@@ -20,6 +20,7 @@ limitations under the License. */
 #ifdef _OPENMP
 #include <omp.h>
 #endif
+#include "framework/context.h"
 #include "operators/math/math.h"
 
 namespace paddle_mobile {
@@ -34,6 +35,7 @@ void pack_lhs_6r(const int m, const int k, const float *A, const int lda,
   uint32x4_t vmask1 = vcltq_u32(vld1q_u32(mask), vdupq_n_u32(remain_k));
 
   #pragma omp parallel for if (unroll)
+  // num_threads(framework::threads())
   for (int i = 0; i < m - 5; i += 6) {
     const float *a0 = A + i * lda;
     const float *a1 = A + (i + 1) * lda;
@@ -293,6 +295,7 @@ void pack_rhs_16c(int k, int n, const float *B, int ldb, float *output,
   uint32x4_t vmask2 = vcltq_u32(vld1q_u32(mask + 4), vdupq_n_u32(remain_n));
 
   #pragma omp parallel for if (unroll)
+  // num_threads(framework::threads())
   for (int i = 0; i < k - 3; i += 4) {
     const float *b0 = B + i * ldb;
     const float *b1 = b0 + ldb;
@@ -442,6 +445,7 @@ void pack_rhs_8c(int k, int n, const float *B, int ldb, float *output,
   uint32x4_t vmask2 = vcltq_u32(vld1q_u32(mask + 4), vdupq_n_u32(remain_n));
 
   #pragma omp parallel for if (unroll)
+  // num_threads(framework::threads())
   for (int i = 0; i < k - 3; i += 4) {
     const float *b0 = B + i * ldb;
     const float *b1 = b0 + ldb;

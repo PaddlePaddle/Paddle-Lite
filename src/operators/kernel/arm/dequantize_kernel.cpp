@@ -15,6 +15,7 @@ limitations under the License. */
 #ifdef DEQUANT_OP
 
 #include "operators/kernel/dequantize_kernel.h"
+#include "framework/context.h"
 
 #if defined(__ARM_NEON__) || defined(__ARM_NEON)
 #include <arm_neon.h>
@@ -45,6 +46,7 @@ void DequantizeKernel<CPU, float>::Compute(const DequantizeParam<CPU> &param) {
   float32x4_t s = vdupq_n_f32(scale);
 
   #pragma omp parallel for
+  // num_threads(framework::threads())
   for (size_t i = 0; i < loop; ++i) {
     const int32_t *local_x = x + (i << 4);
     float *local_y = y + (i << 4);

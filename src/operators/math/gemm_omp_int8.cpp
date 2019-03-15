@@ -30,7 +30,7 @@ namespace math {
 void Gemm::PackMatrixB_omp_8c(int32_t k, int32_t n, int32_t n_tail,
                               const int8_t *B, int32_t ldb, int8_t *buffer) {
   const int32_t j_length = n - n_tail;
-#pragma omp parallel for
+#pragma omp parallel for num_threads(framework::threads())
   for (int32_t j = 0; j < j_length; j += 8) {
     int8_t *local_buffer = buffer + j * k;
     for (int32_t i = 0; i < k; ++i) {
@@ -76,7 +76,7 @@ void Gemm::PackMatrixB_omp_8c(int32_t k, int32_t n, int32_t n_tail,
 void Gemm::PackMatrixA_omp_4r(int32_t m, int32_t k, int32_t m_tail,
                               const int8_t *A, int32_t lda, int8_t *buffer) {
   const int32_t i_length = m - m_tail;
-#pragma omp parallel for
+#pragma omp parallel for num_threads(framework::threads())
   for (int32_t i = 0; i < i_length; i += 4) {
     const int8_t *a0 = A + i * lda;
     const int8_t *a1 = A + (i + 1) * lda;
@@ -123,7 +123,7 @@ void Gemm::PackMatrixA_omp_4r_16(int32_t m, int32_t k, int32_t m_tail,
   const int32_t i_length = m - m_tail;
   const int32_t k_count = k >> 4;
   const int32_t k_tail = k & 15;
-#pragma omp parallel for
+#pragma omp parallel for num_threads(framework::threads())
   for (int32_t i = 0; i < i_length; i += 4) {
     const int8_t *a0 = A + i * lda;
     const int8_t *a1 = A + (i + 1) * lda;
@@ -280,7 +280,7 @@ void Gemm::PackMatrixB_omp_2c_16(int32_t k, int32_t n, int32_t n_tail,
   const int32_t j_length = n - n_tail;
   const int32_t k_count = k >> 4;
   const int32_t k_tail = k & 15;
-#pragma omp parallel for
+#pragma omp parallel for num_threads(framework::threads())
   for (int32_t j = 0; j < j_length; j += 2) {
     int8_t *local_buffer = buffer + j * KC;
     for (int32_t i = 0; i < k_count; ++i) {

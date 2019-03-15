@@ -19,9 +19,6 @@ limitations under the License. */
 #if __ARM_NEON
 #include <arm_neon.h>
 #endif
-#ifdef _OPENMP
-#include <omp.h>
-#endif
 
 namespace paddle_mobile {
 namespace operators {
@@ -41,6 +38,7 @@ void Gemm::PackMatrixA_6r(int m, int k, int m_tail, const float *A, int lda,
   uint32x4_t vmask1 = vcltq_u32(vld1q_u32(mask), vdupq_n_u32(remain_k));
 
   #pragma omp parallel for if (parallel)
+  // num_threads(framework::threads())
   for (int i = 0; i < m - 5; i += 6) {
     const float *a0 = A + i * lda;
     const float *a1 = A + (i + 1) * lda;
@@ -312,6 +310,7 @@ void Gemm::PackMatrixB_8c(int k, int n, int n_tail, const float *B, int ldb,
   const int j_length = n - n_tail;
 
   #pragma omp parallel for if (parallel)
+  // num_threads(framework::threads())
   for (int i = 0; i < k; ++i) {
     int j = 0;
     for (; j < j_length - 31; j += 32) {
@@ -450,6 +449,7 @@ void Gemm::PackMatrixB_12c(int k, int n, int n_tail, const float *B, int ldb,
   const int j_length = n - n_tail;
 
   #pragma omp parallel for if (parallel)
+  // num_threads(framework::threads())
   for (int j = 0; j < j_length; j += NR) {
     float *local_buffer = buffer + j * k;
     for (int i = 0; i < k; ++i) {
@@ -482,6 +482,7 @@ void Gemm::PackMatrixB_16c(int k, int n, int n_tail, const float *B, int ldb,
   const int j_length = n - n_tail;
 
   #pragma omp parallel for if (parallel)
+  // num_threads(framework::threads())
   for (int j = 0; j < n - n_tail; j += NR) {
     float *local_buffer = buffer + j * k;
     for (int i = 0; i < k; ++i) {
@@ -515,7 +516,7 @@ void Gemm::PackMatrixB_16c(int k, int n, int n_tail, const float *B, int ldb,
 void Gemm::InnerKernel(int mc, int nc, float alpha, const float *a,
                        const float *b, float beta, float *c, float *C, int ldc,
                        bool relu) {
-#pragma omp parallel for
+#pragma omp parallel for num_threads(framework::threads())
   for (int j = 0; j < nc; j += NR) {
     for (int i = 0; i < mc; i += MR) {
 #if __aarch64__
@@ -551,7 +552,7 @@ void Gemm::InnerKernel(int mc, int nc, float alpha, const float *a,
 void Gemm::InnerKernelWithBias(int mc, int nc, float alpha, const float *a,
                                const float *b, float beta, float *c, float *C,
                                int ldc, bool relu, float *bias) {
-#pragma omp parallel for
+#pragma omp parallel for num_threads(framework::threads())
   for (int j = 0; j < nc; j += NR) {
     for (int i = 0; i < mc; i += MR) {
 #if __aarch64__
@@ -596,7 +597,7 @@ void Gemm::InnerKernelWithBn(int mc, int nc, float alpha, const float *a,
                              const float *b, float beta, float *c, float *C,
                              int ldc, bool relu, float *new_scale,
                              float *new_bias) {
-#pragma omp parallel for
+#pragma omp parallel for num_threads(framework::threads())
   for (int j = 0; j < nc; j += NR) {
     for (int i = 0; i < mc; i += MR) {
 #if __aarch64__
@@ -622,7 +623,7 @@ void Gemm::InnerKernelWithBnAdd(int mc, int nc, float alpha, const float *a,
                                 const float *b, float beta, float *c, float *C,
                                 int ldc, bool relu, float *new_scale,
                                 float *new_bias, float *bias) {
-#pragma omp parallel for
+#pragma omp parallel for num_threads(framework::threads())
   for (int j = 0; j < nc; j += NR) {
     for (int i = 0; i < mc; i += MR) {
 #if __aarch64__
@@ -641,7 +642,7 @@ void Gemm::InnerKernelWithBnAdd(int mc, int nc, float alpha, const float *a,
 void Gemm::InnerKernelWithPRelu(int mc, int nc, const float *a, const float *b,
                                 float *c, float *C, int ldc, float *p,
                                 std::string mode, float *bias, float *bias1) {
-#pragma omp parallel for
+#pragma omp parallel for num_threads(framework::threads())
   for (int j = 0; j < nc; j += NR) {
     for (int i = 0; i < mc; i += MR) {
 #if __aarch64__
@@ -3509,7 +3510,7 @@ void Gemm::Sgemm_omp(int m, int n, int k, float alpha, const float *A, int lda,
       paddle_mobile::memory::Alloc(sizeof(float) * MC * NC * max_threads));
 
   if (m > n) {
-#pragma omp parallel for
+#pragma omp parallel for num_threads(framework::threads())
     for (int i = 0; i < m; i += MC) {
 #ifdef _OPENMP
       int local_threads = omp_get_thread_num();
@@ -3531,7 +3532,7 @@ void Gemm::Sgemm_omp(int m, int n, int k, float alpha, const float *A, int lda,
       }
     }
   } else {
-#pragma omp parallel for
+#pragma omp parallel for num_threads(framework::threads())
     for (int j = 0; j < n; j += NC) {
 #ifdef _OPENMP
       int local_threads = omp_get_thread_num();
@@ -3627,7 +3628,7 @@ void Gemm::SgemmWithBn_omp(int m, int n, int k, float alpha, const float *A,
       paddle_mobile::memory::Alloc(sizeof(float) * MC * NC * max_threads));
 
   if (m > n) {
-#pragma omp parallel for
+#pragma omp parallel for num_threads(framework::threads())
     for (int i = 0; i < m; i += MC) {
 #ifdef _OPENMP
       int local_threads = omp_get_thread_num();
@@ -3650,7 +3651,7 @@ void Gemm::SgemmWithBn_omp(int m, int n, int k, float alpha, const float *A,
       }
     }
   } else {
-#pragma omp parallel for
+#pragma omp parallel for num_threads(framework::threads())
     for (int j = 0; j < n; j += NC) {
 #ifdef _OPENMP
       int local_threads = omp_get_thread_num();
@@ -3752,7 +3753,7 @@ void Gemm::SgemmWithPRelu_omp(int m, int n, int k, const float *A, int lda,
       paddle_mobile::memory::Alloc(sizeof(float) * MC * NC * max_threads));
 
   if (m > n) {
-#pragma omp parallel for
+#pragma omp parallel for num_threads(framework::threads())
     for (int i = 0; i < m; i += MC) {
 #ifdef _OPENMP
       int local_threads = omp_get_thread_num();
@@ -3774,7 +3775,7 @@ void Gemm::SgemmWithPRelu_omp(int m, int n, int k, const float *A, int lda,
       }
     }
   } else {
-#pragma omp parallel for
+#pragma omp parallel for num_threads(framework::threads())
     for (int j = 0; j < n; j += NC) {
 #ifdef _OPENMP
       int local_threads = omp_get_thread_num();

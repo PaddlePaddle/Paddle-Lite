@@ -17,6 +17,7 @@ limitations under the License. */
 #if defined(__ARM_NEON__) || defined(__ARM_NEON)
 
 #include <arm_neon.h>
+#include "framework/context.h"
 #include "operators/math/math.h"
 
 namespace paddle_mobile {
@@ -336,6 +337,7 @@ void sgemv_notrans_mx1(const int M, const int N, const float alpha,
   float32x4_t _valpha = vdupq_n_f32(alpha);
 
   #pragma omp parallel for
+  // num_threads(framework::threads())
   for (int m = 0; m < M - 3; m += 4) {
     const float *in0 = A + m * lda;
     const float *in1 = in0 + lda;
@@ -442,6 +444,7 @@ void sgemv_trans_mx1(const int M, const int N, const float alpha,
   }
 
   #pragma omp parallel for
+  // num_threads(framework::threads())
   for (int n = 0; n < N - 3; n += 4) {
     const float *in0 = A + n * lda;
     const float *in1 = in0 + lda;

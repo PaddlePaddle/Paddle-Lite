@@ -58,6 +58,7 @@ void winograd_transform_weight<8, 3>(const framework::Tensor &weight,
   int remain_start = out_channel & 0xFFFC;
 
   #pragma omp parallel for
+  // num_threads(framework::threads())
   for (int oc = 0; oc < out_channel - 3; oc += 4) {
     float gw[96];  // gw[3][8][4]
     const float *inptr0 = inptr + oc * in_channel * 9;
@@ -264,6 +265,7 @@ void winograd_transform_weight<8, 3>(const framework::Tensor &weight,
 
   // remain output channel
   #pragma omp parallel for
+  // num_threads(framework::threads())
   for (int oc = remain_start; oc < out_channel; ++oc) {
     float gw[3][8];                                     // gw[3][8]
     const float *inptr0 = inptr + oc * in_channel * 9;  //
@@ -353,6 +355,7 @@ void winograd_transform_input<8, 3>(const framework::Tensor &input,
   const float transform_matrix[8] = {5.25f, -5.f,   -4.25f, -2.5f,
                                      2.f,   -1.25f, 0.5f,   0.25f};
   #pragma omp parallel for
+  // num_threads(framework::threads())
   for (int c = 0; c < channel; ++c) {
     const float *in = inptr + c * image_size;
     float d_bt[64];  // d * B_t
@@ -783,6 +786,7 @@ void winograd_transform_output<8, 3>(const framework::Tensor &input,
   const float *weight_ptr = weight.data<float>();
 
   #pragma omp parallel for
+  // num_threads(framework::threads())
   for (int i = 0; i < out_channel; ++i) {
     float *uv_ptr = uv_trans_ptr + (i * tiles * 64 * 32);
     for (int j = 0; j < tiles; ++j) {
@@ -943,6 +947,7 @@ void winograd_transform_output<8, 3>(const framework::Tensor &input,
   float transform_matrix[8] = {2.f, 4.f, 8.f, 16.f};
 
   #pragma omp parallel for
+  // num_threads(framework::threads())
   for (int oc = 0; oc < output->dims()[1]; ++oc) {
     float at_m[48];        // [6][8]
     float output_tmp[36];  // [6][6], temporarily restore results

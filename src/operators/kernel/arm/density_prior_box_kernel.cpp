@@ -12,32 +12,25 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#if defined(SOFTMAX_OP) || defined(SEQUENCE_SOFTMAX_OP)
+#ifdef DENSITY_PRIORBOX_OP
 
-#pragma once
-
-#include "framework/context.h"
-#include "framework/lod_tensor.h"
-#include "framework/tensor.h"
+#include "operators/kernel/prior_box_kernel.h"
 
 namespace paddle_mobile {
 namespace operators {
-namespace math {
 
-template <typename Device, typename T>
-class SoftmaxFuntor {
- public:
-  void operator()(const framework::Tensor *X, framework::Tensor *Y);
-};
+template <>
+bool DensityPriorBoxKernel<CPU, float>::Init(DensityPriorBoxParam<CPU> *param) {
+  return true;
+}
 
-template <typename Device, typename T>
-class SequenceSoftmaxFuntor {
- public:
-  void operator()(const framework::LoDTensor *X, framework::LoDTensor *Y);
-};
+template <>
+void DensityPriorBoxKernel<CPU, float>::Compute(
+    const DensityPriorBoxParam<CPU> &param) {
+  // TODO(hjchen2)
+}
 
-}  // namespace math
 }  // namespace operators
 }  // namespace paddle_mobile
 
-#endif
+#endif  // DENSITY_PRIORBOX_OP

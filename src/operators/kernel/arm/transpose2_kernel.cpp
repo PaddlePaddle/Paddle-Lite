@@ -15,6 +15,7 @@ limitations under the License. */
 #ifdef TRANSPOSE2_OP
 
 #include "operators/kernel/transpose2_kernel.h"
+#include "framework/context.h"
 
 namespace paddle_mobile {
 namespace operators {
@@ -50,6 +51,7 @@ void ShuffleChannelCompute(const Transpose2Param<CPU> &param) {
   }
 
   #pragma omp parallel for collapse(3)
+  // num_threads(framework::threads())
   for (int batch = 0; batch < out_dim[0]; ++batch) {
     for (int c1 = 0; c1 < out_dim[1]; ++c1) {
       for (int c2 = 0; c2 < out_dim[2]; ++c2) {
@@ -92,6 +94,7 @@ void Transpose2Compute(const Transpose2Param<CPU> &param) {
   }
 
   #pragma omp parallel for collapse(2)
+  // num_threads(framework::threads())
   for (int batch = 0; batch < out_dim[0]; ++batch) {
     for (int j = 0; j < out_dim[1]; ++j) {
       size_t offset = batch * strides[permute - 1] + j * strides[permute - 2];

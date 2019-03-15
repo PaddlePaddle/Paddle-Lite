@@ -17,6 +17,7 @@ limitations under the License. */
 #pragma once
 
 #include <cmath>
+#include "framework/context.h"
 #include "operators/op_param.h"
 #if defined(__ARM_NEON__) || defined(__ARM_NEON)
 #include <arm_neon.h>
@@ -41,6 +42,7 @@ void BatchnormCompute(const BatchNormParam<CPU> &param) {
   int channels = output->dims()[1];
 
   #pragma omp parallel for collapse(2)
+  // num_threads(framework::threads())
   for (int batch = 0; batch < output->dims()[0]; ++batch) {
     for (int c = 0; c < channels; ++c) {
       float inv_scale = 1.f / (std::sqrt(variance_ptr[c] + epsilon));

@@ -171,6 +171,7 @@ struct Pooling2x2<P, 1> {
     int valid_w = valid_w_end - valid_w_start;
 
     #pragma omp parallel for collapse(2)
+    // num_threads(framework::threads())
     for (int batch = 0; batch < output->dims()[0]; ++batch) {
       for (int c = 0; c < output->dims()[1]; ++c) {
         int channel = batch * output->dims()[1] + c;
@@ -567,6 +568,7 @@ struct Pooling2x2<P, 2> {
         padding_w + (ceil_mode ? 2 * output_w - (input_w + 2 * padding_w) : 0);
 
     #pragma omp parallel for collapse(2)
+    // num_threads(framework::threads())
     for (int batch = 0; batch < output->dims()[0]; ++batch) {
       for (int c = 0; c < output->dims()[1]; ++c) {
         int channel = batch * output->dims()[1] + c;

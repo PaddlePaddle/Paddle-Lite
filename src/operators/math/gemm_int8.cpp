@@ -677,7 +677,7 @@ template <>
 void Gemm::InnerKernel(int32_t mc, int32_t nc, float alpha, const int8_t *a,
                        const int8_t *b, float beta, int32_t *c, int32_t *C,
                        int32_t ldc, bool relu) {
-#pragma omp parallel for
+#pragma omp parallel for num_threads(framework::threads())
   for (int32_t j = 0; j < nc; j += NR_INT8) {
     for (int32_t i = 0; i < mc; i += MR_INT8) {
 #if __aarch64__
@@ -700,7 +700,7 @@ void Gemm::InnerKernelWithBias(int32_t mc, int32_t nc, float alpha,
                                const int8_t *a, const int8_t *b, float beta,
                                int32_t *c, int8_t *C, int32_t ldc, bool relu,
                                int32_t *bias, bool addOnRow) {
-#pragma omp parallel for
+#pragma omp parallel for num_threads(framework::threads())
   for (int32_t j = 0; j < nc; j += NR_INT8) {
     for (int32_t i = 0; i < mc; i += MR_INT8) {
 #if __aarch64__

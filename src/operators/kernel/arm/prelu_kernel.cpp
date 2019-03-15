@@ -16,6 +16,7 @@ limitations under the License. */
 
 #include "operators/kernel/prelu_kernel.h"
 #include <operators/math/transform.h>
+#include "framework/context.h"
 #if __ARM_NEON
 #include <arm_neon.h>
 #endif
@@ -52,6 +53,7 @@ void PReluKernel<CPU, float>::Compute(const PReluParam<CPU> &param) {
   int temp = 0;
 #if __ARM_NEON
   #pragma omp parallel for
+  // num_threads(framework::threads())
   for (int i = 0; i < k; i++) {
     float32x4_t zero = vdupq_n_f32(0.0);
     float32x4_t cv;
@@ -98,18 +100,18 @@ void PReluKernel<CPU, float>::Compute(const PReluParam<CPU> &param) {
 #else
   if (mode == "channel") {
     temp = numel / (dim[0] * dim[1]);
-#pragma omp parallel for
+#pragma omp parallel for num_threads(framework::threads())
     for (i = 0; i < numel; i++) {
       index = (i / temp) % dim[1];
       o_ptr[i] = x_ptr[i] > 0 ? x_ptr[i] : alpha_ptr[index] * x_ptr[i];
     }
   } else if (mode == "element") {
-#pragma omp parallel for
+#pragma omp parallel for num_threads(framework::threads())
     for (i = 0; i < numel; i++) {
       o_ptr[i] = x_ptr[i] > 0 ? x_ptr[i] : alpha_ptr[i] * x_ptr[i];
     }
   } else {
-#pragma omp parallel for
+#pragma omp parallel for num_threads(framework::threads())
     for (i = 0; i < numel; i++) {
       o_ptr[i] = x_ptr[i] > 0 ? x_ptr[i] : alpha_ptr[0] * x_ptr[i];
     }

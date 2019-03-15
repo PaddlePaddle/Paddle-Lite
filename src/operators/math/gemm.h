@@ -16,6 +16,7 @@ limitations under the License. */
 #include <cstring>
 #include <string>
 #include "common/log.h"
+#include "framework/context.h"
 #include "memory/t_malloc.h"
 #ifdef _OPENMP
 #include <omp.h>
@@ -408,7 +409,7 @@ void Gemm::Sgemm_omp(int32_t m, int32_t n, int32_t k, float alpha,
       paddle_mobile::memory::Alloc(sizeof(int32_t) * MC * NC * max_threads));
 
   if (m > n) {
-#pragma omp parallel for
+#pragma omp parallel for num_threads(framework::threads())
     for (int32_t i = 0; i < m; i += MC) {
 #ifdef _OPENMP
       int32_t local_threads = omp_get_thread_num();
@@ -439,7 +440,7 @@ void Gemm::Sgemm_omp(int32_t m, int32_t n, int32_t k, float alpha,
       }
     }
   } else {
-#pragma omp parallel for
+#pragma omp parallel for num_threads(framework::threads())
     for (int32_t j = 0; j < n; j += NC) {
 #ifdef _OPENMP
       int32_t local_threads = omp_get_thread_num();

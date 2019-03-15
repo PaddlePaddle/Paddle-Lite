@@ -16,6 +16,7 @@ limitations under the License. */
 
 #include "operators/kernel/quantize_kernel.h"
 #include <cmath>
+#include "framework/context.h"
 #include "operators/math/quantize.h"
 
 #if defined(__ARM_NEON__) || defined(__ARM_NEON)
@@ -46,6 +47,7 @@ inline void QuantizeOffline(const Tensor *input, const float scale,
   float32x4_t __postive_max = vdupq_n_f32(max_abs);
   float32x4_t __negtive_max = vdupq_n_f32(-max_abs);
   #pragma omp parallel for
+  // num_threads(framework::threads())
   for (size_t i = 0; i < loop; ++i) {
     const float *local_x = x + (i << 4);
     int8_t *local_y = y + (i << 4);
@@ -96,6 +98,7 @@ inline void QuantizeOnline(const Tensor *input, const float scale,
   remain = remain & 0xF;
   float32x4_t __scale = vdupq_n_f32(scale);
   #pragma omp parallel for
+  // num_threads(framework::threads())
   for (size_t i = 0; i < loop; ++i) {
     const float *local_x = x + (i << 4);
     int8_t *local_y = y + (i << 4);

@@ -13,6 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include <cmath>
+#include "framework/context.h"
 #include "operators/kernel/dequant_bn_kernel.h"
 #include "operators/math/activation.h"
 #include "operators/math/quantize.h"
@@ -70,6 +71,7 @@ void DequantBNCompute(const FusionDequantBNParam<CPU> *param) {
   size_t spatial_size = param->input_->dims()[2] * param->input_->dims()[3];
 
   #pragma omp parallel for collapse(2)
+  // num_threads(framework::threads())
   for (int batch = 0; batch < batch_size; ++batch) {
     for (int c = 0; c < channels; ++c) {
       // not fuse bn and dequant scale to minimize precision difference
@@ -207,6 +209,7 @@ void DequantBNQuantCompute(const FusionDequantAddBNQuantParam<CPU> *param) {
     max_abs = param->static_scale_;
     float quant_scale = 127.f / max_abs;
     #pragma omp parallel for collapse(2)
+    // num_threads(framework::threads())
     for (int batch = 0; batch < batch_size; ++batch) {
       for (int c = 0; c < channels; ++c) {
         // not fuse bn and dequant scale to minimize precision difference

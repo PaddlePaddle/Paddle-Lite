@@ -14,6 +14,7 @@ limitations under the License. */
 
 #include "operators/kernel/activation_kernel.h"
 #include "common/types.h"
+#include "framework/context.h"
 #include "operators/math/activation.h"
 #if defined(__ARM_NEON__) || defined(__ARM_NEON)
 #include <arm_neon.h>
@@ -37,7 +38,7 @@ struct ActivationCompute<float, Act> {
     size_t loop = remain >> 4;
     remain = remain & 0xF;
 
-#pragma omp parallel for
+#pragma omp parallel for num_threads(framework::threads())
     for (size_t i = 0; i < loop; ++i) {
       const float *local_x = x + (i << 4);
       float *local_y = y + (i << 4);

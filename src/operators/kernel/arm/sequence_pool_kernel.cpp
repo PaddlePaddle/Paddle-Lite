@@ -19,6 +19,7 @@ limitations under the License. */
 #include <string>
 #include <vector>
 #include "common/types.h"
+#include "framework/context.h"
 #include "operators/kernel/sequence_kernels.h"
 #include "operators/math/pooling.h"
 #if defined(__ARM_NEON__) || defined(__ARM_NEON)
@@ -37,6 +38,7 @@ void SequencePoolImpl(const framework::LoDTensor &input,
   int64_t width = input.numel() / input.dims()[0];
 
   #pragma omp parallel for
+  // num_threads(framework::threads())
   for (int i = 0; i < static_cast<int>(lod.size()) - 1; ++i) {
     const float *in_ptr = input_ptr + lod[i] * width;
     float *out_ptr = output_ptr + i * width;
@@ -97,6 +99,7 @@ void SequencePoolImpl<SUM, float>(const framework::LoDTensor &input,
   int64_t width = input.numel() / input.dims()[0];
 
   #pragma omp parallel for
+  // num_threads(framework::threads())
   for (int i = 0; i < static_cast<int>(lod.size()) - 1; ++i) {
     const float *in_ptr = input_ptr + lod[i] * width;
     float *out_ptr = output_ptr + i * width;

@@ -19,17 +19,17 @@ limitations under the License. */
 #include <omp.h>
 #endif
 // #include <sys/time.h>
-// #include <iostream>
+#include <iostream>
 #include "common/log.h"
+#include "framework/context.h"
 #include "memory/t_malloc.h"
-#include "operators/math/gemm/cpu_info.h"
 #include "operators/math/gemm/gemm_kernel.h"
 
 namespace paddle_mobile {
 namespace operators {
 namespace math {
 
-static CPUInfo *info = CPUInfo::Info();
+static framework::CPUContext *g_cpu_ctx = framework::CPUContext::Context();
 
 int CeilDiv(const int &x, const int &y) { return (x + y - 1) / y; }
 unsigned int ResetL1Cache(const unsigned int L1_size, const int thread_num,
@@ -47,15 +47,8 @@ unsigned int ResetL1Cache(const unsigned int L1_size, const int thread_num,
 
 class Executor {
  public:
-  Executor() : num_threads_(1) {
-#ifdef _OPENMP
-    num_threads_ = omp_get_max_threads();
-#endif
-  }
+  Executor() {}
   virtual ~Executor() {}
-
- protected:
-  int num_threads_;
 };
 
 template <typename Strategy>
@@ -70,11 +63,11 @@ class GemmExecutor : public Executor {
     unsigned int L1_size = 0;
     unsigned int L2_size = 0;
     if (M_ > N_) {
-      L2_size = ResetL1Cache(info->L1_cache, num_threads_, M_, K_);
-      L1_size = info->L2_cache;
+      L2_size = ResetL1Cache(g_cpu_ctx->L1_cache, framework::threads(), M_, K_);
+      L1_size = g_cpu_ctx->L2_cache;
     } else {
-      L1_size = ResetL1Cache(info->L1_cache, num_threads_, N_, K_);
-      L2_size = info->L2_cache;
+      L1_size = ResetL1Cache(g_cpu_ctx->L1_cache, framework::threads(), N_, K_);
+      L2_size = g_cpu_ctx->L2_cache;
     }
 
     rhs_tile_num_ = L1_size / (K_ * sizeof(Itype));
@@ -108,14 +101,16 @@ class GemmExecutor : public Executor {
     if (M_ > N_) {
       int nblock = CeilDiv(N_, Strategy::out_width()) * Strategy::out_width();
       lhs_worksize_ = sizeof(Itype) * lhs_tile_num_ * K_;
-      rhs_worksize_ = sizeof(Itype) * K_ * nblock * num_threads_;
-      out_worksize_ = sizeof(Otype) * lhs_tile_num_ * nblock * num_threads_;
+      rhs_worksize_ = sizeof(Itype) * K_ * nblock * framework::threads();
+      out_worksize_ =
+          sizeof(Otype) * lhs_tile_num_ * nblock * framework::threads();
       ldc_ = nblock;
     } else {
       int mblock = CeilDiv(M_, Strategy::out_height()) * Strategy::out_height();
       lhs_worksize_ = sizeof(Itype) * mblock * K_;
-      rhs_worksize_ = sizeof(Itype) * K_ * rhs_tile_num_ * num_threads_;
-      out_worksize_ = sizeof(Otype) * mblock * rhs_tile_num_ * num_threads_;
+      rhs_worksize_ = sizeof(Itype) * K_ * rhs_tile_num_ * framework::threads();
+      out_worksize_ =
+          sizeof(Otype) * mblock * rhs_tile_num_ * framework::threads();
       ldc_ = rhs_tile_num_;
     }
 
@@ -134,6 +129,7 @@ class GemmExecutor : public Executor {
       strategy_.pack_rhs(K_, N_, B, ldb, rhs_workspace_, true);
 
       #pragma omp parallel for if (M_ > 128)
+      // num_threads(framework::threads())
       for (int lhs_block = 0; lhs_block < M_; lhs_block += lhs_tile_num_) {
         int lhs_range = std::min(M_ - lhs_block, lhs_tile_num_);
 #ifdef _OPENMP
@@ -166,6 +162,7 @@ class GemmExecutor : public Executor {
       strategy_.pack_lhs(M_, K_, A, lda, lhs_workspace_, true);
 
       #pragma omp parallel for if (N_ > 128)
+      // num_threads(framework::threads())
       for (int rhs_block = 0; rhs_block < N_; rhs_block += rhs_tile_num_) {
         int rhs_range = std::min(N_ - rhs_block, rhs_tile_num_);
 #ifdef _OPENMP

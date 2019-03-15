@@ -16,6 +16,7 @@ limitations under the License. */
 
 #pragma once
 
+#include "framework/context.h"
 #include "operators/math/elementwise_op_function.h"
 #include "operators/op_param.h"
 #if defined(__ARM_NEON__) || defined(__ARM_NEON)
@@ -53,6 +54,7 @@ inline void ElementwiseAddCompute(const ElementwiseAddParam<CPU> &param) {
   float *output_data = Out->mutable_data<float>();
 
   #pragma omp parallel for collapse(2)
+  // num_threads(framework::threads())
   for (int i = 0; i < batch; ++i) {
     for (int j = 0; j < channels; ++j) {
       size_t offset = (i * channels + j) * elementwise_num;

@@ -16,6 +16,7 @@ limitations under the License. */
 
 #pragma once
 
+#include "framework/context.h"
 #include "framework/tensor.h"
 
 namespace paddle_mobile {

@@ -22,15 +22,14 @@ limitations under the License. */
 #include <CL/cl.h>
 #include "framework/cl/cl_tensor.h"
 #endif
+#include "framework/context.h"
 #include "operators/math/gemm.h"
 
 namespace paddle_mobile {
 
 template <typename Device, typename T>
 void PaddleMobile<Device, T>::SetThreadNum(int num) {
-#ifdef _OPENMP
-  omp_set_num_threads(num);
-#endif
+  framework::CPUContext::Context()->set_num_threads(num);
 }
 
 template <typename Device, typename T>

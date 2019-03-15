@@ -21,6 +21,7 @@ limitations under the License. */
 #include <limits>
 #include <vector>
 #include "common/types.h"
+#include "framework/context.h"
 #include "framework/tensor.h"
 #if defined(__ARM_NEON) || defined(__ARM_NEON__)
 #include <arm_neon.h>
