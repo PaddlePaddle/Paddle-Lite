@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #pragma once
-
+#ifdef PADDLE_MOBILE_CL
 #include "CL/cl.h"
 
 namespace paddle_mobile {
@@ -21,5 +21,7 @@ namespace paddle_mobile {
 cl_context getContext();
 cl_command_queue getClCommandQueue();
 bool isInitSuccess();
+
+#endif
 
 }  // namespace paddle_mobile
