@@ -28,9 +28,7 @@ namespace paddle_mobile {
 
 template <typename Device, typename T>
 void PaddleMobile<Device, T>::SetThreadNum(int num) {
-#ifdef _OPENMP
-  omp_set_num_threads(num);
-#endif
+  executor_->SetThreadNum(num);
 }
 
 template <typename Device, typename T>
