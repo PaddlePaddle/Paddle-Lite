@@ -42,8 +42,7 @@ void TopKKernel<CPU, float>::Compute(const TopKParam<CPU> &param) {
       framework::slice_ddim(input_dims, 0, input_dims.size() - 1));
   const size_t col = input_dims[input_dims.size() - 1];
 
-  #pragma omp parallel for
-  // num_threads(framework::threads())
+#pragma omp parallel for num_threads(framework::threads())
   for (size_t i = 0; i < row; i++) {
     std::vector<std::pair<float, size_t>> vec(col);
     const float *input_ptr = input_data + i * col;

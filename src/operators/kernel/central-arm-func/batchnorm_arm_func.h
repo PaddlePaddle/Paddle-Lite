@@ -41,8 +41,7 @@ void BatchnormCompute(const BatchNormParam<CPU> &param) {
   size_t spatial_size = output->dims()[2] * output->dims()[3];
   int channels = output->dims()[1];
 
-  #pragma omp parallel for collapse(2)
-  // num_threads(framework::threads())
+#pragma omp parallel for collapse(2) num_threads(framework::threads())
   for (int batch = 0; batch < output->dims()[0]; ++batch) {
     for (int c = 0; c < channels; ++c) {
       float inv_scale = 1.f / (std::sqrt(variance_ptr[c] + epsilon));

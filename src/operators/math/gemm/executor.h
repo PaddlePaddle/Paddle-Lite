@@ -128,8 +128,7 @@ class GemmExecutor : public Executor {
     if (M_ > N_) {
       strategy_.pack_rhs(K_, N_, B, ldb, rhs_workspace_, true);
 
-      #pragma omp parallel for if (M_ > 128)
-      // num_threads(framework::threads())
+#pragma omp parallel for if (M_ > 128) num_threads(framework::threads())
       for (int lhs_block = 0; lhs_block < M_; lhs_block += lhs_tile_num_) {
         int lhs_range = std::min(M_ - lhs_block, lhs_tile_num_);
 #ifdef _OPENMP
@@ -161,8 +160,7 @@ class GemmExecutor : public Executor {
     } else {
       strategy_.pack_lhs(M_, K_, A, lda, lhs_workspace_, true);
 
-      #pragma omp parallel for if (N_ > 128)
-      // num_threads(framework::threads())
+#pragma omp parallel for if (N_ > 128) num_threads(framework::threads())
       for (int rhs_block = 0; rhs_block < N_; rhs_block += rhs_tile_num_) {
         int rhs_range = std::min(N_ - rhs_block, rhs_tile_num_);
 #ifdef _OPENMP

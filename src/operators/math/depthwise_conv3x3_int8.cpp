@@ -130,8 +130,7 @@ void DepthwiseConv3x3S1<int8_t, int32_t>(const framework::Tensor &input,
   int valid_w_end = output_w - valid_w_start;
   int valid_w = valid_w_end - valid_w_start;
 
-  #pragma omp parallel for
-  // num_threads(framework::threads())
+#pragma omp parallel for num_threads(framework::threads())
   for (int g = 0; g < input.dims()[1]; ++g) {
     const int8_t *input_ptr = input_data + g * image_size;
     const int8_t *filter_ptr = filter_data + g * 9;
@@ -1066,8 +1065,7 @@ void DepthwiseConv3x3S2<int8_t, int32_t>(const framework::Tensor &input,
   //  DLOG << "valid_w_start: " << valid_w_start;
   //  DLOG << "valid_w_end: " << valid_w_end;
 
-  #pragma omp parallel for
-  // num_threads(framework::threads())
+#pragma omp parallel for num_threads(framework::threads())
   for (int g = 0; g < input.dims()[1]; ++g) {
     const int8_t *input_ptr = input_data + g * image_size;
     const int8_t *filter_ptr = filter_data + g * 9;

@@ -37,8 +37,7 @@ void SequencePoolImpl(const framework::LoDTensor &input,
   const auto &lod = input.lod()[0];
   int64_t width = input.numel() / input.dims()[0];
 
-  #pragma omp parallel for
-  // num_threads(framework::threads())
+#pragma omp parallel for num_threads(framework::threads())
   for (int i = 0; i < static_cast<int>(lod.size()) - 1; ++i) {
     const float *in_ptr = input_ptr + lod[i] * width;
     float *out_ptr = output_ptr + i * width;
@@ -98,8 +97,7 @@ void SequencePoolImpl<SUM, float>(const framework::LoDTensor &input,
   const auto &lod = input.lod()[0];
   int64_t width = input.numel() / input.dims()[0];
 
-  #pragma omp parallel for
-  // num_threads(framework::threads())
+#pragma omp parallel for num_threads(framework::threads())
   for (int i = 0; i < static_cast<int>(lod.size()) - 1; ++i) {
     const float *in_ptr = input_ptr + lod[i] * width;
     float *out_ptr = output_ptr + i * width;

@@ -37,8 +37,7 @@ void Gemm::PackMatrixA_6r(int m, int k, int m_tail, const float *A, int lda,
   uint32x4_t vzero = vdupq_n_u32(0);
   uint32x4_t vmask1 = vcltq_u32(vld1q_u32(mask), vdupq_n_u32(remain_k));
 
-  #pragma omp parallel for if (parallel)
-  // num_threads(framework::threads())
+#pragma omp parallel for if (parallel) num_threads(framework::threads())
   for (int i = 0; i < m - 5; i += 6) {
     const float *a0 = A + i * lda;
     const float *a1 = A + (i + 1) * lda;
@@ -309,8 +308,7 @@ void Gemm::PackMatrixB_8c(int k, int n, int n_tail, const float *B, int ldb,
                           float *buffer, const bool parallel) {
   const int j_length = n - n_tail;
 
-  #pragma omp parallel for if (parallel)
-  // num_threads(framework::threads())
+#pragma omp parallel for if (parallel) num_threads(framework::threads())
   for (int i = 0; i < k; ++i) {
     int j = 0;
     for (; j < j_length - 31; j += 32) {
@@ -448,8 +446,7 @@ void Gemm::PackMatrixB_12c(int k, int n, int n_tail, const float *B, int ldb,
                            float *buffer, const bool parallel) {
   const int j_length = n - n_tail;
 
-  #pragma omp parallel for if (parallel)
-  // num_threads(framework::threads())
+#pragma omp parallel for if (parallel) num_threads(framework::threads())
   for (int j = 0; j < j_length; j += NR) {
     float *local_buffer = buffer + j * k;
     for (int i = 0; i < k; ++i) {
@@ -481,8 +478,7 @@ void Gemm::PackMatrixB_16c(int k, int n, int n_tail, const float *B, int ldb,
                            float *buffer, const bool parallel) {
   const int j_length = n - n_tail;
 
-  #pragma omp parallel for if (parallel)
-  // num_threads(framework::threads())
+#pragma omp parallel for if (parallel) num_threads(framework::threads())
   for (int j = 0; j < n - n_tail; j += NR) {
     float *local_buffer = buffer + j * k;
     for (int i = 0; i < k; ++i) {

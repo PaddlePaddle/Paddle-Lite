@@ -126,8 +126,7 @@ void Im2ColFunctor<ColFormat::kCFO, CPU, float>::operator()(
     int col_spatial_size = col_height * col_width;
     // pad 0
     memset(col_data, 0, col->numel() * sizeof(float));
-    #pragma omp parallel for
-    // num_threads(framework::threads())
+#pragma omp parallel for num_threads(framework::threads())
     for (int ic = 0; ic < im_channels; ++ic) {
       const float *local_im_data = im_data + ic * im_spatial_size;
       float *local_col_data =
@@ -257,8 +256,8 @@ void Im2ColFunctor<ColFormat::kCFO, CPU, int8_t>::operator()(
     int col_spatial_size = col_height * col_width;
     // pad 0
     memset(col_data, 0, col->numel() * sizeof(int8_t));
-    #pragma omp parallel for
-    // num_threads(framework::threads())
+
+#pragma omp parallel for num_threads(framework::threads())
     for (int ic = 0; ic < im_channels; ++ic) {
       const int8_t *local_im_data = im_data + ic * im_spatial_size;
       int8_t *local_col_data =

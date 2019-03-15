@@ -43,8 +43,7 @@ void Pooling<P>::operator()(const framework::Tensor &input,
   const size_t input_spatial_size = input_height * input_width;
   const size_t output_spatial_size = output_height * output_width;
 
-  #pragma omp parallel for collapse(2)
-  // num_threads(framework::threads())
+#pragma omp parallel for collapse(2) num_threads(framework::threads())
   for (int i = 0; i < batch_size; i++) {
     for (int c = 0; c < output_channels; ++c) {
       int channel = i * output_channels + c;

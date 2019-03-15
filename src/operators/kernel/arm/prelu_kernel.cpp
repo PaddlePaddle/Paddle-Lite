@@ -51,9 +51,9 @@ void PReluKernel<CPU, float>::Compute(const PReluParam<CPU> &param) {
   int index = 0;
   int i = 0;
   int temp = 0;
+
 #if __ARM_NEON
-  #pragma omp parallel for
-  // num_threads(framework::threads())
+#pragma omp parallel for num_threads(framework::threads())
   for (int i = 0; i < k; i++) {
     float32x4_t zero = vdupq_n_f32(0.0);
     float32x4_t cv;

@@ -45,8 +45,7 @@ void DequantizeKernel<CPU, float>::Compute(const DequantizeParam<CPU> &param) {
   size_t remain = size & 0xF;
   float32x4_t s = vdupq_n_f32(scale);
 
-  #pragma omp parallel for
-  // num_threads(framework::threads())
+#pragma omp parallel for num_threads(framework::threads())
   for (size_t i = 0; i < loop; ++i) {
     const int32_t *local_x = x + (i << 4);
     float *local_y = y + (i << 4);

@@ -122,8 +122,7 @@ void SoftmaxFuntor<CPU, float>::operator()(const framework::Tensor *X,
   const float *x = X->data<float>();
   float *y = Y->mutable_data<float>();
 
-  #pragma omp parallel for collapse(2)
-  // num_threads(framework::threads())
+#pragma omp parallel for collapse(2) num_threads(framework::threads())
   for (int batch = 0; batch < X->dims()[0]; ++batch) {
     for (int channel = 0; channel < channels; ++channel) {
       size_t offset = (batch * channels + channel) * num_classes;
@@ -141,8 +140,7 @@ void SequenceSoftmaxFuntor<CPU, float>::operator()(
   const auto &lod = X->lod().back();
   float *y = Y->mutable_data<float>();
 
-  #pragma omp parallel for
-  // num_threads(framework::threads())
+#pragma omp parallel for num_threads(framework::threads())
   for (int batch = 0; batch < lod.size() - 1; ++batch) {
     int num_classes = lod[batch + 1] - lod[batch];
     size_t offset = lod[batch];

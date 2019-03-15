@@ -175,8 +175,7 @@ struct Pooling3x3<P, 1> {
     int valid_w = input_w - 2;
     int valid_w_end = valid_w_start + valid_w;
 
-    #pragma omp parallel for collapse(2)
-    // num_threads(framework::threads())
+#pragma omp parallel for collapse(2) num_threads(framework::threads())
     for (int batch = 0; batch < output->dims()[0]; ++batch) {
       for (int c = 0; c < output->dims()[1]; ++c) {
         int channel = batch * output->dims()[1] + c;
@@ -776,8 +775,7 @@ struct Pooling3x3<P, 2> {
     // for pad left
     int valid_input_w_start = (valid_w_start << 1) - padding_w;
 
-    #pragma omp parallel for collapse(2)
-    // num_threads(framework::threads())
+#pragma omp parallel for collapse(2) num_threads(framework::threads())
     for (int batch = 0; batch < output->dims()[0]; ++batch) {
       for (int c = 0; c < output->dims()[1]; ++c) {
         int channel = batch * output->dims()[1] + c;
