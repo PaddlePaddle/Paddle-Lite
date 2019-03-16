@@ -19,17 +19,17 @@ limitations under the License. */
 #include <omp.h>
 #endif
 // #include <sys/time.h>
-// #include <iostream>
+#include <iostream>
 #include "common/log.h"
+#include "framework/context.h"
 #include "memory/t_malloc.h"
-#include "operators/math/gemm/cpu_info.h"
 #include "operators/math/gemm/gemm_kernel.h"
 
 namespace paddle_mobile {
 namespace operators {
 namespace math {
 
-static CPUInfo *info = CPUInfo::Info();
+static framework::CPUContext *g_cpu_ctx = framework::CPUContext::Context();
 
 int CeilDiv(const int &x, const int &y) { return (x + y - 1) / y; }
 unsigned int ResetL1Cache(const unsigned int L1_size, const int thread_num,
@@ -70,11 +70,11 @@ class GemmExecutor : public Executor {
     unsigned int L1_size = 0;
     unsigned int L2_size = 0;
     if (M_ > N_) {
-      L2_size = ResetL1Cache(info->L1_cache, num_threads_, M_, K_);
-      L1_size = info->L2_cache;
+      L2_size = ResetL1Cache(g_cpu_ctx->L1_cache, num_threads_, M_, K_);
+      L1_size = g_cpu_ctx->L2_cache;
     } else {
-      L1_size = ResetL1Cache(info->L1_cache, num_threads_, N_, K_);
-      L2_size = info->L2_cache;
+      L1_size = ResetL1Cache(g_cpu_ctx->L1_cache, num_threads_, N_, K_);
+      L2_size = g_cpu_ctx->L2_cache;
     }
 
     rhs_tile_num_ = L1_size / (K_ * sizeof(Itype));

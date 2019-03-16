@@ -12,8 +12,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef PRIORBOX_OP
-
 #pragma once
 
 #include <algorithm>
@@ -26,9 +24,10 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace operators {
 
-inline void ExpandAspectRatios(const std::vector<float>& input_aspect_ratior,
+#ifdef PRIORBOX_OP
+inline void ExpandAspectRatios(const std::vector<float> &input_aspect_ratior,
                                bool flip,
-                               std::vector<float>* output_aspect_ratior) {
+                               std::vector<float> *output_aspect_ratior) {
   constexpr float epsilon = 1e-6;
   output_aspect_ratior->clear();
   output_aspect_ratior->push_back(1.0f);
@@ -50,14 +49,63 @@ inline void ExpandAspectRatios(const std::vector<float>& input_aspect_ratior,
   }
 }
 
-template <typename DeviceType, typename T>
-class PriorBoxKernel
-    : public framework::OpKernelBase<DeviceType, PriorBoxParam<DeviceType>> {
+DECLARE_KERNEL(PriorBox, PriorBoxParam);
+#endif  // PRIORBOX_OP
+
+#ifdef DENSITY_PRIORBOX_OP
+template <typename Dtype>
+class DensityPriorBoxParam : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+
  public:
-  void Compute(const PriorBoxParam<DeviceType>& param);
-  bool Init(PriorBoxParam<DeviceType>* param);
+  DensityPriorBoxParam(const VariableNameMap &inputs,
+                       const VariableNameMap &outputs,
+                       const AttributeMap &attrs, Scope *scope)
+      : OpParam(inputs, outputs, attrs, scope) {
+    input_ = InputFrom<GType>(inputs, *scope);
+    input_image_ = InputImageFrom<GType>(inputs, *scope);
+    output_boxes_ = OutputBoxesFrom<GType>(outputs, *scope);
+    output_variances_ = OutputVariancesFrom<GType>(outputs, *scope);
+    variances_ = GetAttr<vector<float>>("variances", attrs);
+    clip_ = GetAttr<bool>("clip", attrs);
+    flatten_to_2d_ = GetAttr<bool>("flatten_to_2d", attrs);
+    step_w_ = GetAttr<float>("step_w", attrs);
+    step_h_ = GetAttr<float>("step_h", attrs);
+    offset_ = GetAttr<float>("offset", attrs);
+    fixed_sizes_ = GetAttr<vector<float>>("fixed_sizes", attrs);
+    fixed_ratios_ = GetAttr<vector<float>>("fixed_ratios", attrs);
+    densities_ = GetAttr<vector<int>>("densities", attrs);
+  }
+
+  const GType *Input() const { return input_; }
+  const GType *InputImage() const { return input_image_; }
+  GType *OutputBoxes() const { return output_boxes_; }
+  GType *OutputVariances() const { return output_variances_; }
+  const bool Clip() const { return clip_; }
+  const bool FlattenTo2d() const { return flatten_to_2d_; }
+  const float StepW() const { return step_w_; }
+  const float StepH() const { return step_h_; }
+  const float Offset() const { return offset_; }
+  const vector<float> &FixedSizes() const { return fixed_sizes_; }
+  const vector<float> &FixedRatios() const { return fixed_ratios_; }
+  const vector<int> &Densities() const { return densities_; }
+
+ public:
+  GType *input_;
+  GType *input_image_;
+  GType *output_boxes_ GType *output_variances_;
+  bool clip_;
+  bool flatten_to_2d_;
+  float step_w_;
+  float step_h_;
+  float offset_;
+  vector<float> fixed_sizes_;
+  vector<float> fixed_ratios_;
+  vector<int> densities_;
 };
+
+DECLARE_KERNEL(DensityPriorBox, DensityPriorBoxParam);
+#endif  // DENSITY_PRIORBOX_OP
+
 }  // namespace operators
 }  // namespace paddle_mobile
-
-#endif
