@@ -12,23 +12,25 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#pragma once
+#ifdef DENSITY_PRIORBOX_OP
 
-#include <string>
-#include "framework/operator.h"
 #include "operators/kernel/prior_box_kernel.h"
-#include "operators/op_param.h"
 
 namespace paddle_mobile {
 namespace operators {
 
-#ifdef PRIORBOX_OP
-DECLARE_OPERATOR(PriorBox, PriorBoxParam, PriorBoxKernel);
-#endif
+template <>
+bool DensityPriorBoxKernel<CPU, float>::Init(DensityPriorBoxParam<CPU> *param) {
+  return true;
+}
 
-#ifdef DENSITY_PRIORBOX_OP
-DECLARE_OPERATOR(DensityPriorBox, DensityPriorBoxParam, DensityPriorBoxKernel);
-#endif
+template <>
+void DensityPriorBoxKernel<CPU, float>::Compute(
+    const DensityPriorBoxParam<CPU> &param) {
+  // TODO(hjchen2)
+}
 
 }  // namespace operators
 }  // namespace paddle_mobile
+
+#endif  // DENSITY_PRIORBOX_OP

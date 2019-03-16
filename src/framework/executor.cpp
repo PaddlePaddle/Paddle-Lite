@@ -18,6 +18,7 @@ limitations under the License. */
 #include <vector>
 #include "common/enforce.h"
 #include "common/log.h"
+#include "framework/context.h"
 #include "framework/framework.pb-c.h"
 #include "framework/lod_tensor.h"
 #include "framework/operator.h"
@@ -36,6 +37,11 @@ namespace paddle_mobile {
 namespace framework {
 
 #pragma mark - executor
+
+template <typename Device, typename T>
+void Executor<Device, T>::SetThreadNum(int threads) {
+  set_global_num_threads(threads);
+}
 
 template <typename Device, typename T>
 Executor<Device, T>::Executor(const Program<Device> &program,
@@ -444,6 +450,9 @@ std::shared_ptr<LoDTensor> Executor<Device, T>::GetOutput(
 
 template <typename Device, typename T>
 PMStatus Executor<Device, T>::Predict() {
+#if _OPENMP
+  omp_set_num_threads(get_global_num_threads());
+#endif
 #ifdef PADDLE_MOBILE_PROFILE
   std::vector<ProfInfo> profile(ops_of_block0_.size());
   struct timespec ts;
@@ -654,14 +663,18 @@ void Executor<GPU_CL, float>::InitNoPersistableMemory(
   output->Resize(input_tensor.dims());
   output->mutable_data<float>();
 }
+
 template <>
 void Executor<GPU_CL, float>::SetInput(const Tensor &input,
                                        const std::string &var_name) {
-  auto *target_var = program_.scope->FindVar(var_name);
-  PADDLE_MOBILE_ENFORCE(target_var != nullptr, "Variable %s is not exist",
-                        var_name.c_str());
+  int index = 0;
+  if (feed_indices_.find(var_name) != feed_indices_.end()) {
+    index = feed_indices_.find(var_name)->second;
+  }
+  auto *feed_var = program_.scope->Var("feed");
+  framework::LoDTensor *target_tensor =
+      &(feed_var->template GetMutable<framework::LoDTensorArray>()->at(index));
 
-  auto *target_tensor = target_var->template GetMutable<LoDTensor>();
   DLOG << "config_.load_when_predict   " << config_.load_when_predict;
   DLOG << "target_tensor->IsInitialized() " << target_tensor->IsInitialized();
   DLOG << "target_tensor->dims()   " << target_tensor->dims();
@@ -772,7 +785,7 @@ void Executor<GPU_CL, float>::InitMemory() {
       if (var_desc->Persistable()) {
         CLImage *cl_image = nullptr;
         if (var_desc->Name() == "feed" || var_desc->Name() == "fetch") {
-          var->template GetMutable<LoDTensor>();
+          var->template GetMutable<framework::LoDTensorArray>();
           continue;
         } else {
           cl_image = var->template GetMutable<CLImage>();
@@ -840,7 +853,7 @@ void Executor<GPU_CL, float>::InitCombineMemory() {
       if (var_desc->Persistable()) {
         CLImage *cl_image = nullptr;
         if (var_desc->Name() == "feed" || var_desc->Name() == "fetch") {
-          var->template GetMutable<LoDTensor>();
+          var->template GetMutable<framework::LoDTensorArray>();
           continue;
         } else {
           cl_image = var->template GetMutable<CLImage>();
