@@ -57,8 +57,8 @@ void InitBaseConvKernel(ConvParam<CPU> *param) {
                param->Dilations()[0] == param->Dilations()[1] &&
                param->Strides()[0] == 1 && param->Dilations()[0] == 1
 #if 1
-               && param->Input()->dims()[1] >= 4
-               && param->Input()->dims()[2] >= 16
+               && (param->Input()->dims()[1] >= 4 ||
+                   param->Output()->dims()[1] >= 16)
 #endif
     ) {
       param->ExecMode() = ConvParam<CPU>::EXEC_WINOGRAD3X3_FLOAT;
