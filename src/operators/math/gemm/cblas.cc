@@ -17,7 +17,6 @@ limitations under the License. */
 #pragma once
 
 #include "operators/math/gemm/cblas.h"
-#include "operators/math/gemm/cpu_info.h"
 #include "operators/math/gemm/executor.h"
 #include "operators/math/gemm/strategy.h"
 

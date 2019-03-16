@@ -36,6 +36,8 @@ class Executor {
            paddle_mobile::PaddleMobileConfigInternal config, int batch_size = 1,
            const bool use_optimize = true, const bool lod_mode = false);
 
+  void SetThreadNum(int threads);
+
   PMStatus Predict(const std::vector<std::pair<std::string, Tensor>> &inputs);
   PMStatus Predict(
       const std::vector<std::pair<std::string, LoDTensor>> &inputs);
