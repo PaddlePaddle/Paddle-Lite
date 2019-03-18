@@ -154,6 +154,15 @@ if (CON GREATER -1)
 
 endif ()
 
+list(FIND NET "op" CON)
+if (CON GREATER -1)
+    # gen test
+    ADD_EXECUTABLE(test-sigmoid operators/test_sigmoid_op.cpp test_include.h)
+    target_link_libraries(test-sigmoid paddle-mobile)
+
+    set(FOUND_MATCH ON)
+endif ()
+
 if (NOT FOUND_MATCH)
     # gen test
     ADD_EXECUTABLE(test-resnet net/test_resnet.cpp test_helper.h test_include.h executor_for_test.h)
