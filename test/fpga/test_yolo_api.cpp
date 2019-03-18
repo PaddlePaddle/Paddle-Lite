@@ -19,8 +19,8 @@ limitations under the License. */
 #include <iostream>
 #include "../../src/io/paddle_inference_api.h"
 
-using namespace paddle_mobile;  //NOLINT
-using namespace paddle_mobile::fpga;  //NOLINT
+using namespace paddle_mobile;        // NOLINT
+using namespace paddle_mobile::fpga;  // NOLINT
 
 static const char *g_image = "../images/yolo_test_txtimg/1.txt";
 static const char *g_model = "../models/yolo_bn_l2_model/__model__";
@@ -51,8 +51,7 @@ signed char float_to_int8(float fdata) {
 }
 void quantize(float **data_in, int data_size) {
   float *tmp = *data_in;
-  signed char *tmp_data =
-      (signed char *)fpga_malloc(data_size * sizeof(char));
+  signed char *tmp_data = (signed char *)fpga_malloc(data_size * sizeof(char));
   for (int i = 0; i < data_size; i++) {
     tmp_data[i] = float_to_int8((*data_in)[i] + 128);
   }
@@ -120,7 +119,9 @@ PaddleMobileConfig GetConfig() {
 int main() {
   open_device();
   PaddleMobileConfig config = GetConfig();
-  auto predictor = CreatePaddlePredictor<PaddleMobileConfig, PaddleEngineKind::kPaddleMobile>(config);
+  auto predictor =
+      CreatePaddlePredictor<PaddleMobileConfig,
+                            PaddleEngineKind::kPaddleMobile>(config);
 
   std::cout << "Finishing loading model" << std::endl;
   int img_length = 256 * 416 * 3;
