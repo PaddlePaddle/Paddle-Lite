@@ -27,9 +27,9 @@ bool CLEngine::Init() {
     return true;
   }
   cl_int status;
-  SetPlatform();
-  SetClDeviceId();
-
+  bool is_setplatform_success = SetPlatform();
+  bool is_setcldeviceid_success = SetClDeviceId();
+  is_init_success_ = is_setplatform_success && is_setcldeviceid_success;
   initialized_ = true;
   return initialized_;
   //  setClCommandQueue();
@@ -44,11 +44,14 @@ CLEngine *CLEngine::Instance() {
   return &cl_engine_;
 }
 
+bool CLEngine::isInitSuccess() { return is_init_success_; }
 bool CLEngine::SetPlatform() {
   platform_ = NULL;      // the chosen platform
   cl_uint numPlatforms;  // the NO. of platforms
   cl_int status = clGetPlatformIDs(0, NULL, &numPlatforms);
-
+  if (status != CL_SUCCESS) {
+    return false;
+  }
   /**For clarity, choose the first available platform. */
   if (numPlatforms > 0) {
     cl_platform_id *platforms = reinterpret_cast<cl_platform_id *>(
@@ -56,10 +59,10 @@ bool CLEngine::SetPlatform() {
     status = clGetPlatformIDs(numPlatforms, platforms, NULL);
     platform_ = platforms[0];
     free(platforms);
-    return true;
-  } else {
-    return false;
+    return status == CL_SUCCESS;
   }
+
+  return false;
 }
 
 bool CLEngine::SetClDeviceId() {
@@ -67,13 +70,15 @@ bool CLEngine::SetClDeviceId() {
   devices_ = NULL;
   cl_int status =
       clGetDeviceIDs(platform_, CL_DEVICE_TYPE_GPU, 0, NULL, &numDevices);
-
+  if (status != CL_SUCCESS) {
+    return false;
+  }
   if (numDevices > 0) {
     devices_ = reinterpret_cast<cl_device_id *>(
         malloc(numDevices * sizeof(cl_device_id)));
     status = clGetDeviceIDs(platform_, CL_DEVICE_TYPE_GPU, numDevices, devices_,
                             NULL);
-    return true;
+    return status == CL_SUCCESS;
   }
   return false;
 }
