@@ -27,6 +27,8 @@ void TopKOp<DeviceType, T>::InferShape() const {
   dims[dims.size() - 1] = k;
   this->param_.output_->Resize(dims);
   this->param_.indices_->Resize(dims);
+  this->param_.output_->set_lod(this->param_.input_->lod());
+  this->param_.indices_->set_lod(this->param_.input_->lod());
 }
 
 }  // namespace operators

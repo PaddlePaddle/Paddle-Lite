@@ -30,8 +30,7 @@ class DepthwiseConvOp : public framework::OperatorWithKernel<
  public:
   DepthwiseConvOp(const std::string &type, const VariableNameMap &inputs,
                   const VariableNameMap &outputs,
-                  const framework::AttributeMap &attrs,
-                  std::shared_ptr<framework::Scope> scope)
+                  const framework::AttributeMap &attrs, framework::Scope *scope)
       : framework::OperatorWithKernel<DeviceType, ConvParam<DeviceType>,
                                       operators::ConvKernel<DeviceType, T>>(
             type, inputs, outputs, attrs, scope) {}

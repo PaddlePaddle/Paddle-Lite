@@ -19,7 +19,6 @@ limitations under the License. */
 #include <vector>
 #include "framework/ddim.h"
 #include "framework/operator.h"
-#include "operators/math/conv_func.h"
 #include "operators/math/im2col.h"
 #include "operators/math/math_function.h"
 #include "operators/math/vol2col.h"
@@ -37,6 +36,9 @@ class ConvAddBNReluKernel
  public:
   void Compute(const FusionConvAddBNReluParam<DeviceType> &param);
   bool Init(FusionConvAddBNReluParam<DeviceType> *param);
+  inline int maptofactor(int i, int factor) {
+    return (i + factor - 1) / factor;
+  }
 };
 
 }  // namespace operators

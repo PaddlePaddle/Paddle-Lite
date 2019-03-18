@@ -57,31 +57,27 @@ class Executor4Test : public Executor<DeviceType> {
       LOG(paddle_mobile::LogLevel::kLOG_ERROR) << "program_desc_ == nullptr";
     }
 
-    const std::vector<std::shared_ptr<BlockDesc>> blocks =
+    const std::vector<std::shared_ptr<BlockDesc>> &blocks =
         this->program_desc_->Blocks();
-    for (int block_id = 0; block_id < blocks.size(); ++block_id) {
-      std::vector<std::shared_ptr<OpDesc>> ops = blocks[block_id]->Ops();
-      for (int i = 0; i < ops.size(); ++i) {
-        auto op = ops[i];
-        if (op->Type() == op_type) {
-          DLOG << "匹配到: " << op->Type();
+    std::vector<std::shared_ptr<OpDesc>> ops = blocks[0]->Ops();
+    for (int i = 0; i < ops.size(); ++i) {
+      auto op = ops[i];
+      if (op->Type() == op_type) {
+        DLOG << "匹配到: " << op->Type();
 
-          /// test first meeting op in program
-          std::shared_ptr<paddle_mobile::framework::OperatorBase<DeviceType>>
-              op_ptr =
-                  paddle_mobile::framework::OpRegistry<DeviceType>::CreateOp(
-                      op->Type(), op->GetInputs(), op->GetOutputs(),
-                      op->GetAttrMap(), this->program_.scope);
-          this->ops_of_block_[block_id].push_back(op_ptr);
-          break;
-        }
+        /// test first meeting op in program
+        std::shared_ptr<paddle_mobile::framework::OperatorBase<DeviceType>>
+            op_ptr = paddle_mobile::framework::OpRegistry<DeviceType>::CreateOp(
+                op->Type(), op->GetInputs(), op->GetOutputs(), op->GetAttrMap(),
+                this->program_.scope.get());
+        this->ops_of_block0_.push_back(op_ptr);
+        break;
       }
     }
+
     this->InitMemory();
-    for (const auto &ops : this->ops_of_block_) {
-      for (const auto &op : ops) {
-        op->Init();
-      }
+    for (const auto &op : this->ops_of_block0_) {
+      op->Init();
     }
   }
 
@@ -90,7 +86,7 @@ class Executor4Test : public Executor<DeviceType> {
                                           const vector<string> &input_names,
                                           const vector<string> &output_names,
                                           const vector<DDim> &ddims) {
-    auto scope = this->program_.scope;
+    auto scope = this->program_.scope.get();
     size_t input_size = input_names.size();
     size_t out_size = output_names.size();
 
@@ -114,10 +110,8 @@ class Executor4Test : public Executor<DeviceType> {
       output_tensor_sptrs[i].reset(output_tensors[i]);
     }
 
-    for (auto &ops : this->ops_of_block_) {
-      for (auto &op : ops) {
-        op->Run();
-      }
+    for (auto &op : this->ops_of_block0_) {
+      op->Run();
     }
 
     return output_tensor_sptrs;
@@ -125,7 +119,7 @@ class Executor4Test : public Executor<DeviceType> {
 
   std::shared_ptr<Tensor> Predict(const Tensor &t, string input, string output,
                                   const DDim &dDim) {
-    auto scope = this->program_.scope;
+    auto scope = this->program_.scope.get();
     Variable *g_feed_value = scope->Var(input);
     auto tensor = g_feed_value->GetMutable<LoDTensor>();
     tensor->ShareDataWith(t);
@@ -134,11 +128,10 @@ class Executor4Test : public Executor<DeviceType> {
     auto *output_tensor = con_output->GetMutable<LoDTensor>();
     output_tensor->mutable_data<float>(dDim);
 
-    for (auto &ops : this->ops_of_block_) {
-      for (auto &op : ops) {
-        op->Run();
-      }
+    for (auto &op : this->ops_of_block0_) {
+      op->Run();
     }
+
     return std::make_shared<paddle_mobile::framework::Tensor>(
         paddle_mobile::framework::Tensor(*output_tensor));
   }

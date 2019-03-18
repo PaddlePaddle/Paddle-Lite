@@ -17,7 +17,7 @@ limitations under the License. */
 #include "operators/math/gru_compute.h"
 #include "common/types.h"
 #include "operators/math/activation.h"
-#include "operators/math/gemm.h"
+#include "operators/math/gemm/cblas.h"
 #include "operators/math/gru_cpu_kernel.h"
 
 namespace paddle_mobile {
@@ -29,35 +29,19 @@ struct GRUUnitFunctor<CPU, T> {
   static void compute(GRUMetaValue<T> value, int frame_size, int batch_size,
                       const ActivationType active_node,
                       const ActivationType active_gate) {
-    Gemm gemm;
     if (value.prev_out_value) {
-#ifdef _OPENMP
-      gemm.Sgemm_omp(batch_size, frame_size * 2, frame_size, 1,
-                     value.prev_out_value, frame_size, value.gate_weight,
-                     frame_size * 2, 1, value.gate_value, frame_size * 3, false,
-                     static_cast<float *>(nullptr));
-#else
-      gemm.Sgemm(batch_size, frame_size * 2, frame_size, 1,
-                 value.prev_out_value, frame_size, value.gate_weight,
-                 frame_size * 2, 1, value.gate_value, frame_size * 3, false,
-                 static_cast<float *>(nullptr));
-#endif
+      cblas_sgemm(false, false, batch_size, frame_size * 2, frame_size, 1.f,
+                  value.prev_out_value, frame_size, value.gate_weight,
+                  frame_size * 2, 1.f, value.gate_value, frame_size * 3);
     }
 
     forward_reset_output(value, frame_size, batch_size, active_gate);
 
     if (value.prev_out_value) {
-#ifdef _OPENMP
-      gemm.Sgemm_omp(batch_size, frame_size, frame_size, 1,
-                     value.reset_output_value, frame_size, value.state_weight,
-                     frame_size, 1, value.gate_value + frame_size * 2,
-                     frame_size * 3, false, static_cast<float *>(nullptr));
-#else
-      gemm.Sgemm(batch_size, frame_size, frame_size, 1,
-                 value.reset_output_value, frame_size, value.state_weight,
-                 frame_size, 1, value.gate_value + frame_size * 2,
-                 frame_size * 3, false, static_cast<float *>(nullptr));
-#endif
+      cblas_sgemm(false, false, batch_size, frame_size, frame_size, 1.f,
+                  value.reset_output_value, frame_size, value.state_weight,
+                  frame_size, 1.f, value.gate_value + frame_size * 2,
+                  frame_size * 3);
     }
 
     forward_final_output(value, frame_size, batch_size, active_node);
@@ -65,6 +49,7 @@ struct GRUUnitFunctor<CPU, T> {
 };
 
 template struct GRUUnitFunctor<CPU, float>;
+
 }  // namespace math
 }  // namespace operators
 }  // namespace paddle_mobile

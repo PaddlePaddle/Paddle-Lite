@@ -38,8 +38,8 @@ int TestSequencePoolOp(const framework::LoDTensor &input_x,
   framework::AttributeMap attrs;
   attrs["pooltype"].SetString(pool_type);
 
-  auto *op = new operators::SequencePoolOp<CPU, float>("sequence_pool", inputs,
-                                                       outputs, attrs, scope);
+  auto *op = new operators::SequencePoolOp<CPU, float>(
+      "sequence_pool", inputs, outputs, attrs, scope.get());
 
   op->InferShape();
   op->Init();

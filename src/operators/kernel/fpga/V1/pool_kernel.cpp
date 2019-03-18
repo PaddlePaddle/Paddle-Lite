@@ -21,7 +21,7 @@ namespace operators {
 
 template <>
 bool PoolKernel<FPGA, float>::Init(PoolParam<FPGA> *param) {
-  auto *input = const_cast<Tensor *>(param->Input());
+  auto *input = const_cast<LoDTensor *>(param->Input());
   auto *output = param->Output();
   vector<int> ksize = param->Ksize();
   vector<int> strides = param->Strides();
@@ -68,7 +68,7 @@ bool PoolKernel<FPGA, float>::Init(PoolParam<FPGA> *param) {
 
 template <>
 void PoolKernel<FPGA, float>::Compute(const PoolParam<FPGA> &param) {
-  auto *input = const_cast<Tensor *>(param.Input());
+  auto *input = const_cast<LoDTensor *>(param.Input());
 
   if (input->type() == typeid(float)) {
     auto *output = param.Output();

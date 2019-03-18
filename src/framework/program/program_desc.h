@@ -14,6 +14,7 @@ limitations under the License. */
 
 #pragma once
 
+#include <string>
 #include <vector>
 
 #include "common/types.h"
@@ -30,6 +31,14 @@ class ProgramDesc {
   explicit ProgramDesc(PaddleMobile__Framework__Proto__ProgramDesc *desc);
 
   std::shared_ptr<BlockDesc> Block(size_t idx);
+
+  BlockDesc *MutableBlock(size_t idx) {
+    if (idx == -1) {
+      return nullptr;
+    } else {
+      return blocks_[idx].get();
+    }
+  }
 
   const std::vector<std::shared_ptr<BlockDesc>> &Blocks() { return blocks_; }
   ProgramDesc(const ProgramDesc &program_desc) {
