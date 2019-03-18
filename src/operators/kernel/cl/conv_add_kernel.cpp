@@ -18,6 +18,7 @@ limitations under the License. */
 
 namespace paddle_mobile {
 namespace operators {
+bool optimise_convadd = true;
 
 template <>
 bool ConvAddKernel<GPU_CL, float>::Init(FusionConvAddParam<GPU_CL> *param) {
@@ -35,8 +36,11 @@ bool ConvAddKernel<GPU_CL, float>::Init(FusionConvAddParam<GPU_CL> *param) {
   if (param->Filter()->dims()[2] == 1 && param->Filter()->dims()[3] == 1) {
     param->Filter()->InitNImage(cl_helper_.CLContext(),
                                 cl_helper_.CLCommandQueue());
-
-    this->cl_helper_.AddKernel("conv_1x1", "conv_add_kernel.cl");
+    if (optimise_convadd) {
+      this->cl_helper_.AddKernel("conv_1x1_spl", "conv_add_kernel.cl");
+    } else {
+      this->cl_helper_.AddKernel("conv_1x1", "conv_add_kernel.cl");
+    }
   } else if (param->Filter()->dims()[1] == 1 &&
              param->Input()->dims()[1] == param->Output()->dims()[1] &&
              param->Filter()->dims()[2] == 3) {
@@ -95,58 +99,117 @@ void ConvAddKernel<GPU_CL, float>::Compute(
 
   cl_int status;
 
-  status = clSetKernelArg(kernel, 0, sizeof(int), &c_block);
-  CL_CHECK_ERRORS(status);
+  if (optimise_convadd && param.Filter()->dims()[2] == 1 &&
+      param.Filter()->dims()[3] == 1) {
+    status = clSetKernelArg(kernel, 0, sizeof(int), &c_block);
+    CL_CHECK_ERRORS(status);
 
-  status = clSetKernelArg(kernel, 1, sizeof(int), &w);
-  CL_CHECK_ERRORS(status);
+    int maped_w = maptofactor(w, 4);
+    status = clSetKernelArg(kernel, 1, sizeof(int), &maped_w);
+    CL_CHECK_ERRORS(status);
 
-  status = clSetKernelArg(kernel, 2, sizeof(int), &nh);
-  CL_CHECK_ERRORS(status);
+    status = clSetKernelArg(kernel, 2, sizeof(int), &nh);
+    CL_CHECK_ERRORS(status);
 
-  status = clSetKernelArg(kernel, 3, sizeof(cl_mem), &input);
-  CL_CHECK_ERRORS(status);
+    status = clSetKernelArg(kernel, 3, sizeof(cl_mem), &input);
+    CL_CHECK_ERRORS(status);
 
-  status = clSetKernelArg(kernel, 4, sizeof(cl_mem), &filter);
-  CL_CHECK_ERRORS(status);
+    status = clSetKernelArg(kernel, 4, sizeof(cl_mem), &filter);
+    CL_CHECK_ERRORS(status);
 
-  status = clSetKernelArg(kernel, 5, sizeof(cl_mem), &biase);
-  CL_CHECK_ERRORS(status);
+    status = clSetKernelArg(kernel, 5, sizeof(cl_mem), &biase);
+    CL_CHECK_ERRORS(status);
 
-  status = clSetKernelArg(kernel, 6, sizeof(cl_mem), &output);
-  CL_CHECK_ERRORS(status);
+    status = clSetKernelArg(kernel, 6, sizeof(cl_mem), &output);
+    CL_CHECK_ERRORS(status);
 
-  status = clSetKernelArg(kernel, 7, sizeof(int), &stride);
-  CL_CHECK_ERRORS(status);
+    status = clSetKernelArg(kernel, 7, sizeof(int), &stride);
+    CL_CHECK_ERRORS(status);
 
-  status = clSetKernelArg(kernel, 8, sizeof(int), &offset);
-  CL_CHECK_ERRORS(status);
+    status = clSetKernelArg(kernel, 8, sizeof(int), &offset);
+    CL_CHECK_ERRORS(status);
 
-  status = clSetKernelArg(kernel, 9, sizeof(int), &input_c);
-  CL_CHECK_ERRORS(status);
+    status = clSetKernelArg(kernel, 9, sizeof(int), &input_c);
+    CL_CHECK_ERRORS(status);
 
-  status = clSetKernelArg(kernel, 10, sizeof(int), &dilation);
-  CL_CHECK_ERRORS(status);
+    status = clSetKernelArg(kernel, 10, sizeof(int), &dilation);
+    CL_CHECK_ERRORS(status);
 
-  status = clSetKernelArg(kernel, 11, sizeof(int), &input_width);
-  CL_CHECK_ERRORS(status);
+    status = clSetKernelArg(kernel, 11, sizeof(int), &input_width);
+    CL_CHECK_ERRORS(status);
 
-  status = clSetKernelArg(kernel, 12, sizeof(int), &input_height);
-  CL_CHECK_ERRORS(status);
+    status = clSetKernelArg(kernel, 12, sizeof(int), &input_height);
+    CL_CHECK_ERRORS(status);
 
-  status = clSetKernelArg(kernel, 13, sizeof(int), &output_width);
-  CL_CHECK_ERRORS(status);
+    status = clSetKernelArg(kernel, 13, sizeof(int), &output_width);
+    CL_CHECK_ERRORS(status);
 
-  status = clSetKernelArg(kernel, 14, sizeof(int), &output_height);
-  CL_CHECK_ERRORS(status);
+    status = clSetKernelArg(kernel, 14, sizeof(int), &output_height);
+    CL_CHECK_ERRORS(status);
 
-  //  cl_event out_event = param.Output()->GetClEvent();
-  //  cl_event wait_event = param.Input()->GetClEvent();
+    status = clSetKernelArg(kernel, 15, sizeof(int), &w);
+    CL_CHECK_ERRORS(status);
 
-  status = clEnqueueNDRangeKernel(
-      this->cl_helper_.CLCommandQueue(), kernel, default_work_size.size(), NULL,
-      default_work_size.data(), NULL, 0, NULL, NULL);
-  CL_CHECK_ERRORS(status);
+    const size_t work_size[3] = {
+        static_cast<const uint32_t>(default_work_size.data()[0]),
+        static_cast<const uint32_t>(maped_w),
+        static_cast<const uint32_t>(default_work_size.data()[2])};
+
+    status = clEnqueueNDRangeKernel(this->cl_helper_.CLCommandQueue(), kernel,
+                                    default_work_size.size(), NULL, work_size,
+                                    NULL, 0, NULL, NULL);
+    CL_CHECK_ERRORS(status);
+  } else {
+    status = clSetKernelArg(kernel, 0, sizeof(int), &c_block);
+    CL_CHECK_ERRORS(status);
+
+    status = clSetKernelArg(kernel, 1, sizeof(int), &w);
+    CL_CHECK_ERRORS(status);
+
+    status = clSetKernelArg(kernel, 2, sizeof(int), &nh);
+    CL_CHECK_ERRORS(status);
+
+    status = clSetKernelArg(kernel, 3, sizeof(cl_mem), &input);
+    CL_CHECK_ERRORS(status);
+
+    status = clSetKernelArg(kernel, 4, sizeof(cl_mem), &filter);
+    CL_CHECK_ERRORS(status);
+
+    status = clSetKernelArg(kernel, 5, sizeof(cl_mem), &biase);
+    CL_CHECK_ERRORS(status);
+
+    status = clSetKernelArg(kernel, 6, sizeof(cl_mem), &output);
+    CL_CHECK_ERRORS(status);
+
+    status = clSetKernelArg(kernel, 7, sizeof(int), &stride);
+    CL_CHECK_ERRORS(status);
+
+    status = clSetKernelArg(kernel, 8, sizeof(int), &offset);
+    CL_CHECK_ERRORS(status);
+
+    status = clSetKernelArg(kernel, 9, sizeof(int), &input_c);
+    CL_CHECK_ERRORS(status);
+
+    status = clSetKernelArg(kernel, 10, sizeof(int), &dilation);
+    CL_CHECK_ERRORS(status);
+
+    status = clSetKernelArg(kernel, 11, sizeof(int), &input_width);
+    CL_CHECK_ERRORS(status);
+
+    status = clSetKernelArg(kernel, 12, sizeof(int), &input_height);
+    CL_CHECK_ERRORS(status);
+
+    status = clSetKernelArg(kernel, 13, sizeof(int), &output_width);
+    CL_CHECK_ERRORS(status);
+
+    status = clSetKernelArg(kernel, 14, sizeof(int), &output_height);
+    CL_CHECK_ERRORS(status);
+
+    status = clEnqueueNDRangeKernel(
+        this->cl_helper_.CLCommandQueue(), kernel, default_work_size.size(),
+        NULL, default_work_size.data(), NULL, 0, NULL, NULL);
+    CL_CHECK_ERRORS(status);
+  }
 }
 
 template class ConvAddKernel<GPU_CL, float>;
