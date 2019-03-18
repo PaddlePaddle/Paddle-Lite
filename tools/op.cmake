@@ -228,6 +228,12 @@ if (CON GREATER -1)
   set(FOUND_MATCH ON)
 endif()
 
+list(FIND NET "op" CON)
+if (CON GREATER -1)
+  message("op enabled")
+  set(SIGMOID_OP ON)
+  set(FOUND_MATCH ON)
+endif()
 
 if(NOT FOUND_MATCH)
   message("--default--")
