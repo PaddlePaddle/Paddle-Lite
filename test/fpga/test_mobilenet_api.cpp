@@ -19,8 +19,8 @@ limitations under the License. */
 #include <iostream>
 #include "../../src/io/paddle_inference_api.h"
 
-using namespace paddle_mobile;  //NOLINT
-using namespace paddle_mobile::fpga;  //NOLINT
+using namespace paddle_mobile;        // NOLINT
+using namespace paddle_mobile::fpga;  // NOLINT
 
 static const char *g_image = "../images/mobilenet_txtdata/1.txt";
 static const char *g_model = "../models/keycurve_l2_regular4_model/__model__";
@@ -119,7 +119,9 @@ PaddleMobileConfig GetConfig() {
 int main() {
   open_device();
   PaddleMobileConfig config = GetConfig();
-  auto predictor = CreatePaddlePredictor<paddle_mobile::PaddleMobileConfig, PaddleEngineKind::kPaddleMobile>(config);
+  auto predictor =
+      CreatePaddlePredictor<paddle_mobile::PaddleMobileConfig,
+                            PaddleEngineKind::kPaddleMobile>(config);
 
   std::cout << "Finishing loading model" << std::endl;
   int img_length = 256 * 416 * 3;
