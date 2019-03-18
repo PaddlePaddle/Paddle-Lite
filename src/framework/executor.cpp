@@ -28,6 +28,7 @@ limitations under the License. */
 #include "framework/scope.h"
 #include "framework/tensor.h"
 #include "memory/t_malloc.h"
+#include "pass/memory_optimize.h"
 
 #ifdef PADDLE_MOBILE_CL
 #include "framework/cl/cl_image.h"
@@ -62,6 +63,7 @@ Executor<Device, T>::Executor(const Program<Device> &program,
       use_optimize_ ? program_.optimizeProgram : program_.originProgram;
   PADDLE_MOBILE_ENFORCE(program_desc_ != nullptr,
                         "program_desc_ should not be nullptr");
+  pass::MemoryOptPass()(program_desc_.get(), program_.scope.get());
   // resize feed and fetch list
   // should init feed and fetch variables before infer shape
   InitFeedFetchList();

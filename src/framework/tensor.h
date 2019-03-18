@@ -69,7 +69,8 @@ class Tensor : public TensorBase {
   inline Tensor &ShareDataWith(const Tensor &src) {
     src.check_memory_size();
     if (holder_.get() != src.holder_.get()) {
-      *this = src;
+      // *this = src;
+      holder_ = src.holder_;
     }
     return *this;
   }
