@@ -50,9 +50,6 @@ OperatorBase<Dtype>::OperatorBase(const std::string &type,
       attrs_(attrs),
       scope_(scope) {
   CheckAllInputOutputSet();
-#ifdef PADDLE_MOBILE_FPGA
-  InsertTensors();
-#endif
 }
 
 template <typename Dtype>
@@ -72,6 +69,9 @@ void OperatorBase<Dtype>::Run() {
           var->template IsType<framework::LoDTensor>()) {
         const Tensor *tensor = var->template Get<framework::LoDTensor>();
         if (tensor) DLOG << type_ << " input- " << key << "=" << *tensor;
+#ifdef PADDLE_MOBILE_FPGA
+        DLOG << var_vec_in[i];
+#endif
       }
     }
   }
@@ -83,6 +83,9 @@ void OperatorBase<Dtype>::Run() {
           var->template IsType<framework::LoDTensor>()) {
         const Tensor *tensor = var->template Get<framework::LoDTensor>();
         if (tensor) DLOG << type_ << " output- " << key << "=" << *tensor;
+#ifdef PADDLE_MOBILE_FPGA
+        DLOG << var_vec_out[i];
+#endif
       }
     }
   }

@@ -12,18 +12,19 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#ifndef PADDLE_MOBILE_FPGA
+#define PADDLE_MOBILE_FPGA
+#endif
+#include <fstream>
 #include <iostream>
-#include "../test_helper.h"
-#include "../test_include.h"
+#include "../../src/io/paddle_inference_api.h"
 
-#ifdef PADDLE_MOBILE_FPGA_V1
-#include "fpga/V1/api.h"
-#endif
-#ifdef PADDLE_MOBILE_FPGA_V2
-#include "fpga/V2/api.h"
-#endif
+using namespace paddle_mobile;
+using namespace paddle_mobile::fpga;
 
-#include <string>
+static const char *g_image = "../models/rfcn/data.bin";
+static const char *g_model = "../models/rfcn/model";
+static const char *g_param = "../models/rfcn/params";
 
 void readStream(std::string filename, char *buf) {
   std::ifstream in;
@@ -37,116 +38,128 @@ void readStream(std::string filename, char *buf) {
   auto length = in.tellg();    // report location (this is the length)
   in.seekg(0, std::ios::beg);  // go back to the beginning
   in.read(buf, length);
-  DLOG << length;
   in.close();
 }
 
-void convert_to_chw(int16_t **data_in, int channel, int height, int width,
-                    int num, int16_t *data_tmp) {
-  int64_t amount_per_side = width * height;
-  for (int n = 0; n < num; n++) {
-    for (int h = 0; h < height; h++) {
-      for (int w = 0; w < width; w++) {
-        for (int c = 0; c < channel; c++) {
-          *(data_tmp + n * amount_per_side * channel + c * amount_per_side +
-            width * h + w) = *((*data_in)++);
-        }
-      }
-    }
-  }
+PaddleMobileConfig GetConfig() {
+  PaddleMobileConfig config;
+  config.precision = PaddleMobileConfig::FP32;
+  config.device = PaddleMobileConfig::kFPGA;
+  config.prog_file = g_model;
+  config.param_file = g_param;
+  config.thread_num = 1;
+  config.batch_size = 1;
+  config.optimize = true;
+  config.lod_mode = true;
+  config.quantification = false;
+  return config;
 }
 
-void dump_stride_half(std::string filename, Tensor input_tensor,
-                      const int dumpnum, bool use_chw) {
-  // bool use_chw = true;
-  if (input_tensor.dims().size() != 4) return;
-  int c = (input_tensor.dims())[1];
-  int h = (input_tensor.dims())[2];
-  int w = (input_tensor.dims())[3];
-  int n = (input_tensor.dims())[0];
-  auto data_ptr = input_tensor.get_data();
-  auto *data_ptr_16 = reinterpret_cast<half *>(data_ptr);
-  auto data_tmp = data_ptr_16;
-  if (use_chw) {
-    data_tmp =
-        reinterpret_cast<half *>(malloc(n * c * h * w * sizeof(int16_t)));
-    convert_to_chw(&data_ptr_16, c, h, w, n, data_tmp);
-  }
-  std::ofstream out(filename.c_str());
-  float result = 0;
-  int stride = input_tensor.numel() / dumpnum;
-  stride = stride > 0 ? stride : 1;
-  for (int i = 0; i < input_tensor.numel(); i += stride) {
-    result = paddle_mobile::fpga::fp16_2_fp32(data_tmp[i]);
-    out << result << std::endl;
-  }
-  out.close();
-  if (data_tmp != data_ptr_16) {
-    free(data_tmp);
-  }
+PaddleMobileConfig GetConfig1() {
+  PaddleMobileConfig config;
+  config.precision = PaddleMobileConfig::FP32;
+  config.device = PaddleMobileConfig::kFPGA;
+  config.model_dir = "../models/resnet50";
+  config.thread_num = 1;
+  config.batch_size = 1;
+  config.optimize = true;
+  config.quantification = false;
+  return config;
 }
 
-void dump_stride_float(std::string filename, Tensor input_tensor,
-                       const int dumpnum) {
-  auto data_ptr = reinterpret_cast<float *>(input_tensor.get_data());
-  std::ofstream out(filename.c_str());
-  float result = 0;
-  int stride = input_tensor.numel() / dumpnum;
-  stride = stride > 0 ? stride : 1;
-  for (int i = 0; i < input_tensor.numel(); i += stride) {
-    result = data_ptr[i];
-    out << result << std::endl;
-  }
-  out.close();
-}
-
-void dump_stride(std::string filename, Tensor input_tensor, const int dumpnum,
-                 bool use_chw) {
-  static int i = 0;
-  if (input_tensor.numel() == 0) {
-    return;
-  }
-  if (input_tensor.type() == typeid(float)) {
-    DLOG << "op: " << i++ << ", float data  " << input_tensor.numel();
-
-    dump_stride_float(filename, input_tensor, dumpnum);
-  } else {
-    DLOG << "op: " << i++ << ", half data  " << input_tensor.numel();
-
-    dump_stride_half(filename, input_tensor, dumpnum, use_chw);
-  }
-  DLOG << "dump input address: " << input_tensor.get_data();
-}
-
-static const char *g_rfcn_combine = "../models/rfcn";
-static const char *g_image_src_float = "../models/rfcn/data.bin";
 int main() {
-  paddle_mobile::fpga::open_device();
-  paddle_mobile::PaddleMobile<paddle_mobile::FPGA> paddle_mobile;
+  open_device();
 
-  if (paddle_mobile.Load(std::string(g_rfcn_combine) + "/model",
-                         std::string(g_rfcn_combine) + "/params", true, false,
-                         1, true)) {
-    float img_info[3] = {768, 1536, 768.0f / 960.0f};
-    auto img = reinterpret_cast<float *>(
-        fpga::fpga_malloc(768 * 1536 * 3 * sizeof(float)));
-    readStream(g_image_src_float, reinterpret_cast<char *>(img));
+  PaddleMobileConfig config1 = GetConfig1();
+  auto predictor1 =
+      CreatePaddlePredictor<PaddleMobileConfig,
+                            PaddleEngineKind::kPaddleMobile>(config1);
 
-    std::vector<void *> v(3, nullptr);
-    paddle_mobile.FeedData(std::vector<void *>({img_info, img}));
-    paddle_mobile.Predict_To(-1);
+  std::cout << "Finishing loading model" << std::endl;
 
-    for (int i = 65; i < 69; i++) {
-      auto tensor_ptr = paddle_mobile.FetchResult(i);
-      std::string saveName = "rfcn_" + std::to_string(i);
-      paddle_mobile::fpga::fpga_invalidate((*tensor_ptr).get_data(),
-                                           tensor_ptr->numel() * sizeof(float));
-      dump_stride(saveName, (*tensor_ptr), tensor_ptr->numel(), true);
+  int img_length1 = 224 * 224 * 3;
+  auto img1 =
+      reinterpret_cast<float *>(fpga_malloc(img_length1 * sizeof(float)));
+
+  std::cout << "Finishing initializing data" << std::endl;
+
+  struct PaddleTensor t_img1;
+
+  t_img1.dtypeid = typeid(float);
+  t_img1.layout = LAYOUT_HWC;
+  t_img1.shape = std::vector<int>({1, 224, 224, 3});
+  t_img1.name = "Image information";
+  t_img1.data.Reset(img1, img_length1 * sizeof(float));
+  predictor1->FeedPaddleTensors({t_img1});
+  predictor1->Predict_From_To(0, -1);
+  std::cout << "Finishing predicting " << std::endl;
+
+  std::vector<PaddleTensor> v1;         // No need to initialize v
+  predictor1->FetchPaddleTensors(&v1);  // Old data in v will be cleared
+  std::cout << "Output number is " << v1.size() << std::endl;
+  std::cout << "out[0] length " << v1[0].data.length() << std::endl;
+
+  ////////////////////////////
+
+  PaddleMobileConfig config = GetConfig();
+  auto predictor =
+      CreatePaddlePredictor<PaddleMobileConfig,
+                            PaddleEngineKind::kPaddleMobile>(config);
+
+  std::cout << "Finishing loading model" << std::endl;
+
+  float img_info[3] = {432, 1280, 1.0f};
+  int img_length = 432 * 1280 * 3;
+  auto img = reinterpret_cast<float *>(fpga_malloc(img_length * sizeof(float)));
+  readStream(g_image, reinterpret_cast<char *>(img));
+
+  std::cout << "Finishing initializing data" << std::endl;
+  struct PaddleTensor t_img_info, t_img;
+  t_img.dtypeid = typeid(float);
+  t_img_info.layout = LAYOUT_HWC;
+  t_img_info.shape = std::vector<int>({1, 3});
+  t_img_info.name = "Image information";
+  t_img_info.data.Reset(img_info, 3 * sizeof(float));
+
+  t_img.dtypeid = typeid(float);
+  t_img.layout = LAYOUT_HWC;
+  t_img.shape = std::vector<int>({1, 432, 1280, 3});
+  t_img.name = "Image information";
+  t_img.data.Reset(img, img_length * sizeof(float));
+  predictor->FeedPaddleTensors({t_img_info, t_img});
+
+  std::cout << "Finishing feeding data " << std::endl;
+
+  predictor->Predict_From_To(0, -1);
+  std::cout << "Finishing predicting " << std::endl;
+
+  std::vector<PaddleTensor> v;        // No need to initialize v
+  predictor->FetchPaddleTensors(&v);  // Old data in v will be cleared
+  std::cout << "Output number is " << v.size() << std::endl;
+  std::cout << "out[0] length " << v[0].data.length() << std::endl;
+  std::cout << "out[1] length " << v[1].data.length() << std::endl;
+  std::cout << "out[2] length " << v[2].data.length() << std::endl;
+
+  auto post_nms = v[0].data.length() / sizeof(float) / 8;
+  for (int num = 0; num < post_nms; num++) {
+    for (int i = 0; i < 8; i++) {
+      auto p = reinterpret_cast<float *>(v[0].data.data());
+      std::cout << p[num * 8 + i] << std::endl;
     }
-    //   paddle_mobile.GetResults(&v);
-    DLOG << "Computation done";
-    fpga::fpga_free(img);
   }
+  for (int num = 0; num < post_nms; num++) {
+    for (int i = 0; i < 8; i++) {
+      auto p = reinterpret_cast<float *>(v[1].data.data());
+      std::cout << p[num * 8 + i] << std::endl;
+    }
+  }
+  for (int num = 0; num < post_nms; num++) {
+    for (int i = 0; i < 4; i++) {
+      auto p = reinterpret_cast<float *>(v[2].data.data());
+      std::cout << p[num * 4 + i] << std::endl;
+    }
+  }
+  std::cout << "Finish getting vector values" << std::endl;
 
   return 0;
 }

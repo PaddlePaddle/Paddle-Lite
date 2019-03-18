@@ -89,11 +89,6 @@ Executor<Device, T>::Executor(const Program<Device> &program,
     InitMemory();
   }
 
-#ifdef PADDLE_MOBILE_FPGA
-  program_.scope->EraseVars({"feed", "fetch"});
-  program_.scope->print_vars();
-#endif
-
   int count = 0;
   for (auto &op_handler : ops_of_block0_) {
     DLOG << "Initialize op[" << count++ << "]: " << op_handler->Type();
@@ -512,6 +507,32 @@ PMStatus Executor<Device, T>::Predict() {
   return PMSuccess;
 }
 
+template <typename Device, typename T>
+void Executor<Device, T>::FeedTensorData(const vector<framework::Tensor> &v) {
+  auto input_size = v.size();
+  auto *feed_var = program_.scope->Var("feed");
+
+  PADDLE_MOBILE_ENFORCE(input_size == feed_indices_.size(),
+                        "input data number not correct");
+  for (int i = 0; i < input_size; i++) {
+    framework::LoDTensor &target =
+        feed_var->template GetMutable<framework::LoDTensorArray>()->at(i);
+    target.ShareDataWith(v[input_size - i - 1]);
+  }
+}
+
+template <typename Device, typename T>
+void Executor<Device, T>::GetTensorResults(
+    std::vector<framework::Tensor *> *v) {
+  auto *fetch_var = program_.scope->Var("fetch");
+  auto output_size = fetch_indices_.size();
+  for (int i = 0; i < output_size; i++) {
+    framework::LoDTensor &target =
+        fetch_var->template GetMutable<framework::LoDTensorArray>()->at(i);
+    v->push_back(&target);
+  }
+}
+
 #ifdef PADDLE_MOBILE_FPGA
 template <typename Device, typename T>
 void Executor<Device, T>::InjectVariable(const Tensor &t,
@@ -554,19 +575,6 @@ void Executor<Device, T>::GetResults(std::vector<void *> *v) {
     auto var = program_.scope->Var("fetch", i + index);
     auto fetch_tensor = var->template GetMutable<LoDTensor>();
     (*v)[i] = fetch_tensor->template data<float>();
-  }
-}
-
-template <typename Device, typename T>
-void Executor<Device, T>::GetTensorResults(
-    std::vector<framework::Tensor *> *v) {
-  int index = 0;
-  auto vars = program_.scope->VarContain("fetch", &index);
-  auto output_size = vars.size();
-  for (int i = 0; i < output_size; i++) {
-    auto var = program_.scope->Var("fetch", i + index);
-    auto fetch_tensor = var->template GetMutable<LoDTensor>();
-    v->push_back(fetch_tensor);
   }
 }
 

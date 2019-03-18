@@ -68,23 +68,38 @@ endif ()
 
 list(FIND NET "FPGA_NET_V1" CON)
 if (CON GREATER -1)
-    ADD_EXECUTABLE(test-resnet50 fpga/test_resnet50.cpp test_helper.h test_include.h executor_for_test.h)
-    target_link_libraries(test-resnet50 paddle-mobile)
+    #ADD_EXECUTABLE(test-resnet50 fpga/test_resnet50.cpp test_helper.h test_include.h executor_for_test.h)
+    #target_link_libraries(test-resnet50 paddle-mobile)
 
-    ADD_EXECUTABLE(test-densebox fpga/test_densebox_combine.cpp test_helper.h test_include.h executor_for_test.h)
-    target_link_libraries(test-densebox paddle-mobile)
+    #ADD_EXECUTABLE(test-densebox fpga/test_densebox_combine.cpp test_helper.h test_include.h executor_for_test.h)
+    #target_link_libraries(test-densebox paddle-mobile)
 
-    ADD_EXECUTABLE(test-rfcn fpga/test_rfcn.cpp test_helper.h test_include.h executor_for_test.h)
-    target_link_libraries(test-rfcn paddle-mobile)
+    #ADD_EXECUTABLE(test-rfcn fpga/test_rfcn.cpp test_helper.h test_include.h executor_for_test.h)
+    #target_link_libraries(test-rfcn paddle-mobile)
 
-    ADD_EXECUTABLE(test-marker fpga/test_marker.cpp test_helper.h test_include.h executor_for_test.h)
-    target_link_libraries(test-marker paddle-mobile)
+    #ADD_EXECUTABLE(test-marker fpga/test_marker.cpp test_helper.h test_include.h executor_for_test.h)
+    #target_link_libraries(test-marker paddle-mobile)
 
     ADD_EXECUTABLE(test-rfcn-api fpga/test_rfcn_api.cpp)
     target_link_libraries(test-rfcn-api paddle-mobile)
+
+    ADD_EXECUTABLE(test-mobilenet-api fpga/test_mobilenet_api.cpp)
+    target_link_libraries(test-mobilenet-api paddle-mobile)
+
+    ADD_EXECUTABLE(test-yolo-api fpga/test_yolo_api.cpp)
+    target_link_libraries(test-yolo-api paddle-mobile)
+
+    ADD_EXECUTABLE(test-marker-api fpga/test_marker_api.cpp)
+    target_link_libraries(test-marker-api paddle-mobile)
     
-    ADD_EXECUTABLE(test-marker2 fpga/test_marker2.cpp test_helper.h test_include.h executor_for_test.h )
-    target_link_libraries(test-marker2 paddle-mobile)
+    #ADD_EXECUTABLE(test-marker2 fpga/test_marker2.cpp test_helper.h test_include.h executor_for_test.h )
+    #target_link_libraries(test-marker2 paddle-mobile)
+
+    #ADD_EXECUTABLE(test-mobilenet fpga/test_mobilenet_beijing.cpp test_helper.h test_include.h executor_for_test.h)
+    #target_link_libraries(test-mobilenet paddle-mobile)
+
+    #ADD_EXECUTABLE(test-yolo fpga/test_yolo_combine.cpp test_helper.h test_include.h executor_for_test.h)
+    #target_link_libraries(test-yolo paddle-mobile)
 
     set(FOUND_MATCH ON)
 endif ()
