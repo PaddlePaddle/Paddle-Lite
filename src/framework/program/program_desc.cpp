@@ -46,7 +46,7 @@ ProgramDesc::ProgramDesc(PaddleMobile__Framework__Proto__ProgramDesc *desc) {
   }
 }
 
-void ProgramDesc::Description(std::string header) {
+void ProgramDesc::Description(std::string header) const {
 #ifdef PADDLE_MOBILE_DEBUG
   if (header.size()) {
     LOG(kLOG_INFO) << header;

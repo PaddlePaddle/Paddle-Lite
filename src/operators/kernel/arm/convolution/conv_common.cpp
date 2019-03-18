@@ -52,7 +52,7 @@ void InitBaseConvKernel(ConvParam<CPU> *param) {
     } else if (depth5x5 && param->Strides()[0] == param->Strides()[1] &&
                param->Strides()[0] == 1) {
       param->ExecMode() = ConvParam<CPU>::EXEC_DEPTHWISE5x5_FLOAT;
-    } else if (conv3x3 && !depth3x3 &&
+    } else if (conv3x3 && param->Groups() == 1 &&
                param->Strides()[0] == param->Strides()[1] &&
                param->Dilations()[0] == param->Dilations()[1] &&
                param->Strides()[0] == 1 && param->Dilations()[0] == 1
