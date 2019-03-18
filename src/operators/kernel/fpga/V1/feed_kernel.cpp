@@ -21,6 +21,7 @@ template <>
 bool FeedKernel<FPGA, float>::Init(FeedParam<FPGA> *param) {
   auto output = param->Out();
   int col = param->Col();
+  DLOG << "col = " << col;
   auto input = const_cast<LoDTensor *>(&param->InputX()->at(col));
   input->init(typeid(float));
   input->Resize(output->dims());

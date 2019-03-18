@@ -146,7 +146,7 @@ void PaddleMobilePredictor<Device, T>::FeedPaddleTensors(
     tensors[i].init(typeid(float));
     ConvertPaddleTensors(inputs[i], &tensors[i]);
   }
-  // paddle_mobile_->FeedTensorData(tensors);
+  paddle_mobile_->FeedTensorData(tensors);
 }
 
 template <typename Device, typename T>
