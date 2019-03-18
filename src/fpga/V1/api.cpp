@@ -70,10 +70,11 @@ void format_fp16_ofm(framework::Tensor *ofm_tensor) {
     DLOG << "Wrong ofm dimension";
   }
   auto p = fpga_malloc(memory_size);
-  memset(p, 0, memory_size);
+  // memset(p, 0, memory_size);
   ofm_tensor->reset_data_ptr(p);
   ofm_tensor->set_type(typeid(half));
   ofm_tensor->fpga_data_num = memory_size / sizeof(half);
+  fpga::fpga_flush(p, memory_size);
 }
 
 void format_fp16_ofm(framework::Tensor *ofm_tensor, framework::DDim dims) {
@@ -89,10 +90,11 @@ void format_fp16_ofm(framework::Tensor *ofm_tensor, framework::DDim dims) {
     DLOG << "Wrong ofm dimension";
   }
   auto p = fpga_malloc(memory_size);
-  memset(p, 0, memory_size);
+  // memset(p, 0, memory_size);
   ofm_tensor->reset_data_ptr(p);
   ofm_tensor->set_type(typeid(half));
   ofm_tensor->fpga_data_num = memory_size / sizeof(half);
+  fpga::fpga_flush(p, memory_size);
 }
 
 void format_fp32_ofm(framework::Tensor *ofm_tensor) {
@@ -108,10 +110,11 @@ void format_fp32_ofm(framework::Tensor *ofm_tensor) {
     DLOG << "Wrong ofm dimension";
   }
   auto p = fpga_malloc(memory_size);
-  memset(p, 0, memory_size);
+  // memset(p, 0, memory_size);
   ofm_tensor->reset_data_ptr(p);
   ofm_tensor->set_type(typeid(float));
   ofm_tensor->fpga_data_num = memory_size / sizeof(float);
+  fpga::fpga_flush(p, memory_size);
 }
 
 float filter_find_max(framework::Tensor *filter_tensor) {
@@ -463,9 +466,24 @@ void expand_EW_arg(EWAddArgs *arg) {
   uint64_t image_amount_per_row =
       align_to_x((uint64_t)args.image0.width * (uint64_t)args.image0.channels,
                  IMAGE_ALIGNMENT);
-  uint64_t image_image_pixel = ((uint64_t)args.image0.channels << 32) |
-                               ((uint64_t)args.image0.width << 16) |
-                               (uint64_t)args.image0.height;
+  //////////////////////////////////////////////////////////
+  // temporary modify for EW and DMA problem
+  uint64_t image_image_pixel = 0;
+  if ((args.image0.width * args.image0.channels) >= 24576) {
+    if ((args.image0.width * args.image0.channels) % 32 != 0) {
+      DLOG << "EW parameter can not be support";
+    } else {
+      image_amount_per_row = image_amount_per_row / 2;
+      image_image_pixel = ((uint64_t)args.image0.channels << 32) |
+                          ((uint64_t)(args.image0.width / 2) << 16) |
+                          (uint64_t)(args.image0.height * 2);
+    }
+  } else {
+    image_image_pixel = ((uint64_t)args.image0.channels << 32) |
+                        ((uint64_t)args.image0.width << 16) |
+                        (uint64_t)args.image0.height;
+  }
+  //////////////////////////////////////////////////////////
 
   (*arg).driver.image0_address_phy = image0_address_phy;
   (*arg).driver.image1_address_phy = image1_address_phy;
@@ -560,6 +578,18 @@ void fill_split_arg(struct SplitConvArgs *arg, framework::Tensor *input,
         reinterpret_cast<char *>(arg->conv_arg[i].filter_address), deleter));
     memcpy(arg->conv_arg[i].filter_address, filter_head, filter_size);
     fpga_flush(arg->conv_arg[i].filter_address, filter_size);
+    // for test
+    //    {
+    //    static int cnt = 0;
+    //    if(cnt == 4){
+    //        int8_t result = 0;
+    //        std::string str = "fc_filter";
+    //      fpga::savefile<int8_t>(str, arg->conv_arg[i].filter_address,
+    //      filter_size, result);
+    //
+    //    }
+    //    cnt++;
+    //}
 
     size_t bs_size = 2 *
                      align_to_x(arg->conv_arg[i].filter_num, BS_NUM_ALIGNMENT) *
@@ -570,6 +600,18 @@ void fill_split_arg(struct SplitConvArgs *arg, framework::Tensor *input,
         reinterpret_cast<char *>(arg->conv_arg[i].sb_address), deleter));
     memcpy(arg->conv_arg[i].sb_address, bs_head, bs_size);
     fpga_flush(arg->conv_arg[i].sb_address, bs_size);
+    // for test
+    /*{
+    static int cnt = 0;
+    if(cnt == 4){
+        float result = 0;
+        std::string str = "fc_bs";
+      fpga::savefile<float>(str, arg->conv_arg[i].sb_address, bs_size/4,
+result);
+
+    }
+    cnt++;
+}*/
 
     if (n > 1) {
       arg->conv_arg[i].output.scale_address =
