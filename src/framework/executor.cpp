@@ -518,7 +518,6 @@ void Executor<Device, T>::FeedTensorData(const vector<framework::Tensor> &v) {
     framework::LoDTensor &target =
         feed_var->template GetMutable<framework::LoDTensorArray>()->at(i);
     target.ShareDataWith(v[input_size - i - 1]);
-    DLOG << target.external_data;
   }
 }
 
