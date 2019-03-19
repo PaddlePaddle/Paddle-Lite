@@ -31,8 +31,7 @@ class ConvOpTranspose : public framework::OperatorWithKernel<
  public:
   ConvOpTranspose(const std::string &type, const VariableNameMap &inputs,
                   const VariableNameMap &outputs,
-                  const framework::AttributeMap &attrs,
-                  std::shared_ptr<framework::Scope> scope)
+                  const framework::AttributeMap &attrs, framework::Scope *scope)
       : framework::OperatorWithKernel<
             DeviceType, ConvTransposeParam<DeviceType>,
             operators::ConvTransposeKernel<DeviceType, T>>(

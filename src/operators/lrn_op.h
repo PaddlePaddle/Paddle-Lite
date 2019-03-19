@@ -31,7 +31,7 @@ class LrnOp : public framework::OperatorWithKernel<
  public:
   LrnOp(const string &type, const VariableNameMap &inputs,
         const VariableNameMap &outputs, const framework::AttributeMap &attrs,
-        std::shared_ptr<framework::Scope> scope)
+        framework::Scope *scope)
       : framework::OperatorWithKernel<DeviceType, LrnParam<DeviceType>,
                                       operators::LrnKernel<DeviceType, T>>(
             type, inputs, outputs, attrs, scope) {}

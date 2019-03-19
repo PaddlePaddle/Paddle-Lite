@@ -19,14 +19,15 @@ namespace paddle_mobile {
 namespace operators {
 
 template <typename Dtype, typename T>
-void Pad2dOp<Dtype, T>::InferShape() const {
-  auto input_dims = this->param_.InputX()->dims();
-  auto input_n = input_dims[0];
-  auto input_c = input_dims[1];
-  auto input_h = input_dims[2];
-  auto input_w = input_dims[3];
+void Pad2DOp<Dtype, T>::InferShape() const {
+  auto input_dims = this->param_.input_->dims();
+  const auto &paddings = this->param_.paddings_;
+  PADDLE_MOBILE_ENFORCE(paddings.size() == 4,
+                        "Size of paddings should be equal to 4.");
 
-  this->param_.Out()->Resize({input_n, input_c, input_h + 1, input_w + 1});
+  input_dims[2] += paddings[0] + paddings[1];
+  input_dims[3] += paddings[2] + paddings[3];
+  this->param_.output_->Resize(input_dims);
 }
 
 }  // namespace operators
@@ -34,10 +35,10 @@ void Pad2dOp<Dtype, T>::InferShape() const {
 
 namespace ops = paddle_mobile::operators;
 #ifdef PADDLE_MOBILE_CPU
-REGISTER_OPERATOR_CPU(pad2d, ops::Pad2dOp);
+REGISTER_OPERATOR_CPU(pad2d, ops::Pad2DOp);
 #endif
 #ifdef PADDLE_MOBILE_FPGA
-REGISTER_OPERATOR_FPGA(pad2d, ops::Pad2dOp);
+REGISTER_OPERATOR_FPGA(pad2d, ops::Pad2DOp);
 #endif
 
-#endif
+#endif  // PAD2D_OP

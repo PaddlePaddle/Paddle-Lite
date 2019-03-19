@@ -20,6 +20,12 @@ namespace operators {
 template <>
 bool FeedKernel<FPGA, float>::Init(FeedParam<FPGA> *param) {
   auto output = param->Out();
+  int col = param->Col();
+  DLOG << "col = " << col;
+  auto input = const_cast<LoDTensor *>(&param->InputX()->at(col));
+  input->init(typeid(float));
+  input->Resize(output->dims());
+
   if (output->dims().size() != 4) {
     return true;
   }
@@ -31,7 +37,8 @@ bool FeedKernel<FPGA, float>::Init(FeedParam<FPGA> *param) {
 template <>
 void FeedKernel<FPGA, float>::Compute(const FeedParam<FPGA> &param) {
   auto output = param.Out();
-  auto input = const_cast<LoDTensor *>(param.InputX());
+  int col = param.Col();
+  auto input = const_cast<LoDTensor *>(&param.InputX()->at(col));
   std::type_index input_type = input->type();
 
   if (input_type == typeid(float)) {

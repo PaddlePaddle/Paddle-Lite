@@ -36,6 +36,8 @@ class Executor {
            paddle_mobile::PaddleMobileConfigInternal config, int batch_size = 1,
            const bool use_optimize = true, const bool lod_mode = false);
 
+  void SetThreadNum(int threads);
+
   PMStatus Predict(const std::vector<std::pair<std::string, Tensor>> &inputs);
   PMStatus Predict(
       const std::vector<std::pair<std::string, LoDTensor>> &inputs);
@@ -49,16 +51,15 @@ class Executor {
 
   std::shared_ptr<LoDTensor> GetOutput(const std::string &var_name);
 
+  void FeedTensorData(const std::vector<framework::Tensor> &v);
+  void GetTensorResults(std::vector<framework::Tensor *> *v);
+
 #ifdef PADDLE_MOBILE_FPGA
   void InjectVariable(const Tensor &t, std::string var_name);
   void FeedData(const Tensor &t);
   void FeedData(const std::vector<void *> &v);
-  void FeedTensorData(const std::vector<framework::Tensor> &v);
-
   void GetResults(std::vector<void *> *v);
-  void GetTensorResults(std::vector<framework::Tensor *> *v);
   framework::Tensor *GetTensorByName(const std::string &name);
-
   std::shared_ptr<Tensor> FetchResult(int id = -1);
   void Predict_From_To(int start = 0, int end = -1);
   void Predict_From(int start);
@@ -68,8 +69,9 @@ class Executor {
  protected:
   Executor() = default;
 
-  bool varInputMemory(const std::shared_ptr<VarDesc> &var_desc, Variable *var,
-                      LoDTensor *tensor) const;
+  bool varInputMemory(const std::shared_ptr<VarDesc> &var_desc,
+                      Variable *var) const;
+  void InitFeedFetchList();
   void InitMemory();
   void InitCombineMemory();
   void InitNoPersistableMemory(const Tensor &input_tensor);
@@ -85,10 +87,9 @@ class Executor {
   PaddleMobileConfigInternal config_;
   Program<Device> program_;
   std::shared_ptr<ProgramDesc> program_desc_;
-  typedef std::shared_ptr<OperatorBase<Device>> OperatorBasePtr;
-  std::vector<std::vector<OperatorBasePtr>> ops_of_block_;
-  // operators list
-  std::vector<OperatorBasePtr> ops_list_;
+  std::vector<std::shared_ptr<OperatorBase<Device>>> ops_of_block0_;
+  std::unordered_map<std::string, int> feed_indices_;
+  std::unordered_map<std::string, int> fetch_indices_;
 
   // for super resoltion
   DDim input_dim_last_;

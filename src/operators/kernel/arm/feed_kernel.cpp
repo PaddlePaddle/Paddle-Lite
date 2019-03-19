@@ -24,8 +24,9 @@ bool FeedKernel<CPU, float>::Init(FeedParam<CPU> *param) {
 
 template <>
 void FeedKernel<CPU, float>::Compute(const FeedParam<CPU> &param) {
-  param.Out()->ShareDataWith(*(param.InputX()));
-  param.Out()->set_lod(param.InputX()->lod());
+  int col = param.Col();
+  param.Out()->ShareDataWith(param.InputX()->at(col));
+  param.Out()->set_lod(param.InputX()->at(col).lod());
 }
 
 template class FeedKernel<CPU, float>;

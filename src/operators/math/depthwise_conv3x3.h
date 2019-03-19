@@ -17,53 +17,10 @@ limitations under the License. */
 #include <algorithm>
 #include <vector>
 #include "framework/tensor.h"
-#include "operators/math/conv_func.h"
 
 namespace paddle_mobile {
 namespace operators {
 namespace math {
-
-void DepthwiseConv3x3(const framework::Tensor *input,
-                      const std::vector<int> &strides,
-                      const std::vector<int> &paddings,
-                      const framework::Tensor *filter, framework::Tensor *bias,
-                      framework::Tensor *output, bool if_bias);
-
-void DepthwiseConv3x3s1p1(const framework::Tensor *input,
-                          const framework::Tensor *filter,
-                          framework::Tensor *output, framework::Tensor *bias,
-                          bool if_bias, bool if_relu);
-
-void DepthwiseConvAddBNRelu3x3s1p1(const framework::Tensor *input,
-                                   const framework::Tensor *filter,
-                                   framework::Tensor *output,
-                                   const framework::Tensor *new_scale,
-                                   const framework::Tensor *new_bias,
-                                   bool if_relu);
-
-void DepthwiseConvAddBNRelu3x3s2p1(const framework::Tensor *input,
-                                   const framework::Tensor *filter,
-                                   framework::Tensor *output,
-                                   const framework::Tensor *new_scale,
-                                   const framework::Tensor *new_bias,
-                                   bool if_relu);
-
-void DepthwiseConv3x3s2p1v2(const framework::Tensor *input,
-                            const framework::Tensor *filter,
-                            framework::Tensor *output, framework::Tensor *bias,
-                            bool if_bias, bool if_relu);
-
-void DepthwiseConvAddBNRelu3x3s2p1v2(const framework::Tensor *input,
-                                     const framework::Tensor *filter,
-                                     framework::Tensor *output,
-                                     const framework::Tensor *new_scale,
-                                     const framework::Tensor *new_bias,
-                                     bool if_relu);
-
-void DepthwiseConv3x3s2p0(const framework::Tensor *input,
-                          const framework::Tensor *filter,
-                          framework::Tensor *output, framework::Tensor *bias,
-                          bool if_bias, bool if_relu);
 
 // TODO(hjchen2) need to be implemented
 // template<typename Itype, typename Otype>

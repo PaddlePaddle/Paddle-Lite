@@ -19,8 +19,13 @@ limitations under the License. */
 #include <iostream>
 #include "../../src/io/paddle_inference_api.h"
 
+<<<<<<< HEAD
 using namespace paddle_mobile;
 using namespace paddle_mobile::fpga;
+=======
+using namespace paddle_mobile;        // NOLINT
+using namespace paddle_mobile::fpga;  // NOLINT
+>>>>>>> upstream/develop
 
 static const char *g_image = "../images/yolo_test_txtimg/1.txt";
 static const char *g_model = "../models/yolo_bn_l2_model/__model__";
@@ -51,13 +56,21 @@ signed char float_to_int8(float fdata) {
 }
 void quantize(float **data_in, int data_size) {
   float *tmp = *data_in;
+<<<<<<< HEAD
   signed char *tmp_data =
       (signed char *)paddle_mobile::fpga::fpga_malloc(data_size * sizeof(char));
+=======
+  signed char *tmp_data = (signed char *)fpga_malloc(data_size * sizeof(char));
+>>>>>>> upstream/develop
   for (int i = 0; i < data_size; i++) {
     tmp_data[i] = float_to_int8((*data_in)[i] + 128);
   }
   *data_in = (float *)tmp_data;  // NOLINT
+<<<<<<< HEAD
   paddle_mobile::fpga::fpga_free(tmp);
+=======
+  fpga_free(tmp);
+>>>>>>> upstream/develop
 }
 
 void convert_to_chw(float **data_in, int channel, int height, int width,
@@ -78,7 +91,12 @@ void dump_stride_float(std::string filename, PaddleTensor input_tensor) {
   int h = (input_tensor.shape)[2];
   int w = (input_tensor.shape)[3];
   int n = (input_tensor.shape)[0];
+<<<<<<< HEAD
   float *data_tmp = reinterpret_cast<float *>(malloc(c * h * w * sizeof(float)));
+=======
+  float *data_tmp =
+      reinterpret_cast<float *>(malloc(c * h * w * sizeof(float)));
+>>>>>>> upstream/develop
   convert_to_chw(&data_ptr, c, h, w, data_tmp);
   std::ofstream out(filename.c_str());
   float result = 0;

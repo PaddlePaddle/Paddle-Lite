@@ -42,6 +42,7 @@ inline DataLayout StringToDataLayout(const std::string &str) {
   } else {
     PADDLE_MOBILE_THROW_EXCEPTION("Unknown storage order string: %s", s.c_str())
   }
+  return DataLayout::kNCHW;
 }
 
 inline std::string DataLayoutToString(const DataLayout &data_layout) {

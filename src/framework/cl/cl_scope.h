@@ -29,12 +29,12 @@ namespace framework {
 class CLScope {
  public:
   CLScope() {
-    CLEngine *engin = CLEngine::Instance();
-    context_ = engin->CreateContext();
-    command_queue_ = engin->CreateClCommandQueue(context_.get());
+    CLEngine *engine = CLEngine::Instance();
+    context_ = engine->getContext();
+    command_queue_ = engine->getClCommandQueue();
   }
 
-  cl_command_queue CommandQueue() { return command_queue_.get(); }
+  cl_command_queue CommandQueue() { return command_queue_; }
 
   std::unique_ptr<_cl_kernel, CLKernelDeleter> GetKernel(
       const std::string &kernel_name, const std::string &file_name) {
@@ -49,7 +49,7 @@ class CLScope {
     return std::move(kernel);
   }
 
-  cl_context Context() { return context_.get(); }
+  cl_context Context() { return context_; }
 
   cl_program Program(const std::string &file_name) {
     auto it = programs_.find(file_name);
@@ -58,7 +58,7 @@ class CLScope {
     }
 
     auto program = CLEngine::Instance()->CreateProgramWith(
-        context_.get(),
+        context_,
         CLEngine::Instance()->GetCLPath() + "/cl_kernel/" + file_name);
 
     DLOG << " --- begin build program -> " << file_name << " --- ";
@@ -72,8 +72,8 @@ class CLScope {
 
  private:
   cl_int status_;
-  std::unique_ptr<_cl_context, CLContextDeleter> context_;
-  std::unique_ptr<_cl_command_queue, CLCommQueueDeleter> command_queue_;
+  cl_context context_;
+  cl_command_queue command_queue_;
   std::unordered_map<std::string,
                      std::unique_ptr<_cl_program, CLProgramDeleter>>
       programs_;

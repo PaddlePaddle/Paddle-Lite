@@ -25,6 +25,25 @@ namespace math {
  * Col2ImFunctor. */
 enum class ColFormat { kCFO = 0, kOCF = 1 };
 
+template <class T>
+void ExtractToImg(const T *im_data, T *col_data, const int im_height,
+                  const int im_width, const int col_height, const int col_width,
+                  const int padding_h, const int padding_w, const int stride_h,
+                  const int stride_w, const int kh, const int kw);
+
+template <class T>
+void ExtendToImg(const T *col_data, T *im_data, const int im_height,
+                 const int im_width, const int col_height, const int col_width,
+                 const int padding_h, const int padding_w, const int stride_h,
+                 const int stride_w, const int kh, const int kw);
+
+template <class T>
+void ExtendToImgV2(const T *col_data, T *im_data, const int im_height,
+                   const int im_width, const int col_height,
+                   const int col_width, const int padding_h,
+                   const int padding_w, const int stride_h, const int stride_w,
+                   const int kh, const int kernel_w);
+
 /*
  * \brief Converts the image data of three dimensions(CHW) into a
  * colData of
