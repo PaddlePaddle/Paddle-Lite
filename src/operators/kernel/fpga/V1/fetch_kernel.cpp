@@ -19,6 +19,7 @@ template <>
 bool FetchKernel<FPGA, float>::Init(FetchParam<FPGA> *param) {
   auto input = const_cast<LoDTensor *>(param->InputX());
   int col = param->Col();
+  DLOG << "col = " << col;
   auto output = &(param->Out()->at(col));
   if (input->type() == typeid(float)) {
     return true;
@@ -59,7 +60,11 @@ template <>
 void FetchKernel<FPGA, float>::Compute(const FetchParam<FPGA> &param) {
   auto input = const_cast<LoDTensor *>(param.InputX());
   int col = param.Col();
-  LoDTensor *out = &param.Out()->at(col);
+  auto output = &param.Out()->at(col);
+  if (input->type() == typeid(float)) {
+    output->ShareDataWith(*input);
+    return;
+  }
 
   fpga::BypassArgs args = param.fpga_bypass_args;
   auto input_address = (input->data<half>());
@@ -67,7 +72,7 @@ void FetchKernel<FPGA, float>::Compute(const FetchParam<FPGA> &param) {
   float *outdata_ptr =
       reinterpret_cast<float *>(param.fpga_bypass_args.output.address);
   const int num_th = 32;
-  if ((out->fpga_data_num) < num_th) {
+  if (output->fpga_data_num < num_th) {
     fpga::fpga_invalidate(input_address, (input->fpga_data_num) * sizeof(half));
 
     for (int idx = 0; idx < product(input->dims()); ++idx) {
@@ -77,14 +82,14 @@ void FetchKernel<FPGA, float>::Compute(const FetchParam<FPGA> &param) {
   }
 
   fpga::PerformBypass(args);
-  auto outC = out->dims()[1];
-  auto outH = out->dims()[2];
-  auto outW = out->dims()[3];
+  auto outC = output->dims()[1];
+  auto outH = output->dims()[2];
+  auto outW = output->dims()[3];
 
   fpga::fpga_invalidate(param.fpga_bypass_args.output.address,
-                        out->fpga_data_num * sizeof(float));
+                        output->fpga_data_num * sizeof(float));
 
-  if (out->fpga_data_num != product(input->dims())) {
+  if (output->fpga_data_num != product(input->dims())) {
     float *data_tmp =
         reinterpret_cast<float *>(malloc(outC * outH * outW * sizeof(float)));
     dealign(outdata_ptr, data_tmp, outC, outH, outW);
@@ -92,7 +97,6 @@ void FetchKernel<FPGA, float>::Compute(const FetchParam<FPGA> &param) {
     free(data_tmp);
   }
 }
-
 template class FetchKernel<FPGA, float>;
 
 }  // namespace operators
