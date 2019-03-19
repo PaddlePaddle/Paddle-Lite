@@ -73,8 +73,7 @@ void ConvBNAddReluKernel<CPU, float>::Compute(
                                     param.ExecMode());
   }
 
-  if (param.Bias()->dims() == param.InputBias()->dims() ||
-      param.Bias()->dims() == param.Output()->dims()) {
+  if (param.Bias()->dims() == param.Output()->dims()) {
     math::ScaleAddChannelWise<RELU>(param.Output(), param.InputScale(),
                                     param.InputBias(), param.Bias(),
                                     param.Output());
