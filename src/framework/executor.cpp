@@ -12,12 +12,12 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#include "framework/executor.h"
 #include <algorithm>
 #include <utility>
 #include <vector>
 #include "common/enforce.h"
 #include "common/log.h"
-#include "memory/t_malloc.h"
 #include "framework/context.h"
 #include "framework/framework.pb-c.h"
 #include "framework/lod_tensor.h"
@@ -27,7 +27,7 @@ limitations under the License. */
 #include "framework/program/var_desc.h"
 #include "framework/scope.h"
 #include "framework/tensor.h"
-#include "framework/executor.h"
+#include "memory/t_malloc.h"
 #include "pass/memory_optimize.h"
 #ifdef PADDLE_MOBILE_CL
 #include "framework/cl/cl_image.h"
