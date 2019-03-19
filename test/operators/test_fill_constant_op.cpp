@@ -47,7 +47,7 @@ class TestFillConstantOp {
           std::shared_ptr<operators::FillConstantOp<Dtype, float>> op_ptr =
               std::make_shared<operators::FillConstantOp<Dtype, float>>(
                   op->Type(), op->GetInputs(), op->GetOutputs(),
-                  op->GetAttrMap(), program_.scope);
+                  op->GetAttrMap(), program_.scope.get());
           ops_of_block_[*block_desc.get()].push_back(op_ptr);
         }
       }
@@ -55,7 +55,7 @@ class TestFillConstantOp {
   }
 
   std::shared_ptr<Tensor> predict() {
-    auto scope = program_.scope;
+    auto scope = program_.scope.get();
 
     Variable *output = scope->Var(output_var_name);
     auto *output_tensor = output->GetMutable<LoDTensor>();

@@ -17,7 +17,6 @@ limitations under the License. */
 #include <algorithm>
 #include <vector>
 #include "framework/tensor.h"
-#include "operators/math/conv_func.h"
 
 namespace paddle_mobile {
 namespace operators {

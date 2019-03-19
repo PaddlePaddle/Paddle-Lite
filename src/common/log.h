@@ -31,7 +31,8 @@ namespace paddle_mobile {
 
 #ifdef ANDROID
 
-extern const char *ANDROID_LOG_TAG;
+static const char *ANDROID_LOG_TAG =
+    "paddle_mobile LOG built on " __DATE__ " " __TIME__;
 
 #define ANDROIDLOGI(...)                                               \
   __android_log_print(ANDROID_LOG_INFO, ANDROID_LOG_TAG, __VA_ARGS__); \

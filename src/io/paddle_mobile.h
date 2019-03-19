@@ -33,7 +33,7 @@ namespace paddle_mobile {
 template <typename Device, typename T = float>
 class PaddleMobile {
  public:
-  PaddleMobile(PaddleMobileConfigInternal config) : config_(config) {
+  explicit PaddleMobile(PaddleMobileConfigInternal config) : config_(config) {
 #ifndef PADDLE_MOBILE_CL
     bool is_gpu = std::is_same<DeviceType<kGPU_CL>, Device>::value;
     PADDLE_MOBILE_ENFORCE(!is_gpu, "Please recompile with GPU_CL is on");
@@ -46,7 +46,7 @@ class PaddleMobile {
     PADDLE_MOBILE_ENFORCE(!is_gpu, "Please recompile with GPU_CL is on");
 #endif
   }
-  ~PaddleMobile() {}
+  virtual ~PaddleMobile() { Clear(); }
 
   PMStatus Load(const std::string &dirname, const bool optimize = false,
                 const bool quantification = false, const int batch_size = 1,
@@ -69,8 +69,8 @@ class PaddleMobile {
                          const std::vector<int64_t> &dims);
   PMStatus Predict();
 
-  void Feed(const framework::LoDTensor &input, const std::string &var_name);
-  void Feed(const framework::Tensor &input, const std::string &var_name);
+  void Feed(const std::string &var_name, const framework::LoDTensor &input);
+  void Feed(const std::string &var_name, const framework::Tensor &input);
 
   typedef std::shared_ptr<framework::LoDTensor> LoDTensorPtr;
   LoDTensorPtr Fetch(const std::string &var_name);

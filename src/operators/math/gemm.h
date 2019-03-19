@@ -46,37 +46,25 @@ namespace math {
 
 class Gemm {
  public:
-  typedef void (Gemm::*FnPack)(int, int, int, const float *, int, float *);
+  typedef void (Gemm::*FnPack)(int, int, int, const float *, int, float *,
+                               const bool);
   typedef void (Gemm::*FnAddDot)(int, const float *, const float *, float *,
                                  int);
   FnPack procPackA;
   FnPack procPackB;
   FnAddDot procAddDot;
 
-  // 将 A\B 矩阵分块复制到连续内存(RowMajor)
-  void PackMatrixA_4r(int m, int k, int m_tail, const float *A, int lda,
-                      float *buffer);
   void PackMatrixA_6r(int m, int k, int m_tail, const float *A, int lda,
-                      float *buffer);
-  void PackMatrixA_omp_6r(int m, int k, int m_tail, const float *A, int lda,
-                          float *buffer);
+                      float *buffer, const bool parallel);
   void PackMatrixA_8r(int m, int k, int m_tail, const float *A, int lda,
-                      float *buffer);
-  void PackMatrixA_omp_8r(int m, int k, int m_tail, const float *A, int lda,
-                          float *buffer);
+                      float *buffer, const bool parallel);
   void PackMatrixB_8c(int k, int n, int n_tail, const float *B, int ldb,
-                      float *buffer);
-  void PackMatrixB_omp_8c(int k, int n, int n_tail, const float *B, int ldb,
-                          float *buffer);
+                      float *buffer, const bool parallel);
 #if __aarch64__
   void PackMatrixB_12c(int k, int n, int n_tail, const float *B, int ldb,
-                       float *buffer);
-  void PackMatrixB_omp_12c(int k, int n, int n_tail, const float *B, int ldb,
-                           float *buffer);
+                       float *buffer, const bool parallel);
   void PackMatrixB_16c(int k, int n, int n_tail, const float *B, int ldb,
-                       float *buffer);
-  void PackMatrixB_omp_16c(int k, int n, int n_tail, const float *B, int ldb,
-                           float *buffer);
+                       float *buffer, const bool parallel);
 #endif
 
   // 分块矩阵乘法
@@ -272,7 +260,6 @@ class Gemm {
   float *packedA;
   float *packedB;
   float *packedC;
-  float *zero;
 
   // 8 bits int
   int8_t *packedA_int8;

@@ -115,7 +115,7 @@ int TestQuqntizeOp(const int batch_size, const int channel, const int height,
 
   framework::AttributeMap attrs;
   auto *op = new operators::QuantizeOp<CPU, float>("quantize", inputs, outputs,
-                                                   attrs, scope);
+                                                   attrs, scope.get());
   op->InferShape();
   op->Run();
 
@@ -132,7 +132,7 @@ int TestQuqntizeOp(const int batch_size, const int channel, const int height,
   framework::Tensor output_cmp;
   output_cmp.Resize(output->dims());
   float scale = 127 / output_scale_cmp;
-  quantize<round::RoundAwayZero>(input, scale, &output_cmp);
+  quantize<round::RoundTowardsZero>(input, scale, &output_cmp);
   int8_t *output_cmp_data = output_cmp.data<int8_t>();
   for (int i = 0; i < output->numel(); ++i) {
     PADDLE_MOBILE_ENFORCE(output_data[i] == output_cmp_data[i],

@@ -18,8 +18,9 @@ namespace operators {
 
 template <typename DeviceType, typename T>
 void FetchOp<DeviceType, T>::InferShape() const {
+  int col = this->param_.Col();
   auto x_dims = this->param_.InputX()->dims();
-  this->param_.Out()->Resize(x_dims);
+  this->param_.Out()->at(col).Resize(x_dims);
 }
 
 }  // namespace operators
@@ -29,9 +30,7 @@ namespace ops = paddle_mobile::operators;
 #ifdef PADDLE_MOBILE_CPU
 REGISTER_OPERATOR_CPU(fetch, ops::FetchOp);
 #endif
-#ifdef PADDLE_MOBILE_MALI_GPU
-REGISTER_OPERATOR_MALI_GPU(fetch, ops::FetchOp);
-#endif
+
 #ifdef PADDLE_MOBILE_FPGA
 REGISTER_OPERATOR_FPGA(fetch, ops::FetchOp);
 #endif

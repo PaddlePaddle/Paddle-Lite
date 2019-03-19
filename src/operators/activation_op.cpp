@@ -54,9 +54,6 @@ namespace ops = paddle_mobile::operators;
 REGISTER_OPERATOR_CPU(relu, ops::ReluOp);
 REGISTER_OPERATOR_CPU(relu6, ops::Relu6Op);
 #endif
-#ifdef PADDLE_MOBILE_MALI_GPU
-REGISTER_OPERATOR_MALI_GPU(relu, ops::ReluOp);
-#endif
 #ifdef PADDLE_MOBILE_FPGA
 REGISTER_OPERATOR_FPGA(relu, ops::ReluOp);
 #endif
@@ -68,6 +65,9 @@ REGISTER_OPERATOR_CL(relu, ops::ReluOp);
 #ifdef SIGMOID_OP
 #ifdef PADDLE_MOBILE_CPU
 REGISTER_OPERATOR_CPU(sigmoid, ops::SigmoidOp);
+#endif
+#ifdef PADDLE_MOBILE_CL
+REGISTER_OPERATOR_CL(sigmoid, ops::SigmoidOp);
 #endif
 #endif  // SIGMOID_OP
 
