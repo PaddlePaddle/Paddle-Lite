@@ -13,7 +13,6 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "operators/math/slidingwindow_conv3x3.h"
-#include <float.h>
 #include <vector>
 #if __ARM_NEON
 #include <arm_neon.h>
@@ -1970,9 +1969,10 @@ void SlidingwindowConv3x3s1<float, float>(const framework::Tensor *input,
 }
 
 template <>
-void SlidingwindowConv3x3s2<float, float>(
-    const framework::Tensor *input, const framework::Tensor *filter,
-    const std::vector<int> &paddings, framework::Tensor *output) {
+void SlidingwindowConv3x3s2<float, float>(const framework::Tensor *input,
+                                          const framework::Tensor *filter,
+                                          const std::vector<int> &paddings,
+                                          framework::Tensor *output) {
   const int batch = input->dims()[0];
   const int input_ch = input->dims()[1];
   const int input_h = input->dims()[2];
