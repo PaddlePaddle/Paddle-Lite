@@ -75,6 +75,10 @@ void ConvBNReluKernel<CPU, float>::Compute(
     case ConvParam<CPU>::EXEC_GEMM_FLOAT:
       GemmConv<float, float>(param);
       break;
+    case ConvParam<CPU>::EXEC_SLIDINGWINDOW3x3S1_FLOAT:
+    case ConvParam<CPU>::EXEC_SLIDINGWINDOW3x3S2_FLOAT:
+      SlidingwindowConv3x3<float, float>(param);
+      break;
     default:
       PADDLE_MOBILE_THROW_EXCEPTION("Invalid convolution execute mode %d",
                                     param.ExecMode());
