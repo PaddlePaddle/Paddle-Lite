@@ -15,12 +15,15 @@ limitations under the License. */
 #ifndef PADDLE_MOBILE_FPGA
 #define PADDLE_MOBILE_FPGA
 #endif
+#include <sys/time.h>
+#include <time.h>
 #include <fstream>
+#include <iomanip>
 #include <iostream>
 #include "../../src/io/paddle_inference_api.h"
 
-using namespace paddle_mobile;
-using namespace paddle_mobile::fpga;
+using namespace paddle_mobile;        // NOLINT
+using namespace paddle_mobile::fpga;  // NOLINT
 
 static const char *g_image = "../models/marker/model/image.bin";
 static const char *g_model = "../models/marker/model/model";
@@ -136,44 +139,6 @@ PaddleMobileConfig GetConfig1() {
 
 int main() {
   open_device();
-
-  PaddleMobileConfig config1 = GetConfig1();
-  auto predictor1 =
-      CreatePaddlePredictor<PaddleMobileConfig,
-                            PaddleEngineKind::kPaddleMobile>(config1);
-
-  std::cout << "Finishing loading model" << std::endl;
-  for (int i = 0; i < 1; ++i) {
-    int img_length1 = 144 * 14 * 14;
-    auto img1 =
-        reinterpret_cast<float *>(fpga_malloc(img_length1 * sizeof(float)));
-    readStream(g_image1, reinterpret_cast<char *>(img1));
-
-    std::cout << "Finishing initializing data" << std::endl;
-    struct PaddleTensor t_img1;
-
-    t_img1.dtypeid = typeid(float);
-    t_img1.layout = LAYOUT_HWC;
-    t_img1.shape = std::vector<int>({1, 14, 14, 144});
-    t_img1.name = "Image information";
-    t_img1.data.Reset(img1, img_length1 * sizeof(float));
-    predictor1->FeedPaddleTensors({t_img1});
-
-    std::cout << "Finishing feeding data " << std::endl;
-
-    predictor1->Predict_From_To(0, -1);
-    std::cout << "Finishing predicting " << std::endl;
-
-    std::vector<paddle_mobile::PaddleTensor> v1;  // No need to initialize v
-    predictor1->FetchPaddleTensors(&v1);  // Old data in v will be cleared
-    std::cout << "Output number is " << v1.size() << std::endl;
-    for (int fetchNum = 0; fetchNum < v1.size(); fetchNum++) {
-      std::string dumpName = "marker2_api_fetch_" + std::to_string(fetchNum);
-      dump_stride(dumpName, v1[fetchNum]);
-    }
-  }
-  /////////////////////////////////////
-
   PaddleMobileConfig config = GetConfig();
   auto predictor =
       CreatePaddlePredictor<PaddleMobileConfig,
@@ -207,7 +172,16 @@ int main() {
 
   std::cout << "Finishing feeding data " << std::endl;
 
+  timeval start11, end11;
+  long dif_sec, dif_usec;  // NOLINT
+  gettimeofday(&start11, NULL);
   predictor->Predict_From_To(0, -1);
+  gettimeofday(&end11, NULL);
+  dif_sec = end11.tv_sec - start11.tv_sec;
+  dif_usec = end11.tv_usec - start11.tv_usec;
+  std::cout << "marker1 total"
+            << " cost time: " << (dif_sec * 1000000 + dif_usec) << "  us"
+            << std::endl;
   std::cout << "Finishing predicting " << std::endl;
 
   std::vector<paddle_mobile::PaddleTensor> v;  // No need to initialize v
@@ -216,6 +190,49 @@ int main() {
   for (int fetchNum = 0; fetchNum < v.size(); fetchNum++) {
     std::string dumpName = "marker_api_fetch_" + std::to_string(fetchNum);
     dump_stride(dumpName, v[fetchNum]);
+  }
+
+  PaddleMobileConfig config1 = GetConfig1();
+  auto predictor1 =
+      CreatePaddlePredictor<PaddleMobileConfig,
+                            PaddleEngineKind::kPaddleMobile>(config1);
+
+  std::cout << "Finishing loading model" << std::endl;
+  for (int i = 0; i < 1; ++i) {
+    int img_length1 = 144 * 14 * 14;
+    auto img1 =
+        reinterpret_cast<float *>(fpga_malloc(img_length1 * sizeof(float)));
+    readStream(g_image1, reinterpret_cast<char *>(img1));
+
+    std::cout << "Finishing initializing data" << std::endl;
+    struct PaddleTensor t_img1;
+
+    t_img1.dtypeid = typeid(float);
+    t_img1.layout = LAYOUT_HWC;
+    t_img1.shape = std::vector<int>({1, 14, 14, 144});
+    t_img1.name = "Image information";
+    t_img1.data.Reset(img1, img_length1 * sizeof(float));
+    predictor1->FeedPaddleTensors({t_img1});
+
+    std::cout << "Finishing feeding data " << std::endl;
+
+    gettimeofday(&start11, NULL);
+    predictor1->Predict_From_To(0, -1);
+    gettimeofday(&end11, NULL);
+    dif_sec = end11.tv_sec - start11.tv_sec;
+    dif_usec = end11.tv_usec - start11.tv_usec;
+    std::cout << "marker2 total"
+              << "    cost time: " << (dif_sec * 1000000 + dif_usec) << "  us"
+              << std::endl;
+    std::cout << "Finishing predicting " << std::endl;
+
+    std::vector<paddle_mobile::PaddleTensor> v1;  // No need to initialize v
+    predictor1->FetchPaddleTensors(&v1);  // Old data in v will be cleared
+    std::cout << "Output number is " << v1.size() << std::endl;
+    for (int fetchNum = 0; fetchNum < v1.size(); fetchNum++) {
+      std::string dumpName = "marker2_api_fetch_" + std::to_string(fetchNum);
+      dump_stride(dumpName, v1[fetchNum]);
+    }
   }
   return 0;
 }
