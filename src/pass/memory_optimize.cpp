@@ -131,7 +131,7 @@ void MemoryOptPass::operator()(const framework::ProgramDesc *program,
         DLOG << node->name;
         auto *var = scope->Var(node->name);
         auto *tensor = var->template GetMutable<framework::LoDTensor>();
-        tensor->ShareDataWith(*reuse_tensor);
+        tensor->ShareHolderWith(*reuse_tensor);
       }
     }
   }

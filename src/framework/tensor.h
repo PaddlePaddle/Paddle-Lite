@@ -69,6 +69,15 @@ class Tensor : public TensorBase {
   inline Tensor &ShareDataWith(const Tensor &src) {
     src.check_memory_size();
     if (holder_.get() != src.holder_.get()) {
+      *this = src;
+    }
+    return *this;
+  }
+
+  /*! The internal of two tensors share the same memory block. */
+  inline Tensor &ShareHolderWith(const Tensor &src) {
+    src.check_memory_size();
+    if (holder_.get() != src.holder_.get()) {
       holder_ = src.holder_;
     }
     return *this;
