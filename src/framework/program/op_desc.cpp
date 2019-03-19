@@ -42,7 +42,13 @@ OpDesc::OpDesc(PaddleMobile__Framework__Proto__OpDesc *desc) {
     PaddleMobile__Framework__Proto__OpDesc__Attr *attr = desc->attrs[k];
     std::string attr_name(attr->name);
     attrs_[attr_name] = Attribute::GetAttrValue(attr);
+    proto_attrs_.push_back(*attr);
   }
+}
+
+const std::vector<PaddleMobile__Framework__Proto__OpDesc__Attr>
+    &OpDesc::GetProtoAttr() const {
+  return proto_attrs_;
 }
 
 const std::vector<std::string> &OpDesc::Input(const std::string &name) const {
@@ -56,6 +62,15 @@ const std::vector<std::string> &OpDesc::Output(const std::string &name) const {
 Attribute OpDesc::GetAttr(const std::string &name) const {
   auto it = attrs_.find(name);
   return it->second;
+}
+
+void OpDesc::SetBlockAttr(const std::string &name, BlockDesc *block) {
+  this->attrs_[name].Set<BlockDesc *>(block);
+}
+
+void OpDesc::SetBlocksAttr(const std::string &name,
+                           std::vector<BlockDesc *> blocks) {
+  this->attrs_[name].Set<std::vector<BlockDesc *>>(blocks);
 }
 
 std::unordered_map<std::string, Attribute> &OpDesc::GetAttrMap() {

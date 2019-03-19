@@ -31,7 +31,7 @@ class CLEngine {
   static CLEngine *Instance();
 
   bool Init();
-
+  bool isInitSuccess();
   std::unique_ptr<_cl_context, CLContextDeleter> CreateContext() {
     cl_int status;
     cl_context c = clCreateContext(NULL, 1, devices_, NULL, NULL, &status);
@@ -49,6 +49,20 @@ class CLEngine {
         queue);
     CL_CHECK_ERRORS(status);
     return std::move(command_queue_ptr);
+  }
+
+  cl_context getContext() {
+    if (context_ == nullptr) {
+      context_ = CreateContext();
+    }
+    return context_.get();
+  }
+
+  cl_command_queue getClCommandQueue() {
+    if (command_queue_ == nullptr) {
+      command_queue_ = CreateClCommandQueue(getContext());
+    }
+    return command_queue_.get();
   }
 
   std::unique_ptr<_cl_program, CLProgramDeleter> CreateProgramWith(
@@ -137,6 +151,11 @@ class CLEngine {
   std::string cl_path_;
   std::unique_ptr<_cl_program, CLProgramDeleter> program_;
 
+  std::unique_ptr<_cl_context, CLContextDeleter> context_ = nullptr;
+
+  std::unique_ptr<_cl_command_queue, CLCommQueueDeleter> command_queue_ =
+      nullptr;
+
   //  bool SetClContext();
 
   //  bool SetClCommandQueue();
@@ -144,6 +163,7 @@ class CLEngine {
   //  bool LoadKernelFromFile(const char *kernel_file);
 
   //  bool BuildProgram();
+  bool is_init_success_ = false;
 };
 
 }  // namespace framework

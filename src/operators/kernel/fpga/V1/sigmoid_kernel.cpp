@@ -24,7 +24,7 @@ bool SigmoidKernel<FPGA, float>::Init(SigmoidParam<FPGA> *param) {
   paddle_mobile::fpga::ActivationType activation_enable =
       paddle_mobile::fpga::SIGMOID;
   int16_t leaky_relu_negative_slope = 0;
-  auto input = const_cast<Tensor *>(param->InputX());
+  auto input = const_cast<LoDTensor *>(param->InputX());
   auto input_ptr = input->data<half>();
   auto out = param->Out();
   fpga::format_fp16_ofm(out);

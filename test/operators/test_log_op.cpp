@@ -43,8 +43,8 @@ int TestLogOp(const std::vector<int> input_shape) {
   auto output_var = scope.get()->Var("output");
 
   framework::AttributeMap attrs;
-  auto *op =
-      new operators::LogOp<CPU, float>("log", inputs, outputs, attrs, scope);
+  auto *op = new operators::LogOp<CPU, float>("log", inputs, outputs, attrs,
+                                              scope.get());
   op->InferShape();
   op->Init();
   op->Run();

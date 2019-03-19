@@ -15,7 +15,6 @@ limitations under the License. */
 #pragma once
 
 #include <map>
-#include <memory>
 #include <string>
 #include <utility>
 #include <vector>
@@ -58,7 +57,7 @@ class OperatorBase {
  public:
   OperatorBase(const std::string &type, const VariableNameMap &inputs,
                const VariableNameMap &outputs, const AttributeMap &attrs,
-               std::shared_ptr<Scope> scope);
+               framework::Scope *scope);
   virtual ~OperatorBase() {}
 
   virtual void Init() = 0;
@@ -81,11 +80,10 @@ class OperatorBase {
   }
 #ifdef PADDLE_MOBILE_FPGA
   void InsertTensors();
-  void ChangeNameMap(string key, std::vector<string> value);
 #endif
 
  protected:
-  std::shared_ptr<Scope> scope_;
+  framework::Scope *scope_;
   std::string type_;
   VariableNameMap inputs_;
   VariableNameMap outputs_;
@@ -98,35 +96,15 @@ class OperatorBase {
 template <typename Dtype, typename ParamType, typename KernelType>
 class OperatorWithKernel : public OperatorBase<Dtype> {
  public:
-#ifndef PADDLE_MOBILE_FPGA1
   OperatorWithKernel(const std::string &type, const VariableNameMap &inputs,
                      const VariableNameMap &outputs, const AttributeMap &attrs,
-                     std::shared_ptr<Scope> scope)
+                     framework::Scope *scope)
       : OperatorBase<Dtype>(type, inputs, outputs, attrs, scope),
-        param_(inputs, outputs, attrs, scope.get()) {
+        param_(inputs, outputs, attrs, scope) {
 #ifdef PADDLE_MOBILE_CL
     kernel_.InitCLHelper(scope->GetCLScpoe());
 #endif
   }
-#else
-  OperatorWithKernel(const std::string &type, const VariableNameMap inputs,
-                     const VariableNameMap &outputs, const AttributeMap &attrs,
-                     std::shared_ptr<Scope> scope)
-      : OperatorBase<Dtype>(type, inputs, outputs, attrs, scope) {
-    static int feed_num = 0;
-    static int fetch_num = 0;
-    if (type == "feed") {
-      auto new_name = string("feed") + std::to_string(feed_num++);
-      auto var = scope->Var(new_name);
-      (const_cast<VariableNameMap &>(inputs)).at("X") = {string(new_name)};
-    } else if (type == "fetch") {
-      auto new_name = string("fetch") + std::to_string(fetch_num++);
-      auto var = scope->Var(new_name);
-      (const_cast<VariableNameMap &>(outputs)).at("Out") = {string(new_name)};
-    }
-    param_ = ParamType(inputs, outputs, attrs, *scope);
-  }
-#endif
   virtual void RunImpl() { this->kernel_.Compute(this->param_); }
 
   virtual void InferShape() const = 0;
@@ -152,13 +130,6 @@ class OpKernelBase {
   }
 #endif
 
-#ifdef PADDLE_McOBILE_MALI_GPU
-  OpKernelBase() { acl_op_ = nullptr; }
-  void *GetAclOp() const { return acl_op_; }
-  void SetAclOp(void *op, void *ob) const {
-    reinterpret_cast<OpKernelBase<Dtype, P> *>(ob)->acl_op_ = op;
-  }
-#endif
   virtual void Compute(const P &para) = 0;
   virtual bool Init(P *para) { return true; }
   virtual ~OpKernelBase() = default;
@@ -169,9 +140,6 @@ class OpKernelBase {
 #endif
 
  private:
-#ifdef PADDLE_MOBILE_MALI_GPU
-  void *acl_op_;
-#endif
 };
 
 class FusionOpMatcher {
@@ -198,21 +166,20 @@ class FusionOpMatcher {
   std::shared_ptr<OpDesc> new_opdesc_;
 };
 
-#define DECLARE_OPERATOR(OpName, OpParam, OpKernel)                          \
-  template <typename DeviceType, typename T>                                 \
-  class OpName##Op : public framework::OperatorWithKernel<                   \
-                         DeviceType, OpParam<DeviceType>,                    \
-                         operators::OpKernel<DeviceType, T>> {               \
-   public:                                                                   \
-    OpName##Op(const std::string &type, const VariableNameMap &inputs,       \
-               const VariableNameMap &outputs,                               \
-               const framework::AttributeMap &attrs,                         \
-               std::shared_ptr<framework::Scope> scope)                      \
-        : framework::OperatorWithKernel<DeviceType, OpParam<DeviceType>,     \
-                                        operators::OpKernel<DeviceType, T>>( \
-              type, inputs, outputs, attrs, scope) {}                        \
-                                                                             \
-    void InferShape() const override;                                        \
+#define DECLARE_OPERATOR(OpName, OpParam, OpKernel)                           \
+  template <typename DeviceType, typename T>                                  \
+  class OpName##Op : public framework::OperatorWithKernel<                    \
+                         DeviceType, OpParam<DeviceType>,                     \
+                         operators::OpKernel<DeviceType, T>> {                \
+   public:                                                                    \
+    OpName##Op(const std::string &type, const VariableNameMap &inputs,        \
+               const VariableNameMap &outputs,                                \
+               const framework::AttributeMap &attrs, framework::Scope *scope) \
+        : framework::OperatorWithKernel<DeviceType, OpParam<DeviceType>,      \
+                                        operators::OpKernel<DeviceType, T>>(  \
+              type, inputs, outputs, attrs, scope) {}                         \
+                                                                              \
+    void InferShape() const override;                                         \
   };
 
 #define DECLARE_KERNEL(OpName, OpParam)                                   \
@@ -228,7 +195,7 @@ class FusionOpMatcher {
   cls(const std::string &type, const ::paddle_mobile::VariableNameMap &inputs, \
       const ::paddle_mobile::VariableNameMap &outputs,                         \
       const ::paddle_mobile::framework::AttributeMap &attrs,                   \
-      std::shared_ptr<::paddle_mobile::framework::Scope> scope)                \
+      ::paddle_mobile::framework::Scope *scope)                                \
       : parent_cls<Dtype, T>(type, inputs, outputs, attrs, scope) {}
 
 }  // namespace framework

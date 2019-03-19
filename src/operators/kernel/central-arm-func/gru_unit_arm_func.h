@@ -27,30 +27,39 @@ namespace operators {
 
 template <typename P>
 void GruUnitCompute(const GruUnitParam<CPU>& param) {
+  // inputs
   auto* input = param.InputInput();
   auto* hidden_prev = param.InputHiddenPrev();
   auto* weight = param.InputWeight();
   auto* bias = param.InputBias();
+  // outputs
   auto* gate = param.OutGate();
+  gate->mutable_data<P>();
   auto* reset_hidden_prev = param.OutResetHiddenPrev();
+  reset_hidden_prev->mutable_data<P>();
   auto* hidden = param.OutHidden();
+  hidden->mutable_data<P>();
 
+  // add bias
   if (bias) {
     math::RowwiseAdd<CPU, float> add_bias;
-    add_bias(*gate, *bias, gate);
+    add_bias(*input, *bias, gate);
   }
 
   int batch_size = input->dims()[0];
   int frame_size = hidden_prev->dims()[1];
   const P* weight_data = weight->data<P>();
+
   math::GRUMetaValue<P> gru_value;
   gru_value.gate_weight = const_cast<P*>(weight_data);
   gru_value.state_weight =
       const_cast<P*>(weight_data + 2 * frame_size * frame_size);
-  gru_value.output_value = hidden->data<P>();
   gru_value.prev_out_value = const_cast<P*>(hidden_prev->data<P>());
+
+  gru_value.output_value = hidden->data<P>();
   gru_value.gate_value = gate->data<P>();
   gru_value.reset_output_value = reset_hidden_prev->data<P>();
+
   auto active_node = math::GetActivationType(param.Activation());
   auto active_gate = math::GetActivationType(param.GateActivation());
   math::GRUUnitFunctor<CPU, float>::compute(gru_value, frame_size, batch_size,

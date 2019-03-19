@@ -35,8 +35,9 @@ void FetchKernel<GPU_CL, float>::Compute(const FetchParam<GPU_CL> &param) {
   auto kernel = this->cl_helper_.KernelAt(0);
   auto default_work_size = this->cl_helper_.DefaultWorkSize(*param.InputX());
 
+  const int col = param.Col();
   auto input = param.InputX()->GetCLImage();
-  auto *out = param.Out();
+  auto *out = &param.Out()->at(col);
   out->Resize(param.InputX()->dims());
   out->mutable_data<float>();
   const auto &dim = param.InputX()->dims();

@@ -12,12 +12,9 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef PRIORBOX_OP
-
 #pragma once
 
 #include <string>
-
 #include "framework/operator.h"
 #include "operators/kernel/prior_box_kernel.h"
 #include "operators/op_param.h"
@@ -25,27 +22,13 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace operators {
 
-using paddle_mobile::framework::Tensor;
+#ifdef PRIORBOX_OP
+DECLARE_OPERATOR(PriorBox, PriorBoxParam, PriorBoxKernel);
+#endif
 
-template <typename DeviceType, typename T>
-class PriorBoxOp : public framework::OperatorWithKernel<
-                       DeviceType, PriorBoxParam<DeviceType>,
-                       operators::PriorBoxKernel<DeviceType, T>> {
- public:
-  PriorBoxOp(const std::string &type, const VariableNameMap &inputs,
-             const VariableNameMap &outputs,
-             const framework::AttributeMap &attrs,
-             std::shared_ptr<framework::Scope> scope)
-      : framework::OperatorWithKernel<DeviceType, PriorBoxParam<DeviceType>,
-                                      operators::PriorBoxKernel<DeviceType, T>>(
-            type, inputs, outputs, attrs, scope) {}
-
-  void InferShape() const override;
-
- protected:
-};
+#ifdef DENSITY_PRIORBOX_OP
+DECLARE_OPERATOR(DensityPriorBox, DensityPriorBoxParam, DensityPriorBoxKernel);
+#endif
 
 }  // namespace operators
 }  // namespace paddle_mobile
-
-#endif

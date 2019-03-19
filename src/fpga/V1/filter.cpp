@@ -268,6 +268,7 @@ void format_fc_filter(float **data_in, int num, int channel, int height,
   quantize(data_in, data_size, max);
   char **quantize_data = (char **)data_in;  // NOLINT
   convert_fc_filter(quantize_data, num, chw);
+  convert_to_hwc(quantize_data, num, channel, height, width);
   align_element(quantize_data, num, chw);
   if (num_after_alignment != num) {
     align_num(quantize_data, num_per_div_before_alignment, num, chw);

@@ -64,7 +64,7 @@ int TestPoolOp(int in_channels, int in_height, int in_width) {
   attrs["global_pooling"].Set<bool>(false);
 
   auto *op = new operators::PoolOp<CPU, float>("pool2d", inputs, outputs, attrs,
-                                               scope);
+                                               scope.get());
   op->InferShape();
   op->Init();
   op->Run();

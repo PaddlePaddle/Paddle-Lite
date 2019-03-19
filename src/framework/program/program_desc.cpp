@@ -15,8 +15,8 @@ limitations under the License. */
 #include <string>
 #include <vector>
 
+#include "framework/program/program_desc.h"
 #include "framework/program/tensor_desc.h"
-#include "program_desc.h"
 
 namespace paddle_mobile {
 namespace framework {
@@ -24,6 +24,25 @@ namespace framework {
 ProgramDesc::ProgramDesc(PaddleMobile__Framework__Proto__ProgramDesc *desc) {
   for (int i = 0; i < desc->n_blocks; ++i) {
     blocks_.emplace_back(std::make_shared<BlockDesc>(desc->blocks[i]));
+  }
+  for (auto &block : blocks_) {
+    for (auto op : block->Ops()) {
+      for (const auto &attr : op->GetProtoAttr()) {
+        if (attr.type == PADDLE_MOBILE__FRAMEWORK__PROTO__ATTR_TYPE__BLOCK) {
+          size_t blk_idx = attr.block_idx;
+          op->SetBlockAttr(attr.name, this->MutableBlock(blk_idx));
+        } else if (attr.type ==
+                   PADDLE_MOBILE__FRAMEWORK__PROTO__ATTR_TYPE__BLOCKS) {
+          size_t n_blocks_idx = attr.n_blocks_idx;
+          int32_t *blks_idx = attr.blocks_idx;
+          std::vector<BlockDesc *> block_descs;
+          for (size_t i = 0; i < n_blocks_idx; ++i) {
+            block_descs.push_back(this->MutableBlock(blks_idx[i]));
+          }
+          op->SetBlocksAttr(attr.name, block_descs);
+        }
+      }
+    }
   }
 }
 
@@ -60,9 +79,8 @@ void ProgramDesc::Description(std::string header) {
     }
 
     for (const auto &var_desc : block->Vars()) {
+      LOG(kLOG_DEBUG1) << "var name: " << var_desc->Name();
       if (var_desc->Type() == VARTYPE_TYPE_LOD_TENSOR) {
-        LOG(kLOG_DEBUG1) << "var name: " << var_desc->Name();
-
         const TensorDesc &tensor_desc = var_desc->Tensor_desc();
 
         LOG(kLOG_DEBUG2) << "in var tensor desc dims size: "

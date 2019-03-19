@@ -49,7 +49,7 @@ class TestBoxCoderOp {
           std::shared_ptr<operators::BoxCoderOp<Dtype, float>> boxcoder =
               std::make_shared<operators::BoxCoderOp<Dtype, float>>(
                   op->Type(), op->GetInputs(), op->GetOutputs(),
-                  op->GetAttrMap(), program_.scope);
+                  op->GetAttrMap(), program_.scope.get());
           ops_of_block_[*block_desc.get()].push_back(boxcoder);
         }
       }
@@ -59,7 +59,7 @@ class TestBoxCoderOp {
   std::shared_ptr<Tensor> predict_boxcoder(const Tensor &t1, const Tensor &t2,
                                            const Tensor &t3) {
     // feed
-    auto scope = program_.scope;
+    auto scope = program_.scope.get();
     Variable *prior_box = scope->Var("concat_0.tmp_0");
     auto tensor_x1 = prior_box->GetMutable<LoDTensor>();
     tensor_x1->ShareDataWith(t1);

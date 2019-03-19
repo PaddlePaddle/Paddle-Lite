@@ -56,7 +56,7 @@ class FusionDeconvBNReluOp
   FusionDeconvBNReluOp(const string &type, const VariableNameMap &inputs,
                        const VariableNameMap &outputs,
                        const framework::AttributeMap &attrs,
-                       std::shared_ptr<framework::Scope> scope)
+                       framework::Scope *scope)
       : framework::OperatorWithKernel<
             DeviceType, FusionDeconvBNReluParam<DeviceType>,
             operators::DeconvBNReluKernel<DeviceType, T>>(type, inputs, outputs,

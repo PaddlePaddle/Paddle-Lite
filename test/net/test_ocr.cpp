@@ -20,11 +20,11 @@ limitations under the License. */
 void load_images(const char *image_dir, const char *images_list,
                  std::vector<std::string> *image_names,
                  std::vector<std::pair<int, int>> *image_shapes) {
-  int height, width;
+  int channel, height, width;
   std::string filename;
   std::ifstream if_list(images_list, std::ios::in);
   while (!if_list.eof()) {
-    if_list >> height >> width >> filename;
+    if_list >> channel >> height >> width >> filename;
     image_shapes->push_back(std::make_pair(height, width));
     image_names->push_back(filename);
   }
@@ -32,20 +32,25 @@ void load_images(const char *image_dir, const char *images_list,
 }
 
 int main(int argc, char **argv) {
-  if (argc < 4) {
-    std::cerr << "Usage: ./test_ocr model_dir image_dir images_list."
-              << std::endl;
+  if (argc < 5) {
+    std::cerr
+        << "Usage: ./test_ocr model_dir image_dir images_list output_name."
+        << std::endl;
     return 1;
   }
   char *model_dir = argv[1];
   char *image_dir = argv[2];
   char *images_list = argv[3];
+  char *output_name = argv[4];
 
   paddle_mobile::PaddleMobile<paddle_mobile::CPU> paddle_mobile;
-  paddle_mobile.SetThreadNum(8);
+  paddle_mobile.SetThreadNum(1);
   auto isok = paddle_mobile.Load(std::string(model_dir) + "/model",
                                  std::string(model_dir) + "/params", true,
                                  false, 1, true);
+  //  auto isok = paddle_mobile.Load(std::string(model_dir), false,
+  //                                 false, 1, true);
+
   DLOG << "pass init model";
   std::vector<std::string> image_names;
   std::vector<std::pair<int, int>> image_shapes;
@@ -55,7 +60,7 @@ int main(int argc, char **argv) {
   for (int i = 0; i < image_names.size(); i++) {
     std::string file_name = image_names[i];
     std::vector<float> input_vec;
-    std::vector<int64_t> dims{1, 1, 48, 512};
+    std::vector<int64_t> dims{1, 3, 48, 512};
     dims[2] = image_shapes[i].first;
     dims[3] = image_shapes[i].second;
     // load input image
@@ -64,21 +69,22 @@ int main(int argc, char **argv) {
     std::cerr << "shape = [" << dims[0] << ", " << dims[1] << ", " << dims[2]
               << ", " << dims[3] << "]" << std::endl;
     GetInput<float>(img_path, &input_vec, dims);
-    framework::Tensor input(input_vec, framework::make_ddim(dims));
+    //    framework::Tensor input(input_vec, framework::make_ddim(dims));
     // predict
-    paddle_mobile.Predict(input);
-    auto output_topk = paddle_mobile.Fetch("top_k_1.tmp_0");
-    auto output_indices = paddle_mobile.Fetch("cast_68.tmp_0");
+    //    for (int j = 0; j < 10000; ++j) {
+    auto time3 = paddle_mobile::time();
+    paddle_mobile.Predict(input_vec, dims);
+    auto output_topk = paddle_mobile.Fetch(output_name);
+    auto time4 = paddle_mobile::time();
+    std::cerr << "average predict elapsed: "
+              << paddle_mobile::time_diff(time3, time4) << "ms" << std::endl;
+    //    }
+
     // print result
-    std::cerr << file_name << std::endl;
+    std::cerr << output_name << std::endl;
     std::cerr << output_topk->data<float>()[0];
     for (int j = 1; j < output_topk->numel(); ++j) {
       std::cerr << " " << output_topk->data<float>()[j];
-    }
-    std::cerr << std::endl;
-    std::cerr << output_indices->data<float>()[0];
-    for (int j = 1; j < output_indices->numel(); ++j) {
-      std::cerr << " " << output_indices->data<float>()[j];
     }
     std::cerr << std::endl;
   }

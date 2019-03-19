@@ -33,7 +33,7 @@ bool SoftmaxKernel<FPGA, float>::Init(SoftmaxParam<FPGA> *param) {
     input_ptr = input->data<half>();
   }
 
-  auto float_input = new Tensor;
+  auto float_input = new LoDTensor;
 
   PADDLE_MOBILE_ENFORCE(input->dims().size() == 4,
                         "Softmax should have 4-order input");

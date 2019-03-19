@@ -69,9 +69,7 @@ REGISTER_OPERATOR_CPU(concat, ops::ConcatOp);
 #ifdef PADDLE_MOBILE_CL
 REGISTER_OPERATOR_CL(concat, ops::ConcatOp);
 #endif
-#ifdef PADDLE_MOBILE_MALI_GPU
-REGISTER_OPERATOR_MALI_GPU(concat, ops::ConcatOp);
-#endif
+
 #ifdef PADDLE_MOBILE_FPGA
 REGISTER_OPERATOR_FPGA(concat, ops::ConcatOp);
 #endif

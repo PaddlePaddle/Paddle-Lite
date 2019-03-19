@@ -70,6 +70,37 @@ PaddleMobileConfig GetConfig1() {
 int main() {
   open_device();
 
+  PaddleMobileConfig config1 = GetConfig1();
+  auto predictor1 =
+      CreatePaddlePredictor<PaddleMobileConfig,
+                            PaddleEngineKind::kPaddleMobile>(config1);
+
+  std::cout << "Finishing loading model" << std::endl;
+
+  int img_length1 = 224 * 224 * 3;
+  auto img1 =
+      reinterpret_cast<float *>(fpga_malloc(img_length1 * sizeof(float)));
+
+  std::cout << "Finishing initializing data" << std::endl;
+
+  struct PaddleTensor t_img1;
+
+  t_img1.dtypeid = typeid(float);
+  t_img1.layout = LAYOUT_HWC;
+  t_img1.shape = std::vector<int>({1, 224, 224, 3});
+  t_img1.name = "Image information";
+  t_img1.data.Reset(img1, img_length1 * sizeof(float));
+  predictor1->FeedPaddleTensors({t_img1});
+  predictor1->Predict_From_To(0, -1);
+  std::cout << "Finishing predicting " << std::endl;
+
+  std::vector<PaddleTensor> v1;         // No need to initialize v
+  predictor1->FetchPaddleTensors(&v1);  // Old data in v will be cleared
+  std::cout << "Output number is " << v1.size() << std::endl;
+  std::cout << "out[0] length " << v1[0].data.length() << std::endl;
+
+  ////////////////////////////
+
   PaddleMobileConfig config = GetConfig();
   auto predictor =
       CreatePaddlePredictor<PaddleMobileConfig,
@@ -129,46 +160,6 @@ int main() {
     }
   }
   std::cout << "Finish getting vector values" << std::endl;
-
-  ////////////////////////////////////////////////////
-
-  PaddleTensor tensor;
-  predictor->GetPaddleTensor("fetch2", &tensor);
-  for (int i = 0; i < post_nms; i++) {
-    auto p = reinterpret_cast<float *>(tensor.data.data());
-    std::cout << p[+i] << std::endl;
-  }
-
-  //////////////////////////////////////////////////////
-
-  PaddleMobileConfig config1 = GetConfig1();
-  auto predictor1 =
-      CreatePaddlePredictor<PaddleMobileConfig,
-                            PaddleEngineKind::kPaddleMobile>(config1);
-
-  std::cout << "Finishing loading model" << std::endl;
-
-  int img_length1 = 224 * 224 * 3;
-  auto img1 =
-      reinterpret_cast<float *>(fpga_malloc(img_length1 * sizeof(float)));
-
-  std::cout << "Finishing initializing data" << std::endl;
-
-  struct PaddleTensor t_img1;
-
-  t_img1.dtypeid = typeid(float);
-  t_img1.layout = LAYOUT_HWC;
-  t_img1.shape = std::vector<int>({1, 224, 224, 3});
-  t_img1.name = "Image information";
-  t_img1.data.Reset(img1, img_length1 * sizeof(float));
-  predictor1->FeedPaddleTensors({t_img1});
-  predictor1->Predict_From_To(0, -1);
-  std::cout << "Finishing predicting " << std::endl;
-
-  std::vector<PaddleTensor> v1;         // No need to initialize v
-  predictor1->FetchPaddleTensors(&v1);  // Old data in v will be cleared
-  std::cout << "Output number is " << v1.size() << std::endl;
-  std::cout << "out[0] length " << v1[0].data.length() << std::endl;
 
   return 0;
 }
