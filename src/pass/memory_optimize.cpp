@@ -91,8 +91,6 @@ void MemoryOptPass::operator()(const framework::ProgramDesc *program,
       }
     }
 
-    DLOG << "analysis_nodes_ size: " << analysis_nodes_.size();
-
     // apply optimize
     while (!analysis_nodes_.empty()) {
       auto *node = analysis_nodes_.top();
