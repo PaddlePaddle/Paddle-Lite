@@ -49,7 +49,7 @@ class MemoryOptPass : public PassBase {
   void operator()(const framework::ProgramDesc *program,
                   framework::Scope *scope);
 
-  void InitBlockVars(const framework::BlockDesc *block);
+  void AppendBlockVars(const framework::BlockDesc *block);
 
   bool IsPersistable(const std::string name);
 
