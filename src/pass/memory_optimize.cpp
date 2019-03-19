@@ -54,7 +54,6 @@ void MemoryOptPass::operator()(const framework::ProgramDesc *program,
     // access all variables in block, and stored in map
     InitBlockVars(block.get());
 
-    visited_nodes_.clear();
     reused_nodes_.clear();
     // collect all not persistable variables, and accumulate
     // it's reference count
@@ -63,8 +62,7 @@ void MemoryOptPass::operator()(const framework::ProgramDesc *program,
 
     for (const auto &op : block->Ops()) {
       DLOG << "op_desc->Type(): " << op->Type();
-      const auto &outputs_map = op->GetOutputs();
-      for (const auto &outputs : outputs_map) {
+      for (const auto &outputs : op->GetOutputs()) {
         for (const auto &output : outputs.second) {
           if (!IsPersistable(output)) {
             DLOG << "output: " << output;
@@ -73,12 +71,20 @@ void MemoryOptPass::operator()(const framework::ProgramDesc *program,
           }
         }
       }
-      const auto &inputs_map = op->GetInputs();
-      for (const auto &inputs : inputs_map) {
+      for (const auto &inputs : op->GetInputs()) {
         for (const auto &input : inputs.second) {
           if (!IsPersistable(input)) {
             DLOG << "input: " << input;
             VarNode *node = CreateNode(input);
+            analysis_nodes_.push(node);
+          }
+        }
+      }
+      for (const auto &outputs : op->GetOutputs()) {
+        for (const auto &output : outputs.second) {
+          if (!IsPersistable(output)) {
+            DLOG << "output: " << output;
+            VarNode *node = CreateNode(output);
             analysis_nodes_.push(node);
           }
         }
@@ -115,7 +121,7 @@ void MemoryOptPass::operator()(const framework::ProgramDesc *program,
   // shared data within all variables in the same reused list
   for (const auto &list : reused_nodes_) {
     DLOG << "\n";
-    DLOG << "share data within these variables";
+    DLOG << "share memory within these variables";
     std::string name = list[0]->name;
     auto *reused_var = scope->Var(name);
     auto *reuse_tensor =

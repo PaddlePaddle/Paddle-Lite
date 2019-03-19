@@ -12,12 +12,12 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#include "framework/executor.h"
 #include <algorithm>
 #include <utility>
 #include <vector>
 #include "common/enforce.h"
 #include "common/log.h"
+#include "memory/t_malloc.h"
 #include "framework/context.h"
 #include "framework/framework.pb-c.h"
 #include "framework/lod_tensor.h"
@@ -27,9 +27,8 @@ limitations under the License. */
 #include "framework/program/var_desc.h"
 #include "framework/scope.h"
 #include "framework/tensor.h"
-#include "memory/t_malloc.h"
+#include "framework/executor.h"
 #include "pass/memory_optimize.h"
-
 #ifdef PADDLE_MOBILE_CL
 #include "framework/cl/cl_image.h"
 #endif
@@ -217,6 +216,7 @@ void Executor<Device, T>::InitMemory() {
           var->template GetMutable<framework::LoDTensorArray>();
           continue;
         }
+        DLOG << "init persistable var: " << var_desc->Name();
         char *origin_data =
             ReadFileToBuff(program_.model_path + "/" + var_desc->Name());
         char *data = origin_data;
@@ -329,7 +329,6 @@ bool Executor<Device, T>::varInputMemory(
   if (type == VARTYPE_TYPE_LOD_TENSOR) {
     auto data_type = var_desc->Tensor_desc().DataType();
     framework::LoDTensor *tensor = var->template GetMutable<LoDTensor>();
-    tensor->mutable_data(TypeId(data_type));
   } else if (type == VARTYPE_TYPE_STEP_SCOPES) {
     std::vector<framework::Scope *> *step_scopes =
         var->template GetMutable<std::vector<framework::Scope *>>();
@@ -465,6 +464,7 @@ PMStatus Executor<Device, T>::Predict() {
     clock_gettime(CLOCK_MONOTONIC, &ts);
     profile[op_index].runBegin = (uint64_t)ts.tv_sec * 1e9 + ts.tv_nsec;
 #endif
+    DLOG << "run op: " << op_handler->Type();
     if (lod_mode_) {
       op_handler->InferShape();
     }
