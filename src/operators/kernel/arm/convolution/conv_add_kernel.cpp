@@ -32,10 +32,8 @@ template <>
 void ConvAddKernel<CPU, float>::Compute(const FusionConvAddParam<CPU> &param) {
   switch (param.ExecMode()) {
     case ConvParam<CPU>::EXEC_DEPTHWISE3x3S1_FLOAT:
-      break;
     case ConvParam<CPU>::EXEC_DEPTHWISE3x3S2_FLOAT:
-      math::DepthwiseConv3x3S2<float, float>(*param.Input(), *param.Filter(),
-                                             param.Paddings(), param.Output());
+      DepthwiseConv3x3<float, float>(param);
       break;
     case ConvParam<CPU>::EXEC_DEPTHWISE5x5_FLOAT:
       DepthwiseConv5x5<float, float>(param);
@@ -45,6 +43,10 @@ void ConvAddKernel<CPU, float>::Compute(const FusionConvAddParam<CPU> &param) {
       break;
     case ConvParam<CPU>::EXEC_GEMM_FLOAT:
       GemmConv<float, float>(param);
+      break;
+    case ConvParam<CPU>::EXEC_SLIDINGWINDOW3x3S1_FLOAT:
+    case ConvParam<CPU>::EXEC_SLIDINGWINDOW3x3S2_FLOAT:
+      SlidingwindowConv3x3<float, float>(param);
       break;
     default:
       PADDLE_MOBILE_THROW_EXCEPTION("Invalid convolution execute mode %d",
