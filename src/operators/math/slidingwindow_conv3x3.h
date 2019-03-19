@@ -12,39 +12,27 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef CONV_OP
-
 #pragma once
 
+#include <algorithm>
 #include <vector>
-#include "operators/op_param.h"
+#include "framework/tensor.h"
 
 namespace paddle_mobile {
 namespace operators {
-
-int ConvOutputSize(int input_size, int filter_size, int dilation, int padding,
-                   int stride);
-
-bool IsExpand(const std::vector<int64_t> &filter_dim,
-              const std::vector<int> &strides, const std::vector<int> &paddings,
-              const std::vector<int> &dilations);
+namespace math {
+template <typename Itype, typename Otype>
+void SlidingwindowConv3x3s1(const framework::Tensor *input,
+                            const framework::Tensor *filter,
+                            const std::vector<int> &paddings,
+                            framework::Tensor *output);
 
 template <typename Itype, typename Otype>
-void GemmConv(const ConvParam<CPU> &param);
+void SlidingwindowConv3x3s2(const framework::Tensor *input,
+                            const framework::Tensor *filter,
+                            const std::vector<int> &paddings,
+                            framework::Tensor *output);
 
-template <int tile, int kernel>
-void WinogradConv3x3(const ConvParam<CPU> &param);
-
-template <typename Itype, typename Otype>
-void DepthwiseConv3x3(const ConvParam<CPU> &param);
-
-template <typename Itype, typename Otype>
-void DepthwiseConv5x5(const ConvParam<CPU> &param);
-
-template <typename Itype, typename Otype>
-void SlidingwindowConv3x3(const ConvParam<CPU> &param);
-
+}  // namespace math
 }  // namespace operators
 }  // namespace paddle_mobile
-
-#endif
