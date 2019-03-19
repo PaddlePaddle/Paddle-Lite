@@ -476,6 +476,8 @@ class ConvParam : public OpParam {
     EXEC_GEMM_INT8,
     EXEC_DEPTHWISE3x3_INT8,
     EXEC_DEPTHWISE5x5_INT8,
+    EXEC_SLIDINGWINDOW3x3S1_FLOAT,
+    EXEC_SLIDINGWINDOW3x3S2_FLOAT,
   };
 
   ExecMode &ExecMode() const { return exec_mode_; }
