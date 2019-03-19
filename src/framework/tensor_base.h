@@ -117,6 +117,8 @@ class TensorBase {
     virtual std::type_index type() const = 0;
 
     virtual void set_type(std::type_index type) = 0;
+
+    virtual void resize(size_t size) = 0;
   };
 
   /**
