@@ -28,8 +28,6 @@ limitations under the License. */
 #include "framework/tensor_base.h"
 #include "memory/t_malloc.h"
 
-#include <iostream>
-
 namespace paddle_mobile {
 namespace framework {
 
@@ -84,10 +82,8 @@ class Tensor : public TensorBase {
     int64_t size = numel() * SizeOfType(type);
     if (holder_ == nullptr || holder_->size() < size + offset_) {
       if (holder_ == nullptr) {
-        std::cout << "reset holder... size " << size << std::endl;
         holder_.reset(new PlaceholderImpl(size, type));
       } else {
-        std::cout << "resize holder... size " << size << std::endl;
         holder_->resize(size);
       }
       offset_ = 0;
