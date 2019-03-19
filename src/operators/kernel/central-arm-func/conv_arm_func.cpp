@@ -19,6 +19,7 @@ limitations under the License. */
 #include "operators/math/im2col.h"
 #include "operators/math/math_function.h"
 #include "operators/math/pad.h"
+#include "operators/math/slidingwindow_conv3x3.h"
 #include "operators/math/vol2col.h"
 #include "operators/math/winograd/winograd_transform.h"
 #include "operators/op_param.h"
@@ -232,10 +233,29 @@ void DepthwiseConv5x5(const ConvParam<CPU> &param) {
   }
 }
 
+template <typename Itype, typename Otype>
+void SlidingwindowConv3x3(const ConvParam<CPU> &param) {
+  const Tensor *input = param.Input();
+  const Tensor *filter = param.Filter();
+  const std::vector<int> &paddings = param.Paddings();
+  const std::vector<int> &strides = param.Strides();
+  Tensor *output = param.Output();
+  output->mutable_data<Otype>();
+
+  if (strides[0] == 1) {
+    math::SlidingwindowConv3x3s1<Itype, Otype>(input, filter, paddings, output);
+  } else if (strides[0] == 2) {
+    math::SlidingwindowConv3x3s2<Itype, Otype>(input, filter, paddings, output);
+  } else {
+    GemmConv<Itype, Otype>(param);
+  }
+}
+
 template void GemmConv<float, float>(const ConvParam<CPU> &param);
 template void WinogradConv3x3<8, 3>(const ConvParam<CPU> &param);
 template void DepthwiseConv3x3<float, float>(const ConvParam<CPU> &param);
 template void DepthwiseConv5x5<float, float>(const ConvParam<CPU> &param);
+template void SlidingwindowConv3x3<float, float>(const ConvParam<CPU> &param);
 
 #ifndef __aarch64__
 template void GemmConv<int8_t, int32_t>(const ConvParam<CPU> &param);
