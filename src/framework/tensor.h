@@ -28,6 +28,8 @@ limitations under the License. */
 #include "framework/tensor_base.h"
 #include "memory/t_malloc.h"
 
+#include <iostream>
+
 namespace paddle_mobile {
 namespace framework {
 
@@ -69,7 +71,6 @@ class Tensor : public TensorBase {
   inline Tensor &ShareDataWith(const Tensor &src) {
     src.check_memory_size();
     if (holder_.get() != src.holder_.get()) {
-      // *this = src;
       holder_ = src.holder_;
     }
     return *this;
@@ -82,7 +83,13 @@ class Tensor : public TensorBase {
     PADDLE_MOBILE_ENFORCE(numel() >= 0, "the Tensor's numel must >=0.")
     int64_t size = numel() * SizeOfType(type);
     if (holder_ == nullptr || holder_->size() < size + offset_) {
-      holder_.reset(new PlaceholderImpl(size, type));
+      if (holder_ == nullptr) {
+        std::cout << "reset holder... size " << size << std::endl;
+        holder_.reset(new PlaceholderImpl(size, type));
+      } else {
+        std::cout << "resize holder... size " << size << std::endl;
+        holder_->resize(size);
+      }
       offset_ = 0;
     }
     return reinterpret_cast<void *>(
@@ -181,6 +188,7 @@ class Tensor : public TensorBase {
         : ptr_(static_cast<uint8_t *>(memory::Alloc(size)),
                memory::PODDeleter<uint8_t>()),
           size_(size),
+          capatity_(size),
           type_(type) {
       PADDLE_MOBILE_ENFORCE(ptr_ != nullptr,
                             "Insufficient memory to allocation");
@@ -194,10 +202,20 @@ class Tensor : public TensorBase {
 
     virtual void set_type(std::type_index type) { type_ = type; }
 
+    virtual void resize(size_t size) {
+      if (size > capatity_) {
+        capatity_ = size;
+        ptr_.reset(static_cast<uint8_t *>(memory::Alloc(capatity_)));
+      }
+      size_ = size;
+    }
+
     std::unique_ptr<uint8_t, memory::PODDeleter<uint8_t>> ptr_;
 
     /*! the size of memory block. */
     size_t size_;
+
+    size_t capatity_;
 
     /* the current type of memory */
     std::type_index type_;

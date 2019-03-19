@@ -59,7 +59,6 @@ class MemoryOptPass : public PassBase {
   std::stack<VarNode *> analysis_nodes_;
   std::vector<std::vector<VarNode *>> reused_nodes_;
   std::unordered_map<std::string, VarNode *> created_nodes_;
-  std::unordered_map<std::string, VarNode *> visited_nodes_;
   std::unordered_map<std::string, framework::VarDesc *> block_vars_;
 };
 
