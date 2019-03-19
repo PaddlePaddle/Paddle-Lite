@@ -29,12 +29,6 @@ void SlidingwindowConv3x3s1(const framework::Tensor *input,
 
 template <typename Itype, typename Otype>
 void SlidingwindowConv3x3s2(const framework::Tensor *input,
-                            const framework::Tensor *filter,
-                            const std::vector<int> &paddings,
-                            framework::Tensor *output);
-
-template <typename Itype, typename Otype>
-void SlidingwindowConv3x3s2_8channel(const framework::Tensor *input,
                                      const framework::Tensor *filter,
                                      const std::vector<int> &paddings,
                                      framework::Tensor *output);
