@@ -18,8 +18,8 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace pass {
 
-void MemoryOptPass::InitBlockVars(const framework::BlockDesc *block) {
-  block_vars_.clear();
+void MemoryOptPass::AppendBlockVars(const framework::BlockDesc *block) {
+  // block_vars_.clear();
   for (const auto var : block->Vars()) {
     block_vars_[var->Name()] = var.get();
   }
@@ -51,8 +51,8 @@ void MemoryOptPass::operator()(const framework::ProgramDesc *program,
                                framework::Scope *scope) {
   const auto &blocks = program->Blocks();
   for (const auto &block : blocks) {
-    // access all variables in block, and stored in map
-    InitBlockVars(block.get());
+    // access all variables in each block
+    AppendBlockVars(block.get());
 
     reused_nodes_.clear();
     // collect all not persistable variables, and accumulate
@@ -91,6 +91,8 @@ void MemoryOptPass::operator()(const framework::ProgramDesc *program,
       }
     }
 
+    DLOG << "analysis_nodes_ size: " << analysis_nodes_.size();
+
     // apply optimize
     while (!analysis_nodes_.empty()) {
       auto *node = analysis_nodes_.top();
@@ -117,21 +119,22 @@ void MemoryOptPass::operator()(const framework::ProgramDesc *program,
       node->visited = true;
       node->count -= 1;
     }
-  }
-  // shared data within all variables in the same reused list
-  for (const auto &list : reused_nodes_) {
-    DLOG << "\n";
-    DLOG << "share memory within these variables";
-    std::string name = list[0]->name;
-    auto *reused_var = scope->Var(name);
-    auto *reuse_tensor =
-        reused_var->template GetMutable<framework::LoDTensor>();
-    reuse_tensor->mutable_data<float>();
-    for (const auto &node : list) {
-      DLOG << node->name;
-      auto *var = scope->Var(node->name);
-      auto *tensor = var->template GetMutable<framework::LoDTensor>();
-      tensor->ShareDataWith(*reuse_tensor);
+
+    // shared data within all variables in the same reused list
+    for (const auto &list : reused_nodes_) {
+      DLOG << "\n";
+      DLOG << "share memory within these variables";
+      std::string name = list[0]->name;
+      auto *reused_var = scope->Var(name);
+      auto *reuse_tensor =
+          reused_var->template GetMutable<framework::LoDTensor>();
+      reuse_tensor->mutable_data<float>();
+      for (const auto &node : list) {
+        DLOG << node->name;
+        auto *var = scope->Var(node->name);
+        auto *tensor = var->template GetMutable<framework::LoDTensor>();
+        tensor->ShareDataWith(*reuse_tensor);
+      }
     }
   }
 }
