@@ -300,7 +300,7 @@ static inline T JaccardOverlap(const T *box1, const T *box2, bool normalized) {
 
 template <class T>
 static inline Tensor NMS(Tensor *bbox, Tensor *scores, T nms_threshold,
-                         float eta) {
+                         float eta, int post_nms_num = 100) {
   int64_t num_boxes = bbox->dims()[0];
   // 4: [xmin ymin xmax ymax]
   int64_t box_size = bbox->dims()[1];
@@ -314,7 +314,7 @@ static inline Tensor NMS(Tensor *bbox, Tensor *scores, T nms_threshold,
   int selected_num = 0;
   T adaptive_threshold = nms_threshold;
   const T *bbox_data = bbox->data<T>();
-  while (sorted_indices.size() != 0) {
+  while ((sorted_indices.size() != 0) && (selected_num < post_nms_num)) {
     int idx = sorted_indices.back().second;
     bool flag = true;
     for (int kept_idx : selected_indices) {
@@ -397,17 +397,19 @@ std::pair<Tensor, Tensor> ProposalForOneImage(
     return std::make_pair(bbox_sel, scores_filter);
   }
 
-  Tensor keep_nms = NMS<T>(&bbox_sel, &scores_filter, nms_thresh, eta);
+  // Tensor keep_nms = NMS<T>(&bbox_sel, &scores_filter, nms_thresh, eta);
+  Tensor keep_nms =
+      NMS<T>(&bbox_sel, &scores_filter, nms_thresh, eta, post_nms_top_n);
 
   if (post_nms_top_n > 0 && post_nms_top_n < keep_nms.numel()) {
     keep_nms.Resize({post_nms_top_n});
   }
 
-  // proposals.mutable_data<T>({keep_nms.numel(), 4});//original
-  // scores_sel.mutable_data<T>({keep_nms.numel(), 1});//original
+  proposals.mutable_data<T>({keep_nms.numel(), 4});   // original
+  scores_sel.mutable_data<T>({keep_nms.numel(), 1});  // original
 
-  proposals.mutable_data<T>({post_nms_top_n, 4});   // wong
-  scores_sel.mutable_data<T>({post_nms_top_n, 1});  // wong
+  // proposals.mutable_data<T>({post_nms_top_n, 4});   // wong
+  // scores_sel.mutable_data<T>({post_nms_top_n, 1});  // wong
   CPUGather<T>(bbox_sel, keep_nms, &proposals);
   CPUGather<T>(scores_filter, keep_nms, &scores_sel);
   return std::make_pair(proposals, scores_sel);
