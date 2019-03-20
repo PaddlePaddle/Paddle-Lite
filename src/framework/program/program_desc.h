@@ -30,6 +30,14 @@ class ProgramDesc {
   friend class ProgramOptimize;
   explicit ProgramDesc(PaddleMobile__Framework__Proto__ProgramDesc *desc);
 
+  ProgramDesc(const ProgramDesc &program_desc) {
+    for (auto &block : program_desc.blocks_) {
+      std::shared_ptr<BlockDesc> copy_block =
+          std::make_shared<BlockDesc>(*block);
+      blocks_.push_back(copy_block);
+    }
+  }
+
   std::shared_ptr<BlockDesc> Block(size_t idx);
 
   BlockDesc *MutableBlock(size_t idx) {
@@ -40,16 +48,11 @@ class ProgramDesc {
     }
   }
 
-  const std::vector<std::shared_ptr<BlockDesc>> &Blocks() { return blocks_; }
-  ProgramDesc(const ProgramDesc &program_desc) {
-    for (auto &block : program_desc.blocks_) {
-      std::shared_ptr<BlockDesc> copy_block =
-          std::make_shared<BlockDesc>(*block);
-      blocks_.push_back(copy_block);
-    }
+  const std::vector<std::shared_ptr<BlockDesc>> &Blocks() const {
+    return blocks_;
   }
 
-  void Description(std::string header = "");
+  void Description(std::string header = "") const;
 
  private:
   std::vector<std::shared_ptr<BlockDesc>> blocks_;
