@@ -33,11 +33,9 @@ bool SigmoidKernel<FPGA, float>::Init(SigmoidParam<FPGA> *param) {
   args.input_data_type = fpga::DATA_TYPE_FP16;
   args.output_data_type = fpga::DATA_TYPE_FP16;
   args.image.address = input_ptr;
-  args.image.height =
-      (input->dims().size() == 4) ? (uint32_t)input->dims()[2] : 1;
-  args.image.width =
-      (input->dims().size() == 4) ? (uint32_t)input->dims()[3] : 1;
-  args.image.channels = (uint32_t)input->dims()[1];
+  args.image.height = 1;
+  args.image.width = 1;
+  args.image.channels = input->fpga_data_num;
   args.output.address = out->data<half>();
   args.output.scale_address = out->scale;
   args.output.activation.activation_type = activation_enable;
