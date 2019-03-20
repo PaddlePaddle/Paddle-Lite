@@ -721,7 +721,7 @@ void DepthwiseConv5x5S1<float, float>(const framework::Tensor &input,
       }
     }
     // remain height
-    int start_h = valid_h_start + (valid_h & 0xfffe);
+    int start_h = valid_h_start + (valid_h & 0xfffffffe);
     if (start_h < valid_h_end) {
       const float *input_ptr0 = input_ptr + (start_h - padding_h) * input_w;
       const float *input_ptr1 = input_ptr0 + input_w;

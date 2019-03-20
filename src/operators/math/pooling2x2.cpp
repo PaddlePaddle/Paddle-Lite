@@ -424,7 +424,7 @@ struct Pooling2x2<P, 1> {
           }
         }
         // remain height
-        int start_h = valid_h_start + (valid_h & 0xFFFC);
+        int start_h = valid_h_start + (valid_h & 0xFFFFFFFC);
         for (int h = start_h; h < valid_h_end; ++h) {
           const float *input_ptr0 = input_ptr + (h - padding_h) * input_w;
           const float *input_ptr1 = input_ptr0 + input_w;
@@ -692,7 +692,7 @@ struct Pooling2x2<P, 2> {
           }
         }
         // remain height
-        int start_h = valid_h_start + (valid_h & 0xfffe);
+        int start_h = valid_h_start + (valid_h & 0xfffffffe);
         for (int h = start_h; h < valid_h_end; ++h) {
           const float *input_ptr0 = input_ptr + (2 * h - padding_h) * input_w;
           const float *input_ptr1 = input_ptr0 + input_w;

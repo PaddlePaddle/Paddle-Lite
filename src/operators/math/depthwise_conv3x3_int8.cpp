@@ -580,7 +580,7 @@ void DepthwiseConv3x3S1<int8_t, int32_t>(const framework::Tensor &input,
       }
     }
     // remain height
-    int start_h = valid_h_start + (valid_h & 0xFFFC);
+    int start_h = valid_h_start + (valid_h & 0xFFFFFFFC);
     for (int h = start_h; h < valid_h_end - 1; h += 2) {
       const int8_t *input_ptr0 = input_ptr + (h - padding_h) * input_w;
       const int8_t *input_ptr1 = input_ptr0 + input_w;
@@ -844,7 +844,7 @@ void DepthwiseConv3x3S1<int8_t, int32_t>(const framework::Tensor &input,
       }
     }
 
-    start_h = valid_h_start + (valid_h & 0xFFFE);
+    start_h = valid_h_start + (valid_h & 0xFFFFFFFE);
     if (start_h < valid_h_end) {
       const int8_t *input_ptr0 = input_ptr + (start_h - padding_h) * input_w;
       const int8_t *input_ptr1 = input_ptr0 + input_w;

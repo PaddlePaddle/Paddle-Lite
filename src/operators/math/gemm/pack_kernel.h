@@ -325,7 +325,7 @@ void pack_rhs_16c(int k, int n, const float *B, int ldb, float *output,
           : "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7");
     }
     for (; j < n - 7; j += 8) {
-      float *out_ptr0 = output + (j & 0xFFF0) * k + 16 * i + (j & 0xF);
+      float *out_ptr0 = output + (j & 0xFFFFFFF0) * k + 16 * i + (j & 0xF);
       int step = 64;
       asm volatile(
           "ld1    {v0.4s, v1.4s},  [%[b0]], #32  \n"
@@ -343,7 +343,7 @@ void pack_rhs_16c(int k, int n, const float *B, int ldb, float *output,
           : "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7");
     }
     if (j < n) {
-      float *out_ptr0 = output + (j & 0xFFF0) * k + 16 * i + (j & 0xF);
+      float *out_ptr0 = output + (j & 0xFFFFFFF0) * k + 16 * i + (j & 0xF);
       int step = 64;
       asm volatile(
           "ld1    {v0.4s, v1.4s},  [%[b0]]         \n"
@@ -372,7 +372,7 @@ void pack_rhs_16c(int k, int n, const float *B, int ldb, float *output,
     }
 
     if (j & 0xf) {
-      float *out_ptr0 = output + (j & 0xFFF0) * k + 16 * i + (j & 0xF);
+      float *out_ptr0 = output + (j & 0xFFFFFFF0) * k + 16 * i + (j & 0xF);
       vst1q_f32(out_ptr0, vzero);
       vst1q_f32(out_ptr0 + 4, vzero);
       out_ptr0 += 16;
@@ -387,7 +387,7 @@ void pack_rhs_16c(int k, int n, const float *B, int ldb, float *output,
     }
   }
   // remain k
-  for (int i = (k & 0xFFFC); i < k; ++i) {
+  for (int i = (k & 0xFFFFFFFC); i < k; ++i) {
     const float *b0 = B + i * ldb;
     int j = 0;
     asm volatile("prfm   pldl1keep,       [%[b0]]            \n"
@@ -404,7 +404,7 @@ void pack_rhs_16c(int k, int n, const float *B, int ldb, float *output,
           : "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7");
     }
     for (; j < n - 7; j += 8) {
-      float *out_ptr0 = output + (j & 0xFFF0) * k + 16 * i + (j & 0xF);
+      float *out_ptr0 = output + (j & 0xFFFFFFF0) * k + 16 * i + (j & 0xF);
       int step = 64;
       asm volatile(
           "ld1    {v0.4s, v1.4s},  [%[b0]], #32  \n"
@@ -414,7 +414,7 @@ void pack_rhs_16c(int k, int n, const float *B, int ldb, float *output,
           : "memory", "v0", "v1");
     }
     if (j < n) {
-      float *out_ptr0 = output + (j & 0xFFF0) * k + 16 * i + (j & 0xF);
+      float *out_ptr0 = output + (j & 0xFFFFFFF0) * k + 16 * i + (j & 0xF);
       asm volatile(
           "ld1    {v0.4s, v1.4s},  [%[b0]]          \n"
           "and    v0.16b, v0.16b,  %[vmask1].16b    \n"
@@ -426,7 +426,7 @@ void pack_rhs_16c(int k, int n, const float *B, int ldb, float *output,
       j += 8;
     }
     if (j & 0xf) {
-      float *out_ptr0 = output + (j & 0xFFF0) * k + 16 * i + (j & 0xF);
+      float *out_ptr0 = output + (j & 0xFFFFFFF0) * k + 16 * i + (j & 0xF);
       vst1q_f32(out_ptr0, vzero);
       vst1q_f32(out_ptr0 + 4, vzero);
     }
@@ -517,7 +517,7 @@ void pack_rhs_8c(int k, int n, const float *B, int ldb, float *output,
     }
   }
   // remain k
-  for (int i = (k & 0xFFFC); i < k; ++i) {
+  for (int i = (k & 0xFFFFFFFC); i < k; ++i) {
     const float *b0 = B + i * ldb;
     int j = 0;
     for (; j < n - 15; j += 16) {

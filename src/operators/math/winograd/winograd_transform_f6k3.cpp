@@ -55,7 +55,7 @@ void winograd_transform_weight<8, 3>(const framework::Tensor &weight,
 #if __aarch64__
   int remain_start = 0;
 #else
-  int remain_start = out_channel & 0xFFFC;
+  int remain_start = out_channel & 0xFFFFFFFC;
 
   #pragma omp parallel for
   for (int oc = 0; oc < out_channel - 3; oc += 4) {
@@ -268,7 +268,7 @@ void winograd_transform_weight<8, 3>(const framework::Tensor &weight,
     float gw[3][8];                                     // gw[3][8]
     const float *inptr0 = inptr + oc * in_channel * 9;  //
     // (oc / 4) * 64 * in_channel * 4 + oc % 4
-    int offset = ((oc & 0xFFFC) << 6) * in_channel + (oc & 0x3);
+    int offset = ((oc & 0xFFFFFFFC) << 6) * in_channel + (oc & 0x3);
     int steps = (in_channel << 2);  // in_channel * 4
     float *outptr = trans_outptr + offset;
     for (int ic = 0; ic < in_channel; ++ic) {
