@@ -28,7 +28,7 @@ limitations under the License. */
 #include "framework/scope.h"
 #include "framework/tensor.h"
 #include "memory/t_malloc.h"
-
+#include "pass/memory_optimize.h"
 #ifdef PADDLE_MOBILE_CL
 #include "framework/cl/cl_image.h"
 #endif
@@ -62,6 +62,7 @@ Executor<Device, T>::Executor(const Program<Device> &program,
       use_optimize_ ? program_.optimizeProgram : program_.originProgram;
   PADDLE_MOBILE_ENFORCE(program_desc_ != nullptr,
                         "program_desc_ should not be nullptr");
+  pass::MemoryOptPass()(program_desc_.get(), program_.scope.get());
   // resize feed and fetch list
   // should init feed and fetch variables before infer shape
   InitFeedFetchList();
@@ -210,6 +211,7 @@ void Executor<Device, T>::InitMemory() {
           var->template GetMutable<framework::LoDTensorArray>();
           continue;
         }
+        DLOG << "init persistable var: " << var_desc->Name();
         char *origin_data =
             ReadFileToBuff(program_.model_path + "/" + var_desc->Name());
         char *data = origin_data;
@@ -322,7 +324,6 @@ bool Executor<Device, T>::varInputMemory(
   if (type == VARTYPE_TYPE_LOD_TENSOR) {
     auto data_type = var_desc->Tensor_desc().DataType();
     framework::LoDTensor *tensor = var->template GetMutable<LoDTensor>();
-    tensor->mutable_data(TypeId(data_type));
   } else if (type == VARTYPE_TYPE_STEP_SCOPES) {
     std::vector<framework::Scope *> *step_scopes =
         var->template GetMutable<std::vector<framework::Scope *>>();
@@ -458,6 +459,7 @@ PMStatus Executor<Device, T>::Predict() {
     clock_gettime(CLOCK_MONOTONIC, &ts);
     profile[op_index].runBegin = (uint64_t)ts.tv_sec * 1e9 + ts.tv_nsec;
 #endif
+    DLOG << "run op: " << op_handler->Type();
     if (lod_mode_) {
       op_handler->InferShape();
     }

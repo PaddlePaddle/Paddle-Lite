@@ -18,7 +18,7 @@ limitations under the License. */
 #include <cmath>
 #include "operators/kernel/arm/convolution/conv_common.h"
 #include "operators/kernel/central-arm-func/conv_arm_func.h"
-#include "operators/math/channel_wise.h"
+#include "operators/math/element_wise.h"
 
 namespace paddle_mobile {
 namespace operators {
@@ -34,26 +34,14 @@ bool ConvBNAddReluKernel<CPU, float>::Init(
 
   auto mean_ptr = mean->data<float>();
   auto variance_ptr = variance->data<float>();
-  auto scale_ptr = scale->data<float>();
-  auto bias_ptr = bias->data<float>();
+  auto scale_ptr = const_cast<float *>(scale->data<float>());
+  auto bias_ptr = const_cast<float *>(bias->data<float>());
 
-  const int C = mean->numel();
-  float inv_std_ptr[C];
-  for (int i = 0; i < C; i++) {
-    inv_std_ptr[i] =
-        1 / static_cast<float>(pow((variance_ptr[i] + epsilon), 0.5));
+  for (int c = 0; c < scale->numel(); ++c) {
+    float inv_scale = 1.f / (pow(variance_ptr[c] + epsilon, 0.5));
+    bias_ptr[c] -= inv_scale * scale_ptr[c] * mean_ptr[c];
+    scale_ptr[c] *= inv_scale;
   }
-
-  auto *new_scale = param->CreateNewScale<framework::LoDTensor>();
-  auto *new_bias = param->CreateNewBiase<framework::LoDTensor>();
-  auto new_scale_ptr = new_scale->mutable_data<float>({C});
-  auto new_bias_ptr = new_bias->mutable_data<float>({C});
-  for (int i = 0; i < C; i++) {
-    new_scale_ptr[i] = inv_std_ptr[i] * scale_ptr[i];
-    new_bias_ptr[i] = bias_ptr[i] - mean_ptr[i] * inv_std_ptr[i] * scale_ptr[i];
-  }
-  param->SetNewScale(new_scale);
-  param->SetNewBias(new_bias);
 
   InitBaseConvKernel(param);
   return true;
@@ -84,9 +72,19 @@ void ConvBNAddReluKernel<CPU, float>::Compute(
       PADDLE_MOBILE_THROW_EXCEPTION("Invalid convolution execute mode %d",
                                     param.ExecMode());
   }
-  math::ScaleAddChannelWise<RELU>(param.Output(), param.NewScale(),
-                                  param.NewBias(), param.Output());
+
+  if (param.Bias()->dims() == param.Output()->dims()) {
+    math::ScaleAddChannelWise<RELU>(param.Output(), param.InputScale(),
+                                    param.InputBias(), param.Bias(),
+                                    param.Output());
+  } else {
+    math::ScaleAddChannelWise<IDENTITY>(param.Output(), param.InputScale(),
+                                        param.InputBias(), param.Output());
+    math::AddElememtWise<RELU>(param.Output(), param.Bias(), param.Axis(),
+                               param.Output());
+  }
 }
+
 template class ConvBNAddReluKernel<CPU, float>;
 
 }  // namespace operators
