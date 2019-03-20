@@ -79,7 +79,7 @@ struct CompareCompute<float, Comp> {
     if (elementwise_num == 1) {
       int remain_start = 0;
 #if defined(__ARM_NEON__) || defined(__ARM_NEON)
-      remain_start = channels & 0xfff8;
+      remain_start = channels & 0xfffffff8;
       uint8x8_t __mask = vdup_n_u8(0x1);
       for (int i = 0; i < batch; ++i) {
         for (int j = 0; j < channels - 7; j += 8) {
@@ -112,7 +112,7 @@ struct CompareCompute<float, Comp> {
           int y_offset = j * elementwise_num;
           int remain_start = 0;
 #if defined(__ARM_NEON__) || defined(__ARM_NEON)
-          remain_start = elementwise_num & 0xfff8;
+          remain_start = elementwise_num & 0xfffffff8;
           uint8x8_t __mask = vdup_n_u8(0x1);
           for (int k = 0; k < elementwise_num - 7; k += 8) {
             float32x4_t __x0 = vld1q_f32(x + x_offset);
