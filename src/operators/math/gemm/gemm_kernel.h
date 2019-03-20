@@ -388,7 +388,7 @@ void sgemv_notrans_mx1(const int M, const int N, const float alpha,
     vst1q_f32(output, _sum0);
   }
   // remain m
-  for (int m = (M & 0xfffc); m < M; ++m) {
+  for (int m = (M & 0xfffffffc); m < M; ++m) {
     const float *in0 = A + m * lda;
     float *output = C + m;
     float32x4_t _sum0 = vdupq_n_f32(0.f);
@@ -426,7 +426,7 @@ void sgemv_trans_mx1(const int M, const int N, const float alpha,
     for (int m = 0; m < M - 3; m += 4) {
       vst1q_f32(C + m, vzero);
     }
-    for (int m = (M & 0xfffc); m < M; ++m) {
+    for (int m = (M & 0xfffffffc); m < M; ++m) {
       C[m] = 0.f;
     }
   } else {
@@ -436,7 +436,7 @@ void sgemv_trans_mx1(const int M, const int N, const float alpha,
       _vc = vmulq_f32(_vc, vbeta);
       vst1q_f32(C + m, _vc);
     }
-    for (int m = (M & 0xfffc); m < M; ++m) {
+    for (int m = (M & 0xfffffffc); m < M; ++m) {
       C[m] *= beta;
     }
   }
@@ -491,7 +491,7 @@ void sgemv_trans_mx1(const int M, const int N, const float alpha,
     }
   }
   // remain n
-  for (int n = (N & 0xfffc); n < N; ++n) {
+  for (int n = (N & 0xfffffffc); n < N; ++n) {
     const float *in0 = A + n * lda;
     float32x4_t _b = vld1q_dup_f32(B + n);
     float32x4_t _sum0;
