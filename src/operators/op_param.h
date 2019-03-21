@@ -1270,6 +1270,7 @@ class FetchParam : public OpParam {
 
  public:
   fpga::BypassArgs fpga_bypass_args;
+  Tensor aligned_out;
 #endif
 };
 
