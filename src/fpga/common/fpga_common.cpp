@@ -197,5 +197,17 @@ uint64_t vaddr_to_paddr(void *address) {
   return 0;
 #endif
 }
+
+uint32_t paddle_mobile_version() {
+  uint32_t v_master = 34;
+  uint32_t v_slave = 34;
+
+  uint32_t first = 1, second = 2, fourth_master = 1, fourth_slave = 2;
+  uint32_t master = first << 24 | second << 16 | v_master << 8 | fourth_master;
+  uint32_t slave = first << 24 | second << 16 | v_slave << 8 | fourth_slave;
+
+  return slave;
+}
+
 }  // namespace fpga
 }  // namespace paddle_mobile
