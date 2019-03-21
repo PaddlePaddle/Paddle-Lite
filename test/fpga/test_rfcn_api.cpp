@@ -16,6 +16,7 @@ limitations under the License. */
 #define PADDLE_MOBILE_FPGA
 #endif
 #include <fstream>
+#include <iomanip>
 #include <iostream>
 #include "../../src/io/paddle_inference_api.h"
 
@@ -69,7 +70,7 @@ PaddleMobileConfig GetConfig1() {
 
 int main() {
   open_device();
-
+#if 0
   PaddleMobileConfig config1 = GetConfig1();
   auto predictor1 =
       CreatePaddlePredictor<PaddleMobileConfig,
@@ -98,7 +99,8 @@ int main() {
   predictor1->FetchPaddleTensors(&v1);  // Old data in v will be cleared
   std::cout << "Output number is " << v1.size() << std::endl;
   std::cout << "out[0] length " << v1[0].data.length() << std::endl;
-
+  fpga_free(img1);
+#endif
   ////////////////////////////
 
   PaddleMobileConfig config = GetConfig();
@@ -160,6 +162,11 @@ int main() {
     }
   }
   std::cout << "Finish getting vector values" << std::endl;
+  fpga_free(img);
+
+  auto version = fpga::paddle_mobile_version();
+
+  std::cout << "0X0" << std::hex << version << std::endl;
 
   return 0;
 }

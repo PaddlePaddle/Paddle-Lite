@@ -30,10 +30,12 @@ limitations under the License. */
 namespace paddle_mobile {
 
 #ifdef PADDLE_MOBILE_FPGA
+
 namespace fpga {
 int open_device();
 void* fpga_malloc(size_t size);
 void fpga_free(void* ptr);
+uint32_t paddle_mobile_version();
 }  // namespace fpga
 #endif
 
