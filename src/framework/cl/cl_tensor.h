@@ -137,14 +137,18 @@ class CLTensor : TensorBase {
         : ptr_(clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
                               size, reinterpret_cast<void *>(input), NULL)),
           size_(size),
+          capatity_(size),
           type_(type),
+          context_(context),
           command_queue_(command_queue) {}
 
     PlaceholderImpl(size_t size, std::type_index type, cl_context context,
                     cl_command_queue command_queue)
         : ptr_(clCreateBuffer(context, CL_MEM_READ_WRITE, size, NULL, NULL)),
           size_(size),
+          capatity_(size),
           type_(type),
+          context_(context),
           command_queue_(command_queue) {}
 
     virtual size_t size() const { return size_; }
@@ -155,13 +159,25 @@ class CLTensor : TensorBase {
 
     virtual void set_type(std::type_index type) { type_ = type; }
 
+    virtual void resize(size_t size) {
+      if (size > capatity_) {
+        capatity_ = size;
+        ptr_.reset(
+            clCreateBuffer(context_, CL_MEM_READ_WRITE, capatity_, NULL, NULL));
+      }
+      size_ = size;
+    }
+
     std::unique_ptr<_cl_mem, CLMemDeleter> ptr_;
 
     size_t size_;
 
+    size_t capatity_;
+
     /* the current type of memory */
     std::type_index type_;
 
+    cl_context context_;
     cl_command_queue command_queue_;
   };
 };
