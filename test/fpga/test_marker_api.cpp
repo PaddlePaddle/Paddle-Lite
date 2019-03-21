@@ -139,6 +139,9 @@ PaddleMobileConfig GetConfig1() {
 
 int main() {
   open_device();
+  timeval start11, end11;
+  long dif_sec, dif_usec;  // NOLINT
+
   PaddleMobileConfig config = GetConfig();
   auto predictor =
       CreatePaddlePredictor<PaddleMobileConfig,
@@ -172,8 +175,6 @@ int main() {
 
   std::cout << "Finishing feeding data " << std::endl;
 
-  timeval start11, end11;
-  long dif_sec, dif_usec;  // NOLINT
   gettimeofday(&start11, NULL);
   predictor->Predict_From_To(0, -1);
   gettimeofday(&end11, NULL);
@@ -189,8 +190,9 @@ int main() {
   std::cout << "Output number is " << v.size() << std::endl;
   for (int fetchNum = 0; fetchNum < v.size(); fetchNum++) {
     std::string dumpName = "marker_api_fetch_" + std::to_string(fetchNum);
-    dump_stride(dumpName, v[fetchNum]);
+    // dump_stride(dumpName, v[fetchNum]);
   }
+  fpga_free(img);
 
   PaddleMobileConfig config1 = GetConfig1();
   auto predictor1 =
@@ -233,6 +235,7 @@ int main() {
       std::string dumpName = "marker2_api_fetch_" + std::to_string(fetchNum);
       dump_stride(dumpName, v1[fetchNum]);
     }
+    fpga_free(img1);
   }
   return 0;
 }
