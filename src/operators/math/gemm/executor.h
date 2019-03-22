@@ -107,8 +107,8 @@ class GemmExecutor : public Executor {
     //  gettimeofday(&tv_begin,NULL);
     if (M_ > N_) {
       int nblock = CeilDiv(N_, Strategy::out_width()) * Strategy::out_width();
-      lhs_worksize_ = sizeof(Itype) * lhs_tile_num_ * K_;
-      rhs_worksize_ = sizeof(Itype) * K_ * nblock * num_threads_;
+      lhs_worksize_ = sizeof(Itype) * lhs_tile_num_ * K_ * num_threads_;
+      rhs_worksize_ = sizeof(Itype) * K_ * nblock;
       out_worksize_ = sizeof(Otype) * lhs_tile_num_ * nblock * num_threads_;
       ldc_ = nblock;
     } else {
@@ -133,7 +133,7 @@ class GemmExecutor : public Executor {
     if (M_ > N_) {
       strategy_.pack_rhs(K_, N_, B, ldb, rhs_workspace_, true);
 
-      #pragma omp parallel for if (M_ > 128)
+      #pragma omp parallel for
       for (int lhs_block = 0; lhs_block < M_; lhs_block += lhs_tile_num_) {
         int lhs_range = std::min(M_ - lhs_block, lhs_tile_num_);
 #ifdef _OPENMP
@@ -165,7 +165,7 @@ class GemmExecutor : public Executor {
     } else {
       strategy_.pack_lhs(M_, K_, A, lda, lhs_workspace_, true);
 
-      #pragma omp parallel for if (N_ > 128)
+      #pragma omp parallel for
       for (int rhs_block = 0; rhs_block < N_; rhs_block += rhs_tile_num_) {
         int rhs_range = std::min(N_ - rhs_block, rhs_tile_num_);
 #ifdef _OPENMP
