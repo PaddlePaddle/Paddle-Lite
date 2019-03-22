@@ -30,12 +30,14 @@ bool ConvAddBNReluKernel<CPU, float>::Init(
   const Tensor *variance = param->InputVariance();
   const Tensor *scale = param->InputScale();
   const Tensor *bias = param->InputBias();
+  const Tensor *bias1 = param->Bias();
   const float epsilon = param->Epsilon();
 
   auto mean_ptr = mean->data<float>();
   auto variance_ptr = variance->data<float>();
   auto scale_ptr = scale->data<float>();
   auto bias_ptr = bias->data<float>();
+  auto bias1_ptr = bias1->data<float>();
 
   const int C = mean->numel();
   float inv_std_ptr[C];
@@ -52,7 +54,8 @@ bool ConvAddBNReluKernel<CPU, float>::Init(
   auto new_bias_ptr = new_bias->mutable_data<float>({C});
   for (int i = 0; i < C; i++) {
     new_scale_ptr[i] = inv_std_ptr[i] * scale_ptr[i];
-    new_bias_ptr[i] = bias_ptr[i] - mean_ptr[i] * inv_std_ptr[i] * scale_ptr[i];
+    new_bias_ptr[i] = bias_ptr[i] + (bias1_ptr[i] - mean_ptr[i]) *
+                                        inv_std_ptr[i] * scale_ptr[i];
   }
   param->SetNewScale(new_scale);
   param->SetNewBias(new_bias);
