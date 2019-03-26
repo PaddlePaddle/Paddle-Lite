@@ -671,7 +671,6 @@ int PerformBypass(const struct BypassArgs &args) {
   reg_writeq(output_address_phy, REG_CONVERT_DST_ADDR);
   reg_writeq(datalen, REG_CONVERT_LENGTH);
   reg_writeq(cmd, REG_CONVERT_CMD);
-  // exit(-1);
   DLOG << "before reg poll";
   if (0 != fpga_regpoll(REG_INTERRUPT, INTERRUPT_BYPASS, PE_IRQ_TIMEOUT)) {
     g_fpgainfo.pe_data->pes[PE_IDX_BYPASS]->status = ERROR;
