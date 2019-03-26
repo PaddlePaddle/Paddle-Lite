@@ -13,6 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "fpga/common/pe.h"
+#include "common/enforce.h"
 #include "common/types.h"
 #include "fpga/V1/filter.h"
 #include "fpga/V1/image.h"
@@ -296,6 +297,7 @@ int ComputeBasicConv(const struct ConvArgs &args) {
     g_fpgainfo.pe_data->pes[PE_IDX_CONV]->status = ERROR;
     ret = -EIO;
     DLOG << "Conv Wait Irq Timeout!";
+    PADDLE_MOBILE_ENFORCE(0, "Conv Wait Irq Timeout");
   }
   output_scale = reg_readq(REG_SCALE_PARAMETER);
   output_scale = (output_scale << 32) | (output_scale >> 32);
@@ -447,6 +449,7 @@ int ComputeFpgaPool(const struct PoolingArgs &args) {
     g_fpgainfo.pe_data->pes[PE_IDX_POOLING]->status = ERROR;
     ret = -EIO;
     DLOG << "Pooling Wait Irq Timeout!";
+    PADDLE_MOBILE_ENFORCE(0, "Pooling Wait Irq Timeout!");
   }
   DLOG << "after reg poll";
 
@@ -529,6 +532,7 @@ int ComputeFpgaEWAdd(const struct EWAddArgs &args) {
     g_fpgainfo.pe_data->pes[PE_IDX_EW]->status = ERROR;
     ret = -EIO;
     DLOG << "EW Wait Irq Timeout!";
+    PADDLE_MOBILE_ENFORCE(0, "EW Wait Irq Timeout!");
   }
 
   output_scale = reg_readq(REG_SCALE_PARAMETER);
@@ -561,6 +565,7 @@ int PerformBypass(const struct BypassArgs &args) {
        << "   out_scale_address:" << args.output.scale_address;
 #endif
 #ifdef PADDLE_MOBILE_ZU5
+  uint64_t bypass_interrupt = reg_readq(REG_INTERRUPT);
   uint64_t output_scale = 0;
   uint64_t timer_cnt = 0;
   uint64_t cmd = 0;
@@ -666,12 +671,12 @@ int PerformBypass(const struct BypassArgs &args) {
   reg_writeq(output_address_phy, REG_CONVERT_DST_ADDR);
   reg_writeq(datalen, REG_CONVERT_LENGTH);
   reg_writeq(cmd, REG_CONVERT_CMD);
-
   DLOG << "before reg poll";
   if (0 != fpga_regpoll(REG_INTERRUPT, INTERRUPT_BYPASS, PE_IRQ_TIMEOUT)) {
     g_fpgainfo.pe_data->pes[PE_IDX_BYPASS]->status = ERROR;
     ret = -EIO;
     DLOG << "BYPASS Wait Irq Timeout!";
+    PADDLE_MOBILE_ENFORCE(0, "BYPASS Wait Irq Timeout!");
   }
   DLOG << "after reg poll";
 
@@ -1052,6 +1057,7 @@ int ComputeDWConv(const struct DWconvArgs &args) {
     g_fpgainfo.pe_data->pes[PE_IDX_POOLING]->status = ERROR;
     ret = -EIO;
     DLOG << "Pooling Wait Irq Timeout!";
+    PADDLE_MOBILE_ENFORCE(0, "DWConv Wait Irq Timeout");
   }
   DLOG << "after reg poll";
 
