@@ -14,9 +14,7 @@ limitations under the License. */
 
 #pragma once
 
-#include <type_traits>
-#include <typeindex>
-
+#include <string>
 #include "common/enforce.h"
 #include "common/types.h"
 #include "framework/ddim.h"
@@ -29,8 +27,8 @@ struct SizeOfTypeFunctor;
 
 template <typename T>
 struct SizeOfTypeFunctor<T> {
-  size_t operator()(std::type_index type) const {
-    if (typeid(T).hash_code() == type.hash_code()) {
+  size_t operator()(const std::string type) const {
+    if (type_id<T>().name() == type) {
       return sizeof(T);
     } else {
       return 0UL;
@@ -40,12 +38,12 @@ struct SizeOfTypeFunctor<T> {
 
 template <>
 struct SizeOfTypeFunctor<> {
-  size_t operator()(std::type_index type) const { return 0UL; }
+  size_t operator()(const std::string type) const { return 0UL; }
 };
 
 template <typename HEAD, typename... TAIL>
 struct SizeOfTypeFunctor<HEAD, TAIL...> {
-  size_t operator()(std::type_index type) const {
+  size_t operator()(const std::string type) const {
     SizeOfTypeFunctor<HEAD> head;
     size_t head_size = head(type);
     if (head_size != 0) {
@@ -56,13 +54,14 @@ struct SizeOfTypeFunctor<HEAD, TAIL...> {
   }
 };
 
-static inline size_t SizeOfType(std::type_index type) {
+static inline size_t SizeOfType(std::string type) {
   SizeOfTypeFunctor<int8_t, int, half, float, double, int16_t, int64_t, bool,
                     size_t>
       functor;
   size_t size = functor(type);
 
-  PADDLE_MOBILE_ENFORCE(size != 0UL, "Cannot get size of type %s", type.name());
+  PADDLE_MOBILE_ENFORCE(size != 0UL, "Cannot get size of type %s",
+                        type.c_str());
   return size;
 }
 
@@ -78,7 +77,7 @@ class TensorBase {
   /*! Return the numel of the memory block. */
   inline int64_t numel() const { return product(dims_); }
 
-  std::type_index type() const {
+  std::string type() const {
     PADDLE_MOBILE_ENFORCE(
         holder_ != nullptr,
         "Tensor not initialized yet when Tensor::type() is called.")
@@ -114,9 +113,9 @@ class TensorBase {
 
     virtual size_t size() const = 0;
 
-    virtual std::type_index type() const = 0;
+    virtual std::string type() const = 0;
 
-    virtual void set_type(std::type_index type) = 0;
+    virtual void set_type(std::string type) = 0;
 
     virtual void resize(size_t size) = 0;
   };

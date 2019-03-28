@@ -16,13 +16,10 @@ limitations under the License. */
 
 #include <memory>
 #include <string>
-#include <typeindex>
-#include <typeinfo>
-#include "../common/variant.h"
+#include "common/variant.h"
 
 namespace paddle_mobile {
 namespace framework {
-using std::string;
 
 class Variable {
  public:
@@ -33,7 +30,7 @@ class Variable {
 
   template <typename T>
   const T GetValue() const {
-    if (typeid(T) == typeid(std::string)) {
+    if (type_id<T>().name() == type_id<std::string>().name()) {
       PADDLE_MOBILE_THROW_EXCEPTION(
           "Please use getString to get an string (to avoid of an issue with "
           "gcc "
@@ -60,38 +57,39 @@ class Variable {
 
   template <typename T>
   bool IsType() const {
-    return holder_ != nullptr && holder_->Type() == typeid(T);
+    return holder_ != nullptr && holder_->Type() == type_id<T>().name();
   }
 
   void Clear() { holder_.reset(); }
 
-  std::type_index Type() const { return holder_->Type(); }
+  std::string Type() const { return holder_->Type(); }
 
  private:
   struct Placeholder {
     Placeholder() = default;
     virtual ~Placeholder() = default;
 
-    virtual const std::type_info &Type() const = 0;
+    virtual std::string Type() const = 0;
     virtual void *Ptr() const = 0;
   };
 
   template <typename T>
   struct PlaceholderImp : public Placeholder {
-    explicit PlaceholderImp(T *ptr) : ptr_(ptr), type_(typeid(T)) {}
+    explicit PlaceholderImp(T *ptr) : ptr_(ptr), type_(type_id<T>().name()) {}
 
-    virtual const std::type_info &Type() const { return type_; }
-    virtual void *Ptr() const override {
-      return static_cast<void *>(ptr_.get());
-    }
+    std::string Type() const override { return type_; }
+    void *Ptr() const override { return static_cast<void *>(ptr_.get()); }
 
     std::unique_ptr<T> ptr_;
-    const std::type_info &type_;
+    std::string type_;
   };
-  Variant<int, bool, string, float, double> variant;
-  std::unique_ptr<Placeholder> holder_;
+
   friend class Scope;
-  string name_;
+
+  Variant<int, bool, std::string, float, double> variant;
+  std::unique_ptr<Placeholder> holder_;
+  std::string name_;
 };
+
 }  // namespace framework
 }  // namespace paddle_mobile

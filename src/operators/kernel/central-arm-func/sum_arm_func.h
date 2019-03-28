@@ -144,7 +144,8 @@ void SumCompute(const SumParam<CPU> &param) {
     }
   } else {
     PADDLE_MOBILE_THROW_EXCEPTION(
-        "Unexpected branch, output variable type is %s", outvar->Type().name());
+        "Unexpected branch, output variable type is %s",
+        outvar->Type().c_str());
   }
 }
 }  // namespace operators

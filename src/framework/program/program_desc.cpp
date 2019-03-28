@@ -72,7 +72,7 @@ void ProgramDesc::Description(std::string header) const {
         }
       }
       for (auto &attr : op->GetAttrMap()) {
-        if (attr.first == "op_callstack") continue;
+        if (attr.first == "op_callstack" || attr.first == "sub_block") continue;
         LOG(kLOG_DEBUG2) << "attr name: " << attr.first;
         LOG(kLOG_DEBUG3) << "argument - " << attr.second;
       }
