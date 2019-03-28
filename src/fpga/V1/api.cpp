@@ -207,7 +207,7 @@ void format_DWDconv_filter(framework::Tensor *filter_tensor, float *scale_ptr,
   //      framework::make_ddim({num, 1, height, width});
   //  filter_tensor->Resize(dims_new);
   filter_tensor->reset_data_ptr(new_data);
-  filter_tensor->set_type(typeid(int8_t));
+  filter_tensor->set_type(typeid(int16_t));
 }
 
 void format_fc_filter(framework::Tensor *filter_tensor, float max_value) {
@@ -466,24 +466,9 @@ void expand_EW_arg(EWAddArgs *arg) {
   uint64_t image_amount_per_row =
       align_to_x((uint64_t)args.image0.width * (uint64_t)args.image0.channels,
                  IMAGE_ALIGNMENT);
-  //////////////////////////////////////////////////////////
-  // temporary modify for EW and DMA problem
-  uint64_t image_image_pixel = 0;
-  if ((args.image0.width * args.image0.channels) >= 24576) {
-    if ((args.image0.width * args.image0.channels) % 32 != 0) {
-      DLOG << "EW parameter can not be support";
-    } else {
-      image_amount_per_row = image_amount_per_row / 2;
-      image_image_pixel = ((uint64_t)args.image0.channels << 32) |
-                          ((uint64_t)(args.image0.width / 2) << 16) |
-                          (uint64_t)(args.image0.height * 2);
-    }
-  } else {
-    image_image_pixel = ((uint64_t)args.image0.channels << 32) |
-                        ((uint64_t)args.image0.width << 16) |
-                        (uint64_t)args.image0.height;
-  }
-  //////////////////////////////////////////////////////////
+  uint64_t image_image_pixel = ((uint64_t)args.image0.channels << 32) |
+                               ((uint64_t)args.image0.width << 16) |
+                               (uint64_t)args.image0.height;
 
   (*arg).driver.image0_address_phy = image0_address_phy;
   (*arg).driver.image1_address_phy = image1_address_phy;
