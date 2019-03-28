@@ -211,17 +211,17 @@ inline Print &operator<<(Print &printer, const LoDTensor &tensor) {
   stride = stride > 0 ? stride : 1;
 #ifndef PADDLE_MOBILE_FPGA
   for (int i = 0; i < tensor.numel(); i += stride) {
-    if (tensor.type() == typeid(float)) {
+    if (tensor.type() == type_id<float>()) {
       printer << tensor.data<float>()[i] << " ";
-    } else if (tensor.type() == typeid(int32_t)) {
+    } else if (tensor.type() == type_id<int32_t>()) {
       printer << tensor.data<int32_t>()[i] << " ";
-    } else if (tensor.type() == typeid(int64_t)) {
+    } else if (tensor.type() == type_id<int64_t>()) {
       printer << tensor.data<int64_t>()[i] << " ";
-    } else if (tensor.type() == typeid(int8_t)) {
+    } else if (tensor.type() == type_id<int8_t>()) {
       printer << static_cast<int>(tensor.data<int8_t>()[i]) << " ";
-    } else if (tensor.type() == typeid(int32_t)) {
+    } else if (tensor.type() == type_id<int32_t>()) {
       printer << tensor.data<int32_t>()[i] << " ";
-    } else if (tensor.type() == typeid(bool)) {
+    } else if (tensor.type() == type_id<bool>()) {
       printer << tensor.data<bool>()[i] << " ";
     }
   }

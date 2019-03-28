@@ -63,7 +63,7 @@ Executor<Device, T>::Executor(const Program<Device> &program,
   PADDLE_MOBILE_ENFORCE(program_desc_ != nullptr,
                         "program_desc_ should not be nullptr");
 #ifndef PADDLE_MOBILE_FPGA
-  pass::MemoryOptPass()(program_desc_.get(), program_.scope.get());
+//  pass::MemoryOptPass()(program_desc_.get(), program_.scope.get());
 #endif
   // resize feed and fetch list
   // should init feed and fetch variables before infer shape
@@ -302,25 +302,9 @@ bool Executor<Device, T>::varInputMemory(
     const std::shared_ptr<VarDesc> &var_desc, Variable *var) const {
 #ifdef PADDLE_MOBILE_FPGA
   framework::LoDTensor *tensor = var->template GetMutable<LoDTensor>();
-  tensor->init(typeid(float));
+  tensor->init(type_id<float>());
   return true;
 #endif
-  auto TypeId = [](const VarType_Type &type) -> std::type_index {
-    switch (type) {
-      case VARTYPE_TYPE_BOOL:
-        return typeid(bool);
-      case VARTYPE_TYPE_FP32:
-        return typeid(float);
-      case VARTYPE_TYPE_INT8:
-        return typeid(int8_t);
-      case VARTYPE_TYPE_INT32:
-        return typeid(int);
-      case VARTYPE_TYPE_INT64:
-        return typeid(int64_t);
-      default:
-        PADDLE_MOBILE_THROW_EXCEPTION("got unhandled var type `%d`", type);
-    }
-  };
 
   auto type = var_desc->Type();
   if (type == VARTYPE_TYPE_LOD_TENSOR) {
@@ -390,13 +374,6 @@ void Executor<Device, T>::SetInput(const Tensor &input,
   framework::LoDTensor &target =
       feed_var->template GetMutable<framework::LoDTensorArray>()->at(index);
 
-  if (config_.load_when_predict) {
-    if (input_dim_last_ != input.dims()) {
-      InitNoPersistableMemory(input);
-      input_dim_last_ = input.dims();
-    }
-  }
-
   target.Resize(input.dims());
   target.ShareDataWith(input);
 }
@@ -411,13 +388,6 @@ void Executor<Device, T>::SetInput(const LoDTensor &input,
   auto *feed_var = program_.scope->Var("feed");
   framework::LoDTensor &target =
       feed_var->template GetMutable<framework::LoDTensorArray>()->at(index);
-
-  if (config_.load_when_predict) {
-    if (input_dim_last_ != input.dims()) {
-      InitNoPersistableMemory(input);
-      input_dim_last_ = input.dims();
-    }
-  }
 
   target.Resize(input.dims());
   target.ShareDataWith(input);

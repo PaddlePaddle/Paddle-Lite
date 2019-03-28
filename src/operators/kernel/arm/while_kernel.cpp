@@ -35,6 +35,7 @@ class StepExecutor {
       auto op_handler = framework::OpRegistry<CPU>::CreateOp(
           op_desc->Type(), op_desc->GetInputs(), op_desc->GetOutputs(),
           op_desc->GetAttrMap(), scope_);
+      op_handler->Init();
       ops_of_block_[i] = op_handler;
     }
   }

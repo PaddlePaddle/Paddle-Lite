@@ -192,10 +192,10 @@ bool LessThanKernel<CPU, float>::Init(CompareParam<CPU> *param) {
 
 template <>
 void LessThanKernel<CPU, float>::Compute(const CompareParam<CPU> &param) {
-  if (param.input_x_->type() == typeid(int64_t)) {
+  if (param.input_x_->type() == type_id<int64_t>().name()) {
     CompareCompute<int64_t, LESS_THAN>()(param.input_x_, param.input_y_,
                                          param.axis_, param.output_);
-  } else if (param.input_x_->type() == typeid(float)) {
+  } else if (param.input_x_->type() == type_id<float>().name()) {
     CompareCompute<float, LESS_THAN>()(param.input_x_, param.input_y_,
                                        param.axis_, param.output_);
   } else {
