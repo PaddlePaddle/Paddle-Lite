@@ -19,6 +19,7 @@ limitations under the License. */
 #include <string>
 #include "common/enforce.h"
 #include "common/log.h"
+#include "common/type_define.h"
 
 namespace paddle_mobile {
 
@@ -33,11 +34,11 @@ struct VariantHelper {
                                  ? sizeof(F)
                                  : VariantHelper<Ts...>::size;
 
-  inline static void Destroy(size_t id, void *data) {
-    if (id == typeid(F).hash_code()) {
+  inline static void Destroy(std::string type, void *data) {
+    if (type == type_id<F>().name()) {
       reinterpret_cast<F *>(data)->~F();
     } else {
-      VariantHelper<Ts...>::Destroy(id, data);
+      VariantHelper<Ts...>::Destroy(type, data);
     }
   }
 };
@@ -45,11 +46,11 @@ struct VariantHelper {
 template <typename F>
 struct VariantHelper<F> {
   static const size_t size = sizeof(F);
-  inline static void Destroy(size_t id, void *data) {
-    if (id == typeid(F).hash_code()) {
-      //              reinterpret_cast<F*>(data)->~F();
+  inline static void Destroy(std::string type, void *data) {
+    if (type == type_id<F>().name()) {
+      // reinterpret_cast<F*>(data)->~F();
     } else {
-      //              std::cout << "未匹配到 " << std::endl;
+      // std::cout << "未匹配到 " << std::endl;
     }
   }
 };
@@ -57,7 +58,7 @@ struct VariantHelper<F> {
 template <size_t size>
 class RawData {
  public:
-  char data[size];
+  char data[size];  // NOLINT
   RawData() {}
   RawData(const RawData &raw_data) { memcpy(data, raw_data.data, size); }
 
@@ -69,32 +70,33 @@ class RawData {
 
 template <typename... Ts>
 struct Variant {
+  Variant() : type_(invalid_type()) {}
+
   Variant(const Variant &variant) {
-    type_id = variant.type_id;
-    data = variant.data;
+    type_ = variant.type_;
+    data_ = variant.data_;
   }
 
-  Variant() : type_id(invalid_type()) {}
-  ~Variant() {
-    //        helper::Destroy(type_id, &data);
+  virtual ~Variant() {
+    // helper::Destroy(type_id, &data);
   }
 
   template <typename T, typename... Args>
   void Set(Args &&... args) {
-    helper::Destroy(type_id, data.data);
-    new (data.data) T(std::forward<Args>(args)...);
-    type_id = typeid(T).hash_code();
+    helper::Destroy(type_, data_.data);
+    new (data_.data) T(std::forward<Args>(args)...);
+    type_ = type_id<T>().name();
   }
 
-  void SetString(std::string &string) {
-    helper::Destroy(type_id, data.data);
-    type_id = typeid(std::string).hash_code();
-    strcpy(data.data, string.c_str());
+  void SetString(const std::string &string) {
+    helper::Destroy(type_, data_.data);
+    type_ = type_id<std::string>().name();
+    strcpy(data_.data, string.c_str());  // NOLINT
   }
 
   std::string GetString() const {
-    if (type_id == typeid(std::string).hash_code()) {
-      return std::string(data.data);
+    if (type_ == type_id<std::string>().name()) {
+      return std::string(data_.data);
     } else {
       PADDLE_MOBILE_THROW_EXCEPTION(
           " bad cast in variant data type not a string ");
@@ -104,28 +106,25 @@ struct Variant {
 
   template <typename T>
   T &Get() const {
-    if (type_id == typeid(std::string).hash_code()) {
+    if (type_ == type_id<std::string>().name()) {
       PADDLE_MOBILE_THROW_EXCEPTION(
           "Please use getString to get an string (to avoid of an issue with "
           "gcc "
           "stl lib with string copy)");
       exit(0);
-    } else if (type_id == typeid(T).hash_code()) {
-      return *const_cast<T *>(reinterpret_cast<const T *>(data.data));
     } else {
-      PADDLE_MOBILE_THROW_EXCEPTION(" bad cast in variant");
-      exit(0);
+      return *const_cast<T *>(reinterpret_cast<const T *>(data_.data));
     }
   }
 
-  size_t TypeId() const { return type_id; }
+  std::string TypeId() const { return type_; }
 
  private:
-  static inline size_t invalid_type() { return typeid(void).hash_code(); }
+  static inline std::string invalid_type() { return type_id<void>().name(); }
   typedef VariantHelper<Ts...> helper;
-  size_t type_id;
+  std::string type_ = type_id<void>().name();
   // todo use an anto size to suite this.
-  RawData<64> data;
+  RawData<64> data_;
 };
 
 template <typename T>
