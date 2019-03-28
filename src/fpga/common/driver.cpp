@@ -51,11 +51,7 @@ int open_memdevice() {
   return g_fpgainfo.fd_mem;
 }
 
-void pl_reset() {
-  // DLOG << "PL RESET";
-
-  usleep(100 * 1000);
-}
+void pl_reset() { usleep(100 * 1000); }
 
 void setup_pe(struct pe_data_s *pe_data, struct fpga_pe *pe,
               char const *type_name, int pe_idx) {
@@ -77,7 +73,7 @@ void pl_init() {
 
   pe_data = (struct pe_data_s *)malloc(sizeof(struct pe_data_s));
   if (pe_data == nullptr) {
-    DLOG << "pe_data malloc error!";
+    std::cout << "pe_data malloc error!" << std::endl;
     return;
   }
   memset(pe_data, 0, sizeof(struct pe_data_s));
@@ -165,7 +161,7 @@ uint64_t vaddr_to_paddr_driver(void *address) {
   if (iter != g_fpgainfo.fpga_vaddr2paddr_map.end()) {
     paddr = iter->second;
   } else {
-    DLOG << "Invalid pointer: " << address;
+    std::cout << "Invalid pointer: " << address << std::endl;
   }
 
   return paddr;
@@ -191,7 +187,7 @@ void *fpga_reg_free(void *ptr) {
     g_fpgainfo.fpga_addr2size_map.erase(iter);
     munmap(ptr, size);
   } else {
-    DLOG << "Invalid pointer" << ptr;
+    std::cout << "Invalid pointer" << ptr << std::endl;
   }
 }
 
@@ -205,9 +201,6 @@ void *fpga_malloc_driver(size_t size) {
   int i = 0;
   struct MemoryVM2PHYArgs args;
   struct MemoryCacheArgs args_c;
-
-  // memory_request(g_fpgainfo.memory_info, size, &phy_addr);
-
   ret = mmap64(nullptr, size, PROT_READ | PROT_WRITE, MAP_SHARED,
                g_fpgainfo.fd_mem, FPGA_MEM_PHY_ADDR);
   PADDLE_MOBILE_ENFORCE(ret != (void *)-1, "Should not be -1");
@@ -233,16 +226,12 @@ void fpga_free_driver(void *ptr) {
     size = iter->second;
     g_fpgainfo.fpga_addr2size_map.erase(iter);
     munmap(ptr, size);
-
-    // p_addr = vaddr_to_paddr_driver(ptr);
-    // pos = (p_addr - g_fpgainfo.memory_info->mem_start) / FPGA_PAGE_SIZE;
-
     auto iter = g_fpgainfo.fpga_vaddr2paddr_map.find(ptr);
     if (iter != g_fpgainfo.fpga_vaddr2paddr_map.end()) {
       g_fpgainfo.fpga_vaddr2paddr_map.erase(iter);
     }
   } else {
-    DLOG << "Invalid pointer" << ptr;
+    std::cout << "Invalid pointer" << ptr << std::endl;
   }
 }
 
@@ -295,10 +284,7 @@ int open_device_driver() {
 
   g_fpgainfo.FpgaRegVirAddr =
       (uint64_t *)fpga_reg_malloc(FPGA_REG_SIZE);  // NOLINT
-  // fpga_memory_add();
-
   pl_init();
-
   return ret;
 }
 
@@ -306,7 +292,6 @@ int close_device_driver() {
   pl_destroy();
   fpga_reg_free(g_fpgainfo.FpgaRegVirAddr);
   memory_release(g_fpgainfo.memory_info);
-
   return 0;
 }
 
