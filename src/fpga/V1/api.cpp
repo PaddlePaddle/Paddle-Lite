@@ -207,7 +207,7 @@ void format_DWDconv_filter(framework::Tensor *filter_tensor, float *scale_ptr,
   //      framework::make_ddim({num, 1, height, width});
   //  filter_tensor->Resize(dims_new);
   filter_tensor->reset_data_ptr(new_data);
-  filter_tensor->set_type(typeid(int8_t));
+  filter_tensor->set_type(typeid(int16_t));
 }
 
 void format_fc_filter(framework::Tensor *filter_tensor, float max_value) {

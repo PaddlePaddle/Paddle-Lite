@@ -19,6 +19,7 @@ limitations under the License. */
 #include "fpga/V1/image.h"
 #include "fpga/common/config.h"
 #include "fpga/common/driver.h"
+#include "fpga/common/fpga_common.h"
 #ifdef COST_TIME_PRINT
 #include <sys/time.h>
 #include <time.h>
@@ -253,7 +254,14 @@ int ComputeBasicConv(const struct ConvArgs &args) {
   reg_writeq(
       ((uint64_t)args.kernel.height) | (((uint64_t)args.kernel.width) << 32),
       REG_CONV_FILTER_PIXEL);
-  reg_writeq(args.driver.output_height | (args.driver.output_width << 32),
+
+  uint64_t output_height_fraction =
+      args.driver.output_height / ROW_PARALLEL_NUM;
+  uint64_t output_height_remainder =
+      args.driver.output_height % ROW_PARALLEL_NUM;
+  reg_writeq(args.driver.output_height | (output_height_fraction << 16) |
+                 (output_height_remainder << 26) |
+                 (args.driver.output_width << 32),
              REG_CONV_RESULT_PIXEL);
   reg_writeq(((uint64_t)args.image.pad_height) |
                  (((uint64_t)args.image.pad_width) << 32),
