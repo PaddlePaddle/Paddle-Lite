@@ -27,7 +27,7 @@ bool ConcatKernel<CPU, float>::Init(ConcatParam<CPU> *param) {
 
 template <>
 void ConcatKernel<CPU, float>::Compute(const ConcatParam<CPU> &param) {
-  if (param.Inputs()[0]->type() == type_id<int8_t>().name()) {
+  if (param.Inputs()[0]->type() == type_id<int8_t>().hash_code()) {
     ConcatCompute<int8_t>(param);
   } else {
     ConcatCompute<float>(param);
