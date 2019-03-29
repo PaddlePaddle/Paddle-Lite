@@ -16,17 +16,17 @@ limitations under the License. */
 #include <stdint.h>
 #include <string>
 #include <unordered_map>
+#include "common/type_define.h"
 
 namespace paddle_mobile {
 namespace framework {
 
 struct DataTypeMap {
-  std::unordered_map<std::type_index,
-                     _PaddleMobile__Framework__Proto__VarType__Type>
+  std::unordered_map<kTypeId_t, _PaddleMobile__Framework__Proto__VarType__Type>
       cpp_to_proto_;
-  std::unordered_map<int, std::type_index> proto_to_cpp_;
+  std::unordered_map<int, kTypeId_t> proto_to_cpp_;
   std::unordered_map<int, std::string> proto_to_str_;
-  std::unordered_map<std::type_index, size_t> cpp_to_size_;
+  std::unordered_map<kTypeId_t, size_t> cpp_to_size_;
 };
 
 static DataTypeMap* InitDataTypeMap();
@@ -42,10 +42,11 @@ template <typename T>
 static inline void RegisterType(
     DataTypeMap* map, _PaddleMobile__Framework__Proto__VarType__Type proto_type,
     const std::string& name) {
-  map->proto_to_cpp_.emplace(static_cast<int>(proto_type), typeid(T));
-  map->cpp_to_proto_.emplace(typeid(T), proto_type);
+  map->proto_to_cpp_.emplace(static_cast<int>(proto_type),
+                             type_id<T>().hash_code());
+  map->cpp_to_proto_.emplace(type_id<T>().hash_code(), proto_type);
   map->proto_to_str_.emplace(static_cast<int>(proto_type), name);
-  map->cpp_to_size_.emplace(typeid(T), sizeof(T));
+  map->cpp_to_size_.emplace(type_id<T>().hash_code(), sizeof(T));
 }
 
 static DataTypeMap* InitDataTypeMap() {
@@ -70,17 +71,15 @@ static DataTypeMap* InitDataTypeMap() {
   return retv;
 }
 
-_PaddleMobile__Framework__Proto__VarType__Type ToDataType(
-    std::type_index type) {
+_PaddleMobile__Framework__Proto__VarType__Type ToDataType(kTypeId_t type) {
   auto it = gDataTypeMap().cpp_to_proto_.find(type);
   if (it != gDataTypeMap().cpp_to_proto_.end()) {
     return it->second;
   }
-  PADDLE_MOBILE_THROW_EXCEPTION("Not support %s as tensor type", type.name());
+  PADDLE_MOBILE_THROW_EXCEPTION("Not support %d as tensor type", type);
 }
 
-std::type_index ToTypeIndex(
-    _PaddleMobile__Framework__Proto__VarType__Type type) {
+kTypeId_t ToTypeIndex(_PaddleMobile__Framework__Proto__VarType__Type type) {
   auto it = gDataTypeMap().proto_to_cpp_.find(static_cast<int>(type));
   if (it != gDataTypeMap().proto_to_cpp_.end()) {
     return it->second;

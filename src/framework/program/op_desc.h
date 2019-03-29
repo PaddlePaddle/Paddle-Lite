@@ -18,7 +18,8 @@ limitations under the License. */
 #include <vector>
 
 #include "common/log.h"
-#include "common/type_define.h"
+#include "common/types.h"
+#include "framework/attribute.h"
 #include "framework/framework.pb-c.h"
 
 namespace paddle_mobile {

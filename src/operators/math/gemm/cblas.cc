@@ -14,8 +14,6 @@ limitations under the License. */
 
 #if defined(__ARM_NEON__) || defined(__ARM_NEON)
 
-#pragma once
-
 #include "operators/math/gemm/cblas.h"
 #include "operators/math/gemm/executor.h"
 #include "operators/math/gemm/strategy.h"

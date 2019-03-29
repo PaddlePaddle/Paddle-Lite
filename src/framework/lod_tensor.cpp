@@ -12,51 +12,11 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#include "lod_tensor.h"
+#include "framework/lod_tensor.h"
 #include <algorithm>
 
 namespace paddle_mobile {
 namespace framework {
-
-// std::ostream &operator<<(std::ostream &os, const LoD &lod) {
-//  os << "{";
-//  for (auto &v : lod) {
-//    os << "{";
-//    bool is_first = true;
-//    for (auto &i : v) {
-//      if (is_first) {
-//        os << i;
-//        is_first = false;
-//      } else {
-//        os << ", " << i;
-//      }
-//    }
-//    os << "}";
-//  }
-//  os << "}";
-//
-//  return os;
-//}
-//
-// std::ostream &operator<<(std::ostream &os, const LoDTensor &t) {
-//  PADDLE_MOBILE_ENFORCE(t.type().hash_code() == typeid(float).hash_code(),
-//                        "t.type() is not float");
-//  os << "dim: " << t.dims() << "\n";
-//  os << "lod: " << t.lod() << "\n";
-//  // only print first ten elements
-//  int64_t size = t.numel() < 10 ? t.numel() : 10;
-//  for (int64_t i = 0; i < size; ++i) {
-//    os << t.data<float>()[i] << " ";
-//  }
-//
-//  return os;
-//}
-
-// std::string LoDToString(const LoD &lod) {
-//  std::ostringstream stream;
-//  stream << lod;
-//  return stream.str();
-//}
 
 LoD SliceInLevel(const LoD &in, size_t level, size_t elem_begin,
                  size_t elem_end) {

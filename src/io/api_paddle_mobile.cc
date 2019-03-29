@@ -128,7 +128,7 @@ void ConvertTensors(const framework::Tensor &src, PaddleTensor *des) {
   des->layout = src.layout == framework::LAYOUT_HWC ? LAYOUT_HWC : LAYOUT_CHW;
 
   auto num = src.numel();
-  if (src.type() == typeid(float)) {
+  if (src.type() == type_id<float>()) {
     des->data.Reset(const_cast<float *>(src.data<float>()),
                     num * sizeof(float));
   } else {
@@ -143,7 +143,7 @@ void PaddleMobilePredictor<Device, T>::FeedPaddleTensors(
   auto num = inputs.size();
   std::vector<framework::Tensor> tensors(num, framework::Tensor());
   for (int i = 0; i < num; i++) {
-    tensors[i].init(typeid(float));
+    tensors[i].init(type_id<float>().hash_code());
     ConvertPaddleTensors(inputs[i], &tensors[i]);
   }
   paddle_mobile_->FeedTensorData(tensors);
