@@ -28,7 +28,7 @@ void InitBaseConvKernel(ConvParam<CPU> *param) {
 
   bool depth5x5 = conv5x5 && param->Groups() == param->Input()->dims()[1] &&
                   param->Input()->dims()[1] == param->Output()->dims()[1];
-  if (param->Filter()->type() == type_id<int8_t>().name()) {
+  if (param->Filter()->type() == type_id<int8_t>().hash_code()) {
 #ifndef __aarch64__
     if (depth3x3 && param->Strides()[0] < 3 &&
         param->Strides()[0] == param->Strides()[1]) {

@@ -128,31 +128,30 @@ class Attribute {
 
   template <typename Vistor>
   static typename Vistor::type_t ApplyVistor(Vistor vistor, Attribute attr) {
-    if (attr.variant_.TypeId() == type_id<int>().name()) {  // NOLINT
+    if (attr.variant_.TypeId() == type_id<int>()) {  // NOLINT
       return vistor(attr.variant_.Get<int>());
-    } else if (attr.variant_.TypeId() == type_id<float>().name()) {  // NOLINT
+    } else if (attr.variant_.TypeId() == type_id<float>()) {  // NOLINT
       return vistor(attr.variant_.Get<float>());
-    } else if (attr.variant_.TypeId() == type_id<string>().name()) {
+    } else if (attr.variant_.TypeId() == type_id<string>()) {
       return vistor(attr.variant_.GetString());
-    } else if (attr.variant_.TypeId() == type_id<vector<int>>().name()) {
+    } else if (attr.variant_.TypeId() == type_id<vector<int>>()) {
       return vistor(attr.variant_.Get<vector<int>>());
-    } else if (attr.variant_.TypeId() == type_id<vector<float>>().name()) {
+    } else if (attr.variant_.TypeId() == type_id<vector<float>>()) {
       return vistor(attr.variant_.Get<vector<float>>());
-    } else if (attr.variant_.TypeId() == type_id<vector<string>>().name()) {
+    } else if (attr.variant_.TypeId() == type_id<vector<string>>()) {
       return vistor(attr.variant_.Get<vector<string>>());
-    } else if (attr.variant_.TypeId() == type_id<bool>().name()) {  // NOLINT
+    } else if (attr.variant_.TypeId() == type_id<bool>()) {  // NOLINT
       return vistor(attr.variant_.Get<bool>());
-    } else if (attr.variant_.TypeId() == type_id<vector<bool>>().name()) {
+    } else if (attr.variant_.TypeId() == type_id<vector<bool>>()) {
       return vistor(attr.variant_.Get<vector<bool>>());
-    } else if (attr.variant_.TypeId() == type_id<int64_t>().name()) {
+    } else if (attr.variant_.TypeId() == type_id<int64_t>()) {
       return vistor(attr.variant_.Get<int64_t>());
-    } else if (attr.variant_.TypeId() ==
-               type_id<framework::BlockDesc *>().name()) {
+    } else if (attr.variant_.TypeId() == type_id<framework::BlockDesc *>()) {
       return vistor(attr.variant_.Get<framework::BlockDesc *>());
     } else if (attr.variant_.TypeId() ==
-               type_id<vector<framework::BlockDesc *>>().name()) {
+               type_id<vector<framework::BlockDesc *>>()) {
       return vistor(attr.variant_.Get<vector<framework::BlockDesc *>>());
-    } else if (attr.variant_.TypeId() == type_id<vector<int64_t>>().name()) {
+    } else if (attr.variant_.TypeId() == type_id<vector<int64_t>>()) {
       return vistor(attr.variant_.Get<vector<int64_t>>());
     } else {
       PADDLE_MOBILE_THROW_EXCEPTION("type not support");

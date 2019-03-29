@@ -37,7 +37,7 @@ void MulCompute(const MulParam<CPU> &param) {
   if (out_dim.size() != 2) {
     out->Resize({x_matrix.dims()[0], y_matrix.dims()[1]});
   }
-  if (param.InputX()->type() == type_id<int8_t>().name()) {
+  if (param.InputX()->type() == type_id<int8_t>().hash_code()) {
     out->mutable_data<int32_t>();
     math::MatMul<int8_t, int32_t>(x_matrix, false, y_matrix, false,
                                   static_cast<float>(1), out,

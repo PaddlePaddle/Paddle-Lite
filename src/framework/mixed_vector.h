@@ -197,7 +197,7 @@ class Vector {
   }
 
   size_t capacity() const {
-    return cpu_vec_.memory_size() / SizeOfType(type_id<T>().name());
+    return cpu_vec_.memory_size() / SizeOfType(type_id<T>().hash_code());
   }
 
   // reserve data
