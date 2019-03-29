@@ -65,7 +65,7 @@ static void quantize(const Tensor *input, const float scale, Tensor *output) {
   int output_w = output->dims()[3];
   size_t input_spatial = input_h * input_w;
   size_t output_spatial = output_h * output_w;
-  const float *x = input->data<const float>();
+  const float *x = input->data<float>();
   int8_t *y = output->mutable_data<int8_t>();
 
   for (int nc = 0; nc < batch_size * channels; ++nc) {
@@ -81,7 +81,7 @@ static void quantize(const Tensor *input, const float scale, Tensor *output) {
 
 static float find_abs_max(const Tensor *input) {
   float max_abs = 0.f;
-  const float *x = input->data<const float>();
+  const float *x = input->data<float>();
   size_t size = input->numel();
   for (size_t i = 0; i < size; ++i) {
     float value = std::abs(x[i]);
