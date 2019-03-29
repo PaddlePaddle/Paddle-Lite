@@ -81,7 +81,7 @@ class Tensor : public TensorBase {
     return *this;
   }
 
-  inline void *mutable_data(const std::string type) {
+  inline void *mutable_data(const kTypeId_t type) {
     if (holder_ != nullptr) {
       holder_->set_type(type);
     }
@@ -106,7 +106,7 @@ class Tensor : public TensorBase {
   template <typename T>
   inline T *mutable_data() {
     static_assert(std::is_pod<T>::value, "T must be POD");
-    return reinterpret_cast<T *>(mutable_data(type_id<T>().name()));
+    return reinterpret_cast<T *>(mutable_data(type_id<T>().hash_code()));
   }
 
   /**
@@ -163,9 +163,9 @@ class Tensor : public TensorBase {
     check_memory_size();
     PADDLE_MOBILE_ENFORCE(
         (std::is_same<T, void>::value ||
-         holder_->type() == type_id<T>().name()),
-        "Tensor holds the wrong type, it holds %s, requested %s",
-        this->holder_->type().c_str(), type_id<T>().name().c_str());
+         holder_->type() == type_id<T>().hash_code()),
+        "Tensor holds the wrong type, it holds %d, requested %d",
+        this->holder_->type(), type_id<T>().hash_code());
 
     return reinterpret_cast<T *>(reinterpret_cast<uintptr_t>(holder_->ptr()) +
                                  offset_);
@@ -177,9 +177,9 @@ class Tensor : public TensorBase {
     check_memory_size();
     PADDLE_MOBILE_ENFORCE(
         (std::is_same<T, void>::value ||
-         holder_->type() == type_id<T>().name()),
-        "Tensor holds the wrong type, it holds %s, requested %s",
-        this->holder_->type().c_str(), type_id<T>().name().c_str());
+         holder_->type() == type_id<T>().hash_code()),
+        "Tensor holds the wrong type, it holds %d, requested %d",
+        this->holder_->type(), type_id<T>().hash_code());
 
     return reinterpret_cast<const T *>(
         reinterpret_cast<uintptr_t>(holder_->ptr()) + offset_);
@@ -187,7 +187,7 @@ class Tensor : public TensorBase {
 
  private:
   struct PlaceholderImpl : public Placeholder {
-    PlaceholderImpl(size_t size, const std::string type)
+    PlaceholderImpl(size_t size, const kTypeId_t type)
         : ptr_(static_cast<uint8_t *>(memory::Alloc(size)),
                memory::PODDeleter<uint8_t>()),
           size_(size),
@@ -201,9 +201,9 @@ class Tensor : public TensorBase {
 
     virtual void *ptr() const { return static_cast<void *>(ptr_.get()); }
 
-    virtual std::string type() const { return type_; }
+    virtual kTypeId_t type() const { return type_; }
 
-    virtual void set_type(const std::string type) { type_ = type; }
+    virtual void set_type(const kTypeId_t type) { type_ = type; }
 
     virtual void resize(size_t size) {
       if (size > capatity_) {
@@ -221,7 +221,7 @@ class Tensor : public TensorBase {
     size_t capatity_;
 
     /* the current type of memory */
-    std::string type_;
+    kTypeId_t type_;
   };
 
 #ifdef PADDLE_MOBILE_FPGA
@@ -229,13 +229,13 @@ class Tensor : public TensorBase {
   inline void reset_data_ptr(void *p) {
     ((PlaceholderImpl *)(holder_.get()))->ptr_.reset((uint8_t *)p);  // NOLINT
   }
-  inline void set_type(const std::string type) { holder_->set_type(type); }
+  inline void set_type(const kTypeId_t type) { holder_->set_type(type); }
   inline void *get_data() {
     return (
         void *)(((PlaceholderImpl *)(holder_.get()))->ptr_.get());  // NOLINT
   }
 
-  inline void *init(const std::string type) {
+  inline void *init(const kTypeId_t type) {
     if (holder_ != nullptr) {
       holder_->set_type(type);
     }
@@ -263,15 +263,15 @@ inline Print &operator<<(Print &printer, const Tensor &tensor) {
   stride = stride > 0 ? stride : 1;
 #ifndef PADDLE_MOBILE_FPGA
   for (int i = 0; i < tensor.numel(); i += stride) {
-    if (tensor.type() == type_id<float>().name()) {
+    if (tensor.type() == type_id<float>()) {
       printer << tensor.data<float>()[i] << " ";
-    } else if (tensor.type() == type_id<int32_t>().name()) {
+    } else if (tensor.type() == type_id<int32_t>()) {
       printer << tensor.data<int32_t>()[i] << " ";
-    } else if (tensor.type() == type_id<int64_t>().name()) {
+    } else if (tensor.type() == type_id<int64_t>()) {
       printer << tensor.data<int64_t>()[i] << " ";
-    } else if (tensor.type() == type_id<int8_t>().name()) {
+    } else if (tensor.type() == type_id<int8_t>()) {
       printer << static_cast<int>(tensor.data<int8_t>()[i]) << " ";
-    } else if (tensor.type() == type_id<int32_t>().name()) {
+    } else if (tensor.type() == type_id<int32_t>()) {
       printer << tensor.data<int32_t>()[i] << " ";
     }
   }

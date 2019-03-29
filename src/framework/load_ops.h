@@ -268,6 +268,9 @@ LOAD_OP1(sequence_expand, CPU);
 #ifdef SEQUENCE_POOL_OP
 LOAD_OP1(sequence_pool, CPU);
 #endif
+#ifdef SEQUENCE_SOFTMAX_OP
+LOAD_OP1(sequence_softmax, CPU);
+#endif
 #ifdef LOG_OP
 LOAD_OP1(log, CPU);
 #endif

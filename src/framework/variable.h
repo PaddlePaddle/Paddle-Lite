@@ -30,7 +30,7 @@ class Variable {
 
   template <typename T>
   const T GetValue() const {
-    if (type_id<T>().name() == type_id<std::string>().name()) {
+    if (type_id<T>().hash_code() == type_id<std::string>().hash_code()) {
       PADDLE_MOBILE_THROW_EXCEPTION(
           "Please use getString to get an string (to avoid of an issue with "
           "gcc "
@@ -57,31 +57,32 @@ class Variable {
 
   template <typename T>
   bool IsType() const {
-    return holder_ != nullptr && holder_->Type() == type_id<T>().name();
+    return holder_ != nullptr && holder_->Type() == type_id<T>().hash_code();
   }
 
   void Clear() { holder_.reset(); }
 
-  std::string Type() const { return holder_->Type(); }
+  kTypeId_t Type() const { return holder_->Type(); }
 
  private:
   struct Placeholder {
     Placeholder() = default;
     virtual ~Placeholder() = default;
 
-    virtual std::string Type() const = 0;
+    virtual kTypeId_t Type() const = 0;
     virtual void *Ptr() const = 0;
   };
 
   template <typename T>
   struct PlaceholderImp : public Placeholder {
-    explicit PlaceholderImp(T *ptr) : ptr_(ptr), type_(type_id<T>().name()) {}
+    explicit PlaceholderImp(T *ptr)
+        : ptr_(ptr), type_(type_id<T>().hash_code()) {}
 
-    std::string Type() const override { return type_; }
+    kTypeId_t Type() const override { return type_; }
     void *Ptr() const override { return static_cast<void *>(ptr_.get()); }
 
     std::unique_ptr<T> ptr_;
-    std::string type_;
+    kTypeId_t type_;
   };
 
   friend class Scope;

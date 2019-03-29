@@ -34,8 +34,8 @@ struct VariantHelper {
                                  ? sizeof(F)
                                  : VariantHelper<Ts...>::size;
 
-  inline static void Destroy(std::string type, void *data) {
-    if (type == type_id<F>().name()) {
+  inline static void Destroy(kTypeId_t type, void *data) {
+    if (type == type_id<F>()) {
       reinterpret_cast<F *>(data)->~F();
     } else {
       VariantHelper<Ts...>::Destroy(type, data);
@@ -46,8 +46,8 @@ struct VariantHelper {
 template <typename F>
 struct VariantHelper<F> {
   static const size_t size = sizeof(F);
-  inline static void Destroy(std::string type, void *data) {
-    if (type == type_id<F>().name()) {
+  inline static void Destroy(kTypeId_t type, void *data) {
+    if (type == type_id<F>()) {
       // reinterpret_cast<F*>(data)->~F();
     } else {
       // std::cout << "未匹配到 " << std::endl;
@@ -85,17 +85,17 @@ struct Variant {
   void Set(Args &&... args) {
     helper::Destroy(type_, data_.data);
     new (data_.data) T(std::forward<Args>(args)...);
-    type_ = type_id<T>().name();
+    type_ = type_id<T>().hash_code();
   }
 
   void SetString(const std::string &string) {
     helper::Destroy(type_, data_.data);
-    type_ = type_id<std::string>().name();
+    type_ = type_id<std::string>().hash_code();
     strcpy(data_.data, string.c_str());  // NOLINT
   }
 
   std::string GetString() const {
-    if (type_ == type_id<std::string>().name()) {
+    if (type_ == type_id<std::string>()) {
       return std::string(data_.data);
     } else {
       PADDLE_MOBILE_THROW_EXCEPTION(
@@ -106,7 +106,7 @@ struct Variant {
 
   template <typename T>
   T &Get() const {
-    if (type_ == type_id<std::string>().name()) {
+    if (type_ == type_id<std::string>()) {
       PADDLE_MOBILE_THROW_EXCEPTION(
           "Please use getString to get an string (to avoid of an issue with "
           "gcc "
@@ -117,12 +117,12 @@ struct Variant {
     }
   }
 
-  std::string TypeId() const { return type_; }
+  kTypeId_t TypeId() const { return type_; }
 
  private:
-  static inline std::string invalid_type() { return type_id<void>().name(); }
+  static inline kTypeId_t invalid_type() { return type_id<void>().hash_code(); }
   typedef VariantHelper<Ts...> helper;
-  std::string type_ = type_id<void>().name();
+  kTypeId_t type_ = type_id<void>().hash_code();
   // todo use an anto size to suite this.
   RawData<64> data_;
 };

@@ -40,25 +40,25 @@ struct DDim {
 
   template <typename Vistor>
   static typename Vistor::type_t ApplyVistor(Vistor vistor, const DDim &d) {
-    if (d.var.TypeId() == type_id<Dim<0>>().name()) {
+    if (d.var.TypeId() == type_id<Dim<0>>()) {
       return vistor(d.var.Get<Dim<0>>());
-    } else if (d.var.TypeId() == type_id<Dim<1>>().name()) {
+    } else if (d.var.TypeId() == type_id<Dim<1>>()) {
       return vistor(d.var.Get<Dim<1>>());
-    } else if (d.var.TypeId() == type_id<Dim<2>>().name()) {
+    } else if (d.var.TypeId() == type_id<Dim<2>>()) {
       return vistor(d.var.Get<Dim<2>>());
-    } else if (d.var.TypeId() == type_id<Dim<3>>().name()) {
+    } else if (d.var.TypeId() == type_id<Dim<3>>()) {
       return vistor(d.var.Get<Dim<3>>());
-    } else if (d.var.TypeId() == type_id<Dim<4>>().name()) {
+    } else if (d.var.TypeId() == type_id<Dim<4>>()) {
       return vistor(d.var.Get<Dim<4>>());
-    } else if (d.var.TypeId() == type_id<Dim<5>>().name()) {
+    } else if (d.var.TypeId() == type_id<Dim<5>>()) {
       return vistor(d.var.Get<Dim<5>>());
-    } else if (d.var.TypeId() == type_id<Dim<6>>().name()) {
+    } else if (d.var.TypeId() == type_id<Dim<6>>()) {
       return vistor(d.var.Get<Dim<6>>());
-    } else if (d.var.TypeId() == type_id<Dim<7>>().name()) {
+    } else if (d.var.TypeId() == type_id<Dim<7>>()) {
       return vistor(d.var.Get<Dim<7>>());
-    } else if (d.var.TypeId() == type_id<Dim<8>>().name()) {
+    } else if (d.var.TypeId() == type_id<Dim<8>>()) {
       return vistor(d.var.Get<Dim<8>>());
-    } else if (d.var.TypeId() == type_id<Dim<9>>().name()) {
+    } else if (d.var.TypeId() == type_id<Dim<9>>()) {
       return vistor(d.var.Get<Dim<9>>());
     } else {
       PADDLE_MOBILE_ENFORCE(false, " dim not support");

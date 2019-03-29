@@ -126,13 +126,13 @@ void Transpose2Kernel<CPU, float>::Compute(const Transpose2Param<CPU> &param) {
   const std::vector<int> &axis = param.Axis();
   bool shuffle_channel = IsShuffleChannel(axis);
   if (shuffle_channel) {
-    if (param.InputX()->type() == type_id<int8_t>().name()) {
+    if (param.InputX()->type() == type_id<int8_t>().hash_code()) {
       ShuffleChannelCompute<int8_t>(param);
     } else {
       ShuffleChannelCompute<float>(param);
     }
   } else {
-    if (param.InputX()->type() == type_id<int8_t>().name()) {
+    if (param.InputX()->type() == type_id<int8_t>().hash_code()) {
       Transpose2Compute<int8_t>(param);
     } else {
       Transpose2Compute<float>(param);
