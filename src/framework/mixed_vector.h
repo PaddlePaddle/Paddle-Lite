@@ -17,7 +17,6 @@
 #include <algorithm>
 #include <initializer_list>
 #include <vector>
-
 #include "framework/tensor.h"
 #include "framework/tensor_util.h"
 
@@ -198,7 +197,7 @@ class Vector {
   }
 
   size_t capacity() const {
-    return cpu_vec_.memory_size() / SizeOfType(typeid(T));
+    return cpu_vec_.memory_size() / SizeOfType(type_id<T>().hash_code());
   }
 
   // reserve data

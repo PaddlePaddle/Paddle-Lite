@@ -36,7 +36,7 @@ inline float32_t vmaxvq_f32(float32x4_t r) {
 template <RoundType R>
 inline void QuantizeOffline(const Tensor *input, const float scale,
                             const float max_abs, Tensor *output) {
-  const float *x = input->data<const float>();
+  const float *x = input->data<float>();
   int8_t *y = output->mutable_data<int8_t>();
   size_t remain = input->numel();
 #if defined(__ARM_NEON__) || defined(__ARM_NEON)
@@ -88,7 +88,7 @@ inline void QuantizeOffline(const Tensor *input, const float scale,
 template <RoundType R>
 inline void QuantizeOnline(const Tensor *input, const float scale,
                            Tensor *output) {
-  const float *x = input->data<const float>();
+  const float *x = input->data<float>();
   int8_t *y = output->mutable_data<int8_t>();
   size_t remain = input->numel();
 #if defined(__ARM_NEON__) || defined(__ARM_NEON)
@@ -143,7 +143,7 @@ static void Quantize(const Tensor *input, const float max_abs,
 
 float find_abs_max(const Tensor *input) {
   float max_abs = 0.f;
-  const float *x = input->data<const float>();
+  const float *x = input->data<float>();
   size_t remain = input->numel();
 #if defined(__ARM_NEON__) || defined(__ARM_NEON)
   size_t loop = remain >> 4;

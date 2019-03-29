@@ -14,12 +14,23 @@ limitations under the License. */
 
 #pragma once
 
+#include <functional>
 #include <string>
 #include "common/log.h"
 #include "common/type_define.h"
+#include "framework/scope.h"
 
 namespace paddle_mobile {
 namespace framework {
+
+template <typename Dtype>
+class OperatorBase;
+
+template <typename Dtype>
+using OpCreator = std::function<framework::OperatorBase<Dtype> *(
+    const std::string & /*type*/, const VariableNameMap & /*inputs*/,
+    const VariableNameMap & /*outputs*/,
+    const framework::AttributeMap & /*attrs*/, framework::Scope * /*scope*/)>;
 
 template <typename Dtype>
 struct OpInfo {
@@ -79,8 +90,6 @@ class OpInfoMap {
  private:
   OpInfoMap() = default;
   std::unordered_map<std::string, OpInfo<Dtype>> map_;
-
-  //  DISABLE_COPY_AND_ASSIGN(OpInfoMap);
 };
 
 }  // namespace framework

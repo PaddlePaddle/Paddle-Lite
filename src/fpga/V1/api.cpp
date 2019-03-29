@@ -28,8 +28,8 @@ namespace fpga {
 void format_image(framework::Tensor *image_tensor) {
   auto dims = image_tensor->dims();
   auto channel = dims[1], height = dims[2], width = dims[3];
-  std::type_index input_type = image_tensor->type();
-  if (input_type == typeid(float)) {
+  kTypeId_t input_type = image_tensor->type();
+  if (input_type == type_id<float>()) {
     auto data_ptr = image_tensor->data<float>();
     auto external_ptr = reinterpret_cast<float *>(image_tensor->external_data);
     float *p_data = external_ptr == nullptr ? data_ptr : external_ptr;
@@ -51,7 +51,7 @@ void format_image(framework::Tensor *image_tensor) {
 }
 
 void format_ofm(framework::Tensor *ofm_tensor) {
-  if (ofm_tensor->type() == typeid(float)) {
+  if (ofm_tensor->type() == type_id<float>()) {
     format_fp32_ofm(ofm_tensor);
   } else {
     format_fp16_ofm(ofm_tensor);
@@ -72,7 +72,7 @@ void format_fp16_ofm(framework::Tensor *ofm_tensor) {
   auto p = fpga_malloc(memory_size);
   // memset(p, 0, memory_size);
   ofm_tensor->reset_data_ptr(p);
-  ofm_tensor->set_type(typeid(half));
+  ofm_tensor->set_type(type_id<half>().hash_code());
   ofm_tensor->fpga_data_num = memory_size / sizeof(half);
   fpga::fpga_flush(p, memory_size);
 }
@@ -92,7 +92,7 @@ void format_fp16_ofm(framework::Tensor *ofm_tensor, framework::DDim dims) {
   auto p = fpga_malloc(memory_size);
   // memset(p, 0, memory_size);
   ofm_tensor->reset_data_ptr(p);
-  ofm_tensor->set_type(typeid(half));
+  ofm_tensor->set_type(type_id<half>().hash_code());
   ofm_tensor->fpga_data_num = memory_size / sizeof(half);
   fpga::fpga_flush(p, memory_size);
 }
@@ -112,7 +112,7 @@ void format_fp32_ofm(framework::Tensor *ofm_tensor) {
   auto p = fpga_malloc(memory_size);
   // memset(p, 0, memory_size);
   ofm_tensor->reset_data_ptr(p);
-  ofm_tensor->set_type(typeid(float));
+  ofm_tensor->set_type(type_id<float>().hash_code());
   ofm_tensor->fpga_data_num = memory_size / sizeof(float);
   fpga::fpga_flush(p, memory_size);
 }
@@ -171,7 +171,7 @@ void format_filter(framework::Tensor *filter_tensor, float max_value,
   filter::format_filter(&new_data, num, channel, height, width, group_num,
                         max_value);
   filter_tensor->reset_data_ptr(new_data);
-  filter_tensor->set_type(typeid(int8_t));
+  filter_tensor->set_type(type_id<int8_t>().hash_code());
 }
 void format_dwconv_filter(framework::Tensor *filter_tensor, float *scale_ptr) {
   auto dims = filter_tensor->dims();
@@ -182,7 +182,7 @@ void format_dwconv_filter(framework::Tensor *filter_tensor, float *scale_ptr) {
   fpga_copy(new_data, data_ptr, memory_size);
   filter::format_dwconv_filter(&new_data, num, height, width, scale_ptr);
   filter_tensor->reset_data_ptr(new_data);
-  filter_tensor->set_type(typeid(int16_t));
+  filter_tensor->set_type(type_id<int16_t>().hash_code());
 }
 
 void format_DWDconv_filter(framework::Tensor *filter_tensor, float *scale_ptr,
@@ -207,7 +207,7 @@ void format_DWDconv_filter(framework::Tensor *filter_tensor, float *scale_ptr,
   //      framework::make_ddim({num, 1, height, width});
   //  filter_tensor->Resize(dims_new);
   filter_tensor->reset_data_ptr(new_data);
-  filter_tensor->set_type(typeid(int16_t));
+  filter_tensor->set_type(type_id<int16_t>().hash_code());
 }
 
 void format_fc_filter(framework::Tensor *filter_tensor, float max_value) {
@@ -222,7 +222,7 @@ void format_fc_filter(framework::Tensor *filter_tensor, float max_value) {
   filter::format_fc_filter(&new_data, num, channel, height, width, 1,
                            max_value);
   filter_tensor->reset_data_ptr(new_data);
-  filter_tensor->set_type(typeid(int8_t));
+  filter_tensor->set_type(type_id<int8_t>().hash_code());
 }
 void format_deconv_filter(framework::Tensor *filter_tensor, float max_value,
                           int group_num, int stride) {
@@ -249,7 +249,7 @@ void format_deconv_filter(framework::Tensor *filter_tensor, float max_value,
       framework::make_ddim({num, channel, height, width});
   filter_tensor->Resize(dims_new);
   filter_tensor->reset_data_ptr(new_data);
-  filter_tensor->set_type(typeid(int8_t));
+  filter_tensor->set_type(type_id<int8_t>().hash_code());
 }
 
 void format_bias_scale_array(float **bias_scale_array,
@@ -273,7 +273,7 @@ void format_concat_output(framework::Tensor *out, int height, int width,
   auto ddim = framework::make_ddim({1, sum_channel, height, width});
   out->Resize(ddim);
   out->reset_data_ptr(data_ptr);
-  out->set_type(typeid(half));
+  out->set_type(type_id<half>().hash_code());
 }
 void format_conv_data(framework::Tensor *filter_tensor,
                       framework::Tensor *ofm_tensor, float **bs_ptr,

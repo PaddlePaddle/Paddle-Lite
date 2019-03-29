@@ -14,8 +14,6 @@ limitations under the License. */
 
 #ifdef ONE_HOT_OP
 
-#pragma once
-
 #include "operators/one_hot_op.h"
 
 namespace paddle_mobile {

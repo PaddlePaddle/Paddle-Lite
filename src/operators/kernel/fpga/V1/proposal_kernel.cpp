@@ -37,11 +37,11 @@ bool ProposalKernel<FPGA, float>::Init(ProposalParam<FPGA> *param) {
 
   param->float_bbox = std::make_shared<Tensor>();
   param->float_bbox->Resize(param->bbox_deltas_->dims());
-  param->float_bbox->init(typeid(float));
+  param->float_bbox->init(type_id<float>().hash_code());
   fpga::format_fp32_ofm(param->float_bbox.get());
   param->float_score = std::make_shared<Tensor>();
   param->float_score->Resize(param->scores_->dims());
-  param->float_score->init(typeid(float));
+  param->float_score->init(type_id<float>().hash_code());
   fpga::format_fp32_ofm(param->float_score.get());
 
   auto input = param->bbox_deltas_;
@@ -437,7 +437,6 @@ void ProposalKernel<FPGA, float>::Compute(const ProposalParam<FPGA> &param) {
   bbox_height = (uint32_t)(input_bbox->dims()[2]);
   bbox_width = (uint32_t)(input_bbox->dims()[3]);
 
-  // score_tmp->init(typeid(half));
   std::shared_ptr<Tensor> score_tmp = std::make_shared<Tensor>();
   score_tmp->Resize(param.scores_->dims());
   score_tmp->mutable_data<half>();

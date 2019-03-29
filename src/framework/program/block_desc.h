@@ -14,6 +14,8 @@ limitations under the License. */
 
 #pragma once
 
+#include <memory>
+#include <vector>
 #include "framework/framework.pb-c.h"
 #include "framework/program/op_desc.h"
 #include "framework/program/var_desc.h"
@@ -26,8 +28,8 @@ class BlockDesc {
   friend class Node;
   friend class ProgramOptimize;
   BlockDesc() {}
-  BlockDesc(PaddleMobile__Framework__Proto__BlockDesc *desc);
-  BlockDesc(const BlockDesc &block_desc)
+  explicit BlockDesc(PaddleMobile__Framework__Proto__BlockDesc *desc);
+  explicit BlockDesc(const BlockDesc &block_desc)
       : index_(block_desc.index_), parent_index_(block_desc.parent_index_) {
     for (auto &op_desc : block_desc.ops_) {
       std::shared_ptr<OpDesc> copy_op_desc = std::make_shared<OpDesc>(*op_desc);

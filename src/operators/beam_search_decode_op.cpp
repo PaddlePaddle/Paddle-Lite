@@ -14,8 +14,6 @@ limitations under the License. */
 
 #ifdef BEAM_SEARCH_DECODE_OP
 
-#pragma once
-
 #include "operators/beam_search_decode_op.h"
 
 namespace paddle_mobile {
