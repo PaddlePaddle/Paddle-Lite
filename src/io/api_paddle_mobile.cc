@@ -143,7 +143,7 @@ void PaddleMobilePredictor<Device, T>::FeedPaddleTensors(
   auto num = inputs.size();
   std::vector<framework::Tensor> tensors(num, framework::Tensor());
   for (int i = 0; i < num; i++) {
-    tensors[i].init(type_id<float>());
+    tensors[i].init(type_id<float>().hash_code());
     ConvertPaddleTensors(inputs[i], &tensors[i]);
   }
   paddle_mobile_->FeedTensorData(tensors);

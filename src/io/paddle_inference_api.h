@@ -25,6 +25,7 @@ limitations under the License. */
 #include <memory>
 #include <string>
 #include <vector>
+#include "common/type_define.h"
 
 namespace paddle_mobile {
 
@@ -87,6 +88,7 @@ struct PaddleTensor {
   // TODO(Superjomn) for LoD support, add a vector<vector<int>> field if needed.
   PaddleBuf data;  // blob of data.
   PaddleDType dtype;
+  kTypeId_t dtypeid;
   LayoutType layout;
 };
 

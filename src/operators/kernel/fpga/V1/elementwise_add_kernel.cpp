@@ -25,7 +25,7 @@ template <>
 bool ElementwiseAddKernel<FPGA, float>::Init(ElementwiseAddParam<FPGA> *param) {
   auto *input_y = const_cast<LoDTensor *>(param->InputY());
   auto *out = param->Out();
-  if (input_y->type() != typeid(float)) {
+  if (input_y->type() != type_id<float>()) {
     paddle_mobile::fpga::ActivationType activation_enable =
         paddle_mobile::fpga::NONE;
     int16_t leaky_relu_negative_slope = 0;
@@ -62,11 +62,10 @@ bool ElementwiseAddKernel<FPGA, float>::Init(ElementwiseAddParam<FPGA> *param) {
     param->SetFpgaArgs(ewaddArgs);
   } else {
     param->float_input_x.Resize(param->InputX()->dims());
-    param->float_input_x.init(typeid(float));
+    param->float_input_x.init(type_id<float>().hash_code());
     fpga::format_fp32_ofm(&(param->float_input_x));
 
     param->float_out.Resize(param->InputX()->dims());
-    // param->float_out.init(typeid(float));
     param->float_out.mutable_data<float>(param->InputX()->dims());
     fpga::format_fp32_ofm(&(param->float_out));
 
@@ -118,7 +117,7 @@ template <>
 void ElementwiseAddKernel<FPGA, float>::Compute(
     const ElementwiseAddParam<FPGA> &param) {
   auto input_y = const_cast<LoDTensor *>(param.InputY());
-  if (input_y->type() != typeid(float)) {
+  if (input_y->type() != type_id<float>()) {
     fpga::ComputeFpgaEWAdd(param.FpgaArgs());
   } else {
     auto input_x = const_cast<LoDTensor *>(param.InputX());

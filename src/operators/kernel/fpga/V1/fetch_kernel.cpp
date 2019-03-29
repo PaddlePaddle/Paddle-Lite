@@ -21,10 +21,10 @@ bool FetchKernel<FPGA, float>::Init(FetchParam<FPGA> *param) {
   int col = param->Col();
   DLOG << "col = " << col;
   auto output = &(param->Out()->at(col));
-  if (input->type() == typeid(float)) {
+  if (input->type() == type_id<float>()) {
     return true;
   }
-  output->init(typeid(float));
+  output->init(type_id<float>().hash_code());
   output->Resize(input->dims());
   fpga::format_fp32_ofm(output);
   int outC = 1;
@@ -78,7 +78,7 @@ void FetchKernel<FPGA, float>::Compute(const FetchParam<FPGA> &param) {
   auto input = const_cast<LoDTensor *>(param.InputX());
   int col = param.Col();
   auto output = &param.Out()->at(col);
-  if (input->type() == typeid(float)) {
+  if (input->type() == type_id<float>()) {
     output->ShareDataWith(*input);
     return;
   }
