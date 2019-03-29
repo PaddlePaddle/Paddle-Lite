@@ -24,6 +24,7 @@ typedef enum {
   _void = 0,
   _float,
   _int,
+  _uint16_t,
   _double,
   _int64_t,
   _size_t,
@@ -64,6 +65,9 @@ typedef enum {
   _dim7,
   _dim8,
   _dim9,
+#ifdef PADDLE_MOBILE_CL
+  _cl_image,
+#endif
 } kTypeId_t;
 
 template <typename T>
@@ -83,15 +87,18 @@ struct type_id {
   }
 };
 
-template <typename T>
-inline bool operator==(const kTypeId_t &t0, const type_id<T> &t1) {
-  return t0 == t1.hash_code();
-}
+#define OVERIDE_TYPEID_OPERATOR(oprand)                                    \
+  template <typename T>                                                    \
+  inline bool operator oprand(const kTypeId_t &t0, const type_id<T> &t1) { \
+    return t0 oprand t1.hash_code();                                       \
+  }                                                                        \
+  template <typename T>                                                    \
+  inline bool operator oprand(const type_id<T> &t0, const kTypeId_t &t1) { \
+    return t1 oprand t0.hash_code();                                       \
+  }
 
-template <typename T>
-inline bool operator==(const type_id<T> &t0, const kTypeId_t &t1) {
-  return t1 == t0.hash_code();
-}
+OVERIDE_TYPEID_OPERATOR(==)
+OVERIDE_TYPEID_OPERATOR(!=)
 
 namespace framework {
 class BlockDesc;
@@ -99,6 +106,9 @@ class Tensor;
 class LoDTensor;
 class SelectedRows;
 class Scope;
+#ifdef PADDLE_MOBILE_CL
+class CLImage;
+#endif
 
 template <int>
 struct Dim;
@@ -114,6 +124,7 @@ struct Dim;
 REGISTER_TYPE_ID(void, _void)
 REGISTER_TYPE_ID(float, _float)
 REGISTER_TYPE_ID(int, _int)
+REGISTER_TYPE_ID(uint16_t, _uint16_t)
 REGISTER_TYPE_ID(double, _double)
 REGISTER_TYPE_ID(int64_t, _int64_t)
 REGISTER_TYPE_ID(size_t, _size_t)
@@ -159,6 +170,9 @@ REGISTER_TYPE_ID(framework::Dim<7>, _dim7)
 REGISTER_TYPE_ID(framework::Dim<8>, _dim8)
 REGISTER_TYPE_ID(framework::Dim<9>, _dim9)
 
+#ifdef PADDLE_MOBILE_CL
+REGISTER_TYPE_ID(framework::CLImage, _cl_image)
+#endif
 }  // namespace paddle_mobile
 
 namespace std {

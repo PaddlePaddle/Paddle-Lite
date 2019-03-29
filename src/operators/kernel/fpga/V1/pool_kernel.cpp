@@ -28,7 +28,7 @@ bool PoolKernel<FPGA, float>::Init(PoolParam<FPGA> *param) {
   vector<int> paddings = param->Paddings();
   std::string pooling_type = param->PoolingType();
 
-  if (input->type() == typeid(float)) {
+  if (input->type() == type_id<float>()) {
     int channels = input->dims()[1];
     int height = input->dims()[2];
     int width = input->dims()[3];
@@ -70,7 +70,7 @@ template <>
 void PoolKernel<FPGA, float>::Compute(const PoolParam<FPGA> &param) {
   auto *input = const_cast<LoDTensor *>(param.Input());
 
-  if (input->type() == typeid(float)) {
+  if (input->type() == type_id<float>()) {
     auto *output = param.Output();
     auto in = input->data<float>();
     auto N = input->dims()[0];

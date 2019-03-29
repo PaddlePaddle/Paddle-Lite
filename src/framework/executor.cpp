@@ -62,8 +62,8 @@ Executor<Device, T>::Executor(const Program<Device> &program,
       use_optimize_ ? program_.optimizeProgram : program_.originProgram;
   PADDLE_MOBILE_ENFORCE(program_desc_ != nullptr,
                         "program_desc_ should not be nullptr");
-#ifndef PADDLE_MOBILE_FPGA
-//  pass::MemoryOptPass()(program_desc_.get(), program_.scope.get());
+#if !defined(PADDLE_MOBILE_FPGA) && !defined(PADDLE_MOBILE_CL)
+  pass::MemoryOptPass()(program_desc_.get(), program_.scope.get());
 #endif
   // resize feed and fetch list
   // should init feed and fetch variables before infer shape
@@ -302,7 +302,7 @@ bool Executor<Device, T>::varInputMemory(
     const std::shared_ptr<VarDesc> &var_desc, Variable *var) const {
 #ifdef PADDLE_MOBILE_FPGA
   framework::LoDTensor *tensor = var->template GetMutable<LoDTensor>();
-  tensor->init(type_id<float>());
+  tensor->init(type_id<float>().hash_code());
   return true;
 #endif
 
