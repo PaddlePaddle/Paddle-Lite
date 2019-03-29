@@ -15,18 +15,17 @@ limitations under the License. */
 #pragma once
 
 #include <string>
-#include <typeindex>
 #include "common/enforce.h"
+#include "common/type_define.h"
 #include "framework/framework.pb-c.h"
 
 namespace paddle_mobile {
 
 namespace framework {
 
-extern _PaddleMobile__Framework__Proto__VarType__Type ToDataType(
-    std::type_index type);
-extern std::type_index ToTypeIndex(
-    _PaddleMobile__Framework__Proto__VarType__Type type);
+_PaddleMobile__Framework__Proto__VarType__Type ToDataType(kTypeId_t type);
+
+kTypeId_t ToTypeIndex(_PaddleMobile__Framework__Proto__VarType__Type type);
 
 inline _PaddleMobile__Framework__Proto__VarType__Type ToDataType(int type) {
   return static_cast<_PaddleMobile__Framework__Proto__VarType__Type>(type);

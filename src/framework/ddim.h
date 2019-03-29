@@ -22,7 +22,7 @@ limitations under the License. */
 
 #include "common/enforce.h"
 #include "common/variant.h"
-#include "dim.h"
+#include "framework/dim.h"
 
 namespace paddle_mobile {
 namespace framework {
@@ -40,25 +40,25 @@ struct DDim {
 
   template <typename Vistor>
   static typename Vistor::type_t ApplyVistor(Vistor vistor, const DDim &d) {
-    if (d.var.TypeId() == typeid(Dim<0>).hash_code()) {
+    if (d.var.TypeId() == type_id<Dim<0>>()) {
       return vistor(d.var.Get<Dim<0>>());
-    } else if (d.var.TypeId() == typeid(Dim<1>).hash_code()) {
+    } else if (d.var.TypeId() == type_id<Dim<1>>()) {
       return vistor(d.var.Get<Dim<1>>());
-    } else if (d.var.TypeId() == typeid(Dim<2>).hash_code()) {
+    } else if (d.var.TypeId() == type_id<Dim<2>>()) {
       return vistor(d.var.Get<Dim<2>>());
-    } else if (d.var.TypeId() == typeid(Dim<3>).hash_code()) {
+    } else if (d.var.TypeId() == type_id<Dim<3>>()) {
       return vistor(d.var.Get<Dim<3>>());
-    } else if (d.var.TypeId() == typeid(Dim<4>).hash_code()) {
+    } else if (d.var.TypeId() == type_id<Dim<4>>()) {
       return vistor(d.var.Get<Dim<4>>());
-    } else if (d.var.TypeId() == typeid(Dim<5>).hash_code()) {
+    } else if (d.var.TypeId() == type_id<Dim<5>>()) {
       return vistor(d.var.Get<Dim<5>>());
-    } else if (d.var.TypeId() == typeid(Dim<6>).hash_code()) {
+    } else if (d.var.TypeId() == type_id<Dim<6>>()) {
       return vistor(d.var.Get<Dim<6>>());
-    } else if (d.var.TypeId() == typeid(Dim<7>).hash_code()) {
+    } else if (d.var.TypeId() == type_id<Dim<7>>()) {
       return vistor(d.var.Get<Dim<7>>());
-    } else if (d.var.TypeId() == typeid(Dim<8>).hash_code()) {
+    } else if (d.var.TypeId() == type_id<Dim<8>>()) {
       return vistor(d.var.Get<Dim<8>>());
-    } else if (d.var.TypeId() == typeid(Dim<9>).hash_code()) {
+    } else if (d.var.TypeId() == type_id<Dim<9>>()) {
       return vistor(d.var.Get<Dim<9>>());
     } else {
       PADDLE_MOBILE_ENFORCE(false, " dim not support");

@@ -20,8 +20,8 @@ namespace paddle_mobile {
 
 template <typename Itype, typename Otype>
 int TestGruOp(int in_channels, int out_channels, std::string opname) {
-  int input_c = in_channels;
-  int output_c = out_channels;
+  size_t input_c = in_channels;
+  size_t output_c = out_channels;
   paddle_mobile::framework::LoD lod{{0, input_c}};
   int batch_size = lod.size();
   framework::DDim input_shape = framework::make_ddim({input_c, output_c * 3});

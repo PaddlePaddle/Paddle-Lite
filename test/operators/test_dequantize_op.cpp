@@ -19,7 +19,7 @@ limitations under the License. */
 namespace paddle_mobile {
 
 void dequantize(const Tensor* input, const float scale, Tensor* output) {
-  const int32_t* x = input->data<const int32_t>();
+  const int32_t* x = input->data<int32_t>();
   float* y = output->mutable_data<float>();
   size_t size = output->numel();
   for (size_t i = 0; i < size; ++i) {

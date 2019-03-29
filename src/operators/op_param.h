@@ -19,6 +19,7 @@ limitations under the License. */
 #include "common/log.h"
 #include "common/type_define.h"
 #include "common/types.h"
+#include "framework/attribute.h"
 #include "framework/lod_tensor.h"
 #include "framework/scope.h"
 #include "framework/tensor.h"

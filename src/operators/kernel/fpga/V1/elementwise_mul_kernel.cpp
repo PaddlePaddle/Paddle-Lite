@@ -27,11 +27,11 @@ struct MulFunctor {
 template <>
 bool ElementwiseMulKernel<FPGA, float>::Init(ElementwiseMulParam<FPGA> *param) {
   param->float_input_x.Resize(param->InputX()->dims());
-  param->float_input_x.init(typeid(float));
+  param->float_input_x.init(type_id<float>().hash_code());
   fpga::format_fp32_ofm(&(param->float_input_x));
 
   param->float_out.Resize(param->InputX()->dims());
-  param->float_out.init(typeid(float));
+  param->float_out.init(type_id<float>().hash_code());
   fpga::format_fp32_ofm(&(param->float_out));
 
   auto *out = param->Out();

@@ -53,12 +53,12 @@ class CLTensor : TensorBase {
     int64_t size = numel() * sizeof(T);
 
     holder_.reset(new PlaceholderImpl(
-        size, reinterpret_cast<void *>(const_cast<T *>(data)), typeid(T),
-        context_, command_queue_));
+        size, reinterpret_cast<void *>(const_cast<T *>(data)),
+        type_id<T>().hash_code(), context_, command_queue_));
     return reinterpret_cast<cl_mem>(holder_->ptr());
   }
 
-  inline cl_mem mutable_data(std::type_index type) {
+  inline cl_mem mutable_data(kTypeId_t type) {
     if (holder_ != nullptr) {
       holder_->set_type(type);
     }
@@ -77,7 +77,7 @@ class CLTensor : TensorBase {
    */
   template <typename T>
   inline cl_mem mutable_data() {
-    return reinterpret_cast<cl_mem>(mutable_data(typeid(T)));
+    return reinterpret_cast<cl_mem>(mutable_data(type_id<T>().hash_code()));
   }
 
   /**
@@ -132,7 +132,7 @@ class CLTensor : TensorBase {
   void *host_ptr_ = nullptr;
 
   struct PlaceholderImpl : public Placeholder {
-    PlaceholderImpl(size_t size, void *input, std::type_index type,
+    PlaceholderImpl(size_t size, void *input, kTypeId_t type,
                     cl_context context, cl_command_queue command_queue)
         : ptr_(clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
                               size, reinterpret_cast<void *>(input), NULL)),
@@ -142,7 +142,7 @@ class CLTensor : TensorBase {
           context_(context),
           command_queue_(command_queue) {}
 
-    PlaceholderImpl(size_t size, std::type_index type, cl_context context,
+    PlaceholderImpl(size_t size, kTypeId_t type, cl_context context,
                     cl_command_queue command_queue)
         : ptr_(clCreateBuffer(context, CL_MEM_READ_WRITE, size, NULL, NULL)),
           size_(size),
@@ -155,9 +155,9 @@ class CLTensor : TensorBase {
 
     virtual void *ptr() const { return static_cast<void *>(ptr_.get()); }
 
-    virtual std::type_index type() const { return type_; }
+    virtual kTypeId_t type() const { return type_; }
 
-    virtual void set_type(std::type_index type) { type_ = type; }
+    virtual void set_type(kTypeId_t type) { type_ = type; }
 
     virtual void resize(size_t size) {
       if (size > capatity_) {
@@ -175,7 +175,7 @@ class CLTensor : TensorBase {
     size_t capatity_;
 
     /* the current type of memory */
-    std::type_index type_;
+    kTypeId_t type_;
 
     cl_context context_;
     cl_command_queue command_queue_;

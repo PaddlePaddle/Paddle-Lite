@@ -28,7 +28,9 @@ void WriteToArrayKernel<CPU, float>::Compute(
     const WriteToArrayParam<CPU> &param) {
   int64_t offset = param.index_->data<int64_t>()[0];
   if (offset >= param.output_->size()) {
-    param.output_->resize(offset + 1);
+    while (param.output_->size() <= offset) {
+      param.output_->emplace_back();
+    }
   }
 
   framework::LoDTensor *out_tensor = &(param.output_->at(offset));
