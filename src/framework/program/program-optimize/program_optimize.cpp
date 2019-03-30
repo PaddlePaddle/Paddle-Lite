@@ -14,6 +14,7 @@ limitations under the License. */
 
 #include "framework/program/program-optimize/program_optimize.h"
 #include <algorithm>
+#include <utility>
 #include "framework/program/program-optimize/fusion_op_register.h"
 
 namespace paddle_mobile {
@@ -22,7 +23,6 @@ namespace framework {
 
 std::shared_ptr<ProgramDesc> ProgramOptimize::FusionOptimize(
     std::shared_ptr<ProgramDesc> ori_des, bool add_split) {
-  //  ProgramDesc *optimize_program = new ProgramDesc(*ori_des);
   std::shared_ptr<ProgramDesc> optimize_program =
       std::make_shared<ProgramDesc>(*ori_des);
   current_block_ = optimize_program->Blocks().size();
@@ -35,51 +35,35 @@ std::shared_ptr<ProgramDesc> ProgramOptimize::FusionOptimize(
             std::pair<std::shared_ptr<Node>,
                       std::unordered_map<std::string, std::shared_ptr<Node>>>>>
         type_map;
-
-    std::unordered_map<std::string, bool> output_has;
-
     std::vector<std::shared_ptr<Node>> nodes;
-
     std::shared_ptr<Node> begin_node;
+
     auto block = optimize_program->Block(i);
-    //        DLOG << " ops size: " << block->Ops().size();
     for (int j = 0; j < block->Ops().size(); ++j) {
       auto op = block->Ops()[j];
-      auto op_type = op->Type();
-      if (op_input_output_key.find(op->Type()) == op_input_output_key.end()) {
-        LOG(kLOG_ERROR) << "has not support op return null "
-                        << " op type: " << op->Type();
-        return nullptr;
-      }
-
       std::shared_ptr<Node> node = std::make_shared<Node>(op);
-      nodes.push_back(node);
-
-      //
-      type_map[op->Type()].push_back({node, output_nodes});
-
       if (j == 0) {
         begin_node = node;
       }
 
-      auto input_keys = op_input_output_key.at(op->Type()).first;
-      for (auto input_key : input_keys) {
-        auto op_inputs = op->Input(input_key);
-        for (int l = 0; l < op_inputs.size(); ++l) {
-          std::string input_key = op_inputs[l];
-          if (output_nodes.find(input_key) != output_nodes.end()) {
-            auto input_node = output_nodes[input_key];
+      const std::string op_type = op->Type();
+      nodes.push_back(node);
+      type_map[op_type].push_back({node, output_nodes});
+      const VariableNameMap &op_inputs = op->GetInputs();
+      const VariableNameMap &op_outpus = op->GetOutputs();
+
+      for (const auto &input : op_inputs) {
+        for (const auto &input_name : input.second) {
+          if (output_nodes.find(input_name) != output_nodes.end()) {
+            auto input_node = output_nodes[input_name];
             *input_node > node;
           }
         }
       }
 
-      auto output_keys = op_input_output_key.at(op_type).second;
-
-      for (auto output_key : output_keys) {
-        auto op_outputs = op->Output(output_key);
-        for (int k = 0; k < op_outputs.size(); ++k) {
-          output_nodes[op_outputs[k]] = node;
+      for (const auto &output : op_outpus) {
+        for (const auto &output_name : output.second) {
+          output_nodes[output_name] = node;
         }
       }
     }
@@ -97,14 +81,13 @@ std::shared_ptr<ProgramDesc> ProgramOptimize::FusionOptimize(
 
         auto depth = matcher->BeginNode().Depth();
         auto sub_node = match_node->To(depth);
-        //        DLOG << " sub node: " << *sub_node;
+        //  DLOG << " sub node: " << *sub_node;
         if (*sub_node == matcher->BeginNode()) {
           bool can_folder = true;
 
           auto relationship_map = sub_node->Relationship();
 
           for (auto to_check : matcher->NeedCheck()) {
-            //            if (node_has)
             auto nodes = (*sub_node)[to_check.first];
             for (auto node : nodes) {
               auto inputs_to_check =
@@ -126,13 +109,8 @@ std::shared_ptr<ProgramDesc> ProgramOptimize::FusionOptimize(
             continue;
           }
 
-          //          DLOG << " match success " << " fusion node: \n" <<
-          //          matcher->BeginNode() << "\nsub node: \n" << *sub_node;
-          //          DLOG << "match node\n"<< *match_node;
-
           std::vector<std::shared_ptr<Node>> removed_nodes;
           matcher->FolderNodes(match_node.get(), &removed_nodes);
-
           for (int k = removed_nodes.size() - 1; k >= 0; --k) {
             auto removed_node = removed_nodes[k];
             auto removed_ite =
@@ -170,12 +148,12 @@ void ProgramOptimize::GenerateOps(
     Node *current_node) {
   if (current_node->inputs_.size() > 1 &&
       input_node != current_node->inputs_.back()) {
-    DLOG << " current type " << current_node->type_;
+    DLOG << " current type " << current_node->Type();
 
     DLOG << " inputs size of current node > 0 ";
 
     for (int i = 0; i < current_node->inputs_.size(); ++i) {
-      DLOG << " input i: " << current_node->inputs_[i]->type_;
+      DLOG << " input i: " << current_node->inputs_[i]->Type();
     }
 
     return;
@@ -201,9 +179,11 @@ void ProgramOptimize::GenerateOps(
   }
 
   bool can_add_split = false;
+  const auto current_desc = current_node->OpDescOfNode();
+  const VariableNameMap &current_op_inputs = current_desc->GetInputs();
+  const VariableNameMap &current_op_outputs = current_desc->GetOutputs();
   // 如果当前节点有多个输出 并且 只有当前节点对应的 op_desc_ 输出数为 1 时支持
-  if (current_node->outputs_.size() > 1 &&
-      op_input_output_key[current_node->op_desc_->type_].second.size() == 1) {
+  if (current_node->outputs_.size() > 1 && current_op_outputs.size() == 1) {
     can_add_split = true;
 
     // 遍历当前节点的 output 节点
@@ -217,18 +197,15 @@ void ProgramOptimize::GenerateOps(
 
       //与节点关联的 OpDesc
       std::shared_ptr<framework::OpDesc> &op_desc = output->op_desc_;
-
       //获取这个 op 的 inputs key 和 outputs key
-      auto inputs_and_outputs = op_input_output_key[op_desc->type_];
+      const VariableNameMap &op_inputs = op_desc->GetInputs();
+      const VariableNameMap &op_outputs = op_desc->GetOutputs();
 
       //判断现在 是否存在这个 op
       //判断这个 output 和 input key 的 size 等于 1
-      if (op_input_output_key.find(op_desc->type_) !=
-              op_input_output_key.end() &&
-          inputs_and_outputs.first.size() == 1 &&
-          inputs_and_outputs.second.size() == 1) {
-        auto inputs_of_output = op_desc->Input(inputs_and_outputs.first[0]);
-        auto outputs_of_output = op_desc->Output(inputs_and_outputs.second[0]);
+      if (op_outputs.size() == 1 && op_inputs.size() == 1) {
+        auto inputs_of_output = op_inputs.begin()->second;
+        auto outputs_of_output = op_outputs.begin()->second;
 
         // 判断一下, 如果输入和输出没有同名, 是支持的
         for (int i = 0; i < inputs_of_output.size(); ++i) {
@@ -243,7 +220,7 @@ void ProgramOptimize::GenerateOps(
           }
         }
       } else {  // 如果模型中包含没有的 op, 则不支持添加 split
-        DLOG << "找不到 这个 op 类型: " << output->op_desc_->type_;
+        DLOG << "找不到 这个 op 类型: " << output->op_desc_->Type();
         can_add_split = false;
       }
     }
@@ -312,9 +289,6 @@ void ProgramOptimize::GenerateOps(
 void ProgramOptimize::GenerateOps(
     std::vector<std::shared_ptr<framework::OpDesc>> *op_descs, Node *begin_node,
     bool can_add_split) {
-  // std::vector<std::shared_ptr<framework::OpDesc>> *op_desc,
-  //             Node *input_node, Node *current_node, bool adding_thread, int
-  //             thread_num
   if (can_add_split) {
     this->GenerateOps(op_descs, begin_node, begin_node, false, -1, nullptr);
   } else {
