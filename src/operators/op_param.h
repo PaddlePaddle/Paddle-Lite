@@ -434,6 +434,12 @@ class OpParam {
   }
 };
 
+#define GET_VAR_AS_TENSOR(name, name_dict, scope) \
+  OpParam::GetVarValue<framework::Tensor>(name, name_dict, scope)
+
+#define GET_VAR_AS_LOD_TENSOR(name, name_dict, scope) \
+  OpParam::GetVarValue<framework::LoDTensor>(name, name_dict, scope)
+
 template <typename Dtype>
 class ConvParam : public OpParam {
   typedef typename DtypeTensorTrait<Dtype>::gtype GType;
