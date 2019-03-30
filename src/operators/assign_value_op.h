@@ -12,40 +12,22 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef ONE_HOT_OP
+#ifdef ASSIGN_VALUE_OP
 
 #pragma once
 
+#include <string>
+
 #include "framework/operator.h"
+#include "operators/kernel/assign_value_kernel.h"
 #include "operators/op_param.h"
 
 namespace paddle_mobile {
 namespace operators {
 
-template <typename Dtype>
-class OnehotParam : public OpParam {
- public:
-  OnehotParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
-              const AttributeMap &attrs, Scope *scope)
-      : OpParam(inputs, outputs, attrs, scope) {
-    input_ = GET_VAR_AS_LOD_TENSOR("X", inputs, *scope);
-    output_ = GET_VAR_AS_LOD_TENSOR("Out", outputs, *scope);
-
-    depth_ = OpParam::GetAttr<int>("depth", attrs);
-    dtype_ = OpParam::GetAttr<int>("dtype", attrs);
-  }
-
- public:
-  framework::LoDTensor *input_;
-  framework::LoDTensor *output_;
-
-  int depth_;
-  int dtype_;
-};
-
-DECLARE_KERNEL(Onehot, OnehotParam);
+DECLARE_OPERATOR(AssignValue, AssignValueParam, AssignValueKernel);
 
 }  // namespace operators
 }  // namespace paddle_mobile
 
-#endif  // ONE_HOT_OP
+#endif
