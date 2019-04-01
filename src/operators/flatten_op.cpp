@@ -31,29 +31,22 @@ void FlattenOp<DeviceType, T>::InferShape() const {
                         "The axis should be greater than or equal to 0.");
 
   auto &in_dims = this->param_.InputX()->dims();
-  //  const auto &in_dims = ctx->GetInputDim("X");
   PADDLE_MOBILE_ENFORCE(
       axis <= in_dims.size(),
       "The axis should be less than or equal to input tensor's rank.");
 
   const auto &out_dims = GetOutputShape(axis, in_dims);
   this->param_.Out()->Resize(in_dims);
-  // todo supprot lodtensor
-  //  if (in_dims[0] == out_dims[0]) {
-  //    // Only pass LoD when the first dimension of output and Input(X)
-  //    // are the same.
-  //    ctx->ShareLoD("X", "Out");
-  //  }
 }
 
 }  // namespace operators
 }  // namespace paddle_mobile
 
 namespace ops = paddle_mobile::operators;
+
 #ifdef PADDLE_MOBILE_CPU
 REGISTER_OPERATOR_CPU(flatten, ops::FlattenOp);
-#endif
-#ifdef PADDLE_MOBILE_FPGA
+REGISTER_OPERATOR_CPU(flatten2, ops::Flatten2Op);
 #endif
 
-#endif
+#endif  // FLATTEN_OP

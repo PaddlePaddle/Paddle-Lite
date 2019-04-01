@@ -152,6 +152,7 @@ LOAD_OP1(prelu, CPU);
 #endif
 #ifdef FLATTEN_OP
 LOAD_OP1(flatten, CPU);
+LOAD_OP1(flatten2, CPU);
 #endif
 #ifdef FUSION_CONVBNADDRELU_OP
 LOAD_OP3(fusion_conv_bn_add_relu, CPU, GPU_CL, FPGA);
@@ -330,4 +331,7 @@ LOAD_OP1(pad2d, CPU);
 #endif
 #ifdef ONE_HOT_OP
 LOAD_OP1(one_hot, CPU);
+#endif
+#ifdef ASSIGN_VALUE_OP
+LOAD_OP1(assign_value, CPU);
 #endif

@@ -22,9 +22,6 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace operators {
 
-#define GET_VAR_AS_LOD_TENSOR(name, name_dict, scope) \
-  OpParam::GetVarValue<framework::LoDTensor>(name, name_dict, scope)
-
 template <typename Dtype>
 class BeamSearchParam : public OpParam {
  public:
