@@ -12,10 +12,11 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef ONE_HOT_OP
+#ifdef ASSIGN_VALUE_OP
 
 #pragma once
 
+#include <vector>
 #include "framework/operator.h"
 #include "operators/op_param.h"
 
@@ -23,29 +24,30 @@ namespace paddle_mobile {
 namespace operators {
 
 template <typename Dtype>
-class OnehotParam : public OpParam {
+class AssignValueParam : public OpParam {
  public:
-  OnehotParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
-              const AttributeMap &attrs, Scope *scope)
+  AssignValueParam(const VariableNameMap &inputs,
+                   const VariableNameMap &outputs, const AttributeMap &attrs,
+                   Scope *scope)
       : OpParam(inputs, outputs, attrs, scope) {
-    input_ = GET_VAR_AS_LOD_TENSOR("X", inputs, *scope);
     output_ = GET_VAR_AS_LOD_TENSOR("Out", outputs, *scope);
-
-    depth_ = OpParam::GetAttr<int>("depth", attrs);
+    shape_ = OpParam::GetAttr<std::vector<int>>("shape", attrs);
+    fp32_values_ = OpParam::GetAttr<std::vector<float>>("fp32_values", attrs);
+    int32_values_ = OpParam::GetAttr<std::vector<int>>("int32_values", attrs);
     dtype_ = OpParam::GetAttr<int>("dtype", attrs);
   }
 
  public:
-  framework::LoDTensor *input_;
   framework::LoDTensor *output_;
-
-  int depth_;
+  std::vector<int> shape_;
+  std::vector<float> fp32_values_;
+  std::vector<int> int32_values_;
   int dtype_;
 };
 
-DECLARE_KERNEL(Onehot, OnehotParam);
+DECLARE_KERNEL(AssignValue, AssignValueParam);
 
 }  // namespace operators
 }  // namespace paddle_mobile
 
-#endif  // ONE_HOT_OP
+#endif  // ASSIGN_VALUE_OP
