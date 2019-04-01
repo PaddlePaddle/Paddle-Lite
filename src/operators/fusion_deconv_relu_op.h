@@ -48,7 +48,7 @@ class FusionDeconvReluOp : public framework::OperatorWithKernel<
   FusionDeconvReluOp(const string &type, const VariableNameMap &inputs,
                      const VariableNameMap &outputs,
                      const framework::AttributeMap &attrs,
-                     std::shared_ptr<framework::Scope> scope)
+                     framework::Scope *scope)
       : framework::OperatorWithKernel<
             DeviceType, FusionDeconvReluParam<DeviceType>,
             operators::DeconvReluKernel<DeviceType, T>>(type, inputs, outputs,

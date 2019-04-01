@@ -19,8 +19,6 @@ limitations under the License. */
 #include <fstream>
 #include <memory>
 #include <string>
-#include <type_traits>
-#include <typeindex>
 #include <vector>
 
 #include "common/enforce.h"
@@ -74,14 +72,27 @@ class Tensor : public TensorBase {
     return *this;
   }
 
-  inline void *mutable_data(std::type_index type) {
+  /*! The internal of two tensors share the same memory block. */
+  inline Tensor &ShareHolderWith(const Tensor &src) {
+    src.check_memory_size();
+    if (holder_.get() != src.holder_.get()) {
+      holder_ = src.holder_;
+    }
+    return *this;
+  }
+
+  inline void *mutable_data(const kTypeId_t type) {
     if (holder_ != nullptr) {
       holder_->set_type(type);
     }
     PADDLE_MOBILE_ENFORCE(numel() >= 0, "the Tensor's numel must >=0.")
     int64_t size = numel() * SizeOfType(type);
     if (holder_ == nullptr || holder_->size() < size + offset_) {
-      holder_.reset(new PlaceholderImpl(size, type));
+      if (holder_ == nullptr) {
+        holder_.reset(new PlaceholderImpl(size, type));
+      } else {
+        holder_->resize(size);
+      }
       offset_ = 0;
     }
     return reinterpret_cast<void *>(
@@ -95,7 +106,7 @@ class Tensor : public TensorBase {
   template <typename T>
   inline T *mutable_data() {
     static_assert(std::is_pod<T>::value, "T must be POD");
-    return reinterpret_cast<T *>(mutable_data(typeid(T)));
+    return reinterpret_cast<T *>(mutable_data(type_id<T>().hash_code()));
   }
 
   /**
@@ -152,9 +163,9 @@ class Tensor : public TensorBase {
     check_memory_size();
     PADDLE_MOBILE_ENFORCE(
         (std::is_same<T, void>::value ||
-         holder_->type().hash_code() == typeid(T).hash_code()),
-        "Tensor holds the wrong type, it holds %s, requested %s",
-        this->holder_->type().name(), typeid(T).name());
+         holder_->type() == type_id<T>().hash_code()),
+        "Tensor holds the wrong type, it holds %d, requested %d",
+        this->holder_->type(), type_id<T>().hash_code());
 
     return reinterpret_cast<T *>(reinterpret_cast<uintptr_t>(holder_->ptr()) +
                                  offset_);
@@ -166,9 +177,9 @@ class Tensor : public TensorBase {
     check_memory_size();
     PADDLE_MOBILE_ENFORCE(
         (std::is_same<T, void>::value ||
-         holder_->type().hash_code() == typeid(T).hash_code()),
-        "Tensor holds the wrong type, it holds %s, requested %s",
-        this->holder_->type().name(), typeid(T).name());
+         holder_->type() == type_id<T>().hash_code()),
+        "Tensor holds the wrong type, it holds %d, requested %d",
+        this->holder_->type(), type_id<T>().hash_code());
 
     return reinterpret_cast<const T *>(
         reinterpret_cast<uintptr_t>(holder_->ptr()) + offset_);
@@ -176,10 +187,11 @@ class Tensor : public TensorBase {
 
  private:
   struct PlaceholderImpl : public Placeholder {
-    PlaceholderImpl(size_t size, std::type_index type)
+    PlaceholderImpl(size_t size, const kTypeId_t type)
         : ptr_(static_cast<uint8_t *>(memory::Alloc(size)),
                memory::PODDeleter<uint8_t>()),
           size_(size),
+          capatity_(size),
           type_(type) {
       PADDLE_MOBILE_ENFORCE(ptr_ != nullptr,
                             "Insufficient memory to allocation");
@@ -189,17 +201,27 @@ class Tensor : public TensorBase {
 
     virtual void *ptr() const { return static_cast<void *>(ptr_.get()); }
 
-    virtual std::type_index type() const { return type_; }
+    virtual kTypeId_t type() const { return type_; }
 
-    virtual void set_type(std::type_index type) { type_ = type; }
+    virtual void set_type(const kTypeId_t type) { type_ = type; }
+
+    virtual void resize(size_t size) {
+      if (size > capatity_) {
+        capatity_ = size;
+        ptr_.reset(static_cast<uint8_t *>(memory::Alloc(capatity_)));
+      }
+      size_ = size;
+    }
 
     std::unique_ptr<uint8_t, memory::PODDeleter<uint8_t>> ptr_;
 
     /*! the size of memory block. */
     size_t size_;
 
+    size_t capatity_;
+
     /* the current type of memory */
-    std::type_index type_;
+    kTypeId_t type_;
   };
 
 #ifdef PADDLE_MOBILE_FPGA
@@ -207,12 +229,13 @@ class Tensor : public TensorBase {
   inline void reset_data_ptr(void *p) {
     ((PlaceholderImpl *)(holder_.get()))->ptr_.reset((uint8_t *)p);  // NOLINT
   }
-  inline void set_type(std::type_index type) { holder_->set_type(type); }
+  inline void set_type(const kTypeId_t type) { holder_->set_type(type); }
   inline void *get_data() {
-    return (void *)(((PlaceholderImpl *)(holder_.get()))->ptr_.get());
-  }  // NOLINT
+    return (
+        void *)(((PlaceholderImpl *)(holder_.get()))->ptr_.get());  // NOLINT
+  }
 
-  inline void *init(std::type_index type) {
+  inline void *init(const kTypeId_t type) {
     if (holder_ != nullptr) {
       holder_->set_type(type);
     }
@@ -240,15 +263,15 @@ inline Print &operator<<(Print &printer, const Tensor &tensor) {
   stride = stride > 0 ? stride : 1;
 #ifndef PADDLE_MOBILE_FPGA
   for (int i = 0; i < tensor.numel(); i += stride) {
-    if (tensor.type() == typeid(float)) {
+    if (tensor.type() == type_id<float>()) {
       printer << tensor.data<float>()[i] << " ";
-    } else if (tensor.type() == typeid(int32_t)) {
+    } else if (tensor.type() == type_id<int32_t>()) {
       printer << tensor.data<int32_t>()[i] << " ";
-    } else if (tensor.type() == typeid(int64_t)) {
+    } else if (tensor.type() == type_id<int64_t>()) {
       printer << tensor.data<int64_t>()[i] << " ";
-    } else if (tensor.type() == typeid(int8_t)) {
+    } else if (tensor.type() == type_id<int8_t>()) {
       printer << static_cast<int>(tensor.data<int8_t>()[i]) << " ";
-    } else if (tensor.type() == typeid(int32_t)) {
+    } else if (tensor.type() == type_id<int32_t>()) {
       printer << tensor.data<int32_t>()[i] << " ";
     }
   }

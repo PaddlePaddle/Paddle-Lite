@@ -37,7 +37,7 @@ int TestIsEmptyOp(const std::vector<int> input_shape) {
   framework::AttributeMap attrs;
 
   auto *op = new operators::IsEmptyOp<CPU, float>("is_empty", inputs, outputs,
-                                                  attrs, scope);
+                                                  attrs, scope.get());
 
   op->InferShape();
   op->Init();

@@ -24,19 +24,17 @@ limitations under the License. */
 
 namespace paddle_mobile {
 namespace operators {
-using framework::AttributeMap;
-using framework::OperatorWithKernel;
-using framework::Scope;
-using std::string;
+
 template <typename DeviceType, typename T>
-class PoolOp : public OperatorWithKernel<DeviceType, PoolParam<DeviceType>,
-                                         operators::PoolKernel<DeviceType, T>> {
+class PoolOp : public framework::OperatorWithKernel<
+                   DeviceType, PoolParam<DeviceType>,
+                   operators::PoolKernel<DeviceType, T>> {
  public:
-  PoolOp(const string &type, const VariableNameMap &inputs,
+  PoolOp(const std::string &type, const VariableNameMap &inputs,
          const VariableNameMap &outputs, const AttributeMap &attrs,
-         std::shared_ptr<Scope> scope)
-      : OperatorWithKernel<DeviceType, PoolParam<DeviceType>,
-                           operators::PoolKernel<DeviceType, T>>(
+         framework::Scope *scope)
+      : framework::OperatorWithKernel<DeviceType, PoolParam<DeviceType>,
+                                      operators::PoolKernel<DeviceType, T>>(
             type, inputs, outputs, attrs, scope) {}
   void InferShape() const override;
 

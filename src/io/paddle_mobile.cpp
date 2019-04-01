@@ -20,6 +20,8 @@ limitations under the License. */
 #endif  // _OPENMP
 #ifdef PADDLE_MOBILE_CL
 #include <CL/cl.h>
+#include <mutex>
+#include "framework/cl/cl_engine.h"
 #include "framework/cl/cl_tensor.h"
 #endif
 #include "operators/math/gemm.h"
@@ -28,9 +30,7 @@ namespace paddle_mobile {
 
 template <typename Device, typename T>
 void PaddleMobile<Device, T>::SetThreadNum(int num) {
-#ifdef _OPENMP
-  omp_set_num_threads(num);
-#endif
+  executor_->SetThreadNum(num);
 }
 
 template <typename Device, typename T>
@@ -152,14 +152,14 @@ PMStatus PaddleMobile<Device, T>::Predict() {
 }
 
 template <typename Device, typename T>
-void PaddleMobile<Device, T>::Feed(const framework::Tensor &input,
-                                   const std::string &var_name) {
+void PaddleMobile<Device, T>::Feed(const std::string &var_name,
+                                   const framework::Tensor &input) {
   executor_->SetInput(input, var_name);
 }
 
 template <typename Device, typename T>
-void PaddleMobile<Device, T>::Feed(const framework::LoDTensor &input,
-                                   const std::string &var_name) {
+void PaddleMobile<Device, T>::Feed(const std::string &var_name,
+                                   const framework::LoDTensor &input) {
   executor_->SetInput(input, var_name);
 }
 
@@ -204,11 +204,15 @@ double PaddleMobile<CPU, float>::GetPredictTime() {
 
   operators::math::Gemm gemm;
   auto time1 = paddle_mobile::time();
-  gemm.Sgemm(m, n, k, static_cast<float>(1), a, lda, b, ldb,
-             static_cast<float>(0), c, ldc, false,
-             static_cast<float *>(nullptr));
+  int times = 4;
+  for (int j = 0; j < times; ++j) {
+    gemm.Sgemm(m, n, k, static_cast<float>(1), a, lda, b, ldb,
+               static_cast<float>(0), c, ldc, false,
+               static_cast<float *>(nullptr));
+  }
+
   auto time2 = paddle_mobile::time();
-  double cost = paddle_mobile::time_diff(time1, time2);
+  double cost = paddle_mobile::time_diff(time1, time2) / times;
   paddle_mobile::memory::Free(a);
   paddle_mobile::memory::Free(b);
   paddle_mobile::memory::Free(c);
@@ -227,16 +231,16 @@ template <typename Device, typename T>
 void PaddleMobile<Device, T>::FeedData(const framework::Tensor &t) {
   executor_->FeedData(t);
 }
+
 template <typename Device, typename T>
 void PaddleMobile<Device, T>::FeedData(const std::vector<void *> &v) {
   executor_->FeedData(v);
-};
-
+}
 template <typename Device, typename T>
 void PaddleMobile<Device, T>::FeedTensorData(
     const std::vector<framework::Tensor> &v) {
   executor_->FeedTensorData(v);
-};
+}
 
 template <typename Device, typename T>
 void PaddleMobile<Device, T>::GetResults(std::vector<void *> *v) {
@@ -253,7 +257,7 @@ template <typename Device, typename T>
 framework::Tensor *PaddleMobile<Device, T>::GetTensorByName(
     const std::string &name) {
   return executor_->GetTensorByName(name);
-};
+}
 
 template <typename Device, typename T>
 std::shared_ptr<framework::Tensor> PaddleMobile<Device, T>::FetchResult(
@@ -289,21 +293,11 @@ void PaddleMobile<Device, T>::SetCLPath(std::string path) {
 template <>
 double PaddleMobile<GPU_CL, float>::GetPredictTime() {
   cl_int status;
-  cl_uint nPlatform;
-  clGetPlatformIDs(0, NULL, &nPlatform);
-  cl_platform_id *listPlatform = reinterpret_cast<cl_platform_id *>(
-      malloc(nPlatform * sizeof(cl_platform_id)));
-  clGetPlatformIDs(nPlatform, listPlatform, NULL);
-  cl_uint nDevice = 0;
-  clGetDeviceIDs(listPlatform[0], CL_DEVICE_TYPE_GPU, 0, NULL, &nDevice);
-  cl_device_id *listDevice =
-      reinterpret_cast<cl_device_id *>(malloc(nDevice * sizeof(cl_device_id)));
-  clGetDeviceIDs(listPlatform[0], CL_DEVICE_TYPE_GPU, nDevice, listDevice,
-                 NULL);
-  cl_context context =
-      clCreateContext(NULL, nDevice, listDevice, NULL, NULL, &status);
-  cl_command_queue queue =
-      clCreateCommandQueue(context, listDevice[0], 0, &status);
+  if (!framework::CLEngine::Instance()->isInitSuccess()) {
+    return -1;
+  }
+  cl_context context = framework::CLEngine::Instance()->getContext();
+  cl_command_queue queue = framework::CLEngine::Instance()->getClCommandQueue();
 
   int n = 1;
   int c = 3;
@@ -417,7 +411,7 @@ double PaddleMobile<GPU_CL, float>::GetPredictTime() {
   CL_CHECK_ERRORS(status);
 
   clFinish(queue);
-  queue = clCreateCommandQueue(context, listDevice[0], 0, &status);
+  //  queue = clCreateCommandQueue(context, listDevice[0], 0, &status);
 
   path = framework::CLEngine::Instance()->GetCLPath() +
          "/cl_kernel/conv_kernel.cl";
@@ -472,15 +466,18 @@ double PaddleMobile<GPU_CL, float>::GetPredictTime() {
   //  cl_event wait_event = param.Input()->GetClEvent();
   size_t global_work_size2[3] = {8, 224, 224};
   auto time1 = paddle_mobile::time();
-  status = clEnqueueNDRangeKernel(queue, kernel, 3, NULL, global_work_size2,
-                                  NULL, 0, NULL, NULL);
+  int times = 10;
+  for (int i = 0; i < times; ++i) {
+    status = clEnqueueNDRangeKernel(queue, kernel, 3, NULL, global_work_size2,
+                                    NULL, 0, NULL, NULL);
+  }
   CL_CHECK_ERRORS(status);
   clFinish(queue);
   auto time2 = paddle_mobile::time();
   paddle_mobile::memory::Free(input);
   paddle_mobile::memory::Free(filter);
   if (status == CL_SUCCESS) {
-    return paddle_mobile::time_diff(time1, time2);
+    return paddle_mobile::time_diff(time1, time2) / times;
   } else {
     return -1;
   }

@@ -25,6 +25,7 @@ limitations under the License. */
 
 namespace paddle_mobile {
 namespace operators {
+
 inline std::vector<int32_t> GetOutputShape(const int axis,
                                            const framework::DDim &in_dims) {
   int64_t outer = 1, inner = 1;
@@ -40,7 +41,6 @@ inline std::vector<int32_t> GetOutputShape(const int axis,
   out_shape[1] = static_cast<int>(inner);
   return out_shape;
 }
-using paddle_mobile::framework::Tensor;
 
 template <typename DeviceType, typename T>
 class FlattenOp : public framework::OperatorWithKernel<
@@ -49,12 +49,20 @@ class FlattenOp : public framework::OperatorWithKernel<
  public:
   FlattenOp(const std::string &type, const VariableNameMap &inputs,
             const VariableNameMap &outputs,
-            const framework::AttributeMap &attrs,
-            std::shared_ptr<framework::Scope> scope)
+            const framework::AttributeMap &attrs, framework::Scope *scope)
       : framework::OperatorWithKernel<DeviceType, FlattenParam<DeviceType>,
                                       operators::FlattenKernel<DeviceType, T>>(
             type, inputs, outputs, attrs, scope) {}
   void InferShape() const override;
+};
+
+template <typename DeviceType, typename T>
+class Flatten2Op : public FlattenOp<DeviceType, T> {
+ public:
+  Flatten2Op(const std::string &type, const VariableNameMap &inputs,
+             const VariableNameMap &outputs,
+             const framework::AttributeMap &attrs, framework::Scope *scope)
+      : FlattenOp<DeviceType, T>(type, inputs, outputs, attrs, scope) {}
 };
 
 }  // namespace operators

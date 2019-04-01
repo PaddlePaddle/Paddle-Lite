@@ -27,10 +27,10 @@ bool ConvAddBNReluKernel<FPGA, float>::Init(
   paddle_mobile::fpga::ActivationType activation_enable =
       paddle_mobile::fpga::LEAKYRELU;
   int16_t leaky_relu_negative_slope = 0;
-  auto input = const_cast<Tensor *>(param->Input());
+  auto input = const_cast<LoDTensor *>(param->Input());
   auto bias = param->Bias();
   auto bias_ptr = bias->data<float>();
-  auto filter = const_cast<Tensor *>(param->Filter());
+  auto filter = const_cast<LoDTensor *>(param->Filter());
   auto out = param->Output();
 
   vector<int> paddings = param->Paddings();

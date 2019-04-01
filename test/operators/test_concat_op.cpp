@@ -27,7 +27,7 @@ using framework::Scope;
 using framework::make_ddim;
 
 template <typename T>
-void concat(const std::vector<LoDTensor> &input, LoDTensor &output, int axis) {
+void concat(const std::vector<LoDTensor> &input, LoDTensor *output, int axis) {
   int num = input.size();
 
   int rows = 1;
@@ -45,7 +45,7 @@ void concat(const std::vector<LoDTensor> &input, LoDTensor &output, int axis) {
   }
 
   // computation
-  auto output_data = output.data<T>();
+  auto output_data = output->data<T>();
   int col_idx = 0;
   for (int j = 0; j < num; ++j) {
     int col_len = input_cols[j];
@@ -99,14 +99,14 @@ int TestConcatOP() {
   attrs["axis"].Set<int>(axis_v);
 
   auto *op = new operators::ConcatOp<CPU, float>("concat", inputs, outputs,
-                                                 attrs, scope);
+                                                 attrs, scope.get());
   op->InferShape();
   op->Run();
   auto output = output_var->template Get<framework::LoDTensor>();
   const T *output_data = output->data<T>();
   LoDTensor output_cmp;
   output_cmp.mutable_data<T>(output_shape);
-  concat<T>(input_tensors, output_cmp, axis_v);
+  concat<T>(input_tensors, &output_cmp, axis_v);
   const T *output_cmp_data = output_cmp.data<T>();
   // compare
   int eq = 0;

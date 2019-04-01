@@ -30,7 +30,9 @@ limitations under the License. */
 
 namespace paddle_mobile {
 namespace fpga {
+
 enum DataType {
+  DATA_TYPE_INT8 = 2,
   DATA_TYPE_FP32 = 1,
   DATA_TYPE_FP16 = 0,
 };
@@ -274,5 +276,8 @@ uint64_t vaddr_to_paddr(void* address);
 void expand_conv_arg(ConvArgs* arg);
 void expand_EW_arg(EWAddArgs* arg);
 inline int32_t convertmantissa(int32_t i);
+
+uint32_t paddle_mobile_version();
+
 }  // namespace fpga
 }  // namespace paddle_mobile

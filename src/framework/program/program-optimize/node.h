@@ -16,6 +16,7 @@ limitations under the License. */
 
 #include <cinttypes>
 #include <map>
+#include <memory>
 #include <string>
 #include <utility>
 #include <vector>

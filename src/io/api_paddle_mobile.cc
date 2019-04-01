@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "io/api_paddle_mobile.h"
+#include <string>
 #include <vector>
 #include "common/enforce.h"
 #include "framework/tensor.h"
@@ -127,7 +128,7 @@ void ConvertTensors(const framework::Tensor &src, PaddleTensor *des) {
   des->layout = src.layout == framework::LAYOUT_HWC ? LAYOUT_HWC : LAYOUT_CHW;
 
   auto num = src.numel();
-  if (src.type() == typeid(float)) {
+  if (src.type() == type_id<float>()) {
     des->data.Reset(const_cast<float *>(src.data<float>()),
                     num * sizeof(float));
   } else {
@@ -142,7 +143,7 @@ void PaddleMobilePredictor<Device, T>::FeedPaddleTensors(
   auto num = inputs.size();
   std::vector<framework::Tensor> tensors(num, framework::Tensor());
   for (int i = 0; i < num; i++) {
-    tensors[i].init(typeid(float));
+    tensors[i].init(type_id<float>().hash_code());
     ConvertPaddleTensors(inputs[i], &tensors[i]);
   }
   paddle_mobile_->FeedTensorData(tensors);
@@ -169,18 +170,6 @@ void PaddleMobilePredictor<Device, T>::GetPaddleTensor(const std::string &name,
                                                        PaddleTensor *output) {
   framework::Tensor *t = paddle_mobile_->GetTensorByName(name);
   ConvertTensors(*t, output);
-};
-
-template <typename Device, typename T>
-void PaddleMobilePredictor<Device, T>::FeedData(
-    const std::vector<void *> &inputs) {
-  paddle_mobile_->FeedData(inputs);
-}
-
-template <typename Device, typename T>
-void PaddleMobilePredictor<Device, T>::GetResults(
-    std::vector<void *> *outputs) {
-  paddle_mobile_->GetResults(outputs);
 }
 
 template <typename Device, typename T>

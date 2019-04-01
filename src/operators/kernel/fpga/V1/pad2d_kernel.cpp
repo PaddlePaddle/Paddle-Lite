@@ -16,8 +16,8 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace operators {
 template <>
-bool Pad2dKernel<FPGA, float>::Init(Pad2dParam<FPGA> *param) {
-  Tensor *output = param->Out();
+bool Pad2DKernel<FPGA, float>::Init(Pad2DParam<FPGA> *param) {
+  Tensor *output = param->output_;
   fpga::format_fp16_ofm(output);
   return true;
 }
@@ -39,9 +39,9 @@ void pad2dFunc(const framework::Tensor *input, framework::Tensor *output) {
   }
 }
 template <>
-void Pad2dKernel<FPGA, float>::Compute(const Pad2dParam<FPGA> &param) {
-  auto in_x = param.InputX();
-  auto out = param.Out();
+void Pad2DKernel<FPGA, float>::Compute(const Pad2DParam<FPGA> &param) {
+  auto in_x = param.input_;
+  auto out = param.output_;
   fpga::fpga_invalidate((void *)in_x->data<half>(),  // NOLINT
                         in_x->numel() * sizeof(half));
   pad2dFunc(in_x, out);

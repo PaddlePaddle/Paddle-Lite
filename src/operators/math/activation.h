@@ -21,7 +21,7 @@ limitations under the License. */
 #include "common/types.h"
 #if defined(__ARM_NEON__) || defined(__ARM_NEON)
 #include <arm_neon.h>
-#include "operators/math/math_func_neon.h"
+#include "operators/math/math.h"
 #endif
 
 namespace paddle_mobile {

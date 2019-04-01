@@ -15,23 +15,20 @@ limitations under the License. */
 #pragma once
 
 #ifdef LRN_OP
+
+#include <cmath>
 #ifdef _OPENMP
 #include <omp.h>
+#endif
+#ifdef __ARM_NEON
+#include <arm_neon.h>
+#include "operators/math/math.h"
 #endif
 #include "framework/operator.h"
 #include "operators/op_param.h"
 
-#include <cmath>
-
-#ifdef __ARM_NEON
-#include "arm_neon.h"
-#include "operators/math/math_func_neon.h"
-#endif
-
 namespace paddle_mobile {
 namespace operators {
-
-using namespace framework;
 
 template <typename T>
 struct LRNFunctor {

@@ -13,11 +13,13 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "fpga/common/pe.h"
+#include "common/enforce.h"
 #include "common/types.h"
 #include "fpga/V1/filter.h"
 #include "fpga/V1/image.h"
 #include "fpga/common/config.h"
 #include "fpga/common/driver.h"
+#include "fpga/common/fpga_common.h"
 #ifdef COST_TIME_PRINT
 #include <sys/time.h>
 #include <time.h>
@@ -38,10 +40,12 @@ using namespace std;     // NOLINT
 #define CMD_FP16_TO_FP32 1
 #define CMD_FP32_TO_FP16 2
 #define CMD_FP32_TO_FP32 3
+#define CMD_INT8_TO_FP16 4
 
 // bypass macro
 #define SIZE_FP16 2
 #define SIZE_FP32 4
+#define SIZE_INT8 1
 
 #define PE_IRQ_TIMEOUT 1000000
 
@@ -250,7 +254,14 @@ int ComputeBasicConv(const struct ConvArgs &args) {
   reg_writeq(
       ((uint64_t)args.kernel.height) | (((uint64_t)args.kernel.width) << 32),
       REG_CONV_FILTER_PIXEL);
-  reg_writeq(args.driver.output_height | (args.driver.output_width << 32),
+
+  uint64_t output_height_fraction =
+      args.driver.output_height / ROW_PARALLEL_NUM;
+  uint64_t output_height_remainder =
+      args.driver.output_height % ROW_PARALLEL_NUM;
+  reg_writeq(args.driver.output_height | (output_height_fraction << 16) |
+                 (output_height_remainder << 26) |
+                 (args.driver.output_width << 32),
              REG_CONV_RESULT_PIXEL);
   reg_writeq(((uint64_t)args.image.pad_height) |
                  (((uint64_t)args.image.pad_width) << 32),
@@ -294,6 +305,7 @@ int ComputeBasicConv(const struct ConvArgs &args) {
     g_fpgainfo.pe_data->pes[PE_IDX_CONV]->status = ERROR;
     ret = -EIO;
     DLOG << "Conv Wait Irq Timeout!";
+    PADDLE_MOBILE_ENFORCE(0, "Conv Wait Irq Timeout");
   }
   output_scale = reg_readq(REG_SCALE_PARAMETER);
   output_scale = (output_scale << 32) | (output_scale >> 32);
@@ -445,6 +457,7 @@ int ComputeFpgaPool(const struct PoolingArgs &args) {
     g_fpgainfo.pe_data->pes[PE_IDX_POOLING]->status = ERROR;
     ret = -EIO;
     DLOG << "Pooling Wait Irq Timeout!";
+    PADDLE_MOBILE_ENFORCE(0, "Pooling Wait Irq Timeout!");
   }
   DLOG << "after reg poll";
 
@@ -527,6 +540,7 @@ int ComputeFpgaEWAdd(const struct EWAddArgs &args) {
     g_fpgainfo.pe_data->pes[PE_IDX_EW]->status = ERROR;
     ret = -EIO;
     DLOG << "EW Wait Irq Timeout!";
+    PADDLE_MOBILE_ENFORCE(0, "EW Wait Irq Timeout!");
   }
 
   output_scale = reg_readq(REG_SCALE_PARAMETER);
@@ -559,6 +573,7 @@ int PerformBypass(const struct BypassArgs &args) {
        << "   out_scale_address:" << args.output.scale_address;
 #endif
 #ifdef PADDLE_MOBILE_ZU5
+  uint64_t bypass_interrupt = reg_readq(REG_INTERRUPT);
   uint64_t output_scale = 0;
   uint64_t timer_cnt = 0;
   uint64_t cmd = 0;
@@ -607,6 +622,16 @@ int PerformBypass(const struct BypassArgs &args) {
       }
     } break;
 
+    case DATA_TYPE_INT8: {
+      if (args.output_data_type != DATA_TYPE_FP16) {
+        DLOG << "error:Output Datetype error,not DATA_TYPE_FP16: "
+             << args.output_data_type;
+      }
+      data_cell_in = SIZE_INT8;
+      data_cell_out = SIZE_FP16;
+      cmd = CMD_INT8_TO_FP16;
+    } break;
+
     case DATA_TYPE_FP32: {
       switch (args.output_data_type) {
         case DATA_TYPE_FP16:
@@ -630,10 +655,13 @@ int PerformBypass(const struct BypassArgs &args) {
       break;
   }
   if (cmd != CMD_FP16_TO_FP16 && cmd != CMD_FP16_TO_FP32 &&
-      cmd != CMD_FP32_TO_FP16 && cmd != CMD_FP32_TO_FP32) {
+      cmd != CMD_FP32_TO_FP16 && cmd != CMD_FP32_TO_FP32 &&
+      cmd != CMD_INT8_TO_FP16) {
+    //   std::cout<< " err back Error1!" <<std::endl;
     return -EFAULT;
   }
-  if ((data_cell_in != SIZE_FP16 && data_cell_in != SIZE_FP32) ||
+  if ((data_cell_in != SIZE_FP16 && data_cell_in != SIZE_FP32 &&
+       data_cell_in != SIZE_INT8) ||
       (data_cell_out != SIZE_FP16 && data_cell_out != SIZE_FP32)) {
     return -EFAULT;
   }
@@ -651,12 +679,12 @@ int PerformBypass(const struct BypassArgs &args) {
   reg_writeq(output_address_phy, REG_CONVERT_DST_ADDR);
   reg_writeq(datalen, REG_CONVERT_LENGTH);
   reg_writeq(cmd, REG_CONVERT_CMD);
-
   DLOG << "before reg poll";
   if (0 != fpga_regpoll(REG_INTERRUPT, INTERRUPT_BYPASS, PE_IRQ_TIMEOUT)) {
     g_fpgainfo.pe_data->pes[PE_IDX_BYPASS]->status = ERROR;
     ret = -EIO;
     DLOG << "BYPASS Wait Irq Timeout!";
+    PADDLE_MOBILE_ENFORCE(0, "BYPASS Wait Irq Timeout!");
   }
   DLOG << "after reg poll";
 
@@ -1037,6 +1065,7 @@ int ComputeDWConv(const struct DWconvArgs &args) {
     g_fpgainfo.pe_data->pes[PE_IDX_POOLING]->status = ERROR;
     ret = -EIO;
     DLOG << "Pooling Wait Irq Timeout!";
+    PADDLE_MOBILE_ENFORCE(0, "DWConv Wait Irq Timeout");
   }
   DLOG << "after reg poll";
 

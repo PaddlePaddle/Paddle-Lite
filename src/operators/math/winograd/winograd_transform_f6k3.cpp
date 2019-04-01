@@ -15,10 +15,10 @@ limitations under the License. */
 // Inspired by https://arxiv.org/abs/1509.09308 and refered from nnpack and ncnn
 // project.
 
+#if defined(__ARM_NEON) || defined(__ARM_NEON__)
 #ifdef CONV_OP
 
-#ifndef __aarch64__
-
+#include <arm_neon.h>
 #include "operators/math/pad.h"
 #include "operators/math/winograd/winograd_transform.h"
 
@@ -51,10 +51,12 @@ void winograd_transform_weight<8, 3>(const framework::Tensor &weight,
 
   const float transform_matrix[8] = {2.f, -2.f / 9, 1.f / 90, 1.f / 180};
   const float *inptr = weight.data<float>();
-  int remain_start = out_channel & 0xFFFC;
-#if 0
-  remain_start = 0;
+
+#if __aarch64__
+  int remain_start = 0;
 #else
+  int remain_start = out_channel & 0xFFFFFFFC;
+
   #pragma omp parallel for
   for (int oc = 0; oc < out_channel - 3; oc += 4) {
     float gw[96];  // gw[3][8][4]
@@ -258,7 +260,7 @@ void winograd_transform_weight<8, 3>(const framework::Tensor &weight,
             "q13", "r0");
     }
   }
-#endif
+#endif  // __aarch64__
 
   // remain output channel
   #pragma omp parallel for
@@ -266,7 +268,7 @@ void winograd_transform_weight<8, 3>(const framework::Tensor &weight,
     float gw[3][8];                                     // gw[3][8]
     const float *inptr0 = inptr + oc * in_channel * 9;  //
     // (oc / 4) * 64 * in_channel * 4 + oc % 4
-    int offset = ((oc & 0xFFFC) << 6) * in_channel + (oc & 0x3);
+    int offset = ((oc & 0xFFFFFFFC) << 6) * in_channel + (oc & 0x3);
     int steps = (in_channel << 2);  // in_channel * 4
     float *outptr = trans_outptr + offset;
     for (int ic = 0; ic < in_channel; ++ic) {
@@ -350,311 +352,8 @@ void winograd_transform_input<8, 3>(const framework::Tensor &input,
   size_t image_size = height * width;
   const float transform_matrix[8] = {5.25f, -5.f,   -4.25f, -2.5f,
                                      2.f,   -1.25f, 0.5f,   0.25f};
-  int remain_c_start = channel & 0xFFFC;
-#if 1
-  remain_c_start = 0;
-#else
   #pragma omp parallel for
-  for (int c = 0; c < channel - 3; c += 4) {
-    const float *in = inptr + c * image_size;
-    float d_bt[64 * 4];  // d * B_t
-    for (int h = 0; h < h_tiles; ++h) {
-      for (int w = 0; w < w_tiles; ++w) {
-        const float *in0 = in + (h * width + w) * 6;
-        const float *in1 = in0 + image_size;
-        const float *in2 = in1 + image_size;
-        const float *in3 = in2 + image_size;
-        int steps = width * sizeof(float);
-        float *d_bt_ptr = d_bt;
-        asm volatile(
-            "mov        r0, #8                          \n"
-            "vld1.32    {d0-d3}, [%[tm_ptr]]            \n"
-            // row loop
-            "loop_r_%=:                                 \n"
-            "vld1.32    {d4-d7}, [%[in0]], %[steps]     \n"
-            "vld1.32    {d8-d11}, [%[in1]], %[steps]    \n"
-            "vld1.32    {d12-d15}, [%[in2]], %[steps]   \n"
-            "vld1.32    {d16-d19}, [%[in3]], %[steps]   \n"
-            "vtrn.32    q2, q4                          \n"  // d0: q2
-            "vtrn.32    q3, q5                          \n"  // d1: q4
-            "vtrn.32    q6, q8                          \n"  // d2: q6
-            "vtrn.32    q7, q9                          \n"  // d3: q8
-            "vswp.32    d5, d12                         \n"  // d4: q3
-            "vswp.32    d9, d16                         \n"  // d5: q5
-            "vswp.32    d7, d14                         \n"  // d6: q7
-            "vswp.32    d11, d18                        \n"  // d7: q9
-
-            "vsub.f32   q10, q2, q7                     \n"
-            "vsub.f32   q11, q3, q6                     \n"
-            "vmla.f32   q10, q11, d0[0]                 \n"  // d0 - d6 + (d4 -
-                                                             // d2) * 5.25
-            "vst1.32    {d20-d21}, [%[d_bt]]!           \n"
-
-            "vadd.f32   q10, q6, q7                     \n"
-            "vadd.f32   q11, q4, q5                     \n"
-            "vmla.f32   q10, q3, d1[0]                  \n"  // d2 - 4.25 * d4 +
-                                                             // d6
-            "vmla.f32   q11, q8, d1[0]                  \n"  // d1 - 4.25 * d3 +
-                                                             // d5
-            "vadd.f32   q12, q10, q11                   \n"
-            "vsub.f32   q13, q10, q11                   \n"
-            "vst1.32    {d24-d27}, [%[d_bt]]!           \n"
-
-            "vmul.f32   q10, q6, d3[1]                  \n"  // 0.25 * d2
-            "vmul.f32   q11, q4, d3[0]                  \n"  // 0.5 * d1
-            "vadd.f32   q10, q10, q7                    \n"  // 0.25 * d2 + d6
-            "vmla.f32   q11, q5, d2[0]                  \n"  // 0.5 * d1 + 2 *
-                                                             // d5
-            "vmla.f32   q10, q3, d2[1]                  \n"  // 0.25 * d2 + d6
-                                                             // - 1.25 * d4
-            "vmla.f32   q11, q8, d1[1]                  \n"  // 0.5 * d1 + 2 *
-                                                             // d5 - 2.5 * d3
-            "vadd.f32   q12, q10, q11                   \n"
-            "vsub.f32   q13, q10, q11                   \n"
-            "vst1.32    {d24-d27}, [%[d_bt]]!           \n"
-
-            "vmul.f32   q10, q6, d2[0]                  \n"  // 2 * d2
-            "vmul.f32   q11, q4, d2[0]                  \n"  // 2 * d1
-            "vmla.f32   q10, q3, d1[1]                  \n"  // 2 * d2 - 2.5 *
-                                                             // d4
-            "vmla.f32   q11, q8, d1[1]                  \n"  // 2 * d1 - 2.5 *
-                                                             // d3
-            "vmla.f32   q10, q7, d3[0]                  \n"  // 2 * d1 - 2.5 *
-                                                             // d3 + 0.5 * d6
-            "vmla.f32   q11, q5, d3[0]                  \n"  // 2 * d2 - 2.5 *
-                                                             // d4 + 0.5 * d5
-            "vmul.f32   q10, q10, d2[0]                 \n"  // 4 * d1 - 5 * d3
-                                                             // + d6
-            "vadd.f32   q12, q10, q11                   \n"
-            "vsub.f32   q13, q10, q11                   \n"
-            "vst1.32    {d24-d27}, [%[d_bt]]!           \n"
-
-            "vsub.f32   q10, q9, q4                     \n"
-            "vsub.f32   q11, q8, q5                     \n"
-            "vmla.f32   q10, q11, d0[0]                 \n"
-            "vst1.32    {d20-d21}, [%[d_bt]]!           \n"
-
-            "subs       r0, #1                          \n"
-            "bne        loop_r_%=                       \n"
-            : [d_bt] "+r"(d_bt_ptr), [in0] "+r"(in0), [in1] "+r"(in1),
-              [in2] "+r"(in2), [in3] "+r"(in3)
-            : [tm_ptr] "r"((float *)transform_matrix), [steps] "r"(steps)
-            : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7",
-              "q8", "q9", "q10", "q11", "q12", "q13", "r0");
-
-        float *ptr0 = d_bt;
-        float *ptr1 = ptr0 + 32;
-        float *ptr2 = ptr1 + 32;
-        float *ptr3 = ptr2 + 32;
-        float *ptr4 = ptr3 + 32;
-        float *ptr5 = ptr4 + 32;
-        float *ptr6 = ptr5 + 32;
-        float *ptr7 = ptr6 + 32;
-        int tile_indics = h * w_tiles + w;
-        int tile_block = tile_indics >> 3;
-        int block_indics = tile_indics & 0x7;
-        // (tiles / 8, 64, channel, 8)
-        float *out0 =
-            outptr + (tile_block * 64 * channel + c) * 8 + block_indics;
-        steps = (channel - 3) * 8 * sizeof(float);
-        asm volatile(
-            "vld1.32    {d0-d3}, [%[tm_ptr]]            \n"
-            "mov        r0, 4                           \n"
-            "mov        r1, 32                          \n"
-            "loop_col_%=:                               \n"
-            // col 0:
-            "vld1.32    {d4-d5}, [%[ptr0]]!             \n"  // q2: d0
-            "vld1.32    {d6-d7}, [%[ptr1]]!             \n"  // q3: d1
-            "vld1.32    {d8-d9}, [%[ptr2]]!             \n"  // q4: d2
-            "vld1.32    {d10-d11}, [%[ptr3]]!           \n"  // q5: d3
-            "vld1.32    {d12-d13}, [%[ptr4]]!           \n"  // q6: d4
-            "vld1.32    {d14-d15}, [%[ptr5]]!           \n"  // q7: d5
-            "vld1.32    {d16-d17}, [%[ptr6]]!           \n"  // q8: d6
-            "vld1.32    {d18-d19}, [%[ptr7]]!           \n"  // q9: d7
-
-            "vsub.f32   q10, q2, q8                     \n"  // d0 - d6
-            "vsub.f32   q11, q6, q4                     \n"  // d4 - d2
-            "vmla.f32   q10, q11, d0[0]                 \n"  // d0 - d6 + (d4 -
-                                                             // d2) * 5.25
-            "vst1.32    {d20[0]}, [%[out0]], r1         \n"
-            "vst1.32    {d20[1]}, [%[out0]], r1         \n"
-            "vst1.32    {d21[0]}, [%[out0]], r1         \n"
-            "vst1.32    {d21[1]}, [%[out0]], %[steps]   \n"
-
-            "vadd.f32   q10, q4, q8                     \n"
-            "vadd.f32   q11, q3, q7                     \n"
-            "vmla.f32   q10, q6, d1[0]                  \n"  // d2 - 4.25 * d4 +
-                                                             // d6
-            "vmla.f32   q11, q5, d1[0]                  \n"  // d1 - 4.25 * d3 +
-                                                             // d5
-            "vadd.f32   q12, q10, q11                   \n"
-            "vst1.32    {d24[0]}, [%[out0]], r1         \n"
-            "vst1.32    {d24[1]}, [%[out0]], r1         \n"
-            "vst1.32    {d25[0]}, [%[out0]], r1         \n"
-            "vst1.32    {d25[1]}, [%[out0]], %[steps]   \n"
-            "vsub.f32   q12, q10, q11                   \n"
-            "vst1.32    {d24[0]}, [%[out0]], r1         \n"
-            "vst1.32    {d24[1]}, [%[out0]], r1         \n"
-            "vst1.32    {d25[0]}, [%[out0]], r1         \n"
-            "vst1.32    {d25[1]}, [%[out0]], %[steps]   \n"
-
-            "vmul.f32   q10, q4, d3[1]                  \n"  // 0.25 * d2
-            "vmul.f32   q11, q3, d3[0]                  \n"  // 0.5 * d1
-            "vadd.f32   q10, q10, q8                    \n"  // 0.25 * d2 + d6
-            "vmla.f32   q11, q7, d2[0]                  \n"  // 0.5 * d1 + 2 *
-                                                             // d5
-            "vmla.f32   q10, q6, d2[1]                  \n"  // 0.25 * d2 + d6
-                                                             // - 1.25 * d4
-            "vmla.f32   q11, q5, d1[1]                  \n"  // 0.5 * d1 + 2 *
-                                                             // d5 - 2.5 * d3
-            "vadd.f32   q12, q10, q11                   \n"
-            "vst1.32    {d24[0]}, [%[out0]], r1         \n"
-            "vst1.32    {d24[1]}, [%[out0]], r1         \n"
-            "vst1.32    {d25[0]}, [%[out0]], r1         \n"
-            "vst1.32    {d25[1]}, [%[out0]], %[steps]   \n"
-            "vsub.f32   q12, q10, q11                   \n"
-            "vst1.32    {d24[0]}, [%[out0]], r1         \n"
-            "vst1.32    {d24[1]}, [%[out0]], r1         \n"
-            "vst1.32    {d25[0]}, [%[out0]], r1         \n"
-            "vst1.32    {d25[1]}, [%[out0]], %[steps]   \n"
-
-            "vmul.f32   q10, q4, d2[0]                  \n"  // 2 * d2
-            "vmul.f32   q11, q3, d2[0]                  \n"  // 2 * d1
-            "vmla.f32   q10, q6, d1[1]                  \n"  // 2 * d2 - 2.5 *
-                                                             // d4
-            "vmla.f32   q11, q5, d1[1]                  \n"  // 2 * d1 - 2.5 *
-                                                             // d3
-            "vmla.f32   q10, q8, d3[0]                  \n"  // 2 * d1 - 2.5 *
-                                                             // d3 + 0.5 * d6
-            "vmla.f32   q11, q7, d3[0]                  \n"  // 2 * d2 - 2.5 *
-                                                             // d4 + 0.5 * d5
-            "vmul.f32   q10, q10, d2[0]                 \n"  // 4 * d1 - 5 * d3
-                                                             // + d6
-            "vadd.f32   q12, q10, q11                   \n"
-            "vst1.32    {d24[0]}, [%[out0]], r1         \n"
-            "vst1.32    {d24[1]}, [%[out0]], r1         \n"
-            "vst1.32    {d25[0]}, [%[out0]], r1         \n"
-            "vst1.32    {d25[1]}, [%[out0]], %[steps]   \n"
-            "vsub.f32   q12, q10, q11                   \n"
-            "vst1.32    {d24[0]}, [%[out0]], r1         \n"
-            "vst1.32    {d24[1]}, [%[out0]], r1         \n"
-            "vst1.32    {d25[0]}, [%[out0]], r1         \n"
-            "vst1.32    {d25[1]}, [%[out0]], %[steps]   \n"
-
-            "vsub.f32   q10, q9, q3                     \n"
-            "vsub.f32   q11, q5, q7                     \n"
-            "vmla.f32   q10, q11, d0[0]                 \n"
-            "vst1.32    {d20[0]}, [%[out0]], r1         \n"
-            "vst1.32    {d20[1]}, [%[out0]], r1         \n"
-            "vst1.32    {d21[0]}, [%[out0]], r1         \n"
-            "vst1.32    {d21[1]}, [%[out0]], %[steps]   \n"
-
-            // col 1:
-            "vld1.32    {d4-d5}, [%[ptr0]]!             \n"  // q2: d0
-            "vld1.32    {d6-d7}, [%[ptr1]]!             \n"  // q3: d1
-            "vld1.32    {d8-d9}, [%[ptr2]]!             \n"  // q4: d2
-            "vld1.32    {d10-d11}, [%[ptr3]]!           \n"  // q5: d3
-            "vld1.32    {d12-d13}, [%[ptr4]]!           \n"  // q6: d4
-            "vld1.32    {d14-d15}, [%[ptr5]]!           \n"  // q7: d5
-            "vld1.32    {d16-d17}, [%[ptr6]]!           \n"  // q8: d6
-            "vld1.32    {d18-d19}, [%[ptr7]]!           \n"  // q9: d7
-
-            "vsub.f32   q10, q2, q8                     \n"  // d0 - d6
-            "vsub.f32   q11, q6, q4                     \n"  // d4 - d2
-            "vmla.f32   q10, q11, d0[0]                 \n"  // d0 - d6 + (d4 -
-                                                             // d2) * 5.25
-            "vst1.32    {d20[0]}, [%[out0]], r1         \n"
-            "vst1.32    {d20[1]}, [%[out0]], r1         \n"
-            "vst1.32    {d21[0]}, [%[out0]], r1         \n"
-            "vst1.32    {d21[1]}, [%[out0]], %[steps]   \n"
-
-            "vadd.f32   q10, q4, q8                     \n"
-            "vadd.f32   q11, q3, q7                     \n"
-            "vmla.f32   q10, q6, d1[0]                  \n"  // d2 - 4.25 * d4 +
-                                                             // d6
-            "vmla.f32   q11, q5, d1[0]                  \n"  // d1 - 4.25 * d3 +
-                                                             // d5
-            "vadd.f32   q12, q10, q11                   \n"
-            "vst1.32    {d24[0]}, [%[out0]], r1         \n"
-            "vst1.32    {d24[1]}, [%[out0]], r1         \n"
-            "vst1.32    {d25[0]}, [%[out0]], r1         \n"
-            "vst1.32    {d25[1]}, [%[out0]], %[steps]   \n"
-
-            "vsub.f32   q12, q10, q11                   \n"
-            "vst1.32    {d24[0]}, [%[out0]], r1         \n"
-            "vst1.32    {d24[1]}, [%[out0]], r1         \n"
-            "vst1.32    {d25[0]}, [%[out0]], r1         \n"
-            "vst1.32    {d25[1]}, [%[out0]], %[steps]   \n"
-
-            "vmul.f32   q10, q4, d3[1]                  \n"  // 0.25 * d2
-            "vmul.f32   q11, q3, d3[0]                  \n"  // 0.5 * d1
-            "vadd.f32   q10, q10, q8                    \n"  // 0.25 * d2 + d6
-            "vmla.f32   q11, q7, d2[0]                  \n"  // 0.5 * d1 + 2 *
-                                                             // d5
-            "vmla.f32   q10, q6, d2[1]                  \n"  // 0.25 * d2 + d6
-                                                             // - 1.25 * d4
-            "vmla.f32   q11, q5, d1[1]                  \n"  // 0.5 * d1 + 2 *
-                                                             // d5 - 2.5 * d3
-            "vadd.f32   q12, q10, q11                   \n"
-            "vst1.32    {d24[0]}, [%[out0]], r1         \n"
-            "vst1.32    {d24[1]}, [%[out0]], r1         \n"
-            "vst1.32    {d25[0]}, [%[out0]], r1         \n"
-            "vst1.32    {d25[1]}, [%[out0]], %[steps]   \n"
-
-            "vsub.f32   q12, q10, q11                   \n"
-            "vst1.32    {d24[0]}, [%[out0]], r1         \n"
-            "vst1.32    {d24[1]}, [%[out0]], r1         \n"
-            "vst1.32    {d25[0]}, [%[out0]], r1         \n"
-            "vst1.32    {d25[1]}, [%[out0]], %[steps]   \n"
-
-            "vmul.f32   q10, q4, d2[0]                  \n"  // 2 * d2
-            "vmul.f32   q11, q3, d2[0]                  \n"  // 2 * d1
-            "vmla.f32   q10, q6, d1[1]                  \n"  // 2 * d2 - 2.5 *
-                                                             // d4
-            "vmla.f32   q11, q5, d1[1]                  \n"  // 2 * d1 - 2.5 *
-                                                             // d3
-            "vmla.f32   q10, q8, d3[0]                  \n"  // 2 * d1 - 2.5 *
-                                                             // d3 + 0.5 * d6
-            "vmla.f32   q11, q7, d3[0]                  \n"  // 2 * d2 - 2.5 *
-                                                             // d4 + 0.5 * d5
-            "vmul.f32   q10, q10, d2[0]                 \n"  // 4 * d1 - 5 * d3
-                                                             // + d6
-            "vadd.f32   q12, q10, q11                   \n"
-            "vst1.32    {d24[0]}, [%[out0]], r1         \n"
-            "vst1.32    {d24[1]}, [%[out0]], r1         \n"
-            "vst1.32    {d25[0]}, [%[out0]], r1         \n"
-            "vst1.32    {d25[1]}, [%[out0]], %[steps]   \n"
-
-            "vsub.f32   q12, q10, q11                   \n"
-            "vst1.32    {d24[0]}, [%[out0]], r1         \n"
-            "vst1.32    {d24[1]}, [%[out0]], r1         \n"
-            "vst1.32    {d25[0]}, [%[out0]], r1         \n"
-            "vst1.32    {d25[1]}, [%[out0]], %[steps]   \n"
-
-            "vsub.f32   q10, q9, q3                     \n"
-            "vsub.f32   q11, q5, q7                     \n"
-            "vmla.f32   q10, q11, d0[0]                 \n"
-            "vst1.32    {d20[0]}, [%[out0]], r1         \n"
-            "vst1.32    {d20[1]}, [%[out0]], r1         \n"
-            "vst1.32    {d21[0]}, [%[out0]], r1         \n"
-            "vst1.32    {d21[1]}, [%[out0]], %[steps]   \n"
-
-            "subs       r0, #1                          \n"
-            "bne        loop_col_%=                     \n"
-            : [out0] "+r"(out0), [ptr0] "+r"(ptr0), [ptr1] "+r"(ptr1),
-              [ptr2] "+r"(ptr2), [ptr3] "+r"(ptr3), [ptr4] "+r"(ptr4),
-              [ptr5] "+r"(ptr5), [ptr6] "+r"(ptr6), [ptr7] "+r"(ptr7)
-            : [tm_ptr] "r"((float *)transform_matrix), [steps] "r"(steps)
-            : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7",
-              "q8", "q9", "q10", "q11", "q12", "q13", "r0", "r1");
-      }
-    }
-  }
-#endif
-
-  // remainer channels
-  #pragma omp parallel for
-  for (int c = remain_c_start; c < channel; ++c) {
+  for (int c = 0; c < channel; ++c) {
     const float *in = inptr + c * image_size;
     float d_bt[64];  // d * B_t
     for (int h = 0; h < h_tiles; ++h) {
@@ -664,6 +363,90 @@ void winograd_transform_input<8, 3>(const framework::Tensor &input,
         const float *in2 = in1 + width;
         const float *in3 = in2 + width;
         float *d_bt_ptr = d_bt;
+#if __aarch64__
+        int steps = 4 * width;
+        float32x4_t _q0 = vld1q_f32(transform_matrix);
+        float32x4_t _q1 = vld1q_f32(transform_matrix + 4);
+        for (int l = 0; l < 2; ++l) {
+          float32x4x2_t _q23, _q45, _q67, _q89;
+          _q23.val[0] = vld1q_f32(in0);
+          _q45.val[0] = vld1q_f32(in0 + 4);
+          _q23.val[1] = vld1q_f32(in1);
+          _q45.val[1] = vld1q_f32(in1 + 4);
+          _q67.val[0] = vld1q_f32(in2);
+          _q89.val[0] = vld1q_f32(in2 + 4);
+          _q67.val[1] = vld1q_f32(in3);
+          _q89.val[1] = vld1q_f32(in3 + 4);
+          _q23 = vtrnq_f32(_q23.val[0], _q23.val[1]);
+          _q45 = vtrnq_f32(_q45.val[0], _q45.val[1]);
+          _q67 = vtrnq_f32(_q67.val[0], _q67.val[1]);
+          _q89 = vtrnq_f32(_q89.val[0], _q89.val[1]);
+          float32x4_t _q2 = vcombine_f32(vget_low_f32(_q23.val[0]),
+                                         vget_low_f32(_q67.val[0]));
+          float32x4_t _q4 = vcombine_f32(vget_low_f32(_q23.val[1]),
+                                         vget_low_f32(_q67.val[1]));
+          float32x4_t _q3 = vcombine_f32(vget_low_f32(_q45.val[0]),
+                                         vget_low_f32(_q89.val[0]));
+          float32x4_t _q5 = vcombine_f32(vget_low_f32(_q45.val[1]),
+                                         vget_low_f32(_q89.val[1]));
+          float32x4_t _q6 = vcombine_f32(vget_high_f32(_q23.val[0]),
+                                         vget_high_f32(_q67.val[0]));
+          float32x4_t _q8 = vcombine_f32(vget_high_f32(_q23.val[1]),
+                                         vget_high_f32(_q67.val[1]));
+          float32x4_t _q7 = vcombine_f32(vget_high_f32(_q45.val[0]),
+                                         vget_high_f32(_q89.val[0]));
+          float32x4_t _q9 = vcombine_f32(vget_high_f32(_q45.val[1]),
+                                         vget_high_f32(_q89.val[1]));
+
+          float32x4_t _q10 = vsubq_f32(_q2, _q7);
+          float32x4_t _q11 = vsubq_f32(_q3, _q6);
+          _q10 = vmlaq_lane_f32(_q10, _q11, vget_low_f32(_q0), 0);
+          vst1q_f32(d_bt_ptr, _q10);
+
+          _q10 = vaddq_f32(_q6, _q7);
+          _q11 = vaddq_f32(_q4, _q5);
+          _q10 = vmlaq_lane_f32(_q10, _q3, vget_high_f32(_q0), 0);
+          _q11 = vmlaq_lane_f32(_q11, _q8, vget_high_f32(_q0), 0);
+          float32x4_t _q12 = vaddq_f32(_q10, _q11);
+          float32x4_t _q13 = vsubq_f32(_q10, _q11);
+          vst1q_f32(d_bt_ptr + 4, _q12);
+          vst1q_f32(d_bt_ptr + 8, _q13);
+
+          _q10 = vmulq_lane_f32(_q6, vget_high_f32(_q1), 1);
+          _q11 = vmulq_lane_f32(_q4, vget_high_f32(_q1), 0);
+          _q10 = vaddq_f32(_q10, _q7);
+          _q11 = vmlaq_lane_f32(_q11, _q5, vget_low_f32(_q1), 0);
+          _q10 = vmlaq_lane_f32(_q10, _q3, vget_low_f32(_q1), 1);
+          _q11 = vmlaq_lane_f32(_q11, _q8, vget_high_f32(_q0), 1);
+          _q12 = vaddq_f32(_q10, _q11);
+          _q13 = vsubq_f32(_q10, _q11);
+          vst1q_f32(d_bt_ptr + 12, _q12);
+          vst1q_f32(d_bt_ptr + 16, _q13);
+
+          _q10 = vmulq_lane_f32(_q6, vget_low_f32(_q1), 0);
+          _q11 = vmulq_lane_f32(_q4, vget_low_f32(_q1), 0);
+          _q10 = vmlaq_lane_f32(_q10, _q3, vget_high_f32(_q0), 1);
+          _q11 = vmlaq_lane_f32(_q11, _q8, vget_high_f32(_q0), 1);
+          _q10 = vmlaq_lane_f32(_q10, _q7, vget_high_f32(_q1), 0);
+          _q11 = vmlaq_lane_f32(_q11, _q5, vget_high_f32(_q1), 0);
+          _q10 = vmulq_lane_f32(_q10, vget_low_f32(_q1), 0);
+          _q12 = vaddq_f32(_q10, _q11);
+          _q13 = vsubq_f32(_q10, _q11);
+          vst1q_f32(d_bt_ptr + 20, _q12);
+          vst1q_f32(d_bt_ptr + 24, _q13);
+
+          _q10 = vsubq_f32(_q9, _q4);
+          _q11 = vsubq_f32(_q8, _q5);
+          _q10 = vmlaq_lane_f32(_q10, _q11, vget_low_f32(_q0), 0);
+          vst1q_f32(d_bt_ptr + 28, _q10);
+
+          in0 += steps;
+          in1 += steps;
+          in2 += steps;
+          in3 += steps;
+          d_bt_ptr += 32;
+        }
+#else
         int steps = 4 * width * sizeof(float);
         asm volatile(
             "vld1.32    {d0-d3}, [%[tm_ptr]]            \n"
@@ -740,7 +523,7 @@ void winograd_transform_input<8, 3>(const framework::Tensor &input,
             : [tm_ptr] "r"((float *)transform_matrix), [steps] "r"(steps)
             : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7",
               "q8", "q9", "q10", "q11", "q12", "q13", "r0");
-
+#endif  // __aarch64__
         float *ptr0 = d_bt;
         float *ptr1 = ptr0 + 32;
         int tile_indics = h * w_tiles + w;
@@ -756,6 +539,120 @@ void winograd_transform_input<8, 3>(const framework::Tensor &input,
         float *out5 = out4 + channel * 8;
         float *out6 = out5 + channel * 8;
         float *out7 = out6 + channel * 8;
+#if __aarch64__
+        steps = 8 * channel * 8;
+        for (int l = 0; l < 2; ++l) {
+          float32x4x2_t _q23, _q45, _q67, _q89;
+          _q23.val[0] = vld1q_f32(ptr0);
+          _q23.val[1] = vld1q_f32(ptr0 + 4);
+          _q45.val[0] = vld1q_f32(ptr0 + 8);
+          _q45.val[1] = vld1q_f32(ptr0 + 12);
+          _q67.val[0] = vld1q_f32(ptr1);
+          _q67.val[1] = vld1q_f32(ptr1 + 4);
+          _q89.val[0] = vld1q_f32(ptr1 + 8);
+          _q89.val[1] = vld1q_f32(ptr1 + 12);
+          _q23 = vtrnq_f32(_q23.val[0], _q23.val[1]);
+          _q45 = vtrnq_f32(_q45.val[0], _q45.val[1]);
+          _q67 = vtrnq_f32(_q67.val[0], _q67.val[1]);
+          _q89 = vtrnq_f32(_q89.val[0], _q89.val[1]);
+          float32x4_t _q2 = vcombine_f32(vget_low_f32(_q23.val[0]),
+                                         vget_low_f32(_q45.val[0]));
+          float32x4_t _q4 = vcombine_f32(vget_high_f32(_q23.val[0]),
+                                         vget_high_f32(_q45.val[0]));
+          float32x4_t _q3 = vcombine_f32(vget_low_f32(_q23.val[1]),
+                                         vget_low_f32(_q45.val[1]));
+          float32x4_t _q5 = vcombine_f32(vget_high_f32(_q23.val[1]),
+                                         vget_high_f32(_q45.val[1]));
+          float32x4_t _q6 = vcombine_f32(vget_low_f32(_q67.val[0]),
+                                         vget_low_f32(_q89.val[0]));
+          float32x4_t _q8 = vcombine_f32(vget_high_f32(_q67.val[0]),
+                                         vget_high_f32(_q89.val[0]));
+          float32x4_t _q7 = vcombine_f32(vget_low_f32(_q67.val[1]),
+                                         vget_low_f32(_q89.val[1]));
+          float32x4_t _q9 = vcombine_f32(vget_high_f32(_q67.val[1]),
+                                         vget_high_f32(_q89.val[1]));
+
+          float32x4_t _q10 = vsubq_f32(_q2, _q8);
+          float32x4_t _q11 = vsubq_f32(_q6, _q4);
+          _q10 = vmlaq_lane_f32(_q10, _q11, vget_low_f32(_q0), 0);
+          vst1q_lane_f32(out0, _q10, 0);
+          vst1q_lane_f32(out0 + steps, _q10, 1);
+          vst1q_lane_f32(out0 + 2 * steps, _q10, 2);
+          vst1q_lane_f32(out0 + 3 * steps, _q10, 3);
+
+          _q10 = vaddq_f32(_q4, _q8);
+          _q11 = vaddq_f32(_q3, _q7);
+          _q10 = vmlaq_lane_f32(_q10, _q6, vget_high_f32(_q0), 0);
+          _q11 = vmlaq_lane_f32(_q11, _q5, vget_high_f32(_q0), 0);
+          float32x4_t _q12 = vaddq_f32(_q10, _q11);
+          vst1q_lane_f32(out1, _q12, 0);
+          vst1q_lane_f32(out1 + steps, _q12, 1);
+          vst1q_lane_f32(out1 + 2 * steps, _q12, 2);
+          vst1q_lane_f32(out1 + 3 * steps, _q12, 3);
+
+          _q12 = vsubq_f32(_q10, _q11);
+          vst1q_lane_f32(out2, _q12, 0);
+          vst1q_lane_f32(out2 + steps, _q12, 1);
+          vst1q_lane_f32(out2 + 2 * steps, _q12, 2);
+          vst1q_lane_f32(out2 + 3 * steps, _q12, 3);
+
+          _q10 = vmulq_lane_f32(_q4, vget_high_f32(_q1), 1);
+          _q11 = vmulq_lane_f32(_q3, vget_high_f32(_q1), 0);
+          _q10 = vaddq_f32(_q10, _q8);
+          _q11 = vmlaq_lane_f32(_q11, _q7, vget_low_f32(_q1), 0);
+          _q10 = vmlaq_lane_f32(_q10, _q6, vget_low_f32(_q1), 1);
+          _q11 = vmlaq_lane_f32(_q11, _q5, vget_high_f32(_q0), 1);
+          _q12 = vaddq_f32(_q10, _q11);
+          vst1q_lane_f32(out3, _q12, 0);
+          vst1q_lane_f32(out3 + steps, _q12, 1);
+          vst1q_lane_f32(out3 + 2 * steps, _q12, 2);
+          vst1q_lane_f32(out3 + 3 * steps, _q12, 3);
+
+          _q12 = vsubq_f32(_q10, _q11);
+          vst1q_lane_f32(out4, _q12, 0);
+          vst1q_lane_f32(out4 + steps, _q12, 1);
+          vst1q_lane_f32(out4 + 2 * steps, _q12, 2);
+          vst1q_lane_f32(out4 + 3 * steps, _q12, 3);
+
+          _q10 = vmulq_lane_f32(_q4, vget_low_f32(_q1), 0);
+          _q11 = vmulq_lane_f32(_q3, vget_low_f32(_q1), 0);
+          _q10 = vmlaq_lane_f32(_q10, _q6, vget_high_f32(_q0), 1);
+          _q11 = vmlaq_lane_f32(_q11, _q5, vget_high_f32(_q0), 1);
+          _q10 = vmlaq_lane_f32(_q10, _q8, vget_high_f32(_q1), 0);
+          _q11 = vmlaq_lane_f32(_q11, _q7, vget_high_f32(_q1), 0);
+          _q10 = vmulq_lane_f32(_q10, vget_low_f32(_q1), 0);
+          _q12 = vaddq_f32(_q10, _q11);
+          vst1q_lane_f32(out5, _q12, 0);
+          vst1q_lane_f32(out5 + steps, _q12, 1);
+          vst1q_lane_f32(out5 + 2 * steps, _q12, 2);
+          vst1q_lane_f32(out5 + 3 * steps, _q12, 3);
+
+          _q12 = vsubq_f32(_q10, _q11);
+          vst1q_lane_f32(out6, _q12, 0);
+          vst1q_lane_f32(out6 + steps, _q12, 1);
+          vst1q_lane_f32(out6 + 2 * steps, _q12, 2);
+          vst1q_lane_f32(out6 + 3 * steps, _q12, 3);
+
+          _q10 = vsubq_f32(_q9, _q3);
+          _q11 = vsubq_f32(_q5, _q7);
+          _q10 = vmlaq_lane_f32(_q10, _q11, vget_low_f32(_q0), 0);
+          vst1q_lane_f32(out7, _q10, 0);
+          vst1q_lane_f32(out7 + steps, _q10, 1);
+          vst1q_lane_f32(out7 + 2 * steps, _q10, 2);
+          vst1q_lane_f32(out7 + 3 * steps, _q10, 3);
+
+          ptr0 += 16;
+          ptr1 += 16;
+          out0 += 4 * steps;
+          out1 += 4 * steps;
+          out2 += 4 * steps;
+          out3 += 4 * steps;
+          out4 += 4 * steps;
+          out5 += 4 * steps;
+          out6 += 4 * steps;
+          out7 += 4 * steps;
+        }
+#else
         steps = 8 * channel * 8 * sizeof(float);
         asm volatile(
             "mov        r0, #2                          \n"
@@ -861,6 +758,7 @@ void winograd_transform_input<8, 3>(const framework::Tensor &input,
             : [tm_ptr] "r"((float *)transform_matrix), [steps] "r"(steps)
             : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7",
               "q8", "q9", "q10", "q11", "q12", "q13", "r0");
+#endif  // __aarch64__
       }
     }
   }
@@ -893,6 +791,71 @@ void winograd_transform_output<8, 3>(const framework::Tensor &input,
         const float *in_ptr = input_ptr + (j * 64 + k) * in_channel * 8;
         int inter_channel = in_channel >> 1;
         int remain_channel = in_channel & 0x1;
+#if __aarch64__
+        asm volatile(
+            "dup        v8.4s,     wzr                 \n"
+            "dup        v9.4s,     wzr                 \n"
+            "dup        v10.4s,    wzr                 \n"
+            "dup        v11.4s,    wzr                 \n"
+            "dup        v12.4s,    wzr                 \n"
+            "dup        v13.4s,    wzr                 \n"
+            "dup        v14.4s,    wzr                 \n"
+            "dup        v15.4s,    wzr                 \n"
+
+            "cmp        %[inter], #0                       \n"
+            "ble        2f                                 \n"
+            // loop 2 channels
+            "1:                                            \n"
+            "ld1        {v0.4s, v1.4s}, [%[w_ptr]], #32    \n"
+            "ld1        {v2.4s, v3.4s}, [%[in_ptr]], #32   \n"
+            "ld1        {v4.4s, v5.4s}, [%[in_ptr]], #32   \n"
+
+            "fmla       v8.4s, v2.4s, v0.s[0]              \n"
+            "fmla       v9.4s, v3.4s, v0.s[0]              \n"
+            "fmla       v10.4s, v2.4s, v0.s[1]             \n"
+            "fmla       v11.4s, v3.4s, v0.s[1]             \n"
+            "fmla       v12.4s, v2.4s, v0.s[2]             \n"
+            "fmla       v13.4s, v3.4s, v0.s[2]             \n"
+            "fmla       v14.4s, v2.4s, v0.s[3]             \n"
+            "fmla       v15.4s, v3.4s, v0.s[3]             \n"
+
+            "fmla       v8.4s, v4.4s, v1.s[0]              \n"
+            "fmla       v9.4s, v5.4s, v1.s[0]              \n"
+            "fmla       v10.4s, v4.4s, v1.s[1]             \n"
+            "fmla       v11.4s, v5.4s, v1.s[1]             \n"
+            "fmla       v12.4s, v4.4s, v1.s[2]             \n"
+            "fmla       v13.4s, v5.4s, v1.s[2]             \n"
+            "fmla       v14.4s, v4.4s, v1.s[3]             \n"
+            "fmla       v15.4s, v5.4s, v1.s[3]             \n"
+
+            "subs       %[inter], %[inter], #1             \n"
+            "bne        1b                                 \n"
+
+            // loop 1 channel
+            "2:                                            \n"
+            "cmp        %[remain], #0                      \n"
+            "ble        3f                                 \n"
+
+            "ld1        {v0.4s, v1.4s}, [%[w_ptr]], #32    \n"
+            "ld1        {v2.4s, v3.4s}, [%[in_ptr]], #32   \n"
+            "fmla       v8.4s, v2.4s, v0.s[0]              \n"
+            "fmla       v9.4s, v3.4s, v0.s[0]              \n"
+            "fmla       v10.4s, v2.4s, v0.s[1]             \n"
+            "fmla       v11.4s, v3.4s, v0.s[1]             \n"
+            "fmla       v12.4s, v2.4s, v0.s[2]             \n"
+            "fmla       v13.4s, v3.4s, v0.s[2]             \n"
+            "fmla       v14.4s, v2.4s, v0.s[3]             \n"
+            "fmla       v15.4s, v3.4s, v0.s[3]             \n"
+
+            "3:                                            \n"
+            "st1        {v8.4s, v9.4s, v10.4s, v11.4s}, [%[uv_ptr]], #64 \n"
+            "st1        {v12.4s, v13.4s, v14.4s, v15.4s}, [%[uv_ptr]], #64 \n"
+            : [w_ptr] "+r"(w_ptr), [in_ptr] "+r"(in_ptr), [uv_ptr] "+r"(uv_ptr),
+              [inter] "+r"(inter_channel)
+            : [remain] "r"(remain_channel)
+            : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",
+              "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15");
+#else
         asm volatile(
             "veor       q8, q8, q8                     \n"
             "veor       q9, q9, q9                     \n"
@@ -957,6 +920,7 @@ void winograd_transform_output<8, 3>(const framework::Tensor &input,
             : [remain_channel] "r"(remain_channel)
             : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7",
               "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15");
+#endif  // __aarch64__
       }
     }
   }
@@ -992,6 +956,116 @@ void winograd_transform_output<8, 3>(const framework::Tensor &input,
         int tile_block = tile_indics >> 3;
         int block_indics = tile_indics & 0x7;
         const float *uv_ptr0 = uv_ptr + tile_block * 64 * 32 + block_indics;
+#if __aarch64__
+        float32x4_t _q0 = vld1q_f32(transform_matrix);
+        for (int l = 0; l < 2; ++l) {
+          float32x4_t _q1, _q2, _q3, _q4, _q5, _q6, _q7, _q8;
+          _q1 = vsetq_lane_f32(*uv_ptr0, _q1, 0);
+          uv_ptr0 += 32;
+          _q3 = vsetq_lane_f32(*uv_ptr0, _q3, 0);
+          uv_ptr0 += 32;
+          _q5 = vsetq_lane_f32(*uv_ptr0, _q5, 0);
+          uv_ptr0 += 32;
+          _q7 = vsetq_lane_f32(*uv_ptr0, _q7, 0);
+          uv_ptr0 += 32;
+          _q2 = vsetq_lane_f32(*uv_ptr0, _q2, 0);
+          uv_ptr0 += 32;
+          _q4 = vsetq_lane_f32(*uv_ptr0, _q4, 0);
+          uv_ptr0 += 32;
+          _q6 = vsetq_lane_f32(*uv_ptr0, _q6, 0);
+          uv_ptr0 += 32;
+          _q8 = vsetq_lane_f32(*uv_ptr0, _q8, 0);
+          uv_ptr0 += 32;
+
+          _q1 = vsetq_lane_f32(*uv_ptr0, _q1, 1);
+          uv_ptr0 += 32;
+          _q3 = vsetq_lane_f32(*uv_ptr0, _q3, 1);
+          uv_ptr0 += 32;
+          _q5 = vsetq_lane_f32(*uv_ptr0, _q5, 1);
+          uv_ptr0 += 32;
+          _q7 = vsetq_lane_f32(*uv_ptr0, _q7, 1);
+          uv_ptr0 += 32;
+          _q2 = vsetq_lane_f32(*uv_ptr0, _q2, 1);
+          uv_ptr0 += 32;
+          _q4 = vsetq_lane_f32(*uv_ptr0, _q4, 1);
+          uv_ptr0 += 32;
+          _q6 = vsetq_lane_f32(*uv_ptr0, _q6, 1);
+          uv_ptr0 += 32;
+          _q8 = vsetq_lane_f32(*uv_ptr0, _q8, 1);
+          uv_ptr0 += 32;
+
+          _q1 = vsetq_lane_f32(*uv_ptr0, _q1, 2);
+          uv_ptr0 += 32;
+          _q3 = vsetq_lane_f32(*uv_ptr0, _q3, 2);
+          uv_ptr0 += 32;
+          _q5 = vsetq_lane_f32(*uv_ptr0, _q5, 2);
+          uv_ptr0 += 32;
+          _q7 = vsetq_lane_f32(*uv_ptr0, _q7, 2);
+          uv_ptr0 += 32;
+          _q2 = vsetq_lane_f32(*uv_ptr0, _q2, 2);
+          uv_ptr0 += 32;
+          _q4 = vsetq_lane_f32(*uv_ptr0, _q4, 2);
+          uv_ptr0 += 32;
+          _q6 = vsetq_lane_f32(*uv_ptr0, _q6, 2);
+          uv_ptr0 += 32;
+          _q8 = vsetq_lane_f32(*uv_ptr0, _q8, 2);
+          uv_ptr0 += 32;
+
+          _q1 = vsetq_lane_f32(*uv_ptr0, _q1, 3);
+          uv_ptr0 += 32;
+          _q3 = vsetq_lane_f32(*uv_ptr0, _q3, 3);
+          uv_ptr0 += 32;
+          _q5 = vsetq_lane_f32(*uv_ptr0, _q5, 3);
+          uv_ptr0 += 32;
+          _q7 = vsetq_lane_f32(*uv_ptr0, _q7, 3);
+          uv_ptr0 += 32;
+          _q2 = vsetq_lane_f32(*uv_ptr0, _q2, 3);
+          uv_ptr0 += 32;
+          _q4 = vsetq_lane_f32(*uv_ptr0, _q4, 3);
+          uv_ptr0 += 32;
+          _q6 = vsetq_lane_f32(*uv_ptr0, _q6, 3);
+          uv_ptr0 += 32;
+          _q8 = vsetq_lane_f32(*uv_ptr0, _q8, 3);
+          uv_ptr0 += 32;
+
+          float32x4_t _q9 = vaddq_f32(_q3, _q5);
+          float32x4_t _q10 = vaddq_f32(_q7, _q2);
+          float32x4_t _q11 = vaddq_f32(_q4, _q6);
+          float32x4_t _q12 = vsubq_f32(_q3, _q5);
+          float32x4_t _q13 = vsubq_f32(_q7, _q2);
+          float32x4_t _q14 = vsubq_f32(_q4, _q6);
+          _q2 = vmulq_lane_f32(_q13, vget_low_f32(_q0), 0);
+          _q3 = vmulq_lane_f32(_q11, vget_low_f32(_q0), 0);
+
+          float32x4_t _q15 = vaddq_f32(_q1, _q9);
+          _q15 = vaddq_f32(_q15, _q10);
+          _q15 = vmlaq_lane_f32(_q15, _q3, vget_high_f32(_q0), 1);
+          vst1q_f32(at_m_ptr, _q15);
+
+          _q15 = vaddq_f32(_q12, _q2);
+          _q15 = vmlaq_lane_f32(_q15, _q14, vget_high_f32(_q0), 1);
+          vst1q_f32(at_m_ptr + 4, _q15);
+
+          _q15 = vmlaq_lane_f32(_q9, _q10, vget_low_f32(_q0), 1);
+          _q15 = vmlaq_lane_f32(_q15, _q11, vget_high_f32(_q0), 0);
+          vst1q_f32(at_m_ptr + 8, _q15);
+
+          _q15 = vmlaq_lane_f32(_q12, _q13, vget_high_f32(_q0), 0);
+          _q15 = vmlaq_lane_f32(_q15, _q14, vget_low_f32(_q0), 1);
+          vst1q_f32(at_m_ptr + 12, _q15);
+
+          _q15 = vaddq_f32(_q9, _q3);
+          _q15 = vmlaq_lane_f32(_q15, _q10, vget_high_f32(_q0), 1);
+          vst1q_f32(at_m_ptr + 16, _q15);
+
+          _q15 = vaddq_f32(_q12, _q8);
+          _q15 = vaddq_f32(_q15, _q14);
+          _q15 = vmlaq_lane_f32(_q15, _q2, vget_high_f32(_q0), 1);
+          vst1q_f32(at_m_ptr + 20, _q15);
+
+          at_m_ptr += 24;
+        }
+#else
         int steps = 32 * sizeof(float);
         asm volatile(
             "vld1.32    {d0-d1}, [%[tm_ptr]]              \n"
@@ -1077,6 +1151,7 @@ void winograd_transform_output<8, 3>(const framework::Tensor &input,
             : [tm_ptr] "r"((float *)transform_matrix), [steps] "r"(steps)
             : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7",
               "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15", "r0");
+#endif  // __aarch64__
 
         float *at_m_ptr0 = at_m;
         float *at_m_ptr1 = at_m + 24;
@@ -1088,6 +1163,134 @@ void winograd_transform_output<8, 3>(const framework::Tensor &input,
           float *out_ptr3 = output_tmp + 18;
           float *out_ptr4 = output_tmp + 24;
           float *out_ptr5 = output_tmp + 30;
+#if __aarch64__
+          float32x4_t _q0 = vld1q_f32(transform_matrix);
+          float32x4x2_t _q23, _q45, _q67, _q89;
+          _q23.val[0] = vld1q_f32(at_m_ptr0);
+          _q23.val[1] = vld1q_f32(at_m_ptr0 + 4);
+          _q45.val[0] = vld1q_f32(at_m_ptr0 + 8);
+          _q45.val[1] = vld1q_f32(at_m_ptr0 + 12);
+          _q67.val[0] = vld1q_f32(at_m_ptr1);
+          _q67.val[1] = vld1q_f32(at_m_ptr1 + 4);
+          _q89.val[0] = vld1q_f32(at_m_ptr1 + 8);
+          _q89.val[1] = vld1q_f32(at_m_ptr1 + 12);
+          _q23 = vtrnq_f32(_q23.val[0], _q23.val[1]);
+          _q45 = vtrnq_f32(_q45.val[0], _q45.val[1]);
+          _q67 = vtrnq_f32(_q67.val[0], _q67.val[1]);
+          _q89 = vtrnq_f32(_q89.val[0], _q89.val[1]);
+          float32x4_t _q1 = vcombine_f32(vget_low_f32(_q23.val[0]),
+                                         vget_low_f32(_q45.val[0]));
+          float32x4_t _q3 = vcombine_f32(vget_high_f32(_q23.val[0]),
+                                         vget_high_f32(_q45.val[0]));
+          float32x4_t _q2 = vcombine_f32(vget_low_f32(_q23.val[1]),
+                                         vget_low_f32(_q45.val[1]));
+          float32x4_t _q4 = vcombine_f32(vget_high_f32(_q23.val[1]),
+                                         vget_high_f32(_q45.val[1]));
+          float32x4_t _q5 = vcombine_f32(vget_low_f32(_q67.val[0]),
+                                         vget_low_f32(_q89.val[0]));
+          float32x4_t _q7 = vcombine_f32(vget_high_f32(_q67.val[0]),
+                                         vget_high_f32(_q89.val[0]));
+          float32x4_t _q6 = vcombine_f32(vget_low_f32(_q67.val[1]),
+                                         vget_low_f32(_q89.val[1]));
+          float32x4_t _q8 = vcombine_f32(vget_high_f32(_q67.val[1]),
+                                         vget_high_f32(_q89.val[1]));
+
+          float32x4_t _q9 = vaddq_f32(_q2, _q3);
+          float32x4_t _q10 = vaddq_f32(_q4, _q5);
+          float32x4_t _q11 = vaddq_f32(_q6, _q7);
+          float32x4_t _q12 = vsubq_f32(_q2, _q3);
+          float32x4_t _q13 = vsubq_f32(_q4, _q5);
+          float32x4_t _q14 = vsubq_f32(_q6, _q7);
+          _q6 = vmulq_lane_f32(_q13, vget_low_f32(_q0), 0);
+          _q7 = vmulq_lane_f32(_q11, vget_low_f32(_q0), 0);
+
+          _q1 = vaddq_f32(_q1, _q9);
+          _q1 = vaddq_f32(_q1, _q10);
+          _q1 = vmlaq_lane_f32(_q1, _q7, vget_high_f32(_q0), 1);
+
+          _q2 = vaddq_f32(_q12, _q6);
+          _q2 = vmlaq_lane_f32(_q2, _q14, vget_high_f32(_q0), 1);
+
+          _q3 = vmlaq_lane_f32(_q9, _q10, vget_low_f32(_q0), 1);
+          _q3 = vmlaq_lane_f32(_q3, _q11, vget_high_f32(_q0), 0);
+
+          _q4 = vmlaq_lane_f32(_q12, _q13, vget_high_f32(_q0), 0);
+          _q4 = vmlaq_lane_f32(_q4, _q14, vget_low_f32(_q0), 1);
+
+          _q23 = vtrnq_f32(_q1, _q2);
+          _q45 = vtrnq_f32(_q3, _q4);
+          vst1_f32(out_ptr0, vget_low_f32(_q23.val[0]));
+          vst1_f32(out_ptr0 + 2, vget_low_f32(_q45.val[0]));
+          vst1_f32(out_ptr1, vget_low_f32(_q23.val[1]));
+          vst1_f32(out_ptr1 + 2, vget_low_f32(_q45.val[1]));
+          vst1_f32(out_ptr2, vget_high_f32(_q23.val[0]));
+          vst1_f32(out_ptr2 + 2, vget_high_f32(_q45.val[0]));
+          vst1_f32(out_ptr3, vget_high_f32(_q23.val[1]));
+          vst1_f32(out_ptr3 + 2, vget_high_f32(_q45.val[1]));
+
+          _q1 = vaddq_f32(_q9, _q7);
+          _q1 = vmlaq_lane_f32(_q1, _q10, vget_high_f32(_q0), 1);
+          _q2 = vaddq_f32(_q12, _q8);
+          _q2 = vaddq_f32(_q2, _q14);
+          _q2 = vmlaq_lane_f32(_q2, _q6, vget_high_f32(_q0), 1);
+          _q23 = vtrnq_f32(_q1, _q2);
+          vst1_f32(out_ptr0 + 4, vget_low_f32(_q23.val[0]));
+          vst1_f32(out_ptr1 + 4, vget_low_f32(_q23.val[1]));
+          vst1_f32(out_ptr2 + 4, vget_high_f32(_q23.val[0]));
+          vst1_f32(out_ptr3 + 4, vget_high_f32(_q23.val[1]));
+
+          // remain 2 rows
+          _q1 = vld1q_f32(at_m_ptr0 + 16);
+          _q2 = vld1q_f32(at_m_ptr0 + 20);
+          _q3 = vld1q_f32(at_m_ptr1 + 16);
+          _q4 = vld1q_f32(at_m_ptr1 + 20);
+          _q23 = vtrnq_f32(_q1, _q2);
+          _q45 = vtrnq_f32(_q3, _q4);
+
+          float32x2_t _d2 = vget_low_f32(_q23.val[0]);
+          float32x2_t _d3 = vget_high_f32(_q23.val[0]);
+          float32x2_t _d4 = vget_low_f32(_q23.val[1]);
+          float32x2_t _d5 = vget_high_f32(_q23.val[1]);
+          float32x2_t _d6 = vget_low_f32(_q45.val[0]);
+          float32x2_t _d7 = vget_high_f32(_q45.val[0]);
+          float32x2_t _d8 = vget_low_f32(_q45.val[1]);
+          float32x2_t _d9 = vget_high_f32(_q45.val[1]);
+
+          float32x2_t _d10 = vadd_f32(_d4, _d3);
+          float32x2_t _d11 = vadd_f32(_d5, _d6);
+          float32x2_t _d12 = vadd_f32(_d8, _d7);
+          float32x2_t _d13 = vsub_f32(_d4, _d3);
+          float32x2_t _d14 = vsub_f32(_d5, _d6);
+          float32x2_t _d15 = vsub_f32(_d8, _d7);
+          float32x2_t _d16 = vmul_lane_f32(_d14, vget_low_f32(_q0), 0);
+          float32x2_t _d17 = vmul_lane_f32(_d12, vget_low_f32(_q0), 0);
+
+          float32x2_t _d18 = vadd_f32(_d2, _d10);
+          float32x2_t _d20 = vadd_f32(_d13, _d16);
+          float32x2_t _d19 = vmla_lane_f32(_d10, _d11, vget_low_f32(_q0), 1);
+          float32x2_t _d21 = vmla_lane_f32(_d13, _d14, vget_high_f32(_q0), 0);
+          _d18 = vadd_f32(_d18, _d11);
+          _d18 = vmla_lane_f32(_d18, _d17, vget_high_f32(_q0), 1);
+          _d20 = vmla_lane_f32(_d20, _d15, vget_high_f32(_q0), 1);
+          _d19 = vmla_lane_f32(_d19, _d12, vget_high_f32(_q0), 0);
+          _d21 = vmla_lane_f32(_d21, _d15, vget_low_f32(_q0), 1);
+
+          float32x2x2_t _d18d20 = vtrn_f32(_d18, _d20);
+          float32x2x2_t _d19d21 = vtrn_f32(_d19, _d21);
+          vst1_f32(out_ptr4, _d18d20.val[0]);
+          vst1_f32(out_ptr4 + 2, _d19d21.val[0]);
+          vst1_f32(out_ptr5, _d18d20.val[1]);
+          vst1_f32(out_ptr5 + 2, _d19d21.val[1]);
+
+          _d18 = vadd_f32(_d10, _d17);
+          _d18 = vmla_lane_f32(_d18, _d11, vget_high_f32(_q0), 1);
+          _d20 = vadd_f32(_d13, _d9);
+          _d20 = vadd_f32(_d20, _d15);
+          _d20 = vmla_lane_f32(_d20, _d16, vget_high_f32(_q0), 1);
+          _d18d20 = vtrn_f32(_d18, _d20);
+          vst1_f32(out_ptr4 + 4, _d18d20.val[0]);
+          vst1_f32(out_ptr5 + 4, _d18d20.val[1]);
+#else
           asm volatile(
               "vld1.32    {d0-d1}, [%[tm_ptr]]          \n"
               // process 4 rows
@@ -1204,6 +1407,7 @@ void winograd_transform_output<8, 3>(const framework::Tensor &input,
               : [tm_ptr] "r"((float *)transform_matrix)
               : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7",
                 "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15");
+#endif  // __aarch64__
           size_t offset = (oc * out_h + 6 * tile_h) * out_w + 6 * tile_w;
           float *out_ptr = output_ptr + offset;
           int remain_row = out_h - 6 * tile_h;
@@ -1221,6 +1425,131 @@ void winograd_transform_output<8, 3>(const framework::Tensor &input,
           float *out_ptr3 = out_ptr2 + out_w;
           float *out_ptr4 = out_ptr3 + out_w;
           float *out_ptr5 = out_ptr4 + out_w;
+#if __aarch64__
+          float32x4_t _q0 = vld1q_f32(transform_matrix);
+          float32x4x2_t _q23, _q45, _q67, _q89;
+          _q23.val[0] = vld1q_f32(at_m_ptr0);
+          _q23.val[1] = vld1q_f32(at_m_ptr0 + 4);
+          _q45.val[0] = vld1q_f32(at_m_ptr0 + 8);
+          _q45.val[1] = vld1q_f32(at_m_ptr0 + 12);
+          _q67.val[0] = vld1q_f32(at_m_ptr1);
+          _q67.val[1] = vld1q_f32(at_m_ptr1 + 4);
+          _q89.val[0] = vld1q_f32(at_m_ptr1 + 8);
+          _q89.val[1] = vld1q_f32(at_m_ptr1 + 12);
+          _q23 = vtrnq_f32(_q23.val[0], _q23.val[1]);
+          _q45 = vtrnq_f32(_q45.val[0], _q45.val[1]);
+          _q67 = vtrnq_f32(_q67.val[0], _q67.val[1]);
+          _q89 = vtrnq_f32(_q89.val[0], _q89.val[1]);
+          float32x4_t _q1 = vcombine_f32(vget_low_f32(_q23.val[0]),
+                                         vget_low_f32(_q45.val[0]));
+          float32x4_t _q3 = vcombine_f32(vget_high_f32(_q23.val[0]),
+                                         vget_high_f32(_q45.val[0]));
+          float32x4_t _q2 = vcombine_f32(vget_low_f32(_q23.val[1]),
+                                         vget_low_f32(_q45.val[1]));
+          float32x4_t _q4 = vcombine_f32(vget_high_f32(_q23.val[1]),
+                                         vget_high_f32(_q45.val[1]));
+          float32x4_t _q5 = vcombine_f32(vget_low_f32(_q67.val[0]),
+                                         vget_low_f32(_q89.val[0]));
+          float32x4_t _q7 = vcombine_f32(vget_high_f32(_q67.val[0]),
+                                         vget_high_f32(_q89.val[0]));
+          float32x4_t _q6 = vcombine_f32(vget_low_f32(_q67.val[1]),
+                                         vget_low_f32(_q89.val[1]));
+          float32x4_t _q8 = vcombine_f32(vget_high_f32(_q67.val[1]),
+                                         vget_high_f32(_q89.val[1]));
+
+          float32x4_t _q9 = vaddq_f32(_q2, _q3);
+          float32x4_t _q10 = vaddq_f32(_q4, _q5);
+          float32x4_t _q11 = vaddq_f32(_q6, _q7);
+          float32x4_t _q12 = vsubq_f32(_q2, _q3);
+          float32x4_t _q13 = vsubq_f32(_q4, _q5);
+          float32x4_t _q14 = vsubq_f32(_q6, _q7);
+          _q6 = vmulq_lane_f32(_q13, vget_low_f32(_q0), 0);
+          _q7 = vmulq_lane_f32(_q11, vget_low_f32(_q0), 0);
+
+          _q1 = vaddq_f32(_q1, _q9);
+          _q1 = vaddq_f32(_q1, _q10);
+          _q1 = vmlaq_lane_f32(_q1, _q7, vget_high_f32(_q0), 1);
+          _q2 = vaddq_f32(_q12, _q6);
+          _q2 = vmlaq_lane_f32(_q2, _q14, vget_high_f32(_q0), 1);
+          _q3 = vmlaq_lane_f32(_q9, _q10, vget_low_f32(_q0), 1);
+          _q3 = vmlaq_lane_f32(_q3, _q11, vget_high_f32(_q0), 0);
+          _q4 = vmlaq_lane_f32(_q12, _q13, vget_high_f32(_q0), 0);
+          _q4 = vmlaq_lane_f32(_q4, _q14, vget_low_f32(_q0), 1);
+
+          _q23 = vtrnq_f32(_q1, _q2);
+          _q45 = vtrnq_f32(_q3, _q4);
+          vst1_f32(out_ptr0, vget_low_f32(_q23.val[0]));
+          vst1_f32(out_ptr0 + 2, vget_low_f32(_q45.val[0]));
+          vst1_f32(out_ptr1, vget_low_f32(_q23.val[1]));
+          vst1_f32(out_ptr1 + 2, vget_low_f32(_q45.val[1]));
+          vst1_f32(out_ptr2, vget_high_f32(_q23.val[0]));
+          vst1_f32(out_ptr2 + 2, vget_high_f32(_q45.val[0]));
+          vst1_f32(out_ptr3, vget_high_f32(_q23.val[1]));
+          vst1_f32(out_ptr3 + 2, vget_high_f32(_q45.val[1]));
+
+          _q1 = vaddq_f32(_q9, _q7);
+          _q1 = vmlaq_lane_f32(_q1, _q10, vget_high_f32(_q0), 1);
+          _q2 = vaddq_f32(_q12, _q8);
+          _q2 = vaddq_f32(_q2, _q14);
+          _q2 = vmlaq_lane_f32(_q2, _q6, vget_high_f32(_q0), 1);
+          _q23 = vtrnq_f32(_q1, _q2);
+          vst1_f32(out_ptr0 + 4, vget_low_f32(_q23.val[0]));
+          vst1_f32(out_ptr1 + 4, vget_low_f32(_q23.val[1]));
+          vst1_f32(out_ptr2 + 4, vget_high_f32(_q23.val[0]));
+          vst1_f32(out_ptr3 + 4, vget_high_f32(_q23.val[1]));
+
+          // remain 2 rows
+          _q1 = vld1q_f32(at_m_ptr0 + 16);
+          _q2 = vld1q_f32(at_m_ptr0 + 20);
+          _q3 = vld1q_f32(at_m_ptr1 + 16);
+          _q4 = vld1q_f32(at_m_ptr1 + 20);
+          _q23 = vtrnq_f32(_q1, _q2);
+          _q45 = vtrnq_f32(_q3, _q4);
+
+          float32x2_t _d2 = vget_low_f32(_q23.val[0]);
+          float32x2_t _d3 = vget_high_f32(_q23.val[0]);
+          float32x2_t _d4 = vget_low_f32(_q23.val[1]);
+          float32x2_t _d5 = vget_high_f32(_q23.val[1]);
+          float32x2_t _d6 = vget_low_f32(_q45.val[0]);
+          float32x2_t _d7 = vget_high_f32(_q45.val[0]);
+          float32x2_t _d8 = vget_low_f32(_q45.val[1]);
+          float32x2_t _d9 = vget_high_f32(_q45.val[1]);
+
+          float32x2_t _d10 = vadd_f32(_d4, _d3);
+          float32x2_t _d11 = vadd_f32(_d5, _d6);
+          float32x2_t _d12 = vadd_f32(_d8, _d7);
+          float32x2_t _d13 = vsub_f32(_d4, _d3);
+          float32x2_t _d14 = vsub_f32(_d5, _d6);
+          float32x2_t _d15 = vsub_f32(_d8, _d7);
+          float32x2_t _d16 = vmul_lane_f32(_d14, vget_low_f32(_q0), 0);
+          float32x2_t _d17 = vmul_lane_f32(_d12, vget_low_f32(_q0), 0);
+
+          float32x2_t _d18 = vadd_f32(_d2, _d10);
+          float32x2_t _d20 = vadd_f32(_d13, _d16);
+          float32x2_t _d19 = vmla_lane_f32(_d10, _d11, vget_low_f32(_q0), 1);
+          float32x2_t _d21 = vmla_lane_f32(_d13, _d14, vget_high_f32(_q0), 0);
+          _d18 = vadd_f32(_d18, _d11);
+          _d18 = vmla_lane_f32(_d18, _d17, vget_high_f32(_q0), 1);
+          _d20 = vmla_lane_f32(_d20, _d15, vget_high_f32(_q0), 1);
+          _d19 = vmla_lane_f32(_d19, _d12, vget_high_f32(_q0), 0);
+          _d21 = vmla_lane_f32(_d21, _d15, vget_low_f32(_q0), 1);
+
+          float32x2x2_t _d18d20 = vtrn_f32(_d18, _d20);
+          float32x2x2_t _d19d21 = vtrn_f32(_d19, _d21);
+          vst1_f32(out_ptr4, _d18d20.val[0]);
+          vst1_f32(out_ptr4 + 2, _d19d21.val[0]);
+          vst1_f32(out_ptr5, _d18d20.val[1]);
+          vst1_f32(out_ptr5 + 2, _d19d21.val[1]);
+
+          _d18 = vadd_f32(_d10, _d17);
+          _d18 = vmla_lane_f32(_d18, _d11, vget_high_f32(_q0), 1);
+          _d20 = vadd_f32(_d13, _d9);
+          _d20 = vadd_f32(_d20, _d15);
+          _d20 = vmla_lane_f32(_d20, _d16, vget_high_f32(_q0), 1);
+          _d18d20 = vtrn_f32(_d18, _d20);
+          vst1_f32(out_ptr4 + 4, _d18d20.val[0]);
+          vst1_f32(out_ptr5 + 4, _d18d20.val[1]);
+#else
           asm volatile(
               "vld1.32    {d0-d1}, [%[tm_ptr]]          \n"
               // process 4 rows
@@ -1337,6 +1666,7 @@ void winograd_transform_output<8, 3>(const framework::Tensor &input,
               : [tm_ptr] "r"((float *)transform_matrix)
               : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7",
                 "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15");
+#endif  // __aarch64__
         }
       }
     }
@@ -1347,5 +1677,5 @@ void winograd_transform_output<8, 3>(const framework::Tensor &input,
 }  // namespace operators
 }  // namespace paddle_mobile
 
-#endif  // __aarch64__
 #endif  // CONV_OP
+#endif  // __ARM_NEON__

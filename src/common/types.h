@@ -14,6 +14,7 @@ limitations under the License. */
 
 #pragma once
 
+#include <map>
 #include <string>
 #include <unordered_map>
 #include <utility>
@@ -205,8 +206,12 @@ extern const char *G_OP_TYPE_FUSION_DECONV_ADD_BN_RELU;
 extern const char *G_OP_TYPE_FUSION_DECONV_ADD_BN;
 extern const char *G_OP_TYPE_FUSION_DECONV_BN_RELU;
 
+extern const char *G_OP_TYPE_PAD2D;
+
 extern std::unordered_map<
     std::string, std::pair<std::vector<std::string>, std::vector<std::string>>>
     op_input_output_key;
+
+typedef std::map<std::string, std::vector<std::string>> VariableNameMap;
 
 }  // namespace paddle_mobile

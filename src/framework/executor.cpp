@@ -18,6 +18,7 @@ limitations under the License. */
 #include <vector>
 #include "common/enforce.h"
 #include "common/log.h"
+#include "framework/context.h"
 #include "framework/framework.pb-c.h"
 #include "framework/lod_tensor.h"
 #include "framework/operator.h"
@@ -27,7 +28,7 @@ limitations under the License. */
 #include "framework/scope.h"
 #include "framework/tensor.h"
 #include "memory/t_malloc.h"
-
+#include "pass/memory_optimize.h"
 #ifdef PADDLE_MOBILE_CL
 #include "framework/cl/cl_image.h"
 #endif
@@ -36,6 +37,11 @@ namespace paddle_mobile {
 namespace framework {
 
 #pragma mark - executor
+
+template <typename Device, typename T>
+void Executor<Device, T>::SetThreadNum(int threads) {
+  set_global_num_threads(threads);
+}
 
 template <typename Device, typename T>
 Executor<Device, T>::Executor(const Program<Device> &program,
@@ -56,47 +62,68 @@ Executor<Device, T>::Executor(const Program<Device> &program,
       use_optimize_ ? program_.optimizeProgram : program_.originProgram;
   PADDLE_MOBILE_ENFORCE(program_desc_ != nullptr,
                         "program_desc_ should not be nullptr");
+#if !defined(PADDLE_MOBILE_FPGA) && !defined(PADDLE_MOBILE_CL)
+  pass::MemoryOptPass()(program_desc_.get(), program_.scope.get());
+#endif
+  // resize feed and fetch list
+  // should init feed and fetch variables before infer shape
+  InitFeedFetchList();
+
   const auto &blocks = program_desc_->Blocks();
-  ops_of_block_.resize(blocks.size());
+  std::shared_ptr<BlockDesc> block_desc = blocks[0];
+  std::vector<std::shared_ptr<OpDesc>> ops = block_desc->Ops();
+  for (int j = 0; j < ops.size(); ++j) {
+    std::shared_ptr<OpDesc> op_desc = ops[j];
+    DLOG << "create op: " << op_desc->Type();
 
-  for (int i = 0; i < blocks.size(); ++i) {
-    std::shared_ptr<BlockDesc> block_desc = blocks[i];
-    std::vector<std::shared_ptr<OpDesc>> ops = block_desc->Ops();
-    for (int j = 0; j < ops.size(); ++j) {
-      std::shared_ptr<OpDesc> op_desc = ops[j];
-      DLOG << "create op: " << op_desc->Type();
-
-      auto op_handler = OpRegistry<Device>::CreateOp(
-          op_desc->Type(), op_desc->GetInputs(), op_desc->GetOutputs(),
-          op_desc->GetAttrMap(), program_.scope);
-      // infer shape to reshape inputs and outputs before predict,
-      // but for lod mode, it still need to infer shape in runtime
-      if (!lod_mode) {
-        op_handler->InferShape();
-      }
-      ops_of_block_[i].push_back(op_handler);
+    auto op_handler = OpRegistry<Device>::CreateOp(
+        op_desc->Type(), op_desc->GetInputs(), op_desc->GetOutputs(),
+        op_desc->GetAttrMap(), program_.scope.get());
+    // infer shape to reshape inputs and outputs before predict,
+    // but for lod mode, it still need to infer shape in runtime
+    if (!lod_mode) {
+      op_handler->InferShape();
     }
+    ops_of_block0_.push_back(op_handler);
   }
-
   if (program_.combined) {
     InitCombineMemory();
   } else {
     InitMemory();
   }
 
-#ifdef PADDLE_MOBILE_FPGA
-  program_.scope->EraseVars({"feed", "fetch"});
-  program_.scope->print_vars();
-#endif
-
   int count = 0;
-  for (int block_id = 0; block_id < ops_of_block_.size(); ++block_id) {
-    for (auto &op_handler : ops_of_block_[block_id]) {
-      DLOG << "Initialize op[" << count++ << "]: " << op_handler->Type();
-      op_handler->Init();
-      ops_list_.push_back(op_handler);
+  for (auto &op_handler : ops_of_block0_) {
+    DLOG << "Initialize op[" << count++ << "]: " << op_handler->Type();
+    op_handler->Init();
+  }
+}
+
+template <typename Device, typename T>
+void Executor<Device, T>::InitFeedFetchList() {
+  std::unordered_map<std::string, int> feed_indices, fetch_indices;
+  for (const auto &block : program_desc_->Blocks()) {
+    for (const auto &op_desc : block->Ops()) {
+      if (op_desc->Type() == "feed") {
+        std::string name = op_desc->Output("Out")[0];
+        feed_indices[name] = op_desc->GetAttr("col").Get<int>();
+      } else if (op_desc->Type() == "fetch") {
+        std::string name = op_desc->Input("X")[0];
+        fetch_indices[name] = op_desc->GetAttr("col").Get<int>();
+      }
     }
   }
+  feed_indices_.swap(feed_indices);
+  fetch_indices_.swap(fetch_indices);
+
+  auto *feed_var = program_.scope->Var("feed");
+  auto *feed_list = feed_var->template GetMutable<framework::LoDTensorArray>();
+  feed_list->resize(feed_indices_.size());
+
+  auto *fetch_var = program_.scope->Var("fetch");
+  auto *fetch_list =
+      fetch_var->template GetMutable<framework::LoDTensorArray>();
+  fetch_list->resize(fetch_indices_.size());
 }
 
 template <typename T>
@@ -181,20 +208,21 @@ void Executor<Device, T>::InitMemory() {
   for (const auto &block : program_desc_->Blocks()) {
     for (const auto &var_desc : block->Vars()) {
       auto var = program_.scope->Var(var_desc->Name());
-      auto tensor = var->template GetMutable<LoDTensor>();
       if (var_desc->Persistable()) {
         if (var_desc->Name() == "feed" || var_desc->Name() == "fetch") {
+          var->template GetMutable<framework::LoDTensorArray>();
           continue;
         }
+        DLOG << "init persistable var: " << var_desc->Name();
         char *origin_data =
             ReadFileToBuff(program_.model_path + "/" + var_desc->Name());
         char *data = origin_data;
+        auto tensor = var->template GetMutable<LoDTensor>();
         LoadMemory(reinterpret_cast<void **>(&data), var_desc, tensor);
         delete[] origin_data;
       } else {
-        if (var_desc->Type() == VARTYPE_TYPE_LOD_TENSOR) {
-          varInputMemory(var_desc, var, tensor);
-        }
+        DLOG << "init no persistable var: " << var_desc->Name();
+        varInputMemory(var_desc, var);
       }
     }
   }
@@ -216,23 +244,18 @@ void Executor<Device, T>::InitCombineMemory() {
   for (const auto &block : program_desc_->Blocks()) {
     for (const auto &var_desc : block->Vars()) {
       auto var = program_.scope->Var(var_desc->Name());
-      auto tensor = var->template GetMutable<LoDTensor>();
       if (var_desc->Persistable()) {
         if (var_desc->Name() == "feed" || var_desc->Name() == "fetch") {
+          var->template GetMutable<framework::LoDTensorArray>();
           continue;
         }
 
         DLOG << " init combine memory persistable: " << var_desc->Name();
-
+        auto tensor = var->template GetMutable<LoDTensor>();
         LoadMemory(reinterpret_cast<void **>(&data), var_desc, tensor);
       } else {
-        if (var_desc->Type() == VARTYPE_TYPE_LOD_TENSOR) {
-          DLOG << " init combine memory no persistable in lod: "
-               << var_desc->Name();
-          varInputMemory(var_desc, var, tensor);
-        } else {
-          DLOG << " init combine memory no persistable: " << var_desc->Name();
-        }
+        DLOG << " init combine memory no persistable: " << var_desc->Name();
+        varInputMemory(var_desc, var);
       }
     }
   }
@@ -250,6 +273,7 @@ void Executor<Device, T>::InitNoPersistableMemory(const Tensor &input_tensor) {
       auto tensor = var->template GetMutable<LoDTensor>();
       if (var_desc->Persistable()) {
         if (var_desc->Name() == "feed" || var_desc->Name() == "fetch") {
+          var->template GetMutable<framework::LoDTensorArray>();
           continue;
         }
       } else {
@@ -260,6 +284,9 @@ void Executor<Device, T>::InitNoPersistableMemory(const Tensor &input_tensor) {
                          input_tensor.dims()[3]});
           tensor->Resize(new_dim);
           tensor->template mutable_data<T>();
+        } else {
+          PADDLE_MOBILE_THROW_EXCEPTION("Unsupported var type `%d`",
+                                        var_desc->Type());
         }
       }
     }
@@ -272,34 +299,27 @@ void Executor<Device, T>::InitNoPersistableMemory(const Tensor &input_tensor) {
 
 template <typename Device, typename T>
 bool Executor<Device, T>::varInputMemory(
-    const std::shared_ptr<VarDesc> &var_desc, Variable *var,
-    LoDTensor *tensor) const {
+    const std::shared_ptr<VarDesc> &var_desc, Variable *var) const {
 #ifdef PADDLE_MOBILE_FPGA
-  tensor->init(typeid(float));
+  framework::LoDTensor *tensor = var->template GetMutable<LoDTensor>();
+  tensor->init(type_id<float>().hash_code());
   return true;
 #endif
-  auto type = var_desc->Tensor_desc().DataType();
-  switch (type) {
-    case VARTYPE_TYPE_FP32:
-      tensor->mutable_data<float>();
-      break;
-    case VARTYPE_TYPE_INT8:
-      tensor->mutable_data<int8_t>();
-      break;
-    case VARTYPE_TYPE_INT32:
-      tensor->mutable_data<int32_t>();
-      break;
-    case VARTYPE_TYPE_INT64:
-      tensor->mutable_data<int64_t>();
-      break;
-    default:
-      break;
+
+  auto type = var_desc->Type();
+  if (type == VARTYPE_TYPE_LOD_TENSOR) {
+    auto data_type = var_desc->Tensor_desc().DataType();
+    framework::LoDTensor *tensor = var->template GetMutable<LoDTensor>();
+  } else if (type == VARTYPE_TYPE_STEP_SCOPES) {
+    std::vector<framework::Scope *> *step_scopes =
+        var->template GetMutable<std::vector<framework::Scope *>>();
+  } else if (type == VARTYPE_TYPE_STEP_LOD_TENSOR_ARRAY) {
+    framework::LoDTensorArray *tensor_array =
+        var->template GetMutable<framework::LoDTensorArray>();
+  } else {
+    PADDLE_MOBILE_THROW_EXCEPTION("got unhandled var type `%d`", type);
   }
-  bool is_mute_match =
-      (type == VARTYPE_TYPE_FP32) || (type == VARTYPE_TYPE_INT8) ||
-      (type == VARTYPE_TYPE_INT32) || (type == VARTYPE_TYPE_INT64);
-  PADDLE_MOBILE_ENFORCE(is_mute_match, "got unhandled data type : %d", type);
-  return is_mute_match;
+  return true;
 }
 
 template <typename Device, typename T>
@@ -323,11 +343,19 @@ PMStatus Executor<Device, T>::Predict(
 template <typename Device, typename T>
 std::vector<T> Executor<Device, T>::Predict(const std::vector<T> &input,
                                             const std::vector<int64_t> &dims) {
+  PADDLE_MOBILE_ENFORCE(feed_indices_.size() != 0,
+                        "We don't know which tensor should be assign, since no "
+                        "feed op found in this model");
+  PADDLE_MOBILE_ENFORCE(fetch_indices_.size() != 0,
+                        "We don't know which tensor should be fetch out, since "
+                        "no fetch op found in this model");
+  std::string input_name = feed_indices_.begin()->first;
   Tensor feed_tensor(input, make_ddim(dims));
-  SetInput(feed_tensor, "feed");
+  SetInput(feed_tensor, input_name);
   std::vector<T> output;
   if (this->Predict() == PMSuccess) {
-    const auto output_tensor = GetOutput("fetch");
+    std::string output_name = fetch_indices_.begin()->first;
+    const auto output_tensor = GetOutput(output_name);
     output.resize(output_tensor->numel());
     memcpy(output.data(), output_tensor->template data<T>(),
            output.size() * sizeof(T));
@@ -338,81 +366,97 @@ std::vector<T> Executor<Device, T>::Predict(const std::vector<T> &input,
 template <typename Device, typename T>
 void Executor<Device, T>::SetInput(const Tensor &input,
                                    const std::string &var_name) {
-  auto *target_var = program_.scope->FindVar(var_name);
-  PADDLE_MOBILE_ENFORCE(target_var != nullptr, "Variable %s is not exist",
-                        var_name.c_str());
-
-  auto *target_tensor = target_var->template GetMutable<LoDTensor>();
-
-  if (config_.load_when_predict) {
-    if (input_dim_last_ != input.dims()) {
-      InitNoPersistableMemory(input);
-      input_dim_last_ = input.dims();
-    }
+  int index = 0;
+  if (feed_indices_.find(var_name) != feed_indices_.end()) {
+    index = feed_indices_.find(var_name)->second;
   }
+  auto *feed_var = program_.scope->Var("feed");
+  framework::LoDTensor &target =
+      feed_var->template GetMutable<framework::LoDTensorArray>()->at(index);
 
-  target_tensor->Resize(input.dims());
-  target_tensor->ShareDataWith(input);
+  target.Resize(input.dims());
+  target.ShareDataWith(input);
 }
 
 template <typename Device, typename T>
 void Executor<Device, T>::SetInput(const LoDTensor &input,
                                    const std::string &var_name) {
-  auto *target_var = program_.scope->FindVar(var_name);
-  PADDLE_MOBILE_ENFORCE(target_var != nullptr, "Variable %s is not exist",
-                        var_name.c_str());
-  auto *target_tensor = target_var->template GetMutable<LoDTensor>();
-
-  if (config_.load_when_predict) {
-    if (input_dim_last_ != input.dims()) {
-      InitNoPersistableMemory(*target_tensor);
-      input_dim_last_ = input.dims();
-    }
+  int index = 0;
+  if (feed_indices_.find(var_name) != feed_indices_.end()) {
+    index = feed_indices_.find(var_name)->second;
   }
+  auto *feed_var = program_.scope->Var("feed");
+  framework::LoDTensor &target =
+      feed_var->template GetMutable<framework::LoDTensorArray>()->at(index);
 
-  target_tensor->Resize(input.dims());
-  target_tensor->ShareDataWith(input);
-  target_tensor->set_lod(input.lod());
+  target.Resize(input.dims());
+  target.ShareDataWith(input);
+  target.set_lod(input.lod());
+}
+
+template <typename Device, typename T>
+std::shared_ptr<LoDTensor> Executor<Device, T>::GetOutput(
+    const std::string &var_name) {
+  const auto &iter = fetch_indices_.find(var_name);
+  if (var_name == "fetch" || iter != fetch_indices_.end()) {
+    int index = 0;
+    if (iter != fetch_indices_.end()) {
+      index = iter->second;
+    }
+    auto *fetch_var = program_.scope->Var("fetch");
+    framework::LoDTensor &target =
+        fetch_var->template GetMutable<framework::LoDTensorArray>()->at(index);
+
+    return std::make_shared<LoDTensor>(target);
+  } else {
+    auto *fetch_var = program_.scope->Var(var_name);
+    framework::LoDTensor *target =
+        fetch_var->template GetMutable<framework::LoDTensor>();
+    return std::make_shared<LoDTensor>(*target);
+  }
 }
 
 template <typename Device, typename T>
 PMStatus Executor<Device, T>::Predict() {
+#if _OPENMP
+  omp_set_num_threads(get_global_num_threads());
+#endif
 #ifdef PADDLE_MOBILE_PROFILE
-  std::vector<ProfInfo> profile(ops_list_.size());
+  std::vector<ProfInfo> profile(ops_of_block0_.size());
   struct timespec ts;
   int op_index = 0;
 #endif
-  for (auto &block : ops_of_block_) {
-    for (auto &op_handler : block) {
+  for (auto &op_handler : ops_of_block0_) {
 #ifdef PADDLE_MOBILE_PROFILE
-      clock_gettime(CLOCK_MONOTONIC, &ts);
-      profile[op_index].runBegin = (uint64_t)ts.tv_sec * 1e9 + ts.tv_nsec;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    profile[op_index].runBegin = (uint64_t)ts.tv_sec * 1e9 + ts.tv_nsec;
 #endif
-      if (lod_mode_) {
-        op_handler->InferShape();
-      }
-      op_handler->Run();
-#ifdef PADDLE_MOBILE_PROFILE
-      clock_gettime(CLOCK_MONOTONIC, &ts);
-      profile[op_index].runEnd = (uint64_t)ts.tv_sec * 1e9 + ts.tv_nsec;
-      ++op_index;
-#endif
+    DLOG << "run op: " << op_handler->Type();
+    if (lod_mode_) {
+      op_handler->InferShape();
     }
+    op_handler->Run();
+#ifdef PADDLE_MOBILE_PROFILE
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    profile[op_index].runEnd = (uint64_t)ts.tv_sec * 1e9 + ts.tv_nsec;
+    ++op_index;
+#endif
   }
 #ifdef PADDLE_MOBILE_PROFILE
   std::unordered_map<std::string, uint64_t> _tp;
   for (int i = 0; i < profile.size(); i++) {
     const auto &pInfo = profile[i];
     uint64_t timeCost = pInfo.runEnd - pInfo.runBegin;
-    if (ops_list_[i]->Type() == "conv2d" ||
-        ops_list_[i]->Type() == "depthwise_conv2d") {
-      auto inputs = ops_list_[i]->Inputs();
+    if (ops_of_block0_[i]->Type() == "conv2d" ||
+        ops_of_block0_[i]->Type() == "depthwise_conv2d") {
+      auto inputs = ops_of_block0_[i]->Inputs();
       auto *filter =
           GetVarValue<LoDTensor>("Filter", inputs, *(program_.scope));
       int kernel_size = filter->dims()[2];
-      _tp[ops_list_[i]->Type() + "_" + std::to_string(kernel_size)] += timeCost;
+      _tp[ops_of_block0_[i]->Type() + "_" + std::to_string(kernel_size)] +=
+          timeCost;
     } else {
-      _tp[ops_list_[i]->Type()] += timeCost;
+      _tp[ops_of_block0_[i]->Type()] += timeCost;
     }
   }
   printf("====================[ profile ]======================\n");
@@ -438,13 +482,29 @@ PMStatus Executor<Device, T>::Predict() {
 }
 
 template <typename Device, typename T>
-std::shared_ptr<LoDTensor> Executor<Device, T>::GetOutput(
-    const std::string &var_name) {
-  auto *target_var = program_.scope->FindVar(var_name);
-  PADDLE_MOBILE_ENFORCE(target_var != nullptr, "Variable %s is not exist",
-                        var_name.c_str());
-  auto *output_tensor = target_var->template GetMutable<LoDTensor>();
-  return std::make_shared<LoDTensor>(*output_tensor);
+void Executor<Device, T>::FeedTensorData(const vector<framework::Tensor> &v) {
+  auto input_size = v.size();
+  auto *feed_var = program_.scope->Var("feed");
+
+  PADDLE_MOBILE_ENFORCE(input_size == feed_indices_.size(),
+                        "input data number not correct");
+  for (int i = 0; i < input_size; i++) {
+    framework::LoDTensor &target =
+        feed_var->template GetMutable<framework::LoDTensorArray>()->at(i);
+    target.ShareDataWith(v[input_size - i - 1]);
+  }
+}
+
+template <typename Device, typename T>
+void Executor<Device, T>::GetTensorResults(
+    std::vector<framework::Tensor *> *v) {
+  auto *fetch_var = program_.scope->Var("fetch");
+  auto output_size = fetch_indices_.size();
+  for (int i = 0; i < output_size; i++) {
+    framework::LoDTensor &target =
+        fetch_var->template GetMutable<framework::LoDTensorArray>()->at(i);
+    v->push_back(&target);
+  }
 }
 
 #ifdef PADDLE_MOBILE_FPGA
@@ -465,26 +525,14 @@ void Executor<Device, T>::FeedData(const Tensor &t) {
 template <typename Device, typename T>
 void Executor<Device, T>::FeedData(const std::vector<void *> &v) {
   auto input_size = v.size();
-  auto vars = program_.scope->VarContain("feed");
+  int index = 0;
+  auto vars = program_.scope->VarContain("feed", &index);
   PADDLE_MOBILE_ENFORCE(input_size == vars.size(),
                         "input data number not correct");
   for (int i = 0; i < input_size; i++) {
-    auto var = vars[i];
+    auto var = program_.scope->Var("feed", i + index);
     auto feed_tensor = var->template GetMutable<LoDTensor>();
     feed_tensor->external_data = v[i];
-  }
-}
-
-template <typename Device, typename T>
-void Executor<Device, T>::FeedTensorData(const vector<framework::Tensor> &v) {
-  auto input_size = v.size();
-  auto vars = program_.scope->VarContain("feed");
-  PADDLE_MOBILE_ENFORCE(input_size == vars.size(),
-                        "input data number not correct");
-  for (int i = 0; i < input_size; i++) {
-    auto var = vars[i];
-    auto feed_tensor = var->template GetMutable<LoDTensor>();
-    feed_tensor->ShareDataWith(v[i]);
   }
 }
 
@@ -492,27 +540,15 @@ template <typename Device, typename T>
 void Executor<Device, T>::GetResults(std::vector<void *> *v) {
   auto output_size = v->size();
   PADDLE_MOBILE_ENFORCE(output_size > 0, "Empty output");
-  auto vars = program_.scope->VarContain("fetch");
+  int index = 0;
+  auto vars = program_.scope->VarContain("fetch", &index);
   PADDLE_MOBILE_ENFORCE(output_size == vars.size(),
                         "output data number not correct");
 
   for (int i = 0; i < output_size; i++) {
-    auto var = vars[i];
+    auto var = program_.scope->Var("fetch", i + index);
     auto fetch_tensor = var->template GetMutable<LoDTensor>();
     (*v)[i] = fetch_tensor->template data<float>();
-  }
-}
-
-template <typename Device, typename T>
-void Executor<Device, T>::GetTensorResults(
-    std::vector<framework::Tensor *> *v) {
-  auto vars = program_.scope->VarContain("fetch");
-  auto output_size = vars.size();
-
-  for (int i = 0; i < output_size; i++) {
-    auto var = vars[i];
-    auto fetch_tensor = var->template GetMutable<LoDTensor>();
-    v->push_back(fetch_tensor);
   }
 }
 
@@ -521,11 +557,11 @@ framework::Tensor *Executor<Device, T>::GetTensorByName(
     const std::string &name) {
   auto var = program_.scope->Var(name);
   return var->template GetMutable<LoDTensor>();
-};
+}
 
 template <typename Device, typename T>
 std::shared_ptr<Tensor> Executor<Device, T>::FetchResult(int id) {
-  auto &ops = ops_of_block_[0];
+  auto &ops = ops_of_block0_;
 
   PADDLE_MOBILE_ENFORCE(id < (int)ops.size(), "Index out of range");
   auto op = id < 0 ? ops[ops.size() - 1] : ops[id];
@@ -539,7 +575,7 @@ std::shared_ptr<Tensor> Executor<Device, T>::FetchResult(int id) {
 
 template <typename Device, typename T>
 void Executor<Device, T>::Predict_From_To(int start, int end) {
-  auto &ops = ops_of_block_[0];
+  auto &ops = ops_of_block0_;
   end = end < 0 ? static_cast<int>(ops.size()) : end;
   PADDLE_MOBILE_ENFORCE(start >= 0 && start < end && end <= ops.size(),
                         "start or end parameter is wrong");
@@ -609,14 +645,18 @@ void Executor<GPU_CL, float>::InitNoPersistableMemory(
   output->Resize(input_tensor.dims());
   output->mutable_data<float>();
 }
+
 template <>
 void Executor<GPU_CL, float>::SetInput(const Tensor &input,
                                        const std::string &var_name) {
-  auto *target_var = program_.scope->FindVar(var_name);
-  PADDLE_MOBILE_ENFORCE(target_var != nullptr, "Variable %s is not exist",
-                        var_name.c_str());
+  int index = 0;
+  if (feed_indices_.find(var_name) != feed_indices_.end()) {
+    index = feed_indices_.find(var_name)->second;
+  }
+  auto *feed_var = program_.scope->Var("feed");
+  framework::LoDTensor *target_tensor =
+      &(feed_var->template GetMutable<framework::LoDTensorArray>()->at(index));
 
-  auto *target_tensor = target_var->template GetMutable<LoDTensor>();
   DLOG << "config_.load_when_predict   " << config_.load_when_predict;
   DLOG << "target_tensor->IsInitialized() " << target_tensor->IsInitialized();
   DLOG << "target_tensor->dims()   " << target_tensor->dims();
@@ -727,7 +767,7 @@ void Executor<GPU_CL, float>::InitMemory() {
       if (var_desc->Persistable()) {
         CLImage *cl_image = nullptr;
         if (var_desc->Name() == "feed" || var_desc->Name() == "fetch") {
-          var->template GetMutable<LoDTensor>();
+          var->template GetMutable<framework::LoDTensorArray>();
           continue;
         } else {
           cl_image = var->template GetMutable<CLImage>();
@@ -795,7 +835,7 @@ void Executor<GPU_CL, float>::InitCombineMemory() {
       if (var_desc->Persistable()) {
         CLImage *cl_image = nullptr;
         if (var_desc->Name() == "feed" || var_desc->Name() == "fetch") {
-          var->template GetMutable<LoDTensor>();
+          var->template GetMutable<framework::LoDTensorArray>();
           continue;
         } else {
           cl_image = var->template GetMutable<CLImage>();

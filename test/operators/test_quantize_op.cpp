@@ -65,7 +65,7 @@ static void quantize(const Tensor *input, const float scale, Tensor *output) {
   int output_w = output->dims()[3];
   size_t input_spatial = input_h * input_w;
   size_t output_spatial = output_h * output_w;
-  const float *x = input->data<const float>();
+  const float *x = input->data<float>();
   int8_t *y = output->mutable_data<int8_t>();
 
   for (int nc = 0; nc < batch_size * channels; ++nc) {
@@ -81,7 +81,7 @@ static void quantize(const Tensor *input, const float scale, Tensor *output) {
 
 static float find_abs_max(const Tensor *input) {
   float max_abs = 0.f;
-  const float *x = input->data<const float>();
+  const float *x = input->data<float>();
   size_t size = input->numel();
   for (size_t i = 0; i < size; ++i) {
     float value = std::abs(x[i]);
@@ -115,7 +115,7 @@ int TestQuqntizeOp(const int batch_size, const int channel, const int height,
 
   framework::AttributeMap attrs;
   auto *op = new operators::QuantizeOp<CPU, float>("quantize", inputs, outputs,
-                                                   attrs, scope);
+                                                   attrs, scope.get());
   op->InferShape();
   op->Run();
 
@@ -132,7 +132,7 @@ int TestQuqntizeOp(const int batch_size, const int channel, const int height,
   framework::Tensor output_cmp;
   output_cmp.Resize(output->dims());
   float scale = 127 / output_scale_cmp;
-  quantize<round::RoundAwayZero>(input, scale, &output_cmp);
+  quantize<round::RoundTowardsZero>(input, scale, &output_cmp);
   int8_t *output_cmp_data = output_cmp.data<int8_t>();
   for (int i = 0; i < output->numel(); ++i) {
     PADDLE_MOBILE_ENFORCE(output_data[i] == output_cmp_data[i],
