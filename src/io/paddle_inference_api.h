@@ -35,6 +35,10 @@ namespace fpga {
 int open_device();
 void* fpga_malloc(size_t size);
 void fpga_free(void* ptr);
+
+//  Usage:
+//  auto version = fpga::paddle_mobile_version();
+//  std::cout << "0X0" << std::hex << version << std::endl;
 uint32_t paddle_mobile_version();
 }  // namespace fpga
 #endif
