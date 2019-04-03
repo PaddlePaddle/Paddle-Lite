@@ -352,6 +352,7 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_LANGUAGE_REVISION = iOSMetal10;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -362,6 +363,7 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_LANGUAGE_REVISION = iOSMetal10;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
