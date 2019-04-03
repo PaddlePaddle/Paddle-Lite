@@ -330,6 +330,7 @@ void sgemm_6x8(const float *lhs, const float *rhs, const int k, float *output,
 void sgemv_notrans_mx1(const int M, const int N, const float alpha,
                        const float *A, const int lda, const float *B,
                        const float beta, float *C) {
+  std::cout << "sgemv_notrans_mx1" << std::endl;
   uint32_t mask[4] = {0, 1, 2, 3};
   int remain_n = N & 0x3;
   uint32x4_t vmask = vcltq_u32(vld1q_u32(mask), vdupq_n_u32(remain_n));
@@ -420,7 +421,11 @@ void sgemv_notrans_mx1(const int M, const int N, const float alpha,
 void sgemv_trans_mx1(const int M, const int N, const float alpha,
                      const float *A, const int lda, const float *B,
                      const float beta, float *C) {
+  std::cout << "sgemv_trans_mx1" << std::endl;
+  std::cout << "M=" << M << " N=" << N << " alpha=" << alpha << " lda=" << lda << " beta=" << beta << std::endl;
+
   float32x4_t _valpha = vdupq_n_f32(alpha);
+
   if (beta == 0.f) {
     float32x4_t vzero = vdupq_n_f32(0.f);
     for (int m = 0; m < M - 3; m += 4) {
@@ -506,6 +511,158 @@ void sgemv_trans_mx1(const int M, const int N, const float alpha,
     }
     for (; m < M; ++m) {
       C[m] += alpha * (in0[m] * B[n]);
+    }
+  }
+}
+
+void sgemv_trans_mx1_v2(const int M, const int N, const float alpha,
+                        const float *A, const int lda, const float *B,
+                        const float beta, float *C) {
+  std::cout << "sgemv_trans_mx1_v2" << std::endl;
+  std::cout << "M=" << M << " N=" << N << " alpha=" << alpha << " lda=" << lda << " beta=" << beta << std::endl;
+
+  // assign C with beta*C
+  float32x4_t _valpha = vdupq_n_f32(alpha);
+  if (beta == 0.f) {
+    float32x4_t vzero = vdupq_n_f32(0.f);
+    for (int m = 0; m < M - 3; m += 4) {
+      vst1q_f32(C + m, vzero);
+    }
+    for (int m = (M & 0xfffffffc); m < M; ++m) {
+      C[m] = 0.f;
+    }
+  } else {
+    float32x4_t vbeta = vdupq_n_f32(beta);
+    for (int m = 0; m < M - 3; m += 4) {
+      float32x4_t _vc = vld1q_f32(C + m);
+      _vc = vmulq_f32(_vc, vbeta);
+      vst1q_f32(C + m, _vc);
+    }
+    for (int m = (M & 0xfffffffc); m < M; ++m) {
+      C[m] *= beta;
+    }
+  }
+
+  for (int m = 0; m < M - 3; m += 4)
+  {
+    // load A4x1 pointers
+    const float *a00 = A + m * lda;
+    const float *a10 = a00 + lda;
+    const float *a20 = a10 + lda;
+    const float *a30 = a20 + lda;
+    //// load C4x1
+    //float32x4_t c_00_c_10_c_20_c_30_vreg = vld1q_f32(C + m);
+    float32x4_t sum0_1x4 = vdupq_n_f32(alpha),
+                sum1_1x4 = vdupq_n_f32(alpha),
+                sum2_1x4 = vdupq_n_f32(alpha),
+                sum3_1x4 = vdupq_n_f32(alpha);
+    
+    int n = 0;
+    for (; n < N - 3; n += 4)
+    {
+      // load A4x4
+      float32x4_t a_00_a_01_a_02_a_03_vreg = vld1q_f32(a00 + n);
+      float32x4_t a_10_a_11_a_12_a_13_vreg = vld1q_f32(a10 + n);
+      float32x4_t a_20_a_21_a_22_a_23_vreg = vld1q_f32(a20 + n);
+      float32x4_t a_30_a_31_a_32_a_33_vreg = vld1q_f32(a30 + n);
+
+      // load B4x1
+      float32x4_t b_00_b_10_b_20_b_30_vreg = vld1q_f32(B + n);
+
+      // sum := alpha * (a_1x4)x4 * b_4x1
+      a_00_a_01_a_02_a_03_vreg = vmulq_f32(a_00_a_01_a_02_a_03_vreg, _valpha);
+      a_10_a_11_a_12_a_13_vreg = vmulq_f32(a_10_a_11_a_12_a_13_vreg, _valpha);
+      a_20_a_21_a_22_a_23_vreg = vmulq_f32(a_20_a_21_a_22_a_23_vreg, _valpha);
+      a_30_a_31_a_32_a_33_vreg = vmulq_f32(a_30_a_31_a_32_a_33_vreg, _valpha);
+
+      sum0_1x4 = vfmaq_f32(sum0_1x4, a_00_a_01_a_02_a_03_vreg, b_00_b_10_b_20_b_30_vreg);
+      sum1_1x4 = vfmaq_f32(sum1_1x4, a_10_a_11_a_12_a_13_vreg, b_00_b_10_b_20_b_30_vreg);
+      sum2_1x4 = vfmaq_f32(sum2_1x4, a_20_a_21_a_22_a_23_vreg, b_00_b_10_b_20_b_30_vreg);
+      sum3_1x4 = vfmaq_f32(sum3_1x4, a_30_a_31_a_32_a_33_vreg, b_00_b_10_b_20_b_30_vreg);
+    }
+    // save C4x1
+    vst1q_f32(C+m,   vaddv_f32(sum0_1x4));
+    vst1q_f32(C+m+1, vaddv_f32(sum1_1x4));
+    vst1q_f32(C+m+2, vaddv_f32(sum2_1x4));
+    vst1q_f32(C+m+3, vaddv_f32(sum3_1x4));
+
+    switch ( N - n)
+    {
+      case 3:
+        register float c_00 = *(C+n),
+                       c_10 = *(C+n+1),
+                       c_20 = *(C+n+2),
+                       c_30 = *(C+n+3);
+        c_00 += alpha * ( *(a00+n) * *(B+n) + *(a00+n+1) * *(B+n+1) + *(a00+n+2) * *(B+n+2) );
+        c_10 += alpha * ( *(a10+n) * *(B+n) + *(a10+n+1) * *(B+n+1) + *(a10+n+2) * *(B+n+2) );
+        c_20 += alpha * ( *(a20+n) * *(B+n) + *(a20+n+1) * *(B+n+1) + *(a20+n+2) * *(B+n+2) );
+        c_30 += alpha * ( *(a30+n) * *(B+n) + *(a30+n+1) * *(B+n+1) + *(a30+n+2) * *(B+n+2) );
+        break;
+      case 2:
+      {
+        float32x2_t _valphax2 = vld1_f32(alpha);
+        // load a, b,  init result
+        float32x2_t a_00_a_01_vreg = vld1_f32(a00 + n);
+        float32x2_t a_10_a_11_vreg = vld1_f32(a10 + n);
+        float32x2_t a_20_a_21_vreg = vld1_f32(a20 + n);
+        float32x2_t a_30_a_31_vreg = vld1_f32(a30 + n);
+        float32x2_t b_00_b_10_vreg = vld1_f32(B + n);
+        float32x2_t res0 = vdup_n_f32(0.0f);
+        float32x2_t res1 = vdup_n_f32(0.0f);
+        float32x2_t res2 = vdup_n_f32(0.0f);
+        float32x2_t res3 = vdup_n_f32(0.0f);
+
+        // res := alpha * a * b
+        a_00_a_01_vreg = vmul_f32(a_00_a_01_vreg, _valphax2);
+        a_10_a_11_vreg = vmul_f32(a_10_a_11_vreg, _valphax2);
+        a_20_a_21_vreg = vmul_f32(a_20_a_21_vreg, _valphax2);
+        a_30_a_31_vreg = vmul_f32(a_30_a_31_vreg, _valphax2);
+
+        res0 = vfma_f32(res0, a_00_a_01_vreg, b_00_b_10_vreg);
+        res1 = vfma_f32(res1, a_10_a_11_vreg, b_00_b_10_vreg);
+        res2 = vfma_f32(res2, a_20_a_21_vreg, b_00_b_10_vreg);
+        res3 = vfma_f32(res3, a_30_a_31_vreg, b_00_b_10_vreg);
+
+        float32x4_t c_00_c_10_c_20_c_30_vreg = (float32x4_t){vaddv_f32(res0),
+                                                             vaddv_f32(res1),
+                                                             vaddv_f32(res2),
+                                                             vaddv_f32(res3)};
+        vst1q_f32(C+n, c_00_c_10_c_20_c_30_vreg);
+        break;
+      }
+      case 1:
+        register float a_00 = *(a00 + n),
+                       a_10 = *(a10 + n),
+                       a_20 = *(a20 + n),
+                       a_30 = *(a30 + n),
+                       b_00 = *(B + n);
+        *(C+n)   = a_00 * b_00 * alpha;
+        *(C+n+1) = a_10 * b_00 * alpha;
+        *(C+n+2) = a_20 * b_00 * alpha;
+        *(C+n+3) = a_30 * b_00 * alpha;
+        break;   
+    }
+  }
+
+  // remain m
+  for (int m = (M & 0xfffffffc); m < M; ++m) 
+  {
+    const float *a = A + m * lda;
+    int n = 0;
+    float32x4_t c_4x1_vreg = vdupq_n_f32(0.f);
+    for (; n < N - 3; n += 4)
+    {
+      // load a, b
+      float32x4_t a_1x4_vreg = vld1q_f32(a + n);
+      float32x4_t b_4x1_vreg = vld1q_f32(B + n);
+      // c := a*b*alpha
+      c_4x1_vreg = vmulq_f32(a_1x4_vreg, b_4x1_vreg);
+      c_4x1_vreg = vmulq_f32(c_4x1_vreg, _valpha);
+    }
+    vst1q_f32(C+n, c_4x1_vreg);
+    for (; n < N; ++n)
+    {
+      C[n] += alpha * a[n] * B[n];
     }
   }
 }
