@@ -161,8 +161,9 @@ public class Loader<P: PrecisionProtocol>: Loaderable{
             let programDesc = ProgramOptimize<P>.init().optimize(originProgramDesc: originProgramDesc)
             
             //      let programDesc = PMProgramDesc.init(protoProgram: protoProgram)
-            
-            print(programDesc)
+            if GlobalConfig.shared.debug {
+                print(programDesc)
+            }
             
             guard programDesc.blocks.count > 0 else {
                 throw PaddleMobileError.loaderError(message: "count of blocks must greater than 0")
