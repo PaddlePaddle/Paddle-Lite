@@ -86,7 +86,6 @@ Executor<Device, T>::Executor(const Program<Device> &program,
     }
     ops_of_block0_.push_back(op_handler);
   }
-
   if (program_.combined) {
     InitCombineMemory();
   } else {
@@ -455,7 +454,6 @@ PMStatus Executor<Device, T>::Predict() {
       op_handler->InferShape();
     }
     op_handler->Run();
-    DLOG << "run op finished";
 #ifdef PADDLE_MOBILE_PROFILE
     clock_gettime(CLOCK_MONOTONIC, &ts);
     profile[op_index].runEnd = (uint64_t)ts.tv_sec * 1e9 + ts.tv_nsec;
