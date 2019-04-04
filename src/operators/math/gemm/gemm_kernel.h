@@ -421,106 +421,6 @@ void sgemv_notrans_mx1(const int M, const int N, const float alpha,
 void sgemv_trans_mx1(const int M, const int N, const float alpha,
                      const float *A, const int lda, const float *B,
                      const float beta, float *C) {
-  std::cout << "sgemv_trans_mx1" << std::endl;
-  std::cout << "M=" << M << " N=" << N << " alpha=" << alpha << " lda=" << lda << " beta=" << beta << std::endl;
-
-  float32x4_t _valpha = vdupq_n_f32(alpha);
-
-  if (beta == 0.f) {
-    float32x4_t vzero = vdupq_n_f32(0.f);
-    for (int m = 0; m < M - 3; m += 4) {
-      vst1q_f32(C + m, vzero);
-    }
-    for (int m = (M & 0xfffffffc); m < M; ++m) {
-      C[m] = 0.f;
-    }
-  } else {
-    float32x4_t vbeta = vdupq_n_f32(beta);
-    for (int m = 0; m < M - 3; m += 4) {
-      float32x4_t _vc = vld1q_f32(C + m);
-      _vc = vmulq_f32(_vc, vbeta);
-      vst1q_f32(C + m, _vc);
-    }
-    for (int m = (M & 0xfffffffc); m < M; ++m) {
-      C[m] *= beta;
-    }
-  }
-
-  #pragma omp parallel for
-  for (int n = 0; n < N - 3; n += 4) {
-    const float *in0 = A + n * lda;
-    const float *in1 = in0 + lda;
-    const float *in2 = in1 + lda;
-    const float *in3 = in2 + lda;
-    float32x4_t _b = vld1q_f32(B + n);
-    float32x4_t _sum0;
-    int m = 0;
-    for (; m < M - 3; m += 4) {
-      float32x4_t _r0 = vld1q_f32(in0 + m);
-      float32x4_t _r1 = vld1q_f32(in1 + m);
-      float32x4_t _r2 = vld1q_f32(in2 + m);
-      float32x4_t _r3 = vld1q_f32(in3 + m);
-      float32x4_t _vc = vld1q_f32(C + m);
-
-      _sum0 = vmulq_lane_f32(_r0, vget_low_f32(_b), 0);
-      _sum0 = vmlaq_lane_f32(_sum0, _r1, vget_low_f32(_b), 1);
-      _sum0 = vmlaq_lane_f32(_sum0, _r2, vget_high_f32(_b), 0);
-      _sum0 = vmlaq_lane_f32(_sum0, _r3, vget_high_f32(_b), 1);
-      _sum0 = vmulq_f32(_sum0, _valpha);
-      _sum0 = vaddq_f32(_sum0, _vc);
-      vst1q_f32(C + m, _sum0);
-    }
-    if (m < M) {
-      float32x4_t _r0 = vld1q_f32(in0 + m);
-      float32x4_t _r1 = vld1q_f32(in1 + m);
-      float32x4_t _r2 = vld1q_f32(in2 + m);
-      float32x4_t _r3 = vld1q_f32(in3 + m);
-      float32x4_t _vc = vld1q_f32(C + m);
-
-      _sum0 = vmulq_lane_f32(_r0, vget_low_f32(_b), 0);
-      _sum0 = vmlaq_lane_f32(_sum0, _r1, vget_low_f32(_b), 1);
-      _sum0 = vmlaq_lane_f32(_sum0, _r2, vget_high_f32(_b), 0);
-      _sum0 = vmlaq_lane_f32(_sum0, _r3, vget_high_f32(_b), 1);
-      _sum0 = vmulq_f32(_sum0, _valpha);
-      _sum0 = vaddq_f32(_sum0, _vc);
-      switch (M - m) {
-        case 3:
-          vst1q_lane_f32(C + m + 2, _sum0, 2);
-        case 2:
-          vst1_f32(C + m, vget_low_f32(_sum0));
-          break;
-        case 1:
-          vst1q_lane_f32(C + m, _sum0, 0);
-          break;
-      }
-    }
-  }
-  // remain n
-  for (int n = (N & 0xfffffffc); n < N; ++n) {
-    const float *in0 = A + n * lda;
-    float32x4_t _b = vld1q_dup_f32(B + n);
-    float32x4_t _sum0;
-    int m = 0;
-    for (; m < M - 3; m += 4) {
-      float32x4_t _r0 = vld1q_f32(in0 + m);
-      _sum0 = vld1q_f32(C + m);
-      _r0 = vmulq_f32(_r0, _b);
-      _r0 = vmulq_f32(_valpha, _r0);
-      _sum0 = vaddq_f32(_sum0, _r0);
-      vst1q_f32(C + m, _sum0);
-    }
-    for (; m < M; ++m) {
-      C[m] += alpha * (in0[m] * B[n]);
-    }
-  }
-}
-
-void sgemv_trans_mx1_v3(const int M, const int N, const float alpha,
-                        const float *A, const int lda, const float *B,
-                        const float beta, float *C) {
-  std::cout << "sgemv_trans_mx1_v3" << std::endl;
-  std::cout << "M=" << M << " N=" << N << " alpha=" << alpha << " lda=" << lda << " beta=" << beta << std::endl;
-
   // assign C with beta*C
   float32x4_t _valpha = vdupq_n_f32(alpha);
   if (beta == 0.f) {
@@ -618,12 +518,16 @@ void sgemv_trans_mx1_v3(const int M, const int N, const float alpha,
       _sum = vmlaq_f32(_sum, a0n_1n_2n_3n_vreg, bn_vreg);      
     }
     _sum = vmlaq_f32(_c00_10_20_30_vreg, _sum, _valpha);
-    // TODO store
     switch ( remain_m )
     {
-      case 3: vst1q_lane_f32(C + n, _sum, 2); break;
-      case 2: vst1q_lane_f32(C + n, _sum, 1); break;
-      case 1: vst1q_lane_f32(C + n, _sum, 0); break;
+      case 3:
+        vst1q_lane_f32(C + M-remain_m + 2, _sum, 2);
+      case 2:
+        vst1_f32(C + M-remain_m, vget_low_f32(_sum));
+        break;
+      case 1:
+        vst1q_lane_f32(C + M-remain_m, _sum, 0);
+        break;
     }
   }
 }
@@ -632,7 +536,7 @@ void sgemv_mx1(const bool trans, const int M, const int N, const float alpha,
                const float *A, const int lda, const float *B, const float beta,
                float *C) {
   if (trans) {
-    sgemv_trans_mx1_v3(M, N, alpha, A, lda, B, beta, C);
+    sgemv_trans_mx1(M, N, alpha, A, lda, B, beta, C);
   } else {
     sgemv_notrans_mx1(M, N, alpha, A, lda, B, beta, C);
   }
