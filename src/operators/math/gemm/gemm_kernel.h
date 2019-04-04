@@ -484,12 +484,13 @@ void sgemv_trans_mx1(const int M, const int N, const float alpha,
   }
 
   // remain m
-  int remain_m = M % 4;
+  int remain_m = M & 3; // remain_m := M & (4-1)
   if(remain_m > 0)
   {
-    float32x4_t _c00_10_20_30_vreg = vld1q_f32(C + (M - remain_m));
+    const int remain_m_idx = M - remain_m;
+    float32x4_t _c00_10_20_30_vreg = vld1q_f32(C + remain_m_idx);
     float32x4_t _sum = vdupq_n_f32(0.0f);
-    register const float *ap = A + (M - remain_m);
+    register const float *ap = A + remain_m_idx;
     int n = 0;
     for(; n < N - 3; n += 4)
     {
@@ -521,12 +522,12 @@ void sgemv_trans_mx1(const int M, const int N, const float alpha,
     switch ( remain_m )
     {
       case 3:
-        vst1q_lane_f32(C + M-remain_m + 2, _sum, 2);
+        vst1q_lane_f32(C + remain_m_idx + 2, _sum, 2);
       case 2:
-        vst1_f32(C + M-remain_m, vget_low_f32(_sum));
+        vst1_f32(C + remain_m_idx, vget_low_f32(_sum));
         break;
       case 1:
-        vst1q_lane_f32(C + M-remain_m, _sum, 0);
+        vst1q_lane_f32(C + remain_m_idx, _sum, 0);
         break;
     }
   }
