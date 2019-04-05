@@ -444,15 +444,13 @@ void sgemv_trans_mx1(const int M, const int N, const float alpha,
   }
 
   #pragma omp parallel for
-  for (int m = 0; m < M - 3; m += 4)
-  {
+  for (int m = 0; m < M - 3; m += 4) {
     // load A pointer
     register const float *ap = A + m;
     float32x4_t _sum = vdupq_n_f32(0.0f);
     float32x4_t _c00_10_20_30_vreg = vld1q_f32(C + m);
     int n = 0;
-    for(; n < N - 3; n += 4)
-    {
+    for (; n < N - 3; n += 4) {
       // load a, b, c
       float32x4_t b0_vreg = vdupq_n_f32(*(B + n));
       float32x4_t b1_vreg = vdupq_n_f32(*(B + n + 1));
@@ -471,8 +469,7 @@ void sgemv_trans_mx1(const int M, const int N, const float alpha,
     }
 
     // remain n, add to _sum
-    for(; n < N; ++n)
-    {
+    for (; n < N; ++n) {
       float32x4_t a0n_1n_2n_3n_vreg = vld1q_f32(ap + M * n);
       float32x4_t bn_vreg = vdupq_n_f32(*(B + n));
       _sum = vmlaq_f32(_sum, a0n_1n_2n_3n_vreg, bn_vreg);
@@ -485,15 +482,13 @@ void sgemv_trans_mx1(const int M, const int N, const float alpha,
 
   // remain m
   int remain_m = M & 3; // remain_m := M & (4-1)
-  if(remain_m > 0)
-  {
+  if (remain_m > 0) {
     const int remain_m_idx = M - remain_m;
     float32x4_t _c00_10_20_30_vreg = vld1q_f32(C + remain_m_idx);
     float32x4_t _sum = vdupq_n_f32(0.0f);
     register const float *ap = A + remain_m_idx;
     int n = 0;
-    for(; n < N - 3; n += 4)
-    {
+    for (; n < N - 3; n += 4) {
       // load a, b
       float32x4_t a00_10_20_30_vreg = vld1q_f32(ap + M * (n));
       float32x4_t a01_11_21_31_vreg = vld1q_f32(ap + M * (n+1));
@@ -511,16 +506,14 @@ void sgemv_trans_mx1(const int M, const int N, const float alpha,
       _sum = vmlaq_f32(_sum, a03_13_23_33_vreg, b3_vreg);
     }
     // remain n
-    for(; n < N; ++n)
-    {
+    for (; n < N; ++n) {
       // load remain a, b
       float32x4_t a0n_1n_2n_3n_vreg = vld1q_f32(ap + M * n); 
       float32x4_t bn_vreg = vdupq_n_f32(*(B + n));
       _sum = vmlaq_f32(_sum, a0n_1n_2n_3n_vreg, bn_vreg);      
     }
     _sum = vmlaq_f32(_c00_10_20_30_vreg, _sum, _valpha);
-    switch ( remain_m )
-    {
+    switch ( remain_m ) {
       case 3:
         vst1q_lane_f32(C + remain_m_idx + 2, _sum, 2);
       case 2:
