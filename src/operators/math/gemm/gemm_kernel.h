@@ -330,7 +330,6 @@ void sgemm_6x8(const float *lhs, const float *rhs, const int k, float *output,
 void sgemv_notrans_mx1(const int M, const int N, const float alpha,
                        const float *A, const int lda, const float *B,
                        const float beta, float *C) {
-  std::cout << "sgemv_notrans_mx1" << std::endl;
   uint32_t mask[4] = {0, 1, 2, 3};
   int remain_n = N & 0x3;
   uint32x4_t vmask = vcltq_u32(vld1q_u32(mask), vdupq_n_u32(remain_n));
@@ -452,20 +451,16 @@ void sgemv_trans_mx1(const int M, const int N, const float alpha,
     int n = 0;
     for (; n < N - 3; n += 4) {
       // load a, b, c
-      float32x4_t b0_vreg = vdupq_n_f32(*(B + n));
-      float32x4_t b1_vreg = vdupq_n_f32(*(B + n + 1));
-      float32x4_t b2_vreg = vdupq_n_f32(*(B + n + 2));
-      float32x4_t b3_vreg = vdupq_n_f32(*(B + n + 3));
-
+      float32x4_t b_vreg = vld1q_f32(B + n);
       float32x4_t a00_10_20_30_vreg = vld1q_f32(ap + M * n);
       float32x4_t a01_11_21_31_vreg = vld1q_f32(ap + M * (n + 1));
       float32x4_t a02_12_22_32_vreg = vld1q_f32(ap + M * (n + 2));
       float32x4_t a03_13_23_33_vreg = vld1q_f32(ap + M * (n + 3));
 
-      _sum = vmlaq_f32(_sum, a00_10_20_30_vreg, b0_vreg);
-      _sum = vmlaq_f32(_sum, a01_11_21_31_vreg, b1_vreg);
-      _sum = vmlaq_f32(_sum, a02_12_22_32_vreg, b2_vreg);
-      _sum = vmlaq_f32(_sum, a03_13_23_33_vreg, b3_vreg);
+      _sum = vmlaq_lane_f32(_sum, a00_10_20_30_vreg, vget_low_f32(b_vreg), 0);
+      _sum = vmlaq_lane_f32(_sum, a01_11_21_31_vreg, vget_low_f32(b_vreg), 1);
+      _sum = vmlaq_lane_f32(_sum, a02_12_22_32_vreg, vget_high_f32(b_vreg), 0);
+      _sum = vmlaq_lane_f32(_sum, a03_13_23_33_vreg, vget_high_f32(b_vreg), 1);
     }
 
     // remain n, add to _sum
@@ -494,16 +489,12 @@ void sgemv_trans_mx1(const int M, const int N, const float alpha,
       float32x4_t a01_11_21_31_vreg = vld1q_f32(ap + M * (n+1));
       float32x4_t a02_12_22_32_vreg = vld1q_f32(ap + M * (n+2));
       float32x4_t a03_13_23_33_vreg = vld1q_f32(ap + M * (n+3));
-  
-      float32x4_t b0_vreg = vdupq_n_f32(*(B + n));
-      float32x4_t b1_vreg = vdupq_n_f32(*(B + n + 1));
-      float32x4_t b2_vreg = vdupq_n_f32(*(B + n + 2));
-      float32x4_t b3_vreg = vdupq_n_f32(*(B + n + 3));
+      float32x4_t b_vreg = vld1q_f32(B + n);
 
-      _sum = vmlaq_f32(_sum, a00_10_20_30_vreg, b0_vreg);
-      _sum = vmlaq_f32(_sum, a01_11_21_31_vreg, b1_vreg);
-      _sum = vmlaq_f32(_sum, a02_12_22_32_vreg, b2_vreg);
-      _sum = vmlaq_f32(_sum, a03_13_23_33_vreg, b3_vreg);
+      _sum = vmlaq_lane_f32(_sum, a00_10_20_30_vreg, vget_low_f32(b_vreg), 0);
+      _sum = vmlaq_lane_f32(_sum, a01_11_21_31_vreg, vget_low_f32(b_vreg), 1);
+      _sum = vmlaq_lane_f32(_sum, a02_12_22_32_vreg, vget_high_f32(b_vreg), 0);
+      _sum = vmlaq_lane_f32(_sum, a03_13_23_33_vreg, vget_high_f32(b_vreg), 1);
     }
     // remain n
     for (; n < N; ++n) {
