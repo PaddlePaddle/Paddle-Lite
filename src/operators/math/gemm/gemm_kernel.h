@@ -442,21 +442,17 @@ void sgemv_trans_mx1(const int M, const int N, const float alpha,
   }
 
   // calloc #threads_num of buff_c
-  float **buf_c = nullptr;
   int threads_num = 0;
   #pragma omp parallel for
   for (int n = 0; n < 1; ++n) {
     threads_num = omp_get_num_threads();
-    buf_c = (float**) calloc(threads_num, sizeof(float*));
-    for (int tid = 0; tid < threads_num; ++tid) {
-      buf_c[tid] = (float*) calloc(M, sizeof(float));
-    }
   }
+  float *buf_c = (float*) calloc(threads_num * M, sizeof(float));
 
   #pragma omp parallel for
   for (int n = 0; n < N - 3; n += 4) {
     const int tid = omp_get_thread_num();
-    register float *thread_buf_c = buf_c[tid];
+    register float *thread_buf_c = buf_c + tid * M;
     register const float *in0 = A + n * lda;
     register const float *in1 = in0 + lda;
     register const float *in2 = in1 + lda;
@@ -514,7 +510,7 @@ void sgemv_trans_mx1(const int M, const int N, const float alpha,
   #pragma omp parallel for
   for (int n = (N & 0xfffffffc); n < N; ++n) {
     const int tid = omp_get_thread_num();
-    register float *thread_buf_c = buf_c[tid];
+    register float *thread_buf_c = buf_c + tid * M;
     register const float *in0 = A + n * lda;
     register float32x4_t _b = vld1q_dup_f32(B + n);
     register float32x4_t _sum0;
@@ -536,7 +532,7 @@ void sgemv_trans_mx1(const int M, const int N, const float alpha,
 
   // reduce #threads_num of buf_c, sum to C
   for (register int tid = 0; tid < threads_num; ++tid) {
-    register float *thread_buf_c = buf_c[tid];
+    register float *thread_buf_c = buf_c + tid * M;
     register int m = 0;
     for (; m < M - 3; m += 4) {
       float32x4_t _sum0;
@@ -552,15 +548,9 @@ void sgemv_trans_mx1(const int M, const int N, const float alpha,
 
   // free buff_c
   if (buf_c) {
-    for (int buf_c_idx = 0; buf_c_idx < threads_num; ++buf_c_idx) {
-      if (buf_c[buf_c_idx]) {
-        free(buf_c[buf_c_idx]);
-        buf_c[buf_c_idx] = nullptr;
-      }
-    }
     free(buf_c);
-    buf_c = nullptr;
   }
+  buf_c = nullptr;
 }
 
 void sgemv_mx1(const bool trans, const int M, const int N, const float alpha,
