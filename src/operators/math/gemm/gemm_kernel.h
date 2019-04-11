@@ -447,7 +447,9 @@ void sgemv_trans_mx1(const int M, const int N, const float alpha,
   for (int n = 0; n < 1; ++n) {
     threads_num = omp_get_num_threads();
   }
-  float *buf_c = (float*) calloc(threads_num * M, sizeof(float));
+  float *buf_c =  
+      static_cast<float *>(paddle_mobile::memory::Alloc(sizeof(float) * threads_num * M));
+  memset(buf_c, 0, threads_num * M * sizeof(float));
 
   #pragma omp parallel for
   for (int n = 0; n < N - 3; n += 4) {
@@ -547,10 +549,7 @@ void sgemv_trans_mx1(const int M, const int N, const float alpha,
   }
 
   // free buff_c
-  if (buf_c) {
-    free(buf_c);
-  }
-  buf_c = nullptr;
+  paddle_mobile::memory::Free(buf_c);
 }
 
 void sgemv_mx1(const bool trans, const int M, const int N, const float alpha,
