@@ -57,9 +57,11 @@ void *Alloc(size_t size) {
   void *r = reinterpret_cast<void *>(reinterpret_cast<size_t>(p + offset) &
                                      (~(MALLOC_ALIGN - 1)));
   static_cast<void **>(r)[-1] = p;
-  return r;
+  return r; // if necessary, you need initialize memory by yourself (developer)
 }
 
+// if you use this ptr again after Free
+// you need to assign `ptr` as nullptr yourself (developer)
 void Free(void *ptr) {
   if (ptr) {
     free(static_cast<void **>(ptr)[-1]);
