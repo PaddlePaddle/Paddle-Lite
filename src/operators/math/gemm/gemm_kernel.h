@@ -420,21 +420,23 @@ void sgemv_notrans_mx1(const int M, const int N, const float alpha,
 void sgemv_trans_mx1(const int M, const int N, const float alpha,
                      const float *A, const int lda, const float *B,
                      const float beta, float *C) {
-  // create buff_c to store temp computation result for each threading
-  int threads_num = omp_get_num_procs();
-  #pragma omp parallel for
-  for (int n = 0; n < 1; ++n) {
-    int user_threads_num = omp_get_num_threads();
-    threads_num = (user_threads_num <= 0 || 
-                   user_threads_num > threads_num) ? threads_num : user_threads_num;
-  }
-  float *buf_c =  
-      static_cast<float *>(paddle_mobile::memory::Alloc(sizeof(float) * threads_num * M));
+// create buff_c to store temp computation result for each threading
+#ifdef _OPENMP
+  int threads_num = omp_get_max_threads();
+#else
+  int threads_num = 1;
+#endif  // _OPENMP
+  float *buf_c = static_cast<float *>(
+      paddle_mobile::memory::Alloc(sizeof(float) * threads_num * M));
   memset(buf_c, 0, threads_num * M * sizeof(float));
 
   #pragma omp parallel for
   for (int n = 0; n < N - 3; n += 4) {
+#ifdef _OPENMP
     const int tid = omp_get_thread_num();
+#else
+    const int tid = 0;
+#endif  // _OPENMP
     register float *thread_buf_c = buf_c + tid * M;
     register const float *in0 = A + n * lda;
     register const float *in1 = in0 + lda;
@@ -481,13 +483,17 @@ void sgemv_trans_mx1(const int M, const int N, const float alpha,
           vst1q_lane_f32(thread_buf_c + m, _sum0, 0);
           break;
       }
-    } // if
-  } // for
+    }
+  }
 
   // remain n
   #pragma omp parallel for
   for (int n = (N & 0xfffffffc); n < N; ++n) {
+#ifdef _OPENMP
     const int tid = omp_get_thread_num();
+#else
+    const int tid = 0;
+#endif  // _OPENMP
     register float *thread_buf_c = buf_c + tid * M;
     register const float *in0 = A + n * lda;
     register float32x4_t _b = vld1q_dup_f32(B + n);
@@ -512,22 +518,22 @@ void sgemv_trans_mx1(const int M, const int N, const float alpha,
   if (beta == 0.f) {
     #pragma omp parallel for
     for (int m = 0; m < M; m += 4) {
-      register float32x4_t _sum0 = vld1q_f32(buf_c + m); // take mem. of buf_c+m as _sum0
+      register float32x4_t _sum0 = vld1q_f32(buf_c + m);
       for (int tid = 1; tid < threads_num; ++tid) {
-       _sum0 += vld1q_f32(buf_c + tid * M + m);
+        _sum0 += vld1q_f32(buf_c + tid * M + m);
       }
       vst1q_f32(C + m, _sum0 * _valpha);
     }
     #pragma omp parallel for
-    for (int m =  (M & 0xfffffffc); m < M; ++m) {
+    for (int m = (M & 0xfffffffc); m < M; ++m) {
       register float _sum0 = *(buf_c + m);
       for (register int tid = 1; tid < threads_num; ++tid) {
         _sum0 += *(buf_c + tid * M + m);
       }
       C[m] = _sum0 * alpha;
     }
-  } else { // beta != 0.f
-    float32x4_t _vbeta = vdupq_n_f32(beta);
+  } else {  // beta != 0.f
+    register float32x4_t _vbeta = vdupq_n_f32(beta);
     #pragma omp parallel for
     for (int m = 0; m < M; m += 4) {
       register float32x4_t _sum0 = vld1q_f32(buf_c + m);
@@ -544,7 +550,15 @@ void sgemv_trans_mx1(const int M, const int N, const float alpha,
         _sum0 += *(buf_c + tid * M + m);
       }
       C[m] = _sum0 * alpha + beta * C[m];
-    } 
+    }
+    #pragma omp parallel for
+    for (int m = (m & 0xfffffffc); m < M; ++m) {
+      register float _sum0 = *(buf_c + m);
+      for (register int tid = 1; tid < threads_num; ++tid) {
+        _sum0 += *(buf_c + tid * M + m);
+      }
+      C[m] = _sum0 * alpha + beta * C[m];
+    }
   }
 
   // free buff_c
