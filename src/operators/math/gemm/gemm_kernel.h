@@ -525,7 +525,7 @@ void sgemv_trans_mx1(const int M, const int N, const float alpha,
       C[m] = _sum0 * alpha;
     }
   } else { // beta != 0.f
-    float32x4_t _vbeta = vdupq_n_f32(beta);
+    register float32x4_t _vbeta = vdupq_n_f32(beta);
     #pragma omp parallel for
     for (int m = 0; m < M; m += 4) {
       register float32x4_t _sum0 = vld1q_f32(buf_c + m);
