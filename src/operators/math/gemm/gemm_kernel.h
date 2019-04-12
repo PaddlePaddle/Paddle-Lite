@@ -425,14 +425,18 @@ void sgemv_trans_mx1(const int M, const int N, const float alpha,
   int threads_num = omp_get_max_threads();
 #else
   int threads_num = 1;
-#endif  // _OPENMP
+#endif // _OPENMP
   float *buf_c =  
       static_cast<float *>(paddle_mobile::memory::Alloc(sizeof(float) * threads_num * M));
   memset(buf_c, 0, threads_num * M * sizeof(float));
 
   #pragma omp parallel for
   for (int n = 0; n < N - 3; n += 4) {
+#ifdef _OPENMP
     const int tid = omp_get_thread_num();
+#else
+    const int tid = 0;
+#endif // _OPENMP
     register float *thread_buf_c = buf_c + tid * M;
     register const float *in0 = A + n * lda;
     register const float *in1 = in0 + lda;
@@ -485,7 +489,11 @@ void sgemv_trans_mx1(const int M, const int N, const float alpha,
   // remain n
   #pragma omp parallel for
   for (int n = (N & 0xfffffffc); n < N; ++n) {
+#ifdef _OPENMP
     const int tid = omp_get_thread_num();
+#else
+    const int tid = 0;
+#endif // _OPENMP
     register float *thread_buf_c = buf_c + tid * M;
     register const float *in0 = A + n * lda;
     register float32x4_t _b = vld1q_dup_f32(B + n);
