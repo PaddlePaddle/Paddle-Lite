@@ -54,6 +54,10 @@ JNIEXPORT jboolean JNICALL Java_com_baidu_paddle_PML_loadCombinedQualified(
 JNIEXPORT jfloatArray JNICALL Java_com_baidu_paddle_PML_predictImage(
     JNIEnv *env, jclass thiz, jfloatArray buf, jintArray ddims);
 
+JNIEXPORT jfloatArray JNICALL Java_com_baidu_paddle_PML_fetch(JNIEnv *env,
+                                                              jclass thiz,
+                                                              jstring varName);
+
 /**
  * object detection for anroid
  */
