@@ -444,7 +444,7 @@ endif()
 
 # Generic flags.
 list(APPEND ANDROID_COMPILER_FLAGS
-  -g
+#  -g
   -DANDROID
   -ffunction-sections
   -funwind-tables

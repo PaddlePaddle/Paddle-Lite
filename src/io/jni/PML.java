@@ -44,6 +44,8 @@ public class PML {
      */
     public static native float[] predictImage(float[] buf, int[] ddims);
 
+    public static native float[] fetch(String varName);
+
     public static native float[] predictYuv(byte[] buf, int imgWidth, int imgHeight, int[] ddims, float[] meanValues);
 
     // predict with variable length input
