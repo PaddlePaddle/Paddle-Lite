@@ -165,7 +165,9 @@ public class Texture: Tensorial {
     
     // 初始化时 dim padToFourDim 模型中的维度（一般来说 nchw），前面补全0
     init(device: MTLDevice, inDim: Dim) {
-        print(" in dim > \(inDim)")
+        if GlobalConfig.shared.debug {
+            print(" in dim > \(inDim)")
+        }
         var fourDim: Dim
         if inDim.cout() == 4 {
             fourDim = inDim
