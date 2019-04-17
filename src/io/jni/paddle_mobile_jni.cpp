@@ -14,7 +14,7 @@ limitations under the License. */
 
 #ifdef ANDROID
 
-#include "paddle_mobile_jni.h"
+#include "io/jni/paddle_mobile_jni.h"
 #include <cmath>
 #include <string>
 #include <vector>
@@ -193,11 +193,9 @@ JNIEXPORT jfloatArray JNICALL Java_com_baidu_paddle_PML_predictImage(
     env->DeleteLocalRef(ddims);
     env->ReleaseFloatArrayElements(buf, dataPointer, 0);
     env->DeleteLocalRef(buf);
-
   } catch (paddle_mobile::PaddleMobileException &e) {
     ANDROIDLOGE("jni got an PaddleMobileException! ", e.what());
   }
-
 #else
   jsize ddim_size = env->GetArrayLength(ddims);
   if (ddim_size != 4) {
@@ -231,18 +229,43 @@ JNIEXPORT jfloatArray JNICALL Java_com_baidu_paddle_PML_predictImage(
 #endif
 
   ANDROIDLOGI("predictImage finished");
+  return result;
+}
+
+JNIEXPORT jfloatArray JNICALL Java_com_baidu_paddle_PML_fetch(JNIEnv *env,
+                                                              jclass thiz,
+                                                              jstring varName) {
+  jfloatArray result = NULL;
+
+#ifdef ENABLE_EXCEPTION
+  try {
+    auto output =
+        getPaddleMobileInstance()->Fetch(jstring2cppstring(env, varName));
+    int count = output->numel();
+    result = env->NewFloatArray(count);
+    env->SetFloatArrayRegion(result, 0, count, output->data<float>());
+  } catch (paddle_mobile::PaddleMobileException &e) {
+    ANDROIDLOGE("jni got an PaddleMobileException! ", e.what());
+  }
+#else
+  auto output =
+      getPaddleMobileInstance()->Fetch(jstring2cppstring(env, varName));
+  int count = output->numel();
+  result = env->NewFloatArray(count);
+  env->SetFloatArrayRegion(result, 0, count, output->data<float>());
+#endif
 
   return result;
 }
 
 inline int yuv_to_rgb(int y, int u, int v, float *r, float *g, float *b) {
-  int r1 = (int)(y + 1.370705 * (v - 128));
-  int g1 = (int)(y - 0.698001 * (u - 128) - 0.703125 * (v - 128));
-  int b1 = (int)(y + 1.732446 * (u - 128));
+  int r1 = (int)(y + 1.370705 * (v - 128));                         // NOLINT
+  int g1 = (int)(y - 0.698001 * (u - 128) - 0.703125 * (v - 128));  // NOLINT
+  int b1 = (int)(y + 1.732446 * (u - 128));                         // NOLINT
 
-  r1 = (int)fminf(255, fmaxf(0, r1));
-  g1 = (int)fminf(255, fmaxf(0, g1));
-  b1 = (int)fminf(255, fmaxf(0, b1));
+  r1 = (int)fminf(255, fmaxf(0, r1));  // NOLINT
+  g1 = (int)fminf(255, fmaxf(0, g1));  // NOLINT
+  b1 = (int)fminf(255, fmaxf(0, b1));  // NOLINT
   *r = r1;
   *g = g1;
   *b = b1;
@@ -299,14 +322,14 @@ JNIEXPORT jfloatArray JNICALL Java_com_baidu_paddle_PML_predictYuv(
     framework::DDim ddim = framework::make_ddim(
         {ddim_ptr[0], ddim_ptr[1], ddim_ptr[2], ddim_ptr[3]});
     int length = framework::product(ddim);
-    float matrix[length];
+    float matrix[length];  // NOLINT
     jbyte *yuv = env->GetByteArrayElements(yuv_, NULL);
     float *meansPointer = nullptr;
     if (nullptr != meanValues) {
       meansPointer = env->GetFloatArrayElements(meanValues, NULL);
     }
-    convert_nv21_to_matrix((uint8_t *)yuv, matrix, imgwidth, imgHeight, ddim[3],
-                           ddim[2], meansPointer);
+    convert_nv21_to_matrix(reinterpret_cast<uint8_t *>(yuv), matrix, imgwidth,
+                           imgHeight, ddim[3], ddim[2], meansPointer);
     int count = 0;
     framework::Tensor input;
     input.Resize(ddim);
@@ -335,14 +358,14 @@ JNIEXPORT jfloatArray JNICALL Java_com_baidu_paddle_PML_predictYuv(
   framework::DDim ddim = framework::make_ddim(
       {ddim_ptr[0], ddim_ptr[1], ddim_ptr[2], ddim_ptr[3]});
   int length = framework::product(ddim);
-  float matrix[length];
+  float matrix[length];  // NOLINT
   jbyte *yuv = env->GetByteArrayElements(yuv_, NULL);
   float *meansPointer = nullptr;
   if (nullptr != meanValues) {
     meansPointer = env->GetFloatArrayElements(meanValues, NULL);
   }
-  convert_nv21_to_matrix((uint8_t *)yuv, matrix, imgwidth, imgHeight, ddim[3],
-                         ddim[2], meansPointer);
+  convert_nv21_to_matrix((uint8_t *)yuv, matrix, imgwidth,  // NOLINT
+                         imgHeight, ddim[3], ddim[2], meansPointer);
   int count = 0;
   framework::Tensor input;
   input.Resize(ddim);
@@ -408,13 +431,12 @@ JNIEXPORT void JNICALL Java_com_baidu_paddle_PML_setThread(JNIEnv *env,
   ANDROIDLOGI("setThreadCount %d", threadCount);
 #ifdef ENABLE_EXCEPTION
   try {
-    getPaddleMobileInstance()->SetThreadNum((int)threadCount);
+    getPaddleMobileInstance()->SetThreadNum(static_cast<int>(threadCount));
   } catch (paddle_mobile::PaddleMobileException &e) {
     ANDROIDLOGE("jni got an PaddleMobileException! ", e.what());
   }
 #else
-  getPaddleMobileInstance()->SetThreadNum((int)threadCount);
-
+  getPaddleMobileInstance()->SetThreadNum(static_cast<int>(threadCount));
 #endif
 }
 
@@ -425,13 +447,11 @@ JNIEXPORT void JNICALL Java_com_baidu_paddle_PML_clear(JNIEnv *env,
 #ifdef ENABLE_EXCEPTION
   try {
     getPaddleMobileInstance()->Clear();
-
   } catch (paddle_mobile::PaddleMobileException &e) {
     ANDROIDLOGE("jni got an PaddleMobileException! ", e.what());
   }
 #else
   getPaddleMobileInstance()->Clear();
-
 #endif
 }
 

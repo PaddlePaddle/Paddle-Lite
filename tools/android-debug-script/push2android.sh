@@ -22,6 +22,7 @@ fi
 IMAGES_DIR="/data/local/tmp/images"
 adb shell mkdir ${IMAGES_DIR}
 LIB_PATH="../../build/release/arm-v7a/build/*"
+#LIB_PATH="../../build/release/arm-v8a/build/*"
 adb push ${EXE_FILE} ${EXE_DIR}
 for file in ${LIB_PATH}
 do
