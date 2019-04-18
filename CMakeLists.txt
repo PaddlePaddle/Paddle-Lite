@@ -14,7 +14,7 @@ option(FPGA       "build with FPGA support" OFF)
 if(FPGA)
   option(FPGAV1     "build with fpga v1 support" ON)
   option(FPGAV2     "build with fpga v2 support" OFF)
-  option(FPGAKD     "build with fpga KD support" ON)
+  option(FPGAKD     "build with fpga KD support" OFF)
 endif()
 
 project(paddle-mobile)
