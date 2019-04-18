@@ -438,6 +438,10 @@ PMStatus Executor<Device, T>::Predict() {
 #if _OPENMP
   omp_set_num_threads(get_global_num_threads());
 #endif
+  // clear all no persistable tensor array since write_to_array
+  // is always push back a new tensor in the array
+  ClearNoPersistableTensorArray(program_desc_.get(), program_.scope.get());
+
 #ifdef PADDLE_MOBILE_PROFILE
   std::vector<ProfInfo> profile(ops_of_block0_.size());
   struct timespec ts;
