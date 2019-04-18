@@ -266,6 +266,20 @@ void Executor<Device, T>::InitCombineMemory() {
   LOG(kLOG_INFO) << "init combine memory finish";
 }
 
+static void ClearNoPersistableTensorArray(const framework::ProgramDesc *program,
+                                          framework::Scope *scope) {
+  for (const auto &block : program->Blocks()) {
+    for (const auto &var_desc : block->Vars()) {
+      if (!var_desc->Persistable() &&
+          var_desc->Type() == VARTYPE_TYPE_STEP_LOD_TENSOR_ARRAY) {
+        auto var = scope->Var(var_desc->Name());
+        auto array = var->template GetMutable<framework::LoDTensorArray>();
+        array->resize(1);
+      }
+    }
+  }
+}
+
 template <typename Device, typename T>
 void Executor<Device, T>::InitNoPersistableMemory(const Tensor &input_tensor) {
   for (const auto &block : program_desc_->Blocks()) {
@@ -422,6 +436,10 @@ PMStatus Executor<Device, T>::Predict() {
 #if _OPENMP
   omp_set_num_threads(get_global_num_threads());
 #endif
+  // clear all no persistable tensor array since write_to_array
+  // is always push back a new tensor in the array
+  ClearNoPersistableTensorArray(program_desc_.get(), program_.scope.get());
+
 #ifdef PADDLE_MOBILE_PROFILE
   std::vector<ProfInfo> profile(ops_of_block0_.size());
   struct timespec ts;
