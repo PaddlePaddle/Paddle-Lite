@@ -24,6 +24,10 @@ limitations under the License. */
 #include "fpga/V2/api.h"
 #endif
 
+#ifdef PADDLE_MOBILE_FPGA_KD
+#include "fpga/KD/llapi/zynqmp_api.h"
+#endif
+
 namespace paddle_mobile {
 namespace memory {
 const int MALLOC_ALIGN = 64;
@@ -43,7 +47,21 @@ void Free(void *ptr) {
   }
 }
 
+#elif defined(PADDLE_MOBILE_FPGA_KD)
+
+void Copy(void *dst, const void *src, size_t num) {
+  std::memcpy(dst, src, num);
+}
+
+void *Alloc(size_t size) { return zynqmp::fpga_malloc(size); }
+
+void Free(void *ptr) {
+  if (ptr) {
+    zynqmp::fpga_free(ptr);
+  }
+}
 #else
+
 void Copy(void *dst, const void *src, size_t num) {
   std::memcpy(dst, src, num);
 }
@@ -57,11 +75,9 @@ void *Alloc(size_t size) {
   void *r = reinterpret_cast<void *>(reinterpret_cast<size_t>(p + offset) &
                                      (~(MALLOC_ALIGN - 1)));
   static_cast<void **>(r)[-1] = p;
-  return r;  // if necessary, you need initialize memory by yourself (developer)
+  return r;
 }
 
-// if you use this ptr again after Free
-// you need to assign `ptr` as nullptr yourself (developer)
 void Free(void *ptr) {
   if (ptr) {
     free(static_cast<void **>(ptr)[-1]);
