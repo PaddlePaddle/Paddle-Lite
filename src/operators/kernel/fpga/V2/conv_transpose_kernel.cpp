@@ -12,9 +12,9 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef FUSION_DECONVADD_OP
+#ifdef CONV_TRANSPOSE_OP
 
-#include "operators/kernel/deconv_add_kernel.h"
+#include "operators/kernel/conv_transpose_kernel.h"
 #include "framework/operator.h"
 #include "operators/op_param.h"
 
@@ -22,19 +22,19 @@ namespace paddle_mobile {
 namespace operators {
 
 template <>
-bool DeconvAddKernel<FPGA, float>::Init(FusionDeconvAddParam<FPGA> *param) {
+bool ConvTransposeKernel<FPGA, float>::Init(ConvTransposeParam<FPGA> *param) {
   // bool relu_enabled = false;
   paddle_mobile::fpga::ActivationType activation_enable =
       paddle_mobile::fpga::NONE;
   int16_t leaky_relu_negative_slope = 0;
   auto input = const_cast<LoDTensor *>(param->Input());
-  const Tensor *bias = param->Bias();
-  auto bias_ptr = bias->data<float>();
+  // const Tensor *bias = param->Bias();
+  // auto bias_ptr = bias->data<float>();
   auto filter = const_cast<LoDTensor *>(param->Filter());
   auto out = param->Output();
 
-  PADDLE_MOBILE_ENFORCE(out->dims()[1] == bias->dims()[0],
-                        "Output channel should be equal to bias number");
+  // PADDLE_MOBILE_ENFORCE(out->dims()[1] == bias->dims()[0],
+  //                      "Output channel should be equal to bias number");
   int channel = out->dims()[1];
 
   int sub_conv_n = param->Strides()[0];
@@ -43,7 +43,7 @@ bool DeconvAddKernel<FPGA, float>::Init(FusionDeconvAddParam<FPGA> *param) {
 
   for (int i = 0; i < channel * sub_conv_n; i++) {
     bs_ptr[i + sub_conv_n * channel] = 1;
-    bs_ptr[i] = bias_ptr[i % (channel)];
+    bs_ptr[i] = 0;  // bias_ptr[i % (channel)];
   }
 
   PADDLE_MOBILE_ENFORCE(param->Strides()[1] == param->Strides()[0],
@@ -70,13 +70,12 @@ bool DeconvAddKernel<FPGA, float>::Init(FusionDeconvAddParam<FPGA> *param) {
                           param->Paddings()[0], param->Paddings()[1], bs_ptr);
     param->SetFpgaArgs(deconv_arg);
   }
-
   return true;
 }
 
 template <>
-void DeconvAddKernel<FPGA, float>::Compute(
-    const FusionDeconvAddParam<FPGA> &param) {
+void ConvTransposeKernel<FPGA, float>::Compute(
+    const ConvTransposeParam<FPGA> &param) {
   if (param.Groups() == param.Output()->dims()[1]) {
     fpga::ComputeDWDeconv(param.FpgaDWDconvArgs());
   } else {
