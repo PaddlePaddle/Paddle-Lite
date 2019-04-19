@@ -13,25 +13,38 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #pragma once
-
-#define FILTER_PARALLELISM 1024
+#include <cstdint>
 namespace paddle_mobile {
 namespace fpga {
 namespace filter {
 
-int calc_channel_parallelism(int channel);
-int calc_aligned_channel(int channel);
-int calc_num_parallelism(int channel);
-int calc_aligned_num(int num, int channel);
-int calc_aligned_total_pixel_num(int num, int channel, int height, int width);
-void convert_to_hwc(float** data_in, int num, int channel, int height,
+int calc_division_capacity(int chw);
+int calc_split_num(int num, int division_capacity);
+int calc_division_number(int num, int group_num, int division_capacity);
+int calc_num_per_div(int num, int group_num, int division_capacity);
+void convert_to_hwc(char** data_in, int num, int channel, int height,
                     int width);
+float find_max(float* data_in, int data_size);
+void quantize(float** data_in, int data_size, float max);
+void align_element(char** data_in, int num, int chw);
+void align_num(char** data_in, int num_per_div_before_alignment, int num,
+               int chw);
+void reorder(char** data_in, int num_after_alignment, int chw);
+void interleave(char** data_in, int num_after_alignment, int chw);
 void format_filter(float** data_in, int num, int channel, int height, int width,
                    int group_num, float max);
-void convert_fc_filter(float** data_in, int num, int chw);
+
+void convert_fc_filter(char** data_in, int num, int chw);
 void format_fc_filter(float** data_in, int num, int channel, int height,
                       int width, int group_num, float max);
-float find_max(float* data_in, int data_size);
+
+void convert_to_hwn(int16_t** data_in, int num, int height, int width);
+void align_element_n(int16_t** data_in, int num, int height, int width);
+void quantize_to_fp16(float** data_in, int num, int height, int width,
+                      float* scale_ptr);
+void format_dwconv_filter(float** data_in, int num, int height, int width,
+                          float* scale_ptr);
+
 }  // namespace filter
 }  // namespace fpga
 }  // namespace paddle_mobile
