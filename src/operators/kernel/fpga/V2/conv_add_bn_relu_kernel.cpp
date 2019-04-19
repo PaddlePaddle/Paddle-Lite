@@ -32,7 +32,9 @@ bool ConvAddBNReluKernel<FPGA, float>::Init(
   auto bias_ptr = bias->data<float>();
   auto filter = const_cast<LoDTensor *>(param->Filter());
   auto out = param->Output();
-
+  float Si = input->scale[0];
+  float So = out->scale[0];
+  float Sf = fpga::filter_find_max(filter);
   vector<int> paddings = param->Paddings();
   vector<int> strides = param->Strides();
   auto bn_mean_ptr = param->InputMean()->data<float>();
@@ -57,8 +59,10 @@ bool ConvAddBNReluKernel<FPGA, float>::Init(
                        static_cast<float>(pow((bn_var_ptr[i] + epsilon), 0.5));
     new_bias_ptr[i] =
         bn_bias_ptr[i] + (bias_ptr[i] - bn_mean_ptr[i]) * new_scale_ptr[i];
-    bs_ptr[i + channel] = new_scale_ptr[i];
-    bs_ptr[i] = new_bias_ptr[i];
+//    bs_ptr[i + channel] = new_scale_ptr[i];
+//    bs_ptr[i] = new_bias_ptr[i];
+    bs_ptr[i + channel] = new_scale_ptr[i] * Si / So * Sf / 127.0;
+    bs_ptr[i] = new_bias_ptr[i] * 127.0 / So;
   }
 
   const int groups = param->Groups();
