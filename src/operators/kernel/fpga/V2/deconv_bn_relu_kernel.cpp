@@ -12,9 +12,10 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef FUSION_DECONVADD_OP
+#ifdef FUSION_DECONVBNRELU_OP
 
-#include "operators/kernel/deconv_add_kernel.h"
+#include "operators/kernel/deconv_bn_relu_kernel.h"
+#include <cmath>
 #include "framework/operator.h"
 #include "operators/op_param.h"
 
@@ -22,28 +23,43 @@ namespace paddle_mobile {
 namespace operators {
 
 template <>
-bool DeconvAddKernel<FPGA, float>::Init(FusionDeconvAddParam<FPGA> *param) {
-  // bool relu_enabled = false;
+bool DeconvBNReluKernel<FPGA, float>::Init(
+    FusionDeconvBNReluParam<FPGA> *param) {
+  // bool relu_enabled = true;
   paddle_mobile::fpga::ActivationType activation_enable =
-      paddle_mobile::fpga::NONE;
+      paddle_mobile::fpga::LEAKYRELU;
   int16_t leaky_relu_negative_slope = 0;
   auto input = const_cast<LoDTensor *>(param->Input());
-  const Tensor *bias = param->Bias();
+  const Tensor *bias = param->InputBias();
   auto bias_ptr = bias->data<float>();
   auto filter = const_cast<LoDTensor *>(param->Filter());
   auto out = param->Output();
+  auto bn_mean_ptr = param->InputMean()->data<float>();
+  auto bn_var_ptr = param->InputVariance()->data<float>();
+  auto bn_scale_ptr = param->InputScale()->data<float>();
+  auto bn_bias_ptr = param->InputBias()->data<float>();
+  const float epsilon = param->Epsilon();
 
   PADDLE_MOBILE_ENFORCE(out->dims()[1] == bias->dims()[0],
                         "Output channel should be equal to bias number");
   int channel = out->dims()[1];
+  auto new_scale = new Tensor();
+  auto new_bias = new Tensor();
+  auto new_scale_ptr = new_scale->mutable_data<float>({channel});
+  auto new_bias_ptr = new_bias->mutable_data<float>({channel});
+  for (int i = 0; i < channel; i++) {
+    new_scale_ptr[i] = bn_scale_ptr[i] /
+                       static_cast<float>(pow((bn_var_ptr[i] + epsilon), 0.5));
+    new_bias_ptr[i] = bn_bias_ptr[i] + (0 - bn_mean_ptr[i]) * new_scale_ptr[i];
+  }
 
   int sub_conv_n = param->Strides()[0];
   auto bs_ptr = (float *)fpga::fpga_malloc(2 * channel * sub_conv_n *  // NOLINT
                                            sizeof(float));             // NOLINT
 
   for (int i = 0; i < channel * sub_conv_n; i++) {
-    bs_ptr[i + sub_conv_n * channel] = 1;
-    bs_ptr[i] = bias_ptr[i % (channel)];
+    bs_ptr[i + sub_conv_n * channel] = new_scale_ptr[i % channel];
+    bs_ptr[i] = new_bias_ptr[i % (channel)];
   }
 
   PADDLE_MOBILE_ENFORCE(param->Strides()[1] == param->Strides()[0],
@@ -70,13 +86,15 @@ bool DeconvAddKernel<FPGA, float>::Init(FusionDeconvAddParam<FPGA> *param) {
                           param->Paddings()[0], param->Paddings()[1], bs_ptr);
     param->SetFpgaArgs(deconv_arg);
   }
-
+  delete new_scale;
+  delete new_bias;
   return true;
 }
 
 template <>
-void DeconvAddKernel<FPGA, float>::Compute(
-    const FusionDeconvAddParam<FPGA> &param) {
+void DeconvBNReluKernel<FPGA, float>::Compute(
+    const FusionDeconvBNReluParam<FPGA> &param) {
+  // fpga::ComputeFpgaDeconv(param.FpgaArgs());
   if (param.Groups() == param.Output()->dims()[1]) {
     fpga::ComputeDWDeconv(param.FpgaDWDconvArgs());
   } else {

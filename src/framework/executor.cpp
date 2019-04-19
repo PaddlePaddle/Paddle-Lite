@@ -68,7 +68,6 @@ Executor<Device, T>::Executor(const Program<Device> &program,
   // resize feed and fetch list
   // should init feed and fetch variables before infer shape
   InitFeedFetchList();
-
   const auto &blocks = program_desc_->Blocks();
   std::shared_ptr<BlockDesc> block_desc = blocks[0];
   std::vector<std::shared_ptr<OpDesc>> ops = block_desc->Ops();
@@ -86,6 +85,9 @@ Executor<Device, T>::Executor(const Program<Device> &program,
     }
     ops_of_block0_.push_back(op_handler);
   }
+#ifdef PADDLE_MOBILE_FPGA_V2
+  InitQuantMemory();
+#endif
   if (program_.combined) {
     InitCombineMemory();
   } else {
@@ -626,8 +628,74 @@ template <typename Device, typename T>
 void Executor<Device, T>::Predict_To(int end) {
   Predict_From_To(0, end);
 }
-#endif
+#ifdef PADDLE_MOBILE_FPGA_V2
+std::map<std::string, float> LoadQuantValFromFile(std::string filename) {
+  std::map<std::string, float> quantValList;
+  std::ifstream in;
+  in.open(filename, std::ios::in);
+  if (!in.is_open()) {
+    std::cout << "open File Failed." << std::endl;
+    exit(-1);
+  }
 
+  std::string line;
+  while (getline(in, line)) {
+    std::string splitStr = " : ";
+    std::string::size_type pos;
+    pos = line.find(splitStr);
+    std::string subStr[2];
+    subStr[0] = line.substr(0, pos);
+    subStr[1] = line.substr(pos + splitStr.size(), line.size());
+    quantValList.insert(std::make_pair(subStr[0], atof(subStr[1].c_str())));
+  }
+  in.close();
+  return quantValList;
+}
+
+template <typename Device, typename T>
+void Executor<Device, T>::InitQuantMemory() {
+  std::string quantValFilePath;
+  if (program_.combined) {
+    quantValFilePath = program_.para_path;
+    quantValFilePath =
+        quantValFilePath.substr(0, (quantValFilePath.length() - 6));
+    quantValFilePath = quantValFilePath + "scale";
+  } else {
+    quantValFilePath = program_.model_path + "/scale";
+  }
+  std::map<std::string, float> quantValList =
+      LoadQuantValFromFile(quantValFilePath);
+  auto ops = ops_of_block0_;
+  for (int id = 0; id < ops.size(); id++) {
+    auto op = ops[id];
+    auto input_keys = op->GetInputKeys();
+    auto inputs = op->Inputs();
+    for (auto key = input_keys.begin(); key != input_keys.end(); key++) {
+      auto inputs_vars = inputs[*key];
+      int count = inputs_vars.size();
+      for (int i = 0; i < count; i++) {
+        auto tensor = GetTensorByName(inputs_vars[i]);
+        tensor->scale[0] = quantValList[inputs_vars[i]];
+        std::cout << "input variance name : " << inputs_vars[i]
+                  << ", scale value : " << tensor->scale[0] << std::endl;
+      }
+    }
+    auto output_keys = op->GetOutKeys();
+    auto outputs = op->Outputs();
+    for (auto key = output_keys.begin(); key != output_keys.end(); key++) {
+      auto outputs_vars = outputs[*key];
+      int count = outputs_vars.size();
+      for (int i = 0; i < count; i++) {
+        auto tensor = GetTensorByName(outputs_vars[i]);
+        tensor->scale[0] = quantValList[outputs_vars[i]];
+        std::cout << "output variance name : " << outputs_vars[i]
+                  << ", scale value : " << tensor->scale[0] << std::endl;
+      }
+    }
+  }
+}
+#endif
+#endif
 #ifdef PADDLE_MOBILE_CL
 template <>
 void Executor<GPU_CL, float>::InitNoPersistableMemory(
