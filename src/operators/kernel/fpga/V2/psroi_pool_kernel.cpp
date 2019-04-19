@@ -18,8 +18,8 @@ limitations under the License. */
 #include <vector>
 #include "operators/kernel/detection_kernel.h"
 
-#include "fpga/V1/api.h"
-#include "fpga/V1/image.h"
+#include "fpga/V2/api.h"
+#include "fpga/V2/image.h"
 namespace paddle_mobile {
 namespace operators {
 

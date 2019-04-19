@@ -16,7 +16,7 @@ limitations under the License. */
 #include "operators/kernel/elementwise_add_kernel.h"
 
 #include <string>
-#include "fpga/V1/api.h"
+#include "fpga/V2/api.h"
 
 namespace paddle_mobile {
 namespace operators {
