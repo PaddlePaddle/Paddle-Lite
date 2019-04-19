@@ -21,18 +21,23 @@ namespace operators {
 template <>
 bool ElementwiseAddReluKernel<FPGA, float>::Init(
     ElementwiseAddReluParam<FPGA> *param) {
-  bool relu_enabled = true;
+  // bool relu_enabled = true;
+  paddle_mobile::fpga::ActivationType activation_enable =
+      paddle_mobile::fpga::LEAKYRELU;
+  int16_t leaky_relu_negative_slope = 0;
   auto *input_x = const_cast<LoDTensor *>(param->InputX());
   auto *input_y = const_cast<LoDTensor *>(param->InputY());
   auto *out = param->Out();
-  auto input_x_ptr = input_x->data<float>();
-  auto input_y_ptr = input_y->data<float>();
-  int aligned_channel_num = fpga::get_aligned_channel_num(input_x->dims()[1]);
-  fpga::format_fp16_ofm(out, aligned_channel_num);
-  auto out_ptr = out->mutable_data<float>();
+  auto input_x_ptr = input_x->data<half>();
+  auto input_y_ptr = input_y->data<half>();
+  fpga::format_fp16_ofm(out);
+  auto out_ptr = out->mutable_data<half>();
 
   fpga::EWAddArgs ewaddArgs = {0};
-  ewaddArgs.relu_enabled = relu_enabled;
+  // ewaddArgs.relu_enabled = relu_enabled;
+  ewaddArgs.output.activation.activation_type = activation_enable;
+  ewaddArgs.output.activation.leaky_relu_negative_slope =
+      leaky_relu_negative_slope;
   ewaddArgs.const0 = 0x3c00;  // =1
   ewaddArgs.const1 = 0x3c00;  // =1
   ewaddArgs.image0.address = input_x_ptr;
@@ -51,6 +56,7 @@ bool ElementwiseAddReluKernel<FPGA, float>::Init(
   ewaddArgs.image1.pad_width = 0;
   ewaddArgs.output.scale_address = out->scale;
   ewaddArgs.output.address = out_ptr;
+  fpga::expand_EW_arg(&ewaddArgs);
   param->SetFpgaArgs(ewaddArgs);
   return true;
 }
