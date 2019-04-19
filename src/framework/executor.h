@@ -64,6 +64,9 @@ class Executor {
   void Predict_From_To(int start = 0, int end = -1);
   void Predict_From(int start);
   void Predict_To(int end);
+#ifdef PADDLE_MOBILE_FPGA_V2
+  void InitQuantMemory();
+#endif
 #endif
 
  protected:
