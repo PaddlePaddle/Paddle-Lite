@@ -13,44 +13,94 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "operators/kernel/feed_kernel.h"
-#include "fpga/V2/filter.h"
+
 namespace paddle_mobile {
 namespace operators {
 
 template <>
 bool FeedKernel<FPGA, float>::Init(FeedParam<FPGA> *param) {
-  Tensor *output = param->Out();
-  int aligned_channel = fpga::get_aligned_channel_num(output->dims()[1]);
-  fpga::format_fp16_ofm(output, aligned_channel);
+  auto output = param->Out();
+  int col = param->Col();
+  DLOG << "col = " << col;
+  auto input = const_cast<LoDTensor *>(&param->InputX()->at(col));
+  input->init(type_id<float>().hash_code());
+  input->Resize(output->dims());
+
+  if (output->dims().size() != 4) {
+    return true;
+  }
+
+  fpga::format_fp16_ofm(output);
   return true;
 }
+
 template <>
 void FeedKernel<FPGA, float>::Compute(const FeedParam<FPGA> &param) {
-  auto input =
-      reinterpret_cast<Tensor *>(const_cast<LoDTensor *>(param.InputX()));
+  auto output = param.Out();
+  int col = param.Col();
+  auto input = const_cast<LoDTensor *>(&param.InputX()->at(col));
+  kTypeId_t input_type = input->type();
+
+  if (input_type == type_id<float>()) {
+    input->init(type_id<float>().hash_code());
+  } else {
+    input->init(type_id<int8_t>().hash_code());
+  }
+  input->Resize(output->dims());
+
+  if (output->dims().size() != 4) {
+    size_t size = output->numel() * sizeof(float);
+    auto output_ptr = output->data<float>();
+    auto input_ptr = input->data<float>();
+    auto external_ptr = reinterpret_cast<float *>(input->external_data);
+    float *p_data = external_ptr == nullptr ? input_ptr : external_ptr;
+    memcpy(output_ptr, p_data, size);
+    input->external_data = nullptr;
+    return;
+  }
+
   fpga::format_image(input);
-  auto input_ptr = input->data<float>();
-  Tensor *output = param.Out();
-  auto output_ptr = output->data<float>();
-  auto channel = input->dims()[1];
-  uint32_t aligned_channels =
-      fpga::filter::calc_aligned_channel((int)channel);  // NOLINT
-
+  auto output_ptr = output->data<half>();
   fpga::BypassArgs args = {fpga::DATA_TYPE_FP32};
+  if (input_type == type_id<float>()) {
+    auto input_ptr = input->data<float>();
+    auto external_ptr = reinterpret_cast<float *>(input->external_data);
+    float *p_data = external_ptr == nullptr ? input_ptr : external_ptr;
 
-  args.input_data_type = fpga::DATA_TYPE_FP32;
-  args.output_data_type = fpga::DATA_TYPE_FP16;
-  args.input_layout_type = fpga::LAYOUT_CHW;
-  args.output_layout_type = fpga::LAYOUT_HWC;
-  args.image.address = reinterpret_cast<void *>(input_ptr);
-  args.image.channels = aligned_channels;
-  args.image.height = (uint32_t)input->dims()[2];
-  args.image.width = (uint32_t)input->dims()[3];
-  args.image.pad_height = 0;
-  args.image.pad_width = 0;
-  args.output.address = output_ptr;
-  args.output.scale_address = output->scale;
-  fpga::PerformBypass(args);
+    args.input_data_type = fpga::DATA_TYPE_FP32;
+    args.output_data_type = fpga::DATA_TYPE_FP16;
+    args.input_layout_type = fpga::LAYOUT_CHW;
+    args.output_layout_type = fpga::LAYOUT_HWC;
+    args.image.address = p_data;
+    args.image.channels = (uint32_t)input->dims()[1];
+    args.image.height = (uint32_t)input->dims()[2];
+    args.image.width = (uint32_t)input->dims()[3];
+    args.image.pad_height = 0;
+    args.image.pad_width = 0;
+    args.output.address = output_ptr;
+    args.output.scale_address = output->scale;
+    fpga::PerformBypass(args);
+    input->external_data = nullptr;
+  } else {
+    auto input_ptr = input->data<int8_t>();
+    auto external_ptr = reinterpret_cast<int8_t *>(input->external_data);
+    int8_t *p_data = external_ptr == nullptr ? input_ptr : external_ptr;
+
+    args.input_data_type = fpga::DATA_TYPE_INT8;
+    args.output_data_type = fpga::DATA_TYPE_FP16;
+    args.input_layout_type = fpga::LAYOUT_CHW;
+    args.output_layout_type = fpga::LAYOUT_HWC;
+    args.image.address = p_data;
+    args.image.channels = (uint32_t)input->dims()[1];
+    args.image.height = (uint32_t)input->dims()[2];
+    args.image.width = (uint32_t)input->dims()[3];
+    args.image.pad_height = 0;
+    args.image.pad_width = 0;
+    args.output.address = output_ptr;
+    args.output.scale_address = output->scale;
+    fpga::PerformBypass(args);
+    input->external_data = nullptr;
+  }
 }
 template class FeedKernel<FPGA, float>;
 

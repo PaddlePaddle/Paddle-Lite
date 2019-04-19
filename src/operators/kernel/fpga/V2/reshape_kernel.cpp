@@ -12,23 +12,27 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef FUSION_DECONVRELU_OP
+#ifdef RESHAPE_OP
 
-#include "operators/kernel/deconv_relu_kernel.h"
-#include "framework/operator.h"
-#include "operators/op_param.h"
+#include "operators/kernel/reshape_kernel.h"
 
 namespace paddle_mobile {
 namespace operators {
 
 template <>
-bool DeconvReluKernel<FPGA, float>::Init(FusionDeconvReluParam<FPGA> *param) {
+bool ReshapeKernel<FPGA, float>::Init(ReshapeParam<FPGA> *param) {
+  param->Out()->ShareDataWith(*param->InputX());
+  const int in_n = param->InputX()->dims()[0];
+  const int in_c = param->InputX()->dims()[1];
+  const int in_h = param->InputX()->dims()[2];
+  const int in_w = param->InputX()->dims()[3];
+  auto out = param->Out();
+  out->Resize(framework::make_ddim({in_n, in_c * in_h * in_w}));
   return true;
 }
 
 template <>
-void DeconvReluKernel<FPGA, float>::Compute(
-    const FusionDeconvReluParam<FPGA> &param) {}
+void ReshapeKernel<FPGA, float>::Compute(const ReshapeParam<FPGA> &param) {}
 
 }  // namespace operators
 }  // namespace paddle_mobile

@@ -16,17 +16,20 @@ limitations under the License. */
 
 #include "operators/kernel/conv_bn_relu_kernel.h"
 #include <cmath>
-#include "fpga/V2/filter.h"
-
 namespace paddle_mobile {
 namespace operators {
-
 template <>
 bool ConvBNReluKernel<FPGA, float>::Init(FusionConvBNReluParam<FPGA> *param) {
-  bool relu_enabled = true;
-  auto input = const_cast<Tensor *>(param->Input());
-  auto filter = const_cast<Tensor *>(param->Filter());
+  paddle_mobile::fpga::ActivationType activation_enable =
+      paddle_mobile::fpga::LEAKYRELU;
+  int16_t leaky_relu_negative_slope = 0;
+  const int groups = param->Groups();
+  auto input = const_cast<LoDTensor *>(param->Input());
+  auto filter = const_cast<LoDTensor *>(param->Filter());
   auto out = param->Output();
+  float Si = input->scale[0];
+  float So = out->scale[0];
+  float Sf = fpga::filter_find_max(filter);
   auto bn_mean_ptr = param->InputMean()->data<float>();
   auto bn_var_ptr = param->InputVariance()->data<float>();
   auto bn_scale_ptr = param->InputScale()->data<float>();
@@ -41,32 +44,49 @@ bool ConvBNReluKernel<FPGA, float>::Init(FusionConvBNReluParam<FPGA> *param) {
   auto new_bias = new Tensor();
   auto new_scale_ptr = new_scale->mutable_data<float>({channel});
   auto new_bias_ptr = new_bias->mutable_data<float>({channel});
-
   for (int i = 0; i < channel; i++) {
     new_scale_ptr[i] = bn_scale_ptr[i] /
                        static_cast<float>(pow((bn_var_ptr[i] + epsilon), 0.5));
     new_bias_ptr[i] = bn_bias_ptr[i] + (0 - bn_mean_ptr[i]) * new_scale_ptr[i];
-    bs_ptr[i + channel] = new_scale_ptr[i];
-    bs_ptr[i] = new_bias_ptr[i];
+    // bs_ptr[i + channel] = new_scale_ptr[i];
+    // bs_ptr[i] = new_bias_ptr[i];
+    bs_ptr[i + channel] = new_scale_ptr[i] * Si / So * Sf / 127.0;
+    bs_ptr[i] = new_bias_ptr[i] * 127.0 / So;
+    if (groups == channel) {
+      new_scale_ptr[i] = new_scale_ptr[i] * Si / So;
+      new_bias_ptr[i] = new_bias_ptr[i] * 127.0 / So;
+    }
   }
-  param->SetNewScale(new_scale);
-  param->SetNewBias(new_bias);
-
-  fpga::format_conv_data(filter, out, &bs_ptr, param->Groups());
-
-  fpga::SplitConvArgs conv_arg = {0};
-  fpga::fill_split_arg(&conv_arg, input, out, filter, relu_enabled,
-                       param->Groups(), param->Strides()[0],
-                       param->Strides()[1], param->Paddings()[0],
-                       param->Paddings()[1], bs_ptr);
-  param->SetFpgaArgs(conv_arg);
+  if (groups == channel) {
+    fpga::format_dwconv_data(filter, out, new_scale_ptr, &new_bias_ptr);
+    fpga::DWconvArgs dwconv_arg = {0};
+    fpga::fill_dwconv_arg(&dwconv_arg, input, out, filter, activation_enable,
+                          leaky_relu_negative_slope, param->Strides()[0],
+                          param->Strides()[1], param->Paddings()[0],
+                          param->Paddings()[1], new_bias_ptr);
+    param->SetFpgaArgs(dwconv_arg);
+  } else {
+    fpga::format_conv_data(filter, out, &bs_ptr, param->Groups());
+    fpga::SplitConvArgs conv_arg = {0};
+    fpga::fill_split_arg(&conv_arg, input, out, filter, activation_enable,
+                         leaky_relu_negative_slope, param->Groups(),
+                         param->Strides()[0], param->Strides()[1],
+                         param->Paddings()[0], param->Paddings()[1], bs_ptr);
+    param->SetFpgaArgs(conv_arg);
+  }
+  delete new_scale;
+  delete new_bias;
   return true;
 }
 
 template <>
 void ConvBNReluKernel<FPGA, float>::Compute(
     const FusionConvBNReluParam<FPGA> &param) {
-  fpga::ComputeFpgaConv(param.FpgaArgs());
+  if (param.Groups() == param.Output()->dims()[1]) {
+    fpga::ComputeDWConv(param.FpgaDwconvArgs());
+  } else {
+    fpga::ComputeFpgaConv(param.FpgaArgs());
+  }
 }
 
 }  // namespace operators

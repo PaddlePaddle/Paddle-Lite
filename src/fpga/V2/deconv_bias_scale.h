@@ -16,14 +16,11 @@ limitations under the License. */
 
 namespace paddle_mobile {
 namespace fpga {
-namespace bias_scale {
+namespace deconv_bias_scale {
 
-void align_element(float** data_in, int num_per_div_before_alignment, int num);
-void interleave(float** data_in, int num_after_alignment);
-void format_bias_scale_array(float** bias_scale_array,
-                             int element_num_per_division, int num);
-void format_bias_array(float** bias_array, int num);
+void deconv_bias_scale_expand(float** bias_scale_array, int num,
+                              int sub_conv_n);
 
-}  // namespace bias_scale
+}  // namespace deconv_bias_scale
 }  // namespace fpga
 }  // namespace paddle_mobile
