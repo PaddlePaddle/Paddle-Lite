@@ -12,9 +12,9 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef FUSION_DECONVADD_OP
+#ifdef FUSION_DECONVADDBN_OP
 
-#include "operators/kernel/deconv_add_kernel.h"
+#include "operators/kernel/deconv_add_bn_kernel.h"
 #include "framework/operator.h"
 #include "operators/op_param.h"
 
@@ -22,13 +22,13 @@ namespace paddle_mobile {
 namespace operators {
 
 template <>
-bool DeconvAddKernel<FPGA, float>::Init(FusionDeconvAddParam<FPGA> *param) {
-  // bool relu_enabled = false;
+bool DeconvAddBNKernel<FPGA, float>::Init(FusionDeconvAddBNParam<FPGA> *param) {
+  // bool relu_enabled = true;
   paddle_mobile::fpga::ActivationType activation_enable =
       paddle_mobile::fpga::NONE;
   int16_t leaky_relu_negative_slope = 0;
   auto input = const_cast<LoDTensor *>(param->Input());
-  const Tensor *bias = param->Bias();
+  const Tensor *bias = param->InputBias();
   auto bias_ptr = bias->data<float>();
   auto filter = const_cast<LoDTensor *>(param->Filter());
   auto out = param->Output();
@@ -70,13 +70,13 @@ bool DeconvAddKernel<FPGA, float>::Init(FusionDeconvAddParam<FPGA> *param) {
                           param->Paddings()[0], param->Paddings()[1], bs_ptr);
     param->SetFpgaArgs(deconv_arg);
   }
-
   return true;
 }
 
 template <>
-void DeconvAddKernel<FPGA, float>::Compute(
-    const FusionDeconvAddParam<FPGA> &param) {
+void DeconvAddBNKernel<FPGA, float>::Compute(
+    const FusionDeconvAddBNParam<FPGA> &param) {
+  // fpga::ComputeFpgaDeconv(param.FpgaArgs());
   if (param.Groups() == param.Output()->dims()[1]) {
     fpga::ComputeDWDeconv(param.FpgaDWDconvArgs());
   } else {

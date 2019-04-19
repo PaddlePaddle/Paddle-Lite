@@ -27,6 +27,14 @@ limitations under the License. */
 #define BIAS_NUM_ALIGNMENT (16)
 #define ROW_PARALLEL_NUM (3)
 #endif
+#ifdef PADDLE_MOBILE_FPGA_V2
+#define IMAGE_ALIGNMENT (32)           // Aligned to 32
+#define FILTER_NUM_ALIGNMENT (32)      // Filter number aligned to 32
+#define FILTER_ELEMENT_ALIGNMENT (16)  // Filter element number aligned to 16
+#define BS_NUM_ALIGNMENT (8)
+#define BIAS_NUM_ALIGNMENT (16)
+#define ROW_PARALLEL_NUM (3)
+#endif
 
 namespace paddle_mobile {
 namespace fpga {
@@ -80,7 +88,8 @@ struct ImageOutputArgs {
       activation;  // To select activation and specify (Leaky)Relu parameter.
 };
 
-#ifdef PADDLE_MOBILE_FPGA_V1
+// #ifdef PADDLE_MOBILE_FPGA_V1
+#if ((defined PADDLE_MOBILE_FPGA_V1) || (defined PADDLE_MOBILE_FPGA_V2))
 struct ConvDriverParam {
   uint64_t image_address_phy;
   uint64_t filter_address_phy;
@@ -146,11 +155,8 @@ struct ConvArgs {
   struct ImageInputArgs image;  // input image;
   struct ImageOutputArgs output;
 
-#ifdef PADDLE_MOBILE_FPGA_V2
-  void* free_space;  // used by FPGA logic
-#endif
-
-#ifdef PADDLE_MOBILE_FPGA_V1
+// #ifdef PADDLE_MOBILE_FPGA_V1
+#if ((defined PADDLE_MOBILE_FPGA_V1) || (defined PADDLE_MOBILE_FPGA_V2))
   struct DeconvTxParm deconv_tx_param;
   struct ConvDriverParam driver;
 #endif
@@ -208,7 +214,10 @@ struct EWAddArgs {
   struct ImageInputArgs image0;
   struct ImageInputArgs image1;
   struct ImageOutputArgs output;
-#ifdef PADDLE_MOBILE_FPGA_V1
+  std::vector<float> image_in_quantVal;
+  std::vector<float> image_out_quantVal;
+// #ifdef PADDLE_MOBILE_FPGA_V1
+#if ((defined PADDLE_MOBILE_FPGA_V1) || (defined PADDLE_MOBILE_FPGA_V2))
   struct EWAddDriverParam driver;
 #endif
 };
