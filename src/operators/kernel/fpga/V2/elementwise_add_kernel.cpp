@@ -34,7 +34,11 @@ bool ElementwiseAddKernel<FPGA, float>::Init(ElementwiseAddParam<FPGA> *param) {
     auto input_y_ptr = input_y->data<half>();
     fpga::format_fp16_ofm(out);
     auto out_ptr = out->mutable_data<half>();
-
+    float Si_1 = input_x->scale[0];
+    float Si_2 = input_y->scale[0];
+    float So = out->scale[0];
+    float C1 = Si_1 / So;
+    float C2 = Si_2 / So;
     fpga::EWAddArgs ewaddArgs = {0};
     // ewaddArgs.relu_enabled = relu_enabled;
     ewaddArgs.output.activation.activation_type = activation_enable;

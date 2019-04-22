@@ -29,6 +29,9 @@ bool FusionFcKernel<FPGA, float>::Init(FusionFcParam<FPGA> *param) {
   const Tensor *input_z = param->InputZ();
   auto input_z_ptr = input_z->data<float>();
   auto out = param->Out();
+  float Si = input_x->scale[0];
+  float Sf = filter->scale[0];
+  float So = out->scale[0];
 
   // PADDLE_MOBILE_ENFORCE(input_x->dims()[1] == filter->dims()[0],
   //                     "Image channel should be equal to weight number");
@@ -36,8 +39,10 @@ bool FusionFcKernel<FPGA, float>::Init(FusionFcParam<FPGA> *param) {
   auto bs_ptr =
       (float *)fpga::fpga_malloc(2 * channel * sizeof(float));  // NOLINT
   for (int i = 0; i < channel; i++) {
-    bs_ptr[i + channel] = 1;
-    bs_ptr[i] = input_z_ptr[i];
+    //    bs_ptr[i + channel] = 1;
+    //    bs_ptr[i] = input_z_ptr[i];
+    bs_ptr[i + channel] = Si / So * Sf / 127.0f;
+    bs_ptr[i] = input_z_ptr[i] * 127.0f / So;
   }
   int num = (uint32_t)filter->dims()[1];
   int chw = (uint32_t)filter->dims()[0];
