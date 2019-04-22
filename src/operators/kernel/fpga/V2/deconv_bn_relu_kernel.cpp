@@ -34,6 +34,9 @@ bool DeconvBNReluKernel<FPGA, float>::Init(
   auto bias_ptr = bias->data<float>();
   auto filter = const_cast<LoDTensor *>(param->Filter());
   auto out = param->Output();
+  float Si = input->scale[0];
+  float So = out->scale[0];
+  float Sf = fpga::filter_find_max(filter);
   auto bn_mean_ptr = param->InputMean()->data<float>();
   auto bn_var_ptr = param->InputVariance()->data<float>();
   auto bn_scale_ptr = param->InputScale()->data<float>();
@@ -56,12 +59,22 @@ bool DeconvBNReluKernel<FPGA, float>::Init(
   int sub_conv_n = param->Strides()[0];
   auto bs_ptr = (float *)fpga::fpga_malloc(2 * channel * sub_conv_n *  // NOLINT
                                            sizeof(float));             // NOLINT
-
-  for (int i = 0; i < channel * sub_conv_n; i++) {
-    bs_ptr[i + sub_conv_n * channel] = new_scale_ptr[i % channel];
-    bs_ptr[i] = new_bias_ptr[i % (channel)];
+  //  for (int i = 0; i < channel * sub_conv_n; i++) {
+  //    bs_ptr[i + sub_conv_n * channel] = new_scale_ptr[i % channel];
+  //    bs_ptr[i] = new_bias_ptr[i % (channel)];
+  //  }
+  if (param->Groups() == channel) {
+    for (int i = 0; i < channel * sub_conv_n; i++) {
+      bs_ptr[i + sub_conv_n * channel] = new_scale_ptr[i % channel] * Si / So;
+      bs_ptr[i] = new_bias_ptr[i % (channel)] * 127.0f / So;
+    }
+  } else {
+    for (int i = 0; i < channel * sub_conv_n; i++) {
+      bs_ptr[i + sub_conv_n * channel] =
+          new_scale_ptr[i % channel] * Si / So * Sf / 127.0f;
+      bs_ptr[i] = new_bias_ptr[i % (channel)] * 127.0f / So;
+    }
   }
-
   PADDLE_MOBILE_ENFORCE(param->Strides()[1] == param->Strides()[0],
                         "stride_width should be equal to stride_height ");
   PADDLE_MOBILE_ENFORCE(filter->dims()[2] == filter->dims()[3],
