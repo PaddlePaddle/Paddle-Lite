@@ -32,6 +32,7 @@ bool ConvAddBNReluKernel<FPGA, float>::Init(
   auto bias_ptr = bias->data<float>();
   auto filter = const_cast<LoDTensor *>(param->Filter());
   auto out = param->Output();
+  const int groups = param->Groups();
   float Si = input->scale[0];
   float So = out->scale[0];
   float Sf = fpga::filter_find_max(filter);
@@ -63,9 +64,12 @@ bool ConvAddBNReluKernel<FPGA, float>::Init(
     //    bs_ptr[i] = new_bias_ptr[i];
     bs_ptr[i + channel] = new_scale_ptr[i] * Si / So * Sf / 127.0;
     bs_ptr[i] = new_bias_ptr[i] * 127.0 / So;
+    if (groups == channel) {
+      new_scale_ptr[i] = new_scale_ptr[i] * Si / So;
+      new_bias_ptr[i] = new_bias_ptr[i] * 127.0f / So;
+    }
   }
 
-  const int groups = param->Groups();
   if (groups == channel) {
     fpga::format_dwconv_data(filter, out, new_scale_ptr, &new_bias_ptr);
     fpga::DWconvArgs dwconv_arg = {0};
