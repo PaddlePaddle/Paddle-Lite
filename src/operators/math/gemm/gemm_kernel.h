@@ -16,6 +16,7 @@ limitations under the License. */
 
 #if defined(__ARM_NEON__) || defined(__ARM_NEON)
 
+#include <memory>
 #include <arm_neon.h>
 #include "operators/math/math.h"
 
