@@ -14,13 +14,27 @@ limitations under the License. */
 #ifdef TRANSPOSE2_OP
 
 #include "operators/kernel/transpose2_kernel.h"
-#include "operators/kernel/central-arm-func/transpose2_arm_func.h"
 
 namespace paddle_mobile {
 namespace operators {
 
 template <>
 bool Transpose2Kernel<FPGA, float>::Init(Transpose2Param<FPGA> *param) {
+  auto input = param->InputX();
+  auto output = param->Out();
+  auto axis = param->Axis();
+  auto dim = input->dims();
+  output->ShareDataWith(*input);
+
+  auto dim_v = vectorize(dim);
+
+  for (int i = 0; i < axis.size(); i++) {
+    dim_v[i] = dim[axis[i]];
+  }
+  output->Resize(framework::make_ddim(dim_v));
+
+  DLOG << "input: " << input;
+  DLOG << "output: " << output;
   return true;
 }
 
@@ -28,6 +42,11 @@ template <>
 void Transpose2Kernel<FPGA, float>::Compute(
     const Transpose2Param<FPGA> &param) {
   // Transpose2Compute<float>(param);
+  auto input = param.InputX();
+  auto output = param.Out();
+
+  output->Resize({input->dims()[0], output->dims()[1], output->dims()[2],
+                  output->dims()[3]});
 }
 
 }  // namespace operators
