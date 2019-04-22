@@ -15,7 +15,6 @@ limitations under the License. */
 #ifdef CONCAT_OP
 
 #include "operators/kernel/concat_kernel.h"
-#include "fpga/V2/api.h"
 
 namespace paddle_mobile {
 namespace operators {
@@ -31,45 +30,36 @@ bool ConcatKernel<FPGA, float>::Init(ConcatParam<FPGA> *param) {
       (float **)fpga::fpga_malloc(image_num * sizeof(float *));  // NOLINT
   auto channel_num =
       (uint32_t *)fpga::fpga_malloc(image_num * sizeof(uint32_t));  // NOLINT
-  auto aligned_channel_num =
-      (uint32_t *)fpga::fpga_malloc(image_num * sizeof(uint32_t));  // NOLINT
 
   auto height = inputs[0]->dims()[2];
   auto width = inputs[0]->dims()[3];
-  auto out_channel =
-      (uint32_t)fpga::get_aligned_channel_num((int)out->dims()[1]);  // NOLINT
   for (int i = 0; i < image_num; i++) {
     auto input = inputs[i];
     PADDLE_MOBILE_ENFORCE(
         input->dims()[2] == height && input->dims()[3] == width,
         "Image height & width should be unified");
-    images_in[i] = (half *)input->data<float>();  // NOLINT
-    channel_num[i] = (uint32_t)inputs[i]->dims()[1];
-    aligned_channel_num[i] =
-        (uint32_t)fpga::get_aligned_channel_num(channel_num[i]);
+    images_in[i] = input->data<half>();
+    channel_num[i] = (uint32_t)inputs[i]->dims()[1];  // NOLINT
     scales_in[i] = input->scale;
   }
-  fpga::format_concat_output(out, (int)height, (int)width,  // NOLINT
-                             out_channel);
+  fpga::format_concat_output(out, height, width, image_num, channel_num);
 
   fpga::ConcatArgs concatArgs = {0};
-  concatArgs.image_num = (uint32_t)image_num;
+  concatArgs.image_num = image_num;
   concatArgs.images_in = images_in;
   concatArgs.scales_in = scales_in;
-  concatArgs.image_out = (half *)out->data<float>();  // NOLINT
+  concatArgs.image_out = out->data<half>();
   concatArgs.scale_out = out->scale;
   concatArgs.channel_num = channel_num;
-  concatArgs.aligned_channel_num = aligned_channel_num;
-  concatArgs.out_channel = out_channel;
-  concatArgs.height = (uint32_t)height;
-  concatArgs.width = (uint32_t)width;
+  concatArgs.height = height;
+  concatArgs.width = width;
   param->SetFpgaArgs(concatArgs);
   return true;
 }
 
 template <>
 void ConcatKernel<FPGA, float>::Compute(const ConcatParam<FPGA> &param) {
-  fpga::ComputeFPGAConcat(param.FpgaArgs());
+  ComputeFPGAConcat(param.FpgaArgs());
 }
 template class ConcatKernel<FPGA, float>;
 
