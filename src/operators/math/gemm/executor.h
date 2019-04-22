@@ -174,7 +174,7 @@ class GemmExecutor : public Executor {
         int thread_id = 0;
 #endif
         float *local_B = rhs_workspace_ + K_ * rhs_tile_num_ * thread_id;
-        float *local_C = out_workspace_ + mblock * ldc_ * thread_id; //TODO
+        float *local_C = out_workspace_ + mblock * ldc_ * thread_id;
         // load rhs into rhs_workspace
         strategy_.pack_rhs(K_, rhs_range, B + rhs_block, ldb, local_B, false);
         for (int lhs_block = 0; lhs_block < M_; lhs_block += lhs_tile_num_) {
