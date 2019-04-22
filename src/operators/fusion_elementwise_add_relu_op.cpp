@@ -36,7 +36,7 @@ REGISTER_FUSION_MATCHER(fusion_elementwise_add_relu,
 // REGISTER_OPERATOR_CPU(fusion_elementwise_add_relu,
 //                      ops::FusionElementwiseAddReluOp);
 #endif
-#ifdef PADDLE_MOBILE_FPGA
+#if defined(PADDLE_MOBILE_FPGA) || defined(PADDLE_MOBILE_FPGA_KD)
 REGISTER_OPERATOR_FPGA(fusion_elementwise_add_relu,
                        ops::FusionElementwiseAddReluOp);
 #endif
