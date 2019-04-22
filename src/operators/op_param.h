@@ -33,6 +33,10 @@ limitations under the License. */
 #include "fpga/V2/api.h"
 #endif
 
+#ifdef PADDLE_MOBILE_FPGA_KD
+#include "fpga/KD/context.hpp"
+#endif
+
 #ifdef PADDLE_MOBILE_CL
 #include "framework/cl/cl_image.h"
 #endif
@@ -93,6 +97,12 @@ class OpParam {
 
   VariableNameMap inputs_;
   Scope *scope_pointer_ = nullptr;
+
+#ifdef PADDLE_MOBILE_FPGA_KD
+  zynqmp::Context &context() { return context_; }
+
+  zynqmp::Context context_;
+#endif
 
  protected:
   template <typename T>
