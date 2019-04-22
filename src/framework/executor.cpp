@@ -62,7 +62,8 @@ Executor<Device, T>::Executor(const Program<Device> &program,
       use_optimize_ ? program_.optimizeProgram : program_.originProgram;
   PADDLE_MOBILE_ENFORCE(program_desc_ != nullptr,
                         "program_desc_ should not be nullptr");
-#if !defined(PADDLE_MOBILE_FPGA) && !defined(PADDLE_MOBILE_CL)
+#if !defined(PADDLE_MOBILE_FPGA) && !defined(PADDLE_MOBILE_FPGA_KD) && \
+    !defined(PADDLE_MOBILE_CL)
   pass::MemoryOptPass()(program_desc_.get(), program_.scope.get());
 #endif
   // resize feed and fetch list
@@ -230,20 +231,6 @@ void Executor<Device, T>::InitMemory() {
   }
 }
 
-static void ClearNoPersistableTensorArray(const framework::ProgramDesc *program,
-                                          framework::Scope *scope) {
-  for (const auto &block : program->Blocks()) {
-    for (const auto &var_desc : block->Vars()) {
-      if (!var_desc->Persistable() &&
-          var_desc->Type() == VARTYPE_TYPE_STEP_LOD_TENSOR_ARRAY) {
-        auto var = scope->Var(var_desc->Name());
-        auto array = var->template GetMutable<framework::LoDTensorArray>();
-        array->resize(1);
-      }
-    }
-  }
-}
-
 template <typename Device, typename T>
 void Executor<Device, T>::InitCombineMemory() {
   char *origin_data = nullptr;
@@ -279,6 +266,20 @@ void Executor<Device, T>::InitCombineMemory() {
     delete[] origin_data;
   }
   LOG(kLOG_INFO) << "init combine memory finish";
+}
+
+static void ClearNoPersistableTensorArray(const framework::ProgramDesc *program,
+                                          framework::Scope *scope) {
+  for (const auto &block : program->Blocks()) {
+    for (const auto &var_desc : block->Vars()) {
+      if (!var_desc->Persistable() &&
+          var_desc->Type() == VARTYPE_TYPE_STEP_LOD_TENSOR_ARRAY) {
+        auto var = scope->Var(var_desc->Name());
+        auto array = var->template GetMutable<framework::LoDTensorArray>();
+        array->resize(1);
+      }
+    }
+  }
 }
 
 template <typename Device, typename T>
