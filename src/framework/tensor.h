@@ -26,6 +26,12 @@ limitations under the License. */
 #include "framework/tensor_base.h"
 #include "memory/t_malloc.h"
 
+#ifdef PADDLE_MOBILE_FPGA_KD
+#include "framework/zynqmp/ztensor.hpp"
+#endif
+
+#ifndef PADDLE_MOBILE_FPGA_KD
+
 namespace paddle_mobile {
 namespace framework {
 
@@ -290,3 +296,5 @@ inline Tensor ReshapeToMatrix(const Tensor &src, int num_col_dims) {
 
 }  // namespace framework
 }  // namespace paddle_mobile
+
+#endif

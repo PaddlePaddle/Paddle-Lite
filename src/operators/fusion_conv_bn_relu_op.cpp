@@ -57,7 +57,7 @@ REGISTER_OPERATOR_CPU(fusion_conv_bn_relu, ops::FusionConvBNReluOp);
 #ifdef PADDLE_MOBILE_CL
 REGISTER_OPERATOR_CL(fusion_conv_bn_relu, ops::FusionConvBNReluOp);
 #endif
-#ifdef PADDLE_MOBILE_FPGA
+#if defined(PADDLE_MOBILE_FPGA) || defined(PADDLE_MOBILE_FPGA_KD)
 REGISTER_OPERATOR_FPGA(fusion_conv_bn_relu, ops::FusionConvBNReluOp);
 #endif
 
