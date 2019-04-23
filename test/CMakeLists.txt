@@ -118,6 +118,14 @@ if (CON GREATER -1)
     set(FOUND_MATCH ON)
 endif ()
 
+list(FIND NET "FPGA_OPS_KD" CON)
+if (CON GREATER -1)
+    ADD_EXECUTABLE(test-ssd fpga/test_ssd.cpp test_helper.h test_include.h executor_for_test.h)
+    target_link_libraries(test-ssd paddle-mobile)
+
+    set(FOUND_MATCH ON)
+endif ()
+
 list(FIND NET "mobilenetssd" CON)
 if (CON GREATER -1)
     # gen test
