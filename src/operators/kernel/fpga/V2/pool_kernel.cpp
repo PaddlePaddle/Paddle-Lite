@@ -44,11 +44,13 @@ bool PoolKernel<FPGA, float>::Init(PoolParam<FPGA> *param) {
   auto input_ptr = input->data<half>();
   fpga::format_fp16_ofm(output);
   auto output_ptr = output->mutable_data<half>();
+  float Si = input->scale[0];
+  float So = output->scale[0];
 
   fpga::PoolingArgs poolArgs = {0};
   poolArgs.mode = pooling_type == "max" ? 0 : 1;  // max:0, avg:1
-  poolArgs.kernel_reciprocal =
-      fpga::fp32_2_fp16(float(1.0 / (ksize[0] * ksize[1])));  // NOLINT
+  poolArgs.kernel_reciprocal = fpga::fp32_2_fp16(
+      float(1.0 / (ksize[0] * ksize[1]) * Si / So));  // NOLINT
   poolArgs.image.address = input_ptr;
   poolArgs.image.channels = (uint32_t)input->dims()[1];
   poolArgs.image.height = (uint32_t)input->dims()[2];
