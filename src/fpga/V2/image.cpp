@@ -54,7 +54,64 @@ void convert_to_chw(float **data_in, int channel, int height, int width,
   }
   *data_in = data_tmp;
 }
+#ifdef PADDLE_MOBILE_FPGA_V2
+void concat_images(int8_t **images_in, float **scales_in, void *image_out,
+                   float *scale_out, int image_num, uint32_t *channel_num,
+                   int height, int width) {
+  int i = 0;
+  int j = 0;
+  int k = 0;
+  int each_out_line_channel = 0;
+  int align_each_out_area_cw = 0;
+  int align_each_in_area_cw = 0;
+  int align_each_out_area_cw_differ = 0;
+  int tmp_channel = 0;
+  float Ck = 0.0f;
+  float So = scale_out[0];
+  auto images_in_tmp =
+      (int8_t **)fpga::fpga_malloc(image_num * sizeof(int8_t *));  // NOLINT
+  for (i = 0; i < image_num; i++) {
+    images_in_tmp[i] = reinterpret_cast<int8_t *>(fpga::fpga_malloc(
+        height * align_to_x(channel_num[i] * width, IMAGE_ALIGNMENT) *
+        sizeof(int8_t)));
+  }
+  for (i = 0; i < image_num; i++) {
+    each_out_line_channel += channel_num[i];
+    float Si_k = scales_in[i][0];
+    Ck = Si_k / So;
+    fpga_invalidate(images_in[i],
+                    height *
+                        align_to_x(channel_num[i] * width, IMAGE_ALIGNMENT) *
+                        sizeof(int8_t));
+    for (j = 0;
+         j < height * align_to_x(channel_num[i] * width, IMAGE_ALIGNMENT);
+         j++) {
+      images_in_tmp[i][j] = (int8_t)(images_in[i][j] * Ck + 0.5);
+    }
+  }
+  align_each_out_area_cw =
+      align_to_x(each_out_line_channel * width, IMAGE_ALIGNMENT);
+  align_each_out_area_cw_differ =
+      align_each_out_area_cw - each_out_line_channel * width;
 
+  for (k = 0; k < height; k++) {
+    for (j = 0; j < width; j++) {
+      for (i = 0; i < image_num; i++) {
+        align_each_in_area_cw =
+            align_to_x(channel_num[i] * width, IMAGE_ALIGNMENT);
+        memcpy(
+            (int16_t *)image_out + tmp_channel +  // NOLINT
+                k * align_each_out_area_cw_differ,
+            images_in_tmp[i] + j * channel_num[i] + k * align_each_in_area_cw,
+            channel_num[i] * sizeof(int8_t));
+
+        tmp_channel += channel_num[i];
+      }
+    }
+  }
+  fpga_flush(image_out, height * align_each_out_area_cw * sizeof(int8_t));
+}
+#else
 void concat_images(int16_t **images_in, float **scales_in, void *image_out,
                    float *scale_out, int image_num, uint32_t *channel_num,
                    int height, int width) {
@@ -99,7 +156,46 @@ void concat_images(int16_t **images_in, float **scales_in, void *image_out,
 
   fpga_flush(image_out, height * align_each_out_area_cw * sizeof(int16_t));
 }
+#endif
+#ifdef PADDLE_MOBILE_FPGA_V2
+void split_image(int8_t *image_in, const float *scale_in, void **images_out,
+                 float **scales_out, int image_num,
+                 const uint32_t *channel_nums, int height, int width) {
+  int total_channel = 0;
+  float Si = scale_in[0];
+  float Ck = 0.0f;
+  for (int i = 0; i < image_num; i++) {
+    total_channel += channel_nums[i];
+  }
+  int element_num = height * align_to_x(width * total_channel, IMAGE_ALIGNMENT);
+  fpga_invalidate(image_in, element_num * sizeof(int8_t));
+  int src_offset = 0, des_offset = 0;
+  for (int h = 0; h < height; h++) {
+    for (int w = 0; w < width; w++) {
+      src_offset = h * align_to_x(total_channel * width, IMAGE_ALIGNMENT) +
+                   w * total_channel;
+      for (int i = 0; i < image_num; i++) {
+        des_offset = h * align_to_x(channel_nums[i] * width, IMAGE_ALIGNMENT) +
+                     w * channel_nums[i];
+        float So_k = scales_out[i][0];
+        Ck = Si / So_k;
+        memcpy(reinterpret_cast<int8_t *>(images_out[i]) + des_offset,
+               image_in + src_offset, channel_nums[i] * sizeof(int8_t));
+        for (int j = 0; j < channel_nums[i]; j++) {
+          (reinterpret_cast<int8_t *>(images_out[i]))[des_offset + j] =
+              (int8_t)(image_in[src_offset + j] * Ck + 0.5);
+        }
+        src_offset += channel_nums[i];
+      }
+    }
+  }
 
+  for (int i = 0; i < image_num; i++) {
+    element_num = height * align_to_x(width * channel_nums[i], IMAGE_ALIGNMENT);
+    fpga_flush(images_out[i], element_num * sizeof(int8_t));
+  }
+}
+#else
 void split_image(int16_t *image_in, const float *scale_in, void **images_out,
                  float **scales_out, int image_num,
                  const uint32_t *channel_nums, int height, int width) {
@@ -132,6 +228,7 @@ void split_image(int16_t *image_in, const float *scale_in, void **images_out,
     fpga_flush(images_out[i], element_num * sizeof(int16_t));
   }
 }
+#endif
 
 }  // namespace image
 }  // namespace fpga

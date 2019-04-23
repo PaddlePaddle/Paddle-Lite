@@ -110,7 +110,6 @@ void format_fp32_ofm(framework::Tensor *ofm_tensor) {
     DLOG << "Wrong ofm dimension";
   }
   auto p = fpga_malloc(memory_size);
-  // memset(p, 0, memory_size);
   ofm_tensor->reset_data_ptr(p);
   ofm_tensor->set_type(type_id<float>().hash_code());
   ofm_tensor->fpga_data_num = memory_size / sizeof(float);
@@ -512,7 +511,7 @@ void fill_split_arg(struct SplitConvArgs *arg, framework::Tensor *input,
 
   int n = arg->split_num;
   arg->concat_arg.images_in =
-      static_cast<int16_t **>(fpga_malloc(n * sizeof(int *)));
+      static_cast<int8_t **>(fpga_malloc(n * sizeof(int *)));
   arg->concat_arg.scales_in =
       static_cast<float **>(fpga_malloc(n * sizeof(float *)));
   arg->concat_arg.channel_num =
@@ -531,7 +530,6 @@ void fill_split_arg(struct SplitConvArgs *arg, framework::Tensor *input,
             filter->dims()[3]));
 
   for (int i = 0; i < n; i++) {
-    // arg->conv_arg[i].relu_enabled = relu_enabled;
     arg->conv_arg[i].output.activation.activation_type = activation_enable;
     arg->conv_arg[i].output.activation.leaky_relu_negative_slope =
         leaky_relu_negative_slope;
@@ -563,18 +561,6 @@ void fill_split_arg(struct SplitConvArgs *arg, framework::Tensor *input,
         reinterpret_cast<char *>(arg->conv_arg[i].filter_address), deleter));
     memcpy(arg->conv_arg[i].filter_address, filter_head, filter_size);
     fpga_flush(arg->conv_arg[i].filter_address, filter_size);
-    // for test
-    //    {
-    //    static int cnt = 0;
-    //    if(cnt == 4){
-    //        int8_t result = 0;
-    //        std::string str = "fc_filter";
-    //      fpga::savefile<int8_t>(str, arg->conv_arg[i].filter_address,
-    //      filter_size, result);
-    //
-    //    }
-    //    cnt++;
-    //}
 
     size_t bs_size = 2 *
                      align_to_x(arg->conv_arg[i].filter_num, BS_NUM_ALIGNMENT) *
@@ -585,18 +571,6 @@ void fill_split_arg(struct SplitConvArgs *arg, framework::Tensor *input,
         reinterpret_cast<char *>(arg->conv_arg[i].sb_address), deleter));
     memcpy(arg->conv_arg[i].sb_address, bs_head, bs_size);
     fpga_flush(arg->conv_arg[i].sb_address, bs_size);
-    // for test
-    /*{
-    static int cnt = 0;
-    if(cnt == 4){
-        float result = 0;
-        std::string str = "fc_bs";
-      fpga::savefile<float>(str, arg->conv_arg[i].sb_address, bs_size/4,
-result);
-
-    }
-    cnt++;
-}*/
 
     if (n > 1) {
       arg->conv_arg[i].output.scale_address =
@@ -618,7 +592,7 @@ result);
     }
 
     arg->concat_arg.images_in[i] =
-        (half *)arg->conv_arg[i].output.address;  // NOLINT
+        (int8_t *)arg->conv_arg[i].output.address;  // NOLINT
     arg->concat_arg.scales_in[i] = arg->conv_arg[i].output.scale_address;
     arg->concat_arg.channel_num[i] = arg->conv_arg[i].filter_num;
 
@@ -692,7 +666,7 @@ void fill_deconv_arg(struct DeconvArgs *arg, framework::Tensor *input,
     arg->split_conv_args[i]->conv_arg =
         static_cast<ConvArgs *>(fpga_malloc(split_num * sizeof(ConvArgs)));
     arg->split_conv_args[i]->concat_arg.images_in =
-        static_cast<int16_t **>(fpga_malloc(split_num * sizeof(int16_t *)));
+        static_cast<int8_t **>(fpga_malloc(split_num * sizeof(int8_t *)));
     arg->split_conv_args[i]->concat_arg.scales_in =
         static_cast<float **>(fpga_malloc(split_num * sizeof(float *)));
     arg->split_conv_args[i]->concat_arg.channel_num =
@@ -855,7 +829,7 @@ void fill_deconv_arg(struct DeconvArgs *arg, framework::Tensor *input,
                     arg->split_conv_args[i]->conv_arg[j].output.scale_address),
                 deleter));
       }
-      arg->split_conv_args[i]->concat_arg.images_in[j] = static_cast<half *>(
+      arg->split_conv_args[i]->concat_arg.images_in[j] = static_cast<int8_t *>(
           arg->split_conv_args[i]->conv_arg[j].output.address);
       arg->split_conv_args[i]->concat_arg.scales_in[j] =
           arg->split_conv_args[i]->conv_arg[j].output.scale_address;
@@ -888,7 +862,6 @@ void fill_dwconv_arg(struct DWconvArgs *arg, framework::Tensor *input,
   auto input_ptr = input->data<half>();
   auto output_ptr = out->mutable_data<half>();
   arg->sub_conv_num = 1;
-  // arg->relu_enabled = relu_enabled;
   arg->output.activation.activation_type = activation_enable;
   arg->output.activation.leaky_relu_negative_slope = leaky_relu_negative_slope;
   arg->bias_address = bias_ptr;
@@ -952,12 +925,6 @@ void fill_DWDeconv_arg(struct DWDeconvArgs *arg, framework::Tensor *input,
   fpga::format_fp16_ofm(out, dims_out_new);
   auto out_ptr = out->data<half>();
 
-  /*====For Addition
-  arg->output.address =
-      (half *)out_ptr +  // NOLINT
-      omit_size * sizeof(half) *
-          (align_to_x(real_out_width * arg->filter_num, IMAGE_ALIGNMENT));
-          */
   arg->output.address = out_ptr;
   arg->output.scale_address = out->scale;
 
