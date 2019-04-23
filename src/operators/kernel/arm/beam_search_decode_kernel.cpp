@@ -15,6 +15,7 @@ limitations under the License. */
 #ifdef BEAM_SEARCH_DECODE_OP
 
 #include "operators/kernel/beam_search_decode_kernel.h"
+#include <algorithm>
 #include "framework/data_type.h"
 
 namespace paddle_mobile {
