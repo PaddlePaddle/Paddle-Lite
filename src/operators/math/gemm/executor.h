@@ -106,13 +106,13 @@ class GemmExecutor : public Executor {
     //  struct timeval tv_begin, tv_end;
     //  gettimeofday(&tv_begin,NULL);
     if (M_ > N_) {
-      int nblock = CeilDiv(N_, Strategy::out_width()) * Strategy::out_width();
+      nblock = CeilDiv(N_, Strategy::out_width()) * Strategy::out_width();
       lhs_worksize_ = sizeof(Itype) * lhs_tile_num_ * K_ * num_threads_;
       rhs_worksize_ = sizeof(Itype) * K_ * nblock;
       out_worksize_ = sizeof(Otype) * lhs_tile_num_ * nblock * num_threads_;
       ldc_ = nblock;
     } else {
-      int mblock = CeilDiv(M_, Strategy::out_height()) * Strategy::out_height();
+      mblock = CeilDiv(M_, Strategy::out_height()) * Strategy::out_height();
       lhs_worksize_ = sizeof(Itype) * mblock * K_;
       rhs_worksize_ = sizeof(Itype) * K_ * rhs_tile_num_ * num_threads_;
       out_worksize_ = sizeof(Otype) * mblock * rhs_tile_num_ * num_threads_;
@@ -174,7 +174,7 @@ class GemmExecutor : public Executor {
         int thread_id = 0;
 #endif
         float *local_B = rhs_workspace_ + K_ * rhs_tile_num_ * thread_id;
-        float *local_C = out_workspace_ + lhs_tile_num_ * ldc_ * thread_id;
+        float *local_C = out_workspace_ + mblock * ldc_ * thread_id;
         // load rhs into rhs_workspace
         strategy_.pack_rhs(K_, rhs_range, B + rhs_block, ldb, local_B, false);
         for (int lhs_block = 0; lhs_block < M_; lhs_block += lhs_tile_num_) {
@@ -224,6 +224,9 @@ class GemmExecutor : public Executor {
   unsigned int rhs_worksize_ = 0;
   unsigned int out_worksize_ = 0;
   unsigned int ldc_ = 0;
+
+  unsigned int mblock = 0;
+  unsigned int nblock = 0;
 
   Itype *lhs_workspace_ = nullptr;
   Itype *rhs_workspace_ = nullptr;
