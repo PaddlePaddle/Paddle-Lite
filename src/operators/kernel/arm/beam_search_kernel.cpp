@@ -15,6 +15,7 @@ limitations under the License. */
 #ifdef BEAM_SEARCH_OP
 
 #include "operators/kernel/beam_search_kernel.h"
+#include <cmath>
 #include <numeric>
 
 namespace paddle_mobile {

@@ -46,7 +46,7 @@ int main(int argc, char* argv[]) {
     std::shared_ptr<paddle_mobile::framework::Tensor> output;
     std::vector<int64_t> dims{1, 3, 224, 224};
     if (feed_shape) {
-      sscanf(feed_shape, "%ld,%ld,%ld,%ld", &dims[0], &dims[1], &dims[2],
+      sscanf(feed_shape, "%lld,%lld,%lld,%lld", &dims[0], &dims[1], &dims[2],
              &dims[3]);
     }
     std::cout << "feed shape: [" << dims[0] << ", " << dims[1] << ", "
