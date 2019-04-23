@@ -157,39 +157,34 @@ inline float PoolPost<AVG>(const float &x, const float &post) {
 
 template <PoolingType P>
 struct Pooling {
-  inline void operator()(const framework::Tensor &input,
-                         const std::vector<int> &kernel_size,
-                         const std::vector<int> &strides,
-                         const std::vector<int> &paddings,
-                         framework::Tensor *output);
+  void operator()(const framework::Tensor &input,
+                  const std::vector<int> &kernel_size,
+                  const std::vector<int> &strides,
+                  const std::vector<int> &paddings, framework::Tensor *output);
 };
 
 template <PoolingType P, int Stride>
 struct Pooling2x2 {
-  inline void operator()(const framework::Tensor &input,
-                         const std::vector<int> &paddings,
-                         framework::Tensor *output);
+  void operator()(const framework::Tensor &input,
+                  const std::vector<int> &paddings, framework::Tensor *output);
 };
 
 template <PoolingType P, int Stride>
 struct Pooling3x3 {
-  inline void operator()(const framework::Tensor &input,
-                         const std::vector<int> &paddings,
-                         framework::Tensor *output);
+  void operator()(const framework::Tensor &input,
+                  const std::vector<int> &paddings, framework::Tensor *output);
 };
 
 template <PoolingType P, int Stride>
 struct Pooling5x5 {
-  inline void operator()(const framework::Tensor &input,
-                         const std::vector<int> &paddings,
-                         framework::Tensor *output);
+  void operator()(const framework::Tensor &input,
+                  const std::vector<int> &paddings, framework::Tensor *output);
 };
 
 template <PoolingType P, int Stride>
 struct Pooling7x7 {
-  inline void operator()(const framework::Tensor &input,
-                         const std::vector<int> &paddings,
-                         framework::Tensor *output);
+  void operator()(const framework::Tensor &input,
+                  const std::vector<int> &paddings, framework::Tensor *output);
 };
 
 }  // namespace math

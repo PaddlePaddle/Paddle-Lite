@@ -75,7 +75,6 @@ function build_android_armv7_cpu_only() {
     -DANDROID=true \
     -DWITH_LOGGING=OFF \
     -DCPU=ON \
-    -DGPU_MALI=OFF \
     -DGPU_CL=OFF \
     -DFPGA=OFF
 
@@ -95,7 +94,6 @@ function build_android_armv7_gpu() {
     -DANDROID=true \
     -DWITH_LOGGING=OFF \
     -DCPU=ON \
-    -DGPU_MALI=ON \
     -DGPU_CL=ON \
     -DFPGA=OFF
 
@@ -115,7 +113,6 @@ function build_android_armv8_cpu_only() {
     -DANDROID=true \
     -DWITH_LOGGING=OFF \
     -DCPU=ON \
-    -DGPU_MALI=OFF \
     -DGPU_CL=OFF \
     -DFPGA=OFF
 
@@ -135,7 +132,6 @@ function build_android_armv8_gpu() {
     -DANDROID=true \
     -DWITH_LOGGING=OFF \
     -DCPU=ON \
-    -DGPU_MALI=ON \
     -DGPU_CL=ON \
     -DFPGA=OFF
 
@@ -154,7 +150,6 @@ function build_ios_armv8_cpu_only() {
     -DIS_IOS=true \
     -DUSE_OPENMP=OFF \
     -DCPU=ON \
-    -DGPU_MALI=OFF \
     -DGPU_CL=OFF \
     -DFPGA=OFF
 
@@ -173,7 +168,6 @@ function build_ios_armv8_gpu() {
     -DIS_IOS=true \
     -DUSE_OPENMP=OFF \
     -DCPU=ON \
-    -DGPU_MALI=OFF \
     -DGPU_CL=ON \
     -DFPGA=OFF
 
@@ -188,7 +182,6 @@ function build_linux_armv7_cpu_only() {
     -DCMAKE_BUILD_TYPE="MinSizeRel" \
     -DCMAKE_TOOLCHAIN_FILE="./tools/toolchains/arm-linux-gnueabihf.cmake" \
     -DCPU=ON \
-    -DGPU_MALI=OFF \
     -DGPU_CL=OFF \
     -DFPGA=OFF
 
@@ -203,7 +196,6 @@ function build_linux_armv7_gpu() {
     -DCMAKE_BUILD_TYPE="MinSizeRel" \
     -DCMAKE_TOOLCHAIN_FILE="./tools/toolchains/arm-linux-gnueabihf.cmake" \
     -DCPU=ON \
-    -DGPU_MALI=ON \
     -DGPU_CL=ON \
     -DFPGA=OFF
 

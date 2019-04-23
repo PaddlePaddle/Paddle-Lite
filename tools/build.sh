@@ -118,7 +118,8 @@ build_for_arm_linux() {
     fi
 
     cd "../build/release/arm-linux"
-    make -j 8
+    make -j 2
+
     cd "../../../test/"
     DIRECTORY="models"
     if [ "`ls -A $DIRECTORY`" = "" ]; then
