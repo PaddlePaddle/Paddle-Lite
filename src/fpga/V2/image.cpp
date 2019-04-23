@@ -162,8 +162,6 @@ void split_image(int8_t *image_in, const float *scale_in, void **images_out,
                  float **scales_out, int image_num,
                  const uint32_t *channel_nums, int height, int width) {
   int total_channel = 0;
-  float Si = scale_in[0];
-  float Ck = 0.0f;
   for (int i = 0; i < image_num; i++) {
     total_channel += channel_nums[i];
   }
@@ -177,14 +175,8 @@ void split_image(int8_t *image_in, const float *scale_in, void **images_out,
       for (int i = 0; i < image_num; i++) {
         des_offset = h * align_to_x(channel_nums[i] * width, IMAGE_ALIGNMENT) +
                      w * channel_nums[i];
-        float So_k = scales_out[i][0];
-        Ck = Si / So_k;
         memcpy(reinterpret_cast<int8_t *>(images_out[i]) + des_offset,
                image_in + src_offset, channel_nums[i] * sizeof(int8_t));
-        for (int j = 0; j < channel_nums[i]; j++) {
-          (reinterpret_cast<int8_t *>(images_out[i]))[des_offset + j] =
-              (int8_t)(image_in[src_offset + j] * Ck + 0.5);
-        }
         src_offset += channel_nums[i];
       }
     }
