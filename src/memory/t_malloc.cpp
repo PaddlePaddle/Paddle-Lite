@@ -67,6 +67,10 @@ void Copy(void *dst, const void *src, size_t num) {
 }
 
 void *Alloc(size_t size) {
+  // check overflow
+  if (size <= 0) {
+    return nullptr;
+  }
   size_t offset = sizeof(void *) + MALLOC_ALIGN - 1;
   char *p = static_cast<char *>(malloc(offset + size));
   if (!p) {
