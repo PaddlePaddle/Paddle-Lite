@@ -67,6 +67,8 @@ void Copy(void *dst, const void *src, size_t num) {
 }
 
 void *Alloc(size_t size) {
+  // segmentation fault if size_t overflow on 32-bit platforms
+  // user should check before calling this function
   size_t offset = sizeof(void *) + MALLOC_ALIGN - 1;
   char *p = static_cast<char *>(malloc(offset + size));
   if (!p) {
