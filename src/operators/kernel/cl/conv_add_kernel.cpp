@@ -19,7 +19,6 @@ limitations under the License. */
 
 namespace paddle_mobile {
 namespace operators {
-bool optimise_convadd = true;
 
 template <>
 bool ConvAddKernel<GPU_CL, float>::Init(FusionConvAddParam<GPU_CL> *param) {
@@ -37,11 +36,7 @@ bool ConvAddKernel<GPU_CL, float>::Init(FusionConvAddParam<GPU_CL> *param) {
   if (param->Filter()->dims()[2] == 1 && param->Filter()->dims()[3] == 1) {
     param->Filter()->InitNImage(cl_helper_.CLContext(),
                                 cl_helper_.CLCommandQueue());
-    if (optimise_convadd) {
-      this->cl_helper_.AddKernel("conv_1x1_spl", "conv_add_kernel.cl");
-    } else {
-      this->cl_helper_.AddKernel("conv_1x1", "conv_add_kernel.cl");
-    }
+    this->cl_helper_.AddKernel("conv_1x1_spl", "conv_add_kernel.cl");
   } else if (param->Filter()->dims()[1] == 1 &&
              param->Input()->dims()[1] == param->Output()->dims()[1] &&
              param->Filter()->dims()[2] == 3) {
