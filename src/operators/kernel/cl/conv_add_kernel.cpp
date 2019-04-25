@@ -74,7 +74,7 @@ bool ConvAddKernel<GPU_CL, float>::Init(FusionConvAddParam<GPU_CL> *param) {
 template <>
 void ConvAddKernel<GPU_CL, float>::Compute(
     const FusionConvAddParam<GPU_CL> &param) {
-	ConvAddBnRelu(this->cl_helper_, param, false, param.Bias());
+  ConvAddBnRelu(this->cl_helper_, param, false, param.Bias());
 }
 
 template class ConvAddKernel<GPU_CL, float>;
