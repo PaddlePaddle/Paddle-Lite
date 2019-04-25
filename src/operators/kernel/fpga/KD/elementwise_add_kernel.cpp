@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 #ifdef FUSION_ELEMENTWISEADDRELU_OP
 
-#include "operators/kernel/elementwise_add_relu_kernel.h"
+#include "operators/kernel/elementwise_add_kernel.h"
 #include "fpga/KD/pes/elementwise_add_pe.hpp"
 
 using ElementwiseAddPE = paddle_mobile::zynqmp::ElementwiseAddPE;
@@ -22,8 +22,7 @@ namespace paddle_mobile {
 namespace operators {
 
 template <>
-bool ElementwiseAddReluKernel<FPGA, float>::Init(
-    ElementwiseAddReluParam<FPGA>* param) {
+bool ElementwiseAddKernel<FPGA, float>::Init(ElementwiseAddParam<FPGA>* param) {
   param->Out()->mutable_data<half>();
 
   ElementwiseAddPE& pe = param->context().pe<ElementwiseAddPE>();
@@ -33,7 +32,7 @@ bool ElementwiseAddReluKernel<FPGA, float>::Init(
       param->InputY()->zynqmpTensor(),
   };
   ew_param.output = param->Out()->zynqmpTensor();
-  ew_param.relu.enabled = true;
+  ew_param.relu.enabled = false;
 
   pe.init();
   pe.apply();
@@ -41,9 +40,9 @@ bool ElementwiseAddReluKernel<FPGA, float>::Init(
 }
 
 template <>
-void ElementwiseAddReluKernel<FPGA, float>::Compute(
-    const ElementwiseAddReluParam<FPGA>& param) {
-  std::cout << "ElementwiseAddReluKernel\n";
+void ElementwiseAddKernel<FPGA, float>::Compute(
+    const ElementwiseAddParam<FPGA>& param) {
+  std::cout << "ElementwiseAddKernel\n";
   zynqmp::Context& context = const_cast<zynqmp::Context&>(param.context_);
   ElementwiseAddPE& pe = context.pe<ElementwiseAddPE>();
   pe.dispatch();

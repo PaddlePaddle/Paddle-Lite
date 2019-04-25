@@ -12,36 +12,29 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef FUSION_CONVADDBN_OP
+#ifdef FUSION_BN_RELU_OP
 
-#include "operators/kernel/conv_add_bn_kernel.h"
-#include <cmath>
+#include "operators/fusion_batchnorm_relu_op.h"
+#include "operators/kernel/central-arm-func/conv_arm_func.h"
 
 namespace paddle_mobile {
 namespace operators {
 
-template <>
-bool ConvAddBNKernel<FPGA, float>::Init(FusionConvAddBNParam<FPGA>* param) {
-  // bool relu_enabled = false;
-  zynqmp::PE<ConvParam>& conv = param.context().convPE();
-  ConvParam& p = conv.param();
-  p.input = param->Input()->ZynqTensor();
-  p.filter = param->Filter()->ZynqTensor();
-
-  BatchnormParam* bn = new BatchnormParam();
-  p.bn = bn;
-
-  return true;
-}
-
-template <>
-void ConvAddBNKernel<FPGA, float>::Compute(
-    const FusionConvAddBNParam<FPGA>& param) {
-  zynqmp::PE<ConvParam>& conv = param.context().convPE();
-  conv.dispatch();
+template <typename Dtype, typename T>
+void FusionBatchnormReluOp<Dtype, T>::InferShape() const {
+  auto x_dims = this->param_.InputX()->dims();
+  this->param_.OutputY()->Resize(x_dims);
 }
 
 }  // namespace operators
 }  // namespace paddle_mobile
+
+// namespace ops = paddle_mobile::operators;
+// REGISTER_FUSION_MATCHER(fusion_batchnorm_relu,
+// ops::FusionBatchnormReluMatcher);
+
+// #if defined(PADDLE_MOBILE_FPGA) || defined(PADDLE_MOBILE_FPGA_KD)
+// REGISTER_OPERATOR_FPGA(fusion_batchnorm_relu, ops::FusionBatchnormReluOp);
+// #endif
 
 #endif

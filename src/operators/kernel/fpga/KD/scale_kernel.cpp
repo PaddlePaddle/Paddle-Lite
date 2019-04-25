@@ -12,34 +12,34 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef FUSION_CONVADDBN_OP
+#ifdef SCALE_OP
 
-#include "operators/kernel/conv_add_bn_kernel.h"
-#include <cmath>
+#include "operators/kernel/scale_kernel.h"
+#include "fpga/KD/float16.hpp"
+#include "fpga/KD/pes/scale_pe.hpp"
 
 namespace paddle_mobile {
 namespace operators {
 
 template <>
-bool ConvAddBNKernel<FPGA, float>::Init(FusionConvAddBNParam<FPGA>* param) {
-  // bool relu_enabled = false;
-  zynqmp::PE<ConvParam>& conv = param.context().convPE();
-  ConvParam& p = conv.param();
-  p.input = param->Input()->ZynqTensor();
-  p.filter = param->Filter()->ZynqTensor();
-
-  BatchnormParam* bn = new BatchnormParam();
-  p.bn = bn;
-
+bool ScaleKernel<FPGA, float>::Init(ScaleParam<FPGA>* param) {
+  param->Out()->mutable_data<half>();
   return true;
 }
 
 template <>
-void ConvAddBNKernel<FPGA, float>::Compute(
-    const FusionConvAddBNParam<FPGA>& param) {
-  zynqmp::PE<ConvParam>& conv = param.context().convPE();
-  conv.dispatch();
+void ScaleKernel<FPGA, float>::Compute(const ScaleParam<FPGA>& param) {
+  zynqmp::Tensor* input = param.InputX()->zynqmpTensor();
+  zynqmp::Tensor* output = param.Out()->zynqmpTensor();
+  input->invalidate();
+
+  for (int i = 0; i < input->shape().numel(); i++) {
+    output->data<zynqmp::float16>()[i] = input->data<zynqmp::float16>()[i];
+  }
+  output->flush();
 }
+
+template class ScaleKernel<FPGA, float>;
 
 }  // namespace operators
 }  // namespace paddle_mobile

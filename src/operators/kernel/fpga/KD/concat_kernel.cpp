@@ -11,29 +11,31 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
-#ifdef FUSION_ELEMENTWISEADDRELU_OP
 
-#include "operators/kernel/elementwise_add_relu_kernel.h"
-#include "fpga/KD/pes/elementwise_add_pe.hpp"
+#ifdef CONCAT_OP
 
-using ElementwiseAddPE = paddle_mobile::zynqmp::ElementwiseAddPE;
+#include "operators/kernel/concat_kernel.h"
+#include "fpga/KD/pes/concat_pe.hpp"
 
 namespace paddle_mobile {
 namespace operators {
 
 template <>
-bool ElementwiseAddReluKernel<FPGA, float>::Init(
-    ElementwiseAddReluParam<FPGA>* param) {
-  param->Out()->mutable_data<half>();
+bool ConcatKernel<FPGA, float>::Init(ConcatParam<FPGA>* param) {
+  auto inputs = param->Inputs();
+  auto out = param->Out();
+  auto image_num = inputs.size();
+  out->mutable_data<half>();
 
-  ElementwiseAddPE& pe = param->context().pe<ElementwiseAddPE>();
-  zynqmp::ElementwiseAddParam& ew_param = pe.param();
-  ew_param.inputs = {
-      param->InputX()->zynqmpTensor(),
-      param->InputY()->zynqmpTensor(),
-  };
-  ew_param.output = param->Out()->zynqmpTensor();
-  ew_param.relu.enabled = true;
+  zynqmp::ConcatPE& pe = param->context().pe<zynqmp::ConcatPE>();
+  zynqmp::ConcatParam& concat_param = pe.param();
+  std::vector<zynqmp::Tensor*> input_tensors;
+  for (int i = 0; i < image_num; ++i) {
+    input_tensors.push_back(inputs[i]->zynqmpTensor());
+  }
+  concat_param.inputs = input_tensors;
+  concat_param.output = out->zynqmpTensor();
+  concat_param.axis = param->Axis();
 
   pe.init();
   pe.apply();
@@ -41,19 +43,20 @@ bool ElementwiseAddReluKernel<FPGA, float>::Init(
 }
 
 template <>
-void ElementwiseAddReluKernel<FPGA, float>::Compute(
-    const ElementwiseAddReluParam<FPGA>& param) {
-  std::cout << "ElementwiseAddReluKernel\n";
+void ConcatKernel<FPGA, float>::Compute(const ConcatParam<FPGA>& param) {
   zynqmp::Context& context = const_cast<zynqmp::Context&>(param.context_);
-  ElementwiseAddPE& pe = context.pe<ElementwiseAddPE>();
+  zynqmp::ConcatPE& pe = context.pe<zynqmp::ConcatPE>();
   pe.dispatch();
 
   std::string path =
-      "ew_" + std::to_string(param.Out()->zynqmpTensor()->id()) + ".txt";
-  // param.Out()->zynqmpTensor()->saveToFile(path);
+      "concat" + std::to_string(param.Out()->zynqmpTensor()->id()) + ".txt";
   std::cout << "Out scale:" << param.Out()->zynqmpTensor()->scale()[0]
             << std::endl;
+
+  // param.Out()->zynqmpTensor()->saveToFile(path);
 }
+template class ConcatKernel<FPGA, float>;
+
 }  // namespace operators
 }  // namespace paddle_mobile
 

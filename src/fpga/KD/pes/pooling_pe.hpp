@@ -14,8 +14,11 @@ limitations under the License. */
 
 #pragma once
 
+#include <algorithm>
+
 #include "../pe.hpp"
 #include "../pe_params.hpp"
+
 namespace paddle_mobile {
 namespace zynqmp {
 
@@ -58,14 +61,58 @@ class PoolingPE : public PE {
     args.out_height = output->shape().height();
     args.out_width = output->shape().width();
     param_.poolingArgs = args;
+
+    use_cpu_ = output->shape().width() == 1 && output->shape().height() == 1;
   }
 
-  bool dispatch() { return compute_fpga_pool(param_.poolingArgs) == 0; }
+  void cpu_compute() {
+    Tensor* input = param_.input;
+    Tensor* output = param_.output;
+    input->invalidate();
+
+    Tensor float_input;
+    // Tensor float_output;
+    float* data_in =
+        float_input.mutableData<float>(DataType::FP32, input->shape());
+    float_input.copyFrom(input);
+    float16* data_out = output->data<float16>();
+
+    int kernel_hw = param_.kernelSize[0] * param_.kernelSize[1];
+
+    float scale_max = 0;
+    for (int i = 0; i < output->shape().channel(); i++) {
+      float sum = 0;
+      for (int j = 0; j < kernel_hw; j++) {
+        float value = half_to_float(input->data<float16>()[i * kernel_hw + j]);
+        // max = std::max(max, value);
+        sum += value;
+        std::cout << "value:" << value << std::endl;
+      }
+      // std::cout << "max:" << max << std::endl;
+      float value = sum / kernel_hw;
+      data_out[i] = float_to_half(value);
+      scale_max = std::max(scale_max, std::abs(value));
+    }
+    output->scale()[0] = scale_max / 127.0f;
+    output->scale()[1] = 127.0f / scale_max;
+    std::cout << "pool scale:" << scale_max / 127.0f << std::endl;
+    output->flush();
+    // exit(-1);
+  }
+
+  bool dispatch() {
+    if (use_cpu_) {
+      cpu_compute();
+      return true;
+    }
+    return compute_fpga_pool(param_.poolingArgs) == 0;
+  }
 
   PoolingParam& param() { return param_; }
 
  private:
   PoolingParam param_;
+  bool use_cpu_;
 };
 
 }  // namespace zynqmp

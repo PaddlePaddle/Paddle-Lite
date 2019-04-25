@@ -51,7 +51,7 @@ void PoolKernel<FPGA, float>::Compute(const PoolParam<FPGA>& param) {
 
   std::string path =
       "pool_" + std::to_string(param.Output()->zynqmpTensor()->id()) + ".txt";
-  param.Output()->zynqmpTensor()->saveToFile(path);
+  // param.Output()->zynqmpTensor()->saveToFile(path);
   // param.Output()->zynqmpTensor()->saveToFile();
   std::cout << "Out scale:" << param.Output()->zynqmpTensor()->scale()[0]
             << std::endl;

@@ -11,29 +11,27 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
-#ifdef FUSION_ELEMENTWISEADDRELU_OP
 
-#include "operators/kernel/elementwise_add_relu_kernel.h"
-#include "fpga/KD/pes/elementwise_add_pe.hpp"
+#ifdef CROP_OP
 
-using ElementwiseAddPE = paddle_mobile::zynqmp::ElementwiseAddPE;
+#include "operators/kernel/crop_kernel.h"
+#include "fpga/KD/pes/crop_pe.hpp"
 
 namespace paddle_mobile {
 namespace operators {
 
 template <>
-bool ElementwiseAddReluKernel<FPGA, float>::Init(
-    ElementwiseAddReluParam<FPGA>* param) {
+bool CropKernel<FPGA, float>::Init(CropParam<FPGA>* param) {
   param->Out()->mutable_data<half>();
 
-  ElementwiseAddPE& pe = param->context().pe<ElementwiseAddPE>();
-  zynqmp::ElementwiseAddParam& ew_param = pe.param();
-  ew_param.inputs = {
-      param->InputX()->zynqmpTensor(),
-      param->InputY()->zynqmpTensor(),
-  };
-  ew_param.output = param->Out()->zynqmpTensor();
-  ew_param.relu.enabled = true;
+  zynqmp::CropPE& pe = param->context().pe<zynqmp::CropPE>();
+  zynqmp::CropParam& crop_param = pe.param();
+  crop_param.input = param->InputX()->zynqmpTensor();
+  crop_param.output = param->Out()->zynqmpTensor();
+  crop_param.offsets = param->Offsets();
+  crop_param.axis = param->Axis();
+  crop_param.shape = param->Shape();
+  // crop_param.relu.enabled = false;
 
   pe.init();
   pe.apply();
@@ -41,19 +39,18 @@ bool ElementwiseAddReluKernel<FPGA, float>::Init(
 }
 
 template <>
-void ElementwiseAddReluKernel<FPGA, float>::Compute(
-    const ElementwiseAddReluParam<FPGA>& param) {
-  std::cout << "ElementwiseAddReluKernel\n";
+void CropKernel<FPGA, float>::Compute(const CropParam<FPGA>& param) {
   zynqmp::Context& context = const_cast<zynqmp::Context&>(param.context_);
-  ElementwiseAddPE& pe = context.pe<ElementwiseAddPE>();
+  zynqmp::CropPE& pe = context.pe<zynqmp::CropPE>();
   pe.dispatch();
 
   std::string path =
-      "ew_" + std::to_string(param.Out()->zynqmpTensor()->id()) + ".txt";
-  // param.Out()->zynqmpTensor()->saveToFile(path);
+      "crop" + std::to_string(param.Out()->zynqmpTensor()->id()) + ".txt";
   std::cout << "Out scale:" << param.Out()->zynqmpTensor()->scale()[0]
             << std::endl;
+  // param.Out()->zynqmpTensor()->saveToFile(path);
 }
+
 }  // namespace operators
 }  // namespace paddle_mobile
 

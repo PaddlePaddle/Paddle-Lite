@@ -737,6 +737,44 @@ class ConcatParam : public OpParam {
 };
 #endif
 
+#ifdef CROP_OP
+template <typename Dtype>
+class CropParam : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
+ public:
+  CropParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
+            const AttributeMap &attrs, Scope *scope) {
+    input_x_ = InputXFrom<GType>(inputs, *scope);
+    // input_y_ = InputYFrom<GType>(inputs, scope);
+    shape_ = GetAttr<vector<int>>("shape", attrs);
+    offsets_ = GetAttr<vector<int>>("offsets", attrs);
+
+    if (OpParam::HasAttr("axis", attrs)) {
+      axis_ = GetAttr<int>("axis", attrs);
+    }
+
+    out_ = OutFrom<GType>(outputs, *scope);
+  }
+
+  const RType *InputX() const { return input_x_; }
+  // const RType *InputY() const { return input_y_; }
+  const vector<int> &Offsets() const { return offsets_; }
+  const vector<int> &Shape() const { return shape_; }
+  const int &Axis() const { return axis_; }
+
+  RType *Out() const { return out_; }
+
+ private:
+  RType *input_x_;
+  vector<int> shape_;
+  vector<int> offsets_;
+  int axis_ = 2;
+  RType *out_;
+};
+#endif
+
 #ifdef SUM_OP
 template <typename Dtype>
 class SumParam : public OpParam {

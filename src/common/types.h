@@ -119,6 +119,7 @@ extern const char *G_OP_TYPE_CONV;
 extern const char *G_OP_TYPE_BATCHNORM;
 extern const char *G_OP_TYPE_BOX_CODER;
 extern const char *G_OP_TYPE_CONCAT;
+extern const char *G_OP_TYPE_CROP;
 extern const char *G_OP_TYPE_ELEMENTWISE_ADD;
 extern const char *G_OP_TYPE_ELEMENTWISE_SUB;
 extern const char *G_OP_TYPE_ELEMENTWISE_MUL;
@@ -153,6 +154,7 @@ extern const char *G_OP_TYPE_DEPTHWISE_CONV;
 extern const char *G_OP_TYPE_IM2SEQUENCE;
 extern const char *G_OP_TYPE_DROPOUT;
 
+extern const char *G_OP_TYPE_FUSION_BN_RELU;
 extern const char *G_OP_TYPE_FUSION_CONV_ADD_BN;
 extern const char *G_OP_TYPE_FUSION_POOL_BN;
 extern const char *G_OP_TYPE_FUSION_ELEMENTWISE_ADD_RELU;

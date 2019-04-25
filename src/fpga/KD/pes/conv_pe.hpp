@@ -34,32 +34,8 @@ class ConvPE : public PE {
   }
 
   void apply() {
-    // process scale and bias;
-    BatchnormParam* bn = param_.batchnorm;
-    int channel = param_.output->shape().channel();
-    Shape sb_shape(N, {channel});
-    float* new_scale_ptr = param_.scale()->mutableData<float>(FP32, sb_shape);
-    float* new_bias_ptr = param_.bias()->mutableData<float>(FP32, sb_shape);
-    if (bn != nullptr) {
-      float* bn_scale_ptr = bn->scale->data<float>();
-      float* bn_bias_ptr = bn->bias->data<float>();
-      float* bn_var_ptr = bn->variance->data<float>();
-      float* bn_mean_ptr = bn->mean->data<float>();
-      float epsilon = bn->epsilon;
-      for (int i = 0; i < channel; i++) {
-        float new_scale =
-            bn_scale_ptr[i] /
-            static_cast<float>(pow((bn_var_ptr[i] + epsilon), 0.5));
-        new_scale_ptr[i] = new_scale;
-        new_bias_ptr[i] =
-            bn_bias_ptr[i] + (0 - bn_mean_ptr[i]) * new_scale_ptr[i];
-      }
-    } else {
-      for (int i = 0; i < channel; i++) {
-        new_scale_ptr[i] = 1.0f;
-        new_bias_ptr[i] = 0.0f;
-      }
-    }
+    // BatchnormParam* bn = param_.batchnorm;
+    // combine_bn_params(bn , param_);
     fill_split_arg(param_);
     if (param_.splitParams().size() > 1) {
       ConcatParam& concat_param = concatPE_.param();

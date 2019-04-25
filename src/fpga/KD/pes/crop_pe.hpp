@@ -1,4 +1,4 @@
-/* Copyright (c) 2018 PaddlePaddle Authors. All Rights Reserved.
+/* Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -12,23 +12,33 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef FUSION_CONVADDRELU_OP
+#pragma once
 
-#include "operators/kernel/conv_add_relu_kernel.h"
+#include <cstring>
+#include <vector>
+
+#include "../float16.hpp"
+#include "../pe.hpp"
+#include "../pe_params.hpp"
 
 namespace paddle_mobile {
-namespace operators {
+namespace zynqmp {
+class CropPE : public PE {
+ public:
+  bool init() {
+    Tensor* output = param_.output;
+    output->setAligned(true);
+    return true;
+  }
 
-template <>
-bool ConvAddReluKernel<FPGA, float>::Init(FusionConvAddReluParam<FPGA> *param) {
-  return true;
-}
+  void apply() {}
 
-template <>
-void ConvAddReluKernel<FPGA, float>::Compute(
-    const FusionConvAddReluParam<FPGA> &param) {}
+  bool dispatch();
 
-}  // namespace operators
+  CropParam& param() { return param_; }
+
+ private:
+  CropParam param_;
+};
+}  // namespace zynqmp
 }  // namespace paddle_mobile
-
-#endif

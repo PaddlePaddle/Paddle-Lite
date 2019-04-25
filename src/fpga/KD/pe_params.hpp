@@ -26,7 +26,14 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace zynqmp {
 
-struct PEParam {};
+struct ReLUParam {
+ public:
+  bool enabled = false;
+};
+
+struct PEParam {
+  ReLUParam relu;
+};
 
 struct InputParam : PEParam {
  public:
@@ -40,13 +47,11 @@ struct OutputParam : PEParam {
   Tensor* output = nullptr;
 };
 
-struct ReLUParam : PEParam {
- public:
-  bool enabled = false;
-};
-
 struct BatchnormParam : PEParam {
  public:
+  Tensor* input = nullptr;
+  Tensor* output = nullptr;
+
   Tensor* bias = nullptr;
   Tensor* scale = nullptr;
   Tensor* mean = nullptr;
@@ -67,7 +72,6 @@ struct ConvParam : PEParam {
   Tensor* output = nullptr;
   Tensor* filter = nullptr;
   BatchnormParam* batchnorm = nullptr;
-  ReLUParam relu;
   int groups = 1;
   std::vector<int> strides;
   std::vector<int> paddings;
@@ -78,15 +82,10 @@ struct ConvParam : PEParam {
 
   Tensor* bias() { return bias_; }
 
-  // Tensor* quantizedFilter() {
-  //     return quantizedFilter_;
-  // }
-
   std::vector<BasicConvParam*>& splitParams() { return splitParams_; }
 
  protected:
   std::vector<BasicConvParam*> splitParams_;
-  // Tensor* quantizedFilter_ = new Tensor();
   Tensor* scale_ = new Tensor();
   Tensor* bias_ = new Tensor();
 };
@@ -132,7 +131,6 @@ struct ElementwiseAddParam : PEParam {
   std::vector<Tensor*> inputs;
   Tensor* output = nullptr;
   int axis = 0;
-  ReLUParam relu;
 
   EWAddArgs ewargs;
 };
@@ -147,8 +145,6 @@ struct FullyConnectedParam : PEParam {
   Tensor* quantizedFilter() { return quantizedFilter_; }
 
   Tensor* biasScale() { return biasScale_; }
-
-  SplitConvArgs convArgs;
 
  protected:
   Tensor* quantizedFilter_ = new Tensor();
@@ -172,6 +168,33 @@ struct NormParam : PEParam {
 
  private:
   Tensor* floatInput = nullptr;
+};
+
+struct ScaleParam : PEParam {
+ public:
+  Tensor* input = nullptr;
+  Tensor* output = nullptr;
+  Tensor* scale = nullptr;
+  Tensor* bias = nullptr;
+
+  Tensor* alignedScale() { return alignedScale_; }
+
+  Tensor* alignedBias() { return alignedBias_; }
+
+  ScaleArgs args = {0};
+
+ protected:
+  Tensor* alignedScale_ = new Tensor();
+  Tensor* alignedBias_ = new Tensor();
+};
+
+struct CropParam : PEParam {
+ public:
+  Tensor* input = nullptr;
+  Tensor* output = nullptr;
+  int axis = 2;
+  std::vector<int> offsets;
+  std::vector<int> shape;
 };
 }  // namespace zynqmp
 }  // namespace paddle_mobile

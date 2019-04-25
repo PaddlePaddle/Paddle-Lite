@@ -21,6 +21,7 @@ const char *G_OP_TYPE_CONV = "conv2d";
 const char *G_OP_TYPE_BATCHNORM = "batch_norm";
 const char *G_OP_TYPE_BOX_CODER = "box_coder";
 const char *G_OP_TYPE_CONCAT = "concat";
+const char *G_OP_TYPE_CROP = "crop";
 const char *G_OP_TYPE_ELEMENTWISE_ADD = "elementwise_add";
 const char *G_OP_TYPE_ELEMENTWISE_SUB = "elementwise_sub";
 const char *G_OP_TYPE_ELEMENTWISE_MUL = "elementwise_mul";
@@ -98,6 +99,7 @@ const char *G_OP_TYPE_FUSION_DEQUANT_ADD_BN_RELU_QUANT =
     "fusion_dequant_add_bn_relu_quant";
 
 const char *G_OP_TYPE_TANH = "tanh";
+const char *G_OP_TYPE_FUSION_BN_RELU = "fusion_batchnorm_relu";
 const char *G_OP_TYPE_FUSION_DECONV_RELU = "fusion_deconv_relu";
 const char *G_OP_TYPE_FUSION_DECONV_ADD = "fusion_deconv_add";
 const char *G_OP_TYPE_FUSION_DECONV_ADD_RELU = "fusion_deconv_add_relu";
@@ -136,6 +138,7 @@ std::unordered_map<
         {G_OP_TYPE_BATCHNORM, {{"X"}, {"Y"}}},
         {G_OP_TYPE_LRN, {{"X"}, {"Out"}}},
         {G_OP_TYPE_CONCAT, {{"X"}, {"Out"}}},
+        {G_OP_TYPE_CROP, {{"X"}, {"Out"}}},
         {G_OP_TYPE_SPLIT, {{"X"}, {"Out"}}},
         {G_OP_TYPE_FEED, {{"X"}, {"Out"}}},
         {G_OP_TYPE_FETCH, {{"X"}, {"Out"}}},
@@ -143,6 +146,7 @@ std::unordered_map<
         {G_OP_TYPE_TRANSPOSE2, {{"X"}, {"Out", "XShape"}}},
         {G_OP_TYPE_BOX_CODER,
          {{"PriorBox", "PriorBoxVar", "TargetBox"}, {"OutputBox"}}},
+        {G_OP_TYPE_FUSION_BN_RELU, {{"X"}, {"Y"}}},
         {G_OP_TYPE_FUSION_CONV_ADD_BN_RELU, {{"Input"}, {"Out"}}},
         {G_OP_TYPE_FUSION_CONV_BN_ADD_RELU, {{"Input"}, {"Out"}}},
         {G_OP_TYPE_PRIOR_BOX, {{"Image", "Input"}, {"Boxes", "Variances"}}},

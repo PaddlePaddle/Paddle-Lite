@@ -11,49 +11,41 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
-#ifdef FUSION_ELEMENTWISEADDRELU_OP
 
-#include "operators/kernel/elementwise_add_relu_kernel.h"
-#include "fpga/KD/pes/elementwise_add_pe.hpp"
+#ifdef RELU_OP
 
-using ElementwiseAddPE = paddle_mobile::zynqmp::ElementwiseAddPE;
+#include "fpga/KD/pes/relu_pe.hpp"
+#include "operators/kernel/activation_kernel.h"
 
 namespace paddle_mobile {
 namespace operators {
 
 template <>
-bool ElementwiseAddReluKernel<FPGA, float>::Init(
-    ElementwiseAddReluParam<FPGA>* param) {
+bool ReluKernel<FPGA, float>::Init(ReluParam<FPGA>* param) {
   param->Out()->mutable_data<half>();
+  zynqmp::ReluPE& pe = param->context().pe<zynqmp::ReluPE>();
+  zynqmp::InputParam& input_param = pe.param();
+  input_param.input = param->InputX()->zynqmpTensor();
+  input_param.output = param->Out()->zynqmpTensor();
 
-  ElementwiseAddPE& pe = param->context().pe<ElementwiseAddPE>();
-  zynqmp::ElementwiseAddParam& ew_param = pe.param();
-  ew_param.inputs = {
-      param->InputX()->zynqmpTensor(),
-      param->InputY()->zynqmpTensor(),
-  };
-  ew_param.output = param->Out()->zynqmpTensor();
-  ew_param.relu.enabled = true;
-
-  pe.init();
-  pe.apply();
   return true;
 }
 
 template <>
-void ElementwiseAddReluKernel<FPGA, float>::Compute(
-    const ElementwiseAddReluParam<FPGA>& param) {
-  std::cout << "ElementwiseAddReluKernel\n";
+void ReluKernel<FPGA, float>::Compute(const ReluParam<FPGA>& param) {
+  // param.Out()->zynqmpTensor()->copyFrom(param.InputX()->zynqmpTensor());
+  std::cout << "ReluKernel\n";
   zynqmp::Context& context = const_cast<zynqmp::Context&>(param.context_);
-  ElementwiseAddPE& pe = context.pe<ElementwiseAddPE>();
-  pe.dispatch();
+  // zynqmp::ReluPE& pe = context.pe<zynqmp::ReluPE>();
+  // pe.dispatch();
 
   std::string path =
-      "ew_" + std::to_string(param.Out()->zynqmpTensor()->id()) + ".txt";
-  // param.Out()->zynqmpTensor()->saveToFile(path);
+      "relu" + std::to_string(param.Out()->zynqmpTensor()->id()) + ".txt";
   std::cout << "Out scale:" << param.Out()->zynqmpTensor()->scale()[0]
             << std::endl;
+  param.Out()->zynqmpTensor()->saveToFile(path);
 }
+
 }  // namespace operators
 }  // namespace paddle_mobile
 

@@ -243,7 +243,10 @@ class Tensor {
   }
 
   void saveToFile(std::string path) {
+    // return;
+    invalidate();
     std::ofstream ofs;
+
     static int counter = 0;
     std::string npath = std::to_string(counter) + "_" + path;
     counter++;
@@ -258,6 +261,17 @@ class Tensor {
       ofs << value << std::endl;
     }
     ofs.close();
+  }
+
+  ~Tensor() {
+    if (shape_ != nullptr) {
+      delete shape_;
+      shape_ = nullptr;
+    }
+    if (placeHolder_ != nullptr) {
+      delete placeHolder_;
+      placeHolder_ = nullptr;
+    }
   }
 
  private:

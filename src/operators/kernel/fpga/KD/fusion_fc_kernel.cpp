@@ -46,9 +46,7 @@ void FusionFcKernel<FPGA, float>::Compute(const FusionFcParam<FPGA>& param) {
   param.Out()->zynqmpTensor()->invalidate();
   std::string path =
       "fc_" + std::to_string(param.Out()->zynqmpTensor()->id()) + ".txt";
-  param.Out()->zynqmpTensor()->saveToFile(path);
-  std::cout << "Out scale:" << param.Out()->zynqmpTensor()->scale()[0]
-            << std::endl;
+  // param.Out()->zynqmpTensor()->saveToFile(path);
 }
 }  // namespace operators
 }  // namespace paddle_mobile

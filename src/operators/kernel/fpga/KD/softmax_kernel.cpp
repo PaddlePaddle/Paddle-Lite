@@ -44,9 +44,11 @@ void SoftmaxKernel<FPGA, float>::Compute(const SoftmaxParam<FPGA>& param) {
   param.Out()->zynqmpTensor()->invalidate();
   std::string path =
       "softmax_" + std::to_string(param.Out()->zynqmpTensor()->id()) + ".txt";
-  param.Out()->zynqmpTensor()->saveToFile(path);
+
   std::cout << "Out scale:" << param.Out()->zynqmpTensor()->scale()[0]
             << std::endl;
+
+  // param.Out()->zynqmpTensor()->saveToFile(path);
 }
 
 }  // namespace operators

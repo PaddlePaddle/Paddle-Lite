@@ -16,6 +16,7 @@ limitations under the License. */
 
 #include "operators/kernel/conv_bn_relu_kernel.h"
 #include "fpga/KD/pes/conv_pe.hpp"
+#include "fpga/KD/pes/conv_process.hpp"
 
 #include <math.h>
 
@@ -36,14 +37,17 @@ bool ConvBNReluKernel<FPGA, float>::Init(FusionConvBNReluParam<FPGA>* param) {
   bn_param->mean = param->InputMean()->zynqmpTensor();
   bn_param->variance = param->InputVariance()->zynqmpTensor();
   bn_param->epsilon = param->Epsilon();
+
   conv_param.input = param->Input()->zynqmpTensor();
   conv_param.output = param->Output()->zynqmpTensor();
   conv_param.filter = param->Filter()->zynqmpTensor();
-  conv_param.batchnorm = bn_param;
+  // conv_param.batchnorm = bn_param;
   conv_param.relu.enabled = true;
   conv_param.groups = param->Groups();
   conv_param.strides = param->Strides();
   conv_param.paddings = param->Paddings();
+
+  combine_bn_params(bn_param, conv_param);
   pe.init();
   pe.apply();
   return true;
@@ -58,16 +62,8 @@ void ConvBNReluKernel<FPGA, float>::Compute(
 
   std::string path =
       "bnr_" + std::to_string(param.Output()->zynqmpTensor()->id()) + ".txt";
-  // param.Output()->zynqmpTensor()->saveToFile(path);
   std::cout << "Out scale:" << param.Output()->zynqmpTensor()->scale()[0]
             << std::endl;
-
-  if (isinf(param.Output()->zynqmpTensor()->scale()[0])) {
-    // zynqmp::ConvParam& conv_param = pe.param();
-    std::cout << "invalid cale !!!!!!!!!!!!" << std::endl;
-    // std::cout << conv_param.convArgs.conv_arg[0].kernel.width << std::endl;
-    exit(-1);
-  }
 }
 
 }  // namespace operators
