@@ -131,7 +131,8 @@ bool ConvBNAddReluKernel<GPU_CL, float>::Init(
 template <>
 void ConvBNAddReluKernel<GPU_CL, float>::Compute(
     const FusionConvBNAddReluParam<GPU_CL> &param) {
-	ConvAddBnRelu(this->cl_helper_, param, true, param.Bias(), param.NewScale(), param.NewBias());
+  ConvAddBnRelu(this->cl_helper_, param, true, param.Bias(), param.NewScale(),
+                param.NewBias());
 }
 template class ConvBNAddReluKernel<GPU_CL, float>;
 

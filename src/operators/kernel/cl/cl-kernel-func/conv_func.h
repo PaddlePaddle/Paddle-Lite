@@ -35,8 +35,7 @@ void WinogradConv3x3(framework::CLHelper &cl_helper,
                      const ConvParam<GPU_CL> &param);
 
 void ConvAddBnRelu(framework::CLHelper &cl_helper,
-                   const ConvParam<GPU_CL> &param,
-                   bool ifRelu = false,
+                   const ConvParam<GPU_CL> &param, bool ifRelu = false,
                    const CLImage *biase = nullptr,
                    const CLImage *new_scale = nullptr,
                    const CLImage *new_bias = nullptr);
