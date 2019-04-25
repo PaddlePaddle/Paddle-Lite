@@ -15,6 +15,7 @@ limitations under the License. */
 #ifdef FUSION_CONVADDRELU_OP
 
 #include "operators/kernel/conv_add_relu_kernel.h"
+#include "operators/kernel/cl/cl-kernel-func/conv_func.h"
 
 namespace paddle_mobile {
 namespace operators {
@@ -72,84 +73,7 @@ bool ConvAddReluKernel<GPU_CL, float>::Init(
 template <>
 void ConvAddReluKernel<GPU_CL, float>::Compute(
     const FusionConvAddReluParam<GPU_CL> &param) {
-  auto kernel = this->cl_helper_.KernelAt(0);
-  auto default_work_size = this->cl_helper_.DefaultWorkSize(*param.Output());
-  int c_block = default_work_size[0];
-  int w = default_work_size[1];
-  int nh = default_work_size[2];
-  auto input = param.Input()->GetCLImage();
-  auto filter = param.Filter()->GetCLImage();
-  DLOG << "---yangfei30---";
-  DLOG << *param.Filter();
-  DLOG << param.Paddings();
-  auto biase = param.Bias()->GetCLImage();
-  auto output = param.Output()->GetCLImage();
-  int stride = param.Strides()[0];
-  int offset = param.Offset();
-  int input_c = reinterpret_cast<framework::CLImageConverterFolder *>(
-                    param.Input()->Converter())
-                    ->GetCBlock();
-  int dilation = param.Dilations()[0];
-
-  int input_width = param.Input()->dims()[3];
-  int input_height = param.Input()->dims()[2];
-  int output_width = param.Output()->dims()[3];
-  int output_height = param.Output()->dims()[2];
-
-  cl_int status;
-
-  status = clSetKernelArg(kernel, 0, sizeof(int), &c_block);
-  CL_CHECK_ERRORS(status);
-
-  status = clSetKernelArg(kernel, 1, sizeof(int), &w);
-  CL_CHECK_ERRORS(status);
-
-  status = clSetKernelArg(kernel, 2, sizeof(int), &nh);
-  CL_CHECK_ERRORS(status);
-
-  status = clSetKernelArg(kernel, 3, sizeof(cl_mem), &input);
-  CL_CHECK_ERRORS(status);
-
-  status = clSetKernelArg(kernel, 4, sizeof(cl_mem), &filter);
-  CL_CHECK_ERRORS(status);
-
-  status = clSetKernelArg(kernel, 5, sizeof(cl_mem), &biase);
-  CL_CHECK_ERRORS(status);
-
-  status = clSetKernelArg(kernel, 6, sizeof(cl_mem), &output);
-  CL_CHECK_ERRORS(status);
-
-  status = clSetKernelArg(kernel, 7, sizeof(int), &stride);
-  CL_CHECK_ERRORS(status);
-
-  status = clSetKernelArg(kernel, 8, sizeof(int), &offset);
-  CL_CHECK_ERRORS(status);
-
-  status = clSetKernelArg(kernel, 9, sizeof(int), &input_c);
-  CL_CHECK_ERRORS(status);
-
-  status = clSetKernelArg(kernel, 10, sizeof(int), &dilation);
-  CL_CHECK_ERRORS(status);
-
-  status = clSetKernelArg(kernel, 11, sizeof(int), &input_width);
-  CL_CHECK_ERRORS(status);
-
-  status = clSetKernelArg(kernel, 12, sizeof(int), &input_height);
-  CL_CHECK_ERRORS(status);
-
-  status = clSetKernelArg(kernel, 13, sizeof(int), &output_width);
-  CL_CHECK_ERRORS(status);
-
-  status = clSetKernelArg(kernel, 14, sizeof(int), &output_height);
-  CL_CHECK_ERRORS(status);
-
-  //  cl_event out_event = param.Output()->GetClEvent();
-  //  cl_event wait_event = param.Input()->GetClEvent();
-
-  status = clEnqueueNDRangeKernel(
-      this->cl_helper_.CLCommandQueue(), kernel, default_work_size.size(), NULL,
-      default_work_size.data(), NULL, 0, NULL, NULL);
-  CL_CHECK_ERRORS(status);
+  ConvAddBnRelu(this->cl_helper_, param, true, param.Bias());
 }
 
 template class ConvAddReluKernel<GPU_CL, float>;
