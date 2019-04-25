@@ -38,7 +38,7 @@ bool ConvAddReluKernel<GPU_CL, float>::Init(
     param->Filter()->InitNImage(cl_helper_.CLContext(),
                                 cl_helper_.CLCommandQueue());
 
-    this->cl_helper_.AddKernel("conv_1x1", "conv_add_relu_kernel.cl");
+    this->cl_helper_.AddKernel("conv_1x1_spl", "conv_add_relu_kernel.cl");
   } else if (param->Filter()->dims()[1] == 1 &&
              param->Input()->dims()[1] == param->Output()->dims()[1] &&
              param->Filter()->dims()[2] == 3) {

@@ -40,7 +40,7 @@ bool ConvKernel<GPU_CL, float>::Init(ConvParam<GPU_CL> *param) {
   if (param->Filter()->dims()[2] == 1 && param->Filter()->dims()[3] == 1) {
     param->Filter()->InitNImage(cl_helper_.CLContext(),
                                 cl_helper_.CLCommandQueue());
-    this->cl_helper_.AddKernel("conv_1x1", "conv_kernel.cl");
+    this->cl_helper_.AddKernel("conv_1x1_spl", "conv_kernel.cl");
     DLOG << "conv 1x1";
 
   } else if (param->Filter()->dims()[1] == 1 &&
