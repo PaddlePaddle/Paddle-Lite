@@ -38,7 +38,7 @@ bool ConvAddKernel<FPGA, float>::Init(FusionConvAddParam<FPGA>* param) {
   conv_param.strides = param->Strides();
   conv_param.paddings = param->Paddings();
 
-  fill_scale_bias_const(conv_param);
+  fill_scale_bias_const(&conv_param);
 
   Tensor* bias = param->Bias();
   float* bias_data = bias->zynqmpTensor()->data<float>();

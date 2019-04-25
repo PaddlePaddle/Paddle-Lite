@@ -41,13 +41,12 @@ bool ConvBNReluKernel<FPGA, float>::Init(FusionConvBNReluParam<FPGA>* param) {
   conv_param.input = param->Input()->zynqmpTensor();
   conv_param.output = param->Output()->zynqmpTensor();
   conv_param.filter = param->Filter()->zynqmpTensor();
-  // conv_param.batchnorm = bn_param;
   conv_param.relu.enabled = true;
   conv_param.groups = param->Groups();
   conv_param.strides = param->Strides();
   conv_param.paddings = param->Paddings();
 
-  combine_bn_params(bn_param, conv_param);
+  combine_bn_params(bn_param, &conv_param);
   pe.init();
   pe.apply();
   return true;

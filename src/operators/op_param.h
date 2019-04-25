@@ -745,7 +745,8 @@ class CropParam : public OpParam {
 
  public:
   CropParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
-            const AttributeMap &attrs, Scope *scope) {
+            const AttributeMap &attrs, Scope *scope)
+      : OpParam(inputs, outputs, attrs, scope) {
     input_x_ = InputXFrom<GType>(inputs, *scope);
     // input_y_ = InputYFrom<GType>(inputs, scope);
     shape_ = GetAttr<vector<int>>("shape", attrs);
@@ -954,6 +955,13 @@ class BatchNormParam : public OpParam {
   GType *new_bias_;
   GType *new_scale_;
 };
+#endif
+
+#ifdef FUSION_BN_RELU_OP
+
+template <typename DeviceType>
+using BatchnormReluParam = BatchNormParam<DeviceType>;
+
 #endif
 
 #ifdef POOL_OP
