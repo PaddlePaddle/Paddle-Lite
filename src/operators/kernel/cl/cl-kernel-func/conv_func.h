@@ -12,31 +12,33 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#ifdef CONV_OP
+
 #pragma once
 
-#ifdef FUSION_CONVADDBNRELU_OP
-
-#include <vector>
-#include "framework/ddim.h"
-#include "framework/operator.h"
-#include "operators/math/im2col.h"
-#include "operators/math/math_function.h"
-#include "operators/math/vol2col.h"
+#include "framework/cl/cl_helper.h"
 #include "operators/op_param.h"
 
 namespace paddle_mobile {
 namespace operators {
 
-using framework::DDim;
-using framework::OpKernelBase;
+using namespace framework;
 
-template <typename DeviceType, typename T>
-class ConvAddBNReluKernel
-    : public OpKernelBase<DeviceType, FusionConvAddBNReluParam<DeviceType>> {
- public:
-  void Compute(const FusionConvAddBNReluParam<DeviceType> &param);
-  bool Init(FusionConvAddBNReluParam<DeviceType> *param);
-};
+inline int maptofactor(int i, int factor) { return (i + factor - 1) / factor; }
+
+template <int tile, int kernel>
+void winograd_transform_weight(framework::CLHelper &cl_helper,
+                               framework::CLImage &weight);
+
+template <int tile, int kernel>
+void WinogradConv3x3(framework::CLHelper &cl_helper,
+                     const ConvParam<GPU_CL> &param);
+
+void ConvAddBnRelu(framework::CLHelper &cl_helper,
+                   const ConvParam<GPU_CL> &param, bool ifRelu = false,
+                   const CLImage *biase = nullptr,
+                   const CLImage *new_scale = nullptr,
+                   const CLImage *new_bias = nullptr);
 
 }  // namespace operators
 }  // namespace paddle_mobile
