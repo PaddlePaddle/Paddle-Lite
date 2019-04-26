@@ -120,6 +120,16 @@ endif ()
 
 list(FIND NET "FPGA_OPS_KD" CON)
 if (CON GREATER -1)
+    find_package(OpenCV QUIET COMPONENTS core videoio highgui imgproc imgcodecs ml video)
+
+    include_directories(SYSTEM ${OpenCV_INCLUDE_DIRS})
+    #list(APPEND Caffe_LINKER_LIBS ${OpenCV_LIBS})
+    message(STATUS "OpenCV found (${OpenCV_CONFIG_PATH})，${OpenCV_LIBS}")
+
+    ADD_EXECUTABLE(test_mobilenet fpga/test_mobilenet.cpp test_helper.h test_include.h executor_for_test.h)
+    target_link_libraries(test_mobilenet paddle-mobile)
+    target_link_libraries(test_mobilenet ${OpenCV_LIBS})
+
     ADD_EXECUTABLE(test-ssd fpga/test_ssd.cpp test_helper.h test_include.h executor_for_test.h)
     target_link_libraries(test-ssd paddle-mobile)
 

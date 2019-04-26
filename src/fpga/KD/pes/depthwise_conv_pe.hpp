@@ -35,26 +35,8 @@ class DepthwiseConvPE : public PE {
     Tensor* output = param.output;
     int channel = output->shape().channel();
 
-    Tensor* new_scale = param.scale();
-    Tensor* new_bias = param.bias();
-    Shape shape(NC, {channel, 1});
-    float* new_scale_data = new_scale->mutableData<float>(FP32, shape);
-    float16* new_bias_data = new_bias->mutableData<float16>(FP16, shape);
-
-    BatchnormParam* batchnorm = param.batchnorm;
-    memset(new_scale_data, 0, new_scale->shape().memorySize(sizeof(float16)));
-    memset(new_bias_data, 0, new_bias->shape().memorySize(sizeof(float16)));
-    if (batchnorm != nullptr) {
-      for (size_t i = 0; i < channel; i++) {
-        // TODO(chonwhite) combine;
-      }
-    } else {
-      float16 zero = float_to_half(0.0f);
-      for (size_t i = 0; i < channel; i++) {
-        new_bias_data[i] = zero;
-        new_scale_data[i] = 1.0f;
-      }
-    }
+    float* new_scale_data = param_.scale()->data<float>();
+    float* new_bias_data = param_.bias()->data<float>();
 
     Tensor* quantized_filter = param.quantizedFilter();
     quantized_filter->mutableData<float16>(FP16, param.filter->shape());
@@ -67,8 +49,8 @@ class DepthwiseConvPE : public PE {
 
     args.bias_address = new_bias_data;
     args.filter_address = param.quantizedFilter()->data<void>();
-    args.kernel.width = param.kernelSize[0];
-    args.kernel.height = param.kernelSize[1];
+    args.kernel.width = param.filter->shape().height();
+    args.kernel.height = param.filter->shape().width();
     args.kernel.stride_w = param.strides[0];
     args.kernel.stride_h = param.strides[1];
     args.image.address = input->data<void>();

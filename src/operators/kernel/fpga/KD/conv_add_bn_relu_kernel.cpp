@@ -17,10 +17,10 @@ limitations under the License. */
 #include "operators/kernel/conv_add_bn_relu_kernel.h"
 #include "fpga/KD/pes/conv_pe.hpp"
 #include "fpga/KD/pes/conv_process.hpp"
-
-#include <math.h>
+#include "fpga/KD/pes/depthwise_conv_pe.hpp"
 
 using ConvPE = paddle_mobile::zynqmp::ConvPE;
+using DepthwiseConvPE = paddle_mobile::zynqmp::DepthwiseConvPE;
 
 namespace paddle_mobile {
 namespace operators {
@@ -30,30 +30,60 @@ bool ConvAddBNReluKernel<FPGA, float>::Init(
     FusionConvAddBNReluParam<FPGA>* param) {
   param->Output()->mutable_data<half>();
 
-  ConvPE& pe = param->context().pe<ConvPE>();
+  const int groups = param->Groups();
+  const int channel = param->Output()->dims()[1];
+  if (groups == channel) {
+    DepthwiseConvPE& pe = param->context().pe<DepthwiseConvPE>();
 
-  zynqmp::ConvParam& conv_param = pe.param();
+    zynqmp::DepthwiseConvParam& depthwise_conv_param = pe.param();
+    zynqmp::BatchnormParam* bn_param = new zynqmp::BatchnormParam();
 
-  zynqmp::BatchnormParam* bn_param = new zynqmp::BatchnormParam();
+    bn_param->bias = param->InputBias()->zynqmpTensor();
+    bn_param->scale = param->InputScale()->zynqmpTensor();
+    bn_param->mean = param->InputMean()->zynqmpTensor();
+    bn_param->variance = param->InputVariance()->zynqmpTensor();
+    bn_param->epsilon = param->Epsilon();
 
-  bn_param->bias = param->InputBias()->zynqmpTensor();
-  bn_param->scale = param->InputScale()->zynqmpTensor();
-  bn_param->mean = param->InputMean()->zynqmpTensor();
-  bn_param->variance = param->InputVariance()->zynqmpTensor();
-  bn_param->epsilon = param->Epsilon();
+    depthwise_conv_param.input = param->Input()->zynqmpTensor();
+    depthwise_conv_param.output = param->Output()->zynqmpTensor();
+    depthwise_conv_param.filter = param->Filter()->zynqmpTensor();
+    depthwise_conv_param.relu.enabled = true;
+    depthwise_conv_param.groups = param->Groups();
+    depthwise_conv_param.strides = param->Strides();
+    depthwise_conv_param.paddings = param->Paddings();
 
-  conv_param.input = param->Input()->zynqmpTensor();
-  conv_param.output = param->Output()->zynqmpTensor();
-  conv_param.filter = param->Filter()->zynqmpTensor();
-  conv_param.relu.enabled = true;
-  conv_param.groups = param->Groups();
-  conv_param.strides = param->Strides();
-  conv_param.paddings = param->Paddings();
+    combine_add_bn_params(bn_param, param->Bias()->zynqmpTensor(),
+                          &depthwise_conv_param);
 
-  combine_add_bn_params(bn_param, param->Bias()->zynqmpTensor(), &conv_param);
+    pe.init();
+    pe.apply();
 
-  pe.init();
-  pe.apply();
+  } else {
+    ConvPE& pe = param->context().pe<ConvPE>();
+
+    zynqmp::ConvParam& conv_param = pe.param();
+
+    zynqmp::BatchnormParam* bn_param = new zynqmp::BatchnormParam();
+
+    bn_param->bias = param->InputBias()->zynqmpTensor();
+    bn_param->scale = param->InputScale()->zynqmpTensor();
+    bn_param->mean = param->InputMean()->zynqmpTensor();
+    bn_param->variance = param->InputVariance()->zynqmpTensor();
+    bn_param->epsilon = param->Epsilon();
+
+    conv_param.input = param->Input()->zynqmpTensor();
+    conv_param.output = param->Output()->zynqmpTensor();
+    conv_param.filter = param->Filter()->zynqmpTensor();
+    conv_param.relu.enabled = true;
+    conv_param.groups = param->Groups();
+    conv_param.strides = param->Strides();
+    conv_param.paddings = param->Paddings();
+
+    combine_add_bn_params(bn_param, param->Bias()->zynqmpTensor(), &conv_param);
+
+    pe.init();
+    pe.apply();
+  }
 
   return true;
 }
@@ -61,9 +91,17 @@ bool ConvAddBNReluKernel<FPGA, float>::Init(
 template <>
 void ConvAddBNReluKernel<FPGA, float>::Compute(
     const FusionConvAddBNReluParam<FPGA>& param) {
-  zynqmp::Context& context = const_cast<zynqmp::Context&>(param.context_);
-  ConvPE& pe = context.pe<ConvPE>();
-  pe.dispatch();
+  const int groups = param.Groups();
+  const int channel = param.Output()->dims()[1];
+  if (groups == channel) {
+    zynqmp::Context& context = const_cast<zynqmp::Context&>(param.context_);
+    DepthwiseConvPE& pe = context.pe<DepthwiseConvPE>();
+    pe.dispatch();
+  } else {
+    zynqmp::Context& context = const_cast<zynqmp::Context&>(param.context_);
+    ConvPE& pe = context.pe<ConvPE>();
+    pe.dispatch();
+  }
 }
 
 }  // namespace operators

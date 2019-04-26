@@ -43,11 +43,11 @@ void format_fc_filter(float** data_in, int num, int channel, int height,
                       int width, int group_num, float max);
 
 void convert_to_hwn(int16_t** data_in, int num, int height, int width);
-void align_element_n(int16_t** data_in, int num, int height, int width);
+size_t align_element_n(int16_t** data_in, int num, int height, int width);
 void quantize_to_fp16(float** data_in, int num, int height, int width,
                       float* scale_ptr);
-void format_dwconv_filter(float** data_in, int num, int height, int width,
-                          float* scale_ptr);
+size_t format_dwconv_filter(float** data_in, int num, int height, int width,
+                            float* scale_ptr);
 
 }  // namespace filter
 }  // namespace zynqmp

@@ -286,12 +286,11 @@ void convert_to_hwn(int16_t **data_in, int num, int height, int width) {
   fpga_free(tmp);
 }
 
-void align_element_n(int16_t **data_in, int num, int height, int width) {
+size_t align_element_n(int16_t **data_in, int num, int height, int width) {
   int unalign_n = num;
   int align_n = align_to_x(num, FILTER_ELEMENT_ALIGNMENT);
-  if (unalign_n == align_n) {
-    return;
-  } else {
+  int num_element = height * width * align_n;
+  if (unalign_n != align_n) {
     int16_t *tmp = *data_in;
 
     int num_element = height * width * align_n;
@@ -311,7 +310,9 @@ void align_element_n(int16_t **data_in, int num, int height, int width) {
     *data_in = data_tmp;
     free(tmp);
   }
+  return num_element * sizeof(int16_t);
 }
+
 void quantize_to_fp16(float **data_in, int num, int height, int width,
                       float *scale_ptr) {
   float *tmp = *data_in;
@@ -332,14 +333,15 @@ void quantize_to_fp16(float **data_in, int num, int height, int width,
   *data_in = (float *)tmp_data;  // NOLINT
   fpga_free(tmp);
 }
-void format_dwconv_filter(float **data_in, int num, int height, int width,
-                          float *scale_ptr) {
+size_t format_dwconv_filter(float **data_in, int num, int height, int width,
+                            float *scale_ptr) {
   quantize_to_fp16(data_in, num, height, width, scale_ptr);
   int16_t **quantize_data = (int16_t **)data_in;  // NOLINT
   convert_to_hwn(quantize_data, num, height, width);
-  align_element_n(quantize_data, num, height, width);
+  size_t size = align_element_n(quantize_data, num, height, width);
   fpga_flush(*quantize_data, align_to_x(num, FILTER_ELEMENT_ALIGNMENT) *
                                  height * width * sizeof(int16_t));
+  return size;
 }
 }  // namespace filter
 }  // namespace zynqmp

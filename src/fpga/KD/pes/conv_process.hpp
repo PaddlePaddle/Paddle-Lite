@@ -160,9 +160,11 @@ inline void format_dw_filter(Tensor* filter, Tensor* quantized_filter,
   auto new_data = (float*)fpga_malloc(memory_size);  // NOLINT
   memcpy(new_data, filter->data<float>(), memory_size);
 
-  filter::format_dwconv_filter(&new_data, num, height, width, scale);
+  size_t size =
+      filter::format_dwconv_filter(&new_data, num, height, width, scale);
   float16* src = quantized_filter->mutableData<float16>(FP16, filter->shape());
-  memcpy(src, new_data, quantized_filter->shape().memorySize(sizeof(float16)));
+
+  memcpy(src, new_data, size);
   quantized_filter->flush();
 
   fpga_free(new_data);
