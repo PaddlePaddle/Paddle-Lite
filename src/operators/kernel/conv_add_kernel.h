@@ -41,9 +41,6 @@ class ConvAddKernel
  public:
   void Compute(const FusionConvAddParam<DeviceType> &param);
   bool Init(FusionConvAddParam<DeviceType> *param);
-  inline int maptofactor(int i, int factor) {
-    return (i + factor - 1) / factor;
-  }
 };
 
 }  // namespace operators
