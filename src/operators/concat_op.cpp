@@ -70,7 +70,7 @@ REGISTER_OPERATOR_CPU(concat, ops::ConcatOp);
 REGISTER_OPERATOR_CL(concat, ops::ConcatOp);
 #endif
 
-#ifdef PADDLE_MOBILE_FPGA
+#if defined(PADDLE_MOBILE_FPGA) || defined(PADDLE_MOBILE_FPGA_KD)
 REGISTER_OPERATOR_FPGA(concat, ops::ConcatOp);
 #endif
 

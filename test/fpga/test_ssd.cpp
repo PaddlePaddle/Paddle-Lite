@@ -21,7 +21,7 @@ limitations under the License. */
 #include "fpga/KD/float16.hpp"
 #include "fpga/KD/llapi/zynqmp_api.h"
 
-static const char* g_ssd = "../models/resnet50";
+static const char* g_ssd = "../models/inception_v3";
 
 int main() {
   zynqmp::open_device();
@@ -34,9 +34,9 @@ int main() {
   // if (paddle_mobile.Load(dir, true)) {
   if (paddle_mobile.Load(model, params, true)) {
     Tensor input_tensor;
-    SetupTensor<float>(&input_tensor, {1, 3, 224, 224}, static_cast<float>(1),
+    SetupTensor<float>(&input_tensor, {1, 3, 299, 299}, static_cast<float>(1),
                        static_cast<float>(1));
-    float* data = input_tensor.mutable_data<float>({1, 3, 224, 224});
+    float* data = input_tensor.mutable_data<float>({1, 3, 299, 299});
 
     paddle_mobile.Predict(input_tensor);
     auto result_ptr = paddle_mobile.Fetch();

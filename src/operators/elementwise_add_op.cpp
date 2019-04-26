@@ -37,8 +37,8 @@ REGISTER_OPERATOR_CPU(elementwise_add, ops::ElementwiseAddOp);
 REGISTER_OPERATOR_CL(elementwise_add, ops::ElementwiseAddOp);
 #endif
 
-#if defined(PADDLE_MOBILE_FPGA) || defined(PADDLE_MOBILE_FPGA_KD)
-REGISTER_OPERATOR_FPGA(elementwise_add, ops::ElementwiseAddOp);
-#endif
+// #if defined(PADDLE_MOBILE_FPGA) || defined(PADDLE_MOBILE_FPGA_KD)
+// REGISTER_OPERATOR_FPGA(elementwise_add, ops::ElementwiseAddOp);
+// #endif
 
 #endif

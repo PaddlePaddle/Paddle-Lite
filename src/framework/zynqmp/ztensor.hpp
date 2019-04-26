@@ -96,7 +96,7 @@ class Tensor : public TensorBase {
     if (holder_ == nullptr || holder_->size() < size + offset_) {
       PlaceholderImpl *impl = nullptr;
       if (holder_ == nullptr) {
-        std::cout << "holder null" << std::endl;
+        //        std::cout << "holder null" << std::endl;
         impl = new PlaceholderImpl(dims_, type);
         holder_.reset(impl);
       } else {

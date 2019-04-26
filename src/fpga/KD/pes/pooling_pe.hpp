@@ -86,7 +86,7 @@ class PoolingPE : public PE {
         float value = half_to_float(input->data<float16>()[i * kernel_hw + j]);
         // max = std::max(max, value);
         sum += value;
-        std::cout << "value:" << value << std::endl;
+        // std::cout << "value:" << value << std::endl;
       }
       // std::cout << "max:" << max << std::endl;
       float value = sum / kernel_hw;

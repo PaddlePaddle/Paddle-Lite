@@ -62,7 +62,7 @@ class PlaceHolder {
   size_t memorySize() { return size_; }
 
   ~PlaceHolder() {
-    std::cout << "place holder dealloc";
+    //    std::cout << "place holder dealloc";
     fpga_free(data_);
   }
 

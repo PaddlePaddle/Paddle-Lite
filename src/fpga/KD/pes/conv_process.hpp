@@ -240,7 +240,7 @@ inline void fill_split_arg(const ConvParam& c_param) {
     conv_param->filter.mutableData<float>(FP32, f_shape);
     format_filter(&new_filter, &(conv_param->filter), param.groups);
     filter_address = conv_param->filter.data<int8_t>();
-    std::cout << conv_param->filter.scale()[0] << std::endl;
+    // std::cout << conv_param->filter.scale()[0] << std::endl;
     args.filter_scale_address = conv_param->filter.scale();
 
     int sb_num = 2 * align_to_x(filter_num, BS_NUM_ALIGNMENT);
