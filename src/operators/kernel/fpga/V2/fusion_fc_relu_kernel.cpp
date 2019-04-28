@@ -30,7 +30,7 @@ bool FusionFcReluKernel<FPGA, float>::Init(FusionFcReluParam<FPGA> *param) {
   auto input_z_ptr = input_z->data<float>();
   auto out = param->Out();
   float Si = input_x->scale[0];
-  float Sf = filter->scale[0];
+  float Sf = fpga::filter_find_max(filter) / 127;
   float So = out->scale[0];
 
   // PADDLE_MOBILE_ENFORCE(input_x->dims()[1] == filter->dims()[0],
@@ -60,7 +60,7 @@ bool FusionFcReluKernel<FPGA, float>::Init(FusionFcReluParam<FPGA> *param) {
 
   int element_num_per_div = fpga::get_filter_num_per_div(filter, 1);
   fpga::format_bias_scale_array(&bs_ptr, element_num_per_div, channel);
-  fpga::format_fp16_ofm(out);
+  fpga::format_ofm(out);
 
   fpga::SplitConvArgs conv_arg = {0};
   fpga::fill_split_arg(&conv_arg, input_x, out, filter, activation_enable,

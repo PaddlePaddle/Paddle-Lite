@@ -29,7 +29,7 @@ bool ConvKernel<FPGA, float>::Init(ConvParam<FPGA> *param) {
   auto out = param->Output();
   float Si = input->scale[0];
   float So = out->scale[0];
-  float Sf = fpga::filter_find_max(filter);
+  float Sf = fpga::filter_find_max(filter) / 127;
   int channel = out->dims()[1];
   auto bs_ptr =
       (float *)fpga::fpga_malloc(2 * channel * sizeof(float));  // NOLINT

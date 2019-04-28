@@ -48,8 +48,8 @@ bool Reshape2Kernel<FPGA, float>::Init(Reshape2Param<FPGA> *param) {
 void reshape(LoDTensor *input, LoDTensor *output) {
   // Subscript r means after reshape
 
-  auto input_ptr = input->data<half>();
-  auto output_ptr = output->data<half>();
+  auto input_ptr = input->data<int8_t>();
+  auto output_ptr = output->data<int8_t>();
   output->scale[0] = input->scale[0];
   output->scale[1] = input->scale[1];
 
@@ -67,7 +67,7 @@ void reshape(LoDTensor *input, LoDTensor *output) {
   auto WCr_align = fpga::align_to_x(WCr, IMAGE_ALIGNMENT);
   auto HWr = Hr * Wr;
 
-  fpga::fpga_invalidate(input_ptr, H * WC_align * sizeof(half));
+  fpga::fpga_invalidate(input_ptr, H * WC_align * sizeof(int8_t));
 
   int offset_align = 0;
   int offset_r = 0, offset_align_r = 0;
@@ -89,7 +89,7 @@ void reshape(LoDTensor *input, LoDTensor *output) {
     }
   }
 
-  fpga::fpga_flush(output_ptr, Hr * WCr_align * sizeof(half));
+  fpga::fpga_flush(output_ptr, Hr * WCr_align * sizeof(int8_t));
 }
 
 template <>

@@ -112,8 +112,7 @@ void concat_images(int8_t **images_in, float **scales_in, void *image_out,
   fpga_flush(image_out, height * align_each_out_area_cw * sizeof(int8_t));
 }
 
-void split_image(int8_t *image_in, const float *scale_in, void **images_out,
-                 float **scales_out, int image_num,
+void split_image(int8_t *image_in, void **images_out, int image_num,
                  const uint32_t *channel_nums, int height, int width) {
   int total_channel = 0;
   for (int i = 0; i < image_num; i++) {

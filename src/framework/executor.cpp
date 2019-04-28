@@ -94,7 +94,6 @@ Executor<Device, T>::Executor(const Program<Device> &program,
   } else {
     InitMemory();
   }
-
   int count = 0;
   for (auto &op_handler : ops_of_block0_) {
     DLOG << "Initialize op[" << count++ << "]: " << op_handler->Type();
@@ -319,7 +318,11 @@ bool Executor<Device, T>::varInputMemory(
     const std::shared_ptr<VarDesc> &var_desc, Variable *var) const {
 #ifdef PADDLE_MOBILE_FPGA
   framework::LoDTensor *tensor = var->template GetMutable<LoDTensor>();
+#ifdef PADDLE_MOBILE_FPGA_V2
+  tensor->init(type_id<int8_t>().hash_code());
+#else
   tensor->init(type_id<float>().hash_code());
+#endif
   return true;
 #endif
 
@@ -677,8 +680,8 @@ void Executor<Device, T>::InitQuantMemory() {
       for (int i = 0; i < count; i++) {
         auto tensor = GetTensorByName(inputs_vars[i]);
         tensor->scale[0] = quantValList[inputs_vars[i]];
-        std::cout << "input variance name : " << inputs_vars[i]
-                  << ", scale value : " << tensor->scale[0] << std::endl;
+        DLOG << "input variance name : " << inputs_vars[i]
+             << ", scale value : " << tensor->scale[0];
       }
     }
     auto output_keys = op->GetOutKeys();
@@ -689,8 +692,8 @@ void Executor<Device, T>::InitQuantMemory() {
       for (int i = 0; i < count; i++) {
         auto tensor = GetTensorByName(outputs_vars[i]);
         tensor->scale[0] = quantValList[outputs_vars[i]];
-        std::cout << "output variance name : " << outputs_vars[i]
-                  << ", scale value : " << tensor->scale[0] << std::endl;
+        DLOG << "output variance name : " << outputs_vars[i]
+             << ", scale value : " << tensor->scale[0];
       }
     }
   }

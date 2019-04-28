@@ -35,7 +35,7 @@ bool ConvAddBNReluKernel<FPGA, float>::Init(
   const int groups = param->Groups();
   float Si = input->scale[0];
   float So = out->scale[0];
-  float Sf = fpga::filter_find_max(filter);
+  float Sf = fpga::filter_find_max(filter) / 127;
   vector<int> paddings = param->Paddings();
   vector<int> strides = param->Strides();
   auto bn_mean_ptr = param->InputMean()->data<float>();

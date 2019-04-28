@@ -68,8 +68,7 @@ void concat_images(int8_t** images_in, float** scales_in, void* image_out,
                    int height, int width);
 
 // Split featuremap along channel direction
-void split_image(int8_t* image_in, const float* scale_in, void** images_out,
-                 float** scales_out, int image_num,
+void split_image(int8_t* image_in, void** images_out, int image_num,
                  const uint32_t* channel_nums, int height, int width);
 }  // namespace image
 }  // namespace fpga
