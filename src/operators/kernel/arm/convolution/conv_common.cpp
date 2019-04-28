@@ -64,7 +64,9 @@ void InitBaseConvKernel(ConvParam<CPU> *param) {
     ) {
       param->ExecMode() = ConvParam<CPU>::EXEC_WINOGRAD3X3_FLOAT;
       // transform weight
-      param->transformed_filter_ = new framework::LoDTensor;
+      Variable *transformed_var = param->GetScope()->Var();
+      param->transformed_filter_ =
+          transformed_var->GetMutable<framework::LoDTensor>();
       operators::math::winograd_transform_weight<8, 3>(
           *param->Filter(), param->transformed_filter_);
     } else if (conv3x3 && param->Groups() == 1 &&

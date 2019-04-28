@@ -27,14 +27,20 @@ Scope &Scope::NewScope() const {
   return *kids_.back();
 }
 
+Variable *Scope::Var() {
+  auto *pvar = new Variable;
+  unnamed_vars_.push_back(pvar);
+  return pvar;
+}
+
 Variable *Scope::Var(const std::string &name) {
   auto *pvar = FindVarLocally(name);
   if (pvar != nullptr) {
     return pvar;
   }
   pvar = new Variable;
-  vars_[name] = pvar;
-  pvar->name_ = vars_.find(name)->first;
+  named_vars_[name] = pvar;
+  pvar->name_ = named_vars_.find(name)->first;
   return pvar;
 }
 
@@ -47,7 +53,7 @@ Variable *Scope::FindVar(const std::string &name) const {
 }
 
 const Scope *Scope::FindScope(const Variable *var) const {
-  for (auto &name_var : vars_) {
+  for (auto &name_var : named_vars_) {
     if (name_var.second == var) {
       return this;
     }
@@ -64,8 +70,8 @@ void Scope::DropKids() {
 
 std::vector<std::string> Scope::LocalVarNames() const {
   std::vector<std::string> known_vars;
-  known_vars.reserve(vars_.size());
-  for (auto &name_var : vars_) {
+  known_vars.reserve(named_vars_.size());
+  for (auto &name_var : named_vars_) {
     known_vars.emplace_back(name_var.first);
   }
   return known_vars;
@@ -79,10 +85,10 @@ void Scope::DeleteScope(Scope *scope) const {
 
 void Scope::EraseVars(const std::vector<std::string> &var_names) {
   std::set<std::string> var_set(var_names.begin(), var_names.end());
-  for (auto it = vars_.begin(); it != vars_.end();) {
+  for (auto it = named_vars_.begin(); it != named_vars_.end();) {
     if (var_set.find(it->first) != var_set.end()) {
       delete it->second;
-      it = vars_.erase(it);
+      it = named_vars_.erase(it);
     } else {
       ++it;
     }
@@ -91,21 +97,21 @@ void Scope::EraseVars(const std::vector<std::string> &var_names) {
 
 void Scope::Rename(const std::string &origin_name,
                    const std::string &new_name) const {
-  auto origin_it = vars_.find(origin_name);
-  if (origin_it == vars_.end()) {
+  auto origin_it = named_vars_.find(origin_name);
+  if (origin_it == named_vars_.end()) {
     return;
   }
-  auto new_it = vars_.find(new_name);
-  if (new_it != vars_.end()) {
+  auto new_it = named_vars_.find(new_name);
+  if (new_it != named_vars_.end()) {
     return;
   }
-  vars_[new_name] = origin_it->second;
-  vars_.erase(origin_it);
+  named_vars_[new_name] = origin_it->second;
+  named_vars_.erase(origin_it);
 }
 
 Variable *Scope::FindVarLocally(const std::string &name) const {
-  auto it = vars_.find(name);
-  if (it != vars_.end()) {
+  auto it = named_vars_.find(name);
+  if (it != named_vars_.end()) {
     return it->second;
   }
   return nullptr;
@@ -122,7 +128,7 @@ std::vector<Variable *> Scope::VarContain(const std::string substring,
 
   int temp = 9999;
   auto len0 = substring.length();
-  for (auto pair : vars_) {
+  for (auto pair : named_vars_) {
     if (pair.first.find(substring) == 0) {
       v.push_back(pair.second);
       auto len1 = pair.first.length();
@@ -138,7 +144,7 @@ std::vector<Variable *> Scope::VarContain(const std::string substring,
 
 void Scope::print_vars() {
   DLOG << "====================start to print variables=================";
-  for (auto pair : vars_) {
+  for (auto pair : named_vars_) {
     DLOG << pair.first;
   }
   DLOG << "==================complete printing variables================";
