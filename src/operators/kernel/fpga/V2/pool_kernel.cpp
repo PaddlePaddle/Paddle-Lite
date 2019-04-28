@@ -41,9 +41,9 @@ bool PoolKernel<FPGA, float>::Init(PoolParam<FPGA> *param) {
     return true;
   }
 
-  auto input_ptr = input->data<half>();
+  auto input_ptr = input->data<int8_t>();
   fpga::format_ofm(output);
-  auto output_ptr = output->mutable_data<half>();
+  auto output_ptr = output->mutable_data<int8_t>();
   float Si = input->scale[0];
   float So = output->scale[0];
 

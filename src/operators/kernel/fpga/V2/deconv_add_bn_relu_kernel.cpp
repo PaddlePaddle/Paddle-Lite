@@ -24,7 +24,6 @@ namespace operators {
 template <>
 bool DeconvAddBNReluKernel<FPGA, float>::Init(
     FusionDeconvAddBNReluParam<FPGA> *param) {
-  // bool relu_enabled = true;
   paddle_mobile::fpga::ActivationType activation_enable =
       paddle_mobile::fpga::LEAKYRELU;
   int16_t leaky_relu_negative_slope = 0;
@@ -87,7 +86,6 @@ bool DeconvAddBNReluKernel<FPGA, float>::Init(
 template <>
 void DeconvAddBNReluKernel<FPGA, float>::Compute(
     const FusionDeconvAddBNReluParam<FPGA> &param) {
-  // fpga::ComputeFpgaDeconv(param.FpgaArgs());
   if (param.Groups() == param.Output()->dims()[1]) {
     fpga::ComputeDWDeconv(param.FpgaDWDconvArgs());
   } else {

@@ -20,7 +20,6 @@ namespace operators {
 
 template <>
 bool FusionFcReluKernel<FPGA, float>::Init(FusionFcReluParam<FPGA> *param) {
-  // bool relu_enabled = false;
   paddle_mobile::fpga::ActivationType activation_enable =
       paddle_mobile::fpga::LEAKYRELU;
   int16_t leaky_relu_negative_slope = 0;
@@ -33,14 +32,10 @@ bool FusionFcReluKernel<FPGA, float>::Init(FusionFcReluParam<FPGA> *param) {
   float Sf = fpga::filter_find_max(filter) / 127;
   float So = out->scale[0];
 
-  // PADDLE_MOBILE_ENFORCE(input_x->dims()[1] == filter->dims()[0],
-  //                      "Image channel should be equal to weight number");
   int channel = (uint32_t)out->dims()[1];
   auto bs_ptr =
       (float *)fpga::fpga_malloc(2 * channel * sizeof(float));  // NOLINT
   for (int i = 0; i < channel; i++) {
-    //    bs_ptr[i + channel] = 1;
-    //    bs_ptr[i] = input_z_ptr[i];
     bs_ptr[i + channel] = Si / So * Sf / 127.0f;
     bs_ptr[i] = input_z_ptr[i] * 127.0f / So;
   }

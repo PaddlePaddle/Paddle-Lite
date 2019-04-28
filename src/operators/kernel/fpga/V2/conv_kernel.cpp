@@ -34,8 +34,6 @@ bool ConvKernel<FPGA, float>::Init(ConvParam<FPGA> *param) {
   auto bs_ptr =
       (float *)fpga::fpga_malloc(2 * channel * sizeof(float));  // NOLINT
   for (int i = 0; i < channel; i++) {
-    // bs_ptr[i + channel] = 1;
-    // bs_ptr[i] = 0;
     bs_ptr[i + channel] = Si / So * Sf / 127.0;
     bs_ptr[i] = 0;
   }

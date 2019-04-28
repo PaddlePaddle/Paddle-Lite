@@ -22,7 +22,6 @@ namespace operators {
 
 template <>
 bool ConvAddBNKernel<FPGA, float>::Init(FusionConvAddBNParam<FPGA> *param) {
-  // bool relu_enabled = false;
   paddle_mobile::fpga::ActivationType activation_enable =
       paddle_mobile::fpga::NONE;
   int16_t leaky_relu_negative_slope = 0;
@@ -59,8 +58,6 @@ bool ConvAddBNKernel<FPGA, float>::Init(FusionConvAddBNParam<FPGA> *param) {
                        static_cast<float>(pow((bn_var_ptr[i] + epsilon), 0.5));
     new_bias_ptr[i] =
         bn_bias_ptr[i] + (bias_ptr[i] - bn_mean_ptr[i]) * new_scale_ptr[i];
-    //    bs_ptr[i + channel] = new_scale_ptr[i];
-    //    bs_ptr[i] = new_bias_ptr[i];
     bs_ptr[i + channel] = new_scale_ptr[i] * Si / So * Sf / 127.0;
     bs_ptr[i] = new_bias_ptr[i] * 127.0 / So;
   }

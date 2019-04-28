@@ -23,7 +23,6 @@ namespace operators {
 
 template <>
 bool DeconvAddBNKernel<FPGA, float>::Init(FusionDeconvAddBNParam<FPGA> *param) {
-  // bool relu_enabled = true;
   paddle_mobile::fpga::ActivationType activation_enable =
       paddle_mobile::fpga::NONE;
   int16_t leaky_relu_negative_slope = 0;

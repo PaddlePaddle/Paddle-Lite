@@ -24,7 +24,6 @@ namespace operators {
 template <>
 bool DeconvAddReluKernel<FPGA, float>::Init(
     FusionDeconvAddReluParam<FPGA> *param) {
-  // bool relu_enabled = true;
   paddle_mobile::fpga::ActivationType activation_enable =
       paddle_mobile::fpga::LEAKYRELU;
   int16_t leaky_relu_negative_slope = 0;
@@ -43,11 +42,6 @@ bool DeconvAddReluKernel<FPGA, float>::Init(
   int sub_conv_n = param->Strides()[0];
   auto bs_ptr = (float *)fpga::fpga_malloc(2 * channel * sub_conv_n *  // NOLINT
                                            sizeof(float));             // NOLINT
-
-  for (int i = 0; i < channel * sub_conv_n; i++) {
-    bs_ptr[i + sub_conv_n * channel] = 1;
-    bs_ptr[i] = bias_ptr[i % (channel)];
-  }
 
   PADDLE_MOBILE_ENFORCE(param->Strides()[1] == param->Strides()[0],
                         "stride_width should be equal to stride_height ");
@@ -87,7 +81,6 @@ bool DeconvAddReluKernel<FPGA, float>::Init(
 template <>
 void DeconvAddReluKernel<FPGA, float>::Compute(
     const FusionDeconvAddReluParam<FPGA> &param) {
-  // fpga::ComputeFpgaDeconv(param.FpgaArgs());
   if (param.Groups() == param.Output()->dims()[1]) {
     fpga::ComputeDWDeconv(param.FpgaDWDconvArgs());
   } else {
