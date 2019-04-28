@@ -15,6 +15,15 @@ $ git clone https://github.com/PaddlePaddle/paddle-mobile.git
 在paddle-mobile根目录中，执行以下命令：
 
 ```shell
+# 进入paddle-mobile根目录
+$ cd <your-paddle-mobile>
+
+# 可选：开启GPU支持，在CMakeLists.txt开启GPU_CL选项为ON
+$ cp /usr/lib/aarch64-linux-gnu/libMali.so ./third_party/opencl/
+$ cp /usr/lib/aarch64-linux-gnu/libOpenCL.so ./third_party/opencl/
+$ ln -s ./third_party/opencl/libMali.so ./third_party/opencl/
+
+# 编译
 $ cd ./tools
 $ /bin/bash build.sh arm_linux
 ```
@@ -32,6 +41,7 @@ $ cd ../build/release/arm-linux/build
 $ export LD_LIBRARY_PATH=.
 
 # 执行MobileNet
+# 可选：GPU执行./test-mobilenetgpu
 $ cd ../../../../test/build/
 $ ./test-mobilenet
 
