@@ -222,12 +222,6 @@ if (CON GREATER -1)
   set(TRANSPOSE2_OP ON)
 
 
-
-
-  set(FOUND_MATCH ON)
-endif()
->>>>>>> added VGG-SSD operators
-
   set(FUSION_BN_RELU_OP ON)
   set(FUSION_CONVBN_OP ON)
   set(FUSION_CONVBNRELU_OP ON)

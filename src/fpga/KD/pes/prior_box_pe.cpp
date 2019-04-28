@@ -254,7 +254,7 @@ bool PriorBoxPE::dispatch() {
     cachedBoxes_->mutableData<float16>(FP16, param_.outputBoxes->shape());
     cachedVariances_->mutableData<float16>(FP16,
                                            param_.outputVariances->shape());
-    compute_prior_box(param_);
+    compute_prior_box();
   }
 
   param_.outputBoxes->copyFrom(this->cachedBoxes_);

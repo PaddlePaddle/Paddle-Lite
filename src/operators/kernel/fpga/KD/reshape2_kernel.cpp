@@ -21,39 +21,22 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace operators {
 
-static inline void unalign_tensor_data(const Tensor* tensor, half* src,
-                                       half* dst) {
-  if (tensor->dims().size() == 4) {
-    int channel = tensor->dims()[1];
-    int height = tensor->dims()[2];
-    int width = tensor->dims()[3];
-    int cw = width * channel;
-    int align_cw = zynqmp::align_to_x(cw, 16);
-    // 把aligned_tensor的有效数据（去掉0）填充到tensor
-    for (int h = 0; h < height; h++) {
-      memcpy(reinterpret_cast<void*>(dst + h * cw),
-             reinterpret_cast<void*>(src + h * align_cw), cw * sizeof(half));
-    }
-  }
-}
-
 template <>
-bool Reshape2Kernel<FPGA, float>::Init(Reshape2Param<FPGA>* param) {
+bool Reshape2Kernel<FPGA, float>::Init(Reshape2Param<FPGA> *param) {
   param->Out()->mutable_data<half>();
   return true;
 }
 
 template <>
-void Reshape2Kernel<FPGA, float>::Compute(const Reshape2Param<FPGA>& param) {
-  const auto* input_x = param.InputX();
-  const auto& input_x_dims = input_x->dims();
-  auto* out = param.Out();
-  // out->set_data_aligned(input_x->data_aligned());
-  framework::DDim out_dims = out->dims();
-  const auto* input_shape = param.InputShape();
+void Reshape2Kernel<FPGA, float>::Compute(const Reshape2Param<FPGA> &param) {
+  const auto *input_x = param.InputX();
+  const auto &input_x_dims = input_x->dims();
+  auto *out = param.Out();
 
+  framework::DDim out_dims = out->dims();
+  const auto *input_shape = param.InputShape();
   if (input_shape) {
-    auto* shape_data = input_shape->data<int>();
+    auto *shape_data = input_shape->data<int>();
     framework::Tensor cpu_shape_tensor;
     auto shape =
         std::vector<int>(shape_data, shape_data + input_shape->numel());
@@ -61,35 +44,18 @@ void Reshape2Kernel<FPGA, float>::Compute(const Reshape2Param<FPGA>& param) {
   }
 
   bool inplace = param.Inplace();
-
   out->Resize(out_dims);
   if (!inplace) {
-    out->mutable_data<float>();
+    out->mutable_data<half>();
     framework::TensorCopy(*input_x, out);  // TODO(chonwhite) is it right?
     out->Resize(out_dims);
   } else {
-    out->ShareDataWith(*input_x);
     out->Resize(out_dims);
+    out->ShareDataWith(*input_x);
   }
-
-  auto input = param.InputX();
-  // DLOG << "reshape: aligned:" << input->data_aligned() << "  " <<
-  // out->dims();
-  if (input->dims().size() == out->dims().size()) {
-    return;
-  }
-  // if (!input->data_aligned()) {
-  //   return;
-  // }
-  // out->set_data_aligned(false);
-  auto output = param.Out();
-  half* aligned_data = reinterpret_cast<half*>(input->data<float>());
-  // half* unaligned_data = (half*)fpga::fpga_malloc(output->numel() *
-  // sizeof(half));
-  half* unaligned_data = reinterpret_cast<half*>(output->data<float>());
-
-  unalign_tensor_data(input, aligned_data, unaligned_data);
-  // output->reset_data_ptr(unaligned_data);// TODO align from input;
+  out->zynqmpTensor()->scale()[0] = input_x->zynqmpTensor()->scale()[0];
+  out->zynqmpTensor()->scale()[1] = input_x->zynqmpTensor()->scale()[1];
+  std::cout << "Out scale:" << out->zynqmpTensor()->scale()[0] << std::endl;
 }
 template class Reshape2Kernel<FPGA, float>;
 
