@@ -1,28 +1,31 @@
 cmake_minimum_required(VERSION 3.0.0)
 
-option(USE_OPENMP    "build with openmp support" ON)
-option(USE_EXCEPTION "build with exception" ON)
-option(WITH_LOGGING  "print logging for debug" OFF)
-option(WITH_SYMBOL   "build with all symbols" ON) # turn off if use jni or ios io
-option(WITH_PROFILE  "print op profile for debug" OFF)
-option(WITH_TEST     "build with unit tests" ON)
+# basic build option
+option(USE_OPENMP       "build with openmp support"      ON)
+option(USE_EXCEPTION    "build with exception"           ON)
+option(WITH_LOGGING     "print logging for debug"        OFF)
+option(WITH_SYMBOL      "build with all symbols"         ON) # turn off if use jni or ios io
+option(WITH_PROFILE     "print op profile for debug"     OFF)
+option(WITH_TEST        "build with unit tests"          ON)
 
-# select the platform to build
-option(CPU        "build with arm CPU support" ON)
-option(GPU_CL     "build with OpenCL support" OFF)
-option(FPGA       "build with FPGA support" OFF)
+# select platform: CPU, GPU_CL, FPGA
+option(CPU              "build with arm CPU support"     ON)
+option(GPU_CL           "build with OpenCL support"      ON)
+option(FPGA             "build with FPGA support"        OFF)
 if(FPGA)
-  option(FPGAV1     "build with fpga v1 support" ON)
-  option(FPGAV2     "build with fpga v2 support" OFF)
-  option(FPGAKD     "build with fpga KD support" OFF)
+  option(FPGAV1     "build with fpga v1 support"   ON)
+  option(FPGAV2     "build with fpga v2 support"   OFF)
+  option(FPGAKD     "build with fpga KD support"   OFF)
 endif()
 
 project(paddle-mobile)
 
+# source code
 file(GLOB_RECURSE PADDLE_MOBILE_CC src/*.cc src/*.cpp src/*.c src/*.mm)
 file(GLOB_RECURSE PADDLE_MOBILE_H src/*.h)
 include_directories(src/)
 
+# build flags
 set(CMAKE_CXX_FLAGS "-O3 -s -DNDEBUG ${CMAKE_CXX_FLAGS} -Wno-attributes")
 if(IS_IOS)
     set(CMAKE_CXX_FLAGS "-mfpu=neon -marm -fobjc-abi-version=2 -fobjc-arc \
@@ -32,13 +35,14 @@ else()
     set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
 endif()
 
+# others
 if(USE_OPENMP)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
     add_definitions(-DPADDLE_MOBILE_USE_OPENMP)
 endif()
 
 if(WITH_LOGGING)
-    message(STATUS "debugging mode")
+    message(STATUS "Debugging mode")
     add_definitions(-DPADDLE_MOBILE_DEBUG)
 else()
 endif()
@@ -48,7 +52,7 @@ if(NOT WITH_SYMBOL)
 endif()
 
 if(USE_EXCEPTION)
-    message(STATUS "use exception")
+    message(STATUS "Use exception")
     add_definitions(-DENABLE_EXCEPTION -fexceptions)
 else()
     add_definitions(-fno-exceptions)
@@ -235,7 +239,7 @@ elseif(FPGAV2)
 elseif(FPGAKD)
     set(NET "FPGA_OPS_KD" CACHE STRING "select net type")
 else()
-    set(NET "default" CACHE STRING "select net type")
+    set(NET "default"     CACHE STRING "select net type")
 endif()
 
 set_property(CACHE NET PROPERTY STRINGS "default" "googlenet" "mobilenet" "yolo" "squeezenet" "FPGA_NET_V1" "FPGA_NET_V2" "NLP" "op")
@@ -270,4 +274,3 @@ if(WITH_TEST AND WITH_SYMBOL)
 elseif(FPGA)
     add_subdirectory(test)
 endif()
-
