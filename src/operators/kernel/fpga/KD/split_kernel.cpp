@@ -12,34 +12,32 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef RESHAPE_OP
+#ifdef SPLIT_OP
 
-#include "operators/reshape_op.h"
-#include <vector>
+#include "operators/kernel/split_kernel.h"
+#include "operators/kernel/central-arm-func/split_arm_func.h"
+
 namespace paddle_mobile {
 namespace operators {
 
-template <typename Dtype, typename T>
-void ReshapeOp<Dtype, T>::InferShape() const {
-  /// todo: add InputShape() detection.
-  auto &shape = this->param_.Shape();
-  auto input_x_dims = this->param_.InputX()->dims();
-  auto out_dims = ValidateShape(shape, input_x_dims);
-  this->param_.Out()->Resize(out_dims);
+template <>
+bool SplitKernel<FPGA, float>::Init(SplitParam<FPGA> *param) {
+  // param->Outs()->mutable_data<half>();
+  std::vector<LoDTensor *> outs = param->Outs();
+  for (int i = 0; i < outs.size(); i++) {
+    outs[i]->mutable_data<half>();
+  }
+  return true;
 }
+
+template <>
+void SplitKernel<FPGA, float>::Compute(const SplitParam<FPGA> &param) {
+  // SplitCompute<float>(param);
+}
+
+template class SplitKernel<FPGA, float>;
 
 }  // namespace operators
 }  // namespace paddle_mobile
-
-namespace ops = paddle_mobile::operators;
-#ifdef PADDLE_MOBILE_CPU
-REGISTER_OPERATOR_CPU(reshape, ops::ReshapeOp);
-#endif
-#if defined(PADDLE_MOBILE_FPGA) || defined(PADDLE_MOBILE_FPGA_KD)
-REGISTER_OPERATOR_FPGA(reshape, ops::ReshapeOp);
-#endif
-#ifdef PADDLE_MOBILE_CL
-REGISTER_OPERATOR_CL(reshape, ops::ReshapeOp);
-#endif
 
 #endif

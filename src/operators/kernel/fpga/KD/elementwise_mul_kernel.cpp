@@ -12,34 +12,30 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef RESHAPE_OP
+#ifdef ELEMENTWISEMUL_OP
 
-#include "operators/reshape_op.h"
-#include <vector>
+#include "operators/kernel/elementwise_mul_kernel.h"
+// #include "operators/kernel/central-arm-func/elementwise_mul_arm_func.h"
+
 namespace paddle_mobile {
 namespace operators {
 
-template <typename Dtype, typename T>
-void ReshapeOp<Dtype, T>::InferShape() const {
-  /// todo: add InputShape() detection.
-  auto &shape = this->param_.Shape();
-  auto input_x_dims = this->param_.InputX()->dims();
-  auto out_dims = ValidateShape(shape, input_x_dims);
-  this->param_.Out()->Resize(out_dims);
+template <>
+bool ElementwiseMulKernel<FPGA, float>::Init(ElementwiseMulParam<FPGA> *param) {
+  param->Out()->mutable_data<half>();
+  return true;
 }
+
+template <>
+void ElementwiseMulKernel<FPGA, float>::Compute(
+    const ElementwiseMulParam<FPGA> &param) {
+  // ElementwiseMulCompute<float>(param);
+  param.Out()->set_lod(param.InputX()->lod());
+}
+
+template class ElementwiseMulKernel<FPGA, float>;
 
 }  // namespace operators
 }  // namespace paddle_mobile
-
-namespace ops = paddle_mobile::operators;
-#ifdef PADDLE_MOBILE_CPU
-REGISTER_OPERATOR_CPU(reshape, ops::ReshapeOp);
-#endif
-#if defined(PADDLE_MOBILE_FPGA) || defined(PADDLE_MOBILE_FPGA_KD)
-REGISTER_OPERATOR_FPGA(reshape, ops::ReshapeOp);
-#endif
-#ifdef PADDLE_MOBILE_CL
-REGISTER_OPERATOR_CL(reshape, ops::ReshapeOp);
-#endif
 
 #endif

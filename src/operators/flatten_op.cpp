@@ -49,4 +49,8 @@ REGISTER_OPERATOR_CPU(flatten, ops::FlattenOp);
 REGISTER_OPERATOR_CPU(flatten2, ops::Flatten2Op);
 #endif
 
+#if defined(PADDLE_MOBILE_FPGA) || defined(PADDLE_MOBILE_FPGA_KD)
+REGISTER_OPERATOR_FPGA(flatten, ops::FlattenOp);
+#endif
+
 #endif  // FLATTEN_OP

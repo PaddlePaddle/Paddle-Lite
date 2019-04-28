@@ -14,29 +14,37 @@ limitations under the License. */
 
 #ifdef SHAPE_OP
 
-#include "operators/shape_op.h"
+#include "operators/kernel/shape_kernel.h"
+#include "operators/kernel/central-arm-func/shape_arm_func.h"
 
 namespace paddle_mobile {
 namespace operators {
-template <typename DeviceType, typename T>
-void ShapeOp<DeviceType, T>::InferShape() const {
-  PADDLE_MOBILE_ENFORCE(this->param_.Input() != nullptr,
-                        "Input (Input) of get_shape op should not be null.");
-  PADDLE_MOBILE_ENFORCE(this->param_.Out() != nullptr,
-                        "Output (Out) of get_shape op should not be null.");
-  this->param_.Out()->Resize({this->param_.Input()->dims().size()});
+
+template <typename P>
+void ShapeCompute(const ShapeParam<FPGA>& param) {
+  auto* in_t = param.Input();
+  auto* out_t = param.Out();
+  auto out_data = out_t->mutable_data<int32_t>();
+  auto in_dims = in_t->dims();
+  for (int i = 0; i < in_dims.size(); ++i) {
+    out_data[i] = static_cast<int32_t>(in_dims[i]);
+  }
 }
+
+template <>
+bool ShapeKernel<FPGA, float>::Init(ShapeParam<FPGA>* param) {
+  param->Out()->mutable_data<int>();
+  return true;
+}
+
+template <>
+void ShapeKernel<FPGA, float>::Compute(const ShapeParam<FPGA>& param) {
+  ShapeCompute<float>(param);
+}
+
+template class ShapeKernel<FPGA, float>;
 
 }  // namespace operators
 }  // namespace paddle_mobile
-
-namespace ops = paddle_mobile::operators;
-#ifdef PADDLE_MOBILE_CPU
-REGISTER_OPERATOR_CPU(shape, ops::ShapeOp);
-#endif
-
-#if defined(PADDLE_MOBILE_FPGA) || defined(PADDLE_MOBILE_FPGA_KD)
-REGISTER_OPERATOR_FPGA(shape, ops::ShapeOp);
-#endif
 
 #endif

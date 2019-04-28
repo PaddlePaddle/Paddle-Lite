@@ -12,34 +12,29 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef RESHAPE_OP
+#ifdef MULTICLASSNMS_OP
 
-#include "operators/reshape_op.h"
-#include <vector>
+#include "operators/kernel/multiclass_nms_kernel.h"
+#include "operators/kernel/central-arm-func/multiclass_nms_arm_func.h"
+
 namespace paddle_mobile {
 namespace operators {
 
-template <typename Dtype, typename T>
-void ReshapeOp<Dtype, T>::InferShape() const {
-  /// todo: add InputShape() detection.
-  auto &shape = this->param_.Shape();
-  auto input_x_dims = this->param_.InputX()->dims();
-  auto out_dims = ValidateShape(shape, input_x_dims);
-  this->param_.Out()->Resize(out_dims);
+template <>
+bool MultiClassNMSKernel<FPGA, float>::Init(MultiClassNMSParam<FPGA> *param) {
+  param->Out()->mutable_data<half>();
+  return true;
 }
+
+template <>
+void MultiClassNMSKernel<FPGA, float>::Compute(
+    const MultiClassNMSParam<FPGA> &param) {
+  // MultiClassNMSCompute<float>(param);
+}
+
+template class MultiClassNMSKernel<FPGA, float>;
 
 }  // namespace operators
 }  // namespace paddle_mobile
-
-namespace ops = paddle_mobile::operators;
-#ifdef PADDLE_MOBILE_CPU
-REGISTER_OPERATOR_CPU(reshape, ops::ReshapeOp);
-#endif
-#if defined(PADDLE_MOBILE_FPGA) || defined(PADDLE_MOBILE_FPGA_KD)
-REGISTER_OPERATOR_FPGA(reshape, ops::ReshapeOp);
-#endif
-#ifdef PADDLE_MOBILE_CL
-REGISTER_OPERATOR_CL(reshape, ops::ReshapeOp);
-#endif
 
 #endif

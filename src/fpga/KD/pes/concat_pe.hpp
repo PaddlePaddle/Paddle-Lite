@@ -55,7 +55,6 @@ class ConcatPE : public PE {
     }
     output->scale()[0] = scale;
     output->scale()[1] = 1.0f / scale;
-    std::cout << "conv scale::" << scale << std::endl;
     output->flush();
     return true;
   }

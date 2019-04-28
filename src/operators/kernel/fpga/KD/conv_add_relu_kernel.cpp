@@ -15,19 +15,54 @@ limitations under the License. */
 #ifdef FUSION_CONVADDRELU_OP
 
 #include "operators/kernel/conv_add_relu_kernel.h"
+#include "fpga/KD/pes/conv_pe.hpp"
+#include "fpga/KD/pes/conv_process.hpp"
 
 namespace paddle_mobile {
 namespace operators {
 
 template <>
-bool ConvAddReluKernel<FPGA, float>::Init(FusionConvAddReluParam<FPGA> *param) {
+bool ConvAddReluKernel<FPGA, float>::Init(FusionConvAddReluParam<FPGA>* param) {
+  param->Output()->mutable_data<half>();
+
+  zynqmp::ConvPE& pe = param->context().pe<zynqmp::ConvPE>();
+  zynqmp::ConvParam& conv_param = pe.param();
+  zynqmp::BatchnormParam* bn_param = new zynqmp::BatchnormParam();
+
+  conv_param.input = param->Input()->zynqmpTensor();
+  conv_param.output = param->Output()->zynqmpTensor();
+  conv_param.filter = param->Filter()->zynqmpTensor();
+  // conv_param.batchnorm = bn_param;
+  conv_param.relu.enabled = true;
+  conv_param.groups = param->Groups();
+  conv_param.strides = param->Strides();
+  conv_param.paddings = param->Paddings();
+
+  fill_scale_bias_const(&conv_param);
+
+  Tensor* bias = param->Bias();
+  float* bias_data = bias->zynqmpTensor()->data<float>();
+  float* conv_bias_data = conv_param.bias()->data<float>();
+  memcpy(conv_bias_data, bias_data,
+         conv_param.input->shape().channel() * sizeof(float));
+  conv_param.bias()->flush();
+
+  pe.init();
+  pe.apply();
   return true;
 }
 
 template <>
 void ConvAddReluKernel<FPGA, float>::Compute(
-    const FusionConvAddReluParam<FPGA> &param) {}
+    const FusionConvAddReluParam<FPGA>& param) {
+  // std::cout << "ConvAddReluKernel\n";
+  zynqmp::Context& context = const_cast<zynqmp::Context&>(param.context_);
+  zynqmp::ConvPE& pe = context.pe<zynqmp::ConvPE>();
+  pe.dispatch();
 
+  std::cout << "Out scale:" << param.Output()->zynqmpTensor()->scale()[0]
+            << std::endl;
+}
 }  // namespace operators
 }  // namespace paddle_mobile
 

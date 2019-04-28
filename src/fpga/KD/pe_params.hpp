@@ -71,7 +71,7 @@ struct ConvParam : PEParam {
   Tensor* input = nullptr;
   Tensor* output = nullptr;
   Tensor* filter = nullptr;
-  BatchnormParam* batchnorm = nullptr;
+
   int groups = 1;
   std::vector<int> strides;
   std::vector<int> paddings;
@@ -168,6 +168,25 @@ struct NormParam : PEParam {
 
  private:
   Tensor* floatInput = nullptr;
+};
+
+struct PriorBoxParam : PEParam {
+  Tensor* input;
+  Tensor* image;
+  Tensor* outputBoxes;
+  Tensor* outputVariances;
+
+  std::vector<float> minSizes;
+  std::vector<float> maxSizes;
+  std::vector<float> aspectRatios;
+  std::vector<float> variances;
+
+  bool minMaxAspectRatiosOrder;
+  bool flip;
+  bool clip;
+  float stepW;
+  float stepH;
+  float offset;
 };
 
 struct ScaleParam : PEParam {

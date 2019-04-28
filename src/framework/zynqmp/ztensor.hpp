@@ -65,7 +65,7 @@ class Tensor : public TensorBase {
 
   /*! The internal of two tensors share the same memory block. */
   inline Tensor &ShareDataWith(const Tensor &src) {
-    src.check_memory_size();
+    // src.check_memory_size();
     if (holder_.get() != src.holder_.get()) {
       *this = src;
     }
@@ -228,7 +228,7 @@ class Tensor : public TensorBase {
       tensor_->mutableData<float>(dtype, input_shape);
     }
 
-    virtual size_t size() const { return size_; }
+    virtual size_t size() const { return tensor_->memorySize(); }
 
     virtual void *ptr() const {
       void *ptr = tensor_->data<void *>();

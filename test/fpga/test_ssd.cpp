@@ -21,7 +21,7 @@ limitations under the License. */
 #include "fpga/KD/float16.hpp"
 #include "fpga/KD/llapi/zynqmp_api.h"
 
-static const char* g_ssd = "../models/inception_v3";
+static const char* g_ssd = "../models/ssd";
 
 int main() {
   zynqmp::open_device();

@@ -109,6 +109,11 @@ class Tensor {
     return reinterpret_cast<Dtype*>(placeHolder_->data());
   }
 
+  size_t memorySize() {
+    size_t memorySize = shape_->memorySize(CellSize(dataType_));
+    return memorySize;
+  }
+
   void setDataType(DataType dataType) { this->dataType_ = dataType; }
 
   DataType dataType() { return this->dataType_; }
@@ -210,9 +215,9 @@ class Tensor {
     args.output_layout_type = LAYOUT_HWC;
     args.image = {.address = src->data<void>(),
                   .scale_address = src->scale(),
-                  .channels = (uint32_t)src->shape().channel(),
-                  .width = (uint32_t)src->shape().width(),
-                  .height = (uint32_t)src->shape().height(),
+                  .channels = (uint32_t)src->shape().numel(),
+                  .width = 1,
+                  .height = 1,
                   .pad_width = 0u,
                   .pad_height = 0u};
     args.output = {

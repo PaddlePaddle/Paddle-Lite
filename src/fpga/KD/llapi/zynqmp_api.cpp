@@ -18,6 +18,7 @@ limitations under the License. */
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <algorithm>
 #include <cstring>
 #include <map>
 
@@ -264,12 +265,15 @@ int perform_bypass(const struct BypassArgs &args) {
   int out_type_size =
       args.output_data_type == DATA_TYPE_FP32 ? sizeof(float) : sizeof(int16_t);
 
+  float scales[2];
   struct BypassArgs bypassArgs = args;
   bypassArgs.image.width = 1;
   bypassArgs.image.height = 1;
+  bypassArgs.output.scale_address = scales;
 
   // std::cout << "times:" << times << " count:" << count << std::endl;
 
+  float scale = 0;
   for (int i = 0; i < count; ++i) {
     bypassArgs.image.channels = max_size;
     bypassArgs.image.address =
@@ -277,6 +281,8 @@ int perform_bypass(const struct BypassArgs &args) {
     bypassArgs.output.address =
         reinterpret_cast<char *>(output_address + i * max_size * out_type_size);
     int ret = do_ioctl(IOCTL_CONFIG_BYPASS, &bypassArgs);
+    scale = std::max(scale, scales[0]);
+    std::cout << "scale1:" << scale << std::endl;
     if (ret != 0) {
       return ret;
     }
@@ -290,7 +296,12 @@ int perform_bypass(const struct BypassArgs &args) {
       reinterpret_cast<char *>(input_address + count * max_size * type_size);
   bypassArgs.output.address = reinterpret_cast<char *>(
       output_address + count * max_size * out_type_size);
-  return do_ioctl(IOCTL_CONFIG_BYPASS, &bypassArgs);
+  int ret = do_ioctl(IOCTL_CONFIG_BYPASS, &bypassArgs);
+  scale = std::max(scale, scales[0]);
+  std::cout << "scale2:" << scale << std::endl;
+  args.output.scale_address[0] = scale;
+  args.output.scale_address[1] = 1.0f / scale;
+  return ret;
 }
 
 int compute_fpga_concat(const struct ConcatArgs &args) { return -1; }

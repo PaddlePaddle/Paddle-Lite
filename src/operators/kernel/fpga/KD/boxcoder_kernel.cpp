@@ -12,34 +12,28 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef RESHAPE_OP
+#ifdef BOXCODER_OP
 
-#include "operators/reshape_op.h"
-#include <vector>
+#include "operators/kernel/box_coder_kernel.h"
+#include "operators/kernel/central-arm-func/box_coder_arm_func.h"
+
 namespace paddle_mobile {
 namespace operators {
 
-template <typename Dtype, typename T>
-void ReshapeOp<Dtype, T>::InferShape() const {
-  /// todo: add InputShape() detection.
-  auto &shape = this->param_.Shape();
-  auto input_x_dims = this->param_.InputX()->dims();
-  auto out_dims = ValidateShape(shape, input_x_dims);
-  this->param_.Out()->Resize(out_dims);
+template <>
+bool BoxCoderKernel<FPGA, float>::Init(BoxCoderParam<FPGA> *param) {
+  param->OutputBox()->mutable_data<half>();
+  return true;
 }
+
+template <>
+void BoxCoderKernel<FPGA, float>::Compute(const BoxCoderParam<FPGA> &param) {
+  // BoxCoderCompute<float>(param);
+}
+
+template class BoxCoderKernel<FPGA, float>;
 
 }  // namespace operators
 }  // namespace paddle_mobile
-
-namespace ops = paddle_mobile::operators;
-#ifdef PADDLE_MOBILE_CPU
-REGISTER_OPERATOR_CPU(reshape, ops::ReshapeOp);
-#endif
-#if defined(PADDLE_MOBILE_FPGA) || defined(PADDLE_MOBILE_FPGA_KD)
-REGISTER_OPERATOR_FPGA(reshape, ops::ReshapeOp);
-#endif
-#ifdef PADDLE_MOBILE_CL
-REGISTER_OPERATOR_CL(reshape, ops::ReshapeOp);
-#endif
 
 #endif
