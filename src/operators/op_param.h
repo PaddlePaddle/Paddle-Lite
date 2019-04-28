@@ -76,27 +76,11 @@ struct DtypeTensorTrait<GPU_CL> {
 class OpParam {
  public:
   OpParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
-          const AttributeMap &attrs, Scope *scope) {
-    scope_pointer_ = scope;
-    inputs_ = inputs;
-  }
+          const AttributeMap &attrs, Scope *scope)
+      : scope_(scope) {}
 
-  template <typename T>
-  T *CreateNewScale() {
-    std::string scale_key = Getkey("Scale", inputs_, 0);
-    auto var = scope_pointer_->Var(scale_key + "_new");
-    return var->GetMutable<T>();
-  }
-
-  template <typename T>
-  T *CreateNewBiase() {
-    std::string biase_key = Getkey("Bias", inputs_, 0);
-    auto var = scope_pointer_->Var(biase_key + "_new");
-    return var->GetMutable<T>();
-  }
-
-  VariableNameMap inputs_;
-  Scope *scope_pointer_ = nullptr;
+  Scope *GetScope() const { return scope_; }
+  Scope *scope_ = nullptr;
 
 #ifdef PADDLE_MOBILE_FPGA_KD
   zynqmp::Context &context() { return context_; }

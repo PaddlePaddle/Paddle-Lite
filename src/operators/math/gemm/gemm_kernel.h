@@ -438,14 +438,14 @@ void sgemv_trans_mx1(const int M, const int N, const float alpha,
 #else
     const int tid = 0;
 #endif  // _OPENMP
-    register float *thread_buf_c = buf_c + tid * M;
-    register const float *in0 = A + n * lda;
-    register const float *in1 = in0 + lda;
-    register const float *in2 = in1 + lda;
-    register const float *in3 = in2 + lda;
-    register float32x4_t _b = vld1q_f32(B + n);
-    register float32x4_t _sum0;
-    register int m = 0;
+    float *thread_buf_c = buf_c + tid * M;
+    const float *in0 = A + n * lda;
+    const float *in1 = in0 + lda;
+    const float *in2 = in1 + lda;
+    const float *in3 = in2 + lda;
+    float32x4_t _b = vld1q_f32(B + n);
+    float32x4_t _sum0;
+    int m = 0;
     for (; m < M - 3; m += 4) {
       float32x4_t _r0 = vld1q_f32(in0 + m);
       float32x4_t _r1 = vld1q_f32(in1 + m);
@@ -495,11 +495,11 @@ void sgemv_trans_mx1(const int M, const int N, const float alpha,
 #else
     const int tid = 0;
 #endif  // _OPENMP
-    register float *thread_buf_c = buf_c + tid * M;
-    register const float *in0 = A + n * lda;
-    register float32x4_t _b = vld1q_dup_f32(B + n);
-    register float32x4_t _sum0;
-    register int m = 0;
+    float *thread_buf_c = buf_c + tid * M;
+    const float *in0 = A + n * lda;
+    float32x4_t _b = vld1q_dup_f32(B + n);
+    float32x4_t _sum0;
+    int m = 0;
     for (; m < M - 3; m += 4) {
       float32x4_t _r0 = vld1q_f32(in0 + m);
       float32x4_t _vbuff_c = vld1q_f32(thread_buf_c + m);
@@ -515,47 +515,39 @@ void sgemv_trans_mx1(const int M, const int N, const float alpha,
   // reduction operate for buf_c, sum to C and do left operations
   // y := alpha * A' * X + beta * y
   // reduction operate: sum multi-threadings result for over-all: A' * X
-  register float32x4_t _valpha = vdupq_n_f32(alpha);
+  float32x4_t _valpha = vdupq_n_f32(alpha);
   if (beta == 0.f) {
     #pragma omp parallel for
     for (int m = 0; m < M; m += 4) {
-      register float32x4_t _sum0 = vld1q_f32(buf_c + m);
+      float32x4_t _sum0 = vld1q_f32(buf_c + m);
       for (int tid = 1; tid < threads_num; ++tid) {
         _sum0 += vld1q_f32(buf_c + tid * M + m);
       }
       vst1q_f32(C + m, _sum0 * _valpha);
     }
-    #pragma omp parallel for
+
     for (int m = (M & 0xfffffffc); m < M; ++m) {
-      register float _sum0 = *(buf_c + m);
-      for (register int tid = 1; tid < threads_num; ++tid) {
+      float _sum0 = *(buf_c + m);
+      for (int tid = 1; tid < threads_num; ++tid) {
         _sum0 += *(buf_c + tid * M + m);
       }
       C[m] = _sum0 * alpha;
     }
   } else {  // beta != 0.f
-    register float32x4_t _vbeta = vdupq_n_f32(beta);
+    float32x4_t _vbeta = vdupq_n_f32(beta);
     #pragma omp parallel for
     for (int m = 0; m < M; m += 4) {
-      register float32x4_t _sum0 = vld1q_f32(buf_c + m);
-      for (register int tid = 1; tid < threads_num; ++tid) {
+      float32x4_t _sum0 = vld1q_f32(buf_c + m);
+      for (int tid = 1; tid < threads_num; ++tid) {
         _sum0 += vld1q_f32(buf_c + tid * M + m);
       }
       float32x4_t _vc = vld1q_f32(C + m);
       vst1q_f32(C + m, _sum0 * _valpha + _vbeta * _vc);
     }
-    #pragma omp parallel for
-    for (int m = (m & 0xfffffffc); m < M; ++m) {
-      register float _sum0 = *(buf_c + m);
-      for (register int tid = 1; tid < threads_num; ++tid) {
-        _sum0 += *(buf_c + tid * M + m);
-      }
-      C[m] = _sum0 * alpha + beta * C[m];
-    }
-    #pragma omp parallel for
-    for (int m = (m & 0xfffffffc); m < M; ++m) {
-      register float _sum0 = *(buf_c + m);
-      for (register int tid = 1; tid < threads_num; ++tid) {
+
+    for (int m = (M & 0xfffffffc); m < M; ++m) {
+      float _sum0 = *(buf_c + m);
+      for (int tid = 1; tid < threads_num; ++tid) {
         _sum0 += *(buf_c + tid * M + m);
       }
       C[m] = _sum0 * alpha + beta * C[m];

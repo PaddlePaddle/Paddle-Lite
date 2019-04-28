@@ -32,15 +32,17 @@ class Scope {
   Scope() = default;
 
   ~Scope() {
-    for (auto &var : vars_) {
-      DropKids();
+    // clear named variables
+    for (auto &var : named_vars_) {
       delete var.second;
     }
-    vars_.clear();
-    for (auto kid : kids_) {
-      delete kid;
+    named_vars_.clear();
+    // clear unnamed variables
+    for (auto &var : unnamed_vars_) {
+      delete var;
     }
-    kids_.clear();
+    unnamed_vars_.clear();
+    DropKids();
 
 #ifdef PADDLE_MOBILE_CL
     delete cl_scope_;
@@ -49,11 +51,11 @@ class Scope {
 
   Scope &NewScope() const;
 
+  /// Create a variable without name if it doesn't exist.
+  Variable *Var();
+
   /// Create a variable with given name if it doesn't exist.
   Variable *Var(const std::string &name);
-
-  /// Create a variable with a scope-unique name.
-  Variable *Var(std::string *name = nullptr);
 
   void EraseVars(const std::vector<std::string> &var_names);
 
@@ -98,7 +100,8 @@ class Scope {
   // Call Scope::NewScope for a sub-scope.
   explicit Scope(Scope const *parent) : parent_(parent) {}
 
-  mutable std::unordered_map<std::string, Variable *> vars_;
+  mutable std::unordered_map<std::string, Variable *> named_vars_;
+  mutable std::vector<Variable *> unnamed_vars_;
   mutable std::list<Scope *> kids_;
   Scope const *parent_{nullptr};
 
