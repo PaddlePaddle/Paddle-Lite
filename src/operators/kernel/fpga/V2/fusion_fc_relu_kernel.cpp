@@ -20,7 +20,6 @@ namespace operators {
 
 template <>
 bool FusionFcReluKernel<FPGA, float>::Init(FusionFcReluParam<FPGA> *param) {
-  // bool relu_enabled = false;
   paddle_mobile::fpga::ActivationType activation_enable =
       paddle_mobile::fpga::LEAKYRELU;
   int16_t leaky_relu_negative_slope = 0;
@@ -30,17 +29,13 @@ bool FusionFcReluKernel<FPGA, float>::Init(FusionFcReluParam<FPGA> *param) {
   auto input_z_ptr = input_z->data<float>();
   auto out = param->Out();
   float Si = input_x->scale[0];
-  float Sf = filter->scale[0];
+  float Sf = fpga::filter_find_max(filter) / 127;
   float So = out->scale[0];
 
-  // PADDLE_MOBILE_ENFORCE(input_x->dims()[1] == filter->dims()[0],
-  //                      "Image channel should be equal to weight number");
   int channel = (uint32_t)out->dims()[1];
   auto bs_ptr =
       (float *)fpga::fpga_malloc(2 * channel * sizeof(float));  // NOLINT
   for (int i = 0; i < channel; i++) {
-    //    bs_ptr[i + channel] = 1;
-    //    bs_ptr[i] = input_z_ptr[i];
     bs_ptr[i + channel] = Si / So * Sf / 127.0f;
     bs_ptr[i] = input_z_ptr[i] * 127.0f / So;
   }
@@ -60,7 +55,7 @@ bool FusionFcReluKernel<FPGA, float>::Init(FusionFcReluParam<FPGA> *param) {
 
   int element_num_per_div = fpga::get_filter_num_per_div(filter, 1);
   fpga::format_bias_scale_array(&bs_ptr, element_num_per_div, channel);
-  fpga::format_fp16_ofm(out);
+  fpga::format_ofm(out);
 
   fpga::SplitConvArgs conv_arg = {0};
   fpga::fill_split_arg(&conv_arg, input_x, out, filter, activation_enable,

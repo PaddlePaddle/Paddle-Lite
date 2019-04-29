@@ -907,9 +907,8 @@ int ComputeFPGASplit(const struct SplitArgs &args) {
          << "   image_scale_address:" << args.scales_out[i];
   }
 #endif
-  image::split_image(args.image_in, args.scale_in, args.images_out,
-                     args.scales_out, args.image_num, args.out_channel_nums,
-                     args.height, args.width);
+  image::split_image(args.image_in, args.images_out, args.image_num,
+                     args.out_channel_nums, args.height, args.width);
   return 0;
 }  // ComputeFPGASplit
 int ComputeDWConv(const struct DWconvArgs &args) {

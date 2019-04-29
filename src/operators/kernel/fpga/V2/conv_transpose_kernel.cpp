@@ -23,21 +23,16 @@ namespace operators {
 
 template <>
 bool ConvTransposeKernel<FPGA, float>::Init(ConvTransposeParam<FPGA> *param) {
-  // bool relu_enabled = false;
   paddle_mobile::fpga::ActivationType activation_enable =
       paddle_mobile::fpga::NONE;
   int16_t leaky_relu_negative_slope = 0;
   auto input = const_cast<LoDTensor *>(param->Input());
-  // const Tensor *bias = param->Bias();
-  // auto bias_ptr = bias->data<float>();
   auto filter = const_cast<LoDTensor *>(param->Filter());
   auto out = param->Output();
   float Si = input->scale[0];
   float So = out->scale[0];
-  float Sf = fpga::filter_find_max(filter);
+  float Sf = fpga::filter_find_max(filter) / 127;
 
-  // PADDLE_MOBILE_ENFORCE(out->dims()[1] == bias->dims()[0],
-  //                      "Output channel should be equal to bias number");
   int channel = out->dims()[1];
 
   int sub_conv_n = param->Strides()[0];
@@ -46,7 +41,7 @@ bool ConvTransposeKernel<FPGA, float>::Init(ConvTransposeParam<FPGA> *param) {
 
   for (int i = 0; i < channel * sub_conv_n; i++) {
     bs_ptr[i + sub_conv_n * channel] = 1;
-    bs_ptr[i] = 0;  // bias_ptr[i % (channel)];
+    bs_ptr[i] = 0;
   }
 
   PADDLE_MOBILE_ENFORCE(param->Strides()[1] == param->Strides()[0],
@@ -58,7 +53,7 @@ bool ConvTransposeKernel<FPGA, float>::Init(ConvTransposeParam<FPGA> *param) {
   if (param->Groups() == channel) {
     for (int i = 0; i < channel * sub_conv_n; i++) {
       bs_ptr[i + sub_conv_n * channel] = Si / So;
-      bs_ptr[i] = 0;  // bias_ptr[i % (channel)];
+      bs_ptr[i] = 0;
     }
     fpga::format_DWDeconv_data(filter, out, &bs_ptr, param->Groups(),
                                sub_conv_n);
@@ -71,7 +66,7 @@ bool ConvTransposeKernel<FPGA, float>::Init(ConvTransposeParam<FPGA> *param) {
   } else {
     for (int i = 0; i < channel * sub_conv_n; i++) {
       bs_ptr[i + sub_conv_n * channel] = Si / So * Sf / 127.0f;
-      bs_ptr[i] = 0;  // bias_ptr[i % (channel)];
+      bs_ptr[i] = 0;
     }
     fpga::format_deconv_data(filter, out, &bs_ptr, param->Groups(), sub_conv_n);
     fpga::DeconvArgs deconv_arg = {0};
