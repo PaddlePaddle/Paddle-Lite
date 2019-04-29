@@ -102,9 +102,13 @@ class ConvAddKernel<P: PrecisionProtocol>: Kernel, Computable {
     
     let identifyingKey: String = getUniqueKey()
     
-    required init(device: MTLDevice, param: ConvAddParam<P>, initContext: InitContext) {
+    required init(device: MTLDevice, param: ConvAddParam<P>, initContext: InitContext) throws {
         
-        param.output.initTexture(device: device, inTranspose: [0, 2, 3, 1], computePrecision: GlobalConfig.shared.computePrecision)
+        do {
+            try param.output.initTexture(device: device, inTranspose: [0, 2, 3, 1], computePrecision: GlobalConfig.shared.computePrecision)
+        } catch let error {
+            throw error
+        }
         
         let offsetY = (Int(param.dilations[1]) * (param.filter.tensorDim[2] - 1) + 1)/2 - Int(param.paddings[1])
         let offsetX = (Int(param.dilations[0]) * (param.filter.tensorDim[3] - 1) + 1)/2 - Int(param.paddings[0])

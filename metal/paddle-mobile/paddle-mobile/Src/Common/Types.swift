@@ -22,6 +22,8 @@ public protocol SummableMultipliable: Equatable {
 }
 
 public protocol PrecisionProtocol: SummableMultipliable{
+    //    init(inFloat: Float32)
+    //    init(inFloat16: Float16)
     init<P: PrecisionProtocol>(_ inP: P)
     static var bitSize: UInt { get }
     static func initializeValue() -> Self
@@ -48,12 +50,27 @@ extension Float16: PrecisionProtocol {
         default:
             fatalError()
         }
+        //
+        //        fatalError()
+        //        if P.bitSize == Float32.bitSize {
+        //            self = Float16(inFloat: inP as! Float32)
+        //        } else if P.bitSize == Float16.bitSize {
+        //            self = inP as! Float16
+        //        } else {
+        //            fatalError()
+        //        }
     }
     
     public static var bitSize: UInt {
         return 16
     }
     
+    //    public init(inFloat16: Float16) {
+    //        self = inFloat16
+    //    }
+    //    public init(inFloat: Float32) {
+    //        self = Int16(inFloat)
+    //    }
 }
 
 extension Float32: PrecisionProtocol {
@@ -75,8 +92,23 @@ extension Float32: PrecisionProtocol {
         default:
             fatalError()
         }
+        //        if P.bitSize == Float32.bitSize {
+        //            self = inP as! Float32
+        //        } else if P.bitSize == Float16.bitSize {
+        //            self = Float32.init(inP as! Float16)
+        //        } else {
+        //            fatalError()
+        //        }
     }
     
+    //    public init(inFloat: Float32) {
+    //        self = inFloat
+    //    }
+    //
+    //    public init(inFloat16: Float16) {
+    //        self = Float32.init(inFloat16)
+    //    }
+    //
     public static var bitSize: UInt {
         return 32
     }

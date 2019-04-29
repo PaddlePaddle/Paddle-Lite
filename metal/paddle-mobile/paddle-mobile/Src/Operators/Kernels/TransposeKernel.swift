@@ -22,8 +22,14 @@ struct TransposeMetalParam {
 
 class TransposeKernel<P: PrecisionProtocol>: Kernel, Computable {
     var metalParam: TransposeMetalParam = TransposeMetalParam.init()
-    required init(device: MTLDevice, param: TransposeParam<P>, initContext: InitContext) {
-        param.output.initTexture(device: device, computePrecision: GlobalConfig.shared.computePrecision)
+    required init(device: MTLDevice, param: TransposeParam<P>, initContext: InitContext) throws {
+        
+        do {
+            try param.output.initTexture(device: device, computePrecision: GlobalConfig.shared.computePrecision)
+        } catch let error {
+            throw error
+        }
+        
         let rank = param.input.tensorDim.cout()
         var axis: [Int] = [0, 1, 2, 3]
         for i in 0..<param.axis.count {

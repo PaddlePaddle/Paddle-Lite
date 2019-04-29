@@ -32,8 +32,13 @@ class BoxcoderKernel<P: PrecisionProtocol>: Kernel, Computable{
         encoder.endEncoding()
     }
     
-    required init(device: MTLDevice, param: BoxcoderParam<P>, initContext: InitContext) {
-        param.output.initTexture(device: device, inTranspose: [0, 3, 1, 2], computePrecision: GlobalConfig.shared.computePrecision)
+    required init(device: MTLDevice, param: BoxcoderParam<P>, initContext: InitContext) throws {
+        do {
+            try param.output.initTexture(device: device, inTranspose: [0, 3, 1, 2], computePrecision: GlobalConfig.shared.computePrecision)
+        } catch let error {
+            throw error
+        }
+        
         if GlobalConfig.shared.computePrecision == .Float32 {
             super.init(device: device, inFunctionName: "boxcoder_float", initContext: initContext)
         } else if GlobalConfig.shared.computePrecision == .Float16 {

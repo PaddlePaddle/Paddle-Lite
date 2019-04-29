@@ -89,7 +89,7 @@ import Foundation
         }
     }
     
-    open func updateProgram(program: Program) {
+    open func updateProgram(program: Program) throws {
     }
     
 }
