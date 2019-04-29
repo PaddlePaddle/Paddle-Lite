@@ -25,7 +25,7 @@ class ReluKernel<P: PrecisionProtocol>: Kernel, Computable{
         encoder.endEncoding()
     }
     
-    required init(device: MTLDevice, param: ReluParam<P>, initContext: InitContext) {
+    required init(device: MTLDevice, param: ReluParam<P>, initContext: InitContext) throws {
         if GlobalConfig.shared.computePrecision == .Float32 {
             super.init(device: device, inFunctionName: "relu", initContext: initContext)
         } else if GlobalConfig.shared.computePrecision == .Float16 {

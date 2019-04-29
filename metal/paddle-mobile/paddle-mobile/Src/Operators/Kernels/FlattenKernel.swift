@@ -26,8 +26,14 @@ class FlattenKernel<P: PrecisionProtocol>: Kernel, Computable{
     
     var metalParam: FlattenMetalParam
     
-    required init(device: MTLDevice, param: FlattenParam<P>, initContext: InitContext) {
-        param.output.initTexture(device: device, computePrecision: GlobalConfig.shared.computePrecision)
+    required init(device: MTLDevice, param: FlattenParam<P>, initContext: InitContext) throws {
+        
+        do {
+            try param.output.initTexture(device: device, computePrecision: GlobalConfig.shared.computePrecision)
+        } catch let error {
+            throw error
+        }
+        
         var id: [Int32] = [1, 1, 1, 1]
         for i in 0..<param.input.tensorDim.cout() {
             id[4-param.input.tensorDim.cout()+i] = Int32(param.input.tensorDim[i])

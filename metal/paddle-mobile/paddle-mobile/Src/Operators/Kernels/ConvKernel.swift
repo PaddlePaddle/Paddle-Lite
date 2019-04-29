@@ -26,7 +26,7 @@ public struct MetalConvParam {
 
 class ConvKernel<P: PrecisionProtocol>: Kernel, Computable {
     var metalParam: MetalConvParam!
-    required init(device: MTLDevice, param: ConvParam<P>, initContext: InitContext) {
+    required init(device: MTLDevice, param: ConvParam<P>, initContext: InitContext) throws {
         param.filter.initBuffer(device: device, precision: Precision.Float32)
         if param.filter.width == 1 && param.filter.height == 1 {
             super.init(device: device, inFunctionName: "conv_1x1", initContext: initContext)
