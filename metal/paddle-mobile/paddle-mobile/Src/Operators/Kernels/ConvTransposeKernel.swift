@@ -30,8 +30,13 @@ struct MetalConvTransposeParam {
 
 class ConvTransposeKernel<P: PrecisionProtocol>: Kernel, Computable{
     var metalParam: MetalConvTransposeParam!
-    required init(device: MTLDevice, param: ConvTransposeParam<P>, initContext: InitContext) {
-        param.output.initTexture(device: device, inTranspose: param.input.transpose, computePrecision: GlobalConfig.shared.computePrecision)
+    required init(device: MTLDevice, param: ConvTransposeParam<P>, initContext: InitContext) throws {
+        do {
+            try param.output.initTexture(device: device, inTranspose: param.input.transpose, computePrecision: GlobalConfig.shared.computePrecision)
+        } catch let error {
+            throw error
+        }
+        
         param.filter.initBuffer(device: device, precision: GlobalConfig.shared.computePrecision, convertToNHWC: false, withTranspose: true)
         if GlobalConfig.shared.computePrecision == .Float32 {
             if param.stride == [2, 2] && param.stride == [2, 2] {

@@ -103,7 +103,7 @@ import Foundation
                 executor = try Executor<Float32>.init(inDevice: inDevice, inQueue: inQueue, inProgram: program!, initContext: initContext)
             }
             
-            net.updateProgram(program: program!)
+            try net.updateProgram(program: program!)
         } catch let error {
             print(error)
             return false
@@ -181,14 +181,20 @@ import Foundation
     /// 更新输入维度， 针对可变长输入模型
     ///
     /// - Parameter inDim: 输入维度
-    @objc public func updateInputDim(inDim: Dim) {
+    @objc public func updateInputDim(inDim: Dim) -> Bool {
         if net.inputDim != inDim {
             guard let inProgram = program else {
                 fatalError(" need load first ")
             }
             net.inputDim = inDim
-            net.updateProgram(program: inProgram)
+            do {
+                try net.updateProgram(program: inProgram)
+            } catch let error {
+                print(error)
+                return false
+            }
         }
+        return true
     }
     
     public func scaleTexture(input: MTLTexture , complete: @escaping (MTLTexture) -> Void) {

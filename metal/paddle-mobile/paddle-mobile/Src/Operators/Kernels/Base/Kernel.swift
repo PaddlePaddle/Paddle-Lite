@@ -28,7 +28,7 @@ public protocol Testable {
 protocol Computable {
     associatedtype ParamType: OpParam
     func compute(commandBuffer: MTLCommandBuffer, param: ParamType) throws
-    init(device: MTLDevice, param: ParamType, initContext: InitContext)
+    init(device: MTLDevice, param: ParamType, initContext: InitContext) throws
 }
 
 protocol KernelProtocol {
