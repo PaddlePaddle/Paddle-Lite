@@ -22,7 +22,7 @@ namespace operators {
 template <>
 bool SliceKernel<FPGA, float>::Init(SliceParam<FPGA>* param) {
   auto output = param->output_;
-  fpga::format_fp16_ofm(output);
+  fpga::format_ofm(output);
   DLOG << "input: " << param->input_;
   DLOG << "output: " << param->output_;
   if (param->input_->type() != type_id<half>()) {
@@ -40,8 +40,8 @@ void SliceKernel<FPGA, float>::Compute(const SliceParam<FPGA>& param) {
   auto output = param.output_;
   int HW = input->dims()[2] * input->dims()[3];
   int channel = input->dims()[1];
-  auto input_ptr = input->data<half>();
-  auto output_ptr = output->data<half>();
+  auto input_ptr = input->data<int8_t>();
+  auto output_ptr = output->data<int8_t>();
 
   output->scale[0] = input->scale[0];
   output->scale[1] = input->scale[1];
@@ -52,7 +52,7 @@ void SliceKernel<FPGA, float>::Compute(const SliceParam<FPGA>& param) {
   start = start > channel ? channel : start;
   end = end > channel ? channel : end;
   int len = end - start;
-  size_t size = len * sizeof(half);
+  size_t size = len * sizeof(int8_t);
 
   for (int i = 0; i < HW; i++) {
     memcpy(output_ptr + len * i, input_ptr + i * channel + start, size);

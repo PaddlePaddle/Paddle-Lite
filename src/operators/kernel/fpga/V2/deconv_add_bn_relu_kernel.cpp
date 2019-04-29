@@ -24,7 +24,6 @@ namespace operators {
 template <>
 bool DeconvAddBNReluKernel<FPGA, float>::Init(
     FusionDeconvAddBNReluParam<FPGA> *param) {
-  // bool relu_enabled = true;
   paddle_mobile::fpga::ActivationType activation_enable =
       paddle_mobile::fpga::LEAKYRELU;
   int16_t leaky_relu_negative_slope = 0;
@@ -35,7 +34,7 @@ bool DeconvAddBNReluKernel<FPGA, float>::Init(
   auto out = param->Output();
   float Si = input->scale[0];
   float So = out->scale[0];
-  float Sf = fpga::filter_find_max(filter);
+  float Sf = fpga::filter_find_max(filter) / 127;
   PADDLE_MOBILE_ENFORCE(out->dims()[1] == bias->dims()[0],
                         "Output channel should be equal to bias number");
   int channel = out->dims()[1];
@@ -87,7 +86,6 @@ bool DeconvAddBNReluKernel<FPGA, float>::Init(
 template <>
 void DeconvAddBNReluKernel<FPGA, float>::Compute(
     const FusionDeconvAddBNReluParam<FPGA> &param) {
-  // fpga::ComputeFpgaDeconv(param.FpgaArgs());
   if (param.Groups() == param.Output()->dims()[1]) {
     fpga::ComputeDWDeconv(param.FpgaDWDconvArgs());
   } else {

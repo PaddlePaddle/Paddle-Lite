@@ -21,7 +21,6 @@ namespace operators {
 
 template <>
 bool ConvAddReluKernel<FPGA, float>::Init(FusionConvAddReluParam<FPGA> *param) {
-  // bool relu_enabled = true;
   paddle_mobile::fpga::ActivationType activation_enable =
       paddle_mobile::fpga::LEAKYRELU;
   int16_t leaky_relu_negative_slope = 0;
@@ -32,7 +31,7 @@ bool ConvAddReluKernel<FPGA, float>::Init(FusionConvAddReluParam<FPGA> *param) {
   auto out = param->Output();
   float Si = input->scale[0];
   float So = out->scale[0];
-  float Sf = fpga::filter_find_max(filter);
+  float Sf = fpga::filter_find_max(filter) / 127;
 
   PADDLE_MOBILE_ENFORCE(out->dims()[1] == bias->dims()[0],
                         "Output channel should be equal to bias number");
@@ -40,8 +39,6 @@ bool ConvAddReluKernel<FPGA, float>::Init(FusionConvAddReluParam<FPGA> *param) {
   auto bs_ptr =
       (float *)fpga::fpga_malloc(2 * channel * sizeof(float));  // NOLINT
   for (int i = 0; i < channel; i++) {
-    //    bs_ptr[i + channel] = 1;
-    //    bs_ptr[i] = bias_ptr[i];
     bs_ptr[i + channel] = Si / So * Sf / 127.0;
     bs_ptr[i] = bias_ptr[i] * 127.0 / So;
   }

@@ -38,7 +38,7 @@ bool SplitKernel<FPGA, float>::Init(SplitParam<FPGA> *param) {
   for (int i = 0; i < image_num; i++) {
     fpga::format_fp16_ofm(outs[i]);
     DLOG << "output: " << outs[i];
-    images_out[i] = outs[i]->mutable_data<half>();
+    images_out[i] = outs[i]->mutable_data<int8_t>();
     scales_out[i] = outs[i]->scale;
     out_channels[i] = (uint32_t)sections[i];
   }
@@ -47,7 +47,7 @@ bool SplitKernel<FPGA, float>::Init(SplitParam<FPGA> *param) {
 
   fpga::SplitArgs arg = {0};
   arg.image_num = image_num;
-  arg.image_in = in->data<half>();
+  arg.image_in = in->data<int8_t>();
   arg.scale_in = in->scale;
   arg.images_out = images_out;
   arg.scales_out = scales_out;
