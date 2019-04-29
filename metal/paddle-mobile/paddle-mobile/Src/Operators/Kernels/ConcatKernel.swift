@@ -52,8 +52,14 @@ class ConcatKernel<P: PrecisionProtocol>: Kernel, Computable{
         encoder.endEncoding()
     }
     
-    required init(device: MTLDevice, param: ConcatParam<P>, initContext: InitContext) {
-        param.output.initTexture(device: device, inTranspose: param.transpose, computePrecision: GlobalConfig.shared.computePrecision)
+    required init(device: MTLDevice, param: ConcatParam<P>, initContext: InitContext) throws {
+        
+        do {
+            try param.output.initTexture(device: device, inTranspose: param.transpose, computePrecision: GlobalConfig.shared.computePrecision)
+        } catch let error {
+            throw error
+        }
+        
         let orank = param.output.tensorDim.cout()
         let num = param.input.count
         assert(num <= 6)

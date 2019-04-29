@@ -28,8 +28,14 @@ class ShapeKernel<P: PrecisionProtocol>: Kernel, Computable{
         //    encoder.endEncoding()
     }
     
-    required init(device: MTLDevice, param: ShapeParam<P>, initContext: InitContext) {
-        param.output.initTexture(device: device, computePrecision: GlobalConfig.shared.computePrecision)
+    required init(device: MTLDevice, param: ShapeParam<P>, initContext: InitContext) throws {
+        
+        do {
+            try param.output.initTexture(device: device, computePrecision: GlobalConfig.shared.computePrecision)
+        } catch let error {
+            throw error
+        }
+        
         if GlobalConfig.shared.computePrecision == .Float32 {
             super.init(device: device, inFunctionName: "shape", initContext: initContext)
         } else if GlobalConfig.shared.computePrecision == .Float16 {

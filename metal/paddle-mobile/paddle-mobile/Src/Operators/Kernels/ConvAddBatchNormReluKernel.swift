@@ -49,8 +49,14 @@ class ConvAddBatchNormReluKernel<P: PrecisionProtocol>: Kernel, Computable, Test
     
     var metalParam: MetalConvParam!
     
-    required init(device: MTLDevice, param: ConvAddBatchNormReluParam<P>, initContext: InitContext) {
-        param.output.initTexture(device: device, inTranspose: [0, 2, 3, 1], computePrecision: GlobalConfig.shared.computePrecision)
+    required init(device: MTLDevice, param: ConvAddBatchNormReluParam<P>, initContext: InitContext) throws {
+        
+        do {
+            try param.output.initTexture(device: device, inTranspose: [0, 2, 3, 1], computePrecision: GlobalConfig.shared.computePrecision)
+        } catch let error {
+            throw error
+        }
+        
         param.filter.initBuffer(device: device, precision: GlobalConfig.shared.computePrecision)
         param.y.initBuffer(device: device, precision: GlobalConfig.shared.computePrecision)
         param.variance.initBuffer(device: device, precision: .Float32)
