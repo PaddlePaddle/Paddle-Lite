@@ -209,7 +209,6 @@ struct PoolingArgs {
 };
 
 struct EWAddArgs {
-  // bool relu_enabled;
   uint32_t const0;  // output0 = const0 x input0 + const1 x input1;
   uint32_t const1;
   struct ImageInputArgs image0;

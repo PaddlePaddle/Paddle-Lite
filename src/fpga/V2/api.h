@@ -26,8 +26,6 @@ void format_image(framework::Tensor* image_tensor);
 void format_ofm(framework::Tensor* ofm_tensor);
 void format_int8_ofm(framework::Tensor* ofm_tensor);
 void format_int8_ofm(framework::Tensor* ofm_tensor, framework::DDim dims);
-void format_fp16_ofm(framework::Tensor* ofm_tensor);  // only allocate memory
-void format_fp16_ofm(framework::Tensor* ofm_tensor, framework::DDim dims);
 void format_fp32_ofm(framework::Tensor* ofm_tensor);
 
 float filter_find_max(framework::Tensor* filter_tensor);

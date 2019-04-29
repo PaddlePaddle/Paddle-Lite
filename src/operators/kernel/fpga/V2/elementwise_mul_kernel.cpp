@@ -35,7 +35,7 @@ bool ElementwiseMulKernel<FPGA, float>::Init(ElementwiseMulParam<FPGA> *param) {
   fpga::format_fp32_ofm(&(param->float_out));
 
   auto *out = param->Out();
-  fpga::format_fp16_ofm(out);
+  fpga::format_ofm(out);
   return true;
 }
 
