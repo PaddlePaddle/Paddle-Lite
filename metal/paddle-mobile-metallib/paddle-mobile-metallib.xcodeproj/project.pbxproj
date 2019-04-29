@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		165F38D72276F4C00088E29F /* ConvAddReluMetal.metal in Sources */ = {isa = PBXBuildFile; fileRef = 165F38D62276F4C00088E29F /* ConvAddReluMetal.metal */; };
 		5CCC0CF6759710BAFE999DB7 /* Pods_paddle_mobile_metallib.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5D9D330A035906298947080B /* Pods_paddle_mobile_metallib.framework */; };
 		FCC15DE5221E69E100DC3CB2 /* ReluKernel.metal in Sources */ = {isa = PBXBuildFile; fileRef = FCC15DBC221E69DD00DC3CB2 /* ReluKernel.metal */; };
 		FCC15DE6221E69E100DC3CB2 /* BoxCoder.metal in Sources */ = {isa = PBXBuildFile; fileRef = FCC15DBD221E69DD00DC3CB2 /* BoxCoder.metal */; };
@@ -53,7 +52,6 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		165F38D62276F4C00088E29F /* ConvAddReluMetal.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = ConvAddReluMetal.metal; sourceTree = "<group>"; };
 		33511F4FF7FE78679BE12DC0 /* Pods-paddle-mobile-metallib.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-paddle-mobile-metallib.release.xcconfig"; path = "../Pods/Target Support Files/Pods-paddle-mobile-metallib/Pods-paddle-mobile-metallib.release.xcconfig"; sourceTree = "<group>"; };
 		5D9D330A035906298947080B /* Pods_paddle_mobile_metallib.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_paddle_mobile_metallib.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		C6D31B9F9533810DBCA6B28D /* Pods-paddle-mobile-metallib.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-paddle-mobile-metallib.debug.xcconfig"; path = "../Pods/Target Support Files/Pods-paddle-mobile-metallib/Pods-paddle-mobile-metallib.debug.xcconfig"; sourceTree = "<group>"; };
@@ -192,7 +190,6 @@
 				FCC15DBF221E69DD00DC3CB2 /* Split.metal */,
 				FCC15DC9221E69DE00DC3CB2 /* TransposeKernel.inc.metal */,
 				FCC15DDA221E69E000DC3CB2 /* TransposeKernel.metal */,
-				165F38D62276F4C00088E29F /* ConvAddReluMetal.metal */,
 			);
 			path = "paddle-mobile-metallib";
 			sourceTree = "<group>";
@@ -313,7 +310,6 @@
 				FCC15E08221E69E100DC3CB2 /* Split.inc.metal in Sources */,
 				FCC15DF4221E69E100DC3CB2 /* ResizeBilinear.metal in Sources */,
 				FCC15E05221E69E100DC3CB2 /* BatchNormKernel.metal in Sources */,
-				165F38D72276F4C00088E29F /* ConvAddReluMetal.metal in Sources */,
 				FCC15DE6221E69E100DC3CB2 /* BoxCoder.metal in Sources */,
 				FCC15DF6221E69E100DC3CB2 /* PoolKernel.metal in Sources */,
 				FCC15E09221E69E100DC3CB2 /* ConcatKernel.inc.metal in Sources */,

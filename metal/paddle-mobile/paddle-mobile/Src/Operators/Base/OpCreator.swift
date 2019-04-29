@@ -68,8 +68,7 @@ class OpCreator<P: PrecisionProtocol> {
          gConvAddPreluType          :     ConvAddPreluOp<P>.creat,
          gConvAddAddPreluType       :     ConvAddAddPreluOp<P>.creat,
          gElementwiseAddPreluType   :     ElementwiseAddPreluOp<P>.creat,
-         gFusionConvAddType         :     ConvAddOp<P>.creat,
-         gConvAddReluType           :     ConvAddReluOp<P>.creat]
+         gFusionConvAddType         :     ConvAddOp<P>.creat]
     
     private init(){}
 }
