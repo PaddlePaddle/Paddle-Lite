@@ -32,15 +32,19 @@ struct PriorBoxMetalParam {
 class PriorBoxKernel<P: PrecisionProtocol>: Kernel, Computable{
     var metalParam: PriorBoxMetalParam!
     
-    required init(device: MTLDevice, param: PriorBoxParam<P>, initContext: InitContext) {
+    required init(device: MTLDevice, param: PriorBoxParam<P>, initContext: InitContext) throws {
         
         let originDim = param.output.tensorDim;
         
         param.output.tensorDim = Dim.init(inDim: [1, originDim[0], originDim[1], originDim[2] * originDim[3]])
         param.output.padToFourDim = Dim.init(inDim: [1, originDim[0], originDim[1], originDim[2] * originDim[3]])
         
-        param.output.initTexture(device: device, inTranspose: [0, 1, 2, 3], computePrecision: GlobalConfig.shared.computePrecision)
-        param.outputVariances.initTexture(device: device, inTranspose: [2, 0, 1, 3], computePrecision: GlobalConfig.shared.computePrecision)
+        do {
+            try param.output.initTexture(device: device, inTranspose: [0, 1, 2, 3], computePrecision: GlobalConfig.shared.computePrecision)
+            try param.outputVariances.initTexture(device: device, inTranspose: [2, 0, 1, 3], computePrecision: GlobalConfig.shared.computePrecision)
+        } catch let error {
+            throw error
+        }
         
         if GlobalConfig.shared.computePrecision == .Float32 {
             if param.min_max_aspect_ratios_order {
