@@ -63,13 +63,12 @@ void format_image(T** data_in, int channel, int height, int width) {
              align_to_x(channel * width, IMAGE_ALIGNMENT) * height * sizeof(T));
 }
 // Concat featuremaps along channel direction
-void concat_images(int16_t** images_in, float** scales_in, void* image_out,
+void concat_images(int8_t** images_in, float** scales_in, void* image_out,
                    float* scale_out, int image_num, uint32_t* channel_num,
                    int height, int width);
 
 // Split featuremap along channel direction
-void split_image(int16_t* image_in, const float* scale_in, void** images_out,
-                 float** scales_out, int image_num,
+void split_image(int8_t* image_in, void** images_out, int image_num,
                  const uint32_t* channel_nums, int height, int width);
 }  // namespace image
 }  // namespace fpga

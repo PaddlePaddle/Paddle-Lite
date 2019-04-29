@@ -88,8 +88,6 @@ struct ImageOutputArgs {
       activation;  // To select activation and specify (Leaky)Relu parameter.
 };
 
-// #ifdef PADDLE_MOBILE_FPGA_V1
-#if ((defined PADDLE_MOBILE_FPGA_V1) || (defined PADDLE_MOBILE_FPGA_V2))
 struct ConvDriverParam {
   uint64_t image_address_phy;
   uint64_t filter_address_phy;
@@ -141,10 +139,8 @@ struct DeconvTxParm {
   uint32_t deconv_en;
   uint32_t out_addr_offset;
 };
-#endif
 
 struct ConvArgs {
-  // bool relu_enabled;
   void* sb_address;  // scale and bias
   void* filter_address;
   float* filter_scale_address;
@@ -155,16 +151,17 @@ struct ConvArgs {
   struct ImageInputArgs image;  // input image;
   struct ImageOutputArgs output;
 
-// #ifdef PADDLE_MOBILE_FPGA_V1
-#if ((defined PADDLE_MOBILE_FPGA_V1) || (defined PADDLE_MOBILE_FPGA_V2))
   struct DeconvTxParm deconv_tx_param;
   struct ConvDriverParam driver;
-#endif
 };
 
 struct ConcatArgs {
   uint32_t image_num;
+#ifdef PADDLE_MOBILE_FPGA_V2
+  int8_t** images_in;
+#else
   int16_t** images_in;
+#endif
   float** scales_in;
   void* image_out;
   float* scale_out;
@@ -189,7 +186,11 @@ struct SplitConvArgs {
 
 struct SplitArgs {
   uint32_t image_num;
+#ifdef PADDLE_MOBILE_FPGA_V2
+  int8_t* image_in;
+#else
   int16_t* image_in;
+#endif
   float* scale_in;
   void** images_out;
   float** scales_out;
@@ -214,12 +215,7 @@ struct EWAddArgs {
   struct ImageInputArgs image0;
   struct ImageInputArgs image1;
   struct ImageOutputArgs output;
-  std::vector<float> image_in_quantVal;
-  std::vector<float> image_out_quantVal;
-// #ifdef PADDLE_MOBILE_FPGA_V1
-#if ((defined PADDLE_MOBILE_FPGA_V1) || (defined PADDLE_MOBILE_FPGA_V2))
   struct EWAddDriverParam driver;
-#endif
 };
 
 struct BypassArgs {
@@ -243,7 +239,6 @@ struct DeconvArgs {
 };
 struct DWconvArgs {
   uint32_t sub_conv_num;
-  // bool relu_enabled;
   void* bias_address;
   void* filter_address;
   struct KernelArgs kernel;
@@ -264,8 +259,6 @@ struct DWDeconvArgs {
   std::vector<std::shared_ptr<char>> vector_dw_conv_space;
 };
 
-// static inline int align_to_x(int num, int x) { return (num + x - 1) / x * x;
-// }
 static inline uint32_t align_to_x(int64_t num, int64_t x) {
   return ((uint32_t)(num + x) - 1) / (uint32_t)x * (uint32_t)x;
 }
