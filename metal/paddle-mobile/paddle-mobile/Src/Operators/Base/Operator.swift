@@ -129,10 +129,10 @@ class Operator <KernelType:  Computable , ParameterType>: OperatorProtocol where
         paraInputs = opDesc.paraInputs
         do {
             para = try ParamType.init(opDesc:opDesc, inScope: inScope)
+            kernel = try KernelType.init(device: device, param: para, initContext: initContext)
         } catch let error {
             throw error
         }
-        kernel = KernelType.init(device: device, param: para, initContext: initContext)
     }
     
     typealias ParamType = ParameterType
@@ -173,6 +173,7 @@ let gBilinearInterpType         = "bilinear_interp"
 let gSplit                      = "split"
 let gShape                      = "shape"
 let gFlatten                    = "flatten"
+let gConvAddReluType           = "conv_add_relu"
 let gConvAddPreluType           = "conv_add_prelu"
 let gConvAddAddPreluType        = "conv_add_add_prelu"
 let gElementwiseAddPreluType    = "elementwise_add_prelu"

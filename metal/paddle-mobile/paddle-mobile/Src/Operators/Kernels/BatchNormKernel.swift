@@ -15,7 +15,7 @@
 import Foundation
 
 class BatchNormKernel<P: PrecisionProtocol>: Kernel, Computable {
-    required init(device: MTLDevice, param: BatchNormParam<P>, initContext: InitContext) {
+    required init(device: MTLDevice, param: BatchNormParam<P>, initContext: InitContext) throws {
         let count = param.variance.dim.numel()
         let varianceP = param.variance.data.pointer
         let meanP = param.mean.data.pointer
@@ -29,7 +29,13 @@ class BatchNormKernel<P: PrecisionProtocol>: Kernel, Computable {
         
         param.bias.initBuffer(device: device, precision: GlobalConfig.shared.computePrecision)
         param.scale.initBuffer(device: device, precision: GlobalConfig.shared.computePrecision)
-        param.output.initTexture(device: device, inTranspose: param.input.transpose, computePrecision: GlobalConfig.shared.computePrecision)
+        
+        do {
+            try param.output.initTexture(device: device, inTranspose: param.input.transpose, computePrecision: GlobalConfig.shared.computePrecision)
+        } catch let error {
+            throw error
+        }
+        
         if GlobalConfig.shared.computePrecision == .Float32 {
             super.init(device: device, inFunctionName: "batchnorm", initContext: initContext)
         } else if GlobalConfig.shared.computePrecision == .Float16 {

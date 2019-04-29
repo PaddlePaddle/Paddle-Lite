@@ -37,13 +37,17 @@ class SplitKernel<P: PrecisionProtocol>: Kernel, Computable{
         encoder.endEncoding()
     }
     
-    required init(device: MTLDevice, param: SplitParam<P>, initContext: InitContext) {
+    required init(device: MTLDevice, param: SplitParam<P>, initContext: InitContext) throws {
         //     param.output.initTexture(device: device, computePrecision: computePrecision)
         let num = param.outputList.count
         let rank = param.input.tensorDim.cout()
         assert(num >= 2 && num <= 4)
         for output in param.outputList {
-            output.initTexture(device: device, inTranspose: param.input.transpose, computePrecision: GlobalConfig.shared.computePrecision)
+            do {
+                try output.initTexture(device: device, inTranspose: param.input.transpose, computePrecision: GlobalConfig.shared.computePrecision)
+            } catch let error {
+                throw error
+            }
         }
         smp = SplitMetalParam.init()
         smp.idim = (Int32(param.input.dim[0]), Int32(param.input.dim[1]), Int32(param.input.dim[2]), Int32(param.input.dim[3]))
