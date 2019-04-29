@@ -17,7 +17,7 @@ import Foundation
 class MulticlassNMSKernel<P: PrecisionProtocol>: Kernel, Computable{
     let pipline1: MTLComputePipelineState
     
-    required init(device: MTLDevice, param: MulticlassNMSParam<P>, initContext: InitContext) {
+    required init(device: MTLDevice, param: MulticlassNMSParam<P>, initContext: InitContext) throws {
         
         param.middleOutput.initBuffer(device: device)
         param.bboxOutput.initBuffer(device: device)
