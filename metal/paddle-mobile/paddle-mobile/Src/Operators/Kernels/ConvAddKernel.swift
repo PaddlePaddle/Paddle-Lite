@@ -103,99 +103,31 @@ class ConvAddKernel<P: PrecisionProtocol>: Kernel, Computable {
     let identifyingKey: String = getUniqueKey()
     
     required init(device: MTLDevice, param: ConvAddParam<P>, initContext: InitContext) throws {
-        
         do {
             try param.output.initTexture(device: device, inTranspose: [0, 2, 3, 1], computePrecision: GlobalConfig.shared.computePrecision)
         } catch let error {
             throw error
         }
         
-        let offsetY = (Int(param.dilations[1]) * (param.filter.tensorDim[2] - 1) + 1)/2 - Int(param.paddings[1])
-        let offsetX = (Int(param.dilations[0]) * (param.filter.tensorDim[3] - 1) + 1)/2 - Int(param.paddings[0])
-        
-        let key = identifyingKey
-
-        if initContext.useMPS {  // 使用 apple 的 MetalPerformanceShaders
-            if #available(iOS 11.0, *) {
-                var desc: MPSCNNConvolutionDescriptor?
-                // 如果不是 depth wise, 并且输入输出 tensor channel 都大于 4
-                let isDepthWise = param.filter.tensorDim[1] == 1 && param.filter.tensorDim[0] == param.input.tensorDim[1]
-                if param.input.tensorDim[1] > 4 && param.output.tensorDim[1] > 4 {
-                    if isDepthWise {
-                        desc = MPSCNNDepthWiseConvolutionDescriptor(kernelWidth: param.filter.tensorDim[3],
-                                                                    kernelHeight: param.filter.tensorDim[2],
-                                                                    inputFeatureChannels: param.input.tensorDim[1],
-                                                                    outputFeatureChannels: param.output.tensorDim[1],
-                                                                    neuronFilter: nil)
-                    } else {
-                        desc = MPSCNNConvolutionDescriptor(kernelWidth: param.filter.tensorDim[3],
-                                                           kernelHeight: param.filter.tensorDim[2],
-                                                           inputFeatureChannels: param.input.tensorDim[1],
-                                                           outputFeatureChannels: param.output.tensorDim[1],
-                                                           neuronFilter: nil)
-                    }
-                }
-                desc?.strideInPixelsX = Int(param.stride[0])
-                desc?.strideInPixelsY = Int(param.stride[1])
-                if let inDesc = desc {
-                    let _ = param.filter.convert(converter: MPSPointerConverter<P>.init())
-                    let dataSource = ConvDataSource.init(inDesc: inDesc, inWeights: param.filter, inBiasTerms: param.y)
-                    let conv = MPSCNNConvolution.init(device: device, weights: dataSource)
-                    conv.offset = MPSOffset.init(x: offsetX, y: offsetY, z: 0)
-                    conv.edgeMode = .zero
-                    convDic[key] = conv
-                    super.init(device: device, inFunctionName: nil, initContext: initContext)
-                    return
-                }
+        var shouldUseMPS = false
+        if #available(iOS 11.0, *), initContext.useMPS {
+            // 输入输出 tensor channel 必须都大于 4
+            if param.input.tensorDim[1] > 4 && param.output.tensorDim[1] > 4 {
+                shouldUseMPS = true
             }
         }
         
-        let padWhenOneC = !(param.filter.channel == 1 && param.filter.n == param.input.tensorDim[1])
-        param.filter.initBuffer(device: device, precision: GlobalConfig.shared.computePrecision, padWhenOneC: padWhenOneC)
-        param.y.initBuffer(device: device, precision: GlobalConfig.shared.computePrecision)
-        
-        if GlobalConfig.shared.computePrecision == .Float16 {
-            if param.filter.width == 1 && param.filter.height == 1 {
-                super.init(device: device, inFunctionName: "conv_add_1x1_half", initContext: initContext)
-            } else if param.filter.channel == 1 && param.filter.n == param.input.tensorDim[1] {
-                super.init(device: device, inFunctionName: "depthwise_conv_add_3x3_half", initContext: initContext)
-            } else if param.filter.width == 3 && param.filter.height == 3 {
-                super.init(device: device, inFunctionName: "conv_add_3x3_half", initContext: initContext)
-            } else if param.filter.width == 1 && param.filter.height == 5 {
-                super.init(device: device, inFunctionName: "conv_add_5x1_half", initContext: initContext)
-            } else if param.filter.width == 5 && param.filter.height == 1 {
-                super.init(device: device, inFunctionName: "conv_add_1x5_half", initContext: initContext)
-            } else {
-                fatalError(" unsupport yet ")
-            }
-        } else if GlobalConfig.shared.computePrecision == .Float32 {
-            if param.filter.width == 1 && param.filter.height == 1 {
-                super.init(device: device, inFunctionName: "conv_add_1x1", initContext: initContext)
-            } else if param.filter.channel == 1 && param.filter.n == param.input.tensorDim[1] {
-                super.init(device: device, inFunctionName: "depthwise_conv_add_3x3", initContext: initContext)
-            } else if param.filter.width == 1 && param.filter.height == 5 {
-                super.init(device: device, inFunctionName: "conv_add_5x1", initContext: initContext)
-            } else if param.filter.width == 5 && param.filter.height == 1 {
-                super.init(device: device, inFunctionName: "conv_add_1x5", initContext: initContext)
-            } else if param.filter.width == 3 && param.filter.height == 3 {
-                super.init(device: device, inFunctionName: "conv_add_3x3", initContext: initContext)
-            } else {
-                fatalError(" unsupport yet ")
-            }
+        if shouldUseMPS {
+            super.init(device: device, inFunctionName: nil, initContext: initContext)
+            setupWithMPS(device: device, param: param)
         } else {
-            fatalError()
+            let functionName = type(of: self).kernelFunctionName(param: param)
+            if functionName == nil {
+                fatalError(" unsupport yet ")
+            }
+            super.init(device: device, inFunctionName: functionName, initContext: initContext)
+            setupWithoutMPS(device: device, param: param)
         }
-        
-        //    print(" function: \(functionName)")
-        //    print("offset x: \(offsetX)")
-        //    print("offset y: \(offsetY)")
-        
-        let offsetZ = 0.0
-        let inMetalParam = MetalConvParam.init(offsetX: Int16(offsetX), offsetY: Int16(offsetY), offsetZ: Int16(offsetZ), strideX: UInt16(param.stride[0]), strideY: UInt16(param.stride[1]), dilationX: UInt16(param.dilations[0]), dilationY: UInt16(param.dilations[1]))
-        //    print("metal param: ")
-        //    print(inMetalParam)
-        
-        metalParam = inMetalParam
     }
     
     func compute(commandBuffer: MTLCommandBuffer, param: ConvAddParam<P>) throws {
@@ -204,7 +136,7 @@ class ConvAddKernel<P: PrecisionProtocol>: Kernel, Computable {
                 let inputImage = MPSImage.init(texture: param.input.metalTexture, featureChannels: param.input.tensorDim[1])
                 let outputImage = MPSImage.init(texture: param.output.metalTexture, featureChannels: param.output.tensorDim[1])
                 conv.encode(commandBuffer: commandBuffer, sourceImage: inputImage, destinationImage: outputImage)
-                return;
+                return
             }
         }
 
@@ -224,6 +156,86 @@ class ConvAddKernel<P: PrecisionProtocol>: Kernel, Computable {
         if #available(iOS 10.0, *) {
             convDic.removeValue(forKey: identifyingKey)
         }
+    }
+    
+    func setupWithMPS(device: MTLDevice, param: ConvAddParam<P>) {
+        let offsetX = (Int(param.dilations[0]) * (param.filter.tensorDim[3] - 1) + 1) / 2 - Int(param.paddings[0])
+        let offsetY = (Int(param.dilations[1]) * (param.filter.tensorDim[2] - 1) + 1) / 2 - Int(param.paddings[1])
+        
+        let key = identifyingKey
+        
+        let isDepthWise = param.filter.tensorDim[1] == 1 && param.filter.tensorDim[0] == param.input.tensorDim[1]
+        if #available(iOS 11.0, *) {
+            let desc: MPSCNNConvolutionDescriptor = isDepthWise ?
+                MPSCNNDepthWiseConvolutionDescriptor(kernelWidth: param.filter.tensorDim[3],
+                                                     kernelHeight: param.filter.tensorDim[2],
+                                                     inputFeatureChannels: param.input.tensorDim[1],
+                                                     outputFeatureChannels: param.output.tensorDim[1],
+                                                     neuronFilter: neuronFilterForMPSLayer(device: device) as? MPSCNNNeuron) :
+                MPSCNNConvolutionDescriptor(kernelWidth: param.filter.tensorDim[3],
+                                            kernelHeight: param.filter.tensorDim[2],
+                                            inputFeatureChannels: param.input.tensorDim[1],
+                                            outputFeatureChannels: param.output.tensorDim[1],
+                                            neuronFilter: neuronFilterForMPSLayer(device: device) as? MPSCNNNeuron)
+            desc.strideInPixelsX = Int(param.stride[0])
+            desc.strideInPixelsY = Int(param.stride[1])
+            let _ = param.filter.convert(converter: MPSPointerConverter<P>.init())
+            let dataSource = ConvDataSource.init(inDesc: desc, inWeights: param.filter, inBiasTerms: param.y)
+            let conv = MPSCNNConvolution.init(device: device, weights: dataSource)
+            conv.offset = MPSOffset.init(x: offsetX, y: offsetY, z: 0)
+            conv.edgeMode = .zero
+            convDic[key] = conv
+        }
+    }
+    
+    func setupWithoutMPS(device: MTLDevice, param: ConvAddParam<P>) {
+        let offsetX = (Int(param.dilations[0]) * (param.filter.tensorDim[3] - 1) + 1) / 2 - Int(param.paddings[0])
+        let offsetY = (Int(param.dilations[1]) * (param.filter.tensorDim[2] - 1) + 1) / 2 - Int(param.paddings[1])
+        let offsetZ = 0.0
+        let inMetalParam = MetalConvParam.init(offsetX: Int16(offsetX), offsetY: Int16(offsetY), offsetZ: Int16(offsetZ), strideX: UInt16(param.stride[0]), strideY: UInt16(param.stride[1]), dilationX: UInt16(param.dilations[0]), dilationY: UInt16(param.dilations[1]))
+        metalParam = inMetalParam
+        
+        let padWhenOneC = !(param.filter.channel == 1 && param.filter.n == param.input.tensorDim[1])
+        param.filter.initBuffer(device: device, precision: GlobalConfig.shared.computePrecision, padWhenOneC: padWhenOneC)
+        param.y.initBuffer(device: device, precision: GlobalConfig.shared.computePrecision)
+    }
+    
+    open class func kernelFunctionName(param: ConvAddParam<P>) -> String? {
+        if GlobalConfig.shared.computePrecision == .Float16 {
+            if param.filter.width == 1 && param.filter.height == 1 {
+                return "conv_add_1x1_half"
+            } else if param.filter.channel == 1 && param.filter.n == param.input.tensorDim[1] {
+                return "depthwise_conv_add_3x3_half"
+            } else if param.filter.width == 3 && param.filter.height == 3 {
+                return "conv_add_3x3_half"
+            } else if param.filter.width == 1 && param.filter.height == 5 {
+                return "conv_add_5x1_half"
+            } else if param.filter.width == 5 && param.filter.height == 1 {
+                return "conv_add_1x5_half"
+            } else {
+                return nil
+            }
+        } else if GlobalConfig.shared.computePrecision == .Float32 {
+            if param.filter.width == 1 && param.filter.height == 1 {
+                return "conv_add_1x1"
+            } else if param.filter.channel == 1 && param.filter.n == param.input.tensorDim[1] {
+                return "depthwise_conv_add_3x3"
+            } else if param.filter.width == 1 && param.filter.height == 5 {
+                return "conv_add_5x1"
+            } else if param.filter.width == 5 && param.filter.height == 1 {
+                return "conv_add_1x5"
+            } else if param.filter.width == 3 && param.filter.height == 3 {
+                return "conv_add_3x3"
+            } else {
+                return nil
+            }
+        } else {
+            return nil
+        }
+    }
+    
+    func neuronFilterForMPSLayer(device: MTLDevice) -> AnyObject? {
+        return nil
     }
 }
 
