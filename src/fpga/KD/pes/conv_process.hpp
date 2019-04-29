@@ -105,6 +105,8 @@ inline void combine_add_bn_params(BatchnormParam* bn, Tensor* bias,
       new_bias_ptr[i] = 0.0f;
     }
   }
+  param_->scale()->flush();
+  param_->bias()->flush();
 }
 
 inline void format_scale_bias(Tensor* scale, Tensor* bias, Tensor* filter,

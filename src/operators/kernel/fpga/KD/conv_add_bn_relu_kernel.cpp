@@ -31,7 +31,7 @@ bool ConvAddBNReluKernel<FPGA, float>::Init(
   param->Output()->mutable_data<half>();
 
   const int groups = param->Groups();
-  const int channel = param->Output()->dims()[1];
+  const int channel = param->Input()->dims()[1];
   if (groups == channel) {
     DepthwiseConvPE& pe = param->context().pe<DepthwiseConvPE>();
 
@@ -57,6 +57,7 @@ bool ConvAddBNReluKernel<FPGA, float>::Init(
 
     pe.init();
     pe.apply();
+    delete bn_param;
 
   } else {
     ConvPE& pe = param->context().pe<ConvPE>();
@@ -83,6 +84,7 @@ bool ConvAddBNReluKernel<FPGA, float>::Init(
 
     pe.init();
     pe.apply();
+    delete bn_param;
   }
 
   return true;
@@ -102,6 +104,10 @@ void ConvAddBNReluKernel<FPGA, float>::Compute(
     ConvPE& pe = context.pe<ConvPE>();
     pe.dispatch();
   }
+
+  std::string path =
+      "conv_add_bn_relu_out_" + param.Output()->zynqmpTensor()->dimsFileName();
+  param.Output()->zynqmpTensor()->saveToFile(path);
 }
 
 }  // namespace operators

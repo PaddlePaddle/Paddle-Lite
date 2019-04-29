@@ -38,6 +38,14 @@ class DepthwiseConvPE : public PE {
     float* new_scale_data = param_.scale()->data<float>();
     float* new_bias_data = param_.bias()->data<float>();
 
+    // bias从float转换成float16
+    float16* b_data = bias_.mutableData<float16>(FP16, param_.bias()->shape());
+    // bias->copyFrom(param_.bias());
+    for (int i = 0; i < channel; i++) {
+      b_data[i] = float_to_half(new_bias_data[i]);
+    }
+    bias_.flush();
+
     Tensor* quantized_filter = param.quantizedFilter();
     quantized_filter->mutableData<float16>(FP16, param.filter->shape());
     format_dw_filter(param.filter, param.quantizedFilter(), new_scale_data);
@@ -45,9 +53,8 @@ class DepthwiseConvPE : public PE {
     DWconvArgs args = {0};
 
     void* filter_address = quantized_filter->data<float>();
-    std::cout << "filter:" << filter_address;
 
-    args.bias_address = new_bias_data;
+    args.bias_address = b_data;
     args.filter_address = param.quantizedFilter()->data<void>();
     args.kernel.width = param.filter->shape().height();
     args.kernel.height = param.filter->shape().width();
@@ -68,12 +75,22 @@ class DepthwiseConvPE : public PE {
     param.args = args;
   }
 
-  bool dispatch() { return compute_fpga_dwconv(param_.args) == 0; }
+  bool dispatch() {
+    inplace_.relu_enable = param_.relu.enabled;
+    config_inplace(inplace_);
+    bool ret = compute_fpga_dwconv(param_.args) == 0;
+    inplace_.relu_enable = false;
+    config_inplace(inplace_);
+
+    return ret;
+  }
 
   DepthwiseConvParam& param() { return param_; }
 
  private:
   DepthwiseConvParam param_;
+  Tensor bias_;
+  InplaceArgs inplace_;
 };
 
 }  // namespace zynqmp

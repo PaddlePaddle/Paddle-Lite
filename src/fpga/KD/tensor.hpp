@@ -145,7 +145,7 @@ class Tensor {
       for (int n = 0; n < shape_->num(); n++) {
         for (int h = 0; h < shape_->height(); h++) {
           memcpy(dst_start, src_start, wc * cell_size);
-          memcpy(dst_start + wc * cell_size, 0, remainder * cell_size);
+          memset(dst_start + wc * cell_size, 0, remainder * cell_size);
           src_start += wc * cell_size;
           dst_start += wc_aligned * cell_size;
         }
@@ -242,8 +242,16 @@ class Tensor {
     }
   }
 
+  std::string dimsFileName() {
+    return std::to_string(shape_->num()) + "_" +
+           std::to_string(shape_->channel()) + "_" +
+           std::to_string(shape_->height()) + "_" +
+           std::to_string(shape_->width()) + ".txt";
+  }
+
   void saveToFile() {
-    std::string path = std::to_string(id_) + ".txt";
+    // std::string path = std::to_string(id_) + ".txt";
+    std::string path = dimsFileName();
     saveToFile(path);
   }
 
