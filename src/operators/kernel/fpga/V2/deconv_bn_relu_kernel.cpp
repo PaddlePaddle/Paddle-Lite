@@ -25,7 +25,6 @@ namespace operators {
 template <>
 bool DeconvBNReluKernel<FPGA, float>::Init(
     FusionDeconvBNReluParam<FPGA> *param) {
-  // bool relu_enabled = true;
   paddle_mobile::fpga::ActivationType activation_enable =
       paddle_mobile::fpga::LEAKYRELU;
   int16_t leaky_relu_negative_slope = 0;
@@ -36,7 +35,7 @@ bool DeconvBNReluKernel<FPGA, float>::Init(
   auto out = param->Output();
   float Si = input->scale[0];
   float So = out->scale[0];
-  float Sf = fpga::filter_find_max(filter);
+  float Sf = fpga::filter_find_max(filter) / 127;
   auto bn_mean_ptr = param->InputMean()->data<float>();
   auto bn_var_ptr = param->InputVariance()->data<float>();
   auto bn_scale_ptr = param->InputScale()->data<float>();
@@ -59,10 +58,6 @@ bool DeconvBNReluKernel<FPGA, float>::Init(
   int sub_conv_n = param->Strides()[0];
   auto bs_ptr = (float *)fpga::fpga_malloc(2 * channel * sub_conv_n *  // NOLINT
                                            sizeof(float));             // NOLINT
-  //  for (int i = 0; i < channel * sub_conv_n; i++) {
-  //    bs_ptr[i + sub_conv_n * channel] = new_scale_ptr[i % channel];
-  //    bs_ptr[i] = new_bias_ptr[i % (channel)];
-  //  }
   if (param->Groups() == channel) {
     for (int i = 0; i < channel * sub_conv_n; i++) {
       bs_ptr[i + sub_conv_n * channel] = new_scale_ptr[i % channel] * Si / So;
@@ -107,7 +102,6 @@ bool DeconvBNReluKernel<FPGA, float>::Init(
 template <>
 void DeconvBNReluKernel<FPGA, float>::Compute(
     const FusionDeconvBNReluParam<FPGA> &param) {
-  // fpga::ComputeFpgaDeconv(param.FpgaArgs());
   if (param.Groups() == param.Output()->dims()[1]) {
     fpga::ComputeDWDeconv(param.FpgaDWDconvArgs());
   } else {
