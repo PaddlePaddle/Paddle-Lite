@@ -17,8 +17,14 @@ import Foundation
 
 class ElementwiseAddPreluKernel<P: PrecisionProtocol>: Kernel, Computable {
     var metalParam: ElementwiseAddMetalParam
-    required init(device: MTLDevice, param: ElementwiseAddPreluParam<P>, initContext: InitContext) {
-        param.output.initTexture(device: device, inTranspose: param.inputX.transpose, computePrecision: GlobalConfig.shared.computePrecision)
+    required init(device: MTLDevice, param: ElementwiseAddPreluParam<P>, initContext: InitContext) throws {
+        
+        do {
+            try param.output.initTexture(device: device, inTranspose: param.inputX.transpose, computePrecision: GlobalConfig.shared.computePrecision)
+        } catch let error {
+            throw error
+        }
+        
         param.alpha.initBuffer(device: device, precision: GlobalConfig.shared.computePrecision)
         
         metalParam = ElementwiseAddMetalParam.init()

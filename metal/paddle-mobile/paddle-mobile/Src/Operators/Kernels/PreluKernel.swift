@@ -15,9 +15,15 @@
 import Foundation
 
 class PreluKernel<P: PrecisionProtocol>: Kernel, Computable{
-    required init(device: MTLDevice, param: PreluParam<P>, initContext: InitContext) {
+    required init(device: MTLDevice, param: PreluParam<P>, initContext: InitContext) throws {
         param.alpha.initBuffer(device: device, precision: GlobalConfig.shared.computePrecision)
-        param.output.initTexture(device: device, inTranspose: param.input.transpose, computePrecision: GlobalConfig.shared.computePrecision)
+        
+        do {
+            try param.output.initTexture(device: device, inTranspose: param.input.transpose, computePrecision: GlobalConfig.shared.computePrecision)
+        } catch let error {
+            throw error
+        }
+        
         if GlobalConfig.shared.computePrecision == .Float32 {
             if param.mode == "channel" {
                 super.init(device: device, inFunctionName: "prelu_channel", initContext: initContext)

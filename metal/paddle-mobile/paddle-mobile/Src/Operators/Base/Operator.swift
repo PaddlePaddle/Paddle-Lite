@@ -129,10 +129,10 @@ class Operator <KernelType:  Computable , ParameterType>: OperatorProtocol where
         paraInputs = opDesc.paraInputs
         do {
             para = try ParamType.init(opDesc:opDesc, inScope: inScope)
+            kernel = try KernelType.init(device: device, param: para, initContext: initContext)
         } catch let error {
             throw error
         }
-        kernel = KernelType.init(device: device, param: para, initContext: initContext)
     }
     
     typealias ParamType = ParameterType

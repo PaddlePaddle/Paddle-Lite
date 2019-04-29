@@ -22,8 +22,14 @@ struct SoftmaxMetalParam {
 class SoftmaxKernel<P: PrecisionProtocol>: Kernel, Computable{
     
     var metalParam: SoftmaxMetalParam
-    required init(device: MTLDevice, param: SoftmaxParam<P>, initContext: InitContext) {
-        param.output.initTexture(device: device, computePrecision: GlobalConfig.shared.computePrecision)
+    required init(device: MTLDevice, param: SoftmaxParam<P>, initContext: InitContext) throws {
+        
+        do {
+            try param.output.initTexture(device: device, computePrecision: GlobalConfig.shared.computePrecision)
+        } catch let error {
+            throw error
+        }
+        
         metalParam = SoftmaxMetalParam.init(
             N: Int32(param.input.tensorDim[0]),
             K: Int32(param.input.tensorDim[1])

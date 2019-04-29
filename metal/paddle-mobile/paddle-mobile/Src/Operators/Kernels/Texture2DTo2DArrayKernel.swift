@@ -24,8 +24,14 @@ struct Texture2DTo2DArrayParam {
 
 class Texture2DTo2DArrayKernel<P: PrecisionProtocol>: Kernel, Computable{
     
-    required init(device: MTLDevice, param: FeedParam<P>, initContext: InitContext) {
-        param.output.initTexture(device: device, inTranspose: [0, 2, 3, 1], computePrecision: GlobalConfig.shared.computePrecision)
+    required init(device: MTLDevice, param: FeedParam<P>, initContext: InitContext) throws {
+        
+        do {
+            try param.output.initTexture(device: device, inTranspose: [0, 2, 3, 1], computePrecision: GlobalConfig.shared.computePrecision)
+        } catch let error {
+            throw error
+        }
+        
         if GlobalConfig.shared.computePrecision == .Float16 {
             super.init(device: device, inFunctionName: "texture2d_to_2d_array_half", initContext: initContext)
         } else if GlobalConfig.shared.computePrecision == .Float32 {

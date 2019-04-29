@@ -16,7 +16,7 @@ import Foundation
 
 class FetchKernel<P: PrecisionProtocol>: Kernel, Computable {
     
-    required init(device: MTLDevice, param: FetchParam<P>, initContext: InitContext) {
+    required init(device: MTLDevice, param: FetchParam<P>, initContext: InitContext) throws {
         param.output.initBuffer(device: device)
         if GlobalConfig.shared.computePrecision == .Float16 {
             if param.input.transpose == [0, 2, 3, 1] {
