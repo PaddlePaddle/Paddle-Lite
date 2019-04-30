@@ -15,6 +15,7 @@ limitations under the License. */
 #ifdef MULTICLASSNMS_OP
 
 #include "operators/kernel/multiclass_nms_kernel.h"
+#include <algorithm>
 #include "operators/math/poly_util.h"
 namespace paddle_mobile {
 namespace operators {
