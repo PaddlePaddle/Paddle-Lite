@@ -43,7 +43,7 @@ import paddle_mobile
         metalLibPath = Bundle.main.path(forResource: "paddle-mobile-metallib", ofType: "metallib")
     }
     
-    override public func updateProgram(program: Program) {
+    override public func updateProgram(program: Program) throws {
         // n h w c
         for block in program.programDesc.blocks {
             for varDesc in block.vars {
@@ -54,14 +54,21 @@ import paddle_mobile
                             let newDim = Dim.init(inDim: [texture.dim[0],  inputDim[1], inputDim[2], texture.tensorDim[1]])
                             print(" var desc name " + varDesc.name + " new dim" + "\(newDim)")
                             
-                            texture.updateDims(inTensorDim: Dim.init(inDim: [texture.tensorDim[0], texture.tensorDim[1], inputDim[1], inputDim[2]]), inDim: newDim)
-                            texture.initTexture(device: device, inTranspose: [0, 1, 2, 3], computePrecision: GlobalConfig.shared.computePrecision)
+                            do {
+                                try texture.updateDims(inTensorDim: Dim.init(inDim: [texture.tensorDim[0], texture.tensorDim[1], inputDim[1], inputDim[2]]), inDim: newDim)
+                                try texture.initTexture(device: device, inTranspose: [0, 1, 2, 3], computePrecision: GlobalConfig.shared.computePrecision)
+                            } catch let error {
+                                throw error
+                            }
                             
-                            let output: FetchHolder = program.scope.output() as! FetchHolder
-                            output.dim = newDim
-                            output.capacity = newDim.numel()
-                            output.paddedCapacity = newDim.numel() * 4
-                            output.initBuffer(device: device)
+                            if let output: FetchHolder = program.scope.output() as? FetchHolder {
+                                output.dim = newDim
+                                output.capacity = newDim.numel()
+                                output.paddedCapacity = newDim.numel() * 4
+                                output.initBuffer(device: device)
+                            } else {
+                                throw PaddleMobileError.loaderError(message: "scope output nil")
+                            }
                         }
                     }
                 }

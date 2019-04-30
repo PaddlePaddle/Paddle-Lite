@@ -42,7 +42,7 @@ var isTest = false
 }
 
 protocol Executorable {
-    func predict(input: MTLTexture, dim: Dim, completionHandle: @escaping ([GPUResultHolder]) -> Void, preProcessKernle: CusomKernel?, except: Int) throws
+    func predict(input: MTLTexture, dim: Dim, completionHandle: @escaping ( _ success: Bool, _ result: [GPUResultHolder]?) -> Void, preProcessKernle: CusomKernel?, except: Int) throws
     func clear()
 }
 
@@ -53,6 +53,8 @@ public class Executor<P: PrecisionProtocol>: Executorable{
     let device: MTLDevice
     let inflightSemaphore: DispatchSemaphore
     let queue: MTLCommandQueue
+    private var isValid = true
+    
     init(inDevice:MTLDevice, inQueue: MTLCommandQueue, inProgram: Program, initContext: InitContext) throws {
         self.inflightSemaphore = DispatchSemaphore(value: 1)
         program = inProgram
@@ -73,9 +75,11 @@ public class Executor<P: PrecisionProtocol>: Executorable{
         }
     }
     
-    public func predict(input: MTLTexture, dim: Dim, completionHandle: @escaping ([GPUResultHolder]) -> Void, preProcessKernle: CusomKernel? = nil, except: Int = 0) throws {
+    public func predict(input: MTLTexture, dim: Dim, completionHandle: @escaping ( _ success: Bool, _ result: [GPUResultHolder]?) -> Void, preProcessKernle: CusomKernel? = nil, except: Int = 0) throws {
         inflightSemaphore.wait()
-        
+        guard isValid else {
+            throw PaddleMobileError.predictError(message: "Executor is cleared and invalid")
+        }
         guard let buffer = queue.makeCommandBuffer() else {
             throw PaddleMobileError.predictError(message: "CommandBuffer is nil")
         }
@@ -110,9 +114,20 @@ public class Executor<P: PrecisionProtocol>: Executorable{
             outputTextures = ops[ops.count - except].inputVariant()
         }
         
+        let safeComplete = { [weak self] (success: Bool, result: [GPUResultHolder]?) in
+            completionHandle(success, result)
+            self?.inflightSemaphore.signal()
+        }
+        
         buffer.addCompletedHandler { [weak self] (commandbuffer) in
             guard let SSelf = self else {
-                fatalError()
+                safeComplete(false, nil)
+                return
+            }
+            
+            guard SSelf.isValid else {
+                safeComplete(false, nil)
+                return
             }
             
             //将输入写进文件
@@ -133,24 +148,31 @@ public class Executor<P: PrecisionProtocol>: Executorable{
                 }
             }
             
-            var resultHolder: GPUResultHolder
+            var resultHolder: GPUResultHolder?
             if except > 0 {
                 resultHolder = GPUResultHolder.init(inDim: [], inPointer: nil, inCapacity: 0,  inIntermediateResults: outputTextures)
-            } else {
-                let outputVar: Variant = SSelf.program.scope.output()!
-                let output: FetchHolder = outputVar as! FetchHolder
+            } else if let output = SSelf.program.scope.output() as? FetchHolder {
                 resultHolder = GPUResultHolder.init(inDim: output.dim.dims, inPointer: output.result, inCapacity: output.capacity)
             }
-            
-            completionHandle([resultHolder])
-            SSelf.inflightSemaphore.signal()
+            if let resultHolder = resultHolder {
+                safeComplete(true, [resultHolder])
+            } else {
+                safeComplete(false, nil)
+            }
         }
         
         buffer.commit()
     }
     
     public func clear() {
+        isValid = false
         program.scope.clear()
+    }
+    
+    deinit {
+        while (inflightSemaphore.signal() != 0) {
+            
+        }
     }
     
 }
