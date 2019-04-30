@@ -15,20 +15,36 @@ limitations under the License. */
 #ifdef NORM_OP
 
 #include "operators/kernel/norm_kernel.h"
-// #include "operators/kernel/central-arm-func/norm_arm_func.h"
+#include "fpga/KD/pes/norm_pe.hpp"
 
 namespace paddle_mobile {
 namespace operators {
 
 template <>
-bool NormKernel<FPGA, float>::Init(NormParam<FPGA> *param) {
+bool NormKernel<FPGA, float>::Init(NormParam<FPGA>* param) {
   param->Out()->mutable_data<half>();
+
+  zynqmp::NormPE& pe = param->context().pe<zynqmp::NormPE>();
+  zynqmp::NormParam& norm_param = pe.param();
+  norm_param.input = param->InputX()->zynqmpTensor();
+  norm_param.output = param->Out()->zynqmpTensor();
+
+  pe.init();
+  pe.apply();
+
   return true;
 }
 
 template <>
-void NormKernel<FPGA, float>::Compute(const NormParam<FPGA> &param) {
-  // NormCompute<float>(param);
+void NormKernel<FPGA, float>::Compute(const NormParam<FPGA>& param) {
+  zynqmp::Context& context = const_cast<zynqmp::Context&>(param.context_);
+  zynqmp::NormPE& pe = context.pe<zynqmp::NormPE>();
+  pe.dispatch();
+
+  param.Out()->zynqmpTensor()->saveToFile();
+
+  std::cout << "Out scale:" << param.Out()->zynqmpTensor()->scale()[0]
+            << std::endl;
 }
 
 template class NormKernel<FPGA, float>;

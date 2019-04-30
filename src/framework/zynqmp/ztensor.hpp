@@ -221,10 +221,19 @@ class Tensor : public TensorBase {
       }
       zynqmp::Shape input_shape(layout_type, v);
 
-      // for (int i = 0; i < v.size(); i++) {
-      //   std::cout << ":" << v[i] << std::endl;
-      // }
-      zynqmp::DataType dtype = type == _float ? zynqmp::FP32 : zynqmp::FP16;
+      zynqmp::DataType dtype = zynqmp::FP16;
+      switch (type) {
+        case _float:
+          dtype = zynqmp::FP32;
+          break;
+        case _int:
+          dtype = zynqmp::INT32;
+          break;
+        default:
+          dtype = zynqmp::FP16;
+      }
+
+      // zynqmp::DataType dtype = type == _float ? zynqmp::FP32 : zynqmp::FP16;
       tensor_->mutableData<float>(dtype, input_shape);
     }
 
@@ -266,7 +275,18 @@ class Tensor : public TensorBase {
           break;
       }
       zynqmp::Shape input_shape(layout_type, v);
-      zynqmp::DataType dtype = type == _float ? zynqmp::FP32 : zynqmp::FP16;
+
+      zynqmp::DataType dtype = zynqmp::FP16;
+      switch (type) {
+        case _float:
+          dtype = zynqmp::FP32;
+          break;
+        case _int:
+          dtype = zynqmp::INT32;
+          break;
+        default:
+          dtype = zynqmp::FP16;
+      }
       tensor_->mutableData<float>(dtype, input_shape);
     }
 

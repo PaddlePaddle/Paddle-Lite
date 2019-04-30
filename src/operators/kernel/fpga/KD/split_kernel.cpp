@@ -15,24 +15,40 @@ limitations under the License. */
 #ifdef SPLIT_OP
 
 #include "operators/kernel/split_kernel.h"
-#include "operators/kernel/central-arm-func/split_arm_func.h"
+#include "fpga/KD/pes/split_pe.hpp"
 
 namespace paddle_mobile {
 namespace operators {
 
 template <>
-bool SplitKernel<FPGA, float>::Init(SplitParam<FPGA> *param) {
-  // param->Outs()->mutable_data<half>();
-  std::vector<LoDTensor *> outs = param->Outs();
+bool SplitKernel<FPGA, float>::Init(SplitParam<FPGA>* param) {
+  std::vector<LoDTensor*> outs = param->Outs();
+  std::vector<zynqmp::Tensor*> outputs;
   for (int i = 0; i < outs.size(); i++) {
     outs[i]->mutable_data<half>();
+    outputs.push_back(outs[i]->zynqmpTensor());
   }
+  zynqmp::SplitPE& pe = param->context().pe<zynqmp::SplitPE>();
+  zynqmp::SplitParam& split_param = pe.param();
+  split_param.input = param->InputX()->zynqmpTensor();
+  split_param.outputs = outputs;
+  split_param.axis = param->Axis();
+  split_param.num = param->Num();
+
+  pe.init();
+  pe.apply();
   return true;
 }
 
 template <>
-void SplitKernel<FPGA, float>::Compute(const SplitParam<FPGA> &param) {
-  // SplitCompute<float>(param);
+void SplitKernel<FPGA, float>::Compute(const SplitParam<FPGA>& param) {
+  std::cout << "SplitKernel\n";
+  zynqmp::Context& context = const_cast<zynqmp::Context&>(param.context_);
+  zynqmp::SplitPE& pe = context.pe<zynqmp::SplitPE>();
+  pe.dispatch();
+
+  std::cout << "Out scale:" << param.Outs()[0]->zynqmpTensor()->scale()[0]
+            << std::endl;
 }
 
 template class SplitKernel<FPGA, float>;

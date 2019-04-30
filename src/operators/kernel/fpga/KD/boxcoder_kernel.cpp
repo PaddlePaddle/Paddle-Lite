@@ -15,20 +15,20 @@ limitations under the License. */
 #ifdef BOXCODER_OP
 
 #include "operators/kernel/box_coder_kernel.h"
-#include "operators/kernel/central-arm-func/box_coder_arm_func.h"
+#include "operators/kernel/fpga/KD/box_coder_arm_func.h"
 
 namespace paddle_mobile {
 namespace operators {
 
 template <>
 bool BoxCoderKernel<FPGA, float>::Init(BoxCoderParam<FPGA> *param) {
-  param->OutputBox()->mutable_data<half>();
+  param->OutputBox()->mutable_data<float>();
   return true;
 }
 
 template <>
 void BoxCoderKernel<FPGA, float>::Compute(const BoxCoderParam<FPGA> &param) {
-  // BoxCoderCompute<float>(param);
+  BoxCoderCompute<float>(param);
 }
 
 template class BoxCoderKernel<FPGA, float>;

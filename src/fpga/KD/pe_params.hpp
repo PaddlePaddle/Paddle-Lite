@@ -160,6 +160,15 @@ struct SoftmaxParam : PEParam {
  private:
   Tensor* floatInput = nullptr;
 };
+
+struct SplitParam : PEParam {
+ public:
+  Tensor* input = nullptr;
+  std::vector<Tensor*> outputs;
+  int axis = 1;
+  int num = 1;
+};
+
 struct NormParam : PEParam {
  public:
   Tensor* input = nullptr;

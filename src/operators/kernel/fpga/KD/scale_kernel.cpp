@@ -24,19 +24,36 @@ namespace operators {
 template <>
 bool ScaleKernel<FPGA, float>::Init(ScaleParam<FPGA>* param) {
   param->Out()->mutable_data<half>();
+
+  zynqmp::ScalePE& pe = param->context().pe<zynqmp::ScalePE>();
+  zynqmp::ScaleParam& scale_param = pe.param();
+  scale_param.input = param->InputX()->zynqmpTensor();
+  scale_param.output = param->Out()->zynqmpTensor();
+  scale_param.bias = param->Bias()->zynqmpTensor();
+  scale_param.scale = param->Scale()->zynqmpTensor();
+
+  pe.init();
+  pe.apply();
+
   return true;
 }
 
 template <>
 void ScaleKernel<FPGA, float>::Compute(const ScaleParam<FPGA>& param) {
-  zynqmp::Tensor* input = param.InputX()->zynqmpTensor();
-  zynqmp::Tensor* output = param.Out()->zynqmpTensor();
-  input->invalidate();
+  // zynqmp::Tensor* input = param.InputX()->zynqmpTensor();
+  // zynqmp::Tensor* output = param.Out()->zynqmpTensor();
+  // input->invalidate();
 
-  for (int i = 0; i < input->shape().numel(); i++) {
-    output->data<zynqmp::float16>()[i] = input->data<zynqmp::float16>()[i];
-  }
-  output->flush();
+  // for (int i = 0; i < input->shape().numel(); i++) {
+  //   output->data<zynqmp::float16>()[i] = input->data<zynqmp::float16>()[i];
+  // }
+  // output->flush();
+
+  zynqmp::Context& context = const_cast<zynqmp::Context&>(param.context_);
+  zynqmp::ScalePE& pe = context.pe<zynqmp::ScalePE>();
+  pe.dispatch();
+
+  param.Out()->zynqmpTensor()->saveToFile("scale.txt");
 }
 
 template class ScaleKernel<FPGA, float>;

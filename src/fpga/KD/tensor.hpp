@@ -32,6 +32,7 @@ enum DataType : int {
   FP32 = 0,
   FP16 = 1,
   INT8 = 2,
+  INT32 = 3,
 };
 
 typedef uint16_t float16;
@@ -42,6 +43,8 @@ inline int CellSize(DataType type) {
       return sizeof(float);
     case FP16:
       return sizeof(float16);
+    case INT32:
+      return sizeof(int32_t);
     case INT8:
       return sizeof(int8_t);
     default:
@@ -164,6 +167,14 @@ class Tensor {
         // TODO(chonwhite) share data.
       }
     }
+    if (dst != nullptr) {
+      dst->copyScaleFrom(this);
+    }
+  }
+
+  inline void copyScaleFrom(Tensor* src) {
+    scale_[0] = src->scale_[0];
+    scale_[1] = src->scale_[1];
   }
 
   void unalignImage(Tensor* dst = nullptr, bool copy = false) {
@@ -264,7 +275,7 @@ class Tensor {
     std::string npath = std::to_string(counter) + "_" + path;
     counter++;
     ofs.open(npath);
-    for (size_t i = 0; i < shape_->numel(); i++) {
+    for (int i = 0; i < shape_->numel(); i++) {
       float value = 0;
       if (dataType_ == FP32) {
         value = data<float>()[i];

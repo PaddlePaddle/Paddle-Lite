@@ -15,22 +15,58 @@ limitations under the License. */
 #ifdef ELEMENTWISEMUL_OP
 
 #include "operators/kernel/elementwise_mul_kernel.h"
+#include "fpga/KD/pes/scale_pe.hpp"
 // #include "operators/kernel/central-arm-func/elementwise_mul_arm_func.h"
 
 namespace paddle_mobile {
 namespace operators {
 
 template <>
-bool ElementwiseMulKernel<FPGA, float>::Init(ElementwiseMulParam<FPGA> *param) {
+bool ElementwiseMulKernel<FPGA, float>::Init(ElementwiseMulParam<FPGA>* param) {
   param->Out()->mutable_data<half>();
+
+  zynqmp::ScalePE& pe = param->context().pe<zynqmp::ScalePE>();
+  zynqmp::ScaleParam& scale_param = pe.param();
+  scale_param.input = param->InputX()->zynqmpTensor();
+  scale_param.output = param->Out()->zynqmpTensor();
+  // scale_param.bias = param->Bias()->zynqmpTensor();
+  // scale_param.scale = param->InputY()->zynqmpTensor();
+
+  int channel = scale_param.input->shape().channel();
+  zynqmp::Tensor* scale = new zynqmp::Tensor();
+  zynqmp::Tensor* bias = new zynqmp::Tensor();
+  zynqmp::Shape shape(zynqmp::N, {channel});
+  float* scale_data = scale->mutableData<float>(zynqmp::FP32, shape);
+  float* bias_data = bias->mutableData<float>(zynqmp::FP32, shape);
+
+  float scale_value = param->InputY()->zynqmpTensor()->data<float>()[0];
+  for (int i = 0; i < channel; ++i) {
+    scale_data[i] = scale_value;
+    bias_data[i] = 0.0f;
+  }
+  scale->flush();
+  bias->flush();
+
+  scale_param.bias = bias;
+  scale_param.scale = scale;
+
+  pe.init();
+  pe.apply();
+
   return true;
 }
 
 template <>
 void ElementwiseMulKernel<FPGA, float>::Compute(
-    const ElementwiseMulParam<FPGA> &param) {
+    const ElementwiseMulParam<FPGA>& param) {
   // ElementwiseMulCompute<float>(param);
   param.Out()->set_lod(param.InputX()->lod());
+
+  zynqmp::Context& context = const_cast<zynqmp::Context&>(param.context_);
+  zynqmp::ScalePE& pe = context.pe<zynqmp::ScalePE>();
+  pe.dispatch();
+
+  param.Out()->zynqmpTensor()->saveToFile("ewmul.txt");
 }
 
 template class ElementwiseMulKernel<FPGA, float>;

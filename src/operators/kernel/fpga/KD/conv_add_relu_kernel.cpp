@@ -41,11 +41,7 @@ bool ConvAddReluKernel<FPGA, float>::Init(FusionConvAddReluParam<FPGA>* param) {
   fill_scale_bias_const(&conv_param);
 
   Tensor* bias = param->Bias();
-  float* bias_data = bias->zynqmpTensor()->data<float>();
-  float* conv_bias_data = conv_param.bias()->data<float>();
-  memcpy(conv_bias_data, bias_data,
-         conv_param.input->shape().channel() * sizeof(float));
-  conv_param.bias()->flush();
+  conv_param.bias()->copyFrom(bias->zynqmpTensor());
 
   pe.init();
   pe.apply();
@@ -62,6 +58,8 @@ void ConvAddReluKernel<FPGA, float>::Compute(
 
   std::cout << "Out scale:" << param.Output()->zynqmpTensor()->scale()[0]
             << std::endl;
+
+  param.Output()->zynqmpTensor()->saveToFile("convaddrelu.txt");
 }
 }  // namespace operators
 }  // namespace paddle_mobile

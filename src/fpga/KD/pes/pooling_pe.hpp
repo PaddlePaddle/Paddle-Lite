@@ -72,8 +72,6 @@ class PoolingPE : public PE {
 
     Tensor float_input;
     // Tensor float_output;
-    float* data_in =
-        float_input.mutableData<float>(DataType::FP32, input->shape());
     float_input.copyFrom(input);
     float16* data_out = output->data<float16>();
 
@@ -101,10 +99,10 @@ class PoolingPE : public PE {
   }
 
   bool dispatch() {
-    if (use_cpu_) {
-      cpu_compute();
-      return true;
-    }
+    // if (use_cpu_) {
+    //   cpu_compute();
+    //   return true;
+    // }
     return compute_fpga_pool(param_.poolingArgs) == 0;
   }
 

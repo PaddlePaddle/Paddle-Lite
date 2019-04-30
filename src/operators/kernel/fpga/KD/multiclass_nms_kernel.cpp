@@ -15,21 +15,21 @@ limitations under the License. */
 #ifdef MULTICLASSNMS_OP
 
 #include "operators/kernel/multiclass_nms_kernel.h"
-#include "operators/kernel/central-arm-func/multiclass_nms_arm_func.h"
+#include "operators/kernel/fpga/KD/multiclass_nms_arm_func.h"
 
 namespace paddle_mobile {
 namespace operators {
 
 template <>
 bool MultiClassNMSKernel<FPGA, float>::Init(MultiClassNMSParam<FPGA> *param) {
-  param->Out()->mutable_data<half>();
+  param->Out()->mutable_data<float>();
   return true;
 }
 
 template <>
 void MultiClassNMSKernel<FPGA, float>::Compute(
     const MultiClassNMSParam<FPGA> &param) {
-  // MultiClassNMSCompute<float>(param);
+  MultiClassNMSCompute<float>(param);
 }
 
 template class MultiClassNMSKernel<FPGA, float>;

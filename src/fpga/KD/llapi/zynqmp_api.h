@@ -313,6 +313,8 @@ int compute_fpga_scale(const struct ScaleArgs& args);
 int compute_fpga_concat(const struct ConcatArgs& args);
 int config_power(const struct PowerArgs& args);
 int compute_fpga_dwconv(const struct DWconvArgs& args);
+int config_norm_param(const struct NormalizeParameterArgs& args);
+int compute_norm(const struct NormalizeArgs& args);
 
 // int config_relu(const struct ReluArgs& args);
 

@@ -363,6 +363,14 @@ int config_inplace(const struct InplaceArgs &args) {
   return do_ioctl(IOCTL_CONFIG_INPLACE, &args);
 }
 
+int config_norm_param(const struct NormalizeParameterArgs &args) {
+  return do_ioctl(IOCTL_CONFIG_NORMALIZE_PARAMETER, &args);
+}
+
+int compute_norm(const struct NormalizeArgs &args) {
+  return do_ioctl(IOCTL_CONFIG_NORMALIZE, &args);
+}
+
 // uint64_t vaddr_to_paddr(void *address) {
 //     return 0;
 // }

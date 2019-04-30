@@ -29,7 +29,6 @@ class FullyConnectedPE : public PE {
 
   void apply() {
     Tensor* input = param_.input;
-    Tensor* output = param_.output;
 
     convParam_.input = param_.input;
     convParam_.output = param_.output;
@@ -54,8 +53,6 @@ class FullyConnectedPE : public PE {
     float* filter_data = param_.filter->data<float>();
 
     for (int i = 0; i < num; i++) {
-      float sum = 0;
-      float* f_start = filter_data + i * chw;
       for (int j = 0; j < chw; j++) {
         float scale = filter_data[j * num + i];
         new_filter_data[i * chw + j] = scale;
