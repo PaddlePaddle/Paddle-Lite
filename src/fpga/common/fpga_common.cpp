@@ -97,7 +97,7 @@ float fp16_2_fp32(int16_t fp16_num) {
   } else if (se_fp16 < 63) {
     e_fp32 = 0x80000000 + ((se_fp16 - 32) << 23);
     offset = 1024;
-  } else {  // se_fp16 == 63
+  } else {
     e_fp32 = 0xC7800000;
     offset = 1024;
   }

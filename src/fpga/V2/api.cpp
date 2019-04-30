@@ -40,8 +40,6 @@ void format_image(framework::Tensor *image_tensor) {
 void format_ofm(framework::Tensor *ofm_tensor) {
   if (ofm_tensor->type() == type_id<float>()) {
     format_fp32_ofm(ofm_tensor);
-  } else if (ofm_tensor->type() == type_id<half>()) {
-    format_fp16_ofm(ofm_tensor);
   } else {
     format_int8_ofm(ofm_tensor);
   }
@@ -83,24 +81,6 @@ void format_int8_ofm(framework::Tensor *ofm_tensor, framework::DDim dims) {
   ofm_tensor->set_type(type_id<int8_t>().hash_code());
   ofm_tensor->fpga_data_num = memory_size / sizeof(int8_t);
   fpga::fpga_flush(p, memory_size);
-}
-
-void format_fp16_ofm(framework::Tensor *ofm_tensor) {
-  auto dims = ofm_tensor->dims();
-  size_t memory_size = 0;
-  if (dims.size() == 4) {
-    auto channel = dims[1], height = dims[2], width = dims[3], num = dims[0];
-    memory_size = num * height * align_to_x(channel * width, IMAGE_ALIGNMENT) *
-                  sizeof(half);
-  } else if (dims.size() == 2) {
-    memory_size = align_to_x(dims[1], IMAGE_ALIGNMENT) * sizeof(half);
-  } else {
-    DLOG << "Wrong ofm dimension";
-  }
-  auto p = fpga_malloc(memory_size);
-  ofm_tensor->reset_data_ptr(p);
-  ofm_tensor->set_type(type_id<half>().hash_code());
-  ofm_tensor->fpga_data_num = memory_size / sizeof(half);
 }
 
 void format_fp32_ofm(framework::Tensor *ofm_tensor) {
@@ -208,9 +188,6 @@ void format_DWDconv_filter(framework::Tensor *filter_tensor, float *scale_ptr,
   deconv_filter::DWDconv_format_filter(&new_data, num, channel, height, width,
                                        scale_ptr, stride);
 
-  //  framework::DDim dims_new =
-  //      framework::make_ddim({num, 1, height, width});
-  //  filter_tensor->Resize(dims_new);
   filter_tensor->reset_data_ptr(new_data);
   filter_tensor->set_type(type_id<int16_t>().hash_code());
 }
@@ -314,13 +291,13 @@ void format_DWDeconv_data(framework::Tensor *filter_tensor,
                           framework::Tensor *ofm_tensor, float **bs_ptr,
                           int group, int sub_conv_n) {
   int channel = ofm_tensor->dims()[1];
-  // dw-deconv
   format_DWDconv_filter(
       filter_tensor,
       (reinterpret_cast<float *>(*bs_ptr) + sub_conv_n * channel), sub_conv_n);
   format_bias_array(bs_ptr, channel);
   format_ofm(ofm_tensor);
 }
+
 void expand_conv_arg(ConvArgs *arg) {
   ConvArgs args = *arg;
 
@@ -458,7 +435,6 @@ void expand_conv_arg(ConvArgs *arg) {
 
 void expand_EW_arg(EWAddArgs *arg) {
   EWAddArgs args = *arg;
-  // uint64_t cmd = args.relu_enabled ? USE_RELU : 0;
   uint64_t cmd = 0;
   uint64_t datalen = (uint64_t)args.image0.width *
                      (uint64_t)args.image0.height *
