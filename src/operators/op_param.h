@@ -1270,6 +1270,9 @@ class FetchParam : public OpParam {
 #ifdef PADDLE_MOBILE_FPGA
 
  public:
+#ifdef PADDLE_MOBILE_FPGA_V1
+  fpga::BypassArgs fpga_bypass_args;
+#endif
   Tensor aligned_out;
 #endif
 };
