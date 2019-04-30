@@ -119,13 +119,16 @@ import Foundation
     @objc public func predict(texture: MTLTexture, completion: @escaping ( _ success: Bool, _ result: [ResultHolder]?) -> Void) {
         do {
             
-            try self.executor?.predict(input: texture, dim: self.net.inputDim, completionHandle: { [weak self] (res) in
-                guard let SSelf = self else {
-                    fatalError( " self nil " )
+            try self.executor?.predict(input: texture, dim: self.net.inputDim, completionHandle: { [weak self] (success, res) in
+                if success, let SSelf = self, let res = res {
+                    let result = SSelf.net.fetchResult(paddleMobileRes: res)
+                    if result.count > 0 {
+                        completion(true, result)
+                        return
+                    }
                 }
-                let result = SSelf.net.fetchResult(paddleMobileRes: res)
-                completion(true, result)
-                }, preProcessKernle: self.net.preprocessKernel, except: self.net.except)
+                completion(false, nil)
+            }, preProcessKernle: self.net.preprocessKernel, except: self.net.except)
         } catch let error {
             print(error)
             completion(false, nil)
