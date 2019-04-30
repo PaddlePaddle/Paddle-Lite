@@ -25,18 +25,18 @@ bool SigmoidKernel<FPGA, float>::Init(SigmoidParam<FPGA> *param) {
       paddle_mobile::fpga::SIGMOID;
   int16_t leaky_relu_negative_slope = 0;
   auto input = const_cast<LoDTensor *>(param->InputX());
-  auto input_ptr = input->data<half>();
+  auto input_ptr = input->data<int8_t>();
   auto out = param->Out();
-  fpga::format_fp16_ofm(out);
+  fpga::format_ofm(out);
 
-  fpga::BypassArgs args = {fpga::DATA_TYPE_FP16};
-  args.input_data_type = fpga::DATA_TYPE_FP16;
-  args.output_data_type = fpga::DATA_TYPE_FP16;
+  fpga::BypassArgs args = {fpga::DATA_TYPE_INT8};
+  args.input_data_type = fpga::DATA_TYPE_INT8;
+  args.output_data_type = fpga::DATA_TYPE_INT8;
   args.image.address = input_ptr;
   args.image.height = 1;
   args.image.width = 1;
   args.image.channels = input->fpga_data_num;
-  args.output.address = out->data<half>();
+  args.output.address = out->data<int8_t>();
   args.output.scale_address = out->scale;
   args.output.activation.activation_type = activation_enable;
   args.output.activation.leaky_relu_negative_slope = leaky_relu_negative_slope;

@@ -26,10 +26,6 @@ void convert_to_hwc(float** data_in, int channel, int height, int width,
                     int num = 1);
 void convert_to_chw(float** data_in, int channel, int height, int width,
                     int num = 1);
-// template <typename Dtype>
-// void align_element_conv(Dtype** data_in, int height, int cw);
-// template <typename T>
-// void format_image(T** data_in, int channel, int height, int width);
 template <typename Dtype>
 void align_element_conv(Dtype** data_in, int height, int cw);
 template <typename Dtype>

@@ -21,18 +21,16 @@ bool FetchKernel<FPGA, float>::Init(FetchParam<FPGA> *param) {
   int col = param->Col();
   DLOG << "col = " << col;
   auto output = &(param->Out()->at(col));
+  output->init(type_id<float>().hash_code());
+  output->Resize(input->dims());
   if (input->type() == type_id<float>()) {
     return true;
   }
-  output->init(type_id<float>().hash_code());
-  output->Resize(input->dims());
-  fpga::format_fp32_ofm(output);
+  auto aligned_output = param->aligned_out;
   int outC = 1;
-  int outH = 1;
   int outW = 1;
   if (output->dims().size() == 4) {
     outC = output->dims()[1];
-    outH = output->dims()[2];
     outW = output->dims()[3];
   } else {  // 2
     outC = output->dims()[1];
@@ -40,27 +38,10 @@ bool FetchKernel<FPGA, float>::Init(FetchParam<FPGA> *param) {
   int unalignedCW = outC * outW;
   int alignedCW = fpga::align_to_x(unalignedCW, IMAGE_ALIGNMENT);
   if (alignedCW != unalignedCW) {
-    param->aligned_out.Resize(input->dims());
-    param->aligned_out.mutable_data<float>(input->dims());
-    fpga::fpga_flush(param->aligned_out.data<float>(),
-                     outH * unalignedCW * sizeof(float));
+    aligned_output.init(type_id<float>().hash_code());
+    aligned_output.Resize(input->dims());
+    fpga::format_fp32_ofm(&aligned_output);
   }
-  fpga::BypassArgs args = {fpga::DATA_TYPE_FP16};
-
-  args.input_data_type = fpga::DATA_TYPE_FP16;
-  args.output_data_type = fpga::DATA_TYPE_FP32;
-  args.input_layout_type = fpga::LAYOUT_CHW;
-  args.output_layout_type = fpga::LAYOUT_HWC;
-  args.image.address = input->data<half>();
-  args.image.channels = (uint32_t)(input->fpga_data_num);
-  args.image.height = 1;
-  args.image.width = 1;
-  args.image.pad_height = 0;
-  args.image.pad_width = 0;
-  args.output.address = output->data<float>();
-  args.output.scale_address = output->scale;
-  param->fpga_bypass_args = args;
-
   return true;
 }
 void dealign(float *src, float *dst, int input_c, int input_h, int input_w) {
@@ -83,22 +64,22 @@ void FetchKernel<FPGA, float>::Compute(const FetchParam<FPGA> &param) {
     return;
   }
 
-  fpga::BypassArgs args = param.fpga_bypass_args;
-  auto input_address = (input->data<half>());
-  args.image.address = static_cast<void *>(input_address);
-  float *outdata_ptr =
-      reinterpret_cast<float *>(param.fpga_bypass_args.output.address);
+  auto input_address = input->data<int8_t>();
+  float Si = input->scale[0];
+  auto aligned_ptr = const_cast<float *>(param.aligned_out.data<float>());
+  auto outdata_ptr = output->data<float>();
   const int num_th = 32;
-  if (output->fpga_data_num < num_th) {
-    fpga::fpga_invalidate(input_address, (input->fpga_data_num) * sizeof(half));
-
+  fpga::fpga_invalidate(input_address, (input->fpga_data_num) * sizeof(int8_t));
+  if (input->fpga_data_num < num_th) {
     for (int idx = 0; idx < product(input->dims()); ++idx) {
-      outdata_ptr[idx] = fpga::fp16_2_fp32(input_address[idx]);
+      outdata_ptr[idx] = input_address[idx] * Si;
     }
+    fpga::fpga_flush(outdata_ptr, product(input->dims()) * sizeof(float));
     return;
   }
-
-  fpga::PerformBypass(args);
+  for (int idx = 0; idx < input->fpga_data_num; ++idx) {
+    aligned_ptr[idx] = input_address[idx] * Si;
+  }
   int outC = 1;
   int outH = 1;
   int outW = 1;
@@ -110,16 +91,15 @@ void FetchKernel<FPGA, float>::Compute(const FetchParam<FPGA> &param) {
     outC = output->dims()[1];
   }
 
-  fpga::fpga_invalidate(param.fpga_bypass_args.output.address,
-                        output->fpga_data_num * sizeof(float));
   int unalignedCW = outC * outW;
   int alignedCW = fpga::align_to_x(unalignedCW, IMAGE_ALIGNMENT);
   if (unalignedCW != alignedCW) {
-    auto aligned_ptr = const_cast<float *>(param.aligned_out.data<float>());
-    dealign(outdata_ptr, aligned_ptr, outC, outH, outW);
-    memcpy(outdata_ptr, aligned_ptr, outC * outH * outW * sizeof(float));
+    dealign(aligned_ptr, outdata_ptr, outC, outH, outW);
     fpga::fpga_flush(outdata_ptr, outC * outH * outW * sizeof(float));
+    return;
   }
+  memcpy(outdata_ptr, aligned_ptr, outC * outH * outW * sizeof(float));
+  fpga::fpga_flush(outdata_ptr, outC * outH * outW * sizeof(float));
 }
 template class FetchKernel<FPGA, float>;
 

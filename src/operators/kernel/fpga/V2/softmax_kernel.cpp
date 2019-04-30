@@ -24,13 +24,13 @@ template <>
 bool SoftmaxKernel<FPGA, float>::Init(SoftmaxParam<FPGA> *param) {
   auto input = const_cast<LoDTensor *>(param->InputX());
   auto dims = framework::vectorize(input->dims());
-  half *input_ptr;
+  int8_t *input_ptr;
   auto out = param->Out();
   if (input->type() == type_id<float>()) {
     out->Resize(framework::make_ddim(dims));
     out->mutable_data<float>(framework::make_ddim(dims));
   } else {
-    input_ptr = input->data<half>();
+    input_ptr = input->data<int8_t>();
   }
 
   auto float_input = new LoDTensor;
@@ -52,8 +52,6 @@ bool SoftmaxKernel<FPGA, float>::Init(SoftmaxParam<FPGA> *param) {
     out->mutable_data<float>(framework::make_ddim(dims));
     float_input->init(type_id<float>().hash_code());
     float_input->mutable_data<float>(framework::make_ddim(dims));
-    //  fpga::format_fp32_ofm(float_input);
-    // fpga::format_fp32_ofm(out);
 
     fpga::BypassArgs args = {fpga::DATA_TYPE_FP16};
     args.input_layout_type = fpga::LAYOUT_HWC;
@@ -69,7 +67,7 @@ bool SoftmaxKernel<FPGA, float>::Init(SoftmaxParam<FPGA> *param) {
     param->SetFloatInput(float_input);
     param->SetFpgaArgs(args);
   } else {  // Use FPGA
-    fpga::format_fp16_ofm(out);
+    fpga::format_ofm(out);
     fpga::BypassArgs args = {fpga::DATA_TYPE_FP16};
     args.input_layout_type = fpga::LAYOUT_HWC;
     args.output_layout_type = fpga::LAYOUT_CHW;
@@ -91,7 +89,7 @@ bool SoftmaxKernel<FPGA, float>::Init(SoftmaxParam<FPGA> *param) {
 template <>
 void SoftmaxKernel<FPGA, float>::Compute(const SoftmaxParam<FPGA> &param) {
   auto *in_x = (param.InputX());
-  if (in_x->type() == type_id<half>()) {
+  if (in_x->type() == type_id<int8_t>()) {
     fpga::PerformBypass(param.FpgaArgs());
     if (param.FpgaArgs().output.activation.activation_type != fpga::SOFTMAX) {
       Tensor *out = param.Out();
