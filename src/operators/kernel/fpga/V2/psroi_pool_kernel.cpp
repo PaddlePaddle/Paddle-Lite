@@ -31,21 +31,6 @@ bool PSRoiPoolKernel<FPGA, float>::Init(PSRoiPoolParam<FPGA>* param) {
 
   param->float_input = std::make_shared<Tensor>();
   param->float_input->mutable_data<float>(param->input_x_->dims());
-  // param->float_output = std::make_shared<Tensor>();
-
-  auto input = param->input_x_;
-  fpga::BypassArgs args = {fpga::DATA_TYPE_FP16};
-  args.input_layout_type = fpga::LAYOUT_HWC;
-  args.output_layout_type = fpga::LAYOUT_HWC;
-  args.input_data_type = fpga::DATA_TYPE_FP16;
-  args.output_data_type = fpga::DATA_TYPE_FP32;
-  args.image.address = input->data<half>();
-  args.image.height = (uint32_t)input->dims()[2];
-  args.image.width = (uint32_t)input->dims()[3];
-  args.image.channels = (uint32_t)input->dims()[1];
-  args.output.address = param->float_input->mutable_data<float>();
-  args.output.scale_address = param->float_input->scale;
-  param->input_arg = args;
 
   auto* rois = param->input_rois_;
   int rois_num = rois->dims()[0];
@@ -53,80 +38,10 @@ bool PSRoiPoolKernel<FPGA, float>::Init(PSRoiPoolParam<FPGA>* param) {
       {rois_num, param->output_->dims()[1], param->output_->dims()[2],
        param->output_->dims()[3]});
   param->output_->Resize(dims_out_new);
-  // fpga::format_fp16_ofm(param->output_);
 
   param->output_->mutable_data<float>(dims_out_new);
-  //  auto output = param->float_output.get();
-  // param->output_ = output;
-  /* args.input_data_type = fpga::DATA_TYPE_FP32;
-   args.output_data_type = fpga::DATA_TYPE_FP16;
-   args.image.address = output->data<float>();
-   args.image.height = (uint32_t)output->dims()[2];
-   args.image.width = (uint32_t)output->dims()[3];
-   args.image.channels = (uint32_t)output->dims()[1]  ;
-   args.output.address = param->output_->mutable_data<half>();
-   args.output.scale_address = param->output_->scale;
-   param->output_arg = args;*/
-
   return true;
 }
-
-/*
-    template <typename Dtype>
-    void PSROIPoolingForward(
-    const Dtype* bottom_data,
-    const int height, const int width, const int input_channel,
-    Dtype* top_data,
-    const int pooled_height, const int pooled_width, const int output_channel,
-    const Dtype* bottom_rois,
-    const Dtype Bin_size_h, const Dtype Bin_size_w, const Dtype roi_start_h,
-   const Dtype roi_start_w, const int pw, const int ph, const int roi_batch_ind)
-    {
-
-      int hstart = floor(static_cast<Dtype>(ph) * Bin_size_h + roi_start_h);
-      int wstart = floor(static_cast<Dtype>(pw)* Bin_size_w + roi_start_w);
-      int hend = ceil(static_cast<Dtype>(ph + 1) * Bin_size_h + roi_start_h);
-      int wend = ceil(static_cast<Dtype>(pw + 1) * Bin_size_w + roi_start_w);
-
-      hstart = std::min(std::max(hstart, 0), height);
-      hend = std::min(std::max(hend, 0), height);
-      wstart = std::min(std::max(wstart, 0), width);
-      wend = std::min(std::max(wend, 0), width);
-      bool is_empty = (hend <= hstart) || (wend <= wstart);
-
-      float32x4_t sum_pixels_low_c= vdupq_n_f32(0);
-      float32x4_t sum_pixels_high_c= vdupq_n_f32(0);
-
-      if(!is_empty){
-          Dtype bin_area = (hend - hstart) * (wend - wstart);
-          float rev_bin_area = 1 / bin_area;
-          float32x4_t q_bin_area = vdupq_n_f32(rev_bin_area);
-   //static_cast<float>(bin_area) float pixels_c[output_channel];
-
-          for (int h = hstart; h < hend; ++h) {
-            for (int w = wstart; w < wend; ++w) {
-                int pixel_offset = (h * width + w) * input_channel;
-                for(int output_c = 0; output_c < output_channel; output_c++){
-                    int input_channel_offset = output_c * pooled_height *
-   pooled_width; int input_bias = pixel_offset + input_channel_offset + ph *
-   pooled_width + pw; pixels_c[output_c] = bottom_data[input_bias];
-                }
-                float32x4_t pixel_low_c = vld1q_f32(pixels_c);
-                float32x4_t pixel_high_c = vld1q_f32(pixels_c + 4);
-                sum_pixels_low_c = vaddq_f32(sum_pixels_low_c, pixel_low_c);
-                sum_pixels_high_c = vaddq_f32(sum_pixels_high_c, pixel_high_c);
-            }
-          }
-          sum_pixels_low_c = vmulq_f32(sum_pixels_low_c, q_bin_area);
-          sum_pixels_high_c = vmulq_f32(sum_pixels_high_c, q_bin_area);
-        }
-
-      int output_index_base = (ph * pooled_width + pw) * output_channel;
-      top_data += output_index_base;
-      vst1q_f32(top_data, sum_pixels_low_c);
-      top_data += 4;
-      vst1q_f32(top_data, sum_pixels_high_c);
-    }*/
 
 template <typename Dtype>
 void PSROIPoolingForward(const Dtype* bottom_data, const int height,
@@ -182,14 +97,18 @@ void PSROIPoolingForward(const Dtype* bottom_data, const int height,
 
 template <>
 void PSRoiPoolKernel<FPGA, float>::Compute(const PSRoiPoolParam<FPGA>& param) {
-  auto input_tensor = param.float_input.get();
-  fpga::PerformBypass(param.input_arg);
-  fpga::fpga_invalidate(input_tensor->data<float>(),
-                        input_tensor->numel() * sizeof(float));
+  auto input_tensor = param.input_x_;
+  auto input_data = input_tensor->data<int8_t>();
+  auto Si = input_tensor->scale[0];
+  auto float_input_tensor = param.float_input.get();
+  auto float_input_data = float_input_tensor->data<float>();
+  for (int i = 0; i < float_input_tensor->numel(); i++) {
+    float_input_data[i] = input_data[i] * Si;
+  }
 
-  auto* in = input_tensor;
+  auto* in = float_input_tensor;
   auto* rois = param.input_rois_;
-  auto* out = param.output_;  // param.float_output.get();
+  auto* out = param.output_;
 
   auto pooled_height = param.pooled_height_;
   auto pooled_width = param.pooled_width_;
@@ -205,14 +124,13 @@ void PSRoiPoolKernel<FPGA, float>::Compute(const PSRoiPoolParam<FPGA>& param) {
 
   auto data_nhwc = in->mutable_data<float>();
 
-  //  fpga::image::convert_to_chw(&data_nhwc, input_channels, height, width);
   framework::DDim dims_out_new = framework::make_ddim(
       {rois_num, (param.output_)->dims()[1], (((param.output_)->dims()[2])),
        (param.output_)->dims()[3]});
 
   (param.output_)->Resize(dims_out_new);
 
-  const float* input_data = data_nhwc;  // in->data<float>();
+  const float* input_data_tmp = data_nhwc;  // in->data<float>();
   framework::Tensor rois_batch_id_list;
   rois_batch_id_list.Resize({rois_num});
   auto rois_batch_id_data = rois_batch_id_list.mutable_data<int>();
@@ -268,11 +186,11 @@ void PSRoiPoolKernel<FPGA, float>::Compute(const PSRoiPoolParam<FPGA>& param) {
 
     for (int ph = 0; ph < pooled_height; ph++) {
       for (int pw = 0; pw < pooled_width; pw++) {
-        PSROIPoolingForward<float>(input_data, height, width, input_channels,
-                                   offset_output_data, pooled_height,
-                                   pooled_width, output_channels, input_rois,
-                                   bin_size_h, bin_size_w, roi_start_h,
-                                   roi_start_w, pw, ph, roi_batch_ind);
+        PSROIPoolingForward<float>(
+            input_data_tmp, height, width, input_channels, offset_output_data,
+            pooled_height, pooled_width, output_channels, input_rois,
+            bin_size_h, bin_size_w, roi_start_h, roi_start_w, pw, ph,
+            roi_batch_ind);
       }
     }
   }

@@ -32,9 +32,6 @@ bool ProposalKernel<FPGA, float>::Init(ProposalParam<FPGA> *param) {
   param->rpn_rois_->mutable_data<float>({total, 4});
   param->rpn_probs_->mutable_data<float>({total, 1});
 
-  //  DLOG << *param->rpn_rois_;
-  //  DLOG << *param->rpn_probs_;
-
   param->float_bbox = std::make_shared<Tensor>();
   param->float_bbox->Resize(param->bbox_deltas_->dims());
   param->float_bbox->init(type_id<float>().hash_code());
@@ -44,29 +41,7 @@ bool ProposalKernel<FPGA, float>::Init(ProposalParam<FPGA> *param) {
   param->float_score->init(type_id<float>().hash_code());
   fpga::format_fp32_ofm(param->float_score.get());
 
-  auto input = param->bbox_deltas_;
-  fpga::BypassArgs args = {fpga::DATA_TYPE_FP16};
-  args.input_layout_type = fpga::LAYOUT_HWC;
-  args.output_layout_type = fpga::LAYOUT_HWC;
-  args.input_data_type = fpga::DATA_TYPE_FP16;
-  args.output_data_type = fpga::DATA_TYPE_FP32;
-  args.image.address = input->data<half>();
-  args.image.height = (uint32_t)input->dims()[2];
-  args.image.width = (uint32_t)input->dims()[3];
-  args.image.channels = (uint32_t)input->dims()[1];
-  args.output.address = param->float_bbox->mutable_data<float>();
-  args.output.scale_address = param->float_bbox->scale;
-  param->bbox_arg = args;
-
-  input = param->scores_;
-  args.image.address = input->data<half>();
-  args.image.height = (uint32_t)input->dims()[2];
-  args.image.width = (uint32_t)input->dims()[3];
-  args.image.channels = (uint32_t)input->dims()[1];
-  args.output.address = param->float_score->mutable_data<float>();
-  args.output.scale_address = param->float_score->scale;
-  param->score_arg = args;
-
+  auto input = param->scores_;
   param->score_index_ = std::make_shared<Tensor>();
   param->score_index_->mutable_data<int32_t>({input->numel()});
   auto score_index = param->score_index_->data<int32_t>();
@@ -136,51 +111,17 @@ static inline void BoxCoder(Tensor *all_anchors, Tensor *bbox_deltas,
     T bbox_center_x = 0, bbox_center_y = 0;
     T bbox_width = 0, bbox_height = 0;
 
-    /*
-        if (variances) {
-          bbox_center_x =
-              variances_data[i * len] * bbox_deltas_data[i * len] * anchor_width
-       + anchor_center_x; bbox_center_y = variances_data[i * len + 1] *
-                              bbox_deltas_data[i * len + 1] * anchor_height +
-                          anchor_center_y;
-          bbox_width = std::exp(std::min<T>(variances_data[i * len + 2] *
-                                                bbox_deltas_data[i * len + 2],
-                                            kBBoxClipDefault)) *
-                       anchor_width;
-          bbox_height = std::exp(std::min<T>(variances_data[i * len + 3] *
-                                                 bbox_deltas_data[i * len + 3],
-                                             kBBoxClipDefault)) *
-                        anchor_height;
-        } else {
-    */
     bbox_center_x = bbox_deltas_data[i * len] * anchor_width + anchor_center_x;
     bbox_center_y =
         bbox_deltas_data[i * len + 1] * anchor_height + anchor_center_y;
-
-    /*
-          bbox_width = std::exp(std::min<T>(bbox_deltas_data[i * len + 2],
-                                            kBBoxClipDefault)) *
-                       anchor_width;
-          bbox_height = std::exp(std::min<T>(bbox_deltas_data[i * len + 3],
-                                             kBBoxClipDefault)) *
-                        anchor_height;
-    */
     bbox_width = std::exp(bbox_deltas_data[i * len + 2]) * anchor_width;
     bbox_height = std::exp(bbox_deltas_data[i * len + 3]) * anchor_height;
-    //    }
 
     proposals_data[i * len] = bbox_center_x - bbox_width / 2;
     proposals_data[i * len + 1] = bbox_center_y - bbox_height / 2;
-    /*
-        //wong
-        proposals_data[i * len + 2] = bbox_center_x + bbox_width / 2 - 1;
-        proposals_data[i * len + 3] = bbox_center_y + bbox_height / 2 - 1;
-        //wong
-    */
     proposals_data[i * len + 2] = bbox_center_x + bbox_width / 2;
     proposals_data[i * len + 3] = bbox_center_y + bbox_height / 2;
   }
-  // return proposals;
 }
 
 template <class T>
@@ -252,8 +193,6 @@ static inline std::vector<std::pair<T, int>> GetSortedScoreIndex(
 template <class T>
 static inline T BBoxArea(const T *box, bool normalized) {
   if (box[2] < box[0] || box[3] < box[1]) {
-    // If coordinate values are is invalid
-    // (e.g. xmax < xmin or ymax < ymin), return 0.
     return static_cast<T>(0.);
   } else {
     const T w = box[2] - box[0];
@@ -351,9 +290,6 @@ std::pair<Tensor, Tensor> ProposalForOneImage(
   Tensor index_t;
   index_t.Resize({scores_slice.numel()});
   int *index = index_t.mutable_data<int>();
-  /*for (int i = 0; i < scores_slice.numel(); ++i) {
-    index[i] = i;
-  }*/
   std::memcpy(index, score_index.data<int32_t>(),
               scores_slice.numel() * sizeof(int));
 
@@ -397,7 +333,6 @@ std::pair<Tensor, Tensor> ProposalForOneImage(
     return std::make_pair(bbox_sel, scores_filter);
   }
 
-  // Tensor keep_nms = NMS<T>(&bbox_sel, &scores_filter, nms_thresh, eta);
   Tensor keep_nms =
       NMS<T>(&bbox_sel, &scores_filter, nms_thresh, eta, post_nms_top_n);
 
@@ -408,8 +343,6 @@ std::pair<Tensor, Tensor> ProposalForOneImage(
   proposals.mutable_data<T>({keep_nms.numel(), 4});   // original
   scores_sel.mutable_data<T>({keep_nms.numel(), 1});  // original
 
-  // proposals.mutable_data<T>({post_nms_top_n, 4});   // wong
-  // scores_sel.mutable_data<T>({post_nms_top_n, 1});  // wong
   CPUGather<T>(bbox_sel, keep_nms, &proposals);
   CPUGather<T>(scores_filter, keep_nms, &scores_sel);
   return std::make_pair(proposals, scores_sel);
@@ -418,13 +351,11 @@ std::pair<Tensor, Tensor> ProposalForOneImage(
 template <>
 void ProposalKernel<FPGA, float>::Compute(const ProposalParam<FPGA> &param) {
   auto input_score = param.scores_;
-  auto input_score_data = input_score->data<half>();
-  auto input_score_data_tmp = input_score->data<half>();
+  auto input_score_data = input_score->data<int8_t>();
   uint32_t score_n, score_height, score_width, score_channels;
 
   auto input_bbox = param.bbox_deltas_;
-  auto input_bbox_data = input_bbox->data<half>();
-  auto input_bbox_data_tmp = input_bbox->data<half>();
+  auto input_bbox_data = input_bbox->data<int8_t>();
   uint32_t bbox_n, bbox_height, bbox_width, bbox_channels;
 
   score_n = (uint32_t)(input_score->dims()[0]);
@@ -439,61 +370,48 @@ void ProposalKernel<FPGA, float>::Compute(const ProposalParam<FPGA> &param) {
 
   std::shared_ptr<Tensor> score_tmp = std::make_shared<Tensor>();
   score_tmp->Resize(param.scores_->dims());
-  score_tmp->mutable_data<half>();
+  score_tmp->mutable_data<int8_t>();
 
   std::shared_ptr<Tensor> bbox_tmp = std::make_shared<Tensor>();
   bbox_tmp->Resize(param.bbox_deltas_->dims());
-  bbox_tmp->mutable_data<half>();
+  bbox_tmp->mutable_data<int8_t>();
 
-  auto score_tmp_data = score_tmp->data<half>();
-  auto bbox_tmp_data = bbox_tmp->data<half>();
+  auto score_tmp_data = score_tmp->data<int8_t>();
+  auto bbox_tmp_data = bbox_tmp->data<int8_t>();
   int64_t amount_per_side = score_width * score_height;
   int idx = 0;
-  fpga::fpga_invalidate(
-      input_score_data_tmp,
-      score_height * score_width * score_channels * sizeof(half));
+  fpga::fpga_invalidate(input_score_data, score_height * score_width *
+                                              score_channels * sizeof(int8_t));
   for (int h = 0; h < score_height; h++) {
     for (int w = 0; w < score_width; w++) {
       for (int c = 0; c < score_channels; c++) {
         idx++;
-        // DLOG  << "wong input_score: "<<
-        // paddle_mobile::fpga::fp16_2_fp32(input_score_data[idx]);
         *(score_tmp_data + c * amount_per_side + score_width * h + w) =
-            (*(input_score_data_tmp++));
+            (*(input_score_data++));
       }
     }
   }
   amount_per_side = bbox_width * bbox_height;
-  fpga::fpga_invalidate(input_bbox_data_tmp, bbox_height * bbox_width *
-                                                 bbox_channels * sizeof(half));
+  fpga::fpga_invalidate(input_bbox_data, bbox_height * bbox_width *
+                                             bbox_channels * sizeof(int8_t));
   for (int h = 0; h < bbox_height; h++) {
     for (int w = 0; w < bbox_width; w++) {
       for (int c = 0; c < bbox_channels; c++) {
         idx++;
-        // DLOG  << "wong input_score: "<<
-        // paddle_mobile::fpga::fp16_2_fp32(input_score_data[idx]);
         *(bbox_tmp_data + c * amount_per_side + bbox_width * h + w) =
-            (*(input_bbox_data_tmp++));
+            (*(input_bbox_data++));
       }
     }
   }
-  struct paddle_mobile::fpga::BypassArgs temp_score_arg;
-  struct paddle_mobile::fpga::BypassArgs temp_bbox_arg;
-  temp_score_arg = param.score_arg;
-  temp_score_arg.image.address = score_tmp->data<half>();
 
-  temp_bbox_arg = param.bbox_arg;
-  temp_bbox_arg.image.address = bbox_tmp->data<half>();
   auto score_tensor = param.float_score.get();
-  fpga::PerformBypass(param.score_arg);
-  fpga::fpga_invalidate(score_tensor->data<float>(),
-                        score_tensor->numel() * sizeof(float));
-
+  for (int i = 0; i < score_height * score_width * score_channels; i++) {
+    score_tensor->data<float>()[i] = score_tmp_data[i] * input_score->scale[0];
+  }
   auto bbox_tensor = param.float_bbox.get();
-  fpga::PerformBypass(param.bbox_arg);
-  fpga::fpga_invalidate(bbox_tensor->data<float>(),
-                        bbox_tensor->numel() * sizeof(float));
-
+  for (int i = 0; i < bbox_height * bbox_width * bbox_channels; i++) {
+    bbox_tensor->data<float>()[i] = bbox_tmp_data[i] * input_bbox->scale[0];
+  }
   auto *scores = param.float_score.get();
   auto *bbox_deltas = param.float_bbox.get();
   auto *im_info = param.im_info_;
@@ -507,7 +425,6 @@ void ProposalKernel<FPGA, float>::Compute(const ProposalParam<FPGA> &param) {
 
   int pre_nms_top_n = param.pre_nms_topn_;
   int post_nms_top_n = param.post_nms_topn_;
-  // DLOG << " param.post_nms_topn_ : " << param.post_nms_topn_;
 
   float nms_thresh = param.nms_thresh_ / 2.0f;
   float min_size = param.min_size_;
