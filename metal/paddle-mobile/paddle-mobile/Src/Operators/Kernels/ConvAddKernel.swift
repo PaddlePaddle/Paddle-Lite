@@ -111,10 +111,7 @@ class ConvAddKernel<P: PrecisionProtocol>: Kernel, Computable {
         
         var shouldUseMPS = false
         if #available(iOS 11.0, *), initContext.useMPS {
-            // 输入输出 tensor channel 必须都大于 4
-            if param.input.tensorDim[1] > 4 && param.output.tensorDim[1] > 4 {
-                shouldUseMPS = true
-            }
+            shouldUseMPS = true
         }
         
         if shouldUseMPS {
