@@ -54,7 +54,8 @@ void ReshapeKernel<FPGA, float>::Compute(const ReshapeParam<FPGA> &param) {
   }
   out->zynqmpTensor()->scale()[0] = input_x->zynqmpTensor()->scale()[0];
   out->zynqmpTensor()->scale()[1] = input_x->zynqmpTensor()->scale()[1];
-  std::cout << "Out scale:" << out->zynqmpTensor()->scale()[0] << std::endl;
+
+  out->zynqmpTensor()->printScale();
 }
 
 }  // namespace operators

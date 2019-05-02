@@ -209,8 +209,6 @@ inline void fill_split_arg(const ConvParam& c_param) {
 
     int filter_num = filter->shape().num();
     float16* out_address = nullptr;
-    int8_t* filter_address = nullptr;
-    float* sb_address = nullptr;
     float* out_scale_address = nullptr;
 
     ConvArgs& args = conv_param->args;
@@ -222,6 +220,7 @@ inline void fill_split_arg(const ConvParam& c_param) {
     filter_num = i == split_num - 1
                      ? channel - (split_num - 1) * filter_num_per_div  // NOLINT
                      : filter_num_per_div;
+
     if (split_num != 1) {
       Shape shape(NHWC, {1, out_shape.height(), out_shape.width(), filter_num});
       out_address = conv_param->output.mutableData<float16>(FP16, shape);
@@ -234,15 +233,13 @@ inline void fill_split_arg(const ConvParam& c_param) {
     float* new_filter_data = new_filter.mutableData<float>(FP32, f_shape);
     int filter_hwc = filter->shape().height() * filter->shape().width() *
                      filter->shape().channel();
+
     memcpy(new_filter_data,
            filter->data<float>() + i * filter_num_per_div * filter_hwc,
            filter_num * filter_hwc * sizeof(float));
     new_filter.flush();
     conv_param->filter.mutableData<float>(FP32, f_shape);
     format_filter(&new_filter, &(conv_param->filter), param.groups);
-    filter_address = conv_param->filter.data<int8_t>();
-    // std::cout << conv_param->filter.scale()[0] << std::endl;
-    args.filter_scale_address = conv_param->filter.scale();
 
     int sb_num = 2 * align_to_x(filter_num, BS_NUM_ALIGNMENT);
     Tensor scale;
@@ -253,29 +250,28 @@ inline void fill_split_arg(const ConvParam& c_param) {
     Shape s_shape(N, {filter_num});
     float* scale_data = scale.mutableData<float>(FP32, s_shape);
     float* bias_data = bias.mutableData<float>(FP32, s_shape);
-    for (int i = 0; i < filter_num; i++) {
-      scale_data[i] = param.scale()->data<float>()[i + chnnnel_start];
+    for (int n = 0; n < filter_num; n++) {
+      scale_data[n] = param.scale()->data<float>()[n + chnnnel_start];
     }
-    for (int i = 0; i < filter_num; i++) {
-      bias_data[i] = param.bias()->data<float>()[i + chnnnel_start];
+    for (int n = 0; n < filter_num; n++) {
+      bias_data[n] = param.bias()->data<float>()[n + chnnnel_start];
     }
     Shape sb_shape(N, {sb_num});
     format_scale_bias(&scale, &bias, &conv_param->filter,
                       &conv_param->scaleBias, param.groups);
     conv_param->scaleBias.flush();
-    sb_address = conv_param->scaleBias.mutableData<float>(FP32, sb_shape);
 
     args.group_num = param.groups;
     args.relu_enabled = param.relu.enabled;
-    args.sb_address = sb_address;
+    args.sb_address = conv_param->scaleBias.data<float>();
     args.kernel.stride_h = param.strides[1];
     args.kernel.stride_w = param.strides[0];
     args.kernel.height = new_filter.shape().height();
     args.kernel.width = new_filter.shape().width();
 
-    args.filter_address = filter_address;
+    args.filter_address = conv_param->filter.data<int8_t>();
     args.filter_num = filter_num;
-
+    args.filter_scale_address = conv_param->filter.scale();
     args.image.address = input->data<void>();
     args.image.scale_address = input->scale();
     args.image.channels = input->shape().channel();

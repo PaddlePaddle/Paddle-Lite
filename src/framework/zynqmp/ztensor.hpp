@@ -35,6 +35,21 @@ namespace framework {
 
 class LoDTensor;
 
+inline zynqmp::DataType convert_type(kTypeId_t type) {
+  zynqmp::DataType dtype = zynqmp::FP16;
+  switch (type) {
+    case _float:
+      dtype = zynqmp::FP32;
+      break;
+    case _int:
+      dtype = zynqmp::INT32;
+      break;
+    default:
+      dtype = zynqmp::FP16;
+  }
+  return dtype;
+}
+
 class Tensor : public TensorBase {
  public:
   Tensor() {}
@@ -59,7 +74,13 @@ class Tensor : public TensorBase {
   /*! Resize the dimensions of the memory block. */
   inline Tensor &Resize(const DDim &dims) {
     dims_ = dims;
-    // TODO(chonwhite) resize holder?
+
+    if (holder_.get() != nullptr) {
+      PlaceholderImpl *impl = static_cast<PlaceholderImpl *>(holder_.get());
+      kTypeId_t type = holder_->type();
+      impl->resize(dims_, type);
+    }
+
     return *this;
   }
 
@@ -220,21 +241,7 @@ class Tensor : public TensorBase {
           break;
       }
       zynqmp::Shape input_shape(layout_type, v);
-
-      zynqmp::DataType dtype = zynqmp::FP16;
-      switch (type) {
-        case _float:
-          dtype = zynqmp::FP32;
-          break;
-        case _int:
-          dtype = zynqmp::INT32;
-          break;
-        default:
-          dtype = zynqmp::FP16;
-      }
-
-      // zynqmp::DataType dtype = type == _float ? zynqmp::FP32 : zynqmp::FP16;
-      tensor_->mutableData<float>(dtype, input_shape);
+      tensor_->mutableData<float>(convert_type(type), input_shape);
     }
 
     virtual size_t size() const { return tensor_->memorySize(); }
@@ -275,19 +282,7 @@ class Tensor : public TensorBase {
           break;
       }
       zynqmp::Shape input_shape(layout_type, v);
-
-      zynqmp::DataType dtype = zynqmp::FP16;
-      switch (type) {
-        case _float:
-          dtype = zynqmp::FP32;
-          break;
-        case _int:
-          dtype = zynqmp::INT32;
-          break;
-        default:
-          dtype = zynqmp::FP16;
-      }
-      tensor_->mutableData<float>(dtype, input_shape);
+      tensor_->mutableData<float>(convert_type(type), input_shape);
     }
 
     /*! the size of memory block. */

@@ -73,6 +73,14 @@ class ConcatPE : public PE {
     Tensor* output = param_.output;
     Shape& output_shape = output->shape();
 
+    float scale = 0;
+    for (unsigned int n = 0; n < param_.inputs.size(); n++) {
+      Tensor* input = param_.inputs[n];
+      scale = std::max(scale, input->scale()[0]);
+    }
+    output->scale()[0] = scale;
+    output->scale()[1] = 1.0f / scale;
+
     if (output_shape.dimSize() == 3) {
       concat3D();
       return true;
@@ -82,12 +90,9 @@ class ConcatPE : public PE {
 
     int channel_sum = 0;
     int out_channel = output_shape.channel();
-    float scale = 0;
     for (unsigned int n = 0; n < param_.inputs.size(); n++) {
       Tensor* input = param_.inputs[n];
       input->invalidate();
-      scale = std::max(scale, input->scale()[0]);
-      std::cout << "scale:" << scale << std::endl;
       Shape& input_shape = input->shape();
       int wh = output_shape.width() * output_shape.height();
       for (int j = 0; j < wh; j++) {
@@ -97,8 +102,6 @@ class ConcatPE : public PE {
       }
       channel_sum += input_shape.channel();
     }
-    output->scale()[0] = scale;
-    output->scale()[1] = 1.0f / scale;
     output->flush();
     return true;
   }

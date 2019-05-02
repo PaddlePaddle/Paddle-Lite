@@ -145,7 +145,7 @@ bool SoftmaxPE::dispatch() {
   Tensor float_output;
   float_input.mutableData<float>(DataType::FP32, input->shape());
   float_input.copyFrom(input);
-  float_input.unalignImage();
+  // float_input.unalignImage();
 
   float *out_data =
       float_output.mutableData<float>(DataType::FP32, input->shape());

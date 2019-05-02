@@ -41,12 +41,9 @@ void NormKernel<FPGA, float>::Compute(const NormParam<FPGA>& param) {
   zynqmp::NormPE& pe = context.pe<zynqmp::NormPE>();
   pe.dispatch();
 
-  param.Out()->zynqmpTensor()->saveToFile();
-
-  std::cout << "Out scale:" << param.Out()->zynqmpTensor()->scale()[0]
-            << std::endl;
+  // param.Out()->zynqmpTensor()->saveToFile();
+  param.Out()->zynqmpTensor()->printScale();
 }
-
 template class NormKernel<FPGA, float>;
 
 }  // namespace operators

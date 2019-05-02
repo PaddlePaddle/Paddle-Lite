@@ -27,25 +27,17 @@ bool ConvAddKernel<FPGA, float>::Init(FusionConvAddParam<FPGA>* param) {
 
   zynqmp::ConvPE& pe = param->context().pe<zynqmp::ConvPE>();
   zynqmp::ConvParam& conv_param = pe.param();
-  zynqmp::BatchnormParam* bn_param = new zynqmp::BatchnormParam();
-
   conv_param.input = param->Input()->zynqmpTensor();
   conv_param.output = param->Output()->zynqmpTensor();
   conv_param.filter = param->Filter()->zynqmpTensor();
-  // conv_param.batchnorm = bn_param;
   conv_param.relu.enabled = false;
   conv_param.groups = param->Groups();
   conv_param.strides = param->Strides();
   conv_param.paddings = param->Paddings();
 
   fill_scale_bias_const(&conv_param);
-
   Tensor* bias = param->Bias();
-  float* bias_data = bias->zynqmpTensor()->data<float>();
-  float* conv_bias_data = conv_param.bias()->data<float>();
-  memcpy(conv_bias_data, bias_data,
-         conv_param.input->shape().channel() * sizeof(float));
-  conv_param.bias()->flush();
+  conv_param.bias()->copyFrom(bias->zynqmpTensor());
 
   pe.init();
   pe.apply();
@@ -61,13 +53,7 @@ void ConvAddKernel<FPGA, float>::Compute(
   zynqmp::ConvPE& pe = context.pe<zynqmp::ConvPE>();
   pe.dispatch();
 
-  std::string path = "conv_add" +
-                     std::to_string(param.Output()->zynqmpTensor()->id()) +
-                     ".txt";
-  std::cout << "Out scale:" << param.Output()->zynqmpTensor()->scale()[0]
-            << std::endl;
-
-  // param.Output()->zynqmpTensor()->saveToFile(path);
+  param.Output()->zynqmpTensor()->printScale();
 }
 
 }  // namespace operators

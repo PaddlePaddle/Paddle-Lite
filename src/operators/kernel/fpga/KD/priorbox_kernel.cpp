@@ -55,10 +55,10 @@ void PriorBoxKernel<FPGA, float>::Compute(const PriorBoxParam<FPGA>& param) {
   zynqmp::PriorBoxPE& pe = context.pe<zynqmp::PriorBoxPE>();
   pe.dispatch();
 
-  std::cout << "boxes Out scale:"
-            << param.OutputBoxes()->zynqmpTensor()->scale()[0] << std::endl;
-  std::cout << "variances Out scale:"
-            << param.OutputVariances()->zynqmpTensor()->scale()[0] << std::endl;
+  std::cout << "boxes Out scale:" << std::endl;
+  param.OutputBoxes()->zynqmpTensor()->printScale();
+  std::cout << "variances Out scale:" << std::endl;
+  param.OutputVariances()->zynqmpTensor()->printScale();
 }
 
 template class PriorBoxKernel<FPGA, float>;

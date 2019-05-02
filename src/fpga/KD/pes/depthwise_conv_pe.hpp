@@ -51,9 +51,6 @@ class DepthwiseConvPE : public PE {
     format_dw_filter(param.filter, param.quantizedFilter(), new_scale_data);
 
     DWconvArgs args = {0};
-
-    void* filter_address = quantized_filter->data<float>();
-
     args.bias_address = b_data;
     args.filter_address = param.quantizedFilter()->data<void>();
     args.kernel.width = param.filter->shape().height();

@@ -27,22 +27,18 @@ bool ConvAddReluKernel<FPGA, float>::Init(FusionConvAddReluParam<FPGA>* param) {
 
   zynqmp::ConvPE& pe = param->context().pe<zynqmp::ConvPE>();
   zynqmp::ConvParam& conv_param = pe.param();
-  zynqmp::BatchnormParam* bn_param = new zynqmp::BatchnormParam();
 
   conv_param.input = param->Input()->zynqmpTensor();
   conv_param.output = param->Output()->zynqmpTensor();
   conv_param.filter = param->Filter()->zynqmpTensor();
-  // conv_param.batchnorm = bn_param;
   conv_param.relu.enabled = true;
   conv_param.groups = param->Groups();
   conv_param.strides = param->Strides();
   conv_param.paddings = param->Paddings();
 
   fill_scale_bias_const(&conv_param);
-
   Tensor* bias = param->Bias();
   conv_param.bias()->copyFrom(bias->zynqmpTensor());
-
   pe.init();
   pe.apply();
   return true;
@@ -51,14 +47,16 @@ bool ConvAddReluKernel<FPGA, float>::Init(FusionConvAddReluParam<FPGA>* param) {
 template <>
 void ConvAddReluKernel<FPGA, float>::Compute(
     const FusionConvAddReluParam<FPGA>& param) {
-  // std::cout << "ConvAddReluKernel\n";
+  std::cout << "ConvAddReluKernel\n";
+  static int count = 0;
+  std::string path = std::to_string(count) + ".txt";
+  param.Input()->zynqmpTensor()->readFromFile(path);
+
   zynqmp::Context& context = const_cast<zynqmp::Context&>(param.context_);
   zynqmp::ConvPE& pe = context.pe<zynqmp::ConvPE>();
   pe.dispatch();
 
-  std::cout << "Out scale:" << param.Output()->zynqmpTensor()->scale()[0]
-            << std::endl;
-
+  param.Output()->zynqmpTensor()->printScale();
   param.Output()->zynqmpTensor()->saveToFile("convaddrelu.txt");
 }
 }  // namespace operators

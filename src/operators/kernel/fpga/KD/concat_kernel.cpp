@@ -30,7 +30,7 @@ bool ConcatKernel<FPGA, float>::Init(ConcatParam<FPGA>* param) {
   zynqmp::ConcatPE& pe = param->context().pe<zynqmp::ConcatPE>();
   zynqmp::ConcatParam& concat_param = pe.param();
   std::vector<zynqmp::Tensor*> input_tensors;
-  for (int i = 0; i < image_num; ++i) {
+  for (size_t i = 0; i < image_num; i++) {
     input_tensors.push_back(inputs[i]->zynqmpTensor());
   }
   concat_param.inputs = input_tensors;
@@ -48,12 +48,7 @@ void ConcatKernel<FPGA, float>::Compute(const ConcatParam<FPGA>& param) {
   zynqmp::ConcatPE& pe = context.pe<zynqmp::ConcatPE>();
   pe.dispatch();
 
-  std::string path =
-      "concat" + std::to_string(param.Out()->zynqmpTensor()->id()) + ".txt";
-  std::cout << "Out scale:" << param.Out()->zynqmpTensor()->scale()[0]
-            << std::endl;
-
-  // param.Out()->zynqmpTensor()->saveToFile(path);
+  param.Out()->zynqmpTensor()->printScale();
 }
 template class ConcatKernel<FPGA, float>;
 

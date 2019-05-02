@@ -23,7 +23,8 @@ float find_max(const Tensor& tensor) {
   Tensor& t = const_cast<Tensor&>(tensor);
   float* data = t.data<float>();
   for (int i = 0; i < t.shape().numel(); i++) {
-    max = std::max(data[i], max);
+    float value = data[i] > 0 ? data[i] : -data[i];
+    max = std::max(value, max);
   }
   return max;
 }

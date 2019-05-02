@@ -59,13 +59,13 @@ bool ElementwiseMulKernel<FPGA, float>::Init(ElementwiseMulParam<FPGA>* param) {
 template <>
 void ElementwiseMulKernel<FPGA, float>::Compute(
     const ElementwiseMulParam<FPGA>& param) {
-  // ElementwiseMulCompute<float>(param);
   param.Out()->set_lod(param.InputX()->lod());
 
   zynqmp::Context& context = const_cast<zynqmp::Context&>(param.context_);
   zynqmp::ScalePE& pe = context.pe<zynqmp::ScalePE>();
   pe.dispatch();
 
+  param.Out()->zynqmpTensor()->printScale();
   param.Out()->zynqmpTensor()->saveToFile("ewmul.txt");
 }
 
