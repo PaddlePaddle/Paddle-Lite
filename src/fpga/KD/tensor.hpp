@@ -88,12 +88,10 @@ class Tensor {
 
   template <typename Dtype>
   Dtype* mutableData(DataType dataType, const Shape& shape) {
-    // if (this->shape_ != &shape) {
     if (this->shape_ != nullptr) {
       delete shape_;
     }
     this->shape_ = new Shape(shape);
-    // }
     this->dataType_ = dataType;
     return mutableData<Dtype>();
   }
@@ -113,8 +111,7 @@ class Tensor {
   }
 
   size_t memorySize() {
-    size_t memorySize = shape_->memorySize(CellSize(dataType_));
-    return memorySize;
+    return shape_->memorySize(CellSize(dataType_));
   }
 
   void setDataType(DataType dataType) { this->dataType_ = dataType; }
@@ -218,6 +215,13 @@ class Tensor {
   }
 
   void copyFrom(Tensor* src) {
+    if (src->dataType_ == dataType_) {
+      // src->invalidate();
+      memcpy(data<void>(), src->data<void>(), memorySize());
+      flush();
+      return;
+    }
+
     BypassArgs args;
     args.input_data_type =
         src->dataType_ == FP32 ? DATA_TYPE_FP32 : DATA_TYPE_FP16;
@@ -253,6 +257,10 @@ class Tensor {
     }
   }
 
+  void printScale() {
+    std::cout << "scale:" << scale_[0] << " inv:" << scale_[1] << std::endl;
+  }
+
   std::string dimsFileName() {
     return std::to_string(shape_->num()) + "_" +
            std::to_string(shape_->channel()) + "_" +
@@ -285,6 +293,24 @@ class Tensor {
       ofs << value << std::endl;
     }
     ofs.close();
+  }
+
+  void readFromFile(std::string path) {
+    std::ifstream file_stream;
+    file_stream.open(path);
+    if (!file_stream) {
+      std::cout << "file: " << path << "does not exist\n";
+      return;
+    }
+    int num = shape_->numel();
+    invalidate();
+    float16* data = mutableData<float16>();
+    for (int i = 0; i < num; ++i) {
+      float value = 0;
+      file_stream >> value;
+      data[i] = float_to_half(value);
+    }
+    flush();
   }
 
   ~Tensor() {
