@@ -43,14 +43,14 @@ void ReshapeKernel<FPGA, float>::Compute(const ReshapeParam<FPGA> &param) {
   }
 
   bool inplace = param.Inplace();
-  out->Resize(out_dims);
+  // out->Resize(out_dims);
   if (!inplace) {
     out->mutable_data<half>();
     framework::TensorCopy(*input_x, out);  // TODO(chonwhite) is it right?
     out->Resize(out_dims);
   } else {
-    out->Resize(out_dims);
     out->ShareDataWith(*input_x);
+    out->Resize(out_dims);
   }
   out->zynqmpTensor()->scale()[0] = input_x->zynqmpTensor()->scale()[0];
   out->zynqmpTensor()->scale()[1] = input_x->zynqmpTensor()->scale()[1];
