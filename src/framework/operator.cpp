@@ -58,7 +58,7 @@ void OperatorBase<Dtype>::CheckAllInputOutputSet() const {}
 template <typename Dtype>
 void OperatorBase<Dtype>::Run() {
   RunImpl();
-#ifdef PADDLE_MOBILE_DEBUG
+  // #ifdef PADDLE_MOBILE_DEBUG
   DLOG << "-------------" << type_ << "----------------------------";
   vector<string> input_keys = GetInputKeys();
   for (const auto key : input_keys) {
@@ -86,10 +86,13 @@ void OperatorBase<Dtype>::Run() {
 #ifdef PADDLE_MOBILE_FPGA
         DLOG << var_vec_out[i];
 #endif
+#if defined(PADDLE_MOBILE_FPGA_KD) && defined(WRITE_TENSOR_TO_FILE)
+        tensor->zynqmpTensor()->saveToFile(var_vec_out[i], true);
+#endif
       }
     }
   }
-#endif
+  // #endif
 }
 
 #ifdef PADDLE_MOBILE_CL

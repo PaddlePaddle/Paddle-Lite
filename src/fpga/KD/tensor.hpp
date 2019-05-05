@@ -110,9 +110,7 @@ class Tensor {
     return reinterpret_cast<Dtype*>(placeHolder_->data());
   }
 
-  size_t memorySize() {
-    return shape_->memorySize(CellSize(dataType_));
-  }
+  size_t memorySize() { return shape_->memorySize(CellSize(dataType_)); }
 
   void setDataType(DataType dataType) { this->dataType_ = dataType; }
 
@@ -221,7 +219,6 @@ class Tensor {
       flush();
       return;
     }
-
     BypassArgs args;
     args.input_data_type =
         src->dataType_ == FP32 ? DATA_TYPE_FP32 : DATA_TYPE_FP16;
@@ -274,6 +271,16 @@ class Tensor {
     saveToFile(path);
   }
 
+  void saveToFile(std::string prefix, bool with_shape) {
+    std::string path = prefix;
+    if (with_shape) {
+      path = path + "_" + dimsFileName();
+    } else {
+      path = path + ".txt";
+    }
+    saveToFile(path);
+  }
+
   void saveToFile(std::string path) {
     // return;
     invalidate();
@@ -283,6 +290,8 @@ class Tensor {
     std::string npath = std::to_string(counter) + "_" + path;
     counter++;
     ofs.open(npath);
+    std::cout << "saveToFile " << npath << " dataType_:" << dataType_
+              << std::endl;
     for (int i = 0; i < shape_->numel(); i++) {
       float value = 0;
       if (dataType_ == FP32) {
@@ -302,6 +311,7 @@ class Tensor {
       std::cout << "file: " << path << "does not exist\n";
       return;
     }
+    std::cout << "tensor read from " << path << std::endl;
     int num = shape_->numel();
     invalidate();
     float16* data = mutableData<float16>();
