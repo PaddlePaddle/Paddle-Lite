@@ -135,9 +135,17 @@ public class Texture: Tensorial {
         }
         
         if computePrecision == .Float16 {
-            tmpTextureDes.pixelFormat = .rgba16Float
+            if tensorDim[1] == 1 {
+                tmpTextureDes.pixelFormat = .r16Float
+            } else {
+                tmpTextureDes.pixelFormat = .rgba16Float
+            }
         } else if computePrecision == .Float32 {
-            tmpTextureDes.pixelFormat = .rgba32Float
+            if tensorDim[1] == 1 {
+                tmpTextureDes.pixelFormat = .r32Float
+            } else {
+                tmpTextureDes.pixelFormat = .rgba32Float
+            }
         }
         
         tmpTextureDes.usage = [.shaderRead, .shaderWrite]
