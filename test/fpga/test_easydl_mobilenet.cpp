@@ -31,14 +31,14 @@ cv::Mat sample_float;
 
 void readImage(std::string filename, float* buffer) {
   std::cout << "readImage1" << std::endl;
-  Mat img = imread(filename);
+  cv::Mat img = cv::imread(filename);
   if (img.empty()) {
     std::cerr << "Can't read image from the file: " << filename << std::endl;
     exit(-1);
   }
   std::cout << "readImage2" << std::endl;
   cv::Mat img2;
-  resize(img, img2, Size(224, 224));
+  cv::resize(img, img2, cv::Size(224, 224));
 
   img2.convertTo(sample_float, CV_32FC3);
   std::cout << "readImage3" << sample_float.rows << "," << sample_float.cols

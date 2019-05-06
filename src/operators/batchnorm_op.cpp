@@ -35,10 +35,8 @@ namespace ops = paddle_mobile::operators;
 REGISTER_OPERATOR_CPU(batch_norm, ops::BatchNormOp);
 #endif
 
-if
-  defined(PADDLE_MOBILE_FPGA) ||
-      defined(PADDLE_MOBILE_FPGA_KD)
-          REGISTER_OPERATOR_FPGA(batch_norm, ops::BatchNormOp);
+#if defined(PADDLE_MOBILE_FPGA) || defined(PADDLE_MOBILE_FPGA_KD)
+REGISTER_OPERATOR_FPGA(batch_norm, ops::BatchNormOp);
 #endif
 
 #ifdef PADDLE_MOBILE_CL
