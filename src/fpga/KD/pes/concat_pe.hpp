@@ -76,6 +76,7 @@ class ConcatPE : public PE {
     float scale = 0;
     for (unsigned int n = 0; n < param_.inputs.size(); n++) {
       Tensor* input = param_.inputs[n];
+      input->unalignImage();
       scale = std::max(scale, input->scale()[0]);
     }
     output->scale()[0] = scale;

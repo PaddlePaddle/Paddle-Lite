@@ -23,6 +23,7 @@ namespace operators {
 template <>
 bool MultiClassNMSKernel<FPGA, float>::Init(MultiClassNMSParam<FPGA> *param) {
   param->Out()->mutable_data<float>();
+  param->Out()->zynqmpTensor()->setAligned(false);
   return true;
 }
 
@@ -30,6 +31,7 @@ template <>
 void MultiClassNMSKernel<FPGA, float>::Compute(
     const MultiClassNMSParam<FPGA> &param) {
   MultiClassNMSCompute<float>(param);
+  // param.Out()->zynqmpTensor()->saveToFile("detection.txt");
 }
 
 template class MultiClassNMSKernel<FPGA, float>;

@@ -87,9 +87,6 @@ void PriorBoxPE::compute_prior_box() {
   const float &step_h = param.stepH;
   const float &offset = param.offset;
 
-  // Tensor *output_boxes = param.outputBoxes;
-  // Tensor *output_variances = param.outputVariances;
-
   Tensor *output_boxes = this->cachedBoxes_;
   Tensor *output_variances = this->cachedVariances_;
 
@@ -98,6 +95,7 @@ void PriorBoxPE::compute_prior_box() {
 
   float *output_boxes_dataptr =
       boxes.mutableData<float>(FP32, output_boxes->shape());
+  memset(output_boxes_dataptr, 0, boxes.memorySize());
   float *output_variances_dataptr =
       variances.mutableData<float>(FP32, output_boxes->shape());
 
@@ -106,7 +104,6 @@ void PriorBoxPE::compute_prior_box() {
 
   auto img_width = image_shape.width();
   auto img_height = image_shape.height();
-
   auto feature_width = input_shape.width();
   auto feature_height = input_shape.height();
 
@@ -161,6 +158,7 @@ void PriorBoxPE::compute_prior_box() {
                                  2] = (center_x + box_width) / img_width;
             output_boxes_dataptr[h * stride0 + w * stride1 + idx * stride2 +
                                  3] = (center_y + box_height) / img_height;
+
             idx++;
           }
 
@@ -181,6 +179,7 @@ void PriorBoxPE::compute_prior_box() {
                                  2] = (center_x + box_width) / img_width;
             output_boxes_dataptr[h * stride0 + w * stride1 + idx * stride2 +
                                  3] = (center_y + box_height) / img_height;
+
             idx++;
           }
 
@@ -220,11 +219,16 @@ void PriorBoxPE::compute_prior_box() {
     }
   }
   if (clip) {
-    Transform trans;
-    ClipFunctor<float> clip_func;
-    trans(output_boxes_dataptr,
-          output_boxes_dataptr + output_boxes->shape().numel(),
-          output_boxes_dataptr, clip_func);
+    // Transform trans;
+    // ClipFunctor<float> clip_func;
+    // trans(output_boxes_dataptr,
+    //       output_boxes_dataptr + output_boxes->shape().numel(),
+    //       output_boxes_dataptr, clip_func);
+    for (int i = 0; i < output_boxes->shape().numel(); i++) {
+      float value = output_boxes_dataptr[i];
+      value = std::min(std::max(0.0f, value), 1.0f);
+      output_boxes_dataptr[i] = value;
+    }
   }
 
   if ((param.variances.size() != 4)) {
@@ -241,6 +245,8 @@ void PriorBoxPE::compute_prior_box() {
     output_variances_dataptr[4 * i + 3] = param.variances[3];
   }
 
+  boxes.flush();
+  variances.flush();
   output_boxes->copyFrom(&boxes);
   output_variances->copyFrom(&variances);
 }
@@ -257,6 +263,8 @@ bool PriorBoxPE::dispatch() {
     compute_prior_box();
   }
 
+  // cachedBoxes_->saveToFile("cached_box.txt");
+  // cachedVariances_->saveToFile("cachedVariances.txt");
   param_.outputBoxes->copyFrom(this->cachedBoxes_);
   param_.outputVariances->copyFrom(this->cachedVariances_);
 }

@@ -29,6 +29,7 @@ bool BoxCoderKernel<FPGA, float>::Init(BoxCoderParam<FPGA> *param) {
 template <>
 void BoxCoderKernel<FPGA, float>::Compute(const BoxCoderParam<FPGA> &param) {
   BoxCoderCompute<float>(param);
+  // param.OutputBox()->zynqmpTensor()->saveToFile("boxcoder.txt");
 }
 
 template class BoxCoderKernel<FPGA, float>;

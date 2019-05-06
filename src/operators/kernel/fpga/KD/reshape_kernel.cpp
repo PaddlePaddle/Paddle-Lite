@@ -23,6 +23,7 @@ namespace operators {
 template <>
 bool ReshapeKernel<FPGA, float>::Init(ReshapeParam<FPGA> *param) {
   param->Out()->mutable_data<half>();
+
   return true;
 }
 
@@ -46,12 +47,15 @@ void ReshapeKernel<FPGA, float>::Compute(const ReshapeParam<FPGA> &param) {
   // out->Resize(out_dims);
   if (!inplace) {
     out->mutable_data<half>();
-    framework::TensorCopy(*input_x, out);  // TODO(chonwhite) is it right?
+    // framework::TensorCopy(*input_x, out);  // TODO(chonwhite) is it right?
+    out->zynqmpTensor()->copyFrom(input_x->zynqmpTensor());
     out->Resize(out_dims);
   } else {
     out->ShareDataWith(*input_x);
     out->Resize(out_dims);
   }
+  out->zynqmpTensor()->setAligned(input_x->zynqmpTensor()->aligned());
+
   out->zynqmpTensor()->scale()[0] = input_x->zynqmpTensor()->scale()[0];
   out->zynqmpTensor()->scale()[1] = input_x->zynqmpTensor()->scale()[1];
 

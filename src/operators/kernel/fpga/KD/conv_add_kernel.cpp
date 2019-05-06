@@ -54,6 +54,7 @@ void ConvAddKernel<FPGA, float>::Compute(
   pe.dispatch();
 
   param.Output()->zynqmpTensor()->printScale();
+  // param.Output()->zynqmpTensor()->saveToFile("convadd.txt");
 }
 
 }  // namespace operators

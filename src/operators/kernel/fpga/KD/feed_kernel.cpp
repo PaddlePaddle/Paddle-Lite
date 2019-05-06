@@ -59,7 +59,7 @@ void FeedKernel<FPGA, float>::Compute(const FeedParam<FPGA>& param) {
 
   std::cout << "Out scale:" << param.Out()->zynqmpTensor()->scale()[0]
             << std::endl;
-  param.Out()->zynqmpTensor()->saveToFile("feed_out.txt");
+  // param.Out()->zynqmpTensor()->saveToFile("feed_out.txt");
 
   // exit(-1);
 }

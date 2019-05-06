@@ -130,12 +130,17 @@ void BoxCoderCompute(const BoxCoderParam<FPGA>& param) {
   prior_box.copyFrom(input_priorbox);
   prior_box_var.copyFrom(input_priorboxvar);
 
+  // target_box.saveToFile("target.txt");
+  // prior_box.saveToFile("prior.txt");
+  // prior_box_var.saveToFile("prior_var.txt");
+
   int row = target_box.shape().num();
   int col = prior_box.shape().num();
   int len = prior_box.shape().channel();
 
   framework::Tensor* output_box = param.OutputBox();
-  auto* output_box_dataptr = output_box->mutable_data<float>({row, col, len});
+  output_box->Resize({row, col, len});
+  auto* output_box_dataptr = output_box->mutable_data<float>();
 
   if (code_type == "encode_center_size") {
     EncodeCenterSize<float>(&target_box, &prior_box, &prior_box_var,

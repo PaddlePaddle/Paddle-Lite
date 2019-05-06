@@ -22,8 +22,8 @@ namespace zynqmp {
 class PriorBoxPE : public PE {
  public:
   bool init() {
-    // Tensor* output = param_.output;
-    // output->setAligned(false);
+    param_.outputBoxes->setAligned(false);
+    param_.outputVariances->setAligned(false);
     return true;
   }
 

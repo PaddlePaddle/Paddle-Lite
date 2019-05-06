@@ -66,7 +66,7 @@ void ElementwiseMulKernel<FPGA, float>::Compute(
   pe.dispatch();
 
   param.Out()->zynqmpTensor()->printScale();
-  param.Out()->zynqmpTensor()->saveToFile("ewmul.txt");
+  // param.Out()->zynqmpTensor()->saveToFile("ewmul.txt");
 }
 
 template class ElementwiseMulKernel<FPGA, float>;

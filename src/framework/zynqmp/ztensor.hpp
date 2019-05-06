@@ -75,6 +75,7 @@ class Tensor : public TensorBase {
   inline Tensor &Resize(const DDim &dims) {
     dims_ = dims;
 
+    std::cout << "holder:" << holder_.get() << std::endl;
     if (holder_.get() != nullptr) {
       PlaceholderImpl *impl = static_cast<PlaceholderImpl *>(holder_.get());
       kTypeId_t type = holder_->type();
@@ -265,7 +266,6 @@ class Tensor : public TensorBase {
 
     void resize(DDim ddim, const kTypeId_t type) {
       std::vector<int> v = framework::vectorize2int(ddim);
-
       zynqmp::LayoutType layout_type = zynqmp::NCHW;
       switch (v.size()) {
         case 1:

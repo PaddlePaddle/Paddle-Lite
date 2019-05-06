@@ -29,7 +29,8 @@ namespace zynqmp {
 class ConvPE : public PE {
  public:
   bool init() {
-    //    std::cout << "Conv init" << std::endl;
+    Tensor* output = param_.output;
+    output->setAligned(true);
     return true;
   }
 

@@ -256,7 +256,10 @@ void MultiClassNMSCompute(const MultiClassNMSParam<FPGA>& param) {
   Tensor score_tensor;
   score_tensor.Resize(input_scores_dims);
   auto score_data = score_tensor.mutable_data<float>();
-  score_tensor.zynqmpTensor()->copyFrom(input_bboxes->zynqmpTensor());
+  score_tensor.zynqmpTensor()->copyFrom(input_scores->zynqmpTensor());
+  // input_bboxes->zynqmpTensor()->saveToFile("bboxes.txt");
+  // score_tensor.zynqmpTensor()->saveToFile("score.txt");
+
   // TODO(chonwhite) copy data; and unalign;
 
   auto* outs = param.Out();

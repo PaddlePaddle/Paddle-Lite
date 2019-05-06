@@ -48,10 +48,6 @@ class SplitPE : public PE {
     int64_t src_after = src_stride_numel[axis];
     int64_t dst_after = dst_stride_numel[axis];
 
-    DLOG << "before:" << before;
-    DLOG << "src_after:" << src_after;
-    DLOG << "dst_after:" << dst_after;
-
     // PADDLE_MOBILE_ENFORCE(src_stride_numel.size() == dst_stride_numel.size(),
     //                       "src and dst tensor should have the same dims
     //                       size.");
@@ -87,7 +83,7 @@ class SplitPE : public PE {
   bool dispatch() {
     std::cout << "Split dispatch \n";
     Tensor* input = param_.input;
-
+    input->flush();
     if (input->shape().dimSize() <= 3) {
       auto in_stride = stride_numel(input->shape().dims());
       int64_t axis = param_.axis;
@@ -104,13 +100,13 @@ class SplitPE : public PE {
                                           in_data + input_offset, in_stride,
                                           out_stride[axis]);
         input_offset += out_stride[axis];
+        out->flush();
       }
       return true;
     }
 
     std::vector<Tensor*> outputs = param_.outputs;
     input->invalidate();
-    input->saveToFile("splint_in.txt");
 
     int in_channel = input->shape().channel();
     int split_channel = input->shape().channel() / param_.num;
@@ -129,13 +125,8 @@ class SplitPE : public PE {
     for (int n = 0; n < outputs.size(); n++) {
       Tensor* out = outputs[n];
       out->flush();
-      out->saveToFile("split.txt");
-      out->scale()[0] = input->scale()[0];
-      out->scale()[1] = input->scale()[1];
-      // TODO(chonwhite) optimise this;
+      out->copyScaleFrom(input);
     }
-
-    exit(-1);
     return true;
   }
 

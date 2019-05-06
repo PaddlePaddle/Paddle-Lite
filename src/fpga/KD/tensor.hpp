@@ -35,6 +35,12 @@ enum DataType : int {
   INT32 = 3,
 };
 
+enum DataSyncStatus : int {
+  Synched = 0,
+  Device = 1,
+  CPU = 2,
+};
+
 typedef uint16_t float16;
 
 inline int CellSize(DataType type) {
@@ -110,7 +116,13 @@ class Tensor {
     return reinterpret_cast<Dtype*>(placeHolder_->data());
   }
 
-  size_t memorySize() { return shape_->memorySize(CellSize(dataType_)); }
+  size_t memorySize() {
+    if (placeHolder_ == nullptr) {
+      return 0;
+    }
+    return placeHolder_->memorySize();
+    // return shape_->memorySize(CellSize(dataType_));
+  }
 
   void setDataType(DataType dataType) { this->dataType_ = dataType; }
 
@@ -173,36 +185,44 @@ class Tensor {
   }
 
   void unalignImage(Tensor* dst = nullptr, bool copy = false) {
+    Tensor* target = dst == nullptr ? this : dst;
+    if (!target->aligned_) {
+      if (copy && dst != nullptr) {
+        dst->copyFrom(this);
+      }
+      return;
+    }
+    invalidate();
+    target->aligned_ = false;
     if (shape_->shouldAlign()) {
-      // int cell_size = CellSize(this->dataType_);
-      // char* dst_data = nullptr;
-      // size_t mem_size = shape_->memorySize(cell_size);
-      // if (dst == nullptr) {
-      //     dst_data = (char*)fpga_malloc(mem_size);
-      // } else {
-      //     dst_data = dst->data<char>();
-      // }
-      // int wc = shape_->width() * shape_->channel();
-      // int wc_aligned = align_image(wc);
+      int cell_size = CellSize(this->dataType_);
+      char* dst_data = nullptr;
+      size_t mem_size = shape_->memorySize(cell_size);
+      if (dst == nullptr) {
+        dst_data = reinterpret_cast<char*>(fpga_malloc(mem_size));
+      } else {
+        dst_data = dst->data<char>();
+      }
+      int wc = shape_->width() * shape_->channel();
+      int wc_aligned = align_image(wc);
       // int remainder = wc_aligned - wc;
 
-      // char* src_start = data<char>();
-      // char* dst_start = dst_data;
-      // for (int n = 0; n < shape_->num(); n++) {
-      //     for (int h = 0;h < shape_->height(); h++) {
-      //         memcpy(dst_start, src_start, wc * cell_size);
-      //         memcpy(dst_start + wc * cell_size, 0, remainder * cell_size);
-      //         src_start += wc * cell_size;
-      //         dst_start += wc_aligned * cell_size;
-      //     }
-      // }
-      // if (dst == nullptr) {
-      //     memcpy(data<void>(), dst_data, mem_size);
-      //     flush();
-      //     fpga_free(dst_data);
-      // } else {
-      //     dst->flush();
-      // }
+      char* src_start = data<char>();
+      char* dst_start = dst_data;
+      for (int n = 0; n < shape_->num(); n++) {
+        for (int h = 0; h < shape_->height(); h++) {
+          memcpy(dst_start, src_start, wc * cell_size);
+          src_start += wc_aligned * cell_size;
+          dst_start += wc * cell_size;
+        }
+      }
+      if (dst == nullptr) {
+        memcpy(data<void>(), dst_data, mem_size);
+        flush();
+        fpga_free(dst_data);
+      } else {
+        dst->flush();
+      }
     } else {
       if (copy) {
         dst->copyFrom(this);
@@ -246,6 +266,21 @@ class Tensor {
   void invalidate() {
     fpga_invalidate(placeHolder_->data(), placeHolder_->memorySize());
   }
+
+  void sync() {
+    switch (synchedStatus_) {
+      case CPU:
+        flush();
+        break;
+      case Device:
+        invalidate();
+        break;
+    }
+  }
+
+  DataSyncStatus synchedStatus() { return synchedStatus_; }
+
+  void setSynchedStatus(DataSyncStatus status) { synchedStatus_ = status; }
 
   void print() {
     int count = shape_->numel();
@@ -308,7 +343,7 @@ class Tensor {
     std::ifstream file_stream;
     file_stream.open(path);
     if (!file_stream) {
-      std::cout << "file: " << path << "does not exist\n";
+      std::cout << "file: " << path << " does not exist\n";
       return;
     }
     std::cout << "tensor read from " << path << std::endl;
@@ -339,6 +374,7 @@ class Tensor {
   Shape* shape_ = nullptr;
   DataType dataType_ = FP32;
   bool aligned_ = false;
+  DataSyncStatus synchedStatus_ = Synched;
 
   static int generateID() {
     static int sID = 0;
