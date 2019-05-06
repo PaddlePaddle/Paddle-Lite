@@ -101,5 +101,13 @@ class CLImageConverterDWBlock : public CLImageConverterBase {
                    const DDim &tensor_dim);
 };
 
+class CLImageConverterWinoTransWeight : public CLImageConverterBase {
+ public:
+  const DDim &InitImageDimInfoWith(const DDim &tensor_dim);
+  void NCHWToImage(float *tensor, half_t *image, const DDim &tensor_dim);
+  void ImageToNCHW(half_t *image, float *tensor, const DDim &image_dim,
+                   const DDim &tensor_dim);
+};
+
 }  // namespace framework
 }  // namespace paddle_mobile
