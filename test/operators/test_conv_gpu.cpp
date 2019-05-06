@@ -125,9 +125,10 @@ int TestAll(const int in_channels, const int in_height, const int in_width,
 
   return 0;
 }
+#endif
 
 int main() {
-  TestAll(4, 6, 6, 4, 1);
+  //  TestAll(4, 6, 6, 4, 1);
   //  TestAll(6, 32, 32, 24, 1);
   //    TestAll(12, 32, 32, 24, 1);
   //    TestAll(24, 32, 32, 24, 1);
@@ -196,4 +197,3 @@ int main() {
   //    TestAll(464, 128, 128, 464, 1);
   return 0;
 }
-#endif
