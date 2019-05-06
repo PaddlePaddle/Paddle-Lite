@@ -12,6 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#ifdef PADDLE_MOBILE_CL
 #include <iostream>
 #include "../test_helper.h"
 #include "../test_include.h"
@@ -195,3 +196,4 @@ int main() {
   //    TestAll(464, 128, 128, 464, 1);
   return 0;
 }
+#endif
