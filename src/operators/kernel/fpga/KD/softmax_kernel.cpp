@@ -48,7 +48,6 @@ void SoftmaxKernel<FPGA, float>::Compute(const SoftmaxParam<FPGA>& param) {
 
   // param.Out()->zynqmpTensor()->printScale();
   // param.Out()->zynqmpTensor()->saveToFile("softmax_out_", true);
-
 }
 
 }  // namespace operators
