@@ -402,7 +402,7 @@ kernel void depthwise_conv_add_relu_3x3_half(texture2d_array<half, access::sampl
     constexpr sampler sample(coord::pixel, filter::nearest, address::clamp_to_zero);
     const uint kernelHXW = 9;
     uint weithTo = gid.z * kernelHXW * 4;
-    half4 output = biase[gid.z];
+    float4 output = float4(biase[gid.z]);
     half4 inputs[9];
     inputs[0] = inTexture.sample(sample, float2(posInInput.x - 1,    posInInput.y - 1), output_slice);
     inputs[1] = inTexture.sample(sample, float2(posInInput.x,        posInInput.y - 1), output_slice);
@@ -415,13 +415,13 @@ kernel void depthwise_conv_add_relu_3x3_half(texture2d_array<half, access::sampl
     inputs[8] = inTexture.sample(sample, float2(posInInput.x + 1,    posInInput.y + 1), output_slice);
     for (int j = 0; j < 9; ++j) {
         half4 input = inputs[j];
-        output.x += input.x * weights[weithTo + 0 * kernelHXW + j];
-        output.y += input.y * weights[weithTo + 1 * kernelHXW + j];
-        output.z += input.z * weights[weithTo + 2 * kernelHXW + j];
-        output.w += input.w * weights[weithTo + 3 * kernelHXW + j];
+        output.x += float(input.x) * float(weights[weithTo + 0 * kernelHXW + j]);
+        output.y += float(input.y) * float(weights[weithTo + 1 * kernelHXW + j]);
+        output.z += float(input.z) * float(weights[weithTo + 2 * kernelHXW + j]);
+        output.w += float(input.w) * float(weights[weithTo + 3 * kernelHXW + j]);
     }
     output = fmax(output, 0.0);
-    outTexture.write(output, gid.xy, gid.z);
+    outTexture.write(half4(output), gid.xy, gid.z);
 }
 
 kernel void depthwise_conv_add_relu_3x3_half_winograd(texture2d_array<half, access::sample> inTexture [[texture(0)]],
