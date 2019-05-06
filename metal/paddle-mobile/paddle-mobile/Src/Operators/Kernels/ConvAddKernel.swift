@@ -110,15 +110,18 @@ class ConvAddKernel<P: PrecisionProtocol>: Kernel, Computable {
         }
         
         var shouldUseMPS = false
+        let functionName = type(of: self).kernelFunctionName(param: param)
         if #available(iOS 11.0, *), initContext.useMPS {
             shouldUseMPS = true
         }
-        
+        if type(of: self).isWinoGrad(functionName: functionName) {
+            shouldUseMPS = false
+        }
         if shouldUseMPS {
             super.init(device: device, inFunctionName: nil, initContext: initContext)
             setupWithMPS(device: device, param: param)
         } else {
-            let functionName = type(of: self).kernelFunctionName(param: param)
+            
             if functionName == nil {
                 fatalError(" unsupport yet ")
             }
@@ -136,7 +139,6 @@ class ConvAddKernel<P: PrecisionProtocol>: Kernel, Computable {
                 return
             }
         }
-
         guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
             throw PaddleMobileError.predictError(message: " encode is nil")
         }
@@ -145,7 +147,7 @@ class ConvAddKernel<P: PrecisionProtocol>: Kernel, Computable {
         encoder.setBytes(&metalParam, length: MemoryLayout<MetalConvParam>.size, index: 0)
         encoder.setBuffer(param.filter.buffer, offset: 0, index: 1)
         encoder.setBuffer(param.y.buffer, offset: 0, index: 2)
-        encoder.dispatch(computePipline: pipline, outTexture: param.output.metalTexture)
+        encoder.dispatch(computePipline: pipline, outTexture: param.output.metalTexture, groupDepth: type(of: self).isWinoGrad(functionName: functionName) ? 1 : nil)
         encoder.endEncoding()
     }
     
@@ -194,6 +196,7 @@ class ConvAddKernel<P: PrecisionProtocol>: Kernel, Computable {
         
         let padWhenOneC = !(param.filter.channel == 1 && param.filter.n == param.input.tensorDim[1])
         param.filter.initBuffer(device: device, precision: GlobalConfig.shared.computePrecision, padWhenOneC: padWhenOneC)
+        
         param.y.initBuffer(device: device, precision: GlobalConfig.shared.computePrecision)
     }
     
@@ -233,6 +236,13 @@ class ConvAddKernel<P: PrecisionProtocol>: Kernel, Computable {
     
     func neuronFilterForMPSLayer(device: MTLDevice) -> AnyObject? {
         return nil
+    }
+    
+    open class func isWinoGrad(functionName: String?) -> Bool {
+        if let functionName = functionName {
+            return functionName.hasSuffix("winograd")
+        }
+        return false
     }
 }
 

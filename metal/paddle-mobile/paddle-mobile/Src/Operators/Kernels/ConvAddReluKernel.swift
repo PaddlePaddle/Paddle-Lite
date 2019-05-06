@@ -15,7 +15,11 @@ class ConvAddReluKernel<P: PrecisionProtocol>: ConvAddKernel<P> {
             if param.filter.width == 1 && param.filter.height == 1 {
                 return "conv_add_relu_1x1_half"
             } else if param.filter.channel == 1 && param.filter.n == param.input.tensorDim[1] {
-                return "depthwise_conv_add_relu_3x3_half"
+                if param.filter.n == 16 && param.stride[0] == 1 && param.stride[1] == 1 && param.input.tensorDim[2] % 2 == 0 && param.input.tensorDim[3] % 2 == 0 && false {
+                    return "depthwise_conv_add_relu_3x3_half_winograd"
+                } else {
+                    return "depthwise_conv_add_relu_3x3_half"
+                }
             } else if param.filter.width == 3 && param.filter.height == 3 {
                 return "conv_add_relu_3x3_half"
             } else if param.filter.width == 1 && param.filter.height == 5 {
