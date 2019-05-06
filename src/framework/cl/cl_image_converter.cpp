@@ -426,5 +426,25 @@ void CLImageConverterNormal::ImageToNCHW(half_t *image, float *tensor,
   default_converter.ImageToNCHW(image, tensor, image_dim, tensor_dim);
 }
 
+const DDim &CLImageConverterWinoTransWeight::InitImageDimInfoWith(
+    const DDim &tensor_dim) {
+  PADDLE_MOBILE_ENFORCE(tensor_dim.size() == 4, " tensor dim is not 4");
+  size_t N, C, H, W;
+  N = tensor_dim[0];
+  C = tensor_dim[1];
+  H = tensor_dim[2];
+  W = tensor_dim[3];
+  size_t width = (C + 3) / 4;
+  size_t height = N * 16;  // N * (wino_blk_size + 2) * (wino_blk_size + 2)
+  return make_ddim({width, height});
+}
+
+void CLImageConverterWinoTransWeight::NCHWToImage(float *tensor, half_t *image,
+                                                  const DDim &tensor_dim) {}
+
+void CLImageConverterWinoTransWeight::ImageToNCHW(half_t *image, float *tensor,
+                                                  const DDim &image_dim,
+                                                  const DDim &tensor_dim) {}
+
 }  // namespace framework
 }  // namespace paddle_mobile
