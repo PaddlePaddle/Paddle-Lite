@@ -370,7 +370,7 @@ extension MTLDevice {
 }
 
 extension MTLComputeCommandEncoder {
-    public func dispatch(computePipline: MTLComputePipelineState, outTexture: MTLTexture) {
+    public func dispatch(computePipline: MTLComputePipelineState, outTexture: MTLTexture, groupDepth: Int? = nil) {
         let slices = (outTexture.arrayLength * 4 + 3)/4
         
         let width = computePipline.threadExecutionWidth
@@ -382,8 +382,7 @@ extension MTLComputeCommandEncoder {
         
         let groupWidth = (outTexture.width + width - 1)/width
         let groupHeight = (outTexture.height + height - 1)/height
-        let groupDepth = slices
-        let groups = MTLSize.init(width: groupWidth, height: groupHeight, depth: groupDepth)
+        let groups = MTLSize.init(width: groupWidth, height: groupHeight, depth: groupDepth ?? slices)
         
         setComputePipelineState(computePipline)
         
