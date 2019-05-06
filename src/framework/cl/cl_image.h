@@ -146,6 +146,20 @@ class CLImage {
     DLOG << " end init cl image";
   }
 
+  void InitEmpty(cl_context context, cl_command_queue command_queue,
+                 const DDim &image_dims) {
+    DLOG << " to get image dims ";
+    image_dims_ = image_dims;
+    DLOG << " end get image dims " << image_dims_;
+
+    InitCLImage(context, image_dims_[0], image_dims_[1], nullptr);
+
+    command_queue_ = command_queue;
+    cl_event_ = CLEngine::Instance()->CreateEvent(context);
+    initialized_ = true;
+    DLOG << " end init cl image";
+  }
+
   cl_mem GetCLImage() const { return cl_image_.get(); }
 
   const DDim &ImageDims() const { return image_dims_; }

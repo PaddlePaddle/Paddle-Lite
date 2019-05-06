@@ -13,6 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "operators/kernel/cl/cl-kernel-func/conv_func.h"
+#include <vector>
 #include "framework/cl/cl_image_converter.h"
 #include "framework/cl/cl_tensor.h"
 
@@ -20,19 +21,23 @@ namespace paddle_mobile {
 namespace operators {
 
 template <>
-void winograd_transform_weight<4, 3>(framework::CLHelper &cl_helper,
-                                     framework::CLImage &weight){};
+void winograd_transform_weight<4, 3>(framework::CLHelper *cl_helper,
+                                     framework::CLImage *weight) {}
 
 template <>
-void WinogradConv3x3<4, 3>(framework::CLHelper &cl_helper,
-                           const ConvParam<GPU_CL> &param) {}
+void WinogradConv3x3<4, 3>(framework::CLHelper *cl_helper,
+                           const ConvParam<GPU_CL> &param, bool ifRelu,
+                           const framework::CLImage *biase,
+                           const framework::CLImage *new_scale,
+                           const framework::CLImage *new_bias) {}
 
-void ConvAddBnRelu(framework::CLHelper &cl_helper,
+void ConvAddBnRelu(framework::CLHelper *cl_helper,
                    const ConvParam<GPU_CL> &param, bool ifRelu,
-                   const CLImage *biase, const CLImage *new_scale,
-                   const CLImage *new_bias) {
-  auto kernel = cl_helper.KernelAt(0);
-  auto default_work_size = cl_helper.DefaultWorkSize(*param.Output());
+                   const framework::CLImage *biase,
+                   const framework::CLImage *new_scale,
+                   const framework::CLImage *new_bias) {
+  auto kernel = cl_helper->KernelAt(0);
+  auto default_work_size = cl_helper->DefaultWorkSize(*param.Output());
   int c_block = default_work_size[0];
   int w = default_work_size[1];
   int nh = default_work_size[2];
@@ -137,7 +142,7 @@ void ConvAddBnRelu(framework::CLHelper &cl_helper,
         static_cast<const uint32_t>(maped_w),
         static_cast<const uint32_t>(default_work_size.data()[2])};
 
-    status = clEnqueueNDRangeKernel(cl_helper.CLCommandQueue(), kernel,
+    status = clEnqueueNDRangeKernel(cl_helper->CLCommandQueue(), kernel,
                                     default_work_size.size(), NULL, work_size,
                                     NULL, 0, NULL, NULL);
     CL_CHECK_ERRORS(status);
@@ -201,7 +206,7 @@ void ConvAddBnRelu(framework::CLHelper &cl_helper,
     CL_CHECK_ERRORS(status);
 
     status = clEnqueueNDRangeKernel(
-        cl_helper.CLCommandQueue(), kernel, default_work_size.size(), NULL,
+        cl_helper->CLCommandQueue(), kernel, default_work_size.size(), NULL,
         default_work_size.data(), NULL, 0, NULL, NULL);
     CL_CHECK_ERRORS(status);
   }

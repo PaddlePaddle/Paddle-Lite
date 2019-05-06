@@ -22,23 +22,24 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace operators {
 
-using namespace framework;
-
 inline int maptofactor(int i, int factor) { return (i + factor - 1) / factor; }
 
 template <int tile, int kernel>
-void winograd_transform_weight(framework::CLHelper &cl_helper,
-                               framework::CLImage &weight);
+void winograd_transform_weight(framework::CLHelper *cl_helper,
+                               framework::CLImage *weight);
 
 template <int tile, int kernel>
-void WinogradConv3x3(framework::CLHelper &cl_helper,
-                     const ConvParam<GPU_CL> &param);
+void WinogradConv3x3(framework::CLHelper *cl_helper,
+                     const ConvParam<GPU_CL> &param, bool ifRelu = false,
+                     const framework::CLImage *biase = nullptr,
+                     const framework::CLImage *new_scale = nullptr,
+                     const framework::CLImage *new_bias = nullptr);
 
-void ConvAddBnRelu(framework::CLHelper &cl_helper,
+void ConvAddBnRelu(framework::CLHelper *cl_helper,
                    const ConvParam<GPU_CL> &param, bool ifRelu = false,
-                   const CLImage *biase = nullptr,
-                   const CLImage *new_scale = nullptr,
-                   const CLImage *new_bias = nullptr);
+                   const framework::CLImage *biase = nullptr,
+                   const framework::CLImage *new_scale = nullptr,
+                   const framework::CLImage *new_bias = nullptr);
 
 }  // namespace operators
 }  // namespace paddle_mobile

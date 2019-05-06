@@ -32,9 +32,10 @@ class CLHelper {
 
   explicit CLHelper(CLScope *scope) : scope_(scope) {}
 
-  void AddKernel(const std::string &kernel_name, const std::string &file_name) {
+  void AddKernel(const std::string &kernel_name, const std::string &file_name,
+                 const std::string &options = "") {
     DLOG << " begin add kernel ";
-    auto kernel = scope_->GetKernel(kernel_name, file_name);
+    auto kernel = scope_->GetKernel(kernel_name, file_name, options);
     DLOG << " add kernel ing ";
     kernels.emplace_back(std::move(kernel));
   }

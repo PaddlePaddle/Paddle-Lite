@@ -103,9 +103,9 @@ class CLEngine {
     return std::move(event_ptr);
   }
 
-  bool BuildProgram(cl_program program) {
+  bool BuildProgram(cl_program program, const std::string &options = "") {
     cl_int status;
-    std::string path = "-cl-fast-relaxed-math -I " +
+    std::string path = options + " -cl-fast-relaxed-math -I " +
                        CLEngine::Instance()->GetCLPath() + "/cl_kernel";
 
     status = clBuildProgram(program, 0, 0, path.c_str(), 0, 0);
@@ -149,7 +149,7 @@ class CLEngine {
 
   cl_int status_;
 
-  std::string cl_path_;
+  std::string cl_path_ = "/data/local/tmp/bin";
   std::unique_ptr<_cl_program, CLProgramDeleter> program_;
 
   std::unique_ptr<_cl_context, CLContextDeleter> context_ = nullptr;
