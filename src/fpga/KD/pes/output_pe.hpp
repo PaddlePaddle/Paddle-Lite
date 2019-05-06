@@ -40,6 +40,16 @@ class OutputPE : public PE {
       src_tensor = &float_tensor;
     }
     src_tensor->unalignImage(output, true);
+
+    // if (input->dataType() == DataType::FP16) {
+    //   // float_tensor.copyFrom(input);
+    //   // src_tensor = &float_tensor;
+    //   output->copyFrom(input);
+    // } else {
+    //   output->copyFrom(input);
+    // }
+    // src_tensor->unalignImage(output, true);
+
     return true;
   }
 

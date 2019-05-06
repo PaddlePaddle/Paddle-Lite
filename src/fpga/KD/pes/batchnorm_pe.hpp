@@ -67,7 +67,7 @@ class BatchnormPE : public PE {
 
     scalePE_.init();
 
-    inplace_.relu_enable = false;
+    inplace_.relu_enable = param_.relu.enabled;
     inplace_.power_enable = false;
     inplace_.normalize_enable = false;
 
@@ -83,8 +83,9 @@ class BatchnormPE : public PE {
   }
 
   bool dispatch() {
-    inplace_.relu_enable = true;
-    config_inplace(inplace_);
+    if (inplace_.relu_enable) {
+      config_inplace(inplace_);
+    }
     bool ret = scalePE_.dispatch();
 
     // bool ret = cpu_compute();

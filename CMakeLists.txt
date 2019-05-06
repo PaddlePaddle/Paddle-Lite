@@ -166,7 +166,7 @@ if(FPGA)
     if(FPGAKD)
         message("FPGAKD enabled")
         add_definitions(-DPADDLE_MOBILE_FPGA_KD)
-        add_definitions(-DWRITE_TENSOR_TO_FILE)
+        # add_definitions(-DWRITE_TENSOR_TO_FILE)
 
         file(GLOB_RECURSE _tmp_list src/fpga/common/*.cpp src/fpga/common/*.cc)
         foreach(f ${_tmp_list})

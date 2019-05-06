@@ -22,14 +22,62 @@ namespace operators {
 
 template <>
 bool ConvAddBNKernel<FPGA, float>::Init(FusionConvAddBNParam<FPGA>* param) {
-  // bool relu_enabled = false;
-  zynqmp::PE<ConvParam>& conv = param.context().convPE();
-  ConvParam& p = conv.param();
-  p.input = param->Input()->ZynqTensor();
-  p.filter = param->Filter()->ZynqTensor();
+  const int groups = param->Groups();
+  const int channel = param->Input()->dims()[1];
+  if (groups == channel) {
+    DepthwiseConvPE& pe = param->context().pe<DepthwiseConvPE>();
 
-  BatchnormParam* bn = new BatchnormParam();
-  p.bn = bn;
+    zynqmp::DepthwiseConvParam& depthwise_conv_param = pe.param();
+    zynqmp::BatchnormParam* bn_param = new zynqmp::BatchnormParam();
+
+    bn_param->bias = param->InputBias()->zynqmpTensor();
+    bn_param->scale = param->InputScale()->zynqmpTensor();
+    bn_param->mean = param->InputMean()->zynqmpTensor();
+    bn_param->variance = param->InputVariance()->zynqmpTensor();
+    bn_param->epsilon = param->Epsilon();
+
+    depthwise_conv_param.input = param->Input()->zynqmpTensor();
+    depthwise_conv_param.output = param->Output()->zynqmpTensor();
+    depthwise_conv_param.filter = param->Filter()->zynqmpTensor();
+    depthwise_conv_param.relu.enabled = false;
+    depthwise_conv_param.groups = param->Groups();
+    depthwise_conv_param.strides = param->Strides();
+    depthwise_conv_param.paddings = param->Paddings();
+
+    combine_add_bn_params(bn_param, param->Bias()->zynqmpTensor(),
+                          &depthwise_conv_param);
+
+    pe.init();
+    pe.apply();
+    delete bn_param;
+
+  } else {
+    ConvPE& pe = param->context().pe<ConvPE>();
+
+    zynqmp::ConvParam& conv_param = pe.param();
+
+    zynqmp::BatchnormParam* bn_param = new zynqmp::BatchnormParam();
+
+    bn_param->bias = param->InputBias()->zynqmpTensor();
+    bn_param->scale = param->InputScale()->zynqmpTensor();
+    bn_param->mean = param->InputMean()->zynqmpTensor();
+    bn_param->variance = param->InputVariance()->zynqmpTensor();
+    bn_param->epsilon = param->Epsilon();
+
+    conv_param.input = param->Input()->zynqmpTensor();
+    conv_param.output = param->Output()->zynqmpTensor();
+    conv_param.filter = param->Filter()->zynqmpTensor();
+    conv_param.relu.enabled = false;
+    conv_param.groups = param->Groups();
+    conv_param.strides = param->Strides();
+    conv_param.paddings = param->Paddings();
+
+    combine_add_bn_params(bn_param, param->Bias()->zynqmpTensor(), &conv_param);
+
+    pe.init();
+    pe.apply();
+    delete bn_param;
+  }
 
   return true;
 }
@@ -37,8 +85,19 @@ bool ConvAddBNKernel<FPGA, float>::Init(FusionConvAddBNParam<FPGA>* param) {
 template <>
 void ConvAddBNKernel<FPGA, float>::Compute(
     const FusionConvAddBNParam<FPGA>& param) {
-  zynqmp::PE<ConvParam>& conv = param.context().convPE();
-  conv.dispatch();
+  const int groups = param.Groups();
+  const int channel = param.Output()->dims()[1];
+  if (groups == channel) {
+    zynqmp::Context& context = const_cast<zynqmp::Context&>(param.context_);
+    DepthwiseConvPE& pe = context.pe<DepthwiseConvPE>();
+    pe.dispatch();
+  } else {
+    zynqmp::Context& context = const_cast<zynqmp::Context&>(param.context_);
+    ConvPE& pe = context.pe<ConvPE>();
+    pe.dispatch();
+  }
+  // param.Output()->zynqmpTensor()->printScale();
+  // param.Output()->zynqmpTensor()->saveToFile("conv_add_bn_out_", true);
 }
 
 }  // namespace operators

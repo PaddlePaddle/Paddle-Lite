@@ -126,9 +126,20 @@ if (CON GREATER -1)
     #list(APPEND Caffe_LINKER_LIBS ${OpenCV_LIBS})
     message(STATUS "OpenCV found (${OpenCV_CONFIG_PATH})，${OpenCV_LIBS}")
 
-    ADD_EXECUTABLE(test_mobilenet fpga/test_mobilenet.cpp test_helper.h test_include.h executor_for_test.h)
-    target_link_libraries(test_mobilenet paddle-mobile)
-    target_link_libraries(test_mobilenet ${OpenCV_LIBS})
+    #ADD_EXECUTABLE(test_mobilenet fpga/test_mobilenet.cpp test_helper.h test_include.h executor_for_test.h)
+    #target_link_libraries(test_mobilenet paddle-mobile)
+    #target_link_libraries(test_mobilenet ${OpenCV_LIBS})
+
+    ADD_EXECUTABLE(test_easydl_mobilenet fpga/test_easydl_mobilenet.cpp test_helper.h test_include.h executor_for_test.h)
+    target_link_libraries(test_easydl_mobilenet paddle-mobile)
+    target_link_libraries(test_easydl_mobilenet ${OpenCV_LIBS})
+
+    ADD_EXECUTABLE(test_inception_v3 fpga/test_inception_v3.cpp test_helper.h test_include.h executor_for_test.h)
+    target_link_libraries(test_inception_v3 paddle-mobile)
+    target_link_libraries(test_inception_v3 ${OpenCV_LIBS})
+
+    ADD_EXECUTABLE(test-ssd fpga/test_ssd.cpp test_helper.h test_include.h executor_for_test.h)
+    target_link_libraries(test-ssd paddle-mobile)
 
     ADD_EXECUTABLE(test-ssd fpga/test_ssd.cpp test_helper.h test_include.h executor_for_test.h)
     target_link_libraries(test-ssd paddle-mobile)

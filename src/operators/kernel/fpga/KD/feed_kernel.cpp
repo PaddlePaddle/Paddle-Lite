@@ -41,7 +41,6 @@ bool FeedKernel<FPGA, float>::Init(FeedParam<FPGA>* param) {
 
 template <>
 void FeedKernel<FPGA, float>::Compute(const FeedParam<FPGA>& param) {
-  std::cout << "FeedKernel\n";
   zynqmp::Context& context = const_cast<zynqmp::Context&>(param.context_);
   InputPE& pe = context.pe<InputPE>();
 
@@ -57,11 +56,9 @@ void FeedKernel<FPGA, float>::Compute(const FeedParam<FPGA>& param) {
   input_param.output = out;
   pe.dispatch();
 
-  std::cout << "Out scale:" << param.Out()->zynqmpTensor()->scale()[0]
-            << std::endl;
+  // param.Out()->zynqmpTensor()->printScale();
   // param.Out()->zynqmpTensor()->saveToFile("feed_out.txt");
 
-  // exit(-1);
 }
 template class FeedKernel<FPGA, float>;
 

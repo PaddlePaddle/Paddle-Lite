@@ -26,9 +26,9 @@ bool SoftmaxKernel<FPGA, float>::Init(SoftmaxParam<FPGA>* param) {
   param->Out()->mutable_data<half>();
 
   zynqmp::SoftmaxPE& pe = param->context().pe<zynqmp::SoftmaxPE>();
-  zynqmp::SoftmaxParam& fc_param = pe.param();
-  fc_param.input = param->InputX()->zynqmpTensor();
-  fc_param.output = param->Out()->zynqmpTensor();
+  zynqmp::SoftmaxParam& softmax_param = pe.param();
+  softmax_param.input = param->InputX()->zynqmpTensor();
+  softmax_param.output = param->Out()->zynqmpTensor();
   pe.init();
   pe.apply();
   return true;
@@ -39,13 +39,16 @@ void SoftmaxKernel<FPGA, float>::Compute(const SoftmaxParam<FPGA>& param) {
   // param.InputX()->zynqmpTensor()->saveToFile("softmax_in.txt");
   zynqmp::Context& context = const_cast<zynqmp::Context&>(param.context_);
   zynqmp::SoftmaxPE& pe = context.pe<zynqmp::SoftmaxPE>();
+  zynqmp::SoftmaxParam& softmax_param = pe.param();
+  softmax_param.input = param.InputX()->zynqmpTensor();
+  softmax_param.output = param.Out()->zynqmpTensor();
   pe.dispatch();
 
   param.Out()->zynqmpTensor()->invalidate();
 
-  std::cout << "Out scale:" << param.Out()->zynqmpTensor()->scale()[0]
-            << std::endl;
-  // param.Out()->zynqmpTensor()->saveToFile("softmax.txt");
+  // param.Out()->zynqmpTensor()->printScale();
+  // param.Out()->zynqmpTensor()->saveToFile("softmax_out_", true);
+
 }
 
 }  // namespace operators

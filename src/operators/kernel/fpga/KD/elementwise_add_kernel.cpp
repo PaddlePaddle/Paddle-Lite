@@ -42,16 +42,12 @@ bool ElementwiseAddKernel<FPGA, float>::Init(ElementwiseAddParam<FPGA>* param) {
 template <>
 void ElementwiseAddKernel<FPGA, float>::Compute(
     const ElementwiseAddParam<FPGA>& param) {
-  std::cout << "ElementwiseAddKernel\n";
   zynqmp::Context& context = const_cast<zynqmp::Context&>(param.context_);
   ElementwiseAddPE& pe = context.pe<ElementwiseAddPE>();
   pe.dispatch();
 
-  std::string path =
-      "ew_" + std::to_string(param.Out()->zynqmpTensor()->id()) + ".txt";
-  // param.Out()->zynqmpTensor()->saveToFile(path);
-  std::cout << "Out scale:" << param.Out()->zynqmpTensor()->scale()[0]
-            << std::endl;
+  // param.Out()->zynqmpTensor()->printScale();
+  // param.Out()->zynqmpTensor()->saveToFile("ew_", true);
 }
 }  // namespace operators
 }  // namespace paddle_mobile

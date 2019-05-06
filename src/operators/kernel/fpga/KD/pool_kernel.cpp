@@ -44,12 +44,11 @@ bool PoolKernel<FPGA, float>::Init(PoolParam<FPGA>* param) {
 
 template <>
 void PoolKernel<FPGA, float>::Compute(const PoolParam<FPGA>& param) {
-  std::cout << "PoolKernel\n";
   zynqmp::Context& context = const_cast<zynqmp::Context&>(param.context_);
   zynqmp::PoolingPE& pe = context.pe<zynqmp::PoolingPE>();
   pe.dispatch();
 
-  param.Output()->zynqmpTensor()->printScale();
+  // param.Output()->zynqmpTensor()->printScale();
 }
 }  // namespace operators
 }  // namespace paddle_mobile
