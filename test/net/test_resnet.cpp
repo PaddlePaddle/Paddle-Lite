@@ -21,7 +21,10 @@ int main() {
   paddle_mobile::PaddleMobile<paddle_mobile::FPGA> paddle_mobile;
 #endif
 
-#ifdef PADDLE_MOBILE_CPU
+#ifdef PADDLE_MOBILE_CL
+  paddle_mobile::PaddleMobile<paddle_mobile::GPU_CL> paddle_mobile;
+  paddle_mobile.SetCLPath("/data/local/tmp/bin");
+#else
   paddle_mobile::PaddleMobile<paddle_mobile::CPU> paddle_mobile;
 #endif
   paddle_mobile.SetThreadNum(4);
@@ -38,13 +41,13 @@ int main() {
                              input_tensor.data<float>() + input_tensor.numel());
 #ifndef PADDLE_MOBILE_FPGA
     //   预热十次
-    for (int i = 0; i < 10; ++i) {
-      paddle_mobile.Predict(input, dims);
-    }
+    //    for (int i = 0; i < 10; ++i) {
+    //      paddle_mobile.Predict(input, dims);
+    //    }
     auto time3 = time();
-    for (int i = 0; i < 10; ++i) {
-      paddle_mobile.Predict(input, dims);
-    }
+    //    for (int i = 0; i < 10; ++i) {
+    paddle_mobile.Predict(input, dims);
+    //    }
     auto time4 = time();
     std::cout << "predict cost :" << time_diff(time3, time4) << "ms"
               << std::endl;
