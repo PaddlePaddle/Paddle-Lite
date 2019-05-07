@@ -836,10 +836,6 @@ void fill_dwconv_arg(struct DWconvArgs *arg, framework::Tensor *input,
                      int16_t leaky_relu_negative_slope, int stride_h,
                      int stride_w, int padding_h, int padding_w,
                      float *bias_ptr) {
-  auto deleter = [](void *p) { fpga_free(p); };
-  arg->vector_dwconv_space.push_back(
-      std::shared_ptr<char>(reinterpret_cast<char *>(bias_ptr), deleter));
-
   auto filter_ptr = filter->data<int16_t>();
   auto input_ptr = input->data<int8_t>();
   auto output_ptr = out->mutable_data<int8_t>();

@@ -1277,8 +1277,10 @@ class FetchParam : public OpParam {
  public:
 #ifdef PADDLE_MOBILE_FPGA_V1
   fpga::BypassArgs fpga_bypass_args;
-#endif
   Tensor aligned_out;
+#else
+  std::shared_ptr<Tensor> aligned_out;
+#endif
 #endif
 };
 
