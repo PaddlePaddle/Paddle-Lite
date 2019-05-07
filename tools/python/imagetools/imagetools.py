@@ -3,11 +3,15 @@ import cv2
 from array import array
 
 
-def resize_take_rgbs(path, shape_h_w):
-    print '--------------resize_take_rgbs-----------------begin'
+def resize_take_rgbs(path, shape_h_w, SHOW_IMG=False):
+    print("[INFO] ---- resize_take_rgbs ---- start")
+
     image = cv2.imread(path)
-    # print image.shape
-    cv2.imshow("before", image)
+    print("[INFO] image.shape:{}".format(image.shape))
+    print("[INFO] shape_h_w:{}".format(shape_h_w))
+
+    if SHOW_IMG:
+        cv2.imshow("before", image)
 
     print_rgb(image[0, 0])
     # image len may be for .just check it
@@ -15,8 +19,10 @@ def resize_take_rgbs(path, shape_h_w):
 
     image = cv2.resize(image, (shape_h_w[0], shape_h_w[1]))
 
-    cv2.imshow("after", image)
-    print image.shape
+    if SHOW_IMG:
+        cv2.imshow("after", image)
+
+    print("[INFO] resized image.shape:{}".format(image.shape))
     height = shape_h_w[0]
     width = shape_h_w[1]
 
@@ -25,15 +31,20 @@ def resize_take_rgbs(path, shape_h_w):
     bs_ = []
     for h in range(0, height):
         for w in range(0, width):
+            '''
             bs_.append(image[h, w, 0])
             gs_.append(image[h, w, 1])
             rs_.append(image[h, w, 2])
+            '''
+            bs_.append(image[w, h, 0])
+            gs_.append(image[w, h, 1])
+            rs_.append(image[w, h, 2])
 
     # print image[2, 2, 0]/255.
     print len(bs_)
     print len(gs_)
     print len(rs_)
-    print '--------------resize_take_rgbs-----------------end'
+    print("[INFO] ---- resize_take_rgbs ---- end")
     return bs_, gs_, rs_
 
 
@@ -56,6 +67,5 @@ def print_rgb((b, g, r)):
 
 
 def save_to_file(to_file_name, array):
-    to_file = open(to_file_name, "wb")
-    array.tofile(to_file)
-    to_file.close()
+    with open(to_file_name, "wb") as file_handle:
+        array.tofile(file_handle)
