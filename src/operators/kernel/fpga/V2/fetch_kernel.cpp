@@ -22,7 +22,7 @@ bool FetchKernel<FPGA, float>::Init(FetchParam<FPGA> *param) {
   DLOG << "col = " << col;
   auto output = &(param->Out()->at(col));
   output->init(type_id<float>().hash_code());
-  output->Resize(input->dims());
+  output->mutable_data<float>(input->dims());
   if (input->type() == type_id<float>()) {
     return true;
   }
@@ -38,14 +38,16 @@ bool FetchKernel<FPGA, float>::Init(FetchParam<FPGA> *param) {
   int unalignedCW = outC * outW;
   int alignedCW = fpga::align_to_x(unalignedCW, IMAGE_ALIGNMENT);
   if (alignedCW != unalignedCW) {
-    aligned_output.init(type_id<float>().hash_code());
-    aligned_output.Resize(input->dims());
-    fpga::format_fp32_ofm(&aligned_output);
+    param->aligned_out = std::make_shared<Tensor>();
+    param->aligned_out->Resize(input->dims());
+    param->aligned_out->init(type_id<float>().hash_code());
+    fpga::format_ofm(param->aligned_out.get());
   }
   return true;
 }
 void dealign(float *src, float *dst, int input_c, int input_h, int input_w) {
-  int alignCW = paddle_mobile::fpga::align_to_x(input_c * input_w, 16);
+  int alignCW =
+      paddle_mobile::fpga::align_to_x(input_c * input_w, IMAGE_ALIGNMENT);
   int dealignCW = input_c * input_w;
   for (int h = 0; h < input_h; ++h) {
     auto input_offset = h * alignCW;
@@ -63,11 +65,9 @@ void FetchKernel<FPGA, float>::Compute(const FetchParam<FPGA> &param) {
     output->ShareDataWith(*input);
     return;
   }
-
   auto input_address = input->data<int8_t>();
   float Si = input->scale[0];
-  auto aligned_ptr = const_cast<float *>(param.aligned_out.data<float>());
-  auto outdata_ptr = output->data<float>();
+  auto outdata_ptr = const_cast<float *>(output->data<float>());
   const int num_th = 32;
   fpga::fpga_invalidate(input_address, (input->fpga_data_num) * sizeof(int8_t));
   if (input->fpga_data_num < num_th) {
@@ -76,9 +76,6 @@ void FetchKernel<FPGA, float>::Compute(const FetchParam<FPGA> &param) {
     }
     fpga::fpga_flush(outdata_ptr, product(input->dims()) * sizeof(float));
     return;
-  }
-  for (int idx = 0; idx < input->fpga_data_num; ++idx) {
-    aligned_ptr[idx] = input_address[idx] * Si;
   }
   int outC = 1;
   int outH = 1;
@@ -90,15 +87,21 @@ void FetchKernel<FPGA, float>::Compute(const FetchParam<FPGA> &param) {
   } else {  // 2
     outC = output->dims()[1];
   }
-
   int unalignedCW = outC * outW;
   int alignedCW = fpga::align_to_x(unalignedCW, IMAGE_ALIGNMENT);
+  auto aligned_out = param.aligned_out.get();
   if (unalignedCW != alignedCW) {
+    auto aligned_ptr = aligned_out->data<float>();
+    for (int idx = 0; idx < input->fpga_data_num; ++idx) {
+      aligned_ptr[idx] = input_address[idx] * Si;
+    }
     dealign(aligned_ptr, outdata_ptr, outC, outH, outW);
     fpga::fpga_flush(outdata_ptr, outC * outH * outW * sizeof(float));
     return;
   }
-  memcpy(outdata_ptr, aligned_ptr, outC * outH * outW * sizeof(float));
+  for (int idx = 0; idx < input->fpga_data_num; ++idx) {
+    outdata_ptr[idx] = input_address[idx] * Si;
+  }
   fpga::fpga_flush(outdata_ptr, outC * outH * outW * sizeof(float));
 }
 template class FetchKernel<FPGA, float>;

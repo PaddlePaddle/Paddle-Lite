@@ -29,10 +29,10 @@ bool ElementwiseAddKernel<FPGA, float>::Init(ElementwiseAddParam<FPGA> *param) {
       paddle_mobile::fpga::NONE;
   int16_t leaky_relu_negative_slope = 0;
   auto *input_x = const_cast<LoDTensor *>(param->InputX());
-  auto input_x_ptr = input_x->data<half>();
-  auto input_y_ptr = input_y->data<half>();
+  auto input_x_ptr = input_x->data<int8_t>();
+  auto input_y_ptr = input_y->data<int8_t>();
   fpga::format_ofm(out);
-  auto out_ptr = out->mutable_data<half>();
+  auto out_ptr = out->mutable_data<int8_t>();
   float Si_1 = input_x->scale[0];
   float Si_2 = input_y->scale[0];
   float So = out->scale[0];
