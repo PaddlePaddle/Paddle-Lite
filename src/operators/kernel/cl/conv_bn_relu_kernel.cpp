@@ -98,26 +98,49 @@ bool ConvBNReluKernel<GPU_CL, float>::Init(
 
   param->SetOffset(offset);
 
+  const std::string conv_kernel_file = "conv_kernel.cl";
+  const std::string wino_kernel_file = "winograd_transform.cl";
+  const std::string build_options = "-DBATCH_NORM -DRELU";
+
   if (param->Filter()->dims()[2] == 1 && param->Filter()->dims()[3] == 1) {
+    param->ExecMode() = ConvParam<GPU_CL>::EXEC_SLIDINGWINDOW1x1_FLOAT;
     param->Filter()->InitNImage(cl_helper_.CLContext(),
                                 cl_helper_.CLCommandQueue());
-    this->cl_helper_.AddKernel("conv_1x1_spl", "conv_bn_relu_kernel.cl");
-    DLOG << " conv bn relu conv 1x1";
+
+    this->cl_helper_.AddKernel("conv_1x1_spl", conv_kernel_file, build_options);
+
   } else if (param->Filter()->dims()[1] == 1 &&
              param->Input()->dims()[1] == param->Output()->dims()[1] &&
              param->Filter()->dims()[2] == 3) {
+    param->ExecMode() = ConvParam<GPU_CL>::EXEC_DEPTHWISE3x3_FLOAT;
     param->Filter()->InitDWImage(cl_helper_.CLContext(),
                                  cl_helper_.CLCommandQueue());
-    this->cl_helper_.AddKernel("depth_conv_3x3", "conv_bn_relu_kernel.cl");
-    DLOG << " conv bn relu depth_conv_3x3";
+
+    this->cl_helper_.AddKernel("depth_conv_3x3", conv_kernel_file,
+                               build_options);
 
   } else if (param->Filter()->dims()[2] == 3 &&
              param->Filter()->dims()[3] == 3) {
+    //    if (param->Strides()[0] == param->Strides()[1] &&
+    //        param->Strides()[0] == 1 && param->Input()->dims()[2] >= 32) {
+    //      param->ExecMode() = ConvParam<GPU_CL>::EXEC_WINOGRAD3X3_FLOAT;
+    //      this->cl_helper_.AddKernel("winograd_filter_transform_2x2",
+    //                                 wino_kernel_file, build_options);
+    //      this->cl_helper_.AddKernel("winograd_input_transform_2x2",
+    //                                 wino_kernel_file, build_options);
+    //      this->cl_helper_.AddKernel("matmul", "matmul.cl");
+    //      this->cl_helper_.AddKernel("winograd_output_transform_2x2",
+    //                                 wino_kernel_file, build_options);
+    //
+    //      winograd_transform_weight<4, 3>(&this->cl_helper_, param->Filter());
+    //
+    //    } else {
+    param->ExecMode() = ConvParam<GPU_CL>::EXEC_SLIDINGWINDOW3x3_FLOAT;
     param->Filter()->InitCLImage(cl_helper_.CLContext(),
                                  cl_helper_.CLCommandQueue());
 
-    this->cl_helper_.AddKernel("conv_3x3", "conv_bn_relu_kernel.cl");
-    DLOG << " conv bn relu conv_3x3";
+    this->cl_helper_.AddKernel("conv_3x3", conv_kernel_file, build_options);
+    //    }
   } else {
     PADDLE_MOBILE_THROW_EXCEPTION(" not support ");
   }
@@ -127,8 +150,21 @@ bool ConvBNReluKernel<GPU_CL, float>::Init(
 template <>
 void ConvBNReluKernel<GPU_CL, float>::Compute(
     const FusionConvBNReluParam<GPU_CL> &param) {
-  ConvAddBnRelu(this->cl_helper_, param, true, nullptr, param.NewScale(),
-                param.NewBias());
+  switch (param.ExecMode()) {
+    case ConvParam<GPU_CL>::EXEC_WINOGRAD3X3_FLOAT:
+      WinogradConv3x3<4, 3>(&this->cl_helper_, param, true, nullptr,
+                            param.NewScale(), param.NewBias());
+      break;
+    case ConvParam<GPU_CL>::EXEC_SLIDINGWINDOW1x1_FLOAT:
+    case ConvParam<GPU_CL>::EXEC_SLIDINGWINDOW3x3_FLOAT:
+    case ConvParam<GPU_CL>::EXEC_DEPTHWISE3x3_FLOAT:
+      ConvAddBnRelu(&this->cl_helper_, param, true, nullptr, param.NewScale(),
+                    param.NewBias());
+      break;
+    default:
+      PADDLE_MOBILE_THROW_EXCEPTION("Invalid convolution execute mode %d",
+                                    param.ExecMode());
+  }
 }
 template class ConvBNReluKernel<GPU_CL, float>;
 
