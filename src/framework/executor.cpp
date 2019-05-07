@@ -678,10 +678,12 @@ void Executor<Device, T>::InitQuantMemory() {
       auto inputs_vars = inputs[*key];
       int count = inputs_vars.size();
       for (int i = 0; i < count; i++) {
-        auto tensor = GetTensorByName(inputs_vars[i]);
-        tensor->scale[0] = quantValList[inputs_vars[i]];
-        DLOG << "input variance name : " << inputs_vars[i]
-             << ", scale value : " << tensor->scale[0];
+        if (inputs_vars[i] != "feed") {
+          auto tensor = GetTensorByName(inputs_vars[i]);
+          tensor->scale[0] = quantValList[inputs_vars[i]];
+          DLOG << "input variance name : " << inputs_vars[i]
+               << ", scale value : " << tensor->scale[0];
+        }
       }
     }
     auto output_keys = op->GetOutKeys();
@@ -690,10 +692,12 @@ void Executor<Device, T>::InitQuantMemory() {
       auto outputs_vars = outputs[*key];
       int count = outputs_vars.size();
       for (int i = 0; i < count; i++) {
-        auto tensor = GetTensorByName(outputs_vars[i]);
-        tensor->scale[0] = quantValList[outputs_vars[i]];
-        DLOG << "output variance name : " << outputs_vars[i]
-             << ", scale value : " << tensor->scale[0];
+        if (outputs_vars[i] != "fetch") {
+          auto tensor = GetTensorByName(outputs_vars[i]);
+          tensor->scale[0] = quantValList[outputs_vars[i]];
+          DLOG << "output variance name : " << outputs_vars[i]
+               << ", scale value : " << tensor->scale[0];
+        }
       }
     }
   }

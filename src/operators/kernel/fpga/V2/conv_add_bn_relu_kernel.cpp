@@ -74,7 +74,6 @@ bool ConvAddBNReluKernel<FPGA, float>::Init(
                           leaky_relu_negative_slope, strides[0], strides[1],
                           paddings[0], paddings[1], new_bias_ptr);
     param->SetFpgaArgs(dwconv_arg);
-    fpga::fpga_free(new_scale_ptr);
     fpga::fpga_free(bs_ptr);
   } else {
     fpga::format_conv_data(filter, out, &bs_ptr, param->Groups());
@@ -83,9 +82,9 @@ bool ConvAddBNReluKernel<FPGA, float>::Init(
                          leaky_relu_negative_slope, param->Groups(), strides[0],
                          strides[1], paddings[0], paddings[1], bs_ptr);
     param->SetFpgaArgs(conv_arg);
-    delete new_scale;
-    delete new_bias;
   }
+  delete new_scale;
+  delete new_bias;
   return true;
 }
 

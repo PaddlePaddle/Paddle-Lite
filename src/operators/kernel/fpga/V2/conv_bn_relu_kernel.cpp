@@ -63,6 +63,7 @@ bool ConvBNReluKernel<FPGA, float>::Init(FusionConvBNReluParam<FPGA> *param) {
                           param->Strides()[1], param->Paddings()[0],
                           param->Paddings()[1], new_bias_ptr);
     param->SetFpgaArgs(dwconv_arg);
+    fpga::fpga_free(bs_ptr);
   } else {
     fpga::format_conv_data(filter, out, &bs_ptr, param->Groups());
     fpga::SplitConvArgs conv_arg = {0};
