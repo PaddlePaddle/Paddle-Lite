@@ -133,13 +133,15 @@ static void softmax(Tensor *X, Tensor *Y) {
 bool SoftmaxPE::init() {
   Tensor *output = param_.output;
   output->setAligned(false);
+  output->setDataLocation(CPU);
   return true;
 }
 
 bool SoftmaxPE::dispatch() {
   Tensor *input = param_.input;
   Tensor *output = param_.output;
-  input->invalidate();
+  // input->invalidate();
+  input->syncToCPU();
 
   Tensor float_input;
   Tensor float_output;

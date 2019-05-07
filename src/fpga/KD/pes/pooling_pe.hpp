@@ -27,6 +27,7 @@ class PoolingPE : public PE {
   bool init() {
     Tensor* output = param_.output;
     output->setAligned(true);
+    output->setDataLocation(Device);
     return true;
   }
 
@@ -68,7 +69,7 @@ class PoolingPE : public PE {
   void cpu_compute() {
     Tensor* input = param_.input;
     Tensor* output = param_.output;
-    input->invalidate();
+    input->syncToCPU();
 
     Tensor float_input;
     // Tensor float_output;
@@ -84,9 +85,7 @@ class PoolingPE : public PE {
         float value = half_to_float(input->data<float16>()[i * kernel_hw + j]);
         // max = std::max(max, value);
         sum += value;
-        // std::cout << "value:" << value << std::endl;
       }
-      // std::cout << "max:" << max << std::endl;
       float value = sum / kernel_hw;
       data_out[i] = float_to_half(value);
       scale_max = std::max(scale_max, std::abs(value));
@@ -103,6 +102,7 @@ class PoolingPE : public PE {
     //   cpu_compute();
     //   return true;
     // }
+    param_.input->syncToDevice();
     return compute_fpga_pool(param_.poolingArgs) == 0;
   }
 

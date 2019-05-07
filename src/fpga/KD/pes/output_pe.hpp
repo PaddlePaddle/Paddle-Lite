@@ -33,23 +33,12 @@ class OutputPE : public PE {
     Tensor* output = param_.output;
     Tensor* src_tensor = input;
     Tensor float_tensor;
-    input->invalidate();
     float_tensor.mutableData<float>(DataType::FP32, input->shape());
     if (input->dataType() == DataType::FP16) {
       float_tensor.copyFrom(input);
       src_tensor = &float_tensor;
     }
     src_tensor->unalignImage(output, true);
-
-    // if (input->dataType() == DataType::FP16) {
-    //   // float_tensor.copyFrom(input);
-    //   // src_tensor = &float_tensor;
-    //   output->copyFrom(input);
-    // } else {
-    //   output->copyFrom(input);
-    // }
-    // src_tensor->unalignImage(output, true);
-
     return true;
   }
 

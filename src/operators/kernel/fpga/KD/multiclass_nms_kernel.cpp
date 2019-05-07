@@ -24,13 +24,17 @@ template <>
 bool MultiClassNMSKernel<FPGA, float>::Init(MultiClassNMSParam<FPGA> *param) {
   param->Out()->mutable_data<float>();
   param->Out()->zynqmpTensor()->setAligned(false);
+  param->Out()->zynqmpTensor()->setDataLocation(zynqmp::CPU);
   return true;
 }
 
 template <>
 void MultiClassNMSKernel<FPGA, float>::Compute(
     const MultiClassNMSParam<FPGA> &param) {
+  param.InputBBoxes()->zynqmpTensor()->syncToCPU();
+  param.InputScores()->zynqmpTensor()->syncToCPU();
   MultiClassNMSCompute<float>(param);
+
   // param.Out()->zynqmpTensor()->saveToFile("detection.txt");
 }
 

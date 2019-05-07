@@ -21,9 +21,9 @@ namespace zynqmp {
 
 bool CropPE::dispatch() {
   Tensor* input = param_.input;
-  input->invalidate();
+  // input->invalidate();
+  input->syncToCPU();
   const auto axis = param_.axis;
-
   std::vector<int> shape = param_.shape;
   auto* out = param_.output;
 
@@ -34,7 +34,7 @@ bool CropPE::dispatch() {
 
   std::vector<int> offsets = param_.offsets;
 
-  // FPAG使用的是hwc保存数据，上一层来着fpga，则数据格式hwc
+  // FPGA使用的是hwc保存数据，上一层来着fpga，则数据格式hwc
   // half。dims实际数据还是chw
   int input_c = input->shape().channel();
   int input_h = input->shape().height();
@@ -81,14 +81,7 @@ bool CropPE::dispatch() {
     }
   }
   out->flush();
-
-  out->scale()[0] = input->scale()[0];
-  out->scale()[1] = input->scale()[1];
-  std::cout << "CropKernel in scale::" << input->scale()[0] << " || "
-            << input->scale()[1] << std::endl;
-  std::cout << " CropKernel out fpga scale::" << out->scale()[0] << " || "
-            << out->scale()[1] << std::endl;
-
+  out->copyScaleFrom(input);
   return true;
 }
 

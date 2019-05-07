@@ -24,8 +24,12 @@ namespace zynqmp {
 class SplitPE : public PE {
  public:
   bool init() {
-    // Tensor* output = param_.output;
-    // output->setAligned(true);
+    std::vector<Tensor*> outputs = param_.outputs;
+    for (size_t i = 0; i < outputs.size(); i++) {
+      Tensor* out = outputs[i];
+      out->setAligned(false);
+      out->setDataLocation(CPU);
+    }
     return true;
   }
 
@@ -83,7 +87,7 @@ class SplitPE : public PE {
   bool dispatch() {
     std::cout << "Split dispatch \n";
     Tensor* input = param_.input;
-    input->flush();
+    input->syncToCPU();
     if (input->shape().dimSize() <= 3) {
       auto in_stride = stride_numel(input->shape().dims());
       int64_t axis = param_.axis;
@@ -92,21 +96,18 @@ class SplitPE : public PE {
 
       for (auto& out : param_.outputs) {
         float16* out_data = out->mutableData<float16>();
-        // out->mutable_data<float>();
         auto out_stride = stride_numel(out->shape().dims());
-        // DLOG << "out_stride::" << out_stride;
 
         StridedNumelCopyWithAxis<float16>(axis, out_data, out_stride,
                                           in_data + input_offset, in_stride,
                                           out_stride[axis]);
         input_offset += out_stride[axis];
-        out->flush();
+        // out->flush();
       }
       return true;
     }
 
     std::vector<Tensor*> outputs = param_.outputs;
-    input->invalidate();
 
     int in_channel = input->shape().channel();
     int split_channel = input->shape().channel() / param_.num;
@@ -124,7 +125,7 @@ class SplitPE : public PE {
     }
     for (int n = 0; n < outputs.size(); n++) {
       Tensor* out = outputs[n];
-      out->flush();
+      // out->flush();
       out->copyScaleFrom(input);
     }
     return true;

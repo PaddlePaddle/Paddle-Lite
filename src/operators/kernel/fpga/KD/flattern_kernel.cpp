@@ -23,6 +23,8 @@ namespace operators {
 template <>
 bool FlattenKernel<FPGA, float>::Init(FlattenParam<FPGA> *param) {
   param->Out()->mutable_data<half>();
+  param->Out()->zynqmpTensor()->setAligned(false);
+  param->Out()->zynqmpTensor()->setDataLocation(zynqmp::CPU);
   return true;
 }
 
@@ -32,14 +34,15 @@ void FlattenKernel<FPGA, float>::Compute(const FlattenParam<FPGA> &param) {
   const auto axis = param.Axis();
   const auto &input_x_dims = input_x->dims();
   auto *out = param.Out();
-  // out->set_data_aligned(input_x->data_aligned());
 
   const auto &out_shape_v = GetOutputShape(axis, input_x_dims);
   const framework::DDim &out_dim = ValidateShape(out_shape_v, input_x_dims);
 
+  input_x->zynqmpTensor()->syncToCPU();
+  // input_x->zynqmpTensor()->saveToFile("flatten_in.txt");
+
   out->Resize(out_dim);
   out->mutable_data<float>();
-  // framework::TensorCopy(*input_x, out);
 
   input_x->check_memory_size();
   out->Resize(input_x->dims());
@@ -49,6 +52,8 @@ void FlattenKernel<FPGA, float>::Compute(const FlattenParam<FPGA> &param) {
   memory::Copy(dst_ptr, src_ptr, size);
 
   out->Resize(out_dim);
+  out->zynqmpTensor()->flush();
+  // out->zynqmpTensor()->saveToFile("flatten_out.txt");
 }
 
 template class FlattenKernel<FPGA, float>;

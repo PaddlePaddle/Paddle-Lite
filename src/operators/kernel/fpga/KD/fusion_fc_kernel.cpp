@@ -42,8 +42,6 @@ void FusionFcKernel<FPGA, float>::Compute(const FusionFcParam<FPGA>& param) {
   zynqmp::Context& context = const_cast<zynqmp::Context&>(param.context_);
   FullyConnectedPE& pe = context.pe<FullyConnectedPE>();
   pe.dispatch();
-
-  param.Out()->zynqmpTensor()->invalidate();
   std::string path =
       "fc_" + std::to_string(param.Out()->zynqmpTensor()->id()) + ".txt";
   // param.Out()->zynqmpTensor()->saveToFile(path);

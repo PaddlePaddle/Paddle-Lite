@@ -260,8 +260,6 @@ void MultiClassNMSCompute(const MultiClassNMSParam<FPGA>& param) {
   // input_bboxes->zynqmpTensor()->saveToFile("bboxes.txt");
   // score_tensor.zynqmpTensor()->saveToFile("score.txt");
 
-  // TODO(chonwhite) copy data; and unalign;
-
   auto* outs = param.Out();
   auto background_label = param.BackGroundLabel();
   auto nms_top_k = param.NMSTopK();

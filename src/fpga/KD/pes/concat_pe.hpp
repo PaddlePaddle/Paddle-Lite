@@ -27,7 +27,8 @@ class ConcatPE : public PE {
  public:
   bool init() {
     Tensor* output = param_.output;
-    output->setAligned(true);
+    output->setAligned(false);
+    output->setDataLocation(CPU);
     return true;
   }
 
@@ -38,9 +39,6 @@ class ConcatPE : public PE {
     auto input = param_.inputs;
     Tensor* output = param_.output;
     int axis = param_.axis;
-
-    // output->set_data_aligned(input[0]->data_aligned());
-
     int num = input.size();
     int rows = 1;
     auto dim_0 = input[0]->shape().dims();
@@ -76,6 +74,7 @@ class ConcatPE : public PE {
     float scale = 0;
     for (unsigned int n = 0; n < param_.inputs.size(); n++) {
       Tensor* input = param_.inputs[n];
+      input->syncToCPU();
       input->unalignImage();
       scale = std::max(scale, input->scale()[0]);
     }
@@ -93,7 +92,6 @@ class ConcatPE : public PE {
     int out_channel = output_shape.channel();
     for (unsigned int n = 0; n < param_.inputs.size(); n++) {
       Tensor* input = param_.inputs[n];
-      input->invalidate();
       Shape& input_shape = input->shape();
       int wh = output_shape.width() * output_shape.height();
       for (int j = 0; j < wh; j++) {

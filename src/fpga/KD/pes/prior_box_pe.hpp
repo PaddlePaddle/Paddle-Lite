@@ -24,6 +24,8 @@ class PriorBoxPE : public PE {
   bool init() {
     param_.outputBoxes->setAligned(false);
     param_.outputVariances->setAligned(false);
+    param_.outputBoxes->setDataLocation(CPU);
+    param_.outputVariances->setDataLocation(CPU);
     return true;
   }
 

@@ -118,14 +118,17 @@ void BoxCoderCompute(const BoxCoderParam<FPGA>& param) {
 
   const auto& code_type = param.CodeType();
 
-  zynqmp::Tensor target_box;
   zynqmp::Tensor prior_box;
   zynqmp::Tensor prior_box_var;
+  zynqmp::Tensor target_box;
 
-  target_box.mutableData<float>(zynqmp::FP32, input_targetbox->shape());
   prior_box.mutableData<float>(zynqmp::FP32, input_priorbox->shape());
   prior_box_var.mutableData<float>(zynqmp::FP32, input_priorboxvar->shape());
+  target_box.mutableData<float>(zynqmp::FP32, input_targetbox->shape());
 
+  input_priorbox->flush();
+  input_priorboxvar->flush();
+  input_targetbox->flush();
   target_box.copyFrom(input_targetbox);
   prior_box.copyFrom(input_priorbox);
   prior_box_var.copyFrom(input_priorboxvar);

@@ -224,10 +224,12 @@ void PriorBoxPE::compute_prior_box() {
     // trans(output_boxes_dataptr,
     //       output_boxes_dataptr + output_boxes->shape().numel(),
     //       output_boxes_dataptr, clip_func);
+    std::cout << "\n===================================\n";
     for (int i = 0; i < output_boxes->shape().numel(); i++) {
       float value = output_boxes_dataptr[i];
       value = std::min(std::max(0.0f, value), 1.0f);
       output_boxes_dataptr[i] = value;
+      // std::cout << value << std::endl;
     }
   }
 
@@ -246,9 +248,13 @@ void PriorBoxPE::compute_prior_box() {
   }
 
   boxes.flush();
+  boxes.syncToCPU();
+  // boxes.saveToFile("boxes.txt");
   variances.flush();
   output_boxes->copyFrom(&boxes);
+  // output_boxes->saveToFile("output_boxes.txt");
   output_variances->copyFrom(&variances);
+  // exit(-1);
 }
 
 void PriorBoxPE::apply() {}
@@ -260,13 +266,21 @@ bool PriorBoxPE::dispatch() {
     cachedBoxes_->mutableData<float16>(FP16, param_.outputBoxes->shape());
     cachedVariances_->mutableData<float16>(FP16,
                                            param_.outputVariances->shape());
+    cachedBoxes_->setDataLocation(CPU);
+    cachedVariances_->setDataLocation(CPU);
     compute_prior_box();
   }
 
   // cachedBoxes_->saveToFile("cached_box.txt");
   // cachedVariances_->saveToFile("cachedVariances.txt");
+
   param_.outputBoxes->copyFrom(this->cachedBoxes_);
+
+  // param_.outputBoxes->flush();
   param_.outputVariances->copyFrom(this->cachedVariances_);
+  param_.outputBoxes->flush();
+  param_.outputBoxes->syncToCPU();
+  param_.outputVariances->flush();
 }
 
 }  // namespace zynqmp

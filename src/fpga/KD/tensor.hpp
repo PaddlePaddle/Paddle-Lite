@@ -192,8 +192,8 @@ class Tensor {
       }
       return;
     }
-    invalidate();
-    target->aligned_ = false;
+    target->syncToCPU();
+    // target->aligned_ = false;
     if (shape_->shouldAlign()) {
       int cell_size = CellSize(this->dataType_);
       char* dst_data = nullptr;
@@ -205,7 +205,6 @@ class Tensor {
       }
       int wc = shape_->width() * shape_->channel();
       int wc_aligned = align_image(wc);
-      // int remainder = wc_aligned - wc;
 
       char* src_start = data<char>();
       char* dst_start = dst_data;
@@ -234,8 +233,9 @@ class Tensor {
 
   void copyFrom(Tensor* src) {
     if (src->dataType_ == dataType_) {
-      // src->invalidate();
+      src->syncToCPU();
       memcpy(data<void>(), src->data<void>(), memorySize());
+      copyScaleFrom(src);
       flush();
       return;
     }
@@ -256,7 +256,8 @@ class Tensor {
         .address = data<void>(),
         .scale_address = scale(),
     };
-    src->flush();
+    src->syncToDevice();
+    this->invalidate();
     perform_bypass(args);
     this->invalidate();
   }
@@ -275,12 +276,28 @@ class Tensor {
       case Device:
         invalidate();
         break;
+      default:
+        break;
+    }
+  }
+
+  void syncToCPU() {
+    if (dateLocation_ == Device) {
+      invalidate();
+    }
+  }
+
+  void syncToDevice() {
+    if (dateLocation_ == CPU) {
+      flush();
     }
   }
 
   DataSyncStatus synchedStatus() { return synchedStatus_; }
 
   void setSynchedStatus(DataSyncStatus status) { synchedStatus_ = status; }
+
+  void setDataLocation(DataSyncStatus location) { dateLocation_ = location; }
 
   void print() {
     int count = shape_->numel();
@@ -317,10 +334,8 @@ class Tensor {
   }
 
   void saveToFile(std::string path) {
-    // return;
-    invalidate();
+    syncToCPU();
     std::ofstream ofs;
-
     static int counter = 0;
     std::string npath = std::to_string(counter) + "_" + path;
     counter++;
@@ -375,6 +390,7 @@ class Tensor {
   DataType dataType_ = FP32;
   bool aligned_ = false;
   DataSyncStatus synchedStatus_ = Synched;
+  DataSyncStatus dateLocation_ = Device;
 
   static int generateID() {
     static int sID = 0;

@@ -31,12 +31,11 @@ class ConvPE : public PE {
   bool init() {
     Tensor* output = param_.output;
     output->setAligned(true);
+    output->setDataLocation(Device);
     return true;
   }
 
   void apply() {
-    // BatchnormParam* bn = param_.batchnorm;
-    // combine_bn_params(bn , param_);
     fill_split_arg(param_);
     if (param_.splitParams().size() > 1) {
       ConcatParam& concat_param = concatPE_.param();

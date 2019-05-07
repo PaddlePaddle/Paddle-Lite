@@ -61,6 +61,7 @@ void PriorBoxKernel<FPGA, float>::Compute(const PriorBoxParam<FPGA>& param) {
   std::cout << "variances Out scale:" << std::endl;
   param.OutputVariances()->zynqmpTensor()->printScale();
   // param.OutputVariances()->zynqmpTensor()->saveToFile("outvar_.txt");
+  // exit(-1);
 }
 
 template class PriorBoxKernel<FPGA, float>;

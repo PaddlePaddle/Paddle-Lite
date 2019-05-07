@@ -25,11 +25,15 @@ namespace zynqmp {
 
 class FullyConnectedPE : public PE {
  public:
-  bool init() { return true; }
+  bool init() {
+    Tensor* output = param_.output;
+    output->setAligned(true);
+    output->setDataLocation(Device);
+    return true;
+  }
 
   void apply() {
     Tensor* input = param_.input;
-
     convParam_.input = param_.input;
     convParam_.output = param_.output;
     // convParam_.relu = param_.relu;
@@ -75,9 +79,9 @@ class FullyConnectedPE : public PE {
   }
 
   bool dispatch() {
+    param_.input->syncToDevice();
     int ret = 0;
     std::vector<BasicConvParam*>& params = convParam_.splitParams();
-
     for (auto conv_param : params) {
       std::cout << "conv basic \n";
       ret |= compute_fpga_conv_basic(conv_param->args);

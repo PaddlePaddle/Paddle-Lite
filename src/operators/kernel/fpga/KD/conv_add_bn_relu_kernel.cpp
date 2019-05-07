@@ -104,9 +104,7 @@ void ConvAddBNReluKernel<FPGA, float>::Compute(
     ConvPE& pe = context.pe<ConvPE>();
     pe.dispatch();
   }
-
   param.Output()->zynqmpTensor()->printScale();
-  // param.Output()->zynqmpTensor()->saveToFile("conv_add_bn_relu_out_", true);
 }
 
 }  // namespace operators

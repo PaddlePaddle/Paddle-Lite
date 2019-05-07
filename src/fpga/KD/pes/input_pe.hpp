@@ -24,6 +24,7 @@ class InputPE : public PE {
   bool init() {
     Tensor* output = param_.output;
     output->setAligned(true);
+    output->setDataLocation(Device);
     return true;
   }
 
@@ -33,6 +34,7 @@ class InputPE : public PE {
     Tensor* output = param_.output;
 
     Tensor* src = input;
+    input->flush();
     Tensor half_tensor;
     if (input->dataType() == DataType::FP32) {
       half_tensor.mutableData<void*>(DataType::FP16, input->shape());

@@ -34,47 +34,47 @@ void TransposeCompute(const Transpose2Param<FPGA>& param) {
 
   std::cout << "num::" << num << "  channel::" << channel << std::endl;
 
-  int index = 0;
-  for (int n = 0; n < num; n++) {
-    for (int c = 0; c < channel; c++) {
-      out_data[c * num + n] = input_x_data[n * channel + c];
-      index++;
-    }
-  }
+  // int index = 0;
+  // for (int n = 0; n < num; n++) {
+  //   for (int c = 0; c < channel; c++) {
+  //     out_data[c * num + n] = input_x_data[n * channel + c];
+  //     index++;
+  //   }
+  // }
   // ot.saveToFile("od.txt");
 
-  // size_t ndim = axis.size();
-  // std::vector<int> xdim(ndim);
-  // std::vector<int> xstride(ndim);
-  // std::vector<int> xout(ndim);
-  // for (int i = 0; i < ndim; i++) {
-  //   int j = ndim - 1 - i;
-  //   xdim[j] = input_x_dims[axis[i]];
-  //   xstride[j] = 1;
-  //   for (int k = axis[i] + 1; k < ndim; k++) {
-  //     xstride[j] *= input_x_dims[k];
-  //   }
-  //   xout[j] = xstride[j] * xdim[j];
-  // }
+  size_t ndim = axis.size();
+  std::vector<int> xdim(ndim);
+  std::vector<int> xstride(ndim);
+  std::vector<int> xout(ndim);
+  for (int i = 0; i < ndim; i++) {
+    int j = ndim - 1 - i;
+    xdim[j] = input_x_dims[axis[i]];
+    xstride[j] = 1;
+    for (int k = axis[i] + 1; k < ndim; k++) {
+      xstride[j] *= input_x_dims[k];
+    }
+    xout[j] = xstride[j] * xdim[j];
+  }
 
-  // auto numel = input_x->numel();
-  // size_t pind = 0;
-  // std::vector<int> ind(ndim);
-  // for (int i = 0; i < numel; i++) {
-  //   out_data[i] = input_x_data[pind];
-  //   ind[0]++;
-  //   pind += xstride[0];
-  //   for (int j = 0; j < ndim - 1; j++) {
-  //     if (ind[j] == xdim[j]) {
-  //       ind[j + 1]++;
-  //       ind[j] = 0;
-  //       pind += xstride[j + 1];
-  //       pind -= xout[j];
-  //     } else {
-  //       break;
-  //     }
-  //   }
-  // }
+  auto numel = input_x->numel();
+  size_t pind = 0;
+  std::vector<int> ind(ndim);
+  for (int i = 0; i < numel; i++) {
+    out_data[i] = input_x_data[pind];
+    ind[0]++;
+    pind += xstride[0];
+    for (int j = 0; j < ndim - 1; j++) {
+      if (ind[j] == xdim[j]) {
+        ind[j + 1]++;
+        ind[j] = 0;
+        pind += xstride[j + 1];
+        pind -= xout[j];
+      } else {
+        break;
+      }
+    }
+  }
 }
 
 template <>
@@ -83,8 +83,6 @@ bool Transpose2Kernel<FPGA, float>::Init(Transpose2Param<FPGA>* param) {
   auto output = param->Out();
   auto axis = param->Axis();
   auto dim = input->dims();
-  // output->ShareDataWith(*input);
-
   auto dim_v = vectorize(dim);
 
   for (int i = 0; i < axis.size(); i++) {
@@ -92,14 +90,12 @@ bool Transpose2Kernel<FPGA, float>::Init(Transpose2Param<FPGA>* param) {
   }
   output->Resize(framework::make_ddim(dim_v));
   output->mutable_data<half>();
-
-  DLOG << "input: " << input;
-  DLOG << "output: " << output;
-
   if (param->InputX()->dims().size() == 4) {
-    param->Out()->ShareDataWith(*param->InputX());
+    // param->Out()->ShareDataWith(*param->InputX());
     // param->Out()->zynqmpTensor().copyFrom(param->InputX()->zynqmpTensor());
   }
+  output->zynqmpTensor()->setAligned(false);
+  output->zynqmpTensor()->setDataLocation(zynqmp::CPU);
   return true;
 }
 
@@ -109,14 +105,16 @@ void Transpose2Kernel<FPGA, float>::Compute(
   // Transpose2Compute<float>(param);
   auto input = param.InputX();
   auto output = param.Out();
-  // input->zynqmpTensor()
+  input->zynqmpTensor()->syncToCPU();
   input->zynqmpTensor()->unalignImage();
+  // input->zynqmpTensor()->saveToFile("transpose.txt");
 
   if (param.InputX()->dims().size() != 4) {
     TransposeCompute<float>(param);
     auto out = param.Out();
-    // out->set_data_aligned(param.InputX()->data_aligned());
     auto out_data = out->data<half>();
+  } else {
+    output->zynqmpTensor()->copyFrom(input->zynqmpTensor());
   }
   auto xShape = param.OutputXShape();
   xShape->Resize({0, 0});  // TODO(chonwhite) fix it;

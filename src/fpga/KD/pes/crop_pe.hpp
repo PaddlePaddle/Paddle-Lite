@@ -28,6 +28,7 @@ class CropPE : public PE {
   bool init() {
     Tensor* output = param_.output;
     output->setAligned(true);
+    output->setDataLocation(CPU);
     return true;
   }
 

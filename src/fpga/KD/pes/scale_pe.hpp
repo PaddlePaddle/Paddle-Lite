@@ -34,6 +34,7 @@ class ScalePE : public PE {
   bool init() {
     Tensor* output = param_.output;
     output->setAligned(true);
+    output->setDataLocation(Device);
     return true;
   }
 
@@ -109,6 +110,7 @@ class ScalePE : public PE {
 
   bool dispatch() {
     std::cout << "scale pe" << std::endl;
+    param_.input->syncToDevice();
     return compute_fpga_scale(param_.args) == 0;
   }
 

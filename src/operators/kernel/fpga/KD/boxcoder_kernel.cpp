@@ -23,12 +23,18 @@ namespace operators {
 template <>
 bool BoxCoderKernel<FPGA, float>::Init(BoxCoderParam<FPGA> *param) {
   param->OutputBox()->mutable_data<float>();
+  param->OutputBox()->zynqmpTensor()->setAligned(false);
+  param->OutputBox()->zynqmpTensor()->setDataLocation(zynqmp::CPU);
   return true;
 }
 
 template <>
 void BoxCoderKernel<FPGA, float>::Compute(const BoxCoderParam<FPGA> &param) {
+  param.InputPriorBox()->zynqmpTensor()->syncToCPU();
+  param.InputPriorBoxVar()->zynqmpTensor()->syncToCPU();
+  param.InputTargetBox()->zynqmpTensor()->syncToCPU();
   BoxCoderCompute<float>(param);
+  param.OutputBox()->zynqmpTensor()->syncToCPU();
   // param.OutputBox()->zynqmpTensor()->saveToFile("boxcoder.txt");
 }
 

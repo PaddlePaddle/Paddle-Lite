@@ -28,6 +28,7 @@ class NormPE : public PE {
   bool init() {
     Tensor* output = param_.output;
     output->setAligned(true);
+    output->setDataLocation(Device);
     return true;
   }
 
@@ -65,14 +66,51 @@ class NormPE : public PE {
         reinterpret_cast<uint32_t*>(param_.output->scale());
   }
 
-  bool dispatch() {
-    config_norm_param(norm_param_args_);
-    inplace_args_.normalize_enable = true, config_inplace(inplace_args_);
+  void cpuCompute() {
+    Tensor input_float;
+    Tensor float_out;
+    input_float.mutableData<float>(FP32, param_.input->shape());
+    float_out.mutableData<float>(FP32, param_.output->shape());
 
-    perform_bypass(bypass_args_);
-    inplace_args_.normalize_enable = false;
-    config_inplace(inplace_args_);
-    compute_norm(norm_args_);
+    // param_.input->syncToDevice();
+    input_float.copyFrom(param_.input);
+    input_float.syncToCPU();
+
+    int channel = input_float.shape().channel();
+    int height = input_float.shape().height();
+    int width = input_float.shape().width();
+    int cw = channel * width;
+
+    Tensor* input = &input_float;
+    float* input_ptr = input->data<float>();
+    float* out_ptr = float_out.data<float>();
+
+    int loop = height * width;
+    for (int i = 0; i < loop; i++) {
+      float sum = param_.epsilon;
+      for (int c = 0; c < channel; c++) {
+        float value = input_ptr[i * channel + c];
+        sum += value * value;
+      }
+      float norm = sqrtf(sum);
+      for (int c = 0; c < channel; c++) {
+        out_ptr[i * channel + c] = input_ptr[i * channel + c] / norm;
+      }
+    }
+    float_out.flush();
+    param_.output->copyFrom(&float_out);
+  }
+
+  bool dispatch() {
+    cpuCompute();
+    // param_.input->syncToDevice();
+    // config_norm_param(norm_param_args_);
+    // inplace_args_.normalize_enable = true, config_inplace(inplace_args_);
+
+    // perform_bypass(bypass_args_);
+    // inplace_args_.normalize_enable = false;
+    // config_inplace(inplace_args_);
+    // compute_norm(norm_args_);
     return true;
   }
 

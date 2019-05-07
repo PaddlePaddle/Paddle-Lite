@@ -26,6 +26,9 @@ class DepthwiseConvPE : public PE {
  public:
   bool init() {
     std::cout << "DWConv init" << std::endl;
+    Tensor* output = param_.output;
+    output->setAligned(true);
+    output->setDataLocation(Device);
     return true;
   }
 
@@ -73,6 +76,7 @@ class DepthwiseConvPE : public PE {
   }
 
   bool dispatch() {
+    param_.input->syncToDevice();
     inplace_.relu_enable = param_.relu.enabled;
     config_inplace(inplace_);
     bool ret = compute_fpga_dwconv(param_.args) == 0;

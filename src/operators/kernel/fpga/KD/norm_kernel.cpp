@@ -28,6 +28,7 @@ bool NormKernel<FPGA, float>::Init(NormParam<FPGA>* param) {
   zynqmp::NormParam& norm_param = pe.param();
   norm_param.input = param->InputX()->zynqmpTensor();
   norm_param.output = param->Out()->zynqmpTensor();
+  norm_param.epsilon = param->Epsilon();
 
   pe.init();
   pe.apply();
@@ -37,12 +38,16 @@ bool NormKernel<FPGA, float>::Init(NormParam<FPGA>* param) {
 
 template <>
 void NormKernel<FPGA, float>::Compute(const NormParam<FPGA>& param) {
+  // param.InputX()->zynqmpTensor()->saveToFile("norm_in.txt");
+
   zynqmp::Context& context = const_cast<zynqmp::Context&>(param.context_);
   zynqmp::NormPE& pe = context.pe<zynqmp::NormPE>();
   pe.dispatch();
 
-  // param.Out()->zynqmpTensor()->saveToFile();
+  // param.Out()->zynqmpTensor()->saveToFile("norm_out.txt");
   param.Out()->zynqmpTensor()->printScale();
+
+  // exit(-1);
 }
 template class NormKernel<FPGA, float>;
 

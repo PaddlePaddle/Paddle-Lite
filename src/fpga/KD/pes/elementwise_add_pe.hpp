@@ -22,7 +22,12 @@ namespace zynqmp {
 
 class ElementwiseAddPE : public PE {
  public:
-  bool init() { return true; }
+  bool init() {
+    Tensor* output = param_.output;
+    output->setAligned(true);
+    output->setDataLocation(Device);
+    return true;
+  }
 
   void apply() {
     Tensor* input0 = param_.inputs[0];
@@ -51,6 +56,8 @@ class ElementwiseAddPE : public PE {
   }
 
   bool dispatch() {
+    param_.inputs[0]->syncToDevice();
+    param_.inputs[1]->syncToDevice();
     InplaceArgs inplace_args = {0};
     if (param_.relu.enabled) {
       inplace_args.relu_enable = true;

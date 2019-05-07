@@ -174,6 +174,7 @@ struct NormParam : PEParam {
   Tensor* input = nullptr;
 
   Tensor* output = nullptr;
+  float epsilon = 0;
 
  private:
   Tensor* floatInput = nullptr;

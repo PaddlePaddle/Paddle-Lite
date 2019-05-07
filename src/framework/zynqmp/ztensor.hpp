@@ -74,8 +74,6 @@ class Tensor : public TensorBase {
   /*! Resize the dimensions of the memory block. */
   inline Tensor &Resize(const DDim &dims) {
     dims_ = dims;
-
-    std::cout << "holder:" << holder_.get() << std::endl;
     if (holder_.get() != nullptr) {
       PlaceholderImpl *impl = static_cast<PlaceholderImpl *>(holder_.get());
       kTypeId_t type = holder_->type();
@@ -123,8 +121,6 @@ class Tensor : public TensorBase {
         holder_.reset(impl);
       } else {
         impl = static_cast<PlaceholderImpl *>(holder_.get());
-        std::cout << "holder reize" << std::endl;
-        // holder_->resize(size);
       }
       impl->resize(dims_, type);
       offset_ = 0;
