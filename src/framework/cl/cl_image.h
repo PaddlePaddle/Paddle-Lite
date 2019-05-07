@@ -146,8 +146,8 @@ class CLImage {
     DLOG << " end init cl image";
   }
 
-  void InitEmpty(cl_context context, cl_command_queue command_queue,
-                 const DDim &image_dims) {
+  void InitEmptyWithImageDim(cl_context context, cl_command_queue command_queue,
+                             const DDim &image_dims) {
     DLOG << " to get image dims ";
     image_dims_ = image_dims;
     DLOG << " end get image dims " << image_dims_;
