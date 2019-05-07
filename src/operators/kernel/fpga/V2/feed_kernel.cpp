@@ -20,16 +20,9 @@ namespace operators {
 template <>
 bool FeedKernel<FPGA, float>::Init(FeedParam<FPGA> *param) {
   auto output = param->Out();
-  int col = param->Col();
-  DLOG << "col = " << col;
-  auto input = const_cast<LoDTensor *>(&param->InputX()->at(col));
-
   if (output->dims().size() != 4) {
-    input->init(type_id<float>().hash_code());
     return true;
   }
-  input->init(type_id<int8_t>().hash_code());
-  input->Resize(output->dims());
   fpga::format_ofm(output);
   return true;
 }
