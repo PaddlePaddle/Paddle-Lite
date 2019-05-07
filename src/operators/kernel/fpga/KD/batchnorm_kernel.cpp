@@ -34,7 +34,7 @@ bool BatchNormKernel<FPGA, float>::Init(BatchNormParam<FPGA>* param) {
   bn_param.mean = param->InputMean()->zynqmpTensor();
   bn_param.variance = param->InputVariance()->zynqmpTensor();
   bn_param.epsilon = param->Epsilon();
-  bn_param.relu.enabled = true;  // TODO(chonwhite)
+  bn_param.relu.enabled = false;  // TODO(chonwhite)
 
   pe.init();
   pe.apply();
@@ -49,15 +49,8 @@ void BatchNormKernel<FPGA, float>::Compute(const BatchNormParam<FPGA>& param) {
   zynqmp::BatchnormPE& pe = context.pe<zynqmp::BatchnormPE>();
   pe.dispatch();
 
-  static int counter = 0;
-
-  std::string path = "bn_input_" + (counter++) +
-                     std::to_string(param.OutputY()->zynqmpTensor()->id()) +
-                     ".txt";
-  std::cout << "Out scale:" << param.OutputY()->zynqmpTensor()->scale()[0]
-            << std::endl;
-  // param.OutputY()->zynqmpTensor()->saveToFile(path);
-  // param.InputX()->zynqmpTensor()->saveToFile(path);;
+  param.OutputY()->zynqmpTensor()->printScale();
+  // param.OutputY()->zynqmpTensor()->saveToFile("bn_out_", true);
 }
 template class BatchNormKernel<FPGA, float>;
 

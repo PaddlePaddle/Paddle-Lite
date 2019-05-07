@@ -54,15 +54,12 @@ bool ConvBNReluKernel<FPGA, float>::Init(FusionConvBNReluParam<FPGA>* param) {
 template <>
 void ConvBNReluKernel<FPGA, float>::Compute(
     const FusionConvBNReluParam<FPGA>& param) {
-  std::cout << "ConvBNReluKernel\n";
   zynqmp::Context& context = const_cast<zynqmp::Context&>(param.context_);
   ConvPE& pe = context.pe<ConvPE>();
   pe.dispatch();
 
-  std::string path =
-      "bnr_" + std::to_string(param.Output()->zynqmpTensor()->id()) + ".txt";
-  std::cout << "Out scale:" << param.Output()->zynqmpTensor()->scale()[0]
-            << std::endl;
+  param.Output()->zynqmpTensor()->printScale();
+  // param.Output()->zynqmpTensor()->readFromFile("conv_bn_relu", true);
 }
 
 }  // namespace operators

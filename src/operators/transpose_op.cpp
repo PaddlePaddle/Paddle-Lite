@@ -58,5 +58,8 @@ REGISTER_OPERATOR_CPU(transpose, ops::TransposeOp);
 #ifdef PADDLE_MOBILE_CL
 REGISTER_OPERATOR_CL(transpose, ops::TransposeOp);
 #endif
+#if defined(PADDLE_MOBILE_FPGA) || defined(PADDLE_MOBILE_FPGA_KD)
+REGISTER_OPERATOR_FPGA(transpose, ops::TransposeOp);
+#endif
 
 #endif  // TRANSPOSE_OP

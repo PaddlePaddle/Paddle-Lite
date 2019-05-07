@@ -47,10 +47,10 @@ bool ConvAddReluKernel<FPGA, float>::Init(FusionConvAddReluParam<FPGA>* param) {
 template <>
 void ConvAddReluKernel<FPGA, float>::Compute(
     const FusionConvAddReluParam<FPGA>& param) {
-  std::cout << "ConvAddReluKernel\n";
-  static int count = 0;
-  std::string path = std::to_string(count) + ".txt";
-  param.Input()->zynqmpTensor()->readFromFile(path);
+  // std::cout << "ConvAddReluKernel\n";
+  // static int count = 0;
+  // std::string path = std::to_string(count) + ".txt";
+  // param.Input()->zynqmpTensor()->readFromFile(path);
 
   zynqmp::Context& context = const_cast<zynqmp::Context&>(param.context_);
   zynqmp::ConvPE& pe = context.pe<zynqmp::ConvPE>();
