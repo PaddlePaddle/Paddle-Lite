@@ -194,6 +194,9 @@ class ConvAddKernel<P: PrecisionProtocol>: Kernel, Computable {
         let inMetalParam = MetalConvParam.init(offsetX: Int16(offsetX), offsetY: Int16(offsetY), offsetZ: Int16(offsetZ), strideX: UInt16(param.stride[0]), strideY: UInt16(param.stride[1]), dilationX: UInt16(param.dilations[0]), dilationY: UInt16(param.dilations[1]))
         metalParam = inMetalParam
         
+        if type(of: self).isWinoGrad(functionName: functionName) {
+            let _ = param.filter.convert(converter: WinogradPointerConverter<P>.init())
+        }
         let padWhenOneC = !(param.filter.channel == 1 && param.filter.n == param.input.tensorDim[1])
         param.filter.initBuffer(device: device, precision: GlobalConfig.shared.computePrecision, padWhenOneC: padWhenOneC)
         
