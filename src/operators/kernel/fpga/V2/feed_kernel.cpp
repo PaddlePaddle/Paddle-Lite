@@ -44,7 +44,6 @@ void FeedKernel<FPGA, float>::Compute(const FeedParam<FPGA> &param) {
   }
   fpga::format_image(input);
   output->ShareDataWith(*input);
-  input->external_data = nullptr;
 }
 template class FeedKernel<FPGA, float>;
 
