@@ -32,7 +32,7 @@ void format_image(framework::Tensor *image_tensor) {
   int8_t *p_data = external_ptr == nullptr ? data_ptr : external_ptr;
 
   image::format_image<int8_t>(&p_data, channel, height, width);
-  if (p_data != data_ptr && external_ptr == nullptr) {
+  if (p_data != data_ptr) {
     image_tensor->reset_data_ptr(p_data);
   }
 }
@@ -43,7 +43,6 @@ void format_ofm(framework::Tensor *ofm_tensor) {
   } else {
     format_int8_ofm(ofm_tensor);
   }
-  format_int8_ofm(ofm_tensor);
 }
 
 void format_int8_ofm(framework::Tensor *ofm_tensor) {
