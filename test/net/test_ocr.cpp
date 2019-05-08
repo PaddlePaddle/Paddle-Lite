@@ -79,7 +79,7 @@ int main(int argc, char **argv) {
   auto pred_end_time = paddle_mobile::time();
 
   // inference time
-  double pred_time = 
+  double pred_time =
       paddle_mobile::time_diff(pred_start_time, pred_end_time) / max_run_times;
   std::cout << "predict time(ms): " << pred_time << std::endl;
 
@@ -94,7 +94,7 @@ int main(int argc, char **argv) {
     std::cout << "node_id: " << node_id << std::endl;
     std::cout << "node_elem_num: " << node_elem_num << std::endl;
     std::cout << "PRINT_NODE_ELEM_NUM: " << PRINT_NODE_ELEM_NUM << std::endl;
-    PRINT_NODE_ELEM_NUM = 
+    PRINT_NODE_ELEM_NUM =
         (node_elem_num > PRINT_NODE_ELEM_NUM) ? PRINT_NODE_ELEM_NUM : 0;
     for (int eidx = 0; eidx < PRINT_NODE_ELEM_NUM; ++eidx) {
       std::cout << node_id << "[" << eidx << "]: " << node_ptr[eidx]
