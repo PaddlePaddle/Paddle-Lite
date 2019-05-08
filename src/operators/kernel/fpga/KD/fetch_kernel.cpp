@@ -44,9 +44,9 @@ void FetchKernel<FPGA, float>::Compute(const FetchParam<FPGA>& param) {
   OutputPE& pe = context.pe<OutputPE>();
   pe.dispatch();
 
-  int col = param.Col();
-  auto output = &(param.Out()->at(col));
-  output->zynqmpTensor()->saveToFile("fetch_out.txt");
+  //  int col = param.Col();
+  //  auto output = &(param.Out()->at(col));
+  //  output->zynqmpTensor()->saveToFile("fetch_out.txt");
 }
 template class FetchKernel<FPGA, float>;
 

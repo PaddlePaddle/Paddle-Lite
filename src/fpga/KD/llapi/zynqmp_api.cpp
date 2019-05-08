@@ -21,6 +21,7 @@ limitations under the License. */
 #include <algorithm>
 #include <cstring>
 #include <map>
+#include <utility>
 
 #include "fpga/KD/llapi/config.h"
 #include "fpga/KD/llapi/zynqmp_api.h"
@@ -298,7 +299,7 @@ int perform_bypass(const struct BypassArgs &args) {
       output_address + count * max_size * out_type_size);
   int ret = do_ioctl(IOCTL_CONFIG_BYPASS, &bypassArgs);
   scale = std::max(scale, scales[0]);
-  std::cout << "scale2:" << scale << std::endl;
+  // std::cout << "scale2:" << scale << std::endl;
   args.output.scale_address[0] = scale;
   args.output.scale_address[1] = 1.0f / scale;
   return ret;

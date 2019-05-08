@@ -277,8 +277,12 @@ inline void fill_split_arg(const ConvParam& c_param) {
     args.image.channels = input->shape().channel();
     args.image.width = input->shape().width();
     args.image.height = input->shape().height();
-    args.image.pad_width = param.paddings[0];
-    args.image.pad_height = param.paddings[1];
+    args.image.pad_width = param.paddings[1];
+    args.image.pad_height = param.paddings[0];
+
+    //    std::cout << "~~~~~ args.image.pad_width  : " << args.image.pad_width
+    //    << std::endl; std::cout << "~~~~~ args.image.pad_height : " <<
+    //    args.image.pad_height << std::endl;
 
     args.output.address = out_address;
     args.output.scale_address = out_scale_address;

@@ -83,7 +83,7 @@ class FullyConnectedPE : public PE {
     int ret = 0;
     std::vector<BasicConvParam*>& params = convParam_.splitParams();
     for (auto conv_param : params) {
-      std::cout << "conv basic \n";
+      // std::cout << "conv basic \n";
       ret |= compute_fpga_conv_basic(conv_param->args);
     }
     return ret == 0;

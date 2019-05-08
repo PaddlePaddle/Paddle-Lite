@@ -48,8 +48,12 @@ void ConcatKernel<FPGA, float>::Compute(const ConcatParam<FPGA>& param) {
   zynqmp::ConcatPE& pe = context.pe<zynqmp::ConcatPE>();
   pe.dispatch();
 
-  param.Out()->zynqmpTensor()->printScale();
-  // param.Out()->zynqmpTensor()->saveToFile("concat.txt");
+  //  param.Out()->zynqmpTensor()->printScale();
+
+  //  std::string path =
+  //            "concat_" + param.Out()->zynqmpTensor()->dimsFileName();
+  //
+  //  param.Out()->zynqmpTensor()->saveToFile(path);
 }
 template class ConcatKernel<FPGA, float>;
 

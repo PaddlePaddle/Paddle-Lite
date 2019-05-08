@@ -38,13 +38,15 @@ bool FusionFcKernel<FPGA, float>::Init(FusionFcParam<FPGA>* param) {
 
 template <>
 void FusionFcKernel<FPGA, float>::Compute(const FusionFcParam<FPGA>& param) {
-  std::cout << "FusionFcKernel\n";
+  //  std::cout << "FusionFcKernel\n";
   zynqmp::Context& context = const_cast<zynqmp::Context&>(param.context_);
   FullyConnectedPE& pe = context.pe<FullyConnectedPE>();
   pe.dispatch();
-  std::string path =
-      "fc_" + std::to_string(param.Out()->zynqmpTensor()->id()) + ".txt";
-  // param.Out()->zynqmpTensor()->saveToFile(path);
+
+  // param.Out()->zynqmpTensor()->invalidate();
+  //  std::string path =
+  //      "fc_" + param.Out()->zynqmpTensor()->dimsFileName();
+  //  param.Out()->zynqmpTensor()->saveToFile(path);
 }
 }  // namespace operators
 }  // namespace paddle_mobile

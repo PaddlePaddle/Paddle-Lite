@@ -21,6 +21,7 @@ limitations under the License. */
 #include <string>
 #include <vector>
 
+#include "common/log.h"
 #include "float16.hpp"
 #include "llapi/zynqmp_api.h"
 #include "shape.hpp"
@@ -300,10 +301,10 @@ class Tensor {
   void setDataLocation(DataSyncStatus location) { dateLocation_ = location; }
 
   void print() {
-    int count = shape_->numel();
-    for (int i = 0; i < count; i++) {
-      std::cout << "" << '\n';
-    }
+    //    int count = shape_->numel();
+    //    for (int i = 0; i < count; i++) {
+    //      std::cout << "" << '\n';
+    //    }
   }
 
   void printScale() {
@@ -339,9 +340,15 @@ class Tensor {
     static int counter = 0;
     std::string npath = std::to_string(counter) + "_" + path;
     counter++;
-    ofs.open(npath);
-    std::cout << "saveToFile " << npath << " dataType_:" << dataType_
-              << std::endl;
+    save_file_with_name(npath);
+  }
+
+  void save_file_with_name(std::string path) {
+    // return;
+    invalidate();
+    std::ofstream ofs;
+
+    ofs.open(path);
     for (int i = 0; i < shape_->numel(); i++) {
       float value = 0;
       if (dataType_ == FP32) {
@@ -358,10 +365,9 @@ class Tensor {
     std::ifstream file_stream;
     file_stream.open(path);
     if (!file_stream) {
-      std::cout << "file: " << path << " does not exist\n";
+      // std::cout << "file: " << path << " does not exist\n";
       return;
     }
-    std::cout << "tensor read from " << path << std::endl;
     int num = shape_->numel();
     invalidate();
     float16* data = mutableData<float16>();
@@ -371,6 +377,7 @@ class Tensor {
       data[i] = float_to_half(value);
     }
     flush();
+    DLOG << "\ttensor file " << path << " loaded!";
   }
 
   ~Tensor() {

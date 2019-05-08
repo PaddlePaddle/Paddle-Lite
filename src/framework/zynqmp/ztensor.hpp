@@ -296,7 +296,7 @@ class Tensor : public TensorBase {
 
 #ifdef PADDLE_MOBILE_DEBUG
 inline Print &operator<<(Print &printer, const Tensor &tensor) {
-  printer << " dims: " << tensor.dims() << "\n";
+  printer << " dims: " << tensor.dims() << " ";
   int stride = tensor.numel() / 20;
   stride = stride > 0 ? stride : 1;
   return printer;
