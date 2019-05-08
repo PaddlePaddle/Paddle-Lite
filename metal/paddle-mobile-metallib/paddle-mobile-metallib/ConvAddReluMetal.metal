@@ -431,8 +431,14 @@ kernel void depthwise_conv_add_relu_3x3_half_winograd(texture2d_array<half, acce
                                              const device half4 *biase [[buffer(2)]],
                                              uint3 gid [[thread_position_in_grid]]) {
     uint x = gid.x, y = gid.y;
-    uint ow = (outTexture.get_width() >> 1) << 1;
-    uint oh = (outTexture.get_height() >> 1) << 1;
+    uint ow = outTexture.get_width();
+    if (ow % 2 != 0) {
+        ow++;
+    }
+    uint oh = outTexture.get_height();
+    if (oh % 2 != 0) {
+        oh++;
+    }
     if (x >= ow || y >= oh) {
         return;
     }
