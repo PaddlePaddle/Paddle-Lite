@@ -14,6 +14,7 @@ limitations under the License. */
 
 #include "framework/executor.h"
 #include <algorithm>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 #include "common/enforce.h"
@@ -638,7 +639,8 @@ std::map<std::string, float> LoadQuantValFromFile(std::string filename) {
   std::ifstream in;
   in.open(filename, std::ios::in);
   if (!in.is_open()) {
-    std::cout << "open File Failed." << std::endl;
+    // std::cout << "open File Failed." << std::endl;
+    DLOG << "open File Failed.";
     exit(-1);
   }
 
