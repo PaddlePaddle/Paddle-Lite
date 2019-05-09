@@ -258,6 +258,15 @@ class Tensor {
         .scale_address = scale(),
     };
     src->syncToDevice();
+    size_t aligned_remainder = src->shape().numel() % 16;
+    if (aligned_remainder > 0) {
+      size_t dtype_size =
+          src->dataType_ == FP32 ? sizeof(float) : sizeof(float16);
+      void* dst = src->data<void>() + src->shape().numel() * dtype_size;
+      memset(dst, 0, aligned_remainder * dtype_size);
+      fpga_flush(dst, aligned_remainder * dtype_size);
+    }
+    src->syncToDevice();
     this->invalidate();
     perform_bypass(args);
     this->invalidate();

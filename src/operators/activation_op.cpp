@@ -54,7 +54,7 @@ namespace ops = paddle_mobile::operators;
 REGISTER_OPERATOR_CPU(relu, ops::ReluOp);
 REGISTER_OPERATOR_CPU(relu6, ops::Relu6Op);
 #endif
-#ifdef PADDLE_MOBILE_FPGA
+#if defined(PADDLE_MOBILE_FPGA) || defined(PADDLE_MOBILE_FPGA_KD)
 REGISTER_OPERATOR_FPGA(relu, ops::ReluOp);
 #endif
 #ifdef PADDLE_MOBILE_CL

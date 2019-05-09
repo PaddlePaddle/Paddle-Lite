@@ -40,13 +40,14 @@ bool FetchKernel<FPGA, float>::Init(FetchParam<FPGA>* param) {
 
 template <>
 void FetchKernel<FPGA, float>::Compute(const FetchParam<FPGA>& param) {
+  auto input = param.InputX();
+  int col = param.Col();
+  auto output = &(param.Out()->at(col));
+  output->Resize(input->dims());
+
   zynqmp::Context& context = const_cast<zynqmp::Context&>(param.context_);
   OutputPE& pe = context.pe<OutputPE>();
   pe.dispatch();
-
-  //  int col = param.Col();
-  //  auto output = &(param.Out()->at(col));
-  //  output->zynqmpTensor()->saveToFile("fetch_out.txt");
 }
 template class FetchKernel<FPGA, float>;
 

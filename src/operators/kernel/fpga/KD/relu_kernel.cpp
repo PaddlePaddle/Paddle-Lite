@@ -33,17 +33,9 @@ bool ReluKernel<FPGA, float>::Init(ReluParam<FPGA>* param) {
 
 template <>
 void ReluKernel<FPGA, float>::Compute(const ReluParam<FPGA>& param) {
-  // param.Out()->zynqmpTensor()->copyFrom(param.InputX()->zynqmpTensor());
-  std::cout << "ReluKernel\n";
   zynqmp::Context& context = const_cast<zynqmp::Context&>(param.context_);
-  // zynqmp::ReluPE& pe = context.pe<zynqmp::ReluPE>();
-  // pe.dispatch();
-
-  std::string path =
-      "relu" + std::to_string(param.Out()->zynqmpTensor()->id()) + ".txt";
-  std::cout << "Out scale:" << param.Out()->zynqmpTensor()->scale()[0]
-            << std::endl;
-  param.Out()->zynqmpTensor()->saveToFile(path);
+  zynqmp::ReluPE& pe = context.pe<zynqmp::ReluPE>();
+  pe.dispatch();
 }
 
 }  // namespace operators

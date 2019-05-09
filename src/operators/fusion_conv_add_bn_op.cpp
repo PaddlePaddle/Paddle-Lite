@@ -54,8 +54,9 @@ REGISTER_FUSION_MATCHER(fusion_conv_add_bn, ops::FusionConvAddBNMatcher);
 #ifdef PADDLE_MOBILE_CPU
 REGISTER_OPERATOR_CPU(fusion_conv_add_bn, ops::FusionConvAddBNOp);
 #endif
-// #if defined(PADDLE_MOBILE_FPGA) || defined(PADDLE_MOBILE_FPGA_KD)
-// REGISTER_OPERATOR_FPGA(fusion_conv_add_bn, ops::FusionConvAddBNOp);
-// #endif
+
+#if defined(PADDLE_MOBILE_FPGA) || defined(PADDLE_MOBILE_FPGA_KD)
+REGISTER_OPERATOR_FPGA(fusion_conv_add_bn, ops::FusionConvAddBNOp);
+#endif
 
 #endif

@@ -24,6 +24,7 @@ class ReluPE : public PE {
   bool init() {
     Tensor* output = param_.output;
     output->setAligned(true);
+    output->setDataLocation(Device);
     return true;
   }
 
@@ -54,12 +55,15 @@ class ReluPE : public PE {
   bool dispatch() {
     inplace_.relu_enable = true;
     config_inplace(inplace_);
-    param_.input->flush();
-    int ret = perform_bypass(args_);
-    param_.output->invalidate();
-    inplace_.relu_enable = false;
+    param_.input->syncToDevice();
+    param_.output->copyFrom(param_.input);
+    // param_.input->flush();
+    // int ret = perform_bypass(args_);
+    // param_.output->invalidate();
+    // inplace_.relu_enable = false;
     config_inplace(inplace_);
-    return ret == 0;
+    // return ret == 0;
+    return true;
   }
 
   InputParam& param() { return param_; }

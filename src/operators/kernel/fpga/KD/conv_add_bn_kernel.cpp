@@ -20,6 +20,9 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace operators {
 
+using ConvPE = paddle_mobile::zynqmp::ConvPE;
+using DepthwiseConvPE = paddle_mobile::zynqmp::DepthwiseConvPE;
+
 template <>
 bool ConvAddBNKernel<FPGA, float>::Init(FusionConvAddBNParam<FPGA>* param) {
   const int groups = param->Groups();

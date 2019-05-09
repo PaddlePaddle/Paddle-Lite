@@ -107,6 +107,8 @@ inline void combine_add_bn_params(BatchnormParam* bn, Tensor* bias,
   }
   param_->scale()->flush();
   param_->bias()->flush();
+  param_->scale()->setDataLocation(CPU);
+  param_->bias()->setDataLocation(CPU);
 }
 
 inline void format_scale_bias(Tensor* scale, Tensor* bias, Tensor* filter,
@@ -206,6 +208,8 @@ inline void fill_split_arg(const ConvParam& c_param) {
   Shape& out_shape = out->shape();
   for (int i = 0; i < split_num; i++) {
     BasicConvParam* conv_param = new BasicConvParam();
+    conv_param->output.setDataLocation(Device);
+    conv_param->output.setAligned(true);
 
     int filter_num = filter->shape().num();
     float16* out_address = nullptr;

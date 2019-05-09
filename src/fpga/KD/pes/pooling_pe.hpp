@@ -63,7 +63,8 @@ class PoolingPE : public PE {
     args.out_width = output->shape().width();
     param_.poolingArgs = args;
 
-    use_cpu_ = output->shape().width() == 1 && output->shape().height() == 1;
+    use_cpu_ = output->shape().width() == 1 && output->shape().height() == 1 &&
+               (k_width > 7 || k_height > 7);
   }
 
   void cpu_compute() {
@@ -98,10 +99,10 @@ class PoolingPE : public PE {
   }
 
   bool dispatch() {
-    // if (use_cpu_) {
-    //   cpu_compute();
-    //   return true;
-    // }
+    if (use_cpu_) {
+      cpu_compute();
+      return true;
+    }
     param_.input->syncToDevice();
     return compute_fpga_pool(param_.poolingArgs) == 0;
   }

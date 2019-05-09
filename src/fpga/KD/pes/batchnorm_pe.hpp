@@ -28,6 +28,7 @@ class BatchnormPE : public PE {
   bool init() {
     Tensor* output = param_.output;
     output->setAligned(true);
+    output->setDataLocation(Device);
 
     ScaleParam& scale_param = scalePE_.param();
     scale_param.input = param_.input;

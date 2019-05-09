@@ -25,7 +25,6 @@ namespace zynqmp {
 class DepthwiseConvPE : public PE {
  public:
   bool init() {
-    std::cout << "DWConv init" << std::endl;
     Tensor* output = param_.output;
     output->setAligned(true);
     output->setDataLocation(Device);
@@ -73,16 +72,22 @@ class DepthwiseConvPE : public PE {
     args.out_height = param.output->shape().height();
     args.sub_conv_num = 1;
     param.args = args;
+
+    inplace_.power_enable = false;
+    inplace_.normalize_enable = false;
   }
 
   bool dispatch() {
     param_.input->syncToDevice();
-    inplace_.relu_enable = param_.relu.enabled;
-    config_inplace(inplace_);
+    if (inplace_.relu_enable) {
+      inplace_.relu_enable = param_.relu.enabled;
+      config_inplace(inplace_);
+    }
     bool ret = compute_fpga_dwconv(param_.args) == 0;
-    inplace_.relu_enable = false;
-    config_inplace(inplace_);
-
+    if (inplace_.relu_enable) {
+      inplace_.relu_enable = false;
+      config_inplace(inplace_);
+    }
     return ret;
   }
 
@@ -91,7 +96,7 @@ class DepthwiseConvPE : public PE {
  private:
   DepthwiseConvParam param_;
   Tensor bias_;
-  InplaceArgs inplace_;
+  InplaceArgs inplace_ = {0};
 };
 
 }  // namespace zynqmp

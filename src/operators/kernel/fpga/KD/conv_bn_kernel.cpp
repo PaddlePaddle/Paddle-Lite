@@ -42,6 +42,9 @@ bool ConvBNKernel<FPGA, float>::Init(FusionConvBNParam<FPGA>* param) {
   conv_param.groups = param->Groups();
   conv_param.strides = param->Strides();
   conv_param.paddings = param->Paddings();
+
+  combine_bn_params(bn_param, &conv_param);
+
   pe.init();
   pe.apply();
   return true;
