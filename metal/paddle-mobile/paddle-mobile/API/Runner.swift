@@ -95,6 +95,7 @@ import Foundation
             initContext.metalLoadMode = net.metalLoadMode
             initContext.metalLibPath = net.metalLibPath
             initContext.useMPS = net.useMPS
+            initContext.useAggresiveOptimization = net.useAggressiveOptimization
 
             switch net.paramPrecision {
             case .Float16:
