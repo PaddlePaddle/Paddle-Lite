@@ -25,36 +25,68 @@ template <>
 bool ConvAddReluKernel<FPGA, float>::Init(FusionConvAddReluParam<FPGA>* param) {
   param->Output()->mutable_data<half>();
 
-  zynqmp::ConvPE& pe = param->context().pe<zynqmp::ConvPE>();
-  zynqmp::ConvParam& conv_param = pe.param();
+  const int groups = param->Groups();
+  const int channel = param->Input()->dims()[1];
+  if (groups == channel) {
+    zynqmp::DepthwiseConvPE& pe =
+        param->context().pe<zynqmp::DepthwiseConvPE>();
 
-  conv_param.input = param->Input()->zynqmpTensor();
-  conv_param.output = param->Output()->zynqmpTensor();
-  conv_param.filter = param->Filter()->zynqmpTensor();
-  conv_param.relu.enabled = true;
-  conv_param.groups = param->Groups();
-  conv_param.strides = param->Strides();
-  conv_param.paddings = param->Paddings();
+    zynqmp::DepthwiseConvParam& depthwise_conv_param = pe.param();
 
-  fill_scale_bias_const(&conv_param);
-  Tensor* bias = param->Bias();
-  conv_param.bias()->copyFrom(bias->zynqmpTensor());
-  pe.init();
-  pe.apply();
+    depthwise_conv_param.input = param->Input()->zynqmpTensor();
+    depthwise_conv_param.output = param->Output()->zynqmpTensor();
+    depthwise_conv_param.filter = param->Filter()->zynqmpTensor();
+    depthwise_conv_param.relu.enabled = true;
+    depthwise_conv_param.groups = param->Groups();
+    depthwise_conv_param.strides = param->Strides();
+    depthwise_conv_param.paddings = param->Paddings();
+
+    fill_scale_bias_const(&depthwise_conv_param);
+    Tensor* bias = param->Bias();
+    bias->zynqmpTensor()->flush();
+    bias->zynqmpTensor()->setDataLocation(zynqmp::CPU);
+    depthwise_conv_param.bias()->copyFrom(bias->zynqmpTensor());
+    pe.init();
+    pe.apply();
+
+  } else {
+    zynqmp::ConvPE& pe = param->context().pe<zynqmp::ConvPE>();
+    zynqmp::ConvParam& conv_param = pe.param();
+
+    conv_param.input = param->Input()->zynqmpTensor();
+    conv_param.output = param->Output()->zynqmpTensor();
+    conv_param.filter = param->Filter()->zynqmpTensor();
+    conv_param.relu.enabled = true;
+    conv_param.groups = param->Groups();
+    conv_param.strides = param->Strides();
+    conv_param.paddings = param->Paddings();
+
+    fill_scale_bias_const(&conv_param);
+    Tensor* bias = param->Bias();
+    bias->zynqmpTensor()->flush();
+    bias->zynqmpTensor()->setDataLocation(zynqmp::CPU);
+    conv_param.bias()->copyFrom(bias->zynqmpTensor());
+    pe.init();
+    pe.apply();
+  }
+
   return true;
 }
 
 template <>
 void ConvAddReluKernel<FPGA, float>::Compute(
     const FusionConvAddReluParam<FPGA>& param) {
-  // std::cout << "ConvAddReluKernel\n";
-  // static int count = 0;
-  // std::string path = std::to_string(count) + ".txt";
-  // param.Input()->zynqmpTensor()->readFromFile(path);
-
-  zynqmp::Context& context = const_cast<zynqmp::Context&>(param.context_);
-  zynqmp::ConvPE& pe = context.pe<zynqmp::ConvPE>();
-  pe.dispatch();
+  const int groups = param.Groups();
+  const int channel = param.Output()->dims()[1];
+  if (groups == channel) {
+    zynqmp::Context& context = const_cast<zynqmp::Context&>(param.context_);
+    zynqmp::DepthwiseConvPE& pe = context.pe<zynqmp::DepthwiseConvPE>();
+    pe.dispatch();
+  } else {
+    zynqmp::Context& context = const_cast<zynqmp::Context&>(param.context_);
+    zynqmp::ConvPE& pe = context.pe<zynqmp::ConvPE>();
+    pe.dispatch();
+  }
 
   param.Output()->zynqmpTensor()->printScale();
   // param.Output()->zynqmpTensor()->saveToFile("convaddrelu.txt");

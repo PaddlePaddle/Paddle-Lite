@@ -79,7 +79,11 @@ void TransposeKernel<FPGA, float>::Compute(const TransposeParam<FPGA>& param) {
     auto out = param.Out();
     // out->set_data_aligned(param.InputX()->data_aligned());
     auto out_data = out->data<half>();
+  } else {
+    output->zynqmpTensor()->copyFrom(input->zynqmpTensor());
   }
+
+  output->zynqmpTensor()->saveToFile("transpose.txt");
 }
 
 }  // namespace operators
