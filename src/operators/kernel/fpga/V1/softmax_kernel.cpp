@@ -26,7 +26,7 @@ bool SoftmaxKernel<FPGA, float>::Init(SoftmaxParam<FPGA> *param) {
   auto dims = framework::vectorize(input->dims());
   half *input_ptr;
   auto out = param->Out();
-  if (input->type() == typeid(float)) {
+  if (input->type() == type_id<float>()) {
     out->Resize(framework::make_ddim(dims));
     out->mutable_data<float>(framework::make_ddim(dims));
   } else {
@@ -47,7 +47,7 @@ bool SoftmaxKernel<FPGA, float>::Init(SoftmaxParam<FPGA> *param) {
   input->Resize(framework::make_ddim(dims));
   float_input->Resize(framework::make_ddim(dims));
 
-  if (channel == 2 && input->type() == typeid(half)) {  // Use FPGA
+  if (channel == 2 && input->type() == type_id<half>()) {  // Use FPGA
     fpga::format_fp16_ofm(out);
     fpga::BypassArgs args = {fpga::DATA_TYPE_FP16};
     args.input_layout_type = fpga::LAYOUT_HWC;
@@ -65,7 +65,7 @@ bool SoftmaxKernel<FPGA, float>::Init(SoftmaxParam<FPGA> *param) {
   } else {  // Use CPU
     out->Resize(framework::make_ddim(dims));
     out->mutable_data<float>(framework::make_ddim(dims));
-    float_input->init(typeid(float));
+    float_input->init(type_id<float>().hash_code());
     float_input->mutable_data<float>(framework::make_ddim(dims));
     //  fpga::format_fp32_ofm(float_input);
     // fpga::format_fp32_ofm(out);
@@ -91,7 +91,7 @@ bool SoftmaxKernel<FPGA, float>::Init(SoftmaxParam<FPGA> *param) {
 template <>
 void SoftmaxKernel<FPGA, float>::Compute(const SoftmaxParam<FPGA> &param) {
   auto *in_x = (param.InputX());
-  if (in_x->type() == typeid(half)) {
+  if (in_x->type() == type_id<half>()) {
     fpga::PerformBypass(param.FpgaArgs());
     if (param.FpgaArgs().output.activation.activation_type != fpga::SOFTMAX) {
       Tensor *out = param.Out();
