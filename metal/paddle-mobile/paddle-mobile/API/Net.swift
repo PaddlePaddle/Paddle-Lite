@@ -59,6 +59,9 @@ import Foundation
     /// 是否使用 MetalPerformanceShaders 进行运算, 运算精度为 32 位时不支持开启 MPS
     @objc public var useMPS: Bool = false
     
+    /// 是否使用最高等级的加速策略
+    @objc public var useAggressiveOptimization: Bool = false
+    
     /// 模型精度
     @objc public var paramPrecision: Precision = .Float32
 
