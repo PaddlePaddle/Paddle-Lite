@@ -20,6 +20,7 @@ namespace operators {
 
 template <>
 bool FusionFcReluKernel<FPGA, float>::Init(FusionFcReluParam<FPGA> *param) {
+  bool relu_enabled = false;
   paddle_mobile::fpga::ActivationType activation_enable =
       paddle_mobile::fpga::LEAKYRELU;
   int16_t leaky_relu_negative_slope = 0;
@@ -58,8 +59,8 @@ bool FusionFcReluKernel<FPGA, float>::Init(FusionFcReluParam<FPGA> *param) {
   fpga::format_ofm(out);
 
   fpga::SplitConvArgs conv_arg = {0};
-  fpga::fill_split_arg(&conv_arg, input_x, out, filter, activation_enable,
-                       leaky_relu_negative_slope, 1, 1, 1, 0, 0, bs_ptr);
+  fpga::fill_split_arg(&conv_arg, input_x, out, filter, relu_enabled, 1, 1, 1,
+                       0, 0, bs_ptr);
   param->SetFpgaArgs(conv_arg);
   return true;
 }

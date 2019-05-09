@@ -131,9 +131,12 @@ void ConvertTensors(const framework::Tensor &src, PaddleTensor *des) {
   if (src.type() == type_id<float>()) {
     des->data.Reset(const_cast<float *>(src.data<float>()),
                     num * sizeof(float));
-  } else {
+  } else if (src.type() == type_id<half>()) {
     des->data.Reset(const_cast<int16_t *>(src.data<int16_t>()),
                     num * sizeof(int16_t));
+  } else {
+    des->data.Reset(const_cast<int8_t *>(src.data<int8_t>()),
+                    num * sizeof(int8_t));
   }
 }
 
@@ -143,7 +146,11 @@ void PaddleMobilePredictor<Device, T>::FeedPaddleTensors(
   auto num = inputs.size();
   std::vector<framework::Tensor> tensors(num, framework::Tensor());
   for (int i = 0; i < num; i++) {
-    tensors[i].init(type_id<float>().hash_code());
+    if (inputs[i].dtypeid == type_id<int8_t>().hash_code()) {
+      tensors[i].init(type_id<int8_t>().hash_code());
+    } else {
+      tensors[i].init(type_id<float>().hash_code());
+    }
     ConvertPaddleTensors(inputs[i], &tensors[i]);
   }
   paddle_mobile_->FeedTensorData(tensors);
