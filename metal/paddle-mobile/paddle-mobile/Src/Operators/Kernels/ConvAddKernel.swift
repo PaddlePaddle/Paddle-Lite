@@ -110,9 +110,11 @@ class ConvAddKernel<P: PrecisionProtocol>: Kernel, Computable {
         }
         
         var shouldUseMPS = false
-        let functionName = type(of: self).kernelFunctionName(param: param)
-        if #available(iOS 11.0, *), initContext.useMPS {
-            shouldUseMPS = true
+        let functionName = type(of: self).kernelFunctionName(param: param, useAggressiveOptimization: initContext.useAggresiveOptimization)
+        if #available(iOS 11.0, *), (initContext.useMPS || initContext.useAggresiveOptimization) {
+            if (param.input.tensorDim[1] == 1 || param.input.tensorDim[1] > 4) && (param.output.tensorDim[1] == 1 || param.output.tensorDim[1] > 4) {
+                shouldUseMPS = true
+            }
         }
         if type(of: self).isWinoGrad(functionName: functionName) {
             shouldUseMPS = false
@@ -121,7 +123,6 @@ class ConvAddKernel<P: PrecisionProtocol>: Kernel, Computable {
             super.init(device: device, inFunctionName: nil, initContext: initContext)
             setupWithMPS(device: device, param: param)
         } else {
-            
             if functionName == nil {
                 fatalError(" unsupport yet ")
             }
@@ -203,7 +204,7 @@ class ConvAddKernel<P: PrecisionProtocol>: Kernel, Computable {
         param.y.initBuffer(device: device, precision: GlobalConfig.shared.computePrecision)
     }
     
-    open class func kernelFunctionName(param: ConvAddParam<P>) -> String? {
+    open class func kernelFunctionName(param: ConvAddParam<P>, useAggressiveOptimization: Bool = false) -> String? {
         if GlobalConfig.shared.computePrecision == .Float16 {
             if param.filter.width == 1 && param.filter.height == 1 {
                 return "conv_add_1x1_half"
