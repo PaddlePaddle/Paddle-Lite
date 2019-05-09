@@ -26,7 +26,7 @@ bool SoftmaxKernel<FPGA, float>::Init(SoftmaxParam<FPGA> *param) {
   auto dims = framework::vectorize(input->dims());
   half *input_ptr;
   auto out = param->Out();
-  if (input->type() == type_id<float>()) {
+  if (input->type() == typeid(float)) {
     out->Resize(framework::make_ddim(dims));
     out->mutable_data<float>(framework::make_ddim(dims));
   } else {
@@ -47,10 +47,25 @@ bool SoftmaxKernel<FPGA, float>::Init(SoftmaxParam<FPGA> *param) {
   input->Resize(framework::make_ddim(dims));
   float_input->Resize(framework::make_ddim(dims));
 
-  if (channel != 2) {  // Use CPU
+  if (channel == 2 && input->type() == typeid(half)) {  // Use FPGA
+    fpga::format_fp16_ofm(out);
+    fpga::BypassArgs args = {fpga::DATA_TYPE_FP16};
+    args.input_layout_type = fpga::LAYOUT_HWC;
+    args.output_layout_type = fpga::LAYOUT_CHW;
+    args.input_data_type = fpga::DATA_TYPE_FP16;
+    args.output_data_type = fpga::DATA_TYPE_FP16;
+    args.image.address = input_ptr;
+    args.image.height = (uint32_t)input->dims()[1];
+    args.image.width = (uint32_t)input->dims()[2];
+    args.image.channels = (uint32_t)input->dims()[3];
+    args.output.address = out->data<half>();
+    args.output.scale_address = out->scale;
+    args.output.activation.activation_type = fpga::SOFTMAX;
+    param->SetFpgaArgs(args);
+  } else {  // Use CPU
     out->Resize(framework::make_ddim(dims));
     out->mutable_data<float>(framework::make_ddim(dims));
-    float_input->init(type_id<float>().hash_code());
+    float_input->init(typeid(float));
     float_input->mutable_data<float>(framework::make_ddim(dims));
     //  fpga::format_fp32_ofm(float_input);
     // fpga::format_fp32_ofm(out);
@@ -68,21 +83,6 @@ bool SoftmaxKernel<FPGA, float>::Init(SoftmaxParam<FPGA> *param) {
     args.output.scale_address = float_input->scale;
     param->SetFloatInput(float_input);
     param->SetFpgaArgs(args);
-  } else {  // Use FPGA
-    fpga::format_fp16_ofm(out);
-    fpga::BypassArgs args = {fpga::DATA_TYPE_FP16};
-    args.input_layout_type = fpga::LAYOUT_HWC;
-    args.output_layout_type = fpga::LAYOUT_CHW;
-    args.input_data_type = fpga::DATA_TYPE_FP16;
-    args.output_data_type = fpga::DATA_TYPE_FP16;
-    args.image.address = input_ptr;
-    args.image.height = (uint32_t)input->dims()[1];
-    args.image.width = (uint32_t)input->dims()[2];
-    args.image.channels = (uint32_t)input->dims()[3];
-    args.output.address = out->data<half>();
-    args.output.scale_address = out->scale;
-    args.output.activation.activation_type = fpga::SOFTMAX;
-    param->SetFpgaArgs(args);
   }
 
   return true;
@@ -91,7 +91,7 @@ bool SoftmaxKernel<FPGA, float>::Init(SoftmaxParam<FPGA> *param) {
 template <>
 void SoftmaxKernel<FPGA, float>::Compute(const SoftmaxParam<FPGA> &param) {
   auto *in_x = (param.InputX());
-  if (in_x->type() == type_id<half>()) {
+  if (in_x->type() == typeid(half)) {
     fpga::PerformBypass(param.FpgaArgs());
     if (param.FpgaArgs().output.activation.activation_type != fpga::SOFTMAX) {
       Tensor *out = param.Out();
