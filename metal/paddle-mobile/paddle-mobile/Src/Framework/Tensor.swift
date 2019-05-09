@@ -36,6 +36,10 @@ class DataConverter<P: PrecisionProtocol> {
     func getToDim(fromDim: Dim, layout: DataLayout) -> (dim: Dim, layout: DataLayout) {
         fatalError(" need imp")
     }
+    
+    func capacity(fromDim: Dim) -> Int? {
+        return nil
+    }
 }
 
 /// [ outputChannels ][ inputChannels ][ kernelHeight ][ kernelWidth ] ->
@@ -78,6 +82,119 @@ class MPSPointerConverter<P: PrecisionProtocol>: DataConverter<P>{
         let toDim = Dim.init(inDim: [outputChannels, kernelHeight, kernelWidth, inputChannels])
         
         return (dim: toDim, layout: DataLayout.NHWC())
+    }
+}
+
+class WinogradPointerConverter<P: PrecisionProtocol>: DataConverter<P>{
+    override func convert(from: UnsafeMutablePointer<P>, to: UnsafeMutablePointer<P>, fromDim: Dim) {
+        let N = fromDim[0]
+        let C = fromDim[1]
+        let H = fromDim[2]
+        let W = fromDim[3]
+        if H != 3 || W != 3 {
+            fatalError("not support")
+        }
+        for n in 0..<N {
+            for c in 0..<C {
+                let fromOffset = n * C * H * W + c * H * W
+                let toOffset = n * C * (H + 1) * (W + 1) + c * (H + 1) * (W + 1)
+                func f(_ h: Int, _ w: Int) -> P {
+                    return from[fromOffset + h * W + w]
+                }
+                let c05 = P(Float(0.5))
+                let c025 = P(Float(0.25))
+                to[toOffset] = f(0, 0);
+                to[toOffset + 1] = c05 * f(0, 0)
+                to[toOffset + 1] = to[toOffset + 1] + c05 * f(0, 1)
+                to[toOffset + 1] = to[toOffset + 1] + c05 * f(0, 2)
+                to[toOffset + 2] = c05 * f(0, 0)
+                to[toOffset + 2] = to[toOffset + 2] - c05 * f(0, 1)
+                to[toOffset + 2] = to[toOffset + 2] + c05 * f(0, 2)
+                to[toOffset + 3] = f(0, 2)
+                to[toOffset + 4] = c05 * f(0, 0)
+                to[toOffset + 4] = to[toOffset + 4] + c05 * f(1, 0)
+                to[toOffset + 4] = to[toOffset + 4] + c05 * f(2, 0)
+                to[toOffset + 5] = c025 * f(0, 0)
+                to[toOffset + 5] = to[toOffset + 5] + c025 * f(0, 1)
+                to[toOffset + 5] = to[toOffset + 5] + c025 * f(0, 2)
+                to[toOffset + 5] = to[toOffset + 5] + c025 * f(1, 0)
+                to[toOffset + 5] = to[toOffset + 5] + c025 * f(1, 1)
+                to[toOffset + 5] = to[toOffset + 5] + c025 * f(1, 2)
+                to[toOffset + 5] = to[toOffset + 5] + c025 * f(2, 0)
+                to[toOffset + 5] = to[toOffset + 5] + c025 * f(2, 1)
+                to[toOffset + 5] = to[toOffset + 5] + c025 * f(2, 2)
+                to[toOffset + 6] = c025 * f(0, 0)
+                to[toOffset + 6] = to[toOffset + 6] - c025 * f(0, 1)
+                to[toOffset + 6] = to[toOffset + 6] + c025 * f(0, 2)
+                to[toOffset + 6] = to[toOffset + 6] + c025 * f(1, 0)
+                to[toOffset + 6] = to[toOffset + 6] - c025 * f(1, 1)
+                to[toOffset + 6] = to[toOffset + 6] + c025 * f(1, 2)
+                to[toOffset + 6] = to[toOffset + 6] + c025 * f(2, 0)
+                to[toOffset + 6] = to[toOffset + 6] - c025 * f(2, 1)
+                to[toOffset + 6] = to[toOffset + 6] + c025 * f(2, 2)
+                to[toOffset + 7] = c05 * f(0, 2)
+                to[toOffset + 7] = to[toOffset + 7] + c05 * f(1, 2)
+                to[toOffset + 7] = to[toOffset + 7] + c05 * f(2, 2)
+                to[toOffset + 8] = c05 * f(0, 0)
+                to[toOffset + 8] = to[toOffset + 8] - c05 * f(1, 0)
+                to[toOffset + 8] = to[toOffset + 8] + c05 * f(2, 0)
+                to[toOffset + 9] = c025 * f(0, 0)
+                to[toOffset + 9] = to[toOffset + 9] + c025 * f(0, 1)
+                to[toOffset + 9] = to[toOffset + 9] + c025 * f(0, 2)
+                to[toOffset + 9] = to[toOffset + 9] - c025 * f(1, 0)
+                to[toOffset + 9] = to[toOffset + 9] - c025 * f(1, 1)
+                to[toOffset + 9] = to[toOffset + 9] - c025 * f(1, 2)
+                to[toOffset + 9] = to[toOffset + 9] + c025 * f(2, 0)
+                to[toOffset + 9] = to[toOffset + 9] + c025 * f(2, 1)
+                to[toOffset + 9] = to[toOffset + 9] + c025 * f(2, 2)
+                to[toOffset + 10] = c025 * f(0, 0)
+                to[toOffset + 10] = to[toOffset + 10] - c025 * f(0, 1)
+                to[toOffset + 10] = to[toOffset + 10] + c025 * f(0, 2)
+                to[toOffset + 10] = to[toOffset + 10] - c025 * f(1, 0)
+                to[toOffset + 10] = to[toOffset + 10] + c025 * f(1, 1)
+                to[toOffset + 10] = to[toOffset + 10] - c025 * f(1, 2)
+                to[toOffset + 10] = to[toOffset + 10] + c025 * f(2, 0)
+                to[toOffset + 10] = to[toOffset + 10] - c025 * f(2, 1)
+                to[toOffset + 10] = to[toOffset + 10] + c025 * f(2, 2)
+                to[toOffset + 11] = c05 * f(0, 2)
+                to[toOffset + 11] = to[toOffset + 11] - c05 * f(1, 2)
+                to[toOffset + 11] = to[toOffset + 11] + c05 * f(2, 2)
+                to[toOffset + 12] = f(2, 0)
+                to[toOffset + 13] = c05 * f(2, 0)
+                to[toOffset + 13] = to[toOffset + 13] + c05 * f(2, 1)
+                to[toOffset + 13] = to[toOffset + 13] + c05 * f(2, 2)
+                to[toOffset + 14] = c05 * f(2, 0)
+                to[toOffset + 14] = to[toOffset + 14] - c05 * f(2, 1)
+                to[toOffset + 14] = to[toOffset + 14] + c05 * f(2, 2)
+                to[toOffset + 15] = f(2, 2)
+            }
+        }
+    }
+    
+    override func getToDim(fromDim: Dim, layout: DataLayout) -> (dim: Dim, layout: DataLayout) {
+        if layout != DataLayout.NCHW() {
+            fatalError("not support")
+        }
+        let N = fromDim[0]
+        let C = fromDim[1]
+        let H = fromDim[2]
+        let W = fromDim[3]
+        if H != 3 || W != 3 {
+            fatalError("not support")
+        }
+        let toDim = Dim.init(inDim: [N, C, H + 1, W + 1])
+        return (dim: toDim, layout: DataLayout.NCHW())
+    }
+    
+    override func capacity(fromDim: Dim) -> Int? {
+        let N = fromDim[0]
+        let C = fromDim[1]
+        let H = fromDim[2]
+        let W = fromDim[3]
+        if H != 3 || W != 3 {
+            fatalError("not support")
+        }
+        return N * C * (H + 1) * (W + 1)
     }
 }
 
@@ -135,9 +252,10 @@ class Tensor<P: PrecisionProtocol>: Tensorial {
     }
     
     func convert(converter: DataConverter<P>) -> UnsafeMutablePointer<P> {
-        let to = UnsafeMutablePointer<P>.allocate(capacity: numel())
+        let toCapacity = converter.capacity(fromDim: dim) ?? numel()
+        let to = UnsafeMutablePointer<P>.allocate(capacity: toCapacity)
         converter.convert(from: data.pointer, to: to, fromDim: dim)
-        data = Data.init(inCount: numel(), inPointer: to)
+        data = Data.init(inCount: toCapacity, inPointer: to)
         let dimAndLayout = converter.getToDim(fromDim: dim, layout: layout)
         dim = dimAndLayout.dim
         layout = dimAndLayout.layout

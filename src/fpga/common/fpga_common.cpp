@@ -200,10 +200,10 @@ uint64_t vaddr_to_paddr(void *address) {
 }
 
 uint32_t paddle_mobile_version() {
-  uint32_t v_master = 35;
-  uint32_t v_slave = 35;
+  uint32_t v_master = 52;
+  uint32_t v_slave = 52;
 
-  uint32_t first = 1, second = 2, fourth_master = 1, fourth_slave = 2;
+  uint32_t first = 1, second = 2, fourth_master = 1, fourth_slave = 1;
   uint32_t master = first << 24 | second << 16 | v_master << 8 | fourth_master;
   uint32_t slave = first << 24 | second << 16 | v_slave << 8 | fourth_slave;
 

@@ -22,6 +22,7 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace fpga {
 
+#define USE_RELU 1
 #define USE_BIAS 2
 
 void format_image(framework::Tensor *image_tensor) {
@@ -32,7 +33,7 @@ void format_image(framework::Tensor *image_tensor) {
   int8_t *p_data = external_ptr == nullptr ? data_ptr : external_ptr;
 
   image::format_image<int8_t>(&p_data, channel, height, width);
-  if (p_data != data_ptr && external_ptr == nullptr) {
+  if (p_data != data_ptr) {
     image_tensor->reset_data_ptr(p_data);
   }
 }
@@ -43,7 +44,6 @@ void format_ofm(framework::Tensor *ofm_tensor) {
   } else {
     format_int8_ofm(ofm_tensor);
   }
-  format_int8_ofm(ofm_tensor);
 }
 
 void format_int8_ofm(framework::Tensor *ofm_tensor) {
@@ -302,7 +302,9 @@ void expand_conv_arg(ConvArgs *arg) {
   ConvArgs args = *arg;
 
   auto fpga_bias_scale_len =
-      align_to_x(args.filter_num / args.group_num, 8) * args.group_num;
+      align_to_x(args.filter_num / args.group_num, BS_NUM_ALIGNMENT) *
+      args.group_num;
+  fpga_bias_scale_len = fpga_bias_scale_len / BIAS_SCALE_DMA_NUM;
 
   auto output_height =
       (args.image.height + args.image.pad_height * 2 - args.kernel.height) /
@@ -326,7 +328,7 @@ void expand_conv_arg(ConvArgs *arg) {
 
   auto output_amount_per_row = align_to_x(
       (output_width - (args.deconv_tx_param.omit_size) * 2) * args.filter_num,
-      IMAGE_ALIGNMENT);
+      RESULT_ALIGNMENT);
 
   // find the opt partition strategy
   uint64_t res_win;
@@ -336,10 +338,10 @@ void expand_conv_arg(ConvArgs *arg) {
              (args.image.channels *
               (args.kernel.width + (res_win - 1) * args.kernel.stride_w)),
              IMAGE_ALIGNMENT) /
-             16 +
+             IMAGE_ALIGNMENT +
          1) *
             args.kernel.height >
-        2048) {
+        256) {
       break;
     }
   }
@@ -351,6 +353,7 @@ void expand_conv_arg(ConvArgs *arg) {
   if (((res_win % 2) != 0) && (res_win != 1)) {
     res_win = res_win - 1;
   }
+  PADDLE_MOBILE_ENFORCE(res_win >= 2, "window too bigger than fpga volume");
   res_fit = res_win;
 
   auto block_num = (output_width + res_fit - 1) / res_fit;
@@ -376,14 +379,14 @@ void expand_conv_arg(ConvArgs *arg) {
       align_to_x((args.image.channels *
                   (args.kernel.width + (block_len - 1) * args.kernel.stride_w)),
                  IMAGE_ALIGNMENT) /
-          16 +
+          IMAGE_ALIGNMENT +
       1;
   auto image_block_len_last =
       align_to_x(
           (args.image.channels *
            (args.kernel.width + (block_last - 1) * args.kernel.stride_w)),
           IMAGE_ALIGNMENT) /
-          16 +
+          IMAGE_ALIGNMENT +
       1;
   auto image_win_cnt = block_len;
   auto image_win_cnt_last = block_last;
@@ -396,46 +399,85 @@ void expand_conv_arg(ConvArgs *arg) {
       (512 / (align_to_x(args.filter_num, 4) / 4 * 2) > 2)
           ? (512 / (align_to_x(args.filter_num, 4) / 4 * 2) - 2)
           : 0;
-  // auto cmd = 0UL | (args.relu_enabled ? USE_RELU : 0) | USE_BIAS;
-  auto cmd = 0UL | USE_BIAS;
+  auto cmd = 0UL | (args.relu_enabled ? USE_RELU : 0) | USE_BIAS;
+  // auto cmd = 0UL | USE_BIAS;
 
   auto deconv_param = ((args.deconv_tx_param.deconv_en) << 16) |
                       ((args.deconv_tx_param.sub_conv_num) << 8) |
                       ((args.deconv_tx_param.omit_size) << 0);
-  (*arg).driver.image_address_phy = vaddr_to_paddr(args.image.address);
-  (*arg).driver.sb_address_phy = vaddr_to_paddr(args.sb_address);
-  (*arg).driver.filter_address_phy = vaddr_to_paddr(args.filter_address);
+
+  (*arg).driver.filter_per_group = filter_per_group;
+  (*arg).driver.channel_per_group = channel_per_group;
+  (*arg).driver.image_one_pad_per_row = image_one_pad_per_row;
+  (*arg).driver.deconv_param = deconv_param;
+  // new
+  (*arg).driver.col_padding_up = args.image.pad_width * args.image.channels;
+  (*arg).driver.col_padding_down = image_one_pad_per_row;
+  (*arg).driver.row_padding_up = args.image.pad_height;
+  (*arg).driver.row_padding_down = args.image.pad_height + args.image.height;
+  (*arg).driver.image_block_amount_per_row = image_block_amount_per_row;
+  (*arg).driver.filter_pad_width_mul_channel = filter_pad_width_mul_channel;
+  (*arg).driver.image_win_cnt = image_win_cnt;
+  (*arg).driver.image_win_cnt_last = image_win_cnt_last;
+  (*arg).driver.filter_row = args.kernel.width * args.image.channels;
+  (*arg).driver.filter_width = args.kernel.width;
+  (*arg).driver.filter_height = args.kernel.height;
+  (*arg).driver.skip_window = args.image.channels * args.kernel.stride_w;
+  (*arg).driver.stride_h = args.kernel.stride_h;
+  (*arg).driver.filter_amount_all = filter_amount_all;
+  (*arg).driver.prog_full_cnt = prog_full_cnt;
+  (*arg).driver.filter_align = args.filter_num / (4 * PE_COLUMN) +
+                               (((args.filter_num % (4 * PE_COLUMN))) ? 1 : 0);
+  (*arg).driver.filter_num = args.filter_num;
+  (*arg).driver.output_width = output_width;
+  (*arg).driver.output_amount_per_row = output_amount_per_row;
+  (*arg).driver.res_row_data_align4_pad = res_row_data_align4_pad;
+  (*arg).driver.cal_res_num = output_height / ROW_PARALLEL_NUM +
+                              ((output_height % ROW_PARALLEL_NUM) ? 1 : 0) - 1;
+  (*arg).driver.last_cal_res_row_num =
+      (output_height % (ROW_PARALLEL_NUM))
+          ? (output_height % (ROW_PARALLEL_NUM))
+          : (ROW_PARALLEL_NUM);
+
+  (*arg).driver.post_prog_full_cnt = post_prog_full_cnt;
+  (*arg).driver.deconv_skip_row =
+      ROW_PARALLEL_NUM *
+      args.deconv_tx_param.sub_conv_num;  // paralvl*deconv_group
+  (*arg).driver.deconv_res_skip_row =
+      args.deconv_tx_param.sub_conv_num *
+      output_amount_per_row;  // deconv_group * result_amount_per_row
+  (*arg).driver.deconv_ena = args.deconv_tx_param.deconv_en;
+  (*arg).driver.deconv_dump = args.deconv_tx_param.omit_size;
   (*arg).driver.output_address_phy = vaddr_to_paddr(args.output.address) +
                                      args.deconv_tx_param.out_addr_offset;
   (*arg).driver.output_height = output_height;
-  (*arg).driver.output_width = output_width;
-  (*arg).driver.filter_per_group = filter_per_group;
-  (*arg).driver.channel_per_group = channel_per_group;
+  (*arg).driver.result_amount_per_row_multi_para =
+      output_amount_per_row / RESULT_ALIGNMENT *
+      (args.deconv_tx_param.deconv_en ? (*arg).driver.deconv_skip_row
+                                      : ROW_PARALLEL_NUM);
+  (*arg).driver.sb_address_phy = vaddr_to_paddr(args.sb_address);
+  (*arg).driver.fpga_bias_scale_len = fpga_bias_scale_len;
+  (*arg).driver.filter_amount_whole = filter_amount_all;
+  (*arg).driver.filter_address_phy = vaddr_to_paddr(args.filter_address);
+  (*arg).driver.filters_amount_whole =
+      filter_amount_all * (*arg).driver.filter_align * (4 * PE_COLUMN);
+  (*arg).driver.image_address_phy = vaddr_to_paddr(args.image.address);
+  (*arg).driver.image_hight = args.image.height;
   (*arg).driver.image_amount_per_row = image_amount_per_row;
-  (*arg).driver.image_one_pad_per_row = image_one_pad_per_row;
-  (*arg).driver.filter_amount_all = filter_amount_all;
-  (*arg).driver.output_amount_per_row = output_amount_per_row;
-  (*arg).driver.image_block_amount_per_row = image_block_amount_per_row;
-  (*arg).driver.filter_pad_width_mul_channel = filter_pad_width_mul_channel;
   (*arg).driver.image_amount_per_row_multi_win_first =
       image_amount_per_row_multi_win_first;
   (*arg).driver.image_amount_per_row_multi_win = image_amount_per_row_multi_win;
+  (*arg).driver.filter_pad_hight = args.image.pad_height;
   (*arg).driver.image_block_num = image_block_num;
   (*arg).driver.image_block_len = image_block_len;
   (*arg).driver.image_block_len_last = image_block_len_last;
-  (*arg).driver.image_win_cnt = image_win_cnt;
-  (*arg).driver.image_win_cnt_last = image_win_cnt_last;
-  (*arg).driver.res_row_data_align4_pad = res_row_data_align4_pad;
-  (*arg).driver.prog_full_cnt = prog_full_cnt;
-  (*arg).driver.post_prog_full_cnt = post_prog_full_cnt;
-  (*arg).driver.fpga_bias_scale_len = fpga_bias_scale_len;
+
   (*arg).driver.cmd = cmd;
-  (*arg).driver.deconv_param = deconv_param;
 }  // expand_conv_arg()
 
 void expand_EW_arg(EWAddArgs *arg) {
   EWAddArgs args = *arg;
-  uint64_t cmd = 0;
+  uint64_t cmd = args.relu_enabled ? USE_RELU : 0;
   uint64_t datalen = (uint64_t)args.image0.width *
                      (uint64_t)args.image0.height *
                      (uint64_t)args.image0.channels;
@@ -463,10 +505,8 @@ void expand_EW_arg(EWAddArgs *arg) {
 
 void fill_split_arg(struct SplitConvArgs *arg, framework::Tensor *input,
                     framework::Tensor *out, framework::Tensor *filter,
-                    ActivationType activation_enable,
-                    int16_t leaky_relu_negative_slope, int group_num,
-                    int stride_h, int stride_w, int padding_h, int padding_w,
-                    float *bs_ptr) {
+                    bool relu_enabled, int group_num, int stride_h,
+                    int stride_w, int padding_h, int padding_w, float *bs_ptr) {
   auto input_ptr = input->data<int8_t>();
   auto filter_ptr = filter->data<int8_t>();
   auto out_ptr = out->data<int8_t>();
@@ -474,6 +514,7 @@ void fill_split_arg(struct SplitConvArgs *arg, framework::Tensor *input,
 
   arg->group_num = (uint32_t)group_num;
   // Either group_num or split_num = 1;
+  PADDLE_MOBILE_ENFORCE(group_num == 1, "group_num is not equal to 1");
   arg->split_num = group_num == 1 ? (uint32_t)get_plit_num(filter) : 1;
   arg->filter_num = (uint32_t)filter->dims()[0];
   arg->output.address = out_ptr;
@@ -512,9 +553,7 @@ void fill_split_arg(struct SplitConvArgs *arg, framework::Tensor *input,
             filter->dims()[3]));
 
   for (int i = 0; i < n; i++) {
-    arg->conv_arg[i].output.activation.activation_type = activation_enable;
-    arg->conv_arg[i].output.activation.leaky_relu_negative_slope =
-        leaky_relu_negative_slope;
+    arg->conv_arg[i].relu_enabled = relu_enabled;
     arg->conv_arg[i].group_num = (uint32_t)group_num;
     arg->conv_arg[i].kernel.stride_h = (uint32_t)stride_h;
     arg->conv_arg[i].kernel.stride_w = (uint32_t)stride_w;
@@ -586,9 +625,8 @@ void fill_split_arg(struct SplitConvArgs *arg, framework::Tensor *input,
 
 void fill_deconv_arg(struct DeconvArgs *arg, framework::Tensor *input,
                      framework::Tensor *out, framework::Tensor *filter,
-                     ActivationType activation_enable,
-                     int16_t leaky_relu_negative_slope, int group_num,
-                     int stride_h, int stride_w, int padding_h, int padding_w,
+                     bool relu_enabled, int group_num, int stride_h,
+                     int stride_w, int padding_h, int padding_w,
                      float *bs_ptr) {
   auto input_ptr = input->data<int8_t>();
   auto filter_ptr = filter->data<int8_t>();
@@ -714,12 +752,14 @@ void fill_deconv_arg(struct DeconvArgs *arg, framework::Tensor *input,
     }
 
     for (int j = 0; j < split_num; ++j) {
-      arg->split_conv_args[i]->conv_arg[j].output.activation.activation_type =
-          activation_enable;
-      arg->split_conv_args[i]
-          ->conv_arg[j]
-          .output.activation.leaky_relu_negative_slope =
-          leaky_relu_negative_slope;
+      // arg->split_conv_args[i]->conv_arg[j].output.activation.activation_type
+      // =
+      //    activation_enable;
+      // arg->split_conv_args[i]
+      //     ->conv_arg[j]
+      //    .output.activation.leaky_relu_negative_slope =
+      //    leaky_relu_negative_slope;
+      arg->split_conv_args[i]->conv_arg[j].relu_enabled = relu_enabled;
       arg->split_conv_args[i]->conv_arg[j].group_num = (uint32_t)group_num;
 
       arg->split_conv_args[i]->conv_arg[j].kernel.width =
@@ -832,16 +872,14 @@ void fill_deconv_arg(struct DeconvArgs *arg, framework::Tensor *input,
 
 void fill_dwconv_arg(struct DWconvArgs *arg, framework::Tensor *input,
                      framework::Tensor *out, framework::Tensor *filter,
-                     ActivationType activation_enable,
-                     int16_t leaky_relu_negative_slope, int stride_h,
-                     int stride_w, int padding_h, int padding_w,
-                     float *bias_ptr) {
+                     bool relu_enabled, int stride_h, int stride_w,
+                     int padding_h, int padding_w, float *bias_ptr) {
   auto filter_ptr = filter->data<int16_t>();
   auto input_ptr = input->data<int8_t>();
   auto output_ptr = out->mutable_data<int8_t>();
   arg->sub_conv_num = 1;
-  arg->output.activation.activation_type = activation_enable;
-  arg->output.activation.leaky_relu_negative_slope = leaky_relu_negative_slope;
+  arg->relu_enabled = relu_enabled;
+  // arg->output.activation.activation_type = activation_enable;
   arg->bias_address = bias_ptr;
   arg->filter_address = filter_ptr;
   arg->kernel.height = (uint32_t)filter->dims()[2];
@@ -861,10 +899,8 @@ void fill_dwconv_arg(struct DWconvArgs *arg, framework::Tensor *input,
 
 void fill_DWDeconv_arg(struct DWDeconvArgs *arg, framework::Tensor *input,
                        framework::Tensor *out, framework::Tensor *filter,
-                       ActivationType activation_enable,
-                       int16_t leaky_relu_negative_slope, int stride_h,
-                       int stride_w, int padding_h, int padding_w,
-                       float *bias_ptr) {
+                       bool relu_enabled, int stride_h, int stride_w,
+                       int padding_h, int padding_w, float *bias_ptr) {
   auto filter_ptr = filter->data<int8_t>();
   auto input_ptr = input->data<int8_t>();
 
@@ -914,10 +950,11 @@ void fill_DWDeconv_arg(struct DWDeconvArgs *arg, framework::Tensor *input,
     arg->dw_conv_args.push_back(std::make_shared<DWconvArgs>());
 
     arg->dw_conv_args[i]->sub_conv_num = sub_conv_num;
-    // arg->dw_conv_args[i]->relu_enabled = relu_enabled;
-    arg->dw_conv_args[i]->output.activation.activation_type = activation_enable;
-    arg->dw_conv_args[i]->output.activation.leaky_relu_negative_slope =
-        leaky_relu_negative_slope;
+    arg->dw_conv_args[i]->relu_enabled = relu_enabled;
+    // arg->dw_conv_args[i]->output.activation.activation_type =
+    // activation_enable;
+    // arg->dw_conv_args[i]->output.activation.leaky_relu_negative_slope =
+    //     leaky_relu_negative_slope;
     arg->dw_conv_args[i]->bias_address = bias_ptr;
 
     arg->dw_conv_args[i]->filter_address =

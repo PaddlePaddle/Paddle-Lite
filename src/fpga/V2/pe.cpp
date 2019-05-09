@@ -115,6 +115,19 @@ using namespace std;     // NOLINT
 
 /*conv*/
 #define REG_CONV_CMD 0xC00
+#define REG_CONV_REG0 0xC08
+#define REG_CONV_REG1 0xC10
+#define REG_CONV_REG2 0xC18
+#define REG_CONV_REG3 0xC20
+#define REG_CONV_REG4 0xC28
+#define REG_CONV_REG5 0xC30
+#define REG_CONV_REG6 0xC38
+#define REG_CONV_REG7 0xC40
+#define REG_CONV_REG8 0xC48
+#define REG_CONV_REG9 0xC50
+#define REG_CONV_REG10 0xC58
+#define REG_CONV_REG11 0xC60
+
 #define REG_CONV_IMAGE_BASE_ADDR 0xC08
 #define REG_CONV_FILTER_BASE_ADDR 0xC10
 #define REG_CONV_SB_BASE_ADDR 0xC18
@@ -194,7 +207,7 @@ int ComputeFpgaConv(const struct SplitConvArgs &args) {
 int ComputeBasicConv(const struct ConvArgs &args) {
 #ifdef FPGA_PRINT_MODE
   DLOG << "======Compute Basic Conv======";
-  // DLOG << "   relu_enabled:" << args.relu_enabled
+  DLOG << "   relu_enabled:" << args.relu_enabled;
   DLOG << "   sb_address:" << args.sb_address
        << "   filter_address:" << args.filter_address
        << "   filter_num:" << args.filter_num
@@ -218,23 +231,23 @@ int ComputeBasicConv(const struct ConvArgs &args) {
   int ret = 0;
   uint64_t output_scale = 0;
 
-  uint64_t reg_ActivationArgs = 0;
+  // uint64_t reg_ActivationArgs = 0;
   // active function:{none,leakeyrelu,sigmoid,tanh}
-  ActivationArgs active_args;
+  // ActivationArgs active_args;
   // active_args.activation_type = LEAKYRELU;
 
-  active_args.activation_type = args.output.activation.activation_type;
+  // active_args.activation_type = args.output.activation.activation_type;
 
-  active_args.leaky_relu_negative_slope =
-      args.output.activation.leaky_relu_negative_slope;
+  // active_args.leaky_relu_negative_slope =
+  //    args.output.activation.leaky_relu_negative_slope;
 
-  reg_ActivationArgs = (uint64_t(active_args.activation_type) << 32) |
-                       active_args.leaky_relu_negative_slope;
+  // reg_ActivationArgs = (uint64_t(active_args.activation_type) << 32) |
+  //                     active_args.leaky_relu_negative_slope;
 
-  DLOG << "   activation_type:" << active_args.activation_type
-       << "   leaky_relu_negative_slope:"
-       << active_args.leaky_relu_negative_slope;
-  DLOG << "   reg_ActivationArgs:" << reg_ActivationArgs;
+  // DLOG << "   activation_type:" << active_args.activation_type
+  //     << "   leaky_relu_negative_slope:"
+  //     << active_args.leaky_relu_negative_slope;
+  // DLOG << "   reg_ActivationArgs:" << reg_ActivationArgs;
 
   pthread_mutex_lock(&g_fpgainfo.pe_data->mutex);
   if (ERROR == g_fpgainfo.pe_data->pes[PE_IDX_CONV]->status) {
@@ -243,63 +256,71 @@ int ComputeBasicConv(const struct ConvArgs &args) {
     pthread_mutex_unlock(&g_fpgainfo.pe_data->mutex);
     return ret;
   }
+  // new
+  reg_writeq((args.driver.row_padding_down << 45) |
+                 (args.driver.row_padding_up << 34) |
+                 (args.driver.col_padding_down << 17) |
+                 args.driver.col_padding_up,
+             REG_CONV_REG0);
 
-  reg_writeq(reg_ActivationArgs,
-             REG_ACTIVATION_MODE_AND_LEAKY_RELU_FACTOR);  // active functoion
+  reg_writeq((args.driver.image_win_cnt_last << 50) |
+                 (args.driver.image_win_cnt << 39) |
+                 (args.driver.image_block_amount_per_row << 20) |
+                 args.driver.filter_pad_width_mul_channel,
+             REG_CONV_REG1);
 
-  reg_writeq(output_scale, REG_SCALE_PARAMETER);
+  reg_writeq((args.driver.stride_h << 48) | (args.driver.skip_window << 28) |
+                 (args.driver.filter_row << 8) |
+                 (args.driver.filter_height << 4) | args.driver.filter_width,
+             REG_CONV_REG2);
+
+  reg_writeq((args.driver.filter_num << 42) | (args.driver.filter_align << 26) |
+                 (args.driver.prog_full_cnt << 16) |
+                 args.driver.filter_amount_all,
+             REG_CONV_REG3);
+
+  reg_writeq((args.driver.post_prog_full_cnt << 54) |
+                 (args.driver.last_cal_res_row_num << 50) |
+                 (args.driver.cal_res_num << 39) |
+                 (args.driver.res_row_data_align4_pad << 35) |
+                 (args.driver.output_amount_per_row << 16) |
+                 args.driver.output_width,
+             REG_CONV_REG4);
+
+  reg_writeq((args.driver.deconv_dump << 40) | (args.driver.deconv_ena << 39) |
+                 (args.driver.deconv_res_skip_row << 7) |
+                 args.driver.deconv_skip_row,
+             REG_CONV_REG5);
+
+  reg_writeq((args.driver.result_amount_per_row_multi_para << 43) |
+                 (args.driver.output_height << 32) |
+                 args.driver.output_address_phy,
+             REG_CONV_REG6);
+
+  reg_writeq((args.driver.filter_amount_whole << 48) |
+                 (args.driver.fpga_bias_scale_len << 32) |
+                 args.driver.sb_address_phy,
+             REG_CONV_REG7);
+
   reg_writeq(
-      ((uint64_t)args.image.height) | (((uint64_t)args.image.width) << 32),
-      REG_CONV_IMAGE_PIXEL);
-  reg_writeq(
-      ((uint64_t)args.kernel.height) | (((uint64_t)args.kernel.width) << 32),
-      REG_CONV_FILTER_PIXEL);
+      (args.driver.filters_amount_whole << 32) | args.driver.filter_address_phy,
+      REG_CONV_REG8);
 
-  uint64_t output_height_fraction =
-      args.driver.output_height / ROW_PARALLEL_NUM;
-  uint64_t output_height_remainder =
-      args.driver.output_height % ROW_PARALLEL_NUM;
-  reg_writeq(args.driver.output_height | (output_height_fraction << 16) |
-                 (output_height_remainder << 26) |
-                 (args.driver.output_width << 32),
-             REG_CONV_RESULT_PIXEL);
-  reg_writeq(((uint64_t)args.image.pad_height) |
-                 (((uint64_t)args.image.pad_width) << 32),
-             REG_CONV_PAD_PIXEL);
-  reg_writeq(((uint64_t)args.kernel.stride_h) |
-                 (((uint64_t)args.kernel.stride_w) << 32),
-             REG_CONV_STEP_PIXEL);
-  reg_writeq((uint64_t)args.group_num, REG_CONV_GROUP_NUMBER);
-  reg_writeq((uint64_t)args.filter_num, REG_CONV_FILTER_NUMBER);
-  reg_writeq((uint64_t)args.image.channels, REG_CONV_CHANNEL_NUMBER);
-  reg_writeq(*(uint64_t *)args.image.scale_address,  // NOLINT
-             REG_CONV_IMAGE_SCALE);
-  reg_writeq(*(uint64_t *)args.filter_scale_address,  // NOLINT
-             REG_CONV_FILTER_SCALE);
-  reg_writeq(args.driver.image_address_phy, REG_CONV_IMAGE_BASE_ADDR);
-  reg_writeq(args.driver.filter_address_phy, REG_CONV_FILTER_BASE_ADDR);
-  reg_writeq(args.driver.sb_address_phy, REG_CONV_SB_BASE_ADDR);
-  reg_writeq(args.driver.output_address_phy, REG_CONV_RESULT_BASE_ADDR);
-  reg_writeq(args.driver.filter_per_group, REG_CONV_FILTER_PER_GROUP);
-  reg_writeq(args.driver.channel_per_group, REG_CONV_CHANNEL_PER_GROUP);
-  reg_writeq(args.driver.image_amount_per_row, REG_CONV_IMAGE_AMOUNT_PER_ROW);
-  reg_writeq(args.driver.image_one_pad_per_row, REG_CONV_IMAGE_ONE_PAD_PER_ROW);
-  reg_writeq(args.driver.filter_amount_all, REG_CONV_FILTER_AMOUNT_ALL);
-  reg_writeq(args.driver.output_amount_per_row, REG_CONV_RESULT_AMOUNT_PER_ROW);
-  reg_writeq(args.driver.image_block_amount_per_row, 0xca8);
-  reg_writeq(args.driver.filter_pad_width_mul_channel, 0xcb0);
-  reg_writeq(args.driver.image_amount_per_row_multi_win_first, 0xcb8);
-  reg_writeq(args.driver.image_amount_per_row_multi_win, 0xcc0);
-  reg_writeq(args.driver.image_block_num, 0xcc8);
-  reg_writeq(args.driver.image_block_len, 0xcd0);
-  reg_writeq(args.driver.image_block_len_last, 0xcd8);
-  reg_writeq(args.driver.image_win_cnt, 0xce0);
-  reg_writeq(args.driver.image_win_cnt_last, 0xce8);
-  reg_writeq(args.driver.res_row_data_align4_pad, 0xcf8);
-  reg_writeq(args.driver.prog_full_cnt, 0xd08);
-  reg_writeq(args.driver.post_prog_full_cnt, 0xd10);
-  reg_writeq(args.driver.deconv_param, 0xd18);
-  reg_writeq(args.driver.fpga_bias_scale_len / 4, 0xd20);
+  reg_writeq((args.driver.image_amount_per_row << 43) |
+                 (args.driver.image_hight << 32) |
+                 args.driver.image_address_phy,
+             REG_CONV_REG9);
+
+  reg_writeq((args.driver.filter_pad_hight << 46) |
+                 (args.driver.image_amount_per_row_multi_win << 23) |
+                 args.driver.image_amount_per_row_multi_win_first,
+             REG_CONV_REG10);
+
+  reg_writeq((args.driver.image_block_num << 48) |
+                 (args.driver.image_block_len << 24) |
+                 args.driver.image_block_len_last,
+             REG_CONV_REG11);
+
   reg_writeq(args.driver.cmd, REG_CONV_CMD);
   if (0 != fpga_regpoll(REG_INTERRUPT, INTERRUPT_CONV, PE_IRQ_TIMEOUT)) {
     g_fpgainfo.pe_data->pes[PE_IDX_CONV]->status = ERROR;
@@ -307,12 +328,7 @@ int ComputeBasicConv(const struct ConvArgs &args) {
     DLOG << "Conv Wait Irq Timeout!";
     PADDLE_MOBILE_ENFORCE(0, "Conv Wait Irq Timeout");
   }
-  output_scale = reg_readq(REG_SCALE_PARAMETER);
-  output_scale = (output_scale << 32) | (output_scale >> 32);
-  fpga_copy(args.output.scale_address, &output_scale, sizeof(float) * 2);
-
-  active_args.activation_type = NONE;
-  reg_writeq(reg_ActivationArgs, REG_ACTIVATION_MODE_AND_LEAKY_RELU_FACTOR);
+  DLOG << "after reg poll";
 
   pthread_mutex_unlock(&g_fpgainfo.pe_data->mutex);
 
@@ -350,22 +366,22 @@ int ComputeFpgaPool(const struct PoolingArgs &args) {
   uint64_t image_physical_address = 0;
   uint64_t output_physical_address = 0;
 
-  uint64_t reg_ActivationArgs = 0;
+  // uint64_t reg_ActivationArgs = 0;
   // active function:{none,leakeyrelu,sigmoid,tanh}
-  ActivationArgs active_args;
+  //  ActivationArgs active_args;
   // active_args.activation_type = LEAKYRELU;
-  active_args.activation_type = args.output.activation.activation_type;
+  //  active_args.activation_type = args.output.activation.activation_type;
 
-  active_args.leaky_relu_negative_slope =
-      args.output.activation.leaky_relu_negative_slope;
+  //  active_args.leaky_relu_negative_slope =
+  //     args.output.activation.leaky_relu_negative_slope;
 
-  reg_ActivationArgs = (uint64_t(active_args.activation_type) << 32) |
-                       active_args.leaky_relu_negative_slope;
+  //  reg_ActivationArgs = (uint64_t(active_args.activation_type) << 32) |
+  //                       active_args.leaky_relu_negative_slope;
 
-  DLOG << "   activation_type:" << active_args.activation_type
-       << "   leaky_relu_negative_slope:"
-       << active_args.leaky_relu_negative_slope;
-  DLOG << "   reg_ActivationArgs:" << reg_ActivationArgs;
+  //  DLOG << "   activation_type:" << active_args.activation_type
+  //       << "   leaky_relu_negative_slope:"
+  //       << active_args.leaky_relu_negative_slope;
+  // DLOG << "   reg_ActivationArgs:" << reg_ActivationArgs;
 
   image_physical_address = vaddr_to_paddr_driver(args.image.address);
   output_physical_address = vaddr_to_paddr_driver(args.output.address);
@@ -417,10 +433,10 @@ int ComputeFpgaPool(const struct PoolingArgs &args) {
     return ret;
   }
 
-  reg_writeq(reg_ActivationArgs,
-             REG_ACTIVATION_MODE_AND_LEAKY_RELU_FACTOR);  // active functoion
+  // reg_writeq(reg_ActivationArgs,
+  //            REG_ACTIVATION_MODE_AND_LEAKY_RELU_FACTOR);  // active functoion
 
-  reg_writeq(output_scale, REG_SCALE_PARAMETER);
+  // reg_writeq(output_scale, REG_SCALE_PARAMETER);
   reg_writeq(image_physical_address, REG_POOLING_IMAGE_BASE_ADDR);
   reg_writeq(output_physical_address, REG_POOLING_RESULT_BASE_ADDR);
   reg_writeq(
@@ -462,12 +478,12 @@ int ComputeFpgaPool(const struct PoolingArgs &args) {
   DLOG << "after reg poll";
 
   // *(args.output.scale_address) = reg_readq(REG_SCALE_PARAMETER);
-  output_scale = reg_readq(REG_SCALE_PARAMETER);
-  output_scale = (output_scale << 32) | (output_scale >> 32);
-  fpga_copy(args.output.scale_address, &output_scale, sizeof(float) * 2);
+  //  output_scale = reg_readq(REG_SCALE_PARAMETER);
+  //  output_scale = (output_scale << 32) | (output_scale >> 32);
+  //  fpga_copy(args.output.scale_address, &output_scale, sizeof(float) * 2);
 
-  active_args.activation_type = NONE;
-  reg_writeq(reg_ActivationArgs, REG_ACTIVATION_MODE_AND_LEAKY_RELU_FACTOR);
+  //  active_args.activation_type = NONE;
+  //  reg_writeq(reg_ActivationArgs, REG_ACTIVATION_MODE_AND_LEAKY_RELU_FACTOR);
 
   pthread_mutex_unlock(&g_fpgainfo.pe_data->mutex);
 
@@ -479,7 +495,7 @@ int ComputeFpgaPool(const struct PoolingArgs &args) {
 int ComputeFpgaEWAdd(const struct EWAddArgs &args) {
 #ifdef FPGA_PRINT_MODE
   DLOG << "=============ComputeFpgaEWAdd===========";
-  // DLOG << "   relu_enabled:" << args.relu_enabled
+  DLOG << "   relu_enabled:" << args.relu_enabled;
   DLOG << "   const0:" << fp16_2_fp32(int16_t(args.const0))
        << "   const1:" << fp16_2_fp32(int16_t(args.const1));
   DLOG << "   image0_address:" << args.image0.address
@@ -503,17 +519,17 @@ int ComputeFpgaEWAdd(const struct EWAddArgs &args) {
   int ret = 0;
   uint64_t output_scale = 0;
 
-  uint64_t reg_ActivationArgs = 0;
-  ActivationArgs active_args;
-  active_args.activation_type = args.output.activation.activation_type;
-  active_args.leaky_relu_negative_slope =
-      args.output.activation.leaky_relu_negative_slope;
-  reg_ActivationArgs = (uint64_t(active_args.activation_type) << 32) |
-                       active_args.leaky_relu_negative_slope;
-  DLOG << "    activation_type:" << active_args.activation_type
-       << "    leaky_relu_negative_slope:"
-       << active_args.leaky_relu_negative_slope;
-  DLOG << "    reg_ActivationArgs:" << reg_ActivationArgs;
+  // uint64_t reg_ActivationArgs = 0;
+  // ActivationArgs active_args;
+  // active_args.activation_type = args.output.activation.activation_type;
+  // active_args.leaky_relu_negative_slope =
+  //     args.output.activation.leaky_relu_negative_slope;
+  //  reg_ActivationArgs = (uint64_t(active_args.activation_type) << 32) |
+  //                      active_args.leaky_relu_negative_slope;
+  // DLOG << "    activation_type:" << active_args.activation_type
+  //     << "    leaky_relu_negative_slope:"
+  //     << active_args.leaky_relu_negative_slope;
+  // DLOG << "    reg_ActivationArgs:" << reg_ActivationArgs;
 
   pthread_mutex_lock(&g_fpgainfo.pe_data->mutex);
   if (ERROR == g_fpgainfo.pe_data->pes[PE_IDX_EW]->status) {
@@ -523,8 +539,8 @@ int ComputeFpgaEWAdd(const struct EWAddArgs &args) {
     return ret;
   }
 
-  reg_writeq(reg_ActivationArgs,
-             REG_ACTIVATION_MODE_AND_LEAKY_RELU_FACTOR);  // active functoion
+  // reg_writeq(reg_ActivationArgs,
+  //          REG_ACTIVATION_MODE_AND_LEAKY_RELU_FACTOR);  // active functoion
 
   reg_writeq(output_scale, REG_SCALE_PARAMETER);
   reg_writeq(args.driver.image0_address_phy, REG_EW_IMAGE0_BASE_ADDR);
@@ -543,11 +559,11 @@ int ComputeFpgaEWAdd(const struct EWAddArgs &args) {
     PADDLE_MOBILE_ENFORCE(0, "EW Wait Irq Timeout!");
   }
 
-  output_scale = reg_readq(REG_SCALE_PARAMETER);
-  output_scale = (output_scale << 32) | (output_scale >> 32);
-  fpga_copy(args.output.scale_address, &output_scale, sizeof(float) * 2);
-  active_args.activation_type = NONE;
-  reg_writeq(reg_ActivationArgs, REG_ACTIVATION_MODE_AND_LEAKY_RELU_FACTOR);
+  // output_scale = reg_readq(REG_SCALE_PARAMETER);
+  // output_scale = (output_scale << 32) | (output_scale >> 32);
+  // fpga_copy(args.output.scale_address, &output_scale, sizeof(float) * 2);
+  // active_args.activation_type = NONE;
+  // reg_writeq(reg_ActivationArgs, REG_ACTIVATION_MODE_AND_LEAKY_RELU_FACTOR);
 
   pthread_mutex_unlock(&g_fpgainfo.pe_data->mutex);
   return ret;
