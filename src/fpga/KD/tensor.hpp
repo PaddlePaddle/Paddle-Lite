@@ -20,6 +20,7 @@ limitations under the License. */
 #include <iostream>
 #include <string>
 #include <vector>
+#include <cmath>
 
 #include "common/log.h"
 #include "float16.hpp"
@@ -379,13 +380,17 @@ class Tensor {
     }
     int num = shape_->numel();
     invalidate();
+    float max = 0.0f;
     float16* data = mutableData<float16>();
     for (int i = 0; i < num; ++i) {
       float value = 0;
       file_stream >> value;
+      max = std::max(std::abs(value), max);
       data[i] = float_to_half(value);
     }
     flush();
+    scale_[0] = max / 127.0f;
+    scale_[1] = 127.0f / max;
     DLOG << "\ttensor file " << path << " loaded!";
   }
 
