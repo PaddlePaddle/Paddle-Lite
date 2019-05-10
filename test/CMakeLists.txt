@@ -138,6 +138,10 @@ if (CON GREATER -1)
     #target_link_libraries(test_inception_v3 paddle-mobile)
     #target_link_libraries(test_inception_v3 ${OpenCV_LIBS})
 
+     ADD_EXECUTABLE(test_mobilenet_ssd fpga/test_mobilenet_ssd.cpp test_helper.h test_include.h executor_for_test.h)
+     target_link_libraries(test_mobilenet_ssd paddle-mobile)
+     target_link_libraries(test_mobilenet_ssd ${OpenCV_LIBS})
+
     ADD_EXECUTABLE(test-ssd fpga/test_ssd.cpp test_helper.h test_include.h executor_for_test.h)
     target_link_libraries(test-ssd paddle-mobile)
 

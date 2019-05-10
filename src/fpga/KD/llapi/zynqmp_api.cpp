@@ -283,7 +283,7 @@ int perform_bypass(const struct BypassArgs &args) {
         reinterpret_cast<char *>(output_address + i * max_size * out_type_size);
     int ret = do_ioctl(IOCTL_CONFIG_BYPASS, &bypassArgs);
     scale = std::max(scale, scales[0]);
-    std::cout << "scale1:" << scale << std::endl;
+
     if (ret != 0) {
       return ret;
     }
@@ -332,6 +332,7 @@ int compute_fpga_scale(const struct ScaleArgs &args) {
 }
 
 int compute_fpga_dwconv(const struct DWconvArgs &args) {
+#ifdef ENABLE_DEBUG
   std::cout << "======Compute Basic Conv======";
   std::cout << "   relu_enabled:" << args.relu_enabled
             << "   filter_address:" << args.filter_address;
@@ -352,7 +353,7 @@ int compute_fpga_dwconv(const struct DWconvArgs &args) {
   // float *in_scale = (float *)args.image.scale_address;
   // std::cout << "inv_scale:" << in_scale[0] << "," << in_scale[1] <<
   // std::endl;
-
+#endif
   return do_ioctl(IOCTL_CONFIG_DWCONV, &args);
 }
 

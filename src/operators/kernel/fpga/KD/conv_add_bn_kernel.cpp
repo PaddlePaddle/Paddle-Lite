@@ -25,6 +25,7 @@ using DepthwiseConvPE = paddle_mobile::zynqmp::DepthwiseConvPE;
 
 template <>
 bool ConvAddBNKernel<FPGA, float>::Init(FusionConvAddBNParam<FPGA>* param) {
+  param->Output()->mutable_data<half>();
   const int groups = param->Groups();
   const int channel = param->Input()->dims()[1];
   if (groups == channel) {

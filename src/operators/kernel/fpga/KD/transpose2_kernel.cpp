@@ -32,8 +32,6 @@ void TransposeCompute(const Transpose2Param<FPGA>& param) {
   int num = input_x_dims[1];
   int channel = input_x_dims[2];
 
-  std::cout << "num::" << num << "  channel::" << channel << std::endl;
-
   // int index = 0;
   // for (int n = 0; n < num; n++) {
   //   for (int c = 0; c < channel; c++) {
@@ -118,9 +116,6 @@ void Transpose2Kernel<FPGA, float>::Compute(
   }
   auto xShape = param.OutputXShape();
   xShape->Resize({0, 0});  // TODO(chonwhite) fix it;
-
-  std::cout << "Out scale:" << param.Out()->zynqmpTensor()->scale()[0]
-            << std::endl;
 }
 
 template class Transpose2Kernel<FPGA, float>;
