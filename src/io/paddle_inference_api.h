@@ -33,6 +33,7 @@ namespace paddle_mobile {
 
 namespace fpga {
 int open_device();
+int close_device();
 void* fpga_malloc(size_t size);
 void fpga_free(void* ptr);
 
