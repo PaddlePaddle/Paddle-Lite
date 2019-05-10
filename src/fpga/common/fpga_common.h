@@ -25,7 +25,7 @@ limitations under the License. */
 #define FILTER_ELEMENT_ALIGNMENT (16)  // Filter element number aligned to 16
 #define BS_NUM_ALIGNMENT (8)
 #define BIAS_NUM_ALIGNMENT (16)
-#define ROW_PARALLEL_NUM (3)
+#define ROW_PARALLEL_NUM (2)
 #endif
 #ifdef PADDLE_MOBILE_FPGA_V2
 #define IMAGE_ALIGNMENT (32)           // Aligned to 32
