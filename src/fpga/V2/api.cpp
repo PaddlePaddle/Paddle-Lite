@@ -50,11 +50,13 @@ void format_int8_ofm(framework::Tensor *ofm_tensor) {
   auto dims = ofm_tensor->dims();
   size_t memory_size = 0;
   if (dims.size() == 4) {
-    auto channel = dims[1], height = dims[2], width = dims[3], num = dims[0];
+    auto num = (dims[0] == 0) ? 1 : dims[0], channel = dims[1],
+         height = dims[2], width = dims[3];
     memory_size = num * height * align_to_x(channel * width, IMAGE_ALIGNMENT) *
                   sizeof(int8_t);
   } else if (dims.size() == 2) {
-    memory_size = align_to_x(dims[1], IMAGE_ALIGNMENT) * sizeof(int8_t);
+    auto num = (dims[0] == 0) ? 1 : dims[0], channel = dims[1];
+    memory_size = num * align_to_x(channel, IMAGE_ALIGNMENT) * sizeof(int8_t);
   } else {
     DLOG << "Wrong ofm dimension";
   }
@@ -68,11 +70,13 @@ void format_int8_ofm(framework::Tensor *ofm_tensor) {
 void format_int8_ofm(framework::Tensor *ofm_tensor, framework::DDim dims) {
   size_t memory_size = 0;
   if (dims.size() == 4) {
-    auto channel = dims[1], height = dims[2], width = dims[3];
-    memory_size =
-        height * align_to_x(channel * width, IMAGE_ALIGNMENT) * sizeof(int8_t);
+    auto num = (dims[0] == 0) ? 1 : dims[0], channel = dims[1],
+         height = dims[2], width = dims[3];
+    memory_size = num * height * align_to_x(channel * width, IMAGE_ALIGNMENT) *
+                  sizeof(int8_t);
   } else if (dims.size() == 2) {
-    memory_size = align_to_x(dims[1], IMAGE_ALIGNMENT) * sizeof(int8_t);
+    auto num = (dims[0] == 0) ? 1 : dims[0], channel = dims[1];
+    memory_size = num * align_to_x(channel, IMAGE_ALIGNMENT) * sizeof(int8_t);
   } else {
     DLOG << "Wrong ofm dimension";
   }
@@ -87,11 +91,13 @@ void format_fp32_ofm(framework::Tensor *ofm_tensor) {
   auto dims = ofm_tensor->dims();
   size_t memory_size = 0;
   if (dims.size() == 4) {
-    auto channel = dims[1], height = dims[2], width = dims[3];
-    memory_size =
-        height * align_to_x(channel * width, IMAGE_ALIGNMENT) * sizeof(float);
+    auto num = (dims[0] == 0) ? 1 : dims[0], channel = dims[1],
+         height = dims[2], width = dims[3];
+    memory_size = num * height * align_to_x(channel * width, IMAGE_ALIGNMENT) *
+                  sizeof(float);
   } else if (dims.size() == 2) {
-    memory_size = align_to_x(dims[1], IMAGE_ALIGNMENT) * sizeof(float);
+    auto num = (dims[0] == 0) ? 1 : dims[0], channel = dims[1];
+    memory_size = num * align_to_x(channel, IMAGE_ALIGNMENT) * sizeof(float);
   } else {
     DLOG << "Wrong ofm dimension";
   }

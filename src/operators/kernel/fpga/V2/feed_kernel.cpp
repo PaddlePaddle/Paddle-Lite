@@ -21,6 +21,7 @@ template <>
 bool FeedKernel<FPGA, float>::Init(FeedParam<FPGA> *param) {
   auto output = param->Out();
   if (output->dims().size() != 4) {
+    output->init(type_id<float>().hash_code());
     return true;
   }
   fpga::format_ofm(output);
