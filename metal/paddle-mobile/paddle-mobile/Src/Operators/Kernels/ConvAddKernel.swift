@@ -112,8 +112,14 @@ class ConvAddKernel<P: PrecisionProtocol>: Kernel, Computable {
         var shouldUseMPS = false
         let functionName = type(of: self).kernelFunctionName(param: param, useAggressiveOptimization: initContext.useAggresiveOptimization)
         if #available(iOS 11.0, *), (initContext.useMPS || initContext.useAggresiveOptimization) {
-            if (param.input.tensorDim[1] == 1 || param.input.tensorDim[1] > 4) && (param.output.tensorDim[1] == 1 || param.output.tensorDim[1] > 4) {
-                shouldUseMPS = true
+            if initContext.useAggresiveOptimization {
+                if (param.input.tensorDim[1] == 1 || param.input.tensorDim[1] > 4) && (param.output.tensorDim[1] == 1 || param.output.tensorDim[1] > 4) {
+                    shouldUseMPS = true
+                }
+            } else {
+                if param.input.tensorDim[1] > 4 && param.output.tensorDim[1] > 4 {
+                    shouldUseMPS = true
+                }
             }
         }
         if type(of: self).isWinoGrad(functionName: functionName) {
@@ -166,6 +172,8 @@ class ConvAddKernel<P: PrecisionProtocol>: Kernel, Computable {
         
         let isDepthWise = param.filter.tensorDim[1] == 1 && param.filter.tensorDim[0] == param.input.tensorDim[1]
         if #available(iOS 11.0, *) {
+            param.input.useMPS = true
+            param.output.useMPS = true
             let desc: MPSCNNConvolutionDescriptor = isDepthWise ?
                 MPSCNNDepthWiseConvolutionDescriptor(kernelWidth: param.filter.tensorDim[3],
                                                      kernelHeight: param.filter.tensorDim[2],
