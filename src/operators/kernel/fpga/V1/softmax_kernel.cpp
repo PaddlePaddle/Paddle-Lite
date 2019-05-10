@@ -47,7 +47,22 @@ bool SoftmaxKernel<FPGA, float>::Init(SoftmaxParam<FPGA> *param) {
   input->Resize(framework::make_ddim(dims));
   float_input->Resize(framework::make_ddim(dims));
 
-  if (channel != 2) {  // Use CPU
+  if (channel == 2 && input->type() == type_id<half>()) {  // Use FPGA
+    fpga::format_fp16_ofm(out);
+    fpga::BypassArgs args = {fpga::DATA_TYPE_FP16};
+    args.input_layout_type = fpga::LAYOUT_HWC;
+    args.output_layout_type = fpga::LAYOUT_CHW;
+    args.input_data_type = fpga::DATA_TYPE_FP16;
+    args.output_data_type = fpga::DATA_TYPE_FP16;
+    args.image.address = input_ptr;
+    args.image.height = (uint32_t)input->dims()[1];
+    args.image.width = (uint32_t)input->dims()[2];
+    args.image.channels = (uint32_t)input->dims()[3];
+    args.output.address = out->data<half>();
+    args.output.scale_address = out->scale;
+    args.output.activation.activation_type = fpga::SOFTMAX;
+    param->SetFpgaArgs(args);
+  } else {  // Use CPU
     out->Resize(framework::make_ddim(dims));
     out->mutable_data<float>(framework::make_ddim(dims));
     float_input->init(type_id<float>().hash_code());
@@ -67,21 +82,6 @@ bool SoftmaxKernel<FPGA, float>::Init(SoftmaxParam<FPGA> *param) {
     args.output.address = float_input->data<float>();
     args.output.scale_address = float_input->scale;
     param->SetFloatInput(float_input);
-    param->SetFpgaArgs(args);
-  } else {  // Use FPGA
-    fpga::format_fp16_ofm(out);
-    fpga::BypassArgs args = {fpga::DATA_TYPE_FP16};
-    args.input_layout_type = fpga::LAYOUT_HWC;
-    args.output_layout_type = fpga::LAYOUT_CHW;
-    args.input_data_type = fpga::DATA_TYPE_FP16;
-    args.output_data_type = fpga::DATA_TYPE_FP16;
-    args.image.address = input_ptr;
-    args.image.height = (uint32_t)input->dims()[1];
-    args.image.width = (uint32_t)input->dims()[2];
-    args.image.channels = (uint32_t)input->dims()[3];
-    args.output.address = out->data<half>();
-    args.output.scale_address = out->scale;
-    args.output.activation.activation_type = fpga::SOFTMAX;
     param->SetFpgaArgs(args);
   }
 
