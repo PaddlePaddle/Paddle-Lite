@@ -74,6 +74,7 @@ class PoolingPE : public PE {
 
     Tensor float_input;
     // Tensor float_output;
+    float_input.mutableData<float>(FP32, input->shape());
     float_input.copyFrom(input);
     float16* data_out = output->data<float16>();
 

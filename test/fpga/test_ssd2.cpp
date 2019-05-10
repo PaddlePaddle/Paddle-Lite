@@ -18,15 +18,38 @@ limitations under the License. */
 #include "fpga/KD/float16.hpp"
 #include "fpga/KD/llapi/zynqmp_api.h"
 
-// using namespace paddle_mobile;
-
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp>
+
+// using namespace paddle_mobile;
 // using namespace cv;
 
 cv::Mat sample_float;
 
-void readImage(std::string filename, float* buffer) {
+int width = 300;
+int height = 300;
+
+static size_t ReadBuffer(const char *file_name, uint8_t **out) {
+  FILE *fp;
+  fp = fopen(file_name, "rb");
+  // PADDLE_MOBILE_ENFORCE(fp != NULL, " %s open failed !", file_name);
+
+  fseek(fp, 0, SEEK_END);
+  size_t size = ftell(fp);
+  rewind(fp);
+
+  *out = reinterpret_cast<uint8_t *>(malloc(size));
+
+  size_t cur_len = 0;
+  size_t nread;
+  while ((nread = fread(*out + cur_len, 1, size - cur_len, fp)) != 0) {
+    cur_len += nread;
+  }
+  fclose(fp);
+  return cur_len;
+}
+
+void readImage(std::string filename, float *buffer) {
   Mat img = imread(filename);
   if (img.empty()) {
     std::cerr << "Can't read image from the file: " << filename << std::endl;
@@ -34,29 +57,38 @@ void readImage(std::string filename, float* buffer) {
   }
 
   Mat img2;
-  resize(img, img2, Size(300, 300));
+  resize(img, img2, Size(width, height));
 
   img2.convertTo(sample_float, CV_32FC3);
 
   int index = 0;
   for (int row = 0; row < sample_float.rows; ++row) {
-    float* ptr = reinterpret_cast<float*>(sample_float.ptr(row));
+    float *ptr = reinterpret_cast<float *>(sample_float.ptr(row));
     for (int col = 0; col < sample_float.cols; col++) {
-      float* uc_pixel = ptr;
-      float r = uc_pixel[0];
-      float g = uc_pixel[1];
-      float b = uc_pixel[2];
+      float *uc_pixel = ptr;
+      // float r = uc_pixel[0];
+      // float g = uc_pixel[1];
+      // float b = uc_pixel[2];
 
-      buffer[index] = b - 104;
-      buffer[index + 1] = g - 117;
-      buffer[index + 2] = r - 124;
+      // buffer[index] = b - 104;
+      // buffer[index + 1] = g - 117;
+      // buffer[index + 2] = r - 124;
+
+      float b = uc_pixel[0];
+      float g = uc_pixel[1];
+      float r = uc_pixel[2];
+
+      buffer[index] = (b - 128) / 128;
+      buffer[index + 1] = (g - 128) / 128;
+      buffer[index + 2] = (r - 128) / 128;
+
       ptr += 3;
       index += 3;
     }
   }
 }
 
-void drawRect(const Mat& mat, float* data, int len) {
+void drawRect(const Mat &mat, float *data, int len) {
   for (int i = 0; i < len; i++) {
     float index = data[0];
     float score = data[1];
@@ -93,15 +125,34 @@ PaddleMobileConfig GetConfig() {
 int main() {
   zynqmp::open_device();
   PaddleMobileConfig config = GetConfig();
+
+  const auto &memory_pack = std::make_shared<PaddleModelMemoryPack>();
+
+  uint8_t *model = nullptr;
+  size_t model_size = ReadBuffer(config.prog_file.c_str(), &model);
+  uint8_t *params = nullptr;
+  size_t param_size = ReadBuffer(config.param_file.c_str(), &params);
+
+  memory_pack->model_size = model_size;
+  memory_pack->model_buf = model;
+  memory_pack->combined_params_size = param_size;
+  memory_pack->combined_params_buf = params;
+  memory_pack->from_memory = true;
+  config.precision = PaddleMobileConfig::FP32;
+  config.device = PaddleMobileConfig::kFPGA;
+  config.memory_pack = *memory_pack;
+  config.thread_num = 4;
+  config.optimize = true;
+
   auto predictor =
       CreatePaddlePredictor<PaddleMobileConfig,
                             PaddleEngineKind::kPaddleMobile>(config);
 
-  float data[1 * 3 * 300 * 300] = {1.0f};
-  readImage("1.jpg", data);
+  float data[1 * 3 * width * height] = {1.0f};
+  readImage("4.jpg", data);
 
   PaddleTensor tensor;
-  tensor.shape = std::vector<int>({1, 3, 300, 300});
+  tensor.shape = std::vector<int>({1, 3, width, height});
   tensor.data = PaddleBuf(data, sizeof(data));
   tensor.dtype = PaddleDType::FLOAT32;
   std::vector<PaddleTensor> paddle_tensor_feeds(1, tensor);
@@ -119,12 +170,12 @@ int main() {
   std::cout << " after predict " << std::endl;
   //  assert();
 
-  float* data_o = static_cast<float*>(outputs[0].data.data());
+  float *data_o = static_cast<float *>(outputs[0].data.data());
   for (size_t j = 0; j < outputs[0].data.length() / sizeof(float); ++j) {
     // std::cout << "output[" << j << "]: " << data_o[j] << std::endl;
   }
 
-  drawRect(sample_float, data_o, 20);
+  // drawRect(sample_float, data_o, 20);
 
   return 0;
 }

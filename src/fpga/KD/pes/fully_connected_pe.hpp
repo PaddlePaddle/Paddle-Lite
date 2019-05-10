@@ -33,6 +33,7 @@ class FullyConnectedPE : public PE {
   }
 
   void apply() {
+    ConvParam& convParam_ = convPE_.param();
     Tensor* input = param_.input;
     convParam_.input = param_.input;
     convParam_.output = param_.output;
@@ -75,25 +76,18 @@ class FullyConnectedPE : public PE {
       bias_data[i] = param_.bias->data<float>()[i];
     }
 
-    fill_split_arg(convParam_);
+    convPE_.init();
+    convPE_.apply();
   }
 
-  bool dispatch() {
-    param_.input->syncToDevice();
-    int ret = 0;
-    std::vector<BasicConvParam*>& params = convParam_.splitParams();
-    for (auto conv_param : params) {
-      // std::cout << "conv basic \n";
-      ret |= compute_fpga_conv_basic(conv_param->args);
-    }
-    return ret == 0;
-  }
+  bool dispatch() { return convPE_.dispatch(); }
 
   FullyConnectedParam& param() { return param_; }
 
  private:
   FullyConnectedParam param_;
-  ConvParam convParam_;
+  // ConvParam convParam_;
+  ConvPE convPE_;
 };
 }  // namespace zynqmp
 }  // namespace paddle_mobile

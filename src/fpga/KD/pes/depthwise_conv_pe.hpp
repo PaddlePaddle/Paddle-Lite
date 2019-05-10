@@ -73,6 +73,7 @@ class DepthwiseConvPE : public PE {
     args.sub_conv_num = 1;
     param.args = args;
 
+    inplace_.relu_enable = param_.relu.enabled;
     inplace_.power_enable = false;
     inplace_.normalize_enable = false;
   }
