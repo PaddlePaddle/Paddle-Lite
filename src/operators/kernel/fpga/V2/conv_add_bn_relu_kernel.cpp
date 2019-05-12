@@ -23,9 +23,9 @@ namespace operators {
 template <>
 bool ConvAddBNReluKernel<FPGA, float>::Init(
     FusionConvAddBNReluParam<FPGA> *param) {
-  paddle_mobile::fpga::ActivationType activation_enable =
-      paddle_mobile::fpga::LEAKYRELU;
-  int16_t leaky_relu_negative_slope = 0;
+  bool relu_enabled = true;
+  // paddle_mobile::fpga::ActivationType activation_enable =
+  //    paddle_mobile::fpga::LEAKYRELU;
   auto input = const_cast<LoDTensor *>(param->Input());
   auto bias = param->Bias();
   auto bias_ptr = bias->data<float>();
@@ -34,7 +34,7 @@ bool ConvAddBNReluKernel<FPGA, float>::Init(
   const int groups = param->Groups();
   float Si = input->scale[0];
   float So = out->scale[0];
-  float Sf = fpga::filter_find_max(filter) / 127;
+  float Sf = fpga::filter_find_max(filter);
   vector<int> paddings = param->Paddings();
   vector<int> strides = param->Strides();
   auto bn_mean_ptr = param->InputMean()->data<float>();
@@ -70,22 +70,21 @@ bool ConvAddBNReluKernel<FPGA, float>::Init(
   if (groups == channel) {
     fpga::format_dwconv_data(filter, out, new_scale_ptr, &new_bias_ptr);
     fpga::DWconvArgs dwconv_arg = {0};
-    fpga::fill_dwconv_arg(&dwconv_arg, input, out, filter, activation_enable,
-                          leaky_relu_negative_slope, strides[0], strides[1],
-                          paddings[0], paddings[1], new_bias_ptr);
+    fpga::fill_dwconv_arg(&dwconv_arg, input, out, filter, relu_enabled,
+                          strides[0], strides[1], paddings[0], paddings[1],
+                          new_bias_ptr);
     param->SetFpgaArgs(dwconv_arg);
-    fpga::fpga_free(new_scale_ptr);
     fpga::fpga_free(bs_ptr);
   } else {
     fpga::format_conv_data(filter, out, &bs_ptr, param->Groups());
     fpga::SplitConvArgs conv_arg = {0};
-    fpga::fill_split_arg(&conv_arg, input, out, filter, activation_enable,
-                         leaky_relu_negative_slope, param->Groups(), strides[0],
-                         strides[1], paddings[0], paddings[1], bs_ptr);
+    fpga::fill_split_arg(&conv_arg, input, out, filter, relu_enabled,
+                         param->Groups(), strides[0], strides[1], paddings[0],
+                         paddings[1], bs_ptr);
     param->SetFpgaArgs(conv_arg);
-    delete new_scale;
-    delete new_bias;
   }
+  delete new_scale;
+  delete new_bias;
   return true;
 }
 

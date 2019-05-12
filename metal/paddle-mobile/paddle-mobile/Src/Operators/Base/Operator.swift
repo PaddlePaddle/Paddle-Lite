@@ -70,6 +70,9 @@ public class InitContext {
     /// 是否使用 MetalPerformanceShaders 进行运算
     var useMPS: Bool = false
     
+    /// 是否使用最高等级的加速策略
+    var useAggresiveOptimization: Bool = false
+    
     init() {
         metalLoadMode = .LoadMetalInDefaultLib
         metalLibPath = nil

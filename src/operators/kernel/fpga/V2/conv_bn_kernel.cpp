@@ -30,7 +30,7 @@ bool ConvBNKernel<FPGA, float>::Init(FusionConvBNParam<FPGA> *param) {
   auto out = param->Output();
   float Si = input->scale[0];
   float So = out->scale[0];
-  float Sf = fpga::filter_find_max(filter) / 127;
+  float Sf = fpga::filter_find_max(filter);
   auto bn_mean_ptr = param->InputMean()->data<float>();
   auto bn_var_ptr = param->InputVariance()->data<float>();
   auto bn_scale_ptr = param->InputScale()->data<float>();
@@ -56,8 +56,7 @@ bool ConvBNKernel<FPGA, float>::Init(FusionConvBNParam<FPGA> *param) {
 
   fpga::format_conv_data(filter, out, &bs_ptr, param->Groups());
   fpga::SplitConvArgs conv_arg = {0};
-  fpga::fill_split_arg(&conv_arg, input, out, filter, activation_enable,
-                       leaky_relu_negative_slope, param->Groups(),
+  fpga::fill_split_arg(&conv_arg, input, out, filter, false, param->Groups(),
                        param->Strides()[0], param->Strides()[1],
                        param->Paddings()[0], param->Paddings()[1], bs_ptr);
   param->SetFpgaArgs(conv_arg);

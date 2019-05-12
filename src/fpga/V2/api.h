@@ -48,28 +48,20 @@ void format_concat_output(framework::Tensor* out, int height, int width,
 
 void fill_split_arg(struct SplitConvArgs* arg, framework::Tensor* input,
                     framework::Tensor* out, framework::Tensor* filter,
-                    ActivationType activation_enable,
-                    int16_t leaky_relu_negative_slope, int group_num,
-                    int stride_h, int stride_w, int padding_h, int padding_w,
-                    float* bs_ptr);
+                    bool relu_enabled, int group_num, int stride_h,
+                    int stride_w, int padding_h, int padding_w, float* bs_ptr);
 void fill_deconv_arg(struct DeconvArgs* arg, framework::Tensor* input,
                      framework::Tensor* out, framework::Tensor* filter,
-                     ActivationType activation_enable,
-                     int16_t leaky_relu_negative_slope, int group_num,
-                     int stride_h, int stride_w, int padding_h, int padding_w,
-                     float* bs_ptr);
+                     bool relu_enabled, int group_num, int stride_h,
+                     int stride_w, int padding_h, int padding_w, float* bs_ptr);
 void fill_dwconv_arg(struct DWconvArgs* arg, framework::Tensor* input,
                      framework::Tensor* out, framework::Tensor* filter,
-                     ActivationType activation_enable,
-                     int16_t leaky_relu_negative_slope, int stride_h,
-                     int stride_w, int padding_h, int padding_w,
-                     float* bias_ptr);
+                     bool relu_enabled, int stride_h, int stride_w,
+                     int padding_h, int padding_w, float* bias_ptr);
 void fill_DWDeconv_arg(struct DWDeconvArgs* arg, framework::Tensor* input,
                        framework::Tensor* out, framework::Tensor* filter,
-                       ActivationType activation_enable,
-                       int16_t leaky_relu_negative_slope, int stride_h,
-                       int stride_w, int padding_h, int padding_w,
-                       float* bs_ptr);
+                       bool relu_enabled, int stride_h, int stride_w,
+                       int padding_h, int padding_w, float* bs_ptr);
 
 void format_deconv_filter(framework::Tensor* filter_tensor, float max_value,
                           int group_num, int stride);

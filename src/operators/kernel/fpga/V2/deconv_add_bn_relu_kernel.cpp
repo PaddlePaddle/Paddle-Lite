@@ -34,7 +34,7 @@ bool DeconvAddBNReluKernel<FPGA, float>::Init(
   auto out = param->Output();
   float Si = input->scale[0];
   float So = out->scale[0];
-  float Sf = fpga::filter_find_max(filter) / 127;
+  float Sf = fpga::filter_find_max(filter);
   PADDLE_MOBILE_ENFORCE(out->dims()[1] == bias->dims()[0],
                         "Output channel should be equal to bias number");
   int channel = out->dims()[1];
@@ -62,8 +62,7 @@ bool DeconvAddBNReluKernel<FPGA, float>::Init(
     fpga::format_DWDeconv_data(filter, out, &bs_ptr, param->Groups(),
                                sub_conv_n);
     fpga::DWDeconvArgs DWDeconv_arg = {0};
-    fpga::fill_DWDeconv_arg(&DWDeconv_arg, input, out, filter,
-                            activation_enable, leaky_relu_negative_slope,
+    fpga::fill_DWDeconv_arg(&DWDeconv_arg, input, out, filter, true,
                             param->Strides()[0], param->Strides()[1],
                             param->Paddings()[0], param->Paddings()[1], bs_ptr);
     param->SetFpgaArgs(DWDeconv_arg);
@@ -74,10 +73,10 @@ bool DeconvAddBNReluKernel<FPGA, float>::Init(
     }
     fpga::format_deconv_data(filter, out, &bs_ptr, param->Groups(), sub_conv_n);
     fpga::DeconvArgs deconv_arg = {0};
-    fpga::fill_deconv_arg(&deconv_arg, input, out, filter, activation_enable,
-                          leaky_relu_negative_slope, param->Groups(),
-                          param->Strides()[0], param->Strides()[1],
-                          param->Paddings()[0], param->Paddings()[1], bs_ptr);
+    fpga::fill_deconv_arg(&deconv_arg, input, out, filter, true,
+                          param->Groups(), param->Strides()[0],
+                          param->Strides()[1], param->Paddings()[0],
+                          param->Paddings()[1], bs_ptr);
     param->SetFpgaArgs(deconv_arg);
   }
   return true;
