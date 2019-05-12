@@ -71,6 +71,7 @@ extension InputTexture {
 public class Texture: Tensorial {
     public var dim: Dim
     public var tensorDim: Dim
+    public var useMPS = false
     
     /// tensor dim pad to four
     public var padToFourDim: Dim
@@ -135,14 +136,22 @@ public class Texture: Tensorial {
         }
         
         if computePrecision == .Float16 {
-            if tensorDim[1] == 1 {
-                tmpTextureDes.pixelFormat = .r16Float
+            if useMPS {
+                if tensorDim[1] == 1 {
+                    tmpTextureDes.pixelFormat = .r16Float
+                } else {
+                    tmpTextureDes.pixelFormat = .rgba16Float
+                }
             } else {
                 tmpTextureDes.pixelFormat = .rgba16Float
             }
         } else if computePrecision == .Float32 {
-            if tensorDim[1] == 1 {
-                tmpTextureDes.pixelFormat = .r32Float
+            if useMPS {
+                if tensorDim[1] == 1 {
+                    tmpTextureDes.pixelFormat = .r32Float
+                } else {
+                    tmpTextureDes.pixelFormat = .rgba32Float
+                }
             } else {
                 tmpTextureDes.pixelFormat = .rgba32Float
             }

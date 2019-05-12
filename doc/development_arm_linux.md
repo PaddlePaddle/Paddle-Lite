@@ -1,6 +1,6 @@
 # ARM Linux开发文档
 
-在ARM Linux如Raspberrypi3，或Firefly-RK3399上编译paddle-mobile。
+在ARM Linux如Raspberrypi3，或Firefly-RK3399上编译paddle-mobile（**注：暂不支持ARM Linux GPU**）。
 
 ## 预先安装
 
