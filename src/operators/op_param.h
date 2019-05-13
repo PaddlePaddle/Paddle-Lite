@@ -1101,6 +1101,8 @@ class SoftmaxParam : public OpParam {
 
 #ifdef PADDLE_MOBILE_FPGA
 
+#ifdef PADDLE_MOBILE_FPGA_V1
+
  private:
   std::shared_ptr<GType> float_input_x_;
   fpga::BypassArgs fpga_bypass_args;
@@ -1112,6 +1114,18 @@ class SoftmaxParam : public OpParam {
   void SetFloatInput(LoDTensor *input) { float_input_x_.reset(input); }
   const fpga::BypassArgs &FpgaArgs() const { return fpga_bypass_args; }
   void SetFpgaArgs(const fpga::BypassArgs &args) { fpga_bypass_args = args; }
+#else
+
+ private:
+  fpga::BypassArgs fpga_bypass_args;
+
+ public:
+  const fpga::BypassArgs &FpgaArgs() const { return fpga_bypass_args; }
+  void SetFpgaArgs(const fpga::BypassArgs &args) { fpga_bypass_args = args; }
+
+ public:
+  std::shared_ptr<Tensor> float_input_x_, float_out;
+#endif
 #endif
 };
 #endif
