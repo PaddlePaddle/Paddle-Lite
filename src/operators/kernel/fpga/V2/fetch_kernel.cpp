@@ -23,9 +23,7 @@ bool FetchKernel<FPGA, float>::Init(FetchParam<FPGA> *param) {
   auto output = &(param->Out()->at(col));
   output->init(type_id<float>().hash_code());
   output->mutable_data<float>(input->dims());
-  if (input->type() == type_id<float>()) {
-    return true;
-  }
+
   auto aligned_output = param->aligned_out;
   int outC = 1;
   int outW = 1;
@@ -61,22 +59,7 @@ void FetchKernel<FPGA, float>::Compute(const FetchParam<FPGA> &param) {
   auto input = const_cast<LoDTensor *>(param.InputX());
   int col = param.Col();
   auto output = &param.Out()->at(col);
-  if (input->type() == type_id<float>()) {
-    output->ShareDataWith(*input);
-    return;
-  }
-  auto input_address = input->data<int8_t>();
-  float Si = input->scale[0];
   auto outdata_ptr = const_cast<float *>(output->data<float>());
-  const int num_th = 32;
-  fpga::fpga_invalidate(input_address, (input->fpga_data_num) * sizeof(int8_t));
-  if (input->fpga_data_num < num_th) {
-    for (int idx = 0; idx < product(input->dims()); ++idx) {
-      outdata_ptr[idx] = input_address[idx] * Si;
-    }
-    fpga::fpga_flush(outdata_ptr, product(input->dims()) * sizeof(float));
-    return;
-  }
   int outC = 1;
   int outH = 1;
   int outW = 1;
@@ -89,9 +72,34 @@ void FetchKernel<FPGA, float>::Compute(const FetchParam<FPGA> &param) {
   }
   int unalignedCW = outC * outW;
   int alignedCW = fpga::align_to_x(unalignedCW, IMAGE_ALIGNMENT);
+  if (input->type() == type_id<float>()) {
+    if (unalignedCW == alignedCW) {
+      output->ShareDataWith(*input);
+    } else {
+      auto input_address = input->data<float>();
+      dealign(input_address, outdata_ptr, outC, outH, outW);
+      fpga::fpga_flush(outdata_ptr, outC * outH * outW * sizeof(float));
+    }
+
+    return;
+  }
+  auto input_address = input->data<int8_t>();
+  float Si = input->scale[0];
+
+  const int num_th = 32;
+  fpga::fpga_invalidate(input_address, (input->fpga_data_num) * sizeof(int8_t));
+  if (input->fpga_data_num < num_th) {
+    for (int idx = 0; idx < product(input->dims()); ++idx) {
+      outdata_ptr[idx] = input_address[idx] * Si;
+    }
+    fpga::fpga_flush(outdata_ptr, product(input->dims()) * sizeof(float));
+    return;
+  }
+
   auto aligned_out = param.aligned_out.get();
   if (unalignedCW != alignedCW) {
     auto aligned_ptr = aligned_out->data<float>();
+    fpga::fpga_invalidate(aligned_ptr, (input->fpga_data_num) * sizeof(float));
     for (int idx = 0; idx < input->fpga_data_num; ++idx) {
       aligned_ptr[idx] = input_address[idx] * Si;
     }
