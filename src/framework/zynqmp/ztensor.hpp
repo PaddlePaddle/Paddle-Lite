@@ -241,6 +241,8 @@ class Tensor : public TensorBase {
       tensor_->mutableData<float>(convert_type(type), input_shape);
     }
 
+    virtual ~PlaceholderImpl() { delete tensor_; }
+
     virtual size_t size() const { return tensor_->memorySize(); }
 
     virtual void *ptr() const {
