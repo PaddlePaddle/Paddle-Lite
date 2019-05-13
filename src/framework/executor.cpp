@@ -715,14 +715,14 @@ void Executor<GPU_CL, float>::InitNoPersistableMemory(
     for (const auto &var_desc : block->Vars()) {
       auto var = program_.scope->Var(var_desc->Name());
 
-      auto cl_image = var->template GetMutable<CLImage>();
-
       if (var_desc->Persistable()) {
         if (var_desc->Name() == "feed" || var_desc->Name() == "fetch") {
+          var->template GetMutable<framework::LoDTensorArray>();
           continue;
         }
       } else {
         if (var_desc->Type() == VARTYPE_TYPE_LOD_TENSOR) {
+          auto cl_image = var->template GetMutable<CLImage>();
           cl_context context = program_.scope->GetCLScpoe()->Context();
           cl_command_queue command_queue =
               program_.scope->GetCLScpoe()->CommandQueue();
