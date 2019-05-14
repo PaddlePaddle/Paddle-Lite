@@ -36,6 +36,7 @@ class ConcatPE : public PE {
 
   void concat2D() {
     int offset = 0;
+    float16* out_data = param_.output->data<float16>();
     for (unsigned int n = 0; n < param_.inputs.size(); n++) {
       Tensor* input = param_.inputs[n];
       Shape& input_shape = input->shape();
@@ -44,6 +45,7 @@ class ConcatPE : public PE {
       memcpy(out_data + offset, src, input_shape.numel() * sizeof(float16));
       offset += input_shape.numel();
     }
+    Tensor* output = param_.output;
     output->flush();
   }
 
