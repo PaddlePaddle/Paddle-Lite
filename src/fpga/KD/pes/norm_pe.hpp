@@ -93,6 +93,7 @@ class NormPE : public PE {
         sum += value * value;
       }
       float norm = sqrtf(sum);
+#pragma omp parallel for
       for (int c = 0; c < channel; c++) {
         out_ptr[i * channel + c] = input_ptr[i * channel + c] / norm;
       }

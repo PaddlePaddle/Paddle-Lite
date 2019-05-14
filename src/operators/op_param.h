@@ -40,6 +40,7 @@ limitations under the License. */
 #ifdef PADDLE_MOBILE_CL
 #include "framework/cl/cl_image.h"
 #endif
+#include <memory>
 
 namespace paddle_mobile {
 namespace operators {
@@ -2800,6 +2801,11 @@ class FlattenParam : public OpParam {
   GType *out_;
   int axis;
 };
+#endif
+
+#ifdef FLATTEN2_OP
+template <typename DeviceType>
+using Flatten2Param = FlattenParam<DeviceType>;
 #endif
 
 #ifdef SPLIT_OP

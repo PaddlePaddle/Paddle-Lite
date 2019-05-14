@@ -34,6 +34,19 @@ class ConcatPE : public PE {
 
   void apply() {}
 
+  void concat2D() {
+    int offset = 0;
+    for (unsigned int n = 0; n < param_.inputs.size(); n++) {
+      Tensor* input = param_.inputs[n];
+      Shape& input_shape = input->shape();
+
+      float16* src = input->data<float16>();
+      memcpy(out_data + offset, src, input_shape.numel() * sizeof(float16));
+      offset += input_shape.numel();
+    }
+    output->flush();
+  }
+
   void concat3D() {
     // DLOG << "concat3D";
     auto input = param_.inputs;
@@ -65,6 +78,7 @@ class ConcatPE : public PE {
         col_idx += col_len;
       }
     }
+    output->flush();
   }
 
   bool dispatch() {
@@ -87,6 +101,10 @@ class ConcatPE : public PE {
     }
 
     float16* out_data = param_.output->data<float16>();
+    if (output_shape.dimSize() == 2) {
+      concat2D();
+      return true;
+    }
 
     int channel_sum = 0;
     int out_channel = output_shape.channel();

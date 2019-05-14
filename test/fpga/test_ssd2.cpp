@@ -92,20 +92,22 @@ void drawRect(const Mat &mat, float *data, int len) {
   for (int i = 0; i < len; i++) {
     float index = data[0];
     float score = data[1];
-    std::cout << index << " score::" << score << std::endl;
 
     if (score > 0.5) {
-      float x0 = data[2] * 300;
-      float y0 = data[3] * 300;
-      float x1 = data[4] * 300;
-      float y1 = data[5] * 300;
+      int x1 = static_cast<int>(data[2] * mat.cols);
+      int y1 = static_cast<int>(data[3] * mat.rows);
+      int x2 = static_cast<int>(data[4] * mat.cols);
+      int y2 = static_cast<int>(data[5] * mat.rows);
+      int width = x2 - x1;
+      int height = y2 - y1;
 
-      cv::Point pt1(x0, y0);
-      cv::Point pt2(x1, y1);
+      cv::Point pt1(x1, y1);
+      cv::Point pt2(x2, y2);
       cv::rectangle(mat, pt1, pt2, cv::Scalar(0, 0, 255));
+      std::cout << "label:" << index << ",score:" << score << " loc:";
+      std::cout << x1 << "," << y1 << "," << width << "," << height
+                << std::endl;
     }
-    std::cout << "score::" << score;
-    // std::cout
     data += 6;
   }
   imwrite("result.jpg", mat);
@@ -149,7 +151,7 @@ int main() {
                             PaddleEngineKind::kPaddleMobile>(config);
 
   float data[1 * 3 * width * height] = {1.0f};
-  readImage("4.jpg", data);
+  readImage("1.jpg", data);
 
   PaddleTensor tensor;
   tensor.shape = std::vector<int>({1, 3, width, height});
@@ -175,7 +177,7 @@ int main() {
     // std::cout << "output[" << j << "]: " << data_o[j] << std::endl;
   }
 
-  // drawRect(sample_float, data_o, 20);
+  drawRect(sample_float, data_o, 20);
 
   return 0;
 }

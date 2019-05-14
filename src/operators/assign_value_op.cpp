@@ -34,4 +34,8 @@ namespace ops = paddle_mobile::operators;
 REGISTER_OPERATOR_CPU(assign_value, ops::AssignValueOp);
 #endif
 
+#if defined(PADDLE_MOBILE_FPGA) || defined(PADDLE_MOBILE_FPGA_KD)
+REGISTER_OPERATOR_FPGA(assign_value, ops::AssignValueOp);
+#endif
+
 #endif  // ASSIGN_VALUE_OP

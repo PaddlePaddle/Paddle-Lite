@@ -81,8 +81,8 @@ void readStream(std::string filename, float* buf) {
   in.close();
 }
 
-static const char* g_model = "../models/easydl_mobilenet_v2";
-static const char* image = "../models/easydl_mobilenet_v2/4.jpg";
+static const char* g_model = "../models/easydl_mobilenet_v1";
+static const char* image = "../models/easydl_mobilenet_v1/4.jpg";
 
 int main() {
   paddle_mobile::zynqmp::open_device();

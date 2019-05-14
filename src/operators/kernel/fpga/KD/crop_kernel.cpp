@@ -44,11 +44,7 @@ void CropKernel<FPGA, float>::Compute(const CropParam<FPGA>& param) {
   zynqmp::CropPE& pe = context.pe<zynqmp::CropPE>();
   pe.dispatch();
 
-  std::string path =
-      "crop" + std::to_string(param.Out()->zynqmpTensor()->id()) + ".txt";
-  std::cout << "Out scale:" << param.Out()->zynqmpTensor()->scale()[0]
-            << std::endl;
-  // param.Out()->zynqmpTensor()->saveToFile(path);
+  // param.Out()->zynqmpTensor()->saveToFile("crop_", true);
 }
 
 }  // namespace operators

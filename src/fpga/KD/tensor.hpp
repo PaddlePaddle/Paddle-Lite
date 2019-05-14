@@ -15,12 +15,13 @@ limitations under the License. */
 #pragma once
 
 #include <stdio.h>
+#include <algorithm>
+#include <cmath>
 #include <cstring>
 #include <fstream>
 #include <iostream>
 #include <string>
 #include <vector>
-#include <cmath>
 
 #include "common/log.h"
 #include "float16.hpp"
@@ -318,7 +319,8 @@ class Tensor {
   }
 
   void printScale() {
-    std::cout << "scale:" << scale_[0] << " inv:" << scale_[1] << std::endl;
+    DLOG << "scale:" << scale_[0] << " inv:" << scale_[1];
+    // std::cout << "scale:" << scale_[0] << " inv:" << scale_[1] << std::endl;
   }
 
   std::string dimsFileName() {

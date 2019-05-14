@@ -42,7 +42,6 @@ bool SplitKernel<FPGA, float>::Init(SplitParam<FPGA>* param) {
 
 template <>
 void SplitKernel<FPGA, float>::Compute(const SplitParam<FPGA>& param) {
-  std::cout << "SplitKernel\n";
   zynqmp::Context& context = const_cast<zynqmp::Context&>(param.context_);
   zynqmp::SplitPE& pe = context.pe<zynqmp::SplitPE>();
   pe.dispatch();

@@ -49,6 +49,8 @@ bool ConvBNReluKernel<FPGA, float>::Init(FusionConvBNReluParam<FPGA>* param) {
   combine_bn_params(bn_param, &conv_param);
   pe.init();
   pe.apply();
+  delete bn_param;
+
   return true;
 }
 template <>

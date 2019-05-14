@@ -44,18 +44,29 @@ void Reshape2Kernel<FPGA, float>::Compute(const Reshape2Param<FPGA> &param) {
   }
 
   bool inplace = param.Inplace();
-  // out->Resize(out_dims);
-  if (!inplace) {
-    out->mutable_data<half>();
-    framework::TensorCopy(*input_x, out);  // TODO(chonwhite) is it right?
-    out->Resize(out_dims);
-  } else {
-    out->ShareDataWith(*input_x);
-    out->Resize(out_dims);
-  }
-  out->zynqmpTensor()->scale()[0] = input_x->zynqmpTensor()->scale()[0];
-  out->zynqmpTensor()->scale()[1] = input_x->zynqmpTensor()->scale()[1];
-  std::cout << "Out scale:" << out->zynqmpTensor()->scale()[0] << std::endl;
+
+  input_x->zynqmpTensor()->syncToCPU();
+  input_x->zynqmpTensor()->unalignImage(out->zynqmpTensor(), true);
+
+  // input_x->zynqmpTensor()->saveToFile("reshape_in.txt");
+
+  // out->zynqmpTensor()->copyFrom(input_x->zynqmpTensor());
+  // out->zynqmpTensor()->saveToFile("reshape_out.txt");
+  out->Resize(out_dims);
+  // if (!inplace) {
+  //   out->mutable_data<half>();
+  //   // framework::TensorCopy(*input_x, out);  // TODO(chonwhite) is it right?
+  //   out->zynqmpTensor()->copyFrom(input_x->zynqmpTensor());
+  //   out->Resize(out_dims);
+  // } else {
+  //   out->ShareDataWith(*input_x);
+  //   out->Resize(out_dims);
+  // }
+  out->zynqmpTensor()->setAligned(input_x->zynqmpTensor()->aligned());
+  out->zynqmpTensor()->copyScaleFrom(input_x->zynqmpTensor());
+
+  out->zynqmpTensor()->printScale();
+  // out->zynqmpTensor()->saveToFile("reshape2_", true);
 }
 template class Reshape2Kernel<FPGA, float>;
 

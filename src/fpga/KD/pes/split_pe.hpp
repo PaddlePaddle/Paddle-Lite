@@ -85,7 +85,6 @@ class SplitPE : public PE {
   }
 
   bool dispatch() {
-    std::cout << "Split dispatch \n";
     Tensor* input = param_.input;
     input->syncToCPU();
     if (input->shape().dimSize() <= 3) {

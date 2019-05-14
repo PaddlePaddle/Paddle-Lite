@@ -36,7 +36,8 @@ void FlattenOp<DeviceType, T>::InferShape() const {
       "The axis should be less than or equal to input tensor's rank.");
 
   const auto &out_dims = GetOutputShape(axis, in_dims);
-  this->param_.Out()->Resize(in_dims);
+  // this->param_.Out()->Resize(in_dims);
+  this->param_.Out()->Resize(framework::make_ddim(out_dims));
 }
 
 }  // namespace operators
@@ -51,6 +52,7 @@ REGISTER_OPERATOR_CPU(flatten2, ops::Flatten2Op);
 
 #if defined(PADDLE_MOBILE_FPGA) || defined(PADDLE_MOBILE_FPGA_KD)
 REGISTER_OPERATOR_FPGA(flatten, ops::FlattenOp);
+REGISTER_OPERATOR_FPGA(flatten2, ops::Flatten2Op);
 #endif
 
 #endif  // FLATTEN_OP
