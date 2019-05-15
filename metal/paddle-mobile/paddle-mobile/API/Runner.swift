@@ -40,6 +40,8 @@ import Foundation
     public let net: Net
     let device: MTLDevice?
     let numel: Int
+    private static let loadLock = NSLock()
+    private static let clearLock = NSLock()
     
     /// 初始化函数
     ///
@@ -60,10 +62,20 @@ import Foundation
         numel = net.inputDim.numel()
     }
     
-    /// load 模型, 返回 true 可进行预测
+    /// load 模型, 返回 true 可进行预测，公共方法，保证线程安全
     ///
     /// - Returns: load 成功或失败
     @objc public func load() -> Bool {
+        Runner.loadLock.lock()
+        let success = unSafeLoad()
+        Runner.loadLock.unlock()
+        return success
+    }
+    
+    /// load 模型, 返回 true 可进行预测，不保证线程安全
+    ///
+    /// - Returns: load 成功或失败
+    private func unSafeLoad() -> Bool {
         guard let inDevice = device, let inQueue = queue else {
             print(" paddle mobile gpu load error, need MTLCommandQueue")
             return false
@@ -139,9 +151,11 @@ import Foundation
     
     /// 清理内存, 调用此函数后, 不能再使用, 需重新 load
     @objc public func clear() {
+        Runner.clearLock.lock()
         executor?.clear()
         executor = nil
         program = nil
+        Runner.clearLock.unlock()
     }
     
     /// 获取 texture, 对 texture 进行预处理, 预测时使用

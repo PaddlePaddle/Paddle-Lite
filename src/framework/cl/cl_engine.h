@@ -149,7 +149,7 @@ class CLEngine {
 
   cl_int status_;
 
-  std::string cl_path_ = "/data/local/tmp/bin";
+  std::string cl_path_;
   std::unique_ptr<_cl_program, CLProgramDeleter> program_;
 
   std::unique_ptr<_cl_context, CLContextDeleter> context_ = nullptr;
