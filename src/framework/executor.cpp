@@ -467,21 +467,32 @@ PMStatus Executor<Device, T>::Predict() {
     ++op_index;
 #endif
   }
+
 #ifdef PADDLE_MOBILE_PROFILE
+  PrintProfile(profile);
+#endif
+  return PMSuccess;
+}
+
+#ifdef PADDLE_MOBILE_PROFILE
+template <typename Device, typename T>
+void Executor<Device, T>::PrintProfile(
+    const vector<Executor<Device, T>::ProfInfo> &profile) const {
   std::unordered_map<std::string, uint64_t> _tp;
   for (int i = 0; i < profile.size(); i++) {
     const auto &pInfo = profile[i];
     uint64_t timeCost = pInfo.runEnd - pInfo.runBegin;
-    if (ops_of_block0_[i]->Type() == "conv2d" ||
-        ops_of_block0_[i]->Type() == "depthwise_conv2d") {
-      auto inputs = ops_of_block0_[i]->Inputs();
-      auto *filter =
-          GetVarValue<LoDTensor>("Filter", inputs, *(program_.scope));
+    if (this->ops_of_block0_[i]->Type() == "conv2d" ||
+        this->ops_of_block0_[i]->Type() == "depthwise_conv2d") {
+      auto inputs = this->ops_of_block0_[i]->Inputs();
+
+      auto *filter = GetVarValue<ProfileTensorType>("Filter", inputs,
+                                                    *(this->program_.scope));
       int kernel_size = filter->dims()[2];
-      _tp[ops_of_block0_[i]->Type() + "_" + std::to_string(kernel_size)] +=
-          timeCost;
+      _tp[this->ops_of_block0_[i]->Type() + "_" +
+          std::to_string(kernel_size)] += timeCost;
     } else {
-      _tp[ops_of_block0_[i]->Type()] += timeCost;
+      _tp[this->ops_of_block0_[i]->Type()] += timeCost;
     }
   }
   printf("====================[ profile ]======================\n");
@@ -502,9 +513,8 @@ PMStatus Executor<Device, T>::Predict() {
            static_cast<float>(p.second) / _ptotal * 100.0);
   }
   printf("====================[---------]======================\n");
-#endif
-  return PMSuccess;
 }
+#endif
 
 template <typename Device, typename T>
 void Executor<Device, T>::FeedTensorData(const vector<framework::Tensor> &v) {

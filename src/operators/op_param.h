@@ -23,6 +23,7 @@ limitations under the License. */
 #include "framework/lod_tensor.h"
 #include "framework/scope.h"
 #include "framework/tensor.h"
+#include "framework/type_trait.h"
 #include "framework/variable.h"
 
 #ifdef PADDLE_MOBILE_FPGA_V1
@@ -53,25 +54,7 @@ using framework::Variable;
 using std::string;
 using std::vector;
 
-template <typename Dtype>
-struct DtypeTensorTrait {
-  // This is the type we obtained in variable.
-  typedef framework::LoDTensor gtype;
-  // This type will be the parent class type
-  // or the same type.
-  typedef framework::Tensor rtype;
-};
-
-#ifdef PADDLE_MOBILE_CL
-template <>
-struct DtypeTensorTrait<GPU_CL> {
-  // This is the type we obtained in variable.
-  typedef framework::CLImage gtype;
-  // This type will be the parent class type
-  // or the same type.
-  typedef framework::CLImage rtype;
-};
-#endif
+using framework::DtypeTensorTrait;
 
 class OpParam {
  public:
