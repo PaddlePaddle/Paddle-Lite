@@ -1000,14 +1000,34 @@ int ComputeDWConv(const struct DWconvArgs &args) {
   uint64_t image_padleft_skipwindow =
       (image_skip_window << 32) | image_pad_left;
 
+  uint64_t reg_ActivationArgs = 0;
+  // active function:{none,leakeyrelu,sigmoid,tanh}
+  ActivationArgs active_args;
+  // active_args.activation_type = LEAKYRELU;
+
+  active_args.activation_type = args.output.activation.activation_type;
+
+  active_args.leaky_relu_negative_slope =
+      args.output.activation.leaky_relu_negative_slope;
+
+  reg_ActivationArgs = (uint64_t(active_args.activation_type) << 32) |
+                       active_args.leaky_relu_negative_slope;
+
+  DLOG << "   activation_type:" << active_args.activation_type
+       << "   leaky_relu_negative_slope:"
+       << active_args.leaky_relu_negative_slope;
+  DLOG << "   reg_ActivationArgs:" << reg_ActivationArgs;
+
   pthread_mutex_lock(&g_fpgainfo.pe_data->mutex);
   if (ERROR == g_fpgainfo.pe_data->pes[PE_IDX_POOLING]->status) {
     ret = -EIO;
-    DLOG << "Conv Status Error!";
+    DLOG << "DWConv Status Error!";
     pthread_mutex_unlock(&g_fpgainfo.pe_data->mutex);
     return ret;
   }
 
+  reg_writeq(reg_ActivationArgs,
+             REG_ACTIVATION_MODE_AND_LEAKY_RELU_FACTOR);  // active functoion
   /*restart scale*/
   reg_writeq(output_scale, REG_SCALE_PARAMETER);
 
