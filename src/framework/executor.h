@@ -25,6 +25,7 @@ limitations under the License. */
 #include "framework/operator.h"
 #include "framework/program/program.h"
 #include "framework/tensor.h"
+#include "framework/type_trait.h"
 
 namespace paddle_mobile {
 namespace framework {
@@ -98,11 +99,15 @@ class Executor {
   DDim input_dim_last_;
 
 #ifdef PADDLE_MOBILE_PROFILE
+  typedef typename DtypeTensorTrait<Device>::gtype ProfileTensorType;
+
   struct ProfInfo {
     int tid = 0;
     uint64_t runBegin = 0UL;
     uint64_t runEnd = 0UL;
   };
+
+  void PrintProfile(const vector<Executor<Device, T>::ProfInfo> &profile) const;
 #endif
 };
 
