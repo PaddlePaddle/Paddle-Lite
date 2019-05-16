@@ -65,6 +65,71 @@ class PoolingPE : public PE {
 
     use_cpu_ = output->shape().width() == 1 && output->shape().height() == 1 &&
                (k_width > 7 || k_height > 7);
+
+    // use_cpu_ = param_.type == AVERAGE;
+  }
+
+  void compute() {
+    Tensor* input = param_.input;
+    Tensor* output = param_.output;
+    input->syncToCPU();
+
+    Tensor float_input;
+    // Tensor float_output;
+    float* image_addr = float_input.mutableData<float>(FP32, input->shape());
+    float_input.copyFrom(input);
+    float16* data_out = output->data<float16>();
+
+    int image_height = input->shape().height();
+    int image_width = input->shape().width();
+    int image_channels = input->shape().channel();
+    int image_pad_h = param_.paddings[0];
+    int image_pad_w = param_.paddings[1];
+    int kernel_height = param_.kernelSize[1];
+    int kernel_width = param_.kernelSize[0];
+    int kernel_step_h = param_.strides[0];
+    int kernel_step_w = param_.strides[1];
+
+    int pooled_height_ = output->shape().height();
+    int pooled_width_ = output->shape().width();
+
+    int kernel = kernel_height * kernel_width;
+
+    float max = 0;
+
+    for (int ph = 0; ph < pooled_height_; ++ph) {
+      for (int pw = 0; pw < pooled_width_; ++pw) {
+        int hstart = ph * kernel_step_h - image_pad_h;
+        int wstart = pw * kernel_step_w - image_pad_w;
+        int hend = std::min(hstart + kernel_height, image_height);
+        int wend = std::min(wstart + kernel_width, image_width);
+        hstart = std::max(hstart, 0);
+        wstart = std::max(wstart, 0);
+
+        kernel = (hend - hstart) * (wend - wstart);
+        for (int c = 0; c < image_channels; ++c) {
+          const int pool_index = (ph * pooled_width_ + pw) * image_channels + c;
+          float sum = 0;
+          const int index =
+              (hstart * image_width + wstart) * image_channels + c;
+          for (int h = hstart; h < hend; ++h) {
+            for (int w = wstart; w < wend; ++w) {
+              const int index = (h * image_width + w) * image_channels + c;
+              float value = image_addr[index];
+              sum += value;
+              if (value > max) {
+                max = image_addr[index];
+              }
+            }
+          }
+          float value = sum / kernel;
+          data_out[pool_index] = float_to_half(value);
+        }
+      }
+    }
+    output->scale()[0] = max / 127.0f;
+    output->scale()[1] = 127.0f / max;
+    output->flush();
   }
 
   void cpu_compute() {
@@ -101,7 +166,8 @@ class PoolingPE : public PE {
 
   bool dispatch() {
     if (use_cpu_) {
-      cpu_compute();
+      // cpu_compute();
+      compute();
       return true;
     }
     param_.input->syncToDevice();
