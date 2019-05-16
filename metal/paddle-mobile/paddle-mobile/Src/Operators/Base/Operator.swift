@@ -176,11 +176,15 @@ let gBilinearInterpType         = "bilinear_interp"
 let gSplit                      = "split"
 let gShape                      = "shape"
 let gFlatten                    = "flatten"
-let gConvAddReluType           = "conv_add_relu"
+let gConvAddReluType            = "conv_add_relu"
 let gConvAddPreluType           = "conv_add_prelu"
 let gConvAddAddPreluType        = "conv_add_add_prelu"
 let gElementwiseAddPreluType    = "elementwise_add_prelu"
 let gFusionConvAddType          = "fusion_conv_add"
+let gReshape2Type               = "reshape2"
+let gTranspose2Type             = "transpose2"
+let gScaleType                  = "scale"
+let gRelu6Type                  = "relu6"
 
 
 let opInfos = [gConvType                    : (inputs: ["Input"], outputs: ["Output"]),
@@ -211,5 +215,9 @@ let opInfos = [gConvType                    : (inputs: ["Input"], outputs: ["Out
                gConvAddPreluType            : (inputs: ["Input"], outputs: ["Out"]),
                gConvAddAddPreluType         : (inputs: ["Input"], outputs: ["Out"]),
                gElementwiseAddPreluType     : (inputs: ["X"], outputs: ["Out"]),
-               gFusionConvAddType           : (inputs: ["Input"], outputs: ["Out"])
+               gFusionConvAddType           : (inputs: ["Input"], outputs: ["Out"]),
+               gReshape2Type                : (inputs: ["X"], outputs: ["Out"]),
+               gTranspose2Type              : (inputs: ["X"], outputs: ["Out"]),
+               gScaleType                   : (inputs: ["X"], outputs: ["Out"]),
+               gRelu6Type                   : (inputs: ["X"], outputs: ["Out"]),
 ]
