@@ -102,12 +102,12 @@ class ConcatPE : public PE {
       return true;
     }
 
-    float16* out_data = param_.output->data<float16>();
     if (output_shape.dimSize() == 2) {
       concat2D();
       return true;
     }
 
+    float16* out_data = param_.output->data<float16>();
     int channel_sum = 0;
     int out_channel = output_shape.channel();
     for (unsigned int n = 0; n < param_.inputs.size(); n++) {

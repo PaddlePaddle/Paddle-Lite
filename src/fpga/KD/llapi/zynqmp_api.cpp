@@ -373,6 +373,9 @@ int compute_norm(const struct NormalizeArgs &args) {
   return do_ioctl(IOCTL_CONFIG_NORMALIZE, &args);
 }
 
+int compute_fpga_resize(const struct ResizeArgs &args) {
+  return do_ioctl(IOCTL_CONFIG_RESIZE, &args);
+}
 // uint64_t vaddr_to_paddr(void *address) {
 //     return 0;
 // }
