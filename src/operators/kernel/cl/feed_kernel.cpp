@@ -31,8 +31,6 @@ void FeedKernel<GPU_CL, float>::Compute(const FeedParam<GPU_CL> &param) {
   auto kernel = this->cl_helper_.KernelAt(0);
   auto default_work_size = this->cl_helper_.DefaultWorkSize(*(param.Out()));
   cl_int status;
-  param.Out()->InitEmptyImage(cl_helper_.CLContext(),
-                              cl_helper_.CLCommandQueue(), param.Out()->dims());
   auto output = param.Out();
   const Tensor *input = &param.InputX()->at(col);
   //  DLOG << *input;
