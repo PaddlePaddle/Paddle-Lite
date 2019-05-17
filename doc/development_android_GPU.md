@@ -73,3 +73,5 @@ export LD_LIBRARY_PATH=.
   1线程：90ms
   2线程：50ms
   4线程：29ms
+  
+ 备注: GPU 在打开log之后, 会大幅增加性能开销,测试benchmark请关闭CmakeList中Log选项
