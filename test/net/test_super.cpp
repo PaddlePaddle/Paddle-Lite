@@ -21,12 +21,14 @@ int main() {
   paddle_mobile::PaddleMobileConfigInternal config;
   config.load_when_predict = true;
 
-  paddle_mobile::PaddleMobile<paddle_mobile::CPU> paddle_mobile(config);
-  //    paddle_mobile.SetThreadNum(4);
   auto time1 = paddle_mobile::time();
 #ifdef PADDLE_MOBILE_CL
+  paddle_mobile::PaddleMobile<paddle_mobile::GPU_CL> paddle_mobile(config);
   paddle_mobile.SetCLPath("/data/local/tmp/bin");
+#else
+  paddle_mobile::PaddleMobile<paddle_mobile::CPU> paddle_mobile(config);
 #endif
+  //  paddle_mobile.SetThreadNum(4);
 
   auto isok = paddle_mobile.Load(std::string(g_super) + "/model",
                                  std::string(g_super) + "/params", true, false,
@@ -131,12 +133,12 @@ int main() {
       auto time5 = paddle_mobile::time();
       vec_result4 = paddle_mobile.Predict(input4, dims4);
       auto time6 = paddle_mobile::time();
-      std::cout << "224*224 predict cost :第" << i << ": "
+      std::cout << "300*300 predict cost :第" << i << ": "
                 << paddle_mobile::time_diff(time5, time6) << "ms" << std::endl;
     }
 
     auto time4 = paddle_mobile::time();
-    std::cout << "224*224 predict cost :"
+    std::cout << "300*300 predict cost :"
               << paddle_mobile::time_diff(time3, time4) / max << "ms"
               << std::endl;
     //    biggest = std::max_element(std::begin(vec_result4),
