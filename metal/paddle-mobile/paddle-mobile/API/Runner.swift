@@ -131,8 +131,12 @@ import Foundation
     ///   - completion: 结果回调， 当 success 为 true 时 result 不为 nil
     @objc public func predict(texture: MTLTexture, completion: @escaping ( _ success: Bool, _ result: [ResultHolder]?) -> Void) {
         do {
-            
-            try self.executor?.predict(input: texture, dim: self.net.inputDim, completionHandle: { [weak self] (success, res) in
+            guard let executor = self.executor else {
+                print("executor is empty")
+                completion(false, nil)
+                return
+            }
+            try executor.predict(input: texture, dim: self.net.inputDim, completionHandle: { [weak self] (success, res) in
                 if success, let SSelf = self, let res = res {
                     let result = SSelf.net.fetchResult(paddleMobileRes: res)
                     if result.count > 0 {

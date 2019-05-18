@@ -45,11 +45,11 @@ public class Loader<P: PrecisionProtocol>: Loaderable{
             }
             
             func pointerReader<T>(type: T.Type) -> T {
-                let ptr = UnsafeMutablePointer<T>.allocate(capacity: MemoryLayout<T>.size)
+                let ptr = UnsafeMutablePointer<T>.allocate(capacity: 1)
                 fread(ptr, 1, MemoryLayout<T>.size, file)
                 nowIndex += MemoryLayout<T>.size
                 let pointee = ptr.pointee
-                ptr.deinitialize(count: MemoryLayout<UInt32>.size)
+                ptr.deinitialize(count: 1)
                 ptr.deallocate()
                 return pointee
             }
@@ -65,10 +65,48 @@ public class Loader<P: PrecisionProtocol>: Loaderable{
             
             let _ = pointerReader(type: UInt32.self)
             
-            let tensorDescSize = pointerReader(type: Int32.self)
+            // 读取张量信息
+            let tensorDescSize = Int(pointerReader(type: Int32.self))
             
-            fseek(file, Int(tensorDescSize), SEEK_CUR)
-            nowIndex += Int(tensorDescSize)
+            if GlobalConfig.shared.debug {
+                let tensorDescCharArray = UnsafeMutablePointer<CChar>.allocate(capacity: tensorDescSize)
+                for i in 0..<tensorDescSize {
+                    let ch = pointerReader(type: CChar.self)
+                    tensorDescCharArray[i] = ch
+                }
+                let data = Data(bytes: tensorDescCharArray, count: MemoryLayout<CChar>.size * tensorDescSize)
+                var tensorDescFromParams: VarType_TensorDesc?
+                do {
+                    tensorDescFromParams = try VarType_TensorDesc.init(data: data)
+                } catch let error {
+                    print("\(error)")
+                }
+                tensorDescCharArray.deinitialize(count: tensorDescSize)
+                tensorDescCharArray.deallocate()
+                repeat {
+                    guard let tensorDescFromParams = tensorDescFromParams, let dimsArrayFromParams = tensorDescFromParams.dimsArray else {
+                        print("tensorDescFromParams is nil")
+                        break
+                    }
+                    if tensorDescFromParams.dimsArray_Count != dimsArrayFromParams.count {
+                        print("dimsArray_Count not equal to tensorDescFromParams.dimsArray.count")
+                        break
+                    }
+                    if tensorDescFromParams.dimsArray_Count != tensor.tensorDim.cout() {
+                        print("dimsArray_Count not equal to tensor.tensorDim.cout()")
+                        break
+                    }
+                    for i in 0..<dimsArrayFromParams.count {
+                        if dimsArrayFromParams.value(at: i) != tensor.tensorDim[Int(i)] {
+                            print("tensorDescFromParams \(String(describing: tensorDescFromParams.dimsArray)) not equal to tensor.tensorDim \(tensor.tensorDim)")
+                            break
+                        }
+                    }
+                } while (false)
+            } else {
+                fseek(file, MemoryLayout<CChar>.size * tensorDescSize, SEEK_CUR)
+            }
+            nowIndex += MemoryLayout<CChar>.size * tensorDescSize
             
             /*
              这里没有根据 Data Type 去判断, 而是从外部泛型直接指定了精度
