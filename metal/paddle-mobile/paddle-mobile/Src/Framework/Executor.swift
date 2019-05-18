@@ -78,9 +78,11 @@ public class Executor<P: PrecisionProtocol>: Executorable{
     public func predict(input: MTLTexture, dim: Dim, completionHandle: @escaping ( _ success: Bool, _ result: [GPUResultHolder]?) -> Void, preProcessKernle: CusomKernel? = nil, except: Int = 0) throws {
         inflightSemaphore.wait()
         guard isValid else {
+            inflightSemaphore.signal()
             throw PaddleMobileError.predictError(message: "Executor is cleared and invalid")
         }
         guard let buffer = queue.makeCommandBuffer() else {
+            inflightSemaphore.signal()
             throw PaddleMobileError.predictError(message: "CommandBuffer is nil")
         }
         
