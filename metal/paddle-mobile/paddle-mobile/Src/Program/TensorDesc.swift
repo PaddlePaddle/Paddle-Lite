@@ -62,6 +62,19 @@ class TensorDesc {
             let dim = Int(protoTensorDesc.dimsArray.value(at: i)) > 0 ?Int(protoTensorDesc.dimsArray.value(at: i)) :abs(Int(protoTensorDesc.dimsArray.value(at: i)))
             dimsArray.append(dim)
         }
+        
+        if dimsCount > 4 {
+            let headDims = Int(dimsCount - 4)
+            for i in 0..<headDims {
+                guard dimsArray[i] <= 1 else {
+                    fatalError("dims count is larger than 4 and can't be truncated to 4")
+                }
+            }
+            for _ in 0..<headDims {
+                dimsArray.removeFirst()
+            }
+        }
+        
         dims = dimsArray
         
         dataType = VarTypeType.init(rawValue: Int(protoTensorDesc.dataType.rawValue)) ?? .ErrorType

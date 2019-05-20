@@ -117,4 +117,3 @@ struct MetalConvParam {
     ushort dilationX;
     ushort dilationY;
 };
-
