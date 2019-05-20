@@ -185,6 +185,9 @@ let gReshape2Type               = "reshape2"
 let gTranspose2Type             = "transpose2"
 let gScaleType                  = "scale"
 let gRelu6Type                  = "relu6"
+let gExpType                    = "exp"
+let gSigmoidType                = "sigmoid"
+let gLeakyReluType              = "leaky_relu"
 
 
 let opInfos = [gConvType                    : (inputs: ["Input"], outputs: ["Output"]),
@@ -220,4 +223,7 @@ let opInfos = [gConvType                    : (inputs: ["Input"], outputs: ["Out
                gTranspose2Type              : (inputs: ["X"], outputs: ["Out"]),
                gScaleType                   : (inputs: ["X"], outputs: ["Out"]),
                gRelu6Type                   : (inputs: ["X"], outputs: ["Out"]),
+               gExpType                     : (inputs: ["X"], outputs: ["Out"]),
+               gSigmoidType                 : (inputs: ["X"], outputs: ["Out"]),
+               gLeakyReluType               : (inputs: ["X"], outputs: ["Out"]),
 ]

@@ -73,7 +73,10 @@ class OpCreator<P: PrecisionProtocol> {
          gReshape2Type              :     ReshapeOp<P>.creat,
          gTranspose2Type            :     TransposeOp<P>.creat,
          gScaleType                 :     ScaleOp<P>.creat,
-         gRelu6Type                 :     Relu6Op<P>.creat
+         gRelu6Type                 :     Relu6Op<P>.creat,
+         gExpType                   :     ExpOp<P>.creat,
+         gSigmoidType               :     SigmoidOp<P>.creat,
+         gLeakyReluType             :     LeakyReluOp<P>.creat,
     ]
     
     
