@@ -77,6 +77,9 @@ class OpCreator<P: PrecisionProtocol> {
          gExpType                   :     ExpOp<P>.creat,
          gSigmoidType               :     SigmoidOp<P>.creat,
          gLeakyReluType             :     LeakyReluOp<P>.creat,
+         gFlatten2Type              :     Flatten2Op<P>.creat,
+         gSliceType                 :     SliceOp<P>.creat,
+         gNearestInterpType         :     NearestInterpOp<P>.creat,
     ]
     
     

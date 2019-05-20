@@ -188,6 +188,9 @@ let gRelu6Type                  = "relu6"
 let gExpType                    = "exp"
 let gSigmoidType                = "sigmoid"
 let gLeakyReluType              = "leaky_relu"
+let gFlatten2Type               = "flatten2"
+let gSliceType                  = "slice"
+let gNearestInterpType          = "nearest_interp"
 
 
 let opInfos = [gConvType                    : (inputs: ["Input"], outputs: ["Output"]),
@@ -226,4 +229,7 @@ let opInfos = [gConvType                    : (inputs: ["Input"], outputs: ["Out
                gExpType                     : (inputs: ["X"], outputs: ["Out"]),
                gSigmoidType                 : (inputs: ["X"], outputs: ["Out"]),
                gLeakyReluType               : (inputs: ["X"], outputs: ["Out"]),
+               gFlatten2Type                : (inputs: ["X"], outputs: ["Out"]),
+               gSliceType                   : (inputs: ["Input"], outputs: ["Out"]),
+               gNearestInterpType           : (inputs: ["X"], outputs: ["Out"]),
 ]
