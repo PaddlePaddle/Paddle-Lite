@@ -142,6 +142,7 @@ extern const char *G_OP_TYPE_POOL2D;
 extern const char *G_OP_TYPE_PRIOR_BOX;
 extern const char *G_OP_TYPE_RELU;
 extern const char *G_OP_TYPE_RELU6;
+extern const char *G_OP_TYPE_LEAKY_RELU;
 extern const char *G_OP_TYPE_RESHAPE;
 extern const char *G_OP_TYPE_SIGMOID;
 extern const char *G_OP_TYPE_SOFTMAX;

@@ -37,5 +37,8 @@ DECLARE_KERNEL(Tanh, TanhParam);
 DECLARE_KERNEL(Log, ReluParam);
 #endif
 
+#ifdef LEAKY_RELU_OP
+DECLARE_KERNEL(LeakyRelu, LeakyReluParam);
+#endif
 }  // namespace operators
 }  // namespace paddle_mobile
