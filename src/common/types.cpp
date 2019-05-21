@@ -43,6 +43,7 @@ const char *G_OP_TYPE_POOL2D = "pool2d";
 const char *G_OP_TYPE_PRIOR_BOX = "prior_box";
 const char *G_OP_TYPE_RELU = "relu";
 const char *G_OP_TYPE_RELU6 = "relu6";
+const char *G_OP_TYPE_LEAKY_RELU = "leaky_relu";
 const char *G_OP_TYPE_RESHAPE = "reshape";
 const char *G_OP_TYPE_RESHAPE2 = "reshape2";
 const char *G_OP_TYPE_SIGMOID = "sigmoid";
@@ -126,6 +127,7 @@ std::unordered_map<
         {G_OP_TYPE_FUSION_CONV_ADD, {{"Input"}, {"Out"}}},
         {G_OP_TYPE_RELU, {{"X"}, {"Out"}}},
         {G_OP_TYPE_RELU6, {{"X"}, {"Out"}}},
+        {G_OP_TYPE_LEAKY_RELU, {{"X"}, {"Out"}}},
         {G_OP_TYPE_SOFTMAX, {{"X"}, {"Out"}}},
         {G_OP_TYPE_SIGMOID, {{"X"}, {"Out"}}},
         {G_OP_TYPE_MUL, {{"X"}, {"Out"}}},
