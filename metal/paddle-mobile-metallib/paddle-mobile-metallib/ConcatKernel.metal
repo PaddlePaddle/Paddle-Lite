@@ -67,6 +67,19 @@ struct ConcatParam {
 #undef R
 #undef V
 
+// lens: (R=4, N=3, V=y)
+#define V VY
+#define R 4
+#define N 3
+#define P float
+#include "ConcatKernel.inc.metal"
+#undef P
+#define P half
+#include "ConcatKernel.inc.metal"
+#undef P
+#undef N
+#undef R
+#undef V
 
 // ssd-ar: (R=3, N=2, V=y)
 #define V VY
@@ -96,6 +109,19 @@ struct ConcatParam {
 #undef R
 #undef V
 
+// lens: (R=4, N=2, V=z)
+#define V VZ
+#define R 4
+#define N 2
+#define P float
+#include "ConcatKernel.inc.metal"
+#undef P
+#define P half
+#include "ConcatKernel.inc.metal"
+#undef P
+#undef N
+#undef R
+#undef V
 
 // ssd: (R=2, N=6, V=y)
 #define V VY
@@ -138,6 +164,19 @@ struct ConcatParam {
 #undef R
 #undef V
 
+// lens: (R=2, N=3, V=normal)
+#define V VNORMAL
+#define R 2
+#define N 3
+#define P float
+#include "ConcatKernel.inc.metal"
+#undef P
+#define P half
+#include "ConcatKernel.inc.metal"
+#undef P
+#undef N
+#undef R
+#undef V
 
 #define V VY
 #define R 2
@@ -165,7 +204,3 @@ struct ConcatParam {
 #undef N
 #undef R
 #undef V
-
-
-
-

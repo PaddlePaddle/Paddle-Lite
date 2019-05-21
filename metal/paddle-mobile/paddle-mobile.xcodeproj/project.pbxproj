@@ -7,8 +7,18 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		16324D842292ABDB0047277D /* NearestInterpKernel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16324D832292ABDB0047277D /* NearestInterpKernel.swift */; };
 		165F38D32276CDEA0088E29F /* ConvAddReluOp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 165F38D22276CDEA0088E29F /* ConvAddReluOp.swift */; };
 		165F38D52276CE7D0088E29F /* ConvAddReluKernel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 165F38D42276CE7D0088E29F /* ConvAddReluKernel.swift */; };
+		16D3F3B522929C390067C45D /* SliceOp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16D3F3B422929C390067C45D /* SliceOp.swift */; };
+		16D3F3B722929C660067C45D /* NearestInterpOp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16D3F3B622929C660067C45D /* NearestInterpOp.swift */; };
+		16D3F3B922929D070067C45D /* SliceKernel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16D3F3B822929D070067C45D /* SliceKernel.swift */; };
+		16FBFB36229259C60025B406 /* ExpOp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16FBFB35229259C60025B406 /* ExpOp.swift */; };
+		16FBFB3822925B030025B406 /* ExpKernel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16FBFB3722925B030025B406 /* ExpKernel.swift */; };
+		16FBFB3A22925C3E0025B406 /* SigmoidKernel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16FBFB3922925C3E0025B406 /* SigmoidKernel.swift */; };
+		16FBFB3C22925C800025B406 /* SigmoidOp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16FBFB3B22925C800025B406 /* SigmoidOp.swift */; };
+		16FBFB40229266FE0025B406 /* LeakyReluOp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16FBFB3F229266FE0025B406 /* LeakyReluOp.swift */; };
+		16FBFB422292684E0025B406 /* LeakyReluKernel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16FBFB412292684E0025B406 /* LeakyReluKernel.swift */; };
 		456BB7B421F5B356001474E2 /* Framework.pbobjc.m in Sources */ = {isa = PBXBuildFile; fileRef = 456BB7B221F5B356001474E2 /* Framework.pbobjc.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
 		456BB7B521F5B356001474E2 /* Framework.pbobjc.h in Headers */ = {isa = PBXBuildFile; fileRef = 456BB7B321F5B356001474E2 /* Framework.pbobjc.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		4AA1EA862146625E00D0F791 /* BilinearInterpOp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4AA1EA852146625E00D0F791 /* BilinearInterpOp.swift */; };
@@ -107,8 +117,18 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		16324D832292ABDB0047277D /* NearestInterpKernel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NearestInterpKernel.swift; sourceTree = "<group>"; };
 		165F38D22276CDEA0088E29F /* ConvAddReluOp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConvAddReluOp.swift; sourceTree = "<group>"; };
 		165F38D42276CE7D0088E29F /* ConvAddReluKernel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConvAddReluKernel.swift; sourceTree = "<group>"; };
+		16D3F3B422929C390067C45D /* SliceOp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SliceOp.swift; sourceTree = "<group>"; };
+		16D3F3B622929C660067C45D /* NearestInterpOp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NearestInterpOp.swift; sourceTree = "<group>"; };
+		16D3F3B822929D070067C45D /* SliceKernel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SliceKernel.swift; sourceTree = "<group>"; };
+		16FBFB35229259C60025B406 /* ExpOp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExpOp.swift; sourceTree = "<group>"; };
+		16FBFB3722925B030025B406 /* ExpKernel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExpKernel.swift; sourceTree = "<group>"; };
+		16FBFB3922925C3E0025B406 /* SigmoidKernel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SigmoidKernel.swift; sourceTree = "<group>"; };
+		16FBFB3B22925C800025B406 /* SigmoidOp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SigmoidOp.swift; sourceTree = "<group>"; };
+		16FBFB3F229266FE0025B406 /* LeakyReluOp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeakyReluOp.swift; sourceTree = "<group>"; };
+		16FBFB412292684E0025B406 /* LeakyReluKernel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeakyReluKernel.swift; sourceTree = "<group>"; };
 		456BB7B221F5B356001474E2 /* Framework.pbobjc.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Framework.pbobjc.m; sourceTree = "<group>"; };
 		456BB7B321F5B356001474E2 /* Framework.pbobjc.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Framework.pbobjc.h; sourceTree = "<group>"; };
 		4AA1EA852146625E00D0F791 /* BilinearInterpOp.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BilinearInterpOp.swift; sourceTree = "<group>"; };
@@ -338,6 +358,11 @@
 				165F38D22276CDEA0088E29F /* ConvAddReluOp.swift */,
 				A73DC748227F1C7A001EB663 /* ScaleOp.swift */,
 				A7F26FD922842EF200365D47 /* Relu6Op.swift */,
+				16FBFB35229259C60025B406 /* ExpOp.swift */,
+				16FBFB3B22925C800025B406 /* SigmoidOp.swift */,
+				16FBFB3F229266FE0025B406 /* LeakyReluOp.swift */,
+				16D3F3B422929C390067C45D /* SliceOp.swift */,
+				16D3F3B622929C660067C45D /* NearestInterpOp.swift */,
 			);
 			path = Operators;
 			sourceTree = "<group>";
@@ -395,6 +420,11 @@
 				165F38D42276CE7D0088E29F /* ConvAddReluKernel.swift */,
 				A73DC74A227F1EDE001EB663 /* ScaleOpKernel.swift */,
 				A7F26FDB2284301500365D47 /* Relu6Kernel.swift */,
+				16FBFB3722925B030025B406 /* ExpKernel.swift */,
+				16FBFB3922925C3E0025B406 /* SigmoidKernel.swift */,
+				16FBFB412292684E0025B406 /* LeakyReluKernel.swift */,
+				16D3F3B822929D070067C45D /* SliceKernel.swift */,
+				16324D832292ABDB0047277D /* NearestInterpKernel.swift */,
 			);
 			path = Kernels;
 			sourceTree = "<group>";
@@ -545,15 +575,18 @@
 				A73DC74B227F1EDE001EB663 /* ScaleOpKernel.swift in Sources */,
 				4AA1EA942146661500D0F791 /* ShapeKernel.swift in Sources */,
 				FC0E2DBC20EE45FE009C1FAC /* ConvKernel.swift in Sources */,
+				16FBFB3A22925C3E0025B406 /* SigmoidKernel.swift in Sources */,
 				FC039BAA20E11CBC0081E9F8 /* ElementwiseAddOp.swift in Sources */,
 				FCDE8A33212A917900F4A8F6 /* ConvTransposeOp.swift in Sources */,
 				FCBCCC6B2123071700D94F7E /* BoxcoderOp.swift in Sources */,
+				16D3F3B522929C390067C45D /* SliceOp.swift in Sources */,
 				FC039B9B20E11CA00081E9F8 /* Executor.swift in Sources */,
 				FCD04E7020F31B720007374F /* ReshapeKernel.swift in Sources */,
 				FCD04E7220F343420007374F /* ConvAddOp.swift in Sources */,
 				FC039BBB20E11CC20081E9F8 /* PMProgramDesc.swift in Sources */,
 				FCE3A1AB2153DE8C00C37CDE /* ConvAddAddPreluKernel.swift in Sources */,
 				FC9D037920E229E4000F735A /* OpParam.swift in Sources */,
+				16324D842292ABDB0047277D /* NearestInterpKernel.swift in Sources */,
 				FC3602CC2108819F00FACB58 /* PaddleMobileUnitTest.swift in Sources */,
 				FCDDC6C6212F9FB800E5EF74 /* PreluKernel.swift in Sources */,
 				FC9797CB21D6102D00F2FD90 /* ResizeBilinearKernel.swift in Sources */,
@@ -565,7 +598,9 @@
 				FCEB684C212F093800D2448E /* PreluOp.swift in Sources */,
 				FC60DB8920E9AAA500FF203F /* MetalExtension.swift in Sources */,
 				FCEBC0F620F1FE120099DBAF /* ConvAddBatchNormReluKernel.swift in Sources */,
+				16FBFB422292684E0025B406 /* LeakyReluKernel.swift in Sources */,
 				FC039BBA20E11CC20081E9F8 /* TensorDesc.swift in Sources */,
+				16FBFB36229259C60025B406 /* ExpOp.swift in Sources */,
 				FC039BA020E11CB20081E9F8 /* Dim.swift in Sources */,
 				FC039B9920E11C9A0081E9F8 /* Types.swift in Sources */,
 				FCBCCC592122F42700D94F7E /* ConvBNReluOp.swift in Sources */,
@@ -584,6 +619,7 @@
 				4AA1EA8E2146647F00D0F791 /* SplitKernel.swift in Sources */,
 				FCD04E7420F3437E0007374F /* ConvAddKernel.swift in Sources */,
 				FC1CF3F721D4B4C400F7392E /* Runner.swift in Sources */,
+				16D3F3B722929C660067C45D /* NearestInterpOp.swift in Sources */,
 				FC039BB920E11CC20081E9F8 /* Scope.swift in Sources */,
 				FCD04E6620F314C50007374F /* PoolOp.swift in Sources */,
 				FC039BAC20E11CBC0081E9F8 /* BatchNormOp.swift in Sources */,
@@ -596,6 +632,7 @@
 				4AA1EA862146625E00D0F791 /* BilinearInterpOp.swift in Sources */,
 				FCBCCC6D2123073A00D94F7E /* BoxcoderKernel.swift in Sources */,
 				FCB40E5921E0DCAB0075EC91 /* FetchKernel.swift in Sources */,
+				16FBFB3822925B030025B406 /* ExpKernel.swift in Sources */,
 				FCBCCC69212306D300D94F7E /* ConcatKernel.swift in Sources */,
 				FCDDC6C8212FA3CA00E5EF74 /* ConvTransposeKernel.swift in Sources */,
 				FC82735920E3C04200BE430A /* OpCreator.swift in Sources */,
@@ -603,6 +640,7 @@
 				FC803BC1214CB77A0094B8E5 /* ConvAddPreluKernel.swift in Sources */,
 				FCBCCC5D2122F8A100D94F7E /* DepthwiseConvOp.swift in Sources */,
 				FCE3A1AF2153E8EE00C37CDE /* ElementwiseAddPreluKernel.swift in Sources */,
+				16D3F3B922929D070067C45D /* SliceKernel.swift in Sources */,
 				FCE9D7B7214F869000B520C3 /* Net.swift in Sources */,
 				FC0E2DBE20EE460D009C1FAC /* BatchNormKernel.swift in Sources */,
 				FC039BAB20E11CBC0081E9F8 /* Operator.swift in Sources */,
@@ -613,6 +651,7 @@
 				FC9D038220E2312E000F735A /* FetchOp.swift in Sources */,
 				FC039BBD20E11CC20081E9F8 /* Program.swift in Sources */,
 				FC039BA220E11CB70081E9F8 /* Loader.swift in Sources */,
+				16FBFB3C22925C800025B406 /* SigmoidOp.swift in Sources */,
 				165F38D32276CDEA0088E29F /* ConvAddReluOp.swift in Sources */,
 				FCBCCC67212306B000D94F7E /* ConcatOp.swift in Sources */,
 				FCD04E6C20F31A280007374F /* SoftmaxKernel.swift in Sources */,
@@ -625,6 +664,7 @@
 				FCD04E6820F315020007374F /* PoolKernel.swift in Sources */,
 				FC039BAD20E11CBC0081E9F8 /* ReluOp.swift in Sources */,
 				FCBCCC572122F41300D94F7E /* DwConvBNReluOp.swift in Sources */,
+				16FBFB40229266FE0025B406 /* LeakyReluOp.swift in Sources */,
 				FC039BBE20E11CC20081E9F8 /* PMOpDesc.swift in Sources */,
 				FC9797C921D6101D00F2FD90 /* ResizeBilinearOp.swift in Sources */,
 				4AA1EA88214662BD00D0F791 /* BilinearInterpKernel.swift in Sources */,

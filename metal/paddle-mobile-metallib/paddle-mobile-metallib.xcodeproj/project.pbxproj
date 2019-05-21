@@ -7,7 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		16324D862292C4930047277D /* NearestInterpKernel.metal in Sources */ = {isa = PBXBuildFile; fileRef = 16324D852292C4930047277D /* NearestInterpKernel.metal */; };
 		165F38D72276F4C00088E29F /* ConvAddReluMetal.metal in Sources */ = {isa = PBXBuildFile; fileRef = 165F38D62276F4C00088E29F /* ConvAddReluMetal.metal */; };
+		16D3F3BB22929EAD0067C45D /* SliceKernel.metal in Sources */ = {isa = PBXBuildFile; fileRef = 16D3F3BA22929EAD0067C45D /* SliceKernel.metal */; };
+		16FBFB3E22925D040025B406 /* ActivationKernel.metal in Sources */ = {isa = PBXBuildFile; fileRef = 16FBFB3D22925D040025B406 /* ActivationKernel.metal */; };
 		5CCC0CF6759710BAFE999DB7 /* Pods_paddle_mobile_metallib.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5D9D330A035906298947080B /* Pods_paddle_mobile_metallib.framework */; };
 		A74CAFF0228D9B9B000BBFCA /* ScaleKernel.metal in Sources */ = {isa = PBXBuildFile; fileRef = A74CAFEF228D9B9B000BBFCA /* ScaleKernel.metal */; };
 		FCC15DE5221E69E100DC3CB2 /* ReluKernel.metal in Sources */ = {isa = PBXBuildFile; fileRef = FCC15DBC221E69DD00DC3CB2 /* ReluKernel.metal */; };
@@ -54,7 +57,10 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		16324D852292C4930047277D /* NearestInterpKernel.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = NearestInterpKernel.metal; sourceTree = "<group>"; };
 		165F38D62276F4C00088E29F /* ConvAddReluMetal.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = ConvAddReluMetal.metal; sourceTree = "<group>"; };
+		16D3F3BA22929EAD0067C45D /* SliceKernel.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = SliceKernel.metal; sourceTree = "<group>"; };
+		16FBFB3D22925D040025B406 /* ActivationKernel.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = ActivationKernel.metal; sourceTree = "<group>"; };
 		33511F4FF7FE78679BE12DC0 /* Pods-paddle-mobile-metallib.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-paddle-mobile-metallib.release.xcconfig"; path = "../Pods/Target Support Files/Pods-paddle-mobile-metallib/Pods-paddle-mobile-metallib.release.xcconfig"; sourceTree = "<group>"; };
 		5D9D330A035906298947080B /* Pods_paddle_mobile_metallib.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_paddle_mobile_metallib.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		A74CAFEF228D9B9B000BBFCA /* ScaleKernel.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = ScaleKernel.metal; sourceTree = "<group>"; };
@@ -196,6 +202,9 @@
 				FCC15DDA221E69E000DC3CB2 /* TransposeKernel.metal */,
 				A74CAFEF228D9B9B000BBFCA /* ScaleKernel.metal */,
 				165F38D62276F4C00088E29F /* ConvAddReluMetal.metal */,
+				16FBFB3D22925D040025B406 /* ActivationKernel.metal */,
+				16D3F3BA22929EAD0067C45D /* SliceKernel.metal */,
+				16324D852292C4930047277D /* NearestInterpKernel.metal */,
 			);
 			path = "paddle-mobile-metallib";
 			sourceTree = "<group>";
@@ -299,6 +308,7 @@
 				FCC15DFB221E69E100DC3CB2 /* Softmax.inc.metal in Sources */,
 				FCC15E03221E69E100DC3CB2 /* TransposeKernel.metal in Sources */,
 				FCC15DFE221E69E100DC3CB2 /* ReshapeKernel.metal in Sources */,
+				16FBFB3E22925D040025B406 /* ActivationKernel.metal in Sources */,
 				FCC15E0D221E69E100DC3CB2 /* ConvAddMetal.metal in Sources */,
 				FCC15DF7221E69E100DC3CB2 /* ReshapeKernel.inc.metal in Sources */,
 				FCC15DE5221E69E100DC3CB2 /* ReluKernel.metal in Sources */,
@@ -312,12 +322,14 @@
 				FCC15E0B221E69E100DC3CB2 /* FetchKernel.inc.metal in Sources */,
 				FCC15DEE221E69E100DC3CB2 /* ConvTransposeKernel.metal in Sources */,
 				FCC15DFC221E69E100DC3CB2 /* ConvAddPreluKernel.metal in Sources */,
+				16D3F3BB22929EAD0067C45D /* SliceKernel.metal in Sources */,
 				FCC15E06221E69E100DC3CB2 /* BoxCoder.inc.metal in Sources */,
 				FCC15DF1221E69E100DC3CB2 /* BilinearInterp.inc.metal in Sources */,
 				FCC15E08221E69E100DC3CB2 /* Split.inc.metal in Sources */,
 				FCC15DF4221E69E100DC3CB2 /* ResizeBilinear.metal in Sources */,
 				FCC15E05221E69E100DC3CB2 /* BatchNormKernel.metal in Sources */,
 				165F38D72276F4C00088E29F /* ConvAddReluMetal.metal in Sources */,
+				16324D862292C4930047277D /* NearestInterpKernel.metal in Sources */,
 				FCC15DE6221E69E100DC3CB2 /* BoxCoder.metal in Sources */,
 				FCC15DF6221E69E100DC3CB2 /* PoolKernel.metal in Sources */,
 				FCC15E09221E69E100DC3CB2 /* ConcatKernel.inc.metal in Sources */,
