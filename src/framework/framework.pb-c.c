@@ -14,20 +14,22 @@ void paddle_mobile__framework__proto__version__init(
   *message = init_value;
 }
 PaddleMobile__Framework__Proto__Version *
-paddle_mobile__framework__proto__version__unpack(ProtobufCAllocator *allocator,
-                                                 size_t len,
-                                                 const uint8_t *data) {
-  return (PaddleMobile__Framework__Proto__Version *)protobuf_c_message_unpack(
-      &paddle_mobile__framework__proto__version__descriptor, allocator, len,
-      data);
+paddle_mobile__framework__proto__version__unpack(
+    PaddleMobile__Framework__ProtobufCAllocator *allocator, size_t len,
+    const uint8_t *data) {
+  return (PaddleMobile__Framework__Proto__Version *)
+      PaddleMobile__Framework__protobuf_c_message_unpack(
+          &paddle_mobile__framework__proto__version__descriptor, allocator, len,
+          data);
 }
 void paddle_mobile__framework__proto__version__free_unpacked(
     PaddleMobile__Framework__Proto__Version *message,
-    ProtobufCAllocator *allocator) {
+    PaddleMobile__Framework__ProtobufCAllocator *allocator) {
   if (!message) return;
   assert(message->base.descriptor ==
          &paddle_mobile__framework__proto__version__descriptor);
-  protobuf_c_message_free_unpacked((ProtobufCMessage *)message, allocator);
+  PaddleMobile__Framework__protobuf_c_message_free_unpacked(
+      (PaddleMobile__Framework__ProtobufCMessage *)message, allocator);
 }
 void paddle_mobile__framework__proto__op_desc__attr__init(
     PaddleMobile__Framework__Proto__OpDesc__Attr *message) {
@@ -48,20 +50,22 @@ void paddle_mobile__framework__proto__op_desc__init(
   *message = init_value;
 }
 PaddleMobile__Framework__Proto__OpDesc *
-paddle_mobile__framework__proto__op_desc__unpack(ProtobufCAllocator *allocator,
-                                                 size_t len,
-                                                 const uint8_t *data) {
-  return (PaddleMobile__Framework__Proto__OpDesc *)protobuf_c_message_unpack(
-      &paddle_mobile__framework__proto__op_desc__descriptor, allocator, len,
-      data);
+paddle_mobile__framework__proto__op_desc__unpack(
+    PaddleMobile__Framework__ProtobufCAllocator *allocator, size_t len,
+    const uint8_t *data) {
+  return (PaddleMobile__Framework__Proto__OpDesc *)
+      PaddleMobile__Framework__protobuf_c_message_unpack(
+          &paddle_mobile__framework__proto__op_desc__descriptor, allocator, len,
+          data);
 }
 void paddle_mobile__framework__proto__op_desc__free_unpacked(
     PaddleMobile__Framework__Proto__OpDesc *message,
-    ProtobufCAllocator *allocator) {
+    PaddleMobile__Framework__ProtobufCAllocator *allocator) {
   if (!message) return;
   assert(message->base.descriptor ==
          &paddle_mobile__framework__proto__op_desc__descriptor);
-  protobuf_c_message_free_unpacked((ProtobufCMessage *)message, allocator);
+  PaddleMobile__Framework__protobuf_c_message_free_unpacked(
+      (PaddleMobile__Framework__ProtobufCMessage *)message, allocator);
 }
 void paddle_mobile__framework__proto__op_proto__var__init(
     PaddleMobile__Framework__Proto__OpProto__Var *message) {
@@ -82,20 +86,22 @@ void paddle_mobile__framework__proto__op_proto__init(
   *message = init_value;
 }
 PaddleMobile__Framework__Proto__OpProto *
-paddle_mobile__framework__proto__op_proto__unpack(ProtobufCAllocator *allocator,
-                                                  size_t len,
-                                                  const uint8_t *data) {
-  return (PaddleMobile__Framework__Proto__OpProto *)protobuf_c_message_unpack(
-      &paddle_mobile__framework__proto__op_proto__descriptor, allocator, len,
-      data);
+paddle_mobile__framework__proto__op_proto__unpack(
+    PaddleMobile__Framework__ProtobufCAllocator *allocator, size_t len,
+    const uint8_t *data) {
+  return (PaddleMobile__Framework__Proto__OpProto *)
+      PaddleMobile__Framework__protobuf_c_message_unpack(
+          &paddle_mobile__framework__proto__op_proto__descriptor, allocator,
+          len, data);
 }
 void paddle_mobile__framework__proto__op_proto__free_unpacked(
     PaddleMobile__Framework__Proto__OpProto *message,
-    ProtobufCAllocator *allocator) {
+    PaddleMobile__Framework__ProtobufCAllocator *allocator) {
   if (!message) return;
   assert(message->base.descriptor ==
          &paddle_mobile__framework__proto__op_proto__descriptor);
-  protobuf_c_message_free_unpacked((ProtobufCMessage *)message, allocator);
+  PaddleMobile__Framework__protobuf_c_message_free_unpacked(
+      (PaddleMobile__Framework__ProtobufCMessage *)message, allocator);
 }
 void paddle_mobile__framework__proto__var_type__tensor_desc__init(
     PaddleMobile__Framework__Proto__VarType__TensorDesc *message) {
@@ -142,20 +148,22 @@ void paddle_mobile__framework__proto__var_type__init(
   *message = init_value;
 }
 PaddleMobile__Framework__Proto__VarType *
-paddle_mobile__framework__proto__var_type__unpack(ProtobufCAllocator *allocator,
-                                                  size_t len,
-                                                  const uint8_t *data) {
-  return (PaddleMobile__Framework__Proto__VarType *)protobuf_c_message_unpack(
-      &paddle_mobile__framework__proto__var_type__descriptor, allocator, len,
-      data);
+paddle_mobile__framework__proto__var_type__unpack(
+    PaddleMobile__Framework__ProtobufCAllocator *allocator, size_t len,
+    const uint8_t *data) {
+  return (PaddleMobile__Framework__Proto__VarType *)
+      PaddleMobile__Framework__protobuf_c_message_unpack(
+          &paddle_mobile__framework__proto__var_type__descriptor, allocator,
+          len, data);
 }
 void paddle_mobile__framework__proto__var_type__free_unpacked(
     PaddleMobile__Framework__Proto__VarType *message,
-    ProtobufCAllocator *allocator) {
+    PaddleMobile__Framework__ProtobufCAllocator *allocator) {
   if (!message) return;
   assert(message->base.descriptor ==
          &paddle_mobile__framework__proto__var_type__descriptor);
-  protobuf_c_message_free_unpacked((ProtobufCMessage *)message, allocator);
+  PaddleMobile__Framework__protobuf_c_message_free_unpacked(
+      (PaddleMobile__Framework__ProtobufCMessage *)message, allocator);
 }
 void paddle_mobile__framework__proto__var_desc__init(
     PaddleMobile__Framework__Proto__VarDesc *message) {
@@ -164,20 +172,22 @@ void paddle_mobile__framework__proto__var_desc__init(
   *message = init_value;
 }
 PaddleMobile__Framework__Proto__VarDesc *
-paddle_mobile__framework__proto__var_desc__unpack(ProtobufCAllocator *allocator,
-                                                  size_t len,
-                                                  const uint8_t *data) {
-  return (PaddleMobile__Framework__Proto__VarDesc *)protobuf_c_message_unpack(
-      &paddle_mobile__framework__proto__var_desc__descriptor, allocator, len,
-      data);
+paddle_mobile__framework__proto__var_desc__unpack(
+    PaddleMobile__Framework__ProtobufCAllocator *allocator, size_t len,
+    const uint8_t *data) {
+  return (PaddleMobile__Framework__Proto__VarDesc *)
+      PaddleMobile__Framework__protobuf_c_message_unpack(
+          &paddle_mobile__framework__proto__var_desc__descriptor, allocator,
+          len, data);
 }
 void paddle_mobile__framework__proto__var_desc__free_unpacked(
     PaddleMobile__Framework__Proto__VarDesc *message,
-    ProtobufCAllocator *allocator) {
+    PaddleMobile__Framework__ProtobufCAllocator *allocator) {
   if (!message) return;
   assert(message->base.descriptor ==
          &paddle_mobile__framework__proto__var_desc__descriptor);
-  protobuf_c_message_free_unpacked((ProtobufCMessage *)message, allocator);
+  PaddleMobile__Framework__protobuf_c_message_free_unpacked(
+      (PaddleMobile__Framework__ProtobufCMessage *)message, allocator);
 }
 void paddle_mobile__framework__proto__block_desc__init(
     PaddleMobile__Framework__Proto__BlockDesc *message) {
@@ -187,18 +197,21 @@ void paddle_mobile__framework__proto__block_desc__init(
 }
 PaddleMobile__Framework__Proto__BlockDesc *
 paddle_mobile__framework__proto__block_desc__unpack(
-    ProtobufCAllocator *allocator, size_t len, const uint8_t *data) {
-  return (PaddleMobile__Framework__Proto__BlockDesc *)protobuf_c_message_unpack(
-      &paddle_mobile__framework__proto__block_desc__descriptor, allocator, len,
-      data);
+    PaddleMobile__Framework__ProtobufCAllocator *allocator, size_t len,
+    const uint8_t *data) {
+  return (PaddleMobile__Framework__Proto__BlockDesc *)
+      PaddleMobile__Framework__protobuf_c_message_unpack(
+          &paddle_mobile__framework__proto__block_desc__descriptor, allocator,
+          len, data);
 }
 void paddle_mobile__framework__proto__block_desc__free_unpacked(
     PaddleMobile__Framework__Proto__BlockDesc *message,
-    ProtobufCAllocator *allocator) {
+    PaddleMobile__Framework__ProtobufCAllocator *allocator) {
   if (!message) return;
   assert(message->base.descriptor ==
          &paddle_mobile__framework__proto__block_desc__descriptor);
-  protobuf_c_message_free_unpacked((ProtobufCMessage *)message, allocator);
+  PaddleMobile__Framework__protobuf_c_message_free_unpacked(
+      (PaddleMobile__Framework__ProtobufCMessage *)message, allocator);
 }
 void paddle_mobile__framework__proto__program_desc__init(
     PaddleMobile__Framework__Proto__ProgramDesc *message) {
@@ -208,23 +221,25 @@ void paddle_mobile__framework__proto__program_desc__init(
 }
 PaddleMobile__Framework__Proto__ProgramDesc *
 paddle_mobile__framework__proto__program_desc__unpack(
-    ProtobufCAllocator *allocator, size_t len, const uint8_t *data) {
+    PaddleMobile__Framework__ProtobufCAllocator *allocator, size_t len,
+    const uint8_t *data) {
   return (PaddleMobile__Framework__Proto__ProgramDesc *)
-      protobuf_c_message_unpack(
+      PaddleMobile__Framework__protobuf_c_message_unpack(
           &paddle_mobile__framework__proto__program_desc__descriptor, allocator,
           len, data);
 }
 void paddle_mobile__framework__proto__program_desc__free_unpacked(
     PaddleMobile__Framework__Proto__ProgramDesc *message,
-    ProtobufCAllocator *allocator) {
+    PaddleMobile__Framework__ProtobufCAllocator *allocator) {
   if (!message) return;
   assert(message->base.descriptor ==
          &paddle_mobile__framework__proto__program_desc__descriptor);
-  protobuf_c_message_free_unpacked((ProtobufCMessage *)message, allocator);
+  PaddleMobile__Framework__protobuf_c_message_free_unpacked(
+      (PaddleMobile__Framework__ProtobufCMessage *)message, allocator);
 }
 static const int64_t
     paddle_mobile__framework__proto__version__version__default_value = 0ll;
-static const ProtobufCFieldDescriptor
+static const PaddleMobile__Framework__ProtobufCFieldDescriptor
     paddle_mobile__framework__proto__version__field_descriptors[1] = {
         {
             "version", 1, PROTOBUF_C_LABEL_OPTIONAL, PROTOBUF_C_TYPE_INT64,
@@ -239,10 +254,10 @@ static const unsigned
     paddle_mobile__framework__proto__version__field_indices_by_name[] = {
         0, /* field[0] = version */
 };
-static const ProtobufCIntRange
+static const PaddleMobile__Framework__ProtobufCIntRange
     paddle_mobile__framework__proto__version__number_ranges[1 + 1] = {{1, 0},
                                                                       {0, 1}};
-const ProtobufCMessageDescriptor
+const PaddleMobile__Framework__ProtobufCMessageDescriptor
     paddle_mobile__framework__proto__version__descriptor = {
         PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
         "paddle_mobile.framework.proto.Version",
@@ -260,7 +275,7 @@ const ProtobufCMessageDescriptor
         NULL,
         NULL /* reserved[123] */
 };
-static const ProtobufCFieldDescriptor
+static const PaddleMobile__Framework__ProtobufCFieldDescriptor
     paddle_mobile__framework__proto__op_desc__attr__field_descriptors[14] = {
         {
             "name", 1, PROTOBUF_C_LABEL_REQUIRED, PROTOBUF_C_TYPE_STRING,
@@ -381,10 +396,10 @@ static const unsigned
         7,  /* field[7] = strings */
         1,  /* field[1] = type */
 };
-static const ProtobufCIntRange
+static const PaddleMobile__Framework__ProtobufCIntRange
     paddle_mobile__framework__proto__op_desc__attr__number_ranges[2 + 1] = {
         {1, 0}, {10, 8}, {0, 14}};
-const ProtobufCMessageDescriptor
+const PaddleMobile__Framework__ProtobufCMessageDescriptor
     paddle_mobile__framework__proto__op_desc__attr__descriptor = {
         PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
         "paddle_mobile.framework.proto.OpDesc.Attr",
@@ -403,7 +418,7 @@ const ProtobufCMessageDescriptor
         NULL,
         NULL /* reserved[123] */
 };
-static const ProtobufCFieldDescriptor
+static const PaddleMobile__Framework__ProtobufCFieldDescriptor
     paddle_mobile__framework__proto__op_desc__var__field_descriptors[2] = {
         {
             "parameter", 1, PROTOBUF_C_LABEL_REQUIRED, PROTOBUF_C_TYPE_STRING,
@@ -425,10 +440,10 @@ static const unsigned
         1, /* field[1] = arguments */
         0, /* field[0] = parameter */
 };
-static const ProtobufCIntRange
+static const PaddleMobile__Framework__ProtobufCIntRange
     paddle_mobile__framework__proto__op_desc__var__number_ranges[1 + 1] = {
         {1, 0}, {0, 2}};
-const ProtobufCMessageDescriptor
+const PaddleMobile__Framework__ProtobufCMessageDescriptor
     paddle_mobile__framework__proto__op_desc__var__descriptor = {
         PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
         "paddle_mobile.framework.proto.OpDesc.Var",
@@ -449,7 +464,7 @@ const ProtobufCMessageDescriptor
 };
 static const protobuf_c_boolean
     paddle_mobile__framework__proto__op_desc__is_target__default_value = 0;
-static const ProtobufCFieldDescriptor
+static const PaddleMobile__Framework__ProtobufCFieldDescriptor
     paddle_mobile__framework__proto__op_desc__field_descriptors[5] = {
         {
             "inputs", 1, PROTOBUF_C_LABEL_REPEATED, PROTOBUF_C_TYPE_MESSAGE,
@@ -499,10 +514,10 @@ static const unsigned
         1, /* field[1] = outputs */
         2, /* field[2] = type */
 };
-static const ProtobufCIntRange
+static const PaddleMobile__Framework__ProtobufCIntRange
     paddle_mobile__framework__proto__op_desc__number_ranges[1 + 1] = {{1, 0},
                                                                       {0, 5}};
-const ProtobufCMessageDescriptor
+const PaddleMobile__Framework__ProtobufCMessageDescriptor
     paddle_mobile__framework__proto__op_desc__descriptor = {
         PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
         "paddle_mobile.framework.proto.OpDesc",
@@ -529,7 +544,7 @@ static const protobuf_c_boolean
 static const protobuf_c_boolean
     paddle_mobile__framework__proto__op_proto__var__dispensable__default_value =
         0;
-static const ProtobufCFieldDescriptor
+static const PaddleMobile__Framework__ProtobufCFieldDescriptor
     paddle_mobile__framework__proto__op_proto__var__field_descriptors[6] = {
         {
             "name", 1, PROTOBUF_C_LABEL_REQUIRED, PROTOBUF_C_TYPE_STRING,
@@ -593,10 +608,10 @@ static const unsigned
         0, /* field[0] = name */
         5, /* field[5] = reuse */
 };
-static const ProtobufCIntRange
+static const PaddleMobile__Framework__ProtobufCIntRange
     paddle_mobile__framework__proto__op_proto__var__number_ranges[1 + 1] = {
         {1, 0}, {0, 6}};
-const ProtobufCMessageDescriptor
+const PaddleMobile__Framework__ProtobufCMessageDescriptor
     paddle_mobile__framework__proto__op_proto__var__descriptor = {
         PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
         "paddle_mobile.framework.proto.OpProto.Var",
@@ -618,7 +633,7 @@ const ProtobufCMessageDescriptor
 static const protobuf_c_boolean
     paddle_mobile__framework__proto__op_proto__attr__generated__default_value =
         0;
-static const ProtobufCFieldDescriptor
+static const PaddleMobile__Framework__ProtobufCFieldDescriptor
     paddle_mobile__framework__proto__op_proto__attr__field_descriptors[4] = {
         {
             "name", 1, PROTOBUF_C_LABEL_REQUIRED, PROTOBUF_C_TYPE_STRING,
@@ -660,10 +675,10 @@ static const unsigned
         0, /* field[0] = name */
         1, /* field[1] = type */
 };
-static const ProtobufCIntRange
+static const PaddleMobile__Framework__ProtobufCIntRange
     paddle_mobile__framework__proto__op_proto__attr__number_ranges[1 + 1] = {
         {1, 0}, {0, 4}};
-const ProtobufCMessageDescriptor
+const PaddleMobile__Framework__ProtobufCMessageDescriptor
     paddle_mobile__framework__proto__op_proto__attr__descriptor = {
         PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
         "paddle_mobile.framework.proto.OpProto.Attr",
@@ -682,7 +697,7 @@ const ProtobufCMessageDescriptor
         NULL,
         NULL /* reserved[123] */
 };
-static const ProtobufCFieldDescriptor
+static const PaddleMobile__Framework__ProtobufCFieldDescriptor
     paddle_mobile__framework__proto__op_proto__field_descriptors[5] = {
         {
             "type", 1, PROTOBUF_C_LABEL_REQUIRED, PROTOBUF_C_TYPE_STRING,
@@ -731,10 +746,10 @@ static const unsigned
         2, /* field[2] = outputs */
         0, /* field[0] = type */
 };
-static const ProtobufCIntRange
+static const PaddleMobile__Framework__ProtobufCIntRange
     paddle_mobile__framework__proto__op_proto__number_ranges[1 + 1] = {{1, 0},
                                                                        {0, 5}};
-const ProtobufCMessageDescriptor
+const PaddleMobile__Framework__ProtobufCMessageDescriptor
     paddle_mobile__framework__proto__op_proto__descriptor = {
         PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
         "paddle_mobile.framework.proto.OpProto",
@@ -752,7 +767,7 @@ const ProtobufCMessageDescriptor
         NULL,
         NULL /* reserved[123] */
 };
-static const ProtobufCFieldDescriptor
+static const PaddleMobile__Framework__ProtobufCFieldDescriptor
     paddle_mobile__framework__proto__var_type__tensor_desc__field_descriptors
         [2] = {
             {
@@ -780,11 +795,11 @@ static const unsigned
             0, /* field[0] = data_type */
             1, /* field[1] = dims */
 };
-static const ProtobufCIntRange
+static const PaddleMobile__Framework__ProtobufCIntRange
     paddle_mobile__framework__proto__var_type__tensor_desc__number_ranges[1 +
                                                                           1] = {
         {1, 0}, {0, 2}};
-const ProtobufCMessageDescriptor
+const PaddleMobile__Framework__ProtobufCMessageDescriptor
     paddle_mobile__framework__proto__var_type__tensor_desc__descriptor = {
         PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
         "paddle_mobile.framework.proto.VarType.TensorDesc",
@@ -806,7 +821,7 @@ const ProtobufCMessageDescriptor
 static const int32_t
     paddle_mobile__framework__proto__var_type__lo_dtensor_desc__lod_level__default_value =
         0;
-static const ProtobufCFieldDescriptor
+static const PaddleMobile__Framework__ProtobufCFieldDescriptor
     paddle_mobile__framework__proto__var_type__lo_dtensor_desc__field_descriptors
         [2] = {
             {
@@ -837,10 +852,10 @@ static const unsigned
             1, /* field[1] = lod_level */
             0, /* field[0] = tensor */
 };
-static const ProtobufCIntRange
+static const PaddleMobile__Framework__ProtobufCIntRange
     paddle_mobile__framework__proto__var_type__lo_dtensor_desc__number_ranges
         [1 + 1] = {{1, 0}, {0, 2}};
-const ProtobufCMessageDescriptor
+const PaddleMobile__Framework__ProtobufCMessageDescriptor
     paddle_mobile__framework__proto__var_type__lo_dtensor_desc__descriptor = {
         PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
         "paddle_mobile.framework.proto.VarType.LoDTensorDesc",
@@ -862,7 +877,7 @@ const ProtobufCMessageDescriptor
 static const int32_t
     paddle_mobile__framework__proto__var_type__lo_dtensor_array_desc__lod_level__default_value =
         0;
-static const ProtobufCFieldDescriptor
+static const PaddleMobile__Framework__ProtobufCFieldDescriptor
     paddle_mobile__framework__proto__var_type__lo_dtensor_array_desc__field_descriptors
         [2] = {
             {
@@ -896,10 +911,10 @@ static const unsigned
             1, /* field[1] = lod_level */
             0, /* field[0] = tensor */
 };
-static const ProtobufCIntRange
+static const PaddleMobile__Framework__ProtobufCIntRange
     paddle_mobile__framework__proto__var_type__lo_dtensor_array_desc__number_ranges
         [1 + 1] = {{1, 0}, {0, 2}};
-const ProtobufCMessageDescriptor
+const PaddleMobile__Framework__ProtobufCMessageDescriptor
     paddle_mobile__framework__proto__var_type__lo_dtensor_array_desc__descriptor = {
         PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
         "paddle_mobile.framework.proto.VarType.LoDTensorArrayDesc",
@@ -918,7 +933,7 @@ const ProtobufCMessageDescriptor
         NULL,
         NULL /* reserved[123] */
 };
-static const ProtobufCFieldDescriptor
+static const PaddleMobile__Framework__ProtobufCFieldDescriptor
     paddle_mobile__framework__proto__var_type__reader_desc__field_descriptors[1] = {
         {
             "lod_tensor", 1, PROTOBUF_C_LABEL_REPEATED, PROTOBUF_C_TYPE_MESSAGE,
@@ -936,11 +951,11 @@ static const unsigned
         [] = {
             0, /* field[0] = lod_tensor */
 };
-static const ProtobufCIntRange
+static const PaddleMobile__Framework__ProtobufCIntRange
     paddle_mobile__framework__proto__var_type__reader_desc__number_ranges[1 +
                                                                           1] = {
         {1, 0}, {0, 1}};
-const ProtobufCMessageDescriptor
+const PaddleMobile__Framework__ProtobufCMessageDescriptor
     paddle_mobile__framework__proto__var_type__reader_desc__descriptor = {
         PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
         "paddle_mobile.framework.proto.VarType.ReaderDesc",
@@ -959,7 +974,7 @@ const ProtobufCMessageDescriptor
         NULL,
         NULL /* reserved[123] */
 };
-static const ProtobufCFieldDescriptor
+static const PaddleMobile__Framework__ProtobufCFieldDescriptor
     paddle_mobile__framework__proto__var_type__channel_desc__field_descriptors
         [2] = {
             {
@@ -986,11 +1001,11 @@ static const unsigned
             1, /* field[1] = capacity */
             0, /* field[0] = data_type */
 };
-static const ProtobufCIntRange
+static const PaddleMobile__Framework__ProtobufCIntRange
     paddle_mobile__framework__proto__var_type__channel_desc__number_ranges[1 +
                                                                            1] =
         {{1, 0}, {0, 2}};
-const ProtobufCMessageDescriptor
+const PaddleMobile__Framework__ProtobufCMessageDescriptor
     paddle_mobile__framework__proto__var_type__channel_desc__descriptor = {
         PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
         "paddle_mobile.framework.proto.VarType.ChannelDesc",
@@ -1009,7 +1024,7 @@ const ProtobufCMessageDescriptor
         NULL,
         NULL /* reserved[123] */
 };
-static const ProtobufCFieldDescriptor
+static const PaddleMobile__Framework__ProtobufCFieldDescriptor
     paddle_mobile__framework__proto__var_type__tuple__field_descriptors[1] = {
         {
             "element_type", 1, PROTOBUF_C_LABEL_REPEATED, PROTOBUF_C_TYPE_ENUM,
@@ -1027,10 +1042,10 @@ static const unsigned
         {
             0, /* field[0] = element_type */
 };
-static const ProtobufCIntRange
+static const PaddleMobile__Framework__ProtobufCIntRange
     paddle_mobile__framework__proto__var_type__tuple__number_ranges[1 + 1] = {
         {1, 0}, {0, 1}};
-const ProtobufCMessageDescriptor
+const PaddleMobile__Framework__ProtobufCMessageDescriptor
     paddle_mobile__framework__proto__var_type__tuple__descriptor = {
         PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
         "paddle_mobile.framework.proto.VarType.Tuple",
@@ -1049,7 +1064,7 @@ const ProtobufCMessageDescriptor
         NULL,
         NULL /* reserved[123] */
 };
-static const ProtobufCEnumValue
+static const PaddleMobile__Framework__ProtobufCEnumValue
     paddle_mobile__framework__proto__var_type__type__enum_values_by_number[22] =
         {
             {"BOOL", "PADDLE_MOBILE__FRAMEWORK__PROTO__VAR_TYPE__TYPE__BOOL",
@@ -1102,10 +1117,10 @@ static const ProtobufCEnumValue
             {"INT8", "PADDLE_MOBILE__FRAMEWORK__PROTO__VAR_TYPE__TYPE__INT8",
              21},
 };
-static const ProtobufCIntRange
+static const PaddleMobile__Framework__ProtobufCIntRange
     paddle_mobile__framework__proto__var_type__type__value_ranges[] = {{0, 0},
                                                                        {0, 22}};
-static const ProtobufCEnumValueIndex
+static const PaddleMobile__Framework__ProtobufCEnumValueIndex
     paddle_mobile__framework__proto__var_type__type__enum_values_by_name[22] = {
         {"BOOL", 0},           {"CHANNEL", 16},
         {"FEED_MINIBATCH", 9}, {"FETCH_LIST", 10},
@@ -1119,7 +1134,7 @@ static const ProtobufCEnumValueIndex
         {"SIZE_T", 19},        {"STEP_SCOPES", 11},
         {"TUPLE", 18},         {"UINT8", 20},
 };
-const ProtobufCEnumDescriptor
+const PaddleMobile__Framework__ProtobufCEnumDescriptor
     paddle_mobile__framework__proto__var_type__type__descriptor = {
         PROTOBUF_C__ENUM_DESCRIPTOR_MAGIC,
         "paddle_mobile.framework.proto.VarType.Type",
@@ -1137,7 +1152,7 @@ const ProtobufCEnumDescriptor
         NULL,
         NULL /* reserved[1234] */
 };
-static const ProtobufCFieldDescriptor
+static const PaddleMobile__Framework__ProtobufCFieldDescriptor
     paddle_mobile__framework__proto__var_type__field_descriptors[7] = {
         {
             "type", 1, PROTOBUF_C_LABEL_REQUIRED, PROTOBUF_C_TYPE_ENUM,
@@ -1206,10 +1221,10 @@ static const unsigned
         6, /* field[6] = tuple */
         0, /* field[0] = type */
 };
-static const ProtobufCIntRange
+static const PaddleMobile__Framework__ProtobufCIntRange
     paddle_mobile__framework__proto__var_type__number_ranges[1 + 1] = {{1, 0},
                                                                        {0, 7}};
-const ProtobufCMessageDescriptor
+const PaddleMobile__Framework__ProtobufCMessageDescriptor
     paddle_mobile__framework__proto__var_type__descriptor = {
         PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
         "paddle_mobile.framework.proto.VarType",
@@ -1229,7 +1244,7 @@ const ProtobufCMessageDescriptor
 };
 static const protobuf_c_boolean
     paddle_mobile__framework__proto__var_desc__persistable__default_value = 0;
-static const ProtobufCFieldDescriptor
+static const PaddleMobile__Framework__ProtobufCFieldDescriptor
     paddle_mobile__framework__proto__var_desc__field_descriptors[3] = {
         {
             "name", 1, PROTOBUF_C_LABEL_REQUIRED, PROTOBUF_C_TYPE_STRING,
@@ -1262,10 +1277,10 @@ static const unsigned
         2, /* field[2] = persistable */
         1, /* field[1] = type */
 };
-static const ProtobufCIntRange
+static const PaddleMobile__Framework__ProtobufCIntRange
     paddle_mobile__framework__proto__var_desc__number_ranges[1 + 1] = {{1, 0},
                                                                        {0, 3}};
-const ProtobufCMessageDescriptor
+const PaddleMobile__Framework__ProtobufCMessageDescriptor
     paddle_mobile__framework__proto__var_desc__descriptor = {
         PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
         "paddle_mobile.framework.proto.VarDesc",
@@ -1286,7 +1301,7 @@ const ProtobufCMessageDescriptor
 static const int32_t
     paddle_mobile__framework__proto__block_desc__forward_block_idx__default_value =
         -1;
-static const ProtobufCFieldDescriptor
+static const PaddleMobile__Framework__ProtobufCFieldDescriptor
     paddle_mobile__framework__proto__block_desc__field_descriptors[5] = {
         {
             "idx", 1, PROTOBUF_C_LABEL_REQUIRED, PROTOBUF_C_TYPE_INT32,
@@ -1339,10 +1354,10 @@ static const unsigned
         1, /* field[1] = parent_idx */
         2, /* field[2] = vars */
 };
-static const ProtobufCIntRange
+static const PaddleMobile__Framework__ProtobufCIntRange
     paddle_mobile__framework__proto__block_desc__number_ranges[1 + 1] = {
         {1, 0}, {0, 5}};
-const ProtobufCMessageDescriptor
+const PaddleMobile__Framework__ProtobufCMessageDescriptor
     paddle_mobile__framework__proto__block_desc__descriptor = {
         PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
         "paddle_mobile.framework.proto.BlockDesc",
@@ -1360,7 +1375,7 @@ const ProtobufCMessageDescriptor
         NULL,
         NULL /* reserved[123] */
 };
-static const ProtobufCFieldDescriptor
+static const PaddleMobile__Framework__ProtobufCFieldDescriptor
     paddle_mobile__framework__proto__program_desc__field_descriptors[2] = {
         {
             "blocks", 1, PROTOBUF_C_LABEL_REPEATED, PROTOBUF_C_TYPE_MESSAGE,
@@ -1384,10 +1399,10 @@ static const unsigned
         0, /* field[0] = blocks */
         1, /* field[1] = version */
 };
-static const ProtobufCIntRange
+static const PaddleMobile__Framework__ProtobufCIntRange
     paddle_mobile__framework__proto__program_desc__number_ranges[1 + 1] = {
         {1, 0}, {0, 2}};
-const ProtobufCMessageDescriptor
+const PaddleMobile__Framework__ProtobufCMessageDescriptor
     paddle_mobile__framework__proto__program_desc__descriptor = {
         PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
         "paddle_mobile.framework.proto.ProgramDesc",
@@ -1406,7 +1421,7 @@ const ProtobufCMessageDescriptor
         NULL,
         NULL /* reserved[123] */
 };
-static const ProtobufCEnumValue
+static const PaddleMobile__Framework__ProtobufCEnumValue
     paddle_mobile__framework__proto__attr_type__enum_values_by_number[12] = {
         {"INT", "PADDLE_MOBILE__FRAMEWORK__PROTO__ATTR_TYPE__INT", 0},
         {"FLOAT", "PADDLE_MOBILE__FRAMEWORK__PROTO__ATTR_TYPE__FLOAT", 1},
@@ -1421,16 +1436,16 @@ static const ProtobufCEnumValue
         {"BLOCKS", "PADDLE_MOBILE__FRAMEWORK__PROTO__ATTR_TYPE__BLOCKS", 10},
         {"LONGS", "PADDLE_MOBILE__FRAMEWORK__PROTO__ATTR_TYPE__LONGS", 11},
 };
-static const ProtobufCIntRange
+static const PaddleMobile__Framework__ProtobufCIntRange
     paddle_mobile__framework__proto__attr_type__value_ranges[] = {{0, 0},
                                                                   {0, 12}};
-static const ProtobufCEnumValueIndex
+static const PaddleMobile__Framework__ProtobufCEnumValueIndex
     paddle_mobile__framework__proto__attr_type__enum_values_by_name[12] = {
         {"BLOCK", 8}, {"BLOCKS", 10}, {"BOOLEAN", 6}, {"BOOLEANS", 7},
         {"FLOAT", 1}, {"FLOATS", 4},  {"INT", 0},     {"INTS", 3},
         {"LONG", 9},  {"LONGS", 11},  {"STRING", 2},  {"STRINGS", 5},
 };
-const ProtobufCEnumDescriptor
+const PaddleMobile__Framework__ProtobufCEnumDescriptor
     paddle_mobile__framework__proto__attr_type__descriptor = {
         PROTOBUF_C__ENUM_DESCRIPTOR_MAGIC,
         "paddle_mobile.framework.proto.AttrType",
