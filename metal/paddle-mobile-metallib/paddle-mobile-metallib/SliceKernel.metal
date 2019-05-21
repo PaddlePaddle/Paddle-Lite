@@ -24,6 +24,8 @@ struct MetalSliceParam {
     short end1;
     short end2;
     short end3;
+    int iC;
+    int oC;
 };
 
 kernel void slice(texture2d_array<float, access::sample> inTexture [[texture(0)]],
@@ -35,9 +37,14 @@ kernel void slice(texture2d_array<float, access::sample> inTexture [[texture(0)]
         gid.z >= outTexture.get_array_size()) return;
     constexpr sampler s(coord::pixel, filter::nearest, address::clamp_to_zero);
     float4 output;
-    for (int i = 0; i < 4; i++) {
-        int input_c = gid.z * 4 + i + param.start1;
-        int input_z = input_c / 4;
+    for (int i = 0; i < 4; ++i) {
+        int tmp = gid.z * 4 + i;
+        int output_c = tmp % param.oC;
+        int output_n = tmp / param.oC;
+        int c = output_c + param.start1;
+        tmp = output_n * param.iC + c;
+        int input_z = tmp / 4;
+        int input_c = tmp % 4;
         const float4 input = inTexture.read(gid.xy, input_z);
         output[i] = input[input_c % 4];
     }
@@ -52,12 +59,17 @@ kernel void slice_half(texture2d_array<half, access::sample> inTexture [[texture
         gid.y >= outTexture.get_height() ||
         gid.z >= outTexture.get_array_size()) return;
     constexpr sampler s(coord::pixel, filter::nearest, address::clamp_to_zero);
-    float4 output;
-    for (int i = 0; i < 4; i++) {
-        int input_c = gid.z * 4 + i + param.start1;
-        int input_z = input_c / 4;
-        const float4 input = float4(inTexture.read(gid.xy, input_z));
+    half4 output;
+    for (int i = 0; i < 4; ++i) {
+        int tmp = gid.z * 4 + i;
+        int output_c = tmp % param.oC;
+        int output_n = tmp / param.oC;
+        int c = output_c + param.start1;
+        tmp = output_n * param.iC + c;
+        int input_z = tmp / 4;
+        int input_c = tmp % 4;
+        const half4 input = inTexture.read(gid.xy, input_z);
         output[i] = input[input_c % 4];
     }
-    outTexture.write(half4(output), gid.xy, gid.z);
+    outTexture.write(output, gid.xy, gid.z);
 }
