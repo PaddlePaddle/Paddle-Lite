@@ -1752,6 +1752,31 @@ class PReluParam : public OpParam {
 };
 #endif
 
+#ifdef LEAKY_RELU_OP
+template <typename Dtype>
+class LeakyReluParam : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
+ public:
+  LeakyReluParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
+                 const AttributeMap &attrs, Scope *scope)
+      : OpParam(inputs, outputs, attrs, scope) {
+    input_x_ = InputXFrom<GType>(inputs, *scope);
+    out_ = OutFrom<GType>(outputs, *scope);
+    alpha_ = GetAttr<float>("alpha", attrs);
+  }
+  const GType *InputX() const { return input_x_; }
+  const float Alpha() const { return alpha_; }
+  GType *Out() const { return out_; }
+
+ private:
+  GType *input_x_;
+  GType *out_;
+  float alpha_;
+};
+#endif
+
 template <typename Dtype>
 class FusionFcParam : public OpParam {
   typedef typename DtypeTensorTrait<Dtype>::gtype GType;

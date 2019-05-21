@@ -104,6 +104,18 @@ template <>
 inline float32x4_t vActiveq_f32<LOG>(const float32x4_t &x) {
   return log_ps(x);
 }
+
+template <ActivationType Act = IDENTITY>
+inline float32x4_t vActiveq_f32(const float32x4_t &x,
+                                const float32x4_t &alpha) {
+  return x;
+}
+
+template <>
+inline float32x4_t vActiveq_f32<LEAKY_RELU>(const float32x4_t &x,
+                                            const float32x4_t &alpha) {
+  return vmaxq_f32(x, vmulq_f32(x, alpha));
+}
 #endif
 
 template <ActivationType Act = IDENTITY>
@@ -140,6 +152,16 @@ inline float Active<TANH>(const float &x) {
 template <>
 inline float Active<LOG>(const float &x) {
   return log(x);
+}
+
+template <ActivationType Act = IDENTITY>
+inline float Active(const float &x, const float &alpha) {
+  return x;
+}
+
+template <>
+inline float Active<LEAKY_RELU>(const float &x, const float &alpha) {
+  return std::max(x, alpha * x);
 }
 
 }  // namespace math
