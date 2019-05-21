@@ -244,7 +244,7 @@ public class Loader<P: PrecisionProtocol>: Loaderable{
                             }
                             
                             let dim = Dim.init(inDim: dimArr)
-                            let tensor = Tensor<P>.init(inDim: dim, inLayout: tensorDesc.dataLayout)
+                            let tensor = Tensor<P>.init(inDim: dim, inLayout: tensorDesc.dataLayout, originDimsCount: tensorDesc.originDimsCount)
                             do {
                                 if paraLoaderPointer != nil {
                                     try paraLoaderPointer!.read(tensor: tensor)
@@ -261,7 +261,9 @@ public class Loader<P: PrecisionProtocol>: Loaderable{
                             scope[varDesc.name] = tensor
                         } else {
                             let dim = Dim.init(inDim: tensorDesc.dims)
-                            scope[varDesc.name] = Texture.init(device: device, inDim: dim)
+                            let texture = Texture.init(device: device, inDim: dim)
+                            texture.originDimsCount = tensorDesc.originDimsCount
+                            scope[varDesc.name] = texture
                         }
                     } else {
                         if varDesc.name == fetchKey {

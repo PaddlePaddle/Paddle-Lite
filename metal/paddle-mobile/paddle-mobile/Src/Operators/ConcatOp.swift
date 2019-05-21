@@ -35,6 +35,15 @@ class ConcatParam<P: PrecisionProtocol>: OpParam {
                 input.append(v)
             }
             axis = try ConcatParam.getAttr(key: "axis", attrs: opDesc.attrs)
+            if input.count > 0 {
+                if let originDimsCount = input[0].originDimsCount {
+                    let nowDimsCount = input[0].dim.cout()
+                    let diff = originDimsCount - nowDimsCount
+                    if diff > 0 {
+                        axis -= diff
+                    }
+                }
+            }
             output = try ConcatParam.outputOut(outputs: opDesc.outputs, from: inScope)
         } catch let error {
             throw error
@@ -43,7 +52,7 @@ class ConcatParam<P: PrecisionProtocol>: OpParam {
     var input: [Texture] = []
     var output: Texture
     var transpose: [Int] = []
-    let axis: Int
+    var axis: Int
 }
 
 class ConcatOp<P: PrecisionProtocol>: Operator<ConcatKernel<P>, ConcatParam<P>>, Runable, Creator, InferShaperable{
