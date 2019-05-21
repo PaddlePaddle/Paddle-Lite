@@ -67,8 +67,8 @@ struct ConcatParam {
 #undef R
 #undef V
 
-// lens: (R=4, N=3, V=x)
-#define V VX
+// lens: (R=4, N=3, V=y)
+#define V VY
 #define R 4
 #define N 3
 #define P float

@@ -28,8 +28,8 @@ kernel void nearest_interp(texture2d_array<float, access::sample> inTexture [[te
         gid.z >= outTexture.get_array_size()) return;
     constexpr sampler s(coord::pixel, filter::nearest, address::clamp_to_zero);
     float scale = param.scale;
-    uint x = uint(round(float(gid.x) / scale));
-    uint y = uint(round(float(gid.y) / scale));
+    uint x = uint(floor(float(gid.x) / scale));
+    uint y = uint(floor(float(gid.y) / scale));
     const float4 input = inTexture.read(uint2(x, y), gid.z);
     outTexture.write(input, gid.xy, gid.z);
 }
@@ -43,8 +43,8 @@ kernel void nearest_interp_half(texture2d_array<half, access::sample> inTexture 
         gid.z >= outTexture.get_array_size()) return;
     constexpr sampler s(coord::pixel, filter::nearest, address::clamp_to_zero);
     float scale = param.scale;
-    uint x = uint(round(float(gid.x) / scale));
-    uint y = uint(round(float(gid.y) / scale));
+    uint x = uint(floor(float(gid.x) / scale));
+    uint y = uint(floor(float(gid.y) / scale));
     const half4 input = inTexture.read(uint2(x, y), gid.z);
     outTexture.write(input, gid.xy, gid.z);
 }
