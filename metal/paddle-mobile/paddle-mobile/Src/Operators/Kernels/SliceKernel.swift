@@ -23,6 +23,8 @@ public struct SliceMetalParam {
     let end1: Int16
     let end2: Int16
     let end3: Int16
+    let iC: Int32
+    let oC: Int32
 }
 
 class SliceKernel<P: PrecisionProtocol>: Kernel, Computable {
@@ -40,7 +42,7 @@ class SliceKernel<P: PrecisionProtocol>: Kernel, Computable {
     
     required init(device: MTLDevice, param: SliceParam<P>, initContext: InitContext) throws {
         do {
-            try param.output.initTexture(device: device, inTranspose: param.input.transpose, computePrecision: GlobalConfig.shared.computePrecision)
+            try param.output.initTexture(device: device, inTranspose: [0, 2, 3, 1], computePrecision: GlobalConfig.shared.computePrecision)
         } catch let error {
             throw error
         }
@@ -60,7 +62,11 @@ class SliceKernel<P: PrecisionProtocol>: Kernel, Computable {
         let end1 = ranges[1][1]
         let end2 = ranges[2][1]
         let end3 = ranges[3][1]
-        metalParam = SliceMetalParam.init(start0: start0, start1: start1, start2: start2, start3: start3, end0: end0, end1: end1, end2: end2, end3: end3)
+        
+        let iC = Int32(param.input.tensorDim[1])
+        let oC = Int32(param.output.tensorDim[1])
+        
+        metalParam = SliceMetalParam.init(start0: start0, start1: start1, start2: start2, start3: start3, end0: end0, end1: end1, end2: end2, end3: end3, iC: iC, oC: oC)
         if GlobalConfig.shared.computePrecision == .Float32 {
             super.init(device: device, inFunctionName: "slice", initContext: initContext)
         } else if GlobalConfig.shared.computePrecision == .Float16 {
