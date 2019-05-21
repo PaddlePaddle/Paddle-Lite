@@ -51,6 +51,10 @@ int open_memdevice() {
   return g_fpgainfo.fd_mem;
 }
 
+int close_drvdevice() { return close(g_fpgainfo.fd_drv); }
+
+int close_memdevice() { return close(g_fpgainfo.fd_mem); }
+
 void pl_reset() { usleep(100 * 1000); }
 
 void setup_pe(struct pe_data_s *pe_data, struct fpga_pe *pe,
@@ -141,17 +145,6 @@ int fpga_regpoll(uint64_t reg, uint64_t val, int time) {
     return 0;
   } else {
     return -1;
-  }
-}
-
-void memory_release(struct fpga_memory *memory) {
-  void *ptr = nullptr;
-
-  /*unmap memory*/
-  std::map<void *, size_t> map = g_fpgainfo.fpga_addr2size_map;
-  std::map<void *, size_t>::iterator iter;
-  for (iter = map.begin(); iter != map.end(); iter++) {
-    fpga_free_driver(ptr);
   }
 }
 
@@ -291,8 +284,10 @@ int open_device_driver() {
 int close_device_driver() {
   pl_destroy();
   fpga_reg_free(g_fpgainfo.FpgaRegVirAddr);
-  memory_release(g_fpgainfo.memory_info);
-  return 0;
+  int ret = 0;
+  ret = close_drvdevice();
+  ret |= close_memdevice();
+  return ret;
 }
 
 }  // namespace driver
