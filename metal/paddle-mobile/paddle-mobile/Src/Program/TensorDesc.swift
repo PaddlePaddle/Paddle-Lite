@@ -16,6 +16,7 @@ import Foundation
 
 class TensorDesc {
     let dims: [Int]
+    let originDimsCount: Int
     let dataType: VarTypeType
     let dataLayout: DataLayout = DataLayout.NCHW()
     var NCHWDim: [Int] {
@@ -62,6 +63,8 @@ class TensorDesc {
             let dim = Int(protoTensorDesc.dimsArray.value(at: i)) > 0 ?Int(protoTensorDesc.dimsArray.value(at: i)) :abs(Int(protoTensorDesc.dimsArray.value(at: i)))
             dimsArray.append(dim)
         }
+        
+        originDimsCount = Int(dimsCount)
         
         if dimsCount > 4 {
             let headDims = Int(dimsCount - 4)
