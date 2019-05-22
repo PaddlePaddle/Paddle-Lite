@@ -52,7 +52,13 @@ void ConvAddKernel<CPU, float>::Compute(const FusionConvAddParam<CPU> &param) {
       PADDLE_MOBILE_THROW_EXCEPTION("Invalid convolution execute mode %d",
                                     param.ExecMode());
   }
-  math::AddChannelWise<IDENTITY>(param.Output(), param.Bias(), param.Output());
+  if (param.Bias()->dims() == param.Output()->dims()) {
+    math::AddElememtWise<IDENTITY>(param.Output(), param.Bias(), param.Axis(),
+                                   param.Output());
+  } else {
+    math::AddChannelWise<IDENTITY>(param.Output(), param.Bias(),
+                                   param.Output());
+  }
 }
 
 template class ConvAddKernel<CPU, float>;
