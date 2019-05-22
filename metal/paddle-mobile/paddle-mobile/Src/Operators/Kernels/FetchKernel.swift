@@ -15,6 +15,9 @@
 import Foundation
 
 class FetchKernel<P: PrecisionProtocol>: Kernel, Computable {
+    var expectedTranspose: [Int]?
+    var device: MTLDevice?
+    var initContext: InitContext?
     
     required init(device: MTLDevice, param: FetchParam<P>, initContext: InitContext) throws {
         param.output.initBuffer(device: device)
@@ -25,6 +28,9 @@ class FetchKernel<P: PrecisionProtocol>: Kernel, Computable {
                 switch param.input.tensorDim.cout() {
                 case 1, 2:
                     super.init(device: device, inFunctionName: "fetch_1or2_half", initContext: initContext)
+                case 4:
+                    expectedTranspose = [0, 2, 3, 1]
+                    super.init(device: device, inFunctionName: "fetch_half", initContext: initContext)
                 default:
                     fatalError(" not support ")
                 }
@@ -38,6 +44,9 @@ class FetchKernel<P: PrecisionProtocol>: Kernel, Computable {
                 switch param.input.tensorDim.cout() {
                 case 1, 2:
                     super.init(device: device, inFunctionName: "fetch_1or2_float", initContext: initContext)
+                case 4:
+                    expectedTranspose = [0, 2, 3, 1]
+                    super.init(device: device, inFunctionName: "fetch_float", initContext: initContext)
                 default:
                     fatalError(" not support ")
                 }
@@ -47,13 +56,25 @@ class FetchKernel<P: PrecisionProtocol>: Kernel, Computable {
         } else {
             fatalError(" not support ")
         }
+        self.device = device
+        self.initContext = initContext
     }
     
     func compute(commandBuffer: MTLCommandBuffer, param: FetchParam<P>) throws {
+        var input = param.input
+        if let expectedTranspose = expectedTranspose {
+            if param.input.transpose != expectedTranspose {
+                if let device = device, let initContext = initContext, let transposedInput = encodeTransposeInput(input: param.input, toTranspose: expectedTranspose, commandBuffer: commandBuffer, device: device, initContext: initContext) {
+                    input = transposedInput
+                } else {
+                    print("input transpose failed in slice kernel")
+                }
+            }
+        }
         guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
             throw PaddleMobileError.predictError(message: " encode is nil")
         }
-        encoder.setTexture(param.input.metalTexture, index: 0)
+        encoder.setTexture(input.metalTexture, index: 0)
         encoder.setBuffer(param.output.resultBuffer!, offset: 0, index: 0)
         encoder.dispatch(computePipline: pipline, outTexture: param.input.metalTexture)
         encoder.endEncoding()
