@@ -32,5 +32,7 @@ namespace ops = paddle_mobile::operators;
 #ifdef PADDLE_MOBILE_CPU
 REGISTER_OPERATOR_CPU(scale, ops::ScaleOp);
 #endif
-
+#ifdef PADDLE_MOBILE_CL
+REGISTER_OPERATOR_CL(scale, ops::ScaleOp);
+#endif
 #endif
