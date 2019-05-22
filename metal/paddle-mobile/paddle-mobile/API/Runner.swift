@@ -72,10 +72,20 @@ import Foundation
         return success
     }
     
+    /// load 模型, 返回 true 可进行预测，公共方法，保证线程安全
+    ///
+    /// - Returns: load 成功或失败
+    @objc public func load(optimize: Bool) -> Bool {
+        Runner.loadLock.lock()
+        let success = unSafeLoad(optimize: optimize)
+        Runner.loadLock.unlock()
+        return success
+    }
+    
     /// load 模型, 返回 true 可进行预测，不保证线程安全
     ///
     /// - Returns: load 成功或失败
-    private func unSafeLoad() -> Bool {
+    private func unSafeLoad(optimize: Bool = true) -> Bool {
         guard let inDevice = device, let inQueue = queue else {
             print(" paddle mobile gpu load error, need MTLCommandQueue")
             return false
@@ -89,15 +99,14 @@ import Foundation
         }
         
         do {
-            
             if let inParamPointer = net.paramPointer, let inModelPointer = net.modelPointer {
                 guard net.paramSize > 0 && net.modelSize > 0 else {
                     print(" load from memory param size or model size can't 0 ")
                     return false
                 }
-                program = try loader.load(device: inDevice, paramPointer: inParamPointer, paramSize: net.paramSize,modePointer:inModelPointer,modelSize:net.modelSize)
+                program = try loader.load(device: inDevice, paramPointer: inParamPointer, paramSize: net.paramSize, modePointer: inModelPointer, modelSize: net.modelSize, optimize: optimize)
             } else if let inModelPath = net.modelPath, let inParamPath = net.paramPath {
-                program = try loader.load(device: inDevice, modelPath: inModelPath, paraPath: inParamPath)
+                program = try loader.load(device: inDevice, modelPath: inModelPath, paraPath: inParamPath, optimize: optimize)
             } else {
                 print(" model pointer or model file path need be specified")
                 return false

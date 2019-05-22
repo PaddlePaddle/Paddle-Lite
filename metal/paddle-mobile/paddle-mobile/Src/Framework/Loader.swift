@@ -16,11 +16,11 @@ import Foundation
 //import SwiftProtobuf
 
 protocol Loaderable {
-    func load(device:MTLDevice, paramPointer: UnsafeMutableRawPointer, paramSize:Int, modePointer: UnsafeMutableRawPointer, modelSize: Int) throws -> Program
-    func load(device: MTLDevice, modelPath: String, paraPath: String) throws -> Program
+    func load(device: MTLDevice, paramPointer: UnsafeMutableRawPointer, paramSize: Int, modePointer: UnsafeMutableRawPointer, modelSize: Int, optimize: Bool) throws -> Program
+    func load(device: MTLDevice, modelPath: String, paraPath: String, optimize: Bool) throws -> Program
 }
 
-public class Loader<P: PrecisionProtocol>: Loaderable{
+public class Loader<P: PrecisionProtocol>: Loaderable {
     class ParaLoader {
         let file: UnsafeMutablePointer<FILE>
         let fileSize: Int
@@ -186,7 +186,7 @@ public class Loader<P: PrecisionProtocol>: Loaderable{
         }
     }
     public init(){}
-    private func loadModelandParam(_ device:MTLDevice,_ modelData:Data, _ paraLoaderPointer:ParaLoaderWithPointer?, _ paraLoader:ParaLoader?) throws -> Program {
+    private func loadModelandParam(_ device: MTLDevice, _ modelData: Data, _ paraLoaderPointer: ParaLoaderWithPointer?, _ paraLoader: ParaLoader?, _ optimize: Bool = true) throws -> Program {
         do {
             /// swift protobuf serialized Data to instance class
             //      let protoProgram = try PaddleMobile_Framework_Proto_ProgramDesc.init(
@@ -196,7 +196,7 @@ public class Loader<P: PrecisionProtocol>: Loaderable{
             let protoProgram = try ProgramDesc.init(data: (modelData as NSData) as Data)
             
             let originProgramDesc = PMProgramDesc.init(protoProgram: protoProgram)
-            let programDesc = ProgramOptimize<P>.init().optimize(originProgramDesc: originProgramDesc)
+            let programDesc = optimize ? ProgramOptimize<P>.init().optimize(originProgramDesc: originProgramDesc) : originProgramDesc
             
             //      let programDesc = PMProgramDesc.init(protoProgram: protoProgram)
             if GlobalConfig.shared.debug {
@@ -281,20 +281,20 @@ public class Loader<P: PrecisionProtocol>: Loaderable{
             throw PaddleMobileError.loaderError(message: "protobuf decoder error")
         }
     }
-    public func load(device:MTLDevice, paramPointer: UnsafeMutableRawPointer, paramSize:Int, modePointer: UnsafeMutableRawPointer, modelSize: Int) throws -> Program {
+    public func load(device: MTLDevice, paramPointer: UnsafeMutableRawPointer, paramSize: Int, modePointer: UnsafeMutableRawPointer, modelSize: Int, optimize: Bool = true) throws -> Program {
         let modelData = Data.init(bytes:modePointer, count:modelSize)
         guard let paraLoader = try? ParaLoaderWithPointer.init(pPointer: paramPointer,pSize: paramSize) else {
             throw PaddleMobileError.loaderError(message: "load para error")
         }
         do {
-            let program = try loadModelandParam(device,modelData,paraLoader,nil)
+            let program = try loadModelandParam(device, modelData, paraLoader, nil, optimize)
             return program
         } catch let error {
             throw error
         }
     }
     
-    public func load(device: MTLDevice, modelPath: String, paraPath: String) throws -> Program {
+    public func load(device: MTLDevice, modelPath: String, paraPath: String, optimize: Bool = true) throws -> Program {
         guard let modelData = try? Data.init(contentsOf: URL.init(fileURLWithPath: modelPath)) else {
             throw PaddleMobileError.loaderError(message: "load " + modelPath + " failed !")
         }
@@ -303,7 +303,7 @@ public class Loader<P: PrecisionProtocol>: Loaderable{
         }
         
         do {
-            let program = try loadModelandParam(device,modelData,nil,paraLoader)
+            let program = try loadModelandParam(device, modelData, nil, paraLoader, optimize)
             return program
         } catch let error {
             throw error
