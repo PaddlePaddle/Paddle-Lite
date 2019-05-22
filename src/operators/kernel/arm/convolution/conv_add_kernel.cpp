@@ -54,9 +54,10 @@ void ConvAddKernel<CPU, float>::Compute(const FusionConvAddParam<CPU> &param) {
   }
   if (param.Bias()->dims() == param.Output()->dims()) {
     math::AddElememtWise<IDENTITY>(param.Output(), param.Bias(), param.Axis(),
-                               param.Output());
+                                   param.Output());
   } else {
-    math::AddChannelWise<IDENTITY>(param.Output(), param.Bias(), param.Output());
+    math::AddChannelWise<IDENTITY>(param.Output(), param.Bias(),
+                                   param.Output());
   }
 }
 
