@@ -13,7 +13,9 @@
 // limitations under the License.
 
 #include "io/api_paddle_mobile.h"
+#include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 #include "common/enforce.h"
 #include "framework/tensor.h"
@@ -172,6 +174,14 @@ void PaddleMobilePredictor<Device, T>::FetchPaddleTensors(
   }
 }
 
+template <typename Device, typename T>
+void PaddleMobilePredictor<Device, T>::FetchPaddleTensors(PaddleTensor *output,
+                                                          int id) {
+  std::shared_ptr<framework::Tensor> tensor_ptr =
+      paddle_mobile_->FetchResult(id);
+  ConvertTensors(*(tensor_ptr.get()), output);
+  return;
+}
 template <typename Device, typename T>
 void PaddleMobilePredictor<Device, T>::GetPaddleTensor(const std::string &name,
                                                        PaddleTensor *output) {
