@@ -53,7 +53,12 @@ void ConvAddReluKernel<CPU, float>::Compute(
       PADDLE_MOBILE_THROW_EXCEPTION("Invalid convolution execute mode %d",
                                     param.ExecMode());
   }
-  math::AddChannelWise<RELU>(param.Output(), param.Bias(), param.Output());
+	if (param.Bias()->dims() == param.Output()->dims()) {
+		math::AddElememtWise<RELU>(param.Output(), param.Bias(), param.Axis(),
+		                               param.Output());
+	} else {
+		math::AddChannelWise<RELU>(param.Output(), param.Bias(), param.Output());
+	}
 }
 
 template class ConvAddReluKernel<CPU, float>;
