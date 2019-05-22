@@ -34,7 +34,7 @@ class ReshapeKernel<P: PrecisionProtocol>: Kernel, Computable{
     required init(device: MTLDevice, param: ReshapeParam<P>, initContext: InitContext) throws {
         
         do {
-            try param.output.initTexture(device: device, inTranspose: param.input.transpose, computePrecision: GlobalConfig.shared.computePrecision)
+            try param.output.initTexture(device: device, computePrecision: GlobalConfig.shared.computePrecision)
         } catch let error {
             throw error
         }
