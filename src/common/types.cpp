@@ -71,7 +71,9 @@ const char *G_OP_TYPE_GRU = "gru";
 const char *G_OP_TYPE_GRU_UNIT = "gru_unit";
 const char *G_OP_TYPE_CRF = "crf_decoding";
 const char *G_OP_TYPE_BILINEAR_INTERP = "bilinear_interp";
+const char *G_OP_TYPE_NEAREST_INTERP = "nearest_interp";
 const char *G_OP_TYPE_FLATTEN = "flatten";
+const char *G_OP_TYPE_FLATTEN2 = "flatten2";
 const char *G_OP_TYPE_SHAPE = "shape";
 const char *G_OP_TYPE_SUM = "sum";
 const char *G_OP_TYPE_TOP_K = "top_k";
@@ -177,7 +179,9 @@ std::unordered_map<
           {"Gate", "ResetHiddenPrev", "Hidden"}}},
         {G_OP_TYPE_CRF, {{"Emission", "Transition", "Label"}, {"ViterbiPath"}}},
         {G_OP_TYPE_BILINEAR_INTERP, {{"OutSize", "X"}, {"Out"}}},
+        {G_OP_TYPE_NEAREST_INTERP, {{"OutSize", "X"}, {"Out"}}},
         {G_OP_TYPE_FLATTEN, {{"X"}, {"Out"}}},
+        {G_OP_TYPE_FLATTEN2, {{"X"}, {"Out"}}},
         {G_OP_TYPE_SHAPE, {{"Input"}, {"Out"}}},
         {G_OP_TYPE_CONV_TRANSPOSE, {{"Input"}, {"Output"}}},
         {G_OP_TYPE_SUM, {{"X"}, {"Out"}}},
