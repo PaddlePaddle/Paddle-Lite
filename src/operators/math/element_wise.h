@@ -214,50 +214,87 @@ void AddElememtWise(const framework::Tensor *input,
   float *output_data = output->mutable_data<float>();
 
   if (x_dims == y_dims) {
-    int remain_start = 0;
-#if defined(__ARM_NEON__) || defined(__ARM_NEON)
-    remain_start = input->numel() & 0xfffffffc;
-
-    #pragma omp parallel for
-    for (int i = 0; i < input->numel() - 15; i += 16) {
-      float32x4_t r0 = vld1q_f32(input_data);
-      float32x4_t r1 = vld1q_f32(input_data + 4);
-      float32x4_t r2 = vld1q_f32(input_data + 8);
-      float32x4_t r3 = vld1q_f32(input_data + 12);
-      float32x4_t b0 = vld1q_f32(bias_data);
-      float32x4_t b1 = vld1q_f32(bias_data + 4);
-      float32x4_t b2 = vld1q_f32(bias_data + 8);
-      float32x4_t b3 = vld1q_f32(bias_data + 12);
-      r0 = vaddq_f32(r0, b0);
-      r1 = vaddq_f32(r1, b1);
-      r2 = vaddq_f32(r2, b2);
-      r3 = vaddq_f32(r3, b3);
-      r0 = math::vActiveq_f32<Act>(r0);
-      r1 = math::vActiveq_f32<Act>(r1);
-      r2 = math::vActiveq_f32<Act>(r2);
-      r3 = math::vActiveq_f32<Act>(r3);
-      vst1q_f32(output_data, r0);
-      vst1q_f32(output_data + 4, r1);
-      vst1q_f32(output_data + 8, r2);
-      vst1q_f32(output_data + 12, r3);
-      input_data += 16;
-      bias_data += 16;
-      output_data += 16;
+    size_t channels = 1;
+    size_t elementwise_num = 1;
+    for (int i = 0; i < y_dims.size(); ++i) {
+      channels *= y_dims[i];
     }
-    for (int i = input->numel() & 0xfffffff0; i < input->numel() - 3; i += 4) {
-      float32x4_t r0 = vld1q_f32(input_data);
-      float32x4_t b0 = vld1q_f32(bias_data);
-      r0 = vaddq_f32(r0, b0);
-      r0 = math::vActiveq_f32<Act>(r0);
-      vst1q_f32(output_data, r0);
-      input_data += 4;
-      bias_data += 4;
-      output_data += 4;
-    }
+#pragma omp parallel for
+    for (int j = 0; j < channels; ++j) {
+      size_t offset = (0 * channels + j) * elementwise_num;
+      const float *input = input_data + offset;
+      const float bias = bias_data[j];
+      float *output = output_data + offset;
+#if 0
+      int loop = elementwise_num >> 0x4;
+      int remain = elementwise_num & 0xF;
+      float32x4_t rb = vdupq_n_f32(bias);
+      for (int k = 0; k < loop; ++k) {
+        float32x4_t r0 = vld1q_f32(input);
+        float32x4_t r1 = vld1q_f32(input + 4);
+        float32x4_t r2 = vld1q_f32(input + 8);
+        float32x4_t r3 = vld1q_f32(input + 12);
+        r0 = vaddq_f32(r0, rb);
+        r1 = vaddq_f32(r1, rb);
+        r2 = vaddq_f32(r2, rb);
+        r3 = vaddq_f32(r3, rb);
+        r0 = math::vActiveq_f32<Act>(r0);
+        r1 = math::vActiveq_f32<Act>(r1);
+        r2 = math::vActiveq_f32<Act>(r2);
+        r3 = math::vActiveq_f32<Act>(r3);
+        vst1q_f32(output, r0);
+        vst1q_f32(output + 4, r1);
+        vst1q_f32(output + 8, r2);
+        vst1q_f32(output + 12, r3);
+        input += 16;
+        output += 16;
+      }
+      if (remain >= 8) {
+        float32x4_t r0 = vld1q_f32(input);
+        float32x4_t r1 = vld1q_f32(input + 4);
+        r0 = vaddq_f32(r0, rb);
+        r1 = vaddq_f32(r1, rb);
+        r0 = math::vActiveq_f32<Act>(r0);
+        r1 = math::vActiveq_f32<Act>(r1);
+        vst1q_f32(output, r0);
+        vst1q_f32(output + 4, r1);
+        input += 8;
+        output += 8;
+        remain -= 8;
+      }
+      if (remain >= 4) {
+        float32x4_t r0 = vld1q_f32(input);
+        r0 = vaddq_f32(r0, rb);
+        r0 = math::vActiveq_f32<Act>(r0);
+        vst1q_f32(output, r0);
+        input += 4;
+        output += 4;
+        remain -= 4;
+      }
+      if (remain > 0) {
+        float32x4_t r0 = vld1q_f32(input);
+        r0 = vaddq_f32(r0, rb);
+        r0 = math::vActiveq_f32<Act>(r0);
+        switch (remain) {
+          case 1:
+            vst1q_lane_f32(output, r0, 0);
+            break;
+          case 2:
+            vst1_f32(output, vget_low_f32(r0));
+            break;
+          case 3:
+            vst1_f32(output, vget_low_f32(r0));
+            vst1q_lane_f32(output, r0, 2);
+            break;
+        }
+      }
+#else
+      for (int k = 0; k < elementwise_num; ++k) {
+        output[k] = math::Active<Act>(input[k] + bias);
+      }
 #endif  // __ARM_NEON__
-    for (int i = remain_start; i < input->numel(); ++i) {
-      output_data[i] = math::Active<Act>(input_data[i] + bias_data[i]);
     }
+
   } else {
     // axis = -1 represent the last dimensions.
     int dim = (axis == -1 ? x_dims.size() - y_dims.size() : axis);
@@ -274,7 +311,7 @@ void AddElememtWise(const framework::Tensor *input,
       elementwise_num *= x_dims[i];
     }
 
-    #pragma omp parallel for collapse(2)
+#pragma omp parallel for collapse(2)
     for (int i = 0; i < batch; ++i) {
       for (int j = 0; j < channels; ++j) {
         size_t offset = (i * channels + j) * elementwise_num;
