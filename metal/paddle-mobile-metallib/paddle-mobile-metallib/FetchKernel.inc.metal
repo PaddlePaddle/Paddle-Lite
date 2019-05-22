@@ -57,5 +57,4 @@ kernel void FUNC(fetch, 1or2, P)(texture2d_array<P, access::read> inTexture [[te
     output[gid.y * input_width + gid.x] = float4(input);
 }
 
-
 #endif
