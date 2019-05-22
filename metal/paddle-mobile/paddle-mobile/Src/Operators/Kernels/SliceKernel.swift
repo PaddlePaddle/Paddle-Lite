@@ -29,11 +29,24 @@ public struct SliceMetalParam {
 
 class SliceKernel<P: PrecisionProtocol>: Kernel, Computable {
     var metalParam: SliceMetalParam
+    var device: MTLDevice?
+    var initContext: InitContext?
+    
     func compute(commandBuffer: MTLCommandBuffer, param: SliceParam<P>) throws {
+        let expectedTranspose = [0, 2, 3, 1]
+        var input = param.input
+        if param.input.transpose != expectedTranspose {
+            if let device = device, let initContext = initContext, let transposedInput = encodeTransposeInput(input: param.input, toTranspose: expectedTranspose, commandBuffer: commandBuffer, device: device, initContext: initContext) {
+                input = transposedInput
+            } else {
+                print("input transpose failed in slice kernel")
+            }
+        }
+        
         guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
             throw PaddleMobileError.predictError(message: " encode is nil")
         }
-        encoder.setTexture(param.input.metalTexture, index: 0)
+        encoder.setTexture(input.metalTexture, index: 0)
         encoder.setTexture(param.output.metalTexture, index: 1)
         encoder.setBytes(&metalParam, length: MemoryLayout<SliceMetalParam>.size, index: 0)
         encoder.dispatch(computePipline: pipline, outTexture: param.output.metalTexture)
@@ -72,7 +85,9 @@ class SliceKernel<P: PrecisionProtocol>: Kernel, Computable {
         } else if GlobalConfig.shared.computePrecision == .Float16 {
             super.init(device: device, inFunctionName: "slice_half", initContext: initContext)
         } else {
-            fatalError()
+            fatalError("unknown computePrecision")
         }
+        self.device = device
+        self.initContext = initContext
     }
 }
