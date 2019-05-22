@@ -73,6 +73,12 @@ LOAD_OP2(batch_norm, CPU, GPU_CL);
 #ifdef BILINEAR_INTERP_OP
 LOAD_OP1(bilinear_interp, CPU);
 #endif
+#ifdef NEAREST_INTERP_OP
+LOAD_OP1(nearest_interp, CPU);
+#endif
+#ifdef LEAKY_RELU_OP
+LOAD_OP1(leaky_relu, CPU);
+#endif
 #ifdef BOXCODER_OP
 LOAD_OP2(box_coder, CPU, GPU_CL);
 #endif

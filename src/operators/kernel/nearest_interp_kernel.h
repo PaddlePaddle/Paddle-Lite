@@ -12,30 +12,26 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef ELEMENTWISEADD_OP
+#ifdef NEAREST_INTERP_OP
 
 #pragma once
 
-#include "operators/math/element_wise.h"
+#include <vector>
+
+#include "framework/operator.h"
 #include "operators/op_param.h"
-#if defined(__ARM_NEON__) || defined(__ARM_NEON)
-#include <arm_neon.h>
-#endif
 
 namespace paddle_mobile {
 namespace operators {
 
-template <typename T>
-inline void ElementwiseAddCompute(const ElementwiseAddParam<CPU> &param) {
-  const framework::Tensor *input_x = param.InputX();
-  const framework::Tensor *input_y = param.InputY();
-  framework::Tensor *output = param.Out();
-  int axis = param.Axis();
-  math::AddElememtWise<IDENTITY>(input_x, input_y, axis, output);
-}
-
-template class ElementwiseAddKernel<CPU, float>;
-
+template <typename DeviceType, typename T>
+class NearestInterpolationKernel
+    : public framework::OpKernelBase<DeviceType,
+                                     NearestInterpolationParam<DeviceType>> {
+ public:
+  void Compute(const NearestInterpolationParam<DeviceType>& param);
+  bool Init(NearestInterpolationParam<DeviceType>* param);
+};
 }  // namespace operators
 }  // namespace paddle_mobile
 
