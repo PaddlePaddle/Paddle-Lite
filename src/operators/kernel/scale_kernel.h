@@ -12,6 +12,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#ifdef SCALE_OP
+
 #include "framework/operator.h"
 #include "operators/op_param.h"
 
@@ -25,6 +27,9 @@ class ScaleKernel
     : public framework::OpKernelBase<DeviceType, ScaleParam<DeviceType>> {
  public:
   void Compute(const ScaleParam<DeviceType>& param);
+  bool Init(ScaleParam<DeviceType>* param);
 };
 }  // namespace operators
 }  // namespace paddle_mobile
+
+#endif
