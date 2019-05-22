@@ -114,6 +114,10 @@ class ConvAddKernel<P: PrecisionProtocol>: Kernel, Computable {
         if type(of: self).isWinoGrad(functionName: functionName) {
             shouldUseMPS = false
         }
+        let isDepthWise = param.filter.tensorDim[1] == 1 && param.filter.tensorDim[0] == param.input.tensorDim[1]
+        if !isDepthWise && param.groups > 1 {
+            shouldUseMPS = false
+        }
         if shouldUseMPS {
             super.init(device: device, inFunctionName: nil, initContext: initContext)
             setupWithMPS(device: device, param: param)
