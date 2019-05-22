@@ -144,6 +144,7 @@ extern const char *G_OP_TYPE_RELU;
 extern const char *G_OP_TYPE_RELU6;
 extern const char *G_OP_TYPE_LEAKY_RELU;
 extern const char *G_OP_TYPE_RESHAPE;
+extern const char *G_OP_TYPE_SCALE;
 extern const char *G_OP_TYPE_SIGMOID;
 extern const char *G_OP_TYPE_SOFTMAX;
 extern const char *G_OP_TYPE_TRANSPOSE;

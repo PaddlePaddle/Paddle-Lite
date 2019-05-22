@@ -142,7 +142,7 @@ LOAD_OP1(depthwise_conv2d, CPU);
 LOAD_OP1(conv2d_transpose, CPU);
 #endif
 #ifdef SCALE_OP
-LOAD_OP1(scale, CPU);
+LOAD_OP2(scale, CPU, GPU_CL);
 #endif
 #ifdef ELEMENTWISEADD_OP
 LOAD_OP2(elementwise_add, CPU, GPU_CL);

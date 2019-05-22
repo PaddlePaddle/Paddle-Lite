@@ -46,6 +46,7 @@ const char *G_OP_TYPE_RELU6 = "relu6";
 const char *G_OP_TYPE_LEAKY_RELU = "leaky_relu";
 const char *G_OP_TYPE_RESHAPE = "reshape";
 const char *G_OP_TYPE_RESHAPE2 = "reshape2";
+const char *G_OP_TYPE_SCALE = "scale";
 const char *G_OP_TYPE_SIGMOID = "sigmoid";
 const char *G_OP_TYPE_SOFTMAX = "softmax";
 const char *G_OP_TYPE_TRANSPOSE = "transpose";
@@ -128,6 +129,7 @@ std::unordered_map<
         {G_OP_TYPE_RELU, {{"X"}, {"Out"}}},
         {G_OP_TYPE_RELU6, {{"X"}, {"Out"}}},
         {G_OP_TYPE_LEAKY_RELU, {{"X"}, {"Out"}}},
+        {G_OP_TYPE_SCALE, {{"X"}, {"Out"}}},
         {G_OP_TYPE_SOFTMAX, {{"X"}, {"Out"}}},
         {G_OP_TYPE_SIGMOID, {{"X"}, {"Out"}}},
         {G_OP_TYPE_MUL, {{"X"}, {"Out"}}},
