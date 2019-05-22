@@ -111,6 +111,26 @@ enum PoolingType {
   FIRST = 3,
 };
 
+enum PowerMode {
+  PERFORMANCE_PRIORITY = 0,  // let threads run on big cores if
+                             // thread_num <= big_cores_num,
+                             // otherwise the power mode will be
+                             // set to AUTO and all threads are
+                             // scheduled by system
+  EFFICIENCY_PRIORITY = 1,   // let threads run on little cores if
+                             // thread_num <= little_cores_num,
+                             // otherwise the power mode will be
+                             // set to AUTO and all threads are
+                             // scheduled by system
+  PERFORMANCE_ONLY = 2,      // force threads run on big cores,
+                             // and the remains are ignored if
+                             // exceed the number big cores
+  EFFICIENCY_ONLY = 3,       // force threads run on little cores,
+                             // and the remains are ignored if
+                             // exceed the number of little cores
+  AUTO = 4,                  // scheduled by system
+};
+
 struct PaddleMobileConfigInternal {
   bool load_when_predict = false;
 };

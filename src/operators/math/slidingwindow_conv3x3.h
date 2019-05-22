@@ -33,6 +33,17 @@ void SlidingwindowConv3x3s2(const framework::Tensor *input,
                             const std::vector<int> &paddings,
                             framework::Tensor *output);
 
+template <typename Itype, typename Otype>
+void SlidingwindowConv3x3s1Faster(const framework::Tensor *input,
+                                  framework::Tensor *filter,
+                                  const std::vector<int> &paddings,
+                                  framework::Tensor *output);
+
+template <typename Itype, typename Otype>
+void SlidingwindowConv3x3s2Faster(const framework::Tensor *input,
+                                  framework::Tensor *filter,
+                                  const std::vector<int> &paddings,
+                                  framework::Tensor *output);
 }  // namespace math
 }  // namespace operators
 }  // namespace paddle_mobile

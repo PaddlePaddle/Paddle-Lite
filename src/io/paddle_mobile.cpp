@@ -29,8 +29,9 @@ limitations under the License. */
 namespace paddle_mobile {
 
 template <typename Device, typename T>
-void PaddleMobile<Device, T>::SetThreadNum(int num) {
-  executor_->SetThreadNum(num);
+void PaddleMobile<Device, T>::SetThreadNum(int thread_num,
+                                           PowerMode power_mode) {
+  executor_->SetThreadNum(thread_num, power_mode);
 }
 
 template <typename Device, typename T>
