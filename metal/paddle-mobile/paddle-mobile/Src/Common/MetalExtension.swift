@@ -534,7 +534,7 @@ public extension MTLTexture {
             for c in 0..<4{
                 for h in 0..<dim.h {
                     for w in 0..<dim.w {
-                        if (s * 4 + c) < dim.c {
+                        if (s * 4 + c) < (dim.c * dim.n) {
                             let textureValue = textureArray[dim.w * dim.h * 4 * s + h * dim.w * 4 + w * 4 + c]
                             output.append(textureValue)
                         }

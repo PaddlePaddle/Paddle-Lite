@@ -114,6 +114,10 @@ class ConvAddKernel<P: PrecisionProtocol>: Kernel, Computable {
         if type(of: self).isWinoGrad(functionName: functionName) {
             shouldUseMPS = false
         }
+        let isDepthWise = param.filter.tensorDim[1] == 1 && param.filter.tensorDim[0] == param.input.tensorDim[1]
+        if !isDepthWise && param.groups > 1 {
+            shouldUseMPS = false
+        }
         if shouldUseMPS {
             super.init(device: device, inFunctionName: nil, initContext: initContext)
             setupWithMPS(device: device, param: param)
@@ -181,7 +185,10 @@ class ConvAddKernel<P: PrecisionProtocol>: Kernel, Computable {
         let offsetX = (Int(param.dilations[0]) * (param.filter.tensorDim[3] - 1) + 1) / 2 - Int(param.paddings[0])
         let offsetY = (Int(param.dilations[1]) * (param.filter.tensorDim[2] - 1) + 1) / 2 - Int(param.paddings[1])
         let offsetZ = 0.0
-        let inMetalParam = MetalConvParam.init(offsetX: Int16(offsetX), offsetY: Int16(offsetY), offsetZ: Int16(offsetZ), strideX: UInt16(param.stride[0]), strideY: UInt16(param.stride[1]), dilationX: UInt16(param.dilations[0]), dilationY: UInt16(param.dilations[1]))
+        let iC = param.input.tensorDim[1];
+        let fC = param.filter.tensorDim[1];
+        let oC = param.output.tensorDim[1];
+        let inMetalParam = MetalConvParam.init(offsetX: Int16(offsetX), offsetY: Int16(offsetY), offsetZ: Int16(offsetZ), strideX: UInt16(param.stride[0]), strideY: UInt16(param.stride[1]), dilationX: UInt16(param.dilations[0]), dilationY: UInt16(param.dilations[1]), groups: UInt16(param.groups), iC: UInt16(iC), fC: UInt16(fC), oC: UInt16(oC))
         metalParam = inMetalParam
         
         if type(of: self).isWinoGrad(functionName: functionName) {

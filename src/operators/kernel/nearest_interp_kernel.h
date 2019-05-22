@@ -12,7 +12,11 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#ifdef NEAREST_INTERP_OP
+
 #pragma once
+
+#include <vector>
 
 #include "framework/operator.h"
 #include "operators/op_param.h"
@@ -20,25 +24,15 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace operators {
 
-#ifdef RELU_OP
-DECLARE_KERNEL(Relu, ReluParam);
-DECLARE_KERNEL(Relu6, ReluParam);
-#endif
-
-#ifdef SIGMOID_OP
-DECLARE_KERNEL(Sigmoid, SigmoidParam);
-#endif
-
-#ifdef TANH_OP
-DECLARE_KERNEL(Tanh, TanhParam);
-#endif
-
-#ifdef LOG_OP
-DECLARE_KERNEL(Log, ReluParam);
-#endif
-
-#ifdef LEAKY_RELU_OP
-DECLARE_KERNEL(LeakyRelu, LeakyReluParam);
-#endif
+template <typename DeviceType, typename T>
+class NearestInterpolationKernel
+    : public framework::OpKernelBase<DeviceType,
+                                     NearestInterpolationParam<DeviceType>> {
+ public:
+  void Compute(const NearestInterpolationParam<DeviceType>& param);
+  bool Init(NearestInterpolationParam<DeviceType>* param);
+};
 }  // namespace operators
 }  // namespace paddle_mobile
+
+#endif

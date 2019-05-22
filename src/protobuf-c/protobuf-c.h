@@ -52,7 +52,7 @@
  * \page gencode Generated Code
  *
  * For each enum, we generate a C enum. For each message, we generate a C
- * structure which can be cast to a `ProtobufCMessage`.
+ * structure which can be cast to a `PaddleMobile__Framework__ProtobufCMessage`.
  *
  * For each enum and message, we generate a descriptor object that allows us to
  * implement a kind of reflection on the structures.
@@ -79,7 +79,7 @@
 ~~~{.c}
 Foo__Bar__BazBah *
        foo__bar__baz_bah__unpack
-                     (ProtobufCAllocator  *allocator,
+                     (PaddleMobile__Framework__ProtobufCAllocator  *allocator,
                       size_t               len,
                       const uint8_t       *data);
 ~~~
@@ -99,11 +99,14 @@ Foo__Bar__BazBah *
  * declared in the `.pb-c.h` files:
  *
 ~~~{.c}
-extern const ProtobufCMessageDescriptor foo__bar__baz_bah__descriptor;
+extern const PaddleMobile__Framework__ProtobufCMessageDescriptor
+foo__bar__baz_bah__descriptor;
 ~~~
  *
- * The message structures all begin with `ProtobufCMessageDescriptor *` which is
- * sufficient to allow them to be cast to `ProtobufCMessage`.
+ * The message structures all begin with
+`PaddleMobile__Framework__ProtobufCMessageDescriptor *` which is
+ * sufficient to allow them to be cast to
+`PaddleMobile__Framework__ProtobufCMessage`.
  *
  * For each message defined in a `.proto` file, we generate a number of
  * functions and macros. Each function name contains a prefix based on the
@@ -133,7 +136,7 @@ void foo__bar__baz_bah__init
 ~~~{.c}
 Foo__Bar__BazBah *
        foo__bar__baz_bah__unpack
-                     (ProtobufCAllocator  *allocator,
+                     (PaddleMobile__Framework__ProtobufCAllocator  *allocator,
                       size_t               len,
                       const uint8_t       *data);
 ~~~
@@ -144,7 +147,7 @@ Foo__Bar__BazBah *
 ~~~{.c}
 void   foo__bar__baz_bah__free_unpacked
                      (Foo__Bar__BazBah *message,
-                      ProtobufCAllocator *allocator);
+                      PaddleMobile__Framework__ProtobufCAllocator *allocator);
 ~~~
  *
  * - `get_packed_size()`. Calculates the length in bytes of the serialized
@@ -171,26 +174,29 @@ size_t foo__bar__baz_bah__pack
 ~~~{.c}
 size_t foo__bar__baz_bah__pack_to_buffer
                      (const Foo__Bar__BazBah   *message,
-                      ProtobufCBuffer     *buffer);
+                      PaddleMobile__Framework__ProtobufCBuffer     *buffer);
 ~~~
  *
  * \page pack Packing and unpacking messages
  *
  * To pack a message, first compute the packed size of the message with
- * protobuf_c_message_get_packed_size(), then allocate a buffer of at least
+ * PaddleMobile__Framework__protobuf_c_message_get_packed_size(), then allocate
+a buffer of at least
  * that size, then call protobuf_c_message_pack().
  *
  * Alternatively, a message can be serialized without calculating the final size
  * first. Use the protobuf_c_message_pack_to_buffer() function and provide a
- * ProtobufCBuffer object which implements an "append" method that consumes
+ * PaddleMobile__Framework__ProtobufCBuffer object which implements an "append"
+method that consumes
  * data.
  *
- * To unpack a message, call the protobuf_c_message_unpack() function. The
+ * To unpack a message, call the
+PaddleMobile__Framework__protobuf_c_message_unpack() function. The
  * result can be cast to an object of the type that matches the descriptor for
  * the message.
  *
  * The result of unpacking a message should be freed with
- * protobuf_c_message_free_unpacked().
+ * PaddleMobile__Framework__protobuf_c_message_free_unpacked().
  */
 
 #ifndef PROTOBUF_C_H
@@ -238,7 +244,7 @@ PROTOBUF_C__BEGIN_DECLS
 #define PROTOBUF_C__ENUM_DESCRIPTOR_MAGIC 0x114315af
 
 /* Empty string used for initializers */
-extern const char protobuf_c_empty_string[];
+extern const char PaddleMobile__Framework__protobuf_c_empty_string[];
 
 /**
  * \defgroup api Public API
@@ -250,7 +256,8 @@ extern const char protobuf_c_empty_string[];
  */
 
 /**
- * Values for the `flags` word in `ProtobufCFieldDescriptor`.
+ * Values for the `flags` word in
+ * `PaddleMobile__Framework__ProtobufCFieldDescriptor`.
  */
 typedef enum {
   /** Set if the field is repeated and marked with the `packed` option. */
@@ -261,7 +268,7 @@ typedef enum {
 
   /** Set if the field is a member of a oneof (union). */
   PROTOBUF_C_FIELD_FLAG_ONEOF = (1 << 2),
-} ProtobufCFieldFlag;
+} PaddleMobile__Framework__ProtobufCFieldFlag;
 
 /**
  * Message field rules.
@@ -293,7 +300,7 @@ typedef enum {
    * equivalent to OPTIONAL but no "has" quantifier will be consulted.
    */
   PROTOBUF_C_LABEL_NONE,
-} ProtobufCLabel;
+} PaddleMobile__Framework__ProtobufCLabel;
 
 /**
  * Field value types.
@@ -321,7 +328,7 @@ typedef enum {
   PROTOBUF_C_TYPE_STRING,   /**< UTF-8 or ASCII string */
   PROTOBUF_C_TYPE_BYTES,    /**< arbitrary byte sequence */
   PROTOBUF_C_TYPE_MESSAGE,  /**< nested message */
-} ProtobufCType;
+} PaddleMobile__Framework__ProtobufCType;
 
 /**
  * Field wire types.
@@ -337,51 +344,69 @@ typedef enum {
   PROTOBUF_C_WIRE_TYPE_LENGTH_PREFIXED = 2,
   /* "Start group" and "end group" wire types are unsupported. */
   PROTOBUF_C_WIRE_TYPE_32BIT = 5,
-} ProtobufCWireType;
+} PaddleMobile__Framework__ProtobufCWireType;
 
-struct ProtobufCAllocator;
-struct ProtobufCBinaryData;
-struct ProtobufCBuffer;
-struct ProtobufCBufferSimple;
-struct ProtobufCEnumDescriptor;
-struct ProtobufCEnumValue;
-struct ProtobufCEnumValueIndex;
-struct ProtobufCFieldDescriptor;
-struct ProtobufCIntRange;
-struct ProtobufCMessage;
-struct ProtobufCMessageDescriptor;
-struct ProtobufCMessageUnknownField;
-struct ProtobufCMethodDescriptor;
-struct ProtobufCService;
-struct ProtobufCServiceDescriptor;
+struct PaddleMobile__Framework__ProtobufCAllocator;
+struct PaddleMobile__Framework__ProtobufCBinaryData;
+struct PaddleMobile__Framework__ProtobufCBuffer;
+struct PaddleMobile__Framework__ProtobufCBufferSimple;
+struct PaddleMobile__Framework__ProtobufCEnumDescriptor;
+struct PaddleMobile__Framework__ProtobufCEnumValue;
+struct PaddleMobile__Framework__ProtobufCEnumValueIndex;
+struct PaddleMobile__Framework__ProtobufCFieldDescriptor;
+struct PaddleMobile__Framework__ProtobufCIntRange;
+struct PaddleMobile__Framework__ProtobufCMessage;
+struct PaddleMobile__Framework__ProtobufCMessageDescriptor;
+struct PaddleMobile__Framework__ProtobufCMessageUnknownField;
+struct PaddleMobile__Framework__ProtobufCMethodDescriptor;
+struct PaddleMobile__Framework__ProtobufCService;
+struct PaddleMobile__Framework__ProtobufCServiceDescriptor;
 
-typedef struct ProtobufCAllocator ProtobufCAllocator;
-typedef struct ProtobufCBinaryData ProtobufCBinaryData;
-typedef struct ProtobufCBuffer ProtobufCBuffer;
-typedef struct ProtobufCBufferSimple ProtobufCBufferSimple;
-typedef struct ProtobufCEnumDescriptor ProtobufCEnumDescriptor;
-typedef struct ProtobufCEnumValue ProtobufCEnumValue;
-typedef struct ProtobufCEnumValueIndex ProtobufCEnumValueIndex;
-typedef struct ProtobufCFieldDescriptor ProtobufCFieldDescriptor;
-typedef struct ProtobufCIntRange ProtobufCIntRange;
-typedef struct ProtobufCMessage ProtobufCMessage;
-typedef struct ProtobufCMessageDescriptor ProtobufCMessageDescriptor;
-typedef struct ProtobufCMessageUnknownField ProtobufCMessageUnknownField;
-typedef struct ProtobufCMethodDescriptor ProtobufCMethodDescriptor;
-typedef struct ProtobufCService ProtobufCService;
-typedef struct ProtobufCServiceDescriptor ProtobufCServiceDescriptor;
+typedef struct PaddleMobile__Framework__ProtobufCAllocator
+    PaddleMobile__Framework__ProtobufCAllocator;
+typedef struct PaddleMobile__Framework__ProtobufCBinaryData
+    PaddleMobile__Framework__ProtobufCBinaryData;
+typedef struct PaddleMobile__Framework__ProtobufCBuffer
+    PaddleMobile__Framework__ProtobufCBuffer;
+typedef struct PaddleMobile__Framework__ProtobufCBufferSimple
+    PaddleMobile__Framework__ProtobufCBufferSimple;
+typedef struct PaddleMobile__Framework__ProtobufCEnumDescriptor
+    PaddleMobile__Framework__ProtobufCEnumDescriptor;
+typedef struct PaddleMobile__Framework__ProtobufCEnumValue
+    PaddleMobile__Framework__ProtobufCEnumValue;
+typedef struct PaddleMobile__Framework__ProtobufCEnumValueIndex
+    PaddleMobile__Framework__ProtobufCEnumValueIndex;
+typedef struct PaddleMobile__Framework__ProtobufCFieldDescriptor
+    PaddleMobile__Framework__ProtobufCFieldDescriptor;
+typedef struct PaddleMobile__Framework__ProtobufCIntRange
+    PaddleMobile__Framework__ProtobufCIntRange;
+typedef struct PaddleMobile__Framework__ProtobufCMessage
+    PaddleMobile__Framework__ProtobufCMessage;
+typedef struct PaddleMobile__Framework__ProtobufCMessageDescriptor
+    PaddleMobile__Framework__ProtobufCMessageDescriptor;
+typedef struct PaddleMobile__Framework__ProtobufCMessageUnknownField
+    PaddleMobile__Framework__ProtobufCMessageUnknownField;
+typedef struct PaddleMobile__Framework__ProtobufCMethodDescriptor
+    PaddleMobile__Framework__ProtobufCMethodDescriptor;
+typedef struct PaddleMobile__Framework__ProtobufCService
+    PaddleMobile__Framework__ProtobufCService;
+typedef struct PaddleMobile__Framework__ProtobufCServiceDescriptor
+    PaddleMobile__Framework__ProtobufCServiceDescriptor;
 
 /** Boolean type. */
 typedef int protobuf_c_boolean;
 
-typedef void (*ProtobufCClosure)(const ProtobufCMessage *, void *closure_data);
-typedef void (*ProtobufCMessageInit)(ProtobufCMessage *);
-typedef void (*ProtobufCServiceDestroy)(ProtobufCService *);
+typedef void (*ProtobufCClosure)(
+    const PaddleMobile__Framework__ProtobufCMessage *, void *closure_data);
+typedef void (*ProtobufCMessageInit)(
+    PaddleMobile__Framework__ProtobufCMessage *);
+typedef void (*ProtobufCServiceDestroy)(
+    PaddleMobile__Framework__ProtobufCService *);
 
 /**
  * Structure for defining a custom memory allocator.
  */
-struct ProtobufCAllocator {
+struct PaddleMobile__Framework__ProtobufCAllocator {
   /** Function to allocate memory. */
   void *(*alloc)(void *allocator_data, size_t size);
 
@@ -395,11 +420,11 @@ struct ProtobufCAllocator {
 /**
  * Structure for the protobuf `bytes` scalar type.
  *
- * The data contained in a `ProtobufCBinaryData` is an arbitrary sequence of
- * bytes. It may contain embedded `NUL` characters and is not required to be
- * `NUL`-terminated.
+ * The data contained in a `PaddleMobile__Framework__ProtobufCBinaryData` is an
+ * arbitrary sequence of bytes. It may contain embedded `NUL` characters and is
+ * not required to be `NUL`-terminated.
  */
-struct ProtobufCBinaryData {
+struct PaddleMobile__Framework__ProtobufCBinaryData {
   size_t len;    /**< Number of bytes in the `data` field. */
   uint8_t *data; /**< Data bytes. */
 };
@@ -409,17 +434,18 @@ struct ProtobufCBinaryData {
  * protobuf_c_message_pack_to_buffer() to abstract the consumption of serialized
  * bytes.
  *
- * `ProtobufCBuffer` "subclasses" may be defined on the stack. For example, to
+ * `PaddleMobile__Framework__ProtobufCBuffer` "subclasses" may be defined on the
+stack. For example, to
  * write to a `FILE` object:
  *
 ~~~{.c}
 typedef struct {
-        ProtobufCBuffer base;
+        PaddleMobile__Framework__ProtobufCBuffer base;
         FILE *fp;
 } BufferAppendToFile;
 
 static void
-my_buffer_file_append(ProtobufCBuffer *buffer,
+my_buffer_file_append(PaddleMobile__Framework__ProtobufCBuffer *buffer,
                       size_t len,
                       const uint8_t *data)
 {
@@ -428,7 +454,8 @@ my_buffer_file_append(ProtobufCBuffer *buffer,
 }
 ~~~
  *
- * To use this new type of ProtobufCBuffer, it could be called as follows:
+ * To use this new type of PaddleMobile__Framework__ProtobufCBuffer, it could be
+called as follows:
  *
 ~~~{.c}
 ...
@@ -439,30 +466,36 @@ protobuf_c_message_pack_to_buffer(&message, &tmp);
 ...
 ~~~
  */
-struct ProtobufCBuffer {
+struct PaddleMobile__Framework__ProtobufCBuffer {
   /** Append function. Consumes the `len` bytes stored at `data`. */
-  void (*append)(ProtobufCBuffer *buffer, size_t len, const uint8_t *data);
+  void (*append)(PaddleMobile__Framework__ProtobufCBuffer *buffer, size_t len,
+                 const uint8_t *data);
 };
 
 /**
- * Simple buffer "subclass" of `ProtobufCBuffer`.
+ * Simple buffer "subclass" of `PaddleMobile__Framework__ProtobufCBuffer`.
  *
- * A `ProtobufCBufferSimple` object is declared on the stack and uses a
+ * A `PaddleMobile__Framework__ProtobufCBufferSimple` object is declared on the
+stack and uses a
  * scratch buffer provided by the user for the initial allocation. It performs
  * exponential resizing, using dynamically allocated memory. A
- * `ProtobufCBufferSimple` object can be created and used as follows:
+ * `PaddleMobile__Framework__ProtobufCBufferSimple` object can be created and
+used as follows:
  *
 ~~~{.c}
 uint8_t pad[128];
-ProtobufCBufferSimple simple = PROTOBUF_C_BUFFER_SIMPLE_INIT(pad);
-ProtobufCBuffer *buffer = (ProtobufCBuffer *) &simple;
+PaddleMobile__Framework__ProtobufCBufferSimple simple =
+PROTOBUF_C_BUFFER_SIMPLE_INIT(pad); PaddleMobile__Framework__ProtobufCBuffer
+*buffer = (PaddleMobile__Framework__ProtobufCBuffer *) &simple;
 ~~~
  *
  * `buffer` can now be used with `protobuf_c_message_pack_to_buffer()`. Once a
- * message has been serialized to a `ProtobufCBufferSimple` object, the
+ * message has been serialized to a
+`PaddleMobile__Framework__ProtobufCBufferSimple` object, the
  * serialized data bytes can be accessed from the `.data` field.
  *
- * To free the memory allocated by a `ProtobufCBufferSimple` object, if any,
+ * To free the memory allocated by a
+`PaddleMobile__Framework__ProtobufCBufferSimple` object, if any,
  * call PROTOBUF_C_BUFFER_SIMPLE_CLEAR() on the object, for example:
  *
 ~~~{.c}
@@ -472,9 +505,9 @@ PROTOBUF_C_BUFFER_SIMPLE_CLEAR(&simple);
  * \see PROTOBUF_C_BUFFER_SIMPLE_INIT
  * \see PROTOBUF_C_BUFFER_SIMPLE_CLEAR
  */
-struct ProtobufCBufferSimple {
+struct PaddleMobile__Framework__ProtobufCBufferSimple {
   /** "Base class". */
-  ProtobufCBuffer base;
+  PaddleMobile__Framework__ProtobufCBuffer base;
   /** Number of bytes allocated in `data`. */
   size_t alloced;
   /** Number of bytes currently stored in `data`. */
@@ -484,13 +517,13 @@ struct ProtobufCBufferSimple {
   /** Whether `data` must be freed. */
   protobuf_c_boolean must_free_data;
   /** Allocator to use. May be NULL to indicate the system allocator. */
-  ProtobufCAllocator *allocator;
+  PaddleMobile__Framework__ProtobufCAllocator *allocator;
 };
 
 /**
  * Describes an enumeration as a whole, with all of its values.
  */
-struct ProtobufCEnumDescriptor {
+struct PaddleMobile__Framework__ProtobufCEnumDescriptor {
   /** Magic value checked to ensure that the API is used correctly. */
   uint32_t magic;
 
@@ -506,17 +539,17 @@ struct ProtobufCEnumDescriptor {
   /** Number elements in `values`. */
   unsigned n_values;
   /** Array of distinct values, sorted by numeric value. */
-  const ProtobufCEnumValue *values;
+  const PaddleMobile__Framework__ProtobufCEnumValue *values;
 
   /** Number of elements in `values_by_name`. */
   unsigned n_value_names;
   /** Array of named values, including aliases, sorted by name. */
-  const ProtobufCEnumValueIndex *values_by_name;
+  const PaddleMobile__Framework__ProtobufCEnumValueIndex *values_by_name;
 
   /** Number of elements in `value_ranges`. */
   unsigned n_value_ranges;
   /** Value ranges, for faster lookups by numeric value. */
-  const ProtobufCIntRange *value_ranges;
+  const PaddleMobile__Framework__ProtobufCIntRange *value_ranges;
 
   /** Reserved for future use. */
   void *reserved1;
@@ -531,7 +564,7 @@ struct ProtobufCEnumDescriptor {
 /**
  * Represents a single value of an enumeration.
  */
-struct ProtobufCEnumValue {
+struct PaddleMobile__Framework__ProtobufCEnumValue {
   /** The string identifying this value in the .proto file. */
   const char *name;
 
@@ -543,9 +576,10 @@ struct ProtobufCEnumValue {
 };
 
 /**
- * Used by `ProtobufCEnumDescriptor` to look up enum values.
+ * Used by `PaddleMobile__Framework__ProtobufCEnumDescriptor` to look up enum
+ * values.
  */
-struct ProtobufCEnumValueIndex {
+struct PaddleMobile__Framework__ProtobufCEnumValueIndex {
   /** Name of the enum value. */
   const char *name;
   /** Index into values[] array. */
@@ -555,7 +589,7 @@ struct ProtobufCEnumValueIndex {
 /**
  * Describes a single field in a message.
  */
-struct ProtobufCFieldDescriptor {
+struct PaddleMobile__Framework__ProtobufCFieldDescriptor {
   /** Name of the field as given in the .proto file. */
   const char *name;
 
@@ -563,10 +597,10 @@ struct ProtobufCFieldDescriptor {
   uint32_t id;
 
   /** Whether the field is `REQUIRED`, `OPTIONAL`, or `REPEATED`. */
-  ProtobufCLabel label;
+  PaddleMobile__Framework__ProtobufCLabel label;
 
   /** The type of the field. */
-  ProtobufCType type;
+  PaddleMobile__Framework__ProtobufCType type;
 
   /**
    * The offset in bytes of the message's C structure's quantifier field
@@ -585,10 +619,10 @@ struct ProtobufCFieldDescriptor {
    * A type-specific descriptor.
    *
    * If `type` is `PROTOBUF_C_TYPE_ENUM`, then `descriptor` points to the
-   * corresponding `ProtobufCEnumDescriptor`.
+   * corresponding `PaddleMobile__Framework__ProtobufCEnumDescriptor`.
    *
    * If `type` is `PROTOBUF_C_TYPE_MESSAGE`, then `descriptor` points to
-   * the corresponding `ProtobufCMessageDescriptor`.
+   * the corresponding `PaddleMobile__Framework__ProtobufCMessageDescriptor`.
    *
    * Otherwise this field is NULL.
    */
@@ -599,7 +633,7 @@ struct ProtobufCFieldDescriptor {
 
   /**
    * A flag word. Zero or more of the bits defined in the
-   * `ProtobufCFieldFlag` enum may be set.
+   * `PaddleMobile__Framework__ProtobufCFieldFlag` enum may be set.
    */
   uint32_t flags;
 
@@ -619,7 +653,7 @@ struct ProtobufCFieldDescriptor {
  * The data structures requires that the values in the original array are
  * sorted.
  */
-struct ProtobufCIntRange {
+struct PaddleMobile__Framework__ProtobufCIntRange {
   int start_value;
   unsigned orig_index;
   /*
@@ -632,31 +666,34 @@ struct ProtobufCIntRange {
 /**
  * An instance of a message.
  *
- * `ProtobufCMessage` is a light-weight "base class" for all messages.
+ * `PaddleMobile__Framework__ProtobufCMessage` is a light-weight "base class"
+ * for all messages.
  *
- * In particular, `ProtobufCMessage` doesn't have any allocation policy
- * associated with it. That's because it's common to create `ProtobufCMessage`
- * objects on the stack. In fact, that's what we recommend for sending messages.
- * If the object is allocated from the stack, you can't really have a memory
- * leak.
+ * In particular, `PaddleMobile__Framework__ProtobufCMessage` doesn't have any
+ * allocation policy associated with it. That's because it's common to create
+ * `PaddleMobile__Framework__ProtobufCMessage` objects on the stack. In fact,
+ * that's what we recommend for sending messages. If the object is allocated
+ * from the stack, you can't really have a memory leak.
  *
- * This means that calls to functions like protobuf_c_message_unpack() which
- * return a `ProtobufCMessage` must be paired with a call to a free function,
- * like protobuf_c_message_free_unpacked().
+ * This means that calls to functions like
+ * PaddleMobile__Framework__protobuf_c_message_unpack() which return a
+ * `PaddleMobile__Framework__ProtobufCMessage` must be paired with a call to a
+ * free function, like
+ * PaddleMobile__Framework__protobuf_c_message_free_unpacked().
  */
-struct ProtobufCMessage {
+struct PaddleMobile__Framework__ProtobufCMessage {
   /** The descriptor for this message type. */
-  const ProtobufCMessageDescriptor *descriptor;
+  const PaddleMobile__Framework__ProtobufCMessageDescriptor *descriptor;
   /** The number of elements in `unknown_fields`. */
   unsigned n_unknown_fields;
   /** The fields that weren't recognized by the parser. */
-  ProtobufCMessageUnknownField *unknown_fields;
+  PaddleMobile__Framework__ProtobufCMessageUnknownField *unknown_fields;
 };
 
 /**
  * Describes a message.
  */
-struct ProtobufCMessageDescriptor {
+struct PaddleMobile__Framework__ProtobufCMessageDescriptor {
   /** Magic value checked to ensure that the API is used correctly. */
   uint32_t magic;
 
@@ -678,14 +715,14 @@ struct ProtobufCMessageDescriptor {
   /** Number of elements in `fields`. */
   unsigned n_fields;
   /** Field descriptors, sorted by tag number. */
-  const ProtobufCFieldDescriptor *fields;
+  const PaddleMobile__Framework__ProtobufCFieldDescriptor *fields;
   /** Used for looking up fields by name. */
   const unsigned *fields_sorted_by_name;
 
   /** Number of elements in `field_ranges`. */
   unsigned n_field_ranges;
   /** Used for looking up fields by id. */
-  const ProtobufCIntRange *field_ranges;
+  const PaddleMobile__Framework__ProtobufCIntRange *field_ranges;
 
   /** Message initialisation function. */
   ProtobufCMessageInit message_init;
@@ -701,11 +738,11 @@ struct ProtobufCMessageDescriptor {
 /**
  * An unknown message field.
  */
-struct ProtobufCMessageUnknownField {
+struct PaddleMobile__Framework__ProtobufCMessageUnknownField {
   /** The tag number. */
   uint32_t tag;
   /** The wire type of the field. */
-  ProtobufCWireType wire_type;
+  PaddleMobile__Framework__ProtobufCWireType wire_type;
   /** Number of bytes in `data`. */
   size_t len;
   /** Field data. */
@@ -715,33 +752,34 @@ struct ProtobufCMessageUnknownField {
 /**
  * Method descriptor.
  */
-struct ProtobufCMethodDescriptor {
+struct PaddleMobile__Framework__ProtobufCMethodDescriptor {
   /** Method name. */
   const char *name;
   /** Input message descriptor. */
-  const ProtobufCMessageDescriptor *input;
+  const PaddleMobile__Framework__ProtobufCMessageDescriptor *input;
   /** Output message descriptor. */
-  const ProtobufCMessageDescriptor *output;
+  const PaddleMobile__Framework__ProtobufCMessageDescriptor *output;
 };
 
 /**
  * Service.
  */
-struct ProtobufCService {
+struct PaddleMobile__Framework__ProtobufCService {
   /** Service descriptor. */
-  const ProtobufCServiceDescriptor *descriptor;
+  const PaddleMobile__Framework__ProtobufCServiceDescriptor *descriptor;
   /** Function to invoke the service. */
-  void (*invoke)(ProtobufCService *service, unsigned method_index,
-                 const ProtobufCMessage *input, ProtobufCClosure closure,
-                 void *closure_data);
+  void (*invoke)(PaddleMobile__Framework__ProtobufCService *service,
+                 unsigned method_index,
+                 const PaddleMobile__Framework__ProtobufCMessage *input,
+                 ProtobufCClosure closure, void *closure_data);
   /** Function to destroy the service. */
-  void (*destroy)(ProtobufCService *service);
+  void (*destroy)(PaddleMobile__Framework__ProtobufCService *service);
 };
 
 /**
  * Service descriptor.
  */
-struct ProtobufCServiceDescriptor {
+struct PaddleMobile__Framework__ProtobufCServiceDescriptor {
   /** Magic value checked to ensure that the API is used correctly. */
   uint32_t magic;
 
@@ -756,7 +794,7 @@ struct ProtobufCServiceDescriptor {
   /** Number of elements in `methods`. */
   unsigned n_methods;
   /** Method descriptors, in the order defined in the .proto file. */
-  const ProtobufCMethodDescriptor *methods;
+  const PaddleMobile__Framework__ProtobufCMethodDescriptor *methods;
   /** Sort index of methods. */
   const unsigned *method_indices_by_name;
 };
@@ -768,7 +806,7 @@ struct ProtobufCServiceDescriptor {
  * \return A string containing the version number of protobuf-c.
  */
 PROTOBUF_C__API
-const char *protobuf_c_version(void);
+const char *PaddleMobile__Framework__protobuf_c_version(void);
 
 /**
  * Get the version of the protobuf-c library. Note that this is the version of
@@ -778,17 +816,17 @@ const char *protobuf_c_version(void);
  *      protobuf-c, represented in base-10 as (MAJOR*1E6) + (MINOR*1E3) + PATCH.
  */
 PROTOBUF_C__API
-uint32_t protobuf_c_version_number(void);
+uint32_t PaddleMobile__Framework__protobuf_c_version_number(void);
 
 /**
  * The version of the protobuf-c headers, represented as a string using the same
- * format as protobuf_c_version().
+ * format as PaddleMobile__Framework__protobuf_c_version().
  */
 #define PROTOBUF_C_VERSION "1.3.0"
 
 /**
  * The version of the protobuf-c headers, represented as an integer using the
- * same format as protobuf_c_version_number().
+ * same format as PaddleMobile__Framework__protobuf_c_version_number().
  */
 #define PROTOBUF_C_VERSION_NUMBER 1003000
 
@@ -807,7 +845,8 @@ uint32_t protobuf_c_version_number(void);
  *      Number of bytes.
  */
 PROTOBUF_C__API
-size_t protobuf_c_message_get_packed_size(const ProtobufCMessage *message);
+size_t PaddleMobile__Framework__protobuf_c_message_get_packed_size(
+    const PaddleMobile__Framework__ProtobufCMessage *message);
 
 /**
  * Unpack a serialised message into an in-memory representation.
@@ -815,37 +854,35 @@ size_t protobuf_c_message_get_packed_size(const ProtobufCMessage *message);
  * \param descriptor
  *      The message descriptor.
  * \param allocator
- *      `ProtobufCAllocator` to use for memory allocation. May be NULL to
- *      specify the default allocator.
- * \param len
- *      Length in bytes of the serialised message.
- * \param data
- *      Pointer to the serialised message.
- * \return
- *      An unpacked message object.
- * \retval NULL
- *      If an error occurred during unpacking.
+ *      `PaddleMobile__Framework__ProtobufCAllocator` to use for memory
+ * allocation. May be NULL to specify the default allocator. \param len Length
+ * in bytes of the serialised message. \param data Pointer to the
+ * serialised message. \return An unpacked message object. \retval NULL If
+ * an error occurred during unpacking.
  */
 PROTOBUF_C__API
-ProtobufCMessage *protobuf_c_message_unpack(
-    const ProtobufCMessageDescriptor *descriptor, ProtobufCAllocator *allocator,
-    size_t len, const uint8_t *data);
+PaddleMobile__Framework__ProtobufCMessage *
+PaddleMobile__Framework__protobuf_c_message_unpack(
+    const PaddleMobile__Framework__ProtobufCMessageDescriptor *descriptor,
+    PaddleMobile__Framework__ProtobufCAllocator *allocator, size_t len,
+    const uint8_t *data);
 
 /**
  * Free an unpacked message object.
  *
  * This function should be used to deallocate the memory used by a call to
- * protobuf_c_message_unpack().
+ * PaddleMobile__Framework__protobuf_c_message_unpack().
  *
  * \param message
  *      The message object to free. May be NULL.
  * \param allocator
- *      `ProtobufCAllocator` to use for memory deallocation. May be NULL to
- *      specify the default allocator.
+ *      `PaddleMobile__Framework__ProtobufCAllocator` to use for memory
+ * deallocation. May be NULL to specify the default allocator.
  */
 PROTOBUF_C__API
-void protobuf_c_message_free_unpacked(ProtobufCMessage *message,
-                                      ProtobufCAllocator *allocator);
+void PaddleMobile__Framework__protobuf_c_message_free_unpacked(
+    PaddleMobile__Framework__ProtobufCMessage *message,
+    PaddleMobile__Framework__ProtobufCAllocator *allocator);
 
 /**
  * Check the validity of a message object.
@@ -859,7 +896,8 @@ void protobuf_c_message_free_unpacked(ProtobufCMessage *message,
  *      Message is invalid.
  */
 PROTOBUF_C__API
-protobuf_c_boolean protobuf_c_message_check(const ProtobufCMessage *);
+protobuf_c_boolean PaddleMobile__Framework__protobuf_c_message_check(
+    const PaddleMobile__Framework__ProtobufCMessage *);
 
 /** Message initialiser. */
 #define PROTOBUF_C_MESSAGE_INIT(descriptor) \
@@ -874,20 +912,22 @@ protobuf_c_boolean protobuf_c_message_check(const ProtobufCMessage *);
  *      Allocated block of memory of size `descriptor->sizeof_message`.
  */
 PROTOBUF_C__API
-void protobuf_c_message_init(const ProtobufCMessageDescriptor *descriptor,
-                             void *message);
+void PaddleMobile__Framework__protobuf_c_message_init(
+    const PaddleMobile__Framework__ProtobufCMessageDescriptor *descriptor,
+    void *message);
 
 /**
- * Initialise a `ProtobufCBufferSimple` object.
+ * Initialise a `PaddleMobile__Framework__ProtobufCBufferSimple` object.
  */
-#define PROTOBUF_C_BUFFER_SIMPLE_INIT(array_of_bytes)             \
-  {                                                               \
-    {protobuf_c_buffer_simple_append}, sizeof(array_of_bytes), 0, \
-        (array_of_bytes), 0, NULL                                 \
+#define PROTOBUF_C_BUFFER_SIMPLE_INIT(array_of_bytes)           \
+  {                                                             \
+    {PaddleMobile__Framework__protobuf_c_buffer_simple_append}, \
+        sizeof(array_of_bytes), 0, (array_of_bytes), 0, NULL    \
   }
 
 /**
- * Clear a `ProtobufCBufferSimple` object, freeing any allocated memory.
+ * Clear a `PaddleMobile__Framework__ProtobufCBufferSimple` object, freeing any
+ * allocated memory.
  */
 #define PROTOBUF_C_BUFFER_SIMPLE_CLEAR(simp_buf)                              \
   do {                                                                        \
@@ -900,19 +940,20 @@ void protobuf_c_message_init(const ProtobufCMessageDescriptor *descriptor,
   } while (0)
 
 /**
- * The `append` method for `ProtobufCBufferSimple`.
+ * The `append` method for `PaddleMobile__Framework__ProtobufCBufferSimple`.
  *
  * \param buffer
  *      The buffer object to append to. Must actually be a
- *      `ProtobufCBufferSimple` object.
+ *      `PaddleMobile__Framework__ProtobufCBufferSimple` object.
  * \param len
  *      Number of bytes in `data`.
  * \param data
  *      Data to append.
  */
 PROTOBUF_C__API
-void protobuf_c_buffer_simple_append(ProtobufCBuffer *buffer, size_t len,
-                                     const unsigned char *data);
+void PaddleMobile__Framework__protobuf_c_buffer_simple_append(
+    PaddleMobile__Framework__ProtobufCBuffer *buffer, size_t len,
+    const unsigned char *data);
 
 /**@}*/
 

@@ -202,6 +202,7 @@ class Tensor<P: PrecisionProtocol>: Tensorial {
     
     var data: Data
     var dim: Dim
+    var originDimsCount: Int
     
     /// 模型中的维度: 未经过转换 paddle 模型维度为 N C H W
     var tensorDim: Dim
@@ -243,12 +244,13 @@ class Tensor<P: PrecisionProtocol>: Tensorial {
         }
     }
     
-    init(inDim: Dim, inLayout: DataLayout = DataLayout.NCHW()) {
+    init(inDim: Dim, inLayout: DataLayout = DataLayout.NCHW(), originDimsCount: Int?) {
         tensorDim = inDim
         dim = inDim
         let pointer = UnsafeMutablePointer<P>.allocate(capacity: inDim.numel())
         data = Data.init(inCount: inDim.numel(), inPointer: pointer)
         layout = inLayout
+        self.originDimsCount = originDimsCount ?? inDim.cout()
     }
     
     func convert(converter: DataConverter<P>) -> UnsafeMutablePointer<P> {

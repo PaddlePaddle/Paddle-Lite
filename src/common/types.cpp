@@ -43,8 +43,10 @@ const char *G_OP_TYPE_POOL2D = "pool2d";
 const char *G_OP_TYPE_PRIOR_BOX = "prior_box";
 const char *G_OP_TYPE_RELU = "relu";
 const char *G_OP_TYPE_RELU6 = "relu6";
+const char *G_OP_TYPE_LEAKY_RELU = "leaky_relu";
 const char *G_OP_TYPE_RESHAPE = "reshape";
 const char *G_OP_TYPE_RESHAPE2 = "reshape2";
+const char *G_OP_TYPE_SCALE = "scale";
 const char *G_OP_TYPE_SIGMOID = "sigmoid";
 const char *G_OP_TYPE_SOFTMAX = "softmax";
 const char *G_OP_TYPE_TRANSPOSE = "transpose";
@@ -69,7 +71,9 @@ const char *G_OP_TYPE_GRU = "gru";
 const char *G_OP_TYPE_GRU_UNIT = "gru_unit";
 const char *G_OP_TYPE_CRF = "crf_decoding";
 const char *G_OP_TYPE_BILINEAR_INTERP = "bilinear_interp";
+const char *G_OP_TYPE_NEAREST_INTERP = "nearest_interp";
 const char *G_OP_TYPE_FLATTEN = "flatten";
+const char *G_OP_TYPE_FLATTEN2 = "flatten2";
 const char *G_OP_TYPE_SHAPE = "shape";
 const char *G_OP_TYPE_SUM = "sum";
 const char *G_OP_TYPE_TOP_K = "top_k";
@@ -126,6 +130,8 @@ std::unordered_map<
         {G_OP_TYPE_FUSION_CONV_ADD, {{"Input"}, {"Out"}}},
         {G_OP_TYPE_RELU, {{"X"}, {"Out"}}},
         {G_OP_TYPE_RELU6, {{"X"}, {"Out"}}},
+        {G_OP_TYPE_LEAKY_RELU, {{"X"}, {"Out"}}},
+        {G_OP_TYPE_SCALE, {{"X"}, {"Out"}}},
         {G_OP_TYPE_SOFTMAX, {{"X"}, {"Out"}}},
         {G_OP_TYPE_SIGMOID, {{"X"}, {"Out"}}},
         {G_OP_TYPE_MUL, {{"X"}, {"Out"}}},
@@ -173,7 +179,9 @@ std::unordered_map<
           {"Gate", "ResetHiddenPrev", "Hidden"}}},
         {G_OP_TYPE_CRF, {{"Emission", "Transition", "Label"}, {"ViterbiPath"}}},
         {G_OP_TYPE_BILINEAR_INTERP, {{"OutSize", "X"}, {"Out"}}},
+        {G_OP_TYPE_NEAREST_INTERP, {{"OutSize", "X"}, {"Out"}}},
         {G_OP_TYPE_FLATTEN, {{"X"}, {"Out"}}},
+        {G_OP_TYPE_FLATTEN2, {{"X"}, {"Out"}}},
         {G_OP_TYPE_SHAPE, {{"Input"}, {"Out"}}},
         {G_OP_TYPE_CONV_TRANSPOSE, {{"Input"}, {"Output"}}},
         {G_OP_TYPE_SUM, {{"X"}, {"Out"}}},

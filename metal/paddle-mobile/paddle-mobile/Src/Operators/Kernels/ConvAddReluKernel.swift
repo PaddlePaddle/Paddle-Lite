@@ -25,7 +25,11 @@ class ConvAddReluKernel<P: PrecisionProtocol>: ConvAddKernel<P> {
                 }
                 return "depthwise_conv_add_relu_3x3_half"
             } else if param.filter.width == 3 && param.filter.height == 3 {
-                return "conv_add_relu_3x3_half"
+                if param.groups == 1 {
+                    return "conv_add_relu_3x3_half"
+                } else {
+                    return "group_conv_add_relu_3x3_half"
+                }
             } else if param.filter.width == 1 && param.filter.height == 5 {
                 return "conv_add_relu_5x1_half"
             } else if param.filter.width == 5 && param.filter.height == 1 {
@@ -43,7 +47,11 @@ class ConvAddReluKernel<P: PrecisionProtocol>: ConvAddKernel<P> {
             } else if param.filter.width == 5 && param.filter.height == 1 {
                 return "conv_add_relu_1x5"
             } else if param.filter.width == 3 && param.filter.height == 3 {
-                return "conv_add_relu_3x3"
+                if param.groups == 1 {
+                    return "conv_add_relu_3x3"
+                } else {
+                    return "group_conv_add_relu_3x3"
+                }
             } else {
                 return nil
             }
