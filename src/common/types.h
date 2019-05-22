@@ -134,6 +134,12 @@ extern const char *G_OP_TYPE_FUSION_CONV_BN_RELU;
 
 extern const char *G_OP_TYPE_GRU;
 extern const char *G_OP_TYPE_GRU_UNIT;
+extern const char *G_OP_TYPE_CRF;
+extern const char *G_OP_TYPE_BILINEAR_INTERP;
+extern const char *G_OP_TYPE_NEAREST_INTERP;
+extern const char *G_OP_TYPE_FLATTEN;
+extern const char *G_OP_TYPE_FLATTEN2;
+extern const char *G_OP_TYPE_SHAPE;
 extern const char *G_OP_TYPE_LRN;
 extern const char *G_OP_TYPE_MUL;
 extern const char *G_OP_TYPE_MULTICLASS_NMS;
