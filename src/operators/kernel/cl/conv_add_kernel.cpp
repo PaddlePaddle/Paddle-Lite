@@ -37,7 +37,12 @@ bool ConvAddKernel<GPU_CL, float>::Init(FusionConvAddParam<GPU_CL> *param) {
 
   const std::string conv_kernel_file = "conv_kernel.cl";
   const std::string wino_kernel_file = "winograd_transform.cl";
-  const std::string build_options = "-DBIASE";
+  std::string build_options;
+  if (param->Output()->dims() == param->Bias()->dims()) {
+    build_options = "-DBIASE_ELE";
+  } else {
+    build_options = "-DBIASE_CH";
+  }
 
   if (param->Filter()->dims()[2] == 1 && param->Filter()->dims()[3] == 1) {
     param->ExecMode() = ConvParam<GPU_CL>::EXEC_SLIDINGWINDOW1x1_FLOAT;
