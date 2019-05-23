@@ -26,8 +26,10 @@ bool ConvAddKernel<GPU_CL, float>::Init(FusionConvAddParam<GPU_CL> *param) {
       param->Filter()->dims()[2] == param->Filter()->dims()[3] &&
           param->Paddings()[0] == param->Paddings()[1],
       "need equal");
-  param->Bias()->InitCLImage(cl_helper_.CLContext(),
-                             this->cl_helper_.CLCommandQueue());
+  if (!param->Bias()->isInit()) {
+    param->Bias()->InitCLImage(cl_helper_.CLContext(),
+                               this->cl_helper_.CLCommandQueue());
+  }
 
   int offset = static_cast<int>(param->Filter()->dims()[2]) / 2 -
                static_cast<int>(param->Paddings()[1]);
@@ -100,6 +102,7 @@ bool ConvAddKernel<GPU_CL, float>::Init(FusionConvAddParam<GPU_CL> *param) {
 template <>
 void ConvAddKernel<GPU_CL, float>::Compute(
     const FusionConvAddParam<GPU_CL> &param) {
+  DLOG << "lebron bias " << *param.Bias();
   switch (param.ExecMode()) {
     case ConvParam<GPU_CL>::EXEC_WINOGRAD3X3_FLOAT:
       WinogradConv3x3<4, 3>(&this->cl_helper_, param, false, param.Bias());

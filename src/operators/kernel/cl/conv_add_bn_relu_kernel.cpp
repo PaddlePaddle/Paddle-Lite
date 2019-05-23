@@ -30,8 +30,10 @@ bool ConvAddBNReluKernel<GPU_CL, float>::Init(
           param->Paddings()[0] == param->Paddings()[1],
       "need equal");
 
-  param->Bias()->InitCLImage(cl_helper_.CLContext(),
-                             cl_helper_.CLCommandQueue());
+  if (!param->Bias()->isInit()) {
+    param->Bias()->InitCLImage(cl_helper_.CLContext(),
+                               cl_helper_.CLCommandQueue());
+  }
 
   //  const CL *mean = param->InputMean();
   const framework::CLImage *mean = param->InputMean();
