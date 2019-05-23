@@ -30,7 +30,7 @@ __kernel void conv_3x3(__private const int global_size_dim0,
                                               __read_only image2d_t input_image,
                                               __read_only image2d_t filter,
 
-#ifdef BIASE
+#if defined(BIASE_CH) || defined(BIASE_ELE)
                                               __read_only image2d_t bias,
 #endif
 
@@ -52,6 +52,8 @@ __kernel void conv_3x3(__private const int global_size_dim0,
     const int out_c = get_global_id(0);
     const int out_w = get_global_id(1);
     const int out_nh = get_global_id(2);
+    
+    int2 output_pos = (int2)(out_c * global_size_dim1 + out_w, out_nh);
 
     if (out_c >= global_size_dim0 ||
         out_w >= global_size_dim1 ||
@@ -77,8 +79,10 @@ __kernel void conv_3x3(__private const int global_size_dim0,
     in_pos_in_one_block.x = ouput_pos_in_one_block.x * stride + offset;
     in_pos_in_one_block.y = ouput_pos_in_one_block.y * stride + offset;
 
-#ifdef BIASE
+#ifdef BIASE_CH
     half4 output = read_imageh(bias, sampler, (int2)(out_c, 0));
+#elif defined(BIASE_ELE)
+    half4 output = read_imageh(bias, sampler, output_pos);
 #else
     half4 output = 0.0f;
 #endif
@@ -327,7 +331,7 @@ __kernel void conv_3x3(__private const int global_size_dim0,
     output = activation(output);
 #endif
 
-    write_imageh(output_image, (int2)(out_c * global_size_dim1 + out_w, out_nh), output);
+    write_imageh(output_image, output_pos, output);
 }
 
 
@@ -338,7 +342,7 @@ __kernel void depth_conv_3x3(__private const int global_size_dim0,
                                               __private const int global_size_dim2,
                                               __read_only image2d_t input,
                                               __read_only image2d_t filter,
-#ifdef BIASE
+#if defined(BIASE_CH) || defined(BIASE_ELE)
                                               __read_only image2d_t bias,
 #endif
 #ifdef BATCH_NORM
@@ -376,8 +380,10 @@ __kernel void depth_conv_3x3(__private const int global_size_dim0,
 
     int2 in_pos_in_one_block = ouput_pos_in_one_block * stride_xy + (int2)(offset, offset);
 
-#ifdef BIASE
+#ifdef BIASE_CH
     half4 output = read_imageh(bias, sampler, (int2)(out_c, 0));
+#elif defined(BIASE_ELE)
+    half4 output = read_imageh(bias, sampler, output_pos);
 #else
     half4 output = 0.0f;
 #endif
@@ -492,7 +498,7 @@ __kernel void conv_1x1(__private const int global_size_dim0,
                        __private const int global_size_dim2,
                        __read_only image2d_t input_image,
                        __read_only image2d_t filter,
-#ifdef BIASE
+#if defined(BIASE_CH) || defined(BIASE_ELE)
                        __read_only image2d_t bias,
 #endif
 #ifdef BATCH_NORM
@@ -512,6 +518,8 @@ __kernel void conv_1x1(__private const int global_size_dim0,
   const int out_w = get_global_id(1);
   const int out_nh = get_global_id(2);
 
+  int2 output_pos = (int2)(out_c * global_size_dim1 + out_w, out_nh);
+    
   const sampler_t sampler = CLK_NORMALIZED_COORDS_TRUE |
                            CLK_ADDRESS_CLAMP         |
                            CLK_FILTER_NEAREST;
@@ -521,8 +529,10 @@ __kernel void conv_1x1(__private const int global_size_dim0,
   int2 ouput_pos_in_one_block = (int2)(out_w, out_nh);
   int2 in_pos_in_one_block = ouput_pos_in_one_block * stride_xy + (int2)(offset, offset);
 
-#ifdef BIASE
+#ifdef BIASE_CH
     half4 output = read_imageh(bias, sampler, (int2)(out_c, 0));
+#elif defined(BIASE_ELE)
+    half4 output = read_imageh(bias, sampler, output_pos);
 #else
     half4 output = 0.0f;
 #endif
@@ -557,7 +567,6 @@ __kernel void conv_1x1(__private const int global_size_dim0,
   output = activation(output);
 #endif
 
-  int2 output_pos = (int2)(out_c * global_size_dim1 + out_w, out_nh);
   write_imageh(output_image, output_pos, output);
 }
 
@@ -565,7 +574,7 @@ __kernel void conv_1x1_spl(
     __private const int global_size_dim0, __private const int global_size_dim1,
     __private const int global_size_dim2, __read_only image2d_t input_image,
     __read_only image2d_t filter,
-#ifdef BIASE
+#if defined(BIASE_CH) || defined(BIASE_ELE)
     __read_only image2d_t bias,
 #endif
 #ifdef BATCH_NORM
@@ -593,6 +602,12 @@ __kernel void conv_1x1_spl(
 //  int out_w1 = out_w + global_size_dim1;
 //  int out_w2 = out_w + global_size_dim1 * 2;
 //  int out_w3 = out_w + global_size_dim1 * 3;
+    
+  int outpos_main = mul24(out_c , old_w);
+  int2 output_pos0 = (int2)(outpos_main + out_w0, out_nh);
+  int2 output_pos1 = (int2)(outpos_main + out_w1, out_nh);
+  int2 output_pos2 = (int2)(outpos_main + out_w2, out_nh);
+  int2 output_pos3 = (int2)(outpos_main + out_w3, out_nh);
 
   const sampler_t sampler =
       CLK_NORMALIZED_COORDS_TRUE | CLK_ADDRESS_CLAMP | CLK_FILTER_NEAREST;
@@ -615,15 +630,16 @@ __kernel void conv_1x1_spl(
   int2 in_pos_in_one_block3 =
       ouput_pos_in_one_block3 * stride_xy + (int2)(offset, offset);
 
-#ifdef BIASE
-      half4 output0= read_imageh(bias, sampler, (int2)(out_c, 0));
-      half4 output1 = read_imageh(bias, sampler, (int2)(out_c, 0));
-      half4 output2 = read_imageh(bias, sampler, (int2)(out_c, 0));
-      half4 output3 = read_imageh(bias, sampler, (int2)(out_c, 0));
-//  half4 output0 = 0.0f;
-//  half4 output1 = 0.0f;
-//  half4 output2 = 0.0f;
-//  half4 output3 = 0.0f;
+#ifdef BIASE_CH
+    half4 output0 = read_imageh(bias, sampler, (int2)(out_c, 0));
+    half4 output1 = read_imageh(bias, sampler, (int2)(out_c, 0));
+    half4 output2 = read_imageh(bias, sampler, (int2)(out_c, 0));
+    half4 output3 = read_imageh(bias, sampler, (int2)(out_c, 0));
+#elif defined(BIASE_ELE)
+    half4 output0 = read_imageh(bias, sampler, output_pos0);
+    half4 output1 = read_imageh(bias, sampler, output_pos1);
+    half4 output2 = read_imageh(bias, sampler, output_pos2);
+    half4 output3 = read_imageh(bias, sampler, output_pos3);
 
 #else
   half4 output0 = 0.0f;
@@ -712,23 +728,19 @@ __kernel void conv_1x1_spl(
      output2 = activation(output2);
      output3 = activation(output3);
 #endif
-  int outpos_main = mul24(out_c , old_w);
-  int2 output_pos0 = (int2)(outpos_main + out_w0, out_nh);
 
   if (out_w0 < old_w) {
     write_imageh(output_image, output_pos0, output0);
   }
-  int2 output_pos1 = (int2)(outpos_main + out_w1, out_nh);
+
   if (out_w1 < old_w){
     write_imageh(output_image, output_pos1, output1);
   }
 
-  int2 output_pos2 = (int2)(outpos_main + out_w2, out_nh);
   if (out_w2 < old_w){
     write_imageh(output_image, output_pos2, output2);
   }
 
-  int2 output_pos3 = (int2)(outpos_main + out_w3, out_nh);
   if (out_w3 < old_w){
     write_imageh(output_image, output_pos3, output3);
   }
@@ -1549,7 +1561,7 @@ __kernel void conv_7x7(__private const int global_size_dim0,
                                               __read_only image2d_t input_image,
                                               __read_only image2d_t filter_image,
 
-#ifdef BIASE
+#if defined(BIASE_CH) || defined(BIASE_ELE)
                                               __read_only image2d_t bias,
 #endif
 
@@ -1571,6 +1583,8 @@ __kernel void conv_7x7(__private const int global_size_dim0,
     const int out_c = get_global_id(0);
     const int out_w = get_global_id(1);
     const int out_nh = get_global_id(2);
+    
+    int2 output_pos = (int2)(out_c * global_size_dim1 + out_w, out_nh);
 
     if (out_c >= global_size_dim0 ||
         out_w >= global_size_dim1 ||
@@ -1599,8 +1613,10 @@ __kernel void conv_7x7(__private const int global_size_dim0,
     in_pos_in_one_block.x = ouput_pos_in_one_block.x * stride + offset;
     in_pos_in_one_block.y = ouput_pos_in_one_block.y * stride + offset;
 
-#ifdef BIASE
+#ifdef BIASE_CH
     half4 output = read_imageh(bias, sampler, (int2)(out_c, 0));
+#elif defined(BIASE_ELE)
+    half4 output = read_imageh(bias, sampler, output_pos);
 #else
     half4 output = 0.0f;
 #endif
@@ -1656,7 +1672,7 @@ __kernel void conv_7x7(__private const int global_size_dim0,
     output = activation(output);
 #endif
 
-    write_imageh(output_image, (int2)(out_c * global_size_dim1 + out_w, out_nh), output);
+    write_imageh(output_image, output_pos, output);
 }
 
 __kernel void conv_5x5(__private const int global_size_dim0,
@@ -1665,7 +1681,7 @@ __kernel void conv_5x5(__private const int global_size_dim0,
                                               __read_only image2d_t input_image,
                                               __read_only image2d_t filter_image,
 
-#ifdef BIASE
+#if defined(BIASE_CH) || defined(BIASE_ELE)
                                               __read_only image2d_t bias,
 #endif
 
@@ -1687,6 +1703,8 @@ __kernel void conv_5x5(__private const int global_size_dim0,
     const int out_c = get_global_id(0);
     const int out_w = get_global_id(1);
     const int out_nh = get_global_id(2);
+    
+    int2 output_pos = (int2)(out_c * global_size_dim1 + out_w, out_nh);
 
     if (out_c >= global_size_dim0 ||
         out_w >= global_size_dim1 ||
@@ -1715,8 +1733,10 @@ __kernel void conv_5x5(__private const int global_size_dim0,
     in_pos_in_one_block.x = ouput_pos_in_one_block.x * stride + offset;
     in_pos_in_one_block.y = ouput_pos_in_one_block.y * stride + offset;
 
-#ifdef BIASE
+#ifdef BIASE_CH
     half4 output = read_imageh(bias, sampler, (int2)(out_c, 0));
+#elif defined(BIASE_ELE)
+    half4 output = read_imageh(bias, sampler, output_pos);
 #else
     half4 output = 0.0f;
 #endif
@@ -1772,7 +1792,7 @@ __kernel void conv_5x5(__private const int global_size_dim0,
     output = activation(output);
 #endif
 
-    write_imageh(output_image, (int2)(out_c * global_size_dim1 + out_w, out_nh), output);
+    write_imageh(output_image, output_pos, output);
 }
 
 __kernel void convBNAdd_3x3(__private const int global_size_dim0,
@@ -1781,7 +1801,7 @@ __kernel void convBNAdd_3x3(__private const int global_size_dim0,
                                               __read_only image2d_t input_image,
                                               __read_only image2d_t filter,
 
-#ifdef BIASE
+#if defined(BIASE_CH) || defined(BIASE_ELE)
                                               __read_only image2d_t bias,
 #endif
 
@@ -1803,6 +1823,8 @@ __kernel void convBNAdd_3x3(__private const int global_size_dim0,
     const int out_c = get_global_id(0);
     const int out_w = get_global_id(1);
     const int out_nh = get_global_id(2);
+    
+    int2 output_pos = (int2)(out_c * global_size_dim1 + out_w, out_nh);
 
     if (out_c >= global_size_dim0 ||
         out_w >= global_size_dim1 ||
@@ -2071,15 +2093,17 @@ __kernel void convBNAdd_3x3(__private const int global_size_dim0,
     output = output * read_imageh(new_scale, sampler, (int2)(out_c, 0)) + read_imageh(new_biase, sampler, (int2)(out_c, 0));
 #endif
 
-#ifdef BIASE
-    output += read_imageh(bias, sampler, (int2)(out_c * global_size_dim1 + out_w, out_nh));
+#ifdef BIASE_CH
+    output += read_imageh(bias, sampler, (int2)(out_c, 0));
+#elif defined(BIASE_ELE)
+    output += read_imageh(bias, sampler, output_pos);
 #endif
 
 #ifdef RELU
     output = activation(output);
 #endif
 
-    write_imageh(output_image, (int2)(out_c * global_size_dim1 + out_w, out_nh), output);
+    write_imageh(output_image, output_pos, output);
 }
 
 __kernel void convBNAdd_1x1(__private const int global_size_dim0,
@@ -2087,7 +2111,7 @@ __kernel void convBNAdd_1x1(__private const int global_size_dim0,
                        __private const int global_size_dim2,
                        __read_only image2d_t input_image,
                        __read_only image2d_t filter,
-#ifdef BIASE
+#if defined(BIASE_CH) || defined(BIASE_ELE)
                        __read_only image2d_t bias,
 #endif
 #ifdef BATCH_NORM
@@ -2107,6 +2131,8 @@ __kernel void convBNAdd_1x1(__private const int global_size_dim0,
   const int out_w = get_global_id(1);
   const int out_nh = get_global_id(2);
 
+  int2 output_pos = (int2)(out_c * global_size_dim1 + out_w, out_nh);
+    
   const sampler_t sampler = CLK_NORMALIZED_COORDS_TRUE |
                            CLK_ADDRESS_CLAMP         |
                            CLK_FILTER_NEAREST;
@@ -2145,15 +2171,16 @@ __kernel void convBNAdd_1x1(__private const int global_size_dim0,
     output = output * read_imageh(new_scale, sampler, (int2)(out_c, 0)) + read_imageh(new_biase, sampler, (int2)(out_c, 0));
 #endif
 
-#ifdef BIASE
-   output += read_imageh(bias, sampler, (int2)(out_c * global_size_dim1 + out_w, out_nh));
+#ifdef BIASE_CH
+    output += read_imageh(bias, sampler, (int2)(out_c, 0));
+#elif defined(BIASE_ELE)
+    output += read_imageh(bias, sampler, output_pos);
 #endif
 
 #ifdef RELU
   output = activation(output);
 #endif
 
-  int2 output_pos = (int2)(out_c * global_size_dim1 + out_w, out_nh);
   write_imageh(output_image, output_pos, output);
 }
 
@@ -2161,7 +2188,7 @@ __kernel void convBNAdd_1x1_spl(
         __private const int global_size_dim0, __private const int global_size_dim1,
         __private const int global_size_dim2, __read_only image2d_t input_image,
         __read_only image2d_t filter,
-#ifdef BIASE
+#if defined(BIASE_CH) || defined(BIASE_ELE)
         __read_only image2d_t bias,
 #endif
 #ifdef BATCH_NORM
@@ -2186,9 +2213,11 @@ __kernel void convBNAdd_1x1_spl(
   int out_w2 = out_w + global_size_dim1 * 2;
   int out_w3 = out_w + global_size_dim1 * 3;
 
-//  int out_w1 = out_w + global_size_dim1;
-//  int out_w2 = out_w + global_size_dim1 * 2;
-//  int out_w3 = out_w + global_size_dim1 * 3;
+  int outpos_main = mul24(out_c , old_w);
+  int2 output_pos0 = (int2)(outpos_main + out_w0, out_nh);
+  int2 output_pos1 = (int2)(outpos_main + out_w1, out_nh);
+  int2 output_pos2 = (int2)(outpos_main + out_w2, out_nh);
+  int2 output_pos3 = (int2)(outpos_main + out_w3, out_nh);
 
   const sampler_t sampler =
           CLK_NORMALIZED_COORDS_TRUE | CLK_ADDRESS_CLAMP | CLK_FILTER_NEAREST;
@@ -2279,7 +2308,7 @@ __kernel void convBNAdd_1x1_spl(
   }
 
 #ifdef BATCH_NORM
-  output0 = output0 * read_imageh(new_scale, sampler, (int2)(out_c, 0)) +
+    output0 = output0 * read_imageh(new_scale, sampler, (int2)(out_c, 0)) +
           read_imageh(new_biase, sampler, (int2)(out_c, 0));
 
     output1 = output1 * read_imageh(new_scale, sampler, (int2)(out_c, 0)) +
@@ -2292,11 +2321,16 @@ __kernel void convBNAdd_1x1_spl(
           read_imageh(new_biase, sampler, (int2)(out_c, 0));
 #endif
 
-#ifdef BIASE
-  output0= read_imageh(bias, sampler, (int2)(out_c, 0));
-  output1 = read_imageh(bias, sampler, (int2)(out_c, 0));
-  output2 = read_imageh(bias, sampler, (int2)(out_c, 0));
-  output3 = read_imageh(bias, sampler, (int2)(out_c, 0));
+#ifdef BIASE_CH
+    output0 += read_imageh(bias, sampler, (int2)(out_c, 0));
+    output1 += read_imageh(bias, sampler, (int2)(out_c, 0));
+    output2 += read_imageh(bias, sampler, (int2)(out_c, 0));
+    output3 += read_imageh(bias, sampler, (int2)(out_c, 0));
+#elif defined(BIASE_ELE)
+    output0 += read_imageh(bias, sampler, output_pos0);
+    output1 += read_imageh(bias, sampler, output_pos1);
+    output2 += read_imageh(bias, sampler, output_pos2);
+    output3 += read_imageh(bias, sampler, output_pos3);
 #endif
       
 #ifdef RELU
@@ -2305,23 +2339,19 @@ __kernel void convBNAdd_1x1_spl(
   output2 = activation(output2);
   output3 = activation(output3);
 #endif
-  int outpos_main = mul24(out_c , old_w);
-  int2 output_pos0 = (int2)(outpos_main + out_w0, out_nh);
 
   if (out_w0 < old_w) {
     write_imageh(output_image, output_pos0, output0);
   }
-  int2 output_pos1 = (int2)(outpos_main + out_w1, out_nh);
+
   if (out_w1 < old_w){
     write_imageh(output_image, output_pos1, output1);
   }
 
-  int2 output_pos2 = (int2)(outpos_main + out_w2, out_nh);
   if (out_w2 < old_w){
     write_imageh(output_image, output_pos2, output2);
   }
 
-  int2 output_pos3 = (int2)(outpos_main + out_w3, out_nh);
   if (out_w3 < old_w){
     write_imageh(output_image, output_pos3, output3);
   }
