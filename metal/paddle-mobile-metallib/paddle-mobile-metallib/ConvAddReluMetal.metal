@@ -40,7 +40,7 @@ kernel void conv_add_relu_1x1(texture2d_array<float, access::sample> inTexture [
     uint input_arr_size = inTexture.get_array_size();
     uint weithTo = gid.z * kernelHXW * input_arr_size * 4;
     
-    float4 output = biase[gid.z];
+    float4 output = param.hasAddOp == 1 ? biase[gid.z] : float4(0.0, 0.0, 0.0, 0.0);
     
     float4 input;
     for (uint i = 0; i < input_arr_size; ++i) {
@@ -57,7 +57,7 @@ kernel void conv_add_relu_1x1(texture2d_array<float, access::sample> inTexture [
         float4 weight_w = weights[weithTo + 3 * kernelHXW * input_arr_size + i];
         output.w += dot(input, weight_w);
     }
-    float4 relu = fmax(output, 0.0);
+    float4 relu = param.hasReluOp == 1 ? fmax(output, 0.0) : output;
     outTexture.write(relu, gid.xy, gid.z);
 }
 
@@ -85,7 +85,7 @@ kernel void conv_add_relu_3x3(texture2d_array<float, access::sample> inTexture [
     
     uint weithTo = gid.z * kernelHXW * input_arr_size * 4;
     
-    float4 output = biase[gid.z];
+    float4 output = param.hasAddOp == 1 ? biase[gid.z] : float4(0.0, 0.0, 0.0, 0.0);
     
     ushort dilation_x = param.dilationX;
     ushort dilation_y = param.dilationY;
@@ -125,7 +125,7 @@ kernel void conv_add_relu_3x3(texture2d_array<float, access::sample> inTexture [
             output.w += dot(input[j], weight_w);
         }
     }
-    float4 relu = fmax(output, 0.0);
+    float4 relu = param.hasReluOp == 1 ? fmax(output, 0.0) : output;
     outTexture.write(relu, gid.xy, gid.z);
 }
 
@@ -148,7 +148,7 @@ kernel void group_conv_add_relu_3x3(texture2d_array<float, access::sample> inTex
     
     const uint kernelHXW = 9;
     
-    float4 output = biase[gid.z];
+    float4 output = param.hasAddOp == 1 ? biase[gid.z] : float4(0.0, 0.0, 0.0, 0.0);
     
     ushort dilation_x = param.dilationX;
     ushort dilation_y = param.dilationY;
@@ -180,7 +180,7 @@ kernel void group_conv_add_relu_3x3(texture2d_array<float, access::sample> inTex
         }
     }
     
-    float4 relu = fmax(output, 0.0);
+    float4 relu = param.hasReluOp == 1 ? fmax(output, 0.0) : output;
     outTexture.write(relu, gid.xy, gid.z);
 }
 
@@ -208,7 +208,7 @@ kernel void conv_add_relu_5x1(texture2d_array<float, access::sample> inTexture [
     
     uint weithTo = gid.z * kernelHXW * input_arr_size * 4;
     
-    float4 output = biase[gid.z];
+    float4 output = param.hasAddOp == 1 ? biase[gid.z] : float4(0.0, 0.0, 0.0, 0.0);
     
     ushort dilation_y = param.dilationY;
     float4 input[5];
@@ -238,7 +238,7 @@ kernel void conv_add_relu_5x1(texture2d_array<float, access::sample> inTexture [
             output.w += dot(input[j], weight_w);
         }
     }
-    float4 relu = fmax(output, 0.0);
+    float4 relu = param.hasReluOp == 1 ? fmax(output, 0.0) : output;
     outTexture.write(relu, gid.xy, gid.z);
 }
 
@@ -266,7 +266,7 @@ kernel void conv_add_relu_1x5(texture2d_array<float, access::sample> inTexture [
     
     uint weithTo = gid.z * kernelHXW * input_arr_size * 4;
     
-    float4 output = biase[gid.z];
+    float4 output = param.hasAddOp == 1 ? biase[gid.z] : float4(0.0, 0.0, 0.0, 0.0);
     
     ushort dilation_x = param.dilationX;
     float4 input[5];
@@ -296,7 +296,7 @@ kernel void conv_add_relu_1x5(texture2d_array<float, access::sample> inTexture [
             output.w += dot(input[j], weight_w);
         }
     }
-    float4 relu = fmax(output, 0.0);
+    float4 relu = param.hasReluOp == 1 ? fmax(output, 0.0) : output;
     outTexture.write(relu, gid.xy, gid.z);
 }
 
@@ -318,7 +318,7 @@ kernel void depthwise_conv_add_relu_3x3(texture2d_array<float, access::sample> i
     constexpr sampler sample(coord::pixel, filter::nearest, address::clamp_to_zero);
     const uint kernelHXW = 9;
     uint weithTo = gid.z * kernelHXW * 4;
-    float4 output = biase[gid.z];
+    float4 output = param.hasAddOp == 1 ? biase[gid.z] : float4(0.0, 0.0, 0.0, 0.0);
     float4 inputs[9];
     inputs[0] = inTexture.sample(sample, float2(posInInput.x - 1,    posInInput.y - 1), output_slice);
     inputs[1] = inTexture.sample(sample, float2(posInInput.x,        posInInput.y - 1), output_slice);
@@ -336,7 +336,7 @@ kernel void depthwise_conv_add_relu_3x3(texture2d_array<float, access::sample> i
         output.z += input.z * weights[weithTo + 2 * kernelHXW + j];
         output.w += input.w * weights[weithTo + 3 * kernelHXW + j];
     }
-    float4 relu = fmax(output, 0.0);
+    float4 relu = param.hasReluOp == 1 ? fmax(output, 0.0) : output;
     outTexture.write(relu, gid.xy, gid.z);
 }
 
@@ -364,7 +364,7 @@ kernel void conv_add_relu_1x1_half(texture2d_array<half, access::sample> inTextu
     uint input_arr_size = inTexture.get_array_size();
     uint weithTo = gid.z * kernelHXW * input_arr_size * 4;
     
-    float4 output = float4(biase[gid.z]);
+    float4 output = param.hasAddOp == 1 ? float4(biase[gid.z]) : float4(0.0, 0.0, 0.0, 0.0);
     
     float4 input;
     for (uint i = 0; i < input_arr_size; ++i) {
@@ -381,7 +381,7 @@ kernel void conv_add_relu_1x1_half(texture2d_array<half, access::sample> inTextu
         float4 weight_w = float4(weights[weithTo + 3 * kernelHXW * input_arr_size + i]);
         output.w += dot(input, weight_w);
     }
-    float4 relu = fmax(output, 0.0);
+    float4 relu = param.hasReluOp == 1 ? fmax(output, 0.0) : output;
     outTexture.write(half4(relu), gid.xy, gid.z);
 }
 
@@ -406,7 +406,7 @@ kernel void conv_add_relu_3x3_half(texture2d_array<half, access::sample> inTextu
     uint input_arr_size = inTexture.get_array_size();
     uint weithTo = gid.z * kernelHXW * input_arr_size * 4;
     
-    float4 output = float4(biase[gid.z]);
+    float4 output = param.hasAddOp == 1 ? float4(biase[gid.z]) : float4(0.0, 0.0, 0.0, 0.0);
     
     ushort dilation_x = param.dilationX;
     ushort dilation_y = param.dilationY;
@@ -436,7 +436,7 @@ kernel void conv_add_relu_3x3_half(texture2d_array<half, access::sample> inTextu
             output.w += dot(float4(input[j]), float4(weight_w));
         }
     }
-    float4 relu = fmax(output, 0.0);
+    float4 relu = param.hasReluOp == 1 ? fmax(output, 0.0) : output;
     outTexture.write(half4(relu), gid.xy, gid.z);
 }
 
@@ -459,7 +459,7 @@ kernel void group_conv_add_relu_3x3_half(texture2d_array<half, access::sample> i
     
     const uint kernelHXW = 9;
     
-    half4 output = biase[gid.z];
+    float4 output = param.hasAddOp == 1 ? float4(biase[gid.z]) : float4(0.0, 0.0, 0.0, 0.0);
     
     ushort dilation_x = param.dilationX;
     ushort dilation_y = param.dilationY;
@@ -486,13 +486,13 @@ kernel void group_conv_add_relu_3x3_half(texture2d_array<half, access::sample> i
             input[8] = inTexture.sample(sample, float2(posInInput.x + dilation_x, posInInput.y + dilation_y), input_array_index)[input_array_item_index];
             for (int j = 0; j < 9; ++j) {
                 half weight = weights[(output_c * kernelHXW + j) * filter_array_size * 4 + i];
-                output[c] += input[j] * weight;
+                output[c] += float(input[j]) * float(weight);
             }
         }
     }
     
-    half4 relu = fmax(output, 0.0);
-    outTexture.write(relu, gid.xy, gid.z);
+    float4 relu = param.hasReluOp == 1 ? fmax(output, 0.0) : output;
+    outTexture.write(half4(relu), gid.xy, gid.z);
 }
 
 kernel void depthwise_conv_add_relu_3x3_half(texture2d_array<half, access::sample> inTexture [[texture(0)]],
@@ -512,7 +512,7 @@ kernel void depthwise_conv_add_relu_3x3_half(texture2d_array<half, access::sampl
     constexpr sampler sample(coord::pixel, filter::nearest, address::clamp_to_zero);
     const uint kernelHXW = 9;
     uint weithTo = gid.z * kernelHXW * 4;
-    float4 output = float4(biase[gid.z]);
+    float4 output = param.hasAddOp == 1 ? float4(biase[gid.z]) : float4(0.0, 0.0, 0.0, 0.0);
     half4 inputs[9];
     inputs[0] = inTexture.sample(sample, float2(posInInput.x - 1,    posInInput.y - 1), output_slice);
     inputs[1] = inTexture.sample(sample, float2(posInInput.x,        posInInput.y - 1), output_slice);
@@ -530,8 +530,9 @@ kernel void depthwise_conv_add_relu_3x3_half(texture2d_array<half, access::sampl
         output.z += float(input.z) * float(weights[weithTo + 2 * kernelHXW + j]);
         output.w += float(input.w) * float(weights[weithTo + 3 * kernelHXW + j]);
     }
-    output = fmax(output, 0.0);
-    outTexture.write(half4(output), gid.xy, gid.z);
+    
+    float4 relu = param.hasReluOp == 1 ? fmax(output, 0.0) : output;
+    outTexture.write(half4(relu), gid.xy, gid.z);
 }
 
 kernel void depthwise_conv_add_relu_3x3_half_winograd(texture2d_array<half, access::sample> inTexture [[texture(0)]],
@@ -640,11 +641,18 @@ kernel void depthwise_conv_add_relu_3x3_half_winograd(texture2d_array<half, acce
         res[3][c] = T[7] - T[11] + T[15] + tmp1 - tmp2;
     }
 
-    half4 base = biase[tc];
-    outTexture.write(fmax(res[0] + base, 0.0), uint2(tx, ty), tc);
-    outTexture.write(fmax(res[1] + base, 0.0), uint2(tx + 1, ty), tc);
-    outTexture.write(fmax(res[2] + base, 0.0), uint2(tx, ty + 1), tc);
-    outTexture.write(fmax(res[3] + base, 0.0), uint2(tx + 1, ty + 1), tc);
+    if (param.hasReluOp == 1) {
+        half4 base = biase[tc];
+        outTexture.write(fmax(res[0] + base, 0.0), uint2(tx, ty), tc);
+        outTexture.write(fmax(res[1] + base, 0.0), uint2(tx + 1, ty), tc);
+        outTexture.write(fmax(res[2] + base, 0.0), uint2(tx, ty + 1), tc);
+        outTexture.write(fmax(res[3] + base, 0.0), uint2(tx + 1, ty + 1), tc);
+    } else {
+        outTexture.write(res[0], uint2(tx, ty), tc);
+        outTexture.write(res[1], uint2(tx + 1, ty), tc);
+        outTexture.write(res[2], uint2(tx, ty + 1), tc);
+        outTexture.write(res[3], uint2(tx + 1, ty + 1), tc);
+    }
 }
 
 kernel void conv_add_relu_5x1_half(texture2d_array<half, access::sample> inTexture [[texture(0)]],
@@ -653,7 +661,6 @@ kernel void conv_add_relu_5x1_half(texture2d_array<half, access::sample> inTextu
                               const device half4 *weights [[buffer(1)]],
                               const device half4 *biase [[buffer(2)]],
                               uint3 gid [[thread_position_in_grid]]) {
-    
     if (gid.x >= outTexture.get_width() ||
         gid.y >= outTexture.get_height() ||
         gid.z >= outTexture.get_array_size()) {
@@ -671,7 +678,7 @@ kernel void conv_add_relu_5x1_half(texture2d_array<half, access::sample> inTextu
     
     uint weithTo = gid.z * kernelHXW * input_arr_size * 4;
     
-    float4 output = float4(biase[gid.z]);
+    float4 output = param.hasAddOp == 1 ? float4(biase[gid.z]) : float4(0.0, 0.0, 0.0, 0.0);
     
     ushort dilation_y = param.dilationY;
     half4 input[5];
@@ -701,7 +708,7 @@ kernel void conv_add_relu_5x1_half(texture2d_array<half, access::sample> inTextu
             output.w += dot(float4(input[j]), float4(weight_w));
         }
     }
-    float4 relu = fmax(output, 0.0);
+    float4 relu = param.hasReluOp == 1 ? fmax(output, 0.0) : output;
     outTexture.write(half4(relu), gid.xy, gid.z);
 }
 
@@ -729,7 +736,7 @@ kernel void conv_add_relu_1x5_half(texture2d_array<half, access::sample> inTextu
     
     uint weithTo = gid.z * kernelHXW * input_arr_size * 4;
     
-    float4 output = float4(biase[gid.z]);
+    float4 output = param.hasAddOp == 1 ? float4(biase[gid.z]) : float4(0.0, 0.0, 0.0, 0.0);
     
     ushort dilation_x = param.dilationX;
     half4 input[5];
@@ -759,6 +766,6 @@ kernel void conv_add_relu_1x5_half(texture2d_array<half, access::sample> inTextu
             output.w += dot(float4(input[j]), float4(weight_w));
         }
     }
-    float4 relu = fmax(output, 0.0);
+    float4 relu = param.hasReluOp == 1 ? fmax(output, 0.0) : output;
     outTexture.write(half4(relu), gid.xy, gid.z);
 }

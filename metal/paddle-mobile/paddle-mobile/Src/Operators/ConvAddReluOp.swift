@@ -14,7 +14,40 @@
 
 import Foundation
 
-class ConvAddReluOp<P: PrecisionProtocol>: Operator<ConvAddReluKernel<P>, ConvAddParam<P>>, Runable, Creator, InferShaperable, Fusion {
+class ConvAddReluParam<P: PrecisionProtocol>: OpParam {
+    required init(opDesc: PMOpDesc, inScope: Scope) throws {
+        do {
+            filter = try ConvAddReluParam.inputFilter(paraInputs: opDesc.paraInputs, from: inScope)
+            input = try ConvAddReluParam.input(inputs: opDesc.inputs, from: inScope)
+            output = try ConvAddReluParam.outputOut(outputs: opDesc.outputs, from: inScope)
+            stride = try ConvAddReluParam.getAttr(key: "strides", attrs: opDesc.attrs)
+            paddings = try ConvAddReluParam.getAttr(key: "paddings", attrs: opDesc.attrs)
+            dilations = try ConvAddReluParam.getAttr(key: "dilations", attrs: opDesc.attrs)
+            groups = try ConvAddReluParam.getAttr(key: "groups", attrs: opDesc.attrs)
+            do {
+                y = try ConvAddReluParam.inputY(inputs: opDesc.paraInputs, from: inScope)
+            } catch {
+            }
+        } catch let error {
+            throw error
+        }
+    }
+    
+    let input: Texture
+    var y: Tensor<P>?
+    let filter: Tensor<P>
+    var output: Texture
+    let stride: [Int32]
+    let paddings: [Int32]
+    let dilations: [Int32]
+    let groups: Int
+    
+    open class func hasY() -> Bool {
+        return true
+    }
+}
+
+class ConvAddReluOp<P: PrecisionProtocol>: Operator<ConvAddReluKernel<P>, ConvAddReluParam<P>>, Runable, Creator, InferShaperable, Fusion {
     typealias OpType = ConvAddReluOp<P>
     
     static func fusionNode() -> Node {
@@ -69,4 +102,3 @@ class ConvAddReluOp<P: PrecisionProtocol>: Operator<ConvAddReluKernel<P>, ConvAd
         print(para.output.metalTexture.toTensor(dim: (n: para.output.tensorDim[0], c: para.output.tensorDim[1], h: para.output.tensorDim[2], w: para.output.tensorDim[3])).strideArray())
     }
 }
-
