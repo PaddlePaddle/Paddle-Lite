@@ -325,7 +325,7 @@ public class PaddleMobileUnitTest {
         let fC = 4
         let oC = 4
         
-        let metalParam = MetalConvParam.init(offsetX: Int16(offsetX), offsetY: Int16(offsetY), offsetZ: 0, strideX: UInt16(stride.0), strideY: UInt16(stride.1), dilationX: UInt16(1), dilationY: UInt16(1), groups: UInt16(groups), iC: UInt16(iC), fC: UInt16(fC), oC: UInt16(oC))
+        let metalParam = MetalConvParam.init(offsetX: Int16(offsetX), offsetY: Int16(offsetY), offsetZ: 0, strideX: UInt16(stride.0), strideY: UInt16(stride.1), dilationX: UInt16(1), dilationY: UInt16(1), groups: UInt16(groups), iC: UInt16(iC), fC: UInt16(fC), oC: UInt16(oC), hasAddOp: UInt16(0), hasReluOp: UInt16(0))
         
         let param = ConvAddBatchNormReluTestParam.init(inInputTexture: inputeTexture, inOutputTexture: outputTexture, inMetalParam: metalParam, inFilterBuffer: filterBuffer, inBiaseBuffer: biaseBuffer, inNewScaleBuffer: newScalueBuffer, inNewBiaseBuffer: newBiaseBuffer, inFilterSize: filterSize)
         
