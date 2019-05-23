@@ -34,8 +34,10 @@ limitations under the License. */
 #define BS_NUM_ALIGNMENT (8)
 #define BIAS_SCALE_DMA_NUM (4)
 #define RESULT_ALIGNMENT (32)
+
 #define PE_COLUMN (8)
 #define ROW_PARALLEL_NUM (2)
+
 #define BIAS_NUM_ALIGNMENT (16)
 
 #endif
@@ -92,13 +94,14 @@ struct ImageOutputArgs {
       activation;  // To select activation and specify (Leaky)Relu parameter.
 };
 
+// #ifdef PADDLE_MOBILE_FPGA_V1
 struct ConvDriverParam {
   uint64_t filter_per_group;
   uint64_t channel_per_group;
-
   uint64_t image_one_pad_per_row;
   uint64_t deconv_param;
 
+  // new
   uint64_t col_padding_up;
   uint64_t col_padding_down;
   uint64_t row_padding_up;
@@ -108,39 +111,49 @@ struct ConvDriverParam {
   uint64_t filter_pad_width_mul_channel;
   uint64_t image_win_cnt;
   uint64_t image_win_cnt_last;
+
   uint64_t filter_row;
   uint64_t filter_width;
   uint64_t filter_height;
   uint64_t skip_window;
   uint64_t stride_h;
+
   uint64_t filter_amount_all;
   uint64_t prog_full_cnt;
   uint64_t filter_align;
   uint64_t filter_num;
+
   uint64_t output_width;
   uint64_t output_amount_per_row;
   uint64_t res_row_data_align4_pad;
   uint64_t cal_res_num;
   uint64_t last_cal_res_row_num;
   uint64_t post_prog_full_cnt;
+
   uint64_t deconv_skip_row;      // paralvl*deconv_group
   uint64_t deconv_res_skip_row;  // deconv_group * result_amount_per_row
   uint64_t deconv_ena;
   uint64_t deconv_dump;
+
   uint64_t output_address_phy;
   uint64_t output_height;
   uint64_t result_amount_per_row_multi_para;
+
   uint64_t sb_address_phy;
   uint64_t fpga_bias_scale_len;
   uint64_t filter_amount_whole;
+
   uint64_t filter_address_phy;
   uint64_t filters_amount_whole;
+
   uint64_t image_address_phy;
   uint64_t image_hight;
   uint64_t image_amount_per_row;
+
   uint64_t image_amount_per_row_multi_win_first;
   uint64_t image_amount_per_row_multi_win;
   uint64_t filter_pad_hight;
+
   uint64_t image_block_num;
   uint64_t image_block_len;
   uint64_t image_block_len_last;
@@ -178,6 +191,7 @@ struct ConvArgs {
   struct ImageInputArgs image;  // input image;
   struct ImageOutputArgs output;
 
+  // #ifdef PADDLE_MOBILE_FPGA_V1
   struct DeconvTxParm deconv_tx_param;
   struct ConvDriverParam driver;
 };
@@ -242,6 +256,7 @@ struct EWAddArgs {
   struct ImageInputArgs image0;
   struct ImageInputArgs image1;
   struct ImageOutputArgs output;
+  // #ifdef PADDLE_MOBILE_FPGA_V1
   struct EWAddDriverParam driver;
 };
 
@@ -287,6 +302,8 @@ struct DWDeconvArgs {
   std::vector<std::shared_ptr<char>> vector_dw_conv_space;
 };
 
+// static inline int align_to_x(int num, int x) { return (num + x - 1) / x * x;
+// }
 static inline uint32_t align_to_x(int64_t num, int64_t x) {
   return ((uint32_t)(num + x) - 1) / (uint32_t)x * (uint32_t)x;
 }

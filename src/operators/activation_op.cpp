@@ -45,6 +45,10 @@ DEFINE_ACTIVATION_INFERSHAPE(Tanh);
 DEFINE_ACTIVATION_INFERSHAPE(Log);
 #endif  // LOG_OP
 
+#ifdef LEAKY_RELU_OP
+DEFINE_ACTIVATION_INFERSHAPE(LeakyRelu);
+#endif  // LEAKY_RELU_OP
+
 }  // namespace operators
 }  // namespace paddle_mobile
 
@@ -83,3 +87,7 @@ REGISTER_OPERATOR_FPGA(tanh, ops::TanhOp);
 #ifdef LOG_OP
 REGISTER_OPERATOR_CPU(log, ops::LogOp);
 #endif  // LOG_OP
+
+#ifdef LEAKY_RELU_OP
+REGISTER_OPERATOR_CPU(leaky_relu, ops::LeakyReluOp);
+#endif  // LEAKY_RELU_OP

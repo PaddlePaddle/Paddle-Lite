@@ -40,6 +40,8 @@ import Foundation
     public let net: Net
     let device: MTLDevice?
     let numel: Int
+    private static let loadLock = NSLock()
+    private static let clearLock = NSLock()
     
     /// 初始化函数
     ///
@@ -60,10 +62,30 @@ import Foundation
         numel = net.inputDim.numel()
     }
     
-    /// load 模型, 返回 true 可进行预测
+    /// load 模型, 返回 true 可进行预测，公共方法，保证线程安全
     ///
     /// - Returns: load 成功或失败
     @objc public func load() -> Bool {
+        Runner.loadLock.lock()
+        let success = unSafeLoad()
+        Runner.loadLock.unlock()
+        return success
+    }
+    
+    /// load 模型, 返回 true 可进行预测，公共方法，保证线程安全
+    ///
+    /// - Returns: load 成功或失败
+    @objc public func load(optimize: Bool) -> Bool {
+        Runner.loadLock.lock()
+        let success = unSafeLoad(optimize: optimize)
+        Runner.loadLock.unlock()
+        return success
+    }
+    
+    /// load 模型, 返回 true 可进行预测，不保证线程安全
+    ///
+    /// - Returns: load 成功或失败
+    private func unSafeLoad(optimize: Bool = true) -> Bool {
         guard let inDevice = device, let inQueue = queue else {
             print(" paddle mobile gpu load error, need MTLCommandQueue")
             return false
@@ -77,15 +99,14 @@ import Foundation
         }
         
         do {
-            
             if let inParamPointer = net.paramPointer, let inModelPointer = net.modelPointer {
                 guard net.paramSize > 0 && net.modelSize > 0 else {
                     print(" load from memory param size or model size can't 0 ")
                     return false
                 }
-                program = try loader.load(device: inDevice, paramPointer: inParamPointer, paramSize: net.paramSize,modePointer:inModelPointer,modelSize:net.modelSize)
+                program = try loader.load(device: inDevice, paramPointer: inParamPointer, paramSize: net.paramSize, modePointer: inModelPointer, modelSize: net.modelSize, optimize: optimize)
             } else if let inModelPath = net.modelPath, let inParamPath = net.paramPath {
-                program = try loader.load(device: inDevice, modelPath: inModelPath, paraPath: inParamPath)
+                program = try loader.load(device: inDevice, modelPath: inModelPath, paraPath: inParamPath, optimize: optimize)
             } else {
                 print(" model pointer or model file path need be specified")
                 return false
@@ -119,8 +140,12 @@ import Foundation
     ///   - completion: 结果回调， 当 success 为 true 时 result 不为 nil
     @objc public func predict(texture: MTLTexture, completion: @escaping ( _ success: Bool, _ result: [ResultHolder]?) -> Void) {
         do {
-            
-            try self.executor?.predict(input: texture, dim: self.net.inputDim, completionHandle: { [weak self] (success, res) in
+            guard let executor = self.executor else {
+                print("executor is empty")
+                completion(false, nil)
+                return
+            }
+            try executor.predict(input: texture, dim: self.net.inputDim, completionHandle: { [weak self] (success, res) in
                 if success, let SSelf = self, let res = res {
                     let result = SSelf.net.fetchResult(paddleMobileRes: res)
                     if result.count > 0 {
@@ -139,9 +164,11 @@ import Foundation
     
     /// 清理内存, 调用此函数后, 不能再使用, 需重新 load
     @objc public func clear() {
+        Runner.clearLock.lock()
         executor?.clear()
         executor = nil
         program = nil
+        Runner.clearLock.unlock()
     }
     
     /// 获取 texture, 对 texture 进行预处理, 预测时使用

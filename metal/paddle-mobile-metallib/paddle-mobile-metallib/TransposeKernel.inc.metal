@@ -31,7 +31,7 @@ kernel void FUNC(transpose, R, P)(texture2d_array<P, access::read> inTexture [[t
     for (int n = 0; n < 4; n++) {
         oxyzn[3] = n;
 #if R == 4
-        xyzn2abcd_4(pm.oC, oxyzn, iabcd);
+        xyzn2abcd_4(pm.oC, oxyzn, oabcd);
 #endif // R == 4
 #if R == 3
         xyzn2abcd_3(oxyzn, oabcd);

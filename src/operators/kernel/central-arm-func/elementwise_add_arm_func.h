@@ -31,7 +31,6 @@ inline void ElementwiseAddCompute(const ElementwiseAddParam<CPU> &param) {
   const framework::Tensor *input_y = param.InputY();
   framework::Tensor *output = param.Out();
   int axis = param.Axis();
-
   math::AddElememtWise<IDENTITY>(input_x, input_y, axis, output);
 }
 

@@ -6,14 +6,6 @@
 #include <metal_stdlib>
 using namespace metal;
 
-struct MetalConvParam {
-    short offsetX;
-    short offsetY;
-    short offsetZ;
-    ushort strideX;
-    ushort strideY;
-};
-
 kernel void batch_norm_relu_3x3(texture2d_array<float, access::sample> inTexture [[texture(0)]],
                                 texture2d_array<float, access::write> outTexture [[texture(1)]],
                                 const device float4 *new_scale [[buffer(0)]],

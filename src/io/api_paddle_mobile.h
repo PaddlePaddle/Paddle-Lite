@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #pragma once
-
+#include <memory>
 #include <string>
 #include <vector>
 #include "common/types.h"
@@ -36,6 +36,7 @@ class PaddleMobilePredictor : public PaddlePredictor {
   void Predict_From_To(int start, int end) override;
   void FeedPaddleTensors(const std::vector<PaddleTensor>& inputs) override;
   void FetchPaddleTensors(std::vector<PaddleTensor>* outputs) override;
+  void FetchPaddleTensors(PaddleTensor* outputs, int id) override;
   void GetPaddleTensor(const std::string& name, PaddleTensor* output) override;
 
 #endif

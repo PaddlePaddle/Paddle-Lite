@@ -23,6 +23,7 @@ limitations under the License. */
 #include "framework/lod_tensor.h"
 #include "framework/scope.h"
 #include "framework/tensor.h"
+#include "framework/type_trait.h"
 #include "framework/variable.h"
 
 #ifdef PADDLE_MOBILE_FPGA_V1
@@ -53,25 +54,7 @@ using framework::Variable;
 using std::string;
 using std::vector;
 
-template <typename Dtype>
-struct DtypeTensorTrait {
-  // This is the type we obtained in variable.
-  typedef framework::LoDTensor gtype;
-  // This type will be the parent class type
-  // or the same type.
-  typedef framework::Tensor rtype;
-};
-
-#ifdef PADDLE_MOBILE_CL
-template <>
-struct DtypeTensorTrait<GPU_CL> {
-  // This is the type we obtained in variable.
-  typedef framework::CLImage gtype;
-  // This type will be the parent class type
-  // or the same type.
-  typedef framework::CLImage rtype;
-};
-#endif
+using framework::DtypeTensorTrait;
 
 class OpParam {
  public:
@@ -1769,6 +1752,31 @@ class PReluParam : public OpParam {
 };
 #endif
 
+#ifdef LEAKY_RELU_OP
+template <typename Dtype>
+class LeakyReluParam : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
+ public:
+  LeakyReluParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
+                 const AttributeMap &attrs, Scope *scope)
+      : OpParam(inputs, outputs, attrs, scope) {
+    input_x_ = InputXFrom<GType>(inputs, *scope);
+    out_ = OutFrom<GType>(outputs, *scope);
+    alpha_ = GetAttr<float>("alpha", attrs);
+  }
+  const GType *InputX() const { return input_x_; }
+  const float Alpha() const { return alpha_; }
+  GType *Out() const { return out_; }
+
+ private:
+  GType *input_x_;
+  GType *out_;
+  float alpha_;
+};
+#endif
+
 template <typename Dtype>
 class FusionFcParam : public OpParam {
   typedef typename DtypeTensorTrait<Dtype>::gtype GType;
@@ -2819,6 +2827,38 @@ class BilinearInterpParam : public OpParam {
   BilinearInterpParam(const VariableNameMap &inputs,
                       const VariableNameMap &outputs, const AttributeMap &attrs,
                       Scope *scope)
+      : OpParam(inputs, outputs, attrs, scope) {
+    input_x_ = InputXFrom<GType>(inputs, *scope);
+    input_outsize_ = InputOutSizeFrom<GType>(inputs, *scope);
+    out_ = OutFrom<GType>(outputs, *scope);
+    out_h_ = GetAttr<int>("out_h", attrs);
+    out_w_ = GetAttr<int>("out_w", attrs);
+  }
+  const GType *InputX() const { return input_x_; }
+  const GType *InputOutPutSize() const { return input_outsize_; }
+  GType *Out() const { return out_; }
+  int OutH() const { return out_h_; }
+  int OutW() const { return out_w_; }
+
+ private:
+  GType *input_x_;
+  GType *input_outsize_;
+  GType *out_;
+  int out_h_;
+  int out_w_;
+};
+#endif
+
+#ifdef NEAREST_INTERP_OP
+template <typename Dtype>
+class NearestInterpolationParam : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
+ public:
+  NearestInterpolationParam(const VariableNameMap &inputs,
+                            const VariableNameMap &outputs,
+                            const AttributeMap &attrs, Scope *scope)
       : OpParam(inputs, outputs, attrs, scope) {
     input_x_ = InputXFrom<GType>(inputs, *scope);
     input_outsize_ = InputOutSizeFrom<GType>(inputs, *scope);
