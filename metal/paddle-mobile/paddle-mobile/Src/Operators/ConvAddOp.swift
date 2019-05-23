@@ -14,36 +14,7 @@
 
 import Foundation
 
-class ConvAddParam<P: PrecisionProtocol>: OpParam {
-    //typealias ParamPrecisionType = P
-    required init(opDesc: PMOpDesc, inScope: Scope) throws {
-        do {
-            filter = try ConvAddParam.inputFilter(paraInputs: opDesc.paraInputs, from: inScope)
-            input = try ConvAddParam.input(inputs: opDesc.inputs, from: inScope)
-            output = try ConvAddParam.outputOut(outputs: opDesc.outputs, from: inScope)
-            stride = try ConvAddParam.getAttr(key: "strides", attrs: opDesc.attrs)
-            paddings = try ConvAddParam.getAttr(key: "paddings", attrs: opDesc.attrs)
-            dilations = try ConvAddParam.getAttr(key: "dilations", attrs: opDesc.attrs)
-            groups = try ConvAddParam.getAttr(key: "groups", attrs: opDesc.attrs)
-            
-            y = try ConvAddParam.inputY(inputs: opDesc.paraInputs, from: inScope)
-        } catch let error {
-            throw error
-        }
-    }
-    
-    let input: Texture
-    let y: Tensor<P>
-    let filter: Tensor<P>
-    
-    var output: Texture
-    let stride: [Int32]
-    let paddings: [Int32]
-    let dilations: [Int32]
-    let groups: Int
-}
-
-class ConvAddOp<P: PrecisionProtocol>: Operator<ConvAddKernel<P>, ConvAddParam<P>>, Runable, Creator, InferShaperable, Fusion{
+class ConvAddOp<P: PrecisionProtocol>: Operator<ConvAddKernel<P>, ConvAddReluParam<P>>, Runable, Creator, InferShaperable, Fusion{
     typealias OpType = ConvAddOp<P>
     
     static func fusionNode() -> Node {

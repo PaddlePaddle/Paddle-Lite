@@ -13,7 +13,6 @@
  limitations under the License. */
 
 #include <metal_stdlib>
-#include <metal_math>
 using namespace metal;
 
 kernel void exp(texture2d_array<float, access::sample> inTexture [[texture(0)]],

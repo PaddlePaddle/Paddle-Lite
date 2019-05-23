@@ -37,7 +37,7 @@ protocol KernelProtocol {
     
 }
 
-@objc open class Kernel: NSObject{
+@objc open class Kernel: NSObject {
     
     private var _pipline: MTLComputePipelineState? = nil
     

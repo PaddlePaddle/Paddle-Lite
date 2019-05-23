@@ -40,7 +40,6 @@
 		FCC15DFD221E69E100DC3CB2 /* Elementwise.metal in Sources */ = {isa = PBXBuildFile; fileRef = FCC15DD4221E69DF00DC3CB2 /* Elementwise.metal */; };
 		FCC15DFE221E69E100DC3CB2 /* ReshapeKernel.metal in Sources */ = {isa = PBXBuildFile; fileRef = FCC15DD5221E69DF00DC3CB2 /* ReshapeKernel.metal */; };
 		FCC15DFF221E69E100DC3CB2 /* Scale.metal in Sources */ = {isa = PBXBuildFile; fileRef = FCC15DD6221E69DF00DC3CB2 /* Scale.metal */; };
-		FCC15E00221E69E100DC3CB2 /* ConvKernel.metal in Sources */ = {isa = PBXBuildFile; fileRef = FCC15DD7221E69DF00DC3CB2 /* ConvKernel.metal */; };
 		FCC15E01221E69E100DC3CB2 /* PriorBoxKernel.metal in Sources */ = {isa = PBXBuildFile; fileRef = FCC15DD8221E69DF00DC3CB2 /* PriorBoxKernel.metal */; };
 		FCC15E02221E69E100DC3CB2 /* BatchNormRelu.metal in Sources */ = {isa = PBXBuildFile; fileRef = FCC15DD9221E69E000DC3CB2 /* BatchNormRelu.metal */; };
 		FCC15E03221E69E100DC3CB2 /* TransposeKernel.metal in Sources */ = {isa = PBXBuildFile; fileRef = FCC15DDA221E69E000DC3CB2 /* TransposeKernel.metal */; };
@@ -53,7 +52,6 @@
 		FCC15E0A221E69E100DC3CB2 /* ElementwiseAddPreluKernel.inc.metal in Sources */ = {isa = PBXBuildFile; fileRef = FCC15DE1221E69E100DC3CB2 /* ElementwiseAddPreluKernel.inc.metal */; };
 		FCC15E0B221E69E100DC3CB2 /* FetchKernel.inc.metal in Sources */ = {isa = PBXBuildFile; fileRef = FCC15DE2221E69E100DC3CB2 /* FetchKernel.inc.metal */; };
 		FCC15E0C221E69E100DC3CB2 /* BufferToTexture.metal in Sources */ = {isa = PBXBuildFile; fileRef = FCC15DE3221E69E100DC3CB2 /* BufferToTexture.metal */; };
-		FCC15E0D221E69E100DC3CB2 /* ConvAddMetal.metal in Sources */ = {isa = PBXBuildFile; fileRef = FCC15DE4221E69E100DC3CB2 /* ConvAddMetal.metal */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -93,7 +91,6 @@
 		FCC15DD4221E69DF00DC3CB2 /* Elementwise.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = Elementwise.metal; sourceTree = "<group>"; };
 		FCC15DD5221E69DF00DC3CB2 /* ReshapeKernel.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = ReshapeKernel.metal; sourceTree = "<group>"; };
 		FCC15DD6221E69DF00DC3CB2 /* Scale.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = Scale.metal; sourceTree = "<group>"; };
-		FCC15DD7221E69DF00DC3CB2 /* ConvKernel.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = ConvKernel.metal; sourceTree = "<group>"; };
 		FCC15DD8221E69DF00DC3CB2 /* PriorBoxKernel.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = PriorBoxKernel.metal; sourceTree = "<group>"; };
 		FCC15DD9221E69E000DC3CB2 /* BatchNormRelu.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = BatchNormRelu.metal; sourceTree = "<group>"; };
 		FCC15DDA221E69E000DC3CB2 /* TransposeKernel.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = TransposeKernel.metal; sourceTree = "<group>"; };
@@ -106,7 +103,6 @@
 		FCC15DE1221E69E100DC3CB2 /* ElementwiseAddPreluKernel.inc.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = ElementwiseAddPreluKernel.inc.metal; sourceTree = "<group>"; };
 		FCC15DE2221E69E100DC3CB2 /* FetchKernel.inc.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = FetchKernel.inc.metal; sourceTree = "<group>"; };
 		FCC15DE3221E69E100DC3CB2 /* BufferToTexture.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = BufferToTexture.metal; sourceTree = "<group>"; };
-		FCC15DE4221E69E100DC3CB2 /* ConvAddMetal.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = ConvAddMetal.metal; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -170,11 +166,9 @@
 				FCC15DE0221E69E100DC3CB2 /* ConcatKernel.inc.metal */,
 				FCC15DCA221E69DE00DC3CB2 /* ConcatKernel.metal */,
 				FCC15DBE221E69DD00DC3CB2 /* ConvAddBNReluKernel.metal */,
-				FCC15DE4221E69E100DC3CB2 /* ConvAddMetal.metal */,
 				FCC15DDB221E69E000DC3CB2 /* ConvAddPrelu.inc.metal */,
 				FCC15DD3221E69DF00DC3CB2 /* ConvAddPreluKernel.metal */,
 				FCC15DCF221E69DE00DC3CB2 /* ConvBNReluKernel.metal */,
-				FCC15DD7221E69DF00DC3CB2 /* ConvKernel.metal */,
 				FCC15DC5221E69DE00DC3CB2 /* ConvTransposeKernel.metal */,
 				FCC15DD4221E69DF00DC3CB2 /* Elementwise.metal */,
 				FCC15DE1221E69E100DC3CB2 /* ElementwiseAddPreluKernel.inc.metal */,
@@ -309,12 +303,10 @@
 				FCC15E03221E69E100DC3CB2 /* TransposeKernel.metal in Sources */,
 				FCC15DFE221E69E100DC3CB2 /* ReshapeKernel.metal in Sources */,
 				16FBFB3E22925D040025B406 /* ActivationKernel.metal in Sources */,
-				FCC15E0D221E69E100DC3CB2 /* ConvAddMetal.metal in Sources */,
 				FCC15DF7221E69E100DC3CB2 /* ReshapeKernel.inc.metal in Sources */,
 				FCC15DE5221E69E100DC3CB2 /* ReluKernel.metal in Sources */,
 				FCC15DEF221E69E100DC3CB2 /* Macro.metal in Sources */,
 				FCC15E02221E69E100DC3CB2 /* BatchNormRelu.metal in Sources */,
-				FCC15E00221E69E100DC3CB2 /* ConvKernel.metal in Sources */,
 				FCC15E01221E69E100DC3CB2 /* PriorBoxKernel.metal in Sources */,
 				FCC15DEA221E69E100DC3CB2 /* ElementwiseAddPreluKernel.metal in Sources */,
 				FCC15DED221E69E100DC3CB2 /* PoolKernel.inc.metal in Sources */,
