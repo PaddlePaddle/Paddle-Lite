@@ -102,7 +102,6 @@ bool ConvAddKernel<GPU_CL, float>::Init(FusionConvAddParam<GPU_CL> *param) {
 template <>
 void ConvAddKernel<GPU_CL, float>::Compute(
     const FusionConvAddParam<GPU_CL> &param) {
-  DLOG << "lebron bias " << *param.Bias();
   switch (param.ExecMode()) {
     case ConvParam<GPU_CL>::EXEC_WINOGRAD3X3_FLOAT:
       WinogradConv3x3<4, 3>(&this->cl_helper_, param, false, param.Bias());
