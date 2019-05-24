@@ -83,7 +83,8 @@ class PaddleMobile {
                           bool quantification = false, int batch_size = 1,
                           bool lod_mode = false);
 
-  void SetThreadNum(int count);
+  void SetThreadNum(int thread_num,
+                    PowerMode power_mode = PERFORMANCE_PRIORITY);
   void Clear();
   double GetPredictTime();
 
