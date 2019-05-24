@@ -13,6 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "operators/kernel/arm/convolution/conv_common.h"
+#include "operators/math/slidingwindow_utils.h"
 #include "operators/math/winograd/winograd_transform.h"
 
 namespace paddle_mobile {
@@ -56,38 +57,31 @@ void InitBaseConvKernel(ConvParam<CPU> *param) {
     } else if (conv3x3 && param->Groups() == 1 &&
                param->Strides()[0] == param->Strides()[1] &&
                param->Dilations()[0] == param->Dilations()[1] &&
-               param->Strides()[0] == 1 && param->Dilations()[0] == 1
-#if 1
-               && (param->Input()->dims()[1] >= 8 &&
-                   param->Output()->dims()[1] >= 8)
-#endif
-    ) {
-      param->ExecMode() = ConvParam<CPU>::EXEC_WINOGRAD3X3_FLOAT;
+               param->Strides()[0] == 1 && param->Dilations()[0] == 1) {
       // transform weight
       Variable *transformed_var = param->GetScope()->Var();
       param->transformed_filter_ =
           transformed_var->GetMutable<framework::LoDTensor>();
-      operators::math::winograd_transform_weight<8, 3>(
-          *param->Filter(), param->transformed_filter_);
+      if (param->Input()->dims()[1] >= 32 && param->Output()->dims()[1] >= 32 &&
+          param->Output()->dims()[2] > 16 && param->Output()->dims()[3] > 16) {
+        math::winograd_transform_weight<8, 3>(*param->Filter(),
+                                              param->transformed_filter_);
+        param->ExecMode() = ConvParam<CPU>::EXEC_WINOGRAD3X3_FLOAT;
+      } else {
+        math::slidingwindow_transform_weight<float>(*param->Filter(),
+                                                    param->transformed_filter_);
+        param->ExecMode() = ConvParam<CPU>::EXEC_SLIDINGWINDOW3x3S1_FLOAT;
+      }
     } else if (conv3x3 && param->Groups() == 1 &&
                param->Strides()[0] == param->Strides()[1] &&
                param->Dilations()[0] == param->Dilations()[1] &&
-               param->Strides()[0] == 1 && param->Dilations()[0] == 1
-#if 1
-               && (param->Input()->dims()[2] >= 48 &&
-                   param->Output()->dims()[1] <= 24)
-#endif
-    ) {
-      param->ExecMode() = ConvParam<CPU>::EXEC_SLIDINGWINDOW3x3S1_FLOAT;
-    } else if (conv3x3 && param->Groups() == 1 &&
-               param->Strides()[0] == param->Strides()[1] &&
-               param->Dilations()[0] == param->Dilations()[1] &&
-               param->Strides()[0] == 2 && param->Dilations()[0] == 1
-#if 1
-               && (param->Input()->dims()[2] >= 48 &&
-                   param->Output()->dims()[1] <= 24)
-#endif
-    ) {
+               param->Strides()[0] == 2 && param->Dilations()[0] == 1) {
+      // transform weight
+      Variable *transformed_var = param->GetScope()->Var();
+      param->transformed_filter_ =
+          transformed_var->GetMutable<framework::LoDTensor>();
+      math::slidingwindow_transform_weight<float>(*param->Filter(),
+                                                  param->transformed_filter_);
       param->ExecMode() = ConvParam<CPU>::EXEC_SLIDINGWINDOW3x3S2_FLOAT;
     } else {
       param->ExecMode() = ConvParam<CPU>::EXEC_GEMM_FLOAT;

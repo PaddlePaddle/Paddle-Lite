@@ -29,8 +29,6 @@ namespace paddle_mobile {
 namespace operators {
 namespace math {
 
-static framework::CPUContext *g_cpu_ctx = framework::CPUContext::Context();
-
 int CeilDiv(const int &x, const int &y) { return (x + y - 1) / y; }
 unsigned int ResetL1Cache(const unsigned int L1_size, const int thread_num,
                           const int N, const int K) {
@@ -70,11 +68,15 @@ class GemmExecutor : public Executor {
     unsigned int L1_size = 0;
     unsigned int L2_size = 0;
     if (M_ > N_) {
-      L2_size = ResetL1Cache(g_cpu_ctx->L1_cache, num_threads_, M_, K_);
-      L1_size = g_cpu_ctx->L2_cache;
+      L2_size =
+          ResetL1Cache(framework::CPUContext::Context()->get_l1_cache_size(),
+                       num_threads_, M_, K_);
+      L1_size = framework::CPUContext::Context()->get_l2_cache_size();
     } else {
-      L1_size = ResetL1Cache(g_cpu_ctx->L1_cache, num_threads_, N_, K_);
-      L2_size = g_cpu_ctx->L2_cache;
+      L1_size =
+          ResetL1Cache(framework::CPUContext::Context()->get_l1_cache_size(),
+                       num_threads_, N_, K_);
+      L2_size = framework::CPUContext::Context()->get_l2_cache_size();
     }
 
     rhs_tile_num_ = L1_size / (K_ * sizeof(Itype));

@@ -18,63 +18,45 @@ limitations under the License. */
 #include <omp.h>
 #endif
 
-#define MOBILE_MAX_CPU_NUM 8
+#include <vector>
+#include "framework/tensor.h"
 
 namespace paddle_mobile {
 namespace framework {
 
 struct CPUContext {
  private:
-  CPUContext() : num_cpus(4), num_threads(1) {
-    // TODO(hjchen2)
-    for (int i = 0; i < num_cpus; ++i) {
-      cpu_frequencies[i] = 2400;      // 2400 MHz
-      max_cpu_frequencies[i] = 2400;  // 2400 MHz
-    }
-    //    L1_cache = 32000;    // 32K
-    L1_cache = 32 * 1024;
-    L2_cache = 2000000;  // 2M
-                         //    L2_cache = 512000;
-  }
-
- public:
-  void set_num_threads(int threads) {
-#if _ONENMP
-    omp_set_num_threads(threads);
-    if (threads <= omp_get_max_threads()) {
-      num_threads = threads;
-    } else {
-      num_threads = omp_get_max_threads();
-    }
-#endif
-    num_threads = (num_threads > 1) ? num_threads : 1;
-  }
-
+  CPUContext();
   virtual ~CPUContext() {}
 
  public:
   static CPUContext* Context() {
-    static CPUContext* ctx = new CPUContext;
+    static CPUContext* ctx = nullptr;
+    if (ctx == nullptr) {
+      ctx = new CPUContext();
+    }
     return ctx;
   }
 
-  int num_cpus;
-  int num_threads;
-  int cpu_frequencies[MOBILE_MAX_CPU_NUM];
-  int max_cpu_frequencies[MOBILE_MAX_CPU_NUM];
+  void set_thread_num(int thread_num,
+                      PowerMode power_mode = PERFORMANCE_PRIORITY);
+  int get_thread_num();
+  PowerMode get_power_mode() const { return _power_mode; }
+  int get_cache_size(int level);
+  int get_l1_cache_size() { return get_cache_size(1); }
+  int get_l2_cache_size() { return get_cache_size(2); }
+  int get_l3_cache_size() { return get_cache_size(3); }
+  void* get_work_space(int size_in_byte);
 
-  int L1_cache;
-  int L2_cache;
+  int _cpu_num;
+  PowerMode _power_mode;
+  std::vector<int> _big_core_ids;
+  std::vector<int> _little_core_ids;
+  std::vector<int> _l1_cache_sizes;
+  std::vector<int> _l2_cache_sizes;
+  std::vector<int> _l3_cache_sizes;
+  Tensor _workspace;
 };
-
-inline void set_global_num_threads(int threads) {
-  // CPUContext::Context()->set_num_threads(threads);
-  CPUContext::Context()->num_threads = threads;
-}
-
-inline int get_global_num_threads() {
-  return CPUContext::Context()->num_threads;
-}
 
 }  // namespace framework
 }  // namespace paddle_mobile
