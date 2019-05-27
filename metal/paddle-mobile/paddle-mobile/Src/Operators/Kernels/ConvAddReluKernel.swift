@@ -66,7 +66,7 @@ class ConvDataSource<P: PrecisionProtocol>: NSObject, MPSCNNConvolutionDataSourc
     }
     
     func label() -> String? {
-        return "conv_add_label"
+        return "conv_add_relu_label"
     }
     
     func copy(with zone: NSZone? = nil) -> Any {
@@ -108,7 +108,7 @@ class ConvDataSource<P: PrecisionProtocol>: NSObject, MPSCNNConvolutionDataSourc
 class ConvAddReluKernel<P: PrecisionProtocol>: Kernel, Computable {
     var metalParam: MetalConvParam!
     var mpsConvOp: Any?
-    var blankTensor: Tensor<P>?
+    var blankTexture: Texture?
     
     required init(device: MTLDevice, param: ConvAddReluParam<P>, initContext: InitContext) throws {
         do {
@@ -162,14 +162,10 @@ class ConvAddReluKernel<P: PrecisionProtocol>: Kernel, Computable {
             throw PaddleMobileError.predictError(message: " encode is nil")
         }
         encoder.setTexture(param.input.metalTexture, index: 0)
-        encoder.setTexture(param.output.metalTexture, index: 1)
+        encoder.setTexture(param.y?.metalTexture, index: 1)
+        encoder.setTexture(param.output.metalTexture, index: 2)
         encoder.setBytes(&metalParam, length: MemoryLayout<MetalConvParam>.size, index: 0)
         encoder.setBuffer(param.filter.buffer, offset: 0, index: 1)
-        if let y = param.y {
-            encoder.setBuffer(y.buffer, offset: 0, index: 2)
-        } else {
-            encoder.setBuffer(blankTensor?.buffer, offset: 0, index: 2)
-        }
         encoder.dispatch(computePipline: pipline, outTexture: param.output.metalTexture, groupDepth: type(of: self).isWinoGrad(functionName: functionName) ? 1 : nil)
         encoder.endEncoding()
     }
@@ -196,7 +192,8 @@ class ConvAddReluKernel<P: PrecisionProtocol>: Kernel, Computable {
             desc.strideInPixelsX = Int(param.stride[0])
             desc.strideInPixelsY = Int(param.stride[1])
             let _ = param.filter.convert(converter: MPSPointerConverter<P>.init())
-            let dataSource = ConvDataSource.init(inDesc: desc, inWeights: param.filter, inBiasTerms: param.y)
+            let dataSource = ConvDataSource.init(inDesc: desc, inWeights: param.filter, inBiasTerms: param.yTensor)
+            
             let conv = MPSCNNConvolution.init(device: device, weights: dataSource)
             conv.offset = MPSOffset.init(x: offsetX, y: offsetY, z: 0)
             conv.edgeMode = .zero
@@ -219,11 +216,12 @@ class ConvAddReluKernel<P: PrecisionProtocol>: Kernel, Computable {
         }
         let padWhenOneC = !(param.filter.channel == 1 && param.filter.n == param.input.tensorDim[1])
         param.filter.initBuffer(device: device, precision: GlobalConfig.shared.computePrecision, padWhenOneC: padWhenOneC)
-        if let y = param.y {
-            y.initBuffer(device: device, precision: GlobalConfig.shared.computePrecision)
-        } else {
-            blankTensor = Tensor<P>.init(inDim: Dim(inDim: [1, 1, 1, 4]), inLayout: DataLayout.NHWC(), originDimsCount: 4)
-            blankTensor?.initBuffer(device: device, precision: GlobalConfig.shared.computePrecision)
+        
+        if param.y == nil {
+            let blankTensor = Tensor<P>.init(inDim: Dim(inDim: [1, 1, 1, 4]), inLayout: DataLayout.NHWC(), originDimsCount: 4)
+            blankTexture = Texture.init(device: device, inDim: blankTensor.dim)
+            let value:[P] = [P(Float32(1.0)), P(Float32(1.0)), P(Float32(1.0)), P(Float32(1.0)),]
+            blankTexture?.metalTexture = device.tensor2texture(value: value, dim: blankTensor.dim.dims, transpose: [0, 2, 3, 1], inComputePrecision: GlobalConfig.shared.computePrecision)
         }
     }
     

@@ -14,7 +14,7 @@
 
 import Foundation
 
-class ConvAddOp<P: PrecisionProtocol>: Operator<ConvAddKernel<P>, ConvAddReluParam<P>>, Runable, Creator, InferShaperable, Fusion{
+class ConvAddOp<P: PrecisionProtocol>: Operator<ConvAddKernel<P>, ConvAddReluParam<P>>, Runable, Creator, InferShaperable, Fusion {
     typealias OpType = ConvAddOp<P>
     
     static func fusionNode() -> Node {
@@ -33,7 +33,6 @@ class ConvAddOp<P: PrecisionProtocol>: Operator<ConvAddKernel<P>, ConvAddReluPar
     }
     
     func inferShape() {
-        
         let inDims = para.input.dim
         let filterDim = para.filter.dim
         let strides = para.stride
@@ -64,23 +63,6 @@ class ConvAddOp<P: PrecisionProtocol>: Operator<ConvAddKernel<P>, ConvAddReluPar
     }
     
     func delogOutput() {
-        //    print("op \(type): ")
-        //    print(" padding: ")
-        //    print(para.paddings)
-        //    print("stride: ")
-        //    print(para.stride)
-        //    print("dilations: ")
-        //    print(para.dilations)
-        //    print(" para input dim: ")
-        //    print(para.input.dim)
-        //    print(" para filter dim: ")
-        //    print(para.filter.dim)
-        //    print(" para output dim: ")
-        //    print(para.output.dim)
-        //    print(" biase: ")
-        //    let biase: [Float32] = para.y.buffer.array()
-        //    print(biase)
-        
         print(" \(type) output: ")
         print(para.output.metalTexture)
         print(para.output.metalTexture.toTensor(dim: (n: para.output.tensorDim[0], c: para.output.tensorDim[1], h: para.output.tensorDim[2], w: para.output.tensorDim[3])).strideArray())
