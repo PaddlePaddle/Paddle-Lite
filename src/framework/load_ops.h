@@ -168,6 +168,10 @@ LOAD_FUSION_MATCHER(fusion_conv_bn_add_relu);
 LOAD_OP3(fusion_conv_bn_relu, CPU, GPU_CL, FPGA);
 LOAD_FUSION_MATCHER(fusion_conv_bn_relu);
 #endif
+#ifdef FUSION_CONVRELU_OP
+LOAD_OP2(fusion_conv_relu, CPU, GPU_CL);
+LOAD_FUSION_MATCHER(fusion_conv_relu);
+#endif
 #ifdef GRU_OP
 LOAD_OP1(gru, CPU);
 #endif
