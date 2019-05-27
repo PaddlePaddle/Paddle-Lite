@@ -550,6 +550,12 @@ kernel void depthwise_conv_add_relu_3x3_half_winograd(texture2d_array<half, acce
     uint tx = (x >> 1) << 1;
     uint ty = (y >> 1) << 1;
     uint tc = ((x % 2) << 1) + y % 2;
+    
+    int hasComputedC = 4 * tc;
+    
+    if (hasComputedC >= param.oC) {
+        return;
+    }
 
     constexpr sampler sample(coord::pixel, filter::nearest, address::clamp_to_zero);
     half4 inputs[16];
@@ -577,6 +583,9 @@ kernel void depthwise_conv_add_relu_3x3_half_winograd(texture2d_array<half, acce
     half4 res[4];
 
     for (int c = 0; c < 4; ++c) {
+        if (hasComputedC + c >= param.oC) {
+            return;
+        }
         half I[16];
         for (int i = 0; i < 16; ++i) {
             I[i] = inputs[i][c];
@@ -633,13 +642,23 @@ kernel void depthwise_conv_add_relu_3x3_half_winograd(texture2d_array<half, acce
         res[2][c] = T[4] - T[8] + T[12] + tmp1 + tmp2;
         res[3][c] = T[7] - T[11] + T[15] + tmp1 - tmp2;
     }
+    
+    if (param.hasAddOp == 1) {
+        half4 base = biasTexture.sample(sample, uint2(tx, ty), tc);
+        res[0] += base;
+        base = biasTexture.sample(sample, uint2(tx + 1, ty), tc);
+        res[1] += base;
+        base = biasTexture.sample(sample, uint2(tx, ty + 1), tc);
+        res[2] += base;
+        base = biasTexture.sample(sample, uint2(tx + 1, ty + 1), tc);
+        res[3] += base;
+    }
 
     if (param.hasReluOp == 1) {
-        half4 base = biasTexture.sample(sample, float2(gid.xy), gid.z);
-        outTexture.write(fmax(res[0] + base, 0.0), uint2(tx, ty), tc);
-        outTexture.write(fmax(res[1] + base, 0.0), uint2(tx + 1, ty), tc);
-        outTexture.write(fmax(res[2] + base, 0.0), uint2(tx, ty + 1), tc);
-        outTexture.write(fmax(res[3] + base, 0.0), uint2(tx + 1, ty + 1), tc);
+        outTexture.write(fmax(res[0], 0.0), uint2(tx, ty), tc);
+        outTexture.write(fmax(res[1], 0.0), uint2(tx + 1, ty), tc);
+        outTexture.write(fmax(res[2], 0.0), uint2(tx, ty + 1), tc);
+        outTexture.write(fmax(res[3], 0.0), uint2(tx + 1, ty + 1), tc);
     } else {
         outTexture.write(res[0], uint2(tx, ty), tc);
         outTexture.write(res[1], uint2(tx + 1, ty), tc);

@@ -120,14 +120,8 @@ class ConvAddReluKernel<P: PrecisionProtocol>: Kernel, Computable {
         var shouldUseMPS = false
         let functionName = type(of: self).kernelFunctionName(param: param, useAggressiveOptimization: initContext.useAggresiveOptimization)
         if #available(iOS 11.0, *), (initContext.useMPS || initContext.useAggresiveOptimization) {
-            if initContext.useAggresiveOptimization {
-                if (param.input.tensorDim[1] == 1 || param.input.tensorDim[1] > 4) && (param.output.tensorDim[1] == 1 || param.output.tensorDim[1] > 4) {
-                    shouldUseMPS = true
-                }
-            } else {
-                if param.input.tensorDim[1] > 4 && param.output.tensorDim[1] > 4 {
-                    shouldUseMPS = true
-                }
+            if param.input.tensorDim[1] > 4 && param.output.tensorDim[1] > 4 {
+                shouldUseMPS = true
             }
         }
         if type(of: self).isWinoGrad(functionName: functionName) {
@@ -229,29 +223,32 @@ class ConvAddReluKernel<P: PrecisionProtocol>: Kernel, Computable {
         if GlobalConfig.shared.computePrecision == .Float16 {
             if param.filter.width == 1 && param.filter.height == 1 {
                 return "conv_add_relu_1x1_half"
-            } else if param.filter.channel == 1 && param.filter.n == param.input.tensorDim[1] {
+            }
+            if param.filter.channel == 1 && param.filter.n == param.input.tensorDim[1] {
                 if useAggressiveOptimization {
                     let couldUseWinograd = param.filter.width == 3 && param.filter.height == 3
-                        && param.filter.n == 16 && param.stride[0] == 1 && param.stride[1] == 1
+                        && param.filter.n <= 16 && param.stride[0] == 1 && param.stride[1] == 1
                         && param.dilations[0] == 1 && param.dilations[1] == 1
                     if couldUseWinograd {
                         return "depthwise_conv_add_relu_3x3_half_winograd"
                     }
                 }
                 return "depthwise_conv_add_relu_3x3_half"
-            } else if param.filter.width == 3 && param.filter.height == 3 {
+            }
+            if param.filter.width == 3 && param.filter.height == 3 {
                 if param.groups == 1 {
                     return "conv_add_relu_3x3_half"
                 } else {
                     return "group_conv_add_relu_3x3_half"
                 }
-            } else if param.filter.width == 1 && param.filter.height == 5 {
-                return "conv_add_relu_5x1_half"
-            } else if param.filter.width == 5 && param.filter.height == 1 {
-                return "conv_add_relu_1x5_half"
-            } else {
-                return nil
             }
+            if param.filter.width == 1 && param.filter.height == 5 {
+                return "conv_add_relu_5x1_half"
+            }
+            if param.filter.width == 5 && param.filter.height == 1 {
+                return "conv_add_relu_1x5_half"
+            }
+            return nil
         } else if GlobalConfig.shared.computePrecision == .Float32 {
             if param.filter.width == 1 && param.filter.height == 1 {
                 return "conv_add_relu_1x1"
