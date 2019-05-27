@@ -2240,6 +2240,22 @@ class FusionDWConvBNReluParam : public ConvParam<Dtype> {
 
 #endif
 
+#ifdef FUSION_CONVRELU_OP
+template <typename Dtype>
+class FusionConvReluParam : public ConvParam<Dtype> {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
+ public:
+  FusionConvReluParam(const VariableNameMap &inputs,
+                      const VariableNameMap &outputs, const AttributeMap &attrs,
+                      Scope *scope)
+      : ConvParam<Dtype>(inputs, outputs, attrs, scope) {
+    this->output_ = OpParam::OutFrom<GType>(outputs, *scope);
+  }
+};
+#endif
+
 #ifdef FUSION_CONVBNRELU_OP
 template <typename Dtype>
 class FusionConvBNReluParam : public ConvParam<Dtype> {
