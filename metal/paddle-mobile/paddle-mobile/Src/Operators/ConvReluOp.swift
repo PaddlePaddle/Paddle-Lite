@@ -14,57 +14,12 @@
 
 import Foundation
 
-class ConvAddReluParam<P: PrecisionProtocol>: OpParam {
-    required init(opDesc: PMOpDesc, inScope: Scope) throws {
-        do {
-            filter = try ConvAddReluParam.inputFilter(paraInputs: opDesc.paraInputs, from: inScope)
-            input = try ConvAddReluParam.input(inputs: opDesc.inputs, from: inScope)
-            output = try ConvAddReluParam.outputOut(outputs: opDesc.outputs, from: inScope)
-            stride = try ConvAddReluParam.getAttr(key: "strides", attrs: opDesc.attrs)
-            paddings = try ConvAddReluParam.getAttr(key: "paddings", attrs: opDesc.attrs)
-            dilations = try ConvAddReluParam.getAttr(key: "dilations", attrs: opDesc.attrs)
-            groups = try ConvAddReluParam.getAttr(key: "groups", attrs: opDesc.attrs)
-            do {
-                y = try ConvAddReluParam.inputY(inputs: opDesc.paraInputs, from: inScope)
-            } catch {
-                do {
-                    let yTensor: Tensor<P> = try ConvAddReluParam.inputY(inputs: opDesc.paraInputs, from: inScope)
-                    let device = input.metalTexture!.device
-                    y = Texture.init(device: device, inDim: yTensor.dim)
-                    let value: [P] = Array(UnsafeBufferPointer(start: yTensor.data.pointer, count: yTensor.dim.numel()))
-                    y?.metalTexture = device.tensor2texture(value: value, dim: yTensor.dim.dims, transpose: [0, 2, 3, 1], inComputePrecision: GlobalConfig.shared.computePrecision)
-                    self.yTensor = yTensor
-                } catch {
-                }
-            }
-        } catch let error {
-            throw error
-        }
-    }
-    
-    let input: Texture
-    let filter: Tensor<P>
-    var output: Texture
-    let stride: [Int32]
-    let paddings: [Int32]
-    let dilations: [Int32]
-    let groups: Int
-    
-    var y: Texture?
-    var yTensor: Tensor<P>?
-    
-    open class func hasY() -> Bool {
-        return true
-    }
-}
-
-class ConvAddReluOp<P: PrecisionProtocol>: Operator<ConvAddReluKernel<P>, ConvAddReluParam<P>>, Runable, Creator, InferShaperable, Fusion {
-    typealias OpType = ConvAddReluOp<P>
+class ConvReluOp<P: PrecisionProtocol>: Operator<ConvReluKernel<P>, ConvAddReluParam<P>>, Runable, Creator, InferShaperable, Fusion {
+    typealias OpType = ConvReluOp<P>
     
     static func fusionNode() -> Node {
         let beginNode = Node.init(inType: gConvType)
         _ = beginNode
-            --> Node.init(inType: gElementwiseAddType)
             --> Node.init(inType: gReluType)
         return beginNode
     }
@@ -74,7 +29,7 @@ class ConvAddReluOp<P: PrecisionProtocol>: Operator<ConvAddReluKernel<P>, ConvAd
     }
     
     static func fusionType() -> String {
-        return gConvAddReluType
+        return gConvReluType
     }
     
     func inferShape() {
