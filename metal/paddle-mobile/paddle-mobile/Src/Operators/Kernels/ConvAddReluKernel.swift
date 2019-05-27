@@ -66,7 +66,7 @@ class ConvDataSource<P: PrecisionProtocol>: NSObject, MPSCNNConvolutionDataSourc
     }
     
     func label() -> String? {
-        return "conv_add_label"
+        return "conv_add_relu_label"
     }
     
     func copy(with zone: NSZone? = nil) -> Any {
@@ -108,7 +108,7 @@ class ConvDataSource<P: PrecisionProtocol>: NSObject, MPSCNNConvolutionDataSourc
 class ConvAddReluKernel<P: PrecisionProtocol>: Kernel, Computable {
     var metalParam: MetalConvParam!
     var mpsConvOp: Any?
-    var blankTensor: Tensor<P>?
+    var blankTexture: Texture?
     
     required init(device: MTLDevice, param: ConvAddReluParam<P>, initContext: InitContext) throws {
         do {
@@ -120,14 +120,8 @@ class ConvAddReluKernel<P: PrecisionProtocol>: Kernel, Computable {
         var shouldUseMPS = false
         let functionName = type(of: self).kernelFunctionName(param: param, useAggressiveOptimization: initContext.useAggresiveOptimization)
         if #available(iOS 11.0, *), (initContext.useMPS || initContext.useAggresiveOptimization) {
-            if initContext.useAggresiveOptimization {
-                if (param.input.tensorDim[1] == 1 || param.input.tensorDim[1] > 4) && (param.output.tensorDim[1] == 1 || param.output.tensorDim[1] > 4) {
-                    shouldUseMPS = true
-                }
-            } else {
-                if param.input.tensorDim[1] > 4 && param.output.tensorDim[1] > 4 {
-                    shouldUseMPS = true
-                }
+            if param.input.tensorDim[1] > 4 && param.output.tensorDim[1] > 4 {
+                shouldUseMPS = true
             }
         }
         if type(of: self).isWinoGrad(functionName: functionName) {
@@ -162,14 +156,10 @@ class ConvAddReluKernel<P: PrecisionProtocol>: Kernel, Computable {
             throw PaddleMobileError.predictError(message: " encode is nil")
         }
         encoder.setTexture(param.input.metalTexture, index: 0)
-        encoder.setTexture(param.output.metalTexture, index: 1)
+        encoder.setTexture(param.y?.metalTexture, index: 1)
+        encoder.setTexture(param.output.metalTexture, index: 2)
         encoder.setBytes(&metalParam, length: MemoryLayout<MetalConvParam>.size, index: 0)
         encoder.setBuffer(param.filter.buffer, offset: 0, index: 1)
-        if let y = param.y {
-            encoder.setBuffer(y.buffer, offset: 0, index: 2)
-        } else {
-            encoder.setBuffer(blankTensor?.buffer, offset: 0, index: 2)
-        }
         encoder.dispatch(computePipline: pipline, outTexture: param.output.metalTexture, groupDepth: type(of: self).isWinoGrad(functionName: functionName) ? 1 : nil)
         encoder.endEncoding()
     }
@@ -196,7 +186,8 @@ class ConvAddReluKernel<P: PrecisionProtocol>: Kernel, Computable {
             desc.strideInPixelsX = Int(param.stride[0])
             desc.strideInPixelsY = Int(param.stride[1])
             let _ = param.filter.convert(converter: MPSPointerConverter<P>.init())
-            let dataSource = ConvDataSource.init(inDesc: desc, inWeights: param.filter, inBiasTerms: param.y)
+            let dataSource = ConvDataSource.init(inDesc: desc, inWeights: param.filter, inBiasTerms: param.yTensor)
+            
             let conv = MPSCNNConvolution.init(device: device, weights: dataSource)
             conv.offset = MPSOffset.init(x: offsetX, y: offsetY, z: 0)
             conv.edgeMode = .zero
@@ -219,11 +210,12 @@ class ConvAddReluKernel<P: PrecisionProtocol>: Kernel, Computable {
         }
         let padWhenOneC = !(param.filter.channel == 1 && param.filter.n == param.input.tensorDim[1])
         param.filter.initBuffer(device: device, precision: GlobalConfig.shared.computePrecision, padWhenOneC: padWhenOneC)
-        if let y = param.y {
-            y.initBuffer(device: device, precision: GlobalConfig.shared.computePrecision)
-        } else {
-            blankTensor = Tensor<P>.init(inDim: Dim(inDim: [1, 1, 1, 4]), inLayout: DataLayout.NHWC(), originDimsCount: 4)
-            blankTensor?.initBuffer(device: device, precision: GlobalConfig.shared.computePrecision)
+        
+        if param.y == nil {
+            let blankTensor = Tensor<P>.init(inDim: Dim(inDim: [1, 1, 1, 4]), inLayout: DataLayout.NHWC(), originDimsCount: 4)
+            blankTexture = Texture.init(device: device, inDim: blankTensor.dim)
+            let value:[P] = [P(Float32(1.0)), P(Float32(1.0)), P(Float32(1.0)), P(Float32(1.0)),]
+            blankTexture?.metalTexture = device.tensor2texture(value: value, dim: blankTensor.dim.dims, transpose: [0, 2, 3, 1], inComputePrecision: GlobalConfig.shared.computePrecision)
         }
     }
     
@@ -231,29 +223,32 @@ class ConvAddReluKernel<P: PrecisionProtocol>: Kernel, Computable {
         if GlobalConfig.shared.computePrecision == .Float16 {
             if param.filter.width == 1 && param.filter.height == 1 {
                 return "conv_add_relu_1x1_half"
-            } else if param.filter.channel == 1 && param.filter.n == param.input.tensorDim[1] {
+            }
+            if param.filter.channel == 1 && param.filter.n == param.input.tensorDim[1] {
                 if useAggressiveOptimization {
                     let couldUseWinograd = param.filter.width == 3 && param.filter.height == 3
-                        && param.filter.n == 16 && param.stride[0] == 1 && param.stride[1] == 1
+                        && param.filter.n <= 16 && param.stride[0] == 1 && param.stride[1] == 1
                         && param.dilations[0] == 1 && param.dilations[1] == 1
                     if couldUseWinograd {
                         return "depthwise_conv_add_relu_3x3_half_winograd"
                     }
                 }
                 return "depthwise_conv_add_relu_3x3_half"
-            } else if param.filter.width == 3 && param.filter.height == 3 {
+            }
+            if param.filter.width == 3 && param.filter.height == 3 {
                 if param.groups == 1 {
                     return "conv_add_relu_3x3_half"
                 } else {
                     return "group_conv_add_relu_3x3_half"
                 }
-            } else if param.filter.width == 1 && param.filter.height == 5 {
-                return "conv_add_relu_5x1_half"
-            } else if param.filter.width == 5 && param.filter.height == 1 {
-                return "conv_add_relu_1x5_half"
-            } else {
-                return nil
             }
+            if param.filter.width == 1 && param.filter.height == 5 {
+                return "conv_add_relu_5x1_half"
+            }
+            if param.filter.width == 5 && param.filter.height == 1 {
+                return "conv_add_relu_1x5_half"
+            }
+            return nil
         } else if GlobalConfig.shared.computePrecision == .Float32 {
             if param.filter.width == 1 && param.filter.height == 1 {
                 return "conv_add_relu_1x1"
