@@ -80,6 +80,7 @@ class OpCreator<P: PrecisionProtocol> {
          gFlatten2Type              :     Flatten2Op<P>.creat,
          gSliceType                 :     SliceOp<P>.creat,
          gNearestInterpType         :     NearestInterpOp<P>.creat,
+         gConvReluType              :     ConvReluOp<P>.creat,
     ]
     
     

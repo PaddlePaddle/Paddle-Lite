@@ -13,6 +13,8 @@
 		16D3F3B522929C390067C45D /* SliceOp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16D3F3B422929C390067C45D /* SliceOp.swift */; };
 		16D3F3B722929C660067C45D /* NearestInterpOp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16D3F3B622929C660067C45D /* NearestInterpOp.swift */; };
 		16D3F3B922929D070067C45D /* SliceKernel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16D3F3B822929D070067C45D /* SliceKernel.swift */; };
+		16F70989229BF975000755B0 /* ConvReluOp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16F70988229BF975000755B0 /* ConvReluOp.swift */; };
+		16F7098B229BFA46000755B0 /* ConvReluKernel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16F7098A229BFA46000755B0 /* ConvReluKernel.swift */; };
 		16FBFB36229259C60025B406 /* ExpOp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16FBFB35229259C60025B406 /* ExpOp.swift */; };
 		16FBFB3822925B030025B406 /* ExpKernel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16FBFB3722925B030025B406 /* ExpKernel.swift */; };
 		16FBFB3A22925C3E0025B406 /* SigmoidKernel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16FBFB3922925C3E0025B406 /* SigmoidKernel.swift */; };
@@ -123,6 +125,8 @@
 		16D3F3B422929C390067C45D /* SliceOp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SliceOp.swift; sourceTree = "<group>"; };
 		16D3F3B622929C660067C45D /* NearestInterpOp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NearestInterpOp.swift; sourceTree = "<group>"; };
 		16D3F3B822929D070067C45D /* SliceKernel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SliceKernel.swift; sourceTree = "<group>"; };
+		16F70988229BF975000755B0 /* ConvReluOp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConvReluOp.swift; sourceTree = "<group>"; };
+		16F7098A229BFA46000755B0 /* ConvReluKernel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConvReluKernel.swift; sourceTree = "<group>"; };
 		16FBFB35229259C60025B406 /* ExpOp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExpOp.swift; sourceTree = "<group>"; };
 		16FBFB3722925B030025B406 /* ExpKernel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExpKernel.swift; sourceTree = "<group>"; };
 		16FBFB3922925C3E0025B406 /* SigmoidKernel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SigmoidKernel.swift; sourceTree = "<group>"; };
@@ -363,6 +367,7 @@
 				16FBFB3F229266FE0025B406 /* LeakyReluOp.swift */,
 				16D3F3B422929C390067C45D /* SliceOp.swift */,
 				16D3F3B622929C660067C45D /* NearestInterpOp.swift */,
+				16F70988229BF975000755B0 /* ConvReluOp.swift */,
 			);
 			path = Operators;
 			sourceTree = "<group>";
@@ -425,6 +430,7 @@
 				16FBFB412292684E0025B406 /* LeakyReluKernel.swift */,
 				16D3F3B822929D070067C45D /* SliceKernel.swift */,
 				16324D832292ABDB0047277D /* NearestInterpKernel.swift */,
+				16F7098A229BFA46000755B0 /* ConvReluKernel.swift */,
 			);
 			path = Kernels;
 			sourceTree = "<group>";
@@ -640,6 +646,7 @@
 				FC803BC1214CB77A0094B8E5 /* ConvAddPreluKernel.swift in Sources */,
 				FCBCCC5D2122F8A100D94F7E /* DepthwiseConvOp.swift in Sources */,
 				FCE3A1AF2153E8EE00C37CDE /* ElementwiseAddPreluKernel.swift in Sources */,
+				16F70989229BF975000755B0 /* ConvReluOp.swift in Sources */,
 				16D3F3B922929D070067C45D /* SliceKernel.swift in Sources */,
 				FCE9D7B7214F869000B520C3 /* Net.swift in Sources */,
 				FC0E2DBE20EE460D009C1FAC /* BatchNormKernel.swift in Sources */,
@@ -660,6 +667,7 @@
 				FC5163F620EF556E00636C28 /* Texture2DTo2DArrayKernel.swift in Sources */,
 				FCE3A1AD2153E8BA00C37CDE /* ElementwiseAddPreluOp.swift in Sources */,
 				FC039BC020E11CC20081E9F8 /* PMBlockDesc.swift in Sources */,
+				16F7098B229BFA46000755B0 /* ConvReluKernel.swift in Sources */,
 				A7F26FDC2284301500365D47 /* Relu6Kernel.swift in Sources */,
 				FCD04E6820F315020007374F /* PoolKernel.swift in Sources */,
 				FC039BAD20E11CBC0081E9F8 /* ReluOp.swift in Sources */,
