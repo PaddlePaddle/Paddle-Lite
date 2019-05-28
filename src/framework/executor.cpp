@@ -40,8 +40,8 @@ namespace framework {
 #pragma mark - executor
 
 template <typename Device, typename T>
-void Executor<Device, T>::SetThreadNum(int threads) {
-  set_global_num_threads(threads);
+void Executor<Device, T>::SetThreadNum(int thread_num, PowerMode power_mode) {
+  CPUContext::Context()->set_thread_num(thread_num, power_mode);
 }
 
 template <typename Device, typename T>
@@ -440,7 +440,7 @@ std::shared_ptr<LoDTensor> Executor<Device, T>::GetOutput(
 template <typename Device, typename T>
 PMStatus Executor<Device, T>::Predict() {
 #if _OPENMP
-  omp_set_num_threads(get_global_num_threads());
+  omp_set_num_threads(CPUContext::Context()->get_thread_num());
 #endif
   // clear all no persistable tensor array since write_to_array
   // is always push back a new tensor in the array

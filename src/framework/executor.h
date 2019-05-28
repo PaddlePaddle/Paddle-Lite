@@ -17,6 +17,7 @@ limitations under the License. */
 #include <map>
 #include <memory>
 #include <string>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 #include "common/types.h"
@@ -37,7 +38,8 @@ class Executor {
            paddle_mobile::PaddleMobileConfigInternal config, int batch_size = 1,
            const bool use_optimize = true, const bool lod_mode = false);
 
-  void SetThreadNum(int threads);
+  void SetThreadNum(int thread_num,
+                    PowerMode power_mode = PERFORMANCE_PRIORITY);
 
   PMStatus Predict(const std::vector<std::pair<std::string, Tensor>> &inputs);
   PMStatus Predict(

@@ -12,25 +12,25 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef FUSION_CONVADDRELU_OP
+#ifdef FUSION_CONVRELU_OP
 
-#include "operators/kernel/conv_add_relu_kernel.h"
+#include "operators/kernel/conv_relu_kernel.h"
 #include "operators/kernel/arm/convolution/conv_common.h"
+#include "operators/kernel/central-arm-func/activation_arm_func.h"
 #include "operators/kernel/central-arm-func/conv_arm_func.h"
-#include "operators/math/element_wise.h"
 
 namespace paddle_mobile {
 namespace operators {
 
 template <>
-bool ConvAddReluKernel<CPU, float>::Init(FusionConvAddReluParam<CPU> *param) {
+bool ConvReluKernel<CPU, float>::Init(FusionConvReluParam<CPU> *param) {
   InitBaseConvKernel(param);
   return true;
 }
 
 template <>
-void ConvAddReluKernel<CPU, float>::Compute(
-    const FusionConvAddReluParam<CPU> &param) {
+void ConvReluKernel<CPU, float>::Compute(
+    const FusionConvReluParam<CPU> &param) {
   switch (param.ExecMode()) {
     case ConvParam<CPU>::EXEC_DEPTHWISE3x3S1_FLOAT:
     case ConvParam<CPU>::EXEC_DEPTHWISE3x3S2_FLOAT:
@@ -53,15 +53,9 @@ void ConvAddReluKernel<CPU, float>::Compute(
       PADDLE_MOBILE_THROW_EXCEPTION("Invalid convolution execute mode %d",
                                     param.ExecMode());
   }
-  if (param.Bias()->dims() == param.Output()->dims()) {
-    math::AddElememtWise<RELU>(param.Output(), param.Bias(), param.Axis(),
-                               param.Output());
-  } else {
-    math::AddChannelWise<RELU>(param.Output(), param.Bias(), param.Output());
-  }
+  ActivationCompute<float, RELU>()(param.Output(), param.Output());
 }
-
-template class ConvAddReluKernel<CPU, float>;
+template class ConvReluKernel<CPU, float>;
 
 }  // namespace operators
 }  // namespace paddle_mobile
