@@ -71,7 +71,7 @@ public class InitContext {
     var useMPS: Bool = false
     
     /// 是否使用最高等级的加速策略
-    var useAggresiveOptimization: Bool = false
+    var useAggressiveOptimization: Bool = false
     
     init() {
         metalLoadMode = .LoadMetalInDefaultLib
