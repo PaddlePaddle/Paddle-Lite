@@ -644,13 +644,13 @@ kernel void depthwise_conv_add_relu_3x3_half_winograd(texture2d_array<half, acce
     }
     
     if (param.hasAddOp == 1) {
-        half4 base = biasTexture.sample(sample, uint2(tx, ty), tc);
+        half4 base = biasTexture.sample(sample, float2(tx, ty), tc);
         res[0] += base;
-        base = biasTexture.sample(sample, uint2(tx + 1, ty), tc);
+        base = biasTexture.sample(sample, float2(tx + 1, ty), tc);
         res[1] += base;
-        base = biasTexture.sample(sample, uint2(tx, ty + 1), tc);
+        base = biasTexture.sample(sample, float2(tx, ty + 1), tc);
         res[2] += base;
-        base = biasTexture.sample(sample, uint2(tx + 1, ty + 1), tc);
+        base = biasTexture.sample(sample, float2(tx + 1, ty + 1), tc);
         res[3] += base;
     }
 
