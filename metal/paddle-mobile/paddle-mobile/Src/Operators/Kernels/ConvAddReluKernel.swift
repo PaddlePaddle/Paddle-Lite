@@ -147,19 +147,28 @@ class ConvAddReluKernel<P: PrecisionProtocol>: Kernel, Computable {
         }
     }
     
+    var inputImage: AnyObject?
+    var outputImage: AnyObject?
+    
     func compute(commandBuffer: MTLCommandBuffer, param: ConvAddReluParam<P>) throws {
         if #available(iOS 10.0, *) {
             if let conv = mpsConvOp as? MPSCNNConvolution {
-                let inputImage = MPSImage.init(texture: param.input.metalTexture, featureChannels: param.input.tensorDim[1])
-                let outputImage = MPSImage.init(texture: param.output.metalTexture, featureChannels: param.output.tensorDim[1])
-                conv.encode(commandBuffer: commandBuffer, sourceImage: inputImage, destinationImage: outputImage)
-                if #available(iOS 11.3, *) {
-                    if let add = mpsAddOp as? MPSCNNAdd, let y = param.y {
-                        let biasImage = MPSImage.init(texture: y.metalTexture, featureChannels: y.tensorDim[1])
-                        add.encode(commandBuffer: commandBuffer, primaryImage: outputImage, secondaryImage: biasImage, destinationImage: outputImage)
-                    }
-                    if let relu = mpsReluOp as? MPSCNNNeuronReLU {
-                        relu.encode(commandBuffer: commandBuffer, sourceImage: outputImage, destinationImage: outputImage)
+                if inputImage == nil {
+                    inputImage = MPSImage.init(texture: param.input.metalTexture, featureChannels: param.input.tensorDim[1])
+                }
+                if outputImage == nil {
+                    outputImage = MPSImage.init(texture: param.output.metalTexture, featureChannels: param.output.tensorDim[1])
+                }
+                if let inputImage = inputImage as? MPSImage, let outputImage = outputImage as? MPSImage {
+                    conv.encode(commandBuffer: commandBuffer, sourceImage: inputImage, destinationImage: outputImage)
+                    if #available(iOS 11.3, *) {
+                        if let add = mpsAddOp as? MPSCNNAdd, let y = param.y {
+                            let biasImage = MPSImage.init(texture: y.metalTexture, featureChannels: y.tensorDim[1])
+                            add.encode(commandBuffer: commandBuffer, primaryImage: outputImage, secondaryImage: biasImage, destinationImage: outputImage)
+                        }
+                        if let relu = mpsReluOp as? MPSCNNNeuronReLU {
+                            relu.encode(commandBuffer: commandBuffer, sourceImage: outputImage, destinationImage: outputImage)
+                        }
                     }
                 }
                 return

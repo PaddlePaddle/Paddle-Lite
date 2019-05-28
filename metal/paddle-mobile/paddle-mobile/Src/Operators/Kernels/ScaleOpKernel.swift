@@ -23,6 +23,8 @@ struct ScaleMetalParam {
 class ScaleOpKernel<P: PrecisionProtocol>: Kernel, Computable{
     var metalParam: ScaleMetalParam
     var mpsScaleOp: AnyObject?
+    var inputImage: AnyObject?
+    var outputImage: AnyObject?
     
     required init(device: MTLDevice, param: ScaleParam<P>, initContext: InitContext) throws {
         do {
@@ -67,9 +69,15 @@ class ScaleOpKernel<P: PrecisionProtocol>: Kernel, Computable{
     
     func compute(commandBuffer: MTLCommandBuffer, param: ScaleParam<P>) throws {
         if #available(iOS 10.0, *), let mpsScaleOp = mpsScaleOp as? MPSCNNNeuronLinear {
-            let inputImage = MPSImage.init(texture: param.input.metalTexture, featureChannels: param.input.tensorDim[1])
-            let outputImage = MPSImage.init(texture: param.output.metalTexture, featureChannels: param.output.tensorDim[1])
-            mpsScaleOp.encode(commandBuffer: commandBuffer, sourceImage: inputImage, destinationImage: outputImage)
+            if inputImage == nil {
+                inputImage = MPSImage.init(texture: param.input.metalTexture, featureChannels: param.input.tensorDim[1])
+            }
+            if outputImage == nil {
+                outputImage = MPSImage.init(texture: param.output.metalTexture, featureChannels: param.output.tensorDim[1])
+            }
+            if let inputImage = inputImage as? MPSImage, let outputImage = outputImage as? MPSImage {
+                mpsScaleOp.encode(commandBuffer: commandBuffer, sourceImage: inputImage, destinationImage: outputImage)
+            }
             return
         }
         guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
