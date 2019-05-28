@@ -20,6 +20,7 @@ limitations under the License. */
 #include <cstring>
 #include <fstream>
 #include <iostream>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -78,6 +79,8 @@ class PlaceHolder {
     fpga_free(data_);
   }
 
+  float scale_[2];
+
  private:
   void* data_ = nullptr;
   size_t size_ = 0;
@@ -92,7 +95,9 @@ class Tensor {
     if (placeHolder_ == nullptr) {
       return nullptr;
     }
-    return reinterpret_cast<Dtype*>(this->placeHolder_->data());
+    void* ptr = reinterpret_cast<char*>(this->placeHolder_->data()) +
+                offset * CellSize(dataType_);
+    return reinterpret_cast<Dtype*>(ptr);
   }
 
   template <typename Dtype>
@@ -110,13 +115,13 @@ class Tensor {
     size_t memorySize = shape_->memorySize(CellSize(dataType_));
     if (placeHolder_ != nullptr) {
       if (memorySize > placeHolder_->memorySize()) {
-        delete placeHolder_;
-        placeHolder_ = new PlaceHolder(memorySize);
+        placeHolder_.reset(new PlaceHolder(memorySize));
       }
     } else {
-      placeHolder_ = new PlaceHolder(memorySize);
+      placeHolder_.reset(new PlaceHolder(memorySize));
     }
-    return reinterpret_cast<Dtype*>(placeHolder_->data());
+    // return reinterpret_cast<Dtype*>(placeHolder_->data());
+    return data<Dtype>();
   }
 
   size_t memorySize() {
@@ -137,7 +142,7 @@ class Tensor {
 
   void setAligned(bool aligned) { this->aligned_ = aligned; }
 
-  float* scale() { return scale_; }
+  float* scale() { return placeHolder_->scale_; }
 
   void alignImage(Tensor* dst = nullptr, bool copy = false) {
     if (shape_->shouldAlign()) {
@@ -183,8 +188,8 @@ class Tensor {
   }
 
   inline void copyScaleFrom(Tensor* src) {
-    scale_[0] = src->scale_[0];
-    scale_[1] = src->scale_[1];
+    placeHolder_->scale_[0] = src->placeHolder_->scale_[0];
+    placeHolder_->scale_[1] = src->placeHolder_->scale_[1];
   }
 
   void unalignImage(Tensor* dst = nullptr, bool copy = false) {
@@ -234,6 +239,20 @@ class Tensor {
     }
   }
 
+  void shareDataWith(Tensor* src) { shareDataWith(src, src->shape()); }
+
+  void shareDataWith(Tensor* src, const Shape& shape, int offset = 0) {
+    if (shape_ != nullptr) {
+      delete shape_;
+    }
+    this->placeHolder_ = src->placeHolder_;
+    this->dataType_ = src->dataType_;
+    this->aligned_ = src->aligned_;
+    this->dateLocation_ = src->dateLocation_;
+    this->offset = offset;
+    shape_ = new Shape(const_cast<Shape&>(shape));
+  }
+
   void copyFrom(Tensor* src) {
     if (src->dataType_ == dataType_) {
       src->syncToCPU();
@@ -264,7 +283,7 @@ class Tensor {
     if (aligned_remainder > 0) {
       size_t dtype_size =
           src->dataType_ == FP32 ? sizeof(float) : sizeof(float16);
-      void* dst = src->data<void>() + src->shape().numel() * dtype_size;
+      void* dst = src->data<char>() + src->shape().numel() * dtype_size;
       memset(dst, 0, aligned_remainder * dtype_size);
       fpga_flush(dst, aligned_remainder * dtype_size);
     }
@@ -319,7 +338,7 @@ class Tensor {
   }
 
   void printScale() {
-    DLOG << "scale:" << scale_[0] << " inv:" << scale_[1];
+    // DLOG << "scale:" << scale_[0] << " inv:" << scale_[1];
     // std::cout << "scale:" << scale_[0] << " inv:" << scale_[1] << std::endl;
   }
 
@@ -391,8 +410,8 @@ class Tensor {
       data[i] = float_to_half(value);
     }
     flush();
-    scale_[0] = max / 127.0f;
-    scale_[1] = 127.0f / max;
+    placeHolder_->scale_[0] = max / 127.0f;
+    placeHolder_->scale_[1] = 127.0f / max;
     DLOG << "\ttensor file " << path << " loaded!";
   }
 
@@ -401,14 +420,11 @@ class Tensor {
       delete shape_;
       shape_ = nullptr;
     }
-    if (placeHolder_ != nullptr) {
-      delete placeHolder_;
-      placeHolder_ = nullptr;
-    }
   }
 
  private:
-  float scale_[2];
+  int offset = 0;
+  std::shared_ptr<PlaceHolder> placeHolder_;
   Shape* shape_ = nullptr;
   DataType dataType_ = FP32;
   bool aligned_ = false;
@@ -422,8 +438,6 @@ class Tensor {
   }
 
   int id_ = generateID();
-
-  PlaceHolder* placeHolder_ = nullptr;
 };
 
 }  // namespace zynqmp

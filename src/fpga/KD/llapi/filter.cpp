@@ -22,9 +22,11 @@ namespace paddle_mobile {
 namespace zynqmp {
 namespace filter {
 
+static const int FILTER_SIZE = 2048;
+
 int calc_division_capacity(int chw) {
-  int n = 2048 / ((chw + 15) / 16) * 32;
-  return n < 2048 ? n : 2048;
+  int n = FILTER_SIZE / ((chw + 15) / 16) * 32;
+  return n < FILTER_SIZE ? n : FILTER_SIZE;
 }
 
 int calc_split_num(int num, int division_capacity) {

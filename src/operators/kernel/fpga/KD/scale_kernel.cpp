@@ -29,9 +29,21 @@ bool ScaleKernel<FPGA, float>::Init(ScaleParam<FPGA>* param) {
   zynqmp::ScaleParam& scale_param = pe.param();
   scale_param.input = param->InputX()->zynqmpTensor();
   scale_param.output = param->Out()->zynqmpTensor();
-  // scale_param.bias = param->Bias()->zynqmpTensor();
-  // scale_param.scale = param->Scale()->zynqmpTensor();
 
+  int channel = scale_param.input->shape().channel();
+  zynqmp::Tensor* scale = new zynqmp::Tensor();
+  zynqmp::Tensor* bias = new zynqmp::Tensor();
+  zynqmp::Shape shape(zynqmp::N, {channel});
+  float* scale_data = scale->mutableData<float>(zynqmp::FP32, shape);
+  float* bias_data = bias->mutableData<float>(zynqmp::FP32, shape);
+
+  float scale_value = param->Scale();
+  for (int i = 0; i < channel; ++i) {
+    scale_data[i] = scale_value;
+    bias_data[i] = param->Bias();
+  }
+  scale_param.scale = scale;
+  scale_param.bias = bias;
   pe.init();
   pe.apply();
 

@@ -100,6 +100,8 @@ class Shape {
     }
   }
 
+  void print() {}
+
   int operator[](int index) { return dims_[index]; }
 
  private:

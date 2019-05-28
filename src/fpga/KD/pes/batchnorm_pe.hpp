@@ -69,6 +69,7 @@ class BatchnormPE : public PE {
     scalePE_.init();
 
     inplace_.relu_enable = param_.relu.enabled;
+    inplace_.relu_enable = true;
     inplace_.power_enable = false;
     inplace_.normalize_enable = false;
 

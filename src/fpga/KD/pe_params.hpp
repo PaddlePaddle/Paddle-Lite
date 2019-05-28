@@ -60,6 +60,7 @@ struct BatchnormParam : PEParam {
 };
 
 struct BasicConvParam {
+  Tensor input;
   Tensor output;
   Tensor filter;
   Tensor scaleBias;

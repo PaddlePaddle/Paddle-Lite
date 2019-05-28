@@ -117,12 +117,12 @@ class PoolingPE : public PE {
               const int index = (h * image_width + w) * image_channels + c;
               float value = image_addr[index];
               sum += value;
-              if (value > max) {
-                max = image_addr[index];
-              }
             }
           }
           float value = sum / kernel;
+          if (value > max) {
+            max = value;
+          }
           data_out[pool_index] = float_to_half(value);
         }
       }

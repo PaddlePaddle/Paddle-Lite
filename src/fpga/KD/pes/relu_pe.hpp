@@ -54,14 +54,15 @@ class ReluPE : public PE {
 
   bool dispatch() {
     inplace_.relu_enable = true;
-    config_inplace(inplace_);
+    // config_inplace(inplace_);
     param_.input->syncToDevice();
     param_.output->copyFrom(param_.input);
     // param_.input->flush();
     // int ret = perform_bypass(args_);
-    // param_.output->invalidate();
-    // inplace_.relu_enable = false;
-    config_inplace(inplace_);
+    param_.output->invalidate();
+    inplace_.relu_enable = false;
+    // config_inplace(inplace_);
+    // param_.input->copyScaleFrom(param_.output);
     // return ret == 0;
     return true;
   }

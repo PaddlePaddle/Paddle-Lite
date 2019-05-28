@@ -43,6 +43,7 @@ bool ConvAddKernel<FPGA, float>::Init(FusionConvAddParam<FPGA>* param) {
 
     fill_scale_bias_const(&depthwise_conv_param);
     Tensor* bias = param->Bias();
+    bias->zynqmpTensor()->setDataLocation(zynqmp::CPU);
     depthwise_conv_param.bias()->copyFrom(bias->zynqmpTensor());
 
     pe.init();
@@ -62,6 +63,8 @@ bool ConvAddKernel<FPGA, float>::Init(FusionConvAddParam<FPGA>* param) {
 
     fill_scale_bias_const(&conv_param);
     Tensor* bias = param->Bias();
+    bias->zynqmpTensor()->flush();
+    bias->zynqmpTensor()->setDataLocation(zynqmp::CPU);
     conv_param.bias()->copyFrom(bias->zynqmpTensor());
 
     pe.init();

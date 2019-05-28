@@ -33,7 +33,7 @@ REGISTER_OPERATOR_CPU(dropout, ops::DropoutOp);
 #ifdef PADDLE_MOBILE_CL
 REGISTER_OPERATOR_CL(dropout, ops::DropoutOp);
 #endif
-#ifdef PADDLE_MOBILE_FPGA
+#if defined(PADDLE_MOBILE_FPGA) || defined(PADDLE_MOBILE_FPGA_KD)
 REGISTER_OPERATOR_FPGA(dropout, ops::DropoutOp);
 #endif
 

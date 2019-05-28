@@ -29,9 +29,6 @@ bool ElementwiseMulKernel<FPGA, float>::Init(ElementwiseMulParam<FPGA>* param) {
   zynqmp::ScaleParam& scale_param = pe.param();
   scale_param.input = param->InputX()->zynqmpTensor();
   scale_param.output = param->Out()->zynqmpTensor();
-  // scale_param.bias = param->Bias()->zynqmpTensor();
-  // scale_param.scale = param->InputY()->zynqmpTensor();
-
   int channel = scale_param.input->shape().channel();
   zynqmp::Tensor* scale = new zynqmp::Tensor();
   zynqmp::Tensor* bias = new zynqmp::Tensor();

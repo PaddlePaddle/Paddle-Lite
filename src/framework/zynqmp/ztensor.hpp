@@ -86,18 +86,20 @@ class Tensor : public TensorBase {
   /*! The internal of two tensors share the same memory block. */
   inline Tensor &ShareDataWith(const Tensor &src) {
     // src.check_memory_size();
-    if (holder_.get() != src.holder_.get()) {
-      *this = src;
-    }
-    return *this;
+    // if (holder_.get() != src.holder_.get()) {
+    //   *this = src;
+    // }
+    // return *this;
+    zynqmpTensor()->shareDataWith(src.zynqmpTensor());
   }
 
   /*! The internal of two tensors share the same memory block. */
   inline Tensor &ShareHolderWith(const Tensor &src) {
-    src.check_memory_size();
-    if (holder_.get() != src.holder_.get()) {
-      holder_ = src.holder_;
-    }
+    // src.check_memory_size();
+    // if (holder_.get() != src.holder_.get()) {
+    //   holder_ = src.holder_;
+    // }
+    zynqmpTensor()->shareDataWith(src.zynqmpTensor());
     return *this;
   }
 
