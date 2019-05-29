@@ -71,7 +71,7 @@ public class InitContext {
     var useMPS: Bool = false
     
     /// 是否使用最高等级的加速策略
-    var useAggresiveOptimization: Bool = false
+    var useAggressiveOptimization: Bool = false
     
     init() {
         metalLoadMode = .LoadMetalInDefaultLib
@@ -162,6 +162,7 @@ let gPooType                    = "pool2d"
 let gSoftmaxType                = "softmax"
 let gReshapeType                = "reshape"
 let gConvAddType                = "conv_add"
+let gConvReluType               = "conv_relu"
 let gDepthConvType              = "depthwise_conv2d"
 let gPriorBoxType               = "prior_box"
 let gTransposeType              = "transpose"

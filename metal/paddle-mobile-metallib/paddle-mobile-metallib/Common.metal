@@ -120,4 +120,6 @@ struct MetalConvParam {
     ushort iC;
     ushort fC;
     ushort oC;
+    ushort hasAddOp;
+    ushort hasReluOp;
 };

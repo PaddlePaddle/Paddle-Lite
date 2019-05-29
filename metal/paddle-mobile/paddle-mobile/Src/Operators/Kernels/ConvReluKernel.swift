@@ -15,13 +15,13 @@
 import Foundation
 import MetalPerformanceShaders
 
-class ConvAddKernel<P: PrecisionProtocol>: ConvAddReluKernel<P> {
+class ConvReluKernel<P: PrecisionProtocol>: ConvAddReluKernel<P> {
     override func hasAddOp() -> Bool {
-        return true
+        return false
     }
     
     override func hasReluOp() -> Bool {
-        return false
+        return true
     }
 }
 
