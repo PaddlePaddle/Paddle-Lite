@@ -1,5 +1,5 @@
 # Paddle-Mobile
- 
+
 [![Build Status](https://travis-ci.org/PaddlePaddle/paddle-mobile.svg?branch=develop&longCache=true&style=flat-square)](https://travis-ci.org/PaddlePaddle/paddle-mobile)
 [![Documentation Status](https://img.shields.io/badge/中文文档-最新-brightgreen.svg)](https://github.com/PaddlePaddle/paddle-mobile/tree/develop/doc)
 [![License](https://img.shields.io/badge/license-Apache%202-blue.svg)](LICENSE)
@@ -115,34 +115,21 @@ ONNX全称为“Open Neural Network Exchange”，即“开放的神经网络切
 ### 4. 部分测试模型和测试图片下载
 [http://mms-graph.bj.bcebos.com/paddle-mobile%2FmodelsAndImages.zip](http://mms-graph.bj.bcebos.com/paddle-mobile%2FmodelsAndImages.zip)
 
-<!--## Online output of simple search
+## Communication
+- [Github Issues](https://github.com/PaddlePaddle/Paddle/issues): bug reports, feature requests, install issues, usage issues, etc.
+- QQ discussion group: 696965088 (Paddle-Mobile).
+- [Forums](http://ai.baidu.com/forum/topic/list/168?pageNo=1): discuss implementations, research, etc.
 
-Gif as following is the application output of online main part detection of simple search app
-![ezgif-1-050a733dfb](http://otkwwi4x8.bkt.clouddn.com/2018-07-05-ezgif-1-050a733dfb.gif)-->
-
-## Ask Question
-
-Welcome to put forward or tackle with our problems,You can post your question in our issue modular on github. [Github Issues](https://github.com/PaddlePaddle/paddle-mobile/issues).
-
-## Copyright and License
-Paddle-Mobile provide relatively unstricted Apache-2.0 Open source agreement [Apache-2.0 license](LICENSE).
-
+## 交流与反馈
+- 欢迎您通过[Github Issues](https://github.com/PaddlePaddle/Paddle/issues)来提交问题、报告与建议
+- QQ群: 696965088 (Paddle-Mobile)
+- [论坛](http://ai.baidu.com/forum/topic/list/168): 欢迎大家在PaddlePaddle论坛分享在使用PaddlePaddle中遇到的问题和经验, 营造良好的论坛氛围
 
 ## Old version Mobile-Deep-Learning
-Original MDL(Mobile-Deep-Learning) project has been transferred to [Mobile-Deep-Learning](https://github.com/allonli/mobile-deep-learning) 
-
-<!--## 简单搜索线上效果
-
-如下gif是简单搜索app的线上主体检测应用效果
-![ezgif-1-050a733dfb](http://otkwwi4x8.bkt.clouddn.com/2018-07-05-ezgif-1-050a733dfb.gif)-->
-
-## 问题解决
-
-欢迎提出或解决我们的问题，有疑问可以发issue. [Github Issues](https://github.com/PaddlePaddle/paddle-mobile/issues).
-
-## Copyright and License
-Paddle-Mobile 提供相对宽松的Apache-2.0开源协议 [Apache-2.0 license](LICENSE).
-
+Original MDL(Mobile-Deep-Learning) project has been transferred to [Mobile-Deep-Learning](https://github.com/allonli/mobile-deep-learning)
 
 ## 旧版 Mobile-Deep-Learning
-原MDL(Mobile-Deep-Learning)工程被迁移到了这里 [Mobile-Deep-Learning](https://github.com/allonli/mobile-deep-learning) 
+原MDL(Mobile-Deep-Learning)工程被迁移到了这里 [Mobile-Deep-Learning](https://github.com/allonli/mobile-deep-learning)
+
+## Copyright and License
+[Apache-2.0 license](LICENSE).
