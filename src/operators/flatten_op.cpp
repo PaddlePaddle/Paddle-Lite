@@ -36,7 +36,7 @@ void FlattenOp<DeviceType, T>::InferShape() const {
       "The axis should be less than or equal to input tensor's rank.");
 
   const auto &out_dims = GetOutputShape(axis, in_dims);
-  this->param_.Out()->Resize(in_dims);
+  this->param_.Out()->Resize(framework::make_ddim(out_dims));
 }
 
 }  // namespace operators
