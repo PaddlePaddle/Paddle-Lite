@@ -243,9 +243,15 @@ void SlidingwindowConv3x3(const ConvParam<CPU> &param) {
   output->mutable_data<Otype>();
 
   if (strides[0] == 1) {
-    math::SlidingwindowConv3x3s1<Itype, Otype>(input, filter, paddings, output);
+    // math::SlidingwindowConv3x3s1<Itype, Otype>(input, filter, paddings,
+    // output);
+    math::SlidingwindowConv3x3s1Faster<Itype, Otype>(
+        input, param.transformed_filter_, paddings, output);
   } else if (strides[0] == 2) {
-    math::SlidingwindowConv3x3s2<Itype, Otype>(input, filter, paddings, output);
+    // math::SlidingwindowConv3x3s2<Itype, Otype>(input, filter, paddings,
+    // output);
+    math::SlidingwindowConv3x3s2Faster<Itype, Otype>(
+        input, param.transformed_filter_, paddings, output);
   } else {
     GemmConv<Itype, Otype>(param);
   }

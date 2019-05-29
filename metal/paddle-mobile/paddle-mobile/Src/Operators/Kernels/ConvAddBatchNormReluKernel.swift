@@ -95,7 +95,10 @@ class ConvAddBatchNormReluKernel<P: PrecisionProtocol>: Kernel, Computable, Test
         print("offset y: \(offsetY)")
         
         let offsetZ = 0.0
-        metalParam = MetalConvParam.init(offsetX: Int16(offsetX), offsetY: Int16(offsetY), offsetZ: Int16(offsetZ), strideX: UInt16(param.stride[0]), strideY: UInt16(param.stride[1]), dilationX: UInt16(param.dilations[0]), dilationY: UInt16(param.dilations[1]))
+        let iC = param.input.tensorDim[1];
+        let fC = param.filter.tensorDim[1];
+        let oC = param.output.tensorDim[1];
+        metalParam = MetalConvParam.init(offsetX: Int16(offsetX), offsetY: Int16(offsetY), offsetZ: Int16(offsetZ), strideX: UInt16(param.stride[0]), strideY: UInt16(param.stride[1]), dilationX: UInt16(param.dilations[0]), dilationY: UInt16(param.dilations[1]), groups: UInt16(param.groups), iC: UInt16(iC), fC: UInt16(fC), oC: UInt16(oC), hasAddOp: UInt16(0), hasReluOp: UInt16(0))
         
         var invs: [P] = []
         let varianceContents = param.variance.buffer.contents().assumingMemoryBound(to: P.self)

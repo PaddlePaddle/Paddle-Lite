@@ -30,8 +30,10 @@ bool ConvAddBNReluKernel<GPU_CL, float>::Init(
           param->Paddings()[0] == param->Paddings()[1],
       "need equal");
 
-  param->Bias()->InitCLImage(cl_helper_.CLContext(),
-                             cl_helper_.CLCommandQueue());
+  if (!param->Bias()->isInit()) {
+    param->Bias()->InitCLImage(cl_helper_.CLContext(),
+                               cl_helper_.CLCommandQueue());
+  }
 
   //  const CL *mean = param->InputMean();
   const framework::CLImage *mean = param->InputMean();
@@ -128,7 +130,12 @@ bool ConvAddBNReluKernel<GPU_CL, float>::Init(
 
   const std::string conv_kernel_file = "conv_kernel.cl";
   const std::string wino_kernel_file = "winograd_transform.cl";
-  const std::string build_options = "-DBIASE -DBATCH_NORM -DRELU";
+  std::string build_options = "-DBATCH_NORM -DRELU";
+  if (param->Output()->dims() == param->Bias()->dims()) {
+    build_options += " -DBIASE_ELE";
+  } else {
+    build_options += " -DBIASE_CH";
+  }
 
   /*
   if (param->Filter()->dims()[2] == 1 &&

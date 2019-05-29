@@ -13,9 +13,9 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #ifdef ANCHOR_GENERATOR_OP
-
 #include <string.h>
 #include <iostream>
+#include <memory>
 #include <utility>
 #include <vector>
 #include "operators/kernel/detection_kernel.h"
@@ -39,9 +39,10 @@ bool AnchorGeneratorKernel<FPGA, float>::Init(
                           79,  69,   -96,  -77, 112, 93,   -137, -118, 153,
                           134, -204, -188, 220, 204, -281, -395, 296,  441};
 
-  int anchors_offset2[] = {0, 0, 51, 77, 0, 0, 30, 35, 0, 0, 81, 103,
-                           0, 0, 20, 21, 0, 0, 36, 44, 0, 0, 43, 58,
-                           0, 0, 34, 68, 0, 0, 24, 28, 0, 0, 19, 46};
+  int anchors_offset2[] = {-18, -31, 34,  47,  -22, -22, 38,  38,  -33,
+                           -44, 49,  60,  -2,  -2,  18,  18,  -10, -14,
+                           26,  30,  -14, -22, 30,  38,  -9,  -26, 25,
+                           42,  -92, -92, 108, 108, -2,  -15, 18,  31};
 
   if (offset > 0.6) {
     memcpy(anchors_offset, anchors_offset2, sizeof(anchors_offset));

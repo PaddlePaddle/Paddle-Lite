@@ -16,11 +16,11 @@ import Foundation
 //import SwiftProtobuf
 
 protocol Loaderable {
-    func load(device:MTLDevice, paramPointer: UnsafeMutableRawPointer, paramSize:Int, modePointer: UnsafeMutableRawPointer, modelSize: Int) throws -> Program
-    func load(device: MTLDevice, modelPath: String, paraPath: String) throws -> Program
+    func load(device: MTLDevice, paramPointer: UnsafeMutableRawPointer, paramSize: Int, modePointer: UnsafeMutableRawPointer, modelSize: Int, optimize: Bool) throws -> Program
+    func load(device: MTLDevice, modelPath: String, paraPath: String, optimize: Bool) throws -> Program
 }
 
-public class Loader<P: PrecisionProtocol>: Loaderable{
+public class Loader<P: PrecisionProtocol>: Loaderable {
     class ParaLoader {
         let file: UnsafeMutablePointer<FILE>
         let fileSize: Int
@@ -45,11 +45,11 @@ public class Loader<P: PrecisionProtocol>: Loaderable{
             }
             
             func pointerReader<T>(type: T.Type) -> T {
-                let ptr = UnsafeMutablePointer<T>.allocate(capacity: MemoryLayout<T>.size)
+                let ptr = UnsafeMutablePointer<T>.allocate(capacity: 1)
                 fread(ptr, 1, MemoryLayout<T>.size, file)
                 nowIndex += MemoryLayout<T>.size
                 let pointee = ptr.pointee
-                ptr.deinitialize(count: MemoryLayout<UInt32>.size)
+                ptr.deinitialize(count: 1)
                 ptr.deallocate()
                 return pointee
             }
@@ -65,10 +65,48 @@ public class Loader<P: PrecisionProtocol>: Loaderable{
             
             let _ = pointerReader(type: UInt32.self)
             
-            let tensorDescSize = pointerReader(type: Int32.self)
+            // 读取张量信息
+            let tensorDescSize = Int(pointerReader(type: Int32.self))
             
-            fseek(file, Int(tensorDescSize), SEEK_CUR)
-            nowIndex += Int(tensorDescSize)
+            if GlobalConfig.shared.debug {
+                let tensorDescCharArray = UnsafeMutablePointer<CChar>.allocate(capacity: tensorDescSize)
+                for i in 0..<tensorDescSize {
+                    let ch = pointerReader(type: CChar.self)
+                    tensorDescCharArray[i] = ch
+                }
+                let data = Data(bytes: tensorDescCharArray, count: MemoryLayout<CChar>.size * tensorDescSize)
+                var tensorDescFromParams: VarType_TensorDesc?
+                do {
+                    tensorDescFromParams = try VarType_TensorDesc.init(data: data)
+                } catch let error {
+                    print("\(error)")
+                }
+                tensorDescCharArray.deinitialize(count: tensorDescSize)
+                tensorDescCharArray.deallocate()
+                repeat {
+                    guard let tensorDescFromParams = tensorDescFromParams, let dimsArrayFromParams = tensorDescFromParams.dimsArray else {
+                        print("tensorDescFromParams is nil")
+                        break
+                    }
+                    if tensorDescFromParams.dimsArray_Count != dimsArrayFromParams.count {
+                        print("dimsArray_Count not equal to tensorDescFromParams.dimsArray.count")
+                        break
+                    }
+                    if tensorDescFromParams.dimsArray_Count != tensor.tensorDim.cout() {
+                        print("dimsArray_Count not equal to tensor.tensorDim.cout()")
+                        break
+                    }
+                    for i in 0..<dimsArrayFromParams.count {
+                        if dimsArrayFromParams.value(at: i) != tensor.tensorDim[Int(i)] {
+                            print("tensorDescFromParams \(String(describing: tensorDescFromParams.dimsArray)) not equal to tensor.tensorDim \(tensor.tensorDim)")
+                            break
+                        }
+                    }
+                } while (false)
+            } else {
+                fseek(file, MemoryLayout<CChar>.size * tensorDescSize, SEEK_CUR)
+            }
+            nowIndex += MemoryLayout<CChar>.size * tensorDescSize
             
             /*
              这里没有根据 Data Type 去判断, 而是从外部泛型直接指定了精度
@@ -148,7 +186,7 @@ public class Loader<P: PrecisionProtocol>: Loaderable{
         }
     }
     public init(){}
-    private func loadModelandParam(_ device:MTLDevice,_ modelData:Data, _ paraLoaderPointer:ParaLoaderWithPointer?, _ paraLoader:ParaLoader?) throws -> Program {
+    private func loadModelandParam(_ device: MTLDevice, _ modelData: Data, _ paraLoaderPointer: ParaLoaderWithPointer?, _ paraLoader: ParaLoader?, _ optimize: Bool = true) throws -> Program {
         do {
             /// swift protobuf serialized Data to instance class
             //      let protoProgram = try PaddleMobile_Framework_Proto_ProgramDesc.init(
@@ -158,7 +196,7 @@ public class Loader<P: PrecisionProtocol>: Loaderable{
             let protoProgram = try ProgramDesc.init(data: (modelData as NSData) as Data)
             
             let originProgramDesc = PMProgramDesc.init(protoProgram: protoProgram)
-            let programDesc = ProgramOptimize<P>.init().optimize(originProgramDesc: originProgramDesc)
+            let programDesc = optimize ? ProgramOptimize<P>.init().optimize(originProgramDesc: originProgramDesc) : originProgramDesc
             
             //      let programDesc = PMProgramDesc.init(protoProgram: protoProgram)
             if GlobalConfig.shared.debug {
@@ -206,7 +244,7 @@ public class Loader<P: PrecisionProtocol>: Loaderable{
                             }
                             
                             let dim = Dim.init(inDim: dimArr)
-                            let tensor = Tensor<P>.init(inDim: dim, inLayout: tensorDesc.dataLayout)
+                            let tensor = Tensor<P>.init(inDim: dim, inLayout: tensorDesc.dataLayout, originDimsCount: tensorDesc.originDimsCount)
                             do {
                                 if paraLoaderPointer != nil {
                                     try paraLoaderPointer!.read(tensor: tensor)
@@ -223,7 +261,9 @@ public class Loader<P: PrecisionProtocol>: Loaderable{
                             scope[varDesc.name] = tensor
                         } else {
                             let dim = Dim.init(inDim: tensorDesc.dims)
-                            scope[varDesc.name] = Texture.init(device: device, inDim: dim)
+                            let texture = Texture.init(device: device, inDim: dim)
+                            texture.originDimsCount = tensorDesc.originDimsCount
+                            scope[varDesc.name] = texture
                         }
                     } else {
                         if varDesc.name == fetchKey {
@@ -241,20 +281,20 @@ public class Loader<P: PrecisionProtocol>: Loaderable{
             throw PaddleMobileError.loaderError(message: "protobuf decoder error")
         }
     }
-    public func load(device:MTLDevice, paramPointer: UnsafeMutableRawPointer, paramSize:Int, modePointer: UnsafeMutableRawPointer, modelSize: Int) throws -> Program {
+    public func load(device: MTLDevice, paramPointer: UnsafeMutableRawPointer, paramSize: Int, modePointer: UnsafeMutableRawPointer, modelSize: Int, optimize: Bool = true) throws -> Program {
         let modelData = Data.init(bytes:modePointer, count:modelSize)
         guard let paraLoader = try? ParaLoaderWithPointer.init(pPointer: paramPointer,pSize: paramSize) else {
             throw PaddleMobileError.loaderError(message: "load para error")
         }
         do {
-            let program = try loadModelandParam(device,modelData,paraLoader,nil)
+            let program = try loadModelandParam(device, modelData, paraLoader, nil, optimize)
             return program
         } catch let error {
             throw error
         }
     }
     
-    public func load(device: MTLDevice, modelPath: String, paraPath: String) throws -> Program {
+    public func load(device: MTLDevice, modelPath: String, paraPath: String, optimize: Bool = true) throws -> Program {
         guard let modelData = try? Data.init(contentsOf: URL.init(fileURLWithPath: modelPath)) else {
             throw PaddleMobileError.loaderError(message: "load " + modelPath + " failed !")
         }
@@ -263,7 +303,7 @@ public class Loader<P: PrecisionProtocol>: Loaderable{
         }
         
         do {
-            let program = try loadModelandParam(device,modelData,nil,paraLoader)
+            let program = try loadModelandParam(device, modelData, nil, paraLoader, optimize)
             return program
         } catch let error {
             throw error

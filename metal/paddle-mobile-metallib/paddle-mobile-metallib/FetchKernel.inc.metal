@@ -25,22 +25,22 @@
 kernel void FUNC_T(fetch, P)(texture2d_array<P, access::read> inTexture [[texture(0)]],
                              device float *output [[buffer(0)]],
                              uint3 gid [[thread_position_in_grid]]) {
-    if (gid.x >= inTexture.get_width() ||
-        gid.y >= inTexture.get_height() ||
+    uint input_width = inTexture.get_width();
+    uint input_height = inTexture.get_height();
+    if (gid.x >= input_width ||
+        gid.y >= input_height ||
         gid.z >= inTexture.get_array_size()) {
         return;
     }
     
-    int input_width = inTexture.get_width();
-    int input_height = inTexture.get_height();
     const VECTOR(P, 4) input = inTexture.read(gid.xy, gid.z);
-    int output_to = 4 * input_width * input_height;
+    uint delta = input_width * input_height;
+    uint output_to = 4 * gid.z * delta + gid.y * input_width + gid.x;
     
-    output[gid.z * output_to + 0 * input_width * input_height + gid.y * input_width + gid.x] = input.x;
-    
-    output[gid.z * output_to + 1 * input_width * input_height + gid.y * input_width + gid.x] = input.y;
-    output[gid.z * output_to + 2 * input_width * input_height + gid.y * input_width + gid.x] = input.z;
-    output[gid.z * output_to + 3 * input_width * input_height + gid.y * input_width + gid.x] = input.w;
+    output[output_to] = input.x;
+    output[output_to + delta] = input.y;
+    output[output_to + 2 * delta] = input.z;
+    output[output_to + 3 * delta] = input.w;
 }
 
 kernel void FUNC(fetch, 1or2, P)(texture2d_array<P, access::read> inTexture [[texture(0)]],
@@ -56,6 +56,5 @@ kernel void FUNC(fetch, 1or2, P)(texture2d_array<P, access::read> inTexture [[te
     const VECTOR(P, 4) input = inTexture.read(gid.xy, gid.z);
     output[gid.y * input_width + gid.x] = float4(input);
 }
-
 
 #endif

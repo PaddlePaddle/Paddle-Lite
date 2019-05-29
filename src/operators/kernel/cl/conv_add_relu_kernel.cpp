@@ -27,8 +27,10 @@ bool ConvAddReluKernel<GPU_CL, float>::Init(
       param->Filter()->dims()[2] == param->Filter()->dims()[3] &&
           param->Paddings()[0] == param->Paddings()[1],
       "need equal");
-  param->Bias()->InitCLImage(cl_helper_.CLContext(),
-                             this->cl_helper_.CLCommandQueue());
+  if (!param->Bias()->isInit()) {
+    param->Bias()->InitCLImage(cl_helper_.CLContext(),
+                               this->cl_helper_.CLCommandQueue());
+  }
 
   int offset = static_cast<int>(param->Filter()->dims()[2]) / 2 -
                static_cast<int>(param->Paddings()[1]);
@@ -36,7 +38,12 @@ bool ConvAddReluKernel<GPU_CL, float>::Init(
 
   const std::string conv_kernel_file = "conv_kernel.cl";
   const std::string wino_kernel_file = "winograd_transform.cl";
-  const std::string build_options = "-DBIASE -DRELU";
+  std::string build_options = "-DRELU";
+  if (param->Output()->dims() == param->Bias()->dims()) {
+    build_options += " -DBIASE_ELE";
+  } else {
+    build_options += " -DBIASE_CH";
+  }
 
   if (param->Filter()->dims()[2] == 1 && param->Filter()->dims()[3] == 1) {
     param->ExecMode() = ConvParam<GPU_CL>::EXEC_SLIDINGWINDOW1x1_FLOAT;

@@ -117,7 +117,7 @@ typedef enum _PaddleMobile__Framework__Proto__AttrType {
  * that supports old versions following the version and compatibility policy.
  */
 struct _PaddleMobile__Framework__Proto__Version {
-  ProtobufCMessage base;
+  PaddleMobile__Framework__ProtobufCMessage base;
   protobuf_c_boolean has_version;
   int64_t version;
 };
@@ -129,7 +129,7 @@ struct _PaddleMobile__Framework__Proto__Version {
   }
 
 struct _PaddleMobile__Framework__Proto__OpDesc__Attr {
-  ProtobufCMessage base;
+  PaddleMobile__Framework__ProtobufCMessage base;
   char *name;
   PaddleMobile__Framework__Proto__AttrType type;
   protobuf_c_boolean has_i;
@@ -165,7 +165,7 @@ struct _PaddleMobile__Framework__Proto__OpDesc__Attr {
   }
 
 struct _PaddleMobile__Framework__Proto__OpDesc__Var {
-  ProtobufCMessage base;
+  PaddleMobile__Framework__ProtobufCMessage base;
   char *parameter;
   size_t n_arguments;
   char **arguments;
@@ -182,7 +182,7 @@ struct _PaddleMobile__Framework__Proto__OpDesc__Var {
  * derived class type.
  */
 struct _PaddleMobile__Framework__Proto__OpDesc {
-  ProtobufCMessage base;
+  PaddleMobile__Framework__ProtobufCMessage base;
   char *type;
   size_t n_inputs;
   PaddleMobile__Framework__Proto__OpDesc__Var **inputs;
@@ -204,7 +204,7 @@ struct _PaddleMobile__Framework__Proto__OpDesc {
  * VarProto describes the C++ type framework::Variable.
  */
 struct _PaddleMobile__Framework__Proto__OpProto__Var {
-  ProtobufCMessage base;
+  PaddleMobile__Framework__ProtobufCMessage base;
   char *name;
   char *comment;
   protobuf_c_boolean has_duplicable;
@@ -226,7 +226,7 @@ struct _PaddleMobile__Framework__Proto__OpProto__Var {
  * AttrProto describes the C++ type Attribute.
  */
 struct _PaddleMobile__Framework__Proto__OpProto__Attr {
-  ProtobufCMessage base;
+  PaddleMobile__Framework__ProtobufCMessage base;
   char *name;
   PaddleMobile__Framework__Proto__AttrType type;
   char *comment;
@@ -249,7 +249,7 @@ struct _PaddleMobile__Framework__Proto__OpProto__Attr {
  * OpProto describes a C++ framework::OperatorBase derived class.
  */
 struct _PaddleMobile__Framework__Proto__OpProto {
-  ProtobufCMessage base;
+  PaddleMobile__Framework__ProtobufCMessage base;
   char *type;
   size_t n_inputs;
   PaddleMobile__Framework__Proto__OpProto__Var **inputs;
@@ -267,7 +267,7 @@ struct _PaddleMobile__Framework__Proto__OpProto {
   }
 
 struct _PaddleMobile__Framework__Proto__VarType__TensorDesc {
-  ProtobufCMessage base;
+  PaddleMobile__Framework__ProtobufCMessage base;
   /*
    * Should only be PODType. Is enforced in C++
    */
@@ -286,7 +286,7 @@ struct _PaddleMobile__Framework__Proto__VarType__TensorDesc {
   }
 
 struct _PaddleMobile__Framework__Proto__VarType__LoDTensorDesc {
-  ProtobufCMessage base;
+  PaddleMobile__Framework__ProtobufCMessage base;
   PaddleMobile__Framework__Proto__VarType__TensorDesc *tensor;
   protobuf_c_boolean has_lod_level;
   int32_t lod_level;
@@ -299,7 +299,7 @@ struct _PaddleMobile__Framework__Proto__VarType__LoDTensorDesc {
   }
 
 struct _PaddleMobile__Framework__Proto__VarType__LoDTensorArrayDesc {
-  ProtobufCMessage base;
+  PaddleMobile__Framework__ProtobufCMessage base;
   PaddleMobile__Framework__Proto__VarType__TensorDesc *tensor;
   protobuf_c_boolean has_lod_level;
   int32_t lod_level;
@@ -312,7 +312,7 @@ struct _PaddleMobile__Framework__Proto__VarType__LoDTensorArrayDesc {
   }
 
 struct _PaddleMobile__Framework__Proto__VarType__ReaderDesc {
-  ProtobufCMessage base;
+  PaddleMobile__Framework__ProtobufCMessage base;
   size_t n_lod_tensor;
   PaddleMobile__Framework__Proto__VarType__LoDTensorDesc **lod_tensor;
 };
@@ -324,7 +324,7 @@ struct _PaddleMobile__Framework__Proto__VarType__ReaderDesc {
   }
 
 struct _PaddleMobile__Framework__Proto__VarType__ChannelDesc {
-  ProtobufCMessage base;
+  PaddleMobile__Framework__ProtobufCMessage base;
   PaddleMobile__Framework__Proto__VarType__Type data_type;
   int64_t capacity;
 };
@@ -336,7 +336,7 @@ struct _PaddleMobile__Framework__Proto__VarType__ChannelDesc {
   }
 
 struct _PaddleMobile__Framework__Proto__VarType__Tuple {
-  ProtobufCMessage base;
+  PaddleMobile__Framework__ProtobufCMessage base;
   size_t n_element_type;
   PaddleMobile__Framework__Proto__VarType__Type *element_type;
 };
@@ -348,7 +348,7 @@ struct _PaddleMobile__Framework__Proto__VarType__Tuple {
   }
 
 struct _PaddleMobile__Framework__Proto__VarType {
-  ProtobufCMessage base;
+  PaddleMobile__Framework__ProtobufCMessage base;
   PaddleMobile__Framework__Proto__VarType__Type type;
   PaddleMobile__Framework__Proto__VarType__TensorDesc *selected_rows;
   PaddleMobile__Framework__Proto__VarType__LoDTensorDesc *lod_tensor;
@@ -366,7 +366,7 @@ struct _PaddleMobile__Framework__Proto__VarType {
   }
 
 struct _PaddleMobile__Framework__Proto__VarDesc {
-  ProtobufCMessage base;
+  PaddleMobile__Framework__ProtobufCMessage base;
   char *name;
   PaddleMobile__Framework__Proto__VarType *type;
   protobuf_c_boolean has_persistable;
@@ -380,7 +380,7 @@ struct _PaddleMobile__Framework__Proto__VarDesc {
   }
 
 struct _PaddleMobile__Framework__Proto__BlockDesc {
-  ProtobufCMessage base;
+  PaddleMobile__Framework__ProtobufCMessage base;
   int32_t idx;
   int32_t parent_idx;
   size_t n_vars;
@@ -405,7 +405,7 @@ struct _PaddleMobile__Framework__Proto__BlockDesc {
  * way to distinguish them. Maybe ID or name?
  */
 struct _PaddleMobile__Framework__Proto__ProgramDesc {
-  ProtobufCMessage base;
+  PaddleMobile__Framework__ProtobufCMessage base;
   size_t n_blocks;
   PaddleMobile__Framework__Proto__BlockDesc **blocks;
   PaddleMobile__Framework__Proto__Version *version;
@@ -421,12 +421,12 @@ struct _PaddleMobile__Framework__Proto__ProgramDesc {
 void paddle_mobile__framework__proto__version__init(
     PaddleMobile__Framework__Proto__Version *message);
 PaddleMobile__Framework__Proto__Version *
-paddle_mobile__framework__proto__version__unpack(ProtobufCAllocator *allocator,
-                                                 size_t len,
-                                                 const uint8_t *data);
+paddle_mobile__framework__proto__version__unpack(
+    PaddleMobile__Framework__ProtobufCAllocator *allocator, size_t len,
+    const uint8_t *data);
 void paddle_mobile__framework__proto__version__free_unpacked(
     PaddleMobile__Framework__Proto__Version *message,
-    ProtobufCAllocator *allocator);
+    PaddleMobile__Framework__ProtobufCAllocator *allocator);
 /* PaddleMobile__Framework__Proto__OpDesc__Attr methods */
 void paddle_mobile__framework__proto__op_desc__attr__init(
     PaddleMobile__Framework__Proto__OpDesc__Attr *message);
@@ -437,12 +437,12 @@ void paddle_mobile__framework__proto__op_desc__var__init(
 void paddle_mobile__framework__proto__op_desc__init(
     PaddleMobile__Framework__Proto__OpDesc *message);
 PaddleMobile__Framework__Proto__OpDesc *
-paddle_mobile__framework__proto__op_desc__unpack(ProtobufCAllocator *allocator,
-                                                 size_t len,
-                                                 const uint8_t *data);
+paddle_mobile__framework__proto__op_desc__unpack(
+    PaddleMobile__Framework__ProtobufCAllocator *allocator, size_t len,
+    const uint8_t *data);
 void paddle_mobile__framework__proto__op_desc__free_unpacked(
     PaddleMobile__Framework__Proto__OpDesc *message,
-    ProtobufCAllocator *allocator);
+    PaddleMobile__Framework__ProtobufCAllocator *allocator);
 /* PaddleMobile__Framework__Proto__OpProto__Var methods */
 void paddle_mobile__framework__proto__op_proto__var__init(
     PaddleMobile__Framework__Proto__OpProto__Var *message);
@@ -453,12 +453,12 @@ void paddle_mobile__framework__proto__op_proto__attr__init(
 void paddle_mobile__framework__proto__op_proto__init(
     PaddleMobile__Framework__Proto__OpProto *message);
 PaddleMobile__Framework__Proto__OpProto *
-paddle_mobile__framework__proto__op_proto__unpack(ProtobufCAllocator *allocator,
-                                                  size_t len,
-                                                  const uint8_t *data);
+paddle_mobile__framework__proto__op_proto__unpack(
+    PaddleMobile__Framework__ProtobufCAllocator *allocator, size_t len,
+    const uint8_t *data);
 void paddle_mobile__framework__proto__op_proto__free_unpacked(
     PaddleMobile__Framework__Proto__OpProto *message,
-    ProtobufCAllocator *allocator);
+    PaddleMobile__Framework__ProtobufCAllocator *allocator);
 /* PaddleMobile__Framework__Proto__VarType__TensorDesc methods */
 void paddle_mobile__framework__proto__var_type__tensor_desc__init(
     PaddleMobile__Framework__Proto__VarType__TensorDesc *message);
@@ -481,40 +481,42 @@ void paddle_mobile__framework__proto__var_type__tuple__init(
 void paddle_mobile__framework__proto__var_type__init(
     PaddleMobile__Framework__Proto__VarType *message);
 PaddleMobile__Framework__Proto__VarType *
-paddle_mobile__framework__proto__var_type__unpack(ProtobufCAllocator *allocator,
-                                                  size_t len,
-                                                  const uint8_t *data);
+paddle_mobile__framework__proto__var_type__unpack(
+    PaddleMobile__Framework__ProtobufCAllocator *allocator, size_t len,
+    const uint8_t *data);
 void paddle_mobile__framework__proto__var_type__free_unpacked(
     PaddleMobile__Framework__Proto__VarType *message,
-    ProtobufCAllocator *allocator);
+    PaddleMobile__Framework__ProtobufCAllocator *allocator);
 /* PaddleMobile__Framework__Proto__VarDesc methods */
 void paddle_mobile__framework__proto__var_desc__init(
     PaddleMobile__Framework__Proto__VarDesc *message);
 PaddleMobile__Framework__Proto__VarDesc *
-paddle_mobile__framework__proto__var_desc__unpack(ProtobufCAllocator *allocator,
-                                                  size_t len,
-                                                  const uint8_t *data);
+paddle_mobile__framework__proto__var_desc__unpack(
+    PaddleMobile__Framework__ProtobufCAllocator *allocator, size_t len,
+    const uint8_t *data);
 void paddle_mobile__framework__proto__var_desc__free_unpacked(
     PaddleMobile__Framework__Proto__VarDesc *message,
-    ProtobufCAllocator *allocator);
+    PaddleMobile__Framework__ProtobufCAllocator *allocator);
 /* PaddleMobile__Framework__Proto__BlockDesc methods */
 void paddle_mobile__framework__proto__block_desc__init(
     PaddleMobile__Framework__Proto__BlockDesc *message);
 PaddleMobile__Framework__Proto__BlockDesc *
 paddle_mobile__framework__proto__block_desc__unpack(
-    ProtobufCAllocator *allocator, size_t len, const uint8_t *data);
+    PaddleMobile__Framework__ProtobufCAllocator *allocator, size_t len,
+    const uint8_t *data);
 void paddle_mobile__framework__proto__block_desc__free_unpacked(
     PaddleMobile__Framework__Proto__BlockDesc *message,
-    ProtobufCAllocator *allocator);
+    PaddleMobile__Framework__ProtobufCAllocator *allocator);
 /* PaddleMobile__Framework__Proto__ProgramDesc methods */
 void paddle_mobile__framework__proto__program_desc__init(
     PaddleMobile__Framework__Proto__ProgramDesc *message);
 PaddleMobile__Framework__Proto__ProgramDesc *
 paddle_mobile__framework__proto__program_desc__unpack(
-    ProtobufCAllocator *allocator, size_t len, const uint8_t *data);
+    PaddleMobile__Framework__ProtobufCAllocator *allocator, size_t len,
+    const uint8_t *data);
 void paddle_mobile__framework__proto__program_desc__free_unpacked(
     PaddleMobile__Framework__Proto__ProgramDesc *message,
-    ProtobufCAllocator *allocator);
+    PaddleMobile__Framework__ProtobufCAllocator *allocator);
 /* --- per-message closures --- */
 
 typedef void (*PaddleMobile__Framework__Proto__Version_Closure)(
@@ -569,43 +571,43 @@ typedef void (*PaddleMobile__Framework__Proto__ProgramDesc_Closure)(
 
 /* --- descriptors --- */
 
-extern const ProtobufCEnumDescriptor
+extern const PaddleMobile__Framework__ProtobufCEnumDescriptor
     paddle_mobile__framework__proto__attr_type__descriptor;
-extern const ProtobufCMessageDescriptor
+extern const PaddleMobile__Framework__ProtobufCMessageDescriptor
     paddle_mobile__framework__proto__version__descriptor;
-extern const ProtobufCMessageDescriptor
+extern const PaddleMobile__Framework__ProtobufCMessageDescriptor
     paddle_mobile__framework__proto__op_desc__descriptor;
-extern const ProtobufCMessageDescriptor
+extern const PaddleMobile__Framework__ProtobufCMessageDescriptor
     paddle_mobile__framework__proto__op_desc__attr__descriptor;
-extern const ProtobufCMessageDescriptor
+extern const PaddleMobile__Framework__ProtobufCMessageDescriptor
     paddle_mobile__framework__proto__op_desc__var__descriptor;
-extern const ProtobufCMessageDescriptor
+extern const PaddleMobile__Framework__ProtobufCMessageDescriptor
     paddle_mobile__framework__proto__op_proto__descriptor;
-extern const ProtobufCMessageDescriptor
+extern const PaddleMobile__Framework__ProtobufCMessageDescriptor
     paddle_mobile__framework__proto__op_proto__var__descriptor;
-extern const ProtobufCMessageDescriptor
+extern const PaddleMobile__Framework__ProtobufCMessageDescriptor
     paddle_mobile__framework__proto__op_proto__attr__descriptor;
-extern const ProtobufCMessageDescriptor
+extern const PaddleMobile__Framework__ProtobufCMessageDescriptor
     paddle_mobile__framework__proto__var_type__descriptor;
-extern const ProtobufCMessageDescriptor
+extern const PaddleMobile__Framework__ProtobufCMessageDescriptor
     paddle_mobile__framework__proto__var_type__tensor_desc__descriptor;
-extern const ProtobufCMessageDescriptor
+extern const PaddleMobile__Framework__ProtobufCMessageDescriptor
     paddle_mobile__framework__proto__var_type__lo_dtensor_desc__descriptor;
-extern const ProtobufCMessageDescriptor
+extern const PaddleMobile__Framework__ProtobufCMessageDescriptor
     paddle_mobile__framework__proto__var_type__lo_dtensor_array_desc__descriptor;
-extern const ProtobufCMessageDescriptor
+extern const PaddleMobile__Framework__ProtobufCMessageDescriptor
     paddle_mobile__framework__proto__var_type__reader_desc__descriptor;
-extern const ProtobufCMessageDescriptor
+extern const PaddleMobile__Framework__ProtobufCMessageDescriptor
     paddle_mobile__framework__proto__var_type__channel_desc__descriptor;
-extern const ProtobufCMessageDescriptor
+extern const PaddleMobile__Framework__ProtobufCMessageDescriptor
     paddle_mobile__framework__proto__var_type__tuple__descriptor;
-extern const ProtobufCEnumDescriptor
+extern const PaddleMobile__Framework__ProtobufCEnumDescriptor
     paddle_mobile__framework__proto__var_type__type__descriptor;
-extern const ProtobufCMessageDescriptor
+extern const PaddleMobile__Framework__ProtobufCMessageDescriptor
     paddle_mobile__framework__proto__var_desc__descriptor;
-extern const ProtobufCMessageDescriptor
+extern const PaddleMobile__Framework__ProtobufCMessageDescriptor
     paddle_mobile__framework__proto__block_desc__descriptor;
-extern const ProtobufCMessageDescriptor
+extern const PaddleMobile__Framework__ProtobufCMessageDescriptor
     paddle_mobile__framework__proto__program_desc__descriptor;
 
 PROTOBUF_C__END_DECLS

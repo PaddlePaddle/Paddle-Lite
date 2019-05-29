@@ -43,6 +43,7 @@ static const char *g_inceptionv3 =
     "../models/InceptionV3_Spatial_Attention_Model";
 static const char *g_nlp = "../models/nlp";
 static const char *g_super = "../models/superresoltion";
+static const char *g_superv2 = "../models/superv2";
 static const char *g_resnet_50 = "../models/resnet_50";
 static const char *g_resnet = "../models/resnet";
 static const char *g_googlenet_combine = "../models/googlenet_combine";

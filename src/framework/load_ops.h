@@ -73,6 +73,12 @@ LOAD_OP2(batch_norm, CPU, GPU_CL);
 #ifdef BILINEAR_INTERP_OP
 LOAD_OP1(bilinear_interp, CPU);
 #endif
+#ifdef NEAREST_INTERP_OP
+LOAD_OP1(nearest_interp, CPU);
+#endif
+#ifdef LEAKY_RELU_OP
+LOAD_OP1(leaky_relu, CPU);
+#endif
 #ifdef BOXCODER_OP
 LOAD_OP2(box_coder, CPU, GPU_CL);
 #endif
@@ -142,7 +148,7 @@ LOAD_OP1(depthwise_conv2d, CPU);
 LOAD_OP1(conv2d_transpose, CPU);
 #endif
 #ifdef SCALE_OP
-LOAD_OP1(scale, CPU);
+LOAD_OP2(scale, CPU, GPU_CL);
 #endif
 #ifdef ELEMENTWISEADD_OP
 LOAD_OP2(elementwise_add, CPU, GPU_CL);
@@ -161,6 +167,10 @@ LOAD_FUSION_MATCHER(fusion_conv_bn_add_relu);
 #ifdef FUSION_CONVBNRELU_OP
 LOAD_OP3(fusion_conv_bn_relu, CPU, GPU_CL, FPGA);
 LOAD_FUSION_MATCHER(fusion_conv_bn_relu);
+#endif
+#ifdef FUSION_CONVRELU_OP
+LOAD_OP2(fusion_conv_relu, CPU, GPU_CL);
+LOAD_FUSION_MATCHER(fusion_conv_relu);
 #endif
 #ifdef GRU_OP
 LOAD_OP1(gru, CPU);

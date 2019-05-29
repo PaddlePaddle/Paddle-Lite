@@ -23,6 +23,12 @@ class ReshapeParam<P: PrecisionProtocol>: OpParam {
             output = try ReshapeParam.outputOut(outputs: opDesc.outputs, from: inScope)
             shape = try ReshapeParam.getAttr(key: "shape", attrs: opDesc.attrs)
             
+            if shape.count > 4 {
+                if shape[0] == -1 {
+                    shape.removeFirst()
+                }
+            }
+            
             var s: [Int] = shape.map { Int($0) }
             
             var di = -1
@@ -49,7 +55,7 @@ class ReshapeParam<P: PrecisionProtocol>: OpParam {
         }
     }
     let input: Texture
-    let shape: [Int32]
+    var shape: [Int32]
     var output: Texture
 }
 

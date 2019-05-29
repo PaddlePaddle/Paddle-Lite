@@ -72,6 +72,7 @@ public class Texture: Tensorial {
     public var dim: Dim
     public var tensorDim: Dim
     public var useMPS = false
+    public var originDimsCount: Int?
     
     /// tensor dim pad to four
     public var padToFourDim: Dim

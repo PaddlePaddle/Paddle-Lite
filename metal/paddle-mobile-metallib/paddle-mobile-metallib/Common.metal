@@ -116,5 +116,10 @@ struct MetalConvParam {
     ushort strideY;
     ushort dilationX;
     ushort dilationY;
+    ushort groups;
+    ushort iC;
+    ushort fC;
+    ushort oC;
+    ushort hasAddOp;
+    ushort hasReluOp;
 };
-

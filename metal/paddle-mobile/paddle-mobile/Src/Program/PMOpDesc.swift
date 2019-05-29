@@ -33,6 +33,10 @@ class PMOpDesc {
             return map
         }
         
+        guard let _ = opInfos[protoOpDesc.type] else {
+            fatalError()
+        }
+        
         inputs = creator(protoOpDesc.inputsArray as! [OpDesc_Var]) {
             opInfos[protoOpDesc.type]?.inputs.contains($0) ?? false
         }

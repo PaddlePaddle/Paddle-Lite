@@ -17,6 +17,7 @@ limitations under the License. */
 #include <map>
 #include <memory>
 #include <string>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 #include "common/types.h"
@@ -25,6 +26,7 @@ limitations under the License. */
 #include "framework/operator.h"
 #include "framework/program/program.h"
 #include "framework/tensor.h"
+#include "framework/type_trait.h"
 
 namespace paddle_mobile {
 namespace framework {
@@ -36,7 +38,8 @@ class Executor {
            paddle_mobile::PaddleMobileConfigInternal config, int batch_size = 1,
            const bool use_optimize = true, const bool lod_mode = false);
 
-  void SetThreadNum(int threads);
+  void SetThreadNum(int thread_num,
+                    PowerMode power_mode = PERFORMANCE_PRIORITY);
 
   PMStatus Predict(const std::vector<std::pair<std::string, Tensor>> &inputs);
   PMStatus Predict(
@@ -98,11 +101,15 @@ class Executor {
   DDim input_dim_last_;
 
 #ifdef PADDLE_MOBILE_PROFILE
+  typedef typename DtypeTensorTrait<Device>::gtype ProfileTensorType;
+
   struct ProfInfo {
     int tid = 0;
     uint64_t runBegin = 0UL;
     uint64_t runEnd = 0UL;
   };
+
+  void PrintProfile(const vector<Executor<Device, T>::ProfInfo> &profile) const;
 #endif
 };
 
