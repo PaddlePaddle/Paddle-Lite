@@ -18,7 +18,7 @@ __kernel void scale(__read_only image2d_t input,
                     __write_only image2d_t output,
                     __private float scale,
                     __private float bias,
-                    __private float out_width){
+                    __private int out_width){
 
   const int out_c = get_global_id(0);
   const int out_w = get_global_id(1);
