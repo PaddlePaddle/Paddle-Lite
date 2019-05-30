@@ -35,22 +35,11 @@ int main(int argc, char **argv) {
   std::vector<std::string> output_fetch_nodes;
   int PRINT_NODE_ELEM_NUM = 10;
 
-  bool is_det_model = model_dir.find("detect") != string::npos;
-  if (is_det_model) {
-    input_shape.emplace_back(1);
-    input_shape.emplace_back(3);
-    input_shape.emplace_back(512);
-    input_shape.emplace_back(512);
-    output_fetch_nodes.emplace_back("sigmoid_0.tmp_0");
-    output_fetch_nodes.emplace_back("tmp_5");
-  } else {
-    input_shape.emplace_back(1);
-    input_shape.emplace_back(3);
-    input_shape.emplace_back(48);
-    input_shape.emplace_back(512);
-    output_fetch_nodes.emplace_back("top_k_1.tmp_0");
-    output_fetch_nodes.emplace_back("cast_330.tmp_0");
-  }
+  input_shape.emplace_back(1);
+  input_shape.emplace_back(3);
+  input_shape.emplace_back(192);
+  input_shape.emplace_back(192);
+  output_fetch_nodes.emplace_back("detection_output_0.tmp_0");
   std::shared_ptr<framework::LoDTensor> outputs[output_fetch_nodes.size()];
 
   // init paddle instance
