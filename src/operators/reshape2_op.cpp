@@ -24,8 +24,52 @@ template <typename Dtype, typename T>
 void Reshape2Op<Dtype, T>::InferShape() const {
   auto &shape = this->param_.Shape();
   auto input_x_dims = this->param_.InputX()->dims();
+#ifdef PADDLE_MOBILE_CL
+  auto input_dim_size = input_x_dims.size();
+  bool shouldResize = true;
+  if (input_dim_size > 4) {
+    for (int i = 0; i < input_dim_size - 4; ++i) {
+      if (input_x_dims[i] != 0 && input_x_dims[i] != 1) {
+        shouldResize = false;
+        break;
+      }
+    }
+    if (shouldResize) {
+      std::vector<int64_t> temp_intput_dims;
+      temp_intput_dims.reserve(static_cast<size_t>(4));
+      for (int i = input_dim_size - 4; i < input_dim_size; ++i) {
+        temp_intput_dims.push_back(input_x_dims[i]);
+      }
+      framework::DDim temp_ddim = framework::make_ddim(temp_intput_dims);
+      this->param_.InputX()->Resize(temp_ddim);
+      input_x_dims = this->param_.InputX()->dims();
+    }
+  }
+#endif
+
   auto out_dims = ValidateShape(shape, input_x_dims);
   this->param_.Out()->Resize(out_dims);
+#ifdef PADDLE_MOBILE_CL
+  input_x_dims = this->param_.InputX()->dims();
+  shouldResize = true;
+  if (out_dims.size() > 4) {
+    for (int i = 0; i < out_dims.size() - 4; ++i) {
+      if (out_dims[i] != 0 && out_dims[i] != 1) {
+        shouldResize = false;
+        break;
+      }
+    }
+    if (shouldResize) {
+      std::vector<int64_t> temp_output_dims;
+      temp_output_dims.reserve(static_cast<size_t>(4));
+      for (int i = out_dims.size() - 4; i < out_dims.size(); ++i) {
+        temp_output_dims.push_back(out_dims[i]);
+      }
+      framework::DDim temp_ddim = framework::make_ddim(temp_output_dims);
+      this->param_.Out()->Resize(temp_ddim);
+    }
+  }
+#endif
   std::vector<int64_t> xshape_dims(input_x_dims.size() + 1, 0);
   for (int i = 0; i < input_x_dims.size(); ++i) {
     xshape_dims[i + 1] = input_x_dims[i];
@@ -39,6 +83,9 @@ void Reshape2Op<Dtype, T>::InferShape() const {
 namespace ops = paddle_mobile::operators;
 #ifdef PADDLE_MOBILE_CPU
 REGISTER_OPERATOR_CPU(reshape2, ops::Reshape2Op);
+#endif
+#ifdef PADDLE_MOBILE_CL
+REGISTER_OPERATOR_CL(reshape2, ops::Reshape2Op);
 #endif
 #ifdef PADDLE_MOBILE_FPGA
 REGISTER_OPERATOR_FPGA(reshape2, ops::Reshape2Op);
