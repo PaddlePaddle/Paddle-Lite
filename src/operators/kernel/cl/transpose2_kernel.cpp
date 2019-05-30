@@ -20,7 +20,6 @@ namespace operators {
 
 template <>
 bool Transpose2Kernel<GPU_CL, float>::Init(Transpose2Param<GPU_CL> *param) {
-  DLOG << "zp7~~~~~Transpose2Kernel Axis = " << param->Axis();
   this->cl_helper_.AddKernel("fetch", "fetch_kernel.cl");
   this->cl_helper_.AddKernel("feed", "feed_kernel.cl");
   return true;

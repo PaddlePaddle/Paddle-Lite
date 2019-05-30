@@ -69,12 +69,12 @@ void Reshape2Op<Dtype, T>::InferShape() const {
       this->param_.Out()->Resize(temp_ddim);
     }
   }
+#endif
   std::vector<int64_t> xshape_dims(input_x_dims.size() + 1, 0);
   for (int i = 0; i < input_x_dims.size(); ++i) {
     xshape_dims[i + 1] = input_x_dims[i];
   }
   this->param_.OutputXShape()->Resize(framework::make_ddim(xshape_dims));
-#endif
 }
 
 }  // namespace operators
