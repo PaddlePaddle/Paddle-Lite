@@ -971,6 +971,23 @@ void Executor<GPU_CL, float>::InitCombineMemory() {
             program_.scope->GetCLScpoe()->CommandQueue();
         const TensorDesc &desc = var_desc->Tensor_desc();
         DDim ddim = cl_image->dims();
+        bool shouldResize = true;
+        if (ddim.size() > 4) {
+          for (int i = 0; i < ddim.size() - 4; ++i) {
+            if (ddim[i] != 0) {
+              shouldResize = false;
+              break;
+            }
+          }
+          if (shouldResize) {
+            std::vector<int64_t> temp_intput_dims;
+            temp_intput_dims.reserve(static_cast<size_t>(4));
+            for (int i = ddim.size() - 4; i < ddim.size(); ++i) {
+              temp_intput_dims.push_back(ddim[i]);
+            }
+            ddim = framework::make_ddim(temp_intput_dims);
+          }
+        }
         //  DDim ddim = make_ddim(desc.Dims());
         cl_image->InitEmptyImage(context, command_queue, ddim);
       }

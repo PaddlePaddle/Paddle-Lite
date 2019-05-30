@@ -103,7 +103,7 @@ LOAD_OP2(fusion_elementwise_add_relu, CPU, FPGA);
 LOAD_FUSION_MATCHER(fusion_elementwise_add_relu);
 #endif
 #ifdef SPLIT_OP
-LOAD_OP1(split, CPU);
+LOAD_OP2(split, CPU, GPU_CL);
 #endif
 #ifdef RESIZE_OP
 LOAD_OP1(resize, CPU);
@@ -116,13 +116,13 @@ LOAD_FUSION_MATCHER(fusion_conv_add_bn_relu);
 LOAD_OP2(reshape, CPU, GPU_CL);
 #endif
 #ifdef RESHAPE2_OP
-LOAD_OP1(reshape2, CPU);
+LOAD_OP2(reshape2, CPU, GPU_CL);
 #endif
 #ifdef TRANSPOSE_OP
 LOAD_OP2(transpose, CPU, GPU_CL);
 #endif
 #ifdef TRANSPOSE2_OP
-LOAD_OP1(transpose2, CPU);
+LOAD_OP2(transpose2, CPU, GPU_CL);
 #endif
 #ifdef PRIORBOX_OP
 LOAD_OP2(prior_box, CPU, GPU_CL);
