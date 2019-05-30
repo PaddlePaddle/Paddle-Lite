@@ -13,6 +13,7 @@
  limitations under the License. */
 
 import Foundation
+import MetalPerformanceShaders
 
 struct ScaleMetalParam {
     let scale: Float32
@@ -21,11 +22,24 @@ struct ScaleMetalParam {
 
 class ScaleOpKernel<P: PrecisionProtocol>: Kernel, Computable{
     var metalParam: ScaleMetalParam
+    var mpsScaleOp: AnyObject?
+    var inputImage: AnyObject?
+    var outputImage: AnyObject?
+    
     required init(device: MTLDevice, param: ScaleParam<P>, initContext: InitContext) throws {
         do {
             try param.output.initTexture(device: device, inTranspose: param.input.transpose, computePrecision: GlobalConfig.shared.computePrecision)
         } catch let error {
             throw error
+        }
+        
+        var shouldUseMPS = false
+        if initContext.useMPS && param.biasAfterScale {
+            let inputChannel = param.input.tensorDim[1]
+            let outputChannel = param.output.tensorDim[1]
+            if (inputChannel == 1 || inputChannel > 4) && (outputChannel == 1 || outputChannel > 4) {
+                shouldUseMPS = true
+            }
         }
         
         metalParam = ScaleMetalParam(scale: param.scale, abias: param.bias)
@@ -45,9 +59,27 @@ class ScaleOpKernel<P: PrecisionProtocol>: Kernel, Computable{
         } else {
             fatalError()
         }
+        
+        if #available(iOS 10.0, *), shouldUseMPS {
+            mpsScaleOp = MPSCNNNeuronLinear(device: device, a: param.scale, b: param.bias)
+            param.input.useMPS = true
+            param.output.useMPS = true
+        }
     }
     
     func compute(commandBuffer: MTLCommandBuffer, param: ScaleParam<P>) throws {
+        if #available(iOS 10.0, *), let mpsScaleOp = mpsScaleOp as? MPSCNNNeuronLinear {
+            if inputImage == nil {
+                inputImage = MPSImage.init(texture: param.input.metalTexture, featureChannels: param.input.tensorDim[1])
+            }
+            if outputImage == nil {
+                outputImage = MPSImage.init(texture: param.output.metalTexture, featureChannels: param.output.tensorDim[1])
+            }
+            if let inputImage = inputImage as? MPSImage, let outputImage = outputImage as? MPSImage {
+                mpsScaleOp.encode(commandBuffer: commandBuffer, sourceImage: inputImage, destinationImage: outputImage)
+            }
+            return
+        }
         guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
             throw PaddleMobileError.predictError(message: " encoder is nil")
         }

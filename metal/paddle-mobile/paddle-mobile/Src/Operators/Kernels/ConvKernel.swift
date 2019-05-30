@@ -28,8 +28,8 @@ class ConvKernel<P: PrecisionProtocol>: Kernel, Computable {
         }
         
         var shouldUseMPS = false
-        let functionName = type(of: self).kernelFunctionName(param: param, useAggressiveOptimization: initContext.useAggresiveOptimization)
-        if #available(iOS 11.0, *), (initContext.useMPS || initContext.useAggresiveOptimization) {
+        let functionName = type(of: self).kernelFunctionName(param: param, useAggressiveOptimization: initContext.useAggressiveOptimization)
+        if #available(iOS 11.0, *), (initContext.useMPS || initContext.useAggressiveOptimization) {
             if param.input.tensorDim[1] > 4 && param.output.tensorDim[1] > 4 {
                 shouldUseMPS = true
             }

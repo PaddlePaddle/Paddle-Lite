@@ -108,6 +108,8 @@ class ConvDataSource<P: PrecisionProtocol>: NSObject, MPSCNNConvolutionDataSourc
 class ConvAddReluKernel<P: PrecisionProtocol>: Kernel, Computable {
     var metalParam: MetalConvParam!
     var mpsConvOp: Any?
+    var mpsAddOp: Any?
+    var mpsReluOp: Any?
     var blankTexture: Texture?
     
     required init(device: MTLDevice, param: ConvAddReluParam<P>, initContext: InitContext) throws {
@@ -118,9 +120,11 @@ class ConvAddReluKernel<P: PrecisionProtocol>: Kernel, Computable {
         }
         
         var shouldUseMPS = false
-        let functionName = type(of: self).kernelFunctionName(param: param, useAggressiveOptimization: initContext.useAggresiveOptimization)
-        if #available(iOS 11.0, *), (initContext.useMPS || initContext.useAggresiveOptimization) {
-            if param.input.tensorDim[1] > 4 && param.output.tensorDim[1] > 4 {
+        let functionName = type(of: self).kernelFunctionName(param: param, useAggressiveOptimization: initContext.useAggressiveOptimization)
+        if #available(iOS 11.0, *), (initContext.useMPS || initContext.useAggressiveOptimization) {
+            let inputChannel = param.input.tensorDim[1]
+            let outputChannel = param.output.tensorDim[1]
+            if (inputChannel == 1 || inputChannel > 4) && (outputChannel == 1 || outputChannel > 4) {
                 shouldUseMPS = true
             }
         }
@@ -143,12 +147,30 @@ class ConvAddReluKernel<P: PrecisionProtocol>: Kernel, Computable {
         }
     }
     
+    var inputImage: AnyObject?
+    var outputImage: AnyObject?
+    
     func compute(commandBuffer: MTLCommandBuffer, param: ConvAddReluParam<P>) throws {
         if #available(iOS 10.0, *) {
             if let conv = mpsConvOp as? MPSCNNConvolution {
-                let inputImage = MPSImage.init(texture: param.input.metalTexture, featureChannels: param.input.tensorDim[1])
-                let outputImage = MPSImage.init(texture: param.output.metalTexture, featureChannels: param.output.tensorDim[1])
-                conv.encode(commandBuffer: commandBuffer, sourceImage: inputImage, destinationImage: outputImage)
+                if inputImage == nil {
+                    inputImage = MPSImage.init(texture: param.input.metalTexture, featureChannels: param.input.tensorDim[1])
+                }
+                if outputImage == nil {
+                    outputImage = MPSImage.init(texture: param.output.metalTexture, featureChannels: param.output.tensorDim[1])
+                }
+                if let inputImage = inputImage as? MPSImage, let outputImage = outputImage as? MPSImage {
+                    conv.encode(commandBuffer: commandBuffer, sourceImage: inputImage, destinationImage: outputImage)
+                    if #available(iOS 11.3, *) {
+                        if let add = mpsAddOp as? MPSCNNAdd, let y = param.y {
+                            let biasImage = MPSImage.init(texture: y.metalTexture, featureChannels: y.tensorDim[1])
+                            add.encode(commandBuffer: commandBuffer, primaryImage: outputImage, secondaryImage: biasImage, destinationImage: outputImage)
+                        }
+                        if let relu = mpsReluOp as? MPSCNNNeuronReLU {
+                            relu.encode(commandBuffer: commandBuffer, sourceImage: outputImage, destinationImage: outputImage)
+                        }
+                    }
+                }
                 return
             }
         }
@@ -172,17 +194,26 @@ class ConvAddReluKernel<P: PrecisionProtocol>: Kernel, Computable {
         if #available(iOS 11.0, *) {
             param.input.useMPS = true
             param.output.useMPS = true
+            if #available(iOS 11.3, *) {
+                if param.y != nil {
+                    mpsAddOp = MPSCNNAdd(device: device)
+                    if hasReluOp() {
+                        mpsReluOp = MPSCNNNeuronReLU(device: device, a: 0.0)
+                    }
+                }
+            }
+            let neuronFilter: MPSCNNNeuron? = param.y != nil ? nil : (neuronFilterForMPSLayer(device: device) as? MPSCNNNeuron)
             let desc: MPSCNNConvolutionDescriptor = isDepthWise ?
                 MPSCNNDepthWiseConvolutionDescriptor(kernelWidth: param.filter.tensorDim[3],
                                                      kernelHeight: param.filter.tensorDim[2],
                                                      inputFeatureChannels: param.input.tensorDim[1],
                                                      outputFeatureChannels: param.output.tensorDim[1],
-                                                     neuronFilter: neuronFilterForMPSLayer(device: device) as? MPSCNNNeuron) :
+                                                     neuronFilter: neuronFilter) :
                 MPSCNNConvolutionDescriptor(kernelWidth: param.filter.tensorDim[3],
                                             kernelHeight: param.filter.tensorDim[2],
                                             inputFeatureChannels: param.input.tensorDim[1],
                                             outputFeatureChannels: param.output.tensorDim[1],
-                                            neuronFilter: neuronFilterForMPSLayer(device: device) as? MPSCNNNeuron)
+                                            neuronFilter: neuronFilter)
             desc.strideInPixelsX = Int(param.stride[0])
             desc.strideInPixelsY = Int(param.stride[1])
             let _ = param.filter.convert(converter: MPSPointerConverter<P>.init())
