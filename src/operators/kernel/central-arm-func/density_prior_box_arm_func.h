@@ -15,6 +15,7 @@ limitations under the License. */
 #ifdef DENSITY_PRIORBOX_OP
 #pragma once
 
+#include <operators/kernel/prior_box_kernel.h>
 #include <algorithm>
 #include <cmath>
 #include <vector>
@@ -95,7 +96,6 @@ void DensityPriorBoxCompute(const DensityPriorBoxParam<CPU> &param) {
       /// map origin image
       float center_x = (w + offset) * step_width;
       float center_y = (h + offset) * step_height;
-      float box_width, box_height;
       int idx = 0;
       for (size_t s = 0; s < fixed_sizes.size(); ++s) {
         auto fixed_size = fixed_sizes[s];
