@@ -17,7 +17,6 @@ limitations under the License. */
 #include <arm_neon.h>
 #include <vector>
 
-#include "../llapi/image.h"
 #include "../pe.hpp"
 #include "../pe_params.hpp"
 #include "concat_pe.hpp"

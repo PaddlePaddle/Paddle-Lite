@@ -165,6 +165,19 @@ struct NormalizeArgs {
   uint32_t* output_scale_address;
 };
 
+struct ResizeArgs {
+  void* input_image_address;
+  void* output_image_address;
+  uint32_t input_width;
+  uint32_t input_height;
+  uint32_t image_channel;
+  uint32_t output_width;
+  uint32_t output_height;
+  uint32_t height_ratio;
+  uint32_t width_ratio;
+  uint32_t* output_scale_address;
+};
+
 struct PowerParameterArgs {
   uint16_t shift;
   uint16_t scale;
@@ -214,6 +227,7 @@ struct FpgaResetArgs {};
 #define IOCTL_CONFIG_BYPASS _IOW(IOCTL_FPGA_MAGIC, 24, struct BypassArgs)
 #define IOCTL_CONFIG_SCALE _IOW(IOCTL_FPGA_MAGIC, 25, struct ScaleArgs)
 #define IOCTL_CONFIG_NORMALIZE _IOW(IOCTL_FPGA_MAGIC, 26, struct NormalizeArgs)
+#define IOCTL_CONFIG_RESIZE _IOW(IOCTL_FPGA_MAGIC, 30, struct ResizeArgs)
 
 #define IOCTL_CONFIG_DWCONV _IOW(IOCTL_FPGA_MAGIC, 31, struct DWconvArgs)
 
@@ -311,6 +325,8 @@ int compute_fpga_pool(const struct PoolingArgs& args);
 int compute_fpga_ewadd(const struct EWAddArgs& args);
 int compute_fpga_scale(const struct ScaleArgs& args);
 int compute_fpga_concat(const struct ConcatArgs& args);
+int compute_fpga_resize(const struct ResizeArgs& args);
+
 int config_power(const struct PowerArgs& args);
 int compute_fpga_dwconv(const struct DWconvArgs& args);
 int config_norm_param(const struct NormalizeParameterArgs& args);

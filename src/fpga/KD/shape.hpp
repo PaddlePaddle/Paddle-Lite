@@ -77,6 +77,8 @@ class Shape {
 
   int numel() { return layout_->elementCount(dims_); }
 
+  int alignedElementCount() { return layout_->alignedElementCount(dims_); }
+
   void setLayoutType(LayoutType layout) {
     this->layoutType_ = layout;
     switch (layout) {

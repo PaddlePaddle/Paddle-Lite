@@ -218,6 +218,12 @@ struct ScaleParam : PEParam {
   Tensor* alignedBias_ = new Tensor();
 };
 
+struct ResizeParam : PEParam {
+ public:
+  Tensor* input = nullptr;
+  Tensor* output = nullptr;
+};
+
 struct CropParam : PEParam {
  public:
   Tensor* input = nullptr;

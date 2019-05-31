@@ -138,6 +138,7 @@ extern const char *G_OP_TYPE_GRU_UNIT;
 extern const char *G_OP_TYPE_LRN;
 extern const char *G_OP_TYPE_MUL;
 extern const char *G_OP_TYPE_MULTICLASS_NMS;
+extern const char *G_OP_TYPE_NEAREST_INTERP;
 extern const char *G_OP_TYPE_NORM;
 extern const char *G_OP_TYPE_POOL2D;
 extern const char *G_OP_TYPE_PRIOR_BOX;

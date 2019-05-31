@@ -14,24 +14,18 @@ limitations under the License. */
 
 #ifdef SLICE_OP
 
-#include "operators/slice_op.h"
-#include <vector>
+#include "operators/kernel/slice_kernel.h"
+
 namespace paddle_mobile {
 namespace operators {
 
-template <typename Dtype, typename T>
-void SliceOp<Dtype, T>::InferShape() const {
-  /// todo: add InputShape() detection.
+template <>
+bool SliceKernel<FPGA, float>::Init(SliceParam<FPGA>* param) {
+  param->output_->mutable_data<half>();
+  return true;
 }
-
+template <>
+void SliceKernel<FPGA, float>::Compute(const SliceParam<FPGA>& param) {}
 }  // namespace operators
 }  // namespace paddle_mobile
-
-namespace ops = paddle_mobile::operators;
-#ifdef PADDLE_MOBILE_CPU
-REGISTER_OPERATOR_CPU(slice, ops::SliceOp);
-#endif
-#if defined(PADDLE_MOBILE_FPGA) || defined(PADDLE_MOBILE_FPGA_KD)
-REGISTER_OPERATOR_FPGA(slice, ops::SliceOp);
-#endif
 #endif

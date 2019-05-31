@@ -97,6 +97,8 @@ REGISTER_OPERATOR_CL(prior_box, ops::PriorBoxOp);
 #endif  // PRIORBOX_OP
 #endif  // PADDLE_MOBILE_CL
 
+#ifdef PRIORBOX_OP
 #if defined(PADDLE_MOBILE_FPGA) || defined(PADDLE_MOBILE_FPGA_KD)
 REGISTER_OPERATOR_FPGA(prior_box, ops::PriorBoxOp);
+#endif
 #endif

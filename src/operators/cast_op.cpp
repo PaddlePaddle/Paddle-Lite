@@ -33,4 +33,8 @@ namespace ops = paddle_mobile::operators;
 REGISTER_OPERATOR_CPU(cast, ops::CastOp);
 #endif
 
+#if defined(PADDLE_MOBILE_FPGA) || defined(PADDLE_MOBILE_FPGA_KD)
+REGISTER_OPERATOR_FPGA(cast, ops::CastOp);
+#endif
+
 #endif  // CAST_OP

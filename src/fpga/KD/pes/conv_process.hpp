@@ -24,7 +24,6 @@ limitations under the License. */
 #include "../float16.hpp"
 #include "../llapi/bias_scale.h"
 #include "../llapi/filter.h"
-#include "../llapi/image.h"
 #include "../tensor.hpp"
 
 namespace paddle_mobile {

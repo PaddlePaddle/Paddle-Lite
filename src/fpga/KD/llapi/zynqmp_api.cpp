@@ -47,11 +47,11 @@ static inline int do_ioctl(uint64_t req, const void *arg) {
 }
 
 int open_device() {
-  std::cout << "open_device" << std::endl;
+  // std::cout << "open_device" << std::endl;
   if (fd == -1) {
     fd = open(device_path, O_RDWR);
   }
-  std::cout << "open_device fd:" << fd << std::endl;
+  // std::cout << "open_device fd:" << fd << std::endl;
   return fd;
 }
 
@@ -376,6 +376,7 @@ int compute_norm(const struct NormalizeArgs &args) {
 int compute_fpga_resize(const struct ResizeArgs &args) {
   return do_ioctl(IOCTL_CONFIG_RESIZE, &args);
 }
+
 // uint64_t vaddr_to_paddr(void *address) {
 //     return 0;
 // }

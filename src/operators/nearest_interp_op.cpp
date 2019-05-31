@@ -12,26 +12,31 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef SLICE_OP
+#ifdef NEAREST_INTERP_OP
 
-#include "operators/slice_op.h"
+#include "operators/nearest_interp_op.h"
 #include <vector>
 namespace paddle_mobile {
 namespace operators {
 
 template <typename Dtype, typename T>
-void SliceOp<Dtype, T>::InferShape() const {
-  /// todo: add InputShape() detection.
+void NearestInterpOp<Dtype, T>::InferShape() const {
+  auto x_dims = this->param_.InputX()->dims();
+  framework::DDim out_dims(x_dims);
+  out_dims[2] = this->param_.OutHeight();
+  out_dims[3] = this->param_.OutWidth();
+  this->param_.Out()->Resize(out_dims);
+  std::cout << "out_h:" << out_dims[2] << " w:" << out_dims[3] << std::endl;
+  // exit(-1);
 }
 
 }  // namespace operators
 }  // namespace paddle_mobile
 
 namespace ops = paddle_mobile::operators;
-#ifdef PADDLE_MOBILE_CPU
-REGISTER_OPERATOR_CPU(slice, ops::SliceOp);
-#endif
+
 #if defined(PADDLE_MOBILE_FPGA) || defined(PADDLE_MOBILE_FPGA_KD)
-REGISTER_OPERATOR_FPGA(slice, ops::SliceOp);
+REGISTER_OPERATOR_FPGA(nearest_interp, ops::NearestInterpOp);
 #endif
+
 #endif
