@@ -12,23 +12,23 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef ELEMENTWISEMUL_OP
+#ifdef DROPOUT_OP
 
-#include "operators/kernel/elementwise_mul_kernel.h"
+#include "operators/kernel/dropout_kernel.h"
 #include "fpga/KD/pes/scale_pe.hpp"
-// #include "operators/kernel/central-arm-func/elementwise_mul_arm_func.h"
 
 namespace paddle_mobile {
 namespace operators {
 
 template <>
-bool ElementwiseMulKernel<FPGA, float>::Init(ElementwiseMulParam<FPGA>* param) {
+bool DropoutKernel<FPGA, float>::Init(DropoutParam<FPGA>* param) {
   param->Out()->mutable_data<half>();
 
   zynqmp::ScalePE& pe = param->context().pe<zynqmp::ScalePE>();
   zynqmp::ScaleParam& scale_param = pe.param();
   scale_param.input = param->InputX()->zynqmpTensor();
   scale_param.output = param->Out()->zynqmpTensor();
+
   int channel = scale_param.input->shape().channel();
   zynqmp::Tensor* scale = new zynqmp::Tensor();
   zynqmp::Tensor* bias = new zynqmp::Tensor();
@@ -36,17 +36,10 @@ bool ElementwiseMulKernel<FPGA, float>::Init(ElementwiseMulParam<FPGA>* param) {
   float* scale_data = scale->mutableData<float>(zynqmp::FP32, shape);
   float* bias_data = bias->mutableData<float>(zynqmp::FP32, shape);
 
-  if (param->InputY()->numel() == 1) {
-    Tensor* y =
-        const_cast<Tensor*>(reinterpret_cast<const Tensor*>(param->InputY()));
-    y->mutable_data<float>();
-    float scale_value = param->InputY()->zynqmpTensor()->data<float>()[0];
-    for (int i = 0; i < channel; ++i) {
-      scale_data[i] = scale_value;
-      bias_data[i] = 0.0f;
-    }
-  } else {
-    scale->copyFrom(param->InputY()->zynqmpTensor());
+  float scale_value = 1 - param->DropoutProb();
+  for (int i = 0; i < channel; ++i) {
+    scale_data[i] = scale_value;
+    bias_data[i] = 0.0f;
   }
   scale->flush();
   bias->flush();
@@ -61,18 +54,15 @@ bool ElementwiseMulKernel<FPGA, float>::Init(ElementwiseMulParam<FPGA>* param) {
 }
 
 template <>
-void ElementwiseMulKernel<FPGA, float>::Compute(
-    const ElementwiseMulParam<FPGA>& param) {
-  // param.Out()->set_lod(param.InputX()->lod());
-
+void DropoutKernel<FPGA, float>::Compute(const DropoutParam<FPGA>& param) {
   zynqmp::Context& context = const_cast<zynqmp::Context&>(param.context_);
   zynqmp::ScalePE& pe = context.pe<zynqmp::ScalePE>();
   pe.dispatch();
 
-  // param.Out()->zynqmpTensor()->printScale();
+  param.Out()->zynqmpTensor()->printScale();
+  // param.InputX()->zynqmpTensor()->saveToFile("dropout_in.txt");
+  // param.Out()->zynqmpTensor()->saveToFile("dropout_out.txt");
 }
-
-template class ElementwiseMulKernel<FPGA, float>;
 
 }  // namespace operators
 }  // namespace paddle_mobile

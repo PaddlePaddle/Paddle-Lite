@@ -1648,6 +1648,44 @@ class SliceParam : public OpParam {
 };
 #endif
 
+#ifdef NEAREST_INTERP_OP
+template <typename Dtype>
+class NearestInterpParam : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
+ public:
+  NearestInterpParam(const VariableNameMap &inputs,
+                     const VariableNameMap &outputs, const AttributeMap &attrs,
+                     Scope *scope)
+      : OpParam(inputs, outputs, attrs, scope) {
+    input_x_ = InputXFrom<GType>(inputs, *scope);
+    out_ = OutFrom<GType>(outputs, *scope);
+
+    out_h_ = GetAttr<int>("out_h", attrs);
+    out_w_ = GetAttr<int>("out_w", attrs);
+  }
+
+  const GType *InputX() const { return input_x_; }
+
+  GType *Out() const { return out_; }
+
+  const int &OutHeight() const { return out_h_; }
+
+  const int &OutWidth() const { return out_w_; }
+
+ private:
+  GType *input_x_;
+  GType *out_;
+
+  int out_h_;
+  int out_w_;
+  // float out_height_scale_;
+  // float out_width_scale_;
+};
+
+#endif
+
 #ifdef RESIZE_OP
 template <typename Dtype>
 class ResizeParam : public OpParam {
