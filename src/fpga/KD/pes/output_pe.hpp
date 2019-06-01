@@ -31,14 +31,16 @@ class OutputPE : public PE {
   bool dispatch() {
     Tensor* input = param_.input;
     Tensor* output = param_.output;
-    Tensor* src_tensor = input;
-    Tensor float_tensor;
-    float_tensor.mutableData<float>(DataType::FP32, input->shape());
-    if (input->dataType() == DataType::FP16) {
-      float_tensor.copyFrom(input);
-      src_tensor = &float_tensor;
+    if (input->aligned()) {
+      Tensor tmp;
+      tmp.setAligned(true);
+      tmp.mutableData<float16>(FP16, input->shape());
+      tmp.copyFrom(input);
+      tmp.unalignImage();
+      output->copyFrom(&tmp);
+    } else {
+      output->copyFrom(input);
     }
-    src_tensor->unalignImage(output, true);
     return true;
   }
 
