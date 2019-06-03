@@ -1362,7 +1362,7 @@ class Transpose2Param : public OpParam {
     axis_ = GetAttr<vector<int>>("axis", attrs);
   }
 
-  const GType *InputX() const { return input_x_; }
+  GType *InputX() const { return input_x_; }
 
   GType *Out() const { return out_; }
 
@@ -1510,7 +1510,7 @@ class Reshape2Param : public OpParam {
     }
   }
 
-  const GType *InputX() const { return input_x_; }
+  GType *InputX() const { return input_x_; }
 
   const GType *InputShape() const { return input_shape_; }
 
@@ -2807,7 +2807,7 @@ class SplitParam : public OpParam {
     //      out_ts_.push_back(*scope.FindVar(outs_[i])->GetMutable());
     //    }
   }
-  const GType *InputX() const { return input_x_; }
+  GType *InputX() const { return input_x_; }
   std::vector<GType *> Outs() const { return outs_; }
   int Axis() const { return axis; }
   int Num() const { return num; }

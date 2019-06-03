@@ -86,5 +86,8 @@ REGISTER_OPERATOR_CPU(split, ops::SplitOp);
 #ifdef PADDLE_MOBILE_FPGA
 REGISTER_OPERATOR_FPGA(split, ops::SplitOp);
 #endif
+#ifdef PADDLE_MOBILE_CL
+REGISTER_OPERATOR_CL(split, ops::SplitOp);
+#endif
 
 #endif  // SPLIT_OP
