@@ -380,37 +380,54 @@ void ProposalKernel<FPGA, float>::Compute(const ProposalParam<FPGA> &param) {
   auto bbox_tmp_data = bbox_tmp->data<int8_t>();
   int64_t amount_per_side = score_width * score_height;
   int idx = 0;
-  fpga::fpga_invalidate(input_score_data, score_height * score_width *
-                                              score_channels * sizeof(int8_t));
+  int alignedCW =
+      fpga::align_to_x(score_width * score_channels, IMAGE_ALIGNMENT);
+  int unalignedCW = score_width * score_channels;
+  fpga::fpga_invalidate(input_score_data,
+                        score_height * alignedCW * sizeof(int8_t));
   for (int h = 0; h < score_height; h++) {
     for (int w = 0; w < score_width; w++) {
       for (int c = 0; c < score_channels; c++) {
-        idx++;
-        *(score_tmp_data + c * amount_per_side + score_width * h + w) =
-            (*(input_score_data++));
+        if (alignedCW == unalignedCW) {
+          *(score_tmp_data + c * amount_per_side + score_width * h + w) =
+              (*(input_score_data++));
+        } else {
+          idx = h * alignedCW + w * score_channels + c;
+          *(score_tmp_data + c * amount_per_side + score_width * h + w) =
+              input_score_data[idx];
+        }
       }
     }
   }
   amount_per_side = bbox_width * bbox_height;
-  fpga::fpga_invalidate(input_bbox_data, bbox_height * bbox_width *
-                                             bbox_channels * sizeof(int8_t));
+  alignedCW = fpga::align_to_x(bbox_width * bbox_channels, IMAGE_ALIGNMENT);
+  unalignedCW = bbox_width * bbox_channels;
+  fpga::fpga_invalidate(input_bbox_data,
+                        bbox_height * alignedCW * sizeof(int8_t));
   for (int h = 0; h < bbox_height; h++) {
     for (int w = 0; w < bbox_width; w++) {
       for (int c = 0; c < bbox_channels; c++) {
-        idx++;
-        *(bbox_tmp_data + c * amount_per_side + bbox_width * h + w) =
-            (*(input_bbox_data++));
+        if (alignedCW == unalignedCW) {
+          *(bbox_tmp_data + c * amount_per_side + bbox_width * h + w) =
+              (*(input_bbox_data++));
+        } else {
+          idx = h * alignedCW + w * bbox_channels + c;
+          *(bbox_tmp_data + c * amount_per_side + bbox_width * h + w) =
+              input_bbox_data[idx];
+        }
       }
     }
   }
 
   auto score_tensor = param.float_score.get();
   for (int i = 0; i < score_height * score_width * score_channels; i++) {
-    score_tensor->data<float>()[i] = score_tmp_data[i] * input_score->scale[0];
+    score_tensor->data<float>()[i] =
+        score_tmp_data[i] / 127.0 * input_score->scale[0];
   }
   auto bbox_tensor = param.float_bbox.get();
   for (int i = 0; i < bbox_height * bbox_width * bbox_channels; i++) {
-    bbox_tensor->data<float>()[i] = bbox_tmp_data[i] * input_bbox->scale[0];
+    bbox_tensor->data<float>()[i] =
+        bbox_tmp_data[i] / 127.0 * input_bbox->scale[0];
   }
   auto *scores = param.float_score.get();
   auto *bbox_deltas = param.float_bbox.get();

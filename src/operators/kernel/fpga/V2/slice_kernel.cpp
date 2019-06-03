@@ -25,7 +25,7 @@ bool SliceKernel<FPGA, float>::Init(SliceParam<FPGA>* param) {
   fpga::format_ofm(output);
   DLOG << "input: " << param->input_;
   DLOG << "output: " << param->output_;
-  if (param->input_->type() != type_id<half>()) {
+  if (param->input_->type() != type_id<int8_t>()) {
     DLOG << "wrong type";
   }
   return true;

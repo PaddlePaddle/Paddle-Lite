@@ -21,9 +21,6 @@ namespace operators {
 template <>
 bool ElementwiseAddReluKernel<FPGA, float>::Init(
     ElementwiseAddReluParam<FPGA> *param) {
-  paddle_mobile::fpga::ActivationType activation_enable =
-      paddle_mobile::fpga::LEAKYRELU;
-  int16_t leaky_relu_negative_slope = 0;
   auto *input_x = const_cast<LoDTensor *>(param->InputX());
   auto *input_y = const_cast<LoDTensor *>(param->InputY());
   auto *out = param->Out();
@@ -37,9 +34,7 @@ bool ElementwiseAddReluKernel<FPGA, float>::Init(
   float C1 = Si_1 / So;
   float C2 = Si_2 / So;
   fpga::EWAddArgs ewaddArgs = {0};
-  ewaddArgs.output.activation.activation_type = activation_enable;
-  ewaddArgs.output.activation.leaky_relu_negative_slope =
-      leaky_relu_negative_slope;
+  ewaddArgs.relu_enabled = 1;
   ewaddArgs.const0 = fpga::fp32_2_fp16(C1);
   ewaddArgs.const1 = fpga::fp32_2_fp16(C2);
   ewaddArgs.image0.address = input_x_ptr;

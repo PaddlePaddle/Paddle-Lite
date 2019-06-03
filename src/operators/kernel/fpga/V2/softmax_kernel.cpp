@@ -123,8 +123,8 @@ void SoftmaxKernel<FPGA, float>::Compute(const SoftmaxParam<FPGA> &param) {
     float_out->Resize(in_x->dims());
     float_out->init(type_id<float>().hash_code());
     fpga::format_ofm(float_out.get());
-    auto float_out_data = float_out->data<float>();
     math::SoftmaxFuntor<CPU, float>()(in_x, float_out.get());
+    auto float_out_data = float_out->data<float>();
     int dataNum = n * h * fpga::align_to_x(w * c, IMAGE_ALIGNMENT);
     for (int i = 0; i < dataNum; i++) {
       float tmp_out = float_out_data[i] * 127;
