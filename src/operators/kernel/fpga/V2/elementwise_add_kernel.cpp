@@ -25,9 +25,6 @@ template <>
 bool ElementwiseAddKernel<FPGA, float>::Init(ElementwiseAddParam<FPGA> *param) {
   auto *input_y = const_cast<LoDTensor *>(param->InputY());
   auto *out = param->Out();
-  paddle_mobile::fpga::ActivationType activation_enable =
-      paddle_mobile::fpga::NONE;
-  int16_t leaky_relu_negative_slope = 0;
   auto *input_x = const_cast<LoDTensor *>(param->InputX());
   auto input_x_ptr = input_x->data<int8_t>();
   auto input_y_ptr = input_y->data<int8_t>();
@@ -39,11 +36,9 @@ bool ElementwiseAddKernel<FPGA, float>::Init(ElementwiseAddParam<FPGA> *param) {
   float C1 = Si_1 / So;
   float C2 = Si_2 / So;
   fpga::EWAddArgs ewaddArgs = {0};
-  ewaddArgs.output.activation.activation_type = activation_enable;
-  ewaddArgs.output.activation.leaky_relu_negative_slope =
-      leaky_relu_negative_slope;
   ewaddArgs.const0 = fpga::fp32_2_fp16(C1);
   ewaddArgs.const1 = fpga::fp32_2_fp16(C2);
+  ewaddArgs.relu_enabled = 0;
   ewaddArgs.image0.address = input_x_ptr;
   ewaddArgs.image0.channels = (uint32_t)input_x->dims()[1];
   ewaddArgs.image0.scale_address = input_x->scale;
