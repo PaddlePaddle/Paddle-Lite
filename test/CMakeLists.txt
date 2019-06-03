@@ -459,6 +459,10 @@ if (NOT FOUND_MATCH)
     ADD_EXECUTABLE(test-ocr net/test_ocr.cpp test_helper.h test_include.h)
     target_link_libraries(test-ocr paddle-mobile)
 
+    ADD_EXECUTABLE(test-gesture net/test_gesture.cpp test_helper.h test_include.h)
+    target_link_libraries(test-gesture paddle-mobile)
+  
+
     ADD_EXECUTABLE(test-sequence-expand-op operators/test_sequence_expand_op.cpp test_helper.h test_include.h)
     target_link_libraries(test-sequence-expand-op paddle-mobile)
 

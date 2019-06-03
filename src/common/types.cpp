@@ -42,6 +42,7 @@ const char *G_OP_TYPE_NORM = "norm";
 const char *G_OP_TYPE_POLYGON_BOX_TRANSFORM = "polygon_box_transform";
 const char *G_OP_TYPE_POOL2D = "pool2d";
 const char *G_OP_TYPE_PRIOR_BOX = "prior_box";
+const char *G_OP_TYPE_DENSITY_PRIOR_BOX = "density_prior_box";
 const char *G_OP_TYPE_RELU = "relu";
 const char *G_OP_TYPE_RELU6 = "relu6";
 const char *G_OP_TYPE_LEAKY_RELU = "leaky_relu";
@@ -154,6 +155,8 @@ std::unordered_map<
         {G_OP_TYPE_FUSION_CONV_ADD_BN_RELU, {{"Input"}, {"Out"}}},
         {G_OP_TYPE_FUSION_CONV_BN_ADD_RELU, {{"Input"}, {"Out"}}},
         {G_OP_TYPE_PRIOR_BOX, {{"Image", "Input"}, {"Boxes", "Variances"}}},
+        {G_OP_TYPE_DENSITY_PRIOR_BOX,
+         {{"Image", "Input"}, {"Boxes", "Variances"}}},
         {G_OP_TYPE_MULTICLASS_NMS, {{"BBoxes", "Scores"}, {"Out"}}},
         {G_OP_TYPE_POLYGON_BOX_TRANSFORM, {{"Input"}, {"Output"}}},
         {G_OP_TYPE_FC, {{"X", "Y", "Z"}, {"Out"}}},
