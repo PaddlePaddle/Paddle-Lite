@@ -89,11 +89,13 @@ class DensityPriorBoxParam : public OpParam {
   const vector<float> &FixedSizes() const { return fixed_sizes_; }
   const vector<float> &FixedRatios() const { return fixed_ratios_; }
   const vector<int> &Densities() const { return densities_; }
+  const vector<float> &Variances() const { return variances_; }
 
  public:
   GType *input_;
   GType *input_image_;
-  GType *output_boxes_ GType *output_variances_;
+  GType *output_boxes_;
+  GType *output_variances_;
   bool clip_;
   bool flatten_to_2d_;
   float step_w_;
@@ -102,6 +104,7 @@ class DensityPriorBoxParam : public OpParam {
   vector<float> fixed_sizes_;
   vector<float> fixed_ratios_;
   vector<int> densities_;
+  vector<float> variances_;
 };
 
 DECLARE_KERNEL(DensityPriorBox, DensityPriorBoxParam);
