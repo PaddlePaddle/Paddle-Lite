@@ -495,6 +495,8 @@ void expand_EW_arg(EWAddArgs *arg) {
   uint64_t image_amount_per_row =
       align_to_x((uint64_t)args.image0.width * (uint64_t)args.image0.channels,
                  IMAGE_ALIGNMENT);
+  uint64_t image_amount_per_row_p = align_to_x(
+      (uint64_t)args.image0.width * (uint64_t)args.image0.channels, 16);
   uint64_t image_image_pixel = ((uint64_t)args.image0.channels << 32) |
                                ((uint64_t)args.image0.width << 16) |
                                (uint64_t)args.image0.height;
@@ -503,7 +505,8 @@ void expand_EW_arg(EWAddArgs *arg) {
   (*arg).driver.image1_address_phy = image1_address_phy;
   (*arg).driver.datalen = datalen;
   (*arg).driver.image_image_pixel = image_image_pixel;
-  (*arg).driver.image_amount_per_row = image_amount_per_row;
+  (*arg).driver.image_amount_per_row =
+      (uint64_t)image_amount_per_row | (uint64_t)(image_amount_per_row_p << 32);
   (*arg).driver.output_address_phy = output_address_phy;
   (*arg).driver.coefficient = coefficient;
   (*arg).driver.cmd = cmd;
