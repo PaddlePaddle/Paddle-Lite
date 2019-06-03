@@ -14,6 +14,7 @@ limitations under the License. */
 
 #ifdef DENSITY_PRIORBOX_OP
 
+#include "operators/kernel/central-arm-func/density_prior_box_arm_func.h"
 #include "operators/kernel/prior_box_kernel.h"
 
 namespace paddle_mobile {
@@ -27,7 +28,7 @@ bool DensityPriorBoxKernel<CPU, float>::Init(DensityPriorBoxParam<CPU> *param) {
 template <>
 void DensityPriorBoxKernel<CPU, float>::Compute(
     const DensityPriorBoxParam<CPU> &param) {
-  // TODO(hjchen2)
+  DensityPriorBoxCompute<float>(param);
 }
 
 }  // namespace operators
