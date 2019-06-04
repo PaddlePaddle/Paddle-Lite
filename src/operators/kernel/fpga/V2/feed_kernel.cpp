@@ -44,8 +44,19 @@ void FeedKernel<FPGA, float>::Compute(const FeedParam<FPGA> &param) {
     return;
   }
   fpga::format_image(input);
-  output->ShareDataWith(*input);
-  input->external_data = nullptr;
+
+  auto output_ptr = output->data<int8_t>();
+  int channel = output->dims()[1];
+  int height = output->dims()[2];
+  int width = output->dims()[3];
+  int size = fpga::align_to_x(channel * width, IMAGE_ALIGNMENT) * height;
+  auto input_ptr = input->data<int8_t>();
+  fpga::fpga_invalidate(input_ptr, size * sizeof(int8_t));
+  memcpy(output_ptr, input_ptr, size * sizeof(int8_t));
+
+  fpga::fpga_flush(output_ptr,
+                   fpga::align_to_x(channel * width, IMAGE_ALIGNMENT) * height *
+                       sizeof(int8_t));
 }
 template class FeedKernel<FPGA, float>;
 

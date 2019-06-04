@@ -103,7 +103,7 @@ void PSRoiPoolKernel<FPGA, float>::Compute(const PSRoiPoolParam<FPGA>& param) {
   auto float_input_tensor = param.float_input.get();
   auto float_input_data = float_input_tensor->data<float>();
   for (int i = 0; i < float_input_tensor->numel(); i++) {
-    float_input_data[i] = input_data[i] * Si;
+    float_input_data[i] = input_data[i] / 127.0 * Si;
   }
 
   auto* in = float_input_tensor;
