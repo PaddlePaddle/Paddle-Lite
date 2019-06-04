@@ -561,9 +561,9 @@ template <typename Device, typename T>
 void Executor<Device, T>::FeedData(const std::vector<void *> &v) {
   auto input_size = v.size();
   int index = 0;
-  auto vars = program_.scope->VarContain("feed", &index);
-  PADDLE_MOBILE_ENFORCE(input_size == vars.size(),
-                        "input data number not correct");
+  // auto vars = program_.scope->VarContain("feed", &index);
+  // PADDLE_MOBILE_ENFORCE(input_size == vars.size(),
+  //                    "input data number not correct");
   for (int i = 0; i < input_size; i++) {
     auto var = program_.scope->Var("feed", i + index);
     auto feed_tensor = var->template GetMutable<LoDTensor>();
