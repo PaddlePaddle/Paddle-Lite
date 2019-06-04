@@ -26,7 +26,9 @@ bool ReluKernel<FPGA, float>::Init(ReluParam<FPGA> *param) {
 }
 
 template <>
-void ReluKernel<FPGA, float>::Compute(const ReluParam<FPGA> &param) {}
+void ReluKernel<FPGA, float>::Compute(const ReluParam<FPGA> &param) {
+  PADDLE_MOBILE_ENFORCE(0, "relu as a single op is wrong");
+}
 }  // namespace operators
 }  // namespace paddle_mobile
 

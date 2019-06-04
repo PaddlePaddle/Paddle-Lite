@@ -19,6 +19,9 @@
 #include <vector>
 #include "common/enforce.h"
 #include "framework/tensor.h"
+#ifdef PADDLE_MOBILE_FPGA
+#include <fpga/common/fpga_common.h>
+#endif
 
 namespace paddle_mobile {
 
@@ -179,6 +182,19 @@ void PaddleMobilePredictor<Device, T>::FetchPaddleTensors(PaddleTensor *output,
                                                           int id) {
   std::shared_ptr<framework::Tensor> tensor_ptr =
       paddle_mobile_->FetchResult(id);
+  void *data_addr = nullptr;
+  int data_sizeof = 1;
+  if (tensor_ptr.get()->type() == type_id<half>().hash_code()) {
+    data_addr = tensor_ptr.get()->data<half>();
+    data_sizeof = sizeof(half);
+  } else if (tensor_ptr.get()->type() == type_id<float>().hash_code()) {
+    data_addr = tensor_ptr.get()->data<float>();
+    data_sizeof = sizeof(float);
+  } else {
+    PADDLE_MOBILE_ENFORCE(0, "output typeid is not supported");
+  }
+  size_t size = tensor_ptr.get()->numel() * data_sizeof;
+  fpga::fpga_invalidate(data_addr, size);
   ConvertTensors(*(tensor_ptr.get()), output);
   return;
 }
