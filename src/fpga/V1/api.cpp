@@ -273,6 +273,7 @@ void format_concat_output(framework::Tensor *out, int height, int width,
   auto ddim = framework::make_ddim({1, sum_channel, height, width});
   out->Resize(ddim);
   out->reset_data_ptr(data_ptr);
+  out->fpga_data_num = sum_cw * height;
   out->set_type(type_id<half>().hash_code());
 }
 void format_conv_data(framework::Tensor *filter_tensor,
