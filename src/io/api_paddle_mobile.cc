@@ -190,6 +190,9 @@ void PaddleMobilePredictor<Device, T>::FetchPaddleTensors(PaddleTensor *output,
   } else if (tensor_ptr.get()->type() == type_id<float>().hash_code()) {
     data_addr = tensor_ptr.get()->data<float>();
     data_sizeof = sizeof(float);
+  } else if (tensor_ptr.get()->type() == type_id<int8_t>().hash_code()) {
+    data_addr = tensor_ptr.get()->data<int8_t>();
+    data_sizeof = sizeof(int8_t);
   } else {
     PADDLE_MOBILE_ENFORCE(0, "output typeid is not supported");
   }
