@@ -27,8 +27,6 @@ bool SoftmaxKernel<FPGA, float>::Init(SoftmaxParam<FPGA> *param) {
 
   auto out = param->Out();
   out->Resize(framework::make_ddim(dims));
-  out->mutable_data<int8_t>(framework::make_ddim(dims));
-  fpga::format_ofm(out);
 
   PADDLE_MOBILE_ENFORCE(input->dims().size() == 4,
                         "Softmax should have 4-order input");
@@ -44,6 +42,7 @@ bool SoftmaxKernel<FPGA, float>::Init(SoftmaxParam<FPGA> *param) {
     auto input_ptr = input->data<int8_t>();
     float Si = input->scale[0];
     int16_t slope = fpga::fp32_2_fp16(Si / 127);
+    out->mutable_data<int8_t>(framework::make_ddim(dims));
     fpga::format_ofm(out);
     fpga::BypassArgs args = {fpga::DATA_TYPE_FP16};
     args.input_layout_type = fpga::LAYOUT_HWC;
@@ -65,17 +64,11 @@ bool SoftmaxKernel<FPGA, float>::Init(SoftmaxParam<FPGA> *param) {
     float_input_x->Resize(input->dims());
     float_input_x->init(type_id<float>().hash_code());
     fpga::format_ofm(float_input_x.get());
-    auto float_out = param->float_out;
-    float_out = std::make_shared<Tensor>();
-    float_out->Resize(input->dims());
-    float_out->init(type_id<float>().hash_code());
-    fpga::format_ofm(float_out.get());
+    out->mutable_data<float>(framework::make_ddim(dims));
+    fpga::format_ofm(out);
   } else {
-    auto float_out = param->float_out;
-    float_out = std::make_shared<Tensor>();
-    float_out->Resize(input->dims());
-    float_out->init(type_id<float>().hash_code());
-    fpga::format_ofm(float_out.get());
+    out->mutable_data<float>(framework::make_ddim(dims));
+    fpga::format_ofm(out);
   }
 
   return true;
@@ -97,41 +90,24 @@ void SoftmaxKernel<FPGA, float>::Compute(const SoftmaxParam<FPGA> &param) {
     Tensor *out = param.Out();
     out->Resize(
         {in_x->dims()[0], out->dims()[1], out->dims()[2], out->dims()[3]});
-    auto out_data = out->data<int8_t>();
+
     auto float_input_x = param.float_input_x_;
     auto float_input_x_data = float_input_x->data<float>();
     int dataNum = n * h * fpga::align_to_x(w * c, IMAGE_ALIGNMENT);
     for (int i = 0; i < dataNum; i++) {
       float_input_x_data[i] = in_data[i] * Si / 127;
     }
-    auto float_out = param.float_out;
-    auto float_out_data = float_out->data<float>();
-    math::SoftmaxFuntor<CPU, float>()(float_input_x.get(), float_out.get());
-    for (int i = 0; i < dataNum; i++) {
-      float tmp_out = float_out_data[i] * 127;
-      out_data[i] = tmp_out < 0 ? (signed char)(tmp_out - 0.5)
-                                : (signed char)(tmp_out + 0.5);
-    }
-    fpga::fpga_flush(out_data, dataNum * sizeof(int8_t));
+    math::SoftmaxFuntor<CPU, float>()(float_input_x.get(), out);
+    auto out_data = out->data<float>();
+    fpga::fpga_flush(out_data, dataNum * sizeof(float));
   } else {
     Tensor *out = param.Out();
     out->Resize(
         {in_x->dims()[0], out->dims()[1], out->dims()[2], out->dims()[3]});
-    auto out_data = out->data<int8_t>();
-    auto float_out = param.float_out;
-    float_out = std::make_shared<Tensor>();
-    float_out->Resize(in_x->dims());
-    float_out->init(type_id<float>().hash_code());
-    fpga::format_ofm(float_out.get());
-    math::SoftmaxFuntor<CPU, float>()(in_x, float_out.get());
-    auto float_out_data = float_out->data<float>();
+    math::SoftmaxFuntor<CPU, float>()(in_x, out);
     int dataNum = n * h * fpga::align_to_x(w * c, IMAGE_ALIGNMENT);
-    for (int i = 0; i < dataNum; i++) {
-      float tmp_out = float_out_data[i] * 127;
-      out_data[i] = tmp_out < 0 ? (signed char)(tmp_out - 0.5)
-                                : (signed char)(tmp_out + 0.5);
-    }
-    fpga::fpga_flush(out_data, dataNum * sizeof(int8_t));
+    auto out_data = out->data<float>();
+    fpga::fpga_flush(out_data, dataNum * sizeof(float));
   }
 }
 

@@ -73,7 +73,7 @@ void FetchKernel<FPGA, float>::Compute(const FetchParam<FPGA> &param) {
   int unalignedCW = outC * outW;
   int alignedCW = fpga::align_to_x(unalignedCW, IMAGE_ALIGNMENT);
   if (input->type() == type_id<float>()) {
-    if (unalignedCW == alignedCW) {
+    if ((output->dims().size() != 4) || (unalignedCW == alignedCW)) {
       output->ShareDataWith(*input);
     } else {
       auto input_address = input->data<float>();
@@ -90,7 +90,7 @@ void FetchKernel<FPGA, float>::Compute(const FetchParam<FPGA> &param) {
   fpga::fpga_invalidate(input_address, (input->fpga_data_num) * sizeof(int8_t));
   if (input->fpga_data_num < num_th) {
     for (int idx = 0; idx < product(input->dims()); ++idx) {
-      outdata_ptr[idx] = input_address[idx] * Si;
+      outdata_ptr[idx] = input_address[idx] / 127.0 * Si;
     }
     fpga::fpga_flush(outdata_ptr, product(input->dims()) * sizeof(float));
     return;
@@ -101,14 +101,14 @@ void FetchKernel<FPGA, float>::Compute(const FetchParam<FPGA> &param) {
     auto aligned_ptr = aligned_out->data<float>();
     fpga::fpga_invalidate(aligned_ptr, (input->fpga_data_num) * sizeof(float));
     for (int idx = 0; idx < input->fpga_data_num; ++idx) {
-      aligned_ptr[idx] = input_address[idx] * Si;
+      aligned_ptr[idx] = input_address[idx] / 127.0 * Si;
     }
     dealign(aligned_ptr, outdata_ptr, outC, outH, outW);
     fpga::fpga_flush(outdata_ptr, outC * outH * outW * sizeof(float));
     return;
   }
   for (int idx = 0; idx < input->fpga_data_num; ++idx) {
-    outdata_ptr[idx] = input_address[idx] * Si;
+    outdata_ptr[idx] = input_address[idx] / 127.0 * Si;
   }
   fpga::fpga_flush(outdata_ptr, outC * outH * outW * sizeof(float));
 }
