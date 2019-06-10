@@ -14,6 +14,7 @@ limitations under the License. */
 
 #include <iostream>
 #include "io/paddle_inference_api.h"
+#include "../test_include.h"
 
 #include "fpga/KD/float16.hpp"
 #include "fpga/KD/llapi/zynqmp_api.h"
@@ -21,8 +22,8 @@ limitations under the License. */
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp>
 
-// using namespace paddle_mobile;
-// using namespace cv;
+using namespace paddle_mobile;
+using namespace cv;
 
 cv::Mat sample_float;
 
@@ -66,21 +67,22 @@ void readImage(std::string filename, float *buffer) {
     float *ptr = reinterpret_cast<float *>(sample_float.ptr(row));
     for (int col = 0; col < sample_float.cols; col++) {
       float *uc_pixel = ptr;
-      // float r = uc_pixel[0];
-      // float g = uc_pixel[1];
-      // float b = uc_pixel[2];
 
-      // buffer[index] = b - 104;
-      // buffer[index + 1] = g - 117;
-      // buffer[index + 2] = r - 124;
-
-      float b = uc_pixel[0];
+      float r = uc_pixel[0];
       float g = uc_pixel[1];
-      float r = uc_pixel[2];
+      float b = uc_pixel[2];
 
-      buffer[index] = (b - 128) / 128;
-      buffer[index + 1] = (g - 128) / 128;
-      buffer[index + 2] = (r - 128) / 128;
+      buffer[index] = b - 104;
+      buffer[index + 1] = g - 117;
+      buffer[index + 2] = r - 124;
+
+      // float b = uc_pixel[0];
+      // float g = uc_pixel[1];
+      // float r = uc_pixel[2];
+
+      // buffer[index] = (b - 128) / 128;
+      // buffer[index + 1] = (g - 128) / 128;
+      // buffer[index + 2] = (r - 128) / 128;
 
       ptr += 3;
       index += 3;
@@ -92,7 +94,6 @@ void drawRect(const Mat &mat, float *data, int len) {
   for (int i = 0; i < len; i++) {
     float index = data[0];
     float score = data[1];
-
     if (score > 0.5) {
       int x1 = static_cast<int>(data[2] * mat.cols);
       int y1 = static_cast<int>(data[3] * mat.rows);
@@ -166,8 +167,12 @@ int main() {
   std::vector<PaddleTensor> outputs(1, tensor_out);
 
   std::cout << " before predict " << std::endl;
-
-  predictor->Run(paddle_tensor_feeds, &outputs);
+  auto time3 = time();
+  // for (int i=0; i<1000; i++) {
+    predictor->Run(paddle_tensor_feeds, &outputs);
+  // }  
+  auto time4 = time();  
+  std::cout << "predict cost: " << time_diff(time3, time4) << "ms\n";
 
   std::cout << " after predict " << std::endl;
   //  assert();

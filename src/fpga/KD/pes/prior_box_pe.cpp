@@ -224,7 +224,6 @@ void PriorBoxPE::compute_prior_box() {
     // trans(output_boxes_dataptr,
     //       output_boxes_dataptr + output_boxes->shape().numel(),
     //       output_boxes_dataptr, clip_func);
-    std::cout << "\n===================================\n";
     for (int i = 0; i < output_boxes->shape().numel(); i++) {
       float value = output_boxes_dataptr[i];
       value = std::min(std::max(0.0f, value), 1.0f);

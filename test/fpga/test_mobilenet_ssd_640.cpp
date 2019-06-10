@@ -22,7 +22,7 @@ limitations under the License. */
 
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp>
-// using namespace cv;
+using namespace cv;
 
 cv::Mat img;
 cv::Mat sample_float;
@@ -66,7 +66,7 @@ void readImage(std::string filename, float* buffer) {
       index += 3;
     }
   }
-  return sample_float;
+  // return sample_float;
 }
 
 void readStream(std::string filename, float* buf) {
@@ -111,8 +111,7 @@ void drawRect(const Mat& mat, float* data, int len) {
 }
 
 static const char* g_inception = "../models/mobilenet_ssd_640";
-// static const char* image = "../models/mobilenet_ssd_640/1.jpeg";
-static const char* image = "1.jpg";
+static const char* image = "../models/mobilenet_ssd_640/1.jpeg";
 
 int main() {
   paddle_mobile::zynqmp::open_device();
@@ -132,7 +131,7 @@ int main() {
     readImage(image, data);
 
     auto time3 = time();
-    for (int i = 0; i < 100; i++) {
+    for (int i = 0; i < 10000; i++) {
       paddle_mobile.Predict(input_tensor);
     }
     auto time4 = time();

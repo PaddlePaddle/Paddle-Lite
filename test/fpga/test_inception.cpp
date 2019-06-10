@@ -18,11 +18,11 @@ limitations under the License. */
 #include "fpga/KD/float16.hpp"
 #include "fpga/KD/llapi/zynqmp_api.h"
 
-// using namespace paddle_mobile;
+using namespace paddle_mobile;
 
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp>
-// using namespace cv;
+using namespace cv;
 
 cv::Mat sample_float;
 

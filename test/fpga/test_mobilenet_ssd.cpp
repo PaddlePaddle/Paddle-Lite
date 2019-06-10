@@ -22,7 +22,7 @@ limitations under the License. */
 
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp>
-// using namespace cv;
+using namespace cv;
 
 cv::Mat img;
 cv::Mat sample_float;

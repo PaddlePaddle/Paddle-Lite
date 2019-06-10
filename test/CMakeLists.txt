@@ -134,16 +134,21 @@ if (CON GREATER -1)
     target_link_libraries(test_easydl_mobilenet paddle-mobile)
     target_link_libraries(test_easydl_mobilenet ${OpenCV_LIBS})
 
-    #ADD_EXECUTABLE(test_inception_v3 fpga/test_inception_v3.cpp test_helper.h test_include.h executor_for_test.h)
-    #target_link_libraries(test_inception_v3 paddle-mobile)
-    #target_link_libraries(test_inception_v3 ${OpenCV_LIBS})
+    ADD_EXECUTABLE(test_inception fpga/test_inception.cpp test_helper.h test_include.h executor_for_test.h)
+    target_link_libraries(test_inception paddle-mobile)
+    target_link_libraries(test_inception ${OpenCV_LIBS})
 
-     ADD_EXECUTABLE(test_mobilenet_ssd fpga/test_mobilenet_ssd.cpp test_helper.h test_include.h executor_for_test.h)
-     target_link_libraries(test_mobilenet_ssd paddle-mobile)
-     target_link_libraries(test_mobilenet_ssd ${OpenCV_LIBS})
+    ADD_EXECUTABLE(test_mobilenet_ssd fpga/test_mobilenet_ssd.cpp test_helper.h test_include.h executor_for_test.h)
+    target_link_libraries(test_mobilenet_ssd paddle-mobile)
+    target_link_libraries(test_mobilenet_ssd ${OpenCV_LIBS})
 
-    ADD_EXECUTABLE(test-ssd fpga/test_ssd.cpp test_helper.h test_include.h executor_for_test.h)
+    ADD_EXECUTABLE(test_mobilenet_ssd_640 fpga/test_mobilenet_ssd_640.cpp test_helper.h test_include.h executor_for_test.h)
+    target_link_libraries(test_mobilenet_ssd_640 paddle-mobile)
+    target_link_libraries(test_mobilenet_ssd_640 ${OpenCV_LIBS})
+
+    ADD_EXECUTABLE(test-ssd fpga/test_ssd2.cpp test_helper.h test_include.h executor_for_test.h)
     target_link_libraries(test-ssd paddle-mobile)
+    target_link_libraries(test-ssd ${OpenCV_LIBS})
 
     set(FOUND_MATCH ON)
 endif ()

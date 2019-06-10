@@ -50,7 +50,6 @@ class ScalePE : public PE {
     if (channel % alignment != 0 || channel < alignment) {
       int c_lcm = lcm(channel, alignment);
       repeat = c_lcm / (channel);
-      std::cout << "lcm:" << c_lcm << std::endl;
     }
     Shape shape(N, {channel * repeat});
     param_.alignedBias()->mutableData<float16>(FP16, shape);
@@ -109,7 +108,6 @@ class ScalePE : public PE {
   }
 
   bool dispatch() {
-    std::cout << "scale pe" << std::endl;
     param_.input->syncToDevice();
     return compute_fpga_scale(param_.args) == 0;
   }
