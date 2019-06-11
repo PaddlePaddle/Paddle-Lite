@@ -22,9 +22,10 @@ int main() {
   //  ../../../test/models/googlenet
   //  ../../../test/models/mobilenet
   auto time1 = time();
-  if (paddle_mobile.Load(g_yolo, true)) {
+  if (paddle_mobile.Load(std::string(g_yolo) + "/model",
+                         std::string(g_yolo) + "/params", true)) {
     auto time2 = time();
-    std::cout << "load cost :" << time_diff(time1, time1) << "ms" << std::endl;
+    std::cout << "load cost :" << time_diff(time1, time2) << "ms" << std::endl;
 
     std::vector<int64_t> dims{1, 3, 227, 227};
     Tensor input_tensor;
