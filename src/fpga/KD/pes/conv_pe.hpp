@@ -106,6 +106,15 @@ class ConvPE : public PE {
       return true;
     }
 
+    inplace_.relu_enable = param_.relu.enabled;
+    inplace_.power_enable = false;
+    inplace_.normalize_enable = false;
+
+    if (inplace_.relu_enable) {
+      inplace_.relu_enable = param_.relu.enabled;
+      config_inplace(inplace_);
+    }
+
     std::vector<BasicConvParam*>& params = param_.splitParams();
     int ret = 0;
     for (auto conv_param : params) {
@@ -113,6 +122,13 @@ class ConvPE : public PE {
       conv_param->input.printScale();
       ret |= compute_fpga_conv_basic(conv_param->args);
     }
+
+    if (inplace_.relu_enable) {
+      inplace_.relu_enable = false;
+      config_inplace(inplace_);
+    }
+
+
     size_t size = params.size();
     if (split_axis == 0 && ret == 0 && size > 1) {
       concatPE_.dispatch();
@@ -146,6 +162,7 @@ class ConvPE : public PE {
   ConcatPE concatPE_;
   ElementwiseAddPE addPE_;
   int split_axis = 0;
+  InplaceArgs inplace_ = {0};
 };
 
 }  // namespace zynqmp
