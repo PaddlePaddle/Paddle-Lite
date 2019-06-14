@@ -204,3 +204,16 @@ struct ConcatParam {
 #undef N
 #undef R
 #undef V
+
+#define V VY
+#define R 4
+#define N 3
+#define P float
+#include "ConcatKernel.inc.metal"
+#undef P
+#define P half
+#include "ConcatKernel.inc.metal"
+#undef P
+#undef N
+#undef R
+#undef V
