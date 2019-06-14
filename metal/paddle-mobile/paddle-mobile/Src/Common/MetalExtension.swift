@@ -287,7 +287,13 @@ extension MTLDevice {
             var rcount: Int = (ndim[0] * ndim[3] + 3) / 4
             rcount = rcount * 4 * ndim[1] * ndim[2]
             var nvalue: [Float32] = .init(repeating: 0.0, count: rcount)
-            
+            var value32: [Float32]?
+            if value is [Float16] {
+                var value16 = value as! [Float16]
+                value32 = float16To32(input: &value16, count: value.count)
+            } else {
+                value32 = value as? [Float32]
+            }
             for i0 in 0..<tdim[0] {
                 for i1 in 0..<tdim[1] {
                     for i2 in 0..<tdim[2] {
@@ -298,8 +304,11 @@ extension MTLDevice {
                             let jg = transpose.map { ig[$0] }
                             let k = jg[0] * ndim[3] + jg[3]
                             let jx = ((k / 4) * ndim[1] * ndim[2] * 4) + (jg[1] * ndim[2] * 4) + (jg[2] * 4) + (k % 4)
-                            
-                            nvalue[jx] = value[ix] as! Float32
+                            if let value32 = value32 {
+                                nvalue[jx] = value32[ix]
+                            } else {
+                                fatalError("tensor2texture tensor value type not support")
+                            }
                         }
                     }
                 }

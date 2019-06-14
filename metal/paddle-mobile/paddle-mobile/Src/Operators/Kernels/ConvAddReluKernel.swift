@@ -29,6 +29,7 @@ public struct MetalConvParam {
     let oC: UInt16
     let hasAddOp: UInt16
     let hasReluOp: UInt16
+    let addParam: ElementwiseAddMetalParam
 }
 
 @available(iOS 11.0, *)
@@ -124,7 +125,7 @@ class ConvAddReluKernel<P: PrecisionProtocol>: Kernel, Computable {
         if #available(iOS 11.0, *), (initContext.useMPS || initContext.useAggressiveOptimization) {
             let inputChannel = param.input.tensorDim[1]
             let outputChannel = param.output.tensorDim[1]
-            if (inputChannel == 1 || inputChannel > 4) && (outputChannel == 1 || outputChannel > 4) {
+            if inputChannel > 4 && outputChannel > 4 {
                 shouldUseMPS = true
             }
         }
@@ -134,6 +135,11 @@ class ConvAddReluKernel<P: PrecisionProtocol>: Kernel, Computable {
         let isDepthWise = param.filter.tensorDim[1] == 1 && param.filter.tensorDim[0] == param.input.tensorDim[1]
         if !isDepthWise && param.groups > 1 {
             shouldUseMPS = false
+        }
+        if type(of: self).hasAddOp() {
+            if !(type(of: self).canAddUseMPS(param: param)) {
+                shouldUseMPS = false
+            }
         }
         if shouldUseMPS {
             super.init(device: device, inFunctionName: nil, initContext: initContext)
@@ -195,11 +201,11 @@ class ConvAddReluKernel<P: PrecisionProtocol>: Kernel, Computable {
             param.input.useMPS = true
             param.output.useMPS = true
             if #available(iOS 11.3, *) {
-                if param.y != nil {
+                if type(of: self).hasAddOp() && type(of: self).canMPSAddByElement(param: param) && !type(of: self).canMPSAddByChannel(param: param) {
                     mpsAddOp = MPSCNNAdd(device: device)
-                    if hasReluOp() {
-                        mpsReluOp = MPSCNNNeuronReLU(device: device, a: 0.0)
-                    }
+                }
+                if type(of: self).hasReluOp() {
+                    mpsReluOp = MPSCNNNeuronReLU(device: device, a: 0.0)
                 }
             }
             let neuronFilter: MPSCNNNeuron? = param.y != nil ? nil : (neuronFilterForMPSLayer(device: device) as? MPSCNNNeuron)
@@ -217,7 +223,11 @@ class ConvAddReluKernel<P: PrecisionProtocol>: Kernel, Computable {
             desc.strideInPixelsX = Int(param.stride[0])
             desc.strideInPixelsY = Int(param.stride[1])
             let _ = param.filter.convert(converter: MPSPointerConverter<P>.init())
-            let dataSource = ConvDataSource.init(inDesc: desc, inWeights: param.filter, inBiasTerms: param.yTensor)
+            var biasTerms: Tensor<P>? = nil
+            if type(of: self).hasAddOp() && type(of: self).canMPSAddByChannel(param: param) {
+                biasTerms = param.yTensor
+            }
+            let dataSource = ConvDataSource.init(inDesc: desc, inWeights: param.filter, inBiasTerms: biasTerms)
             
             let conv = MPSCNNConvolution.init(device: device, weights: dataSource)
             conv.offset = MPSOffset.init(x: offsetX, y: offsetY, z: 0)
@@ -233,7 +243,11 @@ class ConvAddReluKernel<P: PrecisionProtocol>: Kernel, Computable {
         let iC = param.input.tensorDim[1];
         let fC = param.filter.tensorDim[1];
         let oC = param.output.tensorDim[1];
-        let inMetalParam = MetalConvParam.init(offsetX: Int16(offsetX), offsetY: Int16(offsetY), offsetZ: Int16(offsetZ), strideX: UInt16(param.stride[0]), strideY: UInt16(param.stride[1]), dilationX: UInt16(param.dilations[0]), dilationY: UInt16(param.dilations[1]), groups: UInt16(param.groups), iC: UInt16(iC), fC: UInt16(fC), oC: UInt16(oC), hasAddOp: UInt16(hasAddOp() ? 1 : 0), hasReluOp: UInt16(hasReluOp() ? 1 : 0))
+        var addParam = ElementwiseAddMetalParam()
+        if let inputY = param.y {
+            addParam = ElementwiseAddKernel<P>.metalParamFrom(inputX: param.output, inputY: inputY, axis: param.axis)
+        }
+        let inMetalParam = MetalConvParam.init(offsetX: Int16(offsetX), offsetY: Int16(offsetY), offsetZ: Int16(offsetZ), strideX: UInt16(param.stride[0]), strideY: UInt16(param.stride[1]), dilationX: UInt16(param.dilations[0]), dilationY: UInt16(param.dilations[1]), groups: UInt16(param.groups), iC: UInt16(iC), fC: UInt16(fC), oC: UInt16(oC), hasAddOp: UInt16(type(of: self).hasAddOp() ? 1 : 0), hasReluOp: UInt16(type(of: self).hasReluOp() ? 1 : 0), addParam: addParam)
         metalParam = inMetalParam
         
         if type(of: self).isWinoGrad(functionName: functionName) {
@@ -304,7 +318,7 @@ class ConvAddReluKernel<P: PrecisionProtocol>: Kernel, Computable {
     }
     
     open func neuronFilterForMPSLayer(device: MTLDevice) -> AnyObject? {
-        if hasReluOp() {
+        if type(of: self).hasReluOp() {
             if #available(iOS 10.0, *) {
                 return MPSCNNNeuronReLU(device: device, a: 0)
             }
@@ -312,11 +326,29 @@ class ConvAddReluKernel<P: PrecisionProtocol>: Kernel, Computable {
         return nil
     }
     
-    open func hasAddOp() -> Bool {
+    open class func canAddUseMPS(param: ConvAddReluParam<P>) -> Bool {
+        return canMPSAddByChannel(param: param) || canMPSAddByElement(param: param)
+    }
+    
+    private class func canMPSAddByChannel(param: ConvAddReluParam<P>) -> Bool {
+        if let yTensor = param.yTensor, yTensor.dim.cout() == 1 {
+            return true
+        }
+        return false
+    }
+    
+    private class func canMPSAddByElement(param: ConvAddReluParam<P>) -> Bool {
+        if let y = param.y, y.dim.dims == param.input.dim.dims {
+            return true
+        }
+        return false
+    }
+    
+    open class func hasAddOp() -> Bool {
         return true
     }
     
-    open func hasReluOp() -> Bool {
+    open class func hasReluOp() -> Bool {
         return true
     }
     

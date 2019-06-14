@@ -25,6 +25,11 @@ class ConvAddReluParam<P: PrecisionProtocol>: OpParam {
             dilations = try ConvAddReluParam.getAttr(key: "dilations", attrs: opDesc.attrs)
             groups = try ConvAddReluParam.getAttr(key: "groups", attrs: opDesc.attrs)
             do {
+                axis = try ConvAddReluParam.getAttr(key: "axis", attrs: opDesc.attrs)
+            } catch {
+                axis = -1
+            }
+            do {
                 y = try ConvAddReluParam.inputY(inputs: opDesc.paraInputs, from: inScope)
             } catch {
                 do {
@@ -32,7 +37,7 @@ class ConvAddReluParam<P: PrecisionProtocol>: OpParam {
                     let device = input.metalTexture!.device
                     y = Texture.init(device: device, inDim: yTensor.dim)
                     let value: [P] = Array(UnsafeBufferPointer(start: yTensor.data.pointer, count: yTensor.dim.numel()))
-                    y?.metalTexture = device.tensor2texture(value: value, dim: yTensor.dim.dims, transpose: [0, 2, 3, 1], inComputePrecision: GlobalConfig.shared.computePrecision)
+                    y?.metalTexture = device.tensor2texture(value: value, dim: yTensor.dim.dims, transpose: [0, 1, 2, 3], inComputePrecision: GlobalConfig.shared.computePrecision)
                     self.yTensor = yTensor
                 } catch {
                 }
@@ -49,6 +54,7 @@ class ConvAddReluParam<P: PrecisionProtocol>: OpParam {
     let paddings: [Int32]
     let dilations: [Int32]
     let groups: Int
+    let axis: Int
     
     var y: Texture?
     var yTensor: Tensor<P>?
