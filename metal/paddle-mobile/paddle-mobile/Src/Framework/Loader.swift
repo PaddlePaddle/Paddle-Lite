@@ -105,8 +105,8 @@ public class Loader<P: PrecisionProtocol>: Loaderable {
                 } while (false)
             } else {
                 fseek(file, MemoryLayout<CChar>.size * tensorDescSize, SEEK_CUR)
+                nowIndex += MemoryLayout<CChar>.size * tensorDescSize
             }
-            nowIndex += MemoryLayout<CChar>.size * tensorDescSize
             
             /*
              这里没有根据 Data Type 去判断, 而是从外部泛型直接指定了精度
