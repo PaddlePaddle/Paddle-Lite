@@ -17,6 +17,56 @@
 
 using namespace metal;
 
+half4 getBiasHalf(uint3 gid, constant ElementwiseAddParam &addParam, texture2d_array<half, access::sample> biasTexture) {
+    half4 output;
+    if (addParam.fast) {
+        output = biasTexture.read(gid.xy, gid.z);
+    } else {
+        int32_t x_xyzn[4] = {int32_t(gid.x), int32_t(gid.y), int32_t(gid.z), 0}, x_abcd[4], t_abcd[4];
+        int32_t y_abcd[4] = {0, 0, 0, 0}, y_xyzn[4];
+        int32_t xtrans[4] = {addParam.xtrans[0], addParam.xtrans[1], addParam.xtrans[2], addParam.xtrans[3]};
+        int32_t ytrans[4] = {addParam.ytrans[0], addParam.ytrans[1], addParam.ytrans[2], addParam.ytrans[3]};
+        int32_t yshift = 4 - addParam.ylen - addParam.axis;
+        for (int n = 0; n < 4; n++) {
+            x_xyzn[3] = n;
+            xyzn2abcd(addParam.xdim[3], x_xyzn, x_abcd);
+            invtrans(xtrans, x_abcd, t_abcd);
+            for (int k = addParam.axis; k < (addParam.axis + addParam.ylen); k++) {
+                y_abcd[yshift+k] = t_abcd[k];
+            }
+            trans(ytrans, y_abcd, t_abcd);
+            abcd2xyzn(addParam.ydim[3], t_abcd, y_xyzn);
+            output[n] = biasTexture.read(uint2(y_xyzn[0], y_xyzn[1]), y_xyzn[2])[y_xyzn[3]];
+        }
+    }
+    return output;
+}
+
+float4 getBias(uint3 gid, constant ElementwiseAddParam &addParam, texture2d_array<float, access::sample> biasTexture) {
+    float4 output;
+    if (addParam.fast) {
+        output = float4(biasTexture.read(gid.xy, gid.z));
+    } else {
+        int32_t x_xyzn[4] = {int32_t(gid.x), int32_t(gid.y), int32_t(gid.z), 0}, x_abcd[4], t_abcd[4];
+        int32_t y_abcd[4] = {0, 0, 0, 0}, y_xyzn[4];
+        int32_t xtrans[4] = {addParam.xtrans[0], addParam.xtrans[1], addParam.xtrans[2], addParam.xtrans[3]};
+        int32_t ytrans[4] = {addParam.ytrans[0], addParam.ytrans[1], addParam.ytrans[2], addParam.ytrans[3]};
+        int32_t yshift = 4 - addParam.ylen - addParam.axis;
+        for (int n = 0; n < 4; n++) {
+            x_xyzn[3] = n;
+            xyzn2abcd(addParam.xdim[3], x_xyzn, x_abcd);
+            invtrans(xtrans, x_abcd, t_abcd);
+            for (int k = addParam.axis; k < (addParam.axis + addParam.ylen); k++) {
+                y_abcd[yshift+k] = t_abcd[k];
+            }
+            trans(ytrans, y_abcd, t_abcd);
+            abcd2xyzn(addParam.ydim[3], t_abcd, y_xyzn);
+            output[n] = biasTexture.read(uint2(y_xyzn[0], y_xyzn[1]), y_xyzn[2])[y_xyzn[3]];
+        }
+    }
+    return output;
+}
+
 #pragma mark - convAdd
 kernel void conv_add_relu_1x1(texture2d_array<float, access::sample> inTexture [[texture(0)]],
                          texture2d_array<float, access::sample> biasTexture [[texture(1)]],
@@ -39,7 +89,11 @@ kernel void conv_add_relu_1x1(texture2d_array<float, access::sample> inTexture [
     uint input_arr_size = inTexture.get_array_size();
     uint weithTo = gid.z * kernelHXW * input_arr_size * 4;
     
-    float4 output = param.hasAddOp == 1 ? biasTexture.sample(sample, float2(gid.xy), gid.z) : float4(0.0, 0.0, 0.0, 0.0);
+    float4 output = float4(0.0, 0.0, 0.0, 0.0);
+    if (param.hasAddOp) {
+        constant ElementwiseAddParam &addParam = param.addParam;
+        output = getBias(gid, addParam, biasTexture);
+    }
     
     float4 input;
     for (uint i = 0; i < input_arr_size; ++i) {
@@ -83,7 +137,11 @@ kernel void conv_add_relu_3x3(texture2d_array<float, access::sample> inTexture [
     
     uint weithTo = gid.z * kernelHXW * input_arr_size * 4;
     
-    float4 output = param.hasAddOp == 1 ? biasTexture.sample(sample, float2(gid.xy), gid.z) : float4(0.0, 0.0, 0.0, 0.0);
+    float4 output = float4(0.0, 0.0, 0.0, 0.0);
+    if (param.hasAddOp) {
+        constant ElementwiseAddParam &addParam = param.addParam;
+        output = getBias(gid, addParam, biasTexture);
+    }
     
     ushort dilation_x = param.dilationX;
     ushort dilation_y = param.dilationY;
@@ -146,7 +204,11 @@ kernel void group_conv_add_relu_3x3(texture2d_array<float, access::sample> inTex
     
     const uint kernelHXW = 9;
     
-    float4 output = param.hasAddOp == 1 ? biasTexture.sample(sample, float2(gid.xy), gid.z) : float4(0.0, 0.0, 0.0, 0.0);
+    float4 output = float4(0.0, 0.0, 0.0, 0.0);
+    if (param.hasAddOp) {
+        constant ElementwiseAddParam &addParam = param.addParam;
+        output = getBias(gid, addParam, biasTexture);
+    }
     
     ushort dilation_x = param.dilationX;
     ushort dilation_y = param.dilationY;
@@ -205,7 +267,11 @@ kernel void conv_add_relu_5x1(texture2d_array<float, access::sample> inTexture [
     
     uint weithTo = gid.z * kernelHXW * input_arr_size * 4;
     
-    float4 output = param.hasAddOp == 1 ? biasTexture.sample(sample, float2(gid.xy), gid.z) : float4(0.0, 0.0, 0.0, 0.0);
+    float4 output = float4(0.0, 0.0, 0.0, 0.0);
+    if (param.hasAddOp) {
+        constant ElementwiseAddParam &addParam = param.addParam;
+        output = getBias(gid, addParam, biasTexture);
+    }
     
     ushort dilation_y = param.dilationY;
     float4 input[5];
@@ -262,7 +328,11 @@ kernel void conv_add_relu_1x5(texture2d_array<float, access::sample> inTexture [
     
     uint weithTo = gid.z * kernelHXW * input_arr_size * 4;
     
-    float4 output = param.hasAddOp == 1 ? biasTexture.sample(sample, float2(gid.xy), gid.z) : float4(0.0, 0.0, 0.0, 0.0);
+    float4 output = float4(0.0, 0.0, 0.0, 0.0);
+    if (param.hasAddOp) {
+        constant ElementwiseAddParam &addParam = param.addParam;
+        output = getBias(gid, addParam, biasTexture);
+    }
     
     ushort dilation_x = param.dilationX;
     float4 input[5];
@@ -313,7 +383,13 @@ kernel void depthwise_conv_add_relu_3x3(texture2d_array<float, access::sample> i
     constexpr sampler sample(coord::pixel, filter::nearest, address::clamp_to_zero);
     const uint kernelHXW = 9;
     uint weithTo = gid.z * kernelHXW * 4;
-    float4 output = param.hasAddOp == 1 ? biasTexture.sample(sample, float2(gid.xy), gid.z) : float4(0.0, 0.0, 0.0, 0.0);
+
+    float4 output = float4(0.0, 0.0, 0.0, 0.0);
+    if (param.hasAddOp) {
+        constant ElementwiseAddParam &addParam = param.addParam;
+        output = getBias(gid, addParam, biasTexture);
+    }
+    
     float4 inputs[9];
     inputs[0] = inTexture.sample(sample, float2(posInInput.x - 1,    posInInput.y - 1), output_slice);
     inputs[1] = inTexture.sample(sample, float2(posInInput.x,        posInInput.y - 1), output_slice);
@@ -358,7 +434,11 @@ kernel void conv_add_relu_1x1_half(texture2d_array<half, access::sample> inTextu
     uint input_arr_size = inTexture.get_array_size();
     uint weithTo = gid.z * kernelHXW * input_arr_size * 4;
     
-    float4 output = param.hasAddOp == 1 ? float4(biasTexture.sample(sample, float2(gid.xy), gid.z)) : float4(0.0, 0.0, 0.0, 0.0);
+    float4 output = float4(0.0, 0.0, 0.0, 0.0);
+    if (param.hasAddOp) {
+        constant ElementwiseAddParam &addParam = param.addParam;
+        output = float4(getBiasHalf(gid, addParam, biasTexture));
+    }
     
     float4 input;
     for (uint i = 0; i < input_arr_size; ++i) {
@@ -399,11 +479,15 @@ kernel void conv_add_relu_3x3_half(texture2d_array<half, access::sample> inTextu
     uint input_arr_size = inTexture.get_array_size();
     uint weithTo = gid.z * kernelHXW * input_arr_size * 4;
     
-    float4 output = param.hasAddOp == 1 ? float4(biasTexture.sample(sample, float2(gid.xy), gid.z)) : float4(0.0, 0.0, 0.0, 0.0);
-    
+    float4 output = float4(0.0, 0.0, 0.0, 0.0);
+    if (param.hasAddOp) {
+        constant ElementwiseAddParam &addParam = param.addParam;
+        output = float4(getBiasHalf(gid, addParam, biasTexture));
+    }
+
     ushort dilation_x = param.dilationX;
     ushort dilation_y = param.dilationY;
-    
+
     half4 input[9];
     for (uint i = 0; i < input_arr_size; ++i) {
         input[0] = inTexture.sample(sample, float2(posInInput.x - dilation_x,    posInInput.y - dilation_y), i);
@@ -418,13 +502,13 @@ kernel void conv_add_relu_3x3_half(texture2d_array<half, access::sample> inTextu
         for (int j = 0; j < 9; ++j) {
             half4 weight_x = weights[weithTo + 0 * kernelHXW * input_arr_size + j * input_arr_size + i];
             output.x += dot(float4(input[j]), float4(weight_x));
-            
+
             half4 weight_y = weights[weithTo + 1 * kernelHXW * input_arr_size + j * input_arr_size + i];
             output.y += dot(float4(input[j]), float4(weight_y));
-            
+
             half4 weight_z = weights[weithTo + 2 * kernelHXW * input_arr_size + j * input_arr_size + i];
             output.z += dot(float4(input[j]), float4(weight_z));
-            
+
             half4 weight_w = weights[weithTo + 3 * kernelHXW * input_arr_size + j * input_arr_size + i];
             output.w += dot(float4(input[j]), float4(weight_w));
         }
@@ -452,7 +536,11 @@ kernel void group_conv_add_relu_3x3_half(texture2d_array<half, access::sample> i
     
     const uint kernelHXW = 9;
     
-    float4 output = param.hasAddOp == 1 ? float4(biasTexture.sample(sample, float2(gid.xy), gid.z)) : float4(0.0, 0.0, 0.0, 0.0);
+    float4 output = float4(0.0, 0.0, 0.0, 0.0);
+    if (param.hasAddOp) {
+        constant ElementwiseAddParam &addParam = param.addParam;
+        output = float4(getBiasHalf(gid, addParam, biasTexture));
+    }
     
     ushort dilation_x = param.dilationX;
     ushort dilation_y = param.dilationY;
@@ -505,7 +593,13 @@ kernel void depthwise_conv_add_relu_3x3_half(texture2d_array<half, access::sampl
     constexpr sampler sample(coord::pixel, filter::nearest, address::clamp_to_zero);
     const uint kernelHXW = 9;
     uint weithTo = gid.z * kernelHXW * 4;
-    float4 output = param.hasAddOp == 1 ? float4(biasTexture.sample(sample, float2(gid.xy), gid.z)) : float4(0.0, 0.0, 0.0, 0.0);
+
+    float4 output = float4(0.0, 0.0, 0.0, 0.0);
+    if (param.hasAddOp) {
+        constant ElementwiseAddParam &addParam = param.addParam;
+        output = float4(getBiasHalf(gid, addParam, biasTexture));
+    }
+
     half4 inputs[9];
     inputs[0] = inTexture.sample(sample, float2(posInInput.x - 1,    posInInput.y - 1), output_slice);
     inputs[1] = inTexture.sample(sample, float2(posInInput.x,        posInInput.y - 1), output_slice);
@@ -523,7 +617,7 @@ kernel void depthwise_conv_add_relu_3x3_half(texture2d_array<half, access::sampl
         output.z += float(input.z) * float(weights[weithTo + 2 * kernelHXW + j]);
         output.w += float(input.w) * float(weights[weithTo + 3 * kernelHXW + j]);
     }
-    
+
     float4 relu = param.hasReluOp == 1 ? fmax(output, 0.0) : output;
     outTexture.write(half4(relu), gid.xy, gid.z);
 }
@@ -584,7 +678,7 @@ kernel void depthwise_conv_add_relu_3x3_half_winograd(texture2d_array<half, acce
 
     for (int c = 0; c < 4; ++c) {
         if (hasComputedC + c >= param.oC) {
-            return;
+            break;
         }
         half I[16];
         for (int i = 0; i < 16; ++i) {
@@ -644,13 +738,14 @@ kernel void depthwise_conv_add_relu_3x3_half_winograd(texture2d_array<half, acce
     }
     
     if (param.hasAddOp == 1) {
-        half4 base = biasTexture.sample(sample, float2(tx, ty), tc);
+        constant ElementwiseAddParam &addParam = param.addParam;
+        half4 base = getBiasHalf(uint3(tx, ty, tc), addParam, biasTexture);
         res[0] += base;
-        base = biasTexture.sample(sample, float2(tx + 1, ty), tc);
+        base = getBiasHalf(uint3(tx + 1, ty, tc), addParam, biasTexture);
         res[1] += base;
-        base = biasTexture.sample(sample, float2(tx, ty + 1), tc);
+        base = getBiasHalf(uint3(tx, ty + 1, tc), addParam, biasTexture);
         res[2] += base;
-        base = biasTexture.sample(sample, float2(tx + 1, ty + 1), tc);
+        base = getBiasHalf(uint3(tx + 1, ty + 1, tc), addParam, biasTexture);
         res[3] += base;
     }
 
@@ -690,8 +785,12 @@ kernel void conv_add_relu_5x1_half(texture2d_array<half, access::sample> inTextu
     
     uint weithTo = gid.z * kernelHXW * input_arr_size * 4;
     
-    float4 output = param.hasAddOp == 1 ? float4(biasTexture.sample(sample, float2(gid.xy), gid.z)) : float4(0.0, 0.0, 0.0, 0.0);
-    
+    float4 output = float4(0.0, 0.0, 0.0, 0.0);
+    if (param.hasAddOp) {
+        constant ElementwiseAddParam &addParam = param.addParam;
+        output = float4(getBiasHalf(gid, addParam, biasTexture));
+    }
+
     ushort dilation_y = param.dilationY;
     half4 input[5];
     
@@ -747,8 +846,12 @@ kernel void conv_add_relu_1x5_half(texture2d_array<half, access::sample> inTextu
     
     uint weithTo = gid.z * kernelHXW * input_arr_size * 4;
     
-    float4 output = param.hasAddOp == 1 ? float4(biasTexture.sample(sample, float2(gid.xy), gid.z)) : float4(0.0, 0.0, 0.0, 0.0);
-    
+    float4 output = float4(0.0, 0.0, 0.0, 0.0);
+    if (param.hasAddOp) {
+        constant ElementwiseAddParam &addParam = param.addParam;
+        output = float4(getBiasHalf(gid, addParam, biasTexture));
+    }
+
     ushort dilation_x = param.dilationX;
     half4 input[5];
     

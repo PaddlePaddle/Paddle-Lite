@@ -34,27 +34,8 @@ class ElementwiseAddKernel<P: PrecisionProtocol>: Kernel, Computable {
             throw error
         }
         
-        metalParam = ElementwiseAddMetalParam.init()
+        metalParam = ElementwiseAddKernel.metalParamFrom(inputX: param.inputX, inputY: param.inputY, axis: param.axis)
         
-        let xdim: [Int32] = (0..<4).map { Int32(param.inputX.dim[$0]) }
-        let ydim: [Int32] = (0..<4).map { Int32(param.inputY.dim[$0]) }
-        let xtrans: [Int32] = (0..<4).map { Int32(param.inputX.transpose[$0]) }
-        let ytrans: [Int32] = (0..<4).map { Int32(param.inputY.transpose[$0]) }
-        
-        metalParam.xdim = (xdim[0], xdim[1], xdim[2], xdim[3])
-        metalParam.ydim = (ydim[0], ydim[1], ydim[2], ydim[3])
-        metalParam.xtrans = (xtrans[0], xtrans[1], xtrans[2], xtrans[3])
-        metalParam.ytrans = (ytrans[0], ytrans[1], ytrans[2], ytrans[3])
-        if param.axis == -1 {
-            metalParam.axis = 4 - Int32(param.inputY.tensorDim.cout())
-        } else {
-            metalParam.axis = 4 - Int32(param.inputX.tensorDim.cout()) + Int32(param.axis)
-        }
-        metalParam.ylen = Int32(param.inputY.tensorDim.cout())
-        if (param.inputX.dim == param.inputY.dim) && (param.inputX.transpose == param.inputY.transpose) {
-            //      print("===> elementwise_add fast!!!")
-            metalParam.fast = 1
-        }
         if GlobalConfig.shared.computePrecision == .Float32 {
             super.init(device: device, inFunctionName: "elementwise_add", initContext: initContext)
         } else if GlobalConfig.shared.computePrecision == .Float16 {
@@ -74,5 +55,30 @@ class ElementwiseAddKernel<P: PrecisionProtocol>: Kernel, Computable {
         encoder.setBytes(&metalParam, length: MemoryLayout<ElementwiseAddMetalParam>.size, index: 0)
         encoder.dispatch(computePipline: pipline, outTexture: param.output.metalTexture)
         encoder.endEncoding()
+    }
+    
+    static func metalParamFrom(inputX: Texture, inputY: Texture, axis: Int) -> ElementwiseAddMetalParam {
+        var metalParam = ElementwiseAddMetalParam.init()
+        
+        let xdim: [Int32] = (0..<4).map { Int32(inputX.dim[$0]) }
+        let ydim: [Int32] = (0..<4).map { Int32(inputY.dim[$0]) }
+        let xtrans: [Int32] = (0..<4).map { Int32(inputX.transpose[$0]) }
+        let ytrans: [Int32] = (0..<4).map { Int32(inputY.transpose[$0]) }
+        
+        metalParam.xdim = (xdim[0], xdim[1], xdim[2], xdim[3])
+        metalParam.ydim = (ydim[0], ydim[1], ydim[2], ydim[3])
+        metalParam.xtrans = (xtrans[0], xtrans[1], xtrans[2], xtrans[3])
+        metalParam.ytrans = (ytrans[0], ytrans[1], ytrans[2], ytrans[3])
+        if axis == -1 {
+            metalParam.axis = 4 - Int32(inputY.tensorDim.cout())
+        } else {
+            metalParam.axis = 4 - Int32(inputX.tensorDim.cout()) + Int32(axis)
+        }
+        metalParam.ylen = Int32(inputY.tensorDim.cout())
+        if (inputX.dim == inputY.dim) && (inputX.transpose == inputY.transpose) {
+            //      print("===> elementwise_add fast!!!")
+            metalParam.fast = 1
+        }
+        return metalParam
     }
 }

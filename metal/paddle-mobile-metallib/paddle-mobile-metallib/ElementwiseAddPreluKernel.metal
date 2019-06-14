@@ -16,16 +16,6 @@
 #include "Common.metal"
 using namespace metal;
 
-struct ElementwiseAddParam {
-    int32_t fast;
-    int32_t axis;
-    int32_t ylen;
-    int32_t xdim[4];
-    int32_t xtrans[4];
-    int32_t ydim[4];
-    int32_t ytrans[4];
-};
-
 #define P float
 
 #define PRELU_CHANNEL prelu_channel

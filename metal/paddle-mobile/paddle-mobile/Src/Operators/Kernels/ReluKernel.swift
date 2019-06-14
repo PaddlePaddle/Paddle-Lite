@@ -26,6 +26,11 @@ class ReluKernel<P: PrecisionProtocol>: Kernel, Computable{
     }
     
     required init(device: MTLDevice, param: ReluParam<P>, initContext: InitContext) throws {
+        do {
+            try param.output.initTexture(device: device, inTranspose: param.input.transpose, computePrecision: GlobalConfig.shared.computePrecision)
+        } catch let error {
+            throw error
+        }
         if GlobalConfig.shared.computePrecision == .Float32 {
             super.init(device: device, inFunctionName: "relu", initContext: initContext)
         } else if GlobalConfig.shared.computePrecision == .Float16 {
