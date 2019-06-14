@@ -41,11 +41,6 @@ void NearestInterpKernel<FPGA, float>::Compute(
   zynqmp::Context& context = const_cast<zynqmp::Context&>(param.context_);
   zynqmp::ResizePE& pe = context.pe<zynqmp::ResizePE>();
   pe.dispatch();
-  // param.InputX()->zynqmpTensor()->saveToFile("resize_in.txt");
-  // param.Out()->zynqmpTensor()->saveToFile("resize.txt");
-  param.Out()->zynqmpTensor()->printScale();
-  // float* scale = param.Out()->zynqmpTensor()->scale();
-  // std::cout << "scale:" << scale[0] << " inv:" << scale[1] << std::endl;
 }
 
 template class NearestInterpKernel<FPGA, float>;

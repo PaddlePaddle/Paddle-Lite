@@ -51,7 +51,6 @@ void ReshapeKernel<FPGA, float>::Compute(const ReshapeParam<FPGA> &param) {
 
   // input_x->zynqmpTensor()->saveToFile("reshape_in.txt");
 
-  // out->zynqmpTensor()->copyFrom(input_x->zynqmpTensor());
   // out->zynqmpTensor()->saveToFile("reshape_out.txt");
   out->Resize(out_dims);
   // if (!inplace) {

@@ -2,10 +2,11 @@ cmake_minimum_required(VERSION 3.0.0)
 
 option(USE_OPENMP    "build with openmp support" ON)
 option(USE_EXCEPTION "build with exception" ON)
-option(WITH_LOGGING  "print logging for debug" ON)
+option(WITH_LOGGING  "print logging for debug" OFF)
 option(WITH_SYMBOL   "build with all symbols" ON) # turn off if use jni or ios io
-option(WITH_PROFILE  "print op profile for debug" ON)
-option(WITH_TEST     "build with unit tests" ON)
+option(WITH_PROFILE  "print op profile for debug" OFF)
+option(WITH_TEST     "build with unit tests" OFF)
+option(DEBUG_MODE "debug mode" OFF)
 
 # select the platform to build
 option(CPU        "build with arm CPU support" OFF)
@@ -23,10 +24,16 @@ file(GLOB_RECURSE PADDLE_MOBILE_CC src/*.cc src/*.cpp src/*.c src/*.mm)
 file(GLOB_RECURSE PADDLE_MOBILE_H src/*.h src/*.hpp)
 include_directories(src/)
 
-SET(CMAKE_BUILD_TYPE "Debug")
-
-SET(CMAKE_CXX_FLAGS_DEBUG "$ENV{CXXFLAGS} -O0 -Wall -g -ggdb")
-SET(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3 -Wall")
+if(DEBUG_MODE)
+    option(WITH_LOGGING  "print logging for debug" ON)
+    option(WITH_PROFILE  "print op profile for debug" ON)
+    option(WITH_TEST     "build with unit tests" ON)
+    SET(CMAKE_BUILD_TYPE "Debug")
+    SET(CMAKE_CXX_FLAGS_DEBUG "$ENV{CXXFLAGS} -O0 -Wall -g -ggdb")
+else()
+    SET(CMAKE_BUILD_TYPE "Release")
+    SET(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3 -Wall")
+endif()
 
 #set(CMAKE_CXX_FLAGS "-O3 -s -DNDEBUG ${CMAKE_CXX_FLAGS} -Wno-attributes")
 if(IS_IOS)

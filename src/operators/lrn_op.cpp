@@ -36,4 +36,8 @@ REGISTER_OPERATOR_CPU(lrn, ops::LrnOp);
 REGISTER_OPERATOR_CL(lrn, ops::LrnOp);
 #endif
 
+#if defined(PADDLE_MOBILE_FPGA) || defined(PADDLE_MOBILE_FPGA_KD)
+REGISTER_OPERATOR_FPGA(lrn, ops::LrnOp);
+#endif
+
 #endif

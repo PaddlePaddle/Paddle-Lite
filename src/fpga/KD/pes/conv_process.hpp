@@ -186,9 +186,9 @@ inline void format_fc_filter(Tensor* filter, Tensor* quantized_filter) {
   size_t memory_size = filter->shape().memorySize(sizeof(float));
   auto new_data = (float*)fpga_malloc(memory_size);  // NOLINT
   memcpy(new_data, filter->data<float>(), memory_size);
-  filter::format_fc_filter(&new_data, filter_shape.num(),
-                           filter_shape.channel(), filter_shape.height(),
-                           filter_shape.width(), 1, max_value);
+  // filter::format_fc_filter(&new_data, filter_shape.num(),
+  //                          filter_shape.channel(), filter_shape.height(),
+  //                          filter_shape.width(), 1, max_value);
 
   int8_t* src = quantized_filter->mutableData<int8_t>(INT8, filter->shape());
   memcpy(src, new_data, quantized_filter->shape().memorySize(sizeof(int8_t)));
@@ -380,7 +380,9 @@ inline void split_channel(const ConvParam& c_param) {
 inline int fill_split_arg(const ConvParam& c_param) {
   ConvParam& param = const_cast<ConvParam&>(c_param);
   Tensor* input = param.input;
-  if (input->shape().channel() > 2047 && input->shape().width() == 1) {
+  Tensor* output = param.output;
+  if (output->shape().dimSize() == 4 && input->shape().channel() > 2047 &&
+      input->shape().width() == 1) {
     split_channel(c_param);
     return 1;
   } else {

@@ -44,13 +44,12 @@ bool BatchNormKernel<FPGA, float>::Init(BatchNormParam<FPGA>* param) {
 
 template <>
 void BatchNormKernel<FPGA, float>::Compute(const BatchNormParam<FPGA>& param) {
-  std::cout << "BatchNormKernel" << std::endl;
   zynqmp::Context& context = const_cast<zynqmp::Context&>(param.context_);
   zynqmp::BatchnormPE& pe = context.pe<zynqmp::BatchnormPE>();
   pe.dispatch();
-
-  param.OutputY()->zynqmpTensor()->printScale();
-  // param.OutputY()->zynqmpTensor()->saveToFile("bn_out_", true);
+  // std::cout << "bn\n";
+  // param.OutputY()->zynqmpTensor()->printScale();
+  // param.OutputY()->zynqmpTensor()->saveToFile("bn.txt");
 }
 template class BatchNormKernel<FPGA, float>;
 

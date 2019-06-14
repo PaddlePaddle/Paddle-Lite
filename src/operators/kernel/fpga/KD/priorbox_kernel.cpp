@@ -50,16 +50,9 @@ bool PriorBoxKernel<FPGA, float>::Init(PriorBoxParam<FPGA>* param) {
 
 template <>
 void PriorBoxKernel<FPGA, float>::Compute(const PriorBoxParam<FPGA>& param) {
-
   zynqmp::Context& context = const_cast<zynqmp::Context&>(param.context_);
   zynqmp::PriorBoxPE& pe = context.pe<zynqmp::PriorBoxPE>();
   pe.dispatch();
-
-  param.OutputBoxes()->zynqmpTensor()->printScale();
-  // param.OutputBoxes()->zynqmpTensor()->saveToFile("outbox_.txt");
-  param.OutputVariances()->zynqmpTensor()->printScale();
-  // param.OutputVariances()->zynqmpTensor()->saveToFile("outvar_.txt");
-  // exit(-1);
 }
 
 template class PriorBoxKernel<FPGA, float>;

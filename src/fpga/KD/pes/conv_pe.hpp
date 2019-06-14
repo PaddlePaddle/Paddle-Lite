@@ -100,11 +100,12 @@ class ConvPE : public PE {
   }
 
   bool dispatch() {
-    if (param_.input->shape().width() == 1 &&
-        param_.input->shape().channel() < 2048) {
-      cpu_compute();
-      return true;
-    }
+    // if (param_.input->shape().dimSize() == 4 && param_.input->shape().width()
+    // == 1 &&
+    //     param_.input->shape().channel() < 2048) {
+    //   cpu_compute();
+    //   return true;
+    // }
 
     inplace_.relu_enable = param_.relu.enabled;
     inplace_.power_enable = false;
@@ -118,8 +119,7 @@ class ConvPE : public PE {
     std::vector<BasicConvParam*>& params = param_.splitParams();
     int ret = 0;
     for (auto conv_param : params) {
-      // std::cout << "image_scale:\n" ;
-      conv_param->input.printScale();
+      // conv_param->input.printScale();
       ret |= compute_fpga_conv_basic(conv_param->args);
     }
 
@@ -131,6 +131,7 @@ class ConvPE : public PE {
 
     size_t size = params.size();
     if (split_axis == 0 && ret == 0 && size > 1) {
+      // std::cout << "concat size:" << size << std::endl;
       concatPE_.dispatch();
     }
     if (split_axis == 1 && ret == 0 && size > 1) {

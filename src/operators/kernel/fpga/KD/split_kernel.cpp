@@ -45,11 +45,6 @@ void SplitKernel<FPGA, float>::Compute(const SplitParam<FPGA>& param) {
   zynqmp::Context& context = const_cast<zynqmp::Context&>(param.context_);
   zynqmp::SplitPE& pe = context.pe<zynqmp::SplitPE>();
   pe.dispatch();
-
-  // param.InputX()->zynqmpTensor()->saveToFile("split_in.txt");
-  // std::vector<LoDTensor*> outs = param.Outs();
-  // outs[0]->zynqmpTensor()->saveToFile("split.txt");
-  // outs[1]->zynqmpTensor()->saveToFile("split.txt");
 }
 
 template class SplitKernel<FPGA, float>;

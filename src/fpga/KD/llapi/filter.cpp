@@ -22,7 +22,9 @@ namespace paddle_mobile {
 namespace zynqmp {
 namespace filter {
 
-static const int FILTER_SIZE = 2048;
+static int FILTER_SIZE = 512;
+
+void set_filter_capacity(uint32_t cap) { FILTER_SIZE = cap; }
 
 int calc_division_capacity(int chw) {
   int n = FILTER_SIZE / ((chw + 15) / 16) * 32;
@@ -35,8 +37,6 @@ int calc_split_num(int num, int division_capacity) {
 
 int calc_division_number(int num, int group_num, int division_capacity) {
   int split_num = calc_split_num(num, division_capacity);
-  //  PADDLE_MOBILE_ENFORCE(group_num == 1 || split_num == 1,
-  //                        "Split number or group number should be 1");
   return group_num * split_num;
 }
 
@@ -232,47 +232,6 @@ size_t format_filter(float **data_in, int num, int channel, int height,
   return mem_size;
 }
 
-void convert_fc_filter(char **data_in, int num, int chw) {
-  char *tmp = *data_in;
-  char *data_tmp = (char *)fpga_malloc(chw * num * sizeof(char));  // NOLINT
-  for (int n = 0; n < num; n++) {
-    for (int c = 0; c < chw; c++) {
-      data_tmp[n * chw + c] = (*data_in)[num * c + n];
-    }
-  }
-  *data_in = data_tmp;
-  fpga_free(tmp);
-}
-
-void format_fc_filter(float **data_in, int num, int channel, int height,
-                      int width, int group_num, float max) {
-  int data_size = channel * height * width * num;
-  int chw = channel * height * width;
-
-  int division_capacity = calc_division_capacity(chw);
-  int num_per_div_before_alignment =
-      calc_num_per_div(num, group_num, division_capacity);
-  int num_per_div_after_alignment =
-      align_to_x(num_per_div_before_alignment, FILTER_NUM_ALIGNMENT);
-  int div_num =
-      (num + num_per_div_before_alignment - 1) / num_per_div_before_alignment;
-  int residual = num % num_per_div_before_alignment;
-  int num_after_alignment = num_per_div_after_alignment *
-                                ((residual == 0) ? div_num : (div_num - 1)) +
-                            align_to_x(residual, FILTER_NUM_ALIGNMENT);
-
-  quantize(data_in, data_size, max);
-  char **quantize_data = (char **)data_in;  // NOLINT
-  convert_fc_filter(quantize_data, num, chw);
-  align_element(quantize_data, num, chw);
-  if (num_after_alignment != num) {
-    align_num(quantize_data, num_per_div_before_alignment, num, chw);
-  }
-  reorder(quantize_data, num_after_alignment, chw);
-  interleave(quantize_data, num_after_alignment, chw);
-  fpga_flush(*quantize_data, align_to_x(chw, FILTER_ELEMENT_ALIGNMENT) *
-                                 num_after_alignment * sizeof(char));
-}
 void convert_to_hwn(int16_t **data_in, int num, int height, int width) {
   int16_t *tmp = *data_in;
   int16_t *data_tmp =

@@ -33,7 +33,7 @@ void TransposeCompute(const TransposeParam<FPGA>& param) {
   int num = input_x_dims[1];
   int channel = input_x_dims[2];
 
-  DLOG << "num::" << num << "  channel::" << channel;
+  // DLOG << "num::" << num << "  channel::" << channel;
 
   int index = 0;
   for (int n = 0; n < num; n++) {
@@ -68,22 +68,16 @@ bool TransposeKernel<FPGA, float>::Init(TransposeParam<FPGA>* param) {
 
 template <>
 void TransposeKernel<FPGA, float>::Compute(const TransposeParam<FPGA>& param) {
-  // Transpose2Compute<float>(param);
   auto input = param.InputX();
   auto output = param.Out();
-  // input->zynqmpTensor()
   input->zynqmpTensor()->unalignImage();
-
   if (param.InputX()->dims().size() != 4) {
     TransposeCompute<float>(param);
     auto out = param.Out();
-    // out->set_data_aligned(param.InputX()->data_aligned());
     auto out_data = out->data<half>();
   } else {
     output->zynqmpTensor()->copyFrom(input->zynqmpTensor());
   }
-
-  // output->zynqmpTensor()->saveToFile("transpose.txt");
 }
 
 }  // namespace operators

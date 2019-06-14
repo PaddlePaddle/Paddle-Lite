@@ -338,8 +338,11 @@ class Tensor {
   }
 
   void printScale() {
-    // DLOG << "scale:" << scale_[0] << " inv:" << scale_[1];
-    // std::cout << "scale:" << scale_[0] << " inv:" << scale_[1] << std::endl;
+    if (placeHolder_ == nullptr) {
+      return;
+    }
+    DLOG << "scale:" << placeHolder_->scale_[0]
+         << " inv:" << placeHolder_->scale_[1];
   }
 
   std::string dimsFileName() {
@@ -352,7 +355,7 @@ class Tensor {
   void saveToFile() {
     // std::string path = std::to_string(id_) + ".txt";
     std::string path = dimsFileName();
-    saveToFile(path);
+    // saveToFile(path);
   }
 
   void saveToFile(std::string prefix, bool with_shape) {
@@ -375,7 +378,7 @@ class Tensor {
   }
 
   void save_file_with_name(std::string path) {
-    // return;
+    return;
     invalidate();
     std::ofstream ofs;
 

@@ -47,6 +47,10 @@ struct VersionArgs {
   void* buffer;
 };
 
+struct DeviceInfo {
+  uint32_t filter_cap;
+};
+
 struct MemoryCopyArgs {
   void* src;
   void* dest;
@@ -210,6 +214,7 @@ struct FpgaResetArgs {};
 #define IOCTL_FPGA_MAGIC (('F' + 'P' + 'G' + 'A') / 4)
 
 #define IOCTL_VERSION _IOW(IOCTL_FPGA_MAGIC, 01, struct VersionArgs)
+#define IOCTL_DEVICE_INFO _IOW(IOCTL_FPGA_MAGIC, 100, struct DeviceInfo)
 
 #define IOCTL_SEPARATOR_0 10
 
@@ -241,15 +246,6 @@ struct FpgaResetArgs {};
 #define IOCTL_FPGA_RESET _IOW(IOCTL_FPGA_MAGIC, 52, struct FpgaResetArgs)
 
 //============================== API =============================
-
-// struct DWconvArgs {
-//     bool relu_enabled;
-//     void* bias_address;
-//     void* filter_address;
-//     struct KernelArgs kernel;
-//     struct ImageInputArgs image;
-//     struct ImageOutputArgs output;
-// };
 
 struct DeconvArgs {
   uint32_t sub_conv_num;
@@ -304,7 +300,6 @@ struct GroupConvArgs {
 inline int align_to_x(int num, int x) { return (num + x - 1) / x * x; }
 int open_device();
 void close_device();
-
 void reset_device();
 
 void* fpga_malloc(size_t size);
@@ -317,6 +312,8 @@ void fpga_copy(void* dst, const void* src, int size);
 
 int fpga_flush(void* address, size_t size);
 int fpga_invalidate(void* address, size_t size);
+
+int get_device_info(const struct DeviceInfo& args);
 
 int perform_bypass(const struct BypassArgs& args);
 int compute_fpga_conv_basic(const struct ConvArgs& args);
@@ -331,8 +328,6 @@ int config_power(const struct PowerArgs& args);
 int compute_fpga_dwconv(const struct DWconvArgs& args);
 int config_norm_param(const struct NormalizeParameterArgs& args);
 int compute_norm(const struct NormalizeArgs& args);
-
-// int config_relu(const struct ReluArgs& args);
 
 int config_inplace(const struct InplaceArgs& args);
 

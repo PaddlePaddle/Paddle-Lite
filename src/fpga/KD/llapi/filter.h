@@ -22,6 +22,7 @@ namespace paddle_mobile {
 namespace zynqmp {
 namespace filter {
 
+void set_filter_capacity(uint32_t cap);
 int calc_division_capacity(int chw);
 int calc_split_num(int num, int division_capacity);
 int calc_division_number(int num, int group_num, int division_capacity);
@@ -38,9 +39,9 @@ size_t interleave(char** data_in, int num_after_alignment, int chw);
 size_t format_filter(float** data_in, int num, int channel, int height,
                      int width, int group_num, float max);
 
-void convert_fc_filter(char** data_in, int num, int chw);
-void format_fc_filter(float** data_in, int num, int channel, int height,
-                      int width, int group_num, float max);
+// void convert_fc_filter(char** data_in, int num, int chw);
+// void format_fc_filter(float** data_in, int num, int channel, int height,
+//                       int width, int group_num, float max);
 
 void convert_to_hwn(int16_t** data_in, int num, int height, int width);
 size_t align_element_n(int16_t** data_in, int num, int height, int width);

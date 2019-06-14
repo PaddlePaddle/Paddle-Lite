@@ -75,6 +75,8 @@ class FullyConnectedPE : public PE {
       scale_data[i] = 1.0f;
       bias_data[i] = param_.bias->data<float>()[i];
     }
+    convParam_.scale()->flush();
+    convParam_.bias()->flush();
 
     convPE_.init();
     convPE_.apply();

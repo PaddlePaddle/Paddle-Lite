@@ -251,6 +251,14 @@ int compute_fpga_ewadd(const struct EWAddArgs &args) {
   return do_ioctl(IOCTL_CONFIG_EW, &args);
 }
 
+int get_device_info(const struct DeviceInfo &args) {
+  // DeviceInfo info;
+  // struct DeviceInfo* a = &info;
+  int ret = do_ioctl(IOCTL_DEVICE_INFO, &args);
+  // std::cout << "a." << a->filter_cap << std::endl;
+  return ret;
+}
+
 int perform_bypass(const struct BypassArgs &args) {
   int size = args.image.channels * args.image.width * args.image.height;
   int max_size = 1 << 21;
@@ -376,10 +384,6 @@ int compute_norm(const struct NormalizeArgs &args) {
 int compute_fpga_resize(const struct ResizeArgs &args) {
   return do_ioctl(IOCTL_CONFIG_RESIZE, &args);
 }
-
-// uint64_t vaddr_to_paddr(void *address) {
-//     return 0;
-// }
 
 int16_t fp32_2_fp16(float fp32_num) {
   unsigned long tmp = *(unsigned long *)(&fp32_num);  // NOLINT

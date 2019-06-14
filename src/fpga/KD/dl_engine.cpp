@@ -13,3 +13,15 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "dl_engine.hpp"
+namespace paddle_mobile {
+namespace zynqmp {
+
+DLEngine::DLEngine() {
+  open_device();
+  struct DeviceInfo info;
+  int ret = get_device_info(info);
+  filter::set_filter_capacity(info.filter_cap);
+}
+
+}  // namespace zynqmp
+}  // namespace paddle_mobile

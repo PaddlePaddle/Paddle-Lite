@@ -52,18 +52,10 @@ bool ConvBNKernel<FPGA, float>::Init(FusionConvBNParam<FPGA>* param) {
 
 template <>
 void ConvBNKernel<FPGA, float>::Compute(const FusionConvBNParam<FPGA>& param) {
-  std::cout << "ConvBNKernel\n";
   zynqmp::Context& context = const_cast<zynqmp::Context&>(param.context_);
   ConvPE& pe = context.pe<ConvPE>();
   pe.dispatch();
-
-  std::string path =
-      "bn_" + std::to_string(param.Output()->zynqmpTensor()->id()) + ".txt";
-  // param.Output()->zynqmpTensor()->saveToFile(path);
-
   // param.Output()->zynqmpTensor()->saveToFile();
-  std::cout << "Out scale:" << param.Output()->zynqmpTensor()->scale()[0]
-            << std::endl;
 }
 
 }  // namespace operators
