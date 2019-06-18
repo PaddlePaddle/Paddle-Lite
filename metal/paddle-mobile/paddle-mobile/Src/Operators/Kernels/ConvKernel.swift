@@ -66,7 +66,7 @@ class ConvKernel<P: PrecisionProtocol>: Kernel, Computable {
             throw PaddleMobileError.predictError(message: " encode is nil")
         }
         encoder.setTexture(param.input.metalTexture, index: 0)
-        encoder.setTexture(param.output.metalTexture, index: 1)
+        encoder.setTexture(param.output.metalTexture, index: 2)
         encoder.setBytes(&metalParam, length: MemoryLayout<MetalConvParam>.size, index: 0)
         encoder.setBuffer(param.filter.buffer, offset: 0, index: 1)
         encoder.setBuffer(blankTensor?.buffer, offset: 0, index: 2)
@@ -111,7 +111,7 @@ class ConvKernel<P: PrecisionProtocol>: Kernel, Computable {
         let iC = param.input.tensorDim[1];
         let fC = param.filter.tensorDim[1];
         let oC = param.output.tensorDim[1];
-        let inMetalParam = MetalConvParam.init(offsetX: Int16(offsetX), offsetY: Int16(offsetY), offsetZ: Int16(offsetZ), strideX: UInt16(param.stride[0]), strideY: UInt16(param.stride[1]), dilationX: UInt16(param.dilations[0]), dilationY: UInt16(param.dilations[1]), groups: UInt16(param.groups), iC: UInt16(iC), fC: UInt16(fC), oC: UInt16(oC), hasAddOp: UInt16(hasAddOp() ? 1 : 0), hasReluOp: UInt16(hasReluOp() ? 1 : 0))
+        let inMetalParam = MetalConvParam.init(offsetX: Int16(offsetX), offsetY: Int16(offsetY), offsetZ: Int16(offsetZ), strideX: UInt16(param.stride[0]), strideY: UInt16(param.stride[1]), dilationX: UInt16(param.dilations[0]), dilationY: UInt16(param.dilations[1]), groups: UInt16(param.groups), iC: UInt16(iC), fC: UInt16(fC), oC: UInt16(oC), hasAddOp: UInt16(hasAddOp() ? 1 : 0), hasReluOp: UInt16(hasReluOp() ? 1 : 0), addParam: ElementwiseAddMetalParam())
         metalParam = inMetalParam
         
         if type(of: self).isWinoGrad(functionName: functionName) {
@@ -130,7 +130,7 @@ class ConvKernel<P: PrecisionProtocol>: Kernel, Computable {
             } else if param.filter.channel == 1 && param.filter.n == param.input.tensorDim[1] {
                 if useAggressiveOptimization {
                     let couldUseWinograd = param.filter.width == 3 && param.filter.height == 3
-                        && param.filter.n == 16 && param.stride[0] == 1 && param.stride[1] == 1
+                        && param.filter.n <= 16 && param.stride[0] == 1 && param.stride[1] == 1
                         && param.dilations[0] == 1 && param.dilations[1] == 1
                     if couldUseWinograd {
                         return "depthwise_conv_add_relu_3x3_half_winograd"

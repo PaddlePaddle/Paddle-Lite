@@ -34,10 +34,10 @@ class ScaleOpKernel<P: PrecisionProtocol>: Kernel, Computable{
         }
         
         var shouldUseMPS = false
-        if initContext.useMPS && param.biasAfterScale {
+        if initContext.useMPS && param.biasAfterScale && param.input.tensorDim.cout() == 4 && param.output.tensorDim.cout() == 4 {
             let inputChannel = param.input.tensorDim[1]
             let outputChannel = param.output.tensorDim[1]
-            if (inputChannel == 1 || inputChannel > 4) && (outputChannel == 1 || outputChannel > 4) {
+            if (inputChannel > 4) && (outputChannel > 4) {
                 shouldUseMPS = true
             }
         }
