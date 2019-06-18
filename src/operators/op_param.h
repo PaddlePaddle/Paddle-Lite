@@ -909,6 +909,7 @@ class PoolParam : public OpParam {
     paddings_ = GetAttr<vector<int>>("paddings", attrs);
     ceil_mode_ = GetAttr<bool>("ceil_mode", attrs);
     global_pooling_ = GetAttr<bool>("global_pooling", attrs);
+    exclusive_ = GetAttr<bool>("exclusive", attrs);
   }
 
   const GType *Input() const { return input_; }
@@ -927,6 +928,8 @@ class PoolParam : public OpParam {
 
   bool isGlobalPooling() const { return global_pooling_; }
 
+  bool isExclusive() const { return exclusive_; }
+
  private:
   GType *input_;
   GType *output_;
@@ -936,6 +939,7 @@ class PoolParam : public OpParam {
   vector<int> paddings_;
   bool ceil_mode_;
   bool global_pooling_ = false;
+  bool exclusive_ = true;
 #ifdef PADDLE_MOBILE_FPGA
 
  private:

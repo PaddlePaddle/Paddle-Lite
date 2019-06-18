@@ -41,6 +41,7 @@ struct PoolingVal {
     return *this;
   }
   inline float Value() { return (count > 0) ? val : 0.f; }
+  inline float ExclusiveSum(int total) { return ((count > 0) ? val : 0.f) * total; }
 };
 
 template <>
@@ -54,6 +55,7 @@ struct PoolingVal<AVG> {
     return *this;
   }
   inline float Value() { return (count > 0) ? val * (1.f / count) : 0.f; }
+  inline float ExclusiveSum(int total) { return (count > 0) ? val : 0.f; }
 };
 
 #if defined(__ARM_NEON) || defined(__ARM_NEON__)
@@ -172,7 +174,7 @@ struct Pooling2x2 {
 template <PoolingType P, int Stride>
 struct Pooling3x3 {
   void operator()(const framework::Tensor &input,
-                  const std::vector<int> &paddings, framework::Tensor *output);
+                  const std::vector<int> &paddings, const bool exclusive, framework::Tensor *output);
 };
 
 template <PoolingType P, int Stride>
