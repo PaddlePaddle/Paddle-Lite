@@ -23,19 +23,19 @@ namespace paddle_mobile {
 namespace operators {
 namespace math {
 
-#define POOLING3X3_NORMAL_BORDER(start, end)                   \
-  for (int w = start; w < end; ++w) {                          \
-    const int w_in_start = -padding_w + w * Stride;            \
-    const int w_in_end = w_in_start + 3;                       \
-    const int w_start = w_in_start > 0 ? w_in_start : 0;       \
-    const int w_end = w_in_end < input_w ? w_in_end : input_w; \
-    PoolingVal<P> val;                                         \
-    for (int h_in = h_start; h_in < h_end; ++h_in) {           \
-      for (int w_in = w_start; w_in < w_end; ++w_in) {         \
-        val += input[h_in * input_w + w_in];                   \
-      }                                                        \
-    }                                                          \
-    output_ptr[w] = val.Value();                               \
+#define POOLING3X3_NORMAL_BORDER(start, end, exclusive)                  \
+  for (int w = start; w < end; ++w) {                                    \
+    const int w_in_start = -padding_w + w * Stride;                      \
+    const int w_in_end = w_in_start + 3;                                 \
+    const int w_start = w_in_start > 0 ? w_in_start : 0;                 \
+    const int w_end = w_in_end < input_w ? w_in_end : input_w;           \
+    PoolingVal<P> val;                                                   \
+    for (int h_in = h_start; h_in < h_end; ++h_in) {                     \
+      for (int w_in = w_start; w_in < w_end; ++w_in) {                   \
+        val += input[h_in * input_w + w_in];                             \
+      }                                                                  \
+    }                                                                    \
+    output_ptr[w] = exclusive ? val.Value() : val.ExclusiveSum(9) / 9.f; \
   }
 
 template <PoolingType P, int Stride = 1>
@@ -80,7 +80,8 @@ template <PoolingType P, int Stride>
 inline void Pooling3x3NormalRow(const float *input, const int h_output,
                                 const int input_h, const int input_w,
                                 const int padding_h, const int padding_w,
-                                const int output_w, float *output) {
+                                const int output_w, const bool exclusive,
+                                float *output) {
   const int h_in_start = -padding_h + h_output * Stride;
   const int h_in_end = h_in_start + 3;
   const int h_start = h_in_start > 0 ? h_in_start : 0;
@@ -97,13 +98,14 @@ inline void Pooling3x3NormalRow(const float *input, const int h_output,
   const int valid_w = valid_w_end - valid_w_start;
 
   // border left
-  POOLING3X3_NORMAL_BORDER(0, valid_w_start)
+  POOLING3X3_NORMAL_BORDER(0, valid_w_start, exclusive)
   // middle
   int output_tiles = (valid_w_end - valid_w_start) / 6;
   int output_tiles_w = output_tiles * 6;
   Pooling3x3NormalRowLoadInput<P, Stride> PoolingCompute;
   float32x4x2_t x0, x1, x2, y0;
-  float32x4_t post = vdupq_n_f32(1.f / (3 * (h_end - h_start)));
+  float32x4_t post = exclusive ? vdupq_n_f32(1.f / (3 * (h_end - h_start)))
+                               : vdupq_n_f32(1.f / 9);
   for (int w = 0; w < output_tiles_w; w += 6) {
     int output_offset = valid_w_start + w;
     int input_w_offset = output_offset * Stride - padding_w;
@@ -150,13 +152,13 @@ inline void Pooling3x3NormalRow(const float *input, const int h_output,
     }
   }
   // border right
-  POOLING3X3_NORMAL_BORDER(valid_w_end, output_w)
+  POOLING3X3_NORMAL_BORDER(valid_w_end, output_w, exclusive)
 }
 
 template <PoolingType P>
 struct Pooling3x3<P, 1> {
   inline void operator()(const framework::Tensor &input,
-                         const std::vector<int> &paddings,
+                         const std::vector<int> &paddings, const bool exclusive,
                          framework::Tensor *output) {
     const float *input_data = input.data<float>();
     float *output_data = output->mutable_data<float>();
@@ -184,7 +186,7 @@ struct Pooling3x3<P, 1> {
         // top
         for (int h = 0; h < valid_h_start; ++h) {
           Pooling3x3NormalRow<P, 1>(input_ptr, h, input_h, input_w, padding_h,
-                                    padding_w, output_w, output_ptr);
+                                    padding_w, output_w, exclusive, output_ptr);
         }
         // valid
         int output_w_tiles = valid_w / 6;
@@ -218,7 +220,8 @@ struct Pooling3x3<P, 1> {
                 output_ptr2[w] = 0.f;
                 output_ptr3[w] = 0.f;
               } else {
-                post = vdup_n_f32(1.f / (3 * (3 - padding)));
+                post = exclusive ? vdup_n_f32(1.f / (3 * (3 - padding)))
+                                 : vdup_n_f32(1.f / 9);
                 acc12 = vPoolPre_f32<P>(row1, row2);
                 acc34 = vPoolPre_f32<P>(row3, row4);
                 acc0 = vPoolPre_f32<P>(row0, acc12);
@@ -526,7 +529,8 @@ struct Pooling3x3<P, 1> {
                 *output_ptr2 = 0.f;
                 *output_ptr3 = 0.f;
               } else {
-                post = vdup_n_f32(1.f / (3 * (3 - padding)));
+                post = exclusive ? vdup_n_f32(1.f / (3 * (3 - padding)))
+                                 : vdup_n_f32(1.f / 9);
                 acc12 = vPoolPre_f32<P>(row1, row2);
                 acc34 = vPoolPre_f32<P>(row3, row4);
                 acc0 = vPoolPre_f32<P>(row0, acc12);
@@ -578,7 +582,8 @@ struct Pooling3x3<P, 1> {
               if (padding >= 3) {
                 output_ptr0[w] = 0.f;
               } else {
-                post = vdup_n_f32(1.f / (3 * (3 - padding)));
+                post = exclusive ? vdup_n_f32(1.f / (3 * (3 - padding)))
+                                 : vdup_n_f32(1.f / 9);
                 acc0 = vPoolPre_f32<P>(row0, row1);
                 acc0 = vPoolPre_f32<P>(acc0, row2);
                 acc0 = vpPoolPre_f32<P>(acc0, acc0);
@@ -718,7 +723,8 @@ struct Pooling3x3<P, 1> {
               if (padding >= 3) {
                 *output_ptr0 = 0.f;
               } else {
-                post = vdup_n_f32(1.f / (3 * (3 - padding)));
+                post = exclusive ? vdup_n_f32(1.f / (3 * (3 - padding)))
+                                 : vdup_n_f32(1.f / 9);
                 acc0 = vPoolPre_f32<P>(row0, row1);
                 acc0 = vPoolPre_f32<P>(acc0, row2);
                 acc0 = vpPoolPre_f32<P>(acc0, acc0);
@@ -735,7 +741,7 @@ struct Pooling3x3<P, 1> {
         // pad bottom
         for (int h = valid_h_end; h < output_h; ++h) {
           Pooling3x3NormalRow<P, 1>(input_ptr, h, input_h, input_w, padding_h,
-                                    padding_w, output_w, output_ptr);
+                                    padding_w, output_w, exclusive, output_ptr);
         }
       }
     }
@@ -745,7 +751,7 @@ struct Pooling3x3<P, 1> {
 template <PoolingType P>
 struct Pooling3x3<P, 2> {
   inline void operator()(const framework::Tensor &input,
-                         const std::vector<int> &paddings,
+                         const std::vector<int> &paddings, const bool exclusive,
                          framework::Tensor *output) {
     const float *input_data = input.data<float>();
     float *output_data = output->mutable_data<float>();
@@ -784,7 +790,7 @@ struct Pooling3x3<P, 2> {
         // top
         for (int h = 0; h < valid_h_start; ++h) {
           Pooling3x3NormalRow<P, 2>(input_ptr, h, input_h, input_w, padding_h,
-                                    padding_w, output_w, output_ptr);
+                                    padding_w, output_w, exclusive, output_ptr);
         }
         // valid
         int output_w_tiles = valid_w / 6;
@@ -818,7 +824,8 @@ struct Pooling3x3<P, 2> {
                 output_ptr1[w] = 0.f;
                 output_ptr2[w] = 0.f;
               } else {
-                post = vdup_n_f32(1.f / (3 * (3 - padding)));
+                post = exclusive ? vdup_n_f32(1.f / (3 * (3 - padding)))
+                                 : vdup_n_f32(1.f / 9);
                 acc0 = vPoolPre_f32<P>(row0, row1);
                 acc1 = vPoolPre_f32<P>(row2, row3);
                 acc2 = vPoolPre_f32<P>(row4, row5);
@@ -1097,7 +1104,8 @@ struct Pooling3x3<P, 2> {
                 *output_ptr1 = 0.f;
                 *output_ptr2 = 0.f;
               } else {
-                post = vdup_n_f32(1.f / (3 * (3 - padding)));
+                post = exclusive ? vdup_n_f32(1.f / (3 * (3 - padding)))
+                                 : vdup_n_f32(1.f / 9);
                 acc0 = vPoolPre_f32<P>(row0, row1);
                 acc1 = vPoolPre_f32<P>(row2, row3);
                 acc2 = vPoolPre_f32<P>(row4, row5);
@@ -1141,7 +1149,8 @@ struct Pooling3x3<P, 2> {
               if (padding >= 3) {
                 output_ptr0[w] = 0.f;
               } else {
-                post = vdup_n_f32(1.f / (3 * (3 - padding)));
+                post = exclusive ? vdup_n_f32(1.f / (3 * (3 - padding)))
+                                 : vdup_n_f32(1.f / 9);
                 acc0 = vPoolPre_f32<P>(row0, row1);
                 acc0 = vPoolPre_f32<P>(acc0, row2);
                 if (padding == 1) {
@@ -1271,7 +1280,8 @@ struct Pooling3x3<P, 2> {
               if (padding >= 3) {
                 *output_ptr0 = 0.f;
               } else {
-                post = vdup_n_f32(1.f / (3 * (3 - padding)));
+                post = exclusive ? vdup_n_f32(1.f / (3 * (3 - padding)))
+                                 : vdup_n_f32(1.f / 9);
                 acc0 = vPoolPre_f32<P>(row0, row1);
                 acc0 = vPoolPre_f32<P>(acc0, row2);
                 if (padding == 1) {
@@ -1287,7 +1297,7 @@ struct Pooling3x3<P, 2> {
         // bottom
         for (int h = valid_h_end; h < output_h; ++h) {
           Pooling3x3NormalRow<P, 2>(input_ptr, h, input_h, input_w, padding_h,
-                                    padding_w, output_w, output_ptr);
+                                    padding_w, output_w, exclusive, output_ptr);
         }
       }
     }
