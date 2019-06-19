@@ -32,6 +32,7 @@ void PoolCompute(const PoolParam<CPU> &param) {
   std::vector<int> ksize = param.Ksize();
   std::vector<int> strides = param.Strides();
   std::vector<int> paddings = param.Paddings();
+  const bool exclusive = param.isExclusive();
   if (param.isGlobalPooling()) {
     for (size_t i = 0; i < ksize.size(); ++i) {
       paddings[i] = 0;
@@ -41,17 +42,17 @@ void PoolCompute(const PoolParam<CPU> &param) {
   if (ksize[0] == 3 && ksize[0] == ksize[1]) {
     if (pooling_type == "max" && strides[0] == strides[1]) {
       if (strides[0] == 1) {
-        math::Pooling3x3<MAX, 1>()(*input, paddings, output);
+        math::Pooling3x3<MAX, 1>()(*input, paddings, exclusive, output);
       } else if (strides[0] == 2) {
-        math::Pooling3x3<MAX, 2>()(*input, paddings, output);
+        math::Pooling3x3<MAX, 2>()(*input, paddings, exclusive, output);
       } else {
         math::Pooling<MAX>()(*input, ksize, strides, paddings, output);
       }
     } else if (pooling_type == "avg" && strides[0] == strides[1]) {
       if (strides[0] == 1) {
-        math::Pooling3x3<AVG, 1>()(*input, paddings, output);
+        math::Pooling3x3<AVG, 1>()(*input, paddings, exclusive, output);
       } else if (strides[0] == 2) {
-        math::Pooling3x3<AVG, 2>()(*input, paddings, output);
+        math::Pooling3x3<AVG, 2>()(*input, paddings, exclusive, output);
       } else {
         math::Pooling<AVG>()(*input, ksize, strides, paddings, output);
       }
