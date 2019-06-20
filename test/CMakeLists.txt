@@ -6,6 +6,14 @@ set(CON -1)
 
 message(STATUS "nets :${NET}")
 
+list(FIND NET "net" CON)
+if (CON GREATER -1)
+    # gen test
+    ADD_EXECUTABLE(test-net net/test_net.cpp test_helper.h test_include.h executor_for_test.h)
+    target_link_libraries(test-net paddle-mobile)
+    set(FOUND_MATCH ON)
+endif ()
+
 list(FIND NET "googlenet" CON)
 if (CON GREATER -1)
     # gen test
@@ -205,6 +213,10 @@ if (NOT FOUND_MATCH)
     # gen test
     ADD_EXECUTABLE(test_yolo_combined net/test_yolo_combined.cpp test_helper.h test_include.h executor_for_test.h)
     target_link_libraries(test_yolo_combined paddle-mobile)
+
+    # gen test
+    ADD_EXECUTABLE(test-net net/test_net.cpp test_helper.h test_include.h executor_for_test.h)
+    target_link_libraries(test-net paddle-mobile)
 
     # gen test
     ADD_EXECUTABLE(test-googlenet net/test_googlenet.cpp test_helper.h test_include.h executor_for_test.h)
