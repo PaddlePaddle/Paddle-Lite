@@ -80,12 +80,12 @@ class DepthwiseConvPE : public PE {
 
   bool dispatch() {
     param_.input->syncToDevice();
-    if (inplace_.relu_enable) {
+    if (param_.relu.enabled) {
       inplace_.relu_enable = param_.relu.enabled;
       config_inplace(inplace_);
     }
     bool ret = compute_fpga_dwconv(param_.args) == 0;
-    if (inplace_.relu_enable) {
+    if (param_.relu.enabled) {
       inplace_.relu_enable = false;
       config_inplace(inplace_);
     }

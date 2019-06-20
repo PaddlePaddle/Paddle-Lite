@@ -25,6 +25,7 @@ limitations under the License. */
 #include <vector>
 
 #include "common/log.h"
+#include "dl_engine.hpp"
 #include "float16.hpp"
 #include "llapi/zynqmp_api.h"
 #include "shape.hpp"
@@ -88,6 +89,8 @@ class PlaceHolder {
 
 class Tensor {
  public:
+  Tensor() { DLEngine::get_instance(); }
+
   int id() { return id_; }
 
   template <typename Dtype>
