@@ -62,6 +62,7 @@ int TestPoolOp(int in_channels, int in_height, int in_width) {
   attrs["ceil_mode"].Set<bool>(true);
   //  attrs["ceil_mode"].Set<bool>(false);
   attrs["global_pooling"].Set<bool>(false);
+  attrs["exclusive"].Set<bool>(true);
 
   auto *op = new operators::PoolOp<CPU, float>("pool2d", inputs, outputs, attrs,
                                                scope.get());

@@ -30,6 +30,6 @@ __kernel void scale(__read_only image2d_t input,
 
   int pos_x = mad24(out_c, out_width, out_w);
   half4 in = read_imageh(input, sampler, (int2)(pos_x, out_nh));
-  in = scale * in + bias;
+  in = convert_half(scale) * in + convert_half(bias);
   write_imageh(output, (int2)(pos_x, out_nh), in);
 }
