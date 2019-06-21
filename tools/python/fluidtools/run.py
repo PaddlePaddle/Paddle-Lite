@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*
 import os
 import sys
 import math
@@ -9,6 +10,9 @@ model_path = "model"
 checked_model_path = "checked_model"
 feed_path = "feeds"
 output_path = "outputs"
+diff_threshold = 0.01
+
+np.set_printoptions(linewidth=150)
 
 mobile_exec_root = "/data/local/tmp/bin"
 mobile_src_root = os.path.abspath("../../../")
@@ -16,11 +20,11 @@ if mobile_src_root.endswith("/"):
     mobile_src_root = mobile_src_root[:-1]
 
 dot = "•"
-black = lambda x: "\033[30m" + str(x)
-red = lambda x: "\033[31m" + str(x)
-green = lambda x: "\033[32m" + str(x)
+black = lambda x: "\033[30m" + str(x) + "\033[0m"
+red = lambda x: "\033[31m" + str(x) + "\033[0m"
+green = lambda x: "\033[32m" + str(x) + "\033[0m"
+yellow = lambda x: "\033[33m" + str(x) + "\033[0m"
 reset = lambda x: "\033[0m" + str(x)
-yellow = lambda x: "\033[33m" + str(x)
 
 def pp_tab(x, level=0):
     header = ""
@@ -61,6 +65,7 @@ def resave_model():
     # 强制所有var为可持久化
     p_names = []
     for name in vars:
+        name = str(name)
         v = fluid.framework._get_var(name, prog)
         if not v.persistable:
             v.persistable = True
@@ -69,6 +74,7 @@ def resave_model():
     has_found_wrong_shape = False
     # 修正每个var的形状
     for name in vars:
+        name = str(name)
         v = vars[name]
         if v.persistable:
             v1 = fluid.global_scope().find_var(name)
@@ -117,6 +123,8 @@ last_feed_var_name = None
 last_feed_file_name = None
 # 加载feed的key-value对
 def load_feed_kv():
+    if not os.path.exists(feed_path):
+        return None
     global last_feed_var_name
     global last_feed_file_name
     feed_kv = {}
@@ -128,7 +136,16 @@ def load_feed_kv():
         file_name = feed_name.replace("/", "_")
         last_feed_var_name = feed_name
         last_feed_file_name = file_name
-        data = np.loadtxt(feed_path + "/" + file_name).reshape(feed_shape).astype("float32")
+        feed_file_path = feed_path + "/" + file_name
+        if not os.path.exists(feed_file_path):
+            return None
+        data = np.loadtxt(feed_file_path)
+        expected_len = 1
+        for dim in feed_shape:
+            expected_len *= dim
+        if len(data) != expected_len:
+            return None
+        data = data.reshape(feed_shape).astype("float32")
         feed_kv[feed_name] = data
     return feed_kv
 
@@ -166,10 +183,11 @@ def get_var_data(var_name, feed_kv=None):
     return output
 
 output_var_cache = {}
+sample_step = 1
 def tensor_sample(tensor):
-    step = math.floor(len(tensor) / 20)
+    # step = math.floor(len(tensor) / 20)
     sample = []
-    for i in range(0, len(tensor), step):
+    for i in range(0, len(tensor), sample_step):
         sample.append(tensor[i])
     return sample
 op_cache = {}
@@ -209,19 +227,21 @@ for op in ops:
     op_types.add(op.type)
 pp_tab("op types : {}".format(op_types), 1)
 
-def check_mobile_results(lines, fuse):
-    pp_yellow(dot + dot + " checking {} paddle mobile results".format("fusion" if fuse else "non fusion"))
+def check_mobile_results(args, fuse, mem_opt):
+    args = "{} {} {}".format("1" if fuse else "0", "1" if mem_opt else "0", args)
+    res = sh("adb shell \"cd {} && export LD_LIBRARY_PATH=. && ./test-net {}\"".format(mobile_exec_root, args))
+    lines = res.split("\n")
+    for line in lines:
+        if line.startswith("auto-test-debug"):
+            print(line)
+    pp_yellow(dot + dot + " checking paddle mobile results for {} -- {} ".format(green("【fusion】" if fuse else "【non fusion】"), green("【memory-optimization】" if mem_opt else "【non-memory-optimization】")))
     mobile_var_cache = {}
     for line in lines:
         parts = line.split(" ")
-        if len(parts) <= 0:
+        if len(parts) < 2:
             continue
-        if fuse:
-            if "auto-test-fuse" != parts[0]:
-                continue
-        else:
-            if "auto-test" != parts[0]:
-                continue
+        if "auto-test" != parts[0]:
+            continue
         if parts[1] == "load-time-cost":
             pp_green("load time cost : {}".format(parts[2]), 1) 
         elif parts[1] == "predict-time-cost":
@@ -235,6 +255,14 @@ def check_mobile_results(lines, fuse):
     error_values2 = None
     for index in op_cache:
         op_output_var_name, op = op_cache[index]
+        if mem_opt:
+            found_in_fetch = False
+            for fetch in fetches:
+                if op_output_var_name == fetch.name:
+                    found_in_fetch = True
+                    break
+            if not found_in_fetch:
+                continue
         if not op_output_var_name in output_var_cache:
             continue
         if not op_output_var_name in mobile_var_cache:
@@ -247,7 +275,7 @@ def check_mobile_results(lines, fuse):
             for i in range(len(values1)):
                 v1 = values1[i]
                 v2 = values2[i]
-                if abs(v1 - v2) > 0.01:
+                if abs(v1 - v2) > diff_threshold:
                     error_index = index
                     break
         if error_index != None:
@@ -257,19 +285,23 @@ def check_mobile_results(lines, fuse):
     if error_index == None:
         pp_green("outputs are all correct", 1)
     else:
+        error_values1 = np.array(error_values1)
+        error_values2 = np.array(error_values2)
         pp_red("{} op's output is not correct, op's type is {}".format(error_index, op_cache[error_index][1].type), 1)
-        pp_red("fluid results are : {}".format(error_values1), 1)
-        pp_red("paddle mobile results are : {}".format(error_values2), 1)
+        pp_red("fluid results are : ", 1)
+        pp_red(str(error_values1).replace("\n", "\n" + "\t" * 1), 1)
+        pp_red("paddle mobile results are : ", 1)
+        pp_red(str(error_values2).replace("\n", "\n" + "\t" * 1), 1)
     # print(output_var_cache)
     # print(mobile_var_cache)
 
 def main():
-    # 如果feed_path不存在，则需要生成并保存feed的键值对
-    if not os.path.exists(feed_path):
-        feed_kv = gen_feed_kv()
-        save_feed_kv(feed_kv)
     # 加载kv
     feed_kv = load_feed_kv()
+    if feed_kv == None:
+        feed_kv = gen_feed_kv()
+        save_feed_kv(feed_kv)
+        feed_kv = load_feed_kv()
     pp_yellow(dot + dot + " checking fetch info")
     for fetch in fetches:
         pp_tab("fetch var name : {}".format(fetch.name), 1)
@@ -297,12 +329,13 @@ def main():
     for dim in last_feed_var_shape:
         args += " " + str(dim)
     args += " " + str(len(output_var_cache))
+    args += " " + str(sample_step)
     for var_name in output_var_cache.keys():
         args += " " + var_name
-    res = sh("adb shell \"cd {} && export LD_LIBRARY_PATH=. && ./test-net {}\"".format(mobile_exec_root, args))
-    lines = res.split("\n")
-    check_mobile_results(lines, False)
-    check_mobile_results(lines, True)
+    check_mobile_results(args, False, False)
+    check_mobile_results(args, False, True)
+    check_mobile_results(args, True, False)
+    check_mobile_results(args, True, True)
 
 if __name__ == "__main__":
     main()
