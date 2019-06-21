@@ -17,39 +17,51 @@ limitations under the License. */
 #include "../test_helper.h"
 #include "../test_include.h"
 
-void test(int argc, char *argv[], bool fuse);
+void test(int argc, char *argv[]);
 
 int main(int argc, char *argv[]) {
-  test(argc, argv, false);
-  test(argc, argv, true);
+  test(argc, argv);
   return 0;
 }
-void test(int argc, char *argv[], bool fuse) {
-  paddle_mobile::PaddleMobile<paddle_mobile::CPU> paddle_mobile;
-  paddle_mobile.SetThreadNum(1);
-  std::string tag = fuse ? "-fuse" : "";
 
-  int dim_count = std::stoi(argv[1]);
+void test(int argc, char *argv[]) {
+  int arg_index = 1;
+  bool fuse = std::stoi(argv[arg_index]) == 1;
+  arg_index++;
+  bool enable_memory_optimization = std::stoi(argv[arg_index]) == 1;
+  arg_index++;
+  paddle_mobile::PaddleMobileConfigInternal config;
+  config.enable_memory_optimization = enable_memory_optimization;
+  paddle_mobile::PaddleMobile<paddle_mobile::CPU> paddle_mobile(config);
+  paddle_mobile.SetThreadNum(1);
+
+  int dim_count = std::stoi(argv[arg_index]);
+  arg_index++;
   int size = 1;
   std::vector<int64_t> dims;
   for (int i = 0; i < dim_count; i++) {
-    int64_t dim = std::stoi(argv[2 + i]);
+    int64_t dim = std::stoi(argv[arg_index + i]);
     size *= dim;
     dims.push_back(dim);
   }
+  arg_index += dim_count;
 
-  int var_count = std::stoi(argv[1 + dim_count]);
+  int var_count = std::stoi(argv[arg_index]);
+  arg_index++;
+  int sample_step = std::stoi(argv[arg_index]);
+  arg_index++;
   std::vector<std::string> var_names;
   for (int i = 0; i < var_count; i++) {
-    std::string var_name = argv[1 + dim_count + 1 + 1 + i];
+    std::string var_name = argv[arg_index + i];
     var_names.push_back(var_name);
   }
+  arg_index += var_count;
 
   auto time1 = time();
   if (paddle_mobile.Load("./checked_model/model", "./checked_model/params",
                          fuse, false, 1, true)) {
     auto time2 = time();
-    std::cout << "auto-test" << tag
+    std::cout << "auto-test"
               << " load-time-cost :" << time_diff(time1, time1) << "ms"
               << std::endl;
 
@@ -73,8 +85,9 @@ void test(int argc, char *argv[], bool fuse) {
       auto out = paddle_mobile.Predict(input_data, dims);
     }
     auto time4 = time();
-    std::cout << "auto-test" << tag << " predict-time-cost "
-              << time_diff(time3, time4) / 50 << "ms" << std::endl;
+    std::cout << "auto-test"
+              << " predict-time-cost " << time_diff(time3, time4) / 50 << "ms"
+              << std::endl;
 
     // 测试正确性
     auto out = paddle_mobile.Predict(input_data, dims);
@@ -88,13 +101,12 @@ void test(int argc, char *argv[], bool fuse) {
         continue;
       }
       auto data = out->data<float>();
-      int step = len / 20;
       std::string sample = "";
-      for (int i = 0; i < len; i += step) {
+      for (int i = 0; i < len; i += sample_step) {
         sample += " " + std::to_string(data[i]);
       }
-      std::cout << "auto-test" << tag << " var " << var_name << sample
-                << std::endl;
+      std::cout << "auto-test"
+                << " var " << var_name << sample << std::endl;
     }
     std::cout << std::endl;
   }
