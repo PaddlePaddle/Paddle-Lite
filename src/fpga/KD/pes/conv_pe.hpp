@@ -111,7 +111,7 @@ class ConvPE : public PE {
     inplace_.power_enable = false;
     inplace_.normalize_enable = false;
 
-    if (inplace_.relu_enable) {
+    if (param_.relu.enabled) {
       inplace_.relu_enable = param_.relu.enabled;
       config_inplace(inplace_);
     }
@@ -123,11 +123,10 @@ class ConvPE : public PE {
       ret |= compute_fpga_conv_basic(conv_param->args);
     }
 
-    if (inplace_.relu_enable) {
+    if (param_.relu.enabled) {
       inplace_.relu_enable = false;
       config_inplace(inplace_);
     }
-
 
     size_t size = params.size();
     if (split_axis == 0 && ret == 0 && size > 1) {

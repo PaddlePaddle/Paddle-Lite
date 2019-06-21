@@ -42,7 +42,7 @@ void FlattenKernel<FPGA, float>::Compute(const FlattenParam<FPGA> &param) {
   // input_x->zynqmpTensor()->saveToFile("flatten_in.txt");
 
   out->Resize(out_dim);
-  out->mutable_data<float>();
+  out->mutable_data<half>();
 
   input_x->check_memory_size();
   out->Resize(input_x->dims());

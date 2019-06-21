@@ -22,7 +22,13 @@ limitations under the License. */
 
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp>
-using namespace cv;
+
+using cv::INTER_AREA;
+using cv::Mat;
+using cv::Size;
+using cv::imread;
+using cv::imwrite;
+using cv::resize;
 
 cv::Mat img;
 cv::Mat sample_float;
@@ -45,9 +51,6 @@ void readImage(std::string filename, float* buffer) {
     float* ptr = reinterpret_cast<float*>(sample_float.ptr(row));
     for (int col = 0; col < sample_float.cols; col++) {
       float* uc_pixel = ptr;
-      // uc_pixel[0] -= 102;
-      // uc_pixel[1] -= 117;
-      // uc_pixel[1] -= 124;
       float b = uc_pixel[0];
       float g = uc_pixel[1];
       float r = uc_pixel[2];
@@ -125,9 +128,13 @@ int main() {
     readImage(image, data);
 
     auto time3 = time();
-    paddle_mobile.Predict(input_tensor);
+    int times = 2;
+    for (int i = 0; i < times; i++) {
+      paddle_mobile.Predict(input_tensor);
+    }
+
     auto time4 = time();
-    std::cout << "predict cost: " << time_diff(time3, time4) << "ms\n";
+    std::cout << "predict cost: " << time_diff(time3, time4) / times << "ms\n";
 
     auto result_ptr = paddle_mobile.Fetch();
 

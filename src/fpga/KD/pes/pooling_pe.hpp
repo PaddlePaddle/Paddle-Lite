@@ -110,8 +110,8 @@ class PoolingPE : public PE {
         for (int c = 0; c < image_channels; ++c) {
           const int pool_index = (ph * pooled_width_ + pw) * image_channels + c;
           float sum = 0;
-          const int index =
-              (hstart * image_width + wstart) * image_channels + c;
+          // const int index =
+          //     (hstart * image_width + wstart) * image_channels + c;
           for (int h = hstart; h < hend; ++h) {
             for (int w = wstart; w < wend; ++w) {
               const int index = (h * image_width + w) * image_channels + c;
