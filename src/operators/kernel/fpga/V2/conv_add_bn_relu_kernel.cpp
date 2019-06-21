@@ -19,13 +19,10 @@ limitations under the License. */
 
 namespace paddle_mobile {
 namespace operators {
-
 template <>
 bool ConvAddBNReluKernel<FPGA, float>::Init(
     FusionConvAddBNReluParam<FPGA> *param) {
   bool relu_enabled = true;
-  // paddle_mobile::fpga::ActivationType activation_enable =
-  //    paddle_mobile::fpga::LEAKYRELU;
   auto input = const_cast<LoDTensor *>(param->Input());
   auto bias = param->Bias();
   auto bias_ptr = bias->data<float>();
@@ -42,6 +39,7 @@ bool ConvAddBNReluKernel<FPGA, float>::Init(
   auto bn_scale_ptr = param->InputScale()->data<float>();
   auto bn_bias_ptr = param->InputBias()->data<float>();
   const float epsilon = param->Epsilon();
+
   PADDLE_MOBILE_ENFORCE(out->dims()[1] == bias->dims()[0] &&
                             bias->dims()[0] == param->InputBias()->dims()[0],
                         "Output channel should be equal to bias number");
@@ -75,6 +73,7 @@ bool ConvAddBNReluKernel<FPGA, float>::Init(
                           new_bias_ptr);
     param->SetFpgaArgs(dwconv_arg);
     fpga::fpga_free(bs_ptr);
+    delete new_scale;
   } else {
     fpga::format_conv_data(filter, out, &bs_ptr, param->Groups());
     fpga::SplitConvArgs conv_arg = {0};
@@ -82,9 +81,10 @@ bool ConvAddBNReluKernel<FPGA, float>::Init(
                          param->Groups(), strides[0], strides[1], paddings[0],
                          paddings[1], bs_ptr);
     param->SetFpgaArgs(conv_arg);
+    delete new_scale;
+    delete new_bias;
   }
-  delete new_scale;
-  delete new_bias;
+
   return true;
 }
 
