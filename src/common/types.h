@@ -133,6 +133,7 @@ enum PowerMode {
 
 struct PaddleMobileConfigInternal {
   bool load_when_predict = false;
+  bool enable_memory_optimization = true;
 };
 
 extern const char *G_OP_TYPE_CONV;
