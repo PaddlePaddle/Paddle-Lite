@@ -22,6 +22,7 @@ limitations under the License. */
 #include "common/enforce.h"
 #include "common/log.h"
 #include "executor_for_test.h"
+#include "framework/ddim.h"
 #include "framework/lod_tensor.h"
 #include "framework/operator.h"
 #include "framework/program/block_desc.h"
