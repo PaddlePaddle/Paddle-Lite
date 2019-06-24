@@ -46,6 +46,19 @@ void test(int argc, char *argv[]) {
   }
   arg_index += dim_count;
 
+  bool is_lod = std::stoi(argv[arg_index]) == 1;
+  arg_index++;
+  paddle_mobile::framework::LoD lod{{}};
+  if (is_lod) {
+    int lod_count = std::stoi(argv[arg_index]);
+    arg_index++;
+    for (int i = 0; i < lod_count; i++) {
+      int dim = std::stoi(argv[arg_index + i]);
+      lod[0].push_back(dim);
+    }
+    arg_index += lod_count;
+  }
+
   int var_count = std::stoi(argv[arg_index]);
   arg_index++;
   int sample_step = std::stoi(argv[arg_index]);
@@ -74,15 +87,33 @@ void test(int argc, char *argv[]) {
     }
     in.close();
 
+    paddle_mobile::framework::LoDTensor input_tensor;
+    if (is_lod) {
+      input_tensor.Resize(paddle_mobile::framework::make_ddim(dims));
+      input_tensor.set_lod(lod);
+      auto *tensor_data = input_tensor.mutable_data<float>();
+      for (int i = 0; i < size; i++) {
+        tensor_data[i] = input_data[i];
+      }
+    }
+
     // 预热10次
     for (int i = 0; i < 10; i++) {
-      auto out = paddle_mobile.Predict(input_data, dims);
+      if (is_lod) {
+        auto out = paddle_mobile.Predict(input_tensor);
+      } else {
+        auto out = paddle_mobile.Predict(input_data, dims);
+      }
     }
 
     // 测速
     auto time3 = time();
     for (int i = 0; i < 50; i++) {
-      auto out = paddle_mobile.Predict(input_data, dims);
+      if (is_lod) {
+        auto out = paddle_mobile.Predict(input_tensor);
+      } else {
+        auto out = paddle_mobile.Predict(input_data, dims);
+      }
     }
     auto time4 = time();
     std::cout << "auto-test"
@@ -90,7 +121,11 @@ void test(int argc, char *argv[]) {
               << std::endl;
 
     // 测试正确性
-    auto out = paddle_mobile.Predict(input_data, dims);
+    if (is_lod) {
+      auto out = paddle_mobile.Predict(input_tensor);
+    } else {
+      auto out = paddle_mobile.Predict(input_data, dims);
+    }
     for (auto var_name : var_names) {
       auto out = paddle_mobile.Fetch(var_name);
       auto len = out->numel();
