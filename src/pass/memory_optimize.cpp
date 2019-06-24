@@ -60,6 +60,7 @@ void MemoryOptPass::operator()(const framework::ProgramDesc *program,
     std::stack<VarNode *> empty_var_nodes;
     analysis_nodes_.swap(empty_var_nodes);
 
+    std::vector<VarNode *> fetch_var_nodes;
     for (const auto &op : block->Ops()) {
       DLOG << "op_desc->Type(): " << op->Type();
       for (const auto &outputs : op->GetOutputs()) {
@@ -77,6 +78,9 @@ void MemoryOptPass::operator()(const framework::ProgramDesc *program,
             DLOG << "input: " << input;
             VarNode *node = CreateNode(input);
             analysis_nodes_.push(node);
+            if (op->Type() == "fetch") {
+              fetch_var_nodes.push_back(node);
+            }
           }
         }
       }
@@ -89,6 +93,10 @@ void MemoryOptPass::operator()(const framework::ProgramDesc *program,
           }
         }
       }
+    }
+
+    for (const auto &node : fetch_var_nodes) {
+      analysis_nodes_.push(node);
     }
 
     // apply optimize

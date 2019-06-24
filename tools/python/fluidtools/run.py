@@ -11,6 +11,7 @@ checked_model_path = "checked_model"
 feed_path = "feeds"
 output_path = "outputs"
 diff_threshold = 0.01
+is_lod = True
 
 np.set_printoptions(linewidth=150)
 
@@ -59,7 +60,7 @@ def load_model(model_path):
 prog, feeds, fetches = load_model(model_path)
 
 # 强制要求所有张量的形状，在model和params中一致，并重新保存模型
-def resave_model():
+def resave_model(feed_kv):
     ops = prog.current_block().ops
     vars = prog.current_block().vars
     # 强制所有var为可持久化
@@ -70,7 +71,7 @@ def resave_model():
         if not v.persistable:
             v.persistable = True
             p_names.append(name)
-    outputs = run_model()
+    outputs = run_model(feed_kv=feed_kv)
     has_found_wrong_shape = False
     # 修正每个var的形状
     for name in vars:
@@ -121,12 +122,14 @@ def save_feed_kv(feed_kv):
 
 last_feed_var_name = None
 last_feed_file_name = None
+last_feed_var_lod = None
 # 加载feed的key-value对
 def load_feed_kv():
     if not os.path.exists(feed_path):
         return None
     global last_feed_var_name
     global last_feed_file_name
+    global last_feed_var_lod
     feed_kv = {}
     pp_yellow(dot + dot + " checking feed info")
     pp_green("feed data is saved into directory 【{}】".format(feed_path), 1)
@@ -146,7 +149,23 @@ def load_feed_kv():
         if len(data) != expected_len:
             return None
         data = data.reshape(feed_shape).astype("float32")
-        feed_kv[feed_name] = data
+        
+        if is_lod:
+            data = data.reshape((1, *feed_shape)).astype("float32")
+            tensor = fluid.LoDTensor()
+            seq_lens = [len(seq) for seq in data]
+            cur_len = 0
+            lod = [cur_len]
+            for l in seq_lens:
+                cur_len += 1
+                lod.append(cur_len)
+            data = data.reshape(feed_shape)
+            tensor.set(data, fluid.CPUPlace())
+            tensor.set_lod([lod])
+            last_feed_var_lod = lod
+            feed_kv[feed_name] = tensor
+        else:
+            feed_kv[feed_name] = data
     return feed_kv
 
 # 运行模型
@@ -204,6 +223,8 @@ def save_all_op_output(feed_kv=None):
             var_name = name
             if "tmp" in name:
                 break
+        if "sequence_pool" in name:
+            continue
         try:
             data = get_var_data(var_name, feed_kv=feed_kv).flatten().tolist()
             sample = tensor_sample(data)
@@ -311,7 +332,7 @@ def main():
     pp_tab("fluid output : {}".format(outputs), 1)
     # 重新保存模型
     pp_yellow(dot + dot + " checking model correctness")
-    resave_model()
+    resave_model(feed_kv=feed_kv)
     # 输出所有中间结果
     pp_yellow(dot + dot + " checking output result of every op")
     save_all_op_output(feed_kv=feed_kv)
@@ -328,6 +349,13 @@ def main():
     args = str(len(last_feed_var_shape))
     for dim in last_feed_var_shape:
         args += " " + str(dim)
+    if is_lod:
+        args += " 1"
+        args += " " + str(len(last_feed_var_lod))
+        for dim in last_feed_var_lod:
+            args += " " + str(dim)
+    else:
+        args += " 0"
     args += " " + str(len(output_var_cache))
     args += " " + str(sample_step)
     for var_name in output_var_cache.keys():

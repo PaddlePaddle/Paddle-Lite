@@ -109,6 +109,7 @@ enum PoolingType {
   AVG = 1,
   SUM = 2,
   FIRST = 3,
+  LAST = 4,
 };
 
 enum PowerMode {
