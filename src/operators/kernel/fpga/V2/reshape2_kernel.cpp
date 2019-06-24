@@ -114,6 +114,7 @@ void Reshape2Kernel<FPGA, float>::Compute(const Reshape2Param<FPGA> &param) {
     output->ShareDataWith(*input);
     framework::LoD lod = input->lod();
     output->set_lod(lod);
+    output->scale[0] = input->scale[0];
     return;
   }
 
