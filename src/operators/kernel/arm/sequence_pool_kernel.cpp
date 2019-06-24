@@ -163,6 +163,22 @@ void SequencePoolImpl<FIRST, float>(const framework::LoDTensor &input,
   }
 }
 
+template <>
+void SequencePoolImpl<LAST, float>(const framework::LoDTensor &input,
+                                   framework::LoDTensor *output) {
+  const float *input_ptr = input.data<float>();
+  float *output_ptr = output->mutable_data<float>();
+  const auto &lod = input.lod()[0];
+  int64_t width = input.numel() / input.dims()[0];
+
+  for (int i = 0; i < static_cast<int>(lod.size()) - 1; ++i) {
+    int64_t seq_len = static_cast<int64_t>(lod[i + 1] - lod[i]);
+    const float *in_ptr = input_ptr + seq_len * width;
+    float *out_ptr = output_ptr + i * width;
+    memcpy(out_ptr, in_ptr - width, width * sizeof(float));
+  }
+}
+
 template <typename T>
 class SequencePoolKernel<CPU, T>
     : public framework::OpKernelBase<CPU, SequencePoolParam<CPU>> {
@@ -179,6 +195,8 @@ class SequencePoolKernel<CPU, T>
       SequencePoolImpl<MAX, T>(*input, output);
     } else if (param.pool_type_ == "FIRST") {
       SequencePoolImpl<FIRST, T>(*input, output);
+    } else if (param.pool_type_ == "LAST") {
+      SequencePoolImpl<LAST, T>(*input, output);
     } else if (param.pool_type_ == "SUM") {
       SequencePoolImpl<SUM, T>(*input, output);
     } else {
