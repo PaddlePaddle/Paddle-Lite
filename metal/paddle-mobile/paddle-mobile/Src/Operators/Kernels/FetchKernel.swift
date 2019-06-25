@@ -23,38 +23,43 @@ class FetchKernel<P: PrecisionProtocol>: Kernel, Computable {
         param.output.initBuffer(device: device)
         if GlobalConfig.shared.computePrecision == .Float16 {
             if param.input.transpose == [0, 2, 3, 1] {
-                super.init(device: device, inFunctionName: "fetch_half", initContext: initContext)
+                try super.init(device: device, inFunctionName: "fetch_half", initContext: initContext)
             } else if param.input.transpose == [0, 1, 2, 3] {
                 switch param.input.tensorDim.cout() {
                 case 1, 2:
-                    super.init(device: device, inFunctionName: "fetch_1or2_half", initContext: initContext)
+                    try super.init(device: device, inFunctionName: "fetch_1or2_half", initContext: initContext)
                 case 4:
                     expectedTranspose = [0, 2, 3, 1]
-                    super.init(device: device, inFunctionName: "fetch_half", initContext: initContext)
+                    try super.init(device: device, inFunctionName: "fetch_half", initContext: initContext)
                 default:
-                    fatalError(" not support ")
+                    let error = PaddleMobileError.netError(message: "unsupported tensor dim count")
+                    throw paddleMobileLogAndThrow(error: error)
                 }
             } else {
-                fatalError(" not support ")
+                let error = PaddleMobileError.netError(message: "unsupported input transpose")
+                throw paddleMobileLogAndThrow(error: error)
             }
         } else if GlobalConfig.shared.computePrecision == .Float32 {
             if param.input.transpose == [0, 2, 3, 1] {
-                super.init(device: device, inFunctionName: "fetch_float", initContext: initContext)
+                try super.init(device: device, inFunctionName: "fetch_float", initContext: initContext)
             } else if param.input.transpose == [0, 1, 2, 3] {
                 switch param.input.tensorDim.cout() {
                 case 1, 2:
-                    super.init(device: device, inFunctionName: "fetch_1or2_float", initContext: initContext)
+                    try super.init(device: device, inFunctionName: "fetch_1or2_float", initContext: initContext)
                 case 4:
                     expectedTranspose = [0, 2, 3, 1]
-                    super.init(device: device, inFunctionName: "fetch_float", initContext: initContext)
+                    try super.init(device: device, inFunctionName: "fetch_float", initContext: initContext)
                 default:
-                    fatalError(" not support ")
+                    let error = PaddleMobileError.netError(message: "unsupported tensor dim count")
+                    throw paddleMobileLogAndThrow(error: error)
                 }
             } else {
-                fatalError(" not support ")
+                let error = PaddleMobileError.netError(message: "unsupported input transpose")
+                throw paddleMobileLogAndThrow(error: error)
             }
         } else {
-            fatalError(" not support ")
+            let error = PaddleMobileError.predictError(message: "unsupported compute precision: \(GlobalConfig.shared.computePrecision)")
+            throw paddleMobileLogAndThrow(error: error)
         }
         self.device = device
         self.initContext = initContext
@@ -67,16 +72,22 @@ class FetchKernel<P: PrecisionProtocol>: Kernel, Computable {
                 if let device = device, let initContext = initContext, let transposedInput = encodeTransposeInput(input: param.input, toTranspose: expectedTranspose, commandBuffer: commandBuffer, device: device, initContext: initContext) {
                     input = transposedInput
                 } else {
-                    print("input transpose failed in slice kernel")
+                    let error = PaddleMobileError.predictError(message: "input transpose failed in slice kernel")
+                    throw paddleMobileLogAndThrow(error: error)
                 }
             }
         }
         guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
-            throw PaddleMobileError.predictError(message: " encode is nil")
+            let error = PaddleMobileError.predictError(message: "encoder is nil")
+            throw paddleMobileLogAndThrow(error: error)
+        }
+        guard let tempPipline = pipline else {
+            let error = PaddleMobileError.predictError(message: "pipline is nil")
+            throw paddleMobileLogAndThrow(error: error)
         }
         encoder.setTexture(input.metalTexture, index: 0)
         encoder.setBuffer(param.output.resultBuffer!, offset: 0, index: 0)
-        encoder.dispatch(computePipline: pipline, outTexture: param.input.metalTexture)
+        encoder.dispatch(computePipline: tempPipline, outTexture: param.input.metalTexture)
         encoder.endEncoding()
     }
 }

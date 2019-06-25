@@ -39,7 +39,7 @@ extension NSMutableArray :Attr {
 }
 
 
-func attrWithProtoDesc(attrDesc: OpDesc_Attr) -> Attr {
+func attrWithProtoDesc(attrDesc: OpDesc_Attr) throws -> Attr {
     switch attrDesc.type {
     case .boolean:
         return attrDesc.b
@@ -79,6 +79,7 @@ func attrWithProtoDesc(attrDesc: OpDesc_Attr) -> Attr {
     case .strings:
         return attrDesc.stringsArray
     default:
-        fatalError(" not support this attr type: \(attrDesc.type)")
+        let error = PaddleMobileError.netError(message: "not support this attr type: \(attrDesc.type)")
+        throw paddleMobileLogAndThrow(error: error)
     }
 }

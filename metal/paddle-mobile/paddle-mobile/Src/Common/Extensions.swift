@@ -20,11 +20,11 @@ precedencegroup ExecutedOrFatalError{
     higherThan: AssignmentPrecedence
 }
 infix operator ?!: ExecutedOrFatalError
-public func ?!<T>(option: T?, excuteOrError: @autoclosure () -> String) -> T{
+public func ?!<T>(option: T?, excuteOrError: @autoclosure () -> String) -> T {
     if let inOpt = option {
         return inOpt
-    }else{
-        print(excuteOrError())
+    } else {
+        paddleMobileLog(excuteOrError())
         fatalError(excuteOrError())
     }
 }
@@ -54,22 +54,22 @@ protocol CIntIndex {
     subscript(index: CInt) -> T { get set};
 }
 
-extension Array: CIntIndex{
+extension Array: CIntIndex {
     typealias T = Element
     subscript(index: CInt) -> T {
         get{
-            guard Int64(Int.max) >= Int64(index) else{
+            guard Int64(Int.max) >= Int64(index) else {
                 fatalError("cint index out of Int range")
             }
             return self[Int(index)]
         }
         set{
-            guard Int64(Int.max) >= Int64(index) else{
+            guard Int64(Int.max) >= Int64(index) else {
                 fatalError("cint index out of Int range")
             }
             self[Int(index)] = newValue
         }
-        
+
     }
 }
 

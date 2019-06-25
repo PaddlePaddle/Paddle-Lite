@@ -22,29 +22,35 @@ class MulticlassNMSKernel<P: PrecisionProtocol>: Kernel, Computable{
         param.middleOutput.initBuffer(device: device)
         param.bboxOutput.initBuffer(device: device)
         if GlobalConfig.shared.computePrecision == .Float32 {
-            pipline1 = device.pipeLine(funcName: "nms_fetch_bbox", metalLoadMode: initContext.metalLoadMode, metalLibPath: initContext.metalLibPath)
-            super.init(device: device, inFunctionName: "nms_fetch_result", initContext: initContext)
+            pipline1 = try device.pipeLine(funcName: "nms_fetch_bbox", metalLoadMode: initContext.metalLoadMode, metalLibPath: initContext.metalLibPath)
+            try super.init(device: device, inFunctionName: "nms_fetch_result", initContext: initContext)
         } else if GlobalConfig.shared.computePrecision == .Float16 {
-            pipline1 = device.pipeLine(funcName: "nms_fetch_bbox_half", metalLoadMode: initContext.metalLoadMode, metalLibPath: initContext.metalLibPath)
-            super.init(device: device, inFunctionName: "nms_fetch_result_half", initContext: initContext)
+            pipline1 = try device.pipeLine(funcName: "nms_fetch_bbox_half", metalLoadMode: initContext.metalLoadMode, metalLibPath: initContext.metalLibPath)
+            try super.init(device: device, inFunctionName: "nms_fetch_result_half", initContext: initContext)
         } else {
-            fatalError( " unsupport precision " )
+            let error = PaddleMobileError.predictError(message: "unsupported compute precision: \(GlobalConfig.shared.computePrecision)")
+            throw paddleMobileLogAndThrow(error: error)
         }
         
     }
     
     func compute(commandBuffer: MTLCommandBuffer, param: MulticlassNMSParam<P>) throws {
         guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
-            throw PaddleMobileError.predictError(message: " encode is nil")
+            let error = PaddleMobileError.predictError(message: "encoder is nil")
+            throw paddleMobileLogAndThrow(error: error)
         }
-        
+        guard let tempPipline = pipline else {
+            let error = PaddleMobileError.predictError(message: "pipline is nil")
+            throw paddleMobileLogAndThrow(error: error)
+        }
         encoder.setTexture(param.scores.metalTexture, index: 0)
         encoder.setBuffer(param.middleOutput.resultBuffer!, offset: 0, index: 0)
-        encoder.dispatch(computePipline: pipline, outTexture: param.scores.metalTexture)
+        encoder.dispatch(computePipline: tempPipline, outTexture: param.scores.metalTexture)
         encoder.endEncoding()
         
         guard let encoderBox = commandBuffer.makeComputeCommandEncoder() else {
-            throw PaddleMobileError.predictError(message: " encode is nil")
+            let error = PaddleMobileError.predictError(message: "encoder is nil")
+            throw paddleMobileLogAndThrow(error: error)
         }
         
         encoderBox.setTexture(param.bboxes.metalTexture, index: 0)

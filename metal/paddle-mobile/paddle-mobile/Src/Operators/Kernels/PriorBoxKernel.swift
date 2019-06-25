@@ -39,33 +39,31 @@ class PriorBoxKernel<P: PrecisionProtocol>: Kernel, Computable{
         param.output.tensorDim = Dim.init(inDim: [1, originDim[0], originDim[1], originDim[2] * originDim[3]])
         param.output.padToFourDim = Dim.init(inDim: [1, originDim[0], originDim[1], originDim[2] * originDim[3]])
         
-        do {
-            try param.output.initTexture(device: device, inTranspose: [0, 1, 2, 3], computePrecision: GlobalConfig.shared.computePrecision)
-            try param.outputVariances.initTexture(device: device, inTranspose: [2, 0, 1, 3], computePrecision: GlobalConfig.shared.computePrecision)
-        } catch let error {
-            throw error
-        }
+        try param.output.initTexture(device: device, inTranspose: [0, 1, 2, 3], computePrecision: GlobalConfig.shared.computePrecision)
+        try param.outputVariances.initTexture(device: device, inTranspose: [2, 0, 1, 3], computePrecision: GlobalConfig.shared.computePrecision)
         
         if GlobalConfig.shared.computePrecision == .Float32 {
             if param.min_max_aspect_ratios_order {
-                super.init(device: device, inFunctionName: "prior_box_MinMaxAspectRatiosOrder", initContext: initContext)
+                try super.init(device: device, inFunctionName: "prior_box_MinMaxAspectRatiosOrder", initContext: initContext)
             } else {
-                super.init(device: device, inFunctionName: "prior_box", initContext: initContext)
+                try super.init(device: device, inFunctionName: "prior_box", initContext: initContext)
             }
             
         } else if GlobalConfig.shared.computePrecision == .Float16 {
             if param.min_max_aspect_ratios_order {
-                super.init(device: device, inFunctionName: "prior_box_MinMaxAspectRatiosOrder_half", initContext: initContext)
+                try super.init(device: device, inFunctionName: "prior_box_MinMaxAspectRatiosOrder_half", initContext: initContext)
             } else {
-                super.init(device: device, inFunctionName: "prior_box_half", initContext: initContext)
+                try super.init(device: device, inFunctionName: "prior_box_half", initContext: initContext)
             }
         } else {
-            fatalError()
+            let error = PaddleMobileError.predictError(message: "unsupported compute precision: \(GlobalConfig.shared.computePrecision)")
+            throw paddleMobileLogAndThrow(error: error)
         }
         
         
         guard param.minSizes.count == 1 else {
-            fatalError(" need implement ")
+            let error = PaddleMobileError.netError(message: "param.minSizes.count must equal to 1")
+            throw paddleMobileLogAndThrow(error: error)
         }
         
         //    let n = 1
@@ -110,14 +108,15 @@ class PriorBoxKernel<P: PrecisionProtocol>: Kernel, Computable{
         
         if GlobalConfig.shared.computePrecision == .Float16 {
             let buffer = device.makeBuffer(length: outputAspectRatior.count * MemoryLayout<Float16>.size)
-            float32ToFloat16(input: &outputAspectRatior, output:(buffer?.contents())!, count: outputAspectRatior.count)
+            try float32ToFloat16(input: &outputAspectRatior, output:(buffer?.contents())!, count: outputAspectRatior.count)
             param.newAspectRatios = buffer
             
         } else if GlobalConfig.shared.computePrecision == .Float32 {
             let buffer = device.makeBuffer(bytes: outputAspectRatior, length: outputAspectRatior.count * MemoryLayout<Float32>.size, options: [])
             param.newAspectRatios = buffer
         } else {
-            fatalError()
+            let error = PaddleMobileError.predictError(message: "unsupported compute precision: \(GlobalConfig.shared.computePrecision)")
+            throw paddleMobileLogAndThrow(error: error)
         }
         
         let aspectRatiosSize = uint(outputAspectRatior.count)
@@ -136,9 +135,13 @@ class PriorBoxKernel<P: PrecisionProtocol>: Kernel, Computable{
     
     func compute(commandBuffer: MTLCommandBuffer, param: PriorBoxParam<P>) throws {
         guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
-            throw PaddleMobileError.predictError(message: " encode is nil")
+            let error = PaddleMobileError.predictError(message: "encoder is nil")
+            throw paddleMobileLogAndThrow(error: error)
         }
-        
+        guard let tempPipline = pipline else {
+            let error = PaddleMobileError.predictError(message: "pipline is nil")
+            throw paddleMobileLogAndThrow(error: error)
+        }
         encoder.setTexture(param.input.metalTexture, index: 0)
         encoder.setTexture(param.output.metalTexture, index: 1)
         encoder.setTexture(param.outputVariances.metalTexture, index: 2)
@@ -148,7 +151,7 @@ class PriorBoxKernel<P: PrecisionProtocol>: Kernel, Computable{
         encoder.setBytes(&metalParam, length: MemoryLayout<PriorBoxMetalParam>.size, index: 1)
         
         encoder.setBytes(param.variances, length: MemoryLayout<Float32>.size * param.variances.count, index: 2)
-        encoder.dispatch(computePipline: pipline, outTexture: param.output.metalTexture)
+        encoder.dispatch(computePipline: tempPipline, outTexture: param.output.metalTexture)
         encoder.endEncoding()
     }
 }

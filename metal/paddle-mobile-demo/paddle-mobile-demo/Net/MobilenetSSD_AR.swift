@@ -16,30 +16,30 @@ import Foundation
 import paddle_mobile
 
 public class MobileNet_ssd_AR: Net {
-    @objc public override init(device: MTLDevice) {
-        super.init(device: device)
+    @objc public override init(device: MTLDevice) throws {
+        try super.init(device: device)
         except = 2
         modelPath = Bundle.main.path(forResource: "ar_model", ofType: nil) ?! "model null"
         paramPath = Bundle.main.path(forResource: "ar_params", ofType: nil) ?! "para null"
-        preprocessKernel = MobilenetssdPreProccess.init(device: device)
+        preprocessKernel = try MobilenetssdPreProccess.init(device: device)
         inputDim = Dim.init(inDim: [1, 160, 160, 3])
         metalLoadMode = .LoadMetalInCustomMetalLib
         metalLibPath = Bundle.main.path(forResource: "paddle-mobile-metallib", ofType: "metallib")
     }
     
-    @objc override public init(device: MTLDevice, inParamPointer: UnsafeMutableRawPointer, inParamSize:Int, inModelPointer: UnsafeMutableRawPointer, inModelSize: Int) {
-        super.init(device:device,inParamPointer:inParamPointer,inParamSize:inParamSize,inModelPointer:inModelPointer,inModelSize:inModelSize)
+    @objc override public init(device: MTLDevice, inParamPointer: UnsafeMutableRawPointer, inParamSize:Int, inModelPointer: UnsafeMutableRawPointer, inModelSize: Int) throws {
+        try super.init(device:device,inParamPointer:inParamPointer,inParamSize:inParamSize,inModelPointer:inModelPointer,inModelSize:inModelSize)
         except = 2
-        preprocessKernel = MobilenetssdPreProccess.init(device: device)
+        preprocessKernel = try MobilenetssdPreProccess.init(device: device)
         inputDim = Dim.init(inDim: [1, 160, 160, 3])
         metalLoadMode = .LoadMetalInCustomMetalLib
         metalLibPath = Bundle.main.path(forResource: "paddle-mobile-metallib", ofType: "metallib")
     }
     
     class MobilenetssdPreProccess: CusomKernel {
-        init(device: MTLDevice)  {
+        init(device: MTLDevice) throws  {
             let s = Shape.init(inWidth: 160, inHeight: 160, inChannel: 3)
-            super.init(device: device, inFunctionName: "mobilent_ar_preprocess", outputDim: s, metalLoadModel: .LoadMetalInDefaultLib, metalLibPath: nil)
+            try super.init(device: device, inFunctionName: "mobilent_ar_preprocess", outputDim: s, metalLoadModel: .LoadMetalInDefaultLib, metalLibPath: nil)
         }
     }
     

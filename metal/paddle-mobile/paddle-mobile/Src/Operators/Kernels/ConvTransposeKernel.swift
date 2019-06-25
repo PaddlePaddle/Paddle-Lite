@@ -31,34 +31,41 @@ struct MetalConvTransposeParam {
 class ConvTransposeKernel<P: PrecisionProtocol>: Kernel, Computable{
     var metalParam: MetalConvTransposeParam!
     required init(device: MTLDevice, param: ConvTransposeParam<P>, initContext: InitContext) throws {
-        do {
-            try param.output.initTexture(device: device, inTranspose: param.input.transpose, computePrecision: GlobalConfig.shared.computePrecision)
-        } catch let error {
-            throw error
-        }
+        try param.output.initTexture(device: device, inTranspose: param.input.transpose, computePrecision: GlobalConfig.shared.computePrecision)
         
-        param.filter.initBuffer(device: device, precision: GlobalConfig.shared.computePrecision, convertToNHWC: false, withTranspose: true)
+        try param.filter.initBuffer(device: device, precision: GlobalConfig.shared.computePrecision, convertToNHWC: false, withTranspose: true)
         if GlobalConfig.shared.computePrecision == .Float32 {
             if param.stride == [2, 2] && param.stride == [2, 2] {
-                super.init(device: device, inFunctionName: "conv_transpose2x2_stride2", initContext: initContext)
+                try super.init(device: device, inFunctionName: "conv_transpose2x2_stride2", initContext: initContext)
             } else {
-                fatalError(" -- conv transpose unsupported yet -- ")
+                let error = PaddleMobileError.netError(message: "conv transpose unsupported yet")
+                throw paddleMobileLogAndThrow(error: error)
             }
         } else if GlobalConfig.shared.computePrecision == .Float16 {
             if param.stride == [2, 2] && param.stride == [2, 2] {
-                super.init(device: device, inFunctionName: "conv_transpose2x2_stride2_half", initContext: initContext)
+                try super.init(device: device, inFunctionName: "conv_transpose2x2_stride2_half", initContext: initContext)
             } else {
-                fatalError(" -- conv transpose unsupported yet -- ")
+                let error = PaddleMobileError.netError(message: "conv transpose unsupported yet")
+                throw paddleMobileLogAndThrow(error: error)
             }
         } else {
-            fatalError()
+            let error = PaddleMobileError.predictError(message: "unsupported compute precision: \(GlobalConfig.shared.computePrecision)")
+            throw paddleMobileLogAndThrow(error: error)
         }
         
         //    let filter: [Float32] = param.filter.buffer.array()
         //    print(" conv transpose filter")
         //    print(filter)
-        let kernelWidth = UInt16(param.filter.width)
-        let kernelHeight = UInt16(param.filter.height)
+        guard let filterWidth = param.filter.width else {
+            let error = PaddleMobileError.netError(message: "filter unsupported")
+            throw paddleMobileLogAndThrow(error: error)
+        }
+        guard let filterHeight = param.filter.height else {
+            let error = PaddleMobileError.netError(message: "filter unsupported")
+            throw paddleMobileLogAndThrow(error: error)
+        }
+        let kernelWidth = UInt16(filterWidth)
+        let kernelHeight = UInt16(filterHeight)
         
         let strideX = UInt16(param.stride[0])
         let strideY = UInt16(param.stride[1])
@@ -73,14 +80,18 @@ class ConvTransposeKernel<P: PrecisionProtocol>: Kernel, Computable{
     
     func compute(commandBuffer: MTLCommandBuffer, param: ConvTransposeParam<P>) throws {
         guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
-            throw PaddleMobileError.predictError(message: " encoder is nil")
+            let error = PaddleMobileError.predictError(message: "encoder is nil")
+            throw paddleMobileLogAndThrow(error: error)
         }
-        
+        guard let tempPipline = pipline else {
+            let error = PaddleMobileError.predictError(message: "pipline is nil")
+            throw paddleMobileLogAndThrow(error: error)
+        }
         encoder.setTexture(param.input.metalTexture, index: 0)
         encoder.setTexture(param.output.metalTexture, index: 1)
         encoder.setBytes(&metalParam, length: MemoryLayout<MetalConvTransposeParam>.size, index: 0)
         encoder.setBuffer(param.filter.buffer, offset: 0, index: 1)
-        encoder.dispatch(computePipline: pipline, outTexture: param.output.metalTexture)
+        encoder.dispatch(computePipline: tempPipline, outTexture: param.output.metalTexture)
         encoder.endEncoding()
     }
 }

@@ -24,7 +24,7 @@ public protocol SummableMultipliable: Equatable {
 public protocol PrecisionProtocol: SummableMultipliable{
     //    init(inFloat: Float32)
     //    init(inFloat16: Float16)
-    init<P: PrecisionProtocol>(_ inP: P)
+    init<P: PrecisionProtocol>(_ inP: P) throws
     static var bitSize: UInt { get }
     static func initializeValue() -> Self
     static var precisionType: Precision { get }
@@ -41,36 +41,22 @@ extension Float16: PrecisionProtocol {
         return 0
     }
     
-    public init<P>(_ inP: P) where P : PrecisionProtocol {
+    public init<P>(_ inP: P) throws where P : PrecisionProtocol {
         switch P.precisionType {
         case .Float32:
-            fatalError()
+            let error = PaddleMobileError.defaultError(message: "Float16 can not be initialized from Float32")
+            throw paddleMobileLogAndThrow(error: error)
         case .Float16:
             self = inP as! Int16
         default:
-            fatalError()
+            let error = PaddleMobileError.defaultError(message: "Float16 must be initialized from Float16")
+            throw paddleMobileLogAndThrow(error: error)
         }
-        //
-        //        fatalError()
-        //        if P.bitSize == Float32.bitSize {
-        //            self = Float16(inFloat: inP as! Float32)
-        //        } else if P.bitSize == Float16.bitSize {
-        //            self = inP as! Float16
-        //        } else {
-        //            fatalError()
-        //        }
     }
     
     public static var bitSize: UInt {
         return 16
     }
-    
-    //    public init(inFloat16: Float16) {
-    //        self = inFloat16
-    //    }
-    //    public init(inFloat: Float32) {
-    //        self = Int16(inFloat)
-    //    }
 }
 
 extension Float32: PrecisionProtocol {
@@ -83,56 +69,44 @@ extension Float32: PrecisionProtocol {
         return 0.0
     }
     
-    public init<P>(_ inP: P) where P : PrecisionProtocol {
+    public init<P>(_ inP: P) throws where P : PrecisionProtocol {
         switch P.precisionType {
         case .Float32:
             self = inP as! Float32
         case .Float16:
             self = Float32.init(Int32.init(inP as! Int16))
         default:
-            fatalError()
+            let error = PaddleMobileError.defaultError(message: "Float32 must be initialized from Float16 or Float32")
+            throw paddleMobileLogAndThrow(error: error)
         }
-        //        if P.bitSize == Float32.bitSize {
-        //            self = inP as! Float32
-        //        } else if P.bitSize == Float16.bitSize {
-        //            self = Float32.init(inP as! Float16)
-        //        } else {
-        //            fatalError()
-        //        }
     }
     
-    //    public init(inFloat: Float32) {
-    //        self = inFloat
-    //    }
-    //
-    //    public init(inFloat16: Float16) {
-    //        self = Float32.init(inFloat16)
-    //    }
-    //
     public static var bitSize: UInt {
         return 32
     }
 }
 
-public func float32ToFloat16(input: UnsafeMutablePointer<Float32>, output: UnsafeMutableRawPointer, count: Int) {
+public func float32ToFloat16(input: UnsafeMutablePointer<Float32>, output: UnsafeMutableRawPointer, count: Int) throws {
     var float32Buffer = vImage_Buffer(data: input,  height: 1, width: UInt(count), rowBytes: count * 4)
     var float16buffer = vImage_Buffer(data: output, height: 1, width: UInt(count), rowBytes: count * 2)
     guard vImageConvert_PlanarFtoPlanar16F(&float32Buffer, &float16buffer, 0) == kvImageNoError else {
-        fatalError(" float 32 to float 16 error ! ")
+        let error = PaddleMobileError.defaultError(message: "float 32 to float 16 error !")
+        throw paddleMobileLogAndThrow(error: error)
     }
 }
 
-public func float16To32(input: UnsafeMutablePointer<Float16>, count: Int) -> [Float32] {
+public func float16To32(input: UnsafeMutablePointer<Float16>, count: Int) throws -> [Float32] {
     var output = Array<Float>.init(repeating: 0.0, count: count)
-    float16to32(input: input, output: &output, count: count)
+    try float16to32(input: input, output: &output, count: count)
     return output
 }
 
-public func float16to32(input: UnsafeMutablePointer<Float16>, output: UnsafeMutablePointer<Float32>, count: Int) {
+public func float16to32(input: UnsafeMutablePointer<Float16>, output: UnsafeMutablePointer<Float32>, count: Int) throws {
     var bufferFloat16 = vImage_Buffer(data: input,  height: 1, width: UInt(count), rowBytes: count * 2)
     var bufferFloat32 = vImage_Buffer(data: output, height: 1, width: UInt(count), rowBytes: count * 4)
     if vImageConvert_Planar16FtoPlanarF(&bufferFloat16, &bufferFloat32, 0) != kvImageNoError {
-        fatalError(" convert float16 to float32 error")
+        let error = PaddleMobileError.defaultError(message: "convert float16 to float32 error")
+        throw paddleMobileLogAndThrow(error: error)
     }
 }
 
@@ -229,9 +203,9 @@ public class FetchHolder: Variant {
         resultBuffer = device.makeBuffer(length: paddedCapacity * 4, options: [])
     }
     
-    var result: UnsafeMutablePointer<Float32> {
+    var result: UnsafeMutablePointer<Float32>? {
         guard let inResultBuffer = resultBuffer else {
-            fatalError()
+            return nil
         }
         return inResultBuffer.contents().bindMemory(to: Float32.self, capacity: paddedCapacity)
     }
@@ -240,16 +214,14 @@ public class FetchHolder: Variant {
 
 extension FetchHolder: CustomStringConvertible, CustomDebugStringConvertible {
     public var description: String {
-        fatalError()
+        return "FetchHolder: dim \(dim) capacity \(capacity) paddedCapacity \(paddedCapacity)"
         //    return "\(result)"
     }
     
     public var debugDescription: String {
-        fatalError()
+        return "FetchHolder: dim \(dim) capacity \(capacity) paddedCapacity \(paddedCapacity)"
         //    return "\(result)"
     }
-    
-    
 }
 
 

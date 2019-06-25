@@ -17,8 +17,8 @@ import Foundation
 import paddle_mobile
 
 public class YoloNet: Net {
-    @objc public override init(device: MTLDevice) {
-        super.init(device: device)
+    @objc public override init(device: MTLDevice) throws {
+        try super.init(device: device)
         except = 0
         modelPath = Bundle.main.path(forResource: "yolo_16_model", ofType: nil) ?! "model null"
         paramPath = Bundle.main.path(forResource: "yolo_16_param", ofType: nil) ?! "para null"
@@ -27,7 +27,7 @@ public class YoloNet: Net {
         metalLibPath = Bundle.main.path(forResource: "paddle-mobile-metallib", ofType: "metallib")
         useMPS = true
         paramPrecision = .Float16
-        preprocessKernel = ScaleKernel.init(device: device, shape: Shape.init(inWidth: 416, inHeight: 416, inChannel: 3), metalLoadMode: .LoadMetalInCustomMetalLib, metalLibPath: Bundle.main.path(forResource: "paddle-mobile-metallib", ofType: "metallib"))
+        preprocessKernel = try ScaleKernel.init(device: device, shape: Shape.init(inWidth: 416, inHeight: 416, inChannel: 3), metalLoadMode: .LoadMetalInCustomMetalLib, metalLibPath: Bundle.main.path(forResource: "paddle-mobile-metallib", ofType: "metallib"))
         
     }
     

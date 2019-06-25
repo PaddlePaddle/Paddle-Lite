@@ -26,14 +26,19 @@ class SplitKernel<P: PrecisionProtocol>: Kernel, Computable{
     var smp: SplitMetalParam
     func compute(commandBuffer: MTLCommandBuffer, param: SplitParam<P>) throws {
         guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
-            throw PaddleMobileError.predictError(message: " encode is nil")
+            let error = PaddleMobileError.predictError(message: "encoder is nil")
+            throw paddleMobileLogAndThrow(error: error)
+        }
+        guard let tempPipline = pipline else {
+            let error = PaddleMobileError.predictError(message: "pipline is nil")
+            throw paddleMobileLogAndThrow(error: error)
         }
         encoder.setTexture(param.input.metalTexture, index: 0)
         for i in 0..<param.outputList.count {
             encoder.setTexture(param.outputList[i].metalTexture, index: i + 1)
         }
         encoder.setBytes(&smp, length: MemoryLayout<SplitMetalParam>.size, index: 0)
-        encoder.dispatch(computePipline: pipline, outTexture: param.input.metalTexture)
+        encoder.dispatch(computePipline: tempPipline, outTexture: param.input.metalTexture)
         encoder.endEncoding()
     }
     
@@ -41,13 +46,12 @@ class SplitKernel<P: PrecisionProtocol>: Kernel, Computable{
         //     param.output.initTexture(device: device, computePrecision: computePrecision)
         let num = param.outputList.count
         let rank = param.input.tensorDim.cout()
-        assert(num >= 2 && num <= 4)
+        guard num >= 2 && num <= 4 else {
+            let error = PaddleMobileError.netError(message: "param.outputList.count should satisfy num >= 2 && num <= 4")
+            throw paddleMobileLogAndThrow(error: error)
+        }
         for output in param.outputList {
-            do {
-                try output.initTexture(device: device, inTranspose: param.input.transpose, computePrecision: GlobalConfig.shared.computePrecision)
-            } catch let error {
-                throw error
-            }
+            try output.initTexture(device: device, inTranspose: param.input.transpose, computePrecision: GlobalConfig.shared.computePrecision)
         }
         smp = SplitMetalParam.init()
         smp.idim = (Int32(param.input.dim[0]), Int32(param.input.dim[1]), Int32(param.input.dim[2]), Int32(param.input.dim[3]))
@@ -83,14 +87,16 @@ class SplitKernel<P: PrecisionProtocol>: Kernel, Computable{
             }
         }
         if v == "normal" {
-            fatalError("split unsupported")
+            let error = PaddleMobileError.netError(message: "unsupported split type")
+            throw paddleMobileLogAndThrow(error: error)
         }
         if GlobalConfig.shared.computePrecision == .Float32 {
-            super.init(device: device, inFunctionName: "split_\(rank)_\(num)_\(v)_float", initContext: initContext)
+            try super.init(device: device, inFunctionName: "split_\(rank)_\(num)_\(v)_float", initContext: initContext)
         } else if GlobalConfig.shared.computePrecision == .Float16 {
-            super.init(device: device, inFunctionName: "split_\(rank)_\(num)_\(v)_half", initContext: initContext)
+            try super.init(device: device, inFunctionName: "split_\(rank)_\(num)_\(v)_half", initContext: initContext)
         } else {
-            fatalError()
+            let error = PaddleMobileError.predictError(message: "unsupported compute precision: \(GlobalConfig.shared.computePrecision)")
+            throw paddleMobileLogAndThrow(error: error)
         }
     }
     

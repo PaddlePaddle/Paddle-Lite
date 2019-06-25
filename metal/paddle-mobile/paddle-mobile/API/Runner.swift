@@ -48,9 +48,10 @@ import Foundation
     /// - Parameters:
     ///   - inNet: 传入自定义的网络
     ///   - commandQueue: commandQueue
-    @objc public init(inNet: Net, commandQueue: MTLCommandQueue?) {
+    @objc public init(inNet: Net, commandQueue: MTLCommandQueue?) throws {
         guard inNet.inputDim.cout() == 4 else {
-            fatalError(" input dim count must 4 ")
+            let error = PaddleMobileError.netError(message: "input dim count must 4")
+            throw paddleMobileLogAndThrow(error: error)
         }
         
         net = inNet
@@ -87,7 +88,7 @@ import Foundation
     /// - Returns: load 成功或失败
     private func unSafeLoad(optimize: Bool = true) -> Bool {
         guard let inDevice = device, let inQueue = queue else {
-            print(" paddle mobile gpu load error, need MTLCommandQueue")
+            paddleMobileLog("paddle mobile gpu load error, need MTLCommandQueue", logLevel: .FatalError, callStack: Thread.callStackSymbols)
             return false
         }
         var loader: Loaderable
@@ -101,14 +102,14 @@ import Foundation
         do {
             if let inParamPointer = net.paramPointer, let inModelPointer = net.modelPointer {
                 guard net.paramSize > 0 && net.modelSize > 0 else {
-                    print(" load from memory param size or model size can't 0 ")
+                    paddleMobileLog("load from memory param size or model size can't 0", logLevel: .FatalError, callStack: Thread.callStackSymbols)
                     return false
                 }
                 program = try loader.load(device: inDevice, paramPointer: inParamPointer, paramSize: net.paramSize, modePointer: inModelPointer, modelSize: net.modelSize, optimize: optimize)
             } else if let inModelPath = net.modelPath, let inParamPath = net.paramPath {
                 program = try loader.load(device: inDevice, modelPath: inModelPath, paraPath: inParamPath, optimize: optimize)
             } else {
-                print(" model pointer or model file path need be specified")
+                paddleMobileLog("model pointer or model file path need be specified", logLevel: .FatalError, callStack: Thread.callStackSymbols)
                 return false
             }
             
@@ -126,8 +127,7 @@ import Foundation
             }
             
             try net.updateProgram(program: program!)
-        } catch let error {
-            print(error)
+        } catch _ {
             return false
         }
         return true
@@ -141,7 +141,7 @@ import Foundation
     @objc public func predict(texture: MTLTexture, completion: @escaping ( _ success: Bool, _ result: [ResultHolder]?) -> Void) {
         do {
             guard let executor = self.executor else {
-                print("executor is empty")
+                paddleMobileLog("executor is empty", logLevel: .FatalError, callStack: Thread.callStackSymbols)
                 completion(false, nil)
                 return
             }
@@ -155,8 +155,7 @@ import Foundation
                 }
                 completion(false, nil)
             }, preProcessKernle: self.net.preprocessKernel, except: self.net.except)
-        } catch let error {
-            print(error)
+        } catch _ {
             completion(false, nil)
             return
         }
@@ -176,9 +175,14 @@ import Foundation
     /// - Parameters:
     ///   - image: 输入图像
     ///   - getTexture: 获取 texture 回调
-    @objc public func getTexture(image: CGImage, getTexture: @escaping (MTLTexture) -> Void) {
-        let texture = try? textureLoader?.newTexture(cgImage: image, options: [:]) ?! " texture loader error"
-        scaleTexture(input: texture!, complete: getTexture)
+    @objc public func getTexture(image: CGImage, getTexture: @escaping (Bool, MTLTexture?) -> Void) {
+        if let textureLoader = textureLoader, let texture = try? textureLoader.newTexture(cgImage: image, options: [:])  {
+            scaleTexture(input: texture, complete: getTexture)
+        } else {
+            DispatchQueue.main.async {
+                getTexture(false, nil)
+            }
+        }
     }
     
     /// 通过 buffer 获取 texture， 内部会使用GPU进行转换操作
@@ -186,27 +190,34 @@ import Foundation
     /// - Parameters:
     ///   - inBuffer: 输入buffer
     ///   - getTexture: 结果回调
-    @objc public func getTexture(inBuffer: MTLBuffer, getTexture: @escaping (MTLTexture) -> Void) {
+    @objc public func getTexture(inBuffer: MTLBuffer, getTexture: @escaping (Bool, MTLTexture?) -> Void) {
         guard let inQueue = queue, let inDevice = device else {
-            fatalError( " queue or devcie nil " )
+            DispatchQueue.main.async {
+                getTexture(false, nil)
+            }
+            return
         }
         
         guard let buffer = inQueue.makeCommandBuffer() else {
-            fatalError( " make buffer error" )
+            DispatchQueue.main.async {
+                getTexture(false, nil)
+            }
+            return
         }
         
-        let bufferToTextureKernel = BufferToTextureKernel.init(device: inDevice, outputDim: Shape.init(inWidth: net.inputDim[2], inHeight: net.inputDim[1], inChannel: net.inputDim[3]), metalLoadMode: net.metalLoadMode, metalLibPath: net.metalLibPath)
         do {
+            let bufferToTextureKernel = try BufferToTextureKernel.init(device: inDevice, outputDim: Shape.init(inWidth: net.inputDim[2], inHeight: net.inputDim[1], inChannel: net.inputDim[3]), metalLoadMode: net.metalLoadMode, metalLibPath: net.metalLibPath)
             try bufferToTextureKernel.compute(inputBuffer: inBuffer, commandBuffer: buffer)
-        } catch {
-            fatalError(" bufferToTextureKernel error ")
+            buffer.addCompletedHandler { (buffer) in
+                getTexture(true, bufferToTextureKernel.outputTexture)
+            }
+            buffer.commit()
+        } catch _ {
+            DispatchQueue.main.async {
+                getTexture(false, nil)
+            }
+            return
         }
-        
-        buffer.addCompletedHandler { (buffer) in
-            getTexture(bufferToTextureKernel.outputTexture)
-        }
-        
-        buffer.commit()
     }
     
     /// 更新输入维度， 针对可变长输入模型
@@ -215,41 +226,47 @@ import Foundation
     @objc public func updateInputDim(inDim: Dim) -> Bool {
         if net.inputDim != inDim {
             guard let inProgram = program else {
-                fatalError(" need load first ")
+                paddleMobileLog("need load first", logLevel: .FatalError, callStack: Thread.callStackSymbols)
+                return false
             }
             net.inputDim = inDim
             do {
                 try net.updateProgram(program: inProgram)
-            } catch let error {
-                print(error)
+            } catch _ {
                 return false
             }
         }
         return true
     }
     
-    public func scaleTexture(input: MTLTexture , complete: @escaping (MTLTexture) -> Void) {
+    public func scaleTexture(input: MTLTexture , complete: @escaping (Bool, MTLTexture?) -> Void) {
         
         guard let inQueue = queue, let inDevice = device else {
-            fatalError( " queue or devcie nil " )
+            DispatchQueue.main.async {
+                complete(false, nil)
+            }
+            return
         }
         
         guard let buffer = inQueue.makeCommandBuffer() else {
-            fatalError( " make buffer error" )
+            DispatchQueue.main.async {
+                complete(false, nil)
+            }
+            return
         }
-        
-        let scaleKernel = ScaleKernel.init(device: inDevice, shape: Shape.init(inWidth: net.inputDim[2], inHeight: net.inputDim[1], inChannel: 3), metalLoadMode: net.metalLoadMode, metalLibPath: net.metalLibPath)
         
         do {
+            let scaleKernel = try ScaleKernel.init(device: inDevice, shape: Shape.init(inWidth: net.inputDim[2], inHeight: net.inputDim[1], inChannel: 3), metalLoadMode: net.metalLoadMode, metalLibPath: net.metalLibPath)
             try scaleKernel.compute(inputTexuture: input, commandBuffer: buffer)
-        } catch let error {
-            print(error)
-            fatalError()
+            buffer.addCompletedHandler { (buffer) in
+                complete(true, scaleKernel.outputTexture)
+            }
+            buffer.commit()
+        } catch _ {
+            DispatchQueue.main.async {
+                complete(false, nil)
+            }
+            return
         }
-        
-        buffer.addCompletedHandler { (buffer) in
-            complete(scaleKernel.outputTexture)
-        }
-        buffer.commit()
     }
 }

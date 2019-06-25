@@ -18,9 +18,9 @@ import paddle_mobile
 public class MobileNet: Net{
     
     class MobilenetPreProccess: CusomKernel {
-        init(device: MTLDevice) {
+        init(device: MTLDevice) throws {
             let s = Shape.init(inWidth: 224, inHeight: 224, inChannel: 3)
-            super.init(device: device, inFunctionName: "mobilenet_preprocess", outputDim: s, metalLoadModel: .LoadMetalInDefaultLib, metalLibPath: nil)
+            try super.init(device: device, inFunctionName: "mobilenet_preprocess", outputDim: s, metalLoadModel: .LoadMetalInDefaultLib, metalLibPath: nil)
         }
     }
     
@@ -52,14 +52,14 @@ public class MobileNet: Net{
         return s.joined(separator: "\n")
     }
     
-    override public init(device: MTLDevice) {
-        super.init(device: device)
+    override public init(device: MTLDevice) throws {
+        try super.init(device: device)
         except = 0
         modelPath = Bundle.main.path(forResource: "mobilenet_model", ofType: nil) ?! "model null"
         paramPath = Bundle.main.path(forResource: "mobilenet_params", ofType: nil) ?! "para null"    
         //    metalLoadMode = .LoadMetalInCustomMetalLib
         //    metalLibPath = Bundle.main.path(forResource: "PaddleMobileMetal", ofType: "metallib") ?! " can't be nil "
-        preprocessKernel = MobilenetPreProccess.init(device: device)
+        preprocessKernel = try MobilenetPreProccess.init(device: device)
         inputDim = Dim.init(inDim: [1, 224, 224, 3])
         metalLoadMode = .LoadMetalInCustomMetalLib
         metalLibPath = Bundle.main.path(forResource: "paddle-mobile-metallib", ofType: "metallib")

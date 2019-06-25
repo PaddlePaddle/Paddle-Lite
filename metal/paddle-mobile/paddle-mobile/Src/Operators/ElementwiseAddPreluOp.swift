@@ -18,42 +18,30 @@ import Metal
 class ElementwiseAddPreluParam<P: PrecisionProtocol>: OpParam {
     //typealias ParamPrecisionType = P
     required init(opDesc: PMOpDesc, inScope: Scope) throws {
-        do {
-            alpha = try ElementwiseAddPreluParam.paramInputAlpha(inputs: opDesc.paraInputs, from: inScope)
-            mode = try ElementwiseAddPreluParam.getAttr(key: "mode", attrs: opDesc.attrs)
-            inputX = try ElementwiseAddPreluParam.inputX(inputs: opDesc.inputs, from: inScope)
-            output = try ElementwiseAddPreluParam.outputOut(outputs: opDesc.outputs, from: inScope)
-            axis = try ElementwiseAddPreluParam.getAttr(key: "axis", attrs: opDesc.attrs)
-        } catch let error {
-            throw error
-        }
+        alpha = try ElementwiseAddPreluParam.paramInputAlpha(inputs: opDesc.paraInputs, from: inScope)
+        mode = try ElementwiseAddPreluParam.getAttr(key: "mode", attrs: opDesc.attrs)
+        inputX = try ElementwiseAddPreluParam.inputX(inputs: opDesc.inputs, from: inScope)
+        output = try ElementwiseAddPreluParam.outputOut(outputs: opDesc.outputs, from: inScope)
+        axis = try ElementwiseAddPreluParam.getAttr(key: "axis", attrs: opDesc.attrs)
         do {
             inputY = try ElementwiseAddPreluParam.inputY(inputs: opDesc.paraInputs, from: inScope)
         } catch _ {
             let tensorY: Tensor<P> = try ElementwiseAddPreluParam.inputY(inputs: opDesc.paraInputs, from: inScope)
             let device = inputX.metalTexture!.device
-            inputY = Texture.init(device: device, inDim: tensorY.dim)
+            inputY = try Texture.init(device: device, inDim: tensorY.dim)
             let value: [P] = Array(UnsafeBufferPointer(start: tensorY.data.pointer, count: tensorY.dim.numel()))
-            inputY.metalTexture = device.tensor2texture(value: value, dim: tensorY.dim.dims, transpose: [0, 1, 2, 3], inComputePrecision: GlobalConfig.shared.computePrecision)
+            inputY.metalTexture = try device.tensor2texture(value: value, dim: tensorY.dim.dims, transpose: [0, 1, 2, 3], inComputePrecision: GlobalConfig.shared.computePrecision)
         }
-        
-        //    required init(device: MTLDevice, param: ElementwiseAddParam<P>) {
-        //      param.output.initTexture(device: device, inTranspose: param.inputX.transpose, computePrecision: computePrecision)
-        //      if computePrecision == .Float32 {
-        //        super.init(device: device, inFunctionName: "elementwise_add")
-        //      } else if computePrecision == .Float16 {
-        //        super.init(device: device, inFunctionName: "elementwise_add_half")
-        //      } else {
-        //        fatalError()
-        //      }
-        //    }
         
         var offset = axis
         if axis == -1 {
             offset = inputX.tensorDim.cout() - inputY.tensorDim.cout()
         }
         for i in 0..<(inputY.tensorDim.cout()) {
-            assert(inputX.tensorDim[offset + i] == inputY.tensorDim[i])
+            guard inputX.tensorDim[offset + i] == inputY.tensorDim[i] else {
+                let error = PaddleMobileError.netError(message: "inputs tensordim inputx: \(inputX.tensorDim) inputy: \(inputY.tensorDim) offset: \(offset) do not satisfy")
+                throw paddleMobileLogAndThrow(error: error)
+            }
         }
     }
     
@@ -88,11 +76,7 @@ class ElementwiseAddPreluOp<P: PrecisionProtocol>: Operator<ElementwiseAddPreluK
     }
     
     func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
-        do {
-            try kernel.compute(commandBuffer: buffer, param: para)
-        } catch let error {
-            throw error
-        }
+        try kernel.compute(commandBuffer: buffer, param: para)
     }
     
     
@@ -102,13 +86,16 @@ class ElementwiseAddPreluOp<P: PrecisionProtocol>: Operator<ElementwiseAddPreluK
         print(para.output)
         
         let padToFourDim = para.output.padToFourDim
-        if para.output.transpose == [0, 1, 2, 3] {
-            let outputArray: [Float32] = para.output.metalTexture.realNHWC(dim: (n: padToFourDim[0], h: padToFourDim[1], w: padToFourDim[2], c: padToFourDim[3]))
-            print(outputArray.strideArray())
-        } else if para.output.transpose == [0, 2, 3, 1] {
-            print(para.output.metalTexture.toTensor(dim: (n: para.output.tensorDim[0], c: para.output.tensorDim[1], h: para.output.tensorDim[2], w: para.output.tensorDim[3])).strideArray())
-        } else {
-            print(" not implement")
+        do {
+            if para.output.transpose == [0, 1, 2, 3] {
+                let outputArray: [Float32] = try para.output.metalTexture.realNHWC(dim: (n: padToFourDim[0], h: padToFourDim[1], w: padToFourDim[2], c: padToFourDim[3]))
+                print(outputArray.strideArray())
+            } else if para.output.transpose == [0, 2, 3, 1] {
+                print(try para.output.metalTexture.toTensor(dim: (n: para.output.tensorDim[0], c: para.output.tensorDim[1], h: para.output.tensorDim[2], w: para.output.tensorDim[3])).strideArray())
+            } else {
+                print(" not implement")
+            }
+        } catch _ {
         }
     }
 }

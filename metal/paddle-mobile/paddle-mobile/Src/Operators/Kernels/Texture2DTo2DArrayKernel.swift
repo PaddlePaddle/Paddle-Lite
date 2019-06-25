@@ -25,29 +25,30 @@ struct Texture2DTo2DArrayParam {
 class Texture2DTo2DArrayKernel<P: PrecisionProtocol>: Kernel, Computable{
     
     required init(device: MTLDevice, param: FeedParam<P>, initContext: InitContext) throws {
-        
-        do {
-            try param.output.initTexture(device: device, inTranspose: [0, 2, 3, 1], computePrecision: GlobalConfig.shared.computePrecision)
-        } catch let error {
-            throw error
-        }
+        try param.output.initTexture(device: device, inTranspose: [0, 2, 3, 1], computePrecision: GlobalConfig.shared.computePrecision)
         
         if GlobalConfig.shared.computePrecision == .Float16 {
-            super.init(device: device, inFunctionName: "texture2d_to_2d_array_half", initContext: initContext)
+            try super.init(device: device, inFunctionName: "texture2d_to_2d_array_half", initContext: initContext)
         } else if GlobalConfig.shared.computePrecision == .Float32 {
-            super.init(device: device, inFunctionName: "texture2d_to_2d_array", initContext: initContext)
+            try super.init(device: device, inFunctionName: "texture2d_to_2d_array", initContext: initContext)
         } else {
-            fatalError()
+            let error = PaddleMobileError.predictError(message: "unsupported compute precision: \(GlobalConfig.shared.computePrecision)")
+            throw paddleMobileLogAndThrow(error: error)
         }
     }
     
     func compute(commandBuffer: MTLCommandBuffer, param: FeedParam<P>) throws {
         guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
-            throw PaddleMobileError.predictError(message: " encode is nil")
+            let error = PaddleMobileError.predictError(message: " encoder is nil")
+            throw paddleMobileLogAndThrow(error: error)
+        }
+        guard let tempPipline = pipline else {
+            let error = PaddleMobileError.predictError(message: "pipline is nil")
+            throw paddleMobileLogAndThrow(error: error)
         }
         encoder.setTexture(param.input.mtlTexture, index: 0)
         encoder.setTexture(param.output.metalTexture, index: 1)
-        encoder.dispatch(computePipline: pipline, outTexture: param.input.mtlTexture)
+        encoder.dispatch(computePipline: tempPipline, outTexture: param.input.mtlTexture)
         encoder.endEncoding()
     }
 }

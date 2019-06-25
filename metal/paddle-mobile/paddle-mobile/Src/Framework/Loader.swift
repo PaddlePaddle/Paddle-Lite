@@ -27,13 +27,15 @@ public class Loader<P: PrecisionProtocol>: Loaderable {
         var nowIndex: Int
         init(paramPath: String) throws {
             guard let tmpFile = fopen(paramPath, "rb") else {
-                throw PaddleMobileError.loaderError(message: "open param file error" + paramPath)
+                let error = PaddleMobileError.loaderError(message: "open param file error" + paramPath)
+                throw paddleMobileLogAndThrow(error: error)
             }
             file = tmpFile
             fseek(file, 0, SEEK_END)
             fileSize = ftell(file)
             guard fileSize > 0 else {
-                throw PaddleMobileError.loaderError(message: "param file size is too small")
+                let error = PaddleMobileError.loaderError(message: "param file size is too small")
+                throw paddleMobileLogAndThrow(error: error)
             }
             rewind(file)
             nowIndex = 0
@@ -41,7 +43,8 @@ public class Loader<P: PrecisionProtocol>: Loaderable {
         
         func read(tensor: Tensor<P>) throws {
             guard nowIndex <= fileSize else {
-                throw PaddleMobileError.loaderError(message: "out of the file range")
+                let error = PaddleMobileError.loaderError(message: "out of the file range")
+                throw paddleMobileLogAndThrow(error: error)
             }
             
             func pointerReader<T>(type: T.Type) -> T {
@@ -78,27 +81,26 @@ public class Loader<P: PrecisionProtocol>: Loaderable {
                 var tensorDescFromParams: VarType_TensorDesc?
                 do {
                     tensorDescFromParams = try VarType_TensorDesc.init(data: data)
-                } catch let error {
-                    print("\(error)")
+                } catch _ {
                 }
                 tensorDescCharArray.deinitialize(count: tensorDescSize)
                 tensorDescCharArray.deallocate()
                 repeat {
                     guard let tensorDescFromParams = tensorDescFromParams, let dimsArrayFromParams = tensorDescFromParams.dimsArray else {
-                        print("tensorDescFromParams is nil")
+                        paddleMobileLog("tensorDescFromParams is nil", logLevel: .FatalError)
                         break
                     }
                     if tensorDescFromParams.dimsArray_Count != dimsArrayFromParams.count {
-                        print("dimsArray_Count not equal to tensorDescFromParams.dimsArray.count")
+                        paddleMobileLog("dimsArray_Count not equal to tensorDescFromParams.dimsArray.count", logLevel: .FatalError)
                         break
                     }
                     if tensorDescFromParams.dimsArray_Count != tensor.tensorDim.cout() {
-                        print("dimsArray_Count not equal to tensor.tensorDim.cout()")
+                        paddleMobileLog("dimsArray_Count not equal to tensor.tensorDim.cout()", logLevel: .FatalError)
                         break
                     }
                     for i in 0..<dimsArrayFromParams.count {
                         if dimsArrayFromParams.value(at: i) != tensor.tensorDim[Int(i)] {
-                            print("tensorDescFromParams \(String(describing: tensorDescFromParams.dimsArray)) not equal to tensor.tensorDim \(tensor.tensorDim)")
+                            paddleMobileLog("tensorDescFromParams \(String(describing: tensorDescFromParams.dimsArray)) not equal to tensor.tensorDim \(tensor.tensorDim)", logLevel: .FatalError)
                             break
                         }
                     }
@@ -118,7 +120,8 @@ public class Loader<P: PrecisionProtocol>: Loaderable {
             let bytesRead = fread(tensor.data.pointer, 1, tensor.data.size, file)
             
             guard bytesRead == tensor.data.size else {
-                throw PaddleMobileError.loaderError(message: "param read size error")
+                let error = PaddleMobileError.loaderError(message: "param read size error")
+                throw paddleMobileLogAndThrow(error: error)
             }
             
             // TODO: use script to convert
@@ -148,7 +151,8 @@ public class Loader<P: PrecisionProtocol>: Loaderable {
         
         func read(tensor: Tensor<P>) throws {
             guard nowIndex <= paramSize else {
-                throw PaddleMobileError.loaderError(message: "out of the file range")
+                let error = PaddleMobileError.loaderError(message: "out of the file range")
+                throw paddleMobileLogAndThrow(error: error)
             }
             var readerIndex: Int = 0
             func pointerReader<T>(type: T.Type) -> T {
@@ -195,33 +199,38 @@ public class Loader<P: PrecisionProtocol>: Loaderable {
             /// oc protobuf serialized Data to instance class
             let protoProgram = try ProgramDesc.init(data: (modelData as NSData) as Data)
             
-            let originProgramDesc = PMProgramDesc.init(protoProgram: protoProgram)
-            let programDesc = optimize ? ProgramOptimize<P>.init().optimize(originProgramDesc: originProgramDesc) : originProgramDesc
+            let originProgramDesc = try PMProgramDesc.init(protoProgram: protoProgram)
+            let programDesc = optimize ? (ProgramOptimize<P>.init().optimize(originProgramDesc: originProgramDesc) ?? originProgramDesc) : originProgramDesc
             
             //      let programDesc = PMProgramDesc.init(protoProgram: protoProgram)
             if GlobalConfig.shared.debug {
-                print(programDesc)
+                paddleMobileLog("\(programDesc)")
             }
             
             guard programDesc.blocks.count > 0 else {
-                throw PaddleMobileError.loaderError(message: "count of blocks must greater than 0")
+                let error = PaddleMobileError.loaderError(message: "count of blocks must greater than 0")
+                throw paddleMobileLogAndThrow(error: error)
             }
             
             // to get feed key and fetch key
             let block = programDesc.blocks[0]
             guard let firstOp = block.ops.first, let lastOp = block.ops.last else {
-                throw PaddleMobileError.loaderError(message: "at least two operator")
+                let error = PaddleMobileError.loaderError(message: "at least two operator")
+                throw paddleMobileLogAndThrow(error: error)
             }
             
             guard firstOp.type == gFeedType, lastOp.type == gFetchType else {
-                throw PaddleMobileError.loaderError(message: "the first op is not feed or the last op is not fetch")
+                let error = PaddleMobileError.loaderError(message: "the first op is not feed or the last op is not fetch")
+                throw paddleMobileLogAndThrow(error: error)
             }
             
             guard let inputKey = opInfos[gFeedType]?.inputs.first, let outKey = opInfos[gFetchType]?.outputs.first else {
-                throw PaddleMobileError.loaderError(message: "the feed input key or fetch output key not found")
+                let error = PaddleMobileError.loaderError(message: "the feed input key or fetch output key not found")
+                throw paddleMobileLogAndThrow(error: error)
             }
             guard let feedKey = firstOp.inputs[inputKey]?.first, let fetchKey = lastOp.outputs[outKey]?.first else {
-                throw PaddleMobileError.loaderError(message: "feed key or fetch key not found")
+                let error = PaddleMobileError.loaderError(message: "feed key or fetch key not found")
+                throw paddleMobileLogAndThrow(error: error)
             }
             
             let scope = Scope.init(inFeedKey: feedKey, inFetchKey: fetchKey)
@@ -231,7 +240,8 @@ public class Loader<P: PrecisionProtocol>: Loaderable {
                 for varDesc in block.vars {
                     if (varDesc.type == .LodTensor) {
                         guard let tensorDesc = varDesc.tensorDesc else {
-                            throw PaddleMobileError.loaderError(message: "get tensor desc failed")
+                            let error = PaddleMobileError.loaderError(message: "get tensor desc failed")
+                            throw paddleMobileLogAndThrow(error: error)
                         }
                         
                         if (varDesc.persistable
@@ -240,28 +250,26 @@ public class Loader<P: PrecisionProtocol>: Loaderable {
                             let dimArr = tensorDesc.dims
                             
                             guard dimArr.count > 0 else {
-                                throw PaddleMobileError.loaderError(message: "tensor desc dim size error")
+                                let error = PaddleMobileError.loaderError(message: "tensor desc dim size error")
+                                throw paddleMobileLogAndThrow(error: error)
                             }
                             
                             let dim = Dim.init(inDim: dimArr)
                             let tensor = Tensor<P>.init(inDim: dim, inLayout: tensorDesc.dataLayout, originDimsCount: tensorDesc.originDimsCount)
-                            do {
-                                if paraLoaderPointer != nil {
-                                    try paraLoaderPointer!.read(tensor: tensor)
-                                }
-                                
-                                if paraLoader != nil {
-                                    try paraLoader!.read(tensor: tensor)
-                                }
-                            } catch let error {
-                                throw error
+                        
+                            if paraLoaderPointer != nil {
+                                try paraLoaderPointer!.read(tensor: tensor)
+                            }
+                            
+                            if paraLoader != nil {
+                                try paraLoader!.read(tensor: tensor)
                             }
                             //              tensor.convert(to: DataLayout.NHWC())
                             //                            tensor.initBuffer(device: device)
                             scope[varDesc.name] = tensor
                         } else {
                             let dim = Dim.init(inDim: tensorDesc.dims)
-                            let texture = Texture.init(device: device, inDim: dim)
+                            let texture = try Texture.init(device: device, inDim: dim)
                             texture.originDimsCount = tensorDesc.originDimsCount
                             scope[varDesc.name] = texture
                         }
@@ -278,35 +286,31 @@ public class Loader<P: PrecisionProtocol>: Loaderable {
             
             return program
         } catch _ {
-            throw PaddleMobileError.loaderError(message: "protobuf decoder error")
+            let error = PaddleMobileError.loaderError(message: "protobuf decoder error")
+            throw paddleMobileLogAndThrow(error: error)
         }
     }
     public func load(device: MTLDevice, paramPointer: UnsafeMutableRawPointer, paramSize: Int, modePointer: UnsafeMutableRawPointer, modelSize: Int, optimize: Bool = true) throws -> Program {
         let modelData = Data.init(bytes:modePointer, count:modelSize)
         guard let paraLoader = try? ParaLoaderWithPointer.init(pPointer: paramPointer,pSize: paramSize) else {
-            throw PaddleMobileError.loaderError(message: "load para error")
+            let error = PaddleMobileError.loaderError(message: "load para error")
+            throw paddleMobileLogAndThrow(error: error)
         }
-        do {
-            let program = try loadModelandParam(device, modelData, paraLoader, nil, optimize)
-            return program
-        } catch let error {
-            throw error
-        }
+        let program = try loadModelandParam(device, modelData, paraLoader, nil, optimize)
+        return program
     }
     
     public func load(device: MTLDevice, modelPath: String, paraPath: String, optimize: Bool = true) throws -> Program {
         guard let modelData = try? Data.init(contentsOf: URL.init(fileURLWithPath: modelPath)) else {
-            throw PaddleMobileError.loaderError(message: "load " + modelPath + " failed !")
+            let error = PaddleMobileError.loaderError(message: "load " + modelPath + " failed !")
+            throw paddleMobileLogAndThrow(error: error)
         }
         guard let paraLoader = try? ParaLoader.init(paramPath: paraPath) else {
-            throw PaddleMobileError.loaderError(message: "load para error")
+            let error = PaddleMobileError.loaderError(message: "load para error")
+            throw paddleMobileLogAndThrow(error: error)
         }
         
-        do {
-            let program = try loadModelandParam(device, modelData, nil, paraLoader, optimize)
-            return program
-        } catch let error {
-            throw error
-        }
+        let program = try loadModelandParam(device, modelData, nil, paraLoader, optimize)
+        return program
     }
 }

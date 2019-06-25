@@ -17,18 +17,13 @@ import Foundation
 class ConvParam<P: PrecisionProtocol>: OpParam {
     //typealias ParamPrecisionType = P
     required init(opDesc: PMOpDesc, inScope: Scope) throws {
-        do {
-            filter = try ConvParam.inputFilter(paraInputs: opDesc.paraInputs, from: inScope)
-            input = try ConvParam.input(inputs: opDesc.inputs, from: inScope)
-            output = try ConvParam.output(outputs: opDesc.outputs, from: inScope)
-            stride = try ConvParam.getAttr(key: "strides", attrs: opDesc.attrs)
-            paddings = try ConvParam.getAttr(key: "paddings", attrs: opDesc.attrs)
-            dilations = try ConvParam.getAttr(key: "dilations", attrs: opDesc.attrs)
-            groups = try ConvParam.getAttr(key: "groups", attrs: opDesc.attrs)
-            
-        } catch let error {
-            throw error
-        }
+        filter = try ConvParam.inputFilter(paraInputs: opDesc.paraInputs, from: inScope)
+        input = try ConvParam.input(inputs: opDesc.inputs, from: inScope)
+        output = try ConvParam.output(outputs: opDesc.outputs, from: inScope)
+        stride = try ConvParam.getAttr(key: "strides", attrs: opDesc.attrs)
+        paddings = try ConvParam.getAttr(key: "paddings", attrs: opDesc.attrs)
+        dilations = try ConvParam.getAttr(key: "dilations", attrs: opDesc.attrs)
+        groups = try ConvParam.getAttr(key: "groups", attrs: opDesc.attrs)
     }
     
     let input: Texture
@@ -66,16 +61,16 @@ class ConvOp<P: PrecisionProtocol>: Operator<ConvKernel<P>, ConvParam<P>>, Runab
     }
     
     func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
-        do {
-            try kernel.compute(commandBuffer: buffer, param: para)
-        } catch let error {
-            throw error
-        }
+        try kernel.compute(commandBuffer: buffer, param: para)
     }
     
     func delogOutput() {
         print("conv output : ")
-        print(para.output.toTensor().strideArray())
+        do {
+            let output = try para.output.toTensor().strideArray()
+            print(output)
+        } catch _ {
+        }
         //        let _: Float16? = para.output.metalTexture.logDesc()
     }
 }
