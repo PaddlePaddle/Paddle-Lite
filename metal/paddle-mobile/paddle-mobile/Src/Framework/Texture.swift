@@ -84,29 +84,30 @@ public class Texture: Tensorial {
         return metalTexture.width * metalTexture.height * metalTexture.arrayLength * 4
     }
     
-    func toTensor() -> [Float32] {
+    func toTensor() throws -> [Float32] {
         guard  padToFourDim.cout() == 4 else {
-            fatalError("- not support -")
+            let error = PaddleMobileError.netError(message: "Texture toTensor padToFourDim count must be 4")
+            throw paddleMobileLogAndThrow(error: error)
         }
-        return metalTexture.toTensor(dim: (n: dim[0], c: dim[3], h: dim[1], w: dim[2]))
+        return try metalTexture.toTensor(dim: (n: dim[0], c: dim[3], h: dim[1], w: dim[2]))
     }
     
-    func realNHWC() -> [Float32] {
+    func realNHWC() throws -> [Float32] {
         guard padToFourDim.cout() == 4 else {
-            fatalError(" - not support - ")
+            let error = PaddleMobileError.netError(message: "Texture toTensor padToFourDim count must be 4")
+            throw paddleMobileLogAndThrow(error: error)
         }
-        return metalTexture.realNHWC(dim: (n: padToFourDim[0], h: padToFourDim[1], w: padToFourDim[2], c: padToFourDim[3]))
+        return try metalTexture.realNHWC(dim: (n: padToFourDim[0], h: padToFourDim[1], w: padToFourDim[2], c: padToFourDim[3]))
     }
-    
+
     public func initTexture(device: MTLDevice, inTranspose: [Int] = [0, 1, 2, 3], computePrecision: Precision = .Float16) throws {
         transpose = inTranspose
         for i in 0..<(4 - tensorDim.cout()) {
             if i != inTranspose[i] {
-//                fatalError()
-                throw PaddleMobileError.loaderError(message: " dims error ")
+                let error = PaddleMobileError.loaderError(message: " dims error ")
+                throw paddleMobileLogAndThrow(error: error)
             }
         }
-        
         
         let newDim = transpose.map { padToFourDim[$0] }
         let newLayout = transpose.map { layout.layoutWithDim[$0] }
@@ -132,8 +133,8 @@ public class Texture: Tensorial {
             tmpTextureDes.height = newDim[2]
             tmpTextureDes.arrayLength = 1
         default:
-//            fatalError("unreachable")
-            throw PaddleMobileError.loaderError(message: " unreachable ")
+            let error = PaddleMobileError.loaderError(message: "unreachable")
+            throw paddleMobileLogAndThrow(error: error)
         }
         
         if computePrecision == .Float16 {
@@ -162,7 +163,8 @@ public class Texture: Tensorial {
         tmpTextureDes.storageMode = .shared
         textureDesc = tmpTextureDes
         guard let inTexture =  device.makeTexture(descriptor: tmpTextureDes) else {
-            throw PaddleMobileError.loaderError(message: " create texture is nil ")
+            let error = PaddleMobileError.loaderError(message: "create texture is nil")
+            throw paddleMobileLogAndThrow(error: error)
         }
         metalTexture =  inTexture
     }
@@ -179,8 +181,8 @@ public class Texture: Tensorial {
             fourDimNum.append(contentsOf: inDim.dims)
             fourDim = Dim.init(inDim: fourDimNum)
         } else {
-//            fatalError(" not support ")
-            throw PaddleMobileError.loaderError(message: " not support ")
+            let error = PaddleMobileError.loaderError(message: "not support")
+            throw paddleMobileLogAndThrow(error: error)
         }
         
         tensorDim = inTensorDim
@@ -189,7 +191,7 @@ public class Texture: Tensorial {
     }
     
     // 初始化时 dim padToFourDim 模型中的维度（一般来说 nchw），前面补全0
-    init(device: MTLDevice, inDim: Dim) {
+    init(device: MTLDevice, inDim: Dim) throws {
         if GlobalConfig.shared.debug {
             print(" in dim > \(inDim)")
         }
@@ -204,7 +206,8 @@ public class Texture: Tensorial {
             fourDimNum.append(contentsOf: inDim.dims)
             fourDim = Dim.init(inDim: fourDimNum)
         } else {
-            fatalError(" not support ")
+            let error = PaddleMobileError.netError(message: "Texture init: dim count \(inDim) unsupported")
+            throw paddleMobileLogAndThrow(error: error)
         }
         tensorDim = inDim
         dim = fourDim

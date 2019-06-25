@@ -24,11 +24,7 @@ class TransposeKernel<P: PrecisionProtocol>: Kernel, Computable {
     var metalParam: TransposeMetalParam = TransposeMetalParam.init()
     required init(device: MTLDevice, param: TransposeParam<P>, initContext: InitContext) throws {
         
-        do {
-            try param.output.initTexture(device: device, computePrecision: GlobalConfig.shared.computePrecision)
-        } catch let error {
-            throw error
-        }
+        try param.output.initTexture(device: device, computePrecision: GlobalConfig.shared.computePrecision)
         
         let rank = param.input.tensorDim.cout()
         var axis: [Int] = [0, 1, 2, 3]
@@ -62,22 +58,27 @@ class TransposeKernel<P: PrecisionProtocol>: Kernel, Computable {
                 kernelFunc = "transpose_\(rank)_float"
             }
         } else {
-            fatalError()
+            let error = PaddleMobileError.predictError(message: "unsupported compute precision: \(GlobalConfig.shared.computePrecision)")
+            throw paddleMobileLogAndThrow(error: error)
         }
-        print("===========>", kernelFunc)
-        print(metalParam)
-        super.init(device: device, inFunctionName: kernelFunc, initContext: initContext)
+        paddleMobileLog("===========> \(kernelFunc)")
+        paddleMobileLog("\(metalParam)")
+        try super.init(device: device, inFunctionName: kernelFunc, initContext: initContext)
     }
     
     func compute(commandBuffer: MTLCommandBuffer, param: TransposeParam<P>) throws {
         guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
-            throw PaddleMobileError.predictError(message: " encode is nil")
+            let error = PaddleMobileError.predictError(message: "encoder is nil")
+            throw paddleMobileLogAndThrow(error: error)
         }
-        
+        guard let tempPipline = pipline else {
+            let error = PaddleMobileError.predictError(message: "pipline is nil")
+            throw paddleMobileLogAndThrow(error: error)
+        }
         encoder.setTexture(param.input.metalTexture, index: 0)
         encoder.setTexture(param.output.metalTexture, index: 1)
         encoder.setBytes(&metalParam, length: MemoryLayout<TransposeMetalParam>.size, index: 0)
-        encoder.dispatch(computePipline: pipline, outTexture: param.output.metalTexture)
+        encoder.dispatch(computePipline: tempPipline, outTexture: param.output.metalTexture)
         encoder.endEncoding()
     }
     

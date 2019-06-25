@@ -332,9 +332,9 @@ public class PaddleMobileUnitTest {
         let initContext = InitContext.init()
         initContext.metalLoadMode = .LoadMetalInDefaultLib
         
-        let convAddBnReluKernel = ConvAddBatchNormReluKernel<Float32>.init(device: device, testParam: param, initContext: initContext)
+        let convAddBnReluKernel = try! ConvAddBatchNormReluKernel<Float32>.init(device: device, testParam: param, initContext: initContext)
         
-        convAddBnReluKernel.test(commandBuffer: buffer, param: param)
+        try! convAddBnReluKernel.test(commandBuffer: buffer, param: param)
         
         buffer.addCompletedHandler { (buffer) in
             let _: Float32? = inputeTexture.logDesc(header: "input texture", stridable: false)

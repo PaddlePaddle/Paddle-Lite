@@ -39,26 +39,28 @@ class SliceKernel<P: PrecisionProtocol>: Kernel, Computable {
             if let device = device, let initContext = initContext, let transposedInput = encodeTransposeInput(input: param.input, toTranspose: expectedTranspose, commandBuffer: commandBuffer, device: device, initContext: initContext) {
                 input = transposedInput
             } else {
-                print("input transpose failed in slice kernel")
+                let error = PaddleMobileError.predictError(message: "input transpose failed in slice kernel")
+                throw paddleMobileLogAndThrow(error: error)
             }
         }
         
         guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
-            throw PaddleMobileError.predictError(message: " encode is nil")
+            let error = PaddleMobileError.predictError(message: "encoder is nil")
+            throw paddleMobileLogAndThrow(error: error)
+        }
+        guard let tempPipline = pipline else {
+            let error = PaddleMobileError.predictError(message: "pipline is nil")
+            throw paddleMobileLogAndThrow(error: error)
         }
         encoder.setTexture(input.metalTexture, index: 0)
         encoder.setTexture(param.output.metalTexture, index: 1)
         encoder.setBytes(&metalParam, length: MemoryLayout<SliceMetalParam>.size, index: 0)
-        encoder.dispatch(computePipline: pipline, outTexture: param.output.metalTexture)
+        encoder.dispatch(computePipline: tempPipline, outTexture: param.output.metalTexture)
         encoder.endEncoding()
     }
     
     required init(device: MTLDevice, param: SliceParam<P>, initContext: InitContext) throws {
-        do {
-            try param.output.initTexture(device: device, inTranspose: [0, 2, 3, 1], computePrecision: GlobalConfig.shared.computePrecision)
-        } catch let error {
-            throw error
-        }
+        try param.output.initTexture(device: device, inTranspose: [0, 2, 3, 1], computePrecision: GlobalConfig.shared.computePrecision)
         var ranges = [[Int16]]()
         for i in 0..<4 {
             if let range = param.ranges[i] {
@@ -81,11 +83,12 @@ class SliceKernel<P: PrecisionProtocol>: Kernel, Computable {
         
         metalParam = SliceMetalParam.init(start0: start0, start1: start1, start2: start2, start3: start3, end0: end0, end1: end1, end2: end2, end3: end3, iC: iC, oC: oC)
         if GlobalConfig.shared.computePrecision == .Float32 {
-            super.init(device: device, inFunctionName: "slice", initContext: initContext)
+            try super.init(device: device, inFunctionName: "slice", initContext: initContext)
         } else if GlobalConfig.shared.computePrecision == .Float16 {
-            super.init(device: device, inFunctionName: "slice_half", initContext: initContext)
+            try super.init(device: device, inFunctionName: "slice_half", initContext: initContext)
         } else {
-            fatalError("unknown computePrecision")
+            let error = PaddleMobileError.predictError(message: "unsupported compute precision: \(GlobalConfig.shared.computePrecision)")
+            throw paddleMobileLogAndThrow(error: error)
         }
         self.device = device
         self.initContext = initContext

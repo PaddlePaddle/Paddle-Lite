@@ -22,40 +22,42 @@ struct ScaleMetalParam {
 class ScaleOpKernel<P: PrecisionProtocol>: Kernel, Computable{
     var metalParam: ScaleMetalParam
     required init(device: MTLDevice, param: ScaleParam<P>, initContext: InitContext) throws {
-        do {
-            try param.output.initTexture(device: device, inTranspose: param.input.transpose, computePrecision: GlobalConfig.shared.computePrecision)
-        } catch let error {
-            throw error
-        }
+        try param.output.initTexture(device: device, inTranspose: param.input.transpose, computePrecision: GlobalConfig.shared.computePrecision)
         
         metalParam = ScaleMetalParam(scale: param.scale, abias: param.bias)
         
         if GlobalConfig.shared.computePrecision == .Float32 {
             if param.biasAfterScale {
-                super.init(device: device, inFunctionName: "scale_before_bias_float", initContext: initContext)
+                try super.init(device: device, inFunctionName: "scale_before_bias_float", initContext: initContext)
             } else {
-                super.init(device: device, inFunctionName: "scale_after_bias_float", initContext: initContext)
+                try super.init(device: device, inFunctionName: "scale_after_bias_float", initContext: initContext)
             }
         } else if GlobalConfig.shared.computePrecision == .Float16 {
             if param.biasAfterScale {
-                super.init(device: device, inFunctionName: "scale_before_bias_half", initContext: initContext)
+                try super.init(device: device, inFunctionName: "scale_before_bias_half", initContext: initContext)
             } else {
-                super.init(device: device, inFunctionName: "scale_after_bias_half", initContext: initContext)
+                try super.init(device: device, inFunctionName: "scale_after_bias_half", initContext: initContext)
             }
         } else {
-            fatalError()
+            let error = PaddleMobileError.predictError(message: "unsupported compute precision: \(GlobalConfig.shared.computePrecision)")
+            throw paddleMobileLogAndThrow(error: error)
         }
     }
     
     func compute(commandBuffer: MTLCommandBuffer, param: ScaleParam<P>) throws {
         guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
-            throw PaddleMobileError.predictError(message: " encoder is nil")
+            let error = PaddleMobileError.predictError(message: "encoder is nil")
+            throw paddleMobileLogAndThrow(error: error)
+        }
+        guard let tempPipline = pipline else {
+            let error = PaddleMobileError.predictError(message: "pipline is nil")
+            throw paddleMobileLogAndThrow(error: error)
         }
         encoder.setTexture(param.input.metalTexture, index: 0)
         encoder.setTexture(param.output.metalTexture, index: 1)
-        
         encoder.setBytes(&metalParam, length: MemoryLayout<PoolMetalParam>.size, index: 0)
-        encoder.dispatch(computePipline: pipline, outTexture: param.output.metalTexture)
+        
+        encoder.dispatch(computePipline: tempPipline, outTexture: param.output.metalTexture)
         encoder.endEncoding()
     }
 }

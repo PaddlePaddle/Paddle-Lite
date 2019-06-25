@@ -22,23 +22,19 @@ class PriorBoxParam<P: PrecisionProtocol>: OpParam {
         } catch _ {
         }
         
-        do {
-            input = try PriorBoxParam.input(inputs: opDesc.inputs, from: inScope)
-            output = try PriorBoxParam.outputBoxes(outputs: opDesc.outputs, from: inScope)
-            inputImage = try PriorBoxParam.inputImage(inputs: opDesc.inputs, from: inScope)
-            outputVariances = try PriorBoxParam.outputVariances(outputs: opDesc.outputs, from: inScope)
-            minSizes = try PriorBoxParam.getAttr(key: "min_sizes", attrs: opDesc.attrs)
-            maxSizes = try PriorBoxParam.getAttr(key: "max_sizes", attrs: opDesc.attrs)
-            aspectRatios = try PriorBoxParam.getAttr(key: "aspect_ratios", attrs: opDesc.attrs)
-            variances = try PriorBoxParam.getAttr(key: "variances", attrs: opDesc.attrs)
-            flip = try PriorBoxParam.getAttr(key: "flip", attrs: opDesc.attrs)
-            clip = try PriorBoxParam.getAttr(key: "clip", attrs: opDesc.attrs)
-            stepW = try PriorBoxParam.getAttr(key: "step_w", attrs: opDesc.attrs)
-            stepH = try PriorBoxParam.getAttr(key: "step_h", attrs: opDesc.attrs)
-            offset = try PriorBoxParam.getAttr(key: "offset", attrs: opDesc.attrs)
-        } catch let error {
-            throw error
-        }
+        input = try PriorBoxParam.input(inputs: opDesc.inputs, from: inScope)
+        output = try PriorBoxParam.outputBoxes(outputs: opDesc.outputs, from: inScope)
+        inputImage = try PriorBoxParam.inputImage(inputs: opDesc.inputs, from: inScope)
+        outputVariances = try PriorBoxParam.outputVariances(outputs: opDesc.outputs, from: inScope)
+        minSizes = try PriorBoxParam.getAttr(key: "min_sizes", attrs: opDesc.attrs)
+        maxSizes = try PriorBoxParam.getAttr(key: "max_sizes", attrs: opDesc.attrs)
+        aspectRatios = try PriorBoxParam.getAttr(key: "aspect_ratios", attrs: opDesc.attrs)
+        variances = try PriorBoxParam.getAttr(key: "variances", attrs: opDesc.attrs)
+        flip = try PriorBoxParam.getAttr(key: "flip", attrs: opDesc.attrs)
+        clip = try PriorBoxParam.getAttr(key: "clip", attrs: opDesc.attrs)
+        stepW = try PriorBoxParam.getAttr(key: "step_w", attrs: opDesc.attrs)
+        stepH = try PriorBoxParam.getAttr(key: "step_h", attrs: opDesc.attrs)
+        offset = try PriorBoxParam.getAttr(key: "offset", attrs: opDesc.attrs)
     }
     
     var min_max_aspect_ratios_order: Bool = false
@@ -67,11 +63,7 @@ class PriorBoxOp<P: PrecisionProtocol>: Operator<PriorBoxKernel<P>, PriorBoxPara
     }
     
     func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
-        do {
-            try kernel.compute(commandBuffer: buffer, param: para)
-        } catch let error {
-            throw error
-        }
+        try kernel.compute(commandBuffer: buffer, param: para)
     }
     
     func delogOutput() {
@@ -89,10 +81,13 @@ class PriorBoxOp<P: PrecisionProtocol>: Operator<PriorBoxKernel<P>, PriorBoxPara
         //    print(variances.strideArray())
         // output
         print(" \(type) output: ")
+        do {
+            let box = try para.output.metalTexture.realNHWC(dim: (para.output.dim[0], para.output.dim[1], para.output.dim[2], para.output.dim[3]))
+            print(" dim: \(para.output.dim)")
+            print(box.strideArray())
+        } catch _ {
+        }
         
-        let box = para.output.metalTexture.realNHWC(dim: (para.output.dim[0], para.output.dim[1], para.output.dim[2], para.output.dim[3]))
-        print(" dim: \(para.output.dim)")
-        print(box.strideArray())
         //    print((0..<box.count).map { (index: $0, value: box[$0])})
         //    print(para.output.realNHWC().strideArray())
         

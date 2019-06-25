@@ -16,8 +16,8 @@ import Foundation
 import paddle_mobile
 
 public class MobileNetCombined: Net {
-    @objc public override init(device: MTLDevice) {
-        super.init(device: device)
+    @objc public override init(device: MTLDevice) throws {
+        try super.init(device: device)
         except = 0
         modelPath = Bundle.main.path(forResource: "combined_mobilenet_model_16", ofType: nil) ?! "model null"
         paramPath = Bundle.main.path(forResource: "combined_mobilenet_params_16", ofType: nil) ?! "para null"
@@ -27,7 +27,7 @@ public class MobileNetCombined: Net {
         metalLibPath = paddleMobileMetallib
         useMPS = true
         paramPrecision = .Float16
-        preprocessKernel = ScaleKernel.init(device: device, shape: Shape.init(inWidth: 224, inHeight: 224, inChannel: 3), metalLoadMode: .LoadMetalInCustomMetalLib, metalLibPath: paddleMobileMetallib)
+        preprocessKernel = try ScaleKernel.init(device: device, shape: Shape.init(inWidth: 224, inHeight: 224, inChannel: 3), metalLoadMode: .LoadMetalInCustomMetalLib, metalLibPath: paddleMobileMetallib)
         
     }
     let labels = PreWords.init(fileName: "vision_synset")

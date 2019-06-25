@@ -18,12 +18,8 @@ import Foundation
 class ReluParam<P: PrecisionProtocol>: OpParam {
     //typealias ParamPrecisionType = P
     required init(opDesc: PMOpDesc, inScope: Scope) throws {
-        do {
-            input = try ReluParam.inputX(inputs: opDesc.inputs, from: inScope)
-            output = try ReluParam.outputOut(outputs: opDesc.outputs, from: inScope)
-        } catch let error {
-            throw error
-        }
+        input = try ReluParam.inputX(inputs: opDesc.inputs, from: inScope)
+        output = try ReluParam.outputOut(outputs: opDesc.outputs, from: inScope)
     }
     let input: Texture
     var output: Texture
@@ -38,17 +34,17 @@ class ReluOp<P: PrecisionProtocol>: Operator<ReluKernel<P>, ReluParam<P>>, Runab
     }
     
     func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
-        do {
-            try kernel.compute(commandBuffer: buffer, param: para)
-        } catch let error {
-            throw error
-        }
+        try kernel.compute(commandBuffer: buffer, param: para)
     }
     
     func delogOutput() {
         print(" \(type) output: ")
         print(para.output.metalTexture)
-        print(para.output.metalTexture.toTensor(dim: (n: para.output.tensorDim[0], c: para.output.tensorDim[1], h: para.output.tensorDim[2], w: para.output.tensorDim[3])).strideArray())
+        do {
+            let output = try para.output.metalTexture.toTensor(dim: (n: para.output.tensorDim[0], c: para.output.tensorDim[1], h: para.output.tensorDim[2], w: para.output.tensorDim[3])).strideArray()
+            print(output)
+        } catch _ {
+        }
         //    let device = para.output.metalTexture!.device
         //    let outputArray: [Float32] = device.texture2tensor(texture: para.output.metalTexture, dim: para.output.tensorDim.dims, transpose: para.output.transpose)
         //    print(outputArray.strideArray())

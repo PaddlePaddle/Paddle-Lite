@@ -16,24 +16,21 @@ import Foundation
 
 class NearestInterpParam<P: PrecisionProtocol>: OpParam {
     required init(opDesc: PMOpDesc, inScope: Scope) throws {
-        do {
-            input = try NearestInterpParam.inputX(inputs: opDesc.inputs, from: inScope)
-            output = try NearestInterpParam.outputOut(outputs: opDesc.outputs, from: inScope)
-            let inputDim = input.tensorDim
-            let outputDim = output.tensorDim
-            guard inputDim.cout() == 4 && outputDim.cout() == 4 && inputDim[0] == outputDim[0] && inputDim[1] == outputDim[1] else {
-                fatalError("nearest interp only support scale along width and height")
-            }
-            let scaleX = Float32(outputDim[2]) / Float32(inputDim[2])
-            let scaleY = Float32(outputDim[3]) / Float32(inputDim[3])
-            guard abs(scaleX - scaleY) <= 0.00001 else {
-                fatalError("nearest interp only support same scale factor")
-            }
-            scale = scaleX
-            print("ok")
-        } catch let error {
-            throw error
+        input = try NearestInterpParam.inputX(inputs: opDesc.inputs, from: inScope)
+        output = try NearestInterpParam.outputOut(outputs: opDesc.outputs, from: inScope)
+        let inputDim = input.tensorDim
+        let outputDim = output.tensorDim
+        guard inputDim.cout() == 4 && outputDim.cout() == 4 && inputDim[0] == outputDim[0] && inputDim[1] == outputDim[1] else {
+            let error = PaddleMobileError.netError(message: "nearest interp only support scale along width and height")
+            throw paddleMobileLogAndThrow(error: error)
         }
+        let scaleX = Float32(outputDim[2]) / Float32(inputDim[2])
+        let scaleY = Float32(outputDim[3]) / Float32(inputDim[3])
+        guard abs(scaleX - scaleY) <= 0.00001 else {
+            let error = PaddleMobileError.netError(message: "nearest interp only support same scale factor")
+            throw paddleMobileLogAndThrow(error: error)
+        }
+        scale = scaleX
     }
     var input: Texture
     var output: Texture
@@ -47,17 +44,16 @@ class NearestInterpOp<P: PrecisionProtocol>: Operator<NearestInterpKernel<P>, Ne
     }
     
     func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
-        do {
-            try kernel.compute(commandBuffer: buffer, param: para)
-        } catch let error {
-            throw error
-        }
+        try kernel.compute(commandBuffer: buffer, param: para)
     }
     
     func delogOutput() {
         print(" \(type) output: ")
         let device = para.output.metalTexture!.device
-        let outputArray: [Float32] = device.texture2tensor(texture: para.output.metalTexture, dim: para.output.tensorDim.dims, transpose: para.output.transpose)
-        print(outputArray.strideArray())
+        do {
+            let outputArray: [Float32] = try device.texture2tensor(texture: para.output.metalTexture, dim: para.output.tensorDim.dims, transpose: para.output.transpose)
+            print(outputArray.strideArray())
+        } catch _ {
+        }
     }
 }

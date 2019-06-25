@@ -31,6 +31,7 @@
 		4AA1EAA2214912CD00D0F791 /* FlattenKernel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4AA1EAA1214912CC00D0F791 /* FlattenKernel.swift */; };
 		A73DC749227F1C7A001EB663 /* ScaleOp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A73DC748227F1C7A001EB663 /* ScaleOp.swift */; };
 		A73DC74B227F1EDE001EB663 /* ScaleOpKernel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A73DC74A227F1EDE001EB663 /* ScaleOpKernel.swift */; };
+		A744C89722C074AC0084C6E9 /* Utils.swift in Sources */ = {isa = PBXBuildFile; fileRef = A744C89622C074AC0084C6E9 /* Utils.swift */; };
 		A7F26FDA22842EF200365D47 /* Relu6Op.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7F26FD922842EF200365D47 /* Relu6Op.swift */; };
 		A7F26FDC2284301500365D47 /* Relu6Kernel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7F26FDB2284301500365D47 /* Relu6Kernel.swift */; };
 		C28FE02F21BA68C00054EFAC /* Metal.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C28FE02C21BA68C00054EFAC /* Metal.framework */; settings = {ATTRIBUTES = (Weak, ); }; };
@@ -141,6 +142,7 @@
 		4AA1EAA1214912CC00D0F791 /* FlattenKernel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FlattenKernel.swift; sourceTree = "<group>"; };
 		A73DC748227F1C7A001EB663 /* ScaleOp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScaleOp.swift; sourceTree = "<group>"; };
 		A73DC74A227F1EDE001EB663 /* ScaleOpKernel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScaleOpKernel.swift; sourceTree = "<group>"; };
+		A744C89622C074AC0084C6E9 /* Utils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utils.swift; sourceTree = "<group>"; };
 		A7F26FD922842EF200365D47 /* Relu6Op.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Relu6Op.swift; sourceTree = "<group>"; };
 		A7F26FDB2284301500365D47 /* Relu6Kernel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Relu6Kernel.swift; sourceTree = "<group>"; };
 		C28FE02C21BA68C00054EFAC /* Metal.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Metal.framework; path = System/Library/Frameworks/Metal.framework; sourceTree = SDKROOT; };
@@ -317,6 +319,7 @@
 				FC039B9D20E11CB20081E9F8 /* Tensor.swift */,
 				FC039B9E20E11CB20081E9F8 /* Dim.swift */,
 				FC9D038320E23B01000F735A /* Texture.swift */,
+				A744C89622C074AC0084C6E9 /* Utils.swift */,
 			);
 			path = Framework;
 			sourceTree = "<group>";
@@ -647,6 +650,7 @@
 				FCD04E6A20F319EC0007374F /* SoftmaxOp.swift in Sources */,
 				A7F26FDA22842EF200365D47 /* Relu6Op.swift in Sources */,
 				FCBCCC612122FBDF00D94F7E /* PriorBoxKernel.swift in Sources */,
+				A744C89722C074AC0084C6E9 /* Utils.swift in Sources */,
 				FCBCCC5F2122FB3B00D94F7E /* PriorBoxOp.swift in Sources */,
 				FC9D038220E2312E000F735A /* FetchOp.swift in Sources */,
 				FC039BBD20E11CC20081E9F8 /* Program.swift in Sources */,

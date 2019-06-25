@@ -37,7 +37,12 @@ class ConcatKernel<P: PrecisionProtocol>: Kernel, Computable{
     func compute(commandBuffer: MTLCommandBuffer, param: ConcatParam<P>) throws {
         
         guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
-            throw PaddleMobileError.predictError(message: " encode is nil")
+            let error = PaddleMobileError.predictError(message: "encoder is nil")
+            throw paddleMobileLogAndThrow(error: error)
+        }
+        guard let tempPipline = pipline else {
+            let error = PaddleMobileError.predictError(message: "pipline is nil")
+            throw paddleMobileLogAndThrow(error: error)
         }
         let num = param.input.count
         for i in 0..<num {
@@ -48,21 +53,20 @@ class ConcatKernel<P: PrecisionProtocol>: Kernel, Computable{
             encoder.setTexture(param.output.metalTexture, index: num + 1)
         }
         encoder.setBytes(&pm, length: MemoryLayout<ConcatMetalParam>.size, index: 0)
-        encoder.dispatch(computePipline: pipline, outTexture: param.output.metalTexture)
+        encoder.dispatch(computePipline: tempPipline, outTexture: param.output.metalTexture)
         encoder.endEncoding()
     }
     
     required init(device: MTLDevice, param: ConcatParam<P>, initContext: InitContext) throws {
         
-        do {
-            try param.output.initTexture(device: device, inTranspose: param.transpose, computePrecision: GlobalConfig.shared.computePrecision)
-        } catch let error {
-            throw error
-        }
+        try param.output.initTexture(device: device, inTranspose: param.transpose, computePrecision: GlobalConfig.shared.computePrecision)
         
         let orank = param.output.tensorDim.cout()
         let num = param.input.count
-        assert(num <= 6)
+        guard num <= 6 else {
+            let error = PaddleMobileError.netError(message: "param input count must be less than or equal to 6")
+            throw paddleMobileLogAndThrow(error: error)
+        }
         var axis = 4 - param.output.tensorDim.cout() + param.axis
         for i in 0..<4 {
             if param.transpose[i] == axis {
@@ -140,15 +144,16 @@ class ConcatKernel<P: PrecisionProtocol>: Kernel, Computable{
         }
         pm.vdim = (Int32(vdim[0]), Int32(vdim[1]), Int32(vdim[2]), Int32(vdim[3]), Int32(vdim[4]), Int32(vdim[5]))
         if GlobalConfig.shared.computePrecision == .Float32 {
-            super.init(device: device, inFunctionName: "concat_\(orank)_\(num)_\(v)_float", initContext: initContext)
+            try super.init(device: device, inFunctionName: "concat_\(orank)_\(num)_\(v)_float", initContext: initContext)
         } else if GlobalConfig.shared.computePrecision == .Float16 {
-            super.init(device: device, inFunctionName: "concat_\(orank)_\(num)_\(v)_half", initContext: initContext)
+            try super.init(device: device, inFunctionName: "concat_\(orank)_\(num)_\(v)_half", initContext: initContext)
         } else {
-            fatalError()
+            let error = PaddleMobileError.predictError(message: "unsupported compute precision: \(GlobalConfig.shared.computePrecision)")
+            throw paddleMobileLogAndThrow(error: error)
         }
     }
     
-    required init(device: MTLDevice, testParam: ConcatTestParam, initContext: InitContext) {
-        super.init(device: device, inFunctionName: "concat", initContext: initContext)
+    required init(device: MTLDevice, testParam: ConcatTestParam, initContext: InitContext) throws {
+        try super.init(device: device, inFunctionName: "concat", initContext: initContext)
     }
 }

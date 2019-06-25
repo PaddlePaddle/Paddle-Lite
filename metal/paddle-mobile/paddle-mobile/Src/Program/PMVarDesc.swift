@@ -51,7 +51,8 @@ public enum VarTypeType: Int {
         case .Bool:
             return 1
         default:
-            throw PaddleMobileError.memoryError(message: "not support \(self) type to get size ")
+            let error = PaddleMobileError.memoryError(message: "not support \(self) type to get size")
+            throw paddleMobileLogAndThrow(error: error)
         }
     }
 }

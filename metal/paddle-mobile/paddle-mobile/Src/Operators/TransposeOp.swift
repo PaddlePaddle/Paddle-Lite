@@ -18,13 +18,9 @@ import Metal
 class TransposeParam<P: PrecisionProtocol>: OpParam {
     //typealias ParamPrecisionType = P
     required init(opDesc: PMOpDesc, inScope: Scope) throws {
-        do {
-            input = try TransposeParam.inputX(inputs: opDesc.inputs, from: inScope)
-            output = try TransposeParam.outputOut(outputs: opDesc.outputs, from: inScope)
-            axis = try TransposeParam.getAttr(key: "axis", attrs: opDesc.attrs)
-        } catch let error {
-            throw error
-        }
+        input = try TransposeParam.inputX(inputs: opDesc.inputs, from: inScope)
+        output = try TransposeParam.outputOut(outputs: opDesc.outputs, from: inScope)
+        axis = try TransposeParam.getAttr(key: "axis", attrs: opDesc.attrs)
     }
     let input: Texture
     var output: Texture
@@ -40,18 +36,17 @@ class TransposeOp<P: PrecisionProtocol>: Operator<TransposeKernel<P>, TransposeP
     }
     
     func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
-        do {
-            try kernel.compute(commandBuffer: buffer, param: para)
-        } catch let error {
-            throw error
-        }
+        try kernel.compute(commandBuffer: buffer, param: para)
     }
     
     func delogOutput() {
         print(" \(type) output: ")
         let device = para.output.metalTexture!.device
-        let outputArray: [Float32] = device.texture2tensor(texture: para.output.metalTexture, dim: para.output.tensorDim.dims, transpose: para.output.transpose)
-        print(outputArray.strideArray())
+        do {
+            let outputArray: [Float32] = try device.texture2tensor(texture: para.output.metalTexture, dim: para.output.tensorDim.dims, transpose: para.output.transpose)
+            print(outputArray.strideArray())
+        } catch _ {
+        }
     }
 }
 

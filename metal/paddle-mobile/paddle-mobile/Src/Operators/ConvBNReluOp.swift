@@ -17,23 +17,19 @@ import Foundation
 class ConvBNReluParam<P: PrecisionProtocol>: OpParam {
     //typealias ParamPrecisionType = P
     required init(opDesc: PMOpDesc, inScope: Scope) throws {
-        do {
-            filter = try ConvBNReluParam.inputFilter(paraInputs: opDesc.paraInputs, from: inScope)
-            input = try ConvBNReluParam.input(inputs: opDesc.inputs, from: inScope)
-            output = try ConvBNReluParam.outputOut(outputs: opDesc.outputs, from: inScope)
-            stride = try ConvBNReluParam.getAttr(key: "strides", attrs: opDesc.attrs)
-            paddings = try ConvBNReluParam.getAttr(key: "paddings", attrs: opDesc.attrs)
-            dilations = try ConvBNReluParam.getAttr(key: "dilations", attrs: opDesc.attrs)
-            epsilon = try ConvBNReluParam.getAttr(key: "epsilon", attrs: opDesc.attrs)
-            
-            groups = try ConvBNReluParam.getAttr(key: "groups", attrs: opDesc.attrs)
-            variance = try ConvBNReluParam.inputVariance(inputs: opDesc.paraInputs, from: inScope)
-            bias = try ConvBNReluParam.inputBiase(inputs: opDesc.paraInputs, from: inScope)
-            scale = try ConvBNReluParam.inputScale(inputs: opDesc.paraInputs, from: inScope)
-            mean = try ConvBNReluParam.inputMean(inputs: opDesc.paraInputs, from: inScope)
-        } catch let error {
-            throw error
-        }
+        filter = try ConvBNReluParam.inputFilter(paraInputs: opDesc.paraInputs, from: inScope)
+        input = try ConvBNReluParam.input(inputs: opDesc.inputs, from: inScope)
+        output = try ConvBNReluParam.outputOut(outputs: opDesc.outputs, from: inScope)
+        stride = try ConvBNReluParam.getAttr(key: "strides", attrs: opDesc.attrs)
+        paddings = try ConvBNReluParam.getAttr(key: "paddings", attrs: opDesc.attrs)
+        dilations = try ConvBNReluParam.getAttr(key: "dilations", attrs: opDesc.attrs)
+        epsilon = try ConvBNReluParam.getAttr(key: "epsilon", attrs: opDesc.attrs)
+        
+        groups = try ConvBNReluParam.getAttr(key: "groups", attrs: opDesc.attrs)
+        variance = try ConvBNReluParam.inputVariance(inputs: opDesc.paraInputs, from: inScope)
+        bias = try ConvBNReluParam.inputBiase(inputs: opDesc.paraInputs, from: inScope)
+        scale = try ConvBNReluParam.inputScale(inputs: opDesc.paraInputs, from: inScope)
+        mean = try ConvBNReluParam.inputMean(inputs: opDesc.paraInputs, from: inScope)
     }
     
     let input: Texture
@@ -84,11 +80,7 @@ class ConvBNReluOp<P: PrecisionProtocol>: Operator<ConvBNReluKernel<P>, ConvBNRe
     }
     
     func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
-        do {
-            try kernel.compute(commandBuffer: buffer, param: para)
-        } catch let error {
-            throw error
-        }
+        try kernel.compute(commandBuffer: buffer, param: para)
     }
     
     static func fusionNode() -> Node {
@@ -109,7 +101,11 @@ class ConvBNReluOp<P: PrecisionProtocol>: Operator<ConvBNReluKernel<P>, ConvBNRe
     
     func delogOutput() {
         print(" \(type) output: ")
-        print(para.output.metalTexture.toTensor(dim: (n: para.output.padToFourDim[0], c: para.output.padToFourDim[1], h: para.output.padToFourDim[2], w: para.output.padToFourDim[3])).strideArray())
+        do {
+            let output = try para.output.metalTexture.toTensor(dim: (n: para.output.padToFourDim[0], c: para.output.padToFourDim[1], h: para.output.padToFourDim[2], w: para.output.padToFourDim[3])).strideArray()
+            print(output)
+        } catch _ {
+        }
     }
     
 }

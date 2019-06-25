@@ -21,4 +21,24 @@ public enum PaddleMobileError: Error{
     case paramError(message: String)
     case opError(message: String)
     case predictError(message: String)
+    case defaultError(message: String)
+    
+    func associatedMsg() -> String {
+        switch self {
+        case .loaderError(message: let msg):
+            return msg
+        case .netError(message: let msg):
+            return msg
+        case .memoryError(message: let msg):
+            return msg
+        case .paramError(message: let msg):
+            return msg
+        case .opError(message: let msg):
+            return msg
+        case .predictError(message: let msg):
+            return msg
+        case .defaultError(message: let msg):
+            return msg
+        }
+    }
 }

@@ -16,15 +16,11 @@ import Foundation
 
 class ScaleParam<P: PrecisionProtocol>: OpParam {
     required init(opDesc: PMOpDesc, inScope: Scope) throws {
-        do {
-            input = try ScaleParam.inputX(inputs: opDesc.inputs, from: inScope)
-            output = try ScaleParam.outputOut(outputs: opDesc.outputs, from: inScope)
-            scale = try ScaleParam.getAttr(key: "scale", attrs: opDesc.attrs)
-            bias = try ScaleParam.getAttr(key: "bias", attrs: opDesc.attrs)
-            biasAfterScale = try ScaleParam.getAttr(key: "bias_after_scale", attrs: opDesc.attrs)
-        } catch let error {
-            throw error
-        }
+        input = try ScaleParam.inputX(inputs: opDesc.inputs, from: inScope)
+        output = try ScaleParam.outputOut(outputs: opDesc.outputs, from: inScope)
+        scale = try ScaleParam.getAttr(key: "scale", attrs: opDesc.attrs)
+        bias = try ScaleParam.getAttr(key: "bias", attrs: opDesc.attrs)
+        biasAfterScale = try ScaleParam.getAttr(key: "bias_after_scale", attrs: opDesc.attrs)
     }
     
     let input: Texture
@@ -42,16 +38,16 @@ class ScaleOp<P: PrecisionProtocol>: Operator<ScaleOpKernel<P>, ScaleParam<P>>, 
     }
     
     func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
-        do {
-            try kernel.compute(commandBuffer: buffer, param: para)
-        } catch let error {
-            throw error
-        }
+        try kernel.compute(commandBuffer: buffer, param: para)
     }
     
     func delogOutput() {
         print(" \(type) output: ")
         print(para.output.metalTexture)
-        print(para.output.metalTexture.toTensor(dim: (n: para.output.tensorDim[0], c: para.output.tensorDim[1], h: para.output.tensorDim[2], w: para.output.tensorDim[3])).strideArray())
+        do {
+            let output = try para.output.metalTexture.toTensor(dim: (n: para.output.tensorDim[0], c: para.output.tensorDim[1], h: para.output.tensorDim[2], w: para.output.tensorDim[3])).strideArray()
+            print(output)
+        } catch _ {
+        }
     }
 }

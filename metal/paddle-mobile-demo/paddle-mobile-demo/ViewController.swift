@@ -24,13 +24,15 @@ class FileReader {
     let fileSize: Int
     init(paramPath: String) throws {
         guard let tmpFile = fopen(paramPath, "rb") else {
-            throw PaddleMobileError.loaderError(message: "open param file error" + paramPath)
+            let error = PaddleMobileError.loaderError(message: "open param file error" + paramPath)
+            throw paddleMobileLogAndThrow(error: error)
         }
         file = tmpFile
         fseek(file, 0, SEEK_END)
         fileSize = ftell(file)
         guard fileSize > 0 else {
-            throw PaddleMobileError.loaderError(message: "param file size is too small")
+            let error = PaddleMobileError.loaderError(message: "param file size is too small")
+            throw paddleMobileLogAndThrow(error: error)
         }
         rewind(file)
     }
@@ -64,10 +66,10 @@ enum SupportModel: String{
 }
 
 let netSupport: [SupportModel : Net] = [
-    .super_resolution : SuperResolutionNet.init(device: MetalHelper.shared.device),
-    .yolo : YoloNet.init(device: MetalHelper.shared.device),
-    .mobilenet_combined : MobileNetCombined.init(device: MetalHelper.shared.device),
-    .mobilenet : MobileNet.init(device: MetalHelper.shared.device)]
+    .super_resolution : try! SuperResolutionNet.init(device: MetalHelper.shared.device),
+    .yolo : try! YoloNet.init(device: MetalHelper.shared.device),
+    .mobilenet_combined : try! MobileNetCombined.init(device: MetalHelper.shared.device),
+    .mobilenet : try! MobileNet.init(device: MetalHelper.shared.device)]
 
 class ViewController: UIViewController {
     @IBOutlet weak var resultTextView: UITextView!
@@ -90,7 +92,7 @@ class ViewController: UIViewController {
     var threadNum = 1
     
     @IBAction func loadAct(_ sender: Any) {
-        runner = Runner.init(inNet: netSupport[modelType]!, commandQueue: MetalHelper.shared.queue)
+        runner = try! Runner.init(inNet: netSupport[modelType]!, commandQueue: MetalHelper.shared.queue)
         if platform == .GPU {
             //      let filePath = Bundle.main.path(forResource: "mingren_input_data", ofType: nil)
             //      let fileReader = try! FileReader.init(paramPath: filePath!)
@@ -109,7 +111,7 @@ class ViewController: UIViewController {
                     let texture = convertToMTLTexture(imageBuffer: buffer.takeRetainedValue())
                     self.toPredictTexture = texture
                 } else {
-                    runner.getTexture(image: selectImage!.cgImage!) { [weak self] (texture) in
+                    runner.getTexture(image: selectImage!.cgImage!) { [weak self] (success, texture) in
                         let timeUse = Date.init().timeIntervalSince(beforeDate)
                         print("get texture time use: \(timeUse)")
                         self?.toPredictTexture = texture
@@ -248,7 +250,7 @@ extension ViewController:  UIImagePickerControllerDelegate, UINavigationControll
             }
             sSelf.selectImage = image
             sSelf.selectImageView.image = image
-            sSelf.runner.getTexture(image: image.cgImage!, getTexture: { (texture) in
+            sSelf.runner.getTexture(image: image.cgImage!, getTexture: { (success, texture) in
                 sSelf.toPredictTexture = texture
             })
         }
@@ -257,11 +259,13 @@ extension ViewController:  UIImagePickerControllerDelegate, UINavigationControll
 
 var bool1 = false
 extension ViewController: VideoCaptureDelegate{
-    func predictTexture(texture: MTLTexture){
-        runner.scaleTexture(input: texture) { (scaledTexture) in
-            self.runner.predict(texture: scaledTexture, completion: { (success, resultHolder) in
-                resultHolder?.first?.releasePointer()
-            })
+    func predictTexture(texture: MTLTexture) {
+        runner.scaleTexture(input: texture) { (success, scaledTexture) in
+            if success, let scaledTexture = scaledTexture {
+                self.runner.predict(texture: scaledTexture, completion: { (success, resultHolder) in
+                    resultHolder?.first?.releasePointer()
+                })
+            }
         }
     }
     

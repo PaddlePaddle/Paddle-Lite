@@ -31,30 +31,26 @@ protocol Runable {
     func run(device: MTLDevice, buffer: MTLCommandBuffer) throws
     func runImpl(device: MTLDevice,buffer: MTLCommandBuffer) throws
     func delogOutput()
-    func inputVariant() -> [String : [MTLBuffer]]
-    func computeMiddleResult(device: MTLDevice, buffer: MTLCommandBuffer)
+    func inputVariant() -> [String : [MTLBuffer]]?
+    func computeMiddleResult(device: MTLDevice, buffer: MTLCommandBuffer) throws
 }
 
-extension Runable where Self: OperatorProtocol{
+extension Runable where Self: OperatorProtocol {
     func run(device: MTLDevice, buffer: MTLCommandBuffer) throws {
-        do {
-            try runImpl(device: device, buffer: buffer)
-        } catch let error {
-            throw error
-        }
+        try runImpl(device: device, buffer: buffer)
     }
     
-    func inputVariant() -> [String : [MTLBuffer]] {
+    func inputVariant() -> [String : [MTLBuffer]]? {
         //    return [:]
-        fatalError(" op \(type) need implement inputVariant")
+        return nil
     }
     
-    func computeMiddleResult(device: MTLDevice, buffer: MTLCommandBuffer) {
-        fatalError(" need implement ")
+    func computeMiddleResult(device: MTLDevice, buffer: MTLCommandBuffer) throws {
+        let error = PaddleMobileError.netError(message: "need implement func computeMiddleResult")
+        throw paddleMobileLogAndThrow(error: error)
     }
     
     func delogOutput() {
-        
         print(type + ": has no implementation" )
     }
 }
@@ -86,11 +82,7 @@ protocol Creator where Self: OperatorProtocol{
 
 extension Creator where Self: OperatorProtocol {
     static func creat(device: MTLDevice, opDesc: PMOpDesc, inScope: Scope, initContext: InitContext) throws -> OpType {
-        do {
-            return try OpType.provide(device:device, opDesc: opDesc, inScope: inScope, initContext: initContext)
-        } catch let error {
-            throw error
-        }
+        return try OpType.provide(device:device, opDesc: opDesc, inScope: inScope, initContext: initContext)
     }
 }
 
@@ -114,11 +106,7 @@ protocol OperatorProtocol {
 
 extension OperatorProtocol {
     static func provide(device: MTLDevice, opDesc: PMOpDesc, inScope: Scope, initContext: InitContext) throws -> Self {
-        do {
-            return try Self.init(device: device, opDesc: opDesc, inScope: inScope, initContext: initContext)
-        } catch let error {
-            throw error
-        }
+        return try Self.init(device: device, opDesc: opDesc, inScope: inScope, initContext: initContext)
     }
 }
 
@@ -130,12 +118,8 @@ class Operator <KernelType:  Computable , ParameterType>: OperatorProtocol where
         outpus = opDesc.outputs
         attrs =  opDesc.attrs
         paraInputs = opDesc.paraInputs
-        do {
-            para = try ParamType.init(opDesc:opDesc, inScope: inScope)
-            kernel = try KernelType.init(device: device, param: para, initContext: initContext)
-        } catch let error {
-            throw error
-        }
+        para = try ParamType.init(opDesc:opDesc, inScope: inScope)
+        kernel = try KernelType.init(device: device, param: para, initContext: initContext)
     }
     
     typealias ParamType = ParameterType

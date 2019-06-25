@@ -74,22 +74,23 @@ class Node {
         return beginNode
     }
     
-    func folderWith(fusion: Fusion.Type, removedNodes: inout [Node]) {
+    func folderWith(fusion: Fusion.Type, removedNodes: inout [Node]) throws {
         let fusionNode = fusion.fusionNode()
         let change = fusion.change()
         let inOutputs = outputs
         outputs.removeAll()
         opDesc?.outputs.removeAll()
         for i in 0..<inOutputs.count {
-            inOutputs[i].folderWith(beginNode: self, matchNode: fusionNode.outputs[i], change: change, removedNodes: &removedNodes)
+            try inOutputs[i].folderWith(beginNode: self, matchNode: fusionNode.outputs[i], change: change, removedNodes: &removedNodes)
         }
         opDesc?.type = fusion.fusionType()
         type = fusion.fusionType()
     }
     
-    private func folderWith(beginNode: Node, matchNode: Node, change: [String : [(from: String, to: String)]], removedNodes: inout [Node]) {
+    private func folderWith(beginNode: Node, matchNode: Node, change: [String : [(from: String, to: String)]], removedNodes: inout [Node]) throws {
         guard let inOpdesc = opDesc else {
-            fatalError()
+            let error = PaddleMobileError.loaderError(message: "Node: opdesc nil when optimize")
+            throw paddleMobileLogAndThrow(error: error)
         }
         
         for attr in inOpdesc.attrs {
@@ -119,7 +120,7 @@ class Node {
         removedNodes.append(self)
         
         for i in 0..<matchNode.outputs.count {
-            outputs[i].folderWith(beginNode: beginNode, matchNode: matchNode.outputs[i], change: change, removedNodes: &removedNodes)
+            try outputs[i].folderWith(beginNode: beginNode, matchNode: matchNode.outputs[i], change: change, removedNodes: &removedNodes)
         }
         
     }
@@ -193,10 +194,11 @@ class ProgramOptimize<P: PrecisionProtocol> {
         ElementwiseAddPreluOp<P>.self
     ]
     
-    func optimize(originProgramDesc: PMProgramDesc) -> PMProgramDesc {
+    func optimize(originProgramDesc: PMProgramDesc) -> PMProgramDesc? {
         
         guard originProgramDesc.blocks.count == 1 else {
-            fatalError(" not support yet")
+            paddleMobileLog("originProgramDesc.blocks.count != 1", logLevel: .FatalError, callStack: Thread.callStackSymbols)
+            return nil
         }
         
         var mapForNodeChain: [String : Node] = [:]
@@ -205,10 +207,11 @@ class ProgramOptimize<P: PrecisionProtocol> {
         let block = originProgramDesc.blocks[0]
         for opDesc in block.ops {
             if GlobalConfig.shared.debug {
-                print(opDesc.type)
+                paddleMobileLog(opDesc.type)
             }
             guard let opInputKeys = opInfos[opDesc.type]?.inputs, let outputKeys = opInfos[opDesc.type]?.outputs else {
-                fatalError()
+                paddleMobileLog("op inputs or outputs nil", logLevel: .FatalError, callStack: Thread.callStackSymbols)
+                return nil
             }
             
             let node = Node.init(inOpDesc: opDesc)
@@ -281,7 +284,12 @@ class ProgramOptimize<P: PrecisionProtocol> {
                         }
                         
                         var removeNodes: [Node] = []
-                        node.node.folderWith(fusion: fusion, removedNodes: &removeNodes)
+                        do {
+                            try node.node.folderWith(fusion: fusion, removedNodes: &removeNodes)
+                        } catch _ {
+                            return nil
+                        }
+                        
                         for removeNode in removeNodes {
                             nodes.remove(element: removeNode)
                         }

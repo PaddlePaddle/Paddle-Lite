@@ -22,7 +22,7 @@ class ShapeKernel<P: PrecisionProtocol>: Kernel, Computable{
     func compute(commandBuffer: MTLCommandBuffer, param: ShapeParam<P>) throws {
         //    print("shape compute")
         //    guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
-        //      throw PaddleMobileError.predictError(message: " encode is nil")
+        //      throw PaddleMobileError.predictError(message: " encoder is nil")
         //    }
         //    encoder.setTexture(param.output.metalTexture, index: 0)
         //    encoder.endEncoding()
@@ -30,18 +30,15 @@ class ShapeKernel<P: PrecisionProtocol>: Kernel, Computable{
     
     required init(device: MTLDevice, param: ShapeParam<P>, initContext: InitContext) throws {
         
-        do {
-            try param.output.initTexture(device: device, computePrecision: GlobalConfig.shared.computePrecision)
-        } catch let error {
-            throw error
-        }
+        try param.output.initTexture(device: device, computePrecision: GlobalConfig.shared.computePrecision)
         
         if GlobalConfig.shared.computePrecision == .Float32 {
-            super.init(device: device, inFunctionName: "shape", initContext: initContext)
+            try super.init(device: device, inFunctionName: "shape", initContext: initContext)
         } else if GlobalConfig.shared.computePrecision == .Float16 {
-            super.init(device: device, inFunctionName: "shape_half", initContext: initContext)
+            try super.init(device: device, inFunctionName: "shape_half", initContext: initContext)
         } else {
-            fatalError()
+            let error = PaddleMobileError.predictError(message: "unsupported compute precision: \(GlobalConfig.shared.computePrecision)")
+            throw paddleMobileLogAndThrow(error: error)
         }
     }
     

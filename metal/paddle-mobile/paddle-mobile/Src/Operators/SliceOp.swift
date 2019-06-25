@@ -17,24 +17,21 @@ import Foundation
 class SliceParam<P: PrecisionProtocol>: OpParam {
     //typealias ParamPrecisionType = P
     required init(opDesc: PMOpDesc, inScope: Scope) throws {
-        do {
-            input = try SliceParam.input(inputs: opDesc.inputs, from: inScope)
-            output = try SliceParam.outputOut(outputs: opDesc.outputs, from: inScope)
-            starts = try SliceParam.getAttr(key: "starts", attrs: opDesc.attrs)
-            ends = try SliceParam.getAttr(key: "ends", attrs: opDesc.attrs)
-            for i in 0..<input.tensorDim.cout() {
-                if input.tensorDim[i] != output.tensorDim[i] {
-                    axes.append(Int32(i))
-                }
+        input = try SliceParam.input(inputs: opDesc.inputs, from: inScope)
+        output = try SliceParam.outputOut(outputs: opDesc.outputs, from: inScope)
+        starts = try SliceParam.getAttr(key: "starts", attrs: opDesc.attrs)
+        ends = try SliceParam.getAttr(key: "ends", attrs: opDesc.attrs)
+        for i in 0..<input.tensorDim.cout() {
+            if input.tensorDim[i] != output.tensorDim[i] {
+                axes.append(Int32(i))
             }
-            guard axes.count == 1 && axes[0] == 1 else {
-                fatalError("slice only support channel axe")
-            }
-            for i in 0..<axes.count {
-                ranges[Int(axes[i])] = [Int16(starts[i]), Int16(ends[i])]
-            }
-        } catch let error {
-            throw error
+        }
+        guard axes.count == 1 && axes[0] == 1 else {
+            let error = PaddleMobileError.netError(message: "slice only support channel axe")
+            throw paddleMobileLogAndThrow(error: error)
+        }
+        for i in 0..<axes.count {
+            ranges[Int(axes[i])] = [Int16(starts[i]), Int16(ends[i])]
         }
     }
     
@@ -53,15 +50,15 @@ class SliceOp<P: PrecisionProtocol>: Operator<SliceKernel<P>, SliceParam<P>>, Ru
     }
     
     func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
-        do {
-            try kernel.compute(commandBuffer: buffer, param: para)
-        } catch let error {
-            throw error
-        }
+        try kernel.compute(commandBuffer: buffer, param: para)
     }
     
     func delogOutput() {
         print("\(type) output : ")
-        print(para.output.toTensor().strideArray())
+        do {
+            let output = try para.output.toTensor().strideArray()
+            print(output)
+        } catch _ {
+        }
     }
 }

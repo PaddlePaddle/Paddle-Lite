@@ -22,38 +22,40 @@ class BatchNormKernel<P: PrecisionProtocol>: Kernel, Computable {
         let scaleP = param.scale.data.pointer
         let biasP = param.bias.data.pointer
         for i in 0..<count {
-            let invStd = P(1 / (Float32(varianceP[i]) + param.epsilon).squareRoot())
+            let invStd = try P(1 / (Float32(varianceP[i]) + param.epsilon).squareRoot())
             biasP[i] = biasP[i] - meanP[i] * invStd * scaleP[i]
             scaleP[i] = invStd * scaleP[i]
         }
         
-        param.bias.initBuffer(device: device, precision: GlobalConfig.shared.computePrecision)
-        param.scale.initBuffer(device: device, precision: GlobalConfig.shared.computePrecision)
+        try param.bias.initBuffer(device: device, precision: GlobalConfig.shared.computePrecision)
+        try param.scale.initBuffer(device: device, precision: GlobalConfig.shared.computePrecision)
         
-        do {
-            try param.output.initTexture(device: device, inTranspose: param.input.transpose, computePrecision: GlobalConfig.shared.computePrecision)
-        } catch let error {
-            throw error
-        }
+        try param.output.initTexture(device: device, inTranspose: param.input.transpose, computePrecision: GlobalConfig.shared.computePrecision)
         
         if GlobalConfig.shared.computePrecision == .Float32 {
-            super.init(device: device, inFunctionName: "batchnorm", initContext: initContext)
+            try super.init(device: device, inFunctionName: "batchnorm", initContext: initContext)
         } else if GlobalConfig.shared.computePrecision == .Float16 {
-            super.init(device: device, inFunctionName: "batchnorm_half", initContext: initContext)
+            try super.init(device: device, inFunctionName: "batchnorm_half", initContext: initContext)
         } else {
-            fatalError()
+            let error = PaddleMobileError.predictError(message: "unsupported compute precision: \(GlobalConfig.shared.computePrecision)")
+            throw paddleMobileLogAndThrow(error: error)
         }
     }
     
     func compute(commandBuffer: MTLCommandBuffer, param: BatchNormParam<P>) throws {
         guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
-            throw PaddleMobileError.predictError(message: " encoder is nil")
+            let error = PaddleMobileError.predictError(message: "encoder is nil")
+            throw paddleMobileLogAndThrow(error: error)
+        }
+        guard let tempPipline = pipline else {
+            let error = PaddleMobileError.predictError(message: "pipline is nil")
+            throw paddleMobileLogAndThrow(error: error)
         }
         encoder.setTexture(param.input.metalTexture, index: 0)
         encoder.setTexture(param.output.metalTexture, index: 1)
         encoder.setBuffer(param.scale.buffer, offset: 0, index: 0)
         encoder.setBuffer(param.bias.buffer, offset: 0, index: 1)
-        encoder.dispatch(computePipline: pipline, outTexture: param.output.metalTexture)
+        encoder.dispatch(computePipline: tempPipline, outTexture: param.output.metalTexture)
         encoder.endEncoding()
     }
 }

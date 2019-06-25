@@ -21,74 +21,81 @@ fileprivate var paddleMobileMetalLibrary: MTLLibrary?
 fileprivate var customMetalLibrary: MTLLibrary?
 
 extension MTLDevice {
-    func defaultLibrary() -> MTLLibrary {
+    func defaultLibrary() throws -> MTLLibrary {
         if defaultMetalLibrary == nil {
             defaultMetalLibrary = makeDefaultLibrary()
         }
         if let inDefaultLib = defaultMetalLibrary {
             return inDefaultLib
         } else {
-            fatalError(" default metal libary is nil")
+            let error = PaddleMobileError.defaultError(message: "default metal libary is nil")
+            throw paddleMobileLogAndThrow(error: error)
         }
     }
     
-    func customLibrary(metalLibPath: String) -> MTLLibrary {
+    func customLibrary(metalLibPath: String) throws -> MTLLibrary {
         if customMetalLibrary == nil {
-            do {
-                customMetalLibrary = try makeLibrary(filepath: metalLibPath)
-            } catch  let error {
-                fatalError("\(error)")
-            }
+            customMetalLibrary = try makeLibrary(filepath: metalLibPath)
         }
         
         if let inMetalLib = customMetalLibrary {
             return inMetalLib
         } else {
-            fatalError(" customlib is nil ")
+            let error = PaddleMobileError.defaultError(message: "customlib is nil")
+            throw paddleMobileLogAndThrow(error: error)
         }
     }
     
-    func paddleMobileLibrary() -> MTLLibrary {
+    func paddleMobileLibrary() throws -> MTLLibrary {
         if paddleMobileMetalLibrary == nil {
             guard let path = Bundle.init(for: Kernel.self).path(forResource: "default", ofType: "metallib") else {
-                fatalError("Counld't find paddle mobile library")
+                let error = PaddleMobileError.defaultError(message: "Counld't find paddle mobile library")
+                throw paddleMobileLogAndThrow(error: error)
             }
             do {
                 paddleMobileMetalLibrary = try makeLibrary(filepath: path)
             } catch _ {
-                fatalError("Counld't load paddle mobile library")
+                let error = PaddleMobileError.defaultError(message: "Counld't load paddle mobile library")
+                throw paddleMobileLogAndThrow(error: error)
             }
         }
         
         if let inPaddleMobileLib = paddleMobileMetalLibrary {
             return inPaddleMobileLib
         } else {
-            fatalError("PaddleMobile metal libary is nil")
+            let error = PaddleMobileError.defaultError(message: "PaddleMobile metal libary is nil")
+            throw paddleMobileLogAndThrow(error: error)
         }
     }
     
-    func pipeLine(funcName: String, metalLoadMode: MetalLoadMode, metalLibPath: String?) -> MTLComputePipelineState {
+    func pipeLine(funcName: String, metalLoadMode: MetalLoadMode, metalLibPath: String?) throws -> MTLComputePipelineState {
         let useLib: MTLLibrary
         switch metalLoadMode {
         case .LoadMetalInDefaultLib:
-            useLib = defaultLibrary()
+            useLib = try defaultLibrary()
         case .LoadMetalInPaddleMobile:
-            useLib = paddleMobileLibrary()
+            useLib = try paddleMobileLibrary()
         case .LoadMetalInCustomMetalLib:
-            useLib = customLibrary(metalLibPath: metalLibPath ?! " can't be nil ")
+            guard let path = metalLibPath else {
+                let error = PaddleMobileError.loaderError(message: "metalibpath can not be nil")
+                throw paddleMobileLogAndThrow(error: error)
+            }
+            useLib = try customLibrary(metalLibPath: path)
         default:
-            fatalError()
+            let error = PaddleMobileError.defaultError(message: "metalLoadMode \(metalLoadMode) not implemented")
+            throw paddleMobileLogAndThrow(error: error)
         }
         
         guard let function = useLib.makeFunction(name: funcName) else {
-            fatalError(" function " + funcName + " not found")
+            let error = PaddleMobileError.defaultError(message: " function " + funcName + " not found")
+            throw paddleMobileLogAndThrow(error: error)
         }
         do {
             let pipLine = try makeComputePipelineState(function: function)
             return pipLine
         } catch let error {
-            print(error)
-            fatalError("make pip line error occured : \(error)")
+            let error = PaddleMobileError.defaultError(message: "make pip line error occured : \(error)")
+            throw paddleMobileLogAndThrow(error: error)
         }
         
     }
@@ -122,7 +129,7 @@ extension MTLDevice {
         }
     }
     
-    func texture2tensor_3<P>(texture: MTLTexture, dim: [Int],  transpose: [Int] = [0, 1, 2, 3]) -> [P] {
+    func texture2tensor_3<P>(texture: MTLTexture, dim: [Int],  transpose: [Int] = [0, 1, 2, 3]) throws -> [P] {
         var tdim: [Int] = [1, 1, 1, 1]
         for i in 0..<dim.count {
             tdim[4 - dim.count + i] = dim[i]
@@ -130,11 +137,16 @@ extension MTLDevice {
         let count = dim.reduce(1) { $0 * $1 }
         var tensor: [P] = .init(repeating: Float32(0.0) as! P, count: count)
         let ndim: [Int] = transpose.map { tdim[$0] }
-        assert(dim.count == 3)
-        assert(texture.width == ndim[3])
-        assert(texture.height == ndim[2])
-        assert(ndim[0] == 1)
-        assert(texture.arrayLength == (ndim[1] + 3) / 4)
+        guard dim.count == 3 &&
+              texture.width == ndim[3] &&
+              texture.height == ndim[2] &&
+              ndim[0] == 1 &&
+              texture.arrayLength == (ndim[1] + 3) / 4
+        else {
+            let error = PaddleMobileError.netError(message: "dim: \(dim) or ndim: \(ndim) or texture: \(texture) do not satisfy")
+            throw paddleMobileLogAndThrow(error: error)
+        }
+        
         texture2tensor_loop(texture: texture) { (xyzn: [Int], v: P) in
             var tg: [Int] = [0, 0, 0, 0]
             tg[1] = xyzn[2] * 4 + xyzn[3]
@@ -152,7 +164,7 @@ extension MTLDevice {
         return tensor
     }
     
-    func texture2tensor_2<P>(texture: MTLTexture, dim: [Int],  transpose: [Int] = [0, 1, 2, 3]) -> [P] {
+    func texture2tensor_2<P>(texture: MTLTexture, dim: [Int],  transpose: [Int] = [0, 1, 2, 3]) throws -> [P] {
         var tdim: [Int] = [1, 1, 1, 1]
         for i in 0..<dim.count {
             tdim[4 - dim.count + i] = dim[i]
@@ -160,13 +172,20 @@ extension MTLDevice {
         let count = dim.reduce(1) { $0 * $1 }
         var tensor: [P] = .init(repeating: Float32(0.0) as! P, count: count)
         let ndim: [Int] = transpose.map { tdim[$0] }
-        assert(dim.count == 2)
+        guard dim.count == 2 else {
+            let error = PaddleMobileError.netError(message: "dim count must equal to 2")
+            throw paddleMobileLogAndThrow(error: error)
+        }
         let w = (ndim[3] + 3) / 4
-        assert(texture.width == w)
-        assert(texture.height == ndim[2])
-        assert(ndim[0] == 1)
-        assert(ndim[1] == 1)
-        assert(texture.arrayLength == 1)
+        guard texture.width == w &&
+              texture.height == ndim[2] &&
+              ndim[0] == 1 &&
+              ndim[1] == 1 &&
+              texture.arrayLength == 1
+        else {
+            let error = PaddleMobileError.netError(message: "ndim: \(ndim) w: \(w) texture: \(texture) do not satisfy")
+            throw paddleMobileLogAndThrow(error: error)
+        }
         
         texture2tensor_loop(texture: texture) { (xyzn: [Int], v: P) in
             var tg: [Int] = [0, 0, 0, 0]
@@ -184,7 +203,7 @@ extension MTLDevice {
         return tensor
     }
     
-    func texture2tensor_1<P>(texture: MTLTexture, dim: [Int],  transpose: [Int] = [0, 1, 2, 3]) -> [P] {
+    func texture2tensor_1<P>(texture: MTLTexture, dim: [Int],  transpose: [Int] = [0, 1, 2, 3]) throws -> [P] {
         var tdim: [Int] = [1, 1, 1, 1]
         for i in 0..<dim.count {
             tdim[4 - dim.count + i] = dim[i]
@@ -192,14 +211,21 @@ extension MTLDevice {
         let count = dim.reduce(1) { $0 * $1 }
         var tensor: [P] = .init(repeating: Float32(0.0) as! P, count: count)
         let ndim: [Int] = transpose.map { tdim[$0] }
-        assert(dim.count == 1)
+        guard dim.count == 1 else {
+            let error = PaddleMobileError.netError(message: "dim count must equal to 1")
+            throw paddleMobileLogAndThrow(error: error)
+        }
         let w = (ndim[3] + 3) / 4
-        assert(texture.width == w)
-        assert(texture.height == 1)
-        assert(ndim[0] == 1)
-        assert(ndim[1] == 1)
-        assert(ndim[2] == 1)
-        assert(texture.arrayLength == 1)
+        guard texture.width == w &&
+              texture.height == 1 &&
+              ndim[0] == 1 &&
+              ndim[1] == 1 &&
+              ndim[2] == 1 &&
+              texture.arrayLength == 1
+        else {
+            let error = PaddleMobileError.netError(message: "ndim: \(ndim) w: \(w) texture: \(texture) do not satisfy")
+            throw paddleMobileLogAndThrow(error: error)
+        }
         
         texture2tensor_loop(texture: texture) { (xyzn: [Int], v: P) in
             var tg: [Int] = [0, 0, 0, 0]
@@ -216,13 +242,13 @@ extension MTLDevice {
         return tensor
     }
     
-    func texture2tensor<P>(texture: MTLTexture, dim: [Int], transpose: [Int] = [0, 1, 2, 3]) -> [P] {
+    func texture2tensor<P>(texture: MTLTexture, dim: [Int], transpose: [Int] = [0, 1, 2, 3]) throws -> [P] {
         if dim.count == 3 {
-            return texture2tensor_3(texture: texture, dim: dim, transpose: transpose)
+            return try texture2tensor_3(texture: texture, dim: dim, transpose: transpose)
         } else if dim.count == 2 {
-            return texture2tensor_2(texture: texture, dim: dim, transpose: transpose)
+            return try texture2tensor_2(texture: texture, dim: dim, transpose: transpose)
         } else if dim.count == 1 {
-            return texture2tensor_1(texture: texture, dim: dim, transpose: transpose)
+            return try texture2tensor_1(texture: texture, dim: dim, transpose: transpose)
         }
         var tdim: [Int] = [1, 1, 1, 1]
         for i in 0..<dim.count {
@@ -232,9 +258,13 @@ extension MTLDevice {
         var tensor: [P] = .init(repeating: Float32(0.0) as! P, count: count)
         let ndim: [Int] = transpose.map { tdim[$0] }
         
-        assert(texture.width == ndim[2])
-        assert(texture.height == ndim[1])
-        assert(texture.arrayLength == (ndim[0] * ndim[3] + 3) / 4)
+        guard texture.width == ndim[2] &&
+              texture.height == ndim[1] &&
+              texture.arrayLength == (ndim[0] * ndim[3] + 3) / 4
+        else {
+            let error = PaddleMobileError.netError(message: "ndim: \(ndim) texture: \(texture) do not satisfy")
+            throw paddleMobileLogAndThrow(error: error)
+        }
         
         texture2tensor_loop(texture: texture) { (xyzn: [Int], v: P) in
             var tg: [Int] = [0, 0, 0, 0]
@@ -254,9 +284,12 @@ extension MTLDevice {
         return tensor
     }
     
-    func tensor2texture<P>(value: [P], dim: [Int], transpose: [Int] = [0, 1, 2, 3], inComputePrecision: Precision = .Float32) -> MTLTexture {
+    func tensor2texture<P>(value: [P], dim: [Int], transpose: [Int] = [0, 1, 2, 3], inComputePrecision: Precision = .Float32) throws -> MTLTexture {
         if value.count > 0 {
-            assert(value.count == dim.reduce(1) { $0 * $1 })
+            guard value.count == (dim.reduce(1) { $0 * $1 }) else {
+                let error = PaddleMobileError.netError(message: "value count: \(value.count) and dim: \(dim) do not satisfy")
+                throw paddleMobileLogAndThrow(error: error)
+            }
         }
         
         var tdim: [Int] = [1, 1, 1, 1]
@@ -310,7 +343,7 @@ extension MTLDevice {
                 let xvalue: [UInt16] = .init(repeating: 0, count: rcount)
                 let pointer: UnsafeMutablePointer<Float32> = UnsafeMutablePointer(mutating: nvalue)
                 let outputP: UnsafeMutablePointer<UInt16> = UnsafeMutablePointer(mutating: xvalue)
-                float32ToFloat16(input: pointer, output: outputP, count: rcount)
+                try float32ToFloat16(input: pointer, output: outputP, count: rcount)
                 let bpR = ndim[2] * 4 * 2
                 let bpI = ndim[1] * bpR
                 for i in 0..<textureDesc.arrayLength {
@@ -347,6 +380,9 @@ extension MTLDevice {
         if value.count >= 4{
             let counts = arrayLength * 4 * textureWidth * textureHeight
             let pointer: UnsafeMutablePointer<P> = UnsafeMutablePointer<P>.allocate(capacity: counts * MemoryLayout<P>.size)
+            defer {
+                pointer.deallocate()
+            }
             for i in 0..<value.count {
                 pointer[i] = value[i]
             }
@@ -440,7 +476,7 @@ public extension MTLTexture {
         return fArr
     }
     
-    func float32Array() -> [Float32] {
+    func float32Array() throws -> [Float32] {
         if pixelFormat == .rgba32Float {
             let float32Array = floatArray { (f: Float32) -> Float32 in
                 return f
@@ -451,15 +487,16 @@ public extension MTLTexture {
             var float16Array = floatArray { (f: Float16) -> Float16 in
                 return f
             }
-            return float16To32(input: &float16Array, count: float16Array.count)
+            return try float16To32(input: &float16Array, count: float16Array.count)
         } else {
-            fatalError()
+            let error = PaddleMobileError.defaultError(message: "pixelFormat \(pixelFormat) unsupported yet")
+            throw paddleMobileLogAndThrow(error: error)
         }
     }
     
     func logDesc<T>(header: String = "", stridable: Bool = true) -> T? {
-        print(header)
-        print("texture: \(self)")
+        paddleMobileLog("\(header)")
+        paddleMobileLog("texture: \(self)")
         //        let res: [(index: Int, value: T)] = stridableFloatArray(stridable: stridable)
         //        print(res)
         
@@ -484,7 +521,7 @@ public extension MTLTexture {
                 }
                 
                 bytes.deallocate()
-                print(str)
+                paddleMobileLog(str)
             }
         } else if textureType == .type2D {
             var str: String = "texture 2D: "
@@ -505,7 +542,7 @@ public extension MTLTexture {
                 }
             }
             
-            print(str)
+            paddleMobileLog(str)
             bytes.deallocate()
         }
         return nil
@@ -513,7 +550,7 @@ public extension MTLTexture {
     }
     
     // n c h w - dim
-    func toTensor(dim: (n: Int, c: Int, h: Int, w: Int)) -> [Float32] {
+    func toTensor(dim: (n: Int, c: Int, h: Int, w: Int)) throws -> [Float32] {
         var textureArray: [Float32]
         if pixelFormat == .rgba32Float {
             textureArray = floatArray { (i : Float32) -> Float32 in
@@ -524,9 +561,10 @@ public extension MTLTexture {
             var textureFloat16Array = floatArray { (i : Float16) -> Float16 in
                 return i
             }
-            textureArray = float16To32(input: &textureFloat16Array, count: textureFloat16Array.count)
+            textureArray = try float16To32(input: &textureFloat16Array, count: textureFloat16Array.count)
         } else {
-            fatalError(" 目前还不支持其他类型 ")
+            let error = PaddleMobileError.defaultError(message: "pixelFormat \(pixelFormat) unsupported yet")
+            throw paddleMobileLogAndThrow(error: error)
         }
         print(textureArray.count)
         var output: [Float32] = []
@@ -545,7 +583,7 @@ public extension MTLTexture {
         return output
     }
     
-    func realNHWC(dim: (n: Int, h: Int, w: Int, c: Int)) -> [Float32] {
+    func realNHWC(dim: (n: Int, h: Int, w: Int, c: Int)) throws -> [Float32] {
         //    print("origin dim: \(dim)")
         //    print("texture: ")
         //    print(self)
@@ -559,9 +597,10 @@ public extension MTLTexture {
             var textureFloat16Array = floatArray { (i : Float16) -> Float16 in
                 return i
             }
-            textureArray = float16To32(input: &textureFloat16Array, count: textureFloat16Array.count)
+            textureArray = try float16To32(input: &textureFloat16Array, count: textureFloat16Array.count)
         } else {
-            fatalError(" 目前还不支持其他类型 ")
+            let error = PaddleMobileError.defaultError(message: "pixelFormat \(pixelFormat) unsupported yet")
+            throw paddleMobileLogAndThrow(error: error)
         }
         
         var output: [Float32] = []
@@ -591,8 +630,8 @@ public extension MTLTexture {
 
 public extension MTLBuffer {
     func logDesc<T>(header: String = "", stridable: Bool = true) -> T? {
-        print(header)
-        print("MTLBuffer: \(self) ")
+        paddleMobileLog(header)
+        paddleMobileLog("MTLBuffer: \(self) ")
         var str = ""
         if stridable && length/MemoryLayout<T>.stride > 1000{
             for j in stride(from: 0, to: length, by: length/MemoryLayout<T>.stride / 100){
@@ -603,7 +642,7 @@ public extension MTLBuffer {
                 str += " \(contents().assumingMemoryBound(to: T.self)[i])"
             }
         }
-        print(str)
+        paddleMobileLog(str)
         return nil
     }
     
