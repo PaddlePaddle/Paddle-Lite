@@ -37,7 +37,7 @@ void Gemm::PackMatrixB_omp_8c(int32_t k, int32_t n, int32_t n_tail,
       const int8_t *b0 = &B(i, j);
 #if __ARM_NEON
 #if __aarch64__
-      // TODO
+// PackMatrixB_omp_8c used only for aarch32
 #else
       asm volatile(
           //          "pld        [%[b0]]                     \n\t"
@@ -133,7 +133,19 @@ void Gemm::PackMatrixA_omp_4r_16(int32_t m, int32_t k, int32_t m_tail,
     for (int32_t j = 0; j < k_count; ++j) {
 #if __ARM_NEON
 #if __aarch64__
-    // TODO
+      asm volatile(
+          "ld1        {v0.16b},   [%[a0]],  #16    \n\t"
+          "ld1        {v1.16b},   [%[a1]],  #16    \n\t"
+          "ld1        {v2.16b},   [%[a2]],  #16    \n\t"
+          "ld1        {v3.16b},   [%[a3]],  #16    \n\t"
+          "st1        {v0.16b},   [%[local_buffer]],  #16   \n\t"
+          "st1        {v1.16b},   [%[local_buffer]],  #16   \n\t"
+          "st1        {v2.16b},   [%[local_buffer]],  #16   \n\t"
+          "st1        {v3.16b},   [%[local_buffer]],  #16   \n\t"
+          : [local_buffer] "+r"(local_buffer), [a0] "+r"(a0), [a1] "+r"(a1),
+            [a2] "+r"(a2), [a3] "+r"(a3)
+          :
+          : "memory", "v0", "v1", "v2", "v3");
 #else
       asm volatile(
           "vld1.s8    {d0, d1},   [%[a0]]!         \n\t"
@@ -213,7 +225,19 @@ void Gemm::PackMatrixA_omp_4r_16(int32_t m, int32_t k, int32_t m_tail,
     for (int32_t j = 0; j < k_count; ++j) {
 #if __ARM_NEON
 #if __aarch64__
-    // TODO
+      asm volatile(
+          "ld1        {v0.16b},   [%[a0]],  #16    \n\t"
+          "ld1        {v1.16b},   [%[a1]],  #16    \n\t"
+          "ld1        {v2.16b},   [%[a2]],  #16    \n\t"
+          "ld1        {v3.16b},   [%[a3]],  #16    \n\t"
+          "st1        {v0.16b},   [%[local_buffer]],  #16   \n\t"
+          "st1        {v1.16b},   [%[local_buffer]],  #16   \n\t"
+          "st1        {v2.16b},   [%[local_buffer]],  #16   \n\t"
+          "st1        {v3.16b},   [%[local_buffer]],  #16   \n\t"
+          : [local_buffer] "+r"(local_buffer), [a0] "+r"(a0), [a1] "+r"(a1),
+            [a2] "+r"(a2), [a3] "+r"(a3)
+          :
+          : "memory", "v0", "v1", "v2", "v3");
 #else
       asm volatile(
           "vld1.s8    {d0, d1},   [%[a0]]!         \n\t"
@@ -337,6 +361,87 @@ void Gemm::PackMatrixB_omp_2c_16(int32_t k, int32_t n, int32_t n_tail,
         *local_buffer++ = 0;
       }
       for (int32_t j = k_count << 4; j < KC; ++j) {
+        *local_buffer++ = 0;
+      }
+    }
+  }
+}
+
+// 8 bits int PackMatrixB
+void Gemm::PackMatrixB_omp_4c_16(int32_t k, int32_t n, int32_t n_tail,
+                                 const int8_t *B, int32_t ldb, int8_t *buffer) {
+  const int32_t j_length = n - n_tail;
+  const int32_t k_count = k >> 4;
+  const int32_t k_tail = k & 15;
+#pragma omp parallel for
+  for (int32_t j = 0; j < n; j += 4) {
+    int8_t *local_buffer = buffer + j * KC;
+    const int8_t *b0 = &B(0, j);
+    const int8_t *b1 = b0 + 1;
+    const int8_t *b2 = b0 + 2;
+    const int8_t *b3 = b0 + 3;
+    if (j > j_length) {
+      switch (n_tail) {
+        case 1:
+          b1 = zero_int8;
+        case 2:
+          b2 = zero_int8;
+        case 3:
+          b3 = zero_int8;
+          break;
+        default:
+          break;
+      }
+    }
+
+    for (int32_t i = 0; i < k_count; ++i) {
+      for (int m = 0; m < 16; ++m) {
+        *local_buffer++ = *b0;
+        b0 += ldb;
+      }
+      for (int m = 0; m < 16; ++m) {
+        *local_buffer++ = *b1;
+        b1 += ldb;
+      }
+      for (int m = 0; m < 16; ++m) {
+        *local_buffer++ = *b2;
+        b2 += ldb;
+      }
+      for (int m = 0; m < 16; ++m) {
+        *local_buffer++ = *b3;
+        b3 += ldb;
+      }
+    }
+    if (k_tail != 0) {
+      for (int32_t j = k_count << 4; j < k; ++j) {
+        *local_buffer++ = *b0;
+        b0 += ldb;
+      }
+      for (int32_t j = k; j < KC; ++j) {
+        *local_buffer++ = 0;
+      }
+
+      for (int32_t j = k_count << 4; j < k; ++j) {
+        *local_buffer++ = *b1;
+        b1 += ldb;
+      }
+      for (int32_t j = k; j < KC; ++j) {
+        *local_buffer++ = 0;
+      }
+
+      for (int32_t j = k_count << 4; j < k; ++j) {
+        *local_buffer++ = *b2;
+        b2 += ldb;
+      }
+      for (int32_t j = k; j < KC; ++j) {
+        *local_buffer++ = 0;
+      }
+
+      for (int32_t j = k_count << 4; j < k; ++j) {
+        *local_buffer++ = *b3;
+        b3 += ldb;
+      }
+      for (int32_t j = k; j < KC; ++j) {
         *local_buffer++ = 0;
       }
     }
