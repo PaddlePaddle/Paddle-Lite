@@ -386,7 +386,7 @@ void Gemm::Sgemm_omp(int32_t m, int32_t n, int32_t k, float alpha,
     packedB_int8 = static_cast<int8_t *>(
         paddle_mobile::memory::Alloc(sizeof(int8_t) * KC * NC));
 #if __aarch64__
-    // TODO(paddle mobile)
+    PackMatrixB_omp_4c_16(k, n, n % NR_INT8, B, ldb, packedB_int8);
 #else
     PackMatrixB_omp_2c_16(k, n, n % NR_INT8, B, ldb, packedB_int8);
 #endif
@@ -408,7 +408,7 @@ void Gemm::Sgemm_omp(int32_t m, int32_t n, int32_t k, float alpha,
     packedA_int8 = static_cast<int8_t *>(
         paddle_mobile::memory::Alloc(sizeof(int8_t) * MC * KC));
 #if __aarch64__
-    // TODO(paddle mobile)
+    PackMatrixA_omp_4r_16(m, k, m % MR_INT8, A, lda, packedA_int8);
 #else
     PackMatrixA_omp_4r_16(m, k, m % MR_INT8, A, lda, packedA_int8);
 #endif
@@ -432,7 +432,7 @@ void Gemm::Sgemm_omp(int32_t m, int32_t n, int32_t k, float alpha,
       int8_t *local_A = packedA_int8 + MC * KC * local_threads;
       int32_t *local_C = packedC_int32 + MC * NC * local_threads;
 #if __aarch64__
-      // TODO(paddle mobile)
+      PackMatrixA_4r_16(mc, k, mc % MR_INT8, &A(i, 0), lda, local_A);
 #else
       PackMatrixA_4r_16(mc, k, mc % MR_INT8, &A(i, 0), lda, local_A);
 #endif
@@ -462,7 +462,7 @@ void Gemm::Sgemm_omp(int32_t m, int32_t n, int32_t k, float alpha,
       int8_t *local_B = packedB_int8 + KC * NC * local_threads;
       int32_t *local_C = packedC_int32 + MC * NC * local_threads;
 #if __aarch64__
-      // TODO(paddle mobile)
+      PackMatrixB_4c_16(k, nc, nc % NR_INT8, &B(0, j), ldb, local_B);
 #else
       PackMatrixB_2c_16(k, nc, nc % NR_INT8, &B(0, j), ldb, local_B);
 #endif
