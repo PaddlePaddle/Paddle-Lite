@@ -263,8 +263,8 @@ template void DepthwiseConv3x3<float, float>(const ConvParam<CPU> &param);
 template void DepthwiseConv5x5<float, float>(const ConvParam<CPU> &param);
 template void SlidingwindowConv3x3<float, float>(const ConvParam<CPU> &param);
 
-#ifndef __aarch64__
 template void GemmConv<int8_t, int32_t>(const ConvParam<CPU> &param);
+#ifndef __aarch64__
 template void DepthwiseConv3x3<int8_t, int32_t>(const ConvParam<CPU> &param);
 template void DepthwiseConv5x5<int8_t, int32_t>(const ConvParam<CPU> &param);
 #endif
