@@ -83,7 +83,7 @@ At present Paddle-Mobile only supports Paddle fluid training model. Models wiil 
 ### 1. Use Paddle Fluid directly to train
 It is the most reliable method to be recommanded
 ### 2. Transform Caffe to Paddle Fluid model
-[https://github.com/PaddlePaddle/models/tree/develop/fluid/PaddleCV/caffe2fluid](https://github.com/PaddlePaddle/models/tree/develop/fluid/PaddleCV/caffe2fluid)
+[caffe2fluid](https://github.com/PaddlePaddle/models/tree/develop/PaddleCV/caffe2fluid)
 ### 3. ONNX
 ONNX is expanded as Open Neural Network Exchange. The project is aimed to make a full communication and usage among diffrent nerual network development frameworks.
 
@@ -103,7 +103,7 @@ At present，work in support of onnx is also under operation in Baidu. Related t
 ### 1. 直接使用Paddle Fluid训练
 该方式最为可靠，推荐方式
 ### 2. caffe转为Paddle Fluid模型
-[https://github.com/PaddlePaddle/models/tree/develop/fluid/PaddleCV/caffe2fluid](https://github.com/PaddlePaddle/models/tree/develop/fluid/PaddleCV/caffe2fluid)
+[caffe2fluid](https://github.com/PaddlePaddle/models/tree/develop/PaddleCV/caffe2fluid)
 ### 3. ONNX
 ONNX全称为“Open Neural Network Exchange”，即“开放的神经网络切换”。该项目的目的是让不同的神经网络开发框架做到互通互用。
 
