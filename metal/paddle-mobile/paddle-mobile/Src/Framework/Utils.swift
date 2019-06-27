@@ -27,35 +27,3 @@ func paddleMobileLog(_ msg: String, logLevel: PaddleMobileLogLevel = .Info, file
     }
     print(msg)
 }
-
-func paddleMobileThrow(error: PaddleMobileError, file: String = #file, line: Int = #line, function: String = #function, callStack: Array<String> = Thread.callStackSymbols) -> PaddleMobileError {
-    let debugMsg = "-file: \(file) -line: \(line) -function:\(function) -calling stack: \(callStack)"
-    switch error {
-    case .loaderError(message: let errorMsg):
-        let newMsg = "\(errorMsg) \(debugMsg)"
-        return PaddleMobileError.loaderError(message: newMsg)
-    case .netError(message: let errorMsg):
-        let newMsg = "\(errorMsg) \(debugMsg)"
-        return PaddleMobileError.netError(message: newMsg)
-    case .memoryError(message: let errorMsg):
-        let newMsg = "\(errorMsg) \(debugMsg)"
-        return PaddleMobileError.memoryError(message: newMsg)
-    case .paramError(message: let errorMsg):
-        let newMsg = "\(errorMsg) \(debugMsg)"
-        return PaddleMobileError.paramError(message: newMsg)
-    case .opError(message: let errorMsg):
-        let newMsg = "\(errorMsg) \(debugMsg)"
-        return PaddleMobileError.opError(message: newMsg)
-    case .predictError(message: let errorMsg):
-        let newMsg = "\(errorMsg) \(debugMsg)"
-        return PaddleMobileError.predictError(message: newMsg)
-    case .defaultError(message: let errorMsg):
-        let newMsg = "\(errorMsg) \(debugMsg)"
-        return PaddleMobileError.defaultError(message: newMsg)
-    }
-}
-
-func paddleMobileLogAndThrow(error: PaddleMobileError, file: String = #file, line: Int = #line, function: String = #function, callStack: Array<String> = Thread.callStackSymbols) -> PaddleMobileError {
-    paddleMobileLog(error.associatedMsg(), logLevel: .FatalError, file: file, line: line, function: function, callStack: callStack)
-    return paddleMobileThrow(error: error, file: file, line: line, function: function, callStack: callStack)
-}

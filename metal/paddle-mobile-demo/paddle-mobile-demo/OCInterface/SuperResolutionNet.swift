@@ -63,8 +63,7 @@ import paddle_mobile
                                 output.paddedCapacity = newDim.numel() * 4
                                 output.initBuffer(device: device)
                             } else {
-                                let error = PaddleMobileError.loaderError(message: "scope output nil")
-                                throw paddleMobileLogAndThrow(error: error)
+                                throw PaddleMobileError.makeError(type: .loaderError, msg: "scope output nil")
                             }
                         }
                     }

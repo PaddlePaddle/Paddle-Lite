@@ -82,7 +82,7 @@ class PriorBoxOp<P: PrecisionProtocol>: Operator<PriorBoxKernel<P>, PriorBoxPara
         // output
         print(" \(type) output: ")
         do {
-            let box = try para.output.metalTexture.realNHWC(dim: (para.output.dim[0], para.output.dim[1], para.output.dim[2], para.output.dim[3]))
+            let box = try para.output.metalTexture?.realNHWC(dim: (para.output.dim[0], para.output.dim[1], para.output.dim[2], para.output.dim[3])) ?? []
             print(" dim: \(para.output.dim)")
             print(box.strideArray())
         } catch _ {

@@ -41,15 +41,15 @@ class FlattenOp<P: PrecisionProtocol>: Operator<FlattenKernel<P>, FlattenParam<P
     
     func delogOutput() {
         print(" \(type) output: ")
-        let device = para.output.metalTexture!.device
-        do {
-            let outputArray: [Float32] = try device.texture2tensor(texture: para.output.metalTexture, dim: para.output.tensorDim.dims, transpose: para.output.transpose)
-            print(outputArray.strideArray())
-        } catch _ {
+        if let metalTexture = para.output.metalTexture {
+            do {
+                let outputArray: [Float32] = try metalTexture.device.texture2tensor(texture: metalTexture, dim: para.output.tensorDim.dims, transpose: para.output.transpose)
+                print(outputArray.strideArray())
+            } catch _ {
+            }
         }
         
     }
-    
 }
 
 class Flatten2Param<P: PrecisionProtocol>: OpParam {
@@ -59,8 +59,7 @@ class Flatten2Param<P: PrecisionProtocol>: OpParam {
         
         let inDims = input.dim
         guard inDims.cout() == 4 else {
-            let error = PaddleMobileError.netError(message: "flatten2 can't handle dims not equal to 4")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .netError, msg: "flatten2 can't handle dims not equal to 4")
         }
         let outDim = [inDims[0] * inDims[1], inDims[2] * inDims[3]]
         output.dim = Dim.init(inDim: outDim)
@@ -81,12 +80,12 @@ class Flatten2Op<P: PrecisionProtocol>: Operator<Flatten2Kernel<P>, Flatten2Para
     
     func delogOutput() {
         print(" \(type) output: ")
-        let device = para.output.metalTexture!.device
-        do {
-            let outputArray: [Float32] = try device.texture2tensor(texture: para.output.metalTexture, dim: para.output.tensorDim.dims, transpose: para.output.transpose)
-            print(outputArray.strideArray())
-        } catch _ {
+        if let metalTexture = para.output.metalTexture {
+            do {
+                let outputArray: [Float32] = try metalTexture.device.texture2tensor(texture: metalTexture, dim: para.output.tensorDim.dims, transpose: para.output.transpose)
+                print(outputArray.strideArray())
+            } catch _ {
+            }
         }
-        
     }
 }

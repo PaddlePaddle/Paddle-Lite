@@ -34,8 +34,7 @@ class PMOpDesc {
         }
         
         guard let _ = opInfos[protoOpDesc.type] else {
-            let error = PaddleMobileError.opError(message: "unsupported op type \(String(describing: protoOpDesc.type))")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .opError, msg: "unsupported op type \(String(describing: protoOpDesc.type))")
         }
         
         inputs = creator(protoOpDesc.inputsArray as! [OpDesc_Var]) {

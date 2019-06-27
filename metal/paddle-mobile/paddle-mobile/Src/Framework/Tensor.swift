@@ -30,13 +30,11 @@ extension Tensorial {
 
 class DataConverter<P: PrecisionProtocol> {
     func convert(from: UnsafeMutablePointer<P>, to: UnsafeMutablePointer<P>, fromDim: Dim) throws {
-        let error = PaddleMobileError.memoryError(message: "DataConverter convert need imp")
-        throw paddleMobileLogAndThrow(error: error)
+        throw PaddleMobileError.makeError(type: .memoryError, msg: "DataConverter convert need imp")
     }
     
     func getToDim(fromDim: Dim, layout: DataLayout) throws -> (dim: Dim, layout: DataLayout) {
-        let error = PaddleMobileError.memoryError(message: "DataConverter getToDim need imp")
-        throw paddleMobileLogAndThrow(error: error)
+        throw PaddleMobileError.makeError(type: .memoryError, msg: "DataConverter getToDim need imp")
     }
     
     func capacity(fromDim: Dim) throws -> Int? {
@@ -74,8 +72,7 @@ class MPSPointerConverter<P: PrecisionProtocol>: DataConverter<P>{
     override func getToDim(fromDim: Dim, layout: DataLayout) throws -> (dim: Dim, layout: DataLayout) {
         
         if layout != DataLayout.NCHW() {
-            let error = PaddleMobileError.memoryError(message: "MPSPointerConverter layout other than NCHW unsupported")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .memoryError, msg: "MPSPointerConverter layout other than NCHW unsupported")
         }
         
         let outputChannels = fromDim[0]
@@ -95,8 +92,7 @@ class WinogradPointerConverter<P: PrecisionProtocol>: DataConverter<P>{
         let H = fromDim[2]
         let W = fromDim[3]
         if H != 3 || W != 3 {
-            let error = PaddleMobileError.memoryError(message: "WinogradPointerConverter convert H and W must equal to 3")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .memoryError, msg: "WinogradPointerConverter convert H and W must equal to 3")
         }
         for n in 0..<N {
             for c in 0..<C {
@@ -177,16 +173,14 @@ class WinogradPointerConverter<P: PrecisionProtocol>: DataConverter<P>{
     
     override func getToDim(fromDim: Dim, layout: DataLayout) throws -> (dim: Dim, layout: DataLayout) {
         if layout != DataLayout.NCHW() {
-            let error = PaddleMobileError.memoryError(message: "WinogradPointerConverter getToDim only support NCHW")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .memoryError, msg: "WinogradPointerConverter getToDim only support NCHW")
         }
         let N = fromDim[0]
         let C = fromDim[1]
         let H = fromDim[2]
         let W = fromDim[3]
         if H != 3 || W != 3 {
-            let error = PaddleMobileError.memoryError(message: "WinogradPointerConverter getToDim H and W must equal to 3")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .memoryError, msg: "WinogradPointerConverter getToDim H and W must equal to 3")
         }
         let toDim = Dim.init(inDim: [N, C, H + 1, W + 1])
         return (dim: toDim, layout: DataLayout.NCHW())
@@ -198,8 +192,7 @@ class WinogradPointerConverter<P: PrecisionProtocol>: DataConverter<P>{
         let H = fromDim[2]
         let W = fromDim[3]
         if H != 3 || W != 3 {
-            let error = PaddleMobileError.memoryError(message: "WinogradPointerConverter capacity H and W must equal to 3")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .memoryError, msg: "WinogradPointerConverter capacity H and W must equal to 3")
         }
         return N * C * (H + 1) * (W + 1)
     }
@@ -307,8 +300,7 @@ class Tensor<P: PrecisionProtocol>: Tensorial {
         }
         
         if P.precisionType == .Float16 && computePrecision == .Float32{
-            let error = PaddleMobileError.predictError(message: "Float16 model can not compute in Float32 precision")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .predictError, msg: "Float16 model can not compute in Float32 precision")
         }
         
         if withTranspose {
@@ -419,8 +411,7 @@ class Tensor<P: PrecisionProtocol>: Tensorial {
                         }
                     }
                 } else if C == 1 {
-                    let error = PaddleMobileError.netError(message: "Tensor initBuffer channel can not be 1")
-                    throw paddleMobileLogAndThrow(error: error)
+                    throw PaddleMobileError.makeError(type: .netError, msg: "Tensor initBuffer channel can not be 1")
                 } else {
                     buffer = device.makeBuffer(length: count * precisionSize)
                     let convertedPointer = UnsafeMutablePointer<P>.allocate(capacity: count)
@@ -471,8 +462,7 @@ class Tensor<P: PrecisionProtocol>: Tensorial {
                 }
             }
         } else {
-            let error = PaddleMobileError.netError(message: "not support tensor initBuffer dim count \(dim.cout())")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .netError, msg: "not support tensor initBuffer dim count \(dim.cout())")
         }
         data.release()
     }

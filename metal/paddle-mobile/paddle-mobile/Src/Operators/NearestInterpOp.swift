@@ -21,14 +21,12 @@ class NearestInterpParam<P: PrecisionProtocol>: OpParam {
         let inputDim = input.tensorDim
         let outputDim = output.tensorDim
         guard inputDim.cout() == 4 && outputDim.cout() == 4 && inputDim[0] == outputDim[0] && inputDim[1] == outputDim[1] else {
-            let error = PaddleMobileError.netError(message: "nearest interp only support scale along width and height")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .netError, msg: "nearest interp only support scale along width and height")
         }
         let scaleX = Float32(outputDim[2]) / Float32(inputDim[2])
         let scaleY = Float32(outputDim[3]) / Float32(inputDim[3])
         guard abs(scaleX - scaleY) <= 0.00001 else {
-            let error = PaddleMobileError.netError(message: "nearest interp only support same scale factor")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .netError, msg: "nearest interp only support same scale factor")
         }
         scale = scaleX
     }
@@ -49,11 +47,12 @@ class NearestInterpOp<P: PrecisionProtocol>: Operator<NearestInterpKernel<P>, Ne
     
     func delogOutput() {
         print(" \(type) output: ")
-        let device = para.output.metalTexture!.device
-        do {
-            let outputArray: [Float32] = try device.texture2tensor(texture: para.output.metalTexture, dim: para.output.tensorDim.dims, transpose: para.output.transpose)
-            print(outputArray.strideArray())
-        } catch _ {
+        if let metalTexture = para.output.metalTexture {
+            do {
+                let outputArray: [Float32] = try metalTexture.device.texture2tensor(texture: metalTexture, dim: para.output.tensorDim.dims, transpose: para.output.transpose)
+                print(outputArray.strideArray())
+            } catch _ {
+            }
         }
     }
 }

@@ -43,7 +43,7 @@ class PreluOp<P: PrecisionProtocol>: Operator<PreluKernel<P>, PreluParam<P>>, Ru
     func delogOutput() {
         print(" \(type) input: ")
         do {
-            let output = try para.input.metalTexture.toTensor(dim: (n: para.input.padToFourDim[0], c: para.input.padToFourDim[1], h: para.input.padToFourDim[2], w: para.input.padToFourDim[3])).strideArray()
+            let output = try para.input.metalTexture?.toTensor(dim: (n: para.input.padToFourDim[0], c: para.input.padToFourDim[1], h: para.input.padToFourDim[2], w: para.input.padToFourDim[3])).strideArray() ?? []
             print(output)
         } catch _ {
         }
@@ -53,7 +53,7 @@ class PreluOp<P: PrecisionProtocol>: Operator<PreluKernel<P>, PreluParam<P>>, Ru
         
         print(" \(type) output: ")
         do {
-            let output = try para.output.metalTexture.toTensor(dim: (n: para.output.padToFourDim[0], c: para.output.padToFourDim[1], h: para.output.padToFourDim[2], w: para.output.padToFourDim[3])).strideArray()
+            let output = try para.output.metalTexture?.toTensor(dim: (n: para.output.padToFourDim[0], c: para.output.padToFourDim[1], h: para.output.padToFourDim[2], w: para.output.padToFourDim[3])).strideArray() ?? []
             print(output)
         } catch _ {
         }

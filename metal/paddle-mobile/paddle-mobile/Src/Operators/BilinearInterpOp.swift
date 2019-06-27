@@ -23,8 +23,7 @@ class BilinearInterpParam<P: PrecisionProtocol>: OpParam {
         out_h = try BilinearInterpParam.getAttr(key: "out_h", attrs: opDesc.attrs)
         out_w = try BilinearInterpParam.getAttr(key: "out_w", attrs: opDesc.attrs)
         if (input.transpose != [0, 2, 3, 1]) || (input.tensorDim.cout() != 4) {
-            let error = PaddleMobileError.netError(message: "BilinearInterpParam input transpose or tensordim not supported")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .netError, msg: "BilinearInterpParam input transpose or tensordim not supported")
         }
     }
     let input: Texture
@@ -47,14 +46,14 @@ class BilinearInterpOp<P: PrecisionProtocol>: Operator<BilinearInterpKernel<P>, 
     
     func delogOutput() {
         print(" \(type) output: ")
-        let device = para.output.metalTexture!.device
-        do {
-            let outputArray: [Float32] = try device.texture2tensor(texture: para.output.metalTexture, dim: para.output.tensorDim.dims, transpose: para.output.transpose)
-            //    print(outputArray)
-            print(outputArray.strideArray())
-        } catch _ {
+        if let metalTexture = para.output.metalTexture {
+            do {
+                let outputArray: [Float32] = try metalTexture.device.texture2tensor(texture: metalTexture, dim: para.output.tensorDim.dims, transpose: para.output.transpose)
+                //    print(outputArray)
+                print(outputArray.strideArray())
+            } catch _ {
+            }
         }
-        
     }
     
 }

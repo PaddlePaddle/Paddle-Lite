@@ -28,8 +28,7 @@ extension MTLDevice {
         if let inDefaultLib = defaultMetalLibrary {
             return inDefaultLib
         } else {
-            let error = PaddleMobileError.defaultError(message: "default metal libary is nil")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .defaultError, msg: "default metal libary is nil")
         }
     }
     
@@ -41,30 +40,26 @@ extension MTLDevice {
         if let inMetalLib = customMetalLibrary {
             return inMetalLib
         } else {
-            let error = PaddleMobileError.defaultError(message: "customlib is nil")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .defaultError, msg: "customlib is nil")
         }
     }
     
     func paddleMobileLibrary() throws -> MTLLibrary {
         if paddleMobileMetalLibrary == nil {
             guard let path = Bundle.init(for: Kernel.self).path(forResource: "default", ofType: "metallib") else {
-                let error = PaddleMobileError.defaultError(message: "Counld't find paddle mobile library")
-                throw paddleMobileLogAndThrow(error: error)
+                throw PaddleMobileError.makeError(type: .defaultError, msg: "Counld't find paddle mobile library")
             }
             do {
                 paddleMobileMetalLibrary = try makeLibrary(filepath: path)
             } catch _ {
-                let error = PaddleMobileError.defaultError(message: "Counld't load paddle mobile library")
-                throw paddleMobileLogAndThrow(error: error)
+                throw PaddleMobileError.makeError(type: .defaultError, msg: "Counld't load paddle mobile library")
             }
         }
         
         if let inPaddleMobileLib = paddleMobileMetalLibrary {
             return inPaddleMobileLib
         } else {
-            let error = PaddleMobileError.defaultError(message: "PaddleMobile metal libary is nil")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .defaultError, msg: "PaddleMobile metal libary is nil")
         }
     }
     
@@ -77,27 +72,22 @@ extension MTLDevice {
             useLib = try paddleMobileLibrary()
         case .LoadMetalInCustomMetalLib:
             guard let path = metalLibPath else {
-                let error = PaddleMobileError.loaderError(message: "metalibpath can not be nil")
-                throw paddleMobileLogAndThrow(error: error)
+                throw PaddleMobileError.makeError(type: .loaderError, msg: "metalibpath can not be nil")
             }
             useLib = try customLibrary(metalLibPath: path)
         default:
-            let error = PaddleMobileError.defaultError(message: "metalLoadMode \(metalLoadMode) not implemented")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .defaultError, msg: "metalLoadMode \(metalLoadMode) not implemented")
         }
         
         guard let function = useLib.makeFunction(name: funcName) else {
-            let error = PaddleMobileError.defaultError(message: " function " + funcName + " not found")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .defaultError, msg: "function " + funcName + " not found")
         }
         do {
             let pipLine = try makeComputePipelineState(function: function)
             return pipLine
         } catch let error {
-            let error = PaddleMobileError.defaultError(message: "make pip line error occured : \(error)")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .defaultError, msg: "make pip line error occured : \(error)")
         }
-        
     }
     
     func makeBuffer<P>(value: [P]) -> MTLBuffer {
@@ -143,8 +133,7 @@ extension MTLDevice {
               ndim[0] == 1 &&
               texture.arrayLength == (ndim[1] + 3) / 4
         else {
-            let error = PaddleMobileError.netError(message: "dim: \(dim) or ndim: \(ndim) or texture: \(texture) do not satisfy")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .netError, msg: "dim: \(dim) or ndim: \(ndim) or texture: \(texture) do not satisfy")
         }
         
         texture2tensor_loop(texture: texture) { (xyzn: [Int], v: P) in
@@ -173,8 +162,7 @@ extension MTLDevice {
         var tensor: [P] = .init(repeating: Float32(0.0) as! P, count: count)
         let ndim: [Int] = transpose.map { tdim[$0] }
         guard dim.count == 2 else {
-            let error = PaddleMobileError.netError(message: "dim count must equal to 2")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .netError, msg: "dim count must equal to 2")
         }
         let w = (ndim[3] + 3) / 4
         guard texture.width == w &&
@@ -183,8 +171,7 @@ extension MTLDevice {
               ndim[1] == 1 &&
               texture.arrayLength == 1
         else {
-            let error = PaddleMobileError.netError(message: "ndim: \(ndim) w: \(w) texture: \(texture) do not satisfy")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .netError, msg: "ndim: \(ndim) w: \(w) texture: \(texture) do not satisfy")
         }
         
         texture2tensor_loop(texture: texture) { (xyzn: [Int], v: P) in
@@ -212,8 +199,7 @@ extension MTLDevice {
         var tensor: [P] = .init(repeating: Float32(0.0) as! P, count: count)
         let ndim: [Int] = transpose.map { tdim[$0] }
         guard dim.count == 1 else {
-            let error = PaddleMobileError.netError(message: "dim count must equal to 1")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .netError, msg: "dim count must equal to 1")
         }
         let w = (ndim[3] + 3) / 4
         guard texture.width == w &&
@@ -223,8 +209,7 @@ extension MTLDevice {
               ndim[2] == 1 &&
               texture.arrayLength == 1
         else {
-            let error = PaddleMobileError.netError(message: "ndim: \(ndim) w: \(w) texture: \(texture) do not satisfy")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .netError, msg: "ndim: \(ndim) w: \(w) texture: \(texture) do not satisfy")
         }
         
         texture2tensor_loop(texture: texture) { (xyzn: [Int], v: P) in
@@ -262,8 +247,7 @@ extension MTLDevice {
               texture.height == ndim[1] &&
               texture.arrayLength == (ndim[0] * ndim[3] + 3) / 4
         else {
-            let error = PaddleMobileError.netError(message: "ndim: \(ndim) texture: \(texture) do not satisfy")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .netError, msg: "ndim: \(ndim) texture: \(texture) do not satisfy")
         }
         
         texture2tensor_loop(texture: texture) { (xyzn: [Int], v: P) in
@@ -287,8 +271,7 @@ extension MTLDevice {
     func tensor2texture<P>(value: [P], dim: [Int], transpose: [Int] = [0, 1, 2, 3], inComputePrecision: Precision = .Float32) throws -> MTLTexture {
         if value.count > 0 {
             guard value.count == (dim.reduce(1) { $0 * $1 }) else {
-                let error = PaddleMobileError.netError(message: "value count: \(value.count) and dim: \(dim) do not satisfy")
-                throw paddleMobileLogAndThrow(error: error)
+                throw PaddleMobileError.makeError(type: .netError, msg: "value count: \(value.count) and dim: \(dim) do not satisfy")
             }
         }
         
@@ -489,8 +472,7 @@ public extension MTLTexture {
             }
             return try float16To32(input: &float16Array, count: float16Array.count)
         } else {
-            let error = PaddleMobileError.defaultError(message: "pixelFormat \(pixelFormat) unsupported yet")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .defaultError, msg: "pixelFormat \(pixelFormat) unsupported yet")
         }
     }
     
@@ -563,8 +545,7 @@ public extension MTLTexture {
             }
             textureArray = try float16To32(input: &textureFloat16Array, count: textureFloat16Array.count)
         } else {
-            let error = PaddleMobileError.defaultError(message: "pixelFormat \(pixelFormat) unsupported yet")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .defaultError, msg: "pixelFormat \(pixelFormat) unsupported yet")
         }
         print(textureArray.count)
         var output: [Float32] = []
@@ -599,8 +580,7 @@ public extension MTLTexture {
             }
             textureArray = try float16To32(input: &textureFloat16Array, count: textureFloat16Array.count)
         } else {
-            let error = PaddleMobileError.defaultError(message: "pixelFormat \(pixelFormat) unsupported yet")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .defaultError, msg: "pixelFormat \(pixelFormat) unsupported yet")
         }
         
         var output: [Float32] = []

@@ -18,20 +18,17 @@ class ConcatParam<P: PrecisionProtocol>: OpParam {
     //typealias ParamPrecisionType = P
     required init(opDesc: PMOpDesc, inScope: Scope) throws {
         guard let xlist = opDesc.inputs["X"] else {
-            let error = PaddleMobileError.netError(message: "concat input desc nil")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .netError, msg: "concat input desc nil")
         }
         for x in xlist {
             guard let variant = inScope[x], let v = variant as? Texture else {
-                let error = PaddleMobileError.netError(message: "concat input texture nil")
-                throw paddleMobileLogAndThrow(error: error)
+                throw PaddleMobileError.makeError(type: .netError, msg: "concat input texture nil")
             }
             if transpose.count == 0 {
                 transpose = v.transpose
             }
             if v.transpose != transpose {
-                let error = PaddleMobileError.netError(message: "concat transpose not equal")
-                throw paddleMobileLogAndThrow(error: error)
+                throw PaddleMobileError.makeError(type: .netError, msg: "concat transpose not equal")
             }
             
             input.append(v)
@@ -70,11 +67,12 @@ class ConcatOp<P: PrecisionProtocol>: Operator<ConcatKernel<P>, ConcatParam<P>>,
     func delogOutput() {
         print(" \(type) output: ")
         
-        let device = para.output.metalTexture!.device
-        do {
-            let outputArray: [Float32] = try device.texture2tensor(texture: para.output.metalTexture, dim: para.output.tensorDim.dims, transpose: para.output.transpose)
-            print(outputArray.strideArray())
-        } catch _ {
+        if let metalTexture = para.output.metalTexture {
+            do {
+                let outputArray: [Float32] = try metalTexture.device.texture2tensor(texture: metalTexture, dim: para.output.tensorDim.dims, transpose: para.output.transpose)
+                print(outputArray.strideArray())
+            } catch _ {
+            }
         }
     }
     

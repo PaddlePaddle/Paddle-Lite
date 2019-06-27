@@ -35,8 +35,7 @@ class BoxcoderParam<P: PrecisionProtocol>: OpParam {
               targetBox.tensorDim.cout() == 3 &&
               targetBox.tensorDim[0] == 1
         else {
-            let error = PaddleMobileError.netError(message: "param do not satisfiy")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .netError, msg:"param do not satisfiy")
         }
     }
     let priorBox: Texture

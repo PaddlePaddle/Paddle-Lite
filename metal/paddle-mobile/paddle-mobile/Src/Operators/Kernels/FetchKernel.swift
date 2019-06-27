@@ -32,12 +32,10 @@ class FetchKernel<P: PrecisionProtocol>: Kernel, Computable {
                     expectedTranspose = [0, 2, 3, 1]
                     try super.init(device: device, inFunctionName: "fetch_half", initContext: initContext)
                 default:
-                    let error = PaddleMobileError.netError(message: "unsupported tensor dim count")
-                    throw paddleMobileLogAndThrow(error: error)
+                    throw PaddleMobileError.makeError(type: .netError, msg: "unsupported tensor dim count")
                 }
             } else {
-                let error = PaddleMobileError.netError(message: "unsupported input transpose")
-                throw paddleMobileLogAndThrow(error: error)
+                throw PaddleMobileError.makeError(type: .netError, msg: "unsupported input transpose")
             }
         } else if GlobalConfig.shared.computePrecision == .Float32 {
             if param.input.transpose == [0, 2, 3, 1] {
@@ -50,16 +48,13 @@ class FetchKernel<P: PrecisionProtocol>: Kernel, Computable {
                     expectedTranspose = [0, 2, 3, 1]
                     try super.init(device: device, inFunctionName: "fetch_float", initContext: initContext)
                 default:
-                    let error = PaddleMobileError.netError(message: "unsupported tensor dim count")
-                    throw paddleMobileLogAndThrow(error: error)
+                    throw PaddleMobileError.makeError(type: .netError, msg: "unsupported tensor dim count")
                 }
             } else {
-                let error = PaddleMobileError.netError(message: "unsupported input transpose")
-                throw paddleMobileLogAndThrow(error: error)
+                throw PaddleMobileError.makeError(type: .netError, msg: "unsupported input transpose")
             }
         } else {
-            let error = PaddleMobileError.predictError(message: "unsupported compute precision: \(GlobalConfig.shared.computePrecision)")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .predictError, msg: "unsupported compute precision: \(GlobalConfig.shared.computePrecision)")
         }
         self.device = device
         self.initContext = initContext
@@ -72,22 +67,22 @@ class FetchKernel<P: PrecisionProtocol>: Kernel, Computable {
                 if let device = device, let initContext = initContext, let transposedInput = encodeTransposeInput(input: param.input, toTranspose: expectedTranspose, commandBuffer: commandBuffer, device: device, initContext: initContext) {
                     input = transposedInput
                 } else {
-                    let error = PaddleMobileError.predictError(message: "input transpose failed in slice kernel")
-                    throw paddleMobileLogAndThrow(error: error)
+                    throw PaddleMobileError.makeError(type: .predictError, msg: "input transpose failed in slice kernel")
                 }
             }
         }
         guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
-            let error = PaddleMobileError.predictError(message: "encoder is nil")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .predictError, msg: "encoder is nil")
         }
         guard let tempPipline = pipline else {
-            let error = PaddleMobileError.predictError(message: "pipline is nil")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .predictError, msg: "pipline is nil")
         }
-        encoder.setTexture(input.metalTexture, index: 0)
+        guard let inputMetalTexture = input.metalTexture else {
+            throw PaddleMobileError.makeError(type: .predictError, msg: "input metaltexture is nil")
+        }
+        encoder.setTexture(inputMetalTexture, index: 0)
         encoder.setBuffer(param.output.resultBuffer!, offset: 0, index: 0)
-        encoder.dispatch(computePipline: tempPipline, outTexture: param.input.metalTexture)
+        encoder.dispatch(computePipline: tempPipline, outTexture: inputMetalTexture)
         encoder.endEncoding()
     }
 }

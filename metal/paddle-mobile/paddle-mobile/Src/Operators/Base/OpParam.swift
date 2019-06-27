@@ -61,17 +61,14 @@ extension OpParam {
     
     static func getFirstTensor<VarType: Variant>(key: String, map: [String : [String]], from: Scope) throws -> VarType {
         guard let mapKeys = map[key], mapKeys.count > 0 else {
-            let error = PaddleMobileError.paramError(message: key + " not found in \(map) or maped values is empty")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .paramError, msg: key + " not found in \(map) or maped values is empty")
         }
         guard let variant = from[mapKeys[0]] else {
-            let error = PaddleMobileError.paramError(message: mapKeys[0] + " not found in scope")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .paramError, msg: mapKeys[0] + " not found in scope")
         }
         
         guard let v = variant as? VarType else {
-            let error = PaddleMobileError.paramError(message: "type error")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .paramError, msg: "type error")
         }
         return v
     }
@@ -151,13 +148,11 @@ extension OpParam {
     
     static func getAttr<T>(key: String, attrs: [String : Attr]) throws -> T{
         guard let attr = attrs[key] else {
-            let error = PaddleMobileError.paramError(message: "attr \(key) can't found in: \(attrs)" )
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .paramError, msg: "attr \(key) can't found in: \(attrs)")
         }
         
         guard let tAttr = attr as? T else {
-            let error = PaddleMobileError.paramError(message: "key: \(key) attr: \(attr) type error" )
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .paramError, msg: "key: \(key) attr: \(attr) type error")
         }
         return tAttr
     }

@@ -37,9 +37,9 @@ class ExpOp<P: PrecisionProtocol>: Operator<ExpKernel<P>, ExpParam<P>>, Runable,
     
     func delogOutput() {
         print(" \(type) output: ")
-        print(para.output.metalTexture)
+        print(para.output.metalTexture ?? "")
         do {
-            let output = try para.output.metalTexture.toTensor(dim: (n: para.output.tensorDim[0], c: para.output.tensorDim[1], h: para.output.tensorDim[2], w: para.output.tensorDim[3])).strideArray()
+            let output = try para.output.metalTexture?.toTensor(dim: (n: para.output.tensorDim[0], c: para.output.tensorDim[1], h: para.output.tensorDim[2], w: para.output.tensorDim[3])).strideArray() ?? []
             print(output)
         } catch _ {
         }

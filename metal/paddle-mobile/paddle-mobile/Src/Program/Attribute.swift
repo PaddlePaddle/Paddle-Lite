@@ -79,7 +79,6 @@ func attrWithProtoDesc(attrDesc: OpDesc_Attr) throws -> Attr {
     case .strings:
         return attrDesc.stringsArray
     default:
-        let error = PaddleMobileError.netError(message: "not support this attr type: \(attrDesc.type)")
-        throw paddleMobileLogAndThrow(error: error)
+        throw PaddleMobileError.makeError(type: .netError, msg: "not support this attr type: \(attrDesc.type)")
     }
 }

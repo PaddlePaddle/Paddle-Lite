@@ -32,19 +32,16 @@ class Texture2DTo2DArrayKernel<P: PrecisionProtocol>: Kernel, Computable{
         } else if GlobalConfig.shared.computePrecision == .Float32 {
             try super.init(device: device, inFunctionName: "texture2d_to_2d_array", initContext: initContext)
         } else {
-            let error = PaddleMobileError.predictError(message: "unsupported compute precision: \(GlobalConfig.shared.computePrecision)")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .predictError, msg: "unsupported compute precision: \(GlobalConfig.shared.computePrecision)")
         }
     }
     
     func compute(commandBuffer: MTLCommandBuffer, param: FeedParam<P>) throws {
         guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
-            let error = PaddleMobileError.predictError(message: " encoder is nil")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .predictError, msg: "encoder is nil")
         }
         guard let tempPipline = pipline else {
-            let error = PaddleMobileError.predictError(message: "pipline is nil")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .predictError, msg: "pipline is nil")
         }
         encoder.setTexture(param.input.mtlTexture, index: 0)
         encoder.setTexture(param.output.metalTexture, index: 1)

@@ -89,8 +89,7 @@ class Node {
     
     private func folderWith(beginNode: Node, matchNode: Node, change: [String : [(from: String, to: String)]], removedNodes: inout [Node]) throws {
         guard let inOpdesc = opDesc else {
-            let error = PaddleMobileError.loaderError(message: "Node: opdesc nil when optimize")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .loaderError, msg: "opdesc nil when optimize")
         }
         
         for attr in inOpdesc.attrs {

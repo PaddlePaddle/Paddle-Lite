@@ -56,25 +56,31 @@ class ElementwiseAddKernel<P: PrecisionProtocol>: Kernel, Computable {
         } else if GlobalConfig.shared.computePrecision == .Float16 {
             try super.init(device: device, inFunctionName: "elementwise_add_half", initContext: initContext)
         } else {
-            let error = PaddleMobileError.predictError(message: "unsupported compute precision: \(GlobalConfig.shared.computePrecision)")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .predictError, msg: "unsupported compute precision: \(GlobalConfig.shared.computePrecision)")
         }
     }
     
     func compute(commandBuffer: MTLCommandBuffer, param: ElementwiseAddParam<P>) throws {
         guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
-            let error = PaddleMobileError.predictError(message: "encoder is nil")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .predictError, msg: "encoder is nil")
         }
         guard let tempPipline = pipline else {
-            let error = PaddleMobileError.predictError(message: "pipline is nil")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .predictError, msg: "pipline is nil")
         }
-        encoder.setTexture(param.inputX.metalTexture, index: 0)
-        encoder.setTexture(param.inputY.metalTexture, index: 1)
-        encoder.setTexture(param.output.metalTexture, index: 2)
+        guard let inputXMetalTexture = param.inputX.metalTexture else {
+            throw PaddleMobileError.makeError(type: .predictError, msg: "inputX metaltexture is nil")
+        }
+        guard let inputYMetalTexture = param.inputY.metalTexture else {
+            throw PaddleMobileError.makeError(type: .predictError, msg: "inputY metaltexture is nil")
+        }
+        guard let outputMetalTexture = param.output.metalTexture else {
+            throw PaddleMobileError.makeError(type: .predictError, msg: "output metaltexture is nil")
+        }
+        encoder.setTexture(inputXMetalTexture, index: 0)
+        encoder.setTexture(inputYMetalTexture, index: 1)
+        encoder.setTexture(outputMetalTexture, index: 2)
         encoder.setBytes(&metalParam, length: MemoryLayout<ElementwiseAddMetalParam>.size, index: 0)
-        encoder.dispatch(computePipline: tempPipline, outTexture: param.output.metalTexture)
+        encoder.dispatch(computePipline: tempPipline, outTexture: outputMetalTexture)
         encoder.endEncoding()
     }
 }

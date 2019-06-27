@@ -56,14 +56,12 @@ class PriorBoxKernel<P: PrecisionProtocol>: Kernel, Computable{
                 try super.init(device: device, inFunctionName: "prior_box_half", initContext: initContext)
             }
         } else {
-            let error = PaddleMobileError.predictError(message: "unsupported compute precision: \(GlobalConfig.shared.computePrecision)")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .predictError, msg: "unsupported compute precision: \(GlobalConfig.shared.computePrecision)")
         }
         
         
         guard param.minSizes.count == 1 else {
-            let error = PaddleMobileError.netError(message: "param.minSizes.count must equal to 1")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .netError, msg: "param.minSizes.count must equal to 1")
         }
         
         //    let n = 1
@@ -115,8 +113,7 @@ class PriorBoxKernel<P: PrecisionProtocol>: Kernel, Computable{
             let buffer = device.makeBuffer(bytes: outputAspectRatior, length: outputAspectRatior.count * MemoryLayout<Float32>.size, options: [])
             param.newAspectRatios = buffer
         } else {
-            let error = PaddleMobileError.predictError(message: "unsupported compute precision: \(GlobalConfig.shared.computePrecision)")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .predictError, msg: "unsupported compute precision: \(GlobalConfig.shared.computePrecision)")
         }
         
         let aspectRatiosSize = uint(outputAspectRatior.count)
@@ -135,23 +132,30 @@ class PriorBoxKernel<P: PrecisionProtocol>: Kernel, Computable{
     
     func compute(commandBuffer: MTLCommandBuffer, param: PriorBoxParam<P>) throws {
         guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
-            let error = PaddleMobileError.predictError(message: "encoder is nil")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .predictError, msg: "encoder is nil")
         }
         guard let tempPipline = pipline else {
-            let error = PaddleMobileError.predictError(message: "pipline is nil")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .predictError, msg: "pipline is nil")
         }
-        encoder.setTexture(param.input.metalTexture, index: 0)
-        encoder.setTexture(param.output.metalTexture, index: 1)
-        encoder.setTexture(param.outputVariances.metalTexture, index: 2)
+        guard let inputMetalTexture = param.input.metalTexture else {
+            throw PaddleMobileError.makeError(type: .predictError, msg: "input metaltexture is nil")
+        }
+        guard let outputMetalTexture = param.output.metalTexture else {
+            throw PaddleMobileError.makeError(type: .predictError, msg: "output metaltexture is nil")
+        }
+        guard let outputVariancesMetalTexture = param.outputVariances.metalTexture else {
+            throw PaddleMobileError.makeError(type: .predictError, msg: "outputVariances metaltexture is nil")
+        }
+        encoder.setTexture(inputMetalTexture, index: 0)
+        encoder.setTexture(outputMetalTexture, index: 1)
+        encoder.setTexture(outputVariancesMetalTexture, index: 2)
         
         encoder.setBuffer(param.newAspectRatios!, offset: 0, index: 0)
         
         encoder.setBytes(&metalParam, length: MemoryLayout<PriorBoxMetalParam>.size, index: 1)
         
         encoder.setBytes(param.variances, length: MemoryLayout<Float32>.size * param.variances.count, index: 2)
-        encoder.dispatch(computePipline: tempPipline, outTexture: param.output.metalTexture)
+        encoder.dispatch(computePipline: tempPipline, outTexture: outputMetalTexture)
         encoder.endEncoding()
     }
 }

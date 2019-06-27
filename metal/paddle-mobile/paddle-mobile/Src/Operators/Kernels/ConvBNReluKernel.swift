@@ -68,8 +68,7 @@ class ConvBNReluKernel<P: PrecisionProtocol>: Kernel, Computable, Testable {
             } else if param.filter.width == 3 && param.filter.height == 3 {
                 try super.init(device: device, inFunctionName: "conv_batch_norm_relu_3x3", initContext: initContext)
             } else {
-                let error = PaddleMobileError.netError(message: "unsupported conv filter")
-                throw paddleMobileLogAndThrow(error: error)
+                throw PaddleMobileError.makeError(type: .netError, msg: "unsupported conv filter")
             }
         } else if GlobalConfig.shared.computePrecision == .Float16 {
             if param.filter.width == 1 && param.filter.height == 1 {
@@ -79,21 +78,17 @@ class ConvBNReluKernel<P: PrecisionProtocol>: Kernel, Computable, Testable {
             } else if param.filter.width == 3 && param.filter.height == 3 {
                 try super.init(device: device, inFunctionName: "conv_batch_norm_relu_3x3_half", initContext: initContext)
             } else {
-                let error = PaddleMobileError.netError(message: "unsupported conv filter")
-                throw paddleMobileLogAndThrow(error: error)
+                throw PaddleMobileError.makeError(type: .netError, msg: "unsupported conv filter")
             }
         } else {
-            let error = PaddleMobileError.predictError(message: "unsupported compute precision: \(GlobalConfig.shared.computePrecision)")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .predictError, msg: "unsupported compute precision: \(GlobalConfig.shared.computePrecision)")
         }
         
         guard let filterHeight = param.filter.height else {
-            let error = PaddleMobileError.netError(message: "filter unsupported")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .netError, msg: "filter unsupported")
         }
         guard let filterWidth = param.filter.width else {
-            let error = PaddleMobileError.netError(message: "filter unsupported")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .netError, msg: "filter unsupported")
         }
         
         let offsetX = filterWidth/2 - Int(param.paddings[0])
@@ -153,8 +148,7 @@ class ConvBNReluKernel<P: PrecisionProtocol>: Kernel, Computable, Testable {
             
             try float32ToFloat16(input: newScale as! UnsafeMutablePointer<Float32>, output: newScaleBuffer.contents(), count: param.scale.buffer.length / MemoryLayout<P>.size)
         } else {
-            let error = PaddleMobileError.predictError(message: "unsupported compute precision: \(GlobalConfig.shared.computePrecision)")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .predictError, msg: "unsupported compute precision: \(GlobalConfig.shared.computePrecision)")
         }
         
         param.newBiase = newBiaseBuffer
@@ -163,31 +157,33 @@ class ConvBNReluKernel<P: PrecisionProtocol>: Kernel, Computable, Testable {
     
     func compute(commandBuffer: MTLCommandBuffer, param: ConvBNReluParam<P>) throws {
         guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
-            let error = PaddleMobileError.predictError(message: "encoder is nil")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .predictError, msg: "encoder is nil")
         }
         guard let tempPipline = pipline else {
-            let error = PaddleMobileError.predictError(message: "pipline is nil")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .predictError, msg: "pipline is nil")
         }
-        encoder.setTexture(param.input.metalTexture, index: 0)
-        encoder.setTexture(param.output.metalTexture, index: 1)
+        guard let inputMetalTexture = param.input.metalTexture else {
+            throw PaddleMobileError.makeError(type: .predictError, msg: "input metaltexture is nil")
+        }
+        guard let outputMetalTexture = param.output.metalTexture else {
+            throw PaddleMobileError.makeError(type: .predictError, msg: "output metaltexture is nil")
+        }
+        encoder.setTexture(inputMetalTexture, index: 0)
+        encoder.setTexture(outputMetalTexture, index: 1)
         encoder.setBytes(&metalParam, length: MemoryLayout<MetalConvParam>.size, index: 0)
         encoder.setBuffer(param.filter.buffer, offset: 0, index: 1)
         encoder.setBuffer(param.newScale!, offset: 0, index: 2)
         encoder.setBuffer(param.newBiase!, offset: 0, index: 3)
-        encoder.dispatch(computePipline: tempPipline, outTexture: param.output.metalTexture)
+        encoder.dispatch(computePipline: tempPipline, outTexture: outputMetalTexture)
         encoder.endEncoding()
     }
     
     public func test(commandBuffer: MTLCommandBuffer, param: ConvBNReluTestParam) throws {
         guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
-            let error = PaddleMobileError.defaultError(message: "encoder nil")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .defaultError, msg: "encoder nil")
         }
         guard let tempPipline = pipline else {
-            let error = PaddleMobileError.defaultError(message: "pipline nil")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .defaultError, msg: "pipline nil")
         }
         encoder.setTexture(param.inputTexture, index: 0)
         encoder.setTexture(param.outputTexture, index: 1)

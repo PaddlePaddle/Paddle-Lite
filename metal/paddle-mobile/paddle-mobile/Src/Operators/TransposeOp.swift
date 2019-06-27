@@ -41,12 +41,14 @@ class TransposeOp<P: PrecisionProtocol>: Operator<TransposeKernel<P>, TransposeP
     
     func delogOutput() {
         print(" \(type) output: ")
-        let device = para.output.metalTexture!.device
-        do {
-            let outputArray: [Float32] = try device.texture2tensor(texture: para.output.metalTexture, dim: para.output.tensorDim.dims, transpose: para.output.transpose)
-            print(outputArray.strideArray())
-        } catch _ {
+        if let metalTexture = para.output.metalTexture {
+            do {
+                let outputArray: [Float32] = try metalTexture.device.texture2tensor(texture: metalTexture, dim: para.output.tensorDim.dims, transpose: para.output.transpose)
+                print(outputArray.strideArray())
+            } catch _ {
+            }
         }
+        
     }
 }
 

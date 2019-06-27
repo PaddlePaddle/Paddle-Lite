@@ -22,15 +22,19 @@ struct BilinearInterpMetalParam {
 class BilinearInterpKernel<P: PrecisionProtocol>: Kernel, Computable{
     func compute(commandBuffer: MTLCommandBuffer, param: BilinearInterpParam<P>) throws {
         guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
-            let error = PaddleMobileError.predictError(message: "encoder is nil")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .predictError, msg: "encoder is nil")
         }
         guard let tempPipline = pipline else {
-            let error = PaddleMobileError.predictError(message: "pipline is nil")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .predictError, msg: "pipline is nil")
         }
-        encoder.setTexture(param.input.metalTexture, index: 0)
-        encoder.setTexture(param.output.metalTexture, index: 1)
+        guard let inputMetalTexture = param.input.metalTexture else {
+            throw PaddleMobileError.makeError(type: .predictError, msg: "input metaltexture is nil")
+        }
+        guard let outputMetalTexture = param.output.metalTexture else {
+            throw PaddleMobileError.makeError(type: .predictError, msg: "output metaltexture is nil")
+        }
+        encoder.setTexture(inputMetalTexture, index: 0)
+        encoder.setTexture(outputMetalTexture, index: 1)
         var ratio_h: Float32 = 0
         var ratio_w: Float32 = 0
         if param.output.tensorDim.dims[2] > 1 {
@@ -41,7 +45,7 @@ class BilinearInterpKernel<P: PrecisionProtocol>: Kernel, Computable{
         }
         var p = BilinearInterpMetalParam.init(ratio_h: ratio_h, ratio_w: ratio_w)
         encoder.setBytes(&p, length: MemoryLayout<BilinearInterpMetalParam>.size, index: 0)
-        encoder.dispatch(computePipline: tempPipline, outTexture: param.output.metalTexture)
+        encoder.dispatch(computePipline: tempPipline, outTexture: outputMetalTexture)
         encoder.endEncoding()
     }
     
@@ -54,8 +58,7 @@ class BilinearInterpKernel<P: PrecisionProtocol>: Kernel, Computable{
         } else if GlobalConfig.shared.computePrecision == .Float16 {
             try super.init(device: device, inFunctionName: "bilinear_interp_half", initContext: initContext)
         } else {
-            let error = PaddleMobileError.predictError(message: "unsupported compute precision: \(GlobalConfig.shared.computePrecision)")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .predictError, msg: "unsupported compute precision: \(GlobalConfig.shared.computePrecision)")
         }
     }
     
