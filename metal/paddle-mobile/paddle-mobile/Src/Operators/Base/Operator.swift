@@ -46,8 +46,7 @@ extension Runable where Self: OperatorProtocol {
     }
     
     func computeMiddleResult(device: MTLDevice, buffer: MTLCommandBuffer) throws {
-        let error = PaddleMobileError.netError(message: "need implement func computeMiddleResult")
-        throw paddleMobileLogAndThrow(error: error)
+        throw PaddleMobileError.makeError(type: .netError, msg: "need implement func computeMiddleResult")
     }
     
     func delogOutput() {

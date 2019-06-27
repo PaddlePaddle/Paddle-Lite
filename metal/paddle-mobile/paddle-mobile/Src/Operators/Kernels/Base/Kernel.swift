@@ -68,16 +68,20 @@ protocol KernelProtocol {
             } else if GlobalConfig.shared.computePrecision == .Float16 {
                 funcName = "reshape_\(irank)_\(orank)_half"
             } else {
-                let error = PaddleMobileError.predictError(message: "unsupported compute precision: \(GlobalConfig.shared.computePrecision)")
-                throw paddleMobileLogAndThrow(error: error)
+                throw PaddleMobileError.makeError(type: .predictError, msg: "unsupported compute precision: \(GlobalConfig.shared.computePrecision)")
             }
             let intermediatePipeline = try device.pipeLine(funcName: funcName, metalLoadMode: initContext.metalLoadMode, metalLibPath: initContext.metalLibPath)
             guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
-                let error = PaddleMobileError.predictError(message: "encoder is nil")
-                throw paddleMobileLogAndThrow(error: error)
+                throw PaddleMobileError.makeError(type: .predictError, msg: "encoder is nil")
             }
-            encoder.setTexture(input.metalTexture, index: 0)
-            encoder.setTexture(intermediateTexture.metalTexture, index: 1)
+            guard let inputMetalTexture = input.metalTexture else {
+                throw PaddleMobileError.makeError(type: .predictError, msg: "input metaltexture is nil")
+            }
+            guard let interMetalTexture = intermediateTexture.metalTexture else {
+                throw PaddleMobileError.makeError(type: .predictError, msg: "intermediateTexture metaltexture is nil")
+            }
+            encoder.setTexture(inputMetalTexture, index: 0)
+            encoder.setTexture(interMetalTexture, index: 1)
             var id: [Int32] = [1, 1, 1, 1]
             for i in 0..<input.tensorDim.cout() {
                 id[4-input.tensorDim.cout()+i] = Int32(input.tensorDim[i])
@@ -95,7 +99,7 @@ protocol KernelProtocol {
                 otrans: (ot[0], ot[1], ot[2], ot[3])
             )
             encoder.setBytes(&reshapeMetalParam, length: MemoryLayout<ReshapeMetalParam>.size, index: 0)
-            encoder.dispatch(computePipline: intermediatePipeline, outTexture: intermediateTexture.metalTexture)
+            encoder.dispatch(computePipline: intermediatePipeline, outTexture: interMetalTexture)
             encoder.endEncoding()
             return intermediateTexture
         } catch _ {
@@ -130,15 +134,13 @@ open class BufferToTextureKernel: Kernel {
         } else if GlobalConfig.shared.computePrecision == .Float32 {
             textureDesc.pixelFormat = .rgba32Float
         } else {
-            let error = PaddleMobileError.predictError(message: "unsupported compute precision: \(GlobalConfig.shared.computePrecision)")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .predictError, msg: "unsupported compute precision: \(GlobalConfig.shared.computePrecision)")
         }
         
         textureDesc.usage = [.shaderRead, .shaderWrite]
         textureDesc.storageMode = .shared
         guard let tempTexture = device.makeTexture(descriptor: textureDesc) else {
-            let error = PaddleMobileError.loaderError(message: "make texture error")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .loaderError, msg: "make texture error")
         }
         outputTexture = tempTexture
         let initContext = InitContext.init()
@@ -153,12 +155,10 @@ open class BufferToTextureKernel: Kernel {
     
     public func compute(inputBuffer: MTLBuffer , commandBuffer: MTLCommandBuffer) throws {
         guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
-            let error = PaddleMobileError.predictError(message: "encoder is nil")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .predictError, msg: "encoder is nil")
         }
         guard let tempPipline = pipline else {
-            let error = PaddleMobileError.predictError(message: "pipline is nil")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .predictError, msg: "pipline is nil")
         }
         encoder.setBuffer(inputBuffer, offset: 0, index: 0)
         encoder.setTexture(outputTexture, index: 0)
@@ -183,15 +183,13 @@ open class BufferToTextureKernel: Kernel {
         } else if GlobalConfig.shared.computePrecision == .Float32 {
             textureDesc.pixelFormat = .rgba32Float
         } else {
-            let error = PaddleMobileError.defaultError(message: "unsupported compute precision: \(GlobalConfig.shared.computePrecision)")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .defaultError, msg: "unsupported compute precision: \(GlobalConfig.shared.computePrecision)")
         }
         
         textureDesc.usage = [.shaderRead, .shaderWrite]
         textureDesc.storageMode = .shared
         guard let tempTexture = device.makeTexture(descriptor: textureDesc) else {
-            let error = PaddleMobileError.loaderError(message: "make texture error")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .loaderError, msg: "make texture error")
         }
         outputTexture = tempTexture
         
@@ -203,12 +201,10 @@ open class BufferToTextureKernel: Kernel {
     
     public func compute(inputTexuture: MTLTexture, commandBuffer: MTLCommandBuffer) throws {
         guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
-            let error = PaddleMobileError.predictError(message: "encoder is nil")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .predictError, msg: "encoder is nil")
         }
         guard let tempPipline = pipline else {
-            let error = PaddleMobileError.predictError(message: "pipline is nil")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .predictError, msg: "pipline is nil")
         }
         encoder.setTexture(inputTexuture, index: 0)
         encoder.setTexture(outputTexture, index: 1)

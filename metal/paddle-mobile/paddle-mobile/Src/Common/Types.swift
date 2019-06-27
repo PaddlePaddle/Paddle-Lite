@@ -44,13 +44,12 @@ extension Float16: PrecisionProtocol {
     public init<P>(_ inP: P) throws where P : PrecisionProtocol {
         switch P.precisionType {
         case .Float32:
-            let error = PaddleMobileError.defaultError(message: "Float16 can not be initialized from Float32")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .defaultError, msg: "Float16 can not be initialized from Float32")
+
         case .Float16:
             self = inP as! Int16
         default:
-            let error = PaddleMobileError.defaultError(message: "Float16 must be initialized from Float16")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .defaultError, msg:  "Float16 must be initialized from Float16")
         }
     }
     
@@ -76,8 +75,7 @@ extension Float32: PrecisionProtocol {
         case .Float16:
             self = Float32.init(Int32.init(inP as! Int16))
         default:
-            let error = PaddleMobileError.defaultError(message: "Float32 must be initialized from Float16 or Float32")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .defaultError, msg: "Float32 must be initialized from Float16 or Float32")
         }
     }
     
@@ -90,8 +88,7 @@ public func float32ToFloat16(input: UnsafeMutablePointer<Float32>, output: Unsaf
     var float32Buffer = vImage_Buffer(data: input,  height: 1, width: UInt(count), rowBytes: count * 4)
     var float16buffer = vImage_Buffer(data: output, height: 1, width: UInt(count), rowBytes: count * 2)
     guard vImageConvert_PlanarFtoPlanar16F(&float32Buffer, &float16buffer, 0) == kvImageNoError else {
-        let error = PaddleMobileError.defaultError(message: "float 32 to float 16 error !")
-        throw paddleMobileLogAndThrow(error: error)
+        throw PaddleMobileError.makeError(type: .defaultError, msg: "float 32 to float 16 error!")
     }
 }
 
@@ -105,8 +102,7 @@ public func float16to32(input: UnsafeMutablePointer<Float16>, output: UnsafeMuta
     var bufferFloat16 = vImage_Buffer(data: input,  height: 1, width: UInt(count), rowBytes: count * 2)
     var bufferFloat32 = vImage_Buffer(data: output, height: 1, width: UInt(count), rowBytes: count * 4)
     if vImageConvert_Planar16FtoPlanarF(&bufferFloat16, &bufferFloat32, 0) != kvImageNoError {
-        let error = PaddleMobileError.defaultError(message: "convert float16 to float32 error")
-        throw paddleMobileLogAndThrow(error: error)
+        throw PaddleMobileError.makeError(type: .defaultError, msg: "convert float16 to float32 error")
     }
 }
 

@@ -50,8 +50,7 @@ class ConvDataSource<P: PrecisionProtocol>: NSObject, MPSCNNConvolutionDataSourc
             if let tempBiasTerms = _biasTensor.data.pointer as? UnsafeMutablePointer<Float> {
                 _biasTerms = tempBiasTerms
             } else {
-                let error = PaddleMobileError.loaderError(message: "_biasTensor.data.pointer not UnsafeMutablePointer<Float>")
-                throw paddleMobileLogAndThrow(error: error)
+                throw PaddleMobileError.makeError(type: .loaderError, msg: "_biasTensor.data.pointer not UnsafeMutablePointer<Float>")
             }
         case .Float16:
             _biasTerms = UnsafeMutablePointer<Float>.allocate(capacity: _biasTensor.data.count)
@@ -59,8 +58,7 @@ class ConvDataSource<P: PrecisionProtocol>: NSObject, MPSCNNConvolutionDataSourc
                 if let float16Point = _biasTensor.data.pointer as? UnsafeMutablePointer<Float16> {
                     try float16to32(input: float16Point, output: _biasTerms!, count: _biasTensor.data.count)
                 } else {
-                    let error = PaddleMobileError.loaderError(message: "_biasTensor.data.pointer not UnsafeMutablePointer<Float16>")
-                    throw paddleMobileLogAndThrow(error: error)
+                    throw PaddleMobileError.makeError(type: .loaderError, msg: "_biasTensor.data.pointer not UnsafeMutablePointer<Float16>")
                 }
             } catch let error {
                 _biasTerms?.deallocate()
@@ -129,8 +127,7 @@ class ConvAddKernel<P: PrecisionProtocol>: Kernel, Computable {
             try setupWithMPS(device: device, param: param)
         } else {
             if functionName == nil {
-                let error = PaddleMobileError.netError(message: "function name nil")
-                throw paddleMobileLogAndThrow(error: error)
+                throw PaddleMobileError.makeError(type: .netError, msg: "function name nil")
             }
             try super.init(device: device, inFunctionName: functionName, initContext: initContext)
             try setupWithoutMPS(device: device, param: param)
@@ -138,28 +135,32 @@ class ConvAddKernel<P: PrecisionProtocol>: Kernel, Computable {
     }
     
     func compute(commandBuffer: MTLCommandBuffer, param: ConvAddParam<P>) throws {
+        guard let inputMetalTexture = param.input.metalTexture else {
+            throw PaddleMobileError.makeError(type: .predictError, msg: "input metaltexture is nil")
+        }
+        guard let outputMetalTexture = param.output.metalTexture else {
+            throw PaddleMobileError.makeError(type: .predictError, msg: "output metaltexture is nil")
+        }
         if #available(iOS 10.0, *) {
             if let conv = mpsConvOp as? MPSCNNConvolution {
-                let inputImage = MPSImage.init(texture: param.input.metalTexture, featureChannels: param.input.tensorDim[1])
-                let outputImage = MPSImage.init(texture: param.output.metalTexture, featureChannels: param.output.tensorDim[1])
+                let inputImage = MPSImage.init(texture: inputMetalTexture, featureChannels: param.input.tensorDim[1])
+                let outputImage = MPSImage.init(texture: outputMetalTexture, featureChannels: param.output.tensorDim[1])
                 conv.encode(commandBuffer: commandBuffer, sourceImage: inputImage, destinationImage: outputImage)
                 return
             }
         }
         guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
-            let error = PaddleMobileError.predictError(message: "encoder is nil")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .predictError, msg: "encoder is nil")
         }
         guard let tempPipline = pipline else {
-            let error = PaddleMobileError.predictError(message: "pipline is nil")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .predictError, msg: "pipline is nil")
         }
-        encoder.setTexture(param.input.metalTexture, index: 0)
-        encoder.setTexture(param.output.metalTexture, index: 1)
+        encoder.setTexture(inputMetalTexture, index: 0)
+        encoder.setTexture(outputMetalTexture, index: 1)
         encoder.setBytes(&metalParam, length: MemoryLayout<MetalConvParam>.size, index: 0)
         encoder.setBuffer(param.filter.buffer, offset: 0, index: 1)
         encoder.setBuffer(param.y.buffer, offset: 0, index: 2)
-        encoder.dispatch(computePipline: tempPipline, outTexture: param.output.metalTexture, groupDepth: type(of: self).isWinoGrad(functionName: functionName) ? 1 : nil)
+        encoder.dispatch(computePipline: tempPipline, outTexture: outputMetalTexture, groupDepth: type(of: self).isWinoGrad(functionName: functionName) ? 1 : nil)
         encoder.endEncoding()
     }
     
@@ -207,12 +208,10 @@ class ConvAddKernel<P: PrecisionProtocol>: Kernel, Computable {
             let _ = try param.filter.convert(converter: WinogradPointerConverter<P>.init())
         }
         guard let filterChannel = param.filter.channel else {
-            let error = PaddleMobileError.netError(message: "filter unsupported")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .netError, msg: "filter unsupported")
         }
         guard let filterN = param.filter.n else {
-            let error = PaddleMobileError.netError(message: "filter unsupported")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .netError, msg: "filter unsupported")
         }
         let padWhenOneC = !(filterChannel == 1 && filterN == param.input.tensorDim[1])
         try param.filter.initBuffer(device: device, precision: GlobalConfig.shared.computePrecision, padWhenOneC: padWhenOneC)

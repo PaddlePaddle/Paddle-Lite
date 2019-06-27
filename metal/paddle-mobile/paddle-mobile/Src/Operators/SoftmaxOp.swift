@@ -50,7 +50,7 @@ class SoftmaxOp<P: PrecisionProtocol>: Operator<SoftmaxKernel<P>, SoftmaxParam<P
         print(para.output)
         let padToFourDim = para.output.padToFourDim
         do {
-            let outputArray: [Float32] = try para.output.metalTexture.realNHWC(dim: (n: padToFourDim[0], h: padToFourDim[1], w: padToFourDim[2], c: padToFourDim[3]))
+            let outputArray: [Float32] = try para.output.metalTexture?.realNHWC(dim: (n: padToFourDim[0], h: padToFourDim[1], w: padToFourDim[2], c: padToFourDim[3])) ?? []
             print(outputArray.strideArray())
         } catch _ {
         }

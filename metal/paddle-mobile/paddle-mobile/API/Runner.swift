@@ -35,6 +35,7 @@ import Foundation
 @objc public class Runner: NSObject {
     var program: Program?
     var executor: Executorable?
+    var memoryManager: MemoryManager?
     var queue: MTLCommandQueue?
     var textureLoader: MTKTextureLoader?
     public let net: Net
@@ -42,7 +43,6 @@ import Foundation
     let numel: Int
     private static let loadLock = NSLock()
     private static let clearLock = NSLock()
-    
     /// 初始化函数
     ///
     /// - Parameters:
@@ -50,8 +50,7 @@ import Foundation
     ///   - commandQueue: commandQueue
     @objc public init(inNet: Net, commandQueue: MTLCommandQueue?) throws {
         guard inNet.inputDim.cout() == 4 else {
-            let error = PaddleMobileError.netError(message: "input dim count must 4")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .netError, msg: "input dim count must 4")
         }
         
         net = inNet
@@ -76,9 +75,9 @@ import Foundation
     /// load 模型, 返回 true 可进行预测，公共方法，保证线程安全
     ///
     /// - Returns: load 成功或失败
-    @objc public func load(optimize: Bool) -> Bool {
+    @objc public func load(optimizeProgram: Bool, optimizeMemory: Bool = true) -> Bool {
         Runner.loadLock.lock()
-        let success = unSafeLoad(optimize: optimize)
+        let success = unSafeLoad(optimizeProgram: optimizeProgram, optimizeMemory: optimizeMemory)
         Runner.loadLock.unlock()
         return success
     }
@@ -86,7 +85,7 @@ import Foundation
     /// load 模型, 返回 true 可进行预测，不保证线程安全
     ///
     /// - Returns: load 成功或失败
-    private func unSafeLoad(optimize: Bool = true) -> Bool {
+    private func unSafeLoad(optimizeProgram: Bool = true, optimizeMemory: Bool = true) -> Bool {
         guard let inDevice = device, let inQueue = queue else {
             paddleMobileLog("paddle mobile gpu load error, need MTLCommandQueue", logLevel: .FatalError, callStack: Thread.callStackSymbols)
             return false
@@ -105,9 +104,9 @@ import Foundation
                     paddleMobileLog("load from memory param size or model size can't 0", logLevel: .FatalError, callStack: Thread.callStackSymbols)
                     return false
                 }
-                program = try loader.load(device: inDevice, paramPointer: inParamPointer, paramSize: net.paramSize, modePointer: inModelPointer, modelSize: net.modelSize, optimize: optimize)
+                program = try loader.load(device: inDevice, paramPointer: inParamPointer, paramSize: net.paramSize, modePointer: inModelPointer, modelSize: net.modelSize, optimize: optimizeProgram)
             } else if let inModelPath = net.modelPath, let inParamPath = net.paramPath {
-                program = try loader.load(device: inDevice, modelPath: inModelPath, paraPath: inParamPath, optimize: optimize)
+                program = try loader.load(device: inDevice, modelPath: inModelPath, paraPath: inParamPath, optimize: optimizeProgram)
             } else {
                 paddleMobileLog("model pointer or model file path need be specified", logLevel: .FatalError, callStack: Thread.callStackSymbols)
                 return false
@@ -127,6 +126,14 @@ import Foundation
             }
             
             try net.updateProgram(program: program!)
+            
+            if optimizeMemory, #available(iOS 10.0, *) {
+                memoryManager = MemoryOptimize(program: program!, device: inDevice)
+            } else {
+                memoryManager = MemoryManager(program: program!, device: inDevice)
+            }
+            memoryManager?.optimizeProgramMemory()
+            memoryManager?.makeMetalTextures()
         } catch _ {
             return false
         }
@@ -167,6 +174,7 @@ import Foundation
         executor?.clear()
         executor = nil
         program = nil
+        memoryManager = nil
         Runner.clearLock.unlock()
     }
     
@@ -232,6 +240,8 @@ import Foundation
             net.inputDim = inDim
             do {
                 try net.updateProgram(program: inProgram)
+                memoryManager?.reallocMemory()
+                memoryManager?.makeMetalTextures()
             } catch _ {
                 return false
             }

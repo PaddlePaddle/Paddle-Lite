@@ -57,7 +57,7 @@ class MulticlassNMSOp<P: PrecisionProtocol>: Operator<MulticlassNMSKernel<P>, Mu
     func delogOutput() {
         print(" nms - output: ")
         do {
-            let output = try para.bboxes.metalTexture.float32Array().strideArray()
+            let output = try para.bboxes.metalTexture?.float32Array().strideArray() ?? []
             print(output)
         } catch _ {
         }

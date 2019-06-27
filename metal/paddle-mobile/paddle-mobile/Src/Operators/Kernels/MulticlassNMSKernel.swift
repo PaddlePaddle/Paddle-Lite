@@ -28,34 +28,36 @@ class MulticlassNMSKernel<P: PrecisionProtocol>: Kernel, Computable{
             pipline1 = try device.pipeLine(funcName: "nms_fetch_bbox_half", metalLoadMode: initContext.metalLoadMode, metalLibPath: initContext.metalLibPath)
             try super.init(device: device, inFunctionName: "nms_fetch_result_half", initContext: initContext)
         } else {
-            let error = PaddleMobileError.predictError(message: "unsupported compute precision: \(GlobalConfig.shared.computePrecision)")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .predictError, msg: "unsupported compute precision: \(GlobalConfig.shared.computePrecision)")
         }
         
     }
     
     func compute(commandBuffer: MTLCommandBuffer, param: MulticlassNMSParam<P>) throws {
         guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
-            let error = PaddleMobileError.predictError(message: "encoder is nil")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .predictError, msg: "encoder is nil")
         }
         guard let tempPipline = pipline else {
-            let error = PaddleMobileError.predictError(message: "pipline is nil")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .predictError, msg: "pipline is nil")
         }
-        encoder.setTexture(param.scores.metalTexture, index: 0)
+        guard let scoresMetalTexture = param.scores.metalTexture else {
+            throw PaddleMobileError.makeError(type: .predictError, msg: "scores metaltexture is nil")
+        }
+        guard let bboxesMetalTexture = param.bboxes.metalTexture else {
+            throw PaddleMobileError.makeError(type: .predictError, msg: "bboxes metaltexture is nil")
+        }
+        encoder.setTexture(scoresMetalTexture, index: 0)
         encoder.setBuffer(param.middleOutput.resultBuffer!, offset: 0, index: 0)
-        encoder.dispatch(computePipline: tempPipline, outTexture: param.scores.metalTexture)
+        encoder.dispatch(computePipline: tempPipline, outTexture: scoresMetalTexture)
         encoder.endEncoding()
         
         guard let encoderBox = commandBuffer.makeComputeCommandEncoder() else {
-            let error = PaddleMobileError.predictError(message: "encoder is nil")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .predictError, msg: "encoder is nil")
         }
         
         encoderBox.setTexture(param.bboxes.metalTexture, index: 0)
         encoderBox.setBuffer(param.bboxOutput.resultBuffer!, offset: 0, index: 0)
-        encoderBox.dispatch(computePipline: pipline1, outTexture: param.bboxes.metalTexture)
+        encoderBox.dispatch(computePipline: pipline1, outTexture: bboxesMetalTexture)
         encoderBox.endEncoding()
     }
 }

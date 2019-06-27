@@ -25,13 +25,11 @@ class SplitParam<P: PrecisionProtocol>: OpParam {
             axis = input.tensorDim.cout() + axis
         }
         guard let outlist = opDesc.outputs["Out"] else {
-            let error = PaddleMobileError.netError(message: "split output desc nil")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .netError, msg: "split output desc nil")
         }
         for out in outlist {
             guard let variant = inScope[out], let v = variant as? Texture else {
-                let error = PaddleMobileError.netError(message: "split output texture nil")
-                throw paddleMobileLogAndThrow(error: error)
+                throw PaddleMobileError.makeError(type: .netError, msg: "split output texture nil")
             }
             outputList.append(v)
             sections.append(Int32(v.tensorDim.dims[axis]))
@@ -59,11 +57,12 @@ class SplitOp<P: PrecisionProtocol>: Operator<SplitKernel<P>, SplitParam<P>>, Ru
     
     func delogOutput() {
         print(" \(type) output: ")
-        let device = para.input.metalTexture!.device
         do {
             for out in para.outputList {
-                let arr: [Float32] = try device.texture2tensor(texture: out.metalTexture, dim: out.tensorDim.dims, transpose: out.transpose)
-                print(arr.strideArray())
+                if let metalTexture = out.metalTexture {
+                    let arr: [Float32] = try metalTexture.device.texture2tensor(texture: metalTexture, dim: out.tensorDim.dims, transpose: out.transpose)
+                    print(arr.strideArray())
+                }
             }
         } catch _ {
         }

@@ -76,36 +76,59 @@ public class Texture: Tensorial {
     
     /// tensor dim pad to four
     public var padToFourDim: Dim
-    private var textureDesc: MTLTextureDescriptor!
-    public var metalTexture: MTLTexture!
+    private(set) var textureDesc: MTLTextureDescriptor?
+    public var metalTexture: MTLTexture? {
+        get {
+            if _metalTexture == nil, let tmpTextureDesc = textureDesc {
+                _metalTexture = device.makeTexture(descriptor: tmpTextureDesc)
+            }
+            return _metalTexture
+        }
+        set {
+            _metalTexture = newValue
+        }
+    }
+    private var _metalTexture: MTLTexture?
     var transpose: [Int] = [0, 1, 2, 3]
+
+    public var device: MTLDevice
     
     func elementCount() -> Int {
-        return metalTexture.width * metalTexture.height * metalTexture.arrayLength * 4
+        if let tmpMetalTexture = _metalTexture {
+            return tmpMetalTexture.width * tmpMetalTexture.height * tmpMetalTexture.arrayLength * 4
+        } else if let tmpTextureDesc = textureDesc {
+            return tmpTextureDesc.width * tmpTextureDesc.height * tmpTextureDesc.arrayLength * 4
+        } else {
+            paddleMobileLog("texture desc nil, using tensorDim.numel() as element count may cause trouble", logLevel: .Warning)
+            return tensorDim.numel()
+        }
     }
     
     func toTensor() throws -> [Float32] {
-        guard  padToFourDim.cout() == 4 else {
-            let error = PaddleMobileError.netError(message: "Texture toTensor padToFourDim count must be 4")
-            throw paddleMobileLogAndThrow(error: error)
+        guard padToFourDim.cout() == 4 else {
+            throw PaddleMobileError.makeError(type: .netError, msg: "Texture toTensor padToFourDim count must be 4")
         }
-        return try metalTexture.toTensor(dim: (n: dim[0], c: dim[3], h: dim[1], w: dim[2]))
+        guard let tmpMetalTexture = metalTexture else {
+            throw PaddleMobileError.makeError(type: .netError, msg: "metaltexture nil")
+        }
+        return try tmpMetalTexture.toTensor(dim: (n: dim[0], c: dim[3], h: dim[1], w: dim[2]))
     }
     
     func realNHWC() throws -> [Float32] {
         guard padToFourDim.cout() == 4 else {
-            let error = PaddleMobileError.netError(message: "Texture toTensor padToFourDim count must be 4")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .netError, msg: "Texture toTensor padToFourDim count must be 4")
         }
-        return try metalTexture.realNHWC(dim: (n: padToFourDim[0], h: padToFourDim[1], w: padToFourDim[2], c: padToFourDim[3]))
+        guard let tmpMetalTexture = metalTexture else {
+            throw PaddleMobileError.makeError(type: .netError, msg: "metaltexture nil")
+        }
+        return try tmpMetalTexture.realNHWC(dim: (n: padToFourDim[0], h: padToFourDim[1], w: padToFourDim[2], c: padToFourDim[3]))
     }
 
     public func initTexture(device: MTLDevice, inTranspose: [Int] = [0, 1, 2, 3], computePrecision: Precision = .Float16) throws {
         transpose = inTranspose
         for i in 0..<(4 - tensorDim.cout()) {
             if i != inTranspose[i] {
-                let error = PaddleMobileError.loaderError(message: " dims error ")
-                throw paddleMobileLogAndThrow(error: error)
+                throw PaddleMobileError.makeError(type: .loaderError, msg: "dims error")
             }
         }
         
@@ -133,8 +156,7 @@ public class Texture: Tensorial {
             tmpTextureDes.height = newDim[2]
             tmpTextureDes.arrayLength = 1
         default:
-            let error = PaddleMobileError.loaderError(message: "unreachable")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .loaderError, msg: "unreachable")
         }
         
         if computePrecision == .Float16 {
@@ -162,11 +184,7 @@ public class Texture: Tensorial {
         tmpTextureDes.usage = [.shaderRead, .shaderWrite]
         tmpTextureDes.storageMode = .shared
         textureDesc = tmpTextureDes
-        guard let inTexture =  device.makeTexture(descriptor: tmpTextureDes) else {
-            let error = PaddleMobileError.loaderError(message: "create texture is nil")
-            throw paddleMobileLogAndThrow(error: error)
-        }
-        metalTexture =  inTexture
+        _metalTexture = nil
     }
     
     public func updateDims(inTensorDim: Dim, inDim: Dim) throws {
@@ -181,8 +199,7 @@ public class Texture: Tensorial {
             fourDimNum.append(contentsOf: inDim.dims)
             fourDim = Dim.init(inDim: fourDimNum)
         } else {
-            let error = PaddleMobileError.loaderError(message: "not support")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .loaderError, msg: "not support")
         }
         
         tensorDim = inTensorDim
@@ -195,6 +212,7 @@ public class Texture: Tensorial {
         if GlobalConfig.shared.debug {
             print(" in dim > \(inDim)")
         }
+        self.device = device
         var fourDim: Dim
         if inDim.cout() == 4 {
             fourDim = inDim
@@ -206,8 +224,8 @@ public class Texture: Tensorial {
             fourDimNum.append(contentsOf: inDim.dims)
             fourDim = Dim.init(inDim: fourDimNum)
         } else {
-            let error = PaddleMobileError.netError(message: "Texture init: dim count \(inDim) unsupported")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .netError, msg: "Texture init: dim count \(inDim) unsupported")
+
         }
         tensorDim = inDim
         dim = fourDim
@@ -226,7 +244,7 @@ extension Texture {
     public var debugDescription: String{
         var str = ""
         str += "Dim: \(dim) \n value:[ "
-        str += "\(metalTexture.description)"
+        str += "\(_metalTexture?.description ?? "")"
         str += " ]"
         return str
     }

@@ -37,8 +37,7 @@ class ShapeKernel<P: PrecisionProtocol>: Kernel, Computable{
         } else if GlobalConfig.shared.computePrecision == .Float16 {
             try super.init(device: device, inFunctionName: "shape_half", initContext: initContext)
         } else {
-            let error = PaddleMobileError.predictError(message: "unsupported compute precision: \(GlobalConfig.shared.computePrecision)")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .predictError, msg: "unsupported compute precision: \(GlobalConfig.shared.computePrecision)")
         }
     }
     

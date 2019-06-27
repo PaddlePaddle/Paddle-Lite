@@ -24,15 +24,13 @@ class FileReader {
     let fileSize: Int
     init(paramPath: String) throws {
         guard let tmpFile = fopen(paramPath, "rb") else {
-            let error = PaddleMobileError.loaderError(message: "open param file error" + paramPath)
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .loaderError, msg: "open param file error" + paramPath)
         }
         file = tmpFile
         fseek(file, 0, SEEK_END)
         fileSize = ftell(file)
         guard fileSize > 0 else {
-            let error = PaddleMobileError.loaderError(message: "param file size is too small")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .loaderError, msg: "param file size is too small")
         }
         rewind(file)
     }
@@ -122,7 +120,7 @@ class ViewController: UIViewController {
             fatalError( " unsupport " )
         }
         
-        if runner.load() {
+        if runner.load(optimizeProgram: true, optimizeMemory: true) {
             print(" load success ! ")
         } else {
             print(" load error ! ")

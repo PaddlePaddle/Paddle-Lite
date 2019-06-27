@@ -86,8 +86,7 @@ import Foundation
     @objc open func fetchResult(paddleMobileRes: [GPUResultHolder]) -> [ResultHolder] {
         let results = try? paddleMobileRes.map { (gpuRes) -> ResultHolder in
             guard let inResPointer = gpuRes.resultPointer else {
-                let error = PaddleMobileError.defaultError(message: "resultPointer nil")
-                throw paddleMobileLogAndThrow(error: error)
+                throw PaddleMobileError.makeError(type: .defaultError, msg: "resultPointer nil")
             }
             return ResultHolder.init(inResult: inResPointer, inCapacity: gpuRes.capacity, inDim: gpuRes.dim)
         }

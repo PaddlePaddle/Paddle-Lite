@@ -27,8 +27,7 @@ class SliceParam<P: PrecisionProtocol>: OpParam {
             }
         }
         guard axes.count == 1 && axes[0] == 1 else {
-            let error = PaddleMobileError.netError(message: "slice only support channel axe")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .netError, msg: "slice only support channel axe")
         }
         for i in 0..<axes.count {
             ranges[Int(axes[i])] = [Int16(starts[i]), Int16(ends[i])]

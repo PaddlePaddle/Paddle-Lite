@@ -75,13 +75,11 @@ public class Executor<P: PrecisionProtocol>: Executorable{
         inflightSemaphore.wait()
         guard isValid else {
             inflightSemaphore.signal()
-            let error = PaddleMobileError.predictError(message: "Executor is cleared and invalid")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .predictError, msg: "Executor is cleared and invalid")
         }
         guard let buffer = queue.makeCommandBuffer() else {
             inflightSemaphore.signal()
-            let error = PaddleMobileError.predictError(message: "CommandBuffer is nil")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .predictError, msg: "CommandBuffer is nil")
         }
         
         let resInput: MTLTexture

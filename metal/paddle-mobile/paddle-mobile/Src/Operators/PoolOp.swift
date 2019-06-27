@@ -26,8 +26,7 @@ class PoolParam<P: PrecisionProtocol>: OpParam {
         ceilMode = try PoolParam.getAttr(key: "ceil_mode", attrs: opDesc.attrs)
         globalPooling = try PoolParam.getAttr(key: "global_pooling", attrs: opDesc.attrs)
         guard input.transpose == [0, 2, 3, 1] else {
-            let error = PaddleMobileError.netError(message: "input transpose must equal to [0, 2, 3, 1]")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .netError, msg: "input transpose must equal to [0, 2, 3, 1]")
         }
     }
     let input: Texture
@@ -55,7 +54,7 @@ class PoolOp<P: PrecisionProtocol>: Operator<PoolKernel<P>, PoolParam<P>>, Runab
     func delogOutput() {
         print(" \(type) output: ")
         do {
-            let output = try para.output.metalTexture.toTensor(dim: (n: para.output.tensorDim[0], c: para.output.tensorDim[1], h: para.output.tensorDim[2], w: para.output.tensorDim[3])).strideArray()
+            let output = try para.output.metalTexture?.toTensor(dim: (n: para.output.tensorDim[0], c: para.output.tensorDim[1], h: para.output.tensorDim[2], w: para.output.tensorDim[3])).strideArray() ?? []
             print(output)
         } catch _ {
         }

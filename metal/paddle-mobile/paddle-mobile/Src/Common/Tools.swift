@@ -16,15 +16,13 @@ import Foundation
 
 func writeToLibrary<P: PrecisionProtocol>(fileName: String, array: [P]) throws {
     guard let libraryPath = NSSearchPathForDirectoriesInDomains(.libraryDirectory, .userDomainMask, true).last else {
-        let error = PaddleMobileError.defaultError(message: "library path get error")
-        throw paddleMobileLogAndThrow(error: error)
+        throw PaddleMobileError.makeError(type: .defaultError, msg: "library path get error")
     }
     let filePath = libraryPath + "/" + fileName
     let fileManager = FileManager.init()
     fileManager.createFile(atPath: filePath, contents: nil, attributes: nil)
     guard let fileHandler = FileHandle.init(forWritingAtPath: filePath) else {
-        let error = PaddleMobileError.defaultError(message: "file handler nil")
-        throw paddleMobileLogAndThrow(error: error)
+        throw PaddleMobileError.makeError(type: .defaultError, msg: "file handler nil")
     }
     let data = Data.init(buffer: UnsafeBufferPointer.init(start: array, count: array.count))
     fileHandler.write(data)
@@ -33,15 +31,13 @@ func writeToLibrary<P: PrecisionProtocol>(fileName: String, array: [P]) throws {
 
 public func writeToLibrary<P: PrecisionProtocol>(fileName: String, buffer: UnsafeBufferPointer<P>) throws {
     guard let libraryPath = NSSearchPathForDirectoriesInDomains(.libraryDirectory, .userDomainMask, true).last else {
-        let error = PaddleMobileError.defaultError(message: "library path get error")
-        throw paddleMobileLogAndThrow(error: error)
+        throw PaddleMobileError.makeError(type: .defaultError, msg: "library path get error")
     }
     let filePath = libraryPath + "/" + fileName
     let fileManager = FileManager.init()
     fileManager.createFile(atPath: filePath, contents: nil, attributes: nil)
     guard let fileHandler = FileHandle.init(forWritingAtPath: filePath) else {
-        let error = PaddleMobileError.defaultError(message: "file handler nil")
-        throw paddleMobileLogAndThrow(error: error)
+        throw PaddleMobileError.makeError(type: .defaultError, msg: "file handler nil")
     }
     let data = Data.init(buffer: buffer)
     fileHandler.write(data)
@@ -50,8 +46,7 @@ public func writeToLibrary<P: PrecisionProtocol>(fileName: String, buffer: Unsaf
 
 func createFile(fileName: String) throws -> String {
     guard let libraryPath = NSSearchPathForDirectoriesInDomains(.libraryDirectory, .userDomainMask, true).last else {
-        let error = PaddleMobileError.defaultError(message: "library path get error")
-        throw paddleMobileLogAndThrow(error: error)
+        throw PaddleMobileError.makeError(type: .defaultError, msg: "library path get error")
     }
     let filePath = libraryPath + "/" + fileName
     let fileManager = FileManager.init()

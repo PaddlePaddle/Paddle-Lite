@@ -20,8 +20,7 @@ class BatchNormParam<P: PrecisionProtocol>: OpParam {
     required init(opDesc: PMOpDesc, inScope: Scope) throws {
         input = try BatchNormParam.inputX(inputs: opDesc.inputs, from: inScope)
         if input.transpose != [0, 2, 3, 1] {
-            let error = PaddleMobileError.netError(message: "batch norm only accepts NHWC")
-            throw paddleMobileLogAndThrow(error: error)
+            throw PaddleMobileError.makeError(type: .netError, msg: "batch norm only accepts NHWC")
         }
         output = try BatchNormParam.outputY(outputs: opDesc.outputs, from: inScope)
         bias = try BatchNormParam.getFirstTensor(key: "Bias", map: opDesc.paraInputs, from: inScope)
@@ -53,13 +52,13 @@ class BatchNormOp<P: PrecisionProtocol>: Operator<BatchNormKernel<P>, BatchNormP
     
     func delogOutput() {
         print(" \(type) output: ")
-        let device = para.output.metalTexture!.device
-        do {
-            let outputArray: [Float32] = try device.texture2tensor(texture: para.output.metalTexture, dim: para.output.tensorDim.dims, transpose: para.output.transpose)
-            print(outputArray.strideArray())
-        } catch _ {
-    
+        if let metalTexture = para.output.metalTexture {
+            do {
+                let outputArray: [Float32] = try metalTexture.device.texture2tensor(texture: metalTexture, dim: para.output.tensorDim.dims, transpose: para.output.transpose)
+                print(outputArray.strideArray())
+            } catch _ {
+                
+            }
         }
-        
     }
 }
