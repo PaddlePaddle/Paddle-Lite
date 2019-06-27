@@ -518,7 +518,7 @@ void sgemv_trans_mx1(const int M, const int N, const float alpha,
   float32x4_t _valpha = vdupq_n_f32(alpha);
   if (beta == 0.f) {
     #pragma omp parallel for
-    for (int m = 0; m < M; m += 4) {
+    for (int m = 0; m < M - 3; m += 4) {
       float32x4_t _sum0 = vld1q_f32(buf_c + m);
       for (int tid = 1; tid < threads_num; ++tid) {
         _sum0 += vld1q_f32(buf_c + tid * M + m);
@@ -545,7 +545,7 @@ void sgemv_trans_mx1(const int M, const int N, const float alpha,
       vst1q_f32(C + m, _sum0 * _valpha + _vbeta * _vc);
     }
 
-    for (int m = (M & 0xfffffffc); m < M; ++m) {
+    for (int m = (M & 0xfffffffc); m < M - 3; ++m) {
       float _sum0 = *(buf_c + m);
       for (int tid = 1; tid < threads_num; ++tid) {
         _sum0 += *(buf_c + tid * M + m);
