@@ -30,10 +30,10 @@ bool ConvKernel<CPU, float>::Init(ConvParam<CPU> *param) {
 template <>
 void ConvKernel<CPU, float>::Compute(const ConvParam<CPU> &param) {
   switch (param.ExecMode()) {
-#ifndef __aarch64__
     case ConvParam<CPU>::EXEC_GEMM_INT8:
       GemmConv<int8_t, int32_t>(param);
       break;
+#ifndef __aarch64__
     case ConvParam<CPU>::EXEC_DEPTHWISE3x3_INT8:
       DepthwiseConv3x3<int8_t, int32_t>(param);
       break;
