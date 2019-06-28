@@ -31,7 +31,7 @@ void test(int argc, char *argv[]) {
   bool enable_memory_optimization = std::stoi(argv[arg_index]) == 1;
   arg_index++;
   paddle_mobile::PaddleMobileConfigInternal config;
-  config.enable_memory_optimization = enable_memory_optimization;
+  config.memory_optimization_level = enable_memory_optimization ? MemoryOptimizationWithoutFeeds : NoMemoryOptimization;
   paddle_mobile::PaddleMobile<paddle_mobile::CPU> paddle_mobile(config);
   paddle_mobile.SetThreadNum(1);
 
@@ -75,56 +75,72 @@ void test(int argc, char *argv[]) {
                          fuse, false, 1, true)) {
     auto time2 = time();
     std::cout << "auto-test"
-              << " load-time-cost :" << time_diff(time1, time1) << "ms"
+              << " load-time-cost :" << time_diff(time1, time2) << "ms"
               << std::endl;
 
-    std::vector<float> input_data;
+    float input_data_array[size];
     std::ifstream in("input.txt", std::ios::in);
     for (int i = 0; i < size; i++) {
       float num;
       in >> num;
-      input_data.push_back(num);
+      input_data_array[i] = num;
     }
     in.close();
 
-    paddle_mobile::framework::LoDTensor input_tensor;
+    auto time3 = time();
+    // std::vector<float> input_data;
+    // for (int i = 0; i < size; i++) {
+    //   float num = input_data_array[i];
+    //   input_data.push_back(num);
+    // }
+    // paddle_mobile::framework::Tensor input_tensor(input_data, paddle_mobile::framework::make_ddim(dims));
+    paddle_mobile::framework::Tensor input_tensor(input_data_array, paddle_mobile::framework::make_ddim(dims));
+    auto time4 = time();
+    std::cout << "auto-test"
+              << " preprocess-time-cost :" << time_diff(time3, time4) << "ms"
+              << std::endl;
+
+    paddle_mobile::framework::LoDTensor input_lod_tensor;
     if (is_lod) {
-      input_tensor.Resize(paddle_mobile::framework::make_ddim(dims));
-      input_tensor.set_lod(lod);
-      auto *tensor_data = input_tensor.mutable_data<float>();
+      input_lod_tensor.Resize(paddle_mobile::framework::make_ddim(dims));
+      input_lod_tensor.set_lod(lod);
+      auto *tensor_data = input_lod_tensor.mutable_data<float>();
       for (int i = 0; i < size; i++) {
-        tensor_data[i] = input_data[i];
+        tensor_data[i] = input_data_array[i];
       }
     }
 
     // 预热10次
     for (int i = 0; i < 10; i++) {
       if (is_lod) {
-        auto out = paddle_mobile.Predict(input_tensor);
+        auto out = paddle_mobile.Predict(input_lod_tensor);
       } else {
-        auto out = paddle_mobile.Predict(input_data, dims);
+        paddle_mobile.Feed(var_names[0], input_tensor);
+        paddle_mobile.Predict();
       }
     }
 
     // 测速
-    auto time3 = time();
+    auto time5 = time();
     for (int i = 0; i < 50; i++) {
       if (is_lod) {
-        auto out = paddle_mobile.Predict(input_tensor);
+        auto out = paddle_mobile.Predict(input_lod_tensor);
       } else {
-        auto out = paddle_mobile.Predict(input_data, dims);
+        paddle_mobile.Feed(var_names[0], input_tensor);
+        paddle_mobile.Predict();
       }
     }
-    auto time4 = time();
+    auto time6 = time();
     std::cout << "auto-test"
-              << " predict-time-cost " << time_diff(time3, time4) / 50 << "ms"
+              << " predict-time-cost " << time_diff(time5, time6) / 50 << "ms"
               << std::endl;
 
     // 测试正确性
     if (is_lod) {
-      auto out = paddle_mobile.Predict(input_tensor);
+      auto out = paddle_mobile.Predict(input_lod_tensor);
     } else {
-      auto out = paddle_mobile.Predict(input_data, dims);
+      paddle_mobile.Feed(var_names[0], input_tensor);
+      paddle_mobile.Predict();
     }
     for (auto var_name : var_names) {
       auto out = paddle_mobile.Fetch(var_name);

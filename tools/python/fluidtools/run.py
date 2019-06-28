@@ -279,6 +279,8 @@ def check_mobile_results(args, fuse, mem_opt):
             pp_green("load time cost : {}".format(parts[2]), 1) 
         elif parts[1] == "predict-time-cost":
             pp_green("predict time cost : {}".format(parts[2]), 1) 
+        elif parts[1] == "preprocess-time-cost":
+            pp_green("preprocess time cost : {}".format(parts[2]), 1)
         elif parts[1] == "var":
             var_name = parts[2]
             values = list(map(lambda x: float(x), parts[3:]))
