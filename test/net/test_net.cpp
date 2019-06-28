@@ -31,7 +31,9 @@ void test(int argc, char *argv[]) {
   bool enable_memory_optimization = std::stoi(argv[arg_index]) == 1;
   arg_index++;
   paddle_mobile::PaddleMobileConfigInternal config;
-  config.memory_optimization_level = enable_memory_optimization ? MemoryOptimizationWithoutFeeds : NoMemoryOptimization;
+  config.memory_optimization_level = enable_memory_optimization
+                                         ? MemoryOptimizationWithoutFeeds
+                                         : NoMemoryOptimization;
   paddle_mobile::PaddleMobile<paddle_mobile::CPU> paddle_mobile(config);
   paddle_mobile.SetThreadNum(1);
 
@@ -93,8 +95,10 @@ void test(int argc, char *argv[]) {
     //   float num = input_data_array[i];
     //   input_data.push_back(num);
     // }
-    // paddle_mobile::framework::Tensor input_tensor(input_data, paddle_mobile::framework::make_ddim(dims));
-    paddle_mobile::framework::Tensor input_tensor(input_data_array, paddle_mobile::framework::make_ddim(dims));
+    // paddle_mobile::framework::Tensor input_tensor(input_data,
+    // paddle_mobile::framework::make_ddim(dims));
+    paddle_mobile::framework::Tensor input_tensor(
+        input_data_array, paddle_mobile::framework::make_ddim(dims));
     auto time4 = time();
     std::cout << "auto-test"
               << " preprocess-time-cost :" << time_diff(time3, time4) << "ms"

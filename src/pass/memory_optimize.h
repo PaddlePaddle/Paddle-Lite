@@ -47,7 +47,8 @@ class MemoryOptPass : public PassBase {
   }
 
   void operator()(const framework::ProgramDesc *program,
-                  framework::Scope *scope, MemoryOptimizationLevel memory_optimization_level);
+                  framework::Scope *scope,
+                  MemoryOptimizationLevel memory_optimization_level);
 
   void AppendBlockVars(const framework::BlockDesc *block);
 

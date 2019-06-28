@@ -66,7 +66,8 @@ Executor<Device, T>::Executor(const Program<Device> &program,
 #if !defined(PADDLE_MOBILE_FPGA) && !defined(PADDLE_MOBILE_FPGA_KD) && \
     !defined(PADDLE_MOBILE_CL)
   if (config_.memory_optimization_level != NoMemoryOptimization) {
-    pass::MemoryOptPass()(program_desc_.get(), program_.scope.get(), config_.memory_optimization_level);
+    pass::MemoryOptPass()(program_desc_.get(), program_.scope.get(),
+                          config_.memory_optimization_level);
   }
 #endif
   // resize feed and fetch list

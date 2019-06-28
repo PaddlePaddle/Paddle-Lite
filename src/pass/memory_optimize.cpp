@@ -47,8 +47,9 @@ VarNode *MemoryOptPass::CreateNode(const std::string name) {
   return var;
 }
 
-void MemoryOptPass::operator()(const framework::ProgramDesc *program,
-                               framework::Scope *scope, MemoryOptimizationLevel memory_optimization_level) {
+void MemoryOptPass::operator()(
+    const framework::ProgramDesc *program, framework::Scope *scope,
+    MemoryOptimizationLevel memory_optimization_level) {
   const auto &blocks = program->Blocks();
   for (const auto &block : blocks) {
     // access all variables in each block
@@ -80,7 +81,9 @@ void MemoryOptPass::operator()(const framework::ProgramDesc *program,
       DLOG << "op_desc->Type(): " << op->Type();
       for (const auto &outputs : op->GetOutputs()) {
         for (const auto &output : outputs.second) {
-          if (!IsPersistable(output) && std::find(exclude_var_names.begin(), exclude_var_names.end(), output) == exclude_var_names.end()) {
+          if (!IsPersistable(output) &&
+              std::find(exclude_var_names.begin(), exclude_var_names.end(),
+                        output) == exclude_var_names.end()) {
             DLOG << "output: " << output;
             VarNode *node = CreateNode(output);
             analysis_nodes_.push(node);
@@ -89,7 +92,9 @@ void MemoryOptPass::operator()(const framework::ProgramDesc *program,
       }
       for (const auto &inputs : op->GetInputs()) {
         for (const auto &input : inputs.second) {
-          if (!IsPersistable(input) && std::find(exclude_var_names.begin(), exclude_var_names.end(), input) == exclude_var_names.end()) {
+          if (!IsPersistable(input) &&
+              std::find(exclude_var_names.begin(), exclude_var_names.end(),
+                        input) == exclude_var_names.end()) {
             DLOG << "input: " << input;
             VarNode *node = CreateNode(input);
             analysis_nodes_.push(node);
@@ -101,7 +106,9 @@ void MemoryOptPass::operator()(const framework::ProgramDesc *program,
       }
       for (const auto &outputs : op->GetOutputs()) {
         for (const auto &output : outputs.second) {
-          if (!IsPersistable(output) && std::find(exclude_var_names.begin(), exclude_var_names.end(), output) == exclude_var_names.end()) {
+          if (!IsPersistable(output) &&
+              std::find(exclude_var_names.begin(), exclude_var_names.end(),
+                        output) == exclude_var_names.end()) {
             DLOG << "output: " << output;
             VarNode *node = CreateNode(output);
             analysis_nodes_.push(node);
