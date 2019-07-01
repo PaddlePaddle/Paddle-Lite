@@ -13,8 +13,8 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "pass/memory_optimize.h"
-#include "framework/lod_tensor.h"
 #include <algorithm>
+#include "framework/lod_tensor.h"
 
 namespace paddle_mobile {
 namespace pass {

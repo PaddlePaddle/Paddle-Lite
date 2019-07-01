@@ -25,6 +25,7 @@ class ModelObfuscatePass : public PassBase {
   ModelObfuscatePass(std::string key);
   void convert_data(char *data);
   int version = 1;
+
  private:
   int acc = 0;
   int base = 17;
