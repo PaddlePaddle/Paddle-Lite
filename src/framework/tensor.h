@@ -57,6 +57,20 @@ class Tensor : public TensorBase {
     }
   }
 
+  template <typename T>
+  Tensor(T *input, DDim ddim) {
+    // PADDLE_MOBILE_ENFORCE(
+    //     (sizeof(input) / sizeof(input[0])) == framework::product(ddim),
+    //     "input vector'length should be equal to tensor's length");
+
+    Resize(ddim);
+    auto type = type_id<T>().hash_code();
+    int64_t size = numel() * SizeOfType(type);
+    holder_.reset(new PlaceholderImpl(size, type, (uint8_t *)input));
+    holder_->set_type(type);
+    offset_ = 0;
+  }
+
   Tensor(const Tensor &inTensor) {
     this->dims_ = inTensor.dims_;
     this->holder_ = inTensor.holder_;
@@ -196,6 +210,15 @@ class Tensor : public TensorBase {
     PlaceholderImpl(size_t size, const kTypeId_t type)
         : ptr_(static_cast<uint8_t *>(memory::Alloc(size)),
                memory::PODDeleter<uint8_t>()),
+          size_(size),
+          capatity_(size),
+          type_(type) {
+      PADDLE_MOBILE_ENFORCE(ptr_ != nullptr,
+                            "Insufficient memory to allocation");
+    }
+
+    PlaceholderImpl(size_t size, const kTypeId_t type, uint8_t *ptr)
+        : ptr_(ptr, memory::PODDeleter<uint8_t>()),
           size_(size),
           capatity_(size),
           type_(type) {
