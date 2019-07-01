@@ -1,5 +1,5 @@
 {
-  "name": "paddle-web-demo",
+  "name": "paddle-web",
   "version": "1.0.0",
   "description": "paddle",
   "main": "index.js",
@@ -11,7 +11,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "ssh://yangmingming@icode.baidu.com:8235/baidu/mms/paddle-web-demo"
+    "url": "https://github.com/PaddlePaddle/paddle-mobile"
   },
   "devDependencies": {
     "babel-core": "^6.26.3",
