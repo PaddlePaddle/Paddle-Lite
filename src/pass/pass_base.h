@@ -14,13 +14,14 @@ limitations under the License. */
 
 #pragma once
 
-#include <string>
-#include "common/enforce.h"
-
 namespace paddle_mobile {
+namespace pass {
 
-char *ReadFileToBuff(std::string filename);
+class PassBase {
+ public:
+  PassBase() {}
+  virtual ~PassBase() {}
+};
 
-int GetFileLength(std::string filename);
-
+}  // namespace pass
 }  // namespace paddle_mobile

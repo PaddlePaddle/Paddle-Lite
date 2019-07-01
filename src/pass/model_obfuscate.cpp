@@ -12,15 +12,25 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#pragma once
-
-#include <string>
-#include "common/enforce.h"
+#include "pass/model_obfuscate.h"
 
 namespace paddle_mobile {
+namespace pass {
 
-char *ReadFileToBuff(std::string filename);
+ModelObfuscatePass::ModelObfuscatePass(std::string key) {
+  for (auto c : key) {
+    acc *= base;
+    acc += (int)c;
+    acc %= stride;
+  }
+  acc += stride;
+}
 
-int GetFileLength(std::string filename);
+void ModelObfuscatePass::convert_data(char *data, int len) {
+  for (int i = 0; i < len; i += acc) {
+    data[i] = 255 - data[i];
+  }
+}
 
+}  // namespace pass
 }  // namespace paddle_mobile
