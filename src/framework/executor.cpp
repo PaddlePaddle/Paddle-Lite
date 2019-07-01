@@ -30,6 +30,7 @@ limitations under the License. */
 #include "framework/tensor.h"
 #include "memory/t_malloc.h"
 #include "pass/memory_optimize.h"
+#include "pass/model_obfuscate.h"
 #ifdef PADDLE_MOBILE_CL
 #include "framework/cl/cl_image.h"
 #endif
@@ -246,6 +247,10 @@ void Executor<Device, T>::InitCombineMemory() {
     origin_data = ReadFileToBuff(program_.para_path);
   }
   PADDLE_MOBILE_ENFORCE(origin_data != nullptr, "data == nullptr");
+  if (config_.model_obfuscate_key != "") {
+    auto obfuscator = pass::ModelObfuscatePass(config_.model_obfuscate_key);
+    obfuscator.convert_data(origin_data);
+  }
   char *data = origin_data;
   for (const auto &block : program_desc_->Blocks()) {
     for (const auto &var_desc : block->Vars()) {
@@ -936,6 +941,10 @@ void Executor<GPU_CL, float>::InitCombineMemory() {
     origin_data = ReadFileToBuff(program_.para_path);
   }
   PADDLE_MOBILE_ENFORCE(origin_data != nullptr, "origin_data==nullptr!!!");
+  if (config_.model_obfuscate_key != "") {
+    auto obfuscator = pass::ModelObfuscatePass(config_.model_obfuscate_key);
+    obfuscator.convert_data(origin_data);
+  }
   float *data = reinterpret_cast<float *>(origin_data);
 
   for (const auto &block : program_desc_->Blocks()) {
