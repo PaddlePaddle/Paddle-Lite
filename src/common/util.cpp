@@ -32,4 +32,15 @@ char *ReadFileToBuff(std::string filename) {
   return data;
 }
 
+int GetFileLength(std::string filename) {
+  FILE *file = fopen(filename.c_str(), "rb");
+  PADDLE_MOBILE_ENFORCE(file != nullptr, "can't open file: %s ",
+                        filename.c_str());
+  fseek(file, 0, SEEK_END);
+  int size = ftell(file);
+  PADDLE_MOBILE_ENFORCE(size > 0, "file should not be empty");
+  fclose(file);
+  return size;
+}
+
 }  // namespace paddle_mobile

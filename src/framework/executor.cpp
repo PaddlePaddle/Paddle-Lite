@@ -30,6 +30,7 @@ limitations under the License. */
 #include "framework/tensor.h"
 #include "memory/t_malloc.h"
 #include "pass/memory_optimize.h"
+#include "pass/model_obfuscate.h"
 #ifdef PADDLE_MOBILE_CL
 #include "framework/cl/cl_image.h"
 #endif
@@ -241,9 +242,17 @@ void Executor<Device, T>::InitCombineMemory() {
   if (program_.combined_params_buf && program_.combined_params_len) {
     origin_data = reinterpret_cast<char *>(
         const_cast<uint8_t *>(program_.combined_params_buf));
+    if (config_.model_obfuscate_key != "") {
+      auto obfuscator = pass::ModelObfuscatePass(config_.model_obfuscate_key);
+      obfuscator.convert_data(origin_data, program_.combined_params_len);
+    }
   } else {
     self_alloc = true;
     origin_data = ReadFileToBuff(program_.para_path);
+    if (config_.model_obfuscate_key != "") {
+      auto obfuscator = pass::ModelObfuscatePass(config_.model_obfuscate_key);
+      obfuscator.convert_data(origin_data, GetFileLength(program_.para_path));
+    }
   }
   PADDLE_MOBILE_ENFORCE(origin_data != nullptr, "data == nullptr");
   char *data = origin_data;
@@ -930,10 +939,18 @@ void Executor<GPU_CL, float>::InitCombineMemory() {
   if (program_.combined_params_buf && program_.combined_params_len) {
     LOG(kLOG_INFO) << "use outter memory";
     origin_data = reinterpret_cast<char *>(program_.combined_params_buf);
+    if (config_.model_obfuscate_key != "") {
+      auto obfuscator = pass::ModelObfuscatePass(config_.model_obfuscate_key);
+      obfuscator.convert_data(origin_data, program_.combined_params_len);
+    }
   } else {
     LOG(kLOG_INFO) << " begin init combine memory";
     self_alloc = true;
     origin_data = ReadFileToBuff(program_.para_path);
+    if (config_.model_obfuscate_key != "") {
+      auto obfuscator = pass::ModelObfuscatePass(config_.model_obfuscate_key);
+      obfuscator.convert_data(origin_data, GetFileLength(program_.para_path));
+    }
   }
   PADDLE_MOBILE_ENFORCE(origin_data != nullptr, "origin_data==nullptr!!!");
   float *data = reinterpret_cast<float *>(origin_data);
