@@ -1,6 +1,4 @@
-# paddle-web-demo 前端机器学习框架
-
-[icode地址](http://icode.baidu.com/repos/baidu/mms/paddle-web-demo/tree/master)
+# paddle web 前端机器学习框架
 
 ## get start
 
