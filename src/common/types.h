@@ -132,9 +132,15 @@ enum PowerMode {
   AUTO = 4,                  // scheduled by system
 };
 
+enum MemoryOptimizationLevel {
+  NoMemoryOptimization = 0,
+  MemoryOptimizationWithoutFeeds = 1,
+  FullMemoryOptimization = 2,
+};
+
 struct PaddleMobileConfigInternal {
   bool load_when_predict = false;
-  bool enable_memory_optimization = true;
+  MemoryOptimizationLevel memory_optimization_level = FullMemoryOptimization;
 };
 
 extern const char *G_OP_TYPE_CONV;
