@@ -26,8 +26,7 @@ ModelObfuscatePass::ModelObfuscatePass(std::string key) {
   acc += stride;
 }
 
-void ModelObfuscatePass::convert_data(char *data) {
-  int len = sizeof(data) / sizeof(char);
+void ModelObfuscatePass::convert_data(char *data, int len) {
   for (int i = 0; i < len; i += acc) {
     data[i] = 255 - data[i];
   }

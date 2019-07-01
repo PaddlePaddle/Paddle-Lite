@@ -23,7 +23,7 @@ namespace pass {
 class ModelObfuscatePass : public PassBase {
  public:
   ModelObfuscatePass(std::string key);
-  void convert_data(char *data);
+  void convert_data(char *data, int len);
   int version = 1;
 
  private:

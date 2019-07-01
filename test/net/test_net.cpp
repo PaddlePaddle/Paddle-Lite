@@ -14,6 +14,7 @@ limitations under the License. */
 
 #include <iostream>
 #include <string>
+#include <fstream>
 #include "../test_helper.h"
 #include "../test_include.h"
 
@@ -34,6 +35,15 @@ void test(int argc, char *argv[]) {
   config.memory_optimization_level = enable_memory_optimization
                                          ? MemoryOptimizationWithoutFeeds
                                          : NoMemoryOptimization;
+
+  // save obfuscated model
+  // config.model_obfuscate_key = "asdf";
+  // std::ofstream out_file("new-params", std::ofstream::binary);
+  // char *out_data = ReadFileToBuff("./checked_model/params");
+  // int len = GetFileLength("./checked_model/params");
+  // out_file.write(out_data, len);
+  // out_file.close();
+
   paddle_mobile::PaddleMobile<paddle_mobile::CPU> paddle_mobile(config);
   paddle_mobile.SetThreadNum(1);
 

@@ -242,15 +242,19 @@ void Executor<Device, T>::InitCombineMemory() {
   if (program_.combined_params_buf && program_.combined_params_len) {
     origin_data = reinterpret_cast<char *>(
         const_cast<uint8_t *>(program_.combined_params_buf));
+    if (config_.model_obfuscate_key != "") {
+      auto obfuscator = pass::ModelObfuscatePass(config_.model_obfuscate_key);
+      obfuscator.convert_data(origin_data, program_.combined_params_len);
+    }
   } else {
     self_alloc = true;
     origin_data = ReadFileToBuff(program_.para_path);
+    if (config_.model_obfuscate_key != "") {
+      auto obfuscator = pass::ModelObfuscatePass(config_.model_obfuscate_key);
+      obfuscator.convert_data(origin_data, GetFileLength(program_.para_path));
+    }
   }
   PADDLE_MOBILE_ENFORCE(origin_data != nullptr, "data == nullptr");
-  if (config_.model_obfuscate_key != "") {
-    auto obfuscator = pass::ModelObfuscatePass(config_.model_obfuscate_key);
-    obfuscator.convert_data(origin_data);
-  }
   char *data = origin_data;
   for (const auto &block : program_desc_->Blocks()) {
     for (const auto &var_desc : block->Vars()) {
@@ -935,16 +939,20 @@ void Executor<GPU_CL, float>::InitCombineMemory() {
   if (program_.combined_params_buf && program_.combined_params_len) {
     LOG(kLOG_INFO) << "use outter memory";
     origin_data = reinterpret_cast<char *>(program_.combined_params_buf);
+    if (config_.model_obfuscate_key != "") {
+      auto obfuscator = pass::ModelObfuscatePass(config_.model_obfuscate_key);
+      obfuscator.convert_data(origin_data, program_.combined_params_len);
+    }
   } else {
     LOG(kLOG_INFO) << " begin init combine memory";
     self_alloc = true;
     origin_data = ReadFileToBuff(program_.para_path);
+    if (config_.model_obfuscate_key != "") {
+      auto obfuscator = pass::ModelObfuscatePass(config_.model_obfuscate_key);
+      obfuscator.convert_data(origin_data, GetFileLength(program_.para_path));
+    }
   }
   PADDLE_MOBILE_ENFORCE(origin_data != nullptr, "origin_data==nullptr!!!");
-  if (config_.model_obfuscate_key != "") {
-    auto obfuscator = pass::ModelObfuscatePass(config_.model_obfuscate_key);
-    obfuscator.convert_data(origin_data);
-  }
   float *data = reinterpret_cast<float *>(origin_data);
 
   for (const auto &block : program_desc_->Blocks()) {
