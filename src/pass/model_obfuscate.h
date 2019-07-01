@@ -15,12 +15,22 @@ limitations under the License. */
 #pragma once
 
 #include <string>
-#include "common/enforce.h"
+#include "pass/pass_base.h"
 
 namespace paddle_mobile {
+namespace pass {
 
-char *ReadFileToBuff(std::string filename);
+class ModelObfuscatePass : public PassBase {
+ public:
+  ModelObfuscatePass(std::string key);
+  void convert_data(char *data, int len);
+  int version = 1;
 
-int GetFileLength(std::string filename);
+ private:
+  int acc = 0;
+  int base = 17;
+  int stride = 100;
+};
 
+}  // namespace pass
 }  // namespace paddle_mobile
