@@ -12,24 +12,20 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#pragma once
+#pragma OPENCL EXTENSION cl_khr_fp16 : enable
 
-#include <map>
-#include <string>
-#include <vector>
+__kernel void relu6(__read_only image2d_t input,
+                   __write_only image2d_t output){
 
-#include "./test_helper.h"
-#include "common/enforce.h"
-#include "common/log.h"
-#include "common/util.h"
-#include "executor_for_test.h"
-#include "framework/ddim.h"
-#include "framework/lod_tensor.h"
-#include "framework/operator.h"
-#include "framework/program/block_desc.h"
-#include "framework/program/program.h"
-#include "framework/program/program_desc.h"
-#include "framework/scope.h"
-#include "framework/tensor.h"
-#include "framework/variable.h"
-#include "io/paddle_mobile.h"
+  const int x = get_global_id(0);
+  const int y = get_global_id(1);
+
+  const sampler_t sampler = CLK_NORMALIZED_COORDS_TRUE |
+                            CLK_ADDRESS_CLAMP |
+                            CLK_FILTER_NEAREST;
+
+  half4 in = read_imageh(input, sampler, (int2)(x, y));
+  in = max((half4)(0.0f, 0.0f, 0.0f, 0.0f), in);
+  in = min((half4)(6.0f, 6.0f, 6.0f, 6.0f), in);
+  write_imageh(output, (int2)(x, y), in);
+}

@@ -142,7 +142,7 @@ LOAD_OP2(softmax, CPU, GPU_CL);
 LOAD_OP1(shape, CPU);
 #endif
 #ifdef DEPTHWISECONV_OP
-LOAD_OP1(depthwise_conv2d, CPU);
+LOAD_OP2(depthwise_conv2d, CPU, GPU_CL);
 #endif
 #ifdef CONV_TRANSPOSE_OP
 LOAD_OP1(conv2d_transpose, CPU);
@@ -200,7 +200,7 @@ LOAD_OP1(norm, CPU);
 #endif
 #ifdef RELU_OP
 LOAD_OP2(relu, CPU, GPU_CL);
-LOAD_OP1(relu6, CPU);
+LOAD_OP2(relu6, CPU, GPU_CL);
 #endif
 #ifdef IM2SEQUENCE_OP
 LOAD_OP1(im2sequence, CPU);
