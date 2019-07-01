@@ -24,7 +24,7 @@
     "babel-preset-stage-0": "^6.24.1",
     "babel-runtime": "^6.26.0",
     "parcel-bundler": "^1.10.3",
-    "axios": "^0.17.1"
+    "axios": ">=0.18.1"
   },
   "keywords": [],
   "author": "",
