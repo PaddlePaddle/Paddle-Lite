@@ -12,9 +12,9 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#include <fstream>
 #include <iostream>
 #include <string>
-#include <fstream>
 #include "../test_helper.h"
 #include "../test_include.h"
 
@@ -44,8 +44,14 @@ void test(int argc, char *argv[]) {
   // out_file.write(out_data, len);
   // out_file.close();
 
+#ifdef PADDLE_MOBILE_CL
+  //  config.load_when_predict = true;
+  paddle_mobile::PaddleMobile<paddle_mobile::GPU_CL> paddle_mobile(config);
+  paddle_mobile.SetCLPath("/data/local/tmp/bin");
+#else
   paddle_mobile::PaddleMobile<paddle_mobile::CPU> paddle_mobile(config);
   paddle_mobile.SetThreadNum(1);
+#endif
 
   int dim_count = std::stoi(argv[arg_index]);
   arg_index++;
