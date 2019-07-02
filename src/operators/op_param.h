@@ -1675,6 +1675,20 @@ class ReluParam : public ReluParamBase<Dtype> {
   using ReluParamBase<Dtype>::ReluParamBase;
 };
 
+template <typename Dtype>
+class Relu6Param : public ReluParamBase<Dtype> {
+ public:
+  Relu6Param(const VariableNameMap &inputs, const VariableNameMap &outputs,
+             const AttributeMap &attrs, Scope *scope)
+      : ReluParamBase<Dtype>(inputs, outputs, attrs, scope) {
+    threshold = OpParam::GetAttr<float>("threshold", attrs);
+  }
+  float getThreshold() const { return threshold; }
+
+ private:
+  float threshold;
+};
+
 #ifdef PADDLE_MOBILE_CL
 template <>
 class ReluParam<GPU_CL> : public ReluParamBase<GPU_CL> {
