@@ -20,8 +20,8 @@ limitations under the License. */
 
 #include "./test_helper.h"
 #include "common/enforce.h"
-#include "common/util.h"
 #include "common/log.h"
+#include "common/util.h"
 #include "executor_for_test.h"
 #include "framework/ddim.h"
 #include "framework/lod_tensor.h"
