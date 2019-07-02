@@ -44,8 +44,14 @@ void test(int argc, char *argv[]) {
   // out_file.write(out_data, len);
   // out_file.close();
 
+#ifdef PADDLE_MOBILE_CL
+  //  config.load_when_predict = true;
+  paddle_mobile::PaddleMobile<paddle_mobile::GPU_CL> paddle_mobile(config);
+  paddle_mobile.SetCLPath("/data/local/tmp/bin");
+#else
   paddle_mobile::PaddleMobile<paddle_mobile::CPU> paddle_mobile(config);
   paddle_mobile.SetThreadNum(1);
+#endif
 
   int dim_count = std::stoi(argv[arg_index]);
   arg_index++;

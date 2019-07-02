@@ -63,6 +63,7 @@ REGISTER_OPERATOR_FPGA(relu, ops::ReluOp);
 #endif
 #ifdef PADDLE_MOBILE_CL
 REGISTER_OPERATOR_CL(relu, ops::ReluOp);
+REGISTER_OPERATOR_CL(relu6, ops::Relu6Op);
 #endif
 #endif  // RELU_OP
 
