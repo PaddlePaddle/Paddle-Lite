@@ -22,7 +22,7 @@ namespace operators {
 
 #ifdef RELU_OP
 DECLARE_KERNEL(Relu, ReluParam);
-DECLARE_KERNEL(Relu6, ReluParam);
+DECLARE_KERNEL(Relu6, Relu6Param);
 #endif
 
 #ifdef SIGMOID_OP

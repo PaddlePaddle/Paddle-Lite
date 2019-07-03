@@ -19,21 +19,23 @@ namespace paddle_mobile {
 namespace operators {
 
 template <>
-bool Relu6Kernel<GPU_CL, float>::Init(ReluParam<GPU_CL>* param) {
+bool Relu6Kernel<GPU_CL, float>::Init(Relu6Param<GPU_CL>* param) {
   this->cl_helper_.AddKernel("relu6", "relu6.cl");
   return true;
 }
 
 template <>
-void Relu6Kernel<GPU_CL, float>::Compute(const ReluParam<GPU_CL>& param) {
+void Relu6Kernel<GPU_CL, float>::Compute(const Relu6Param<GPU_CL>& param) {
   auto kernel = this->cl_helper_.KernelAt(0);
   const auto* input = param.InputX();
   auto* output = param.Out();
+  float threshold = param.getThreshold();
   auto default_work_size = this->cl_helper_.DefaultWorkSize(*output);
   auto inputImage = input->GetCLImage();
   auto outputImage = output->GetCLImage();
   clSetKernelArg(kernel, 0, sizeof(cl_mem), &inputImage);
   clSetKernelArg(kernel, 1, sizeof(cl_mem), &outputImage);
+  clSetKernelArg(kernel, 2, sizeof(cl_mem), &threshold);
   const size_t work_size[2] = {input->ImageWidth(), input->ImageHeight()};
 
   clEnqueueNDRangeKernel(this->cl_helper_.CLCommandQueue(), kernel, 2, NULL,
