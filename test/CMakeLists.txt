@@ -520,4 +520,7 @@ if (NOT FOUND_MATCH)
 
     ADD_EXECUTABLE(test-conv-gpu operators/test_conv_gpu.cpp test_helper.h test_include.h)
     target_link_libraries(test-conv-gpu paddle-mobile)
+
+    ADD_EXECUTABLE(test-net-benchmark net/test_net_benchmark.cpp test_helper.h test_include.h)
+    target_link_libraries(test-net-benchmark paddle-mobile)
 endif ()
