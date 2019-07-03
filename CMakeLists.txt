@@ -278,3 +278,11 @@ if(WITH_TEST AND WITH_SYMBOL)
 elseif(FPGA)
     add_subdirectory(test)
 endif()
+
+# # if you want to combine third party static librares into paddle mobile so, please uncomment this code block
+# target_link_libraries(
+#     paddle-mobile
+#     -Wl,--whole-archive
+#     "path_to_third_party_static_library"
+#     -Wl,--no-whole-archive
+# )

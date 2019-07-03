@@ -14,6 +14,7 @@ diff_threshold = 0.01
 is_lod = False
 mobile_model_path = ""
 fast_check = False
+sample_step = 1
 
 np.set_printoptions(linewidth=150)
 
@@ -108,7 +109,7 @@ def resave_model(feed_kv):
 def gen_feed_kv():
     feed_kv = {}
     for feed_name in feeds:
-        feed_shape = get_var_shape(feed_name)
+        feed_shape = get_feed_var_shape(feed_name)
         data = np.random.random(feed_shape).astype("float32")
         feed_kv[feed_name] = data
     return feed_kv
@@ -140,7 +141,7 @@ def load_feed_kv():
     pp_yellow(dot + dot + " checking feed info")
     pp_green("feed data is saved into directory 【{}】".format(feed_path), 1)
     for feed_name in feeds:
-        feed_shape = get_var_shape(feed_name)
+        feed_shape = get_feed_var_shape(feed_name)
         pp_tab("feed var name : {}; feed var shape : {}".format(feed_name, feed_shape), 1)
         file_name = feed_name.replace("/", "_")
         last_feed_var_name = feed_name
@@ -194,6 +195,12 @@ def get_var_shape(var_name):
             shape[i] = 1
     return shape
 
+# 获取输入变量形状
+def get_feed_var_shape(var_name):
+    # 如果想写死输入形状，放开以下语句
+    # return [1, 3, 224, 224]
+    return get_var_shape(var_name)
+
 # 获取var的数据
 def get_var_data(var_name, feed_kv=None):
     # 强制var为可持久化
@@ -201,14 +208,13 @@ def get_var_data(var_name, feed_kv=None):
     persistable = v.persistable
     if not persistable:
         v.persistable = True
-    outputs = run_model(feed_kv=feed_kv)
+    # outputs = run_model(feed_kv=feed_kv)
     output = np.array(fluid.global_scope().find_var(var_name).get_tensor())
     # 恢复var的可持久化属性
     v.persistable = persistable
     return output
 
 output_var_cache = {}
-sample_step = 1
 def tensor_sample(tensor):
     # step = math.floor(len(tensor) / 20)
     sample = []
@@ -375,7 +381,7 @@ def main():
     push(feed_path + "/" + last_feed_file_name, "input.txt")
     push(mobile_src_root + "/build/release/arm-v7a/build/libpaddle-mobile.so")
     push(mobile_src_root + "/test/build/test-net")
-    last_feed_var_shape = get_var_shape(last_feed_var_name)
+    last_feed_var_shape = get_feed_var_shape(last_feed_var_name)
     args = str(len(last_feed_var_shape))
     for dim in last_feed_var_shape:
         args += " " + str(dim)
