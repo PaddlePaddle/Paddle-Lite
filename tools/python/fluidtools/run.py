@@ -225,6 +225,7 @@ def save_all_op_output(feed_kv=None):
     fetch_names = []
     for fetch in fetches:
         fetch_names.append(fetch.name)
+    feed_names = feeds
     for i in range(len(ops)):
         op = ops[i]
         var_name = None
@@ -235,7 +236,7 @@ def save_all_op_output(feed_kv=None):
         if "sequence_pool" in var_name:
             continue
         if fast_check:
-            if var_name not in fetch_names:
+            if var_name not in fetch_names and var_name not in feed_names:
                 continue
         try:
             data = get_var_data(var_name, feed_kv=feed_kv).flatten().tolist()
