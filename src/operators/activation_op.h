@@ -24,7 +24,7 @@ namespace operators {
 
 #ifdef RELU_OP
 DECLARE_OPERATOR(Relu, ReluParam, ReluKernel);
-DECLARE_OPERATOR(Relu6, ReluParam, Relu6Kernel);
+DECLARE_OPERATOR(Relu6, Relu6Param, Relu6Kernel);
 #endif
 
 #ifdef SIGMOID_OP
