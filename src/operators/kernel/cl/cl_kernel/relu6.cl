@@ -15,7 +15,8 @@ limitations under the License. */
 #pragma OPENCL EXTENSION cl_khr_fp16 : enable
 
 __kernel void relu6(__read_only image2d_t input,
-                   __write_only image2d_t output){
+                   __write_only image2d_t output,
+                    __private const float threshold){
 
   const int x = get_global_id(0);
   const int y = get_global_id(1);
@@ -26,6 +27,6 @@ __kernel void relu6(__read_only image2d_t input,
 
   half4 in = read_imageh(input, sampler, (int2)(x, y));
   in = max((half4)(0.0f, 0.0f, 0.0f, 0.0f), in);
-  in = min((half4)(6.0f, 6.0f, 6.0f, 6.0f), in);
+  in = min((half4)(threshold, threshold, threshold, threshold), in);
   write_imageh(output, (int2)(x, y), in);
 }

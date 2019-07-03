@@ -38,15 +38,16 @@ void ReluKernel<CPU, float>::Compute(const ReluParam<CPU> &param) {
 }
 
 template <>
-bool Relu6Kernel<CPU, float>::Init(ReluParam<CPU> *param) {
+bool Relu6Kernel<CPU, float>::Init(Relu6Param<CPU> *param) {
   return true;
 }
 
 template <>
-void Relu6Kernel<CPU, float>::Compute(const ReluParam<CPU> &param) {
+void Relu6Kernel<CPU, float>::Compute(const Relu6Param<CPU> &param) {
   const LoDTensor *input = param.InputX();
   LoDTensor *output = param.Out();
-  ActivationCompute<float, RELU6>()(input, output);
+  float threshold = param.getThreshold();
+  ActivationCompute<float, RELU6>()(input, output, threshold);
   output->set_lod(input->lod());
 }
 #endif
