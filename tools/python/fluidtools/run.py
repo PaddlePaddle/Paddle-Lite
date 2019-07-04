@@ -14,7 +14,9 @@ diff_threshold = 0.01
 is_lod = False
 mobile_model_path = ""
 fast_check = False
+is_sample_step = False
 sample_step = 1
+sample_num = 20
 
 np.set_printoptions(linewidth=150)
 
@@ -216,13 +218,17 @@ def get_var_data(var_name, feed_kv=None):
 
 output_var_cache = {}
 def tensor_sample(tensor):
-    # step = math.floor(len(tensor) / 20)
+    if is_sample_step:
+        step = sample_step
+    else:
+        step = math.floor(len(tensor) / sample_num)
+    step = max(step, 1)
     sample = []
-    for i in range(0, len(tensor), sample_step):
+    for i in range(0, len(tensor), step):
         sample.append(tensor[i])
     return sample
-op_cache = {}
 
+op_cache = {}
 # 获取每层输出的数据
 def save_all_op_output(feed_kv=None):
     if not os.path.exists(output_path):
@@ -251,8 +257,12 @@ def save_all_op_output(feed_kv=None):
             op_cache[i] = (var_name, op)
             file_name = var_name.replace("/", "_")
             out_file = open(output_path + "/" + file_name, "w")
-            for item in data:
-                out_file.write("{}\n".format(item))
+            if var_name in feed_names:
+                for item in data:
+                    out_file.write("{}\n".format(item))
+            else:
+                for item in sample:
+                    out_file.write("{}\n".format(item))
             out_file.close()
         except:
             pass
@@ -271,6 +281,7 @@ def check_mobile_results(args, fuse, mem_opt):
     args = "{} {} {}".format("1" if fuse else "0", "1" if mem_opt else "0", args)
     res = sh("adb shell \"cd {} && export LD_LIBRARY_PATH=. && ./test-net {}\"".format(mobile_exec_root, args))
     lines = res.split("\n")
+    print(lines)
     for line in lines:
         if line.startswith("auto-test-debug"):
             print(line)
@@ -393,7 +404,11 @@ def main():
     else:
         args += " 0"
     args += " " + str(len(output_var_cache))
-    args += " " + str(sample_step)
+    args += " " + str(1 if is_sample_step else 0)
+    if is_sample_step:
+        args += " " + str(sample_step)
+    else:
+        args += " " + str(sample_num)
     for var_name in output_var_cache.keys():
         args += " " + var_name
     if not fast_check:
