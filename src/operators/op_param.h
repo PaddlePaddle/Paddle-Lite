@@ -909,7 +909,12 @@ class PoolParam : public OpParam {
     paddings_ = GetAttr<vector<int>>("paddings", attrs);
     ceil_mode_ = GetAttr<bool>("ceil_mode", attrs);
     global_pooling_ = GetAttr<bool>("global_pooling", attrs);
-    exclusive_ = GetAttr<bool>("exclusive", attrs);
+
+    if (HasAttr("exclusive", attrs)) {
+      exclusive_ = GetAttr<bool>("exclusive", attrs);
+    } else {
+      exclusive_ = true;
+    }
   }
 
   const GType *Input() const { return input_; }
