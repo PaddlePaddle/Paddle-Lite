@@ -241,12 +241,26 @@ def save_all_op_output(feed_kv=None):
     for i in range(len(ops)):
         op = ops[i]
         var_name = None
-        for name in op.output_arg_names:
-            var_name = name
-            if "tmp" in name:
+        var_name_index = -1
+        for index in range(len(op.output_names)):
+            if op.output_names[index] in ["Y", "Out", "Output"]:
+                var_name_index = index
                 break
-        if "sequence_pool" in var_name:
-            continue
+        if var_name_index != -1:
+            var_name = op.output_arg_names[var_name_index]
+        else:
+            for name in op.output_arg_names:
+                var_name = name
+                if "tmp" in name:
+                    break
+        # real_var_name = None
+        # if op.type == "fetch":
+        #     for name in op.input_arg_names:
+        #         real_var_name = name
+        #         if "tmp" in name:
+        #             break
+        # else:
+        #     real_var_name = var_name
         if fast_check:
             if var_name not in fetch_names and var_name not in feed_names:
                 continue
@@ -281,7 +295,7 @@ def check_mobile_results(args, fuse, mem_opt):
     args = "{} {} {}".format("1" if fuse else "0", "1" if mem_opt else "0", args)
     res = sh("adb shell \"cd {} && export LD_LIBRARY_PATH=. && ./test-net {}\"".format(mobile_exec_root, args))
     lines = res.split("\n")
-    print(lines)
+    # print(lines)
     for line in lines:
         if line.startswith("auto-test-debug"):
             print(line)
