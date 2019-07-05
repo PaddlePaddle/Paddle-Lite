@@ -59,7 +59,7 @@ build_for_android() {
 
 
     MODE="Release"
-    ANDROID_PLATFORM_VERSION="android-22"
+    ANDROID_PLATFORM_VERSION="android-19"
     TOOLCHAIN_FILE="./tools/android-cmake/android.toolchain.cmake"
     ANDROID_ARM_MODE="arm"
 

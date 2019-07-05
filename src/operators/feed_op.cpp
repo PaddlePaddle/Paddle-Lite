@@ -24,6 +24,11 @@ void FeedOp<DeviceType, T>::InferShape() const {
   int col = this->param_.Col();
   auto input_dims = this->param_.InputX()->at(col).dims();
   this->param_.Out()->Resize(input_dims);
+  if (input_dims.size() == 4 || input_dims.size() == 2) {
+    this->param_.Out()->Resize(input_dims);
+  } else {
+    this->param_.Out()->Resize(out_dims);
+  }
 }
 
 }  // namespace operators
