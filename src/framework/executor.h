@@ -97,8 +97,9 @@ class Executor {
   std::unordered_map<std::string, int> feed_indices_;
   std::unordered_map<std::string, int> fetch_indices_;
 
-  // for super resoltion
+  // for lod_mode_
   DDim input_dim_last_;
+  DDim input_dim_cur_;
 
 #ifdef PADDLE_MOBILE_PROFILE
   typedef typename DtypeTensorTrait<Device>::gtype ProfileTensorType;
