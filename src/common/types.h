@@ -140,7 +140,8 @@ enum MemoryOptimizationLevel {
 
 struct PaddleMobileConfigInternal {
   bool load_when_predict = false;
-  MemoryOptimizationLevel memory_optimization_level = FullMemoryOptimization;
+  MemoryOptimizationLevel memory_optimization_level =
+      MemoryOptimizationWithoutFeeds;
   std::string model_obfuscate_key = "";
 };
 
