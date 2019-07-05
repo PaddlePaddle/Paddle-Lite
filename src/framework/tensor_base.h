@@ -70,6 +70,8 @@ class TensorBase {
 
   inline bool IsInitialized() const { return holder_ != nullptr; }
 
+  inline bool reset() const { holder_ == nullptr; }
+
   /*! Return the dimensions of the memory block. */
   inline const DDim &dims() const { return dims_; }
 
