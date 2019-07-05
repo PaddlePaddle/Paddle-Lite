@@ -14,6 +14,9 @@ diff_threshold = 0.01
 is_lod = False
 mobile_model_path = ""
 fast_check = False
+is_sample_step = False
+sample_step = 1
+sample_num = 20
 
 np.set_printoptions(linewidth=150)
 
@@ -108,7 +111,7 @@ def resave_model(feed_kv):
 def gen_feed_kv():
     feed_kv = {}
     for feed_name in feeds:
-        feed_shape = get_var_shape(feed_name)
+        feed_shape = get_feed_var_shape(feed_name)
         data = np.random.random(feed_shape).astype("float32")
         feed_kv[feed_name] = data
     return feed_kv
@@ -140,7 +143,7 @@ def load_feed_kv():
     pp_yellow(dot + dot + " checking feed info")
     pp_green("feed data is saved into directory 【{}】".format(feed_path), 1)
     for feed_name in feeds:
-        feed_shape = get_var_shape(feed_name)
+        feed_shape = get_feed_var_shape(feed_name)
         pp_tab("feed var name : {}; feed var shape : {}".format(feed_name, feed_shape), 1)
         file_name = feed_name.replace("/", "_")
         last_feed_var_name = feed_name
@@ -194,6 +197,12 @@ def get_var_shape(var_name):
             shape[i] = 1
     return shape
 
+# 获取输入变量形状
+def get_feed_var_shape(var_name):
+    # 如果想写死输入形状，放开以下语句
+    # return [1, 3, 224, 224]
+    return get_var_shape(var_name)
+
 # 获取var的数据
 def get_var_data(var_name, feed_kv=None):
     # 强制var为可持久化
@@ -201,22 +210,25 @@ def get_var_data(var_name, feed_kv=None):
     persistable = v.persistable
     if not persistable:
         v.persistable = True
-    outputs = run_model(feed_kv=feed_kv)
+    # outputs = run_model(feed_kv=feed_kv)
     output = np.array(fluid.global_scope().find_var(var_name).get_tensor())
     # 恢复var的可持久化属性
     v.persistable = persistable
     return output
 
 output_var_cache = {}
-sample_step = 1
 def tensor_sample(tensor):
-    # step = math.floor(len(tensor) / 20)
+    if is_sample_step:
+        step = sample_step
+    else:
+        step = math.floor(len(tensor) / sample_num)
+    step = max(step, 1)
     sample = []
-    for i in range(0, len(tensor), sample_step):
+    for i in range(0, len(tensor), step):
         sample.append(tensor[i])
     return sample
-op_cache = {}
 
+op_cache = {}
 # 获取每层输出的数据
 def save_all_op_output(feed_kv=None):
     if not os.path.exists(output_path):
@@ -245,8 +257,12 @@ def save_all_op_output(feed_kv=None):
             op_cache[i] = (var_name, op)
             file_name = var_name.replace("/", "_")
             out_file = open(output_path + "/" + file_name, "w")
-            for item in data:
-                out_file.write("{}\n".format(item))
+            if var_name in feed_names:
+                for item in data:
+                    out_file.write("{}\n".format(item))
+            else:
+                for item in sample:
+                    out_file.write("{}\n".format(item))
             out_file.close()
         except:
             pass
@@ -265,6 +281,7 @@ def check_mobile_results(args, fuse, mem_opt):
     args = "{} {} {}".format("1" if fuse else "0", "1" if mem_opt else "0", args)
     res = sh("adb shell \"cd {} && export LD_LIBRARY_PATH=. && ./test-net {}\"".format(mobile_exec_root, args))
     lines = res.split("\n")
+    print(lines)
     for line in lines:
         if line.startswith("auto-test-debug"):
             print(line)
@@ -375,7 +392,7 @@ def main():
     push(feed_path + "/" + last_feed_file_name, "input.txt")
     push(mobile_src_root + "/build/release/arm-v7a/build/libpaddle-mobile.so")
     push(mobile_src_root + "/test/build/test-net")
-    last_feed_var_shape = get_var_shape(last_feed_var_name)
+    last_feed_var_shape = get_feed_var_shape(last_feed_var_name)
     args = str(len(last_feed_var_shape))
     for dim in last_feed_var_shape:
         args += " " + str(dim)
@@ -387,7 +404,11 @@ def main():
     else:
         args += " 0"
     args += " " + str(len(output_var_cache))
-    args += " " + str(sample_step)
+    args += " " + str(1 if is_sample_step else 0)
+    if is_sample_step:
+        args += " " + str(sample_step)
+    else:
+        args += " " + str(sample_num)
     for var_name in output_var_cache.keys():
         args += " " + var_name
     if not fast_check:

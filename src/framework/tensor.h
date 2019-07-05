@@ -17,6 +17,7 @@ limitations under the License. */
 #include <cstdint>
 #include <cstring>
 #include <fstream>
+#include <functional>
 #include <memory>
 #include <string>
 #include <vector>
@@ -59,7 +60,8 @@ class Tensor : public TensorBase {
 
   template <typename T>
   Tensor(T *input, DDim ddim) {
-    // PADDLE_MOBILE_ENFORCE(
+    // input pointer is allocated by external sources. can't calculate its
+    // length. PADDLE_MOBILE_ENFORCE(
     //     (sizeof(input) / sizeof(input[0])) == framework::product(ddim),
     //     "input vector'length should be equal to tensor's length");
 
@@ -209,7 +211,7 @@ class Tensor : public TensorBase {
   struct PlaceholderImpl : public Placeholder {
     PlaceholderImpl(size_t size, const kTypeId_t type)
         : ptr_(static_cast<uint8_t *>(memory::Alloc(size)),
-               memory::PODDeleter<uint8_t>()),
+               [](uint8_t *ptr) { memory::PODDeleter<uint8_t>()(ptr); }),
           size_(size),
           capatity_(size),
           type_(type) {
@@ -218,7 +220,7 @@ class Tensor : public TensorBase {
     }
 
     PlaceholderImpl(size_t size, const kTypeId_t type, uint8_t *ptr)
-        : ptr_(ptr, memory::PODDeleter<uint8_t>()),
+        : ptr_(ptr, [](uint8_t *ptr) {}),
           size_(size),
           capatity_(size),
           type_(type) {
@@ -242,7 +244,7 @@ class Tensor : public TensorBase {
       size_ = size;
     }
 
-    std::unique_ptr<uint8_t, memory::PODDeleter<uint8_t>> ptr_;
+    std::unique_ptr<uint8_t, std::function<void(uint8_t *)>> ptr_;
 
     /*! the size of memory block. */
     size_t size_;
