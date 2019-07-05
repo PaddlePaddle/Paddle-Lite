@@ -79,7 +79,11 @@ void test(int argc, char *argv[]) {
 
   int var_count = std::stoi(argv[arg_index]);
   arg_index++;
-  int sample_step = std::stoi(argv[arg_index]);
+  bool is_sample_step = std::stoi(argv[arg_index]) == 1;
+  arg_index++;
+  int sample_arg = std::stoi(argv[arg_index]);
+  int sample_step = sample_arg;
+  int sample_num = sample_arg;
   arg_index++;
   std::vector<std::string> var_names;
   for (int i = 0; i < var_count; i++) {
@@ -130,30 +134,31 @@ void test(int argc, char *argv[]) {
       }
     }
 
-    // 预热10次
-    for (int i = 0; i < 10; i++) {
-      if (is_lod) {
-        auto out = paddle_mobile.Predict(input_lod_tensor);
-      } else {
-        paddle_mobile.Feed(var_names[0], input_tensor);
-        paddle_mobile.Predict();
-      }
-    }
+    // // 预热10次
+    // for (int i = 0; i < 10; i++) {
+    //   if (is_lod) {
+    //     auto out = paddle_mobile.Predict(input_lod_tensor);
+    //   } else {
+    //     paddle_mobile.Feed(var_names[0], input_tensor);
+    //     paddle_mobile.Predict();
+    //   }
+    // }
 
-    // 测速
-    auto time5 = time();
-    for (int i = 0; i < 50; i++) {
-      if (is_lod) {
-        auto out = paddle_mobile.Predict(input_lod_tensor);
-      } else {
-        paddle_mobile.Feed(var_names[0], input_tensor);
-        paddle_mobile.Predict();
-      }
-    }
-    auto time6 = time();
-    std::cout << "auto-test"
-              << " predict-time-cost " << time_diff(time5, time6) / 50 << "ms"
-              << std::endl;
+    // // 测速
+    // auto time5 = time();
+    // for (int i = 0; i < 50; i++) {
+    //   if (is_lod) {
+    //     auto out = paddle_mobile.Predict(input_lod_tensor);
+    //   } else {
+    //     paddle_mobile.Feed(var_names[0], input_tensor);
+    //     paddle_mobile.Predict();
+    //   }
+    // }
+    // auto time6 = time();
+    // std::cout << "auto-test"
+    //           << " predict-time-cost " << time_diff(time5, time6) / 50 <<
+    //           "ms"
+    //           << std::endl;
 
     // 测试正确性
     if (is_lod) {
@@ -173,6 +178,12 @@ void test(int argc, char *argv[]) {
       }
       auto data = out->data<float>();
       std::string sample = "";
+      if (!is_sample_step) {
+        sample_step = len / sample_num;
+      }
+      if (sample_step <= 0) {
+        sample_step = 1;
+      }
       for (int i = 0; i < len; i += sample_step) {
         sample += " " + std::to_string(data[i]);
       }
