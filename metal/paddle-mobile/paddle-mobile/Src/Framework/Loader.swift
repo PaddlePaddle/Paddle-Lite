@@ -33,6 +33,7 @@ public class Loader<P: PrecisionProtocol>: Loaderable {
             fseek(file, 0, SEEK_END)
             fileSize = ftell(file)
             guard fileSize > 0 else {
+                fclose(file)
                 throw PaddleMobileError.makeError(type: .loaderError, msg: "param file size is too small")
             }
             rewind(file)
@@ -146,39 +147,35 @@ public class Loader<P: PrecisionProtocol>: Loaderable {
         }
         
         func read(tensor: Tensor<P>) throws {
-            guard nowIndex <= paramSize else {
+            guard nowIndex < paramSize else {
                 throw PaddleMobileError.makeError(type: .loaderError, msg: "out of the file range")
             }
-            var readerIndex: Int = 0
-            func pointerReader<T>(type: T.Type) -> T {
-                let ptr = UnsafeMutablePointer<T>.allocate(capacity: MemoryLayout<T>.size)
-                memcpy(ptr, paramPointer.advanced(by: Int(readerIndex)), MemoryLayout<T>.size)
+            func pointerReader<T>(type: T.Type) throws -> T {
+                guard nowIndex + MemoryLayout<T>.size <= paramSize else {
+                    throw PaddleMobileError.makeError(type: .loaderError, msg: "must satisfy nowIndex:\(nowIndex)+MemoryLayout<T>.size:\(MemoryLayout<T>.size) <= paramSize:\(paramSize)")
+                }
+                let ptr = UnsafeMutablePointer<T>.allocate(capacity: 1)
+                memcpy(ptr, paramPointer.advanced(by: nowIndex), MemoryLayout<T>.size)
                 nowIndex += MemoryLayout<T>.size
-                readerIndex += MemoryLayout<T>.size
                 let pointee = ptr.pointee
                 ptr.deinitialize(count: MemoryLayout<UInt32>.size)
                 ptr.deallocate()
-                
                 return pointee
             }
-            let _ = pointerReader(type: UInt32.self)
-            let lodLevel = pointerReader(type: UInt64.self)
+            let _ = try pointerReader(type: UInt32.self)
+            let lodLevel = try pointerReader(type: UInt64.self)
             for _ in 0..<lodLevel {
-                let size = pointerReader(type: UInt64.self)
+                let size = try pointerReader(type: UInt64.self)
                 for _ in 0..<Int(size/UInt64(MemoryLayout<size_t>.size)){
-                    _ = pointerReader(type: size_t.self)
+                    _ = try pointerReader(type: size_t.self)
                 }
             }
             
-            let _ = pointerReader(type: UInt32.self)
-            let tensorDescSize = pointerReader(type: Int32.self)
-            
-            paramPointer = paramPointer.advanced(by: Int(readerIndex))
-            paramPointer = paramPointer.advanced(by: Int(tensorDescSize))
+            let _ = try pointerReader(type: UInt32.self)
+            let tensorDescSize = try pointerReader(type: Int32.self)
             nowIndex += Int(tensorDescSize)
             
-            let _ = memcpy(tensor.data.pointer, paramPointer, tensor.data.size)
-            paramPointer = paramPointer.advanced(by: Int(tensor.data.size))
+            let _ = memcpy(tensor.data.pointer, paramPointer.advanced(by: nowIndex), tensor.data.size)
             nowIndex += tensor.data.size
         }
         deinit {

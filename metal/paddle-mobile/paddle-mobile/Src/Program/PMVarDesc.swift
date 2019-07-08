@@ -61,6 +61,11 @@ public class PMVarDesc {
     public let persistable: Bool
     public let type: VarTypeType
     let tensorDesc: TensorDesc?
+    public var dims: [Int]? {
+        get {
+            return tensorDesc?.dims
+        }
+    }
     init(protoVarDesc: VarDesc) {
         type = VarTypeType.init(rawValue: Int(protoVarDesc.type.type.rawValue)) ?? .ErrorType
         name = protoVarDesc.name

@@ -21,9 +21,6 @@ struct LeakyReluMetalParam {
 class LeakyReluKernel<P: PrecisionProtocol>: Kernel, Computable {
     var metalParam: LeakyReluMetalParam
     func compute(commandBuffer: MTLCommandBuffer, param: LeakyReluParam<P>) throws {
-        guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
-            throw PaddleMobileError.makeError(type: .predictError, msg: "encoder is nil")
-        }
         guard let tempPipline = pipline else {
             throw PaddleMobileError.makeError(type: .predictError, msg: "pipline is nil")
         }
@@ -33,11 +30,18 @@ class LeakyReluKernel<P: PrecisionProtocol>: Kernel, Computable {
         guard let outputTexture = param.output.metalTexture else {
             throw PaddleMobileError.makeError(type: .predictError, msg: "output metaltexture is nil")
         }
-        encoder.setTexture(inputTexture, index: 0)
-        encoder.setTexture(outputTexture, index: 1)
-        encoder.setBytes(&metalParam, length: MemoryLayout<Relu6MetalParam>.size, index: 0)
-        encoder.dispatch(computePipline: tempPipline, outTexture: outputTexture)
-        encoder.endEncoding()
+        do {
+            guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
+                throw PaddleMobileError.makeError(type: .predictError, msg: "encoder is nil")
+            }
+            defer {
+                encoder.endEncoding()
+            }
+            encoder.setTexture(inputTexture, index: 0)
+            encoder.setTexture(outputTexture, index: 1)
+            encoder.setBytes(&metalParam, length: MemoryLayout<Relu6MetalParam>.size, index: 0)
+            try encoder.dispatch(computePipline: tempPipline, outTexture: outputTexture)
+        }
     }
     
     required init(device: MTLDevice, param: LeakyReluParam<P>, initContext: InitContext) throws {

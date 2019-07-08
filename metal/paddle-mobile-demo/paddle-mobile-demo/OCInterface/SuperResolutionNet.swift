@@ -35,12 +35,21 @@ import paddle_mobile
     @objc override public init(device: MTLDevice) throws {
         try super.init(device: device)
         except = 0
-        modelPath = Bundle.main.path(forResource: "super_model", ofType: nil) ?! "model null"
-        paramPath = Bundle.main.path(forResource: "super_params", ofType: nil) ?! "para null"
+        guard let modelPath = Bundle.main.path(forResource: "super_model", ofType: nil) else {
+            throw PaddleMobileError.makeError(type: PaddleMobileErrorType.loaderError, msg: "model null")
+        }
+        self.modelPath = modelPath
+        guard let paramPath = Bundle.main.path(forResource: "super_params", ofType: nil) else {
+            throw PaddleMobileError.makeError(type: PaddleMobileErrorType.loaderError, msg: "para null")
+        }
+        self.paramPath = paramPath
         preprocessKernel = nil
         inputDim = Dim.init(inDim: [1, 224, 224, 1])
         metalLoadMode = .LoadMetalInCustomMetalLib
-        metalLibPath = Bundle.main.path(forResource: "paddle-mobile-metallib", ofType: "metallib")
+        guard let metalLibPath = Bundle.main.path(forResource: "paddle-mobile-metallib", ofType: "metallib") else {
+            throw PaddleMobileError.makeError(type: PaddleMobileErrorType.loaderError, msg: "metallib null")
+        }
+        self.metalLibPath = metalLibPath
     }
     
     override public func updateProgram(program: Program) throws {

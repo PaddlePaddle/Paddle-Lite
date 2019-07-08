@@ -25,25 +25,29 @@ struct SplitMetalParam {
 class SplitKernel<P: PrecisionProtocol>: Kernel, Computable{
     var smp: SplitMetalParam
     func compute(commandBuffer: MTLCommandBuffer, param: SplitParam<P>) throws {
-        guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
-            throw PaddleMobileError.makeError(type: .predictError, msg: "encoder is nil")
-        }
         guard let tempPipline = pipline else {
             throw PaddleMobileError.makeError(type: .predictError, msg: "pipline is nil")
         }
         guard let inputMetalTexture = param.input.metalTexture else {
             throw PaddleMobileError.makeError(type: .predictError, msg: "input metaltexture is nil")
         }
-        encoder.setTexture(inputMetalTexture, index: 0)
-        for i in 0..<param.outputList.count {
-            guard let outputMetalTexture = param.outputList[i].metalTexture else {
-                throw PaddleMobileError.makeError(type: .predictError, msg: "output metaltexture \(i) is nil")
+        do {
+            guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
+                throw PaddleMobileError.makeError(type: .predictError, msg: "encoder is nil")
             }
-            encoder.setTexture(outputMetalTexture, index: i + 1)
+            defer {
+                encoder.endEncoding()
+            }
+            encoder.setTexture(inputMetalTexture, index: 0)
+            for i in 0..<param.outputList.count {
+                guard let outputMetalTexture = param.outputList[i].metalTexture else {
+                    throw PaddleMobileError.makeError(type: .predictError, msg: "output metaltexture \(i) is nil")
+                }
+                encoder.setTexture(outputMetalTexture, index: i + 1)
+            }
+            encoder.setBytes(&smp, length: MemoryLayout<SplitMetalParam>.size, index: 0)
+            try encoder.dispatch(computePipline: tempPipline, outTexture: inputMetalTexture)
         }
-        encoder.setBytes(&smp, length: MemoryLayout<SplitMetalParam>.size, index: 0)
-        encoder.dispatch(computePipline: tempPipline, outTexture: inputMetalTexture)
-        encoder.endEncoding()
     }
     
     required init(device: MTLDevice, param: SplitParam<P>, initContext: InitContext) throws {

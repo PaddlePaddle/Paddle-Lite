@@ -299,7 +299,7 @@ class Tensor<P: PrecisionProtocol>: Tensorial {
             convert(to: DataLayout.NHWC())
         }
         
-        if P.precisionType == .Float16 && computePrecision == .Float32{
+        if P.precisionType == .Float16 && computePrecision == .Float32 {
             throw PaddleMobileError.makeError(type: .predictError, msg: "Float16 model can not compute in Float32 precision")
         }
         

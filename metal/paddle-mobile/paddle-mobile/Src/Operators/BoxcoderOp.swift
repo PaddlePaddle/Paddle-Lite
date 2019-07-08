@@ -60,23 +60,14 @@ class BoxcoderOp<P: PrecisionProtocol>: Operator<BoxcoderKernel<P>, BoxcoderPara
     
     func delogOutput() {
         print(" \(type) output: ")
-        let device = para.output.metalTexture!.device
-        do {
-            let pbv : [Float32] = try device.texture2tensor(texture: para.priorBoxVar.metalTexture!, dim: para.priorBoxVar.tensorDim.dims, transpose: para.priorBoxVar.transpose)
-            let pb : [Float32] = try device.texture2tensor(texture: para.priorBox.metalTexture!, dim: para.priorBox.tensorDim.dims, transpose: para.priorBox.transpose)
-            let tb : [Float32] = try device.texture2tensor(texture: para.targetBox.metalTexture!, dim: para.targetBox.tensorDim.dims, transpose: para.targetBox.transpose)
-            let out : [Float32] = try device.texture2tensor(texture: para.output.metalTexture!, dim: para.output.tensorDim.dims, transpose: para.output.transpose)
-            print(" prior box var ")
-            print(pbv.strideArray())
-            print(" target box ")
-            print(tb.strideArray())
-            print(" prior box ")
-            print(pb.strideArray())
-            print(" output ")
-            print(out.strideArray())
-        } catch _ {
-        }
-        
+        print(" prior box var ")
+        para.priorBoxVar.delog()
+        print(" target box ")
+        para.targetBox.delog()
+        print(" prior box ")
+        para.priorBox.delog()
+        print(" output ")
+        para.output.delog()
     }
     
 }

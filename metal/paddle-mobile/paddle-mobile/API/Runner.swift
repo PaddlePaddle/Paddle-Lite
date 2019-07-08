@@ -40,7 +40,6 @@ import Foundation
     var textureLoader: MTKTextureLoader?
     public let net: Net
     let device: MTLDevice?
-    let numel: Int
     private static let loadLock = NSLock()
     private static let clearLock = NSLock()
     /// 初始化函数
@@ -59,7 +58,6 @@ import Foundation
         if let inDevice = device {
             textureLoader = MTKTextureLoader.init(device: inDevice)
         }
-        numel = net.inputDim.numel()
     }
     
     /// load 模型, 返回 true 可进行预测，公共方法，保证线程安全
@@ -69,6 +67,9 @@ import Foundation
         Runner.loadLock.lock()
         let success = unSafeLoad()
         Runner.loadLock.unlock()
+        if !success {
+            clear()
+        }
         return success
     }
     
@@ -79,6 +80,9 @@ import Foundation
         Runner.loadLock.lock()
         let success = unSafeLoad(optimizeProgram: optimizeProgram, optimizeMemory: optimizeMemory)
         Runner.loadLock.unlock()
+        if !success {
+            clear()
+        }
         return success
     }
     
@@ -149,7 +153,16 @@ import Foundation
         do {
             guard let executor = self.executor else {
                 paddleMobileLog("executor is empty", logLevel: .FatalError, callStack: Thread.callStackSymbols)
-                completion(false, nil)
+                DispatchQueue.main.async {
+                    completion(false, nil)
+                }
+                return
+            }
+            guard texture != nil else {
+                paddleMobileLog("texture is nil", logLevel: .FatalError, callStack: Thread.callStackSymbols)
+                DispatchQueue.main.async {
+                    completion(false, nil)
+                }
                 return
             }
             try executor.predict(input: texture, dim: self.net.inputDim, completionHandle: { [weak self] (success, res) in
@@ -163,7 +176,9 @@ import Foundation
                 completion(false, nil)
             }, preProcessKernle: self.net.preprocessKernel, except: self.net.except)
         } catch _ {
-            completion(false, nil)
+            DispatchQueue.main.async {
+                completion(false, nil)
+            }
             return
         }
     }
@@ -198,7 +213,7 @@ import Foundation
     /// - Parameters:
     ///   - inBuffer: 输入buffer
     ///   - getTexture: 结果回调
-    @objc public func getTexture(inBuffer: MTLBuffer, getTexture: @escaping (Bool, MTLTexture?) -> Void) {
+    @objc public func getTexture(inBuffer: MTLBuffer, getTexture: @escaping (Bool, MTLTexture?) -> Void, channelNum: Int = 1) {
         guard let inQueue = queue, let inDevice = device else {
             DispatchQueue.main.async {
                 getTexture(false, nil)
@@ -214,7 +229,7 @@ import Foundation
         }
         
         do {
-            let bufferToTextureKernel = try BufferToTextureKernel.init(device: inDevice, outputDim: Shape.init(inWidth: net.inputDim[2], inHeight: net.inputDim[1], inChannel: net.inputDim[3]), metalLoadMode: net.metalLoadMode, metalLibPath: net.metalLibPath)
+            let bufferToTextureKernel = try BufferToTextureKernel.init(device: inDevice, outputDim: Shape.init(inWidth: net.inputDim[2], inHeight: net.inputDim[1], inChannel: net.inputDim[3]), metalLoadMode: net.metalLoadMode, metalLibPath: net.metalLibPath, channelNum: channelNum)
             try bufferToTextureKernel.compute(inputBuffer: inBuffer, commandBuffer: buffer)
             buffer.addCompletedHandler { (buffer) in
                 getTexture(true, bufferToTextureKernel.outputTexture)
@@ -278,5 +293,123 @@ import Foundation
             }
             return
         }
+    }
+    
+    public func feedOpOutputVarDesc() -> PMVarDesc? {
+        guard let program = program else {
+            paddleMobileLog("need load program first")
+            return nil
+        }
+        var feedOp: PMOpDesc? = nil
+        var feedBlock: PMBlockDesc? = nil
+        for block in program.programDesc.blocks {
+            for op in block.ops {
+                if op.type == gFeedType {
+                    feedOp = op
+                    feedBlock = block
+                    break
+                }
+            }
+            if feedOp != nil && feedBlock != nil{
+                break
+            }
+        }
+        if let feedOp = feedOp, let feedBlock = feedBlock {
+            guard let outputKey = opInfos[gFeedType]?.outputs.first else {
+                return nil
+            }
+            guard let feedVarName = feedOp.outputs[outputKey]?.first else {
+                return nil
+            }
+            for varDesc in feedBlock.vars {
+                if varDesc.name == feedVarName {
+                    return varDesc
+                }
+            }
+        }
+        return nil
+    }
+    
+    public func fetchOpInputVarDesc() -> [PMVarDesc]? {
+        guard let program = program else {
+            paddleMobileLog("need load program first")
+            return nil
+        }
+        var fetchOp: PMOpDesc? = nil
+        var fetchBlock: PMBlockDesc? = nil
+        for block in program.programDesc.blocks {
+            for op in block.ops {
+                if op.type == gFetchType {
+                    fetchOp = op
+                    fetchBlock = block
+                    break
+                }
+            }
+            if fetchOp != nil && fetchBlock != nil{
+                break
+            }
+        }
+        if let fetchOp = fetchOp, let fetchBlock = fetchBlock {
+            guard let outKey = opInfos[gFetchType]?.inputs.first else {
+                return nil
+            }
+            guard let fetchVarNames = fetchOp.inputs[outKey] else {
+                return nil
+            }
+            var varDescs: [PMVarDesc] = []
+            for varName in fetchVarNames {
+                for varDesc in fetchBlock.vars {
+                    if varDesc.name == varName {
+                        varDescs.append(varDesc)
+                    }
+                }
+            }
+            return varDescs
+        }
+        return nil
+    }
+    
+    @objc public func fetchVar(_ varName: String) -> [Float]? {
+        guard let value = program?.scope[varName] else {
+            return nil
+        }
+        if let texture = value as? Texture {
+            do {
+                if texture.transpose == [0, 2, 3, 1] {
+                    return try texture.metalTexture?.toTensor(dim: (n: texture.padToFourDim[0], c: texture.padToFourDim[1], h: texture.padToFourDim[2], w: texture.padToFourDim[3]))
+                } else if texture.transpose == [0, 1, 2, 3] {
+                    return try texture.realNHWC()
+                } else {
+                    paddleMobileLog("unsupported transpose: \(texture.transpose)", logLevel: .Warning)
+                }
+            } catch _ {
+                return nil
+            }
+        }
+        return nil
+    }
+    
+    public func getAllOutputVars() -> [String] {
+        var orderedVars = [String]()
+        let program = self.program!
+        let programDesc = program.programDesc
+        let scope = program.scope
+        for block in programDesc.blocks {
+            var varsDic = [String: PMVarDesc]()
+            for varDesc in block.vars {
+                varsDic[varDesc.name] = varDesc
+            }
+            for op in block.ops {
+                let outputs = op.outputs
+                for dicPair in outputs {
+                    for varName in dicPair.value {
+                        if scope[varName] is Texture {
+                            orderedVars.append(varName)
+                        }
+                    }
+                }
+            }
+        }
+        return orderedVars
     }
 }

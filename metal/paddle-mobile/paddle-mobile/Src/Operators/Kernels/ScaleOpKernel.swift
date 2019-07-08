@@ -44,9 +44,6 @@ class ScaleOpKernel<P: PrecisionProtocol>: Kernel, Computable{
     }
     
     func compute(commandBuffer: MTLCommandBuffer, param: ScaleParam<P>) throws {
-        guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
-            throw PaddleMobileError.makeError(type: .predictError, msg: "encoder is nil")
-        }
         guard let tempPipline = pipline else {
             throw PaddleMobileError.makeError(type: .predictError, msg: "pipline is nil")
         }
@@ -56,11 +53,17 @@ class ScaleOpKernel<P: PrecisionProtocol>: Kernel, Computable{
         guard let outputMetalTexture = param.output.metalTexture else {
             throw PaddleMobileError.makeError(type: .predictError, msg: "output metaltexture is nil")
         }
-        encoder.setTexture(inputMetalTexture, index: 0)
-        encoder.setTexture(outputMetalTexture, index: 1)
-        encoder.setBytes(&metalParam, length: MemoryLayout<PoolMetalParam>.size, index: 0)
-        
-        encoder.dispatch(computePipline: tempPipline, outTexture: outputMetalTexture)
-        encoder.endEncoding()
+        do {
+            guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
+                throw PaddleMobileError.makeError(type: .predictError, msg: "encoder is nil")
+            }
+            defer {
+                encoder.endEncoding()
+            }
+            encoder.setTexture(inputMetalTexture, index: 0)
+            encoder.setTexture(outputMetalTexture, index: 1)
+            encoder.setBytes(&metalParam, length: MemoryLayout<PoolMetalParam>.size, index: 0)
+            try encoder.dispatch(computePipline: tempPipline, outTexture: outputMetalTexture)
+        }
     }
 }

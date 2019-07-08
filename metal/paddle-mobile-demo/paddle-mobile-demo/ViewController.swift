@@ -117,7 +117,7 @@ class ViewController: UIViewController {
                 }
             }
         } else {
-            fatalError( " unsupport " )
+            print( " unsupport " )
         }
         
         if runner.load(optimizeProgram: true, optimizeMemory: true) {
@@ -151,7 +151,8 @@ class ViewController: UIViewController {
             for i in 0..<max {
                 self.runner.predict(texture: inTexture) { [weak self] (success, resultHolder)  in
                     guard let sSelf = self else {
-                        fatalError()
+                        print("runner nil in predict completion")
+                        return
                     }
                     
                     if success, let inResultHolderArr = resultHolder {
@@ -205,7 +206,8 @@ extension ViewController: UIPickerViewDataSource, UIPickerViewDelegate{
         } else if pickerView == threadPickerView {
             return 1
         } else {
-            fatalError()
+            print("unsupport picker view")
+            return 0
         }
     }
     
@@ -215,7 +217,8 @@ extension ViewController: UIPickerViewDataSource, UIPickerViewDelegate{
         } else if pickerView == threadPickerView {
             return platformSupport.count
         } else {
-            fatalError()
+            print("unsupport picker view")
+            return 0
         }
     }
     
@@ -225,7 +228,8 @@ extension ViewController: UIPickerViewDataSource, UIPickerViewDelegate{
         } else if pickerView == threadPickerView {
             return platformSupport[row].1
         } else {
-            fatalError()
+            print("unsupport picker view")
+            return ""
         }
     }
     
@@ -235,7 +239,7 @@ extension ViewController: UIPickerViewDataSource, UIPickerViewDelegate{
         } else if pickerView == threadPickerView {
             platform = platformSupport[row].0
         } else {
-            fatalError()
+            print("unsupport picker view")
         }
     }
 }
@@ -244,7 +248,8 @@ extension ViewController:  UIImagePickerControllerDelegate, UINavigationControll
     func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [String : Any]) {
         picker.dismiss(animated: true){[weak self] in
             guard let sSelf = self, let image =  info["UIImagePickerControllerOriginalImage"] as? UIImage else{
-                fatalError("no image")
+                print("no image")
+                return
             }
             sSelf.selectImage = image
             sSelf.selectImageView.image = image

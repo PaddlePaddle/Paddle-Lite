@@ -31,31 +31,64 @@ public struct MetalConvParam {
 class ConvKernel<P: PrecisionProtocol>: Kernel, Computable {
     var metalParam: MetalConvParam!
     required init(device: MTLDevice, param: ConvParam<P>, initContext: InitContext) throws {
-        try param.filter.initBuffer(device: device, precision: Precision.Float32)
-        if param.filter.width == 1 && param.filter.height == 1 {
-            try super.init(device: device, inFunctionName: "conv_1x1", initContext: initContext)
-        } else if param.filter.channel == 1 {
-            try super.init(device: device, inFunctionName: "depthwise_conv_3x3", initContext: initContext)
-        } else if param.filter.width == 3 && param.filter.height == 3 {
-            try super.init(device: device, inFunctionName: "conv_3x3", initContext: initContext)
+        try param.output.initTexture(device: device, inTranspose: [0, 2, 3, 1], computePrecision: GlobalConfig.shared.computePrecision)
+        if GlobalConfig.shared.computePrecision == .Float16 {
+            if param.filter.width == 1 && param.filter.height == 1 {
+                try super.init(device: device, inFunctionName: "conv_1x1_half", initContext: initContext)
+            } else if param.filter.width == 3 && param.filter.height == 3 {
+                if param.filter.channel == 1 {
+                    try super.init(device: device, inFunctionName: "depthwise_conv_3x3_half", initContext: initContext)
+                } else {
+                    if param.groups == 1 {
+                        try super.init(device: device, inFunctionName: "conv_3x3_half", initContext: initContext)
+                    } else {
+                        try super.init(device: device, inFunctionName: "group_conv_3x3_half", initContext: initContext)
+                    }
+                }
+            } else {
+                throw PaddleMobileError.makeError(type: .netError, msg: "unsupported conv filter")
+            }
+        } else if GlobalConfig.shared.computePrecision == .Float32 {
+            if param.filter.width == 1 && param.filter.height == 1 {
+                try super.init(device: device, inFunctionName: "conv_1x1", initContext: initContext)
+            } else if param.filter.width == 3 && param.filter.height == 3 {
+                if param.filter.channel == 1 {
+                    try super.init(device: device, inFunctionName: "depthwise_conv_3x3", initContext: initContext)
+                } else {
+                    if param.groups == 1 {
+                        try super.init(device: device, inFunctionName: "conv_3x3", initContext: initContext)
+                    } else {
+                        try super.init(device: device, inFunctionName: "group_conv_3x3", initContext: initContext)
+                    }
+                }
+            } else {
+                throw PaddleMobileError.makeError(type: .netError, msg: "unsupported conv filter")
+            }
         } else {
-            throw PaddleMobileError.makeError(type: .netError, msg: "unsupported conv filter")
+            throw PaddleMobileError.makeError(type: .predictError, msg: "unsupported compute precision: \(GlobalConfig.shared.computePrecision)")
         }
         
-        let offsetX = param.filter.dim[2]/2 - Int(param.paddings[0])
-        let offsetY = param.filter.dim[1]/2 - Int(param.paddings[1])
+        
+        let offsetX = (Int(param.dilations[0]) * (param.filter.tensorDim[3] - 1) + 1) / 2 - Int(param.paddings[0])
+        let offsetY = (Int(param.dilations[1]) * (param.filter.tensorDim[2] - 1) + 1) / 2 - Int(param.paddings[1])
         let offsetZ = 0.0
         let iC = param.input.tensorDim[1];
         let fC = param.filter.tensorDim[1];
         let oC = param.output.tensorDim[1];
         
+        guard let filterChannel = param.filter.channel else {
+            throw PaddleMobileError.makeError(type: .netError, msg: "filter unsupported")
+        }
+        guard let filterN = param.filter.n else {
+            throw PaddleMobileError.makeError(type: .netError, msg: "filter unsupported")
+        }
+        let padWhenOneC = !(filterChannel == 1 && filterN == param.input.tensorDim[1])
+        try param.filter.initBuffer(device: device, precision: GlobalConfig.shared.computePrecision, padWhenOneC: padWhenOneC)
+        
         metalParam = MetalConvParam.init(offsetX: Int16(offsetX), offsetY: Int16(offsetY), offsetZ: Int16(offsetZ), strideX: UInt16(param.stride[0]), strideY: UInt16(param.stride[1]), dilationX: UInt16(param.dilations[0]), dilationY: UInt16(param.dilations[1]), groups: UInt16(param.groups), iC: UInt16(iC), fC: UInt16(fC), oC: UInt16(oC))
     }
     
     func compute(commandBuffer: MTLCommandBuffer, param: ConvParam<P>) throws {
-        guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
-            throw PaddleMobileError.makeError(type: .predictError, msg: "encoder is nil")
-        }
         guard let tempPipline = pipline else {
             throw PaddleMobileError.makeError(type: .predictError, msg: "pipline is nil")
         }
@@ -65,11 +98,18 @@ class ConvKernel<P: PrecisionProtocol>: Kernel, Computable {
         guard let outputMetalTexture = param.output.metalTexture else {
             throw PaddleMobileError.makeError(type: .predictError, msg: "output metaltexture is nil")
         }
-        encoder.setTexture(inputMetalTexture, index: 0)
-        encoder.setTexture(outputMetalTexture, index: 1)
-        encoder.setBytes(&metalParam, length: MemoryLayout<MetalConvParam>.size, index: 0)
-        encoder.setBuffer(param.filter.buffer, offset: 0, index: 1)
-        encoder.dispatch(computePipline: tempPipline, outTexture: outputMetalTexture)
-        encoder.endEncoding()
+        do {
+            guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
+                throw PaddleMobileError.makeError(type: .predictError, msg: "encoder is nil")
+            }
+            defer {
+                encoder.endEncoding()
+            }
+            encoder.setTexture(inputMetalTexture, index: 0)
+            encoder.setTexture(outputMetalTexture, index: 1)
+            encoder.setBytes(&metalParam, length: MemoryLayout<MetalConvParam>.size, index: 0)
+            encoder.setBuffer(param.filter.buffer, offset: 0, index: 1)
+            try encoder.dispatch(computePipline: tempPipline, outTexture: outputMetalTexture)
+        }
     }
 }

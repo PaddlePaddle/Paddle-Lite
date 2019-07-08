@@ -25,7 +25,9 @@ class ElementwiseAddParam<P: PrecisionProtocol>: OpParam {
             inputY = try ElementwiseAddParam.inputY(inputs: opDesc.paraInputs, from: inScope)
         } catch _ {
             let tensorY: Tensor<P> = try ElementwiseAddParam.inputY(inputs: opDesc.paraInputs, from: inScope)
-            let device = inputX.metalTexture!.device
+            guard let device = inputX.metalTexture?.device else {
+                throw PaddleMobileError.makeError(type: .loaderError, msg: "ElementwiseAddParam inputX metalTexture nil")
+            }
             inputY = try Texture.init(device: device, inDim: tensorY.dim)
             let value: [P] = Array(UnsafeBufferPointer(start: tensorY.data.pointer, count: tensorY.dim.numel()))
             inputY.metalTexture = try device.tensor2texture(value: value, dim: tensorY.dim.dims, transpose: [0, 1, 2, 3], inComputePrecision: GlobalConfig.shared.computePrecision)

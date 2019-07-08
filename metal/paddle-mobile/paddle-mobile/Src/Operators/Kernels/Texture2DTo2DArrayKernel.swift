@@ -37,15 +37,19 @@ class Texture2DTo2DArrayKernel<P: PrecisionProtocol>: Kernel, Computable{
     }
     
     func compute(commandBuffer: MTLCommandBuffer, param: FeedParam<P>) throws {
-        guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
-            throw PaddleMobileError.makeError(type: .predictError, msg: "encoder is nil")
-        }
         guard let tempPipline = pipline else {
             throw PaddleMobileError.makeError(type: .predictError, msg: "pipline is nil")
         }
-        encoder.setTexture(param.input.mtlTexture, index: 0)
-        encoder.setTexture(param.output.metalTexture, index: 1)
-        encoder.dispatch(computePipline: tempPipline, outTexture: param.input.mtlTexture)
-        encoder.endEncoding()
+        do {
+            guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
+                throw PaddleMobileError.makeError(type: .predictError, msg: "encoder is nil")
+            }
+            defer {
+                encoder.endEncoding()
+            }
+            encoder.setTexture(param.input.mtlTexture, index: 0)
+            encoder.setTexture(param.output.metalTexture, index: 1)
+            try encoder.dispatch(computePipline: tempPipline, outTexture: param.input.mtlTexture)
+        }
     }
 }

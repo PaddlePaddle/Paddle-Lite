@@ -149,19 +149,23 @@ class ConvAddKernel<P: PrecisionProtocol>: Kernel, Computable {
                 return
             }
         }
-        guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
-            throw PaddleMobileError.makeError(type: .predictError, msg: "encoder is nil")
-        }
         guard let tempPipline = pipline else {
             throw PaddleMobileError.makeError(type: .predictError, msg: "pipline is nil")
         }
-        encoder.setTexture(inputMetalTexture, index: 0)
-        encoder.setTexture(outputMetalTexture, index: 1)
-        encoder.setBytes(&metalParam, length: MemoryLayout<MetalConvParam>.size, index: 0)
-        encoder.setBuffer(param.filter.buffer, offset: 0, index: 1)
-        encoder.setBuffer(param.y.buffer, offset: 0, index: 2)
-        encoder.dispatch(computePipline: tempPipline, outTexture: outputMetalTexture, groupDepth: type(of: self).isWinoGrad(functionName: functionName) ? 1 : nil)
-        encoder.endEncoding()
+        do {
+            guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
+                throw PaddleMobileError.makeError(type: .predictError, msg: "encoder is nil")
+            }
+            defer {
+                encoder.endEncoding()
+            }
+            encoder.setTexture(inputMetalTexture, index: 0)
+            encoder.setTexture(outputMetalTexture, index: 1)
+            encoder.setBytes(&metalParam, length: MemoryLayout<MetalConvParam>.size, index: 0)
+            encoder.setBuffer(param.filter.buffer, offset: 0, index: 1)
+            encoder.setBuffer(param.y.buffer, offset: 0, index: 2)
+            try encoder.dispatch(computePipline: tempPipline, outTexture: outputMetalTexture, groupDepth: type(of: self).isWinoGrad(functionName: functionName) ? 1 : nil)
+        }
     }
     
     func setupWithMPS(device: MTLDevice, param: ConvAddParam<P>) throws {
@@ -223,10 +227,12 @@ class ConvAddKernel<P: PrecisionProtocol>: Kernel, Computable {
         if GlobalConfig.shared.computePrecision == .Float16 {
             if param.filter.width == 1 && param.filter.height == 1 {
                 return "conv_add_1x1_half"
-            } else if param.filter.channel == 1 && param.filter.n == param.input.tensorDim[1] {
-                return "depthwise_conv_add_3x3_half"
             } else if param.filter.width == 3 && param.filter.height == 3 {
-                return "conv_add_3x3_half"
+                if param.filter.channel == 1 && param.filter.n == param.input.tensorDim[1] {
+                    return "depthwise_conv_add_3x3_half"
+                } else {
+                    return "conv_add_3x3_half"
+                }
             } else if param.filter.width == 1 && param.filter.height == 5 {
                 return "conv_add_5x1_half"
             } else if param.filter.width == 5 && param.filter.height == 1 {
@@ -237,14 +243,16 @@ class ConvAddKernel<P: PrecisionProtocol>: Kernel, Computable {
         } else if GlobalConfig.shared.computePrecision == .Float32 {
             if param.filter.width == 1 && param.filter.height == 1 {
                 return "conv_add_1x1"
-            } else if param.filter.channel == 1 && param.filter.n == param.input.tensorDim[1] {
-                return "depthwise_conv_add_3x3"
+            } else if param.filter.width == 3 && param.filter.height == 3 {
+                if param.filter.channel == 1 && param.filter.n == param.input.tensorDim[1] {
+                    return "depthwise_conv_add_3x3"
+                } else {
+                    return "conv_add_3x3"
+                }
             } else if param.filter.width == 1 && param.filter.height == 5 {
                 return "conv_add_5x1"
             } else if param.filter.width == 5 && param.filter.height == 1 {
                 return "conv_add_1x5"
-            } else if param.filter.width == 3 && param.filter.height == 3 {
-                return "conv_add_3x3"
             } else {
                 return nil
             }

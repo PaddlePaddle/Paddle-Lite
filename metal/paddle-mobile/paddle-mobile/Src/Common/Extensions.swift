@@ -14,21 +14,6 @@
 
 import Foundation
 
-// 自定义 ?!  如果 ?! 前的返回值为一个可选值, 则进行隐式解包, 如果有值则返回这个值, 如果为nil 则fatalError 传入的信息
-precedencegroup ExecutedOrFatalError{
-    associativity: left
-    higherThan: AssignmentPrecedence
-}
-infix operator ?!: ExecutedOrFatalError
-public func ?!<T>(option: T?, excuteOrError: @autoclosure () -> String) -> T {
-    if let inOpt = option {
-        return inOpt
-    } else {
-        paddleMobileLog(excuteOrError())
-        fatalError(excuteOrError())
-    }
-}
-
 //Lense
 struct Lense<A, B> {
     let from: (A) -> B
@@ -57,16 +42,10 @@ protocol CIntIndex {
 extension Array: CIntIndex {
     typealias T = Element
     subscript(index: CInt) -> T {
-        get{
-            guard Int64(Int.max) >= Int64(index) else {
-                fatalError("cint index out of Int range")
-            }
+        get {
             return self[Int(index)]
         }
-        set{
-            guard Int64(Int.max) >= Int64(index) else {
-                fatalError("cint index out of Int range")
-            }
+        set {
             self[Int(index)] = newValue
         }
 

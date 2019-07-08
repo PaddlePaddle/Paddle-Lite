@@ -33,21 +33,23 @@ class ConvAddAddPreluKernel<P: PrecisionProtocol>: Kernel, Computable {
                 } else {
                     try super.init(device: device, inFunctionName: "conv_add_1x1_prelu_other_half", initContext: initContext)
                 }
-            } else if param.filter.channel == 1 {
-                if param.mode == "channel" {
-                    try super.init(device: device, inFunctionName: "depthwise_conv_add_3x3_prelu_channel_half", initContext: initContext)
-                } else if param.mode == "element" {
-                    try super.init(device: device, inFunctionName: "depthwise_conv_add_3x3_prelu_element_half", initContext: initContext)
-                } else {
-                    try super.init(device: device, inFunctionName: "depthwise_conv_add_3x3_prelu_other_half", initContext: initContext)
-                }
             } else if param.filter.width == 3 && param.filter.height == 3 {
-                if param.mode == "channel" {
-                    try super.init(device: device, inFunctionName: "conv_add_3x3_prelu_channel_half", initContext: initContext)
-                } else if param.mode == "element" {
-                    try super.init(device: device, inFunctionName: "conv_add_3x3_prelu_element_half", initContext: initContext)
+                if param.filter.channel == 1 {
+                    if param.mode == "channel" {
+                        try super.init(device: device, inFunctionName: "depthwise_conv_add_3x3_prelu_channel_half", initContext: initContext)
+                    } else if param.mode == "element" {
+                        try super.init(device: device, inFunctionName: "depthwise_conv_add_3x3_prelu_element_half", initContext: initContext)
+                    } else {
+                        try super.init(device: device, inFunctionName: "depthwise_conv_add_3x3_prelu_other_half", initContext: initContext)
+                    }
                 } else {
-                    try super.init(device: device, inFunctionName: "conv_add_3x3_prelu_other_half", initContext: initContext)
+                    if param.mode == "channel" {
+                        try super.init(device: device, inFunctionName: "conv_add_3x3_prelu_channel_half", initContext: initContext)
+                    } else if param.mode == "element" {
+                        try super.init(device: device, inFunctionName: "conv_add_3x3_prelu_element_half", initContext: initContext)
+                    } else {
+                        try super.init(device: device, inFunctionName: "conv_add_3x3_prelu_other_half", initContext: initContext)
+                    }
                 }
             } else if param.filter.width == 1 && param.filter.height == 5 {
                 if param.mode == "channel" {
@@ -77,21 +79,23 @@ class ConvAddAddPreluKernel<P: PrecisionProtocol>: Kernel, Computable {
                 } else {
                     try super.init(device: device, inFunctionName: "conv_add_1x1_prelu_other_float", initContext: initContext)
                 }
-            } else if param.filter.channel == 1 {
-                if param.mode == "channel" {
-                    try super.init(device: device, inFunctionName: "depthwise_conv_add_3x3_prelu_channel_float", initContext: initContext)
-                } else if param.mode == "element" {
-                    try super.init(device: device, inFunctionName: "depthwise_conv_add_3x3_prelu_element_float", initContext: initContext)
-                } else {
-                    try super.init(device: device, inFunctionName: "depthwise_conv_add_3x3_prelu_other_float", initContext: initContext)
-                }
             } else if param.filter.width == 3 && param.filter.height == 3 {
-                if param.mode == "channel" {
-                    try super.init(device: device, inFunctionName: "conv_add_3x3_prelu_channel_float", initContext: initContext)
-                } else if param.mode == "element" {
-                    try super.init(device: device, inFunctionName: "conv_add_3x3_prelu_element_float", initContext: initContext)
+                if param.filter.channel == 1 {
+                    if param.mode == "channel" {
+                        try super.init(device: device, inFunctionName: "depthwise_conv_add_3x3_prelu_channel_float", initContext: initContext)
+                    } else if param.mode == "element" {
+                        try super.init(device: device, inFunctionName: "depthwise_conv_add_3x3_prelu_element_float", initContext: initContext)
+                    } else {
+                        try super.init(device: device, inFunctionName: "depthwise_conv_add_3x3_prelu_other_float", initContext: initContext)
+                    }
                 } else {
-                    try super.init(device: device, inFunctionName: "conv_add_3x3_prelu_other_float", initContext: initContext)
+                    if param.mode == "channel" {
+                        try super.init(device: device, inFunctionName: "conv_add_3x3_prelu_channel_float", initContext: initContext)
+                    } else if param.mode == "element" {
+                        try super.init(device: device, inFunctionName: "conv_add_3x3_prelu_element_float", initContext: initContext)
+                    } else {
+                        try super.init(device: device, inFunctionName: "conv_add_3x3_prelu_other_float", initContext: initContext)
+                    }
                 }
             } else if param.filter.width == 1 && param.filter.height == 5 {
                 if param.mode == "channel" {
@@ -143,9 +147,6 @@ class ConvAddAddPreluKernel<P: PrecisionProtocol>: Kernel, Computable {
     }
     
     func compute(commandBuffer: MTLCommandBuffer, param: ConvAddAddPreluParam<P>) throws {
-        guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
-            throw PaddleMobileError.makeError(type: .predictError, msg: "encoder is nil")
-        }
         guard let tempPipline = pipline else {
             throw PaddleMobileError.makeError(type: .predictError, msg: "pipline is nil")
         }
@@ -155,13 +156,20 @@ class ConvAddAddPreluKernel<P: PrecisionProtocol>: Kernel, Computable {
         guard let outputMetalTexture = param.output.metalTexture else {
             throw PaddleMobileError.makeError(type: .predictError, msg: "output metaltexture is nil")
         }
-        encoder.setTexture(inputMetalTexture, index: 0)
-        encoder.setTexture(outputMetalTexture, index: 1)
-        encoder.setBytes(&metalParam, length: MemoryLayout<MetalConvParam>.size, index: 0)
-        encoder.setBuffer(param.filter.buffer, offset: 0, index: 1)
-        encoder.setBuffer(param.y.buffer, offset: 0, index: 2)
-        encoder.setBuffer(param.alpha.buffer, offset: 0, index: 3)
-        encoder.dispatch(computePipline: tempPipline, outTexture: outputMetalTexture)
-        encoder.endEncoding()
+        do {
+            guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
+                throw PaddleMobileError.makeError(type: .predictError, msg: "encoder is nil")
+            }
+            defer {
+                encoder.endEncoding()
+            }
+            encoder.setTexture(inputMetalTexture, index: 0)
+            encoder.setTexture(outputMetalTexture, index: 1)
+            encoder.setBytes(&metalParam, length: MemoryLayout<MetalConvParam>.size, index: 0)
+            encoder.setBuffer(param.filter.buffer, offset: 0, index: 1)
+            encoder.setBuffer(param.y.buffer, offset: 0, index: 2)
+            encoder.setBuffer(param.alpha.buffer, offset: 0, index: 3)
+            try encoder.dispatch(computePipline: tempPipline, outTexture: outputMetalTexture)
+        }
     }
 }

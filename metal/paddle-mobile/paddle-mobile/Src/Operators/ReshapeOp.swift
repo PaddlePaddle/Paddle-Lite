@@ -67,14 +67,7 @@ class ReshapeOp<P: PrecisionProtocol>: Operator<ReshapeKernel<P>, ReshapeParam<P
         try kernel.compute(commandBuffer: buffer, param: para)
     }
     func delogOutput() {
-        print("reshape delog")
-        if let metalTexture = para.output.metalTexture {
-            do {
-                let outputArray: [Float32] = try metalTexture.device.texture2tensor(texture: metalTexture, dim: para.output.tensorDim.dims, transpose: para.output.transpose)
-                print(outputArray.strideArray())
-                //    print(outputArray)
-            } catch _ {
-            }
-        }
+        print("reshape output")
+        para.output.delog()
     }
 }

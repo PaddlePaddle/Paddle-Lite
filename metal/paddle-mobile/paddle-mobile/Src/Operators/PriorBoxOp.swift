@@ -67,51 +67,8 @@ class PriorBoxOp<P: PrecisionProtocol>: Operator<PriorBoxKernel<P>, PriorBoxPara
     }
     
     func delogOutput() {
-        
         print(" \(type) output: ")
-        // output
-        //    let outputArray = para.output.metalTexture.float32Array()
-        //    print(outputArray.strideArray())
-        //    let device = para.input.metalTexture!.device
-        //    let boxes:[Float32] = device.texture2tensor(texture: para.output.metalTexture!, dim: para.output.tensorDim.dims, transpose: [2,0,1,3])
-        //    let variances:[Float32] = device.texture2tensor(texture: para.outputVariances.metalTexture!, dim: para.outputVariances.tensorDim.dims, transpose: [2,0,1,3])
-        //    print("boxes: ")
-        //    print(boxes.strideArray())
-        //    print("variances: ")
-        //    print(variances.strideArray())
-        // output
-        print(" \(type) output: ")
-        do {
-            let box = try para.output.metalTexture?.realNHWC(dim: (para.output.dim[0], para.output.dim[1], para.output.dim[2], para.output.dim[3])) ?? []
-            print(" dim: \(para.output.dim)")
-            print(box.strideArray())
-        } catch _ {
-        }
-        
-        //    print((0..<box.count).map { (index: $0, value: box[$0])})
-        //    print(para.output.realNHWC().strideArray())
-        
-        //    let padToFourDim = para.output.padToFourDim
-        //    if para.output.transpose == [0, 1, 2, 3] {
-        //      let outputArray: [Float32] = para.output.metalTexture.realNHWC(dim: (n: padToFourDim[0], h: padToFourDim[1], w: padToFourDim[2], c: padToFourDim[3]), texturePrecision: computePrecision)
-        //      print(outputArray.strideArray())
-        //    } else if para.output.transpose == [0, 2, 3, 1] {
-        //      print(para.output.metalTexture.toTensor(dim: (n: padToFourDim[0], c: padToFourDim[1], h: padToFourDim[2], w: padToFourDim[3]), texturePrecision: computePrecision).strideArray())
-        //    } else {
-        //      print(" not implement")
-        //    }
-        
-        //    writeToLibrary(fileName: "box_out", array: outputArray)
-        
-        // output variance
-        //    let outputVarianceArray = para.outputVariances.metalTexture.floatArray { (o: Float32) -> Float32 in
-        //      return o
-        //    }
-        //
-        //    print(" output variance: \(outputVarianceArray)")
-        
-        //    writeToLibrary(fileName: "variance_out", array: outputVarianceArray)
-        
+        para.output.delog()
     }
 }
 

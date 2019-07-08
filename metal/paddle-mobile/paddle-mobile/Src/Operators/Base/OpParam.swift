@@ -146,7 +146,7 @@ extension OpParam {
         return tensorVariance
     }
     
-    static func getAttr<T>(key: String, attrs: [String : Attr]) throws -> T{
+    static func getAttr<T>(key: String, attrs: [String : Attr]) throws -> T {
         guard let attr = attrs[key] else {
             throw PaddleMobileError.makeError(type: .paramError, msg: "attr \(key) can't found in: \(attrs)")
         }

@@ -35,30 +35,33 @@ class ConcatKernel<P: PrecisionProtocol>: Kernel, Computable{
     var v = "normal"
     var pm = ConcatMetalParam.init()
     func compute(commandBuffer: MTLCommandBuffer, param: ConcatParam<P>) throws {
-        
-        guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
-            throw PaddleMobileError.makeError(type: .predictError, msg: "encoder is nil")
-        }
         guard let tempPipline = pipline else {
             throw PaddleMobileError.makeError(type: .predictError, msg: "pipline is nil")
         }
         guard let outputMetalTexture = param.output.metalTexture else {
             throw PaddleMobileError.makeError(type: .predictError, msg: "output metaltexture is nil")
         }
-        let num = param.input.count
-        for i in 0..<num {
-            guard let inputMetalTexture = param.input[i].metalTexture else {
-                throw PaddleMobileError.makeError(type: .predictError, msg: "input metaltexture \(i) is nil")
+        do {
+            guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
+                throw PaddleMobileError.makeError(type: .predictError, msg: "encoder is nil")
             }
-            encoder.setTexture(inputMetalTexture, index: i)
+            defer {
+                encoder.endEncoding()
+            }
+            let num = param.input.count
+            for i in 0..<num {
+                guard let inputMetalTexture = param.input[i].metalTexture else {
+                    throw PaddleMobileError.makeError(type: .predictError, msg: "input metaltexture \(i) is nil")
+                }
+                encoder.setTexture(inputMetalTexture, index: i)
+            }
+            encoder.setTexture(outputMetalTexture, index: num)
+            if v == "normal" {
+                encoder.setTexture(param.output.metalTexture, index: num + 1)
+            }
+            encoder.setBytes(&pm, length: MemoryLayout<ConcatMetalParam>.size, index: 0)
+            try encoder.dispatch(computePipline: tempPipline, outTexture: outputMetalTexture)
         }
-        encoder.setTexture(outputMetalTexture, index: num)
-        if v == "normal" {
-            encoder.setTexture(param.output.metalTexture, index: num + 1)
-        }
-        encoder.setBytes(&pm, length: MemoryLayout<ConcatMetalParam>.size, index: 0)
-        encoder.dispatch(computePipline: tempPipline, outTexture: outputMetalTexture)
-        encoder.endEncoding()
     }
     
     required init(device: MTLDevice, param: ConcatParam<P>, initContext: InitContext) throws {
