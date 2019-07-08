@@ -90,13 +90,15 @@ extension MTLDevice {
         }
     }
     
-    func makeBuffer<P>(value: [P]) -> MTLBuffer {
-        let buffer = makeBuffer(length: value.count * MemoryLayout<P>.size, options: MTLResourceOptions.storageModeShared)
-        let contents = buffer?.contents().bindMemory(to: P.self, capacity: value.count * MemoryLayout<P>.size)
-        for i in 0..<value.count {
-            contents?[i] = value[i]
+    func makeBuffer<P>(value: [P]) throws -> MTLBuffer {
+        guard let buffer = makeBuffer(length: value.count * MemoryLayout<P>.size, options: MTLResourceOptions.storageModeShared) else {
+            throw PaddleMobileError.makeError(type: .defaultError, msg: "make buffer nil")
         }
-        return buffer!
+        let contents = buffer.contents().bindMemory(to: P.self, capacity: value.count * MemoryLayout<P>.size)
+        for i in 0..<value.count {
+            contents[i] = value[i]
+        }
+        return buffer
     }
     
     func texture2tensor_loop<P>(texture: MTLTexture, cb: ([Int], P)->Void) -> Void {
@@ -304,6 +306,16 @@ extension MTLDevice {
             rcount = rcount * 4 * ndim[1] * ndim[2]
             var nvalue: [Float32] = .init(repeating: 0.0, count: rcount)
             
+            var value32: [Float32]?
+            if value is [Float16] {
+                var value16 = value as! [Float16]
+                value32 = try float16To32(input: &value16, count: value.count)
+            } else {
+                value32 = value as? [Float32]
+            }
+            guard let tmpValue32 = value32 else {
+                throw PaddleMobileError.makeError(type: .loaderError, msg: "tensor2texture tensor value type not support")
+            }
             for i0 in 0..<tdim[0] {
                 for i1 in 0..<tdim[1] {
                     for i2 in 0..<tdim[2] {
@@ -314,8 +326,7 @@ extension MTLDevice {
                             let jg = transpose.map { ig[$0] }
                             let k = jg[0] * ndim[3] + jg[3]
                             let jx = ((k / 4) * ndim[1] * ndim[2] * 4) + (jg[1] * ndim[2] * 4) + (jg[2] * 4) + (k % 4)
-                            
-                            nvalue[jx] = value[ix] as! Float32
+                            nvalue[jx] = tmpValue32[ix]
                         }
                     }
                 }
@@ -346,7 +357,7 @@ extension MTLDevice {
         return texture
     }
     
-    func makeFloatTexture<P>(value: [P], textureWidth: Int, textureHeight: Int, arrayLength: Int) -> MTLTexture{
+    func makeFloatTexture<P>(value: [P], textureWidth: Int, textureHeight: Int, arrayLength: Int) -> MTLTexture {
         
         let textureDesc = MTLTextureDescriptor.init()
         textureDesc.width = textureWidth
@@ -389,7 +400,7 @@ extension MTLDevice {
 }
 
 extension MTLComputeCommandEncoder {
-    public func dispatch(computePipline: MTLComputePipelineState, outTexture: MTLTexture, groupDepth: Int? = nil) {
+    public func dispatch(computePipline: MTLComputePipelineState, outTexture: MTLTexture, groupDepth: Int? = nil) throws {
         let slices = (outTexture.arrayLength * 4 + 3)/4
         
         let width = computePipline.threadExecutionWidth
@@ -402,7 +413,9 @@ extension MTLComputeCommandEncoder {
         let groupWidth = (outTexture.width + width - 1)/width
         let groupHeight = (outTexture.height + height - 1)/height
         let groups = MTLSize.init(width: groupWidth, height: groupHeight, depth: groupDepth ?? slices)
-        
+        guard groups.width > 0 && groups.height > 0 && groups.depth > 0 else {
+            throw PaddleMobileError.makeError(type: PaddleMobileErrorType.predictError, msg: "dispatch thread groups width:\(groups.width) or height:\(groups.height) or depth: \(groups.depth) must not be 0")
+        }
         setComputePipelineState(computePipline)
         
         dispatchThreadgroups(groups, threadsPerThreadgroup: threadsPerGroup)
@@ -582,24 +595,23 @@ public extension MTLTexture {
         } else {
             throw PaddleMobileError.makeError(type: .defaultError, msg: "pixelFormat \(pixelFormat) unsupported yet")
         }
+        let total = dim.n*dim.c*dim.h*dim.w
+        var output: [Float32] = Array<Float32>.init(repeating: 0, count: total)
         
-        var output: [Float32] = []
-        let numOfASlice = dim.h * dim.w * 4
-        for h in 0..<dim.h {
-            for w in 0..<dim.w {
-                for sliceIndex in 0..<arrayLength {
-                    if sliceIndex * 4 + 4 > dim.c {
-                        for i in 0..<(4 - ((sliceIndex * 4 + 4) - dim.c)) {
-                            let value = textureArray[sliceIndex * numOfASlice + h * dim.w * 4 + w * 4 + i]
-                            output.append(value)
-                        }
-                    } else {
-                        for i in 0..<4 {
-                            let value = textureArray[sliceIndex * numOfASlice + h * dim.w * 4 + w * 4 + i]
-                            output.append(value)
-                        }
-                    }
-                }
+        for i in 0..<textureArray.count {
+            let z = i / (dim.h*dim.w*4)
+            let k = i % (dim.h*dim.w*4)
+            let y = k / (dim.w*4)
+            let m = k % (dim.w*4)
+            let x = m / 4
+            let c = m % 4
+            let nn = (z*4+c)/dim.c
+            let nc = y
+            let nh = x
+            let nw = (z*4+c)%dim.c
+            let index = nn*dim.h*dim.w*dim.c+nc*dim.w*dim.c+nh*dim.c+nw
+            if index < total {
+                output[index] = textureArray[i]
             }
         }
         return output
@@ -613,8 +625,8 @@ public extension MTLBuffer {
         paddleMobileLog(header)
         paddleMobileLog("MTLBuffer: \(self) ")
         var str = ""
-        if stridable && length/MemoryLayout<T>.stride > 1000{
-            for j in stride(from: 0, to: length, by: length/MemoryLayout<T>.stride / 100){
+        if stridable && length/MemoryLayout<T>.stride > 1000 {
+            for j in stride(from: 0, to: length, by: length/MemoryLayout<T>.stride / 100) {
                 str += " \(contents().assumingMemoryBound(to: T.self)[j])"
             }
         } else {

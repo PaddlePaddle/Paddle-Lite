@@ -131,9 +131,6 @@ class PriorBoxKernel<P: PrecisionProtocol>: Kernel, Computable{
     }
     
     func compute(commandBuffer: MTLCommandBuffer, param: PriorBoxParam<P>) throws {
-        guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
-            throw PaddleMobileError.makeError(type: .predictError, msg: "encoder is nil")
-        }
         guard let tempPipline = pipline else {
             throw PaddleMobileError.makeError(type: .predictError, msg: "pipline is nil")
         }
@@ -146,16 +143,20 @@ class PriorBoxKernel<P: PrecisionProtocol>: Kernel, Computable{
         guard let outputVariancesMetalTexture = param.outputVariances.metalTexture else {
             throw PaddleMobileError.makeError(type: .predictError, msg: "outputVariances metaltexture is nil")
         }
-        encoder.setTexture(inputMetalTexture, index: 0)
-        encoder.setTexture(outputMetalTexture, index: 1)
-        encoder.setTexture(outputVariancesMetalTexture, index: 2)
-        
-        encoder.setBuffer(param.newAspectRatios!, offset: 0, index: 0)
-        
-        encoder.setBytes(&metalParam, length: MemoryLayout<PriorBoxMetalParam>.size, index: 1)
-        
-        encoder.setBytes(param.variances, length: MemoryLayout<Float32>.size * param.variances.count, index: 2)
-        encoder.dispatch(computePipline: tempPipline, outTexture: outputMetalTexture)
-        encoder.endEncoding()
+        do {
+            guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
+                throw PaddleMobileError.makeError(type: .predictError, msg: "encoder is nil")
+            }
+            defer {
+                encoder.endEncoding()
+            }
+            encoder.setTexture(inputMetalTexture, index: 0)
+            encoder.setTexture(outputMetalTexture, index: 1)
+            encoder.setTexture(outputVariancesMetalTexture, index: 2)
+            encoder.setBuffer(param.newAspectRatios!, offset: 0, index: 0)
+            encoder.setBytes(&metalParam, length: MemoryLayout<PriorBoxMetalParam>.size, index: 1)
+            encoder.setBytes(param.variances, length: MemoryLayout<Float32>.size * param.variances.count, index: 2)
+            try encoder.dispatch(computePipline: tempPipline, outTexture: outputMetalTexture)
+        }
     }
 }

@@ -225,7 +225,6 @@ public class Texture: Tensorial {
             fourDim = Dim.init(inDim: fourDimNum)
         } else {
             throw PaddleMobileError.makeError(type: .netError, msg: "Texture init: dim count \(inDim) unsupported")
-
         }
         tensorDim = inDim
         dim = fourDim
@@ -249,4 +248,15 @@ extension Texture {
         return str
     }
     
+    public func delog() {
+        if self.transpose == [0, 2, 3, 1] {
+            let outputArray = (try? self.metalTexture?.toTensor(dim: (n: self.padToFourDim[0], c: self.padToFourDim[1], h: self.padToFourDim[2], w: self.padToFourDim[3]))) ?? []
+            print(outputArray?.strideArray() ?? [])
+        } else if self.transpose == [0, 1, 2, 3] {
+            let outputArray = (try? self.realNHWC()) ?? []
+            print(outputArray.strideArray())
+        } else {
+            paddleMobileLog("unsupported transpose: \(self.transpose)", logLevel: .Warning)
+        }
+    }
 }

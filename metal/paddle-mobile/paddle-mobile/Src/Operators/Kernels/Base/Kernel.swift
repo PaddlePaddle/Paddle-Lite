@@ -71,17 +71,12 @@ protocol KernelProtocol {
                 throw PaddleMobileError.makeError(type: .predictError, msg: "unsupported compute precision: \(GlobalConfig.shared.computePrecision)")
             }
             let intermediatePipeline = try device.pipeLine(funcName: funcName, metalLoadMode: initContext.metalLoadMode, metalLibPath: initContext.metalLibPath)
-            guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
-                throw PaddleMobileError.makeError(type: .predictError, msg: "encoder is nil")
-            }
             guard let inputMetalTexture = input.metalTexture else {
                 throw PaddleMobileError.makeError(type: .predictError, msg: "input metaltexture is nil")
             }
             guard let interMetalTexture = intermediateTexture.metalTexture else {
                 throw PaddleMobileError.makeError(type: .predictError, msg: "intermediateTexture metaltexture is nil")
             }
-            encoder.setTexture(inputMetalTexture, index: 0)
-            encoder.setTexture(interMetalTexture, index: 1)
             var id: [Int32] = [1, 1, 1, 1]
             for i in 0..<input.tensorDim.cout() {
                 id[4-input.tensorDim.cout()+i] = Int32(input.tensorDim[i])
@@ -98,9 +93,18 @@ protocol KernelProtocol {
                 odim: (od[0], od[1], od[2], od[3]),
                 otrans: (ot[0], ot[1], ot[2], ot[3])
             )
-            encoder.setBytes(&reshapeMetalParam, length: MemoryLayout<ReshapeMetalParam>.size, index: 0)
-            encoder.dispatch(computePipline: intermediatePipeline, outTexture: interMetalTexture)
-            encoder.endEncoding()
+            do {
+                guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
+                    throw PaddleMobileError.makeError(type: .predictError, msg: "encoder is nil")
+                }
+                defer {
+                    encoder.endEncoding()
+                }
+                encoder.setTexture(inputMetalTexture, index: 0)
+                encoder.setTexture(interMetalTexture, index: 1)
+                encoder.setBytes(&reshapeMetalParam, length: MemoryLayout<ReshapeMetalParam>.size, index: 0)
+                try encoder.dispatch(computePipline: intermediatePipeline, outTexture: interMetalTexture)
+            }
             return intermediateTexture
         } catch _ {
             return nil
@@ -122,13 +126,12 @@ protocol KernelProtocol {
 open class BufferToTextureKernel: Kernel {
     public let outputTexture: MTLTexture
     
-    public init(device: MTLDevice, outputDim: Shape, metalLoadMode: MetalLoadMode, metalLibPath: String?) throws {
+    public init(device: MTLDevice, outputDim: Shape, metalLoadMode: MetalLoadMode, metalLibPath: String?, channelNum: Int) throws {
         let textureDesc = MTLTextureDescriptor.init()
         textureDesc.textureType = .type2D
         textureDesc.width = outputDim.width
         textureDesc.height = outputDim.height
         textureDesc.depth = (outputDim.channel + 3) / 4
-        
         if GlobalConfig.shared.computePrecision == .Float16 {
             textureDesc.pixelFormat = .rgba16Float
         } else if GlobalConfig.shared.computePrecision == .Float32 {
@@ -136,7 +139,6 @@ open class BufferToTextureKernel: Kernel {
         } else {
             throw PaddleMobileError.makeError(type: .predictError, msg: "unsupported compute precision: \(GlobalConfig.shared.computePrecision)")
         }
-        
         textureDesc.usage = [.shaderRead, .shaderWrite]
         textureDesc.storageMode = .shared
         guard let tempTexture = device.makeTexture(descriptor: textureDesc) else {
@@ -147,23 +149,39 @@ open class BufferToTextureKernel: Kernel {
         initContext.metalLibPath = metalLibPath
         initContext.metalLoadMode = metalLoadMode
         if GlobalConfig.shared.computePrecision == .Float32 {
-            try super.init(device: device, inFunctionName: "buffer_to_texture_kernel", initContext: initContext)
+            if channelNum == 1 {
+                try super.init(device: device, inFunctionName: "buffer_to_texture_kernel", initContext: initContext)
+            } else if channelNum == 3 {
+                try super.init(device: device, inFunctionName: "buffer_to_texture_kernel_channel_3", initContext: initContext)
+            } else {
+                throw PaddleMobileError.makeError(type: .loaderError, msg: "not support channel num: \(channelNum)")
+            }
         } else {
-            try super.init(device: device, inFunctionName: "buffer_to_texture_kernel_half", initContext: initContext)
+            if channelNum == 1 {
+                try super.init(device: device, inFunctionName: "buffer_to_texture_kernel_half", initContext: initContext)
+            } else if channelNum == 3 {
+                try super.init(device: device, inFunctionName: "buffer_to_texture_kernel_half_channel_3", initContext: initContext)
+            } else {
+                throw PaddleMobileError.makeError(type: .loaderError, msg: "not support channel num: \(channelNum)")
+            }
         }
     }
     
     public func compute(inputBuffer: MTLBuffer , commandBuffer: MTLCommandBuffer) throws {
-        guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
-            throw PaddleMobileError.makeError(type: .predictError, msg: "encoder is nil")
-        }
         guard let tempPipline = pipline else {
             throw PaddleMobileError.makeError(type: .predictError, msg: "pipline is nil")
         }
-        encoder.setBuffer(inputBuffer, offset: 0, index: 0)
-        encoder.setTexture(outputTexture, index: 0)
-        encoder.dispatch(computePipline: tempPipline, outTexture: outputTexture)
-        encoder.endEncoding()
+        do {
+            guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
+                throw PaddleMobileError.makeError(type: .predictError, msg: "encoder is nil")
+            }
+            defer {
+                encoder.endEncoding()
+            }
+            encoder.setBuffer(inputBuffer, offset: 0, index: 0)
+            encoder.setTexture(outputTexture, index: 0)
+            try encoder.dispatch(computePipline: tempPipline, outTexture: outputTexture)
+        }
     }
     
 }
@@ -200,16 +218,20 @@ open class BufferToTextureKernel: Kernel {
     }
     
     public func compute(inputTexuture: MTLTexture, commandBuffer: MTLCommandBuffer) throws {
-        guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
-            throw PaddleMobileError.makeError(type: .predictError, msg: "encoder is nil")
-        }
         guard let tempPipline = pipline else {
             throw PaddleMobileError.makeError(type: .predictError, msg: "pipline is nil")
         }
-        encoder.setTexture(inputTexuture, index: 0)
-        encoder.setTexture(outputTexture, index: 1)
-        encoder.dispatch(computePipline: tempPipline, outTexture: outputTexture)
-        encoder.endEncoding()
+        do {
+            guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
+                throw PaddleMobileError.makeError(type: .predictError, msg: "encoder is nil")
+            }
+            defer {
+                encoder.endEncoding()
+            }
+            encoder.setTexture(inputTexuture, index: 0)
+            encoder.setTexture(outputTexture, index: 1)
+            try encoder.dispatch(computePipline: tempPipline, outTexture: outputTexture)
+        }
     }
     
 }

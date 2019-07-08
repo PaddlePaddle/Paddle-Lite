@@ -18,12 +18,21 @@ import paddle_mobile
 public class Genet: Net {
     @objc public override init(device: MTLDevice) throws {
         try super.init(device: device)
-        modelPath = Bundle.main.path(forResource: "genet_model", ofType: nil) ?! "model null"
-        paramPath = Bundle.main.path(forResource: "genet_params", ofType: nil) ?! "para null"
+        guard let modelPath = Bundle.main.path(forResource: "genet_model", ofType: nil) else {
+            throw PaddleMobileError.makeError(type: PaddleMobileErrorType.loaderError, msg: "model null")
+        }
+        self.modelPath = modelPath
+        guard let paramPath = Bundle.main.path(forResource: "genet_params", ofType: nil) else {
+            throw PaddleMobileError.makeError(type: PaddleMobileErrorType.loaderError, msg: "para null")
+        }
+        self.paramPath = paramPath
         preprocessKernel = try GenetPreProccess.init(device: device)
         inputDim = Dim.init(inDim: [1, 128, 128, 3])
         metalLoadMode = .LoadMetalInCustomMetalLib
-        metalLibPath = Bundle.main.path(forResource: "paddle-mobile-metallib", ofType: "metallib")
+        guard let metalLibPath = Bundle.main.path(forResource: "paddle-mobile-metallib", ofType: "metallib") else {
+            throw PaddleMobileError.makeError(type: PaddleMobileErrorType.loaderError, msg: "metallib null")
+        }
+        self.metalLibPath = metalLibPath
     }
     
     @objc override public init(device: MTLDevice, inParamPointer: UnsafeMutableRawPointer, inParamSize:Int, inModelPointer: UnsafeMutableRawPointer, inModelSize: Int) throws {

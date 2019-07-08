@@ -16,9 +16,6 @@ import Foundation
 
 class ReluKernel<P: PrecisionProtocol>: Kernel, Computable{
     func compute(commandBuffer: MTLCommandBuffer, param: ReluParam<P>) throws {
-        guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
-            throw PaddleMobileError.makeError(type: .predictError, msg: "encoder is nil")
-        }
         guard let tempPipline = pipline else {
             throw PaddleMobileError.makeError(type: .predictError, msg: "pipline is nil")
         }
@@ -28,13 +25,21 @@ class ReluKernel<P: PrecisionProtocol>: Kernel, Computable{
         guard let outputMetalTexture = param.output.metalTexture else {
             throw PaddleMobileError.makeError(type: .predictError, msg: "output metaltexture is nil")
         }
-        encoder.setTexture(inputMetalTexture, index: 0)
-        encoder.setTexture(outputMetalTexture, index: 1)
-        encoder.dispatch(computePipline: tempPipline, outTexture: outputMetalTexture)
-        encoder.endEncoding()
+        do {
+            guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
+                throw PaddleMobileError.makeError(type: .predictError, msg: "encoder is nil")
+            }
+            defer {
+                encoder.endEncoding()
+            }
+            encoder.setTexture(inputMetalTexture, index: 0)
+            encoder.setTexture(outputMetalTexture, index: 1)
+            try encoder.dispatch(computePipline: tempPipline, outTexture: outputMetalTexture)
+        }
     }
     
     required init(device: MTLDevice, param: ReluParam<P>, initContext: InitContext) throws {
+        try param.output.initTexture(device: device, inTranspose: param.input.transpose, computePrecision: GlobalConfig.shared.computePrecision)
         if GlobalConfig.shared.computePrecision == .Float32 {
             try super.init(device: device, inFunctionName: "relu", initContext: initContext)
         } else if GlobalConfig.shared.computePrecision == .Float16 {

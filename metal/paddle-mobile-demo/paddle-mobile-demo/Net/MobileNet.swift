@@ -32,12 +32,12 @@ public class MobileNet: Net{
                 contents = string.components(separatedBy: CharacterSet.newlines).filter{$0.count > 10}.map{
                     String($0[$0.index($0.startIndex, offsetBy: 10)...])
                 }
-            }else{
-                fatalError("no file call \(fileName)")
+            } else {
+                print("no file called \(fileName)")
             }
         }
         subscript(index: Int) -> String {
-            return contents[index]
+            return index < contents.count ? contents[index] : ""
         }
     }
     
@@ -55,14 +55,21 @@ public class MobileNet: Net{
     override public init(device: MTLDevice) throws {
         try super.init(device: device)
         except = 0
-        modelPath = Bundle.main.path(forResource: "mobilenet_model", ofType: nil) ?! "model null"
-        paramPath = Bundle.main.path(forResource: "mobilenet_params", ofType: nil) ?! "para null"    
-        //    metalLoadMode = .LoadMetalInCustomMetalLib
-        //    metalLibPath = Bundle.main.path(forResource: "PaddleMobileMetal", ofType: "metallib") ?! " can't be nil "
+        guard let modelPath = Bundle.main.path(forResource: "mobilenet_model", ofType: nil) else {
+            throw PaddleMobileError.makeError(type: PaddleMobileErrorType.loaderError, msg: "model null")
+        }
+        self.modelPath = modelPath
+        guard let paramPath = Bundle.main.path(forResource: "mobilenet_params", ofType: nil) else {
+            throw PaddleMobileError.makeError(type: PaddleMobileErrorType.loaderError, msg: "para null")
+        }
+        self.paramPath = paramPath
         preprocessKernel = try MobilenetPreProccess.init(device: device)
         inputDim = Dim.init(inDim: [1, 224, 224, 3])
         metalLoadMode = .LoadMetalInCustomMetalLib
-        metalLibPath = Bundle.main.path(forResource: "paddle-mobile-metallib", ofType: "metallib")
+        guard let metalLibPath = Bundle.main.path(forResource: "paddle-mobile-metallib", ofType: "metallib") else {
+            throw PaddleMobileError.makeError(type: PaddleMobileErrorType.loaderError, msg: "metallib null")
+        }
+        self.metalLibPath = metalLibPath
     }
 }
 

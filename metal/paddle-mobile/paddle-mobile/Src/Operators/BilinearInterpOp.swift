@@ -46,14 +46,7 @@ class BilinearInterpOp<P: PrecisionProtocol>: Operator<BilinearInterpKernel<P>, 
     
     func delogOutput() {
         print(" \(type) output: ")
-        if let metalTexture = para.output.metalTexture {
-            do {
-                let outputArray: [Float32] = try metalTexture.device.texture2tensor(texture: metalTexture, dim: para.output.tensorDim.dims, transpose: para.output.transpose)
-                //    print(outputArray)
-                print(outputArray.strideArray())
-            } catch _ {
-            }
-        }
+        para.output.delog()
     }
     
 }

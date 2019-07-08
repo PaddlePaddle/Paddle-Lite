@@ -57,15 +57,7 @@ class SplitOp<P: PrecisionProtocol>: Operator<SplitKernel<P>, SplitParam<P>>, Ru
     
     func delogOutput() {
         print(" \(type) output: ")
-        do {
-            for out in para.outputList {
-                if let metalTexture = out.metalTexture {
-                    let arr: [Float32] = try metalTexture.device.texture2tensor(texture: metalTexture, dim: out.tensorDim.dims, transpose: out.transpose)
-                    print(arr.strideArray())
-                }
-            }
-        } catch _ {
-        }
+        para.output.delog()
     }
     
 }

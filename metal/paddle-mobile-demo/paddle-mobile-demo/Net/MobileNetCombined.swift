@@ -19,11 +19,19 @@ public class MobileNetCombined: Net {
     @objc public override init(device: MTLDevice) throws {
         try super.init(device: device)
         except = 0
-        modelPath = Bundle.main.path(forResource: "combined_mobilenet_model_16", ofType: nil) ?! "model null"
-        paramPath = Bundle.main.path(forResource: "combined_mobilenet_params_16", ofType: nil) ?! "para null"
+        guard let modelPath = Bundle.main.path(forResource: "combined_mobilenet_model_16", ofType: nil) else {
+            throw PaddleMobileError.makeError(type: PaddleMobileErrorType.loaderError, msg: "model null")
+        }
+        self.modelPath = modelPath
+        guard let paramPath = Bundle.main.path(forResource: "combined_mobilenet_params_16", ofType: nil) else {
+            throw PaddleMobileError.makeError(type: PaddleMobileErrorType.loaderError, msg: "para null")
+        }
+        self.paramPath = paramPath
         inputDim = Dim.init(inDim: [1, 224, 224, 3])
         metalLoadMode = .LoadMetalInCustomMetalLib
-        let paddleMobileMetallib = Bundle.main.path(forResource: "paddle-mobile-metallib", ofType: "metallib")
+        guard let paddleMobileMetallib = Bundle.main.path(forResource: "paddle-mobile-metallib", ofType: "metallib") else {
+            throw PaddleMobileError.makeError(type: PaddleMobileErrorType.loaderError, msg: "metallib null")
+        }
         metalLibPath = paddleMobileMetallib
         useMPS = true
         paramPrecision = .Float16
@@ -40,12 +48,12 @@ public class MobileNetCombined: Net {
                 contents = string.components(separatedBy: CharacterSet.newlines).filter{$0.count > 10}.map{
                     String($0[$0.index($0.startIndex, offsetBy: 10)...])
                 }
-            }else{
-                fatalError("no file call \(fileName)")
+            } else {
+                print("no file called \(fileName)")
             }
         }
         subscript(index: Int) -> String {
-            return contents[index]
+            return index < contents.count ? contents[index] : ""
         }
     }
     

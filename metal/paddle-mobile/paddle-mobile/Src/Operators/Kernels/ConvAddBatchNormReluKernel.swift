@@ -40,10 +40,14 @@ class ConvAddBatchNormReluKernel<P: PrecisionProtocol>: Kernel, Computable, Test
     required init(device: MTLDevice, testParam: ConvAddBatchNormReluTestParam, initContext: InitContext) throws {
         if testParam.filterSize.width == 1 && testParam.filterSize.height == 1 {
             try super.init(device: device, inFunctionName: "conv_add_batch_norm_relu_1x1", initContext: initContext)
-        } else if testParam.filterSize.channel == 1 {
-            try super.init(device: device, inFunctionName: "depthwise_conv_add_batch_norm_relu_3x3", initContext: initContext)
+        } else if testParam.filterSize.width == 3 && testParam.filterSize.height == 3 {
+            if testParam.filterSize.channel == 1 {
+                try super.init(device: device, inFunctionName: "depthwise_conv_add_batch_norm_relu_3x3", initContext: initContext)
+            } else {
+                try super.init(device: device, inFunctionName: "conv_add_batch_norm_relu_3x3", initContext: initContext)
+            }
         } else {
-            try super.init(device: device, inFunctionName: "conv_add_batch_norm_relu_3x3", initContext: initContext)
+            throw PaddleMobileError.makeError(type: .netError, msg: "unsupported conv filter")
         }
     }
     
@@ -63,20 +67,24 @@ class ConvAddBatchNormReluKernel<P: PrecisionProtocol>: Kernel, Computable, Test
         if GlobalConfig.shared.computePrecision == .Float32 {
             if param.filter.width == 1 && param.filter.height == 1 {
                 try super.init(device: device, inFunctionName: "conv_add_batch_norm_relu_1x1", initContext: initContext)
-            } else if param.filter.channel == 1 {
-                try super.init(device: device, inFunctionName: "depthwise_conv_add_batch_norm_relu_3x3", initContext: initContext)
             } else if param.filter.width == 3 && param.filter.height == 3 {
-                try super.init(device: device, inFunctionName: "conv_add_batch_norm_relu_3x3", initContext: initContext)
+                if param.filter.channel == 1 {
+                    try super.init(device: device, inFunctionName: "depthwise_conv_add_batch_norm_relu_3x3", initContext: initContext)
+                } else {
+                    try super.init(device: device, inFunctionName: "conv_add_batch_norm_relu_3x3", initContext: initContext)
+                }
             } else {
                 throw PaddleMobileError.makeError(type: .netError, msg: "unsupported conv filter")
             }
         } else if GlobalConfig.shared.computePrecision == .Float16 {
             if param.filter.width == 1 && param.filter.height == 1 {
                 try super.init(device: device, inFunctionName: "conv_add_batch_norm_relu_1x1_half", initContext: initContext)
-            } else if param.filter.channel == 1 {
-                try super.init(device: device, inFunctionName: "depthwise_conv_add_batch_norm_relu_3x3_half", initContext: initContext)
             } else if param.filter.width == 3 && param.filter.height == 3 {
-                try super.init(device: device, inFunctionName: "conv_add_batch_norm_relu_3x3_half", initContext: initContext)
+                if param.filter.channel == 1 {
+                    try super.init(device: device, inFunctionName: "depthwise_conv_add_batch_norm_relu_3x3_half", initContext: initContext)
+                } else {
+                    try super.init(device: device, inFunctionName: "conv_add_batch_norm_relu_3x3_half", initContext: initContext)
+                }
             } else {
                 throw PaddleMobileError.makeError(type: .netError, msg: "unsupported conv filter")
             }
@@ -157,9 +165,6 @@ class ConvAddBatchNormReluKernel<P: PrecisionProtocol>: Kernel, Computable, Test
     }
     
     func compute(commandBuffer: MTLCommandBuffer, param: ConvAddBatchNormReluParam<P>) throws {
-        guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
-            throw PaddleMobileError.makeError(type: .predictError, msg: "encoder is nil")
-        }
         guard let tempPipline = pipline else {
             throw PaddleMobileError.makeError(type: .predictError, msg: "pipline is nil")
         }
@@ -169,33 +174,44 @@ class ConvAddBatchNormReluKernel<P: PrecisionProtocol>: Kernel, Computable, Test
         guard let outputTexture = param.output.metalTexture else {
             throw PaddleMobileError.makeError(type: .predictError, msg: "output metaltexture is nil")
         }
-        encoder.setTexture(inputTexture, index: 0)
-        encoder.setTexture(outputTexture, index: 1)
-        encoder.setBytes(&metalParam, length: MemoryLayout<MetalConvParam>.size, index: 0)
-        encoder.setBuffer(param.filter.buffer, offset: 0, index: 1)
-        encoder.setBuffer(param.y.buffer, offset: 0, index: 2)
-        encoder.setBuffer(param.newScale!, offset: 0, index: 3)
-        encoder.setBuffer(param.newBiase!, offset: 0, index: 4)
-        encoder.dispatch(computePipline: tempPipline, outTexture: outputTexture)
-        encoder.endEncoding()
+        do {
+            guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
+                throw PaddleMobileError.makeError(type: .predictError, msg: "encoder is nil")
+            }
+            defer {
+                encoder.endEncoding()
+            }
+            encoder.setTexture(inputTexture, index: 0)
+            encoder.setTexture(outputTexture, index: 1)
+            encoder.setBytes(&metalParam, length: MemoryLayout<MetalConvParam>.size, index: 0)
+            encoder.setBuffer(param.filter.buffer, offset: 0, index: 1)
+            encoder.setBuffer(param.y.buffer, offset: 0, index: 2)
+            encoder.setBuffer(param.newScale!, offset: 0, index: 3)
+            encoder.setBuffer(param.newBiase!, offset: 0, index: 4)
+            try encoder.dispatch(computePipline: tempPipline, outTexture: outputTexture)
+        }
     }
     
     public func test(commandBuffer: MTLCommandBuffer, param: ConvAddBatchNormReluTestParam) throws {
-        guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
-            throw PaddleMobileError.makeError(type: .defaultError, msg: "encoder nil")
-        }
         guard let tempPipline = pipline else {
             throw PaddleMobileError.makeError(type: .defaultError, msg: "pipline nil")
         }
-        encoder.setTexture(param.inputTexture, index: 0)
-        encoder.setTexture(param.outputTexture, index: 1)
-        var inMetalParam = param.metalParam
-        encoder.setBytes(&inMetalParam, length: MemoryLayout<MetalConvParam>.size, index: 0)
-        encoder.setBuffer(param.filterBuffer, offset: 0, index: 1)
-        encoder.setBuffer(param.biaseBuffer, offset: 0, index: 2)
-        encoder.setBuffer(param.newScaleBuffer, offset: 0, index: 3)
-        encoder.setBuffer(param.newBiaseBuffer, offset: 0, index: 4)
-        encoder.dispatch(computePipline: tempPipline, outTexture: param.outputTexture)
-        encoder.endEncoding()
+        do {
+            guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
+                throw PaddleMobileError.makeError(type: .defaultError, msg: "encoder nil")
+            }
+            defer {
+                encoder.endEncoding()
+            }
+            encoder.setTexture(param.inputTexture, index: 0)
+            encoder.setTexture(param.outputTexture, index: 1)
+            var inMetalParam = param.metalParam
+            encoder.setBytes(&inMetalParam, length: MemoryLayout<MetalConvParam>.size, index: 0)
+            encoder.setBuffer(param.filterBuffer, offset: 0, index: 1)
+            encoder.setBuffer(param.biaseBuffer, offset: 0, index: 2)
+            encoder.setBuffer(param.newScaleBuffer, offset: 0, index: 3)
+            encoder.setBuffer(param.newBiaseBuffer, offset: 0, index: 4)
+            try encoder.dispatch(computePipline: tempPipline, outTexture: param.outputTexture)
+        }
     }
 }

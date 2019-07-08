@@ -21,9 +21,6 @@ class SoftmaxParam<P: PrecisionProtocol>: OpParam {
         input = try SoftmaxParam.inputX(inputs: opDesc.inputs, from: inScope)
         output = try SoftmaxParam.outputOut(outputs: opDesc.outputs, from: inScope)
         
-        //assert(input.tensorDim.dims.count == 2)
-        //assert(input.transpose == [0, 1, 2, 3])
-        
         output.dim = input.dim
         output.tensorDim = input.tensorDim
         output.padToFourDim = input.padToFourDim

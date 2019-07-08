@@ -71,18 +71,22 @@ class FetchKernel<P: PrecisionProtocol>: Kernel, Computable {
                 }
             }
         }
-        guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
-            throw PaddleMobileError.makeError(type: .predictError, msg: "encoder is nil")
-        }
         guard let tempPipline = pipline else {
             throw PaddleMobileError.makeError(type: .predictError, msg: "pipline is nil")
         }
         guard let inputMetalTexture = input.metalTexture else {
             throw PaddleMobileError.makeError(type: .predictError, msg: "input metaltexture is nil")
         }
-        encoder.setTexture(inputMetalTexture, index: 0)
-        encoder.setBuffer(param.output.resultBuffer!, offset: 0, index: 0)
-        encoder.dispatch(computePipline: tempPipline, outTexture: inputMetalTexture)
-        encoder.endEncoding()
+        do {
+            guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
+                throw PaddleMobileError.makeError(type: .predictError, msg: "encoder is nil")
+            }
+            defer {
+                encoder.endEncoding()
+            }
+            encoder.setTexture(inputMetalTexture, index: 0)
+            encoder.setBuffer(param.output.resultBuffer!, offset: 0, index: 0)
+            try encoder.dispatch(computePipline: tempPipline, outTexture: inputMetalTexture)
+        }
     }
 }

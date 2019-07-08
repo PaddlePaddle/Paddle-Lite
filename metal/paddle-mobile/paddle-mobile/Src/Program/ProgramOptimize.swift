@@ -22,7 +22,6 @@ precedencegroup ChainNode {
 infix operator --> : ChainNode
 
 class Node {
-    var inputs: [Node] = []
     var outputs: [Node] = []
     var type: String
     var opDesc: PMOpDesc?
@@ -53,7 +52,6 @@ class Node {
     
     static func -->(lNode: Node, rNode: Node) -> Node {
         lNode.outputs.append(rNode)
-        rNode.inputs.append(lNode)
         return rNode
     }
     
@@ -158,7 +156,6 @@ class Node {
             output.relationship(map: &map)
         }
     }
-    
 }
 
 extension Node: Equatable {

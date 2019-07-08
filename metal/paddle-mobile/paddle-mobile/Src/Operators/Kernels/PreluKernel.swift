@@ -14,7 +14,7 @@
 
 import Foundation
 
-class PreluKernel<P: PrecisionProtocol>: Kernel, Computable{
+class PreluKernel<P: PrecisionProtocol>: Kernel, Computable {
     required init(device: MTLDevice, param: PreluParam<P>, initContext: InitContext) throws {
         try param.alpha.initBuffer(device: device, precision: GlobalConfig.shared.computePrecision)
         
@@ -42,9 +42,6 @@ class PreluKernel<P: PrecisionProtocol>: Kernel, Computable{
     }
     
     func compute(commandBuffer: MTLCommandBuffer, param: PreluParam<P>) throws {
-        guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
-            throw PaddleMobileError.makeError(type: .predictError, msg: "encoder is nil")
-        }
         guard let tempPipline = pipline else {
             throw PaddleMobileError.makeError(type: .predictError, msg: "pipline is nil")
         }
@@ -54,10 +51,17 @@ class PreluKernel<P: PrecisionProtocol>: Kernel, Computable{
         guard let outputMetalTexture = param.output.metalTexture else {
             throw PaddleMobileError.makeError(type: .predictError, msg: "output metaltexture is nil")
         }
-        encoder.setTexture(inputMetalTexture, index: 0)
-        encoder.setTexture(outputMetalTexture, index: 1)
-        encoder.setBuffer(param.alpha.buffer, offset: 0, index: 0)
-        encoder.dispatch(computePipline: tempPipline, outTexture: outputMetalTexture)
-        encoder.endEncoding()
+        do {
+            guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
+                throw PaddleMobileError.makeError(type: .predictError, msg: "encoder is nil")
+            }
+            defer {
+                encoder.endEncoding()
+            }
+            encoder.setTexture(inputMetalTexture, index: 0)
+            encoder.setTexture(outputMetalTexture, index: 1)
+            encoder.setBuffer(param.alpha.buffer, offset: 0, index: 0)
+            try encoder.dispatch(computePipline: tempPipline, outTexture: outputMetalTexture)
+        }
     }
 }
