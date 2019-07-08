@@ -15,14 +15,22 @@
 set(HOST_C_COMPILER $ENV{CC})
 set(HOST_CXX_COMPILER $ENV{CXX})
 
+if(IOS)
+    set(default_cc clang)
+    set(default_cxx clang++)
+else()
+    set(default_cc gcc)
+    set(default_cxx g++)
+endif()
+
 if(NOT HOST_C_COMPILER)
-    find_program(HOST_C_COMPILER NAMES gcc PATH
+    find_program(HOST_C_COMPILER NAMES ${default_cc} PATH
         /usr/bin
         /usr/local/bin)
 endif()
 
 if(NOT HOST_CXX_COMPILER)
-    find_program(HOST_CXX_COMPILER NAMES g++ PATH
+    find_program(HOST_CXX_COMPILER NAMES ${default_cxx} PATH
         /usr/bin
         /usr/local/bin)
 endif()

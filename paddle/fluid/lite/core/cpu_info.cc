@@ -18,11 +18,11 @@
 #endif
 #if __APPLE__
 #include "TargetConditionals.h"
-#if TARGET_OS_IPHONE
+#if LITE_WITH_IPHONE
 #include <mach/machine.h>
 #include <sys/sysctl.h>
 #include <sys/types.h>
-#endif  // TARGET_OS_IPHONE
+#endif  // LITE_WITH_IPHONE
 #endif  // __APPLE__
 
 #ifdef ARM_WITH_OMP

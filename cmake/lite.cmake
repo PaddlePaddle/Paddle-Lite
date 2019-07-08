@@ -40,32 +40,42 @@ function(bundle_static_library tgt_name bundled_tgt_name fake_target)
 
   message(STATUS "+++++ bundled_tgt_full_name: ${bundled_tgt_full_name}")
 
-  file(WRITE ${CMAKE_BINARY_DIR}/${bundled_tgt_name}.ar.in
-    "CREATE ${bundled_tgt_full_name}\n" )
+  if(NOT IOS)
+    file(WRITE ${CMAKE_BINARY_DIR}/${bundled_tgt_name}.ar.in
+      "CREATE ${bundled_tgt_full_name}\n" )
 
-  foreach(tgt IN LISTS static_libs)
-    file(APPEND ${CMAKE_BINARY_DIR}/${bundled_tgt_name}.ar.in
-      "ADDLIB $<TARGET_FILE:${tgt}>\n")
-  endforeach()
+    foreach(tgt IN LISTS static_libs)
+      file(APPEND ${CMAKE_BINARY_DIR}/${bundled_tgt_name}.ar.in
+        "ADDLIB $<TARGET_FILE:${tgt}>\n")
+    endforeach()
 
-  file(APPEND ${CMAKE_BINARY_DIR}/${bundled_tgt_name}.ar.in "SAVE\n")
-  file(APPEND ${CMAKE_BINARY_DIR}/${bundled_tgt_name}.ar.in "END\n")
+    file(APPEND ${CMAKE_BINARY_DIR}/${bundled_tgt_name}.ar.in "SAVE\n")
+    file(APPEND ${CMAKE_BINARY_DIR}/${bundled_tgt_name}.ar.in "END\n")
 
-  file(GENERATE
-    OUTPUT ${CMAKE_BINARY_DIR}/${bundled_tgt_name}.ar
-    INPUT ${CMAKE_BINARY_DIR}/${bundled_tgt_name}.ar.in)
+    file(GENERATE
+      OUTPUT ${CMAKE_BINARY_DIR}/${bundled_tgt_name}.ar
+      INPUT ${CMAKE_BINARY_DIR}/${bundled_tgt_name}.ar.in)
 
-  set(ar_tool ${CMAKE_AR})
-  if (CMAKE_INTERPROCEDURAL_OPTIMIZATION)
-    set(ar_tool ${CMAKE_CXX_COMPILER_AR})
+    set(ar_tool ${CMAKE_AR})
+    if (CMAKE_INTERPROCEDURAL_OPTIMIZATION)
+      set(ar_tool ${CMAKE_CXX_COMPILER_AR})
+    endif()
+
+    add_custom_command(
+      COMMAND ${ar_tool} -M < ${CMAKE_BINARY_DIR}/${bundled_tgt_name}.ar
+      OUTPUT ${bundled_tgt_full_name}
+      COMMENT "Bundling ${bundled_tgt_name}"
+      VERBATIM)
+  else()
+    foreach(lib ${static_libs})
+      set(libfiles ${libfiles} $<TARGET_FILE:${lib}>)
+    endforeach()
+    add_custom_command(
+      COMMAND /usr/bin/libtool -static -o ${bundled_tgt_full_name} ${libfiles}
+      OUTPUT ${bundled_tgt_full_name}
+    )
   endif()
-
-  add_custom_command(
-    COMMAND ${ar_tool} -M < ${CMAKE_BINARY_DIR}/${bundled_tgt_name}.ar
-    OUTPUT ${bundled_tgt_full_name}
-    COMMENT "Bundling ${bundled_tgt_name}"
-    VERBATIM)
-
+  
   add_custom_target(${fake_target} ALL DEPENDS ${bundled_tgt_full_name})
   add_dependencies(${fake_target} ${tgt_name})
 
