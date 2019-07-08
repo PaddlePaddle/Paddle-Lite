@@ -25,8 +25,7 @@
 #endif
 #ifdef LITE_WITH_OPENCL
 #include "paddle/fluid/lite/opencl/cl_context.h"
-#include "paddle/fluid/lite/opencl/cl_engine.h"
-#include "paddle/fluid/lite/opencl/cl_helper.h"
+#include "paddle/fluid/lite/opencl/cl_runtime.h"
 #endif
 #include <map>
 #include <memory>
@@ -53,7 +52,7 @@ using HostContext = Context<TargetType::kHost>;
 using X86Context = Context<TargetType::kX86>;
 using CUDAContext = Context<TargetType::kCUDA>;
 using ARMContext = Context<TargetType::kARM>;
-using OpenClContext = Context<TargetType::kOpenCL>;
+using OpenCLContext = Context<TargetType::kOpenCL>;
 
 template <>
 class Context<TargetType::kHost> {
@@ -216,35 +215,30 @@ class Context<TargetType::kX86> {
 template <>
 class Context<TargetType::kOpenCL> {
   mutable std::shared_ptr<CLContext> cl_context_;
-  mutable std::shared_ptr<CLHelper> cl_helper_;
 
  public:
   CLContext* cl_context() { return cl_context_.get(); }
-  CLHelper* cl_helper() { return cl_helper_.get(); }
 
   void InitOnce() {
-    // Init cl engine.
-    CHECK(CLEngine::Global()->IsInitSuccess()) << "OpenCL engine init failed";
-    CLEngine::Global()->set_cl_path(FLAGS_cl_path);
+    // Init cl runtime.
+    CHECK(CLRuntime::Global()->IsInitSuccess()) << "OpenCL runtime init failed";
+    CLRuntime::Global()->set_cl_path(FLAGS_cl_path);
 
     cl_context_ = std::make_shared<CLContext>();
-    cl_helper_ = std::make_shared<CLHelper>();
-    cl_helper_->set_context(cl_context_.get());
 
     PrepareKernels();
   }
 
-  void CopySharedTo(const OpenClContext* ctx) {
+  void CopySharedTo(const OpenCLContext* ctx) {
     ctx->cl_context_ = cl_context_;
-    ctx->cl_helper_ = cl_helper_;
   }
 
  private:
   void PrepareKernels() {
-    cl_helper_->AddKernel("elementwise_add", "elementwise_add_kernel.cl");
-    cl_helper_->AddKernel("channel_add", "channel_add_kernel.cl");
-    cl_helper_->AddKernel("pool_max", "pool_kernel.cl");
-    cl_helper_->AddKernel("pool_avg", "pool_kernel.cl");
+    cl_context_->AddKernel("elementwise_add", "elementwise_add_kernel.cl");
+    cl_context_->AddKernel("channel_add", "channel_add_kernel.cl");
+    cl_context_->AddKernel("pool_max", "pool_kernel.cl");
+    cl_context_->AddKernel("pool_avg", "pool_kernel.cl");
   }
 };
 #endif
@@ -300,8 +294,8 @@ class ContextScheduler {
 #endif
 #ifdef LITE_WITH_OPENCL
       case TARGET(kOpenCL):
-        kernel_contexts_[TargetType::kOpenCL].As<OpenClContext>().CopySharedTo(
-            &ctx->As<OpenClContext>());
+        kernel_contexts_[TargetType::kOpenCL].As<OpenCLContext>().CopySharedTo(
+            &ctx->As<OpenCLContext>());
         break;
 #endif
       default:
@@ -328,7 +322,7 @@ class ContextScheduler {
     InitContext<TargetType::kARM, ARMContext>();
 #endif
 #ifdef LITE_WITH_OPENCL
-    InitContext<TargetType::kOpenCL, OpenClContext>();
+    InitContext<TargetType::kOpenCL, OpenCLContext>();
 #endif
   }
 

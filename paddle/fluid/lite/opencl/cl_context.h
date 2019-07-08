@@ -14,9 +14,12 @@ limitations under the License. */
 
 #pragma once
 
+#include <map>
 #include <memory>
 #include <string>
 #include <unordered_map>
+#include <vector>
+#include "paddle/fluid/lite/opencl/cl_image.h"
 #include "paddle/fluid/lite/opencl/cl_include.h"
 
 namespace paddle {
@@ -31,12 +34,19 @@ class CLContext {
   cl::Program &GetProgram(const std::string &file_name,
                           const std::string &options);
 
-  std::unique_ptr<cl::Kernel> GetKernel(const std::string &kernel_name,
-                                        const std::string &file_name,
-                                        const std::string &options);
+  void AddKernel(const std::string &kernel_name, const std::string &file_name,
+                 const std::string &options = "");
+
+  cl::Kernel &GetKernel(const int index);
+
+  cl::Kernel &GetKernel(const std::string &name);
+
+  cl::NDRange DefaultWorkSize(const CLImage &image);
 
  private:
   std::unordered_map<std::string, std::unique_ptr<cl::Program>> programs_;
+  std::vector<std::unique_ptr<cl::Kernel>> kernels_;
+  std::map<std::string, int> kernel_offset_;
 };
 
 }  // namespace lite

@@ -21,51 +21,48 @@ limitations under the License. */
 #include "paddle/fluid/lite/core/compatible_tensor.h"
 #include "paddle/fluid/lite/opencl/cl_caller.h"
 #include "paddle/fluid/lite/opencl/cl_context.h"
-#include "paddle/fluid/lite/opencl/cl_engine.h"
-#include "paddle/fluid/lite/opencl/cl_helper.h"
 #include "paddle/fluid/lite/opencl/cl_image.h"
+#include "paddle/fluid/lite/opencl/cl_runtime.h"
 
 DEFINE_string(cl_path, "/data/local/tmp/opencl", "The OpenCL kernels path.");
 
 namespace paddle {
 namespace lite {
 
-TEST(cl_test, engine_test) {
-  auto* engine = CLEngine::Global();
-  CHECK(engine->IsInitSuccess());
-  engine->set_cl_path(FLAGS_cl_path);
-  engine->platform();
-  engine->device();
-  engine->command_queue();
-  auto& context = engine->context();
-  auto program = engine->CreateProgram(
-      context, engine->cl_path() + "/cl_kernel/" + "elementwise_add_kernel.cl");
-  auto event = engine->CreateEvent(context);
-  CHECK(engine->BuildProgram(program.get()));
+TEST(cl_test, runtime_test) {
+  auto* runtime = CLRuntime::Global();
+  CHECK(runtime->IsInitSuccess());
+  runtime->set_cl_path(FLAGS_cl_path);
+  runtime->platform();
+  runtime->device();
+  runtime->command_queue();
+  auto& context = runtime->context();
+  auto program =
+      runtime->CreateProgram(context, runtime->cl_path() + "/cl_kernel/" +
+                                          "elementwise_add_kernel.cl");
+  auto event = runtime->CreateEvent(context);
+  CHECK(runtime->BuildProgram(program.get()));
 }
 
 TEST(cl_test, context_test) {
-  auto* engine = CLEngine::Global();
-  CHECK(engine->IsInitSuccess());
-  engine->set_cl_path(FLAGS_cl_path);
+  auto* runtime = CLRuntime::Global();
+  CHECK(runtime->IsInitSuccess());
+  runtime->set_cl_path(FLAGS_cl_path);
   CLContext context;
-  context.GetKernel("pool_max", "pool_kernel.cl", "");
-  context.GetKernel("elementwise_add", "elementwise_add_kernel.cl", "");
-  context.GetKernel("elementwise_add", "elementwise_add_kernel.cl", "");
+  context.AddKernel("pool_max", "pool_kernel.cl", "");
+  context.AddKernel("elementwise_add", "elementwise_add_kernel.cl", "");
+  context.AddKernel("elementwise_add", "elementwise_add_kernel.cl", "");
 }
 
 TEST(cl_test, kernel_test) {
-  auto* engine = CLEngine::Global();
-  CHECK(engine->IsInitSuccess());
-  engine->set_cl_path(FLAGS_cl_path);
+  auto* runtime = CLRuntime::Global();
+  CHECK(runtime->IsInitSuccess());
+  runtime->set_cl_path(FLAGS_cl_path);
   std::unique_ptr<CLContext> context(new CLContext);
-  // std::unique_ptr<CLHelper> helper(new CLHelper(context.get()));
-  std::unique_ptr<CLHelper> helper(new CLHelper);
-  helper->set_context(context.get());
-  helper->AddKernel("elementwise_add", "elementwise_add_kernel.cl");
-  helper->AddKernel("pool_max", "pool_kernel.cl");
-  helper->AddKernel("elementwise_add", "elementwise_add_kernel.cl");
-  auto kernel = helper->GetKernel(2);
+  context->AddKernel("elementwise_add", "elementwise_add_kernel.cl");
+  context->AddKernel("pool_max", "pool_kernel.cl");
+  context->AddKernel("elementwise_add", "elementwise_add_kernel.cl");
+  auto kernel = context->GetKernel(2);
 
   std::unique_ptr<float[]> in_data(new float[4 * 3 * 256 * 512]);
   for (int i = 0; i < 4 * 3 * 256 * 512; i++) {
@@ -74,7 +71,7 @@ TEST(cl_test, kernel_test) {
   const DDim in_dim = DDim(std::vector<DDim::value_type>{4, 3, 256, 512});
   CLImage in_image;
   in_image.set_tensor_data(in_data.get(), in_dim);
-  in_image.InitNormalCLImage(helper->OpenCLContext());
+  in_image.InitNormalCLImage(context->GetContext());
   LOG(INFO) << in_image;
 
   std::unique_ptr<float[]> bias_data(new float[4 * 3 * 256 * 512]);
@@ -84,12 +81,12 @@ TEST(cl_test, kernel_test) {
   const DDim bias_dim = DDim(std::vector<DDim::value_type>{4, 3, 256, 512});
   CLImage bias_image;
   bias_image.set_tensor_data(bias_data.get(), bias_dim);
-  bias_image.InitNormalCLImage(helper->OpenCLContext());
+  bias_image.InitNormalCLImage(context->GetContext());
   LOG(INFO) << bias_image;
 
   CLImage out_image;
   const DDim out_dim = DDim(std::vector<DDim::value_type>{4, 3, 256, 512});
-  out_image.InitEmptyImage(helper->OpenCLContext(), out_dim);
+  out_image.InitEmptyImage(context->GetContext(), out_dim);
   LOG(INFO) << out_image;
 
   cl_int status;
@@ -100,15 +97,14 @@ TEST(cl_test, kernel_test) {
   status = kernel.setArg(2, *out_image.cl_image());
   CL_CHECK_ERRORS(status);
 
-  // auto global_work_size = helper->DefaultWorkSize(out_image);
   size_t width = in_image.ImageWidth();
   size_t height = in_image.ImageHeight();
   auto global_work_size = cl::NDRange{width, height};
   cl::Event event;
-  status = helper->OpenCLCommandQueue().enqueueNDRangeKernel(
+  status = context->GetCommandQueue().enqueueNDRangeKernel(
       kernel, cl::NullRange, global_work_size, cl::NullRange, nullptr, &event);
   CL_CHECK_ERRORS(status);
-  status = helper->OpenCLCommandQueue().finish();
+  status = context->GetCommandQueue().finish();
   CL_CHECK_ERRORS(status);
   double start_nanos = event.getProfilingInfo<CL_PROFILING_COMMAND_START>();
   double stop_nanos = event.getProfilingInfo<CL_PROFILING_COMMAND_END>();
@@ -147,13 +143,12 @@ TEST(cl_test, channel_add_test) {
   const DDim out_dim = DDim(std::vector<DDim::value_type>{4, 16, 256, 512});
   std::unique_ptr<float[]> out(new float[4 * 16 * 256 * 512]);
 
-  bool status = InitOpenCLEngine(FLAGS_cl_path);
-  CHECK(status) << "Fail to initialize OpenCL engine.";
+  bool status = InitOpenCLRuntime(FLAGS_cl_path);
+  CHECK(status) << "Fail to initialize OpenCL runtime.";
   std::unique_ptr<CLContext> context(new CLContext);
-  std::unique_ptr<CLHelper> helper(new CLHelper(context.get()));
-  helper->AddKernel("elementwise_add", "elementwise_add_kernel.cl");
-  helper->AddKernel("channel_add", "channel_add_kernel.cl");
-  elementwise_add(helper.get(), in_data.get(), in_dim, bias_data.get(),
+  context->AddKernel("elementwise_add", "elementwise_add_kernel.cl");
+  context->AddKernel("channel_add", "channel_add_kernel.cl");
+  elementwise_add(context.get(), in_data.get(), in_dim, bias_data.get(),
                   bias_dim, out.get(), out_dim);
 
   int stride = 4 * 16 * 256 * 512 / 20;
@@ -191,13 +186,12 @@ TEST(cl_test, elementwise_add_test) {
   const DDim out_dim = DDim(std::vector<DDim::value_type>{4, 16, 256, 512});
   std::unique_ptr<float[]> out(new float[4 * 16 * 256 * 512]);
 
-  bool status = InitOpenCLEngine(FLAGS_cl_path);
-  CHECK(status) << "Fail to initialize OpenCL engine.";
+  bool status = InitOpenCLRuntime(FLAGS_cl_path);
+  CHECK(status) << "Fail to initialize OpenCL runtime.";
   std::unique_ptr<CLContext> context(new CLContext);
-  std::unique_ptr<CLHelper> helper(new CLHelper(context.get()));
-  helper->AddKernel("elementwise_add", "elementwise_add_kernel.cl");
-  helper->AddKernel("channel_add", "channel_add_kernel.cl");
-  elementwise_add(helper.get(), in_data.get(), in_dim, bias_data.get(),
+  context->AddKernel("elementwise_add", "elementwise_add_kernel.cl");
+  context->AddKernel("channel_add", "channel_add_kernel.cl");
+  elementwise_add(context.get(), in_data.get(), in_dim, bias_data.get(),
                   bias_dim, out.get(), out_dim);
 
   int stride = 4 * 16 * 256 * 512 / 20;
@@ -271,13 +265,12 @@ TEST(cl_test, pool_test) {
   std::unique_ptr<float[]> out(new float[4 * 1024 * 1 * 1]);
   std::unique_ptr<float[]> out_ref(new float[4 * 1024 * 1 * 1]);
 
-  bool status = InitOpenCLEngine(FLAGS_cl_path);
-  CHECK(status) << "Fail to initialize OpenCL engine.";
+  bool status = InitOpenCLRuntime(FLAGS_cl_path);
+  CHECK(status) << "Fail to initialize OpenCL runtime.";
   std::unique_ptr<CLContext> context(new CLContext);
-  std::unique_ptr<CLHelper> helper(new CLHelper(context.get()));
-  helper->AddKernel("pool_max", "pool_kernel.cl");
-  helper->AddKernel("pool_avg", "pool_kernel.cl");
-  pool(helper.get(), "avg", 0, 0, 1, 1, 7, 7, in_data.get(), in_dim, out.get(),
+  context->AddKernel("pool_max", "pool_kernel.cl");
+  context->AddKernel("pool_avg", "pool_kernel.cl");
+  pool(context.get(), "avg", 0, 0, 1, 1, 7, 7, in_data.get(), in_dim, out.get(),
        out_dim);
   pool_avg(0, 0, 1, 1, 7, 7, in_data.get(), in_dim, out_ref.get(), out_dim);
 

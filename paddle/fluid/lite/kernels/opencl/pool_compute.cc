@@ -45,10 +45,10 @@ class PoolCompute
       }
     }
 
-    auto& context = ctx_->As<OpenClContext>();
-    CHECK(context.cl_helper() != nullptr);
+    auto& context = ctx_->As<OpenCLContext>();
+    CHECK(context.cl_context() != nullptr);
 
-    pool(context.cl_helper(), pooling_type, paddings[0], paddings[1],
+    pool(context.cl_context(), pooling_type, paddings[0], paddings[1],
          strides[0], strides[1], ksize[0], ksize[1],
          static_cast<const float*>(param.x->raw_data()), in_dims,
          param.output->mutable_data<float>(), out_dims);

@@ -39,6 +39,7 @@ function cmake_opencl {
     # $2: ARM_TARGET_ARCH_ABI in "armv8", "armv7" ,"armv7hf"
     # $3: ARM_TARGET_LANG in "gcc" "clang"
     cmake .. \
+        -DCMAKE_BUILD_TYPE=Debug \
         -DLITE_WITH_OPENCL=ON \
         -DWITH_GPU=OFF \
         -DWITH_MKL=OFF \
@@ -315,6 +316,7 @@ function cmake_arm {
     # $2: ARM_TARGET_ARCH_ABI in "armv8", "armv7" ,"armv7hf"
     # $3: ARM_TARGET_LANG in "gcc" "clang"
     cmake .. \
+        -DCMAKE_BUILD_TYPE=Debug \
         -DWITH_GPU=OFF \
         -DWITH_MKL=OFF \
         -DWITH_LITE=ON \

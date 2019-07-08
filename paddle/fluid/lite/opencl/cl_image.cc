@@ -15,8 +15,8 @@ limitations under the License. */
 #include "paddle/fluid/lite/opencl/cl_image.h"
 #include <glog/logging.h>
 #include <array>
-#include "paddle/fluid/lite/opencl/cl_engine.h"
-#include "paddle/fluid/lite/opencl/cl_tool.h"
+#include "paddle/fluid/lite/opencl/cl_runtime.h"
+#include "paddle/fluid/lite/opencl/cl_utility.h"
 
 namespace paddle {
 namespace lite {
@@ -30,7 +30,7 @@ std::ostream& operator<<(std::ostream& os, const CLImage& cl_image) {
   const std::array<size_t, 3> origin{0, 0, 0};
   const std::array<size_t, 3> region{static_cast<size_t>(width),
                                      static_cast<size_t>(height), 1};
-  cl_int err = CLEngine::Global()->command_queue().enqueueReadImage(
+  cl_int err = CLRuntime::Global()->command_queue().enqueueReadImage(
       *image, CL_TRUE, origin, region, 0, 0, image_data, nullptr, nullptr);
   CL_CHECK_ERRORS(err);
 
@@ -64,9 +64,7 @@ void CLImage::set_tensor_data(const float* tensor_data, const DDim& dim) {
 }
 
 void CLImage::InitCLImage(const cl::Context& context) {
-  CHECK(tensor_data_ != nullptr) << " Please call "
-                                    "set_tensohelper->DefaultWorkSize(out_"
-                                    "image)r_data first!";
+  CHECK(tensor_data_ != nullptr) << " Please call set_tensor_data first!";
   image_converter_.reset(new CLImageConverterFolder);
   InitCLImage(context, image_converter_.get());
 }
@@ -104,7 +102,7 @@ void CLImage::InitEmptyImage(const cl::Context& context, const DDim& dim) {
 
   InitCLImage(context, image_dims_[0], image_dims_[1], nullptr);
 
-  cl_event_ = CLEngine::Global()->CreateEvent(context);
+  cl_event_ = CLRuntime::Global()->CreateEvent(context);
   initialized_ = true;
   VLOG(3) << " end init cl image ";
 }
@@ -117,7 +115,7 @@ void CLImage::InitEmptyWithImageDim(const cl::Context& context,
 
   InitCLImage(context, image_dims_[0], image_dims_[1], nullptr);
 
-  cl_event_ = CLEngine::Global()->CreateEvent(context);
+  cl_event_ = CLRuntime::Global()->CreateEvent(context);
   initialized_ = true;
   VLOG(3) << " end init cl image";
 }
@@ -143,7 +141,7 @@ void CLImage::InitCLImage(const cl::Context& context,
 
   delete[] image_data;
   tensor_data_ = nullptr;
-  cl_event_ = CLEngine::Global()->CreateEvent(context);
+  cl_event_ = CLRuntime::Global()->CreateEvent(context);
   initialized_ = true;
   VLOG(3) << " end init cl image ";
 }

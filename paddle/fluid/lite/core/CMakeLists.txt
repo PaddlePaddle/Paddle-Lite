@@ -31,9 +31,9 @@ lite_cc_library(scope_lite SRCS scope.cc DEPS ${tensor_lite})
 lite_cc_library(cpu_info_lite SRCS cpu_info.cc)
 
 if (LITE_WITH_ARM)
-lite_cc_library(context_lite SRCS context.cc DEPS ${tensor_lite} any_lite cpu_info_lite CL_DEPS cl_helper)
+lite_cc_library(context_lite SRCS context.cc DEPS ${tensor_lite} any_lite cpu_info_lite CL_DEPS cl_context)
 else()
-lite_cc_library(context_lite SRCS context.cc DEPS ${tensor_lite} any_lite cpu_info_lite eigen3 CL_DEPS cl_helper)
+lite_cc_library(context_lite SRCS context.cc DEPS ${tensor_lite} any_lite cpu_info_lite eigen3 CL_DEPS cl_context)
 endif()
 lite_cc_library(kernel_lite SRCS kernel.cc DEPS context_lite type_system target_wrapper_lite any_lite op_params_lite framework_proto_lite ${tensor_lite})
 lite_cc_library(op_lite SRCS op_lite.cc DEPS scope_lite op_registry_lite target_wrapper_lite kernel_lite
