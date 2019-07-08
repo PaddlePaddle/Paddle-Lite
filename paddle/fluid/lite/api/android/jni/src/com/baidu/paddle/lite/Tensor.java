@@ -13,10 +13,34 @@ limitations under the License. */
 
 package com.baidu.paddle.lite;
 
+/**
+ * Tensor class provides the Java APIs that users can get or set the shape or
+ * the data of a Tensor.
+ */
 public class Tensor {
 
+    /**
+     * Java doesn't have pointer. To maintain the life cycle of underneath C++
+     * PaddlePredictor object, we use a long value to maintain it.
+     */
     private long cppTensorPointer;
+
+    /**
+     * Is this tensor read-only. This field is also used at C++ side to know whether
+     * we should interpret the C++ tensor pointer to "Tensor" pointer or "const
+     * Tensor" pointer.
+     */
     private boolean readOnly;
+
+    /**
+     * Due to different memory management of Java and C++, at C++, if a user
+     * destroys PaddlePredictor object, the tensor's memory will be released and a
+     * pointer operating on the released tensor will cause unknown behavior. At C++
+     * side, that's users' responsibility to manage memory well. But for our Java
+     * code, we have to prevent this case. We make this {@link Tensor} keep a
+     * reference to {@link PaddlePredictor} to prevent the {@link PaddlePredictor}
+     * object be collected by JVM before {@Tensor}.
+     */
     private PaddlePredictor predictor;
 
     /**
@@ -29,6 +53,7 @@ public class Tensor {
         this.predictor = predictor;
     }
 
+    /** Deletes C++ Tensor pointer when Java Tensor object is destroyed */
     protected void finalize() throws Throwable {
         if (cppTensorPointer != 0L) {
             deleteCppTensor(cppTensorPointer);
@@ -37,21 +62,80 @@ public class Tensor {
         super.finalize();
     }
 
+    /**
+     * @return whether this Tensor is read-only.
+     */
     public boolean isReadOnly() {
         return readOnly;
     }
 
-    public native boolean resize(long[] dims);
+    /**
+     * Resizes the tensor shape.
+     *
+     * @param dims long array of shape.
+     * @return true if resize successfully.
+     */
+    public boolean resize(long[] dims) {
+        if (readOnly) {
+            return false;
+        }
+        return nativeResize(dims);
+    }
 
+    /**
+     * Set the tensor float data.
+     *
+     * @param buf the float array buffer which will be copied into tensor.
+     * @return true if set data successfully.
+     */
+    public boolean setData(float[] buf) {
+        if (readOnly) {
+            return false;
+        }
+        return nativeSetData(buf);
+    }
+
+    /**
+     * Set the tensor byte data.
+     *
+     * @param buf the byte array buffer which will be copied into tensor.
+     * @return true if set data successfully.
+     */
+    public boolean setData(byte[] buf) {
+        if (readOnly) {
+            return false;
+        }
+        return nativeSetData(buf);
+    }
+
+    /**
+     * @return shape of the tensor as long array.
+     */
     public native long[] shape();
 
-    public native boolean setData(float[] buf);
-
-    public native boolean setData(byte[] buf);
-
+    /**
+     * @return the tensor data as float array.
+     */
     public native float[] getFloatData();
 
+    /**
+     * @return the tensor data as byte array.
+     */
     public native byte[] getByteData();
 
-    private native boolean deleteCppTensor(long native_pointer);
+    private native boolean nativeResize(long[] dims);
+
+    private native boolean nativeSetData(float[] buf);
+
+    private native boolean nativeSetData(byte[] buf);
+
+    /**
+     * Delete C++ Tenor object pointed by the input pointer, which is presented by a
+     * long value.
+     * 
+     * @param nativePointer a long value which is reinterpret_cast of the C++
+     *                      pointer.
+     * @return true if deletion success.
+     */
+    private native boolean deleteCppTensor(long nativePointer);
 }

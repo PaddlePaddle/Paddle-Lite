@@ -91,8 +91,8 @@ public class MainActivity extends AppCompatActivity {
 
         // Cxx Model
         Place[] validPlaces = new Place[2];
-        validPlaces[0] = new Place(Place.TargetType.X86, PrecisionType.FLOAT);
-        validPlaces[1] = new Place(Place.TargetType.ARM, PrecisionType.FLOAT);
+        validPlaces[0] = new Place(Place.TargetType.X86, Place.PrecisionType.FLOAT);
+        validPlaces[1] = new Place(Place.TargetType.ARM, Place.PrecisionType.FLOAT);
         Place preferredPlace = validPlaces[1];
 
         CxxConfig cxxConfig = new CxxConfig();

@@ -63,7 +63,7 @@ inline static std::unique_ptr<const Tensor> *get_read_only_tensor_pointer(
   return ptr;
 }
 
-JNIEXPORT jboolean JNICALL Java_com_baidu_paddle_lite_Tensor_resize(
+JNIEXPORT jboolean JNICALL Java_com_baidu_paddle_lite_Tensor_nativeResize(
     JNIEnv *env, jobject jtensor, jlongArray dims) {
   std::unique_ptr<Tensor> *tensor = get_writable_tensor_pointer(env, jtensor);
   if (tensor == nullptr || (*tensor == nullptr)) {
@@ -88,7 +88,7 @@ Java_com_baidu_paddle_lite_Tensor_shape(JNIEnv *env, jobject jtensor) {
   }
 }
 
-JNIEXPORT jboolean JNICALL Java_com_baidu_paddle_lite_Tensor_setData___3F(
+JNIEXPORT jboolean JNICALL Java_com_baidu_paddle_lite_Tensor_nativeSetData___3F(
     JNIEnv *env, jobject jtensor, jfloatArray buf) {
   std::unique_ptr<Tensor> *tensor = get_writable_tensor_pointer(env, jtensor);
   if (tensor == nullptr || (*tensor == nullptr)) {
@@ -104,7 +104,7 @@ JNIEXPORT jboolean JNICALL Java_com_baidu_paddle_lite_Tensor_setData___3F(
   return JNI_TRUE;
 }
 
-JNIEXPORT jboolean JNICALL Java_com_baidu_paddle_lite_Tensor_setData___3B(
+JNIEXPORT jboolean JNICALL Java_com_baidu_paddle_lite_Tensor_nativeSetData___3B(
     JNIEnv *env, jobject jtensor, jbyteArray buf) {
   std::unique_ptr<Tensor> *tensor = get_writable_tensor_pointer(env, jtensor);
   if (tensor == nullptr || (*tensor == nullptr)) {

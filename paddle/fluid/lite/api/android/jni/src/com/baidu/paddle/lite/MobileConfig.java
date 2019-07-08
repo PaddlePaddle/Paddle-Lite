@@ -14,9 +14,9 @@ limitations under the License. */
 package com.baidu.paddle.lite;
 
 /**
- * MobileConfig is the config for the light weight predictor, it will skip
- * IR optimization or other unnecessary stages.
- */ 
+ * MobileConfig is the config for the light weight predictor, it will skip IR
+ * optimization or other unnecessary stages.
+ */
 public class MobileConfig extends ConfigBase {
-
+    // Empty class
 }
