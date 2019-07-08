@@ -18,6 +18,8 @@ package com.baidu.paddle.lite;
  * kernel. It is used to make the analysis of the MIR more clear and accurate.
  */
 public class Place {
+
+    /** Place hardware target type. */
     public enum TargetType {
         UNKNOWN(0), HOST(1), X86(2), CUDA(3), ARM(4), OPEN_CL(5), ANY(6);
 
@@ -28,6 +30,18 @@ public class Place {
         }
     }
 
+    /** Place precision type */
+    public enum PrecisionType {
+        UNKNOWN(0), FLOAT(1), INT8(2), INT32(3), ANY(4);
+
+        public final int value;
+
+        private PrecisionType(int value) {
+            this.value = value;
+        }
+    }
+
+    /** Place data layout type */
     public enum DataLayoutType {
         UNKNOWN(0), NCHW(1), ANY(2);
 
@@ -105,14 +119,29 @@ public class Place {
         this.device = device;
     }
 
+    /**
+     * Returns hardware target as enum int value.
+     *
+     * @return hardware target as enum int value
+     */
     public int getTargetInt() {
         return target.value;
     }
 
+    /**
+     * Returns precision target as enum int value.
+     *
+     * @return precision as enum int value
+     */
     public int getPrecisionInt() {
         return precision.value;
     }
 
+    /**
+     * Returns data layout as enum int value.
+     *
+     * @return data layout as enum int value
+     */
     public int getDataLayoutInt() {
         return layout.value;
     }

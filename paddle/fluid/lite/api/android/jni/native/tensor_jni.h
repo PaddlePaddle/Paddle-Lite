@@ -27,36 +27,11 @@ namespace lite_api {
 
 /*
  * Class:     com_baidu_paddle_lite_Tensor
- * Method:    resize
- * Signature: ([J)Z
- */
-JNIEXPORT jboolean JNICALL Java_com_baidu_paddle_lite_Tensor_resize(JNIEnv *,
-                                                                    jobject,
-                                                                    jlongArray);
-
-/*
- * Class:     com_baidu_paddle_lite_Tensor
  * Method:    shape
  * Signature: ()[J
  */
 JNIEXPORT jlongArray JNICALL Java_com_baidu_paddle_lite_Tensor_shape(JNIEnv *,
                                                                      jobject);
-
-/*
- * Class:     com_baidu_paddle_lite_Tensor
- * Method:    setData
- * Signature: ([F)Z
- */
-JNIEXPORT jboolean JNICALL
-Java_com_baidu_paddle_lite_Tensor_setData___3F(JNIEnv *, jobject, jfloatArray);
-
-/*
- * Class:     com_baidu_paddle_lite_Tensor
- * Method:    setData
- * Signature: ([B)Z
- */
-JNIEXPORT jboolean JNICALL
-Java_com_baidu_paddle_lite_Tensor_setData___3B(JNIEnv *, jobject, jbyteArray);
 
 /*
  * Class:     com_baidu_paddle_lite_Tensor
@@ -73,6 +48,30 @@ Java_com_baidu_paddle_lite_Tensor_getFloatData(JNIEnv *, jobject);
  */
 JNIEXPORT jbyteArray JNICALL
 Java_com_baidu_paddle_lite_Tensor_getByteData(JNIEnv *, jobject);
+
+/*
+ * Class:     com_baidu_paddle_lite_Tensor
+ * Method:    nativeResize
+ * Signature: ([J)Z
+ */
+JNIEXPORT jboolean JNICALL
+Java_com_baidu_paddle_lite_Tensor_nativeResize(JNIEnv *, jobject, jlongArray);
+
+/*
+ * Class:     com_baidu_paddle_lite_Tensor
+ * Method:    nativeSetData
+ * Signature: ([F)Z
+ */
+JNIEXPORT jboolean JNICALL Java_com_baidu_paddle_lite_Tensor_nativeSetData___3F(
+    JNIEnv *, jobject, jfloatArray);
+
+/*
+ * Class:     com_baidu_paddle_lite_Tensor
+ * Method:    nativeSetData
+ * Signature: ([B)Z
+ */
+JNIEXPORT jboolean JNICALL Java_com_baidu_paddle_lite_Tensor_nativeSetData___3B(
+    JNIEnv *, jobject, jbyteArray);
 
 /*
  * Class:     com_baidu_paddle_lite_Tensor

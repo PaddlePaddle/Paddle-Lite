@@ -18,8 +18,8 @@ package com.baidu.paddle.lite;
  */
 public class CxxConfig extends ConfigBase {
 
-    Place preferredPlace;
-    Place[] validPlaces;
+    protected Place preferredPlace;
+    protected Place[] validPlaces;
 
     public Place getPreferredPlace() {
         return preferredPlace;

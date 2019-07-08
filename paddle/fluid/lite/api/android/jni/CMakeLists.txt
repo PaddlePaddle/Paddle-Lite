@@ -22,7 +22,6 @@ add_jar(PaddlePredictor
     src/com/baidu/paddle/lite/PaddleLiteInitializer.java
     src/com/baidu/paddle/lite/PaddlePredictor.java
     src/com/baidu/paddle/lite/Place.java
-    src/com/baidu/paddle/lite/PrecisionType.java
     src/com/baidu/paddle/lite/Tensor.java)
 get_target_property(_jarFile PaddlePredictor JAR_FILE)
 get_target_property(_classDir PaddlePredictor CLASSDIR)
