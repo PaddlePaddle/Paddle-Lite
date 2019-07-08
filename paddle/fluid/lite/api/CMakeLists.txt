@@ -50,6 +50,7 @@ if(WITH_TESTING)
        ${ops_lite} ${host_kernels} 
        X86_DEPS ${x86_kernels}
        ARM_DEPS ${arm_kernels}
+       CL_DEPS ${opencl_kernels}
        EXCLUDE_COMPILE_DEPS "ON"
        ARGS --model_dir=${LITE_MODEL_DIR}/lite_naive_model
             --optimized_model=${LITE_MODEL_DIR}/lite_naive_model_opt SERIAL)
