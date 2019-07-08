@@ -2635,7 +2635,7 @@ void pooling3x3s2p0_avg(const float* din, float* dout, int num, int chout,
         if (cnt_num > 0 || cnt_num_remain > 0) {
           asm volatile(
               "cmp       %[cnt_num], #0           @cmp cnt_num, 0\n"
-              "ble       loop3_ave_p0             @ble exit\n"
+              "ble       3f             @ble exit\n"
               "s3_ave_loop_mid_p0:                @main loop\n"
               "vld1.f32  {d0-d3}, [%[dr0]]!       @load d0-d5, dr0\n"
               "vld1.f32  {d6-d9}, [%[dr1]]!       @load d4-d7, dr1\n"
@@ -2669,9 +2669,9 @@ void pooling3x3s2p0_avg(const float* din, float* dout, int num, int chout,
               "vst1.f32  d8, [%[dr_out]]!         @vst1 d0,dr_out\n"
               "vst1.f32  d9, [%[dr_out]]!         @vst1 d0,dr_out\n"
               "bne       s3_ave_loop_mid_p0       @bne s3_max_loop_mid\n"
-              "loop3_ave_p0:                      @loop\n"
+              "3:                      @loop\n"
               "cmp       %[cnt_num_remain], #0    @cmp cnt_num_remain,0\n"
-              "ble       exit1_ave_p0             @ble exit1\n"
+              "ble       4f             @ble exit1\n"
               "s3_ave_loop_mid_1_p0:              @mid loop\n"
               "vld1.f32  {d0-d1}, [%[dr0]]!       @load d0-d1,dr0\n"
               "vld1.f32  {d2-d3}, [%[dr1]]!       @load d2-d3,dr1\n"
@@ -2690,7 +2690,7 @@ void pooling3x3s2p0_avg(const float* din, float* dout, int num, int chout,
               "subs      %[cnt_num_remain], #1    @cnt_num_remain--\n"
               "vst1.f32  d0[0], [%[dr_out]]!      @vst d0[0],dr_out\n"
               "bne       s3_ave_loop_mid_1_p0     @bne s3_max_loop_mid_1\n"
-              "exit1_ave_p0:                      @exit\n"
+              "4:                      @exit\n"
               : [dr0] "+r"(dr0), [dr1] "+r"(dr1), [dr2] "+r"(dr2),
                 [dr_out] "+r"(dr_out), [cnt_num] "+r"(cnt_num),
                 [cnt_num_remain] "+r"(cnt_num_remain), [vcoef] "+w"(vcoef),

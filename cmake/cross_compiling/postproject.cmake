@@ -12,7 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-if (ANDROID)
+if(NOT LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
+    return()
+endif()
+
+if(ANDROID)
     include(cross_compiling/findar)
 endif()
 
@@ -54,3 +58,22 @@ if(LITE_WITH_OPENMP)
     endif()
 endif()
 
+# third party cmake args
+set(CROSS_COMPILE_CMAKE_ARGS
+    "-DCMAKE_SYSTEM_NAME=${CMAKE_SYSTEM_NAME}"
+    "-DCMAKE_SYSTEM_VERSION=${CMAKE_SYSTEM_VERSION}")
+
+if(ANDROID)
+    set(CROSS_COMPILE_CMAKE_ARGS ${CROSS_COMPILE_CMAKE_ARGS}
+        "-DCMAKE_ANDROID_ARCH_ABI=${CMAKE_ANDROID_ARCH_ABI}"
+        "-DCMAKE_ANDROID_NDK=${CMAKE_ANDROID_NDK}"
+        "-DCMAKE_ANDROID_STL_TYPE=${CMAKE_ANDROID_STL_TYPE}"
+        "-DCMAKE_ANDROID_NDK_TOOLCHAIN_VERSION=${CMAKE_ANDROID_NDK_TOOLCHAIN_VERSION}")
+endif()
+  
+if(IOS)
+    set(CROSS_COMPILE_CMAKE_ARGS ${CROSS_COMPILE_CMAKE_ARGS}
+        "-DCMAKE_OSX_ARCHITECTURES=${CMAKE_OSX_ARCHITECTURES}"
+        "-DCMAKE_SYSTEM_PROCESSOR=${CMAKE_SYSTEM_PROCESSOR}"
+        "-DCMAKE_OSX_SYSROOT=${CMAKE_OSX_SYSROOT}")
+endif()

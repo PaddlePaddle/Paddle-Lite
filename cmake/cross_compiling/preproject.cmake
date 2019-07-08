@@ -38,15 +38,15 @@ function(check_input_var VAR_NAME)
   set(${VAR_NAME} ${var_out} PARENT_SCOPE)
 endfunction(check_input_var)
 
-check_input_var(ARM_TARGET_OS DEFAULT "android" LIST "android" "armlinux")
+check_input_var(ARM_TARGET_OS DEFAULT "android" LIST "android" "armlinux" "ios" "ios64")
 check_input_var(ARM_TARGET_ARCH_ABI DEFAULT "armv8" LIST "armv8" "armv7" "armv7hf" "arm64-v8a" "armeabi-v7a")
 check_input_var(ARM_TARGET_LANG DEFAULT "gcc" LIST "gcc" "clang")
 check_input_var(ARM_TARGET_LIB_TYPE DEFAULT "static" LIST "static" "shared")
-message(STATUS "Lite ARM Compile ${ARM_TARGET_OS} with ${ARM_TARGET_ARCH_ABI} ${ARM_TARGET_LANG}")
 
-include(cross_compiling/host)
 include(cross_compiling/armlinux)
 include(cross_compiling/android)
+include(cross_compiling/ios)
+include(cross_compiling/host)
 
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Default use Release in android" FORCE)
@@ -56,3 +56,4 @@ if(NOT THIRD_PARTY_BUILD_TYPE)
     set(THIRD_PARTY_BUILD_TYPE "MinSizeRel" CACHE STRING "Default use MinSizeRel in android" FORCE)
 endif()
 
+message(STATUS "Lite ARM Compile ${ARM_TARGET_OS} with ${ARM_TARGET_ARCH_ABI} ${ARM_TARGET_LANG}")
