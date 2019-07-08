@@ -336,7 +336,9 @@ void LoadWithDumpForFloat32(const paddle_mobile::framework::VarDesc &var_desc, c
         diff += abs(value - value_quantized);
         fwrite(&value_quantized, sizeof(float), 1, out_file);
     }
-    std::cout << "avg diff caused by quantization for var " << var_desc.Name() << " is: " << diff << std::endl;
+    if (memory_size > 0) {
+        std::cout << "avg diff caused by quantization for var " << var_desc.Name() << " is: " << (diff / memory_size) << std::endl;
+    }
 }
 
 void
