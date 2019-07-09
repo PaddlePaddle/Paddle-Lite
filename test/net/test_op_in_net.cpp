@@ -87,14 +87,15 @@ void test(int argc, char *argv[]) {
               << std::endl;
 
     // 测试正确性
-    auto *input_var =
-        paddle_mobile.executor_->program_.scope->FindVar(input_var_name);
-    framework::LoDTensor *target =
-        input_var->template GetMutable<framework::LoDTensor>();
-    target->Resize(input_tensor.dims());
-    target->ShareDataWith(input_tensor);
-    paddle_mobile.executor_->ops_of_block0_[op_index]->InferShape();
-    paddle_mobile.executor_->ops_of_block0_[op_index]->Run();
+    // 以下代码依赖paddle_mobile.h及executor.h的属性可见性，如需使用，调整可见性后，放开注释
+    // auto *input_var =
+    //     paddle_mobile.executor_->program_.scope->FindVar(input_var_name);
+    // framework::LoDTensor *target =
+    //     input_var->template GetMutable<framework::LoDTensor>();
+    // target->Resize(input_tensor.dims());
+    // target->ShareDataWith(input_tensor);
+    // paddle_mobile.executor_->ops_of_block0_[op_index]->InferShape();
+    // paddle_mobile.executor_->ops_of_block0_[op_index]->Run();
 
     for (auto var_name : output_var_names) {
       auto out = paddle_mobile.Fetch(var_name);
