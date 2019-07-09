@@ -12,7 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#include "paddle/fluid/lite/opencl/cl_engine.h"
+#include "paddle/fluid/lite/opencl/cl_runtime.h"
 #include <glog/logging.h>
 #include <string>
 #include <utility>
@@ -21,13 +21,13 @@ limitations under the License. */
 namespace paddle {
 namespace lite {
 
-CLEngine* CLEngine::Global() {
-  static CLEngine cl_engine_;
-  cl_engine_.Init();
-  return &cl_engine_;
+CLRuntime* CLRuntime::Global() {
+  static CLRuntime cl_runtime_;
+  cl_runtime_.Init();
+  return &cl_runtime_;
 }
 
-CLEngine::~CLEngine() {
+CLRuntime::~CLRuntime() {
   if (command_queue_ != nullptr) {
     command_queue_->finish();
   }
@@ -38,7 +38,7 @@ CLEngine::~CLEngine() {
   platform_.reset();
 }
 
-bool CLEngine::Init() {
+bool CLRuntime::Init() {
   if (initialized_) {
     return true;
   }
@@ -49,32 +49,32 @@ bool CLEngine::Init() {
   return initialized_;
 }
 
-cl::Platform& CLEngine::platform() {
+cl::Platform& CLRuntime::platform() {
   CHECK(platform_ != nullptr) << "platform_ is not initialized!";
   return *platform_;
 }
 
-cl::Context& CLEngine::context() {
+cl::Context& CLRuntime::context() {
   if (context_ == nullptr) {
     context_ = CreateContext();
   }
   return *context_;
 }
 
-cl::Device& CLEngine::device() {
+cl::Device& CLRuntime::device() {
   CHECK(device_ != nullptr) << "device_ is not initialized!";
   return *device_;
 }
 
-cl::CommandQueue& CLEngine::command_queue() {
+cl::CommandQueue& CLRuntime::command_queue() {
   if (command_queue_ == nullptr) {
     command_queue_ = CreateCommandQueue(context());
   }
   return *command_queue_;
 }
 
-std::unique_ptr<cl::Program> CLEngine::CreateProgram(const cl::Context& context,
-                                                     std::string file_name) {
+std::unique_ptr<cl::Program> CLRuntime::CreateProgram(
+    const cl::Context& context, std::string file_name) {
   std::ifstream file{file_name, std::ios::binary | std::ios::ate};
   CHECK(file.is_open()) << "Can't open file from " << file_name;
   auto size = file.tellg();
@@ -92,7 +92,7 @@ std::unique_ptr<cl::Program> CLEngine::CreateProgram(const cl::Context& context,
   return std::move(prog);
 }
 
-std::unique_ptr<cl::UserEvent> CLEngine::CreateEvent(
+std::unique_ptr<cl::UserEvent> CLRuntime::CreateEvent(
     const cl::Context& context) {
   auto event =
       std::unique_ptr<cl::UserEvent>(new cl::UserEvent(context, &status_));
@@ -100,9 +100,9 @@ std::unique_ptr<cl::UserEvent> CLEngine::CreateEvent(
   return std::move(event);
 }
 
-bool CLEngine::BuildProgram(cl::Program* program, const std::string& options) {
+bool CLRuntime::BuildProgram(cl::Program* program, const std::string& options) {
   std::string build_option = options + " -cl-fast-relaxed-math -I " +
-                             CLEngine::Global()->cl_path() + "/cl_kernel";
+                             CLRuntime::Global()->cl_path() + "/cl_kernel";
   status_ = program->build({*device_}, build_option.c_str());
   CL_CHECK_ERRORS(status_);
 
@@ -118,7 +118,7 @@ bool CLEngine::BuildProgram(cl::Program* program, const std::string& options) {
   return true;
 }
 
-bool CLEngine::InitializePlatform() {
+bool CLRuntime::InitializePlatform() {
   std::vector<cl::Platform> all_platforms;
   status_ = cl::Platform::get(&all_platforms);
   CL_CHECK_ERRORS(status_);
@@ -131,7 +131,7 @@ bool CLEngine::InitializePlatform() {
   return true;
 }
 
-bool CLEngine::InitializeDevice() {
+bool CLRuntime::InitializeDevice() {
   std::vector<cl::Device> all_devices;
   status_ = platform_->getDevices(CL_DEVICE_TYPE_GPU, &all_devices);
   CL_CHECK_ERRORS(status_);

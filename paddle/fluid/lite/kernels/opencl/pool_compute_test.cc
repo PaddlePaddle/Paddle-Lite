@@ -87,7 +87,7 @@ TEST(pool2d, init) {
   param.ksize = std::vector<int>{7, 7};
 
   std::unique_ptr<KernelContext> context(new KernelContext);
-  context->As<OpenClContext>().InitOnce();
+  context->As<OpenCLContext>().InitOnce();
 
   kernel->SetParam(param);
   kernel->SetContext(std::move(context));

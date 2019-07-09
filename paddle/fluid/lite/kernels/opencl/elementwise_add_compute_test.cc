@@ -35,7 +35,7 @@ TEST(elementwise_add, init) {
   param.Out = &Out;
 
   std::unique_ptr<KernelContext> context(new KernelContext);
-  context->As<OpenClContext>().InitOnce();
+  context->As<OpenCLContext>().InitOnce();
 
   kernel->SetParam(param);
   kernel->SetContext(std::move(context));

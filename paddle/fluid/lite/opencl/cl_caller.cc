@@ -15,15 +15,15 @@ limitations under the License. */
 #include "paddle/fluid/lite/opencl/cl_caller.h"
 #include <string>
 #include "paddle/fluid/lite/core/compatible_tensor.h"
-#include "paddle/fluid/lite/opencl/cl_engine.h"
-#include "paddle/fluid/lite/opencl/cl_helper.h"
+#include "paddle/fluid/lite/opencl/cl_context.h"
 #include "paddle/fluid/lite/opencl/cl_image.h"
-#include "paddle/fluid/lite/opencl/cl_tool.h"
+#include "paddle/fluid/lite/opencl/cl_runtime.h"
+#include "paddle/fluid/lite/opencl/cl_utility.h"
 #include "paddle/fluid/lite/utils/string.h"
 
 namespace paddle {
 namespace lite {
-static void CopyImageData(CLHelper* helper, const CLImage& cl_image,
+static void CopyImageData(CLContext* context, const CLImage& cl_image,
                           float* out) {
   int width = cl_image.image_dims()[0];
   int height = cl_image.image_dims()[1];
@@ -33,7 +33,7 @@ static void CopyImageData(CLHelper* helper, const CLImage& cl_image,
   const std::array<size_t, 3> origin{0, 0, 0};
   const std::array<size_t, 3> region{static_cast<size_t>(width),
                                      static_cast<size_t>(height), 1};
-  cl_int err = helper->OpenCLCommandQueue().enqueueReadImage(
+  cl_int err = context->GetCommandQueue().enqueueReadImage(
       *image, CL_TRUE, origin, region, 0, 0, image_data, nullptr, nullptr);
   CL_CHECK_ERRORS(err);
 
@@ -44,31 +44,31 @@ static void CopyImageData(CLHelper* helper, const CLImage& cl_image,
   delete[] image_data;
 }
 
-bool InitOpenCLEngine(std::string cl_path) {
-  auto* engine = CLEngine::Global();
-  engine->set_cl_path(cl_path);
-  return engine->IsInitSuccess();
+bool InitOpenCLRuntime(std::string cl_path) {
+  auto* runtime = CLRuntime::Global();
+  runtime->set_cl_path(cl_path);
+  return runtime->IsInitSuccess();
 }
 
-void elementwise_add(CLHelper* helper, const float* in, const DDim& in_dim,
+void elementwise_add(CLContext* context, const float* in, const DDim& in_dim,
                      const float* bias, const DDim& bias_dim, float* out,
                      const DDim& out_dim) {
   if (!(bias_dim.size() == 1 || bias_dim.size() == 4)) {
     LOG(FATAL) << "Error: bias dims is error";
     return;
   }
-  auto kernel = bias_dim.size() == 1 ? helper->GetKernel("channel_add")
-                                     : helper->GetKernel("elementwise_add");
+  auto kernel = bias_dim.size() == 1 ? context->GetKernel("channel_add")
+                                     : context->GetKernel("elementwise_add");
   CLImage in_image;
   in_image.set_tensor_data(in, in_dim);
-  in_image.InitNormalCLImage(helper->OpenCLContext());
+  in_image.InitNormalCLImage(context->GetContext());
   VLOG(3) << " --- Inpu image: " << in_image << " --- ";
   CLImage bias_image;
   bias_image.set_tensor_data(bias, bias_dim);
-  bias_image.InitCLImage(helper->OpenCLContext());
+  bias_image.InitCLImage(context->GetContext());
   VLOG(3) << " --- Bias image: " << bias_image << " --- ";
   CLImage out_image;
-  out_image.InitEmptyImage(helper->OpenCLContext(), out_dim);
+  out_image.InitEmptyImage(context->GetContext(), out_dim);
   cl_int status;
   status = kernel.setArg(0, *in_image.cl_image());
   CL_CHECK_ERRORS(status);
@@ -85,29 +85,29 @@ void elementwise_add(CLHelper* helper, const float* in, const DDim& in_dim,
   size_t width = in_image.ImageWidth();
   size_t height = in_image.ImageHeight();
   auto global_work_size = cl::NDRange{width, height};
-  status = helper->OpenCLCommandQueue().enqueueNDRangeKernel(
+  status = context->GetCommandQueue().enqueueNDRangeKernel(
       kernel, cl::NullRange, global_work_size, cl::NullRange, nullptr, nullptr);
   CL_CHECK_ERRORS(status);
 
-  status = helper->OpenCLCommandQueue().finish();
+  status = context->GetCommandQueue().finish();
   CL_CHECK_ERRORS(status);
   VLOG(3) << " --- Out image: " << out_image << " --- ";
-  CopyImageData(helper, out_image, out);
+  CopyImageData(context, out_image, out);
 }
 
-void pool(CLHelper* helper, const std::string pooling_type, const int pad_h,
+void pool(CLContext* context, const std::string pooling_type, const int pad_h,
           const int pad_w, const int stride_h, const int stride_w,
           const int ksize_h, const int ksize_w, const float* in,
           const DDim& in_dim, float* out, const DDim& out_dim) {
   auto kernel =
-      helper->GetKernel(string_format("pool_%s", pooling_type.c_str()));
+      context->GetKernel(string_format("pool_%s", pooling_type.c_str()));
   CLImage in_image;
   in_image.set_tensor_data(in, in_dim);
-  in_image.InitNormalCLImage(helper->OpenCLContext());
+  in_image.InitNormalCLImage(context->GetContext());
   VLOG(3) << " --- Inpu image: " << in_image << " --- ";
   CLImage out_image;
-  out_image.InitEmptyImage(helper->OpenCLContext(), out_dim);
-  auto global_work_size = helper->DefaultWorkSize(out_image);
+  out_image.InitEmptyImage(context->GetContext(), out_dim);
+  auto global_work_size = context->DefaultWorkSize(out_image);
   auto* in_converter =
       dynamic_cast<CLImageConverterNormal*>(in_image.image_converter());
   auto* out_converter =
@@ -142,14 +142,14 @@ void pool(CLHelper* helper, const std::string pooling_type, const int pad_h,
   status = kernel.setArg(11, *out_image.cl_image());
   CL_CHECK_ERRORS(status);
 
-  status = helper->OpenCLCommandQueue().enqueueNDRangeKernel(
+  status = context->GetCommandQueue().enqueueNDRangeKernel(
       kernel, cl::NullRange, global_work_size, cl::NullRange, nullptr, nullptr);
   CL_CHECK_ERRORS(status);
 
-  status = helper->OpenCLCommandQueue().finish();
+  status = context->GetCommandQueue().finish();
   CL_CHECK_ERRORS(status);
   VLOG(3) << " --- Out image: " << out_image << " --- ";
-  CopyImageData(helper, out_image, out);
+  CopyImageData(context, out_image, out);
 }
 
 }  // namespace lite

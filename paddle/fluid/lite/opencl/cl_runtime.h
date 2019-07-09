@@ -19,14 +19,14 @@ limitations under the License. */
 #include <string>
 #include <vector>
 #include "paddle/fluid/lite/opencl/cl_include.h"
-#include "paddle/fluid/lite/opencl/cl_tool.h"
+#include "paddle/fluid/lite/opencl/cl_utility.h"
 
 namespace paddle {
 namespace lite {
 
-class CLEngine {
+class CLRuntime {
  public:
-  static CLEngine* Global();
+  static CLRuntime* Global();
 
   bool Init();
 
@@ -52,9 +52,9 @@ class CLEngine {
   void set_cl_path(std::string cl_path) { cl_path_ = cl_path; }
 
  private:
-  CLEngine() = default;
+  CLRuntime() = default;
 
-  ~CLEngine();
+  ~CLRuntime();
 
   bool InitializePlatform();
 
