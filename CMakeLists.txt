@@ -27,21 +27,6 @@ message(STATUS "C compiler: ${CMAKE_C_COMPILER}, version: "
         "${CMAKE_C_COMPILER_ID} ${CMAKE_C_COMPILER_VERSION}")
 message(STATUS "AR tools: ${CMAKE_AR}")
 
-if(WIN32)
-    set(CMAKE_SUPPRESS_REGENERATION ON)
-    set(CMAKE_STATIC_LIBRARY_PREFIX lib)
-    add_definitions("/DGOOGLE_GLOG_DLL_DECL=")
-    set(CMAKE_C_FLAGS_DEBUG   "${CMAKE_C_FLAGS_DEBUG} /bigobj /MTd")
-    set(CMAKE_C_FLAGS_RELEASE  "${CMAKE_C_FLAGS_RELEASE} /bigobj /MT")
-    set(CMAKE_CXX_FLAGS_DEBUG  "${CMAKE_CXX_FLAGS_DEBUG} /bigobj /MTd")
-    set(CMAKE_CXX_FLAGS_RELEASE   "${CMAKE_CXX_FLAGS_RELEASE} /bigobj /MT")
-    add_compile_options(/wd4068 /wd4129 /wd4244 /wd4267 /wd4297 /wd4530 /wd4577 /wd4819 /wd4838)
-    set(PADDLE_LINK_FLAGS "/IGNORE:4006 /IGNORE:4098 /IGNORE:4217 /IGNORE:4221")
-    set(CMAKE_STATIC_LINKER_FLAGS  "${CMAKE_STATIC_LINKER_FLAGS} ${PADDLE_LINK_FLAGS}")
-    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${PADDLE_LINK_FLAGS}")
-    set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} ${PADDLE_LINK_FLAGS}")
-endif(WIN32)
-
 if(NOT LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
     find_package(CUDA QUIET)
 endif()
@@ -60,27 +45,13 @@ option(WITH_MKL         "Compile PaddlePaddle with MKL support."        ${AVX_FO
 option(WITH_SYSTEM_BLAS   "Use system blas library"           OFF)
 option(WITH_DISTRIBUTE  "Compile with distributed support"              OFF)
 option(WITH_BRPC_RDMA     "Use brpc rdma as the rpc protocal"           OFF)
-option(ON_INFER         "Turn on inference optimization."               OFF)
 ################################ Internal Configurations #######################################
-option(WITH_ANAKIN      "Compile with Anakin library"                   OFF)
-option(WITH_AMD_GPU     "Compile PaddlePaddle with AMD GPU"             OFF)
-option(WITH_NGRAPH      "Compile PaddlePaddle with nGraph support."     OFF)
 option(WITH_PROFILER    "Compile PaddlePaddle with GPU profiler and gperftools"        OFF)
 option(WITH_JEMALLOC    "Compile PaddlePaddle with jemalloc"            OFF)
 option(WITH_COVERAGE    "Compile PaddlePaddle with code coverage"       OFF)
 option(COVERALLS_UPLOAD "Package code coverage data to coveralls"       OFF)
-option(WITH_PSLIB       "Compile with pslib support"                    OFF)
-option(WITH_CONTRIB     "Compile the third-party contributation"        OFF)
 option(REPLACE_ENFORCE_GLOG "Replace PADDLE_ENFORCE with glog/CHECK for better debug." OFF)
 # TODO(Superjomn) Remove WITH_ANAKIN option if not needed latter.
-option(ANAKIN_BUILD_FAT_BIN "Build anakin cuda fat-bin lib for all device plantform, ignored when WITH_ANAKIN=OFF" OFF)
-option(ANAKIN_BUILD_CROSS_PLANTFORM "Build anakin lib for any nvidia device plantform. ignored when WITH_ANAKIN=OFF" ON)
-option(WITH_GRPC     "Use grpc as the default rpc framework"            ${WITH_DISTRIBUTE})
-option(WITH_INFERENCE_API_TEST   "Test fluid inference C++ high-level api interface"  OFF)
-option(WITH_HIGH_LEVEL_API_TEST   "Test fluid python high-level api interface"  OFF)
-option(PY_VERSION       "Compile PaddlePaddle with python3 support"     ${PY_VERSION})
-option(WITH_FAST_MATH   "Make use of fast math library, might affect the precision to some extent" ON)
-option(WITH_DGC   "Use DGC(Deep Gradient Compression) or not" ON)
 
 if(ANDROID OR IOS OR ARMLINUX)
     set(WITH_GPU OFF CACHE STRING
@@ -144,32 +115,10 @@ if (WITH_LITE AND LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
     include(generic)            # simplify cmake module
     include(configure)          # add paddle env configuration
 
-    add_subdirectory(paddle)
+    add_subdirectory(lite)
     return()
 endif()
 
-
-# PY_VERSION
-if(NOT PY_VERSION)
-  set(PY_VERSION 2.7)
-endif()
-set(PYBIND11_PYTHON_VERSION ${PY_VERSION})
-
-if (APPLE)
-    set(WITH_MKL OFF CACHE STRING
-        "Disable MKL for building on mac" FORCE)
-endif()
-
-if (WIN32)
-    set(WITH_DISTRIBUTE OFF CACHE STRING
-            "Disable DISTRIBUTE when compiling for Windows" FORCE)
-endif()
-
-set(FLUID_INSTALL_DIR "${CMAKE_BINARY_DIR}/fluid_install_dir" CACHE STRING
-  "A path setting fluid shared and static libraries")
-
-set(FLUID_INFERENCE_INSTALL_DIR "${CMAKE_BINARY_DIR}/fluid_inference_install_dir" CACHE STRING
-  "A path setting fluid inference shared and static libraries")
 
 
 set(WITH_MKLML ${WITH_MKL})
@@ -211,39 +160,6 @@ include(external/snappy)    # download snappy
 include(external/snappystream) # download snappystream
 include(external/warpctc)   # download, build, install warpctc
 
-if (NOT WIN32)
-# there is no official support of nccl, cupti in windows
-include(cupti)
-include(external/gzstream)
-endif (NOT WIN32)
-
-if(WITH_PSLIB)
-    include(external/libmct)
-    include(external/pslib_brpc)
-    include(external/pslib)
-endif(WITH_PSLIB)
-
-if(WITH_DISTRIBUTE)
-    if(WITH_GRPC)
-        include(external/grpc)
-        message(STATUS "Use grpc framework.")
-    else()
-        message(STATUS "Use brpc framework.")
-        include(external/leveldb)
-        include(external/brpc)
-    endif()
-endif()
-
-if(WITH_BRPC_RDMA)
-    message(STATUS "Use brpc with rdma.")
-    if(WITH_GRPC)
-        message(FATAL_ERROR "Can't use grpc with brpc rdma.")
-    endif()
-    if(NOT WITH_DISTRIBUTE)
-        message(FATAL_ERROR "Can't use brpc rdma in no distribute env.")
-    endif()
-endif()
-
 include(external/threadpool)
 include(flags)              # set paddle compile flags
 include(cudnn)              # set cudnn libraries, must before configure
@@ -252,66 +168,17 @@ include(configure)          # add paddle env configuration
 if(WITH_GPU)
     include(cuda)
     include(tensorrt)
-    include(anakin_subgraph)
 endif()
 
-if(WIN32 OR APPLE OR NOT WITH_GPU OR ON_INFER)
-    set(WITH_DGC OFF)
-endif()
-
-if(WITH_DGC)
-    message(STATUS "add dgc lib.")
-    include(external/dgc)
-    add_definitions(-DPADDLE_WITH_DGC)
-endif()
-
-if(WITH_MKL OR WITH_MKLML)
-    include(external/anakin)
-elseif()
-    set(WITH_ANAKIN OFF CACHE STRING "Anakin is used in MKL only now." FORCE)
-endif()
-
-if (WITH_PROFILER)
-    find_package(Gperftools REQUIRED)
-    include_directories(${GPERFTOOLS_INCLUDE_DIR})
-    add_definitions(-DWITH_GPERFTOOLS)
-endif()
-
-if (WITH_JEMALLOC)
-    find_package(JeMalloc REQUIRED)
-    include_directories(${JEMALLOC_INCLUDE_DIR})
-    add_definitions(-DPADDLE_WITH_JEMALLOC)
-endif()
 
 include(generic)            # simplify cmake module
-include(package)            # set paddle packages
 include(ccache)             # set ccache for compilation
 include(util)               # set unittest and link libs
 include(version)            # set PADDLE_VERSION
-include(coveralls)          # set code coverage
-include(inference_lib)      # add paddle fluid inference libraries
 
 
-
-if(WITH_AMD_GPU)
-    find_package(HIP)
-    include(hip)
-endif(WITH_AMD_GPU)
-
-set(PADDLE_PYTHON_BUILD_DIR "${CMAKE_CURRENT_BINARY_DIR}/python/build")
 
 set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O3 -g -DNDEBUG")
 set(CMAKE_C_FLAGS_RELWITHDEBINFO "-O3 -g -DNDEBUG")
 
-if (ON_INFER)
-    message(STATUS "On inference mode, will take place some specific optimization.")
-    add_definitions(-DPADDLE_ON_INFERENCE)
-else()
-    #TODO(luotao), combine this warning with `make inference_lib_dist` command.
-    message(WARNING "On inference mode, will take place some specific optimization. Turn on the ON_INFER flag when building inference_lib only.")
-endif()
-
-add_subdirectory(paddle)
-if(WITH_PYTHON)
-    add_subdirectory(python)
-endif()
+add_subdirectory(lite)
