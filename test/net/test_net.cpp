@@ -176,19 +176,35 @@ void test(int argc, char *argv[]) {
       if (out->memory_size() == 0) {
         continue;
       }
-      auto data = out->data<float>();
-      std::string sample = "";
-      if (!is_sample_step) {
-        sample_step = len / sample_num;
+      if (out->type() == type_id<int>()) {
+        auto data = out->data<int>();
+        std::string sample = "";
+        if (!is_sample_step) {
+          sample_step = len / sample_num;
+        }
+        if (sample_step <= 0) {
+          sample_step = 1;
+        }
+        for (int i = 0; i < len; i += sample_step) {
+          sample += " " + std::to_string(data[i]);
+        }
+        std::cout << "auto-test"
+                  << " var " << var_name << sample << std::endl;
+      } else if (out->type() == type_id<float>()) {
+        auto data = out->data<float>();
+        std::string sample = "";
+        if (!is_sample_step) {
+          sample_step = len / sample_num;
+        }
+        if (sample_step <= 0) {
+          sample_step = 1;
+        }
+        for (int i = 0; i < len; i += sample_step) {
+          sample += " " + std::to_string(data[i]);
+        }
+        std::cout << "auto-test"
+                  << " var " << var_name << sample << std::endl;
       }
-      if (sample_step <= 0) {
-        sample_step = 1;
-      }
-      for (int i = 0; i < len; i += sample_step) {
-        sample += " " + std::to_string(data[i]);
-      }
-      std::cout << "auto-test"
-                << " var " << var_name << sample << std::endl;
     }
     std::cout << std::endl;
   }

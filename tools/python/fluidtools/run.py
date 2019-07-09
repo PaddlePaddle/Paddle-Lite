@@ -382,11 +382,6 @@ def main():
         feed_kv = gen_feed_kv()
         save_feed_kv(feed_kv)
         feed_kv = load_feed_kv()
-    pp_yellow(dot + dot + " checking fetch info")
-    for fetch in fetches:
-        fetch_name = fetch.name
-        fetch_shape = get_var_shape(fetch_name)
-        pp_tab("fetch var name : {}; fetch var shape : {}".format(fetch_name, fetch_shape), 1)
     # 预测
     pp_yellow(dot + dot + " checking inference")
     outputs = run_model(feed_kv=feed_kv)
@@ -397,6 +392,11 @@ def main():
     # 输出所有中间结果
     pp_yellow(dot + dot + " checking output result of every op")
     save_all_op_output(feed_kv=feed_kv)
+    pp_yellow(dot + dot + " checking fetch info")
+    for fetch in fetches:
+        fetch_name = fetch.name
+        fetch_shape = get_var_shape(fetch_name)
+        pp_tab("fetch var name : {}; fetch var shape : {}".format(fetch_name, fetch_shape), 1)
     # 开始检查mobile的正确性
     print("")
     print("==================================================")
