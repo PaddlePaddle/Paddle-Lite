@@ -219,6 +219,10 @@ if (NOT FOUND_MATCH)
     target_link_libraries(test-net paddle-mobile)
 
     # gen test
+    ADD_EXECUTABLE(test-op-in-net net/test_op_in_net.cpp test_helper.h test_include.h executor_for_test.h)
+    target_link_libraries(test-op-in-net paddle-mobile)
+
+    # gen test
     ADD_EXECUTABLE(test-googlenet net/test_googlenet.cpp test_helper.h test_include.h executor_for_test.h)
     target_link_libraries(test-googlenet paddle-mobile)
 
