@@ -294,20 +294,6 @@ static void ClearNoPersistableTensorArray(const framework::ProgramDesc *program,
   }
 }
 
-static void ClearNoPersistableTensor(const framework::ProgramDesc *program,
-                                     framework::Scope *scope) {
-  for (const auto &block : program->Blocks()) {
-    for (const auto &var_desc : block->Vars()) {
-      if (!var_desc->Persistable() &&
-          var_desc->Type() == VARTYPE_TYPE_LOD_TENSOR) {
-        auto var = scope->Var(var_desc->Name());
-        auto target_tensor = var->template GetMutable<framework::LoDTensor>();
-        target_tensor->reset();
-      }
-    }
-  }
-}
-
 template <typename Device, typename T>
 void Executor<Device, T>::InitNoPersistableMemory(const Tensor &input_tensor) {
   for (const auto &block : program_desc_->Blocks()) {
@@ -423,7 +409,6 @@ void Executor<Device, T>::SetInput(const Tensor &input,
 
   target.Resize(input.dims());
   target.ShareDataWith(input);
-  input_dim_cur_ = input.dims();
 }
 
 template <typename Device, typename T>
@@ -472,16 +457,6 @@ PMStatus Executor<Device, T>::Predict() {
   // clear all no persistable tensor array since write_to_array
   // is always push back a new tensor in the array
   ClearNoPersistableTensorArray(program_desc_.get(), program_.scope.get());
-
-  // in lod_mode_, free no persistable memery when input changes smaller.
-  if (lod_mode_) {
-    if (product(input_dim_cur_) <= 0.7 * product(input_dim_last_)) {
-      ClearNoPersistableTensor(program_desc_.get(), program_.scope.get());
-      input_dim_last_ = input_dim_cur_;
-    } else if (product(input_dim_cur_) > product(input_dim_last_)) {
-      input_dim_last_ = input_dim_cur_;
-    }
-  }
 
 #ifdef PADDLE_MOBILE_PROFILE
   std::vector<ProfInfo> profile(ops_of_block0_.size());
