@@ -37,40 +37,40 @@ check:prebuilt:
         - pip install pre-commit
         - pre-commit install
 
-        - ./paddle/fluid/lite/tools/build.sh check_style
+        - ./lite/tools/build.sh check_style
 
     cache:
         key: check_style
         paths:
             - $CI_USER_DIR/.cache
 
-build:server:
-    tags:
-        - lite
-    image: $SERVER_LITE_DOCKER_IMAGE
-    stage: build_server
-    cache:
-        key: server_thirdparty
-        paths:
-            - build/third_party
-            - ~/.ccache
-            - $CI_PROJECT_DIR/_build_server_ccache
-    script:
-        # customize ccache path for specifying runner cache
-        - export CCACHE_DIR=$CI_PROJECT_DIR/_build_server_ccache
-        # run build and test
-        - mkdir -p build
-        - cd build
-        - ../paddle/fluid/lite/tools/build.sh cmake_x86
-        - make extern_eigen3
-        - make extern_boost
-        - make framework_proto
-        - make extern_warpctc
-        - cd ..
-        - export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$PWD/build/third_party/install/mklml/lib
-        - ./paddle/fluid/lite/tools/build.sh build_test_server
-    dependencies:
-        - check:prebuilt
+# build:server:
+#     tags:
+#         - lite
+#     image: $SERVER_LITE_DOCKER_IMAGE
+#     stage: build_server
+#     cache:
+#         key: server_thirdparty
+#         paths:
+#             - build/third_party
+#             - ~/.ccache
+#             - $CI_PROJECT_DIR/_build_server_ccache
+#     script:
+#         # customize ccache path for specifying runner cache
+#         - export CCACHE_DIR=$CI_PROJECT_DIR/_build_server_ccache
+#         # run build and test
+#         - mkdir -p build
+#         - cd build
+#         - ../paddle/fluid/lite/tools/build.sh cmake_x86
+#         - make extern_eigen3
+#         - make extern_boost
+#         - make framework_proto
+#         - make extern_warpctc
+#         - cd ..
+#         - export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$PWD/build/third_party/install/mklml/lib
+#         - ./paddle/fluid/lite/tools/build.sh build_test_server
+#     dependencies:
+#         - check:prebuilt
 
 build:mobile_android:
     tags:
@@ -86,10 +86,11 @@ build:mobile_android:
             - $CI_PROJECT_DIR/build_mobile_ccache
     script:
         - export CCACHE_DIR=$CI_PROJECT_DIR/build_mobile_ccache
-        - ./paddle/fluid/lite/tools/build.sh build_test_arm_subtask_android
+        - ./lite/tools/build.sh build_test_arm_subtask_android
 
     dependencies:
-        - build:server
+      - check:prebuilt
+        # - build:server
 
 build:mobile_android_cl:
     tags:
@@ -105,10 +106,10 @@ build:mobile_android_cl:
             - $CI_PROJECT_DIR/build_mobile_ccache_cl
     script:
         - export CCACHE_DIR=$CI_PROJECT_DIR/build_mobile_ccache_cl
-        - ./paddle/fluid/lite/tools/build.sh build_test_arm_opencl
+        - ./lite/tools/build.sh build_test_arm_opencl
 
     dependencies:
-        - build:server
+      - check:prebuilt
 
 build:mobile_armlinux:
     tags:
@@ -125,10 +126,11 @@ build:mobile_armlinux:
             - $CI_PROJECT_DIR/build_mobile_ccache2
     script:
         - export CCACHE_DIR=$CI_PROJECT_DIR/build_mobile_ccache2
-        - ./paddle/fluid/lite/tools/build.sh build_test_arm_subtask_armlinux
+        - ./lite/tools/build.sh build_test_arm_subtask_armlinux
 
     dependencies:
-        - build:server
+        # - build:server
+        - check:prebuilt
 
 build:mobile_model_mobilenetv1:
     tags:
@@ -138,10 +140,11 @@ build:mobile_model_mobilenetv1:
 
     script:
         - export CCACHE_DIR=$CI_PROJECT_DIR/build_mobile_model_mobilenetv1
-        - ./paddle/fluid/lite/tools/build.sh build_test_arm_model_mobilenetv1
+        - ./lite/tools/build.sh build_test_arm_model_mobilenetv1
 
     dependencies:
-        - build:server
+        # - build:server
+        - check:prebuilt
 
     cache:
         key: mobile_thirdparty
@@ -158,10 +161,11 @@ build:mobile_model_mobilenetv2:
 
     script:
         - export CCACHE_DIR=$CI_PROJECT_DIR/build_mobile_model_mobilenetv2
-        - ./paddle/fluid/lite/tools/build.sh build_test_arm_model_mobilenetv2
+        - ./lite/tools/build.sh build_test_arm_model_mobilenetv2
 
     dependencies:
-        - build:server
+        # - build:server
+        - check:prebuilt
 
     cache:
         key: mobile_thirdparty
@@ -178,10 +182,11 @@ build:mobile_model_resnet50:
 
     script:
         - export CCACHE_DIR=$CI_PROJECT_DIR/build_mobile_model_resnet50
-        - ./paddle/fluid/lite/tools/build.sh build_test_arm_model_resnet50
+        - ./lite/tools/build.sh build_test_arm_model_resnet50
 
     dependencies:
-        - build:server
+        # - build:server
+        - check:prebuilt
 
     cache:
         key: mobile_thirdparty
@@ -198,10 +203,11 @@ build:mobile_model_inceptionv4:
 
     script:
         - export CCACHE_DIR=$CI_PROJECT_DIR/build_mobile_model_inceptionv4
-        - ./paddle/fluid/lite/tools/build.sh build_test_arm_model_inceptionv4
+        - ./lite/tools/build.sh build_test_arm_model_inceptionv4
 
     dependencies:
-        - build:server
+        # - build:server
+        - check:prebuilt
 
     cache:
         key: mobile_thirdparty
