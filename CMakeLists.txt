@@ -16,6 +16,7 @@ cmake_minimum_required(VERSION 3.0)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 set(PADDLE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 set(PADDLE_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR})
+set(CMAKE_CXX_STANDARD 11)
 
 include(system)
 include(cross_compiling/preproject)
@@ -101,7 +102,6 @@ if (WITH_LITE AND LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
     include(external/gflags)    # download, build, install gflags
     include(external/glog)      # download, build, install glog
     include(external/gtest)     # download, build, install gtest
-    #include(external/zlib)     # download, build, install gtest
     include(external/protobuf)  # download, build, install protobuf
     include(external/eigen)     # download eigen3
     include(ccache)             # set ccache for compilation
@@ -139,43 +139,20 @@ endif()
 include(external/mklml)     # download mklml package
 include(external/xbyak)     # download xbyak package
 include(external/libxsmm)   # download, build, install libxsmm
-include(external/zlib)      # download, build, install zlib
 include(external/gflags)    # download, build, install gflags
 include(external/glog)      # download, build, install glog
 include(external/gtest)     # download, build, install gtest
 include(external/protobuf)  # download, build, install protobuf
-include(external/python)    # download, build, install python
 include(external/openblas)  # download, build, install openblas
 include(external/mkldnn)    # download, build, install mkldnn
-include(external/ngraph)    # download, build, install nGraph
-include(external/boost)     # download boost
 include(external/eigen)     # download eigen3
-include(external/pybind11)  # download pybind11
-include(external/cares)
-include(external/cub)
-include(external/rocprim)
-include(external/xxhash)    # download xxhash
-include(external/dlpack)
-include(external/snappy)    # download snappy
-include(external/snappystream) # download snappystream
-include(external/warpctc)   # download, build, install warpctc
 
-include(external/threadpool)
-include(flags)              # set paddle compile flags
-include(cudnn)              # set cudnn libraries, must before configure
 include(configure)          # add paddle env configuration
-
-if(WITH_GPU)
-    include(cuda)
-    include(tensorrt)
-endif()
-
 
 include(generic)            # simplify cmake module
 include(ccache)             # set ccache for compilation
 include(util)               # set unittest and link libs
 include(version)            # set PADDLE_VERSION
-
 
 
 set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O3 -g -DNDEBUG")

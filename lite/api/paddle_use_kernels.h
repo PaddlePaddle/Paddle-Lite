@@ -48,6 +48,8 @@ USE_LITE_KERNEL(fc, kARM, kInt8, kNCHW, fp32out);
 #endif
 
 #ifdef LITE_WITH_X86
+// NOTE all the X86 kernels are disabled temporarily for kernel are changed.
+/*
 USE_LITE_KERNEL(relu, kX86, kFloat, kNCHW, def);
 USE_LITE_KERNEL(mul, kX86, kFloat, kNCHW, def);
 USE_LITE_KERNEL(fc, kX86, kFloat, kNCHW, def);
@@ -62,6 +64,7 @@ USE_LITE_KERNEL(conv2d, kX86, kFloat, kNCHW, def);
 USE_LITE_KERNEL(depthwise_conv2d, kX86, kFloat, kNCHW, def);
 USE_LITE_KERNEL(pool2d, kX86, kFloat, kNCHW, def);
 USE_LITE_KERNEL(batch_norm, kX86, kFloat, kNCHW, def);
+*/
 #endif
 
 #ifdef LITE_WITH_CUDA

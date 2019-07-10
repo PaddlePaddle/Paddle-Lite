@@ -19,10 +19,6 @@
 #include "lite/cuda/blas.h"
 #include "lite/cuda/cuda_utils.h"
 #endif
-#ifdef LITE_WITH_X86
-#include "paddle/fluid/framework/operator.h"
-#include "paddle/fluid/platform/device_context.h"
-#endif
 #ifdef LITE_WITH_OPENCL
 #include "lite/opencl/cl_context.h"
 #include "lite/opencl/cl_runtime.h"
@@ -167,36 +163,14 @@ class Context<TargetType::kCUDA> {
 template <>
 class Context<TargetType::kX86> {
  public:
-  using device_ctx_t = ::paddle::platform::CPUDeviceContext;
-  using execution_ctx_t = ::paddle::framework::ExecutionContext;
+  Context() {}
 
-  Context() {
-    x86_device_context_.reset(new ::paddle::platform::CPUDeviceContext);
-    x86_execution_context_.reset(
-        new ::paddle::framework::ExecutionContext(*x86_device_context_));
-  }
-
-  Context(Context&& ctx) {
-    x86_device_context_ = std::move(ctx.x86_device_context_);
-    x86_execution_context_ = std::move(ctx.x86_execution_context_);
-  }
+  Context(Context&& ctx) {}
 
   // NOTE: InitOnce should only be used by ContextScheduler
   void InitOnce() {}
 
   void CopySharedTo(const X86Context* ctx) {}
-
-  const device_ctx_t* x86_device_context() { return x86_device_context_.get(); }
-  void SetX86DeviceContext(std::unique_ptr<device_ctx_t>&& ctx) {
-    x86_device_context_ = std::move(ctx);
-  }
-
-  const execution_ctx_t* x86_execution_context() {
-    return x86_execution_context_.get();
-  }
-  void SetX86ExecutionContext(std::unique_ptr<execution_ctx_t>&& ctx) {
-    x86_execution_context_ = std::move(ctx);
-  }
 
   std::string name() const { return "X86Context"; }
 
@@ -204,10 +178,6 @@ class Context<TargetType::kX86> {
   // overall information
   //
   // kernel information
-
-  // legacy info.
-  std::unique_ptr<device_ctx_t> x86_device_context_;
-  std::unique_ptr<execution_ctx_t> x86_execution_context_;
 };
 #endif
 

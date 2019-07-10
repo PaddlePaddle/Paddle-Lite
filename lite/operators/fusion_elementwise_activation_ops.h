@@ -43,7 +43,7 @@ class FusionElementwiseActivationOp : public OpLite {
   mutable operators::FusionElementwiseActivationParam param_;
 };
 
-#ifdef LITE_WITH_X86
+#ifdef LITE_WITH_TRAIN
 class FusionElementwiseActivationGradExplicitOp : public OpLite {
  public:
   explicit FusionElementwiseActivationGradExplicitOp(const std::string& type)

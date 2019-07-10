@@ -24,10 +24,6 @@
 #include "lite/core/types.h"
 #include "lite/model_parser/model_parser.h"
 
-#ifdef LITE_WITH_X86
-#include "paddle/fluid/framework/program_desc.h"
-#endif
-
 namespace paddle {
 namespace lite {
 
@@ -69,7 +65,7 @@ class Predictor {
   // This method is disabled in mobile, for unnecessary dependencies required.
   void SaveModel(const std::string& dir);
 
-#ifdef LITE_WITH_X86
+#ifdef LITE_WITH_TRAIN
   void Run(const std::vector<framework::Tensor>& tensors) {
     FeedVars(tensors);
     program_->Run();
@@ -120,7 +116,7 @@ class CXXTrainer {
     return main_program_executor_;
   }
 
-#ifdef LITE_WITH_X86
+#ifdef LITE_WITH_TRAIN
   Predictor& BuildMainProgramExecutor(framework::ProgramDesc& desc) {  // NOLINT
     return BuildMainProgramExecutor(*desc.Proto());
   }

@@ -80,7 +80,7 @@ const lite::Tensor *Predictor::GetTensor(const std::string &name) const {
   return &var->Get<lite::Tensor>();
 }
 
-#ifdef LITE_WITH_X86
+#ifdef LITE_WITH_TRAIN
 void Predictor::FeedVars(const std::vector<framework::Tensor> &tensors) {
   auto var = scope_->FindVar("feed");
   auto &feed_list = *(var->GetMutable<std::vector<lite::Tensor>>());
