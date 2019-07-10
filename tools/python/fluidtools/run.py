@@ -397,6 +397,28 @@ def main():
         fetch_name = fetch.name
         fetch_shape = get_var_shape(fetch_name)
         pp_tab("fetch var name : {}; fetch var shape : {}".format(fetch_name, fetch_shape), 1)
+    # 输出所有op、var信息
+    info_file = open("info.txt", "w")
+    for i in range(len(ops)):
+        op = ops[i]
+        info_file.write("{}th op: type - {}\n".format(i, op.type))
+        info_file.write("inputs:\n")
+        for var_name in op.input_arg_names:
+            try:
+                shape = get_var_shape(var_name)
+                shape_str = ", ".join(list(map(lambda x: str(x), shape)))
+                info_file.write("var {} : {}\n".format(var_name, shape_str))
+            except:
+                pass
+        info_file.write("outputs:\n")
+        for var_name in op.output_arg_names:
+            try:
+                shape = get_var_shape(var_name)
+                shape_str = ", ".join(list(map(lambda x: str(x), shape)))
+                info_file.write("var {} : {}\n".format(var_name, shape_str))
+            except:
+                pass
+    info_file.close()
     # 开始检查mobile的正确性
     print("")
     print("==================================================")
