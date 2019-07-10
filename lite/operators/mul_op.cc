@@ -31,19 +31,20 @@ bool MulOpLite::CheckShape() const {
   CHECK_GT_OR_FALSE(x_dims.size(), static_cast<size_t>(param_.x_num_col_dims));
   CHECK_GT_OR_FALSE(y_dims.size(), static_cast<size_t>(param_.y_num_col_dims));
 
-#ifndef LITE_WITH_LIGHT_WEIGHT_FRAMEWORK
-  auto x_mat_dims =
-      framework::flatten_to_2d(x_dims.data(), param_.x_num_col_dims);
-  auto y_mat_dims =
-      framework::flatten_to_2d(y_dims.data(), param_.y_num_col_dims);
+  // #ifndef LITE_WITH_LIGHT_WEIGHT_FRAMEWORK
+  //   auto x_mat_dims =
+  //       framework::flatten_to_2d(x_dims.data(), param_.x_num_col_dims);
+  //   auto y_mat_dims =
+  //       framework::flatten_to_2d(y_dims.data(), param_.y_num_col_dims);
 
-  PADDLE_ENFORCE_EQ(x_mat_dims[1],
-                    y_mat_dims[0],
-                    "First matrix's width must be equal with second matrix's"
-                    "height. %s, %s",
-                    x_mat_dims[1],
-                    y_mat_dims[0]);
-#endif
+  //   PADDLE_ENFORCE_EQ(x_mat_dims[1],
+  //                     y_mat_dims[0],
+  //                     "First matrix's width must be equal with second
+  //                     matrix's"
+  //                     "height. %s, %s",
+  //                     x_mat_dims[1],
+  //                     y_mat_dims[0]);
+  // #endif
 
   return true;
 }
@@ -71,8 +72,7 @@ bool MulOpLite::InferShape() const {
   return true;
 }
 
-#ifdef LITE_WITH_X86
-
+#ifdef LITE_WITH_TRAIN
 bool MulGradOpLite::CheckShape() const {
   CHECK_OR_FALSE(param_.x);
   CHECK_OR_FALSE(param_.y);
@@ -115,6 +115,6 @@ bool MulGradOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
 }  // namespace paddle
 
 REGISTER_LITE_OP(mul, paddle::lite::operators::MulOpLite);
-#ifdef LITE_WITH_X86
+#ifdef LITE_WITH_TRAIN
 REGISTER_LITE_OP(mul_grad, paddle::lite::operators::MulGradOpLite);
 #endif

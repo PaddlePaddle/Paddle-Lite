@@ -39,7 +39,7 @@ class ElementwiseOp : public OpLite {
   mutable operators::ElementwiseParam param_;
 };
 
-#ifdef LITE_WITH_X86
+#ifdef LITE_WITH_TRAIN
 class ElementwiseGradExplicitOp : public OpLite {
  public:
   explicit ElementwiseGradExplicitOp(const std::string& type) : OpLite(type) {}

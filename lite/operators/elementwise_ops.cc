@@ -44,7 +44,7 @@ bool ElementwiseOp::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
   return true;
 }
 
-#ifdef LITE_WITH_X86
+#ifdef LITE_WITH_TRAIN
 bool ElementwiseGradExplicitOp::CheckShape() const {
   CHECK_OR_FALSE(param_.Y);
   CHECK_OR_FALSE(param_.X_grad);
@@ -76,7 +76,6 @@ bool ElementwiseGradExplicitOp::AttachImpl(const cpp::OpDesc& opdesc,
 
   return true;
 }
-
 #endif
 
 }  // namespace operators
@@ -84,8 +83,9 @@ bool ElementwiseGradExplicitOp::AttachImpl(const cpp::OpDesc& opdesc,
 }  // namespace paddle
 
 REGISTER_LITE_OP(elementwise_sub, paddle::lite::operators::ElementwiseOp);
-#ifdef LITE_WITH_X86
+REGISTER_LITE_OP(elementwise_add, paddle::lite::operators::ElementwiseOp);
+
+#ifdef LITE_WITH_TRAIN
 REGISTER_LITE_OP(elementwise_sub_grad,
                  paddle::lite::operators::ElementwiseGradExplicitOp);
 #endif
-REGISTER_LITE_OP(elementwise_add, paddle::lite::operators::ElementwiseOp);

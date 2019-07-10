@@ -50,39 +50,40 @@ bool FusionElementwiseActivationOp::AttachImpl(const cpp::OpDesc& opdesc,
   return true;
 }
 
-#ifdef LITE_WITH_X86
-bool FusionElementwiseActivationGradExplicitOp::CheckShape() const {
-  CHECK_OR_FALSE(param_.Y);
-  CHECK_OR_FALSE(param_.X_grad);
-  CHECK_OR_FALSE(param_.Y_grad);
-  CHECK_OR_FALSE(param_.Out_grad);
-  return true;
-}
+// #ifdef LITE_WITH_X86
+// bool FusionElementwiseActivationGradExplicitOp::CheckShape() const {
+//   CHECK_OR_FALSE(param_.Y);
+//   CHECK_OR_FALSE(param_.X_grad);
+//   CHECK_OR_FALSE(param_.Y_grad);
+//   CHECK_OR_FALSE(param_.Out_grad);
+//   return true;
+// }
 
-bool FusionElementwiseActivationGradExplicitOp::InferShape() const {
-  param_.X_grad->Resize(param_.Out_grad->dims());
-  param_.Y_grad->Resize(param_.Y->dims());
-  return true;
-}
+// bool FusionElementwiseActivationGradExplicitOp::InferShape() const {
+//   param_.X_grad->Resize(param_.Out_grad->dims());
+//   param_.Y_grad->Resize(param_.Y->dims());
+//   return true;
+// }
 
-bool FusionElementwiseActivationGradExplicitOp::AttachImpl(
-    const cpp::OpDesc& opdesc, lite::Scope* scope) {
-  CHECK_EQ(opdesc.InputArgumentNames().size(), 1UL);
-  auto Out_name = opdesc.Input(framework::GradVarName("Out")).front();
-  auto X_name = opdesc.Output(framework::GradVarName("X")).front();
-  auto Y_name = opdesc.Output(framework::GradVarName("Y")).front();
+// bool FusionElementwiseActivationGradExplicitOp::AttachImpl(
+//     const cpp::OpDesc& opdesc, lite::Scope* scope) {
+//   CHECK_EQ(opdesc.InputArgumentNames().size(), 1UL);
+//   auto Out_name = opdesc.Input(framework::GradVarName("Out")).front();
+//   auto X_name = opdesc.Output(framework::GradVarName("X")).front();
+//   auto Y_name = opdesc.Output(framework::GradVarName("Y")).front();
 
-  param_.Out_grad = GetVar<lite::Tensor>(scope, Out_name);
-  param_.X_grad = GetMutableVar<lite::Tensor>(scope, X_name);
-  param_.Y_grad = GetMutableVar<Tensor>(scope, Y_name);
-  param_.axis = opdesc.GetAttr<int>("axis");
-  param_.act_type = opdesc.GetAttr<std::string>("act_type");
-  // TODO(sangoly): support more activation types.
-  CHECK(param_.act_type == "relu") << "Only relu activation be supported now";
+//   param_.Out_grad = GetVar<lite::Tensor>(scope, Out_name);
+//   param_.X_grad = GetMutableVar<lite::Tensor>(scope, X_name);
+//   param_.Y_grad = GetMutableVar<Tensor>(scope, Y_name);
+//   param_.axis = opdesc.GetAttr<int>("axis");
+//   param_.act_type = opdesc.GetAttr<std::string>("act_type");
+//   // TODO(sangoly): support more activation types.
+//   CHECK(param_.act_type == "relu") << "Only relu activation be supported
+//   now";
 
-  return true;
-}
-#endif
+//   return true;
+// }
+// #endif
 
 }  // namespace operators
 }  // namespace lite
@@ -90,10 +91,11 @@ bool FusionElementwiseActivationGradExplicitOp::AttachImpl(
 
 REGISTER_LITE_OP(fusion_elementwise_sub_activation,
                  paddle::lite::operators::FusionElementwiseActivationOp);
-#ifdef LITE_WITH_X86
+REGISTER_LITE_OP(fusion_elementwise_add_activation,
+                 paddle::lite::operators::FusionElementwiseActivationOp);
+
+#ifdef LITE_WITH_TRAIN
 REGISTER_LITE_OP(
     fusion_elementwise_sub_activation_grad,
     paddle::lite::operators::FusionElementwiseActivationGradExplicitOp);
 #endif
-REGISTER_LITE_OP(fusion_elementwise_add_activation,
-                 paddle::lite::operators::FusionElementwiseActivationOp);

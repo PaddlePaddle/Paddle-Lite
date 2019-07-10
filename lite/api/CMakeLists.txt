@@ -28,7 +28,7 @@ message(STATUS "get ARM kernels ${arm_kernels}")
 lite_cc_library(cxx_api_lite
                 SRCS cxx_api.cc
                 DEPS ${cxx_api_lite_deps} ${ops_lite} ${host_kernels} program_lite
-                X86_DEPS ${x86_kernels} operator
+                X86_DEPS ${x86_kernels}
                 ARM_DEPS ${arm_kernels}
                 CL_DEPS ${opencl_kenrels})
 
@@ -36,7 +36,7 @@ lite_cc_library(light_api_lite SRCS light_api.cc
         DEPS scope_lite target_wrapper_host model_parser_lite
             ${light_api_deps} ${ops_lite} ${host_kernels} program_lite
         CUDA_DEPS target_wrapper_cuda
-        X86_DEPS ${x86_kernels} operator
+        X86_DEPS ${x86_kernels}
         ARM_DEPS ${arm_kernels}
         CL_DEPS ${opencl_kenrels})
 
@@ -121,7 +121,7 @@ lite_cc_test(test_light_api_lite SRCS light_api_test.cc
 lite_cc_test(test_apis_lite SRCS apis_test.cc
   DEPS cxx_api_lite light_api_lite ${ops_lite}
   CL_DEPS ${opencl_kernels}
-  X86_DEPS ${x86_kernels} operator
+  X86_DEPS ${x86_kernels}
   ARGS --model_dir=${LITE_MODEL_DIR}/lite_naive_model
        --optimized_model=${LITE_MODEL_DIR}/lite_naive_model_opt SERIAL)
 

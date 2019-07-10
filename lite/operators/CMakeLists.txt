@@ -58,20 +58,22 @@ set(ops_lite
         uniform_random_op_lite
         CACHE INTERNAL "ops lite")
 
-lite_cc_test(test_fc_op_lite SRCS fc_op_test.cc 
-             DEPS fc_op_lite memory_lite 
-             X86_DEPS fc_compute_x86
-             ARM_DEPS fc_compute_arm)
-lite_cc_test(test_pool_op_lite SRCS pool_op_test.cc
-             DEPS pool_op_lite memory_lite
-             ARM_DEPS pool_compute_arm)
-lite_cc_test(test_scale_op_lite SRCS scale_op_test.cc DEPS scale_op_lite memory_lite)
-lite_cc_test(test_softmax_op_lite SRCS softmax_op_test.cc DEPS softmax_op_lite memory_lite)
-lite_cc_test(test_reshape_op_lite SRCS reshape_op_test.cc DEPS reshape_op_lite memory_lite)
-lite_cc_test(test_batch_norm_op_lite SRCS batch_norm_op_test.cc DEPS batch_norm_op_lite memory_lite)
-lite_cc_test(test_concat_op_lite SRCS concat_op_test.cc DEPS concat_op_lite memory_lite)
-lite_cc_test(test_calib_op_lite SRCS calib_op_test.cc DEPS calib_op_lite memory_lite ARM_DEPS calib_compute_arm)
-lite_cc_test(test_fusion_elementwise_activation_ops_lite 
-             SRCS fusion_elementwise_activation_ops_test.cc 
-             DEPS fusion_elementwise_activation_ops_lite memory_lite)
-lite_cc_test(test_transpose_op_lite SRCS transpose_op_test.cc DEPS transpose_op_lite memory_lite)
+if (NOT LITE_WITH_X86)
+    lite_cc_test(test_fc_op_lite SRCS fc_op_test.cc
+                DEPS fc_op_lite memory_lite
+                X86_DEPS fc_compute_x86
+                ARM_DEPS fc_compute_arm)
+    lite_cc_test(test_pool_op_lite SRCS pool_op_test.cc
+                DEPS pool_op_lite memory_lite
+                ARM_DEPS pool_compute_arm)
+    lite_cc_test(test_scale_op_lite SRCS scale_op_test.cc DEPS scale_op_lite memory_lite)
+    lite_cc_test(test_softmax_op_lite SRCS softmax_op_test.cc DEPS softmax_op_lite memory_lite)
+    lite_cc_test(test_reshape_op_lite SRCS reshape_op_test.cc DEPS reshape_op_lite memory_lite)
+    lite_cc_test(test_batch_norm_op_lite SRCS batch_norm_op_test.cc DEPS batch_norm_op_lite memory_lite)
+    lite_cc_test(test_concat_op_lite SRCS concat_op_test.cc DEPS concat_op_lite memory_lite)
+    lite_cc_test(test_calib_op_lite SRCS calib_op_test.cc DEPS calib_op_lite memory_lite ARM_DEPS calib_compute_arm)
+    lite_cc_test(test_fusion_elementwise_activation_ops_lite
+                SRCS fusion_elementwise_activation_ops_test.cc
+                DEPS fusion_elementwise_activation_ops_lite memory_lite)
+    lite_cc_test(test_transpose_op_lite SRCS transpose_op_test.cc DEPS transpose_op_lite memory_lite)
+endif()

@@ -18,34 +18,34 @@
 namespace paddle {
 namespace lite {
 
-#ifdef LITE_WITH_X86
-TEST(ContextScheduler, NewContext) {
-  auto ctx1_p = ContextScheduler::Global().NewContext(TargetType::kX86);
-  auto ctx2_p = ContextScheduler::Global().NewContext(TargetType::kX86);
-  ASSERT_FALSE(ctx1_p.get() == ctx2_p.get());
+// #ifdef LITE_WITH_X86
+// TEST(ContextScheduler, NewContext) {
+//   auto ctx1_p = ContextScheduler::Global().NewContext(TargetType::kX86);
+//   auto ctx2_p = ContextScheduler::Global().NewContext(TargetType::kX86);
+//   ASSERT_FALSE(ctx1_p.get() == ctx2_p.get());
 
-  auto& ctx1 = ctx1_p->As<X86Context>();
-  auto& ctx2 = ctx2_p->As<X86Context>();
+//   auto& ctx1 = ctx1_p->As<X86Context>();
+//   auto& ctx2 = ctx2_p->As<X86Context>();
 
-  ASSERT_EQ(ctx1.name(), "X86Context");
-  ASSERT_EQ(ctx2.name(), "X86Context");
+//   ASSERT_EQ(ctx1.name(), "X86Context");
+//   ASSERT_EQ(ctx2.name(), "X86Context");
 
-  ASSERT_FALSE(ctx1.x86_device_context() == nullptr ||
-               ctx2.x86_device_context() == nullptr);
-  ASSERT_FALSE(ctx1.x86_execution_context() == nullptr ||
-               ctx2.x86_execution_context() == nullptr);
+//   ASSERT_FALSE(ctx1.x86_device_context() == nullptr ||
+//                ctx2.x86_device_context() == nullptr);
+//   ASSERT_FALSE(ctx1.x86_execution_context() == nullptr ||
+//                ctx2.x86_execution_context() == nullptr);
 
-  ASSERT_TRUE(ctx1.x86_device_context() != ctx2.x86_device_context());
-  ASSERT_TRUE(ctx1.x86_execution_context() != ctx2.x86_execution_context());
+//   ASSERT_TRUE(ctx1.x86_device_context() != ctx2.x86_device_context());
+//   ASSERT_TRUE(ctx1.x86_execution_context() != ctx2.x86_execution_context());
 
-  using device_ctx_t = ::paddle::platform::CPUDeviceContext;
-  using exec_ctx_t = ::paddle::framework::ExecutionContext;
-  auto* device_ctx = new device_ctx_t;
-  ctx1.SetX86DeviceContext(std::unique_ptr<device_ctx_t>(device_ctx));
-  ctx1.SetX86ExecutionContext(
-      std::unique_ptr<exec_ctx_t>(new exec_ctx_t(*device_ctx)));
-}
-#endif
+//   using device_ctx_t = ::paddle::platform::CPUDeviceContext;
+//   using exec_ctx_t = ::paddle::framework::ExecutionContext;
+//   auto* device_ctx = new device_ctx_t;
+//   ctx1.SetX86DeviceContext(std::unique_ptr<device_ctx_t>(device_ctx));
+//   ctx1.SetX86ExecutionContext(
+//       std::unique_ptr<exec_ctx_t>(new exec_ctx_t(*device_ctx)));
+// }
+// #endif
 
 }  // namespace lite
 }  // namespace paddle

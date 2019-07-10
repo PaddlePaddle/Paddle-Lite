@@ -96,14 +96,14 @@ USE_LITE_OP(scale);
 USE_LITE_KERNEL(feed, kHost, kAny, kAny, def);
 USE_LITE_KERNEL(fetch, kHost, kAny, kAny, def);
 
-#ifdef LITE_WITH_X86
-USE_LITE_KERNEL(mul, kX86, kFloat, kNCHW, def);
-USE_LITE_KERNEL(fc, kX86, kFloat, kNCHW, def);
-USE_LITE_KERNEL(elementwise_sub, kX86, kFloat, kNCHW, def);
-USE_LITE_KERNEL(elementwise_add, kX86, kFloat, kNCHW, def);
-USE_LITE_KERNEL(softmax, kX86, kFloat, kNCHW, def);
-USE_LITE_KERNEL(scale, kX86, kFloat, kNCHW, def);
-#endif
+// #ifdef LITE_WITH_X86
+// USE_LITE_KERNEL(mul, kX86, kFloat, kNCHW, def);
+// USE_LITE_KERNEL(fc, kX86, kFloat, kNCHW, def);
+// USE_LITE_KERNEL(elementwise_sub, kX86, kFloat, kNCHW, def);
+// USE_LITE_KERNEL(elementwise_add, kX86, kFloat, kNCHW, def);
+// USE_LITE_KERNEL(softmax, kX86, kFloat, kNCHW, def);
+// USE_LITE_KERNEL(scale, kX86, kFloat, kNCHW, def);
+// #endif
 
 #ifdef LITE_WITH_CUDA
 USE_LITE_KERNEL(mul, kCUDA, kFloat, kNCHW, def);

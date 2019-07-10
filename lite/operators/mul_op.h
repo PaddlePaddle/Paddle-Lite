@@ -66,7 +66,7 @@ class MulOpLite : public OpLite {
   mutable MulParam param_;
 };
 
-#ifdef LITE_WITH_X86
+#ifdef LITE_WITH_TRAIN
 class MulGradOpLite : public OpLite {
  public:
   MulGradOpLite() {}

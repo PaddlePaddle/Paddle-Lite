@@ -12,9 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifdef LITE_WITH_X86
-#include "paddle/fluid/framework/operator.h"
-#endif
 #include "lite/core/op_lite.h"
 #include "lite/core/op_registry.h"
 
@@ -54,7 +51,7 @@ class MeanOp : public OpLite {
   mutable operators::MeanParam param_;
 };
 
-#ifdef LITE_WITH_X86
+#ifdef LITE_WITH_TRAIN
 class MeanGradOp : public OpLite {
  public:
   explicit MeanGradOp(const std::string& type) : OpLite(type) {}
@@ -98,6 +95,6 @@ class MeanGradOp : public OpLite {
 }  // namespace paddle
 
 REGISTER_LITE_OP(mean, paddle::lite::operators::MeanOp);
-#ifdef LITE_WITH_X86
+#ifdef LITE_WITH_TRAIN
 REGISTER_LITE_OP(mean_grad, paddle::lite::operators::MeanGradOp);
 #endif
