@@ -15,12 +15,47 @@
 #pragma once
 
 #include <stack>
-#include "lite/core/context.h"
+#include <string>
+#include "lite/api/paddle_place.h"
 #include "lite/utils/all.h"
 
 namespace paddle {
 namespace lite {
 namespace core {
+
+/*
+ * Type representations used to represent standard types.
+ */
+// TODO(Superjomn) unify all the type representation across the lite framework.
+enum class Type {
+  _unk = -1,
+  // primary types
+  _int32,
+  _int64,
+  _float32,
+  _float64,
+  _bool,
+  _string,
+  // primary list types
+  _list,
+  // number of types
+  __num__,
+};
+
+template <typename T>
+Type StdTypeToRepr() {
+  return Type::_unk;
+}
+template <>
+Type StdTypeToRepr<int32_t>();
+template <>
+Type StdTypeToRepr<int64_t>();
+template <>
+Type StdTypeToRepr<float>();
+template <>
+Type StdTypeToRepr<bool>();
+template <>
+Type StdTypeToRepr<std::string>();
 
 // Factors that impact the kernel picking strategy. Multiple factors can be
 // considered together by using statement like 'factor1 | factor2'
@@ -53,7 +88,7 @@ class KernelPickFactor {
 
  private:
   unsigned char data_{};
-  TargetType target_{TARGET(kUnk)};
+  lite_api::TargetType target_{TARGET(kUnk)};
 };
 
 struct dim2 {

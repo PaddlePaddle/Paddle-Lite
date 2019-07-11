@@ -65,6 +65,31 @@ std::ostream& operator<<(std::ostream& os, const KernelPickFactor& k) {
   return os;
 }
 
+template <>
+Type StdTypeToRepr<int32_t>() {
+  return Type::_int32;
+}
+template <>
+Type StdTypeToRepr<int64_t>() {
+  return Type::_int64;
+}
+template <>
+Type StdTypeToRepr<float>() {
+  return Type::_float32;
+}
+template <>
+Type StdTypeToRepr<double>() {
+  return Type::_float64;
+}
+template <>
+Type StdTypeToRepr<std::string>() {
+  return Type::_string;
+}
+template <>
+Type StdTypeToRepr<bool>() {
+  return Type::_bool;
+}
+
 }  // namespace core
 }  // namespace lite
 }  // namespace paddle
