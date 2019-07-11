@@ -15,14 +15,17 @@ limitations under the License. */
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 #include <gtest/gtest.h>
+#include <algorithm>
+#include <array>
 #include <memory>
 #include <random>
 #include <vector>
-#include "lite/core/tensor.h"
+#include "lite/core/compatible_tensor.h"
 #include "lite/opencl/cl_caller.h"
 #include "lite/opencl/cl_context.h"
 #include "lite/opencl/cl_image.h"
 #include "lite/opencl/cl_runtime.h"
+#include "lite/opencl/target_wrapper.h"
 
 DEFINE_string(cl_path, "/data/local/tmp/opencl", "The OpenCL kernels path.");
 
@@ -304,5 +307,113 @@ TEST(cl_test, pool_test) {
   }
 }
 
+TEST(cl_test, target_wrapper_buffer_test) {
+  bool inited = InitOpenCLRuntime(FLAGS_cl_path);
+  CHECK(inited) << "Fail to initialize OpenCL runtime.";
+  std::unique_ptr<CLContext> context(new CLContext);
+  context->AddKernel("vector_add", "vector_add.cl");
+  std::vector<float> h_a;
+  std::vector<float> h_b;
+  std::vector<float> h_out;
+  std::vector<float> h_ref;
+  for (int i = 0; i < 10; i++) {
+    h_a.push_back(3.14f * i);
+    h_b.push_back(6.28f * i);
+    h_out.push_back(0);
+    h_ref.push_back((3.14f + 6.28f) * i);
+  }
+  auto* d_a = static_cast<cl::Buffer*>(
+      TargetWrapperCL::Malloc(sizeof(float) * h_a.size()));
+  auto* d_b = static_cast<cl::Buffer*>(
+      TargetWrapperCL::Malloc(sizeof(float) * h_b.size()));
+  auto* d_out =
+      static_cast<cl::Buffer*>(TargetWrapperCL::Malloc(sizeof(float) * 10));
+  auto* d_copy =
+      static_cast<cl::Buffer*>(TargetWrapperCL::Malloc(sizeof(float) * 10));
+  TargetWrapperCL::MemcpySync(
+      d_a, h_a.data(), sizeof(float) * h_a.size(), IoDirection::HtoD);
+  TargetWrapperCL::MemcpySync(
+      d_b, h_b.data(), sizeof(float) * h_b.size(), IoDirection::HtoD);
+  auto kernel = context->GetKernel("vector_add");
+  cl_int status = kernel.setArg(0, *d_a);
+  CL_CHECK_ERRORS(status);
+  status = kernel.setArg(1, *d_b);
+  CL_CHECK_ERRORS(status);
+  status = kernel.setArg(2, *d_out);
+  CL_CHECK_ERRORS(status);
+  status = kernel.setArg(3, 10);
+  CL_CHECK_ERRORS(status);
+  auto global_work_size = cl::NDRange{10};
+  status = context->GetCommandQueue().enqueueNDRangeKernel(
+      kernel, cl::NullRange, global_work_size, cl::NullRange, nullptr, nullptr);
+  CL_CHECK_ERRORS(status);
+  status = context->GetCommandQueue().finish();
+  CL_CHECK_ERRORS(status);
+  TargetWrapperCL::MemcpySync(
+      h_out.data(), d_out, sizeof(float) * 10, IoDirection::DtoH);
+
+  for (int i = 0; i < 10; i++) {
+    std::cout << h_out[i] << " ";
+  }
+  std::cout << std::endl;
+
+  for (int i = 0; i < 10; i++) {
+    EXPECT_NEAR(h_out[i], h_ref[i], 1e-5);
+  }
+
+  TargetWrapperCL::MemcpySync(
+      d_copy, d_out, sizeof(float) * 10, IoDirection::DtoD);
+  std::fill(h_out.begin(), h_out.end(), 0);
+  for (int i = 0; i < 10; i++) {
+    EXPECT_NEAR(h_out[i], 0, 1e-5);
+  }
+  TargetWrapperCL::MemcpySync(
+      h_out.data(), d_copy, sizeof(float) * 10, IoDirection::DtoH);
+  for (int i = 0; i < 10; i++) {
+    EXPECT_NEAR(h_out[i], h_ref[i], 1e-5);
+  }
+
+  auto* mapped_ptr =
+      static_cast<float*>(TargetWrapperCL::Map(d_copy, 0, sizeof(float) * 10));
+  for (int i = 0; i < 10; i++) {
+    EXPECT_NEAR(mapped_ptr[i], h_ref[i], 1e-5);
+  }
+  TargetWrapperCL::Unmap(d_copy, mapped_ptr);
+
+  TargetWrapperCL::Free(d_copy);
+  TargetWrapperCL::Free(d_out);
+  TargetWrapperCL::Free(d_b);
+  TargetWrapperCL::Free(d_a);
+}
+
+TEST(cl_test, target_wrapper_image_test) {
+  const std::array<size_t, 2> image_shape{28, 32};
+  auto* d_image = static_cast<cl::Image2D*>(
+      TargetWrapperCL::MallocImage(image_shape, PRECISION(kFloat)));
+  std::array<size_t, 2> image_pitch;
+  auto* h_image = static_cast<float*>(
+      TargetWrapperCL::MapImage(d_image, image_shape, &image_pitch));
+  // row_pitch = 448 = 28 * 4 (RGBA: 4 floats) * 4 (float in bytes)
+  // slice_pitch = 0
+  size_t row_pitch = image_pitch[0];
+  size_t slice_pitch = image_pitch[1];
+  CHECK_EQ(row_pitch, 448);
+  CHECK_EQ(slice_pitch, 0);
+  LOG(INFO) << "row_pitch = " << row_pitch << " slice_pitch " << slice_pitch;
+
+  for (int i = 0; i < 10; i++) {
+    h_image[i] = 3.14f * i;
+  }
+  TargetWrapperCL::Unmap(d_image, h_image);
+
+  auto* h_ptr = static_cast<float*>(
+      TargetWrapperCL::MapImage(d_image, image_shape, &image_pitch));
+  for (int i = 0; i < 10; i++) {
+    EXPECT_NEAR(h_ptr[i], 3.14f * i, 1e-5);
+  }
+  TargetWrapperCL::Unmap(d_image, h_ptr);
+
+  TargetWrapperCL::FreeImage(d_image);
+}
 }  // namespace lite
 }  // namespace paddle
