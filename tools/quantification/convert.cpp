@@ -333,7 +333,7 @@ void LoadWithDumpForFloat32(const paddle_mobile::framework::VarDesc &var_desc, c
         float value = static_cast<float *> (memory)[g];
         auto factor = (uint8_t) round((value - min_value) / (max_value - min_value) * 255);
         float value_quantized = min_value + (factor / 255.0) * (max_value - min_value);
-        diff += abs(value - value_quantized);
+        diff += fabs(value - value_quantized);
         fwrite(&value_quantized, sizeof(float), 1, out_file);
     }
     if (memory_size > 0) {
