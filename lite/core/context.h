@@ -30,8 +30,8 @@
 #include <utility>
 #include <vector>
 #include "lite/core/cpu_info.h"
-#include "lite/core/lite_tensor.h"
 #include "lite/core/target_wrapper.h"
+#include "lite/core/tensor.h"
 #include "lite/utils/all.h"
 
 #ifdef LITE_WITH_OPENCL

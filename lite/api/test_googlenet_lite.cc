@@ -34,8 +34,8 @@
 #include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
 #include "lite/api/paddle_use_passes.h"
-#include "lite/core/compatible_tensor.h"
 #include "lite/core/op_registry.h"
+#include "lite/core/tensor.h"
 
 // for googlenet
 DEFINE_string(model_dir, "", "");

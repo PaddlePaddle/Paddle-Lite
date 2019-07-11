@@ -868,7 +868,7 @@ bool trans_tensor_fp32_to_int8(Tensor* tin, Tensor* tout, float input_scale) {
 
   // compute scale
   std::vector<float> scale({input_scale});
-  int inner_size = tin->dims().product();
+  int inner_size = tin->dims().production();
 
   const auto* i_data = tin->data<float>();
   int8_t* o_data = tout->mutable_data<int8_t>();
@@ -884,7 +884,7 @@ bool trans_fp32_bias_to_int32_basic(Tensor* tin,
 
   const float* i_data = tin->data<float>();
   int* o_data = tout->mutable_data<int>();
-  for (int i = 0; i < tin->dims().product(); ++i) {
+  for (int i = 0; i < tin->dims().production(); ++i) {
     o_data[i] =
         static_cast<int>(roundf(i_data[i] / in_scale / vector_weight_scale[i]));
   }

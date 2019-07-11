@@ -53,11 +53,7 @@ std::ostream& operator<<(std::ostream& os, const CLImage& cl_image) {
 }
 
 void CLImage::set_tensor_data(const float* tensor_data, const DDim& dim) {
-#ifdef LITE_WITH_LIGHT_WEIGHT_FRAMEWORK
-  auto numel = dim.product();
-#else
   auto numel = dim.production();
-#endif
   tensor_data_.reset(new float[numel]);
   memcpy(tensor_data_.get(), tensor_data, numel * sizeof(float));
   tensor_dims_ = dim;
@@ -127,11 +123,7 @@ void CLImage::InitCLImage(const cl::Context& context,
   VLOG(3) << " begin init cl image ";
   image_dims_ = converter->InitImageDimInfoWith(tensor_dims_);
 
-#ifdef LITE_WITH_LIGHT_WEIGHT_FRAMEWORK
-  float* image_data = new float[image_dims_.product() * 4];
-#else
   float* image_data = new float[image_dims_.production() * 4];
-#endif
 
   VLOG(3) << " convert to image ";
   converter->NCHWToImage(tensor_data_.get(), image_data, tensor_dims_);

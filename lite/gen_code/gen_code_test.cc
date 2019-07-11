@@ -21,9 +21,9 @@
 #include <vector>
 #include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
-#include "lite/core/compatible_tensor.h"
 #include "lite/core/context.h"
 #include "lite/core/scope.h"
+#include "lite/core/tensor.h"
 #include "lite/model_parser/cpp/op_desc.h"
 #include "lite/model_parser/model_parser.h"
 

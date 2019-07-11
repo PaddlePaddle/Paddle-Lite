@@ -16,8 +16,8 @@
 #include <string>
 #include <vector>
 #include "lite/arm/math/funcs.h"
-#include "lite/core/compatible_tensor.h"
 #include "lite/core/op_registry.h"
+#include "lite/core/tensor.h"
 #include "lite/core/type_system.h"
 
 namespace paddle {

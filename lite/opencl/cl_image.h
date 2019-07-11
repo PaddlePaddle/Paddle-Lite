@@ -17,7 +17,7 @@ limitations under the License. */
 #include <iostream>
 #include <memory>
 #include <vector>
-#include "lite/core/compatible_tensor.h"
+#include "lite/core/tensor.h"
 #include "lite/opencl/cl_image_converter.h"
 #include "lite/opencl/cl_include.h"
 
@@ -81,13 +81,7 @@ class CLImage {
   /*
    *  Numel of tensor dim
    * */
-  inline int64_t numel() const {
-#ifdef LITE_WITH_LIGHT_WEIGHT_FRAMEWORK
-    return tensor_dims_.product();
-#else
-    return tensor_dims_.production();
-#endif
-  }
+  inline int64_t numel() const { return tensor_dims_.production(); }
 
   /*
    *  Original tensor dim

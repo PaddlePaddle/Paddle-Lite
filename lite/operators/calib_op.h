@@ -16,10 +16,10 @@
 
 #include <string>
 #include <vector>
-#include "lite/core/compatible_tensor.h"
 #include "lite/core/kernel.h"
 #include "lite/core/op_lite.h"
 #include "lite/core/scope.h"
+#include "lite/core/tensor.h"
 #include "lite/operators/op_params.h"
 #include "lite/utils/all.h"
 

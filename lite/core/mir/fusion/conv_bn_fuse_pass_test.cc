@@ -16,9 +16,9 @@
 #include <gflags/gflags.h>
 #include <gtest/gtest.h>
 #include <vector>
-#include "lite/core/compatible_tensor.h"
 #include "lite/core/mir/graph_visualize_pass.h"
 #include "lite/core/program.h"
+#include "lite/core/tensor.h"
 #include "paddle/fluid/framework/program_desc.h"
 
 namespace paddle {

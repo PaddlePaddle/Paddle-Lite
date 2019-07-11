@@ -16,10 +16,10 @@
 #include <set>
 #include <string>
 #include <vector>
-#include "lite/core/compatible_tensor.h"
 #include "lite/core/framework.pb.h"
 #include "lite/core/program.h"
 #include "lite/core/target_wrapper.h"
+#include "lite/core/tensor.h"
 #include "lite/model_parser/cpp/op_desc.h"
 #include "lite/model_parser/desc_apis.h"
 #include "lite/utils/string.h"

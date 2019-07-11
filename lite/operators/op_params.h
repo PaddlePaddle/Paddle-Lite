@@ -15,8 +15,8 @@
 #pragma once
 #include <string>
 #include <vector>
-#include "lite/core/compatible_tensor.h"
 #include "lite/core/framework.pb.h"
+#include "lite/core/tensor.h"
 #include "lite/utils/all.h"
 
 /*
