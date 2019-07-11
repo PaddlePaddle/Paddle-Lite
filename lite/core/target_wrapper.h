@@ -13,18 +13,21 @@
 // limitations under the License.
 
 #pragma once
-#include <array>
 #include <iostream>
 #include <sstream>
 #include <string>
 #include "lite/api/paddle_place.h"
-#include "lite/opencl/cl_include.h"
 #include "lite/utils/cp_logging.h"
+
+#ifdef LITE_WITH_OPENCL
+#include <array>
+#include "lite/opencl/cl_include.h"
+#endif  // LITE_WITH_OPENCL
 
 #ifdef LITE_WITH_CUDA
 #include <cuda.h>
 #include <cuda_runtime.h>
-#endif
+#endif  // LITE_WITH_CUDA
 
 namespace paddle {
 namespace lite {
