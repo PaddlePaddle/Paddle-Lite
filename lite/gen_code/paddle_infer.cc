@@ -13,8 +13,8 @@
 // limitations under the License.
 
 #include "lite/gen_code/paddle_infer.h"
-#include "lite/core/compatible_tensor.h"
 #include "lite/core/op_lite.h"
+#include "lite/core/tensor.h"
 
 namespace paddle {
 namespace gencode {

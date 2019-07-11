@@ -14,8 +14,8 @@
 
 #include <gtest/gtest.h>
 #include <random>
-#include "lite/core/compatible_tensor.h"
 #include "lite/core/op_registry.h"
+#include "lite/core/tensor.h"
 
 namespace paddle {
 namespace lite {

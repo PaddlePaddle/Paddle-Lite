@@ -15,7 +15,7 @@ limitations under the License. */
 #pragma once
 
 #include <string>
-#include "lite/core/compatible_tensor.h"
+#include "lite/core/tensor.h"
 #include "lite/opencl/cl_context.h"
 
 namespace paddle {

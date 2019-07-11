@@ -22,9 +22,9 @@
 #include <string>
 #include <utility>
 #include <vector>
-#include "lite/core/compatible_tensor.h"
 #include "lite/core/context.h"
 #include "lite/core/program.h"
+#include "lite/core/tensor.h"
 #include "lite/core/types.h"
 #include "lite/model_parser/model_parser.h"
 #include "lite/model_parser/pb/op_desc.h"

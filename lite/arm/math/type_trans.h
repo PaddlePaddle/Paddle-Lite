@@ -16,8 +16,8 @@
 
 #include <stdint.h>
 #include <vector>
-#include "lite/core/compatible_tensor.h"
 #include "lite/core/target_wrapper.h"
+#include "lite/core/tensor.h"
 
 namespace paddle {
 namespace lite {

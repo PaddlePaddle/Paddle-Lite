@@ -13,85 +13,62 @@
 // limitations under the License.
 
 #pragma once
-
-/*
- * This file defines the general interface for DDim and Tensor, which is used in
- * server and mobile framework, to make the framework on the two devices share
- * the same code, we clear up the methods and make the different implementations
- * looks the same.
- */
-
+#include <algorithm>
+#include <functional>  // for multiplies
+#include <memory>
+#include <numeric>
 #include <string>
 #include <vector>
+
+#include "lite/core/memory.h"
 #include "lite/core/target_wrapper.h"
 
 namespace paddle {
 namespace lite {
 
-/*
- * This class defines the basic interfaces of the DDims for server and mobile.
- * For the DDims's implementation is too tedious, we add a simple implementation
- * for mobile, and use this interface to share the framework both for mobile and
- * server.
- *
- * The derived should implement following interfaces:
- * ConstructFrom
- * operator[]
- * Vectorize
- * size
- */
-template <typename DDimT>
-class DDimBase {
+class DDimLite;
+class TensorLite;
+
+using DDim = lite::DDimLite;
+using Tensor = lite::TensorLite;
+
+class DDimLite {
  public:
   using value_type = int64_t;
 
-  DDimBase() = default;
+  DDimLite() = default;
 
-  explicit DDimBase(const std::vector<int64_t> &x) { self()->ConstructFrom(x); }
-  value_type operator[](int offset) const { return (*const_self())[offset]; }
-  value_type &operator[](int offset) { return (*self())[offset]; }
-  std::vector<int64_t> Vectorize() const { return self()->Vectorize(); }
-  size_t size() const { return const_self()->size(); }
-  bool empty() const { return const_self()->empty(); }
+  explicit DDimLite(const std::vector<value_type> &x) { ConstructFrom(x); }
 
-  value_type production() const {
-    value_type res = 1;
-    for (size_t i = 0; i < const_self()->size(); i++) {
-      res *= (*const_self())[i];
-    }
-    return res;
-  }
+  void ConstructFrom(const std::vector<value_type> &x) { data_ = x; }
 
-  DDimT Slice(int start, int end) const {
-    std::vector<value_type> vec;
-    for (int i = start; i < end; i++) {
-      vec.push_back((*const_self())[i]);
-    }
-    return DDimT(vec);
-  }
+  value_type operator[](int offset) const { return data_[offset]; }
+  value_type &operator[](int offset) { return data_[offset]; }
+  std::vector<int64_t> Vectorize() const { return data_; }
 
-  DDimT Flattern2D(int col) const {
-    return DDimT(std::vector<value_type>(
+  size_t size() const { return data_.size(); }
+  bool empty() const { return data_.empty(); }
+
+  value_type production() const;
+
+  const std::vector<value_type> &data() const { return data_; }
+  value_type count(int start, int end) const;
+
+  DDimLite Slice(int start, int end) const;
+
+  DDimLite Flattern2D(int col) const {
+    return DDimLite(std::vector<value_type>(
         {Slice(0, col).production(), Slice(col, size()).production()}));
   }
 
-  std::string repr() const {
-    std::stringstream ss;
-    ss << "{";
-    for (size_t i = 0; i < this->size() - 1; i++) {
-      ss << (*this)[i] << ",";
-    }
-    if (!this->empty()) ss << (*this)[size() - 1];
-    ss << "}";
-    return ss.str();
-  }
+  std::string repr() const;
 
-  friend std::ostream &operator<<(std::ostream &os, const DDimT &dims) {
+  friend std::ostream &operator<<(std::ostream &os, const DDimLite &dims) {
     os << dims.repr();
     return os;
   }
 
-  friend bool operator==(const DDimBase &a, const DDimBase &b) {
+  friend bool operator==(const DDimLite &a, const DDimLite &b) {
     if (a.size() != b.size()) return false;
     for (size_t i = 0; i < a.size(); i++) {
       if (a[i] != b[i]) return false;
@@ -99,79 +76,67 @@ class DDimBase {
     return true;
   }
 
-  friend bool operator!=(const DDimBase &a, const DDimBase &b) {
+  friend bool operator!=(const DDimLite &a, const DDimLite &b) {
     return !(a == b);
   }
 
  private:
-  DDimT *self() { return static_cast<DDimT *>(this); }
-  const DDimT *const_self() const { return static_cast<const DDimT *>(this); }
+  std::vector<value_type> data_;
 };
 
-/*
- * This class defines the basic interfaces of the tensors implemented for
- * server and mobile. It use the CRTR technology to accelerate the runtime
- * performance.
- */
-template <typename TensorT>
-class TensorBase {
+using LoD = std::vector<std::vector<size_t>>;
+
+// A light-weight tensor implementation.
+class TensorLite {
  public:
-  TensorBase() = default;
+  TensorLite() : buffer_(std::make_shared<Buffer>()) {}
 
-  template <typename T, typename DimT>
-  void Assign(T *data, const DimT &dim) {
-    self()->Assign(data, dim);
-  }
-
-  TargetType target() const { return self()->target(); }
-
-  template <typename T>
-  T *mutable_data() {
-    return self()->template mutable_data<T>();
+  template <typename DType, typename DimT, TargetType Target>
+  void Assign(DType *data, const DimT &dim) {
+    Resize(dim);
+    auto *dst = mutable_data<DType>(Target);
+    CopySync<Target>(
+        dst, data, dim.production() * sizeof(DType), IoDirection::HtoD);
   }
 
   template <typename T>
-  T *mutable_data(TargetType target) {
-    return self()->template mutable_data<T>(target);
+  const T *data() const {
+    return static_cast<const T *>(buffer_->data());
   }
+
+  void Resize(const DDimLite &ddim) { dims_ = ddim; }
+  void Resize(const std::vector<int64_t> &x) { dims_ = DDimLite(x); }
+
+  const DDimLite &dims() const { return dims_; }
+  int64_t numel() const { return dims_.production(); }
+
+  const LoD &lod() const { return lod_; }
+  LoD *mutable_lod() { return &lod_; }
 
   template <typename T>
-  const T *data() {
-    return self()->template data<T>();
-  }
+  T *mutable_data();
 
-  template <typename DimT>
-  void Resize(const DimT &dims) {
-    self()->Resize(dims);
-  }
-
-  template <typename DDimT>
-  DDimT dims() {
-    return self()->dims();
-  }
-
-  template <typename LoDT>
-  const LoDT &lod() const {
-    return const_self()->lod();
-  }
-  template <typename LoDT>
-  LoDT *mutable_lod() {
-    return self()->mutable_lod();
-  }
   template <typename T>
-  const T &data() const {
-    return const_self()->data();
-  }
+  T *mutable_data(TargetType target);
+  void *mutable_data(size_t memory_size);
+  void *mutable_data(TargetType target, size_t memory_size);
 
-  const void *raw_data() const { return const_self()->data(); }
+  const void *raw_data() const { return buffer_->data(); }
 
-  size_t data_size() const { return const_self()->dims().production(); }
-  size_t memory_size() const { return const_self()->memory_size(); }
+  size_t data_size() const { return this->dims().production(); }
 
-  void ShareDataWith(const TensorBase &other) { self()->ShareDataWith(other); }
-  void CopyDataFrom(const TensorBase &other) { self()->CopyDataFrom(other); }
+  size_t memory_size() const { return memory_size_; }
 
-  friend std::ostream &operator<<(std::ostream &os, const TensorT &tensor) {
+  bool IsInitialized() const { return buffer_->data(); }
+
+  // Other share data to this.
+  void ShareDataWith(const TensorLite &other);
+
+  void CopyDataFrom(const TensorLite &other);
+
+  TargetType target() const { return target_; }
+
+  friend std::ostream &operator<<(std::ostream &os, const TensorLite &tensor) {
     os << "Tensor:" << '\n';
     os << "dim: " << tensor.dims() << '\n';
     for (int i = 0; i < tensor.dims().production(); i++) {
@@ -182,11 +147,27 @@ class TensorBase {
   }
 
  private:
-  TensorT *self() { return static_cast<TensorT *>(this); }
-  const TensorT *const_self() const {
-    return static_cast<const TensorT *>(this);
-  }
+  TargetType target_{TargetType::kHost};
+  DDimLite dims_;
+  std::shared_ptr<Buffer> buffer_;
+  LoD lod_;
+  size_t memory_size_{};
 };
+
+template <typename T>
+T *TensorLite::mutable_data() {
+  memory_size_ = dims_.production() * sizeof(T);
+  buffer_->ResetLazy(target_, memory_size_);
+  return static_cast<T *>(buffer_->data());
+}
+
+template <typename T>
+T *TensorLite::mutable_data(TargetType target) {
+  target_ = target;
+  memory_size_ = dims_.production() * sizeof(T);
+  buffer_->ResetLazy(target, memory_size());
+  return static_cast<T *>(buffer_->data());
+}
 
 template <typename TensorT>
 bool TensorCompareWith(const TensorT &a, const TensorT &b) {

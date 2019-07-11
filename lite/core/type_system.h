@@ -26,7 +26,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
-#include "lite/core/compatible_tensor.h"
+#include "lite/core/tensor.h"
 #include "lite/utils/all.h"
 
 namespace paddle {

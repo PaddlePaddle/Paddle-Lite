@@ -54,7 +54,7 @@ void Module::AddHeaderIncludeGenCode() {
   Line("");
   Line("#include <string>");
   Line("#include <vector>");
-  Line("#include \"lite/core/compatible_tensor.h\"");
+  Line("#include \"lite/core/tensor.h\"");
   Line("#include \"lite/core/context.h\"");
   Line("#include \"lite/gen_code/paddle_infer.h\"");
   Line("#include \"lite/core/op_registry.h\"");

@@ -960,9 +960,9 @@ void DeviceInfo::SetCache(int l1size, int l2size, int l3size) {
 }
 
 bool DeviceInfo::ExtendWorkspace(DDimLite dims) {
-  auto count = dims.product();
+  auto count = dims.production();
   auto old = workspace_.dims();
-  if (count == old.product()) {
+  if (count == old.production()) {
     return false;
   }
   workspace_.Resize({static_cast<int64_t>(

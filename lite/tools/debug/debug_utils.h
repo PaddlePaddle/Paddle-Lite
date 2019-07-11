@@ -22,7 +22,7 @@
 #include <utility>
 #include <vector>
 #include "lite/api/cxx_api.h"
-#include "lite/core/compatible_tensor.h"
+#include "lite/core/tensor.h"
 #include "lite/utils/string.h"
 
 DEFINE_string(model_dir, "", "Model dir path");

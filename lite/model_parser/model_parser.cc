@@ -16,8 +16,8 @@
 #include <algorithm>
 #include <fstream>
 #include <limits>
-#include "lite/core/compatible_tensor.h"
 #include "lite/core/scope.h"
+#include "lite/core/tensor.h"
 #include "lite/core/variable.h"
 
 namespace paddle {

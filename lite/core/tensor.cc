@@ -12,10 +12,57 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/lite_tensor.h"
+#include "lite/core/tensor.h"
+#include <string>
 
 namespace paddle {
 namespace lite {
+
+using value_type = int64_t;
+
+value_type DDimLite::production() const {
+  value_type res = 1;
+  for (size_t i = 0; i < this->size(); i++) {
+    res *= (*this)[i];
+  }
+  return res;
+}
+
+value_type DDimLite::count(int start, int end) const {
+  if (start < 0) {
+    start = 0;
+  }
+  if (end > size()) {
+    end = size();
+  }
+  if (end < start) {
+    end = start;
+  }
+  value_type sum = 1;
+  for (auto i = start; i < end; ++i) {
+    sum *= data_[i];
+  }
+  return sum;
+}
+
+DDimLite DDimLite::Slice(int start, int end) const {
+  std::vector<value_type> vec;
+  for (int i = start; i < end; i++) {
+    vec.push_back((*this)[i]);
+  }
+  return DDimLite(vec);
+}
+
+std::string DDimLite::repr() const {
+  std::stringstream ss;
+  ss << "{";
+  for (size_t i = 0; i < this->size() - 1; i++) {
+    ss << (*this)[i] << ",";
+  }
+  if (!this->empty()) ss << (*this)[size() - 1];
+  ss << "}";
+  return ss.str();
+}
 
 void TensorLite::ShareDataWith(const TensorLite &other) {
   buffer_ = other.buffer_;

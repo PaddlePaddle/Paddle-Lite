@@ -18,8 +18,8 @@
 #include <string>
 #include <vector>
 #include "lite/arm/math/funcs.h"
-#include "lite/core/lite_tensor.h"
 #include "lite/core/op_registry.h"
+#include "lite/core/tensor.h"
 
 namespace paddle {
 namespace lite {

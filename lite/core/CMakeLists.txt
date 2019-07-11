@@ -6,7 +6,7 @@ lite_cc_library(target_wrapper_lite SRCS target_wrapper.cc
   X86_DEPS target_wrapper_x86
   CUDA_DEPS target_wrapper_cuda)
 lite_cc_library(memory_lite SRCS memory.cc DEPS target_wrapper_lite)
-lite_cc_library(lite_tensor SRCS lite_tensor.cc DEPS memory_lite target_wrapper_lite)
+lite_cc_library(lite_tensor SRCS tensor.cc DEPS memory_lite target_wrapper_lite)
 
 set(tensor_lite lite_tensor)
 
@@ -25,8 +25,8 @@ lite_cc_library(cpu_info_lite SRCS cpu_info.cc)
 
 if (LITE_WITH_ARM)
 lite_cc_library(context_lite SRCS context.cc DEPS ${tensor_lite} any_lite cpu_info_lite CL_DEPS cl_context)
-else()
-lite_cc_library(context_lite SRCS context.cc DEPS ${tensor_lite} any_lite cpu_info_lite eigen3 CL_DEPS cl_context)
+#else()
+#lite_cc_library(context_lite SRCS context.cc DEPS ${tensor_lite} any_lite cpu_info_lite eigen3 CL_DEPS cl_context)
 endif()
 lite_cc_library(kernel_lite SRCS kernel.cc DEPS context_lite type_system target_wrapper_lite any_lite op_params_lite framework_proto_lite ${tensor_lite})
 lite_cc_library(op_lite SRCS op_lite.cc DEPS scope_lite op_registry_lite target_wrapper_lite kernel_lite

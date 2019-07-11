@@ -87,7 +87,7 @@ TEST(fc_x86, run_test) {
     VLOG(3) << out_data[i];
   }
 
-  /* for (int i = 0; i < out.dims().product(); ++i) {
+  /* for (int i = 0; i < out.dims().production(); ++i) {
      EXPECT_NEAR(out_data[i], ref_data[i], 1e-5);
    }*/
 }

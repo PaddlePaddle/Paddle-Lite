@@ -16,8 +16,8 @@
 
 #include <gflags/gflags.h>
 #include "lite/api/cxx_api.h"
-#include "lite/core/compatible_tensor.h"
 #include "lite/core/op_registry.h"
+#include "lite/core/tensor.h"
 
 DECLARE_string(model_dir);
 DECLARE_string(optimized_model);
