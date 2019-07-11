@@ -65,15 +65,15 @@ function run_gen_code_test {
     adb -s emulator-${port} push "./third_party/install/lite_naive_model" ${adb_work_dir}
     adb -s emulator-${port} push ${test_cxx_api_lite_path} ${adb_work_dir}
     adb -s emulator-${port} shell "${adb_work_dir}/test_cxx_api_lite --model_dir=${adb_work_dir}/lite_naive_model --optimized_model=${adb_work_dir}/lite_naive_model_opt"
- 
+
     # 3. build test_gen_code_lite
     make test_gen_code_lite -j$NUM_CORES_FOR_COMPILE
- 
+
     # 4. run test_gen_code_lite
     local test_gen_code_lite_path=$(find ./lite -name test_gen_code_lite)
     adb -s emulator-${port} push ${test_gen_code_lite_path} ${adb_work_dir}
     adb -s emulator-${port} shell "${adb_work_dir}/test_gen_code_lite --optimized_model=${adb_work_dir}/lite_naive_model_opt --generated_code_file=${adb_work_dir}/${gen_code_file_name}"
-  
+
     # 5. pull __generated_code__.cc down and mv to buil real path
     adb -s emulator-${port} pull "${adb_work_dir}/${gen_code_file_name}" .
     mv ${gen_code_file_name} ${gen_code_file_path}
@@ -200,7 +200,7 @@ function build_test_train {
 
     make -j$NUM_CORES_FOR_COMPILE
 
-    find -name "*.whl" | xargs pip2 install 
+    find -name "*.whl" | xargs pip2 install
     python ../lite/python/lite_test.py
 
 }
@@ -221,7 +221,7 @@ function test_arm_android {
     echo "test name: ${test_name}"
     adb_work_dir="/data/local/tmp"
 
-    skip_list=("test_model_parser_lite" "test_mobilenetv1_lite" "test_mobilenetv2_lite" "test_resnet50_lite" "test_inceptionv4_lite" "test_light_api_lite" "test_apis_lite" "test_paddle_api_lite" "test_cxx_api_lite" "test_gen_code_lite")
+    skip_list=("test_model_parser_lite" "test_mobilenetv1_lite" "test_mobilenetv2_lite" "test_resnet50_lite" "test_inceptionv4_lite" "test_light_api_lite" "test_apis_lite" "test_paddle_api_lite" "test_cxx_api_lite" "test_gen_code_lite" "test_naive_buffer")
     for skip_name in ${skip_list[@]} ; do
         [[ $skip_name =~ (^|[[:space:]])$test_name($|[[:space:]]) ]] && echo "skip $test_name" && return
     done
@@ -378,7 +378,7 @@ function test_arm {
         echo "android do not need armv7hf"
         return 0
     fi
-   
+
     echo "test file: ${TESTS_FILE}"
     for _test in $(cat $TESTS_FILE); do
         test_arm_android $_test $port
