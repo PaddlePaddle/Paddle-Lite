@@ -20,7 +20,7 @@ limitations under the License. */
 #include <memory>
 #include <random>
 #include <vector>
-#include "lite/core/compatible_tensor.h"
+#include "lite/core/tensor.h"
 #include "lite/opencl/cl_caller.h"
 #include "lite/opencl/cl_context.h"
 #include "lite/opencl/cl_image.h"
