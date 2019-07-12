@@ -18,7 +18,6 @@
 #include <gtest/gtest_prod.h>
 #endif
 
-#include <glog/logging.h>
 #include <memory>
 #include <numeric>
 #include <sstream>
@@ -30,6 +29,7 @@
 #include "lite/core/mir/node.h"
 #include "lite/core/mir/ssa_graph.h"
 #include "lite/model_parser/pb/op_desc.h"
+#include "lite/utils/cp_logging.h"
 #include "lite/utils/string.h"
 
 namespace paddle {

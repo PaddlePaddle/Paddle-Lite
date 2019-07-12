@@ -19,11 +19,11 @@
  */
 #pragma once
 
-#include <glog/logging.h>  // NOLINT
 #include <sstream>
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include "lite/utils/cp_logging.h"
 
 namespace paddle {
 namespace inference {

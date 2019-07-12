@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <gflags/gflags.h>
 #include "lite/utils/any.h"
 #ifdef LITE_WITH_CUDA
 #include "lite/cuda/blas.h"

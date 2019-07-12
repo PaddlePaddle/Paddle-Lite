@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <glog/logging.h>
 #include <string>
 #include <vector>
 #include "lite/api/paddle_api.h"
@@ -21,6 +20,7 @@
 #include "lite/api/paddle_use_passes.h"
 #include "lite/api/test_helper.h"
 #include "lite/core/cpu_info.h"
+#include "lite/utils/cp_logging.h"
 #include "lite/utils/string.h"
 
 namespace paddle {
@@ -38,17 +38,6 @@ void OutputOptModel(const std::string& load_model_dir,
   });
   auto predictor = lite_api::CreatePaddlePredictor(config);
 
-  auto input_tensor = predictor->GetInput(0);
-  input_tensor->Resize(input_shape);
-  auto* data = input_tensor->mutable_data<float>();
-  int input_num = 1;
-  for (int i = 0; i < input_shape.size(); ++i) {
-    input_num *= input_shape[i];
-  }
-  for (int i = 0; i < input_num; ++i) {
-    data[i] = i;
-  }
-  predictor->Run();
   // delete old optimized model
   int ret = system(
       paddle::lite::string_format("rm -rf %s", save_optimized_model_dir.c_str())

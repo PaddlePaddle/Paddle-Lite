@@ -17,29 +17,38 @@
  * friendly for mobile.
  */
 #pragma once
-#include <stdlib.h>
+
+#include <sys/time.h>
+#include <sys/types.h>
+#include <time.h>
+#include <cstdlib>
 #include <cstring>
+#include <iomanip>
 #include <iostream>
 #include <sstream>
+#include <string>
 
 // NOLINTFILE()
-
-#ifdef LITE_WITH_LIGHT_WEIGHT_FRAMEWORK
 
 // LOG()
 #define LOG(status) LOG_##status.stream()
 #define LOG_ERROR LOG_INFO
-#define LOG_INFO paddle::lite::LogMessage(__FILE__, __LINE__)
-#define LOG_WARNING paddle::lite::LogMessage(__FILE__, __LINE__)
-#define LOG_FATAL paddle::lite::LogMessageFatal(__FILE__, __LINE__)
-// Not supported yet.
-#define VLOG(level) LOG_INFO.stream()
+#define LOG_INFO paddle::lite::LogMessage(__FILE__, __FUNCTION__, __LINE__, "I")
+#define LOG_WARNING \
+  paddle::lite::LogMessage(__FILE__, __FUNCTION__, __LINE__, "W")
+#define LOG_FATAL \
+  paddle::lite::LogMessageFatal(__FILE__, __FUNCTION__, __LINE__)
+
+// VLOG()
+#define VLOG(level) \
+  paddle::lite::VLogMessage(__FILE__, __FUNCTION__, __LINE__, level).stream()
 
 // CHECK()
 // clang-format off
-#define CHECK(x) if (!(x)) paddle::lite::LogMessageFatal(__FILE__, __LINE__).stream() << "Check failed: " #x << ": " // NOLINT(*)
+#define CHECK(x) if (!(x)) paddle::lite::LogMessageFatal(__FILE__, __FUNCTION__, __LINE__).stream() << "Check failed: " #x << ": " // NOLINT(*)
 // clang-format on
 #define CHECK_EQ(x, y) _CHECK_BINARY(x, ==, y)
+#define CHECK_NE(x, y) _CHECK_BINARY(x, !=, y)
 #define CHECK_LT(x, y) _CHECK_BINARY(x, <, y)
 #define CHECK_LE(x, y) _CHECK_BINARY(x, <=, y)
 #define CHECK_GT(x, y) _CHECK_BINARY(x, >, y)
@@ -49,22 +58,26 @@
 namespace paddle {
 namespace lite {
 
+void gen_log(std::ostream& log_stream_,
+             const char* file,
+             const char* func,
+             int lineno,
+             const char* level,
+             const int kMaxLen = 20);
+
+// LogMessage
 class LogMessage {
  public:
-  LogMessage(const char* file, int lineno) {
-    const int kMaxLen = 20;
-    const int len = strlen(file);
-    if (len > kMaxLen) {
-      log_stream_ << '[' << "..." << file + len - kMaxLen << ":" << lineno
-                  << "] ";
-    } else {
-      log_stream_ << '[' << file << ":" << lineno << "] ";
-    }
+  LogMessage(const char* file,
+             const char* func,
+             int lineno,
+             const char* level = "I") {
+    paddle::lite::gen_log(log_stream_, file, func, lineno, level);
   }
 
   ~LogMessage() {
     log_stream_ << '\n';
-    std::cerr << log_stream_.str();
+    fprintf(stderr, "%s", log_stream_.str().c_str());
   }
 
   std::ostream& stream() { return log_stream_; }
@@ -76,18 +89,57 @@ class LogMessage {
   void operator=(const LogMessage&) = delete;
 };
 
+// LogMessageFatal
 class LogMessageFatal : public LogMessage {
  public:
-  LogMessageFatal(const char* file, int lineno) : LogMessage(file, lineno) {}
+  LogMessageFatal(const char* file,
+                  const char* func,
+                  int lineno,
+                  const char* level = "F")
+      : LogMessage(file, func, lineno, level) {}
 
   ~LogMessageFatal() {
     log_stream_ << '\n';
-    std::cerr << log_stream_.str();
+    fprintf(stderr, "%s", log_stream_.str().c_str());
     abort();
   }
 };
 
+// VLOG
+class VLogMessage {
+ public:
+  VLogMessage(const char* file,
+              const char* func,
+              int lineno,
+              const int32_t level_int = 0) {
+    const char* GLOG_v = std::getenv("GLOG_v");
+    GLOG_v_int = (GLOG_v && atoi(GLOG_v) > 0) ? atoi(GLOG_v) : 0;
+    this->level_int = level_int;
+    if (GLOG_v_int < level_int) {
+      return;
+    }
+    const char* level = std::to_string(level_int).c_str();
+    paddle::lite::gen_log(log_stream_, file, func, lineno, level);
+  }
+
+  ~VLogMessage() {
+    if (GLOG_v_int < this->level_int) {
+      return;
+    }
+    log_stream_ << '\n';
+    fprintf(stderr, "%s", log_stream_.str().c_str());
+  }
+
+  std::ostream& stream() { return log_stream_; }
+
+ protected:
+  std::stringstream log_stream_;
+  int32_t GLOG_v_int;
+  int32_t level_int;
+
+  VLogMessage(const VLogMessage&) = delete;
+  void operator=(const VLogMessage&) = delete;
+};
+
 }  // namespace lite
 }  // namespace paddle
-
-#endif  // LITE_WITH_LIGHT_FRAMEWORK

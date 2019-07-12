@@ -42,7 +42,7 @@ void GenCode(const std::string& model_dir, const std::string& out_file) {
 }  // namespace paddle
 
 int main(int argc, char** argv) {
-  google::ParseCommandLineFlags(&argc, &argv, false);
+  gflags::ParseCommandLineFlags(&argc, &argv, false);
   paddle::lite::gencode::GenCode(FLAGS_optimized_model,
                                  FLAGS_generated_code_file);
   return 0;

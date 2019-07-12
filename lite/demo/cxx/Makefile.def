@@ -4,16 +4,14 @@ LDFLAGS = -latomic -pthread -ldl
 
 SYSROOT_COMPLILE = --sysroot=/opt/android-ndk-r17c/sysroot
 
-THIRD_PARTY_LIBS = ../../../third_party/glog/lib/libglog.a \
-                   ../../../third_party/gflags/lib/libgflags.a
+THIRD_PARTY_LIBS = ../../../third_party/gflags/lib/libgflags.a
 
 SYSTEM_INCLUDES = -I/opt/android-ndk-r17c/sources/cxx-stl/llvm-libc++/include \
 	          -I/opt/android-ndk-r17c/sources/cxx-stl/llvm-libc++abi/include \
 	          -I/opt/android-ndk-r17c/sources/android/support/include \
 	          -I/opt/android-ndk-r17c/sysroot/usr/include \
 
-THIRD_PARTY_INCLUDES = -I../../../third_party/gflags/include \
-	               -I../../../third_party/glog/include
+THIRD_PARTY_INCLUDES = -I../../../third_party/gflags/include
 
 ifeq ($(ARM_ABI), arm8)
     CC = /opt/android-ndk-r17c/toolchains/aarch64-linux-android-4.9/prebuilt/linux-x86_64/bin/aarch64-linux-android-g++ 

@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include "lite/core/mir/pattern_matcher_high_api.h"
-#include <glog/logging.h>
+#include "lite/utils/cp_logging.h"
 
 namespace paddle {
 namespace lite {

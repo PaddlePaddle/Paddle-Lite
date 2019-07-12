@@ -15,6 +15,7 @@
 /*
  * We test multiple apis here.
  */
+#include <gflags/gflags.h>
 #include <gtest/gtest.h>
 #include <sstream>
 #include <vector>
