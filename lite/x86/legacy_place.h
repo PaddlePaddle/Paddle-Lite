@@ -14,28 +14,15 @@
 
 #pragma once
 
-#ifndef DISALLOW_COPY_AND_ASSIGN
-#define DISALLOW_COPY_AND_ASSIGN(class__) \
-  class__(const class__&) = delete;       \
-  class__& operator=(const class__&) = delete;
-#endif
+namespace paddle {
+namespace fluid {
 
-#define LITE_UNIMPLEMENTED CHECK(false) << "Not Implemented";
+// Fake the legacy Place.
+struct Place {
+  int which() const { return 1; }  // fake
+};
 
-#if defined(_WIN32)
-#define UNUSED
-#define __builtin_expect(EXP, C) (EXP)
-#else
-#define UNUSED __attribute__((unused))
-#endif
+struct CPUPlace : Place {};
 
-/*
-#ifndef LIKELY
-#define LIKELY(x) __builtin_expect(!!(x), 1)
-#endif
-
-#ifndef UNLIKELY
-//#define UNLIKELY(x) __built_expect(!!(x), 0)
-#define UNLIKELY(x) (x)
-#endif
- */
+}  // namespace fluid
+}  // namespace paddle
