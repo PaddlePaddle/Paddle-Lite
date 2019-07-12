@@ -1,5 +1,6 @@
 package com.baidu.paddle.lite;
 
+import android.content.Context;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.widget.TextView;
@@ -21,31 +22,31 @@ public class MainActivity extends AppCompatActivity {
 
         String textOutput = "";
         ArrayList<Tensor> output;
-        output = runNaiveModel("lite_naive_model");
+        output = setInputAndRunNaiveModel("lite_naive_model", this);
         textOutput += "lite_naive_model output: " + output.get(0).getFloatData()[0] + ", "
                 + output.get(1).getFloatData()[1] + "\n";
         textOutput += "expected: 50.2132, -28.8729\n";
 
         Date start = new Date();
-        output = runImageModel("inception_v4_simple");
+        output = setInputAndRunImageModel("inception_v4_simple", this);
         Date end = new Date();
         textOutput += "\ninception_v4_simple test: " + testInceptionV4Simple(output) + "\n";
         textOutput += "time: " + (end.getTime() - start.getTime()) + " ms\n";
 
         start = new Date();
-        output = runImageModel("resnet50");
+        output = setInputAndRunImageModel("resnet50", this);
         end = new Date();
         textOutput += "\nresnet50 test: " + testResnet50(output) + "\n";
         textOutput += "time: " + (end.getTime() - start.getTime()) + " ms\n";
 
         start = new Date();
-        output = runImageModel("mobilenet_v1");
+        output = setInputAndRunImageModel("mobilenet_v1", this);
         end = new Date();
         textOutput += "\nmobilenet_v1 test: " + testMobileNetV1(output) + "\n";
         textOutput += "time: " + (end.getTime() - start.getTime()) + " ms\n";
 
         start = new Date();
-        output = runImageModel("mobilenet_v2_relu");
+        output = setInputAndRunImageModel("mobilenet_v2_relu", this);
         end = new Date();
         textOutput += "\nmobilenet_v2 test: " + testMobileNetV2Relu(output) + "\n";
         textOutput += "time: " + (end.getTime() - start.getTime()) + " ms\n";
@@ -54,8 +55,8 @@ public class MainActivity extends AppCompatActivity {
         textView.setText(textOutput);
     }
 
-    public String copyFromAssetsToCache(String modelPath) {
-        String newPath = getCacheDir() + "/" + modelPath;
+    public static String copyFromAssetsToCache(String modelPath, Context context) {
+        String newPath = context.getCacheDir() + "/" + modelPath;
         // String newPath = "/sdcard/" + modelPath;
         File desDir = new File(newPath);
 
@@ -63,8 +64,8 @@ public class MainActivity extends AppCompatActivity {
             if (!desDir.exists()) {
                 desDir.mkdir();
             }
-            for (String fileName : getAssets().list(modelPath)) {
-                InputStream stream = getAssets().open(modelPath + "/" + fileName);
+            for (String fileName : context.getAssets().list(modelPath)) {
+                InputStream stream = context.getAssets().open(modelPath + "/" + fileName);
                 OutputStream output = new BufferedOutputStream(new FileOutputStream(newPath + "/" + fileName));
 
                 byte data[] = new byte[1024];
@@ -86,8 +87,8 @@ public class MainActivity extends AppCompatActivity {
         return desDir.getPath();
     }
 
-    public ArrayList<Tensor> runModel(String modelName, long[] dims, float[] inputBuffer) {
-        String modelPath = copyFromAssetsToCache(modelName);
+    public static ArrayList<Tensor> runModel(String modelName, long[] dims, float[] inputBuffer, Context context) {
+        String modelPath = copyFromAssetsToCache(modelName, context);
 
         // Cxx Model
         Place[] validPlaces = new Place[2];
@@ -133,13 +134,13 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    public ArrayList<Tensor> runNaiveModel(String modelName) {
+    public static ArrayList<Tensor> setInputAndRunNaiveModel(String modelName, Context context) {
         long[] dims = {100, 100};
         float[] inputBuffer = new float[10000];
         for (int i = 0; i < 10000; ++i) {
             inputBuffer[i] = i;
         }
-        return runModel(modelName, dims, inputBuffer);
+        return runModel(modelName, dims, inputBuffer, context);
     }
 
     /**
@@ -148,14 +149,14 @@ public class MainActivity extends AppCompatActivity {
      * @param modelName
      * @return
      */
-    public ArrayList<Tensor> runImageModel(String modelName) {
+    public static ArrayList<Tensor> setInputAndRunImageModel(String modelName, Context context) {
         long[] dims = {1, 3, 224, 224};
         int item_size = 3 * 224 * 224;
         float[] inputBuffer = new float[item_size];
         for (int i = 0; i < item_size; ++i) {
             inputBuffer[i] = 1;
         }
-        return runModel(modelName, dims, inputBuffer);
+        return runModel(modelName, dims, inputBuffer, context);
     }
 
     public boolean equalsNear(float a, float b, float delta) {
@@ -242,3 +243,4 @@ public class MainActivity extends AppCompatActivity {
     }
 
 }
+
