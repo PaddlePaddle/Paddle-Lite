@@ -17,6 +17,12 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.Assert.assertEquals;
 
+/**
+ * Deprecated test. Now we use Android demo's Instrument test.
+ * 
+ * @TODO make this test as Java Unit test. Then we don't have to launch Android
+ *       demo to test.
+ */
 class PaddlePredictorTest {
 
     @Test
@@ -36,7 +42,7 @@ class PaddlePredictorTest {
         input.setData(inputBuffer);
 
         predictor.run();
-        
+
         Tensor output = predictor.getOutput(0);
         float[] outputBuffer = output.getFloatData();
 

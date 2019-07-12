@@ -278,10 +278,12 @@ if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM)
     # add java lib
         add_custom_target(publish_inference_java_lib ${TARGET}
             COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/java/so"
+            COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/java/jar"
             COMMAND cp "${CMAKE_BINARY_DIR}/lite/api/android/jni/native/libpaddle_lite_jni.so" "${INFER_LITE_PUBLISH_ROOT}/java/so"
+            COMMAND cp "${CMAKE_BINARY_DIR}/lite/api/android/jni/PaddlePredictor.jar" "${INFER_LITE_PUBLISH_ROOT}/java/jar"
             COMMAND cp -r "${CMAKE_SOURCE_DIR}/lite/api/android/jni/src" "${INFER_LITE_PUBLISH_ROOT}/java"
         )
-        add_dependencies(publish_inference_java_lib paddle_lite_jni)
+        add_dependencies(publish_inference_java_lib paddle_lite_jni PaddlePredictor)
         add_dependencies(publish_inference_lite publish_inference_java_lib)
     endif()
 
