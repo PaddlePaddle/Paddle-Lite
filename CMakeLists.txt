@@ -146,6 +146,7 @@ include(external/protobuf)  # download, build, install protobuf
 include(external/openblas)  # download, build, install openblas
 include(external/mkldnn)    # download, build, install mkldnn
 include(external/eigen)     # download eigen3
+include(external/xxhash)    # download install xxhash needed for x86 jit
 
 include(configure)          # add paddle env configuration
 
