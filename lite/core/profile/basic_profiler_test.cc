@@ -13,10 +13,10 @@
 // limitations under the License.
 
 #include "lite/core/profile/basic_profiler.h"
-#include <glog/logging.h>
 #include <gtest/gtest.h>
 #include <chrono>  // NOLINT
 #include <thread>  // NOLINT
+#include "lite/utils/cp_logging.h"
 
 namespace paddle {
 namespace lite {

@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include "lite/api/paddle_place.h"
-#include <glog/logging.h>
+#include "lite/utils/cp_logging.h"
 #include "lite/utils/hash.h"
 
 namespace paddle {

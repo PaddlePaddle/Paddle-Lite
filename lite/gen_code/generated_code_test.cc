@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <glog/logging.h>
 #include <gtest/gtest.h>
 #include "lite/gen_code/paddle_infer.h"
+#include "lite/utils/cp_logging.h"
 
 namespace paddle {
 namespace lite {

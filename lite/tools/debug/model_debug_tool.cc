@@ -89,7 +89,7 @@ void Run(DebugConfig* conf) {
 }  // namespace paddle
 
 int main(int argc, char** argv) {
-  google::ParseCommandLineFlags(&argc, &argv, true);
+  gflags::ParseCommandLineFlags(&argc, &argv, true);
   paddle::lite::tools::debug::DebugConfig conf;
   paddle::lite::tools::debug::ParseConfig(&conf);
   paddle::lite::tools::debug::Run(&conf);

@@ -413,8 +413,15 @@ function(raw_cc_test TARGET_NAME)
       endif()
     endif(WIN32)
     get_property(os_dependency_modules GLOBAL PROPERTY OS_DEPENDENCY_MODULES)
-    target_link_libraries(${TARGET_NAME} ${cc_test_DEPS} ${os_dependency_modules} lite_gtest_main gtest gflags glog)
-    add_dependencies(${TARGET_NAME} ${cc_test_DEPS} lite_gtest_main gtest gflags glog)
+
+    if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
+      target_link_libraries(${TARGET_NAME} ${cc_test_DEPS} ${os_dependency_modules} lite_gtest_main gtest gflags logging)
+      add_dependencies(${TARGET_NAME} ${cc_test_DEPS} lite_gtest_main gtest gflags logging)
+    else()
+      target_link_libraries(${TARGET_NAME} ${cc_test_DEPS} ${os_dependency_modules} lite_gtest_main gtest gflags glog)
+      add_dependencies(${TARGET_NAME} ${cc_test_DEPS} lite_gtest_main gtest gflags glog)
+    endif(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
+
     common_link(${TARGET_NAME})
     add_test(NAME ${TARGET_NAME}
             COMMAND ${TARGET_NAME} ${cc_test_ARGS}

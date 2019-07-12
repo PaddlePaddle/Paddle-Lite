@@ -14,9 +14,9 @@ limitations under the License. */
 
 #include "lite/opencl/cl_wrapper.h"
 #include <dlfcn.h>
-#include <glog/logging.h>
 #include <string>
 #include <vector>
+#include "lite/utils/cp_logging.h"
 
 namespace paddle {
 namespace lite {

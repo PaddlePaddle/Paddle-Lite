@@ -18,7 +18,6 @@
  * of each kernel.
  */
 #pragma once
-#include <glog/logging.h>
 #include <time.h>
 #include <algorithm>
 #include <chrono>  // NOLINT
@@ -28,6 +27,7 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include "lite/utils/cp_logging.h"
 
 namespace paddle {
 namespace lite {

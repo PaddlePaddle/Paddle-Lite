@@ -13,12 +13,12 @@
 // limitations under the License.
 
 #include <gflags/gflags.h>
-#include <glog/logging.h>
 #include <gtest/gtest.h>
 #include "lite/api/paddle_api.h"
 #include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
 #include "lite/api/paddle_use_passes.h"
+#include "lite/utils/cp_logging.h"
 #include "lite/utils/string.h"
 
 DEFINE_string(model_dir, "", "path of the model");

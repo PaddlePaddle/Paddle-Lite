@@ -13,10 +13,10 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "lite/opencl/cl_image.h"
-#include <glog/logging.h>
 #include <array>
 #include "lite/opencl/cl_runtime.h"
 #include "lite/opencl/cl_utility.h"
+#include "lite/utils/cp_logging.h"
 
 namespace paddle {
 namespace lite {

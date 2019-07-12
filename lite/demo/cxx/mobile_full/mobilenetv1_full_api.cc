@@ -13,9 +13,9 @@
 // limitations under the License.
 
 #include <gflags/gflags.h>
-#include <glog/logging.h>
 #include <iostream>
 #include <vector>
+#include "logging.h"             // NOLINT
 #include "paddle_api.h"          // NOLINT
 #include "paddle_use_kernels.h"  // NOLINT
 #include "paddle_use_ops.h"      // NOLINT

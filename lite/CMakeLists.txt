@@ -267,6 +267,7 @@ if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM)
             COMMAND cp "${CMAKE_BINARY_DIR}/libpaddle_api_light_bundled.a" "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
             COMMAND cp "${CMAKE_BINARY_DIR}/lite/api/model_optimize_tool" "${INFER_LITE_PUBLISH_ROOT}/bin"
             COMMAND cp "${CMAKE_BINARY_DIR}/lite/gen_code/paddle_code_generator" "${INFER_LITE_PUBLISH_ROOT}/bin"
+            COMMAND cp "${CMAKE_BINARY_DIR}/lite/api/test_model_bin" "${INFER_LITE_PUBLISH_ROOT}/bin"
             )
     add_dependencies(publish_inference_cxx_lib model_optimize_tool)
     add_dependencies(publish_inference_cxx_lib paddle_code_generator)
@@ -293,7 +294,8 @@ if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM)
         add_custom_target(publish_inference_android_cxx_demos ${TARGET}
             COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/third_party"
             COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/demo/cxx"
-            COMMAND cp -r "${CMAKE_BINARY_DIR}/third_party/install/glog" "${INFER_LITE_PUBLISH_ROOT}/third_party"
+            COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/include"
+            COMMAND cp "${CMAKE_SOURCE_DIR}/lite/utils/logging.h" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/include/logging.h"
             COMMAND cp -r "${CMAKE_BINARY_DIR}/third_party/install/gflags" "${INFER_LITE_PUBLISH_ROOT}/third_party"
             COMMAND cp "${CMAKE_SOURCE_DIR}/lite/demo/cxx/Makefile.def" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx"
             COMMAND cp "${CMAKE_SOURCE_DIR}/lite/demo/cxx/README.md" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx"
@@ -302,7 +304,7 @@ if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM)
             COMMAND cp -r "${CMAKE_SOURCE_DIR}/lite/demo/cxx/mobile_light" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx"
             COMMAND cp "${CMAKE_SOURCE_DIR}/lite/demo/cxx/makefiles/mobile_light/Makefile.${ARM_TARGET_OS}.${ARM_TARGET_ARCH_ABI}" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/mobile_light/Makefile"
         )
-        add_dependencies(publish_inference_android_cxx_demos glog gflags)
+        add_dependencies(publish_inference_android_cxx_demos logging gflags)
         add_dependencies(publish_inference_cxx_lib publish_inference_android_cxx_demos)
 
         if (LITE_WITH_JAVA)

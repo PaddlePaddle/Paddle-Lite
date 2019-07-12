@@ -58,6 +58,7 @@ size_t VarDesc::GetTensorDescNum() const {
                     "of var %s."
                  << this->Name();
   }
+  return 0;
 }
 
 void VarDesc::SetShapes(
@@ -174,6 +175,7 @@ int32_t VarDesc::GetLoDLevel() const {
           << "Getting 'lod_level' is not supported by the type of var %s."
           << this->Name();
   }
+  return 0;
 }
 
 std::vector<int32_t> VarDesc::GetLoDLevels() const {
@@ -191,6 +193,7 @@ std::vector<int32_t> VarDesc::GetLoDLevels() const {
           << "Getting 'lod_levels' is not supported by the type of var %s."
           << this->Name();
   }
+  return std::vector<int32_t>();
 }
 
 const proto::VarType::TensorDesc &VarDesc::tensor_desc() const {
@@ -208,6 +211,7 @@ const proto::VarType::TensorDesc &VarDesc::tensor_desc() const {
           << "Getting 'tensor_desc' is not supported by the type of var %s."
           << this->Name();
   }
+  return framework::proto::VarDesc().type().lod_tensor().tensor();
 }
 
 std::vector<proto::VarType::TensorDesc> VarDesc::tensor_descs() const {
@@ -226,6 +230,7 @@ std::vector<proto::VarType::TensorDesc> VarDesc::tensor_descs() const {
              "%s."
           << this->Name();
   }
+  return std::vector<proto::VarType::TensorDesc>();
 }
 
 proto::VarType::TensorDesc *VarDesc::mutable_tensor_desc() {
@@ -244,6 +249,7 @@ proto::VarType::TensorDesc *VarDesc::mutable_tensor_desc() {
                     "%s."
                  << this->Name();
   }
+  return nullptr;
 }
 
 std::vector<proto::VarType::TensorDesc *> VarDesc::mutable_tensor_descs() {
@@ -264,6 +270,7 @@ std::vector<proto::VarType::TensorDesc *> VarDesc::mutable_tensor_descs() {
              "%s."
           << this->Name();
   }
+  return std::vector<proto::VarType::TensorDesc *>();
 }
 
 }  // namespace pb

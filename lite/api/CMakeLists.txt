@@ -6,7 +6,11 @@ if(LITE_WITH_CUDA)
     nv_test(test_cxx_api_lite_cuda SRCS cxx_api_test.cc DEPS cxx_api_lite_cuda)
 endif()
 
-lite_cc_library(place_lite SRCS paddle_place.cc DEPS glog)
+if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
+  lite_cc_library(place_lite SRCS paddle_place.cc DEPS logging)
+else()
+  lite_cc_library(place_lite SRCS paddle_place.cc DEPS glog)
+endif(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
 
 lite_cc_library(lite_api_test_helper SRCS lite_api_test_helper.cc
   DEPS scope_lite optimizer_lite target_wrapper_host model_parser_lite program_lite

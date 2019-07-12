@@ -13,7 +13,6 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include <gflags/gflags.h>
-#include <glog/logging.h>
 #include <gtest/gtest.h>
 #include <algorithm>
 #include <array>
@@ -26,6 +25,7 @@ limitations under the License. */
 #include "lite/opencl/cl_image.h"
 #include "lite/opencl/cl_runtime.h"
 #include "lite/opencl/target_wrapper.h"
+#include "lite/utils/cp_logging.h"
 
 DEFINE_string(cl_path, "/data/local/tmp/opencl", "The OpenCL kernels path.");
 
