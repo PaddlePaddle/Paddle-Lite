@@ -26,6 +26,7 @@ stages:
   - ci
   - build_server
   - build_mobile
+  - approval_check
 
 check:prebuilt:
     tags:
@@ -216,3 +217,19 @@ build:mobile_model_inceptionv4:
             - build.lite.android.armv8.gcc
             - ~/.ccache
             - $CI_PROJECT_DIR/build_mobile_model_inceptionv4
+
+approval_check:
+  tags:
+    - lite
+  stage: approval_check
+  script:
+    - ./lite/tools/gitlab_review.sh
+  dependencies:
+    - build:server
+    - build:mobile_android
+    - build:mobile_android_cl
+    - build:mobile_armlinux
+    - build:mobile_model_mobilenetv1
+    - build:mobile_model_mobilenetv2
+    - build:mobile_model_resnet50
+    - build:mobile_model_inceptionv4
