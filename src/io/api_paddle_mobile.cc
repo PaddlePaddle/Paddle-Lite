@@ -71,7 +71,7 @@ bool PaddleMobilePredictor<Device, T>::Run(
   }
   auto input = inputs[0];
 
-  if (input.shape.size() != 4) {
+  if (input.lod.size() == 0 && input.shape.size() != 4) {
     LOG(kLOG_ERROR) << "input shape not equal to 4!";
     return false;
   }
@@ -81,17 +81,29 @@ bool PaddleMobilePredictor<Device, T>::Run(
   }
 
   // use tensor
-  framework::DDim ddim =
-      framework::make_ddim({dims[0], dims[1], dims[2], dims[3]});
+  framework::DDim ddim = framework::make_ddim(dims);
 
   framework::Tensor input_tensor;
-  input_tensor.Resize(ddim);
-  int input_length = framework::product(ddim);
-  auto input_ptr = input_tensor.mutable_data<T>();
+  framework::LoDTensor input_lod_tensor;
+  paddle_mobile::framework::LoD lod{{}};
+  for (int i = 0; i < input.lod.size(); ++i) {
+    lod[0].push_back(input.lod[i]);
+  }
+  input_lod_tensor.set_lod(lod);
 
-  memcpy(input_ptr, static_cast<T *>(input.data.data()),
-         input_length * sizeof(T));
-  paddle_mobile_->Predict(input_tensor);
+  int input_length = framework::product(ddim);
+  if (input.lod.size() > 0) {
+    input_lod_tensor.Resize(ddim);
+    memcpy(input_lod_tensor.mutable_data<T>(),
+           static_cast<T *>(input.data.data()), input_length * sizeof(T));
+    paddle_mobile_->Predict(input_lod_tensor);
+  } else {
+    input_tensor.Resize(ddim);
+    memcpy(input_tensor.mutable_data<T>(), static_cast<T *>(input.data.data()),
+           input_length * sizeof(T));
+    paddle_mobile_->Predict(input_tensor);
+  }
+
   auto output_tensor = paddle_mobile_->Fetch();
 
   if (output_data->empty()) {
