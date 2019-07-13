@@ -9,7 +9,7 @@ lite_cc_library(cl_context SRCS cl_context.cc DEPS cl_runtime)
 lite_cc_library(cl_image_converter SRCS cl_image_converter.cc DEPS lite_tensor)
 lite_cc_library(cl_image SRCS cl_image.cc DEPS lite_tensor cl_image_converter cl_runtime)
 lite_cc_library(cl_caller SRCS cl_caller.cc  DEPS cl_context cl_image)
-lite_cc_library(cl_target_wrapper SRCS target_wrapper.cc)
+lite_cc_library(cl_target_wrapper SRCS target_wrapper.cc DEPS cl_runtime)
 lite_cc_test(test_cl_functions SRCS cl_functions_test.cc DEPS cl_context cl_image cl_caller cl_wrapper cl_target_wrapper
              ARGS --cl_path=${CMAKE_SOURCE_DIR}/paddle/fluid/lite/opencl)
 
