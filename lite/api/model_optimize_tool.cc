@@ -13,7 +13,9 @@
 // limitations under the License.
 
 #include <gflags/gflags.h>
+#ifdef PADDLE_WITH_TESTING
 #include <gtest/gtest.h>
+#endif
 #include "lite/api/paddle_api.h"
 #include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"

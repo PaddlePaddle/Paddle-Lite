@@ -17,7 +17,7 @@
 #include <iostream>
 #include <sstream>
 #include <vector>
-//#include "paddle/fluid/memory/allocation/cpu_allocator.h"  // for
+// #include "paddle/fluid/memory/allocation/cpu_allocator.h"  // for
 // posix_memalign
 #include "lite/utils/paddle_enforce.h"
 #include "lite/x86/cpu_info.h"

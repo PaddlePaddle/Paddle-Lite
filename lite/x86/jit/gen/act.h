@@ -82,8 +82,8 @@ class VActFunc : public JitCode {
 
   // compute EXP with ymm, xmm
   template <typename JMM>
-  void exp_jmm(JMM& dst,
-               JMM& src,
+  void exp_jmm(JMM& dst,  // NOLINT
+               JMM& src,  // NOLINT
                int src_idx = 11,
                int fx_idx = 12,  // NOLINT
                int fy_idx = 13,
@@ -172,8 +172,8 @@ class VActFunc : public JitCode {
 
   // compute SIGMOID with ymm, xmm
   template <typename JMM>
-  void sigmoid_jmm(JMM& dst,
-                   JMM& src,
+  void sigmoid_jmm(JMM& dst,          // NOLINT
+                   JMM& src,          // NOLINT
                    int src_idx = 11,  // NOLINT
                    int fx_idx = 12,
                    int fy_idx = 13,
@@ -201,8 +201,8 @@ class VActFunc : public JitCode {
 
   // compute TANH with ymm, xmm
   template <typename JMM>
-  void tanh_jmm(JMM& dst,
-                JMM& src,
+  void tanh_jmm(JMM& dst,          // NOLINT
+                JMM& src,          // NOLINT
                 int src_idx = 11,  // NOLINT
                 int fx_idx = 12,
                 int fy_idx = 13,

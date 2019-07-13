@@ -103,7 +103,6 @@ if (WITH_LITE AND LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
     include(external/glog)      # download, build, install glog
     include(external/gtest)     # download, build, install gtest
     include(external/protobuf)  # download, build, install protobuf
-    include(external/eigen)     # download eigen3
     include(ccache)             # set ccache for compilation
 
     # for opencl
