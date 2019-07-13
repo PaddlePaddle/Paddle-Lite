@@ -7,6 +7,7 @@ lite_cc_binary(lite_model_debug_tool SRCS model_debug_tool.cc
     model_parser_lite
     target_wrapper_host
     mir_passes
+    gflags
     ${ops_lite} ${host_kernels}
     X86_DEPS ${x86_kernels}
     ARM_DEPS ${arm_kernels}

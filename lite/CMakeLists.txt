@@ -184,25 +184,29 @@ endfunction()
 set(offline_test_registry_file "${CMAKE_BINARY_DIR}/lite_tests.txt")
 file(WRITE ${offline_test_registry_file} "") # clean
 # Test lite modules.
+
 function(lite_cc_test TARGET)
+    if(NOT WITH_TESTING)
+        return()
+    endif()
     set(options "")
     set(oneValueArgs "")
     set(multiValueArgs SRCS DEPS X86_DEPS CUDA_DEPS CL_DEPS ARM_DEPS PROFILE_DEPS
-      LIGHT_DEPS HVY_DEPS EXCLUDE_COMPILE_DEPS
-      ARGS)
+        LIGHT_DEPS HVY_DEPS EXCLUDE_COMPILE_DEPS
+        ARGS)
     cmake_parse_arguments(args "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
     set(deps "")
     lite_deps(deps
-            DEPS ${args_DEPS}
-            X86_DEPS ${args_X86_DEPS}
-            CUDA_DEPS ${args_CUDA_DEPS}
-            CL_DEPS ${args_CL_DEPS}
-            ARM_DEPS ${args_ARM_DEPS}
-            PROFILE_DEPS ${args_PROFILE_DEPS}
-            LIGHT_DEPS ${args_LIGHT_DEPS}
-            HVY_DEPS ${args_HVY_DEPS}
-            )
+              DEPS ${args_DEPS}
+              X86_DEPS ${args_X86_DEPS}
+              CUDA_DEPS ${args_CUDA_DEPS}
+              CL_DEPS ${args_CL_DEPS}
+              ARM_DEPS ${args_ARM_DEPS}
+              PROFILE_DEPS ${args_PROFILE_DEPS}
+              LIGHT_DEPS ${args_LIGHT_DEPS}
+              HVY_DEPS ${args_HVY_DEPS}
+              )
     _lite_cc_test(${TARGET} SRCS ${args_SRCS} DEPS ${deps} ARGS ${args_ARGS})
     target_compile_options(${TARGET} BEFORE PRIVATE -Wno-ignored-qualifiers)
     file(APPEND ${offline_test_registry_file} "${TARGET}\n")

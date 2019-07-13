@@ -153,7 +153,7 @@ lite_cc_test(test_paddle_api_lite SRCS paddle_api_test.cc DEPS paddle_api_full p
   ARGS --model_dir=${LITE_MODEL_DIR}/lite_naive_model SERIAL)
 
 if(NOT IOS)
-  lite_cc_test(test_model_bin SRCS model_test.cc DEPS paddle_api_full paddle_api_light
+  lite_cc_binary(test_model_bin SRCS model_test.cc DEPS paddle_api_full paddle_api_light gflags
     ${ops_lite}
     ARM_DEPS ${arm_kernels}
     CL_DEPS ${opencl_kernels}
@@ -183,5 +183,5 @@ lite_cc_binary(cxx_api_lite_bin SRCS cxx_api_bin_int8.cc
     ARM_DEPS ${arm_kernels}
     CL_DEPS ${opencl_kernels})
 lite_cc_binary(model_optimize_tool SRCS model_optimize_tool.cc
-    DEPS paddle_api_full
+    DEPS paddle_api_full gflags
     CL_DEPS ${opencl_kernels})

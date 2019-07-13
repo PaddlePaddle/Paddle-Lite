@@ -19,10 +19,12 @@ lite_cc_library(__generated_code__
     DEPS scope_lite op_lite kernel_lite paddle_infer_gencode
     EXCLUDE_COMPILE_DEPS "ON"
 )
-add_dependencies(__generated_code__ test_gen_code_lite)
-add_dependencies(__generated_code__ extern_lite_download_lite_naive_model_tar_gz)
+if(WITH_TESTING)
+    add_dependencies(__generated_code__ test_gen_code_lite)
+    add_dependencies(__generated_code__ extern_lite_download_lite_naive_model_tar_gz)
+endif(WITH_TESTING)
 
-lite_cc_binary(paddle_code_generator SRCS paddle_code_generator.cc DEPS model_parser_lite gen_code_lite)
+lite_cc_binary(paddle_code_generator SRCS paddle_code_generator.cc DEPS model_parser_lite gen_code_lite gflags)
 
 # TODO(xxx): fix the gen code bug on ios
 if(IOS)
