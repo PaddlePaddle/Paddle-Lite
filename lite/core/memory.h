@@ -29,6 +29,22 @@ void TargetFree(TargetType target, void* data);
 // Copy a buffer from host to another target.
 void TargetCopy(TargetType target, void* dst, const void* src, size_t size);
 
+template <TargetType Target>
+void CopySync(void* dst, void* src, size_t size, IoDirection dir) {
+  switch (Target) {
+    case TARGET(kX86):
+    case TARGET(kHost):
+    case TARGET(kARM):
+      TargetWrapper<TARGET(kHost)>::MemcpySync(
+          dst, src, size, IoDirection::HtoH);
+      break;
+#ifdef LITE_WITH_CUDA
+    case TARGET(kCUDA):
+      TargetWrapperCuda::MemcpySync(dst, src, size, dir);
+#endif
+  }
+}
+
 // Memory buffer manager.
 class Buffer {
  public:

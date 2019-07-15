@@ -33,13 +33,13 @@ namespace paddle {
 namespace lite {
 
 TEST(cl_test, runtime_test) {
-  auto* runtime = CLRuntime::Global();
+  auto *runtime = CLRuntime::Global();
   CHECK(runtime->IsInitSuccess());
   runtime->set_cl_path(FLAGS_cl_path);
   runtime->platform();
   runtime->device();
   runtime->command_queue();
-  auto& context = runtime->context();
+  auto &context = runtime->context();
   auto program = runtime->CreateProgram(
       context,
       runtime->cl_path() + "/cl_kernel/" + "elementwise_add_kernel.cl");
@@ -48,7 +48,7 @@ TEST(cl_test, runtime_test) {
 }
 
 TEST(cl_test, context_test) {
-  auto* runtime = CLRuntime::Global();
+  auto *runtime = CLRuntime::Global();
   CHECK(runtime->IsInitSuccess());
   runtime->set_cl_path(FLAGS_cl_path);
   CLContext context;
@@ -58,7 +58,7 @@ TEST(cl_test, context_test) {
 }
 
 TEST(cl_test, kernel_test) {
-  auto* runtime = CLRuntime::Global();
+  auto *runtime = CLRuntime::Global();
   CHECK(runtime->IsInitSuccess());
   runtime->set_cl_path(FLAGS_cl_path);
   std::unique_ptr<CLContext> context(new CLContext);
@@ -224,10 +224,10 @@ void pool_avg(const int padding_height,
               const int stride_width,
               const int ksize_height,
               const int ksize_width,
-              const float* input_data,
-              const DDim& in_dim,
-              float* output_data,
-              const DDim& out_dim) {
+              const float *input_data,
+              const DDim &in_dim,
+              float *output_data,
+              const DDim &out_dim) {
   const int batch_size = in_dim[0];
   const int input_height = in_dim[2];
   const int input_width = in_dim[3];
@@ -241,8 +241,8 @@ void pool_avg(const int padding_height,
   for (int i = 0; i < batch_size; i++) {
     for (int c = 0; c < output_channels; ++c) {
       int channel = i * output_channels + c;
-      const float* input_ptr = input_data + channel * input_spatial_size;
-      float* output_ptr = output_data + channel * output_spatial_size;
+      const float *input_ptr = input_data + channel * input_spatial_size;
+      float *output_ptr = output_data + channel * output_spatial_size;
 
       for (int ph = 0; ph < output_height; ++ph) {
         int hstart = ph * stride_height - padding_height;
@@ -322,14 +322,14 @@ TEST(cl_test, target_wrapper_buffer_test) {
     h_out.push_back(0);
     h_ref.push_back((3.14f + 6.28f) * i);
   }
-  auto* d_a = static_cast<cl::Buffer*>(
+  auto *d_a = static_cast<cl::Buffer *>(
       TargetWrapperCL::Malloc(sizeof(float) * h_a.size()));
-  auto* d_b = static_cast<cl::Buffer*>(
+  auto *d_b = static_cast<cl::Buffer *>(
       TargetWrapperCL::Malloc(sizeof(float) * h_b.size()));
-  auto* d_out =
-      static_cast<cl::Buffer*>(TargetWrapperCL::Malloc(sizeof(float) * 10));
-  auto* d_copy =
-      static_cast<cl::Buffer*>(TargetWrapperCL::Malloc(sizeof(float) * 10));
+  auto *d_out =
+      static_cast<cl::Buffer *>(TargetWrapperCL::Malloc(sizeof(float) * 10));
+  auto *d_copy =
+      static_cast<cl::Buffer *>(TargetWrapperCL::Malloc(sizeof(float) * 10));
   TargetWrapperCL::MemcpySync(
       d_a, h_a.data(), sizeof(float) * h_a.size(), IoDirection::HtoD);
   TargetWrapperCL::MemcpySync(
@@ -373,8 +373,8 @@ TEST(cl_test, target_wrapper_buffer_test) {
     EXPECT_NEAR(h_out[i], h_ref[i], 1e-5);
   }
 
-  auto* mapped_ptr =
-      static_cast<float*>(TargetWrapperCL::Map(d_copy, 0, sizeof(float) * 10));
+  auto *mapped_ptr =
+      static_cast<float *>(TargetWrapperCL::Map(d_copy, 0, sizeof(float) * 10));
   for (int i = 0; i < 10; i++) {
     EXPECT_NEAR(mapped_ptr[i], h_ref[i], 1e-5);
   }
@@ -388,10 +388,10 @@ TEST(cl_test, target_wrapper_buffer_test) {
 
 TEST(cl_test, target_wrapper_image_test) {
   const std::array<size_t, 2> image_shape{28, 32};
-  auto* d_image = static_cast<cl::Image2D*>(
+  auto *d_image = static_cast<cl::Image2D *>(
       TargetWrapperCL::MallocImage(image_shape, PRECISION(kFloat)));
   std::array<size_t, 2> image_pitch;
-  auto* h_image = static_cast<float*>(
+  auto *h_image = static_cast<float *>(
       TargetWrapperCL::MapImage(d_image, image_shape, &image_pitch));
   // row_pitch = 448 = 28 * 4 (RGBA: 4 floats) * 4 (float in bytes)
   // slice_pitch = 0
@@ -406,7 +406,7 @@ TEST(cl_test, target_wrapper_image_test) {
   }
   TargetWrapperCL::Unmap(d_image, h_image);
 
-  auto* h_ptr = static_cast<float*>(
+  auto *h_ptr = static_cast<float *>(
       TargetWrapperCL::MapImage(d_image, image_shape, &image_pitch));
   for (int i = 0; i < 10; i++) {
     EXPECT_NEAR(h_ptr[i], 3.14f * i, 1e-5);
@@ -415,5 +415,6 @@ TEST(cl_test, target_wrapper_image_test) {
 
   TargetWrapperCL::FreeImage(d_image);
 }
+
 }  // namespace lite
 }  // namespace paddle

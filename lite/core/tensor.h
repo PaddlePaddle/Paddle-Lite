@@ -21,7 +21,6 @@
 #include <vector>
 
 #include "lite/core/memory.h"
-#include "lite/core/target_wrapper.h"
 
 namespace paddle {
 namespace lite {
