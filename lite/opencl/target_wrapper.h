@@ -13,10 +13,71 @@
 // limitations under the License.
 
 #pragma once
+
+#include <array>
 #include "lite/core/target_wrapper.h"
+#include "lite/opencl/cl_include.h"
 
 namespace paddle {
 namespace lite {
-namespace opencl {}  // namespace opencl
+
+using TargetWrapperCL =
+    TargetWrapper<TARGET(kOpenCL), cl::CommandQueue, cl::Event>;
+// This interface should be specified by each kind of target.
+template <>
+class TargetWrapper<TARGET(kOpenCL), cl::CommandQueue, cl::Event> {
+ public:
+  using stream_t = cl::CommandQueue;
+  using event_t = cl::Event;
+
+  static size_t num_devices() { return 0; }
+  static size_t maximum_stream() { return 0; }
+
+  static void CreateStream(stream_t* stream) {}
+  static void DestroyStream(const stream_t& stream) {}
+
+  static void CreateEvent(event_t* event) {}
+  static void DestroyEvent(const event_t& event) {}
+
+  static void RecordEvent(const event_t& event) {}
+  static void SyncEvent(const event_t& event) {}
+
+  static void StreamSync(const stream_t& stream) {}
+
+  static void* Malloc(size_t size);
+  static void Free(void* ptr);
+
+  static void* MallocImage(const std::array<size_t, 2>& image_shape,
+                           PrecisionType data_type);
+  static void FreeImage(void* image);
+
+  static void* Map(void* buffer, size_t offset, size_t size);
+  static void* MapImage(void* image,
+                        const std::array<size_t, 2>& image_shape,
+                        std::array<size_t, 2>* image_pitch);
+  static void Unmap(void* cl_obj, void* mapped_ptr);
+
+  static void MemcpySync(void* dst,
+                         const void* src,
+                         size_t size,
+                         IoDirection dir);
+  static void MemcpyAsync(void* dst,
+                          const void* src,
+                          size_t size,
+                          IoDirection dir,
+                          const stream_t& stream);
+  static void ImgcpySync(void* dst,
+                         const void* src,
+                         const std::array<size_t, 2>& image_shape,
+                         const std::array<size_t, 2>& image_pitch,
+                         IoDirection dir);
+  static void ImgcpyAsync(void* dst,
+                          const void* src,
+                          const std::array<size_t, 2>& image_shape,
+                          const std::array<size_t, 2>& image_pitch,
+                          IoDirection dir,
+                          const stream_t& stream);
+};
+
 }  // namespace lite
 }  // namespace paddle
