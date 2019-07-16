@@ -63,7 +63,7 @@ function main {
     local approval_repo_path="./lite-review"
     local approval_repo_url="http://${ci_username}:${ci_pass}@10.87.145.36/inference/lite-review.git"
     #local commit=$(git log -n1 --pretty=format:"%h")
-    local commit=$LITE_COMMIT
+    local commit=${CI_COMMIT_SHA:0:6}
 
     update_approval_repo $approval_repo_url
     check_is_approved $commit $approval_repo_path
