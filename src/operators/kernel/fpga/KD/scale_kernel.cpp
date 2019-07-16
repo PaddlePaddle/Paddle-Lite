@@ -52,6 +52,15 @@ bool ScaleKernel<FPGA, float>::Init(ScaleParam<FPGA>* param) {
 
 template <>
 void ScaleKernel<FPGA, float>::Compute(const ScaleParam<FPGA>& param) {
+
+  if (param.Scale() == 1 && param.Bias() == 0) {
+    param.Out()->Resize(param.InputX()->dims());
+    param.Out()->zynqmpTensor()->copyFrom(param.InputX()->zynqmpTensor());
+    param.Out()->zynqmpTensor()->setAligned(false);
+    // param.Out()->zynqmpTensor()->saveToFile("scale", true);
+    return;
+  }
+
   zynqmp::Context& context = const_cast<zynqmp::Context&>(param.context_);
   zynqmp::ScalePE& pe = context.pe<zynqmp::ScalePE>();
   pe.dispatch();

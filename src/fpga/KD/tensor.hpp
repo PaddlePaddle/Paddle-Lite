@@ -383,6 +383,33 @@ class Tensor {
   void save_file_with_name(std::string path) {
     return;
     invalidate();
+
+    Tensor* t;
+
+    if (this->aligned_) {
+      Tensor unaligned;
+      unaligned.dataType_ = this->dataType_;
+      unaligned.aligned_ = this->aligned_;
+      unaligned.mutableData<void>(dataType_, *shape_);
+      unaligned.copyFrom(this);
+      unaligned.unalignImage();
+      unaligned.syncToCPU();
+      
+      std::ofstream ofs;
+      ofs.open(path);
+      for (int i = 0; i < shape_->numel(); i++) {
+        float value = 0;
+        if (dataType_ == FP32) {
+          value = unaligned.data<float>()[i];
+        } else {
+          value = half_to_float(unaligned.data<float16>()[i]);
+        }
+        ofs << value << std::endl;
+      }
+      ofs.close();
+      return;
+    }
+    
     std::ofstream ofs;
 
     ofs.open(path);
@@ -396,6 +423,10 @@ class Tensor {
       ofs << value << std::endl;
     }
     ofs.close();
+  }
+
+  void releaseData() {
+    placeHolder_.reset();
   }
 
   void readFromFile(std::string path) {

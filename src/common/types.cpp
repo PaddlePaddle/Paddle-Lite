@@ -33,6 +33,7 @@ const char *G_OP_TYPE_FUSION_CONV_ADD_BN_RELU = "fusion_conv_add_bn_relu";
 const char *G_OP_TYPE_FUSION_CONV_BN_ADD_RELU = "fusion_conv_bn_add_relu";
 const char *G_OP_TYPE_FUSION_DWCONV_BN_RELU = "fusion_dwconv_bn_relu";
 const char *G_OP_TYPE_FUSION_CONV_BN_RELU = "fusion_conv_bn_relu";
+const char *G_OP_TYPE_FUSION_CONV_BN_LEAKYRELU = "fusion_conv_bn_leakyrelu";
 const char *G_OP_TYPE_FC = "fusion_fc";
 const char *G_OP_TYPE_FUSION_CONV_ADD = "fusion_conv_add";
 const char *G_OP_TYPE_LRN = "lrn";
@@ -45,6 +46,7 @@ const char *G_OP_TYPE_POOL2D = "pool2d";
 const char *G_OP_TYPE_PRIOR_BOX = "prior_box";
 const char *G_OP_TYPE_RELU = "relu";
 const char *G_OP_TYPE_RELU6 = "relu6";
+const char *G_OP_TYPE_LEAKYRELU = "leaky_relu";
 const char *G_OP_TYPE_RESHAPE = "reshape";
 const char *G_OP_TYPE_RESHAPE2 = "reshape2";
 const char *G_OP_TYPE_SIGMOID = "sigmoid";
@@ -57,6 +59,7 @@ const char *G_OP_TYPE_FETCH = "fetch";
 const char *G_OP_TYPE_DEPTHWISE_CONV = "depthwise_conv2d";
 const char *G_OP_TYPE_IM2SEQUENCE = "im2sequence";
 const char *G_OP_TYPE_DROPOUT = "dropout";
+const char *G_OP_TYPE_YOLOBOX = "yolo_box";
 const char *G_OP_TYPE_FUSION_CONV_ADD_BN = "fusion_conv_add_bn";
 const char *G_OP_TYPE_FUSION_POOL_BN = "fusion_pool_bn";
 const char *G_OP_TYPE_FUSION_ELEMENTWISE_ADD_RELU =
@@ -125,10 +128,12 @@ std::unordered_map<
         {G_OP_TYPE_CONV, {{"Input"}, {"Output"}}},
         {G_OP_TYPE_FUSION_DWCONV_BN_RELU, {{"Input"}, {"Out"}}},
         {G_OP_TYPE_FUSION_CONV_BN_RELU, {{"Input"}, {"Out"}}},
+        {G_OP_TYPE_FUSION_CONV_BN_LEAKYRELU, {{"Input"}, {"Out"}}},
         {G_OP_TYPE_PRELU, {{"X", "Alpha"}, {"Out"}}},
         {G_OP_TYPE_FUSION_CONV_ADD, {{"Input"}, {"Out"}}},
         {G_OP_TYPE_RELU, {{"X"}, {"Out"}}},
         {G_OP_TYPE_RELU6, {{"X"}, {"Out"}}},
+        {G_OP_TYPE_LEAKYRELU, {{"X"}, {"Out"}}},
         {G_OP_TYPE_SOFTMAX, {{"X"}, {"Out"}}},
         {G_OP_TYPE_SIGMOID, {{"X"}, {"Out"}}},
         {G_OP_TYPE_MUL, {{"X"}, {"Out"}}},
@@ -164,6 +169,7 @@ std::unordered_map<
         {G_OP_TYPE_FUSION_CONV_ADD_ADD_PRELU, {{"Input"}, {"Out"}}},
         {G_OP_TYPE_IM2SEQUENCE, {{"X"}, {"Out"}}},
         {G_OP_TYPE_DROPOUT, {{"X"}, {"Out"}}},
+        {G_OP_TYPE_YOLOBOX, {{"X"}, {"Boxes", "Scores"}}},
         {G_OP_TYPE_FUSION_CONV_ADD_BN, {{"Input"}, {"Y"}}},
         {G_OP_TYPE_FUSION_POOL_BN, {{"X"}, {"Y"}}},
         {G_OP_TYPE_FUSION_ELEMENTWISE_ADD_RELU, {{"X", "Y"}, {"Out"}}},

@@ -205,6 +205,10 @@ class OpParam {
     return GetVarValue<T>("Scale", inputs, scope);
   }
   template <typename T>
+  static T *ImgSizeFrom(const VariableNameMap &inputs, const Scope &scope) {
+    return GetVarValue<T>("ImgSize", inputs, scope);
+  }
+  template <typename T>
   static T *InputImageFrom(const VariableNameMap &inputs, const Scope &scope) {
     return GetVarValue<T>("Image", inputs, scope);
   }
@@ -328,6 +332,13 @@ class OpParam {
                             const Scope &scope) {
     return GetVarValue<T>("Boxes", outputs, scope);
   }
+
+  template <typename T>
+  static T *OutputScoresFrom(const VariableNameMap &outputs,
+                            const Scope &scope) {
+    return GetVarValue<T>("Scores", outputs, scope);
+  }
+
 
   template <typename T>
   static T *OutputBoxFrom(const VariableNameMap &outputs, const Scope &scope) {
@@ -1099,6 +1110,55 @@ class PriorBoxParam : public OpParam {
   float step_h_;
   float offset_;
   bool min_max_aspect_ratios_order_;
+};
+#endif
+
+#ifdef YOLOBOX_OP
+template <typename Dtype>
+class YoloBoxParam : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
+ public:
+  YoloBoxParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
+                const AttributeMap &attrs, Scope *scope)
+      : OpParam(inputs, outputs, attrs, scope) {
+    input_x_ = InputXFrom<GType>(inputs, *scope);
+    // inputs_ = InputMultiFrom<GType>(inputs, *scope);
+    img_size_ = ImgSizeFrom<GType>(inputs, *scope);
+    output_boxes_ = OutputBoxesFrom<GType>(outputs, *scope);
+    output_scores_ = OutputScoresFrom<GType>(outputs, *scope);
+    downsample_ratio_ = GetAttr<int>("downsample_ratio", attrs);
+    anchors_ = GetAttr<vector<int>>("anchors", attrs);
+    class_num_ = GetAttr<int>("class_num", attrs);
+    conf_thresh_ = GetAttr<float>("conf_thresh", attrs);
+
+  }
+  const GType *Input() const { return input_x_; }
+
+  const GType *ImgSize() const { return img_size_; }
+
+  GType *OutputBoxes() const { return output_boxes_; }
+
+  GType *OutputScores() const { return output_scores_; }
+
+  const int DownsampleRatio() const { return downsample_ratio_; }
+
+  const vector<int> &Anchors() const { return anchors_; }
+
+  const int ClassNum() const { return class_num_; }
+
+  const float ConfThresh() const { return conf_thresh_; }
+
+ private:
+  GType *input_x_;
+  GType *img_size_;
+  GType *output_boxes_;
+  GType *output_scores_;
+  int downsample_ratio_;
+  vector<int> anchors_;
+  int class_num_;
+  float conf_thresh_;
 };
 #endif
 
@@ -2357,6 +2417,62 @@ class FusionConvBNReluParam : public ConvParam<Dtype> {
   GType *input_variance_;
   float epsilon_;
   float momentum_;
+  GType *new_bias_;
+  GType *new_scale_;
+};
+#endif
+
+#ifdef FUSION_CONVBNLEAKYRELU_OP
+template <typename Dtype>
+class FusionConvBNLeakyReluParam : public ConvParam<Dtype> {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
+ public:
+  FusionConvBNLeakyReluParam(const VariableNameMap &inputs,
+                        const VariableNameMap &outputs,
+                        const AttributeMap &attrs, Scope *scope)
+      : ConvParam<Dtype>(inputs, outputs, attrs, scope) {
+    input_bias_ = OpParam::InputBiasFrom<GType>(inputs, *scope);
+    input_mean_ = OpParam::InputMeanFrom<GType>(inputs, *scope);
+    input_scale_ = OpParam::InputScaleFrom<GType>(inputs, *scope);
+    input_variance_ = OpParam::InputVarianceFrom<GType>(inputs, *scope);
+    epsilon_ = OpParam::GetAttr<float>("epsilon", attrs);
+    momentum_ = OpParam::GetAttr<float>("momentum", attrs);
+    alpha_ = OpParam::GetAttr<float>("alpha", attrs);
+    this->output_ = OpParam::OutFrom<GType>(outputs, *scope);
+  }
+
+  const GType *InputBias() const { return input_bias_; }
+
+  const GType *InputMean() const { return input_mean_; }
+
+  const GType *InputScale() const { return input_scale_; }
+
+  const GType *InputVariance() const { return input_variance_; }
+
+  const float &Epsilon() const { return epsilon_; }
+
+  const float &Momentum() const { return momentum_; }
+
+  const float &Alpha() const { return alpha_; }
+
+  void SetNewScale(GType *new_scale) { new_scale_ = new_scale; }
+
+  void SetNewBias(GType *new_bias) { new_bias_ = new_bias; }
+
+  const GType *NewScale() const { return new_scale_; }
+
+  const GType *NewBias() const { return new_bias_; }
+
+ protected:
+  GType *input_bias_;
+  GType *input_mean_;
+  GType *input_scale_;
+  GType *input_variance_;
+  float epsilon_;
+  float momentum_;
+  float alpha_;
   GType *new_bias_;
   GType *new_scale_;
 };

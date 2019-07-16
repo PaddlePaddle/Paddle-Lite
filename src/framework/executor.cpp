@@ -381,6 +381,31 @@ std::vector<T> Executor<Device, T>::Predict(const std::vector<T> &input,
 }
 
 template <typename Device, typename T>
+void Executor<Device, T>::SetInput(int index, const Tensor &input, const std::string &var_name) {
+ 
+  auto *feed_var = program_.scope->Var("feed");
+
+  framework::LoDTensor &target =
+      feed_var->template GetMutable<framework::LoDTensorArray>()->at(index);
+  Tensor tensor = (Tensor) target;
+ 
+  target.ShareDataWith(input);
+  // std::cout << "------------------------------------------------------------" << std::endl;
+
+  // std::vector<Variable *> feed_vars = program_.scope->VarContain("feed");
+  // for (int i = 0; i < feed_vars.size(); i++) {
+  //   framework::LoDTensor &target =
+  //       feed_var->template GetMutable<framework::LoDTensorArray>()->at(i);
+  //   target.ShareDataWith(v[input_size - i - 1]);
+  // }
+  // framework::LoDTensor &target =
+  //     feed_var->template GetMutable<framework::LoDTensorArray>()->at(index);
+
+  // target.Resize(input.dims());
+  // target.ShareDataWith(input);
+}
+
+template <typename Device, typename T>
 void Executor<Device, T>::SetInput(const Tensor &input,
                                    const std::string &var_name) {
   int index = 0;

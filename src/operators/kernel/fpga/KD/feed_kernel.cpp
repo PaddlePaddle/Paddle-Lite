@@ -46,11 +46,23 @@ void FeedKernel<FPGA, float>::Compute(const FeedParam<FPGA>& param) {
 
   int col = param.Col();
   auto input = const_cast<LoDTensor*>(&param.InputX()->at(col));
+  if (input->dims().size() != 4) {
+    float* data = param.Out()->mutable_data<float>();
+    data[0] = 608;
+    data[1] = 608;
+    // data[0] = 3040;
+    // data[1] = 4056;
+    auto out = param.Out()->zynqmpTensor();
+    InputParam& input_param = pe.param();
+    input_param.output = out;
+    // std::cout << "FeedKernel Compute dim not equal 4" << input->dims().size() << std::endl;
+    return;
+  }
   InputParam& input_param = pe.param();
   input->mutable_data<float>();
   zynqmp::Tensor* input_tensor = input->zynqmpTensor();
   input_param.input = input_tensor;
-  param.Out()->Resize(input->dims());
+//  param.Out()->Resize(input->dims());
   param.Out()->mutable_data<half>();
   auto out = param.Out()->zynqmpTensor();
   input_param.output = out;
