@@ -57,22 +57,22 @@ function run_gen_code_test {
     local gen_code_file_path="./lite/gen_code/${gen_code_file_path}"
     local adb_work_dir="/data/local/tmp"
 
-    # 1. build test_cxx_api_lite
-    make test_cxx_api_lite -j$NUM_CORES_FOR_COMPILE
+    # 1. build test_cxx_api
+    make test_cxx_api -j$NUM_CORES_FOR_COMPILE
 
     # 2. run test_cxx_api_lite in emulator to get opt model 
-    local test_cxx_api_lite_path=$(find ./lite -name test_cxx_api_lite)
+    local test_cxx_api_lite_path=$(find ./lite -name test_cxx_api)
     adb -s emulator-${port} push "./third_party/install/lite_naive_model" ${adb_work_dir}
     adb -s emulator-${port} push ${test_cxx_api_lite_path} ${adb_work_dir}
-    adb -s emulator-${port} shell "${adb_work_dir}/test_cxx_api_lite --model_dir=${adb_work_dir}/lite_naive_model --optimized_model=${adb_work_dir}/lite_naive_model_opt"
+    adb -s emulator-${port} shell "${adb_work_dir}/test_cxx_api --model_dir=${adb_work_dir}/lite_naive_model --optimized_model=${adb_work_dir}/lite_naive_model_opt"
 
-    # 3. build test_gen_code_lite
-    make test_gen_code_lite -j$NUM_CORES_FOR_COMPILE
+    # 3. build test_gen_code
+    make test_gen_code -j$NUM_CORES_FOR_COMPILE
 
     # 4. run test_gen_code_lite in emulator to get __generated_code__.cc
-    local test_gen_code_lite_path=$(find ./lite -name test_gen_code_lite)
+    local test_gen_code_lite_path=$(find ./lite -name test_gen_code)
     adb -s emulator-${port} push ${test_gen_code_lite_path} ${adb_work_dir}
-    adb -s emulator-${port} shell "${adb_work_dir}/test_gen_code_lite --optimized_model=${adb_work_dir}/lite_naive_model_opt --generated_code_file=${adb_work_dir}/${gen_code_file_name}"
+    adb -s emulator-${port} shell "${adb_work_dir}/test_gen_code --optimized_model=${adb_work_dir}/lite_naive_model_opt --generated_code_file=${adb_work_dir}/${gen_code_file_name}"
 
     # 5. pull __generated_code__.cc down and mv to build real path
     adb -s emulator-${port} pull "${adb_work_dir}/${gen_code_file_name}" .
@@ -120,7 +120,7 @@ function build_opencl {
     build $TESTS_FILE
 
     # test publish inference lib
-    make publish_inference_lite
+    make publish_inference
 }
 
 # This method is only called in CI.
@@ -129,10 +129,10 @@ function cmake_x86_for_CI {
     cmake ..  -DWITH_GPU=OFF -DWITH_MKLDNN=OFF -DLITE_WITH_X86=ON ${common_flags} -DLITE_WITH_PROFILE=ON -DWITH_MKL=OFF
 
     # Compile and execute the gen_code related test, so it will generate some code, and make the compilation reasonable.
-    # make test_gen_code_lite -j$NUM_CORES_FOR_COMPILE
-    # make test_cxx_api_lite -j$NUM_CORES_FOR_COMPILE
-    # ctest -R test_cxx_api_lite
-    # ctest -R test_gen_code_lite
+    # make test_gen_code -j$NUM_CORES_FOR_COMPILE
+    # make test_cxx_api -j$NUM_CORES_FOR_COMPILE
+    # ctest -R test_cxx_api
+    # ctest -R test_gen_code
     # make test_generated_code -j$NUM_CORES_FOR_COMPILE
 }
 
@@ -161,17 +161,17 @@ function build {
     make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
 
     # test publish inference lib
-    # make publish_inference_lite
+    # make publish_inference
 }
 
 # It will eagerly test all lite related unittests.
 function test_server {
     # Due to the missing of x86 kernels, we skip the following tests temporarily.
     # TODO(xxx) clear the skip list latter
-    local skip_list=("test_paddle_api_lite" "test_cxx_api_lite" "test_googlenet_lite"
+    local skip_list=("test_paddle_api" "test_cxx_api" "test_googlenet"
                      "test_mobilenetv1_lite_x86" "test_mobilenetv2_lite_x86"
-                     "test_inceptionv4_lite_x86" "test_light_api_lite"
-                     "test_apis_lite" "test_model_bin"
+                     "test_inceptionv4_lite_x86" "test_light_api"
+                     "test_apis" "test_model_bin"
                     )
     local to_skip=0
     for _test in $(cat $TESTS_FILE); do
@@ -207,10 +207,10 @@ function build_test_train {
     prepare_workspace # fake an empty __generated_code__.cc to pass cmake.
     cmake .. -DWITH_LITE=ON -DWITH_GPU=OFF -DWITH_PYTHON=ON -DLITE_WITH_X86=ON -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF -DWITH_TESTING=ON -DWITH_MKL=OFF
 
-    make test_gen_code_lite -j$NUM_CORES_FOR_COMPILE
-    make test_cxx_api_lite -j$NUM_CORES_FOR_COMPILE
-    ctest -R test_cxx_api_lite
-    ctest -R test_gen_code_lite
+    make test_gen_code -j$NUM_CORES_FOR_COMPILE
+    make test_cxx_api -j$NUM_CORES_FOR_COMPILE
+    ctest -R test_cxx_api
+    ctest -R test_gen_code
     make test_generated_code -j$NUM_CORES_FOR_COMPILE
 
     make -j$NUM_CORES_FOR_COMPILE
@@ -236,7 +236,7 @@ function test_arm_android {
     echo "test name: ${test_name}"
     adb_work_dir="/data/local/tmp"
 
-    skip_list=("test_model_parser_lite" "test_mobilenetv1_lite" "test_mobilenetv2_lite" "test_resnet50_lite" "test_inceptionv4_lite" "test_light_api_lite" "test_apis_lite" "test_paddle_api_lite" "test_cxx_api_lite" "test_gen_code_lite")
+    skip_list=("test_model_parser" "test_mobilenetv1" "test_mobilenetv2" "test_resnet50" "test_inceptionv4" "test_light_api" "test_apis" "test_paddle_api" "test_cxx_api" "test_gen_code")
     for skip_name in ${skip_list[@]} ; do
         [[ $skip_name =~ (^|[[:space:]])$test_name($|[[:space:]]) ]] && echo "skip $test_name" && return
     done
@@ -250,7 +250,7 @@ function test_arm_android {
 # test the inference high level api
 function test_arm_api {
     local port=$1
-    local test_name="test_paddle_api_lite"
+    local test_name="test_paddle_api"
 
     make $test_name -j$NUM_CORES_FOR_COMPILE
 
@@ -369,7 +369,7 @@ function build_arm {
     build $TESTS_FILE
 
     # test publish inference lib
-    make publish_inference_lite
+    make publish_inference
 }
 
 # $1: ARM_TARGET_OS in "android" , "armlinux"
@@ -537,13 +537,13 @@ function test_arm_predict_apis {
     local port=$1
     local workspace=$2
     local naive_model_path=$3
-    local api_test_path=$(find . -name "test_apis_lite")
+    local api_test_path=$(find . -name "test_apis")
     # the model is pushed to ./lite_naive_model
     adb -s emulator-${port} push ${naive_model_path} ${workspace}
     adb -s emulator-${port} push $api_test_path ${workspace}
 
     # test cxx_api first to store the optimized model.
-    adb -s emulator-${port} shell ./test_apis_lite --model_dir ./lite_naive_model --optimized_model ./lite_naive_model_opt
+    adb -s emulator-${port} shell ./test_apis --model_dir ./lite_naive_model --optimized_model ./lite_naive_model_opt
 }
 
 
@@ -675,19 +675,19 @@ function main {
                 shift
                 ;;
             build_test_arm_model_mobilenetv1)
-                build_test_arm_subtask_model test_mobilenetv1_lite mobilenet_v1
+                build_test_arm_subtask_model test_mobilenetv1 mobilenet_v1
                 shift
                 ;;
             build_test_arm_model_mobilenetv2)
-                build_test_arm_subtask_model test_mobilenetv2_lite mobilenet_v2_relu
+                build_test_arm_subtask_model test_mobilenetv2 mobilenet_v2_relu
                 shift
                 ;;
             build_test_arm_model_resnet50)
-                build_test_arm_subtask_model test_resnet50_lite resnet50
+                build_test_arm_subtask_model test_resnet50 resnet50
                 shift
                 ;;
             build_test_arm_model_inceptionv4)
-                build_test_arm_subtask_model test_inceptionv4_lite inception_v4_simple
+                build_test_arm_subtask_model test_inceptionv4 inception_v4_simple
                 shift
                 ;;
             check_style)

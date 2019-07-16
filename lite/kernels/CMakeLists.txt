@@ -1,6 +1,6 @@
 message(STATUS "add lite kernels")
 
-set(lite_kernel_deps type_system kernel_lite op_lite op_registry_lite context_lite ${tensor_lite} CACHE INTERNAL "" FORCE)
+set(lite_kernel_deps type_system kernel op op_registry context ${tensor} CACHE INTERNAL "" FORCE)
 
 add_subdirectory(host)
 add_subdirectory(arm)

@@ -1,1 +1,1 @@
-lite_cc_library(cpp_op_desc_lite SRCS op_desc.cc DEPS any_lite)
+lite_cc_library(cpp_op_desc SRCS op_desc.cc DEPS any)

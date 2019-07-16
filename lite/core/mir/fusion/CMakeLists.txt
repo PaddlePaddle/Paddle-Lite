@@ -29,4 +29,4 @@ endif()
 # TODO(Superjomn) Enable it latter
 # NOTE disabled for the proto_desc is not valid yet.
 # lite_cc_test(test_lite_conv_bn_fuse SRCS conv_bn_fuse_pass_test.cc
-#    DEPS elementwise_ops_lite batch_norm_op_lite conv_op_lite proto_desc compatible_pb_lite program_lite mir_pass mir_pass_manager pattern_matcher_high_api)
+#    DEPS elementwise_ops batch_norm_op conv_op proto_desc compatible_pb program mir_pass mir_pass_manager pattern_matcher_high_api)
