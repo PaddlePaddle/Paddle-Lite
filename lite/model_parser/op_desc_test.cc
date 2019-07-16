@@ -15,50 +15,62 @@
 #include "lite/model_parser/cpp/op_desc.h"
 #include <gtest/gtest.h>
 #include "lite/model_parser/compatible_pb.h"
+#include "lite/model_parser/naive_buffer/op_desc.h"
 #include "lite/model_parser/pb/op_desc.h"
 
 namespace paddle {
 namespace lite {
 
-template <typename OpDesc>
-void TestX() {
-  OpDesc desc;
+using pt_desc_type = naive_buffer::proto::OpDesc;
+using pt_table_type = naive_buffer::BinaryTable;
 
-  desc.SetInput("X", {"a", "b"});
-  auto X = desc.Input("X");
+template <typename OpDescType>
+void TestX(OpDescType* desc) {
+  desc->SetInput("X", {"a", "b"});
+  auto X = desc->Input("X");
   ASSERT_EQ(X.size(), 2UL);
   ASSERT_EQ(X[0], "a");
   ASSERT_EQ(X[1], "b");
 
-  desc.SetOutput("Y", {"c", "d"});
-  auto Y = desc.Output("Y");
+  desc->SetOutput("Y", {"c", "d"});
+  auto Y = desc->Output("Y");
   ASSERT_EQ(Y.size(), 2UL);
   ASSERT_EQ(Y[0], "c");
   ASSERT_EQ(Y[1], "d");
 
-  desc.template SetAttr<int32_t>("aint", 100);
-  ASSERT_TRUE(desc.HasAttr("aint"));
-  ASSERT_FALSE(desc.HasAttr("afloat"));
-  ASSERT_EQ(desc.template GetAttr<int32_t>("aint"), 100);
+  desc->template SetAttr<int32_t>("aint", 100);
+  ASSERT_TRUE(desc->HasAttr("aint"));
+  ASSERT_FALSE(desc->HasAttr("afloat"));
+  ASSERT_EQ(desc->template GetAttr<int32_t>("aint"), 100);
 }
 
 TEST(OpDesc, Basic) {
-  TestX<pb::OpDesc>();
-  TestX<cpp::OpDesc>();
+  // pb OpDesc
+  pb::OpDesc pb_desc;
+  TestX<pb::OpDesc>(&pb_desc);
+
+  // cpp OpDesc
+  cpp::OpDesc cpp_desc;
+  TestX<cpp::OpDesc>(&cpp_desc);
+
+  // naive buffer OpDesc
+  pt_table_type table;
+  pt_desc_type pt_desc(&table);
+  naive_buffer::OpDesc nb_desc(&pt_desc);
+  TestX<naive_buffer::OpDesc>(&nb_desc);
 }
 
-TEST(OpDesc, CppToPb) {
+template <typename OpDescType>
+void TestCppToAny(OpDescType* any_desc) {
   cpp::OpDesc desc;
 
   desc.SetInput("X", {"a", "b"});
   desc.SetOutput("Y", {"c", "d"});
   desc.template SetAttr<int32_t>("aint", 100);
 
-  pb::OpDesc pb_desc;
-
-  TransformOpDescCppToPb(desc, &pb_desc);
+  TransformOpDescCppToAny(desc, any_desc);
   {
-    auto& desc = pb_desc;
+    auto& desc = *any_desc;
     auto X = desc.Input("X");
     ASSERT_EQ(X.size(), 2UL);
     ASSERT_EQ(X[0], "a");
@@ -75,16 +87,27 @@ TEST(OpDesc, CppToPb) {
   }
 }
 
-TEST(OpDesc, PbToCpp) {
-  pb::OpDesc desc;
+TEST(OpDesc, CppToAny) {
+  // pb OpDesc
+  pb::OpDesc pb_desc;
+  TestCppToAny<pb::OpDesc>(&pb_desc);
 
-  desc.SetInput("X", {"a", "b"});
-  desc.SetOutput("Y", {"c", "d"});
-  desc.template SetAttr<int32_t>("aint", 100);
+  // naive buffer OpDesc
+  pt_table_type table;
+  pt_desc_type pt_desc(&table);
+  naive_buffer::OpDesc nb_desc(&pt_desc);
+  TestCppToAny<naive_buffer::OpDesc>(&nb_desc);
+}
+
+template <typename OpDescType>
+void TestAnyToCpp(OpDescType* desc) {
+  desc->SetInput("X", {"a", "b"});
+  desc->SetOutput("Y", {"c", "d"});
+  desc->template SetAttr<int32_t>("aint", 100);
 
   cpp::OpDesc cpp_desc;
 
-  TransformOpDescPbToCpp(desc, &cpp_desc);
+  TransformOpDescAnyToCpp(*desc, &cpp_desc);
   {
     auto& desc = cpp_desc;
     auto X = desc.Input("X");
@@ -101,6 +124,18 @@ TEST(OpDesc, PbToCpp) {
     ASSERT_FALSE(desc.HasAttr("afloat"));
     ASSERT_EQ(desc.template GetAttr<int32_t>("aint"), 100);
   }
+}
+
+TEST(OpDesc, AnyToCpp) {
+  // pb OpDesc
+  pb::OpDesc pb_desc;
+  TestAnyToCpp<pb::OpDesc>(&pb_desc);
+
+  // naive buffer OpDesc
+  pt_table_type table;
+  pt_desc_type pt_desc(&table);
+  naive_buffer::OpDesc nb_desc(&pt_desc);
+  TestAnyToCpp<naive_buffer::OpDesc>(&nb_desc);
 }
 
 }  // namespace lite

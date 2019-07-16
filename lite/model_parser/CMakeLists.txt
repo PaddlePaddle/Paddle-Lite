@@ -1,3 +1,7 @@
+add_subdirectory(pb)
+add_subdirectory(cpp)
+add_subdirectory(naive_buffer)
+
 #lite_cc_library(runtime_lite SRCS runtime.cc)
 
 #TODO(Superjomn) enable it again.
@@ -11,17 +15,14 @@ if(NOT LITE_ON_MOBILE)
 endif()
 
 lite_cc_library(compatible_pb_lite SRCS compatible_pb.cc
-  DEPS op_desc_lite framework_proto_lite var_desc_lite cpp_op_desc_lite)
+  DEPS op_desc_lite framework_proto_lite var_desc_lite cpp_op_desc_lite nb_op_desc_lite)
 
 lite_cc_library(model_parser_lite SRCS model_parser.cc DEPS
     variable_lite scope_lite ${tensor_lite} scope_lite
     target_wrapper_host
     compatible_pb_lite
     memory_lite
+    ${naive_wrapper_lite}
     CUDA_DEPS target_wrapper_cuda)
 
-lite_cc_test(test_op_desc_lite SRCS op_desc_test.cc DEPS cpp_op_desc_lite op_desc_lite compatible_pb_lite)
-
-add_subdirectory(pb)
-add_subdirectory(cpp)
-add_subdirectory(naive_buffer)
+lite_cc_test(test_op_desc_lite SRCS op_desc_test.cc DEPS cpp_op_desc_lite op_desc_lite nb_op_desc_lite compatible_pb_lite)

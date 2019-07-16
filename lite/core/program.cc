@@ -14,6 +14,8 @@
 
 #include "lite/core/program.h"
 #include "lite/core/optimizer.h"
+#include "lite/model_parser/pb/op_desc.h"
+#include "lite/model_parser/pb/var_desc.h"
 
 namespace paddle {
 namespace lite {
@@ -40,7 +42,7 @@ std::string RuntimeProgram::SerializeProgram(
   program_dummy.mutable_blocks(0)->clear_ops();
   for (auto &node : instructions_) {
     pb::OpDesc pb_desc;
-    TransformOpDescCppToPb(*node.op()->op_info(), &pb_desc);
+    TransformOpDescCppToAny(*node.op()->op_info(), &pb_desc);
     pb_desc.SetAttr(kKernelTypeAttr, node.kernel()->SerializedKernelType());
     // append new opdesc
     *program_dummy.mutable_blocks(0)->add_ops() = *pb_desc.Proto();
@@ -67,9 +69,9 @@ void Program::Build(const framework::proto::ProgramDesc &program) {
 
   // Create operators.
   for (const auto &proto_op_desc : program.blocks(0).ops()) {
-    lite::OpDesc op_desc_dummy(proto_op_desc);
+    lite::pb::OpDesc op_desc_dummy(proto_op_desc);
     cpp::OpDesc op_desc;
-    TransformOpDescPbToCpp(op_desc_dummy, &op_desc);
+    TransformOpDescAnyToCpp(op_desc_dummy, &op_desc);
     auto op_type = op_desc.Type();
     // if (op_type == "feed" || op_type == "fetch") continue;
     VLOG(4) << "create Op [" << op_type << "]";
@@ -92,7 +94,7 @@ void Program::PrepareWorkspace(const framework::proto::ProgramDesc &program) {
   tmp_vars_.push_back("fetch");
   CHECK(!program.blocks().empty());
   for (auto proto_var_desc : program.blocks(0).vars()) {
-    lite::VarDesc var_desc(proto_var_desc);
+    lite::pb::VarDesc var_desc(proto_var_desc);
     if (!var_desc.Persistable()) {
       tmp_vars_.push_back(var_desc.Name());
       exec_scope_->Var(var_desc.Name());

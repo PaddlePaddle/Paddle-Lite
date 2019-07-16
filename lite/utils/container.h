@@ -33,7 +33,12 @@ class OrderedMap {
     order_[key] = list_.size() - 1;
   }
 
-  Elem& Get(const std::string& key) {
+  const Elem& Get(const std::string& key) const {
+    CHECK(order_.count(key)) << "No key " << key << " found";
+    return list_[order_.at(key)];
+  }
+
+  Elem& GetMutable(const std::string& key) {
     CHECK(order_.count(key)) << "No key " << key << " found";
     return list_[order_[key]];
   }

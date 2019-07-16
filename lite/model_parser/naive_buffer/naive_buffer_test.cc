@@ -65,11 +65,13 @@ class NBTestMsg0 : public StructBuilder {
   }
 };
 
+using enum_builder = EnumBuilder<Type>;
 // Message structure composed of NBTestMsg0
 class NBTestMsg1 : public StructBuilder {
  public:
   explicit NBTestMsg1(BinaryTable* table) : StructBuilder(table) {
     NewInt32("int0");
+    New<enum_builder>("enum0");
     New<NBTestMsg0>("msg0");
   }
 };
@@ -82,22 +84,22 @@ const char* str0 = "sdfalfjasngasdghsadfjafas;fj";
 const char* str1 = "sdlkfjasdfafjcsasafasskdfjh  fsadfsafj;fj";
 
 void SetMsg0(NBTestMsg0* msg0) {
-  msg0->GetField<Int32Builder>("int0")->set(int0);
-  msg0->GetField<Int32Builder>("int1")->set(int1);
-  msg0->GetField<Int32Builder>("int2")->set(int2);
-  msg0->GetField<Float32Builder>("float")->set(float0);
-  msg0->GetField<StringBuilder>("str0")->set(str0);
-  msg0->GetField<StringBuilder>("str1")->set(str1);
+  msg0->GetMutableField<Int32Builder>("int0")->set(int0);
+  msg0->GetMutableField<Int32Builder>("int1")->set(int1);
+  msg0->GetMutableField<Int32Builder>("int2")->set(int2);
+  msg0->GetMutableField<Float32Builder>("float")->set(float0);
+  msg0->GetMutableField<StringBuilder>("str0")->set(str0);
+  msg0->GetMutableField<StringBuilder>("str1")->set(str1);
   msg0->Save();
 }
 
-void TestMsg0(NBTestMsg0* msg0) {
-  ASSERT_EQ(msg0->GetField<Int32Builder>("int0")->data(), int0);
-  ASSERT_EQ(msg0->GetField<Int32Builder>("int1")->data(), int1);
-  ASSERT_EQ(msg0->GetField<Int32Builder>("int2")->data(), int2);
-  EXPECT_NEAR(msg0->GetField<Float32Builder>("float")->data(), float0, 1e-5);
-  ASSERT_EQ(msg0->GetField<StringBuilder>("str0")->data(), str0);
-  ASSERT_EQ(msg0->GetField<StringBuilder>("str1")->data(), str1);
+void TestMsg0(const NBTestMsg0& msg0) {
+  ASSERT_EQ(msg0.GetField<Int32Builder>("int0").data(), int0);
+  ASSERT_EQ(msg0.GetField<Int32Builder>("int1").data(), int1);
+  ASSERT_EQ(msg0.GetField<Int32Builder>("int2").data(), int2);
+  EXPECT_NEAR(msg0.GetField<Float32Builder>("float").data(), float0, 1e-5);
+  ASSERT_EQ(msg0.GetField<StringBuilder>("str0").data(), str0);
+  ASSERT_EQ(msg0.GetField<StringBuilder>("str1").data(), str1);
 }
 
 TEST(NBTestMsg, msg0) {
@@ -113,18 +115,22 @@ TEST(NBTestMsg, msg0) {
   table1.LoadFromFile("1.bf");
   NBTestMsg0 msg1(&table1);
   msg1.Load();
-  TestMsg0(&msg1);
+  TestMsg0(msg1);
 }
 
 TEST(NBTestMsg, msg1) {
   BinaryTable table;
   NBTestMsg1 msg(&table);
 
-  auto* int0 = msg.GetField<Int32Builder>("int0");
-  auto* msg0 = msg.GetField<NBTestMsg0>("msg0");
+  auto* int0 = msg.GetMutableField<Int32Builder>("int0");
+  auto* enum0 = msg.GetMutableField<enum_builder>("enum0");
+  auto* msg0 = msg.GetMutableField<NBTestMsg0>("msg0");
 
   int0->set(2008);
   int0->Save();
+
+  enum0->set(Type::_int64);
+  enum0->Save();
 
   SetMsg0(msg0);
 
@@ -136,7 +142,8 @@ TEST(NBTestMsg, msg1) {
 
   msg1.Load();
 
-  ASSERT_EQ(msg.GetField<Int32Builder>("int0")->data(), 2008);
+  ASSERT_EQ(msg.GetField<Int32Builder>("int0").data(), 2008);
+  ASSERT_EQ(msg.GetField<enum_builder>("enum0").data(), Type::_int64);
   TestMsg0(msg1.GetField<NBTestMsg0>("msg0"));
 }
 
@@ -162,7 +169,7 @@ TEST(ListBuilder, basic) {
   li1.Load();
 
   for (int i = 0; i < num_elems; i++) {
-    ASSERT_EQ(li1.Get(i)->data(), "elem-" + std::to_string(i));
+    ASSERT_EQ(li1.Get(i).data(), "elem-" + std::to_string(i));
   }
 }
 
