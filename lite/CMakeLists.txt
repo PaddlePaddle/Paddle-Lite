@@ -259,7 +259,7 @@ if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM)
     message(STATUS "publish inference lib to ${INFER_LITE_PUBLISH_ROOT}")
 
     # The final target for publish lite lib
-    add_custom_target(publish_inference_lite)
+    add_custom_target(publish_inference)
 
     # add cxx lib
     add_custom_target(publish_inference_cxx_lib ${TARGET}
@@ -277,7 +277,7 @@ if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM)
     add_dependencies(publish_inference_cxx_lib paddle_code_generator)
     add_dependencies(publish_inference_cxx_lib bundle_full_api)
     add_dependencies(publish_inference_cxx_lib bundle_light_api)
-    add_dependencies(publish_inference_lite publish_inference_cxx_lib)
+    add_dependencies(publish_inference publish_inference_cxx_lib)
 
     if (LITE_WITH_JAVA)
     # add java lib
@@ -289,7 +289,7 @@ if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM)
             COMMAND cp -r "${CMAKE_SOURCE_DIR}/lite/api/android/jni/src" "${INFER_LITE_PUBLISH_ROOT}/java"
         )
         add_dependencies(publish_inference_java_lib paddle_lite_jni PaddlePredictor)
-        add_dependencies(publish_inference_lite publish_inference_java_lib)
+        add_dependencies(publish_inference publish_inference_java_lib)
     endif()
 
     if ((ARM_TARGET_OS STREQUAL "android") AND (NOT LITE_WITH_OPENCL) AND
