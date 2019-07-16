@@ -23,6 +23,8 @@
 #include <vector>
 #include "lite/api/cxx_api.h"
 #include "lite/core/tensor.h"
+#include "lite/model_parser/pb/op_desc.h"
+#include "lite/model_parser/pb/var_desc.h"
 #include "lite/utils/string.h"
 
 DEFINE_string(model_dir, "", "Model dir path");
@@ -61,7 +63,7 @@ struct DebugConfig {
   int tensor_output_length;
   int arm_thread_num;
 
-  std::unordered_map<std::string, lite::VarDesc> var_descs;
+  std::unordered_map<std::string, lite::pb::VarDesc> var_descs;
   std::vector<std::vector<std::string>> input_values;
 };
 
@@ -85,7 +87,7 @@ void CollectFeedVarsInfo(std::unordered_map<int, std::string>* feed_vars_info,
                          const framework::proto::ProgramDesc& desc) {
   CHECK(feed_vars_info);
   for (const auto& proto_op_desc : desc.blocks(0).ops()) {
-    lite::OpDesc op_desc(proto_op_desc);
+    lite::pb::OpDesc op_desc(proto_op_desc);
     auto op_type = op_desc.Type();
     if (op_type == "feed") {
       (*feed_vars_info)
@@ -239,13 +241,14 @@ void CollectAndDumpTopoInfo(const std::vector<Instruction>& instructions,
   os.close();
 }
 
-void CollectVarDescs(std::unordered_map<std::string, lite::VarDesc>* var_descs,
-                     const framework::proto::ProgramDesc& desc) {
+void CollectVarDescs(
+    std::unordered_map<std::string, lite::pb::VarDesc>* var_descs,
+    const framework::proto::ProgramDesc& desc) {
   CHECK(var_descs);
   CHECK(!desc.blocks().empty());
   std::unordered_set<std::string> weights;
   for (auto proto_var_desc : desc.blocks(0).vars()) {
-    lite::VarDesc var_desc(proto_var_desc);
+    lite::pb::VarDesc var_desc(proto_var_desc);
     (*var_descs).emplace(var_desc.Name(), std::move(var_desc));
   }
 }

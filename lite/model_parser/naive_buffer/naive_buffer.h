@@ -31,8 +31,8 @@
 namespace paddle {
 namespace lite {
 namespace naive_buffer {
-using core::Type;
 
+using core::Type;
 using byte_t = uint8_t;
 
 /*
@@ -72,9 +72,6 @@ struct BinaryTable {
 class FieldBuilder {
   BinaryTable* table_{};
 
- protected:
-  BinaryTable* table() { return table_; }
-
  public:
   explicit FieldBuilder(BinaryTable* table) : table_(table) {}
 
@@ -84,6 +81,8 @@ class FieldBuilder {
   virtual void Load() = 0;
 
   virtual Type type() const = 0;
+
+  BinaryTable* table() { return table_; }
 
   virtual ~FieldBuilder() = default;
 };
@@ -99,6 +98,8 @@ class PrimaryBuilder : public FieldBuilder {
   using value_type = Primary;
 
   explicit PrimaryBuilder(BinaryTable* table) : FieldBuilder(table) {}
+  PrimaryBuilder(BinaryTable* table, const Primary& val)
+      : FieldBuilder(table), data_(val) {}
 
   /// Set data.
   void set(Primary x) { data_ = x; }
@@ -116,17 +117,50 @@ class PrimaryBuilder : public FieldBuilder {
   ~PrimaryBuilder() = default;
 };
 
+using BoolBuilder = PrimaryBuilder<bool>;
+using CharBuilder = PrimaryBuilder<char>;
 using Int32Builder = PrimaryBuilder<int32_t>;
+using UInt32Builder = PrimaryBuilder<uint32_t>;
 using Int64Builder = PrimaryBuilder<int64_t>;
+using UInt64Builder = PrimaryBuilder<uint64_t>;
 using Float32Builder = PrimaryBuilder<float>;
 using Float64Builder = PrimaryBuilder<double>;
-using BoolBuilder = PrimaryBuilder<bool>;
+
+/*
+ * Builder for all the primary types. int32, float, bool and so on.
+ */
+template <typename EnumType>
+class EnumBuilder : public FieldBuilder {
+  EnumType data_;
+
+ public:
+  using value_type = int32_t;
+
+  explicit EnumBuilder(BinaryTable* table) : FieldBuilder(table) {}
+
+  /// Set data.
+  void set(EnumType x) { data_ = x; }
+
+  EnumType data() const { return data_; }
+
+  /// Save information to the corresponding BinaryTable.
+  void Save() override;
+
+  /// Load information from the corresponding BinaryTable.
+  void Load() override;
+
+  ~EnumBuilder() = default;
+
+  Type type() const override { return Type::_enum; }
+};
 
 class StringBuilder : public FieldBuilder {
   std::string data_;
 
  public:
   explicit StringBuilder(BinaryTable* table) : FieldBuilder(table) {}
+  StringBuilder(BinaryTable* table, const std::string& val)
+      : FieldBuilder(table), data_(val) {}
 
   void set(const std::string& x) { data_ = x; }
 
@@ -155,6 +189,8 @@ class StringBuilder : public FieldBuilder {
  * One can retrive a field with the specific field name.
  * e.g.
  * GetField<Int32Builder>("age") will get the age field declared in `MyStruct`
+ * GetMutableField<Int32Builder>("age") will get the mutable age field declared
+ * in `MyStruct`
  */
 class StructBuilder : public FieldBuilder {
   OrderedMap<std::unique_ptr<FieldBuilder>> field_builders_;
@@ -162,14 +198,20 @@ class StructBuilder : public FieldBuilder {
  public:
   explicit StructBuilder(BinaryTable* table) : FieldBuilder(table) {}
 
-  /// Create a Int32 field called `name`.
-  PrimaryBuilder<int32_t>* NewInt32(const std::string& name);
-
-  /// Create a Int64 field called `name`.
-  PrimaryBuilder<int64_t>* NewInt64(const std::string& name);
+#define NEW_PRIMARY_BUILDER_DECLARE(T, name__, dft_val__) \
+  PrimaryBuilder<T>* New##name__(const std::string& name, T val = dft_val__);
+  NEW_PRIMARY_BUILDER_DECLARE(bool, Bool, false);
+  NEW_PRIMARY_BUILDER_DECLARE(char, Char, 0);
+  NEW_PRIMARY_BUILDER_DECLARE(int32_t, Int32, 0);
+  NEW_PRIMARY_BUILDER_DECLARE(uint32_t, UInt32, 0);
+  NEW_PRIMARY_BUILDER_DECLARE(int64_t, Int64, 0);
+  NEW_PRIMARY_BUILDER_DECLARE(uint64_t, UInt64, 0);
+  NEW_PRIMARY_BUILDER_DECLARE(float, Float32, 0.0);
+  NEW_PRIMARY_BUILDER_DECLARE(double, Float64, 0.0);
+#undef NEW_PRIMARY_BUILDER_DECLARE
 
   /// Create a string field called `name`.
-  StringBuilder* NewStr(const std::string& name);
+  StringBuilder* NewStr(const std::string& name, const std::string& val = "");
 
   /// Create a user-defined field, this can build a complex composed struct.
   template <typename CustomBuilder>
@@ -187,8 +229,15 @@ class StructBuilder : public FieldBuilder {
 
   /// Get a field by `name`.
   template <typename T>
-  T* GetField(const std::string& name) {
+  const T& GetField(const std::string& name) const {
     auto& builder = field_builders_.Get(name);
+    return *(static_cast<const T*>(builder.get()));
+  }
+
+  /// Get a mutable field by `name`.
+  template <typename T>
+  T* GetMutableField(const std::string& name) {
+    auto& builder = field_builders_.GetMutable(name);
     return static_cast<T*>(builder.get());
   }
 };
@@ -214,9 +263,26 @@ class ListBuilder : public FieldBuilder {
   }
 
   // Get i-th element.
-  Builder* Get(int i) {
+  const Builder& Get(int i) const {
+    CHECK_LT(i, builders_.size());
+    return builders_[i];
+  }
+
+  Builder* GetMutable(int i) {
     CHECK_LT(i, builders_.size());
     return &builders_[i];
+  }
+
+  typename std::vector<Builder>::iterator begin() { return builders_.begin(); }
+
+  typename std::vector<Builder>::iterator end() { return builders_.end(); }
+
+  typename std::vector<Builder>::const_iterator begin() const {
+    return builders_.begin();
+  }
+
+  typename std::vector<Builder>::const_iterator end() const {
+    return builders_.end();
   }
 
   // Get element type.
@@ -230,6 +296,9 @@ class ListBuilder : public FieldBuilder {
 
   /// Number of elements.
   size_t size() const { return builders_.size(); }
+
+  /// clear builders
+  void Clear() { builders_.clear(); }
 };
 
 template <typename Builder>
@@ -275,11 +344,29 @@ void PrimaryBuilder<Primary>::Load() {
   table()->Consume(sizeof(value_type));
 }
 
+template <typename EnumType>
+void EnumBuilder<EnumType>::Save() {
+  value_type holder = static_cast<value_type>(data_);
+  table()->Require(sizeof(value_type));
+  memcpy(table()->cursor(),
+         reinterpret_cast<byte_t*>(&holder),
+         sizeof(value_type));
+  table()->Consume(sizeof(value_type));
+}
+
+template <typename EnumType>
+void EnumBuilder<EnumType>::Load() {
+  value_type holder;
+  memcpy(&holder, table()->cursor(), sizeof(value_type));
+  table()->Consume(sizeof(value_type));
+  data_ = static_cast<EnumType>(holder);
+}
+
 template <typename CustomBuilder>
 CustomBuilder* StructBuilder::New(const std::string& name) {
   using type = CustomBuilder;
   field_builders_.Set(name, std::unique_ptr<CustomBuilder>(new type(table())));
-  return static_cast<type*>(field_builders_.Get(name).get());
+  return static_cast<type*>(field_builders_.GetMutable(name).get());
 }
 
 }  // namespace naive_buffer

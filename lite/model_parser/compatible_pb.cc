@@ -19,81 +19,88 @@
 namespace paddle {
 namespace lite {
 
-void InputsPbToCpp(const pb::OpDesc &pb_desc, cpp::OpDesc *cpp_desc) {
-  for (const std::string &param : pb_desc.InputArgumentNames()) {
-    cpp_desc->SetInput(param, pb_desc.Input(param));
+template <typename OpDescType>
+void InputsAnyToCpp(const OpDescType &any_desc, cpp::OpDesc *cpp_desc) {
+  for (const std::string &param : any_desc.InputArgumentNames()) {
+    cpp_desc->SetInput(param, any_desc.Input(param));
   }
 }
 
-void InputsCppToPb(const cpp::OpDesc &cpp_desc, pb::OpDesc *pb_desc) {
+template <typename OpDescType>
+void InputsCppToAny(const cpp::OpDesc &cpp_desc, OpDescType *any_desc) {
   for (const std::string &param : cpp_desc.InputArgumentNames()) {
-    pb_desc->SetInput(param, cpp_desc.Input(param));
+    any_desc->SetInput(param, cpp_desc.Input(param));
   }
 }
 
-void OutputsPbToCpp(const pb::OpDesc &pb_desc, cpp::OpDesc *cpp_desc) {
-  for (const std::string &param : pb_desc.OutputArgumentNames()) {
-    cpp_desc->SetOutput(param, pb_desc.Output(param));
+template <typename OpDescType>
+void OutputsAnyToCpp(const OpDescType &any_desc, cpp::OpDesc *cpp_desc) {
+  for (const std::string &param : any_desc.OutputArgumentNames()) {
+    cpp_desc->SetOutput(param, any_desc.Output(param));
   }
 }
 
-void OutputsCppToPb(const cpp::OpDesc &cpp_desc, pb::OpDesc *pb_desc) {
+template <typename OpDescType>
+void OutputsCppToAny(const cpp::OpDesc &cpp_desc, OpDescType *any_desc) {
   for (const std::string &param : cpp_desc.OutputArgumentNames()) {
-    pb_desc->SetOutput(param, cpp_desc.Output(param));
+    any_desc->SetOutput(param, cpp_desc.Output(param));
   }
 }
 
-void AttrsPbToCpp(const pb::OpDesc &pb_desc, cpp::OpDesc *cpp_desc) {
+template <typename OpDescType>
+void AttrsAnyToCpp(const OpDescType &any_desc, cpp::OpDesc *cpp_desc) {
   using AttrType = OpDescAPI::AttrType;
   auto set_attr = [&](const std::string &name, AttrType type) {
     switch (type) {
       case AttrType::INT:
-        cpp_desc->SetAttr<int32_t>(name, pb_desc.GetAttr<int32_t>(name));
+        cpp_desc->SetAttr<int32_t>(name,
+                                   any_desc.template GetAttr<int32_t>(name));
         break;
       case AttrType::FLOAT:
-        cpp_desc->SetAttr<float>(name, pb_desc.GetAttr<float>(name));
+        cpp_desc->SetAttr<float>(name, any_desc.template GetAttr<float>(name));
         break;
       case AttrType::STRING:
-        cpp_desc->SetAttr<std::string>(name,
-                                       pb_desc.GetAttr<std::string>(name));
+        cpp_desc->SetAttr<std::string>(
+            name, any_desc.template GetAttr<std::string>(name));
         break;
       case AttrType::INTS:
         cpp_desc->SetAttr<std::vector<int>>(
-            name, pb_desc.GetAttr<std::vector<int>>(name));
+            name, any_desc.template GetAttr<std::vector<int>>(name));
         break;
       case AttrType::FLOATS:
         cpp_desc->SetAttr<std::vector<float>>(
-            name, pb_desc.GetAttr<std::vector<float>>(name));
+            name, any_desc.template GetAttr<std::vector<float>>(name));
         break;
       case AttrType::BOOLEAN:
-        cpp_desc->SetAttr<bool>(name, pb_desc.GetAttr<bool>(name));
+        cpp_desc->SetAttr<bool>(name, any_desc.template GetAttr<bool>(name));
         break;
       case AttrType::STRINGS:
         cpp_desc->SetAttr<std::vector<std::string>>(
-            name, pb_desc.GetAttr<std::vector<std::string>>(name));
+            name, any_desc.template GetAttr<std::vector<std::string>>(name));
         break;
       case AttrType::LONGS:
         cpp_desc->SetAttr<std::vector<int64_t>>(
-            name, pb_desc.GetAttr<std::vector<int64_t>>(name));
+            name, any_desc.template GetAttr<std::vector<int64_t>>(name));
         break;
       default:
         LOG(FATAL) << "Unsupported attr type found " << static_cast<int>(type);
     }
   };
 
-  for (const auto &attr_name : pb_desc.AttrNames()) {
-    auto type = pb_desc.GetAttrType(attr_name);
+  for (const auto &attr_name : any_desc.AttrNames()) {
+    auto type = any_desc.GetAttrType(attr_name);
     set_attr(attr_name, type);
   }
 }
 
-void AttrsCppToPb(const cpp::OpDesc &cpp_desc, pb::OpDesc *pb_desc) {
+template <typename OpDescType>
+void AttrsCppToAny(const cpp::OpDesc &cpp_desc, OpDescType *any_desc) {
   using AttrType = OpDescAPI::AttrType;
   auto set_attr = [&](const std::string &name, AttrType type) {
     switch (type) {
-#define IMPL_ONE(type__, T)                               \
-  case AttrType::type__:                                  \
-    pb_desc->SetAttr<T>(name, cpp_desc.GetAttr<T>(name)); \
+#define IMPL_ONE(type__, T)                                         \
+  case AttrType::type__:                                            \
+    any_desc->template SetAttr<T>(name, cpp_desc.GetAttr<T>(name)); \
     break;
       IMPL_ONE(INT, int32_t);
       IMPL_ONE(FLOAT, float);
@@ -113,19 +120,29 @@ void AttrsCppToPb(const cpp::OpDesc &cpp_desc, pb::OpDesc *pb_desc) {
   }
 }
 
-void TransformOpDescPbToCpp(const pb::OpDesc &pb_desc, cpp::OpDesc *cpp_desc) {
-  cpp_desc->SetType(pb_desc.Type());
-  InputsPbToCpp(pb_desc, cpp_desc);
-  OutputsPbToCpp(pb_desc, cpp_desc);
-  AttrsPbToCpp(pb_desc, cpp_desc);
-}
+#define TRANS_ANY_TO_CPP_IMPL(T)                                              \
+  template <>                                                                 \
+  void TransformOpDescAnyToCpp<T>(const T &any_desc, cpp::OpDesc *cpp_desc) { \
+    cpp_desc->SetType(any_desc.Type());                                       \
+    InputsAnyToCpp<T>(any_desc, cpp_desc);                                    \
+    OutputsAnyToCpp<T>(any_desc, cpp_desc);                                   \
+    AttrsAnyToCpp<T>(any_desc, cpp_desc);                                     \
+  }
+TRANS_ANY_TO_CPP_IMPL(pb::OpDesc);
+TRANS_ANY_TO_CPP_IMPL(naive_buffer::OpDesc);
+#undef TRANS_ANY_TO_CPP_IMPL
 
-void TransformOpDescCppToPb(const cpp::OpDesc &cpp_desc, pb::OpDesc *pb_desc) {
-  pb_desc->SetType(cpp_desc.Type());
-  InputsCppToPb(cpp_desc, pb_desc);
-  OutputsCppToPb(cpp_desc, pb_desc);
-  AttrsCppToPb(cpp_desc, pb_desc);
-}
+#define TRANS_CPP_TO_ANY_IMPL(T)                                              \
+  template <>                                                                 \
+  void TransformOpDescCppToAny<T>(const cpp::OpDesc &cpp_desc, T *any_desc) { \
+    any_desc->SetType(cpp_desc.Type());                                       \
+    InputsCppToAny<T>(cpp_desc, any_desc);                                    \
+    OutputsCppToAny<T>(cpp_desc, any_desc);                                   \
+    AttrsCppToAny<T>(cpp_desc, any_desc);                                     \
+  }
+TRANS_CPP_TO_ANY_IMPL(pb::OpDesc);
+TRANS_CPP_TO_ANY_IMPL(naive_buffer::OpDesc);
+#undef TRANS_CPP_TO_ANY_IMPL
 
 }  // namespace lite
 }  // namespace paddle

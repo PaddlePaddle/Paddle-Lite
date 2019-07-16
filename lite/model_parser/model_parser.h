@@ -22,6 +22,7 @@
 #include "lite/core/framework.pb.h"
 #include "lite/core/scope.h"
 #include "lite/core/variable.h"
+#include "lite/model_parser/naive_buffer/proto/framework.nb.h"
 
 namespace paddle {
 namespace lite {
@@ -50,6 +51,23 @@ void SerializeTensor(std::ostream& os,
 void TensorToStream(std::ostream& os, const lite::Tensor& tensor);
 
 void ReadBinaryFile(const std::string& filename, std::string* contents);
+
+// For naive buffer
+void LoadParamNaive(const std::string& path,
+                    lite::Scope* scope,
+                    const std::string& name);
+
+void SaveParamNaive(const std::string& path,
+                    const lite::Scope& scope,
+                    const std::string& var_name);
+
+void LoadModelNaive(const std::string& model_dir,
+                    lite::Scope* scope,
+                    naive_buffer::proto::ProgramDesc* prog);
+
+void SaveModelNaive(const std::string& model_dir,
+                    Scope* scope,
+                    naive_buffer::proto::ProgramDesc* prog);
 
 }  // namespace lite
 }  // namespace paddle

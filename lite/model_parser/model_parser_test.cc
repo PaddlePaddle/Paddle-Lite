@@ -36,10 +36,44 @@ TEST(ModelParser, LoadParam) {
   LOG(INFO) << t;
 }
 
-TEST(ModelParser, LoadModel) {
+TEST(ModelParser, LoadModel) {}
+
+TEST(ModelParser, SaveParamNaive) {
   Scope scope;
-  framework::proto::ProgramDesc prog;
-  LoadModel(FLAGS_model_dir, &scope, &prog);
+  auto* tensor = scope.Var("xxx")->GetMutable<lite::Tensor>();
+  auto& lod = *tensor->mutable_lod();
+  lod.resize(2);
+  lod[0] = {1, 2, 3};
+  lod[1] = {4, 5};
+  std::vector<int64_t> dim({1, 2, 5});
+  tensor->Resize(lite::DDim(dim));
+  auto* data = tensor->mutable_data<float>();
+  size_t size = tensor->data_size();
+  for (size_t i = 0; i < size; ++i) {
+    data[i] = i / static_cast<float>(size);
+  }
+  SaveParamNaive("./fc_0.w", scope, "xxx");
+}
+
+TEST(ModelParser, LoadParamNaive) {
+  Scope scope;
+  LoadParamNaive("./fc_0.w", &scope, "xxx");
+  auto& tensor = scope.Var("xxx")->Get<lite::Tensor>();
+  std::vector<int64_t> bg_dim({1, 2, 5});
+  size_t size = 10;
+  std::vector<std::vector<uint64_t>> bg_lod({{1, 2, 3}, {4, 5}});
+  std::vector<float> bg_data(size);
+  for (size_t i = 0; i < size; ++i) {
+    bg_data[i] = i / static_cast<float>(size);
+  }
+
+  ASSERT_EQ(bg_dim, tensor.dims().Vectorize());
+  ASSERT_EQ(bg_lod, tensor.lod());
+  ASSERT_EQ(tensor.data_size(), size);
+  auto* data = tensor.data<float>();
+  for (int i = 0; i < size; ++i) {
+    EXPECT_NEAR(bg_data[i], data[i], 1e-6);
+  }
 }
 
 }  // namespace lite

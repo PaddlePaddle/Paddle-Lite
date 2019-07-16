@@ -22,26 +22,19 @@
 
 #include "lite/core/framework.pb.h"
 #include "lite/model_parser/cpp/op_desc.h"
+#include "lite/model_parser/naive_buffer/op_desc.h"
 #include "lite/model_parser/pb/op_desc.h"
-#include "lite/model_parser/pb/var_desc.h"
 
 namespace paddle {
 namespace lite {
 
-using Attribute = lite::pb::Attribute;
-using OpDesc = lite::pb::OpDesc;
-using VarDesc = lite::pb::VarDesc;
+/// Transform an OpDesc from OpDescType to cpp format.
+template <typename OpDescType>
+void TransformOpDescAnyToCpp(const OpDescType& any_desc, cpp::OpDesc* cpp_desc);
 
-template <typename T>
-T GetAttr(const Attribute& x) {
-  return x.get<T>();
-}
-
-/// Transform an OpDesc from pb to cpp format.
-void TransformOpDescPbToCpp(const pb::OpDesc& pb_desc, cpp::OpDesc* cpp_desc);
-
-/// Transform an OpDesc from cpp to pb format.
-void TransformOpDescCppToPb(const cpp::OpDesc& cpp_desc, pb::OpDesc* pb_desc);
+/// Transform an OpDesc from cpp to OpDescType format.
+template <typename OpDescType>
+void TransformOpDescCppToAny(const cpp::OpDesc& cpp_desc, OpDescType* any_desc);
 
 }  // namespace lite
 }  // namespace paddle

@@ -231,7 +231,7 @@ class ProgramCodeGenerator {
     for (auto &op : program_.blocks(0).ops()) {
       pb::OpDesc pb_desc(op);
       cpp::OpDesc cpp_desc;
-      TransformOpDescPbToCpp(pb_desc, &cpp_desc);
+      TransformOpDescAnyToCpp(pb_desc, &cpp_desc);
       m->AddOp(cpp_desc);
     }
   }

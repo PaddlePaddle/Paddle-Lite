@@ -88,21 +88,27 @@ void StringBuilder::Load() {
   table()->Consume(str_len);
 }
 
-PrimaryBuilder<int32_t> *StructBuilder::NewInt32(const std::string &name) {
-  using type = PrimaryBuilder<int32_t>;
-  field_builders_.Set(name, std::unique_ptr<type>(new type(table())));
-  return static_cast<type *>(field_builders_.Get(name).get());
-}
+#define NEW_PRIMARY_BUILDER_IMPL(T, name__)                                   \
+  PrimaryBuilder<T> *StructBuilder::New##name__(const std::string &name,      \
+                                                T val) {                      \
+    using type = PrimaryBuilder<T>;                                           \
+    field_builders_.Set(name, std::unique_ptr<type>(new type(table(), val))); \
+    return static_cast<type *>(field_builders_.Get(name).get());              \
+  }
+NEW_PRIMARY_BUILDER_IMPL(bool, Bool);
+NEW_PRIMARY_BUILDER_IMPL(char, Char);
+NEW_PRIMARY_BUILDER_IMPL(int32_t, Int32);
+NEW_PRIMARY_BUILDER_IMPL(uint32_t, UInt32);
+NEW_PRIMARY_BUILDER_IMPL(int64_t, Int64);
+NEW_PRIMARY_BUILDER_IMPL(uint64_t, UInt64);
+NEW_PRIMARY_BUILDER_IMPL(float, Float32);
+NEW_PRIMARY_BUILDER_IMPL(double, Float64);
+#undef NEW_PRIMARY_BUILDER_IMPL
 
-PrimaryBuilder<int64_t> *StructBuilder::NewInt64(const std::string &name) {
-  using type = PrimaryBuilder<int64_t>;
-  field_builders_.Set(name, std::unique_ptr<type>(new type(table())));
-  return static_cast<type *>(field_builders_.Get(name).get());
-}
-
-StringBuilder *StructBuilder::NewStr(const std::string &name) {
+StringBuilder *StructBuilder::NewStr(const std::string &name,
+                                     const std::string &val) {
   using type = StringBuilder;
-  field_builders_.Set(name, std::unique_ptr<type>(new type(table())));
+  field_builders_.Set(name, std::unique_ptr<type>(new type(table(), val)));
   return static_cast<type *>(field_builders_.Get(name).get());
 }
 

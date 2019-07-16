@@ -19,6 +19,9 @@
 #include "lite/core/scope.h"
 #include "lite/core/tensor.h"
 #include "lite/core/variable.h"
+#include "lite/model_parser/desc_apis.h"
+#include "lite/model_parser/naive_buffer/param_desc.h"
+#include "lite/model_parser/naive_buffer/var_desc.h"
 
 namespace paddle {
 namespace lite {
@@ -101,7 +104,7 @@ void LoadLoDTensor(std::istream &is, Variable *var) {
   for (uint64_t i = 0; i < lod_level; ++i) {
     uint64_t size;
     is.read(reinterpret_cast<char *>(&size), sizeof(size));
-    std::vector<size_t> tmp(size / sizeof(size_t));
+    std::vector<uint64_t> tmp(size / sizeof(uint64_t));
     is.read(reinterpret_cast<char *>(tmp.data()),
             static_cast<std::streamsize>(size));
     lod[i] = tmp;
@@ -240,6 +243,146 @@ void SerializeTensor(std::ostream &os,
   const auto &tensor = var->Get<lite::Tensor>();
   TensorToStream(os, tensor);
 }
+
+/// For navie buffer
+template <typename T>
+void SetTensorDataNaive(T *out, size_t size, const std::vector<T> &src) {
+  CHECK(out);
+  CHECK(size == src.size());
+  for (size_t i = 0; i < size; ++i) {
+    out[i] = src[i];
+  }
+}
+
+void LoadParamNaive(const std::string &path,
+                    lite::Scope *scope,
+                    const std::string &name) {
+  CHECK(scope);
+  auto *tensor = scope->Var(name)->GetMutable<lite::Tensor>();
+
+  // Load param
+  naive_buffer::BinaryTable table;
+  table.LoadFromFile(path);
+  naive_buffer::proto::ParamDesc pt_desc(&table);
+  pt_desc.Load();
+  naive_buffer::ParamDesc desc(&pt_desc);
+
+  VLOG(3) << "model version " << desc.ModelVersion();
+  CHECK_EQ(desc.TensorVersion(), 0U) << "Only version 0 is supported";
+
+  // Load LoD info
+  auto *tgt_lod = tensor->mutable_lod();
+  auto desc_lod = desc.LoD();
+  tgt_lod->assign(desc_lod.begin(), desc_lod.end());
+
+  // Load Dim info
+  tensor->Resize(lite::DDim(desc.Dim()));
+
+  // Load data
+  switch (desc.GetDataType()) {
+#define DO(data_type__, T)                                               \
+  case VarDescAPI::VarDataType::data_type__:                             \
+    SetTensorDataNaive<T>(                                               \
+        tensor->mutable_data<T>(), tensor->data_size(), desc.Data<T>()); \
+    break
+
+    // DO(BOOL, bool);
+    DO(FP32, float);
+    DO(INT8, int8_t);
+    DO(INT16, int16_t);
+    DO(INT32, int32_t);
+    DO(INT64, int64_t);
+#undef DO
+    default:
+      LOG(FATAL) << "unknown type";
+  }
+}
+
+void SaveParamNaive(const std::string &path,
+                    const lite::Scope &scope,
+                    const std::string &var_name) {
+  // the 1st field, uint32_t version
+  constexpr uint32_t version = 0;
+
+  auto *var = scope.FindVar(var_name);
+  const auto &tensor = var->Get<lite::Tensor>();
+
+  naive_buffer::BinaryTable table;
+  naive_buffer::proto::ParamDesc pt_desc(&table);
+  naive_buffer::ParamDesc desc(&pt_desc);
+
+  desc.SetModelVersion(version);
+  desc.SetTensorVersion(version);
+
+  desc.SetLoDLevel(tensor.lod().size());
+  desc.SetLoD(tensor.lod());
+
+  // TODO(sangoly): support other data types.
+  desc.SetDataType(VarDescAPI::VarDataType::FP32);
+  desc.SetDim(tensor.dims().Vectorize());
+  uint64_t size = tensor.memory_size();
+  CHECK_LT(size, std::numeric_limits<std::streamsize>::max())
+      << "Index overflow when writing tensor";
+
+#ifdef LITE_WITH_CUDA
+  if (tensor.target() == TARGET(kCUDA)) {
+    std::unique_ptr<float> tmp_buffer(new float[tensor.data_size()]);
+    TargetWrapperCuda::MemcpySync(tmp_buffer.get(),
+                                  tensor.data<float>(),
+                                  tensor.data_size(),
+                                  IoDirection::DtoH);
+    desc.SetData<float>(tmp_buffer.get(), tensor.data_size());
+  } else  // NOLINT
+#endif    // LITE_WITH_CUDA
+  {
+    desc.SetData<float>(tensor.data<float>(), tensor.data_size());
+  }
+
+  // Save param
+  pt_desc.Save();
+  table.SaveToFile(path);
+}
+
+void LoadModelNaive(const std::string &model_dir,
+                    Scope *scope,
+                    naive_buffer::proto::ProgramDesc *prog) {
+  using block_desc_list_t =
+      naive_buffer::ListBuilder<naive_buffer::proto::BlockDesc>;
+  using var_desc_list_t =
+      naive_buffer::ListBuilder<naive_buffer::proto::VarDesc>;
+
+  CHECK(prog);
+  // Load model
+  const std::string prog_path = model_dir + "/__model__";
+  prog->table()->LoadFromFile(prog_path);
+  prog->Load();
+
+  auto *main_block_desc =
+      prog->GetMutableField<block_desc_list_t>("blocks")->GetMutable(0);
+  auto *var_descs = main_block_desc->GetMutableField<var_desc_list_t>("vars");
+  for (size_t i = 0; i < var_descs->size(); ++i) {
+    auto *desc = var_descs->GetMutable(i);
+    naive_buffer::VarDesc var(desc);
+    if (var.Name() == "feed" || var.Name() == "fetch" || !var.Persistable())
+      continue;
+
+    std::string file_path = model_dir + "/" + var.Name();
+    VLOG(4) << "reading weight " << var.Name();
+
+    std::ifstream file(file_path);
+    switch (var.GetType()) {
+      case VarDescAPI::VarDataType::LOD_TENSOR:
+        LoadParamNaive(file_path, scope, var.Name());
+        break;
+      default:
+        CHECK(false) << "unknown weight type";
+    }
+  }
+}
+
+void SaveModelNaive(const std::string &model_dir,
+                    Scope *scope,
+                    naive_buffer::proto::ProgramDesc *prog) {}
 
 }  // namespace lite
 }  // namespace paddle

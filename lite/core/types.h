@@ -38,6 +38,8 @@ enum class Type {
   _string,
   // primary list types
   _list,
+  // enum type
+  _enum,
   // number of types
   __num__,
 };

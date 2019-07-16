@@ -83,7 +83,7 @@ class DDimLite {
   std::vector<value_type> data_;
 };
 
-using LoD = std::vector<std::vector<size_t>>;
+using LoD = std::vector<std::vector<uint64_t>>;
 
 // A light-weight tensor implementation.
 class TensorLite {
