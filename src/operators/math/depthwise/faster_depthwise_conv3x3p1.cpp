@@ -70,7 +70,6 @@ void conv_depthwise_3x3p1(const float *din, float *dout, int num, int ch_out,
   }
 }
 
-
 // 4line
 void conv_depthwise_3x3s1p1_bias_relu(float *dout, const float *din,
                                       const float *weights, const float *bias,
