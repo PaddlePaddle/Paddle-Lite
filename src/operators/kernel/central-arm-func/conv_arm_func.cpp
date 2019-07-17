@@ -14,6 +14,7 @@ limitations under the License. */
 
 #include "operators/kernel/central-arm-func/conv_arm_func.h"
 #include <vector>
+#include "operators/math/depthwise/faster_depthwise_conv3x3.h"
 #include "operators/math/depthwise_conv3x3.h"
 #include "operators/math/depthwise_conv5x5.h"
 #include "operators/math/im2col.h"
@@ -208,6 +209,65 @@ void DepthwiseConv3x3(const ConvParam<CPU> &param) {
     }
   } else {
     GemmConv<Itype, Otype>(param);
+  }
+}
+
+template <>
+void DepthwiseConv3x3<float, float>(const ConvParam<CPU> &param) {
+  const Tensor *input = param.Input();
+  const Tensor *filter = param.Filter();
+  const std::vector<int> &paddings = param.Paddings();
+  const std::vector<int> &strides = param.Strides();
+  const int batch_size = input->dims()[0];
+  Tensor *output = param.Output();
+  output->mutable_data<float>();
+
+  if (paddings.size() == 2 && paddings[0] == paddings[1] &&
+      strides.size() == 2 && strides[0] == strides[1]) {
+    int pad = paddings[0];
+    int stride = strides[0];
+    const float *din = input->data<float>();
+    float *dout = output->mutable_data<float>();
+    const float *weights = filter->data<float>();
+    const float *bias = nullptr;
+    const int num = input->dims()[0];
+    const int chin = input->dims()[1];
+    const int hin = input->dims()[2];
+    const int win = input->dims()[3];
+    const int chout = output->dims()[1];
+    const int hout = output->dims()[2];
+    const int wout = output->dims()[3];
+    bool flag_relu = false;
+    bool flag_bias = bias != nullptr;
+    if (pad == 0 && hin > 2) {
+      math::depthwise::conv_depthwise_3x3p0(din, dout, num, chout, hout, wout,
+                                            chin, hin, win, weights, bias,
+                                            stride, flag_bias, flag_relu);
+    } else if (pad == 1) {
+      math::depthwise::conv_depthwise_3x3p1(din, dout, num, chout, hout, wout,
+                                            chin, hin, win, weights, bias,
+                                            stride, flag_bias, flag_relu);
+    } else {
+      GemmConv<float, float>(param);
+    }
+  } else {
+    if (strides[0] == 1) {
+      for (int i = 0; i < batch_size; i++) {
+        Tensor in_batch = input->Slice(i, i + 1);
+        Tensor out_batch = output->Slice(i, i + 1);
+        math::DepthwiseConv3x3S1<float, float>(in_batch, *filter, paddings,
+                                               &out_batch);
+      }
+    } else if (strides[0] == 2) {
+      for (int i = 0; i < batch_size; i++) {
+        Tensor in_batch = input->Slice(i, i + 1);
+        Tensor out_batch = output->Slice(i, i + 1);
+        math::DepthwiseConv3x3S2<float, float>(in_batch, *filter, paddings,
+                                               &out_batch);
+      }
+    } else {
+      GemmConv<float, float>(param);
+    }
   }
 }
 
