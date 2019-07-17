@@ -36,6 +36,9 @@ class ConvAddBNReluKernel
  public:
   void Compute(const FusionConvAddBNReluParam<DeviceType> &param);
   bool Init(FusionConvAddBNReluParam<DeviceType> *param);
+
+ private:
+  bool could_use_faster_depthwise_conv_ = false;
 };
 
 }  // namespace operators
