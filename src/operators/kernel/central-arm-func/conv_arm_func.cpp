@@ -235,11 +235,7 @@ void FasterDepthwiseConv3x3_bias_relu(const ConvParam<CPU> &param,
   const int hout = output->dims()[2];
   const int wout = output->dims()[3];
   bool flag_bias = bias != nullptr;
-  if (pad == 0 && hin > 2) {
-    math::depthwise::conv_depthwise_3x3p0(din, dout, num, chout, hout, wout,
-                                          chin, hin, win, weights, bias, stride,
-                                          flag_bias, flag_relu);
-  } else if (pad == 1) {
+  if (pad == 1) {
     math::depthwise::conv_depthwise_3x3p1(din, dout, num, chout, hout, wout,
                                           chin, hin, win, weights, bias, stride,
                                           flag_bias, flag_relu);

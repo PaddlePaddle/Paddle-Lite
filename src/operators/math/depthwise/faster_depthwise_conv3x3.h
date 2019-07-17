@@ -23,11 +23,6 @@ namespace operators {
 namespace math {
 namespace depthwise {
 
-void conv_depthwise_3x3p0(const float* din, float* dout, int num, int ch_out,
-                          int h_out, int w_out, int ch_in, int h_in, int w_in,
-                          const float* weights, const float* bias, int stride,
-                          bool flag_bias, bool flag_relu);
-
 void conv_depthwise_3x3p1(const float* din, float* dout, int num, int ch_out,
                           int h_out, int w_out, int ch_in, int h_in, int w_in,
                           const float* weights, const float* bias, int stride,
