@@ -118,10 +118,6 @@ void MemoryOptPass::operator()(
       }
     }
 
-    for (const auto &node : fetch_var_nodes) {
-      analysis_nodes_.push(node);
-    }
-
     // apply optimize
     while (!analysis_nodes_.empty()) {
       auto *node = analysis_nodes_.top();
@@ -132,7 +128,9 @@ void MemoryOptPass::operator()(
         bool reused = false;
         // find out a possable reuse list
         for (auto &list : reused_nodes_) {
-          if (list.back()->count == 0) {
+          if (list.back()->count == 0 &&
+              std::find(fetch_var_nodes.begin(), fetch_var_nodes.end(),
+                        list.back()) == fetch_var_nodes.end()) {
             list.push_back(node);
             reused = true;
             break;
