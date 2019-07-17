@@ -212,8 +212,8 @@ void DepthwiseConv3x3(const ConvParam<CPU> &param) {
   }
 }
 
-template <>
-void DepthwiseConv3x3<float, float>(const ConvParam<CPU> &param) {
+void FasterDepthwiseConv3x3_bias_relu(const ConvParam<CPU> &param,
+                                      const float *bias, bool flag_relu) {
   const Tensor *input = param.Input();
   const Tensor *filter = param.Filter();
   const std::vector<int> &paddings = param.Paddings();
@@ -222,52 +222,27 @@ void DepthwiseConv3x3<float, float>(const ConvParam<CPU> &param) {
   Tensor *output = param.Output();
   output->mutable_data<float>();
 
-  if (paddings.size() == 2 && paddings[0] == paddings[1] &&
-      strides.size() == 2 && strides[0] == strides[1]) {
-    int pad = paddings[0];
-    int stride = strides[0];
-    const float *din = input->data<float>();
-    float *dout = output->mutable_data<float>();
-    const float *weights = filter->data<float>();
-    const float *bias = nullptr;
-    const int num = input->dims()[0];
-    const int chin = input->dims()[1];
-    const int hin = input->dims()[2];
-    const int win = input->dims()[3];
-    const int chout = output->dims()[1];
-    const int hout = output->dims()[2];
-    const int wout = output->dims()[3];
-    bool flag_relu = false;
-    bool flag_bias = bias != nullptr;
-    if (pad == 0 && hin > 2) {
-      math::depthwise::conv_depthwise_3x3p0(din, dout, num, chout, hout, wout,
-                                            chin, hin, win, weights, bias,
-                                            stride, flag_bias, flag_relu);
-    } else if (pad == 1) {
-      math::depthwise::conv_depthwise_3x3p1(din, dout, num, chout, hout, wout,
-                                            chin, hin, win, weights, bias,
-                                            stride, flag_bias, flag_relu);
-    } else {
-      GemmConv<float, float>(param);
-    }
-  } else {
-    if (strides[0] == 1) {
-      for (int i = 0; i < batch_size; i++) {
-        Tensor in_batch = input->Slice(i, i + 1);
-        Tensor out_batch = output->Slice(i, i + 1);
-        math::DepthwiseConv3x3S1<float, float>(in_batch, *filter, paddings,
-                                               &out_batch);
-      }
-    } else if (strides[0] == 2) {
-      for (int i = 0; i < batch_size; i++) {
-        Tensor in_batch = input->Slice(i, i + 1);
-        Tensor out_batch = output->Slice(i, i + 1);
-        math::DepthwiseConv3x3S2<float, float>(in_batch, *filter, paddings,
-                                               &out_batch);
-      }
-    } else {
-      GemmConv<float, float>(param);
-    }
+  int pad = paddings[0];
+  int stride = strides[0];
+  const float *din = input->data<float>();
+  float *dout = output->mutable_data<float>();
+  const float *weights = filter->data<float>();
+  const int num = input->dims()[0];
+  const int chin = input->dims()[1];
+  const int hin = input->dims()[2];
+  const int win = input->dims()[3];
+  const int chout = output->dims()[1];
+  const int hout = output->dims()[2];
+  const int wout = output->dims()[3];
+  bool flag_bias = bias != nullptr;
+  if (pad == 0 && hin > 2) {
+    math::depthwise::conv_depthwise_3x3p0(din, dout, num, chout, hout, wout,
+                                          chin, hin, win, weights, bias, stride,
+                                          flag_bias, flag_relu);
+  } else if (pad == 1) {
+    math::depthwise::conv_depthwise_3x3p1(din, dout, num, chout, hout, wout,
+                                          chin, hin, win, weights, bias, stride,
+                                          flag_bias, flag_relu);
   }
 }
 
