@@ -250,8 +250,13 @@ struct FusionElementwiseActivationGradParam : public ElementwiseGradParam {
 
 /// ----------------------- activation operators ----------------------
 struct ActivationParam {
-  const lite::Tensor* X{};
-  lite::Tensor* Out{};
+  const lite::Tensor* x{};
+  float relu_neg_slope{0};              // relu_neg param
+  float relu_clipped_coef{6};           // relu_clipped param
+  bool prelu_channel_shared{false};     // prelu param
+  lite::Tensor* prelu_channel_slope{};  // prelu param
+  float swish_coef;                     // swish param
+  lite::Tensor* out{};
 };
 
 struct ActivationGradParam {
