@@ -54,6 +54,9 @@ void ConvKernel<CPU, float>::Compute(const ConvParam<CPU> &param) {
     case ConvParam<CPU>::EXEC_GEMM_FLOAT:
       GemmConv<float, float>(param);
       break;
+    case ConvParam<CPU>::EXEC_GEMM1x1s1_FLOAT:
+      GemmConv1x1s1<float, float>(param);
+      break;
     case ConvParam<CPU>::EXEC_SLIDINGWINDOW3x3S1_FLOAT:
     case ConvParam<CPU>::EXEC_SLIDINGWINDOW3x3S2_FLOAT:
       SlidingwindowConv3x3<float, float>(param);

@@ -13,6 +13,8 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "operators/kernel/arm/convolution/conv_common.h"
+#include "framework/context.h"
+#include "operators/math/gemm/gemm1x1s1.h"
 #include "operators/math/slidingwindow_utils.h"
 #include "operators/math/winograd/winograd_transform.h"
 
@@ -20,6 +22,8 @@ namespace paddle_mobile {
 namespace operators {
 
 void InitBaseConvKernel(ConvParam<CPU> *param) {
+  bool conv1x1 = param->Filter()->dims()[2] == param->Filter()->dims()[3] &&
+                 param->Filter()->dims()[2] == 1;
   bool conv3x3 = param->Filter()->dims()[2] == param->Filter()->dims()[3] &&
                  param->Filter()->dims()[2] == 3;
   bool conv5x5 = param->Filter()->dims()[2] == param->Filter()->dims()[3] &&
@@ -83,6 +87,22 @@ void InitBaseConvKernel(ConvParam<CPU> *param) {
       math::slidingwindow_transform_weight<float>(*param->Filter(),
                                                   param->transformed_filter_);
       param->ExecMode() = ConvParam<CPU>::EXEC_SLIDINGWINDOW3x3S2_FLOAT;
+    } else if (conv1x1 && param->Groups() == 1 &&
+               param->Paddings()[0] == param->Paddings()[1] &&
+               param->Paddings()[0] == 0 && param->Input()->dims()[1] > 1 &&
+               param->Strides()[0] == param->Strides()[1] &&
+               param->Dilations()[0] == param->Dilations()[1] &&
+               param->Strides()[0] == 1 && param->Dilations()[0] == 1 &&
+               param->Output()->dims()[2] * param->Output()->dims()[3] > 1) {
+      // transform weight
+      Variable *transformed_var = param->GetScope()->Var();
+      ARMArch arch = framework::CPUContext::Context()->get_arch();
+      param->transformed_filter_ =
+          transformed_var->GetMutable<framework::LoDTensor>();
+      math::gemm1x1s1_transform_weight(*param->Filter(), *param->Output(),
+                                       param->transformed_filter_,
+                                       param->groups, arch);
+      param->ExecMode() = ConvParam<CPU>::EXEC_GEMM1x1s1_FLOAT;
     } else {
       param->ExecMode() = ConvParam<CPU>::EXEC_GEMM_FLOAT;
     }

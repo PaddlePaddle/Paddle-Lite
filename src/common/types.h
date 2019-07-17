@@ -145,6 +145,18 @@ struct PaddleMobileConfigInternal {
   std::string model_obfuscate_key = "";
 };
 
+enum ARMArch {
+  APPLE = 0,
+  A53 = 53,
+  A55 = 55,
+  A57 = 57,
+  A72 = 72,
+  A73 = 73,
+  A75 = 75,
+  A76 = 76,
+  ARM_UNKOWN = -1
+};
+
 extern const char *G_OP_TYPE_CONV;
 extern const char *G_OP_TYPE_BATCHNORM;
 extern const char *G_OP_TYPE_BOX_CODER;
