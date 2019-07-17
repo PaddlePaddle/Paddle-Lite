@@ -99,6 +99,7 @@ class Executor {
 
   // for super resoltion
   DDim input_dim_last_;
+  bool input_dim_has_changed_ = true;
 
 #ifdef PADDLE_MOBILE_PROFILE
   typedef typename DtypeTensorTrait<Device>::gtype ProfileTensorType;
