@@ -43,12 +43,14 @@ struct CPUContext {
   int get_thread_num();
   PowerMode get_power_mode() const { return _power_mode; }
   int get_cache_size(int level);
+  ARMArch get_arch() const { return _arch; }
   int get_l1_cache_size() { return get_cache_size(1); }
   int get_l2_cache_size() { return get_cache_size(2); }
   int get_l3_cache_size() { return get_cache_size(3); }
   void* get_work_space(int size_in_byte);
 
   int _cpu_num;
+  ARMArch _arch;
   PowerMode _power_mode;
   std::vector<int> _big_core_ids;
   std::vector<int> _little_core_ids;
