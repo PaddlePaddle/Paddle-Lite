@@ -295,7 +295,8 @@ def check_mobile_results(args, fuse, mem_opt):
     args = "{} {} {}".format("1" if fuse else "0", "1" if mem_opt else "0", args)
     res = sh("adb shell \"cd {} && export LD_LIBRARY_PATH=. && ./test-net {}\"".format(mobile_exec_root, args))
     lines = res.split("\n")
-    # print(lines)
+    # for line in lines:
+    #     print(line)
     for line in lines:
         if line.startswith("auto-test-debug"):
             print(line)

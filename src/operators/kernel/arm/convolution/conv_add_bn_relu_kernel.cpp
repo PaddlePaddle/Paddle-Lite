@@ -72,11 +72,13 @@ bool ConvAddBNReluKernel<CPU, float>::Init(
           strides.size() == 2 && strides[0] == strides[1]) {
         int pad = paddings[0];
         int stride = strides[0];
-        const int hin = param->Input()->dims()[2];
-        if (pad == 0 && hin > 2) {
-          could_use_faster_depthwise_conv_ = true;
-        } else if (pad == 1) {
-          could_use_faster_depthwise_conv_ = true;
+        const int win = param->Input()->dims()[3];
+        if (pad == 1) {
+          if (stride == 1) {
+            could_use_faster_depthwise_conv_ = true;
+          } else if (stride == 2 && win > 7) {
+            could_use_faster_depthwise_conv_ = true;
+          }
         }
       }
       break;
