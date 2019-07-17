@@ -44,6 +44,9 @@ void DepthwiseConv5x5(const ConvParam<CPU> &param);
 template <typename Itype, typename Otype>
 void SlidingwindowConv3x3(const ConvParam<CPU> &param);
 
+void FasterDepthwiseConv3x3_bias_relu(const ConvParam<CPU> &param,
+                                      const float *bias, bool flag_relu);
+
 }  // namespace operators
 }  // namespace paddle_mobile
 
