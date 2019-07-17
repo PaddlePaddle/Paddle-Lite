@@ -18,6 +18,8 @@
 #include <cmath>
 
 #include "lite/arm/math/activation.h"
+#include "lite/arm/math/argmax.h"
+#include "lite/arm/math/axpy.h"
 #include "lite/arm/math/concat.h"
 #include "lite/arm/math/conv_depthwise.h"
 #include "lite/arm/math/conv_direct.h"

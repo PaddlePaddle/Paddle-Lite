@@ -19,6 +19,8 @@ lite_cc_library(mean_op SRCS mean_op.cc DEPS ${op_DEPS})
 lite_cc_library(fill_constant_op SRCS fill_constant_op.cc DEPS ${op_DEPS})
 lite_cc_library(sgd_op SRCS sgd_op.cc DEPS ${op_DEPS})
 lite_cc_library(uniform_random_op SRCS uniform_random_op.cc DEPS ${op_DEPS})
+lite_cc_library(argmax_op SRCS argmax_op.cc DEPS ${op_DEPS})
+lite_cc_library(axpy_op SRCS axpy_op.cc DEPS ${op_DEPS})
 
 lite_cc_library(op_params SRCS op_params.cc DEPS ${tensor} any framework_proto)
 lite_cc_library(dropout_op SRCS dropout_op.cc DEPS ${op_DEPS})
@@ -56,6 +58,8 @@ set(ops
         fake_dequant
         sgd_op
         uniform_random_op
+      	argmax_op
+	      axpy_op
         CACHE INTERNAL "ops lite")
 
 if (NOT LITE_WITH_X86)

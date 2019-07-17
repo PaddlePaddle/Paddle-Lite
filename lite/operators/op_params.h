@@ -327,6 +327,21 @@ struct UniformRandomParam {
   lite::Tensor* Out{};
 };
 
+///----------------------- argmax operators ----------------------
+struct ArgmaxParam {
+  lite::Tensor* x{};
+  lite::Tensor* output{};
+  int axis{0};
+};
+
+///----------------------- axpy operators ----------------------
+struct AxpyParam {
+  lite::Tensor* scale{};
+  lite::Tensor* x{};
+  lite::Tensor* bias{};
+  lite::Tensor* output{};
+};
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle
