@@ -32,6 +32,9 @@ bool IsExpand(const std::vector<int64_t> &filter_dim,
 template <typename Itype, typename Otype>
 void GemmConv(const ConvParam<CPU> &param);
 
+template <typename Itype, typename Otype>
+void GemmConv1x1s1(const ConvParam<CPU> &param);
+
 template <int tile, int kernel>
 void WinogradConv3x3(const ConvParam<CPU> &param);
 

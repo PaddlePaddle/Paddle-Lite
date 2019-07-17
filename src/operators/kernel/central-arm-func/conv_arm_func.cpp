@@ -14,9 +14,11 @@ limitations under the License. */
 
 #include "operators/kernel/central-arm-func/conv_arm_func.h"
 #include <vector>
+#include "framework/context.h"
 #include "operators/math/depthwise/faster_depthwise_conv3x3.h"
 #include "operators/math/depthwise_conv3x3.h"
 #include "operators/math/depthwise_conv5x5.h"
+#include "operators/math/gemm/gemm1x1s1.h"
 #include "operators/math/im2col.h"
 #include "operators/math/math_function.h"
 #include "operators/math/pad.h"
@@ -133,6 +135,61 @@ void GemmConv(const ConvParam<CPU> &param) {
                                  static_cast<float>(1), &out_slice,
                                  static_cast<float>(0), false,
                                  static_cast<Otype *>(nullptr));
+    }
+  }
+}
+
+template <typename Itype, typename Otype>
+void GemmConv1x1s1(const ConvParam<CPU> &param) {
+  const Tensor *input = param.Input();
+  Tensor filter = *param.transformed_filter_;
+  Tensor *output = param.Output();
+  output->mutable_data<Otype>();
+
+  const float *din = input->data<Itype>();
+  float *dout = output->mutable_data<Otype>();
+  const int num = input->dims()[0];
+  const int chin = input->dims()[1];
+  const int hin = input->dims()[2];
+  const int win = input->dims()[3];
+  const int chout = output->dims()[1];
+  const int hout = output->dims()[2];
+  const int wout = output->dims()[3];
+  const float *weights = filter.mutable_data<float>();
+  const float *bias = nullptr;
+
+  int channel_size_out = wout * hout;
+  int channel_size_in = win * hin;
+  const int group = param.Groups();
+  const int m = chout / group;
+  const int n = hout * wout;
+  const int k = chin / group;
+
+  bool flag_relu = false;
+  bool flag_bias = false;
+  ARMArch arch = framework::CPUContext::Context()->get_arch();
+  int hblock = math::get_hblock(arch);
+
+  int m_roundup = hblock * ((m + hblock - 1) / hblock);
+  int weights_size_per_group = m * k;
+  if (n > 1) {
+    weights_size_per_group = ((m_roundup * k + 15) / 16) * 16;
+  }
+
+  for (int b = 0; b < num; ++b) {
+    // dC
+    for (int g = 0; g < group; ++g) {
+      float *dout_group =
+          static_cast<float *>(dout) + (b * chout + g * m) * channel_size_out;
+      const float *din_group = static_cast<const float *>(din) +
+                               (b * chin + g * k) * channel_size_in;
+      const float *weights_group =
+          static_cast<const float *>(weights) + g * weights_size_per_group;
+      const float *bias_group = static_cast<const float *>(bias) + g * m;
+      if (n > 1) {
+        math::sgemm_prepack(weights_group, din_group, bias_group, dout_group, m,
+                            n, k, flag_bias, flag_relu, false, arch);
+      }
     }
   }
 }
@@ -289,6 +346,7 @@ void SlidingwindowConv3x3(const ConvParam<CPU> &param) {
 }
 
 template void GemmConv<float, float>(const ConvParam<CPU> &param);
+template void GemmConv1x1s1<float, float>(const ConvParam<CPU> &param);
 template void WinogradConv3x3<8, 3>(const ConvParam<CPU> &param);
 template void DepthwiseConv3x3<float, float>(const ConvParam<CPU> &param);
 template void DepthwiseConv5x5<float, float>(const ConvParam<CPU> &param);
