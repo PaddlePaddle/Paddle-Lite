@@ -409,9 +409,11 @@ void Executor<Device, T>::SetInput(const Tensor &input,
 
   target.Resize(input.dims());
   target.ShareDataWith(input);
-  auto &dim = input.dims();
-  input_dim_has_changed_ = input_dim_last_ != dim;
-  input_dim_last_ = static_cast<DDim>(dim);
+  if (feed_indices_.size() == 1) {
+    auto &dim = input.dims();
+    input_dim_has_changed_ = input_dim_last_ != dim;
+    input_dim_last_ = static_cast<DDim>(dim);
+  }
 }
 
 template <typename Device, typename T>
@@ -428,9 +430,11 @@ void Executor<Device, T>::SetInput(const LoDTensor &input,
   target.Resize(input.dims());
   target.ShareDataWith(input);
   target.set_lod(input.lod());
-  auto &dim = input.dims();
-  input_dim_has_changed_ = input_dim_last_ != dim;
-  input_dim_last_ = static_cast<DDim>(dim);
+  if (feed_indices_.size() == 1) {
+    auto &dim = input.dims();
+    input_dim_has_changed_ = input_dim_last_ != dim;
+    input_dim_last_ = static_cast<DDim>(dim);
+  }
 }
 
 template <typename Device, typename T>
@@ -485,7 +489,9 @@ PMStatus Executor<Device, T>::Predict() {
     ++op_index;
 #endif
   }
-  input_dim_has_changed_ = false;
+  if (feed_indices_.size() == 1) {
+    input_dim_has_changed_ = false;
+  }
 
 #ifdef PADDLE_MOBILE_PROFILE
   PrintProfile(profile);
@@ -800,8 +806,10 @@ void Executor<GPU_CL, float>::SetInput(const Tensor &input,
     DLOG << "SetInput ---- > ShareDataWith";
   }
   target_tensor->ShareDataWith(input);
+  if (feed_indices_.size() == 1) {
+    input_dim_has_changed_ = input_dim_last_ != input.dims();
+  }
   auto &dim = input.dims();
-  input_dim_has_changed_ = input_dim_last_ != dim;
   input_dim_last_ = static_cast<DDim>(dim);
 }
 
