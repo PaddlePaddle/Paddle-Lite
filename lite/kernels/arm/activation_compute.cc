@@ -23,9 +23,9 @@ namespace arm {
 void ReluCompute::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->template As<ARMContext>();
-  auto x_dims = param.x->dims();
-  auto x_data = param.x->data<float>();
-  auto output_data = param.out->mutable_data<float>();
+  auto x_dims = param.X->dims();
+  auto x_data = param.X->data<float>();
+  auto output_data = param.Out->mutable_data<float>();
   lite::arm::math::act_relu<float>(
       x_data, output_data, x_dims.production(), ctx.threads());
 }
@@ -33,31 +33,31 @@ void ReluCompute::Run() {
 void ReluNegCompute::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->template As<ARMContext>();
-  auto x_dims = param.x->dims();
-  auto x_data = param.x->data<float>();
-  auto negative_slope = param.relu_neg_slope;
-  auto output_data = param.out->mutable_data<float>();
+  auto x_dims = param.X->dims();
+  auto x_data = param.X->data<float>();
+  auto negative_slope = param.Relu_neg_slope;
+  auto output_data = param.Out->mutable_data<float>();
   lite::arm::math::act_relu_neg<float>(
       x_data, output_data, x_dims.production(), negative_slope, ctx.threads());
 }
 void ReluClippedCompute::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->template As<ARMContext>();
-  auto x_dims = param.x->dims();
-  auto x_data = param.x->data<float>();
-  auto coef = param.relu_clipped_coef;
-  auto output_data = param.out->mutable_data<float>();
+  auto x_dims = param.X->dims();
+  auto x_data = param.X->data<float>();
+  auto coef = param.Relu_clipped_coef;
+  auto output_data = param.Out->mutable_data<float>();
   lite::arm::math::act_clipped_relu<float>(
       x_data, output_data, x_dims.production(), coef, ctx.threads());
 }
 void PReluCompute::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->template As<ARMContext>();
-  auto x_dims = param.x->dims();
-  auto x_data = param.x->data<float>();
-  auto channel_shared = param.prelu_channel_shared;
-  auto channel_slope = param.prelu_channel_slope->data<float>();
-  auto output_data = param.out->mutable_data<float>();
+  auto x_dims = param.X->dims();
+  auto x_data = param.X->data<float>();
+  auto channel_shared = param.Prelu_channel_shared;
+  auto channel_slope = param.Prelu_channel_slope->data<float>();
+  auto output_data = param.Out->mutable_data<float>();
 
   int outer_size = x_dims[0];
   int channel_size = x_dims[1];
@@ -74,28 +74,28 @@ void PReluCompute::Run() {
 void SigmoidCompute::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->template As<ARMContext>();
-  auto x_dims = param.x->dims();
-  auto x_data = param.x->data<float>();
-  auto output_data = param.out->mutable_data<float>();
+  auto x_dims = param.X->dims();
+  auto x_data = param.X->data<float>();
+  auto output_data = param.Out->mutable_data<float>();
   lite::arm::math::act_sigmoid<float>(
       x_data, output_data, x_dims.production(), ctx.threads());
 }
 void TanhCompute::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->template As<ARMContext>();
-  auto x_dims = param.x->dims();
-  auto x_data = param.x->data<float>();
-  auto output_data = param.out->mutable_data<float>();
+  auto x_dims = param.X->dims();
+  auto x_data = param.X->data<float>();
+  auto output_data = param.Out->mutable_data<float>();
   lite::arm::math::act_tanh<float>(
       x_data, output_data, x_dims.production(), ctx.threads());
 }
 void SwishCompute::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->template As<ARMContext>();
-  auto x_dims = param.x->dims();
-  auto x_data = param.x->data<float>();
-  auto coef = param.swish_coef;
-  auto output_data = param.out->mutable_data<float>();
+  auto x_dims = param.X->dims();
+  auto x_data = param.X->data<float>();
+  auto coef = param.Swish_coef;
+  auto output_data = param.Out->mutable_data<float>();
   lite::arm::math::act_swish<float>(
       x_data, output_data, x_dims.production(), coef, ctx.threads());
 }
@@ -107,14 +107,14 @@ void SwishCompute::Run() {
 
 REGISTER_LITE_KERNEL(
     relu, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::ReluCompute, def)
-    .BindInput("x", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
 REGISTER_LITE_KERNEL(
     relu_neg, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::ReluCompute, def)
-    .BindInput("x", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("relu_neg_slope", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Relu_neg_slope", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
 REGISTER_LITE_KERNEL(relu_clipped,
                      kARM,
@@ -122,30 +122,30 @@ REGISTER_LITE_KERNEL(relu_clipped,
                      kNCHW,
                      paddle::lite::kernels::arm::ReluCompute,
                      def)
-    .BindInput("x", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("relu_clipped_coef", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Relu_clipped_coef", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
 REGISTER_LITE_KERNEL(
     prelu, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::ReluCompute, def)
-    .BindInput("x", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("prelu_channel_shared", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("prelu_channel_slope", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Prelu_channel_shared", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Prelu_channel_slope", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
 REGISTER_LITE_KERNEL(
     sigmoid, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::ReluCompute, def)
-    .BindInput("x", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
 REGISTER_LITE_KERNEL(
     tanh, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::ReluCompute, def)
-    .BindInput("x", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
 REGISTER_LITE_KERNEL(
     swish, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::ReluCompute, def)
-    .BindInput("x", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("swish_coef", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Swish_coef", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();

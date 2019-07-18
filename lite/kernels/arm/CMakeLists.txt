@@ -20,6 +20,7 @@ lite_cc_library(calib_compute_arm SRCS calib_compute.cc DEPS ${lite_kernel_deps}
 lite_cc_library(transpose_compute_arm SRCS transpose_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(argmax_compute_arm SRCS argmax_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(axpy_compute_arm SRCS axpy_compute.cc DEPS ${lite_kernel_deps} math_arm)
+lite_cc_library(conv_transpose_compute_arm SRCS conv_transpose_compute.cc DEPS ${lite_kernel_deps} math_arm)
 
 lite_cc_test(test_fc_compute_arm SRCS fc_compute_test.cc DEPS fc_compute_arm math_arm)
 lite_cc_test(test_activation_compute_arm SRCS activation_compute_test.cc DEPS activation_compute_arm)
@@ -37,6 +38,7 @@ lite_cc_test(test_dropout_compute_arm SRCS dropout_compute_test.cc DEPS dropout_
 lite_cc_test(test_transpose_compute_arm SRCS transpose_compute_test.cc DEPS transpose_compute_arm)
 lite_cc_test(test_argmax_compute_arm SRCS argmax_compute_test.cc DEPS argmax_compute_arm)
 lite_cc_test(test_axpy_compute_arm SRCS axpy_compute_test.cc DEPS axpy_compute_arm)
+lite_cc_test(test_conv_transpose_compute_arm SRCS conv_transpose_compute_test.cc DEPS conv_transpose_compute_arm)
 
 
 set(arm_kernels
@@ -56,6 +58,7 @@ set(arm_kernels
     calib_compute_arm
     argmax_compute_arm
     axpy_compute_arm
+		conv_transpose_compute_arm
     )
 
 set(arm_kernels "${arm_kernels}" CACHE INTERNAL "arm kernels")

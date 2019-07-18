@@ -80,5 +80,7 @@ if (NOT HAS_ARM_MATH_LIB_DIR)
       conv3x3s2_direct_int8.cc
       argmax.cc
       axpy.cc
+			fill_bias_relu.cc
+			col_im_transform.cc
       DEPS ${lite_kernel_deps} framework_proto)
 endif()

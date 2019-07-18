@@ -39,10 +39,10 @@ enum activation_type {
 template <typename dtype>
 void activation_compute_ref(const operators::ActivationParam& param,
                             activation_type type) {
-  auto x_data = param.x->data<dtype>();
-  auto output_data = param.out->mutable_data<dtype>();
-  DDim x_dims = param.x->dims();
-  DDim output_dims = param.out->dims();
+  auto x_data = param.X->data<dtype>();
+  auto output_data = param.Out->mutable_data<dtype>();
+  DDim x_dims = param.X->dims();
+  DDim output_dims = param.Out->dims();
   ASSERT_EQ(x_dims.data(), output_dims.data());
 
   switch (type) {
@@ -53,14 +53,14 @@ void activation_compute_ref(const operators::ActivationParam& param,
       break;
     }
     case RELU_NEG: {
-      float neg_slope = param.relu_neg_slope;
+      float neg_slope = param.Relu_neg_slope;
       for (int i = 0; i < output_dims.production(); i++) {
         output_data[i] = x_data[i] > 0.f ? x_data[i] : x_data[i] * neg_slope;
       }
       break;
     }
     case RELU_CLIPPED: {
-      float clipped_coef = param.relu_clipped_coef;
+      float clipped_coef = param.Relu_clipped_coef;
       for (int i = 0; i < output_dims.production(); i++) {
         output_data[i] = x_data[i] > 0.f ? x_data[i] : 0.f;
         output_data[i] =
@@ -69,8 +69,8 @@ void activation_compute_ref(const operators::ActivationParam& param,
       break;
     }
     case PRELU: {
-      bool channel_shared = param.prelu_channel_shared;
-      auto channel_slope = param.prelu_channel_slope->data<dtype>();
+      bool channel_shared = param.Prelu_channel_shared;
+      auto channel_slope = param.Prelu_channel_slope->data<dtype>();
       int num = x_dims[0];
       int channel = x_dims[1];
       int csize = x_dims[2] * x_dims[3];
@@ -104,7 +104,7 @@ void activation_compute_ref(const operators::ActivationParam& param,
       break;
     }
     case SWISH: {
-      float coef = param.swish_coef;
+      float coef = param.Swish_coef;
       for (int i = 0; i < output_dims.production(); i++) {
         output_data[i] = x_data[i] / (1.f + std::exp(-coef * x_data[i]));
       }
@@ -142,8 +142,8 @@ void test_activation_compute(
           std::unique_ptr<KernelContext> ctx(new KernelContext);
           ctx->As<ARMContext>();
           activation->SetContext(std::move(ctx));
-          param->x = &x;
-          param->out = &output;
+          param->X = &x;
+          param->Out = &output;
           if (type == PRELU) {
             Tensor channel_slope;
             channel_slope.Resize({c});
@@ -153,12 +153,12 @@ void test_activation_compute(
               channel_slope_data[j] =
                   sign * static_cast<float>(j % 128) * 0.013f;
             }
-            param->prelu_channel_slope = &channel_slope;
+            param->Prelu_channel_slope = &channel_slope;
           }
           activation->SetParam(*param);
           activation->Launch();
           // invoking ref implementation and compare results
-          param->out = &output_ref;
+          param->Out = &output_ref;
           activation_compute_ref<float>(*param, type);
           auto* output_ref_data = output_ref.mutable_data<float>();
 
@@ -229,7 +229,7 @@ TEST(relu_neg_activation_arm, compute) {
   ReluNegCompute activation;
   operators::ActivationParam param;
   for (float slope : {0.001, 0.01, 0.1}) {
-    param.relu_neg_slope = slope;
+    param.Relu_neg_slope = slope;
     activation_type type = RELU_NEG;
     test_activation_compute(&activation, &param, type);
   }
@@ -239,7 +239,7 @@ TEST(relu_clipped_activation_arm, compute) {
   ReluClippedCompute activation;
   operators::ActivationParam param;
   for (float coef : {1, 3, 6}) {
-    param.relu_clipped_coef = coef;
+    param.Relu_clipped_coef = coef;
     activation_type type = RELU_CLIPPED;
     test_activation_compute(&activation, &param, type);
   }
@@ -249,7 +249,7 @@ TEST(prelu_activation_arm, compute) {
   PReluCompute activation;
   operators::ActivationParam param;
   for (bool flag : {false, true}) {
-    param.prelu_channel_shared = flag;
+    param.Prelu_channel_shared = flag;
     activation_type type = PRELU;
     test_activation_compute(&activation, &param, type);
   }
@@ -273,7 +273,7 @@ TEST(swish_activation_arm, compute) {
   SwishCompute activation;
   operators::ActivationParam param;
   for (float coef : {0.01, 0.1}) {
-    param.swish_coef = coef;
+    param.Swish_coef = coef;
     activation_type type = SWISH;
     test_activation_compute(&activation, &param, type);
   }

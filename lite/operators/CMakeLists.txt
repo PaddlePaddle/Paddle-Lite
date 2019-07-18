@@ -30,6 +30,7 @@ lite_cc_library(split_op SRCS split_op.cc DEPS ${op_DEPS})
 lite_cc_library(transpose_op SRCS transpose_op.cc DEPS ${op_DEPS})
 lite_cc_library(fake_quant SRCS fake_quantize_moving_avg_max_abs.cc DEPS ${op_DEPS})
 lite_cc_library(fake_dequant SRCS fake_dequantize_max_abs.cc DEPS ${op_DEPS})
+lite_cc_library(conv_transpose_op SRCS conv_transpose_op.cc DEPS ${op_DEPS})
 
 set(ops
         conv_op
@@ -60,6 +61,7 @@ set(ops
         uniform_random_op
       	argmax_op
 	      axpy_op
+				conv_transpose_op
         CACHE INTERNAL "ops lite")
 
 if (NOT LITE_WITH_X86)

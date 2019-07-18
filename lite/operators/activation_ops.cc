@@ -20,29 +20,29 @@ namespace lite {
 namespace operators {
 
 bool ActivationOp::CheckShape() const {
-  CHECK_OR_FALSE(param_.x);
-  CHECK_OR_FALSE(param_.out);
+  CHECK_OR_FALSE(param_.X);
+  CHECK_OR_FALSE(param_.Out);
   return true;
 }
 
 bool ActivationOp::InferShape() const {
-  param_.out->Resize(param_.x->dims());
+  param_.Out->Resize(param_.X->dims());
   return true;
 }
 
 bool ActivationOp::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
-  auto x_name = opdesc.Input("x").front();
-  auto prelu_channel_slope_name = opdesc.Input("prelu_channel_slope").front();
-  auto out_name = opdesc.Output("out").front();
+  auto x_name = opdesc.Input("X").front();
+  auto prelu_channel_slope_name = opdesc.Input("Prelu_channel_slope").front();
+  auto out_name = opdesc.Output("Out").front();
 
-  param_.x = GetVar<lite::Tensor>(scope, x_name);
-  param_.relu_neg_slope = op_desc.GetAttr<float>("relu_neg_slope");
-  param_.relu_clipped_coef = op_desc.GetAttr<float>("relu_clipped_coef");
-  param_.prelu_channel_shared = op_desc.GetAttr<bool>("prelu_channel_shared");
-  param_.prelu_channel_slope =
-      GetVar<lite::Tensor>(scope, prelu_channel_slope_name);
-  param_.swish_coef = op_desc.GetAttr<float>("swish_coef");
-  param_.out = GetMutableVar<lite::Tensor>(scope, out_name);
+  param_.X = scope->FindVar(x_name)->GetMutable<lite::Tensor>();
+  param_.Relu_neg_slope = opdesc.GetAttr<float>("Relu_neg_slope");
+  param_.Relu_clipped_coef = opdesc.GetAttr<float>("Relu_clipped_coef");
+  param_.Prelu_channel_shared = opdesc.GetAttr<bool>("Prelu_channel_shared");
+  param_.Prelu_channel_slope =
+      scope->FindVar(prelu_channel_slope_name)->GetMutable<lite::Tensor>();
+  param_.Swish_coef = opdesc.GetAttr<float>("Swish_coef");
+  param_.Out = scope->FindVar(out_name)->GetMutable<lite::Tensor>();
   return true;
 }
 
