@@ -16,9 +16,11 @@ limitations under the License. */
 
 #include "operators/kernel/conv_add_bn_relu_kernel.h"
 #include <cmath>
+#include "framework/context.h"
 #include "operators/kernel/arm/convolution/conv_common.h"
 #include "operators/kernel/central-arm-func/conv_arm_func.h"
 #include "operators/math/element_wise.h"
+#include "operators/math/gemm/gemm1x1s1.h"
 
 namespace paddle_mobile {
 namespace operators {
@@ -64,6 +66,9 @@ bool ConvAddBNReluKernel<CPU, float>::Init(
 
   // try to use faster depthwise conv
   switch (param->ExecMode()) {
+    case ConvParam<CPU>::EXEC_GEMM1x1s1_FLOAT:
+      use_gemm_add_bn_relu = true;
+      break;
     case ConvParam<CPU>::EXEC_DEPTHWISE3x3S1_FLOAT:
     case ConvParam<CPU>::EXEC_DEPTHWISE3x3S2_FLOAT:
       const std::vector<int> &paddings = param->Paddings();
@@ -84,7 +89,7 @@ bool ConvAddBNReluKernel<CPU, float>::Init(
       break;
   }
 
-  if (could_use_faster_depthwise_conv_) {
+  if (could_use_faster_depthwise_conv_ || use_gemm_add_bn_relu) {
     auto filter_data = param->Filter()->data<float>();
     auto filter_dim = param->Filter()->dims();
     int len = 1;
@@ -98,6 +103,12 @@ bool ConvAddBNReluKernel<CPU, float>::Init(
         filter_data[i * step + k] =
             filter_data[i * step + k] * new_scale_ptr[i];
       }
+    }
+    if (use_gemm_add_bn_relu) {
+      ARMArch arch = framework::CPUContext::Context()->get_arch();
+      math::gemm1x1s1_transform_weight(*param->Filter(), *param->Output(),
+                                       param->transformed_filter_,
+                                       param->groups, arch);
     }
   }
 
@@ -129,7 +140,9 @@ void ConvAddBNReluKernel<CPU, float>::Compute(
       GemmConv<float, float>(param);
       break;
     case ConvParam<CPU>::EXEC_GEMM1x1s1_FLOAT:
-      GemmConv1x1s1<float, float>(param);
+      fusion_has_been_computed = true;
+      GemmConv1x1s1<float, float>(param, param.NewBias()->data<float>(), true,
+                                  true);
       break;
     case ConvParam<CPU>::EXEC_SLIDINGWINDOW3x3S1_FLOAT:
     case ConvParam<CPU>::EXEC_SLIDINGWINDOW3x3S2_FLOAT:

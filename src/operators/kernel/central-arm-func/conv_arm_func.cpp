@@ -140,7 +140,8 @@ void GemmConv(const ConvParam<CPU> &param) {
 }
 
 template <typename Itype, typename Otype>
-void GemmConv1x1s1(const ConvParam<CPU> &param) {
+void GemmConv1x1s1(const ConvParam<CPU> &param, const float *bias, bool is_bias,
+                   bool is_relu) {
   const Tensor *input = param.Input();
   Tensor filter = *param.transformed_filter_;
   Tensor *output = param.Output();
@@ -156,8 +157,6 @@ void GemmConv1x1s1(const ConvParam<CPU> &param) {
   const int hout = output->dims()[2];
   const int wout = output->dims()[3];
   const float *weights = filter.mutable_data<float>();
-  const float *bias = nullptr;
-
   int channel_size_out = wout * hout;
   int channel_size_in = win * hin;
   const int group = param.Groups();
@@ -165,8 +164,16 @@ void GemmConv1x1s1(const ConvParam<CPU> &param) {
   const int n = hout * wout;
   const int k = chin / group;
 
-  bool flag_relu = false;
-  bool flag_bias = false;
+  bool flag_relu = true;
+  bool flag_bias = true;
+
+  if (!is_bias) {
+    bias = nullptr;
+    flag_bias = false;
+  }
+  if (!is_relu) {
+    flag_relu = false;
+  }
   ARMArch arch = framework::CPUContext::Context()->get_arch();
   int hblock = math::get_hblock(arch);
 
@@ -346,7 +353,9 @@ void SlidingwindowConv3x3(const ConvParam<CPU> &param) {
 }
 
 template void GemmConv<float, float>(const ConvParam<CPU> &param);
-template void GemmConv1x1s1<float, float>(const ConvParam<CPU> &param);
+template void GemmConv1x1s1<float, float>(const ConvParam<CPU> &param,
+                                          const float *bias, bool is_bias,
+                                          bool is_relu);
 template void WinogradConv3x3<8, 3>(const ConvParam<CPU> &param);
 template void DepthwiseConv3x3<float, float>(const ConvParam<CPU> &param);
 template void DepthwiseConv5x5<float, float>(const ConvParam<CPU> &param);
