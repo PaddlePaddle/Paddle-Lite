@@ -59,7 +59,7 @@ void ConvKernel<CPU, float>::Compute(const ConvParam<CPU> &param) {
       break;
     case ConvParam<CPU>::EXEC_SLIDINGWINDOW3x3S1_FLOAT:
     case ConvParam<CPU>::EXEC_SLIDINGWINDOW3x3S2_FLOAT:
-      SlidingwindowConv3x3<float, float>(param);
+      SlidingwindowConv3x3<float, float>(param, nullptr, false, false);
       break;
     default:
       PADDLE_MOBILE_THROW_EXCEPTION("Invalid convolution execute mode %d",

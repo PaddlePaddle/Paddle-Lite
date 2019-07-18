@@ -329,7 +329,8 @@ void DepthwiseConv5x5(const ConvParam<CPU> &param) {
 }
 
 template <typename Itype, typename Otype>
-void SlidingwindowConv3x3(const ConvParam<CPU> &param) {
+void SlidingwindowConv3x3(const ConvParam<CPU> &param, const float *bias,
+                          bool is_bias, bool is_relu) {
   const Tensor *input = param.Input();
   const Tensor *filter = param.Filter();
   const std::vector<int> &paddings = param.Paddings();
@@ -341,12 +342,14 @@ void SlidingwindowConv3x3(const ConvParam<CPU> &param) {
     // math::SlidingwindowConv3x3s1<Itype, Otype>(input, filter, paddings,
     // output);
     math::SlidingwindowConv3x3s1Faster<Itype, Otype>(
-        input, param.transformed_filter_, paddings, output);
+        input, param.transformed_filter_, paddings, output, bias, is_bias,
+        is_relu);
   } else if (strides[0] == 2) {
     // math::SlidingwindowConv3x3s2<Itype, Otype>(input, filter, paddings,
     // output);
     math::SlidingwindowConv3x3s2Faster<Itype, Otype>(
-        input, param.transformed_filter_, paddings, output);
+        input, param.transformed_filter_, paddings, output, bias, is_bias,
+        is_relu);
   } else {
     GemmConv<Itype, Otype>(param);
   }
@@ -359,7 +362,9 @@ template void GemmConv1x1s1<float, float>(const ConvParam<CPU> &param,
 template void WinogradConv3x3<8, 3>(const ConvParam<CPU> &param);
 template void DepthwiseConv3x3<float, float>(const ConvParam<CPU> &param);
 template void DepthwiseConv5x5<float, float>(const ConvParam<CPU> &param);
-template void SlidingwindowConv3x3<float, float>(const ConvParam<CPU> &param);
+template void SlidingwindowConv3x3<float, float>(const ConvParam<CPU> &param,
+                                                 const float *bias,
+                                                 bool is_bias, bool is_relu);
 
 template void GemmConv<int8_t, int32_t>(const ConvParam<CPU> &param);
 #ifndef __aarch64__

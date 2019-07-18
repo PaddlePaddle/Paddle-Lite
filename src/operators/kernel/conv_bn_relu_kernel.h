@@ -36,6 +36,10 @@ class ConvBNReluKernel
  public:
   void Compute(const FusionConvBNReluParam<DeviceType> &param);
   bool Init(FusionConvBNReluParam<DeviceType> *param);
+
+ private:
+  bool use_gemm_bn_relu = false;
+  bool use_slidingwindow_bn_relu = false;
 };
 
 }  // namespace operators

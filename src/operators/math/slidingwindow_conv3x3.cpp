@@ -3710,12 +3710,15 @@ void SlidingwindowConv3x3s2<float, float>(const framework::Tensor *input,
 template <>
 void SlidingwindowConv3x3s1Faster<float, float>(
     const framework::Tensor *input, framework::Tensor *filter,
-    const std::vector<int> &paddings, framework::Tensor *output) {
+    const std::vector<int> &paddings, framework::Tensor *output,
+    const float *bias, bool is_bias, bool is_relu) {
   const float *din = input->data<float>();
   float *dout = output->mutable_data<float>();
   const float *weights = filter->mutable_data<float>();
-  const float *bias = nullptr;
-  bool relu = false;
+  if (!is_bias) {
+    bias = nullptr;
+  }
+  bool relu = is_relu;
   const int num = input->dims()[0];
   const int chin = input->dims()[1];
   const int hin = input->dims()[2];
@@ -4623,12 +4626,15 @@ void SlidingwindowConv3x3s1Faster<float, float>(
 template <>
 void SlidingwindowConv3x3s2Faster<float, float>(
     const framework::Tensor *input, framework::Tensor *filter,
-    const std::vector<int> &paddings, framework::Tensor *output) {
+    const std::vector<int> &paddings, framework::Tensor *output,
+    const float *bias, bool is_bias, bool is_relu) {
   const float *din = input->data<float>();
   float *dout = output->mutable_data<float>();
   const float *weights = filter->mutable_data<float>();
-  const float *bias = nullptr;
-  bool relu = false;
+  if (!is_bias) {
+    bias = nullptr;
+  }
+  bool relu = is_relu;
   const int num = input->dims()[0];
   const int chin = input->dims()[1];
   const int hin = input->dims()[2];
