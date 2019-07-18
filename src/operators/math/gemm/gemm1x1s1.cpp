@@ -18,7 +18,6 @@ limitations under the License. */
 #include "operators/math/gemm/gemm1x1s1.h"
 #include <arm_neon.h>
 #include "framework/context.h"
-#include "iostream"
 
 namespace paddle_mobile {
 namespace operators {

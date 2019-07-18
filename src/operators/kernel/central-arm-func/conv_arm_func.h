@@ -33,7 +33,8 @@ template <typename Itype, typename Otype>
 void GemmConv(const ConvParam<CPU> &param);
 
 template <typename Itype, typename Otype>
-void GemmConv1x1s1(const ConvParam<CPU> &param);
+void GemmConv1x1s1(const ConvParam<CPU> &param, const float *bias, bool is_bias,
+                   bool is_relu);
 
 template <int tile, int kernel>
 void WinogradConv3x3(const ConvParam<CPU> &param);
@@ -45,7 +46,8 @@ template <typename Itype, typename Otype>
 void DepthwiseConv5x5(const ConvParam<CPU> &param);
 
 template <typename Itype, typename Otype>
-void SlidingwindowConv3x3(const ConvParam<CPU> &param);
+void SlidingwindowConv3x3(const ConvParam<CPU> &param, const float *bias,
+                          bool is_bias, bool is_relu);
 
 void FasterDepthwiseConv3x3_bias_relu(const ConvParam<CPU> &param,
                                       const float *bias, bool flag_relu);

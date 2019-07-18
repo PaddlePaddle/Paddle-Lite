@@ -31,6 +31,7 @@ bool ConvAddReluKernel<CPU, float>::Init(FusionConvAddReluParam<CPU> *param) {
 template <>
 void ConvAddReluKernel<CPU, float>::Compute(
     const FusionConvAddReluParam<CPU> &param) {
+  bool fusion_has_been_computed = false;
   switch (param.ExecMode()) {
     case ConvParam<CPU>::EXEC_DEPTHWISE3x3S1_FLOAT:
     case ConvParam<CPU>::EXEC_DEPTHWISE3x3S2_FLOAT:
@@ -46,21 +47,25 @@ void ConvAddReluKernel<CPU, float>::Compute(
       GemmConv<float, float>(param);
       break;
     case ConvParam<CPU>::EXEC_GEMM1x1s1_FLOAT:
-      GemmConv1x1s1<float, float>(param);
+      fusion_has_been_computed = true;
+      GemmConv1x1s1<float, float>(param, param.Bias()->data<float>(), true,
+                                  true);
       break;
     case ConvParam<CPU>::EXEC_SLIDINGWINDOW3x3S1_FLOAT:
     case ConvParam<CPU>::EXEC_SLIDINGWINDOW3x3S2_FLOAT:
-      SlidingwindowConv3x3<float, float>(param);
+      SlidingwindowConv3x3<float, float>(param, nullptr, false, false);
       break;
     default:
       PADDLE_MOBILE_THROW_EXCEPTION("Invalid convolution execute mode %d",
                                     param.ExecMode());
   }
-  if (param.Bias()->dims() == param.Output()->dims()) {
-    math::AddElememtWise<RELU>(param.Output(), param.Bias(), param.Axis(),
-                               param.Output());
-  } else {
-    math::AddChannelWise<RELU>(param.Output(), param.Bias(), param.Output());
+  if (!fusion_has_been_computed) {
+    if (param.Bias()->dims() == param.Output()->dims()) {
+      math::AddElememtWise<RELU>(param.Output(), param.Bias(), param.Axis(),
+                                 param.Output());
+    } else {
+      math::AddChannelWise<RELU>(param.Output(), param.Bias(), param.Output());
+    }
   }
 }
 
