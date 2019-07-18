@@ -39,6 +39,8 @@ class ConvAddBNReluKernel
 
  private:
   bool could_use_faster_depthwise_conv_ = false;
+  bool use_gemm_add_bn_relu = false;
+  bool use_slidingwindow_add_bn_relu = false;
 };
 
 }  // namespace operators

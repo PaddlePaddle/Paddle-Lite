@@ -16,9 +16,12 @@ limitations under the License. */
 
 #include "operators/kernel/conv_bn_relu_kernel.h"
 #include <cmath>
+#include "framework/context.h"
 #include "operators/kernel/arm/convolution/conv_common.h"
 #include "operators/kernel/central-arm-func/conv_arm_func.h"
 #include "operators/math/element_wise.h"
+#include "operators/math/gemm/gemm1x1s1.h"
+#include "operators/math/slidingwindow_utils.h"
 
 namespace paddle_mobile {
 namespace operators {
@@ -57,12 +60,50 @@ bool ConvBNReluKernel<CPU, float>::Init(FusionConvBNReluParam<CPU> *param) {
   param->SetNewBias(new_bias);
 
   InitBaseConvKernel(param);
+
+  switch (param->ExecMode()) {
+    case ConvParam<CPU>::EXEC_SLIDINGWINDOW3x3S1_FLOAT:
+    case ConvParam<CPU>::EXEC_SLIDINGWINDOW3x3S2_FLOAT:
+      use_slidingwindow_bn_relu = true;
+      break;
+    case ConvParam<CPU>::EXEC_GEMM1x1s1_FLOAT:
+      use_gemm_bn_relu = true;
+      break;
+  }
+
+  if (use_gemm_bn_relu || use_slidingwindow_bn_relu) {
+    auto filter_data = param->Filter()->data<float>();
+    auto filter_dim = param->Filter()->dims();
+    int len = 1;
+    for (int i = 0; i < filter_dim.size(); i++) {
+      len *= filter_dim[i];
+    }
+    int batch = filter_dim[0];
+    int step = len / batch;
+    for (int i = 0; i < batch; i++) {
+      for (int k = 0; k < step; k++) {
+        filter_data[i * step + k] =
+            filter_data[i * step + k] * new_scale_ptr[i];
+      }
+    }
+    if (use_gemm_bn_relu) {
+      ARMArch arch = framework::CPUContext::Context()->get_arch();
+      math::gemm1x1s1_transform_weight(*param->Filter(), *param->Output(),
+                                       param->transformed_filter_,
+                                       param->groups, arch);
+    }
+    if (use_slidingwindow_bn_relu) {
+      math::slidingwindow_transform_weight<float>(*param->Filter(),
+                                                  param->transformed_filter_);
+    }
+  }
   return true;
 }
 
 template <>
 void ConvBNReluKernel<CPU, float>::Compute(
     const FusionConvBNReluParam<CPU> &param) {
+  bool fusion_has_been_computed = false;
   switch (param.ExecMode()) {
     case ConvParam<CPU>::EXEC_DEPTHWISE3x3S1_FLOAT:
     case ConvParam<CPU>::EXEC_DEPTHWISE3x3S2_FLOAT:
@@ -78,18 +119,24 @@ void ConvBNReluKernel<CPU, float>::Compute(
       GemmConv<float, float>(param);
       break;
     case ConvParam<CPU>::EXEC_GEMM1x1s1_FLOAT:
-      GemmConv1x1s1<float, float>(param);
+      GemmConv1x1s1<float, float>(param, param.NewBias()->data<float>(), true,
+                                  true);
+      fusion_has_been_computed = true;
       break;
     case ConvParam<CPU>::EXEC_SLIDINGWINDOW3x3S1_FLOAT:
     case ConvParam<CPU>::EXEC_SLIDINGWINDOW3x3S2_FLOAT:
-      SlidingwindowConv3x3<float, float>(param);
+      SlidingwindowConv3x3<float, float>(param, param.NewBias()->data<float>(),
+                                         true, true);
+      fusion_has_been_computed = true;
       break;
     default:
       PADDLE_MOBILE_THROW_EXCEPTION("Invalid convolution execute mode %d",
                                     param.ExecMode());
   }
-  math::ScaleAddChannelWise<RELU>(param.Output(), param.NewScale(),
-                                  param.NewBias(), param.Output());
+  if (!fusion_has_been_computed) {
+    math::ScaleAddChannelWise<RELU>(param.Output(), param.NewScale(),
+                                    param.NewBias(), param.Output());
+  }
 }
 template class ConvBNReluKernel<CPU, float>;
 
