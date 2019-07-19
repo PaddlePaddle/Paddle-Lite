@@ -22,7 +22,6 @@ namespace operators {
 bool ActivationOp::CheckShape() const {
   CHECK_OR_FALSE(param_.X);
   CHECK_OR_FALSE(param_.Out);
-  CHECK_OR_FALSE(param_.X->dims() == param_.Out->dims());
   return true;
 }
 
@@ -37,7 +36,7 @@ bool ActivationOp::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
   auto out_name = opdesc.Output("Out").front();
 
   param_.X = scope->FindVar(x_name)->GetMutable<lite::Tensor>();
-  param_.Relu_neg_slope = opdesc.GetAttr<float>("Relu_neg_slope");
+  param_.Leaky_relu_slope = opdesc.GetAttr<float>("Leaky_relu_slope");
   param_.Relu_clipped_coef = opdesc.GetAttr<float>("Relu_clipped_coef");
   param_.Prelu_channel_shared = opdesc.GetAttr<bool>("Prelu_channel_shared");
   param_.Prelu_channel_slope =
@@ -93,7 +92,7 @@ bool ActivationGradOp::AttachImpl(const cpp::OpDesc& opdesc,
 
 REGISTER_LITE_OP(square, paddle::lite::operators::ActivationOp);
 // REGISTER_LITE_OP(relu_1, paddle::lite::operators::ActivationOp);
-REGISTER_LITE_OP(relu_neg, paddle::lite::operators::ActivationOp);
+REGISTER_LITE_OP(leaky_relu, paddle::lite::operators::ActivationOp);
 REGISTER_LITE_OP(relu_clipped, paddle::lite::operators::ActivationOp);
 REGISTER_LITE_OP(prelu, paddle::lite::operators::ActivationOp);
 REGISTER_LITE_OP(sigmoid, paddle::lite::operators::ActivationOp);

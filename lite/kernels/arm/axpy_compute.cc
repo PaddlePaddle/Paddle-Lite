@@ -32,7 +32,6 @@ void AxpyCompute::Run() {
   lite::Tensor* bias = param.bias;
   lite::Tensor* out = param.output;
 
-  // axpy_kernel_fp32
   const float* scale_ptr = scale->data<float>();
   const float* x_ptr = x->data<float>();
   const float* bias_ptr = bias->data<float>();

@@ -31,13 +31,13 @@ class ReluCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
   virtual ~ReluCompute() = default;
 };
 
-class ReluNegCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+class LeakyReluCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
  public:
   using param_t = operators::ActivationParam;
 
   void Run() override;
 
-  virtual ~ReluNegCompute() = default;
+  virtual ~LeakyReluCompute() = default;
 };
 
 class ReluClippedCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {

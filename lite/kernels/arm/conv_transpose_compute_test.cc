@@ -242,20 +242,14 @@ TEST(conv2d_transpose_arm, init) {
   ASSERT_EQ(compute.precision(), PRECISION(kFloat));
   ASSERT_EQ(compute.target(), TARGET(kARM));
 }
-void print_data(lite::Tensor input, std::string name) {
-  LOG(INFO) << name;
-  auto* input_data = input.mutable_data<float>();
-  for (int i = 0; i < input.dims().production(); i++) {
-    LOG(INFO) << input_data[i];
-  }
-}
+
 TEST(conv2d_transpose_arm, compute) {
   DeviceInfo::Init();
   for (auto n : {1, 2}) {
-    for (auto ic : {1, 3, 8 /*, 128*/}) {
-      for (auto oc : {1, 3, 8 /*, 128*/}) {
-        for (auto ih : {2, 8, 15 /*, 56 , 112, 224, 512*/}) {
-          for (auto iw : {2, 8, 15 /*, 56, 112, 224, 512*/}) {
+    for (auto ic : {1, 3 /*, 128*/}) {
+      for (auto oc : {1, 3 /*, 128*/}) {
+        for (auto ih : {2, 8 /*, 56 , 112, 224, 512*/}) {
+          for (auto iw : {2, 8 /*, 56, 112, 224, 512*/}) {
             for (auto flag_bias : {false, true}) {
               for (auto flag_relu : {false, true}) {
                 for (auto dilation : {1, 2}) {
@@ -263,16 +257,7 @@ TEST(conv2d_transpose_arm, compute) {
                     for (auto padding : {0, 1, 2}) {
                       for (auto ks : {2, 3, 5}) {
                         for (auto group : {1, 2}) {
-                          /*
-                          LOG(INFO) << "n:" << n << ",ic:" << ic << ",oc:" << oc
-                          << ",ih:" << ih
-                            << ",iw:" << iw << ",flag_bias:" << flag_bias <<
-                          ",flag_relu:" << flag_relu
-                            << ",dila:" << dilation << ",padding:" << padding <<
-                          ",ks:" << ks
-                            << ",group:" << group;
-                            */
-                          // get shape
+                          // obtain shape
                           if (ic % group != 0 || oc % group != 0) {
                             group = 1;
                           }

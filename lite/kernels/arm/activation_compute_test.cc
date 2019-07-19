@@ -28,7 +28,7 @@ namespace arm {
 
 enum activation_type {
   RELU,
-  RELU_NEG,
+  LEAKY_RELU,
   RELU_CLIPPED,
   PRELU,
   SIGMOID,
@@ -52,10 +52,10 @@ void activation_compute_ref(const operators::ActivationParam& param,
       }
       break;
     }
-    case RELU_NEG: {
-      float neg_slope = param.Relu_neg_slope;
+    case LEAKY_RELU: {
+      float slope = param.Leaky_relu_slope;
       for (int i = 0; i < output_dims.production(); i++) {
-        output_data[i] = x_data[i] > 0.f ? x_data[i] : x_data[i] * neg_slope;
+        output_data[i] = x_data[i] > 0.f ? x_data[i] : x_data[i] * slope;
       }
       break;
     }
@@ -173,7 +173,7 @@ void test_activation_compute(
 
 TEST(activation_arm, retrive_op) {
   for (auto activation_name : {"relu",
-                               "relu_neg",
+                               "leaky_relu",
                                "relu_clipped",
                                "prelu",
                                "sigmoid",
@@ -193,7 +193,7 @@ TEST(activation_arm, init) {
   ASSERT_EQ(activation_relu.precision(), PRECISION(kFloat));
   ASSERT_EQ(activation_relu.target(), TARGET(kARM));
 
-  ReluNegCompute activation_relu_neg;
+  LeakyReluCompute activation_relu_neg;
   ASSERT_EQ(activation_relu_neg.precision(), PRECISION(kFloat));
   ASSERT_EQ(activation_relu_neg.target(), TARGET(kARM));
 
@@ -225,12 +225,12 @@ TEST(relu_activation_arm, compute) {
   test_activation_compute(&activation, &param, type);
 }
 
-TEST(relu_neg_activation_arm, compute) {
-  ReluNegCompute activation;
+TEST(leaky_relu_activation_arm, compute) {
+  LeakyReluCompute activation;
   operators::ActivationParam param;
   for (float slope : {0.001, 0.01, 0.1}) {
-    param.Relu_neg_slope = slope;
-    activation_type type = RELU_NEG;
+    param.Leaky_relu_slope = slope;
+    activation_type type = LEAKY_RELU;
     test_activation_compute(&activation, &param, type);
   }
 }

@@ -30,16 +30,17 @@ void ReluCompute::Run() {
       x_data, output_data, x_dims.production(), ctx.threads());
 }
 
-void ReluNegCompute::Run() {
+void LeakyReluCompute::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->template As<ARMContext>();
   auto x_dims = param.X->dims();
   auto x_data = param.X->data<float>();
-  auto negative_slope = param.Relu_neg_slope;
+  auto slope = param.Leaky_relu_slope;
   auto output_data = param.Out->mutable_data<float>();
   lite::arm::math::act_relu_neg<float>(
-      x_data, output_data, x_dims.production(), negative_slope, ctx.threads());
+      x_data, output_data, x_dims.production(), slope, ctx.threads());
 }
+
 void ReluClippedCompute::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->template As<ARMContext>();
@@ -50,6 +51,7 @@ void ReluClippedCompute::Run() {
   lite::arm::math::act_clipped_relu<float>(
       x_data, output_data, x_dims.production(), coef, ctx.threads());
 }
+
 void PReluCompute::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->template As<ARMContext>();
@@ -71,6 +73,7 @@ void PReluCompute::Run() {
                                     channel_slope,
                                     ctx.threads());
 }
+
 void SigmoidCompute::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->template As<ARMContext>();
@@ -80,6 +83,7 @@ void SigmoidCompute::Run() {
   lite::arm::math::act_sigmoid<float>(
       x_data, output_data, x_dims.production(), ctx.threads());
 }
+
 void TanhCompute::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->template As<ARMContext>();
@@ -89,6 +93,7 @@ void TanhCompute::Run() {
   lite::arm::math::act_tanh<float>(
       x_data, output_data, x_dims.production(), ctx.threads());
 }
+
 void SwishCompute::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->template As<ARMContext>();
@@ -110,10 +115,14 @@ REGISTER_LITE_KERNEL(
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
-REGISTER_LITE_KERNEL(
-    relu_neg, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::ReluCompute, def)
+REGISTER_LITE_KERNEL(leaky_relu,
+                     kARM,
+                     kFloat,
+                     kNCHW,
+                     paddle::lite::kernels::arm::ReluCompute,
+                     def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("Relu_neg_slope", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Leaky_relu_slope", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
 REGISTER_LITE_KERNEL(relu_clipped,

@@ -39,11 +39,6 @@ void Conv2DTransposeCompute::PrepareForRun() {
   int kh = w_dims[2];
   int group = param.groups;
 
-  if (chin != chout || param.groups != chin) {
-    // CHECK_OR_FALSE(chin % param.groups == 0);
-    // CHECK_OR_FALSE(chout % param.groups == 0);
-  }
-
   // deconv weights layout: chin * chout * kh * kw
   auto& ctx = this->ctx_->template As<ARMContext>();
   int m = chout * kw * kh / group;
