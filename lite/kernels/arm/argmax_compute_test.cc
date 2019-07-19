@@ -28,9 +28,9 @@ namespace arm {
 
 template <typename dtype>
 void argmax_compute_ref(const operators::ArgmaxParam& param) {
-  lite::Tensor* x = param.x;
-  lite::Tensor* output = param.output;
-  int axis = param.axis;
+  lite::Tensor* x = param.X;
+  lite::Tensor* output = param.Out;
+  int axis = param.Axis;
 
   auto x_data = x->data<dtype>();
   auto output_data = output->mutable_data<dtype>();
@@ -110,15 +110,15 @@ TEST(argmax_arm, compute) {
           ctx->As<ARMContext>();
           argmaxOp.SetContext(std::move(ctx));
           operators::ArgmaxParam param;
-          param.x = &x;
-          param.output = &output;
-          param.axis = axis;
+          param.X = &x;
+          param.Out = &output;
+          param.Axis = axis;
           argmaxOp.SetParam(param);
           argmaxOp.Launch();
           auto* output_data = output.mutable_data<float>();
 
           // obtain output_ref_data
-          param.output = &output_ref;
+          param.Out = &output_ref;
           argmax_compute_ref<float>(param);
           auto* output_ref_data = output_ref.mutable_data<float>();
 

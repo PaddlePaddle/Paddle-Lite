@@ -27,10 +27,10 @@ namespace arm {
 
 template <typename dtype>
 void axpy_compute_ref(const operators::AxpyParam& param) {
-  lite::Tensor* scale = param.scale;
-  lite::Tensor* x = param.x;
-  lite::Tensor* bias = param.bias;
-  lite::Tensor* output = param.output;
+  lite::Tensor* scale = param.Scale;
+  lite::Tensor* x = param.X;
+  lite::Tensor* bias = param.Bias;
+  lite::Tensor* output = param.Out;
 
   auto scale_data = scale->data<dtype>();
   auto x_data = x->data<dtype>();
@@ -116,16 +116,16 @@ TEST(axpy_arm, compute) {
     ctx->As<ARMContext>();
     axpy_op.SetContext(std::move(ctx));
     operators::AxpyParam param;
-    param.scale = &scale;
-    param.x = &x;
-    param.bias = &bias;
-    param.output = &output;
+    param.Scale = &scale;
+    param.X = &x;
+    param.Bias = &bias;
+    param.Out = &output;
     axpy_op.SetParam(param);
     axpy_op.Launch();
     auto* output_data = output.mutable_data<float>();
 
     // invoking ref implementation and compare results
-    param.output = &output_ref;
+    param.Out = &output_ref;
     axpy_compute_ref<float>(param);
     auto* output_ref_data = output_ref.mutable_data<float>();
 

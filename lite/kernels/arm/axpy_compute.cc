@@ -27,10 +27,10 @@ namespace arm {
 
 void AxpyCompute::Run() {
   auto& param = Param<operators::AxpyParam>();
-  lite::Tensor* scale = param.scale;
-  lite::Tensor* x = param.x;
-  lite::Tensor* bias = param.bias;
-  lite::Tensor* out = param.output;
+  lite::Tensor* scale = param.Scale;
+  lite::Tensor* x = param.X;
+  lite::Tensor* bias = param.Bias;
+  lite::Tensor* out = param.Out;
 
   const float* scale_ptr = scale->data<float>();
   const float* x_ptr = x->data<float>();

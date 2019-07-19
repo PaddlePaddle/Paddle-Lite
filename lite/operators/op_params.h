@@ -334,17 +334,17 @@ struct UniformRandomParam {
 
 ///----------------------- argmax operators ----------------------
 struct ArgmaxParam {
-  lite::Tensor* x{};
-  lite::Tensor* output{};
-  int axis{0};
+  lite::Tensor* X{};
+  lite::Tensor* Out{};
+  int Axis{0};
 };
 
 ///----------------------- axpy operators ----------------------
 struct AxpyParam {
-  lite::Tensor* scale{};
-  lite::Tensor* x{};
-  lite::Tensor* bias{};
-  lite::Tensor* output{};
+  lite::Tensor* Scale{};
+  lite::Tensor* X{};
+  lite::Tensor* Bias{};
+  lite::Tensor* Out{};
 };
 
 }  // namespace operators

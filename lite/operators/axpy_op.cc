@@ -21,25 +21,24 @@ namespace lite {
 namespace operators {
 
 bool AxpyOpLite::CheckShape() const {
-  CHECK_OR_FALSE(param_.scale);
-  CHECK_OR_FALSE(param_.x);
-  CHECK_OR_FALSE(param_.bias);
-  CHECK_OR_FALSE(param_.output);
+  CHECK_OR_FALSE(param_.Scale);
+  CHECK_OR_FALSE(param_.X);
+  CHECK_OR_FALSE(param_.Bias);
+  CHECK_OR_FALSE(param_.Out);
 
-  const auto scale_dims = param_.scale->dims();
-  const auto x_dims = param_.x->dims();
+  const auto scale_dims = param_.Scale->dims();
+  const auto x_dims = param_.X->dims();
   CHECK_OR_FALSE(scale_dims[0] == x_dims[0] && scale_dims[1] == x_dims[1]);
-  CHECK_OR_FALSE(x_dims == param_.output->dims());
-  CHECK_OR_FALSE(x_dims = param_.bias->dims());
+  CHECK_OR_FALSE(x_dims = param_.Bias->dims());
 
   return true;
 }
 
 bool AxpyOpLite::InferShape() const {
-  auto dims = param_.bias->dims();
+  auto dims = param_.Bias->dims();
 
   // Set output dims
-  param_.output->Resize(lite::DDim(dims));
+  param_.Out->Resize(lite::DDim(dims));
   return true;
 }
 // TODO(Superjomn) replace framework::OpDesc with a lite one.
@@ -49,10 +48,10 @@ bool AxpyOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
   auto bias = op_desc.Input("Bias").front();
   auto output = op_desc.Output("Out").front();
 
-  param_.scale = scope->FindVar(scale)->GetMutable<lite::Tensor>();
-  param_.x = scope->FindVar(x)->GetMutable<lite::Tensor>();
-  param_.bias = scope->FindVar(bias)->GetMutable<lite::Tensor>();
-  param_.output = scope->FindVar(output)->GetMutable<lite::Tensor>();
+  param_.Scale = scope->FindVar(scale)->GetMutable<lite::Tensor>();
+  param_.X = scope->FindVar(x)->GetMutable<lite::Tensor>();
+  param_.Bias = scope->FindVar(bias)->GetMutable<lite::Tensor>();
+  param_.Out = scope->FindVar(output)->GetMutable<lite::Tensor>();
 
   return true;
 }

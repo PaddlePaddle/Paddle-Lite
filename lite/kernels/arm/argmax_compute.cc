@@ -27,9 +27,9 @@ namespace arm {
 
 void ArgmaxCompute::Run() {
   auto& param = Param<operators::ArgmaxParam>();
-  lite::Tensor* input = param.x;
-  lite::Tensor* output = param.output;
-  int axis = param.axis;
+  lite::Tensor* input = param.X;
+  lite::Tensor* output = param.Out;
+  int axis = param.Axis;
 
   lite::arm::math::argmax_func(input, axis, output);
   return;
