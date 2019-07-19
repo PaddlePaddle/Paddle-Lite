@@ -42,7 +42,7 @@ TEST(cl_test, runtime_test) {
   auto &context = runtime->context();
   auto program = runtime->CreateProgram(
       context,
-      runtime->cl_path() + "/cl_kernel/" + "elementwise_add_kernel.cl");
+      runtime->cl_path() + "/cl_kernel/" + "image/elementwise_add_kernel.cl");
   auto event = runtime->CreateEvent(context);
   CHECK(runtime->BuildProgram(program.get()));
 }
@@ -52,9 +52,9 @@ TEST(cl_test, context_test) {
   CHECK(runtime->IsInitSuccess());
   runtime->set_cl_path(FLAGS_cl_path);
   CLContext context;
-  context.AddKernel("pool_max", "pool_kernel.cl", "");
-  context.AddKernel("elementwise_add", "elementwise_add_kernel.cl", "");
-  context.AddKernel("elementwise_add", "elementwise_add_kernel.cl", "");
+  context.AddKernel("pool_max", "image/pool_kernel.cl", "");
+  context.AddKernel("elementwise_add", "image/elementwise_add_kernel.cl", "");
+  context.AddKernel("elementwise_add", "image/elementwise_add_kernel.cl", "");
 }
 
 TEST(cl_test, kernel_test) {
@@ -62,9 +62,9 @@ TEST(cl_test, kernel_test) {
   CHECK(runtime->IsInitSuccess());
   runtime->set_cl_path(FLAGS_cl_path);
   std::unique_ptr<CLContext> context(new CLContext);
-  context->AddKernel("elementwise_add", "elementwise_add_kernel.cl");
-  context->AddKernel("pool_max", "pool_kernel.cl");
-  context->AddKernel("elementwise_add", "elementwise_add_kernel.cl");
+  context->AddKernel("elementwise_add", "image/elementwise_add_kernel.cl");
+  context->AddKernel("pool_max", "image/pool_kernel.cl");
+  context->AddKernel("elementwise_add", "image/elementwise_add_kernel.cl");
   auto kernel = context->GetKernel(2);
 
   std::unique_ptr<float[]> in_data(new float[4 * 3 * 256 * 512]);
@@ -94,11 +94,11 @@ TEST(cl_test, kernel_test) {
 
   cl_int status;
   status = kernel.setArg(0, *in_image.cl_image());
-  CL_CHECK_ERRORS(status);
+  CL_CHECK_FATAL(status);
   status = kernel.setArg(1, *bias_image.cl_image());
-  CL_CHECK_ERRORS(status);
+  CL_CHECK_FATAL(status);
   status = kernel.setArg(2, *out_image.cl_image());
-  CL_CHECK_ERRORS(status);
+  CL_CHECK_FATAL(status);
 
   size_t width = in_image.ImageWidth();
   size_t height = in_image.ImageHeight();
@@ -106,9 +106,9 @@ TEST(cl_test, kernel_test) {
   cl::Event event;
   status = context->GetCommandQueue().enqueueNDRangeKernel(
       kernel, cl::NullRange, global_work_size, cl::NullRange, nullptr, &event);
-  CL_CHECK_ERRORS(status);
+  CL_CHECK_FATAL(status);
   status = context->GetCommandQueue().finish();
-  CL_CHECK_ERRORS(status);
+  CL_CHECK_FATAL(status);
   double start_nanos = event.getProfilingInfo<CL_PROFILING_COMMAND_START>();
   double stop_nanos = event.getProfilingInfo<CL_PROFILING_COMMAND_END>();
   double elapsed_micros = (stop_nanos - start_nanos) / 1000.0;
@@ -149,8 +149,8 @@ TEST(cl_test, channel_add_test) {
   bool status = InitOpenCLRuntime(FLAGS_cl_path);
   CHECK(status) << "Fail to initialize OpenCL runtime.";
   std::unique_ptr<CLContext> context(new CLContext);
-  context->AddKernel("elementwise_add", "elementwise_add_kernel.cl");
-  context->AddKernel("channel_add", "channel_add_kernel.cl");
+  context->AddKernel("elementwise_add", "image/elementwise_add_kernel.cl");
+  context->AddKernel("channel_add", "image/channel_add_kernel.cl");
   elementwise_add(context.get(),
                   in_data.get(),
                   in_dim,
@@ -197,8 +197,8 @@ TEST(cl_test, elementwise_add_test) {
   bool status = InitOpenCLRuntime(FLAGS_cl_path);
   CHECK(status) << "Fail to initialize OpenCL runtime.";
   std::unique_ptr<CLContext> context(new CLContext);
-  context->AddKernel("elementwise_add", "elementwise_add_kernel.cl");
-  context->AddKernel("channel_add", "channel_add_kernel.cl");
+  context->AddKernel("elementwise_add", "image/elementwise_add_kernel.cl");
+  context->AddKernel("channel_add", "image/channel_add_kernel.cl");
   elementwise_add(context.get(),
                   in_data.get(),
                   in_dim,
@@ -286,8 +286,8 @@ TEST(cl_test, pool_test) {
   bool status = InitOpenCLRuntime(FLAGS_cl_path);
   CHECK(status) << "Fail to initialize OpenCL runtime.";
   std::unique_ptr<CLContext> context(new CLContext);
-  context->AddKernel("pool_max", "pool_kernel.cl");
-  context->AddKernel("pool_avg", "pool_kernel.cl");
+  context->AddKernel("pool_max", "image/pool_kernel.cl");
+  context->AddKernel("pool_avg", "image/pool_kernel.cl");
   pool(context.get(),
        "avg",
        0,
@@ -311,7 +311,7 @@ TEST(cl_test, target_wrapper_buffer_test) {
   bool inited = InitOpenCLRuntime(FLAGS_cl_path);
   CHECK(inited) << "Fail to initialize OpenCL runtime.";
   std::unique_ptr<CLContext> context(new CLContext);
-  context->AddKernel("vector_add", "vector_add.cl");
+  context->AddKernel("vector_add", "buffer/vector_add.cl");
   std::vector<float> h_a;
   std::vector<float> h_b;
   std::vector<float> h_out;
@@ -336,19 +336,19 @@ TEST(cl_test, target_wrapper_buffer_test) {
       d_b, h_b.data(), sizeof(float) * h_b.size(), IoDirection::HtoD);
   auto kernel = context->GetKernel("vector_add");
   cl_int status = kernel.setArg(0, *d_a);
-  CL_CHECK_ERRORS(status);
+  CL_CHECK_FATAL(status);
   status = kernel.setArg(1, *d_b);
-  CL_CHECK_ERRORS(status);
+  CL_CHECK_FATAL(status);
   status = kernel.setArg(2, *d_out);
-  CL_CHECK_ERRORS(status);
+  CL_CHECK_FATAL(status);
   status = kernel.setArg(3, 10);
-  CL_CHECK_ERRORS(status);
+  CL_CHECK_FATAL(status);
   auto global_work_size = cl::NDRange{10};
   status = context->GetCommandQueue().enqueueNDRangeKernel(
       kernel, cl::NullRange, global_work_size, cl::NullRange, nullptr, nullptr);
-  CL_CHECK_ERRORS(status);
+  CL_CHECK_FATAL(status);
   status = context->GetCommandQueue().finish();
-  CL_CHECK_ERRORS(status);
+  CL_CHECK_FATAL(status);
   TargetWrapperCL::MemcpySync(
       h_out.data(), d_out, sizeof(float) * 10, IoDirection::DtoH);
 
@@ -391,6 +391,7 @@ TEST(cl_test, target_wrapper_image_test) {
   auto *d_image = static_cast<cl::Image2D *>(
       TargetWrapperCL::MallocImage(image_shape, PRECISION(kFloat)));
   std::array<size_t, 2> image_pitch;
+  // Map/Unmap test
   auto *h_image = static_cast<float *>(
       TargetWrapperCL::MapImage(d_image, image_shape, &image_pitch));
   // row_pitch = 448 = 28 * 4 (RGBA: 4 floats) * 4 (float in bytes)
@@ -399,7 +400,7 @@ TEST(cl_test, target_wrapper_image_test) {
   size_t slice_pitch = image_pitch[1];
   CHECK_EQ(row_pitch, 448);
   CHECK_EQ(slice_pitch, 0);
-  LOG(INFO) << "row_pitch = " << row_pitch << " slice_pitch " << slice_pitch;
+  LOG(INFO) << "row_pitch = " << row_pitch << ", slice_pitch " << slice_pitch;
 
   for (int i = 0; i < 10; i++) {
     h_image[i] = 3.14f * i;
@@ -409,10 +410,32 @@ TEST(cl_test, target_wrapper_image_test) {
   auto *h_ptr = static_cast<float *>(
       TargetWrapperCL::MapImage(d_image, image_shape, &image_pitch));
   for (int i = 0; i < 10; i++) {
-    EXPECT_NEAR(h_ptr[i], 3.14f * i, 1e-5);
+    EXPECT_NEAR(h_ptr[i], 3.14f * i, 1e-6);
   }
   TargetWrapperCL::Unmap(d_image, h_ptr);
 
+  // Imagecpy test
+  std::vector<float> h_image_cpy(28 * 4 * 32);
+  for (int i = 0; i < 28 * 4 * 32; i++) {
+    h_image_cpy[i] = 3.14f;
+  }
+  TargetWrapperCL::ImgcpySync(
+      d_image, h_image_cpy.data(), image_shape, image_pitch, IoDirection::HtoD);
+  auto *d_image_cpy = static_cast<cl::Image2D *>(
+      TargetWrapperCL::MallocImage(image_shape, PRECISION(kFloat)));
+  TargetWrapperCL::ImgcpySync(
+      d_image_cpy, d_image, image_shape, image_pitch, IoDirection::DtoD);
+  std::fill(h_image_cpy.begin(), h_image_cpy.end(), 0);
+  TargetWrapperCL::ImgcpySync(h_image_cpy.data(),
+                              d_image_cpy,
+                              image_shape,
+                              image_pitch,
+                              IoDirection::DtoH);
+  for (int i = 0; i < 28 * 4 * 32; i++) {
+    EXPECT_NEAR(h_image_cpy[i], 3.14f, 1e-6);
+  }
+
+  TargetWrapperCL::FreeImage(d_image_cpy);
   TargetWrapperCL::FreeImage(d_image);
 }
 

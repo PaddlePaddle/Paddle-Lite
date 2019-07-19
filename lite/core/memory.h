@@ -15,6 +15,10 @@
 #pragma once
 #include "lite/core/target_wrapper.h"
 
+#ifdef LITE_WITH_OPENCL
+#include "lite/opencl/target_wrapper.h"
+#endif  // LITE_WITH_OPENCL
+
 namespace paddle {
 namespace lite {
 
@@ -41,7 +45,13 @@ void CopySync(void* dst, void* src, size_t size, IoDirection dir) {
 #ifdef LITE_WITH_CUDA
     case TARGET(kCUDA):
       TargetWrapperCuda::MemcpySync(dst, src, size, dir);
+      break;
 #endif
+#ifdef LITE_WITH_OPENCL
+    case TargetType::kOpenCL:
+      TargetWrapperCL::MemcpySync(dst, src, size, dir);
+      break;
+#endif  // LITE_WITH_OPENCL
   }
 }
 

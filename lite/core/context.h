@@ -206,10 +206,8 @@ class Context<TargetType::kOpenCL> {
 
  private:
   void PrepareKernels() {
-    cl_context_->AddKernel("elementwise_add", "elementwise_add_kernel.cl");
-    cl_context_->AddKernel("channel_add", "channel_add_kernel.cl");
-    cl_context_->AddKernel("pool_max", "pool_kernel.cl");
-    cl_context_->AddKernel("pool_avg", "pool_kernel.cl");
+    cl_context_->AddKernel("pool_max", "buffer/pool_kernel.cl");
+    cl_context_->AddKernel("pool_avg", "buffer/pool_kernel.cl");
   }
 };
 #endif

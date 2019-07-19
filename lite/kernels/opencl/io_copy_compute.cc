@@ -14,45 +14,36 @@
 
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
-#include "lite/cuda/target_wrapper.h"
+#include "lite/opencl/target_wrapper.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace cuda {
+namespace opencl {
 
-using TargetW = TargetWrapper<TARGET(kCUDA), cudaStream_t, cudaEvent_t>;
-
-// Host to CUDA memory.
+// Host to OpenCL memory.
 void CopyFromHostSync(void* target, const void* source, size_t size) {
-  TargetW::MemcpySync(target, source, size, IoDirection::HtoD);
+  TargetWrapperCL::MemcpySync(target, source, size, IoDirection::HtoD);
 }
 
-void CopyFromHostAsync(void* target,
-                       const void* source,
-                       size_t size,
-                       TargetW::stream_t stream) {
-  TargetW::MemcpyAsync(target, source, size, IoDirection::HtoD, stream);
-}
-
-// Host to Host memory.
+// Device to Host memory.
 void CopyToHostSync(void* target, const void* source, size_t size) {
-  TargetW::MemcpySync(target, source, size, IoDirection::DtoH);
+  TargetWrapperCL::MemcpySync(target, source, size, IoDirection::DtoH);
 }
 
 /*
- * This kernel copies a tensor from host to CUDA space.
+ * This kernel copies a tensor from host to OpenCL space.
  */
-class IoCopyHostToCudaCompute
-    : public KernelLite<TARGET(kCUDA), PRECISION(kAny), DATALAYOUT(kAny)> {
+class IoCopyHostToOpenCLCompute
+    : public KernelLite<TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kAny)> {
  public:
   void Run() override {
     auto& param = Param<operators::IoCopyParam>();
     CHECK(param.x->target() == TARGET(kHost) ||
-          param.x->target() == TARGET(kX86));
+          param.x->target() == TARGET(kARM));
     auto mem_size = param.x->memory_size();
     LOG(INFO) << "copy size " << mem_size;
-    auto* data = param.y->mutable_data(TARGET(kCUDA), mem_size);
+    auto* data = param.y->mutable_data(TARGET(kOpenCL), mem_size);
     CopyFromHostSync(data, param.x->raw_data(), mem_size);
   }
 
@@ -65,7 +56,7 @@ class IoCopyHostToCudaCompute
       CHECK(type->target() == TARGET(kHost));
 
       auto out_place = type->place();
-      out_place.target = TARGET(kCUDA);
+      out_place.target = TARGET(kOpenCL);
       auto* out_type = Type::Get(type->id(),
                                  out_place.target,
                                  out_place.precision,
@@ -76,48 +67,48 @@ class IoCopyHostToCudaCompute
     return res;
   }
 
-  std::string doc() const override { return "Copy IO from HOST to CUDA"; }
+  std::string doc() const override { return "Copy IO from HOST to OpenCL"; }
 };
 
 /*
- * This kernel copies a tensor from CUDA to host space.
+ * This kernel copies a tensor from OpenCL to host space.
  */
-class IoCopyCudaToHostCompute
-    : public KernelLite<TARGET(kCUDA), PRECISION(kAny), DATALAYOUT(kAny)> {
+class IoCopykOpenCLToHostCompute
+    : public KernelLite<TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kAny)> {
  public:
   void Run() override {
     auto& param = Param<operators::IoCopyParam>();
-    CHECK(param.x->target() == TARGET(kCUDA));
+    CHECK(param.x->target() == TARGET(kOpenCL));
     auto mem_size = param.x->memory_size();
     LOG(INFO) << "copy size " << mem_size;
     auto* data = param.y->mutable_data(TARGET(kHost), mem_size);
     CopyToHostSync(data, param.x->raw_data(), mem_size);
   }
 
-  std::string doc() const override { return "Copy IO from CUDA to HOST"; }
+  std::string doc() const override { return "Copy IO from OpenCL to HOST"; }
 };
 
-}  // namespace cuda
+}  // namespace opencl
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(io_copy,
-                     kCUDA,
+                     kOpenCL,
                      kAny,
                      kAny,
-                     paddle::lite::kernels::cuda::IoCopyHostToCudaCompute,
+                     paddle::lite::kernels::opencl::IoCopyHostToOpenCLCompute,
                      host_to_device)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kHost))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kCUDA))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kOpenCL))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(io_copy,
-                     kCUDA,
+                     kOpenCL,
                      kAny,
                      kAny,
-                     paddle::lite::kernels::cuda::IoCopyCudaToHostCompute,
+                     paddle::lite::kernels::opencl::IoCopykOpenCLToHostCompute,
                      device_to_host)
-    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kCUDA))})
+    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kOpenCL))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
     .Finalize();

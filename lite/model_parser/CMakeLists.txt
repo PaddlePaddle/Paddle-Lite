@@ -18,7 +18,7 @@ lite_cc_library(compatible_pb SRCS compatible_pb.cc
   DEPS op_desc framework_proto var_desc cpp_op_desc nb_op_desc)
 
 lite_cc_library(model_parser SRCS model_parser.cc DEPS
-    variable scope ${tensor} scope
+    variable scope tensor scope
     target_wrapper_host
     compatible_pb
     memory

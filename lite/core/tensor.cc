@@ -73,7 +73,8 @@ void TensorLite::ShareDataWith(const TensorLite &other) {
 }
 
 void *TensorLite::mutable_data(size_t memory_size) {
-  buffer_->ResetLazy(target_, memory_size);
+  memory_size_ = memory_size;
+  buffer_->ResetLazy(target_, memory_size_);
   return buffer_->data();
 }
 
