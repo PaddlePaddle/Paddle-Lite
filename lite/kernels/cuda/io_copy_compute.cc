@@ -50,9 +50,10 @@ class IoCopyHostToCudaCompute
     auto& param = Param<operators::IoCopyParam>();
     CHECK(param.x->target() == TARGET(kHost) ||
           param.x->target() == TARGET(kX86));
-    LOG(INFO) << "copy size " << param.x->data_size();
-    auto* data = param.y->mutable_data<int8_t>(TARGET(kCUDA));
-    CopyFromHostSync(data, param.x->raw_data(), param.x->data_size());
+    auto mem_size = param.x->memory_size();
+    LOG(INFO) << "copy size " << mem_size;
+    auto* data = param.y->mutable_data(TARGET(kCUDA), mem_size);
+    CopyFromHostSync(data, param.x->raw_data(), mem_size);
   }
 
   std::unique_ptr<type_infer_handler_t> GetTypeInferHandler() override {
@@ -87,9 +88,10 @@ class IoCopyCudaToHostCompute
   void Run() override {
     auto& param = Param<operators::IoCopyParam>();
     CHECK(param.x->target() == TARGET(kCUDA));
-    auto* data = param.y->mutable_data<float>();
-    LOG(INFO) << "copy size " << param.x->data_size();
-    CopyToHostSync(data, param.x->data<void>(), param.x->data_size());
+    auto mem_size = param.x->memory_size();
+    LOG(INFO) << "copy size " << mem_size;
+    auto* data = param.y->mutable_data(TARGET(kHost), mem_size);
+    CopyToHostSync(data, param.x->raw_data(), mem_size);
   }
 
   std::string doc() const override { return "Copy IO from CUDA to HOST"; }

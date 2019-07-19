@@ -5,7 +5,7 @@ lite_cc_library(gen_code SRCS gen_code.cc
 lite_cc_library(paddle_infer_gencode SRCS paddle_infer.cc DEPS program utils)
 
 lite_cc_test(test_gen_code SRCS gen_code_test.cc 
-        DEPS gen_code ${tensor} ${host_kernels} ${ops} 
+        DEPS gen_code tensor ${host_kernels} ${ops}
         compatible_pb
         model_parser
         X86_DEPS ${x86_kernels}

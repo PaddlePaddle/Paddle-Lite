@@ -112,7 +112,6 @@ void TypeTargetTransformPass::AddIoCopyInst(
 
   // Update the original instruction OpDesc.
   // Update its input to the io_copy_output_name
-
   // Add new link, var -> new_inst, new_inst->newarg, newarg->inst
   DirectedLink(in, io_copy_inst);
   DirectedLink(io_copy_inst, io_copy_output_arg);
@@ -122,9 +121,18 @@ void TypeTargetTransformPass::AddIoCopyInst(
   UpdateInputTo(inst_node->AsStmt().op()->mutable_op_info(),
                 in->AsArg().name,
                 io_copy_output_name);
-
-  inst_node->AsStmt().ResetOp(*inst_node->AsStmt().op_info(),
-                              graph->valid_places());
+  auto original_selected_kernel =
+      std::move(inst_node->AsStmt().kernels().front());
+  auto update_op_info = *inst_node->AsStmt().op_info();
+  // ResetOp() will change the Stmt op_info_ value,
+  // after that the old op_info_ value will be nullified.
+  // So, we can't pass `*inst_node->AsStmt().op_info()` into ResetOp.
+  // `update_op_info` is the copy of `*inst_node->AsStmt().op_info().
+  // Whenever update the op_info of a stmt, we should call its ResetOp().
+  inst_node->AsStmt().ResetOp(update_op_info, graph->valid_places());
+  inst_node->AsStmt().kernels().clear();
+  inst_node->AsStmt().kernels().emplace_back(
+      std::move(original_selected_kernel));
 
   std::string tmp;
   if (inst_node->AsStmt().op_info()->GetInputArgname("a", &tmp)) {
@@ -132,6 +140,7 @@ void TypeTargetTransformPass::AddIoCopyInst(
   }
 
   for (auto& kernel : inst_node->AsStmt().kernels()) {
+    LOG(INFO) << "kernel info: " << kernel->name();
     inst_node->AsStmt().op()->AttachKernel(kernel.get());
   }
 

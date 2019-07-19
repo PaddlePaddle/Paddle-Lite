@@ -26,6 +26,7 @@
 #include "lite/core/program.h"
 #include "lite/core/tensor.h"
 #include "lite/core/types.h"
+#include "lite/model_parser/cpp/program_desc.h"
 #include "lite/model_parser/model_parser.h"
 #include "lite/model_parser/pb/op_desc.h"
 
@@ -38,7 +39,8 @@ namespace lite {
  */
 class LightPredictor {
  public:
-  explicit LightPredictor(const std::string& model_dir);
+  explicit LightPredictor(const std::string& model_dir,
+                          LiteModelType model_type = LiteModelType::kProtobuf);
 
   void Run() { program_->Run(); }
 
@@ -54,8 +56,9 @@ class LightPredictor {
   }
 
  private:
-  void Build(const std::string& model_dir);
-  void BuildRuntimeProgram(const framework::proto::ProgramDesc& prog);
+  void Build(const std::string& model_dir,
+             LiteModelType model_type = LiteModelType::kProtobuf);
+  void BuildRuntimeProgram(const cpp::ProgramDesc& prog);
 
  private:
   std::shared_ptr<Scope> scope_;

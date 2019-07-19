@@ -47,8 +47,7 @@ void *TargetWrapperCL::Malloc(size_t size) {
     delete buffer;
     buffer = nullptr;
   }
-  CL_CHECK_ERRORS(status);
-  CHECK_EQ(CL_SUCCESS, status);
+  CL_CHECK_FATAL(status);
   return buffer;
 }
 
@@ -78,8 +77,7 @@ void *TargetWrapperCL::MallocImage(const std::array<size_t, 2> &image_shape,
     delete cl_image;
     cl_image = nullptr;
   }
-  CL_CHECK_ERRORS(status);
-  CHECK_EQ(CL_SUCCESS, status);
+  CL_CHECK_FATAL(status);
   return cl_image;
 }
 
@@ -105,8 +103,7 @@ void *TargetWrapperCL::Map(void *buffer, size_t offset, size_t size) {
   if (status != CL_SUCCESS) {
     mapped_ptr = nullptr;
   }
-  CL_CHECK_ERRORS(status);
-  CHECK_EQ(CL_SUCCESS, status);
+  CL_CHECK_FATAL(status);
   return mapped_ptr;
 }
 
@@ -135,8 +132,7 @@ void *TargetWrapperCL::MapImage(void *image,
   if (status != CL_SUCCESS) {
     mapped_ptr = nullptr;
   }
-  CL_CHECK_ERRORS(status);
-  CHECK_EQ(CL_SUCCESS, status);
+  CL_CHECK_FATAL(status);
   return mapped_ptr;
 }
 
@@ -144,8 +140,7 @@ void TargetWrapperCL::Unmap(void *cl_obj, void *mapped_ptr) {
   cl::Memory *mem_obj = static_cast<cl::Memory *>(cl_obj);
   cl_int status = CLRuntime::Global()->command_queue().enqueueUnmapMemObject(
       *mem_obj, mapped_ptr, nullptr, nullptr);
-  CL_CHECK_ERRORS(status);
-  CHECK_EQ(CL_SUCCESS, status);
+  CL_CHECK_FATAL(status);
 }
 
 void TargetWrapperCL::MemcpySync(void *dst,
@@ -164,8 +159,7 @@ void TargetWrapperCL::MemcpySync(void *dst,
                                         size,
                                         nullptr,
                                         &event);
-      CL_CHECK_ERRORS(status);
-      CHECK_EQ(CL_SUCCESS, status);
+      CL_CHECK_FATAL(status);
       event.wait();
       break;
     case IoDirection::HtoD:
@@ -176,8 +170,7 @@ void TargetWrapperCL::MemcpySync(void *dst,
                                          src,
                                          nullptr,
                                          nullptr);
-      CL_CHECK_ERRORS(status);
-      CHECK_EQ(CL_SUCCESS, status);
+      CL_CHECK_FATAL(status);
       break;
     case IoDirection::DtoH:
       status = stream.enqueueReadBuffer(*static_cast<const cl::Buffer *>(src),
@@ -187,8 +180,7 @@ void TargetWrapperCL::MemcpySync(void *dst,
                                         dst,
                                         nullptr,
                                         nullptr);
-      CL_CHECK_ERRORS(status);
-      CHECK_EQ(CL_SUCCESS, status);
+      CL_CHECK_FATAL(status);
       break;
     default:
       LOG(FATAL) << "Unsupported IoDirection " << static_cast<int>(dir);
@@ -210,8 +202,7 @@ void TargetWrapperCL::MemcpyAsync(void *dst,
                                         size,
                                         nullptr,
                                         nullptr);
-      CL_CHECK_ERRORS(status);
-      CHECK_EQ(CL_SUCCESS, status);
+      CL_CHECK_FATAL(status);
       break;
     case IoDirection::HtoD:
       status = stream.enqueueWriteBuffer(*static_cast<cl::Buffer *>(dst),
@@ -221,8 +212,7 @@ void TargetWrapperCL::MemcpyAsync(void *dst,
                                          src,
                                          nullptr,
                                          nullptr);
-      CL_CHECK_ERRORS(status);
-      CHECK_EQ(CL_SUCCESS, status);
+      CL_CHECK_FATAL(status);
       break;
     case IoDirection::DtoH:
       status = stream.enqueueReadBuffer(*static_cast<const cl::Buffer *>(src),
@@ -232,8 +222,7 @@ void TargetWrapperCL::MemcpyAsync(void *dst,
                                         dst,
                                         nullptr,
                                         nullptr);
-      CL_CHECK_ERRORS(status);
-      CHECK_EQ(CL_SUCCESS, status);
+      CL_CHECK_FATAL(status);
       break;
     default:
       LOG(FATAL) << "Unsupported IoDirection " << static_cast<int>(dir);
@@ -263,8 +252,7 @@ void TargetWrapperCL::ImgcpySync(void *dst,
                                        region,
                                        nullptr,
                                        &event);
-      CL_CHECK_ERRORS(status);
-      CHECK_EQ(CL_SUCCESS, status);
+      CL_CHECK_FATAL(status);
       event.wait();
       break;
     case IoDirection::HtoD:
@@ -277,8 +265,7 @@ void TargetWrapperCL::ImgcpySync(void *dst,
                                         src,
                                         nullptr,
                                         nullptr);
-      CL_CHECK_ERRORS(status);
-      CHECK_EQ(CL_SUCCESS, status);
+      CL_CHECK_FATAL(status);
       break;
     case IoDirection::DtoH:
       status = stream.enqueueReadImage(*static_cast<const cl::Image2D *>(src),
@@ -290,8 +277,7 @@ void TargetWrapperCL::ImgcpySync(void *dst,
                                        dst,
                                        nullptr,
                                        nullptr);
-      CL_CHECK_ERRORS(status);
-      CHECK_EQ(CL_SUCCESS, status);
+      CL_CHECK_FATAL(status);
       break;
     default:
       LOG(FATAL) << "Unsupported IoDirection " << static_cast<int>(dir);
@@ -320,8 +306,7 @@ void TargetWrapperCL::ImgcpyAsync(void *dst,
                                        region,
                                        nullptr,
                                        nullptr);
-      CL_CHECK_ERRORS(status);
-      CHECK_EQ(CL_SUCCESS, status);
+      CL_CHECK_FATAL(status);
       break;
     case IoDirection::HtoD:
       status = stream.enqueueWriteImage(*static_cast<cl::Image2D *>(dst),
@@ -333,8 +318,7 @@ void TargetWrapperCL::ImgcpyAsync(void *dst,
                                         src,
                                         nullptr,
                                         nullptr);
-      CL_CHECK_ERRORS(status);
-      CHECK_EQ(CL_SUCCESS, status);
+      CL_CHECK_FATAL(status);
       break;
     case IoDirection::DtoH:
       status = stream.enqueueReadImage(*static_cast<const cl::Image2D *>(src),
@@ -346,8 +330,7 @@ void TargetWrapperCL::ImgcpyAsync(void *dst,
                                        dst,
                                        nullptr,
                                        nullptr);
-      CL_CHECK_ERRORS(status);
-      CHECK_EQ(CL_SUCCESS, status);
+      CL_CHECK_FATAL(status);
       break;
     default:
       LOG(FATAL) << "Unsupported IoDirection " << static_cast<int>(dir);

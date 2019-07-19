@@ -20,8 +20,10 @@
 #include "lite/core/program.h"
 #include "lite/core/target_wrapper.h"
 #include "lite/core/tensor.h"
+#include "lite/model_parser/compatible_pb.h"
 #include "lite/model_parser/cpp/op_desc.h"
 #include "lite/model_parser/desc_apis.h"
+#include "lite/model_parser/pb/op_desc.h"
 #include "lite/utils/string.h"
 
 namespace paddle {
@@ -228,9 +230,10 @@ class ProgramCodeGenerator {
     }
   }
   void AddOps(Module *m) {
-    for (auto &op : program_.blocks(0).ops()) {
-      pb::OpDesc pb_desc(op);
-      cpp::OpDesc cpp_desc;
+    for (auto &pb_op : program_.blocks(0).ops()) {
+      auto op = pb_op;
+      lite::pb::OpDesc pb_desc(&op);
+      lite::cpp::OpDesc cpp_desc;
       TransformOpDescAnyToCpp(pb_desc, &cpp_desc);
       m->AddOp(cpp_desc);
     }

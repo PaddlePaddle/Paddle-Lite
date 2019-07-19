@@ -46,10 +46,10 @@ class IoCopyKernelPickPass : public StmtPass {
         const Type* out_arg_ty = kernel->GetOutputDeclType("Out");
         LOG(INFO) << "checking kernel candidate " << *in_arg_ty << "->"
                   << *out_arg_ty;
-        if (inty->target() == in_arg_ty->target()) {
+        if (TargetCompatibleTo(*inty, *in_arg_ty)) {
           // Both the input and output type matches, remove other kernels
           // directly.
-          if (out_arg_ty->target() == outy->target()) {
+          if (TargetCompatibleTo(*outy, *out_arg_ty)) {
             LOG(INFO) << "get a IOCopy kernel";
             auto x = std::move(kernel);
             kernels.clear();

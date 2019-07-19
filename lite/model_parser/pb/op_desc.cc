@@ -39,7 +39,7 @@ FindAttr(framework::proto::OpDesc *desc, const std::string &name) {
 #define SET_IMPL_ONE(T, ty__, pb_f__)                            \
   template <>                                                    \
   void OpDesc::SetAttr<T>(const std::string &name, const T &v) { \
-    auto it = FindAttr(&desc_, name);                            \
+    auto it = FindAttr(desc_, name);                             \
     it->set_type(framework::proto::ty__);                        \
     it->set_##pb_f__(v);                                         \
   }
@@ -50,7 +50,7 @@ SET_IMPL_ONE(bool, BOOLEAN, b);
 template <>
 void OpDesc::SetAttr<std::vector<int>>(const std::string &name,
                                        const std::vector<int> &v) {
-  auto it = FindAttr(&desc_, name);
+  auto it = FindAttr(desc_, name);
   it->set_type(framework::proto::INTS);
   it->clear_ints();
   for (auto &i : v) {
@@ -61,7 +61,7 @@ void OpDesc::SetAttr<std::vector<int>>(const std::string &name,
 template <>
 void OpDesc::SetAttr<std::string>(const std::string &name,
                                   const std::string &v) {
-  auto it = FindAttr(&desc_, name);
+  auto it = FindAttr(desc_, name);
   it->set_type(framework::proto::STRING);
   it->set_s(v.c_str());
 }
@@ -69,7 +69,7 @@ void OpDesc::SetAttr<std::string>(const std::string &name,
 template <>
 void OpDesc::SetAttr<std::vector<float>>(const std::string &name,
                                          const std::vector<float> &v) {
-  auto it = FindAttr(&desc_, name);
+  auto it = FindAttr(desc_, name);
   it->set_type(framework::proto::FLOATS);
   it->clear_floats();
   for (auto &i : v) {
@@ -80,7 +80,7 @@ void OpDesc::SetAttr<std::vector<float>>(const std::string &name,
 template <>
 void OpDesc::SetAttr<std::vector<std::string>>(
     const std::string &name, const std::vector<std::string> &v) {
-  auto it = FindAttr(&desc_, name);
+  auto it = FindAttr(desc_, name);
   it->set_type(framework::proto::STRINGS);
   it->clear_strings();
   for (auto &i : v) {
@@ -102,14 +102,14 @@ GetFindAttr(const framework::proto::OpDesc &desc, const std::string &name) {
 #define GET_ATTR_IMPL(T, pb_f__)                        \
   template <>                                           \
   T OpDesc::GetAttr<T>(const std::string &name) const { \
-    auto it = GetFindAttr(desc_, name);                 \
+    auto it = GetFindAttr(*desc_, name);                \
     return it->pb_f__();                                \
   }
 
 #define GET_ATTRS_IMPL(T, pb_f__)                       \
   template <>                                           \
   T OpDesc::GetAttr<T>(const std::string &name) const { \
-    auto it = GetFindAttr(desc_, name);                 \
+    auto it = GetFindAttr(*desc_, name);                \
     T res;                                              \
     for (const auto &v : it->pb_f__()) {                \
       res.push_back(v);                                 \

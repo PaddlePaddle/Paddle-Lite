@@ -15,40 +15,67 @@
 #include "lite/model_parser/compatible_pb.h"
 #include <string>
 #include <vector>
+#include "lite/model_parser/naive_buffer/block_desc.h"
+#include "lite/model_parser/naive_buffer/op_desc.h"
+#include "lite/model_parser/naive_buffer/program_desc.h"
+#include "lite/model_parser/naive_buffer/var_desc.h"
+#include "lite/model_parser/pb/block_desc.h"
+#include "lite/model_parser/pb/op_desc.h"
+#include "lite/model_parser/pb/program_desc.h"
+#include "lite/model_parser/pb/var_desc.h"
 
 namespace paddle {
 namespace lite {
 
+/// For VarDesc transfrom
+#define TRANS_VAR_ANY_WITH_CPP_IMPL(T)                           \
+  template <>                                                    \
+  void TransformVarDescAnyToCpp<T>(const T &any_desc,            \
+                                   cpp::VarDesc *cpp_desc) {     \
+    cpp_desc->SetName(any_desc.Name());                          \
+    cpp_desc->SetType(any_desc.GetType());                       \
+    cpp_desc->SetPersistable(any_desc.Persistable());            \
+  }                                                              \
+                                                                 \
+  template <>                                                    \
+  void TransformVarDescCppToAny<T>(const cpp::VarDesc &cpp_desc, \
+                                   T *any_desc) {                \
+    any_desc->SetName(cpp_desc.Name());                          \
+    any_desc->SetType(cpp_desc.GetType());                       \
+    any_desc->SetPersistable(cpp_desc.Persistable());            \
+  }
+
+/// For OpDesc transform
 template <typename OpDescType>
-void InputsAnyToCpp(const OpDescType &any_desc, cpp::OpDesc *cpp_desc) {
+void OpInputsAnyToCpp(const OpDescType &any_desc, cpp::OpDesc *cpp_desc) {
   for (const std::string &param : any_desc.InputArgumentNames()) {
     cpp_desc->SetInput(param, any_desc.Input(param));
   }
 }
 
 template <typename OpDescType>
-void InputsCppToAny(const cpp::OpDesc &cpp_desc, OpDescType *any_desc) {
+void OpInputsCppToAny(const cpp::OpDesc &cpp_desc, OpDescType *any_desc) {
   for (const std::string &param : cpp_desc.InputArgumentNames()) {
     any_desc->SetInput(param, cpp_desc.Input(param));
   }
 }
 
 template <typename OpDescType>
-void OutputsAnyToCpp(const OpDescType &any_desc, cpp::OpDesc *cpp_desc) {
+void OpOutputsAnyToCpp(const OpDescType &any_desc, cpp::OpDesc *cpp_desc) {
   for (const std::string &param : any_desc.OutputArgumentNames()) {
     cpp_desc->SetOutput(param, any_desc.Output(param));
   }
 }
 
 template <typename OpDescType>
-void OutputsCppToAny(const cpp::OpDesc &cpp_desc, OpDescType *any_desc) {
+void OpOutputsCppToAny(const cpp::OpDesc &cpp_desc, OpDescType *any_desc) {
   for (const std::string &param : cpp_desc.OutputArgumentNames()) {
     any_desc->SetOutput(param, cpp_desc.Output(param));
   }
 }
 
 template <typename OpDescType>
-void AttrsAnyToCpp(const OpDescType &any_desc, cpp::OpDesc *cpp_desc) {
+void OpAttrsAnyToCpp(const OpDescType &any_desc, cpp::OpDesc *cpp_desc) {
   using AttrType = OpDescAPI::AttrType;
   auto set_attr = [&](const std::string &name, AttrType type) {
     switch (type) {
@@ -94,7 +121,7 @@ void AttrsAnyToCpp(const OpDescType &any_desc, cpp::OpDesc *cpp_desc) {
 }
 
 template <typename OpDescType>
-void AttrsCppToAny(const cpp::OpDesc &cpp_desc, OpDescType *any_desc) {
+void OpAttrsCppToAny(const cpp::OpDesc &cpp_desc, OpDescType *any_desc) {
   using AttrType = OpDescAPI::AttrType;
   auto set_attr = [&](const std::string &name, AttrType type) {
     switch (type) {
@@ -120,29 +147,122 @@ void AttrsCppToAny(const cpp::OpDesc &cpp_desc, OpDescType *any_desc) {
   }
 }
 
-#define TRANS_ANY_TO_CPP_IMPL(T)                                              \
+#define TRANS_OP_ANY_WITH_CPP_IMPL(T)                                         \
   template <>                                                                 \
   void TransformOpDescAnyToCpp<T>(const T &any_desc, cpp::OpDesc *cpp_desc) { \
     cpp_desc->SetType(any_desc.Type());                                       \
-    InputsAnyToCpp<T>(any_desc, cpp_desc);                                    \
-    OutputsAnyToCpp<T>(any_desc, cpp_desc);                                   \
-    AttrsAnyToCpp<T>(any_desc, cpp_desc);                                     \
-  }
-TRANS_ANY_TO_CPP_IMPL(pb::OpDesc);
-TRANS_ANY_TO_CPP_IMPL(naive_buffer::OpDesc);
-#undef TRANS_ANY_TO_CPP_IMPL
-
-#define TRANS_CPP_TO_ANY_IMPL(T)                                              \
+    OpInputsAnyToCpp<T>(any_desc, cpp_desc);                                  \
+    OpOutputsAnyToCpp<T>(any_desc, cpp_desc);                                 \
+    OpAttrsAnyToCpp<T>(any_desc, cpp_desc);                                   \
+  }                                                                           \
+                                                                              \
   template <>                                                                 \
   void TransformOpDescCppToAny<T>(const cpp::OpDesc &cpp_desc, T *any_desc) { \
     any_desc->SetType(cpp_desc.Type());                                       \
-    InputsCppToAny<T>(cpp_desc, any_desc);                                    \
-    OutputsCppToAny<T>(cpp_desc, any_desc);                                   \
-    AttrsCppToAny<T>(cpp_desc, any_desc);                                     \
+    OpInputsCppToAny<T>(cpp_desc, any_desc);                                  \
+    OpOutputsCppToAny<T>(cpp_desc, any_desc);                                 \
+    OpAttrsCppToAny<T>(cpp_desc, any_desc);                                   \
   }
-TRANS_CPP_TO_ANY_IMPL(pb::OpDesc);
-TRANS_CPP_TO_ANY_IMPL(naive_buffer::OpDesc);
-#undef TRANS_CPP_TO_ANY_IMPL
+
+/// For BlockDesc transform
+#define TRANS_BLOCK_ANY_WITH_CPP_IMPL(T, NT, PNT)                           \
+  template <>                                                               \
+  void TransformBlockDescAnyToCpp<NT::T>(const NT::T &any_desc,             \
+                                         cpp::BlockDesc *cpp_desc) {        \
+    NT::T desc = any_desc;                                                  \
+    cpp_desc->SetIdx(desc.Idx());                                           \
+    cpp_desc->SetParentIdx(desc.ParentIdx());                               \
+    cpp_desc->SetForwardBlockIdx(desc.ForwardBlockIdx());                   \
+                                                                            \
+    cpp_desc->ClearOps();                                                   \
+    for (size_t i = 0; i < desc.OpsSize(); ++i) {                           \
+      auto any_op_desc = NT::OpDesc(desc.GetOp<PNT::proto::OpDesc>(i));     \
+      auto *cpp_op_desc = cpp_desc->AddOp<cpp::OpDesc>();                   \
+      TransformOpDescAnyToCpp(any_op_desc, cpp_op_desc);                    \
+    }                                                                       \
+                                                                            \
+    cpp_desc->ClearVars();                                                  \
+    for (size_t i = 0; i < desc.VarsSize(); ++i) {                          \
+      auto any_var_desc = NT::VarDesc(desc.GetVar<PNT::proto::VarDesc>(i)); \
+      auto *cpp_var_desc = cpp_desc->AddVar<cpp::VarDesc>();                \
+      TransformVarDescAnyToCpp(any_var_desc, cpp_var_desc);                 \
+    }                                                                       \
+  }                                                                         \
+                                                                            \
+  template <>                                                               \
+  void TransformBlockDescCppToAny<NT::T>(const cpp::T &cpp_desc,            \
+                                         NT::T *any_desc) {                 \
+    auto desc = cpp_desc;                                                   \
+    any_desc->SetIdx(desc.Idx());                                           \
+    any_desc->SetParentIdx(desc.ParentIdx());                               \
+    any_desc->SetForwardBlockIdx(desc.ForwardBlockIdx());                   \
+                                                                            \
+    any_desc->ClearOps();                                                   \
+    for (size_t i = 0; i < desc.OpsSize(); ++i) {                           \
+      auto *cpp_op_desc = desc.GetOp<cpp::OpDesc>(i);                       \
+      auto any_op_desc = NT::OpDesc(any_desc->AddOp<PNT::proto::OpDesc>()); \
+      TransformOpDescCppToAny(*cpp_op_desc, &any_op_desc);                  \
+    }                                                                       \
+                                                                            \
+    any_desc->ClearVars();                                                  \
+    for (size_t i = 0; i < desc.VarsSize(); ++i) {                          \
+      auto *cpp_var_desc = desc.GetVar<cpp::VarDesc>(i);                    \
+      auto any_var_desc =                                                   \
+          NT::VarDesc(any_desc->AddVar<PNT::proto::VarDesc>());             \
+      TransformVarDescCppToAny(*cpp_var_desc, &any_var_desc);               \
+    }                                                                       \
+  }
+
+/// For ProgramDesc transform
+#define TRANS_PROGRAM_ANY_WITH_CPP_IMPL(T, NT, PNT)                      \
+  template <>                                                            \
+  void TransformProgramDescAnyToCpp<NT::T>(const NT::T &any_desc,        \
+                                           cpp::ProgramDesc *cpp_desc) { \
+    NT::T desc = any_desc;                                               \
+    if (desc.HasVersion()) {                                             \
+      cpp_desc->SetVersion(desc.Version());                              \
+    }                                                                    \
+                                                                         \
+    cpp_desc->ClearBlocks();                                             \
+    for (size_t i = 0; i < desc.BlocksSize(); ++i) {                     \
+      auto any_block_desc =                                              \
+          NT::BlockDesc(desc.GetBlock<PNT::proto::BlockDesc>(i));        \
+      auto *cpp_block_desc = cpp_desc->AddBlock<cpp::BlockDesc>();       \
+      TransformBlockDescAnyToCpp(any_block_desc, cpp_block_desc);        \
+    }                                                                    \
+  }                                                                      \
+                                                                         \
+  template <>                                                            \
+  void TransformProgramDescCppToAny<NT::T>(const cpp::T &cpp_desc,       \
+                                           NT::T *any_desc) {            \
+    auto desc = cpp_desc;                                                \
+    if (desc.HasVersion()) {                                             \
+      any_desc->SetVersion(desc.Version());                              \
+    }                                                                    \
+                                                                         \
+    any_desc->ClearBlocks();                                             \
+    for (size_t i = 0; i < desc.BlocksSize(); ++i) {                     \
+      auto *cpp_block_desc = desc.GetBlock<cpp::BlockDesc>(i);           \
+      auto any_block_desc =                                              \
+          NT::BlockDesc(any_desc->AddBlock<PNT::proto::BlockDesc>());    \
+      TransformBlockDescCppToAny(*cpp_block_desc, &any_block_desc);      \
+    }                                                                    \
+  }
+
+TRANS_VAR_ANY_WITH_CPP_IMPL(naive_buffer::VarDesc);
+TRANS_OP_ANY_WITH_CPP_IMPL(naive_buffer::OpDesc);
+TRANS_BLOCK_ANY_WITH_CPP_IMPL(BlockDesc, naive_buffer, naive_buffer);
+TRANS_PROGRAM_ANY_WITH_CPP_IMPL(ProgramDesc, naive_buffer, naive_buffer);
+
+TRANS_VAR_ANY_WITH_CPP_IMPL(pb::VarDesc);
+TRANS_OP_ANY_WITH_CPP_IMPL(pb::OpDesc);
+TRANS_BLOCK_ANY_WITH_CPP_IMPL(BlockDesc, pb, framework);
+TRANS_PROGRAM_ANY_WITH_CPP_IMPL(ProgramDesc, pb, framework);
+
+#undef TRANS_VAR_ANY_WITH_CPP_IMPL
+#undef TRANS_OP_ANY_WITH_CPP_IMPL
+#undef TRANS_BLOCK_ANY_WITH_CPP_IMPL
+#undef TRANS_PROGRAM_ANY_WITH_CPP_IMPL
 
 }  // namespace lite
 }  // namespace paddle

@@ -55,6 +55,10 @@ DDimLite DDimLite::Slice(int start, int end) const {
 
 std::string DDimLite::repr() const {
   std::stringstream ss;
+  if (empty()) {
+    ss << "{}";
+    return ss.str();
+  }
   ss << "{";
   for (size_t i = 0; i < this->size() - 1; i++) {
     ss << (*this)[i] << ",";
@@ -73,7 +77,8 @@ void TensorLite::ShareDataWith(const TensorLite &other) {
 }
 
 void *TensorLite::mutable_data(size_t memory_size) {
-  buffer_->ResetLazy(target_, memory_size);
+  memory_size_ = memory_size;
+  buffer_->ResetLazy(target_, memory_size_);
   return buffer_->data();
 }
 

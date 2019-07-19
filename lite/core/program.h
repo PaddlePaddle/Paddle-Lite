@@ -22,7 +22,7 @@
 #include "lite/core/mir/node.h"
 #include "lite/core/op_lite.h"
 #include "lite/core/op_registry.h"
-#include "lite/model_parser/compatible_pb.h"
+#include "lite/model_parser/cpp/program_desc.h"
 #ifdef LITE_WITH_PROFILE
 #include "lite/core/profile/basic_profiler.h"
 #endif  // LITE_WITH_PROFILE
@@ -39,7 +39,7 @@ static const char kKernelTypeAttr[] = "__@kernel_type_attr@__";
 struct Program {
  public:
   explicit Program(const std::shared_ptr<Scope>& root) { scope_ = root; }
-  Program(const framework::proto::ProgramDesc& desc,
+  Program(const cpp::ProgramDesc& desc,
           const std::shared_ptr<Scope>& root,
           const std::vector<Place>& valid_places)
       : scope_(root), valid_places_(valid_places), desc_(desc) {
@@ -66,9 +66,9 @@ struct Program {
 
  private:
   // Build from a program and scope.
-  void Build(const framework::proto::ProgramDesc& program);
+  void Build(const cpp::ProgramDesc& program);
   // Create temporary variables.
-  void PrepareWorkspace(const framework::proto::ProgramDesc& program);
+  void PrepareWorkspace(const cpp::ProgramDesc& program);
 
  private:
   std::list<std::string> tmp_vars_;
@@ -79,7 +79,7 @@ struct Program {
   std::vector<Place> valid_places_;
   // Runtime scope.
   lite::Scope* exec_scope_{};
-  const framework::proto::ProgramDesc desc_;
+  cpp::ProgramDesc desc_;
 };
 
 struct Instruction {
@@ -146,10 +146,6 @@ class RuntimeProgram {
     }
   }
 
-  // Serialize the graph and save to the disk.
-  void PersistModel(const std::string& dir,
-                    const framework::proto::ProgramDesc& desc);
-
   void set_exec_scope(lite::Scope* x) { exec_scope_ = x; }
   lite::Scope* exec_scope() { return exec_scope_; }
 
@@ -157,10 +153,7 @@ class RuntimeProgram {
 
   const std::vector<Instruction>& instructions() const { return instructions_; }
 
- protected:
-  std::string SerializeProgram(const framework::proto::ProgramDesc& desc);
-  void SaveParams(const std::string& dir,
-                  const framework::proto::ProgramDesc& desc);
+  void SaveOpInfosToProgram(cpp::ProgramDesc* desc);
 
  private:
   RuntimeProgram(const RuntimeProgram&) = delete;

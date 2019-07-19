@@ -24,7 +24,7 @@ namespace paddle {
 namespace lite {
 namespace naive_buffer {
 
-class VarDesc {
+class VarDesc : public VarDescAPI {
  public:
   VarDesc() = delete;
 
@@ -39,17 +39,17 @@ class VarDesc {
 
   const proto::VarDesc &ReadonlyProto() const { return *desc_; }
 
-  std::string Name() const;
+  std::string Name() const override;
 
-  void SetName(std::string name);
+  void SetName(std::string name) override;
 
-  VarDescAPI::VarDataType GetType() const;
+  VarDescAPI::Type GetType() const override;
 
-  void SetType(VarDescAPI::VarDataType type);
+  void SetType(VarDescAPI::Type type) override;
 
-  bool Persistable() const;
+  bool Persistable() const override;
 
-  void SetPersistable(bool persistable);
+  void SetPersistable(bool persistable) override;
 
  private:
   const proto::VarType &GetVarType() const;
