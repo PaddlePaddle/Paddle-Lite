@@ -55,6 +55,10 @@ DDimLite DDimLite::Slice(int start, int end) const {
 
 std::string DDimLite::repr() const {
   std::stringstream ss;
+  if (empty()) {
+    ss << "{}";
+    return ss.str();
+  }
   ss << "{";
   for (size_t i = 0; i < this->size() - 1; i++) {
     ss << (*this)[i] << ",";

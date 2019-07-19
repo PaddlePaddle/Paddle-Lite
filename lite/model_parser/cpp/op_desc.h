@@ -64,33 +64,18 @@ class OpDesc : public OpDescAPI {
     return it != inputs_.end();
   }
 
-  std::vector<std::string> Input(const std::string& param) const override {
-    auto it = inputs_.find(param);
-    CHECK(it != inputs_.end());
-    return it->second;
-  }
+  std::vector<std::string> Input(const std::string& param) const override;
 
-  std::vector<std::string> InputArgumentNames() const override {
-    std::vector<std::string> res;
-    for (const auto& x : inputs_) res.push_back(x.first);
-    return res;
-  }
-  std::vector<std::string> OutputArgumentNames() const override {
-    std::vector<std::string> res;
-    for (const auto& x : outputs_) res.push_back(x.first);
-    return res;
-  }
+  std::vector<std::string> InputArgumentNames() const override;
+  std::vector<std::string> OutputArgumentNames() const override;
 
-  bool HasOutput(const std::string& param) const {
-    auto it = outputs_.find(param);
-    return it != outputs_.end();
-  }
+  std::vector<std::string> input_vars() const;
 
-  std::vector<std::string> Output(const std::string& param) const override {
-    auto it = outputs_.find(param);
-    CHECK(it != outputs_.end());
-    return it->second;
-  }
+  std::vector<std::string> output_vars() const;
+
+  bool HasOutput(const std::string& param) const;
+
+  std::vector<std::string> Output(const std::string& param) const override;
 
   void SetInput(const std::string& param,
                 const std::vector<std::string>& args) override {

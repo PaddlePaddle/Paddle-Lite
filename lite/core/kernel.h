@@ -101,10 +101,10 @@ class KernelBase {
   const std::string& op_type() const { return op_type_; }
 
   // Get input declaration Type.
-  const Type* GetInputDeclType(const std::string& arg_name);
+  const Type* GetInputDeclType(const std::string& arg_name) const;
 
   // Get output declaration Type.
-  const Type* GetOutputDeclType(const std::string& arg_name);
+  const Type* GetOutputDeclType(const std::string& arg_name) const;
 
   void set_alias(const std::string& x) { alias_ = x; }
   const std::string& alias() const { return alias_; }
@@ -123,6 +123,7 @@ class KernelBase {
   // Generate the key of the parameter type.
   std::string GenParamTypeKey() const;
 
+  // Used to serialize the kernel.
   std::string SerializedKernelType() const {
     return SerializeKernelType(op_type(), alias(), place());
   }
@@ -135,6 +136,8 @@ class KernelBase {
                               std::string* op_type,
                               std::string* alias,
                               Place* place);
+
+  std::string key_with_alias() const { return op_type() + "/" + alias(); }
 
   virtual ~KernelBase() = default;
   void Torch() {}
