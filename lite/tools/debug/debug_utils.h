@@ -84,10 +84,12 @@ std::vector<T> Split2Vector(const std::string& input,
 }
 
 void CollectFeedVarsInfo(std::unordered_map<int, std::string>* feed_vars_info,
-                         const framework::proto::ProgramDesc& desc) {
+                         const framework::proto::ProgramDesc& prog_desc) {
   CHECK(feed_vars_info);
+  auto desc = prog_desc;
   for (const auto& proto_op_desc : desc.blocks(0).ops()) {
-    lite::pb::OpDesc op_desc(proto_op_desc);
+    auto tmp_desc = proto_op_desc;
+    lite::pb::OpDesc op_desc(&tmp_desc);
     auto op_type = op_desc.Type();
     if (op_type == "feed") {
       (*feed_vars_info)
@@ -247,8 +249,9 @@ void CollectVarDescs(
   CHECK(var_descs);
   CHECK(!desc.blocks().empty());
   std::unordered_set<std::string> weights;
-  for (auto proto_var_desc : desc.blocks(0).vars()) {
-    lite::pb::VarDesc var_desc(proto_var_desc);
+  for (const auto& proto_var_desc : desc.blocks(0).vars()) {
+    auto tmp_var = proto_var_desc;
+    lite::pb::VarDesc var_desc(&tmp_var);
     (*var_descs).emplace(var_desc.Name(), std::move(var_desc));
   }
 }

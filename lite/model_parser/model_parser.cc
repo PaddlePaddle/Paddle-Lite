@@ -21,7 +21,11 @@
 #include "lite/core/variable.h"
 #include "lite/model_parser/desc_apis.h"
 #include "lite/model_parser/naive_buffer/param_desc.h"
+#include "lite/model_parser/naive_buffer/program_desc.h"
 #include "lite/model_parser/naive_buffer/var_desc.h"
+#include "lite/model_parser/pb/program_desc.h"
+#include "lite/model_parser/pb/var_desc.h"
+#include "lite/utils/io.h"
 
 namespace paddle {
 namespace lite {
@@ -146,13 +150,24 @@ void LoadParam(const std::string &path, Variable *out) {
   LoadLoDTensor(fin, out);
 }
 
-void LoadModel(const std::string &model_dir,
-               Scope *scope,
-               framework::proto::ProgramDesc *prog) {
-  const std::string prog_path = model_dir + "/__model__";
-  *prog = *LoadProgram(prog_path);
+void LoadModelPb(const std::string &model_dir,
+                 Scope *scope,
+                 cpp::ProgramDesc *cpp_prog) {
+  CHECK(cpp_prog);
+  CHECK(scope);
+  cpp_prog->ClearBlocks();
 
-  auto main_block = prog->blocks(0);
+  // Load model
+  const std::string prog_path = model_dir + "/__model__";
+  framework::proto::ProgramDesc pb_proto_prog = *LoadProgram(prog_path);
+  pb::ProgramDesc pb_prog(&pb_proto_prog);
+
+  // Transform to cpp::ProgramDesc
+  TransformProgramDescAnyToCpp(pb_prog, cpp_prog);
+
+  // Load Params
+  // NOTE: Only main block be used now.
+  auto main_block = pb_proto_prog.blocks(0);
   for (auto &var : main_block.vars()) {
     if (var.name() == "feed" || var.name() == "fetch" || !var.persistable())
       continue;
@@ -169,6 +184,37 @@ void LoadModel(const std::string &model_dir,
         CHECK(false) << "unknown weight type";
     }
   }
+  VLOG(4) << "Load protobuf model in '" << model_dir << "'' successfully";
+}
+
+void SaveModelPb(const std::string &model_dir,
+                 const Scope &exec_scope,
+                 const cpp::ProgramDesc &cpp_prog) {
+  MkDirRecur(model_dir);
+  // Save program
+  framework::proto::ProgramDesc pb_proto_prog;
+  pb::ProgramDesc pb_prog(&pb_proto_prog);
+  TransformProgramDescCppToAny(cpp_prog, &pb_prog);
+
+  const std::string prog_path = model_dir + "/__model__";
+  std::ofstream model_ostream(prog_path, std::ios_base::binary);
+  CHECK(model_ostream.is_open());
+  const std::string pb_str = pb_proto_prog.SerializeAsString();
+  model_ostream.write(pb_str.c_str(), pb_str.size());
+  model_ostream.close();
+
+  // Save Params
+  // NOTE: Only main block be used now.
+  for (auto &item : pb_proto_prog.blocks(0).vars()) {
+    if (item.name() == "feed" || item.name() == "fetch" || !item.persistable())
+      continue;
+    const std::string path = model_dir + "/" + item.name();
+    std::ofstream var_ostream(path, std::ios::binary);
+    CHECK(var_ostream.is_open());
+    SerializeTensor(var_ostream, exec_scope, item.name());
+    var_ostream.close();
+  }
+  VLOG(4) << "Save protobuf model in '" << model_dir << "'' successfully";
 }
 
 void TensorToStream(std::ostream &os, const lite::Tensor &tensor) {
@@ -345,24 +391,28 @@ void SaveParamNaive(const std::string &path,
 
 void LoadModelNaive(const std::string &model_dir,
                     Scope *scope,
-                    naive_buffer::proto::ProgramDesc *prog) {
-  using block_desc_list_t =
-      naive_buffer::ListBuilder<naive_buffer::proto::BlockDesc>;
-  using var_desc_list_t =
-      naive_buffer::ListBuilder<naive_buffer::proto::VarDesc>;
+                    cpp::ProgramDesc *cpp_prog) {
+  CHECK(cpp_prog);
+  CHECK(scope);
+  cpp_prog->ClearBlocks();
 
-  CHECK(prog);
   // Load model
   const std::string prog_path = model_dir + "/__model__";
-  prog->table()->LoadFromFile(prog_path);
-  prog->Load();
+  naive_buffer::BinaryTable table;
+  table.LoadFromFile(prog_path);
+  naive_buffer::proto::ProgramDesc nb_proto_prog(&table);
+  nb_proto_prog.Load();
+  naive_buffer::ProgramDesc nb_prog(&nb_proto_prog);
 
-  auto *main_block_desc =
-      prog->GetMutableField<block_desc_list_t>("blocks")->GetMutable(0);
-  auto *var_descs = main_block_desc->GetMutableField<var_desc_list_t>("vars");
-  for (size_t i = 0; i < var_descs->size(); ++i) {
-    auto *desc = var_descs->GetMutable(i);
-    naive_buffer::VarDesc var(desc);
+  // Transform to cpp::ProgramDesc
+  TransformProgramDescAnyToCpp(nb_prog, cpp_prog);
+
+  // Load Params
+  // NOTE: Only main block be used now.
+  auto &prog = *cpp_prog;
+  auto &main_block_desc = *prog.GetBlock<cpp::BlockDesc>(0);
+  for (size_t i = 0; i < main_block_desc.VarsSize(); ++i) {
+    auto &var = *main_block_desc.GetVar<cpp::VarDesc>(i);
     if (var.Name() == "feed" || var.Name() == "fetch" || !var.Persistable())
       continue;
 
@@ -371,18 +421,42 @@ void LoadModelNaive(const std::string &model_dir,
 
     std::ifstream file(file_path);
     switch (var.GetType()) {
-      case VarDescAPI::VarDataType::LOD_TENSOR:
+      case VarDescAPI::Type::LOD_TENSOR:
         LoadParamNaive(file_path, scope, var.Name());
         break;
       default:
         CHECK(false) << "unknown weight type";
     }
   }
+  VLOG(4) << "Load naive buffer model in '" << model_dir << "' successfully";
 }
 
 void SaveModelNaive(const std::string &model_dir,
-                    Scope *scope,
-                    naive_buffer::proto::ProgramDesc *prog) {}
+                    const Scope &exec_scope,
+                    const cpp::ProgramDesc &cpp_prog) {
+  MkDirRecur(model_dir);
+  // Save program
+  const std::string prog_path = model_dir + "/__model__";
+  naive_buffer::BinaryTable table;
+  naive_buffer::proto::ProgramDesc nb_proto_prog(&table);
+  naive_buffer::ProgramDesc nb_prog(&nb_proto_prog);
+  TransformProgramDescCppToAny(cpp_prog, &nb_prog);
+  nb_proto_prog.Save();
+  table.SaveToFile(prog_path);
+
+  // Save Params
+  // NOTE: Only main block be used now.
+  auto prog = cpp_prog;
+  auto &main_block_desc = *prog.GetBlock<cpp::BlockDesc>(0);
+  for (size_t i = 0; i < main_block_desc.VarsSize(); ++i) {
+    auto &var = *main_block_desc.GetVar<cpp::VarDesc>(i);
+    if (var.Name() == "feed" || var.Name() == "fetch" || !var.Persistable())
+      continue;
+    const std::string path = model_dir + "/" + var.Name();
+    SaveParamNaive(path, exec_scope, var.Name());
+  }
+  VLOG(4) << "Save naive buffer model in '" << model_dir << "'' successfully";
+}
 
 }  // namespace lite
 }  // namespace paddle

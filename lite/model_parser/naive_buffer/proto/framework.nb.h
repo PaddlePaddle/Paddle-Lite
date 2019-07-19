@@ -13,21 +13,8 @@
 // limitations under the License.
 
 #pragma once
-#include <fstream>
-#include <memory>
-#include <string>
-#include <vector>
-#include "lite/core/types.h"
-#include "lite/model_parser/naive_buffer/naive_buffer.h"
-#include "lite/utils/container.h"
-#include "lite/utils/cp_logging.h"
 
-/*
- * This file contains the implementation of NaiveBuffer. We implement the basic
- * interfaces for serialization and de-serialization for a PaddlePaddle model to
- * avoid using the third-party libraries such as protobuf, and make the lite
- * dependencies small and easy to compile and deploy.
- */
+#include "lite/model_parser/naive_buffer/naive_buffer.h"
 
 namespace paddle {
 namespace lite {
@@ -151,7 +138,8 @@ class LoDTensorArrayDesc : public StructBuilder {
 
 class VarType : public StructBuilder {
  public:
-  using enum_builder = EnumBuilder<VarDataType>;
+  using Type = VarDataType;
+  using enum_builder = EnumBuilder<Type>;
   using ReaderDesc = ListBuilder<LoDTensorDesc>;
   using Tuple = ListBuilder<enum_builder>;
 

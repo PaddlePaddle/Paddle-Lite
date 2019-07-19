@@ -13,8 +13,10 @@
 // limitations under the License.
 
 #include <gtest/gtest.h>
+#include "lite/model_parser/naive_buffer/block_desc.h"
 #include "lite/model_parser/naive_buffer/op_desc.h"
 #include "lite/model_parser/naive_buffer/param_desc.h"
+#include "lite/model_parser/naive_buffer/program_desc.h"
 #include "lite/model_parser/naive_buffer/var_desc.h"
 
 namespace paddle {
@@ -130,6 +132,102 @@ TEST(NaiveBufferWrapper, ParamDesc) {
   for (size_t i = 0; i < data1.size(); ++i) {
     EXPECT_NEAR(data1[i], data[i], 1e-6);
   }
+}
+
+TEST(NaiveBufferWrapper, BlockDesc) {
+  BinaryTable table0;
+  proto::BlockDesc pt_desc0(&table0);
+  BlockDesc nb_desc0(&pt_desc0);
+
+  // Set BlockDesc
+  nb_desc0.SetIdx(1);
+  nb_desc0.SetParentIdx(2);
+  nb_desc0.SetForwardBlockIdx(3);
+  VarDesc var0_0(nb_desc0.AddVar<proto::VarDesc>());
+  var0_0.SetName("a");
+  var0_0.SetPersistable(true);
+  var0_0.SetType(VarDescAPI::VarDataType::LOD_TENSOR);
+  VarDesc var0_1(nb_desc0.AddVar<proto::VarDesc>());
+  var0_1.SetName("b");
+  var0_1.SetPersistable(false);
+  var0_1.SetType(VarDescAPI::VarDataType::READER);
+  OpDesc op0_0(nb_desc0.AddOp<proto::OpDesc>());
+  op0_0.SetType("mul");
+  op0_0.SetInput("X", {"a"});
+  op0_0.SetInput("Y", {"b"});
+  op0_0.SetOutput("Out", {"c"});
+  op0_0.SetAttr<int32_t>("x_num_col_dims", 0);
+  op0_0.SetAttr<int32_t>("y_num_col_dims", 1);
+
+  // Save model
+  pt_desc0.Save();
+  table0.SaveToFile("4.bf");
+
+  // Load model
+  BinaryTable table1;
+  table1.LoadFromFile("4.bf");
+  proto::BlockDesc pt_desc1(&table1);
+  pt_desc1.Load();
+  BlockDesc nb_desc1(&pt_desc1);
+
+  ASSERT_EQ(nb_desc1.Idx(), 1);
+  ASSERT_EQ(nb_desc1.ParentIdx(), 2);
+  ASSERT_EQ(nb_desc1.ForwardBlockIdx(), 3);
+
+  ASSERT_EQ(nb_desc1.VarsSize(), 2);
+  VarDesc var1_0(nb_desc1.GetVar<proto::VarDesc>(0));
+  ASSERT_EQ(var1_0.Name(), "a");
+  ASSERT_EQ(var1_0.GetType(), VarDescAPI::VarDataType::LOD_TENSOR);
+  ASSERT_TRUE(var1_0.Persistable());
+  VarDesc var1_1(nb_desc1.GetVar<proto::VarDesc>(1));
+  ASSERT_EQ(var1_1.Name(), "b");
+  ASSERT_EQ(var1_1.GetType(), VarDescAPI::VarDataType::READER);
+  ASSERT_FALSE(var1_1.Persistable());
+
+  ASSERT_EQ(nb_desc1.OpsSize(), 1);
+  OpDesc op1_0(nb_desc1.GetOp<proto::OpDesc>(0));
+  ASSERT_EQ(op1_0.Type(), "mul");
+  auto x = op1_0.Input("X");
+  ASSERT_EQ(x.size(), 1);
+  ASSERT_EQ(x[0], "a");
+  auto y = op1_0.Input("Y");
+  ASSERT_EQ(y.size(), 1);
+  ASSERT_EQ(y[0], "b");
+  auto out = op1_0.Output("Out");
+  ASSERT_EQ(out.size(), 1);
+  ASSERT_EQ(out[0], "c");
+  ASSERT_TRUE(op1_0.HasAttr("x_num_col_dims"));
+  ASSERT_EQ(op1_0.GetAttr<int32_t>("x_num_col_dims"), 0);
+  ASSERT_EQ(op1_0.GetAttrType("x_num_col_dims"), OpDescAPI::AttrType::INT);
+  ASSERT_TRUE(op1_0.HasAttr("y_num_col_dims"));
+  ASSERT_EQ(op1_0.GetAttr<int32_t>("y_num_col_dims"), 1);
+  ASSERT_EQ(op1_0.GetAttrType("y_num_col_dims"), OpDescAPI::AttrType::INT);
+}
+
+TEST(NaiveBufferWrapper, ProgramDesc) {
+  BinaryTable table0;
+  proto::ProgramDesc pt_desc0(&table0);
+  ProgramDesc nb_desc0(&pt_desc0);
+
+  // Set ProgramDesc
+  nb_desc0.SetVersion(1);
+  for (int i = 0; i < 3; ++i) {
+    auto* item = nb_desc0.AddBlock<proto::BlockDesc>();
+  }
+
+  // Save model
+  pt_desc0.Save();
+  table0.SaveToFile("5.bf");
+
+  // Load model
+  BinaryTable table1;
+  table1.LoadFromFile("5.bf");
+  proto::ProgramDesc pt_desc1(&table1);
+  pt_desc1.Load();
+  ProgramDesc nb_desc1(&pt_desc1);
+
+  ASSERT_EQ(nb_desc1.Version(), 1);
+  ASSERT_EQ(nb_desc1.BlocksSize(), 3);
 }
 
 }  // namespace naive_buffer

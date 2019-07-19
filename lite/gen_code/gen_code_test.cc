@@ -24,8 +24,10 @@
 #include "lite/core/context.h"
 #include "lite/core/scope.h"
 #include "lite/core/tensor.h"
+#include "lite/model_parser/compatible_pb.h"
 #include "lite/model_parser/cpp/op_desc.h"
 #include "lite/model_parser/model_parser.h"
+#include "lite/model_parser/pb/program_desc.h"
 
 DEFINE_string(optimized_model, "", "");
 DEFINE_string(generated_code_file, "__generated_code__.cc", "");
@@ -142,10 +144,14 @@ TEST(gen_code, auto_gen) {
 
 TEST(gen_code, optimized_program) {
   lite::Scope scope;
-  framework::proto::ProgramDesc desc;
-  LoadModel(FLAGS_optimized_model, &scope, &desc);
+  cpp::ProgramDesc cpp_desc;
+  LoadModelPb(FLAGS_optimized_model, &scope, &cpp_desc);
 
-  ProgramCodeGenerator codegen(desc, scope);
+  framework::proto::ProgramDesc pb_proto_desc;
+  lite::pb::ProgramDesc pb_desc(&pb_proto_desc);
+  TransformProgramDescCppToAny(cpp_desc, &pb_desc);
+
+  ProgramCodeGenerator codegen(pb_proto_desc, scope);
 
   std::ofstream file(FLAGS_generated_code_file);
 

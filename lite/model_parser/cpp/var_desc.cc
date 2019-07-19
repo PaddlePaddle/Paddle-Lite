@@ -12,25 +12,4 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/model_parser/pb/program_desc.h"
-
-namespace paddle {
-namespace lite {
-namespace pb {
-
-template <>
-framework::proto::BlockDesc* ProgramDesc::GetBlock<framework::proto::BlockDesc>(
-    int32_t idx) {
-  CHECK_LT(idx, BlocksSize()) << "idx >= blocks.size()";
-  return desc_->mutable_blocks(idx);
-}
-
-template <>
-framework::proto::BlockDesc*
-ProgramDesc::AddBlock<framework::proto::BlockDesc>() {
-  return desc_->add_blocks();
-}
-
-}  // namespace pb
-}  // namespace lite
-}  // namespace paddle
+#include "lite/model_parser/cpp/var_desc.h"

@@ -20,6 +20,7 @@
 #include "lite/api/paddle_use_ops.h"
 #include "lite/api/paddle_use_passes.h"
 #include "lite/core/op_registry.h"
+#include "lite/model_parser/pb/program_desc.h"
 #include "lite/tools/debug/debug_utils.h"
 
 namespace paddle {
@@ -65,8 +66,12 @@ void Run(DebugConfig* conf) {
                   passes);
 
   auto& instructions = predictor.runtime_program().instructions();
-  auto& program_desc = predictor.program_desc();
+  auto& cpp_program_desc = predictor.program_desc();
   auto* scope = const_cast<lite::OpLite*>(instructions[0].op())->scope();
+
+  framework::proto::ProgramDesc program_desc;
+  lite::pb::ProgramDesc pb_desc(&program_desc);
+  TransformProgramDescCppToAny(cpp_program_desc, &pb_desc);
 
   CollectVarDescs(&(conf->var_descs), program_desc);
   PrepareModelInputTensor(*conf, scope, program_desc);
