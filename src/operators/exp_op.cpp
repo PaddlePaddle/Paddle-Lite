@@ -21,7 +21,7 @@ void EXPOp<DeviceType, T>::InferShape() const {
   auto shape = this->param_.InputX()->dims();
   this->param_.Out()->Resize(shape);
 }
-}
+}  // namespace operators
 }  // namespace paddle_mobile
 namespace ops = paddle_mobile::operators;
 
