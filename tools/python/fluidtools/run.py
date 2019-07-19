@@ -368,10 +368,11 @@ def check_mobile_results(args, fuse, mem_opt):
         error_values1 = np.array(error_values1)
         error_values2 = np.array(error_values2)
         # pp_red("mobile op is not correct, error occurs at {}th op, op's type is {}")
-        pp_red("corresponding fluid op is {}th op, op's type is {}".format(error_index, op_cache[error_index][1].type), 1)
+        pp_red("corresponding fluid op is {}th op, op's type is {}, wrong var name is {}".format(
+            error_index,op_cache[error_index][1].type,op_output_var_name), 1)
         pp_red("fluid results are : ", 1)
         pp_red(str(error_values1).replace("\n", "\n" + "\t" * 1), 1)
-        pp_red("paddle mobile results are : ", 1)
+        pp_yellow("paddle mobile results are : ", 1)
         pp_red(str(error_values2).replace("\n", "\n" + "\t" * 1), 1)
     # print(output_var_cache)
     # print(mobile_var_cache)

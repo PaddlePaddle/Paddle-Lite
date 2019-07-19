@@ -474,12 +474,14 @@ PMStatus Executor<Device, T>::Predict() {
   struct timespec ts;
   int op_index = 0;
 #endif
-  for (auto &op_handler : ops_of_block0_) {
+  for (int i = 0; i < ops_of_block0_.size(); ++i) {
+    auto &op_handler = ops_of_block0_[i];
 #ifdef PADDLE_MOBILE_PROFILE
     clock_gettime(CLOCK_MONOTONIC, &ts);
     profile[op_index].runBegin = (uint64_t)ts.tv_sec * 1e9 + ts.tv_nsec;
 #endif
-    DLOG << "run op: " << op_handler->Type();
+    DLOG << i << "th, "
+         << "run op: " << op_handler->Type();
     if (lod_mode_ && input_dim_has_changed_) {
       op_handler->InferShape();
     }
