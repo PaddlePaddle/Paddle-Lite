@@ -54,6 +54,12 @@ class VariablePlaceInferencePass : public DebugPass {
     }
   }
 
+  // Set the tye of the weight
+  void SetWeightType(Node* w, const LiteType& type) {
+    w->AsArg().type =
+        LiteType::GetTensorTy(TARGET(kHost), type.precision(), type.layout());
+  }
+
   void InferenceArgumentPlace(SSAGraph* graph) {
     VLOG(3) << "param-type-registry:\n" << ParamTypeRegistry::Global();
     for (auto& x : graph->StmtTopologicalOrder()) {
@@ -86,7 +92,11 @@ class VariablePlaceInferencePass : public DebugPass {
         auto type = inst.picked_kernel().GetInputDeclType(arg_name);
         if (!x_in->AsArg().type) {
           VLOG(4) << "set type " << *type << " " << x_in;
-          x_in->AsArg().type = type;
+          if (x_in->AsArg().is_weight) {
+            SetWeightType(x_in, *type);
+          } else {
+            x_in->AsArg().type = type;
+          }
         }
       }
 
@@ -102,7 +112,11 @@ class VariablePlaceInferencePass : public DebugPass {
         auto type = inst.picked_kernel().GetOutputDeclType(arg_name);
         if (!x_out->AsArg().type) {
           VLOG(4) << "set type " << *type << " " << x_out;
-          x_out->AsArg().type = type;
+          if (x_out->AsArg().is_weight) {
+            SetWeightType(x_out, *type);
+          } else {
+            x_out->AsArg().type = type;
+          }
         }
       }
     }

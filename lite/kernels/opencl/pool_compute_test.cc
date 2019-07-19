@@ -108,20 +108,20 @@ TEST(pool2d, compute) {
   std::default_random_engine engine;
   std::uniform_real_distribution<float> dist(-5, 5);
   auto* mapped_x = static_cast<float*>(
-      TargetWrapperCL::Map(x_data, 0, sizeof(float) * 4 * 1024 * 7 * 7));
-  for (int i = 0; i < 4 * 1024 * 7 * 7; i++) {
+      TargetWrapperCL::Map(x_data, 0, sizeof(float) * in_dim.production()));
+  for (int i = 0; i < in_dim.production(); i++) {
     mapped_x[i] = dist(engine);
   }
 
   kernel->Launch();
 
-  std::unique_ptr<float[]> out_ref(new float[4 * 1024 * 1 * 1]);
+  std::unique_ptr<float[]> out_ref(new float[out_dim.production()]);
   pool_avg(0, 0, 1, 1, 7, 7, mapped_x, in_dim, out_ref.get(), out_dim);
   TargetWrapperCL::Unmap(x_data, mapped_x);
   auto* out_data = out.mutable_data<float, cl::Buffer>();
   auto* mapped_out = static_cast<float*>(
-      TargetWrapperCL::Map(out_data, 0, sizeof(float) * 4 * 1024 * 1 * 1));
-  for (int i = 0; i < 4 * 1024 * 1 * 1; i++) {
+      TargetWrapperCL::Map(out_data, 0, sizeof(float) * out_dim.production()));
+  for (int i = 0; i < out_dim.production(); i++) {
     EXPECT_NEAR(mapped_out[i], out_ref[i], 1e-6);
   }
   TargetWrapperCL::Unmap(out_data, mapped_out);
