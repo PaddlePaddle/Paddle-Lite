@@ -108,6 +108,8 @@ struct dim3 {
   dim3(int x, int y, int z) : x(x), y(y), z(z) {}
 };
 
+using byte_t = uint8_t;
+
 }  // namespace core
 }  // namespace lite
 }  // namespace paddle

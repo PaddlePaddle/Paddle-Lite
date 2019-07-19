@@ -25,6 +25,7 @@
 #include "lite/core/target_wrapper.h"
 #include "lite/core/type_system.h"
 #include "lite/core/types.h"
+#include "lite/core/workspace.h"
 #include "lite/operators/op_params.h"
 #include "lite/utils/all.h"
 
@@ -55,6 +56,16 @@ class KernelBase {
       PrepareForRun();
       is_first_epoch_ = false;
     }
+
+    // Reset the workspace to make every kernel in the same thread to share the
+    // temporary memory.
+    WorkSpace::Global_Host().AllocReset();
+#if defined(LITE_WITH_X86)
+    WorkSpace::Global_X86().AllocReset();
+#endif
+#if defined(LITE_WITH_CUDA)
+    WorkSpace::Global_CUDA().AllocReset();
+#endif
 
     Run();
   }
