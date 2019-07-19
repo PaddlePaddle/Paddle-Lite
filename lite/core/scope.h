@@ -48,6 +48,26 @@ class Scope final {
   // Following the legacy scope interface.
   std::vector<std::string> LocalVarNames() const;
 
+  /// ------------------------------------- helper functions for Tensor
+  /// ----------------------------------
+  // Create a Tensor variable. This will create a new Variable called `name`.
+  Tensor* NewTensor(const std::string& name) {
+    auto* var = Var(name);
+    return var->GetMutable<TensorLite>();
+  }
+
+  const Tensor* FindTensor(const std::string& name) {
+    auto* var = FindVar(name);
+    if (!var) return nullptr;
+    return &var->Get<TensorLite>();
+  }
+
+  Tensor* FindMutableTensor(const std::string& name) {
+    auto* var = FindVar(name);
+    if (!var) return nullptr;
+    return var->GetMutable<TensorLite>();
+  }
+
  private:
   // Scope in `kids_` are owned by this class.
   mutable std::list<Scope*> kids_;

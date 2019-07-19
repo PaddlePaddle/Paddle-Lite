@@ -25,7 +25,7 @@ std::string KernelBase::summary() const {
   return ss.str();
 }
 
-const Type *KernelBase::GetInputDeclType(const std::string &arg_name) {
+const Type *KernelBase::GetInputDeclType(const std::string &arg_name) const {
   CHECK(!op_type_.empty()) << "op_type should be set first";
   const auto *type = ParamTypeRegistry::Global().RetrieveInArgument(
       place(), GenParamTypeKey(), arg_name);
@@ -35,11 +35,11 @@ const Type *KernelBase::GetInputDeclType(const std::string &arg_name) {
   return type->type;
 }
 
-const Type *KernelBase::GetOutputDeclType(const std::string &arg_name) {
+const Type *KernelBase::GetOutputDeclType(const std::string &arg_name) const {
   CHECK(!op_type_.empty()) << "op_type should be set first";
   const auto *type = ParamTypeRegistry::Global().RetrieveOutArgument(
       place(), GenParamTypeKey(), arg_name);
-  CHECK(type) << "no type registered for kernel [" << op_type_
+  CHECK(type) << "no type registered for kernel [" << GenParamTypeKey()
               << "] output argument [" << arg_name << "]";
   return type->type;
 }

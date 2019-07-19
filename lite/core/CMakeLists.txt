@@ -40,6 +40,7 @@ lite_cc_library(optimizer SRCS optimizer.cc DEPS mir_pass_manager model_parser p
 
 add_subdirectory(mir)
 add_subdirectory(profile)
+add_subdirectory(arena)
 
 # for mobile, unnecessary to compile the following testings.
 if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)

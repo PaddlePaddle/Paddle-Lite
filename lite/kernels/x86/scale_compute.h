@@ -19,8 +19,6 @@
 #include "lite/core/op_registry.h"
 #include "lite/core/type_system.h"
 #include "lite/operators/relu_op.h"
-#include "paddle/fluid/framework/eigen.h"
-#include "paddle/fluid/framework/operator.h"
 
 namespace paddle {
 namespace lite {
