@@ -22,8 +22,8 @@ namespace operators {
 void SliceCompute(const SliceParam<CPU>& param) {
   auto input = param.input_;
   auto output = param.output_;
-  auto *input_ptr = input->data<float>();
-  auto *output_ptr = output->mutable_data<float>();
+  auto* input_ptr = input->data<float>();
+  auto* output_ptr = output->mutable_data<float>();
   auto out_dims = output->dims();
   auto in_dims = input->dims();
   auto starts = param.starts_;
@@ -62,8 +62,7 @@ void SliceKernel<CPU, float>::Compute(const SliceParam<CPU>& param) {
       }
       break;
     default:
-    PADDLE_MOBILE_ENFORCE(0,
-                          "op only support slice channel now");
+      PADDLE_MOBILE_ENFORCE(0, "input dims not support now");
       break;
   }
 }
