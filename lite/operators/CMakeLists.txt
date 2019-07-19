@@ -14,6 +14,7 @@ lite_cc_library(fetch_op SRCS fetch_op.cc DEPS ${op_DEPS})
 lite_cc_library(io_copy_op SRCS io_copy_op.cc DEPS ${op_DEPS})
 lite_cc_library(activation_ops SRCS activation_ops.cc DEPS ${op_DEPS})
 lite_cc_library(elementwise_ops SRCS elementwise_ops.cc DEPS ${op_DEPS})
+lite_cc_library(lrn_op_lite SRCS lrn_op.cc DEPS ${op_DEPS})
 lite_cc_library(fusion_elementwise_activation_ops SRCS fusion_elementwise_activation_ops.cc DEPS elementwise_ops ${op_DEPS})
 lite_cc_library(mean_op SRCS mean_op.cc DEPS ${op_DEPS})
 lite_cc_library(fill_constant_op SRCS fill_constant_op.cc DEPS ${op_DEPS})
@@ -44,6 +45,7 @@ set(ops
         io_copy_op
         elementwise_ops
         fusion_elementwise_activation_ops
+        lrn_op_lite
         mean_op
         fill_constant_op
         activation_ops
