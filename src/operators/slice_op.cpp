@@ -21,7 +21,15 @@ namespace operators {
 
 template <typename Dtype, typename T>
 void SliceOp<Dtype, T>::InferShape() const {
-  /// todo: add InputShape() detection.
+  auto axes = this->param_.axes_;
+  auto input = this->param_.input_;
+  auto output = this->param_.output_;
+  PADDLE_MOBILE_ENFORCE(axes.size() == 1,
+                 "axes size should equals 1");
+  PADDLE_MOBILE_ENFORCE(input->dims().size() == output->dims().size(),
+                        "input dim size should equals output dim size");
+  PADDLE_MOBILE_ENFORCE(input->dims().size() - axes[0] == 3,
+                        "op only support slice channel now");
 }
 
 }  // namespace operators
