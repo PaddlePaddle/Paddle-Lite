@@ -117,6 +117,8 @@ class TensorBase {
     virtual void set_type(kTypeId_t type) = 0;
 
     virtual void resize(size_t size) = 0;
+
+    virtual void realloc(size_t size) = 0;
   };
 
   /**
