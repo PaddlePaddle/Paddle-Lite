@@ -58,9 +58,9 @@ void readImage(std::string filename, float* buffer) {
       float g = uc_pixel[1];
       float r = uc_pixel[2];
 
-      buffer[index] = (r - 104);
-      buffer[index + 1] = (g - 117);
-      buffer[index + 2] = (b - 123);
+      buffer[index] = (r - 127.5) / 128;
+      buffer[index + 1] = (g - 127.5) / 128;
+      buffer[index + 2] = (b - 127.5) / 128;
 
       ptr += 3;
       index += 3;
@@ -131,7 +131,7 @@ int main() {
     readImage(image, data);
 
     auto time3 = time();
-    for (int i = 0; i < 10000; i++) {
+    for (int i = 0; i < 20; i++) {
       paddle_mobile.Predict(input_tensor);
     }
     auto time4 = time();

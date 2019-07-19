@@ -46,12 +46,9 @@ void Reshape2Kernel<FPGA, float>::Compute(const Reshape2Param<FPGA> &param) {
   bool inplace = param.Inplace();
 
   input_x->zynqmpTensor()->syncToCPU();
-  input_x->zynqmpTensor()->unalignImage(out->zynqmpTensor(), true);
+  out->zynqmpTensor()->copyFrom(input_x->zynqmpTensor());
+  out->zynqmpTensor()->unalignImage();
 
-  // input_x->zynqmpTensor()->saveToFile("reshape_in.txt");
-
-  // out->zynqmpTensor()->copyFrom(input_x->zynqmpTensor());
-  // out->zynqmpTensor()->saveToFile("reshape_out.txt");
   out->Resize(out_dims);
   // if (!inplace) {
   //   out->mutable_data<half>();

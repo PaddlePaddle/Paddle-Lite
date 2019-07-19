@@ -16,125 +16,100 @@ limitations under the License. */
 #include <iostream>
 #include "../test_include.h"
 
-#ifdef PADDLE_MOBILE_FPGA_V1
-#include "fpga/V1/api.h"
-#endif
-#ifdef PADDLE_MOBILE_FPGA_V2
-#include "fpga/V2/api.h"
-#endif
+// #ifdef PADDLE_MOBILE_FPGA_KD
+// #include "fpga/KD/api.h"
+// #endif
+#include "fpga/KD/float16.hpp"
+#include "fpga/KD/llapi/zynqmp_api.h"
+#include "io/paddle_mobile.h"
 
-void readStream(std::string filename, float *buf) {
-  std::ifstream in;
-  in.open(filename, std::ios::in);
-  if (!in.is_open()) {
-    std::cout << "open File Failed." << std::endl;
-    return;
-  }
-  string strOne;
-  int i = 0;
-  while (!in.eof()) {
-    in >> buf[i];
-    i++;
-  }
-  in.close();
-}
+#include <opencv2/highgui.hpp>
+#include <opencv2/imgproc.hpp>
 
-void convert_to_chw(int16_t **data_in, int channel, int height, int width,
-                    int16_t *data_tmp) {
-  int64_t amount_per_side = width * height;
-  for (int h = 0; h < height; h++) {
-    for (int w = 0; w < width; w++) {
-      for (int c = 0; c < channel; c++) {
-        *(data_tmp + c * amount_per_side + width * h + w) = *((*data_in)++);
-      }
+using namespace paddle_mobile;
+using namespace cv;
+
+cv::Mat img;
+cv::Mat sample_float;
+
+void readImage(std::string filename, float* buffer) {
+  std::cout << "readImage1" << std::endl;
+  img = imread(filename);
+  if (img.empty()) {
+    std::cerr << "Can't read image from the file: " << filename << std::endl;
+    exit(-1);
+  }
+  std::cout << "readImage2" << std::endl;
+  cv::Mat img2;
+
+  int channel = img.channels();
+  int width = img.cols;
+  int height = img.rows;
+  std::cout << "mat:" << width << "," << height << "," << channel << std::endl;
+
+  resize(img, img2, Size(224, 224), INTER_AREA);
+
+  img2.convertTo(sample_float, CV_32FC3);
+
+  int index = 0;
+  for (int row = 0; row < sample_float.rows; ++row) {
+    float* ptr = reinterpret_cast<float*>(sample_float.ptr(row));
+    for (int col = 0; col < sample_float.cols; col++) {
+      float* uc_pixel = ptr;
+      // uc_pixel[0] -= 102;
+      // uc_pixel[1] -= 117;
+      // uc_pixel[1] -= 124;
+      float b = uc_pixel[0];
+      float g = uc_pixel[1];
+      float r = uc_pixel[2];
+
+      buffer[index] = (r / 255 - 0.485) / 0.229;
+      buffer[index + 1] = (g / 255 - 0.456) * 0.224;
+      buffer[index + 2] = (b / 255  - 0.406) * 0.225;
+
+      ptr += 3;
+      index += 3;
     }
   }
+  // return sample_float;
 }
 
-void dump(std::string filename, Tensor input_tensor) {
-  auto dataptr = reinterpret_cast<half *>(input_tensor.get_data());
-  std::ofstream out(filename.c_str());
-  float result = 0;
-  for (int i = 0; i < input_tensor.numel(); ++i) {
-    result = paddle_mobile::fpga::fp16_2_fp32(dataptr[i]);
-    out << result << std::endl;
-  }
-  out.close();
-}
-void dump_stride_half(std::string filename, Tensor input_tensor,
-                      const int dumpnum) {
-  int c = (input_tensor.dims())[1];
-  int h = (input_tensor.dims())[2];
-  int w = (input_tensor.dims())[3];
-  auto data_ptr = input_tensor.get_data();
-  auto *data_tmp =
-      reinterpret_cast<half *>(malloc(c * h * w * sizeof(int16_t)));
-  auto *data_ptr_16 = reinterpret_cast<half *>(data_ptr);
-  convert_to_chw(&data_ptr_16, c, h, w, data_tmp);
-  std::ofstream out(filename.c_str());
-  float result = 0;
-  int stride = input_tensor.numel() / dumpnum;
-  stride = stride > 0 ? stride : 1;
-  for (int i = 0; i < input_tensor.numel(); i += stride) {
-    result = paddle_mobile::fpga::fp16_2_fp32(data_tmp[i]);
-    out << result << std::endl;
-  }
-  out.close();
-  free(data_tmp);
-}
-
-void dump_stride_float(std::string filename, Tensor input_tensor,
-                       const int dumpnum) {
-  auto data_ptr = reinterpret_cast<float *>(input_tensor.get_data());
-  std::ofstream out(filename.c_str());
-  float result = 0;
-  int stride = input_tensor.numel() / dumpnum;
-  stride = stride > 0 ? stride : 1;
-  for (int i = 0; i < input_tensor.numel(); i += stride) {
-    result = data_ptr[i];
-    out << result << std::endl;
-  }
-  out.close();
-}
-static const char *g_resnet50 = "../models/resnet50";
-const std::string g_image_src_float = "../images/image_src_float";  // NOLINT
+static const char *g_resnet50 = "../../../models/resnet50";
+const std::string image = "../../../models/resnet50/3.jpg";  // NOLINT
 int main() {
-  paddle_mobile::fpga::open_device();
+  paddle_mobile::zynqmp::open_device();
   paddle_mobile::PaddleMobile<paddle_mobile::FPGA> paddle_mobile;
-  if (paddle_mobile.Load(std::string(g_resnet50), true)) {
+  std::string model = std::string(g_resnet50) + "/model";
+  std::string params = std::string(g_resnet50) + "/params";
+ if (paddle_mobile.Load(model, params, true)) {
     Tensor input_tensor;
-    SetupTensor<float>(&input_tensor, {1, 3, 224, 224}, static_cast<float>(2),
-                       static_cast<float>(2));
-    readStream(g_image_src_float,
-               input_tensor.mutable_data<float>({1, 3, 224, 224}));
-    paddle_mobile.FeedData(input_tensor);
-    paddle_mobile.Predict_To(-1);
-    for (int i = 0; i < 73; i++) {
-      auto tensor_ptr = paddle_mobile.FetchResult(i);
-      std::string saveName = "resnet50_result_" + std::to_string(i);
-      paddle_mobile::fpga::fpga_invalidate((*tensor_ptr).get_data(),
-                                           tensor_ptr->numel() * sizeof(half));
-      // dump_stride_half(saveName, (*tensor_ptr), 20);
-      // dump(saveName, (*tensor_ptr));
-    }
 
-    auto tensor_ptr = paddle_mobile.FetchResult(73);
-    // dump_stride_float("resnet50_result_73", (*tensor_ptr), 20);
-    tensor_ptr = paddle_mobile.FetchResult(74);
-    // dump_stride_float("resnet50_result_74", (*tensor_ptr), 9999);
+    SetupTensor<float>(&input_tensor, {1, 3, 224, 224}, static_cast<float>(1),
+                       static_cast<float>(1));
+    float* data = input_tensor.mutable_data<float>({1, 3, 224, 224});
 
-    float max = 0;
-    auto data_ptr = tensor_ptr->data<float>();
-    int maximumIdx = 0;
-    for (int i = 0; i < (*tensor_ptr).numel(); i++) {
-      if (data_ptr[i] > max) {
-        maximumIdx = i;
-        max = data_ptr[i];
+    readImage(image, data);
+    // for (int i = 0; i < 3*224*224; ++i)
+    // {
+    //   data[i] == 1;
+    // }
+
+    paddle_mobile.Predict(input_tensor);
+
+    auto result_ptr = paddle_mobile.Fetch();
+
+    int index = 1;
+    float max = 0.0f;
+    float* result_data = result_ptr->data<float>();
+    for (int i = 0; i < result_ptr->numel(); i++) {
+      if (result_data[i] > max) {
+        max = result_data[i];
+        index = i + 1;
       }
     }
-    std::cout << "index : " << std::dec << maximumIdx << ",    value : " << max
-              << std::endl;
-    std::cout << "Computation done" << std::endl;
-    return 0;
+    std::cout << index << "," << max << std::endl;
   }
+  paddle_mobile::zynqmp::close_device();
+  return 0;
+
 }

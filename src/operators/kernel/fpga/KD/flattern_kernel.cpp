@@ -39,7 +39,6 @@ void FlattenKernel<FPGA, float>::Compute(const FlattenParam<FPGA> &param) {
   const framework::DDim &out_dim = ValidateShape(out_shape_v, input_x_dims);
 
   input_x->zynqmpTensor()->syncToCPU();
-  // input_x->zynqmpTensor()->saveToFile("flatten_in.txt");
 
   out->Resize(out_dim);
   out->mutable_data<half>();
@@ -52,6 +51,7 @@ void FlattenKernel<FPGA, float>::Compute(const FlattenParam<FPGA> &param) {
   memory::Copy(dst_ptr, src_ptr, size);
 
   out->Resize(out_dim);
+  out->zynqmpTensor()->copyScaleFrom(input_x->zynqmpTensor());
   out->zynqmpTensor()->flush();
   // out->zynqmpTensor()->saveToFile("flatten_out.txt");
 }

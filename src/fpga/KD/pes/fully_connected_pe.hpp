@@ -37,7 +37,7 @@ class FullyConnectedPE : public PE {
     Tensor* input = param_.input;
     convParam_.input = param_.input;
     convParam_.output = param_.output;
-    // convParam_.relu = param_.relu;
+    convParam_.relu = param_.relu;
     convParam_.groups = 1;
     convParam_.strides = {1, 1};
     convParam_.paddings = {0, 0};
