@@ -16,6 +16,7 @@
 #include <random>
 #include "lite/core/op_registry.h"
 #include "lite/core/tensor.h"
+#include "lite/opencl/target_wrapper.h"
 
 namespace paddle {
 namespace lite {
@@ -71,7 +72,7 @@ void pool_avg(const int padding_height,
   }
 }
 
-TEST(pool2d, init) {
+TEST(pool2d, compute) {
   LOG(INFO) << "to get kernel ...";
   auto kernels = KernelRegistry::Global().Create(
       "pool2d", TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW));
@@ -102,24 +103,28 @@ TEST(pool2d, init) {
   x.Resize(in_dim);
   out.Resize(out_dim);
 
-  auto* x_data = x.mutable_data<float>();
-  auto* out_data = out.mutable_data<float>();
+  auto* x_data = x.mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
 
   std::default_random_engine engine;
   std::uniform_real_distribution<float> dist(-5, 5);
-
+  auto* mapped_x = static_cast<float*>(
+      TargetWrapperCL::Map(x_data, 0, sizeof(float) * 4 * 1024 * 7 * 7));
   for (int i = 0; i < 4 * 1024 * 7 * 7; i++) {
-    x_data[i] = dist(engine);
+    mapped_x[i] = dist(engine);
   }
 
   kernel->Launch();
 
   std::unique_ptr<float[]> out_ref(new float[4 * 1024 * 1 * 1]);
-  pool_avg(0, 0, 1, 1, 7, 7, x_data, in_dim, out_ref.get(), out_dim);
-
+  pool_avg(0, 0, 1, 1, 7, 7, mapped_x, in_dim, out_ref.get(), out_dim);
+  TargetWrapperCL::Unmap(x_data, mapped_x);
+  auto* out_data = out.mutable_data<float, cl::Buffer>();
+  auto* mapped_out = static_cast<float*>(
+      TargetWrapperCL::Map(out_data, 0, sizeof(float) * 4 * 1024 * 1 * 1));
   for (int i = 0; i < 4 * 1024 * 1 * 1; i++) {
-    EXPECT_NEAR(out_data[i], out_ref[i], 1e-6);
+    EXPECT_NEAR(mapped_out[i], out_ref[i], 1e-6);
   }
+  TargetWrapperCL::Unmap(out_data, mapped_out);
 }
 
 }  // namespace lite

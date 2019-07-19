@@ -31,6 +31,11 @@ void* TargetMalloc(TargetType target, size_t size) {
           TargetWrapper<TARGET(kCUDA), cudaStream_t, cudaEvent_t>::Malloc(size);
       break;
 #endif  // LITE_WITH_CUDA
+#ifdef LITE_WITH_OPENCL
+    case TargetType::kOpenCL:
+      data = TargetWrapperCL::Malloc(size);
+      break;
+#endif  // LITE_WITH_OPENCL
     default:
       LOG(FATAL) << "Unknown supported target " << TargetToStr(target);
   }
@@ -50,6 +55,11 @@ void TargetFree(TargetType target, void* data) {
       TargetWrapper<TARGET(kCUDA)>::Free(data);
       break;
 #endif  // LITE_WITH_CUDA
+#ifdef LITE_WITH_OPENCL
+    case TargetType::kOpenCL:
+      TargetWrapperCL::Free(data);
+      break;
+#endif  // LITE_WITH_OPENCL
     default:
       LOG(FATAL) << "Unknown type";
   }
@@ -70,6 +80,11 @@ void TargetCopy(TargetType target, void* dst, const void* src, size_t size) {
           dst, src, size, IoDirection::DtoD);
       break;
 #endif
+#ifdef LITE_WITH_OPENCL
+    case TargetType::kOpenCL:
+      TargetWrapperCL::MemcpySync(dst, src, size, IoDirection::DtoD);
+      break;
+#endif  // LITE_WITH_OPENCL
     default:
       LOG(FATAL) << "unsupported type";
   }

@@ -65,7 +65,7 @@ void CLContext::AddKernel(const std::string &kernel_name,
   VLOG(3) << " --- to create kernel: " << kernel_name << " --- ";
   std::unique_ptr<cl::Kernel> kernel(
       new cl::Kernel(program, kernel_name.c_str(), &status));
-  CL_CHECK_ERRORS(status);
+  CL_CHECK_FATAL(status);
   VLOG(3) << " --- end create kernel --- ";
   kernels_.emplace_back(std::move(kernel));
   kernel_offset_[kernel_name] = kernels_.size() - 1;
@@ -82,7 +82,8 @@ cl::Kernel &CLContext::GetKernel(const int index) {
 
 cl::Kernel &CLContext::GetKernel(const std::string &name) {
   auto it = kernel_offset_.find(name);
-  CHECK(it != kernel_offset_.end());
+  CHECK(it != kernel_offset_.end()) << "Cannot find the kernel function: "
+                                    << name;
   return GetKernel(it->second);
 }
 

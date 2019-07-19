@@ -15,18 +15,30 @@ limitations under the License. */
 #pragma once
 
 #include "lite/opencl/cl_include.h"
+#include "lite/utils/cp_logging.h"
+#include "lite/utils/string.h"
 
 namespace paddle {
 namespace lite {
 
 const char* opencl_error_to_str(cl_int error);
 
-#define CL_CHECK_ERRORS(ERR)                                         \
-  if (ERR != CL_SUCCESS) {                                           \
-    printf(                                                          \
+#define CL_CHECK_ERROR(err_code__)                                   \
+  if (err_code__ != CL_SUCCESS) {                                    \
+    LOG(ERROR) << string_format(                                     \
         "OpenCL error with code %s happened in file %s at line %d. " \
         "Exiting.\n",                                                \
-        opencl_error_to_str(ERR),                                    \
+        opencl_error_to_str(err_code__),                             \
+        __FILE__,                                                    \
+        __LINE__);                                                   \
+  }
+
+#define CL_CHECK_FATAL(err_code__)                                   \
+  if (err_code__ != CL_SUCCESS) {                                    \
+    LOG(FATAL) << string_format(                                     \
+        "OpenCL error with code %s happened in file %s at line %d. " \
+        "Exiting.\n",                                                \
+        opencl_error_to_str(err_code__),                             \
         __FILE__,                                                    \
         __LINE__);                                                   \
   }

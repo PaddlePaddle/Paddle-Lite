@@ -98,9 +98,9 @@ class TensorLite {
         dst, data, dim.production() * sizeof(DType), IoDirection::HtoD);
   }
 
-  template <typename T>
-  const T *data() const {
-    return static_cast<const T *>(buffer_->data());
+  template <typename T, typename R = T>
+  const R *data() const {
+    return static_cast<const R *>(buffer_->data());
   }
 
   void Resize(const DDimLite &ddim) { dims_ = ddim; }
@@ -112,11 +112,11 @@ class TensorLite {
   const LoD &lod() const { return lod_; }
   LoD *mutable_lod() { return &lod_; }
 
-  template <typename T>
-  T *mutable_data();
+  template <typename T, typename R = T>
+  R *mutable_data();
 
-  template <typename T>
-  T *mutable_data(TargetType target);
+  template <typename T, typename R = T>
+  R *mutable_data(TargetType target);
   void *mutable_data(size_t memory_size);
   void *mutable_data(TargetType target, size_t memory_size);
 
@@ -153,19 +153,19 @@ class TensorLite {
   size_t memory_size_{};
 };
 
-template <typename T>
-T *TensorLite::mutable_data() {
+template <typename T, typename R>
+R *TensorLite::mutable_data() {
   memory_size_ = dims_.production() * sizeof(T);
   buffer_->ResetLazy(target_, memory_size_);
-  return static_cast<T *>(buffer_->data());
+  return static_cast<R *>(buffer_->data());
 }
 
-template <typename T>
-T *TensorLite::mutable_data(TargetType target) {
+template <typename T, typename R>
+R *TensorLite::mutable_data(TargetType target) {
   target_ = target;
   memory_size_ = dims_.production() * sizeof(T);
   buffer_->ResetLazy(target, memory_size());
-  return static_cast<T *>(buffer_->data());
+  return static_cast<R *>(buffer_->data());
 }
 
 template <typename TensorT>

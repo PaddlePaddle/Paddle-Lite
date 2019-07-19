@@ -36,7 +36,7 @@ static void CopyImageData(CLContext* context,
       static_cast<size_t>(width), static_cast<size_t>(height), 1};
   cl_int err = context->GetCommandQueue().enqueueReadImage(
       *image, CL_TRUE, origin, region, 0, 0, image_data, nullptr, nullptr);
-  CL_CHECK_ERRORS(err);
+  CL_CHECK_FATAL(err);
 
   auto* converter = cl_image.image_converter();
   converter->ImageToNCHW(
@@ -76,26 +76,26 @@ void elementwise_add(CLContext* context,
   out_image.InitEmptyImage(context->GetContext(), out_dim);
   cl_int status;
   status = kernel.setArg(0, *in_image.cl_image());
-  CL_CHECK_ERRORS(status);
+  CL_CHECK_FATAL(status);
   status = kernel.setArg(1, *bias_image.cl_image());
-  CL_CHECK_ERRORS(status);
+  CL_CHECK_FATAL(status);
   status = kernel.setArg(2, *out_image.cl_image());
-  CL_CHECK_ERRORS(status);
+  CL_CHECK_FATAL(status);
 
   if (bias_dim.size() == 1) {
     int tensor_w = in_dim[3];
     status = kernel.setArg(3, tensor_w);
-    CL_CHECK_ERRORS(status);
+    CL_CHECK_FATAL(status);
   }
   size_t width = in_image.ImageWidth();
   size_t height = in_image.ImageHeight();
   auto global_work_size = cl::NDRange{width, height};
   status = context->GetCommandQueue().enqueueNDRangeKernel(
       kernel, cl::NullRange, global_work_size, cl::NullRange, nullptr, nullptr);
-  CL_CHECK_ERRORS(status);
+  CL_CHECK_FATAL(status);
 
   status = context->GetCommandQueue().finish();
-  CL_CHECK_ERRORS(status);
+  CL_CHECK_FATAL(status);
   VLOG(3) << " --- Out image: " << out_image << " --- ";
   CopyImageData(context, out_image, out);
 }
@@ -131,36 +131,36 @@ void pool(CLContext* context,
   const int out_width = out_converter->WidthOfOneBlock();
   cl_int status;
   status = kernel.setArg(0, in_height);
-  CL_CHECK_ERRORS(status);
+  CL_CHECK_FATAL(status);
   status = kernel.setArg(1, in_width);
-  CL_CHECK_ERRORS(status);
+  CL_CHECK_FATAL(status);
   status = kernel.setArg(2, out_height);
-  CL_CHECK_ERRORS(status);
+  CL_CHECK_FATAL(status);
   status = kernel.setArg(3, out_width);
-  CL_CHECK_ERRORS(status);
+  CL_CHECK_FATAL(status);
   status = kernel.setArg(4, pad_h);
-  CL_CHECK_ERRORS(status);
+  CL_CHECK_FATAL(status);
   status = kernel.setArg(5, pad_w);
-  CL_CHECK_ERRORS(status);
+  CL_CHECK_FATAL(status);
   status = kernel.setArg(6, stride_h);
-  CL_CHECK_ERRORS(status);
+  CL_CHECK_FATAL(status);
   status = kernel.setArg(7, stride_w);
-  CL_CHECK_ERRORS(status);
+  CL_CHECK_FATAL(status);
   status = kernel.setArg(8, ksize_h);
-  CL_CHECK_ERRORS(status);
+  CL_CHECK_FATAL(status);
   status = kernel.setArg(9, ksize_w);
-  CL_CHECK_ERRORS(status);
+  CL_CHECK_FATAL(status);
   status = kernel.setArg(10, *in_image.cl_image());
-  CL_CHECK_ERRORS(status);
+  CL_CHECK_FATAL(status);
   status = kernel.setArg(11, *out_image.cl_image());
-  CL_CHECK_ERRORS(status);
+  CL_CHECK_FATAL(status);
 
   status = context->GetCommandQueue().enqueueNDRangeKernel(
       kernel, cl::NullRange, global_work_size, cl::NullRange, nullptr, nullptr);
-  CL_CHECK_ERRORS(status);
+  CL_CHECK_FATAL(status);
 
   status = context->GetCommandQueue().finish();
-  CL_CHECK_ERRORS(status);
+  CL_CHECK_FATAL(status);
   VLOG(3) << " --- Out image: " << out_image << " --- ";
   CopyImageData(context, out_image, out);
 }
