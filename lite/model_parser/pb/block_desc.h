@@ -14,110 +14,67 @@
 
 #pragma once
 
-#include <deque>
-#include <memory>
-#include <set>
-#include <string>
-#include <unordered_map>
 #include <vector>
-
-#include "paddle/fluid/framework/op_desc.h"
-#include "paddle/fluid/framework/proto_desc.h"
-#include "paddle/fluid/framework/var_desc.h"
-#include "paddle/fluid/platform/macros.h"
+#include "lite/core/framework.pb.h"
+#include "lite/model_parser/desc_apis.h"
+#include "lite/utils/cp_logging.h"
 
 namespace paddle {
 namespace lite {
+namespace pb {
 
-class ProgramDesc;
-
-// Each Protobuf Message, we provide a XXXBind class. In that class, we optimize
-// read/write speed. Only when we want the protobuf message, the local changes
-// will be synchronized (by `Sync` method).
-
-class BlockDesc {
+class BlockDesc : public BlockDescAPI {
  public:
-  BlockDesc(ProgramDesc *prog, proto::BlockDesc *desc);
+  BlockDesc() = delete;
 
-  BlockDesc(const BlockDesc &other, proto::BlockDesc *desc, ProgramDesc *prog);
-
-  int32_t ID() const { return desc_->idx(); }
-
-  int32_t Parent() const { return desc_->parent_idx(); }
-
-  int32_t ForwardBlockID() const { return desc_->forward_block_idx(); }
-
-  VarDesc *Var(const std::string &name_bytes);
-
-  VarDesc *FindVar(const std::string &name_bytes) const;
-
-  bool HasVar(const std::string &var_name) const;
-
-  VarDesc *RenameVar(const std::string &old_name, const std::string &new_name);
-
-  VarDesc *FindVarRecursive(const std::string &name_bytes) const;
-
-  VarDesc &FindRecursiveOrCreateVar(const std::string &name_bytes);
-
-  bool HasVarRecursive(const std::string &var_name) const;
-
-  std::set<std::string> LocalVarNames() const {
-    std::set<std::string> var_names;
-    for (auto &var : vars_) {
-      var_names.insert(var.first);
-    }
-    return var_names;
+  explicit BlockDesc(framework::proto::BlockDesc* desc) : desc_(desc) {
+    CHECK(desc_);
   }
 
-  std::vector<VarDesc *> AllVars() const;
+  framework::proto::BlockDesc* Proto() { return desc_; }
 
-  BlockDesc *ParentBlock() const;
+  const framework::proto::BlockDesc& ReadonlyProto() const { return *desc_; }
 
-  BlockDesc *ForwardBlock() const;
+  int32_t Idx() const override { return desc_->idx(); }
 
-  void SetForwardBlockID(int32_t forward_block_id);
+  void SetIdx(int32_t idx) override { desc_->set_idx(idx); }
 
-  OpDesc *AppendOp();
+  int32_t ParentIdx() const override { return desc_->parent_idx(); }
 
-  void AppendAllocatedOp(std::unique_ptr<OpDesc> &&op_desc);
+  void SetParentIdx(int32_t idx) override { desc_->set_parent_idx(idx); }
 
-  OpDesc *PrependOp();
+  size_t VarsSize() const override { return desc_->vars_size(); }
 
-  void PrependAllocatedOp(std::unique_ptr<OpDesc> &&op_desc);
+  void ClearVars() override { desc_->clear_vars(); }
 
-  OpDesc *InsertOp(size_t index);
+  template <typename T>
+  T* GetVar(int32_t idx);
 
-  /*
-   * Only remove op itself,
-   * do nothing to its input and output variables
-   */
-  void RemoveOp(size_t s, size_t e);
+  template <typename T>
+  T* AddVar();
 
-  void RemoveOpInternal(const OpDesc *op_desc);
+  size_t OpsSize() const override { return desc_->ops_size(); }
 
-  void RemoveVar(const std::string &name) { vars_.erase(name); }
+  void ClearOps() override { desc_->clear_ops(); }
 
-  std::vector<OpDesc *> AllOps() const;
+  template <typename T>
+  T* GetOp(int32_t idx);
 
-  size_t OpSize() const { return ops_.size(); }
+  template <typename T>
+  T* AddOp();
 
-  OpDesc *Op(int idx) const { return ops_.at(idx).get(); }
+  int32_t ForwardBlockIdx() const override {
+    return desc_->forward_block_idx();
+  }
 
-  void Flush();
-
-  proto::BlockDesc *Proto();
-
-  ProgramDesc *Program() const { return this->prog_; }
+  void SetForwardBlockIdx(int32_t idx) override {
+    desc_->set_forward_block_idx(idx);
+  }
 
  private:
-  ProgramDesc *prog_;       // not_own
-  proto::BlockDesc *desc_;  // not_own
-  bool need_update_;
-
-  std::deque<std::unique_ptr<OpDesc>> ops_;
-  std::unordered_map<std::string, std::unique_ptr<VarDesc>> vars_;
-
-  DISABLE_COPY_AND_ASSIGN(BlockDesc);
+  framework::proto::BlockDesc* desc_;  // not_own
 };
+
+}  // namespace pb
 }  // namespace lite
 }  // namespace paddle

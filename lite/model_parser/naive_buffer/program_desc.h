@@ -15,29 +15,32 @@
 #pragma once
 
 #include <vector>
-#include "lite/core/framework.pb.h"
 #include "lite/model_parser/desc_apis.h"
-#include "lite/utils/cp_logging.h"
+#include "lite/model_parser/naive_buffer/proto/framework.nb.h"
 
 namespace paddle {
 namespace lite {
-namespace pb {
+namespace naive_buffer {
 
 class ProgramDesc : public ProgramDescAPI {
  public:
   ProgramDesc() = delete;
 
-  explicit ProgramDesc(framework::proto::ProgramDesc *desc) : desc_(desc) {
-    CHECK(desc_);
+  explicit ProgramDesc(proto::ProgramDesc *desc) : desc_(desc) { CHECK(desc_); }
+
+  void CopyFrom(ProgramDesc &program_desc) {
+    CHECK(program_desc.Proto())
+        << "Source proto::ProgramDesc pointer can't be null";
+    desc_ = program_desc.Proto();
   }
 
-  framework::proto::ProgramDesc *Proto() { return desc_; }
+  proto::ProgramDesc *Proto() { return desc_; }
 
-  const framework::proto::ProgramDesc &ReadonlyProto() const { return *desc_; }
+  const proto::ProgramDesc &ReadonlyProto() const { return *desc_; }
 
-  size_t BlocksSize() const override { return desc_->blocks_size(); }
+  size_t BlocksSize() const override;
 
-  void ClearBlocks() override { desc_->clear_blocks(); }
+  void ClearBlocks() override;
 
   template <typename T>
   T *GetBlock(int32_t idx);
@@ -45,18 +48,19 @@ class ProgramDesc : public ProgramDescAPI {
   template <typename T>
   T *AddBlock();
 
-  bool HasVersion() const override { return desc_->has_version(); }
+  bool HasVersion() const override { return true; }
 
-  int64_t Version() const override { return desc_->version().version(); }
+  int64_t Version() const override;
 
-  void SetVersion(int64_t version) override {
-    desc_->mutable_version()->set_version(version);
-  }
+  void SetVersion(int64_t version) override;
 
  private:
-  framework::proto::ProgramDesc *desc_;  // not_own
+  const ListBuilder<proto::BlockDesc> &GetBlockListBuilder() const;
+  ListBuilder<proto::BlockDesc> *GetMutableBlockListBuilder();
+
+  proto::ProgramDesc *desc_;
 };
 
-}  // namespace pb
+}  // namespace naive_buffer
 }  // namespace lite
 }  // namespace paddle

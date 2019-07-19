@@ -46,48 +46,48 @@ using VariableNameMap = std::map<std::string, std::vector<std::string>>;
  */
 class OpDesc : public OpDescAPI {
  public:
-  OpDesc() {}
+  OpDesc() = delete;
 
-  explicit OpDesc(const framework::proto::OpDesc &desc) : desc_(desc) {}
+  explicit OpDesc(framework::proto::OpDesc *desc) : desc_(desc) {
+    CHECK(desc_);
+  }
 
-  void CopyFrom(const OpDesc &op_desc) { desc_ = op_desc.ReadonlyProto(); }
+  framework::proto::OpDesc *Proto() { return desc_; }
+  const framework::proto::OpDesc &ReadonlyProto() const { return *desc_; }
 
-  framework::proto::OpDesc *Proto() { return &desc_; }
-  const framework::proto::OpDesc &ReadonlyProto() const { return desc_; }
+  std::string Type() const override { return desc_->type(); }
 
-  std::string Type() const override { return desc_.type(); }
-
-  void SetType(const std::string &type) override { desc_.set_type(type); }
+  void SetType(const std::string &type) override { desc_->set_type(type); }
 
   // Get the arguments of parameter called `param`
   std::vector<std::string> Input(const std::string &param) const override {
-    return GetArguments(desc_.inputs(), param);
+    return GetArguments(desc_->inputs(), param);
   }
 
   std::vector<std::string> InputArgumentNames() const override {
-    return GetArgumentNames(desc_.inputs());
+    return GetArgumentNames(desc_->inputs());
   }
 
   void SetInput(const std::string &param,
                 const std::vector<std::string> &args) override {
-    SetArgument(desc_.mutable_inputs(), param, args);
+    SetArgument(desc_->mutable_inputs(), param, args);
   }
 
   std::vector<std::string> Output(const std::string &param) const override {
-    return GetArguments(desc_.outputs(), param);
+    return GetArguments(desc_->outputs(), param);
   }
 
   std::vector<std::string> OutputArgumentNames() const override {
-    return GetArgumentNames(desc_.outputs());
+    return GetArgumentNames(desc_->outputs());
   }
 
   void SetOutput(const std::string &param,
                  const std::vector<std::string> &args) override {
-    SetArgument(desc_.mutable_outputs(), param, args);
+    SetArgument(desc_->mutable_outputs(), param, args);
   }
 
   bool HasAttr(const std::string &name) const override {
-    const auto &xs = desc_.attrs();
+    const auto &xs = desc_->attrs();
     auto it = std::find_if(
         xs.begin(), xs.end(), [&](const framework::proto::OpDesc_Attr &x) {
           return x.name() == name;
@@ -96,7 +96,7 @@ class OpDesc : public OpDescAPI {
   }
 
   AttrType GetAttrType(const std::string &name) const override {
-    const auto &xs = desc_.attrs();
+    const auto &xs = desc_->attrs();
     auto it = std::find_if(
         xs.begin(), xs.end(), [&](const framework::proto::OpDesc_Attr &x) {
           return x.name() == name;
@@ -128,7 +128,7 @@ class OpDesc : public OpDescAPI {
 
   std::vector<std::string> AttrNames() const override {
     std::vector<std::string> res;
-    const auto &xs = desc_.attrs();
+    const auto &xs = desc_->attrs();
     std::transform(
         xs.begin(),
         xs.end(),
@@ -143,7 +143,7 @@ class OpDesc : public OpDescAPI {
   template <typename T>
   T GetAttr(const std::string &name) const;
 
-  std::string DebugString() const { return desc_.DebugString(); }
+  std::string DebugString() const { return desc_->DebugString(); }
 
  private:
   std::vector<std::string> GetArguments(
@@ -200,7 +200,7 @@ class OpDesc : public OpDescAPI {
   }
 
  private:
-  framework::proto::OpDesc desc_;
+  framework::proto::OpDesc *desc_;
 };
 
 template <>

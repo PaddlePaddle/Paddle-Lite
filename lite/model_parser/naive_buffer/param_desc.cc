@@ -15,31 +15,11 @@
 #include "lite/model_parser/naive_buffer/param_desc.h"
 #include <string>
 #include <vector>
+#include "lite/model_parser/naive_buffer/naive_buffer_wrapper_helper.h"
 
 namespace paddle {
 namespace lite {
 namespace naive_buffer {
-
-/// BuilderType must have data method
-template <typename T, typename BuilderType>
-std::vector<T> RepeatedToVector(const ListBuilder<BuilderType>& builder) {
-  std::vector<T> res;
-  for (size_t i = 0; i < builder.size(); ++i) {
-    res.push_back(builder.Get(i).data());
-  }
-  return res;
-}
-
-/// BuilderType must have set method
-template <typename T, typename BuilderType>
-void VectorToRepeated(const std::vector<T>& data,
-                      ListBuilder<BuilderType>* builder) {
-  CHECK(builder);
-  builder->Clear();
-  for (auto& val : data) {
-    builder->New()->set(val);
-  }
-}
 
 uint32_t ParamDesc::ModelVersion() const { return Version("model_version"); }
 

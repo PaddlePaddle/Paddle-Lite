@@ -17,9 +17,20 @@
 namespace paddle {
 namespace lite {
 
-void LightPredictor::Build(const std::string& model_dir) {
-  framework::proto::ProgramDesc desc;
-  LoadModel(model_dir, scope_.get(), &desc);
+void LightPredictor::Build(const std::string& model_dir,
+                           LiteModelType model_type) {
+  cpp::ProgramDesc desc;
+  LOG(INFO) << "Load model from " << model_dir;
+  switch (model_type) {
+    case LiteModelType::kProtobuf:
+      LoadModelPb(model_dir, scope_.get(), &desc);
+      break;
+    case LiteModelType::kNaiveBuffer:
+      LoadModelNaive(model_dir, scope_.get(), &desc);
+      break;
+    default:
+      LOG(FATAL) << "Unknown model type";
+  }
   BuildRuntimeProgram(desc);
 }
 
@@ -41,8 +52,7 @@ const Tensor* LightPredictor::GetOutput(size_t offset) {
   return &fetch_list.at(offset);
 }
 
-void LightPredictor::BuildRuntimeProgram(
-    const framework::proto::ProgramDesc& prog) {
+void LightPredictor::BuildRuntimeProgram(const cpp::ProgramDesc& prog) {
   std::vector<Instruction> insts;
   // 1. Create op first
   Program program(prog, scope_, {});
@@ -71,7 +81,8 @@ void LightPredictor::BuildRuntimeProgram(
   program_->set_exec_scope(program.exec_scope());
 }
 
-LightPredictor::LightPredictor(const std::string& model_dir) {
+LightPredictor::LightPredictor(const std::string& model_dir,
+                               LiteModelType model_type) {
   scope_ = std::make_shared<Scope>();
   Build(model_dir);
 }

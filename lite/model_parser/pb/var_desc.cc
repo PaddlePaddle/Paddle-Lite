@@ -20,10 +20,49 @@ namespace pb {
 
 using namespace framework;  // NOLINT
 
-proto::VarType::Type VarDesc::GetType() const { return desc_.type().type(); }
+VarDescAPI::Type VarDesc::GetType() const {
+  auto type = desc_->type().type();
 
-void VarDesc::SetType(proto::VarType::Type type) {
-  desc_.mutable_type()->set_type(type);
+#define GET_TYPE_CASE_ITEM(type__)        \
+  case framework::proto::VarType::type__: \
+    return VarDescAPI::Type::type__;
+
+  switch (type) {
+    GET_TYPE_CASE_ITEM(LOD_TENSOR);
+    GET_TYPE_CASE_ITEM(LOD_TENSOR_ARRAY);
+    GET_TYPE_CASE_ITEM(LOD_RANK_TABLE);
+    GET_TYPE_CASE_ITEM(SELECTED_ROWS);
+    GET_TYPE_CASE_ITEM(FEED_MINIBATCH);
+    GET_TYPE_CASE_ITEM(FETCH_LIST);
+    GET_TYPE_CASE_ITEM(STEP_SCOPES);
+    GET_TYPE_CASE_ITEM(PLACE_LIST);
+    GET_TYPE_CASE_ITEM(READER);
+    default:
+      LOG(ERROR) << "Unknown var type";
+  }
+#undef GET_TYPE_CASE_ITEM
+}
+
+void VarDesc::SetType(VarDescAPI::Type type) {
+#define SET_TYPE_CASE_ITEM(type__)                                      \
+  case VarDescAPI::Type::type__:                                        \
+    desc_->mutable_type()->set_type(framework::proto::VarType::type__); \
+    break;
+
+  switch (type) {
+    SET_TYPE_CASE_ITEM(LOD_TENSOR);
+    SET_TYPE_CASE_ITEM(LOD_TENSOR_ARRAY);
+    SET_TYPE_CASE_ITEM(LOD_RANK_TABLE);
+    SET_TYPE_CASE_ITEM(SELECTED_ROWS);
+    SET_TYPE_CASE_ITEM(FEED_MINIBATCH);
+    SET_TYPE_CASE_ITEM(FETCH_LIST);
+    SET_TYPE_CASE_ITEM(STEP_SCOPES);
+    SET_TYPE_CASE_ITEM(PLACE_LIST);
+    SET_TYPE_CASE_ITEM(READER);
+    default:
+      LOG(ERROR) << "Unknown var type";
+  }
+#undef SET_TYPE_CASE_ITEM
 }
 
 void VarDesc::SetShape(const std::vector<int64_t> &dims) {
@@ -31,10 +70,10 @@ void VarDesc::SetShape(const std::vector<int64_t> &dims) {
 }
 
 void VarDesc::SetTensorDescNum(size_t num) {
-  switch (desc_.type().type()) {
+  switch (desc_->type().type()) {
     case proto::VarType::READER: {
       auto *lod_tensors_ptr =
-          desc_.mutable_type()->mutable_reader()->mutable_lod_tensor();
+          desc_->mutable_type()->mutable_reader()->mutable_lod_tensor();
       lod_tensors_ptr->Clear();
       for (size_t i = 0; i < num; ++i) {
         lod_tensors_ptr->Add();
@@ -49,9 +88,9 @@ void VarDesc::SetTensorDescNum(size_t num) {
 }
 
 size_t VarDesc::GetTensorDescNum() const {
-  switch (desc_.type().type()) {
+  switch (desc_->type().type()) {
     case proto::VarType::READER:
-      return desc_.type().reader().lod_tensor_size();
+      return desc_->type().reader().lod_tensor_size();
       break;
     default:
       LOG(FATAL) << "Getting 'sub_tensor_number' is not supported by the type "
@@ -126,12 +165,12 @@ std::vector<proto::VarType::Type> VarDesc::GetDataTypes() const {
 }
 
 void VarDesc::SetLoDLevel(int32_t lod_level) {
-  switch (desc_.type().type()) {
+  switch (desc_->type().type()) {
     case proto::VarType::LOD_TENSOR:
-      desc_.mutable_type()->mutable_lod_tensor()->set_lod_level(lod_level);
+      desc_->mutable_type()->mutable_lod_tensor()->set_lod_level(lod_level);
       break;
     case proto::VarType::LOD_TENSOR_ARRAY:
-      desc_.mutable_type()->mutable_tensor_array()->set_lod_level(lod_level);
+      desc_->mutable_type()->mutable_tensor_array()->set_lod_level(lod_level);
       break;
     default:
       LOG(FATAL)
@@ -149,11 +188,11 @@ void VarDesc::SetLoDLevels(const std::vector<int32_t> &multiple_lod_level) {
             << "). The Reader is going to be reinitialized.";
     SetTensorDescNum(multiple_lod_level.size());
   }
-  switch (desc_.type().type()) {
+  switch (desc_->type().type()) {
     case proto::VarType::READER: {
       size_t i = 0;
       for (auto &lod_tensor :
-           *desc_.mutable_type()->mutable_reader()->mutable_lod_tensor()) {
+           *desc_->mutable_type()->mutable_reader()->mutable_lod_tensor()) {
         lod_tensor.set_lod_level(multiple_lod_level[i++]);
       }
     } break;
@@ -165,11 +204,11 @@ void VarDesc::SetLoDLevels(const std::vector<int32_t> &multiple_lod_level) {
 }
 
 int32_t VarDesc::GetLoDLevel() const {
-  switch (desc_.type().type()) {
+  switch (desc_->type().type()) {
     case proto::VarType::LOD_TENSOR:
-      return desc_.type().lod_tensor().lod_level();
+      return desc_->type().lod_tensor().lod_level();
     case proto::VarType::LOD_TENSOR_ARRAY:
-      return desc_.type().tensor_array().lod_level();
+      return desc_->type().tensor_array().lod_level();
     default:
       LOG(FATAL)
           << "Getting 'lod_level' is not supported by the type of var %s."
@@ -180,10 +219,10 @@ int32_t VarDesc::GetLoDLevel() const {
 
 std::vector<int32_t> VarDesc::GetLoDLevels() const {
   std::vector<int32_t> res;
-  switch (desc_.type().type()) {
+  switch (desc_->type().type()) {
     case proto::VarType::READER:
-      res.reserve(desc_.type().reader().lod_tensor_size());
-      for (auto &lod_tensor : desc_.type().reader().lod_tensor()) {
+      res.reserve(desc_->type().reader().lod_tensor_size());
+      for (auto &lod_tensor : desc_->type().reader().lod_tensor()) {
         res.push_back(lod_tensor.lod_level());
       }
       return res;
@@ -197,15 +236,15 @@ std::vector<int32_t> VarDesc::GetLoDLevels() const {
 }
 
 const proto::VarType::TensorDesc &VarDesc::tensor_desc() const {
-  CHECK(desc_.has_type()) << "The var's type hasn't been set.";
-  CHECK(desc_.type().has_type()) << "The var type hasn't been set.";
-  switch (desc_.type().type()) {
+  CHECK(desc_->has_type()) << "The var's type hasn't been set.";
+  CHECK(desc_->type().has_type()) << "The var type hasn't been set.";
+  switch (desc_->type().type()) {
     case proto::VarType::SELECTED_ROWS:
-      return desc_.type().selected_rows();
+      return desc_->type().selected_rows();
     case proto::VarType::LOD_TENSOR:
-      return desc_.type().lod_tensor().tensor();
+      return desc_->type().lod_tensor().tensor();
     case proto::VarType::LOD_TENSOR_ARRAY:
-      return desc_.type().tensor_array().tensor();
+      return desc_->type().tensor_array().tensor();
     default:
       LOG(FATAL)
           << "Getting 'tensor_desc' is not supported by the type of var %s."
@@ -215,12 +254,12 @@ const proto::VarType::TensorDesc &VarDesc::tensor_desc() const {
 }
 
 std::vector<proto::VarType::TensorDesc> VarDesc::tensor_descs() const {
-  CHECK(desc_.has_type()) << "The var type hasn't been set.";
+  CHECK(desc_->has_type()) << "The var type hasn't been set.";
   std::vector<proto::VarType::TensorDesc> res;
   res.reserve(GetTensorDescNum());
-  switch (desc_.type().type()) {
+  switch (desc_->type().type()) {
     case proto::VarType::READER:
-      for (const auto &lod_tensor : desc_.type().reader().lod_tensor()) {
+      for (const auto &lod_tensor : desc_->type().reader().lod_tensor()) {
         res.push_back(lod_tensor.tensor());
       }
       return res;
@@ -234,15 +273,15 @@ std::vector<proto::VarType::TensorDesc> VarDesc::tensor_descs() const {
 }
 
 proto::VarType::TensorDesc *VarDesc::mutable_tensor_desc() {
-  CHECK(desc_.has_type()) << "The var type hasn't been set.";
-  CHECK(desc_.type().has_type()) << "The var type hasn't been set.";
-  switch (desc_.type().type()) {
+  CHECK(desc_->has_type()) << "The var type hasn't been set.";
+  CHECK(desc_->type().has_type()) << "The var type hasn't been set.";
+  switch (desc_->type().type()) {
     case proto::VarType::SELECTED_ROWS:
-      return desc_.mutable_type()->mutable_selected_rows();
+      return desc_->mutable_type()->mutable_selected_rows();
     case proto::VarType::LOD_TENSOR:
-      return desc_.mutable_type()->mutable_lod_tensor()->mutable_tensor();
+      return desc_->mutable_type()->mutable_lod_tensor()->mutable_tensor();
     case proto::VarType::LOD_TENSOR_ARRAY:
-      return desc_.mutable_type()->mutable_tensor_array()->mutable_tensor();
+      return desc_->mutable_type()->mutable_tensor_array()->mutable_tensor();
     default:
       LOG(FATAL) << "Getting 'mutable_tensor_desc' is not supported by the "
                     "type of var "
@@ -253,14 +292,14 @@ proto::VarType::TensorDesc *VarDesc::mutable_tensor_desc() {
 }
 
 std::vector<proto::VarType::TensorDesc *> VarDesc::mutable_tensor_descs() {
-  CHECK(desc_.has_type()) << "The var type hasn't been set.";
-  CHECK(desc_.type().has_type()) << "The var type hasn't been set.";
+  CHECK(desc_->has_type()) << "The var type hasn't been set.";
+  CHECK(desc_->type().has_type()) << "The var type hasn't been set.";
   std::vector<proto::VarType::TensorDesc *> res;
   res.reserve(GetTensorDescNum());
-  switch (desc_.type().type()) {
+  switch (desc_->type().type()) {
     case proto::VarType::READER:
       for (auto &lod_tensor :
-           *desc_.mutable_type()->mutable_reader()->mutable_lod_tensor()) {
+           *desc_->mutable_type()->mutable_reader()->mutable_lod_tensor()) {
         res.push_back(lod_tensor.mutable_tensor());
       }
       return res;

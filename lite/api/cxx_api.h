@@ -42,9 +42,10 @@ class Predictor {
   void Build(const std::string& model_path,
              const Place& prefer_place,
              const std::vector<Place>& valid_places,
-             const std::vector<std::string>& passes = {});
+             const std::vector<std::string>& passes = {},
+             LiteModelType model_type = LiteModelType::kProtobuf);
 
-  void Build(const framework::proto::ProgramDesc& desc,
+  void Build(const cpp::ProgramDesc& desc,
              const Place& prefer_place,
              const std::vector<Place>& valid_places,
              const std::vector<std::string>& passes = {});
@@ -58,12 +59,13 @@ class Predictor {
   // Get offset-th col of fetch results.
   const lite::Tensor* GetOutput(size_t offset) const;
 
-  const framework::proto::ProgramDesc& program_desc() const;
+  const cpp::ProgramDesc& program_desc() const;
   const lite::Tensor* GetTensor(const std::string& name) const;
   const RuntimeProgram& runtime_program() const;
 
   // This method is disabled in mobile, for unnecessary dependencies required.
-  void SaveModel(const std::string& dir);
+  void SaveModel(const std::string& dir,
+                 LiteModelType model_type = LiteModelType::kProtobuf);
 
 #ifdef LITE_WITH_TRAIN
   void Run(const std::vector<framework::Tensor>& tensors) {
@@ -76,12 +78,11 @@ class Predictor {
 
  private:
   Optimizer optimizer_;
-  framework::proto::ProgramDesc program_desc_;
+  cpp::ProgramDesc program_desc_;
   std::shared_ptr<Scope> scope_;
   std::unique_ptr<RuntimeProgram> program_;
 };
 
-#ifdef LITE_WITH_X86
 /*
  * An executor for training.
  *
@@ -96,7 +97,7 @@ class Predictor {
  *   // fill data for tensor0
  *   exe.Run();
  * }
- */
+#ifdef LITE_WITH_X86
 class CXXTrainer {
  public:
   CXXTrainer(const std::shared_ptr<lite::Scope>& root_scope,
@@ -144,6 +145,7 @@ class CXXTrainer {
   Predictor main_program_executor_;
 };
 #endif
+*/
 
 }  // namespace lite
 }  // namespace paddle

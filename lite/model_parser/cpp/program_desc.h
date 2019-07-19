@@ -13,50 +13,45 @@
 // limitations under the License.
 
 #pragma once
-
 #include <vector>
-#include "lite/core/framework.pb.h"
+#include "lite/model_parser/cpp/block_desc.h"
 #include "lite/model_parser/desc_apis.h"
-#include "lite/utils/cp_logging.h"
 
 namespace paddle {
 namespace lite {
-namespace pb {
+namespace cpp {
 
+/*
+ * The cpp::ProgramDesc is the internal representation for Op. All the internal
+ * imprementation should use it, not the pb::ProgramDesc.
+ */
 class ProgramDesc : public ProgramDescAPI {
  public:
-  ProgramDesc() = delete;
+  ProgramDesc() = default;
 
-  explicit ProgramDesc(framework::proto::ProgramDesc *desc) : desc_(desc) {
-    CHECK(desc_);
-  }
+  size_t BlocksSize() const override { return blocks_.size(); }
 
-  framework::proto::ProgramDesc *Proto() { return desc_; }
-
-  const framework::proto::ProgramDesc &ReadonlyProto() const { return *desc_; }
-
-  size_t BlocksSize() const override { return desc_->blocks_size(); }
-
-  void ClearBlocks() override { desc_->clear_blocks(); }
+  void ClearBlocks() override { blocks_.clear(); }
 
   template <typename T>
-  T *GetBlock(int32_t idx);
+  T* GetBlock(int32_t idx);
 
   template <typename T>
-  T *AddBlock();
+  T* AddBlock();
 
-  bool HasVersion() const override { return desc_->has_version(); }
+  // Just return default versoin
+  // TODO(sangoly): refine this
+  bool HasVersion() const override { return true; }
 
-  int64_t Version() const override { return desc_->version().version(); }
+  int64_t Version() const override { return version_; }
 
-  void SetVersion(int64_t version) override {
-    desc_->mutable_version()->set_version(version);
-  }
+  void SetVersion(int64_t version) override { version_ = version; }
 
  private:
-  framework::proto::ProgramDesc *desc_;  // not_own
+  int64_t version_;
+  std::vector<BlockDesc> blocks_;
 };
 
-}  // namespace pb
+}  // namespace cpp
 }  // namespace lite
 }  // namespace paddle

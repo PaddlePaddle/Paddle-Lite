@@ -34,7 +34,7 @@ lite_cc_library(op SRCS op_lite.cc DEPS scope op_registry target_wrapper kernel
 lite_cc_library(type_system SRCS type_system.cc DEPS tensor target_wrapper)
 
 lite_cc_library(program SRCS program.cc
-    DEPS op kernel compatible_pb model_parser ${ops} framework_proto
+    DEPS op kernel model_parser ${ops} ${cpp_wrapper}
     PROFILE_DEPS basic_profiler)
 lite_cc_library(optimizer SRCS optimizer.cc DEPS mir_pass_manager model_parser program)
 
