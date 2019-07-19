@@ -29,7 +29,7 @@ bool AxpyOpLite::CheckShape() const {
   const auto scale_dims = param_.Scale->dims();
   const auto x_dims = param_.X->dims();
   CHECK_OR_FALSE(scale_dims[0] == x_dims[0] && scale_dims[1] == x_dims[1]);
-  CHECK_OR_FALSE(x_dims = param_.Bias->dims());
+  CHECK_OR_FALSE(x_dims == param_.Bias->dims());
 
   return true;
 }

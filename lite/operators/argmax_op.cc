@@ -24,7 +24,7 @@ namespace operators {
 bool ArgmaxOpLite::CheckShape() const {
   CHECK_OR_FALSE(param_.X);
   CHECK_OR_FALSE(param_.Out);
-  CHECK_OR_FALSE(param_.axis < (param_.X)->dims().size());
+  CHECK_OR_FALSE(param_.Axis < (param_.X)->dims().size());
   return true;
 }
 
