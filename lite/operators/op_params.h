@@ -327,6 +327,17 @@ struct UniformRandomParam {
   lite::Tensor* Out{};
 };
 
+/// ------------------------------ lrn operators ------------------------------
+struct LrnParam {
+  const lite::Tensor* X{};
+  lite::Tensor* Out{};
+  int local_size{5};
+  float alpha{1.};
+  float beta{0.75};
+  float k{1.};
+  std::string norm_region{"AcrossChannels"};
+};
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle

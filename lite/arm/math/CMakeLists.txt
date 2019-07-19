@@ -53,6 +53,7 @@ if (NOT HAS_ARM_MATH_LIB_DIR)
       scale.cc
       pooling.cc
       elementwise.cc
+      lrn.cc
       concat.cc
       sgemv.cc
       type_trans.cc
