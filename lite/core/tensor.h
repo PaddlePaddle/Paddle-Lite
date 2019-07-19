@@ -98,6 +98,10 @@ class TensorLite {
         dst, data, dim.production() * sizeof(DType), IoDirection::HtoD);
   }
 
+  // T is the data type and R is the return type
+  // For OpenCL, the return type can be cl::Buffer
+  // and the data type can be float/int8_t.
+  // For other devices, T and R may be the same type.
   template <typename T, typename R = T>
   const R *data() const {
     return static_cast<const R *>(buffer_->data());
@@ -112,9 +116,17 @@ class TensorLite {
   const LoD &lod() const { return lod_; }
   LoD *mutable_lod() { return &lod_; }
 
+  // T is the data type and R is the return type
+  // For OpenCL, the return type can be cl::Buffer
+  // and the data type can be float/int8_t.
+  // For other devices, T and R may be the same type.
   template <typename T, typename R = T>
   R *mutable_data();
 
+  // T is the data type and R is the return type
+  // For OpenCL, the return type can be cl::Buffer
+  // and the data type can be float/int8_t.
+  // For other devices, T and R may be the same type.
   template <typename T, typename R = T>
   R *mutable_data(TargetType target);
   void *mutable_data(size_t memory_size);
