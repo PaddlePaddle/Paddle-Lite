@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/kernels/arm/conv_transpose_compute.h"
+#include <vector>
 #include "lite/arm/math/funcs.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/type_system.h"
@@ -27,7 +28,6 @@ void Conv2DTransposeCompute::PrepareForRun() {
   auto x_dims = param.x->dims();
   auto w_dims = param.filter->dims();
   auto o_dims = param.output->dims();
-
   int win = x_dims[3];  // nchw
   int hin = x_dims[2];
   int chin = x_dims[1];
@@ -37,19 +37,27 @@ void Conv2DTransposeCompute::PrepareForRun() {
   int chout = o_dims[1];
   int kw = w_dims[3];  // oihw
   int kh = w_dims[2];
+  int group = param.groups;
+
+  if (chin != chout || param.groups != chin) {
+    // CHECK_OR_FALSE(chin % param.groups == 0);
+    // CHECK_OR_FALSE(chout % param.groups == 0);
+  }
 
   // deconv weights layout: chin * chout * kh * kw
-  int m = chout * kw * kh / param.groups;
-  int n = hin * win;
-  int k = chin / param.groups;
   auto& ctx = this->ctx_->template As<ARMContext>();
-  ctx.ExtendWorkspace(lite::DDim({1, 1, 1, param.groups * m * n}));
+  int m = chout * kw * kh / group;
+  int n = hin * win;
+  int k = chin / group;
 
-  lite::Tensor tmp_weight;
-  auto* w_data = param.filter->data<float>();
+  ctx.ExtendWorkspace(
+      lite::DDim(std::vector<int64_t>({1, 1, 1, group * m * n})));
+
+  lite::Tensor tmp_weights;
   lite::arm::math::prepackA(
-      &tmp_weight, *(param.filter), m, k, param.groups, true, &ctx);
-  param.filter->CopyDataFrom(tmp_weight);
+      &tmp_weights, *(param.filter), m, k, group, true, &ctx);
+  param.filter->Resize(tmp_weights.dims());
+  param.filter->CopyDataFrom(tmp_weights);
   param.filter->Resize(w_dims);
 }
 
@@ -69,11 +77,11 @@ void Conv2DTransposeCompute::Run() {
   int kh = w_dims[2];
   int group = param.groups;
   bool fuse_relu = param.fuse_relu;
-  bool flag_bias = param.bias != nullptr;
+  bool flag_bias = (param.bias != nullptr);
 
   int m = chout * kw * kh / group;
   int n = hin * win;
-  int k = chin / param.groups;
+  int k = chin / group;
   int group_size_in = win * hin * chin / group;
   int group_size_out = wout * hout * chout / group;
   int group_size_coldata = m * n;
@@ -81,11 +89,13 @@ void Conv2DTransposeCompute::Run() {
   int hblock = lite::arm::math::get_hblock(ctx.arch());
   int m_roundup = hblock * ((m + hblock - 1) / hblock);
   int group_size_weights = ((m_roundup * k + 15) / 16) * 16;
-
   bool flag_1x1s1p1 = (kw == 1) && (kh == 1) && (param.strides[0] == 1) &&
                       (param.strides[1] == 1) && (param.paddings[0] == 0) &&
                       (param.paddings[1] == 0) && (param.dilations[0] == 1) &&
                       (param.dilations[1] == 1);
+  ctx.ExtendWorkspace(
+      lite::DDim(std::vector<int64_t>({1, 1, 1, group * m * n})));
+
   const float* din = param.x->data<float>();
   float* dout = param.output->mutable_data<float>();
   const float* weights = param.filter->data<float>();

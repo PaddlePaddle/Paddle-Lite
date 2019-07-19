@@ -22,6 +22,7 @@ namespace operators {
 bool ActivationOp::CheckShape() const {
   CHECK_OR_FALSE(param_.X);
   CHECK_OR_FALSE(param_.Out);
+  CHECK_OR_FALSE(param_.X->dims() == param_.Out->dims());
   return true;
 }
 

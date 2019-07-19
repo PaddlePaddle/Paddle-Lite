@@ -34,8 +34,7 @@ bool ConvTransposeOpLite::CheckShape() const {
   CHECK_OR_FALSE(in_dims.size() - param_.strides.size() == 2U);
   CHECK_EQ_OR_FALSE(param_.paddings.size(), param_.strides.size());
 
-  CHECK_EQ_OR_FALSE(in_dims[1], filter_dims[1] * param_.groups);
-  CHECK_EQ_OR_FALSE(filter_dims[0] % param_.groups, 0);
+  // CHECK_OR_FALSE(in_dims[1] % param_.groups == 0);
   return true;
 }
 

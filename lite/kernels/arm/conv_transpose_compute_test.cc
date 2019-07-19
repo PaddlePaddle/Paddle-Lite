@@ -14,9 +14,11 @@
 
 #include "lite/kernels/arm/conv_transpose_compute.h"
 #include <gtest/gtest.h>
+#include <cmath>
 #include <cstdlib>
 #include <functional>
 #include <memory>
+#include <string>
 #include <utility>
 #include <vector>
 #include "lite/arm/math/funcs.h"
@@ -171,8 +173,62 @@ bool deconv_basic(const Dtype1* din,
   return true;
 }
 
-template <typename dtype>
-void conv2d_transpose_compute_ref(const operators::ConvParam& param) {}
+template <typename Dtype1, typename Dtype2>
+void conv2d_transpose_compute_ref(const operators::ConvParam& param) {
+  const Dtype1* din = param.x->data<Dtype1>();
+  Dtype2* dout = param.output->mutable_data<Dtype2>();
+
+  int num = param.x->dims()[0];
+  int chout = param.output->dims()[1];
+  int hout = param.output->dims()[2];
+  int wout = param.output->dims()[3];
+
+  int chin = param.x->dims()[1];
+  int hin = param.x->dims()[2];
+  int win = param.x->dims()[3];
+
+  const Dtype1* weights = param.filter->mutable_data<Dtype1>();
+  Dtype2* bias = nullptr;
+  if (param.bias != nullptr) {
+    bias = param.bias->mutable_data<Dtype2>();
+  }
+
+  int group = param.groups;
+  int kernel_h = param.filter->dims()[2];
+  int kernel_w = param.filter->dims()[3];
+  int stride_h = param.strides[0];
+  int stride_w = param.strides[1];
+  int dila_h = param.dilations[0];
+  int dila_w = param.dilations[1];
+
+  int pad_h = param.paddings[0];
+  int pad_w = param.paddings[1];
+  bool flag_bias = (param.bias != nullptr);
+  bool flag_relu = param.fuse_relu;
+
+  deconv_basic<float, float>(din,
+                             dout,
+                             num,
+                             chout,
+                             hout,
+                             wout,
+                             chin,
+                             hin,
+                             win,
+                             weights,
+                             bias,
+                             group,
+                             kernel_w,
+                             kernel_h,
+                             stride_w,
+                             stride_h,
+                             dila_w,
+                             dila_h,
+                             pad_w,
+                             pad_h,
+                             flag_bias,
+                             flag_relu);
+}
 
 TEST(conv2d_transpose_arm, retrive_op) {
   auto op = KernelRegistry::Global().Create<TARGET(kARM), PRECISION(kFloat)>(
@@ -186,60 +242,141 @@ TEST(conv2d_transpose_arm, init) {
   ASSERT_EQ(compute.precision(), PRECISION(kFloat));
   ASSERT_EQ(compute.target(), TARGET(kARM));
 }
+void print_data(lite::Tensor input, std::string name) {
+  LOG(INFO) << name;
+  auto* input_data = input.mutable_data<float>();
+  for (int i = 0; i < input.dims().production(); i++) {
+    LOG(INFO) << input_data[i];
+  }
+}
 TEST(conv2d_transpose_arm, compute) {
-  /*
-    DeviceInfo::Init();
-    for (auto n : {2, 3}) {
-      for (auto c : {3, 4 }) {
-        for (auto h : {4, 5}) {
-          for (auto w : {5, 6}) {
-            Tensor x;
-            Tensor output;
-            Tensor output_ref;
-            int axis = (n + c + h + w) % 4;
+  DeviceInfo::Init();
+  for (auto n : {1, 2}) {
+    for (auto ic : {1, 3, 8 /*, 128*/}) {
+      for (auto oc : {1, 3, 8 /*, 128*/}) {
+        for (auto ih : {2, 8, 15 /*, 56 , 112, 224, 512*/}) {
+          for (auto iw : {2, 8, 15 /*, 56, 112, 224, 512*/}) {
+            for (auto flag_bias : {false, true}) {
+              for (auto flag_relu : {false, true}) {
+                for (auto dilation : {1, 2}) {
+                  for (auto stride : {1, 2}) {
+                    for (auto padding : {0, 1, 2}) {
+                      for (auto ks : {2, 3, 5}) {
+                        for (auto group : {1, 2}) {
+                          /*
+                          LOG(INFO) << "n:" << n << ",ic:" << ic << ",oc:" << oc
+                          << ",ih:" << ih
+                            << ",iw:" << iw << ",flag_bias:" << flag_bias <<
+                          ",flag_relu:" << flag_relu
+                            << ",dila:" << dilation << ",padding:" << padding <<
+                          ",ks:" << ks
+                            << ",group:" << group;
+                            */
+                          // get shape
+                          if (ic % group != 0 || oc % group != 0) {
+                            group = 1;
+                          }
+                          std::vector<int64_t> input_shape = {n, ic, ih, iw};
+                          std::vector<int64_t> filter_shape = {
+                              oc / group, ic, ks, ks};
+                          int oh = (ih - 1) * stride - 2 * padding +
+                                   dilation * (ks - 1) + 1;
+                          int ow = (iw - 1) * stride - 2 * padding +
+                                   dilation * (ks - 1) + 1;
+                          if (oh < 1 || ow < 1) {
+                            break;
+                          }
+                          std::vector<int64_t> output_shape = {n, oc, oh, ow};
+                          std::vector<int64_t> bias_shape = {1, oc, 1, 1};
 
-            // get tensor x data
-            x.Resize({n, c, h, w});
-            auto* x_data = x.mutable_data<float>();
-            for (int i = 0; i < x.dims().production(); i++) {
-              float sign = i % 3 == 0 ? -1.0f : 1.0f;
-              x_data[i] = sign * static_cast<float>(i % 128) * 0.013f;
-            }
+                          // define and resize tensor
+                          Tensor input;
+                          Tensor filter;
+                          Tensor filter_copy;
+                          Tensor bias;
+                          Tensor output;
+                          Tensor output_ref;
+                          input.Resize(input_shape);
+                          filter.Resize(filter_shape);
+                          filter_copy.Resize(filter_shape);
+                          output.Resize(output_shape);
+                          output_ref.Resize(output_shape);
+                          auto* input_data = input.mutable_data<float>();
+                          auto* filter_data = filter.mutable_data<float>();
+                          auto* filter_copy_data =
+                              filter_copy.mutable_data<float>();
+                          auto* output_data = output.mutable_data<float>();
 
-            // resize output and output_ref
-            int nchw[] = {n, c, h, w};
-            std::vector<int64_t> output_size(nchw, nchw + 4);
-            output_size.erase(output_size.begin() + axis);
-            output.Resize(output_size);
-            output_ref.Resize(output_size);
+                          // initialize tensor
+                          for (int i = 0; i < input.dims().production(); i++) {
+                            float sign = i % 3 == 0 ? -1.0f : 1.0f;
+                            input_data[i] = sign * static_cast<float>(i % 128);
+                          }
+                          for (int i = 0; i < filter.dims().production(); i++) {
+                            filter_data[i] =
+                                i /
+                                static_cast<float>(filter.dims().production());
+                            filter_copy_data[i] =
+                                i / static_cast<float>(
+                                        filter_copy.dims().production());
+                          }
+                          if (flag_bias) {
+                            bias.Resize(bias_shape);
+                            auto* bias_data = bias.mutable_data<float>();
+                            for (int i = 0; i < bias.dims().production(); i++) {
+                              bias_data[i] = static_cast<float>(i);
+                            }
+                          }
 
-            // obtain output_data
-            ArgmaxCompute argmaxOp;
-            std::unique_ptr<KernelContext> ctx(new KernelContext);
-            ctx->As<ARMContext>();
-            argmaxOp.SetContext(std::move(ctx));
-            operators::ArgmaxParam param;
-            param.x = &x;
-            param.output = &output;
-            param.axis = axis;
-            argmaxOp.SetParam(param);
-            argmaxOp.Launch();
-            auto* output_data = output.mutable_data<float>();
+                          // prepare kernel params and run
+                          std::unique_ptr<KernelContext> ctx(new KernelContext);
+                          ctx->As<ARMContext>();
+                          Conv2DTransposeCompute conv2d_transpose;
+                          conv2d_transpose.SetContext(std::move(ctx));
+                          operators::ConvParam param;
+                          param.x = &input;
+                          param.filter = &filter;
+                          param.output = &output;
+                          param.bias = nullptr;
+                          if (flag_bias) {
+                            bias.Resize(bias_shape);
+                            auto* bias_data = bias.mutable_data<float>();
+                            for (int i = 0; i < bias.dims().production(); i++) {
+                              bias_data[i] = static_cast<float>(i);
+                            }
+                            param.bias = &bias;
+                          }
+                          param.fuse_relu = flag_relu;
+                          param.paddings = std::vector<int>({padding, padding});
+                          param.strides = std::vector<int>({stride, stride});
+                          param.dilations =
+                              std::vector<int>({dilation, dilation});
+                          param.groups = group;
+                          conv2d_transpose.SetParam(param);
+                          conv2d_transpose.Launch();
 
-            // obtain output_ref_data
-            param.output = &output_ref;
-            argmax_compute_ref<float>(param);
-            auto* output_ref_data = output_ref.mutable_data<float>();
-
-            // compare
-            for (int i = 0; i < output.dims().production(); i++) {
-              EXPECT_NEAR(output_data[i], output_ref_data[i], 1e-5);
+                          // invoking ref implementation and compare results
+                          param.filter = &filter_copy;
+                          param.output = &output_ref;
+                          conv2d_transpose_compute_ref<float, float>(param);
+                          auto* output_ref_data =
+                              output_ref.mutable_data<float>();
+                          for (int i = 0; i < output.dims().production(); i++) {
+                            EXPECT_NEAR(
+                                output_data[i], output_ref_data[i], 1e-3);
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
             }
           }
         }
       }
     }
-  */
+  }
 }
 
 }  // namespace arm

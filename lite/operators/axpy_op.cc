@@ -25,6 +25,7 @@ bool AxpyOpLite::CheckShape() const {
   CHECK_OR_FALSE(param_.x);
   CHECK_OR_FALSE(param_.bias);
   CHECK_OR_FALSE(param_.output);
+  CHECK_OR_FALSE(param_.x->dims() == param_.output->dims());
   return true;
 }
 
