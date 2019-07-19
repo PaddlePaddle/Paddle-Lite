@@ -345,3 +345,6 @@ LOAD_OP1(one_hot, CPU);
 #ifdef ASSIGN_VALUE_OP
 LOAD_OP1(assign_value, CPU);
 #endif
+#ifdef EXP_OP
+LOAD_OP1(exp, CPU);
+#endif
