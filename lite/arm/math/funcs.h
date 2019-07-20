@@ -23,6 +23,7 @@
 #include "lite/arm/math/conv_direct.h"
 #include "lite/arm/math/conv_gemmlike.h"
 #include "lite/arm/math/conv_winograd.h"
+#include "lite/arm/math/decode_bboxes.h"
 #include "lite/arm/math/dropout.h"
 #include "lite/arm/math/elementwise.h"
 #include "lite/arm/math/lrn.h"

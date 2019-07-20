@@ -338,6 +338,21 @@ struct LrnParam {
   std::string norm_region{"AcrossChannels"};
 };
 
+/// ----------------------- decode_bboxes operators ----------------------
+struct DecodeBboxesParam {
+  const lite::Tensor* loc_data{};
+  const lite::Tensor* prior_data{};
+  lite::Tensor* bbox_data{};
+
+  int batch_num;
+  int num_priors;
+  int num_loc_classes{0};
+  bool share_location{true};
+  bool variance_encoded_in_target;
+  // code_type:  corner, cente_size, corner_size
+  std::string code_type;
+};
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle

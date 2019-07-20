@@ -54,6 +54,7 @@ if (NOT HAS_ARM_MATH_LIB_DIR)
       pooling.cc
       elementwise.cc
       lrn.cc
+      decode_bboxes.cc
       concat.cc
       sgemv.cc
       type_trans.cc
