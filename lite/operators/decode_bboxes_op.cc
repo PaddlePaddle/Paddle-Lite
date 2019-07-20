@@ -24,8 +24,8 @@ bool DecodeBboxesOpLite::CheckShape() const {
   CHECK_OR_FALSE(param_.prior_data);
   CHECK_OR_FALSE(param_.bbox_data);
 
-  CHECK_OR_FALSE(param_.loc_data->dims() == 2);
-  CHECK_OR_FALSE(param_.prior_data->dims() == 3);
+  CHECK_EQ(param_.loc_data->dims().size(), 2);
+  CHECK_EQ(param_.prior_data->dims().size(), 3);
   return true;
 }
 

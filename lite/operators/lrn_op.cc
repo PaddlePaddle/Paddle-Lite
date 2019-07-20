@@ -23,7 +23,7 @@ bool LrnOpLite::CheckShape() const {
   CHECK_OR_FALSE(param_.X);
   CHECK_OR_FALSE(param_.Out);
   const auto in_dims = param_.X->dims();
-  CHECK_OR_FALSE(in_dims.size() == 4);
+  CHECK_EQ(in_dims.size(), 4);
   return true;
 }
 
