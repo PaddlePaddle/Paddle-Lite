@@ -29,9 +29,9 @@ void decode_bboxes_compute_ref(const operators::DecodeBboxesParam& param) {
   const dtype* prior_data = param.prior_data->data<const dtype>();
   dtype* bbox_data = param.bbox_data->mutable_data<dtype>();
 
-  for (int n = 0; n < batch_num; ++n) {
-    const dtype* ptr_loc_batch = loc_data + n * param.num_priors;
-    dtype* ptr_bbox_batch = bbox_data + n * param.num_priors;
+  for (int n = 0; n < param.batch_num; ++n) {
+    const dtype* ptr_loc_batch = loc_data + n * param.num_priors * 4;
+    dtype* ptr_bbox_batch = bbox_data + n * param.num_priors * 4;
     for (int i = 0; i < param.num_priors; ++i) {
       int idx = i * 4;
       const dtype* ptr_loc = ptr_loc_batch + idx;
@@ -45,7 +45,7 @@ void decode_bboxes_compute_ref(const operators::DecodeBboxesParam& param) {
       dtype prior_width = p_xmax - p_xmin;
       dtype prior_height = p_ymax - p_ymin;
       dtype prior_center_x = (p_xmin + p_xmax) / 2.f;
-      dtype prior_center_y = (p + ymin + p_ymax) / 2.f;
+      dtype prior_center_y = (p_ymin + p_ymax) / 2.f;
 
       dtype xmin = ptr_loc[0];
       dtype ymin = ptr_loc[1];
@@ -54,36 +54,39 @@ void decode_bboxes_compute_ref(const operators::DecodeBboxesParam& param) {
 
       if (param.code_type == "corner") {
         if (param.variance_encoded_in_target) {
+          ptr_bbox[0] = ptr_loc[0] + ptr_prior[0];
+          ptr_bbox[1] = ptr_loc[1] + ptr_prior[1];
+          ptr_bbox[2] = ptr_loc[2] + ptr_prior[2];
+          ptr_bbox[3] = ptr_loc[3] + ptr_prior[3];
+        } else {
           const dtype* variance_data = prior_data + 4 * param.num_priors;
           const dtype* ptr_var = variance_data + idx;
           ptr_bbox[0] = ptr_var[0] * ptr_loc[0] + ptr_prior[0];
           ptr_bbox[1] = ptr_var[1] * ptr_loc[1] + ptr_prior[1];
           ptr_bbox[2] = ptr_var[2] * ptr_loc[2] + ptr_prior[2];
           ptr_bbox[3] = ptr_var[3] * ptr_loc[3] + ptr_prior[3];
-        } else {
-          ptr_bbox[0] = ptr_loc[0] + ptr_prior[0];
-          ptr_bbox[1] = ptr_loc[1] + ptr_prior[1];
-          ptr_bbox[2] = ptr_loc[2] + ptr_prior[2];
-          ptr_bbox[3] = ptr_loc[3] + ptr_prior[3];
         }
       } else if (param.code_type == "center_size") {
+        dtype decode_bbox_center_x;
+        dtype decode_bbox_center_y;
+        dtype decode_bbox_width;
+        dtype decode_bbox_height;
         if (param.variance_encoded_in_target) {
-          const dtype* variance_data = prior_data + 4 * param.num_priors;
-          const dtype* ptr_var = variance_data + idx;
-          dtype decode_bbox_center_x =
-              ptr_var[0] * xmin * prior_width + prior_center_x;
-          dtype decide_bbox_center_y =
-              ptr_var[1] * ymin * prior_height + prior_center_y;
-          dtype decode_bbox_width = std::exp(variance[2] * xmax) * prior_width;
-          dtype decode_bbox_height =
-              std::exp(variance[3] * ymax) * prior_height;
-        } else {
           //! variance is encoded in target, we simply need to retore the offset
           //! predictions.
-          dtype decode_bbox_center_x = xmin * prior_width + prior_center_x;
-          dtype decide_bbox_center_y = ymin * prior_height + prior_center_y;
-          dtype decode_bbox_width = std::exp(xmax) * prior_width;
-          dtype decode_bbox_height = std::exp(ymax) * prior_height;
+          decode_bbox_center_x = xmin * prior_width + prior_center_x;
+          decode_bbox_center_y = ymin * prior_height + prior_center_y;
+          decode_bbox_width = std::exp(xmax) * prior_width;
+          decode_bbox_height = std::exp(ymax) * prior_height;
+        } else {
+          const dtype* variance_data = prior_data + 4 * param.num_priors;
+          const dtype* ptr_var = variance_data + idx;
+          decode_bbox_center_x =
+              ptr_var[0] * xmin * prior_width + prior_center_x;
+          decode_bbox_center_y =
+              ptr_var[1] * ymin * prior_height + prior_center_y;
+          decode_bbox_width = std::exp(ptr_var[2] * xmax) * prior_width;
+          decode_bbox_height = std::exp(ptr_var[3] * ymax) * prior_height;
         }
         ptr_bbox[0] = decode_bbox_center_x - decode_bbox_width / 2.f;
         ptr_bbox[1] = decode_bbox_center_y - decode_bbox_height / 2.f;
@@ -91,17 +94,17 @@ void decode_bboxes_compute_ref(const operators::DecodeBboxesParam& param) {
         ptr_bbox[3] = decode_bbox_center_y + decode_bbox_height / 2.f;
       } else if (param.code_type == "corner_size") {
         if (param.variance_encoded_in_target) {
-          const dtype* variance_data = prior_data + 4 * param.num_priors;
-          const dtype* ptr_var = variance_data + idx;
-          ptr_bbox[0] = p_xmin + ptr_loc[0] * ptr_var[0] * prior_width;
-          ptr_bbox[1] = p_xmin + ptr_loc[1] * ptr_var[1] * prior_width;
-          ptr_bbox[2] = p_xmin + ptr_loc[2] * ptr_var[2] * prior_width;
-          ptr_bbox[3] = p_xmin + ptr_loc[3] * ptr_var[3] * prior_width;
-        } else {
           ptr_bbox[0] = p_xmin + ptr_loc[0] * prior_width;
           ptr_bbox[1] = p_ymin + ptr_loc[1] * prior_height;
           ptr_bbox[2] = p_xmax + ptr_loc[2] * prior_width;
           ptr_bbox[3] = p_ymax + ptr_loc[3] * prior_height;
+        } else {
+          const dtype* variance_data = prior_data + 4 * param.num_priors;
+          const dtype* ptr_var = variance_data + idx;
+          ptr_bbox[0] = p_xmin + ptr_loc[0] * ptr_var[0] * prior_width;
+          ptr_bbox[1] = p_ymin + ptr_loc[1] * ptr_var[1] * prior_width;
+          ptr_bbox[2] = p_xmax + ptr_loc[2] * ptr_var[2] * prior_width;
+          ptr_bbox[3] = p_ymax + ptr_loc[3] * ptr_var[3] * prior_width;
         }
       } else {
         LOG(FATAL) << "unsupported code type: " << param.code_type;
@@ -131,8 +134,8 @@ TEST(decode_bboxes_arm, compute) {
 
   for (int batch_num : {1, 2, 3, 4}) {
     for (int num_priors : {1, 3, 4, 8, 10}) {
-      for (std::string code_type : {"corner", "cente_size", "corner_size"}) {
-        for (bool variance_encoded_in_target : {false, true}) {
+      for (std::string code_type : {"corner", "center_size", "corner_size"}) {
+        for (bool variance_encoded_in_target : {true, false}) {
           auto loc_dim =
               DDim(std::vector<int64_t>({batch_num, num_priors * 4}));
           loc.Resize(loc_dim);
@@ -146,10 +149,10 @@ TEST(decode_bboxes_arm, compute) {
           auto* bbox_ref_data = bbox_ref.mutable_data<float>();
 
           for (int i = 0; i < loc_dim.production(); ++i) {
-            loc_data[i] = i;
+            loc_data[i] = i * 1. / loc_dim.production();
           }
           for (int i = 0; i < prior_dim.production(); ++i) {
-            prior_data[i] = i;
+            prior_data[i] = i * 1. / prior_dim.production();
           }
 
           param.loc_data = &loc;

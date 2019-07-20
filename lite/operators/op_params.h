@@ -347,6 +347,7 @@ struct DecodeBboxesParam {
   int batch_num;
   int num_priors;
   int num_loc_classes{0};
+  int background_label_id{0};
   bool share_location{true};
   bool variance_encoded_in_target;
   // code_type:  corner, cente_size, corner_size

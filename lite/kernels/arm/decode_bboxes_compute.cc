@@ -25,7 +25,7 @@ void DecodeBboxesCompute::Run() {
   auto& param = Param<operators::DecodeBboxesParam>();
   const float* loc_data = param.loc_data->data<float>();
   const float* prior_data = param.prior_data->data<float>();
-  float* bbox_data = param.bbox_data->data<float>();
+  float* bbox_data = param.bbox_data->mutable_data<float>();
 
   // CHECK_EQ(param.loc_data->dims(), 2); // loc_data {N, boxes * 4}
   // CHECK_EQ(param.prior_data->dims(), 3); // prior_data {1, 2, boxes * 4(xmin,
@@ -34,6 +34,7 @@ void DecodeBboxesCompute::Run() {
   int batch_num = param.batch_num;
   int num_priors = param.num_priors;
   int num_loc_classes = param.num_loc_classes;
+  int background_label_id = param.background_label_id;
   bool share_location = param.share_location;
   bool variance_encoded_in_target = param.variance_encoded_in_target;
   std::string code_type = param.code_type;
@@ -46,6 +47,7 @@ void DecodeBboxesCompute::Run() {
                                  num_priors,
                                  share_location,
                                  num_loc_classes,
+                                 background_label_id,
                                  bbox_data);
 }
 
