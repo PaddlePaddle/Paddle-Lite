@@ -43,6 +43,13 @@ enum DLayoutType {
   LAYOUT_HWC = 0,
 };
 
+enum ActiveType {
+    TYPE_RELU = 0,
+    TYPE_RELU6 = 1,
+    TYPE_LEAK_RELU = 2,
+    TYPE_SIGMOID = 3,
+};
+
 struct VersionArgs {
   void* buffer;
 };
@@ -193,10 +200,16 @@ struct NormalizeParameterArgs {
   uint32_t hight_width;
 };
 
+struct ActiveParamterArgs {
+	ActiveType  type;
+	uint16_t leaky_relu_factor;
+};
+
 struct InplaceArgs {
-  bool relu_enable;
-  bool power_enable;
-  bool normalize_enable;
+    bool leaky_relu_enable;
+    bool relu_enable;
+    bool power_enable;
+    bool normalize_enable;
 };
 
 struct FpgaRegWriteArgs {
@@ -241,6 +254,7 @@ struct FpgaResetArgs {};
   _IOW(IOCTL_FPGA_MAGIC, 41, struct PowerParameterArgs)
 #define IOCTL_CONFIG_NORMALIZE_PARAMETER \
   _IOW(IOCTL_FPGA_MAGIC, 42, struct NormalizeParameterArgs)
+#define IOCTL_CONFIG_ACTIVATION_PARAMETER   _IOW(IOCTL_FPGA_MAGIC, 43, struct ActiveParamterArgs)
 #define IOCTL_FPGA_REG_READ _IOW(IOCTL_FPGA_MAGIC, 50, struct FpgaRegReadArgs)
 #define IOCTL_FPGA_REG_WRITE _IOW(IOCTL_FPGA_MAGIC, 51, struct FpgaRegWriteArgs)
 #define IOCTL_FPGA_RESET _IOW(IOCTL_FPGA_MAGIC, 52, struct FpgaResetArgs)
@@ -324,6 +338,7 @@ int compute_fpga_scale(const struct ScaleArgs& args);
 int compute_fpga_concat(const struct ConcatArgs& args);
 int compute_fpga_resize(const struct ResizeArgs& args);
 
+int config_activation(const struct ActiveParamterArgs& args);
 int config_power(const struct PowerArgs& args);
 int compute_fpga_dwconv(const struct DWconvArgs& args);
 int config_norm_param(const struct NormalizeParameterArgs& args);

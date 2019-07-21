@@ -365,6 +365,10 @@ int compute_fpga_dwconv(const struct DWconvArgs &args) {
   return do_ioctl(IOCTL_CONFIG_DWCONV, &args);
 }
 
+int config_activation(const struct ActiveParamterArgs& args) {
+    return do_ioctl(IOCTL_CONFIG_ACTIVATION_PARAMETER, &args);
+}
+
 // int config_power(const struct PowerArgs& args) {
 //     return do_ioctl(IOCTL_CONFIG_POWER, &args);
 // }

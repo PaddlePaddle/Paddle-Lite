@@ -29,6 +29,7 @@ namespace zynqmp {
 struct ReLUParam {
  public:
   bool enabled = false;
+  float leaky_relu_factor = 0.0f;
 };
 
 struct PEParam {
@@ -198,6 +199,17 @@ struct PriorBoxParam : PEParam {
   float stepW;
   float stepH;
   float offset;
+};
+
+struct YoloBoxParam : PEParam {
+  Tensor* input;
+  Tensor* imgSize;
+  Tensor* outputBoxes;
+  Tensor* outputScores;
+  int downsampleRatio;
+  std::vector<int> anchors;
+  int classNum;  
+  float confThresh;
 };
 
 struct ScaleParam : PEParam {

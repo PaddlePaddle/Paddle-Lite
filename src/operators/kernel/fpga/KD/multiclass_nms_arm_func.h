@@ -250,6 +250,11 @@ void MultiClassNMSCompute(const MultiClassNMSParam<FPGA>& param) {
   const auto* input_bboxes = param.InputBBoxes();
   const auto& input_bboxes_dims = input_bboxes->dims();
 
+  Tensor bboxes_tensor;
+  bboxes_tensor.Resize(input_bboxes_dims);
+  auto bboxes_data = bboxes_tensor.mutable_data<float>();
+  bboxes_tensor.zynqmpTensor()->copyFrom(input_bboxes->zynqmpTensor());
+
   const auto* input_scores = param.InputScores();
   const auto& input_scores_dims = input_scores->dims();
 
@@ -279,7 +284,7 @@ void MultiClassNMSCompute(const MultiClassNMSParam<FPGA>& param) {
     framework::Tensor ins_score = score_tensor.Slice(i, i + 1);
     ins_score.Resize({class_num, predict_dim});
 
-    framework::Tensor ins_boxes = input_bboxes->Slice(i, i + 1);
+    framework::Tensor ins_boxes = bboxes_tensor.Slice(i, i + 1);
     ins_boxes.Resize({predict_dim, box_dim});
 
     std::map<int, std::vector<int>> indices;
@@ -297,12 +302,13 @@ void MultiClassNMSCompute(const MultiClassNMSParam<FPGA>& param) {
     od[0] = -1;
   } else {
     int64_t out_dim = box_dim + 2;
-    outs->mutable_data<float>({num_kept, out_dim});
+    // std::cout << "num_kept" << num_kept << "," << out_dim << std::endl;
+    float* od = outs->mutable_data<float>({num_kept, out_dim});
     for (int64_t i = 0; i < batch_size; ++i) {
       framework::Tensor ins_score = score_tensor.Slice(i, i + 1);
       ins_score.Resize({class_num, predict_dim});
 
-      framework::Tensor ins_boxes = input_bboxes->Slice(i, i + 1);
+      framework::Tensor ins_boxes = bboxes_tensor.Slice(i, i + 1);
       ins_boxes.Resize({predict_dim, box_dim});
 
       int64_t s = batch_starts[i];

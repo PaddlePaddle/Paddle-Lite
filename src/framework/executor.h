@@ -46,6 +46,7 @@ class Executor {
                          const std::vector<int64_t> &dims);
   PMStatus Predict();
 
+  void SetInput(int index, const Tensor &input, const std::string &var_name);
   void SetInput(const Tensor &input, const std::string &var_name);
   void SetInput(const LoDTensor &input, const std::string &var_name);
 

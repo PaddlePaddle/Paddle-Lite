@@ -132,6 +132,7 @@ extern const char *G_OP_TYPE_FUSION_CONV_ADD_BN_RELU;
 extern const char *G_OP_TYPE_FUSION_CONV_BN_ADD_RELU;
 extern const char *G_OP_TYPE_FUSION_DWCONV_BN_RELU;
 extern const char *G_OP_TYPE_FUSION_CONV_BN_RELU;
+extern const char *G_OP_TYPE_FUSION_CONV_BN_LEAKYRELU;
 
 extern const char *G_OP_TYPE_GRU;
 extern const char *G_OP_TYPE_GRU_UNIT;
@@ -144,6 +145,7 @@ extern const char *G_OP_TYPE_POOL2D;
 extern const char *G_OP_TYPE_PRIOR_BOX;
 extern const char *G_OP_TYPE_RELU;
 extern const char *G_OP_TYPE_RELU6;
+extern const char *G_OP_TYPE_LEAKYRELU;
 extern const char *G_OP_TYPE_RESHAPE;
 extern const char *G_OP_TYPE_SIGMOID;
 extern const char *G_OP_TYPE_SOFTMAX;
@@ -154,6 +156,7 @@ extern const char *G_OP_TYPE_FETCH;
 extern const char *G_OP_TYPE_DEPTHWISE_CONV;
 extern const char *G_OP_TYPE_IM2SEQUENCE;
 extern const char *G_OP_TYPE_DROPOUT;
+extern const char *G_OP_TYPE_YOLOBOX;
 
 extern const char *G_OP_TYPE_FUSION_BN_RELU;
 extern const char *G_OP_TYPE_FUSION_CONV_ADD_BN;
