@@ -16,6 +16,7 @@ lite_cc_library(activation_ops SRCS activation_ops.cc DEPS ${op_DEPS})
 lite_cc_library(elementwise_ops SRCS elementwise_ops.cc DEPS ${op_DEPS})
 lite_cc_library(lrn_op_lite SRCS lrn_op.cc DEPS ${op_DEPS})
 lite_cc_library(decode_bboxes_op_lite SRCS decode_bboxes_op.cc DEPS ${op_DEPS})
+lite_cc_library(multiclass_nms_op_lite SRCS multiclass_nms_op.cc DEPS ${op_DEPS})
 lite_cc_library(fusion_elementwise_activation_ops SRCS fusion_elementwise_activation_ops.cc DEPS elementwise_ops ${op_DEPS})
 lite_cc_library(mean_op SRCS mean_op.cc DEPS ${op_DEPS})
 lite_cc_library(fill_constant_op SRCS fill_constant_op.cc DEPS ${op_DEPS})
@@ -48,6 +49,7 @@ set(ops
         fusion_elementwise_activation_ops
         lrn_op_lite
 	decode_bboxes_op_lite
+	multiclass_nms_op_lite
         mean_op
         fill_constant_op
         activation_ops

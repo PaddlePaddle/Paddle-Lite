@@ -354,6 +354,22 @@ struct DecodeBboxesParam {
   std::string code_type;
 };
 
+/// ----------------------- multiclass_nms operators ----------------------
+struct MulticlassNmsParam {
+  const lite::Tensor* bbox_data{};
+  const lite::Tensor* conf_data{};
+  lite::Tensor* out;
+  std::vector<int> priors;
+  int class_num;
+  int background_id;
+  int keep_topk;
+  int nms_topk;
+  float conf_thresh;
+  float nms_thresh;
+  float nms_eta;
+  bool share_location{true};
+};
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle

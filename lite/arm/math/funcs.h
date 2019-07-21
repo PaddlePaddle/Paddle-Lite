@@ -27,6 +27,7 @@
 #include "lite/arm/math/dropout.h"
 #include "lite/arm/math/elementwise.h"
 #include "lite/arm/math/lrn.h"
+#include "lite/arm/math/multiclass_nms.h"
 #include "lite/arm/math/packed_sgemm.h"
 #include "lite/arm/math/pooling.h"
 #include "lite/arm/math/scale.h"
