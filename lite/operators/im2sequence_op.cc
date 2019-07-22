@@ -54,7 +54,7 @@ bool Im2SequenceOp::InferShape() const {
 }
 
 bool Im2SequenceOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
-  auto inputs = op_desc.Input("X");
+  auto inputs = opdesc.Input("X");
   for (auto var : inputs) {
     param_.X.push_back(scope->FindVar(var)->GetMutable<lite::Tensor>());
   }
@@ -62,9 +62,9 @@ bool Im2SequenceOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
       scope->FindVar(opdesc.Output("Out").front())->GetMutable<lite::Tensor>();
   CHECK(param_.X);
   CHECK(param_.Out);
-  param_.strides = op_desc.GetAttr<std::vector<int>>("strides");
-  param_.paddings = op_desc.GetAttr<std::vector<int>>("paddings");
-  param_.kernels = op_desc.GetAttr<std::vector<int>>("kernels");
+  param_.strides = opdesc.GetAttr<std::vector<int>>("strides");
+  param_.paddings = opdesc.GetAttr<std::vector<int>>("paddings");
+  param_.kernels = opdesc.GetAttr<std::vector<int>>("kernels");
   return true;
 }
 

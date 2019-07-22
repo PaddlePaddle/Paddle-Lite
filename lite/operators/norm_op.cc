@@ -35,13 +35,13 @@ bool NormOp::InferShape() const {
 
 bool NormOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   param_.X =
-      scope->FindVar(op_desc.Input("X").front())->GetMutable<lite::Tensor>();
+      scope->FindVar(opdesc.Input("X").front())->GetMutable<lite::Tensor>();
   param_.Out =
       scope->FindVar(opdesc.Output("Out").front())->GetMutable<lite::Tensor>();
   CHECK(param_.X);
   CHECK(param_.Out);
-  param_.axis = op_desc.GetAttr<int>("axis");
-  param_.epsilon = op_desc.GetAttr<float>("epsilon");
+  param_.axis = opdesc.GetAttr<int>("axis");
+  param_.epsilon = opdesc.GetAttr<float>("epsilon");
   return true;
 }
 
@@ -49,4 +49,4 @@ bool NormOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(im2sequence, paddle::lite::operators::NormOp);
+REGISTER_LITE_OP(norm, paddle::lite::operators::NormOp);
