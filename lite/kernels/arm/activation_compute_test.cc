@@ -14,9 +14,11 @@
 
 #include "lite/kernels/arm/activation_compute.h"
 #include <gtest/gtest.h>
+#include <cmath>
 #include <memory>
 #include <utility>
 #include <vector>
+#include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 
 namespace paddle {
@@ -24,32 +26,99 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
+enum activation_type {
+  RELU,
+  LEAKY_RELU,
+  RELU_CLIPPED,
+  PRELU,
+  SIGMOID,
+  TANH,
+  SWISH
+};
+
 template <typename dtype>
-void activation_compute_ref(const operators::ActivationParam& param) {
+void activation_compute_ref(const operators::ActivationParam& param,
+                            activation_type type) {
   auto x_data = param.X->data<dtype>();
   auto output_data = param.Out->mutable_data<dtype>();
   DDim x_dims = param.X->dims();
   DDim output_dims = param.Out->dims();
   ASSERT_EQ(x_dims.data(), output_dims.data());
-  for (int i = 0; i < output_dims.production(); i++) {
-    output_data[i] = std::max(0.f, x_data[i]);
+
+  switch (type) {
+    case RELU: {
+      for (int i = 0; i < output_dims.production(); i++) {
+        output_data[i] = std::max(0.f, x_data[i]);
+      }
+      break;
+    }
+    case LEAKY_RELU: {
+      float slope = param.Leaky_relu_slope;
+      for (int i = 0; i < output_dims.production(); i++) {
+        output_data[i] = x_data[i] > 0.f ? x_data[i] : x_data[i] * slope;
+      }
+      break;
+    }
+    case RELU_CLIPPED: {
+      float clipped_coef = param.Relu_clipped_coef;
+      for (int i = 0; i < output_dims.production(); i++) {
+        output_data[i] = x_data[i] > 0.f ? x_data[i] : 0.f;
+        output_data[i] =
+            output_data[i] < clipped_coef ? output_data[i] : clipped_coef;
+      }
+      break;
+    }
+    case PRELU: {
+      bool channel_shared = param.Prelu_channel_shared;
+      auto channel_slope = param.Prelu_channel_slope->data<dtype>();
+      int num = x_dims[0];
+      int channel = x_dims[1];
+      int csize = x_dims[2] * x_dims[3];
+      int bsize = channel * csize;
+      for (int n = 0; n < num; n++) {
+        auto x_data_bptr = x_data + n * bsize;
+        auto output_data_bptr = output_data + n * bsize;
+        for (int c = 0; c < channel; c++) {
+          auto x_data_cptr = x_data_bptr + c * csize;
+          auto output_data_cptr = output_data_bptr + c * csize;
+          float slope = channel_shared ? channel_slope[0] : channel_slope[c];
+          for (int i = 0; i < csize; i++) {
+            output_data_cptr[i] =
+                x_data_cptr[i] > 0.f ? x_data_cptr[i] : x_data_cptr[i] * slope;
+          }
+        }
+      }
+      break;
+    }
+    case SIGMOID: {
+      for (int i = 0; i < output_dims.production(); i++) {
+        output_data[i] = 1.f / (1.f + std::exp(-x_data[i]));
+      }
+      break;
+    }
+    case TANH: {
+      for (int i = 0; i < output_dims.production(); i++) {
+        output_data[i] = (std::exp(x_data[i]) - std::exp(-x_data[i])) /
+                         (std::exp(x_data[i]) + std::exp(-x_data[i]));
+      }
+      break;
+    }
+    case SWISH: {
+      float coef = param.Swish_coef;
+      for (int i = 0; i < output_dims.production(); i++) {
+        output_data[i] = x_data[i] / (1.f + std::exp(-coef * x_data[i]));
+      }
+      break;
+    }
+    default:
+      LOG(INFO) << "the type of activation is wrong";
   }
 }
 
-TEST(activation_arm, retrive_op) {
-  auto activation =
-      KernelRegistry::Global().Create<TARGET(kARM), PRECISION(kFloat)>("relu");
-  ASSERT_FALSE(activation.empty());
-  ASSERT_TRUE(activation.front());
-}
-
-TEST(activation_arm, init) {
-  ReluCompute activation;
-  ASSERT_EQ(activation.precision(), PRECISION(kFloat));
-  ASSERT_EQ(activation.target(), TARGET(kARM));
-}
-
-TEST(activation_arm, compute) {
+void test_activation_compute(
+    KernelLite<TARGET(kARM), PRECISION(kFloat)>* activation,
+    operators::ActivationParam* param,
+    activation_type type) {
   DeviceInfo::Init();
   for (auto n : {1, 2}) {
     for (auto c : {6, 32 /*, 128*/}) {
@@ -70,19 +139,34 @@ TEST(activation_arm, compute) {
             x_data[i] = sign * static_cast<float>(i % 128) * 0.013f;
           }
           // prepare kernel params and run
-          ReluCompute activation;
           std::unique_ptr<KernelContext> ctx(new KernelContext);
           ctx->As<ARMContext>();
-          activation.SetContext(std::move(ctx));
-          operators::ActivationParam param;
-          param.X = &x;
-          param.Out = &output;
-          activation.SetParam(param);
-          activation.Launch();
+          activation->SetContext(std::move(ctx));
+          param->X = &x;
+          param->Out = &output;
+          if (type == PRELU) {
+            Tensor channel_slope;
+            if (param.Prelu_channel_shared) {
+              channel_slope.Resize({c});
+            } else {
+              channel_slope.Resize({1});
+            }
+
+            auto* channel_slope_data = channel_slope.mutable_data<float>();
+            for (int j = 1; j < channel_slope.dims().production(); j++) {
+              float sign = j % 3 == 0 ? -1.0f : 1.0f;
+              channel_slope_data[j] =
+                  sign * static_cast<float>(j % 128) * 0.013f;
+            }
+            param->Prelu_channel_slope = &channel_slope;
+          }
+          activation->SetParam(*param);
+          activation->Launch();
           // invoking ref implementation and compare results
-          param.Out = &output_ref;
-          activation_compute_ref<float>(param);
+          param->Out = &output_ref;
+          activation_compute_ref<float>(*param, type);
           auto* output_ref_data = output_ref.mutable_data<float>();
+
           for (int i = 0; i < output.dims().production(); i++) {
             EXPECT_NEAR(output_data[i], output_ref_data[i], 1e-5);
           }
@@ -92,9 +176,120 @@ TEST(activation_arm, compute) {
   }
 }
 
+TEST(activation_arm, retrive_op) {
+  for (auto activation_name : {"relu",
+                               "leaky_relu",
+                               "relu_clipped",
+                               "prelu",
+                               "sigmoid",
+                               "tanh",
+                               "swish"}) {
+    auto activation =
+        KernelRegistry::Global().Create<TARGET(kARM), PRECISION(kFloat)>(
+            activation_name);
+    ASSERT_FALSE(activation.empty());
+    ASSERT_TRUE(activation.front());
+  }
+}
+
+TEST(activation_arm, init) {
+  ReluCompute activation_relu;
+  ASSERT_EQ(activation_relu.precision(), PRECISION(kFloat));
+  ASSERT_EQ(activation_relu.target(), TARGET(kARM));
+
+  LeakyReluCompute activation_relu_neg;
+  ASSERT_EQ(activation_relu_neg.precision(), PRECISION(kFloat));
+  ASSERT_EQ(activation_relu_neg.target(), TARGET(kARM));
+
+  ReluClippedCompute activation_relu_clipped;
+  ASSERT_EQ(activation_relu_clipped.precision(), PRECISION(kFloat));
+  ASSERT_EQ(activation_relu_clipped.target(), TARGET(kARM));
+
+  PReluCompute activation_prelu;
+  ASSERT_EQ(activation_prelu.precision(), PRECISION(kFloat));
+  ASSERT_EQ(activation_prelu.target(), TARGET(kARM));
+
+  SigmoidCompute activation_sigmoid;
+  ASSERT_EQ(activation_sigmoid.precision(), PRECISION(kFloat));
+  ASSERT_EQ(activation_sigmoid.target(), TARGET(kARM));
+
+  TanhCompute activation_tanh;
+  ASSERT_EQ(activation_tanh.precision(), PRECISION(kFloat));
+  ASSERT_EQ(activation_tanh.target(), TARGET(kARM));
+
+  SwishCompute activation_swish;
+  ASSERT_EQ(activation_swish.precision(), PRECISION(kFloat));
+  ASSERT_EQ(activation_swish.target(), TARGET(kARM));
+}
+
+TEST(relu_activation_arm, compute) {
+  ReluCompute activation;
+  operators::ActivationParam param;
+  activation_type type = RELU;
+  test_activation_compute(&activation, &param, type);
+}
+
+TEST(leaky_relu_activation_arm, compute) {
+  LeakyReluCompute activation;
+  operators::ActivationParam param;
+  for (float slope : {0.001, 0.01, 0.1}) {
+    param.Leaky_relu_slope = slope;
+    activation_type type = LEAKY_RELU;
+    test_activation_compute(&activation, &param, type);
+  }
+}
+
+TEST(relu_clipped_activation_arm, compute) {
+  ReluClippedCompute activation;
+  operators::ActivationParam param;
+  for (float coef : {1, 3, 6}) {
+    param.Relu_clipped_coef = coef;
+    activation_type type = RELU_CLIPPED;
+    test_activation_compute(&activation, &param, type);
+  }
+}
+
+TEST(sigmoid_activation_arm, compute) {
+  SigmoidCompute activation;
+  operators::ActivationParam param;
+  activation_type type = SIGMOID;
+  test_activation_compute(&activation, &param, type);
+}
+
+TEST(tanh_activation_arm, compute) {
+  TanhCompute activation;
+  operators::ActivationParam param;
+  activation_type type = TANH;
+  test_activation_compute(&activation, &param, type);
+}
+
+TEST(swish_activation_arm, compute) {
+  SwishCompute activation;
+  operators::ActivationParam param;
+  for (float coef : {0.01, 0.1}) {
+    param.Swish_coef = coef;
+    activation_type type = SWISH;
+    test_activation_compute(&activation, &param, type);
+  }
+}
+
+TEST(prelu_activation_arm, compute) {
+  PReluCompute activation;
+  operators::ActivationParam param;
+  for (bool flag : {false, true}) {
+    param.Prelu_channel_shared = flag;
+    activation_type type = PRELU;
+    test_activation_compute(&activation, &param, type);
+  }
+}
 }  // namespace arm
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
-
 USE_LITE_KERNEL(relu, kARM, kFloat, kNCHW, def);
+USE_LITE_KERNEL(leaky_relu, kARM, kFloat, kNCHW, def);
+USE_LITE_KERNEL(relu_clipped, kARM, kFloat, kNCHW, def);
+USE_LITE_KERNEL(prelu, kARM, kFloat, kNCHW, def);
+USE_LITE_KERNEL(sigmoid, kARM, kFloat, kNCHW, def);
+USE_LITE_KERNEL(tanh, kARM, kFloat, kNCHW, def);
+USE_LITE_KERNEL(swish, kARM, kFloat, kNCHW, def);

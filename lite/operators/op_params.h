@@ -251,6 +251,11 @@ struct FusionElementwiseActivationGradParam : public ElementwiseGradParam {
 /// ----------------------- activation operators ----------------------
 struct ActivationParam {
   const lite::Tensor* X{};
+  float Leaky_relu_slope{0};            // leaky_relu param
+  float Relu_clipped_coef{6};           // relu_clipped param
+  bool Prelu_channel_shared{false};     // prelu param
+  lite::Tensor* Prelu_channel_slope{};  // prelu param
+  float Swish_coef;                     // swish param
   lite::Tensor* Out{};
 };
 
@@ -324,6 +329,21 @@ struct UniformRandomParam {
   float max{1.0f};
   int seed{0};
   int dtype{framework::proto::VarType::FP32};
+  lite::Tensor* Out{};
+};
+
+///----------------------- argmax operators ----------------------
+struct ArgmaxParam {
+  lite::Tensor* X{};
+  lite::Tensor* Out{};
+  int Axis{0};
+};
+
+///----------------------- axpy operators ----------------------
+struct AxpyParam {
+  lite::Tensor* Scale{};
+  lite::Tensor* X{};
+  lite::Tensor* Bias{};
   lite::Tensor* Out{};
 };
 
