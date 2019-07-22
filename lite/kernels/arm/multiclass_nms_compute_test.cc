@@ -237,7 +237,7 @@ void multiclass_nms_compute_ref(const operators::MulticlassNmsParam& param,
     (*result).clear();
     return;
   } else {
-    (*result).resize(num_kept * 7);
+    (*result).resize(num_kept * 6);
   }
 
   int count = 0;
@@ -262,12 +262,11 @@ void multiclass_nms_compute_ref(const operators::MulticlassNmsParam& param,
 
       for (int j = 0; j < indices.size(); ++j) {
         int idx = indices[j];
-        (*result)[count * 7] = i;
-        (*result)[count * 7 + 1] = label;
-        (*result)[count * 7 + 2] = cur_conf_data[idx];
+        (*result)[count * 6] = label;
+        (*result)[count * 6 + 1] = cur_conf_data[idx];
 
         for (int k = 0; k < 4; ++k) {
-          (*result)[count * 7 + 3 + k] = cur_bbox_data[idx * 4 + k];
+          (*result)[count * 6 + 2 + k] = cur_bbox_data[idx * 4 + k];
         }
 
         ++count;
@@ -324,7 +323,6 @@ TEST(multiclass_nms_arm, compute) {
                   for (float conf_thresh : {0.5, 0.7}) {
                     auto* conf_data = conf.mutable_data<float>();
                     auto* bbox_data = bbox.mutable_data<float>();
-                    // auto* out_data = out.mutable_data<float>();
                     for (int i = 0; i < bbox_dim->production(); ++i) {
                       bbox_data[i] = i * 1. / bbox_dim->production();
                     }
@@ -349,6 +347,7 @@ TEST(multiclass_nms_arm, compute) {
 
                     out_ref.clear();
                     multiclass_nms_compute_ref<float>(param, &out_ref);
+                    EXPECT_EQ(out.dims().production(), out_ref.size());
                     auto* out_ref_data = out_ref.data();
                     for (int i = 0; i < out.dims().production(); i++) {
                       EXPECT_NEAR(out_data[i], out_ref_data[i], 1e-5);

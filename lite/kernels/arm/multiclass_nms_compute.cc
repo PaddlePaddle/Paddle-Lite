@@ -25,7 +25,6 @@ void MulticlassNmsCompute::Run() {
   auto& param = Param<operators::MulticlassNmsParam>();
   const float* bbox_data = param.bbox_data->data<float>();
   const float* conf_data = param.conf_data->data<float>();
-  // float* Out = param.out->mutable_data<float>();
 
   CHECK_EQ(param.bbox_data->dims().production() % 4, 0);
 
@@ -52,10 +51,34 @@ void MulticlassNmsCompute::Run() {
                                   nms_thresh,
                                   nms_eta,
                                   share_location);
-  param.out->Resize({static_cast<int64_t>(result.size() / 7), 7});
-  float* out = param.out->mutable_data<float>();
+  lite::LoD* lod = param.out->mutable_lod();
+  std::vector<uint64_t> lod_info;
+  std::vector<float> result_corrected;
+  int tmp_batch_id;
+  uint64_t num = 0;
 
-  std::memcpy(out, result.data(), sizeof(float) * result.size());
+  for (int i = 0; i < result.size(); ++i) {
+    if (i == 0) {
+      tmp_batch_id = result[i];
+    }
+    if (i % 7 == 0) {
+      if (result[i] == tmp_batch_id) {
+        ++num;
+      } else {
+        lod_info.push_back(num);
+        ++num;
+        tmp_batch_id = result[i];
+      }
+    } else {
+      result_corrected.push_back(result[i]);
+    }
+  }
+
+  (*lod).push_back(lod_info);
+  param.out->Resize({static_cast<int64_t>(result_corrected.size() / 6), 6});
+  float* out = param.out->mutable_data<float>();
+  std::memcpy(
+      out, result_corrected.data(), sizeof(float) * result_corrected.size());
 }
 
 }  // namespace arm
