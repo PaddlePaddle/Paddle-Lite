@@ -67,6 +67,8 @@ class OpLite : public Registry {
   virtual bool InferShape() const { return true; }
   // Run this operator.
   virtual bool Run();
+  // Indicate whether the Op runs only once or not
+  virtual bool run_once() const { return false; }
 
   // Link the external execution environ to internal context.
   bool Attach(const cpp::OpDesc &opdesc, lite::Scope *scope);
