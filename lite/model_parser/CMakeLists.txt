@@ -15,14 +15,13 @@ if(NOT LITE_ON_MOBILE)
 endif()
 
 lite_cc_library(compatible_pb SRCS compatible_pb.cc
-  DEPS op_desc framework_proto var_desc cpp_op_desc nb_op_desc)
+  DEPS ${cpp_wrapper} ${naive_wrapper} ${pb_wrapper} framework_proto)
 
 lite_cc_library(model_parser SRCS model_parser.cc DEPS
     variable scope tensor scope
     target_wrapper_host
     compatible_pb
     memory
-    ${naive_wrapper}
     CUDA_DEPS target_wrapper_cuda)
 
-lite_cc_test(test_op_desc SRCS op_desc_test.cc DEPS cpp_op_desc op_desc nb_op_desc compatible_pb)
+lite_cc_test(test_compatible_pb SRCS compatible_pb_test.cc DEPS compatible_pb)

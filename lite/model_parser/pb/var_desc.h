@@ -18,6 +18,7 @@
 #include <string>
 #include <vector>
 #include "lite/core/framework.pb.h"
+#include "lite/model_parser/desc_apis.h"
 #include "lite/utils/cp_logging.h"
 
 namespace paddle {
@@ -56,21 +57,20 @@ inline void VectorToRepeated(const std::vector<bool> &vec,
   }
 }
 
-class VarDesc {
+class VarDesc : public VarDescAPI {
  public:
-  explicit VarDesc(const std::string &name) {
-    desc_.set_name(name);
-    // TODO(paddle-dev): Why default to lodtensor.
-    desc_.mutable_type()->set_type(framework::proto::VarType::LOD_TENSOR);
+  VarDesc() = delete;
+
+  explicit VarDesc(framework::proto::VarDesc *desc) : desc_(desc) {
+    CHECK(desc_);
   }
 
-  explicit VarDesc(const framework::proto::VarDesc &desc) : desc_(desc) {}
+  framework::proto::VarDesc *Proto() { return desc_; }
+  const framework::proto::VarDesc &ReadonlyProto() const { return *desc_; }
 
-  framework::proto::VarDesc *Proto() { return &desc_; }
+  std::string Name() const override { return desc_->name(); }
 
-  std::string Name() const { return desc_.name(); }
-
-  void SetName(std::string name) { desc_.set_name(name); }
+  void SetName(std::string name) override { desc_->set_name(name); }
 
   void SetTensorDescNum(size_t num);
 
@@ -101,13 +101,15 @@ class VarDesc {
 
   std::vector<int32_t> GetLoDLevels() const;
 
-  framework::proto::VarType::Type GetType() const;
+  VarDescAPI::Type GetType() const override;
 
-  void SetType(framework::proto::VarType::Type type);
+  void SetType(VarDescAPI::Type type) override;
 
-  bool Persistable() const { return desc_.persistable(); }
+  bool Persistable() const override { return desc_->persistable(); }
 
-  void SetPersistable(bool persistable) { desc_.set_persistable(persistable); }
+  void SetPersistable(bool persistable) override {
+    desc_->set_persistable(persistable);
+  }
 
  private:
   const framework::proto::VarType::TensorDesc &tensor_desc() const;
@@ -115,7 +117,7 @@ class VarDesc {
   framework::proto::VarType::TensorDesc *mutable_tensor_desc();
   std::vector<framework::proto::VarType::TensorDesc *> mutable_tensor_descs();
 
-  framework::proto::VarDesc desc_;
+  framework::proto::VarDesc *desc_;
 };
 
 }  // namespace pb

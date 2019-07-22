@@ -15,6 +15,7 @@
 #include <gflags/gflags.h>
 #include "lite/gen_code/gen_code.h"
 #include "lite/model_parser/model_parser.h"
+#include "lite/model_parser/pb/program_desc.h"
 
 DEFINE_string(optimized_model, "", "");
 DEFINE_string(generated_code_file, "__generated_code__.cc", "");
@@ -25,10 +26,14 @@ namespace gencode {
 
 void GenCode(const std::string& model_dir, const std::string& out_file) {
   lite::Scope scope;
-  framework::proto::ProgramDesc desc;
-  LoadModel(model_dir, &scope, &desc);
+  cpp::ProgramDesc cpp_desc;
+  LoadModelPb(model_dir, &scope, &cpp_desc);
 
-  ProgramCodeGenerator codegen(desc, scope);
+  framework::proto::ProgramDesc pb_proto_desc;
+  lite::pb::ProgramDesc pb_desc(&pb_proto_desc);
+  TransformProgramDescCppToAny(cpp_desc, &pb_desc);
+
+  ProgramCodeGenerator codegen(pb_proto_desc, scope);
 
   std::ofstream file(out_file);
 

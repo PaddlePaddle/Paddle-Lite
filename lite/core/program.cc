@@ -14,67 +14,46 @@
 
 #include "lite/core/program.h"
 #include "lite/core/optimizer.h"
-#include "lite/model_parser/pb/op_desc.h"
-#include "lite/model_parser/pb/var_desc.h"
+#include "lite/model_parser/cpp/block_desc.h"
+#include "lite/model_parser/cpp/op_desc.h"
+#include "lite/model_parser/cpp/var_desc.h"
 
 namespace paddle {
 namespace lite {
 
-void RuntimeProgram::PersistModel(const std::string &dir,
-                                  const framework::proto::ProgramDesc &desc) {
-  // Persist model.
-  const std::string model_path = dir + "/__model__";
-  std::ofstream model_ostream(model_path, std::ios_base::binary);
-  CHECK(model_ostream.is_open());
-  const std::string pb_str = SerializeProgram(desc);
-  model_ostream.write(pb_str.c_str(), pb_str.size());
-  model_ostream.close();
-
-  // Persist params.
-  framework::proto::ProgramDesc latest_program;
-  latest_program.ParseFromString(pb_str);
-  SaveParams(dir, latest_program);
-}
-
-std::string RuntimeProgram::SerializeProgram(
-    const framework::proto::ProgramDesc &desc) {
-  auto program_dummy = desc;
-  program_dummy.mutable_blocks(0)->clear_ops();
-  for (auto &node : instructions_) {
-    pb::OpDesc pb_desc;
-    TransformOpDescCppToAny(*node.op()->op_info(), &pb_desc);
-    pb_desc.SetAttr(kKernelTypeAttr, node.kernel()->SerializedKernelType());
-    // append new opdesc
-    *program_dummy.mutable_blocks(0)->add_ops() = *pb_desc.Proto();
-  }
-  return program_dummy.SerializeAsString();
-}
-
-void RuntimeProgram::SaveParams(const std::string &dir,
-                                const framework::proto::ProgramDesc &desc) {
-  CHECK(exec_scope_);
-  for (auto &item : desc.blocks(0).vars()) {
-    const std::string path = dir + "/" + item.name();
-    if (item.name() == "feed" || item.name() == "fetch") continue;
-    if (item.persistable()) {
-      std::ofstream file(path, std::ios::binary);
-      SerializeTensor(file, *exec_scope_, item.name());
-      file.close();
-    }
+void RuntimeProgram::SaveOpInfosToProgram(cpp::ProgramDesc* desc) {
+  CHECK(desc);
+  // NOTE: RuntimeProgram do not has all meta info, so save model just update
+  // upon origin model
+  CHECK(desc->BlocksSize());
+  auto& main_block = *desc->GetBlock<cpp::BlockDesc>(0);
+  main_block.ClearOps();
+  for (auto& node : instructions_) {
+    auto* op = main_block.AddOp<cpp::OpDesc>();
+    *op = *node.op()->op_info();
+    op->SetAttr(kKernelTypeAttr, node.kernel()->SerializedKernelType());
   }
 }
 
-void Program::Build(const framework::proto::ProgramDesc &program) {
+void RuntimeProgram::Run() {
+  for (auto& inst : instructions_) {
+    VLOG(4) << ">> Running kernel: " << inst.op()->op_info()->Repr()
+            << " on Target " << TargetToStr(inst.kernel()->target());
+    inst.Run();
+  }
+}
+
+void Program::Build(const cpp::ProgramDesc& prog) {
   CHECK(ops_.empty()) << "Executor duplicate Build found";
 
   // Create operators.
-  for (const auto &proto_op_desc : program.blocks(0).ops()) {
-    lite::pb::OpDesc op_desc_dummy(proto_op_desc);
-    cpp::OpDesc op_desc;
-    TransformOpDescAnyToCpp(op_desc_dummy, &op_desc);
+  auto program = prog;
+  CHECK(program.BlocksSize());
+  auto& main_block = *program.GetBlock<cpp::BlockDesc>(0);
+  for (size_t i = 0; i < main_block.OpsSize(); ++i) {
+    auto& op_desc = *main_block.GetOp<cpp::OpDesc>(i);
     auto op_type = op_desc.Type();
     // if (op_type == "feed" || op_type == "fetch") continue;
-    VLOG(4) << "create Op [" << op_type << "]";
     LOG(INFO) << "create Op [" << op_type << "]";
     auto op = LiteOpRegistry::Global().Create(op_type);
     CHECK(op) << "no Op found for " << op_type;
@@ -83,18 +62,20 @@ void Program::Build(const framework::proto::ProgramDesc &program) {
   }
 }
 
-void Program::PrepareWorkspace(const framework::proto::ProgramDesc &program) {
+void Program::PrepareWorkspace(const cpp::ProgramDesc& prog) {
   CHECK(!exec_scope_) << "Duplicate PrepareWorkspace found";
   exec_scope_ = &scope_->NewScope();
   // Create Feed and Fetch var.
   scope_->Var("feed")->GetMutable<std::vector<lite::Tensor>>();
   scope_->Var("fetch")->GetMutable<std::vector<lite::Tensor>>();
-
   tmp_vars_.push_back("feed");
   tmp_vars_.push_back("fetch");
-  CHECK(!program.blocks().empty());
-  for (auto proto_var_desc : program.blocks(0).vars()) {
-    lite::pb::VarDesc var_desc(proto_var_desc);
+
+  auto program = prog;
+  CHECK(program.BlocksSize());
+  auto& main_block = *program.GetBlock<cpp::BlockDesc>(0);
+  for (size_t i = 0; i < main_block.VarsSize(); ++i) {
+    auto& var_desc = *main_block.GetVar<cpp::VarDesc>(i);
     if (!var_desc.Persistable()) {
       tmp_vars_.push_back(var_desc.Name());
       exec_scope_->Var(var_desc.Name());
@@ -104,6 +85,28 @@ void Program::PrepareWorkspace(const framework::proto::ProgramDesc &program) {
       if (var_desc.Persistable()) scope_->Var(var_desc.Name());
     }
   }
+}
+
+void Instruction::Run() {
+#ifdef LITE_WITH_PROFILE
+  profile::ProfileBlock x(profile_id_);
+#endif  // LITE_WITH_PROFILE
+  CHECK(op_);
+  CHECK(kernel_);
+  if (first_epoch_) {
+    first_epoch_ = false;
+    CHECK(op_->CheckShape());
+  }
+
+  if (op_->run_once() && has_run_) return;
+  op_->InferShape();
+  kernel_->Launch();
+  has_run_ = true;
+}
+
+std::ostream& operator<<(std::ostream& os, const Instruction& other) {
+  os << other.kernel_->summary() << "\t(" << other.kernel_->doc() << ")";
+  return os;
 }
 
 }  // namespace lite

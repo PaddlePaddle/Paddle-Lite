@@ -36,7 +36,21 @@ TEST(ModelParser, LoadParam) {
   LOG(INFO) << t;
 }
 
-TEST(ModelParser, LoadModel) {}
+TEST(ModelParser, LoadModelPb) {
+  CHECK(!FLAGS_model_dir.empty());
+  cpp::ProgramDesc prog;
+  Scope scope;
+  LoadModelPb(FLAGS_model_dir, &scope, &prog);
+}
+
+TEST(ModelParser, SaveModelPb) {
+  CHECK(!FLAGS_model_dir.empty());
+  cpp::ProgramDesc prog;
+  Scope scope;
+  LoadModelPb(FLAGS_model_dir, &scope, &prog);
+  const std::string save_pb_model_path = FLAGS_model_dir + ".saved.pb";
+  SaveModelPb(save_pb_model_path, scope, prog);
+}
 
 TEST(ModelParser, SaveParamNaive) {
   Scope scope;
@@ -74,6 +88,23 @@ TEST(ModelParser, LoadParamNaive) {
   for (int i = 0; i < size; ++i) {
     EXPECT_NEAR(bg_data[i], data[i], 1e-6);
   }
+}
+
+TEST(ModelParser, SaveModelNaive) {
+  CHECK(!FLAGS_model_dir.empty());
+  cpp::ProgramDesc prog;
+  Scope scope;
+  LoadModelPb(FLAGS_model_dir, &scope, &prog);
+  const std::string save_pb_model_path = FLAGS_model_dir + ".saved.naive";
+  SaveModelNaive(save_pb_model_path, scope, prog);
+}
+
+TEST(ModelParser, LoadModelNaive) {
+  CHECK(!FLAGS_model_dir.empty());
+  cpp::ProgramDesc prog;
+  Scope scope;
+  const std::string model_path = FLAGS_model_dir + ".saved.naive";
+  LoadModelNaive(model_path, &scope, &prog);
 }
 
 }  // namespace lite

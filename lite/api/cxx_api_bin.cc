@@ -80,6 +80,7 @@ USE_LITE_OP(scale);
 USE_LITE_OP(feed);
 USE_LITE_OP(fetch);
 USE_LITE_OP(io_copy);
+USE_LITE_OP(io_copy_once);
 
 USE_LITE_OP(conv2d);
 USE_LITE_OP(batch_norm);
@@ -123,4 +124,6 @@ USE_LITE_KERNEL(calib, kARM, kInt8, kNCHW, int8_to_fp32);
 USE_LITE_KERNEL(mul, kCUDA, kFloat, kNCHW, def);
 USE_LITE_KERNEL(io_copy, kCUDA, kAny, kAny, host_to_device);
 USE_LITE_KERNEL(io_copy, kCUDA, kAny, kAny, device_to_host);
+USE_LITE_KERNEL(io_copy_once, kCUDA, kAny, kAny, host_to_device);
+USE_LITE_KERNEL(io_copy_once, kCUDA, kAny, kAny, device_to_host);
 #endif

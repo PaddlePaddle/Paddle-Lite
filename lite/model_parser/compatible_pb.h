@@ -15,18 +15,29 @@
 #pragma once
 
 /*
- * This file implements the interface to manipute the protobuf message. We use
- * macros to make a compatible interface with the framework::XXDesc and
- * lite::pb::XXDesc.
+ * This file implements the interface to manipute the protobuf/naive_buffer
+ * message. We use
+ * macros to make a compatible interface with the lite::cpp::XXDesc and
+ * lite::pb::XXDesc/lite::naive_buffer::XXDesc.
  */
 
-#include "lite/core/framework.pb.h"
+#include "lite/model_parser/cpp/block_desc.h"
 #include "lite/model_parser/cpp/op_desc.h"
-#include "lite/model_parser/naive_buffer/op_desc.h"
-#include "lite/model_parser/pb/op_desc.h"
+#include "lite/model_parser/cpp/program_desc.h"
+#include "lite/model_parser/cpp/var_desc.h"
 
 namespace paddle {
 namespace lite {
+
+/// Transform an VarDesc from VarDescType to cpp format.
+template <typename VarDescType>
+void TransformVarDescAnyToCpp(const VarDescType& any_desc,
+                              cpp::VarDesc* cpp_desc);
+
+/// Transform an VarDesc from cpp to VarDescType format.
+template <typename VarDescType>
+void TransformVarDescCppToAny(const cpp::VarDesc& cpp_desc,
+                              VarDescType* any_desc);
 
 /// Transform an OpDesc from OpDescType to cpp format.
 template <typename OpDescType>
@@ -35,6 +46,26 @@ void TransformOpDescAnyToCpp(const OpDescType& any_desc, cpp::OpDesc* cpp_desc);
 /// Transform an OpDesc from cpp to OpDescType format.
 template <typename OpDescType>
 void TransformOpDescCppToAny(const cpp::OpDesc& cpp_desc, OpDescType* any_desc);
+
+/// Transform an BlockDesc from BlockDescType to cpp format.
+template <typename BlockDescType>
+void TransformBlockDescAnyToCpp(const BlockDescType& any_desc,
+                                cpp::BlockDesc* cpp_desc);
+
+/// Transform an BlockDesc from cpp to BlockDescType format.
+template <typename BlockDescType>
+void TransformBlockDescCppToAny(const cpp::BlockDesc& cpp_desc,
+                                BlockDescType* any_desc);
+
+/// Transform an ProgramDesc from ProgramDescType to cpp format.
+template <typename ProgramDescType>
+void TransformProgramDescAnyToCpp(const ProgramDescType& any_desc,
+                                  cpp::ProgramDesc* cpp_desc);
+
+/// Transform an ProgramDesc from cpp to ProgramDescType format.
+template <typename ProgramDescType>
+void TransformProgramDescCppToAny(const cpp::ProgramDesc& cpp_desc,
+                                  ProgramDescType* any_desc);
 
 }  // namespace lite
 }  // namespace paddle

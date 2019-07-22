@@ -22,10 +22,13 @@
 #include "lite/core/framework.pb.h"
 #include "lite/core/scope.h"
 #include "lite/core/variable.h"
+#include "lite/model_parser/compatible_pb.h"
 #include "lite/model_parser/naive_buffer/proto/framework.nb.h"
 
 namespace paddle {
 namespace lite {
+
+enum class LiteModelType { kProtobuf = 0, kNaiveBuffer, UNK };
 
 // Read a __model__ file.
 std::unique_ptr<framework::proto::ProgramDesc> LoadProgram(
@@ -37,10 +40,15 @@ void LoadParams(const std::string& path);
 // Load a single parameter to an output tensor.
 void LoadParam(const std::string& path, Variable* out);
 
-// Read a model and files of parameters.
-void LoadModel(const std::string& model_dir,
-               Scope* scope,
-               framework::proto::ProgramDesc* prog);
+// Read a model and files of parameters in pb format.
+void LoadModelPb(const std::string& model_dir,
+                 Scope* scope,
+                 cpp::ProgramDesc* prog);
+
+// Save a model and files of parameters in pb format.
+void SaveModelPb(const std::string& model_dir,
+                 const Scope& scope,
+                 const cpp::ProgramDesc& prog);
 
 // Serialize tensors to ostream.
 void SerializeTensor(std::ostream& os,
@@ -58,16 +66,16 @@ void LoadParamNaive(const std::string& path,
                     const std::string& name);
 
 void SaveParamNaive(const std::string& path,
-                    const lite::Scope& scope,
+                    const lite::Scope& exec_scope,
                     const std::string& var_name);
 
 void LoadModelNaive(const std::string& model_dir,
                     lite::Scope* scope,
-                    naive_buffer::proto::ProgramDesc* prog);
+                    cpp::ProgramDesc* prog);
 
 void SaveModelNaive(const std::string& model_dir,
-                    Scope* scope,
-                    naive_buffer::proto::ProgramDesc* prog);
+                    const Scope& exec_scope,
+                    const cpp::ProgramDesc& cpp_prog);
 
 }  // namespace lite
 }  // namespace paddle

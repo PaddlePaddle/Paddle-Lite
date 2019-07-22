@@ -130,6 +130,8 @@ class Optimizer {
     return graph_.get();
   }
 
+  lite::Scope* exec_scope() { return exec_scope_; }
+
  protected:
   void SpecifyKernelPickTactic(core::KernelPickFactor factor);
 
