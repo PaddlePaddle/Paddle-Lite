@@ -21,7 +21,8 @@ namespace lite {
 std::string KernelBase::summary() const {
   std::stringstream ss;
   ss << op_type() << ":" << TargetToStr(target()) << "/"
-     << PrecisionToStr(precision()) << "/" << DataLayoutToStr(layout());
+     << PrecisionToStr(precision()) << "/" << DataLayoutToStr(layout()) << "("
+     << alias() << ")";
   return ss.str();
 }
 
