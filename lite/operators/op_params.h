@@ -328,24 +328,24 @@ struct UniformRandomParam {
 };
 
 struct Im2SequenceParam {
-    const lite::Tensor* X{};
-    lite::Tensor* Out{};
-    std::vector<int> kernels{3, 3};
-    std::vector<int> strides{1, 1};
-    std::vector<int> paddings{0, 0, 0, 0};
-    std::vector<int> out_strides{1, 1};
+  const lite::Tensor* X{};
+  lite::Tensor* Out{};
+  std::vector<int> kernels{3, 3};
+  std::vector<int> strides{1, 1};
+  std::vector<int> paddings{0, 0, 0, 0};
+  std::vector<int> out_strides{1, 1};
 };
 
 struct SequenceSoftmaxParam {
-    const lite::Tensor* X{};
-    lite::Tensor* Out{};
+  const lite::Tensor* X{};
+  lite::Tensor* Out{};
 };
 
 struct NormParam {
-    const lite::Tensor* X{};
-    lite::Tensor* Out{};
-    int axis{1};
-    float epsilon{1e-10};
+  const lite::Tensor* X{};
+  lite::Tensor* Out{};
+  int axis{1};
+  float epsilon{1e-10};
 };
 
 }  // namespace operators

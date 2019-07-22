@@ -24,8 +24,7 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
-void SequenceSoftmaxCompute::PrepareForRun() {
-}
+void SequenceSoftmaxCompute::PrepareForRun() {}
 
 void SequenceSoftmaxCompute::Run() {
   auto& ctx = this->ctx_->template As<ARMContext>();
@@ -37,23 +36,21 @@ void SequenceSoftmaxCompute::Run() {
   int in_h = input_dims[0];
   int in_w = param.X->numel() / in_h;
   auto seq_offset = param.Out->lod()[0];
-  lite::arm::math::sequence_softmax(x_data,
-                               seq_offset,
-                               in_h,
-                               in_w,
-                               o_data, 
-                               &ctx);
+  lite::arm::math::sequence_softmax(
+      x_data, seq_offset, in_h, in_w, o_data, &ctx);
 }
-
 
 }  // namespace arm
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(
-    sequence_softmax, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::SequenceSoftmaxCompute, def)
+REGISTER_LITE_KERNEL(sequence_softmax,
+                     kARM,
+                     kFloat,
+                     kNCHW,
+                     paddle::lite::kernels::arm::SequenceSoftmaxCompute,
+                     def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
-

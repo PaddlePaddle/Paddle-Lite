@@ -36,7 +36,6 @@ class Im2SequenceCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
  private:
 };
 
-
 }  // namespace arm
 }  // namespace kernels
 }  // namespace lite

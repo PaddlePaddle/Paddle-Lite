@@ -26,18 +26,18 @@ void norm(const float* input,
           const int n,
           const int post_n,
           const float epsilon,
-          float * out) {
+          float* out) {
   for (int i = 0; i < pre_n; i++) {
     for (int k = 0; k < post_n; k++) {
       float sum = epsilon;
       const float* in_tmp = input + k;
       for (int j = 0; j < n; j++) {
-         sum += in_tmp[j*post_n] * in_tmp[j*post_n];
+        sum += in_tmp[j * post_n] * in_tmp[j * post_n];
       }
       sum = std::sqrt(sum);
       float* out_tmp = out + k;
       for (int j = 0; j < n; j++) {
-         out_tmp[j*post_n] = in_tmp[j*post_n] / sum;
+        out_tmp[j * post_n] = in_tmp[j * post_n] / sum;
       }
     }
   }

@@ -24,27 +24,19 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
-void NormCompute::PrepareForRun() {
-}
+void NormCompute::PrepareForRun() {}
 
 void NormCompute::Run() {
   auto& ctx = this->ctx_->template As<ARMContext>();
   auto& param = this->Param<operators::NormParam>();
   auto input_dims = param.X->dims();
   int dim_size = param.X->dims().size();
-  auto axis = (param.axis < 0) ?  param.axis + dim_size : param.axis;
+  auto axis = (param.axis < 0) ? param.axis + dim_size : param.axis;
 
   const auto* x_data = param.X[0]->data<float>();
   auto* o_data = param.Out->mutable_data<float>();
-  lite::arm::math::norm(x_data,
-                        pre_n,
-                        n,
-                        post_n,
-                        param.epsilon,
-                        o_data,
-                        &ctx);
+  lite::arm::math::norm(x_data, pre_n, n, post_n, param.epsilon, o_data, &ctx);
 }
-
 
 }  // namespace arm
 }  // namespace kernels
@@ -56,4 +48,3 @@ REGISTER_LITE_KERNEL(
     .BindInput("X", {LiteType::GetTensorListTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
-

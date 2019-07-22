@@ -24,8 +24,7 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
-void Im2SequenceCompute::PrepareForRun() {
-}
+void Im2SequenceCompute::PrepareForRun() {}
 
 void Im2SequenceCompute::Run() {
   auto& ctx = this->ctx_->template As<ARMContext>();
@@ -59,8 +58,12 @@ void Im2SequenceCompute::Run() {
       int tmp_real_w = (real_w + out_strides[1] - 1) / out_strides[1];
       im_real_h.push_back(tmp_real_h);
       im_real_w.push_back(tmp_real_w);
-      int out_h = (tmp_real_h + paddings[0] + paddings[1] - kernels[0]) / strides[0] + 1;
-      int out_w = (tmp_real_w + paddings[2] + paddings[3] - kernels[1]) / strides[1] + 1;
+      int out_h =
+          (tmp_real_h + paddings[0] + paddings[1] - kernels[0]) / strides[0] +
+          1;
+      int out_w =
+          (tmp_real_w + paddings[2] + paddings[3] - kernels[1]) / strides[1] +
+          1;
       out_h_vec.push_back(out_h);
       out_w_vec.push_back(out_w);
       total_rows += out_h * out_w;
@@ -69,10 +72,10 @@ void Im2SequenceCompute::Run() {
     auto out_dims = param.Out->dims();
     out_dims[0] = total_rows;
     param.Out->Resize(out_dims);
-    
+
     int out_offset = 0;
     for (int im_id = 0; im_id < im_num; im_id++) {
-      lite::arm::math::im2sequence(x_data + im_id * im_size ,
+      lite::arm::math::im2sequence(x_data + im_id * im_size,
                                    input_dims[1],
                                    input_dims[2],
                                    input_dims[3],
@@ -86,7 +89,7 @@ void Im2SequenceCompute::Run() {
                                    param.strides[1],
                                    out_h_vec[im_id],
                                    out_w_vec[im_id],
-                                   o_data + im_offset[im_id] * out_cols, 
+                                   o_data + im_offset[im_id] * out_cols,
                                    &ctx);
     }
   } else {
@@ -106,9 +109,9 @@ void Im2SequenceCompute::Run() {
                                    param.strides[1],
                                    out_h,
                                    out_w,
-                                   o_data + im_id * out_size_per_im, 
+                                   o_data + im_id * out_size_per_im,
                                    &ctx);
-       im_offset.push_back(im_id * out_h * out_w);
+      im_offset.push_back(im_id * out_h * out_w);
     }
     auto lod = param.Out->mutable_lod();
     lod->resize(1);
@@ -116,15 +119,17 @@ void Im2SequenceCompute::Run() {
   }
 }
 
-
 }  // namespace arm
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(
-    im2sequence, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::Im2SequenceCompute, def)
+REGISTER_LITE_KERNEL(im2sequence,
+                     kARM,
+                     kFloat,
+                     kNCHW,
+                     paddle::lite::kernels::arm::Im2SequenceCompute,
+                     def)
     .BindInput("X", {LiteType::GetTensorListTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
-

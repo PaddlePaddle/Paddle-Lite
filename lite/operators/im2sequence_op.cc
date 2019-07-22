@@ -18,8 +18,8 @@
 namespace paddle {
 namespace lite {
 namespace operators {
-inline int Im2SeqOutputSize(int input_size, int filter_size, int padding_0,
-                            int padding_1, int stride) {
+inline int Im2SeqOutputSize(
+    int input_size, int filter_size, int padding_0, int padding_1, int stride) {
   const int output_size =
       (input_size + padding_0 + padding_1 - filter_size) / stride + 1;
   return output_size;
@@ -40,12 +40,11 @@ bool Im2SequenceOp::InferShape() const {
   auto paddings = param_.kernels;
   auto strides = param_.kernels;
   auto out_dims = std::vector<int>({1, img_channels * kernels[0] * kernels[1]});
-  
 
-  int output_height = Im2SeqOutputSize(img_height, kernels[0], paddings[0],
-                                       paddings[2], strides[0]);
-  int output_width = Im2SeqOutputSize(img_width, kernels[1], paddings[1],
-                                       paddings[3], strides[1]);
+  int output_height = Im2SeqOutputSize(
+      img_height, kernels[0], paddings[0], paddings[2], strides[0]);
+  int output_width = Im2SeqOutputSize(
+      img_width, kernels[1], paddings[1], paddings[3], strides[1]);
   out_dims[0] = img_num * output_height * output_width;
   param_.Out->Resize(out_dims);
 

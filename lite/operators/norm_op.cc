@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/operators/im2sequence_op.h"
 #include "lite/core/op_registry.h"
+#include "lite/operators/im2sequence_op.h"
 
 namespace paddle {
 namespace lite {
@@ -34,7 +34,7 @@ bool NormOp::InferShape() const {
 }
 
 bool NormOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
-  param_.X = 
+  param_.X =
       scope->FindVar(op_desc.Input("X").front())->GetMutable<lite::Tensor>();
   param_.Out =
       scope->FindVar(opdesc.Output("Out").front())->GetMutable<lite::Tensor>();

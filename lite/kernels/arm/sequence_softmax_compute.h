@@ -23,7 +23,8 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
-class SequenceSoftmaxCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+class SequenceSoftmaxCompute
+    : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
  public:
   using param_t = operators::SequenceSoftmaxParam;
 
@@ -35,7 +36,6 @@ class SequenceSoftmaxCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)
 
  private:
 };
-
 
 }  // namespace arm
 }  // namespace kernels

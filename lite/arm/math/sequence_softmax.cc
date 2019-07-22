@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "lite/arm/math/sequence_softmax.h"
 #include <arm_neon.h>
 #include <cmath>
 #include "lite/utils/cp_logging.h"
-#include "lite/arm/math/sequence_softmax.h"
 
 namespace paddle {
 namespace lite {
@@ -31,18 +31,17 @@ bool sequence_softmax(const float* input,
   for (int i = 0; i < seq_num; i++) {
     float seq_max = input[seq_offset[i]];
     float exp_sum = 0.f;
-    for (int j = seq_offset[i]; j < seq_offset[i+1]; j++) {
-      seq_max = std::max(seq_max, input[j]); 
-    } 
-    for (int j = seq_offset[i]; j < seq_offset[i+1]; j++) {
+    for (int j = seq_offset[i]; j < seq_offset[i + 1]; j++) {
+      seq_max = std::max(seq_max, input[j]);
+    }
+    for (int j = seq_offset[i]; j < seq_offset[i + 1]; j++) {
       exp_sum += expf(input[j] - seq_max);
     }
-    for (int j = seq_offset[i]; j < seq_offset[i+1]; j++) {
+    for (int j = seq_offset[i]; j < seq_offset[i + 1]; j++) {
       out[j] = input[j] / exp_sum;
     }
   }
 }
-
 
 }  // namespace math
 }  // namespace arm

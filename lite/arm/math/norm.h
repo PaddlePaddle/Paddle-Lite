@@ -25,7 +25,7 @@ void norm(const float* input,
           const int n,
           const int post_n,
           const float epsilon,
-          float * out);
+          float* out);
 
 }  // namespace math
 }  // namespace arm
