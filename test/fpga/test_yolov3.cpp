@@ -163,9 +163,9 @@ PaddleMobileConfig GetConfig() {
 
    float data[1 * 3 * 608 * 608] = {1.0f};
    // memset(data, 1,  (3 * 608 * 608) * sizeof(float));
-   for(int i=0; i<3 * 608 * 608; i++) {
-        data[i] = 1.0f;
-   }
+   // for(int i=0; i<3 * 608 * 608; i++) {
+   //      data[i] = 1.0f;
+   // }
    readImage("../../../models/easydl_yolov3/DJI_0618.jpeg", data);
  
    PaddleTensor tensor;

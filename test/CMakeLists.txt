@@ -150,6 +150,10 @@ if (CON GREATER -1)
     target_link_libraries(test-ssd paddle-mobile)
     target_link_libraries(test-ssd ${OpenCV_LIBS})
 
+    ADD_EXECUTABLE(test-yolov3 fpga/test_yolov3.cpp test_helper.h test_include.h executor_for_test.h)
+    target_link_libraries(test-yolov3 paddle-mobile)
+    target_link_libraries(test-yolov3 ${OpenCV_LIBS})
+
     set(FOUND_MATCH ON)
 endif ()
 

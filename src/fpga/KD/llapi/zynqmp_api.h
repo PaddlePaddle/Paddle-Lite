@@ -222,7 +222,9 @@ struct FpgaRegReadArgs {
   uint64_t value;
 };
 
-struct FpgaResetArgs {};
+struct FpgaResetArgs {
+  uint32_t val;
+};
 
 #define IOCTL_FPGA_MAGIC (('F' + 'P' + 'G' + 'A') / 4)
 
@@ -348,6 +350,8 @@ int config_inplace(const struct InplaceArgs& args);
 
 int flush_cache(void* addr, int size);
 int invalidate_cache(void* addr, int size);
+
+int fpga_reset();
 
 int16_t fp32_2_fp16(float fp32_num);
 float fp16_2_fp32(int16_t fp16_num);

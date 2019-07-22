@@ -36,11 +36,11 @@ void fpga_resize(float* input, int input_width, int input_height,
 
   // float16_output.copyFrom(float_input);
 
-  paddle_mobile::zynqmp::InplaceArgs inplace_args = {
-      .relu_enable = 0,
-      .power_enable = 0,
-  };
-  paddle_mobile::zynqmp::config_inplace(inplace_args);
+  // paddle_mobile::zynqmp::InplaceArgs inplace_args = {
+  //     .relu_enable = 0,
+  //     .power_enable = 0,
+  // };
+  // paddle_mobile::zynqmp::config_inplace(inplace_args);
 
   paddle_mobile::zynqmp::ImageInputArgs input_args = {nullptr};
   input_args.address = nullptr;

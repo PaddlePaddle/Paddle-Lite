@@ -26,8 +26,6 @@ void NearestInterpOp<Dtype, T>::InferShape() const {
   out_dims[2] = this->param_.OutHeight();
   out_dims[3] = this->param_.OutWidth();
   this->param_.Out()->Resize(out_dims);
-  std::cout << "out_h:" << out_dims[2] << " w:" << out_dims[3] << std::endl;
-  // exit(-1);
 }
 
 }  // namespace operators
