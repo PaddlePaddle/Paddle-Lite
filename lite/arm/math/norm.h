@@ -15,18 +15,17 @@
 #pragma once
 
 #include <cmath>
-#include <vector>
 
 namespace paddle {
 namespace lite {
 namespace arm {
 namespace math {
-
-bool sequence_softmax(const float* input,
-                      std::vector<uint64_t>& seq_offset,
-                      int in_h,
-                      int in_w,
-                      float* out);
+void norm(const float* input,
+          const int pre_n,
+          const int n,
+          const int post_n,
+          const float epsilon,
+          float * out);
 
 }  // namespace math
 }  // namespace arm

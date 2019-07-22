@@ -12,21 +12,36 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
-
+#include <arm_neon.h>
 #include <cmath>
-#include <vector>
+#include "lite/utils/cp_logging.h"
 
 namespace paddle {
 namespace lite {
 namespace arm {
 namespace math {
 
-bool sequence_softmax(const float* input,
-                      std::vector<uint64_t>& seq_offset,
-                      int in_h,
-                      int in_w,
-                      float* out);
+void norm(const float* input,
+          const int pre_n,
+          const int n,
+          const int post_n,
+          const float epsilon,
+          float * out) {
+  for (int i = 0; i < pre_n; i++) {
+    for (int k = 0; k < post_n; k++) {
+      float sum = epsilon;
+      const float* in_tmp = input + k;
+      for (int j = 0; j < n; j++) {
+         sum += in_tmp[j*post_n] * in_tmp[j*post_n];
+      }
+      sum = std::sqrt(sum);
+      float* out_tmp = out + k;
+      for (int j = 0; j < n; j++) {
+         out_tmp[j*post_n] = in_tmp[j*post_n] / sum;
+      }
+    }
+  }
+}
 
 }  // namespace math
 }  // namespace arm

@@ -341,6 +341,13 @@ struct SequenceSoftmaxParam {
     lite::Tensor* Out{};
 };
 
+struct NormParam {
+    const lite::Tensor* X{};
+    lite::Tensor* Out{};
+    int axis{1};
+    float epsilon{1e-10};
+};
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle

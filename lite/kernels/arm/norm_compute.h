@@ -13,22 +13,31 @@
 // limitations under the License.
 
 #pragma once
-
-#include <cmath>
-#include <vector>
+#include <stdint.h>
+#include "lite/arm/math/type_trans.h"
+#include "lite/core/kernel.h"
+#include "lite/operators/norm_op.h"
 
 namespace paddle {
 namespace lite {
+namespace kernels {
 namespace arm {
-namespace math {
 
-bool sequence_softmax(const float* input,
-                      std::vector<uint64_t>& seq_offset,
-                      int in_h,
-                      int in_w,
-                      float* out);
+class NormCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::NormParam;
 
-}  // namespace math
+  void PrepareForRun() override;
+
+  void Run() override;
+
+  ~NormCompute() override;
+
+ private:
+};
+
+
 }  // namespace arm
+}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

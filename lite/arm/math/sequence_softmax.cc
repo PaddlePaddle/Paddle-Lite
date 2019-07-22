@@ -15,13 +15,15 @@
 #include <arm_neon.h>
 #include <cmath>
 #include "lite/utils/cp_logging.h"
+#include "lite/arm/math/sequence_softmax.h"
 
 namespace paddle {
 namespace lite {
 namespace arm {
 namespace math {
+
 bool sequence_softmax(const float* input,
-                      std::vector<int>& seq_offset,
+                      std::vector<uint64_t>& seq_offset,
                       int in_h,
                       int in_w,
                       float* out) {
