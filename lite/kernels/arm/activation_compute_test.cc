@@ -146,7 +146,7 @@ void test_activation_compute(
           param->X = &x;
           param->Out = &output;
           if (type == PRELU) {
-            if (param.Prelu_channel_shared) {
+            if (param->Prelu_channel_shared) {
               channel_slope.Resize({1});
             } else {
               channel_slope.Resize({c});
