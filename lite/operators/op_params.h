@@ -327,6 +327,20 @@ struct UniformRandomParam {
   lite::Tensor* Out{};
 };
 
+struct Im2SequenceParam {
+    const lite::Tensor* X{};
+    lite::Tensor* Out{};
+    std::vector<int> kernels{3, 3};
+    std::vector<int> strides{1, 1};
+    std::vector<int> paddings{0, 0, 0, 0};
+    std::vector<int> out_strides{1, 1};
+};
+
+struct SequenceSoftmaxParam {
+    const lite::Tensor* X{};
+    lite::Tensor* Out{};
+};
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle
