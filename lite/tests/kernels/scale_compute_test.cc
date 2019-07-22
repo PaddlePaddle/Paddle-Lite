@@ -12,25 +12,34 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/arena/framework.h"
 #include <gtest/gtest.h>
 #include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
+#include "lite/core/arena/framework.h"
 
 namespace paddle {
 namespace lite {
 
 class ScaleComputeTester : public arena::TestCase {
+ protected:
   // common attributes for this op.
   std::string input_ = "x";
   std::string output_ = "out";
-  float scale_ = 1.2f;
-  float bias_ = 0.f;
-  DDim dims_{{3, 2, 10}};
+  float scale_ = 0.;
+  float bias_ = 0.;
+  DDim dims_{{100, 20}};
+  bool bias_after_scale_;
 
  public:
-  explicit ScaleComputeTester(const Place& place, const std::string& alias)
-      : TestCase(place, alias) {}
+  ScaleComputeTester(const Place& place,
+                     const std::string& alias,
+                     float scale,
+                     float bias,
+                     bool bias_after_scale)
+      : TestCase(place, alias),
+        scale_(scale),
+        bias_(bias),
+        bias_after_scale_(bias_after_scale) {}
 
   void RunBaseline(Scope* scope) override {
     auto* out = scope->NewTensor(output_);
@@ -41,8 +50,14 @@ class ScaleComputeTester : public arena::TestCase {
     auto* x = scope->FindTensor(input_);
     const auto* x_data = x->data<float>();
 
+    float bias = bias_;
+
+    if (!bias_after_scale_) {
+      bias *= scale_;
+    }
+
     for (int i = 0; i < dims_.production(); i++) {
-      out_data[i] = x_data[i] * scale_ + bias_;
+      out_data[i] = x_data[i] * scale_ + bias;
     }
   }
 
@@ -52,7 +67,7 @@ class ScaleComputeTester : public arena::TestCase {
     op_desc->SetOutput("Out", {output_});
     op_desc->SetAttr("scale", scale_);
     op_desc->SetAttr("bias", bias_);
-    op_desc->SetAttr("bias_after_scale", false);
+    op_desc->SetAttr("bias_after_scale", bias_after_scale_);
   }
 
   void PrepareData() override {
@@ -66,17 +81,24 @@ class ScaleComputeTester : public arena::TestCase {
   }
 };
 
-TEST(MUL, basic) {
+TEST(Scale, precision) {
 #ifdef LITE_WITH_X86
   Place place(TARGET(kX86));
 #endif
 #ifdef LITE_WITH_ARM
   Place place(TARGET(kARM));
 #endif
-  std::unique_ptr<arena::TestCase> tester(new ScaleComputeTester(place, "def"));
-  arena::Arena arena(std::move(tester), place);
 
-  arena.TestPrecision();
+  for (float scale : {0.123, 2., -1.2}) {
+    for (float bias : {1., 0., -1.2331}) {
+      for (bool bias_before : {true, false}) {
+        std::unique_ptr<arena::TestCase> tester(
+            new ScaleComputeTester(place, "def", scale, bias, bias_before));
+        arena::Arena arena(std::move(tester), place, 2e-5);
+        arena.TestPrecision();
+      }
+    }
+  }
 }
 
 }  // namespace lite
