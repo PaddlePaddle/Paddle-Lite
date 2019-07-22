@@ -368,3 +368,4 @@ TEST(conv2d_transpose_arm, compute) {
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
+USE_LITE_KERNEL(conv2d_transpose, kARM, kFloat, kNCHW, def);

@@ -136,3 +136,4 @@ TEST(argmax_arm, compute) {
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
+USE_LITE_KERNEL(argmax, kARM, kFloat, kNCHW, def);

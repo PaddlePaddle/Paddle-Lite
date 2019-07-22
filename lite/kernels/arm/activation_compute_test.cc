@@ -282,3 +282,10 @@ TEST(swish_activation_arm, compute) {
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
+USE_LITE_KERNEL(relu, kARM, kFloat, kNCHW, def);
+USE_LITE_KERNEL(leaky_relu, kARM, kFloat, kNCHW, def);
+USE_LITE_KERNEL(relu_clipped, kARM, kFloat, kNCHW, def);
+USE_LITE_KERNEL(prelu, kARM, kFloat, kNCHW, def);
+USE_LITE_KERNEL(sigmoid, kARM, kFloat, kNCHW, def);
+USE_LITE_KERNEL(tanh, kARM, kFloat, kNCHW, def);
+USE_LITE_KERNEL(swish, kARM, kFloat, kNCHW, def);

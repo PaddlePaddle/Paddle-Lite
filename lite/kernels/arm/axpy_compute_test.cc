@@ -139,3 +139,4 @@ TEST(axpy_arm, compute) {
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
+USE_LITE_KERNEL(axpy, kARM, kFloat, kNCHW, def);

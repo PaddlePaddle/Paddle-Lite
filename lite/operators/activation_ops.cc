@@ -98,6 +98,7 @@ REGISTER_LITE_OP(prelu, paddle::lite::operators::ActivationOp);
 REGISTER_LITE_OP(sigmoid, paddle::lite::operators::ActivationOp);
 REGISTER_LITE_OP(tanh, paddle::lite::operators::ActivationOp);
 REGISTER_LITE_OP(swish, paddle::lite::operators::ActivationOp);
+REGISTER_LITE_OP(relu6, paddle::lite::operators::ActivationOp);
 
 #ifdef LITE_WITH_TRAIN
 REGISTER_LITE_OP(square_grad, paddle::lite::operators::ActivationGradOp);
