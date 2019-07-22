@@ -146,9 +146,14 @@ void test_activation_compute(
           param->Out = &output;
           if (type == PRELU) {
             Tensor channel_slope;
-            channel_slope.Resize({c});
+            if (param.Prelu_channel_shared) {
+              channel_slope.Resize({c});
+            } else {
+              channel_slope.Resize({1});
+            }
+
             auto* channel_slope_data = channel_slope.mutable_data<float>();
-            for (int j = 0; j < channel_slope.dims().production(); j++) {
+            for (int j = 1; j < channel_slope.dims().production(); j++) {
               float sign = j % 3 == 0 ? -1.0f : 1.0f;
               channel_slope_data[j] =
                   sign * static_cast<float>(j % 128) * 0.013f;
@@ -179,7 +184,6 @@ TEST(activation_arm, retrive_op) {
                                "sigmoid",
                                "tanh",
                                "swish"}) {
-    LOG(INFO) << "test " << activation_name;
     auto activation =
         KernelRegistry::Global().Create<TARGET(kARM), PRECISION(kFloat)>(
             activation_name);
@@ -245,16 +249,6 @@ TEST(relu_clipped_activation_arm, compute) {
   }
 }
 
-TEST(prelu_activation_arm, compute) {
-  PReluCompute activation;
-  operators::ActivationParam param;
-  for (bool flag : {false, true}) {
-    param.Prelu_channel_shared = flag;
-    activation_type type = PRELU;
-    test_activation_compute(&activation, &param, type);
-  }
-}
-
 TEST(sigmoid_activation_arm, compute) {
   SigmoidCompute activation;
   operators::ActivationParam param;
@@ -275,6 +269,16 @@ TEST(swish_activation_arm, compute) {
   for (float coef : {0.01, 0.1}) {
     param.Swish_coef = coef;
     activation_type type = SWISH;
+    test_activation_compute(&activation, &param, type);
+  }
+}
+
+TEST(prelu_activation_arm, compute) {
+  PReluCompute activation;
+  operators::ActivationParam param;
+  for (bool flag : {false, true}) {
+    param.Prelu_channel_shared = flag;
+    activation_type type = PRELU;
     test_activation_compute(&activation, &param, type);
   }
 }
