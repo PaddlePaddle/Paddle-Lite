@@ -24,8 +24,14 @@ void TestCase::CreateInstruction() {
   CHECK(op) << "no op for " << op_desc().Type();
   op->Attach(*op_desc_, inst_scope_);
   auto kernels = op->CreateKernels({place_});
+  // filter out the target kernel
   CHECK(!kernels.empty()) << "No kernel found for place " << place_;
-  instruction_.reset(new Instruction(op, std::move(kernels.front())));
+  auto it = std::remove_if(
+      kernels.begin(), kernels.end(), [&](std::unique_ptr<KernelBase>& k) {
+        return k->alias() == alias_;
+      });
+
+  instruction_.reset(new Instruction(op, std::move(*it)));
 }
 
 void TestCase::PrepareInputsForInstruction() {

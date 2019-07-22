@@ -46,7 +46,7 @@ class ScaleCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
                   param.x->dims().production(),
                   param.scale,
                   param.bias,
-                  param.bias_after_scale);
+                  !param.bias_after_scale);
   }
 
   virtual ~ScaleCompute() = default;

@@ -35,6 +35,14 @@ void RuntimeProgram::SaveOpInfosToProgram(cpp::ProgramDesc* desc) {
   }
 }
 
+void RuntimeProgram::Run() {
+  for (auto& inst : instructions_) {
+    VLOG(4) << ">> Running kernel: " << inst.op()->op_info()->Repr()
+            << " on Target " << TargetToStr(inst.kernel()->target());
+    inst.Run();
+  }
+}
+
 void Program::Build(const cpp::ProgramDesc& prog) {
   CHECK(ops_.empty()) << "Executor duplicate Build found";
 
@@ -77,6 +85,25 @@ void Program::PrepareWorkspace(const cpp::ProgramDesc& prog) {
       if (var_desc.Persistable()) scope_->Var(var_desc.Name());
     }
   }
+}
+
+void Instruction::Run() {
+#ifdef LITE_WITH_PROFILE
+  profile::ProfileBlock x(profile_id_);
+#endif  // LITE_WITH_PROFILE
+  CHECK(op_);
+  CHECK(kernel_);
+  if (first_epoch_) {
+    first_epoch_ = false;
+    CHECK(op_->CheckShape());
+  }
+  op_->InferShape();
+  kernel_->Launch();
+}
+
+std::ostream& operator<<(std::ostream& os, const Instruction& other) {
+  os << other.kernel_->summary() << "\t(" << other.kernel_->doc() << ")";
+  return os;
 }
 
 }  // namespace lite

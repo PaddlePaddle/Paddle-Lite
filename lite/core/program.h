@@ -93,24 +93,10 @@ struct Instruction {
 #endif  // LITE_WITH_PROFILE
   }
 
-  void Run() {
-#ifdef LITE_WITH_PROFILE
-    profile::ProfileBlock x(profile_id_);
-#endif  // LITE_WITH_PROFILE
-    CHECK(op_);
-    CHECK(kernel_);
-    if (first_epoch_) {
-      first_epoch_ = false;
-      CHECK(op_->CheckShape());
-    }
-    op_->InferShape();
-    kernel_->Launch();
-  }
+  /// Run the instruction.
+  void Run();
 
-  friend std::ostream& operator<<(std::ostream& os, const Instruction& other) {
-    os << other.kernel_->summary() << "\t(" << other.kernel_->doc() << ")";
-    return os;
-  }
+  friend std::ostream& operator<<(std::ostream& os, const Instruction& other);
 
   const OpLite* op() const { return op_.get(); }
   const KernelBase* kernel() const { return kernel_.get(); }
@@ -138,13 +124,7 @@ class RuntimeProgram {
     }
   }
 
-  void Run() {
-    for (auto& inst : instructions_) {
-      VLOG(4) << ">> Running kernel: " << inst.op()->op_info()->Repr()
-              << " on Target " << TargetToStr(inst.kernel()->target());
-      inst.Run();
-    }
-  }
+  void Run();
 
   void set_exec_scope(lite::Scope* x) { exec_scope_ = x; }
   lite::Scope* exec_scope() { return exec_scope_; }
