@@ -41,6 +41,7 @@ class OutputPE : public PE {
     } else {
       output->copyFrom(input);
     }
+    fpga_reset();
     return true;
   }
 
