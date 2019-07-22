@@ -33,7 +33,8 @@ namespace arena {
  */
 class TestCase {
  public:
-  explicit TestCase(const Place& place) : place_(place), scope_(new Scope) {}
+  explicit TestCase(const Place& place, const std::string& alias)
+      : place_(place), scope_(new Scope), alias_(alias) {}
 
   void Prepare() {
     PrepareScopes();
@@ -63,7 +64,7 @@ class TestCase {
   /// in two scopes, one of the instruction execution, and the other for the
   /// baseline.
   template <typename T>
-  void CheckPrecision(const std::string& var_name, float abs_error = 1e-6) {
+  void CheckPrecision(const std::string& var_name, float abs_error) {
     auto a_tensor = inst_scope_->FindTensor(var_name);
     auto b_tensor = base_scope_->FindTensor(var_name);
     CHECK(a_tensor);
@@ -123,8 +124,6 @@ class TestCase {
     tensor->Resize(ddim);
     auto* d = tensor->mutable_data<T>();
     memcpy(d, data, ddim.production() * sizeof(T));
-
-    LOG(INFO) << "set shared tensor " << var_name << " " << *tensor;
   }
 
   // Prepare for the operator.
@@ -171,25 +170,33 @@ class TestCase {
   std::unique_ptr<cpp::OpDesc> op_desc_;
   std::unique_ptr<Instruction> instruction_;
   Place place_;
+  std::string alias_;
 };
 
 class Arena {
+  float abs_error_{};
+
  public:
-  Arena(std::unique_ptr<TestCase>&& tester, const Place& place)
-      : tester_(std::move(tester)), place_(place) {
+  Arena(std::unique_ptr<TestCase>&& tester,
+        const Place& place,
+        float abs_error = 1e-5)
+      : tester_(std::move(tester)), place_(place), abs_error_(abs_error) {
     tester_->Prepare();
   }
 
   void TestPrecision() {
+    LOG(INFO) << "Testing precision for " << tester_->op_desc().Type();
     tester_->RunBaseline(tester_->baseline_scope());
     tester_->RunInstruction();
 
     for (auto& out : tester_->op_desc().OutputArgumentNames()) {
       for (auto& var : tester_->op_desc().Output(out)) {
-        LOG(INFO) << "Comparing var " << out << " " << var;
+        LOG(INFO) << "Testing var " << out;
         CompareTensor(out, var);
       }
     }
+
+    LOG(INFO) << "done";
   }
 
   void TestPerformance(int times = 100) {
@@ -207,13 +214,13 @@ class Arena {
 
     switch (type->precision()) {
       case PRECISION(kFloat):
-        tester_->CheckPrecision<float>(var_name);
+        tester_->CheckPrecision<float>(var_name, abs_error_);
         break;
       case PRECISION(kInt8):
-        tester_->CheckPrecision<int8_t>(var_name);
+        tester_->CheckPrecision<int8_t>(var_name, abs_error_);
         break;
       case PRECISION(kInt32):
-        tester_->CheckPrecision<int32_t>(var_name);
+        tester_->CheckPrecision<int32_t>(var_name, abs_error_);
         break;
 
       default:
