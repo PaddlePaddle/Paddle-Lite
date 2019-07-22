@@ -40,9 +40,9 @@ enum class Type {
   _list,
   // enum type
   _enum,
+  _float16,
   // number of types
   __num__,
-  _float16
 };
 
 template <typename T>

@@ -14,10 +14,10 @@ limitations under the License. */
 
 #pragma once
 
-#include "../float16.hpp"
-#include "../pe.hpp"
-#include "../pe_params.hpp"
-#include "conv_process.hpp"
+#include "lite/fpga/KD/float16.hpp"
+#include "lite/fpga/KD/pe.hpp"
+#include "lite/fpga/KD/pe_params.hpp"
+#include "lite/fpga/KD/pes/conv_process.hpp"
 
 namespace paddle {
 namespace zynqmp {
@@ -40,9 +40,7 @@ class DepthwiseConvPE : public PE {
     float* new_scale_data = param_.scale()->data<float>();
     float* new_bias_data = param_.bias()->data<float>();
 
-    // bias从float转换成float16
     float16* b_data = bias_.mutableData<float16>(FP16, param_.bias()->shape());
-    // bias->copyFrom(param_.bias());
     for (int i = 0; i < channel; i++) {
       b_data[i] = float_to_half(new_bias_data[i]);
     }

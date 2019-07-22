@@ -17,8 +17,8 @@ limitations under the License. */
 #include <algorithm>
 #include <vector>
 
-#include "../pe.hpp"
-#include "../pe_params.hpp"
+#include "lite/fpga/KD/pe.hpp"
+#include "lite/fpga/KD/pe_params.hpp"
 
 namespace paddle {
 namespace zynqmp {
@@ -50,7 +50,6 @@ class ConcatPE : public PE {
   }
 
   void concat3D() {
-    // DLOG << "concat3D";
     auto input = param_.inputs;
     Tensor* output = param_.output;
     int axis = param_.axis;

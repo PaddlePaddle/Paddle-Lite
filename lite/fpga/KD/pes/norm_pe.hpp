@@ -17,9 +17,9 @@ limitations under the License. */
 #include <cstring>
 #include <vector>
 
-#include "../float16.hpp"
-#include "../pe.hpp"
-#include "../pe_params.hpp"
+#include "lite/fpga/KD/float16.hpp"
+#include "lite/fpga/KD/pe.hpp"
+#include "lite/fpga/KD/pe_params.hpp"
 
 namespace paddle {
 namespace zynqmp {
@@ -72,7 +72,6 @@ class NormPE : public PE {
     input_float.mutableData<float>(FP32, param_.input->shape());
     float_out.mutableData<float>(FP32, param_.output->shape());
 
-    // param_.input->syncToDevice();
     input_float.copyFrom(param_.input);
     input_float.syncToCPU();
 
@@ -104,14 +103,6 @@ class NormPE : public PE {
 
   bool dispatch() {
     cpuCompute();
-    // param_.input->syncToDevice();
-    // config_norm_param(norm_param_args_);
-    // inplace_args_.normalize_enable = true, config_inplace(inplace_args_);
-
-    // perform_bypass(bypass_args_);
-    // inplace_args_.normalize_enable = false;
-    // config_inplace(inplace_args_);
-    // compute_norm(norm_args_);
     return true;
   }
 

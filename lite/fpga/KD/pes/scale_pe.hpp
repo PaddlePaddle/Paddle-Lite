@@ -14,8 +14,8 @@ limitations under the License. */
 
 #pragma once
 
-#include "../pe.hpp"
-#include "../pe_params.hpp"
+#include "lite/fpga/KD/pe.hpp"
+#include "lite/fpga/KD/pe_params.hpp"
 
 namespace paddle {
 namespace zynqmp {
@@ -64,7 +64,6 @@ class ScalePE : public PE {
         for (int j = 0; j < length; j++) {
           float16 value = float_to_half(bias_data_float[j]);
           bias_data[i * length + j] = value;
-          // bias_data[i * length + j] = float_to_half(1.0f);
         }
       }
     } else {

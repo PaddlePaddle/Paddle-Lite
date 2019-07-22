@@ -16,8 +16,8 @@ limitations under the License. */
 
 #include <vector>
 
-#include "../pe.hpp"
-#include "../pe_params.hpp"
+#include "lite/fpga/KD/pe.hpp"
+#include "lite/fpga/KD/pe_params.hpp"
 namespace paddle {
 namespace zynqmp {
 
@@ -53,23 +53,11 @@ class SplitPE : public PE {
     int64_t src_after = src_stride_numel[axis];
     int64_t dst_after = dst_stride_numel[axis];
 
-    // PADDLE_MOBILE_ENFORCE(src_stride_numel.size() == dst_stride_numel.size(),
-    //                       "src and dst tensor should have the same dims
-    //                       size.");
-
     for (int64_t i = 0; i < axis; ++i) {
       if (i < axis) {
-        // PADDLE_MOBILE_ENFORCE(src_stride_numel[i] / src_stride_numel[axis] ==
-        //                           dst_stride_numel[i] /
-        //                           dst_stride_numel[axis],
-        //                       "src and dst should have the same elements "
-        //                       "except the specified axis.");
       } else if (i == axis) {
         continue;
       } else {
-        // PADDLE_MOBILE_ENFORCE(src_stride_numel[i] == dst_stride_numel[i],
-        //                       "src and dst should have the same elements "
-        //                       "except the specified axis.");
       }
     }
 
@@ -78,12 +66,7 @@ class SplitPE : public PE {
     }
   }
 
-  void split3D() {
-    int axis = param_.axis;
-    // float16* dst = param_.output->data<float16>();
-    // std::vector<int>& dst_dims = ;
-    // StridedNumelCopyWithAxis();
-  }
+  void split3D() { int axis = param_.axis; }
 
   bool dispatch() {
     Tensor* input = param_.input;
@@ -105,7 +88,6 @@ class SplitPE : public PE {
                                           in_stride,
                                           out_stride[axis]);
         input_offset += out_stride[axis];
-        // out->flush();
       }
       return true;
     }
@@ -128,7 +110,6 @@ class SplitPE : public PE {
     }
     for (int n = 0; n < outputs.size(); n++) {
       Tensor* out = outputs[n];
-      // out->flush();
       out->copyScaleFrom(input);
     }
     return true;

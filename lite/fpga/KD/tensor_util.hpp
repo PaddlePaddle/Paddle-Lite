@@ -16,7 +16,7 @@ limitations under the License. */
 
 #include <stdio.h>
 
-#include "tensor.hpp"
+#include "lite/fpga/KD/tensor.hpp"
 
 namespace paddle {
 namespace zynqmp {

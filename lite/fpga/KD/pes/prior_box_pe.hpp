@@ -14,8 +14,8 @@ limitations under the License. */
 
 #pragma once
 
-#include "../pe.hpp"
-#include "../pe_params.hpp"
+#include "lite/fpga/KD/pe.hpp"
+#include "lite/fpga/KD/pe_params.hpp"
 namespace paddle {
 namespace zynqmp {
 

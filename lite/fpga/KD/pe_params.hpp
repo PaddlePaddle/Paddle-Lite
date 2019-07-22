@@ -14,14 +14,11 @@ limitations under the License. */
 
 #pragma once
 
-#ifndef PEParams_hpp
-#define PEParams_hpp
-
 #include <stdio.h>
 #include <vector>
 
-#include "llapi/zynqmp_api.h"
-#include "tensor.hpp"
+#include "lite/fpga/KD/llapi/zynqmp_api.h"
+#include "lite/fpga/KD/tensor.hpp"
 
 namespace paddle {
 namespace zynqmp {
@@ -234,5 +231,3 @@ struct CropParam : PEParam {
 };
 }  // namespace zynqmp
 }  // namespace paddle
-
-#endif /* PEParams_hpp */

@@ -14,8 +14,8 @@ limitations under the License. */
 
 #pragma once
 
-#include "../pe.hpp"
-#include "../pe_params.hpp"
+#include "lite/fpga/KD/pe.hpp"
+#include "lite/fpga/KD/pe_params.hpp"
 namespace paddle {
 namespace zynqmp {
 
@@ -29,7 +29,6 @@ class InputPE : public PE {
   }
 
   bool dispatch() {
-    // std::cout << "InputPE dispatch \n";
     Tensor* input = param_.input;
     Tensor* output = param_.output;
 

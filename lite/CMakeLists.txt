@@ -40,7 +40,7 @@ endfunction()
 function (lite_deps TARGET)
   set(options "")
   set(oneValueArgs "")
-  set(multiValueArgs DEPS X86_DEPS CUDA_DEPS ARM_DEPS PROFILE_DEPS LIGHT_DEPS HVY_DEPS CL_DEPS ARGS)
+  set(multiValueArgs DEPS X86_DEPS CUDA_DEPS ARM_DEPS PROFILE_DEPS LIGHT_DEPS HVY_DEPS CL_DEPS FPGA_DEPS ARGS)
   cmake_parse_arguments(lite_deps "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
   set(deps ${lite_deps_DEPS})
@@ -83,6 +83,12 @@ function (lite_deps TARGET)
 
   if (LITE_WITH_OPENCL)
     foreach(var ${lite_deps_CL_DEPS})
+      set(deps ${deps} ${var})
+    endforeach(var)
+  endif()
+
+  if (LITE_WITH_FPGA)
+    foreach(var ${lite_deps_FPGA_DEPS})
       set(deps ${deps} ${var})
     endforeach(var)
   endif()
@@ -158,7 +164,7 @@ endfunction()
 function(lite_cc_binary TARGET)
     set(options "")
     set(oneValueArgs "")
-    set(multiValueArgs SRCS DEPS X86_DEPS CUDA_DEPS CL_DEPS ARM_DEPS PROFILE_DEPS
+    set(multiValueArgs SRCS DEPS X86_DEPS CUDA_DEPS CL_DEPS ARM_DEPS FPGA_DEPS PROFILE_DEPS
       LIGHT_DEPS HVY_DEPS EXCLUDE_COMPILE_DEPS ARGS)
     cmake_parse_arguments(args "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
@@ -169,6 +175,7 @@ function(lite_cc_binary TARGET)
             CUDA_DEPS ${args_CUDA_DEPS}
             CL_DEPS ${args_CL_DEPS}
             ARM_DEPS ${args_ARM_DEPS}
+            FPGA_DEPS ${args_FPGA_DEPS}
             PROFILE_DEPS ${args_PROFILE_DEPS}
             LIGHT_DEPS ${args_LIGHT_DEPS}
             HVY_DEPS ${args_HVY_DEPS}
@@ -192,7 +199,7 @@ function(lite_cc_test TARGET)
     endif()
     set(options "")
     set(oneValueArgs "")
-    set(multiValueArgs SRCS DEPS X86_DEPS CUDA_DEPS CL_DEPS ARM_DEPS PROFILE_DEPS
+    set(multiValueArgs SRCS DEPS X86_DEPS CUDA_DEPS CL_DEPS ARM_DEPS FPGA_DEPS PROFILE_DEPS
         LIGHT_DEPS HVY_DEPS EXCLUDE_COMPILE_DEPS
         ARGS)
     cmake_parse_arguments(args "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
@@ -204,6 +211,7 @@ function(lite_cc_test TARGET)
               CUDA_DEPS ${args_CUDA_DEPS}
               CL_DEPS ${args_CL_DEPS}
               ARM_DEPS ${args_ARM_DEPS}
+              FPGA_DEPS ${args_FPGA_DEPS}
               PROFILE_DEPS ${args_PROFILE_DEPS}
               LIGHT_DEPS ${args_LIGHT_DEPS}
               HVY_DEPS ${args_HVY_DEPS}
@@ -218,6 +226,7 @@ function(lite_cc_test TARGET)
     endif()
 endfunction()
 
+include_directories(${PADDLE_SOURCE_DIR}/lite)
 add_subdirectory(operators)
 add_subdirectory(kernels)
 add_subdirectory(core)
@@ -226,6 +235,7 @@ add_subdirectory(arm)
 add_subdirectory(host)
 add_subdirectory(cuda)
 add_subdirectory(opencl)
+add_subdirectory(fpga)
 add_subdirectory(model_parser)
 add_subdirectory(utils)
 add_subdirectory(api)

@@ -17,9 +17,9 @@ limitations under the License. */
 #include <fstream>
 #include <iostream>
 
-#include "../pe.hpp"
-#include "../pe_params.hpp"
-#include "scale_pe.hpp"
+#include "lite/fpga/KD/pe.hpp"
+#include "lite/fpga/KD/pe_params.hpp"
+#include "lite/fpga/KD/pes/scale_pe.hpp"
 
 namespace paddle {
 namespace zynqmp {
@@ -76,13 +76,7 @@ class BatchnormPE : public PE {
     return true;
   }
 
-  void apply() {
-    scalePE_.apply();
-    // delete param_.scale;
-    // delete param_.bias;
-    // param_.scale = nullptr;
-    // param_.bias = nullptr;
-  }
+  void apply() { scalePE_.apply(); }
 
   bool dispatch() {
     if (inplace_.relu_enable) {
@@ -90,7 +84,6 @@ class BatchnormPE : public PE {
     }
     bool ret = scalePE_.dispatch();
 
-    // bool ret = cpu_compute();
     inplace_.relu_enable = false;
     config_inplace(inplace_);
     return ret;

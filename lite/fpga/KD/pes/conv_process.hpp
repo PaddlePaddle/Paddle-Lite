@@ -14,17 +14,14 @@ limitations under the License. */
 
 #pragma once
 
-#ifndef conv_process_hpp
-#define conv_process_hpp
-
 #include <string.h>
 #include <cmath>
 #include <vector>
 
-#include "../float16.hpp"
-#include "../llapi/bias_scale.h"
-#include "../llapi/filter.h"
-#include "../tensor.hpp"
+#include "lite/fpga/KD/float16.hpp"
+#include "lite/fpga/KD/llapi/bias_scale.h"
+#include "lite/fpga/KD/llapi/filter.h"
+#include "lite/fpga/KD/tensor.hpp"
 
 namespace paddle {
 namespace zynqmp {
@@ -195,9 +192,6 @@ inline void format_fc_filter(Tensor* filter, Tensor* quantized_filter) {
   size_t memory_size = filter->shape().memorySize(sizeof(float));
   auto new_data = (float*)fpga_malloc(memory_size);  // NOLINT
   memcpy(new_data, filter->data<float>(), memory_size);
-  // filter::format_fc_filter(&new_data, filter_shape.num(),
-  //                          filter_shape.channel(), filter_shape.height(),
-  //                          filter_shape.width(), 1, max_value);
 
   int8_t* src = quantized_filter->mutableData<int8_t>(INT8, filter->shape());
   memcpy(src, new_data, quantized_filter->shape().memorySize(sizeof(int8_t)));
@@ -343,9 +337,6 @@ inline void split_channel(const ConvParam& c_param) {
 
     Tensor bias;
     Tensor scale;
-    // bias.shareDataWith(param.bias(), bs_shape, i * channel);
-
-    // param.bias()->saveToFile("param.bias.txt");
 
     float* bias_data = bias.mutableData<float>(FP32, bs_shape);
     float* scale_data = scale.mutableData<float>(FP32, bs_shape);
@@ -355,17 +346,12 @@ inline void split_channel(const ConvParam& c_param) {
     }
     scale.flush();
     bias.flush();
-    // bias.saveToFile("bias.txt");
-    // new_filter.saveToFile("new_filter.txt");
-
-    // Shape sb_shape(N, {2 * channel});
     format_scale_bias(&scale,
                       &bias,
                       &conv_param->filter,
                       &conv_param->scaleBias,
                       param.groups);
     conv_param->scaleBias.flush();
-    // conv_param->scaleBias.saveToFile("sb.txt");
 
     ConvArgs& args = conv_param->args;
     args.group_num = param.groups;
@@ -379,8 +365,6 @@ inline void split_channel(const ConvParam& c_param) {
     args.filter_address = conv_param->filter.data<int8_t>();
     args.filter_num = f_shape.num();
     args.filter_scale_address = conv_param->filter.scale();
-    // std::cout << "filter_scale:\n" ;
-    // conv_param->filter.printScale();
     args.image.address = conv_param->input.mutableData<void>();
     args.image.scale_address = conv_param->input.scale();
 
@@ -407,7 +391,6 @@ inline int fill_split_arg(const ConvParam& c_param) {
     split_filter_num(c_param);
     return 0;
   }
-  // split_filter_num(c_param);
 }
 
 inline bool compute_conv(const ConvParam& c_conv_params) {
@@ -419,7 +402,6 @@ inline bool compute_conv(const ConvParam& c_conv_params) {
   }
   size_t size = params.size();
   if (ret == 0 && size > 1) {
-    // Tensor* output = conv_params.output;
     Tensor& img = params[0]->output;
     for (int i = 0; i < 1; i++) {
       for (int i = 0; i < img.shape().numel(); i++) {
@@ -433,5 +415,3 @@ inline bool compute_conv(const ConvParam& c_conv_params) {
 
 }  // namespace zynqmp
 }  // namespace paddle
-
-#endif /* conv_process_hpp */

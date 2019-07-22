@@ -14,18 +14,15 @@ limitations under the License. */
 
 #pragma once
 
-#ifndef Context_hpp
-#define Context_hpp
-
 #include <stdio.h>
-#include "pe.hpp"
-#include "pes/conv_pe.hpp"
-#include "pes/depthwise_conv_pe.hpp"
-#include "pes/fully_connected_pe.hpp"
-#include "pes/input_pe.hpp"
-#include "pes/output_pe.hpp"
-#include "pes/pooling_pe.hpp"
-#include "pes/softmax_pe.hpp"
+#include "lite/fpga/KD/pe.hpp"
+#include "lite/fpga/KD/pes/conv_pe.hpp"
+#include "lite/fpga/KD/pes/depthwise_conv_pe.hpp"
+#include "lite/fpga/KD/pes/fully_connected_pe.hpp"
+#include "lite/fpga/KD/pes/input_pe.hpp"
+#include "lite/fpga/KD/pes/output_pe.hpp"
+#include "lite/fpga/KD/pes/pooling_pe.hpp"
+#include "lite/fpga/KD/pes/softmax_pe.hpp"
 
 namespace paddle {
 namespace zynqmp {
@@ -51,5 +48,3 @@ class Context {
 };
 }  // namespace zynqmp
 }  // namespace paddle
-
-#endif /* Context_hpp */

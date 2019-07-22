@@ -24,11 +24,10 @@ limitations under the License. */
 #include <string>
 #include <vector>
 
-#include "common/log.h"
-#include "dl_engine.hpp"
-#include "float16.hpp"
-#include "llapi/zynqmp_api.h"
-#include "shape.hpp"
+#include "lite/fpga/KD/dl_engine.hpp"
+#include "lite/fpga/KD/float16.hpp"
+#include "lite/fpga/KD/llapi/zynqmp_api.h"
+#include "lite/fpga/KD/shape.hpp"
 
 namespace paddle {
 namespace zynqmp {
@@ -75,10 +74,7 @@ class PlaceHolder {
 
   size_t memorySize() { return size_; }
 
-  ~PlaceHolder() {
-    //    std::cout << "place holder dealloc";
-    fpga_free(data_);
-  }
+  ~PlaceHolder() { fpga_free(data_); }
 
   float scale_[2];
 
@@ -123,7 +119,6 @@ class Tensor {
     } else {
       placeHolder_.reset(new PlaceHolder(memorySize));
     }
-    // return reinterpret_cast<Dtype*>(placeHolder_->data());
     return data<Dtype>();
   }
 
@@ -132,7 +127,6 @@ class Tensor {
       return 0;
     }
     return placeHolder_->memorySize();
-    // return shape_->memorySize(CellSize(dataType_));
   }
 
   void setDataType(DataType dataType) { this->dataType_ = dataType; }
@@ -204,7 +198,6 @@ class Tensor {
       return;
     }
     target->syncToCPU();
-    // target->aligned_ = false;
     if (shape_->shouldAlign()) {
       int cell_size = CellSize(this->dataType_);
       char* dst_data = nullptr;
@@ -332,19 +325,12 @@ class Tensor {
 
   void setDataLocation(DataSyncStatus location) { dateLocation_ = location; }
 
-  void print() {
-    //    int count = shape_->numel();
-    //    for (int i = 0; i < count; i++) {
-    //      std::cout << "" << '\n';
-    //    }
-  }
+  void print() {}
 
   void printScale() {
     if (placeHolder_ == nullptr) {
       return;
     }
-    DLOG << "scale:" << placeHolder_->scale_[0]
-         << " inv:" << placeHolder_->scale_[1];
   }
 
   std::string dimsFileName() {
@@ -354,11 +340,7 @@ class Tensor {
            std::to_string(shape_->width()) + ".txt";
   }
 
-  void saveToFile() {
-    // std::string path = std::to_string(id_) + ".txt";
-    std::string path = dimsFileName();
-    // saveToFile(path);
-  }
+  void saveToFile() { std::string path = dimsFileName(); }
 
   void saveToFile(std::string prefix, bool with_shape) {
     std::string path = prefix;
@@ -401,7 +383,6 @@ class Tensor {
     std::ifstream file_stream;
     file_stream.open(path);
     if (!file_stream) {
-      // std::cout << "file: " << path << " does not exist\n";
       return;
     }
     int num = shape_->numel();
@@ -417,7 +398,6 @@ class Tensor {
     flush();
     placeHolder_->scale_[0] = max / 127.0f;
     placeHolder_->scale_[1] = 127.0f / max;
-    DLOG << "\ttensor file " << path << " loaded!";
   }
 
   ~Tensor() {

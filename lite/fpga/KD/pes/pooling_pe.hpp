@@ -16,8 +16,8 @@ limitations under the License. */
 
 #include <algorithm>
 
-#include "../pe.hpp"
-#include "../pe_params.hpp"
+#include "lite/fpga/KD/pe.hpp"
+#include "lite/fpga/KD/pe_params.hpp"
 
 namespace paddle {
 namespace zynqmp {
@@ -65,8 +65,6 @@ class PoolingPE : public PE {
 
     use_cpu_ = output->shape().width() == 1 && output->shape().height() == 1 &&
                (k_width > 7 || k_height > 7);
-
-    // use_cpu_ = param_.type == AVERAGE;
   }
 
   void compute() {
@@ -75,7 +73,6 @@ class PoolingPE : public PE {
     input->syncToCPU();
 
     Tensor float_input;
-    // Tensor float_output;
     float* image_addr = float_input.mutableData<float>(FP32, input->shape());
     float_input.copyFrom(input);
     float16* data_out = output->data<float16>();
@@ -110,8 +107,6 @@ class PoolingPE : public PE {
         for (int c = 0; c < image_channels; ++c) {
           const int pool_index = (ph * pooled_width_ + pw) * image_channels + c;
           float sum = 0;
-          // const int index =
-          //     (hstart * image_width + wstart) * image_channels + c;
           for (int h = hstart; h < hend; ++h) {
             for (int w = wstart; w < wend; ++w) {
               const int index = (h * image_width + w) * image_channels + c;
@@ -138,7 +133,6 @@ class PoolingPE : public PE {
     input->syncToCPU();
 
     Tensor float_input;
-    // Tensor float_output;
     float_input.mutableData<float>(FP32, input->shape());
     float_input.copyFrom(input);
     float16* data_out = output->data<float16>();
@@ -150,7 +144,6 @@ class PoolingPE : public PE {
       float sum = 0;
       for (int j = 0; j < kernel_hw; j++) {
         float value = half_to_float(input->data<float16>()[i * kernel_hw + j]);
-        // max = std::max(max, value);
         sum += value;
       }
       float value = sum / kernel_hw;
@@ -161,12 +154,10 @@ class PoolingPE : public PE {
     output->scale()[1] = 127.0f / scale_max;
     std::cout << "pool scale:" << scale_max / 127.0f << std::endl;
     output->flush();
-    // exit(-1);
   }
 
   bool dispatch() {
     if (use_cpu_) {
-      // cpu_compute();
       compute();
       return true;
     }

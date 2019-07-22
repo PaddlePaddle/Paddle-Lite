@@ -18,7 +18,7 @@ limitations under the License. */
 #include <algorithm>
 #include <vector>
 
-#include "prior_box_pe.hpp"
+#include "lite/fpga/KD/pes/prior_box_pe.hpp"
 
 namespace paddle {
 namespace zynqmp {
@@ -86,7 +86,6 @@ void PriorBoxPE::compute_prior_box() {
 
   const auto &min_sizes = param.minSizes;
   const auto &max_sizes = param.maxSizes;
-  // const auto &variances = param.variances;
   const auto &input_aspect_ratio = param.aspectRatios;
   const bool &flip = param.flip;
   const bool &clip = param.clip;
@@ -121,7 +120,6 @@ void PriorBoxPE::compute_prior_box() {
 
   float step_width = step_w;
   float step_height = step_h;
-  /// 300 / 19
   if (step_w == 0 || step_h == 0) {
     step_width = static_cast<float>(img_width) / feature_width;
     step_height = static_cast<float>(img_height) / feature_height;
@@ -176,8 +174,6 @@ void PriorBoxPE::compute_prior_box() {
             }
             box_width = min_size * sqrt(ar) / 2.;
             box_height = min_size / sqrt(ar) / 2.;
-            /// box_width/2 , / img_width 为了得到feature map 相对于
-            /// 原图的归一化位置的比例。
             output_boxes_dataptr[h * stride0 + w * stride1 + idx * stride2 +
                                  0] = (center_x - box_width) / img_width;
             output_boxes_dataptr[h * stride0 + w * stride1 + idx * stride2 +
@@ -195,8 +191,6 @@ void PriorBoxPE::compute_prior_box() {
           for (float ar : aspect_ratios) {
             box_width = min_size * sqrt(ar) / 2.;
             box_height = min_size / sqrt(ar) / 2.;
-            /// box_width/2 , / img_width 为了得到feature map 相对于
-            /// 原图的归一化位置的比例。
             output_boxes_dataptr[h * stride0 + w * stride1 + idx * stride2 +
                                  0] = (center_x - box_width) / img_width;
             output_boxes_dataptr[h * stride0 + w * stride1 + idx * stride2 +
@@ -226,21 +220,14 @@ void PriorBoxPE::compute_prior_box() {
     }
   }
   if (clip) {
-    // Transform trans;
-    // ClipFunctor<float> clip_func;
-    // trans(output_boxes_dataptr,
-    //       output_boxes_dataptr + output_boxes->shape().numel(),
-    //       output_boxes_dataptr, clip_func);
     for (int i = 0; i < output_boxes->shape().numel(); i++) {
       float value = output_boxes_dataptr[i];
       value = std::min(std::max(0.0f, value), 1.0f);
       output_boxes_dataptr[i] = value;
-      // std::cout << value << std::endl;
     }
   }
 
   if ((param.variances.size() != 4)) {
-    // LOG(kLOG_ERROR) << " variances.size() must be 4.";
     // TODO(chonwhite) throw error;
   }
 
@@ -255,12 +242,9 @@ void PriorBoxPE::compute_prior_box() {
 
   boxes.flush();
   boxes.syncToCPU();
-  // boxes.saveToFile("boxes.txt");
   variances.flush();
   output_boxes->copyFrom(&boxes);
-  // output_boxes->saveToFile("output_boxes.txt");
   output_variances->copyFrom(&variances);
-  // exit(-1);
 }
 
 void PriorBoxPE::apply() {}
@@ -277,12 +261,8 @@ bool PriorBoxPE::dispatch() {
     compute_prior_box();
   }
 
-  // cachedBoxes_->saveToFile("cached_box.txt");
-  // cachedVariances_->saveToFile("cachedVariances.txt");
-
   param_.outputBoxes->copyFrom(this->cachedBoxes_);
 
-  // param_.outputBoxes->flush();
   param_.outputVariances->copyFrom(this->cachedVariances_);
   param_.outputBoxes->flush();
   param_.outputBoxes->syncToCPU();

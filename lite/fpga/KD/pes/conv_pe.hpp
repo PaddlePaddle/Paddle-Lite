@@ -17,13 +17,13 @@ limitations under the License. */
 #include <arm_neon.h>
 #include <vector>
 
-#include "../pe.hpp"
-#include "../pe_params.hpp"
-#include "concat_pe.hpp"
-#include "conv_pe.hpp"
-#include "conv_process.hpp"
-#include "elementwise_add_pe.hpp"
-#include "scale_pe.hpp"
+#include "lite/fpga/KD/pe.hpp"
+#include "lite/fpga/KD/pe_params.hpp"
+#include "lite/fpga/KD/pes/concat_pe.hpp"
+#include "lite/fpga/KD/pes/conv_pe.hpp"
+#include "lite/fpga/KD/pes/conv_process.hpp"
+#include "lite/fpga/KD/pes/elementwise_add_pe.hpp"
+#include "lite/fpga/KD/pes/scale_pe.hpp"
 
 namespace paddle {
 namespace zynqmp {
@@ -59,7 +59,6 @@ class ConvPE : public PE {
     Tensor float_output;
     float* image_addr = float_input.mutableData<float>(FP32, input->shape());
     float_input.copyFrom(input);
-    // float16* data_out = output->data<float16>();
     float* out = float_output.mutableData<float>(FP32, output->shape());
 
     int out_channel = output->shape().channel();
@@ -74,16 +73,6 @@ class ConvPE : public PE {
       float* out_ptr = mi;
 #pragma omp parallel for
       for (int j = 0; j < in_channel; j++) {
-        // float32x4_t x0 = vld1q_f32(image);
-        // float32x4_t x1 = vld1q_f32(filter_ptr);
-
-        // float32x4_t r = vmulq_f32(x0, x1);
-
-        // vst1q_f32(out_ptr, r);
-        // image += 4;
-        // filter_ptr += 4;
-        // out_ptr += 4;
-
         float value = image_addr[j] * filter_ptr[j];
         mi[j] = value;
       }
@@ -100,13 +89,6 @@ class ConvPE : public PE {
   }
 
   bool dispatch() {
-    // if (param_.input->shape().dimSize() == 4 && param_.input->shape().width()
-    // == 1 &&
-    //     param_.input->shape().channel() < 2048) {
-    //   cpu_compute();
-    //   return true;
-    // }
-
     inplace_.relu_enable = param_.relu.enabled;
     inplace_.power_enable = false;
     inplace_.normalize_enable = false;
@@ -119,7 +101,6 @@ class ConvPE : public PE {
     std::vector<BasicConvParam*>& params = param_.splitParams();
     int ret = 0;
     for (auto conv_param : params) {
-      // conv_param->input.printScale();
       ret |= compute_fpga_conv_basic(conv_param->args);
     }
 
@@ -130,27 +111,15 @@ class ConvPE : public PE {
 
     size_t size = params.size();
     if (split_axis == 0 && ret == 0 && size > 1) {
-      // std::cout << "concat size:" << size << std::endl;
       concatPE_.dispatch();
     }
     if (split_axis == 1 && ret == 0 && size > 1) {
-      // for (int n = 0; n < size - 1; n++) {
       ElementwiseAddParam& add_param = addPE_.param();
       add_param.inputs = {&params[0]->output, &params[1]->output};
       add_param.output = param_.output;
       addPE_.init();
       addPE_.apply();
       addPE_.dispatch();
-
-      // param_.output->printScale();
-
-      // params[0]->input.saveToFile("conv_1.txt");
-      // params[1]->input.saveToFile("conv_2.txt");
-
-      // params[0]->output.saveToFile("ew_o1.txt");
-      // params[1]->output.saveToFile("ew_o2.txt");
-      // std::cout << "\n ================== EW ================== \n";
-      // }
     }
     return ret == 0;
   }

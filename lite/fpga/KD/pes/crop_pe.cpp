@@ -12,7 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#include "crop_pe.hpp"
+#include "lite/fpga/KD/pes/crop_pe.hpp"
 
 #include <vector>
 
@@ -21,7 +21,6 @@ namespace zynqmp {
 
 bool CropPE::dispatch() {
   Tensor* input = param_.input;
-  // input->invalidate();
   input->syncToCPU();
   const auto axis = param_.axis;
   std::vector<int> shape = param_.shape;
@@ -34,8 +33,6 @@ bool CropPE::dispatch() {
 
   std::vector<int> offsets = param_.offsets;
 
-  // FPGA使用的是hwc保存数据，上一层来着fpga，则数据格式hwc
-  // half。dims实际数据还是chw
   int input_c = input->shape().channel();
   int input_h = input->shape().height();
   int input_w = input->shape().width();

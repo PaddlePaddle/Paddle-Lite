@@ -112,6 +112,7 @@ template <>
 class Context<TargetType::kFPGA> {
  public:
   Context() {}
+  void InitOnce() {}
 
   FPGAContext& operator=(const FPGAContext& ctx) {}
 

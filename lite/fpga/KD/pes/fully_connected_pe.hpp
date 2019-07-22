@@ -16,9 +16,9 @@ limitations under the License. */
 
 #include <vector>
 
-#include "../pe.hpp"
-#include "../pe_params.hpp"
-#include "conv_process.hpp"
+#include "lite/fpga/KD/conv_process.hpp"
+#include "lite/fpga/KD/pe.hpp"
+#include "lite/fpga/KD/pe_params.hpp"
 
 namespace paddle {
 namespace zynqmp {
@@ -37,7 +37,6 @@ class FullyConnectedPE : public PE {
     Tensor* input = param_.input;
     convParam_.input = param_.input;
     convParam_.output = param_.output;
-    // convParam_.relu = param_.relu;
     convParam_.groups = 1;
     convParam_.strides = {1, 1};
     convParam_.paddings = {0, 0};
@@ -88,7 +87,6 @@ class FullyConnectedPE : public PE {
 
  private:
   FullyConnectedParam param_;
-  // ConvParam convParam_;
   ConvPE convPE_;
 };
 }  // namespace zynqmp

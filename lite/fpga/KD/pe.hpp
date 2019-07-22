@@ -14,13 +14,10 @@ limitations under the License. */
 
 #pragma once
 
-#ifndef PE_hpp
-#define PE_hpp
-
 #include <stdio.h>
 #include <iostream>
-#include "pe_params.hpp"
-#include "tensor_util.hpp"
+#include "lite/fpga/KD/pe_params.hpp"
+#include "lite/fpga/KD/tensor_util.hpp"
 
 namespace paddle {
 namespace zynqmp {
@@ -31,15 +28,10 @@ class PE {
 
   virtual void apply() {}
 
-  virtual bool dispatch() {
-    std::cout << "pe dispatch \n";
-    return false;
-  }
+  virtual bool dispatch() { return false; }
 
   virtual ~PE() {}
 };
 
 }  // namespace zynqmp
 }  // namespace paddle
-
-#endif /* PE_hpp */

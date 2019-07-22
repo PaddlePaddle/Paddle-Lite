@@ -14,8 +14,8 @@ limitations under the License. */
 
 #pragma once
 
-#include "../pe.hpp"
-#include "../pe_params.hpp"
+#include "lite/fpga/KD/pe.hpp"
+#include "lite/fpga/KD/pe_params.hpp"
 
 namespace paddle {
 namespace zynqmp {
@@ -58,27 +58,6 @@ class ResizePE : public PE {
   }
 
   void compute_scale(Tensor* src, float* scale) {
-    // float ss[2];
-    // Tensor dst;
-    // dst.mutableData<float16>(FP16, src->shape());
-    // BypassArgs args_;
-    // args_.input_data_type = DATA_TYPE_FP16;
-    // args_.output_data_type = DATA_TYPE_FP16;
-    // args_.input_layout_type = LAYOUT_HWC;
-    // args_.output_layout_type = LAYOUT_HWC;
-    // args_.image = {.address = src->data<void>(),
-    //                .scale_address = src->scale(),
-    //                .channels = (uint32_t)src->shape().channel(),
-    //                .width = (uint32_t)src->shape().width(),
-    //                .height = (uint32_t)src->shape().height(),
-    //                .pad_width = 0u,
-    //                .pad_height = 0u};
-    // args_.output = {
-    //     .address = dst.data<void>(),
-    //     .scale_address = ss,
-    // };
-    // perform_bypass(args_);
-    // std::cout << "ss" << ss[0] << std::endl;
     float16* data = src->data<float16>();
     src->invalidate();
     float max = 0;
@@ -97,8 +76,6 @@ class ResizePE : public PE {
 
   bool dispatch() {
     bool ret = compute_fpga_resize(args_) == 0;
-    // compute_scale(param_.output, param_.output->scale());
-    // return ret;
     return true;
   }
 

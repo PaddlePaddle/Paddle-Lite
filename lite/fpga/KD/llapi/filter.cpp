@@ -185,8 +185,6 @@ size_t interleave(char **data_in, int num_after_alignment, int chw) {
   char *data_tmp =
       (char *)fpga_malloc(chw_align * num_after_alignment *  // NOLINT
                           sizeof(char));
-  //  std::cout << "interleave size:" << chw_align * num_after_alignment
-  //            << std::endl;
   char *tmp = *data_in;
   int interleave_num = chw_align * 2 / interleave_per_num;
   for (i = 0; i < num_after_alignment; i += 2) {

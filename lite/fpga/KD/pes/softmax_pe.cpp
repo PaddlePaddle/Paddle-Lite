@@ -12,7 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#include "softmax_pe.hpp"
+#include "lite/fpga/KD/pes/softmax_pe.hpp"
 
 #include <vector>
 
@@ -140,14 +140,12 @@ bool SoftmaxPE::init() {
 bool SoftmaxPE::dispatch() {
   Tensor *input = param_.input;
   Tensor *output = param_.output;
-  // input->invalidate();
   input->syncToCPU();
 
   Tensor float_input;
   Tensor float_output;
   float_input.mutableData<float>(DataType::FP32, input->shape());
   float_input.copyFrom(input);
-  // float_input.unalignImage();
 
   float *out_data =
       float_output.mutableData<float>(DataType::FP32, input->shape());

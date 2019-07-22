@@ -20,11 +20,11 @@ limitations under the License. */
 
 #if defined(__ARM_NEON) || defined(__ARM_NEON__)
 #include <arm_neon.h>
-#include "fpga/KD/pes/math_func_neon.h"
+#include "lite/fpga/KD/pes/math_func_neon.h"
 #endif
 
-#include "../pe.hpp"
-#include "../pe_params.hpp"
+#include "lite/fpga/KD/pe.hpp"
+#include "lite/fpga/KD/pe_params.hpp"
 
 namespace paddle {
 namespace zynqmp {

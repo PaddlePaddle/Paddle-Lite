@@ -13,13 +13,9 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #pragma once
-
-#ifndef alignment_h
-#define alignment_h
-
 #include <stdio.h>
 
-#include "llapi/zynqmp_api.h"
+#include "lite/fpga/KD/llapi/zynqmp_api.h"
 
 namespace paddle {
 namespace zynqmp {
@@ -28,5 +24,3 @@ inline int align_image(int wc) { return align_to_x(wc, IMAGE_ALIGNMENT); }
 
 }  // namespace zynqmp
 }  // namespace paddle
-
-#endif /* alignment_h */

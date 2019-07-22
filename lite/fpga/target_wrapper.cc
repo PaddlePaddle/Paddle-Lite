@@ -15,18 +15,16 @@
 #include "lite/core/target_wrapper.h"
 #include "lite/fpga/KD/llapi/zynqmp_api.h"
 #include "lite/utils/all.h"
+#ifdef LITE_WITH_FPGA
 namespace paddle {
 namespace lite {
 
-template <>
 void* TargetWrapper<TARGET(kFPGA)>::Malloc(size_t size) {
   return zynqmp::fpga_malloc(size);
 }
-template <>
-void TargetWrapper<TARGET(kFPGA)>::Free(void* ptr) {
-  zynqmp::fpga_free(ptr);
-}
-template <>
+
+void TargetWrapper<TARGET(kFPGA)>::Free(void* ptr) { zynqmp::fpga_free(ptr); }
+
 void TargetWrapper<TARGET(kFPGA)>::MemcpySync(void* dst,
                                               const void* src,
                                               size_t size,
@@ -34,7 +32,6 @@ void TargetWrapper<TARGET(kFPGA)>::MemcpySync(void* dst,
   memcpy(dst, src, size);
 }
 
-template class TargetWrapper<TARGET(kFPGA)>;
-
 }  // namespace lite
 }  // namespace paddle
+#endif
