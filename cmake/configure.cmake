@@ -180,6 +180,10 @@ if (LITE_WITH_OPENCL)
     add_definitions("-DLITE_WITH_OPENCL")
 endif()
 
+if (LITE_WITH_FPGA)
+add_definitions("-DLITE_WITH_FPGA")
+endif()
+
 if (LITE_WITH_PROFILE)
     add_definitions("-DLITE_WITH_PROFILE")
 endif()

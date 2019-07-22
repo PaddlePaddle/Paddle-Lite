@@ -42,6 +42,7 @@ enum class Type {
   _enum,
   // number of types
   __num__,
+  _float16
 };
 
 template <typename T>
