@@ -127,6 +127,7 @@ void test_activation_compute(
           Tensor x;
           Tensor output;
           Tensor output_ref;
+          Tensor channel_slope;
           // set the dims of input, output, ref output tensors
           x.Resize({n, c, h, w});
           output.Resize({n, c, h, w});
@@ -145,18 +146,17 @@ void test_activation_compute(
           param->X = &x;
           param->Out = &output;
           if (type == PRELU) {
-            Tensor channel_slope;
             if (param.Prelu_channel_shared) {
-              channel_slope.Resize({c});
-            } else {
               channel_slope.Resize({1});
+            } else {
+              channel_slope.Resize({c});
             }
 
             auto* channel_slope_data = channel_slope.mutable_data<float>();
             for (int j = 1; j < channel_slope.dims().production(); j++) {
               float sign = j % 3 == 0 ? -1.0f : 1.0f;
               channel_slope_data[j] =
-                  sign * static_cast<float>(j % 128) * 0.013f;
+                  sign * static_cast<float>(j % 128) * 0.013f + 0.001;
             }
             param->Prelu_channel_slope = &channel_slope;
           }
