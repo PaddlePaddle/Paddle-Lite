@@ -22,10 +22,19 @@
 namespace paddle {
 namespace lite {
 
-void Predictor::SaveModel(const std::string &dir) {
-  MkDirRecur(dir);
-  program_->PersistModel(dir, program_desc_);
+void Predictor::SaveModel(const std::string &dir, LiteModelType model_type) {
+  program_->SaveOpInfosToProgram(&program_desc_);
   LOG(INFO) << "Save model to " << dir;
+  switch (model_type) {
+    case LiteModelType::kProtobuf:
+      SaveModelPb(dir, *program_->exec_scope(), program_desc_);
+      break;
+    case LiteModelType::kNaiveBuffer:
+      SaveModelNaive(dir, *program_->exec_scope(), program_desc_);
+      break;
+    default:
+      LOG(FATAL) << "Unknown model type";
+  }
 }
 
 lite::Tensor *Predictor::GetInput(size_t offset) {
@@ -49,18 +58,29 @@ const lite::Tensor *Predictor::GetOutput(size_t offset) const {
 void Predictor::Build(const std::string &model_path,
                       const Place &prefer_place,
                       const std::vector<Place> &valid_places,
-                      const std::vector<std::string> &passes) {
-  LoadModel(model_path, scope_.get(), &program_desc_);
+                      const std::vector<std::string> &passes,
+                      LiteModelType model_type) {
+  LOG(INFO) << "Load model from " << model_path;
+  switch (model_type) {
+    case LiteModelType::kProtobuf:
+      LoadModelPb(model_path, scope_.get(), &program_desc_);
+      break;
+    case LiteModelType::kNaiveBuffer:
+      LoadModelNaive(model_path, scope_.get(), &program_desc_);
+      break;
+    default:
+      LOG(FATAL) << "Unknown model type";
+  }
   Build(program_desc_, prefer_place, valid_places, passes);
 }
 
-const framework::proto::ProgramDesc &Predictor::program_desc() const {
+const cpp::ProgramDesc &Predictor::program_desc() const {
   return program_desc_;
 }
 
 const RuntimeProgram &Predictor::runtime_program() const { return *program_; }
 
-void Predictor::Build(const framework::proto::ProgramDesc &desc,
+void Predictor::Build(const cpp::ProgramDesc &desc,
                       const Place &prefer_place,
                       const std::vector<Place> &valid_places,
                       const std::vector<std::string> &passes) {

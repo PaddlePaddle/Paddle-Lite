@@ -21,9 +21,14 @@
 namespace paddle {
 namespace lite {
 
+/*
+ * Compatible interfaces for all the different kinds of XXXDesc. All the XXXDesc
+ * classes should implement this.
+ */
+
 class VarDescAPI {
  public:
-  enum class VarDataType {
+  enum class Type {
     // Pod Types
     BOOL = 0,
     INT16,
@@ -53,11 +58,26 @@ class VarDescAPI {
     RAW,
     TUPLE
   };
+
+  using VarDataType = Type;
+
+  virtual ~VarDescAPI() = default;
+
+  // Get var's name
+  virtual std::string Name() const = 0;
+  // Set var's name
+  virtual void SetName(std::string name) = 0;
+  // Get var's type
+  virtual Type GetType() const = 0;
+  // Set var's type
+  virtual void SetType(Type type) = 0;
+  // Tell whether var is persistable or not
+  virtual bool Persistable() const = 0;
+  // Set var to be persistable or not
+  virtual void SetPersistable(bool persistable) = 0;
 };
 
 /*
- * Compatible interfaces for all the different kinds of opdesc. All the OpDesc
- * classes should implement this.
  * NOTE Some interfaces are weried, we remain them unchanged to keep compatible
  * with framework::OpDesc in Fluid framework.
  */
@@ -135,6 +155,73 @@ class OpDescAPI {
     ss << ")";
     return ss.str();
   }
+};
+
+class BlockDescAPI {
+ public:
+  virtual ~BlockDescAPI() = default;
+
+  virtual int32_t Idx() const = 0;
+
+  virtual void SetIdx(int32_t idx) = 0;
+
+  virtual int32_t ParentIdx() const = 0;
+
+  virtual void SetParentIdx(int32_t idx) = 0;
+
+  virtual size_t VarsSize() const = 0;
+
+  virtual void ClearVars() = 0;
+
+  // NOTE: This ugly method is used to compatible interfaces between cpp and
+  // pb/nb backends
+  // TODO(sangoly): refine this
+  template <typename T>
+  T* GetVar(int32_t idx);
+
+  template <typename T>
+  T* AddVar();
+
+  virtual size_t OpsSize() const = 0;
+
+  virtual void ClearOps() = 0;
+
+  // NOTE: This ugly method is used to compatible interfaces between cpp and
+  // pb/nb backends
+  // TODO(sangoly): refine this
+  template <typename T>
+  T* GetOp(int32_t idx);
+
+  template <typename T>
+  T* AddOp();
+
+  virtual int32_t ForwardBlockIdx() const = 0;
+
+  virtual void SetForwardBlockIdx(int32_t idx) = 0;
+};
+
+class ProgramDescAPI {
+ public:
+  virtual ~ProgramDescAPI() = default;
+
+  virtual size_t BlocksSize() const = 0;
+
+  virtual void ClearBlocks() = 0;
+
+  // NOTE: This ugly method is used to compatible interfaces between cpp and
+  // pb/nb backends
+  // TODO(sangoly): refine this
+  template <typename T>
+  T* GetBlock(int32_t idx);
+
+  template <typename T>
+  T* AddBlock();
+
+  virtual bool HasVersion() const = 0;
+
+  virtual int64_t Version() const = 0;
+
+  virtual void SetVersion(int64_t version) = 0;
 };
 
 }  // namespace lite

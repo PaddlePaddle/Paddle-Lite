@@ -63,7 +63,7 @@ class CLRuntime {
   std::shared_ptr<cl::Context> CreateContext() {
     auto context = std::make_shared<cl::Context>(
         std::vector<cl::Device>{device()}, nullptr, nullptr, nullptr, &status_);
-    CL_CHECK_ERRORS(status_);
+    CL_CHECK_FATAL(status_);
     return context;
   }
 
@@ -71,7 +71,7 @@ class CLRuntime {
       const cl::Context& context) {
     auto queue =
         std::make_shared<cl::CommandQueue>(context, device(), 0, &status_);
-    CL_CHECK_ERRORS(status_);
+    CL_CHECK_FATAL(status_);
     return queue;
   }
 

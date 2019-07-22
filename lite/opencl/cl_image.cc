@@ -32,7 +32,7 @@ std::ostream& operator<<(std::ostream& os, const CLImage& cl_image) {
       static_cast<size_t>(width), static_cast<size_t>(height), 1};
   cl_int err = CLRuntime::Global()->command_queue().enqueueReadImage(
       *image, CL_TRUE, origin, region, 0, 0, image_data, nullptr, nullptr);
-  CL_CHECK_ERRORS(err);
+  CL_CHECK_FATAL(err);
 
   float* tensor_data = new float[cl_image.numel()];
   auto* converter = cl_image.image_converter();
@@ -153,8 +153,7 @@ void CLImage::InitCLImage(const cl::Context& context,
                       0,
                       data,
                       &err));
-  CL_CHECK_ERRORS(err);
-  CHECK(err == CL_SUCCESS) << " Create image 2d error.";
+  CL_CHECK_FATAL(err);
 }
 
 }  // namespace lite

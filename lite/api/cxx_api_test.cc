@@ -49,7 +49,9 @@ TEST(CXXApi, save_model) {
       FLAGS_model_dir, Place{TARGET(kCUDA), PRECISION(kFloat)}, valid_places);
 
   LOG(INFO) << "Save optimized model to " << FLAGS_optimized_model;
-  predictor.SaveModel(FLAGS_optimized_model);
+  predictor.SaveModel(FLAGS_optimized_model, LiteModelType::kProtobuf);
+  predictor.SaveModel(FLAGS_optimized_model + ".naive",
+                      LiteModelType::kNaiveBuffer);
 }
 
 /*TEST(CXXTrainer, train) {
@@ -95,6 +97,50 @@ TEST(CXXApi, save_model) {
 
   LOG(INFO) << "Save optimized model to " << FLAGS_optimized_model;
   predictor.SaveModel(FLAGS_optimized_model);
+  predictor.SaveModel(FLAGS_optimized_model + ".naive",
+                      LiteModelType::kNaiveBuffer);
+}
+
+TEST(CXXApi, load_model_naive) {
+  lite::Predictor predictor;
+  std::vector<Place> valid_places({Place{TARGET(kHost), PRECISION(kFloat)},
+                                   Place{TARGET(kARM), PRECISION(kFloat)}});
+  predictor.Build(FLAGS_optimized_model + ".naive",
+                  Place{TARGET(kARM), PRECISION(kFloat)},
+                  valid_places,
+                  {},
+                  LiteModelType::kNaiveBuffer);
+
+  auto* input_tensor = predictor.GetInput(0);
+  input_tensor->Resize(std::vector<int64_t>({1, 100}));
+  auto* data = input_tensor->mutable_data<float>();
+  for (int i = 0; i < 100; i++) {
+    data[i] = 1;
+  }
+
+  predictor.Run();
+
+  std::vector<float> result({0.4350058,
+                             -0.6048313,
+                             -0.29346266,
+                             0.40377066,
+                             -0.13400325,
+                             0.37114543,
+                             -0.3407839,
+                             0.14574292,
+                             0.4104212,
+                             0.8938774});
+
+  auto* output_tensor = predictor.GetOutput(0);
+  auto output_shape = output_tensor->dims().Vectorize();
+  ASSERT_EQ(output_shape.size(), 2);
+  ASSERT_EQ(output_shape[0], 1);
+  ASSERT_EQ(output_shape[1], 500);
+
+  int step = 50;
+  for (int i = 0; i < result.size(); i += step) {
+    EXPECT_NEAR(output_tensor->data<float>()[i], result[i], 1e-6);
+  }
 }
 #endif
 

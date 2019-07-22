@@ -13,12 +13,72 @@
 // limitations under the License.
 
 #include <gtest/gtest.h>
+#include <random>
 #include "lite/core/op_registry.h"
+#include "lite/core/tensor.h"
+#include "lite/opencl/target_wrapper.h"
 
 namespace paddle {
 namespace lite {
 
-TEST(elementwise_add, init) {
+template <typename dtype>
+void elementwise_compute_ref(const dtype *x_data,
+                             const dtype *y_data,
+                             dtype *out_data,
+                             const DDim &x_dims,
+                             const DDim &y_dims,
+                             int axis,
+                             const std::string elt_type) {
+  if (axis < 0) {
+    axis = x_dims.size() - y_dims.size();
+  }
+  int batch = 1;
+  int channels = 1;
+  int num = 1;
+  for (int i = 0; i < axis; ++i) {
+    batch *= x_dims[i];
+  }
+  for (int i = 0; i < y_dims.size(); ++i) {
+    channels *= y_dims[i];
+  }
+  for (int i = y_dims.size() + axis; i < x_dims.size(); ++i) {
+    num *= x_dims[i];
+  }
+  // do elementwise add/sub/max/...
+  if (elt_type == "add") {
+    for (int i = 0; i < batch; ++i) {
+      for (int j = 0; j < channels; ++j) {
+        int offset = (i * channels + j) * num;
+        const dtype *din_ptr = x_data + offset;
+        const dtype diny_data = y_data[j];
+        dtype *dout_ptr = out_data + offset;
+        for (int k = 0; k < num; ++k) {
+          *dout_ptr = *din_ptr + diny_data;
+          dout_ptr++;
+          din_ptr++;
+        }
+      }
+    }
+  } else if (elt_type == "sub") {
+    for (int i = 0; i < batch; ++i) {
+      for (int j = 0; j < channels; ++j) {
+        int offset = (i * channels + j) * num;
+        const dtype *din_ptr = x_data + offset;
+        const dtype diny_data = y_data[j];
+        dtype *dout_ptr = out_data + offset;
+        for (int k = 0; k < num; ++k) {
+          *dout_ptr = *din_ptr - diny_data;
+          dout_ptr++;
+          din_ptr++;
+        }
+      }
+    }
+  } else {
+    LOG(FATAL) << "unsupported Elementwise type: " << elt_type << std::endl;
+  }
+}
+
+TEST(elementwise_add, compute) {
   LOG(INFO) << "to get kernel ...";
   auto kernels = KernelRegistry::Global().Create(
       "elementwise_add", TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW));
@@ -28,11 +88,12 @@ TEST(elementwise_add, init) {
 
   LOG(INFO) << "get kernel";
 
-  lite::Tensor X, Y, Out;
+  lite::Tensor x, y, out;
   operators::ElementwiseParam param;
-  param.X = &X;
-  param.Y = &Y;
-  param.Out = &Out;
+  param.X = &x;
+  param.Y = &y;
+  param.Out = &out;
+  param.axis = -1;
 
   std::unique_ptr<KernelContext> context(new KernelContext);
   context->As<OpenCLContext>().InitOnce();
@@ -40,24 +101,44 @@ TEST(elementwise_add, init) {
   kernel->SetParam(param);
   kernel->SetContext(std::move(context));
 
-  X.Resize({4, 3, 10, 10});
-  Y.Resize({4, 3, 10, 10});
-  Out.Resize({4, 3, 10, 10});
+  const DDim x_dim = DDim(std::vector<DDim::value_type>{3, 2, 1, 5});
+  const DDim y_dim = DDim(std::vector<DDim::value_type>{2, 1, 5});
+  const DDim out_dim = DDim(std::vector<DDim::value_type>{3, 2, 1, 5});
+  x.Resize(x_dim);
+  y.Resize(y_dim);
+  out.Resize(out_dim);
 
-  auto* x_data = X.mutable_data<float>();
-  auto* y_data = Y.mutable_data<float>();
-  auto* out_data = Out.mutable_data<float>();
+  auto *x_data = x.mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
+  auto *y_data = y.mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
 
-  for (int i = 0; i < 4 * 3 * 10 * 10; i++) {
-    x_data[i] = 1.1 * i;
-    y_data[i] = 2.3 * i;
+  std::default_random_engine engine;
+  std::uniform_real_distribution<float> dist(-10, 10);
+  auto *mapped_x = static_cast<float *>(
+      TargetWrapperCL::Map(x_data, 0, sizeof(float) * x_dim.production()));
+  for (int i = 0; i < x_dim.production(); i++) {
+    mapped_x[i] = dist(engine);
+  }
+  auto *mapped_y = static_cast<float *>(
+      TargetWrapperCL::Map(y_data, 0, sizeof(float) * y_dim.production()));
+  for (int i = 0; i < y_dim.production(); i++) {
+    mapped_y[i] = dist(engine);
   }
 
   kernel->Launch();
 
-  for (int i = 0; i < 4 * 3 * 10 * 10; i++) {
-    EXPECT_NEAR(out_data[i], static_cast<float>(3.4 * i), 1e-6);
+  std::unique_ptr<float[]> out_ref(new float[out_dim.production()]);
+  elementwise_compute_ref<float>(
+      mapped_x, mapped_y, out_ref.get(), x_dim, y_dim, param.axis, "add");
+
+  TargetWrapperCL::Unmap(x_data, mapped_x);
+  TargetWrapperCL::Unmap(y_data, mapped_y);
+  auto *out_data = out.mutable_data<float, cl::Buffer>();
+  auto *mapped_out = static_cast<float *>(
+      TargetWrapperCL::Map(out_data, 0, sizeof(float) * out_dim.production()));
+  for (int i = 0; i < out_dim.production(); i++) {
+    EXPECT_NEAR(mapped_out[i], out_ref[i], 1e-6);
   }
+  TargetWrapperCL::Unmap(out_data, mapped_out);
 }
 
 }  // namespace lite

@@ -30,18 +30,24 @@ void VarDesc::SetName(std::string name) {
   return builder->set(name);
 }
 
-VarDescAPI::VarDataType VarDesc::GetType() const {
-  using type_builder_t = EnumBuilder<proto::VarDataType>;
+VarDescAPI::Type VarDesc::GetType() const {
+  using PbType = proto::VarDataType;
+  using type_builder_t = EnumBuilder<PbType>;
 
   auto type = GetVarType().GetField<type_builder_t>("type").data();
 #define GET_TYPE_CASE_ITEM(type__) \
-  case proto::VarDataType::type__: \
-    return VarDescAPI::VarDataType::type__
+  case PbType::type__:             \
+    return VarDescAPI::Type::type__
 
   switch (type) {
     GET_TYPE_CASE_ITEM(LOD_TENSOR);
-    GET_TYPE_CASE_ITEM(SELECTED_ROWS);
     GET_TYPE_CASE_ITEM(LOD_TENSOR_ARRAY);
+    GET_TYPE_CASE_ITEM(LOD_RANK_TABLE);
+    GET_TYPE_CASE_ITEM(SELECTED_ROWS);
+    GET_TYPE_CASE_ITEM(FEED_MINIBATCH);
+    GET_TYPE_CASE_ITEM(FETCH_LIST);
+    GET_TYPE_CASE_ITEM(STEP_SCOPES);
+    GET_TYPE_CASE_ITEM(PLACE_LIST);
     GET_TYPE_CASE_ITEM(READER);
     default:
       LOG(ERROR) << "Unknown var type";
@@ -49,21 +55,27 @@ VarDescAPI::VarDataType VarDesc::GetType() const {
 #undef GET_TYPE_CASE_ITEM
 }
 
-void VarDesc::SetType(VarDescAPI::VarDataType type) {
-  using type_builder_t = EnumBuilder<proto::VarDataType>;
+void VarDesc::SetType(VarDescAPI::Type type) {
+  using PbType = proto::VarDataType;
+  using type_builder_t = EnumBuilder<PbType>;
 
   auto* type_builder =
       GetMutableVarType()->GetMutableField<type_builder_t>("type");
   CHECK(type_builder);
-#define SET_TYPE_CASE_ITEM(type__)                 \
-  case VarDescAPI::VarDataType::type__:            \
-    type_builder->set(proto::VarDataType::type__); \
+#define SET_TYPE_CASE_ITEM(type__)     \
+  case VarDescAPI::Type::type__:       \
+    type_builder->set(PbType::type__); \
     break
 
   switch (type) {
     SET_TYPE_CASE_ITEM(LOD_TENSOR);
-    SET_TYPE_CASE_ITEM(SELECTED_ROWS);
     SET_TYPE_CASE_ITEM(LOD_TENSOR_ARRAY);
+    SET_TYPE_CASE_ITEM(LOD_RANK_TABLE);
+    SET_TYPE_CASE_ITEM(SELECTED_ROWS);
+    SET_TYPE_CASE_ITEM(FEED_MINIBATCH);
+    SET_TYPE_CASE_ITEM(FETCH_LIST);
+    SET_TYPE_CASE_ITEM(STEP_SCOPES);
+    SET_TYPE_CASE_ITEM(PLACE_LIST);
     SET_TYPE_CASE_ITEM(READER);
     default:
       LOG(ERROR) << "Unknown var type";

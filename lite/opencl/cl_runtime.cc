@@ -88,7 +88,7 @@ std::unique_ptr<cl::Program> CLRuntime::CreateProgram(
       std::unique_ptr<cl::Program>(new cl::Program(context, sources, &status_));
   LOG(INFO) << "OpenCL kernel file name: " << file_name;
   LOG(INFO) << "Program source size: " << content.size();
-  CL_CHECK_ERRORS(status_);
+  CL_CHECK_FATAL(status_);
   return std::move(prog);
 }
 
@@ -96,7 +96,7 @@ std::unique_ptr<cl::UserEvent> CLRuntime::CreateEvent(
     const cl::Context& context) {
   auto event =
       std::unique_ptr<cl::UserEvent>(new cl::UserEvent(context, &status_));
-  CL_CHECK_ERRORS(status_);
+  CL_CHECK_FATAL(status_);
   return std::move(event);
 }
 
@@ -104,13 +104,13 @@ bool CLRuntime::BuildProgram(cl::Program* program, const std::string& options) {
   std::string build_option = options + " -cl-fast-relaxed-math -I " +
                              CLRuntime::Global()->cl_path() + "/cl_kernel";
   status_ = program->build({*device_}, build_option.c_str());
-  CL_CHECK_ERRORS(status_);
+  CL_CHECK_ERROR(status_);
 
   if (status_ != CL_SUCCESS) {
     if (program->getBuildInfo<CL_PROGRAM_BUILD_STATUS>(device()) ==
         CL_BUILD_ERROR) {
       std::string log = program->getBuildInfo<CL_PROGRAM_BUILD_LOG>(device());
-      LOG(INFO) << "Program build error: " << log;
+      LOG(FATAL) << "Program build error: " << log;
     }
     return false;
   }
@@ -121,9 +121,9 @@ bool CLRuntime::BuildProgram(cl::Program* program, const std::string& options) {
 bool CLRuntime::InitializePlatform() {
   std::vector<cl::Platform> all_platforms;
   status_ = cl::Platform::get(&all_platforms);
-  CL_CHECK_ERRORS(status_);
+  CL_CHECK_ERROR(status_);
   if (all_platforms.empty()) {
-    LOG(ERROR) << "No OpenCL platform found!";
+    LOG(FATAL) << "No OpenCL platform found!";
     return false;
   }
   platform_ = std::make_shared<cl::Platform>();
@@ -134,9 +134,9 @@ bool CLRuntime::InitializePlatform() {
 bool CLRuntime::InitializeDevice() {
   std::vector<cl::Device> all_devices;
   status_ = platform_->getDevices(CL_DEVICE_TYPE_GPU, &all_devices);
-  CL_CHECK_ERRORS(status_);
+  CL_CHECK_ERROR(status_);
   if (all_devices.empty()) {
-    LOG(ERROR) << "No OpenCL GPU device found!";
+    LOG(FATAL) << "No OpenCL GPU device found!";
     return false;
   }
   device_ = std::make_shared<cl::Device>();
@@ -148,7 +148,7 @@ bool CLRuntime::InitializeDevice() {
   if (image_support) {
     LOG(INFO) << "The chosen device supports image processing.";
   } else {
-    LOG(ERROR) << "The chosen device doesn't support image processing!";
+    LOG(INFO) << "The chosen device doesn't support image processing!";
     return false;
   }
   auto ext_data = device_->getInfo<CL_DEVICE_EXTENSIONS>();

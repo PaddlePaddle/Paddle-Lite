@@ -14,9 +14,8 @@
 
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
+#include "lite/opencl/cl_include.h"
 #include "lite/operators/op_params.h"
-// NOTE ugly here, hide these.
-#include "lite/opencl/cl_caller.h"
 
 namespace paddle {
 namespace lite {
@@ -30,16 +29,64 @@ class ElementwiseAddCompute
 
   void Run() override {
     auto& param = *param_.get_mutable<param_t>();
+    auto axis = param.axis;
+    const auto& x_dims = param.X->dims();
+    const auto& y_dims = param.Y->dims();
+    const auto& out_dims = param.Out->dims();
+    if (axis < 0) {
+      axis = static_cast<int>(x_dims.size() - y_dims.size());
+    }
+    size_t batch = 1;
+    size_t channels = 1;
+    size_t num = 1;
+    for (int i = 0; i < axis; ++i) {
+      batch *= x_dims[i];
+    }
+    for (int i = 0; i < y_dims.size(); ++i) {
+      channels *= y_dims[i];
+    }
+    for (int i = static_cast<int>(y_dims.size() + axis); i < x_dims.size();
+         ++i) {
+      num *= x_dims[i];
+    }
+    VLOG(4) << "axis:" << axis;
+    VLOG(4) << "channels:" << channels;
+    VLOG(4) << "num:" << num;
+    VLOG(4) << "batch:" << batch;
     auto& context = ctx_->As<OpenCLContext>();
     CHECK(context.cl_context() != nullptr);
+    auto* x_buf = param.X->data<float, cl::Buffer>();
+    auto* y_buf = param.Y->data<float, cl::Buffer>();
+    auto* out_buf = param.Out->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
+    auto kernel = context.cl_context()->GetKernel("elementwise_add");
+    VLOG(4) << TargetToStr(param.X->target());
+    VLOG(4) << TargetToStr(param.Y->target());
+    VLOG(4) << TargetToStr(param.Out->target());
+    cl_int status = kernel.setArg(0, *x_buf);
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(1, *y_buf);
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(2, *out_buf);
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(3, (const int)batch);
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(4, (const int)channels);
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(5, (const int)num);
+    CL_CHECK_FATAL(status);
 
-    elementwise_add(context.cl_context(),
-                    static_cast<const float*>(param.X->raw_data()),
-                    param.X->dims(),
-                    static_cast<const float*>(param.Y->raw_data()),
-                    param.Y->dims(),
-                    param.Out->mutable_data<float>(),
-                    param.Out->dims());
+    auto global_work_size = cl::NDRange{channels, batch};
+    cl::Event event;
+    status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
+        kernel,
+        cl::NullRange,
+        global_work_size,
+        cl::NullRange,
+        nullptr,
+        &event);
+    CL_CHECK_FATAL(status);
+    status = event.wait();
+    CL_CHECK_FATAL(status);
   }
 };
 
@@ -54,7 +101,7 @@ REGISTER_LITE_KERNEL(elementwise_add,
                      kNCHW,
                      paddle::lite::kernels::opencl::ElementwiseAddCompute,
                      def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost))})
-    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kHost))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kOpenCL))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kOpenCL))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kOpenCL))})
     .Finalize();
