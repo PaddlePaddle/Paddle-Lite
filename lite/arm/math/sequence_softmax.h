@@ -16,6 +16,7 @@
 
 #include <cmath>
 #include <vector>
+#include "lite/core/context.h"
 
 namespace paddle {
 namespace lite {

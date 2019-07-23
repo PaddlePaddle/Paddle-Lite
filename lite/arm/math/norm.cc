@@ -15,6 +15,7 @@
 #include <arm_neon.h>
 #include <cmath>
 #include "lite/utils/cp_logging.h"
+#include "lite/arm/math/norm.h"
 
 namespace paddle {
 namespace lite {
@@ -28,7 +29,6 @@ void norm(const float* input,
           const float epsilon,
           float* out,
           Context<TARGET(kARM)>* ctx) {
-  LOG(INFO) << "norm math start";
   for (int i = 0; i < pre_n; i++) {
     for (int k = 0; k < post_n; k++) {
       float sum = epsilon;

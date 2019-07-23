@@ -15,6 +15,7 @@
 #pragma once
 
 #include <cmath>
+#include "lite/core/context.h"
 
 namespace paddle {
 namespace lite {
