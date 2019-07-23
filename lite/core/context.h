@@ -247,6 +247,7 @@ class Context<TargetType::kOpenCL> {
                            "buffer/elementwise_add_kernel.cl");
     cl_context_->AddKernel("pool_max", "buffer/pool_kernel.cl");
     cl_context_->AddKernel("pool_avg", "buffer/pool_kernel.cl");
+    cl_context_->AddKernel("mat_mul", "buffer/mat_mul.cl");
   }
 };
 #endif
