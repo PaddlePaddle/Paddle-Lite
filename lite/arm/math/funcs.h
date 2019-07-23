@@ -25,12 +25,17 @@
 #include "lite/arm/math/conv_winograd.h"
 #include "lite/arm/math/dropout.h"
 #include "lite/arm/math/elementwise.h"
+#include "lite/arm/math/negative.h"
+#include "lite/arm/math/normalize.h"
 #include "lite/arm/math/packed_sgemm.h"
+#include "lite/arm/math/pad2d.h"
+#include "lite/arm/math/permute.h"
 #include "lite/arm/math/pooling.h"
 #include "lite/arm/math/scale.h"
 #include "lite/arm/math/sgemv.h"
 #include "lite/arm/math/softmax.h"
 #include "lite/arm/math/split.h"
+#include "lite/arm/math/sroi_align.h"
 
 namespace paddle {
 namespace lite {
