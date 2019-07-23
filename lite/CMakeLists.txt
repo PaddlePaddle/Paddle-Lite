@@ -226,7 +226,6 @@ function(lite_cc_test TARGET)
     endif()
 endfunction()
 
-include_directories(${PADDLE_SOURCE_DIR}/lite)
 add_subdirectory(operators)
 add_subdirectory(kernels)
 add_subdirectory(core)

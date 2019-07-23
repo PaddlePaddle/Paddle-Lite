@@ -23,8 +23,8 @@ limitations under the License. */
 #include <map>
 #include <utility>
 
-#include "fpga/KD/llapi/config.h"
-#include "fpga/KD/llapi/zynqmp_api.h"
+#include "lite/fpga/KD/llapi/config.h"
+#include "lite/fpga/KD/llapi/zynqmp_api.h"
 
 namespace paddle {
 namespace zynqmp {

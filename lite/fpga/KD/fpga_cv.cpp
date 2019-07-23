@@ -69,7 +69,6 @@ void fpga_resize(float* input,
   paddle::zynqmp::fpga_flush(resize_args.output_image_address,
                              output_size * sizeof(float16));
   int ret = paddle::zynqmp::compute_fpga_resize(resize_args);
-  std::cout << "compute_fpga_resize ret：" << ret << std::endl;
   if (ret == 0) {
     paddle::zynqmp::fpga_invalidate(resize_args.output_image_address,
                                     output_size * sizeof(float16));

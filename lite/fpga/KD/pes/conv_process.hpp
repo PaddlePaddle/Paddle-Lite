@@ -209,7 +209,6 @@ inline void split_filter_num(const ConvParam& c_param) {
   int split_num = param.groups == 1 ? get_split_num(param.filter) : 1;
   int filter_num_per_div = get_filter_num_per_div(filter, param.groups);
 
-  // std::cout << "\n split_num:" << split_num << std::endl;
   Shape& out_shape = out->shape();
   for (int i = 0; i < split_num; i++) {
     BasicConvParam* conv_param = new BasicConvParam();

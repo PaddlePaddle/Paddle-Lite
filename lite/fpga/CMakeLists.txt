@@ -1,12 +1,9 @@
 if (NOT LITE_WITH_FPGA)
     return()
 endif()
-include_directories(${PADDLE_SOURCE_DIR}/lite)
 
 set(LITE_FPGA_KD_PATH "${PADDLE_SOURCE_DIR}/lite/fpga/KD")
 set(LITE_FPGA_PATH "${PADDLE_SOURCE_DIR}/lite/fpga")
-include_directories(${LITE_FPGA_KD_PATH})
-
 
 message("fpga_kd_path ${LITE_FPGA_KD_PATH}")
 message("fpga_path ${LITE_FPGA_PATH}")
