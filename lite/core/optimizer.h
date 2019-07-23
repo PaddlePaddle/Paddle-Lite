@@ -24,6 +24,9 @@
 #include "lite/core/program.h"
 #include "lite/core/types.h"
 #include "lite/model_parser/model_parser.h"
+#ifdef LITE_WITH_NPU
+#include "lite/core/mir/subgraph/generate_npu_program_pass.h"
+#endif
 
 namespace paddle {
 namespace lite {
@@ -94,10 +97,11 @@ class Optimizer {
     pass->SetPreferPlace(place);
   }
 
+  const lite::Scope* exec_scope() const { return exec_scope_; }
+
   // Generate a new program based on the mir graph.
   std::unique_ptr<RuntimeProgram> GenRuntimeProgram() {
     LOG(INFO) << "generate program";
-    std::unique_ptr<Program> res;
     auto pass = mir::PassManager::Global().LookUp<mir::GenerateProgramPass>(
         "generate_program_pass");
     pass->Apply(graph_);
@@ -105,6 +109,36 @@ class Optimizer {
     CHECK(exec_scope_);
     program->set_exec_scope(exec_scope_);
     return program;
+  }
+
+  // check the input dims in the scope, must not be empty
+  void CheckInputDimsNotEmpty(const lite::Scope* scope) {
+    CHECK(scope);
+    auto* feed_var = scope->FindVar("feed");
+    CHECK(feed_var) << "no feed variable in exec_scope: " << scope;
+    auto* feed_tensor_list = feed_var->GetMutable<std::vector<lite::Tensor>>();
+    CHECK_GE(feed_tensor_list->size(), 1);
+    for (size_t i = 0; i < feed_tensor_list->size(); ++i) {
+      CHECK(!feed_tensor_list->at(i).dims().empty())
+          << "Input " << i << " dims can not be empty.";
+    }
+  }
+
+  std::unique_ptr<RuntimeProgram> GenNPURuntimeProgram() {
+#ifdef LITE_WITH_NPU
+    CheckInputDimsNotEmpty(exec_scope_);
+    auto pass = mir::PassManager::Global().LookUp<mir::GenerateNPUProgramPass>(
+        "generate_npu_program_pass");
+    pass->Apply(graph_);
+
+    auto program = pass->GenProgram();
+    CHECK(exec_scope_);
+    program->set_exec_scope(exec_scope_);
+    return program;
+#else
+    LOG(WARNING) << "Not compiled with NPU but use it!";
+    return GenRuntimeProgram();
+#endif
   }
 
   void InitTargetTypeTransformPass() {

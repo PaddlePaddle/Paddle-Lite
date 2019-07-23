@@ -50,8 +50,17 @@ class Predictor {
              const std::vector<Place>& valid_places,
              const std::vector<std::string>& passes = {});
 
+  void GenRuntimeProgram();
+
+  void GenNPURuntimeProgram();
+
   // Run the predictor for a single batch of data.
-  void Run() { program_->Run(); }
+  void Run() {
+    if (!program_generated_) {
+      GenRuntimeProgram();
+    }
+    program_->Run();
+  }
 
   // Get offset-th col of feed inputs.
   lite::Tensor* GetInput(size_t offset);
@@ -80,7 +89,9 @@ class Predictor {
   Optimizer optimizer_;
   cpp::ProgramDesc program_desc_;
   std::shared_ptr<Scope> scope_;
+  const Scope* exec_scope_;
   std::unique_ptr<RuntimeProgram> program_;
+  bool program_generated_{false};
 };
 
 /*

@@ -59,6 +59,14 @@ struct CalibParam {
   float scale;
 };
 
+struct GraphParam {
+  // only one input yet
+  // std::vector<lite::Tensor*> x{};
+  const lite::Tensor* input{};
+  lite::Tensor* output{};
+  std::string graph_name{"graph"};
+};
+
 /// -------------------------- NN operators ------------------------------------
 
 struct FcParam {
