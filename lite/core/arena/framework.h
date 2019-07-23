@@ -14,6 +14,10 @@
 
 #pragma once
 #include <gtest/gtest.h>
+#include <time.h>
+#include <algorithm>
+#include <chrono>  // NOLINT
+#include <iomanip>
 #include <memory>
 #include <string>
 #include <utility>
@@ -45,15 +49,13 @@ class TestCase {
     PrepareOutputsForInstruction();
     CreateInstruction();
     PrepareInputsForInstruction();
-
-    LOG(INFO) << "Prepare done";
   }
 
   /// Run the target instruction, that is run the test operator.
-  void RunInstruction() {
-    LOG(INFO) << "Run instruction start" << *instruction_;
-    instruction_->Run();
-    LOG(INFO) << "Run instruction " << *instruction_;
+  void RunInstruction() { instruction_->Run(); }
+
+  KernelContext* context() {
+    return instruction_->mutable_kernel()->mutable_context();
   }
 
   /// The baseline should be implemented, which acts similar to an operator,
@@ -65,40 +67,7 @@ class TestCase {
   /// in two scopes, one of the instruction execution, and the other for the
   /// baseline.
   template <typename T>
-  void CheckPrecision(const std::string& var_name, float abs_error) {
-    auto a_tensor = inst_scope_->FindTensor(var_name);
-    auto b_tensor = base_scope_->FindTensor(var_name);
-    CHECK(a_tensor);
-    CHECK(b_tensor);
-
-    CHECK(ShapeEquals(a_tensor->dims(), b_tensor->dims()));
-
-    // The baseline should output in host devices.
-    CHECK(b_tensor->target() == TARGET(kHost) ||
-          b_tensor->target() == TARGET(kX86) ||
-          b_tensor->target() == TARGET(kARM));
-
-    const T* a_data{};
-    switch (a_tensor->target()) {
-      case TARGET(kX86):
-      case TARGET(kHost):
-      case TARGET(kARM):
-        a_data = static_cast<const T*>(a_tensor->raw_data());
-        break;
-
-      default:
-        // Before compare, need to copy data from `target` device to host.
-        LOG(FATAL) << "Not supported";
-    }
-
-    CHECK(a_data);
-
-    const T* b_data = static_cast<const T*>(b_tensor->raw_data());
-
-    for (int i = 0; i < a_tensor->dims().production(); i++) {
-      EXPECT_NEAR(a_data[i], b_data[i], abs_error);
-    }
-  }
+  void CheckPrecision(const std::string& var_name, float abs_error);
 
   const cpp::OpDesc& op_desc() { return *op_desc_; }
 
@@ -121,18 +90,14 @@ class TestCase {
   void SetCommonTensor(const std::string& var_name,
                        const DDim& ddim,
                        const T* data,
-                       LoD lod = LoD()) {
+                       const LoD& lod = {}) {
     auto* tensor = scope_->NewTensor(var_name);
     tensor->Resize(ddim);
     auto* d = tensor->mutable_data<T>();
     memcpy(d, data, ddim.production() * sizeof(T));
-    if (lod.size() > 0) {
-      auto tensor_lod = tensor->mutable_lod();
-      tensor_lod->clear();
-      for (auto vec : lod) {
-        tensor_lod->push_back(vec);
-      }
-    }
+
+    // set lod
+    if (!lod.empty()) *tensor->mutable_lod() = lod;
   }
 
   // Prepare for the operator.
@@ -196,9 +161,7 @@ class Arena {
   void TestPrecision() {
     LOG(INFO) << "Testing precision for " << tester_->op_desc().Type();
     tester_->RunBaseline(tester_->baseline_scope());
-    LOG(INFO) << "base finished";
     tester_->RunInstruction();
-    LOG(INFO) << "real  finished";
 
     for (auto& out : tester_->op_desc().OutputArgumentNames()) {
       for (auto& var : tester_->op_desc().Output(out)) {
@@ -211,9 +174,13 @@ class Arena {
   }
 
   void TestPerformance(int times = 100) {
+    auto timer = std::chrono::high_resolution_clock::now();
     for (int i = 0; i < times; i++) {
       tester_->RunInstruction();
     }
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::high_resolution_clock::now() - timer);
+    LOG(INFO) << "average duration: " << duration.count() << " ms";
   }
 
  private:
@@ -243,6 +210,44 @@ class Arena {
   std::unique_ptr<TestCase> tester_;
   Place place_;
 };
+
+template <typename T>
+void TestCase::CheckPrecision(const std::string& var_name, float abs_error) {
+  auto a_tensor = inst_scope_->FindTensor(var_name);
+  auto b_tensor = base_scope_->FindTensor(var_name);
+  CHECK(a_tensor);
+  CHECK(b_tensor);
+
+  CHECK(ShapeEquals(a_tensor->dims(), b_tensor->dims()));
+
+  CHECK(a_tensor->lod() == b_tensor->lod()) << "lod not match";
+
+  // The baseline should output in host devices.
+  CHECK(b_tensor->target() == TARGET(kHost) ||
+        b_tensor->target() == TARGET(kX86) ||
+        b_tensor->target() == TARGET(kARM));
+
+  const T* a_data{};
+  switch (a_tensor->target()) {
+    case TARGET(kX86):
+    case TARGET(kHost):
+    case TARGET(kARM):
+      a_data = static_cast<const T*>(a_tensor->raw_data());
+      break;
+
+    default:
+      // Before compare, need to copy data from `target` device to host.
+      LOG(FATAL) << "Not supported";
+  }
+
+  CHECK(a_data);
+
+  const T* b_data = static_cast<const T*>(b_tensor->raw_data());
+
+  for (int i = 0; i < a_tensor->dims().production(); i++) {
+    EXPECT_NEAR(a_data[i], b_data[i], abs_error);
+  }
+}
 
 }  // namespace arena
 }  // namespace lite

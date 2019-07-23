@@ -66,7 +66,7 @@ class ScaleComputeTester : public arena::TestCase {
   }
 };
 
-TEST(MUL, basic) {
+TEST(scale, basic) {
 #ifdef LITE_WITH_X86
   Place place(TARGET(kX86));
 #endif

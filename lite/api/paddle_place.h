@@ -20,27 +20,31 @@ namespace lite_api {
 
 enum class TargetType : int {
   kUnk = 0,
-  kHost,
-  kX86,
-  kCUDA,
-  kARM,
-  kOpenCL,
-  kAny,  // any target
-  NUM,   // number of fields.
+  kHost = 1,
+  kX86 = 2,
+  kCUDA = 3,
+  kARM = 4,
+  kOpenCL = 5,
+  kFPGA = 7,
+  kNPU = 8,
+  kAny = 6,  // any target
+  NUM = 9,   // number of fields.
 };
 enum class PrecisionType : int {
   kUnk = 0,
-  kFloat,
-  kInt8,
-  kInt32,
-  kAny,  // any precision
-  NUM,   // number of fields.
+  kFloat = 1,
+  kInt8 = 2,
+  kFP16 = 5,
+  kInt32 = 3,
+  kAny = 4,  // any precision
+  NUM = 6,   // number of fields.
 };
 enum class DataLayoutType : int {
   kUnk = 0,
-  kNCHW,
-  kAny,  // any data layout
-  NUM,   // number of fields.
+  kNCHW = 1,
+  kNHWC = 3,
+  kAny = 2,  // any data layout
+  NUM = 4,   // number of fields.
 };
 
 static size_t PrecisionTypeLength(PrecisionType type) {
@@ -51,6 +55,8 @@ static size_t PrecisionTypeLength(PrecisionType type) {
       return 1;
     case PrecisionType::kInt32:
       return 4;
+    case PrecisionType::kFP16:
+      return 2;
     default:
       return 4;
   }
