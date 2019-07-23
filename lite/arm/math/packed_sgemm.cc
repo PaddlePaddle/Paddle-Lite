@@ -21,86 +21,68 @@ namespace arm {
 namespace math {
 
 #ifdef __aarch64__
-void prepackA_8x12(float *out,
-                   const float *in,
-                   const int ldin,
-                   const int m0,
-                   const int mmax,
-                   const int k0,
-                   const int kmax);
-void prepackA_trans_8x12(float *out,
-                         const float *in,
-                         const int ldin,
-                         const int m0,
-                         const int mmax,
-                         const int k0,
-                         const int kmax);
-void sgemm_conv_8x12(const float *A_packed,
-                     const float *B,
-                     const float *bias,
-                     float *C,
-                     int M,
-                     int N,
-                     int K,
-                     bool is_bias,
-                     bool is_relu,
-                     bool transB,
-                     ARMContext *ctx);
+void prepackA_8x12(
+    float *out, const float *in, int ldin, int m0, int mmax, int k0, int kmax);
+void prepackA_trans_8x12(
+    float *out, const float *in, int ldin, int m0, int mmax, int k0, int kmax);
+void sgemm_prepacked_8x12(bool is_transB,
+                          int M,
+                          int N,
+                          int K,
+                          float alpha,
+                          const float *A_packed,
+                          const float *B,
+                          int ldb,
+                          float beta,
+                          float *C,
+                          int ldc,
+                          const float *bias,
+                          bool has_bias,
+                          bool has_relu,
+                          ARMContext *ctx);
 #else
 // for kA72
-void prepackA_6x8(float *out,
-                  const float *in,
-                  const int ldin,
-                  const int m0,
-                  const int mmax,
-                  const int k0,
-                  const int kmax);
-void prepackA_trans_6x8(float *out,
-                        const float *in,
-                        const int ldin,
-                        const int m0,
-                        const int mmax,
-                        const int k0,
-                        const int kmax);
+void prepackA_6x8(
+    float *out, const float *in, int ldin, int m0, int mmax, int k0, int kmax);
+void prepackA_trans_6x8(
+    float *out, const float *in, int ldin, int m0, int mmax, int k0, int kmax);
 // for kA73
-void prepackA_4x8(float *out,
-                  const float *in,
-                  const int ldin,
-                  const int m0,
-                  const int mmax,
-                  const int k0,
-                  const int kmax);
-void prepackA_trans_4x8(float *out,
-                        const float *in,
-                        const int ldin,
-                        const int m0,
-                        const int mmax,
-                        const int k0,
-                        const int kmax);
+void prepackA_4x8(
+    float *out, const float *in, int ldin, int m0, int mmax, int k0, int kmax);
+void prepackA_trans_4x8(
+    float *out, const float *in, int ldin, int m0, int mmax, int k0, int kmax);
 // for kA72, 6x8
-void sgemm_conv_6x8(const float *A_packed,
-                    const float *B,
-                    const float *bias,
-                    float *C,
-                    int M,
-                    int N,
-                    int K,
-                    bool is_bias,
-                    bool is_relu,
-                    bool transB,
-                    ARMContext *ctx);
+void sgemm_prepacked_6x8(bool is_transB,
+                         int M,
+                         int N,
+                         int K,
+                         float alpha,
+                         const float *A_packed,
+                         const float *B,
+                         int ldb,
+                         float beta,
+                         float *C,
+                         int ldc,
+                         const float *bias,
+                         bool has_bias,
+                         bool has_relu,
+                         ARMContext *ctx);
 // for kA73, 4x8
-void sgemm_conv_4x8(const float *A_packed,
-                    const float *B,
-                    const float *bias,
-                    float *C,
-                    int M,
-                    int N,
-                    int K,
-                    bool is_bias,
-                    bool is_relu,
-                    bool transB,
-                    ARMContext *ctx);
+void sgemm_prepacked_4x8(bool is_transB,
+                         int M,
+                         int N,
+                         int K,
+                         float alpha,
+                         const float *A_packed,
+                         const float *B,
+                         int ldb,
+                         float beta,
+                         float *C,
+                         int ldc,
+                         const float *bias,
+                         bool has_bias,
+                         bool has_relu,
+                         ARMContext *ctx);
 #endif  // __aarch64__
 
 /**
@@ -110,11 +92,11 @@ void sgemm_conv_4x8(const float *A_packed,
  */
 void prepackA(float *out,
               const float *in,
-              const int ldin,
-              const int m0,
-              const int mmax,
-              const int k0,
-              const int kmax,
+              int ldin,
+              int m0,
+              int mmax,
+              int k0,
+              int kmax,
               bool is_trans,
               ARMContext *ctx) {
 #ifdef __aarch64__
@@ -166,45 +148,83 @@ void prepackA(TensorLite *tout,
 }
 
 /// a: m*k  b: k*n  c: m*n
-void sgemm_prepack(const float *A_packed,
-                   const float *B,
-                   const float *bias,
-                   float *C,
+void sgemm_prepack(bool is_transB,
                    int M,
                    int N,
                    int K,
-                   bool is_bias,
-                   bool is_relu,
-                   bool is_transB,
+                   float alpha,
+                   const float *A_packed,
+                   const float *B,
+                   int ldb,
+                   float beta,
+                   float *C,
+                   int ldc,
+                   const float *bias,
+                   bool has_bias,
+                   bool has_relu,
                    ARMContext *ctx) {
 #ifdef __aarch64__
-  sgemm_conv_8x12(
-      A_packed, B, bias, C, M, N, K, is_bias, is_relu, is_transB, ctx);
+  sgemm_prepacked_8x12(is_transB,
+                       M,
+                       N,
+                       K,
+                       alpha,
+                       A_packed,
+                       B,
+                       ldb,
+                       beta,
+                       C,
+                       ldc,
+                       bias,
+                       has_bias,
+                       has_relu,
+                       ctx);
 #else   // armv7
   if (ctx->arch() == kA73) {
-    sgemm_conv_4x8(
-        A_packed, B, bias, C, M, N, K, is_bias, is_relu, is_transB, ctx);
+    sgemm_prepacked_4x8(is_transB,
+                        M,
+                        N,
+                        K,
+                        alpha,
+                        A_packed,
+                        B,
+                        ldb,
+                        beta,
+                        C,
+                        ldc,
+                        bias,
+                        has_bias,
+                        has_relu,
+                        ctx);
   } else {
-    sgemm_conv_6x8(
-        A_packed, B, bias, C, M, N, K, is_bias, is_relu, is_transB, ctx);
+    sgemm_prepacked_6x8(is_transB,
+                        M,
+                        N,
+                        K,
+                        alpha,
+                        A_packed,
+                        B,
+                        ldb,
+                        beta,
+                        C,
+                        ldc,
+                        bias,
+                        has_bias,
+                        has_relu,
+                        ctx);
   }
 #endif  // arm64
 }
 
 #ifdef __aarch64__
-void prepackA_8x12(float *out,
-                   const float *in,
-                   const int ldin,
-                   const int m0,
-                   const int mmax,
-                   const int k0,
-                   const int kmax) {
+void prepackA_8x12(
+    float *out, const float *in, int ldin, int m0, int mmax, int k0, int kmax) {
   int x_len = kmax - k0;
   uint32_t zerobuff[x_len];  // NOLINT
   memset(zerobuff, 0, sizeof(uint32_t) * x_len);
 
-  uint32_t *dout = reinterpret_cast<uint32_t *>(out);
-  const uint32_t *inptr = reinterpret_cast<const uint32_t *>(in);
+  auto dout = reinterpret_cast<uint32_t *>(out);
+  auto inptr = reinterpret_cast<const uint32_t *>(in);
 
   int stride = x_len * 8;
 #pragma omp parallel for
@@ -272,76 +292,65 @@ void prepackA_8x12(float *out,
     }
     for (; x > 7; x -= 8) {
       asm volatile(
-          // Load up 8 elements (2 vectors) from each of 8 sources.
-          "LDP        q0, q1, [%[inptr0]], #32\n"  // q0=A0A1A2A3
-          "LDP        q2, q3, [%[inptr1]], #32\n"  // q2=B0B1B2B3
-          "LDP        q4, q5, [%[inptr2]], #32\n"  // q4=C0C1C2C3
-          "ZIP1       v16.4s, v0.4s, v4.4s\n"      // q16=A0C0A1C1
-          "prfm   pldl1keep, [%[inptr0], #128] \n"
-          "LDP        q6, q7, [%[inptr3]], #32\n"  // q6=D0D1D2D3
-          "ZIP1       v17.4s, v2.4s, v6.4s\n"      // q17=B0D0B1D1
-          "LDP        q8, q9, [%[inptr4]], #32\n"
-          "LDP        q10, q11, [%[inptr5]], #32\n"
-          "LDP        q12, q13, [%[inptr6]], #32\n"
-          "ZIP1       v18.4s, v8.4s, v12.4s\n"
-          "prfm   pldl1keep, [%[inptr1], #128]\n"
-          "LDP        q14, q15, [%[inptr7]], #32\n"
-          "ZIP1       v19.4s, v10.4s, v14.4s\n"
+          "ldp    q0, q1,     [%[inptr0]], #32\n" /* load r0, a0~a7 */
+          "ldp    q2, q3,     [%[inptr1]], #32\n" /* load r1, b0~b7 */
+          "ldp    q4, q5,     [%[inptr2]], #32\n" /* load r2, c0~c7 */
+          "ldp    q6, q7,     [%[inptr3]], #32\n" /* load r3, d0~d7 */
 
-          "ZIP1       v20.4s, v16.4s, v17.4s\n"  // q20=A0B0C0D0
-          "prfm   pldl1keep, [%[inptr2], #128]\n"
-          "ZIP1       v21.4s, v18.4s, v19.4s\n"
-          "ZIP2       v22.4s, v16.4s, v17.4s\n"
-          "ZIP2       v23.4s, v18.4s, v19.4s\n"
+          "trn1   v16.4s, v0.4s, v2.4s\n" /* a0b0a2b2*/
+          "trn2   v17.4s, v0.4s, v2.4s\n" /* a1b1a3b3*/
+          "trn1   v18.4s, v1.4s, v3.4s\n" /* a4b4a6b6*/
+          "trn2   v19.4s, v1.4s, v3.4s\n" /* a5b5a7b7*/
 
-          "ZIP2       v16.4s, v0.4s, v4.4s\n"
-          "prfm   pldl1keep, [%[inptr3], #128]\n"
-          "ZIP2       v17.4s, v2.4s, v6.4s\n"
-          "STP        q20, q21, [%[outptr]], #32\n"  // Write back the first
-                                                     // element of each source
+          "ldp    q8, q9,     [%[inptr4]], #32\n" /* load r4, e0~e7 */
+          "ldp    q10, q11,   [%[inptr5]], #32\n" /* load r5, f0~f7 */
 
-          "ZIP2       v18.4s, v8.4s, v12.4s\n"
-          "ZIP2       v19.4s, v10.4s, v14.4s\n"
-          "STP        q22, q23, [%[outptr]], #32\n"  // Write back the second
-                                                     // element of each source
+          "trn1   v20.4s, v4.4s, v6.4s\n" /* c0d0c2d2*/
+          "trn2   v21.4s, v4.4s, v6.4s\n" /* c1d1c3d3*/
+          "trn1   v22.4s, v5.4s, v7.4s\n" /* c4d4c6d6*/
+          "trn2   v23.4s, v5.4s, v7.4s\n" /* c5d5c7d7*/
 
-          "ZIP1       v20.4s, v16.4s, v17.4s\n"
-          "prfm   pldl1keep, [%[inptr4], #128]\n"
-          "ZIP1       v21.4s, v18.4s, v19.4s\n"
-          "ZIP2       v22.4s, v16.4s, v17.4s\n"
-          "ZIP2       v23.4s, v18.4s, v19.4s\n"
+          "ldp    q12, q13,   [%[inptr6]], #32\n" /* load r6, g0~g7 */
+          "ldp    q14, q15,   [%[inptr7]], #32\n" /* load r7, h0~h7 */
 
-          "ZIP1       v16.4s, v1.4s, v5.4s\n"
-          "prfm   pldl1keep, [%[inptr5], #128]\n"
-          "ZIP1       v17.4s, v3.4s, v7.4s\n"
-          "STP        q20, q21, [%[outptr]], #32\n"  // Third element
+          "trn1   v24.4s, v8.4s, v10.4s\n" /* e0f0e2f2*/
+          "trn2   v25.4s, v8.4s, v10.4s\n" /* e1f1e3f3*/
+          "trn1   v26.4s, v9.4s, v11.4s\n" /* e4f4e6f6*/
+          "trn2   v27.4s, v9.4s, v11.4s\n" /* e5f5e7f7*/
 
-          "ZIP1       v18.4s, v9.4s, v13.4s\n"
-          "ZIP1       v19.4s, v11.4s, v15.4s\n"
-          "STP        q22, q23, [%[outptr]], #32\n"  // Fourth element
+          "trn1   v28.4s, v12.4s, v14.4s\n" /* g0h0g2h2*/
+          "trn2   v29.4s, v12.4s, v14.4s\n" /* g1h1g3h3*/
+          "trn1   v30.4s, v13.4s, v15.4s\n" /* g4h4g6h6*/
+          "trn2   v31.4s, v13.4s, v15.4s\n" /* g5h5g7h7*/
 
-          "ZIP1       v20.4s, v16.4s, v17.4s\n"
-          "ZIP1       v21.4s, v18.4s, v19.4s\n"
-          "ZIP2       v22.4s, v16.4s, v17.4s\n"
-          "prfm   pldl1keep, [%[inptr6], #128]\n"
-          "ZIP2       v23.4s, v18.4s, v19.4s\n"
+          "trn1   v0.2d, v16.2d, v20.2d\n" /* a0b0c0d0 */
+          "trn1   v1.2d, v24.2d, v28.2d\n" /* e0f0g0h0 */
+          "trn1   v2.2d, v17.2d, v21.2d\n" /* a1b1c1d1 */
+          "trn1   v3.2d, v25.2d, v29.2d\n" /* e1b1c1d1 */
 
-          "ZIP2       v16.4s, v1.4s, v5.4s\n"
-          "ZIP2       v17.4s, v3.4s, v7.4s\n"
-          "STP        q20, q21, [%[outptr]], #32\n"  // Fifth element
+          "trn2   v4.2d, v16.2d, v20.2d\n"    /* a2b2c2d2 */
+          "trn2   v5.2d, v24.2d, v28.2d\n"    /* e2f2g2h2 */
+          "stp    q0, q1, [%[outptr]], #32\n" /* save q0, q1, a0~h0*/
+          "trn2   v6.2d, v17.2d, v21.2d\n"    /* a3b3c3d3 */
+          "trn2   v7.2d, v25.2d, v29.2d\n"    /* e3f3g3h3 */
+          "stp    q2, q3, [%[outptr]], #32\n" /* save q2, q3, a1~h1*/
 
-          "ZIP2       v18.4s, v9.4s, v13.4s\n"
-          "prfm   pldl1keep, [%[inptr7], #128]\n"
-          "ZIP2       v19.4s, v11.4s, v15.4s\n"
-          "STP        q22, q23, [%[outptr]], #32\n"  // Sixth element
+          "trn1   v8.2d, v18.2d, v22.2d\n"    /* a4b4c4d4 */
+          "trn1   v9.2d, v26.2d, v30.2d\n"    /* e4f4g4h4 */
+          "stp    q4, q5, [%[outptr]], #32\n" /* save q4, q5, a2~h2*/
+          "trn1   v10.2d, v19.2d, v23.2d\n"   /* a5b5c5d5 */
+          "trn1   v11.2d, v27.2d, v31.2d\n"   /* e5f5g5h5 */
+          "stp    q6, q7, [%[outptr]], #32\n" /* save q6, q7, a3~h3*/
 
-          "ZIP1       v20.4s, v16.4s, v17.4s\n"
-          "ZIP1       v21.4s, v18.4s, v19.4s\n"
-          "STP        q20, q21, [%[outptr]], #32\n"  // Seventh element
+          "trn2   v12.2d, v18.2d, v22.2d\n"     /* a6b6c6d6 */
+          "trn2   v13.2d, v26.2d, v30.2d\n"     /* e6f6g6h6 */
+          "stp    q8, q9, [%[outptr]], #32\n"   /* save q8, q9, a4~h4*/
+          "trn2   v14.2d, v19.2d, v23.2d\n"     /* a7b7c7d7 */
+          "trn2   v15.2d, v27.2d, v31.2d\n"     /* e7f7g7h7 */
+          "stp    q10, q11, [%[outptr]], #32\n" /* save q10, q11, a5~h5*/
 
-          "ZIP2       v22.4s, v16.4s, v17.4s\n"
-          "ZIP2       v23.4s, v18.4s, v19.4s\n"
-          "STP        q22, q23, [%[outptr]], #32\n"  // Eighth element
+          "stp    q12, q13, [%[outptr]], #32\n" /* save q12, q13, a6~h6*/
+          "stp    q14, q15, [%[outptr]], #32\n" /* save q14, q15, a7~h7*/
           : [inptr0] "+r"(inptr0),
             [inptr1] "+r"(inptr1),
             [inptr2] "+r"(inptr2),
@@ -376,6 +385,14 @@ void prepackA_8x12(float *out,
             "v21",
             "v22",
             "v23",
+            "v24",
+            "v25",
+            "v26",
+            "v27",
+            "v28",
+            "v29",
+            "v30",
+            "v31",
             "cc",
             "memory");
     }
@@ -393,25 +410,15 @@ void prepackA_8x12(float *out,
   }
 }
 
-void prepackA_trans_8x12(float *out,
-                         const float *in,
-                         const int ldin,
-                         const int m0,
-                         const int mmax,
-                         const int k0,
-                         const int kmax) {
-  uint32_t *outptr = reinterpret_cast<uint32_t *>(out);
-  const uint32_t *inptr =
-      reinterpret_cast<const uint32_t *>(in) + k0 * ldin + m0;
+void prepackA_trans_8x12(
+    float *out, const float *in, int ldin, int m0, int mmax, int k0, int kmax) {
+  auto outptr = reinterpret_cast<uint32_t *>(out);
+  auto inptr = reinterpret_cast<const uint32_t *>(in) + k0 * ldin + m0;
 
   uint32_t mask_buffer[8] = {0, 1, 2, 3, 4, 5, 6, 7};
   int x_len = mmax - m0;
   int y_len = kmax - k0;
   int right_remain = x_len - 8 * (x_len / 8);
-  int right_pad = 8 - right_remain;
-  if (right_remain == 0) {
-    right_pad = 0;
-  }
 
   uint32_t *outptr_row = outptr;
   int stride_out = 8 * y_len;
@@ -543,19 +550,14 @@ void prepackA_trans_8x12(float *out,
 }
 
 #else  // __aarch64__
-void prepackA_6x8(float* out,
-                  const float* in,
-                  const int ldin,
-                  const int m0,
-                  const int mmax,
-                  const int k0,
-                  const int kmax) {
+void prepackA_6x8(
+    float* out, const float* in, int ldin, int m0, int mmax, int k0, int kmax) {
   int x_len = kmax - k0;
   uint32_t zerobuff[x_len];  // NOLINT
   memset(zerobuff, 0, sizeof(uint32_t) * x_len);
 
-  uint32_t* dout = reinterpret_cast<uint32_t*>(out);
-  const uint32_t* inptr = reinterpret_cast<const uint32_t*>(in);
+  auto dout = reinterpret_cast<uint32_t*>(out);
+  auto inptr = reinterpret_cast<const uint32_t*>(in);
 
   uint32_t* outptr = dout;
 
@@ -679,13 +681,8 @@ void prepackA_6x8(float* out,
   }
 }
 
-void prepackA_trans_6x8(float* out,
-                        const float* in,
-                        const int ldin,
-                        const int m0,
-                        const int mmax,
-                        const int k0,
-                        const int kmax) {
+void prepackA_trans_6x8(
+    float* out, const float* in, int ldin, int m0, int mmax, int k0, int kmax) {
   uint32_t* outptr = reinterpret_cast<uint32_t*>(out);
   const uint32_t* inptr =
       reinterpret_cast<const uint32_t*>(in) + k0 * ldin + m0;
@@ -797,19 +794,14 @@ void prepackA_trans_6x8(float* out,
   }
 }
 
-void prepackA_4x8(float* out,
-                  const float* in,
-                  const int ldin,
-                  const int m0,
-                  const int mmax,
-                  const int k0,
-                  const int kmax) {
+void prepackA_4x8(
+    float* out, const float* in, int ldin, int m0, int mmax, int k0, int kmax) {
   int x_len = kmax - k0;
   uint32_t zerobuff[x_len];  // NOLINT
   memset(zerobuff, 0, sizeof(uint32_t) * x_len);
 
-  uint32_t* dout = reinterpret_cast<uint32_t*>(out);
-  const uint32_t* inptr = reinterpret_cast<const uint32_t*>(in);
+  auto dout = reinterpret_cast<uint32_t*>(out);
+  auto inptr = reinterpret_cast<const uint32_t*>(in);
 
   uint32_t* outptr = dout;
   //! data A is not transposed, transpose A to k * 4
@@ -906,14 +898,9 @@ void prepackA_4x8(float* out,
   }
 }
 
-void prepackA_trans_4x8(float* out,
-                        const float* in,
-                        const int ldin,
-                        const int m0,
-                        const int mmax,
-                        const int k0,
-                        const int kmax) {
-  uint32_t* outptr = reinterpret_cast<uint32_t*>(out);
+void prepackA_trans_4x8(
+    float* out, const float* in, int ldin, int m0, int mmax, int k0, int kmax) {
+  auto outptr = reinterpret_cast<uint32_t*>(out);
   const uint32_t* inptr =
       reinterpret_cast<const uint32_t*>(in) + k0 * ldin + m0;
 
@@ -1026,13 +1013,8 @@ void prepackA_trans_4x8(float* out,
 * for arm-v8a, transform data to block x k x 12 layout
 */
 #ifdef __aarch64__
-void loadb(float *out,
-           const float *in,
-           const int ldin,
-           const int k0,
-           const int kmax,
-           const int n0,
-           const int nmax) {
+void loadb(
+    float *out, const float *in, int ldin, int k0, int kmax, int n0, int nmax) {
   uint32_t *outptr = reinterpret_cast<uint32_t *>(out);
   const uint32_t *inptr =
       reinterpret_cast<const uint32_t *>(in) + k0 * ldin + n0;
@@ -1203,18 +1185,13 @@ void loadb(float *out,
   }
 }
 
-void loadb_trans(float *out,
-                 const float *in,
-                 const int ldin,
-                 const int k0,
-                 const int kmax,
-                 const int n0,
-                 const int nmax) {
+void loadb_trans(
+    float *out, const float *in, int ldin, int k0, int kmax, int n0, int nmax) {
   int x_len = kmax - k0;
   uint32_t zerobuff[x_len];  // NOLINT
   memset(zerobuff, 0, sizeof(uint32_t) * x_len);
-  uint32_t *outptr = reinterpret_cast<uint32_t *>(out);
-  const uint32_t *inptr = reinterpret_cast<const uint32_t *>(in);
+  auto outptr = reinterpret_cast<uint32_t *>(out);
+  auto inptr = reinterpret_cast<const uint32_t *>(in);
 
   //! data B is not transposed, transpose B to k * 12
   for (int y = n0; y < nmax; y += 12) {
@@ -1304,117 +1281,113 @@ void loadb_trans(float *out,
     }
     for (; x > 7; x -= 8) {
       asm volatile(
-          // Load up 12 elements (3 vectors) from each of 8 sources.
-          "LDP        q0, q1, [%[inptr0]], #32\n"  // q0=A0A1A2A3
-          "LDP        q2, q3, [%[inptr1]], #32\n"  // q2=B0B1B2B3
-          "LDP        q4, q5, [%[inptr2]], #32\n"  // q4=C0C1C2C3
-          "ZIP1       v16.4s, v0.4s, v4.4s\n"      // q16=A0C0A1C1
+          "ldp    q0, q1, [%[inptr0]], #32\n" /* r0, a0~a7 */
+          "ldp    q2, q3, [%[inptr1]], #32\n" /* r1, b0~b7 */
+          "ldp    q4, q5, [%[inptr2]], #32\n" /* r2, c0~c7 */
+          "ldp    q6, q7, [%[inptr3]], #32\n" /* r3, d0~d7 */
+
+          "zip1   v16.4s, v0.4s, v4.4s\n" /* a0c0a1c1 */
+          "zip1   v17.4s, v2.4s, v6.4s\n" /* b0d0b1d1 */
           "prfm   pldl1keep, [%[inptr0], #128] \n"
-          "LDP        q6, q7, [%[inptr3]], #32\n"  // q6=D0D1D2D3
-          "ZIP1       v17.4s, v2.4s, v6.4s\n"      // q17=B0D0B1D1
-          "LDP        q8, q9, [%[inptr4]], #32\n"
-          "LDP        q10, q11, [%[inptr5]], #32\n"
-          "LDP        q12, q13, [%[inptr6]], #32\n"
-          "ZIP1       v18.4s, v8.4s, v12.4s\n"
+
+          "ldp    q8, q9, [%[inptr4]], #32\n"   /* r4, e0~e7 */
+          "ldp    q10, q11, [%[inptr5]], #32\n" /* r5, f0~f7 */
+          "ldp    q12, q13, [%[inptr6]], #32\n" /* r6, g0~g7 */
+          "ldp    q14, q15, [%[inptr7]], #32\n" /* r7, h0~h7 */
+
+          "zip1   v18.4s, v8.4s, v12.4s\n"  /* e0g0e1g1 */
+          "zip1   v19.4s, v10.4s, v14.4s\n" /* f0h0f1h1 */
           "prfm   pldl1keep, [%[inptr1], #128]\n"
-          "LDP        q14, q15, [%[inptr7]], #32\n"
-          "ZIP1       v19.4s, v10.4s, v14.4s\n"
-
-          "ZIP1       v20.4s, v16.4s, v17.4s\n"  // q20=A0B0C0D0
+          "zip1   v20.4s, v16.4s, v17.4s\n" /* a0b0c0d0 */
+          "zip1   v21.4s, v18.4s, v19.4s\n" /* e0f0g0h0 */
           "prfm   pldl1keep, [%[inptr2], #128]\n"
-          "ZIP1       v21.4s, v18.4s, v19.4s\n"
-          "ZIP2       v22.4s, v16.4s, v17.4s\n"
-          "ZIP2       v23.4s, v18.4s, v19.4s\n"
+          "zip2   v22.4s, v16.4s, v17.4s\n" /* a1b1c1d1 */
+          "zip2   v23.4s, v18.4s, v19.4s\n" /* e1f1g1h1 */
 
-          "LDP        q24, q25, [%[inptr8]], #32\n"   // q24=A0A1A2A3
-          "LDP        q26, q27, [%[inptr9]], #32\n"   // q26=B0B1B2B3
-          "LDP        q28, q29, [%[inptr10]], #32\n"  // q28=C0C1C2C3
-          "LDP        q30, q31, [%[inptr11]], #32\n"  // q30=D0D1D2D3
+          "ldp    q24, q25, [%[inptr8]], #32\n"  /* r8, i0~i7 */
+          "ldp    q26, q27, [%[inptr9]], #32\n"  /* r9, j0~j7 */
+          "ldp    q28, q29, [%[inptr10]], #32\n" /* r10, k0~k7 */
+          "ldp    q30, q31, [%[inptr11]], #32\n" /* r11, l0~l7 */
+
+          "stp    q20, q21, [%[outptr]], #32\n" /* save a0~h0 */
           "prfm   pldl1keep, [%[inptr3], #128]\n"
+
+          "zip1   v16.4s, v24.4s, v28.4s\n" /* i0k0i1k1 */
+          "zip1   v17.4s, v26.4s, v30.4s\n" /* j0l0j1l1 */
           "prfm   pldl1keep, [%[inptr4], #128]\n"
-          "ZIP1       v16.4s, v24.4s, v28.4s\n"      // q16=A0C0A1C1
-          "ZIP1       v17.4s, v26.4s, v30.4s\n"      // q17=B0D0B1D1
-          "STP        q20, q21, [%[outptr]], #32\n"  // Write back the first
-                                                     // element of each source
-          "ZIP1       v18.4s, v16.4s, v17.4s\n"      // q20=A0B0C0D0
-          "ZIP2       v19.4s, v16.4s, v17.4s\n"      // q20=A0B0C0D0
-
-          "ZIP2       v16.4s, v0.4s, v4.4s\n"
+          "zip1   v18.4s, v16.4s, v17.4s\n" /* i0j0k0l0 */
+          "zip2   v19.4s, v16.4s, v17.4s\n" /* i1j1k1l1 */
           "prfm   pldl1keep, [%[inptr5], #128]\n"
-          "ZIP2       v17.4s, v2.4s, v6.4s\n"
-          "STR       q18, [%[outptr]], #16\n"  // Write back the second element
-                                               // of each source
+          "zip2   v16.4s, v0.4s, v4.4s\n" /* a2c2a3c3 */
+          "zip2   v17.4s, v2.4s, v6.4s\n" /* b2d2b3d3 */
 
-          "STP        q22, q23, [%[outptr]], #32\n"  // Write back the second
-                                                     // element of each source
-          "ZIP2       v18.4s, v8.4s, v12.4s\n"
+          "str    q18, [%[outptr]], #16\n"      /* save j0~l0 */
+          "stp    q22, q23, [%[outptr]], #32\n" /* save a1~h1 */
+          "str    q19, [%[outptr]], #16\n"      /* save j1~l1 */
+
+          "zip2   v18.4s, v8.4s, v12.4s\n"  /* e2g2e3g3 */
+          "zip2   v19.4s, v10.4s, v14.4s\n" /* f2h2f3h3 */
           "prfm   pldl1keep, [%[inptr6], #128]\n"
-          "STR        q19, [%[outptr]], #16\n"  // Write back the second element
-                                                // of each source
-          "ZIP2       v19.4s, v10.4s, v14.4s\n"
-
-          "ZIP1       v20.4s, v16.4s, v17.4s\n"
+          "zip1   v20.4s, v16.4s, v17.4s\n" /* a2b2c2d2 */
+          "zip1   v21.4s, v18.4s, v19.4s\n" /* e2f2g2h2 */
           "prfm   pldl1keep, [%[inptr7], #128]\n"
-          "ZIP1       v21.4s, v18.4s, v19.4s\n"
-          "ZIP2       v22.4s, v16.4s, v17.4s\n"
-          "ZIP2       v23.4s, v18.4s, v19.4s\n"
-
-          "ZIP2       v16.4s, v24.4s, v28.4s\n"  // q16=A0C0A1C1
-          "ZIP2       v17.4s, v26.4s, v30.4s\n"  // q17=B0D0B1D1
+          "zip2   v22.4s, v16.4s, v17.4s\n" /* a3b3c3d3 */
+          "zip2   v23.4s, v18.4s, v19.4s\n" /* e3f3g3h3 */
           "prfm   pldl1keep, [%[inptr8], #128]\n"
-          "STP        q20, q21, [%[outptr]], #32\n"  // Third element
-          "ZIP1       v18.4s, v16.4s, v17.4s\n"
-          "ZIP2       v19.4s, v16.4s, v17.4s\n"
+          "zip2   v16.4s, v24.4s, v28.4s\n" /* i2k2i3k3 */
+          "zip2   v17.4s, v26.4s, v30.4s\n" /* j2l2j3l3 */
 
-          "ZIP1       v16.4s, v1.4s, v5.4s\n"
+          "stp    q20, q21, [%[outptr]], #32\n" /* save a2~h2 */
+
+          "zip1   v18.4s, v16.4s, v17.4s\n" /* i2j2k2l2 */
+          "zip2   v19.4s, v16.4s, v17.4s\n" /* i3j3k3l3 */
           "prfm   pldl1keep, [%[inptr9], #128]\n"
-          "ZIP1       v17.4s, v3.4s, v7.4s\n"
-          "STR       q18, [%[outptr]], #16\n"  // Write back the second element
-                                               // of each source
+          "zip1   v16.4s, v1.4s, v5.4s\n" /* a4c4a5c5 */
+          "zip1   v17.4s, v3.4s, v7.4s\n" /* b4d4b5d5 */
 
-          "STP        q22, q23, [%[outptr]], #32\n"  // Fourth element
-          "ZIP1       v18.4s, v9.4s, v13.4s\n"
+          "str    q18, [%[outptr]], #16\n"      /* save i2~l2 */
+          "stp    q22, q23, [%[outptr]], #32\n" /* save a3~h3 */
+          "str    q19, [%[outptr]], #16\n"      /* save i3~l3 */
+
+          "zip1   v18.4s, v9.4s, v13.4s\n"  /* e4g4e5g5 */
+          "zip1   v19.4s, v11.4s, v15.4s\n" /* f4h4f5h5 */
           "prfm   pldl1keep, [%[inptr10], #128]\n"
-          "STR        q19, [%[outptr]], #16\n"  // Write back the second element
-                                                // of each source
-          "ZIP1       v19.4s, v11.4s, v15.4s\n"
-
-          "ZIP1       v20.4s, v16.4s, v17.4s\n"
-          "ZIP1       v21.4s, v18.4s, v19.4s\n"
-          "ZIP2       v22.4s, v16.4s, v17.4s\n"
+          "zip1   v20.4s, v16.4s, v17.4s\n" /* a4b4c4d4 */
+          "zip1   v21.4s, v18.4s, v19.4s\n" /* e4f4g4h4 */
           "prfm   pldl1keep, [%[inptr11], #128]\n"
-          "ZIP2       v23.4s, v18.4s, v19.4s\n"
+          "zip2   v22.4s, v16.4s, v17.4s\n" /* a5b5c5d5 */
+          "zip2   v23.4s, v18.4s, v19.4s\n" /* e5f5g5h5 */
+          "zip1   v16.4s, v25.4s, v29.4s\n" /* i4k4i5k5 */
+          "zip1   v17.4s, v27.4s, v31.4s\n" /* j4l4j5l5 */
 
-          "ZIP1       v16.4s, v25.4s, v29.4s\n"
-          "ZIP1       v17.4s, v27.4s, v31.4s\n"
-          "STP        q20, q21, [%[outptr]], #32\n"  // Fifth element
-          "ZIP1       v18.4s, v16.4s, v17.4s\n"
-          "ZIP2       v19.4s, v16.4s, v17.4s\n"
+          "stp    q20, q21, [%[outptr]], #32\n" /* save a4~h4 */
 
-          "ZIP2       v16.4s, v1.4s, v5.4s\n"
-          "ZIP2       v17.4s, v3.4s, v7.4s\n"
-          "STR       q18, [%[outptr]], #16\n"
+          "zip1   v18.4s, v16.4s, v17.4s\n" /* i4j4k4l4 */
+          "zip2   v19.4s, v16.4s, v17.4s\n" /* i5j5k5l5 */
+          "zip2   v16.4s, v1.4s, v5.4s\n"   /* a6c6a7c7 */
+          "zip2   v17.4s, v3.4s, v7.4s\n"   /* b6d6b7d7 */
 
-          "STP        q22, q23, [%[outptr]], #32\n"  // Sixth element
-          "ZIP2       v18.4s, v9.4s, v13.4s\n"
-          "STR       q19, [%[outptr]], #16\n"  // Sixth element
+          "str    q18, [%[outptr]], #16\n"      /* save i4~l4 */
+          "stp    q22, q23, [%[outptr]], #32\n" /* save a5~h5 */
+          "str    q19, [%[outptr]], #16\n"      /* save i5~l5 */
 
-          "ZIP2       v19.4s, v11.4s, v15.4s\n"
-          "ZIP1       v20.4s, v16.4s, v17.4s\n"
-          "ZIP1       v21.4s, v18.4s, v19.4s\n"
+          "zip2   v18.4s, v9.4s, v13.4s\n"  /* e6g6e7g7 */
+          "zip2   v19.4s, v11.4s, v15.4s\n" /* f6h6f7h7 */
+          "zip1   v20.4s, v16.4s, v17.4s\n" /* a6b6c6d6 */
+          "zip1   v21.4s, v18.4s, v19.4s\n" /* e6f6g6h6 */
+          "zip2   v22.4s, v16.4s, v17.4s\n" /* a7b7c7d7 */
+          "zip2   v23.4s, v18.4s, v19.4s\n" /* e7f7g7h7 */
+          "zip2   v16.4s, v25.4s, v29.4s\n" /* i6k6i7k7 */
+          "zip2   v17.4s, v27.4s, v31.4s\n" /* j6l6j7l7 */
 
-          "ZIP2       v22.4s, v16.4s, v17.4s\n"
-          "ZIP2       v23.4s, v18.4s, v19.4s\n"
+          "stp    q20, q21, [%[outptr]], #32\n" /* save a6~h6 */
 
-          "ZIP2       v16.4s, v25.4s, v29.4s\n"
-          "ZIP2       v17.4s, v27.4s, v31.4s\n"
-          "STP        q20, q21, [%[outptr]], #32\n"  // Seventh element
+          "zip1   v18.4s, v16.4s, v17.4s\n" /* i6j6k6l6 */
+          "zip2   v19.4s, v16.4s, v17.4s\n" /* i7j7k7l7 */
 
-          "ZIP1       v18.4s, v16.4s, v17.4s\n"
-          "ZIP2       v19.4s, v16.4s, v17.4s\n"
-          "STR       q18, [%[outptr]], #16\n"
-          "STP        q22, q23, [%[outptr]], #32\n"  // Eighth element
-          "STR       q19, [%[outptr]], #16\n"
+          "str    q18, [%[outptr]], #16\n"      /* save i6~l6 */
+          "stp    q22, q23, [%[outptr]], #32\n" /* save a7~h7 */
+          "str    q19, [%[outptr]], #16\n"      /* save i7~l7 */
           : [inptr0] "+r"(inptr0),
             [inptr1] "+r"(inptr1),
             [inptr2] "+r"(inptr2),
@@ -1483,24 +1456,15 @@ void loadb_trans(float *out,
 }
 
 #else  // __aarch64__
-void loadb(float* out,
-           const float* in,
-           const int ldin,
-           const int k0,
-           const int kmax,
-           const int n0,
-           const int nmax) {
-  uint32_t* outptr = reinterpret_cast<uint32_t*>(out);
-  const uint32_t* inptr =
-      reinterpret_cast<const uint32_t*>(in) + k0 * ldin + n0;
+void loadb(
+    float* out, const float* in, int ldin, int k0, int kmax, int n0, int nmax) {
+  auto outptr = reinterpret_cast<uint32_t*>(out);
+  auto inptr = reinterpret_cast<const uint32_t*>(in) + k0 * ldin + n0;
   uint32_t mask_buffer[8] = {0, 1, 2, 3, 4, 5, 6, 7};
   int x_len = nmax - n0;
   int y_len = kmax - k0;
   int right_remain = x_len - 8 * (x_len / 8);
   int right_pad = 8 - right_remain;
-  const size_t copy_len_remain = sizeof(float) * right_remain;
-  const size_t copy_len_pad = sizeof(float) * right_pad;
-  const size_t size_ldin = sizeof(float) * ldin;
 
   uint32_t* outptr_row = outptr;
   int stride_out = 8 * y_len;
@@ -1600,19 +1564,14 @@ void loadb(float* out,
   }
 }
 
-void loadb_trans(float* out,
-                 const float* in,
-                 const int ldin,
-                 const int k0,
-                 const int kmax,
-                 const int n0,
-                 const int nmax) {
+void loadb_trans(
+    float* out, const float* in, int ldin, int k0, int kmax, int n0, int nmax) {
   int x_len = kmax - k0;
   uint32_t zerobuff[x_len];  // NOLINT
   memset(zerobuff, 0, sizeof(uint32_t) * x_len);
 
-  uint32_t* outptr = reinterpret_cast<uint32_t*>(out);
-  const uint32_t* inptr = reinterpret_cast<const uint32_t*>(in);
+  auto outptr = reinterpret_cast<uint32_t*>(out);
+  auto inptr = reinterpret_cast<const uint32_t*>(in);
   //! data B is not transposed, transpose B to k * 8
   for (int y = n0; y < nmax; y += 8) {
     const uint32_t* inptr0 = inptr + y * ldin + k0;
@@ -1783,20 +1742,24 @@ void loadb_trans(float* out,
 #endif  // __aarch64__
 
 #ifdef __aarch64__
-void sgemm_conv_8x12(const float *A_packed,
-                     const float *B,
-                     const float *bias,
-                     float *C,
-                     int M,
-                     int N,
-                     int K,
-                     bool is_bias,
-                     bool is_relu,
-                     bool transB,
-                     ARMContext *ctx) {
+void sgemm_prepacked_8x12(bool is_transB,
+                          int M,
+                          int N,
+                          int K,
+                          float alpha,
+                          const float *A_packed,
+                          const float *B,
+                          int ldb,
+                          float beta,
+                          float *C,
+                          int ldc,
+                          const float *bias,
+                          bool has_bias,
+                          bool has_relu,
+                          ARMContext *ctx) {
   size_t l2_cache =
       ctx->l2_cache_size() > 0 ? ctx->l2_cache_size() : 512 * 1024;
-  float *workspace = ctx->workspace_data<float>();
+  auto workspace = ctx->workspace_data<float>();
   int threads = ctx->threads();
   //! MBLOCK * x (result) + MBLOCK * k (A) + x * k (B) = l2
   int x_block = (l2_cache - (MBLOCK * K)) / (sizeof(float) * (K + MBLOCK));
@@ -1828,10 +1791,10 @@ void sgemm_conv_8x12(const float *A_packed,
     }
     //! load bpanel
     float *b_pannel = workspace;
-    if (transB) {
-      loadb_trans(b_pannel, B, K, 0, K, x0, xmax);
+    if (is_transB) {
+      loadb_trans(b_pannel, B, ldb, 0, K, x0, xmax);
     } else {
-      loadb(b_pannel, B, N, 0, K, x0, xmax);
+      loadb(b_pannel, B, ldb, 0, K, x0, xmax);
     }
 #pragma omp parallel for num_threads(threads)
     for (unsigned int y = 0; y < M; y += MBLOCK) {
@@ -1841,7 +1804,7 @@ void sgemm_conv_8x12(const float *A_packed,
       }
 
       float bias_local[8] = {0};
-      if (is_bias) {
+      if (has_bias) {
         bias_local[0] = bias[y];
         bias_local[1] = bias[y + 1];
         bias_local[2] = bias[y + 2];
@@ -1861,14 +1824,14 @@ void sgemm_conv_8x12(const float *A_packed,
       float cout6[NBLOCK];
       float cout7[NBLOCK];
 
-      float *c_ptr0 = C + y * N + x0;
-      float *c_ptr1 = c_ptr0 + N;
-      float *c_ptr2 = c_ptr1 + N;
-      float *c_ptr3 = c_ptr2 + N;
-      float *c_ptr4 = c_ptr3 + N;
-      float *c_ptr5 = c_ptr4 + N;
-      float *c_ptr6 = c_ptr5 + N;
-      float *c_ptr7 = c_ptr6 + N;
+      float *c_ptr0 = C + y * ldc + x0;
+      float *c_ptr1 = c_ptr0 + ldc;
+      float *c_ptr2 = c_ptr1 + ldc;
+      float *c_ptr3 = c_ptr2 + ldc;
+      float *c_ptr4 = c_ptr3 + ldc;
+      float *c_ptr5 = c_ptr4 + ldc;
+      float *c_ptr6 = c_ptr5 + ldc;
+      float *c_ptr7 = c_ptr6 + ldc;
 
       float *pout0 = c_ptr0;
       float *pout1 = c_ptr1;
@@ -2603,7 +2566,7 @@ void sgemm_conv_8x12(const float *A_packed,
               [c_ptr5] "+r"(c_ptr5),
               [c_ptr6] "+r"(c_ptr6),
               [c_ptr7] "+r"(c_ptr7)
-            : [bias_ptr] "r"(bias_local), [relu] "r"(is_relu)
+            : [bias_ptr] "r"(bias_local), [relu] "r"(has_relu)
             : "v0",
               "v1",
               "v2",
@@ -2664,17 +2627,21 @@ void sgemm_conv_8x12(const float *A_packed,
  * @param threads
  * @param workspace
  */
-void sgemm_conv_6x8(const float* A_packed,
-                    const float* B,
-                    const float* bias,
-                    float* C,
-                    int M,
-                    int N,
-                    int K,
-                    bool is_bias,
-                    bool is_relu,
-                    bool transB,
-                    ARMContext* ctx) {
+void sgemm_prepacked_6x8(bool is_transB,
+                         int M,
+                         int N,
+                         int K,
+                         float alpha,
+                         const float* A_packed,
+                         const float* B,
+                         int ldb,
+                         float beta,
+                         float* C,
+                         int ldc,
+                         const float* bias,
+                         bool has_bias,
+                         bool has_relu,
+                         ARMContext* ctx) {
   size_t l2_cache =
       ctx->l2_cache_size() > 0 ? ctx->l2_cache_size() : 512 * 1024;
   auto* workspace = ctx->workspace_data<float>();
@@ -2712,10 +2679,10 @@ void sgemm_conv_6x8(const float* A_packed,
     }
     //! load bpanel
     float* b_pannel = workspace;
-    if (transB) {
-      loadb_trans(b_pannel, B, K, 0, K, x0, xmax);
+    if (is_transB) {
+      loadb_trans(b_pannel, B, ldb, 0, K, x0, xmax);
     } else {
-      loadb(b_pannel, B, N, 0, K, x0, xmax);
+      loadb(b_pannel, B, ldb, 0, K, x0, xmax);
     }
 #pragma omp parallel for num_threads(threads)
     for (unsigned int y = 0; y < M; y += MBLOCK_OTH) {
@@ -2723,12 +2690,12 @@ void sgemm_conv_6x8(const float* A_packed,
       if (ymax > M) {
         ymax = M;
       }
-      float* c_ptr0 = C + y * N + x0;
-      float* c_ptr1 = c_ptr0 + N;
-      float* c_ptr2 = c_ptr1 + N;
-      float* c_ptr3 = c_ptr2 + N;
-      float* c_ptr4 = c_ptr3 + N;
-      float* c_ptr5 = c_ptr4 + N;
+      float* c_ptr0 = C + y * ldc + x0;
+      float* c_ptr1 = c_ptr0 + ldc;
+      float* c_ptr2 = c_ptr1 + ldc;
+      float* c_ptr3 = c_ptr2 + ldc;
+      float* c_ptr4 = c_ptr3 + ldc;
+      float* c_ptr5 = c_ptr4 + ldc;
 
       float* pout0 = c_ptr0;
       float* pout1 = c_ptr1;
@@ -2738,7 +2705,7 @@ void sgemm_conv_6x8(const float* A_packed,
       float* pout5 = c_ptr5;
 
       float bias_local[6] = {0};
-      if (is_bias) {
+      if (has_bias) {
         bias_local[0] = bias[y];
         bias_local[1] = bias[y + 1];
         bias_local[2] = bias[y + 2];
@@ -3052,7 +3019,7 @@ void sgemm_conv_6x8(const float* A_packed,
               [c_ptr5] "+r"(c_ptr5),
               [k] "+r"(k),
               [tails] "+r"(tails)
-            : [bias_ptr] "r"(bias_local), [relu] "r"(is_relu)
+            : [bias_ptr] "r"(bias_local), [relu] "r"(has_relu)
             : "q0",
               "q1",
               "q2",
@@ -3087,17 +3054,21 @@ void sgemm_conv_6x8(const float* A_packed,
   }
 }
 
-void sgemm_conv_4x8(const float* A_packed,
-                    const float* B,
-                    const float* bias,
-                    float* C,
-                    int M,
-                    int N,
-                    int K,
-                    bool is_bias,
-                    bool is_relu,
-                    bool transB,
-                    ARMContext* ctx) {
+void sgemm_prepacked_4x8(bool is_transB,
+                         int M,
+                         int N,
+                         int K,
+                         float alpha,
+                         const float* A_packed,
+                         const float* B,
+                         int ldb,
+                         float beta,
+                         float* C,
+                         int ldc,
+                         const float* bias,
+                         bool has_bias,
+                         bool has_relu,
+                         ARMContext* ctx) {
   size_t l2_cache =
       ctx->l2_cache_size() > 0 ? ctx->l2_cache_size() : 512 * 1024;
   auto* workspace = ctx->workspace_data<float>();
@@ -3135,10 +3106,10 @@ void sgemm_conv_4x8(const float* A_packed,
     }
     //! load bpanel
     float* b_pannel = workspace;
-    if (transB) {
-      loadb_trans(b_pannel, B, K, 0, K, x0, xmax);
+    if (is_transB) {
+      loadb_trans(b_pannel, B, ldb, 0, K, x0, xmax);
     } else {
-      loadb(b_pannel, B, N, 0, K, x0, xmax);
+      loadb(b_pannel, B, ldb, 0, K, x0, xmax);
     }
 #pragma omp parallel for num_threads(threads)
     for (unsigned int y = 0; y < M; y += MBLOCK_A73) {
@@ -3153,17 +3124,17 @@ void sgemm_conv_4x8(const float* A_packed,
       float cout3[NBLOCK];
 
       float bias_local[4] = {0};
-      if (is_bias) {
+      if (has_bias) {
         bias_local[0] = bias[y];
         bias_local[1] = bias[y + 1];
         bias_local[2] = bias[y + 2];
         bias_local[3] = bias[y + 3];
       }
 
-      float* c_ptr0 = C + y * N + x0;
-      float* c_ptr1 = c_ptr0 + N;
-      float* c_ptr2 = c_ptr1 + N;
-      float* c_ptr3 = c_ptr2 + N;
+      float* c_ptr0 = C + y * ldc + x0;
+      float* c_ptr1 = c_ptr0 + ldc;
+      float* c_ptr2 = c_ptr1 + ldc;
+      float* c_ptr3 = c_ptr2 + ldc;
 
       float* pout0 = c_ptr0;
       float* pout1 = c_ptr1;
@@ -3379,7 +3350,7 @@ void sgemm_conv_4x8(const float* A_packed,
               [c_ptr3] "+r"(c_ptr3),
               [k] "+r"(k),
               [tails] "+r"(tails)
-            : [bias_ptr] "r"(bias_local), [relu] "r"(is_relu)
+            : [bias_ptr] "r"(bias_local), [relu] "r"(has_relu)
             : "q0",
               "q1",
               "q2",

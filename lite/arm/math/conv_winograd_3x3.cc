@@ -134,14 +134,18 @@ void conv_winograd3x3(const float* din,
       const float* ptr_a = weights + l * stride_a;
       const float* ptr_b = tmp_data2 + l * stride_b;
       float* ptr_c = tmp_data1 + l * stride_c;
-      sgemm_prepack(ptr_a,
-                    ptr_b,
-                    nullptr,
-                    ptr_c,
+      sgemm_prepack(false,
                     chout,
                     size_tile,
                     chin,
-                    false,
+                    1.f,
+                    ptr_a,
+                    ptr_b,
+                    size_tile,
+                    0.f,
+                    ptr_c,
+                    size_tile,
+                    nullptr,
                     false,
                     false,
                     ctx);

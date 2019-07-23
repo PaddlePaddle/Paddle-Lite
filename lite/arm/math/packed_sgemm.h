@@ -45,11 +45,11 @@ inline int get_hblock(ARMArch arch) {
 
 void prepackA(float* out,
               const float* in,
-              const int ldin,
-              const int m0,
-              const int mmax,
-              const int k0,
-              const int kmax,
+              int ldin,
+              int m0,
+              int mmax,
+              int k0,
+              int kmax,
               bool is_trans,
               ARMContext* ctx);
 
@@ -61,16 +61,20 @@ void prepackA(TensorLite* tout,
               bool is_trans,
               ARMContext* ctx);
 
-void sgemm_prepack(const float* A_packed,
-                   const float* B,
-                   const float* bias,
-                   float* C,
+void sgemm_prepack(bool is_transB,
                    int M,
                    int N,
                    int K,
-                   bool is_bias,
-                   bool is_relu,
-                   bool is_transB,
+                   float alpha,
+                   const float* A_packed,
+                   const float* B,
+                   int ldb,
+                   float beta,
+                   float* C,
+                   int ldc,
+                   const float* bias,
+                   bool has_bias,
+                   bool has_relu,
                    ARMContext* ctx);
 
 }  // namespace math

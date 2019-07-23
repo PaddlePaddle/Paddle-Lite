@@ -327,6 +327,39 @@ struct UniformRandomParam {
   lite::Tensor* Out{};
 };
 
+/// ----------------------- GRU unit operators ----------------------f
+struct GRUUnitParam {
+  enum ActType { identity, sigmoid, tanh, relu };
+  const lite::Tensor* input{nullptr};
+  const lite::Tensor* hiddenprev{nullptr};
+  const lite::Tensor* weight{nullptr};
+  const lite::Tensor* bias{nullptr};
+  lite::Tensor* gate{nullptr};
+  lite::Tensor* resethiddenprev{nullptr};
+  lite::Tensor* hidden{nullptr};
+
+  int gate_activation{ActType::sigmoid};
+  int activation{ActType::tanh};
+  bool origin_mode{false};
+};
+
+/// ----------------------- GRU operators ----------------------f
+struct GRUParam {
+  const lite::Tensor* input{nullptr};
+  const lite::Tensor* h0{nullptr};
+  const lite::Tensor* weight{nullptr};
+  const lite::Tensor* bias{nullptr};
+  lite::Tensor* batchgate{nullptr};
+  lite::Tensor* batchresethiddenprev{nullptr};
+  lite::Tensor* batchhidden{nullptr};
+  lite::Tensor* hidden{nullptr};
+
+  std::string gate_activation{"sigmoid"};
+  std::string activation{"tanh"};
+  bool is_reverse{false};
+  bool origin_mode{false};
+};
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle

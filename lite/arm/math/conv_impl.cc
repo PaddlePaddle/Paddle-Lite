@@ -332,16 +332,20 @@ void conv1x1s1_gemm(const float* i_data,
               bias_group,
               flag_relu);
       } else {
-        sgemm_prepack(weights_group,
-                      din_group,
-                      bias_group,
-                      dout_group,
+        sgemm_prepack(false,
                       m,
                       n,
                       k,
+                      1.f,
+                      weights_group,
+                      din_group,
+                      n,
+                      0.f,
+                      dout_group,
+                      n,
+                      bias_group,
                       flag_bias,
                       flag_relu,
-                      false,
                       ctx);
       }
     }
@@ -572,16 +576,24 @@ void conv_im2col_gemm(const float* i_data,
               bias_group,
               flag_relu);
       } else {
-        sgemm_prepack(weights_group,
-                      dB,
-                      bias_group,
-                      dout_group,
+        int ldb = n;
+        if (flag_im2col2) {
+          ldb = k;
+        }
+        sgemm_prepack(flag_im2col2,
                       m,
                       n,
                       k,
+                      1.f,
+                      weights_group,
+                      dB,
+                      ldb,
+                      0.f,
+                      dout_group,
+                      n,
+                      bias_group,
                       flag_bias,
                       flag_relu,
-                      flag_im2col2,
                       ctx);
       }
     }
