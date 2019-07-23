@@ -15,6 +15,7 @@ limitations under the License. */
 #pragma once
 
 #include "lite/opencl/cl_include.h"
+#include "lite/utils/cp_logging.h"
 
 #if CL_HPP_TARGET_OPENCL_VERSION < 200
 #define CL_API_SUFFIX__VERSION_2_0
@@ -236,133 +237,276 @@ class CLWrapper final {
                                             const cl_event *,
                                             cl_event *);
 
-  clGetPlatformIDsType clGetPlatformIDs() { return clGetPlatformIDs_; }
+  clGetPlatformIDsType clGetPlatformIDs() {
+    CHECK(clGetPlatformIDs_ != nullptr) << "Cannot load clGetPlatformIDs!";
+    return clGetPlatformIDs_;
+  }
 
-  clGetPlatformInfoType clGetPlatformInfo() { return clGetPlatformInfo_; }
+  clGetPlatformInfoType clGetPlatformInfo() {
+    CHECK(clGetPlatformInfo_ != nullptr) << "Cannot load clGetPlatformInfo!";
+    return clGetPlatformInfo_;
+  }
 
-  clBuildProgramType clBuildProgram() { return clBuildProgram_; }
+  clBuildProgramType clBuildProgram() {
+    CHECK(clBuildProgram_ != nullptr) << "Cannot load clBuildProgram!";
+    return clBuildProgram_;
+  }
 
   clEnqueueNDRangeKernelType clEnqueueNDRangeKernel() {
+    CHECK(clEnqueueNDRangeKernel_ != nullptr)
+        << "Cannot load clEnqueueNDRangeKernel!";
     return clEnqueueNDRangeKernel_;
   }
 
-  clSetKernelArgType clSetKernelArg() { return clSetKernelArg_; }
+  clSetKernelArgType clSetKernelArg() {
+    CHECK(clSetKernelArg_ != nullptr) << "Cannot load clSetKernelArg!";
+    return clSetKernelArg_;
+  }
 
-  clRetainMemObjectType clRetainMemObject() { return clRetainMemObject_; }
+  clRetainMemObjectType clRetainMemObject() {
+    CHECK(clRetainMemObject_ != nullptr) << "Cannot load clRetainMemObject!";
+    return clRetainMemObject_;
+  }
 
-  clReleaseMemObjectType clReleaseMemObject() { return clReleaseMemObject_; }
+  clReleaseMemObjectType clReleaseMemObject() {
+    CHECK(clReleaseMemObject_ != nullptr) << "Cannot load clReleaseMemObject!";
+    return clReleaseMemObject_;
+  }
 
   clEnqueueUnmapMemObjectType clEnqueueUnmapMemObject() {
+    CHECK(clEnqueueUnmapMemObject_ != nullptr)
+        << "Cannot load clEnqueueUnmapMemObject!";
     return clEnqueueUnmapMemObject_;
   }
 
   clRetainCommandQueueType clRetainCommandQueue() {
+    CHECK(clRetainCommandQueue_ != nullptr)
+        << "Cannot load clRetainCommandQueue!";
     return clRetainCommandQueue_;
   }
 
-  clCreateContextType clCreateContext() { return clCreateContext_; }
+  clCreateContextType clCreateContext() {
+    CHECK(clCreateContext_ != nullptr) << "Cannot load clCreateContext!";
+    return clCreateContext_;
+  }
 
   clCreateContextFromTypeType clCreateContextFromType() {
+    CHECK(clCreateContextFromType_ != nullptr)
+        << "Cannot load clCreateContextFromType!";
     return clCreateContextFromType_;
   }
 
-  clReleaseContextType clReleaseContext() { return clReleaseContext_; }
+  clReleaseContextType clReleaseContext() {
+    CHECK(clReleaseContext_ != nullptr) << "Cannot load clReleaseContext!";
+    return clReleaseContext_;
+  }
 
-  clWaitForEventsType clWaitForEvents() { return clWaitForEvents_; }
+  clWaitForEventsType clWaitForEvents() {
+    CHECK(clWaitForEvents_ != nullptr) << "Cannot load clWaitForEvents!";
+    return clWaitForEvents_;
+  }
 
-  clReleaseEventType clReleaseEvent() { return clReleaseEvent_; }
+  clReleaseEventType clReleaseEvent() {
+    CHECK(clReleaseEvent_ != nullptr) << "Cannot load clReleaseEvent!";
+    return clReleaseEvent_;
+  }
 
   clEnqueueWriteBufferType clEnqueueWriteBuffer() {
+    CHECK(clEnqueueWriteBuffer_ != nullptr)
+        << "Cannot loadcl clEnqueueWriteBuffer!";
     return clEnqueueWriteBuffer_;
   }
 
-  clEnqueueReadBufferType clEnqueueReadBuffer() { return clEnqueueReadBuffer_; }
+  clEnqueueReadBufferType clEnqueueReadBuffer() {
+    CHECK(clEnqueueReadBuffer_ != nullptr)
+        << "Cannot load clEnqueueReadBuffer!";
+    return clEnqueueReadBuffer_;
+  }
 
-  clEnqueueReadImageType clEnqueueReadImage() { return clEnqueueReadImage_; }
+  clEnqueueReadImageType clEnqueueReadImage() {
+    CHECK(clEnqueueReadImage_ != nullptr) << "Cannot load clEnqueueReadImage!";
+    return clEnqueueReadImage_;
+  }
 
   clGetProgramBuildInfoType clGetProgramBuildInfo() {
+    CHECK(clGetProgramBuildInfo_ != nullptr)
+        << "Cannot load clGetProgramBuildInfo!";
     return clGetProgramBuildInfo_;
   }
 
-  clRetainProgramType clRetainProgram() { return clRetainProgram_; }
+  clRetainProgramType clRetainProgram() {
+    CHECK(clRetainProgram_ != nullptr) << "Cannot load clRetainProgram!";
+    return clRetainProgram_;
+  }
 
-  clEnqueueMapBufferType clEnqueueMapBuffer() { return clEnqueueMapBuffer_; }
+  clEnqueueMapBufferType clEnqueueMapBuffer() {
+    CHECK(clEnqueueMapBuffer_ != nullptr) << "Cannot load clEnqueueMapBuffer!";
+    return clEnqueueMapBuffer_;
+  }
 
-  clEnqueueMapImageType clEnqueueMapImage() { return clEnqueueMapImage_; }
+  clEnqueueMapImageType clEnqueueMapImage() {
+    CHECK(clEnqueueMapImage_ != nullptr) << "Cannot load clEnqueueMapImage!";
+    return clEnqueueMapImage_;
+  }
 
   clCreateCommandQueueType clCreateCommandQueue() {
+    CHECK(clCreateCommandQueue_ != nullptr)
+        << "Cannot load clCreateCommandQueue!";
     return clCreateCommandQueue_;
   }
 
   clCreateCommandQueueWithPropertiesType clCreateCommandQueueWithProperties() {
+    CHECK(clCreateCommandQueueWithProperties_ != nullptr)
+        << "Cannot load clCreateCommandQueueWithProperties!";
     return clCreateCommandQueueWithProperties_;
   }
 
   clReleaseCommandQueueType clReleaseCommandQueue() {
+    CHECK(clReleaseCommandQueue_ != nullptr)
+        << "Cannot load clReleaseCommandQueue!";
     return clReleaseCommandQueue_;
   }
 
   clCreateProgramWithBinaryType clCreateProgramWithBinary() {
+    CHECK(clCreateProgramWithBinary_ != nullptr)
+        << "Cannot load clCreateProgramWithBinary!";
     return clCreateProgramWithBinary_;
   }
 
-  clRetainContextType clRetainContext() { return clRetainContext_; }
+  clRetainContextType clRetainContext() {
+    CHECK(clRetainContext_ != nullptr) << "Cannot load clRetainContext!";
+    return clRetainContext_;
+  }
 
-  clGetContextInfoType clGetContextInfo() { return clGetContextInfo_; }
+  clGetContextInfoType clGetContextInfo() {
+    CHECK(clGetContextInfo_ != nullptr) << "Cannot load clGetContextInfo!";
+    return clGetContextInfo_;
+  }
 
-  clReleaseProgramType clReleaseProgram() { return clReleaseProgram_; }
+  clReleaseProgramType clReleaseProgram() {
+    CHECK(clReleaseProgram_ != nullptr) << "Cannot load clReleaseProgram!";
+    return clReleaseProgram_;
+  }
 
-  clFlushType clFlush() { return clFlush_; }
+  clFlushType clFlush() {
+    CHECK(clFlush_ != nullptr) << "Cannot load clFlush!";
+    return clFlush_;
+  }
 
-  clFinishType clFinish() { return clFinish_; }
+  clFinishType clFinish() {
+    CHECK(clFinish_ != nullptr) << "Cannot load clFinish!";
+    return clFinish_;
+  }
 
-  clGetProgramInfoType clGetProgramInfo() { return clGetProgramInfo_; }
+  clGetProgramInfoType clGetProgramInfo() {
+    CHECK(clGetProgramInfo_ != nullptr) << "Cannot load clGetProgramInfo!";
+    return clGetProgramInfo_;
+  }
 
-  clCreateKernelType clCreateKernel() { return clCreateKernel_; }
+  clCreateKernelType clCreateKernel() {
+    CHECK(clCreateKernel_ != nullptr) << "Cannot load clCreateKernel!";
+    return clCreateKernel_;
+  }
 
-  clRetainKernelType clRetainKernel() { return clRetainKernel_; }
+  clRetainKernelType clRetainKernel() {
+    CHECK(clRetainKernel_ != nullptr) << "Cannot load clRetainKernel!";
+    return clRetainKernel_;
+  }
 
-  clCreateBufferType clCreateBuffer() { return clCreateBuffer_; }
+  clCreateBufferType clCreateBuffer() {
+    CHECK(clCreateBuffer_ != nullptr) << "Cannot load clCreateBuffer!";
+    return clCreateBuffer_;
+  }
 
-  clCreateImage2DType clCreateImage2D() { return clCreateImage2D_; }
+  clCreateImage2DType clCreateImage2D() {
+    CHECK(clCreateImage2D_ != nullptr) << "Cannot load clCreateImage2D!";
+    return clCreateImage2D_;
+  }
 
-  clCreateImageType clCreateImage() { return clCreateImage_; }
+  clCreateImageType clCreateImage() {
+    CHECK(clCreateImage_ != nullptr) << "Cannot load clCreateImage!";
+    return clCreateImage_;
+  }
 
-  clCreateUserEventType clCreateUserEvent() { return clCreateUserEvent_; }
+  clCreateUserEventType clCreateUserEvent() {
+    CHECK(clCreateUserEvent_ != nullptr) << "Cannot load clCreateUserEvent!";
+    return clCreateUserEvent_;
+  }
 
   clCreateProgramWithSourceType clCreateProgramWithSource() {
+    CHECK(clCreateProgramWithSource_ != nullptr)
+        << "Cannot load clCreateProgramWithSource!";
     return clCreateProgramWithSource_;
   }
 
-  clReleaseKernelType clReleaseKernel() { return clReleaseKernel_; }
+  clReleaseKernelType clReleaseKernel() {
+    CHECK(clReleaseKernel_ != nullptr) << "Cannot load clReleaseKernel!";
+    return clReleaseKernel_;
+  }
 
-  clGetDeviceInfoType clGetDeviceInfo() { return clGetDeviceInfo_; }
+  clGetDeviceInfoType clGetDeviceInfo() {
+    CHECK(clGetDeviceInfo_ != nullptr) << "Cannot load clGetDeviceInfo!";
+    return clGetDeviceInfo_;
+  }
 
-  clGetDeviceIDsType clGetDeviceIDs() { return clGetDeviceIDs_; }
+  clGetDeviceIDsType clGetDeviceIDs() {
+    CHECK(clGetDeviceIDs_ != nullptr) << "Cannot load clGetDeviceIDs!";
+    return clGetDeviceIDs_;
+  }
 
-  clRetainDeviceType clRetainDevice() { return clRetainDevice_; }
+  clRetainDeviceType clRetainDevice() {
+    CHECK(clRetainDevice_ != nullptr) << "Cannot load clRetainDevice!";
+    return clRetainDevice_;
+  }
 
-  clReleaseDeviceType clReleaseDevice() { return clReleaseDevice_; }
+  clReleaseDeviceType clReleaseDevice() {
+    CHECK(clReleaseDevice_ != nullptr) << "Cannot load clReleaseDevice!";
+    return clReleaseDevice_;
+  }
 
-  clRetainEventType clRetainEvent() { return clRetainEvent_; }
+  clRetainEventType clRetainEvent() {
+    CHECK(clRetainEvent_ != nullptr) << "Cannot load clRetainEvent!";
+    return clRetainEvent_;
+  }
 
   clGetKernelWorkGroupInfoType clGetKernelWorkGroupInfo() {
+    CHECK(clGetKernelWorkGroupInfo_ != nullptr)
+        << "Cannot load clGetKernelWorkGroupInfo!";
     return clGetKernelWorkGroupInfo_;
   }
 
-  clGetEventInfoType clGetEventInfo() { return clGetEventInfo_; }
+  clGetEventInfoType clGetEventInfo() {
+    CHECK(clGetEventInfo_ != nullptr) << "Cannot load clGetEventInfo!";
+    return clGetEventInfo_;
+  }
 
   clGetEventProfilingInfoType clGetEventProfilingInfo() {
+    CHECK(clGetEventProfilingInfo_ != nullptr)
+        << "Cannot load clGetEventProfilingInfo!";
     return clGetEventProfilingInfo_;
   }
 
-  clGetImageInfoType clGetImageInfo() { return clGetImageInfo_; }
+  clGetImageInfoType clGetImageInfo() {
+    CHECK(clGetImageInfo_ != nullptr) << "Cannot load clGetImageInfo!";
+    return clGetImageInfo_;
+  }
 
-  clEnqueueCopyBufferType clEnqueueCopyBuffer() { return clEnqueueCopyBuffer_; }
+  clEnqueueCopyBufferType clEnqueueCopyBuffer() {
+    CHECK(clEnqueueCopyBuffer_ != nullptr)
+        << "Cannot load clEnqueueCopyBuffer!";
+    return clEnqueueCopyBuffer_;
+  }
 
-  clEnqueueWriteImageType clEnqueueWriteImage() { return clEnqueueWriteImage_; }
+  clEnqueueWriteImageType clEnqueueWriteImage() {
+    CHECK(clEnqueueWriteImage_ != nullptr)
+        << "Cannot load clEnqueueWriteImage!";
+    return clEnqueueWriteImage_;
+  }
 
-  clEnqueueCopyImageType clEnqueueCopyImage() { return clEnqueueCopyImage_; }
+  clEnqueueCopyImageType clEnqueueCopyImage() {
+    CHECK(clEnqueueCopyImage_ != nullptr) << "Cannot load clEnqueueCopyImage!";
+    return clEnqueueCopyImage_;
+  }
 
  private:
   CLWrapper();

@@ -45,7 +45,7 @@ std::string Place::DebugString() const {
 
 const std::string& TargetToStr(TargetType target) {
   static const std::string target2string[] = {
-      "unk", "host", "x86", "cuda", "arm", "opencl", "any"};
+      "unk", "host", "x86", "cuda", "arm", "opencl", "any", "fpga"};
   auto x = static_cast<int>(target);
   CHECK_LT(x, static_cast<int>(TARGET(NUM)));
   return target2string[x];
@@ -53,14 +53,14 @@ const std::string& TargetToStr(TargetType target) {
 
 const std::string& PrecisionToStr(PrecisionType precision) {
   static const std::string precision2string[] = {
-      "unk", "float", "int8_t", "int32_t", "any"};
+      "unk", "float", "int8_t", "int32_t", "any", "float16"};
   auto x = static_cast<int>(precision);
   CHECK_LT(x, static_cast<int>(PRECISION(NUM)));
   return precision2string[x];
 }
 
 const std::string& DataLayoutToStr(DataLayoutType layout) {
-  static const std::string datalayout2string[] = {"unk", "NCHW", "any"};
+  static const std::string datalayout2string[] = {"unk", "NCHW", "any", "NHWC"};
   auto x = static_cast<int>(layout);
   CHECK_LT(x, static_cast<int>(DATALAYOUT(NUM)));
   return datalayout2string[x];
@@ -68,7 +68,7 @@ const std::string& DataLayoutToStr(DataLayoutType layout) {
 
 const std::string& TargetRepr(TargetType target) {
   static const std::string target2string[] = {
-      "kUnk", "kHost", "kX86", "kCUDA", "kARM", "kOpenCL", "kAny"};
+      "kUnk", "kHost", "kX86", "kCUDA", "kARM", "kOpenCL", "kAny", "kFPGA"};
   auto x = static_cast<int>(target);
   CHECK_LT(x, static_cast<int>(TARGET(NUM)));
   return target2string[x];
@@ -76,14 +76,15 @@ const std::string& TargetRepr(TargetType target) {
 
 const std::string& PrecisionRepr(PrecisionType precision) {
   static const std::string precision2string[] = {
-      "kUnk", "kFloat", "kInt8", "kInt32", "kAny"};
+      "kUnk", "kFloat", "kInt8", "kInt32", "kAny", "kFP16"};
   auto x = static_cast<int>(precision);
   CHECK_LT(x, static_cast<int>(PRECISION(NUM)));
   return precision2string[x];
 }
 
 const std::string& DataLayoutRepr(DataLayoutType layout) {
-  static const std::string datalayout2string[] = {"kUnk", "kNCHW", "kAny"};
+  static const std::string datalayout2string[] = {
+      "kUnk", "kNCHW", "kAny", "kNHWC"};
   auto x = static_cast<int>(layout);
   CHECK_LT(x, static_cast<int>(DATALAYOUT(NUM)));
   return datalayout2string[x];
