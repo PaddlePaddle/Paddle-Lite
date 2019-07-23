@@ -24,7 +24,8 @@ namespace math {
 
 bool sequence_softmax(const float* input,
                       std::vector<uint64_t>& seq_offset,
-                      float* out) {
+                      float* out,
+                      Context<TARGET(kARM)>* ctx) {
   int seq_num = seq_offset.size() - 1;
   for (int i = 0; i < seq_num; i++) {
     float seq_max = input[seq_offset[i]];

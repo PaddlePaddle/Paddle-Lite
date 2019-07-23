@@ -24,7 +24,8 @@ namespace math {
 
 bool sequence_softmax(const float* input,
                       std::vector<uint64_t>& seq_offset,
-                      float* out);
+                      float* out,
+                      Context<TARGET(kARM)>* ctx);
 
 }  // namespace math
 }  // namespace arm

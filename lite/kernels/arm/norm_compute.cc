@@ -23,15 +23,12 @@ namespace arm {
 void NormCompute::PrepareForRun() {}
 
 void NormCompute::Run() {
-  LOG(INFO) << "norm kernel";
-  //auto& ctx = this->ctx_->template As<ARMContext>();
+  auto& ctx = this->ctx_->template As<ARMContext>();
   auto& param = this->Param<operators::NormParam>();
-  LOG(INFO) << "norm param";
   
   auto input_dims = param.X->dims();
   int dim_size = param.X->dims().size();
   auto axis = (param.axis < 0) ? param.axis + dim_size : param.axis;
-  LOG(INFO) << "dim_soze" << dim_size;
 
   const auto* x_data = param.X->data<float>();
   auto* o_data = param.Out->mutable_data<float>();
@@ -39,7 +36,7 @@ void NormCompute::Run() {
   int post_n = input_dims.count(axis+1, dim_size);
   int n = input_dims[axis];
   LOG(INFO) << dim_size <<"" << pre_n <<" " <<  post_n << " "<< n;
-  lite::arm::math::norm(x_data, pre_n, n, post_n, param.epsilon, o_data);
+  lite::arm::math::norm(x_data, pre_n, n, post_n, param.epsilon, o_data, ctx);
 }
 
 

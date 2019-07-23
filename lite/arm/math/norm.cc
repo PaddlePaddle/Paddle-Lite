@@ -26,7 +26,8 @@ void norm(const float* input,
           const int n,
           const int post_n,
           const float epsilon,
-          float* out) {
+          float* out,
+          Context<TARGET(kARM)>* ctx) {
   LOG(INFO) << "norm math start";
   for (int i = 0; i < pre_n; i++) {
     for (int k = 0; k < post_n; k++) {

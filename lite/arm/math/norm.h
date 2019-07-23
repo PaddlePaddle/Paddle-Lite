@@ -25,7 +25,8 @@ void norm(const float* input,
           const int n,
           const int post_n,
           const float epsilon,
-          float* out);
+          float* out,
+          Context<TARGET(kARM)>* ctx);
 
 }  // namespace math
 }  // namespace arm

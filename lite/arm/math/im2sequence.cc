@@ -35,7 +35,8 @@ void im2sequence(const float* input,
                  const int stride_w,
                  const int out_h,
                  const int out_w,
-                 float* out) {
+                 float* out,
+                 Context<TARGET(kARM)>* ctx) {
   int window_size = kernel_h * kernel_w;
   int out_rows = out_h * out_w;
   int out_cols = input_c * window_size;

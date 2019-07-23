@@ -27,7 +27,7 @@ namespace arm {
 void Im2SequenceCompute::PrepareForRun() {}
 
 void Im2SequenceCompute::Run() {
-  //auto& ctx = this->ctx_->template As<ARMContext>();
+  auto& ctx = this->ctx_->template As<ARMContext>();
   auto& param = this->Param<operators::Im2SequenceParam>();
   int num = param.X.size();
   auto kernels = param.kernels;
@@ -90,7 +90,8 @@ void Im2SequenceCompute::Run() {
                                    param.strides[1],
                                    out_h_vec[im_id],
                                    out_w_vec[im_id],
-                                   o_data + im_offset[im_id] * out_cols);
+                                   o_data + im_offset[im_id] * out_cols,
+                                   &ctx);
     }
   } else {
     int out_h =
@@ -115,7 +116,8 @@ void Im2SequenceCompute::Run() {
                                    param.strides[1],
                                    out_h,
                                    out_w,
-                                   o_data + im_id * out_size_per_im);
+                                   o_data + im_id * out_size_per_im,
+                                   &ctx);
       im_offset.push_back(uint64_t(im_id * out_h * out_w));
     }
     auto lod = param.Out->mutable_lod();

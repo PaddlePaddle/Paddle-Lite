@@ -34,7 +34,8 @@ void im2sequence(const float* input,
                  const int stride_w,
                  const int out_h,
                  const int out_w,
-                 float* out);
+                 float* out,
+                 Context<TARGET(kARM)>* ctx);
 
 }  // namespace math
 }  // namespace arm
