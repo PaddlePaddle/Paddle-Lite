@@ -9,6 +9,7 @@ message(STATUS "LIGHT_FRAMEWORK:\t${LITE_WITH_LIGHT_WEIGHT_FRAMEWORK}")
 message(STATUS "LITE_WITH_CUDA:\t${LITE_WITH_CUDA}")
 message(STATUS "LITE_WITH_X86:\t${LITE_WITH_X86}")
 message(STATUS "LITE_WITH_ARM:\t${LITE_WITH_ARM}")
+message(STATUS "LITE_WITH_NPU:\t${LITE_WITH_NPU}")
 message(STATUS "LITE_WITH_FPGA:\t${LITE_WITH_FPGA}")
 message(STATUS "LITE_WITH_PROFILE:\t${LITE_WITH_PROFILE}")
 
@@ -40,7 +41,7 @@ endfunction()
 function (lite_deps TARGET)
   set(options "")
   set(oneValueArgs "")
-  set(multiValueArgs DEPS X86_DEPS CUDA_DEPS ARM_DEPS PROFILE_DEPS LIGHT_DEPS HVY_DEPS CL_DEPS FPGA_DEPS ARGS)
+  set(multiValueArgs DEPS X86_DEPS CUDA_DEPS ARM_DEPS PROFILE_DEPS LIGHT_DEPS HVY_DEPS CL_DEPS FPGA_DEPS NPU_DEPS ARGS)
   cmake_parse_arguments(lite_deps "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
   set(deps ${lite_deps_DEPS})
@@ -87,6 +88,12 @@ function (lite_deps TARGET)
     endforeach(var)
   endif()
 
+  if (LITE_WITH_NPU)
+    foreach(var ${lite_deps_NPU_DEPS})
+      set(deps ${deps} ${var})
+    endforeach(var)
+  endif()
+
   if (LITE_WITH_FPGA)
     foreach(var ${lite_deps_FPGA_DEPS})
       set(deps ${deps} ${var})
@@ -122,7 +129,7 @@ file(WRITE ${__lite_cc_files} "") # clean
 function(lite_cc_library TARGET)
     set(options SHARED shared STATIC static MODULE module)
     set(oneValueArgs "")
-    set(multiValueArgs SRCS DEPS X86_DEPS CUDA_DEPS CL_DEPS ARM_DEPS PROFILE_DEPS LIGHT_DEPS
+    set(multiValueArgs SRCS DEPS X86_DEPS CUDA_DEPS CL_DEPS NPU_DEPS ARM_DEPS PROFILE_DEPS LIGHT_DEPS
       HVY_DEPS EXCLUDE_COMPILE_DEPS ARGS)
     cmake_parse_arguments(args "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
@@ -132,6 +139,7 @@ function(lite_cc_library TARGET)
             X86_DEPS ${args_X86_DEPS}
             CUDA_DEPS ${args_CUDA_DEPS}
             CL_DEPS ${args_CL_DEPS}
+            NPU_DEPS ${args_NPU_DEPS}
             ARM_DEPS ${args_ARM_DEPS}
             PROFILE_DEPS ${args_PROFILE_DEPS}
             LIGHT_DEPS ${args_LIGHT_DEPS}
@@ -233,6 +241,7 @@ add_subdirectory(x86)
 add_subdirectory(arm)
 add_subdirectory(host)
 add_subdirectory(cuda)
+add_subdirectory(npu)
 add_subdirectory(opencl)
 add_subdirectory(fpga)
 add_subdirectory(model_parser)
@@ -347,3 +356,4 @@ if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM)
         add_dependencies(publish_inference_cxx_lib publish_inference_opencl)
     endif()
 endif()
+ 
