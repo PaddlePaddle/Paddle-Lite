@@ -93,18 +93,20 @@ struct Instruction {
 #endif  // LITE_WITH_PROFILE
   }
 
-  /// Run the instruction.
+  // Run the instruction.
   void Run();
 
   friend std::ostream& operator<<(std::ostream& os, const Instruction& other);
 
   const OpLite* op() const { return op_.get(); }
   const KernelBase* kernel() const { return kernel_.get(); }
+  KernelBase* mutable_kernel() { return kernel_.get(); }
 
  private:
   std::shared_ptr<OpLite> op_;
   std::unique_ptr<KernelBase> kernel_;
   bool first_epoch_{true};
+  bool has_run_{false};
 
 #ifdef LITE_WITH_PROFILE
   // for profiler

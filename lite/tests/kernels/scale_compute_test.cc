@@ -101,5 +101,25 @@ TEST(Scale, precision) {
   }
 }
 
+TEST(Scale, performance) {
+#ifdef LITE_WITH_X86
+  Place place(TARGET(kX86));
+#endif
+#ifdef LITE_WITH_ARM
+  Place place(TARGET(kARM));
+#endif
+
+  std::unique_ptr<arena::TestCase> tester(
+      new ScaleComputeTester(place, "def", 1.2, 1.1, true));
+
+  // To modify the arm context, one can retrive the context as follows.
+  // #ifdef LITE_WITH_ARM
+  //   tester->context()->As<ARMContext>();
+  // #endif
+
+  arena::Arena arena(std::move(tester), place, 2e-5);
+  arena.TestPerformance(100);
+}
+
 }  // namespace lite
 }  // namespace paddle

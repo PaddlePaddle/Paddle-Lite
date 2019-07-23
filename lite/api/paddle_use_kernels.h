@@ -71,6 +71,8 @@ USE_LITE_KERNEL(scale, kX86, kFloat, kNCHW, def);
 USE_LITE_KERNEL(mul, kCUDA, kFloat, kNCHW, def);
 USE_LITE_KERNEL(io_copy, kCUDA, kAny, kAny, host_to_device);
 USE_LITE_KERNEL(io_copy, kCUDA, kAny, kAny, device_to_host);
+USE_LITE_KERNEL(io_copy_once, kCUDA, kAny, kAny, host_to_device);
+USE_LITE_KERNEL(io_copy_once, kCUDA, kAny, kAny, device_to_host);
 #endif
 
 #ifdef LITE_WITH_OPENCL
@@ -78,4 +80,6 @@ USE_LITE_KERNEL(elementwise_add, kOpenCL, kFloat, kNCHW, def);
 USE_LITE_KERNEL(pool2d, kOpenCL, kFloat, kNCHW, def);
 USE_LITE_KERNEL(io_copy, kOpenCL, kAny, kAny, host_to_device);
 USE_LITE_KERNEL(io_copy, kOpenCL, kAny, kAny, device_to_host);
+USE_LITE_KERNEL(io_copy_once, kOpenCL, kAny, kAny, host_to_device);
+USE_LITE_KERNEL(io_copy_once, kOpenCL, kAny, kAny, device_to_host);
 #endif

@@ -69,8 +69,13 @@ class CLRuntime {
 
   std::shared_ptr<cl::CommandQueue> CreateCommandQueue(
       const cl::Context& context) {
-    auto queue =
-        std::make_shared<cl::CommandQueue>(context, device(), 0, &status_);
+    cl_command_queue_properties properties = 0;
+
+#ifdef LITE_WITH_PROFILE
+    properties |= CL_QUEUE_PROFILING_ENABLE;
+#endif  // LITE_WITH_PROFILE
+    auto queue = std::make_shared<cl::CommandQueue>(
+        context, device(), properties, &status_);
     CL_CHECK_FATAL(status_);
     return queue;
   }

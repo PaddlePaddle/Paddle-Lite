@@ -42,7 +42,7 @@ class IoCopyHostToOpenCLCompute
     CHECK(param.x->target() == TARGET(kHost) ||
           param.x->target() == TARGET(kARM));
     auto mem_size = param.x->memory_size();
-    LOG(INFO) << "copy size " << mem_size;
+    VLOG(4) << "copy size " << mem_size;
     auto* data = param.y->mutable_data(TARGET(kOpenCL), mem_size);
     CopyFromHostSync(data, param.x->raw_data(), mem_size);
   }
@@ -80,7 +80,7 @@ class IoCopykOpenCLToHostCompute
     auto& param = Param<operators::IoCopyParam>();
     CHECK(param.x->target() == TARGET(kOpenCL));
     auto mem_size = param.x->memory_size();
-    LOG(INFO) << "copy size " << mem_size;
+    VLOG(4) << "copy size " << mem_size;
     auto* data = param.y->mutable_data(TARGET(kHost), mem_size);
     CopyToHostSync(data, param.x->raw_data(), mem_size);
   }
@@ -104,6 +104,26 @@ REGISTER_LITE_KERNEL(io_copy,
     .Finalize();
 
 REGISTER_LITE_KERNEL(io_copy,
+                     kOpenCL,
+                     kAny,
+                     kAny,
+                     paddle::lite::kernels::opencl::IoCopykOpenCLToHostCompute,
+                     device_to_host)
+    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kOpenCL))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(io_copy_once,
+                     kOpenCL,
+                     kAny,
+                     kAny,
+                     paddle::lite::kernels::opencl::IoCopyHostToOpenCLCompute,
+                     host_to_device)
+    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kOpenCL))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(io_copy_once,
                      kOpenCL,
                      kAny,
                      kAny,

@@ -12,6 +12,7 @@ lite_cc_library(batch_norm_op SRCS batch_norm_op.cc DEPS ${op_DEPS})
 lite_cc_library(feed_op SRCS feed_op.cc DEPS ${op_DEPS})
 lite_cc_library(fetch_op SRCS fetch_op.cc DEPS ${op_DEPS})
 lite_cc_library(io_copy_op SRCS io_copy_op.cc DEPS ${op_DEPS})
+lite_cc_library(io_copy_once_op SRCS io_copy_once_op.cc DEPS io_copy_op ${op_DEPS})
 lite_cc_library(activation_ops SRCS activation_ops.cc DEPS ${op_DEPS})
 lite_cc_library(elementwise_ops SRCS elementwise_ops.cc DEPS ${op_DEPS})
 lite_cc_library(fusion_elementwise_activation_ops SRCS fusion_elementwise_activation_ops.cc DEPS elementwise_ops ${op_DEPS})
@@ -31,6 +32,7 @@ lite_cc_library(transpose_op SRCS transpose_op.cc DEPS ${op_DEPS})
 lite_cc_library(fake_quant SRCS fake_quantize_moving_avg_max_abs.cc DEPS ${op_DEPS})
 lite_cc_library(fake_dequant SRCS fake_dequantize_max_abs.cc DEPS ${op_DEPS})
 lite_cc_library(conv_transpose_op SRCS conv_transpose_op.cc DEPS ${op_DEPS})
+lite_cc_library(graph_op_lite SRCS graph_op.cc DEPS ${op_DEPS})
 
 set(ops
         conv_op
@@ -45,6 +47,7 @@ set(ops
         feed_op
         fetch_op
         io_copy_op
+        io_copy_once_op
         elementwise_ops
         fusion_elementwise_activation_ops
         mean_op

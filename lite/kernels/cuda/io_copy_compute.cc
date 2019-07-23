@@ -121,3 +121,23 @@ REGISTER_LITE_KERNEL(io_copy,
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kCUDA))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
     .Finalize();
+
+REGISTER_LITE_KERNEL(io_copy_once,
+                     kCUDA,
+                     kAny,
+                     kAny,
+                     paddle::lite::kernels::cuda::IoCopyHostToCudaCompute,
+                     host_to_device)
+    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kCUDA))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(io_copy_once,
+                     kCUDA,
+                     kAny,
+                     kAny,
+                     paddle::lite::kernels::cuda::IoCopyCudaToHostCompute,
+                     device_to_host)
+    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kCUDA))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
+    .Finalize();

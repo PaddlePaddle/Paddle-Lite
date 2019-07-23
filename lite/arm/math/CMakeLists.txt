@@ -84,3 +84,4 @@ if (NOT HAS_ARM_MATH_LIB_DIR)
 			col_im_transform.cc
       DEPS ${lite_kernel_deps} framework_proto)
 endif()
+ 

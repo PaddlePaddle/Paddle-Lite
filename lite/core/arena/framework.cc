@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/core/arena/framework.h"
+#include "lite/core/context.h"
 
 namespace paddle {
 namespace lite {
@@ -30,7 +31,10 @@ void TestCase::CreateInstruction() {
       kernels.begin(), kernels.end(), [&](std::unique_ptr<KernelBase>& k) {
         return k->alias() == alias_;
       });
-
+  CHECK(it != kernels.end()) << "failed to create the kernel in " << place_
+                             << " with alias: " << alias_;
+  // prepare context
+  (*it)->SetContext(ContextScheduler::Global().NewContext(place_.target));
   instruction_.reset(new Instruction(op, std::move(*it)));
 }
 

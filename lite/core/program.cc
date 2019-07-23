@@ -97,8 +97,11 @@ void Instruction::Run() {
     first_epoch_ = false;
     CHECK(op_->CheckShape());
   }
+
+  if (op_->run_once() && has_run_) return;
   op_->InferShape();
   kernel_->Launch();
+  has_run_ = true;
 }
 
 std::ostream& operator<<(std::ostream& os, const Instruction& other) {
