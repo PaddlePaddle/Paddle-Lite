@@ -24,6 +24,8 @@ limitations under the License. */
 #include <string>
 #include <vector>
 
+#include "lite/core/tensor.h"
+
 #include "lite/fpga/KD/dl_engine.hpp"
 #include "lite/fpga/KD/float16.hpp"
 #include "lite/fpga/KD/llapi/zynqmp_api.h"
@@ -65,14 +67,17 @@ inline int CellSize(DataType type) {
 
 class PlaceHolder {
  public:
+  PlaceHolder() {}
   explicit PlaceHolder(size_t size) {
     size_ = size;
     data_ = fpga_malloc(size_);
   }
 
   void* data() { return data_; }
+  void set_data(const void* ptr) { data_ = const_cast<void*>(ptr); }
 
   size_t memorySize() { return size_; }
+  void set_size(size_t new_size) { size_ = new_size; }
 
   ~PlaceHolder() { fpga_free(data_); }
 
@@ -405,6 +410,26 @@ class Tensor {
       delete shape_;
       shape_ = nullptr;
     }
+  }
+  // add by tianxiaogang
+  // get from tensorlite
+  void share_from_tensorlite(const lite::Tensor& lite_tensor) {
+    const void* lite_ptr = lite_tensor.data<void>();
+    size_t mem_size = lite_tensor.memory_size();
+    const lite::DDimLite lite_dim = lite_tensor.dims();
+    if (placeHolder_ == nullptr) {
+      placeHolder_ = std::make_shared<PlaceHolder>();
+    }
+    placeHolder_->set_data(lite_ptr);
+    placeHolder_->set_size(mem_size);
+    if (shape_ == nullptr) {
+      delete shape_;
+    }
+    std::vector<int> tem_dims;
+    for (int i = 0; i < lite_dim.size(); ++i) {
+      tem_dims.push_back(lite_dim[i]);
+    }
+    shape_ = new Shape(tem_dims);
   }
 
  private:
