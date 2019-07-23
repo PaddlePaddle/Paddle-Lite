@@ -31,6 +31,9 @@
 #include "lite/arm/math/sgemv.h"
 #include "lite/arm/math/softmax.h"
 #include "lite/arm/math/split.h"
+#include "lite/arm/math/im2sequence.h"
+#include "lite/arm/math/sequence_softmax.h"
+#include "lite/arm/math/norm.h"
 
 namespace paddle {
 namespace lite {

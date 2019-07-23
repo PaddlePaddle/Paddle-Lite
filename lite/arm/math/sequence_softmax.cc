@@ -24,8 +24,6 @@ namespace math {
 
 bool sequence_softmax(const float* input,
                       std::vector<uint64_t>& seq_offset,
-                      int in_h,
-                      int in_w,
                       float* out) {
   int seq_num = seq_offset.size() - 1;
   for (int i = 0; i < seq_num; i++) {
@@ -38,7 +36,7 @@ bool sequence_softmax(const float* input,
       exp_sum += expf(input[j] - seq_max);
     }
     for (int j = seq_offset[i]; j < seq_offset[i + 1]; j++) {
-      out[j] = input[j] / exp_sum;
+      out[j] = expf(input[j] - seq_max) / exp_sum;
     }
   }
 }

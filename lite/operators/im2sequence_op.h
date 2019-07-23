@@ -39,7 +39,7 @@ class Im2SequenceOp : public OpLite {
   std::string DebugString() const override { return "im2suquence"; }
 
  private:
-  mutable Im2SuquenceParam param_;
+  mutable Im2SequenceParam param_;
 };
 
 }  // namespace operators

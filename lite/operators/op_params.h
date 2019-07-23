@@ -328,7 +328,7 @@ struct UniformRandomParam {
 };
 
 struct Im2SequenceParam {
-  const lite::Tensor* X{};
+  std::vector<lite::Tensor*> X{};
   lite::Tensor* Out{};
   std::vector<int> kernels{3, 3};
   std::vector<int> strides{1, 1};

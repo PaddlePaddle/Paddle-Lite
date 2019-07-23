@@ -27,17 +27,19 @@ namespace arm {
 void SequenceSoftmaxCompute::PrepareForRun() {}
 
 void SequenceSoftmaxCompute::Run() {
-  auto& ctx = this->ctx_->template As<ARMContext>();
+  //auto& ctx = this->ctx_->template As<ARMContext>();
   auto& param = this->Param<operators::SequenceSoftmaxParam>();
 
   const auto* x_data = param.X->data<float>();
   auto* o_data = param.Out->mutable_data<float>();
-  int input_dims = param.X->dims();
+  auto input_dims = param.X->dims();
   int in_h = input_dims[0];
   int in_w = param.X->numel() / in_h;
-  auto seq_offset = param.Out->lod()[0];
+  CHECK_EQ(in_w, 1) << "input dims is not valid";
+  auto seq_offset = param.X->lod()[0];
+  CHECK_EQ(in_h, seq_offset.back()) << "input dims is not valid";
   lite::arm::math::sequence_softmax(
-      x_data, seq_offset, in_h, in_w, o_data, &ctx);
+      x_data, seq_offset, o_data);
 }
 
 }  // namespace arm

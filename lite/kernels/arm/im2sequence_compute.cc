@@ -27,7 +27,7 @@ namespace arm {
 void Im2SequenceCompute::PrepareForRun() {}
 
 void Im2SequenceCompute::Run() {
-  auto& ctx = this->ctx_->template As<ARMContext>();
+  //auto& ctx = this->ctx_->template As<ARMContext>();
   auto& param = this->Param<operators::Im2SequenceParam>();
   int num = param.X.size();
   auto kernels = param.kernels;
@@ -36,12 +36,14 @@ void Im2SequenceCompute::Run() {
 
   const auto* x_data = param.X[0]->data<float>();
   auto* o_data = param.Out->mutable_data<float>();
-  int input_dims = param.X[0]->dims();
+  auto input_dims = param.X[0]->dims();
   int im_num = input_dims[0];
   int im_size = param.X[0]->numel() / im_num;
   int out_cols = input_dims[1] * kernels[0] * kernels[1];
+  LOG(INFO) << "out_cols" << out_cols;
 
-  std::vector<int> im_offset;
+  int total_rows = 0;
+  std::vector<uint64_t> im_offset;
   im_offset.push_back(total_rows);
   if (param.X.size() > 1) {
     const auto* y_data = param.X[1]->data<int>();
@@ -50,7 +52,6 @@ void Im2SequenceCompute::Run() {
     std::vector<int> im_real_w;
     std::vector<int> out_h_vec;
     std::vector<int> out_w_vec;
-    int total_rows = 0;
     for (int im_id = 0; im_id < im_num; im_id++) {
       int real_h = y_data[im_id * 2 + 0];
       int real_w = y_data[im_id * 2 + 1];
@@ -89,10 +90,15 @@ void Im2SequenceCompute::Run() {
                                    param.strides[1],
                                    out_h_vec[im_id],
                                    out_w_vec[im_id],
-                                   o_data + im_offset[im_id] * out_cols,
-                                   &ctx);
+                                   o_data + im_offset[im_id] * out_cols);
     }
   } else {
+    int out_h =
+          (input_dims[2] + paddings[0] + paddings[1] - kernels[0]) / strides[0] +
+          1;
+    int out_w =
+          (input_dims[3] + paddings[2] + paddings[3] - kernels[1]) / strides[1] +
+          1;
     for (int im_id = 0; im_id < im_num; im_id++) {
       int out_size_per_im = out_h * out_w * out_cols;
       lite::arm::math::im2sequence(x_data + im_id * im_size,
@@ -109,9 +115,8 @@ void Im2SequenceCompute::Run() {
                                    param.strides[1],
                                    out_h,
                                    out_w,
-                                   o_data + im_id * out_size_per_im,
-                                   &ctx);
-      im_offset.push_back(im_id * out_h * out_w);
+                                   o_data + im_id * out_size_per_im);
+      im_offset.push_back(uint64_t(im_id * out_h * out_w));
     }
     auto lod = param.Out->mutable_lod();
     lod->resize(1);

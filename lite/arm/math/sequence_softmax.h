@@ -24,8 +24,6 @@ namespace math {
 
 bool sequence_softmax(const float* input,
                       std::vector<uint64_t>& seq_offset,
-                      int in_h,
-                      int in_w,
                       float* out);
 
 }  // namespace math

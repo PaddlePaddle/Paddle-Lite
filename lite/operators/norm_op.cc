@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include "lite/core/op_registry.h"
-#include "lite/operators/im2sequence_op.h"
+#include "lite/operators/norm_op.h"
 
 namespace paddle {
 namespace lite {

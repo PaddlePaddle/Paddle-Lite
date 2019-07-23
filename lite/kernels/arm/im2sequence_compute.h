@@ -31,7 +31,7 @@ class Im2SequenceCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
 
   void Run() override;
 
-  ~Im2SequenceCompute() override;
+  ~Im2SequenceCompute() {}
 
  private:
 };

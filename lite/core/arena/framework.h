@@ -51,6 +51,7 @@ class TestCase {
 
   /// Run the target instruction, that is run the test operator.
   void RunInstruction() {
+    LOG(INFO) << "Run instruction start" << *instruction_;
     instruction_->Run();
     LOG(INFO) << "Run instruction " << *instruction_;
   }
@@ -119,11 +120,19 @@ class TestCase {
   template <typename T>
   void SetCommonTensor(const std::string& var_name,
                        const DDim& ddim,
-                       const T* data) {
+                       const T* data,
+                       LoD lod = LoD()) {
     auto* tensor = scope_->NewTensor(var_name);
     tensor->Resize(ddim);
     auto* d = tensor->mutable_data<T>();
     memcpy(d, data, ddim.production() * sizeof(T));
+    if (lod.size() > 0) {
+      auto tensor_lod = tensor->mutable_lod();
+      tensor_lod->clear();
+      for (auto vec : lod) {
+        tensor_lod->push_back(vec);
+      }
+    }
   }
 
   // Prepare for the operator.
@@ -187,7 +196,9 @@ class Arena {
   void TestPrecision() {
     LOG(INFO) << "Testing precision for " << tester_->op_desc().Type();
     tester_->RunBaseline(tester_->baseline_scope());
+    LOG(INFO) << "base finished";
     tester_->RunInstruction();
+    LOG(INFO) << "real  finished";
 
     for (auto& out : tester_->op_desc().OutputArgumentNames()) {
       for (auto& var : tester_->op_desc().Output(out)) {

@@ -32,7 +32,7 @@ class SequenceSoftmaxCompute
 
   void Run() override;
 
-  ~SequenceSoftmaxCompute() override;
+  ~SequenceSoftmaxCompute() {}
 
  private:
 };

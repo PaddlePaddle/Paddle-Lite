@@ -36,7 +36,7 @@ class NormOp : public OpLite {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
-  std::string DebugString() const override { return "im2suquence"; }
+  std::string DebugString() const override { return "norm"; }
 
  private:
   mutable NormParam param_;
