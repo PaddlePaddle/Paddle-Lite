@@ -40,6 +40,7 @@ enum class Type {
   _list,
   // enum type
   _enum,
+  _float16,
   // number of types
   __num__,
 };

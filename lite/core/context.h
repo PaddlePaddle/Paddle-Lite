@@ -50,6 +50,7 @@ using X86Context = Context<TargetType::kX86>;
 using CUDAContext = Context<TargetType::kCUDA>;
 using ARMContext = Context<TargetType::kARM>;
 using OpenCLContext = Context<TargetType::kOpenCL>;
+using FPGAContext = Context<TargetType::kFPGA>;
 
 template <>
 class Context<TargetType::kHost> {
@@ -102,6 +103,22 @@ class Context<TargetType::kARM> {
   }
 
   std::string name() const { return "ARMContext"; }
+};
+#endif
+
+#ifdef LITE_WITH_FPGA
+// TODO(tianxiaogang): add needed implementation to context
+template <>
+class Context<TargetType::kFPGA> {
+ public:
+  Context() {}
+  void InitOnce() {}
+
+  FPGAContext& operator=(const FPGAContext& ctx) {}
+
+  void CopySharedTo(const FPGAContext* ctx) {}
+
+  std::string name() const { return "FPGAContext"; }
 };
 #endif
 
@@ -269,6 +286,12 @@ class ContextScheduler {
             &ctx->As<OpenCLContext>());
         break;
 #endif
+#ifdef LITE_WITH_FPGA
+      case TARGET(kFPGA):
+        kernel_contexts_[TargetType::kFPGA].As<FPGAContext>().CopySharedTo(
+            &ctx->As<FPGAContext>());
+        break;
+#endif
       default:
         LOG(FATAL) << "unsupported target " << TargetToStr(target);
     }
@@ -294,6 +317,9 @@ class ContextScheduler {
 #endif
 #ifdef LITE_WITH_OPENCL
     InitContext<TargetType::kOpenCL, OpenCLContext>();
+#endif
+#ifdef LITE_WITH_FPGA
+    InitContext<TargetType::kFPGA, FPGAContext>();
 #endif
   }
 
