@@ -100,6 +100,7 @@ struct Instruction {
 
   const OpLite* op() const { return op_.get(); }
   const KernelBase* kernel() const { return kernel_.get(); }
+  KernelBase* mutable_kernel() { return kernel_.get(); }
 
  private:
   std::shared_ptr<OpLite> op_;

@@ -5,7 +5,8 @@ lite_cc_library(target_wrapper SRCS target_wrapper.cc
   DEPS target_wrapper_host place
   X86_DEPS target_wrapper_x86
   CUDA_DEPS target_wrapper_cuda
-  CL_DEPS cl_target_wrapper)
+  CL_DEPS cl_target_wrapper
+  FPGA_DEPS fpga_target_wrapper)
 
 lite_cc_library(memory SRCS memory.cc DEPS target_wrapper CL_DEPS cl_target_wrapper)
 lite_cc_library(tensor SRCS tensor.cc DEPS memory)
@@ -21,10 +22,10 @@ lite_cc_library(types SRCS types.cc)
 endif()
 lite_cc_library(op_registry SRCS op_registry.cc DEPS framework_proto)
 lite_cc_library(scope SRCS scope.cc DEPS tensor)
-lite_cc_library(cpu_info SRCS cpu_info.cc)
+lite_cc_library(cpu_info SRCS cpu_info.cc DEPS tensor)
 
 if (LITE_WITH_ARM)
-lite_cc_library(context SRCS context.cc DEPS tensor any cpu_info CL_DEPS cl_context)
+lite_cc_library(context SRCS context.cc DEPS tensor any cpu_info CL_DEPS cl_context NPU_DEPS ${npu_ddk_libs})
 else()
 lite_cc_library(context SRCS context.cc DEPS tensor any cpu_info eigen3 CL_DEPS cl_context)
 endif()

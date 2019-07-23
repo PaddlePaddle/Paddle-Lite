@@ -176,8 +176,16 @@ if (LITE_WITH_ARM)
     add_definitions("-DLITE_WITH_ARM")
 endif()
 
+if (LITE_WITH_NPU)
+    add_definitions("-DLITE_WITH_NPU")
+endif()
+
 if (LITE_WITH_OPENCL)
     add_definitions("-DLITE_WITH_OPENCL")
+endif()
+
+if (LITE_WITH_FPGA)
+add_definitions("-DLITE_WITH_FPGA")
 endif()
 
 if (LITE_WITH_PROFILE)

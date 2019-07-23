@@ -6,6 +6,7 @@ lite_cc_library(mir_pass_registry SRCS pass_registry.cc DEPS mir_pass_manager)
 
 add_subdirectory(fusion)
 add_subdirectory(elimination)
+add_subdirectory(subgraph)
 
 lite_cc_library(mir_passes
   SRCS
@@ -26,7 +27,7 @@ lite_cc_library(mir_passes
       trans_weigths_pass.cc
       demo_pass.cc
       runtime_context_assign_pass.cc
-  DEPS mir_pass types context ${mir_fusers})
+  DEPS mir_pass types context ${mir_fusers} ${subgraph_passes})
 
 # lite_cc_test(test_ssa_graph SRCS ssa_graph_test.cc DEPS
         #mir_ssa_graph scope op

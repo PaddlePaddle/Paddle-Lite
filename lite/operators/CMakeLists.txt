@@ -31,6 +31,7 @@ lite_cc_library(fake_quant SRCS fake_quantize_moving_avg_max_abs.cc DEPS ${op_DE
 lite_cc_library(fake_dequant SRCS fake_dequantize_max_abs.cc DEPS ${op_DEPS})
 lite_cc_library(im2sequence SRCS im2sequence.cc DEPS ${op_DEPS})
 lite_cc_library(sequence_softmax SRCS sequence_softmax.cc DEPS ${op_DEPS})
+lite_cc_library(graph_op_lite SRCS graph_op.cc DEPS ${op_DEPS})
 
 set(ops
         conv_op
@@ -60,6 +61,7 @@ set(ops
         fake_dequant
         sgd_op
         uniform_random_op
+        norm_lite
         im2sequence_lite
         sequence_softmax_lite
         CACHE INTERNAL "ops lite")

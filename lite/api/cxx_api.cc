@@ -23,6 +23,9 @@ namespace paddle {
 namespace lite {
 
 void Predictor::SaveModel(const std::string &dir, LiteModelType model_type) {
+  if (!program_) {
+    GenRuntimeProgram();
+  }
   program_->SaveOpInfosToProgram(&program_desc_);
   LOG(INFO) << "Save model to " << dir;
   switch (model_type) {
@@ -38,7 +41,7 @@ void Predictor::SaveModel(const std::string &dir, LiteModelType model_type) {
 }
 
 lite::Tensor *Predictor::GetInput(size_t offset) {
-  auto *_feed_list = program_->exec_scope()->FindVar("feed");
+  auto *_feed_list = exec_scope_->FindVar("feed");
   CHECK(_feed_list) << "no feed variable in exec_scope";
   auto *feed_list = _feed_list->GetMutable<std::vector<lite::Tensor>>();
   if (offset >= feed_list->size()) {
@@ -48,12 +51,17 @@ lite::Tensor *Predictor::GetInput(size_t offset) {
 }
 
 const lite::Tensor *Predictor::GetOutput(size_t offset) const {
-  auto *_fetch_list = program_->exec_scope()->FindVar("fetch");
+  auto *_fetch_list = exec_scope_->FindVar("fetch");
   CHECK(_fetch_list) << "no fatch variable in exec_scope";
   auto &fetch_list = *_fetch_list->GetMutable<std::vector<lite::Tensor>>();
   CHECK_LT(offset, fetch_list.size()) << "offset " << offset << " overflow";
   return &fetch_list.at(offset);
 }
+
+const cpp::ProgramDesc &Predictor::program_desc() const {
+  return program_desc_;
+}
+const RuntimeProgram &Predictor::runtime_program() const { return *program_; }
 
 void Predictor::Build(const std::string &model_path,
                       const Place &prefer_place,
@@ -74,12 +82,6 @@ void Predictor::Build(const std::string &model_path,
   Build(program_desc_, prefer_place, valid_places, passes);
 }
 
-const cpp::ProgramDesc &Predictor::program_desc() const {
-  return program_desc_;
-}
-
-const RuntimeProgram &Predictor::runtime_program() const { return *program_; }
-
 void Predictor::Build(const cpp::ProgramDesc &desc,
                       const Place &prefer_place,
                       const std::vector<Place> &valid_places,
@@ -92,11 +94,23 @@ void Predictor::Build(const cpp::ProgramDesc &desc,
   factor.ConsiderTarget();
   factor.ConsiderPrecision();
   optimizer_.Run(std::move(program), valid_places, factor, passes);
+  exec_scope_ = optimizer_.exec_scope();
+}
+
+void Predictor::GenRuntimeProgram() {
   program_ = optimizer_.GenRuntimeProgram();
+  CHECK_EQ(exec_scope_, program_->exec_scope());
+  program_generated_ = true;
+}
+
+void Predictor::GenNPURuntimeProgram() {
+  program_ = optimizer_.GenNPURuntimeProgram();
+  CHECK_EQ(exec_scope_, program_->exec_scope());
+  program_generated_ = true;
 }
 
 const lite::Tensor *Predictor::GetTensor(const std::string &name) const {
-  auto *var = program_->exec_scope()->FindVar(name);
+  auto *var = exec_scope_->FindVar(name);
   return &var->Get<lite::Tensor>();
 }
 
