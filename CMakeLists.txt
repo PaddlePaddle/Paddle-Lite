@@ -77,6 +77,7 @@ option(LITE_WITH_X86  "Enable X86 in lite mode"  ON)
 option(LITE_WITH_ARM  "Enable ARM in lite mode"  OFF)
 option(LITE_WITH_OPENMP "Enable OpenMP in lite framework" ON)
 option(LITE_WITH_OPENCL   "Enable OpenCL support in lite" OFF)
+option(LITE_WITH_FPGA   "Enable FPGA support in lite" OFF)
 option(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK  "Enable light-weight framework" OFF)
 option(LITE_WITH_PROFILE  "Enable profile mode in lite framework"  OFF)
 
