@@ -120,19 +120,12 @@ TEST(elementwise_add, compute) {
   operators::ElementwiseParam param;
   lite::Tensor x, y, output, output_ref;
 
-  for (auto n : {1, 3, 4}) {
-    for (auto c : {1, 3, 4}) {
-      for (auto h : {1, 3, 4}) {
-        for (auto w : {1, 3, 4}) {
-          for (auto axis : {-1, 0, 1, 3}) {
-            for (auto yd : {std::vector<int64_t>({n}),
-                            std::vector<int64_t>({c}),
-                            std::vector<int64_t>({h}),
-                            std::vector<int64_t>({w}),
-                            std::vector<int64_t>({n, c}),
-                            std::vector<int64_t>({c, h}),
-                            std::vector<int64_t>({c, h, w}),
-                            std::vector<int64_t>({n, c, h, w})}) {
+  for (auto n : {1}) {
+    for (auto c : {8}) {
+      for (auto h : {8}) {
+        for (auto w : {8}) {
+          for (auto axis : {0}) {
+            for (auto yd : {std::vector<int64_t>({n, c, h, w})}) {
               auto x_dim = DDim(std::vector<int64_t>({n, c, h, w}));
               auto y_dim = DDim(yd);
               int axis_t = axis < 0 ? x_dim.size() - y_dim.size() : axis;
@@ -153,20 +146,25 @@ TEST(elementwise_add, compute) {
               auto* output_data = output.mutable_data<float16>();
               auto* output_ref_data = output_ref.mutable_data<float16>();
               for (int i = 0; i < x_dim.production(); i++) {
-                x_data[i] = i;
+                x_data[i] = zynqmp::float_to_half(i);
               }
               for (int i = 0; i < y_dim.production(); i++) {
-                y_data[i] = i;
+                y_data[i] = zynqmp::float_to_half(i);
               }
               param.X = &x;
               param.Y = &y;
               param.axis = axis;
               param.Out = &output;
               elementwise_add.SetParam(param);
+              LOG(ERROR) << "========prepare for run===========";
               elementwise_add.PrepareForRun();
+              LOG(ERROR) << "========finished for run===========";
               elementwise_add.Run();
+              LOG(ERROR) << *param.Out;
               param.Out = &output_ref;
+
               elementwise_compute_ref<float16>(param, "add", "");
+              LOG(ERROR) << *param.Out;
               for (int i = 0; i < output.dims().production(); i++) {
                 EXPECT_NEAR(output_data[i], output_ref_data[i], 1e-5);
               }
@@ -199,19 +197,12 @@ TEST(fusion_elementwise_add_activation_fpga, compute) {
   lite::Tensor x, y, output, output_ref;
 
   for (auto act_type : {"relu"}) {
-    for (auto n : {1, 3, 4}) {
-      for (auto c : {1, 3, 4}) {
-        for (auto h : {1, 3, 4}) {
-          for (auto w : {1, 3, 4}) {
-            for (auto axis : {-1, 0, 1, 3}) {
-              for (auto yd : {std::vector<int64_t>({n}),
-                              std::vector<int64_t>({c}),
-                              std::vector<int64_t>({h}),
-                              std::vector<int64_t>({w}),
-                              std::vector<int64_t>({n, c}),
-                              std::vector<int64_t>({h, w}),
-                              std::vector<int64_t>({n, c, h}),
-                              std::vector<int64_t>({n, c, h, w})}) {
+    for (auto n : {1}) {
+      for (auto c : {1}) {
+        for (auto h : {2}) {
+          for (auto w : {2}) {
+            for (auto axis : {0}) {
+              for (auto yd : {std::vector<int64_t>({n, c, h, w})}) {
                 auto x_dim = DDim(std::vector<int64_t>({n, c, h, w}));
                 auto y_dim = DDim(yd);
                 int axis_t = axis < 0 ? x_dim.size() - y_dim.size() : axis;

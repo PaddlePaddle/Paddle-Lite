@@ -16,12 +16,15 @@
 #include <algorithm>
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
+#include "lite/fpga/KD/float16.hpp"
 #include "lite/fpga/KD/pes/elementwise_add_pe.hpp"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace fpga {
+
+using float16 = zynqmp::float16;
 
 class ElementwiseAddCompute
     : public KernelLite<TARGET(kFPGA), PRECISION(kFP16)> {

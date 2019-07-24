@@ -24,8 +24,13 @@ namespace fpga {
 void ElementwiseAddCompute::PrepareForRun() {
   zynqmp::ElementwiseAddParam& ew_param = pe_.param();
   auto& param = Param<operators::ElementwiseParam>();
+  LOG(ERROR) << *param.X;
+  LOG(ERROR) << *param.Y;
   input_x_.share_from_tensorlite(*param.X);
   input_y_.share_from_tensorlite(*param.Y);
+  LOG(ERROR) << "input x_";
+  LOG(ERROR) << input_x_;
+  LOG(ERROR) << input_y_;
   output_.share_from_tensorlite(*param.Out);
   ew_param.inputs = {&input_x_, &input_y_};
   ew_param.output = &output_;
@@ -35,7 +40,17 @@ void ElementwiseAddCompute::PrepareForRun() {
   pe_.init();
   pe_.apply();
 }
-void ElementwiseAddCompute::Run() { pe_.dispatch(); }
+void ElementwiseAddCompute::Run() {
+  input_x_.flush();
+  input_y_.flush();
+  pe_.dispatch();
+  output_.invalidate();
+  auto& param = Param<operators::ElementwiseParam>();
+  output_.fill_to_tensorlite(param.Out);
+
+  LOG(ERROR) << output_;
+  LOG(ERROR) << *param.Out;
+}
 
 void ElementwiseAddActivationCompute::PrepareForRun() {
   zynqmp::ElementwiseAddParam& ew_param = pe_.param();

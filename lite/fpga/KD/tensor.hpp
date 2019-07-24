@@ -357,6 +357,27 @@ class Tensor {
     saveToFile(path);
   }
 
+  friend std::ostream& operator<<(std::ostream& os, Tensor& tensor) {
+    os << "tensor:"
+       << "\n";
+    os << "dims: {";
+    for (int i = 0; i < tensor.shape().dimSize(); ++i) {
+      os << tensor.shape()[i] << " ";
+    }
+    os << "}\n";
+    for (int i = 0; i < tensor.shape().numel(); i++) {
+      float value = 0;
+      if (tensor.dataType() == FP32) {
+        value = tensor.data<float>()[i];
+      } else {
+        value = half_to_float(tensor.data<float16>()[i]);
+      }
+      os << value << " ";
+    }
+    os << "\n";
+    return os;
+  }
+
   void saveToFile(std::string path) {
     syncToCPU();
     std::ofstream ofs;
@@ -367,7 +388,7 @@ class Tensor {
   }
 
   void save_file_with_name(std::string path) {
-    return;
+    // return;
     invalidate();
     std::ofstream ofs;
 
@@ -422,14 +443,26 @@ class Tensor {
     }
     placeHolder_->set_data(lite_ptr);
     placeHolder_->set_size(mem_size);
-    if (shape_ == nullptr) {
+    if (shape_ != nullptr) {
       delete shape_;
     }
     std::vector<int> tem_dims;
     for (int i = 0; i < lite_dim.size(); ++i) {
       tem_dims.push_back(lite_dim[i]);
+      printf("push shape:%d", lite_dim[i]);
     }
     shape_ = new Shape(tem_dims);
+    dataType_ = FP16;
+  }
+  void fill_to_tensorlite(lite::Tensor* lite_tensor) {
+    float16* ptr = mutableData<float16>();
+    std::vector<int64_t> dim;
+    for (auto i : shape_->dims()) {
+      dim.push_back(i);
+    }
+    lite::DDimLite lite_dim(dim);
+    lite_tensor->Assign<float16, lite::DDimLite, lite_api::TargetType::kFPGA>(
+        ptr, lite_dim);
   }
 
  private:
