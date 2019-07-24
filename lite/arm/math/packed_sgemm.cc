@@ -511,7 +511,7 @@ void prepackA_trans_8x12(float *outptr,
   int right_remain = x_len - 8 * (x_len / 8);
   int stride_out = 8 * y_len;
 
-  uint32x4_t vzero = vdupq_n_u32(0);
+  float32x4_t vzero = vdupq_n_f32(0.f);
   uint32x4_t vmask1 =
       vcltq_u32(vld1q_u32(mask_buffer), vdupq_n_u32(right_remain));
   uint32x4_t vmask2 =
@@ -528,7 +528,7 @@ void prepackA_trans_8x12(float *outptr,
     const float *ptr3 = ptr2 + ldin;
 
     asm volatile(
-        "prfm   pldl1keep, [%[ptr0]]                \n"
+        "prfm   pldl1keep, [%[ptr0]]        \n"
         "prfm   pldl1keep, [%[ptr0], #64]   \n"
         "prfm   pldl1keep, [%[ptr1]]        \n"
         "prfm   pldl1keep, [%[ptr1], #64]   \n"
