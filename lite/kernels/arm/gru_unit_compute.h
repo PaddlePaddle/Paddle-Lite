@@ -13,22 +13,26 @@
 // limitations under the License.
 
 #pragma once
-
-#include <cmath>
-#include <vector>
-#include "lite/core/context.h"
+#include <algorithm>
+#include "lite/core/kernel.h"
 
 namespace paddle {
 namespace lite {
+namespace kernels {
 namespace arm {
-namespace math {
 
-bool sequence_softmax(const float* input,
-                      const std::vector<uint64_t>& seq_offset,
-                      float* out,
-                      Context<TARGET(kARM)>* ctx);
+class GRUUnitCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::GRUUnitParam;
 
-}  // namespace math
+  GRUUnitCompute() = default;
+
+  void Run() override;
+
+  virtual ~GRUUnitCompute() = default;
+};
+
 }  // namespace arm
+}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

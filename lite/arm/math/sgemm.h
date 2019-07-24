@@ -15,18 +15,32 @@
 #pragma once
 
 #include <cmath>
-#include <vector>
+#include "lite/arm/math/packed_sgemm.h"
 #include "lite/core/context.h"
+#include "lite/core/cpu_info.h"
 
 namespace paddle {
 namespace lite {
 namespace arm {
 namespace math {
 
-bool sequence_softmax(const float* input,
-                      const std::vector<uint64_t>& seq_offset,
-                      float* out,
-                      Context<TARGET(kARM)>* ctx);
+void sgemm(bool is_transA,
+           bool is_transB,
+           int M,
+           int N,
+           int K,
+           float alpha,
+           const float* A,
+           int lda,
+           const float* B,
+           int ldb,
+           float beta,
+           float* C,
+           int ldc,
+           const float* bias,
+           bool is_bias,
+           bool is_relu,
+           ARMContext* ctx);
 
 }  // namespace math
 }  // namespace arm

@@ -97,9 +97,9 @@ void test_norm(Place place) {
 }
 
 TEST(Norm, precision) {
-//#ifdef LITE_WITH_X86
-//  Place place(TARGET(kX86));
-//#endif
+// #ifdef LITE_WITH_X86
+//   Place place(TARGET(kX86));
+// #endif
 #ifdef LITE_WITH_ARM
   Place place(TARGET(kARM));
   test_norm(place);

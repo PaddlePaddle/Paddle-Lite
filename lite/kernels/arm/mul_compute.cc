@@ -62,17 +62,25 @@ void MulCompute::Run() {
 
     float* packed_x = static_cast<float*>(ctx.workspace_data<float>()) +
                       ctx.l2_cache_size() / sizeof(float);
-    lite::arm::math::prepackA(packed_x, x_data, k_, 0, m_, 0, k_, false, &ctx);
-    lite::arm::math::sgemm_prepack(packed_x,
-                                   y_data,
-                                   nullptr,
-                                   o_data,
+    lite::arm::math::prepackA(
+        packed_x, x_data, 1.f, k_, 0, m_, 0, k_, false, &ctx);
+    int ldb = n_;
+    if (is_tranposed_y) {
+      ldb = k_;
+    }
+    lite::arm::math::sgemm_prepack(is_tranposed_y,
                                    m_,
                                    n_,
                                    k_,
+                                   packed_x,
+                                   y_data,
+                                   ldb,
+                                   0.f,
+                                   o_data,
+                                   n_,
+                                   nullptr,
                                    false,
                                    false,
-                                   is_tranposed_y,
                                    &ctx);
   }
 }

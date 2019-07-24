@@ -20,6 +20,8 @@ lite_cc_library(mean_op SRCS mean_op.cc DEPS ${op_DEPS})
 lite_cc_library(fill_constant_op SRCS fill_constant_op.cc DEPS ${op_DEPS})
 lite_cc_library(sgd_op SRCS sgd_op.cc DEPS ${op_DEPS})
 lite_cc_library(uniform_random_op SRCS uniform_random_op.cc DEPS ${op_DEPS})
+lite_cc_library(gru_unit_op SRCS gru_unit_op.cc DEPS ${op_DEPS})
+lite_cc_library(gru_op SRCS gru_op.cc DEPS ${op_DEPS})
 
 lite_cc_library(op_params SRCS op_params.cc DEPS tensor any framework_proto)
 lite_cc_library(dropout_op SRCS dropout_op.cc DEPS ${op_DEPS})
@@ -46,6 +48,8 @@ set(ops
         batch_norm_op
         feed_op
         fetch_op
+        gru_unit_op
+        gru_op
         io_copy_op
         io_copy_once_op
         elementwise_ops

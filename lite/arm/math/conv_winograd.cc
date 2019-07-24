@@ -52,18 +52,19 @@ bool WinogradConv<PRECISION(kFloat)>::create(const operators::ConvParam& param,
     weights_trans_.Resize({1, 1, 1, 8 * 8 * m_round * ic});
     this->ctx_->ExtendWorkspace(DDim(std::vector<DDim::value_type>(
         {1, 1, 1, size_trans_channel * max_ch * 2 + n_wino})));
-    float* weights_wino =
+    auto weights_wino =
         static_cast<float*>(malloc(sizeof(float) * 8 * 8 * oc * ic));
     void* trans_tmp_ptr = malloc(sizeof(float) * 8 * 8 * oc * ic);
     if (weights_wino && trans_tmp_ptr) {
       winograd_transform_weights(
           weights_wino, param.filter->data<float>(), oc, ic, trans_tmp_ptr);
-      float* weights_trans = weights_trans_.mutable_data<float>();
+      auto weights_trans = weights_trans_.mutable_data<float>();
       for (int i = 0; i < 64; ++i) {
         float* packed_weights = weights_trans + i * m_round * ic;
         const float* weights_wino_ptr = weights_wino + i * oc * ic;
         prepackA(packed_weights,
                  weights_wino_ptr,
+                 1.f,
                  ic,
                  0,
                  m_wino,
@@ -100,7 +101,7 @@ bool WinogradConv<PRECISION(kFloat)>::run(const operators::ConvParam& param) {
   const auto* b_data = param.bias ? param.bias->data<float>() : nullptr;
   auto* o_data = param.output->mutable_data<float>();
 
-  if (is_weights_transed_ == true) {
+  if (is_weights_transed_) {
     w_data = weights_trans_.data<float>();
   }
 

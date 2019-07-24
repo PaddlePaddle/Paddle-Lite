@@ -84,7 +84,10 @@ class SequenceSoftmaxComputeTester : public arena::TestCase {
     SetCommonTensor(input_, dims_, data.data(), lod_);
   }
 };
-void generate_lod(int seq_num, int max_len, std::vector<uint64_t>& seq_offset) {
+
+void generate_lod(int seq_num,
+                  int max_len,
+                  std::vector<uint64_t>& seq_offset) {  // NOLINT
   seq_offset.clear();
   int sum = 0;
   seq_offset.push_back(sum);
@@ -107,9 +110,9 @@ void test_sequence_softmax(Place place) {
 }
 
 TEST(SequenceSoftmax, precision) {
-//#ifdef LITE_WITH_X86
-//  Place place(TARGET(kX86));
-//#endif
+// #ifdef LITE_WITH_X86
+//   Place place(TARGET(kX86));
+// #endif
 #ifdef LITE_WITH_ARM
   Place place(TARGET(kARM));
   test_sequence_softmax(place);
