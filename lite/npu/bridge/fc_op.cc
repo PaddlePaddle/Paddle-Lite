@@ -33,4 +33,4 @@ std::shared_ptr<ge::Operator> FCConverter(const std::shared_ptr<OpLite> op,
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_NPU_CVT(fc, paddle::lite::npu::bridge::FCConverter);
+REGISTER_NPU_BRIDGE(fc, paddle::lite::npu::bridge::FCConverter);
