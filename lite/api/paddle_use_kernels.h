@@ -38,6 +38,9 @@ USE_LITE_KERNEL(relu, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(transpose, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(transpose2, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(batch_norm, kARM, kFloat, kNCHW, def);
+USE_LITE_KERNEL(pad2d, kARM, kFloat, kNCHW, def);
+USE_LITE_KERNEL(negative, kARM, kFloat, kNCHW, def);
+USE_LITE_KERNEL(normalize, kARM, kFloat, kNCHW, def);
 
 USE_LITE_KERNEL(norm, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(sequence_softmax, kARM, kFloat, kNCHW, def);

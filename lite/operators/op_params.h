@@ -374,25 +374,14 @@ struct SroiAlignParam {
 struct NormalizeParam {
   const lite::Tensor* X{};
   // lite::Tensor* Out{};
-  std::vector<lite::Tensor*> Out{};
+  lite::Tensor* Out{};
   ///////////////////////////////////////////
-  //! scale tensor if has one
-  lite::Tensor* scale{nullptr};
-  lite::Tensor* bias{nullptr};
   //! whether normalize is across the spatial
   //! if not across spatial, do normalize across channel
   bool across_spatial{true};
-  //! has_scale = true, result is multiplied by scale
-  bool has_scale{false};
-  //! if channel_shared = true, use one scale data
-  bool channel_shared{false};
-  //! bias
-  bool has_bias{false};
   //! p = 1, L1 normalize, p = 2, L2 normalize
   int p{2};
   float eps{1e-6f};
-  //! group, which can normalize
-  int group{-1};
 };
 
 struct Im2SequenceParam {

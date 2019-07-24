@@ -24,11 +24,16 @@ namespace paddle {
 namespace lite {
 namespace kernels {
 namespace arm {
+/*void NormalizeCompute::PrepareForRun() {
+  LOG(INFO) << "Normalize prepare to run";
+  auto& ctx = this->ctx_->template As<ARMContext>();
+}*/
 
 void NormalizeCompute::Run() {
   // 1、读入数据
+  LOG(INFO) << "into normalize";
   auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->template As<ARMContext>();
+  //  auto& ctx = this->ctx_->template As<ARMContext>();
   /////////////// 1给变量malloc空间
   auto x_dims = param.X->dims();
   this->_mean->Resize({1, 1, 1, x_dims[0] * x_dims[1]});
@@ -37,7 +42,7 @@ void NormalizeCompute::Run() {
   //  param.Out.push_back(_variance);
   /////////////////////////////////////
   const float* input = param.X->data<float>();
-  float* out = param.Out[0]->mutable_data<float>();
+  float* out = param.Out->mutable_data<float>();
   const float* mean_data = this->_mean->data<float>();
   const float* variance_data = this->_variance->data<float>();
   auto input_dims = param.X->dims();
@@ -47,12 +52,13 @@ void NormalizeCompute::Run() {
   int width = input_dims[3];
   int spatial_size = width * height;
   int cnt = spatial_size / 8;
-
+  LOG(INFO) << "into compute mean";
   lite::arm::math::compute_mean(
       input, this->_mean, num, channel, height, width);
+  LOG(INFO) << "into cmopute variance;";
   lite::arm::math::compute_variance(
       input, this->_mean, this->_variance, num, channel, height, width);
-
+  LOG(INFO) << "into for";
   for (int n = 0; n < num; ++n) {
     const float* input_batch = input + n * spatial_size * channel;
     float* output_batch = out + n * spatial_size * channel;
@@ -112,9 +118,10 @@ void NormalizeCompute::Run() {
         input_channel++;
         output_channel++;
       }
+      LOG(INFO) << "out of for";
     }
   }
-
+  LOG(INFO) << "get of normalize:";
   return;
 }
 
@@ -130,7 +137,7 @@ REGISTER_LITE_KERNEL(normalize,
                      paddle::lite::kernels::arm::NormalizeCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("Scale", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kARM))})
+    // .BindInput("Scale", {LiteType::GetTensorTy(TARGET(kARM))})
+    // .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
