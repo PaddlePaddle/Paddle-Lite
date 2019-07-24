@@ -350,14 +350,7 @@ class FusionElementwiseMaxActivationComputeTester : public arena::TestCase {
   }
 };
 
-TEST(Elementwise, precision) {
-#ifdef LITE_WITH_X86
-  Place place(TARGET(kX86));
-#endif
-#ifdef LITE_WITH_ARM
-  Place place(TARGET(kARM));
-#endif
-
+void test_elementwise(Place place) {
   for (int axis : {-1, 0, 1, 3}) {
     std::unique_ptr<arena::TestCase> tester(
         new ElementwiseComputeTester(place, "def", axis));
@@ -376,14 +369,17 @@ TEST(Elementwise, precision) {
   }
 }
 
-TEST(FusionElementwise, precision) {
+TEST(Elementwise, precision) {
 #ifdef LITE_WITH_X86
   Place place(TARGET(kX86));
 #endif
 #ifdef LITE_WITH_ARM
   Place place(TARGET(kARM));
+  test_elementwise(place);
 #endif
+}
 
+void test_fusion_elementwise(Place place) {
   for (int axis : {-1, 0, 1, 3}) {
     std::unique_ptr<arena::TestCase> tester_add_act(
         new FusionElementwiseAddActivationComputeTester(
@@ -403,6 +399,16 @@ TEST(FusionElementwise, precision) {
     arena::Arena arena_max_act(std::move(tester_max_act), place, 2e-5);
     arena_max_act.TestPrecision();
   }
+}
+
+TEST(FusionElementwise, precision) {
+#ifdef LITE_WITH_X86
+  Place place(TARGET(kX86));
+#endif
+#ifdef LITE_WITH_ARM
+  Place place(TARGET(kARM));
+  test_fusion_elementwise(place);
+#endif
 }
 
 }  // namespace lite

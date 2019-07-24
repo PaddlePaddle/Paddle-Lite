@@ -175,27 +175,31 @@ class LrnComputeTester : public arena::TestCase {
   }
 };
 
-TEST(Lrn, precision) {
-#ifdef LITE_WITH_X86
-  Place place(TARGET(kX86));
-#endif
-#ifdef LITE_WITH_ARM
-  Place place(TARGET(kARM));
-#endif
-
+void test_lrn(Place place) {
   for (float alpha : {0.9, 1., 1.1}) {
     for (float beta : {0.5, 0.75, 1.}) {
       for (float k : {0.9, 1., 1.1}) {
-        for (int local_size : {4, 5, 7})
+        for (int local_size : {4, 5, 7}) {
           for (std::string norm_region : {"AcrossChannels"}) {
             std::unique_ptr<arena::TestCase> tester(new LrnComputeTester(
                 place, "def", alpha, beta, k, local_size, norm_region));
             arena::Arena arena(std::move(tester), place, 2e-5);
             arena.TestPrecision();
           }
+        }
       }
     }
   }
+}
+
+TEST(Lrn, precision) {
+#ifdef LITE_WITH_X86
+  Place place(TARGET(kX86));
+#endif
+#ifdef LITE_WITH_ARM
+  Place place(TARGET(kARM));
+  test_lrn(place);
+#endif
 }
 
 }  // namespace lite

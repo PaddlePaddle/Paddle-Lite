@@ -186,14 +186,7 @@ class DecodeBboxesComputeTester : public arena::TestCase {
   }
 };
 
-TEST(DecodeBboxes, precision) {
-#ifdef LITE_WITH_X86
-  Place place(TARGET(kX86));
-#endif
-#ifdef LITE_WITH_ARM
-  Place place(TARGET(kARM));
-#endif
-
+void test_decode_bboxes(Place place) {
   for (int batch_num : {1, 2, 3, 4}) {
     for (int num_priors : {1, 3, 4, 8, 10}) {
       for (std::string code_type : {"corner", "center_size", "corner_size"}) {
@@ -216,6 +209,16 @@ TEST(DecodeBboxes, precision) {
       }
     }
   }
+}
+
+TEST(DecodeBboxes, precision) {
+#ifdef LITE_WITH_X86
+  Place place(TARGET(kX86));
+#endif
+#ifdef LITE_WITH_ARM
+  Place place(TARGET(kARM));
+  test_decode_bboxes(place);
+#endif
 }
 
 }  // namespace lite
