@@ -95,9 +95,9 @@ void generate_lod(int seq_num, int max_len, std::vector<uint64_t>& seq_offset) {
 }
 
 TEST(SequenceSoftmax, precision) {
-#ifdef LITE_WITH_X86
-  Place place(TARGET(kX86));
-#endif
+//#ifdef LITE_WITH_X86
+//  Place place(TARGET(kX86));
+//#endif
 #ifdef LITE_WITH_ARM
   Place place(TARGET(kARM));
 #endif
