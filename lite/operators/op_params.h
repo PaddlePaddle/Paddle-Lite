@@ -354,7 +354,7 @@ struct AxpyParam {
   lite::Tensor* X{};
   lite::Tensor* Bias{};
   lite::Tensor* Out{};
-}
+};
 /// ----------------------- GRU unit operators ----------------------f
 struct GRUUnitParam {
   enum ActType { identity, sigmoid, tanh, relu };
