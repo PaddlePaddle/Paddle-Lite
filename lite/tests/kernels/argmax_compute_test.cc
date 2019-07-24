@@ -52,7 +52,6 @@ class ArgmaxComputeTester : public arena::TestCase {
 
     auto* x = scope->FindTensor(input_);
     const auto* x_data = x->data<float>();
-    LOG(INFO) << "x_dims:" << dims_;
 
     // int in_channel = x_dims
     const int size = dims_[axis_];

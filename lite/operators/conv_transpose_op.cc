@@ -60,9 +60,9 @@ bool ConvTransposeOpLite::InferShape() const {
 // TODO(Superjomn) replace framework::OpDesc with a lite one.
 bool ConvTransposeOpLite::AttachImpl(const cpp::OpDesc &op_desc,
                                      lite::Scope *scope) {
-  auto X = op_desc.Input("Input").front();
-  auto Filter = op_desc.Input("Filter").front();
-  auto Out = op_desc.Output("Output").front();
+  auto X = op_desc.Input("x").front();
+  auto Filter = op_desc.Input("filter").front();
+  auto Out = op_desc.Output("output").front();
 
   param_.x = scope->FindVar(X)->GetMutable<lite::Tensor>();
   param_.filter = scope->FindVar(Filter)->GetMutable<lite::Tensor>();
@@ -75,9 +75,9 @@ bool ConvTransposeOpLite::AttachImpl(const cpp::OpDesc &op_desc,
 
   // optional params
   std::vector<std::string> input_arg_names = op_desc.InputArgumentNames();
-  if (std::find(input_arg_names.begin(), input_arg_names.end(), "Bias") !=
+  if (std::find(input_arg_names.begin(), input_arg_names.end(), "bias") !=
       input_arg_names.end()) {
-    auto bias_arguments = op_desc.Input("Bias");
+    auto bias_arguments = op_desc.Input("bias");
     if (bias_arguments.size() > 0) {
       auto bias_var = scope->FindVar(bias_arguments.front());
       if (bias_var != nullptr) {

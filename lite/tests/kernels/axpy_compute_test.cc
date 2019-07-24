@@ -51,7 +51,6 @@ class AxpyComputeTester : public arena::TestCase {
     const auto* scale_data = scale->data<float>();
     auto* bias = scope->FindTensor(bias_);
     const auto* bias_data = bias->data<float>();
-    LOG(INFO) << "x_dims:" << x_dims_;
 
     int num = x_dims_[0];
     int channel = x_dims_[1];

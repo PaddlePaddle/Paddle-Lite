@@ -63,7 +63,6 @@ class ActivationComputeTester : public arena::TestCase {
         act_type_(act_type) {}
 
   void RunBaseline(Scope* scope) override {
-    LOG(INFO) << "run base line";
     auto* out = scope->NewTensor(output_);
     CHECK(out);
     out->Resize(dims_);
@@ -118,6 +117,7 @@ class ActivationComputeTester : public arena::TestCase {
             }
           }
         }
+        break;
       }
       case SIGMOID: {
         for (int i = 0; i < dims_.production(); i++) {
@@ -145,14 +145,14 @@ class ActivationComputeTester : public arena::TestCase {
   }
 
   void PrepareOpDesc(cpp::OpDesc* op_desc) {
-    LOG(INFO) << "prepare op desc";
     op_desc->SetType(type_);
     op_desc->SetInput("X", {input_});
+    op_desc->SetOutput("Out", {output_});
+    op_desc->SetAttr("Type", type_);
     if (act_type_ == PRELU) {
       op_desc->SetInput("Prelu_channel_slope", {prelu_channel_slope_});
       op_desc->SetAttr("Prelu_channel_shared", prelu_channel_shared_);
     }
-    op_desc->SetOutput("Out", {output_});
     if (act_type_ == LEAKY_RELU) {
       op_desc->SetAttr("Leaky_relu_slope", leaky_relu_slope_);
     }
@@ -165,7 +165,6 @@ class ActivationComputeTester : public arena::TestCase {
   }
 
   void PrepareData() override {
-    LOG(INFO) << "prepare data";
     std::vector<float> data(dims_.production());
     for (int i = 0; i < dims_.production(); i++) {
       float sign = i % 3 == 0 ? -1.0f : 1.0f;
@@ -303,7 +302,7 @@ TEST(Activation_prelu, precision) {
                 0.,
                 DDim(std::vector<int64_t>({n, c, h, w})),
                 "prelu",
-                RELU));
+                PRELU));
             arena::Arena arena(std::move(tester), place, 2e-5);
             arena.TestPrecision();
           }
