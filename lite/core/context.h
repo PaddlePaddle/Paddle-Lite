@@ -24,6 +24,10 @@
 #include "lite/opencl/cl_context.h"
 #include "lite/opencl/cl_runtime.h"
 #endif
+#ifdef LITE_WITH_NPU
+#include "lite/npu/npu_helper.h"
+#endif
+
 #include <map>
 #include <memory>
 #include <set>
@@ -49,6 +53,7 @@ using HostContext = Context<TargetType::kHost>;
 using X86Context = Context<TargetType::kX86>;
 using CUDAContext = Context<TargetType::kCUDA>;
 using ARMContext = Context<TargetType::kARM>;
+using NPUContext = Context<TargetType::kNPU>;
 using OpenCLContext = Context<TargetType::kOpenCL>;
 using FPGAContext = Context<TargetType::kFPGA>;
 
@@ -63,8 +68,23 @@ class Context<TargetType::kHost> {
   std::string name() const { return "HostContext"; }
 };
 
-#ifdef LITE_WITH_ARM
+#ifdef LITE_WITH_NPU
+template <>
+class Context<TargetType::kNPU> {
+ public:
+  Context() {}
+  explicit Context(const NPUContext& ctx);
+  void CopySharedTo(const NPUContext* ctx) {}
 
+  NPUContext& operator=(const NPUContext& ctx) {}
+  std::string name() const { return "NPUContext"; }
+  const hiai::AiModelMngerClient* client(const std::string& model_name) const {
+    return npu::DeviceInfo::Global().client(model_name);
+  }
+};
+#endif
+
+#ifdef LITE_WITH_ARM
 template <>
 class Context<TargetType::kARM> {
  public:
@@ -227,6 +247,8 @@ class Context<TargetType::kOpenCL> {
                            "buffer/elementwise_add_kernel.cl");
     cl_context_->AddKernel("pool_max", "buffer/pool_kernel.cl");
     cl_context_->AddKernel("pool_avg", "buffer/pool_kernel.cl");
+    cl_context_->AddKernel("relu", "buffer/relu_kernel.cl");
+    cl_context_->AddKernel("mat_mul", "buffer/mat_mul.cl");
   }
 };
 #endif
@@ -278,6 +300,12 @@ class ContextScheduler {
       case TARGET(kARM):
         kernel_contexts_[TargetType::kARM].As<ARMContext>().CopySharedTo(
             &ctx->As<ARMContext>());
+        break;
+#endif
+#ifdef LITE_WITH_NPU
+      case TARGET(kNPU):
+        kernel_contexts_[TargetType::kNPU].As<NPUContext>().CopySharedTo(
+            &ctx->As<NPUContext>());
         break;
 #endif
 #ifdef LITE_WITH_OPENCL

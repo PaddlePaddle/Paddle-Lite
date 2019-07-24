@@ -114,6 +114,7 @@ class KernelBase {
   virtual PrecisionType precision() const = 0;
   virtual DataLayoutType layout() const = 0;
   const KernelContext* context() const { return ctx_.get(); }
+  KernelContext* mutable_context() { return ctx_.get(); }
   virtual std::string name() const = 0;
 
   // Short human-readable document.

@@ -4,7 +4,7 @@ lite_cc_library(paddle_lite_jni MODULE
     SRCS paddle_init_jni.cc paddle_lite_jni.cc tensor_jni.cc
     DEPS light_api cxx_api
        paddle_api_full paddle_api paddle_api_light
-    ARM_DEPS ${arm_kernels})
+    ARM_DEPS ${arm_kernels} NPU_DEPS ${npu_kernels})
 if (APPLE)
     # MacOS only accepts JNI lib ends with .jnilib or .dylib
     set_target_properties(paddle_lite_jni PROPERTIES SUFFIX ".jnilib")
@@ -15,4 +15,4 @@ endif (APPLE)
 # Unlike static library, module library has to link target to be able to work
 # as a single .so lib.
 target_link_libraries(paddle_lite_jni light_api cxx_api
-    paddle_api_full paddle_api paddle_api_light ${arm_kernels})
+    paddle_api_full paddle_api paddle_api_light ${arm_kernels} ${npu_kernels})
