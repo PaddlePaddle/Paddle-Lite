@@ -78,10 +78,9 @@ if (NOT HAS_ARM_MATH_LIB_DIR)
       gemv_arm_int8.cc
       conv3x3s1_direct_int8.cc
       conv3x3s2_direct_int8.cc
-      negative.cc
-      permute.cc
-      pad2d.cc
-      sroi_align.cc
-      normalize.cc
+      im2sequence.cc
+      sequence_softmax.cc
+      norm.cc
       DEPS ${lite_kernel_deps} framework_proto)
 endif()
+ 

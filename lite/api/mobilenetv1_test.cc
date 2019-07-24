@@ -26,7 +26,8 @@ namespace paddle {
 namespace lite {
 
 void TestModel(const std::vector<Place>& valid_places,
-               const Place& preferred_place) {
+               const Place& preferred_place,
+               bool use_npu = false) {
   DeviceInfo::Init();
   DeviceInfo::Global().SetRunMode(LITE_POWER_HIGH, FLAGS_threads);
   lite::Predictor predictor;
@@ -39,6 +40,10 @@ void TestModel(const std::vector<Place>& valid_places,
   auto item_size = input_tensor->dims().production();
   for (int i = 0; i < item_size; i++) {
     data[i] = 1;
+  }
+
+  if (use_npu) {
+    predictor.GenNPURuntimeProgram();
   }
 
   for (int i = 0; i < FLAGS_warmup; ++i) {
@@ -79,11 +84,24 @@ void TestModel(const std::vector<Place>& valid_places,
   }
 }
 
+#ifdef LITE_WITH_NPU
+TEST(MobileNetV1, test_npu) {
+  std::vector<Place> valid_places({
+      Place{TARGET(kHost), PRECISION(kFloat)},
+      Place{TARGET(kARM), PRECISION(kFloat)},
+      //  Place{TARGET(kNPU), PRECISION(kFloat)},
+  });
+
+  TestModel(valid_places,
+            Place({TARGET(kARM), PRECISION(kFloat)}),
+            true /* use_npu */);
+}
+#endif
+
 TEST(MobileNetV1, test_arm) {
   std::vector<Place> valid_places({
       Place{TARGET(kHost), PRECISION(kFloat)},
       Place{TARGET(kARM), PRECISION(kFloat)},
-      // Place{TARGET(kOpenCL), PRECISION(kFloat)},
   });
 
   TestModel(valid_places, Place({TARGET(kARM), PRECISION(kFloat)}));
