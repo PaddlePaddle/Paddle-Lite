@@ -84,8 +84,16 @@ bool GemmLikeConv<PRECISION(kFloat)>::create(const operators::ConvParam& param,
     for (int g = 0; g < param.groups; ++g) {
       const float* weights_group = w_data + g * m * k;
       float* weights_trans_ptr = w_trans_ptr + g * group_size_round_up;
-      prepackA(
-          weights_trans_ptr, weights_group, k, 0, m, 0, k, false, this->ctx_);
+      prepackA(weights_trans_ptr,
+               weights_group,
+               1.f,
+               k,
+               0,
+               m,
+               0,
+               k,
+               false,
+               this->ctx_);
     }
     is_weights_transed_ = true;
   }
@@ -108,7 +116,7 @@ bool GemmLikeConv<PRECISION(kFloat)>::run(const operators::ConvParam& param) {
   auto* o_data = param.output->mutable_data<float>();
   const int* idx_data = idx_data_.mutable_data<int>();
 
-  if (is_weights_transed_ == true) {
+  if (is_weights_transed_) {
     w_data = weights_trans_.data<float>();
   }
   auto x_dims = param.x->dims();

@@ -20,7 +20,6 @@ namespace lite {
 namespace arm {
 namespace math {
 
-#if 1
 void transpose(float* data_out, const float* data_in, int w_in, int h_in);
 void transform_input_f6x6(float* dout, const float* din);
 void transform_output_f6x6(float* output, const float* din, float bias);
@@ -45,12 +44,6 @@ void conv_winograd3x3(const float* din,
   int size_out_channel = wout * hout;
   bool flag_relu = param.fuse_relu;
   bool flag_bias = param.bias != nullptr;
-  //   if (param.activation_param.has_active) {
-  //     if (param.activation_param.active == Active_relu &&
-  //         fabs(param.activation_param.negative_slope) < 1e-6f) {
-  //       flag_relu = true;
-  //     }
-  //   }
 
   //! transform input
   int tile_w = (wout + 5) / 6;
@@ -71,14 +64,10 @@ void conv_winograd3x3(const float* din,
   //! tmp data buffer for dot mul
   float* tmp_data2 = tmp_data1 + size_trans_channel * max_ch;
 
-  // SaberTimer<ARM> t1;
-  // Context<ARM> ctx1;
-
   for (int i = 0; i < num; ++i) {
     const float* din_batch = din + i * chin * size_in_channel;
     float* dout_batch = dout + i * chout * size_out_channel;
 
-// t1.start(ctx1);
 //! transform input Bt * data * B
 #pragma omp parallel for num_threads(threads)
     for (int j = 0; j < chin; ++j) {
@@ -107,9 +96,8 @@ void conv_winograd3x3(const float* din,
         }
       }
     }
-//! end of transform input
+    //! end of transform input
 
-#if 1
     ////////////////////////////////////////////////////////////////////////////////
     //! dot mul
     //! transpose input, convert from ch_in * tile_h * tile_w * 64 to
@@ -121,13 +109,6 @@ void conv_winograd3x3(const float* din,
     int stride_c = chout * size_tile;
     transpose(tmp_data2, tmp_data1, 64, stride_b);
 
-    // t1.end(ctx1);
-    // LOG(INFO) << "winograd conv transform input time: " <<
-    // t1.get_average_ms();
-
-    // t1.clear();
-    // t1.start(ctx1);
-
     //! gemm
     // #pragma omp parallel for
     for (int l = 0; l < 64; ++l) {
@@ -138,7 +119,6 @@ void conv_winograd3x3(const float* din,
                     chout,
                     size_tile,
                     chin,
-                    1.f,
                     ptr_a,
                     ptr_b,
                     size_tile,
@@ -149,21 +129,13 @@ void conv_winograd3x3(const float* din,
                     false,
                     false,
                     ctx);
-      // gemmer(ptr_a, chin, ptr_b, size_tile, ptr_c, size_tile, 1.f, 0.f,
-      // false);
     }
 
     //! transpose output, convert from 64 * ch_out * tile_h * tile_w to
     //! ch_out * tile_h * tile_w * 64
     transpose(tmp_data2, tmp_data1, stride_c, 64);
 //! end of dot mul
-#endif
-// t1.end(ctx1);
-// LOG(INFO) << "winograd conv dot mul time: " << t1.get_average_ms();
 
-// t1.clear();
-// t1.start(ctx1);
-#if 1
 ///////////////////////////////////////////////////////////////////////////////
 //! transform output
 #pragma omp parallel for
@@ -198,11 +170,7 @@ void conv_winograd3x3(const float* din,
         }
       }
     }
-//! end of transform output
-#endif
-    // t1.end(ctx1);
-    // LOG(INFO) << "winograd conv transform output time: " <<
-    // t1.get_average_ms();
+    //! end of transform output
   }
 }
 
@@ -504,7 +472,6 @@ void transform_output_f6x6(float* output, const float* din, float bias) {
     output += 6;
   }
 }
-#endif
 
 }  // namespace math
 }  // namespace arm

@@ -43,13 +43,12 @@ void sgemm(bool is_transA,
   auto packed_A = static_cast<float*>(
       TargetMalloc(TargetType::kARM, m_roundup * K * sizeof(float)));
 
-  prepackA(packed_A, A, lda, 0, M, 0, K, is_transA, ctx);
+  prepackA(packed_A, A, alpha, lda, 0, M, 0, K, is_transA, ctx);
 
   sgemm_prepack(is_transB,
                 M,
                 N,
                 K,
-                alpha,
                 packed_A,
                 B,
                 ldb,

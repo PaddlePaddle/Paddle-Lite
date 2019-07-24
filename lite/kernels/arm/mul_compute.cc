@@ -62,7 +62,8 @@ void MulCompute::Run() {
 
     float* packed_x = static_cast<float*>(ctx.workspace_data<float>()) +
                       ctx.l2_cache_size() / sizeof(float);
-    lite::arm::math::prepackA(packed_x, x_data, k_, 0, m_, 0, k_, false, &ctx);
+    lite::arm::math::prepackA(
+        packed_x, x_data, 1.f, k_, 0, m_, 0, k_, false, &ctx);
     int ldb = n_;
     if (is_tranposed_y) {
       ldb = k_;
@@ -71,7 +72,6 @@ void MulCompute::Run() {
                                    m_,
                                    n_,
                                    k_,
-                                   1.f,
                                    packed_x,
                                    y_data,
                                    ldb,

@@ -26,6 +26,37 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
+template <typename Dtype>
+void gru_add_with_bias(
+    const Dtype* din, const Dtype* bias, Dtype* dout, int batch, int size);
+
+template <>
+void gru_add_with_bias(
+    const float* din, const float* bias, float* dout, int batch, int size) {
+#pragma omp parallel for
+  for (int i = 0; i < batch; ++i) {
+    int j = 0;
+    auto din_batch = din + i * size;
+    auto dout_batch = dout + i * size;
+    float32x4_t vb0 = vld1q_f32(bias);
+    float32x4_t vin0 = vld1q_f32(din_batch);
+    float32x4_t vout0;
+    float32x4_t vout1;
+    float32x4_t vin1;
+    float32x4_t vb1;
+    for (; j < size - 7; j += 8) {
+      vin1 = vld1q_f32(din_batch + j + 4);
+      vb1 = vld1q_f32(bias + j + 4);
+      vout0 = vaddq_f32(vb0, vin0);
+      vout1 = vaddq_f32(vb1, vin1);
+      vb0 = vld1q_f32(bias + j + 8);
+      vin0 = vld1q_f32(din_batch + j + 8);
+      vst1q_f32(dout_batch + j, vout0);
+      vst1q_f32(dout_batch + j + 4, vout1);
+    }
+  }
+}
+
 void GRUUnitCompute::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->template As<ARMContext>();
@@ -42,33 +73,42 @@ void GRUUnitCompute::Run() {
 
   int batch_size = input->dims()[0];
   int frame_size = hidden_prev->dims()[1];
+  const float* input_data = input->data<float>();
+  const float* hidden_prev_data = hidden_prev->data<float>();
   const float* weight_data = weight->data<float>();
-  const float* bias_data = nullptr;
-  bool has_bias = false;
+  float* gate_data = gate->mutable_data<float>();
+  float* reset_hidden_prev_data = resethiddenprev->mutable_data<float>();
+  float* hidden_data = hidden->mutable_data<float>();
   if (bias) {
-    bias_data = bias->data<float>();
-    has_bias = true;
+    auto bias_data = bias->data<float>();
+    gru_add_with_bias<float>(
+        input_data, bias_data, gate_data, batch_size, frame_size * 3);
+  } else {
+    for (int i = 0; i < batch_size; ++i) {
+      TargetCopy(TargetType::kARM,
+                 gate_data + i * frame_size * 3,
+                 input_data,
+                 frame_size * 3 * sizeof(float));
+    }
   }
 
-  const float* hidden_prev_data = hidden_prev->data<float>();
-
-  float* gate_data = gate->data<float>();
-  float* reset_hidden_prev_data = resethiddenprev->data<float>();
-
-  math::sgemm(hidden_prev_data,
-              weight_data,
-              bias_data,
-              gate_data,
-              batch_size,
-              2 * frame_size,
-              frame_size,
-              has_bias,
-              false,
-              false,
-              false,
-              ctx);
-
-  return;
+  lite::arm::math::sgemm(false,
+                         false,
+                         batch_size,
+                         2 * frame_size,
+                         frame_size,
+                         1.f,
+                         hidden_prev_data,
+                         frame_size,
+                         weight_data,
+                         frame_size * 2,
+                         0.f,
+                         gate_data,
+                         frame_size * 3,
+                         nullptr,
+                         false,
+                         false,
+                         &ctx);
 }
 
 }  // namespace arm
