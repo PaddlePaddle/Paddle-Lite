@@ -87,7 +87,7 @@ class SequenceSoftmaxComputeTester : public arena::TestCase {
 
 void generate_lod(int seq_num,
                   int max_len,
-                  const std::vector<uint64_t>& seq_offset) {
+                  std::vector<uint64_t>& seq_offset) {  // NOLINT
   seq_offset.clear();
   int sum = 0;
   seq_offset.push_back(sum);
