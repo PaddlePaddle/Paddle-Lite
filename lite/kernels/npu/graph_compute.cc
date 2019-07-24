@@ -26,33 +26,34 @@ namespace npu {
 
 void GraphCompute::PrepareForRun() {
   auto& ctx = this->ctx_->template As<NPUContext>();
+  auto& param = this->Param<param_t>();
+
   exec_ = ctx.client(param.model_name);
   CHECK(exec_);
-
   int ret =
       exec_->GetModelIOTensorDim(param.model_name, npu_idims_, npu_odims_);
-  CHECK_EQ(ret, hiai::AI_SUCCESS) << "Get dims failed.";
+  CHECK_EQ(ret, hiai::AI_SUCCESS) << "[NPU] Get dims failed.";
 
   npu_itensors_.resize(npu_idims_.size());
   npu_otensors_.resize(npu_odims_.size());
 
   for (size_t i = 0; i < npu_idims_.size(); ++i) {
-    npu_itensors_[i].reset(make_shared<AiTensor>());
+    npu_itensors_[i].reset(make_shared<hiai::AiTensor>());
     npu_itensors_[i]->Init(&(npu_idims_[i]));
   }
 
   for (size_t i = 0; i < npu_odims_.size(); ++i) {
-    npu_otensors_[i].reset(make_shared<AiTensor>());
+    npu_otensors_[i].reset(make_shared<hiai::AiTensor>());
     npu_otensors_[i]->Init(&(npu_odims_[i]));
   }
 
-  CHECK_EQ(param.output->dims().production() ，npu_odims_[0].GetNumber() *
-           npu_odims_[0].GetChannel() * npu_odims_[0].GetHeight() *
-           npu_odims_[0].GetWidth());
+  CHECK_EQ(param.output->dims().production(),
+           npu_odims_[0].GetNumber() * npu_odims_[0].GetChannel() *
+               npu_odims_[0].GetHeight() * npu_odims_[0].GetWidth());
 }
 
 bool input_dims_changed() const {
-  auto& param = Param<param_t>();
+  auto& param = this->Param<param_t>();
   // TODO(TJ): input change to vector
   CHECK(param.input);
   CHECK(!param.input->dims().empty());
@@ -67,7 +68,7 @@ bool input_dims_changed() const {
 void GraphCompute::Run() {
   CHECK(!input_dims_changed())
       << "When NPU is enabled, the input shape cloud not change yet.";
-  auto& param = Param<param_t>();
+  auto& param = this->Param<param_t>();
 
   const auto* i_data = param.input->data<float>();
   auto* o_data = param.output->mutable_data<float>();
