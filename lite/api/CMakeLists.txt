@@ -28,12 +28,14 @@ endif()
 message(STATUS "get ops ${ops}")
 message(STATUS "get Host kernels ${host_kernels}")
 message(STATUS "get ARM kernels ${arm_kernels}")
+message(STATUS "get NPU kernels ${npu_kernels}")
 
 lite_cc_library(cxx_api
                 SRCS cxx_api.cc
                 DEPS ${cxx_api_deps} ${ops} ${host_kernels} program
                 X86_DEPS ${x86_kernels}
                 ARM_DEPS ${arm_kernels}
+                NPU_DEPS ${npu_kernels} ${npu_bridges} npu_pass
                 CL_DEPS ${opencl_kenrels})
 
 lite_cc_library(light_api SRCS light_api.cc
@@ -42,6 +44,7 @@ lite_cc_library(light_api SRCS light_api.cc
         CUDA_DEPS target_wrapper_cuda
         X86_DEPS ${x86_kernels}
         ARM_DEPS ${arm_kernels}
+        NPU_DEPS ${npu_kernels} ${npu_bridges} npu_pass
         CL_DEPS ${opencl_kenrels})
 
 include(ExternalProject)
@@ -54,6 +57,7 @@ if(WITH_TESTING)
        ${ops} ${host_kernels}
        X86_DEPS ${x86_kernels}
        ARM_DEPS ${arm_kernels}
+       NPU_DEPS ${npu_kernels}
        CL_DEPS ${opencl_kernels}
        EXCLUDE_COMPILE_DEPS "ON"
        ARGS --model_dir=${LITE_MODEL_DIR}/lite_naive_model
@@ -84,7 +88,7 @@ if(WITH_TESTING)
 endif()
 
 if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND WITH_TESTING)
-    set(lite_model_test_DEPS cxx_api mir_passes ${ops} ${host_kernels} ${arm_kernels})
+    set(lite_model_test_DEPS cxx_api mir_passes ${ops} ${host_kernels} ${arm_kernels} ${npu_kernels})
 
     lite_cc_test(test_mobilenetv1 SRCS mobilenetv1_test.cc
        DEPS ${lite_model_test_DEPS}
@@ -136,6 +140,7 @@ lite_cc_library(paddle_api SRCS paddle_api.cc DEPS op_params)
 lite_cc_library(paddle_api_full SRCS cxx_api_impl.cc DEPS cxx_api paddle_api light_api
   ${ops}
   ARM_DEPS ${arm_kernels}
+  NPU_DEPS ${npu_kernels}
   CL_DEPS ${opencl_kernels})
 # The final inference library for just MobileConfig.
 lite_cc_library(paddle_api_light SRCS light_api_impl.cc DEPS light_api paddle_api mir_passes)
@@ -148,6 +153,7 @@ bundle_static_library(paddle_api_light paddle_api_light_bundled bundle_light_api
 lite_cc_test(test_paddle_api SRCS paddle_api_test.cc DEPS paddle_api_full paddle_api_light
   ${ops}
   ARM_DEPS ${arm_kernels}
+  NPU_DEPS ${npu_kernels}
   CL_DEPS ${opencl_kernels}
   X86_DEPS ${x86_kernels}
   ARGS --model_dir=${LITE_MODEL_DIR}/lite_naive_model SERIAL)
@@ -156,6 +162,7 @@ if(NOT IOS)
   lite_cc_binary(test_model_bin SRCS model_test.cc DEPS paddle_api_full paddle_api_light gflags
     ${ops}
     ARM_DEPS ${arm_kernels}
+    NPU_DEPS ${npu_kernels}
     CL_DEPS ${opencl_kernels}
     X86_DEPS ${x86_kernels})
 endif()
@@ -171,7 +178,7 @@ endif()
 #lite_cc_binary(cxx_api_bin SRCS cxx_api_bin.cc
     #X86_DEPS operator
     #DEPS light_api model_parser target_wrapper_host mir_passes
-    #ARM_DEPS ${arm_kernels})
+    #ARM_DEPS ${arm_kernels}) NPU_DEPS ${npu_kernels})
 
 lite_cc_binary(cxx_api_bin SRCS cxx_api_bin_int8.cc
     DEPS
@@ -181,6 +188,7 @@ lite_cc_binary(cxx_api_bin SRCS cxx_api_bin_int8.cc
     mir_passes
     ${ops} ${host_kernels}
     ARM_DEPS ${arm_kernels}
+    NPU_DEPS ${npu_kernels}
     CL_DEPS ${opencl_kernels})
 lite_cc_binary(model_optimize_tool SRCS model_optimize_tool.cc
     DEPS paddle_api_full gflags

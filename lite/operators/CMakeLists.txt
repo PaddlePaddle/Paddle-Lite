@@ -20,6 +20,8 @@ lite_cc_library(mean_op SRCS mean_op.cc DEPS ${op_DEPS})
 lite_cc_library(fill_constant_op SRCS fill_constant_op.cc DEPS ${op_DEPS})
 lite_cc_library(sgd_op SRCS sgd_op.cc DEPS ${op_DEPS})
 lite_cc_library(uniform_random_op SRCS uniform_random_op.cc DEPS ${op_DEPS})
+lite_cc_library(gru_unit_op SRCS gru_unit_op.cc DEPS ${op_DEPS})
+lite_cc_library(gru_op SRCS gru_op.cc DEPS ${op_DEPS})
 
 lite_cc_library(op_params SRCS op_params.cc DEPS tensor any framework_proto)
 lite_cc_library(dropout_op SRCS dropout_op.cc DEPS ${op_DEPS})
@@ -29,8 +31,7 @@ lite_cc_library(split_op SRCS split_op.cc DEPS ${op_DEPS})
 lite_cc_library(transpose_op SRCS transpose_op.cc DEPS ${op_DEPS})
 lite_cc_library(fake_quant SRCS fake_quantize_moving_avg_max_abs.cc DEPS ${op_DEPS})
 lite_cc_library(fake_dequant SRCS fake_dequantize_max_abs.cc DEPS ${op_DEPS})
-lite_cc_library(gru_unit_op SRCS gru_unit_op.cc DEPS ${op_DEPS})
-lite_cc_library(gru_op SRCS gru_op.cc DEPS ${op_DEPS})
+lite_cc_library(graph_op_lite SRCS graph_op.cc DEPS ${op_DEPS})
 
 set(ops
         conv_op

@@ -324,6 +324,30 @@ function _test_paddle_code_generator {
     $adb shell $remote_test --optimized_model $remote_model --generated_code_file $ADB_WORK_DIR/gen_code.cc
 }
 
+function cmake_npu {
+    prepare_workspace
+    # $1: ARM_TARGET_OS in "android" , "armlinux"
+    # $2: ARM_TARGET_ARCH_ABI in "armv8", "armv7" ,"armv7hf"
+    # $3: ARM_TARGET_LANG in "gcc" "clang"
+
+    # NPU libs need API LEVEL 24 above
+    build_dir=`pwd`
+
+    cmake .. \
+        -DWITH_GPU=OFF \
+        -DWITH_MKL=OFF \
+        -DWITH_LITE=ON \
+        -DLITE_WITH_CUDA=OFF \
+        -DLITE_WITH_X86=OFF \
+        -DLITE_WITH_ARM=ON \
+        -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
+        -DWITH_TESTING=ON \
+        -DLITE_WITH_NPU=ON \
+        -DANDROID_API_LEVEL=24 \
+        -DNPU_DDK_ROOT="${build_dir}/../ai_ddk_lib/" \
+        -DARM_TARGET_OS=$1 -DARM_TARGET_ARCH_ABI=$2 -DARM_TARGET_LANG=$3
+}
+
 function cmake_arm {
     prepare_workspace
     # $1: ARM_TARGET_OS in "android" , "armlinux"

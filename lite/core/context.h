@@ -24,6 +24,10 @@
 #include "lite/opencl/cl_context.h"
 #include "lite/opencl/cl_runtime.h"
 #endif
+#ifdef LITE_WITH_NPU
+#include "lite/npu/npu_helper.h"
+#endif
+
 #include <map>
 #include <memory>
 #include <set>
@@ -49,7 +53,9 @@ using HostContext = Context<TargetType::kHost>;
 using X86Context = Context<TargetType::kX86>;
 using CUDAContext = Context<TargetType::kCUDA>;
 using ARMContext = Context<TargetType::kARM>;
+using NPUContext = Context<TargetType::kNPU>;
 using OpenCLContext = Context<TargetType::kOpenCL>;
+using FPGAContext = Context<TargetType::kFPGA>;
 
 template <>
 class Context<TargetType::kHost> {
@@ -62,8 +68,23 @@ class Context<TargetType::kHost> {
   std::string name() const { return "HostContext"; }
 };
 
-#ifdef LITE_WITH_ARM
+#ifdef LITE_WITH_NPU
+template <>
+class Context<TargetType::kNPU> {
+ public:
+  Context() {}
+  explicit Context(const NPUContext& ctx);
+  void CopySharedTo(const NPUContext* ctx) {}
 
+  NPUContext& operator=(const NPUContext& ctx) {}
+  std::string name() const { return "NPUContext"; }
+  const hiai::AiModelMngerClient* client(const std::string& model_name) const {
+    return npu::DeviceInfo::Global().client(model_name);
+  }
+};
+#endif
+
+#ifdef LITE_WITH_ARM
 template <>
 class Context<TargetType::kARM> {
  public:
@@ -102,6 +123,22 @@ class Context<TargetType::kARM> {
   }
 
   std::string name() const { return "ARMContext"; }
+};
+#endif
+
+#ifdef LITE_WITH_FPGA
+// TODO(tianxiaogang): add needed implementation to context
+template <>
+class Context<TargetType::kFPGA> {
+ public:
+  Context() {}
+  void InitOnce() {}
+
+  FPGAContext& operator=(const FPGAContext& ctx) {}
+
+  void CopySharedTo(const FPGAContext* ctx) {}
+
+  std::string name() const { return "FPGAContext"; }
 };
 #endif
 
@@ -210,6 +247,8 @@ class Context<TargetType::kOpenCL> {
                            "buffer/elementwise_add_kernel.cl");
     cl_context_->AddKernel("pool_max", "buffer/pool_kernel.cl");
     cl_context_->AddKernel("pool_avg", "buffer/pool_kernel.cl");
+    cl_context_->AddKernel("relu", "buffer/relu_kernel.cl");
+    cl_context_->AddKernel("mat_mul", "buffer/mat_mul.cl");
   }
 };
 #endif
@@ -263,10 +302,22 @@ class ContextScheduler {
             &ctx->As<ARMContext>());
         break;
 #endif
+#ifdef LITE_WITH_NPU
+      case TARGET(kNPU):
+        kernel_contexts_[TargetType::kNPU].As<NPUContext>().CopySharedTo(
+            &ctx->As<NPUContext>());
+        break;
+#endif
 #ifdef LITE_WITH_OPENCL
       case TARGET(kOpenCL):
         kernel_contexts_[TargetType::kOpenCL].As<OpenCLContext>().CopySharedTo(
             &ctx->As<OpenCLContext>());
+        break;
+#endif
+#ifdef LITE_WITH_FPGA
+      case TARGET(kFPGA):
+        kernel_contexts_[TargetType::kFPGA].As<FPGAContext>().CopySharedTo(
+            &ctx->As<FPGAContext>());
         break;
 #endif
       default:
@@ -294,6 +345,9 @@ class ContextScheduler {
 #endif
 #ifdef LITE_WITH_OPENCL
     InitContext<TargetType::kOpenCL, OpenCLContext>();
+#endif
+#ifdef LITE_WITH_FPGA
+    InitContext<TargetType::kFPGA, FPGAContext>();
 #endif
   }
 
