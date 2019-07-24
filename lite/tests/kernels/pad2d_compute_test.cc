@@ -1,0 +1,195 @@
+// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#include <gtest/gtest.h>
+#include "lite/api/paddle_use_kernels.h"
+#include "lite/api/paddle_use_ops.h"
+#include "lite/core/arena/framework.h"
+
+namespace paddle {
+namespace lite {
+
+class Pad2dComputeTester : public arena::TestCase {
+ protected:
+  // common attributes for this op.
+  std::string input_ = "X";
+  std::string output_ = "Out";
+  /*
+  _mode是PadMode
+  typedef enum{
+     PAD_CONSTANT = 0,
+     PAD_EDGE = 1,
+     PAD_REFLECT = 2,
+ } PadMode;
+   */
+  DDim dims_{{1, 1, 14, 14}};
+  int _mode{0};
+  std::vector<int> _pad_h;
+  std::vector<int> _pad_w;
+  float _pad_value = 0.f;
+
+ public:
+  Pad2dComputeTester(const Place& place,
+                     const std::string& alias,
+                     int mode,
+                     std::vector<int> pad_h,
+                     std::vector<int> pad_w,
+                     float pad_value)
+      : TestCase(place, alias),
+        _mode(mode),
+        _pad_h(pad_h),
+        _pad_w(pad_w),
+        _pad_value(pad_value) {}
+
+  void RunBaseline(Scope* scope) override {
+    LOG(INFO) << "into runbase";
+    auto* out = scope->NewTensor(output_);
+    CHECK(out);
+    int out_h = dims_[2] + _pad_h[0] + _pad_h[1];
+    int out_w = dims_[3] + _pad_w[0] + _pad_w[1];
+    out->Resize(lite::DDim({dims_[0], dims_[1], out_h, out_w}));
+    //    out->Resize(dims_);
+    auto* out_data = out->mutable_data<float>();
+
+    auto* x = scope->FindTensor(input_);
+    const auto* x_data = x->data<float>();
+    LOG(INFO) << "get nums";
+
+    auto output_dims = out->dims();
+    int n = output_dims[0];
+    int c = output_dims[1];
+    int h = output_dims[2];
+    int w = output_dims[3];
+
+    int pad_top = _pad_h[0];
+    int pad_bottom = _pad_h[1];
+    int pad_left = _pad_w[0];
+    int pad_right = _pad_w[1];
+    int pad_mode = _mode;
+    float pad_value = _pad_value;
+
+    int in_w = w - pad_left - pad_right;
+    int in_h = h - pad_bottom - pad_top;
+    int spatial_size_out = w * h;
+    int spatial_size_in = in_w * in_h;
+#pragma omp parallel for
+    // LOG(INFO)<<"total:";
+    for (int i = 0; i < n * c; ++i) {
+      const float* din_batch = x_data + i * spatial_size_in;
+      float* dout_batch = out_data + i * spatial_size_out;
+      int in_y = 0;
+      int in_x = 0;
+      for (int y = 0; y < h; ++y) {
+        for (int x = 0; x < w; ++x) {
+          switch (pad_mode) {
+            case 0:
+              /////////////////////////////
+              /*     _mode是PadMode
+                     typedef enum{
+                         PAD_CONSTANT = 0,
+                         PAD_EDGE = 1,
+                         PAD_REFLECT = 2,
+                     } PadMode;   */
+              /////////////////////////
+              in_y = y - pad_top;
+              in_x = x - pad_left;
+              dout_batch[y * w + x] =
+                  (in_x >= 0 && in_x < in_w) && (in_y >= 0 && in_y < in_h)
+                      ? din_batch[in_y * in_w + in_x]
+                      : pad_value;
+              break;
+            case 1:
+              in_x = std::min(std::max(pad_left, x), in_w + pad_left - 1) -
+                     pad_left;
+              in_y =
+                  std::min(std::max(pad_top, y), in_h + pad_top - 1) - pad_top;
+              dout_batch[y * w + x] = din_batch[in_y * in_w + in_x];
+              break;
+            case 2:
+              in_y = y - pad_top;
+              in_x = x - pad_left;
+              in_y = std::max(in_y, -in_y);
+              in_y = std::min(in_y, 2 * in_h - in_y - 2);
+              in_x = std::max(in_x, -in_x);
+              in_x = std::min(in_x, 2 * in_w - in_x - 2);
+              dout_batch[y * w + x] = din_batch[in_y * in_w + in_x];
+              break;
+            default:
+              LOG(ERROR) << "ERROR: unknown pad mode:" << pad_mode;
+          }
+        }
+      }
+    }
+    //}
+    LOG(INFO) << "run base end";
+
+    /*
+        for (int i = 0; i < dims_.production(); i++) {
+          out_data[i] = x_data[i] * scale_ + bias;
+        }*/
+  }
+
+  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+    op_desc->SetType("pad2d");
+    op_desc->SetInput("X", {input_});
+    op_desc->SetOutput("Out", {output_});
+    op_desc->SetAttr("_mode", _mode);
+    op_desc->SetAttr("_pad_h", _pad_h);
+    op_desc->SetAttr("_pad_w", _pad_w);
+    op_desc->SetAttr("_pad_value", _pad_value);
+  }
+
+  void PrepareData() override {
+    std::vector<float> data(dims_.production());
+
+    for (int i = 0; i < dims_.production(); i++) {
+      data[i] = i * 1;
+    }
+
+    SetCommonTensor(input_, dims_, data.data());
+  }
+};
+
+TEST(Scale, precision) {
+#ifdef LITE_WITH_X86
+  Place place(TARGET(kX86));
+#endif
+#ifdef LITE_WITH_ARM
+  Place place(TARGET(kARM));
+#endif
+  for (int pad_top : {0, 1}) {
+    for (int pad_bottom : {0, 1}) {
+      std::vector<int> pad_h{pad_top, pad_bottom};
+      for (int pad_left : {0, 1}) {
+        for (int pad_right : {0, 1}) {
+          std::vector<int> pad_w{pad_left, pad_right};
+          for (int pad_mode : {0, 1, 2}) {
+            for (float pad_value : {0.f, 1.0f}) {
+              LOG(INFO) << "pad param: " << pad_mode << " " << pad_value << " "
+                        << pad_h[0] << " " << pad_h[1] << " " << pad_w[0] << " "
+                        << pad_w[1];
+              std::unique_ptr<arena::TestCase> tester(new Pad2dComputeTester(
+                  place, "def", pad_mode, pad_h, pad_w, pad_value));
+              arena::Arena arena(std::move(tester), place, 2e-5);
+              arena.TestPrecision();
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+}  // namespace lite
+}  // namespace paddle
