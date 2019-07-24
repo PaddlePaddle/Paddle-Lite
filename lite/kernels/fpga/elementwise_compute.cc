@@ -63,7 +63,7 @@ void ElementwiseAddActivationCompute::Run() { pe_.dispatch(); }
 
 REGISTER_LITE_KERNEL(elementwise_add,
                      kFPGA,
-                     kFloat,
+                     kFP16,
                      kNHWC,
                      paddle::lite::kernels::fpga::ElementwiseAddCompute,
                      def)
@@ -75,7 +75,7 @@ REGISTER_LITE_KERNEL(elementwise_add,
 REGISTER_LITE_KERNEL(
     fusion_elementwise_add_activation,
     kFPGA,
-    kFloat,
+    kFP16,
     kNHWC,
     paddle::lite::kernels::fpga::ElementwiseAddActivationCompute,
     def)

@@ -24,7 +24,7 @@ namespace kernels {
 namespace fpga {
 
 class ElementwiseAddCompute
-    : public KernelLite<TARGET(kFPGA), PRECISION(kFloat)> {
+    : public KernelLite<TARGET(kFPGA), PRECISION(kFP16)> {
  public:
   void Run() override;
   void PrepareForRun() override;
@@ -39,7 +39,7 @@ class ElementwiseAddCompute
 };
 
 class ElementwiseAddActivationCompute
-    : public KernelLite<TARGET(kFPGA), PRECISION(kFloat)> {
+    : public KernelLite<TARGET(kFPGA), PRECISION(kFP16)> {
  public:
   void Run() override;
   void PrepareForRun() override;

@@ -17,23 +17,26 @@
 #include <string>
 #include <vector>
 #include "lite/core/op_registry.h"
-
+#include "lite/fpga/KD/float16.hpp"
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace fpga {
 
+using float16 = zynqmp::float16;
+
 TEST(elementwise_add_fpga, retrive_op) {
   auto elementwise_add =
-      KernelRegistry::Global().Create<TARGET(kFPGA), PRECISION(kFloat)>(
-          "elementwise_add");
+      KernelRegistry::Global()
+          .Create<TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)>(
+              "elementwise_add");
   ASSERT_FALSE(elementwise_add.empty());
   ASSERT_TRUE(elementwise_add.front());
 }
 
 TEST(elementwise_add_fpga, init) {
   ElementwiseAddCompute elementwise_add;
-  ASSERT_EQ(elementwise_add.precision(), PRECISION(kFloat));
+  ASSERT_EQ(elementwise_add.precision(), PRECISION(kFP16));
   ASSERT_EQ(elementwise_add.target(), TARGET(kFPGA));
 }
 
@@ -117,7 +120,6 @@ TEST(elementwise_add, compute) {
   operators::ElementwiseParam param;
   lite::Tensor x, y, output, output_ref;
 
-#if 1
   for (auto n : {1, 3, 4}) {
     for (auto c : {1, 3, 4}) {
       for (auto h : {1, 3, 4}) {
@@ -131,23 +133,6 @@ TEST(elementwise_add, compute) {
                             std::vector<int64_t>({c, h}),
                             std::vector<int64_t>({c, h, w}),
                             std::vector<int64_t>({n, c, h, w})}) {
-#else
-  for (auto n : {1, 3, 4, 11}) {
-    for (auto c : {1, 3, 4, 11}) {
-      for (auto h : {1, 3, 4, 11}) {
-        for (auto w : {1, 3, 4, 11}) {
-          for (auto axis : {-1, 0, 1, 2, 3}) {
-            for (auto yd : {std::vector<int64_t>({n}),
-                            std::vector<int64_t>({c}),
-                            std::vector<int64_t>({h}),
-                            std::vector<int64_t>({w}),
-                            std::vector<int64_t>({n, c}),
-                            std::vector<int64_t>({c, h}),
-                            std::vector<int64_t>({h, w}),
-                            std::vector<int64_t>({n, c, h}),
-                            std::vector<int64_t>({c, h, w}),
-                            std::vector<int64_t>({n, c, h, w})}) {
-#endif
               auto x_dim = DDim(std::vector<int64_t>({n, c, h, w}));
               auto y_dim = DDim(yd);
               int axis_t = axis < 0 ? x_dim.size() - y_dim.size() : axis;
@@ -163,10 +148,10 @@ TEST(elementwise_add, compute) {
               y.Resize(y_dim);
               output.Resize(x_dim);
               output_ref.Resize(x_dim);
-              auto* x_data = x.mutable_data<float>();
-              auto* y_data = y.mutable_data<float>();
-              auto* output_data = output.mutable_data<float>();
-              auto* output_ref_data = output_ref.mutable_data<float>();
+              auto* x_data = x.mutable_data<float16>();
+              auto* y_data = y.mutable_data<float16>();
+              auto* output_data = output.mutable_data<float16>();
+              auto* output_ref_data = output_ref.mutable_data<float16>();
               for (int i = 0; i < x_dim.production(); i++) {
                 x_data[i] = i;
               }
@@ -178,9 +163,10 @@ TEST(elementwise_add, compute) {
               param.axis = axis;
               param.Out = &output;
               elementwise_add.SetParam(param);
+              elementwise_add.PrepareForRun();
               elementwise_add.Run();
               param.Out = &output_ref;
-              elementwise_compute_ref<float>(param, "add", "");
+              elementwise_compute_ref<float16>(param, "add", "");
               for (int i = 0; i < output.dims().production(); i++) {
                 EXPECT_NEAR(output_data[i], output_ref_data[i], 1e-5);
               }
@@ -194,15 +180,16 @@ TEST(elementwise_add, compute) {
 
 TEST(fusion_elementwise_add_activation_fpga, retrive_op) {
   auto fusion_elementwise_add_activation =
-      KernelRegistry::Global().Create<TARGET(kFPGA), PRECISION(kFloat)>(
-          "fusion_elementwise_add_activation");
+      KernelRegistry::Global()
+          .Create<TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)>(
+              "fusion_elementwise_add_activation");
   ASSERT_FALSE(fusion_elementwise_add_activation.empty());
   ASSERT_TRUE(fusion_elementwise_add_activation.front());
 }
 
 TEST(fusion_elementwise_add_activation_fpga, init) {
   ElementwiseAddActivationCompute fusion_elementwise_add_activation;
-  ASSERT_EQ(fusion_elementwise_add_activation.precision(), PRECISION(kFloat));
+  ASSERT_EQ(fusion_elementwise_add_activation.precision(), PRECISION(kFP16));
   ASSERT_EQ(fusion_elementwise_add_activation.target(), TARGET(kFPGA));
 }
 
@@ -211,7 +198,6 @@ TEST(fusion_elementwise_add_activation_fpga, compute) {
   operators::FusionElementwiseActivationParam param;
   lite::Tensor x, y, output, output_ref;
 
-#if 1
   for (auto act_type : {"relu"}) {
     for (auto n : {1, 3, 4}) {
       for (auto c : {1, 3, 4}) {
@@ -226,24 +212,6 @@ TEST(fusion_elementwise_add_activation_fpga, compute) {
                               std::vector<int64_t>({h, w}),
                               std::vector<int64_t>({n, c, h}),
                               std::vector<int64_t>({n, c, h, w})}) {
-#else
-  for (auto act_type : {"relu"}) {
-    for (auto n : {1, 3, 4, 11}) {
-      for (auto c : {1, 3, 4, 11}) {
-        for (auto h : {1, 3, 4, 11}) {
-          for (auto w : {1, 3, 4, 11}) {
-            for (auto axis : {-1, 0, 1, 2, 3}) {
-              for (auto yd : {std::vector<int64_t>({n}),
-                              std::vector<int64_t>({c}),
-                              std::vector<int64_t>({h}),
-                              std::vector<int64_t>({w}),
-                              std::vector<int64_t>({n, c}),
-                              std::vector<int64_t>({c, h}),
-                              std::vector<int64_t>({h, w}),
-                              std::vector<int64_t>({n, c, h}),
-                              std::vector<int64_t>({c, h, w}),
-                              std::vector<int64_t>({n, c, h, w})}) {
-#endif
                 auto x_dim = DDim(std::vector<int64_t>({n, c, h, w}));
                 auto y_dim = DDim(yd);
                 int axis_t = axis < 0 ? x_dim.size() - y_dim.size() : axis;
@@ -277,6 +245,7 @@ TEST(fusion_elementwise_add_activation_fpga, compute) {
                 param.Out = &output;
                 param.act_type = act_type;
                 fusion_elementwise_add_activation.SetParam(param);
+                fusion_elementwise_add_activation.PrepareForRun();
                 fusion_elementwise_add_activation.Run();
                 param.Out = &output_ref;
                 elementwise_compute_ref<float>(param, "add", act_type);
@@ -297,5 +266,5 @@ TEST(fusion_elementwise_add_activation_fpga, compute) {
 }  // namespace lite
 }  // namespace paddle
 
-USE_LITE_KERNEL(elementwise_add, kFPGA, kFloat, kNHWC, def);
-USE_LITE_KERNEL(fusion_elementwise_add_activation, kFPGA, kFloat, kNHWC, def);
+USE_LITE_KERNEL(elementwise_add, kFPGA, kFP16, kNHWC, def);
+USE_LITE_KERNEL(fusion_elementwise_add_activation, kFPGA, kFP16, kNHWC, def);

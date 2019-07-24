@@ -98,7 +98,19 @@ class KernelRegistry final {
                                       DATALAYOUT(kNCHW)> *,  //
               KernelRegistryForTarget<TARGET(kOpenCL),
                                       PRECISION(kInt8),
-                                      DATALAYOUT(kNCHW)> *  //
+                                      DATALAYOUT(kNCHW)> *,  //
+              KernelRegistryForTarget<TARGET(kFPGA),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kNCHW)> *,  //
+              KernelRegistryForTarget<TARGET(kFPGA),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kNHWC)> *,  //
+              KernelRegistryForTarget<TARGET(kFPGA),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kNCHW)> *,  //
+              KernelRegistryForTarget<TARGET(kFPGA),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kNHWC)> *  //
               >;
 
   KernelRegistry();
