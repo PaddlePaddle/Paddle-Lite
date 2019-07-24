@@ -509,7 +509,6 @@ void prepackA_trans_8x12(float *outptr,
   int x_len = mmax - m0;
   int y_len = kmax - k0;
   int right_remain = x_len - 8 * (x_len / 8);
-
   int stride_out = 8 * y_len;
 
   uint32x4_t vzero = vdupq_n_u32(0);
@@ -529,7 +528,7 @@ void prepackA_trans_8x12(float *outptr,
     const float *ptr3 = ptr2 + ldin;
 
     asm volatile(
-        "prfm   pldl1keep, [%[ptr0]]        \n"
+        "prfm   pldl1keep, [%[ptr0]]                \n"
         "prfm   pldl1keep, [%[ptr0], #64]   \n"
         "prfm   pldl1keep, [%[ptr1]]        \n"
         "prfm   pldl1keep, [%[ptr1], #64]   \n"
@@ -562,6 +561,7 @@ void prepackA_trans_8x12(float *outptr,
         vr30 = vmulq_f32(vr30, valpha);
         vr31 = vmulq_f32(vr31, valpha);
       }
+
       vst1q_f32(outptr_row_col, vr00);
       vst1q_f32(outptr_row_col + 4, vr01);
       vst1q_f32(outptr_row_col + 8, vr10);
@@ -575,6 +575,7 @@ void prepackA_trans_8x12(float *outptr,
       ptr1 += 8;
       ptr2 += 8;
       ptr3 += 8;
+
       outptr_row_col += stride_out;
     }
     if (right_remain > 0) {
