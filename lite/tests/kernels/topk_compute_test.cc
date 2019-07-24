@@ -19,6 +19,10 @@
 
 namespace paddle {
 namespace lite {
+template <typename T>
+bool comp_func(std::pair<T, int> a, std::pair<T, int> b) {
+  return (a.first > b.first);
+}
 
 class TopkComputeTester : public arena::TestCase {
  protected:
@@ -34,17 +38,42 @@ class TopkComputeTester : public arena::TestCase {
                     const std::string& alias,
                     int K,
                     DDim dims)
-      : TestCase(place, alias), K_(K), , dims_(dims) {}
+      : TestCase(place, alias), K_(K), dims_(dims) {}
 
   void RunBaseline(Scope* scope) override {
-    auto* out = scope->NewTensor(output_);
-    CHECK(out);
-    out->Resize(dims_);
-    auto* out_data = out->mutable_data<float>();
+    auto* out_val = scope->NewTensor(out_val_);
+    auto* out_ind = scope->NewTensor(out_ind_);
+    CHECK(out_val);
+    CHECK(out_ind);
+    DDim out_dims = dims_;
+    out_dims[out_dims.size() - 1] = K_;
+    out_val->Resize(out_dims);
+    out_ind->Resize(out_dims);
+    auto* out_val_data = out_val->mutable_data<float>();
+    auto* out_ind_data = out_ind->mutable_data<int>();
 
     auto* x = scope->FindTensor(input_);
     const auto* x_data = x->data<float>();
+    int m = out_dims.production() / K_;
+    int n = K_;
+
+    for (int i = 0; i < m; i++) {
+      const float* in_tmp = x_data + i * n;
+      float* out_val_tmp = out_val_data + i * k;
+      int* out_ind_tmp = out_ind_data + i * k;
+      std::vector<std::pair<float, int>> vec;
+      for (int j = 0; j < n; j++) {
+        vec.push_back(std::make_pair(in_tmp[j], j));
+      }
+      std::partial_sort(vec, vec + k, vec + n, comp_func);
+      for (int q = 0; q < k; q++) {
+        out_val_tmp[q] = vec[q].first;
+        out_ind_tmp[q] = vec[q].second;
+        LOG(INFO) << "out:" << q << out_val_tmp[q] << " " << out_ind_tmp[q];
+      }
+    }
   }
+
   void PrepareOpDesc(cpp::OpDesc* op_desc) {
     op_desc->SetType("topk");
     op_desc->SetInput("X", {input_});

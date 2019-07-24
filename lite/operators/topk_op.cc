@@ -26,7 +26,7 @@ bool TopkOp::CheckShape() const {
 
 bool TopkOp::InferShape() const {
   auto out_dims = param_.X->dims();
-  out_dims.back() = param_.K;
+  out_dims[out_dims.size() - 1] = param_.K;
   param_.Out->Resize(out_dims);
   return true;
 }
