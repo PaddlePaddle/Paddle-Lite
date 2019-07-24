@@ -12,17 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <gtest/gtest.h>
-#include "lite/npu/bridge/paddle_use_npu_bridges.h"
+#pragma once
+
 #include "lite/npu/bridge/registry.h"
 
-namespace paddle {
-namespace lite {
-
-TEST(NPUBridges, FC) {
-  const auto& bridges = lite::npu::bridge::Factory::Instance();
-  CHECK(bridges.HasType("fc"));
-}
-
-}  // namespace lite
-}  // namespace paddle
+USE_NPU_BRIDGE(fc);

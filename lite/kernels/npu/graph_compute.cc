@@ -26,40 +26,48 @@ namespace npu {
 
 void GraphCompute::PrepareForRun() {
   auto& ctx = this->ctx_->template As<NPUContext>();
-  exec_ = ctx.client(param.model_name);
-  CHECK(exec_);
+  auto& param = this->Param<param_t>();
 
+  exec_ = ctx.client(param.graph_name);
+  CHECK(exec_);
   int ret =
-      exec_->GetModelIOTensorDim(param.model_name, npu_idims_, npu_odims_);
-  CHECK_EQ(ret, hiai::AI_SUCCESS) << "Get dims failed.";
+      exec_->GetModelIOTensorDim(param.graph_name, npu_idims_, npu_odims_);
+  CHECK_EQ(ret, hiai::AI_SUCCESS) << "[NPU] Get dims failed.";
 
   npu_itensors_.resize(npu_idims_.size());
   npu_otensors_.resize(npu_odims_.size());
 
   for (size_t i = 0; i < npu_idims_.size(); ++i) {
-    npu_itensors_[i].reset(make_shared<AiTensor>());
+    npu_itensors_[i].reset(new hiai::AiTensor);
     npu_itensors_[i]->Init(&(npu_idims_[i]));
   }
 
   for (size_t i = 0; i < npu_odims_.size(); ++i) {
-    npu_otensors_[i].reset(make_shared<AiTensor>());
+    npu_otensors_[i].reset(new hiai::AiTensor);
     npu_otensors_[i]->Init(&(npu_odims_[i]));
   }
 
-  CHECK_EQ(param.output->dims().production() ，npu_odims_[0].GetNumber() *
-           npu_odims_[0].GetChannel() * npu_odims_[0].GetHeight() *
-           npu_odims_[0].GetWidth());
+  CHECK_EQ(param.output->dims().production(),
+           npu_odims_[0].GetNumber() * npu_odims_[0].GetChannel() *
+               npu_odims_[0].GetHeight() * npu_odims_[0].GetWidth());
 }
 
-bool input_dims_changed() const {
-  auto& param = Param<param_t>();
+bool GraphCompute::input_dims_changed() const {
+  auto& param = this->Param<param_t>();
   // TODO(TJ): input change to vector
   CHECK(param.input);
-  CHECK(!param.input->dims().empty());
-  if (input_dims_.empty()) {
-    input_dims_ = param_.input->dims();
-  } else {
-    return input_dims_!= param_.input->dims());
+  auto param_idims = param.input->dims();
+  CHECK(!param_idims.empty());
+  CHECK_EQ(npu_idims_.size(), 1);
+  CHECK_EQ(param_idims.size(), 4);
+  std::vector<int> idims{static_cast<int>(npu_idims_[0].GetNumber()),
+                         static_cast<int>(npu_idims_[0].GetChannel()),
+                         static_cast<int>(npu_idims_[0].GetHeight()),
+                         static_cast<int>(npu_idims_[0].GetWidth())};
+  for (size_t i = 0; i < 4; ++i) {
+    if (param_idims[i] != idims[i]) {
+      return true;
+    }
   }
   return false;
 }
@@ -67,7 +75,7 @@ bool input_dims_changed() const {
 void GraphCompute::Run() {
   CHECK(!input_dims_changed())
       << "When NPU is enabled, the input shape cloud not change yet.";
-  auto& param = Param<param_t>();
+  auto& param = this->Param<param_t>();
 
   const auto* i_data = param.input->data<float>();
   auto* o_data = param.output->mutable_data<float>();
@@ -78,8 +86,8 @@ void GraphCompute::Run() {
       npu_itensors_[0]->GetBuffer(),
       i_data,
       sizeof(float) * static_cast<size_t>(param.input->dims().production()));
-  std::string key = "model_name";
-  npu_context_.AddPara(key, param.model_name);
+  std::string key = "graph_name";
+  npu_context_.AddPara(key, param.graph_name);
   int istamp;
   CHECK_EQ(
       hiai::AI_SUCCESS,
