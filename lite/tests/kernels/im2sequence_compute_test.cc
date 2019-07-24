@@ -215,13 +215,7 @@ class Im2SequenceComputeTester : public arena::TestCase {
   }
 };
 
-TEST(Im2Sequence, precision) {
-//#ifdef LITE_WITH_X86
-//  Place place(TARGET(kX86));
-//#endif
-#ifdef LITE_WITH_ARM
-  Place place(TARGET(kARM));
-#endif
+void test_im2sequence(Place place) {
   DDimLite dims{{3, 5, 4, 4}};
   for (int kernel : {1}) {
     std::vector<int> kernels{{kernel, kernel}};
@@ -239,6 +233,16 @@ TEST(Im2Sequence, precision) {
       }
     }
   }
+}
+
+TEST(Im2Sequence, precision) {
+//#ifdef LITE_WITH_X86
+//  Place place(TARGET(kX86));
+//#endif
+#ifdef LITE_WITH_ARM
+  Place place(TARGET(kARM));
+  test_im2sequence(place);
+#endif
 }
 
 }  // namespace lite

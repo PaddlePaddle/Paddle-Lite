@@ -84,14 +84,7 @@ class NormComputeTester : public arena::TestCase {
     SetCommonTensor(input_, dims_, data.data());
   }
 };
-
-TEST(Norm, precision) {
-//#ifdef LITE_WITH_X86
-//  Place place(TARGET(kX86));
-//#endif
-#ifdef LITE_WITH_ARM
-  Place place(TARGET(kARM));
-#endif
+void test_norm(Place place) {
   DDimLite dims{{3, 5, 4, 4}};
   for (int axis : {1}) {
     for (float epsilon : {1e-9}) {
@@ -101,6 +94,16 @@ TEST(Norm, precision) {
       arena.TestPrecision();
     }
   }
+}
+
+TEST(Norm, precision) {
+//#ifdef LITE_WITH_X86
+//  Place place(TARGET(kX86));
+//#endif
+#ifdef LITE_WITH_ARM
+  Place place(TARGET(kARM));
+  test_norm(place);
+#endif
 }
 
 }  // namespace lite

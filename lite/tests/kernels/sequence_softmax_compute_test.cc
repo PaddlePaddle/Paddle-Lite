@@ -93,14 +93,7 @@ void generate_lod(int seq_num, int max_len, std::vector<uint64_t>& seq_offset) {
     seq_offset.push_back(uint64_t(sum));
   }
 }
-
-TEST(SequenceSoftmax, precision) {
-//#ifdef LITE_WITH_X86
-//  Place place(TARGET(kX86));
-//#endif
-#ifdef LITE_WITH_ARM
-  Place place(TARGET(kARM));
-#endif
+void test_sequence_softmax(Place place) {
   int max_len = 10;
   for (int seq_num : {1, 3, 5}) {
     std::vector<std::vector<uint64_t>> lod;
@@ -111,6 +104,16 @@ TEST(SequenceSoftmax, precision) {
     arena::Arena arena(std::move(tester), place, 2e-5);
     arena.TestPrecision();
   }
+}
+
+TEST(SequenceSoftmax, precision) {
+//#ifdef LITE_WITH_X86
+//  Place place(TARGET(kX86));
+//#endif
+#ifdef LITE_WITH_ARM
+  Place place(TARGET(kARM));
+  test_sequence_softmax(place);
+#endif
 }
 
 }  // namespace lite
