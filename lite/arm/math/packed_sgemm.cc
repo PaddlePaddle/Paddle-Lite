@@ -712,7 +712,7 @@ void prepackA_6x8(float* outptr,
           "q8,q9=r40,r44,r41,r45,r42,r46,r43,r47\n"
           "vld4.32  {d20-d23}, [%[inptr5]]! @ zip load r5, "
           "q10,q11=r50,r54,r51,r55,r52,r56,r53,r57\n"
-          "cmp %[has_alpha], 0\n"
+          "cmp %[has_alpha], #0\n"
           "beq  0f\n"                        /* check whether alpha == 1? */
           "vmul.f32   q0, q0, %q[alpha]\n"   /* mul alpha */
           "vmul.f32   q1, q1, %q[alpha]\n"   /* mul alpha */
@@ -860,7 +860,7 @@ void prepackA_trans_6x8(float* outptr,
           "vld1.32 {d4-d6}, [%[ptr1]]!        @ load r1, 6 elements\n"
           "vld1.32 {d8-d10}, [%[ptr2]]!       @ load r2, 6 elements\n"
           "vld1.32 {d12-d14}, [%[ptr3]]!      @ load r3, 6 elements\n"
-          "cmp %[has_alpha], 0\n"
+          "cmp %[has_alpha], #0\n"
           "beq  0f\n"                        /* check whether alpha == 1? */
           "vmul.f32   q0, q0, %q[alpha]\n"   /* mul alpha */
           "vmul.f32   d2, d2, %e[alpha]\n"   /* mul alpha */
@@ -891,7 +891,7 @@ void prepackA_trans_6x8(float* outptr,
           "vld1.32 {d4-d6}, [%[ptr1]]!        @ load r1, 6 elements\n"
           "vld1.32 {d8-d10}, [%[ptr2]]!       @ load r2, 8 elements\n"
           "vld1.32 {d12-d14}, [%[ptr3]]!      @ load r3, 8 elements\n"
-          "cmp %[has_alpha], 0\n"
+          "cmp %[has_alpha], #0\n"
           "beq  0f\n"                        /* check whether alpha == 1? */
           "vmul.f32   q0, q0, %q[alpha]\n"   /* mul alpha */
           "vmul.f32   d2, d2, %e[alpha]\n"   /* mul alpha */
@@ -937,7 +937,7 @@ void prepackA_trans_6x8(float* outptr,
       float* ptr_out = outptr_row_col;
       asm volatile(
           "vld1.32 {d0-d2}, [%[ptr0]]!        @ load r0, 6 elements\n"
-          "cmp %[has_alpha], 0\n"
+          "cmp %[has_alpha], #0\n"
           "beq  0f\n"                      /* check whether alpha == 1? */
           "vmul.f32   q0, q0, %q[alpha]\n" /* mul alpha */
           "vmul.f32   d2, d2, %e[alpha]\n" /* mul alpha */
@@ -952,7 +952,7 @@ void prepackA_trans_6x8(float* outptr,
       float* ptr_out = outptr_row_col;
       asm volatile(
           "vld1.32 {d0-d2}, [%[ptr0]]!        @ load r0, 6 elements\n"
-          "cmp %[has_alpha], 0\n"
+          "cmp %[has_alpha], #0\n"
           "beq  0f\n"                      /* check whether alpha == 1? */
           "vmul.f32   q0, q0, %q[alpha]\n" /* mul alpha */
           "vmul.f32   d2, d2, %e[alpha]\n" /* mul alpha */
@@ -1016,7 +1016,7 @@ void prepackA_4x8(float* outptr,
           "q4,q5=r20,r24,r21,r25,r22,r26,r23,r27\n"
           "vld4.32  {d12-d15}, [%[inptr3]]! @ zip load r3, "
           "q6,q7=r30,r34,r31,r35,r32,r36,r33,r37\n"
-          "cmp %[has_alpha], 0\n"
+          "cmp %[has_alpha], #0\n"
           "beq  0f\n"                      /* check whether alpha == 1? */
           "vmul.f32   q0, q0, %q[alpha]\n" /* mul alpha */
           "vmul.f32   q1, q1, %q[alpha]\n" /* mul alpha */
@@ -1124,7 +1124,7 @@ void prepackA_trans_4x8(float* outptr,
           "vld1.32 {d2-d3}, [%[ptr1]]!        @ load r1, 4 elements\n"
           "vld1.32 {d4-d5}, [%[ptr2]]!        @ load r2, 4 elements\n"
           "vld1.32 {d6-d7}, [%[ptr3]]!        @ load r3, 4 elements\n"
-          "cmp %[has_alpha], 0\n"
+          "cmp %[has_alpha], #0\n"
           "beq  0f\n"                      /* check whether alpha == 1? */
           "vmul.f32   q0, q0, %q[alpha]\n" /* mul alpha */
           "vmul.f32   q1, q1, %q[alpha]\n" /* mul alpha */
@@ -1151,7 +1151,7 @@ void prepackA_trans_4x8(float* outptr,
           "vld1.32 {d2-d3}, [%[ptr1]]!        @ load r1, 4 elements\n"
           "vld1.32 {d4-d5}, [%[ptr2]]!        @ load r2, 4 elements\n"
           "vld1.32 {d6-d7}, [%[ptr3]]!        @ load r3, 4 elements\n"
-          "cmp %[has_alpha], 0\n"
+          "cmp %[has_alpha], #0\n"
           "beq  0f\n"                      /* check whether alpha == 1? */
           "vmul.f32   q0, q0, %q[alpha]\n" /* mul alpha */
           "vmul.f32   q1, q1, %q[alpha]\n" /* mul alpha */
@@ -1188,7 +1188,7 @@ void prepackA_trans_4x8(float* outptr,
       float* ptr_out = outptr_row_col;
       asm volatile(
           "vld1.32 {d0-d1}, [%[ptr0]]!        @ load r0, 4 elements\n"
-          "cmp %[has_alpha], 0\n"
+          "cmp %[has_alpha], #0\n"
           "beq  0f\n"                      /* check whether alpha == 1? */
           "vmul.f32   q0, q0, %q[alpha]\n" /* mul alpha */
           "0: \n"
@@ -1202,7 +1202,7 @@ void prepackA_trans_4x8(float* outptr,
       float* ptr_out = outptr_row_col;
       asm volatile(
           "vld1.32 {d0-d1}, [%[ptr0]]!        @ load r0, 4 elements\n"
-          "cmp %[has_alpha], 0\n"
+          "cmp %[has_alpha], #0\n"
           "beq  0f\n"                      /* check whether alpha == 1? */
           "vmul.f32   q0, q0, %q[alpha]\n" /* mul alpha */
           "0: \n"
@@ -2789,7 +2789,7 @@ void sgemm_prepacked_6x8(bool is_transB,
             "pld [%[b_ptr], #320]                   @ preload b\n"
             "vdup.i32	q11,d3[1]                   @ out31=0\n"
             "pld [%[b_ptr], #384]                   @ preload b\n"
-            "cmp %[has_beta], 0\n"
+            "cmp %[has_beta], #0\n"
             "beq    11f\n" /* check beta == 0? */
             /* process beta */
             "vdup.32    q3, %[beta]\n"          /* beta to vector */
@@ -3224,7 +3224,7 @@ void sgemm_prepacked_4x8(bool is_transB,
             "pld [%[b_ptr], #128]                   @ preload b\n"
             "vdup.32    q15, d5[1]                  @ add bias to out31\n"
             "pld [%[b_ptr], #192]                   @ preload b\n"
-            "cmp %[has_beta], 0\n"
+            "cmp %[has_beta], #0\n"
             "beq    11f\n" /* check beta == 0? */
             /* process beta */
             "vdup.32    q4, %[beta]\n"          /* beta to vector */
