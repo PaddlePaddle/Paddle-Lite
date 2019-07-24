@@ -39,7 +39,6 @@ class GraphCompute : public KernelLite<TARGET(kNPU), PRECISION(kFloat)> {
   bool input_dims_changed() const;
 
  private:
-  DDim input_dims_;
   hiai::AiModelMngerClient* exec_;
   std::vector<hiai::TensorDimension> npu_idims_;
   std::vector<hiai::TensorDimension> npu_odims_;
