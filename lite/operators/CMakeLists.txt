@@ -32,6 +32,7 @@ lite_cc_library(fake_dequant SRCS fake_dequantize_max_abs.cc DEPS ${op_DEPS})
 lite_cc_library(im2sequence_op SRCS im2sequence_op.cc DEPS ${op_DEPS})
 lite_cc_library(sequence_softmax_op SRCS sequence_softmax_op.cc DEPS ${op_DEPS})
 lite_cc_library(norm_op SRCS norm_op.cc DEPS ${op_DEPS})
+lite_cc_library(topk_op SRCS topk_op.cc DEPS ${op_DEPS})
 lite_cc_library(graph_op_lite SRCS graph_op.cc DEPS ${op_DEPS})
 
 set(ops
@@ -65,6 +66,7 @@ set(ops
         im2sequence_op
         sequence_softmax_op
         norm_op
+        topk_op
         CACHE INTERNAL "ops lite")
 
 if (NOT LITE_WITH_X86)

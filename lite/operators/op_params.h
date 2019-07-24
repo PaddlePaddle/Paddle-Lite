@@ -356,6 +356,12 @@ struct NormParam {
   float epsilon{1e-10};
 };
 
+struct TopkParam {
+  const lite::Tensor* X{};
+  lite::Tensor* Out{};
+  int K{1};
+};
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle

@@ -81,6 +81,7 @@ if (NOT HAS_ARM_MATH_LIB_DIR)
       im2sequence.cc
       sequence_softmax.cc
       norm.cc
+      topk.cc
       DEPS ${lite_kernel_deps} framework_proto)
 endif()
  
