@@ -1,0 +1,78 @@
+// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#include "lite/core/kernel.h"
+#include "lite/core/op_registry.h"
+#include "lite/opencl/cl_include.h"
+#include "lite/operators/op_params.h"
+
+namespace paddle {
+namespace lite {
+namespace kernels {
+namespace opencl {
+
+class ReluCompute
+    : public KernelLite<TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW)> {
+ public:
+  using param_t = operators::ActivationParam;
+
+  void Run() override {
+    auto& param = *param_.get_mutable<param_t>();
+    const auto& x_dims = param.X->dims();
+    size_t count = x_dims.production();
+
+    auto& context = ctx_->As<OpenCLContext>();
+    CHECK(context.cl_context() != nullptr);
+    auto* x_buf = param.X->data<float, cl::Buffer>();
+    auto* out_buf = param.Out->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
+    auto kernel = context.cl_context()->GetKernel("relu");
+    VLOG(4) << TargetToStr(param.X->target());
+    VLOG(4) << TargetToStr(param.Out->target());
+
+    cl_int status = kernel.setArg(0, *x_buf);
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(1, (const int)count);
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(2, *out_buf);
+    CL_CHECK_FATAL(status);
+
+    auto global_work_size = cl::NDRange{count};
+    cl::Event event;
+    status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
+        kernel,
+        cl::NullRange,
+        global_work_size,
+        cl::NullRange,
+        nullptr,
+        &event);
+    CL_CHECK_FATAL(status);
+    status = event.wait();
+    CL_CHECK_FATAL(status);
+  }
+};
+
+}  // namespace opencl
+}  // namespace kernels
+}  // namespace lite
+}  // namespace paddle
+
+REGISTER_LITE_KERNEL(relu,
+                     kOpenCL,
+                     kFloat,
+                     kNCHW,
+                     paddle::lite::kernels::opencl::ReluCompute,
+                     def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kOpenCL))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kOpenCL))})
+    .Finalize();
