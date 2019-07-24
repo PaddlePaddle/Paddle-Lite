@@ -78,7 +78,7 @@ class Context<TargetType::kNPU> {
 
   NPUContext& operator=(const NPUContext& ctx) {}
   std::string name() const { return "NPUContext"; }
-  const hiai::AiModelMngerClient* client(const std::string& model_name) const {
+  hiai::AiModelMngerClient* client(const std::string& model_name) const {
     return npu::DeviceInfo::Global().client(model_name);
   }
 };
