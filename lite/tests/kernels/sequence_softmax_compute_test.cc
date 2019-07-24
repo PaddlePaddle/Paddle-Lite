@@ -31,11 +31,10 @@ class SequenceSoftmaxComputeTester : public arena::TestCase {
 
  public:
   SequenceSoftmaxComputeTester(const Place& place,
-                    const std::string& alias,
-                    LoD lod)
-      : TestCase(place, alias),
-        lod_(lod) {
-    DDim dims{{int64_t(lod[0].back()), int64_t(1)}}; 
+                               const std::string& alias,
+                               LoD lod)
+      : TestCase(place, alias), lod_(lod) {
+    DDim dims{{int64_t(lod[0].back()), int64_t(1)}};
     dims_ = dims;
   }
 
@@ -57,13 +56,13 @@ class SequenceSoftmaxComputeTester : public arena::TestCase {
     for (int i = 0; i < seq_num; i++) {
       float seq_max = x_data[seq_offset[i]];
       float exp_sum = 0.f;
-      for (int j = seq_offset[i]; j < seq_offset[i+1]; j++) {
+      for (int j = seq_offset[i]; j < seq_offset[i + 1]; j++) {
         seq_max = std::max(seq_max, x_data[j]);
       }
-      for (int j = seq_offset[i]; j < seq_offset[i+1]; j++) {
+      for (int j = seq_offset[i]; j < seq_offset[i + 1]; j++) {
         exp_sum += expf(x_data[j] - seq_max);
       }
-      for (int j = seq_offset[i]; j < seq_offset[i+1]; j++) {
+      for (int j = seq_offset[i]; j < seq_offset[i + 1]; j++) {
         out_data[j] = expf(x_data[j] - seq_max) / exp_sum;
       }
     }

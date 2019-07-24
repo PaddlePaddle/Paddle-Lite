@@ -39,7 +39,8 @@ bool Im2SequenceOp::InferShape() const {
   auto kernels = param_.kernels;
   auto paddings = param_.paddings;
   auto strides = param_.strides;
-  DDimLite out_dims(std::vector<int64_t>({1, img_channels * kernels[0] * kernels[1]}));
+  DDimLite out_dims(
+      std::vector<int64_t>({1, img_channels * kernels[0] * kernels[1]}));
 
   int output_height = Im2SeqOutputSize(
       img_height, kernels[0], paddings[0], paddings[2], strides[0]);

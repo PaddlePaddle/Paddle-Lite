@@ -26,7 +26,7 @@ class NormComputeTester : public arena::TestCase {
   std::string input_ = "x";
   std::string output_ = "out";
   int axis_ = 1;
-  float epsilon_  = 1e-9;
+  float epsilon_ = 1e-9;
   DDim dims_{{3, 5, 4, 4}};
   bool bias_after_scale_;
 
@@ -36,10 +36,7 @@ class NormComputeTester : public arena::TestCase {
                     int axis,
                     float epsilon,
                     DDim dims)
-      : TestCase(place, alias),
-        axis_(axis),
-        epsilon_(epsilon),
-        dims_(dims) {}
+      : TestCase(place, alias), axis_(axis), epsilon_(epsilon), dims_(dims) {}
 
   void RunBaseline(Scope* scope) override {
     auto* out = scope->NewTensor(output_);
@@ -52,7 +49,7 @@ class NormComputeTester : public arena::TestCase {
     int axis = axis_ < 0 ? axis + dims_.size() : axis_;
     int pre_n = dims_.count(0, axis);
     int n = dims_[axis];
-    int post_n = dims_.count(axis+1, dims_.size()); 
+    int post_n = dims_.count(axis + 1, dims_.size());
     for (int i = 0; i < pre_n; i++) {
       for (int k = 0; k < post_n; k++) {
         float sum = epsilon_;
@@ -98,10 +95,10 @@ TEST(Norm, precision) {
   DDimLite dims{{3, 5, 4, 4}};
   for (int axis : {1}) {
     for (float epsilon : {1e-9}) {
-        std::unique_ptr<arena::TestCase> tester(
-            new NormComputeTester(place, "def", axis, epsilon, dims));
-        arena::Arena arena(std::move(tester), place, 2e-5);
-        arena.TestPrecision();
+      std::unique_ptr<arena::TestCase> tester(
+          new NormComputeTester(place, "def", axis, epsilon, dims));
+      arena::Arena arena(std::move(tester), place, 2e-5);
+      arena.TestPrecision();
     }
   }
 }

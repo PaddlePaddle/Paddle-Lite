@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "lite/arm/math/norm.h"
 #include <arm_neon.h>
 #include <cmath>
 #include "lite/utils/cp_logging.h"
-#include "lite/arm/math/norm.h"
 
 namespace paddle {
 namespace lite {

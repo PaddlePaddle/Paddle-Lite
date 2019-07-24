@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/op_registry.h"
 #include "lite/operators/norm_op.h"
+#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {

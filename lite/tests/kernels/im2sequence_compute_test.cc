@@ -78,12 +78,12 @@ class Im2SequenceComputeTester : public arena::TestCase {
 
  public:
   Im2SequenceComputeTester(const Place& place,
-                    const std::string& alias,
-                    std::vector<int> kernels,
-                    std::vector<int> paddings,
-                    std::vector<int> strides,
-                    std::vector<int> out_strides,
-                    DDim dims)
+                           const std::string& alias,
+                           std::vector<int> kernels,
+                           std::vector<int> paddings,
+                           std::vector<int> strides,
+                           std::vector<int> out_strides,
+                           DDim dims)
       : TestCase(place, alias),
         paddings_(paddings),
         kernels_(kernels),
@@ -109,8 +109,8 @@ class Im2SequenceComputeTester : public arena::TestCase {
       std::vector<int> im_real_h;
       std::vector<int> im_real_w;
       std::vector<int> out_h_vec;
-      std::vector<int> out_w_vec;      
-      
+      std::vector<int> out_w_vec;
+
       for (int im_id = 0; im_id < im_num; im_id++) {
         int real_h = y_data[im_id * 2 + 0];
         int real_w = y_data[im_id * 2 + 1];
@@ -118,12 +118,12 @@ class Im2SequenceComputeTester : public arena::TestCase {
         int tmp_real_w = (real_w + out_strides_[1] - 1) / out_strides_[1];
         im_real_h.push_back(tmp_real_h);
         im_real_w.push_back(tmp_real_w);
-        int out_h =
-            (tmp_real_h + paddings_[0] + paddings_[1] - kernels_[0]) / strides_[0] +
-            1;
-        int out_w =
-            (tmp_real_w + paddings_[2] + paddings_[3] - kernels_[1]) / strides_[1] +
-            1;
+        int out_h = (tmp_real_h + paddings_[0] + paddings_[1] - kernels_[0]) /
+                        strides_[0] +
+                    1;
+        int out_w = (tmp_real_w + paddings_[2] + paddings_[3] - kernels_[1]) /
+                        strides_[1] +
+                    1;
         out_h_vec.push_back(out_h);
         out_w_vec.push_back(out_w);
         total_rows += out_h * out_w;
@@ -151,8 +151,12 @@ class Im2SequenceComputeTester : public arena::TestCase {
                     o_data + im_offset[im_id] * out_cols);
       }
     } else {
-      int out_h = (dims_[2] + paddings_[0] + paddings_[1] - kernels_[0]) / strides_[0] + 1;
-      int out_w = (dims_[3] + paddings_[2] + paddings_[3] - kernels_[1]) / strides_[1] + 1;
+      int out_h =
+          (dims_[2] + paddings_[0] + paddings_[1] - kernels_[0]) / strides_[0] +
+          1;
+      int out_w =
+          (dims_[3] + paddings_[2] + paddings_[3] - kernels_[1]) / strides_[1] +
+          1;
       DDim out_dims{{im_num * out_h * out_w, out_cols}};
       out->Resize(out_dims);
       auto* o_data = out->mutable_data<float>();
@@ -176,7 +180,6 @@ class Im2SequenceComputeTester : public arena::TestCase {
         im_offset.push_back(uint64_t(im_id * out_h * out_w));
       }
     }
-    
   }
 
   void PrepareOpDesc(cpp::OpDesc* op_desc) {
@@ -204,8 +207,8 @@ class Im2SequenceComputeTester : public arena::TestCase {
     for (int i = 0; i < in_num; i++) {
       int real_h = std::rand() % int(in_h * 0.3) + (in_h * 0.7);
       int real_w = std::rand() % int(in_w * 0.3) + (in_w * 0.7);
-      real_im_size[2*i] = real_h;
-      real_im_size[2*i] = real_w;
+      real_im_size[2 * i] = real_h;
+      real_im_size[2 * i] = real_w;
     }
     DDim input1_dims{{in_num, 2}};
     SetCommonTensor(input1_, input1_dims, real_im_size.data());
@@ -228,8 +231,8 @@ TEST(Im2Sequence, precision) {
         std::vector<int> paddings{{padding, padding, padding, padding}};
         for (int out_stride : {1}) {
           std::vector<int> out_strides{{out_stride, out_stride}};
-          std::unique_ptr<arena::TestCase> tester(
-              new Im2SequenceComputeTester(place, "def", kernels, paddings, strides, out_strides, dims));
+          std::unique_ptr<arena::TestCase> tester(new Im2SequenceComputeTester(
+              place, "def", kernels, paddings, strides, out_strides, dims));
           arena::Arena arena(std::move(tester), place, 2e-5);
           arena.TestPrecision();
         }

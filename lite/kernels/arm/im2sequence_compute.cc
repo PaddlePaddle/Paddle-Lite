@@ -95,11 +95,11 @@ void Im2SequenceCompute::Run() {
     }
   } else {
     int out_h =
-          (input_dims[2] + paddings[0] + paddings[1] - kernels[0]) / strides[0] +
-          1;
+        (input_dims[2] + paddings[0] + paddings[1] - kernels[0]) / strides[0] +
+        1;
     int out_w =
-          (input_dims[3] + paddings[2] + paddings[3] - kernels[1]) / strides[1] +
-          1;
+        (input_dims[3] + paddings[2] + paddings[3] - kernels[1]) / strides[1] +
+        1;
     for (int im_id = 0; im_id < im_num; im_id++) {
       int out_size_per_im = out_h * out_w * out_cols;
       lite::arm::math::im2sequence(x_data + im_id * im_size,

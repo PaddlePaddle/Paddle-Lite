@@ -33,7 +33,6 @@ class NormCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
 
   ~NormCompute() {}
 
-
  private:
 };
 
