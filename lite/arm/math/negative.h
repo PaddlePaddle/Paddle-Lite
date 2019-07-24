@@ -26,8 +26,7 @@ namespace arm {
 namespace math {
 
 template <typename T>
-void negative_func(const T* din, T* dout);
-
+void negative_func(const T* din, T* dout, int num);
 }  // namespace math
 }  // namespace arm
 }  // namespace lite

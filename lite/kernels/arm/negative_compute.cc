@@ -24,14 +24,18 @@ namespace kernels {
 namespace arm {
 
 void NegativeCompute::PrepareForRun() {
-  auto& ctx = this->ctx_->template As<ARMContext>();
+  //  auto& ctx = this->ctx_->template As<ARMContext>();
+  LOG(INFO) << "into negative kernels prepare run";
 }
 
 void NegativeCompute::Run() {
+  LOG(INFO) << "into kernel compute run";
   auto& param = Param<param_t>();
   const auto* x_data = param.X->data<float>();
   auto* o_data = param.Out->mutable_data<float>();
-  lite::arm::math::negative_func<float>(x_data, o_data);
+  int num = param.X->dims().production();
+  LOG(INFO) << "into negative fun";
+  lite::arm::math::negative_func<float>(x_data, o_data, num);
 }
 
 }  // namespace arm

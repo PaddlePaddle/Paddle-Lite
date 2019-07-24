@@ -24,13 +24,11 @@ namespace arm {
 namespace math {
 
 template <>
-void negative_func<float>(const float* din, float* dout) {
-  int i = 0;
-  while (din + i) {
+void negative_func<float>(const float* din, float* dout, int num) {
+  for (int i = 0; i < num; i++) {
     dout[i] = -din[i];
-    i++;
+    LOG(INFO) << "arm i:" << i;
   }
-  // dout[0] = - din[0];
 }
 
 }  // namespace math

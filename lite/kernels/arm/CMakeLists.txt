@@ -35,7 +35,7 @@ lite_cc_test(test_pool_compute_arm SRCS pool_compute_test.cc DEPS pool_compute_a
 lite_cc_test(test_mul_compute_arm SRCS mul_compute_test.cc DEPS mul_compute_arm)
 lite_cc_test(test_split_compute_arm SRCS split_compute_test.cc DEPS split_compute_arm)
 lite_cc_test(test_concat_compute_arm SRCS concat_compute_test.cc DEPS concat_compute_arm)
-lite_cc_test(test_negative_compute_arm SRCS negative_compute_test.cc DEPS negative_compute_arm)
+#lite_cc_test(test_negative_compute_arm SRCS negative_compute_test.cc DEPS negative_compute_arm)
 lite_cc_test(test_permute_compute_arm SRCS permute_compute_test.cc DEPS permute_compute_arm)
 lite_cc_test(test_pad2d_compute_arm SRCS pad2d_compute_test.cc DEPS pad2d_compute_arm)
 lite_cc_test(test_dropout_compute_arm SRCS dropout_compute_test.cc DEPS dropout_compute_arm)
