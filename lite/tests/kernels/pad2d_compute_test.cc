@@ -59,9 +59,7 @@ class Pad2dComputeTester : public arena::TestCase {
     int out_h = dims_[2] + _pad_h[0] + _pad_h[1];
     int out_w = dims_[3] + _pad_w[0] + _pad_w[1];
     out->Resize(lite::DDim({dims_[0], dims_[1], out_h, out_w}));
-    //    out->Resize(dims_);
     auto* out_data = out->mutable_data<float>();
-
     auto* x = scope->FindTensor(input_);
     const auto* x_data = x->data<float>();
     LOG(INFO) << "get nums";
@@ -84,7 +82,6 @@ class Pad2dComputeTester : public arena::TestCase {
     int spatial_size_out = w * h;
     int spatial_size_in = in_w * in_h;
 #pragma omp parallel for
-    // LOG(INFO)<<"total:";
     for (int i = 0; i < n * c; ++i) {
       const float* din_batch = x_data + i * spatial_size_in;
       float* dout_batch = out_data + i * spatial_size_out;
@@ -94,14 +91,6 @@ class Pad2dComputeTester : public arena::TestCase {
         for (int x = 0; x < w; ++x) {
           switch (pad_mode) {
             case 0:
-              /////////////////////////////
-              /*     _mode是PadMode
-                     typedef enum{
-                         PAD_CONSTANT = 0,
-                         PAD_EDGE = 1,
-                         PAD_REFLECT = 2,
-                     } PadMode;   */
-              /////////////////////////
               in_y = y - pad_top;
               in_x = x - pad_left;
               dout_batch[y * w + x] =
@@ -131,13 +120,6 @@ class Pad2dComputeTester : public arena::TestCase {
         }
       }
     }
-    //}
-    LOG(INFO) << "run base end";
-
-    /*
-        for (int i = 0; i < dims_.production(); i++) {
-          out_data[i] = x_data[i] * scale_ + bias;
-        }*/
   }
 
   void PrepareOpDesc(cpp::OpDesc* op_desc) {
@@ -161,13 +143,7 @@ class Pad2dComputeTester : public arena::TestCase {
   }
 };
 
-TEST(Scale, precision) {
-#ifdef LITE_WITH_X86
-  Place place(TARGET(kX86));
-#endif
-#ifdef LITE_WITH_ARM
-  Place place(TARGET(kARM));
-#endif
+void TestPad2d(const Place& place) {
   for (int pad_top : {0, 1}) {
     for (int pad_bottom : {0, 1}) {
       std::vector<int> pad_h{pad_top, pad_bottom};
@@ -189,6 +165,16 @@ TEST(Scale, precision) {
       }
     }
   }
+}
+
+TEST(Scale, precision) {
+#ifdef LITE_WITH_X86
+  Place place(TARGET(kX86));
+#endif
+#ifdef LITE_WITH_ARM
+  Place place(TARGET(kARM));
+  TestPad2d(place);
+#endif
 }
 
 }  // namespace lite
