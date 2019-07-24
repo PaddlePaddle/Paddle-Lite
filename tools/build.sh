@@ -103,7 +103,7 @@ build_for_arm_linux() {
             -B"../build/release/arm-linux" \
             -DCMAKE_BUILD_TYPE="${MODE}" \
             -DCMAKE_TOOLCHAIN_FILE="./tools/toolchains/arm-linux-gnueabihf.cmake" \
-            -DCMAKE_CXX_FLAGS="-std=c++14 -mcpu=cortex-a53 -mtune=cortex-a53 -ftree-vectorize -funsafe-math-optimizations  -pipe -mlittle-endian " \
+            -DCMAKE_CXX_FLAGS="-std=c++14 -mcpu=cortex-a53 -mfpu=neon -mtune=cortex-a53 -ftree-vectorize -funsafe-math-optimizations  -pipe -mlittle-endian " \
             -DNET="${NETS}" \
             -D"V7"=true
     else
@@ -111,7 +111,7 @@ build_for_arm_linux() {
             -B"../build/release/arm-linux" \
             -DCMAKE_BUILD_TYPE="${MODE}" \
             -DCMAKE_TOOLCHAIN_FILE="./tools/toolchains/arm-linux-gnueabihf.cmake" \
-            -DCMAKE_CXX_FLAGS="-std=c++14 -mcpu=cortex-a53 -mtune=cortex-a53 -ftree-vectorize -funsafe-math-optimizations -pipe -mlittle-endian " \
+            -DCMAKE_CXX_FLAGS="-std=c++14 -mcpu=cortex-a53 -mfpu=neon -mtune=cortex-a53 -ftree-vectorize -funsafe-math-optimizations -pipe -mlittle-endian " \
             -DNET="${NETS}" \
             -D"V7"=true
     fi
