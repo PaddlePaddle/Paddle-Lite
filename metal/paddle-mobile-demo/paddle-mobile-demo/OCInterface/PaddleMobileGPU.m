@@ -52,12 +52,15 @@
     self = [super init];
     if (self) {
         Net *net = nil;
+        NSError *error = nil;
         if (netType == SuperResolutionNetType) {
-            net = [[SuperResolutionNet alloc] initWithDevice:queue.device inParamPointer:config.paramPointer inParamSize:config.paramSize inModelPointer:config.modelPointer inModelSize:config.modelSize];
+            net = [[SuperResolutionNet alloc] initWithDevice:queue.device inParamPointer:config.paramPointer inParamSize:config.paramSize inModelPointer:config.modelPointer inModelSize:config.modelSize error:&error];
         } else if (netType == MobileNetSSDType) {
-            net = [[MobileNet_ssd_AR alloc] initWithDevice:queue.device inParamPointer:config.paramPointer inParamSize:config.paramSize inModelPointer:config.modelPointer inModelSize:config.modelSize];
+            net = [[MobileNet_ssd_AR alloc] initWithDevice:queue.device inParamPointer:config.paramPointer inParamSize:config.paramSize inModelPointer:config.paramPointer inModelSize:config.modelSize error:&error];
         }
-        runner = [[Runner alloc] initInNet:net commandQueue:queue];
+        if (!error && net) {
+            runner = [[Runner alloc] initInNet:net commandQueue:queue error:&error];
+        }
     }
     return self;
 }

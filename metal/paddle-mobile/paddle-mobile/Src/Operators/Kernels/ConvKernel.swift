@@ -42,39 +42,52 @@ class ConvKernel<P: PrecisionProtocol>: Kernel, Computable {
             shouldUseMPS = false
         }
         if shouldUseMPS {
-            super.init(device: device, inFunctionName: nil, initContext: initContext)
-            setupWithMPS(device: device, param: param)
+            try super.init(device: device, inFunctionName: nil, initContext: initContext)
+            try setupWithMPS(device: device, param: param)
         } else {
             if functionName == nil {
                 fatalError(" unsupport yet ")
             }
-            super.init(device: device, inFunctionName: functionName, initContext: initContext)
-            setupWithoutMPS(device: device, param: param)
+            try super.init(device: device, inFunctionName: functionName, initContext: initContext)
+            try setupWithoutMPS(device: device, param: param)
         }
     }
     
     func compute(commandBuffer: MTLCommandBuffer, param: ConvParam<P>) throws {
+        guard let inputMetalTexture = param.input.metalTexture else {
+            throw PaddleMobileError.makeError(type: .predictError, msg: "input metaltexture is nil")
+        }
+        guard let outputMetalTexture = param.output.metalTexture else {
+            throw PaddleMobileError.makeError(type: .predictError, msg: "output metaltexture is nil")
+        }
         if #available(iOS 10.0, *) {
             if let conv = mpsConvOp as? MPSCNNConvolution {
-                let inputImage = MPSImage.init(texture: param.input.metalTexture, featureChannels: param.input.tensorDim[1])
-                let outputImage = MPSImage.init(texture: param.output.metalTexture, featureChannels: param.output.tensorDim[1])
+                let inputImage = MPSImage.init(texture: inputMetalTexture, featureChannels: param.input.tensorDim[1])
+                let outputImage = MPSImage.init(texture: outputMetalTexture, featureChannels: param.output.tensorDim[1])
                 conv.encode(commandBuffer: commandBuffer, sourceImage: inputImage, destinationImage: outputImage)
                 return
             }
         }
-        guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
-            throw PaddleMobileError.predictError(message: " encode is nil")
+        guard let tempPipline = pipline else {
+            throw PaddleMobileError.makeError(type: .predictError, msg: "pipline is nil")
         }
-        encoder.setTexture(param.input.metalTexture, index: 0)
-        encoder.setTexture(param.output.metalTexture, index: 2)
-        encoder.setBytes(&metalParam, length: MemoryLayout<MetalConvParam>.size, index: 0)
-        encoder.setBuffer(param.filter.buffer, offset: 0, index: 1)
-        encoder.setBuffer(blankTensor?.buffer, offset: 0, index: 2)
-        encoder.dispatch(computePipline: pipline, outTexture: param.output.metalTexture, groupDepth: type(of: self).isWinoGrad(functionName: functionName) ? 1 : nil)
-        encoder.endEncoding()
+        do {
+            guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
+                throw PaddleMobileError.makeError(type: .predictError, msg: "encoder is nil")
+            }
+            defer {
+                encoder.endEncoding()
+            }
+            encoder.setTexture(inputMetalTexture, index: 0)
+            encoder.setTexture(outputMetalTexture, index: 2)
+            encoder.setBytes(&metalParam, length: MemoryLayout<MetalConvParam>.size, index: 0)
+            encoder.setBuffer(param.filter.buffer, offset: 0, index: 1)
+            encoder.setBuffer(blankTensor?.buffer, offset: 0, index: 2)
+            try encoder.dispatch(computePipline: tempPipline, outTexture: outputMetalTexture, groupDepth: type(of: self).isWinoGrad(functionName: functionName) ? 1 : nil)
+        }
     }
     
-    func setupWithMPS(device: MTLDevice, param: ConvParam<P>) {
+    func setupWithMPS(device: MTLDevice, param: ConvParam<P>) throws {
         let offsetX = (Int(param.dilations[0]) * (param.filter.tensorDim[3] - 1) + 1) / 2 - Int(param.paddings[0])
         let offsetY = (Int(param.dilations[1]) * (param.filter.tensorDim[2] - 1) + 1) / 2 - Int(param.paddings[1])
         
@@ -95,8 +108,8 @@ class ConvKernel<P: PrecisionProtocol>: Kernel, Computable {
                                             neuronFilter: neuronFilterForMPSLayer(device: device) as? MPSCNNNeuron)
             desc.strideInPixelsX = Int(param.stride[0])
             desc.strideInPixelsY = Int(param.stride[1])
-            let _ = param.filter.convert(converter: MPSPointerConverter<P>.init())
-            let dataSource = ConvDataSource.init(inDesc: desc, inWeights: param.filter, inBiasTerms: nil)
+            let _ = try param.filter.convert(converter: MPSPointerConverter<P>.init())
+            let dataSource = try ConvDataSource.init(inDesc: desc, inWeights: param.filter, inBiasTerms: nil)
             let conv = MPSCNNConvolution.init(device: device, weights: dataSource)
             conv.offset = MPSOffset.init(x: offsetX, y: offsetY, z: 0)
             conv.edgeMode = .zero
@@ -104,7 +117,7 @@ class ConvKernel<P: PrecisionProtocol>: Kernel, Computable {
         }
     }
     
-    func setupWithoutMPS(device: MTLDevice, param: ConvParam<P>) {
+    func setupWithoutMPS(device: MTLDevice, param: ConvParam<P>) throws {
         let offsetX = (Int(param.dilations[0]) * (param.filter.tensorDim[3] - 1) + 1) / 2 - Int(param.paddings[0])
         let offsetY = (Int(param.dilations[1]) * (param.filter.tensorDim[2] - 1) + 1) / 2 - Int(param.paddings[1])
         let offsetZ = 0.0
@@ -115,12 +128,12 @@ class ConvKernel<P: PrecisionProtocol>: Kernel, Computable {
         metalParam = inMetalParam
         
         if type(of: self).isWinoGrad(functionName: functionName) {
-            let _ = param.filter.convert(converter: WinogradPointerConverter<P>.init())
+            let _ = try param.filter.convert(converter: WinogradPointerConverter<P>.init())
         }
         let padWhenOneC = !(param.filter.channel == 1 && param.filter.n == param.input.tensorDim[1])
-        param.filter.initBuffer(device: device, precision: GlobalConfig.shared.computePrecision, padWhenOneC: padWhenOneC)
+        try param.filter.initBuffer(device: device, precision: GlobalConfig.shared.computePrecision, padWhenOneC: padWhenOneC)
         blankTensor = Tensor<P>.init(inDim: Dim(inDim: [1, 1, 1, 4]), inLayout: DataLayout.NHWC(), originDimsCount: 4)
-        blankTensor?.initBuffer(device: device, precision: GlobalConfig.shared.computePrecision)
+        try blankTensor?.initBuffer(device: device, precision: GlobalConfig.shared.computePrecision)
     }
     
     class func kernelFunctionName(param: ConvParam<P>, useAggressiveOptimization: Bool = false) -> String? {
@@ -130,7 +143,7 @@ class ConvKernel<P: PrecisionProtocol>: Kernel, Computable {
             } else if param.filter.channel == 1 && param.filter.n == param.input.tensorDim[1] {
                 if useAggressiveOptimization {
                     let couldUseWinograd = param.filter.width == 3 && param.filter.height == 3
-                        && param.filter.n <= 16 && param.stride[0] == 1 && param.stride[1] == 1
+                        && (param.filter.n ?? Int.max) <= 16 && param.stride[0] == 1 && param.stride[1] == 1
                         && param.dilations[0] == 1 && param.dilations[1] == 1
                     if couldUseWinograd {
                         return "depthwise_conv_add_relu_3x3_half_winograd"

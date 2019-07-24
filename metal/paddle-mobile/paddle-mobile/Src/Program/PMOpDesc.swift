@@ -21,7 +21,7 @@ class PMOpDesc {
     let unusedOutputs: [String : [String]]
     var attrs: [String : Attr] = [:]
     var type: String
-    init(protoOpDesc: OpDesc) {
+    init(protoOpDesc: OpDesc) throws {
         type = protoOpDesc.type
         let creator = { (vars: [OpDesc_Var], canAdd: (String) -> Bool) -> [String : [String]] in
             var map: [String : [String]] = [:]
@@ -34,7 +34,7 @@ class PMOpDesc {
         }
         
         guard let _ = opInfos[protoOpDesc.type] else {
-            fatalError()
+            throw PaddleMobileError.makeError(type: .opError, msg: "unsupported op type \(String(describing: protoOpDesc.type))")
         }
         
         inputs = creator(protoOpDesc.inputsArray as! [OpDesc_Var]) {
@@ -55,7 +55,7 @@ class PMOpDesc {
         
         for attr in protoOpDesc.attrsArray {
             if ((attr as! OpDesc_Attr).type != .block) {
-                attrs[(attr as! OpDesc_Attr).name] = attrWithProtoDesc(attrDesc: attr as! OpDesc_Attr)
+                attrs[(attr as! OpDesc_Attr).name] = try attrWithProtoDesc(attrDesc: attr as! OpDesc_Attr)
             }
         }
     }

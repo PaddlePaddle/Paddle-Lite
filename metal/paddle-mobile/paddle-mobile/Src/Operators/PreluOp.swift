@@ -17,14 +17,10 @@ import Foundation
 class PreluParam<P: PrecisionProtocol>: OpParam {
     //typealias ParamPrecisionType = P
     required init(opDesc: PMOpDesc, inScope: Scope) throws {
-        do {
-            input = try PreluParam.inputX(inputs: opDesc.inputs, from: inScope)
-            output = try PreluParam.outputOut(outputs: opDesc.outputs, from: inScope)
-            alpha = try PreluParam.paramInputAlpha(inputs: opDesc.paraInputs, from: inScope)
-            mode = try PreluParam.getAttr(key: "mode", attrs: opDesc.attrs)
-        } catch let error {
-            throw error
-        }
+        input = try PreluParam.inputX(inputs: opDesc.inputs, from: inScope)
+        output = try PreluParam.outputOut(outputs: opDesc.outputs, from: inScope)
+        alpha = try PreluParam.paramInputAlpha(inputs: opDesc.paraInputs, from: inScope)
+        mode = try PreluParam.getAttr(key: "mode", attrs: opDesc.attrs)
     }
     let mode: String
     let alpha: Tensor<P>
@@ -41,22 +37,26 @@ class PreluOp<P: PrecisionProtocol>: Operator<PreluKernel<P>, PreluParam<P>>, Ru
     }
     
     func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
-        do {
-            try kernel.compute(commandBuffer: buffer, param: para)
-        } catch let error {
-            throw error
-        }
+        try kernel.compute(commandBuffer: buffer, param: para)
     }
     
     func delogOutput() {
         print(" \(type) input: ")
-        print(para.input.metalTexture.toTensor(dim: (n: para.input.padToFourDim[0], c: para.input.padToFourDim[1], h: para.input.padToFourDim[2], w: para.input.padToFourDim[3])).strideArray())
+        do {
+            let output = try para.input.metalTexture?.toTensor(dim: (n: para.input.padToFourDim[0], c: para.input.padToFourDim[1], h: para.input.padToFourDim[2], w: para.input.padToFourDim[3])).strideArray() ?? []
+            print(output)
+        } catch _ {
+        }
         
         print(" \(type) Alpha: ")
         let _: Float32? = para.alpha.buffer.logDesc(header: " alpha: ", stridable: false)
         
         print(" \(type) output: ")
-        print(para.output.metalTexture.toTensor(dim: (n: para.output.padToFourDim[0], c: para.output.padToFourDim[1], h: para.output.padToFourDim[2], w: para.output.padToFourDim[3])).strideArray())
+        do {
+            let output = try para.output.metalTexture?.toTensor(dim: (n: para.output.padToFourDim[0], c: para.output.padToFourDim[1], h: para.output.padToFourDim[2], w: para.output.padToFourDim[3])).strideArray() ?? []
+            print(output)
+        } catch _ {
+        }
     }
     
     //    print("softmax delog")

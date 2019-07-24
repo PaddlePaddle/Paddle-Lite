@@ -32,3 +32,9 @@ target 'paddle-mobile-metallib' do
     project 'paddle-mobile-metallib/paddle-mobile-metallib.xcodeproj'
 end
 
+
+target 'PaddleMobileTest' do
+  project 'PaddleMobileTest/PaddleMobileTest.xcodeproj'
+  pod 'Protobuf', '~> 3.0.0'
+  pod 'Alamofire'
+end

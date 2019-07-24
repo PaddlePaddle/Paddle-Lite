@@ -25,29 +25,40 @@ struct SplitMetalParam {
 class SplitKernel<P: PrecisionProtocol>: Kernel, Computable{
     var smp: SplitMetalParam
     func compute(commandBuffer: MTLCommandBuffer, param: SplitParam<P>) throws {
-        guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
-            throw PaddleMobileError.predictError(message: " encode is nil")
+        guard let tempPipline = pipline else {
+            throw PaddleMobileError.makeError(type: .predictError, msg: "pipline is nil")
         }
-        encoder.setTexture(param.input.metalTexture, index: 0)
-        for i in 0..<param.outputList.count {
-            encoder.setTexture(param.outputList[i].metalTexture, index: i + 1)
+        guard let inputMetalTexture = param.input.metalTexture else {
+            throw PaddleMobileError.makeError(type: .predictError, msg: "input metaltexture is nil")
         }
-        encoder.setBytes(&smp, length: MemoryLayout<SplitMetalParam>.size, index: 0)
-        encoder.dispatch(computePipline: pipline, outTexture: param.input.metalTexture)
-        encoder.endEncoding()
+        do {
+            guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
+                throw PaddleMobileError.makeError(type: .predictError, msg: "encoder is nil")
+            }
+            defer {
+                encoder.endEncoding()
+            }
+            encoder.setTexture(inputMetalTexture, index: 0)
+            for i in 0..<param.outputList.count {
+                guard let outputMetalTexture = param.outputList[i].metalTexture else {
+                    throw PaddleMobileError.makeError(type: .predictError, msg: "output metaltexture \(i) is nil")
+                }
+                encoder.setTexture(outputMetalTexture, index: i + 1)
+            }
+            encoder.setBytes(&smp, length: MemoryLayout<SplitMetalParam>.size, index: 0)
+            try encoder.dispatch(computePipline: tempPipline, outTexture: inputMetalTexture)
+        }
     }
     
     required init(device: MTLDevice, param: SplitParam<P>, initContext: InitContext) throws {
         //     param.output.initTexture(device: device, computePrecision: computePrecision)
         let num = param.outputList.count
         let rank = param.input.tensorDim.cout()
-        assert(num >= 2 && num <= 4)
+        guard num >= 2 && num <= 4 else {
+            throw PaddleMobileError.makeError(type: .netError, msg: "param.outputList.count should satisfy num >= 2 && num <= 4")
+        }
         for output in param.outputList {
-            do {
-                try output.initTexture(device: device, inTranspose: param.input.transpose, computePrecision: GlobalConfig.shared.computePrecision)
-            } catch let error {
-                throw error
-            }
+            try output.initTexture(device: device, inTranspose: param.input.transpose, computePrecision: GlobalConfig.shared.computePrecision)
         }
         smp = SplitMetalParam.init()
         smp.idim = (Int32(param.input.dim[0]), Int32(param.input.dim[1]), Int32(param.input.dim[2]), Int32(param.input.dim[3]))
@@ -83,14 +94,14 @@ class SplitKernel<P: PrecisionProtocol>: Kernel, Computable{
             }
         }
         if v == "normal" {
-            fatalError("split unsupported")
+            throw PaddleMobileError.makeError(type: .netError, msg: "unsupported split type")
         }
         if GlobalConfig.shared.computePrecision == .Float32 {
-            super.init(device: device, inFunctionName: "split_\(rank)_\(num)_\(v)_float", initContext: initContext)
+            try super.init(device: device, inFunctionName: "split_\(rank)_\(num)_\(v)_float", initContext: initContext)
         } else if GlobalConfig.shared.computePrecision == .Float16 {
-            super.init(device: device, inFunctionName: "split_\(rank)_\(num)_\(v)_half", initContext: initContext)
+            try super.init(device: device, inFunctionName: "split_\(rank)_\(num)_\(v)_half", initContext: initContext)
         } else {
-            fatalError()
+            throw PaddleMobileError.makeError(type: .predictError, msg: "unsupported compute precision: \(GlobalConfig.shared.computePrecision)")
         }
     }
     
