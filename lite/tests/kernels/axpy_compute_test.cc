@@ -113,12 +113,8 @@ class AxpyComputeTester : public arena::TestCase {
 };
 
 TEST(Axpy, precision) {
-#ifdef LITE_WITH_X86
-  Place place(TARGET(kX86));
-#endif
 #ifdef LITE_WITH_ARM
   Place place(TARGET(kARM));
-#endif
 
   for (int n : {1, 3}) {
     for (int c : {3, 6}) {
@@ -132,6 +128,7 @@ TEST(Axpy, precision) {
       }
     }
   }
+#endif
 }
 
 }  // namespace lite

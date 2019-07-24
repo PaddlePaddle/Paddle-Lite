@@ -317,12 +317,8 @@ class Conv2DTransposeComputeTester : public arena::TestCase {
 };
 
 TEST(conv2d_transpose, precision) {
-#ifdef LITE_WITH_X86
-  Place place(TARGET(kX86));
-#endif
 #ifdef LITE_WITH_ARM
   Place place(TARGET(kARM));
-#endif
   for (auto n : {1, 2}) {
     for (auto ic : {1, 4 /*, 128*/}) {
       for (auto oc : {1, 4 /*, 128*/}) {
@@ -369,6 +365,7 @@ TEST(conv2d_transpose, precision) {
       }
     }
   }
+#endif
 }
 
 }  // namespace lite

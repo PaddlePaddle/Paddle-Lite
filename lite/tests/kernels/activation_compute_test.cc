@@ -187,12 +187,8 @@ class ActivationComputeTester : public arena::TestCase {
 };
 
 TEST(Activation_relu, precision) {
-#ifdef LITE_WITH_X86
-  Place place(TARGET(kX86));
-#endif
 #ifdef LITE_WITH_ARM
   Place place(TARGET(kARM));
-#endif
 
   for (auto n : {1, 3}) {
     for (auto c : {3, 6}) {
@@ -214,15 +210,12 @@ TEST(Activation_relu, precision) {
       }
     }
   }
+#endif
 }
 
 TEST(Activation_leaky_relu, precision) {
-#ifdef LITE_WITH_X86
-  Place place(TARGET(kX86));
-#endif
 #ifdef LITE_WITH_ARM
   Place place(TARGET(kARM));
-#endif
 
   for (auto n : {1, 3}) {
     for (auto c : {3, 6}) {
@@ -246,15 +239,12 @@ TEST(Activation_leaky_relu, precision) {
       }
     }
   }
+#endif
 }
 
 TEST(Activation_relu_clipped, precision) {
-#ifdef LITE_WITH_X86
-  Place place(TARGET(kX86));
-#endif
 #ifdef LITE_WITH_ARM
   Place place(TARGET(kARM));
-#endif
 
   for (auto n : {1, 3}) {
     for (auto c : {3, 6}) {
@@ -278,15 +268,12 @@ TEST(Activation_relu_clipped, precision) {
       }
     }
   }
+#endif
 }
 
 TEST(Activation_prelu, precision) {
-#ifdef LITE_WITH_X86
-  Place place(TARGET(kX86));
-#endif
 #ifdef LITE_WITH_ARM
   Place place(TARGET(kARM));
-#endif
 
   for (auto n : {1, 3}) {
     for (auto c : {3, 6}) {
@@ -310,15 +297,12 @@ TEST(Activation_prelu, precision) {
       }
     }
   }
+#endif
 }
 
 TEST(Activation_sigmoid, precision) {
-#ifdef LITE_WITH_X86
-  Place place(TARGET(kX86));
-#endif
 #ifdef LITE_WITH_ARM
   Place place(TARGET(kARM));
-#endif
 
   for (auto n : {1, 3}) {
     for (auto c : {3, 6}) {
@@ -340,15 +324,12 @@ TEST(Activation_sigmoid, precision) {
       }
     }
   }
+#endif
 }
 
 TEST(Activation_tanh, precision) {
-#ifdef LITE_WITH_X86
-  Place place(TARGET(kX86));
-#endif
 #ifdef LITE_WITH_ARM
   Place place(TARGET(kARM));
-#endif
 
   for (auto n : {1, 3}) {
     for (auto c : {3, 6}) {
@@ -370,15 +351,12 @@ TEST(Activation_tanh, precision) {
       }
     }
   }
+#endif
 }
 
 TEST(Activation_swish, precision) {
-#ifdef LITE_WITH_X86
-  Place place(TARGET(kX86));
-#endif
 #ifdef LITE_WITH_ARM
   Place place(TARGET(kARM));
-#endif
 
   for (auto n : {1, 3}) {
     for (auto c : {3, 6}) {
@@ -402,6 +380,7 @@ TEST(Activation_swish, precision) {
       }
     }
   }
+#endif
 }
 
 }  // namespace lite

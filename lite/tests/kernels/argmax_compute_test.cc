@@ -101,12 +101,11 @@ class ArgmaxComputeTester : public arena::TestCase {
 };
 
 TEST(Argmax, precision) {
-#ifdef LITE_WITH_X86
-  Place place(TARGET(kX86));
-#endif
+// #ifdef LITE_WITH_X86
+//  Place place(TARGET(kX86));
+// #endif
 #ifdef LITE_WITH_ARM
   Place place(TARGET(kARM));
-#endif
 
   for (int axis : {0, 1, 2, 3}) {
     for (int n : {1, 3}) {
@@ -122,6 +121,7 @@ TEST(Argmax, precision) {
       }
     }
   }
+#endif
 }
 
 }  // namespace lite
