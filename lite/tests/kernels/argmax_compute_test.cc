@@ -105,6 +105,7 @@ TEST(Argmax, precision) {
 //  Place place(TARGET(kX86));
 // #endif
 #ifdef LITE_WITH_ARM
+  LOG(INFO) << "test argmax arm";
   Place place(TARGET(kARM));
 
   for (int axis : {0, 1, 2, 3}) {

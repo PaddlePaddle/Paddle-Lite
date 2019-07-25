@@ -50,7 +50,7 @@ void Conv2DTransposeCompute::PrepareForRun() {
 
   lite::Tensor tmp_weights;
   lite::arm::math::prepackA(
-      &tmp_weights, *(param.filter), m, k, group, true, &ctx);
+      &tmp_weights, *(param.filter), 1., m, k, group, true, &ctx);
   param.filter->Resize(tmp_weights.dims());
   param.filter->CopyDataFrom(tmp_weights);
   param.filter->Resize(w_dims);
@@ -106,6 +106,7 @@ void Conv2DTransposeCompute::Run() {
       const float* din_group = din_batch + g * group_size_in;
       const float* weights_group = weights + g * group_size_weights;
       float* coldata_group = col_data + g * group_size_coldata;
+      /*
       lite::arm::math::sgemm_prepack(weights_group,
                                      din_group,
                                      nullptr,
@@ -116,6 +117,21 @@ void Conv2DTransposeCompute::Run() {
                                      false,
                                      fuse_relu && (!flag_bias),
                                      false,
+                                     &ctx);
+      */
+      lite::arm::math::sgemm_prepack(false,
+                                     m,
+                                     n,
+                                     k,
+                                     weights_group,
+                                     din_group,
+                                     n,
+                                     0.,
+                                     coldata_group,
+                                     n,
+                                     nullptr,
+                                     false,
+                                     fuse_relu && (!flag_bias),
                                      &ctx);
     }
     if (!flag_1x1s1p1) {
