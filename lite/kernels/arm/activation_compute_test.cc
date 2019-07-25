@@ -33,7 +33,8 @@ enum activation_type {
   PRELU,
   SIGMOID,
   TANH,
-  SWISH
+  SWISH,
+  RELU6
 };
 
 template <typename dtype>
@@ -110,6 +111,13 @@ void activation_compute_ref(const operators::ActivationParam& param,
       }
       break;
     }
+    case RELU6: {
+      for (int i = 0; i < output_dims.production(); i++) {
+        output_data[i] = x_data[i] > 0.f ? x_data[i] : 0.f;
+        output_data[i] = output_data[i] < 6.0 ? output_data[i] : 6.0;
+      }
+      break;
+    }
     default:
       LOG(INFO) << "the type of activation is wrong";
   }
@@ -183,7 +191,8 @@ TEST(activation_arm, retrive_op) {
                                "prelu",
                                "sigmoid",
                                "tanh",
-                               "swish"}) {
+                               "swish",
+                               "relu6"}) {
     auto activation =
         KernelRegistry::Global().Create<TARGET(kARM), PRECISION(kFloat)>(
             activation_name);
@@ -220,12 +229,22 @@ TEST(activation_arm, init) {
   SwishCompute activation_swish;
   ASSERT_EQ(activation_swish.precision(), PRECISION(kFloat));
   ASSERT_EQ(activation_swish.target(), TARGET(kARM));
+
+  Relu6Compute activation_relu6;
+  ASSERT_EQ(activation_relu6.precision(), PRECISION(kFloat));
+  ASSERT_EQ(activation_relu6.target(), TARGET(kARM));
+}
+
+TEST(relu_activation_arm, compute) {
+  ReluCompute activation;
+  operators::ActivationParam param;
+  activation_type type = RELU;
+  test_activation_compute(&activation, &param, type);
 }
 
 TEST(leaky_relu_activation_arm, compute) {
   LeakyReluCompute activation;
   operators::ActivationParam param;
-  param.Type = "leaky_relu";
   for (float slope : {0.001, 0.01, 0.1}) {
     param.Leaky_relu_slope = slope;
     activation_type type = LEAKY_RELU;
@@ -236,7 +255,6 @@ TEST(leaky_relu_activation_arm, compute) {
 TEST(prelu_activation_arm, compute) {
   PReluCompute activation;
   operators::ActivationParam param;
-  param.Type = "prelu";
   for (bool flag : {false, true}) {
     param.Prelu_channel_shared = flag;
     activation_type type = PRELU;
@@ -247,7 +265,6 @@ TEST(prelu_activation_arm, compute) {
 TEST(relu_clipped_activation_arm, compute) {
   ReluClippedCompute activation;
   operators::ActivationParam param;
-  param.Type = "relu_clipped";
   for (float coef : {1, 3, 6}) {
     param.Relu_clipped_coef = coef;
     activation_type type = RELU_CLIPPED;
@@ -258,7 +275,6 @@ TEST(relu_clipped_activation_arm, compute) {
 TEST(sigmoid_activation_arm, compute) {
   SigmoidCompute activation;
   operators::ActivationParam param;
-  param.Type = "sigmoid";
   activation_type type = SIGMOID;
   test_activation_compute(&activation, &param, type);
 }
@@ -266,7 +282,6 @@ TEST(sigmoid_activation_arm, compute) {
 TEST(tanh_activation_arm, compute) {
   TanhCompute activation;
   operators::ActivationParam param;
-  param.Type = "tanh";
   activation_type type = TANH;
   test_activation_compute(&activation, &param, type);
 }
@@ -274,12 +289,18 @@ TEST(tanh_activation_arm, compute) {
 TEST(swish_activation_arm, compute) {
   SwishCompute activation;
   operators::ActivationParam param;
-  param.Type = "swish";
   for (float coef : {0.01, 0.1}) {
     param.Swish_coef = coef;
     activation_type type = SWISH;
     test_activation_compute(&activation, &param, type);
   }
+}
+
+TEST(relu6_activation_arm, compute) {
+  Relu6Compute activation;
+  operators::ActivationParam param;
+  activation_type type = RELU6;
+  test_activation_compute(&activation, &param, type);
 }
 
 }  // namespace arm

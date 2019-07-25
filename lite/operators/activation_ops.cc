@@ -33,21 +33,20 @@ bool ActivationOp::InferShape() const {
 bool ActivationOp::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
   auto x_name = opdesc.Input("X").front();
   auto out_name = opdesc.Output("Out").front();
-  param_.Type = opdesc.GetAttr<std::string>("Type");
   param_.X = scope->FindVar(x_name)->GetMutable<lite::Tensor>();
-  if (param_.Type == "leaky_relu") {
+  if (opdesc.Type() == "leaky_relu") {
     param_.Leaky_relu_slope = opdesc.GetAttr<float>("Leaky_relu_slope");
   }
-  if (param_.Type == "relu_clipped") {
+  if (opdesc.Type() == "relu_clipped") {
     param_.Relu_clipped_coef = opdesc.GetAttr<float>("Relu_clipped_coef");
   }
-  if (param_.Type == "prelu") {
+  if (opdesc.Type() == "prelu") {
     auto prelu_channel_slope_name = opdesc.Input("Prelu_channel_slope").front();
     param_.Prelu_channel_shared = opdesc.GetAttr<bool>("Prelu_channel_shared");
     param_.Prelu_channel_slope =
         scope->FindVar(prelu_channel_slope_name)->GetMutable<lite::Tensor>();
   }
-  if (param_.Type == "swish") {
+  if (opdesc.Type() == "swish") {
     param_.Swish_coef = opdesc.GetAttr<float>("Swish_coef");
   }
   param_.Out = scope->FindVar(out_name)->GetMutable<lite::Tensor>();
@@ -99,7 +98,7 @@ bool ActivationGradOp::AttachImpl(const cpp::OpDesc& opdesc,
 }  // namespace paddle
 
 REGISTER_LITE_OP(square, paddle::lite::operators::ActivationOp);
-REGISTER_LITE_OP(relu_1, paddle::lite::operators::ActivationOp);
+REGISTER_LITE_OP(relu, paddle::lite::operators::ActivationOp);
 REGISTER_LITE_OP(leaky_relu, paddle::lite::operators::ActivationOp);
 REGISTER_LITE_OP(relu_clipped, paddle::lite::operators::ActivationOp);
 REGISTER_LITE_OP(prelu, paddle::lite::operators::ActivationOp);

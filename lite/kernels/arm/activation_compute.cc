@@ -105,6 +105,17 @@ void SwishCompute::Run() {
       x_data, output_data, x_dims.production(), coef, ctx.threads());
 }
 
+void Relu6Compute::Run() {
+  auto& param = this->Param<param_t>();
+  auto& ctx = this->ctx_->template As<ARMContext>();
+  auto x_dims = param.X->dims();
+  auto x_data = param.X->data<float>();
+  float coef = 6.;
+  auto output_data = param.Out->mutable_data<float>();
+  lite::arm::math::act_clipped_relu<float>(
+      x_data, output_data, x_dims.production(), coef, ctx.threads());
+}
+
 }  // namespace arm
 }  // namespace kernels
 }  // namespace lite
@@ -115,7 +126,6 @@ REGISTER_LITE_KERNEL(
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
-
 REGISTER_LITE_KERNEL(leaky_relu,
                      kARM,
                      kFloat,
@@ -123,7 +133,6 @@ REGISTER_LITE_KERNEL(leaky_relu,
                      paddle::lite::kernels::arm::LeakyReluCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("Type", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Leaky_relu_slope", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
@@ -134,14 +143,12 @@ REGISTER_LITE_KERNEL(relu_clipped,
                      paddle::lite::kernels::arm::ReluClippedCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("Type", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Relu_clipped_coef", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
 REGISTER_LITE_KERNEL(
     prelu, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::PReluCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("Type", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Prelu_channel_shared", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Prelu_channel_slope", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
@@ -153,19 +160,21 @@ REGISTER_LITE_KERNEL(sigmoid,
                      paddle::lite::kernels::arm::SigmoidCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("Type", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
 REGISTER_LITE_KERNEL(
     tanh, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::TanhCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("Type", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
 REGISTER_LITE_KERNEL(
     swish, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::SwishCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("Type", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Swish_coef", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .Finalize();
+REGISTER_LITE_KERNEL(
+    relu6, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::ReluCompute, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();

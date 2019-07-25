@@ -259,7 +259,6 @@ struct FusionElementwiseActivationGradParam : public ElementwiseGradParam {
 /// ----------------------- activation operators ----------------------
 struct ActivationParam {
   const lite::Tensor* X{};
-  std::string Type{};
   float Leaky_relu_slope{0};            // leaky_relu param
   float Relu_clipped_coef{6};           // relu_clipped param
   bool Prelu_channel_shared{false};     // prelu param

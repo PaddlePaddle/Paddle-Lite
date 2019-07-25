@@ -27,7 +27,8 @@ enum activation_type_test {
   PRELU,
   SIGMOID,
   TANH,
-  SWISH
+  SWISH,
+  RELU6
 };
 class ActivationComputeTester : public arena::TestCase {
  protected:
@@ -139,6 +140,13 @@ class ActivationComputeTester : public arena::TestCase {
         }
         break;
       }
+      case RELU6: {
+        for (int i = 0; i < dims_.production(); i++) {
+          output_data[i] = x_data[i] > 0.f ? x_data[i] : 0.f;
+          output_data[i] = output_data[i] < 6.0 ? output_data[i] : 6.0;
+        }
+        break;
+      }
       default:
         LOG(INFO) << "the type of activation is unknow.";
     }
@@ -148,7 +156,6 @@ class ActivationComputeTester : public arena::TestCase {
     op_desc->SetType(type_);
     op_desc->SetInput("X", {input_});
     op_desc->SetOutput("Out", {output_});
-    op_desc->SetAttr("Type", type_);
     if (act_type_ == PRELU) {
       op_desc->SetInput("Prelu_channel_slope", {prelu_channel_slope_});
       op_desc->SetAttr("Prelu_channel_shared", prelu_channel_shared_);
@@ -185,6 +192,36 @@ class ActivationComputeTester : public arena::TestCase {
     }
   }
 };
+
+TEST(Activation_relu, precision) {
+  LOG(INFO) << "test relu op";
+#ifdef LITE_WITH_ARM
+  Place place(TARGET(kARM));
+
+  for (auto n : {1, 3}) {
+    for (auto c : {3, 6}) {
+      for (auto h : {9, 18}) {
+        for (auto w : {9, 18}) {
+          for (auto slope : {0.01, 0.1}) {
+            std::unique_ptr<arena::TestCase> tester(new ActivationComputeTester(
+                place,
+                "def",
+                0.01,
+                6.,
+                false,
+                0.,
+                DDim(std::vector<int64_t>({n, c, h, w})),
+                "relu",
+                RELU));
+            arena::Arena arena(std::move(tester), place, 2e-5);
+            arena.TestPrecision();
+          }
+        }
+      }
+    }
+  }
+#endif
+}
 
 TEST(Activation_leaky_relu, precision) {
   LOG(INFO) << "test leaky_relu op";
@@ -362,5 +399,34 @@ TEST(Activation_swish, precision) {
 #endif
 }
 
+TEST(Activation_relu6, precision) {
+  LOG(INFO) << "test relu6 op";
+#ifdef LITE_WITH_ARM
+  Place place(TARGET(kARM));
+
+  for (auto n : {1, 3}) {
+    for (auto c : {3, 6}) {
+      for (auto h : {9, 18}) {
+        for (auto w : {9, 18}) {
+          for (auto slope : {0.01, 0.1}) {
+            std::unique_ptr<arena::TestCase> tester(new ActivationComputeTester(
+                place,
+                "def",
+                0.01,
+                6.,
+                false,
+                0.,
+                DDim(std::vector<int64_t>({n, c, h, w})),
+                "relu6",
+                RELU6));
+            arena::Arena arena(std::move(tester), place, 2e-5);
+            arena.TestPrecision();
+          }
+        }
+      }
+    }
+  }
+#endif
+}
 }  // namespace lite
 }  // namespace paddle
