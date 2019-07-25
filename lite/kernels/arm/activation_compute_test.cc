@@ -222,14 +222,6 @@ TEST(activation_arm, init) {
   ASSERT_EQ(activation_swish.target(), TARGET(kARM));
 }
 
-TEST(relu_activation_arm, compute) {
-  ReluCompute activation;
-  operators::ActivationParam param;
-  param.Type = "relu";
-  activation_type type = RELU;
-  test_activation_compute(&activation, &param, type);
-}
-
 TEST(leaky_relu_activation_arm, compute) {
   LeakyReluCompute activation;
   operators::ActivationParam param;

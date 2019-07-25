@@ -186,34 +186,6 @@ class ActivationComputeTester : public arena::TestCase {
   }
 };
 
-TEST(Activation_relu, precision) {
-  LOG(INFO) << "test relu op";
-#ifdef LITE_WITH_ARM
-  Place place(TARGET(kARM));
-
-  for (auto n : {1, 3}) {
-    for (auto c : {3, 6}) {
-      for (auto h : {9, 18}) {
-        for (auto w : {9, 18}) {
-          std::unique_ptr<arena::TestCase> tester(new ActivationComputeTester(
-              place,
-              "def",
-              0.01,
-              6.,
-              false,
-              0.,
-              DDim(std::vector<int64_t>({n, c, h, w})),
-              "relu",
-              RELU));
-          arena::Arena arena(std::move(tester), place, 2e-5);
-          arena.TestPrecision();
-        }
-      }
-    }
-  }
-#endif
-}
-
 TEST(Activation_leaky_relu, precision) {
   LOG(INFO) << "test leaky_relu op";
 #ifdef LITE_WITH_ARM

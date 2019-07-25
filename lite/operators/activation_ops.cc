@@ -99,7 +99,7 @@ bool ActivationGradOp::AttachImpl(const cpp::OpDesc& opdesc,
 }  // namespace paddle
 
 REGISTER_LITE_OP(square, paddle::lite::operators::ActivationOp);
-// REGISTER_LITE_OP(relu_1, paddle::lite::operators::ActivationOp);
+REGISTER_LITE_OP(relu_1, paddle::lite::operators::ActivationOp);
 REGISTER_LITE_OP(leaky_relu, paddle::lite::operators::ActivationOp);
 REGISTER_LITE_OP(relu_clipped, paddle::lite::operators::ActivationOp);
 REGISTER_LITE_OP(prelu, paddle::lite::operators::ActivationOp);

@@ -113,9 +113,9 @@ void SwishCompute::Run() {
 REGISTER_LITE_KERNEL(
     relu, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::ReluCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("Type", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
+
 REGISTER_LITE_KERNEL(leaky_relu,
                      kARM,
                      kFloat,
