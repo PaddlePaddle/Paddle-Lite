@@ -20,9 +20,8 @@ namespace lite {
 namespace arm {
 namespace math {
 
-template <typename T>
-void topk(const T* din,
-          T* out_val,
+void topk(const float* din,
+          float* out_val,
           int* out_ind,
           int m,
           int n,

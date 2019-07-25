@@ -46,3 +46,4 @@ USE_LITE_OP(calib);
 USE_LITE_OP(norm);
 USE_LITE_OP(im2sequence);
 USE_LITE_OP(sequence_softmax);
+USE_LITE_OP(topk);

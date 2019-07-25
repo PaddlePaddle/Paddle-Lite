@@ -20,22 +20,26 @@ namespace paddle {
 namespace lite {
 namespace arm {
 namespace math {
-template <typename T>
-bool comp_func(std::pair<T, int> a, std::pair<T, int> b) {
+bool comp_func(std::pair<float, int> a, std::pair<float, int> b) {
   return (a.first > b.first);
 }
 
-template <typename T>
-void topk(const T* in_data, T* out_val, int* out_ind, int m, int n, int k) {
+void topk(const float* in_data,
+          float* out_val,
+          int* out_ind,
+          int m,
+          int n,
+          int k,
+          Context<TARGET(kARM)>* ctx) {
   for (int i = 0; i < m; i++) {
-    const T* in_tmp = in_data + i * n;
-    T* out_val_tmp = out_val + i * k;
+    const float* in_tmp = in_data + i * n;
+    float* out_val_tmp = out_val + i * k;
     int* out_ind_tmp = out_ind + i * k;
-    std::vector<std::pair<T, int>> vec;
+    std::vector<std::pair<float, int>> vec;
     for (int j = 0; j < n; j++) {
       vec.push_back(std::make_pair(in_tmp[j], j));
     }
-    std::partial_sort(vec, vec + k, vec + n, comp_func);
+    std::partial_sort(vec.begin(), vec.begin() + k, vec.end(), comp_func);
     for (int q = 0; q < k; q++) {
       out_val_tmp[q] = vec[q].first;
       out_ind_tmp[q] = vec[q].second;

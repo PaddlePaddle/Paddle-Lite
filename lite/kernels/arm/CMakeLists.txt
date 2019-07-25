@@ -21,6 +21,7 @@ lite_cc_library(transpose_compute_arm SRCS transpose_compute.cc DEPS ${lite_kern
 lite_cc_library(im2sequence_compute_arm SRCS im2sequence_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(sequence_softmax_compute_arm SRCS sequence_softmax_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(norm_compute_arm SRCS norm_compute.cc DEPS ${lite_kernel_deps} math_arm)
+lite_cc_library(topk_compute_arm SRCS topk_compute.cc DEPS ${lite_kernel_deps} math_arm)
 
 lite_cc_test(test_fc_compute_arm SRCS fc_compute_test.cc DEPS fc_compute_arm math_arm)
 lite_cc_test(test_activation_compute_arm SRCS activation_compute_test.cc DEPS activation_compute_arm)
@@ -55,6 +56,7 @@ set(arm_kernels
     im2sequence_compute_arm
     sequence_softmax_compute_arm
     norm_compute_arm
+    topk_compute_arm
     )
 
 set(arm_kernels "${arm_kernels}" CACHE INTERNAL "arm kernels")

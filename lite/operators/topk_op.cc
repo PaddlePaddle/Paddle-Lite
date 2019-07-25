@@ -20,26 +20,31 @@ namespace operators {
 
 bool TopkOp::CheckShape() const {
   CHECK_OR_FALSE(param_.X);
-  CHECK_OR_FALSE(param_.Out);
   return true;
 }
 
 bool TopkOp::InferShape() const {
   auto out_dims = param_.X->dims();
   out_dims[out_dims.size() - 1] = param_.K;
-  param_.Out->Resize(out_dims);
+  for (auto out : param_.Out) {
+    out->Resize(out_dims);
+  }
   return true;
 }
 
 bool TopkOp::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
   auto x = op_desc.Input("X").front();
-  auto output = op_desc.Output("Out").front();
   param_.X = scope->FindVar(x)->GetMutable<Tensor>();
-  param_.Out = scope->FindMutableTensor(output);
-  param_.K = op_desc.GetAttr<float>("K");
+
+  auto outputs = op_desc.Output("Out");
+  for (auto var : outputs) {
+    param_.Out.push_back(scope->FindVar(var)->GetMutable<lite::Tensor>());
+  }
+  param_.K = op_desc.GetAttr<int>("K");
+
   CHECK(param_.X);
-  CHECK(param_.Out);
-  CHECK_LE(param_.K, 1) << "topK param is not valid";
+  CHECK_EQ(param_.Out.size(), 2) << "topk out tensor is 2";
+  CHECK_GE(param_.K, 1) << "topK param is not valid";
   return true;
 }
 
@@ -47,4 +52,4 @@ bool TopkOp::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(scale, paddle::lite::operators::TopkOp);
+REGISTER_LITE_OP(topk, paddle::lite::operators::TopkOp);

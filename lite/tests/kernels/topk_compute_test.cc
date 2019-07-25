@@ -19,8 +19,7 @@
 
 namespace paddle {
 namespace lite {
-template <typename T>
-bool comp_func(std::pair<T, int> a, std::pair<T, int> b) {
+bool comp_func(std::pair<float, int> a, std::pair<float, int> b) {
   return (a.first > b.first);
 }
 
@@ -55,21 +54,22 @@ class TopkComputeTester : public arena::TestCase {
     auto* x = scope->FindTensor(input_);
     const auto* x_data = x->data<float>();
     int m = out_dims.production() / K_;
-    int n = K_;
+    int n = dims_[dims_.size() - 1];
 
     for (int i = 0; i < m; i++) {
       const float* in_tmp = x_data + i * n;
-      float* out_val_tmp = out_val_data + i * k;
-      int* out_ind_tmp = out_ind_data + i * k;
+      float* out_val_tmp = out_val_data + i * K_;
+      int* out_ind_tmp = out_ind_data + i * K_;
       std::vector<std::pair<float, int>> vec;
       for (int j = 0; j < n; j++) {
         vec.push_back(std::make_pair(in_tmp[j], j));
       }
-      std::partial_sort(vec, vec + k, vec + n, comp_func);
-      for (int q = 0; q < k; q++) {
+      std::partial_sort(vec.begin(), vec.begin() + K_, vec.end(), comp_func);
+      for (int q = 0; q < K_; q++) {
         out_val_tmp[q] = vec[q].first;
         out_ind_tmp[q] = vec[q].second;
-        LOG(INFO) << "out:" << q << out_val_tmp[q] << " " << out_ind_tmp[q];
+        LOG(INFO) << "out:" << i << " " << q << " " << out_val_tmp[q] << " "
+                  << out_ind_tmp[q];
       }
     }
   }
@@ -85,21 +85,23 @@ class TopkComputeTester : public arena::TestCase {
     std::vector<float> data(dims_.production());
 
     for (int i = 0; i < dims_.production(); i++) {
-      data[i] = i * 1.1;
+      data[i] = std::rand() * 1.0f / RAND_MAX;
     }
 
     SetCommonTensor(input_, dims_, data.data());
   }
 };
+
 void test_topk(Place place) {
-  DDimLite dims_0{{3, 5, 4, 4}};
+  DDimLite dims_0{{3, 5}};
   DDimLite dims_1{{8}};
   for (int K : {1, 2}) {
-    for (auto dims : {dims_0, dims_1})
+    for (auto dims : {dims_0, dims_1}) {
       std::unique_ptr<arena::TestCase> tester(
           new TopkComputeTester(place, "def", K, dims));
-    arena::Arena arena(std::move(tester), place, 2e-5);
-    arena.TestPrecision();
+      arena::Arena arena(std::move(tester), place, 2e-5);
+      arena.TestPrecision();
+    }
   }
 }
 

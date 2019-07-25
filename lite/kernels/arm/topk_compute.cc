@@ -21,15 +21,17 @@ namespace kernels {
 namespace arm {
 
 void TopkCompute::Run() {
+  auto& ctx = this->ctx_->template As<ARMContext>();
   auto& param = Param<operators::TopkParam>();
   const float* x_data = param.X->data<float>();
-  float* out_data = param.Out->mutable_data<float>();
-  DDim x_dims = param.x->dims();
+  float* out_val = param.Out[0]->mutable_data<float>();
+  int* out_ind = param.Out[1]->mutable_data<int>();
+  DDim x_dims = param.X->dims();
   int K = param.K;
   int dim_size = x_dims.size();
   int m = x_dims.production() / x_dims[dim_size - 1];
   int n = x_dims[dim_size - 1];
-  lite::arm::math::topk(x_data, out_data, m, n, K);
+  lite::arm::math::topk(x_data, out_val, out_ind, m, n, K, &ctx);
 }
 
 }  // namespace arm
@@ -38,7 +40,7 @@ void TopkCompute::Run() {
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(
-    scale, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::ScaleCompute, def)
+    topk, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::TopkCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();

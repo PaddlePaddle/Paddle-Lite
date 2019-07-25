@@ -358,7 +358,7 @@ struct NormParam {
 
 struct TopkParam {
   const lite::Tensor* X{};
-  lite::Tensor* Out{};
+  std::vector<lite::Tensor*> Out{};
   int K{1};
 };
 
