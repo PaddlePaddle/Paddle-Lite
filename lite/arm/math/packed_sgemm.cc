@@ -2092,6 +2092,18 @@ void sgemm_prepacked_8x12(bool is_transB,
           c_ptr5 = cout5;
           c_ptr6 = cout6;
           c_ptr7 = cout7;
+          if (has_beta) {
+            for (int i = 0; i < remain; ++i) {
+              cout0[i] = pout0[i];
+              cout1[i] = pout1[i];
+              cout2[i] = pout2[i];
+              cout3[i] = pout3[i];
+              cout4[i] = pout4[i];
+              cout5[i] = pout5[i];
+              cout6[i] = pout6[i];
+              cout7[i] = pout7[i];
+            }
+          }
         }
         const float *a_ptr = a_ptr_l;
         int tail = tail_pre;

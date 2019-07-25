@@ -38,7 +38,9 @@ namespace arena {
 class TestCase {
  public:
   explicit TestCase(const Place& place, const std::string& alias)
-      : place_(place), scope_(new Scope), alias_(alias) {}
+      : place_(place), scope_(new Scope), alias_(alias) {
+    ctx_ = ContextScheduler::Global().NewContext(place_.target);
+  }
 
   void Prepare() {
     PrepareScopes();
@@ -54,9 +56,7 @@ class TestCase {
   /// Run the target instruction, that is run the test operator.
   void RunInstruction() { instruction_->Run(); }
 
-  KernelContext* context() {
-    return instruction_->mutable_kernel()->mutable_context();
-  }
+  KernelContext* context() { return ctx_.get(); }
 
   /// The baseline should be implemented, which acts similar to an operator,
   /// that is take several tensors as input and output several tensors as
@@ -107,6 +107,7 @@ class TestCase {
   const Instruction& instruction() { return *instruction_; }
 
  private:
+  std::unique_ptr<KernelContext> ctx_;
   void CreateInstruction();
 
   void PrepareScopes() {

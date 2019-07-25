@@ -58,18 +58,21 @@ bool GRUUnitOpLite::InferShape() const {
   auto weight_dims = param_.weight->dims();
 
   int batch_size = input_dims[0];
-  int input_size = input_dims[1];
   int frame_size = hidden_prev_dims[1];
-  int weight_height = weight_dims[0];
-  int weight_width = weight_dims[1];
 
-  std::vector<int64_t> gatedim(batch_size, frame_size * 3);
-  std::vector<int64_t> reset_hidden_prevdim(batch_size, frame_size);
-  std::vector<int64_t> hiddendim(batch_size, frame_size);
+  LOG(INFO) << "batch size: " << batch_size;
+  LOG(INFO) << "frame size: " << frame_size;
 
-  param_.gate->Resize(lite::DDim(gatedim));
-  param_.reset_hidden_prev->Resize(lite::DDim(reset_hidden_prevdim));
-  param_.hidden->Resize(lite::DDim(hiddendim));
+  param_.gate->Resize(lite::DDim({batch_size, frame_size * 3}));
+  param_.reset_hidden_prev->Resize(lite::DDim({batch_size, frame_size}));
+  param_.hidden->Resize(lite::DDim({batch_size, frame_size}));
+
+  LOG(INFO) << "gate dims: " << param_.gate->dims()[0] << ", "
+            << param_.gate->dims()[1];
+  LOG(INFO) << "reset hidden prev dims: " << param_.reset_hidden_prev->dims()[0]
+            << ", " << param_.reset_hidden_prev->dims()[1];
+  LOG(INFO) << "hidden dims: " << param_.hidden->dims()[0] << ", "
+            << param_.hidden->dims()[1];
 }
 
 bool GRUUnitOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {

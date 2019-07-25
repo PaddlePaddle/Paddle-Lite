@@ -32,6 +32,7 @@
 #include "lite/arm/math/pooling.h"
 #include "lite/arm/math/scale.h"
 #include "lite/arm/math/sequence_softmax.h"
+#include "lite/arm/math/sgemm.h"
 #include "lite/arm/math/sgemv.h"
 #include "lite/arm/math/softmax.h"
 #include "lite/arm/math/split.h"
@@ -362,8 +363,7 @@ template <>
 inline float32x4_t vactive_f32<lite_api::ActivationType::kTanh>(
     const float32x4_t &x) {
   float32x4_t __one = vdupq_n_f32(1.f);
-  float32x4_t __x = vnegq_f32(x);
-  __x = vmulq_n_f32(__x, 2.f);
+  float32x4_t __x = vmulq_n_f32(x, -2.f);
   __x = exp_ps(__x);
   __x = vaddq_f32(__x, __one);
   float32x4_t __out = vrecpeq_f32(__x);

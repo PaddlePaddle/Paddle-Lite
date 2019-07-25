@@ -19,6 +19,7 @@
 #include "lite/core/op_registry.h"
 #include "lite/core/tensor.h"
 #include "lite/core/type_system.h"
+#include "lite/tests/kernels/test_funcs.h"
 
 namespace paddle {
 namespace lite {
@@ -67,6 +68,9 @@ void gru_add_with_bias(
       vin0 = vld1q_f32(din_batch + j + 8);
       vst1q_f32(dout_batch + j, vout0);
       vst1q_f32(dout_batch + j + 4, vout1);
+    }
+    for (; j < size; ++j) {
+      dout_batch[j] = din_batch[j] + bias[j];
     }
   }
 }
@@ -136,6 +140,7 @@ void gru_unit_out_act_impl(bool origin_mode,
                            int stride_hidden,
                            int frame_size,
                            int batch_size) {
+#pragma omp parallel for
   for (int b = 0; b < batch_size; ++b) {
     int i = 0;
     if (origin_mode) {
@@ -151,11 +156,11 @@ void gru_unit_out_act_impl(bool origin_mode,
         float32x4_t vpre0 = vld1q_f32(hidden_prev + i);
         float32x4_t vpre1 = vld1q_f32(hidden_prev + i + 4);
 
-        float32x4_t vh0 = vmlsq_f32(vc0, vu0, vc0);
-        float32x4_t vh1 = vmlsq_f32(vc1, vu1, vc1);
+        float32x4_t vh0 = vmlsq_f32(vac0, vu0, vac0);
+        float32x4_t vh1 = vmlsq_f32(vac1, vu1, vac1);
 
-        vst1q_f32(cell_state + i, vc0);
-        vst1q_f32(cell_state + i + 4, vc1);
+        vst1q_f32(cell_state + i, vac0);
+        vst1q_f32(cell_state + i + 4, vac1);
 
         vh0 = vmlaq_f32(vh0, vu0, vpre0);
         vh1 = vmlaq_f32(vh1, vu1, vpre1);
@@ -183,13 +188,13 @@ void gru_unit_out_act_impl(bool origin_mode,
         float32x4_t vpre1 = vld1q_f32(hidden_prev + i + 4);
 
         float32x4_t vh0 = vmlsq_f32(vpre0, vpre0, vu0);
-        float32x4_t vh1 = vmlsq_f32(vpre1, vpre0, vu1);
+        float32x4_t vh1 = vmlsq_f32(vpre1, vpre1, vu1);
 
-        vst1q_f32(cell_state + i, vc0);
-        vst1q_f32(cell_state + i + 4, vc1);
+        vst1q_f32(cell_state + i, vac0);
+        vst1q_f32(cell_state + i + 4, vac1);
 
-        vh0 = vmlaq_f32(vh0, vu0, vc0);
-        vh1 = vmlaq_f32(vh1, vu1, vc1);
+        vh0 = vmlaq_f32(vh0, vu0, vac0);
+        vh1 = vmlaq_f32(vh1, vu1, vac1);
 
         vst1q_f32(hidden + i, vh0);
         vst1q_f32(hidden + i + 4, vh1);
@@ -370,6 +375,7 @@ void GRUUnitCompute::Run() {
   float* gate_data = gate->mutable_data<float>();
   float* reset_hidden_prev_data = reset_hidden_prev->mutable_data<float>();
   float* hidden_data = hidden->mutable_data<float>();
+
   if (bias) {
     auto bias_data = bias->data<float>();
     gru_add_with_bias<float>(
@@ -382,8 +388,6 @@ void GRUUnitCompute::Run() {
                  frame_size * 3 * sizeof(float));
     }
   }
-
-  LOG(INFO) << "prepare data and add input with bias";
 
   lite::arm::math::sgemm(false,
                          false,
