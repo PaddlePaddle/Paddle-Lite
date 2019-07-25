@@ -449,7 +449,6 @@ class Tensor {
     std::vector<int> tem_dims;
     for (int i = 0; i < lite_dim.size(); ++i) {
       tem_dims.push_back(lite_dim[i]);
-      printf("push shape:%d", lite_dim[i]);
     }
     shape_ = new Shape(tem_dims);
     dataType_ = FP16;

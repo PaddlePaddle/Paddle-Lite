@@ -41,6 +41,32 @@ TEST(elementwise_add_fpga, init) {
 }
 
 template <typename dtype>
+dtype sum(dtype d1, dtype d2) {
+  return d1 + d2;
+}
+template <>
+float16 sum<float16>(float16 d1, float16 d2) {
+  return zynqmp::float_to_half(zynqmp::half_to_float(d1) +
+                               zynqmp::half_to_float(d2));
+}
+template <typename dtype>
+bool greater(dtype d1, dtype d2) {  // NOLINT
+  return d1 > d2;
+}
+template <>
+bool greater<float16>(float16 d1, float16 d2) {  // NOLINT
+  return zynqmp::half_to_float(d1) > zynqmp::half_to_float(d2);
+}
+template <typename dtype>
+dtype float_cast(float d) {
+  return d;
+}
+template <>
+float16 float_cast<float16>(float d) {
+  return zynqmp::float_to_half(d);
+}
+
+template <typename dtype>
 void elementwise_compute_ref(const operators::ElementwiseParam& param,
                              const std::string elt_type,
                              const std::string act_type) {
@@ -74,7 +100,7 @@ void elementwise_compute_ref(const operators::ElementwiseParam& param,
         const dtype diny_data = y_data[j];
         dtype* dout_ptr = out_data + offset;
         for (int k = 0; k < num; ++k) {
-          *dout_ptr = *din_ptr + diny_data;
+          *dout_ptr = sum(*din_ptr, diny_data);
           dout_ptr++;
           din_ptr++;
         }
@@ -100,11 +126,12 @@ void elementwise_compute_ref(const operators::ElementwiseParam& param,
   // do activation relu/sigmod...
   if (act_type.size() > 0) {
     if (act_type == "relu") {
+      float16 zero = float_cast<float16>(0.0f);
       for (int i = 0; i < batch; ++i) {
         for (int j = 0; j < channels; ++j) {
           dtype* dout_ptr = out_data + (i * channels + j) * num;
           for (int k = 0; k < num; ++k) {
-            *dout_ptr = *dout_ptr > 0.0f ? *dout_ptr : 0.0f;
+            *dout_ptr = greater(*dout_ptr, zero) ? *dout_ptr : zero;
             dout_ptr++;
           }
         }
@@ -141,10 +168,11 @@ TEST(elementwise_add, compute) {
               y.Resize(y_dim);
               output.Resize(x_dim);
               output_ref.Resize(x_dim);
-              auto* x_data = x.mutable_data<float16>();
-              auto* y_data = y.mutable_data<float16>();
-              auto* output_data = output.mutable_data<float16>();
-              auto* output_ref_data = output_ref.mutable_data<float16>();
+              auto* x_data = x.mutable_data<float16>(TARGET(kFPGA));
+              auto* y_data = y.mutable_data<float16>(TARGET(kFPGA));
+              auto* output_data = output.mutable_data<float16>(TARGET(kFPGA));
+              auto* output_ref_data =
+                  output_ref.mutable_data<float16>(TARGET(kFPGA));
               for (int i = 0; i < x_dim.production(); i++) {
                 x_data[i] = zynqmp::float_to_half(i);
               }
@@ -156,15 +184,11 @@ TEST(elementwise_add, compute) {
               param.axis = axis;
               param.Out = &output;
               elementwise_add.SetParam(param);
-              LOG(ERROR) << "========prepare for run===========";
               elementwise_add.PrepareForRun();
-              LOG(ERROR) << "========finished for run===========";
               elementwise_add.Run();
-              LOG(ERROR) << *param.Out;
               param.Out = &output_ref;
 
               elementwise_compute_ref<float16>(param, "add", "");
-              LOG(ERROR) << *param.Out;
               for (int i = 0; i < output.dims().production(); i++) {
                 EXPECT_NEAR(output_data[i], output_ref_data[i], 1e-5);
               }
@@ -198,9 +222,9 @@ TEST(fusion_elementwise_add_activation_fpga, compute) {
 
   for (auto act_type : {"relu"}) {
     for (auto n : {1}) {
-      for (auto c : {1}) {
-        for (auto h : {2}) {
-          for (auto w : {2}) {
+      for (auto c : {8}) {
+        for (auto h : {8}) {
+          for (auto w : {8}) {
             for (auto axis : {0}) {
               for (auto yd : {std::vector<int64_t>({n, c, h, w})}) {
                 auto x_dim = DDim(std::vector<int64_t>({n, c, h, w}));
@@ -218,17 +242,18 @@ TEST(fusion_elementwise_add_activation_fpga, compute) {
                 y.Resize(y_dim);
                 output.Resize(x_dim);
                 output_ref.Resize(x_dim);
-                auto* x_data = x.mutable_data<float>();
-                auto* y_data = y.mutable_data<float>();
-                auto* output_data = output.mutable_data<float>();
-                auto* output_ref_data = output_ref.mutable_data<float>();
+                auto* x_data = x.mutable_data<float16>(TARGET(kFPGA));
+                auto* y_data = y.mutable_data<float16>(TARGET(kFPGA));
+                auto* output_data = output.mutable_data<float16>(TARGET(kFPGA));
+                auto* output_ref_data =
+                    output_ref.mutable_data<float16>(TARGET(kFPGA));
                 for (int i = 0; i < x_dim.production(); i++) {
                   float sign = i % 3 == 0 ? -1.0f : 1.0f;
-                  x_data[i] = i * sign;
+                  x_data[i] = zynqmp::float_to_half(i * sign);
                 }
                 for (int i = 0; i < y_dim.production(); i++) {
                   float sign = i % 2 == 0 ? 0.5f : -0.5f;
-                  y_data[i] = i * sign;
+                  y_data[i] = zynqmp::float_to_half(i * sign);
                 }
                 param.X = &x;
                 param.Y = &y;
@@ -239,7 +264,7 @@ TEST(fusion_elementwise_add_activation_fpga, compute) {
                 fusion_elementwise_add_activation.PrepareForRun();
                 fusion_elementwise_add_activation.Run();
                 param.Out = &output_ref;
-                elementwise_compute_ref<float>(param, "add", act_type);
+                elementwise_compute_ref<float16>(param, "add", act_type);
                 for (int i = 0; i < output.dims().production(); i++) {
                   EXPECT_NEAR(output_data[i], output_ref_data[i], 1e-5);
                 }
