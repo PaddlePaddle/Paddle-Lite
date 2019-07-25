@@ -101,9 +101,10 @@ class ArgmaxComputeTester : public arena::TestCase {
 };
 
 TEST(Argmax, precision) {
-// #ifdef LITE_WITH_X86
-//  Place place(TARGET(kX86));
-// #endif
+  // #ifdef LITE_WITH_X86
+  //  Place place(TARGET(kX86));
+  // #endif
+  LOG(INFO) << "test argmax op";
 #ifdef LITE_WITH_ARM
   LOG(INFO) << "test argmax arm";
   Place place(TARGET(kARM));

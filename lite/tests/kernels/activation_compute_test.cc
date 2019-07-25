@@ -187,6 +187,7 @@ class ActivationComputeTester : public arena::TestCase {
 };
 
 TEST(Activation_relu, precision) {
+  LOG(INFO) << "test relu op";
 #ifdef LITE_WITH_ARM
   Place place(TARGET(kARM));
 
@@ -214,6 +215,7 @@ TEST(Activation_relu, precision) {
 }
 
 TEST(Activation_leaky_relu, precision) {
+  LOG(INFO) << "test leaky_relu op";
 #ifdef LITE_WITH_ARM
   Place place(TARGET(kARM));
 
@@ -243,6 +245,7 @@ TEST(Activation_leaky_relu, precision) {
 }
 
 TEST(Activation_relu_clipped, precision) {
+  LOG(INFO) << "test relu clipped op";
 #ifdef LITE_WITH_ARM
   Place place(TARGET(kARM));
 
@@ -272,6 +275,7 @@ TEST(Activation_relu_clipped, precision) {
 }
 
 TEST(Activation_prelu, precision) {
+  LOG(INFO) << "test prelu op";
 #ifdef LITE_WITH_ARM
   Place place(TARGET(kARM));
 
@@ -301,6 +305,7 @@ TEST(Activation_prelu, precision) {
 }
 
 TEST(Activation_sigmoid, precision) {
+  LOG(INFO) << "test sigmoid op";
 #ifdef LITE_WITH_ARM
   Place place(TARGET(kARM));
 
@@ -328,6 +333,7 @@ TEST(Activation_sigmoid, precision) {
 }
 
 TEST(Activation_tanh, precision) {
+  LOG(INFO) << "test tanh op";
 #ifdef LITE_WITH_ARM
   Place place(TARGET(kARM));
 
@@ -355,6 +361,7 @@ TEST(Activation_tanh, precision) {
 }
 
 TEST(Activation_swish, precision) {
+  LOG(INFO) << "test swish op";
 #ifdef LITE_WITH_ARM
   Place place(TARGET(kARM));
 

@@ -113,6 +113,7 @@ class AxpyComputeTester : public arena::TestCase {
 };
 
 TEST(Axpy, precision) {
+  LOG(INFO) << "test axpy op";
 #ifdef LITE_WITH_ARM
   Place place(TARGET(kARM));
 

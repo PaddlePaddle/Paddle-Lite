@@ -400,6 +400,7 @@ class Conv2DTransposeComputeTester : public arena::TestCase {
 };
 
 TEST(conv2d_transpose, precision) {
+  LOG(INFO) << "test conv2d_transpose op";
 #ifdef LITE_WITH_ARM
   Place place(TARGET(kARM));
   for (auto n : {1, 2}) {
