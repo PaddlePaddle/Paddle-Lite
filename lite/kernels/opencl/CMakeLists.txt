@@ -4,6 +4,7 @@ endif()
 
 set(cl_kernel_deps op_params cl_runtime cl_context cl_wrapper cl_target_wrapper)
 
+lite_cc_library(fc_opencl SRCS fc_compute.cc DEPS ${cl_kernel_deps})
 lite_cc_library(mul_opencl SRCS mul_compute.cc DEPS ${cl_kernel_deps})
 lite_cc_library(elementwise_add_opencl SRCS elementwise_add_compute.cc DEPS ${cl_kernel_deps})
 lite_cc_library(pool_opencl SRCS pool_compute.cc DEPS ${cl_kernel_deps})
@@ -17,6 +18,10 @@ lite_cc_test(test_elementwise_add_opencl SRCS elementwise_add_compute_test.cc
 
 lite_cc_test(test_pool_opencl SRCS pool_compute_test.cc
         DEPS pool_opencl op_registry program context
+        ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/opencl)
+
+lite_cc_test(test_fc_opencl SRCS fc_compute_test.cc
+        DEPS fc_opencl op_registry program context
         ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/opencl)
 
 lite_cc_test(test_mul_opencl SRCS mul_compute_test.cc
@@ -41,5 +46,6 @@ set(opencl_kernels
         pool_opencl
         relu_opencl
         mul_opencl
+        fc_opencl
         depthwise_conv2d_opencl
         CACHE INTERNAL "opencl_kernels")
