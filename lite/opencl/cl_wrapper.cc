@@ -70,132 +70,71 @@ bool CLWrapper::InitHandle() {
 
 void CLWrapper::InitFunctions() {
   CHECK(handle_ != nullptr) << "The library handle can't be null!";
-  clGetPlatformIDs_ = (clGetPlatformIDsType)dlsym(handle_, "clGetPlatformIDs");
 
-  clGetPlatformInfo_ =
-      (clGetPlatformInfoType)dlsym(handle_, "clGetPlatformInfo");
+#define PADDLE_DLSYM(cl_func)                                        \
+  do {                                                               \
+    cl_func##_ = (cl_func##Type)dlsym(handle_, #cl_func);            \
+    if (cl_func##_ == nullptr) {                                     \
+      LOG(ERROR) << "Cannot find the " << #cl_func                   \
+                 << " symbol in libOpenCL.so!";                      \
+      break;                                                         \
+    }                                                                \
+    VLOG(4) << "Loaded the " << #cl_func << " symbol successfully."; \
+  } while (false)
 
-  clBuildProgram_ = (clBuildProgramType)dlsym(handle_, "clBuildProgram");
+  PADDLE_DLSYM(clGetPlatformIDs);
+  PADDLE_DLSYM(clGetPlatformInfo);
+  PADDLE_DLSYM(clBuildProgram);
+  PADDLE_DLSYM(clEnqueueNDRangeKernel);
+  PADDLE_DLSYM(clSetKernelArg);
+  PADDLE_DLSYM(clRetainMemObject);
+  PADDLE_DLSYM(clReleaseMemObject);
+  PADDLE_DLSYM(clEnqueueUnmapMemObject);
+  PADDLE_DLSYM(clRetainCommandQueue);
+  PADDLE_DLSYM(clCreateContext);
+  PADDLE_DLSYM(clCreateContextFromType);
+  PADDLE_DLSYM(clReleaseContext);
+  PADDLE_DLSYM(clWaitForEvents);
+  PADDLE_DLSYM(clReleaseEvent);
+  PADDLE_DLSYM(clEnqueueWriteBuffer);
+  PADDLE_DLSYM(clEnqueueReadBuffer);
+  PADDLE_DLSYM(clEnqueueReadImage);
+  PADDLE_DLSYM(clGetProgramBuildInfo);
+  PADDLE_DLSYM(clRetainProgram);
+  PADDLE_DLSYM(clEnqueueMapBuffer);
+  PADDLE_DLSYM(clEnqueueMapImage);
+  PADDLE_DLSYM(clCreateCommandQueue);
+  PADDLE_DLSYM(clCreateCommandQueueWithProperties);
+  PADDLE_DLSYM(clReleaseCommandQueue);
+  PADDLE_DLSYM(clCreateProgramWithBinary);
+  PADDLE_DLSYM(clRetainContext);
+  PADDLE_DLSYM(clGetContextInfo);
+  PADDLE_DLSYM(clReleaseProgram);
+  PADDLE_DLSYM(clFlush);
+  PADDLE_DLSYM(clFinish);
+  PADDLE_DLSYM(clGetProgramInfo);
+  PADDLE_DLSYM(clCreateKernel);
+  PADDLE_DLSYM(clRetainKernel);
+  PADDLE_DLSYM(clCreateBuffer);
+  PADDLE_DLSYM(clCreateImage2D);
+  PADDLE_DLSYM(clCreateImage);
+  PADDLE_DLSYM(clCreateUserEvent);
+  PADDLE_DLSYM(clCreateProgramWithSource);
+  PADDLE_DLSYM(clReleaseKernel);
+  PADDLE_DLSYM(clGetDeviceInfo);
+  PADDLE_DLSYM(clGetDeviceIDs);
+  PADDLE_DLSYM(clRetainDevice);
+  PADDLE_DLSYM(clReleaseDevice);
+  PADDLE_DLSYM(clRetainEvent);
+  PADDLE_DLSYM(clGetKernelWorkGroupInfo);
+  PADDLE_DLSYM(clGetEventInfo);
+  PADDLE_DLSYM(clGetEventProfilingInfo);
+  PADDLE_DLSYM(clGetImageInfo);
+  PADDLE_DLSYM(clEnqueueCopyBuffer);
+  PADDLE_DLSYM(clEnqueueWriteImage);
+  PADDLE_DLSYM(clEnqueueCopyImage);
 
-  clEnqueueNDRangeKernel_ =
-      (clEnqueueNDRangeKernelType)dlsym(handle_, "clEnqueueNDRangeKernel");
-
-  clSetKernelArg_ = (clSetKernelArgType)dlsym(handle_, "clSetKernelArg");
-
-  clRetainMemObject_ =
-      (clRetainMemObjectType)dlsym(handle_, "clRetainMemObject");
-
-  clReleaseMemObject_ =
-      (clReleaseMemObjectType)dlsym(handle_, "clReleaseMemObject");
-
-  clEnqueueUnmapMemObject_ =
-      (clEnqueueUnmapMemObjectType)dlsym(handle_, "clEnqueueUnmapMemObject");
-
-  clRetainCommandQueue_ =
-      (clRetainCommandQueueType)dlsym(handle_, "clRetainCommandQueue");
-
-  clCreateContext_ = (clCreateContextType)dlsym(handle_, "clCreateContext");
-
-  clCreateContextFromType_ =
-      (clCreateContextFromTypeType)dlsym(handle_, "clCreateContextFromType");
-
-  clReleaseContext_ = (clReleaseContextType)dlsym(handle_, "clReleaseContext");
-
-  clWaitForEvents_ = (clWaitForEventsType)dlsym(handle_, "clWaitForEvents");
-
-  clReleaseEvent_ = (clReleaseEventType)dlsym(handle_, "clReleaseEvent");
-
-  clEnqueueWriteBuffer_ =
-      (clEnqueueWriteBufferType)dlsym(handle_, "clEnqueueWriteBuffer");
-
-  clEnqueueReadBuffer_ =
-      (clEnqueueReadBufferType)dlsym(handle_, "clEnqueueReadBuffer");
-
-  clEnqueueReadImage_ =
-      (clEnqueueReadImageType)dlsym(handle_, "clEnqueueReadImage");
-
-  clGetProgramBuildInfo_ =
-      (clGetProgramBuildInfoType)dlsym(handle_, "clGetProgramBuildInfo");
-
-  clRetainProgram_ = (clRetainProgramType)dlsym(handle_, "clRetainProgram");
-
-  clEnqueueMapBuffer_ =
-      (clEnqueueMapBufferType)dlsym(handle_, "clEnqueueMapBuffer");
-
-  clEnqueueMapImage_ =
-      (clEnqueueMapImageType)dlsym(handle_, "clEnqueueMapImage");
-
-  clCreateCommandQueue_ =
-      (clCreateCommandQueueType)dlsym(handle_, "clCreateCommandQueue");
-
-  clCreateCommandQueueWithProperties_ =
-      (clCreateCommandQueueWithPropertiesType)dlsym(
-          handle_, "clCreateCommandQueueWithProperties");
-
-  clReleaseCommandQueue_ =
-      (clReleaseCommandQueueType)dlsym(handle_, "clReleaseCommandQueue");
-
-  clCreateProgramWithBinary_ = (clCreateProgramWithBinaryType)dlsym(
-      handle_, "clCreateProgramWithBinary");
-
-  clRetainContext_ = (clRetainContextType)dlsym(handle_, "clRetainContext");
-
-  clGetContextInfo_ = (clGetContextInfoType)dlsym(handle_, "clGetContextInfo");
-
-  clReleaseProgram_ = (clReleaseProgramType)dlsym(handle_, "clReleaseProgram");
-
-  clFlush_ = (clFlushType)dlsym(handle_, "clFlush");
-
-  clFinish_ = (clFinishType)dlsym(handle_, "clFinish");
-
-  clGetProgramInfo_ = (clGetProgramInfoType)dlsym(handle_, "clGetProgramInfo");
-
-  clCreateKernel_ = (clCreateKernelType)dlsym(handle_, "clCreateKernel");
-
-  clRetainKernel_ = (clRetainKernelType)dlsym(handle_, "clRetainKernel");
-
-  clCreateBuffer_ = (clCreateBufferType)dlsym(handle_, "clCreateBuffer");
-
-  clCreateImage2D_ = (clCreateImage2DType)dlsym(handle_, "clCreateImage2D");
-
-  clCreateImage_ = (clCreateImageType)dlsym(handle_, "clCreateImage");
-
-  clCreateUserEvent_ =
-      (clCreateUserEventType)dlsym(handle_, "clCreateUserEvent");
-
-  clCreateProgramWithSource_ = (clCreateProgramWithSourceType)dlsym(
-      handle_, "clCreateProgramWithSource");
-
-  clReleaseKernel_ = (clReleaseKernelType)dlsym(handle_, "clReleaseKernel");
-
-  clGetDeviceInfo_ = (clGetDeviceInfoType)dlsym(handle_, "clGetDeviceInfo");
-
-  clGetDeviceIDs_ = (clGetDeviceIDsType)dlsym(handle_, "clGetDeviceIDs");
-
-  clRetainDevice_ = (clRetainDeviceType)dlsym(handle_, "clRetainDevice");
-
-  clReleaseDevice_ = (clReleaseDeviceType)dlsym(handle_, "clReleaseDevice");
-
-  clRetainEvent_ = (clRetainEventType)dlsym(handle_, "clRetainEvent");
-
-  clGetKernelWorkGroupInfo_ =
-      (clGetKernelWorkGroupInfoType)dlsym(handle_, "clGetKernelWorkGroupInfo");
-
-  clGetEventInfo_ = (clGetEventInfoType)dlsym(handle_, "clGetEventInfo");
-
-  clGetEventProfilingInfo_ =
-      (clGetEventProfilingInfoType)dlsym(handle_, "clGetEventProfilingInfo");
-
-  clGetImageInfo_ = (clGetImageInfoType)dlsym(handle_, "clGetImageInfo");
-
-  clEnqueueCopyBuffer_ =
-      (clEnqueueCopyBufferType)dlsym(handle_, "clEnqueueCopyBuffer");
-
-  clEnqueueWriteImage_ =
-      (clEnqueueWriteImageType)dlsym(handle_, "clEnqueueWriteImage");
-
-  clEnqueueCopyImage_ =
-      (clEnqueueCopyImageType)dlsym(handle_, "clEnqueueCopyImage");
+#undef PADDLE_DLSYM
 }
 
 }  // namespace lite

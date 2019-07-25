@@ -247,8 +247,11 @@ class Context<TargetType::kOpenCL> {
                            "buffer/elementwise_add_kernel.cl");
     cl_context_->AddKernel("pool_max", "buffer/pool_kernel.cl");
     cl_context_->AddKernel("pool_avg", "buffer/pool_kernel.cl");
+    cl_context_->AddKernel("mat_mul", "buffer/mat_mul_kernel.cl");
+    cl_context_->AddKernel("fc", "buffer/fc_kernel.cl");
     cl_context_->AddKernel("relu", "buffer/relu_kernel.cl");
-    cl_context_->AddKernel("mat_mul", "buffer/mat_mul.cl");
+    cl_context_->AddKernel("depthwise_conv2d",
+                           "buffer/depthwise_conv2d_kernel.cl");
   }
 };
 #endif

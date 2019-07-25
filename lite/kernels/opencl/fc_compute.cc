@@ -24,54 +24,47 @@ namespace lite {
 namespace kernels {
 namespace opencl {
 
-class MulCompute
+class FcCompute
     : public KernelLite<TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW)> {
  public:
-  using param_t = operators::MulParam;
+  using param_t = operators::FcParam;
 
   void PrepareForRun() {
-    kernel_func_name_ = "mat_mul";
+    kernel_func_name_ = "fc";
 
     const auto& param = *param_.get_mutable<param_t>();
-    const auto* x_data = param.x->data<float>();
-    const auto* y_data = param.y->data<float>();
-    auto* o_data = param.output->mutable_data<float>();
+    const auto x_dims = param.input->dims();
+    const auto w_dims = param.w->dims();
 
-    m_ = static_cast<int>(
-        param.x->dims().Slice(0, param.x_num_col_dims).production());
-    const int x_w = static_cast<int>(
-        param.x->dims()
-            .Slice(param.x_num_col_dims, param.x->dims().size())
-            .production());
-    int y_h = static_cast<int>(
-        param.y->dims().Slice(0, param.y_num_col_dims).production());
-    n_ = static_cast<int>(
-        param.y->dims()
-            .Slice(param.y_num_col_dims, param.y->dims().size())
-            .production());
+    CHECK_GE(x_dims.size(), 2UL);
+    CHECK_GE(w_dims.size(), 2UL);
+    CHECK_EQ(param.output->dims().size(), 2UL);
 
-    CHECK_EQ(x_w, y_h) << "x_w must be equal with y_h";
-    k_ = x_w;
-    VLOG(4) << "m: " << m_ << " n_: " << n_ << " k_: " << k_ << " y_h: " << y_h
-            << " x_w: " << x_w;
+    m_ = x_dims.Slice(0, param.in_num_col_dims).production();
+    k_ = x_dims.Slice(param.in_num_col_dims, x_dims.size()).production();
+    n_ = w_dims[1];
+    CHECK_EQ(k_, static_cast<int>(w_dims[0]));
+    LOG(INFO) << "m_: " << m_ << " n_: " << n_ << " k_: " << k_;
   }
 
   void Run() override {
     const auto& param = *param_.get_mutable<param_t>();
     auto& context = ctx_->As<OpenCLContext>();
     CHECK(context.cl_context() != nullptr);
-    auto* x_buf = param.x->data<float, cl::Buffer>();
-    auto* y_buf = param.y->data<float, cl::Buffer>();
+    auto* x_buf = param.input->data<float, cl::Buffer>();
+    auto* w_buf = param.w->data<float, cl::Buffer>();
+    auto* bias_buf = param.bias->data<float, cl::Buffer>();
     auto* out_buf =
         param.output->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
 
     auto kernel = context.cl_context()->GetKernel(kernel_func_name_);
-
     cl_int status;
     int arg_idx = 0;
     status = kernel.setArg(arg_idx, *x_buf);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, *y_buf);
+    status = kernel.setArg(++arg_idx, *w_buf);
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(++arg_idx, *bias_buf);
     CL_CHECK_FATAL(status);
     status = kernel.setArg(++arg_idx, *out_buf);
     CL_CHECK_FATAL(status);
@@ -108,8 +101,9 @@ class MulCompute
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(
-    mul, kOpenCL, kFloat, kNCHW, paddle::lite::kernels::opencl::MulCompute, def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kOpenCL))})
-    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kOpenCL))})
+    fc, kOpenCL, kFloat, kNCHW, paddle::lite::kernels::opencl::FcCompute, def)
+    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kOpenCL))})
+    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kOpenCL))})
+    .BindInput("W", {LiteType::GetTensorTy(TARGET(kOpenCL))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kOpenCL))})
     .Finalize();

@@ -18,6 +18,7 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
+#include <vector>
 #include "ai_ddk_lib/include/graph/operator_reg.h"
 #include "lite/core/op_lite.h"
 #include "lite/utils/macros.h"
@@ -30,8 +31,9 @@ namespace bridge {
 class Factory {
  public:
   // TODO(TJ): input and output must be vector
-  using func_type = std::function<std::shared_ptr<ge::Operator>(
-      const std::shared_ptr<OpLite>, std::shared_ptr<ge::Operator>)>;
+  using func_type = std::function<std::vector<std::shared_ptr<ge::Operator>>(
+      const std::shared_ptr<OpLite>,
+      const std::vector<std::shared_ptr<ge::Operator>>&)>;
   using map_type = std::unordered_map<std::string, func_type>;
   static Factory& Instance();
 
