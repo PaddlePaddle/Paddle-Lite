@@ -24,11 +24,10 @@ void act_relu(const T* din, T* dout, int size, int threads);
 
 template <typename T>
 void act_relu_neg(
-    const T* din, T* dout, int size, const float negative_slope, int threads);
+    const T* din, T* dout, int size, float negative_slope, int threads);
 
 template <typename T>
-void act_clipped_relu(
-    const T* din, T* dout, int size, const float coef, int threads);
+void act_clipped_relu(const T* din, T* dout, int size, float coef, int threads);
 
 template <typename T>
 void act_prelu(const T* din,
@@ -47,7 +46,7 @@ template <typename T>
 void act_tanh(const T* din, T* dout, int size, int threads);
 
 template <typename T>
-void act_swish(const T* din, T* dout, int size, const float coef, int threads);
+void act_swish(const T* din, T* dout, int size, float coef, int threads);
 
 }  // namespace math
 }  // namespace arm

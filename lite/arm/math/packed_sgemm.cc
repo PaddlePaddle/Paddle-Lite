@@ -1965,8 +1965,7 @@ void sgemm_prepacked_8x12(bool is_transB,
                           bool has_bias,
                           bool has_relu,
                           ARMContext *ctx) {
-  size_t l2_cache =
-      ctx->l2_cache_size() > 0 ? ctx->l2_cache_size() : 512 * 1024;
+  size_t l2_cache = ctx->llc_size() > 0 ? ctx->llc_size() : 512 * 1024;
   auto workspace = ctx->workspace_data<float>();
   int threads = ctx->threads();
   //! MBLOCK * x (result) + MBLOCK * k (A) + x * k (B) = l2
@@ -2634,8 +2633,7 @@ void sgemm_prepacked_6x8(bool is_transB,
                          bool has_bias,
                          bool has_relu,
                          ARMContext* ctx) {
-  size_t l2_cache =
-      ctx->l2_cache_size() > 0 ? ctx->l2_cache_size() : 512 * 1024;
+  size_t l2_cache = ctx->llc_size() > 0 ? ctx->llc_size() : 512 * 1024;
   auto* workspace = ctx->workspace_data<float>();
   int threads = ctx->threads();
   //! MBLOCK * x (result) + MBLOCK * k (A) + x * k (B) = l2
@@ -3095,8 +3093,7 @@ void sgemm_prepacked_4x8(bool is_transB,
                          bool has_bias,
                          bool has_relu,
                          ARMContext* ctx) {
-  size_t l2_cache =
-      ctx->l2_cache_size() > 0 ? ctx->l2_cache_size() : 512 * 1024;
+  size_t l2_cache = ctx->llc_size() > 0 ? ctx->llc_size() : 512 * 1024;
   auto* workspace = ctx->workspace_data<float>();
   int threads = ctx->threads();
   //! MBLOCK * x (result) + MBLOCK * k (A) + x * k (B) = l2
