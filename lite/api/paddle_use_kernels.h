@@ -81,6 +81,8 @@ USE_LITE_KERNEL(io_copy, kOpenCL, kAny, kAny, host_to_device);
 USE_LITE_KERNEL(io_copy, kOpenCL, kAny, kAny, device_to_host);
 USE_LITE_KERNEL(io_copy_once, kOpenCL, kAny, kAny, host_to_device);
 USE_LITE_KERNEL(io_copy_once, kOpenCL, kAny, kAny, device_to_host);
+
+USE_LITE_KERNEL(fc, kOpenCL, kFloat, kNCHW, def);
 USE_LITE_KERNEL(elementwise_add, kOpenCL, kFloat, kNCHW, def);
 USE_LITE_KERNEL(pool2d, kOpenCL, kFloat, kNCHW, def);
 USE_LITE_KERNEL(relu, kOpenCL, kFloat, kNCHW, def);
