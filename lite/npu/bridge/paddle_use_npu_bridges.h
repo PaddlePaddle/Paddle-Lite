@@ -13,21 +13,11 @@
 // limitations under the License.
 
 #pragma once
-#include <string>
-#include "lite/core/op_lite.h"
-#include "lite/operators/io_copy_op.h"
 
-namespace paddle {
-namespace lite {
-namespace operators {
+#include "lite/npu/bridge/registry.h"
 
-class IoCopyOnceOp : public IoCopyOp {
- public:
-  explicit IoCopyOnceOp(const std::string &type) : IoCopyOp(type) {}
-  bool run_once() const override;
-  std::string DebugString() const override;
-};
-
-}  // namespace operators
-}  // namespace lite
-}  // namespace paddle
+USE_NPU_BRIDGE(fc);
+USE_NPU_BRIDGE(conv);
+USE_NPU_BRIDGE(mul);
+USE_NPU_BRIDGE(act);
+USE_NPU_BRIDGE(scale);

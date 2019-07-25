@@ -17,70 +17,69 @@
 #include "lite/core/op_registry.h"
 #include "lite/opencl/cl_include.h"
 #include "lite/operators/op_params.h"
-#include "lite/utils/string.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace opencl {
 
-class PoolCompute
+class DepthwiseConv2dCompute
     : public KernelLite<TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW)> {
  public:
-  using param_t = operators::PoolParam;
+  using param_t = operators::ConvParam;
 
   void Run() override {
     const auto& param = *param_.get_mutable<param_t>();
-    const auto& in_dims = param.x->dims();
-    const auto& out_dims = param.output->dims();
-    const std::string pooling_type = param.pooling_type;
-    const bool global_pooling = param.global_pooling;
-    std::vector<int> paddings = param.paddings;
-    std::vector<int> strides = param.strides;
-    std::vector<int> ksize = param.ksize;
-    if (global_pooling) {
-      for (size_t i = 0; i < ksize.size(); ++i) {
-        paddings[i] = 0;
-        ksize[i] = static_cast<int>(in_dims[i + 2]);
-      }
-    }
+    auto x_dims = param.x->dims();
+    auto filter_dims = param.filter->dims();
+    auto output_dims = param.output->dims();
+    auto paddings = param.paddings;
+    auto strides = param.strides;
 
     auto& context = ctx_->As<OpenCLContext>();
     CHECK(context.cl_context() != nullptr);
     auto* input_buf = param.x->data<float, cl::Buffer>();
+    auto* filter_buf = param.filter->data<float, cl::Buffer>();
+    auto* bias_buf = param.bias == nullptr
+                         ? static_cast<cl::Buffer*>(nullptr)
+                         : param.bias->data<float, cl::Buffer>();
     auto* output_buf =
         param.output->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
-    auto kernel = context.cl_context()->GetKernel(
-        string_format("pool_%s", pooling_type.c_str()));
+    auto kernel = context.cl_context()->GetKernel("depthwise_conv2d");
     cl_int status;
-    auto numel = out_dims.production();
-    status = kernel.setArg(0, static_cast<const int>(numel));
+    auto numel = output_dims.production();
+    int arg_idx = 0;
+    status = kernel.setArg(arg_idx, static_cast<const int>(numel));
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(1, *input_buf);
+    status = kernel.setArg(++arg_idx, *input_buf);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(2, static_cast<const int>(in_dims[1]));
+    status = kernel.setArg(++arg_idx, static_cast<const int>(x_dims[2]));
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(3, static_cast<const int>(in_dims[2]));
+    status = kernel.setArg(++arg_idx, static_cast<const int>(x_dims[3]));
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(4, static_cast<const int>(in_dims[3]));
+    status = kernel.setArg(++arg_idx, static_cast<const int>(output_dims[1]));
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(5, static_cast<const int>(out_dims[2]));
+    status = kernel.setArg(++arg_idx, static_cast<const int>(output_dims[2]));
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(6, static_cast<const int>(out_dims[3]));
+    status = kernel.setArg(++arg_idx, static_cast<const int>(output_dims[3]));
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(7, static_cast<const int>(ksize[0]));
+    status = kernel.setArg(++arg_idx, static_cast<const int>(filter_dims[2]));
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(8, static_cast<const int>(ksize[1]));
+    status = kernel.setArg(++arg_idx, static_cast<const int>(filter_dims[3]));
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(9, static_cast<const int>(strides[0]));
+    status = kernel.setArg(++arg_idx, static_cast<const int>(strides[0]));
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(10, static_cast<const int>(strides[1]));
+    status = kernel.setArg(++arg_idx, static_cast<const int>(strides[1]));
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(11, static_cast<const int>(paddings[0]));
+    status = kernel.setArg(++arg_idx, static_cast<const int>(paddings[0]));
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(12, static_cast<const int>(paddings[1]));
+    status = kernel.setArg(++arg_idx, static_cast<const int>(paddings[1]));
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(13, *output_buf);
+    status = kernel.setArg(++arg_idx, *output_buf);
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(++arg_idx, *filter_buf);
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(++arg_idx, *bias_buf);
     CL_CHECK_FATAL(status);
     cl::Event event;
     auto global_work_size = cl::NDRange(static_cast<size_t>(numel));
@@ -102,12 +101,14 @@ class PoolCompute
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(pool2d,
+REGISTER_LITE_KERNEL(depthwise_conv2d,
                      kOpenCL,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::opencl::PoolCompute,
+                     paddle::lite::kernels::opencl::DepthwiseConv2dCompute,
                      def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kOpenCL))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kOpenCL))})
+    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kOpenCL))})
+    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kOpenCL))})
+    .BindInput("Filter", {LiteType::GetTensorTy(TARGET(kOpenCL))})
+    .BindOutput("Output", {LiteType::GetTensorTy(TARGET(kOpenCL))})
     .Finalize();
