@@ -14,6 +14,7 @@
 
 #include "lite/arm/math/sequence_softmax.h"
 #include <arm_neon.h>
+#include <algorithm>
 #include <cmath>
 #include "lite/utils/cp_logging.h"
 
@@ -23,7 +24,7 @@ namespace arm {
 namespace math {
 
 bool sequence_softmax(const float* input,
-                      std::vector<uint64_t>& seq_offset,
+                      const std::vector<uint64_t>& seq_offset,
                       float* out,
                       Context<TARGET(kARM)>* ctx) {
   int seq_num = seq_offset.size() - 1;

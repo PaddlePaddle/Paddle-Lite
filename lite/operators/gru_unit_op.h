@@ -13,22 +13,34 @@
 // limitations under the License.
 
 #pragma once
-
-#include <cmath>
+#include <string>
 #include <vector>
-#include "lite/core/context.h"
+#include "lite/core/op_lite.h"
+#include "lite/core/scope.h"
+#include "lite/utils/all.h"
 
 namespace paddle {
 namespace lite {
-namespace arm {
-namespace math {
+namespace operators {
 
-bool sequence_softmax(const float* input,
-                      const std::vector<uint64_t>& seq_offset,
-                      float* out,
-                      Context<TARGET(kARM)>* ctx);
+class GRUUnitOpLite : public OpLite {
+ public:
+  GRUUnitOpLite() {}
+  explicit GRUUnitOpLite(const std::string &op_type) : OpLite(op_type) {}
 
-}  // namespace math
-}  // namespace arm
+  bool CheckShape() const override;
+
+  bool InferShape() const override;
+
+  bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
+
+  void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
+  std::string DebugString() const override { return "GRUUnit"; }
+
+ private:
+  mutable GRUUnitParam param_;
+};
+
+}  // namespace operators
 }  // namespace lite
 }  // namespace paddle

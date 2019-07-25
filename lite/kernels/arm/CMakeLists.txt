@@ -18,6 +18,7 @@ lite_cc_library(concat_compute_arm SRCS concat_compute.cc DEPS ${lite_kernel_dep
 lite_cc_library(dropout_compute_arm SRCS dropout_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(calib_compute_arm SRCS calib_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(transpose_compute_arm SRCS transpose_compute.cc DEPS ${lite_kernel_deps} math_arm)
+lite_cc_library(gru_unit_compute_arm SRCS gru_unit_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(im2sequence_compute_arm SRCS im2sequence_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(sequence_softmax_compute_arm SRCS sequence_softmax_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(norm_compute_arm SRCS norm_compute.cc DEPS ${lite_kernel_deps} math_arm)
@@ -53,6 +54,7 @@ set(arm_kernels
     dropout_compute_arm
     transpose_compute_arm
     calib_compute_arm
+    gru_unit_compute_arm
     im2sequence_compute_arm
     sequence_softmax_compute_arm
     norm_compute_arm

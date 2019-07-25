@@ -77,15 +77,19 @@ void FcCompute::Run() {
   if (m_ > 1) {
     float* packed_in =
         ctx.workspace_data<float>() + ctx.l2_cache_size() / sizeof(float);
-    lite::arm::math::prepackA(packed_in, i_data, k_, 0, m_, 0, k_, false, &ctx);
-    lite::arm::math::sgemm_prepack(packed_in,
-                                   w_data,
-                                   b_data,
-                                   o_data,
+    lite::arm::math::prepackA(
+        packed_in, i_data, 1.f, k_, 0, m_, 0, k_, false, &ctx);
+    lite::arm::math::sgemm_prepack(false,
                                    m_,
                                    n_,
                                    k_,
-                                   false,
+                                   packed_in,
+                                   w_data,
+                                   n_,
+                                   0.f,
+                                   o_data,
+                                   n_,
+                                   b_data,
                                    false,
                                    false,
                                    &ctx);
