@@ -81,10 +81,7 @@ if (NOT HAS_ARM_MATH_LIB_DIR)
       im2sequence.cc
       sequence_softmax.cc
       norm.cc
-      normalize.cc
       pad2d.cc
-      permute.cc
-      sroi_align.cc
       negative.cc
       DEPS ${lite_kernel_deps} framework_proto)
 endif()

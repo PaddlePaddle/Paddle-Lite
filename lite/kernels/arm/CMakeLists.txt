@@ -15,10 +15,7 @@ lite_cc_library(elementwise_compute_arm SRCS elementwise_compute.cc DEPS ${lite_
 lite_cc_library(pool_compute_arm SRCS pool_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(split_compute_arm SRCS split_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(concat_compute_arm SRCS concat_compute.cc DEPS ${lite_kernel_deps} math_arm)
-lite_cc_library(normalize_compute_arm SRCS normalize_compute.cc DEPS ${lite_kernel_deps} math_arm)
-lite_cc_library(sroi_align_compute_arm SRCS sroi_align_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(pad2d_compute_arm SRCS pad2d_compute.cc DEPS ${lite_kernel_deps} math_arm)
-lite_cc_library(permute_compute_arm SRCS permute_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(negative_compute_arm SRCS negative_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(dropout_compute_arm SRCS dropout_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(calib_compute_arm SRCS calib_compute.cc DEPS ${lite_kernel_deps} math_arm)
@@ -38,11 +35,7 @@ lite_cc_test(test_pool_compute_arm SRCS pool_compute_test.cc DEPS pool_compute_a
 lite_cc_test(test_mul_compute_arm SRCS mul_compute_test.cc DEPS mul_compute_arm)
 lite_cc_test(test_split_compute_arm SRCS split_compute_test.cc DEPS split_compute_arm)
 lite_cc_test(test_concat_compute_arm SRCS concat_compute_test.cc DEPS concat_compute_arm)
-#lite_cc_test(test_negative_compute_arm SRCS negative_compute_test.cc DEPS negative_compute_arm)
-lite_cc_test(test_permute_compute_arm SRCS permute_compute_test.cc DEPS permute_compute_arm)
-lite_cc_test(test_pad2d_compute_arm SRCS pad2d_compute_test.cc DEPS pad2d_compute_arm)
 lite_cc_test(test_dropout_compute_arm SRCS dropout_compute_test.cc DEPS dropout_compute_arm)
-# lite_cc_test(test_calib_compute_arm SRCS calib_compute_test.cc DEPS calib_compute_arm)
 lite_cc_test(test_transpose_compute_arm SRCS transpose_compute_test.cc DEPS transpose_compute_arm)
 
 set(arm_kernels
@@ -57,10 +50,7 @@ set(arm_kernels
     pool_compute_arm
     split_compute_arm
     concat_compute_arm
-    normalize_compute_arm
-    sroi_align_compute_arm
     pad2d_compute_arm
-    permute_compute_arm
     negative_compute_arm
     dropout_compute_arm
     transpose_compute_arm

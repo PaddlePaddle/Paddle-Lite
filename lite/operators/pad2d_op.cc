@@ -37,17 +37,11 @@ bool Pad2dOpLite::InferShape() const {
 
 // TODO(Superjomn) replace framework::OpDesc with a lite one.
 bool Pad2dOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
-  //////////////////////////
-  ///////  lite::Tensor类型（输入输出类型）的写入。-----先写入输入类型
   param_.X = scope->FindVar(op_desc.Input("X").front())->GetMutable<Tensor>();
-  //输出类型设置
   param_.Out =
       scope->FindVar(op_desc.Output("Out").front())->GetMutable<Tensor>();
-  // int型变量输入
   param_._mode = op_desc.GetAttr<int>("_mode");
-  // float型变量输入
   param_._pad_value = op_desc.GetAttr<float>("_pad_value");
-  // vector型变量的输入
   param_._pad_h = op_desc.GetAttr<std::vector<int>>("_pad_h");
   param_._pad_w = op_desc.GetAttr<std::vector<int>>("_pad_w");
   return true;

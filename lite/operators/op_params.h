@@ -339,18 +339,12 @@ struct NegativeParam {
   const lite::Tensor* X{};
   lite::Tensor* Out{};
 };
-/// ----------------------- Permute operators ----------------------
-struct PermuteParam {
-  std::vector<lite::Tensor*> X{};
-  std::vector<lite::Tensor*> Out{};
-  std::vector<int> order;
-};
 /// ----------------------- pad2d operators ----------------------
 struct Pad2dParam {
   const lite::Tensor* X{};
   lite::Tensor* Out{};
   /*
-  _mode是PadMode
+  _mod:PadMode
   typedef enum{
      PAD_CONSTANT = 0,
      PAD_EDGE = 1,
@@ -361,27 +355,6 @@ struct Pad2dParam {
   std::vector<int> _pad_h;
   std::vector<int> _pad_w;
   float _pad_value = 0.f;
-};
-/// ----------------------- ScoiAlign operators ----------------------
-struct SroiAlignParam {
-  std::vector<lite::Tensor*> X{};
-  lite::Tensor* Out{};
-  int pooled_h{1};
-  int pooled_w{1};
-  float spatial_scale{1};
-};
-/// ----------------------- Normalize operators ----------------------
-struct NormalizeParam {
-  const lite::Tensor* X{};
-  // lite::Tensor* Out{};
-  lite::Tensor* Out{};
-  ///////////////////////////////////////////
-  //! whether normalize is across the spatial
-  //! if not across spatial, do normalize across channel
-  bool across_spatial{true};
-  //! p = 1, L1 normalize, p = 2, L2 normalize
-  int p{2};
-  float eps{1e-6f};
 };
 
 struct Im2SequenceParam {

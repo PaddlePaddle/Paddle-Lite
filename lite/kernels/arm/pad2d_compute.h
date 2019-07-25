@@ -33,7 +33,7 @@ class Pad2dCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
 
  private:
   /////////////////////////////
-  /*     _mode是PadMode
+  /*     _mode:PadMode
          typedef enum{
              PAD_CONSTANT = 0,
              PAD_EDGE = 1,

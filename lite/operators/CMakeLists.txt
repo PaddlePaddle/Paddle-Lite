@@ -23,10 +23,7 @@ lite_cc_library(uniform_random_op SRCS uniform_random_op.cc DEPS ${op_DEPS})
 lite_cc_library(op_params SRCS op_params.cc DEPS tensor any framework_proto)
 lite_cc_library(dropout_op SRCS dropout_op.cc DEPS ${op_DEPS})
 lite_cc_library(concat_op SRCS concat_op.cc DEPS ${op_DEPS})
-lite_cc_library(normalize_op SRCS normalize_op.cc DEPS ${op_DEPS})
-lite_cc_library(sroi_align_op SRCS sroi_align_op.cc DEPS ${op_DEPS})
 lite_cc_library(pad2d_op SRCS pad2d_op.cc DEPS ${op_DEPS})
-lite_cc_library(permute_op SRCS permute_op.cc DEPS ${op_DEPS})
 lite_cc_library(negative_op SRCS negative_op.cc DEPS ${op_DEPS})
 lite_cc_library(calib_op SRCS calib_op.cc DEPS ${op_DEPS})
 lite_cc_library(split_op SRCS split_op.cc DEPS ${op_DEPS})
@@ -58,10 +55,7 @@ set(ops
         activation_ops
         dropout_op
         concat_op
-        normalize_op
-        sroi_align_op
         pad2d_op
-        permute_op
         negative_op
         calib_op
         split_op

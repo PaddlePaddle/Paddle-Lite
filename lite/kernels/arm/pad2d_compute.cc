@@ -26,7 +26,6 @@ namespace kernels {
 namespace arm {
 
 void Pad2dCompute::Run() {
-  // 1、读入数据
   auto& param = Param<operators::Pad2dParam>();
   const lite::Tensor* inputs = param.X;
   auto* out = param.Out;
@@ -35,7 +34,7 @@ void Pad2dCompute::Run() {
   _pad_w = param._pad_w;
   _pad_value = param._pad_value;
   /////////////////////////////
-  /*     _mode是PadMode
+  /*     _mode:PadMode
          typedef enum{
              PAD_CONSTANT = 0,
              PAD_EDGE = 1,
@@ -54,7 +53,6 @@ void Pad2dCompute::Run() {
     CHECK_LE(_pad_w[1], input_dims[3] - 1)
         << "pad right size must  <= inputs width - 1";
   }
-  // 2、执行运算
   lite::arm::math::pad2d_func(inputs, out, _mode, _pad_h, _pad_w, _pad_value);
   return;
 }

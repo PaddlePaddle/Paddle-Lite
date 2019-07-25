@@ -24,7 +24,6 @@ namespace kernels {
 namespace arm {
 
 void NegativeCompute::PrepareForRun() {
-  //  auto& ctx = this->ctx_->template As<ARMContext>();
   LOG(INFO) << "into negative kernels prepare run";
 }
 

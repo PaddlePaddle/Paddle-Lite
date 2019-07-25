@@ -26,7 +26,7 @@ class Pad2dComputeTester : public arena::TestCase {
   std::string input_ = "X";
   std::string output_ = "Out";
   /*
-  _mode是PadMode
+  _mode:PadMode
   typedef enum{
      PAD_CONSTANT = 0,
      PAD_EDGE = 1,
