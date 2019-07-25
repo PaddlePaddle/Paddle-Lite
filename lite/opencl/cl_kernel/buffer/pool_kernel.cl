@@ -28,7 +28,6 @@
 
 __kernel void pool_max(const int numel, // num of elements
                        __global float* input_data,
-                       const int num, // num of feature maps
                        const int channels,
                        const int height,
                        const int width,
@@ -72,7 +71,6 @@ __kernel void pool_max(const int numel, // num of elements
 
 __kernel void pool_avg(const int numel,
                        __global float* input_data,
-                       const int num,
                        const int channels,
                        const int height,
                        const int width,
