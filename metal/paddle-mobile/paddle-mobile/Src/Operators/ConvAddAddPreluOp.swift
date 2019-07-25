@@ -18,20 +18,16 @@ import Metal
 class ConvAddAddPreluParam<P: PrecisionProtocol>: OpParam {
     //typealias ParamPrecisionType = P
     required init(opDesc: PMOpDesc, inScope: Scope) throws {
-        do {
-            filter = try ConvAddAddPreluParam.inputFilter(paraInputs: opDesc.paraInputs, from: inScope)
-            input = try ConvAddAddPreluParam.input(inputs: opDesc.inputs, from: inScope)
-            output = try ConvAddAddPreluParam.outputOut(outputs: opDesc.outputs, from: inScope)
-            stride = try ConvAddAddPreluParam.getAttr(key: "strides", attrs: opDesc.attrs)
-            paddings = try ConvAddAddPreluParam.getAttr(key: "paddings", attrs: opDesc.attrs)
-            dilations = try ConvAddAddPreluParam.getAttr(key: "dilations", attrs: opDesc.attrs)
-            groups = try ConvAddAddPreluParam.getAttr(key: "groups", attrs: opDesc.attrs)
-            alpha = try ConvAddAddPreluParam.paramInputAlpha(inputs: opDesc.paraInputs, from: inScope)
-            mode = try ConvAddAddPreluParam.getAttr(key: "mode", attrs: opDesc.attrs)
-            y = try ConvAddAddPreluParam.inputY(inputs: opDesc.paraInputs, from: inScope)
-        } catch let error {
-            throw error
-        }
+        filter = try ConvAddAddPreluParam.inputFilter(paraInputs: opDesc.paraInputs, from: inScope)
+        input = try ConvAddAddPreluParam.input(inputs: opDesc.inputs, from: inScope)
+        output = try ConvAddAddPreluParam.outputOut(outputs: opDesc.outputs, from: inScope)
+        stride = try ConvAddAddPreluParam.getAttr(key: "strides", attrs: opDesc.attrs)
+        paddings = try ConvAddAddPreluParam.getAttr(key: "paddings", attrs: opDesc.attrs)
+        dilations = try ConvAddAddPreluParam.getAttr(key: "dilations", attrs: opDesc.attrs)
+        groups = try ConvAddAddPreluParam.getAttr(key: "groups", attrs: opDesc.attrs)
+        alpha = try ConvAddAddPreluParam.paramInputAlpha(inputs: opDesc.paraInputs, from: inScope)
+        mode = try ConvAddAddPreluParam.getAttr(key: "mode", attrs: opDesc.attrs)
+        y = try ConvAddAddPreluParam.inputY(inputs: opDesc.paraInputs, from: inScope)
     }
     
     let input: Texture
@@ -93,17 +89,17 @@ class ConvAddAddPreluOp<P: PrecisionProtocol>: Operator<ConvAddAddPreluKernel<P>
     }
     
     func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
-        do {
-            try kernel.compute(commandBuffer: buffer, param: para)
-        } catch let error {
-            throw error
-        }
+        try kernel.compute(commandBuffer: buffer, param: para)
     }
     
     
     func delogOutput() {
         print(" \(type) output: ")
-        print(para.output.metalTexture.toTensor(dim: (n: para.output.tensorDim[0], c: para.output.tensorDim[1], h: para.output.tensorDim[2], w: para.output.tensorDim[3])).strideArray())
+        do {
+            let output = try para.output.metalTexture?.toTensor(dim: (n: para.output.tensorDim[0], c: para.output.tensorDim[1], h: para.output.tensorDim[2], w: para.output.tensorDim[3])).strideArray() ?? []
+            print(output)
+        } catch _ {
+        }
     }
     
 }

@@ -49,7 +49,8 @@ import Foundation
         dims.swapAt(index1, index2)
     }
     
-    private override init(){
-        fatalError()
+    private override init() {
+        dims = []
+        super.init()
     }
 }

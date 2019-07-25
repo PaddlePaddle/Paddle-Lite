@@ -18,19 +18,12 @@ import Metal
 class SoftmaxParam<P: PrecisionProtocol>: OpParam {
     //typealias ParamPrecisionType = P
     required init(opDesc: PMOpDesc, inScope: Scope) throws {
-        do {
-            input = try SoftmaxParam.inputX(inputs: opDesc.inputs, from: inScope)
-            output = try SoftmaxParam.outputOut(outputs: opDesc.outputs, from: inScope)
-            
-            //assert(input.tensorDim.dims.count == 2)
-            //assert(input.transpose == [0, 1, 2, 3])
-            
-            output.dim = input.dim
-            output.tensorDim = input.tensorDim
-            output.padToFourDim = input.padToFourDim
-        } catch let error {
-            throw error
-        }
+        input = try SoftmaxParam.inputX(inputs: opDesc.inputs, from: inScope)
+        output = try SoftmaxParam.outputOut(outputs: opDesc.outputs, from: inScope)
+        
+        output.dim = input.dim
+        output.tensorDim = input.tensorDim
+        output.padToFourDim = input.padToFourDim
     }
     let input: Texture
     var output: Texture
@@ -44,11 +37,7 @@ class SoftmaxOp<P: PrecisionProtocol>: Operator<SoftmaxKernel<P>, SoftmaxParam<P
     }
     
     func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
-        do {
-            try kernel.compute(commandBuffer: buffer, param: para)
-        } catch let error {
-            throw error
-        }
+        try kernel.compute(commandBuffer: buffer, param: para)
     }
     
     func delogOutput() {
@@ -57,7 +46,10 @@ class SoftmaxOp<P: PrecisionProtocol>: Operator<SoftmaxKernel<P>, SoftmaxParam<P
         
         print(para.output)
         let padToFourDim = para.output.padToFourDim
-        let outputArray: [Float32] = para.output.metalTexture.realNHWC(dim: (n: padToFourDim[0], h: padToFourDim[1], w: padToFourDim[2], c: padToFourDim[3]))
-        print(outputArray.strideArray())
+        do {
+            let outputArray: [Float32] = try para.output.metalTexture?.realNHWC(dim: (n: padToFourDim[0], h: padToFourDim[1], w: padToFourDim[2], c: padToFourDim[3])) ?? []
+            print(outputArray.strideArray())
+        } catch _ {
+        }
     }
 }
