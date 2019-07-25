@@ -83,6 +83,7 @@ if (NOT HAS_ARM_MATH_LIB_DIR)
       sequence_softmax.cc
       norm.cc
       topk.cc
+      increment.cc
       DEPS ${lite_kernel_deps} framework_proto)
 endif()
  

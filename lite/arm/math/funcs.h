@@ -26,6 +26,7 @@
 #include "lite/arm/math/dropout.h"
 #include "lite/arm/math/elementwise.h"
 #include "lite/arm/math/im2sequence.h"
+#include "lite/arm/math/increment.h"
 #include "lite/arm/math/norm.h"
 #include "lite/arm/math/packed_sgemm.h"
 #include "lite/arm/math/pooling.h"

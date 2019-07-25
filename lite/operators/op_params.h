@@ -395,6 +395,12 @@ struct TopkParam {
   int K{1};
 };
 
+struct IncrementParam {
+  const lite::Tensor* X{};
+  lite::Tensor* Out{};
+  float step{1};
+};
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle
