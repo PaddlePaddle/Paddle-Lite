@@ -334,6 +334,28 @@ struct UniformRandomParam {
   int dtype{framework::proto::VarType::FP32};
   lite::Tensor* Out{};
 };
+/// ----------------------- negative operators --------------
+struct NegativeParam {
+  const lite::Tensor* X{};
+  lite::Tensor* Out{};
+};
+/// ----------------------- pad2d operators ----------------------
+struct Pad2dParam {
+  const lite::Tensor* X{};
+  lite::Tensor* Out{};
+  /*
+  _mod:PadMode
+  typedef enum{
+     PAD_CONSTANT = 0,
+     PAD_EDGE = 1,
+     PAD_REFLECT = 2,
+ } PadMode;
+   */
+  int _mode{0};
+  std::vector<int> _pad_h;
+  std::vector<int> _pad_w;
+  float _pad_value = 0.f;
+};
 
 /// ----------------------- GRU unit operators ----------------------f
 struct GRUUnitParam {
