@@ -19,7 +19,7 @@ public class PMBlockDesc {
     let parentIndex: Int
     public let vars: [PMVarDesc]
     let ops: [PMOpDesc]
-    init(block: BlockDesc) {
+    init(block: BlockDesc) throws {
         index = Int(block.idx)
         parentIndex = Int(block.parentIdx)
         var vars: [PMVarDesc] = []
@@ -30,7 +30,7 @@ public class PMBlockDesc {
         self.vars = vars
         var ops: [PMOpDesc] = []
         for op in block.opsArray {
-            ops.append(PMOpDesc.init(protoOpDesc: op as! OpDesc))
+            try ops.append(PMOpDesc.init(protoOpDesc: op as! OpDesc))
         }
         self.ops = ops
     }

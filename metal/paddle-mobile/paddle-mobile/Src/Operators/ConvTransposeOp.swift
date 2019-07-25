@@ -17,11 +17,7 @@ import Foundation
 class ConvTransposeParam<P: PrecisionProtocol>: ConvParam<P> {
     //typealias ParamPrecisionType = P
     required init(opDesc: PMOpDesc, inScope: Scope) throws {
-        do {
-            try super.init(opDesc: opDesc, inScope: inScope)
-        } catch let error {
-            throw error
-        }
+        try super.init(opDesc: opDesc, inScope: inScope)
     }
 }
 
@@ -34,25 +30,24 @@ class ConvTransposeOp<P: PrecisionProtocol>: Operator<ConvTransposeKernel<P>, Co
     }
     
     func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
-        do {
-            try kernel.compute(commandBuffer: buffer, param: para)
-        } catch let error {
-            throw error
-        }
+        try kernel.compute(commandBuffer: buffer, param: para)
     }
     
     func delogOutput() {
         
         print(" \(type) output: ")
         let padToFourDim = para.output.padToFourDim
-        if para.output.transpose == [0, 1, 2, 3] {
-            let outputArray: [Float32] = para.output.metalTexture.realNHWC(dim: (n: padToFourDim[0], h: padToFourDim[1], w: padToFourDim[2], c: padToFourDim[3]))
-            print(outputArray.strideArray())
-        } else if para.output.transpose == [0, 2, 3, 1] {
-            let output = para.output.metalTexture.toTensor(dim: (n: para.output.tensorDim[0], c: para.output.tensorDim[1], h: para.output.tensorDim[2], w: para.output.tensorDim[3]))
-            print(output.strideArray())
-        } else {
-            print(" not implement")
+        do {
+            if para.output.transpose == [0, 1, 2, 3] {
+                let outputArray: [Float32] = try para.output.metalTexture?.realNHWC(dim: (n: padToFourDim[0], h: padToFourDim[1], w: padToFourDim[2], c: padToFourDim[3])) ?? []
+                print(outputArray.strideArray())
+            } else if para.output.transpose == [0, 2, 3, 1] {
+                let output = try para.output.metalTexture?.toTensor(dim: (n: para.output.tensorDim[0], c: para.output.tensorDim[1], h: para.output.tensorDim[2], w: para.output.tensorDim[3])) ?? []
+                print(output.strideArray())
+            } else {
+                print(" not implement")
+            }
+        } catch _ {
         }
     }
 }

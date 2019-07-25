@@ -24,11 +24,7 @@ class TransposeKernel<P: PrecisionProtocol>: Kernel, Computable {
     var metalParam: TransposeMetalParam = TransposeMetalParam.init()
     required init(device: MTLDevice, param: TransposeParam<P>, initContext: InitContext) throws {
         
-        do {
-            try param.output.initTexture(device: device, computePrecision: GlobalConfig.shared.computePrecision)
-        } catch let error {
-            throw error
-        }
+        try param.output.initTexture(device: device, computePrecision: GlobalConfig.shared.computePrecision)
         
         let rank = param.input.tensorDim.cout()
         var axis: [Int] = [0, 1, 2, 3]
@@ -62,24 +58,34 @@ class TransposeKernel<P: PrecisionProtocol>: Kernel, Computable {
                 kernelFunc = "transpose_\(rank)_float"
             }
         } else {
-            fatalError()
+            throw PaddleMobileError.makeError(type: .predictError, msg: "unsupported compute precision: \(GlobalConfig.shared.computePrecision)")
         }
-        print("===========>", kernelFunc)
-        print(metalParam)
-        super.init(device: device, inFunctionName: kernelFunc, initContext: initContext)
+        paddleMobileLog("===========> \(kernelFunc)")
+        paddleMobileLog("\(metalParam)")
+        try super.init(device: device, inFunctionName: kernelFunc, initContext: initContext)
     }
     
     func compute(commandBuffer: MTLCommandBuffer, param: TransposeParam<P>) throws {
-        guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
-            throw PaddleMobileError.predictError(message: " encode is nil")
+        guard let tempPipline = pipline else {
+            throw PaddleMobileError.makeError(type: .predictError, msg: "pipline is nil")
         }
-        
-        encoder.setTexture(param.input.metalTexture, index: 0)
-        encoder.setTexture(param.output.metalTexture, index: 1)
-        encoder.setBytes(&metalParam, length: MemoryLayout<TransposeMetalParam>.size, index: 0)
-        encoder.dispatch(computePipline: pipline, outTexture: param.output.metalTexture)
-        encoder.endEncoding()
+        guard let inputMetalTexture = param.input.metalTexture else {
+            throw PaddleMobileError.makeError(type: .predictError, msg: "input metaltexture is nil")
+        }
+        guard let outputMetalTexture = param.output.metalTexture else {
+            throw PaddleMobileError.makeError(type: .predictError, msg: "output metaltexture is nil")
+        }
+        do {
+            guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
+                throw PaddleMobileError.makeError(type: .predictError, msg: "encoder is nil")
+            }
+            defer {
+                encoder.endEncoding()
+            }
+            encoder.setTexture(inputMetalTexture, index: 0)
+            encoder.setTexture(outputMetalTexture, index: 1)
+            encoder.setBytes(&metalParam, length: MemoryLayout<TransposeMetalParam>.size, index: 0)
+            try encoder.dispatch(computePipline: tempPipline, outTexture: outputMetalTexture)
+        }
     }
-    
-    
 }

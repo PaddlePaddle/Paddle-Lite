@@ -17,12 +17,8 @@ import Foundation
 class ShapeParam<P: PrecisionProtocol>: OpParam {
     // typealias ParamPrecisionType = P
     required init(opDesc: PMOpDesc, inScope: Scope) throws {
-        do {
-            input = try ShapeParam.input(inputs: opDesc.inputs, from: inScope)
-            output = try ShapeParam.outputOut(outputs: opDesc.outputs, from: inScope)
-        } catch let error {
-            throw error
-        }
+        input = try ShapeParam.input(inputs: opDesc.inputs, from: inScope)
+        output = try ShapeParam.outputOut(outputs: opDesc.outputs, from: inScope)
     }
     var output: Texture
     let input: Texture
@@ -37,11 +33,7 @@ class ShapeOp<P: PrecisionProtocol>: Operator<ShapeKernel<P>, ShapeParam<P>>, Ru
     }
     
     func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
-        do {
-            try kernel.compute(commandBuffer: buffer, param: para)
-        } catch let error {
-            throw error
-        }
+        try kernel.compute(commandBuffer: buffer, param: para)
     }
     
     func delogOutput() {
