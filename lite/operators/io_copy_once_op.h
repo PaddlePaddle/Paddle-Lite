@@ -26,9 +26,6 @@ class IoCopyOnceOp : public IoCopyOp {
   explicit IoCopyOnceOp(const std::string &type) : IoCopyOp(type) {}
   bool run_once() const override;
   std::string DebugString() const override;
-
- private:
-  operators::IoCopyParam param_;
 };
 
 }  // namespace operators
