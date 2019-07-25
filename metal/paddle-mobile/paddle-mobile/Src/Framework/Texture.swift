@@ -76,37 +76,61 @@ public class Texture: Tensorial {
     
     /// tensor dim pad to four
     public var padToFourDim: Dim
-    private var textureDesc: MTLTextureDescriptor!
-    public var metalTexture: MTLTexture!
+    private(set) var textureDesc: MTLTextureDescriptor?
+    public var metalTexture: MTLTexture? {
+        get {
+            if _metalTexture == nil, let tmpTextureDesc = textureDesc {
+                _metalTexture = device.makeTexture(descriptor: tmpTextureDesc)
+            }
+            return _metalTexture
+        }
+        set {
+            _metalTexture = newValue
+        }
+    }
+    private var _metalTexture: MTLTexture?
     var transpose: [Int] = [0, 1, 2, 3]
+
+    public var device: MTLDevice
     
     func elementCount() -> Int {
-        return metalTexture.width * metalTexture.height * metalTexture.arrayLength * 4
-    }
-    
-    func toTensor() -> [Float32] {
-        guard  padToFourDim.cout() == 4 else {
-            fatalError("- not support -")
+        if let tmpMetalTexture = _metalTexture {
+            return tmpMetalTexture.width * tmpMetalTexture.height * tmpMetalTexture.arrayLength * 4
+        } else if let tmpTextureDesc = textureDesc {
+            return tmpTextureDesc.width * tmpTextureDesc.height * tmpTextureDesc.arrayLength * 4
+        } else {
+            paddleMobileLog("texture desc nil, using tensorDim.numel() as element count may cause trouble", logLevel: .Warning)
+            return tensorDim.numel()
         }
-        return metalTexture.toTensor(dim: (n: dim[0], c: dim[3], h: dim[1], w: dim[2]))
     }
     
-    func realNHWC() -> [Float32] {
+    func toTensor() throws -> [Float32] {
         guard padToFourDim.cout() == 4 else {
-            fatalError(" - not support - ")
+            throw PaddleMobileError.makeError(type: .netError, msg: "Texture toTensor padToFourDim count must be 4")
         }
-        return metalTexture.realNHWC(dim: (n: padToFourDim[0], h: padToFourDim[1], w: padToFourDim[2], c: padToFourDim[3]))
+        guard let tmpMetalTexture = metalTexture else {
+            throw PaddleMobileError.makeError(type: .netError, msg: "metaltexture nil")
+        }
+        return try tmpMetalTexture.toTensor(dim: (n: dim[0], c: dim[3], h: dim[1], w: dim[2]))
     }
     
+    func realNHWC() throws -> [Float32] {
+        guard padToFourDim.cout() == 4 else {
+            throw PaddleMobileError.makeError(type: .netError, msg: "Texture toTensor padToFourDim count must be 4")
+        }
+        guard let tmpMetalTexture = metalTexture else {
+            throw PaddleMobileError.makeError(type: .netError, msg: "metaltexture nil")
+        }
+        return try tmpMetalTexture.realNHWC(dim: (n: padToFourDim[0], h: padToFourDim[1], w: padToFourDim[2], c: padToFourDim[3]))
+    }
+
     public func initTexture(device: MTLDevice, inTranspose: [Int] = [0, 1, 2, 3], computePrecision: Precision = .Float16) throws {
         transpose = inTranspose
         for i in 0..<(4 - tensorDim.cout()) {
             if i != inTranspose[i] {
-//                fatalError()
-                throw PaddleMobileError.loaderError(message: " dims error ")
+                throw PaddleMobileError.makeError(type: .loaderError, msg: "dims error")
             }
         }
-        
         
         let newDim = transpose.map { padToFourDim[$0] }
         let newLayout = transpose.map { layout.layoutWithDim[$0] }
@@ -132,8 +156,7 @@ public class Texture: Tensorial {
             tmpTextureDes.height = newDim[2]
             tmpTextureDes.arrayLength = 1
         default:
-//            fatalError("unreachable")
-            throw PaddleMobileError.loaderError(message: " unreachable ")
+            throw PaddleMobileError.makeError(type: .loaderError, msg: "unreachable")
         }
         
         if computePrecision == .Float16 {
@@ -161,10 +184,7 @@ public class Texture: Tensorial {
         tmpTextureDes.usage = [.shaderRead, .shaderWrite]
         tmpTextureDes.storageMode = .shared
         textureDesc = tmpTextureDes
-        guard let inTexture =  device.makeTexture(descriptor: tmpTextureDes) else {
-            throw PaddleMobileError.loaderError(message: " create texture is nil ")
-        }
-        metalTexture =  inTexture
+        _metalTexture = nil
     }
     
     public func updateDims(inTensorDim: Dim, inDim: Dim) throws {
@@ -179,8 +199,7 @@ public class Texture: Tensorial {
             fourDimNum.append(contentsOf: inDim.dims)
             fourDim = Dim.init(inDim: fourDimNum)
         } else {
-//            fatalError(" not support ")
-            throw PaddleMobileError.loaderError(message: " not support ")
+            throw PaddleMobileError.makeError(type: .loaderError, msg: "not support")
         }
         
         tensorDim = inTensorDim
@@ -189,10 +208,11 @@ public class Texture: Tensorial {
     }
     
     // 初始化时 dim padToFourDim 模型中的维度（一般来说 nchw），前面补全0
-    init(device: MTLDevice, inDim: Dim) {
+    init(device: MTLDevice, inDim: Dim) throws {
         if GlobalConfig.shared.debug {
             print(" in dim > \(inDim)")
         }
+        self.device = device
         var fourDim: Dim
         if inDim.cout() == 4 {
             fourDim = inDim
@@ -204,7 +224,7 @@ public class Texture: Tensorial {
             fourDimNum.append(contentsOf: inDim.dims)
             fourDim = Dim.init(inDim: fourDimNum)
         } else {
-            fatalError(" not support ")
+            throw PaddleMobileError.makeError(type: .netError, msg: "Texture init: dim count \(inDim) unsupported")
         }
         tensorDim = inDim
         dim = fourDim
@@ -223,9 +243,20 @@ extension Texture {
     public var debugDescription: String{
         var str = ""
         str += "Dim: \(dim) \n value:[ "
-        str += "\(metalTexture.description)"
+        str += "\(_metalTexture?.description ?? "")"
         str += " ]"
         return str
     }
     
+    public func delog() {
+        if self.transpose == [0, 2, 3, 1] {
+            let outputArray = (try? self.metalTexture?.toTensor(dim: (n: self.padToFourDim[0], c: self.padToFourDim[1], h: self.padToFourDim[2], w: self.padToFourDim[3]))) ?? []
+            print(outputArray?.strideArray() ?? [])
+        } else if self.transpose == [0, 1, 2, 3] {
+            let outputArray = (try? self.realNHWC()) ?? []
+            print(outputArray.strideArray())
+        } else {
+            paddleMobileLog("unsupported transpose: \(self.transpose)", logLevel: .Warning)
+        }
+    }
 }

@@ -17,13 +17,9 @@ import Foundation
 class FlattenParam<P: PrecisionProtocol>: OpParam {
     //typealias ParamPrecisionType = P
     required init(opDesc: PMOpDesc, inScope: Scope) throws {
-        do {
-            input = try FlattenParam.inputX(inputs: opDesc.inputs, from: inScope)
-            output = try FlattenParam.outputOut(outputs: opDesc.outputs, from: inScope)
+        input = try FlattenParam.inputX(inputs: opDesc.inputs, from: inScope)
+        output = try FlattenParam.outputOut(outputs: opDesc.outputs, from: inScope)
 //            axis = try FlattenParam.getAttr(key: "axis", attrs: opDesc.attrs)
-        } catch let error {
-            throw error
-        }
     }
     var input: Texture
     var output: Texture
@@ -40,37 +36,26 @@ class FlattenOp<P: PrecisionProtocol>: Operator<FlattenKernel<P>, FlattenParam<P
     }
     
     func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
-        do {
-            try kernel.compute(commandBuffer: buffer, param: para)
-        } catch let error {
-            throw error
-        }
+        try kernel.compute(commandBuffer: buffer, param: para)
     }
     
     func delogOutput() {
         print(" \(type) output: ")
-        let device = para.output.metalTexture!.device
-        let outputArray: [Float32] = device.texture2tensor(texture: para.output.metalTexture, dim: para.output.tensorDim.dims, transpose: para.output.transpose)
-        print(outputArray.strideArray())
+        para.output.delog()
     }
-    
 }
 
 class Flatten2Param<P: PrecisionProtocol>: OpParam {
     required init(opDesc: PMOpDesc, inScope: Scope) throws {
-        do {
-            input = try Flatten2Param.inputX(inputs: opDesc.inputs, from: inScope)
-            output = try Flatten2Param.outputOut(outputs: opDesc.outputs, from: inScope)
-            
-            let inDims = input.dim
-            guard inDims.cout() == 4 else {
-                fatalError("flatten2 can't handle dims not equal to 4")
-            }
-            let outDim = [inDims[0] * inDims[1], inDims[2] * inDims[3]]
-            output.dim = Dim.init(inDim: outDim)
-        } catch let error {
-            throw error
+        input = try Flatten2Param.inputX(inputs: opDesc.inputs, from: inScope)
+        output = try Flatten2Param.outputOut(outputs: opDesc.outputs, from: inScope)
+        
+        let inDims = input.dim
+        guard inDims.cout() == 4 else {
+            throw PaddleMobileError.makeError(type: .netError, msg: "flatten2 can't handle dims not equal to 4")
         }
+        let outDim = [inDims[0] * inDims[1], inDims[2] * inDims[3]]
+        output.dim = Dim.init(inDim: outDim)
     }
     var input: Texture
     var output: Texture
@@ -83,17 +68,11 @@ class Flatten2Op<P: PrecisionProtocol>: Operator<Flatten2Kernel<P>, Flatten2Para
     }
     
     func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
-        do {
-            try kernel.compute(commandBuffer: buffer, param: para)
-        } catch let error {
-            throw error
-        }
+        try kernel.compute(commandBuffer: buffer, param: para)
     }
     
     func delogOutput() {
         print(" \(type) output: ")
-        let device = para.output.metalTexture!.device
-        let outputArray: [Float32] = device.texture2tensor(texture: para.output.metalTexture, dim: para.output.tensorDim.dims, transpose: para.output.transpose)
-        print(outputArray.strideArray())
+        para.output.delog()
     }
 }

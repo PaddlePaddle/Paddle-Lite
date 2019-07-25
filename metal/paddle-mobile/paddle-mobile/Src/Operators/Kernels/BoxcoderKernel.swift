@@ -19,32 +19,47 @@ struct BoxcoderMetalParam {
 
 class BoxcoderKernel<P: PrecisionProtocol>: Kernel, Computable{
     func compute(commandBuffer: MTLCommandBuffer, param: BoxcoderParam<P>) throws {
-        guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
-            throw PaddleMobileError.predictError(message: " encode is nil")
+        guard let tempPipline = pipline else {
+            throw PaddleMobileError.makeError(type: .predictError, msg: "pipline is nil")
         }
-        encoder.setTexture(param.priorBox.metalTexture, index: 0)
-        encoder.setTexture(param.priorBoxVar.metalTexture, index: 1)
-        encoder.setTexture(param.targetBox.metalTexture, index: 2)
-        encoder.setTexture(param.output.metalTexture, index: 3)
-        var bmp = BoxcoderMetalParam.init()
-        encoder.setBytes(&bmp, length: MemoryLayout<BoxcoderMetalParam>.size, index: 0)
-        encoder.dispatch(computePipline: pipline, outTexture: param.output.metalTexture)
-        encoder.endEncoding()
+        guard let priorBoxMetalTexture = param.priorBox.metalTexture else {
+            throw PaddleMobileError.makeError(type: .predictError, msg: "priorBox metaltexture is nil")
+        }
+        guard let priorBoxVarMetalTexture = param.priorBoxVar.metalTexture else {
+            throw PaddleMobileError.makeError(type: .predictError, msg: "priorBoxVar metaltexture is nil")
+        }
+        guard let targetBoxMetalTexture = param.targetBox.metalTexture else {
+            throw PaddleMobileError.makeError(type: .predictError, msg: "input metaltexture is nil")
+        }
+        guard let outputMetalTexture = param.output.metalTexture else {
+            throw PaddleMobileError.makeError(type: .predictError, msg: "output metaltexture is nil")
+        }
+        do {
+            guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
+                throw PaddleMobileError.makeError(type: .predictError, msg: "encoder is nil")
+            }
+            defer {
+                encoder.endEncoding()
+            }
+            encoder.setTexture(priorBoxMetalTexture, index: 0)
+            encoder.setTexture(priorBoxVarMetalTexture, index: 1)
+            encoder.setTexture(targetBoxMetalTexture, index: 2)
+            encoder.setTexture(outputMetalTexture, index: 3)
+            var bmp = BoxcoderMetalParam.init()
+            encoder.setBytes(&bmp, length: MemoryLayout<BoxcoderMetalParam>.size, index: 0)
+            try encoder.dispatch(computePipline: tempPipline, outTexture: outputMetalTexture)
+        }
     }
     
     required init(device: MTLDevice, param: BoxcoderParam<P>, initContext: InitContext) throws {
-        do {
-            try param.output.initTexture(device: device, inTranspose: [0, 3, 1, 2], computePrecision: GlobalConfig.shared.computePrecision)
-        } catch let error {
-            throw error
-        }
+        try param.output.initTexture(device: device, inTranspose: [0, 3, 1, 2], computePrecision: GlobalConfig.shared.computePrecision)
         
         if GlobalConfig.shared.computePrecision == .Float32 {
-            super.init(device: device, inFunctionName: "boxcoder_float", initContext: initContext)
+            try super.init(device: device, inFunctionName: "boxcoder_float", initContext: initContext)
         } else if GlobalConfig.shared.computePrecision == .Float16 {
-            super.init(device: device, inFunctionName: "boxcoder_half", initContext: initContext)
+            try super.init(device: device, inFunctionName: "boxcoder_half", initContext: initContext)
         } else {
-            fatalError()
+            throw PaddleMobileError.makeError(type: .predictError, msg: "unsupported compute precision: \(GlobalConfig.shared.computePrecision)")
         }
     }
     

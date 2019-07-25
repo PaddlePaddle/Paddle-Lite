@@ -38,7 +38,7 @@ class ViewController: UIViewController {
             print(resutText)
             self.resultTextView.text = resutText
         } else {
-            fatalError(" load error ")
+            print("load fail!!!")
         }
     }
     
@@ -81,7 +81,8 @@ extension ViewController:  UIImagePickerControllerDelegate, UINavigationControll
     func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [String : Any]) {
         picker.dismiss(animated: true){[weak self] in
             guard let sSelf = self, let image =  info["UIImagePickerControllerOriginalImage"] as? UIImage else {
-                fatalError("no image")
+                print("no image!!!")
+                return
             }
             sSelf.selectImageView.image = image
             sSelf.runner.getTexture(image: image.cgImage!, getTexture: { (texture) in

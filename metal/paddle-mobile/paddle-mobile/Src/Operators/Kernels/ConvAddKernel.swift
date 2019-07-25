@@ -19,7 +19,7 @@ class ConvAddKernel<P: PrecisionProtocol>: ConvAddReluKernel<P> {
     override class func hasAddOp() -> Bool {
         return true
     }
-    
+
     override class func hasReluOp() -> Bool {
         return false
     }

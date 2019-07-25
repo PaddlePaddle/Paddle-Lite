@@ -29,15 +29,15 @@ extension Tensorial {
 }
 
 class DataConverter<P: PrecisionProtocol> {
-    func convert(from: UnsafeMutablePointer<P>, to: UnsafeMutablePointer<P>, fromDim: Dim) {
-        fatalError(" need imp")
+    func convert(from: UnsafeMutablePointer<P>, to: UnsafeMutablePointer<P>, fromDim: Dim) throws {
+        throw PaddleMobileError.makeError(type: .memoryError, msg: "DataConverter convert need imp")
     }
     
-    func getToDim(fromDim: Dim, layout: DataLayout) -> (dim: Dim, layout: DataLayout) {
-        fatalError(" need imp")
+    func getToDim(fromDim: Dim, layout: DataLayout) throws -> (dim: Dim, layout: DataLayout) {
+        throw PaddleMobileError.makeError(type: .memoryError, msg: "DataConverter getToDim need imp")
     }
     
-    func capacity(fromDim: Dim) -> Int? {
+    func capacity(fromDim: Dim) throws -> Int? {
         return nil
     }
 }
@@ -51,7 +51,7 @@ class MPSPointerConverter<P: PrecisionProtocol>: DataConverter<P>{
     /// - Parameters:
     ///   - from: from pointer
     ///   - to: to pointer
-    override func convert(from: UnsafeMutablePointer<P>, to: UnsafeMutablePointer<P>, fromDim: Dim) {
+    override func convert(from: UnsafeMutablePointer<P>, to: UnsafeMutablePointer<P>, fromDim: Dim) throws {
         let outputChannels = fromDim[0]
         let inputChannels = fromDim[1]
         let kernelHeight = fromDim[2]
@@ -69,10 +69,10 @@ class MPSPointerConverter<P: PrecisionProtocol>: DataConverter<P>{
         }
     }
     
-    override func getToDim(fromDim: Dim, layout: DataLayout) -> (dim: Dim, layout: DataLayout) {
+    override func getToDim(fromDim: Dim, layout: DataLayout) throws -> (dim: Dim, layout: DataLayout) {
         
         if layout != DataLayout.NCHW() {
-            fatalError("not support")
+            throw PaddleMobileError.makeError(type: .memoryError, msg: "MPSPointerConverter layout other than NCHW unsupported")
         }
         
         let outputChannels = fromDim[0]
@@ -86,13 +86,13 @@ class MPSPointerConverter<P: PrecisionProtocol>: DataConverter<P>{
 }
 
 class WinogradPointerConverter<P: PrecisionProtocol>: DataConverter<P>{
-    override func convert(from: UnsafeMutablePointer<P>, to: UnsafeMutablePointer<P>, fromDim: Dim) {
+    override func convert(from: UnsafeMutablePointer<P>, to: UnsafeMutablePointer<P>, fromDim: Dim) throws {
         let N = fromDim[0]
         let C = fromDim[1]
         let H = fromDim[2]
         let W = fromDim[3]
         if H != 3 || W != 3 {
-            fatalError("not support")
+            throw PaddleMobileError.makeError(type: .memoryError, msg: "WinogradPointerConverter convert H and W must equal to 3")
         }
         for n in 0..<N {
             for c in 0..<C {
@@ -101,8 +101,8 @@ class WinogradPointerConverter<P: PrecisionProtocol>: DataConverter<P>{
                 func f(_ h: Int, _ w: Int) -> P {
                     return from[fromOffset + h * W + w]
                 }
-                let c05 = P(Float(0.5))
-                let c025 = P(Float(0.25))
+                let c05 = try P(Float(0.5))
+                let c025 = try P(Float(0.25))
                 to[toOffset] = f(0, 0);
                 to[toOffset + 1] = c05 * f(0, 0)
                 to[toOffset + 1] = to[toOffset + 1] + c05 * f(0, 1)
@@ -171,28 +171,28 @@ class WinogradPointerConverter<P: PrecisionProtocol>: DataConverter<P>{
         }
     }
     
-    override func getToDim(fromDim: Dim, layout: DataLayout) -> (dim: Dim, layout: DataLayout) {
+    override func getToDim(fromDim: Dim, layout: DataLayout) throws -> (dim: Dim, layout: DataLayout) {
         if layout != DataLayout.NCHW() {
-            fatalError("not support")
+            throw PaddleMobileError.makeError(type: .memoryError, msg: "WinogradPointerConverter getToDim only support NCHW")
         }
         let N = fromDim[0]
         let C = fromDim[1]
         let H = fromDim[2]
         let W = fromDim[3]
         if H != 3 || W != 3 {
-            fatalError("not support")
+            throw PaddleMobileError.makeError(type: .memoryError, msg: "WinogradPointerConverter getToDim H and W must equal to 3")
         }
         let toDim = Dim.init(inDim: [N, C, H + 1, W + 1])
         return (dim: toDim, layout: DataLayout.NCHW())
     }
     
-    override func capacity(fromDim: Dim) -> Int? {
+    override func capacity(fromDim: Dim) throws -> Int? {
         let N = fromDim[0]
         let C = fromDim[1]
         let H = fromDim[2]
         let W = fromDim[3]
         if H != 3 || W != 3 {
-            fatalError("not support")
+            throw PaddleMobileError.makeError(type: .memoryError, msg: "WinogradPointerConverter capacity H and W must equal to 3")
         }
         return N * C * (H + 1) * (W + 1)
     }
@@ -253,12 +253,17 @@ class Tensor<P: PrecisionProtocol>: Tensorial {
         self.originDimsCount = originDimsCount ?? inDim.cout()
     }
     
-    func convert(converter: DataConverter<P>) -> UnsafeMutablePointer<P> {
-        let toCapacity = converter.capacity(fromDim: dim) ?? numel()
+    func convert(converter: DataConverter<P>) throws -> UnsafeMutablePointer<P> {
+        let toCapacity = try converter.capacity(fromDim: dim) ?? numel()
         let to = UnsafeMutablePointer<P>.allocate(capacity: toCapacity)
-        converter.convert(from: data.pointer, to: to, fromDim: dim)
+        do {
+            try converter.convert(from: data.pointer, to: to, fromDim: dim)
+        } catch let error {
+            to.deallocate()
+            throw error
+        }
         data = Data.init(inCount: toCapacity, inPointer: to)
-        let dimAndLayout = converter.getToDim(fromDim: dim, layout: layout)
+        let dimAndLayout = try converter.getToDim(fromDim: dim, layout: layout)
         dim = dimAndLayout.dim
         layout = dimAndLayout.layout
         return to
@@ -289,13 +294,13 @@ class Tensor<P: PrecisionProtocol>: Tensorial {
         layout = to
     }
     
-    func initBuffer(device: MTLDevice, precision computePrecision: Precision = .Float16, padWhenOneC: Bool = false, convertToNHWC: Bool = true, withTranspose: Bool = false) {
+    func initBuffer(device: MTLDevice, precision computePrecision: Precision = .Float16, padWhenOneC: Bool = false, convertToNHWC: Bool = true, withTranspose: Bool = false) throws {
         if convertToNHWC {
             convert(to: DataLayout.NHWC())
         }
         
-        if P.precisionType == .Float16 && computePrecision == .Float32{
-            fatalError(" 不支持: 16位模型不能按照 32 位进行运算")
+        if P.precisionType == .Float16 && computePrecision == .Float32 {
+            throw PaddleMobileError.makeError(type: .predictError, msg: "Float16 model can not compute in Float32 precision")
         }
         
         if withTranspose {
@@ -338,7 +343,7 @@ class Tensor<P: PrecisionProtocol>: Tensorial {
                         case .Float32:
                             buffer?.contents().copyMemory(from: data.pointer, byteCount: count * MemoryLayout<P>.stride)
                         case .Float16:
-                            float32ToFloat16(input: data.pointer as! UnsafeMutablePointer<Float32>, output: buffer.contents(), count: count)
+                            try float32ToFloat16(input: data.pointer as! UnsafeMutablePointer<Float32>, output: buffer.contents(), count: count)
                         }
                     }
                 } else if C == 1 && !padWhenOneC {
@@ -351,12 +356,16 @@ class Tensor<P: PrecisionProtocol>: Tensorial {
                         case .Float32:
                             buffer?.contents().copyMemory(from: data.pointer, byteCount: numel() * MemoryLayout<P>.stride)
                         case .Float16:
-                            float32ToFloat16(input: data.pointer as! UnsafeMutablePointer<Float32>, output: buffer.contents(), count: numel())
+                            try float32ToFloat16(input: data.pointer as! UnsafeMutablePointer<Float32>, output: buffer.contents(), count: numel())
                         }
                     }
                 } else {
                     buffer = device.makeBuffer(length: count * precisionSize)
                     let convertedPointer = UnsafeMutablePointer<P>.allocate(capacity: count)
+                    defer {
+                        convertedPointer.deinitialize(count: count)
+                        convertedPointer.deallocate()
+                    }
                     var tmpPointer = data.pointer
                     var dstPtr = convertedPointer
                     for _ in 0..<dim[0] * dim[1] * dim[2] {
@@ -379,11 +388,9 @@ class Tensor<P: PrecisionProtocol>: Tensorial {
                         case .Float32:
                             buffer?.contents().copyMemory(from: convertedPointer, byteCount: count * MemoryLayout<P>.stride)
                         case .Float16:
-                            float32ToFloat16(input: convertedPointer as! UnsafeMutablePointer<Float32>, output: buffer.contents(), count: count)
+                            try float32ToFloat16(input: convertedPointer as! UnsafeMutablePointer<Float32>, output: buffer.contents(), count: count)
                         }
                     }
-                    convertedPointer.deinitialize(count: count)
-                    convertedPointer.deallocate()
                 }
             } else {
                 let C = dim[3]
@@ -400,14 +407,18 @@ class Tensor<P: PrecisionProtocol>: Tensorial {
                         case .Float32:
                             buffer?.contents().copyMemory(from: data.pointer, byteCount: count * MemoryLayout<P>.stride)
                         case .Float16:
-                            float32ToFloat16(input: data.pointer as! UnsafeMutablePointer<Float32>, output: buffer.contents(), count: count)
+                            try float32ToFloat16(input: data.pointer as! UnsafeMutablePointer<Float32>, output: buffer.contents(), count: count)
                         }
                     }
                 } else if C == 1 {
-                    fatalError(" not support ")
+                    throw PaddleMobileError.makeError(type: .netError, msg: "Tensor initBuffer channel can not be 1")
                 } else {
                     buffer = device.makeBuffer(length: count * precisionSize)
                     let convertedPointer = UnsafeMutablePointer<P>.allocate(capacity: count)
+                    defer {
+                        convertedPointer.deinitialize(count: count)
+                        convertedPointer.deallocate()
+                    }
                     var tmpPointer = data.pointer
                     var dstPtr = convertedPointer
                     for _ in 0..<dim[0] * dim[1] * dim[2] {
@@ -430,11 +441,9 @@ class Tensor<P: PrecisionProtocol>: Tensorial {
                         case .Float32:
                             buffer?.contents().copyMemory(from: convertedPointer, byteCount: count * MemoryLayout<P>.stride)
                         case .Float16:
-                            float32ToFloat16(input: convertedPointer as! UnsafeMutablePointer<Float32>, output: buffer.contents(), count: count)
+                            try float32ToFloat16(input: convertedPointer as! UnsafeMutablePointer<Float32>, output: buffer.contents(), count: count)
                         }
                     }
-                    convertedPointer.deinitialize(count: count)
-                    convertedPointer.deallocate()
                 }
             }
         } else if dim.cout() == 1 {
@@ -449,17 +458,17 @@ class Tensor<P: PrecisionProtocol>: Tensorial {
                 case .Float32:
                     buffer?.contents().copyMemory(from: data.pointer, byteCount: num * MemoryLayout<P>.stride)
                 case .Float16:
-                    float32ToFloat16(input: data.pointer as! UnsafeMutablePointer<Float32>, output: buffer.contents(), count: num)
+                    try float32ToFloat16(input: data.pointer as! UnsafeMutablePointer<Float32>, output: buffer.contents(), count: num)
                 }
             }
         } else {
-            fatalError(" not support !")
+            throw PaddleMobileError.makeError(type: .netError, msg: "not support tensor initBuffer dim count \(dim.cout())")
         }
-        //TODO: release
         data.release()
     }
     
-    var n: Int {
+    
+    var n: Int? {
         get {
             if dim.cout() == 4 {
                 if layout == DataLayout.NCHW() {
@@ -467,15 +476,15 @@ class Tensor<P: PrecisionProtocol>: Tensorial {
                 } else if layout == DataLayout.NHWC() {
                     return dim[0]
                 } else {
-                    fatalError(" unsupport ")
+                    return nil
                 }
             } else {
-                fatalError()
+                return nil
             }
         }
     }
-    
-    var width: Int {
+
+    var width: Int? {
         get {
             if dim.cout() == 4 {
                 if layout == DataLayout.NHWC() {
@@ -483,15 +492,15 @@ class Tensor<P: PrecisionProtocol>: Tensorial {
                 } else if layout == DataLayout.NCHW() {
                     return dim[3]
                 } else {
-                    fatalError(" unsupport ")
+                    return nil
                 }
             } else {
-                fatalError()
+                return nil
             }
         }
     }
-    
-    var height: Int {
+
+    var height: Int? {
         get {
             if dim.cout() == 4 {
                 if layout == DataLayout.NHWC() {
@@ -499,15 +508,15 @@ class Tensor<P: PrecisionProtocol>: Tensorial {
                 } else if layout == DataLayout.NCHW() {
                     return dim[2]
                 } else {
-                    fatalError(" unsupport ")
+                    return nil
                 }
             } else {
-                fatalError()
+                return nil
             }
         }
     }
-    
-    var channel: Int {
+
+    var channel: Int? {
         get {
             if dim.cout() == 4 {
                 if layout == DataLayout.NHWC() {
@@ -515,10 +524,10 @@ class Tensor<P: PrecisionProtocol>: Tensorial {
                 } else if layout == DataLayout.NCHW() {
                     return dim[1]
                 } else {
-                    fatalError(" unsupport ")
+                    return nil
                 }
             } else {
-                fatalError()
+                return nil
             }
         }
     }
@@ -559,14 +568,14 @@ extension Tensor {
     }
     
     func logDataPointer(header: String = "") {
-        print(header)
+        paddleMobileLog(header)
         var str = ""
         str += "data count: \(data.count) \n"
         str += "dim: \(dim) \n"
         for i in 0..<numel() {
             str += " \(data.pointer[i])"
         }
-        print(str)
+        paddleMobileLog(str)
     }
     
     var description: String {
