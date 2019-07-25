@@ -40,7 +40,6 @@ void ElementwiseAddCompute::Run() {
   input_y_.flush();
   pe_.dispatch();
   output_.invalidate();
-  // output_.fill_to_tensorlite(param.Out);
 }
 
 void ElementwiseAddActivationCompute::PrepareForRun() {
