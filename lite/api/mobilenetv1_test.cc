@@ -107,6 +107,7 @@ TEST(MobileNetV1, test_arm) {
   TestModel(valid_places, Place({TARGET(kARM), PRECISION(kFloat)}));
 }
 
+#ifdef LITE_WITH_OPENCL
 TEST(MobileNetV1, test_opencl) {
   std::vector<Place> valid_places({
       Place{TARGET(kHost), PRECISION(kFloat)},
@@ -116,6 +117,7 @@ TEST(MobileNetV1, test_opencl) {
 
   TestModel(valid_places, Place({TARGET(kOpenCL), PRECISION(kFloat)}));
 }
+#endif  // LITE_WITH_OPENCL
 
 }  // namespace lite
 }  // namespace paddle

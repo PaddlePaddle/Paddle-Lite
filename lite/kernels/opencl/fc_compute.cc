@@ -29,8 +29,10 @@ class FcCompute
  public:
   using param_t = operators::FcParam;
 
-  void PrepareForRun() {
+  void PrepareForRun() override {
     kernel_func_name_ = "fc";
+    auto& context = ctx_->As<OpenCLContext>();
+    context.cl_context()->AddKernel(kernel_func_name_, "buffer/fc_kernel.cl");
 
     const auto& param = *param_.get_mutable<param_t>();
     const auto x_dims = param.input->dims();
@@ -92,7 +94,7 @@ class FcCompute
 
  private:
   int m_, n_, k_;
-  std::string kernel_func_name_;
+  std::string kernel_func_name_{};
 };
 
 }  // namespace opencl

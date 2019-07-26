@@ -259,6 +259,11 @@ struct FusionElementwiseActivationGradParam : public ElementwiseGradParam {
 /// ----------------------- activation operators ----------------------
 struct ActivationParam {
   const lite::Tensor* X{};
+  float Leaky_relu_slope{0};            // leaky_relu param
+  float Relu_clipped_coef{6};           // relu_clipped param
+  bool Prelu_channel_shared{false};     // prelu param
+  lite::Tensor* Prelu_channel_slope{};  // prelu param
+  float Swish_coef;                     // swish param
   lite::Tensor* Out{};
 };
 
@@ -357,6 +362,20 @@ struct Pad2dParam {
   float _pad_value = 0.f;
 };
 
+///----------------------- argmax operators ----------------------
+struct ArgmaxParam {
+  lite::Tensor* X{};
+  lite::Tensor* Out{};
+  int Axis{0};
+};
+
+///----------------------- axpy operators ----------------------
+struct AxpyParam {
+  lite::Tensor* Scale{};
+  lite::Tensor* X{};
+  lite::Tensor* Bias{};
+  lite::Tensor* Out{};
+};
 /// ----------------------- GRU unit operators ----------------------f
 struct GRUUnitParam {
   enum ActType { identity, sigmoid, tanh, relu };
@@ -410,7 +429,6 @@ struct NormParam {
   int axis{1};
   float epsilon{1e-10};
 };
-
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle

@@ -63,7 +63,7 @@ class Context<TargetType::kHost> {
   // NOTE: InitOnce should only be used by ContextScheduler
   void InitOnce() {}
 
-  void CopySharedTo(const HostContext* ctx) {}
+  void CopySharedTo(HostContext* ctx) {}
 
   std::string name() const { return "HostContext"; }
 };
@@ -74,7 +74,7 @@ class Context<TargetType::kNPU> {
  public:
   Context() {}
   explicit Context(const NPUContext& ctx);
-  void CopySharedTo(const NPUContext* ctx) {}
+  void CopySharedTo(NPUContext* ctx) {}
 
   NPUContext& operator=(const NPUContext& ctx) {}
   std::string name() const { return "NPUContext"; }
@@ -96,7 +96,7 @@ class Context<TargetType::kARM> {
   // NOTE: InitOnce should only be used by ContextScheduler
   void InitOnce() { DeviceInfo::Init(); }
 
-  void CopySharedTo(const ARMContext* ctx) {}
+  void CopySharedTo(ARMContext* ctx) {}
 
   void SetRunMode(PowerMode mode, int threads) {
     return DeviceInfo::Global().SetRunMode(mode, threads);
@@ -137,7 +137,7 @@ class Context<TargetType::kFPGA> {
 
   FPGAContext& operator=(const FPGAContext& ctx) {}
 
-  void CopySharedTo(const FPGAContext* ctx) {}
+  void CopySharedTo(FPGAContext* ctx) {}
 
   std::string name() const { return "FPGAContext"; }
 };
@@ -153,7 +153,7 @@ class Context<TargetType::kCUDA> {
     cublas_fp32_ = std::make_shared<lite::cuda::Blas<float>>();
   }
 
-  void CopySharedTo(const CUDAContext* ctx) {
+  void CopySharedTo(CUDAContext* ctx) {
     CHECK(ctx);
     CHECK(cublas_fp32_) << "cublas_fp32 should be set first";
     ctx->cublas_fp32_ = cublas_fp32_;
@@ -209,7 +209,7 @@ class Context<TargetType::kX86> {
   // NOTE: InitOnce should only be used by ContextScheduler
   void InitOnce() {}
 
-  void CopySharedTo(const X86Context* ctx) {}
+  void CopySharedTo(X86Context* ctx) {}
 
   std::string name() const { return "X86Context"; }
 
@@ -223,7 +223,7 @@ class Context<TargetType::kX86> {
 #ifdef LITE_WITH_OPENCL
 template <>
 class Context<TargetType::kOpenCL> {
-  mutable std::shared_ptr<CLContext> cl_context_;
+  std::shared_ptr<CLContext> cl_context_;
 
  public:
   CLContext* cl_context() { return cl_context_.get(); }
@@ -234,26 +234,9 @@ class Context<TargetType::kOpenCL> {
     CLRuntime::Global()->set_cl_path(FLAGS_cl_path);
 
     cl_context_ = std::make_shared<CLContext>();
-
-    PrepareKernels();
   }
 
-  void CopySharedTo(const OpenCLContext* ctx) {
-    ctx->cl_context_ = cl_context_;
-  }
-
- private:
-  void PrepareKernels() {
-    cl_context_->AddKernel("elementwise_add",
-                           "buffer/elementwise_add_kernel.cl");
-    cl_context_->AddKernel("pool_max", "buffer/pool_kernel.cl");
-    cl_context_->AddKernel("pool_avg", "buffer/pool_kernel.cl");
-    cl_context_->AddKernel("mat_mul", "buffer/mat_mul_kernel.cl");
-    cl_context_->AddKernel("fc", "buffer/fc_kernel.cl");
-    cl_context_->AddKernel("relu", "buffer/relu_kernel.cl");
-    cl_context_->AddKernel("depthwise_conv2d",
-                           "buffer/depthwise_conv2d_kernel.cl");
-  }
+  void CopySharedTo(OpenCLContext* ctx) { ctx->cl_context_ = cl_context_; }
 };
 #endif
 

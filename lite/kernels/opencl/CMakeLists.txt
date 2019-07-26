@@ -7,6 +7,9 @@ set(cl_kernel_deps op_params cl_runtime cl_context cl_wrapper cl_target_wrapper)
 lite_cc_library(fc_opencl SRCS fc_compute.cc DEPS ${cl_kernel_deps})
 lite_cc_library(mul_opencl SRCS mul_compute.cc DEPS ${cl_kernel_deps})
 lite_cc_library(elementwise_add_opencl SRCS elementwise_add_compute.cc DEPS ${cl_kernel_deps})
+lite_cc_library(fusion_elementwise_add_activation_opencl
+        SRCS fusion_elementwise_add_activation_compute.cc
+        DEPS ${cl_kernel_deps})
 lite_cc_library(pool_opencl SRCS pool_compute.cc DEPS ${cl_kernel_deps})
 lite_cc_library(io_copy_compute_opencl SRCS io_copy_compute.cc DEPS ${tensor_lite} ${cl_kernel_deps})
 lite_cc_library(relu_opencl SRCS relu_compute.cc DEPS ${cl_kernel_deps})
@@ -43,6 +46,7 @@ lite_cc_test(test_depthwise_conv2d_opencl SRCS depthwise_conv2d_compute_test.cc
 set(opencl_kernels
         io_copy_compute_opencl
         elementwise_add_opencl
+        fusion_elementwise_add_activation_opencl
         pool_opencl
         relu_opencl
         mul_opencl

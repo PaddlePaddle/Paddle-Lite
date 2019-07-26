@@ -19,6 +19,9 @@
 #include <cmath>
 
 #include "lite/arm/math/activation.h"
+#include "lite/arm/math/argmax.h"
+#include "lite/arm/math/axpy.h"
+#include "lite/arm/math/col_im_transform.h"
 #include "lite/arm/math/concat.h"
 #include "lite/arm/math/conv_depthwise.h"
 #include "lite/arm/math/conv_direct.h"
@@ -26,6 +29,7 @@
 #include "lite/arm/math/conv_winograd.h"
 #include "lite/arm/math/dropout.h"
 #include "lite/arm/math/elementwise.h"
+#include "lite/arm/math/fill_bias_relu.h"
 #include "lite/arm/math/im2sequence.h"
 #include "lite/arm/math/negative.h"
 #include "lite/arm/math/norm.h"
