@@ -21,7 +21,7 @@
 #ifdef LITE_WITH_ARM
 #include "lite/arm/math/funcs.h"
 #endif
-
+#include "lite/core/context.h"
 #include "lite/core/tensor.h"
 int g_cluster = 0;
 int g_threads = 1;
