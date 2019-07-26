@@ -14,19 +14,25 @@ limitations under the License. */
 
 #pragma once
 
-inline float4 activation(float4 in
+#pragma OPENCL EXTENSION cl_khr_fp16 : enable
+
+#define GET_VEC_TYPE(type__, size__) type__##size__
+#define VECTORIZED_TYPE(type__, size__) GET_VEC_TYPE(type__, size__)
+#define CL_DTYPE4 VECTORIZED_TYPE(CL_DTYPE, 4)
+
+inline CL_DTYPE activation(CL_DTYPE in
 #ifdef PRELU
-                         ,
-                         float4 prelu_alpha
+                           ,
+                           CL_DTYPE prelu_alpha
 #endif
-                         ) {
-  float4 output;
+                           ) {
+  CL_DTYPE output;
 #ifdef PRELU
-  output = select(prelu_alpha * in, in, in >= (float4)0.0);
+  output = select(prelu_alpha * in, in, in >= (CL_DTYPE)0);
 #endif
 
 #ifdef RELU
-  output = fmax(in, (float4)(0.0f));
+  output = fmax(in, (CL_DTYPE)0);
 #endif
   return output;
 }

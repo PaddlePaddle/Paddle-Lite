@@ -12,6 +12,7 @@ lite_cc_library(batch_norm_op SRCS batch_norm_op.cc DEPS ${op_DEPS})
 lite_cc_library(feed_op SRCS feed_op.cc DEPS ${op_DEPS})
 lite_cc_library(fetch_op SRCS fetch_op.cc DEPS ${op_DEPS})
 lite_cc_library(io_copy_op SRCS io_copy_op.cc DEPS ${op_DEPS})
+lite_cc_library(io_copy_once_op SRCS io_copy_once_op.cc DEPS io_copy_op ${op_DEPS})
 lite_cc_library(activation_ops SRCS activation_ops.cc DEPS ${op_DEPS})
 lite_cc_library(elementwise_ops SRCS elementwise_ops.cc DEPS ${op_DEPS})
 lite_cc_library(fusion_elementwise_activation_ops SRCS fusion_elementwise_activation_ops.cc DEPS elementwise_ops ${op_DEPS})
@@ -55,6 +56,7 @@ set(ops
         gru_unit_op
         gru_op
         io_copy_op
+        io_copy_once_op
         elementwise_ops
         fusion_elementwise_activation_ops
         mean_op
