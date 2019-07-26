@@ -16,9 +16,10 @@
 #include <string>
 #include <vector>
 #include "lite/core/framework.pb.h"
+#include "lite/core/scope.h"
 #include "lite/core/tensor.h"
+#include "lite/model_parser/cpp/block_desc.h"
 #include "lite/utils/all.h"
-
 /*
  * This file contains all the argument parameter data structure for operators.
  */
@@ -409,6 +410,14 @@ struct NormParam {
   lite::Tensor* Out{};
   int axis{1};
   float epsilon{1e-10};
+};
+
+struct WhileParam {
+  const Scope* scope;
+  Tensor* cond;
+  cpp::BlockDesc* sub_block;
+  std::vector<Tensor*> x{};
+  std::vector<Tensor*> outs{};
 };
 
 }  // namespace operators

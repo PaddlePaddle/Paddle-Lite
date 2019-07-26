@@ -17,6 +17,7 @@
 #include "lite/model_parser/cpp/block_desc.h"
 #include "lite/model_parser/cpp/op_desc.h"
 #include "lite/model_parser/cpp/var_desc.h"
+#include "lite/operators/while_op.h"
 
 namespace paddle {
 namespace lite {
@@ -59,6 +60,11 @@ void Program::Build(const cpp::ProgramDesc& prog) {
     CHECK(op) << "no Op found for " << op_type;
     ops_.emplace_back(std::move(op));
     ops_.back()->Attach(op_desc, exec_scope_);
+    if (op_type == "while") {
+      auto sub_block_idx = op_desc.GetAttr<int32_t>("block_idx");
+      auto sub_block = program.GetBlock<cpp::BlockDesc>(sub_block_idx);
+      static_cast<operators::WhileOpLite*>(op.get())->SetSubBlock(sub_block);
+    }
   }
 }
 
