@@ -290,7 +290,9 @@ void test_func_sgemm_prepacked() {
 }
 
 int main(int argc, const char** argv) {
+#ifdef LITE_WITH_ARM
   paddle::lite::DeviceInfo::Init();
+#endif
   LOG(ERROR) << "usage: ./" << argv[0]
              << " [do_basic_test] [cluster]  [threads]  [m] [n]  [k] [transA] "
                 "[transB] [relu] [bias] [test iter] [compare result]";
