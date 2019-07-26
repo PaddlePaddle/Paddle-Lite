@@ -71,9 +71,9 @@ set(ops
         fake_dequant
         sgd_op
         uniform_random_op
-      	argmax_op
-	      axpy_op
-				conv_transpose_op
+        argmax_op
+        axpy_op
+        conv_transpose_op
         im2sequence_op
         sequence_softmax_op
         norm_op

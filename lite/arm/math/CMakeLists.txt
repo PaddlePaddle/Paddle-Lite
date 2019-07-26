@@ -81,9 +81,9 @@ if (NOT HAS_ARM_MATH_LIB_DIR)
       conv3x3s2_direct_int8.cc
       argmax.cc
       axpy.cc
-			fill_bias_relu.cc
-			col_im_transform.cc
-      im2sequence.cc
+      fill_bias_relu.cc
+      col_im_transform.cc
+			im2sequence.cc
       sequence_softmax.cc
       norm.cc
       pad2d.cc
