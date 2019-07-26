@@ -67,9 +67,7 @@ class Optimizer {
            "lite_fc_fuse_pass",              //
            "identity_scale_eliminate_pass",  //
 #ifdef LITE_WITH_LIGHT_WEIGHT_FRAMEWORK
-#ifndef LITE_WITH_OPENCL
            "lite_elementwise_add_activation_fuse_pass",  //
-#endif
 #endif
            "static_kernel_pick_pass",        //
            "variable_place_inference_pass",  //

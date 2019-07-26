@@ -29,9 +29,11 @@ class MulCompute
  public:
   using param_t = operators::MulParam;
 
-  void PrepareForRun() {
+  void PrepareForRun() override {
     kernel_func_name_ = "mat_mul";
-
+    auto& context = ctx_->As<OpenCLContext>();
+    context.cl_context()->AddKernel(kernel_func_name_,
+                                    "buffer/mat_mul_kernel.cl");
     const auto& param = *param_.get_mutable<param_t>();
     const auto* x_data = param.x->data<float>();
     const auto* y_data = param.y->data<float>();
@@ -99,7 +101,7 @@ class MulCompute
 
  private:
   int m_, n_, k_;
-  std::string kernel_func_name_;
+  std::string kernel_func_name_{};
 };
 
 }  // namespace opencl

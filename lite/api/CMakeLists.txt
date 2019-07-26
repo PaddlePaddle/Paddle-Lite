@@ -101,7 +101,7 @@ if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND WITH_TESTING)
        DEPS ${lite_model_test_DEPS}
        CL_DEPS ${opencl_kernels}
        ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/opencl
-            --model_dir=${LITE_MODEL_DIR}/mobilenet_v2 SERIAL)
+            --model_dir=${LITE_MODEL_DIR}/mobilenet_v2_relu SERIAL)
     add_dependencies(test_mobilenetv2 extern_lite_download_mobilenet_v2_relu_tar_gz)
 
     lite_cc_test(test_resnet50 SRCS resnet50_test.cc

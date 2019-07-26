@@ -27,6 +27,12 @@ class ReluCompute
  public:
   using param_t = operators::ActivationParam;
 
+  void PrepareForRun() override {
+    kernel_func_name_ = "relu";
+    auto& context = ctx_->As<OpenCLContext>();
+    context.cl_context()->AddKernel(kernel_func_name_, "buffer/relu_kernel.cl");
+  }
+
   void Run() override {
     auto& param = *param_.get_mutable<param_t>();
     const auto& x_dims = param.X->dims();
@@ -36,15 +42,16 @@ class ReluCompute
     CHECK(context.cl_context() != nullptr);
     auto* x_buf = param.X->data<float, cl::Buffer>();
     auto* out_buf = param.Out->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
-    auto kernel = context.cl_context()->GetKernel("relu");
+    auto kernel = context.cl_context()->GetKernel(kernel_func_name_);
     VLOG(4) << TargetToStr(param.X->target());
     VLOG(4) << TargetToStr(param.Out->target());
 
-    cl_int status = kernel.setArg(0, *x_buf);
+    int arg_idx = 0;
+    cl_int status = kernel.setArg(arg_idx, *x_buf);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(1, (const int)count);
+    status = kernel.setArg(++arg_idx, (const int)count);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(2, *out_buf);
+    status = kernel.setArg(++arg_idx, *out_buf);
     CL_CHECK_FATAL(status);
 
     auto global_work_size = cl::NDRange{count};
@@ -60,6 +67,9 @@ class ReluCompute
     status = event.wait();
     CL_CHECK_FATAL(status);
   }
+
+ private:
+  std::string kernel_func_name_{};
 };
 
 }  // namespace opencl

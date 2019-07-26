@@ -49,6 +49,8 @@ TEST(NPUBridges, MUL) {
   op_desc.SetInput("X", {"x"});
   op_desc.SetInput("Y", {"y"});
   op_desc.SetOutput("Out", {"out"});
+  op_desc.SetAttr("x_num_col_dims", 1);
+  op_desc.SetAttr("y_num_col_dims", 1);
 
   std::shared_ptr<operators::MulOpLite> mul_op =
       std::make_shared<operators::MulOpLite>("mul");

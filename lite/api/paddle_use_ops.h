@@ -25,7 +25,6 @@ USE_LITE_OP(scale);
 USE_LITE_OP(feed);
 USE_LITE_OP(fetch);
 USE_LITE_OP(io_copy);
-USE_LITE_OP(io_copy_once);
 USE_LITE_OP(elementwise_add)
 USE_LITE_OP(elementwise_sub)
 USE_LITE_OP(square)
@@ -48,6 +47,8 @@ USE_LITE_OP(sigmoid)
 USE_LITE_OP(tanh)
 USE_LITE_OP(swish)
 USE_LITE_OP(conv2d_transpose)
+USE_LITE_OP(negative)
+USE_LITE_OP(pad2d)
 
 USE_LITE_OP(fake_quantize_moving_average_abs_max);
 USE_LITE_OP(fake_dequantize_max_abs);

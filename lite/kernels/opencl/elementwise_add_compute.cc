@@ -12,95 +12,87 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/kernel.h"
+#include "lite/kernels/opencl/elementwise_add_compute.h"
 #include "lite/core/op_registry.h"
 #include "lite/opencl/cl_include.h"
-#include "lite/operators/op_params.h"
+#include "lite/utils/string.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace opencl {
 
-class ElementwiseAddCompute
-    : public KernelLite<TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW)> {
- public:
-  using param_t = operators::ElementwiseParam;
+void ElementwiseAddCompute::PrepareForRun() {
+  kernel_func_name_ = "elementwise_add";
+  auto& context = ctx_->As<OpenCLContext>();
+  context.cl_context()->AddKernel(
+      kernel_func_name_, "buffer/elementwise_add_kernel.cl", build_option_);
+  ele_param_ = param_.get_mutable<param_t>();
+  UpdateParams();
+}
 
-  void Run() override {
-    auto& param = *param_.get_mutable<param_t>();
-    auto axis = param.axis;
-    const auto& x_dims = param.X->dims();
-    const auto& y_dims = param.Y->dims();
-    const auto& out_dims = param.Out->dims();
-    if (axis < 0) {
-      axis = static_cast<int>(x_dims.size() - y_dims.size());
-    }
-    size_t batch = 1;
-    size_t channels = 1;
-    size_t num = 1;
-    for (int i = 0; i < axis; ++i) {
-      batch *= x_dims[i];
-    }
-    for (int i = 0; i < y_dims.size(); ++i) {
-      channels *= y_dims[i];
-    }
-    for (int i = static_cast<int>(y_dims.size() + axis); i < x_dims.size();
-         ++i) {
-      num *= x_dims[i];
-    }
-    VLOG(4) << "axis:" << axis;
-    VLOG(4) << "channels:" << channels;
-    VLOG(4) << "num:" << num;
-    VLOG(4) << "batch:" << batch;
-    auto& context = ctx_->As<OpenCLContext>();
-    CHECK(context.cl_context() != nullptr);
-    auto* x_buf = param.X->data<float, cl::Buffer>();
-    auto* y_buf = param.Y->data<float, cl::Buffer>();
-    auto* out_buf = param.Out->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
-    auto kernel = context.cl_context()->GetKernel("elementwise_add");
-    VLOG(4) << TargetToStr(param.X->target());
-    VLOG(4) << TargetToStr(param.Y->target());
-    VLOG(4) << TargetToStr(param.Out->target());
-    cl_int status = kernel.setArg(0, *x_buf);
-    CL_CHECK_FATAL(status);
-    status = kernel.setArg(1, *y_buf);
-    CL_CHECK_FATAL(status);
-    status = kernel.setArg(2, *out_buf);
-    CL_CHECK_FATAL(status);
-    status = kernel.setArg(3, (const int)batch);
-    CL_CHECK_FATAL(status);
-    status = kernel.setArg(4, (const int)channels);
-    CL_CHECK_FATAL(status);
-    status = kernel.setArg(5, (const int)num);
-    CL_CHECK_FATAL(status);
+void ElementwiseAddCompute::Run() {
+  auto& context = ctx_->As<OpenCLContext>();
+  CHECK(context.cl_context() != nullptr);
+  auto* x_buf = ele_param_->X->template data<float, cl::Buffer>();
+  auto* y_buf = ele_param_->Y->template data<float, cl::Buffer>();
+  auto* out_buf = ele_param_->Out->template mutable_data<float, cl::Buffer>(
+      TARGET(kOpenCL));
+  auto kernel = context.cl_context()->GetKernel(
+      string_format("%s%s", kernel_func_name_.c_str(), build_option_.c_str()));
+  VLOG(4) << TargetToStr(ele_param_->X->target());
+  VLOG(4) << TargetToStr(ele_param_->Y->target());
+  VLOG(4) << TargetToStr(ele_param_->Out->target());
+  int arg_idx = 0;
+  cl_int status = kernel.setArg(arg_idx, *x_buf);
+  CL_CHECK_FATAL(status);
+  status = kernel.setArg(++arg_idx, *y_buf);
+  CL_CHECK_FATAL(status);
+  status = kernel.setArg(++arg_idx, *out_buf);
+  CL_CHECK_FATAL(status);
+  status = kernel.setArg(++arg_idx, (const int)batch_);
+  CL_CHECK_FATAL(status);
+  status = kernel.setArg(++arg_idx, (const int)channels_);
+  CL_CHECK_FATAL(status);
+  status = kernel.setArg(++arg_idx, (const int)num_);
+  CL_CHECK_FATAL(status);
 
-    auto global_work_size = cl::NDRange{channels, batch};
-    cl::Event event;
-    status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
-        kernel,
-        cl::NullRange,
-        global_work_size,
-        cl::NullRange,
-        nullptr,
-        &event);
-    CL_CHECK_FATAL(status);
-    status = event.wait();
-    CL_CHECK_FATAL(status);
+  auto global_work_size = cl::NDRange{channels_, batch_};
+  cl::Event event;
+  status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
+      kernel, cl::NullRange, global_work_size, cl::NullRange, nullptr, &event);
+  CL_CHECK_FATAL(status);
+  status = event.wait();
+  CL_CHECK_FATAL(status);
+}
+
+void ElementwiseAddCompute::UpdateParams() {
+  auto axis = ele_param_->axis;
+  const auto& x_dims = ele_param_->X->dims();
+  const auto& y_dims = ele_param_->Y->dims();
+  const auto& out_dims = ele_param_->Out->dims();
+  if (axis < 0) {
+    axis = static_cast<int>(x_dims.size() - y_dims.size());
   }
-};
+  for (int i = 0; i < axis; ++i) {
+    batch_ *= x_dims[i];
+  }
+  for (int i = 0; i < y_dims.size(); ++i) {
+    channels_ *= y_dims[i];
+  }
+  for (int i = static_cast<int>(y_dims.size() + axis); i < x_dims.size(); ++i) {
+    num_ *= x_dims[i];
+  }
+}
 
 }  // namespace opencl
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(elementwise_add,
-                     kOpenCL,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::opencl::ElementwiseAddCompute,
-                     def)
+namespace ocl = paddle::lite::kernels::opencl;
+REGISTER_LITE_KERNEL(
+    elementwise_add, kOpenCL, kFloat, kNCHW, ocl::ElementwiseAddCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kOpenCL))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kOpenCL))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kOpenCL))})
