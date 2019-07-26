@@ -26,10 +26,6 @@ void ElementwiseAddCompute::PrepareForRun() {
   auto& param = Param<operators::ElementwiseParam>();
   input_x_.share_from_tensorlite(*param.X);
   input_y_.share_from_tensorlite(*param.Y);
-<<<<<<< HEAD
-=======
-
->>>>>>> added pooling conv activation
   output_.share_from_tensorlite(*param.Out);
   ew_param.inputs = {&input_x_, &input_y_};
   ew_param.output = &output_;
@@ -50,16 +46,6 @@ void ElementwiseAddCompute::Run() {
   pe_.dispatch();
   LOG(ERROR) << "after dispatch";
   output_.invalidate();
-<<<<<<< HEAD
-=======
-  auto& param = Param<operators::ElementwiseParam>();
-  LOG(ERROR) << "after param";
-  // output_.fill_to_tensorlite(param.Out);
-
-  LOG(ERROR) << output_;
-  LOG(ERROR) << "after print output";
-  LOG(ERROR) << *param.Out;
->>>>>>> added pooling conv activation
 }
 
 void ElementwiseAddActivationCompute::PrepareForRun() {
