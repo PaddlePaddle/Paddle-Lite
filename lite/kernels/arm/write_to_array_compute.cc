@@ -23,7 +23,6 @@ namespace arm {
 void WriteToArrayCompute::PrepareForRun() {}
 
 void WriteToArrayCompute::Run() {
-  LOG(INFO) << "write to array run start;";
   auto& ctx = this->ctx_->template As<ARMContext>();
   auto& param = this->Param<operators::WriteToArrayParam>();
 
@@ -33,7 +32,6 @@ void WriteToArrayCompute::Run() {
 
   const auto* x_data = param.X[0]->data<float>();
   int id = param.X[1]->data<int>()[0];
-  LOG(INFO) << "id : " << id;
   if (id > param.Out.size()) {
     for (int i = param.Out.size(); i < id + 1; i++) {
       lite::Tensor tmp;

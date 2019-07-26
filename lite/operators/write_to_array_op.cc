@@ -31,14 +31,11 @@ bool WriteToArrayOp::InferShape() const {
 
 bool WriteToArrayOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   auto inputs = opdesc.Input("X");
-  LOG(INFO) << "inputs_size" << inputs.size();
   for (auto in : inputs) {
     LOG(INFO) << in;
     param_.X.push_back(scope->FindVar(in)->GetMutable<lite::Tensor>());
   }
-  LOG(INFO) << "inputs have been prepared";
   auto outputs = opdesc.Output("Out");
-  LOG(INFO) << "outputs_size" << outputs.size();
   for (auto out : outputs) {
     param_.Out.push_back(scope->FindVar(out)->GetMutable<lite::Tensor>());
   }
