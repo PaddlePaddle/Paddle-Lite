@@ -63,7 +63,7 @@ let device = MTLCreateSystemDefaultDevice()!
 let commandQueue = device.makeCommandQueue()!
 var timeCosts = [Double]()
 var count = 0
-var totalCount = 10
+var totalCount = 100
 
 var orderedVars: [String] = []
 var varIndex = 0
@@ -107,7 +107,9 @@ class TestViewController: UIViewController {
     }
     
     private func getTestInfo() {
-        Alamofire.request("\(hostUrlStr)/getTestInfo").validate().responseJSON { (response) in
+        var testInfoRequest = URLRequest(url: URL(string: "\(hostUrlStr)/getTestInfo")!)
+        testInfoRequest.cachePolicy = .reloadIgnoringLocalAndRemoteCacheData
+        Alamofire.request(testInfoRequest).validate().responseJSON { (response) in
             guard response.result.isSuccess else {
                 self.testLog("getTestInfo request error")
                 return
@@ -194,7 +196,9 @@ class TestViewController: UIViewController {
         testResult.model = model
         
         let modelUrlStr = "\(hostUrlStr)/getFile/\(model.name)"
-        Alamofire.request("\(modelUrlStr)/model").validate().responseData { (response) in
+        var modelRequest = URLRequest(url: URL(string: "\(modelUrlStr)/model")!)
+        modelRequest.cachePolicy = .reloadIgnoringLocalAndRemoteCacheData
+        Alamofire.request(modelRequest).validate().responseData { (response) in
             guard response.result.isSuccess, let modelData = response.result.value else {
                 let msg = "get model \(model.name) error"
                 self.testLog(msg)
@@ -205,7 +209,9 @@ class TestViewController: UIViewController {
             //let modelData2 = try! Data(contentsOf: URL(fileURLWithPath: Bundle.main.path(forResource: "yolo_model_v3_16", ofType: nil)!))
             let modelPtr = UnsafeMutablePointer<UInt8>.allocate(capacity: modelData.count)
             NSData(data: modelData).getBytes(modelPtr, length: modelData.count)
-            Alamofire.request("\(modelUrlStr)/params/\(model.paramsPrecision)").validate().responseData(completionHandler: { (response) in
+            var paramsRequest = URLRequest(url: URL(string: "\(modelUrlStr)/params/\(model.paramsPrecision)")!)
+            paramsRequest.cachePolicy = .reloadIgnoringLocalAndRemoteCacheData
+            Alamofire.request(paramsRequest).validate().responseData(completionHandler: { (response) in
                 guard response.result.isSuccess, let paramsData = response.result.value else {
                     let msg = "get params \(model.name) error"
                     self.testLog(msg)
@@ -244,7 +250,10 @@ class TestViewController: UIViewController {
                 }
                 let fetchVar = fetchVars[0]
                 net.inputDim = Dim(inDim: [dims[0], dims[2], dims[3], dims[1]])
-                Alamofire.request("\(modelUrlStr)/data/\(feedVar.name.replacingOccurrences(of: "/", with: "_"))").validate().responseData(completionHandler: { (response) in
+               
+                var feedVarRequest = URLRequest(url: URL(string: "\(modelUrlStr)/data/\(feedVar.name.replacingOccurrences(of: "/", with: "_"))")!)
+                feedVarRequest.cachePolicy = .reloadIgnoringLocalAndRemoteCacheData
+                Alamofire.request(feedVarRequest).validate().responseData(completionHandler: { (response) in
                     guard response.result.isSuccess, let inputData = response.result.value else {
                         let msg = "get var \(feedVar) error"
                         self.testLog(msg)
@@ -309,7 +318,8 @@ class TestViewController: UIViewController {
                         for i in 0..<outputSize {
                             let a = output[i]
                             let b = resultHolder.result[i]
-                            if abs(a - b) > precision && abs(a - b) / min(abs(a), abs(b)) > 0.05 {
+                            // && abs(a - b) / min(abs(a), abs(b)) > 0.05 
+                            if abs(a - b) > precision {
                                 isResultEqual = false
                                 msg = "unequal: i: \(i) target: \(output[i]) result: \(resultHolder.result[i])"
                                 self.testLog(msg)
@@ -403,7 +413,9 @@ class TestViewController: UIViewController {
                 }
             }
             if severVars.contains(varName) {
-                Alamofire.request("\(urlString)/\(varName)").validate().responseData { (response) in
+                var severVarRequest = URLRequest(url: URL(string: "\(urlString)/\(varName)")!)
+                severVarRequest.cachePolicy = .reloadIgnoringLocalAndRemoteCacheData
+                Alamofire.request(severVarRequest).validate().responseData { (response) in
                     varIndex += 1
                     guard response.result.isSuccess, let varData = response.result.value else {
                         self.compareVars(runner: runner, model: model, completion: completion)
