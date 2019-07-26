@@ -401,6 +401,11 @@ struct IncrementParam {
   float step{1};
 };
 
+struct WriteToArrayParam {
+  std::vector<lite::Tensor*> X{};
+  std::vector<lite::Tensor*> Out{};
+};
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle

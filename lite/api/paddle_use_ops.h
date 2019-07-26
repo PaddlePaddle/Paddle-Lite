@@ -48,3 +48,4 @@ USE_LITE_OP(im2sequence);
 USE_LITE_OP(sequence_softmax);
 USE_LITE_OP(topk);
 USE_LITE_OP(increment);
+USE_LITE_OP(write_to_array);

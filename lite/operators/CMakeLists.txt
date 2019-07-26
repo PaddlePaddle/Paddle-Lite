@@ -36,6 +36,7 @@ lite_cc_library(sequence_softmax_op SRCS sequence_softmax_op.cc DEPS ${op_DEPS})
 lite_cc_library(norm_op SRCS norm_op.cc DEPS ${op_DEPS})
 lite_cc_library(topk_op SRCS topk_op.cc DEPS ${op_DEPS})
 lite_cc_library(increment_op SRCS increment_op.cc DEPS ${op_DEPS})
+lite_cc_library(write_to_array_op SRCS write_to_array_op.cc DEPS ${op_DEPS})
 lite_cc_library(graph_op_lite SRCS graph_op.cc DEPS ${op_DEPS})
 
 set(ops
@@ -73,6 +74,7 @@ set(ops
         norm_op
         topk_op
         increment_op
+        write_to_array_op
         CACHE INTERNAL "ops lite")
 
 if (NOT LITE_WITH_X86)
