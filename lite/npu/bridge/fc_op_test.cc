@@ -33,9 +33,9 @@ TEST(NPUBridges, FC) {
   auto* bias = scope.Var("bias")->GetMutable<Tensor>();
   auto* out = scope.Var("out")->GetMutable<Tensor>();
   auto* out_ref = scope.Var("out_ref")->GetMutable<Tensor>();
-  input->Resize({1, 10, 20});
-  w->Resize({20, 20});
-  bias->Resize({1, 10});
+  input->Resize({1, 20});
+  w->Resize({20, 30});
+  bias->Resize({30});
 
   // set data
   for (int i = 0; i < input->dims().production(); i++) {
