@@ -339,7 +339,7 @@ class GRUUnitTester : public arena::TestCase {
 };
 
 void test_gru_unit(Place place) {
-  DDimLite dims{{1, 16 * 3}};
+  DDimLite dims{{8, 16 * 3}};
   std::unique_ptr<arena::TestCase> tester(new GRUUnitTester(
       place, "def", 1 /* sigomoid */, 2 /* tanh */, false, dims));
 #ifdef LITE_WITH_ARM

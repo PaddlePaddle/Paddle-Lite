@@ -234,8 +234,8 @@ inline void gru_unit_reset_act(lite_api::ActivationType act_type,
                                int batch_size) {
   auto updata_gate = value.gate_value;
   auto reset_gate = value.gate_value + frame_size;
-  auto hidden_prev = value.reset_output_value;
-  auto reset_hidden_prev = value.prev_out_value;
+  auto hidden_prev = value.prev_out_value;
+  auto reset_hidden_prev = value.reset_output_value;
   int stride_update = 3 * frame_size;
   int stride_reset = 3 * frame_size;
   int stride_hidden_prev = frame_size;
