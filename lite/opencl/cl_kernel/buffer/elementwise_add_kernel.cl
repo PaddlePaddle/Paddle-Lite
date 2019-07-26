@@ -12,8 +12,12 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-__kernel void elementwise_add(__global const float* x_data, __global const float* y_data, __global float* out_data,
-                  const int batch, const int channels, const int num) {
+__kernel void elementwise_add(__global const float* x_data,
+                  __global const float* y_data,
+                  __global float* out_data,
+                  const int batch,
+                  const int channels,
+                  const int num) {
 
   const int c = get_global_id(0); // c: [0, channels)
   const int b = get_global_id(1); // b: [0, batch)
@@ -30,6 +34,9 @@ __kernel void elementwise_add(__global const float* x_data, __global const float
 
   for (int n = 0; n < num; ++n) { // n: [0, h*w)
     *dout_ptr = *din_ptr + diny_data;
+#ifdef FUSE_RELU
+    *dout_ptr = fmax(*dout_ptr, 0);
+#endif
     ++dout_ptr;
     ++din_ptr;
   }

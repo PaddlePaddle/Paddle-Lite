@@ -18,6 +18,7 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
+#include <vector>
 #include "ai_ddk_lib/include/graph/operator_reg.h"
 #include "lite/core/op_lite.h"
 #include "lite/utils/macros.h"
@@ -30,8 +31,9 @@ namespace bridge {
 class Factory {
  public:
   // TODO(TJ): input and output must be vector
-  using func_type = std::function<std::shared_ptr<ge::Operator>(
-      const std::shared_ptr<OpLite>, std::shared_ptr<ge::Operator>)>;
+  using func_type = std::function<std::vector<std::shared_ptr<ge::Operator>>(
+      const std::shared_ptr<OpLite>,
+      const std::vector<std::shared_ptr<ge::Operator>>&)>;
   using map_type = std::unordered_map<std::string, func_type>;
   static Factory& Instance();
 
@@ -64,14 +66,17 @@ class Factory {
                              __test_global_namespace_##uniq_name##__>::value, \
                 msg)
 
-#define REGISTER_NPU_CVT(op_type, cvt_func_name)                          \
-  STATIC_ASSERT_JITKERNEL_GLOBAL_NAMESPACE(                               \
-      __reg_npu_bridge_##op_type##__,                                     \
-      "REGISTER_NPU_CVT must be called in global namespace only once!");  \
-  int __reg_npu_bridge_##op_type##_Insert() {                             \
-    paddle::lite::npu::bridge::Factory::Instance().Insert(#op_type,       \
-                                                          cvt_func_name); \
-    return 0;                                                             \
-  }                                                                       \
-  static int __reg_npu_bridge_##op_type##_Insert_return UNUSED =          \
+#define REGISTER_NPU_BRIDGE(op_type, cvt_func_name)                         \
+  STATIC_ASSERT_JITKERNEL_GLOBAL_NAMESPACE(                                 \
+      __reg_npu_bridge_##op_type##__,                                       \
+      "REGISTER_NPU_BRIDGE must be called in global namespace only once!"); \
+  int __reg_npu_bridge_##op_type##_Insert() {                               \
+    paddle::lite::npu::bridge::Factory::Instance().Insert(#op_type,         \
+                                                          cvt_func_name);   \
+    return 0;                                                               \
+  }
+
+#define USE_NPU_BRIDGE(op_type)                                  \
+  extern int __reg_npu_bridge_##op_type##_Insert();              \
+  static int __reg_npu_bridge_##op_type##_Insert_return UNUSED = \
       __reg_npu_bridge_##op_type##_Insert();

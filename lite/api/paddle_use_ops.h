@@ -27,7 +27,6 @@ USE_LITE_OP(lrn);
 USE_LITE_OP(decode_bboxes);
 USE_LITE_OP(fetch);
 USE_LITE_OP(io_copy);
-USE_LITE_OP(io_copy_once);
 USE_LITE_OP(elementwise_add)
 USE_LITE_OP(elementwise_sub)
 USE_LITE_OP(elementwise_mul)
@@ -46,7 +45,21 @@ USE_LITE_OP(batch_norm)
 USE_LITE_OP(fusion_elementwise_sub_activation)
 USE_LITE_OP(transpose)
 USE_LITE_OP(transpose2)
+USE_LITE_OP(argmax)
+USE_LITE_OP(axpy)
+USE_LITE_OP(leaky_relu)
+USE_LITE_OP(relu_clipped)
+USE_LITE_OP(prelu)
+USE_LITE_OP(sigmoid)
+USE_LITE_OP(tanh)
+USE_LITE_OP(swish)
+USE_LITE_OP(conv2d_transpose)
+USE_LITE_OP(negative)
+USE_LITE_OP(pad2d)
 
 USE_LITE_OP(fake_quantize_moving_average_abs_max);
 USE_LITE_OP(fake_dequantize_max_abs);
 USE_LITE_OP(calib);
+USE_LITE_OP(norm);
+USE_LITE_OP(im2sequence);
+USE_LITE_OP(sequence_softmax);

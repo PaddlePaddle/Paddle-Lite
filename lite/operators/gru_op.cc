@@ -1,0 +1,106 @@
+// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#include "lite/operators/gru_op.h"
+#include "lite/core/op_lite.h"
+#include "lite/core/op_registry.h"
+
+namespace paddle {
+namespace lite {
+namespace operators {
+
+bool GRUOpLite::CheckShape() const {
+  CHECK_OR_FALSE(param_.input);
+  CHECK_OR_FALSE(param_.weight);
+  CHECK_OR_FALSE(param_.batchgate);
+  CHECK_OR_FALSE(param_.batchresethiddenprev);
+  CHECK_OR_FALSE(param_.batchhidden);
+  CHECK_OR_FALSE(param_.hidden);
+
+  auto input_dims = param_.input->dims();
+  auto weight_dims = param_.weight->dims();
+  int input_size = input_dims[1];
+  int frame_size = weight_dims[0];
+  CHECK_EQ_OR_FALSE(input_size, frame_size * 3);
+  CHECK_EQ_OR_FALSE(weight_dims[1], frame_size * 3);
+
+  if (param_.h0) {
+    auto h0_dims = param_.h0->dims();
+    CHECK_EQ_OR_FALSE(h0_dims[1], frame_size);
+  }
+
+  if (param_.bias) {
+    auto bias_dims = param_.bias->dims();
+    int bias_height = bias_dims[0];
+    int bias_width = bias_dims[1];
+    CHECK_EQ_OR_FALSE(bias_height, 1);
+    CHECK_EQ_OR_FALSE(bias_width, frame_size * 3);
+  }
+
+  return true;
+}
+
+bool GRUOpLite::InferShape() const {
+  auto input_dims = param_.input->dims();
+  auto weight_dims = param_.weight->dims();
+  int input_size = input_dims[1];
+  int frame_size = weight_dims[0];
+
+  std::vector<int64_t> dims_hidden{input_dims[0], frame_size};
+
+  param_.batchgate->Resize(input_dims);
+  param_.batchresethiddenprev->Resize(lite::DDim(dims_hidden));
+  param_.batchhidden->Resize(lite::DDim(dims_hidden));
+  param_.hidden->Resize(lite::DDim(dims_hidden));
+
+  *param_.hidden->mutable_lod() = param_.input->lod();
+}
+
+bool GRUOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
+  auto input = op_desc.Input("Input").front();
+  auto h0 = op_desc.Input("H0").front();
+  auto weight = op_desc.Input("Weight").front();
+  auto batch_gate = op_desc.Output("BatchGate").front();
+  auto batchresethiddenprev = op_desc.Output("BatchResetHiddenPrev").front();
+  auto batchhidden = op_desc.Output("BatchHidden").front();
+  auto hidden = op_desc.Output("Hidden").front();
+
+  param_.input = scope->FindVar(input)->GetMutable<lite::Tensor>();
+  param_.h0 = scope->FindVar(h0)->GetMutable<lite::Tensor>();
+  param_.weight = scope->FindVar(weight)->GetMutable<lite::Tensor>();
+
+  param_.batchgate = scope->FindVar(batch_gate)->GetMutable<lite::Tensor>();
+  param_.batchresethiddenprev =
+      scope->FindVar(batchresethiddenprev)->GetMutable<lite::Tensor>();
+  param_.batchhidden = scope->FindVar(batchhidden)->GetMutable<lite::Tensor>();
+  param_.hidden = scope->FindVar(hidden)->GetMutable<lite::Tensor>();
+
+  if (op_desc.HasInput("Bias")) {
+    auto bias = op_desc.Input("Bias").front();
+    param_.bias = scope->FindVar(bias)->GetMutable<lite::Tensor>();
+  }
+
+  param_.gate_activation = op_desc.GetAttr<std::string>("gate_activation");
+  param_.activation = op_desc.GetAttr<std::string>("activation");
+  param_.is_reverse = op_desc.GetAttr<bool>("is_reverse");
+  param_.origin_mode = op_desc.GetAttr<bool>("origin_mode");
+
+  return true;
+}
+
+REGISTER_LITE_OP(gru, paddle::lite::operators::GRUOpLite);
+
+}  // namespace operators
+}  // namespace lite
+}  // namespace paddle

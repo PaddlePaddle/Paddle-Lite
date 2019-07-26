@@ -12,7 +12,6 @@ lite_cc_library(batch_norm_op SRCS batch_norm_op.cc DEPS ${op_DEPS})
 lite_cc_library(feed_op SRCS feed_op.cc DEPS ${op_DEPS})
 lite_cc_library(fetch_op SRCS fetch_op.cc DEPS ${op_DEPS})
 lite_cc_library(io_copy_op SRCS io_copy_op.cc DEPS ${op_DEPS})
-lite_cc_library(io_copy_once_op SRCS io_copy_once_op.cc DEPS io_copy_op ${op_DEPS})
 lite_cc_library(activation_ops SRCS activation_ops.cc DEPS ${op_DEPS})
 lite_cc_library(elementwise_ops SRCS elementwise_ops.cc DEPS ${op_DEPS})
 lite_cc_library(lrn_op_lite SRCS lrn_op.cc DEPS ${op_DEPS})
@@ -23,15 +22,25 @@ lite_cc_library(mean_op SRCS mean_op.cc DEPS ${op_DEPS})
 lite_cc_library(fill_constant_op SRCS fill_constant_op.cc DEPS ${op_DEPS})
 lite_cc_library(sgd_op SRCS sgd_op.cc DEPS ${op_DEPS})
 lite_cc_library(uniform_random_op SRCS uniform_random_op.cc DEPS ${op_DEPS})
+lite_cc_library(argmax_op SRCS argmax_op.cc DEPS ${op_DEPS})
+lite_cc_library(axpy_op SRCS axpy_op.cc DEPS ${op_DEPS})
+lite_cc_library(gru_unit_op SRCS gru_unit_op.cc DEPS ${op_DEPS})
+lite_cc_library(gru_op SRCS gru_op.cc DEPS ${op_DEPS})
 
 lite_cc_library(op_params SRCS op_params.cc DEPS tensor any framework_proto)
 lite_cc_library(dropout_op SRCS dropout_op.cc DEPS ${op_DEPS})
 lite_cc_library(concat_op SRCS concat_op.cc DEPS ${op_DEPS})
+lite_cc_library(pad2d_op SRCS pad2d_op.cc DEPS ${op_DEPS})
+lite_cc_library(negative_op SRCS negative_op.cc DEPS ${op_DEPS})
 lite_cc_library(calib_op SRCS calib_op.cc DEPS ${op_DEPS})
 lite_cc_library(split_op SRCS split_op.cc DEPS ${op_DEPS})
 lite_cc_library(transpose_op SRCS transpose_op.cc DEPS ${op_DEPS})
 lite_cc_library(fake_quant SRCS fake_quantize_moving_avg_max_abs.cc DEPS ${op_DEPS})
 lite_cc_library(fake_dequant SRCS fake_dequantize_max_abs.cc DEPS ${op_DEPS})
+lite_cc_library(conv_transpose_op SRCS conv_transpose_op.cc DEPS ${op_DEPS})
+lite_cc_library(im2sequence_op SRCS im2sequence_op.cc DEPS ${op_DEPS})
+lite_cc_library(sequence_softmax_op SRCS sequence_softmax_op.cc DEPS ${op_DEPS})
+lite_cc_library(norm_op SRCS norm_op.cc DEPS ${op_DEPS})
 lite_cc_library(graph_op_lite SRCS graph_op.cc DEPS ${op_DEPS})
 
 set(ops
@@ -46,8 +55,9 @@ set(ops
         batch_norm_op
         feed_op
         fetch_op
+        gru_unit_op
+        gru_op
         io_copy_op
-        io_copy_once_op
         elementwise_ops
         fusion_elementwise_activation_ops
         lrn_op_lite
@@ -58,6 +68,8 @@ set(ops
         activation_ops
         dropout_op
         concat_op
+        pad2d_op
+        negative_op
         calib_op
         split_op
         transpose_op
@@ -65,6 +77,12 @@ set(ops
         fake_dequant
         sgd_op
         uniform_random_op
+        argmax_op
+        axpy_op
+        conv_transpose_op
+        im2sequence_op
+        sequence_softmax_op
+        norm_op
         CACHE INTERNAL "ops lite")
 
 if (NOT LITE_WITH_X86)

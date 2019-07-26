@@ -29,6 +29,13 @@ class PoolCompute
  public:
   using param_t = operators::PoolParam;
 
+  void PrepareForRun() override {
+    const auto& param = *param_.get_mutable<param_t>();
+    kernel_func_name_ = string_format("pool_%s", param.pooling_type.c_str());
+    auto& context = ctx_->As<OpenCLContext>();
+    context.cl_context()->AddKernel(kernel_func_name_, "buffer/pool_kernel.cl");
+  }
+
   void Run() override {
     const auto& param = *param_.get_mutable<param_t>();
     const auto& in_dims = param.x->dims();
@@ -50,39 +57,37 @@ class PoolCompute
     auto* input_buf = param.x->data<float, cl::Buffer>();
     auto* output_buf =
         param.output->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
-    auto kernel = context.cl_context()->GetKernel(
-        string_format("pool_%s", pooling_type.c_str()));
+    auto kernel = context.cl_context()->GetKernel(kernel_func_name_);
     cl_int status;
     auto numel = out_dims.production();
-    status = kernel.setArg(0, static_cast<const int>(numel));
+    int arg_idx = 0;
+    status = kernel.setArg(arg_idx, static_cast<const int>(numel));
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(1, *input_buf);
+    status = kernel.setArg(++arg_idx, *input_buf);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(2, static_cast<const int>(in_dims[0]));
+    status = kernel.setArg(++arg_idx, static_cast<const int>(in_dims[1]));
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(3, static_cast<const int>(in_dims[1]));
+    status = kernel.setArg(++arg_idx, static_cast<const int>(in_dims[2]));
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(4, static_cast<const int>(in_dims[2]));
+    status = kernel.setArg(++arg_idx, static_cast<const int>(in_dims[3]));
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(5, static_cast<const int>(in_dims[3]));
+    status = kernel.setArg(++arg_idx, static_cast<const int>(out_dims[2]));
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(6, static_cast<const int>(out_dims[2]));
+    status = kernel.setArg(++arg_idx, static_cast<const int>(out_dims[3]));
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(7, static_cast<const int>(out_dims[3]));
+    status = kernel.setArg(++arg_idx, static_cast<const int>(ksize[0]));
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(8, static_cast<const int>(ksize[0]));
+    status = kernel.setArg(++arg_idx, static_cast<const int>(ksize[1]));
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(9, static_cast<const int>(ksize[1]));
+    status = kernel.setArg(++arg_idx, static_cast<const int>(strides[0]));
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(10, static_cast<const int>(strides[0]));
+    status = kernel.setArg(++arg_idx, static_cast<const int>(strides[1]));
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(11, static_cast<const int>(strides[1]));
+    status = kernel.setArg(++arg_idx, static_cast<const int>(paddings[0]));
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(12, static_cast<const int>(paddings[0]));
+    status = kernel.setArg(++arg_idx, static_cast<const int>(paddings[1]));
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(13, static_cast<const int>(paddings[1]));
-    CL_CHECK_FATAL(status);
-    status = kernel.setArg(14, *output_buf);
+    status = kernel.setArg(++arg_idx, *output_buf);
     CL_CHECK_FATAL(status);
     cl::Event event;
     auto global_work_size = cl::NDRange(static_cast<size_t>(numel));
@@ -97,6 +102,9 @@ class PoolCompute
     status = event.wait();
     CL_CHECK_FATAL(status);
   }
+
+ private:
+  std::string kernel_func_name_{};
 };
 
 }  // namespace opencl

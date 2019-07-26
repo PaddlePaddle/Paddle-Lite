@@ -29,9 +29,11 @@ class MulCompute
  public:
   using param_t = operators::MulParam;
 
-  void PrepareForRun() {
+  void PrepareForRun() override {
     kernel_func_name_ = "mat_mul";
-
+    auto& context = ctx_->As<OpenCLContext>();
+    context.cl_context()->AddKernel(kernel_func_name_,
+                                    "buffer/mat_mul_kernel.cl");
     const auto& param = *param_.get_mutable<param_t>();
     const auto* x_data = param.x->data<float>();
     const auto* y_data = param.y->data<float>();
@@ -58,7 +60,6 @@ class MulCompute
 
   void Run() override {
     const auto& param = *param_.get_mutable<param_t>();
-    LOG(INFO) << "sgemm";
     auto& context = ctx_->As<OpenCLContext>();
     CHECK(context.cl_context() != nullptr);
     auto* x_buf = param.x->data<float, cl::Buffer>();
@@ -84,9 +85,8 @@ class MulCompute
     CL_CHECK_FATAL(status);
 
     cl::Event event;
-    auto global_work_size =
-        cl::NDRange{static_cast<const unsigned int>((m_ + 4) / 4),
-                    static_cast<const unsigned int>((n_ + 4) / 4)};
+    auto global_work_size = cl::NDRange{static_cast<size_t>((m_ + 3) / 4),
+                                        static_cast<size_t>((n_ + 3) / 4)};
     status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
         kernel,
         cl::NullRange,
@@ -101,7 +101,7 @@ class MulCompute
 
  private:
   int m_, n_, k_;
-  std::string kernel_func_name_;
+  std::string kernel_func_name_{};
 };
 
 }  // namespace opencl
