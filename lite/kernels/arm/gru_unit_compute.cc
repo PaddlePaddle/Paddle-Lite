@@ -93,67 +93,6 @@ void GRUUnitCompute::Run() {
       convert_gru_act_type(param.gate_activation),
       param.origin_mode,
       &ctx);
-
-  //  lite::arm::math::sgemm(false,
-  //                         false,
-  //                         batch_size,
-  //                         2 * frame_size,
-  //                         frame_size,
-  //                         1.f,
-  //                         hidden_prev_data,
-  //                         frame_size,
-  //                         weight_data,
-  //                         frame_size * 2,
-  //                         1.f,
-  //                         gate_data,
-  //                         frame_size * 3,
-  //                         nullptr,
-  //                         false,
-  //                         false,
-  //                         &ctx);
-  //
-  //  gru_unit_reset_act(convert_gru_act_type(param.gate_activation),
-  //                     gate_data,
-  //                     3 * frame_size,
-  //                     gate_data + frame_size,
-  //                     3 * frame_size,
-  //                     hidden_prev_data,
-  //                     frame_size,
-  //                     reset_hidden_prev_data,
-  //                     frame_size,
-  //                     frame_size,
-  //                     batch_size);
-  //
-  //  lite::arm::math::sgemm(false,
-  //                         false,
-  //                         batch_size,
-  //                         frame_size,
-  //                         frame_size,
-  //                         1.f,
-  //                         reset_hidden_prev_data,
-  //                         frame_size,
-  //                         weight_data + 2 * frame_size * frame_size,
-  //                         frame_size,
-  //                         1.f,
-  //                         gate_data + frame_size * 2,
-  //                         frame_size * 3,
-  //                         nullptr,
-  //                         false,
-  //                         false,
-  //                         &ctx);
-  //
-  //  gru_unit_out_act(convert_gru_act_type(param.activation),
-  //                   param.origin_mode,
-  //                   gate_data,
-  //                   3 * frame_size,
-  //                   gate_data + 2 * frame_size,
-  //                   3 * frame_size,
-  //                   hidden_prev_data,
-  //                   frame_size,
-  //                   hidden_data,
-  //                   frame_size,
-  //                   frame_size,
-  //                   batch_size);
 }
 
 }  // namespace arm
