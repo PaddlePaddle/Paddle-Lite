@@ -352,12 +352,11 @@ void test_gru_unit(Place place) {
 
 TEST(GRUUnit, precision) {
 #ifdef LITE_WITH_ARM
-  //  DeviceInfo::Init();
   Place place(TARGET(kARM));
+  test_gru_unit(place);
 #else
   Place place(TARGET(kHost));
 #endif
-  test_gru_unit(place);
 }
 
 }  // namespace lite
