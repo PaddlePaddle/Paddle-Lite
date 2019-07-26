@@ -59,6 +59,7 @@ TEST(NPUBridges, CONV) {
   op_desc.SetAttr("strides", std::vector<int32_t>({1, 1}));
   op_desc.SetAttr("paddings", std::vector<int32_t>({1, 1}));
   op_desc.SetAttr("groups", 1);
+  op_desc.SetAttr("fuse_relu", false);
 
   std::shared_ptr<operators::ConvOpLite> conv_op =
       std::make_shared<operators::ConvOpLite>("conv2d");
@@ -86,3 +87,4 @@ TEST(NPUBridges, CONV) {
 
 USE_LITE_OP(conv2d);
 USE_NPU_BRIDGE(conv2d);
+USE_NPU_BRIDGE(depthwise_conv2d);

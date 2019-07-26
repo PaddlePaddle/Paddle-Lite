@@ -53,15 +53,14 @@ ge::TensorPtr CreateTensorAndFillData(T value,
   ge::TensorDesc desc(ge::Shape(shape), format, type);
   ge::TensorPtr tensor = std::make_shared<ge::Tensor>();
   tensor->SetTensorDesc(desc);
-  int i;
-  int64_t num = 1;
-  for (i = 0; i < shape.size(); i++) {
-    num *= shape[i];
+  int64_t data_num = 1;
+  for (auto i : shape) {
+    data_num *= i;
   }
-  T* data_ptr = reinterpret_cast<T*>(tensor->MutableData().GetData());
-  for (i = 0; i < num; i++) {
-    data_ptr[i] = value;
-  }
+  std::vector<T> data_value(data_num, value);
+  tensor->SetData(reinterpret_cast<uint8_t*>(data_value.data()),
+                  data_num * sizeof(T));
+  return tensor;
 }
 
 }  // namespace bridge
