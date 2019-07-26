@@ -67,8 +67,11 @@ void PrintData(std::string name, float* a, const int rows, const int cols) {
 }
 
 // #define PRINT_RESULT
-// #define LOOP_TEST
+#define LOOP_TEST
 TEST(fc, compute) {
+  std::unique_ptr<KernelContext> context(new KernelContext);
+  context->As<OpenCLContext>().InitOnce();
+
 #ifdef LOOP_TEST
   for (int m = 1; m < 213; m += 71) {
     for (int k = 1; k < 123; k += 31) {
@@ -93,11 +96,11 @@ TEST(fc, compute) {
         param.output = &out;
         param.in_num_col_dims = 1;
 
-        std::unique_ptr<KernelContext> context(new KernelContext);
-        context->As<OpenCLContext>().InitOnce();
-
         kernel->SetParam(param);
-        kernel->SetContext(std::move(context));
+        std::unique_ptr<KernelContext> fc_context(new KernelContext);
+        context->As<OpenCLContext>().CopySharedTo(
+            &(fc_context->As<OpenCLContext>()));
+        kernel->SetContext(std::move(fc_context));
 
         const DDim x_dim = DDim(std::vector<DDim::value_type>{m, k});
         const DDim w_dim = DDim(std::vector<DDim::value_type>{k, n});

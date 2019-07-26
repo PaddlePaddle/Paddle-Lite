@@ -36,7 +36,7 @@ void act_prelu(const T* din,
                int channel_size,
                int inner_size,
                bool channel_shared,
-               float* channel_slope,
+               const float* channel_slope,
                int threads);
 
 template <typename T>
