@@ -22,57 +22,58 @@ namespace lite {
 
 class ScaleComputeTester : public arena::TestCase {
   // common attributes for this op.
-  std::string input = "x";
-  std::string output = "out";
-  float scale = 1.2f;
-  float bias = 0.f;
-  DDim dims{{3, 2, 10}};
+  std::string input_ = "x";
+  std::string output_ = "out";
+  float scale_ = 1.2f;
+  float bias_ = 0.f;
+  DDim dims_{{3, 2, 10}};
 
  public:
-  explicit ScaleComputeTester(const Place& place) : TestCase(place) {}
+  explicit ScaleComputeTester(const Place& place, const std::string& alias)
+      : TestCase(place, alias) {}
 
   void RunBaseline(Scope* scope) override {
-    auto* out = scope->NewTensor(output);
+    auto* out = scope->NewTensor(output_);
     CHECK(out);
-    out->Resize(dims);
+    out->Resize(dims_);
     auto* out_data = out->mutable_data<float>();
 
-    auto* x = scope->FindTensor(input);
+    auto* x = scope->FindTensor(input_);
     const auto* x_data = x->data<float>();
 
-    for (int i = 0; i < dims.production(); i++) {
-      out_data[i] = x_data[i] * scale + bias;
+    for (int i = 0; i < dims_.production(); i++) {
+      out_data[i] = x_data[i] * scale_ + bias_;
     }
   }
 
   void PrepareOpDesc(cpp::OpDesc* op_desc) {
     op_desc->SetType("scale");
-    op_desc->SetInput("X", {input});
-    op_desc->SetOutput("Out", {output});
-    op_desc->SetAttr("scale", scale);
-    op_desc->SetAttr("bias", bias);
+    op_desc->SetInput("X", {input_});
+    op_desc->SetOutput("Out", {output_});
+    op_desc->SetAttr("scale", scale_);
+    op_desc->SetAttr("bias", bias_);
     op_desc->SetAttr("bias_after_scale", false);
   }
 
   void PrepareData() override {
-    std::vector<float> data(dims.production());
+    std::vector<float> data(dims_.production());
 
-    for (int i = 0; i < dims.production(); i++) {
+    for (int i = 0; i < dims_.production(); i++) {
       data[i] = i * 1.1;
     }
 
-    SetCommonTensor(input, dims, data.data());
+    SetCommonTensor(input_, dims_, data.data());
   }
 };
 
-TEST(MUL, basic) {
+TEST(scale, basic) {
 #ifdef LITE_WITH_X86
   Place place(TARGET(kX86));
 #endif
 #ifdef LITE_WITH_ARM
   Place place(TARGET(kARM));
 #endif
-  std::unique_ptr<arena::TestCase> tester(new ScaleComputeTester(place));
+  std::unique_ptr<arena::TestCase> tester(new ScaleComputeTester(place, "def"));
   arena::Arena arena(std::move(tester), place);
 
   arena.TestPrecision();

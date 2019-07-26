@@ -247,6 +247,34 @@ function test_arm_android {
     adb -s emulator-${port} shell "cd ${adb_work_dir} && ./${test_name}"
 }
 
+# test_npu <some_test_name> <adb_port_number>
+function test_npu {
+    local test_name=$1
+    local port=$2
+    if [[ "${test_name}x" == "x" ]]; then
+        echo "test_name can not be empty"
+        exit 1
+    fi
+    if [[ "${port}x" == "x" ]]; then
+        echo "Port can not be empty"
+        exit 1
+    fi
+
+    echo "test name: ${test_name}"
+    adb_work_dir="/data/local/tmp"
+
+    skip_list=("test_model_parser" "test_mobilenetv1" "test_mobilenetv2" "test_resnet50" "test_inceptionv4" "test_light_api" "test_apis" "test_paddle_api" "test_cxx_api" "test_gen_code")
+    for skip_name in ${skip_list[@]} ; do
+        [[ $skip_name =~ (^|[[:space:]])$test_name($|[[:space:]]) ]] && echo "skip $test_name" && return
+    done
+
+    local testpath=$(find ./lite -name ${test_name})
+
+    adb -s emulator-${port} push ../ai_ddk_lib/lib64/* ${adb_work_dir}
+    adb -s emulator-${port} push ${testpath} ${adb_work_dir}
+    adb -s emulator-${port} shell "cd ${adb_work_dir}; export LD_LIBRARY_PATH=./ ;./${test_name}"
+}
+
 # test the inference high level api
 function test_arm_api {
     local port=$1
@@ -322,6 +350,30 @@ function _test_paddle_code_generator {
 
     $adb push $test_path $remote_test
     $adb shell $remote_test --optimized_model $remote_model --generated_code_file $ADB_WORK_DIR/gen_code.cc
+}
+
+function cmake_npu {
+    prepare_workspace
+    # $1: ARM_TARGET_OS in "android" , "armlinux"
+    # $2: ARM_TARGET_ARCH_ABI in "armv8", "armv7" ,"armv7hf"
+    # $3: ARM_TARGET_LANG in "gcc" "clang"
+
+    # NPU libs need API LEVEL 24 above
+    build_dir=`pwd`
+
+    cmake .. \
+        -DWITH_GPU=OFF \
+        -DWITH_MKL=OFF \
+        -DWITH_LITE=ON \
+        -DLITE_WITH_CUDA=OFF \
+        -DLITE_WITH_X86=OFF \
+        -DLITE_WITH_ARM=ON \
+        -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
+        -DWITH_TESTING=ON \
+        -DLITE_WITH_NPU=ON \
+        -DANDROID_API_LEVEL=24 \
+        -DNPU_DDK_ROOT="${build_dir}/../ai_ddk_lib/" \
+        -DARM_TARGET_OS=$1 -DARM_TARGET_ARCH_ABI=$2 -DARM_TARGET_LANG=$3
 }
 
 function cmake_arm {
@@ -644,6 +696,10 @@ function main {
                 ;;
             test_arm)
                 test_arm $ARM_OS $ARM_ABI $ARM_LANG $ARM_PORT
+                shift
+                ;;
+            test_npu)
+                test_npu $TEST_NAME $ARM_PORT
                 shift
                 ;;
             test_arm_android)

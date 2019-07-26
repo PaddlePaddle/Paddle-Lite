@@ -38,6 +38,12 @@ USE_LITE_KERNEL(relu, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(transpose, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(transpose2, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(batch_norm, kARM, kFloat, kNCHW, def);
+USE_LITE_KERNEL(pad2d, kARM, kFloat, kNCHW, def);
+USE_LITE_KERNEL(negative, kARM, kFloat, kNCHW, def);
+
+USE_LITE_KERNEL(norm, kARM, kFloat, kNCHW, def);
+USE_LITE_KERNEL(sequence_softmax, kARM, kFloat, kNCHW, def);
+USE_LITE_KERNEL(im2sequence, kARM, kFloat, kNCHW, def);
 
 USE_LITE_KERNEL(calib, kARM, kInt8, kNCHW, fp32_to_int8);
 USE_LITE_KERNEL(calib, kARM, kInt8, kNCHW, int8_to_fp32);
@@ -69,11 +75,20 @@ USE_LITE_KERNEL(scale, kX86, kFloat, kNCHW, def);
 USE_LITE_KERNEL(mul, kCUDA, kFloat, kNCHW, def);
 USE_LITE_KERNEL(io_copy, kCUDA, kAny, kAny, host_to_device);
 USE_LITE_KERNEL(io_copy, kCUDA, kAny, kAny, device_to_host);
+USE_LITE_KERNEL(io_copy_once, kCUDA, kAny, kAny, host_to_device);
+USE_LITE_KERNEL(io_copy_once, kCUDA, kAny, kAny, device_to_host);
 #endif
 
 #ifdef LITE_WITH_OPENCL
-USE_LITE_KERNEL(elementwise_add, kOpenCL, kFloat, kNCHW, def);
-USE_LITE_KERNEL(pool2d, kOpenCL, kFloat, kNCHW, def);
 USE_LITE_KERNEL(io_copy, kOpenCL, kAny, kAny, host_to_device);
 USE_LITE_KERNEL(io_copy, kOpenCL, kAny, kAny, device_to_host);
+USE_LITE_KERNEL(io_copy_once, kOpenCL, kAny, kAny, host_to_device);
+USE_LITE_KERNEL(io_copy_once, kOpenCL, kAny, kAny, device_to_host);
+
+USE_LITE_KERNEL(fc, kOpenCL, kFloat, kNCHW, def);
+USE_LITE_KERNEL(elementwise_add, kOpenCL, kFloat, kNCHW, def);
+USE_LITE_KERNEL(pool2d, kOpenCL, kFloat, kNCHW, def);
+USE_LITE_KERNEL(relu, kOpenCL, kFloat, kNCHW, def);
+USE_LITE_KERNEL(mul, kOpenCL, kFloat, kNCHW, def);
+USE_LITE_KERNEL(depthwise_conv2d, kOpenCL, kFloat, kNCHW, def);
 #endif

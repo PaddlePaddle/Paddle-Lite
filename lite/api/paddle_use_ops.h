@@ -38,7 +38,12 @@ USE_LITE_OP(batch_norm)
 USE_LITE_OP(fusion_elementwise_sub_activation)
 USE_LITE_OP(transpose)
 USE_LITE_OP(transpose2)
+USE_LITE_OP(negative)
+USE_LITE_OP(pad2d)
 
 USE_LITE_OP(fake_quantize_moving_average_abs_max);
 USE_LITE_OP(fake_dequantize_max_abs);
 USE_LITE_OP(calib);
+USE_LITE_OP(norm);
+USE_LITE_OP(im2sequence);
+USE_LITE_OP(sequence_softmax);

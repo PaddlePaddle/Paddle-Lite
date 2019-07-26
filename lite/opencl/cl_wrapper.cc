@@ -16,7 +16,6 @@ limitations under the License. */
 #include <dlfcn.h>
 #include <string>
 #include <vector>
-#include "lite/utils/cp_logging.h"
 
 namespace paddle {
 namespace lite {
@@ -71,196 +70,71 @@ bool CLWrapper::InitHandle() {
 
 void CLWrapper::InitFunctions() {
   CHECK(handle_ != nullptr) << "The library handle can't be null!";
-  clGetPlatformIDs_ = (clGetPlatformIDsType)dlsym(handle_, "clGetPlatformIDs");
-  CHECK(clGetPlatformIDs_ != nullptr) << "Cannot load clGetPlatformIDs!";
 
-  clGetPlatformInfo_ =
-      (clGetPlatformInfoType)dlsym(handle_, "clGetPlatformInfo");
-  CHECK(clGetPlatformInfo_ != nullptr) << "Cannot load clGetPlatformInfo!";
+#define PADDLE_DLSYM(cl_func)                                        \
+  do {                                                               \
+    cl_func##_ = (cl_func##Type)dlsym(handle_, #cl_func);            \
+    if (cl_func##_ == nullptr) {                                     \
+      LOG(ERROR) << "Cannot find the " << #cl_func                   \
+                 << " symbol in libOpenCL.so!";                      \
+      break;                                                         \
+    }                                                                \
+    VLOG(4) << "Loaded the " << #cl_func << " symbol successfully."; \
+  } while (false)
 
-  clBuildProgram_ = (clBuildProgramType)dlsym(handle_, "clBuildProgram");
-  CHECK(clBuildProgram_ != nullptr) << "Cannot load clBuildProgram!";
+  PADDLE_DLSYM(clGetPlatformIDs);
+  PADDLE_DLSYM(clGetPlatformInfo);
+  PADDLE_DLSYM(clBuildProgram);
+  PADDLE_DLSYM(clEnqueueNDRangeKernel);
+  PADDLE_DLSYM(clSetKernelArg);
+  PADDLE_DLSYM(clRetainMemObject);
+  PADDLE_DLSYM(clReleaseMemObject);
+  PADDLE_DLSYM(clEnqueueUnmapMemObject);
+  PADDLE_DLSYM(clRetainCommandQueue);
+  PADDLE_DLSYM(clCreateContext);
+  PADDLE_DLSYM(clCreateContextFromType);
+  PADDLE_DLSYM(clReleaseContext);
+  PADDLE_DLSYM(clWaitForEvents);
+  PADDLE_DLSYM(clReleaseEvent);
+  PADDLE_DLSYM(clEnqueueWriteBuffer);
+  PADDLE_DLSYM(clEnqueueReadBuffer);
+  PADDLE_DLSYM(clEnqueueReadImage);
+  PADDLE_DLSYM(clGetProgramBuildInfo);
+  PADDLE_DLSYM(clRetainProgram);
+  PADDLE_DLSYM(clEnqueueMapBuffer);
+  PADDLE_DLSYM(clEnqueueMapImage);
+  PADDLE_DLSYM(clCreateCommandQueue);
+  PADDLE_DLSYM(clCreateCommandQueueWithProperties);
+  PADDLE_DLSYM(clReleaseCommandQueue);
+  PADDLE_DLSYM(clCreateProgramWithBinary);
+  PADDLE_DLSYM(clRetainContext);
+  PADDLE_DLSYM(clGetContextInfo);
+  PADDLE_DLSYM(clReleaseProgram);
+  PADDLE_DLSYM(clFlush);
+  PADDLE_DLSYM(clFinish);
+  PADDLE_DLSYM(clGetProgramInfo);
+  PADDLE_DLSYM(clCreateKernel);
+  PADDLE_DLSYM(clRetainKernel);
+  PADDLE_DLSYM(clCreateBuffer);
+  PADDLE_DLSYM(clCreateImage2D);
+  PADDLE_DLSYM(clCreateImage);
+  PADDLE_DLSYM(clCreateUserEvent);
+  PADDLE_DLSYM(clCreateProgramWithSource);
+  PADDLE_DLSYM(clReleaseKernel);
+  PADDLE_DLSYM(clGetDeviceInfo);
+  PADDLE_DLSYM(clGetDeviceIDs);
+  PADDLE_DLSYM(clRetainDevice);
+  PADDLE_DLSYM(clReleaseDevice);
+  PADDLE_DLSYM(clRetainEvent);
+  PADDLE_DLSYM(clGetKernelWorkGroupInfo);
+  PADDLE_DLSYM(clGetEventInfo);
+  PADDLE_DLSYM(clGetEventProfilingInfo);
+  PADDLE_DLSYM(clGetImageInfo);
+  PADDLE_DLSYM(clEnqueueCopyBuffer);
+  PADDLE_DLSYM(clEnqueueWriteImage);
+  PADDLE_DLSYM(clEnqueueCopyImage);
 
-  clEnqueueNDRangeKernel_ =
-      (clEnqueueNDRangeKernelType)dlsym(handle_, "clEnqueueNDRangeKernel");
-  CHECK(clEnqueueNDRangeKernel_ != nullptr)
-      << "Cannot load clEnqueueNDRangeKernel!";
-
-  clSetKernelArg_ = (clSetKernelArgType)dlsym(handle_, "clSetKernelArg");
-  CHECK(clSetKernelArg_ != nullptr) << "Cannot load clSetKernelArg!";
-
-  clRetainMemObject_ =
-      (clRetainMemObjectType)dlsym(handle_, "clRetainMemObject");
-  CHECK(clRetainMemObject_ != nullptr) << "Cannot load clRetainMemObject!";
-
-  clReleaseMemObject_ =
-      (clReleaseMemObjectType)dlsym(handle_, "clReleaseMemObject");
-  CHECK(clReleaseMemObject_ != nullptr) << "Cannot load clReleaseMemObject!";
-
-  clEnqueueUnmapMemObject_ =
-      (clEnqueueUnmapMemObjectType)dlsym(handle_, "clEnqueueUnmapMemObject");
-  CHECK(clEnqueueUnmapMemObject_ != nullptr)
-      << "Cannot load clEnqueueUnmapMemObject!";
-
-  clRetainCommandQueue_ =
-      (clRetainCommandQueueType)dlsym(handle_, "clRetainCommandQueue");
-  CHECK(clRetainCommandQueue_ != nullptr)
-      << "Cannot load clRetainCommandQueue!";
-
-  clCreateContext_ = (clCreateContextType)dlsym(handle_, "clCreateContext");
-  CHECK(clCreateContext_ != nullptr) << "Cannot load clCreateContext!";
-
-  clCreateContextFromType_ =
-      (clCreateContextFromTypeType)dlsym(handle_, "clCreateContextFromType");
-  CHECK(clCreateContextFromType_ != nullptr)
-      << "Cannot load clCreateContextFromType!";
-
-  clReleaseContext_ = (clReleaseContextType)dlsym(handle_, "clReleaseContext");
-  CHECK(clReleaseContext_ != nullptr) << "Cannot load clReleaseContext!";
-
-  clWaitForEvents_ = (clWaitForEventsType)dlsym(handle_, "clWaitForEvents");
-  CHECK(clWaitForEvents_ != nullptr) << "Cannot load clWaitForEvents!";
-
-  clReleaseEvent_ = (clReleaseEventType)dlsym(handle_, "clReleaseEvent");
-  CHECK(clReleaseEvent_ != nullptr) << "Cannot load clReleaseEvent!";
-
-  clEnqueueWriteBuffer_ =
-      (clEnqueueWriteBufferType)dlsym(handle_, "clEnqueueWriteBuffer");
-  CHECK(clEnqueueWriteBuffer_ != nullptr)
-      << "Cannot loadcl clEnqueueWriteBuffer!";
-
-  clEnqueueReadBuffer_ =
-      (clEnqueueReadBufferType)dlsym(handle_, "clEnqueueReadBuffer");
-  CHECK(clEnqueueReadBuffer_ != nullptr) << "Cannot load clEnqueueReadBuffer!";
-
-  clEnqueueReadImage_ =
-      (clEnqueueReadImageType)dlsym(handle_, "clEnqueueReadImage");
-  CHECK(clEnqueueReadImage_ != nullptr) << "Cannot load clEnqueueReadImage!";
-
-  clGetProgramBuildInfo_ =
-      (clGetProgramBuildInfoType)dlsym(handle_, "clGetProgramBuildInfo");
-  CHECK(clGetProgramBuildInfo_ != nullptr)
-      << "Cannot load clGetProgramBuildInfo!";
-
-  clRetainProgram_ = (clRetainProgramType)dlsym(handle_, "clRetainProgram");
-  CHECK(clRetainProgram_ != nullptr) << "Cannot load clRetainProgram!";
-
-  clEnqueueMapBuffer_ =
-      (clEnqueueMapBufferType)dlsym(handle_, "clEnqueueMapBuffer");
-  CHECK(clEnqueueMapBuffer_ != nullptr) << "Cannot load clEnqueueMapBuffer!";
-
-  clEnqueueMapImage_ =
-      (clEnqueueMapImageType)dlsym(handle_, "clEnqueueMapImage");
-  CHECK(clEnqueueMapImage_ != nullptr) << "Cannot load clEnqueueMapImage!";
-
-  clCreateCommandQueue_ =
-      (clCreateCommandQueueType)dlsym(handle_, "clCreateCommandQueue");
-  CHECK(clCreateCommandQueue_ != nullptr)
-      << "Cannot load clCreateCommandQueue!";
-
-  clCreateCommandQueueWithProperties_ =
-      (clCreateCommandQueueWithPropertiesType)dlsym(
-          handle_, "clCreateCommandQueueWithProperties");
-  CHECK(clCreateCommandQueueWithProperties_ != nullptr)
-      << "Cannot load clCreateCommandQueueWithProperties!";
-
-  clReleaseCommandQueue_ =
-      (clReleaseCommandQueueType)dlsym(handle_, "clReleaseCommandQueue");
-  CHECK(clReleaseCommandQueue_ != nullptr)
-      << "Cannot load clReleaseCommandQueue!";
-
-  clCreateProgramWithBinary_ = (clCreateProgramWithBinaryType)dlsym(
-      handle_, "clCreateProgramWithBinary");
-  CHECK(clCreateProgramWithBinary_ != nullptr)
-      << "Cannot load clCreateProgramWithBinary!";
-
-  clRetainContext_ = (clRetainContextType)dlsym(handle_, "clRetainContext");
-  CHECK(clRetainContext_ != nullptr) << "Cannot load clRetainContext!";
-
-  clGetContextInfo_ = (clGetContextInfoType)dlsym(handle_, "clGetContextInfo");
-  CHECK(clGetContextInfo_ != nullptr) << "Cannot load clGetContextInfo!";
-
-  clReleaseProgram_ = (clReleaseProgramType)dlsym(handle_, "clReleaseProgram");
-  CHECK(clReleaseProgram_ != nullptr) << "Cannot load clReleaseProgram!";
-
-  clFlush_ = (clFlushType)dlsym(handle_, "clFlush");
-  CHECK(clFlush_ != nullptr) << "Cannot load clFlush!";
-
-  clFinish_ = (clFinishType)dlsym(handle_, "clFinish");
-  CHECK(clFinish_ != nullptr) << "Cannot load clFinish!";
-
-  clGetProgramInfo_ = (clGetProgramInfoType)dlsym(handle_, "clGetProgramInfo");
-  CHECK(clGetProgramInfo_ != nullptr) << "Cannot load clGetProgramInfo!";
-
-  clCreateKernel_ = (clCreateKernelType)dlsym(handle_, "clCreateKernel");
-  CHECK(clCreateKernel_ != nullptr) << "Cannot load clCreateKernel!";
-
-  clRetainKernel_ = (clRetainKernelType)dlsym(handle_, "clRetainKernel");
-  CHECK(clRetainKernel_ != nullptr) << "Cannot load clRetainKernel!";
-
-  clCreateBuffer_ = (clCreateBufferType)dlsym(handle_, "clCreateBuffer");
-  CHECK(clCreateBuffer_ != nullptr) << "Cannot load clCreateBuffer!";
-
-  clCreateImage2D_ = (clCreateImage2DType)dlsym(handle_, "clCreateImage2D");
-  CHECK(clCreateImage2D_ != nullptr) << "Cannot load clCreateImage2D!";
-
-  clCreateImage_ = (clCreateImageType)dlsym(handle_, "clCreateImage");
-  CHECK(clCreateImage_ != nullptr) << "Cannot load clCreateImage!";
-
-  clCreateUserEvent_ =
-      (clCreateUserEventType)dlsym(handle_, "clCreateUserEvent");
-  CHECK(clCreateUserEvent_ != nullptr) << "Cannot load clCreateUserEvent!";
-
-  clCreateProgramWithSource_ = (clCreateProgramWithSourceType)dlsym(
-      handle_, "clCreateProgramWithSource");
-  CHECK(clCreateProgramWithSource_ != nullptr)
-      << "Cannot load clCreateProgramWithSource!";
-
-  clReleaseKernel_ = (clReleaseKernelType)dlsym(handle_, "clReleaseKernel");
-  CHECK(clReleaseKernel_ != nullptr) << "Cannot load clReleaseKernel!";
-
-  clGetDeviceInfo_ = (clGetDeviceInfoType)dlsym(handle_, "clGetDeviceInfo");
-  CHECK(clGetDeviceInfo_ != nullptr) << "Cannot load clGetDeviceInfo!";
-
-  clGetDeviceIDs_ = (clGetDeviceIDsType)dlsym(handle_, "clGetDeviceIDs");
-  CHECK(clGetDeviceIDs_ != nullptr) << "Cannot load clGetDeviceIDs!";
-
-  clRetainDevice_ = (clRetainDeviceType)dlsym(handle_, "clRetainDevice");
-  CHECK(clRetainDevice_ != nullptr) << "Cannot load clRetainDevice!";
-
-  clReleaseDevice_ = (clReleaseDeviceType)dlsym(handle_, "clReleaseDevice");
-  CHECK(clReleaseDevice_ != nullptr) << "Cannot load clReleaseDevice!";
-
-  clRetainEvent_ = (clRetainEventType)dlsym(handle_, "clRetainEvent");
-  CHECK(clRetainEvent_ != nullptr) << "Cannot load clRetainEvent!";
-
-  clGetKernelWorkGroupInfo_ =
-      (clGetKernelWorkGroupInfoType)dlsym(handle_, "clGetKernelWorkGroupInfo");
-  CHECK(clGetKernelWorkGroupInfo_ != nullptr)
-      << "Cannot load clGetKernelWorkGroupInfo!";
-
-  clGetEventInfo_ = (clGetEventInfoType)dlsym(handle_, "clGetEventInfo");
-  CHECK(clGetEventInfo_ != nullptr) << "Cannot load clGetEventInfo!";
-
-  clGetEventProfilingInfo_ =
-      (clGetEventProfilingInfoType)dlsym(handle_, "clGetEventProfilingInfo");
-  CHECK(clGetEventProfilingInfo_ != nullptr)
-      << "Cannot load clGetEventProfilingInfo!";
-
-  clGetImageInfo_ = (clGetImageInfoType)dlsym(handle_, "clGetImageInfo");
-  CHECK(clGetImageInfo_ != nullptr) << "Cannot load clGetImageInfo!";
-
-  clEnqueueCopyBuffer_ =
-      (clEnqueueCopyBufferType)dlsym(handle_, "clEnqueueCopyBuffer");
-  CHECK(clEnqueueCopyBuffer_ != nullptr) << "Cannot load clEnqueueCopyBuffer!";
-
-  clEnqueueWriteImage_ =
-      (clEnqueueWriteImageType)dlsym(handle_, "clEnqueueWriteImage");
-  CHECK(clEnqueueWriteImage_ != nullptr) << "Cannot load clEnqueueWriteImage!";
-
-  clEnqueueCopyImage_ =
-      (clEnqueueCopyImageType)dlsym(handle_, "clEnqueueCopyImage");
-  CHECK(clEnqueueCopyImage_ != nullptr) << "Cannot load clEnqueueCopyImage!";
+#undef PADDLE_DLSYM
 }
 
 }  // namespace lite
@@ -594,7 +468,7 @@ clCreateProgramWithBinary(cl_context context,
 
 CL_API_ENTRY cl_int CL_API_CALL clRetainContext(cl_context context)
     CL_API_SUFFIX__VERSION_1_0 {
-  paddle::lite::CLWrapper::Global()->clRetainContext()(context);
+  return paddle::lite::CLWrapper::Global()->clRetainContext()(context);
 }
 
 CL_API_ENTRY cl_int CL_API_CALL clGetContextInfo(cl_context context,

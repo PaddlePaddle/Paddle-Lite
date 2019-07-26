@@ -59,6 +59,14 @@ struct CalibParam {
   float scale;
 };
 
+struct GraphParam {
+  // only one input yet
+  // std::vector<lite::Tensor*> x{};
+  const lite::Tensor* input{};
+  lite::Tensor* output{};
+  std::string graph_name{"graph"};
+};
+
 /// -------------------------- NN operators ------------------------------------
 
 struct FcParam {
@@ -325,6 +333,82 @@ struct UniformRandomParam {
   int seed{0};
   int dtype{framework::proto::VarType::FP32};
   lite::Tensor* Out{};
+};
+/// ----------------------- negative operators --------------
+struct NegativeParam {
+  const lite::Tensor* X{};
+  lite::Tensor* Out{};
+};
+/// ----------------------- pad2d operators ----------------------
+struct Pad2dParam {
+  const lite::Tensor* X{};
+  lite::Tensor* Out{};
+  /*
+  _mod:PadMode
+  typedef enum{
+     PAD_CONSTANT = 0,
+     PAD_EDGE = 1,
+     PAD_REFLECT = 2,
+ } PadMode;
+   */
+  int _mode{0};
+  std::vector<int> _pad_h;
+  std::vector<int> _pad_w;
+  float _pad_value = 0.f;
+};
+
+/// ----------------------- GRU unit operators ----------------------f
+struct GRUUnitParam {
+  enum ActType { identity, sigmoid, tanh, relu };
+  const lite::Tensor* input{nullptr};
+  const lite::Tensor* hiddenprev{nullptr};
+  const lite::Tensor* weight{nullptr};
+  const lite::Tensor* bias{nullptr};
+  lite::Tensor* gate{nullptr};
+  lite::Tensor* resethiddenprev{nullptr};
+  lite::Tensor* hidden{nullptr};
+
+  int gate_activation{ActType::sigmoid};
+  int activation{ActType::tanh};
+  bool origin_mode{false};
+};
+
+/// ----------------------- GRU operators ----------------------f
+struct GRUParam {
+  const lite::Tensor* input{nullptr};
+  const lite::Tensor* h0{nullptr};
+  const lite::Tensor* weight{nullptr};
+  const lite::Tensor* bias{nullptr};
+  lite::Tensor* batchgate{nullptr};
+  lite::Tensor* batchresethiddenprev{nullptr};
+  lite::Tensor* batchhidden{nullptr};
+  lite::Tensor* hidden{nullptr};
+
+  std::string gate_activation{"sigmoid"};
+  std::string activation{"tanh"};
+  bool is_reverse{false};
+  bool origin_mode{false};
+};
+
+struct Im2SequenceParam {
+  std::vector<lite::Tensor*> X{};
+  lite::Tensor* Out{};
+  std::vector<int> kernels{3, 3};
+  std::vector<int> strides{1, 1};
+  std::vector<int> paddings{0, 0, 0, 0};
+  std::vector<int> out_strides{1, 1};
+};
+
+struct SequenceSoftmaxParam {
+  const lite::Tensor* X{};
+  lite::Tensor* Out{};
+};
+
+struct NormParam {
+  const lite::Tensor* X{};
+  lite::Tensor* Out{};
+  int axis{1};
+  float epsilon{1e-10};
 };
 
 }  // namespace operators
