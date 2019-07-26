@@ -47,7 +47,7 @@ std::vector<std::shared_ptr<ge::Operator>> ScaleConverter(
   }
   if (fabs(bias) > 1e-6f) {
     // get input tensor shape
-    auto input_var_name = op_info->Input("Input").front();
+    auto input_var_name = op_info->Input("X").front();
     lite::Tensor* input =
         scope->FindVar(input_var_name)->GetMutable<lite::Tensor>();
     auto input_shape = input->dims().Vectorize();
