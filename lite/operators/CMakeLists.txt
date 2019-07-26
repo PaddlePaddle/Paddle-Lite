@@ -38,6 +38,7 @@ lite_cc_library(topk_op SRCS topk_op.cc DEPS ${op_DEPS})
 lite_cc_library(increment_op SRCS increment_op.cc DEPS ${op_DEPS})
 lite_cc_library(write_to_array_op SRCS write_to_array_op.cc DEPS ${op_DEPS})
 lite_cc_library(graph_op_lite SRCS graph_op.cc DEPS ${op_DEPS})
+lite_cc_library(read_from_array_op SRCS read_from_array_op.cc DEPS ${op_DEPS})
 
 set(ops
         conv_op
@@ -75,6 +76,7 @@ set(ops
         topk_op
         increment_op
         write_to_array_op
+        read_from_array_op
         CACHE INTERNAL "ops lite")
 
 if (NOT LITE_WITH_X86)

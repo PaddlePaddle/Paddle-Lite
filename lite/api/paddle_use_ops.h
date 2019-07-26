@@ -49,3 +49,4 @@ USE_LITE_OP(sequence_softmax);
 USE_LITE_OP(topk);
 USE_LITE_OP(increment);
 USE_LITE_OP(write_to_array);
+USE_LITE_OP(read_from_array);

@@ -68,7 +68,8 @@ class WriteToArrayComputeTester : public arena::TestCase {
 
   void PrepareOpDesc(cpp::OpDesc* op_desc) {
     op_desc->SetType("write_to_array");
-    op_desc->SetInput("X", {input_0, input_1});
+    op_desc->SetInput("X", {input_0});
+    op_desc->SetInput("I", {input_1});
     op_desc->SetOutput("Out", {output_0, output_1, output_2});
   }
 

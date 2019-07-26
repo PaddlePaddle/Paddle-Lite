@@ -402,8 +402,15 @@ struct IncrementParam {
 };
 
 struct WriteToArrayParam {
-  std::vector<lite::Tensor*> X{};
+  const lite::Tensor* X{};
+  const lite::Tensor* I{};
   std::vector<lite::Tensor*> Out{};
+};
+
+struct ReadFromArrayParam {
+  std::vector<lite::Tensor*> X{};
+  lite::Tensor* I{};
+  lite::Tensor* Out{};
 };
 
 }  // namespace operators

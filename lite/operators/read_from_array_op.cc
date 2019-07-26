@@ -12,34 +12,33 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/operators/write_to_array_op.h"
+#include "lite/operators/read_from_array_op.h"
 #include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
 namespace operators {
 
-bool WriteToArrayOp::CheckShape() const { return true; }
+bool ReadFromArrayOp::CheckShape() const { return true; }
 
-bool WriteToArrayOp::InferShape() const {
-  auto in_dims = param_.X->dims();
-  for (auto out : param_.Out) {
-    out->Resize(in_dims);
-  }
+bool ReadFromArrayOp::InferShape() const {
+  auto in_dims = param_.X[0]->dims();
+  param_.Out->Resize(in_dims);
   return true;
 }
 
-bool WriteToArrayOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
-  auto inputs = opdesc.Input("X").front();
-  param_.X = scope->FindVar(inputs)->GetMutable<lite::Tensor>();
-
-  auto id = opdesc.Input("I").front();
-  param_.I = scope->FindVar(id)->GetMutable<lite::Tensor>();
-
-  auto outputs = opdesc.Output("Out");
-  for (auto out : outputs) {
-    param_.Out.push_back(scope->FindVar(out)->GetMutable<lite::Tensor>());
+bool ReadFromArrayOp::AttachImpl(const cpp::OpDesc &opdesc,
+                                 lite::Scope *scope) {
+  auto inputs = opdesc.Input("X");
+  for (auto in : inputs) {
+    param_.X.push_back(scope->FindVar(in)->GetMutable<lite::Tensor>());
   }
+
+  param_.I =
+      scope->FindVar(opdesc.Input("I").front())->GetMutable<lite::Tensor>();
+
+  param_.Out =
+      scope->FindVar(opdesc.Output("Out").front())->GetMutable<lite::Tensor>();
   return true;
 }
 
@@ -47,4 +46,4 @@ bool WriteToArrayOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(write_to_array, paddle::lite::operators::WriteToArrayOp);
+REGISTER_LITE_OP(read_from_array, paddle::lite::operators::ReadFromArrayOp);

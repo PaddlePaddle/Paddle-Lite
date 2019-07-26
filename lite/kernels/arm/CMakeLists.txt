@@ -25,6 +25,7 @@ lite_cc_library(norm_compute_arm SRCS norm_compute.cc DEPS ${lite_kernel_deps} m
 lite_cc_library(topk_compute_arm SRCS topk_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(increment_compute_arm SRCS increment_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(write_to_array_compute_arm SRCS write_to_array_compute.cc DEPS ${lite_kernel_deps} math_arm)
+lite_cc_library(read_from_array_compute_arm SRCS read_from_array_compute.cc DEPS ${lite_kernel_deps} math_arm)
 
 lite_cc_test(test_fc_compute_arm SRCS fc_compute_test.cc DEPS fc_compute_arm math_arm)
 lite_cc_test(test_activation_compute_arm SRCS activation_compute_test.cc DEPS activation_compute_arm)
@@ -63,6 +64,7 @@ set(arm_kernels
     topk_compute_arm
     increment_compute_arm
     write_to_array_compute_arm
+    read_from_array_compute_arm
     )
 
 set(arm_kernels "${arm_kernels}" CACHE INTERNAL "arm kernels")

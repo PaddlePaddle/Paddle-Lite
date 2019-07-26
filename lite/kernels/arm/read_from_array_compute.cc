@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/arm/write_to_array_compute.h"
+#include "lite/kernels/arm/read_from_array_compute.h"
 #include "lite/arm/math/funcs.h"
 
 namespace paddle {
@@ -20,27 +20,24 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
-void WriteToArrayCompute::PrepareForRun() {}
+void ReadFromArrayCompute::PrepareForRun() {}
 
-void WriteToArrayCompute::Run() {
+void ReadFromArrayCompute::Run() {
   auto& ctx = this->ctx_->template As<ARMContext>();
-  auto& param = this->Param<operators::WriteToArrayParam>();
+  auto& param = this->Param<operators::ReadFromArrayParam>();
 
-  CHECK_EQ(param.I->numel(), 1) << "input2 should have only one element";
-  const auto* x_data = param.X->data<float>();
+  int in_num = param.X.size();
+  CHECK_EQ(param.I->numel(), 1) << "I should have only one element";
   int id = param.I->data<int>()[0];
-  if (id > param.Out.size()) {
-    for (int i = param.Out.size(); i < id + 1; i++) {
-      lite::Tensor tmp;
-      param.Out.push_back(&tmp);
-    }
-  }
-  param.Out[id]->Resize(param.X->dims());
-  auto out_lod = param.Out[id]->mutable_lod();
-  *out_lod = param.X->lod();
-  auto* o_data = param.Out[id]->mutable_data<float>();
-  int input_size = param.X->numel();
+  CHECK_LE(id, in_num) << "id is not valid";
+  int input_size = param.X[id]->numel();
+
+  param.Out->Resize(param.X[id]->dims());
+  auto* o_data = param.Out->mutable_data<float>();
+  const auto* x_data = param.X[id]->data<float>();
   memcpy(o_data, x_data, sizeof(float) * input_size);
+  auto out_lod = param.Out->mutable_lod();
+  *out_lod = param.X[id]->lod();
 }
 
 }  // namespace arm
@@ -48,11 +45,11 @@ void WriteToArrayCompute::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(write_to_array,
+REGISTER_LITE_KERNEL(read_from_array,
                      kARM,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::arm::WriteToArrayCompute,
+                     paddle::lite::kernels::arm::ReadFromArrayCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("I", {LiteType::GetTensorTy(TARGET(kARM))})
