@@ -16,6 +16,7 @@ import Foundation
 
 struct ElementwiseAddMetalParam {
     var fast: Int32 = 0
+    var addByChannel: Int32 = 0
     var axis: Int32 = 0
     var ylen: Int32 = 0
     var xdim: (Int32, Int32, Int32, Int32) = (0, 0, 0, 0)
@@ -90,6 +91,9 @@ class ElementwiseAddKernel<P: PrecisionProtocol>: Kernel, Computable {
         if (inputX.dim == inputY.dim) && (inputX.transpose == inputY.transpose) {
             //      print("===> elementwise_add fast!!!")
             metalParam.fast = 1
+        }
+        if inputY.tensorDim.cout() == 1 && (axis == 1 || (axis == -1 && inputY.tensorDim.dims[0] == inputX.padToFourDim[1])) {
+            metalParam.addByChannel = 1
         }
         return metalParam
     }

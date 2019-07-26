@@ -46,7 +46,7 @@ class ConvKernel<P: PrecisionProtocol>: Kernel, Computable {
             try setupWithMPS(device: device, param: param)
         } else {
             if functionName == nil {
-                fatalError(" unsupport yet ")
+                throw PaddleMobileError.makeError(type: .netError, msg: "function name nil")
             }
             try super.init(device: device, inFunctionName: functionName, initContext: initContext)
             try setupWithoutMPS(device: device, param: param)
