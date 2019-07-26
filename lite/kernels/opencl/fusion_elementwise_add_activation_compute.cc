@@ -26,13 +26,14 @@ class FusionElementwiseAddActivationCompute : public ElementwiseAddCompute {
 
   void PrepareForRun() override {
     kernel_func_name_ = "elementwise_add";
-    build_option_ = "-DFUSE_RELU";
+    build_options_ = "-DCL_DTYPE=float -DRELU";
     auto& context = ctx_->As<OpenCLContext>();
     context.cl_context()->AddKernel(
-        kernel_func_name_, "buffer/elementwise_add_kernel.cl", build_option_);
+        kernel_func_name_, "buffer/elementwise_add_kernel.cl", build_options_);
     ele_param_ = param_.get_mutable<param_t>();
     UpdateParams();
     auto act_t = static_cast<param_t*>(ele_param_)->act_type;
+    VLOG(4) << "act: " << act_t;
     if (act_t != "relu") {
       LOG(FATAL) << "Unsupported Activation type: " << act_t;
     }

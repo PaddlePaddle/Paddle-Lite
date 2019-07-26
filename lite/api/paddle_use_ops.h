@@ -25,6 +25,7 @@ USE_LITE_OP(scale);
 USE_LITE_OP(feed);
 USE_LITE_OP(fetch);
 USE_LITE_OP(io_copy);
+USE_LITE_OP(io_copy_once);
 USE_LITE_OP(elementwise_add)
 USE_LITE_OP(elementwise_sub)
 USE_LITE_OP(square)

@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <sstream>
 #include <vector>
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
@@ -31,9 +32,10 @@ class MulCompute
 
   void PrepareForRun() override {
     kernel_func_name_ = "mat_mul";
+    build_options_ = "-DCL_DTYPE=float";
     auto& context = ctx_->As<OpenCLContext>();
-    context.cl_context()->AddKernel(kernel_func_name_,
-                                    "buffer/mat_mul_kernel.cl");
+    context.cl_context()->AddKernel(
+        kernel_func_name_, "buffer/mat_mul_kernel.cl", build_options_);
     const auto& param = *param_.get_mutable<param_t>();
     const auto* x_data = param.x->data<float>();
     const auto* y_data = param.y->data<float>();
@@ -67,7 +69,9 @@ class MulCompute
     auto* out_buf =
         param.output->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
 
-    auto kernel = context.cl_context()->GetKernel(kernel_func_name_);
+    std::stringstream kernel_key;
+    kernel_key << kernel_func_name_ << build_options_;
+    auto kernel = context.cl_context()->GetKernel(kernel_key.str());
 
     cl_int status;
     int arg_idx = 0;
@@ -77,11 +81,11 @@ class MulCompute
     CL_CHECK_FATAL(status);
     status = kernel.setArg(++arg_idx, *out_buf);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(m_));
+    status = kernel.setArg(++arg_idx, m_);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(n_));
+    status = kernel.setArg(++arg_idx, n_);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(k_));
+    status = kernel.setArg(++arg_idx, k_);
     CL_CHECK_FATAL(status);
 
     cl::Event event;
@@ -102,6 +106,7 @@ class MulCompute
  private:
   int m_, n_, k_;
   std::string kernel_func_name_{};
+  std::string build_options_{};
 };
 
 }  // namespace opencl
