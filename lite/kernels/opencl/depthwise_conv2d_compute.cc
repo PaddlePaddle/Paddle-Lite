@@ -28,6 +28,13 @@ class DepthwiseConv2dCompute
  public:
   using param_t = operators::ConvParam;
 
+  void PrepareForRun() override {
+    kernel_func_name_ = "depthwise_conv2d";
+    auto& context = ctx_->As<OpenCLContext>();
+    context.cl_context()->AddKernel(kernel_func_name_,
+                                    "buffer/depthwise_conv2d_kernel.cl");
+  }
+
   void Run() override {
     const auto& param = *param_.get_mutable<param_t>();
     auto x_dims = param.x->dims();
@@ -45,7 +52,7 @@ class DepthwiseConv2dCompute
                          : param.bias->data<float, cl::Buffer>();
     auto* output_buf =
         param.output->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
-    auto kernel = context.cl_context()->GetKernel("depthwise_conv2d");
+    auto kernel = context.cl_context()->GetKernel(kernel_func_name_);
     cl_int status;
     auto numel = output_dims.production();
     int arg_idx = 0;
@@ -94,6 +101,9 @@ class DepthwiseConv2dCompute
     status = event.wait();
     CL_CHECK_FATAL(status);
   }
+
+ private:
+  std::string kernel_func_name_{};
 };
 
 }  // namespace opencl
