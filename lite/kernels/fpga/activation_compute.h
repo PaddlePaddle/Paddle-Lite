@@ -12,29 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/arm/activation_compute.h"
-#include "lite/arm/math/funcs.h"
+#pragma once
+#include <algorithm>
+#include "lite/core/kernel.h"
+#include "lite/core/op_registry.h"
+#include "lite/fpga/KD/pes/relu_pe.hpp"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace fpga {
 
-void ReluCompute::Run() {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->template As<ARMContext>();
-  auto x_dims = param.X->dims();
-  auto x_data = param.X->data<float>();
-  auto output_data = param.Out->mutable_data<float>();
-}
+class ReluCompute : public KernelLite<TARGET(kFPGA), PRECISION(kFP16)> {
+ public:
+  using param_t = operators::ActivationParam;
 
-}  // namespace arm
+  void Run() override;
+
+  virtual ~ReluCompute() = default;
+};
+
+}  // namespace fpga
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
-
-REGISTER_LITE_KERNEL(
-    relu, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::ReluCompute, def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
-    .Finalize();

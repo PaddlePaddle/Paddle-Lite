@@ -12,29 +12,36 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/arm/activation_compute.h"
-#include "lite/arm/math/funcs.h"
+#pragma once
+
+#include "lite/core/kernel.h"
+#include "lite/fpga/KD/float16.hpp"
+#include "lite/fpga/KD/pes/conv_pe.hpp"
+#include "lite/operators/conv_op.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace fpga {
 
-void ReluCompute::Run() {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->template As<ARMContext>();
-  auto x_dims = param.X->dims();
-  auto x_data = param.X->data<float>();
-  auto output_data = param.Out->mutable_data<float>();
-}
+class ConvCompute : public KernelLite<TARGET(kFPGA), PRECISION(kFP16)> {
+ public:
+  using param_t = operators::ConvParam;
 
-}  // namespace arm
+  void PrepareForRun() override;
+
+  void Run() override;
+
+  ~ConvCompute() {}
+
+ private:
+  zynqmp::ConvPE pe_;
+  zynqmp::Tensor input_;
+  zynqmp::Tensor output_;
+  zynqmp::Tensor filter_;
+};
+
+}  // namespace fpga
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
-
-REGISTER_LITE_KERNEL(
-    relu, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::ReluCompute, def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
-    .Finalize();

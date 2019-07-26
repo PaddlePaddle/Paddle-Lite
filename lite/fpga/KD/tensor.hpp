@@ -450,7 +450,7 @@ class Tensor {
     for (int i = 0; i < lite_dim.size(); ++i) {
       tem_dims.push_back(lite_dim[i]);
     }
-    shape_ = new Shape(tem_dims);
+    shape_ = new Shape(NCHW, tem_dims);
     dataType_ = FP16;
   }
   void fill_to_tensorlite(lite::Tensor* lite_tensor) {
