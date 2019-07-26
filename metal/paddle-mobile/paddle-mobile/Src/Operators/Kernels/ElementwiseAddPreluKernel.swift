@@ -23,27 +23,7 @@ class ElementwiseAddPreluKernel<P: PrecisionProtocol>: Kernel, Computable {
         
         try param.alpha.initBuffer(device: device, precision: GlobalConfig.shared.computePrecision)
         
-        metalParam = ElementwiseAddMetalParam.init()
-        
-        let xdim: [Int32] = (0..<4).map { Int32(param.inputX.dim[$0]) }
-        let ydim: [Int32] = (0..<4).map { Int32(param.inputY.dim[$0]) }
-        let xtrans: [Int32] = (0..<4).map { Int32(param.inputX.transpose[$0]) }
-        let ytrans: [Int32] = (0..<4).map { Int32(param.inputY.transpose[$0]) }
-        
-        metalParam.xdim = (xdim[0], xdim[1], xdim[2], xdim[3])
-        metalParam.ydim = (ydim[0], ydim[1], ydim[2], ydim[3])
-        metalParam.xtrans = (xtrans[0], xtrans[1], xtrans[2], xtrans[3])
-        metalParam.ytrans = (ytrans[0], ytrans[1], ytrans[2], ytrans[3])
-        if param.axis == -1 {
-            metalParam.axis = 4 - Int32(param.inputY.tensorDim.cout())
-        } else {
-            metalParam.axis = 4 - Int32(param.inputX.tensorDim.cout()) + Int32(param.axis)
-        }
-        metalParam.ylen = Int32(param.inputY.tensorDim.cout())
-        if (param.inputX.dim == param.inputY.dim) && (param.inputX.transpose == param.inputY.transpose) {
-            //      print("===> elementwise_add fast!!!")
-            metalParam.fast = 1
-        }
+        metalParam = ElementwiseAddKernel<P>.metalParamFrom(inputX: param.inputX, inputY: param.inputY, axis: param.axis)
         
         if GlobalConfig.shared.computePrecision == .Float32 {
             if param.mode == "channel" {

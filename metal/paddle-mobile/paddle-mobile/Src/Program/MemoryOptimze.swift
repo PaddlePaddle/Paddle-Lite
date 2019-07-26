@@ -66,6 +66,7 @@ class MemoryOptimize: MemoryManager {
         var createdNodes = [String: Node]()
         var nodesArray = [Node]()
         let scope = program.scope
+        var fetchVarNames: [String] = []
         func appendNodes(textureDic: [String: [String]], varsDic: [String: PMVarDesc]) {
             for dicPair in textureDic {
                 for varName in dicPair.value {
@@ -94,9 +95,16 @@ class MemoryOptimize: MemoryManager {
                 varsDic[varDesc.name] = varDesc
             }
             for op in block.ops {
+                if op.type == gFetchType {
+                    for names in op.inputs.values {
+                        fetchVarNames.append(contentsOf: names)
+                    }
+                }
                 appendNodes(textureDic: op.inputs, varsDic: varsDic)
+                appendNodes(textureDic: op.paraInputs, varsDic: varsDic)
                 appendNodes(textureDic: op.outputs, varsDic: varsDic)
                 appendNodes(textureDic: op.inputs, varsDic: varsDic)
+                appendNodes(textureDic: op.paraInputs, varsDic: varsDic)
             }
         }
         var nodeGroups: [[Node]] = []
@@ -106,7 +114,8 @@ class MemoryOptimize: MemoryManager {
                 node.visited = true
                 var placed = false
                 for i in 0..<nodeGroups.count {
-                    if nodeGroups[i].last?.count == 0 {
+                    let lastNode = nodeGroups[i].last
+                    if lastNode?.count == 0 && !fetchVarNames.contains(lastNode?.name ?? "") {
                         nodeGroups[i].append(node)
                         placed = true
                         break
@@ -156,7 +165,7 @@ class MemoryBucket {
     
     public func allocHeap() {
         let size = maxSizeForTextures(textures)
-        if size > (heap?.size ?? 0) {
+        if size != (heap?.size ?? 0) {
             heap?.setPurgeableState(.empty)
             heap = makeHeapForSize(size)
         }

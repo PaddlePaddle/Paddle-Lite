@@ -109,6 +109,7 @@ inline void invtrans(int32_t trans[4], int32_t ipos[4], int32_t opos[4]) {
 
 struct ElementwiseAddParam {
     int32_t fast;
+    int32_t addByChannel;
     int32_t axis;
     int32_t ylen;
     int32_t xdim[4];

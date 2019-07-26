@@ -160,7 +160,7 @@ class ConvAddReluKernel<P: PrecisionProtocol>: Kernel, Computable {
             try setupWithMPS(device: device, param: param)
         } else {
             if functionName == nil {
-                fatalError(" unsupport yet ")
+                throw PaddleMobileError.makeError(type: .netError, msg: "function name nil")
             }
             try super.init(device: device, inFunctionName: functionName, initContext: initContext)
             try setupWithoutMPS(device: device, param: param)
@@ -371,7 +371,7 @@ class ConvAddReluKernel<P: PrecisionProtocol>: Kernel, Computable {
     }
     
     private class func canMPSAddByElement(param: ConvAddReluParam<P>) -> Bool {
-        if let y = param.y, y.dim.dims == param.input.dim.dims {
+        if let y = param.y, y.dim.dims == param.output.dim.dims {
             return true
         }
         return false

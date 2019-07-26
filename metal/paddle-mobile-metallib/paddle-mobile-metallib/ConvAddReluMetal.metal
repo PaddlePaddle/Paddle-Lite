@@ -19,8 +19,10 @@ using namespace metal;
 
 half4 getBiasHalf(uint3 gid, constant ElementwiseAddParam &addParam, texture2d_array<half, access::sample> biasTexture) {
     half4 output;
-    if (addParam.fast) {
+    if (addParam.fast == 1) {
         output = biasTexture.read(gid.xy, gid.z);
+    } else if (addParam.addByChannel == 1) {
+        output = biasTexture.read(uint2(0, 0), gid.z);
     } else {
         int32_t x_xyzn[4] = {int32_t(gid.x), int32_t(gid.y), int32_t(gid.z), 0}, x_abcd[4], t_abcd[4];
         int32_t y_abcd[4] = {0, 0, 0, 0}, y_xyzn[4];
@@ -44,8 +46,10 @@ half4 getBiasHalf(uint3 gid, constant ElementwiseAddParam &addParam, texture2d_a
 
 float4 getBias(uint3 gid, constant ElementwiseAddParam &addParam, texture2d_array<float, access::sample> biasTexture) {
     float4 output;
-    if (addParam.fast) {
+    if (addParam.fast == 1) {
         output = float4(biasTexture.read(gid.xy, gid.z));
+    } else if (addParam.addByChannel == 1) {
+        output = float4(biasTexture.read(uint2(0, 0), gid.z));
     } else {
         int32_t x_xyzn[4] = {int32_t(gid.x), int32_t(gid.y), int32_t(gid.z), 0}, x_abcd[4], t_abcd[4];
         int32_t y_abcd[4] = {0, 0, 0, 0}, y_xyzn[4];
