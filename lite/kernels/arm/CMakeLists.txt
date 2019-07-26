@@ -65,7 +65,7 @@ set(arm_kernels
     calib_compute_arm
     argmax_compute_arm
     axpy_compute_arm
-		conv_transpose_compute_arm
+    conv_transpose_compute_arm
     gru_unit_compute_arm
     im2sequence_compute_arm
     sequence_softmax_compute_arm
