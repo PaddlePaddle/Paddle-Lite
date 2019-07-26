@@ -30,6 +30,9 @@ class ReluCompute : public KernelLite<TARGET(kFPGA), PRECISION(kFP16)> {
   void Run() override;
 
   virtual ~ReluCompute() = default;
+
+ private:
+  zynqmp::ReluPE pe_;
 };
 
 }  // namespace fpga

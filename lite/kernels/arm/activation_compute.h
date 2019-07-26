@@ -31,7 +31,7 @@ class ReluCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
   virtual ~ReluCompute() = default;
 
  private:
-  zynqmp::ReluPE pe_;
+
 };
 
 }  // namespace arm
