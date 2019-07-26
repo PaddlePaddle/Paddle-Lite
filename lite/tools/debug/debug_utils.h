@@ -245,13 +245,13 @@ void CollectAndDumpTopoInfo(const std::vector<Instruction>& instructions,
 
 void CollectVarDescs(
     std::unordered_map<std::string, lite::pb::VarDesc>* var_descs,
-    const framework::proto::ProgramDesc& desc) {
+    framework::proto::ProgramDesc* desc) {
+  CHECK(desc);
   CHECK(var_descs);
-  CHECK(!desc.blocks().empty());
+  CHECK(!desc->blocks().empty());
   std::unordered_set<std::string> weights;
-  for (const auto& proto_var_desc : desc.blocks(0).vars()) {
-    auto tmp_var = proto_var_desc;
-    lite::pb::VarDesc var_desc(&tmp_var);
+  for (auto& proto_var_desc : *desc->mutable_blocks(0)->mutable_vars()) {
+    lite::pb::VarDesc var_desc(&proto_var_desc);
     (*var_descs).emplace(var_desc.Name(), std::move(var_desc));
   }
 }
@@ -289,7 +289,6 @@ std::string GetTensorRepr(const lite::Tensor& tensor, int out_data_len) {
 }
 
 void CollectAndDumpTensorInfo(const std::vector<Instruction>& instructions,
-                              const framework::proto::ProgramDesc& desc,
                               const DebugConfig& conf) {
   CHECK(instructions.size() > 0) << "No instruction found";
   const auto* scope = const_cast<lite::OpLite*>(instructions[0].op())->scope();
