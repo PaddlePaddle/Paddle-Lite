@@ -32,10 +32,10 @@ class CopyMatrixRowsFunctor {
   // copy the input src to the indexed rows of output dst.
   // The indexed rows are based on the input index.
   void operator()(const Tensor& src,
-                  std::vector<size_t> index_lod,
+                  std::vector<uint64_t> index_lod,
                   Tensor* dst,
                   bool is_src_index) {
-    size_t* index = index_lod.data();
+    auto index = index_lod.data();
     auto src_dims = src.dims();
     auto dst_dims = dst->dims();
     CHECK_EQ(src_dims.size(), 2UL) << "The src must be matrix with rank 2.";
@@ -137,9 +137,9 @@ class LoDTensor2BatchFunctor {
     // input LodTensor. It is also the maximum length of input sequence.
 
     LoD batch_lods;
-    batch_lods.emplace_back(std::vector<size_t>{0});
-    batch_lods.emplace_back(std::vector<size_t>{0});
-    batch_lods.emplace_back(std::vector<size_t>{0});
+    batch_lods.emplace_back(std::vector<uint64_t>{0});
+    batch_lods.emplace_back(std::vector<uint64_t>{0});
+    batch_lods.emplace_back(std::vector<uint64_t>{0});
 
     // batch_lods[0] is the start positions for batch LoDTensor
     int max_seqlen = seq_info[0].length;
