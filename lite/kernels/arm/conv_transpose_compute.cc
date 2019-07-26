@@ -45,8 +45,7 @@ void Conv2DTransposeCompute::PrepareForRun() {
   int n = hin * win;
   int k = chin / group;
 
-  ctx.ExtendWorkspace(
-      lite::DDim(std::vector<int64_t>({1, 1, 1, group * m * n})));
+  ctx.ExtendWorkspace(group * m * n * sizeof(float));
 
   lite::Tensor tmp_weights;
   lite::arm::math::prepackA(
@@ -88,12 +87,11 @@ void Conv2DTransposeCompute::Run() {
                       (param.strides[1] == 1) && (param.paddings[0] == 0) &&
                       (param.paddings[1] == 0) && (param.dilations[0] == 1) &&
                       (param.dilations[1] == 1);
-  ctx.ExtendWorkspace(
-      lite::DDim(std::vector<int64_t>({1, 1, 1, group * m * n})));
+  ctx.ExtendWorkspace(sizeof(float) * group * m * n);
 
-  const float* din = param.x->data<float>();
-  float* dout = param.output->mutable_data<float>();
-  const float* weights = param.filter->data<float>();
+  auto din = param.x->data<float>();
+  auto dout = param.output->mutable_data<float>();
+  auto weights = param.filter->data<float>();
   for (int i = 0; i < num; i++) {
     const float* din_batch = din + i * chin * hin * win;
     float* dout_batch = dout + i * chout * hout * wout;
@@ -106,19 +104,7 @@ void Conv2DTransposeCompute::Run() {
       const float* din_group = din_batch + g * group_size_in;
       const float* weights_group = weights + g * group_size_weights;
       float* coldata_group = col_data + g * group_size_coldata;
-      /*
-      lite::arm::math::sgemm_prepack(weights_group,
-                                     din_group,
-                                     nullptr,
-                                     coldata_group,
-                                     m,
-                                     n,
-                                     k,
-                                     false,
-                                     fuse_relu && (!flag_bias),
-                                     false,
-                                     &ctx);
-      */
+
       lite::arm::math::sgemm_prepack(false,
                                      m,
                                      n,

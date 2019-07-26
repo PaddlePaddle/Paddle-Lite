@@ -57,7 +57,7 @@ void conv_winograd3x3(const float* din,
   int k = chin;
 
   float* tmp_work_space =
-      ctx->workspace_data<float>() + ctx->l2_cache_size() / sizeof(float);
+      ctx->workspace_data<float>() + ctx->llc_size() / sizeof(float);
 
   //! tmp data buffer for input transform
   float* tmp_data1 = tmp_work_space;

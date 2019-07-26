@@ -15,6 +15,7 @@
 #pragma once
 
 #include <arm_neon.h>
+#include <algorithm>
 #include <cmath>
 
 #include "lite/arm/math/activation.h"
@@ -37,6 +38,7 @@
 #include "lite/arm/math/pooling.h"
 #include "lite/arm/math/scale.h"
 #include "lite/arm/math/sequence_softmax.h"
+#include "lite/arm/math/sgemm.h"
 #include "lite/arm/math/sgemv.h"
 #include "lite/arm/math/softmax.h"
 #include "lite/arm/math/split.h"
@@ -241,7 +243,7 @@ inline float32x4_t exp_ps(float32x4_t x) {
 // almost no extra price so both sin_ps and cos_ps make use of
 // sincos_ps..
 //
-inline void sincos_ps(float32x4_t x, float32x4_t* ysin, float32x4_t* ycos) {
+inline void sincos_ps(float32x4_t x, float32x4_t *ysin, float32x4_t *ycos) {
   // any x
   float32x4_t xmm1, xmm2, xmm3, y;
 
@@ -330,7 +332,76 @@ inline float32x4_t pow_ps(float32x4_t a, float32x4_t b) {
 }
 
 template <typename T>
-void fill_bias_fc(T* tensor, const T* bias, const int num, const int channel);
+void fill_bias_fc(T *tensor, const T *bias, int num, int channel);
+
+template <lite_api::ActivationType Act = lite_api::ActivationType::kIndentity>
+inline float32x4_t vactive_f32(const float32x4_t &x) {
+  return x;
+}
+
+template <>
+inline float32x4_t vactive_f32<lite_api::ActivationType::kRelu>(
+    const float32x4_t &x) {
+  float32x4_t __zero = vdupq_n_f32(0.f);
+  return vmaxq_f32(x, __zero);
+}
+
+template <>
+inline float32x4_t vactive_f32<lite_api::ActivationType::kRelu6>(
+    const float32x4_t &x) {
+  float32x4_t __zero = vdupq_n_f32(0.f);
+  float32x4_t __six = vdupq_n_f32(6.f);
+  return vminq_f32(vmaxq_f32(x, __zero), __six);
+}
+
+template <>
+inline float32x4_t vactive_f32<lite_api::ActivationType::kSigmoid>(
+    const float32x4_t &x) {
+  float32x4_t __one = vdupq_n_f32(1.f);
+  float32x4_t __x = vnegq_f32(x);
+  __x = exp_ps(__x);
+  __x = vaddq_f32(__x, __one);
+  float32x4_t __out = vrecpeq_f32(__x);
+  return vmulq_f32(vrecpsq_f32(__x, __out), __out);
+}
+
+template <>
+inline float32x4_t vactive_f32<lite_api::ActivationType::kTanh>(
+    const float32x4_t &x) {
+  float32x4_t __one = vdupq_n_f32(1.f);
+  float32x4_t __x = vmulq_n_f32(x, -2.f);
+  __x = exp_ps(__x);
+  __x = vaddq_f32(__x, __one);
+  float32x4_t __out = vrecpeq_f32(__x);
+  __out = vmulq_f32(vrecpsq_f32(__x, __out), __out);
+  __out = vmulq_n_f32(__out, 2.f);
+  return vsubq_f32(__out, __one);
+}
+
+template <lite_api::ActivationType Act = lite_api::ActivationType::kIndentity>
+inline float active_f32(const float &x) {
+  return x;
+}
+
+template <>
+inline float active_f32<lite_api::ActivationType::kRelu>(const float &x) {
+  return std::max(x, 0.f);
+}
+
+template <>
+inline float active_f32<lite_api::ActivationType::kRelu6>(const float &x) {
+  return std::min(std::max(x, 0.f), 6.f);
+}
+
+template <>
+inline float active_f32<lite_api::ActivationType::kSigmoid>(const float &x) {
+  return 1.f / (1.f + exp(-x));
+}
+
+template <>
+inline float active_f32<lite_api::ActivationType::kTanh>(const float &x) {
+  return 2.f / (1.f + exp(-2.f * x)) - 1.f;
+}
 
 }  // namespace math
 }  // namespace arm

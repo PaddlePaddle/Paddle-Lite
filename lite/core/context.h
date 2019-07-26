@@ -112,14 +112,15 @@ class Context<TargetType::kARM> {
   int l1_cache_size() const { return DeviceInfo::Global().l1_cache_size(); }
   int l2_cache_size() const { return DeviceInfo::Global().l2_cache_size(); }
   int l3_cache_size() const { return DeviceInfo::Global().l3_cache_size(); }
+  int llc_size() const { return DeviceInfo::Global().llc_size(); }
 
   template <typename T>
   T* workspace_data() {
     return DeviceInfo::Global().workspace_data<T>();
   }
 
-  bool ExtendWorkspace(DDimLite dims) {
-    return DeviceInfo::Global().ExtendWorkspace(dims);
+  bool ExtendWorkspace(size_t size) {
+    return DeviceInfo::Global().ExtendWorkspace(size);
   }
 
   std::string name() const { return "ARMContext"; }

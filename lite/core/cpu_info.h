@@ -70,12 +70,16 @@ class DeviceInfo {
   int l1_cache_size() const { return L1_cache_[active_ids_[0]]; }
   int l2_cache_size() const { return L2_cache_[active_ids_[0]]; }
   int l3_cache_size() const { return L3_cache_[active_ids_[0]]; }
+  int llc_size() const {
+    return L3_cache_[active_ids_[0]] > 0 ? L3_cache_[active_ids_[0]]
+                                         : L2_cache_[active_ids_[0]];
+  }
 
   template <typename T>
   T* workspace_data() {
-    return reinterpret_cast<T*>(workspace_.mutable_data<float>());
+    return reinterpret_cast<T*>(workspace_.mutable_data<int8_t>());
   }
-  bool ExtendWorkspace(DDimLite dims);
+  bool ExtendWorkspace(size_t size);
 
  private:
   int core_num_;

@@ -380,11 +380,11 @@ struct AxpyParam {
 struct GRUUnitParam {
   enum ActType { identity, sigmoid, tanh, relu };
   const lite::Tensor* input{nullptr};
-  const lite::Tensor* hiddenprev{nullptr};
+  const lite::Tensor* hidden_prev{nullptr};
   const lite::Tensor* weight{nullptr};
   const lite::Tensor* bias{nullptr};
   lite::Tensor* gate{nullptr};
-  lite::Tensor* resethiddenprev{nullptr};
+  lite::Tensor* reset_hidden_prev{nullptr};
   lite::Tensor* hidden{nullptr};
 
   int gate_activation{ActType::sigmoid};
@@ -398,9 +398,9 @@ struct GRUParam {
   const lite::Tensor* h0{nullptr};
   const lite::Tensor* weight{nullptr};
   const lite::Tensor* bias{nullptr};
-  lite::Tensor* batchgate{nullptr};
-  lite::Tensor* batchresethiddenprev{nullptr};
-  lite::Tensor* batchhidden{nullptr};
+  lite::Tensor* batch_gate{nullptr};
+  lite::Tensor* batch_reset_hidden_prev{nullptr};
+  lite::Tensor* batch_hidden{nullptr};
   lite::Tensor* hidden{nullptr};
 
   std::string gate_activation{"sigmoid"};
