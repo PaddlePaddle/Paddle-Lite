@@ -19,6 +19,8 @@ lite_cc_library(mean_op SRCS mean_op.cc DEPS ${op_DEPS})
 lite_cc_library(fill_constant_op SRCS fill_constant_op.cc DEPS ${op_DEPS})
 lite_cc_library(sgd_op SRCS sgd_op.cc DEPS ${op_DEPS})
 lite_cc_library(uniform_random_op SRCS uniform_random_op.cc DEPS ${op_DEPS})
+lite_cc_library(argmax_op SRCS argmax_op.cc DEPS ${op_DEPS})
+lite_cc_library(axpy_op SRCS axpy_op.cc DEPS ${op_DEPS})
 lite_cc_library(gru_unit_op SRCS gru_unit_op.cc DEPS ${op_DEPS})
 lite_cc_library(gru_op SRCS gru_op.cc DEPS ${op_DEPS})
 
@@ -32,6 +34,7 @@ lite_cc_library(split_op SRCS split_op.cc DEPS ${op_DEPS})
 lite_cc_library(transpose_op SRCS transpose_op.cc DEPS ${op_DEPS})
 lite_cc_library(fake_quant SRCS fake_quantize_moving_avg_max_abs.cc DEPS ${op_DEPS})
 lite_cc_library(fake_dequant SRCS fake_dequantize_max_abs.cc DEPS ${op_DEPS})
+lite_cc_library(conv_transpose_op SRCS conv_transpose_op.cc DEPS ${op_DEPS})
 lite_cc_library(im2sequence_op SRCS im2sequence_op.cc DEPS ${op_DEPS})
 lite_cc_library(sequence_softmax_op SRCS sequence_softmax_op.cc DEPS ${op_DEPS})
 lite_cc_library(norm_op SRCS norm_op.cc DEPS ${op_DEPS})
@@ -68,6 +71,9 @@ set(ops
         fake_dequant
         sgd_op
         uniform_random_op
+        argmax_op
+        axpy_op
+        conv_transpose_op
         im2sequence_op
         sequence_softmax_op
         norm_op

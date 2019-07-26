@@ -330,7 +330,7 @@ void act_prelu<float>(const float* din,
                       int channel_size,
                       int inner_size,
                       bool channel_shared,
-                      float* channel_slope,
+                      const float* channel_slope,
                       int threads) {
   int stride_size = inner_size * channel_size;
   int cnt = inner_size >> 4;

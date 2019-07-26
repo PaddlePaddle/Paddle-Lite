@@ -38,6 +38,15 @@ USE_LITE_KERNEL(relu, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(transpose, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(transpose2, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(batch_norm, kARM, kFloat, kNCHW, def);
+USE_LITE_KERNEL(argmax, kARM, kFloat, kNCHW, def);
+USE_LITE_KERNEL(axpy, kARM, kFloat, kNCHW, def);
+USE_LITE_KERNEL(leaky_relu, kARM, kFloat, kNCHW, def);
+USE_LITE_KERNEL(relu_clipped, kARM, kFloat, kNCHW, def);
+USE_LITE_KERNEL(prelu, kARM, kFloat, kNCHW, def);
+USE_LITE_KERNEL(sigmoid, kARM, kFloat, kNCHW, def);
+USE_LITE_KERNEL(tanh, kARM, kFloat, kNCHW, def);
+USE_LITE_KERNEL(swish, kARM, kFloat, kNCHW, def);
+USE_LITE_KERNEL(conv2d_transpose, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(pad2d, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(negative, kARM, kFloat, kNCHW, def);
 
