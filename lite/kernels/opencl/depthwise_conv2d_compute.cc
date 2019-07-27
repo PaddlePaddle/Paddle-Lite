@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <sstream>
+#include <utility>
 #include <vector>
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
@@ -94,7 +95,7 @@ class DepthwiseConv2dCompute
     CL_CHECK_FATAL(status);
     status = kernel.setArg(++arg_idx, *bias_buf);
     CL_CHECK_FATAL(status);
-    cl::Event event;
+    std::unique_ptr<cl::Event> event(new cl::Event);
     auto global_work_size = cl::NDRange(static_cast<size_t>(numel));
     status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
         kernel,
@@ -102,10 +103,10 @@ class DepthwiseConv2dCompute
         global_work_size,
         cl::NullRange,
         nullptr,
-        &event);
+        event.get());
     CL_CHECK_FATAL(status);
-    status = event.wait();
-    CL_CHECK_FATAL(status);
+    context.cl_wait_list()->insert(
+        std::make_pair(output_buf, std::move(event)));
   }
 
  private:

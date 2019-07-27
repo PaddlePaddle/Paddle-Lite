@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <sstream>
+#include <utility>
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 #include "lite/opencl/cl_include.h"
@@ -60,17 +61,16 @@ class ReluCompute
     CL_CHECK_FATAL(status);
 
     auto global_work_size = cl::NDRange{count};
-    cl::Event event;
+    std::unique_ptr<cl::Event> event(new cl::Event);
     status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
         kernel,
         cl::NullRange,
         global_work_size,
         cl::NullRange,
         nullptr,
-        &event);
+        event.get());
     CL_CHECK_FATAL(status);
-    status = event.wait();
-    CL_CHECK_FATAL(status);
+    context.cl_wait_list()->insert(std::make_pair(out_buf, std::move(event)));
   }
 
  private:

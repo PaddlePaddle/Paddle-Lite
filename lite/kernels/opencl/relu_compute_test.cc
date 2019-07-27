@@ -56,8 +56,23 @@ TEST(opencl_relu, compute) {
   ASSERT_FALSE(kernels.empty());
   auto kernel = std::move(kernels.front());
   kernel->SetParam(param);
-  kernel->SetContext(std::move(context));
+  std::unique_ptr<KernelContext> relu_context(new KernelContext);
+  context->As<OpenCLContext>().CopySharedTo(
+      &(relu_context->As<OpenCLContext>()));
+  kernel->SetContext(std::move(relu_context));
+
   kernel->Launch();
+
+  auto *wait_list = context->As<OpenCLContext>().cl_wait_list();
+  auto *out_ptr = param.Out->data<float, cl::Buffer>();
+  auto it = wait_list->find(out_ptr);
+  if (it != wait_list->end()) {
+    VLOG(4) << "--- Find the sync event for the target cl tensor. ---";
+    auto &event = *(it->second);
+    event.wait();
+  } else {
+    LOG(FATAL) << "Could not find the sync event for the target cl tensor.";
+  }
 
   // run compute ref and check
   std::unique_ptr<float[]> out_ref(new float[x_dim.production()]);
