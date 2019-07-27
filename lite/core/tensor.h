@@ -93,7 +93,7 @@ class TensorLite {
   template <typename DType, typename DimT, TargetType Target>
   void Assign(DType *data, const DimT &dim) {
     Resize(dim);
-    auto *dst = mutable_data<DType>(Target);
+    auto *dst = mutable_data<DType, void>(Target);
     CopySync<Target>(
         dst, data, dim.production() * sizeof(DType), IoDirection::HtoD);
   }

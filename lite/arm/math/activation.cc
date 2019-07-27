@@ -100,7 +100,7 @@ template <>
 void act_relu_neg<float>(const float* din,
                          float* dout,
                          int size,
-                         const float negative_slope,
+                         float negative_slope,
                          int threads) {
   int nums_per_thread = size / threads;
   int remain = size - threads * nums_per_thread;
@@ -222,7 +222,7 @@ void act_relu_neg<float>(const float* din,
 
 template <>
 void act_clipped_relu<float>(
-    const float* din, float* dout, int size, const float coef, int threads) {
+    const float* din, float* dout, int size, float coef, int threads) {
   int nums_per_thread = size / threads;
   int remain = size - threads * nums_per_thread;
   int neon_loop_cnt = nums_per_thread >> 4;
@@ -330,7 +330,7 @@ void act_prelu<float>(const float* din,
                       int channel_size,
                       int inner_size,
                       bool channel_shared,
-                      float* channel_slope,
+                      const float* channel_slope,
                       int threads) {
   int stride_size = inner_size * channel_size;
   int cnt = inner_size >> 4;
@@ -523,7 +523,7 @@ void act_tanh<float>(const float* din, float* dout, int size, int threads) {
 // swish: x /(1 + exp(-(b * x)))
 template <>
 void act_swish<float>(
-    const float* din, float* dout, int size, const float coef, int threads) {
+    const float* din, float* dout, int size, float coef, int threads) {
   int nums_per_thread = size / threads;
   int remain = size - threads * nums_per_thread;
   int neon_loop_cnt_dim4 = nums_per_thread >> 2;

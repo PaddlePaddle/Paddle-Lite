@@ -22,14 +22,14 @@ namespace operators {
 
 bool GRUUnitOpLite::CheckShape() const {
   CHECK_OR_FALSE(param_.input);
-  CHECK_OR_FALSE(param_.hiddenprev);
+  CHECK_OR_FALSE(param_.hidden_prev);
   CHECK_OR_FALSE(param_.gate);
-  CHECK_OR_FALSE(param_.resethiddenprev);
+  CHECK_OR_FALSE(param_.reset_hidden_prev);
   CHECK_OR_FALSE(param_.hidden);
   CHECK_OR_FALSE(param_.weight);
 
   auto input_dims = param_.input->dims();
-  auto hidden_prev_dims = param_.hiddenprev->dims();
+  auto hidden_prev_dims = param_.hidden_prev->dims();
   auto weight_dims = param_.weight->dims();
 
   int batch_size = input_dims[0];
@@ -37,12 +37,12 @@ bool GRUUnitOpLite::CheckShape() const {
   int frame_size = hidden_prev_dims[1];
   int weight_height = weight_dims[0];
   int weight_width = weight_dims[1];
-  CHECK_EQ_OR_FALSE(input_size, frame_size * 3);
-  CHECK_EQ_OR_FALSE(weight_height, frame_size);
-  CHECK_EQ_OR_FALSE(weight_width, frame_size * 3);
+  CHECK_EQ_OR_FALSE(input_size, frame_size * 3)
+  CHECK_EQ_OR_FALSE(weight_height, frame_size)
+  CHECK_EQ_OR_FALSE(weight_width, frame_size * 3)
 
   if (param_.bias) {
-    auto bias_dims = param_.input->dims();
+    auto bias_dims = param_.bias->dims();
     int bias_height = bias_dims[0];
     int bias_width = bias_dims[1];
     CHECK_EQ_OR_FALSE(bias_height, 1);
@@ -54,39 +54,42 @@ bool GRUUnitOpLite::CheckShape() const {
 
 bool GRUUnitOpLite::InferShape() const {
   auto input_dims = param_.input->dims();
-  auto hidden_prev_dims = param_.hiddenprev->dims();
+  auto hidden_prev_dims = param_.hidden_prev->dims();
   auto weight_dims = param_.weight->dims();
 
   int batch_size = input_dims[0];
-  int input_size = input_dims[1];
   int frame_size = hidden_prev_dims[1];
-  int weight_height = weight_dims[0];
-  int weight_width = weight_dims[1];
 
-  std::vector<int64_t> gatedim(batch_size, frame_size * 3);
-  std::vector<int64_t> resethiddenprevdim(batch_size, frame_size);
-  std::vector<int64_t> hiddendim(batch_size, frame_size);
+  LOG(INFO) << "batch size: " << batch_size;
+  LOG(INFO) << "frame size: " << frame_size;
 
-  param_.gate->Resize(lite::DDim(gatedim));
-  param_.resethiddenprev->Resize(lite::DDim(resethiddenprevdim));
-  param_.hidden->Resize(lite::DDim(hiddendim));
+  param_.gate->Resize(lite::DDim({batch_size, frame_size * 3}));
+  param_.reset_hidden_prev->Resize(lite::DDim({batch_size, frame_size}));
+  param_.hidden->Resize(lite::DDim({batch_size, frame_size}));
+
+  LOG(INFO) << "gate dims: " << param_.gate->dims()[0] << ", "
+            << param_.gate->dims()[1];
+  LOG(INFO) << "reset hidden prev dims: " << param_.reset_hidden_prev->dims()[0]
+            << ", " << param_.reset_hidden_prev->dims()[1];
+  LOG(INFO) << "hidden dims: " << param_.hidden->dims()[0] << ", "
+            << param_.hidden->dims()[1];
 }
 
 bool GRUUnitOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
   auto input = op_desc.Input("Input").front();
-  auto hiddenprev = op_desc.Input("HiddenPrev").front();
+  auto hidden_prev = op_desc.Input("HiddenPrev").front();
   auto weight = op_desc.Input("Weight").front();
   auto gate = op_desc.Output("Gate").front();
-  auto resethiddenprev = op_desc.Output("ResetHiddenPrev").front();
+  auto reset_hidden_prev = op_desc.Output("ResetHiddenPrev").front();
   auto hidden = op_desc.Output("Hidden").front();
 
   param_.input = scope->FindVar(input)->GetMutable<lite::Tensor>();
-  param_.hiddenprev = scope->FindVar(hiddenprev)->GetMutable<lite::Tensor>();
+  param_.hidden_prev = scope->FindVar(hidden_prev)->GetMutable<lite::Tensor>();
   param_.weight = scope->FindVar(weight)->GetMutable<lite::Tensor>();
 
   param_.gate = scope->FindVar(gate)->GetMutable<lite::Tensor>();
-  param_.resethiddenprev =
-      scope->FindVar(resethiddenprev)->GetMutable<lite::Tensor>();
+  param_.reset_hidden_prev =
+      scope->FindVar(reset_hidden_prev)->GetMutable<lite::Tensor>();
   param_.hidden = scope->FindVar(hidden)->GetMutable<lite::Tensor>();
 
   if (op_desc.HasInput("Bias")) {
@@ -101,8 +104,8 @@ bool GRUUnitOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
   return true;
 }
 
-REGISTER_LITE_OP(gru_unit, paddle::lite::operators::GRUUnitOpLite);
-
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle
+
+REGISTER_LITE_OP(gru_unit, paddle::lite::operators::GRUUnitOpLite)

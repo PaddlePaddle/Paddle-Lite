@@ -39,7 +39,17 @@ USE_LITE_OP(batch_norm)
 USE_LITE_OP(fusion_elementwise_sub_activation)
 USE_LITE_OP(transpose)
 USE_LITE_OP(transpose2)
-
+USE_LITE_OP(argmax)
+USE_LITE_OP(axpy)
+USE_LITE_OP(leaky_relu)
+USE_LITE_OP(relu_clipped)
+USE_LITE_OP(prelu)
+USE_LITE_OP(sigmoid)
+USE_LITE_OP(tanh)
+USE_LITE_OP(swish)
+USE_LITE_OP(conv2d_transpose)
+USE_LITE_OP(negative)
+USE_LITE_OP(pad2d)
 USE_LITE_OP(fake_quantize_moving_average_abs_max);
 USE_LITE_OP(fake_dequantize_max_abs);
 USE_LITE_OP(calib);
@@ -50,3 +60,5 @@ USE_LITE_OP(topk);
 USE_LITE_OP(increment);
 USE_LITE_OP(write_to_array);
 USE_LITE_OP(read_from_array);
+USE_LITE_OP(sequence_softmax)
+USE_LITE_OP(gru_unit)

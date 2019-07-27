@@ -12,12 +12,27 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-__kernel void vector_add (__global const float* src_a,
-                     __global const float* src_b,
-                     __global float* res,
-                     const int num)
-{
-   const int idx = get_global_id(0);
-   if (idx < num)
-      res[idx] = src_a[idx] + src_b[idx];
+#pragma once
+
+#pragma OPENCL EXTENSION cl_khr_fp16 : enable
+
+#define GET_VEC_TYPE(type__, size__) type__##size__
+#define VECTORIZED_TYPE(type__, size__) GET_VEC_TYPE(type__, size__)
+#define CL_DTYPE4 VECTORIZED_TYPE(CL_DTYPE, 4)
+
+inline CL_DTYPE activation(CL_DTYPE in
+#ifdef PRELU
+                           ,
+                           CL_DTYPE prelu_alpha
+#endif
+                           ) {
+  CL_DTYPE output;
+#ifdef PRELU
+  output = select(prelu_alpha * in, in, in >= (CL_DTYPE)0);
+#endif
+
+#ifdef RELU
+  output = fmax(in, (CL_DTYPE)0);
+#endif
+  return output;
 }

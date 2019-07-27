@@ -259,6 +259,11 @@ struct FusionElementwiseActivationGradParam : public ElementwiseGradParam {
 /// ----------------------- activation operators ----------------------
 struct ActivationParam {
   const lite::Tensor* X{};
+  float Leaky_relu_slope{0};            // leaky_relu param
+  float Relu_clipped_coef{6};           // relu_clipped param
+  bool Prelu_channel_shared{false};     // prelu param
+  lite::Tensor* Prelu_channel_slope{};  // prelu param
+  float Swish_coef;                     // swish param
   lite::Tensor* Out{};
 };
 
@@ -334,16 +339,52 @@ struct UniformRandomParam {
   int dtype{framework::proto::VarType::FP32};
   lite::Tensor* Out{};
 };
+/// ----------------------- negative operators --------------
+struct NegativeParam {
+  const lite::Tensor* X{};
+  lite::Tensor* Out{};
+};
+/// ----------------------- pad2d operators ----------------------
+struct Pad2dParam {
+  const lite::Tensor* X{};
+  lite::Tensor* Out{};
+  /*
+  _mod:PadMode
+  typedef enum{
+     PAD_CONSTANT = 0,
+     PAD_EDGE = 1,
+     PAD_REFLECT = 2,
+ } PadMode;
+   */
+  int _mode{0};
+  std::vector<int> _pad_h;
+  std::vector<int> _pad_w;
+  float _pad_value = 0.f;
+};
 
+///----------------------- argmax operators ----------------------
+struct ArgmaxParam {
+  lite::Tensor* X{};
+  lite::Tensor* Out{};
+  int Axis{0};
+};
+
+///----------------------- axpy operators ----------------------
+struct AxpyParam {
+  lite::Tensor* Scale{};
+  lite::Tensor* X{};
+  lite::Tensor* Bias{};
+  lite::Tensor* Out{};
+};
 /// ----------------------- GRU unit operators ----------------------f
 struct GRUUnitParam {
   enum ActType { identity, sigmoid, tanh, relu };
   const lite::Tensor* input{nullptr};
-  const lite::Tensor* hiddenprev{nullptr};
+  const lite::Tensor* hidden_prev{nullptr};
   const lite::Tensor* weight{nullptr};
   const lite::Tensor* bias{nullptr};
   lite::Tensor* gate{nullptr};
-  lite::Tensor* resethiddenprev{nullptr};
+  lite::Tensor* reset_hidden_prev{nullptr};
   lite::Tensor* hidden{nullptr};
 
   int gate_activation{ActType::sigmoid};
@@ -357,9 +398,9 @@ struct GRUParam {
   const lite::Tensor* h0{nullptr};
   const lite::Tensor* weight{nullptr};
   const lite::Tensor* bias{nullptr};
-  lite::Tensor* batchgate{nullptr};
-  lite::Tensor* batchresethiddenprev{nullptr};
-  lite::Tensor* batchhidden{nullptr};
+  lite::Tensor* batch_gate{nullptr};
+  lite::Tensor* batch_reset_hidden_prev{nullptr};
+  lite::Tensor* batch_hidden{nullptr};
   lite::Tensor* hidden{nullptr};
 
   std::string gate_activation{"sigmoid"};

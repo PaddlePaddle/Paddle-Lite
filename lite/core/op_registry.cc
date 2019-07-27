@@ -36,6 +36,10 @@ std::list<std::unique_ptr<KernelBase>> KernelRegistry::Create(
       return Create<TARGET(target__),                                        \
                     PRECISION(precision__),                                  \
                     DATALAYOUT(kAny)>(op_type);                              \
+    case DATALAYOUT(kNHWC):                                                  \
+      return Create<TARGET(target__),                                        \
+                    PRECISION(precision__),                                  \
+                    DATALAYOUT(kNHWC)>(op_type);                             \
     default:                                                                 \
       LOG(FATAL) << "unsupported kernel layout " << DataLayoutToStr(layout); \
   }
@@ -46,6 +50,8 @@ std::list<std::unique_ptr<KernelBase>> KernelRegistry::Create(
       CREATE_KERNEL1(target__, kFloat);                 \
     case PRECISION(kInt8):                              \
       CREATE_KERNEL1(target__, kInt8);                  \
+    case PRECISION(kFP16):                              \
+      CREATE_KERNEL1(target__, kFP16);                  \
     case PRECISION(kAny):                               \
       CREATE_KERNEL1(target__, kAny);                   \
     default:                                            \
@@ -68,6 +74,9 @@ std::list<std::unique_ptr<KernelBase>> KernelRegistry::Create(
     } break;
     case TARGET(kOpenCL): {
       CREATE_KERNEL(kOpenCL);
+    } break;
+    case TARGET(kFPGA): {
+      CREATE_KERNEL(kFPGA);
     } break;
     default:
       CHECK(false) << "not supported kernel target " << TargetToStr(target);
@@ -112,6 +121,11 @@ KernelRegistry::KernelRegistry()
   INIT_FOR(kOpenCL, kFloat, kNCHW);
   INIT_FOR(kOpenCL, kAny, kNCHW);
   INIT_FOR(kOpenCL, kAny, kAny);
+
+  INIT_FOR(kFPGA, kFloat, kNCHW);
+  INIT_FOR(kFPGA, kFP16, kNCHW);
+  INIT_FOR(kFPGA, kFloat, kNHWC);
+  INIT_FOR(kFPGA, kFP16, kNHWC);
 #undef INIT_FOR
 }
 

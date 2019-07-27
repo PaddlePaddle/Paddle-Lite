@@ -54,7 +54,7 @@ void conv_3x3s2_direct_int8(const int8_t* din,
   bool flag_bias = (param.bias != nullptr);
 
   //! set 2/3 l2 cache
-  int l2_size = ctx->l2_cache_size() / 3 * 2;
+  int l2_size = ctx->llc_size() / 3 * 2;
   const int hout_c_block = 8;
   const int hout_r_kernel = 2;
   const int wout_round = ((wout + 3) / 4) * 4;
@@ -769,7 +769,7 @@ void conv_3x3s2_direct_int8(const int8_t* din,
   bool flag_bias = (param.bias != nullptr);
 
   //! set 2/3 l2 cache
-  int l2_size = ctx->l2_cache_size() / 3 * 2;
+  int l2_size = ctx->llc_size() / 3 * 2;
   const int hout_c_block = 4;
   const int hout_r_kernel = 1;
   const int wout_round = ((wout + 3) / 4) * 4;
