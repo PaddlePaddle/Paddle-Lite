@@ -12,9 +12,11 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-__kernel void elementwise_add(__global const float* x_data,
-                  __global const float* y_data,
-                  __global float* out_data,
+#include <cl_common.h>
+
+__kernel void elementwise_add(__global const CL_DTYPE* x_data,
+                  __global const CL_DTYPE* y_data,
+                  __global CL_DTYPE* out_data,
                   const int batch,
                   const int channels,
                   const int num) {
@@ -28,14 +30,14 @@ __kernel void elementwise_add(__global const float* x_data,
 
   const int offset = (b * channels + c) * num;
 
-  __global const float* din_ptr = x_data + offset;
-  const float diny_data = y_data[c];
-  __global float* dout_ptr = out_data + offset;
+  __global const CL_DTYPE* din_ptr = x_data + offset;
+  const CL_DTYPE diny_data = y_data[c];
+  __global CL_DTYPE* dout_ptr = out_data + offset;
 
   for (int n = 0; n < num; ++n) { // n: [0, h*w)
     *dout_ptr = *din_ptr + diny_data;
-#ifdef FUSE_RELU
-    *dout_ptr = fmax(*dout_ptr, 0);
+#ifdef RELU
+    *dout_ptr = activation(*dout_ptr);
 #endif
     ++dout_ptr;
     ++din_ptr;

@@ -21,6 +21,7 @@
 #include "lite/cuda/cuda_utils.h"
 #endif
 #ifdef LITE_WITH_OPENCL
+#include <unordered_map>
 #include "lite/opencl/cl_context.h"
 #include "lite/opencl/cl_runtime.h"
 #endif
@@ -112,14 +113,15 @@ class Context<TargetType::kARM> {
   int l1_cache_size() const { return DeviceInfo::Global().l1_cache_size(); }
   int l2_cache_size() const { return DeviceInfo::Global().l2_cache_size(); }
   int l3_cache_size() const { return DeviceInfo::Global().l3_cache_size(); }
+  int llc_size() const { return DeviceInfo::Global().llc_size(); }
 
   template <typename T>
   T* workspace_data() {
     return DeviceInfo::Global().workspace_data<T>();
   }
 
-  bool ExtendWorkspace(DDimLite dims) {
-    return DeviceInfo::Global().ExtendWorkspace(dims);
+  bool ExtendWorkspace(size_t size) {
+    return DeviceInfo::Global().ExtendWorkspace(size);
   }
 
   std::string name() const { return "ARMContext"; }
@@ -223,9 +225,14 @@ class Context<TargetType::kX86> {
 template <>
 class Context<TargetType::kOpenCL> {
   std::shared_ptr<CLContext> cl_context_;
+  using WaitListType =
+      std::unordered_map<decltype(static_cast<const cl::Buffer*>(nullptr)),
+                         std::unique_ptr<cl::Event>>;
+  std::shared_ptr<WaitListType> cl_wait_list_;
 
  public:
   CLContext* cl_context() { return cl_context_.get(); }
+  WaitListType* cl_wait_list() { return cl_wait_list_.get(); }
 
   void InitOnce() {
     // Init cl runtime.
@@ -233,9 +240,13 @@ class Context<TargetType::kOpenCL> {
     CLRuntime::Global()->set_cl_path(FLAGS_cl_path);
 
     cl_context_ = std::make_shared<CLContext>();
+    cl_wait_list_ = std::make_shared<WaitListType>();
   }
 
-  void CopySharedTo(OpenCLContext* ctx) { ctx->cl_context_ = cl_context_; }
+  void CopySharedTo(OpenCLContext* ctx) {
+    ctx->cl_context_ = cl_context_;
+    ctx->cl_wait_list_ = cl_wait_list_;
+  }
 };
 #endif
 

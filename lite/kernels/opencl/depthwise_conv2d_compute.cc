@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <sstream>
+#include <utility>
 #include <vector>
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
@@ -30,9 +32,10 @@ class DepthwiseConv2dCompute
 
   void PrepareForRun() override {
     kernel_func_name_ = "depthwise_conv2d";
+    build_options_ = "-DCL_DTYPE=float";
     auto& context = ctx_->As<OpenCLContext>();
-    context.cl_context()->AddKernel(kernel_func_name_,
-                                    "buffer/depthwise_conv2d_kernel.cl");
+    context.cl_context()->AddKernel(
+        kernel_func_name_, "buffer/depthwise_conv2d_kernel.cl", build_options_);
   }
 
   void Run() override {
@@ -52,7 +55,11 @@ class DepthwiseConv2dCompute
                          : param.bias->data<float, cl::Buffer>();
     auto* output_buf =
         param.output->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
-    auto kernel = context.cl_context()->GetKernel(kernel_func_name_);
+
+    std::stringstream kernel_key;
+    kernel_key << kernel_func_name_ << build_options_;
+    auto kernel = context.cl_context()->GetKernel(kernel_key.str());
+
     cl_int status;
     auto numel = output_dims.production();
     int arg_idx = 0;
@@ -88,7 +95,7 @@ class DepthwiseConv2dCompute
     CL_CHECK_FATAL(status);
     status = kernel.setArg(++arg_idx, *bias_buf);
     CL_CHECK_FATAL(status);
-    cl::Event event;
+    std::unique_ptr<cl::Event> event(new cl::Event);
     auto global_work_size = cl::NDRange(static_cast<size_t>(numel));
     status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
         kernel,
@@ -96,14 +103,15 @@ class DepthwiseConv2dCompute
         global_work_size,
         cl::NullRange,
         nullptr,
-        &event);
+        event.get());
     CL_CHECK_FATAL(status);
-    status = event.wait();
-    CL_CHECK_FATAL(status);
+    context.cl_wait_list()->insert(
+        std::make_pair(output_buf, std::move(event)));
   }
 
  private:
   std::string kernel_func_name_{};
+  std::string build_options_{};
 };
 
 }  // namespace opencl

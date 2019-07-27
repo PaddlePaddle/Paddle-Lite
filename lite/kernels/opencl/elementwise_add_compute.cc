@@ -13,9 +13,10 @@
 // limitations under the License.
 
 #include "lite/kernels/opencl/elementwise_add_compute.h"
+#include <sstream>
+#include <utility>
 #include "lite/core/op_registry.h"
 #include "lite/opencl/cl_include.h"
-#include "lite/utils/string.h"
 
 namespace paddle {
 namespace lite {
@@ -24,9 +25,10 @@ namespace opencl {
 
 void ElementwiseAddCompute::PrepareForRun() {
   kernel_func_name_ = "elementwise_add";
+  build_options_ = "-DCL_DTYPE=float";
   auto& context = ctx_->As<OpenCLContext>();
   context.cl_context()->AddKernel(
-      kernel_func_name_, "buffer/elementwise_add_kernel.cl", build_option_);
+      kernel_func_name_, "buffer/elementwise_add_kernel.cl", build_options_);
   ele_param_ = param_.get_mutable<param_t>();
   UpdateParams();
 }
@@ -38,8 +40,9 @@ void ElementwiseAddCompute::Run() {
   auto* y_buf = ele_param_->Y->template data<float, cl::Buffer>();
   auto* out_buf = ele_param_->Out->template mutable_data<float, cl::Buffer>(
       TARGET(kOpenCL));
-  auto kernel = context.cl_context()->GetKernel(
-      string_format("%s%s", kernel_func_name_.c_str(), build_option_.c_str()));
+  std::stringstream kernel_key;
+  kernel_key << kernel_func_name_ << build_options_;
+  auto kernel = context.cl_context()->GetKernel(kernel_key.str());
   VLOG(4) << TargetToStr(ele_param_->X->target());
   VLOG(4) << TargetToStr(ele_param_->Y->target());
   VLOG(4) << TargetToStr(ele_param_->Out->target());
@@ -58,12 +61,16 @@ void ElementwiseAddCompute::Run() {
   CL_CHECK_FATAL(status);
 
   auto global_work_size = cl::NDRange{channels_, batch_};
-  cl::Event event;
+  std::unique_ptr<cl::Event> event(new cl::Event);
   status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
-      kernel, cl::NullRange, global_work_size, cl::NullRange, nullptr, &event);
+      kernel,
+      cl::NullRange,
+      global_work_size,
+      cl::NullRange,
+      nullptr,
+      event.get());
   CL_CHECK_FATAL(status);
-  status = event.wait();
-  CL_CHECK_FATAL(status);
+  context.cl_wait_list()->insert(std::make_pair(out_buf, std::move(event)));
 }
 
 void ElementwiseAddCompute::UpdateParams() {
@@ -83,6 +90,10 @@ void ElementwiseAddCompute::UpdateParams() {
   for (int i = static_cast<int>(y_dims.size() + axis); i < x_dims.size(); ++i) {
     num_ *= x_dims[i];
   }
+  VLOG(4) << "axis: " << axis;
+  VLOG(4) << "batch: " << batch_;
+  VLOG(4) << "channels: " << channels_;
+  VLOG(4) << "num: " << num_;
 }
 
 }  // namespace opencl

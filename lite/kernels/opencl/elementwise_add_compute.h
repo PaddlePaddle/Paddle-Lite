@@ -40,7 +40,7 @@ class ElementwiseAddCompute
   size_t num_{1};
   param_t* ele_param_{nullptr};
   std::string kernel_func_name_{};
-  std::string build_option_{};
+  std::string build_options_{};
 };
 
 }  // namespace opencl
