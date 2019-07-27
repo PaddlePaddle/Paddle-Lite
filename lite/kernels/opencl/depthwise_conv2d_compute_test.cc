@@ -112,7 +112,10 @@ TEST(depthwise_conv2d, compute) {
   context->As<OpenCLContext>().InitOnce();
 
   kernel->SetParam(param);
-  kernel->SetContext(std::move(context));
+  std::unique_ptr<KernelContext> dep_context(new KernelContext);
+  context->As<OpenCLContext>().CopySharedTo(
+      &(dep_context->As<OpenCLContext>()));
+  kernel->SetContext(std::move(dep_context));
 
   std::default_random_engine engine;
   std::uniform_real_distribution<float> gen(-5, 5);
@@ -131,6 +134,17 @@ TEST(depthwise_conv2d, compute) {
       filter_v.data(), lite::DDim{std::vector<int64_t>({32, 1, 3, 3})});
   output.Resize({4, 32, 110, 110});
   kernel->Launch();
+
+  auto* wait_list = context->As<OpenCLContext>().cl_wait_list();
+  auto* out_ptr = param.output->data<float, cl::Buffer>();
+  auto it = wait_list->find(out_ptr);
+  if (it != wait_list->end()) {
+    VLOG(4) << "--- Find the sync event for the target cl tensor. ---";
+    auto& event = *(it->second);
+    event.wait();
+  } else {
+    LOG(FATAL) << "Could not find the sync event for the target cl tensor.";
+  }
 
   lite::Tensor output_ref;
   output_ref.Resize({4, 32, 110, 110});

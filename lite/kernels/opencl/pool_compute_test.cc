@@ -96,7 +96,10 @@ TEST(pool2d, compute) {
   context->As<OpenCLContext>().InitOnce();
 
   kernel->SetParam(param);
-  kernel->SetContext(std::move(context));
+  std::unique_ptr<KernelContext> pool_context(new KernelContext);
+  context->As<OpenCLContext>().CopySharedTo(
+      &(pool_context->As<OpenCLContext>()));
+  kernel->SetContext(std::move(pool_context));
 
   const DDim in_dim = DDim(std::vector<DDim::value_type>{4, 1024, 7, 7});
   const DDim out_dim = DDim(std::vector<DDim::value_type>{4, 1024, 1, 1});
@@ -114,6 +117,17 @@ TEST(pool2d, compute) {
   }
 
   kernel->Launch();
+
+  auto* wait_list = context->As<OpenCLContext>().cl_wait_list();
+  auto* out_ptr = param.output->data<float, cl::Buffer>();
+  auto it = wait_list->find(out_ptr);
+  if (it != wait_list->end()) {
+    VLOG(4) << "--- Find the sync event for the target cl tensor. ---";
+    auto& event = *(it->second);
+    event.wait();
+  } else {
+    LOG(FATAL) << "Could not find the sync event for the target cl tensor.";
+  }
 
   std::unique_ptr<float[]> out_ref(new float[out_dim.production()]);
   pool_avg(0, 0, 1, 1, 7, 7, mapped_x, in_dim, out_ref.get(), out_dim);

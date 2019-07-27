@@ -138,6 +138,18 @@ TEST(fc, compute) {
         // run opencl kernel
         kernel->Launch();
 
+        auto* wait_list = context->As<OpenCLContext>().cl_wait_list();
+        auto* out_ptr = param.output->data<float, cl::Buffer>();
+        auto it = wait_list->find(out_ptr);
+        if (it != wait_list->end()) {
+          VLOG(4) << "--- Find the sync event for the target cl tensor. ---";
+          auto& event = *(it->second);
+          event.wait();
+        } else {
+          LOG(FATAL)
+              << "Could not find the sync event for the target cl tensor.";
+        }
+
         // run cpu ref
         auto* out_ref_data = out_ref.mutable_data<float>(TARGET(kARM));
         gemm_bias<float>(

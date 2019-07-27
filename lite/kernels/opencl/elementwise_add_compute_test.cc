@@ -107,7 +107,10 @@ TEST(elementwise_add, compute) {
   context->As<OpenCLContext>().InitOnce();
 
   kernel->SetParam(param);
-  kernel->SetContext(std::move(context));
+  std::unique_ptr<KernelContext> ele_context(new KernelContext);
+  context->As<OpenCLContext>().CopySharedTo(
+      &(ele_context->As<OpenCLContext>()));
+  kernel->SetContext(std::move(ele_context));
 
   const DDim x_dim = DDim(std::vector<DDim::value_type>{3, 2, 1, 5});
   const DDim y_dim = DDim(std::vector<DDim::value_type>{2, 1, 5});
@@ -133,6 +136,17 @@ TEST(elementwise_add, compute) {
   }
 
   kernel->Launch();
+
+  auto *wait_list = context->As<OpenCLContext>().cl_wait_list();
+  auto *out_ptr = param.Out->data<float, cl::Buffer>();
+  auto it = wait_list->find(out_ptr);
+  if (it != wait_list->end()) {
+    VLOG(4) << "--- Find the sync event for the target cl tensor. ---";
+    auto &event = *(it->second);
+    event.wait();
+  } else {
+    LOG(FATAL) << "Could not find the sync event for the target cl tensor.";
+  }
 
   std::unique_ptr<float[]> out_ref(new float[out_dim.production()]);
   elementwise_compute_ref<float>(
@@ -174,7 +188,10 @@ TEST(fusion_elementwise_add_activation, compute) {
   context->As<OpenCLContext>().InitOnce();
 
   kernel->SetParam(param);
-  kernel->SetContext(std::move(context));
+  std::unique_ptr<KernelContext> ele_context(new KernelContext);
+  context->As<OpenCLContext>().CopySharedTo(
+      &(ele_context->As<OpenCLContext>()));
+  kernel->SetContext(std::move(ele_context));
 
   const DDim x_dim = DDim(std::vector<DDim::value_type>{30, 20, 10, 50});
   const DDim y_dim = DDim(std::vector<DDim::value_type>{20, 10, 50});
@@ -200,6 +217,17 @@ TEST(fusion_elementwise_add_activation, compute) {
   }
 
   kernel->Launch();
+
+  auto *wait_list = context->As<OpenCLContext>().cl_wait_list();
+  auto *out_ptr = param.Out->data<float, cl::Buffer>();
+  auto it = wait_list->find(out_ptr);
+  if (it != wait_list->end()) {
+    VLOG(4) << "--- Find the sync event for the target cl tensor. ---";
+    auto &event = *(it->second);
+    event.wait();
+  } else {
+    LOG(FATAL) << "Could not find the sync event for the target cl tensor.";
+  }
 
   std::unique_ptr<float[]> out_ref(new float[out_dim.production()]);
   elementwise_compute_ref<float>(
