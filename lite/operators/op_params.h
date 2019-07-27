@@ -435,6 +435,32 @@ struct MulticlassNmsParam {
   bool share_location{true};
 };
 
+/// ----------------------- priorbox operators ----------------------
+struct PriorBoxParam {
+  std::vector<lite::Tensor*> ins;
+  std::vector<lite::Tensor*> outs;
+
+  bool is_flip;
+  bool is_clip;
+  std::vector<float> min_size;
+  std::vector<float> max_size;
+  std::vector<float> aspect_ratio;
+  std::vector<float> variance;
+  int img_w{0};
+  int img_h{0};
+  float step_w{0};
+  float step_h{0};
+  float offset{0.5};
+  int prior_num{0};
+  // priortype: prior_min, prior_max, prior_com
+  std::vector<std::string> order;
+};
+
+struct DensityPriorBoxParam : public PriorBoxParam {
+  std::vector<float> fixed_size;
+  std::vector<float> fixed_ratio;
+  std::vector<float> density_size;
+};
 /// ----------------------- GRU operators ----------------------f
 struct GRUParam {
   const lite::Tensor* input{nullptr};

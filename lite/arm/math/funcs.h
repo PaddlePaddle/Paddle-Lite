@@ -38,6 +38,7 @@
 #include "lite/arm/math/packed_sgemm.h"
 #include "lite/arm/math/pad2d.h"
 #include "lite/arm/math/pooling.h"
+#include "lite/arm/math/prior_box.h"
 #include "lite/arm/math/scale.h"
 #include "lite/arm/math/sequence_softmax.h"
 #include "lite/arm/math/sgemv.h"

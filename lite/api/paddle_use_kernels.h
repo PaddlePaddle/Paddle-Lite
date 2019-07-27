@@ -55,6 +55,8 @@ USE_LITE_KERNEL(tanh, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(swish, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(conv2d_transpose, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(pad2d, kARM, kFloat, kNCHW, def);
+USE_LITE_KERNEL(prior_box, kARM, kFloat, kNCHW, def);
+USE_LITE_KERNEL(density_prior_box, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(negative, kARM, kFloat, kNCHW, def);
 
 USE_LITE_KERNEL(norm, kARM, kFloat, kNCHW, def);

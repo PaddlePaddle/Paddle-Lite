@@ -19,6 +19,8 @@ lite_cc_library(pool_compute_arm SRCS pool_compute.cc DEPS ${lite_kernel_deps} m
 lite_cc_library(split_compute_arm SRCS split_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(concat_compute_arm SRCS concat_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(pad2d_compute_arm SRCS pad2d_compute.cc DEPS ${lite_kernel_deps} math_arm)
+lite_cc_library(prior_box_compute_arm SRCS prior_box_compute.cc DEPS ${lite_kernel_deps} math_arm)
+lite_cc_library(density_prior_box_compute_arm SRCS density_prior_box_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(negative_compute_arm SRCS negative_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(dropout_compute_arm SRCS dropout_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(calib_compute_arm SRCS calib_compute.cc DEPS ${lite_kernel_deps} math_arm)
@@ -68,6 +70,8 @@ set(arm_kernels
     split_compute_arm
     concat_compute_arm
     pad2d_compute_arm
+    prior_box_compute_arm
+    density_prior_box_compute_arm
     negative_compute_arm
     dropout_compute_arm
     transpose_compute_arm
