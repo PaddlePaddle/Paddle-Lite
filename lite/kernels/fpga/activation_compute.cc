@@ -19,12 +19,23 @@ namespace lite {
 namespace kernels {
 namespace fpga {
 
-void ReluCompute::Run() {
+void ReluCompute::PrepareForRun() {
   auto& param = this->Param<param_t>();
   auto x_dims = param.X->dims();
   auto x_data = param.X->data<float>();
   auto output_data = param.Out->mutable_data<float>();
+
+  zynqmp::InputParam& input_param = pe_.param();
+  input_.share_from_tensorlite(*param.X);
+  output_.share_from_tensorlite(*param.Out);
+
+  input_param.input = &input_;
+  input_param.output = &output_;
+  pe_.init();
+  pe_.apply();
 }
+
+void ReluCompute::Run() { pe_.dispatch(); }
 
 }  // namespace fpga
 }  // namespace kernels

@@ -14,6 +14,10 @@ lite_cc_test(test_conv_fpga SRCS conv_compute_test.cc DEPS ${lite_kernel_deps} c
 lite_cc_library(elementwise_compute_fpga SRCS elementwise_compute.cc DEPS ${fpga_deps})
 lite_cc_test(test_elementwise_fpga SRCS elementwise_compute_test.cc DEPS ${lite_kernel_deps} elementwise_compute_fpga ${fpga_deps})
 
+lite_cc_library(feed_compute_fpga SRCS feed_compute.cc DEPS ${fpga_deps})
+# lite_cc_test(test_feed_fpga SRCS feed_compute_test.cc DEPS ${lite_kernel_deps} feed_compute_fpga ${fpga_deps})
+lite_cc_library(fetch_compute_fpga SRCS fetch_compute.cc DEPS ${fpga_deps})
+
 lite_cc_library(pooling_compute_fpga SRCS pooling_compute.cc DEPS ${fpga_deps})
 lite_cc_test(test_pooling_compute_fpga SRCS pooling_compute_test.cc DEPS ${lite_kernel_deps} pooling_compute_fpga ${fpga_deps})
 

@@ -11,8 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
-#include "lite/kernels/fpga/conv_compute.h"
+#include "lite/kernels/fpga/fetch_compute.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/type_system.h"
 
@@ -21,34 +20,24 @@ namespace lite {
 namespace kernels {
 namespace fpga {
 
-void ConvCompute::PrepareForRun() {
+void FetchCompute::PrepareForRun() {
   auto& param = this->Param<param_t>();
-
   // ====================================================
-  zynqmp::ConvParam& conv_param = pe_.param();
-  // auto& param = Param<operators::ConvParam>();
+  zynqmp::OutputParam& conv_param = pe_.param();
 
-  input_.share_from_tensorlite(*param.x);
-  output_.share_from_tensorlite(*param.output);
-  filter_.share_from_tensorlite(*param.filter);
+  Tensor& out = param.fetch_list->at(param.col);
+
+  input_.share_from_tensorlite(*param.input);
+  output_.share_from_tensorlite(out);
 
   conv_param.input = &input_;
   conv_param.output = &output_;
-  conv_param.filter = &filter_;
-  conv_param.groups = param.groups;
-  conv_param.strides = param.strides;
-  conv_param.paddings = param.paddings;
-  conv_param.dilations = param.dilations;
 
-  // std::vector<int> kernelSize;
   pe_.init();
   pe_.apply();
 }
 
-void ConvCompute::Run() {
-  auto& param = this->Param<param_t>();
-  pe_.dispatch();
-}
+void FetchCompute::Run() { pe_.dispatch(); }
 
 }  // namespace fpga
 }  // namespace kernels
@@ -56,9 +45,11 @@ void ConvCompute::Run() {
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(
-    conv2d, kFPGA, kFP16, kNHWC, paddle::lite::kernels::fpga::ConvCompute, def)
-    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kFPGA))})
-    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kFPGA))})
-    .BindInput("Filter", {LiteType::GetTensorTy(TARGET(kFPGA))})
-    .BindOutput("Output", {LiteType::GetTensorTy(TARGET(kFPGA))})
+    fetch, kFPGA, kFP16, kNHWC, paddle::lite::kernels::fpga::FetchCompute, def)
+    .BindInput("X",
+               {LiteType::GetTensorTy(
+                   TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny), -1)})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(
+                    TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny), -1)})
     .Finalize();

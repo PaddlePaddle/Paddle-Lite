@@ -11,30 +11,25 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 #pragma once
-#include <algorithm>
-#include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
-#include "lite/fpga/KD/float16.hpp"
-#include "lite/fpga/KD/pes/relu_pe.hpp"
+#include "lite/core/type_system.h"
+#include "lite/fpga/KD/pes/output_pe.hpp"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace fpga {
 
-class ReluCompute : public KernelLite<TARGET(kFPGA), PRECISION(kFP16)> {
+class FetchCompute : public KernelLite<TARGET(kFPGA), PRECISION(kFP16)> {
  public:
-  using param_t = operators::ActivationParam;
+  using param_t = operators::FetchParam;
 
-  void Run() override;
   void PrepareForRun() override;
-
-  virtual ~ReluCompute() = default;
+  void Run() override;
 
  private:
-  zynqmp::ReluPE pe_;
+  zynqmp::OutputPE pe_;
   zynqmp::Tensor input_;
   zynqmp::Tensor output_;
 };

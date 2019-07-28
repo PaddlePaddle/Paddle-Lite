@@ -12,34 +12,42 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
-#include <algorithm>
-#include "lite/core/kernel.h"
+#include "lite/kernels/fpga/feed_compute.h"
 #include "lite/core/op_registry.h"
-#include "lite/fpga/KD/float16.hpp"
-#include "lite/fpga/KD/pes/relu_pe.hpp"
+#include "lite/core/type_system.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace fpga {
 
-class ReluCompute : public KernelLite<TARGET(kFPGA), PRECISION(kFP16)> {
- public:
-  using param_t = operators::ActivationParam;
+void FeedCompute::PrepareForRun() {
+  auto& param = this->Param<param_t>();
+  // ====================================================
+  zynqmp::InputParam& conv_param = pe_.param();
+  Tensor& x = param.feed_list->at(param.col);
+  input_.share_from_tensorlite(x);
+  output_.share_from_tensorlite(*param.out);
 
-  void Run() override;
-  void PrepareForRun() override;
+  conv_param.input = &input_;
+  conv_param.output = &output_;
 
-  virtual ~ReluCompute() = default;
+  pe_.init();
+  pe_.apply();
+}
 
- private:
-  zynqmp::ReluPE pe_;
-  zynqmp::Tensor input_;
-  zynqmp::Tensor output_;
-};
+void FeedCompute::Run() {
+  auto& param = this->Param<param_t>();
+  pe_.dispatch();
+}
 
 }  // namespace fpga
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
+
+REGISTER_LITE_KERNEL(
+    conv2d, kFPGA, kFP16, kNHWC, paddle::lite::kernels::fpga::FeedCompute, def)
+    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kFPGA))})
+    .BindOutput("Output", {LiteType::GetTensorTy(TARGET(kFPGA))})
+    .Finalize();
