@@ -16,3 +16,9 @@ lite_cc_test(test_elementwise_fpga SRCS elementwise_compute_test.cc DEPS ${lite_
 
 lite_cc_library(pooling_compute_fpga SRCS pooling_compute.cc DEPS ${fpga_deps})
 lite_cc_test(test_pooling_compute_fpga SRCS pooling_compute_test.cc DEPS ${lite_kernel_deps} pooling_compute_fpga ${fpga_deps})
+
+lite_cc_library(softmax_compute_fpga SRCS softmax_compute.cc DEPS ${fpga_deps})
+lite_cc_test(test_softmax_compute_fpga SRCS softmax_compute_test.cc DEPS ${lite_kernel_deps} softmax_compute_fpga ${fpga_deps})
+
+lite_cc_library(fc_compute_fpga SRCS fc_compute.cc DEPS ${fpga_deps})
+lite_cc_test(test_fc_compute_fpga SRCS fc_compute_test.cc DEPS ${lite_kernel_deps} fc_compute_fpga ${fpga_deps})
