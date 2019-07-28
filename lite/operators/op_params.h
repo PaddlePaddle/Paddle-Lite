@@ -343,18 +343,10 @@ struct NegativeParam {
 struct Pad2dParam {
   const lite::Tensor* X{};
   lite::Tensor* Out{};
-  /*
-  _mod:PadMode
-  typedef enum{
-     PAD_CONSTANT = 0,
-     PAD_EDGE = 1,
-     PAD_REFLECT = 2,
- } PadMode;
-   */
-  int _mode{0};
-  std::vector<int> _pad_h;
-  std::vector<int> _pad_w;
-  float _pad_value = 0.f;
+  std::vector<int> paddings{0,0,0,0};  
+  std::string mode{"constant"};   
+  float pad_value = 0.f;
+  std::string data_format{"NCHW"};  
 };
 
 struct Im2SequenceParam {

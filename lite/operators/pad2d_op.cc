@@ -23,14 +23,16 @@ namespace operators {
 bool Pad2dOpLite::CheckShape() const {
   CHECK_GT_OR_FALSE(param_.X->dims().size(), 1UL);
   CHECK_OR_FALSE(param_.Out);
+  CHECK(param_.mode == "constant" || param_.mode == "reflect"|| param_.mode == "edge") << "Invilid mode.";
+  CHECK_GT_OR_FALSE(param_.paddings.size(), 4UL); 
   return true;
 }
 
 bool Pad2dOpLite::InferShape() const {
   // nchw
   auto x_dims = param_.X->dims();
-  int out_h = x_dims[2] + param_._pad_h[0] + param_._pad_h[1];
-  int out_w = x_dims[3] + param_._pad_w[0] + param_._pad_w[1];
+  int out_h = x_dims[2] + param_.paddings[0] + param_.paddings[1];
+  int out_w = x_dims[3] + param_.paddings[2] + param_.paddings[3];
   param_.Out->Resize(lite::DDim({x_dims[0], x_dims[1], out_h, out_w}));
   return true;
 }
@@ -40,10 +42,10 @@ bool Pad2dOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
   param_.X = scope->FindVar(op_desc.Input("X").front())->GetMutable<Tensor>();
   param_.Out =
       scope->FindVar(op_desc.Output("Out").front())->GetMutable<Tensor>();
-  param_._mode = op_desc.GetAttr<int>("_mode");
-  param_._pad_value = op_desc.GetAttr<float>("_pad_value");
-  param_._pad_h = op_desc.GetAttr<std::vector<int>>("_pad_h");
-  param_._pad_w = op_desc.GetAttr<std::vector<int>>("_pad_w");
+  param_.mode = op_desc.GetAttr<std::string>("mode");
+  param_.pad_value = op_desc.GetAttr<float>("pad_value");
+  param_.paddings = op_desc.GetAttr<std::vector<int>>("paddings");
+  param_.data_format = op_desc.GetAttr<std::string>("data_format");
   return true;
 }
 

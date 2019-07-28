@@ -29,31 +29,34 @@ void Pad2dCompute::Run() {
   auto& param = Param<operators::Pad2dParam>();
   const lite::Tensor* inputs = param.X;
   auto* out = param.Out;
-  _mode = param._mode;
-  _pad_h = param._pad_h;
-  _pad_w = param._pad_w;
-  _pad_value = param._pad_value;
-  /////////////////////////////
-  /*     _mode:PadMode
-         typedef enum{
-             PAD_CONSTANT = 0,
-             PAD_EDGE = 1,
-             PAD_REFLECT = 2,
-         } PadMode;   */
-  /////////////////////////
-  if (_mode == 2) {
+
+  if(param.mode=="constant"){  
+      mode_=0;
+  }else if(param.mode=="reflect"){
+      mode_=1;
+  }else if(param.mode=="edge"){
+      mode_=2;
+  }else{
+    LOG(FATAL) << "Unknown mode type";
+  }  
+
+  pad_h_ = {param.paddings[0],param.paddings[1]};    
+  pad_w_ = {param.paddings[2],param.paddings[3]};
+  pad_value_ = param.pad_value;
+  data_format_=param.data_format;
+  if (mode_ == 2) {
     // nchw
     auto input_dims = inputs->dims();
-    CHECK_LE(_pad_h[0], input_dims[2] - 1)
+    CHECK_LE(pad_h_[0], input_dims[2] - 1)  
         << "pad top size must <= inputs height - 1";
-    CHECK_LE(_pad_h[1], input_dims[2] - 1)
+    CHECK_LE(pad_h_[1], input_dims[2] - 1)   
         << "pad bottom size must <= inputs height - 1";
-    CHECK_LE(_pad_w[0], input_dims[3] - 1)
+    CHECK_LE(pad_w_[0], input_dims[3] - 1)   
         << "pad left size must <= inputs width - 1";
-    CHECK_LE(_pad_w[1], input_dims[3] - 1)
-        << "pad right size must  <= inputs width - 1";
+    CHECK_LE(pad_w_[1], input_dims[3] - 1)  
+        << "pad right size must  <= inputs width - 1";  
   }
-  lite::arm::math::pad2d_func(inputs, out, _mode, _pad_h, _pad_w, _pad_value);
+  lite::arm::math::pad2d_func(inputs, out, mode_, pad_h_, pad_w_, pad_value_);  
   return;
 }
 
