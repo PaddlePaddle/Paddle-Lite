@@ -508,6 +508,45 @@ struct NormParam {
   int axis{1};
   float epsilon{1e-10};
 };
+
+struct TopkParam {
+  const lite::Tensor* X{};
+  std::vector<lite::Tensor*> Out{};
+  int K{1};
+};
+
+struct IncrementParam {
+  const lite::Tensor* X{};
+  lite::Tensor* Out{};
+  float step{1};
+};
+
+struct WriteToArrayParam {
+  const lite::Tensor* X{};
+  const lite::Tensor* I{};
+  std::vector<lite::Tensor*> Out{};
+};
+
+struct ReadFromArrayParam {
+  std::vector<lite::Tensor*> X{};
+  lite::Tensor* I{};
+  lite::Tensor* Out{};
+};
+
+struct BeamSearchParam {
+  const lite::Tensor* pre_ids{};
+  const lite::Tensor* pre_scores{};
+  const lite::Tensor* ids{};
+  const lite::Tensor* scores{};
+  lite::Tensor* selected_ids{};
+  lite::Tensor* selected_scores{};
+  lite::Tensor* parent_idx{};
+  int level;
+  int beam_size;
+  int end_id;
+  bool is_accumulated;
+};
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle

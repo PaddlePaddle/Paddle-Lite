@@ -11,41 +11,36 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#pragma once
 
-#include <memory>
+#pragma once
 #include <string>
-#include "lite/core/kernel.h"
-#include "lite/operators/op_params.h"
-#include "lite/utils/cp_logging.h"
+#include <vector>
+#include "lite/core/op_lite.h"
+#include "lite/core/scope.h"
+#include "lite/utils/all.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
-namespace opencl {
+namespace operators {
 
-class ElementwiseAddCompute
-    : public KernelLite<TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW)> {
+class WhileOp : public OpLite {
  public:
-  using param_t = operators::ElementwiseParam;
+  WhileOp() {}
+  explicit WhileOp(const std::string &op_type) : OpLite(op_type) {}
 
-  void PrepareForRun() override;
+  bool CheckShape() const override;
 
-  void Run() override;
+  bool InferShape() const override;
 
- protected:
-  void UpdateParams();
+  bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
 
-  size_t batch_{1};
-  size_t channels_{1};
-  size_t num_{1};
-  param_t* ele_param_{nullptr};
-  std::string kernel_func_name_{"elementwise_add"};
-  std::string build_options_{"-DCL_DTYPE=float"};
-  std::shared_ptr<cl::Event> event_{new cl::Event};
+  void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
+  std::string DebugString() const override { return "scale"; }
+
+ private:
+  mutable WhileParam param_;
 };
 
-}  // namespace opencl
-}  // namespace kernels
+}  // namespace operators
 }  // namespace lite
 }  // namespace paddle

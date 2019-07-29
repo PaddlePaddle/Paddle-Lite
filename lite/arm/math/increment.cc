@@ -11,41 +11,27 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#pragma once
 
-#include <memory>
-#include <string>
-#include "lite/core/kernel.h"
-#include "lite/operators/op_params.h"
+#include "lite/arm/math/increment.h"
+#include <arm_neon.h>
+#include <cmath>
 #include "lite/utils/cp_logging.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
-namespace opencl {
+namespace arm {
+namespace math {
+void increment(const float* input,
+               const int n,
+               const float step,
+               float* out,
+               Context<TARGET(kARM)>* ctx) {
+  for (int i = 0; i < n; i++) {
+    out[i] = input[i] + step;
+  }
+}
 
-class ElementwiseAddCompute
-    : public KernelLite<TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW)> {
- public:
-  using param_t = operators::ElementwiseParam;
-
-  void PrepareForRun() override;
-
-  void Run() override;
-
- protected:
-  void UpdateParams();
-
-  size_t batch_{1};
-  size_t channels_{1};
-  size_t num_{1};
-  param_t* ele_param_{nullptr};
-  std::string kernel_func_name_{"elementwise_add"};
-  std::string build_options_{"-DCL_DTYPE=float"};
-  std::shared_ptr<cl::Event> event_{new cl::Event};
-};
-
-}  // namespace opencl
-}  // namespace kernels
+}  // namespace math
+}  // namespace arm
 }  // namespace lite
 }  // namespace paddle

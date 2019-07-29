@@ -64,6 +64,10 @@ USE_LITE_OP(fake_dequantize_max_abs);
 USE_LITE_OP(calib);
 USE_LITE_OP(norm);
 USE_LITE_OP(im2sequence);
+USE_LITE_OP(topk);
+USE_LITE_OP(increment);
+USE_LITE_OP(write_to_array);
+USE_LITE_OP(read_from_array);
 USE_LITE_OP(sequence_softmax)
 USE_LITE_OP(gru_unit)
 USE_LITE_OP(gru)

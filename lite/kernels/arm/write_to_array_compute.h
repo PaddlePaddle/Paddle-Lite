@@ -11,41 +11,32 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#pragma once
 
-#include <memory>
-#include <string>
+#pragma once
+#include <stdint.h>
+#include "lite/arm/math/type_trans.h"
 #include "lite/core/kernel.h"
-#include "lite/operators/op_params.h"
-#include "lite/utils/cp_logging.h"
+#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace opencl {
+namespace arm {
 
-class ElementwiseAddCompute
-    : public KernelLite<TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW)> {
+class WriteToArrayCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
  public:
-  using param_t = operators::ElementwiseParam;
+  using param_t = operators::WriteToArrayParam;
 
   void PrepareForRun() override;
 
   void Run() override;
 
- protected:
-  void UpdateParams();
+  ~WriteToArrayCompute() {}
 
-  size_t batch_{1};
-  size_t channels_{1};
-  size_t num_{1};
-  param_t* ele_param_{nullptr};
-  std::string kernel_func_name_{"elementwise_add"};
-  std::string build_options_{"-DCL_DTYPE=float"};
-  std::shared_ptr<cl::Event> event_{new cl::Event};
+ private:
 };
 
-}  // namespace opencl
+}  // namespace arm
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

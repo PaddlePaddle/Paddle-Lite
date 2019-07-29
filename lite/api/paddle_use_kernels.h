@@ -61,6 +61,11 @@ USE_LITE_KERNEL(negative, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(norm, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(sequence_softmax, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(im2sequence, kARM, kFloat, kNCHW, def);
+USE_LITE_KERNEL(topk, kARM, kFloat, kNCHW, def);
+USE_LITE_KERNEL(increment, kARM, kFloat, kNCHW, def);
+USE_LITE_KERNEL(write_to_array, kARM, kFloat, kNCHW, def);
+USE_LITE_KERNEL(read_from_array, kARM, kFloat, kNCHW, def);
+
 USE_LITE_KERNEL(calib, kARM, kInt8, kNCHW, fp32_to_int8);
 USE_LITE_KERNEL(calib, kARM, kInt8, kNCHW, int8_to_fp32);
 USE_LITE_KERNEL(conv2d, kARM, kInt8, kNCHW, int8_out);

@@ -21,6 +21,7 @@
 #include "lite/arm/math/activation.h"
 #include "lite/arm/math/argmax.h"
 #include "lite/arm/math/axpy.h"
+#include "lite/arm/math/beam_search.h"
 #include "lite/arm/math/col_im_transform.h"
 #include "lite/arm/math/concat.h"
 #include "lite/arm/math/conv_depthwise.h"
@@ -32,6 +33,7 @@
 #include "lite/arm/math/elementwise.h"
 #include "lite/arm/math/fill_bias_relu.h"
 #include "lite/arm/math/im2sequence.h"
+#include "lite/arm/math/increment.h"
 #include "lite/arm/math/lrn.h"
 #include "lite/arm/math/multiclass_nms.h"
 #include "lite/arm/math/negative.h"
@@ -46,6 +48,7 @@
 #include "lite/arm/math/sgemv.h"
 #include "lite/arm/math/softmax.h"
 #include "lite/arm/math/split.h"
+#include "lite/arm/math/topk.h"
 
 namespace paddle {
 namespace lite {
