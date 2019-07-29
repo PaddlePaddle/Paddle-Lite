@@ -26,10 +26,10 @@ class Pad2dComputeTester : public arena::TestCase {
   std::string input_ = "X";
   std::string output_ = "Out";
   DDim dims_{{1, 1, 14, 14}};
-  std::vector<int> paddings_;  
-  std::string mode_{"constant"};   
+  std::vector<int> paddings_;
+  std::string mode_{"constant"};
   float pad_value_ = 0.f;
-  std::string data_format_{"NCHW"};  
+  std::string data_format_{"NCHW"};
 
  public:
   Pad2dComputeTester(const Place& place,
@@ -49,7 +49,7 @@ class Pad2dComputeTester : public arena::TestCase {
     auto* out = scope->NewTensor(output_);
     CHECK(out);
     int out_h = dims_[2] + paddings_[0] + paddings_[1];
-    int out_w = dims_[3] + paddings_[2] + paddings_[3];    
+    int out_w = dims_[3] + paddings_[2] + paddings_[3];
     out->Resize(lite::DDim({dims_[0], dims_[1], out_h, out_w}));
     auto* out_data = out->mutable_data<float>();
     auto* x = scope->FindTensor(input_);
@@ -66,15 +66,15 @@ class Pad2dComputeTester : public arena::TestCase {
     int pad_bottom = paddings_[1];
     int pad_left = paddings_[2];
     int pad_right = paddings_[3];
-    int pad_mode; 
-    if(mode_=="constant"){  
-      pad_mode=0;
-    }else if(mode_=="reflect"){
-      pad_mode=1;
-    }else if(mode_=="edge"){
-      pad_mode=2;
-    }else{
-    LOG(FATAL) << "Unknown mode type";
+    int pad_mode;
+    if (mode_ == "constant") {
+      pad_mode = 0;
+    } else if (mode_ == "reflect") {
+      pad_mode = 1;
+    } else if (mode_ == "edge") {
+      pad_mode = 2;
+    } else {
+      LOG(FATAL) << "Unknown mode type";
     }
     float pad_value = pad_value_;
 
@@ -91,23 +91,23 @@ class Pad2dComputeTester : public arena::TestCase {
       for (int y = 0; y < h; ++y) {
         for (int x = 0; x < w; ++x) {
           switch (pad_mode) {
-              case 0:
-	      in_y = y - pad_top;
+            case 0:
+              in_y = y - pad_top;
               in_x = x - pad_left;
               dout_batch[y * w + x] =
                   (in_x >= 0 && in_x < in_w) && (in_y >= 0 && in_y < in_h)
                       ? din_batch[in_y * in_w + in_x]
                       : pad_value;
               break;
-              case 1:
-	      in_x = std::min(std::max(pad_left, x), in_w + pad_left - 1) -
+            case 1:
+              in_x = std::min(std::max(pad_left, x), in_w + pad_left - 1) -
                      pad_left;
               in_y =
                   std::min(std::max(pad_top, y), in_h + pad_top - 1) - pad_top;
               dout_batch[y * w + x] = din_batch[in_y * in_w + in_x];
               break;
-              case 2:
-	      in_y = y - pad_top;
+            case 2:
+              in_y = y - pad_top;
               in_x = x - pad_left;
               in_y = std::max(in_y, -in_y);
               in_y = std::min(in_y, 2 * in_h - in_y - 2);
@@ -151,13 +151,13 @@ void TestPad2d(const Place& place) {
       for (int pad_left : {0, 1}) {
         for (int pad_right : {0, 1}) {
           std::vector<int> paddings{pad_top, pad_bottom, pad_left, pad_right};
-          for (std::string  pad_mode : {"constant", "edge", "reflect"}) {
+          for (std::string pad_mode : {"constant", "edge", "reflect"}) {
             for (float pad_value : {0.f, 1.0f}) {
               LOG(INFO) << "pad param: " << pad_mode << " " << pad_value << " "
-                        << paddings[0] << " " << paddings[1] << " " << paddings[2] << " "
-                        << paddings[3];   
+                        << paddings[0] << " " << paddings[1] << " "
+                        << paddings[2] << " " << paddings[3];
               std::unique_ptr<arena::TestCase> tester(new Pad2dComputeTester(
-                  place, "def", pad_mode, paddings, pad_value,data_format));
+                  place, "def", pad_mode, paddings, pad_value, data_format));
               arena::Arena arena(std::move(tester), place, 2e-5);
               arena.TestPrecision();
             }

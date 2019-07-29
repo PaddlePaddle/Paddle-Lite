@@ -343,10 +343,10 @@ struct NegativeParam {
 struct Pad2dParam {
   const lite::Tensor* X{};
   lite::Tensor* Out{};
-  std::vector<int> paddings{0,0,0,0};  
-  std::string mode{"constant"};   
+  std::vector<int> paddings{0, 0, 0, 0};
+  std::string mode{"constant"};
   float pad_value = 0.f;
-  std::string data_format{"NCHW"};  
+  std::string data_format{"NCHW"};
 };
 
 struct Im2SequenceParam {

@@ -23,8 +23,10 @@ namespace operators {
 bool Pad2dOpLite::CheckShape() const {
   CHECK_GT_OR_FALSE(param_.X->dims().size(), 1UL);
   CHECK_OR_FALSE(param_.Out);
-  CHECK(param_.mode == "constant" || param_.mode == "reflect"|| param_.mode == "edge") << "Invilid mode.";
-  CHECK_GT_OR_FALSE(param_.paddings.size(), 4UL); 
+  CHECK(param_.mode == "constant" || param_.mode == "reflect" ||
+        param_.mode == "edge")
+      << "Invilid mode.";
+  CHECK_EQ(param_.paddings.size(), 4UL);
   return true;
 }
 
