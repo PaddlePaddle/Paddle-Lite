@@ -686,6 +686,7 @@ class ConcatParam : public OpParam {
     inputs_ = InputMultiFrom<GType>(inputs, *scope);
     out_ = OutFrom<GType>(outputs, *scope);
     axis_ = GetAttr<int>("axis", attrs);
+    original_output_dims_size_ = out_->dims().size();
   }
 
   vector<GType *> Inputs() const { return inputs_; }
@@ -694,10 +695,11 @@ class ConcatParam : public OpParam {
 
   const int &Axis() const { return axis_; }
 
- private:
+ public:
   vector<GType *> inputs_;
   GType *out_;
   int axis_;
+  int original_output_dims_size_;
 #ifdef PADDLE_MOBILE_FPGA
 
  private:

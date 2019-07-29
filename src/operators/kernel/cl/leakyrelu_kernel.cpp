@@ -16,44 +16,44 @@ limitations under the License. */
 
 #include <operators/kernel/activation_kernel.h>
 
-namespace paddle_mobile{
-    namespace operators{
-        template <>
-        bool LeakyReluKernel<GPU_CL, float >::Init(
-                paddle_mobile::operators::LeakyReluParam<paddle_mobile::GPU_CL> *param) {
-            this->cl_helper_.AddKernel("leakyrelu", "leakyrelu_kernel.cl");
-            return true;
-        }
-
-        template <>
-        void LeakyReluKernel<GPU_CL, float >::Compute(
-                const paddle_mobile::operators::LeakyReluParam<paddle_mobile::GPU_CL> &param) {
-            auto kernel = this->cl_helper_.KernelAt(0);
-            auto default_work_size = this->cl_helper_.DefaultWorkSize(*(param.Out()));
-            auto input = param.InputX();
-            cl_mem input_image = input->GetCLImage();
-            auto output = param.Out();
-            cl_mem out_image = output->GetCLImage();
-            float alpha = param.Alpha();
-            int out_dims_w = output->dims()[3];
-
-            cl_int status;
-            status = clSetKernelArg(kernel, 0, sizeof(cl_mem), &input_image);
-            CL_CHECK_ERRORS(status);
-            status = clSetKernelArg(kernel, 1, sizeof(cl_mem), &out_image);
-            CL_CHECK_ERRORS(status);
-            status = clSetKernelArg(kernel, 2, sizeof(float), &alpha);
-            CL_CHECK_ERRORS(status);
-            status = clSetKernelArg(kernel, 3, sizeof(int), &out_dims_w);
-            CL_CHECK_ERRORS(status);
-            status = clEnqueueNDRangeKernel(this->cl_helper_.CLCommandQueue(), kernel,
-                                            default_work_size.size(), NULL,
-                                            default_work_size.data(), NULL, 0, NULL, NULL);
-            CL_CHECK_ERRORS(status);
-
-        }
-        template class LeakyReluKernel<GPU_CL, float>;
-    }
+namespace paddle_mobile {
+namespace operators {
+template <>
+bool LeakyReluKernel<GPU_CL, float>::Init(
+    paddle_mobile::operators::LeakyReluParam<paddle_mobile::GPU_CL> *param) {
+  this->cl_helper_.AddKernel("leakyrelu", "leakyrelu_kernel.cl");
+  return true;
 }
+
+template <>
+void LeakyReluKernel<GPU_CL, float>::Compute(
+    const paddle_mobile::operators::LeakyReluParam<paddle_mobile::GPU_CL>
+        &param) {
+  auto kernel = this->cl_helper_.KernelAt(0);
+  auto default_work_size = this->cl_helper_.DefaultWorkSize(*(param.Out()));
+  auto input = param.InputX();
+  cl_mem input_image = input->GetCLImage();
+  auto output = param.Out();
+  cl_mem out_image = output->GetCLImage();
+  float alpha = param.Alpha();
+  int out_dims_w = output->dims()[3];
+
+  cl_int status;
+  status = clSetKernelArg(kernel, 0, sizeof(cl_mem), &input_image);
+  CL_CHECK_ERRORS(status);
+  status = clSetKernelArg(kernel, 1, sizeof(cl_mem), &out_image);
+  CL_CHECK_ERRORS(status);
+  status = clSetKernelArg(kernel, 2, sizeof(float), &alpha);
+  CL_CHECK_ERRORS(status);
+  status = clSetKernelArg(kernel, 3, sizeof(int), &out_dims_w);
+  CL_CHECK_ERRORS(status);
+  status = clEnqueueNDRangeKernel(
+      this->cl_helper_.CLCommandQueue(), kernel, default_work_size.size(), NULL,
+      default_work_size.data(), NULL, 0, NULL, NULL);
+  CL_CHECK_ERRORS(status);
+}
+template class LeakyReluKernel<GPU_CL, float>;
+}  // namespace operators
+}  // namespace paddle_mobile
 
 #endif

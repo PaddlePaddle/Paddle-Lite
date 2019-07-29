@@ -14,21 +14,21 @@ limitations under the License. */
 
 #ifdef EXP_OP
 
-#include <operators/kernel/exp_kernel.h>
 #include <framework/cl/cl_tensor.h>
+#include <operators/kernel/exp_kernel.h>
 namespace paddle_mobile {
 namespace operators {
 
 template <>
 bool EXPKernel<GPU_CL, float>::Init(
-    paddle_mobile::operators::EXPParam<paddle_mobile::GPU_CL> *param) {
-        this->cl_helper_.AddKernel("exp_impl", "exp_kernel.cl");
-        return true;
+    paddle_mobile::operators::EXPParam<paddle_mobile::GPU_CL>* param) {
+  this->cl_helper_.AddKernel("exp_impl", "exp_kernel.cl");
+  return true;
 }
 
 template <>
 void EXPKernel<GPU_CL, float>::Compute(
-    const paddle_mobile::operators::EXPParam<paddle_mobile::GPU_CL> &param) {
+    const paddle_mobile::operators::EXPParam<paddle_mobile::GPU_CL>& param) {
   auto kernel = this->cl_helper_.KernelAt(0);
   const auto* input = param.InputX();
   auto* output = param.Out();
@@ -41,8 +41,8 @@ void EXPKernel<GPU_CL, float>::Compute(
   status = clSetKernelArg(kernel, 1, sizeof(cl_mem), &outputImage);
   CL_CHECK_ERRORS(status);
   const size_t work_size[2] = {input->ImageWidth(), input->ImageHeight()};
-  status = clEnqueueNDRangeKernel(this->cl_helper_.CLCommandQueue(), kernel, 2, NULL,
-                         work_size, NULL, 0, NULL, NULL);
+  status = clEnqueueNDRangeKernel(this->cl_helper_.CLCommandQueue(), kernel, 2,
+                                  NULL, work_size, NULL, 0, NULL, NULL);
   CL_CHECK_ERRORS(status);
 }
 
