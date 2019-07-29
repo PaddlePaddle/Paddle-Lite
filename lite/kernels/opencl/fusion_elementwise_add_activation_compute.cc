@@ -25,8 +25,7 @@ class FusionElementwiseAddActivationCompute : public ElementwiseAddCompute {
   using param_t = operators::FusionElementwiseActivationParam;
 
   void PrepareForRun() override {
-    kernel_func_name_ = "elementwise_add";
-    build_options_ = "-DCL_DTYPE=float -DRELU";
+    build_options_ += " -DRELU";
     auto& context = ctx_->As<OpenCLContext>();
     context.cl_context()->AddKernel(
         kernel_func_name_, "buffer/elementwise_add_kernel.cl", build_options_);

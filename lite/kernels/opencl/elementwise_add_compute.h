@@ -39,8 +39,9 @@ class ElementwiseAddCompute
   size_t channels_{1};
   size_t num_{1};
   param_t* ele_param_{nullptr};
-  std::string kernel_func_name_{};
-  std::string build_options_{};
+  std::string kernel_func_name_{"elementwise_add"};
+  std::string build_options_{"-DCL_DTYPE=float"};
+  std::shared_ptr<cl::Event> event_{new cl::Event};
 };
 
 }  // namespace opencl

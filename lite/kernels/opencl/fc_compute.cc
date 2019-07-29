@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #include <sstream>
-#include <utility>
 #include <vector>
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
@@ -32,8 +31,6 @@ class FcCompute
   using param_t = operators::FcParam;
 
   void PrepareForRun() override {
-    kernel_func_name_ = "fc";
-    build_options_ = "-DCL_DTYPE=float";
     auto& context = ctx_->As<OpenCLContext>();
     context.cl_context()->AddKernel(
         kernel_func_name_, "buffer/fc_kernel.cl", build_options_);
@@ -84,7 +81,6 @@ class FcCompute
     status = kernel.setArg(++arg_idx, static_cast<const int>(k_));
     CL_CHECK_FATAL(status);
 
-    std::unique_ptr<cl::Event> event(new cl::Event);
     auto global_work_size = cl::NDRange{static_cast<size_t>((m_ + 3) / 4),
                                         static_cast<size_t>((n_ + 3) / 4)};
     status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
@@ -93,15 +89,16 @@ class FcCompute
         global_work_size,
         cl::NullRange,
         nullptr,
-        event.get());
+        event_.get());
     CL_CHECK_FATAL(status);
-    context.cl_wait_list()->insert(std::make_pair(out_buf, std::move(event)));
+    context.cl_wait_list()->emplace(out_buf, event_);
   }
 
  private:
   int m_, n_, k_;
-  std::string kernel_func_name_{};
-  std::string build_options_{};
+  std::string kernel_func_name_{"fc"};
+  std::string build_options_{"-DCL_DTYPE=float"};
+  std::shared_ptr<cl::Event> event_{new cl::Event};
 };
 
 }  // namespace opencl
