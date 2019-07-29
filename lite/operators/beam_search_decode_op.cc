@@ -55,4 +55,5 @@ bool BeamSearchDecodeOpLite::AttachImpl(const cpp::OpDesc &op_desc,
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(gru, paddle::lite::operators::BeamSearchDecodeOpLite)
+REGISTER_LITE_OP(beam_search_decode,
+                 paddle::lite::operators::BeamSearchDecodeOpLite)

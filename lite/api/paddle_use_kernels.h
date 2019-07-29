@@ -49,7 +49,6 @@ USE_LITE_KERNEL(swish, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(conv2d_transpose, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(pad2d, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(negative, kARM, kFloat, kNCHW, def);
-
 USE_LITE_KERNEL(norm, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(sequence_softmax, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(im2sequence, kARM, kFloat, kNCHW, def);
@@ -61,6 +60,7 @@ USE_LITE_KERNEL(fc, kARM, kInt8, kNCHW, int8out);
 USE_LITE_KERNEL(fc, kARM, kInt8, kNCHW, fp32out);
 USE_LITE_KERNEL(gru_unit, kARM, kFloat, kNCHW, def)
 USE_LITE_KERNEL(gru, kARM, kFloat, kNCHW, def)
+USE_LITE_KERNEL(beam_search_decode, kARM, kFloat, kNCHW, def)
 #endif
 
 #ifdef LITE_WITH_X86
