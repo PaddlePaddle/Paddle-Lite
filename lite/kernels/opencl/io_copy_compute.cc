@@ -82,6 +82,17 @@ class IoCopykOpenCLToHostCompute
     auto mem_size = param.x->memory_size();
     VLOG(4) << "copy size " << mem_size;
     auto* data = param.y->mutable_data(TARGET(kHost), mem_size);
+    auto& context = ctx_->As<OpenCLContext>();
+    auto* wait_list = context.cl_wait_list();
+    auto* x_ptr = param.x->data<float, cl::Buffer>();
+    auto it = wait_list->find(x_ptr);
+    if (it != wait_list->end()) {
+      VLOG(4) << "--- Find the sync event for the target cl tensor. ---";
+      auto& event = *(it->second);
+      event.wait();
+    } else {
+      LOG(FATAL) << "Could not find the sync event for the target cl tensor.";
+    }
     CopyToHostSync(data, param.x->raw_data(), mem_size);
   }
 

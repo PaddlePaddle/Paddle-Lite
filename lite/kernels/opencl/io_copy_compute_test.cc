@@ -43,9 +43,15 @@ TEST(io_copy, compute) {
   context->As<OpenCLContext>().InitOnce();
 
   h2d_kernel->SetParam(h2d_param);
-  h2d_kernel->SetContext(std::move(context));
+  std::unique_ptr<KernelContext> h2d_context(new KernelContext);
+  context->As<OpenCLContext>().CopySharedTo(
+      &(h2d_context->As<OpenCLContext>()));
+  h2d_kernel->SetContext(std::move(h2d_context));
   d2h_kernel->SetParam(d2h_param);
-  d2h_kernel->SetContext(std::move(context));
+  std::unique_ptr<KernelContext> d2h_context(new KernelContext);
+  context->As<OpenCLContext>().CopySharedTo(
+      &(d2h_context->As<OpenCLContext>()));
+  d2h_kernel->SetContext(std::move(d2h_context));
 
   const DDim dim = DDim(std::vector<DDim::value_type>{3, 9, 28, 28});
   h_x.Resize(dim);
@@ -53,12 +59,14 @@ TEST(io_copy, compute) {
   h_y.Resize(dim);
 
   auto* h_x_data = h_x.mutable_data<float>(TARGET(kARM));
-
   for (int i = 0; i < 3 * 9 * 28 * 28; i++) {
     h_x_data[i] = 3.14f * i / 1000.f;
   }
 
   h2d_kernel->Launch();
+  auto* event_key = d_y.data<float, cl::Buffer>();
+  std::shared_ptr<cl::Event> event(new cl::Event);
+  context->As<OpenCLContext>().cl_wait_list()->emplace(event_key, event);
   d2h_kernel->Launch();
 
   auto* h_y_data = h_y.data<float>();

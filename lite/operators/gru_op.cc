@@ -54,17 +54,15 @@ bool GRUOpLite::CheckShape() const {
 bool GRUOpLite::InferShape() const {
   auto input_dims = param_.input->dims();
   auto weight_dims = param_.weight->dims();
-  int input_size = input_dims[1];
   int frame_size = weight_dims[0];
-
-  std::vector<int64_t> dims_hidden{input_dims[0], frame_size};
+  auto batch_size = input_dims[0];
 
   param_.batch_gate->Resize(input_dims);
-  param_.batch_reset_hidden_prev->Resize(lite::DDim(dims_hidden));
-  param_.batch_hidden->Resize(lite::DDim(dims_hidden));
-  param_.hidden->Resize(lite::DDim(dims_hidden));
+  param_.batch_reset_hidden_prev->Resize(lite::DDim({batch_size, frame_size}));
+  param_.batch_hidden->Resize(lite::DDim({batch_size, frame_size}));
+  param_.hidden->Resize(lite::DDim({batch_size, frame_size}));
 
-  *param_.hidden->mutable_lod() = param_.input->lod();
+  *(param_.hidden->mutable_lod()) = param_.input->lod();
 }
 
 bool GRUOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
@@ -100,8 +98,8 @@ bool GRUOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
   return true;
 }
 
-REGISTER_LITE_OP(gru, paddle::lite::operators::GRUOpLite);
-
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle
+
+REGISTER_LITE_OP(gru, paddle::lite::operators::GRUOpLite)

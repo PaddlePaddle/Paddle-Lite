@@ -15,6 +15,9 @@ lite_cc_library(io_copy_op SRCS io_copy_op.cc DEPS ${op_DEPS})
 lite_cc_library(io_copy_once_op SRCS io_copy_once_op.cc DEPS io_copy_op ${op_DEPS})
 lite_cc_library(activation_ops SRCS activation_ops.cc DEPS ${op_DEPS})
 lite_cc_library(elementwise_ops SRCS elementwise_ops.cc DEPS ${op_DEPS})
+lite_cc_library(lrn_op_lite SRCS lrn_op.cc DEPS ${op_DEPS})
+lite_cc_library(decode_bboxes_op_lite SRCS decode_bboxes_op.cc DEPS ${op_DEPS})
+lite_cc_library(multiclass_nms_op_lite SRCS multiclass_nms_op.cc DEPS ${op_DEPS})
 lite_cc_library(fusion_elementwise_activation_ops SRCS fusion_elementwise_activation_ops.cc DEPS elementwise_ops ${op_DEPS})
 lite_cc_library(mean_op SRCS mean_op.cc DEPS ${op_DEPS})
 lite_cc_library(fill_constant_op SRCS fill_constant_op.cc DEPS ${op_DEPS})
@@ -24,6 +27,8 @@ lite_cc_library(argmax_op SRCS argmax_op.cc DEPS ${op_DEPS})
 lite_cc_library(axpy_op SRCS axpy_op.cc DEPS ${op_DEPS})
 lite_cc_library(gru_unit_op SRCS gru_unit_op.cc DEPS ${op_DEPS})
 lite_cc_library(gru_op SRCS gru_op.cc DEPS ${op_DEPS})
+lite_cc_library(prior_box_op SRCS prior_box_op.cc DEPS ${op_DEPS})
+lite_cc_library(density_prior_box_op SRCS density_prior_box_op.cc DEPS ${op_DEPS})
 
 lite_cc_library(op_params SRCS op_params.cc DEPS tensor any framework_proto)
 lite_cc_library(dropout_op SRCS dropout_op.cc DEPS ${op_DEPS})
@@ -64,12 +69,17 @@ set(ops
         io_copy_once_op
         elementwise_ops
         fusion_elementwise_activation_ops
+        lrn_op_lite
+	decode_bboxes_op_lite
+	multiclass_nms_op_lite
         mean_op
         fill_constant_op
         activation_ops
         dropout_op
         concat_op
         pad2d_op
+        prior_box_op
+        density_prior_box_op
         negative_op
         calib_op
         split_op

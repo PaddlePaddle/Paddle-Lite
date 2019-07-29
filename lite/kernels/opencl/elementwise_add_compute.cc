@@ -23,8 +23,6 @@ namespace kernels {
 namespace opencl {
 
 void ElementwiseAddCompute::PrepareForRun() {
-  kernel_func_name_ = "elementwise_add";
-  build_options_ = "-DCL_DTYPE=float";
   auto& context = ctx_->As<OpenCLContext>();
   context.cl_context()->AddKernel(
       kernel_func_name_, "buffer/elementwise_add_kernel.cl", build_options_);
@@ -60,12 +58,15 @@ void ElementwiseAddCompute::Run() {
   CL_CHECK_FATAL(status);
 
   auto global_work_size = cl::NDRange{channels_, batch_};
-  cl::Event event;
   status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
-      kernel, cl::NullRange, global_work_size, cl::NullRange, nullptr, &event);
+      kernel,
+      cl::NullRange,
+      global_work_size,
+      cl::NullRange,
+      nullptr,
+      event_.get());
   CL_CHECK_FATAL(status);
-  status = event.wait();
-  CL_CHECK_FATAL(status);
+  context.cl_wait_list()->emplace(out_buf, event_);
 }
 
 void ElementwiseAddCompute::UpdateParams() {
