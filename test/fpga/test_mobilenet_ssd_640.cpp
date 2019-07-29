@@ -131,9 +131,9 @@ int main() {
     readImage(image, data);
 
     auto time3 = time();
-    for (int i = 0; i < 20; i++) {
+    // for (int i = 0; i < 20; i++) {
       paddle_mobile.Predict(input_tensor);
-    }
+    // }
     auto time4 = time();
     std::cout << "predict cost: " << time_diff(time3, time4) / 100 << "ms\n";
 

@@ -42,7 +42,7 @@ void fpga_resize(float* input, int input_width, int input_height,
   // };
   // paddle_mobile::zynqmp::config_inplace(inplace_args);
 
-  paddle_mobile::zynqmp::ImageInputArgs input_args = {nullptr};
+  // paddle_mobile::zynqmp::ImageInputArgs input_args = {nullptr};
   input_args.address = nullptr;
   input_args.scale_address = nullptr;
 

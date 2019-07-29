@@ -51,8 +51,8 @@ void YoloBoxKernel<FPGA, float>::Compute(const YoloBoxParam<FPGA>& param) {
   zynqmp::YoloBoxPE& pe = context.pe<zynqmp::YoloBoxPE>();
   pe.dispatch();
 
-  param.OutputBoxes()->zynqmpTensor()->saveToFile("yolobox_OutputBoxes", true);
-  param.OutputScores()->zynqmpTensor()->saveToFile("yolobox_OutputScores", true);
+  // param.OutputBoxes()->zynqmpTensor()->saveToFile("yolobox_OutputBoxes", true);
+  // param.OutputScores()->zynqmpTensor()->saveToFile("yolobox_OutputScores", true);
 }
 
 template class YoloBoxKernel<FPGA, float>;
