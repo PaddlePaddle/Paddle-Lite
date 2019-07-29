@@ -32,7 +32,9 @@ void ConcatOp<Dtype, T>::InferShape() const {
     inputs_dims.push_back(inputs[i]->dims());
   }
 
-  auto axis = static_cast<size_t>(this->param_.Axis());
+  auto axis = static_cast<size_t>(this->param_.Axis()) -
+              (this->param_.original_output_dims_size_ -
+               this->param_.Out()->dims().size());
 
   if (n == 1) {
     DLOG << "Warning: concat op have only one input, "
