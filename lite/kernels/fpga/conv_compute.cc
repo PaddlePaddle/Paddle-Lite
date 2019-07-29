@@ -57,7 +57,10 @@ void ConvCompute::Run() {
 
 REGISTER_LITE_KERNEL(
     conv2d, kFPGA, kFP16, kNHWC, paddle::lite::kernels::fpga::ConvCompute, def)
-    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kFPGA))})
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kFPGA),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kNHWC))})
     .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kFPGA))})
     .BindInput("Filter", {LiteType::GetTensorTy(TARGET(kFPGA))})
     .BindOutput("Output", {LiteType::GetTensorTy(TARGET(kFPGA))})

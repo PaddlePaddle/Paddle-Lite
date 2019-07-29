@@ -24,7 +24,8 @@ namespace lite {
 namespace kernels {
 namespace fpga {
 
-class ReluCompute : public KernelLite<TARGET(kFPGA), PRECISION(kFP16)> {
+class ReluCompute
+    : public KernelLite<TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)> {
  public:
   using param_t = operators::ActivationParam;
 

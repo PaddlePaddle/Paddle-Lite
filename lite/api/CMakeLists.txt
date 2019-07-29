@@ -24,11 +24,16 @@ set(light_api_deps
 if(LITE_WITH_CUDA)
     set(light_api_deps ${light_api_deps} target_wrapper_cuda)
 endif()
+if(LITE_WITH_FPGA)
+    set(light_api_deps ${light_api_deps} ${fpga_deps})
+    set(cxx_api_deps ${cxx_api_deps} ${fpga_deps})
+endif()
 
 message(STATUS "get ops ${ops}")
 message(STATUS "get Host kernels ${host_kernels}")
 message(STATUS "get ARM kernels ${arm_kernels}")
 message(STATUS "get NPU kernels ${npu_kernels}")
+message(STATUS "get FPGA kernels ${fpga_kernels}")
 
 lite_cc_library(cxx_api
                 SRCS cxx_api.cc
@@ -36,7 +41,8 @@ lite_cc_library(cxx_api
                 X86_DEPS ${x86_kernels}
                 ARM_DEPS ${arm_kernels}
                 NPU_DEPS ${npu_kernels} ${npu_bridges} npu_pass
-                CL_DEPS ${opencl_kenrels})
+                CL_DEPS ${opencl_kenrels}
+                FPGA_DEPS ${fpga_kenrels})
 
 lite_cc_library(light_api SRCS light_api.cc
         DEPS scope target_wrapper_host model_parser
@@ -45,7 +51,8 @@ lite_cc_library(light_api SRCS light_api.cc
         X86_DEPS ${x86_kernels}
         ARM_DEPS ${arm_kernels}
         NPU_DEPS ${npu_kernels} ${npu_bridges} npu_pass
-        CL_DEPS ${opencl_kenrels})
+        CL_DEPS ${opencl_kenrels}
+        FPGA_DEPS ${fpga_kenrels})
 
 include(ExternalProject)
 set(LITE_DEMO_INSTALL_DIR "${THIRD_PARTY_PATH}/inference_demo" CACHE STRING
@@ -59,6 +66,7 @@ if(WITH_TESTING)
        ARM_DEPS ${arm_kernels}
        NPU_DEPS ${npu_kernels}
        CL_DEPS ${opencl_kernels}
+       FPGA_DEPS ${fpga_kernels}
        EXCLUDE_COMPILE_DEPS "ON"
        ARGS --model_dir=${LITE_MODEL_DIR}/lite_naive_model
             --optimized_model=${LITE_MODEL_DIR}/lite_naive_model_opt SERIAL)
@@ -88,7 +96,7 @@ if(WITH_TESTING)
 endif()
 
 if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND WITH_TESTING)
-    set(lite_model_test_DEPS cxx_api mir_passes ${ops} ${host_kernels} ${arm_kernels} ${npu_kernels})
+    set(lite_model_test_DEPS cxx_api mir_passes ${ops} ${host_kernels} ${arm_kernels} ${npu_kernels} ${fpga_kernels})
 
     lite_cc_test(test_mobilenetv1 SRCS mobilenetv1_test.cc
        DEPS ${lite_model_test_DEPS}
@@ -107,16 +115,13 @@ if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND WITH_TESTING)
     lite_cc_test(test_resnet50 SRCS resnet50_test.cc
        DEPS ${lite_model_test_DEPS}
        CL_DEPS ${opencl_kernels}
+       FPGA_DEPS ${fpga_kernels}
        ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/opencl
             --model_dir=${LITE_MODEL_DIR}/resnet50 SERIAL)
     add_dependencies(test_resnet50 extern_lite_download_resnet50_tar_gz)
 
-    lite_cc_test(test_resnet50_fpga SRCS resnet50_test.cc
-       DEPS ${lite_model_test_DEPS}
-       FPGA_DEPS ${fpga_kernels}
-       ARGS --fpga_path=${CMAKE_SOURCE_DIR}/lite/fpga
-            --model_dir=${LITE_MODEL_DIR}/resnet50 SERIAL)
-    add_dependencies(test_resnet50_fpga extern_lite_download_resnet50_tar_gz)
+    lite_cc_test(test_resnet50_fpga SRCS resnet50_test_fpga.cc
+       DEPS ${lite_model_test_DEPS})
 
     lite_cc_test(test_inceptionv4 SRCS inceptionv4_test.cc
        DEPS ${lite_model_test_DEPS}
@@ -131,12 +136,14 @@ endif()
 lite_cc_test(test_light_api SRCS light_api_test.cc
     DEPS light_api program mir_passes
     CL_DEPS ${opencl_kernels}
+    FPGA_DEPS ${fpga_kernels}
     ARGS --optimized_model=${LITE_MODEL_DIR}/lite_naive_model_opt SERIAL)
 
 lite_cc_test(test_apis SRCS apis_test.cc
   DEPS cxx_api light_api ${ops}
   CL_DEPS ${opencl_kernels}
   X86_DEPS ${x86_kernels}
+    FPGA_DEPS ${fpga_kernels}
   ARGS --model_dir=${LITE_MODEL_DIR}/lite_naive_model
        --optimized_model=${LITE_MODEL_DIR}/lite_naive_model_opt SERIAL)
 
@@ -148,7 +155,8 @@ lite_cc_library(paddle_api_full SRCS cxx_api_impl.cc DEPS cxx_api paddle_api lig
   ${ops}
   ARM_DEPS ${arm_kernels}
   NPU_DEPS ${npu_kernels}
-  CL_DEPS ${opencl_kernels})
+  CL_DEPS ${opencl_kernels}
+  FPGA_DEPS ${fpga_kernels})
 # The final inference library for just MobileConfig.
 lite_cc_library(paddle_api_light SRCS light_api_impl.cc DEPS light_api paddle_api mir_passes)
 
@@ -163,6 +171,7 @@ lite_cc_test(test_paddle_api SRCS paddle_api_test.cc DEPS paddle_api_full paddle
   NPU_DEPS ${npu_kernels}
   CL_DEPS ${opencl_kernels}
   X86_DEPS ${x86_kernels}
+  FPGA_DEPS ${fpga_kernels}
   ARGS --model_dir=${LITE_MODEL_DIR}/lite_naive_model SERIAL)
 
 if(NOT IOS)
@@ -171,6 +180,7 @@ if(NOT IOS)
     ARM_DEPS ${arm_kernels}
     NPU_DEPS ${npu_kernels}
     CL_DEPS ${opencl_kernels}
+    FPGA_DEPS ${fpga_kernels}
     X86_DEPS ${x86_kernels})
 endif()
 
@@ -196,6 +206,7 @@ lite_cc_binary(cxx_api_bin SRCS cxx_api_bin_int8.cc
     ${ops} ${host_kernels}
     ARM_DEPS ${arm_kernels}
     NPU_DEPS ${npu_kernels}
+    FPGA_DEPS ${fpga_kernels}
     CL_DEPS ${opencl_kernels})
 lite_cc_binary(model_optimize_tool SRCS model_optimize_tool.cc
     DEPS paddle_api_full gflags

@@ -37,6 +37,7 @@ std::list<std::unique_ptr<KernelBase>> KernelRegistry::Create(
                     PRECISION(precision__),                                  \
                     DATALAYOUT(kAny)>(op_type);                              \
     case DATALAYOUT(kNHWC):                                                  \
+      LOG(ERROR) << "create nhwc";                                           \
       return Create<TARGET(target__),                                        \
                     PRECISION(precision__),                                  \
                     DATALAYOUT(kNHWC)>(op_type);                             \
@@ -107,6 +108,8 @@ KernelRegistry::KernelRegistry()
 
   INIT_FOR(kHost, kFloat, kNCHW);
   INIT_FOR(kHost, kAny, kNCHW);
+  INIT_FOR(kHost, kFloat, kNHWC);
+  INIT_FOR(kHost, kAny, kNHWC);
   INIT_FOR(kHost, kAny, kAny);
 
   INIT_FOR(kX86, kFloat, kNCHW);
@@ -122,13 +125,8 @@ KernelRegistry::KernelRegistry()
   INIT_FOR(kOpenCL, kAny, kNCHW);
   INIT_FOR(kOpenCL, kAny, kAny);
 
-  INIT_FOR(kFPGA, kFloat, kNCHW);
-  INIT_FOR(kFPGA, kFP16, kNCHW);
-  INIT_FOR(kFPGA, kAny, kNCHW);
-  INIT_FOR(kFPGA, kAny, kAny);
-
-  INIT_FOR(kFPGA, kFloat, kNHWC);
   INIT_FOR(kFPGA, kFP16, kNHWC);
+  INIT_FOR(kFPGA, kFloat, kNHWC);
   INIT_FOR(kFPGA, kAny, kNHWC);
   INIT_FOR(kFPGA, kAny, kAny);
 #undef INIT_FOR

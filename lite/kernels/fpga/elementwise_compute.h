@@ -27,7 +27,7 @@ namespace fpga {
 using float16 = zynqmp::float16;
 
 class ElementwiseAddCompute
-    : public KernelLite<TARGET(kFPGA), PRECISION(kFP16)> {
+    : public KernelLite<TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)> {
  public:
   void Run() override;
   void PrepareForRun() override;
@@ -42,7 +42,7 @@ class ElementwiseAddCompute
 };
 
 class ElementwiseAddActivationCompute
-    : public KernelLite<TARGET(kFPGA), PRECISION(kFP16)> {
+    : public KernelLite<TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)> {
  public:
   void Run() override;
   void PrepareForRun() override;

@@ -24,7 +24,8 @@ namespace lite {
 namespace kernels {
 namespace fpga {
 
-class ConvCompute : public KernelLite<TARGET(kFPGA), PRECISION(kFP16)> {
+class ConvCompute
+    : public KernelLite<TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)> {
  public:
   using param_t = operators::ConvParam;
 

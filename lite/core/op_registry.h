@@ -80,6 +80,9 @@ class KernelRegistry final {
                                       PRECISION(kFloat),
                                       DATALAYOUT(kNCHW)> *,  //
               KernelRegistryForTarget<TARGET(kHost),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kNHWC)> *,  //
+              KernelRegistryForTarget<TARGET(kHost),
                                       PRECISION(kAny),
                                       DATALAYOUT(kAny)> *,  //
               KernelRegistryForTarget<TARGET(kCUDA),

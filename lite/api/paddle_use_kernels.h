@@ -92,3 +92,13 @@ USE_LITE_KERNEL(relu, kOpenCL, kFloat, kNCHW, def);
 USE_LITE_KERNEL(mul, kOpenCL, kFloat, kNCHW, def);
 USE_LITE_KERNEL(depthwise_conv2d, kOpenCL, kFloat, kNCHW, def);
 #endif
+#ifdef LITE_WITH_FPGA
+USE_LITE_KERNEL(relu, kFPGA, kFP16, kNHWC, def);
+USE_LITE_KERNEL(conv2d, kFPGA, kFP16, kNHWC, def);
+USE_LITE_KERNEL(elementwise_add, kFPGA, kFP16, kNHWC, def);
+USE_LITE_KERNEL(fusion_elementwise_add_activation, kFPGA, kFP16, kNHWC, def);
+USE_LITE_KERNEL(fc, kFPGA, kFP16, kNHWC, def);
+USE_LITE_KERNEL(pool2d, kFPGA, kFP16, kNHWC, def);
+USE_LITE_KERNEL(scale, kFPGA, kFP16, kNHWC, def);
+USE_LITE_KERNEL(softmax, kFPGA, kFP16, kNHWC, def);
+#endif

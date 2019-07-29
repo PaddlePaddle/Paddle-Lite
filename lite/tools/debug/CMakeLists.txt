@@ -12,4 +12,5 @@ lite_cc_binary(lite_model_debug_tool SRCS model_debug_tool.cc
     X86_DEPS ${x86_kernels}
     ARM_DEPS ${arm_kernels}
     NPU_DEPS ${npu_kernels}
+    FPGA_DEPS ${fpga_kernels}
     CL_DEPS ${opencl_kernels})

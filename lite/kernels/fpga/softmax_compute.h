@@ -26,7 +26,8 @@ namespace fpga {
 
 using float16 = zynqmp::float16;
 
-class SoftmaxCompute : public KernelLite<TARGET(kFPGA), PRECISION(kFP16)> {
+class SoftmaxCompute
+    : public KernelLite<TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)> {
  public:
   void Run() override;
 

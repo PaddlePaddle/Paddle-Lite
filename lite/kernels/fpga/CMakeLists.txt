@@ -14,9 +14,6 @@ lite_cc_test(test_conv_fpga SRCS conv_compute_test.cc DEPS ${lite_kernel_deps} c
 lite_cc_library(elementwise_compute_fpga SRCS elementwise_compute.cc DEPS ${fpga_deps})
 lite_cc_test(test_elementwise_fpga SRCS elementwise_compute_test.cc DEPS ${lite_kernel_deps} elementwise_compute_fpga ${fpga_deps})
 
-lite_cc_library(feed_compute_fpga SRCS feed_compute.cc DEPS ${fpga_deps})
-# lite_cc_test(test_feed_fpga SRCS feed_compute_test.cc DEPS ${lite_kernel_deps} feed_compute_fpga ${fpga_deps})
-lite_cc_library(fetch_compute_fpga SRCS fetch_compute.cc DEPS ${fpga_deps})
 
 lite_cc_library(pooling_compute_fpga SRCS pooling_compute.cc DEPS ${fpga_deps})
 lite_cc_test(test_pooling_compute_fpga SRCS pooling_compute_test.cc DEPS ${lite_kernel_deps} pooling_compute_fpga ${fpga_deps})
@@ -28,3 +25,16 @@ lite_cc_test(test_softmax_compute_fpga SRCS softmax_compute_test.cc DEPS ${lite_
 
 lite_cc_library(fc_compute_fpga SRCS fc_compute.cc DEPS ${fpga_deps})
 lite_cc_test(test_fc_compute_fpga SRCS fc_compute_test.cc DEPS ${lite_kernel_deps} fc_compute_fpga ${fpga_deps})
+
+set (fpga_kernels 
+     activation_compute_fpga
+     conv_compute_fpga
+     elementwise_compute_fpga
+     pooling_compute_fpga
+     scale_compute_fpga
+     softmax_compute_fpga
+     fc_compute_fpga
+ 
+)
+
+set(fpga_kernels "${fpga_kernels}" CACHE INTERNAL "fpga kernels")

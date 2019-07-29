@@ -47,7 +47,7 @@ void FeedCompute::Run() {
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(
-    conv2d, kFPGA, kFP16, kNHWC, paddle::lite::kernels::fpga::FeedCompute, def)
+    feed, kFPGA, kFP16, kNHWC, paddle::lite::kernels::fpga::FeedCompute, def)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kFPGA))})
     .BindOutput("Output", {LiteType::GetTensorTy(TARGET(kFPGA))})
     .Finalize();

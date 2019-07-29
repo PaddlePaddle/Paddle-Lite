@@ -21,9 +21,9 @@ namespace lite {
 namespace kernels {
 namespace fpga {
 
-class ScaleCompute : public KernelLite<TARGET(kFPGA), PRECISION(kFP16)> {
+class ScaleCompute
+    : public KernelLite<TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)> {
  public:
-  void PrepareForRun() override;
   void Run() override;
 
   virtual ~ScaleCompute() = default;

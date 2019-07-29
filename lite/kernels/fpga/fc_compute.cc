@@ -56,6 +56,6 @@ REGISTER_LITE_KERNEL(
     fc, kFPGA, kFP16, kNHWC, paddle::lite::kernels::fpga::FcCompute, def)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kFPGA))})
     .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kFPGA))})
-    .BindInput("Filter", {LiteType::GetTensorTy(TARGET(kFPGA))})
-    .BindOutput("Output", {LiteType::GetTensorTy(TARGET(kFPGA))})
+    .BindInput("W", {LiteType::GetTensorTy(TARGET(kFPGA))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kFPGA))})
     .Finalize();
