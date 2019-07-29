@@ -454,6 +454,20 @@ struct ReadFromArrayParam {
   lite::Tensor* Out{};
 };
 
+struct BeamSearchParam {
+  const lite::Tensor* pre_ids{};
+  const lite::Tensor* pre_scores{};
+  const lite::Tensor* ids{};
+  const lite::Tensor* scores{};
+  lite::Tensor* selected_ids{};
+  lite::Tensor* selected_scores{};
+  lite::Tensor* parent_idx{};
+  int level;
+  int beam_size;
+  int end_id;
+  bool is_accumulated;
+};
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle

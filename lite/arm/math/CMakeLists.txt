@@ -90,6 +90,7 @@ if (NOT HAS_ARM_MATH_LIB_DIR)
       increment.cc
       pad2d.cc
       negative.cc
+      beam_search.cc
       DEPS ${lite_kernel_deps} framework_proto)
 endif()
  
