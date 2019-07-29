@@ -33,3 +33,7 @@ limitations under the License. */
 #include "framework/tensor.h"
 #include "framework/variable.h"
 #include "io/paddle_mobile.h"
+
+#ifdef PADDLE_MOBILE_CL
+#include "framework/cl/cl_image.h"
+#endif

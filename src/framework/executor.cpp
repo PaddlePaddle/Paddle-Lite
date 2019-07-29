@@ -460,6 +460,20 @@ std::shared_ptr<LoDTensor> Executor<Device, T>::GetOutput(
   }
 }
 
+#ifdef PADDLE_MOBILE_CL
+template <typename Device, typename T>
+const CLImage *Executor<Device, T>::GetOutputImage(
+    const std::string &var_name) {
+  auto var = program_.scope->FindVar(var_name);
+  if (var->IsInitialized() && var->template IsType<framework::CLImage>()) {
+    const CLImage *cl_image = var->template Get<framework::CLImage>();
+    return cl_image;
+  } else {
+    return nullptr;
+  }
+}
+#endif
+
 template <typename Device, typename T>
 PMStatus Executor<Device, T>::Predict() {
 #if _OPENMP
