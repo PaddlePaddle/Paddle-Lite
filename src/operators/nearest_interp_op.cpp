@@ -49,4 +49,8 @@ namespace ops = paddle_mobile::operators;
 REGISTER_OPERATOR_CPU(nearest_interp, ops::NearestInterpolationOp);
 #endif
 
+#if PADDLE_MOBILE_CL
+REGISTER_OPERATOR_CL(nearest_interp, ops::NearestInterpolationOp)
+#endif
+
 #endif

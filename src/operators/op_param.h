@@ -1590,6 +1590,8 @@ class SliceParam : public OpParam {
     axes_ = GetAttr<std::vector<int>>("axes", attrs);
     starts_ = GetAttr<std::vector<int>>("starts", attrs);
     ends_ = GetAttr<std::vector<int>>("ends", attrs);
+
+    original_output_dims_size_ = output_->dims().size();
   }
 
  public:
@@ -1598,6 +1600,7 @@ class SliceParam : public OpParam {
   std::vector<int> axes_;
   std::vector<int> starts_;
   std::vector<int> ends_;
+  int original_output_dims_size_;
 };
 #endif
 
