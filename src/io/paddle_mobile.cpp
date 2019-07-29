@@ -170,6 +170,14 @@ LoDTensorPtr PaddleMobile<Device, T>::Fetch(const std::string &var_name) {
   return executor_->GetOutput(var_name);
 }
 
+#ifdef PADDLE_MOBILE_CL
+template <typename Device, typename T>
+const framework::CLImage *PaddleMobile<Device, T>::FetchImage(
+    const std::string &var_name) {
+  return executor_->GetOutputImage(var_name);
+}
+#endif
+
 template <typename Device, typename T>
 void PaddleMobile<Device, T>::Clear() {
   executor_ = nullptr;
