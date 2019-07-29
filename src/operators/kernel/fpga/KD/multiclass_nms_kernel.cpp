@@ -35,7 +35,7 @@ void MultiClassNMSKernel<FPGA, float>::Compute(
   param.InputScores()->zynqmpTensor()->syncToCPU();
   MultiClassNMSCompute<float>(param);
 
-  // param.Out()->zynqmpTensor()->saveToFile("detection.txt");
+  param.Out()->zynqmpTensor()->saveToFile("detection.txt");
 }
 
 template class MultiClassNMSKernel<FPGA, float>;

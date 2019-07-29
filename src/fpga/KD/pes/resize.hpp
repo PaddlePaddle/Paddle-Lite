@@ -95,10 +95,42 @@ class ResizePE : public PE {
     scale[1] = 127.0 / max;
   }
 
+  void cpu_compute() {
+    Shape& in_shape = param_.input->shape();
+    Shape& out_shape = param_.output->shape();
+    int channel = in_shape.channel();
+    int in_height = in_shape.height();
+    int in_width = in_shape.width();
+    int out_width = out_shape.width();
+    int factor = out_shape.width() / in_shape.width();
+
+    param_.input->syncToCPU();
+
+    for (int h = 0; h < in_height; h++) {
+        for (int w = 0; w < in_width; w++) {
+            int src_index = in_width * channel * h + w * channel;
+            float16* src = param_.input->data<float16>() + src_index;
+
+            for (int v = 0; v < factor; v++) {
+                for (int i =0; i < factor; i++) {
+                    int dst_index = out_width * channel * h * factor +
+                        out_width * channel * v +
+                        w * channel * factor +
+                        channel * i;
+                    float16* dst = param_.output->data<float16>() + dst_index;
+                    memcpy(dst, src, channel * sizeof(float16));
+                }
+            }
+        }
+    }
+    param_.output->flush();
+  }
+
   bool dispatch() {
-    bool ret = compute_fpga_resize(args_) == 0;
+    // bool ret = compute_fpga_resize(args_) == 0;
     // compute_scale(param_.output, param_.output->scale());
     // return ret;
+    cpu_compute();
     return true;
   }
 

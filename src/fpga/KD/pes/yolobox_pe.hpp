@@ -16,6 +16,8 @@ limitations under the License. */
 
 #include "../pe.hpp"
 #include "../pe_params.hpp"
+#include "common/common.h"
+
 namespace paddle_mobile {
 namespace zynqmp {
 
@@ -83,6 +85,7 @@ class YoloBoxPE : public PE {
   }
 
   bool dispatch() {
+    auto time1 = time();
     auto* input = param_.input;
     auto* imgsize = param_.imgSize;
     auto* boxes = param_.outputBoxes;
@@ -157,7 +160,7 @@ class YoloBoxPE : public PE {
     int img_height = imgsize_data[0];
     int img_width = imgsize_data[1];
     // std::cout << "YoloBoxPE imgsize:" << img_height << "," << img_width << std::endl;
-
+    std::cout << "yolobox dispatch cost1: " << time_diff(time1, time()) << "ms\n";
     int channel = input_float.shape().channel();
     int count = 0;
     for (int h = 0; h < height; h++) {
@@ -185,10 +188,11 @@ class YoloBoxPE : public PE {
         }
       }
     }
-
+    std::cout << "yolobox dispatch cost2: " << time_diff(time1, time()) << "ms\n";
     boxes->copyFrom(&boxes_float);
     scores->copyFrom(&scores_float);
     input->setAligned(true);
+    std::cout << "yolobox dispatch cost3: " << time_diff(time1, time()) << "ms\n";
   }
 
   void apply(){};

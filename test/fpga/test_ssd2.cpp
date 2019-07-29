@@ -119,8 +119,8 @@ PaddleMobileConfig GetConfig() {
   config.precision = PaddleMobileConfig::FP32;
   config.device = PaddleMobileConfig::kFPGA;
   // config.model_dir = "../models/mobilenet/";
-  config.prog_file = "../models/ssd/model";
-  config.param_file = "../models/ssd/params";
+  config.prog_file = "../models/vgg-ssd/model";
+  config.param_file = "../models/vgg-ssd/params";
   config.thread_num = 4;
   return config;
 }
@@ -172,7 +172,7 @@ int main() {
     predictor->Run(paddle_tensor_feeds, &outputs);
   // }  
   auto time4 = time();  
-  std::cout << "predict cost: " << time_diff(time3, time4) << "ms\n";
+  std::cout << "predict 1000 cost: " << time_diff(time3, time4) << "ms\n";
 
   std::cout << " after predict " << std::endl;
   //  assert();

@@ -115,42 +115,12 @@ PaddleMobileConfig GetConfig() {
     config.precision = PaddleMobileConfig::FP32;
     config.device = PaddleMobileConfig::kFPGA;
     // config.model_dir = "../models/mobilenet/";
-    config.prog_file = "../../../models/easydl_yolov3/model";
-    config.param_file = "../../../models/easydl_yolov3/params";
+    config.prog_file = "../../../models/aistudio_attention/model";
+    config.param_file = "../../../models/aistudio_attention/params";
     config.thread_num = 1;
     return config;
 }
 
-// int main() {
-//  zynqmp::open_device();
-//   paddle_mobile::PaddleMobile<paddle_mobile::FPGA> paddle_mobile;
-
-//   if (paddle_mobile.Load("../../../models/yolov3/model",
-//                         "../../../models/yolov3/params", true, false,
-//                          1, true)) {
-//     // float img_info[3] = {768, 1536, 768.0f / 960.0f};
-//     // auto img = reinterpret_cast<float *>(
-//     //     fpga::fpga_malloc(608 * 608 * 3 * sizeof(float)));
-  
-
-//     float im_shape_data[2] = {608, 608};
-//     paddle_mobile.FeedData(std::vector<void *>({img, im_shape_data}));
-//     paddle_mobile.Predict_To(-1);
-
-//     // for (int i = 65; i < 69; i++) {
-//     //   auto tensor_ptr = paddle_mobile.FetchResult(i);
-//     //   std::string saveName = "rfcn_" + std::to_string(i);
-//     //   paddle_mobile::fpga::fpga_invalidate((*tensor_ptr).get_data(),
-//     //                                        tensor_ptr->numel() * sizeof(float));
-//     //   dump_stride(saveName, (*tensor_ptr), tensor_ptr->numel(), true);
-//     // }
-//     //   paddle_mobile.GetResults(&v);
-//     DLOG << "Computation done";
-//     // fpga::fpga_free(img);
-//   }
-
-//   return 0;
-// }
   
   int main() {
     zynqmp::open_device();
@@ -161,23 +131,23 @@ PaddleMobileConfig GetConfig() {
        CreatePaddlePredictor<PaddleMobileConfig,
                              PaddleEngineKind::kPaddleMobile>(config);
 
-   float data[1 * 3 * 608 * 608] = {1.0f};
-   // memset(data, 1,  (3 * 608 * 608) * sizeof(float));
-   // for(int i=0; i<3 * 608 * 608; i++) {
-   //      data[i] = 1.0f;
-   // }
-   readImage("../../../models/easydl_yolov3/DJI_0618.jpeg", data);
+   float data[1 * 3 * 48 * 512] = {1.0f};
+   memset(data, 1,  (3 * 48 * 512) * sizeof(float));
+   for(int i=0; i<3 * 48 * 512; i++) {
+        data[i] = 1.0f;
+   }
+   // readImage("../../../models/easydl_yolov3/DJI_0618.jpeg", data);
  
    PaddleTensor tensor;
    tensor.shape = std::vector<int>({1, 3, 608, 608});
    tensor.data = PaddleBuf(data, sizeof(data));
    tensor.dtype = PaddleDType::FLOAT32;
 
-   PaddleTensor im_shape_tensor;
-   im_shape_tensor.shape = std::vector<int>({1, 2});
-   float im_shape_data[2] = {608};
-   im_shape_tensor.data = PaddleBuf(im_shape_data, sizeof(im_shape_data));
-   im_shape_tensor.dtype = PaddleDType::FLOAT32;
+   // PaddleTensor im_shape_tensor;
+   // im_shape_tensor.shape = std::vector<int>({1, 2});
+   // float im_shape_data[2] = {608};
+   // im_shape_tensor.data = PaddleBuf(im_shape_data, sizeof(im_shape_data));
+   // im_shape_tensor.dtype = PaddleDType::FLOAT32;
 
    std::vector<PaddleTensor> paddle_tensor_feeds(1, tensor);
    // std::vector<PaddleTensor> paddle_tensor_feeds(2);
@@ -191,13 +161,13 @@ PaddleMobileConfig GetConfig() {
    tensor_out.dtype = PaddleDType::FLOAT32;
    std::vector<PaddleTensor> outputs(1, tensor_out);
  
-   // for (int i = 0; i < 5; ++i) {
+   for (int i = 0; i < 5; ++i) {
        predictor->Run(paddle_tensor_feeds, &outputs);
    
  
      float* data_ret = static_cast<float*>(outputs[0].data.data());
      drawRect(img, data_ret, outputs[0].shape[0]);
-  // }
+  }
    return 0;
 }
 

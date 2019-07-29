@@ -94,7 +94,13 @@ int main() {
     //   data[i] == 1;
     // }
 
-    paddle_mobile.Predict(input_tensor);
+    auto time3 = time();
+    int times = 1000;
+    // for (int i = 0; i < times; i++) {
+      paddle_mobile.Predict(input_tensor);
+    // }
+    auto time4 = time();
+    std::cout << "predict cost: " << time_diff(time3, time4) / times << "ms\n";
 
     auto result_ptr = paddle_mobile.Fetch();
 

@@ -4,8 +4,8 @@ option(USE_OPENMP    "build with openmp support" ON)
 option(USE_EXCEPTION "build with exception" ON)
 option(WITH_LOGGING  "print logging for debug" OFF)
 option(WITH_SYMBOL   "build with all symbols" ON) # turn off if use jni or ios io
-option(WITH_PROFILE  "print op profile for debug" OFF)
-option(WITH_TEST     "build with unit tests" OFF)
+option(WITH_PROFILE  "print op profile for debug" ON)
+option(WITH_TEST     "build with unit tests" ON)
 option(DEBUG_MODE "debug mode" OFF)
 
 # select the platform to build

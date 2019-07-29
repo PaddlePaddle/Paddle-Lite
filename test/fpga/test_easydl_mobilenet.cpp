@@ -81,8 +81,8 @@ void readStream(std::string filename, float* buf) {
   in.close();
 }
 
-static const char* g_model = "../models/easydl_mobilenet_v1";
-static const char* image = "../models/easydl_mobilenet_v1/4.jpg";
+static const char* g_model = "../../../models/easydl_mobilenet_v1";
+static const char* image = "../../../models/easydl_mobilenet_v1/4.jpg";
 
 int main() {
   paddle_mobile::zynqmp::open_device();
@@ -103,7 +103,7 @@ int main() {
 
     auto time3 = time();
     // for (int i = 0; i < 1000; i++) {
-    paddle_mobile.Predict(input_tensor);
+      paddle_mobile.Predict(input_tensor);
     // }
     auto time4 = time();
     std::cout << "predict cost: " << time_diff(time3, time4) << "ms\n";
