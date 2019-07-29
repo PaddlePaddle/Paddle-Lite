@@ -32,6 +32,7 @@ void FusionFcCompute(const FusionFcParam<CPU> &param) {
   int axis = param.Axis();
   Tensor *out = param.Out();
   auto *out_data = out->mutable_data<Itype>();
+  int M = (int)input_x->dims()[0];
 
   const Tensor x_matrix =
       input_x->dims().size() > 2
@@ -57,9 +58,15 @@ void FusionFcCompute(const FusionFcParam<CPU> &param) {
   for (int i = 0; i < out_dim[0]; i++) {
     memory::Copy(out_data + i * classes, input_z_data, sizeof(Otype) * classes);
   }
-  math::MatMul<Itype, Otype>(x_matrix, false, y_matrix, false,
-                             static_cast<float>(1), out, static_cast<float>(1),
-                             false);
+  if (M == 1) {
+    math::MatMul<Itype, Otype>(x_matrix, false, y_matrix, true,
+                               static_cast<float>(1), out,
+                               static_cast<float>(1), false);
+  } else {
+    math::MatMul<Itype, Otype>(x_matrix, false, y_matrix, false,
+                               static_cast<float>(1), out,
+                               static_cast<float>(1), false);
+  }
 }
 
 }  // namespace operators
