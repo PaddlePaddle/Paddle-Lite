@@ -74,6 +74,9 @@ class PaddleMobile {
 
   typedef std::shared_ptr<framework::LoDTensor> LoDTensorPtr;
   LoDTensorPtr Fetch(const std::string &var_name);
+#ifdef PADDLE_MOBILE_CL
+  const framework::CLImage *FetchImage(const std::string &var_name);
+#endif
 
   LoDTensorPtr Fetch() { return Fetch("fetch"); }
 
