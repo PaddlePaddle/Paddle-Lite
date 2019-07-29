@@ -53,7 +53,7 @@ void FcCompute::Run() {
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(
-    conv2d, kFPGA, kFP16, kNHWC, paddle::lite::kernels::fpga::FcCompute, def)
+    fc, kFPGA, kFP16, kNHWC, paddle::lite::kernels::fpga::FcCompute, def)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kFPGA))})
     .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kFPGA))})
     .BindInput("Filter", {LiteType::GetTensorTy(TARGET(kFPGA))})

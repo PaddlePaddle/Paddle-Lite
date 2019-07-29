@@ -21,6 +21,8 @@ lite_cc_library(fetch_compute_fpga SRCS fetch_compute.cc DEPS ${fpga_deps})
 lite_cc_library(pooling_compute_fpga SRCS pooling_compute.cc DEPS ${fpga_deps})
 lite_cc_test(test_pooling_compute_fpga SRCS pooling_compute_test.cc DEPS ${lite_kernel_deps} pooling_compute_fpga ${fpga_deps})
 
+lite_cc_library(scale_compute_fpga SRCS scale_compute.cc DEPS ${fpga_deps})
+
 lite_cc_library(softmax_compute_fpga SRCS softmax_compute.cc DEPS ${fpga_deps})
 lite_cc_test(test_softmax_compute_fpga SRCS softmax_compute_test.cc DEPS ${lite_kernel_deps} softmax_compute_fpga ${fpga_deps})
 

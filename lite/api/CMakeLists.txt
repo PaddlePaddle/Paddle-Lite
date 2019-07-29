@@ -111,6 +111,13 @@ if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND WITH_TESTING)
             --model_dir=${LITE_MODEL_DIR}/resnet50 SERIAL)
     add_dependencies(test_resnet50 extern_lite_download_resnet50_tar_gz)
 
+    lite_cc_test(test_resnet50_fpga SRCS resnet50_test.cc
+       DEPS ${lite_model_test_DEPS}
+       FPGA_DEPS ${fpga_kernels}
+       ARGS --fpga_path=${CMAKE_SOURCE_DIR}/lite/fpga
+            --model_dir=${LITE_MODEL_DIR}/resnet50 SERIAL)
+    add_dependencies(test_resnet50_fpga extern_lite_download_resnet50_tar_gz)
+
     lite_cc_test(test_inceptionv4 SRCS inceptionv4_test.cc
        DEPS ${lite_model_test_DEPS}
        CL_DEPS ${opencl_kernels}
