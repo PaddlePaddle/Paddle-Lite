@@ -48,9 +48,11 @@ void test(int argc, char *argv[]) {
   //  config.load_when_predict = true;
   paddle_mobile::PaddleMobile<paddle_mobile::GPU_CL> paddle_mobile(config);
   paddle_mobile.SetCLPath("/data/local/tmp/bin");
+  std::cout << "testing opencl yyz " << std::endl;
 #else
   paddle_mobile::PaddleMobile<paddle_mobile::CPU> paddle_mobile(config);
   paddle_mobile.SetThreadNum(1);
+  std::cout << "testing cpu yyz " << std::endl;
 #endif
 
   int dim_count = std::stoi(argv[arg_index]);
