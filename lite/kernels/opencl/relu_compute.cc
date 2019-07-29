@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #include <sstream>
-#include <utility>
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 #include "lite/opencl/cl_include.h"
@@ -30,8 +29,6 @@ class ReluCompute
   using param_t = operators::ActivationParam;
 
   void PrepareForRun() override {
-    kernel_func_name_ = "relu";
-    build_options_ = "-DCL_DTYPE=float -DRELU";
     auto& context = ctx_->As<OpenCLContext>();
     context.cl_context()->AddKernel(
         kernel_func_name_, "buffer/relu_kernel.cl", build_options_);
@@ -61,21 +58,21 @@ class ReluCompute
     CL_CHECK_FATAL(status);
 
     auto global_work_size = cl::NDRange{count};
-    std::unique_ptr<cl::Event> event(new cl::Event);
     status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
         kernel,
         cl::NullRange,
         global_work_size,
         cl::NullRange,
         nullptr,
-        event.get());
+        event_.get());
     CL_CHECK_FATAL(status);
-    context.cl_wait_list()->insert(std::make_pair(out_buf, std::move(event)));
+    context.cl_wait_list()->emplace(out_buf, event_);
   }
 
  private:
-  std::string kernel_func_name_{};
-  std::string build_options_{};
+  std::string kernel_func_name_{"relu"};
+  std::string build_options_{"-DCL_DTYPE=float -DRELU"};
+  std::shared_ptr<cl::Event> event_{new cl::Event};
 };
 
 }  // namespace opencl

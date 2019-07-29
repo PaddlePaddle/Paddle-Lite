@@ -227,7 +227,7 @@ class Context<TargetType::kOpenCL> {
   std::shared_ptr<CLContext> cl_context_;
   using WaitListType =
       std::unordered_map<decltype(static_cast<const cl::Buffer*>(nullptr)),
-                         std::unique_ptr<cl::Event>>;
+                         std::shared_ptr<cl::Event>>;
   std::shared_ptr<WaitListType> cl_wait_list_;
 
  public:

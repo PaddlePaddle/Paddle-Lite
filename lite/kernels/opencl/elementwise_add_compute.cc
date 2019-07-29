@@ -14,7 +14,6 @@
 
 #include "lite/kernels/opencl/elementwise_add_compute.h"
 #include <sstream>
-#include <utility>
 #include "lite/core/op_registry.h"
 #include "lite/opencl/cl_include.h"
 
@@ -24,8 +23,6 @@ namespace kernels {
 namespace opencl {
 
 void ElementwiseAddCompute::PrepareForRun() {
-  kernel_func_name_ = "elementwise_add";
-  build_options_ = "-DCL_DTYPE=float";
   auto& context = ctx_->As<OpenCLContext>();
   context.cl_context()->AddKernel(
       kernel_func_name_, "buffer/elementwise_add_kernel.cl", build_options_);
@@ -61,16 +58,15 @@ void ElementwiseAddCompute::Run() {
   CL_CHECK_FATAL(status);
 
   auto global_work_size = cl::NDRange{channels_, batch_};
-  std::unique_ptr<cl::Event> event(new cl::Event);
   status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
       kernel,
       cl::NullRange,
       global_work_size,
       cl::NullRange,
       nullptr,
-      event.get());
+      event_.get());
   CL_CHECK_FATAL(status);
-  context.cl_wait_list()->insert(std::make_pair(out_buf, std::move(event)));
+  context.cl_wait_list()->emplace(out_buf, event_);
 }
 
 void ElementwiseAddCompute::UpdateParams() {
