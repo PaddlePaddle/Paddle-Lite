@@ -21,13 +21,9 @@ class FetchParam<P: PrecisionProtocol>: OpParam{
     let scope: Scope
     required init(opDesc: PMOpDesc, inScope: Scope) throws {
         scope = inScope
-        do {
-            input = try FetchParam.inputX(inputs: opDesc.inputs, from: inScope)
-            output = FetchHolder.init(inPaddedCapacity: input.elementCount(), inDim: input.tensorDim)
-            scope.setOutput(output: output)
-        } catch let error {
-            throw error
-        }
+        input = try FetchParam.inputX(inputs: opDesc.inputs, from: inScope)
+        output = FetchHolder.init(inPaddedCapacity: input.elementCount(), inDim: input.tensorDim)
+        scope.setOutput(output: output)
     }
     
     //typealias ParamPrecisionType = P
@@ -38,21 +34,17 @@ class FetchOp<P: PrecisionProtocol>: Operator< FetchKernel<P>, FetchParam<P>>, R
     typealias OpType = FetchOp<P>
     
     func inferShape() {
-        print(para.input.dim)
+        paddleMobileLog("\(para.input.dim)")
     }
     
     func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
-        do {
-            try kernel.compute(commandBuffer: buffer, param: para)
-        } catch let error {
-            throw error
-        }
+        try kernel.compute(commandBuffer: buffer, param: para)
     }
     
     func delogOutput() {
         print("fetch output: ")
-        let resArr = self.para.output.result.floatArr(count: self.para.output.capacity)
-        print(resArr.strideArray())
+        let resArr = self.para.output.result?.floatArr(count: self.para.output.capacity)
+        print(resArr?.strideArray() ?? "")
     }
 }
 

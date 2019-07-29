@@ -91,6 +91,7 @@ const char *G_OP_TYPE_WRITE_TO_ARRAY = "write_to_array";
 const char *G_OP_TYPE_READ_FROM_ARRAY = "read_from_array";
 const char *G_OP_TYPE_IS_EMPTY = "is_empty";
 const char *G_OP_TYPE_INCREMENT = "increment";
+const char *G_OP_TYPE_EXP = "exp";
 
 const char *G_OP_TYPE_QUANTIZE = "quantize";
 const char *G_OP_TYPE_DEQUANTIZE = "dequantize";
@@ -169,6 +170,7 @@ std::unordered_map<
         {G_OP_TYPE_FUSION_CONV_ADD_ADD_PRELU, {{"Input"}, {"Out"}}},
         {G_OP_TYPE_IM2SEQUENCE, {{"X"}, {"Out"}}},
         {G_OP_TYPE_DROPOUT, {{"X"}, {"Out"}}},
+        {G_OP_TYPE_EXP, {{"X"}, {"Out"}}},
         {G_OP_TYPE_FUSION_CONV_ADD_BN, {{"Input"}, {"Y"}}},
         {G_OP_TYPE_FUSION_POOL_BN, {{"X"}, {"Y"}}},
         {G_OP_TYPE_FUSION_ELEMENTWISE_ADD_RELU, {{"X", "Y"}, {"Out"}}},

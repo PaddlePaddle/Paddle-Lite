@@ -16,32 +16,41 @@ import Foundation
 import paddle_mobile
 
 public class MobileNet_ssd_hand: Net {
-    @objc public override init(device: MTLDevice) {
-        super.init(device: device)
+    @objc public override init(device: MTLDevice) throws {
+        try super.init(device: device)
         except = 2
-        modelPath = Bundle.main.path(forResource: "ssd_hand_model", ofType: nil) ?! "model null"
-        paramPath = Bundle.main.path(forResource: "ssd_hand_params", ofType: nil) ?! "para null"
+        guard let modelPath = Bundle.main.path(forResource: "ssd_hand_model", ofType: nil) else {
+            throw PaddleMobileError.makeError(type: PaddleMobileErrorType.loaderError, msg: "model null")
+        }
+        self.modelPath = modelPath
+        guard let paramPath = Bundle.main.path(forResource: "ssd_hand_params", ofType: nil) else {
+            throw PaddleMobileError.makeError(type: PaddleMobileErrorType.loaderError, msg: "para null")
+        }
+        self.paramPath = paramPath
         metalLoadMode = .LoadMetalInCustomMetalLib
-        metalLibPath = Bundle.main.path(forResource: "paddle-mobile-metallib", ofType: "metallib")
-        preprocessKernel = MobilenetssdPreProccess.init(device: device)
+        guard let metalLibPath = Bundle.main.path(forResource: "paddle-mobile-metallib", ofType: "metallib") else {
+            throw PaddleMobileError.makeError(type: PaddleMobileErrorType.loaderError, msg: "metallib null")
+        }
+        self.metalLibPath = metalLibPath
+        preprocessKernel = try MobilenetssdPreProccess.init(device: device)
         inputDim = Dim.init(inDim: [1, 300, 300, 3])
     }
     
-    @objc override public init(device: MTLDevice,inParamPointer: UnsafeMutableRawPointer, inParamSize:Int, inModelPointer inModePointer: UnsafeMutableRawPointer, inModelSize: Int) {
-        super.init(device:device,inParamPointer:inParamPointer,inParamSize:inParamSize,inModelPointer:inModePointer,inModelSize:inModelSize)
+    @objc override public init(device: MTLDevice,inParamPointer: UnsafeMutableRawPointer, inParamSize:Int, inModelPointer inModePointer: UnsafeMutableRawPointer, inModelSize: Int) throws {
+        try super.init(device:device,inParamPointer:inParamPointer,inParamSize:inParamSize,inModelPointer:inModePointer,inModelSize:inModelSize)
         except = 2
         modelPath = ""
         paramPath = ""
         metalLoadMode = .LoadMetalInCustomMetalLib
         metalLibPath = Bundle.main.path(forResource: "paddle-mobile-metallib", ofType: "metallib")
-        preprocessKernel = MobilenetssdPreProccess.init(device: device)
+        preprocessKernel = try MobilenetssdPreProccess.init(device: device)
         inputDim = Dim.init(inDim: [1, 300, 300, 3])
     }
     
     class MobilenetssdPreProccess: CusomKernel {
-        init(device: MTLDevice) {
+        init(device: MTLDevice) throws {
             let s = Shape.init(inWidth: 300, inHeight: 300, inChannel: 3)
-            super.init(device: device, inFunctionName: "mobilenet_ssd_preprocess", outputDim: s, metalLoadModel: .LoadMetalInDefaultLib, metalLibPath: nil)
+            try super.init(device: device, inFunctionName: "mobilenet_ssd_preprocess", outputDim: s, metalLoadModel: .LoadMetalInDefaultLib, metalLibPath: nil)
         }
     }
     
@@ -50,50 +59,6 @@ public class MobileNet_ssd_hand: Net {
     }
     
     override public func fetchResult(paddleMobileRes: [GPUResultHolder]) -> [ResultHolder] {
-        
-        //    guard let interRes = paddleMobileRes.intermediateResults else {
-        //      fatalError(" need have inter result ")
-        //    }
-        //
-        //    guard let scores = interRes["Scores"], scores.count > 0, let score = scores[0] as?  Texture<Float32> else {
-        //      fatalError(" need score ")
-        //    }
-        //
-        //    guard let bboxs = interRes["BBoxes"], bboxs.count > 0, let bbox = bboxs[0] as? Texture<Float32> else {
-        //      fatalError()
-        //    }
-        //
-        //    var scoreFormatArr: [Float32] = score.metalTexture.realNHWC(dim: (n: score.padToFourDim[0], h: score.padToFourDim[1], w: score.padToFourDim[2], c: score.padToFourDim[3]))
-        ////    print("score: ")
-        ////    print(scoreFormatArr.strideArray())
-        ////
-        //    var bboxArr = bbox.metalTexture.float32Array()
-        ////    print("bbox: ")
-        ////    print(bboxArr.strideArray())
-        //
-        //    let nmsCompute = NMSCompute.init()
-        //    nmsCompute.scoreThredshold = 0.01
-        //    nmsCompute.nmsTopK = 400
-        //    nmsCompute.keepTopK = 200
-        //    nmsCompute.nmsEta = 1.0
-        //    nmsCompute.nmsThreshold = 0.45
-        //    nmsCompute.background_label = 0;
-        //
-        //    nmsCompute.scoreDim = [NSNumber.init(value: score.tensorDim[0]), NSNumber.init(value: score.tensorDim[1]), NSNumber.init(value: score.tensorDim[2])]
-        //
-        //    nmsCompute.bboxDim = [NSNumber.init(value: bbox.tensorDim[0]), NSNumber.init(value: bbox.tensorDim[1]), NSNumber.init(value: bbox.tensorDim[2])]
-        //    guard let result = nmsCompute.compute(withScore: &scoreFormatArr, andBBoxs: &bboxArr) else {
-        //      fatalError( " result error " )
-        //    }
-        //
-        //    let output: [Float32] = result.map { $0.floatValue }
-        //
-        //
-        //    return output
-        fatalError()
+        return []
     }
-    
-    
-    
-    
 }

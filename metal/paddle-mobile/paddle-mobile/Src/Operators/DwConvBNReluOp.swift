@@ -40,11 +40,7 @@ class DwConvBNReluOp<P: PrecisionProtocol>: Operator<ConvBNReluKernel<P>, ConvBN
     }
     
     func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
-        do {
-            try kernel.compute(commandBuffer: buffer, param: para)
-        } catch let error {
-            throw error
-        }
+        try kernel.compute(commandBuffer: buffer, param: para)
     }
     
     static func fusionNode() -> Node {
@@ -65,6 +61,10 @@ class DwConvBNReluOp<P: PrecisionProtocol>: Operator<ConvBNReluKernel<P>, ConvBN
     
     func delogOutput() {
         print(" \(type) output: ")
-        print(para.output.metalTexture.toTensor(dim: (n: para.output.padToFourDim[0], c: para.output.padToFourDim[1], h: para.output.padToFourDim[2], w: para.output.padToFourDim[3])).strideArray())
+        do {
+            let output = try para.output.metalTexture?.toTensor(dim: (n: para.output.padToFourDim[0], c: para.output.padToFourDim[1], h: para.output.padToFourDim[2], w: para.output.padToFourDim[3])).strideArray() ?? []
+            print(output)
+        } catch _ {
+        }
     }
 }

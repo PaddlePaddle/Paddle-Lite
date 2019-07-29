@@ -3431,6 +3431,26 @@ class Pad2dParam : public OpParam {
   RType *out_;
 };
 #endif
+#ifdef EXP_OP
+template <typename Dtype>
+class EXPParam : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
 
+ public:
+  EXPParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
+           const AttributeMap &attrs, Scope *scope)
+      : OpParam(inputs, outputs, attrs, scope) {
+    input_x_ = InputXFrom<GType>(inputs, *scope);
+    out_ = OutFrom<GType>(outputs, *scope);
+  }
+  const GType *InputX() const { return input_x_; }
+  GType *Out() const { return out_; }
+
+ private:
+  GType *input_x_;
+  GType *out_;
+};
+#endif
 }  // namespace operators
 }  // namespace paddle_mobile

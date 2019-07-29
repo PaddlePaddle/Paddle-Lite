@@ -17,37 +17,33 @@ import Foundation
 class ConcatParam<P: PrecisionProtocol>: OpParam {
     //typealias ParamPrecisionType = P
     required init(opDesc: PMOpDesc, inScope: Scope) throws {
-        do {
-            guard let xlist = opDesc.inputs["X"] else {
-                fatalError()
-            }
-            for x in xlist {
-                guard let variant = inScope[x], let v = variant as? Texture else {
-                    fatalError()
-                }
-                if transpose.count == 0 {
-                    transpose = v.transpose
-                }
-                if v.transpose != transpose {
-                    fatalError()
-                }
-                
-                input.append(v)
-            }
-            axis = try ConcatParam.getAttr(key: "axis", attrs: opDesc.attrs)
-            if input.count > 0 {
-                if let originDimsCount = input[0].originDimsCount {
-                    let nowDimsCount = input[0].dim.cout()
-                    let diff = originDimsCount - nowDimsCount
-                    if diff > 0 {
-                        axis -= diff
-                    }
-                }
-            }
-            output = try ConcatParam.outputOut(outputs: opDesc.outputs, from: inScope)
-        } catch let error {
-            throw error
+        guard let xlist = opDesc.inputs["X"] else {
+            throw PaddleMobileError.makeError(type: .netError, msg: "concat input desc nil")
         }
+        for x in xlist {
+            guard let variant = inScope[x], let v = variant as? Texture else {
+                throw PaddleMobileError.makeError(type: .netError, msg: "concat input texture nil")
+            }
+            if transpose.count == 0 {
+                transpose = v.transpose
+            }
+            if v.transpose != transpose {
+                throw PaddleMobileError.makeError(type: .netError, msg: "concat transpose not equal")
+            }
+            
+            input.append(v)
+        }
+        axis = try ConcatParam.getAttr(key: "axis", attrs: opDesc.attrs)
+        if input.count > 0 {
+            if let originDimsCount = input[0].originDimsCount {
+                let nowDimsCount = input[0].dim.cout()
+                let diff = originDimsCount - nowDimsCount
+                if diff > 0 {
+                    axis -= diff
+                }
+            }
+        }
+        output = try ConcatParam.outputOut(outputs: opDesc.outputs, from: inScope)
     }
     var input: [Texture] = []
     var output: Texture
@@ -65,19 +61,12 @@ class ConcatOp<P: PrecisionProtocol>: Operator<ConcatKernel<P>, ConcatParam<P>>,
     }
     
     func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
-        do {
-            try kernel.compute(commandBuffer: buffer, param: para)
-        } catch let error {
-            throw error
-        }
+        try kernel.compute(commandBuffer: buffer, param: para)
     }
     
     func delogOutput() {
         print(" \(type) output: ")
-        
-        let device = para.output.metalTexture!.device
-        let outputArray: [Float32] = device.texture2tensor(texture: para.output.metalTexture, dim: para.output.tensorDim.dims, transpose: para.output.transpose)
-        print(outputArray.strideArray())
+        para.output.delog()
     }
     
 }

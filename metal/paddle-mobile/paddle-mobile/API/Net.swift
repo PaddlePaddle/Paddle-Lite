@@ -65,7 +65,7 @@ import Foundation
     /// 模型精度
     @objc public var paramPrecision: Precision = .Float32
 
-    @objc public init(device: MTLDevice, inParamPointer: UnsafeMutableRawPointer, inParamSize:Int, inModelPointer: UnsafeMutableRawPointer, inModelSize: Int) {
+    @objc public init(device: MTLDevice, inParamPointer: UnsafeMutableRawPointer, inParamSize:Int, inModelPointer: UnsafeMutableRawPointer, inModelSize: Int) throws {
         self.paramPointer = inParamPointer
         self.paramSize = inParamSize
         self.modelPointer = inModelPointer
@@ -74,22 +74,23 @@ import Foundation
         super.init()
     }
     
-    @objc public init(device: MTLDevice) {
+    @objc public init(device: MTLDevice) throws {
         self.device = device
         super.init()
     }
     
     @objc open func resultStr(res: [ResultHolder]) -> String {
-        fatalError()
+        return ""
     }
     
     @objc open func fetchResult(paddleMobileRes: [GPUResultHolder]) -> [ResultHolder] {
-        return paddleMobileRes.map { (gpuRes) -> ResultHolder in
+        let results = try? paddleMobileRes.map { (gpuRes) -> ResultHolder in
             guard let inResPointer = gpuRes.resultPointer else {
-                fatalError()
+                throw PaddleMobileError.makeError(type: .defaultError, msg: "resultPointer nil")
             }
             return ResultHolder.init(inResult: inResPointer, inCapacity: gpuRes.capacity, inDim: gpuRes.dim)
         }
+        return results ?? []
     }
     
     open func updateProgram(program: Program) throws {

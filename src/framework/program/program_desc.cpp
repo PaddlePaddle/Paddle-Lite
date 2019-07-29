@@ -58,7 +58,7 @@ void ProgramDesc::Description(std::string header) const {
     LOG(kLOG_INFO) << "block ops size: " << block->Ops().size();
     for (int j = 0; j < block->Ops().size(); ++j) {
       auto op = block->Ops()[j];
-      LOG(kLOG_DEBUG1) << "op: " << op->Type();
+      LOG(kLOG_DEBUG1) << j << "th, op: " << op->Type();
       for (auto &input : op->GetInputs()) {
         LOG(kLOG_DEBUG2) << "input parameter: " << input.first;
         for (auto &n : input.second) {

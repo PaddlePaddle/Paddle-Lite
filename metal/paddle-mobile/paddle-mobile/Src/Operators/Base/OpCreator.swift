@@ -29,14 +29,10 @@ class OpCreator<P: PrecisionProtocol> {
     
     func creat(device: MTLDevice, opDesc: PMOpDesc, scope: Scope, initContext: InitContext) throws -> Runable & InferShaperable {
         guard let opCreator = opCreators[opDesc.type] else {
-            throw PaddleMobileError.opError(message: "there is no " + opDesc.type + " yet")
+            throw PaddleMobileError.makeError(type: .opError, msg: "there is no " + opDesc.type + " yet")
         }
         
-        do {
-            return try opCreator(device, opDesc, scope, initContext)
-        } catch let error {
-            throw error
-        }
+        return try opCreator(device, opDesc, scope, initContext)
     }
     
     let opCreators: [String : (MTLDevice, PMOpDesc, Scope, InitContext) throws -> Runable & InferShaperable] =

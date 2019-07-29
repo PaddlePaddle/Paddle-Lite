@@ -16,9 +16,9 @@ import Foundation
 
 public class PMProgramDesc {
     public var blocks: [PMBlockDesc] = []
-    init(protoProgram: ProgramDesc) {
+    init(protoProgram: ProgramDesc) throws {
         for block in protoProgram.blocksArray {
-            self.blocks.append(PMBlockDesc.init(block: block as! BlockDesc))
+            try self.blocks.append(PMBlockDesc.init(block: block as! BlockDesc))
         }
     }
     

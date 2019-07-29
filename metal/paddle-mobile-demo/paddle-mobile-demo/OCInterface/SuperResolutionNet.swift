@@ -20,8 +20,8 @@ import paddle_mobile
         return "未实现"
     }
     
-    public override init(device: MTLDevice, inParamPointer: UnsafeMutableRawPointer, inParamSize: Int, inModelPointer: UnsafeMutableRawPointer, inModelSize: Int) {
-        super.init(device: device)
+    public override init(device: MTLDevice, inParamPointer: UnsafeMutableRawPointer, inParamSize: Int, inModelPointer: UnsafeMutableRawPointer, inModelSize: Int) throws {
+        try super.init(device: device)
         except = 0
         metalLoadMode = .LoadMetalInCustomMetalLib
         metalLibPath = Bundle.main.path(forResource: "paddle-mobile-metallib", ofType: "metallib")
@@ -32,15 +32,24 @@ import paddle_mobile
         self.modelSize = inModelSize
     }
     
-    @objc override public init(device: MTLDevice) {
-        super.init(device: device)
+    @objc override public init(device: MTLDevice) throws {
+        try super.init(device: device)
         except = 0
-        modelPath = Bundle.main.path(forResource: "super_model", ofType: nil) ?! "model null"
-        paramPath = Bundle.main.path(forResource: "super_params", ofType: nil) ?! "para null"
+        guard let modelPath = Bundle.main.path(forResource: "super_model", ofType: nil) else {
+            throw PaddleMobileError.makeError(type: PaddleMobileErrorType.loaderError, msg: "model null")
+        }
+        self.modelPath = modelPath
+        guard let paramPath = Bundle.main.path(forResource: "super_params", ofType: nil) else {
+            throw PaddleMobileError.makeError(type: PaddleMobileErrorType.loaderError, msg: "para null")
+        }
+        self.paramPath = paramPath
         preprocessKernel = nil
         inputDim = Dim.init(inDim: [1, 224, 224, 1])
         metalLoadMode = .LoadMetalInCustomMetalLib
-        metalLibPath = Bundle.main.path(forResource: "paddle-mobile-metallib", ofType: "metallib")
+        guard let metalLibPath = Bundle.main.path(forResource: "paddle-mobile-metallib", ofType: "metallib") else {
+            throw PaddleMobileError.makeError(type: PaddleMobileErrorType.loaderError, msg: "metallib null")
+        }
+        self.metalLibPath = metalLibPath
     }
     
     override public func updateProgram(program: Program) throws {
@@ -53,13 +62,9 @@ import paddle_mobile
                         if let texture = varEle as? Texture {
                             let newDim = Dim.init(inDim: [texture.dim[0],  inputDim[1], inputDim[2], texture.tensorDim[1]])
                             print(" var desc name " + varDesc.name + " new dim" + "\(newDim)")
-                            
-                            do {
-                                try texture.updateDims(inTensorDim: Dim.init(inDim: [texture.tensorDim[0], texture.tensorDim[1], inputDim[1], inputDim[2]]), inDim: newDim)
-                                try texture.initTexture(device: device, inTranspose: [0, 1, 2, 3], computePrecision: GlobalConfig.shared.computePrecision)
-                            } catch let error {
-                                throw error
-                            }
+                        
+                            try texture.updateDims(inTensorDim: Dim.init(inDim: [texture.tensorDim[0], texture.tensorDim[1], inputDim[1], inputDim[2]]), inDim: newDim)
+                            try texture.initTexture(device: device, inTranspose: [0, 1, 2, 3], computePrecision: GlobalConfig.shared.computePrecision)
                             
                             if let output: FetchHolder = program.scope.output() as? FetchHolder {
                                 output.dim = newDim
@@ -67,7 +72,7 @@ import paddle_mobile
                                 output.paddedCapacity = newDim.numel() * 4
                                 output.initBuffer(device: device)
                             } else {
-                                throw PaddleMobileError.loaderError(message: "scope output nil")
+                                throw PaddleMobileError.makeError(type: .loaderError, msg: "scope output nil")
                             }
                         }
                     }

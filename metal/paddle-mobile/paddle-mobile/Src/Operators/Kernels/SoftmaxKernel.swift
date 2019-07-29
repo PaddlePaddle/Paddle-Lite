@@ -24,34 +24,43 @@ class SoftmaxKernel<P: PrecisionProtocol>: Kernel, Computable{
     var metalParam: SoftmaxMetalParam
     required init(device: MTLDevice, param: SoftmaxParam<P>, initContext: InitContext) throws {
         
-        do {
-            try param.output.initTexture(device: device, computePrecision: GlobalConfig.shared.computePrecision)
-        } catch let error {
-            throw error
-        }
+        try param.output.initTexture(device: device, computePrecision: GlobalConfig.shared.computePrecision)
         
         metalParam = SoftmaxMetalParam.init(
             N: Int32(param.input.tensorDim[0]),
             K: Int32(param.input.tensorDim[1])
         )
         if GlobalConfig.shared.computePrecision == .Float32 {
-            super.init(device: device, inFunctionName: "softmax_float", initContext: initContext)
+            try super.init(device: device, inFunctionName: "softmax_float", initContext: initContext)
         } else if GlobalConfig.shared.computePrecision == .Float16 {
-            super.init(device: device, inFunctionName: "softmax_half", initContext: initContext)
+            try super.init(device: device, inFunctionName: "softmax_half", initContext: initContext)
         } else {
-            fatalError()
+            throw PaddleMobileError.makeError(type: .predictError, msg: "unsupported compute precision: \(GlobalConfig.shared.computePrecision)")
         }
     }
     
     func compute(commandBuffer: MTLCommandBuffer, param: SoftmaxParam<P>) throws {
-        guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
-            throw PaddleMobileError.predictError(message: " encoder is nil")
+        guard let tempPipline = pipline else {
+            throw PaddleMobileError.makeError(type: .predictError, msg: "pipline is nil")
         }
-        encoder.setTexture(param.input.metalTexture, index: 0)
-        encoder.setTexture(param.output.metalTexture, index: 1)
-        encoder.setBytes(&metalParam, length: MemoryLayout<SoftmaxMetalParam>.size, index: 0)
-        encoder.dispatch(computePipline: pipline, outTexture: param.output.metalTexture)
-        encoder.endEncoding()
+        guard let inputMetalTexture = param.input.metalTexture else {
+            throw PaddleMobileError.makeError(type: .predictError, msg: "input metaltexture is nil")
+        }
+        guard let outputMetalTexture = param.output.metalTexture else {
+            throw PaddleMobileError.makeError(type: .predictError, msg: "output metaltexture is nil")
+        }
+        do {
+            guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
+                throw PaddleMobileError.makeError(type: .predictError, msg: "encoder is nil")
+            }
+            defer {
+                encoder.endEncoding()
+            }
+            encoder.setTexture(inputMetalTexture, index: 0)
+            encoder.setTexture(outputMetalTexture, index: 1)
+            encoder.setBytes(&metalParam, length: MemoryLayout<SoftmaxMetalParam>.size, index: 0)
+            try encoder.dispatch(computePipline: tempPipline, outTexture: outputMetalTexture)
+        }
     }
     
 }
