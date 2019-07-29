@@ -13,7 +13,9 @@
 // limitations under the License.
 
 #include "lite/kernels/opencl/elementwise_add_compute.h"
+#include <memory>
 #include <sstream>
+#include <utility>
 #include "lite/core/op_registry.h"
 #include "lite/opencl/cl_include.h"
 
@@ -60,12 +62,16 @@ void ElementwiseAddCompute::Run() {
   CL_CHECK_FATAL(status);
 
   auto global_work_size = cl::NDRange{channels_, batch_};
-  cl::Event event;
+  std::unique_ptr<cl::Event> event(new cl::Event);
   status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
-      kernel, cl::NullRange, global_work_size, cl::NullRange, nullptr, &event);
+      kernel,
+      cl::NullRange,
+      global_work_size,
+      cl::NullRange,
+      nullptr,
+      event.get());
   CL_CHECK_FATAL(status);
-  status = event.wait();
-  CL_CHECK_FATAL(status);
+  context.cl_wait_list()->insert(std::make_pair(out_buf, std::move(event)));
 }
 
 void ElementwiseAddCompute::UpdateParams() {

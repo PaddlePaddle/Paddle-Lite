@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <sstream>
+#include <utility>
 #include <vector>
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
@@ -88,7 +89,7 @@ class MulCompute
     status = kernel.setArg(++arg_idx, k_);
     CL_CHECK_FATAL(status);
 
-    cl::Event event;
+    std::unique_ptr<cl::Event> event(new cl::Event);
     auto global_work_size = cl::NDRange{static_cast<size_t>((m_ + 3) / 4),
                                         static_cast<size_t>((n_ + 3) / 4)};
     status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
@@ -97,10 +98,9 @@ class MulCompute
         global_work_size,
         cl::NullRange,
         nullptr,
-        &event);
+        event.get());
     CL_CHECK_FATAL(status);
-    status = event.wait();
-    CL_CHECK_FATAL(status);
+    context.cl_wait_list()->insert(std::make_pair(out_buf, std::move(event)));
   }
 
  private:

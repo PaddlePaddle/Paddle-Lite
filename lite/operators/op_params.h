@@ -392,6 +392,75 @@ struct GRUUnitParam {
   bool origin_mode{false};
 };
 
+/// ------------------------------ lrn operators ------------------------------
+struct LrnParam {
+  const lite::Tensor* X{};
+  lite::Tensor* Out{};
+  int local_size{5};
+  float alpha{1.};
+  float beta{0.75};
+  float k{1.};
+  std::string norm_region{"AcrossChannels"};
+};
+
+/// ----------------------- decode_bboxes operators ----------------------
+struct DecodeBboxesParam {
+  const lite::Tensor* loc_data{};
+  const lite::Tensor* prior_data{};
+  lite::Tensor* bbox_data{};
+
+  int batch_num;
+  int num_priors;
+  int num_loc_classes{0};
+  int background_label_id{0};
+  bool share_location{true};
+  bool variance_encoded_in_target;
+  // code_type:  corner, cente_size, corner_size
+  std::string code_type;
+};
+
+/// ----------------------- multiclass_nms operators ----------------------
+struct MulticlassNmsParam {
+  const lite::Tensor* bbox_data{};
+  const lite::Tensor* conf_data{};
+  lite::Tensor* out;
+  std::vector<int> priors;
+  int class_num;
+  int background_id;
+  int keep_topk;
+  int nms_topk;
+  float conf_thresh;
+  float nms_thresh;
+  float nms_eta;
+  bool share_location{true};
+};
+
+/// ----------------------- priorbox operators ----------------------
+struct PriorBoxParam {
+  std::vector<lite::Tensor*> ins;
+  std::vector<lite::Tensor*> outs;
+
+  bool is_flip;
+  bool is_clip;
+  std::vector<float> min_size;
+  std::vector<float> max_size;
+  std::vector<float> aspect_ratio;
+  std::vector<float> variance;
+  int img_w{0};
+  int img_h{0};
+  float step_w{0};
+  float step_h{0};
+  float offset{0.5};
+  int prior_num{0};
+  // priortype: prior_min, prior_max, prior_com
+  std::vector<std::string> order;
+};
+
+struct DensityPriorBoxParam : public PriorBoxParam {
+  std::vector<float> fixed_size;
+  std::vector<float> fixed_ratio;
+  std::vector<float> density_size;
+};
 /// ----------------------- GRU operators ----------------------f
 struct GRUParam {
   const lite::Tensor* input{nullptr};

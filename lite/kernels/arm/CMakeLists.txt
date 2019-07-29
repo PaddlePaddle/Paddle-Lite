@@ -12,10 +12,15 @@ lite_cc_library(softmax_compute_arm SRCS softmax_compute.cc DEPS ${lite_kernel_d
 lite_cc_library(conv_compute_arm SRCS conv_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(batch_norm_compute_arm SRCS batch_norm_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(elementwise_compute_arm SRCS elementwise_compute.cc DEPS ${lite_kernel_deps} math_arm)
+lite_cc_library(lrn_compute_arm SRCS lrn_compute.cc DEPS ${lite_kernel_deps} math_arm)
+lite_cc_library(decode_bboxes_compute_arm SRCS decode_bboxes_compute.cc DEPS ${lite_kernel_deps} math_arm)
+lite_cc_library(multiclass_nms_compute_arm SRCS multiclass_nms_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(pool_compute_arm SRCS pool_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(split_compute_arm SRCS split_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(concat_compute_arm SRCS concat_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(pad2d_compute_arm SRCS pad2d_compute.cc DEPS ${lite_kernel_deps} math_arm)
+lite_cc_library(prior_box_compute_arm SRCS prior_box_compute.cc DEPS ${lite_kernel_deps} math_arm)
+lite_cc_library(density_prior_box_compute_arm SRCS density_prior_box_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(negative_compute_arm SRCS negative_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(dropout_compute_arm SRCS dropout_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(calib_compute_arm SRCS calib_compute.cc DEPS ${lite_kernel_deps} math_arm)
@@ -37,6 +42,9 @@ lite_cc_test(test_softmax_compute_arm SRCS softmax_compute_test.cc DEPS softmax_
 lite_cc_test(test_conv_compute_arm SRCS conv_compute_test.cc DEPS conv_compute_arm)
 lite_cc_test(test_batch_norm_compute_arm SRCS batch_norm_compute_test.cc DEPS batch_norm_compute_arm)
 lite_cc_test(test_elementwise_compute_arm SRCS elementwise_compute_test.cc DEPS elementwise_compute_arm)
+lite_cc_test(test_lrn_compute_arm SRCS lrn_compute_test.cc DEPS lrn_compute_arm)
+lite_cc_test(test_decode_bboxes_compute_arm SRCS decode_bboxes_compute_test.cc DEPS decode_bboxes_compute_arm)
+lite_cc_test(test_multiclass_nms_compute_arm SRCS multiclass_nms_compute_test.cc DEPS multiclass_nms_compute_arm)
 lite_cc_test(test_pool_compute_arm SRCS pool_compute_test.cc DEPS pool_compute_arm)
 lite_cc_test(test_mul_compute_arm SRCS mul_compute_test.cc DEPS mul_compute_arm)
 lite_cc_test(test_split_compute_arm SRCS split_compute_test.cc DEPS split_compute_arm)
@@ -57,10 +65,15 @@ set(arm_kernels
     conv_compute_arm
     batch_norm_compute_arm
     elementwise_compute_arm
+    lrn_compute_arm
+    decode_bboxes_compute_arm
+    multiclass_nms_compute_arm
     pool_compute_arm
     split_compute_arm
     concat_compute_arm
     pad2d_compute_arm
+    prior_box_compute_arm
+    density_prior_box_compute_arm
     negative_compute_arm
     dropout_compute_arm
     transpose_compute_arm

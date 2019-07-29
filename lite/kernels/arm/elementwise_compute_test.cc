@@ -91,6 +91,34 @@ void elementwise_compute_ref(const operators::ElementwiseParam& param,
         }
       }
     }
+  } else if (elt_type == "mul") {
+    for (int i = 0; i < batch; ++i) {
+      for (int j = 0; j < channels; ++j) {
+        int offset = (i * channels + j) * num;
+        const dtype* din_ptr = x_data + offset;
+        const dtype diny_data = y_data[j];
+        dtype* dout_ptr = out_data + offset;
+        for (int k = 0; k < num; ++k) {
+          *dout_ptr = *din_ptr * diny_data;
+          dout_ptr++;
+          din_ptr++;
+        }
+      }
+    }
+  } else if (elt_type == "max") {
+    for (int i = 0; i < batch; ++i) {
+      for (int j = 0; j < channels; ++j) {
+        int offset = (i * channels + j) * num;
+        const dtype* din_ptr = x_data + offset;
+        const dtype diny_data = y_data[j];
+        dtype* dout_ptr = out_data + offset;
+        for (int k = 0; k < num; ++k) {
+          *dout_ptr = std::max(*din_ptr, diny_data);
+          dout_ptr++;
+          din_ptr++;
+        }
+      }
+    }
   } else {
     LOG(FATAL) << "unsupported Elementwise type: " << elt_type;
   }
@@ -292,6 +320,394 @@ TEST(fusion_elementwise_add_activation_arm, compute) {
   }
 }
 
+TEST(elementwise_mul_arm, retrive_op) {
+  auto elementwise_mul =
+      KernelRegistry::Global().Create<TARGET(kARM), PRECISION(kFloat)>(
+          "elementwise_mul");
+  ASSERT_FALSE(elementwise_mul.empty());
+  ASSERT_TRUE(elementwise_mul.front());
+}
+
+TEST(elementwise_mul_arm, init) {
+  ElementwiseMulCompute elementwise_mul;
+  ASSERT_EQ(elementwise_mul.precision(), PRECISION(kFloat));
+  ASSERT_EQ(elementwise_mul.target(), TARGET(kARM));
+}
+
+TEST(elementwise_mul, compute) {
+  ElementwiseMulCompute elementwise_mul;
+  operators::ElementwiseParam param;
+  lite::Tensor x, y, output, output_ref;
+
+#if 1
+  for (auto n : {1, 3, 4}) {
+    for (auto c : {1, 3, 4}) {
+      for (auto h : {1, 3, 4}) {
+        for (auto w : {1, 3, 4}) {
+          for (auto axis : {-1, 0, 1, 3}) {
+            for (auto yd : {std::vector<int64_t>({n}),
+                            std::vector<int64_t>({c}),
+                            std::vector<int64_t>({h}),
+                            std::vector<int64_t>({w}),
+                            std::vector<int64_t>({n, c}),
+                            std::vector<int64_t>({c, h}),
+                            std::vector<int64_t>({c, h, w}),
+                            std::vector<int64_t>({n, c, h, w})}) {
+#else
+  for (auto n : {1, 3, 4, 11}) {
+    for (auto c : {1, 3, 4, 11}) {
+      for (auto h : {1, 3, 4, 11}) {
+        for (auto w : {1, 3, 4, 11}) {
+          for (auto axis : {-1, 0, 1, 2, 3}) {
+            for (auto yd : {std::vector<int64_t>({n}),
+                            std::vector<int64_t>({c}),
+                            std::vector<int64_t>({h}),
+                            std::vector<int64_t>({w}),
+                            std::vector<int64_t>({n, c}),
+                            std::vector<int64_t>({c, h}),
+                            std::vector<int64_t>({h, w}),
+                            std::vector<int64_t>({n, c, h}),
+                            std::vector<int64_t>({c, h, w}),
+                            std::vector<int64_t>({n, c, h, w})}) {
+#endif
+              auto x_dim = DDim(std::vector<int64_t>({n, c, h, w}));
+              auto y_dim = DDim(yd);
+              int axis_t = axis < 0 ? x_dim.size() - y_dim.size() : axis;
+
+              if (axis_t + y_dim.size() > 4) continue;
+              bool flag = false;
+              for (int i = 0; i < y_dim.size(); i++) {
+                if (x_dim[i + axis_t] != y_dim[i]) flag = true;
+              }
+              if (flag) continue;
+
+              x.Resize(x_dim);
+              y.Resize(y_dim);
+              output.Resize(x_dim);
+              output_ref.Resize(x_dim);
+              auto* x_data = x.mutable_data<float>();
+              auto* y_data = y.mutable_data<float>();
+              auto* output_data = output.mutable_data<float>();
+              auto* output_ref_data = output_ref.mutable_data<float>();
+              for (int i = 0; i < x_dim.production(); i++) {
+                x_data[i] = i;
+              }
+              for (int i = 0; i < y_dim.production(); i++) {
+                y_data[i] = i;
+              }
+              param.X = &x;
+              param.Y = &y;
+              param.axis = axis;
+              param.Out = &output;
+              elementwise_mul.SetParam(param);
+              elementwise_mul.Run();
+              param.Out = &output_ref;
+              elementwise_compute_ref<float>(param, "mul", "");
+              for (int i = 0; i < output.dims().production(); i++) {
+                EXPECT_NEAR(output_data[i], output_ref_data[i], 1e-5);
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+TEST(fusion_elementwise_mul_activation_arm, retrive_op) {
+  auto fusion_elementwise_mul_activation =
+      KernelRegistry::Global().Create<TARGET(kARM), PRECISION(kFloat)>(
+          "fusion_elementwise_mul_activation");
+  ASSERT_FALSE(fusion_elementwise_mul_activation.empty());
+  ASSERT_TRUE(fusion_elementwise_mul_activation.front());
+}
+
+TEST(fusion_elementwise_mul_activation_arm, init) {
+  ElementwiseMulActivationCompute fusion_elementwise_mul_activation;
+  ASSERT_EQ(fusion_elementwise_mul_activation.precision(), PRECISION(kFloat));
+  ASSERT_EQ(fusion_elementwise_mul_activation.target(), TARGET(kARM));
+}
+
+TEST(fusion_elementwise_mul_activation_arm, compute) {
+  ElementwiseMulActivationCompute fusion_elementwise_mul_activation;
+  operators::FusionElementwiseActivationParam param;
+  lite::Tensor x, y, output, output_ref;
+
+#if 1
+  for (auto act_type : {"relu"}) {
+    for (auto n : {1, 3, 4}) {
+      for (auto c : {1, 3, 4}) {
+        for (auto h : {1, 3, 4}) {
+          for (auto w : {1, 3, 4}) {
+            for (auto axis : {-1, 0, 1, 3}) {
+              for (auto yd : {std::vector<int64_t>({n}),
+                              std::vector<int64_t>({c}),
+                              std::vector<int64_t>({h}),
+                              std::vector<int64_t>({w}),
+                              std::vector<int64_t>({n, c}),
+                              std::vector<int64_t>({h, w}),
+                              std::vector<int64_t>({n, c, h}),
+                              std::vector<int64_t>({n, c, h, w})}) {
+#else
+  for (auto act_type : {"relu"}) {
+    for (auto n : {1, 3, 4, 11}) {
+      for (auto c : {1, 3, 4, 11}) {
+        for (auto h : {1, 3, 4, 11}) {
+          for (auto w : {1, 3, 4, 11}) {
+            for (auto axis : {-1, 0, 1, 2, 3}) {
+              for (auto yd : {std::vector<int64_t>({n}),
+                              std::vector<int64_t>({c}),
+                              std::vector<int64_t>({h}),
+                              std::vector<int64_t>({w}),
+                              std::vector<int64_t>({n, c}),
+                              std::vector<int64_t>({c, h}),
+                              std::vector<int64_t>({h, w}),
+                              std::vector<int64_t>({n, c, h}),
+                              std::vector<int64_t>({c, h, w}),
+                              std::vector<int64_t>({n, c, h, w})}) {
+#endif
+                auto x_dim = DDim(std::vector<int64_t>({n, c, h, w}));
+                auto y_dim = DDim(yd);
+                int axis_t = axis < 0 ? x_dim.size() - y_dim.size() : axis;
+
+                if (axis_t + y_dim.size() > 4) continue;
+                bool flag = false;
+                for (int i = 0; i < y_dim.size(); i++) {
+                  if (x_dim[i + axis_t] != y_dim[i]) flag = true;
+                }
+                if (flag) continue;
+
+                x.Resize(x_dim);
+                y.Resize(y_dim);
+                output.Resize(x_dim);
+                output_ref.Resize(x_dim);
+                auto* x_data = x.mutable_data<float>();
+                auto* y_data = y.mutable_data<float>();
+                auto* output_data = output.mutable_data<float>();
+                auto* output_ref_data = output_ref.mutable_data<float>();
+                for (int i = 0; i < x_dim.production(); i++) {
+                  float sign = i % 3 == 0 ? -1.0f : 1.0f;
+                  x_data[i] = i * sign;
+                }
+                for (int i = 0; i < y_dim.production(); i++) {
+                  float sign = i % 2 == 0 ? 0.5f : -0.5f;
+                  y_data[i] = i * sign;
+                }
+                param.X = &x;
+                param.Y = &y;
+                param.axis = axis;
+                param.Out = &output;
+                param.act_type = act_type;
+                fusion_elementwise_mul_activation.SetParam(param);
+                fusion_elementwise_mul_activation.Run();
+                param.Out = &output_ref;
+                elementwise_compute_ref<float>(param, "mul", act_type);
+                for (int i = 0; i < output.dims().production(); i++) {
+                  EXPECT_NEAR(output_data[i], output_ref_data[i], 1e-5);
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+TEST(elementwise_max_arm, retrive_op) {
+  auto elementwise_max =
+      KernelRegistry::Global().Create<TARGET(kARM), PRECISION(kFloat)>(
+          "elementwise_max");
+  ASSERT_FALSE(elementwise_max.empty());
+  ASSERT_TRUE(elementwise_max.front());
+}
+
+TEST(elementwise_max_arm, init) {
+  ElementwiseMaxCompute elementwise_max;
+  ASSERT_EQ(elementwise_max.precision(), PRECISION(kFloat));
+  ASSERT_EQ(elementwise_max.target(), TARGET(kARM));
+}
+
+TEST(elementwise_max, compute) {
+  ElementwiseMaxCompute elementwise_max;
+  operators::ElementwiseParam param;
+  lite::Tensor x, y, output, output_ref;
+
+#if 1
+  for (auto n : {1, 3, 4}) {
+    for (auto c : {1, 3, 4}) {
+      for (auto h : {1, 3, 4}) {
+        for (auto w : {1, 3, 4}) {
+          for (auto axis : {-1, 0, 1, 3}) {
+            for (auto yd : {std::vector<int64_t>({n}),
+                            std::vector<int64_t>({c}),
+                            std::vector<int64_t>({h}),
+                            std::vector<int64_t>({w}),
+                            std::vector<int64_t>({n, c}),
+                            std::vector<int64_t>({c, h}),
+                            std::vector<int64_t>({c, h, w}),
+                            std::vector<int64_t>({n, c, h, w})}) {
+#else
+  for (auto n : {1, 3, 4, 11}) {
+    for (auto c : {1, 3, 4, 11}) {
+      for (auto h : {1, 3, 4, 11}) {
+        for (auto w : {1, 3, 4, 11}) {
+          for (auto axis : {-1, 0, 1, 2, 3}) {
+            for (auto yd : {std::vector<int64_t>({n}),
+                            std::vector<int64_t>({c}),
+                            std::vector<int64_t>({h}),
+                            std::vector<int64_t>({w}),
+                            std::vector<int64_t>({n, c}),
+                            std::vector<int64_t>({c, h}),
+                            std::vector<int64_t>({h, w}),
+                            std::vector<int64_t>({n, c, h}),
+                            std::vector<int64_t>({c, h, w}),
+                            std::vector<int64_t>({n, c, h, w})}) {
+#endif
+              auto x_dim = DDim(std::vector<int64_t>({n, c, h, w}));
+              auto y_dim = DDim(yd);
+              int axis_t = axis < 0 ? x_dim.size() - y_dim.size() : axis;
+
+              if (axis_t + y_dim.size() > 4) continue;
+              bool flag = false;
+              for (int i = 0; i < y_dim.size(); i++) {
+                if (x_dim[i + axis_t] != y_dim[i]) flag = true;
+              }
+              if (flag) continue;
+
+              x.Resize(x_dim);
+              y.Resize(y_dim);
+              output.Resize(x_dim);
+              output_ref.Resize(x_dim);
+              auto* x_data = x.mutable_data<float>();
+              auto* y_data = y.mutable_data<float>();
+              auto* output_data = output.mutable_data<float>();
+              auto* output_ref_data = output_ref.mutable_data<float>();
+              for (int i = 0; i < x_dim.production(); i++) {
+                x_data[i] = i;
+              }
+              for (int i = 0; i < y_dim.production(); i++) {
+                y_data[i] = i;
+              }
+              param.X = &x;
+              param.Y = &y;
+              param.axis = axis;
+              param.Out = &output;
+              elementwise_max.SetParam(param);
+              elementwise_max.Run();
+              param.Out = &output_ref;
+              elementwise_compute_ref<float>(param, "max", "");
+              for (int i = 0; i < output.dims().production(); i++) {
+                EXPECT_NEAR(output_data[i], output_ref_data[i], 1e-5);
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+TEST(fusion_elementwise_max_activation_arm, retrive_op) {
+  auto fusion_elementwise_max_activation =
+      KernelRegistry::Global().Create<TARGET(kARM), PRECISION(kFloat)>(
+          "fusion_elementwise_max_activation");
+  ASSERT_FALSE(fusion_elementwise_max_activation.empty());
+  ASSERT_TRUE(fusion_elementwise_max_activation.front());
+}
+
+TEST(fusion_elementwise_max_activation_arm, init) {
+  ElementwiseMaxActivationCompute fusion_elementwise_max_activation;
+  ASSERT_EQ(fusion_elementwise_max_activation.precision(), PRECISION(kFloat));
+  ASSERT_EQ(fusion_elementwise_max_activation.target(), TARGET(kARM));
+}
+
+TEST(fusion_elementwise_max_activation_arm, compute) {
+  ElementwiseMaxActivationCompute fusion_elementwise_max_activation;
+  operators::FusionElementwiseActivationParam param;
+  lite::Tensor x, y, output, output_ref;
+
+#if 1
+  for (auto act_type : {"relu"}) {
+    for (auto n : {1, 3, 4}) {
+      for (auto c : {1, 3, 4}) {
+        for (auto h : {1, 3, 4}) {
+          for (auto w : {1, 3, 4}) {
+            for (auto axis : {-1, 0, 1, 3}) {
+              for (auto yd : {std::vector<int64_t>({n}),
+                              std::vector<int64_t>({c}),
+                              std::vector<int64_t>({h}),
+                              std::vector<int64_t>({w}),
+                              std::vector<int64_t>({n, c}),
+                              std::vector<int64_t>({h, w}),
+                              std::vector<int64_t>({n, c, h}),
+                              std::vector<int64_t>({n, c, h, w})}) {
+#else
+  for (auto act_type : {"relu"}) {
+    for (auto n : {1, 3, 4, 11}) {
+      for (auto c : {1, 3, 4, 11}) {
+        for (auto h : {1, 3, 4, 11}) {
+          for (auto w : {1, 3, 4, 11}) {
+            for (auto axis : {-1, 0, 1, 2, 3}) {
+              for (auto yd : {std::vector<int64_t>({n}),
+                              std::vector<int64_t>({c}),
+                              std::vector<int64_t>({h}),
+                              std::vector<int64_t>({w}),
+                              std::vector<int64_t>({n, c}),
+                              std::vector<int64_t>({c, h}),
+                              std::vector<int64_t>({h, w}),
+                              std::vector<int64_t>({n, c, h}),
+                              std::vector<int64_t>({c, h, w}),
+                              std::vector<int64_t>({n, c, h, w})}) {
+#endif
+                auto x_dim = DDim(std::vector<int64_t>({n, c, h, w}));
+                auto y_dim = DDim(yd);
+                int axis_t = axis < 0 ? x_dim.size() - y_dim.size() : axis;
+
+                if (axis_t + y_dim.size() > 4) continue;
+                bool flag = false;
+                for (int i = 0; i < y_dim.size(); i++) {
+                  if (x_dim[i + axis_t] != y_dim[i]) flag = true;
+                }
+                if (flag) continue;
+
+                x.Resize(x_dim);
+                y.Resize(y_dim);
+                output.Resize(x_dim);
+                output_ref.Resize(x_dim);
+                auto* x_data = x.mutable_data<float>();
+                auto* y_data = y.mutable_data<float>();
+                auto* output_data = output.mutable_data<float>();
+                auto* output_ref_data = output_ref.mutable_data<float>();
+                for (int i = 0; i < x_dim.production(); i++) {
+                  float sign = i % 3 == 0 ? -1.0f : 1.0f;
+                  x_data[i] = i * sign;
+                }
+                for (int i = 0; i < y_dim.production(); i++) {
+                  float sign = i % 2 == 0 ? 0.5f : -0.5f;
+                  y_data[i] = i * sign;
+                }
+                param.X = &x;
+                param.Y = &y;
+                param.axis = axis;
+                param.Out = &output;
+                param.act_type = act_type;
+                fusion_elementwise_max_activation.SetParam(param);
+                fusion_elementwise_max_activation.Run();
+                param.Out = &output_ref;
+                elementwise_compute_ref<float>(param, "max", act_type);
+                for (int i = 0; i < output.dims().production(); i++) {
+                  EXPECT_NEAR(output_data[i], output_ref_data[i], 1e-5);
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
 }  // namespace arm
 }  // namespace kernels
 }  // namespace lite
@@ -299,3 +715,7 @@ TEST(fusion_elementwise_add_activation_arm, compute) {
 
 USE_LITE_KERNEL(elementwise_add, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(fusion_elementwise_add_activation, kARM, kFloat, kNCHW, def);
+USE_LITE_KERNEL(elementwise_mul, kARM, kFloat, kNCHW, def);
+USE_LITE_KERNEL(fusion_elementwise_mul_activation, kARM, kFloat, kNCHW, def);
+USE_LITE_KERNEL(elementwise_max, kARM, kFloat, kNCHW, def);
+USE_LITE_KERNEL(fusion_elementwise_max_activation, kARM, kFloat, kNCHW, def);
