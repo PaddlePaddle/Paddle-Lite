@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/kernels/opencl/elementwise_add_compute.h"
+#include <memory>
 #include <sstream>
 #include "lite/core/op_registry.h"
 #include "lite/opencl/cl_include.h"

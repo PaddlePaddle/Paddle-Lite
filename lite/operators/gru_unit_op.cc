@@ -60,19 +60,11 @@ bool GRUUnitOpLite::InferShape() const {
   int batch_size = input_dims[0];
   int frame_size = hidden_prev_dims[1];
 
-  LOG(INFO) << "batch size: " << batch_size;
-  LOG(INFO) << "frame size: " << frame_size;
-
   param_.gate->Resize(lite::DDim({batch_size, frame_size * 3}));
   param_.reset_hidden_prev->Resize(lite::DDim({batch_size, frame_size}));
   param_.hidden->Resize(lite::DDim({batch_size, frame_size}));
 
-  LOG(INFO) << "gate dims: " << param_.gate->dims()[0] << ", "
-            << param_.gate->dims()[1];
-  LOG(INFO) << "reset hidden prev dims: " << param_.reset_hidden_prev->dims()[0]
-            << ", " << param_.reset_hidden_prev->dims()[1];
-  LOG(INFO) << "hidden dims: " << param_.hidden->dims()[0] << ", "
-            << param_.hidden->dims()[1];
+  return true;
 }
 
 bool GRUUnitOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {

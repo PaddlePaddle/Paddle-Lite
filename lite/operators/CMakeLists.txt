@@ -27,6 +27,7 @@ lite_cc_library(argmax_op SRCS argmax_op.cc DEPS ${op_DEPS})
 lite_cc_library(axpy_op SRCS axpy_op.cc DEPS ${op_DEPS})
 lite_cc_library(gru_unit_op SRCS gru_unit_op.cc DEPS ${op_DEPS})
 lite_cc_library(gru_op SRCS gru_op.cc DEPS ${op_DEPS})
+lite_cc_library(beam_search_decode_op SRCS beam_search_decode_op.cc DEPS ${op_DEPS})
 lite_cc_library(prior_box_op SRCS prior_box_op.cc DEPS ${op_DEPS})
 lite_cc_library(density_prior_box_op SRCS density_prior_box_op.cc DEPS ${op_DEPS})
 
@@ -60,13 +61,14 @@ set(ops
         fetch_op
         gru_unit_op
         gru_op
+        beam_search_decode_op
         io_copy_op
         io_copy_once_op
         elementwise_ops
         fusion_elementwise_activation_ops
         lrn_op_lite
-	decode_bboxes_op_lite
-	multiclass_nms_op_lite
+	    decode_bboxes_op_lite
+	    multiclass_nms_op_lite
         mean_op
         fill_constant_op
         activation_ops
