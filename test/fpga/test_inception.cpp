@@ -14,7 +14,6 @@ limitations under the License. */
 
 #include <iostream>
 #include "io/paddle_inference_api.h"
-#include "../test_include.h"
 
 #include "fpga/KD/float16.hpp"
 #include "fpga/KD/llapi/zynqmp_api.h"
@@ -165,15 +164,15 @@ int main() {
   std::vector<PaddleTensor> outputs(1, tensor_out);
 
   std::cout << " before predict " << std::endl;
-  auto time1 = time();
-  for (int i = 0; i < 1000; ++i) {
+
+  for (int i = 0; i < 1; ++i) {
     // size_t mem = fpga_get_memory_size_max();
     predictor->Run(paddle_tensor_feeds, &outputs);
-    // size_t mem = zynqmp::fpga_get_memory_size_max();
-    // std::cout << "\n Run: " << i << "mem_max:" << mem << std::endl;
+    size_t mem = zynqmp::fpga_get_memory_size_max();
+    std::cout << "\n Run: " << i << "mem_max:" << mem << std::endl;
   }
-  auto time2 = time();
-  std::cout << "predict 1000 cost: " << time_diff(time1, time2) << "ms\n";
+
+  std::cout << " after predict " << std::endl;
   //  assert();
 
   int index = 1;

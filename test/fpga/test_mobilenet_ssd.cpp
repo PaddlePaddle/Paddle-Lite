@@ -107,8 +107,8 @@ void drawRect(const Mat& mat, float* data, int len) {
   imwrite("result.jpg", mat);
 }
 
-static const char* g_inception = "../../../models/mobilenet_ssd_screw";
-static const char* image = "../../../models/mobilenet_ssd_screw/1.jpg";
+static const char* g_inception = "../models/mobilenet_ssd_screw";
+static const char* image = "1.jpg";
 
 int main() {
   paddle_mobile::zynqmp::open_device();
@@ -128,10 +128,10 @@ int main() {
     readImage(image, data);
 
     auto time3 = time();
-    int times = 1000;
-    // for (int i = 0; i < times; i++) {
+    int times = 2;
+    for (int i = 0; i < times; i++) {
       paddle_mobile.Predict(input_tensor);
-    // }
+    }
 
     auto time4 = time();
     std::cout << "predict cost: " << time_diff(time3, time4) / times << "ms\n";

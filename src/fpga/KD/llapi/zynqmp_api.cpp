@@ -159,11 +159,6 @@ void fpga_copy(void *dest, const void *src, size_t num) {
   memcpy(dest, src, num);
 }
 
-int fpga_reset() {
-  struct FpgaResetArgs args;
-  return  do_ioctl(IOCTL_FPGA_RESET, &args);
-}
-
 int ioctl_conv(const struct ConvArgs &args) {
 #ifdef ENABLE_DEBUG
 //        std::cout << "======Compute Basic Conv======";

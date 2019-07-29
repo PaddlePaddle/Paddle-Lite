@@ -191,13 +191,13 @@ PaddleMobileConfig GetConfig() {
    tensor_out.dtype = PaddleDType::FLOAT32;
    std::vector<PaddleTensor> outputs(1, tensor_out);
  
-   // for (int i = 0; i < 5; ++i) {
+   for (int i = 0; i < 5; ++i) {
        predictor->Run(paddle_tensor_feeds, &outputs);
    
  
      float* data_ret = static_cast<float*>(outputs[0].data.data());
      drawRect(img, data_ret, outputs[0].shape[0]);
-  // }
+  }
    return 0;
 }
 
