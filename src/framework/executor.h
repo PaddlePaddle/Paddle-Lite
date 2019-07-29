@@ -53,6 +53,9 @@ class Executor {
   void SetInput(const LoDTensor &input, const std::string &var_name);
 
   std::shared_ptr<LoDTensor> GetOutput(const std::string &var_name);
+#ifdef PADDLE_MOBILE_CL
+  const CLImage *GetOutputImage(const std::string &var_name);
+#endif
 
   void FeedTensorData(const std::vector<framework::Tensor> &v);
   void GetTensorResults(std::vector<framework::Tensor *> *v);
