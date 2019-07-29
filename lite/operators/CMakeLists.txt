@@ -24,6 +24,7 @@ lite_cc_library(argmax_op SRCS argmax_op.cc DEPS ${op_DEPS})
 lite_cc_library(axpy_op SRCS axpy_op.cc DEPS ${op_DEPS})
 lite_cc_library(gru_unit_op SRCS gru_unit_op.cc DEPS ${op_DEPS})
 lite_cc_library(gru_op SRCS gru_op.cc DEPS ${op_DEPS})
+lite_cc_library(beam_search_decode_op SRCS beam_search_decode_op.cc DEPS ${op_DEPS})
 
 lite_cc_library(op_params SRCS op_params.cc DEPS tensor any framework_proto)
 lite_cc_library(dropout_op SRCS dropout_op.cc DEPS ${op_DEPS})
@@ -55,6 +56,7 @@ set(ops
         fetch_op
         gru_unit_op
         gru_op
+        beam_search_decode_op
         io_copy_op
         io_copy_once_op
         elementwise_ops

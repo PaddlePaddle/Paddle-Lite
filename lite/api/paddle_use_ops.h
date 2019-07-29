@@ -58,3 +58,4 @@ USE_LITE_OP(im2sequence);
 USE_LITE_OP(sequence_softmax)
 USE_LITE_OP(gru_unit)
 USE_LITE_OP(gru)
+USE_LITE_OP(beam_search_decode)

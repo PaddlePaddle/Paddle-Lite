@@ -409,6 +409,16 @@ struct GRUParam {
   bool origin_mode{false};
 };
 
+/// ----------------------- BeamSearchDecode operators ----------------------f
+struct BeamSearchDecodeParam {
+  std::vector<lite::Tensor>* ids{nullptr};
+  std::vector<lite::Tensor>* scores{nullptr};
+  lite::Tensor* sentence_ids{nullptr};
+  lite::Tensor* sentence_scores{nullptr};
+  int beam_size;
+  int end_id;
+};
+
 struct Im2SequenceParam {
   std::vector<lite::Tensor*> X{};
   lite::Tensor* Out{};

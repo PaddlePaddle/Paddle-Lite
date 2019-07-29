@@ -63,6 +63,7 @@ bool GRUOpLite::InferShape() const {
   param_.hidden->Resize(lite::DDim({batch_size, frame_size}));
 
   *(param_.hidden->mutable_lod()) = param_.input->lod();
+  return true;
 }
 
 bool GRUOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
