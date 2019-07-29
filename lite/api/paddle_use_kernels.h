@@ -69,6 +69,7 @@ USE_LITE_KERNEL(conv2d, kARM, kInt8, kNCHW, fp32_out);
 USE_LITE_KERNEL(fc, kARM, kInt8, kNCHW, int8out);
 USE_LITE_KERNEL(fc, kARM, kInt8, kNCHW, fp32out);
 USE_LITE_KERNEL(gru_unit, kARM, kFloat, kNCHW, def)
+USE_LITE_KERNEL(gru, kARM, kFloat, kNCHW, def)
 #endif
 
 #ifdef LITE_WITH_X86
