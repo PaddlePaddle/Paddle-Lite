@@ -111,7 +111,10 @@ class KernelRegistry final {
                                       DATALAYOUT(kNCHW)> *,  //
               KernelRegistryForTarget<TARGET(kFPGA),
                                       PRECISION(kFP16),
-                                      DATALAYOUT(kNHWC)> *  //
+                                      DATALAYOUT(kNHWC)> *,  //
+              KernelRegistryForTarget<TARGET(kFPGA),
+                                      PRECISION(kAny),
+                                      DATALAYOUT(kAny)> *  //
               >;
 
   KernelRegistry();

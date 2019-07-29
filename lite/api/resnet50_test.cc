@@ -91,7 +91,8 @@ TEST(ResNet50, test) {
   // DeviceInfo::Init();
   // DeviceInfo::Global().SetRunMode(LITE_POWER_HIGH, FLAGS_threads);
   lite::Predictor predictor;
-  std::vector<Place> valid_places({Place{TARGET(kFPGA), PRECISION(kFP16)}});
+  std::vector<Place> valid_places(
+      {Place{TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)}});
 
   predictor.Build(FLAGS_model_dir,
                   Place{TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)},

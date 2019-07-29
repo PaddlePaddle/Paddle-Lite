@@ -124,8 +124,13 @@ KernelRegistry::KernelRegistry()
 
   INIT_FOR(kFPGA, kFloat, kNCHW);
   INIT_FOR(kFPGA, kFP16, kNCHW);
+  INIT_FOR(kFPGA, kAny, kNCHW);
+  INIT_FOR(kFPGA, kAny, kAny);
+
   INIT_FOR(kFPGA, kFloat, kNHWC);
   INIT_FOR(kFPGA, kFP16, kNHWC);
+  INIT_FOR(kFPGA, kAny, kNHWC);
+  INIT_FOR(kFPGA, kAny, kAny);
 #undef INIT_FOR
 }
 
