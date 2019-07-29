@@ -13,10 +13,10 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #pragma OPENCL EXTENSION cl_khr_fp16 : enable
+#pragma OPENCL EXTENSION cl_khr_local_int32_extended_atomics : enable
+#pragma OPENCL EXTENSION cl_khr_global_int32_extended_atomics : enable
 
-__kernel void sigmoid(__read_only image2d_t input,
-                   __write_only image2d_t output){
-
+__kernel void exp_impl(__read_only image2d_t input, __write_only image2d_t output) {
    const int x = get_global_id(0);
    const int y = get_global_id(1);
 
@@ -26,9 +26,9 @@ __kernel void sigmoid(__read_only image2d_t input,
 
    half4 in = read_imageh(input, sampler, (int2)(x, y));
    half4 out;
-   out.x = 1.0 / (1.0 + pow(2.71828182, -1.0 * (float)(in.x)));
-   out.y = 1.0 / (1.0 + pow(2.71828182, -1.0 * (float)(in.y)));
-   out.z = 1.0 / (1.0 + pow(2.71828182, -1.0 * (float)(in.z)));
-   out.w = 1.0 / (1.0 + pow(2.71828182, -1.0 * (float)(in.w)));
+   out.x = pow(2.71828182, (float)(in.x));
+   out.y = pow(2.71828182, (float)(in.y));
+   out.z = pow(2.71828182, (float)(in.z));
+   out.w = pow(2.71828182, (float)(in.w));
    write_imageh(output, (int2)(x, y), out);
 }

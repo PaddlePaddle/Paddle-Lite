@@ -686,6 +686,7 @@ class ConcatParam : public OpParam {
     inputs_ = InputMultiFrom<GType>(inputs, *scope);
     out_ = OutFrom<GType>(outputs, *scope);
     axis_ = GetAttr<int>("axis", attrs);
+    original_output_dims_size_ = out_->dims().size();
   }
 
   vector<GType *> Inputs() const { return inputs_; }
@@ -694,10 +695,11 @@ class ConcatParam : public OpParam {
 
   const int &Axis() const { return axis_; }
 
- private:
+ public:
   vector<GType *> inputs_;
   GType *out_;
   int axis_;
+  int original_output_dims_size_;
 #ifdef PADDLE_MOBILE_FPGA
 
  private:
@@ -1590,6 +1592,8 @@ class SliceParam : public OpParam {
     axes_ = GetAttr<std::vector<int>>("axes", attrs);
     starts_ = GetAttr<std::vector<int>>("starts", attrs);
     ends_ = GetAttr<std::vector<int>>("ends", attrs);
+
+    original_output_dims_size_ = output_->dims().size();
   }
 
  public:
@@ -1598,6 +1602,7 @@ class SliceParam : public OpParam {
   std::vector<int> axes_;
   std::vector<int> starts_;
   std::vector<int> ends_;
+  int original_output_dims_size_;
 };
 #endif
 

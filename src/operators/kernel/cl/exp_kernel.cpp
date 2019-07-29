@@ -1,4 +1,4 @@
-/* Copyright (c) 2018 PaddlePaddle Authors. All Rights Reserved.
+/* Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -11,21 +11,24 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
-#ifdef SIGMOID_OP
 
-#include "operators/kernel/activation_kernel.h"
+#ifdef EXP_OP
 
+#include <framework/cl/cl_tensor.h>
+#include <operators/kernel/exp_kernel.h>
 namespace paddle_mobile {
 namespace operators {
 
 template <>
-bool SigmoidKernel<GPU_CL, float>::Init(SigmoidParam<GPU_CL>* param) {
-  this->cl_helper_.AddKernel("sigmoid", "sigmoid.cl");
+bool EXPKernel<GPU_CL, float>::Init(
+    paddle_mobile::operators::EXPParam<paddle_mobile::GPU_CL>* param) {
+  this->cl_helper_.AddKernel("exp_impl", "exp_kernel.cl");
   return true;
 }
 
 template <>
-void SigmoidKernel<GPU_CL, float>::Compute(const SigmoidParam<GPU_CL>& param) {
+void EXPKernel<GPU_CL, float>::Compute(
+    const paddle_mobile::operators::EXPParam<paddle_mobile::GPU_CL>& param) {
   auto kernel = this->cl_helper_.KernelAt(0);
   const auto* input = param.InputX();
   auto* output = param.Out();
@@ -43,8 +46,7 @@ void SigmoidKernel<GPU_CL, float>::Compute(const SigmoidParam<GPU_CL>& param) {
   CL_CHECK_ERRORS(status);
 }
 
-template class SigmoidKernel<GPU_CL, float>;
-
+template class EXPKernel<GPU_CL, float>;
 }  // namespace operators
 }  // namespace paddle_mobile
 #endif
