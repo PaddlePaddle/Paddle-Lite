@@ -56,6 +56,7 @@ void MatMul<float, float>(const framework::Tensor &matrix_a, bool trans_a,
   int M = dim_out[0];
   int N = dim_out[1];
   int K = (!trans_a) ? dim_a[1] : dim_a[0];
+  int ldb = (!trans_b) ? dim_b[1] : dim_b[0];
 
   Gemm gemm;
   if (trans_a) {
@@ -71,11 +72,12 @@ void MatMul<float, float>(const framework::Tensor &matrix_a, bool trans_a,
         a[index++] = tmp[i * n + j];
       }
     }
-    cblas_sgemm(false, false, M, N, K, alpha, a, K, matrix_b.data<float>(), N,
-                beta, matrix_out->data<float>(), N);
+    cblas_sgemm(false, trans_b, M, N, K, alpha, a, K, matrix_b.data<float>(),
+                ldb, beta, matrix_out->data<float>(), N);
   } else {
-    cblas_sgemm(false, false, M, N, K, alpha, matrix_a.data<float>(), K,
-                matrix_b.data<float>(), N, beta, matrix_out->data<float>(), N);
+    cblas_sgemm(false, trans_b, M, N, K, alpha, matrix_a.data<float>(), K,
+                matrix_b.data<float>(), ldb, beta, matrix_out->data<float>(),
+                N);
   }
 }
 
