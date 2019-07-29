@@ -22,6 +22,27 @@ namespace operators {
 
 template <>
 bool FusionFcKernel<CPU, float>::Init(FusionFcParam<CPU> *param) {
+  int M = (int)param->InputX()->dims()[0];
+  if (M == 1) {
+    int r = param->InputY()->dims()[0];
+    int c = param->InputY()->dims()[1];
+    float *B = param->InputY()->data<float>();
+    framework::Tensor matrix_trans;
+    float *trans_b = matrix_trans.mutable_data<float>({r, c});
+    int index = 0;
+    for (int j = 0; j < c; j++) {
+      for (int i = 0; i < r; i++) {
+        trans_b[index++] = B[i * c + j];
+      }
+    }
+    index = 0;
+    for (int j = 0; j < c; j++) {
+      for (int i = 0; i < r; i++) {
+        B[index] = trans_b[index];
+        index++;
+      }
+    }
+  }
   return true;
 }
 
