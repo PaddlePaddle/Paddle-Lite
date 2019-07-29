@@ -94,6 +94,96 @@ void ElementwiseAddActivationCompute::Run() {
   }
 }
 
+void ElementwiseMulCompute::Run() {
+  auto& param = Param<operators::ElementwiseParam>();
+  const float* x_data = param.X->data<float>();
+  const float* y_data = param.Y->data<float>();
+  float* out_data = param.Out->mutable_data<float>();
+  int axis = param.axis;
+  auto x_dims = param.X->dims();
+  auto y_dims = param.Y->dims();
+  int pre, n, post;
+  if (is_broadcast(x_dims, y_dims, axis, &pre, &n, &post)) {
+    lite::arm::math::elementwise_mul_broadcast(
+        x_data, y_data, out_data, pre, n, post);
+  } else {
+    lite::arm::math::elementwise_mul(
+        x_data, y_data, out_data, x_dims.production());
+  }
+}
+
+void ElementwiseMulActivationCompute::Run() {
+  auto& param = Param<operators::FusionElementwiseActivationParam>();
+  const float* x_data = param.X->data<float>();
+  const float* y_data = param.Y->data<float>();
+  float* out_data = param.Out->mutable_data<float>();
+  int axis = param.axis;
+  std::string act_type = param.act_type;
+  auto x_dims = param.X->dims();
+  auto y_dims = param.Y->dims();
+  int pre, n, post;
+  if (is_broadcast(x_dims, y_dims, axis, &pre, &n, &post)) {
+    if (act_type == "relu") {
+      lite::arm::math::elementwise_mul_relu_broadcast(
+          x_data, y_data, out_data, pre, n, post);
+    } else {
+      LOG(FATAL) << "unsupported Activation type: " << act_type;
+    }
+  } else {
+    if (act_type == "relu") {
+      lite::arm::math::elementwise_mul_relu(
+          x_data, y_data, out_data, x_dims.production());
+    } else {
+      LOG(FATAL) << "unsupported Activation type: " << act_type;
+    }
+  }
+}
+
+void ElementwiseMaxCompute::Run() {
+  auto& param = Param<operators::ElementwiseParam>();
+  const float* x_data = param.X->data<float>();
+  const float* y_data = param.Y->data<float>();
+  float* out_data = param.Out->mutable_data<float>();
+  int axis = param.axis;
+  auto x_dims = param.X->dims();
+  auto y_dims = param.Y->dims();
+  int pre, n, post;
+  if (is_broadcast(x_dims, y_dims, axis, &pre, &n, &post)) {
+    lite::arm::math::elementwise_max_broadcast(
+        x_data, y_data, out_data, pre, n, post);
+  } else {
+    lite::arm::math::elementwise_max(
+        x_data, y_data, out_data, x_dims.production());
+  }
+}
+
+void ElementwiseMaxActivationCompute::Run() {
+  auto& param = Param<operators::FusionElementwiseActivationParam>();
+  const float* x_data = param.X->data<float>();
+  const float* y_data = param.Y->data<float>();
+  float* out_data = param.Out->mutable_data<float>();
+  int axis = param.axis;
+  std::string act_type = param.act_type;
+  auto x_dims = param.X->dims();
+  auto y_dims = param.Y->dims();
+  int pre, n, post;
+  if (is_broadcast(x_dims, y_dims, axis, &pre, &n, &post)) {
+    if (act_type == "relu") {
+      lite::arm::math::elementwise_max_relu_broadcast(
+          x_data, y_data, out_data, pre, n, post);
+    } else {
+      LOG(FATAL) << "unsupported Activation type: " << act_type;
+    }
+  } else {
+    if (act_type == "relu") {
+      lite::arm::math::elementwise_max_relu(
+          x_data, y_data, out_data, x_dims.production());
+    } else {
+      LOG(FATAL) << "unsupported Activation type: " << act_type;
+    }
+  }
+}
+
 }  // namespace arm
 }  // namespace kernels
 }  // namespace lite
@@ -116,6 +206,52 @@ REGISTER_LITE_KERNEL(
     kFloat,
     kNCHW,
     paddle::lite::kernels::arm::ElementwiseAddActivationCompute,
+    def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(elementwise_mul,
+                     kARM,
+                     kFloat,
+                     kNCHW,
+                     paddle::lite::kernels::arm::ElementwiseMulCompute,
+                     def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    fusion_elementwise_mul_activation,
+    kARM,
+    kFloat,
+    kNCHW,
+    paddle::lite::kernels::arm::ElementwiseMulActivationCompute,
+    def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(elementwise_max,
+                     kARM,
+                     kFloat,
+                     kNCHW,
+                     paddle::lite::kernels::arm::ElementwiseMaxCompute,
+                     def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    fusion_elementwise_max_activation,
+    kARM,
+    kFloat,
+    kNCHW,
+    paddle::lite::kernels::arm::ElementwiseMaxActivationCompute,
     def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM))})

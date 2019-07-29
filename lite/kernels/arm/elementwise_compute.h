@@ -38,6 +38,38 @@ class ElementwiseAddActivationCompute
   virtual ~ElementwiseAddActivationCompute() = default;
 };
 
+class ElementwiseMulCompute
+    : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+ public:
+  void Run() override;
+
+  virtual ~ElementwiseMulCompute() = default;
+};
+
+class ElementwiseMulActivationCompute
+    : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+ public:
+  void Run() override;
+
+  virtual ~ElementwiseMulActivationCompute() = default;
+};
+
+class ElementwiseMaxCompute
+    : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+ public:
+  void Run() override;
+
+  virtual ~ElementwiseMaxCompute() = default;
+};
+
+class ElementwiseMaxActivationCompute
+    : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+ public:
+  void Run() override;
+
+  virtual ~ElementwiseMaxActivationCompute() = default;
+};
+
 }  // namespace arm
 }  // namespace kernels
 }  // namespace lite
