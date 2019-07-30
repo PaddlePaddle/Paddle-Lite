@@ -64,8 +64,14 @@ class DeviceInfo {
       clients_;
 };
 
-bool BuildNPUClinet(std::vector<ge::Operator>& inputs,   // NOLINT
+bool BuildNPUClient(std::vector<ge::Operator>& inputs,   // NOLINT
                     std::vector<ge::Operator>& outputs,  // NOLINT
+                    const string& name);
+
+bool BuildNPUClient(const string& om_model_file_path, const string& name);
+
+bool BuildNPUClient(const void* om_model_data,
+                    const size_t om_model_size,
                     const string& name);
 
 }  // namespace npu

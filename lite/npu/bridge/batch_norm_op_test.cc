@@ -23,7 +23,7 @@ namespace lite {
 namespace npu {
 namespace bridge {
 
-TEST(npu_bridge_batch_norm_op, test) {
+TEST(NPUBridges, batch_norm) {
   const auto& bridges = lite::npu::bridge::Factory::Instance();
   const auto& supported_lists = bridges.AllFunctions();
   CHECK(bridges.HasType("batch_norm"));
