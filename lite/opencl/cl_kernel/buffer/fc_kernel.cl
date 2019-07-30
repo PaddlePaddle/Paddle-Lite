@@ -44,12 +44,17 @@ void fc(__global const CL_DTYPE* a,
       c0 = (bias && col < N) ? bias[col] : 0;
 
   for (int p = 0; p < K; ++p) {
-    a0 = *( (__global CL_DTYPE*)(a + row * K + p) );
-    b0 = *( (__global CL_DTYPE*)(b + p * N + col) );
+    a0 = *(a + row * K + p);
+    b0 = *(b + p * N + col);
     c0 += a0 * b0;
   }
 
-  c[row * M + col] = c0;
+#if defined(RELU)
+  c[row * N + col] = max(c0, 0);
+#else
+  c[row * N + col] = c0;
+#endif
+
 }
 #endif // naive gemm
 
