@@ -70,9 +70,10 @@ REGISTER_LITE_KERNEL(logical_xor,
                      kNCHW,
                      paddle::lite::kernels::arm::LogicalXorCompute,
                      def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kBool))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kBool))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kBool))})
     .Finalize();
 REGISTER_LITE_KERNEL(logical_and,
                      kARM,
@@ -80,7 +81,7 @@ REGISTER_LITE_KERNEL(logical_and,
                      kNCHW,
                      paddle::lite::kernels::arm::LogicalAndCompute,
                      def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kBool))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kBool))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kBool))})
     .Finalize();

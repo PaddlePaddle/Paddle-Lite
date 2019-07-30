@@ -31,7 +31,19 @@ class LogicalXorTester : public arena::TestCase {
   LogicalXorTester(const Place& place, const std::string& alias, DDim dims)
       : TestCase(place, alias), dims_(dims) {}
 
-  void RunBaseline(Scope* scope) override {}
+  void RunBaseline(Scope* scope) override {
+    auto* out = scope->NewTensor(output_);
+    CHECK(out);
+    out->Resize(dims_);
+    bool* out_data = out->mutable_data<bool>();
+    auto* x = scope->FindTensor(input_x_);
+    const bool* x_data = x->data<bool>();
+    auto* y = scope->FindTensor(input_y_);
+    const bool* y_data = y->data<bool>();
+    for (int i = 0; i < dims_.production(); i++) {
+      out_data[i] = (x_data[i] || y_data[i]) && !((x_data[i] && y_data[i]));
+    }
+  }
 
   void PrepareOpDesc(cpp::OpDesc* op_desc) {
     op_desc->SetType("logical_xor");
@@ -41,21 +53,27 @@ class LogicalXorTester : public arena::TestCase {
   }
 
   void PrepareData() override {
-    std::vector<float> data(dims_.production());
-
+    // std::vector<bool> data(dims_.production());
+    // std::vector<char> datay(dims_.production());
+    bool* data;
+    bool* datay;
+    data = reinterpret_cast<bool*>(malloc(dims_.production() * sizeof(bool)));
+    datay = reinterpret_cast<bool*>(malloc(dims_.production() * sizeof(bool)));
     for (int i = 0; i < dims_.production(); i++) {
-      data[i] = i * 1.1;
+      data[i] = 1;
+      datay[i] = 1;
     }
 
-    SetCommonTensor(input_x_, dims_, data.data());
-    SetCommonTensor(input_y_, dims_, data.data());
+    SetCommonTensor(input_x_, dims_, data);
+    SetCommonTensor(input_y_, dims_, datay);
   }
 };
 void test_logicalxor(Place place) {
   DDimLite dims{{3, 5, 4, 4}};
   std::unique_ptr<arena::TestCase> tester(
       new LogicalXorTester(place, "def", dims));
-  arena::Arena arena(std::move(tester), place, 2);
+  arena::Arena arena(std::move(tester), place, 1);
+
   arena.TestPrecision();
 }
 TEST(LessThan, precision) {

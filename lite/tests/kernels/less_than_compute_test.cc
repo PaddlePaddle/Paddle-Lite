@@ -40,7 +40,19 @@ class LessThanTester : public arena::TestCase {
         force_cpu_(force_cpu),
         dims_(dims) {}
 
-  void RunBaseline(Scope* scope) override {}
+  void RunBaseline(Scope* scope) override {
+    auto* out = scope->NewTensor(output_);
+    CHECK(out);
+    out->Resize(dims_);
+    auto* out_data = out->mutable_data<bool>();
+    auto* x = scope->FindTensor(input_x_);
+    const auto* x_data = x->data<float>();
+    auto* y = scope->FindTensor(input_y_);
+    const auto* y_data = y->data<float>();
+    for (int i = 0; i < dims_.production(); i++) {
+      out_data[i] = x_data[i] < y_data[i];
+    }
+  }
 
   void PrepareOpDesc(cpp::OpDesc* op_desc) {
     op_desc->SetType("less_than");
@@ -53,13 +65,14 @@ class LessThanTester : public arena::TestCase {
 
   void PrepareData() override {
     std::vector<float> data(dims_.production());
-
+    std::vector<float> datay(dims_.production());
     for (int i = 0; i < dims_.production(); i++) {
-      data[i] = i * 1.1;
+      data[i] = 1.1;
+      datay[i] = 1.1;
     }
 
     SetCommonTensor(input_x_, dims_, data.data());
-    SetCommonTensor(input_y_, dims_, data.data());
+    SetCommonTensor(input_y_, dims_, datay.data());
   }
 };
 void test_lessthan(Place place) {
@@ -68,7 +81,8 @@ void test_lessthan(Place place) {
     for (bool force_cpu : {0}) {
       std::unique_ptr<arena::TestCase> tester(
           new LessThanTester(place, "def", force_cpu, axis, dims));
-      arena::Arena arena(std::move(tester), place, 2);
+      arena::Arena arena(std::move(tester), place, 1);
+
       arena.TestPrecision();
     }
   }
