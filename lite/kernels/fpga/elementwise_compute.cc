@@ -83,9 +83,18 @@ REGISTER_LITE_KERNEL(elementwise_add,
                      kNHWC,
                      paddle::lite::kernels::fpga::ElementwiseAddCompute,
                      def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kFPGA))})
-    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kFPGA))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kFPGA))})
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kFPGA),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kNHWC))})
+    .BindInput("Y",
+               {LiteType::GetTensorTy(TARGET(kFPGA),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kNHWC))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kFPGA),
+                                       PRECISION(kFP16),
+                                       DATALAYOUT(kNHWC))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(
@@ -95,7 +104,16 @@ REGISTER_LITE_KERNEL(
     kNHWC,
     paddle::lite::kernels::fpga::ElementwiseAddActivationCompute,
     def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kFPGA))})
-    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kFPGA))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kFPGA))})
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kFPGA),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kNHWC))})
+    .BindInput("Y",
+               {LiteType::GetTensorTy(TARGET(kFPGA),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kNHWC))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kFPGA),
+                                       PRECISION(kFP16),
+                                       DATALAYOUT(kNHWC))})
     .Finalize();

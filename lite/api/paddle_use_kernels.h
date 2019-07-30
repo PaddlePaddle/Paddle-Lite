@@ -101,4 +101,10 @@ USE_LITE_KERNEL(fc, kFPGA, kFP16, kNHWC, def);
 USE_LITE_KERNEL(pool2d, kFPGA, kFP16, kNHWC, def);
 USE_LITE_KERNEL(scale, kFPGA, kFP16, kNHWC, def);
 USE_LITE_KERNEL(softmax, kFPGA, kFP16, kNHWC, def);
+USE_LITE_KERNEL(io_copy, kFPGA, kAny, kAny, host_to_device);
+USE_LITE_KERNEL(io_copy, kFPGA, kAny, kAny, device_to_host);
+USE_LITE_KERNEL(io_copy_once, kFPGA, kAny, kAny, host_to_device);
+USE_LITE_KERNEL(io_copy_once, kFPGA, kAny, kAny, device_to_host);
+USE_LITE_KERNEL(calib, kFPGA, kFP16, kNHWC, fp32_to_fp16);
+USE_LITE_KERNEL(calib, kFPGA, kFP16, kNHWC, fp16_to_fp32);
 #endif

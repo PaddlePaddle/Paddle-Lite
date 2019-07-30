@@ -69,6 +69,12 @@ void PoolCompute::Run() {
 
 REGISTER_LITE_KERNEL(
     pool2d, kFPGA, kFP16, kNHWC, paddle::lite::kernels::fpga::PoolCompute, def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kFPGA))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kFPGA))})
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kFPGA),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kNHWC))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kFPGA),
+                                       PRECISION(kFP16),
+                                       DATALAYOUT(kNHWC))})
     .Finalize();

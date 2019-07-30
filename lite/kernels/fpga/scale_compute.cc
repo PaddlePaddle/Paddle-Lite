@@ -41,6 +41,12 @@ void ScaleCompute::Run() {
 
 REGISTER_LITE_KERNEL(
     scale, kFPGA, kFP16, kNHWC, paddle::lite::kernels::fpga::ScaleCompute, def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kFPGA))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kFPGA))})
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kFPGA),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kNHWC))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kFPGA),
+                                       PRECISION(kFP16),
+                                       DATALAYOUT(kNHWC))})
     .Finalize();

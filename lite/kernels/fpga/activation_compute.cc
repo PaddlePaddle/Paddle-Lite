@@ -44,6 +44,12 @@ void ReluCompute::Run() { pe_.dispatch(); }
 
 REGISTER_LITE_KERNEL(
     relu, kFPGA, kFP16, kNHWC, paddle::lite::kernels::fpga::ReluCompute, def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kFPGA))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kFPGA))})
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kFPGA),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kNHWC))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kFPGA),
+                                       PRECISION(kFP16),
+                                       DATALAYOUT(kNHWC))})
     .Finalize();

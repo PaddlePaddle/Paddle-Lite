@@ -54,8 +54,14 @@ void FcCompute::Run() {
 
 REGISTER_LITE_KERNEL(
     fc, kFPGA, kFP16, kNHWC, paddle::lite::kernels::fpga::FcCompute, def)
-    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kFPGA))})
-    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kFPGA))})
-    .BindInput("W", {LiteType::GetTensorTy(TARGET(kFPGA))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kFPGA))})
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kFPGA),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kNHWC))})
+    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("W", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kFPGA),
+                                       PRECISION(kFP16),
+                                       DATALAYOUT(kNHWC))})
     .Finalize();

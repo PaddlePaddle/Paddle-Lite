@@ -105,10 +105,10 @@ void PrecisionCastPass::AddCastInst(const Type& from,
   op_desc.SetType("calib");
   op_desc.SetInput("Input", {in->AsArg().name});
   op_desc.SetOutput("Out", {cast_op_output_name});
-  CHECK(inst_node->AsStmt().op_info()->HasAttr("input_scale"));
-  op_desc.SetAttr("scale",
-                  inst_node->AsStmt().op_info()->GetAttr<float>("input_scale"));
-
+  if (inst_node->AsStmt().op_info()->HasAttr("input_scale")) {
+    op_desc.SetAttr(
+        "scale", inst_node->AsStmt().op_info()->GetAttr<float>("input_scale"));
+  }
   cast_op->Attach(op_desc, inst_node->AsStmt().op()->scope());
   auto kernels = cast_op->CreateKernels(valid_places);
   std::vector<std::unique_ptr<KernelBase>> selected_kernels;
