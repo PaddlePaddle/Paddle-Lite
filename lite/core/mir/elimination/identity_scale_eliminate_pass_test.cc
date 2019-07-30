@@ -66,7 +66,7 @@ std::unique_ptr<SSAGraph> BuildGraph(framework::ProgramDesc* program_desc,
   auto graph = std::unique_ptr<SSAGraph>(new SSAGraph());
   graph->Build(program, valid_places);
 
-  LOG(INFO) << Visualize(graph.get());
+  VLOG(5) << Visualize(graph.get());
 
   return graph;
 }
