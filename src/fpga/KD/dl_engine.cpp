@@ -16,11 +16,16 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace zynqmp {
 
+DeviceInfo& DLEngine::deviceInfo() { return info_; }
+
 DLEngine::DLEngine() {
   open_device();
-  struct DeviceInfo info;
-  int ret = get_device_info(info);
-  filter::set_filter_capacity(info.filter_cap);
+  int ret = get_device_info(info_);
+  filter::set_filter_capacity(info_.filter_cap);
+
+  // std::cout << "version:" << info_.version;
+  // std::cout << "device_type:" << info_.device_type;
+  // std::cout << "filter_cap:" << info_.filter_cap;
 }
 
 }  // namespace zynqmp

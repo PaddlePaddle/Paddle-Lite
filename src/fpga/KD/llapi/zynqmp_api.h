@@ -44,10 +44,10 @@ enum DLayoutType {
 };
 
 enum ActiveType {
-    TYPE_RELU = 0,
-    TYPE_RELU6 = 1,
-    TYPE_LEAK_RELU = 2,
-    TYPE_SIGMOID = 3,
+  TYPE_RELU = 0,
+  TYPE_RELU6 = 1,
+  TYPE_LEAK_RELU = 2,
+  TYPE_SIGMOID = 3,
 };
 
 struct VersionArgs {
@@ -56,6 +56,15 @@ struct VersionArgs {
 
 struct DeviceInfo {
   uint32_t filter_cap;
+  uint32_t version;
+  uint16_t device_type;
+  uint32_t reserved0;
+  uint32_t reserved1;
+  uint32_t reserved2;
+  uint32_t reserved3;
+  uint32_t reserved4;
+  uint32_t reserved5;
+  uint32_t reserved6;
 };
 
 struct MemoryCopyArgs {
@@ -201,15 +210,15 @@ struct NormalizeParameterArgs {
 };
 
 struct ActiveParamterArgs {
-	ActiveType  type;
-	uint16_t leaky_relu_factor;
+  ActiveType type;
+  uint16_t leaky_relu_factor;
 };
 
 struct InplaceArgs {
-    bool leaky_relu_enable;
-    bool relu_enable;
-    bool power_enable;
-    bool normalize_enable;
+  bool leaky_relu_enable;
+  bool relu_enable;
+  bool power_enable;
+  bool normalize_enable;
 };
 
 struct FpgaRegWriteArgs {
@@ -256,7 +265,8 @@ struct FpgaResetArgs {
   _IOW(IOCTL_FPGA_MAGIC, 41, struct PowerParameterArgs)
 #define IOCTL_CONFIG_NORMALIZE_PARAMETER \
   _IOW(IOCTL_FPGA_MAGIC, 42, struct NormalizeParameterArgs)
-#define IOCTL_CONFIG_ACTIVATION_PARAMETER   _IOW(IOCTL_FPGA_MAGIC, 43, struct ActiveParamterArgs)
+#define IOCTL_CONFIG_ACTIVATION_PARAMETER \
+  _IOW(IOCTL_FPGA_MAGIC, 43, struct ActiveParamterArgs)
 #define IOCTL_FPGA_REG_READ _IOW(IOCTL_FPGA_MAGIC, 50, struct FpgaRegReadArgs)
 #define IOCTL_FPGA_REG_WRITE _IOW(IOCTL_FPGA_MAGIC, 51, struct FpgaRegWriteArgs)
 #define IOCTL_FPGA_RESET _IOW(IOCTL_FPGA_MAGIC, 52, struct FpgaResetArgs)

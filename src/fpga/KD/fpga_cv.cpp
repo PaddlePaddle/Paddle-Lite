@@ -43,58 +43,58 @@ void fpga_resize(float* input, int input_width, int input_height,
   // paddle_mobile::zynqmp::config_inplace(inplace_args);
 
   // paddle_mobile::zynqmp::ImageInputArgs input_args = {nullptr};
-  input_args.address = nullptr;
-  input_args.scale_address = nullptr;
+  // input_args.address = nullptr;
+  // input_args.scale_address = nullptr;
 
-  float16* input_image_address =
-      reinterpret_cast<float16*>(paddle_mobile::zynqmp::fpga_malloc(
-          input_width * input_height * input_channel * sizeof(float16)));
-  int index = 0;
+  // float16* input_image_address =
+  //     reinterpret_cast<float16*>(paddle_mobile::zynqmp::fpga_malloc(
+  //         input_width * input_height * input_channel * sizeof(float16)));
+  // int index = 0;
 
-  for (int i = 0; i < input_width * input_height * input_channel; i++) {
-    input_image_address[i] = float16(1.0 * input[i]);
-  }
+  // for (int i = 0; i < input_width * input_height * input_channel; i++) {
+  //   input_image_address[i] = float16(1.0 * input[i]);
+  // }
 
-  paddle_mobile::zynqmp::ResizeArgs resize_args = {0};
+  // paddle_mobile::zynqmp::ResizeArgs resize_args = {0};
 
-  resize_args.input_width = input_width;
-  resize_args.input_height = input_height;
-  resize_args.image_channel = input_channel;
-  resize_args.output_width = output_width;
-  resize_args.output_height = output_height;
-  float height_ratio = static_cast<float>(input_height) /
-                       static_cast<float>(resize_args.output_height);
-  float width_ratio = static_cast<float>(input_width) /
-                      static_cast<float>(resize_args.output_width);
-  resize_args.height_ratio = *reinterpret_cast<uint32_t*>(&height_ratio);
-  resize_args.width_ratio = *reinterpret_cast<uint32_t*>(&width_ratio);
+  // resize_args.input_width = input_width;
+  // resize_args.input_height = input_height;
+  // resize_args.image_channel = input_channel;
+  // resize_args.output_width = output_width;
+  // resize_args.output_height = output_height;
+  // float height_ratio = static_cast<float>(input_height) /
+  //                      static_cast<float>(resize_args.output_height);
+  // float width_ratio = static_cast<float>(input_width) /
+  //                     static_cast<float>(resize_args.output_width);
+  // resize_args.height_ratio = *reinterpret_cast<uint32_t*>(&height_ratio);
+  // resize_args.width_ratio = *reinterpret_cast<uint32_t*>(&width_ratio);
 
-  // resizeArgs.output_scale_address = scale_;
-  int output_size =
-      resize_args.output_width * resize_args.output_height * input_channel;
-  float16* fpga_output = reinterpret_cast<float16*>(
-      paddle_mobile::zynqmp::fpga_malloc(output_size * sizeof(float16)));
-  resize_args.input_image_address = input_image_address;
-  resize_args.output_image_address = fpga_output;
+  // // resizeArgs.output_scale_address = scale_;
+  // int output_size =
+  //     resize_args.output_width * resize_args.output_height * input_channel;
+  // float16* fpga_output = reinterpret_cast<float16*>(
+  //     paddle_mobile::zynqmp::fpga_malloc(output_size * sizeof(float16)));
+  // resize_args.input_image_address = input_image_address;
+  // resize_args.output_image_address = fpga_output;
 
-  memset(fpga_output, 0, output_size * sizeof(float16));
-  paddle_mobile::zynqmp::fpga_flush(
-      input_image_address,
-      input_width * input_height * input_channel * sizeof(float16));
-  paddle_mobile::zynqmp::fpga_flush(resize_args.output_image_address,
-                                    output_size * sizeof(float16));
-  int ret = paddle_mobile::zynqmp::compute_fpga_resize(resize_args);
-  std::cout << "compute_fpga_resize ret：" << ret << std::endl;
-  if (ret == 0) {
-    paddle_mobile::zynqmp::fpga_invalidate(resize_args.output_image_address,
-                                           output_size * sizeof(float16));
-  }
+  // memset(fpga_output, 0, output_size * sizeof(float16));
+  // paddle_mobile::zynqmp::fpga_flush(
+  //     input_image_address,
+  //     input_width * input_height * input_channel * sizeof(float16));
+  // paddle_mobile::zynqmp::fpga_flush(resize_args.output_image_address,
+  //                                   output_size * sizeof(float16));
+  // int ret = paddle_mobile::zynqmp::compute_fpga_resize(resize_args);
+  // std::cout << "compute_fpga_resize ret：" << ret << std::endl;
+  // if (ret == 0) {
+  //   paddle_mobile::zynqmp::fpga_invalidate(resize_args.output_image_address,
+  //                                          output_size * sizeof(float16));
+  // }
 
-  // uchar* output_img = (uchar*)malloc(output_size * sizeof(uchar));
-  for (int i = 0; i < output_size; i++) {
-    output[i] = fpga_output[i];
-    // output_img[i] = fpga_output[i];
-  }
+  // // uchar* output_img = (uchar*)malloc(output_size * sizeof(uchar));
+  // for (int i = 0; i < output_size; i++) {
+  //   output[i] = fpga_output[i];
+  //   // output_img[i] = fpga_output[i];
+  // }
 
   // Mat inmat = Mat(input_height, input_width, CV_8UC3, input);
   // cv::imwrite(std::string("input.jpg"), inmat);

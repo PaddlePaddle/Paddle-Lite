@@ -49,7 +49,16 @@ class ConvPE : public PE {
       concatPE_.init();
       concatPE_.apply();
     }
-    param_.filter->releaseData();
+
+    if (DLEngine::get_instance().isZU3() &&
+        param_.input->shape().dimSize() == 4 &&
+        param_.input->shape().width() == 1 &&
+        param_.input->shape().channel() >= 2048) {
+      use_cpu_ = true;
+    }
+    if (!use_cpu_) {
+      param_.filter->releaseData();
+    }
   }
   void cpu_compute() {
     Tensor* input = param_.input;
@@ -68,7 +77,6 @@ class ConvPE : public PE {
 
     float* filter_data = param_.filter->data<float>();
     float* mi = new float[in_channel];
-
     for (int i = 0; i < out_channel; i++) {
       float* image = image_addr;
       float* filter_ptr = filter_data + i * in_channel;
@@ -84,7 +92,6 @@ class ConvPE : public PE {
         // image += 4;
         // filter_ptr += 4;
         // out_ptr += 4;
-
         float value = image_addr[j] * filter_ptr[j];
         mi[j] = value;
       }
@@ -101,27 +108,26 @@ class ConvPE : public PE {
   }
 
   bool dispatch() {
-    // if (param_.input->shape().dimSize() == 4 && param_.input->shape().width()
-    // == 1 &&
-    //     param_.input->shape().channel() < 2048) {
-    //   cpu_compute();
-    //   return true;
-    // }
+    if (use_cpu_) {
+      cpu_compute();
+      return true;
+    }
 
-    inplace_.leaky_relu_enable =  (param_.relu.leaky_relu_factor != 0) ? true : false;
-    inplace_.relu_enable = inplace_.leaky_relu_enable ? false : param_.relu.enabled;  
+    inplace_.leaky_relu_enable =
+        (param_.relu.leaky_relu_factor != 0) ? true : false;
+    inplace_.relu_enable =
+        inplace_.leaky_relu_enable ? false : param_.relu.enabled;
     inplace_.power_enable = false;
     inplace_.normalize_enable = false;
     if (inplace_.relu_enable || inplace_.leaky_relu_enable) {
-        config_inplace(inplace_);
-
-        if (inplace_.leaky_relu_enable) {
-            activeParamterArgs.type = TYPE_LEAK_RELU;
-            activeParamterArgs.leaky_relu_factor = fp32_2_fp16(param_.relu.leaky_relu_factor);
-            config_activation(activeParamterArgs);
-        }
+      config_inplace(inplace_);
+      if (inplace_.leaky_relu_enable) {
+        activeParamterArgs.type = TYPE_LEAK_RELU;
+        activeParamterArgs.leaky_relu_factor =
+            fp32_2_fp16(param_.relu.leaky_relu_factor);
+        config_activation(activeParamterArgs);
+      }
     }
-
 
     std::vector<BasicConvParam*>& params = param_.splitParams();
     int ret = 0;
@@ -131,15 +137,15 @@ class ConvPE : public PE {
     }
 
     if (inplace_.relu_enable || inplace_.leaky_relu_enable) {
-        inplace_.relu_enable = false;
-        inplace_.leaky_relu_enable = false;
-        config_inplace(inplace_);
+      inplace_.relu_enable = false;
+      inplace_.leaky_relu_enable = false;
+      config_inplace(inplace_);
 
-        if (inplace_.leaky_relu_enable) {
-            activeParamterArgs.type = TYPE_LEAK_RELU;
-            activeParamterArgs.leaky_relu_factor = fp32_2_fp16(0);
-            config_activation(activeParamterArgs);
-        }
+      if (inplace_.leaky_relu_enable) {
+        activeParamterArgs.type = TYPE_LEAK_RELU;
+        activeParamterArgs.leaky_relu_factor = fp32_2_fp16(0);
+        config_activation(activeParamterArgs);
+      }
     }
 
     size_t size = params.size();
@@ -172,6 +178,7 @@ class ConvPE : public PE {
   ConvParam& param() { return param_; }
 
  private:
+  bool use_cpu_ = false;
   ConvParam param_;
   ConcatPE concatPE_;
   ElementwiseAddPE addPE_;
