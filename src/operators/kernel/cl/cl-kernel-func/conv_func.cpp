@@ -55,6 +55,8 @@ void ConvAddBnRelu(framework::CLHelper *cl_helper,
   int input_height = param.Input()->dims()[2];
   int output_width = param.Output()->dims()[3];
   int output_height = param.Output()->dims()[2];
+  int filter_channel = param.Filter()->dims()[1];
+  int input_channel = param.Input()->dims()[1];
 
   //  DLOG << " c block " << c_block;
   //  DLOG << " w " << w;
@@ -204,6 +206,24 @@ void ConvAddBnRelu(framework::CLHelper *cl_helper,
 
     status = clSetKernelArg(kernel, index++, sizeof(int), &output_height);
     CL_CHECK_ERRORS(status);
+
+    if (param.Filter()->dims()[2] == 3 && param.Filter()->dims()[3] == 3) {
+      if (filter_channel != input_channel) {
+        if (filter_channel != 1) {
+          status = clSetKernelArg(kernel, index++, sizeof(int), &filter_channel);
+          CL_CHECK_ERRORS(status);
+          int has_group = 1;
+          status = clSetKernelArg(kernel, index++, sizeof(int), &has_group);
+          CL_CHECK_ERRORS(status);
+        }
+      } else {
+        status = clSetKernelArg(kernel, index++, sizeof(int), &filter_channel);
+        CL_CHECK_ERRORS(status);
+        int has_group = 0;
+        status = clSetKernelArg(kernel, index++, sizeof(int), &has_group);
+        CL_CHECK_ERRORS(status);
+      }
+    }
 
     status = clEnqueueNDRangeKernel(
         cl_helper->CLCommandQueue(), kernel, default_work_size.size(), NULL,
