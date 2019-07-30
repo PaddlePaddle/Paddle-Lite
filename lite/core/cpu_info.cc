@@ -774,8 +774,17 @@ void DeviceInfo::RequestPowerLowMode(const int thread_num) {
 
 void DeviceInfo::RequestPowerNoBindMode(const int thread_num) {
   active_ids_.clear();
-  for (int i = 0; i < thread_num; i++) {
-    active_ids_.push_back(0);
+  if (thread_num > core_ids_.size()) {
+    active_ids_ = core_ids_;
+  } else {
+    active_ids_.resize(thread_num);
+    for (int i = 0; i < thread_num; ++i) {
+      if (i < big_core_ids_.size()) {
+        active_ids_[i] = big_core_ids_[i];
+      } else {
+        active_ids_[i] = little_core_ids_[i - big_core_ids_.size()];
+      }
+    }
   }
   mode_ = LITE_POWER_NO_BIND;
 }
@@ -925,7 +934,7 @@ void DeviceInfo::SetRunMode(PowerMode mode, int thread_num) {
       LOG(FATAL) << "Unsupported power mode: " << mode;
       break;
   }
-  if (active_ids_.size() == 0) {
+  if (active_ids_.empty()) {
     active_ids_.push_back(0);
   }
 #ifdef ARM_WITH_OMP
@@ -947,8 +956,8 @@ void DeviceInfo::SetRunMode(PowerMode mode, int thread_num) {
 #endif
 #endif  // LITE_WITH_LINUX
   //! alloc memory for sgemm in this context
-  workspace_.Resize(
-      {static_cast<int64_t>(L2_cache_[active_ids_[0]] / sizeof(float))});
+  workspace_.Resize({llc_size()});
+  workspace_.mutable_data<int8_t>();
   arch_ = archs_[active_ids_[0]];
 }
 
@@ -959,14 +968,9 @@ void DeviceInfo::SetCache(int l1size, int l2size, int l3size) {
   workspace_.Resize({2 * (l1size + l2size)});
 }
 
-bool DeviceInfo::ExtendWorkspace(DDimLite dims) {
-  auto count = dims.production();
-  auto old = workspace_.dims();
-  if (count == old.production()) {
-    return false;
-  }
-  workspace_.Resize({static_cast<int64_t>(
-      count + L2_cache_[active_ids_[0]] / sizeof(float))});
+bool DeviceInfo::ExtendWorkspace(size_t size) {
+  workspace_.Resize({size + llc_size()});
+  workspace_.mutable_data<int8_t>();
   return true;
 }
 

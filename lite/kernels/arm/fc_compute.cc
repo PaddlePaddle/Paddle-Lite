@@ -61,7 +61,7 @@ void FcCompute::PrepareForRun() {
   if (m_ > 1) {
     int hblock = lite::arm::math::get_hblock(ctx.arch());
     int m_round = hblock * ((m_ + hblock - 1) / hblock);
-    ctx.ExtendWorkspace(DDimLite(std::vector<int64_t>({m_round * k_})));
+    ctx.ExtendWorkspace(m_round * k_ * sizeof(float));
   }
 }
 
@@ -76,7 +76,7 @@ void FcCompute::Run() {
   auto& ctx = this->ctx_->template As<ARMContext>();
   if (m_ > 1) {
     float* packed_in =
-        ctx.workspace_data<float>() + ctx.l2_cache_size() / sizeof(float);
+        ctx.workspace_data<float>() + ctx.llc_size() / sizeof(float);
     lite::arm::math::prepackA(
         packed_in, i_data, 1.f, k_, 0, m_, 0, k_, false, &ctx);
     lite::arm::math::sgemm_prepack(false,
@@ -153,7 +153,7 @@ void FcComputeInt8<Ptype_out>::PrepareForRun() {
   if (this->m_ > 1) {
     int hblock = lite::arm::math::get_hblock(ctx.arch());
     int m_round = hblock * ((this->m_ + hblock - 1) / hblock);
-    ctx.ExtendWorkspace(DDimLite(std::vector<int64_t>({m_round * this->k_})));
+    ctx.ExtendWorkspace(m_round * this->k_);
   }
 }
 
@@ -172,7 +172,7 @@ void FcComputeInt8<Ptype_out>::Run() {
   if (m_ > 1) {
     int8_t* packed_in =
         static_cast<int8_t*>(ctx.template workspace_data<int8_t>()) +
-        ctx.l2_cache_size() / sizeof(int8_t);
+        ctx.llc_size() / sizeof(int8_t);
     lite::arm::math::prepackA_int8(packed_in, i_data, k_, 0, m_, 0, k_, false);
     lite::arm::math::gemm_prepack_int8(packed_in,
                                        w_data,

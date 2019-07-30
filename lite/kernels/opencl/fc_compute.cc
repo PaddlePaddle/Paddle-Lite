@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <sstream>
 #include <vector>
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
@@ -30,9 +31,9 @@ class FcCompute
   using param_t = operators::FcParam;
 
   void PrepareForRun() override {
-    kernel_func_name_ = "fc";
     auto& context = ctx_->As<OpenCLContext>();
-    context.cl_context()->AddKernel(kernel_func_name_, "buffer/fc_kernel.cl");
+    context.cl_context()->AddKernel(
+        kernel_func_name_, "buffer/fc_kernel.cl", build_options_);
 
     const auto& param = *param_.get_mutable<param_t>();
     const auto x_dims = param.input->dims();
@@ -46,7 +47,7 @@ class FcCompute
     k_ = x_dims.Slice(param.in_num_col_dims, x_dims.size()).production();
     n_ = w_dims[1];
     CHECK_EQ(k_, static_cast<int>(w_dims[0]));
-    LOG(INFO) << "m_: " << m_ << " n_: " << n_ << " k_: " << k_;
+    VLOG(4) << "m_: " << m_ << " n_: " << n_ << " k_: " << k_;
   }
 
   void Run() override {
@@ -59,7 +60,10 @@ class FcCompute
     auto* out_buf =
         param.output->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
 
-    auto kernel = context.cl_context()->GetKernel(kernel_func_name_);
+    std::stringstream kernel_key;
+    kernel_key << kernel_func_name_ << build_options_;
+    auto kernel = context.cl_context()->GetKernel(kernel_key.str());
+
     cl_int status;
     int arg_idx = 0;
     status = kernel.setArg(arg_idx, *x_buf);
@@ -77,7 +81,6 @@ class FcCompute
     status = kernel.setArg(++arg_idx, static_cast<const int>(k_));
     CL_CHECK_FATAL(status);
 
-    cl::Event event;
     auto global_work_size = cl::NDRange{static_cast<size_t>((m_ + 3) / 4),
                                         static_cast<size_t>((n_ + 3) / 4)};
     status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
@@ -86,15 +89,16 @@ class FcCompute
         global_work_size,
         cl::NullRange,
         nullptr,
-        &event);
+        event_.get());
     CL_CHECK_FATAL(status);
-    status = event.wait();
-    CL_CHECK_FATAL(status);
+    context.cl_wait_list()->emplace(out_buf, event_);
   }
 
  private:
   int m_, n_, k_;
-  std::string kernel_func_name_{};
+  std::string kernel_func_name_{"fc"};
+  std::string build_options_{"-DCL_DTYPE=float"};
+  std::shared_ptr<cl::Event> event_{new cl::Event};
 };
 
 }  // namespace opencl

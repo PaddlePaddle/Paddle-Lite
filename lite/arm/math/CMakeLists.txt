@@ -54,6 +54,9 @@ if (NOT HAS_ARM_MATH_LIB_DIR)
       scale.cc
       pooling.cc
       elementwise.cc
+      lrn.cc
+      decode_bboxes.cc
+      multiclass_nms.cc
       concat.cc
       sgemv.cc
       type_trans.cc
@@ -83,11 +86,15 @@ if (NOT HAS_ARM_MATH_LIB_DIR)
       axpy.cc
       fill_bias_relu.cc
       col_im_transform.cc
-			im2sequence.cc
+      im2sequence.cc
+      prior_box.cc
       sequence_softmax.cc
       norm.cc
+      topk.cc
+      increment.cc
       pad2d.cc
       negative.cc
+      beam_search.cc
       DEPS ${lite_kernel_deps} framework_proto)
 endif()
  

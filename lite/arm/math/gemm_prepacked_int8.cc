@@ -109,7 +109,7 @@ inline void gemm_int8_kernel(const int8_t* a_ptr,
                              const int8_t*& b_ptr,  // NOLINT
                              const int32_t* bias,
                              Dtype*& c_ptr0,  // NOLINT
-                             Dtype*& c_ptr1,
+                             Dtype*& c_ptr1,  // NOLINT
                              Dtype*& c_ptr2,  // NOLINT
                              Dtype*& c_ptr3,  // NOLINT
                              const float* scale,
@@ -543,10 +543,10 @@ template <>
 inline void gemm_int8_kernel(const int8_t* a_ptr,
                              const int8_t*& b_ptr,  // NOLINT
                              const int32_t* bias,
-                             int32_t*& c_ptr0,  // NOLINT
-                             int32_t*& c_ptr1,
-                             int32_t*& c_ptr2,  // NOLINT
-                             int32_t*& c_ptr3,
+                             int32_t*& c_ptr0,    // NOLINT
+                             int32_t*& c_ptr1,    // NOLINT
+                             int32_t*& c_ptr2,    // NOLINT
+                             int32_t*& c_ptr3,    // NOLINT
                              const float* scale,  // NOLINT
                              bool is_relu,        // NOLINT
                              int k,
@@ -599,7 +599,7 @@ inline void gemm_int8_kernel(const int8_t* a_ptr,
                              const int8_t*& b_ptr,  // NOLINT
                              const int32_t* bias,
                              float*& c_ptr0,  // NOLINT
-                             float*& c_ptr1,
+                             float*& c_ptr1,  // NOLINT
                              float*& c_ptr2,  // NOLINT
                              float*& c_ptr3,  // NOLINT
                              const float* scale,
@@ -658,7 +658,7 @@ inline void gemm_int8_kernel(const int8_t* a_ptr,
                              const int8_t*& b_ptr,  // NOLINT
                              const int32_t* bias,
                              int8_t*& c_ptr0,  // NOLINT
-                             int8_t*& c_ptr1,
+                             int8_t*& c_ptr1,  // NOLINT
                              int8_t*& c_ptr2,  // NOLINT
                              int8_t*& c_ptr3,  // NOLINT
                              const float* scale,
@@ -1025,7 +1025,7 @@ void gemm_prepack_int8(const int8_t* A_packed, const int8_t* B, const int* bias,
   const int MBLOCK = 4;
   const int KUP = ROUNDUP(K, KBLOCK_INT8);
   size_t l2_cache =
-      ctx->l2_cache_size() > 0 ? ctx->l2_cache_size() : 512 * 1024;
+      ctx->llc_size() > 0 ? ctx->llc_size() : 512 * 1024;
   auto* workspace = ctx->workspace_data<int8_t>();
   int threads = ctx->threads();
   int x_block = l2_cache / (sizeof(int8_t) * (KUP + MBLOCK));
