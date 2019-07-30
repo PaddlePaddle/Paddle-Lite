@@ -58,79 +58,110 @@ void PrintData(std::string name, float* a, const int rows, const int cols) {
   }
 }
 
+// #define PRINT_RESULT
+#define LOOP_TEST
 TEST(mul, compute) {
-  auto kernels = KernelRegistry::Global().Create(
-      "mul", TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW));
-  ASSERT_FALSE(kernels.empty());
-  auto kernel = std::move(kernels.front());
-
-  lite::Tensor x, y, out, out_ref;
-  operators::MulParam param;
-  param.x = &x;
-  param.y = &y;
-  param.output = &out;
-  param.x_num_col_dims = 1;
-  param.y_num_col_dims = 1;
-
   std::unique_ptr<KernelContext> context(new KernelContext);
   context->As<OpenCLContext>().InitOnce();
 
-  kernel->SetParam(param);
-  kernel->SetContext(std::move(context));
-
+#ifdef LOOP_TEST
+  for (int m = 1; m < 213; m += 71) {
+    for (int k = 1; k < 123; k += 31) {
+      for (int n = 1; n < 123; n += 121) {
+        LOG(INFO) << "m=" << m << " n=" << n << " k=" << k;
+#else
   const int m = 1;
-  const int k = 2;
-  const int n = 3;
-  const DDim x_dim = DDim(std::vector<DDim::value_type>{m, k});
-  const DDim y_dim = DDim(std::vector<DDim::value_type>{k, n});
-  const DDim out_dim = DDim(std::vector<DDim::value_type>{m, n});
+  const int k = 1;
+  const int n = 13;
+#endif
+        LOG(INFO) << "m=" << m << " n=" << n << " k=" << k;
 
-  x.Resize(x_dim);
-  y.Resize(y_dim);
-  out.Resize(out_dim);
-  out_ref.Resize(out_dim);
+        auto kernels = KernelRegistry::Global().Create(
+            "mul", TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW));
+        ASSERT_FALSE(kernels.empty());
+        auto kernel = std::move(kernels.front());
 
-  auto* x_data = x.mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
-  auto* y_data = y.mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
+        lite::Tensor x, y, out, out_ref;
+        operators::MulParam param;
+        param.x = &x;
+        param.y = &y;
+        param.output = &out;
+        param.x_num_col_dims = 1;
+        param.y_num_col_dims = 1;
 
-  std::default_random_engine engine;
-  std::uniform_real_distribution<float> dist(-5, 5);
-  auto* mapped_x = static_cast<float*>(
-      TargetWrapperCL::Map(x_data, 0, sizeof(float) * x_dim.production()));
-  for (int i = 0; i < x_dim.production(); ++i) {
-    mapped_x[i] = static_cast<int>(dist(engine));
-  }
-  auto* mapped_y = static_cast<float*>(
-      TargetWrapperCL::Map(y_data, 0, sizeof(float) * y_dim.production()));
-  for (int i = 0; i < y_dim.production(); ++i) {
-    mapped_y[i] = static_cast<int>((dist(engine)));
-  }
+        kernel->SetParam(param);
+        std::unique_ptr<KernelContext> mul_context(new KernelContext);
+        context->As<OpenCLContext>().CopySharedTo(
+            &(mul_context->As<OpenCLContext>()));
+        kernel->SetContext(std::move(mul_context));
 
-  // run opencl kernel
-  kernel->Launch();
+        const DDim x_dim = DDim(std::vector<DDim::value_type>{m, k});
+        const DDim y_dim = DDim(std::vector<DDim::value_type>{k, n});
+        const DDim out_dim = DDim(std::vector<DDim::value_type>{m, n});
 
-  // run cpu ref
-  auto* out_ref_data = out_ref.mutable_data<float>(TARGET(kARM));
-  mul_gemm<float>(mapped_x, m, k, mapped_y, k, n, out_ref_data);
+        x.Resize(x_dim);
+        y.Resize(y_dim);
+        out.Resize(out_dim);
+        out_ref.Resize(out_dim);
 
-#if 0
-  PrintData("x_data", static_cast<float*>(mapped_x), m, k);
-  PrintData("y_data", static_cast<float*>(mapped_y), k, n);
-  PrintData("out_ref_data", static_cast<float*>(out_ref_data), m, n);
-  PrintData("mapped_out", static_cast<float*>(mapped_out), m, n);
+        auto* x_data = x.mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
+        auto* y_data = y.mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
+
+        std::default_random_engine engine;
+        std::uniform_real_distribution<float> dist(-5, 5);
+        auto* mapped_x = static_cast<float*>(TargetWrapperCL::Map(
+            x_data, 0, sizeof(float) * x_dim.production()));
+        for (int i = 0; i < x_dim.production(); ++i) {
+          mapped_x[i] = static_cast<int>(dist(engine));
+        }
+        auto* mapped_y = static_cast<float*>(TargetWrapperCL::Map(
+            y_data, 0, sizeof(float) * y_dim.production()));
+        for (int i = 0; i < y_dim.production(); ++i) {
+          mapped_y[i] = static_cast<int>((dist(engine)));
+        }
+
+        // run opencl kernel
+        kernel->Launch();
+
+        auto* wait_list = context->As<OpenCLContext>().cl_wait_list();
+        auto* out_ptr = param.output->data<float, cl::Buffer>();
+        auto it = wait_list->find(out_ptr);
+        if (it != wait_list->end()) {
+          VLOG(4) << "--- Find the sync event for the target cl tensor. ---";
+          auto& event = *(it->second);
+          event.wait();
+        } else {
+          LOG(FATAL)
+              << "Could not find the sync event for the target cl tensor.";
+        }
+
+        // run cpu ref
+        auto* out_ref_data = out_ref.mutable_data<float>(TARGET(kARM));
+        mul_gemm<float>(mapped_x, m, k, mapped_y, k, n, out_ref_data);
+
+#ifdef PRINT_RESULT
+        PrintData("x_data", static_cast<float*>(mapped_x), m, k);
+        PrintData("y_data", static_cast<float*>(mapped_y), k, n);
+        PrintData("out_ref_data", static_cast<float*>(out_ref_data), m, n);
+        PrintData("mapped_out", static_cast<float*>(mapped_out), m, n);
 #endif
 
-  auto* out_data = out.mutable_data<float, cl::Buffer>();
-  auto* mapped_out = static_cast<float*>(
-      TargetWrapperCL::Map(out_data, 0, sizeof(float) * out_dim.production()));
+        auto* out_data = out.mutable_data<float, cl::Buffer>();
+        auto* mapped_out = static_cast<float*>(TargetWrapperCL::Map(
+            out_data, 0, sizeof(float) * out_dim.production()));
 
-  for (int i = 0; i < out_dim.production(); i++) {
-    EXPECT_NEAR(mapped_out[i], out_ref_data[i], 1e-6);
-  }
+        for (int i = 0; i < out_dim.production(); i++) {
+          EXPECT_NEAR(mapped_out[i], out_ref_data[i], 1e-6);
+        }
 
-  TargetWrapperCL::Unmap(x_data, mapped_x);
-  TargetWrapperCL::Unmap(y_data, mapped_y);
-  TargetWrapperCL::Unmap(out_data, mapped_out);
+        TargetWrapperCL::Unmap(x_data, mapped_x);
+        TargetWrapperCL::Unmap(y_data, mapped_y);
+        TargetWrapperCL::Unmap(out_data, mapped_out);
+#ifdef LOOP_TEST
+      }  // n
+    }    // k
+  }      // m
+#endif
 }
 
 }  // namespace lite

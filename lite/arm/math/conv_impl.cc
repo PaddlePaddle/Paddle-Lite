@@ -332,16 +332,19 @@ void conv1x1s1_gemm(const float* i_data,
               bias_group,
               flag_relu);
       } else {
-        sgemm_prepack(weights_group,
-                      din_group,
-                      bias_group,
-                      dout_group,
+        sgemm_prepack(false,
                       m,
                       n,
                       k,
+                      weights_group,
+                      din_group,
+                      n,
+                      0.f,
+                      dout_group,
+                      n,
+                      bias_group,
                       flag_bias,
                       flag_relu,
-                      false,
                       ctx);
       }
     }
@@ -518,7 +521,7 @@ void conv_im2col_gemm(const float* i_data,
                        param.strides[0] == 1 && param.strides[1] == 1 && n > 1);
 
   float* tmp_work_space =
-      ctx->workspace_data<float>() + ctx->l2_cache_size() / sizeof(float);
+      ctx->workspace_data<float>() + ctx->llc_size() / sizeof(float);
 
   //! use gemv when the output channel size = 1
   for (int b = 0; b < num; ++b) {
@@ -572,16 +575,23 @@ void conv_im2col_gemm(const float* i_data,
               bias_group,
               flag_relu);
       } else {
-        sgemm_prepack(weights_group,
-                      dB,
-                      bias_group,
-                      dout_group,
+        int ldb = n;
+        if (flag_im2col2) {
+          ldb = k;
+        }
+        sgemm_prepack(flag_im2col2,
                       m,
                       n,
                       k,
+                      weights_group,
+                      dB,
+                      ldb,
+                      0.f,
+                      dout_group,
+                      n,
+                      bias_group,
                       flag_bias,
                       flag_relu,
-                      flag_im2col2,
                       ctx);
       }
     }
@@ -635,7 +645,7 @@ void conv_im2col_gemm_int8(const int8_t* i_data,
                        stride_w == 1 && n > 1);
 
   int8_t* tmp_work_space =
-      ctx->workspace_data<int8_t>() + ctx->l2_cache_size() / sizeof(int8_t);
+      ctx->workspace_data<int8_t>() + ctx->llc_size() / sizeof(int8_t);
 
   //! use gemv when the output channel size = 1
   for (int b = 0; b < num; ++b) {

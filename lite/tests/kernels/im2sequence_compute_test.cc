@@ -205,8 +205,8 @@ class Im2SequenceComputeTester : public arena::TestCase {
     int in_num = dims_[0];
     std::vector<int> real_im_size(in_num * 2);
     for (int i = 0; i < in_num; i++) {
-      int real_h = std::rand() % int(in_h * 0.3) + (in_h * 0.7);
-      int real_w = std::rand() % int(in_w * 0.3) + (in_w * 0.7);
+      int real_h = std::rand() % static_cast<int>(in_h * 0.3) + (in_h * 0.7);
+      int real_w = std::rand() % static_cast<int>(in_w * 0.3) + (in_w * 0.7);
       real_im_size[2 * i] = real_h;
       real_im_size[2 * i] = real_w;
     }
@@ -236,9 +236,9 @@ void test_im2sequence(Place place) {
 }
 
 TEST(Im2Sequence, precision) {
-//#ifdef LITE_WITH_X86
-//  Place place(TARGET(kX86));
-//#endif
+// #ifdef LITE_WITH_X86
+//   Place place(TARGET(kX86));
+// #endif
 #ifdef LITE_WITH_ARM
   Place place(TARGET(kARM));
   test_im2sequence(place);

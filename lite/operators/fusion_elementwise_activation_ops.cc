@@ -93,6 +93,10 @@ REGISTER_LITE_OP(fusion_elementwise_sub_activation,
                  paddle::lite::operators::FusionElementwiseActivationOp);
 REGISTER_LITE_OP(fusion_elementwise_add_activation,
                  paddle::lite::operators::FusionElementwiseActivationOp);
+REGISTER_LITE_OP(fusion_elementwise_mul_activation,
+                 paddle::lite::operators::FusionElementwiseActivationOp);
+REGISTER_LITE_OP(fusion_elementwise_max_activation,
+                 paddle::lite::operators::FusionElementwiseActivationOp);
 
 #ifdef LITE_WITH_TRAIN
 REGISTER_LITE_OP(

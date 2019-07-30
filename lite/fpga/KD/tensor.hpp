@@ -24,6 +24,8 @@ limitations under the License. */
 #include <string>
 #include <vector>
 
+#include "lite/core/tensor.h"
+
 #include "lite/fpga/KD/dl_engine.hpp"
 #include "lite/fpga/KD/float16.hpp"
 #include "lite/fpga/KD/llapi/zynqmp_api.h"
@@ -65,14 +67,17 @@ inline int CellSize(DataType type) {
 
 class PlaceHolder {
  public:
+  PlaceHolder() {}
   explicit PlaceHolder(size_t size) {
     size_ = size;
     data_ = fpga_malloc(size_);
   }
 
   void* data() { return data_; }
+  void set_data(const void* ptr) { data_ = const_cast<void*>(ptr); }
 
   size_t memorySize() { return size_; }
+  void set_size(size_t new_size) { size_ = new_size; }
 
   ~PlaceHolder() { fpga_free(data_); }
 
@@ -352,6 +357,27 @@ class Tensor {
     saveToFile(path);
   }
 
+  friend std::ostream& operator<<(std::ostream& os, Tensor& tensor) {
+    os << "tensor:"
+       << "\n";
+    os << "dims: {";
+    for (int i = 0; i < tensor.shape().dimSize(); ++i) {
+      os << tensor.shape()[i] << " ";
+    }
+    os << "}\n";
+    for (int i = 0; i < tensor.shape().numel(); i++) {
+      float value = 0;
+      if (tensor.dataType() == FP32) {
+        value = tensor.data<float>()[i];
+      } else {
+        value = half_to_float(tensor.data<float16>()[i]);
+      }
+      os << value << " ";
+    }
+    os << "\n";
+    return os;
+  }
+
   void saveToFile(std::string path) {
     syncToCPU();
     std::ofstream ofs;
@@ -362,7 +388,7 @@ class Tensor {
   }
 
   void save_file_with_name(std::string path) {
-    return;
+    // return;
     invalidate();
     std::ofstream ofs;
 
@@ -405,6 +431,37 @@ class Tensor {
       delete shape_;
       shape_ = nullptr;
     }
+  }
+  // add by tianxiaogang
+  // get from tensorlite
+  void share_from_tensorlite(const lite::Tensor& lite_tensor) {
+    const void* lite_ptr = lite_tensor.data<void>();
+    size_t mem_size = lite_tensor.memory_size();
+    const lite::DDimLite lite_dim = lite_tensor.dims();
+    if (placeHolder_ == nullptr) {
+      placeHolder_ = std::make_shared<PlaceHolder>();
+    }
+    placeHolder_->set_data(lite_ptr);
+    placeHolder_->set_size(mem_size);
+    if (shape_ != nullptr) {
+      delete shape_;
+    }
+    std::vector<int> tem_dims;
+    for (int i = 0; i < lite_dim.size(); ++i) {
+      tem_dims.push_back(lite_dim[i]);
+    }
+    shape_ = new Shape(tem_dims);
+    dataType_ = FP16;
+  }
+  void fill_to_tensorlite(lite::Tensor* lite_tensor) {
+    float16* ptr = mutableData<float16>();
+    std::vector<int64_t> dim;
+    for (auto i : shape_->dims()) {
+      dim.push_back(i);
+    }
+    lite::DDimLite lite_dim(dim);
+    lite_tensor->Assign<float16, lite::DDimLite, lite_api::TargetType::kFPGA>(
+        ptr, lite_dim);
   }
 
  private:

@@ -56,7 +56,6 @@ class KernelBase {
       PrepareForRun();
       is_first_epoch_ = false;
     }
-    LOG(INFO) << "prepare run";
 
     // Reset the workspace to make every kernel in the same thread to share the
     // temporary memory.
@@ -67,9 +66,7 @@ class KernelBase {
 #if defined(LITE_WITH_CUDA)
     WorkSpace::Global_CUDA().AllocReset();
 #endif
-    LOG(INFO) << "before run";
     Run();
-    LOG(INFO) << " run finished";
   }
 
   void SetContext(std::unique_ptr<KernelContext>&& ctx) {

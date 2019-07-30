@@ -21,10 +21,7 @@ namespace arm {
 namespace math {
 
 template <>
-void fill_bias_fc<float>(float *out,
-                         const float *bias,
-                         const int num,
-                         const int channel) {
+void fill_bias_fc<float>(float *out, const float *bias, int num, int channel) {
   int cnt = channel >> 4;
   int remain = channel & 15;
 
@@ -87,10 +84,7 @@ void fill_bias_fc<float>(float *out,
 }
 
 template <>
-void fill_bias_fc<int>(int *out,
-                       const int *bias,
-                       const int num,
-                       const int channel) {
+void fill_bias_fc<int>(int *out, const int *bias, int num, int channel) {
   int cnt = channel >> 4;
   int remain = channel & 15;
 

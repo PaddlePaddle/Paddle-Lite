@@ -311,7 +311,10 @@ TEST(cl_test, target_wrapper_buffer_test) {
   bool inited = InitOpenCLRuntime(FLAGS_cl_path);
   CHECK(inited) << "Fail to initialize OpenCL runtime.";
   std::unique_ptr<CLContext> context(new CLContext);
-  context->AddKernel("vector_add", "buffer/vector_add.cl");
+  std::string kernel_name = "elementwise_add";
+  std::string build_options = "-DCL_DTYPE=float";
+  context->AddKernel(
+      kernel_name, "buffer/elementwise_add_kernel.cl", build_options);
   std::vector<float> h_a;
   std::vector<float> h_b;
   std::vector<float> h_out;
@@ -334,16 +337,21 @@ TEST(cl_test, target_wrapper_buffer_test) {
       d_a, h_a.data(), sizeof(float) * h_a.size(), IoDirection::HtoD);
   TargetWrapperCL::MemcpySync(
       d_b, h_b.data(), sizeof(float) * h_b.size(), IoDirection::HtoD);
-  auto kernel = context->GetKernel("vector_add");
+  // x + y: x[n=1, c=10, h=1, w=1], y[c=10]
+  auto kernel = context->GetKernel(kernel_name + build_options);
   cl_int status = kernel.setArg(0, *d_a);
   CL_CHECK_FATAL(status);
   status = kernel.setArg(1, *d_b);
   CL_CHECK_FATAL(status);
   status = kernel.setArg(2, *d_out);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(3, 10);
+  status = kernel.setArg(3, 1);
   CL_CHECK_FATAL(status);
-  auto global_work_size = cl::NDRange{10};
+  status = kernel.setArg(4, 10);
+  CL_CHECK_FATAL(status);
+  status = kernel.setArg(5, 1);
+  CL_CHECK_FATAL(status);
+  auto global_work_size = cl::NDRange{10, 1};
   status = context->GetCommandQueue().enqueueNDRangeKernel(
       kernel, cl::NullRange, global_work_size, cl::NullRange, nullptr, nullptr);
   CL_CHECK_FATAL(status);

@@ -114,7 +114,10 @@ std::shared_ptr<ge::Operator> GenerateNPUProgramPass::CvtOpNodes(
   if (cvtfunc_map.find(op_type) == cvtfunc_map.end()) {
     return nullptr;
   }
-  auto output = cvtfunc_map.at(op_type)(stmt->op(), input);
+  std::vector<std::shared_ptr<ge::Operator>> inputs{input};
+  std::vector<std::shared_ptr<ge::Operator>> outputs =
+      cvtfunc_map.at(op_type)(stmt->op(), inputs);
+  auto output = outputs[0];
   if (!output) {
     return nullptr;
   }
