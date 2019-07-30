@@ -69,6 +69,7 @@ class LogicalXorTester : public arena::TestCase {
 
     SetCommonTensor(input_x_, dims_, &data[0]);
     SetCommonTensor(input_y_, dims_, &datay[0]);
+
   }
 };
 void test_logicalxor(Place place) {
@@ -76,6 +77,7 @@ void test_logicalxor(Place place) {
   std::unique_ptr<arena::TestCase> tester(
       new LogicalXorTester(place, "def", dims));
   arena::Arena arena(std::move(tester), place, 1);
+
   arena.TestPrecision();
 }
 TEST(LessThan, precision) {

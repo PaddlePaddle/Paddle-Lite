@@ -39,7 +39,6 @@ void LogicalXorCompute::Run() {
   for (int i = 0; i < count; ++i) {
     // z[i] = LogicalFunctor()(x[i], y[i]);
     z[i] = (x[i] || y[i]) && !(x[i] && y[i]);
-
   }
 }
 
@@ -71,6 +70,7 @@ REGISTER_LITE_KERNEL(logical_xor,
                      kNCHW,
                      paddle::lite::kernels::arm::LogicalXorCompute,
                      def)
+
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kBool))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kBool))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kBool))})

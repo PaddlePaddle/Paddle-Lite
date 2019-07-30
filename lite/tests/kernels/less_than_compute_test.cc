@@ -54,6 +54,7 @@ class LessThanTester : public arena::TestCase {
     }
   }
 
+
   void PrepareOpDesc(cpp::OpDesc* op_desc) {
     op_desc->SetType("less_than");
     op_desc->SetInput("X", {input_x_});
@@ -82,6 +83,7 @@ void test_lessthan(Place place) {
       std::unique_ptr<arena::TestCase> tester(
           new LessThanTester(place, "def", force_cpu, axis, dims));
       arena::Arena arena(std::move(tester), place, 1);
+
       arena.TestPrecision();
     }
   }
