@@ -25,16 +25,19 @@
 namespace paddle {
 namespace lite {
 
-void TestModel(const std::vector<Place>& valid_places,
-               const Place& preferred_place) {
+#ifdef LITE_WITH_ARM
+TEST(unet, test) {
   DeviceInfo::Init();
   DeviceInfo::Global().SetRunMode(LITE_POWER_HIGH, FLAGS_threads);
   lite::Predictor predictor;
+  std::vector<Place> valid_places({Place{TARGET(kHost), PRECISION(kFloat)},
+                                   Place{TARGET(kARM), PRECISION(kFloat)}});
 
-  predictor.Build(FLAGS_model_dir, preferred_place, valid_places);
+  predictor.Build(
+      FLAGS_model_dir, Place{TARGET(kARM), PRECISION(kFloat)}, valid_places);
 
   auto* input_tensor = predictor.GetInput(0);
-  input_tensor->Resize(DDim(std::vector<DDim::value_type>({1, 3, 224, 224})));
+  input_tensor->Resize(DDim(std::vector<DDim::value_type>({1, 3, 512, 512})));
   auto* data = input_tensor->mutable_data<float>();
   auto item_size = input_tensor->dims().production();
   for (int i = 0; i < item_size; i++) {
@@ -56,26 +59,30 @@ void TestModel(const std::vector<Place>& valid_places,
             << ", spend " << (GetCurrentUS() - start) / FLAGS_repeats / 1000.0
             << " ms in average.";
 
+  // std::vector<float> results({0.00078033, 0.00083865, 0.00060029, 0.00057083,
+  //                            0.00070094, 0.00080584, 0.00044525, 0.00074907,
+  //                            0.00059774, 0.00063654});
+  //
   std::vector<std::vector<float>> results;
   // i = 1
   results.emplace_back(std::vector<float>(
-      {0.00078033, 0.00083864, 0.00060029, 0.00057083, 0.00070094, 0.00080585,
-       0.00044525, 0.00074907, 0.00059774, 0.00063654, 0.00061012, 0.00047342,
-       0.00056656, 0.00048569, 0.00058536, 0.00055791, 0.00060953, 0.00050026,
-       0.00053206, 0.0005766,  0.00049303, 0.00098111, 0.00098136, 0.00079492,
-       0.00063321, 0.00116216, 0.00200527, 0.00125035, 0.0013654,  0.00128721,
-       0.00094687, 0.00113662, 0.00107747, 0.00046942, 0.00065095, 0.00054033,
-       0.00074176, 0.00052958, 0.00153806, 0.00064412, 0.00074696, 0.00074853,
-       0.00069978, 0.00083423, 0.00104772, 0.00062703, 0.0008324,  0.00084235,
-       0.00050299, 0.0008887,  0.00077417, 0.0008537,  0.001429,   0.00110349,
-       0.00090407, 0.00068112, 0.00083266, 0.00076748, 0.00094665, 0.00238264,
-       0.00164756, 0.00092233, 0.00103418, 0.0012954,  0.00108995, 0.00068761,
-       0.0010689,  0.00051305, 0.00097589, 0.00071219, 0.00064634, 0.0011234,
-       0.00065846, 0.00146709, 0.00054817, 0.00078511, 0.0007248,  0.00080298,
-       0.00117994, 0.00160993, 0.00087876, 0.00062687, 0.00050534, 0.0004736,
-       0.00057464, 0.00051153, 0.0006622,  0.00072636, 0.00061334, 0.00074368,
-       0.00051138, 0.00060684, 0.000731,   0.00070752, 0.00069557, 0.00054018,
-       0.00074147, 0.00041445, 0.00066844, 0.00043833}));
+      {0.9134332,  0.9652493,  0.959906,   0.96601194, 0.9704161,  0.973321,
+       0.9763035,  0.9788776,  0.98090196, 0.9823532,  0.9830632,  0.98336476,
+       0.9837605,  0.98430413, 0.9848935,  0.9854547,  0.9858877,  0.9862335,
+       0.9865361,  0.9867324,  0.98686767, 0.9870094,  0.98710895, 0.98710257,
+       0.98703253, 0.98695105, 0.98681927, 0.98661137, 0.98637575, 0.98613656,
+       0.9858899,  0.98564225, 0.9853931,  0.9851323,  0.98487836, 0.9846578,
+       0.9844529,  0.9842441,  0.98405427, 0.9839205,  0.98382735, 0.98373055,
+       0.9836299,  0.9835474,  0.9834818,  0.9834427,  0.98343164, 0.9834163,
+       0.9833809,  0.9833255,  0.9832343,  0.9831207,  0.98302484, 0.9829579,
+       0.9829039,  0.98283756, 0.9827444,  0.98264474, 0.9825466,  0.98243505,
+       0.982312,   0.98218083, 0.98203814, 0.981895,   0.9817609,  0.9816264,
+       0.9814932,  0.9813706,  0.98124915, 0.9811211,  0.98099536, 0.9808748,
+       0.98075336, 0.9806301,  0.98050594, 0.98038554, 0.980272,   0.9801562,
+       0.9800356,  0.9799207,  0.9798147,  0.97971845, 0.97963905, 0.9795745,
+       0.9795107,  0.97943753, 0.9793595,  0.97928876, 0.97922987, 0.9791764,
+       0.97912955, 0.9790941,  0.9790663,  0.9790414,  0.9790204,  0.9790055,
+       0.97899526, 0.9789867,  0.9789797,  0.9789748}));
   auto* out = predictor.GetOutput(0);
   ASSERT_EQ(out->dims().size(), 2);
   ASSERT_EQ(out->dims()[0], 1);
@@ -90,26 +97,7 @@ void TestModel(const std::vector<Place>& valid_places,
     }
   }
 }
-
-TEST(InceptionV4, test_arm) {
-  std::vector<Place> valid_places({
-      Place{TARGET(kHost), PRECISION(kFloat)},
-      Place{TARGET(kARM), PRECISION(kFloat)},
-      // Place{TARGET(kOpenCL), PRECISION(kFloat)},
-  });
-
-  TestModel(valid_places, Place({TARGET(kARM), PRECISION(kFloat)}));
-}
-
-TEST(InceptionV4, test_opencl) {
-  std::vector<Place> valid_places({
-      Place{TARGET(kHost), PRECISION(kFloat)},
-      Place{TARGET(kARM), PRECISION(kFloat)},
-      Place{TARGET(kOpenCL), PRECISION(kFloat)},
-  });
-
-  TestModel(valid_places, Place({TARGET(kOpenCL), PRECISION(kFloat)}));
-}
+#endif
 
 }  // namespace lite
 }  // namespace paddle
