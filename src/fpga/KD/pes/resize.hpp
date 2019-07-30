@@ -117,7 +117,7 @@ class ResizePE : public PE {
                             out_width * channel * v +
                             w * channel * factor +
                             channel * i;
-                        float16* dst = _param.output->data<float16>() + dst_index;
+                        float16* dst = param_.output->data<float16>() + dst_index;
                         memcpy(dst, src, channel * sizeof(float16));
                         // std::cout << "dst_index:" << dst_index << std::endl;
                     }
