@@ -26,9 +26,8 @@ class LessThanTester : public arena::TestCase {
   std::string input_y_ = "y";
   std::string output_ = "out";
   int axis_ = 1;
-  float force_cpu_ = 0;
+  bool force_cpu_ = 0;
   DDim dims_{{3, 5, 4, 4}};
-  bool bias_after_scale_;
 
  public:
   LessThanTester(const Place& place,
