@@ -516,7 +516,9 @@ struct WhileParam {
   cpp::BlockDesc* sub_block;
   std::vector<Tensor*> x{};
   std::vector<Tensor*> outs{};
-} struct TopkParam {
+};
+
+struct TopkParam {
   const lite::Tensor* X{};
   std::vector<lite::Tensor*> Out{};
   int K{1};
