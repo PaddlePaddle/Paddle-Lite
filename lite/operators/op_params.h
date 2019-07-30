@@ -509,6 +509,20 @@ struct NormParam {
   float epsilon{1e-10};
 };
 
+struct LogicalParam {
+  const lite::Tensor* X{};
+  const lite::Tensor* Y{};
+  lite::Tensor* Out{};
+};
+
+struct CompareParam {
+  const lite::Tensor* X{};
+  const lite::Tensor* Y{};
+  bool force_cpu{0};
+  int axis{-1};
+  lite::Tensor* Out{};
+};
+
 struct TopkParam {
   const lite::Tensor* X{};
   std::vector<lite::Tensor*> Out{};

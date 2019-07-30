@@ -201,6 +201,9 @@ class Arena {
       case PRECISION(kInt32):
         tester_->CheckPrecision<int32_t>(var_name, abs_error_);
         break;
+      case PRECISION(kBool):
+        tester_->CheckPrecision<bool>(var_name, abs_error_);
+        break;
 
       default:
         LOG(FATAL) << "not support type " << PrecisionToStr(type->precision());

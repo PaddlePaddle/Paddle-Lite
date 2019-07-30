@@ -194,7 +194,7 @@ void GenerateNPUProgramPass::ConvertSubgraph(
         std::vector<ge::Operator> inputs{*npu_inputs[0]};
         std::vector<ge::Operator> outputs{*npu_output};
         std::string model_name("_npu_client_" + std::to_string(id) + "_");
-        if (!npu::BuildNPUClinet(inputs, outputs, model_name)) {
+        if (!npu::BuildNPUClient(inputs, outputs, model_name)) {
           // build failed, so this subgraph is abandoned
           nodes2rm.clear();
           continue;

@@ -20,8 +20,10 @@
 
 namespace paddle {
 namespace lite {
+namespace npu {
+namespace bridge {
 
-TEST(NPUBridges, MUL) {
+TEST(NPUBridges, mul) {
   const auto& bridges = lite::npu::bridge::Factory::Instance();
   const auto& supported_lists = bridges.AllFunctions();
   CHECK(bridges.HasType("mul"));
@@ -78,6 +80,8 @@ TEST(NPUBridges, MUL) {
   CHECK_GT(output_nodes.size(), 0);
 }
 
+}  // namespace bridge
+}  // namespace npu
 }  // namespace lite
 }  // namespace paddle
 

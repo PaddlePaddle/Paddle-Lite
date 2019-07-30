@@ -75,6 +75,8 @@ class Context<TargetType::kNPU> {
  public:
   Context() {}
   explicit Context(const NPUContext& ctx);
+  // NOTE: InitOnce should only be used by ContextScheduler
+  void InitOnce() {}
   void CopySharedTo(NPUContext* ctx) {}
 
   NPUContext& operator=(const NPUContext& ctx) {}
@@ -345,6 +347,9 @@ class ContextScheduler {
 #endif
 #ifdef LITE_WITH_FPGA
     InitContext<TargetType::kFPGA, FPGAContext>();
+#endif
+#ifdef LITE_WITH_NPU
+    InitContext<TargetType::kNPU, NPUContext>();
 #endif
   }
 
