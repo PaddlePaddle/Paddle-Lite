@@ -38,7 +38,10 @@ void NearestInterpolationKernel<GPU_CL, float>::Compute(
   cl_mem output_image = output->GetCLImage();
   float scale_h = output->dims()[2] / input->dims()[2];
   float scale_w = output->dims()[3] / input->dims()[3];
-  int in_dims_w = output->dims()[3];
+  int in_dims_h = input->dims()[2];
+  int out_dims_h = output->dims()[2];
+  int in_dims_w = input->dims()[3];
+  int out_dims_w = output->dims()[3];
 
   cl_int status;
 
@@ -50,7 +53,13 @@ void NearestInterpolationKernel<GPU_CL, float>::Compute(
   CL_CHECK_ERRORS(status)
   status = clSetKernelArg(kernel, 3, sizeof(float), &scale_w);
   CL_CHECK_ERRORS(status)
-  status = clSetKernelArg(kernel, 4, sizeof(int), &in_dims_w);
+  status = clSetKernelArg(kernel, 4, sizeof(int), &in_dims_h);
+  CL_CHECK_ERRORS(status)
+  status = clSetKernelArg(kernel, 5, sizeof(int), &out_dims_h);
+  CL_CHECK_ERRORS(status)
+  status = clSetKernelArg(kernel, 6, sizeof(int), &in_dims_w);
+  CL_CHECK_ERRORS(status)
+  status = clSetKernelArg(kernel, 7, sizeof(int), &out_dims_w);
   CL_CHECK_ERRORS(status)
   status = clEnqueueNDRangeKernel(
       this->cl_helper_.CLCommandQueue(), kernel, default_work_size.size(), NULL,
