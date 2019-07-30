@@ -16,6 +16,8 @@ limitations under the License. */
 
 #include "../pe.hpp"
 #include "../pe_params.hpp"
+#include "../float16.hpp"
+
 namespace paddle_mobile {
 namespace zynqmp {
 
