@@ -37,7 +37,7 @@ class StepExecutor {
       auto op_handler = lite::LiteOpRegistry::Global().Create(op_desc->Type());
       op_handler->Attach(*op_desc, scope);
       auto kernels = op_handler->CreateKernels({place_});
-      // ASSERT(kernels.empty());
+      CHECK_GT(kernels.size(), 0) << "cannot create kernel";
       op_handler->AttachKernel(kernels[0].get());
       ops_of_block_.push_back(op_handler);
     }

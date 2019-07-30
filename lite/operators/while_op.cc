@@ -20,7 +20,14 @@ namespace paddle {
 namespace lite {
 namespace operators {
 
-bool WhileOpLite::CheckShape() const { return true; }
+bool WhileOpLite::CheckShape() const {
+  CHECK_GT_OR_FALSE(param_.x.size(), 0UL);
+  CHECK_GT_OR_FALSE(param_.outs.size(), 0UL);
+  CHECK_OR_FALSE(param_.sub_block);
+  CHECK_OR_FALSE(param_.scope);
+  CHECK_OR_FALSE(param_.cond);
+  return true;
+}
 
 bool WhileOpLite::InferShape() const { return true; }
 
