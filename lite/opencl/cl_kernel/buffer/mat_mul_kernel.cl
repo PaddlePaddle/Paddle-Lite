@@ -32,12 +32,12 @@ void mat_mul(__global const CL_DTYPE* x,
         out0 = 0;
 
   for (int p = 0; p < K; ++p) {
-    x0 = *( (__global CL_DTYPE*)(x + row * K + p) );
-    y0 = *( (__global CL_DTYPE*)(y + p * N + col) );
+    x0 = *(x + row * K + p);
+    y0 = *(y + p * N + col);
     out0 += x0 * y0;
   }
 
-  out[row * M + col] = out0;
+  out[row * N + col] = out0;
 }
 #endif // naive gemm
 
