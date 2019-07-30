@@ -30,9 +30,9 @@ __kernel void leakyrelu(__read_only image2d_t input,
 
     half4 output_data;
     output_data.x = max((float)(in.x), (float)(alpha * (in.x)));
-    output_data.y = max((float)(in.x), (float)(alpha * (in.y)));
-    output_data.z = max((float)(in.x), (float)(alpha * (in.z)));
-    output_data.w = max((float)(in.x), (float)(alpha * (in.w)));
+    output_data.y = max((float)(in.y), (float)(alpha * (in.y)));
+    output_data.z = max((float)(in.z), (float)(alpha * (in.z)));
+    output_data.w = max((float)(in.w), (float)(alpha * (in.w)));
 
     write_imageh(output, (int2)(input_pos.x, input_pos.y), output_data);
 }

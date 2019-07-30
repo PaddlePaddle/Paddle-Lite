@@ -686,7 +686,7 @@ class ConcatParam : public OpParam {
     inputs_ = InputMultiFrom<GType>(inputs, *scope);
     out_ = OutFrom<GType>(outputs, *scope);
     axis_ = GetAttr<int>("axis", attrs);
-    original_output_dims_size_ = out_->dims().size();
+    original_output_dims_size_ = inputs_[0]->dims().size();
   }
 
   vector<GType *> Inputs() const { return inputs_; }
