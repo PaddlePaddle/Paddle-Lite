@@ -210,7 +210,8 @@ void ConvAddBnRelu(framework::CLHelper *cl_helper,
     if (param.Filter()->dims()[2] == 3 && param.Filter()->dims()[3] == 3) {
       if (filter_channel != input_channel) {
         if (filter_channel != 1) {
-          status = clSetKernelArg(kernel, index++, sizeof(int), &filter_channel);
+          status =
+              clSetKernelArg(kernel, index++, sizeof(int), &filter_channel);
           CL_CHECK_ERRORS(status);
           int has_group = 1;
           status = clSetKernelArg(kernel, index++, sizeof(int), &has_group);
