@@ -23,7 +23,7 @@ namespace lite {
 namespace npu {
 namespace bridge {
 
-TEST(npu_bridge_elementwise_op, test) {
+TEST(NPUBridges, elementwise_add) {
   const auto& bridges = lite::npu::bridge::Factory::Instance();
   const auto& supported_lists = bridges.AllFunctions();
   CHECK(bridges.HasType("elementwise_add"));

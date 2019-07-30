@@ -20,8 +20,10 @@
 
 namespace paddle {
 namespace lite {
+namespace npu {
+namespace bridge {
 
-TEST(NPUBridges, FC) {
+TEST(NPUBridges, fc) {
   const auto& bridges = lite::npu::bridge::Factory::Instance();
   const auto& supported_lists = bridges.AllFunctions();
   CHECK(bridges.HasType("fc"));
@@ -86,7 +88,7 @@ TEST(NPUBridges, FC) {
   model.SetGraph(graph);
   domi::HiaiIrBuild ir_build;
   domi::ModelBufferData model_buf;
-  ir_build.CreateModelBuff(model, model_buf);
+  CHECK(ir_build.CreateModelBuff(model, model_buf));
   CHECK(ir_build.BuildIRModel(model, model_buf));
   // load model
   std::shared_ptr<hiai::AiModelMngerClient> model_client =
@@ -132,6 +134,8 @@ TEST(NPUBridges, FC) {
 #endif
 }
 
+}  // namespace bridge
+}  // namespace npu
 }  // namespace lite
 }  // namespace paddle
 

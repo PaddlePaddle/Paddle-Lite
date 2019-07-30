@@ -45,6 +45,7 @@ lite_cc_library(conv_transpose_op SRCS conv_transpose_op.cc DEPS ${op_DEPS})
 lite_cc_library(im2sequence_op SRCS im2sequence_op.cc DEPS ${op_DEPS})
 lite_cc_library(sequence_softmax_op SRCS sequence_softmax_op.cc DEPS ${op_DEPS})
 lite_cc_library(norm_op SRCS norm_op.cc DEPS ${op_DEPS})
+lite_cc_library(graph_op SRCS graph_op.cc DEPS ${op_DEPS})
 lite_cc_library(topk_op SRCS topk_op.cc DEPS ${op_DEPS})
 lite_cc_library(increment_op SRCS increment_op.cc DEPS ${op_DEPS})
 lite_cc_library(write_to_array_op SRCS write_to_array_op.cc DEPS ${op_DEPS})
@@ -100,7 +101,9 @@ set(ops
         sequence_softmax_op
         norm_op
         logical_xor        
+        logical_and        
         less_than        
+        graph_op
         topk_op
         increment_op
         write_to_array_op
