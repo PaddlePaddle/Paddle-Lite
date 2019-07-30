@@ -70,13 +70,14 @@ void ConvBNFuser::BuildPattern() {
 void ConvBNFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
   auto op_desc = GenOpDesc(matched);
   auto eltwise_op = LiteOpRegistry::Global().Create("elementwise_add");
-  auto conv = matched.at("conv2d")->stmt()->op();
+
+  auto conv_instruct = matched.at("conv2d")->stmt();
+  auto conv = conv_instruct->op();
   auto* scope = conv->scope();
   auto& valid_places = conv->valid_places();
 
   auto conv_weight_t = scope->FindVar(matched.at("conv_weight")->arg()->name)
                            ->GetMutable<lite::Tensor>();
-  auto conv_weight_d = conv_weight_t->mutable_data<float>();
   auto conv_weight_dims = conv_weight_t->dims();
   size_t weight_num = conv_weight_t->data_size();
 
@@ -101,15 +102,43 @@ void ConvBNFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
   auto bn_bias_d = bn_bias_t->mutable_data<float>();
   auto eps = matched.at("bn")->stmt()->op_info()->GetAttr<float>("epsilon");
 
-  ComputeFusedWeight(bn_scale_d,
-                     bn_mean_d,
-                     bn_var_d,
-                     bn_bias_d,
-                     conv_weight_d,
-                     eps,
-                     bias_size,
-                     weight_num / bias_size);
+  auto conv_op_desc = conv_instruct->mutable_op_info();
 
+  bool enable_int8 = conv_op_desc->HasAttr("enable_int8") ? true : false;
+  Tensor alpha_tensor, beta_tensor;
+  alpha_tensor.CopyDataFrom(*bn_bias_t);
+  beta_tensor.CopyDataFrom(*bn_bias_t);
+  auto alpha_data = alpha_tensor.mutable_data<float>();
+  auto beta_data = beta_tensor.mutable_data<float>();
+
+  int h = bias_size;
+  int w = weight_num / bias_size;
+  ComputeAlphaAndBeta(
+      bn_scale_d, bn_mean_d, bn_var_d, alpha_data, beta_data, eps, h, w);
+
+  if (enable_int8) {
+    PADDLE_ENFORCE(conv_op_desc->HasAttr("weight_scale"),
+                   "INT8 mode: Conv should has weight_scale attr");
+    auto weight_scale =
+        conv_op_desc->GetAttr<std::vector<float>>("weight_scale");
+    for (int i = 0; i < h; i++) {
+      weight_scale[i] *= alpha_data[i];
+    }
+    // Interface like this should be abandoned.
+    conv_op_desc->SetAttr("weight_scale", weight_scale);
+    auto update_conv_desc = *conv_instruct->mutable_op_info();
+    conv_instruct->ResetOp(update_conv_desc, graph->valid_places());
+  } else {
+    auto conv_weight_d = conv_weight_t->mutable_data<float>();
+    for (int i = 0; i < h; i++) {
+      for (int j = 0; j < w; j++) {
+        conv_weight_d[i * w + j] *= alpha_data[i];
+      }
+    }
+  }
+  for (int i = 0; i < bias_size; i++) {
+    bn_bias_d[i] += beta_data[i];
+  }
   eltwise_op->Attach(op_desc, scope);
   auto* new_op_node = graph->GraphCreateInstructNode(eltwise_op, valid_places);
 

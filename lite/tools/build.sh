@@ -237,7 +237,7 @@ function test_arm_android {
     echo "test name: ${test_name}"
     adb_work_dir="/data/local/tmp"
 
-    skip_list=("test_model_parser" "test_mobilenetv1" "test_mobilenetv2" "test_resnet50" "test_inceptionv4" "test_light_api" "test_apis" "test_paddle_api" "test_cxx_api" "test_gen_code")
+    skip_list=("test_model_parser" "test_mobilenetv1" "test_mobilenetv2" "test_resnet50" "test_inceptionv4" "test_light_api" "test_apis" "test_paddle_api" "test_cxx_api" "test_gen_code" "test_mobilenetv1_int8")
     for skip_name in ${skip_list[@]} ; do
         [[ $skip_name =~ (^|[[:space:]])$test_name($|[[:space:]]) ]] && echo "skip $test_name" && return
     done
@@ -582,6 +582,8 @@ function build_test_arm_subtask_model {
 
     adb devices | grep emulator | cut -f1 | while read line; do adb -s $line emu kill; done
     echo "Done"
+    cd -
+    rm -rf $build_dir
 }
 
 
@@ -733,6 +735,7 @@ function main {
                 ;;
             build_test_arm_model_mobilenetv1)
                 build_test_arm_subtask_model test_mobilenetv1 mobilenet_v1
+                build_test_arm_subtask_model test_mobilenetv1_int8 MobileNetV1_quant
                 shift
                 ;;
             build_test_arm_model_mobilenetv2)

@@ -115,13 +115,13 @@ void ConvComputeInt8<Ptype_out>::PrepareForRun() {
   int sh = param.strides[1];
   int sw = param.strides[0];
 
+  bool with_bias = param.bias;
   bool kps_equal = (pw == ph) && (sh == sw) && (kw == kh);
   bool no_dilation = (param.dilations[0] == 1) && (param.dilations[1] == 1);
   bool flag_dw_3x3 = (kw == 3) && (ph == 1) && (sw == 1 || sw == 2);
   bool flag_dw_5x5 = (kw == 5 && sw == 1 && ph == 2);
   bool flag_dw = flag_dw_3x3 || flag_dw_5x5;
 
-  // weigth is int8 and bias is int32 so do not need trans
   if (param.groups == ic && ic == oc && kps_equal && no_dilation && flag_dw) {
     impl_ = new lite::arm::math::DepthwiseConvInt8<Ptype_out>;
     VLOG(3) << "Run DepthwiseConv Int8";
@@ -133,7 +133,14 @@ void ConvComputeInt8<Ptype_out>::PrepareForRun() {
     VLOG(3) << "Run GemmLikeConvInt8";
     impl_ = new lite::arm::math::GemmLikeConvInt8<Ptype_out>;
   }
-
+  // Convert fp32 bias to int32 bias.
+  if (with_bias) {
+    Tensor temp_tensor;
+    temp_tensor.CopyDataFrom(*param.bias);
+    lite::arm::math::trans_fp32_bias_to_int32_basic(
+        &temp_tensor, param.bias, param.input_scale, param.weight_scale);
+  }
+  // param.bias->data<int32_t>();
   CHECK(this->impl_->create(param, &ctx));
 }
 

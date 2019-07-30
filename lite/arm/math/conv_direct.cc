@@ -227,7 +227,8 @@ bool DirectConvInt8<Ptype_out>::run(const operators::ConvParam& param) {
              Ptype_out,
              w_scale_.data());
 
-  // timer end
+  // Modified from int32 for debug convenience
+  if (Ptype_out == PRECISION(kInt8)) param.output->mutable_data<int8_t>();
   return true;
 }
 
