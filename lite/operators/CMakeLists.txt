@@ -81,7 +81,7 @@ set(ops
         dropout_op
         concat_op
         pad2d_op
-#        crop_op
+        crop_op
         prior_box_op
         density_prior_box_op
         negative_op
