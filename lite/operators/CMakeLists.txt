@@ -25,6 +25,7 @@ lite_cc_library(dropout_op SRCS dropout_op.cc DEPS ${op_DEPS})
 lite_cc_library(concat_op SRCS concat_op.cc DEPS ${op_DEPS})
 lite_cc_library(pad2d_op SRCS pad2d_op.cc DEPS ${op_DEPS})
 lite_cc_library(negative_op SRCS negative_op.cc DEPS ${op_DEPS})
+lite_cc_library(crop_op SRCS crop_op.cc DEPS ${op_DEPS})
 lite_cc_library(calib_op SRCS calib_op.cc DEPS ${op_DEPS})
 lite_cc_library(split_op SRCS split_op.cc DEPS ${op_DEPS})
 lite_cc_library(transpose_op SRCS transpose_op.cc DEPS ${op_DEPS})
@@ -56,7 +57,8 @@ set(ops
         dropout_op
         concat_op
         pad2d_op
-        negative_op
+	negative_op
+        crop_op
         calib_op
         split_op
         transpose_op

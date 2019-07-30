@@ -349,6 +349,14 @@ struct Pad2dParam {
   std::string data_format{"NCHW"};
 };
 
+/// ----------------------- Crop operators ----------------------
+struct CropParam {
+  const lite::Tensor* X{};
+  lite::Tensor* Out{};
+  std::vector<int> offsets;
+  std::vector<int> shape;
+};
+
 struct Im2SequenceParam {
   std::vector<lite::Tensor*> X{};
   lite::Tensor* Out{};
