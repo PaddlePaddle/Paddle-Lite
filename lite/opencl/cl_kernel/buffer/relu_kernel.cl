@@ -12,9 +12,11 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-__kernel void relu(__global const float* x_data, const int count, __global float* out_data) {
+#include <cl_common.h>
+
+__kernel void relu(__global const CL_DTYPE* x_data, const int count, __global CL_DTYPE* out_data) {
   const int index = get_global_id(0); 
-	if (index < count) {
-		out_data[index] = x_data[index] > 0.f ? x_data[index] : 0.f;
-	}
+  if (index < count) {
+    out_data[index] = activation(x_data[index]);
+  }
 }

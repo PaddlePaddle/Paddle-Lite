@@ -23,7 +23,7 @@ namespace lite {
 namespace npu {
 namespace bridge {
 
-TEST(npu_bridge_pool_op, test) {
+TEST(NPUBridges, pool) {
   const auto& bridges = lite::npu::bridge::Factory::Instance();
   const auto& supported_lists = bridges.AllFunctions();
   CHECK_EQ(bridges.HasType("pool2d"), true);

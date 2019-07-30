@@ -34,7 +34,7 @@ void TestCase::CreateInstruction() {
   CHECK(it != kernels.end()) << "failed to create the kernel in " << place_
                              << " with alias: " << alias_;
   // prepare context
-  (*it)->SetContext(ContextScheduler::Global().NewContext(place_.target));
+  (*it)->SetContext(std::move(ctx_));
   instruction_.reset(new Instruction(op, std::move(*it)));
 }
 

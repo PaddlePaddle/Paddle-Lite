@@ -21,31 +21,31 @@ namespace lite {
 namespace operators {
 
 bool GRUOpLite::CheckShape() const {
-  CHECK_OR_FALSE(param_.input);
-  CHECK_OR_FALSE(param_.weight);
-  CHECK_OR_FALSE(param_.batchgate);
-  CHECK_OR_FALSE(param_.batchresethiddenprev);
-  CHECK_OR_FALSE(param_.batchhidden);
-  CHECK_OR_FALSE(param_.hidden);
+  CHECK_OR_FALSE(param_.input)
+  CHECK_OR_FALSE(param_.weight)
+  CHECK_OR_FALSE(param_.batch_gate)
+  CHECK_OR_FALSE(param_.batch_reset_hidden_prev)
+  CHECK_OR_FALSE(param_.batch_hidden)
+  CHECK_OR_FALSE(param_.hidden)
 
   auto input_dims = param_.input->dims();
   auto weight_dims = param_.weight->dims();
   int input_size = input_dims[1];
   int frame_size = weight_dims[0];
-  CHECK_EQ_OR_FALSE(input_size, frame_size * 3);
-  CHECK_EQ_OR_FALSE(weight_dims[1], frame_size * 3);
+  CHECK_EQ_OR_FALSE(input_size, frame_size * 3)
+  CHECK_EQ_OR_FALSE(weight_dims[1], frame_size * 3)
 
   if (param_.h0) {
     auto h0_dims = param_.h0->dims();
-    CHECK_EQ_OR_FALSE(h0_dims[1], frame_size);
+    CHECK_EQ_OR_FALSE(h0_dims[1], frame_size)
   }
 
   if (param_.bias) {
     auto bias_dims = param_.bias->dims();
     int bias_height = bias_dims[0];
     int bias_width = bias_dims[1];
-    CHECK_EQ_OR_FALSE(bias_height, 1);
-    CHECK_EQ_OR_FALSE(bias_width, frame_size * 3);
+    CHECK_EQ_OR_FALSE(bias_height, 1)
+    CHECK_EQ_OR_FALSE(bias_width, frame_size * 3)
   }
 
   return true;
@@ -54,17 +54,16 @@ bool GRUOpLite::CheckShape() const {
 bool GRUOpLite::InferShape() const {
   auto input_dims = param_.input->dims();
   auto weight_dims = param_.weight->dims();
-  int input_size = input_dims[1];
   int frame_size = weight_dims[0];
+  auto batch_size = input_dims[0];
 
-  std::vector<int64_t> dims_hidden{input_dims[0], frame_size};
+  param_.batch_gate->Resize(input_dims);
+  param_.batch_reset_hidden_prev->Resize(lite::DDim({batch_size, frame_size}));
+  param_.batch_hidden->Resize(lite::DDim({batch_size, frame_size}));
+  param_.hidden->Resize(lite::DDim({batch_size, frame_size}));
 
-  param_.batchgate->Resize(input_dims);
-  param_.batchresethiddenprev->Resize(lite::DDim(dims_hidden));
-  param_.batchhidden->Resize(lite::DDim(dims_hidden));
-  param_.hidden->Resize(lite::DDim(dims_hidden));
-
-  *param_.hidden->mutable_lod() = param_.input->lod();
+  *(param_.hidden->mutable_lod()) = param_.input->lod();
+  return true;
 }
 
 bool GRUOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
@@ -72,18 +71,19 @@ bool GRUOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
   auto h0 = op_desc.Input("H0").front();
   auto weight = op_desc.Input("Weight").front();
   auto batch_gate = op_desc.Output("BatchGate").front();
-  auto batchresethiddenprev = op_desc.Output("BatchResetHiddenPrev").front();
-  auto batchhidden = op_desc.Output("BatchHidden").front();
+  auto batch_reset_hidden_prev = op_desc.Output("BatchResetHiddenPrev").front();
+  auto batch_hidden = op_desc.Output("BatchHidden").front();
   auto hidden = op_desc.Output("Hidden").front();
 
   param_.input = scope->FindVar(input)->GetMutable<lite::Tensor>();
   param_.h0 = scope->FindVar(h0)->GetMutable<lite::Tensor>();
   param_.weight = scope->FindVar(weight)->GetMutable<lite::Tensor>();
 
-  param_.batchgate = scope->FindVar(batch_gate)->GetMutable<lite::Tensor>();
-  param_.batchresethiddenprev =
-      scope->FindVar(batchresethiddenprev)->GetMutable<lite::Tensor>();
-  param_.batchhidden = scope->FindVar(batchhidden)->GetMutable<lite::Tensor>();
+  param_.batch_gate = scope->FindVar(batch_gate)->GetMutable<lite::Tensor>();
+  param_.batch_reset_hidden_prev =
+      scope->FindVar(batch_reset_hidden_prev)->GetMutable<lite::Tensor>();
+  param_.batch_hidden =
+      scope->FindVar(batch_hidden)->GetMutable<lite::Tensor>();
   param_.hidden = scope->FindVar(hidden)->GetMutable<lite::Tensor>();
 
   if (op_desc.HasInput("Bias")) {
@@ -99,8 +99,8 @@ bool GRUOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
   return true;
 }
 
-REGISTER_LITE_OP(gru, paddle::lite::operators::GRUOpLite);
-
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle
+
+REGISTER_LITE_OP(gru, paddle::lite::operators::GRUOpLite)

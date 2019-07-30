@@ -44,4 +44,4 @@ bool ReluOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(relu, paddle::lite::operators::ReluOp);
+// REGISTER_LITE_OP(relu, paddle::lite::operators::ReluOp);

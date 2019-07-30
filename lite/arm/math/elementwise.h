@@ -33,6 +33,34 @@ template <typename T>
 void elementwise_add_relu_broadcast(
     const T* dinx, const T* diny, T* dout, int batch, int channels, int num);
 
+template <typename T>
+void elementwise_mul(const T* dinx, const T* diny, T* dout, int num);
+
+template <typename T>
+void elementwise_mul_relu(const T* dinx, const T* diny, T* dout, int num);
+
+template <typename T>
+void elementwise_mul_broadcast(
+    const T* dinx, const T* diny, T* dout, int batch, int channels, int num);
+
+template <typename T>
+void elementwise_mul_relu_broadcast(
+    const T* dinx, const T* diny, T* dout, int batch, int channels, int num);
+
+template <typename T>
+void elementwise_max(const T* dinx, const T* diny, T* dout, int num);
+
+template <typename T>
+void elementwise_max_relu(const T* dinx, const T* diny, T* dout, int num);
+
+template <typename T>
+void elementwise_max_broadcast(
+    const T* dinx, const T* diny, T* dout, int batch, int channels, int num);
+
+template <typename T>
+void elementwise_max_relu_broadcast(
+    const T* dinx, const T* diny, T* dout, int batch, int channels, int num);
+
 }  // namespace math
 }  // namespace arm
 }  // namespace lite

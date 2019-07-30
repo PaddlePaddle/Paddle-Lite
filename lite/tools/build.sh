@@ -117,6 +117,7 @@ function build_opencl {
     cd $build_dir
 
     cmake_opencl ${os} ${abi} ${lang}
+    make opencl_clhpp
     build $TESTS_FILE
 
     # test publish inference lib

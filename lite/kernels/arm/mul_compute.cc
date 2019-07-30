@@ -58,10 +58,10 @@ void MulCompute::Run() {
     auto& ctx = this->ctx_->template As<ARMContext>();
     int hblock = lite::arm::math::get_hblock(ctx.arch());
     int m_round = hblock * ((m_ + hblock - 1) / hblock);
-    ctx.ExtendWorkspace(DDimLite(std::vector<int64_t>({m_round * k_})));
+    ctx.ExtendWorkspace(m_round * k_ * sizeof(float));
 
     float* packed_x = static_cast<float*>(ctx.workspace_data<float>()) +
-                      ctx.l2_cache_size() / sizeof(float);
+                      ctx.llc_size() / sizeof(float);
     lite::arm::math::prepackA(
         packed_x, x_data, 1.f, k_, 0, m_, 0, k_, false, &ctx);
     int ldb = n_;

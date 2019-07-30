@@ -50,8 +50,8 @@ bool WinogradConv<PRECISION(kFloat)>::create(const operators::ConvParam& param,
     int hblock = get_hblock(this->ctx_->arch());
     int m_round = hblock * ((m_wino + hblock - 1) / hblock);
     weights_trans_.Resize({1, 1, 1, 8 * 8 * m_round * ic});
-    this->ctx_->ExtendWorkspace(DDim(std::vector<DDim::value_type>(
-        {1, 1, 1, size_trans_channel * max_ch * 2 + n_wino})));
+    this->ctx_->ExtendWorkspace((size_trans_channel * max_ch * 2 + n_wino) *
+                                sizeof(float));
     auto weights_wino =
         static_cast<float*>(malloc(sizeof(float) * 8 * 8 * oc * ic));
     void* trans_tmp_ptr = malloc(sizeof(float) * 8 * 8 * oc * ic);

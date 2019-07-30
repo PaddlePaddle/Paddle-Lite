@@ -47,6 +47,17 @@ enum class DataLayoutType : int {
   NUM = 4,   // number of fields.
 };
 
+enum class ActivationType : int {
+  kIndentity = 0,
+  kRelu = 1,
+  kRelu6 = 2,
+  kPRelu = 3,
+  kLeakyRelu = 4,
+  kSigmoid = 5,
+  kTanh = 6,
+  kSwish = 7
+};
+
 static size_t PrecisionTypeLength(PrecisionType type) {
   switch (type) {
     case PrecisionType::kFloat:
