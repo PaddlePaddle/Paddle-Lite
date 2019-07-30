@@ -260,6 +260,11 @@ struct FusionElementwiseActivationGradParam : public ElementwiseGradParam {
 /// ----------------------- activation operators ----------------------
 struct ActivationParam {
   const lite::Tensor* X{};
+  float Leaky_relu_slope{0};            // leaky_relu param
+  float Relu_clipped_coef{6};           // relu_clipped param
+  bool Prelu_channel_shared{false};     // prelu param
+  lite::Tensor* Prelu_channel_slope{};  // prelu param
+  float Swish_coef;                     // swish param
   lite::Tensor* Out{};
 };
 
@@ -358,15 +363,29 @@ struct Pad2dParam {
   float _pad_value = 0.f;
 };
 
+///----------------------- argmax operators ----------------------
+struct ArgmaxParam {
+  lite::Tensor* X{};
+  lite::Tensor* Out{};
+  int Axis{0};
+};
+
+///----------------------- axpy operators ----------------------
+struct AxpyParam {
+  lite::Tensor* Scale{};
+  lite::Tensor* X{};
+  lite::Tensor* Bias{};
+  lite::Tensor* Out{};
+};
 /// ----------------------- GRU unit operators ----------------------f
 struct GRUUnitParam {
   enum ActType { identity, sigmoid, tanh, relu };
   const lite::Tensor* input{nullptr};
-  const lite::Tensor* hiddenprev{nullptr};
+  const lite::Tensor* hidden_prev{nullptr};
   const lite::Tensor* weight{nullptr};
   const lite::Tensor* bias{nullptr};
   lite::Tensor* gate{nullptr};
-  lite::Tensor* resethiddenprev{nullptr};
+  lite::Tensor* reset_hidden_prev{nullptr};
   lite::Tensor* hidden{nullptr};
 
   int gate_activation{ActType::sigmoid};
@@ -374,21 +393,100 @@ struct GRUUnitParam {
   bool origin_mode{false};
 };
 
+/// ------------------------------ lrn operators ------------------------------
+struct LrnParam {
+  const lite::Tensor* X{};
+  lite::Tensor* Out{};
+  int local_size{5};
+  float alpha{1.};
+  float beta{0.75};
+  float k{1.};
+  std::string norm_region{"AcrossChannels"};
+};
+
+/// ----------------------- decode_bboxes operators ----------------------
+struct DecodeBboxesParam {
+  const lite::Tensor* loc_data{};
+  const lite::Tensor* prior_data{};
+  lite::Tensor* bbox_data{};
+
+  int batch_num;
+  int num_priors;
+  int num_loc_classes{0};
+  int background_label_id{0};
+  bool share_location{true};
+  bool variance_encoded_in_target;
+  // code_type:  corner, cente_size, corner_size
+  std::string code_type;
+};
+
+/// ----------------------- multiclass_nms operators ----------------------
+struct MulticlassNmsParam {
+  const lite::Tensor* bbox_data{};
+  const lite::Tensor* conf_data{};
+  lite::Tensor* out;
+  std::vector<int> priors;
+  int class_num;
+  int background_id;
+  int keep_topk;
+  int nms_topk;
+  float conf_thresh;
+  float nms_thresh;
+  float nms_eta;
+  bool share_location{true};
+};
+
+/// ----------------------- priorbox operators ----------------------
+struct PriorBoxParam {
+  std::vector<lite::Tensor*> ins;
+  std::vector<lite::Tensor*> outs;
+
+  bool is_flip;
+  bool is_clip;
+  std::vector<float> min_size;
+  std::vector<float> max_size;
+  std::vector<float> aspect_ratio;
+  std::vector<float> variance;
+  int img_w{0};
+  int img_h{0};
+  float step_w{0};
+  float step_h{0};
+  float offset{0.5};
+  int prior_num{0};
+  // priortype: prior_min, prior_max, prior_com
+  std::vector<std::string> order;
+};
+
+struct DensityPriorBoxParam : public PriorBoxParam {
+  std::vector<float> fixed_size;
+  std::vector<float> fixed_ratio;
+  std::vector<float> density_size;
+};
 /// ----------------------- GRU operators ----------------------f
 struct GRUParam {
   const lite::Tensor* input{nullptr};
   const lite::Tensor* h0{nullptr};
   const lite::Tensor* weight{nullptr};
   const lite::Tensor* bias{nullptr};
-  lite::Tensor* batchgate{nullptr};
-  lite::Tensor* batchresethiddenprev{nullptr};
-  lite::Tensor* batchhidden{nullptr};
+  lite::Tensor* batch_gate{nullptr};
+  lite::Tensor* batch_reset_hidden_prev{nullptr};
+  lite::Tensor* batch_hidden{nullptr};
   lite::Tensor* hidden{nullptr};
 
   std::string gate_activation{"sigmoid"};
   std::string activation{"tanh"};
   bool is_reverse{false};
   bool origin_mode{false};
+};
+
+/// ----------------------- BeamSearchDecode operators ----------------------f
+struct BeamSearchDecodeParam {
+  std::vector<lite::Tensor>* ids{nullptr};
+  std::vector<lite::Tensor>* scores{nullptr};
+  lite::Tensor* sentence_ids{nullptr};
+  lite::Tensor* sentence_scores{nullptr};
+  int beam_size;
+  int end_id;
 };
 
 struct Im2SequenceParam {
@@ -418,6 +516,42 @@ struct WhileParam {
   cpp::BlockDesc* sub_block;
   std::vector<Tensor*> x{};
   std::vector<Tensor*> outs{};
+} struct TopkParam {
+  const lite::Tensor* X{};
+  std::vector<lite::Tensor*> Out{};
+  int K{1};
+};
+
+struct IncrementParam {
+  const lite::Tensor* X{};
+  lite::Tensor* Out{};
+  float step{1};
+};
+
+struct WriteToArrayParam {
+  const lite::Tensor* X{};
+  const lite::Tensor* I{};
+  std::vector<lite::Tensor*> Out{};
+};
+
+struct ReadFromArrayParam {
+  std::vector<lite::Tensor*> X{};
+  lite::Tensor* I{};
+  lite::Tensor* Out{};
+};
+
+struct BeamSearchParam {
+  const lite::Tensor* pre_ids{};
+  const lite::Tensor* pre_scores{};
+  const lite::Tensor* ids{};
+  const lite::Tensor* scores{};
+  lite::Tensor* selected_ids{};
+  lite::Tensor* selected_scores{};
+  lite::Tensor* parent_idx{};
+  int level;
+  int beam_size;
+  int end_id;
+  bool is_accumulated;
 };
 
 }  // namespace operators

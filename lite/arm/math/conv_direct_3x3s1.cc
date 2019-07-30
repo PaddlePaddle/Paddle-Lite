@@ -40,7 +40,7 @@ void conv_3x3s1_direct_fp32(const float* i_data,
                             const operators::ConvParam& param,
                             ARMContext* ctx) {
   const int threads = ctx->threads();
-  int l2_size = ctx->l2_cache_size() / sizeof(float);
+  int l2_size = ctx->llc_size() / sizeof(float);
 
   const int pad_h = param.paddings[0];
   const int pad_w = param.paddings[1];

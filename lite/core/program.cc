@@ -105,11 +105,8 @@ void Instruction::Run() {
   }
 
   if (op_->run_once() && has_run_) return;
-  LOG(INFO) << "op infershape";
   op_->InferShape();
-  LOG(INFO) << "kernel launch";
   kernel_->Launch();
-  LOG(INFO) << "kernel launch finished";
   has_run_ = true;
 }
 

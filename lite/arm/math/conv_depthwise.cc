@@ -41,8 +41,7 @@ bool DepthwiseConv<PRECISION(kFloat)>::create(const operators::ConvParam& param,
     impl_ = conv_depthwise_3x3;
   } else if (kw == 5) {
     VLOG(5) << "invoke 5x5 dw conv";
-    this->ctx_->ExtendWorkspace(
-        DDim(std::vector<DDim::value_type>({1, 1, 1, iw + ow})));
+    this->ctx_->ExtendWorkspace((iw + ow) * sizeof(float));
     impl_ = conv_depthwise_5x5;
   } else {
     LOG(ERROR) << "this type dw conv not impl";
@@ -145,8 +144,9 @@ bool DepthwiseConvInt8<Ptype_out>::create(const operators::ConvParam& param,
         (tmp_size_io_bytes + sizeof(float) - 1) / sizeof(float);
     const int tmp_row_io_float =
         (tmp_row_io_bytes + sizeof(float) - 1) / sizeof(float);
-    ctx_->ExtendWorkspace(DDim(std::vector<DDim::value_type>(
-        {1, 1, 1, ctx_->threads() * tmp_size_io_float + tmp_row_io_float})));
+    ctx_->ExtendWorkspace(
+        (ctx_->threads() * tmp_size_io_float + tmp_row_io_float) *
+        sizeof(float));
     impl_ = conv_depthwise_5x5_int8;
     VLOG(5) << "invoke conv_depthwise_5x5 int8 conv";
   } else {

@@ -24,10 +24,12 @@
  * POSSIBILITY OF SUCH DAMAGE.
  **************************************************************************************/
 
+#include <cl_common.h>
+
 #define MIN_VALUE -FLT_MAX
 
 __kernel void pool_max(const int numel, // num of elements
-                       __global float* input_data,
+                       __global CL_DTYPE* input_data,
                        const int channels,
                        const int height,
                        const int width,
@@ -39,7 +41,7 @@ __kernel void pool_max(const int numel, // num of elements
                        const int stride_w,
                        const int pad_h,
                        const int pad_w,
-                       __global float* output_data) {
+                       __global CL_DTYPE* output_data) {
   int index = get_global_id(0);
   int tmp = get_global_size(0);
   for(index; index < numel; index += tmp) {
@@ -53,7 +55,7 @@ __kernel void pool_max(const int numel, // num of elements
     const int wend = min(wstart + kernel_w, width);
     hstart = max(hstart, 0);
     wstart = max(wstart, 0);
-    float maxval = MIN_VALUE;
+    CL_DTYPE maxval = MIN_VALUE;
     int maxidx = -1;
     input_data =
     input_data + (n * channels + c) * height * width;
@@ -70,7 +72,7 @@ __kernel void pool_max(const int numel, // num of elements
 }
 
 __kernel void pool_avg(const int numel,
-                       __global float* input_data,
+                       __global CL_DTYPE* input_data,
                        const int channels,
                        const int height,
                        const int width,
@@ -82,7 +84,7 @@ __kernel void pool_avg(const int numel,
                        const int stride_w,
                        const int pad_h,
                        const int pad_w,
-                       __global float* output_data) {
+                       __global CL_DTYPE* output_data) {
   int index = get_global_id(0);
   int tmp = get_global_size(0);
   for(index; index < numel; index+=tmp) {
@@ -97,7 +99,7 @@ __kernel void pool_avg(const int numel,
     wstart = max(wstart, 0);
     hend = min(hend, height);
     wend = min(wend, width);
-    float aveval = 0;
+    CL_DTYPE aveval = 0;
     input_data =
     input_data + (n * channels + c) * height * width;
     for (int h = hstart; h < hend; ++h) {

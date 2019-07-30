@@ -96,6 +96,7 @@ std::vector<std::string> OpDesc::Input(const std::string& param) const {
 
 std::vector<std::string> OpDesc::Output(const std::string& param) const {
   auto it = outputs_.find(param);
+  LOG(INFO) << "param" << param;
   CHECK(it != outputs_.end());
   return it->second;
 }
@@ -103,7 +104,7 @@ std::vector<std::string> OpDesc::Output(const std::string& param) const {
 bool OpDesc::HasOutput(const std::string& param) const {
   auto it = outputs_.find(param);
   return it != outputs_.end();
-};
+}
 
 GET_IMPL_ONE(float, FLOAT);
 GET_IMPL_ONE(std::string, STRING);

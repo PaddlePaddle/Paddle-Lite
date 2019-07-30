@@ -311,7 +311,10 @@ TEST(cl_test, target_wrapper_buffer_test) {
   bool inited = InitOpenCLRuntime(FLAGS_cl_path);
   CHECK(inited) << "Fail to initialize OpenCL runtime.";
   std::unique_ptr<CLContext> context(new CLContext);
-  context->AddKernel("elementwise_add", "buffer/elementwise_add_kernel.cl");
+  std::string kernel_name = "elementwise_add";
+  std::string build_options = "-DCL_DTYPE=float";
+  context->AddKernel(
+      kernel_name, "buffer/elementwise_add_kernel.cl", build_options);
   std::vector<float> h_a;
   std::vector<float> h_b;
   std::vector<float> h_out;
@@ -335,7 +338,7 @@ TEST(cl_test, target_wrapper_buffer_test) {
   TargetWrapperCL::MemcpySync(
       d_b, h_b.data(), sizeof(float) * h_b.size(), IoDirection::HtoD);
   // x + y: x[n=1, c=10, h=1, w=1], y[c=10]
-  auto kernel = context->GetKernel("elementwise_add");
+  auto kernel = context->GetKernel(kernel_name + build_options);
   cl_int status = kernel.setArg(0, *d_a);
   CL_CHECK_FATAL(status);
   status = kernel.setArg(1, *d_b);
