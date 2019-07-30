@@ -25,9 +25,8 @@ namespace fpga {
 
 void CopyFromHostSync(void* target, const void* source, size_t size) {
   LOG(INFO) << "copying " << target << ":" << source << ":" << size;
-  memcpy(target, source, size);
-  // TargetWrapper<TARGET(kFPGA)>::MemcpySync(target, source, size,
-  // IoDirection::HtoD);
+  TargetWrapper<TARGET(kFPGA)>::MemcpySync(
+      target, source, size, IoDirection::HtoD);
 }
 
 void CopyToHostSync(void* target, const void* source, size_t size) {
