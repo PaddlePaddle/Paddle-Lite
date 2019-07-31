@@ -49,6 +49,10 @@ lite_cc_library(graph_op SRCS graph_op.cc DEPS ${op_DEPS})
 lite_cc_library(topk_op SRCS topk_op.cc DEPS ${op_DEPS})
 lite_cc_library(increment_op SRCS increment_op.cc DEPS ${op_DEPS})
 lite_cc_library(write_to_array_op SRCS write_to_array_op.cc DEPS ${op_DEPS})
+lite_cc_library(graph_op_lite SRCS graph_op.cc DEPS ${op_DEPS})
+lite_cc_library(logical_xor  SRCS logical_op.cc DEPS ${op_DEPS})
+lite_cc_library(logical_and  SRCS logical_op.cc DEPS ${op_DEPS})
+lite_cc_library(less_than  SRCS compare_op.cc DEPS ${op_DEPS})
 lite_cc_library(read_from_array_op SRCS read_from_array_op.cc DEPS ${op_DEPS})
 lite_cc_library(beam_search_op SRCS beam_search_op.cc DEPS ${op_DEPS})
 
@@ -96,6 +100,9 @@ set(ops
         im2sequence_op
         sequence_softmax_op
         norm_op
+        logical_xor        
+        logical_and        
+        less_than        
         graph_op
         topk_op
         increment_op

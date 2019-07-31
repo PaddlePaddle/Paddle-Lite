@@ -37,7 +37,8 @@ enum class PrecisionType : int {
   kFP16 = 5,
   kInt32 = 3,
   kAny = 4,  // any precision
-  NUM = 6,   // number of fields.
+  kBool = 6,
+  NUM = 7,  // number of fields.
 };
 enum class DataLayoutType : int {
   kUnk = 0,
