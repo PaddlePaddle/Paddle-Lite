@@ -26,7 +26,7 @@ class CropComputeTester : public arena::TestCase {
   std::string input_ = "X";
   std::string output_ = "Out";
 
-  DDim dims_{{64, 64, 8, 32}};
+  DDim dims_{{1, 32, 113, 113}};
   std::vector<int> offsets_;
   std::vector<int> shape_;
 
@@ -107,8 +107,8 @@ class CropComputeTester : public arena::TestCase {
 };
 
 void TestCrop(const Place& place) {
-  std::vector<int> offset = {0, 1, 2, 2};
-  std::vector<int> shape = {1, 3, 4, 5};
+  std::vector<int> offset = {0, 0, 1, 1};
+  std::vector<int> shape = {-1, 32, 112, 112};
   std::unique_ptr<arena::TestCase> tester(
       new CropComputeTester(place, "def", offset, shape));
   arena::Arena arena(std::move(tester), place, 2e-5);
