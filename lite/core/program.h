@@ -44,8 +44,11 @@ struct Program {
           const std::vector<Place>& valid_places)
       : scope_(root), valid_places_(valid_places), desc_(desc) {
     CHECK(scope_) << "scope should be init first";
+    LOG(INFO) << "prepare work";
     PrepareWorkspace(desc);
+    LOG(INFO) << "build desc";
     Build(desc);
+    LOG(INFO) << "build desc finished";
   }
 
   std::unique_ptr<Program> Clone() const {

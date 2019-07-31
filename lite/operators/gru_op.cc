@@ -68,7 +68,7 @@ bool GRUOpLite::InferShape() const {
 
 bool GRUOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
   auto input = op_desc.Input("Input").front();
-  auto h0 = op_desc.Input("H0").front();
+  bool has_h0 = op_desc.Input("H0").size() > 0;
   auto weight = op_desc.Input("Weight").front();
   auto batch_gate = op_desc.Output("BatchGate").front();
   auto batch_reset_hidden_prev = op_desc.Output("BatchResetHiddenPrev").front();
@@ -76,7 +76,10 @@ bool GRUOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
   auto hidden = op_desc.Output("Hidden").front();
 
   param_.input = scope->FindVar(input)->GetMutable<lite::Tensor>();
-  param_.h0 = scope->FindVar(h0)->GetMutable<lite::Tensor>();
+  if (has_h0) {
+    param_.h0 =
+        scope->FindVar(op_desc.Input("H0").front())->GetMutable<lite::Tensor>();
+  }
   param_.weight = scope->FindVar(weight)->GetMutable<lite::Tensor>();
 
   param_.batch_gate = scope->FindVar(batch_gate)->GetMutable<lite::Tensor>();
