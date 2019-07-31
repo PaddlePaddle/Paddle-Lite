@@ -102,7 +102,7 @@ void test(int argc, char *argv[]) {
               << " load-time-cost :" << time_diff(time1, time2) << "ms"
               << std::endl;
 
-    float input_data_array[size];
+    float *input_data_array = new float[size];
     std::ifstream in("input.txt", std::ios::in);
     for (int i = 0; i < size; i++) {
       float num;
