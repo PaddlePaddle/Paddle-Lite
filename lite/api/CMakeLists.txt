@@ -121,29 +121,12 @@ if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND WITH_TESTING)
             --model_dir=${LITE_MODEL_DIR}/resnet50 SERIAL)
     add_dependencies(test_resnet50 extern_lite_download_resnet50_tar_gz)
 
-#    lite_cc_test(test_inceptionv4 SRCS inceptionv4_test.cc
-#       DEPS ${lite_model_test_DEPS}
-#       CL_DEPS ${opencl_kernels}
-#       ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/opencl
-#            --model_dir=${LITE_MODEL_DIR}/inception_v4 SERIAL)
-
-#    lite_cc_test(test_efficientnet_lite SRCS EfficientNet_b0_test.cc
-#           DEPS ${lite_model_test_DEPS}
-#           CL_DEPS ${opencl_kernels}
-#            ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/opencl
-#                --model_dir=${LITE_MODEL_DIR}/efficientnet_b0 SERIAL)
-
-#    lite_cc_test(test_mnasnet_lite SRCS mnasnet_test.cc
-#        DEPS ${lite_model_test_DEPS}
-#        CL_DEPS ${opencl_kernels}
-#        ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/opencl
-#            --model_dir=${LITE_MODEL_DIR}/mnasnet SERIAL)
-
-#    lite_cc_test(test_unet SRCS unet_test.cc
-#       DEPS ${lite_model_test_DEPS}
-#       CL_DEPS ${opencl_kernels}
-#       ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/opencl
-#            --model_dir=${LITE_MODEL_DIR}/unet SERIAL)  
+    lite_cc_test(test_inceptionv4 SRCS inceptionv4_test.cc
+       DEPS ${lite_model_test_DEPS}
+       CL_DEPS ${opencl_kernels}
+       ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/opencl
+            --model_dir=${LITE_MODEL_DIR}/inception_v4 SERIAL)
+    add_dependencies(test_inceptionv4 extern_lite_download_inception_v4_simple_tar_gz)
 endif()
 
 # These tests needs CLI arguments, and is not supported in ARM CI.
