@@ -18,7 +18,6 @@
 #include <limits>
 #include <vector>
 #include "lite/arm/math/funcs.h"
-#include "lite/core/op_registry.h"
 #include "lite/core/tensor.h"
 #include "lite/core/type_system.h"
 
@@ -31,7 +30,7 @@ template <>
 void seq_pool_sum<float>(const float* din,
                          float* dout,
                          const std::vector<uint64_t> lod,
-                         int64_t width) {
+                         int width) {
   for (int i = 0; i < static_cast<int>(lod.size()) - 1; ++i) {
     const float* din_ptr = din + lod[i] * width;
     float* dout_ptr = dout + i * width;
@@ -60,7 +59,7 @@ template <>
 void seq_pool_average<float>(const float* din,
                              float* dout,
                              const std::vector<uint64_t> lod,
-                             int64_t width) {
+                             int width) {
   for (int i = 0; i < static_cast<int>(lod.size()) - 1; ++i) {
     const float* din_ptr = din + lod[i] * width;
     float* dout_ptr = dout + i * width;
@@ -94,7 +93,7 @@ template <>
 void seq_pool_sqrt<float>(const float* din,
                           float* dout,
                           const std::vector<uint64_t> lod,
-                          int64_t width) {
+                          int width) {
   for (int i = 0; i < static_cast<int>(lod.size()) - 1; ++i) {
     const float* din_ptr = din + lod[i] * width;
     float* dout_ptr = dout + i * width;
@@ -129,7 +128,7 @@ template <>
 void seq_pool_max<float>(const float* din,
                          float* dout,
                          const std::vector<uint64_t> lod,
-                         int64_t width) {
+                         int width) {
   for (int i = 0; i < static_cast<int>(lod.size()) - 1; ++i) {
     const float* din_ptr = din + lod[i] * width;
     float* dout_ptr = dout + i * width;
@@ -160,7 +159,7 @@ template <>
 void seq_pool_min<float>(const float* din,
                          float* dout,
                          const std::vector<uint64_t> lod,
-                         int64_t width) {
+                         int width) {
   for (int i = 0; i < static_cast<int>(lod.size()) - 1; ++i) {
     const float* din_ptr = din + lod[i] * width;
     float* dout_ptr = dout + i * width;
@@ -191,7 +190,7 @@ template <>
 void seq_pool_first<float>(const float* din,
                            float* dout,
                            const std::vector<uint64_t> lod,
-                           int64_t width) {
+                           int width) {
   for (int i = 0; i < static_cast<int>(lod.size()) - 1; ++i) {
     int64_t height = lod[i + 1] - lod[i];
     const float* din_ptr = din + width * lod[i];
@@ -206,7 +205,7 @@ template <>
 void seq_pool_last<float>(const float* din,
                           float* dout,
                           const std::vector<uint64_t> lod,
-                          int64_t width) {
+                          int width) {
   for (int i = 0; i < static_cast<int>(lod.size()) - 1; ++i) {
     int64_t height = lod[i + 1] - lod[i];
     int64_t seq_len = static_cast<int64_t>(lod[i + 1] - lod[0]);

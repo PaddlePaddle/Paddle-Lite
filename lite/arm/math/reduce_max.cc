@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "lite/arm/math/reduce_max.h"
-#include "lite/arm/math/funcs.h"
+#include "lite/core/tensor.h"
 
 namespace paddle {
 namespace lite {
@@ -160,7 +160,7 @@ void reduce_nc<float>(const float* src,
                       int height_in,
                       int width_in) {
   // reduce n first.
-  DDimLite ddimA({1, channel_in, height_in, width_in});
+  DDim ddimA({1, channel_in, height_in, width_in});
   lite::Tensor tensor_tmp;
   tensor_tmp.Resize(ddimA);
   float* tmp_out = tensor_tmp.mutable_data<float>();
@@ -176,7 +176,7 @@ void reduce_ch<float>(const float* src,
                       int height_in,
                       int width_in) {
   // reduce c first
-  DDimLite ddimA({num_in, 1, height_in, width_in});
+  DDim ddimA({num_in, 1, height_in, width_in});
   lite::Tensor tensor_tmp;
   tensor_tmp.Resize(ddimA);
   float* tmp_out = tensor_tmp.mutable_data<float>();
@@ -192,7 +192,7 @@ void reduce_hw<float>(const float* src,
                       int height_in,
                       int width_in) {
   // reduce h first
-  DDimLite ddimA({num_in, channel_in, 1, width_in});
+  DDim ddimA({num_in, channel_in, 1, width_in});
   lite::Tensor tensor_tmp;
   tensor_tmp.Resize(ddimA);
   float* tmp_out = tensor_tmp.mutable_data<float>();
