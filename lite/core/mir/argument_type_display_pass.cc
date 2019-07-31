@@ -22,18 +22,18 @@ namespace mir {
 class ArgumentTypeDisplayPass : public DebugPass {
  public:
   void Apply(const std::unique_ptr<SSAGraph>& graph) override {
-    LOG(INFO) << "== Argument types ==";
+    VLOG(3) << "== Argument types ==";
     for (auto& node : graph->mutable_nodes()) {
       if (!node.IsArg()) continue;
 
       auto* type = node.AsArg().type;
       if (type) {
-        LOG(INFO) << "* ARG " << node.AsArg().name << " type: " << *type;
+        VLOG(3) << "* ARG " << node.AsArg().name << " type: " << *type;
       } else {
-        LOG(INFO) << "* ARG " << node.AsArg().name << " type: UNK";
+        VLOG(3) << "* ARG " << node.AsArg().name << " type: UNK";
       }
     }
-    LOG(INFO) << "---------------------";
+    VLOG(3) << "---------------------";
   }
 };
 

@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #include "lite/core/program.h"
-#include "lite/core/optimizer.h"
 #include "lite/model_parser/cpp/block_desc.h"
 #include "lite/model_parser/cpp/op_desc.h"
 #include "lite/model_parser/cpp/var_desc.h"
@@ -54,7 +53,7 @@ void Program::Build(const cpp::ProgramDesc& prog) {
     auto& op_desc = *main_block.GetOp<cpp::OpDesc>(i);
     auto op_type = op_desc.Type();
     // if (op_type == "feed" || op_type == "fetch") continue;
-    LOG(INFO) << "create Op [" << op_type << "]";
+    VLOG(4) << "create Op [" << op_type << "]";
     auto op = LiteOpRegistry::Global().Create(op_type);
     CHECK(op) << "no Op found for " << op_type;
     ops_.emplace_back(std::move(op));

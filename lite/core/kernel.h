@@ -21,6 +21,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include "lite/arm/math/type_trans.h"
 #include "lite/core/context.h"
 #include "lite/core/target_wrapper.h"
 #include "lite/core/type_system.h"

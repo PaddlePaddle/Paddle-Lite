@@ -31,7 +31,7 @@ lite_cc_library(beam_search_decode_op SRCS beam_search_decode_op.cc DEPS ${op_DE
 lite_cc_library(prior_box_op SRCS prior_box_op.cc DEPS ${op_DEPS})
 lite_cc_library(density_prior_box_op SRCS density_prior_box_op.cc DEPS ${op_DEPS})
 
-lite_cc_library(op_params SRCS op_params.cc DEPS tensor any framework_proto)
+lite_cc_library(op_params SRCS op_params.cc DEPS tensor any)
 lite_cc_library(dropout_op SRCS dropout_op.cc DEPS ${op_DEPS})
 lite_cc_library(concat_op SRCS concat_op.cc DEPS ${op_DEPS})
 lite_cc_library(pad2d_op SRCS pad2d_op.cc DEPS ${op_DEPS})

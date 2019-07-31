@@ -160,7 +160,6 @@ class Arena {
   }
 
   void TestPrecision() {
-    LOG(INFO) << "Testing precision for " << tester_->op_desc().Type();
     tester_->RunBaseline(tester_->baseline_scope());
     tester_->RunInstruction();
 

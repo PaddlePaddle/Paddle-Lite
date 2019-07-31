@@ -21,6 +21,8 @@
 
 USE_LITE_KERNEL(feed, kHost, kAny, kAny, def);
 USE_LITE_KERNEL(fetch, kHost, kAny, kAny, def);
+USE_LITE_KERNEL(reshape, kHost, kAny, kAny, def);
+USE_LITE_KERNEL(reshape2, kHost, kAny, kAny, def);
 
 #ifdef LITE_WITH_ARM
 USE_LITE_KERNEL(fc, kARM, kFloat, kNCHW, def);
