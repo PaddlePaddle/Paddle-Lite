@@ -155,6 +155,13 @@ void FcComputeInt8<Ptype_out>::PrepareForRun() {
     int m_round = hblock * ((this->m_ + hblock - 1) / hblock);
     ctx.ExtendWorkspace(m_round * this->k_);
   }
+  bool with_bias = param.bias;
+  if (with_bias) {
+    Tensor temp_tensor;
+    temp_tensor.CopyDataFrom(*param.bias);
+    lite::arm::math::trans_fp32_bias_to_int32_basic(
+        &temp_tensor, param.bias, param.input_scale, param.weight_scale);
+  }
 }
 
 template <PrecisionType Ptype_out>

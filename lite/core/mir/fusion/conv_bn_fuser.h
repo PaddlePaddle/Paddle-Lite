@@ -17,6 +17,7 @@
 #include <memory>
 #include <string>
 #include "lite/core/mir/pattern_matcher_high_api.h"
+#include "lite/utils/paddle_enforce.h"
 
 namespace paddle {
 namespace lite {
@@ -31,24 +32,19 @@ class ConvBNFuser : public FuseBase {
 
  private:
   cpp::OpDesc GenOpDesc(const key2nodes_t& matched) override;
-  void ComputeFusedWeight(float* scale_d,
-                          float* mean_d,
-                          float* var_d,
-                          float* bias_d,
-                          float* conv_weight_d,
-                          float eps,
-                          int h,
-                          int w) {
+  void ComputeAlphaAndBeta(float* scale_d,
+                           float* mean_d,
+                           float* var_d,
+                           float* alpha,
+                           float* beta,
+                           float eps,
+                           int h,
+                           int w) {
     for (int i = 0; i < h; i++) {
-      var_d[i] = scale_d[i] / std::sqrt(var_d[i] + eps);
+      alpha[i] = scale_d[i] / std::sqrt(var_d[i] + eps);
     }
     for (int i = 0; i < h; i++) {
-      bias_d[i] += (-mean_d[i]) * var_d[i];
-    }
-    for (int i = 0; i < h; i++) {
-      for (int j = 0; j < w; j++) {
-        conv_weight_d[i * w + j] *= var_d[i];
-      }
+      beta[i] = (-mean_d[i]) * alpha[i];
     }
   }
 

@@ -90,6 +90,13 @@ endif()
 if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND WITH_TESTING)
     set(lite_model_test_DEPS cxx_api mir_passes ${ops} ${host_kernels} ${arm_kernels} ${npu_kernels})
 
+    lite_cc_test(test_mobilenetv1_int8 SRCS mobilenetv1_int8_test.cc
+       DEPS ${lite_model_test_DEPS}
+       CL_DEPS ${opencl_kernels}
+       ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/opencl
+        --model_dir=${LITE_MODEL_DIR}/MobilenetV1_quant SERIAL)
+    add_dependencies(test_mobilenetv1_int8 extern_lite_download_MobileNetV1_quant_tar_gz)
+
     lite_cc_test(test_mobilenetv1 SRCS mobilenetv1_test.cc
        DEPS ${lite_model_test_DEPS}
        CL_DEPS ${opencl_kernels}
@@ -197,16 +204,6 @@ endif()
     #DEPS light_api model_parser target_wrapper_host mir_passes
     #ARM_DEPS ${arm_kernels}) NPU_DEPS ${npu_kernels})
 
-lite_cc_binary(cxx_api_bin SRCS cxx_api_bin_int8.cc
-    DEPS
-    cxx_api
-    model_parser
-    target_wrapper_host
-    mir_passes
-    ${ops} ${host_kernels}
-    ARM_DEPS ${arm_kernels}
-    NPU_DEPS ${npu_kernels}
-    CL_DEPS ${opencl_kernels})
 lite_cc_binary(model_optimize_tool SRCS model_optimize_tool.cc
     DEPS paddle_api_full gflags
     CL_DEPS ${opencl_kernels})

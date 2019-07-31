@@ -23,7 +23,7 @@ namespace lite {
 namespace npu {
 namespace bridge {
 
-TEST(npu_bridge_softmax_op, test) {
+TEST(NPUBridges, softmax) {
   const auto& bridges = lite::npu::bridge::Factory::Instance();
   const auto& supported_lists = bridges.AllFunctions();
   CHECK(bridges.HasType("softmax"));
