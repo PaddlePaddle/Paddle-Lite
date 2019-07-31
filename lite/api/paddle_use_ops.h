@@ -59,6 +59,9 @@ USE_LITE_OP(negative)
 USE_LITE_OP(pad2d)
 USE_LITE_OP(prior_box)
 USE_LITE_OP(density_prior_box)
+USE_LITE_OP(reshape)
+USE_LITE_OP(reshape2)
+USE_LITE_OP(split)
 USE_LITE_OP(fake_quantize_moving_average_abs_max);
 USE_LITE_OP(fake_dequantize_max_abs);
 USE_LITE_OP(calib);
