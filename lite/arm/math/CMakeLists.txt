@@ -95,6 +95,6 @@ if (NOT HAS_ARM_MATH_LIB_DIR)
       pad2d.cc
       negative.cc
       beam_search.cc
-      DEPS ${lite_kernel_deps} framework_proto)
+      DEPS ${lite_kernel_deps})
 endif()
  

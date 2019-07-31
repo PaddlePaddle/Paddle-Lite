@@ -14,13 +14,13 @@
 
 #pragma once
 
-#include <gflags/gflags.h>
 #include "lite/utils/any.h"
 #ifdef LITE_WITH_CUDA
 #include "lite/cuda/blas.h"
 #include "lite/cuda/cuda_utils.h"
 #endif
 #ifdef LITE_WITH_OPENCL
+#include <gflags/gflags.h>
 #include <unordered_map>
 #include "lite/opencl/cl_context.h"
 #include "lite/opencl/cl_runtime.h"

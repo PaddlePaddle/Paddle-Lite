@@ -30,7 +30,7 @@ namespace lite {
 /*
  * Predictor for inference, input a model, it will optimize and execute it.
  */
-class Predictor {
+class LITE_API Predictor {
  public:
   // Create an empty predictor.
   Predictor() { scope_ = std::make_shared<Scope>(); }
@@ -109,7 +109,7 @@ class Predictor {
  *   exe.Run();
  * }
 #ifdef LITE_WITH_X86
-class CXXTrainer {
+class LITE_API CXXTrainer {
  public:
   CXXTrainer(const std::shared_ptr<lite::Scope>& root_scope,
              const Place& preferred_place,

@@ -13,8 +13,7 @@
 // limitations under the License.
 
 #include "lite/api/paddle_api.h"
-#include "lite/api/cxx_api.h"
-#include "lite/api/light_api.h"
+#include "lite/core/tensor.h"
 
 namespace paddle {
 namespace lite_api {
