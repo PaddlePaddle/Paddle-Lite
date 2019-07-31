@@ -101,6 +101,7 @@ const proto::OpDesc::Attr& GetFindAttr(const proto::OpDesc& desc,
 GET_ATTR_IMPL(int32_t, Int32, i);
 GET_ATTR_IMPL(float, Float32, f);
 GET_ATTR_IMPL(bool, Bool, b);
+GET_ATTR_IMPL(int64_t, Int64, l);
 GET_ATTR_IMPL(std::string, String, s);
 #undef GET_ATTR_IMPL
 

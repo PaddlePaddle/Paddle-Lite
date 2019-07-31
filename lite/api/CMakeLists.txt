@@ -124,6 +124,8 @@ if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND WITH_TESTING)
        ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/opencl
             --model_dir=${LITE_MODEL_DIR}/inception_v4 SERIAL)
     add_dependencies(test_inceptionv4 extern_lite_download_inception_v4_simple_tar_gz)
+    lite_cc_test(test_ocr_attention SRCS ocr_attention_test.cc
+       DEPS ${lite_model_test_DEPS})
 endif()
 
 # These tests needs CLI arguments, and is not supported in ARM CI.

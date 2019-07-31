@@ -90,6 +90,10 @@ void OpAttrsAnyToCpp(const OpDescType &any_desc, cpp::OpDesc *cpp_desc) {
         cpp_desc->SetAttr<std::string>(
             name, any_desc.template GetAttr<std::string>(name));
         break;
+      case AttrType::LONG:
+        cpp_desc->SetAttr<int64_t>(name,
+                                   any_desc.template GetAttr<int64_t>(name));
+        break;
       case AttrType::INTS:
         cpp_desc->SetAttr<std::vector<int>>(
             name, any_desc.template GetAttr<std::vector<int>>(name));

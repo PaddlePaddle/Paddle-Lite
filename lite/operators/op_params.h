@@ -490,7 +490,8 @@ struct BeamSearchDecodeParam {
 };
 
 struct Im2SequenceParam {
-  std::vector<lite::Tensor*> X{};
+  const lite::Tensor* X{};
+  const lite::Tensor* Y{};
   lite::Tensor* Out{};
   std::vector<int> kernels{3, 3};
   std::vector<int> strides{1, 1};
