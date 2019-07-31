@@ -561,6 +561,26 @@ struct BeamSearchParam {
   bool is_accumulated;
 };
 
+struct SequencePoolParam {
+  const lite::Tensor* X{};
+  lite::Tensor* Out{};
+  std::string pool_type;
+};
+
+struct SequenceExpandParam {
+  const lite::Tensor* X{};
+  const lite::Tensor* Y{};
+  lite::Tensor* Out{};
+  int ref_level{-1};
+};
+
+struct ReduceMaxParam {
+  const lite::Tensor* X{};
+  lite::Tensor* Out{};
+  std::vector<int> dim{};
+  bool keep_dim{false};
+};
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle

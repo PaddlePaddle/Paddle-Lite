@@ -78,3 +78,6 @@ USE_LITE_OP(read_from_array);
 USE_LITE_OP(gru_unit)
 USE_LITE_OP(gru)
 USE_LITE_OP(beam_search_decode)
+USE_LITE_OP(sequence_expand)
+USE_LITE_OP(sequence_pool)
+USE_LITE_OP(reduce_max)
