@@ -63,7 +63,7 @@ void PrecisionCastPass::ComplementInputs(SSAGraph* graph,
   // if (!in->AsArg().is_weight && !PrecisionCompatibleTo(*in->AsArg().type,
   // *decl_arg_type)) {
   if (!PrecisionCompatibleTo(*in->AsArg().type, *decl_arg_type)) {
-    LOG(INFO) << "found Target unmatched tensor: " << in->AsArg().name
+    LOG(INFO) << "found Precision unmatched tensor: " << in->AsArg().name
               << " for kernel " << inst.op()->DebugString() << " "
               << *in->AsArg().type << " -> " << *decl_arg_type;
     // Add an Cast instruction to make the input compatible with other dist.
@@ -117,7 +117,8 @@ void PrecisionCastPass::AddCastInst(const Type& from,
     const Type* in_arg_ty = kernel->GetInputDeclType("Input");
     const Type* out_arg_ty = kernel->GetOutputDeclType("Out");
     if (in_arg_ty->precision() == from.precision() &&
-        out_arg_ty->precision() == to.precision()) {
+        in_arg_ty->target() == from.target() &&
+        in_arg_ty->layout() == from.layout()) {
       is_found = true;
       selected_kernels.emplace_back(std::move(kernel));
       // we pick the kernel

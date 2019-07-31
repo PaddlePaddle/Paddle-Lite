@@ -79,15 +79,21 @@ class Optimizer {
            "static_kernel_pick_pass",        //
            "variable_place_inference_pass",  //
            "argument_type_display_pass",     //
+
            "type_target_cast_pass",          //
            "variable_place_inference_pass",  //
            "argument_type_display_pass",     //
+
            "io_copy_kernel_pick_pass",       //
            "variable_place_inference_pass",  //
-           "type_precision_cast_pass",       //
            "argument_type_display_pass",     //
-           "trans_weight_pass",              //
-           "runtime_context_assign_pass",    //
+
+           "type_precision_cast_pass",       //
+           "variable_place_inference_pass",  //
+           "argument_type_display_pass",     //
+
+           "trans_weight_pass",            //
+           "runtime_context_assign_pass",  //
            "graph_visualze"}});
     } else {
       RunPasses(passes);

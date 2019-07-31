@@ -53,6 +53,11 @@ struct IoCopyParam {
   lite::Tensor* y{};
 };
 
+struct LayoutParam {
+  const lite::Tensor* x{};
+  lite::Tensor* y{};
+};
+
 struct CalibParam {
   const lite::Tensor* input{};
   lite::Tensor* output{};

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/mir/type_target_cast_pass.h"
+#include "lite/core/mir/type_layout_cast_pass.h"
 #include <list>
 #include <memory>
 #include <string>
@@ -26,7 +26,7 @@ namespace paddle {
 namespace lite {
 namespace mir {
 
-void TypeTargetTransformPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
+void TypeLayoutTransformPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   // Start from inputs of the graph, those should have place set.
   std::list<Node*> nodes;
   for (auto& node : graph->mutable_nodes()) {
@@ -45,7 +45,7 @@ void TypeTargetTransformPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   VLOG(3) << "\n" << Visualize(graph.get());
 }
 
-void TypeTargetTransformPass::ComplementInputs(SSAGraph* graph,
+void TypeLayoutTransformPass::ComplementInputs(SSAGraph* graph,
                                                Node* inst_node,
                                                Node* in) {
   // If this input is out of date.
@@ -62,17 +62,16 @@ void TypeTargetTransformPass::ComplementInputs(SSAGraph* graph,
   CHECK(inst.op_info()->GetInputArgname(in_arg_name, &tmp));
   auto decl_arg_type = inst.picked_kernel().GetInputDeclType(tmp);
   CHECK(in->AsArg().type);
-  if (!TargetCompatibleTo(*in->AsArg().type, *decl_arg_type)) {
-    LOG(INFO) << "found Target unmatched tensor: " << in->AsArg().name
+  if (!LayoutCompatibleTo(*in->AsArg().type, *decl_arg_type)) {
+    LOG(INFO) << "found Layout unmatched tensor: " << in->AsArg().name
               << " for kernel " << inst.op()->DebugString() << " "
               << *in->AsArg().type << " -> " << *decl_arg_type;
-    // Add an IoCopy instruction to make the input compatible with other dist.
-    AddIoCopyInst(
+    AddLayoutInst(
         *in->AsArg().type, *decl_arg_type, in, graph, inst_node, valid_places_);
   }
 }
 
-void TypeTargetTransformPass::AddIoCopyInst(
+void TypeLayoutTransformPass::AddLayoutInst(
     const Type& from,
     const Type& to,
     Node* in,
@@ -80,37 +79,33 @@ void TypeTargetTransformPass::AddIoCopyInst(
     Node* inst_node,
     const std::vector<Place>& valid_places) {
   CHECK(!valid_places.empty()) << "valid_place should be set";
-  // var -> new_transform_op -> new_var -> inst
-  // So there will be a new Argument node and a new IoCopy Statement Node.
 
   CHECK(in->IsArg());
   auto node_id = [&] { return graph->nodes().size(); };
-  auto io_copy_output_name =
+  auto layout_output_name =
       string_format("%s/trans/%d", in->AsArg().name.c_str(), node_id());
-  // TODO(MyPandaShaoxiang) should set same place with input?
-  auto* io_copy_output_arg = graph->NewArgumentNode(io_copy_output_name);
-  auto* io_copy_inst = graph->NewInstructNode();
+  auto* layout_output_arg = graph->NewArgumentNode(layout_output_name);
+  auto* layout_inst = graph->NewInstructNode();
 
-  std::string io_copy_type = in->AsArg().is_weight ? "io_copy_once" : "io_copy";
+  std::string layout_type = "layout";
   // create Op and kernels.
-  auto io_copy_op = LiteOpRegistry::Global().Create(io_copy_type);
-  CHECK(io_copy_op) << "create op [" << io_copy_op << "] failed";
-  // CHECK(io_copy_op);
+  auto layout_op = LiteOpRegistry::Global().Create(layout_type);
+  CHECK(layout_op) << "create op [" << layout_op << "] failed";
+  // CHECK(layout_op);
   // Create the new var manually.
-  inst_node->AsStmt().op()->scope()->Var(io_copy_output_name);
+  inst_node->AsStmt().op()->scope()->Var(layout_output_name);
 
   // Create IoCopy Instruction.
   cpp::OpDesc op_desc;
-  op_desc.SetType(io_copy_type);
+  op_desc.SetType(layout_type);
   op_desc.SetInput("Input", {in->AsArg().name});
-  op_desc.SetOutput("Out", {io_copy_output_name});
+  op_desc.SetOutput("Out", {layout_output_name});
 
-  io_copy_op->Attach(op_desc, inst_node->AsStmt().op()->scope());
-  auto kernels = io_copy_op->CreateKernels(valid_places);
-  LOG(INFO) << "in pass add_io_copy: io_copy create kernels " << kernels.size();
+  layout_op->Attach(op_desc, inst_node->AsStmt().op()->scope());
+  auto kernels = layout_op->CreateKernels(valid_places);
+  LOG(INFO) << "in pass add_layout: layout create kernels " << kernels.size();
   // fix(MyPandaShaoxiang): select kernel that input_dcl_type same as in.type
   bool is_found = false;
-  std::vector<std::unique_ptr<KernelBase>> selected_kernels;
   for (auto& kernel : kernels) {
     const Type* in_arg_ty = kernel->GetInputDeclType("Input");
     const Type* out_arg_ty = kernel->GetOutputDeclType("Out");
@@ -120,11 +115,11 @@ void TypeTargetTransformPass::AddIoCopyInst(
       is_found = true;
       selected_kernels.emplace_back(std::move(kernel));
       // we pick the kernel
-      io_copy_inst->AsStmt(io_copy_type, std::move(kernels), io_copy_op);
+      layout_inst->AsStmt(layout_type, std::move(kernels), layout_op);
       break;
     }
   }
-  CHECK(is_found) << "Can't find a io_copy  kernel for io_copy op: " << from
+  CHECK(is_found) << "Can't find a layout  kernel for layout op: " << from
                   << ":" << in->AsArg().name << "->" << to << ":"
                   << inst_node->AsStmt().op_info()->Type();
 
@@ -132,16 +127,16 @@ void TypeTargetTransformPass::AddIoCopyInst(
   RemoveDirectedLink(in, inst_node);
 
   // Update the original instruction OpDesc.
-  // Update its input to the io_copy_output_name
+  // Update its input to the layout_output_name
   // Add new link, var -> new_inst, new_inst->newarg, newarg->inst
-  DirectedLink(in, io_copy_inst);
-  DirectedLink(io_copy_inst, io_copy_output_arg);
-  DirectedLink(io_copy_output_arg, inst_node);
+  DirectedLink(in, layout_inst);
+  DirectedLink(layout_inst, layout_output_arg);
+  DirectedLink(layout_output_arg, inst_node);
 
   // reset opdesc and update kernel information
   UpdateInputTo(inst_node->AsStmt().op()->mutable_op_info(),
                 in->AsArg().name,
-                io_copy_output_name);
+                layout_output_name);
   auto original_selected_kernel =
       std::move(inst_node->AsStmt().kernels().front());
   auto update_op_info = *inst_node->AsStmt().op_info();
@@ -168,7 +163,7 @@ void TypeTargetTransformPass::AddIoCopyInst(
   graph->CheckValid();
 }
 
-void TypeTargetTransformPass::SetValidPlaces(
+void TypeLayoutTransformPass::SetValidPlaces(
     const std::vector<Place>& valid_places) {
   CHECK(!valid_places.empty());
   valid_places_ = valid_places;
@@ -178,5 +173,5 @@ void TypeTargetTransformPass::SetValidPlaces(
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_MIR_PASS(type_target_cast_pass,
-                  paddle::lite::mir::TypeTargetTransformPass);
+REGISTER_MIR_PASS(type_layout_cast_pass,
+                  paddle::lite::mir::TypeLayoutTransformPass);

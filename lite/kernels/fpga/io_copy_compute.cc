@@ -105,9 +105,15 @@ REGISTER_LITE_KERNEL(io_copy,
                      kAny,
                      kAny,
                      paddle::lite::kernels::fpga::IoCopyHostToFpgaCompute,
-                     host_to_device)
-    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kHost))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kFPGA))})
+                     host_to_device_float_chw)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kNCHW))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kFPGA),
+                                       PRECISION(kFloat),
+                                       DATALAYOUT(kNCHW))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(io_copy,
@@ -115,9 +121,15 @@ REGISTER_LITE_KERNEL(io_copy,
                      kAny,
                      kAny,
                      paddle::lite::kernels::fpga::IoCopyFpgaToHostCompute,
-                     device_to_host)
-    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kFPGA))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
+                     device_to_host_float_chw)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kFPGA),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kNCHW))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kHost),
+                                       PRECISION(kFloat),
+                                       DATALAYOUT(kNCHW))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(io_copy_once,
@@ -125,9 +137,15 @@ REGISTER_LITE_KERNEL(io_copy_once,
                      kAny,
                      kAny,
                      paddle::lite::kernels::fpga::IoCopyHostToFpgaCompute,
-                     host_to_device)
-    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kHost))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kFPGA))})
+                     host_to_device_float_chw)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kNCHW))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kFPGA),
+                                       PRECISION(kFloat),
+                                       DATALAYOUT(kNCHW))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(io_copy_once,
@@ -135,7 +153,13 @@ REGISTER_LITE_KERNEL(io_copy_once,
                      kAny,
                      kAny,
                      paddle::lite::kernels::fpga::IoCopyFpgaToHostCompute,
-                     device_to_host)
-    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kFPGA))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
+                     device_to_host_float_chw)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kFPGA),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kNCHW))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kHost),
+                                       PRECISION(kFloat),
+                                       DATALAYOUT(kNCHW))})
     .Finalize();
