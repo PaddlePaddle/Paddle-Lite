@@ -19,7 +19,9 @@
 #include <memory>
 #include <string>
 #include <vector>
+#ifndef LITE_ON_TINY_PUBLISH
 #include "lite/core/framework.pb.h"
+#endif
 #include "lite/core/scope.h"
 #include "lite/core/variable.h"
 #include "lite/model_parser/compatible_pb.h"
@@ -30,6 +32,7 @@ namespace lite {
 
 enum class LiteModelType { kProtobuf = 0, kNaiveBuffer, UNK };
 
+#ifndef LITE_ON_TINY_PUBLISH
 // Read a __model__ file.
 std::unique_ptr<framework::proto::ProgramDesc> LoadProgram(
     const std::string& path);
@@ -59,6 +62,7 @@ void SerializeTensor(std::ostream& os,
 void TensorToStream(std::ostream& os, const lite::Tensor& tensor);
 
 void ReadBinaryFile(const std::string& filename, std::string* contents);
+#endif
 
 // For naive buffer
 void LoadParamNaive(const std::string& path,

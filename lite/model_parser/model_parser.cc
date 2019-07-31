@@ -23,13 +23,16 @@
 #include "lite/model_parser/naive_buffer/param_desc.h"
 #include "lite/model_parser/naive_buffer/program_desc.h"
 #include "lite/model_parser/naive_buffer/var_desc.h"
+#ifndef LITE_ON_TINY_PUBLISH
 #include "lite/model_parser/pb/program_desc.h"
 #include "lite/model_parser/pb/var_desc.h"
+#endif
 #include "lite/utils/io.h"
 
 namespace paddle {
 namespace lite {
 
+#ifndef LITE_ON_TINY_PUBLISH
 int SizeOfType(framework::proto::VarType::Type type) {
   using Type = framework::proto::VarType::Type;
   switch (static_cast<int>(type)) {
@@ -289,6 +292,7 @@ void SerializeTensor(std::ostream &os,
   const auto &tensor = var->Get<lite::Tensor>();
   TensorToStream(os, tensor);
 }
+#endif
 
 /// For navie buffer
 template <typename T>
