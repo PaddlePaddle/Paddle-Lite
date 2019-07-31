@@ -36,6 +36,7 @@ lite_cc_library(sequence_softmax_compute_arm SRCS sequence_softmax_compute.cc DE
 lite_cc_library(norm_compute_arm SRCS norm_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(logical_compute_arm SRCS logical_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(less_than_arm SRCS compare_compute.cc DEPS ${lite_kernel_deps} math_arm)
+lite_cc_library(while_compute_arm SRCS while_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(topk_compute_arm SRCS topk_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(increment_compute_arm SRCS increment_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(write_to_array_compute_arm SRCS write_to_array_compute.cc DEPS ${lite_kernel_deps} math_arm)
@@ -96,6 +97,7 @@ set(arm_kernels
     norm_compute_arm
     logical_compute_arm
     less_than_arm
+    while_compute_arm
     topk_compute_arm
     increment_compute_arm
     write_to_array_compute_arm

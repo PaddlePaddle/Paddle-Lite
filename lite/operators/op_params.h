@@ -16,9 +16,10 @@
 #include <string>
 #include <vector>
 #include "lite/core/framework.pb.h"
+#include "lite/core/scope.h"
 #include "lite/core/tensor.h"
+#include "lite/model_parser/cpp/block_desc.h"
 #include "lite/utils/all.h"
-
 /*
  * This file contains all the argument parameter data structure for operators.
  */
@@ -521,6 +522,14 @@ struct CompareParam {
   bool force_cpu{0};
   int axis{-1};
   lite::Tensor* Out{};
+};
+
+struct WhileParam {
+  const Scope* scope;
+  Tensor* cond;
+  cpp::BlockDesc* sub_block;
+  std::vector<Tensor*> x{};
+  std::vector<Tensor*> outs{};
 };
 
 struct TopkParam {

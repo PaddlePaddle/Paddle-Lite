@@ -109,6 +109,10 @@ void OpAttrsAnyToCpp(const OpDescType &any_desc, cpp::OpDesc *cpp_desc) {
         cpp_desc->SetAttr<std::vector<int64_t>>(
             name, any_desc.template GetAttr<std::vector<int64_t>>(name));
         break;
+      case AttrType::BLOCK:
+        cpp_desc->SetAttr<int32_t>(name,
+                                   any_desc.template GetAttr<int32_t>(name));
+        break;
       default:
         LOG(FATAL) << "Unsupported attr type found " << static_cast<int>(type);
     }
