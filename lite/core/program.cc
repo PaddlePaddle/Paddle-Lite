@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #include "lite/core/program.h"
-#include "lite/core/optimizer.h"
 #include "lite/model_parser/cpp/block_desc.h"
 #include "lite/model_parser/cpp/op_desc.h"
 #include "lite/model_parser/cpp/var_desc.h"

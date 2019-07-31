@@ -18,7 +18,9 @@ limitations under the License. */
 #include "lite/api/paddle_lite_factory_helper.h"
 #include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
+#ifndef LITE_ON_TINY_PUBLISH
 #include "lite/api/paddle_use_passes.h"
+#endif
 #include "lite/kernels/arm/activation_compute.h"
 #include "lite/kernels/arm/batch_norm_compute.h"
 #include "lite/kernels/arm/calib_compute.h"

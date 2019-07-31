@@ -14,6 +14,7 @@
 
 #pragma once
 #include <string>
+#include "lite/utils/macros.h"
 
 namespace paddle {
 namespace lite_api {
@@ -94,7 +95,7 @@ const std::string& DataLayoutRepr(DataLayoutType layout);
  * Place specifies the execution context of a Kernel or input/output for a
  * kernel. It is used to make the analysis of the MIR more clear and accurate.
  */
-struct Place {
+struct LITE_API Place {
   TargetType target{TARGET(kUnk)};
   PrecisionType precision{PRECISION(kUnk)};
   DataLayoutType layout{DATALAYOUT(kUnk)};

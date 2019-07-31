@@ -26,9 +26,7 @@
 #include "lite/core/program.h"
 #include "lite/core/tensor.h"
 #include "lite/core/types.h"
-#include "lite/model_parser/cpp/program_desc.h"
 #include "lite/model_parser/model_parser.h"
-#include "lite/model_parser/pb/op_desc.h"
 
 namespace paddle {
 namespace lite {
@@ -37,7 +35,7 @@ namespace lite {
  * The light weight predictor, mainly for mobile. It loads an optimized model,
  * and will not depend on the MIR or perform latter optimization.
  */
-class LightPredictor {
+class LITE_API LightPredictor {
  public:
   explicit LightPredictor(const std::string& model_dir,
                           LiteModelType model_type = LiteModelType::kProtobuf);

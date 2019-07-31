@@ -24,7 +24,7 @@ namespace lite {
 
 // Malloc memory for a specific Target. All the targets should be an element in
 // the `switch` here.
-void* TargetMalloc(TargetType target, size_t size);
+LITE_API void* TargetMalloc(TargetType target, size_t size);
 
 // Free memory for a specific Target. All the targets should be an element in
 // the `switch` here.

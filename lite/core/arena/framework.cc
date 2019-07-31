@@ -20,7 +20,6 @@ namespace lite {
 namespace arena {
 
 void TestCase::CreateInstruction() {
-  LOG(INFO) << "Create op for " << op_desc().Type();
   auto op = LiteOpRegistry::Global().Create(op_desc().Type());
   CHECK(op) << "no op for " << op_desc().Type();
   op->Attach(*op_desc_, inst_scope_);

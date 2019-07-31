@@ -112,6 +112,7 @@ Java_com_baidu_paddle_lite_PaddlePredictor_newCppPaddlePredictor__Lcom_baidu_\
 paddle_lite_CxxConfig_2(JNIEnv *env,
                         jobject jpaddle_predictor,
                         jobject jcxxconfig) {
+#ifndef LITE_ON_TINY_PUBLISH
   CxxConfig config = jcxxconfig_to_cpp_cxxconfig(env, jcxxconfig);
   std::shared_ptr<PaddlePredictor> predictor =
       paddle::lite_api::CreatePaddlePredictor(config);
@@ -121,6 +122,9 @@ paddle_lite_CxxConfig_2(JNIEnv *env,
   std::shared_ptr<PaddlePredictor> *predictor_pointer =
       new std::shared_ptr<PaddlePredictor>(predictor);
   return reinterpret_cast<jlong>(predictor_pointer);
+#else
+  return 0;
+#endif
 }
 
 JNIEXPORT jlong JNICALL

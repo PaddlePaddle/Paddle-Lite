@@ -15,8 +15,8 @@
 #pragma once
 #include <string>
 #include <vector>
-#include "lite/core/framework.pb.h"
 #include "lite/core/tensor.h"
+#include "lite/model_parser/desc_apis.h"
 #include "lite/utils/all.h"
 
 /*
@@ -290,7 +290,7 @@ struct MeanGradParam {
 
 /// ----------------------- fill_constant operators ----------------------
 struct FillConstantParam {
-  int dtype{framework::proto::VarType::FP32};
+  int dtype{static_cast<int>(VarDescAPI::VarDataType::FP32)};
   std::vector<int64_t> shape{};
   float value{0.0f};
   // useless for x86, keep it for compatibility
@@ -322,7 +322,7 @@ struct FakeDequantizeMaxAbsParam {
 
 /// ----------------------- sgd operators ----------------------
 struct SGDParam {
-  int dtype{framework::proto::VarType::FP32};
+  int dtype{static_cast<int>(VarDescAPI::VarDataType::FP32)};
 
   const lite::Tensor* Param{};
   const lite::Tensor* LearningRate{};
@@ -336,7 +336,7 @@ struct UniformRandomParam {
   float min{-1.0f};
   float max{1.0f};
   int seed{0};
-  int dtype{framework::proto::VarType::FP32};
+  int dtype{static_cast<int>(VarDescAPI::VarDataType::FP32)};
   lite::Tensor* Out{};
 };
 /// ----------------------- negative operators --------------

@@ -14,6 +14,7 @@
 
 #include "lite/api/light_api.h"
 #include "lite/api/paddle_api.h"
+#include "lite/model_parser/model_parser.h"
 
 namespace paddle {
 namespace lite_api {
@@ -38,7 +39,12 @@ class LightPredictorImpl : public PaddlePredictor {
 };
 
 void LightPredictorImpl::Init(const MobileConfig& config) {
+#ifdef LITE_ON_TINY_PUBLISH
+  raw_predictor_.reset(new lite::LightPredictor(
+      config.model_dir(), lite::LiteModelType::kNaiveBuffer));
+#else
   raw_predictor_.reset(new lite::LightPredictor(config.model_dir()));
+#endif
 }
 
 std::unique_ptr<Tensor> LightPredictorImpl::GetInput(int i) {
