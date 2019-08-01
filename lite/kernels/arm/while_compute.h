@@ -32,6 +32,7 @@ class StepExecutor {
   StepExecutor(cpp::BlockDesc *block, Scope *scope, Place place)
       : scope_(scope), place_(place) {
     int32_t op_size = block->OpsSize();
+    LOG(INFO) << "block size" << op_size;
     for (int32_t i = 0; i < op_size; ++i) {
       cpp::OpDesc *op_desc = block->template GetOp<cpp::OpDesc>(i);
       auto op_handler = lite::LiteOpRegistry::Global().Create(op_desc->Type());
@@ -44,7 +45,9 @@ class StepExecutor {
   }
 
   void Run() {
+    LOG(INFO) << "op size" << ops_of_block_.size();
     for (auto &op_handler : ops_of_block_) {
+      LOG(INFO) << op_handler->op_info()->Type();
       op_handler->InferShape();
       op_handler->Run();
     }

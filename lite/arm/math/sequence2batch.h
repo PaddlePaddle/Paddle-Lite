@@ -47,6 +47,7 @@ class CopyMatrixRowsFunctor {
     auto* src_data = src.data<T>();
     auto* dst_data = dst->mutable_data<T>();
     const int sz = width * sizeof(T);
+    LOG(INFO) << "src index" << is_src_index;
     if (is_src_index) {
       for (int i = 0; i < height; ++i) {
         TargetCopy(TARGET(kARM),
@@ -55,13 +56,18 @@ class CopyMatrixRowsFunctor {
                    sz);
       }
     } else {
+      LOG(INFO) << index_lod.size() << " " << height;
       for (int i = 0; i < height; ++i) {
+        LOG(INFO) << index_lod[i];
+        LOG(INFO) << dst_data;
+        LOG(INFO) << src_data;
         TargetCopy(TARGET(kARM),
                    dst_data + index[i] * width,
                    src_data + i * width,
                    sz);
       }
     }
+    LOG(INFO) << "src index finished" << is_src_index;
   }
 };
 

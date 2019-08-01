@@ -35,12 +35,17 @@ void WriteToArrayCompute::Run() {
       param.Out.push_back(&tmp);
     }
   }
+  LOG(INFO) << "id" << id;
   param.Out[id]->Resize(param.X->dims());
+  LOG(INFO) << "before mute lod";
   auto out_lod = param.Out[id]->mutable_lod();
   *out_lod = param.X->lod();
-  auto* o_data = param.Out[id]->mutable_data<float>();
+  LOG(INFO) << "before mute data";
+  auto* o_data = param.Out[id]->mutable_data<float>(TARGET(kHost));
+  LOG(INFO) << "mute data finish";
   int input_size = param.X->numel();
   memcpy(o_data, x_data, sizeof(float) * input_size);
+  LOG(INFO) << "write_to_array finished";
 }
 
 }  // namespace arm

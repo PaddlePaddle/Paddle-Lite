@@ -34,6 +34,7 @@ void WhileCompute::PrepareForRun() {
 void WhileCompute::Run() {
   auto &param = Param<operators::WhileParam>();
   while (param.cond->data<bool>()[0]) {
+    LOG(INFO) << "condition" << param.cond->data<bool>()[0];
     executor_->Run();
   }
 }
