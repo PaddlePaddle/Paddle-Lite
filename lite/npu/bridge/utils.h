@@ -71,6 +71,10 @@ std::shared_ptr<ge::Operator> CvtNode2Tensor(const lite::mir::Node* arg_node);
 
 std::shared_ptr<ge::Operator> CvtNode(lite::mir::Node* var_node,
                                       const Scope* scope);
+
+int16_t float2half(float f);
+float half2float(int16_t h);
+
 }  // namespace bridge
 }  // namespace npu
 }  // namespace lite

@@ -159,6 +159,31 @@ std::shared_ptr<ge::Operator> CvtNode(lite::mir::Node* var_node,
   return nullptr;
 }
 
+int16_t float2half(float f) {
+  int32_t hs, he, hm, *ptr;
+  int16_t rlt;
+  ptr = reinterpret_cast<int32_t*>(&f);
+  hs = ((*ptr) & 0x80000000) >> 16;
+  he = ((*ptr) & 0x7f800000) >> 23;
+  he = he - 0x70;
+  he = he << 10;
+  hm = ((*ptr) & 0x007fffff) >> 13;
+  rlt = hs | he | hm;
+  return rlt;
+}
+
+float half2float(int16_t h) {
+  int32_t fs, fe, fm, rlt;
+  int16_t* ptr = &h;
+  fs = ((*ptr) & 0x8000) << 16;
+  fe = ((*ptr) & 0x7c00) >> 10;
+  fe = fe + 0x70;
+  fe = fe << 23;
+  fm = ((*ptr) & 0x03ff) << 13;
+  rlt = fs | fe | fm;
+  return *(reinterpret_cast<float*>(&rlt));
+}
+
 }  // namespace bridge
 }  // namespace npu
 }  // namespace lite
