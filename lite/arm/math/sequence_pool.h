@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <vector>
+#include "lite/core/tensor.h"
 #pragma once
 
 namespace paddle {
