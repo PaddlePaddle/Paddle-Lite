@@ -126,6 +126,7 @@ USE_LITE_KERNEL(fusion_elementwise_add_activation, kOpenCL, kFloat, kNCHW, def);
 USE_LITE_KERNEL(pool2d, kOpenCL, kFloat, kNCHW, def);
 USE_LITE_KERNEL(relu, kOpenCL, kFloat, kNCHW, def);
 USE_LITE_KERNEL(depthwise_conv2d, kOpenCL, kFloat, kNCHW, def);
+USE_LITE_KERNEL(conv2d, kOpenCL, kFloat, kNCHW, def);
 #endif
 
 #ifdef LITE_WITH_NPU
