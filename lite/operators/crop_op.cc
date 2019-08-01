@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/operators/pad2d_op.h"
+#include "lite/operators/crop_op.h"
 #include "lite/core/op_lite.h"
 #include "lite/core/op_registry.h"
 
@@ -20,34 +20,31 @@ namespace paddle {
 namespace lite {
 namespace operators {
 
-bool Pad2dOpLite::CheckShape() const {
-  CHECK_GT_OR_FALSE(param_.X->dims().size(), 1UL);
+bool CropOpLite::CheckShape() const {
+  CHECK_OR_FALSE(param_.X);
   CHECK_OR_FALSE(param_.Out);
-  CHECK(param_.mode == "constant" || param_.mode == "reflect" ||
-        param_.mode == "edge")
-      << "Invilid mode.";
-  CHECK_EQ(param_.paddings.size(), 4UL);
   return true;
 }
 
-bool Pad2dOpLite::InferShape() const {
+bool CropOpLite::InferShape() const {
   // nchw
   auto x_dims = param_.X->dims();
-  int out_h = x_dims[2] + param_.paddings[0] + param_.paddings[1];
-  int out_w = x_dims[3] + param_.paddings[2] + param_.paddings[3];
-  param_.Out->Resize(lite::DDim({x_dims[0], x_dims[1], out_h, out_w}));
+  lite::DDim output_shape(x_dims);
+  output_shape[0] = x_dims[0];
+  output_shape[1] = param_.shape[1];
+  output_shape[2] = param_.shape[2];
+  output_shape[3] = param_.shape[3];
+  param_.Out->Resize(output_shape);
   return true;
 }
 
 // TODO(Superjomn) replace framework::OpDesc with a lite one.
-bool Pad2dOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
+bool CropOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
   param_.X = scope->FindVar(op_desc.Input("X").front())->GetMutable<Tensor>();
   param_.Out =
       scope->FindVar(op_desc.Output("Out").front())->GetMutable<Tensor>();
-  param_.mode = op_desc.GetAttr<std::string>("mode");
-  param_.pad_value = op_desc.GetAttr<float>("pad_value");
-  param_.paddings = op_desc.GetAttr<std::vector<int>>("paddings");
-  param_.data_format = op_desc.GetAttr<std::string>("data_format");
+  param_.offsets = op_desc.GetAttr<std::vector<int>>("offsets");
+  param_.shape = op_desc.GetAttr<std::vector<int>>("shape");
   return true;
 }
 
@@ -55,4 +52,4 @@ bool Pad2dOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(pad2d, paddle::lite::operators::Pad2dOpLite);
+REGISTER_LITE_OP(crop, paddle::lite::operators::CropOpLite);

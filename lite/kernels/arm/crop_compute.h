@@ -16,27 +16,31 @@
 #include <algorithm>
 #include <vector>
 #include "lite/core/kernel.h"
-#include "lite/operators/pad2d_op.h"
+#include "lite/operators/crop_op.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace arm {
 
-class Pad2dCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+class CropCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
  public:
-  using param_t = operators::Pad2dParam;
+  using param_t = operators::CropParam;
 
   void Run() override;
-
-  virtual ~Pad2dCompute() = default;
+  virtual ~CropCompute() = default;
+  void crop_fun(const lite::Tensor* input, lite::Tensor* output);
 
  private:
-  int mode_;
-  std::vector<int> pad_h_{0, 0};
-  std::vector<int> pad_w_{0, 0};
-  float pad_value_ = 0.f;
-  std::string data_format_{"NCHW"};
+  std::vector<int> offsets_;
+  std::vector<int> shape_;
+
+  int c_off;
+  int h_off;
+  int w_off;
+  int c_end;
+  int h_end;
+  int w_end;
 };
 
 }  // namespace arm

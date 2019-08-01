@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/arm/pad2d_compute.h"
+#include "lite/kernels/arm/crop_compute.h"
 #include <string>
 #include <vector>
 #include "lite/arm/math/funcs.h"
@@ -25,38 +25,43 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
-void Pad2dCompute::Run() {
-  auto& param = Param<operators::Pad2dParam>();
+void CropCompute::crop_fun(const lite::Tensor* input, lite::Tensor* output) {
+  auto input_dims = input->dims();
+  int num = input_dims[0];
+  int in_c = input_dims[1];
+  int in_h = input_dims[2];
+  int in_w = input_dims[3];
+  const float* ptr_in = input->data<float>();
+  float* ptr_out = output->mutable_data<float>();
+  for (int i = 0; i < num; ++i) {
+    int offset_n = i * in_c * in_h * in_w;
+    for (int j = c_off; j < c_end; ++j) {
+      int offset_c = offset_n + j * in_h * in_w;
+      for (int k = h_off; k < h_end; ++k) {
+        int offset_h = offset_c + k * in_w;
+        for (int l = w_off; l < w_end; ++l) {
+          ptr_out[0] = ptr_in[offset_h + l];
+          ptr_out++;
+        }
+      }
+    }
+  }
+}
+void CropCompute::Run() {
+  auto& param = Param<operators::CropParam>();
   const lite::Tensor* inputs = param.X;
   auto* out = param.Out;
+  offsets_ = param.offsets;
+  shape_ = param.shape;
 
-  if (param.mode == "constant") {
-    mode_ = 0;
-  } else if (param.mode == "reflect") {
-    mode_ = 1;
-  } else if (param.mode == "edge") {
-    mode_ = 2;
-  } else {
-    LOG(FATAL) << "Unknown mode type";
-  }
+  c_off = param.offsets[1];
+  h_off = param.offsets[2];
+  w_off = param.offsets[3];
+  c_end = shape_[1] + c_off;
+  h_end = shape_[2] + h_off;
+  w_end = shape_[3] + w_off;
+  crop_fun(inputs, out);
 
-  pad_h_ = {param.paddings[0], param.paddings[1]};
-  pad_w_ = {param.paddings[2], param.paddings[3]};
-  pad_value_ = param.pad_value;
-  data_format_ = param.data_format;
-  if (mode_ == 2) {
-    // nchw
-    auto input_dims = inputs->dims();
-    CHECK_LE(pad_h_[0], input_dims[2] - 1)
-        << "pad top size must <= inputs height - 1";
-    CHECK_LE(pad_h_[1], input_dims[2] - 1)
-        << "pad bottom size must <= inputs height - 1";
-    CHECK_LE(pad_w_[0], input_dims[3] - 1)
-        << "pad left size must <= inputs width - 1";
-    CHECK_LE(pad_w_[1], input_dims[3] - 1)
-        << "pad right size must  <= inputs width - 1";
-  }
-  lite::arm::math::pad2d_func(inputs, out, mode_, pad_h_, pad_w_, pad_value_);
   return;
 }
 
@@ -66,7 +71,7 @@ void Pad2dCompute::Run() {
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(
-    pad2d, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::Pad2dCompute, def)
+    crop, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::CropCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
