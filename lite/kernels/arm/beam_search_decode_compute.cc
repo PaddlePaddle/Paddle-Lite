@@ -291,6 +291,6 @@ REGISTER_LITE_KERNEL(beam_search_decode,
                      def)
     .BindInput("Ids", {LiteType::GetTensorListTy(TARGET(kARM))})
     .BindInput("Scores", {LiteType::GetTensorListTy(TARGET(kARM))})
-    .BindInput("SentenceScores", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("SentenceScores", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("SentenceIds", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("SentenceScores", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
