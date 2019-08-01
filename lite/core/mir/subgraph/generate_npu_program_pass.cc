@@ -48,7 +48,7 @@ lite::npu::bridge::node_map_type GenerateNPUProgramPass::CvtOpNodes(
     key2nodes_t* matched) {
   lite::npu::bridge::node_map_type failed;
   if (!op_node->IsStmt()) {
-    LOG(INFO) << "stop return -------------";
+    LOG(INFO) << "stop return failed";
     return failed;
   }
   auto* stmt = op_node->stmt();
@@ -72,34 +72,35 @@ lite::npu::bridge::node_map_type GenerateNPUProgramPass::CvtOpNodes(
   nodes2rm->insert(op_node);
   for (auto& var_node : op_node->outlinks) {
     for (auto& next_op_node : var_node->outlinks) {
+      LOG(INFO) << "next op type: " << next_op_node->AsStmt().op_type();
       if (next_op_node->AsStmt().subgraph_id() != sub_id) {
         // this is the end condition
         // TODO(TJ): when enable more inputs and outputs this is bugy
-        LOG(INFO) << "------------- should once!";
+        LOG(INFO) << "--- should return once ---";
+        // TODO(TJ): matched output could be vector
         matched->insert(std::make_pair("Output", var_node));
         return outputs_map;
       } else {
-        LOG(INFO) << "argnames: ";
-
-        for (auto sss : next_op_node->AsStmt().op_info()->input_argnames()) {
-          LOG(INFO) << sss;
-        }
-        LOG(INFO) << "input argnames: ";
-
-        for (auto sss : next_op_node->AsStmt().op_info()->input_names()) {
-          LOG(INFO) << sss;
-        }
-
+        // LOG(INFO) << "argnames: ";
+        // for (auto sss : next_op_node->AsStmt().op_info()->input_argnames()) {
+        //   LOG(INFO) << sss;
+        // }
+        // LOG(INFO) << "input argnames: ";
+        // for (auto sss : next_op_node->AsStmt().op_info()->input_names()) {
+        //   LOG(INFO) << sss;
+        // }
         for (auto& i_node : next_op_node->inlinks) {
           CHECK(i_node->IsArg());
           auto& arg = i_node->AsArg();
           LOG(INFO) << arg.name;
           if (outputs_map.count(arg.name)) continue;
-          LOG(INFO) << arg.name;
-          outputs_map.insert(std::make_pair(
-              arg.name,
-              lite::npu::bridge::CvtNode(
-                  i_node, next_op_node->AsStmt().op()->scope())));
+          if (!arg.is_weight) {
+            LOG(INFO) << "Data arg name:" << arg.name;
+            outputs_map.insert(std::make_pair(
+                arg.name,
+                lite::npu::bridge::CvtNode(
+                    i_node, next_op_node->AsStmt().op()->scope())));
+          }
         }
         nodes2rm->insert(var_node);
         return CvtOpNodes(
@@ -116,9 +117,8 @@ void GenerateNPUProgramPass::ConvertSubgraph(
   std::unordered_set<const Node*> nodes2rm_all;
 
   auto items = graph->StmtTopologicalOrder();
-  LOG(INFO) << "-------------";
   for (int id = 1; id <= sub_num; ++id) {
-    LOG(INFO) << "-------------subgraph_id:" << id;
+    LOG(INFO) << "Converting subgraph_id:" << id;
     for (auto& op_node : items) {
       std::unordered_set<const Node*> nodes2rm;
       if (!op_node->IsStmt()) continue;
@@ -133,38 +133,36 @@ void GenerateNPUProgramPass::ConvertSubgraph(
       std::string data_name = "data_subgraph_" + std::to_string(id);
       lite::npu::bridge::node_map_type npu_inputs_map;
       int name_id = 0;
-      LOG(INFO) << "-----op_type:" << stmt.op_type();
+      LOG(INFO) << "op_type: " << stmt.op_type();
       std::vector<std::string> actual_input_argnames;
       for (auto& arg_node : op_node->inlinks) {
         CHECK(arg_node->IsArg());
         const auto& arg = arg_node->AsArg();
-        LOG(INFO) << arg.name;
-        // TODO(TJ): do not handle weights here
-        npu_inputs_map.insert(std::make_pair(
-            arg.name, lite::npu::bridge::CvtNode(arg_node, scope)));
         if (!arg_node->AsArg().is_weight) {
+          LOG(INFO) << "Input arg name: " << arg.name;
+          npu_inputs_map.insert(std::make_pair(
+              arg.name, lite::npu::bridge::CvtNode(arg_node, scope)));
+          // TODO(TJ): Here matched inputs should also be input vector
           matched["Input"] = arg_node;
-          actual_input_argnames.push_back(arg.name);
           name_id++;
         }
       }
       CHECK_EQ(name_id, 1) << "mobilenetv1 only have one input data!";
-      auto npu_outputs_map =  // here is just one op yet, need to be vector
-          CvtOpNodes(
-              cvtfunc_map, op_node, npu_inputs_map, id, &nodes2rm, &matched);
+      auto npu_outputs_map = CvtOpNodes(
+          cvtfunc_map, op_node, npu_inputs_map, id, &nodes2rm, &matched);
       if (!npu_outputs_map.empty()) {
         LOG(INFO) << "[NPU] subgraph " << id << ": output not empty ";
-        ge::Graph npu_subgraph("npu_subgraph_" + id);
         std::vector<ge::Operator> inputs;
         std::vector<ge::Operator> outputs;
-        for (auto& i_name : actual_input_argnames) {
-          LOG(INFO) << " data argname:" << i_name;
-          CHECK(npu_inputs_map.count(i_name));
-          inputs.emplace_back(*(npu_inputs_map.at(i_name)));
+        for (auto& i : npu_inputs_map) {
+          LOG(INFO) << "input data argname:" << i.first
+                    << ", ptr: " << i.second;
+          inputs.emplace_back(*(i.second));
         }
-        for (auto& o : npu_outputs_map) {
-          LOG(INFO) << o.first;
-          outputs.emplace_back(*(o.second));
+        for (auto& i : npu_outputs_map) {
+          LOG(INFO) << "output data argname:" << i.first
+                    << ", ptr: " << i.second;
+          outputs.emplace_back(*(i.second));
         }
 
         std::string model_name("hiai_npu_client_" + std::to_string(id) + ".om");
@@ -174,7 +172,6 @@ void GenerateNPUProgramPass::ConvertSubgraph(
           LOG(WARNING) << "Build NPU failed subgraph " << id;
           break;
         }
-
         LOG(INFO) << "[NPU] Build NPU Client success subgraph " << id;
 
         // Then InsertNewNode(graph, matched); make one function
@@ -198,13 +195,11 @@ void GenerateNPUProgramPass::ConvertSubgraph(
 
         IR_NODE_LINK_TO(matched.at("Input"), new_op_node);
         IR_NODE_LINK_TO(new_op_node, matched.at("Output"));
-        LOG(INFO) << "--------";
 
         // assign context
         auto& inst = new_op_node->AsStmt();
         inst.picked_kernel().SetContext(ContextScheduler::Global().NewContext(
             inst.picked_kernel().target()));
-        LOG(INFO) << "--------";
 
         if (!nodes2rm.empty()) {
           nodes2rm_all.insert(nodes2rm.begin(), nodes2rm.end());
@@ -213,9 +208,10 @@ void GenerateNPUProgramPass::ConvertSubgraph(
       }  // if npu output success
     }    // for op_nodes
   }      // for subgraph id
-  LOG(INFO) << "--------";
   // remove all unused node once
   GraphSafeRemoveNodes(graph.get(), nodes2rm_all);
+  // clear all npu ops
+  npu::OpList::Global().clear();
 }
 
 void GenerateNPUProgramPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
@@ -231,8 +227,6 @@ void GenerateNPUProgramPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   LOG(INFO) << "detected " << num_subgraph << " NPU subgraph";
 
   InferOnce(graph);
-  LOG(INFO) << "-------------";
-
   ConvertSubgraph(graph, num_subgraph);
   // auto graph1 = GenerateFusedGraph(std::move(graph));
   // GraphSafeRemoveNodes(graph, nodes2rm);
@@ -242,31 +236,6 @@ void GenerateNPUProgramPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
     if (item->IsStmt()) {
       auto& stmt = item->AsStmt();
       LOG(INFO) << stmt;
-      // auto* scope = stmt.op()->scope();
-      // auto* op_info = stmt.op()->op_info();
-      // auto& op = stmt.op();
-
-      // LOG(INFO) << "op type: " << op_info->Type();
-      // if (op_info->Type() != "fetch") {
-      //   if (op_info->output_argnames().size() >= 1) {
-      //     auto first_output_name = op_info->output_argnames().front();
-      //     LOG(INFO) << ",first_output_name: " << first_output_name;
-      //     if (op_info->Output(first_output_name).size() >= 1) {
-      //       auto var_name = op_info->Output(first_output_name).front();
-      //       LOG(INFO) << ",fisrt output var_name:" << var_name;
-
-      //       auto* var = scope->FindVar(var_name);
-      //       if (var) {
-      //         auto* tensor = var->GetMutable<lite::Tensor>();
-      //         LOG(INFO) << ",tensor :" << tensor;
-
-      //         if (tensor && op_info->Type() != "feed") {
-      //           LOG(INFO) << ", dims:" << tensor->dims();
-      //         }
-      //       }
-      //     }
-      //   }
-      // }
       insts_.emplace_back(stmt.op(), std::move(stmt.kernels().front()));
     }
   }

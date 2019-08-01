@@ -45,7 +45,7 @@ TEST(NPUSubgraph, mobilenetv1) {
   auto* input_tensor = predictor.GetInput(0);
   //   input_tensor->Resize(DDim(std::vector<DDim::value_type>({1, 3, 224,
   //   224})));
-  input_tensor->Resize(DDim(std::vector<DDim::value_type>({1, 100, 1, 1})));
+  input_tensor->Resize(DDim(std::vector<DDim::value_type>({1, 13, 1, 1})));
   auto* data = input_tensor->mutable_data<float>();
   auto item_size = input_tensor->dims().production();
   for (int i = 0; i < item_size; i++) {
