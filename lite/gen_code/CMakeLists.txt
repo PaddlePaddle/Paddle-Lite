@@ -1,3 +1,7 @@
+if (LITE_ON_TYNY_PUBLISH)
+    return()
+endif()
+
 lite_cc_library(gen_code SRCS gen_code.cc
         DEPS program op scope
         cpp_op_desc

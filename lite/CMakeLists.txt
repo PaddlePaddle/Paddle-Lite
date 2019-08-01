@@ -1,7 +1,3 @@
-if (NOT WITH_LITE)
-    return()
-endif()
-
 include(lite)
 
 message(WARNING "Lite enabled!")
