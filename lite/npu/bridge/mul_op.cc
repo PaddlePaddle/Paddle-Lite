@@ -27,6 +27,8 @@ namespace lite {
 namespace npu {
 namespace bridge {
 
+// Note: inputs_map the var_name contains only the data, the weight should be
+// handle in this converter
 node_map_type MulConverter(const std::shared_ptr<lite::OpLite> mul_op,
                            const node_map_type& inputs_map) {
   LOG(INFO) << "converting mul...";

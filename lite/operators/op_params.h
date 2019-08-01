@@ -60,11 +60,9 @@ struct CalibParam {
 };
 
 struct GraphParam {
-  // only one input yet
-  // std::vector<lite::Tensor*> x{};
-  const lite::Tensor* input{};
-  lite::Tensor* output{};
-  std::string graph_name{"graph"};
+  std::vector<const lite::Tensor*> inputs{};
+  std::vector<lite::Tensor*> outputs{};
+  std::string model_name{"model"};
 };
 
 /// -------------------------- NN operators ------------------------------------

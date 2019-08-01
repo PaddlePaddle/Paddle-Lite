@@ -39,7 +39,7 @@ node_map_type ElementwiseConverter(
   int npu_mode = 1;
   CHECK_EQ(op_info->GetAttr<int>("axis"), -1)
       << "npu only support inputs with same size";
-  CHECK_EQ(input_nodes.size(), 2);
+  CHECK_EQ(inputs_map.size(), 2);
 
   std::shared_ptr<ge::op::Eltwise> output_node =
       std::make_shared<ge::op::Eltwise>(UniqueName("elementwise"));
