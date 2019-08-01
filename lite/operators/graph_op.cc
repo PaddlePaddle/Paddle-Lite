@@ -20,8 +20,8 @@ namespace lite {
 namespace operators {
 
 bool GraphOpLite::CheckShape() const {
-  CHECK_GT_OR_FALSE(param_.inputs.size(), 1UL);
-  CHECK_GT_OR_FALSE(param_.outputs.size(), 1UL);
+  CHECK_GE_OR_FALSE(param_.inputs.size(), 1UL);
+  CHECK_GE_OR_FALSE(param_.outputs.size(), 1UL);
   return true;
 }
 

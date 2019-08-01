@@ -21,6 +21,7 @@
 #include "ai_ddk_lib/include/graph/operator_reg.h"
 #include "lite/npu/bridge/registry.h"
 #include "lite/npu/bridge/utils.h"
+#include "lite/npu/npu_helper.h"
 
 namespace paddle {
 namespace lite {
@@ -38,6 +39,9 @@ node_map_type SoftmaxConverter(const std::shared_ptr<lite::OpLite> softmax_op,
   CHECK(inputs_map.count(x_var_name));
   output_node->set_input_x(*inputs_map.at(x_var_name));
   output_node->set_attr_axis(op_info->GetAttr<int>("axis"));
+
+  OpList::Global().add(inputs_map.at(x_var_name));
+  OpList::Global().add(output_node);
 
   node_map_type outputs_map;
   outputs_map[op_info->Output("Out").front()] = output_node;

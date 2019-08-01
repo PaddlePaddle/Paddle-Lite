@@ -31,11 +31,10 @@ bool BuildNPUClient(std::vector<ge::Operator>& inputs,   // NOLINT
                     std::vector<ge::Operator>& outputs,  // NOLINT
                     const string& name) {
   LOG(INFO) << "[NPU] Building Client";
-
   ge::Graph npu_subgraph("npu_subgraph" + name);
   npu_subgraph.SetInputs(inputs).SetOutputs(outputs);
 
-  ge::Model npu_model("npu_model" + name, "npu_model" + name);
+  ge::Model npu_model("model", "npu_model" + name);
   npu_model.SetGraph(npu_subgraph);
 
   // compile IR graph and output om model to memory
