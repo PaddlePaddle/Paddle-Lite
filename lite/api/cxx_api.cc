@@ -79,7 +79,9 @@ void Predictor::Build(const std::string &model_path,
     default:
       LOG(FATAL) << "Unknown model type";
   }
+  LOG(INFO) << "load model down";
   Build(program_desc_, prefer_place, valid_places, passes);
+  LOG(INFO) << "build finished";
 }
 
 void Predictor::Build(const cpp::ProgramDesc &desc,
