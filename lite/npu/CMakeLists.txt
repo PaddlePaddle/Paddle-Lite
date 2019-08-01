@@ -2,6 +2,7 @@ if(NOT LITE_WITH_NPU)
   return ()
 endif()
 
+# TODO(TJ): move to external cmake
 if(NOT DEFINED NPU_DDK_ROOT)
     set(NPU_DDK_ROOT $ENV{NPU_DDK_ROOT})
     if(NOT NPU_DDK_ROOT)

@@ -27,24 +27,25 @@ namespace lite {
 namespace npu {
 namespace bridge {
 
-std::vector<std::shared_ptr<ge::Operator>> ConvConverter(
-    const std::shared_ptr<lite::OpLite> op,
-    const std::vector<std::shared_ptr<ge::Operator>>& input_nodes) {
-  const std::shared_ptr<lite::operators::ConvOpLite> conv_op =
-      static_pointer_cast<lite::operators::ConvOpLite>(op);
+node_map_type ConvConverter(const std::shared_ptr<lite::OpLite> conv_op,
+                            const node_map_type& inputs_map) {
   lite::Scope* scope = conv_op->scope();
   const lite::OpInfo* op_info = conv_op->op_info();
   // build conv op node
   std::shared_ptr<ge::op::Convolution> output_node =
       std::make_shared<ge::op::Convolution>(UniqueName("conv2d"));
-  output_node->set_input_x(*input_nodes[0]);
+
+  auto x_var_name = op_info->Input("Input").front();
+  CHECK(inputs_map.count(x_var_name));
+  output_node->set_input_x(*inputs_map.at(x_var_name));
+  // TODO(xxx): all other node should be from inputs_map
   // build filter and bias node
   auto filter_var_name = op_info->Input("Filter").front();
   lite::Tensor* filter =
       scope->FindVar(filter_var_name)->GetMutable<lite::Tensor>();
   auto filter_dims = filter->dims();
   ge::op::Const filter_const_node =
-      ge::op::Const(filter_var_name).set_attr_value(TensorConverter(filter));
+      ge::op::Const(filter_var_name).set_attr_value(CvtFromLiteTensor(filter));
   output_node->set_input_w(filter_const_node);
   if (op_info->HasInput("Bias")) {
     auto bias_var_names = op_info->Input("Bias");
@@ -53,7 +54,7 @@ std::vector<std::shared_ptr<ge::Operator>> ConvConverter(
       lite::Tensor* bias =
           scope->FindVar(bias_var_name)->GetMutable<lite::Tensor>();
       ge::op::Const bias_const_node =
-          ge::op::Const(bias_var_name).set_attr_value(TensorConverter(bias));
+          ge::op::Const(bias_var_name).set_attr_value(CvtFromLiteTensor(bias));
       output_node->set_input_b(bias_const_node);
     }
   }
@@ -87,9 +88,10 @@ std::vector<std::shared_ptr<ge::Operator>> ConvConverter(
   } else {
     output_node->set_attr_mode(1);
   }
-  std::vector<std::shared_ptr<ge::Operator>> output_nodes;
-  output_nodes.push_back(output_node);
-  return output_nodes;
+
+  node_map_type outputs_map;
+  outputs_map[op_info->Output("Output").front()] = output_node;
+  return outputs_map;
 }
 
 }  // namespace bridge

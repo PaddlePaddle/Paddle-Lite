@@ -78,3 +78,4 @@ USE_LITE_OP(read_from_array);
 USE_LITE_OP(gru_unit)
 USE_LITE_OP(gru)
 USE_LITE_OP(beam_search_decode)
+USE_LITE_OP(graph_op);

@@ -27,24 +27,21 @@ namespace lite {
 namespace npu {
 namespace bridge {
 
-std::vector<std::shared_ptr<ge::Operator>> SoftmaxConverter(
-    const std::shared_ptr<lite::OpLite> op,
-    const std::vector<std::shared_ptr<ge::Operator>>& input_nodes) {
-  const std::shared_ptr<lite::operators::SoftmaxOp> softmax_op =
-      static_pointer_cast<lite::operators::SoftmaxOp>(op);
+node_map_type SoftmaxConverter(const std::shared_ptr<lite::OpLite> softmax_op,
+                               const node_map_type& inputs_map) {
   lite::Scope* scope = softmax_op->scope();
   const lite::OpInfo* op_info = softmax_op->op_info();
 
-  int axis = op_info->GetAttr<int>("axis");
-
   std::shared_ptr<ge::op::Softmax> output_node =
       std::make_shared<ge::op::Softmax>(UniqueName("softmax"));
-  output_node->set_input_x(*input_nodes[0]);
-  output_node->set_attr_axis(axis);
+  auto x_var_name = op_info->Input("X").front();
+  CHECK(inputs_map.count(x_var_name));
+  output_node->set_input_x(*inputs_map.at(x_var_name));
+  output_node->set_attr_axis(op_info->GetAttr<int>("axis"));
 
-  std::vector<std::shared_ptr<ge::Operator>> output_nodes;
-  output_nodes.push_back(output_node);
-  return output_nodes;
+  node_map_type outputs_map;
+  outputs_map[op_info->Output("Out").front()] = output_node;
+  return outputs_map;
 }
 
 }  // namespace bridge

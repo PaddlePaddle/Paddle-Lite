@@ -271,9 +271,52 @@ function test_npu {
 
     local testpath=$(find ./lite -name ${test_name})
 
+    # note the ai_ddk_lib is under paddle-lite root directory
     adb -s emulator-${port} push ../ai_ddk_lib/lib64/* ${adb_work_dir}
     adb -s emulator-${port} push ${testpath} ${adb_work_dir}
-    adb -s emulator-${port} shell "cd ${adb_work_dir}; export LD_LIBRARY_PATH=./ ;./${test_name}"
+
+    if [[ ${test_name} == "test_npu_pass" ]]; then
+        local model_name=mobilenet_v1
+        adb -s emulator-${port} push "./third_party/install/${model_name}" ${adb_work_dir}
+        adb -s emulator-${port} shell "rm -rf ${adb_work_dir}/${model_name}_opt "
+        adb -s emulator-${port} shell "cd ${adb_work_dir}; export LD_LIBRARY_PATH=./ ; export GLOG_v=0; ./${test_name} --model_dir=./${model_name} --optimized_model=./${model_name}_opt"
+    elif [[ ${test_name} == "test_subgraph_pass" ]]; then
+        local model_name=mobilenet_v1
+        adb -s emulator-${port} push "./third_party/install/${model_name}" ${adb_work_dir}
+        adb -s emulator-${port} shell "cd ${adb_work_dir}; export LD_LIBRARY_PATH=./ ; export GLOG_v=0; ./${test_name} --model_dir=./${model_name}"
+    else
+        adb -s emulator-${port} shell "cd ${adb_work_dir}; export LD_LIBRARY_PATH=./ ; ./${test_name}"
+    fi
+}
+
+function test_npu_model {
+    local test_name=$1
+    local port=$2
+    local model_dir=$3
+
+    if [[ "${test_name}x" == "x" ]]; then
+        echo "test_name can not be empty"
+        exit 1
+    fi
+    if [[ "${port}x" == "x" ]]; then
+        echo "Port can not be empty"
+        exit 1
+    fi
+    if [[ "${model_dir}x" == "x" ]]; then
+        echo "Model dir can not be empty"
+        exit 1
+    fi
+
+    echo "test name: ${test_name}"
+    adb_work_dir="/data/local/tmp"
+
+    testpath=$(find ./lite -name ${test_name})
+    adb -s emulator-${port} push ../ai_ddk_lib/lib64/* ${adb_work_dir}
+    adb -s emulator-${port} push ${model_dir} ${adb_work_dir}
+    adb -s emulator-${port} push ${testpath} ${adb_work_dir}
+    adb -s emulator-${port} shell chmod +x "${adb_work_dir}/${test_name}"
+    local adb_model_path="${adb_work_dir}/`basename ${model_dir}`"
+    adb -s emulator-${port} shell "export LD_LIBRARY_PATH=${adb_work_dir}; ${adb_work_dir}/${test_name} --model_dir=$adb_model_path"
 }
 
 # test the inference high level api
@@ -425,6 +468,31 @@ function build_arm {
     make publish_inference
 }
 
+# $1: ARM_TARGET_OS in "android"
+# $2: ARM_TARGET_ARCH_ABI in "armv8", "armv7"
+# $3: ARM_TARGET_LANG in "gcc" "clang"
+# $4: test_name
+function build_npu {
+    os=$1
+    abi=$2
+    lang=$3
+    local test_name=$4
+
+    cur_dir=$(pwd)
+
+    build_dir=$cur_dir/build.lite.npu.${os}.${abi}.${lang}
+    mkdir -p $build_dir
+    cd $build_dir
+
+    cmake_npu ${os} ${abi} ${lang}
+
+    if [[ "${test_name}x" != "x" ]]; then
+        build_single $test_name
+    else
+        build $TESTS_FILE
+    fi
+}
+
 # $1: ARM_TARGET_OS in "android" , "armlinux"
 # $2: ARM_TARGET_ARCH_ABI in "armv8", "armv7" ,"armv7hf"
 # $3: ARM_TARGET_LANG in "gcc" "clang"
@@ -469,9 +537,11 @@ function prepare_emulator {
     echo n | avdmanager create avd -f -n paddle-armv8 -k "system-images;android-24;google_apis;arm64-v8a"
     echo -ne '\n' | ${ANDROID_HOME}/emulator/emulator -avd paddle-armv8 -noaudio -no-window -gpu off -port ${port_armv8} &
     sleep 1m
-    echo n | avdmanager create avd -f -n paddle-armv7 -k "system-images;android-24;google_apis;armeabi-v7a"
-    echo -ne '\n' | ${ANDROID_HOME}/emulator/emulator -avd paddle-armv7 -noaudio -no-window -gpu off -port ${port_armv7} &
-    sleep 1m
+    if [[ "${port_armv7}x" != "x" ]]; then
+        echo n | avdmanager create avd -f -n paddle-armv7 -k "system-images;android-24;google_apis;armeabi-v7a"
+        echo -ne '\n' | ${ANDROID_HOME}/emulator/emulator -avd paddle-armv7 -noaudio -no-window -gpu off -port ${port_armv7} &
+        sleep 1m
+    fi
 }
 
 function arm_push_necessary_file {
@@ -613,6 +683,39 @@ function build_test_arm {
     build_test_arm_subtask_armlinux
 }
 
+function build_test_npu {
+    ########################################################################
+    local test_name=$1
+    local port_armv8=5554
+    local port_armv7=5556
+    local os=android
+    local abi=armv8
+    local lang=gcc
+
+    local test_model_name=test_mobilenetv1 
+    local model_name=mobilenet_v1
+    cur_dir=$(pwd)
+
+    build_npu "android" "armv8" "gcc" $test_name
+
+    # just test the model on armv8
+    # prepare_emulator $port_armv8
+
+    if [[ "${test_name}x" != "x" ]]; then
+        test_npu ${test_name} ${port_armv8}
+    else
+        # run_gen_code_test ${port_armv8}
+        for _test in $(cat $TESTS_FILE | grep npu); do
+            test_npu $_test $port_armv8
+        done
+    fi
+
+    test_npu_model $test_model_name $port_armv8 "./third_party/install/$model_name"
+    cd -
+    # just test the model on armv8
+    # adb devices | grep emulator | cut -f1 | while read line; do adb -s $line emu kill; done
+    echo "Done"
+}
 
 ############################# MAIN #################################
 function print_usage {
@@ -719,6 +822,10 @@ function main {
                 ;;
             build_test_arm)
                 build_test_arm
+                shift
+                ;;
+            build_test_npu)
+                build_test_npu $TEST_NAME
                 shift
                 ;;
             build_test_arm_opencl)

@@ -94,9 +94,10 @@ void GraphCompute::Run() {
       exec_->Process(npu_context_, npu_itensors_, npu_otensors_, 1000, istamp));
   auto* npu_obuffer = static_cast<float*>(npu_otensors_[0]->GetBuffer());
 
-  std::memcpy(o_data,
-              npu_obuffer,
-              static_cast<size_t>(param.output->dims().production()));
+  std::memcpy(
+      o_data,
+      npu_obuffer,
+      sizeof(float) * static_cast<size_t>(param.output->dims().production()));
 }
 
 }  // namespace npu

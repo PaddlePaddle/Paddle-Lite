@@ -126,8 +126,9 @@ class Optimizer {
   std::unique_ptr<RuntimeProgram> GenNPURuntimeProgram() {
 #ifdef LITE_WITH_NPU
     CheckInputDimsNotEmpty(exec_scope_);
-    auto pass = mir::PassManager::Global().LookUp<mir::GenerateNPUProgramPass>(
-        "generate_npu_program_pass");
+    auto pass = mir::PassManager::Global()
+                    .LookUp<mir::subgraph::GenerateNPUProgramPass>(
+                        "generate_npu_program_pass");
     pass->Apply(graph_);
 
     auto program = pass->GenProgram();

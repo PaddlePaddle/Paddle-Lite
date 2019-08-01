@@ -27,26 +27,34 @@ namespace lite {
 namespace npu {
 namespace bridge {
 
-std::vector<std::shared_ptr<ge::Operator>> MulConverter(
-    const std::shared_ptr<lite::OpLite> op,
-    const std::vector<std::shared_ptr<ge::Operator>>& input_nodes) {
-  const std::shared_ptr<lite::operators::MulOpLite> mul_op =
-      static_pointer_cast<lite::operators::MulOpLite>(op);
+node_map_type MulConverter(const std::shared_ptr<lite::OpLite> mul_op,
+                           const node_map_type& inputs_map) {
+  LOG(INFO) << "converting mul...";
   lite::Scope* scope = mul_op->scope();
   const lite::OpInfo* op_info = mul_op->op_info();
   // build mul op node
   std::shared_ptr<ge::op::Mul> output_node =
       std::make_shared<ge::op::Mul>(UniqueName("mul"));
   // set x and y node
-  int x_num_col_dims =
-      op_info->GetAttr<int>("x_num_col_dims");  // TODO(hong19860320)
-  int y_num_col_dims =
-      op_info->GetAttr<int>("y_num_col_dims");  // TODO(hong19860320)
-  output_node->set_input_x(*input_nodes[0]);
-  output_node->set_input_y(*input_nodes[1]);
-  std::vector<std::shared_ptr<ge::Operator>> output_nodes;
-  output_nodes.push_back(output_node);
-  return output_nodes;
+  //   int x_num_col_dims =
+  //       op_info->GetAttr<int>("x_num_col_dims");  // TODO(hong19860320)
+  //   int y_num_col_dims =
+  //       op_info->GetAttr<int>("y_num_col_dims");  // TODO(hong19860320)
+
+  auto x_var_name = op_info->Input("X").front();
+  auto y_var_name = op_info->Input("Y").front();
+  LOG(INFO) << "x_var_name:" << x_var_name;
+  LOG(INFO) << "y_var_name:" << y_var_name;
+  CHECK(inputs_map.count(x_var_name));
+  CHECK(inputs_map.count(y_var_name));
+  LOG(INFO) << inputs_map.at(x_var_name);
+  LOG(INFO) << inputs_map.at(y_var_name);
+  output_node->set_input_x(*inputs_map.at(x_var_name));
+  output_node->set_input_y(*inputs_map.at(y_var_name));
+
+  node_map_type outputs_map;
+  outputs_map[op_info->Output("Out").front()] = output_node;
+  return outputs_map;
 }
 
 }  // namespace bridge
