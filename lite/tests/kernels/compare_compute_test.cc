@@ -83,12 +83,17 @@ class LessThanTester : public arena::TestCase {
     auto* x = scope->FindTensor(input_x_);
     const auto* x_data = x->data<float>();
     auto* y = scope->FindTensor(input_y_);
-    const auto* y_data_in = y->data<float>();
+    auto* y_data_in = y->data<float>();
 
-    auto* y_data = y_data_in;
-    if (x_dims_.size() != y_dims_.size()) {
-      y_data =
-          reinterpret_cast<float*> malloc(x_dims_.production() * sizeof(float));
+    using CompareFunc = Functor<float>;
+    if (x_dims_.size() == y_dims_.size()) {
+      for (int i = 0; i < x_dims_.production(); i++) {
+        // out_data[i] = x_data[i] < y_data[i];
+        out_data[i] = CompareFunc()(x_data[i], y_data_in[i]);
+      }
+    } else {
+      auto* y_data = reinterpret_cast<float*>(
+          malloc(x_dims_.production() * sizeof(float)));
 
       if (axis < 0) {
         axis = x_dims_.size() - y_dims_.size();
@@ -106,11 +111,11 @@ class LessThanTester : public arena::TestCase {
         num *= x_dims_[i];
       }
       int ysize = channels * num;
-      float* y_data_t = reinterpret_cast<float*> y_data;
+      float* y_data_t = reinterpret_cast<float*>(y_data);
       if (num == 1) {
         for (int i = 0; i < batch; ++i) {
-          memcpy(y_data_t,
-                 reinterpret_cast<void*>(&y_data_in[0]),
+          memcpy(reinterpret_cast<void*>(y_data_t),
+                 reinterpret_cast<const void*>(&y_data_in[0]),
                  ysize * sizeof(float));
           y_data_t += ysize;
         }
@@ -127,11 +132,10 @@ class LessThanTester : public arena::TestCase {
           y_data_t += ysize;
         }
       }
-    }
-    using CompareFunc = Functor<float>;
-    for (int i = 0; i < x_dims_.production(); i++) {
-      // out_data[i] = x_data[i] < y_data[i];
-      out_data[i] = CompareFunc()(x_data[i], y_data[i]);
+      for (int i = 0; i < x_dims_.production(); i++) {
+        // out_data[i] = x_data[i] < y_data[i];
+        out_data[i] = CompareFunc()(x_data[i], y_data[i]);
+      }
     }
   }
 
