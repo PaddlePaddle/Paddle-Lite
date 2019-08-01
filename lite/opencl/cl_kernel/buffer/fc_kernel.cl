@@ -27,6 +27,9 @@ void mat_transpose(__global const CL_DTYPE* src,
 
 #if 0
 // naive gemm: keep for check
+// a: x_d
+// b: filter_d
+// c: output_d
 __kernel
 void fc(__global const CL_DTYPE* a,
         __global const CL_DTYPE* b,
@@ -50,14 +53,13 @@ void fc(__global const CL_DTYPE* a,
   }
 
 #if defined(RELU)
-  c[row * N + col] = max(c0, 0);
+  c[row * N + col] = activation(c0);
 #else
   c[row * N + col] = c0;
 #endif
 
 }
 #endif // naive gemm
-
 
 __kernel
 void fc(__global const CL_DTYPE* a,
@@ -97,10 +99,10 @@ void fc(__global const CL_DTYPE* a,
             c30 += a30 * b00; c31 += a30 * b01; c32 += a30 * b02; c33 += a30 * b03;
         }
 #if defined(RELU)
-        c[row*N+col] = max(c00, 0);     c[row*N+(col+1)] = max(c01, 0);     c[row*N+(col+2)] = max(c02, 0);     c[row*N+(col+3)] = max(c03, 0);
-        c[(row+1)*N+col] = max(c10, 0); c[(row+1)*N+(col+1)] = max(c11, 0); c[(row+1)*N+(col+2)] = max(c12, 0); c[(row+1)*N+(col+3)] = max(c13, 0);
-        c[(row+2)*N+col] = max(c20, 0); c[(row+2)*N+(col+1)] = max(c21, 0); c[(row+2)*N+(col+2)] = max(c22, 0); c[(row+2)*N+(col+3)] = max(c23, 0);
-        c[(row+3)*N+col] = max(c30, 0); c[(row+3)*N+(col+1)] = max(c31, 0); c[(row+3)*N+(col+2)] = max(c32, 0); c[(row+3)*N+(col+3)] = max(c33, 0);
+        c[row*N+col] = fmax(c00, 0);     c[row*N+(col+1)] = fmax(c01, 0);     c[row*N+(col+2)] = fmax(c02, 0);     c[row*N+(col+3)] = fmax(c03, 0);
+        c[(row+1)*N+col] = fmax(c10, 0); c[(row+1)*N+(col+1)] = fmax(c11, 0); c[(row+1)*N+(col+2)] = fmax(c12, 0); c[(row+1)*N+(col+3)] = fmax(c13, 0);
+        c[(row+2)*N+col] = fmax(c20, 0); c[(row+2)*N+(col+1)] = fmax(c21, 0); c[(row+2)*N+(col+2)] = fmax(c22, 0); c[(row+2)*N+(col+3)] = fmax(c23, 0);
+        c[(row+3)*N+col] = fmax(c30, 0); c[(row+3)*N+(col+1)] = fmax(c31, 0); c[(row+3)*N+(col+2)] = fmax(c32, 0); c[(row+3)*N+(col+3)] = fmax(c33, 0);
 #else
         c[row*N+col] = c00;     c[row*N+(col+1)] = c01;     c[row*N+(col+2)] = c02;     c[row*N+(col+3)] = c03;
         c[(row+1)*N+col] = c10; c[(row+1)*N+(col+1)] = c11; c[(row+1)*N+(col+2)] = c12; c[(row+1)*N+(col+3)] = c13;
@@ -117,11 +119,49 @@ void fc(__global const CL_DTYPE* a,
                     c0 += a0 * b0;
                 }
 #if defined(RELU)
-                c[ridx * N + cidx] = max(c0, 0);
+                c[ridx * N + cidx] = activation(c0);
 #else
                 c[ridx * N + cidx] = c0;
 #endif
             }
         }
     }
+}
+
+// gemm_batch: used for conv1x1, gemm of im2col_gemm
+// a: filter_d
+// b: x_d
+// c: output_d
+__kernel
+void gemm_batch(__global const CL_DTYPE* a,
+                __global const CL_DTYPE* b,
+                __global const CL_DTYPE* bias,
+                __global CL_DTYPE* c,
+                const int M, const int N, const int K, const int batch_size) {
+  const int row = get_global_id(0); // [0, M) height of out == m
+  const int col = get_global_id(1); // [0, N) width of out == n
+  const int bidx = get_global_id(2); // [0, batch_size)
+
+  const __global CL_DTYPE* cur_b = b + K * N * bidx;
+  __global CL_DTYPE* cur_c = c + M * N * bidx;
+
+  if ((col >= N) || (row >= M) || (bidx >= batch_size)) {
+    return;
+  }
+
+  CL_DTYPE a0, b0,
+      c0 = (bias && col < N) ? bias[row] : 0;
+
+  for (int p = 0; p < K; ++p) {
+    a0 = *(a + row * K + p);
+    b0 = *(cur_b + p * N + col);
+    c0 += a0 * b0;
+  }
+
+#ifdef RELU
+  cur_c[row * N + col] = activation(c0);
+#else
+  cur_c[row * N + col] = c0;
+#endif
+
 }
