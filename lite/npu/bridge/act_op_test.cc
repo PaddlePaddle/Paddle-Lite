@@ -94,15 +94,15 @@ void test_relu(int bs, int ic, int ih, int iw) {
   // compile IR graph to om model
   std::vector<ge::Operator> graph_inputs{*inputs_map[x_var_name]};
   std::vector<ge::Operator> graph_outputs{*outputs_map[out_var_name]};
-  std::string graph_name(UniqueName("test_relu") + ".om");
-  CHECK(npu::BuildNPUClient(graph_inputs, graph_outputs, graph_name));
+  std::string model_name(UniqueName("test_relu") + ".om");
+  CHECK(npu::BuildNPUClient(graph_inputs, graph_outputs, model_name));
 
   // create graph op
   cpp::OpDesc graph_op_desc;
   graph_op_desc.SetType("graph_op");
-  graph_op_desc.SetInput("Input", {x_var_name});
-  graph_op_desc.SetOutput("Output", {out_var_name});
-  graph_op_desc.SetAttr("graph_name", graph_name);
+  graph_op_desc.SetInput("Inputs", {x_var_name});
+  graph_op_desc.SetOutput("Outputs", {out_var_name});
+  graph_op_desc.SetAttr("model_name", model_name);
 
   std::shared_ptr<operators::GraphOpLite> graph_op =
       std::make_shared<operators::GraphOpLite>(graph_op_desc.Type());

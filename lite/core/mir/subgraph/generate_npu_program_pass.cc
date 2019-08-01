@@ -139,7 +139,7 @@ void GenerateNPUProgramPass::ConvertSubgraph(
         CHECK(arg_node->IsArg());
         const auto& arg = arg_node->AsArg();
         LOG(INFO) << arg.name;
-
+        // TODO(TJ): do not handle weights here
         npu_inputs_map.insert(std::make_pair(
             arg.name, lite::npu::bridge::CvtNode(arg_node, scope)));
         if (!arg_node->AsArg().is_weight) {
@@ -180,9 +180,10 @@ void GenerateNPUProgramPass::ConvertSubgraph(
         // Then InsertNewNode(graph, matched); make one function
         cpp::OpDesc op_desc = *matched.at("target_op")->stmt()->op_info();
         op_desc.SetType("graph_op");
-        op_desc.SetInput("Input", {matched.at("Input")->arg()->name});
-        op_desc.SetOutput("Output", {matched.at("Output")->arg()->name});
-        op_desc.SetAttr("graph_name", model_name);
+        // change to vectors
+        op_desc.SetInput("Inputs", {matched.at("Input")->arg()->name});
+        op_desc.SetOutput("Outputs", {matched.at("Output")->arg()->name});
+        op_desc.SetAttr("model_name", model_name);
         auto graph_op = LiteOpRegistry::Global().Create("graph_op");
         auto target_op = matched.at("target_op")->stmt()->op();
         auto* scope = target_op->scope();

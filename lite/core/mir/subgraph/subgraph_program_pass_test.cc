@@ -142,8 +142,12 @@ TEST(SubgraphTest, mobilenetv1) {
   LoadModelPb(FLAGS_model_dir, scope.get(), &desc);
   std::vector<Place> valid_places({
       Place{TARGET(kHost), PRECISION(kFloat)},
+#ifdef LITE_WITH_ARM
       Place{TARGET(kARM), PRECISION(kFloat)},
+#endif
+#ifdef LITE_WITH_NPU
       Place{TARGET(kNPU), PRECISION(kFloat)},
+#endif
   });
   lite::Program program(desc, scope, valid_places);
   auto graph = std::unique_ptr<mir::SSAGraph>(new mir::SSAGraph());
