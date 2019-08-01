@@ -37,6 +37,7 @@ bool SequenceExpandOp::CheckShape() const {
   if (x_lod.size() > 0) {
     CHECK_EQ_OR_FALSE(x_lod[0].size(), y_lod[ref_level].size());
   }
+  return true;
 }
 
 bool SequenceExpandOp::InferShape() const {
