@@ -19,7 +19,6 @@
 #include <utility>
 #include <vector>
 #include "lite/core/kernel.h"
-#include "lite/core/mir/node.h"
 #include "lite/core/op_lite.h"
 #include "lite/core/op_registry.h"
 #include "lite/model_parser/cpp/program_desc.h"
@@ -120,7 +119,7 @@ struct Instruction {
 /*
  * A program contains kernels for runtime.
  */
-class RuntimeProgram {
+class LITE_API RuntimeProgram {
  public:
   explicit RuntimeProgram(std::vector<Instruction>&& insts)
       : instructions_(std::move(insts)) {

@@ -28,6 +28,7 @@ namespace cpp {
   }
 
 SET_ATTR_IMPL(int32_t, INT);
+SET_ATTR_IMPL(int16_t, INT);
 SET_ATTR_IMPL(float, FLOAT);
 SET_ATTR_IMPL(std::string, STRING);
 SET_ATTR_IMPL(bool, BOOLEAN);
@@ -97,7 +98,6 @@ std::vector<std::string> OpDesc::Input(const std::string& param) const {
 
 std::vector<std::string> OpDesc::Output(const std::string& param) const {
   auto it = outputs_.find(param);
-  LOG(INFO) << "param" << param;
   CHECK(it != outputs_.end());
   return it->second;
 }
@@ -108,6 +108,7 @@ bool OpDesc::HasOutput(const std::string& param) const {
 }
 
 GET_IMPL_ONE(float, FLOAT);
+GET_IMPL_ONE(int16_t, INT);
 GET_IMPL_ONE(std::string, STRING);
 GET_IMPL_ONE(int64_t, LONG);
 GET_IMPL_ONE(bool, BOOLEAN);

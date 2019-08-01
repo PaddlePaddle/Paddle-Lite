@@ -43,10 +43,12 @@ bool ReshapeOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   std::vector<std::string> input_arg_names = opdesc.InputArgumentNames();
   if (std::find(input_arg_names.begin(), input_arg_names.end(), "Shape") !=
       input_arg_names.end()) {
-    auto actual_shape_var = scope->FindVar(opdesc.Input("Shape").front());
-    if (actual_shape_var != nullptr) {
-      param_.actual_shape =
-          const_cast<lite::Tensor *>(&(actual_shape_var->Get<lite::Tensor>()));
+    if (opdesc.Input("Shape").size() > 0) {
+      auto actual_shape_var = scope->FindVar(opdesc.Input("Shape").front());
+      if (actual_shape_var != nullptr) {
+        param_.actual_shape = const_cast<lite::Tensor *>(
+            &(actual_shape_var->Get<lite::Tensor>()));
+      }
     }
   }
   param_.shape = (opdesc.GetAttr<std::vector<int>>("shape"));

@@ -21,6 +21,8 @@
 
 USE_LITE_KERNEL(feed, kHost, kAny, kAny, def);
 USE_LITE_KERNEL(fetch, kHost, kAny, kAny, def);
+USE_LITE_KERNEL(reshape, kHost, kAny, kAny, def);
+USE_LITE_KERNEL(reshape2, kHost, kAny, kAny, def);
 
 #ifdef LITE_WITH_ARM
 USE_LITE_KERNEL(fc, kARM, kFloat, kNCHW, def);
@@ -68,6 +70,9 @@ USE_LITE_KERNEL(topk, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(increment, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(write_to_array, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(read_from_array, kARM, kFloat, kNCHW, def);
+USE_LITE_KERNEL(reduce_max, kARM, kFloat, kNCHW, def);
+USE_LITE_KERNEL(sequence_expand, kARM, kFloat, kNCHW, def);
+USE_LITE_KERNEL(sequence_pool, kARM, kFloat, kNCHW, def);
 
 USE_LITE_KERNEL(calib, kARM, kInt8, kNCHW, fp32_to_int8);
 USE_LITE_KERNEL(calib, kARM, kInt8, kNCHW, int8_to_fp32);
@@ -78,6 +83,7 @@ USE_LITE_KERNEL(fc, kARM, kInt8, kNCHW, fp32out);
 USE_LITE_KERNEL(gru_unit, kARM, kFloat, kNCHW, def)
 USE_LITE_KERNEL(gru, kARM, kFloat, kNCHW, def)
 USE_LITE_KERNEL(beam_search_decode, kARM, kFloat, kNCHW, def)
+USE_LITE_KERNEL(while, kARM, kFloat, kNCHW, def)
 #endif
 
 #ifdef LITE_WITH_X86
@@ -86,6 +92,7 @@ USE_LITE_KERNEL(beam_search_decode, kARM, kFloat, kNCHW, def)
 // USE_LITE_KERNEL(mul, kX86, kFloat, kNCHW, def);
 // USE_LITE_KERNEL(fc, kX86, kFloat, kNCHW, def);
 USE_LITE_KERNEL(scale, kX86, kFloat, kNCHW, def);
+USE_LITE_KERNEL(fill_constant, kX86, kFloat, kNCHW, def);
 // USE_LITE_KERNEL(square, kX86, kFloat, kNCHW, def);
 // USE_LITE_KERNEL(elementwise_sub, kX86, kFloat, kNCHW, def);
 // USE_LITE_KERNEL(elementwise_add, kX86, kFloat, kNCHW, def);

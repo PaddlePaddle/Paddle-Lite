@@ -104,6 +104,7 @@ void TestModel(const std::vector<Place>& valid_places,
 
 TEST(OcrAttention, test_arm) {
   std::vector<Place> valid_places({
+      Place{TARGET(kHost), PRECISION(kFloat)},
       Place{TARGET(kARM), PRECISION(kFloat)},
   });
 

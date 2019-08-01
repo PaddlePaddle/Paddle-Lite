@@ -112,11 +112,6 @@ add_custom_target(lite_compile_deps COMMAND echo 1)
 set(offline_lib_registry_file "${CMAKE_BINARY_DIR}/lite_libs.txt")
 file(WRITE ${offline_lib_registry_file} "") # clean
 
-set(__lite_cc_files "" ; "")
-set(__lite_cc_files "${CMAKE_BINARY_DIR}/lite_cc_files.txt")
-file(WRITE ${__lite_cc_files} "") # clean
-
-
 # cc_library with branch support.
 # The branches:
 #  X86_DEPS: works only when LITE_WITH_X86 is ON.
@@ -155,10 +150,6 @@ function(lite_cc_library TARGET)
         cc_library(${TARGET} SRCS ${args_SRCS} DEPS ${deps} ${args_DEPS})
     endif()
     target_compile_options(${TARGET} BEFORE PRIVATE -Wno-ignored-qualifiers)
-
-    foreach(cc_file ${args_SRCS})
-        file(APPEND ${__lite_cc_files} "${cc_file}\n")
-    endforeach()
 
     # collect targets need to compile for lite
     if (args_SRCS AND NOT args_EXCLUDE_COMPILE_DEPS)
@@ -247,11 +238,13 @@ add_subdirectory(fpga)
 add_subdirectory(model_parser)
 add_subdirectory(utils)
 add_subdirectory(api)
-add_subdirectory(tests)
-if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
+if (NOT LITE_ON_TINY_PUBLISH)
+    add_subdirectory(tests)
+    add_subdirectory(tools)
+endif()
+if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND NOT LITE_ON_TINY_PUBLISH)
   add_subdirectory(gen_code)
 endif()
-add_subdirectory(tools)
 
 if (WITH_TESTING)
     lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL} "lite_naive_model.tar.gz")
@@ -282,26 +275,32 @@ if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM)
     # The final target for publish lite lib
     add_custom_target(publish_inference)
 
-    # add cxx lib
-    add_custom_target(publish_inference_cxx_lib ${TARGET}
-            COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
-            COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/bin"
-            COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/cxx/include"
-            COMMAND cp "${CMAKE_SOURCE_DIR}/lite/api/paddle_*.h" "${INFER_LITE_PUBLISH_ROOT}/cxx/include"
-            COMMAND cp "${CMAKE_BINARY_DIR}/libpaddle_api_full_bundled.a" "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
-            COMMAND cp "${CMAKE_BINARY_DIR}/libpaddle_api_light_bundled.a" "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
-            COMMAND cp "${CMAKE_BINARY_DIR}/lite/api/model_optimize_tool" "${INFER_LITE_PUBLISH_ROOT}/bin"
-            COMMAND cp "${CMAKE_BINARY_DIR}/lite/gen_code/paddle_code_generator" "${INFER_LITE_PUBLISH_ROOT}/bin"
-            COMMAND cp "${CMAKE_BINARY_DIR}/lite/api/test_model_bin" "${INFER_LITE_PUBLISH_ROOT}/bin"
-            )
-    add_dependencies(publish_inference_cxx_lib model_optimize_tool)
-    add_dependencies(publish_inference_cxx_lib paddle_code_generator)
-    add_dependencies(publish_inference_cxx_lib bundle_full_api)
-    add_dependencies(publish_inference_cxx_lib bundle_light_api)
-    add_dependencies(publish_inference publish_inference_cxx_lib)
+    if (NOT LITE_ON_TINY_PUBLISH)
+        # add cxx lib
+        add_custom_target(publish_inference_cxx_lib ${TARGET}
+                COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
+                COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/bin"
+                COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/cxx/include"
+                COMMAND cp "${CMAKE_SOURCE_DIR}/lite/api/paddle_*.h" "${INFER_LITE_PUBLISH_ROOT}/cxx/include"
+                COMMAND cp "${CMAKE_BINARY_DIR}/libpaddle_api_full_bundled.a" "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
+                COMMAND cp "${CMAKE_BINARY_DIR}/libpaddle_api_light_bundled.a" "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
+                COMMAND cp "${CMAKE_BINARY_DIR}/lite/api/model_optimize_tool" "${INFER_LITE_PUBLISH_ROOT}/bin"
+                COMMAND cp "${CMAKE_BINARY_DIR}/lite/gen_code/paddle_code_generator" "${INFER_LITE_PUBLISH_ROOT}/bin"
+                COMMAND cp "${CMAKE_BINARY_DIR}/lite/api/test_model_bin" "${INFER_LITE_PUBLISH_ROOT}/bin"
+                )
+        add_dependencies(publish_inference_cxx_lib model_optimize_tool)
+        add_dependencies(publish_inference_cxx_lib paddle_code_generator)
+        add_dependencies(publish_inference_cxx_lib bundle_full_api)
+        add_dependencies(publish_inference_cxx_lib bundle_light_api)
+        add_dependencies(publish_inference_cxx_lib test_model_bin)
+        add_dependencies(publish_inference publish_inference_cxx_lib)
+        add_custom_command(TARGET publish_inference_cxx_lib POST_BUILD 
+                                       COMMAND ${CMAKE_STRIP} "--strip-debug" ${INFER_LITE_PUBLISH_ROOT}/cxx/lib/*.a)
+    endif()
+
 
     if (LITE_WITH_JAVA)
-    # add java lib
+        # add java lib
         add_custom_target(publish_inference_java_lib ${TARGET}
             COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/java/so"
             COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/java/jar"
@@ -311,26 +310,30 @@ if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM)
         )
         add_dependencies(publish_inference_java_lib paddle_lite_jni PaddlePredictor)
         add_dependencies(publish_inference publish_inference_java_lib)
+        add_custom_command(TARGET publish_inference_java_lib POST_BUILD
+                                   COMMAND ${CMAKE_STRIP} "-s" ${INFER_LITE_PUBLISH_ROOT}/java/so/libpaddle_lite_jni.so)
     endif()
 
     if ((ARM_TARGET_OS STREQUAL "android") AND (NOT LITE_WITH_OPENCL) AND
             ((ARM_TARGET_ARCH_ABI STREQUAL armv7) OR (ARM_TARGET_ARCH_ABI STREQUAL armv8)))
-        # copy
-        add_custom_target(publish_inference_android_cxx_demos ${TARGET}
-            COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/third_party"
-            COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/demo/cxx"
-            COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/include"
-            COMMAND cp "${CMAKE_SOURCE_DIR}/lite/utils/logging.h" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/include/logging.h"
-            COMMAND cp -r "${CMAKE_BINARY_DIR}/third_party/install/gflags" "${INFER_LITE_PUBLISH_ROOT}/third_party"
-            COMMAND cp "${CMAKE_SOURCE_DIR}/lite/demo/cxx/Makefile.def" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx"
-            COMMAND cp "${CMAKE_SOURCE_DIR}/lite/demo/cxx/README.md" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx"
-            COMMAND cp -r "${CMAKE_SOURCE_DIR}/lite/demo/cxx/mobile_full" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx"
-            COMMAND cp "${CMAKE_SOURCE_DIR}/lite/demo/cxx/makefiles/mobile_full/Makefile.${ARM_TARGET_OS}.${ARM_TARGET_ARCH_ABI}" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/mobile_full/Makefile"
-            COMMAND cp -r "${CMAKE_SOURCE_DIR}/lite/demo/cxx/mobile_light" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx"
-            COMMAND cp "${CMAKE_SOURCE_DIR}/lite/demo/cxx/makefiles/mobile_light/Makefile.${ARM_TARGET_OS}.${ARM_TARGET_ARCH_ABI}" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/mobile_light/Makefile"
-        )
-        add_dependencies(publish_inference_android_cxx_demos logging gflags)
-        add_dependencies(publish_inference_cxx_lib publish_inference_android_cxx_demos)
+        if (NOT LITE_ON_TINY_PUBLISH)
+            # copy
+            add_custom_target(publish_inference_android_cxx_demos ${TARGET}
+                COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/third_party"
+                COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/demo/cxx"
+                COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/include"
+                COMMAND cp "${CMAKE_SOURCE_DIR}/lite/utils/logging.h" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/include/logging.h"
+                COMMAND cp -r "${CMAKE_BINARY_DIR}/third_party/install/gflags" "${INFER_LITE_PUBLISH_ROOT}/third_party"
+                COMMAND cp "${CMAKE_SOURCE_DIR}/lite/demo/cxx/Makefile.def" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx"
+                COMMAND cp "${CMAKE_SOURCE_DIR}/lite/demo/cxx/README.md" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx"
+                COMMAND cp -r "${CMAKE_SOURCE_DIR}/lite/demo/cxx/mobile_full" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx"
+                COMMAND cp "${CMAKE_SOURCE_DIR}/lite/demo/cxx/makefiles/mobile_full/Makefile.${ARM_TARGET_OS}.${ARM_TARGET_ARCH_ABI}" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/mobile_full/Makefile"
+                COMMAND cp -r "${CMAKE_SOURCE_DIR}/lite/demo/cxx/mobile_light" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx"
+                COMMAND cp "${CMAKE_SOURCE_DIR}/lite/demo/cxx/makefiles/mobile_light/Makefile.${ARM_TARGET_OS}.${ARM_TARGET_ARCH_ABI}" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/mobile_light/Makefile"
+            )
+            add_dependencies(publish_inference_android_cxx_demos logging gflags)
+            add_dependencies(publish_inference_cxx_lib publish_inference_android_cxx_demos)
+        endif()
 
         if (LITE_WITH_JAVA)
             # copy java mobile_light demo/lib

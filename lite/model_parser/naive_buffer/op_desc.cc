@@ -99,6 +99,7 @@ const proto::OpDesc::Attr& GetFindAttr(const proto::OpDesc& desc,
     return builder.data();                               \
   }
 GET_ATTR_IMPL(int32_t, Int32, i);
+GET_ATTR_IMPL(int16_t, Int32, block_idx);
 GET_ATTR_IMPL(float, Float32, f);
 GET_ATTR_IMPL(bool, Bool, b);
 GET_ATTR_IMPL(int64_t, Int64, l);

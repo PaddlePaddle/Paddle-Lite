@@ -117,6 +117,7 @@ GetFindAttr(const framework::proto::OpDesc &desc, const std::string &name) {
     return res;                                         \
   }
 GET_ATTR_IMPL(int32_t, i);
+GET_ATTR_IMPL(int16_t, block_idx);
 GET_ATTR_IMPL(float, f);
 GET_ATTR_IMPL(bool, b);
 GET_ATTR_IMPL(int64_t, l);

@@ -54,7 +54,7 @@ void activation_compute_ref(const operators::ActivationParam& param,
       break;
     }
     case LEAKY_RELU: {
-      float slope = param.Leaky_relu_slope;
+      float slope = param.Leaky_relu_alpha;
       for (int i = 0; i < output_dims.production(); i++) {
         output_data[i] = x_data[i] > 0.f ? x_data[i] : x_data[i] * slope;
       }
@@ -105,7 +105,7 @@ void activation_compute_ref(const operators::ActivationParam& param,
       break;
     }
     case SWISH: {
-      float coef = param.Swish_coef;
+      float coef = param.Swish_beta;
       for (int i = 0; i < output_dims.production(); i++) {
         output_data[i] = x_data[i] / (1.f + std::exp(-coef * x_data[i]));
       }
@@ -246,7 +246,7 @@ TEST(leaky_relu_activation_arm, compute) {
   LeakyReluCompute activation;
   operators::ActivationParam param;
   for (float slope : {0.001, 0.01, 0.1}) {
-    param.Leaky_relu_slope = slope;
+    param.Leaky_relu_alpha = slope;
     activation_type type = LEAKY_RELU;
     test_activation_compute(&activation, &param, type);
   }
@@ -290,7 +290,7 @@ TEST(swish_activation_arm, compute) {
   SwishCompute activation;
   operators::ActivationParam param;
   for (float coef : {0.01, 0.1}) {
-    param.Swish_coef = coef;
+    param.Swish_beta = coef;
     activation_type type = SWISH;
     test_activation_compute(&activation, &param, type);
   }

@@ -30,9 +30,11 @@ void Predictor::SaveModel(const std::string &dir, LiteModelType model_type) {
   LOG(INFO) << "Save model to " << dir;
   switch (model_type) {
     case LiteModelType::kProtobuf:
+      LOG(INFO) << "load pb";
       SaveModelPb(dir, *program_->exec_scope(), program_desc_);
       break;
     case LiteModelType::kNaiveBuffer:
+      LOG(INFO) << "load nb";
       SaveModelNaive(dir, *program_->exec_scope(), program_desc_);
       break;
     default:
@@ -72,14 +74,16 @@ void Predictor::Build(const std::string &model_path,
   switch (model_type) {
     case LiteModelType::kProtobuf:
       LoadModelPb(model_path, scope_.get(), &program_desc_);
+      LOG(INFO) << "load pb";
       break;
     case LiteModelType::kNaiveBuffer:
       LoadModelNaive(model_path, scope_.get(), &program_desc_);
+      LOG(INFO) << "load nb";
       break;
     default:
       LOG(FATAL) << "Unknown model type";
   }
-  LOG(INFO) << "loaded finished";
+  LOG(INFO) << "load model down";
   Build(program_desc_, prefer_place, valid_places, passes);
   LOG(INFO) << "build finished";
 }

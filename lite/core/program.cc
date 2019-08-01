@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #include "lite/core/program.h"
-#include "lite/core/optimizer.h"
 #include "lite/model_parser/cpp/block_desc.h"
 #include "lite/model_parser/cpp/op_desc.h"
 #include "lite/model_parser/cpp/var_desc.h"
@@ -55,17 +54,21 @@ void Program::Build(const cpp::ProgramDesc& prog) {
     auto& op_desc = *main_block.GetOp<cpp::OpDesc>(i);
     auto op_type = op_desc.Type();
     // if (op_type == "feed" || op_type == "fetch") continue;
+    VLOG(4) << "create Op [" << op_type << "]";
     LOG(INFO) << "create Op [" << op_type << "]";
     auto op = LiteOpRegistry::Global().Create(op_type);
     CHECK(op) << "no Op found for " << op_type;
+    if (op_type == "while") {
+      auto sub_block_idx = op_desc.GetAttr<int16_t>("sub_block");
+      LOG(INFO) << sub_block_idx;
+      auto sub_block = program.GetBlock<cpp::BlockDesc>(sub_block_idx);
+      LOG(INFO) << sub_block_idx;
+      static_cast<operators::WhileOpLite*>(op.get())->SetSubBlock(sub_block);
+      LOG(INFO) << sub_block_idx;
+    }
     ops_.emplace_back(std::move(op));
     ops_.back()->Attach(op_desc, exec_scope_);
     LOG(INFO) << "attached";
-    if (op_type == "while") {
-      auto sub_block_idx = op_desc.GetAttr<int32_t>("block_idx");
-      auto sub_block = program.GetBlock<cpp::BlockDesc>(sub_block_idx);
-      static_cast<operators::WhileOpLite*>(op.get())->SetSubBlock(sub_block);
-    }
   }
 }
 

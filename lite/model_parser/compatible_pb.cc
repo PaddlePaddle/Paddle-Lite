@@ -19,10 +19,12 @@
 #include "lite/model_parser/naive_buffer/op_desc.h"
 #include "lite/model_parser/naive_buffer/program_desc.h"
 #include "lite/model_parser/naive_buffer/var_desc.h"
+#ifndef LITE_ON_TINY_PUBLISH
 #include "lite/model_parser/pb/block_desc.h"
 #include "lite/model_parser/pb/op_desc.h"
 #include "lite/model_parser/pb/program_desc.h"
 #include "lite/model_parser/pb/var_desc.h"
+#endif
 
 namespace paddle {
 namespace lite {
@@ -113,10 +115,16 @@ void OpAttrsAnyToCpp(const OpDescType &any_desc, cpp::OpDesc *cpp_desc) {
         cpp_desc->SetAttr<std::vector<int64_t>>(
             name, any_desc.template GetAttr<std::vector<int64_t>>(name));
         break;
-      case AttrType::BLOCK:
-        cpp_desc->SetAttr<int32_t>(name,
-                                   any_desc.template GetAttr<int32_t>(name));
+      case AttrType::BLOCK: {
+        LOG(INFO) << "loading block " << name;
+        auto i = any_desc.template GetAttr<int16_t>(name);
+        LOG(INFO) << i;
+        cpp_desc->SetAttr<int16_t>(name, i);
+        // naive_buffer::BlockDesc* sub_block = any_desc.template
+        // GetAttr<naive_buffer::BlockDesc*>(name);
+        // LOG(INFO) << sub_block->OpsSize();
         break;
+      }
       default:
         LOG(FATAL) << "Unsupported attr type found " << static_cast<int>(type);
     }
@@ -262,10 +270,12 @@ TRANS_OP_ANY_WITH_CPP_IMPL(naive_buffer::OpDesc);
 TRANS_BLOCK_ANY_WITH_CPP_IMPL(BlockDesc, naive_buffer, naive_buffer);
 TRANS_PROGRAM_ANY_WITH_CPP_IMPL(ProgramDesc, naive_buffer, naive_buffer);
 
+#ifndef LITE_ON_TINY_PUBLISH
 TRANS_VAR_ANY_WITH_CPP_IMPL(pb::VarDesc);
 TRANS_OP_ANY_WITH_CPP_IMPL(pb::OpDesc);
 TRANS_BLOCK_ANY_WITH_CPP_IMPL(BlockDesc, pb, framework);
 TRANS_PROGRAM_ANY_WITH_CPP_IMPL(ProgramDesc, pb, framework);
+#endif
 
 #undef TRANS_VAR_ANY_WITH_CPP_IMPL
 #undef TRANS_OP_ANY_WITH_CPP_IMPL
