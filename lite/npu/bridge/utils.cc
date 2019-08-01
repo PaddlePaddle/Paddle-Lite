@@ -95,26 +95,25 @@ ge::TensorPtr CvtFromLiteTensor(lite::Tensor* in_tensor,
   ge::Format out_ltype = DataLayoutConverter(in_ltype);
   auto dims = in_tensor->dims().Vectorize();
 
-  if (out_ltype == ge::FORMAT_NCHW) {
-    if (dims.size() == 1) {
-      dims.push_back(dims[0]);
-      dims[0] = 1;
-      dims.push_back(1);
-      dims.push_back(1);
-    } else if (dims.size() < 4) {
-      for (size_t i = 4 - dims.size(); i > 0; --i) {
-        dims.push_back(1);
-      }
-    }
-    CHECK_EQ(dims.size(), 4);
-  }
+  // if (out_ltype == ge::FORMAT_NCHW) {
+  //   if (dims.size() == 1) {
+  //     dims.push_back(dims[0]);
+  //     dims[0] = 1;
+  //     dims.push_back(1);
+  //     dims.push_back(1);
+  //   } else if (dims.size() < 4) {
+  //     for (size_t i = 4 - dims.size(); i > 0; --i) {
+  //       dims.push_back(1);
+  //     }
+  //   }
+  //   CHECK_EQ(dims.size(), 4);
+  // }
 
   ge::TensorDesc desc(ge::Shape(dims), out_ltype, out_ptype);
   CHECK_EQ(out_ltype, ge::FORMAT_NCHW);
 
   auto size = desc.GetShape().GetShapeSize();
   CHECK_EQ(size, in_size / sizeof(float));
-  // ge::TensorUtils::SetWeightSize(desc, size*4);
 
   ge::TensorPtr out_tensor = std::make_shared<ge::Tensor>();
   out_tensor->SetTensorDesc(desc);

@@ -36,10 +36,10 @@ node_map_type SoftmaxConverter(const std::shared_ptr<lite::OpLite> softmax_op,
   std::shared_ptr<ge::op::Softmax> output_node =
       std::make_shared<ge::op::Softmax>(UniqueName("softmax"));
   auto x_var_name = op_info->Input("X").front();
-  int axis = op_info->GetAttr<int>("axis");
 
+  CHECK(inputs_map.count(x_var_name));
   output_node->set_input_x(*inputs_map.at(x_var_name));
-  output_node->set_attr_axis(axis);
+  output_node->set_attr_axis(op_info->GetAttr<int>("axis"));
 
   OpList::Global().add(inputs_map.at(x_var_name));
   OpList::Global().add(output_node);
