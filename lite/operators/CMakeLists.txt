@@ -36,6 +36,7 @@ lite_cc_library(dropout_op SRCS dropout_op.cc DEPS ${op_DEPS})
 lite_cc_library(concat_op SRCS concat_op.cc DEPS ${op_DEPS})
 lite_cc_library(pad2d_op SRCS pad2d_op.cc DEPS ${op_DEPS})
 lite_cc_library(negative_op SRCS negative_op.cc DEPS ${op_DEPS})
+lite_cc_library(crop_op SRCS crop_op.cc DEPS ${op_DEPS})
 lite_cc_library(calib_op SRCS calib_op.cc DEPS ${op_DEPS})
 lite_cc_library(split_op SRCS split_op.cc DEPS ${op_DEPS})
 lite_cc_library(transpose_op SRCS transpose_op.cc DEPS ${op_DEPS})
@@ -62,6 +63,10 @@ lite_cc_library(greater_than  SRCS compare_op.cc DEPS ${op_DEPS})
 lite_cc_library(greater_equal  SRCS compare_op.cc DEPS ${op_DEPS})
 lite_cc_library(read_from_array_op SRCS read_from_array_op.cc DEPS ${op_DEPS})
 lite_cc_library(beam_search_op SRCS beam_search_op.cc DEPS ${op_DEPS})
+lite_cc_library(sequence_pool_op_lite SRCS sequence_pool_op.cc DEPS ${op_DEPS})
+lite_cc_library(sequence_expand_op_lite SRCS sequence_expand_op.cc DEPS ${op_DEPS})
+lite_cc_library(reduce_max_op_lite SRCS reduce_max_op.cc DEPS ${op_DEPS})
+
 
 set(ops
         conv_op
@@ -91,6 +96,7 @@ set(ops
         dropout_op
         concat_op
         pad2d_op
+        crop_op
         prior_box_op
         density_prior_box_op
         negative_op
@@ -123,6 +129,9 @@ set(ops
         write_to_array_op
         read_from_array_op
         beam_search_op
+        sequence_pool_op_lite
+        sequence_expand_op_lite
+        reduce_max_op_lite
         CACHE INTERNAL "ops lite")
 
 if (NOT LITE_WITH_X86)

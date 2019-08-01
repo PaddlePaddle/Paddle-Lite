@@ -20,6 +20,7 @@
 #include <vector>
 #include "ai_ddk_lib/include/HiAiModelManagerService.h"
 #include "ai_ddk_lib/include/graph/graph.h"
+#include "ai_ddk_lib/include/graph/operator_reg.h"
 #include "lite/utils/cp_logging.h"
 
 namespace paddle {
