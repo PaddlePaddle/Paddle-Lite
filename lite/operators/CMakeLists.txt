@@ -32,7 +32,7 @@ lite_cc_library(beam_search_decode_op SRCS beam_search_decode_op.cc DEPS ${op_DE
 lite_cc_library(prior_box_op SRCS prior_box_op.cc DEPS ${op_DEPS})
 lite_cc_library(density_prior_box_op SRCS density_prior_box_op.cc DEPS ${op_DEPS})
 
-lite_cc_library(op_params SRCS op_params.cc DEPS tensor any framework_proto)
+lite_cc_library(op_params SRCS op_params.cc DEPS tensor any)
 lite_cc_library(dropout_op SRCS dropout_op.cc DEPS ${op_DEPS})
 lite_cc_library(concat_op SRCS concat_op.cc DEPS ${op_DEPS})
 lite_cc_library(pad2d_op SRCS pad2d_op.cc DEPS ${op_DEPS})
@@ -56,6 +56,9 @@ lite_cc_library(logical_and  SRCS logical_op.cc DEPS ${op_DEPS})
 lite_cc_library(less_than  SRCS compare_op.cc DEPS ${op_DEPS})
 lite_cc_library(read_from_array_op SRCS read_from_array_op.cc DEPS ${op_DEPS})
 lite_cc_library(beam_search_op SRCS beam_search_op.cc DEPS ${op_DEPS})
+lite_cc_library(sequence_pool_op_lite SRCS sequence_pool_op.cc DEPS ${op_DEPS})
+lite_cc_library(sequence_expand_op_lite SRCS sequence_expand_op.cc DEPS ${op_DEPS})
+lite_cc_library(reduce_max_op_lite SRCS reduce_max_op.cc DEPS ${op_DEPS})
 
 set(ops
         conv_op
@@ -111,6 +114,9 @@ set(ops
         write_to_array_op
         read_from_array_op
         beam_search_op
+        sequence_pool_op_lite
+        sequence_expand_op_lite
+        reduce_max_op_lite
         CACHE INTERNAL "ops lite")
 
 if (NOT LITE_WITH_X86)

@@ -31,21 +31,15 @@ class NegativeComputeTester : public arena::TestCase {
       : TestCase(place, alias) {}
 
   void RunBaseline(Scope* scope) override {
-    LOG(INFO) << "1";
     auto* out = scope->NewTensor(output_);
     CHECK(out);
     out->Resize(dims_);
-    LOG(INFO) << "2";
     auto* out_data = out->mutable_data<float>();
-    LOG(INFO) << "3";
     auto* x = scope->FindTensor(input_);
     const auto* x_data = x->data<float>();
-    LOG(INFO) << "4";
     for (int i = 0; i < dims_.production(); i++) {
       out_data[i] = -x_data[i];
-      LOG(INFO) << "i" << i;
     }
-    LOG(INFO) << "5";
   }
 
   void PrepareOpDesc(cpp::OpDesc* op_desc) {

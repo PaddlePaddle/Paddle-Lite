@@ -21,6 +21,8 @@
 
 USE_LITE_KERNEL(feed, kHost, kAny, kAny, def);
 USE_LITE_KERNEL(fetch, kHost, kAny, kAny, def);
+USE_LITE_KERNEL(reshape, kHost, kAny, kAny, def);
+USE_LITE_KERNEL(reshape2, kHost, kAny, kAny, def);
 
 #ifdef LITE_WITH_ARM
 USE_LITE_KERNEL(fc, kARM, kFloat, kNCHW, def);
@@ -68,6 +70,9 @@ USE_LITE_KERNEL(topk, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(increment, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(write_to_array, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(read_from_array, kARM, kFloat, kNCHW, def);
+USE_LITE_KERNEL(reduce_max, kARM, kFloat, kNCHW, def);
+USE_LITE_KERNEL(sequence_expand, kARM, kFloat, kNCHW, def);
+USE_LITE_KERNEL(sequence_pool, kARM, kFloat, kNCHW, def);
 
 USE_LITE_KERNEL(calib, kARM, kInt8, kNCHW, fp32_to_int8);
 USE_LITE_KERNEL(calib, kARM, kInt8, kNCHW, int8_to_fp32);

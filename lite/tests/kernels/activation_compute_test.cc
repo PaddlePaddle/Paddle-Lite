@@ -36,10 +36,10 @@ class ActivationComputeTester : public arena::TestCase {
   std::string input_ = "x";
   std::string output_ = "out";
   std::string prelu_channel_slope_ = "prelu_channel_slope";
-  float leaky_relu_slope_ = 0.01;
+  float leaky_relu_alpha_ = 0.01;
   float relu_clipped_coef_ = 6.;
   bool prelu_channel_shared_ = false;
-  float swish_coef_ = 0.;
+  float swish_beta_ = 0.;
   DDim dims_{{1}};
   std::string type_ = "relu";
   activation_type_test act_type_ = RELU;
@@ -47,18 +47,18 @@ class ActivationComputeTester : public arena::TestCase {
  public:
   ActivationComputeTester(const Place& place,
                           const std::string& alias,
-                          float leaky_relu_slope,
+                          float leaky_relu_alpha,
                           float relu_clipped_coef,
                           bool prelu_channel_shared,
-                          float swish_coef,
+                          float swish_beta,
                           DDim dims,
                           std::string type,
                           activation_type_test act_type)
       : TestCase(place, alias),
-        leaky_relu_slope_(leaky_relu_slope),
+        leaky_relu_alpha_(leaky_relu_alpha),
         relu_clipped_coef_(relu_clipped_coef),
         prelu_channel_shared_(prelu_channel_shared),
-        swish_coef_(swish_coef),
+        swish_beta_(swish_beta),
         dims_(dims),
         type_(type),
         act_type_(act_type) {}
@@ -81,7 +81,7 @@ class ActivationComputeTester : public arena::TestCase {
       case LEAKY_RELU: {
         for (int i = 0; i < dims_.production(); i++) {
           output_data[i] =
-              x_data[i] > 0.f ? x_data[i] : x_data[i] * leaky_relu_slope_;
+              x_data[i] > 0.f ? x_data[i] : x_data[i] * leaky_relu_alpha_;
         }
         break;
       }
@@ -136,7 +136,7 @@ class ActivationComputeTester : public arena::TestCase {
       case SWISH: {
         for (int i = 0; i < dims_.production(); i++) {
           output_data[i] =
-              x_data[i] / (1.f + std::exp(-swish_coef_ * x_data[i]));
+              x_data[i] / (1.f + std::exp(-swish_beta_ * x_data[i]));
         }
         break;
       }
@@ -161,13 +161,13 @@ class ActivationComputeTester : public arena::TestCase {
       op_desc->SetAttr("Prelu_channel_shared", prelu_channel_shared_);
     }
     if (act_type_ == LEAKY_RELU) {
-      op_desc->SetAttr("Leaky_relu_slope", leaky_relu_slope_);
+      op_desc->SetAttr("alpha", leaky_relu_alpha_);
     }
     if (act_type_ == RELU_CLIPPED) {
       op_desc->SetAttr("Relu_clipped_coef", relu_clipped_coef_);
     }
     if (act_type_ == SWISH) {
-      op_desc->SetAttr("Swish_coef", swish_coef_);
+      op_desc->SetAttr("beta", swish_beta_);
     }
   }
 

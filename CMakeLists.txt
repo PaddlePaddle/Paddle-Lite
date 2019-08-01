@@ -53,7 +53,6 @@ option(WITH_COVERAGE    "Compile PaddlePaddle with code coverage"       OFF)
 option(COVERALLS_UPLOAD "Package code coverage data to coveralls"       OFF)
 option(REPLACE_ENFORCE_GLOG "Replace PADDLE_ENFORCE with glog/CHECK for better debug." OFF)
 # TODO(Superjomn) Remove WITH_ANAKIN option if not needed latter.
-
 if(ANDROID OR IOS OR ARMLINUX)
     set(WITH_GPU OFF CACHE STRING
         "Disable GPU when cross-compiling for Android and iOS" FORCE)
@@ -81,7 +80,8 @@ option(LITE_WITH_OPENCL   "Enable OpenCL support in lite" OFF)
 option(LITE_WITH_FPGA   "Enable FPGA support in lite" OFF)
 option(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK  "Enable light-weight framework" OFF)
 option(LITE_WITH_PROFILE  "Enable profile mode in lite framework"  OFF)
-
+option(LITE_SHUTDOWN_LOG "Shutdown log system or not." OFF)
+option(LITE_ON_TINY_PUBLISH "Publish tiny predictor lib." OFF)
 
 set(THIRD_PARTY_PATH "${CMAKE_BINARY_DIR}/third_party" CACHE STRING
         "A path setting third party libraries download & build directories.")
@@ -93,6 +93,14 @@ if(NOT CMAKE_BUILD_TYPE)
             FORCE)
 endif()
 
+# check options
+if (LITE_ON_TINY_PUBLISH)
+    if (NOT (WITH_LITE AND LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_JAVA AND NOT WITH_TESTING))
+        message(FATAL_ERROR "LITE_ON_TINY_PUBLISH=ON must be used with WITH_LITE=ON LITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON LITE_WITH_JAVA=ON WITH_TESTING=OFF")
+        return()
+    endif()
+endif()
+
 include_directories("${PADDLE_SOURCE_DIR}")
 
 # for mobile
@@ -102,10 +110,16 @@ if (WITH_LITE AND LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
 
     # include the necessary thirdparty dependencies
     include(external/gflags)    # download, build, install gflags
-    include(external/glog)      # download, build, install glog
+
+    # LITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON will disable glog
+    # TODO(sangoly): refine WITH_LITE and LITE_WITH_LIGHT_WEIGHT_FRAMEWORK
+    #include(external/glog)     # download, build, install glog
     include(external/gtest)     # download, build, install gtest
-    include(external/protobuf)  # download, build, install protobuf
     include(ccache)             # set ccache for compilation
+
+    if (NOT LITE_ON_TINY_PUBLISH)
+        include(external/protobuf)  # download, build, install protobuf
+    endif()
 
     # for opencl
     if (LITE_WITH_OPENCL)
@@ -120,8 +134,6 @@ if (WITH_LITE AND LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
     return()
 endif()
 
-
-
 set(WITH_MKLML ${WITH_MKL})
 if (NOT DEFINED WITH_MKLDNN)
     if (WITH_MKL AND AVX2_FOUND)
@@ -132,9 +144,6 @@ if (NOT DEFINED WITH_MKLDNN)
     endif()
 endif()
 
-if (REPLACE_ENFORCE_GLOG)
-  add_definitions("-DREPLACE_ENFORCE_GLOG")
-endif()
 ########################################################################################
 
 include(external/mklml)     # download mklml package

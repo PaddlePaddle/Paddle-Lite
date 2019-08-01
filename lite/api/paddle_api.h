@@ -29,7 +29,7 @@ namespace lite_api {
 
 using shape_t = std::vector<int64_t>;
 
-struct Tensor {
+struct LITE_API Tensor {
   explicit Tensor(void* raw);
   explicit Tensor(const void* raw);
 
@@ -51,7 +51,7 @@ struct Tensor {
 
 /// The PaddlePredictor defines the basic interfaces for different kinds of
 /// predictors.
-class PaddlePredictor {
+class LITE_API PaddlePredictor {
  public:
   PaddlePredictor() = default;
 
@@ -75,7 +75,7 @@ class PaddlePredictor {
 };
 
 /// Base class for all the configs.
-class ConfigBase {
+class LITE_API ConfigBase {
   std::string model_dir_;
 
  public:
@@ -85,7 +85,7 @@ class ConfigBase {
 };
 
 /// CxxConfig is the config for the Full feature predictor.
-class CxxConfig : public ConfigBase {
+class LITE_API CxxConfig : public ConfigBase {
   Place preferred_place_;
   std::vector<Place> valid_places_;
 
@@ -99,7 +99,7 @@ class CxxConfig : public ConfigBase {
 
 /// MobileConfig is the config for the light weight predictor, it will skip
 /// IR optimization or other unnecessary stages.
-class MobileConfig : public ConfigBase {};
+class LITE_API MobileConfig : public ConfigBase {};
 
 template <typename ConfigT>
 std::shared_ptr<PaddlePredictor> CreatePaddlePredictor(const ConfigT&);
