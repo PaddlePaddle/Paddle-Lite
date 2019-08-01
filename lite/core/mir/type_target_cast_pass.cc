@@ -120,7 +120,8 @@ void TypeTargetTransformPass::AddIoCopyInst(
       is_found = true;
       selected_kernels.emplace_back(std::move(kernel));
       // we pick the kernel
-      io_copy_inst->AsStmt(io_copy_type, std::move(kernels), io_copy_op);
+      io_copy_inst->AsStmt(
+          io_copy_type, std::move(selected_kernels), io_copy_op);
       break;
     }
   }

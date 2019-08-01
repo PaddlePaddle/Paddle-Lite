@@ -30,6 +30,7 @@ Place mir::Node::Stmt::place() const {
 
 KernelBase &mir::Node::Stmt::picked_kernel() {
   CHECK(!valid_kernels_.empty()) << "no kernel for " << op_type();
+
   return *valid_kernels_.front();
 }
 

@@ -51,7 +51,7 @@ void CalibComputeFP16ToFp32::Run() {
 REGISTER_LITE_KERNEL(calib,
                      kFPGA,
                      kFP16,
-                     kAny,
+                     kNHWC,
                      paddle::lite::kernels::fpga::CalibComputeFp32ToFP16,
                      fp32_to_fp16_fpga_chw)
     .BindInput("Input",
@@ -67,7 +67,7 @@ REGISTER_LITE_KERNEL(calib,
 REGISTER_LITE_KERNEL(calib,
                      kFPGA,
                      kFP16,
-                     kAny,
+                     kNHWC,
                      paddle::lite::kernels::fpga::CalibComputeFP16ToFp32,
                      fp16_to_fp32_fpga_chw)
     .BindInput("Input",

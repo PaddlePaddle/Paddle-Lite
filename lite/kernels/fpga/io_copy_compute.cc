@@ -163,3 +163,19 @@ REGISTER_LITE_KERNEL(io_copy_once,
                                        PRECISION(kFloat),
                                        DATALAYOUT(kNCHW))})
     .Finalize();
+
+REGISTER_LITE_KERNEL(io_copy,
+                     kFPGA,
+                     kAny,
+                     kAny,
+                     paddle::lite::kernels::fpga::IoCopyFpgaToHostCompute,
+                     device_to_host_fp16_hwc)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kFPGA),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kNHWC))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kHost),
+                                       PRECISION(kFP16),
+                                       DATALAYOUT(kNHWC))})
+    .Finalize();

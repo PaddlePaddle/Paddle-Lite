@@ -57,7 +57,10 @@ class VariablePlaceInferencePass : public DebugPass {
   // Set the tye of the weight
   void SetWeightType(Node* w, const LiteType& type) {
     w->AsArg().type =
-        LiteType::GetTensorTy(TARGET(kHost), type.precision(), type.layout());
+        // LiteType::GetTensorTy(TARGET(kHost), type.precision(),
+        // type.layout());
+        LiteType::GetTensorTy(
+            TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
   }
 
   void InferenceArgumentPlace(SSAGraph* graph) {
@@ -68,7 +71,7 @@ class VariablePlaceInferencePass : public DebugPass {
       if (inst.op_type() == "io_copy") continue;
       // LOG(INFO) << "- inferencing type " <<
       // deal with inputs
-      VLOG(4) << "Infering op " << inst.op_info()->Repr();
+      LOG(INFO) << "Infering op " << inst.op_info()->Repr();
       // TODO(zhaolong): Add check if the node's name in op's arguments.
 
       auto get_argname = [&](
@@ -88,7 +91,8 @@ class VariablePlaceInferencePass : public DebugPass {
         std::string arg_name = get_argname(node_name, inst.op_info()->inputs());
         CHECK(arg_name.size() > 0) << "can not found op arguments for node "
                                    << node_name;
-        VLOG(3) << "-- input arg_name " << arg_name;
+        LOG(INFO) << "-- input arg_name " << arg_name
+                  << "-- node name :" << node_name;
         auto type = inst.picked_kernel().GetInputDeclType(arg_name);
         if (!x_in->AsArg().type) {
           VLOG(4) << "set type " << *type << " " << x_in;
