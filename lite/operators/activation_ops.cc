@@ -41,8 +41,10 @@ bool ActivationOp::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
     param_.Relu_clipped_coef = opdesc.GetAttr<float>("Relu_clipped_coef");
   }
   if (opdesc.Type() == "prelu") {
-    auto prelu_channel_slope_name = opdesc.Input("Prelu_channel_slope").front();
-    param_.Prelu_channel_shared = opdesc.GetAttr<bool>("Prelu_channel_shared");
+    auto prelu_channel_slope_name = opdesc.Input("Alpha").front();
+    if (opdesc.GetAttr<std::string>("mode") == "channel") {
+      param_.Prelu_channel_shared = false;
+    }
     param_.Prelu_channel_slope =
         scope->FindVar(prelu_channel_slope_name)->GetMutable<lite::Tensor>();
   }

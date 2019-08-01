@@ -84,6 +84,7 @@ USE_LITE_KERNEL(gru_unit, kARM, kFloat, kNCHW, def)
 USE_LITE_KERNEL(gru, kARM, kFloat, kNCHW, def)
 USE_LITE_KERNEL(beam_search_decode, kARM, kFloat, kNCHW, def)
 USE_LITE_KERNEL(while, kARM, kFloat, kNCHW, def)
+USE_LITE_KERNEL(fill_constant, kARM, kFloat, kNCHW, def)
 #endif
 
 #ifdef LITE_WITH_X86
