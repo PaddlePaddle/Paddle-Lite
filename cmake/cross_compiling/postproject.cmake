@@ -20,6 +20,9 @@ include(CheckCXXCompilerFlag)
 
 if(ANDROID)
     include(cross_compiling/findar)
+    
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -llog -fPIC")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -llog -fPIC")
 endif()
 
 if(ARMLINUX)

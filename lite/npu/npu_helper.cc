@@ -30,7 +30,8 @@ namespace npu {
 bool BuildNPUClient(std::vector<ge::Operator>& inputs,   // NOLINT
                     std::vector<ge::Operator>& outputs,  // NOLINT
                     const string& name) {
-  // build IR graph
+  LOG(INFO) << "[NPU] Building Client";
+
   ge::Graph npu_subgraph("npu_subgraph" + name);
   npu_subgraph.SetInputs(inputs).SetOutputs(outputs);
 
@@ -40,7 +41,10 @@ bool BuildNPUClient(std::vector<ge::Operator>& inputs,   // NOLINT
   // compile IR graph and output om model to memory
   domi::HiaiIrBuild ir_build;
   domi::ModelBufferData om_model_buffer;
-  ir_build.CreateModelBuff(npu_model, om_model_buffer);
+  if (!ir_build.CreateModelBuff(npu_model, om_model_buffer)) {
+    LOG(WARNING) << "[NPU] Failed CreateModelBuff: " << npu_model.GetName();
+    return false;
+  }
   if (!ir_build.BuildIRModel(npu_model, om_model_buffer)) {
     LOG(WARNING) << "[NPU] Failed BuildIRModel: " << npu_model.GetName();
     return false;
@@ -80,7 +84,7 @@ bool BuildNPUClient(const void* om_model_data,
   }
 
   auto desc = std::make_shared<hiai::AiModelDescription>(
-      "hiai" + name + ".om",
+      name,
       DeviceInfo::Global().freq_level(),
       DeviceInfo::Global().framework_type(),
       DeviceInfo::Global().model_type(),

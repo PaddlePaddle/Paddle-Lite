@@ -30,9 +30,12 @@ bool GraphOpLite::InferShape() const { return CheckShape(); /* enrich me */ }
 bool GraphOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
   auto x = op_desc.Input("Input").front();
   auto out = op_desc.Output("Output").front();
+  LOG(INFO) << "--------";
 
   CHECK(scope->FindVar(x));
   CHECK(scope->FindVar(out));
+  LOG(INFO) << "--------";
+
   param_.input = scope->FindVar(x)->GetMutable<lite::Tensor>();
   param_.output = scope->FindVar(out)->GetMutable<lite::Tensor>();
   param_.graph_name = op_desc.GetAttr<std::string>("graph_name");

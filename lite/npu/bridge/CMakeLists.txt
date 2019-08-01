@@ -1,8 +1,9 @@
 
 lite_cc_library(npu_bridge_registry SRCS registry.cc DEPS ${npu_ddk_libs})
-lite_cc_library(npu_bridge_utils SRCS utils.cc DEPS ${npu_ddk_libs})
+lite_cc_library(npu_bridge_utils SRCS utils.cc DEPS ${npu_ddk_libs} tensor op mir_node scope)
 
 set(npu_bridge_deps npu_bridge_registry npu_bridge_utils op)
+
 lite_cc_library(npu_bridge_fc_op SRCS fc_op.cc DEPS ${npu_bridge_deps})
 lite_cc_library(npu_bridge_conv_op SRCS conv_op.cc DEPS ${npu_bridge_deps})
 lite_cc_library(npu_bridge_mul_op SRCS mul_op.cc DEPS ${npu_bridge_deps})

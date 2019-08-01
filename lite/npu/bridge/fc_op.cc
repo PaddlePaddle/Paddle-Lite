@@ -27,25 +27,23 @@ namespace lite {
 namespace npu {
 namespace bridge {
 
-std::vector<std::shared_ptr<ge::Operator>> FCConverter(
-    const std::shared_ptr<lite::OpLite> op,
-    const std::vector<std::shared_ptr<ge::Operator>>& input_nodes) {
-  const std::shared_ptr<lite::operators::FcOpLite> fc_op =
-      static_pointer_cast<lite::operators::FcOpLite>(op);
+node_map_type FCConverter(const std::shared_ptr<lite::OpLite> fc_op,
+                          const node_map_type& inputs_map) {
   lite::Scope* scope = fc_op->scope();
-  // build fc op node
+  auto* op_info = fc_op->op_info();
+
   std::shared_ptr<ge::op::FullConnection> output_node =
       std::make_shared<ge::op::FullConnection>(UniqueName("fc"));
-  output_node->set_input_x(*input_nodes[0]);
+  auto x_var_name = op_info->Input("Input").front();
+  auto w_var_name = op_info->Input("W").front();
+  CHECK(inputs_map.count(x_var_name));
+  CHECK(inputs_map.count(w_var_name));
+  output_node->set_input_x(*inputs_map.at(x_var_name));
+  output_node->set_input_w(*inputs_map.at(w_var_name));
+
   // build and set weight and bias node
-  const lite::OpInfo* op_info = fc_op->op_info();
   int in_num_col_dims =
       op_info->GetAttr<int>("in_num_col_dims");  // TODO(hong19860320)
-  auto w_var_name = op_info->Input("W").front();
-  lite::Tensor* w = scope->FindVar(w_var_name)->GetMutable<lite::Tensor>();
-  ge::op::Const w_const_node =
-      ge::op::Const(w_var_name).set_attr_value(TensorConverter(w));
-  output_node->set_input_w(w_const_node);
   if (op_info->HasInput("Bias")) {
     auto bias_var_names = op_info->Input("Bias");
     if (bias_var_names.size() > 0) {
@@ -53,13 +51,14 @@ std::vector<std::shared_ptr<ge::Operator>> FCConverter(
       lite::Tensor* bias =
           scope->FindVar(bias_var_name)->GetMutable<lite::Tensor>();
       ge::op::Const bias_const_node =
-          ge::op::Const(bias_var_name).set_attr_value(TensorConverter(bias));
+          ge::op::Const(bias_var_name).set_attr_value(CvtFromLiteTensor(bias));
       output_node->set_input_b(bias_const_node);
     }
   }
-  std::vector<std::shared_ptr<ge::Operator>> output_nodes;
-  output_nodes.push_back(output_node);
-  return output_nodes;
+
+  node_map_type outputs_map;
+  outputs_map[op_info->Output("Out").front()] = output_node;
+  return outputs_map;
 }
 
 }  // namespace bridge

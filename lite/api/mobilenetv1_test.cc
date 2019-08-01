@@ -89,7 +89,7 @@ TEST(MobileNetV1, test_npu) {
   std::vector<Place> valid_places({
       Place{TARGET(kHost), PRECISION(kFloat)},
       Place{TARGET(kARM), PRECISION(kFloat)},
-      //  Place{TARGET(kNPU), PRECISION(kFloat)},
+      Place{TARGET(kNPU), PRECISION(kFloat)},
   });
 
   TestModel(valid_places,
