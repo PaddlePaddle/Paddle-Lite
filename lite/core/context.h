@@ -116,6 +116,8 @@ class Context<TargetType::kARM> {
   int l2_cache_size() const { return DeviceInfo::Global().l2_cache_size(); }
   int l3_cache_size() const { return DeviceInfo::Global().l3_cache_size(); }
   int llc_size() const { return DeviceInfo::Global().llc_size(); }
+  bool has_dot() const { return DeviceInfo::Global().has_dot(); }
+  bool has_fp16() const { return DeviceInfo::Global().has_fp16(); }
 
   template <typename T>
   T* workspace_data() {

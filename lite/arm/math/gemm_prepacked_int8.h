@@ -23,32 +23,44 @@ namespace lite {
 namespace arm {
 namespace math {
 
+const int KBLOCK_INT8 = 4;
 #ifdef __aarch64__
 // for int7/int8 gemm
 // const int HBLOCK = 4;
 // const int NBLOCK = 16;
-const int MBLOCK_INT8 = 4;
-const int KBLOCK_INT8 = 4;
-const int NBLOCK_INT8 = 16;
+const int MBLOCK_INT8_OTH = 4;
+const int NBLOCK_INT8_OTH = 16;
 
-inline int get_hblock_int8(ARMArch arch) { return MBLOCK_INT8; }
+const int MBLOCK_INT8_DOT = 8;
+const int NBLOCK_INT8_DOT = 12;
+
+inline int get_hblock_int8(const ARMContext* ctx) {
+#ifdef WITH_ARM_DOTPROD
+  if (ctx->has_dot()) {
+    return MBLOCK_INT8_DOT;
+  } else {
+    return MBLOCK_INT8_OTH;
+  }
+#else
+  return MBLOCK_INT8_OTH;
+#endif
+}
 #else
 // const int HBLOCK = 4;
 // const int WBLOCK = 8;
-const int MBLOCK_INT8 = 4;
-const int KBLOCK_INT8 = 4;
-const int NBLOCK_INT8 = 8;
+const int MBLOCK_INT8_OTH = 4;
+const int NBLOCK_INT8_OTH = 8;
 
-inline int get_hblock_int8(ARMArch arch) { return 4; }
+inline int get_hblock_int8(const Context* ctx) { return 4; }
 #endif  // __aarch64__
 
 void prepackA_int8(void* out,
                    const void* in,
-                   const int ldin,
-                   const int m0,
-                   const int mmax,
-                   const int k0,
-                   const int kmax,
+                   int ldin,
+                   int m0,
+                   int mmax,
+                   int k0,
+                   int kmax,
                    bool is_trans);
 
 void prepackA_int8(TensorLite* tout,
@@ -73,7 +85,7 @@ void gemm_prepack_int8(const int8_t* A_packed,
                        const float* scale,
                        ARMContext* ctx);
 
-#define ROUNDUP(a, b) (((a + b - 1) / b) * b)
+#define ROUNDUP(a, b) ((((a) + (b)-1) / (b)) * (b))
 
 }  // namespace math
 }  // namespace arm
