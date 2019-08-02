@@ -1,3 +1,4 @@
+
 /* Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,17 +13,16 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-//
-// Created by hujie09 on 2019-07-31.
-//
 
 #ifdef FLATTEN2_OP
 #include <operators/op_param.h>
 #include "framework/operator.h"
 namespace paddle_mobile {
+
 namespace operators {
 DECLARE_KERNEL(Flatten2, FlattenParam)
 }
 }  // namespace paddle_mobile
 
 #endif  // FLATTEN2_KERNEL
+

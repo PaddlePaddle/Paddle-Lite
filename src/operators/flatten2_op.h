@@ -16,7 +16,7 @@ limitations under the License. */
 
 #pragma once
 
-#include <string>lot
+#include <string>
 #include <vector>
 
 #include "framework/operator.h"

@@ -1,3 +1,4 @@
+
 /* Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,6 +16,7 @@ limitations under the License. */
 #ifdef FLATTEN2_OP
 
 #include "operators/kernel/flatten2_kernel.h"
+
 
 namespace paddle_mobile {
 namespace operators {
@@ -35,3 +37,4 @@ void Flatten2Kernel<GPU_CL, float>::Compute(
 }  // namespace paddle_mobile
 
 #endif
+
