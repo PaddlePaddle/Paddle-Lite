@@ -14,33 +14,39 @@ limitations under the License. */
 
 #pragma once
 
-#ifndef PE_hpp
-#define PE_hpp
-
 #include <stdio.h>
-#include <iostream>
-#include "debugger.hpp"
-#include "pe_params.hpp"
-#include "tensor_util.hpp"
+#include <string>
+#include <unordered_map>
+
+#include "llapi/filter.h"
+#include "llapi/zynqmp_api.h"
 
 namespace paddle_mobile {
 namespace zynqmp {
 
-class PE {
+class Debugger {
  public:
-  virtual bool init() { return false; }
-
-  virtual void apply() {}
-
-  virtual bool dispatch() {
-    std::cout << "pe dispatch \n";
-    return false;
+  static Debugger& get_instance() {
+    static Debugger s_instance;
+    return s_instance;
   }
 
-  virtual ~PE() {}
-};
+  void registerOutput(std::string op_type, Tensor* tensor) {
+    tensor->saveToFile(op_type, true);
+  }
 
+ private:
+  std::unordered_map<std::string, bool> op_config;
+  Debugger() {
+    op_config["concat"] = true;
+    op_config["conv_add_bn"] = true;
+    op_config["conv_add_bn_relu"] = true;
+    op_config["conv_add"] = true;
+    op_config["conv_add_relu"] = true;
+    op_config["conv_bn"] = true;
+    op_config["conv_bn_relu"] = true;
+    op_config["crop"] = true;
+  }
+};
 }  // namespace zynqmp
 }  // namespace paddle_mobile
-
-#endif /* PE_hpp */

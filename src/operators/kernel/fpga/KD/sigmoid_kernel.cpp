@@ -12,55 +12,54 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef FLATTEN_OP
+#ifdef SIGMOID_OP
 
-#include "operators/kernel/central-arm-func/flatten_arm_func.h"
-#include "operators/kernel/flatten_kernel.h"
+#include "fpga/KD/float16.hpp"
+#include "operators/kernel/activation_kernel.h"
+
+using float16 = paddle_mobile::zynqmp::float16;
 
 namespace paddle_mobile {
 namespace operators {
 
 template <>
-bool FlattenKernel<FPGA, float>::Init(FlattenParam<FPGA> *param) {
-  param->Out()->mutable_data<half>();
+bool SigmoidKernel<FPGA, float>::Init(SigmoidParam<FPGA> *param) {
+  param->Out()->mutable_data<float>();
   param->Out()->zynqmpTensor()->setAligned(false);
   param->Out()->zynqmpTensor()->setDataLocation(zynqmp::CPU);
   return true;
 }
-
 template <>
-void FlattenKernel<FPGA, float>::Compute(const FlattenParam<FPGA> &param) {
+void SigmoidKernel<FPGA, float>::Compute(const SigmoidParam<FPGA> &param) {
   const auto *input_x = param.InputX();
-  const auto axis = param.Axis();
-  const auto &input_x_dims = input_x->dims();
-  auto *out = param.Out();
+  auto out = param.Out();
+  int numel = input_x->numel();
 
-  const auto &out_shape_v = GetOutputShape(axis, input_x_dims);
-  const framework::DDim &out_dim = ValidateShape(out_shape_v, input_x_dims);
-
+  float16 *in_data = input_x->zynqmpTensor()->data<float16>();
+  float *out_data = out->zynqmpTensor()->data<float>();
   input_x->zynqmpTensor()->syncToCPU();
-
-  out->Resize(out_dim);
-  out->mutable_data<half>();
-
-  input_x->check_memory_size();
-  out->Resize(input_x->dims());
-  auto src_ptr = input_x->data<void>();
-  auto dst_ptr = out->mutable_data(input_x->type());
-  auto size = input_x->numel() * sizeof(half);
-  memory::Copy(dst_ptr, src_ptr, size);
-
-  out->Resize(out_dim);
-  out->zynqmpTensor()->copyScaleFrom(input_x->zynqmpTensor());
+  // input_x->zynqmpTensor()->saveToFile("sin.txt");
+  float max = 0.0f;
+  for (int i = 0; i < numel; i++) {
+    /* code */
+    float value = zynqmp::half_to_float(in_data[i]);
+    value = 1 / (1 + exp(-value));
+    out_data[i] = value;
+    // out_data[i] = zynqmp::float_to_half(value);
+    max = std::max(std::abs(value), max);
+  }
+  out->zynqmpTensor()->scale()[0] = max / 127.0;
+  out->zynqmpTensor()->scale()[1] = 127.0 / max;
   out->zynqmpTensor()->flush();
+  out->zynqmpTensor()->printScale();
 
 #ifdef PADDLE_MOBILE_DEBUG
-  zynqmp::Debugger::get_instance().registerOutput("flattern",
+  zynqmp::Debugger::get_instance().registerOutput("sigmoid",
                                                   param.Out()->zynqmpTensor());
 #endif
-}
 
-template class FlattenKernel<FPGA, float>;
+  exit(-1);
+}
 
 }  // namespace operators
 }  // namespace paddle_mobile

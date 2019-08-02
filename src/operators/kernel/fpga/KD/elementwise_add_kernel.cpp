@@ -46,8 +46,10 @@ void ElementwiseAddKernel<FPGA, float>::Compute(
   ElementwiseAddPE& pe = context.pe<ElementwiseAddPE>();
   pe.dispatch();
 
-  // param.Out()->zynqmpTensor()->printScale();
-  // param.Out()->zynqmpTensor()->saveToFile("ew_", true);
+#ifdef PADDLE_MOBILE_DEBUG
+  zynqmp::Debugger::get_instance().registerOutput("ew_add",
+                                                  param.Out()->zynqmpTensor());
+#endif
 }
 }  // namespace operators
 }  // namespace paddle_mobile

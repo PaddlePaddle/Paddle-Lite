@@ -46,8 +46,10 @@ void ElementwiseAddReluKernel<FPGA, float>::Compute(
   zynqmp::Context& context = const_cast<zynqmp::Context&>(param.context_);
   ElementwiseAddPE& pe = context.pe<ElementwiseAddPE>();
   pe.dispatch();
-
-  // param.Out()->zynqmpTensor()->saveToFile("ew_relu.txt");
+#ifdef PADDLE_MOBILE_DEBUG
+  zynqmp::Debugger::get_instance().registerOutput("ew_add_relu",
+                                                  param.Out()->zynqmpTensor());
+#endif
 }
 }  // namespace operators
 }  // namespace paddle_mobile

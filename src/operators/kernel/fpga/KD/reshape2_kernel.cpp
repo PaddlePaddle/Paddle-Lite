@@ -63,7 +63,11 @@ void Reshape2Kernel<FPGA, float>::Compute(const Reshape2Param<FPGA> &param) {
   out->zynqmpTensor()->copyScaleFrom(input_x->zynqmpTensor());
 
   out->zynqmpTensor()->printScale();
-  // out->zynqmpTensor()->saveToFile("reshape2_", true);
+
+#ifdef PADDLE_MOBILE_DEBUG
+  zynqmp::Debugger::get_instance().registerOutput("reshape2",
+                                                  param.Out()->zynqmpTensor());
+#endif
 }
 template class Reshape2Kernel<FPGA, float>;
 

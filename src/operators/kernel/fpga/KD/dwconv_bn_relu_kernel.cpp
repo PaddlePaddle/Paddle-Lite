@@ -60,7 +60,10 @@ void DWConvBNReluKernel<FPGA, float>::Compute(
   pe.dispatch();
 
   param.Output()->zynqmpTensor()->printScale();
-  // param.Output()->zynqmpTensor()->saveToFile("dwconvaddrelu_", true);
+#ifdef PADDLE_MOBILE_DEBUG
+  zynqmp::Debugger::get_instance().registerOutput(
+      "dwconv_bn_relu", param.Output()->zynqmpTensor());
+#endif
 }
 }  // namespace operators
 }  // namespace paddle_mobile

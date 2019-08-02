@@ -66,6 +66,10 @@ void ElementwiseMulKernel<FPGA, float>::Compute(
   zynqmp::Context& context = const_cast<zynqmp::Context&>(param.context_);
   zynqmp::ScalePE& pe = context.pe<zynqmp::ScalePE>();
   pe.dispatch();
+#ifdef PADDLE_MOBILE_DEBUG
+  zynqmp::Debugger::get_instance().registerOutput("ew_mul",
+                                                  param.Out()->zynqmpTensor());
+#endif
 }
 
 template class ElementwiseMulKernel<FPGA, float>;

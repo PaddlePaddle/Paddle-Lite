@@ -60,8 +60,10 @@ void DropoutKernel<FPGA, float>::Compute(const DropoutParam<FPGA>& param) {
   pe.dispatch();
 
   param.Out()->zynqmpTensor()->printScale();
-  // param.InputX()->zynqmpTensor()->saveToFile("dropout_in.txt");
-  // param.Out()->zynqmpTensor()->saveToFile("dropout_out.txt");
+#ifdef PADDLE_MOBILE_DEBUG
+  zynqmp::Debugger::get_instance().registerOutput("dropout",
+                                                  param.Out()->zynqmpTensor());
+#endif
 }
 
 }  // namespace operators

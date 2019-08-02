@@ -13,8 +13,8 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 #ifdef FUSION_FC_OP
 
-#include "operators/kernel/fc_relu_kernel.h"
 #include "fpga/KD/pes/fully_connected_pe.hpp"
+#include "operators/kernel/fc_relu_kernel.h"
 
 namespace paddle_mobile {
 namespace operators {
@@ -38,11 +38,16 @@ bool FusionFcReluKernel<FPGA, float>::Init(FusionFcReluParam<FPGA>* param) {
 }
 
 template <>
-void FusionFcReluKernel<FPGA, float>::Compute(const FusionFcReluParam<FPGA>& param) {
+void FusionFcReluKernel<FPGA, float>::Compute(
+    const FusionFcReluParam<FPGA>& param) {
   zynqmp::Context& context = const_cast<zynqmp::Context&>(param.context_);
   FullyConnectedPE& pe = context.pe<FullyConnectedPE>();
   pe.dispatch();
 
+#ifdef PADDLE_MOBILE_DEBUG
+  zynqmp::Debugger::get_instance().registerOutput("fusion_fc_relu",
+                                                  param.Out()->zynqmpTensor());
+#endif
 }
 }  // namespace operators
 }  // namespace paddle_mobile

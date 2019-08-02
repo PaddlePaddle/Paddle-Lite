@@ -55,7 +55,10 @@ void ConvBNKernel<FPGA, float>::Compute(const FusionConvBNParam<FPGA>& param) {
   zynqmp::Context& context = const_cast<zynqmp::Context&>(param.context_);
   ConvPE& pe = context.pe<ConvPE>();
   pe.dispatch();
-  // param.Output()->zynqmpTensor()->saveToFile();
+#ifdef PADDLE_MOBILE_DEBUG
+  zynqmp::Debugger::get_instance().registerOutput(
+      "conv_bn", param.Output()->zynqmpTensor());
+#endif
 }
 
 }  // namespace operators

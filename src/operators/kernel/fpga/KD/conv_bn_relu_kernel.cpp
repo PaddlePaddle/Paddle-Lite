@@ -61,7 +61,10 @@ void ConvBNReluKernel<FPGA, float>::Compute(
   pe.dispatch();
 
   param.Output()->zynqmpTensor()->printScale();
-  // param.Output()->zynqmpTensor()->readFromFile("conv_bn_relu", true);
+#ifdef PADDLE_MOBILE_DEBUG
+  zynqmp::Debugger::get_instance().registerOutput(
+      "conv_bn_relu", param.Output()->zynqmpTensor());
+#endif
 }
 
 }  // namespace operators

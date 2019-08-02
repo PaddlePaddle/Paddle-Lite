@@ -78,6 +78,11 @@ void TransposeKernel<FPGA, float>::Compute(const TransposeParam<FPGA>& param) {
   } else {
     output->zynqmpTensor()->copyFrom(input->zynqmpTensor());
   }
+
+#ifdef PADDLE_MOBILE_DEBUG
+  zynqmp::Debugger::get_instance().registerOutput("transpose",
+                                                  param.Out()->zynqmpTensor());
+#endif
 }
 
 }  // namespace operators

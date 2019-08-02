@@ -44,7 +44,10 @@ void CropKernel<FPGA, float>::Compute(const CropParam<FPGA>& param) {
   zynqmp::CropPE& pe = context.pe<zynqmp::CropPE>();
   pe.dispatch();
 
-  // param.Out()->zynqmpTensor()->saveToFile("crop_", true);
+#ifdef PADDLE_MOBILE_DEBUG
+  zynqmp::Debugger::get_instance().registerOutput("crop",
+                                                  param.Out()->zynqmpTensor());
+#endif
 }
 
 }  // namespace operators

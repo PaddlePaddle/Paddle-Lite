@@ -100,8 +100,10 @@ void ConvAddBNKernel<FPGA, float>::Compute(
     ConvPE& pe = context.pe<ConvPE>();
     pe.dispatch();
   }
-  // param.Output()->zynqmpTensor()->printScale();
-  // param.Output()->zynqmpTensor()->saveToFile("conv_add_bn_out_", true);
+#ifdef PADDLE_MOBILE_DEBUG
+  zynqmp::Debugger::get_instance().registerOutput(
+      "conv_add_bn", param.Output()->zynqmpTensor());
+#endif
 }
 
 }  // namespace operators
