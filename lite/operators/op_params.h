@@ -527,9 +527,9 @@ struct CompareParam {
 };
 
 struct WhileParam {
-  const Scope* scope;
-  Tensor* cond;
-  cpp::BlockDesc* sub_block;
+  Scope* scope{};
+  Tensor* cond{};
+  cpp::BlockDesc* sub_block{};
   std::vector<Tensor*> x{};
   std::vector<Tensor*> outs{};
 };
@@ -549,11 +549,11 @@ struct IncrementParam {
 struct WriteToArrayParam {
   const lite::Tensor* X{};
   const lite::Tensor* I{};
-  std::vector<lite::Tensor*> Out{};
+  std::vector<lite::Tensor>* Out{};
 };
 
 struct ReadFromArrayParam {
-  std::vector<lite::Tensor*> X{};
+  std::vector<lite::Tensor>* X{};
   lite::Tensor* I{};
   lite::Tensor* Out{};
 };

@@ -22,17 +22,16 @@ namespace operators {
 bool ReadFromArrayOp::CheckShape() const { return true; }
 
 bool ReadFromArrayOp::InferShape() const {
-  auto in_dims = param_.X[0]->dims();
+  auto in_dims = (*param_.X)[0].dims();
   param_.Out->Resize(in_dims);
   return true;
 }
 
 bool ReadFromArrayOp::AttachImpl(const cpp::OpDesc &opdesc,
                                  lite::Scope *scope) {
-  auto inputs = opdesc.Input("X");
-  for (auto in : inputs) {
-    param_.X.push_back(scope->FindVar(in)->GetMutable<lite::Tensor>());
-  }
+  auto in = opdesc.Input("X").front();
+  param_.X = scope->FindVar(in)->GetMutable<std::vector<lite::Tensor>>();
+  LOG(INFO) << "param_.x " << param_.X->size();
 
   param_.I =
       scope->FindVar(opdesc.Input("I").front())->GetMutable<lite::Tensor>();

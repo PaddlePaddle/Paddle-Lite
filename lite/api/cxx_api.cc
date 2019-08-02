@@ -27,14 +27,11 @@ void Predictor::SaveModel(const std::string &dir, LiteModelType model_type) {
     GenRuntimeProgram();
   }
   program_->SaveOpInfosToProgram(&program_desc_);
-  LOG(INFO) << "Save model to " << dir;
   switch (model_type) {
     case LiteModelType::kProtobuf:
-      LOG(INFO) << "load pb";
       SaveModelPb(dir, *program_->exec_scope(), program_desc_);
       break;
     case LiteModelType::kNaiveBuffer:
-      LOG(INFO) << "load nb";
       SaveModelNaive(dir, *program_->exec_scope(), program_desc_);
       break;
     default:
@@ -74,18 +71,14 @@ void Predictor::Build(const std::string &model_path,
   switch (model_type) {
     case LiteModelType::kProtobuf:
       LoadModelPb(model_path, scope_.get(), &program_desc_);
-      LOG(INFO) << "load pb";
       break;
     case LiteModelType::kNaiveBuffer:
       LoadModelNaive(model_path, scope_.get(), &program_desc_);
-      LOG(INFO) << "load nb";
       break;
     default:
       LOG(FATAL) << "Unknown model type";
   }
-  LOG(INFO) << "load model down";
   Build(program_desc_, prefer_place, valid_places, passes);
-  LOG(INFO) << "build finished";
 }
 
 void Predictor::Build(const cpp::ProgramDesc &desc,
@@ -93,17 +86,12 @@ void Predictor::Build(const cpp::ProgramDesc &desc,
                       const std::vector<Place> &valid_places,
                       const std::vector<std::string> &passes) {
   program_desc_ = desc;
-  LOG(INFO) << "program";
   Program program(desc, scope_, valid_places);
-  LOG(INFO) << "program finished";
-
   optimizer_.KernelPickPreferPlace(prefer_place);
   core::KernelPickFactor factor;
   factor.ConsiderTarget();
   factor.ConsiderPrecision();
-  LOG(INFO) << "opt run";
   optimizer_.Run(std::move(program), valid_places, factor, passes);
-  LOG(INFO) << "opr run finished";
   exec_scope_ = optimizer_.exec_scope();
 }
 

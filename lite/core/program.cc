@@ -64,15 +64,13 @@ void Program::Build(const cpp::ProgramDesc& prog) {
     CHECK(op) << "no Op found for " << op_type;
     if (op_type == "while") {
       auto sub_block_idx = op_desc.GetAttr<int16_t>("sub_block");
-      LOG(INFO) << sub_block_idx;
-      auto sub_block = program.GetBlock<cpp::BlockDesc>(sub_block_idx);
-      LOG(INFO) << sub_block_idx;
+      auto sub_block =
+          const_cast<cpp::ProgramDesc&>(prog).GetBlock<cpp::BlockDesc>(
+              sub_block_idx);
       static_cast<operators::WhileOpLite*>(op.get())->SetSubBlock(sub_block);
-      LOG(INFO) << sub_block_idx;
     }
     ops_.emplace_back(std::move(op));
     ops_.back()->Attach(op_desc, exec_scope_);
-    LOG(INFO) << "attached";
   }
 }
 
@@ -87,16 +85,21 @@ void Program::PrepareWorkspace(const cpp::ProgramDesc& prog) {
 
   auto program = prog;
   CHECK(program.BlocksSize());
-  auto& main_block = *program.GetBlock<cpp::BlockDesc>(0);
-  for (size_t i = 0; i < main_block.VarsSize(); ++i) {
-    auto& var_desc = *main_block.GetVar<cpp::VarDesc>(i);
-    if (!var_desc.Persistable()) {
-      tmp_vars_.push_back(var_desc.Name());
-      exec_scope_->Var(var_desc.Name());
-    } else {
-      if (var_desc.Name() == "feed" || var_desc.Name() == "fetch") continue;
-      weights_.push_back(var_desc.Name());
-      if (var_desc.Persistable()) scope_->Var(var_desc.Name());
+  for (size_t b = 0; b < program.BlocksSize(); ++b) {
+    auto& main_block = *program.GetBlock<cpp::BlockDesc>(b);
+    for (size_t i = 0; i < main_block.VarsSize(); ++i) {
+      auto& var_desc = *main_block.GetVar<cpp::VarDesc>(i);
+      if (!var_desc.Persistable()) {
+        tmp_vars_.push_back(var_desc.Name());
+        exec_scope_->Var(var_desc.Name());
+        if (b > 0) {
+          LOG(INFO) << "var: " << var_desc.Name();
+        }
+      } else {
+        if (var_desc.Name() == "feed" || var_desc.Name() == "fetch") continue;
+        weights_.push_back(var_desc.Name());
+        if (var_desc.Persistable()) scope_->Var(var_desc.Name());
+      }
     }
   }
 }
@@ -105,16 +108,19 @@ void Instruction::Run() {
 #ifdef LITE_WITH_PROFILE
   profile::ProfileBlock x(profile_id_);
 #endif  // LITE_WITH_PROFILE
-  CHECK(op_);
-  CHECK(kernel_);
+  CHECK(op_) << "op null";
+  CHECK(kernel_) << "kernel null";
   if (first_epoch_) {
     first_epoch_ = false;
     CHECK(op_->CheckShape());
   }
 
   if (op_->run_once() && has_run_) return;
+  LOG(INFO) << "op infershape";
   op_->InferShape();
+  LOG(INFO) << "kernel launch";
   kernel_->Launch();
+  LOG(INFO) << "kernel launched";
   has_run_ = true;
 }
 

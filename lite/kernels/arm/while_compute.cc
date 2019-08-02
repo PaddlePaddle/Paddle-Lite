@@ -27,9 +27,10 @@ namespace arm {
 
 void WhileCompute::PrepareForRun() {
   auto &param = Param<operators::WhileParam>();
-  auto &cur_scope = param.scope->NewScope();
+  auto cur_scope = param.scope;
+
   executor_ =
-      std::make_shared<StepExecutor>(param.sub_block, &cur_scope, place());
+      std::make_shared<StepExecutor>(param.sub_block, cur_scope, place());
 }
 void WhileCompute::Run() {
   auto &param = Param<operators::WhileParam>();

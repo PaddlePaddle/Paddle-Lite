@@ -29,23 +29,18 @@ void WriteToArrayCompute::Run() {
   CHECK_EQ(param.I->numel(), 1) << "input2 should have only one element";
   const auto* x_data = param.X->data<float>();
   int id = param.I->data<int>()[0];
-  if (id > param.Out.size()) {
-    for (int i = param.Out.size(); i < id + 1; i++) {
+  if (id >= param.Out->size()) {
+    for (int i = param.Out->size(); i < id + 1; i++) {
       lite::Tensor tmp;
-      param.Out.push_back(&tmp);
+      param.Out->push_back(tmp);
     }
   }
-  LOG(INFO) << "id" << id;
-  param.Out[id]->Resize(param.X->dims());
-  LOG(INFO) << "before mute lod";
-  auto out_lod = param.Out[id]->mutable_lod();
+  (*param.Out)[id].Resize(param.X->dims());
+  auto out_lod = (*param.Out)[id].mutable_lod();
   *out_lod = param.X->lod();
-  LOG(INFO) << "before mute data";
-  auto* o_data = param.Out[id]->mutable_data<float>(TARGET(kHost));
-  LOG(INFO) << "mute data finish";
+  auto* o_data = (*param.Out)[id].mutable_data<float>(TARGET(kHost));
   int input_size = param.X->numel();
   memcpy(o_data, x_data, sizeof(float) * input_size);
-  LOG(INFO) << "write_to_array finished";
 }
 
 }  // namespace arm

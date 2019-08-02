@@ -21,8 +21,6 @@ namespace lite {
 namespace operators {
 
 bool WhileOpLite::CheckShape() const {
-  CHECK_GT_OR_FALSE(param_.x.size(), 0UL);
-  CHECK_GT_OR_FALSE(param_.outs.size(), 0UL);
   CHECK_OR_FALSE(param_.sub_block);
   CHECK_OR_FALSE(param_.scope);
   CHECK_OR_FALSE(param_.cond);
@@ -34,23 +32,18 @@ bool WhileOpLite::InferShape() const { return true; }
 bool WhileOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
   auto inputs = op_desc.Input("X");
   auto outs = op_desc.Output("Out");
-  LOG(INFO) << "set x";
 
   for (auto var : inputs) {
-    param_.x.push_back(scope->FindVar(var)->GetMutable<lite::Tensor>());
+    // param_.x.push_back(scope->FindVar(var)->GetMutable<lite::Tensor>());
   }
   for (auto var : outs) {
-    param_.outs.push_back(scope->FindVar(var)->GetMutable<lite::Tensor>());
+    // param_.outs.push_back(scope->FindVar(var)->GetMutable<lite::Tensor>());
   }
-  LOG(INFO) << "set outs";
   param_.sub_block = sub_block_;
-  LOG(INFO) << "set outs";
 
   auto condition = op_desc.Input("Condition");
   param_.cond = scope->FindVar(condition[0])->GetMutable<lite::Tensor>();
-  LOG(INFO) << "set outs";
   param_.scope = scope;
-  LOG(INFO) << "set outs";
 
   return true;
 }
