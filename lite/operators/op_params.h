@@ -15,7 +15,6 @@
 #pragma once
 #include <string>
 #include <vector>
-#include "lite/core/framework.pb.h"
 #include "lite/core/scope.h"
 #include "lite/core/tensor.h"
 #include "lite/model_parser/cpp/block_desc.h"
@@ -62,11 +61,9 @@ struct CalibParam {
 };
 
 struct GraphParam {
-  // only one input yet
-  // std::vector<lite::Tensor*> x{};
-  const lite::Tensor* input{};
-  lite::Tensor* output{};
-  std::string graph_name{"graph"};
+  std::vector<const lite::Tensor*> inputs{};
+  std::vector<lite::Tensor*> outputs{};
+  std::string model_name{"model"};
 };
 
 /// -------------------------- NN operators ------------------------------------
@@ -350,18 +347,18 @@ struct NegativeParam {
 struct Pad2dParam {
   const lite::Tensor* X{};
   lite::Tensor* Out{};
-  /*
-  _mod:PadMode
-  typedef enum{
-     PAD_CONSTANT = 0,
-     PAD_EDGE = 1,
-     PAD_REFLECT = 2,
- } PadMode;
-   */
-  int _mode{0};
-  std::vector<int> _pad_h;
-  std::vector<int> _pad_w;
-  float _pad_value = 0.f;
+  std::vector<int> paddings{0, 0, 0, 0};
+  std::string mode{"constant"};
+  float pad_value = 0.f;
+  std::string data_format{"NCHW"};
+};
+
+/// ----------------------- Crop operators ----------------------
+struct CropParam {
+  const lite::Tensor* X{};
+  lite::Tensor* Out{};
+  std::vector<int> offsets;
+  std::vector<int> shape;
 };
 
 ///----------------------- argmax operators ----------------------
@@ -421,6 +418,18 @@ struct DecodeBboxesParam {
   std::string code_type;
 };
 
+/// ----------------------- box_coder operators ----------------------
+struct BoxCoderParam {
+  const lite::Tensor* prior_box{};
+  const lite::Tensor* prior_box_var{};
+  const lite::Tensor* target_box{};
+  lite::Tensor* proposals{};
+  int axis{0};
+  bool box_normalized{true};
+  // code_type: encode_center_size and decode_center_size
+  std::string code_type;
+};
+
 /// ----------------------- multiclass_nms operators ----------------------
 struct MulticlassNmsParam {
   const lite::Tensor* bbox_data{};
@@ -428,26 +437,28 @@ struct MulticlassNmsParam {
   lite::Tensor* out;
   std::vector<int> priors;
   int class_num;
-  int background_id;
-  int keep_topk;
-  int nms_topk;
-  float conf_thresh;
-  float nms_thresh;
+  int background_label;
+  int keep_top_k;
+  int nms_top_k;
+  float score_threshold;
+  float nms_threshold;
   float nms_eta;
   bool share_location{true};
 };
 
 /// ----------------------- priorbox operators ----------------------
 struct PriorBoxParam {
-  std::vector<lite::Tensor*> ins;
-  std::vector<lite::Tensor*> outs;
+  lite::Tensor* input{};
+  lite::Tensor* image{};
+  lite::Tensor* boxes{};
+  lite::Tensor* variances{};
 
-  bool is_flip;
-  bool is_clip;
-  std::vector<float> min_size;
-  std::vector<float> max_size;
-  std::vector<float> aspect_ratio;
-  std::vector<float> variance;
+  bool flip;
+  bool clip;
+  std::vector<float> min_sizes;
+  std::vector<float> max_sizes;
+  std::vector<float> aspect_ratios;
+  std::vector<float> variances_;
   int img_w{0};
   int img_h{0};
   float step_w{0};
@@ -459,9 +470,9 @@ struct PriorBoxParam {
 };
 
 struct DensityPriorBoxParam : public PriorBoxParam {
-  std::vector<float> fixed_size;
-  std::vector<float> fixed_ratio;
-  std::vector<float> density_size;
+  std::vector<float> fixed_sizes;
+  std::vector<float> fixed_ratios;
+  std::vector<float> density_sizes;
 };
 /// ----------------------- GRU operators ----------------------f
 struct GRUParam {
@@ -488,6 +499,14 @@ struct BeamSearchDecodeParam {
   lite::Tensor* sentence_scores{nullptr};
   int beam_size;
   int end_id;
+};
+
+/// ----------------------- LookupTable operators ----------------------f
+struct LookupTableParam {
+  lite::Tensor* W{nullptr};
+  lite::Tensor* Ids{nullptr};
+  lite::Tensor* Out{nullptr};
+  int64_t padding_idx{-1};
 };
 
 struct Im2SequenceParam {
@@ -590,6 +609,14 @@ struct ReduceMaxParam {
   lite::Tensor* Out{};
   std::vector<int> dim{};
   bool keep_dim{false};
+};
+
+struct LodResetParam {
+  const lite::Tensor* X{};
+  const lite::Tensor* Y{};
+  lite::Tensor* Out{};
+  std::vector<int> target_lod;
+  bool append;
 };
 
 }  // namespace operators

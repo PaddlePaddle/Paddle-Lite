@@ -23,7 +23,8 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
-class LessThanCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+template <template <typename T> class Functor>
+class CompareCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
  public:
   using param_t = operators::LogicalParam;
 
@@ -31,7 +32,7 @@ class LessThanCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
 
   void Run() override;
 
-  ~LessThanCompute() {}
+  ~CompareCompute() {}
 
  private:
 };

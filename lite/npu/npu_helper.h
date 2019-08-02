@@ -20,6 +20,7 @@
 #include <vector>
 #include "ai_ddk_lib/include/HiAiModelManagerService.h"
 #include "ai_ddk_lib/include/graph/graph.h"
+#include "ai_ddk_lib/include/graph/operator_reg.h"
 #include "lite/utils/cp_logging.h"
 
 namespace paddle {
@@ -62,6 +63,19 @@ class DeviceInfo {
   // TODO(TJ): find better place
   std::unordered_map<std::string, std::unique_ptr<hiai::AiModelMngerClient>>
       clients_;
+};
+
+class OpList {
+ public:
+  static OpList& Global() {
+    static thread_local OpList x;
+    return x;
+  }
+  void clear() { lists_.clear(); }
+  void add(std::shared_ptr<ge::Operator> p) { lists_.push_back(p); }
+
+ private:
+  std::vector<std::shared_ptr<ge::Operator>> lists_;
 };
 
 bool BuildNPUClient(std::vector<ge::Operator>& inputs,   // NOLINT

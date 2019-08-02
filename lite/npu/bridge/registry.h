@@ -28,22 +28,24 @@ namespace lite {
 namespace npu {
 namespace bridge {
 
+// var_name, npu node point
+using node_map_type =
+    std::unordered_map<std::string, std::shared_ptr<ge::Operator>>;
+
+using func_type = std::function<node_map_type(const std::shared_ptr<OpLite>,
+                                              const node_map_type&)>;
+using cvt_map_type = std::unordered_map<std::string, func_type>;
 class Factory {
  public:
-  // TODO(TJ): input and output must be vector
-  using func_type = std::function<std::vector<std::shared_ptr<ge::Operator>>(
-      const std::shared_ptr<OpLite>,
-      const std::vector<std::shared_ptr<ge::Operator>>&)>;
-  using map_type = std::unordered_map<std::string, func_type>;
   static Factory& Instance();
 
-  const map_type& AllFunctions() const { return map_; }
+  const cvt_map_type& AllFunctions() const { return map_; }
   bool HasType(const std::string& op_type) const;
   void Insert(const std::string& op_type, const func_type& func_name);
   Factory() = default;
 
  private:
-  map_type map_;
+  cvt_map_type map_;
   DISALLOW_COPY_AND_ASSIGN(Factory);
 };
 

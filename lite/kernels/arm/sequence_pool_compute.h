@@ -16,7 +16,7 @@
 #include <stdint.h>
 #include "lite/arm/math/type_trans.h"
 #include "lite/core/kernel.h"
-#include "lite/operators/sequence_pool_op.h"
+#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {

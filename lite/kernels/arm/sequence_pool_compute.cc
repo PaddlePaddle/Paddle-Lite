@@ -35,7 +35,7 @@ void SequencePoolCompute::Run() {
   const auto pool_type = param.pool_type;
   const auto lod = param.X->lod()[0];
 
-  int width = param.X->numel() / param.X->dims()[0];
+  int64_t width = param.X->numel() / param.X->dims()[0];
 
   if (pool_type == "SUM") {
     lite::arm::math::seq_pool_sum(din, dout, lod, width);

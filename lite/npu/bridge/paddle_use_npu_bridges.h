@@ -16,8 +16,12 @@
 
 #include "lite/npu/bridge/registry.h"
 
-USE_NPU_BRIDGE(fc);
-USE_NPU_BRIDGE(conv);
 USE_NPU_BRIDGE(mul);
-USE_NPU_BRIDGE(act);
+USE_NPU_BRIDGE(fc);
+USE_NPU_BRIDGE(conv2d);
+USE_NPU_BRIDGE(depthwise_conv2d);
+USE_NPU_BRIDGE(pool2d);
+USE_NPU_BRIDGE(relu);
+USE_NPU_BRIDGE(elementwise_add);
 USE_NPU_BRIDGE(scale);
+USE_NPU_BRIDGE(softmax);

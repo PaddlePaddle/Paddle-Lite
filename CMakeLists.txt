@@ -69,7 +69,6 @@ if(ANDROID OR IOS OR ARMLINUX)
 endif()
 
 # for lite, both server and mobile framework.
-option(WITH_LITE "Enable lite framework" OFF)
 option(LITE_WITH_JAVA "Enable Java JNI lib in lite mode" OFF)
 option(LITE_WITH_CUDA "Enable CUDA in lite mode" OFF)
 option(LITE_WITH_X86  "Enable X86 in lite mode"  ON)
@@ -107,7 +106,8 @@ include_directories("${PADDLE_SOURCE_DIR}")
 if (WITH_LITE AND LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
     message(STATUS "Building the mobile framework")
     include(cross_compiling/postproject)
-
+    include(cross_compiling/npu) # check and prepare NPU DDK
+    
     # include the necessary thirdparty dependencies
     include(external/gflags)    # download, build, install gflags
 

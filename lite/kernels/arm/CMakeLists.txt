@@ -22,6 +22,7 @@ lite_cc_library(pad2d_compute_arm SRCS pad2d_compute.cc DEPS ${lite_kernel_deps}
 lite_cc_library(prior_box_compute_arm SRCS prior_box_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(density_prior_box_compute_arm SRCS density_prior_box_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(negative_compute_arm SRCS negative_compute.cc DEPS ${lite_kernel_deps} math_arm)
+lite_cc_library(crop_compute_arm SRCS crop_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(dropout_compute_arm SRCS dropout_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(calib_compute_arm SRCS calib_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(transpose_compute_arm SRCS transpose_compute.cc DEPS ${lite_kernel_deps} math_arm)
@@ -31,21 +32,25 @@ lite_cc_library(conv_transpose_compute_arm SRCS conv_transpose_compute.cc DEPS $
 lite_cc_library(gru_unit_compute_arm SRCS gru_unit_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(gru_compute_arm SRCS gru_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(beam_search_decode_compute_arm SRCS beam_search_decode_compute.cc DEPS ${lite_kernel_deps} math_arm)
+lite_cc_library(lookup_table_compute_arm SRCS lookup_table_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(im2sequence_compute_arm SRCS im2sequence_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(sequence_softmax_compute_arm SRCS sequence_softmax_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(norm_compute_arm SRCS norm_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(logical_compute_arm SRCS logical_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(less_than_arm SRCS compare_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(while_compute_arm SRCS while_compute.cc DEPS ${lite_kernel_deps} math_arm)
+lite_cc_library(compare_compute_arm SRCS compare_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(topk_compute_arm SRCS topk_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(increment_compute_arm SRCS increment_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(write_to_array_compute_arm SRCS write_to_array_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(read_from_array_compute_arm SRCS read_from_array_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(beam_search_compute_arm SRCS beam_search_compute.cc DEPS ${lite_kernel_deps} math_arm)
+lite_cc_library(fill_constant_compute_arm SRCS fill_constant_compute.cc DEPS ${lite_kernel_deps} math_arm)
+lite_cc_library(lod_reset_compute_arm SRCS lod_reset_compute.cc DEPS ${lite_kernel_deps} math_arm)
+lite_cc_library(box_coder_compute_arm SRCS box_coder_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(sequence_pool_compute_arm SRCS sequence_pool_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(sequence_expand_compute_arm SRCS sequence_expand_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(reduce_max_compute_arm SRCS reduce_max_compute.cc DEPS ${lite_kernel_deps} math_arm)
-lite_cc_library(fill_constant_compute_arm SRCS fill_constant_compute.cc DEPS ${lite_kernel_deps} math_arm)
 
 lite_cc_test(test_fc_compute_arm SRCS fc_compute_test.cc DEPS fc_compute_arm math_arm)
 lite_cc_test(test_activation_compute_arm SRCS activation_compute_test.cc DEPS activation_compute_arm)
@@ -87,6 +92,7 @@ set(arm_kernels
     prior_box_compute_arm
     density_prior_box_compute_arm
     negative_compute_arm
+    crop_compute_arm
     dropout_compute_arm
     transpose_compute_arm
     calib_compute_arm
@@ -96,21 +102,25 @@ set(arm_kernels
     gru_unit_compute_arm
     gru_compute_arm
     beam_search_decode_compute_arm
+    lookup_table_compute_arm
     im2sequence_compute_arm
     sequence_softmax_compute_arm
     norm_compute_arm
     logical_compute_arm
     less_than_arm
     while_compute_arm
+    compare_compute_arm
     topk_compute_arm
     increment_compute_arm
     write_to_array_compute_arm
     read_from_array_compute_arm
     beam_search_compute_arm
+    fill_constant_compute_arm
+    lod_reset_compute_arm
+    box_coder_compute_arm
     reduce_max_compute_arm
     sequence_expand_compute_arm
     sequence_pool_compute_arm
-    fill_constant_compute_arm
     )
 
 set(arm_kernels "${arm_kernels}" CACHE INTERNAL "arm kernels")

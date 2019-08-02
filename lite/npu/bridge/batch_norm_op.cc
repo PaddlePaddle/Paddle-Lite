@@ -21,45 +21,49 @@
 #include "ai_ddk_lib/include/graph/operator_reg.h"
 #include "lite/npu/bridge/registry.h"
 #include "lite/npu/bridge/utils.h"
+#include "lite/npu/npu_helper.h"
 
 namespace paddle {
 namespace lite {
 namespace npu {
 namespace bridge {
 
-std::vector<std::shared_ptr<ge::Operator>> BatchNormConverter(
-    const std::shared_ptr<lite::OpLite> op,
-    const std::vector<std::shared_ptr<ge::Operator>>& input_nodes) {
-  const std::shared_ptr<lite::operators::BatchNormOp> batch_norm_op =
-      static_pointer_cast<lite::operators::BatchNormOp>(op);
+node_map_type BatchNormConverter(
+    const std::shared_ptr<lite::OpLite> batch_norm_op,
+    const node_map_type& inputs_map) {
   lite::Scope* scope = batch_norm_op->scope();
   const lite::OpInfo* op_info = batch_norm_op->op_info();
+
+  std::shared_ptr<ge::op::BatchNorm> output_node =
+      std::make_shared<ge::op::BatchNorm>(UniqueName("batch_norm"));
+  auto x_var_name = op_info->Input("X").front();
 
   auto scale_var_name = op_info->Input("Scale").front();
   lite::Tensor* scale = scope->FindVar(scale_var_name)->GetMutable<Tensor>();
   ge::op::Const npu_scale =
-      ge::op::Const(scale_var_name).set_attr_value(TensorConverter(scale));
+      ge::op::Const(scale_var_name).set_attr_value(CvtFromLiteTensor(scale));
+
   auto bias_var_name = op_info->Input("Bias").front();
   lite::Tensor* bias = scope->FindVar(bias_var_name)->GetMutable<Tensor>();
   ge::op::Const npu_bias =
-      ge::op::Const(bias_var_name).set_attr_value(TensorConverter(bias));
+      ge::op::Const(bias_var_name).set_attr_value(CvtFromLiteTensor(bias));
+
   auto mean_var_name = op_info->Input("Mean").front();
   lite::Tensor* mean = scope->FindVar(mean_var_name)->GetMutable<Tensor>();
   ge::op::Const npu_mean =
-      ge::op::Const(mean_var_name).set_attr_value(TensorConverter(mean));
+      ge::op::Const(mean_var_name).set_attr_value(CvtFromLiteTensor(mean));
+
   auto variance_var_name = op_info->Input("Variance").front();
   lite::Tensor* variance =
       scope->FindVar(variance_var_name)->GetMutable<Tensor>();
   ge::op::Const npu_variance = ge::op::Const(variance_var_name)
-                                   .set_attr_value(TensorConverter(variance));
+                                   .set_attr_value(CvtFromLiteTensor(variance));
   float npu_momentum = op_info->GetAttr<float>("momentum");
   float npu_epsilon = op_info->GetAttr<float>("epsilon");
   int npu_mode = 1;  // bnScale, bnBias tensor dims are 1xCx1x1
   bool npu_use_global_stats = op_info->GetAttr<bool>("use_global_stats");
 
-  std::shared_ptr<ge::op::BatchNorm> output_node =
-      std::make_shared<ge::op::BatchNorm>(UniqueName("batch_norm"));
-  output_node->set_input_x(*input_nodes[0]);
+  output_node->set_input_x(*inputs_map.at(x_var_name));
   output_node->set_input_scale(npu_scale);
   output_node->set_input_b(npu_bias);
   output_node->set_input_mean(npu_mean);
@@ -69,9 +73,12 @@ std::vector<std::shared_ptr<ge::Operator>> BatchNormConverter(
   output_node->set_attr_mode(npu_mode);
   output_node->set_attr_use_global_stats(npu_use_global_stats);
 
-  std::vector<std::shared_ptr<ge::Operator>> output_nodes;
-  output_nodes.push_back(output_node);
-  return output_nodes;
+  OpList::Global().add(inputs_map.at(x_var_name));
+  OpList::Global().add(output_node);
+
+  node_map_type outputs_map;
+  outputs_map[op_info->Output("Y").front()] = output_node;
+  return outputs_map;
 }
 
 }  // namespace bridge

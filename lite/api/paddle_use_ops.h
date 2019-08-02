@@ -25,6 +25,7 @@ USE_LITE_OP(scale);
 USE_LITE_OP(feed);
 USE_LITE_OP(lrn);
 USE_LITE_OP(decode_bboxes);
+USE_LITE_OP(box_coder);
 USE_LITE_OP(fetch);
 USE_LITE_OP(io_copy);
 USE_LITE_OP(io_copy_once);
@@ -58,6 +59,7 @@ USE_LITE_OP(log)
 USE_LITE_OP(conv2d_transpose)
 USE_LITE_OP(negative)
 USE_LITE_OP(pad2d)
+USE_LITE_OP(crop)
 USE_LITE_OP(prior_box)
 USE_LITE_OP(density_prior_box)
 USE_LITE_OP(reshape)
@@ -79,8 +81,12 @@ USE_LITE_OP(read_from_array);
 USE_LITE_OP(gru_unit)
 USE_LITE_OP(gru)
 USE_LITE_OP(beam_search_decode)
+USE_LITE_OP(fill_constant)
+USE_LITE_OP(while)
+USE_LITE_OP(lod_reset)
+USE_LITE_OP(lookup_table)
+USE_LITE_OP(multiclass_nms)
+USE_LITE_OP(graph_op)
 USE_LITE_OP(sequence_expand)
 USE_LITE_OP(sequence_pool)
 USE_LITE_OP(reduce_max)
-USE_LITE_OP(fill_constant)
-USE_LITE_OP(while)

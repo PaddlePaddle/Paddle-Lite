@@ -23,34 +23,40 @@
 #include "ai_ddk_lib/include/graph/operator_reg.h"
 #include "lite/npu/bridge/registry.h"
 #include "lite/npu/bridge/utils.h"
+#include "lite/npu/npu_helper.h"
 
 namespace paddle {
 namespace lite {
 namespace npu {
 namespace bridge {
 
-std::vector<std::shared_ptr<ge::Operator>> ElementwiseConverter(
-    const std::shared_ptr<lite::OpLite> op,
-    const std::vector<std::shared_ptr<ge::Operator>>& input_nodes) {
-  const std::shared_ptr<lite::operators::ElementwiseOp> elemenntwise_op =
-      static_pointer_cast<lite::operators::ElementwiseOp>(op);
-  lite::Scope* scope = elemenntwise_op->scope();
-  const lite::OpInfo* op_info = elemenntwise_op->op_info();
+node_map_type ElementwiseConverter(
+    const std::shared_ptr<lite::OpLite> elementwise_op,
+    const node_map_type& inputs_map) {
+  lite::Scope* scope = elementwise_op->scope();
+  const lite::OpInfo* op_info = elementwise_op->op_info();
 
+  std::shared_ptr<ge::op::Eltwise> output_node =
+      std::make_shared<ge::op::Eltwise>(UniqueName("elementwise"));
+  auto x_var_name = op_info->Input("X").front();
+  auto y_var_name = op_info->Input("Y").front();
   // paddlelite has sum only
   int npu_mode = 1;
   CHECK_EQ(op_info->GetAttr<int>("axis"), -1)
       << "npu only support inputs with same size";
+  CHECK_EQ(inputs_map.size(), 2);
 
-  std::shared_ptr<ge::op::Eltwise> output_node =
-      std::make_shared<ge::op::Eltwise>(UniqueName("elementwise"));
-  output_node->set_input_x1(*input_nodes[0]);
-  output_node->set_input_x2(*input_nodes[1]);
+  OpList::Global().add(inputs_map.at(x_var_name));
+  OpList::Global().add(inputs_map.at(y_var_name));
+  OpList::Global().add(output_node);
+
+  output_node->set_input_x1(*inputs_map.at(x_var_name));
+  output_node->set_input_x2(*inputs_map.at(y_var_name));
   output_node->set_attr_mode(npu_mode);
 
-  std::vector<std::shared_ptr<ge::Operator>> output_nodes;
-  output_nodes.push_back(output_node);
-  return output_nodes;
+  node_map_type outputs_map;
+  outputs_map[op_info->Output("Out").front()] = output_node;
+  return outputs_map;
 }
 
 }  // namespace bridge
