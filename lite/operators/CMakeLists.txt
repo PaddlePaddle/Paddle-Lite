@@ -59,6 +59,7 @@ lite_cc_library(beam_search_op SRCS beam_search_op.cc DEPS ${op_DEPS})
 lite_cc_library(sequence_pool_op_lite SRCS sequence_pool_op.cc DEPS ${op_DEPS})
 lite_cc_library(sequence_expand_op_lite SRCS sequence_expand_op.cc DEPS ${op_DEPS})
 lite_cc_library(reduce_max_op_lite SRCS reduce_max_op.cc DEPS ${op_DEPS})
+lite_cc_library(lod_reset_op SRCS lod_reset_op.cc DEPS ${op_DEPS})
 
 set(ops
         conv_op
@@ -80,8 +81,8 @@ set(ops
         elementwise_ops
         fusion_elementwise_activation_ops
         lrn_op_lite
-	    decode_bboxes_op_lite
-	    multiclass_nms_op_lite
+	decode_bboxes_op_lite
+	multiclass_nms_op_lite
         mean_op
         fill_constant_op
         activation_ops
@@ -117,6 +118,7 @@ set(ops
         sequence_pool_op_lite
         sequence_expand_op_lite
         reduce_max_op_lite
+        lod_reset_op
         CACHE INTERNAL "ops lite")
 
 if (NOT LITE_WITH_X86)

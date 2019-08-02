@@ -15,7 +15,6 @@
 #pragma once
 #include <string>
 #include <vector>
-#include "lite/core/framework.pb.h"
 #include "lite/core/scope.h"
 #include "lite/core/tensor.h"
 #include "lite/model_parser/cpp/block_desc.h"
@@ -590,6 +589,14 @@ struct ReduceMaxParam {
   lite::Tensor* Out{};
   std::vector<int> dim{};
   bool keep_dim{false};
+};
+
+struct LodResetParam {
+  const lite::Tensor* X{};
+  const lite::Tensor* Y{};
+  lite::Tensor* Out{};
+  std::vector<int> target_lod;
+  bool append;
 };
 
 }  // namespace operators
