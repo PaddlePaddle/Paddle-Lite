@@ -60,6 +60,7 @@ if (NOT HAS_ARM_MATH_LIB_DIR)
       concat.cc
       sgemv.cc
       type_trans.cc
+      box_coder.cc
       conv_impl.cc
       conv_direct_3x3s1.cc
       conv_direct_3x3s2.cc

@@ -417,6 +417,18 @@ struct DecodeBboxesParam {
   std::string code_type;
 };
 
+/// ----------------------- box_coder operators ----------------------
+struct BoxCoderParam {
+  const lite::Tensor* prior_box{};
+  const lite::Tensor* prior_box_var{};
+  const lite::Tensor* target_box{};
+  lite::Tensor* proposals{};
+  int axis{0};
+  bool box_normalized{true};
+  // code_type: encode_center_size and decode_center_size
+  std::string code_type;
+};
+
 /// ----------------------- multiclass_nms operators ----------------------
 struct MulticlassNmsParam {
   const lite::Tensor* bbox_data{};
@@ -424,26 +436,28 @@ struct MulticlassNmsParam {
   lite::Tensor* out;
   std::vector<int> priors;
   int class_num;
-  int background_id;
-  int keep_topk;
-  int nms_topk;
-  float conf_thresh;
-  float nms_thresh;
+  int background_label;
+  int keep_top_k;
+  int nms_top_k;
+  float score_threshold;
+  float nms_threshold;
   float nms_eta;
   bool share_location{true};
 };
 
 /// ----------------------- priorbox operators ----------------------
 struct PriorBoxParam {
-  std::vector<lite::Tensor*> ins;
-  std::vector<lite::Tensor*> outs;
+  lite::Tensor* input{};
+  lite::Tensor* image{};
+  lite::Tensor* boxes{};
+  lite::Tensor* variances{};
 
-  bool is_flip;
-  bool is_clip;
-  std::vector<float> min_size;
-  std::vector<float> max_size;
-  std::vector<float> aspect_ratio;
-  std::vector<float> variance;
+  bool flip;
+  bool clip;
+  std::vector<float> min_sizes;
+  std::vector<float> max_sizes;
+  std::vector<float> aspect_ratios;
+  std::vector<float> variances_;
   int img_w{0};
   int img_h{0};
   float step_w{0};
@@ -455,9 +469,9 @@ struct PriorBoxParam {
 };
 
 struct DensityPriorBoxParam : public PriorBoxParam {
-  std::vector<float> fixed_size;
-  std::vector<float> fixed_ratio;
-  std::vector<float> density_size;
+  std::vector<float> fixed_sizes;
+  std::vector<float> fixed_ratios;
+  std::vector<float> density_sizes;
 };
 /// ----------------------- GRU operators ----------------------f
 struct GRUParam {

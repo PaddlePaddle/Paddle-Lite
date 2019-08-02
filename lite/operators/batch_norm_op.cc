@@ -83,7 +83,9 @@ bool BatchNormOp::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
       scope->FindVar(op_desc.Input("Variance").front())->GetMutable<Tensor>();
   param_.y = scope->FindVar(op_desc.Output("Y").front())->GetMutable<Tensor>();
   param_.is_test = op_desc.GetAttr<int>("is_test");
-  param_.use_global_stats = op_desc.GetAttr<bool>("use_global_stats");
+  if (op_desc.HasAttr("use_global_stats")) {
+    param_.use_global_stats = op_desc.GetAttr<bool>("use_global_stats");
+  }
   if (!param_.is_test) {
     param_.mean_out =
         scope->FindVar(op_desc.Output("MeanOut").front())->GetMutable<Tensor>();

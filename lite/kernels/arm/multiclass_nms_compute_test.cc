@@ -145,11 +145,11 @@ void multiclass_nms_compute_ref(const operators::MulticlassNmsParam& param,
                                 std::vector<float>* result) {
   const std::vector<int>& priors = param.priors;
   int class_num = param.class_num;
-  int background_id = param.background_id;
-  int keep_topk = param.keep_topk;
-  int nms_topk = param.nms_topk;
-  float conf_thresh = param.conf_thresh;
-  float nms_thresh = param.nms_thresh;
+  int background_id = param.background_label;
+  int keep_topk = param.keep_top_k;
+  int nms_topk = param.nms_top_k;
+  float conf_thresh = param.score_threshold;
+  float nms_thresh = param.nms_threshold;
   float nms_eta = param.nms_eta;
   bool share_location = param.share_location;
   const dtype* bbox_data = param.bbox_data->data<const dtype>();
@@ -297,22 +297,22 @@ TEST(multiclass_nms_arm, compute) {
   lite::Tensor bbox, conf, out;
   std::vector<float> out_ref;
 
-  for (std::vector<int> priors :
-       {std::vector<int>({2, 2, 2}), std::vector<int>({1, 3, 6})}) {
-    for (bool share_location : {true, false}) {
+  for (std::vector<int> priors : {std::vector<int>({2, 2, 2})}) {
+    int N = priors.size();
+    for (bool share_location : {true}) {
       for (int class_num : {1, 4, 10}) {
         DDim* bbox_dim;
         DDim* conf_dim;
-        int M = 0;
-        for (int i = 0; i < priors.size(); ++i) {
-          M += priors[i];
-        }
+        int M = priors[0];
+        // for (int i = 0; i < priors.size(); ++i) {
+        //  M += priors[i];
+        //}
         if (share_location) {
-          bbox_dim = new DDim({M, 4});
+          bbox_dim = new DDim({N, M, 4});
         } else {
           bbox_dim = new DDim({class_num, M, 4});
         }
-        conf_dim = new DDim({class_num, M});
+        conf_dim = new DDim({N, class_num, M});
         bbox.Resize(*bbox_dim);
         conf.Resize(*conf_dim);
         for (int background_id : {0}) {
@@ -334,23 +334,24 @@ TEST(multiclass_nms_arm, compute) {
                     param.out = &out;
                     param.priors = priors;
                     param.class_num = class_num;
-                    param.background_id = background_id;
-                    param.keep_topk = keep_topk;
-                    param.nms_topk = nms_topk;
-                    param.conf_thresh = conf_thresh;
-                    param.nms_thresh = nms_thresh;
+                    param.background_label = background_id;
+                    param.keep_top_k = keep_topk;
+                    param.nms_top_k = nms_topk;
+                    param.score_threshold = conf_thresh;
+                    param.nms_threshold = nms_thresh;
                     param.nms_eta = nms_eta;
                     param.share_location = share_location;
                     multiclass_nms.SetParam(param);
                     multiclass_nms.Run();
                     auto* out_data = out.mutable_data<float>();
-
                     out_ref.clear();
                     multiclass_nms_compute_ref<float>(param, &out_ref);
                     EXPECT_EQ(out.dims().production(), out_ref.size());
-                    auto* out_ref_data = out_ref.data();
-                    for (int i = 0; i < out.dims().production(); i++) {
-                      EXPECT_NEAR(out_data[i], out_ref_data[i], 1e-5);
+                    if (out.dims().production() == out_ref.size()) {
+                      auto* out_ref_data = out_ref.data();
+                      for (int i = 0; i < out.dims().production(); i++) {
+                        EXPECT_NEAR(out_data[i], out_ref_data[i], 1e-5);
+                      }
                     }
                   }
                 }
