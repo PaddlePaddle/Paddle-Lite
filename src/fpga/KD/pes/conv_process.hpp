@@ -136,7 +136,8 @@ inline void format_scale_bias(Tensor* scale, Tensor* bias, Tensor* filter,
   bias_scale::format_bias_scale_array(&bs_data, element_num_per_div, channel);
 }
 
-inline void format_filter(Tensor* filter, Tensor* quantized_filter, int group) {
+inline void format_filter(Tensor* filter, Tensor* quantized_filter, int group,
+                          std::vector<float>& scales) {
   float max_value = find_max(*filter);
   Shape& filter_shape = filter->shape();
   quantized_filter->setAligned(true);
@@ -145,15 +146,18 @@ inline void format_filter(Tensor* filter, Tensor* quantized_filter, int group) {
   quantized_filter->scale()[1] = 127.0f / max_value;
 
   auto memory_size = filter->shape().memorySize(sizeof(float));
-  auto new_data = reinterpret_cast<float*>(fpga_malloc(memory_size));
-  memcpy(new_data, filter->data<float>(), memory_size);
-  size_t mem_size = filter::format_filter(
-      &new_data, filter_shape.num(), filter_shape.channel(),
-      filter_shape.height(), filter_shape.width(), group, max_value);
+  auto new_data = filter->data<float>();
+  int mem_size;
+  int8_t* qdata = filter::format_filter(
+      new_data, mem_size, filter_shape.num(), filter_shape.channel(),
+      filter_shape.height(), filter_shape.width(), group, max_value, scales);
   int8_t* src = quantized_filter->mutableData<int8_t>(INT8, filter->shape());
-  memcpy(src, new_data, mem_size);
-  fpga_free(new_data);
+  memcpy(src, qdata, mem_size);
   quantized_filter->flush();
+
+  for (size_t i = 0; i < scales.size(); i++) {
+    scales[i] = scales[i] / max_value;
+  }
 }
 
 inline void format_dw_filter(Tensor* filter, Tensor* quantized_filter,
@@ -186,9 +190,6 @@ inline void format_fc_filter(Tensor* filter, Tensor* quantized_filter) {
   size_t memory_size = filter->shape().memorySize(sizeof(float));
   auto new_data = (float*)fpga_malloc(memory_size);  // NOLINT
   memcpy(new_data, filter->data<float>(), memory_size);
-  // filter::format_fc_filter(&new_data, filter_shape.num(),
-  //                          filter_shape.channel(), filter_shape.height(),
-  //                          filter_shape.width(), 1, max_value);
 
   int8_t* src = quantized_filter->mutableData<int8_t>(INT8, filter->shape());
   memcpy(src, new_data, quantized_filter->shape().memorySize(sizeof(int8_t)));
@@ -246,7 +247,9 @@ inline void split_filter_num(const ConvParam& c_param) {
     new_filter.flush();
 
     conv_param->filter.mutableData<float>(FP32, f_shape);
-    format_filter(&new_filter, &(conv_param->filter), param.groups);
+
+    std::vector<float> filter_max;
+    format_filter(&new_filter, &(conv_param->filter), param.groups, filter_max);
 
     int sb_num = 2 * align_to_x(filter_num, BS_NUM_ALIGNMENT);
     Tensor scale;
@@ -258,8 +261,13 @@ inline void split_filter_num(const ConvParam& c_param) {
     float* scale_data = scale.mutableData<float>(FP32, s_shape);
     float* bias_data = bias.mutableData<float>(FP32, s_shape);
     for (int n = 0; n < filter_num; n++) {
-      scale_data[n] = param.scale()->data<float>()[n + chnnnel_start];
+      // float s = filter_max[n] / max;
+      // std::cout << filter_max[n] << std::endl;
+      scale_data[n] =
+          param.scale()->data<float>()[n + chnnnel_start] * filter_max[n];
     }
+
+    // exit(-1);
     for (int n = 0; n < filter_num; n++) {
       bias_data[n] = param.bias()->data<float>()[n + chnnnel_start];
     }
@@ -324,7 +332,8 @@ inline void split_channel(const ConvParam& c_param) {
       src += param.filter->shape().channel();
     }
     new_filter.flush();
-    format_filter(&new_filter, &(conv_param->filter), param.groups);
+    std::vector<float> scales;
+    format_filter(&new_filter, &(conv_param->filter), param.groups, scales);
 
     Tensor bias;
     Tensor scale;

@@ -21,7 +21,8 @@ DeviceInfo& DLEngine::deviceInfo() { return info_; }
 DLEngine::DLEngine() {
   open_device();
   int ret = get_device_info(info_);
-  filter::set_filter_capacity(info_.filter_cap);
+  filter::set_filter_capacity(2048);
+  // filter::set_filter_capacity(info_.filter_cap);
 
   // std::cout << "version:" << info_.version;
   // std::cout << "device_type:" << info_.device_type;
