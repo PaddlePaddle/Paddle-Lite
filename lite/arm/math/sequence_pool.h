@@ -14,8 +14,6 @@
 
 #pragma once
 #include <vector>
-#include "lite/core/kernel.h"
-#include "lite/core/op_registry.h"
 #include "lite/core/tensor.h"
 
 namespace paddle {
@@ -27,43 +25,43 @@ template <typename T>
 void seq_pool_sum(const T* din,
                   T* dout,
                   const std::vector<uint64_t> lod,
-                  int width);
+                  int64_t width);
 
 template <typename T>
 void seq_pool_average(const T* din,
                       T* dout,
                       const std::vector<uint64_t> lod,
-                      int width);
+                      int64_t width);
 
 template <typename T>
 void seq_pool_sqrt(const T* din,
                    T* dout,
                    const std::vector<uint64_t> lod,
-                   int width);
+                   int64_t width);
 
 template <typename T>
 void seq_pool_max(const T* din,
                   T* dout,
                   const std::vector<uint64_t> lod,
-                  int width);
+                  int64_t width);
 
 template <typename T>
 void seq_pool_min(const T* din,
                   T* dout,
                   const std::vector<uint64_t> lod,
-                  int width);
+                  int64_t width);
 
 template <typename T>
 void seq_pool_first(const T* din,
                     T* dout,
                     const std::vector<uint64_t> lod,
-                    int width);
+                    int64_t width);
 
 template <typename T>
 void seq_pool_last(const T* din,
                    T* dout,
                    const std::vector<uint64_t> lod,
-                   int width);
+                   int64_t width);
 
 }  // namespace math
 }  // namespace arm

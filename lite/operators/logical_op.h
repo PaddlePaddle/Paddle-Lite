@@ -23,10 +23,10 @@ namespace paddle {
 namespace lite {
 namespace operators {
 
-class LogicalXorOp : public OpLite {
+class BinaryLogicalOp : public OpLite {
  public:
-  LogicalXorOp() {}
-  explicit LogicalXorOp(const std::string &op_type) : OpLite(op_type) {}
+  BinaryLogicalOp() {}
+  explicit BinaryLogicalOp(const std::string &op_type) : OpLite(op_type) {}
 
   bool CheckShape() const override;
 
@@ -42,10 +42,10 @@ class LogicalXorOp : public OpLite {
   mutable LogicalParam param_;
 };
 
-class LogicalAndOp : public OpLite {
+class UnaryLogicalOp : public OpLite {
  public:
-  LogicalAndOp() {}
-  explicit LogicalAndOp(const std::string &op_type) : OpLite(op_type) {}
+  UnaryLogicalOp() {}
+  explicit UnaryLogicalOp(const std::string &op_type) : OpLite(op_type) {}
 
   bool CheckShape() const override;
 

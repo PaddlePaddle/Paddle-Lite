@@ -44,15 +44,41 @@ void fast_free(void* ptr) {
   }
 }
 
-void prior_box_compute_ref(const std::vector<lite::Tensor*>& inputs,
-                           std::vector<lite::Tensor*>* outputs,
-                           std::vector<float> min_size_,
-                           std::vector<float> fixed_size_,
-                           std::vector<float> fixed_ratio_,
-                           std::vector<float> density_size_,
-                           std::vector<float> max_size_,
-                           std::vector<float> aspect_ratio_,
-                           std::vector<float> variance_,
+inline void ExpandAspectRatios(const std::vector<float>& input_aspect_ratior,
+                               bool flip,
+                               std::vector<float>* output_aspect_ratior) {
+  constexpr float epsilon = 1e-6;
+  output_aspect_ratior->clear();
+  output_aspect_ratior->push_back(1.0f);
+  for (size_t i = 0; i < input_aspect_ratior.size(); ++i) {
+    float ar = input_aspect_ratior[i];
+    bool already_exist = false;
+    for (size_t j = 0; j < output_aspect_ratior->size(); ++j) {
+      if (fabs(ar - output_aspect_ratior->at(j)) < epsilon) {
+        already_exist = true;
+        break;
+      }
+    }
+    if (!already_exist) {
+      output_aspect_ratior->push_back(ar);
+      if (flip) {
+        output_aspect_ratior->push_back(1.0f / ar);
+      }
+    }
+  }
+}
+
+void prior_box_compute_ref(const lite::Tensor* input,
+                           const lite::Tensor* image,
+                           lite::Tensor** boxes,
+                           lite::Tensor** variances,
+                           const std::vector<float>& min_size_,
+                           const std::vector<float>& fixed_size_,
+                           const std::vector<float>& fixed_ratio_,
+                           const std::vector<float>& density_size_,
+                           const std::vector<float>& max_size_,
+                           const std::vector<float>& aspect_ratio_,
+                           const std::vector<float>& variance_,
                            int img_w_,
                            int img_h_,
                            float step_w_,
@@ -61,32 +87,23 @@ void prior_box_compute_ref(const std::vector<lite::Tensor*>& inputs,
                            int prior_num_,
                            bool is_flip_,
                            bool is_clip_,
-                           std::vector<std::string> order_) {
-  int win1 = inputs[0]->dims()[3];
-  int hin1 = inputs[0]->dims()[2];
-  int wout = win1 * hin1 * prior_num_ * 4;
+                           const std::vector<std::string>& order_) {
+  int win1 = input->dims()[3];
+  int hin1 = input->dims()[2];
+  DDim out_sh({hin1, win1, prior_num_, 4});
+  (*boxes)->Resize(out_sh);
+  (*variances)->Resize(out_sh);
 
-  DDim out_sh({1, 2, wout});
-  (*outputs)[0]->Resize(out_sh);
-  // CHECK_EQ(out_sh[0], 1) << "output shape error";
-  // CHECK_EQ(out_sh[1], 2) << "output shape error";
-  // CHECK_EQ(out_sh[2], wout) << "ouput shape error";
+  float* _cpu_data = (*boxes)->mutable_data<float>();
+  float* _variance_data = (*variances)->mutable_data<float>();
 
-  uint64_t out_size = (*outputs)[0]->numel();
-  float* _cpu_data = (*outputs)[0]->mutable_data<float>();
-
-  float* min_buf = reinterpret_cast<float*>(fast_malloc(sizeof(float) * 4));
-  float* max_buf = reinterpret_cast<float*>(fast_malloc(sizeof(float) * 4));
-  float* com_buf = reinterpret_cast<float*>(
-      fast_malloc(sizeof(float) * aspect_ratio_.size() * 4));
-
-  const int width = inputs[0]->dims()[3];
-  const int height = inputs[0]->dims()[2];
+  const int width = input->dims()[3];
+  const int height = input->dims()[2];
   int img_width = img_w_;
   int img_height = img_h_;
   if (img_width == 0 || img_height == 0) {
-    img_width = inputs[1]->dims()[3];
-    img_height = inputs[1]->dims()[2];
+    img_width = image->dims()[3];
+    img_height = image->dims()[2];
   }
 
   float step_w = step_w_;
@@ -198,8 +215,8 @@ void prior_box_compute_ref(const std::vector<lite::Tensor*>& inputs,
 
               int density = density_size_[s];
               int shift = fixed_size_[s] / density;
-              float box_width_ratio = fixed_size_[s] * sqrtf(ar);
-              float box_height_ratio = fixed_size_[s] / sqrtf(ar);
+              float box_width_ratio = fixed_size_[s] * sqrt(ar);
+              float box_height_ratio = fixed_size_[s] / sqrt(ar);
 
               for (int p = 0; p < density; ++p) {
                 for (int c = 0; c < density; ++c) {
@@ -235,12 +252,19 @@ void prior_box_compute_ref(const std::vector<lite::Tensor*>& inputs,
           }
         }
       } else {
+        float* min_buf =
+            reinterpret_cast<float*>(fast_malloc(sizeof(float) * 4));
+        float* max_buf =
+            reinterpret_cast<float*>(fast_malloc(sizeof(float) * 4));
+        float* com_buf = reinterpret_cast<float*>(
+            fast_malloc(sizeof(float) * aspect_ratio_.size() * 4));
+
         for (int s = 0; s < min_size_.size(); ++s) {
           int min_idx = 0;
           int max_idx = 0;
           int com_idx = 0;
           int min_size = min_size_[s];
-          //! first prior: aspect_ratio = 1, size = min_size
+          // first prior: aspect_ratio = 1, size = min_size
           box_width = box_height = min_size;
           //! xmin
           min_buf[min_idx++] = (center_x - box_width / 2.f) / img_width;
@@ -248,13 +272,13 @@ void prior_box_compute_ref(const std::vector<lite::Tensor*>& inputs,
           min_buf[min_idx++] = (center_y - box_height / 2.f) / img_height;
           //! xmax
           min_buf[min_idx++] = (center_x + box_width / 2.f) / img_width;
-          //! ymax
+          // ymax
           min_buf[min_idx++] = (center_y + box_height / 2.f) / img_height;
 
           if (max_size_.size() > 0) {
             int max_size = max_size_[s];
             //! second prior: aspect_ratio = 1, size = sqrt(min_size * max_size)
-            box_width = box_height = sqrt(min_size * max_size);
+            box_width = box_height = sqrtf(min_size * max_size);
             //! xmin
             max_buf[max_idx++] = (center_x - box_width / 2.f) / img_width;
             //! ymin
@@ -265,10 +289,10 @@ void prior_box_compute_ref(const std::vector<lite::Tensor*>& inputs,
             max_buf[max_idx++] = (center_y + box_height / 2.f) / img_height;
           }
 
-          //! reset of priors
+          //! rest of priors
           for (int r = 0; r < aspect_ratio_.size(); ++r) {
             float ar = aspect_ratio_[r];
-            if (fabsf(ar - 1.f) < 1e-6f) {
+            if (fabs(ar - 1.) < 1e-6) {
               continue;
             }
             box_width = min_size * sqrt(ar);
@@ -282,27 +306,19 @@ void prior_box_compute_ref(const std::vector<lite::Tensor*>& inputs,
             //! ymax
             com_buf[com_idx++] = (center_y + box_height / 2.f) / img_height;
           }
-
-          for (const auto& type : order_) {
-            if (type == "prior_min") {
-              memcpy(_cpu_data + idx, min_buf, sizeof(float) * min_idx);
-              idx += min_idx;
-            } else if (type == "prior_max") {
-              memcpy(_cpu_data + idx, max_buf, sizeof(float) * max_idx);
-              idx += max_idx;
-            } else if (type == "prior_com") {
-              memcpy(_cpu_data + idx, com_buf, sizeof(float) * com_idx);
-              idx += com_idx;
-            }
-          }
+          memcpy(_cpu_data + idx, min_buf, sizeof(float) * min_idx);
+          idx += min_idx;
+          memcpy(_cpu_data + idx, com_buf, sizeof(float) * com_idx);
+          idx += com_idx;
+          memcpy(_cpu_data + idx, max_buf, sizeof(float) * max_idx);
+          idx += max_idx;
         }
+        fast_free(min_buf);
+        fast_free(max_buf);
+        fast_free(com_buf);
       }
     }
   }
-
-  fast_free(min_buf);
-  fast_free(max_buf);
-  fast_free(com_buf);
 
   //! clip the prior's coordinate such that it is within [0, 1]
   if (is_clip_) {
@@ -311,14 +327,12 @@ void prior_box_compute_ref(const std::vector<lite::Tensor*>& inputs,
     }
   }
   //! set the variance.
-
-  float* ptr = _cpu_data + channel_size;
   int count = 0;
   for (int h = 0; h < height; ++h) {
     for (int w = 0; w < width; ++w) {
       for (int i = 0; i < prior_num_; ++i) {
         for (int j = 0; j < 4; ++j) {
-          ptr[count] = variance_[j];
+          _variance_data[count] = variance_[j];
           ++count;
         }
       }
@@ -329,9 +343,10 @@ void prior_box_compute_ref(const std::vector<lite::Tensor*>& inputs,
 class DensityPriorBoxComputeTester : public arena::TestCase {
  protected:
   // common attributes for this op.
-  std::string ins0 = "input0";
-  std::string ins1 = "input1";
-  std::string outs0 = "output0";
+  std::string ins0 = "Input";
+  std::string ins1 = "Image";
+  std::string outs0 = "Boxes";
+  std::string outs1 = "Variances";
   bool is_flip_;
   bool is_clip_;
   std::vector<float> min_size_;
@@ -357,13 +372,13 @@ class DensityPriorBoxComputeTester : public arena::TestCase {
                                const std::string& alias,
                                bool is_flip,
                                bool is_clip,
-                               std::vector<float> min_size,
-                               std::vector<float> fixed_size,
-                               std::vector<float> fixed_ratio,
-                               std::vector<float> density_size,
-                               std::vector<float> max_size,
-                               std::vector<float> aspect_ratio,
-                               std::vector<float> variance,
+                               const std::vector<float>& min_size,
+                               const std::vector<float>& fixed_size,
+                               const std::vector<float>& fixed_ratio,
+                               const std::vector<float>& density_size,
+                               const std::vector<float>& max_size,
+                               const std::vector<float>& aspect_ratio,
+                               const std::vector<float>& variance,
                                int img_w,
                                int img_h,
                                float step_w,
@@ -371,7 +386,7 @@ class DensityPriorBoxComputeTester : public arena::TestCase {
                                float offset,
                                int prior_num,
                                // priortype: prior_min, prior_max, prior_com
-                               std::vector<std::string> order,
+                               const std::vector<std::string>& order,
                                DDim feature_dims,
                                DDim data_dims)
       : TestCase(place, alias),
@@ -396,21 +411,20 @@ class DensityPriorBoxComputeTester : public arena::TestCase {
 
   // todo get vector<Tensor>
   void RunBaseline(Scope* scope) override {
-    std::vector<lite::Tensor*> inputs;
-    std::vector<lite::Tensor*> outputs;
-
-    auto* inputs0 = scope->NewTensor(ins0);
-    auto* inputs1 = scope->NewTensor(ins1);
+    auto* inputs0 = scope->FindTensor(ins0);
+    auto* inputs1 = scope->FindTensor(ins1);
     auto* outputs0 = scope->NewTensor(outs0);
+    auto* outputs1 = scope->NewTensor(outs1);
+
     CHECK(outputs0);
+    CHECK(outputs1);
     CHECK(inputs0);
     CHECK(inputs1);
-    inputs.push_back(inputs0);
-    inputs.push_back(inputs1);
-    outputs.push_back(outputs0);
 
-    prior_box_compute_ref(inputs,
-                          &outputs,
+    prior_box_compute_ref(inputs0,
+                          inputs1,
+                          &outputs0,
+                          &outputs1,
                           min_size_,
                           fixed_size_,
                           fixed_ratio_,
@@ -431,17 +445,19 @@ class DensityPriorBoxComputeTester : public arena::TestCase {
 
   void PrepareOpDesc(cpp::OpDesc* op_desc) {
     op_desc->SetType("density_prior_box");
-    op_desc->SetInput("Input", {ins0, ins1});
-    op_desc->SetOutput("Output", {outs0});
-    op_desc->SetAttr("is_flip", is_flip_);
-    op_desc->SetAttr("is_clip", is_clip_);
-    op_desc->SetAttr("min_size", min_size_);
-    op_desc->SetAttr("fixed_size", fixed_size_);
-    op_desc->SetAttr("fixed_ratio", fixed_ratio_);
-    op_desc->SetAttr("density_size", density_size_);
-    op_desc->SetAttr("max_size", max_size_);
-    op_desc->SetAttr("aspect_ratio", aspect_ratio_);
-    op_desc->SetAttr("variance", variance_);
+    op_desc->SetInput("Input", {ins0});
+    op_desc->SetInput("Image", {ins1});
+    op_desc->SetOutput("Boxes", {outs0});
+    op_desc->SetOutput("Variances", {outs1});
+    op_desc->SetAttr("flip", is_flip_);
+    op_desc->SetAttr("clip", is_clip_);
+    op_desc->SetAttr("min_sizes", min_size_);
+    op_desc->SetAttr("fixed_sizes", fixed_size_);
+    op_desc->SetAttr("fixed_ratios", fixed_ratio_);
+    op_desc->SetAttr("density_sizes", density_size_);
+    op_desc->SetAttr("max_sizes", max_size_);
+    op_desc->SetAttr("aspect_ratios", aspect_ratio_);
+    op_desc->SetAttr("variances", variance_);
     op_desc->SetAttr("img_w", img_w_);
     op_desc->SetAttr("img_h", img_h_);
     op_desc->SetAttr("step_w", step_w_);
@@ -470,9 +486,10 @@ class DensityPriorBoxComputeTester : public arena::TestCase {
 class PriorBoxComputeTester : public arena::TestCase {
  protected:
   // common attributes for this op.
-  std::string ins0 = "input0";
-  std::string ins1 = "input1";
-  std::string outs0 = "output0";
+  std::string ins0 = "Input";
+  std::string ins1 = "Image";
+  std::string outs0 = "Boxes";
+  std::string outs1 = "Variances";
   bool is_flip_;
   bool is_clip_;
   std::vector<float> min_size_;
@@ -495,10 +512,10 @@ class PriorBoxComputeTester : public arena::TestCase {
                         const std::string& alias,
                         bool is_flip,
                         bool is_clip,
-                        std::vector<float> min_size,
-                        std::vector<float> max_size,
-                        std::vector<float> aspect_ratio,
-                        std::vector<float> variance,
+                        const std::vector<float>& min_size,
+                        const std::vector<float>& max_size,
+                        const std::vector<float>& aspect_ratio,
+                        const std::vector<float>& variance,
                         int img_w,
                         int img_h,
                         float step_w,
@@ -506,7 +523,7 @@ class PriorBoxComputeTester : public arena::TestCase {
                         float offset,
                         int prior_num,
                         // priortype: prior_min, prior_max, prior_com
-                        std::vector<std::string> order,
+                        const std::vector<std::string>& order,
                         DDim feature_dims,
                         DDim data_dims)
       : TestCase(place, alias),
@@ -527,21 +544,20 @@ class PriorBoxComputeTester : public arena::TestCase {
         data_dims_(data_dims) {}
 
   void RunBaseline(Scope* scope) override {
-    std::vector<lite::Tensor*> inputs;
-    std::vector<lite::Tensor*> outputs;
-
-    auto* inputs0 = scope->NewTensor(ins0);
-    auto* inputs1 = scope->NewTensor(ins1);
+    auto* inputs0 = scope->FindTensor(ins0);
+    auto* inputs1 = scope->FindTensor(ins1);
     auto* outputs0 = scope->NewTensor(outs0);
+    auto* outputs1 = scope->NewTensor(outs1);
+
     CHECK(outputs0);
+    CHECK(outputs1);
     CHECK(inputs0);
     CHECK(inputs1);
-    inputs.push_back(inputs0);
-    inputs.push_back(inputs1);
-    outputs.push_back(outputs0);
 
-    prior_box_compute_ref(inputs,
-                          &outputs,
+    prior_box_compute_ref(inputs0,
+                          inputs1,
+                          &outputs0,
+                          &outputs1,
                           min_size_,
                           std::vector<float>(),
                           std::vector<float>(),
@@ -562,15 +578,17 @@ class PriorBoxComputeTester : public arena::TestCase {
 
   void PrepareOpDesc(cpp::OpDesc* op_desc) {
     op_desc->SetType("prior_box");
-    op_desc->SetInput("Input", {ins0, ins1});
-    op_desc->SetOutput("Output", {outs0});
+    op_desc->SetInput("Input", {ins0});
+    op_desc->SetInput("Image", {ins1});
+    op_desc->SetOutput("Boxes", {outs0});
+    op_desc->SetOutput("Variances", {outs1});
 
-    op_desc->SetAttr("is_flip", is_flip_);
-    op_desc->SetAttr("is_clip", is_clip_);
-    op_desc->SetAttr("min_size", min_size_);
-    op_desc->SetAttr("max_size", max_size_);
-    op_desc->SetAttr("aspect_ratio", aspect_ratio_);
-    op_desc->SetAttr("variance", variance_);
+    op_desc->SetAttr("flip", is_flip_);
+    op_desc->SetAttr("clip", is_clip_);
+    op_desc->SetAttr("min_sizes", min_size_);
+    op_desc->SetAttr("max_sizes", max_size_);
+    op_desc->SetAttr("aspect_ratios", aspect_ratio_);
+    op_desc->SetAttr("variances", variance_);
     op_desc->SetAttr("img_w", img_w_);
     op_desc->SetAttr("img_h", img_h_);
     op_desc->SetAttr("step_w", step_w_);
@@ -604,10 +622,19 @@ void test_density_prior_box(Place place) {
   std::vector<float> fixed_size{60, 30};
   std::vector<float> fixed_ratio{1., 2.};
   std::vector<float> density_size{1., 3.};
-  int prior_num = 0;
-  if (min_size.size() > 0) {
-    prior_num = min_size.size() * aspect_ratio.size();
-  }
+  bool flip = true;
+  bool clip = false;
+  float step_h = 0;
+  float step_w = 0;
+  int img_w = 0;
+  int img_h = 0;
+  float offset = 0.5;
+  std::vector<std::string> order;
+  std::vector<float> aspect_ratios_vec;
+  ExpandAspectRatios(aspect_ratio, flip, &aspect_ratios_vec);
+  size_t prior_num = aspect_ratios_vec.size() * min_size.size();
+  prior_num += max_size.size();
+
   if (fixed_size.size() > 0) {
     prior_num = fixed_size.size() * fixed_ratio.size();
   }
@@ -621,18 +648,7 @@ void test_density_prior_box(Place place) {
       }
     }
   }
-  prior_num += max_size.size();
-  bool flip = true;
-  bool clip = false;
-  float step_h = 0;
-  float step_w = 0;
-  int img_w = 0;
-  int img_h = 0;
-  float offset = 0.5;
-  std::vector<std::string> order;
-  order.push_back("prior_min");
-  order.push_back("prior_max");
-  order.push_back("prior_com");
+
   int width = 300;
   int height = 300;
   int channel = 3;
@@ -668,13 +684,8 @@ void test_density_prior_box(Place place) {
 void test_prior_box(Place place) {
   std::vector<float> min_size{60.f};
   std::vector<float> max_size;
-  std::vector<float> aspect_ratio{2};
+  std::vector<float> aspect_ratio{2.};
   std::vector<float> variance{0.1f, 0.1f, 0.2f, 0.2f};
-  int prior_num = 0;
-  if (min_size.size() > 0) {
-    prior_num = min_size.size() * aspect_ratio.size();
-  }
-  prior_num += max_size.size();
   bool flip = true;
   bool clip = false;
   float step_h = 0;
@@ -683,16 +694,18 @@ void test_prior_box(Place place) {
   int img_h = 0;
   float offset = 0.5;
   std::vector<std::string> order;
-  order.push_back("prior_min");
-  order.push_back("prior_max");
-  order.push_back("prior_com");
+  std::vector<float> aspect_ratios_vec;
+  ExpandAspectRatios(aspect_ratio, flip, &aspect_ratios_vec);
+  size_t prior_num = aspect_ratios_vec.size() * min_size.size();
+  prior_num += max_size.size();
+
   int width = 300;
   int height = 300;
   int channel = 3;
   int num = 1;
   int w_fea = 19;
   int h_fea = 19;
-  int c_fea = 512;
+  int c_fea = 128;
   std::unique_ptr<arena::TestCase> tester(
       new PriorBoxComputeTester(place,
                                 "def",
@@ -700,7 +713,7 @@ void test_prior_box(Place place) {
                                 clip,
                                 min_size,
                                 max_size,
-                                aspect_ratio,
+                                aspect_ratios_vec,
                                 variance,
                                 img_w,
                                 img_h,

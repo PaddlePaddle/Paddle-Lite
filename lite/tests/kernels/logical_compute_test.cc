@@ -20,6 +20,11 @@
 namespace paddle {
 namespace lite {
 
+bool _logical_xor_func(const bool& a, const bool& b) {
+  return (a || b) && !(a && b);
+}
+bool _logical_and_func(const bool& a, const bool& b) { return (a && b); }
+template <bool (*T)(const bool&, const bool&)>
 class LogicalXorTester : public arena::TestCase {
  protected:
   std::string input_x_ = "x";
@@ -41,7 +46,8 @@ class LogicalXorTester : public arena::TestCase {
     auto* y = scope->FindTensor(input_y_);
     const bool* y_data = y->data<bool>();
     for (int i = 0; i < dims_.production(); i++) {
-      out_data[i] = (x_data[i] || y_data[i]) && !((x_data[i] && y_data[i]));
+      // out_data[i] = (x_data[i] || y_data[i]) && !((x_data[i] && y_data[i]));
+      out_data[i] = T(x_data[i], y_data[i]);
     }
   }
 
@@ -59,6 +65,9 @@ class LogicalXorTester : public arena::TestCase {
     bool* datay;
     data = reinterpret_cast<bool*>(malloc(dims_.production() * sizeof(bool)));
     datay = reinterpret_cast<bool*>(malloc(dims_.production() * sizeof(bool)));
+    LOG(INFO) << "dims_.production()"
+              << ":::" << dims_.production();
+
     for (int i = 0; i < dims_.production(); i++) {
       data[i] = 1;
       datay[i] = 1;
@@ -68,21 +77,28 @@ class LogicalXorTester : public arena::TestCase {
     SetCommonTensor(input_y_, dims_, datay);
   }
 };
-void test_logicalxor(Place place) {
-  DDimLite dims{{3, 5, 4, 4}};
-  std::unique_ptr<arena::TestCase> tester(
-      new LogicalXorTester(place, "def", dims));
-  arena::Arena arena(std::move(tester), place, 1);
 
-  arena.TestPrecision();
+void test_logical(Place place) {
+  DDimLite dims{{3, 5, 4, 4}};
+  std::unique_ptr<arena::TestCase> logical_xor_tester(
+      new LogicalXorTester<_logical_xor_func>(place, "def", dims));
+  arena::Arena arena_xor(std::move(logical_xor_tester), place, 1);
+
+  arena_xor.TestPrecision();
+
+  std::unique_ptr<arena::TestCase> logical_and_tester(
+      new LogicalXorTester<_logical_and_func>(place, "def", dims));
+  arena::Arena arena_and(std::move(logical_and_tester), place, 1);
+
+  arena_and.TestPrecision();
 }
-TEST(LessThan, precision) {
+TEST(Logical, precision) {
 // #ifdef LITE_WITH_X86
 // //   Place place(TARGET(kX86));
 // // #endif
 #ifdef LITE_WITH_ARM
   Place place(TARGET(kARM));
-  test_logicalxor(place);
+  test_logical(place);
 #endif
 }
 

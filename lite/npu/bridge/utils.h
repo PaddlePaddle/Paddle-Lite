@@ -16,9 +16,13 @@
 
 #include <memory>
 #include <string>
+#include <unordered_map>
 #include <vector>
 #include "ai_ddk_lib/include/graph/operator_reg.h"
+#include "lite/core/mir/node.h"
 #include "lite/core/op_lite.h"
+#include "lite/core/target_wrapper.h"
+#include "lite/core/tensor.h"
 
 namespace paddle {
 namespace lite {
@@ -31,9 +35,9 @@ ge::DataType PrecisionConverter(PrecisionType itype);
 
 ge::Format DataLayoutConverter(DataLayoutType itype);
 
-ge::TensorPtr TensorConverter(lite::Tensor* in_tensor,
-                              PrecisionType in_ptype = PRECISION(kFloat),
-                              DataLayoutType in_ltype = DATALAYOUT(kNCHW));
+ge::TensorPtr CvtFromLiteTensor(Tensor* in_tensor,
+                                PrecisionType in_ptype = PRECISION(kFloat),
+                                DataLayoutType in_ltype = DATALAYOUT(kNCHW));
 
 template <typename T>
 ge::TensorPtr CreateTensorAndFillData(T value,
@@ -62,6 +66,14 @@ ge::TensorPtr CreateTensorAndFillData(T value,
                   data_num * sizeof(T));
   return tensor;
 }
+
+std::shared_ptr<ge::Operator> CvtNode2Tensor(const lite::mir::Node* arg_node);
+
+std::shared_ptr<ge::Operator> CvtNode(lite::mir::Node* var_node,
+                                      const Scope* scope);
+
+int16_t float2half(float f);
+float half2float(int16_t h);
 
 }  // namespace bridge
 }  // namespace npu

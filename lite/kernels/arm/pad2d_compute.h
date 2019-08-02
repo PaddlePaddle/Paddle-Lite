@@ -14,6 +14,7 @@
 
 #pragma once
 #include <algorithm>
+#include <string>
 #include <vector>
 #include "lite/core/kernel.h"
 #include "lite/operators/pad2d_op.h"
@@ -32,18 +33,11 @@ class Pad2dCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
   virtual ~Pad2dCompute() = default;
 
  private:
-  /////////////////////////////
-  /*     _mode:PadMode
-         typedef enum{
-             PAD_CONSTANT = 0,
-             PAD_EDGE = 1,
-             PAD_REFLECT = 2,
-         } PadMode;   */
-  /////////////////////////
-  int _mode;
-  std::vector<int> _pad_h{0, 0};
-  std::vector<int> _pad_w{0, 0};
-  float _pad_value = 0.f;
+  int mode_;
+  std::vector<int> pad_h_{0, 0};
+  std::vector<int> pad_w_{0, 0};
+  float pad_value_ = 0.f;
+  std::string data_format_{"NCHW"};
 };
 
 }  // namespace arm

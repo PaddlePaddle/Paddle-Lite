@@ -63,15 +63,12 @@ void im2col(const Dtype *data_im,
       (width + 2 * pad_w - (dilation_w * (kernel_w - 1) + 1)) / stride_w + 1;
   const int channel_size = height * width;
 
-  // for (int channel = channels; channel--; data_im += channel_size) {
   for (int channel = 0; channel++ < channels; data_im += channel_size) {
     for (int kernel_row = 0; kernel_row < kernel_h; kernel_row++) {
       for (int kernel_col = 0; kernel_col < kernel_w; kernel_col++) {
         int input_row = -pad_h + kernel_row * dilation_h;
-        // for (int output_rows = output_h; output_rows; output_rows--) {
         for (int output_rows = 0; output_rows < output_h; ++output_rows) {
           if (!is_a_ge_zero_and_a_lt_b(input_row, height)) {
-            // for (int output_cols = output_w; output_cols; output_cols--) {
             for (int output_cols = 0; output_cols < output_w; ++output_cols) {
               *(data_col++) = 0;
             }
@@ -91,7 +88,7 @@ void im2col(const Dtype *data_im,
   }
 }
 
-#define CHECK_ERROR
+// #define CHECK_ERROR
 // #define PRINT_RESULT
 // #define LOOP_TEST
 TEST(cl_test, im2col_test) {
@@ -114,8 +111,7 @@ TEST(cl_test, im2col_test) {
                         for (int dilation_w : {1}) {
 // TODO(yuanshuai): support group for im2col
 #else
-  // first conv scale of mobilenetv1
-  int n = 1;
+  int n = 8;
   int c = 32;
   int h = 224;
   int w = 224;
@@ -145,7 +141,8 @@ TEST(cl_test, im2col_test) {
                                            (dilation_w * (kernel_w - 1) + 1)) /
                                               stride_w +
                                           1;
-                          int col_chw = channels * height_col * width_col;
+                          int col_chw = channels * kernel_h * kernel_w *
+                                        height_col * width_col;
                           if (col_chw <= 0 || height_col <= 0 ||
                               width_col <= 0 || channels <= 0) {
                             VLOG(4) << "col_chw <= 0, skipped";
@@ -178,33 +175,30 @@ TEST(cl_test, im2col_test) {
                           const int input_elem_num = input_dim.production();
                           T *in_data = static_cast<T *>(
                               calloc(sizeof(T), input_elem_num));
-                          T *out_data = static_cast<T *>(
-                              calloc(sizeof(T), input_elem_num));
-                          T *out_ref_data = static_cast<T *>(
-                              calloc(sizeof(T), input_elem_num));
-                          VLOG(4) << "initial cpu data";
+                          T *out_data =
+                              static_cast<T *>(calloc(sizeof(T), n * col_chw));
+                          T *out_ref_data =
+                              static_cast<T *>(calloc(sizeof(T), n * col_chw));
                           for (int i = 0; i < input_elem_num; ++i) {
                             in_data[i] = i;
-                            out_data[i] = 0;
-                            out_ref_data[i] = 0;
                           }
 
                           // CPU im2col
-                          VLOG(4) << "start compute im2col on cpu";
-                          im2col<T>(static_cast<const T *>(in_data),
-                                    channels,
-                                    height,
-                                    width,
-                                    kernel_h,
-                                    kernel_w,
-                                    pad_h,
-                                    pad_w,
-                                    stride_h,
-                                    stride_w,
-                                    dilation_h,
-                                    dilation_w,
-                                    static_cast<T *>(out_ref_data));
-                          VLOG(3) << "CPU im2col finished";
+                          for (int b = 0; b < n; b++) {
+                            im2col<T>(in_data + b * channels * height * width,
+                                      channels,
+                                      height,
+                                      width,
+                                      kernel_h,
+                                      kernel_w,
+                                      pad_h,
+                                      pad_w,
+                                      stride_h,
+                                      stride_w,
+                                      dilation_h,
+                                      dilation_w,
+                                      out_ref_data + b * col_chw);
+                          }
 
                           // OpenCL im2col
                           auto *runtime = CLRuntime::Global();
@@ -212,117 +206,84 @@ TEST(cl_test, im2col_test) {
                               << "Fail to initialize OpenCL runtime.";
                           runtime->set_cl_path(FLAGS_cl_path);
 
-                          VLOG(3) << "start InitOpenCLRuntime(FLAGS_cl_path) "
-                                     "finished...";
                           std::unique_ptr<CLContext> context(new CLContext);
-                          VLOG(3) << "start context->AddKernel ...";
                           context->AddKernel(kernel_func_name,
                                              kernel_func_path);
-                          VLOG(3) << "start context->GetKernel ...";
                           auto kernel = context->GetKernel(kernel_func_name);
 
-                          VLOG(4) << "start Malloc for in and out ...";
                           auto *d_in =
                               static_cast<cl::Buffer *>(TargetWrapperCL::Malloc(
                                   sizeof(T) * input_elem_num));
-                          auto *d_out =
-                              static_cast<cl::Buffer *>(TargetWrapperCL::Malloc(
-                                  sizeof(T) * input_elem_num));
-                          VLOG(4) << "start MemcpySync for in_data ...";
+                          auto *d_out = static_cast<cl::Buffer *>(
+                              TargetWrapperCL::Malloc(sizeof(T) * n * col_chw));
                           TargetWrapperCL::MemcpySync(
                               d_in,
                               in_data,
                               sizeof(T) * input_elem_num,
                               IoDirection::HtoD);
 
-                          VLOG(4) << "start setargs ...";
+                          int n_threads = channels * height_col * width_col;
                           cl_int status;
                           int arg_idx = 0;
-                          status = kernel.setArg(arg_idx, *d_in);
-                          CL_CHECK_FATAL(status);
-                          status = kernel.setArg(
-                              ++arg_idx, static_cast<const int>(img_offset));
-                          CL_CHECK_FATAL(status);
-                          status = kernel.setArg(
-                              ++arg_idx, static_cast<const int>(col_chw));
-                          CL_CHECK_FATAL(status);
-                          status = kernel.setArg(
-                              ++arg_idx, static_cast<const int>(height));
-                          CL_CHECK_FATAL(status);
-                          status = kernel.setArg(++arg_idx,
-                                                 static_cast<const int>(width));
-                          CL_CHECK_FATAL(status);
-                          status = kernel.setArg(
-                              ++arg_idx, static_cast<const int>(kernel_h));
-                          CL_CHECK_FATAL(status);
-                          status = kernel.setArg(
-                              ++arg_idx, static_cast<const int>(kernel_w));
-                          CL_CHECK_FATAL(status);
-                          status = kernel.setArg(++arg_idx,
-                                                 static_cast<const int>(pad_h));
-                          CL_CHECK_FATAL(status);
-                          status = kernel.setArg(++arg_idx,
-                                                 static_cast<const int>(pad_w));
-                          CL_CHECK_FATAL(status);
-                          status = kernel.setArg(
-                              ++arg_idx, static_cast<const int>(stride_h));
-                          CL_CHECK_FATAL(status);
-                          status = kernel.setArg(
-                              ++arg_idx, static_cast<const int>(stride_w));
-                          CL_CHECK_FATAL(status);
-                          status = kernel.setArg(
-                              ++arg_idx, static_cast<const int>(dilation_h));
-                          CL_CHECK_FATAL(status);
-                          status = kernel.setArg(
-                              ++arg_idx, static_cast<const int>(dilation_w));
-                          CL_CHECK_FATAL(status);
-                          status = kernel.setArg(
-                              ++arg_idx, static_cast<const int>(height_col));
-                          CL_CHECK_FATAL(status);
-                          status = kernel.setArg(
-                              ++arg_idx, static_cast<const int>(width_col));
-                          CL_CHECK_FATAL(status);
-                          status = kernel.setArg(++arg_idx, *d_out);
-                          CL_CHECK_FATAL(status);
-                          status = kernel.setArg(
-                              ++arg_idx, static_cast<const int>(col_offset));
-                          CL_CHECK_FATAL(status);
-                          VLOG(4) << "setargs finished";
+                          for (int b = 0; b < n; b++) {
+                            img_offset = b * channels * height * width;
+                            col_offset = b * col_chw;
+                            arg_idx = 0;
+                            status = kernel.setArg(arg_idx, *d_in);
+                            CL_CHECK_FATAL(status);
+                            status = kernel.setArg(++arg_idx, img_offset);
+                            CL_CHECK_FATAL(status);
+                            status = kernel.setArg(++arg_idx, n_threads);
+                            CL_CHECK_FATAL(status);
+                            status = kernel.setArg(++arg_idx, height);
+                            CL_CHECK_FATAL(status);
+                            status = kernel.setArg(++arg_idx, width);
+                            CL_CHECK_FATAL(status);
+                            status = kernel.setArg(++arg_idx, kernel_h);
+                            CL_CHECK_FATAL(status);
+                            status = kernel.setArg(++arg_idx, kernel_w);
+                            CL_CHECK_FATAL(status);
+                            status = kernel.setArg(++arg_idx, pad_h);
+                            CL_CHECK_FATAL(status);
+                            status = kernel.setArg(++arg_idx, pad_w);
+                            CL_CHECK_FATAL(status);
+                            status = kernel.setArg(++arg_idx, stride_h);
+                            CL_CHECK_FATAL(status);
+                            status = kernel.setArg(++arg_idx, stride_w);
+                            CL_CHECK_FATAL(status);
+                            status = kernel.setArg(++arg_idx, dilation_h);
+                            CL_CHECK_FATAL(status);
+                            status = kernel.setArg(++arg_idx, dilation_w);
+                            CL_CHECK_FATAL(status);
+                            status = kernel.setArg(++arg_idx, height_col);
+                            CL_CHECK_FATAL(status);
+                            status = kernel.setArg(++arg_idx, width_col);
+                            CL_CHECK_FATAL(status);
+                            status = kernel.setArg(++arg_idx, *d_out);
+                            CL_CHECK_FATAL(status);
+                            status = kernel.setArg(++arg_idx, col_offset);
+                            CL_CHECK_FATAL(status);
 
-                          cl::Event event;
-                          double start_nanos = event.getProfilingInfo<
-                              CL_PROFILING_COMMAND_START>();
-                          VLOG(4) << "start enqueueNDRangeKernel ...";
-                          auto global_work_size =
-                              cl::NDRange{static_cast<size_t>(col_chw)};
-                          status =
-                              context->GetCommandQueue().enqueueNDRangeKernel(
-                                  kernel,
-                                  cl::NullRange,
-                                  global_work_size,
-                                  cl::NullRange,
-                                  nullptr,
-                                  &event);
-                          CL_CHECK_FATAL(status);
-                          VLOG(4) << "start GetCommandQueue().finish() ...";
+                            auto global_work_size =
+                                cl::NDRange{static_cast<size_t>(col_chw)};
+                            status =
+                                context->GetCommandQueue().enqueueNDRangeKernel(
+                                    kernel,
+                                    cl::NullRange,
+                                    global_work_size,
+                                    cl::NullRange,
+                                    nullptr,
+                                    nullptr);
+                            CL_CHECK_FATAL(status);
+                          }
+
                           status = context->GetCommandQueue().finish();
-                          VLOG(4) << "GetCommandQueue().finish() finished";
                           CL_CHECK_FATAL(status);
-                          double stop_nanos =
-                              event
-                                  .getProfilingInfo<CL_PROFILING_COMMAND_END>();
-                          double elapsed_micros =
-                              (stop_nanos - start_nanos) / 1000.0;
 
-                          VLOG(4) << "Kernel:" << kernel_func_name
-                                  << " Run Cost Time: " << elapsed_micros
-                                  << " us.";
-
-                          TargetWrapperCL::MemcpySync(
-                              out_data,
-                              d_out,
-                              sizeof(T) * input_dim.production(),
-                              IoDirection::DtoH);
+                          TargetWrapperCL::MemcpySync(out_data,
+                                                      d_out,
+                                                      sizeof(T) * n * col_chw,
+                                                      IoDirection::DtoH);
 
 #ifdef PRINT_RESULT
                           PrintData("in", in_data, height, width);
@@ -330,7 +291,7 @@ TEST(cl_test, im2col_test) {
                           PrintData("out", out_data, height, width);
 #endif
 
-                          for (int i = 0; i < input_dim.production(); ++i) {
+                          for (int i = 0; i < n * col_chw; ++i) {
                             EXPECT_NEAR(out_data[i], out_ref_data[i], 1e-5);
 #ifdef CHECK_ERROR
                             if (abs(out_data[i] - out_ref_data[i]) > 1e-5) {
