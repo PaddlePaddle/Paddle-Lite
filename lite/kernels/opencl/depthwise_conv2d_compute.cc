@@ -30,6 +30,10 @@ class DepthwiseConv2dCompute
   using param_t = operators::ConvParam;
 
   void PrepareForRun() override {
+    const auto& param = *param_.get_mutable<param_t>();
+    if (param.fuse_relu) {
+      build_options_ += " -DRELU";
+    }
     auto& context = ctx_->As<OpenCLContext>();
     context.cl_context()->AddKernel(
         kernel_func_name_, "buffer/depthwise_conv2d_kernel.cl", build_options_);

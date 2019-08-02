@@ -19,14 +19,14 @@ namespace paddle {
 namespace lite {
 namespace operators {
 
-bool LogicalXorOp::CheckShape() const {
+bool BinaryLogicalOp::CheckShape() const {
   CHECK_OR_FALSE(param_.X);
   CHECK_OR_FALSE(param_.Y);
   CHECK_OR_FALSE(param_.Out);
   return true;
 }
 
-bool LogicalXorOp::InferShape() const {
+bool BinaryLogicalOp::InferShape() const {
   CHECK_OR_FALSE(param_.Out);
   // TODO(Superjomn) Enable data sharing.
   auto input_dims = param_.X->dims();
@@ -34,7 +34,8 @@ bool LogicalXorOp::InferShape() const {
   return true;
 }
 
-bool LogicalXorOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
+bool BinaryLogicalOp::AttachImpl(const cpp::OpDesc &opdesc,
+                                 lite::Scope *scope) {
   param_.X =
       scope->FindVar(opdesc.Input("X").front())->GetMutable<lite::Tensor>();
   param_.Y =
@@ -46,14 +47,13 @@ bool LogicalXorOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   CHECK(param_.Out);
   return true;
 }
-bool LogicalAndOp::CheckShape() const {
+bool UnaryLogicalOp::CheckShape() const {
   CHECK_OR_FALSE(param_.X);
-  CHECK_OR_FALSE(param_.Y);
   CHECK_OR_FALSE(param_.Out);
   return true;
 }
 
-bool LogicalAndOp::InferShape() const {
+bool UnaryLogicalOp::InferShape() const {
   CHECK_OR_FALSE(param_.Out);
   // TODO(Superjomn) Enable data sharing.
   auto input_dims = param_.X->dims();
@@ -61,15 +61,12 @@ bool LogicalAndOp::InferShape() const {
   return true;
 }
 
-bool LogicalAndOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
+bool UnaryLogicalOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   param_.X =
       scope->FindVar(opdesc.Input("X").front())->GetMutable<lite::Tensor>();
-  param_.Y =
-      scope->FindVar(opdesc.Input("Y").front())->GetMutable<lite::Tensor>();
   param_.Out =
       scope->FindVar(opdesc.Output("Out").front())->GetMutable<lite::Tensor>();
   CHECK(param_.X);
-  CHECK(param_.Y);
   CHECK(param_.Out);
   return true;
 }
@@ -77,5 +74,7 @@ bool LogicalAndOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(logical_xor, paddle::lite::operators::LogicalXorOp);
-REGISTER_LITE_OP(logical_and, paddle::lite::operators::LogicalAndOp);
+REGISTER_LITE_OP(logical_xor, paddle::lite::operators::BinaryLogicalOp);
+REGISTER_LITE_OP(logical_and, paddle::lite::operators::BinaryLogicalOp);
+REGISTER_LITE_OP(logical_or, paddle::lite::operators::BinaryLogicalOp);
+REGISTER_LITE_OP(logical_not, paddle::lite::operators::UnaryLogicalOp);

@@ -14,6 +14,7 @@
 
 #pragma once
 #include <algorithm>
+#include <string>
 #include <vector>
 #include "lite/core/kernel.h"
 #include "lite/operators/pad2d_op.h"

@@ -65,6 +65,19 @@ class DeviceInfo {
       clients_;
 };
 
+class OpList {
+ public:
+  static OpList& Global() {
+    static thread_local OpList x;
+    return x;
+  }
+  void clear() { lists_.clear(); }
+  void add(std::shared_ptr<ge::Operator> p) { lists_.push_back(p); }
+
+ private:
+  std::vector<std::shared_ptr<ge::Operator>> lists_;
+};
+
 bool BuildNPUClient(std::vector<ge::Operator>& inputs,   // NOLINT
                     std::vector<ge::Operator>& outputs,  // NOLINT
                     const string& name);

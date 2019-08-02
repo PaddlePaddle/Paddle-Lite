@@ -34,21 +34,21 @@ bool MulticlassNmsOpLite::InferShape() const {
 
 bool MulticlassNmsOpLite::AttachImpl(const cpp::OpDesc& opdesc,
                                      lite::Scope* scope) {
-  auto Bbox_name = opdesc.Input("Bbox").front();
-  auto Conf_name = opdesc.Input("Conf").front();
+  auto Bbox_name = opdesc.Input("BBoxes").front();
+  auto Conf_name = opdesc.Input("Scores").front();
   auto Out_name = opdesc.Output("Out").front();
   param_.bbox_data = GetVar<lite::Tensor>(scope, Bbox_name);
   param_.conf_data = GetVar<lite::Tensor>(scope, Conf_name);
   param_.out = GetMutableVar<lite::Tensor>(scope, Out_name);
-  param_.priors = opdesc.GetAttr<std::vector<int>>("priors");
-  param_.class_num = opdesc.GetAttr<int>("class_num");
-  param_.background_id = opdesc.GetAttr<int>("background_id");
-  param_.keep_topk = opdesc.GetAttr<int>("keep_topk");
-  param_.nms_topk = opdesc.GetAttr<int>("nms_topk");
-  param_.conf_thresh = opdesc.GetAttr<float>("conf_thresh");
-  param_.nms_thresh = opdesc.GetAttr<float>("nms_thresh");
+  param_.background_label = opdesc.GetAttr<int>("background_label");
+  param_.keep_top_k = opdesc.GetAttr<int>("keep_top_k");
+  param_.nms_top_k = opdesc.GetAttr<int>("nms_top_k");
+  param_.score_threshold = opdesc.GetAttr<float>("score_threshold");
+  param_.nms_threshold = opdesc.GetAttr<float>("nms_threshold");
   param_.nms_eta = opdesc.GetAttr<float>("nms_eta");
-  param_.share_location = opdesc.GetAttr<bool>("share_location");
+  if (opdesc.HasAttr("share_location")) {
+    param_.share_location = opdesc.GetAttr<bool>("share_location");
+  }
   return true;
 }
 

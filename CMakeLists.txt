@@ -106,7 +106,8 @@ include_directories("${PADDLE_SOURCE_DIR}")
 if (WITH_LITE AND LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
     message(STATUS "Building the mobile framework")
     include(cross_compiling/postproject)
-
+    include(cross_compiling/npu) # check and prepare NPU DDK
+    
     # include the necessary thirdparty dependencies
     include(external/gflags)    # download, build, install gflags
 

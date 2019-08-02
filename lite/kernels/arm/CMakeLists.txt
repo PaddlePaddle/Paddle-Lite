@@ -37,16 +37,16 @@ lite_cc_library(im2sequence_compute_arm SRCS im2sequence_compute.cc DEPS ${lite_
 lite_cc_library(sequence_softmax_compute_arm SRCS sequence_softmax_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(norm_compute_arm SRCS norm_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(logical_compute_arm SRCS logical_compute.cc DEPS ${lite_kernel_deps} math_arm)
-lite_cc_library(less_than_arm SRCS compare_compute.cc DEPS ${lite_kernel_deps} math_arm)
+lite_cc_library(compare_compute_arm SRCS compare_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(topk_compute_arm SRCS topk_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(increment_compute_arm SRCS increment_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(write_to_array_compute_arm SRCS write_to_array_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(read_from_array_compute_arm SRCS read_from_array_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(beam_search_compute_arm SRCS beam_search_compute.cc DEPS ${lite_kernel_deps} math_arm)
+lite_cc_library(box_coder_compute_arm SRCS box_coder_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(sequence_pool_compute_arm SRCS sequence_pool_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(sequence_expand_compute_arm SRCS sequence_expand_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(reduce_max_compute_arm SRCS reduce_max_compute.cc DEPS ${lite_kernel_deps} math_arm)
-
 
 lite_cc_test(test_fc_compute_arm SRCS fc_compute_test.cc DEPS fc_compute_arm math_arm)
 lite_cc_test(test_activation_compute_arm SRCS activation_compute_test.cc DEPS activation_compute_arm)
@@ -103,12 +103,13 @@ set(arm_kernels
     sequence_softmax_compute_arm
     norm_compute_arm
     logical_compute_arm
-    less_than_arm
+    compare_compute_arm
     topk_compute_arm
     increment_compute_arm
     write_to_array_compute_arm
     read_from_array_compute_arm
     beam_search_compute_arm
+    box_coder_compute_arm
     reduce_max_compute_arm
     sequence_expand_compute_arm
     sequence_pool_compute_arm

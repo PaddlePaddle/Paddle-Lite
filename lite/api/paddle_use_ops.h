@@ -25,6 +25,7 @@ USE_LITE_OP(scale);
 USE_LITE_OP(feed);
 USE_LITE_OP(lrn);
 USE_LITE_OP(decode_bboxes);
+USE_LITE_OP(box_coder);
 USE_LITE_OP(fetch);
 USE_LITE_OP(io_copy);
 USE_LITE_OP(io_copy_once);
@@ -80,7 +81,8 @@ USE_LITE_OP(gru_unit)
 USE_LITE_OP(gru)
 USE_LITE_OP(beam_search_decode)
 USE_LITE_OP(lookup_table)
-USE_LITE_OP(graph_op);
+USE_LITE_OP(multiclass_nms)
+USE_LITE_OP(graph_op)
 USE_LITE_OP(sequence_expand)
 USE_LITE_OP(sequence_pool)
 USE_LITE_OP(reduce_max)

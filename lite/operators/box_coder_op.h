@@ -13,31 +13,33 @@
 // limitations under the License.
 
 #pragma once
-#include <stdint.h>
-#include "lite/arm/math/type_trans.h"
-#include "lite/core/kernel.h"
-#include "lite/operators/compare_op.h"
+
+#include <string>
+#include <vector>
+#include "lite/core/op_lite.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
-namespace arm {
+namespace operators {
 
-template <template <typename T> class Functor>
-class CompareCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+class BoxCoderOpLite : public OpLite {
  public:
-  using param_t = operators::LogicalParam;
+  BoxCoderOpLite() {}
+  explicit BoxCoderOpLite(const std::string &op_type) : OpLite(op_type) {}
 
-  void PrepareForRun() override;
+  bool CheckShape() const override;
 
-  void Run() override;
+  bool InferShape() const override;
 
-  ~CompareCompute() {}
+  bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
+
+  void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
+  std::string DebugString() const override { return "box_coder"; }
 
  private:
+  mutable BoxCoderParam param_;
 };
 
-}  // namespace arm
-}  // namespace kernels
+}  // namespace operators
 }  // namespace lite
 }  // namespace paddle

@@ -23,10 +23,10 @@ namespace paddle {
 namespace lite {
 namespace operators {
 
-class LessThanOp : public OpLite {
+class CompareOp : public OpLite {
  public:
-  LessThanOp() {}
-  explicit LessThanOp(const std::string &op_type) : OpLite(op_type) {}
+  CompareOp() {}
+  explicit CompareOp(const std::string &op_type) : OpLite(op_type) {}
 
   bool CheckShape() const override;
 

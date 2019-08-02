@@ -13,28 +13,21 @@
 // limitations under the License.
 
 #pragma once
-#include <stdint.h>
-#include "lite/arm/math/type_trans.h"
 #include "lite/core/kernel.h"
-#include "lite/operators/compare_op.h"
+#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace arm {
 
-template <template <typename T> class Functor>
-class CompareCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+class BoxCoderCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
  public:
-  using param_t = operators::LogicalParam;
-
-  void PrepareForRun() override;
+  using param_t = operators::BoxCoderParam;
 
   void Run() override;
 
-  ~CompareCompute() {}
-
- private:
+  virtual ~BoxCoderCompute() = default;
 };
 
 }  // namespace arm

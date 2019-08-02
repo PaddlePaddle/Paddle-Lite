@@ -13,31 +13,24 @@
 // limitations under the License.
 
 #pragma once
-#include <stdint.h>
-#include "lite/arm/math/type_trans.h"
-#include "lite/core/kernel.h"
-#include "lite/operators/compare_op.h"
+
+#include <string>
+#include "lite/core/tensor.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
 namespace arm {
+namespace math {
 
-template <template <typename T> class Functor>
-class CompareCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
- public:
-  using param_t = operators::LogicalParam;
+void box_coder(lite::Tensor* proposals,
+               const lite::Tensor* anchors,
+               const lite::Tensor* variances,
+               const lite::Tensor* bbox_deltas,
+               const std::string code_type,
+               bool box_normalized,
+               int axis);
 
-  void PrepareForRun() override;
-
-  void Run() override;
-
-  ~CompareCompute() {}
-
- private:
-};
-
+}  // namespace math
 }  // namespace arm
-}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
