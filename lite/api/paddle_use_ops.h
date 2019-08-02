@@ -85,3 +85,4 @@ USE_LITE_OP(graph_op);
 USE_LITE_OP(sequence_expand)
 USE_LITE_OP(sequence_pool)
 USE_LITE_OP(reduce_max)
+USE_LITE_OP(is_empty)

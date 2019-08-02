@@ -593,6 +593,10 @@ struct ReduceMaxParam {
   bool keep_dim{false};
 };
 
+struct IsEmptyParam {
+  const lite::Tensor* X{};
+  lite::Tensor* Out{};
+};
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle
