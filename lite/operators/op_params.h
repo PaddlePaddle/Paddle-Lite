@@ -619,6 +619,10 @@ struct LodResetParam {
   bool append;
 };
 
+struct IsEmptyParam {
+  const lite::Tensor* X{};
+  lite::Tensor* Out{};
+};
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle

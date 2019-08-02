@@ -70,6 +70,8 @@ lite_cc_library(sequence_pool_op_lite SRCS sequence_pool_op.cc DEPS ${op_DEPS})
 lite_cc_library(sequence_expand_op_lite SRCS sequence_expand_op.cc DEPS ${op_DEPS})
 lite_cc_library(reduce_max_op_lite SRCS reduce_max_op.cc DEPS ${op_DEPS})
 lite_cc_library(lod_reset_op SRCS lod_reset_op.cc DEPS ${op_DEPS})
+lite_cc_library(is_empty SRCS is_empty_op.cc DEPS ${op_DEPS})
+
 
 set(ops
         conv_op
@@ -141,6 +143,7 @@ set(ops
         sequence_expand_op_lite
         reduce_max_op_lite
         lod_reset_op
+        is_empty 
         CACHE INTERNAL "ops lite")
 
 if (NOT LITE_WITH_X86)
