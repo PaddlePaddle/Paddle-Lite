@@ -17,7 +17,6 @@ limitations under the License. */
 
 #include "operators/kernel/flatten2_kernel.h"
 
-
 namespace paddle_mobile {
 namespace operators {
 
@@ -37,4 +36,3 @@ void Flatten2Kernel<GPU_CL, float>::Compute(
 }  // namespace paddle_mobile
 
 #endif
-
