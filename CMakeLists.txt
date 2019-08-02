@@ -11,25 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License
-#set(ANDROID_NDK /Users/lixiaoyang05/android-ndk-r16b)
-#set(NDK_ROOT /Users/lixiaoyang05/android-ndk-r16b)
-#set(ARM_TARGET_OS android)
-#set(ARM_TARGET_ARCH_ABI armv8)
-#set(ARM_TARGET_LANG gcc)
-
-# for lite, both server and mobile framework.
-option(LITE_WITH_JAVA "Enable Java JNI lib in lite mode" OFF)
-option(LITE_WITH_CUDA "Enable CUDA in lite mode" OFF)
-option(LITE_WITH_X86  "Enable X86 in lite mode"  OFF)
-option(LITE_WITH_ARM  "Enable ARM in lite mode"  ON)
-option(LITE_WITH_NPU  "Enable NPU in lite mode"  OFF)
-option(LITE_WITH_OPENMP "Enable OpenMP in lite framework" ON)
-option(LITE_WITH_OPENCL   "Enable OpenCL support in lite" OFF)
-option(LITE_WITH_FPGA   "Enable FPGA support in lite" OFF)
-option(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK  "Enable light-weight framework" ON)
-option(LITE_WITH_PROFILE  "Enable profile mode in lite framework"  OFF)
-option(LITE_SHUTDOWN_LOG "Shutdown log system or not." OFF)
-option(LITE_ON_TINY_PUBLISH "Publish tiny predictor lib." OFF)
 
 cmake_minimum_required(VERSION 3.0)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
@@ -56,12 +37,12 @@ find_package(Threads REQUIRED)
 include(simd)
 
 ################################ Exposed Configurations #######################################
-option(WITH_GPU         "Compile PaddlePaddle with NVIDIA GPU"          OFF)
-option(WITH_DSO         "Compile PaddlePaddle with dynamic linked CUDA" OFF)
-option(WITH_AVX         "Compile PaddlePaddle with AVX intrinsics"      OFF)
-option(WITH_PYTHON      "Compile PaddlePaddle with python interpreter"  OFF)
-option(WITH_TESTING     "Compile PaddlePaddle with unit testing"        ON)
-option(WITH_MKL         "Compile PaddlePaddle with MKL support."        OFF)
+option(WITH_GPU         "Compile PaddlePaddle with NVIDIA GPU"          ${CUDA_FOUND})
+option(WITH_DSO         "Compile PaddlePaddle with dynamic linked CUDA" ON)
+option(WITH_AVX         "Compile PaddlePaddle with AVX intrinsics"      ${AVX_FOUND})
+option(WITH_PYTHON      "Compile PaddlePaddle with python interpreter"  ON)
+option(WITH_TESTING     "Compile PaddlePaddle with unit testing"        OFF)
+option(WITH_MKL         "Compile PaddlePaddle with MKL support."        ${AVX_FOUND})
 option(WITH_ARM_DOTPROD "Compile PaddlePaddle with ARM dot production"  ON)
 option(WITH_SYSTEM_BLAS   "Use system blas library"           OFF)
 option(WITH_DISTRIBUTE  "Compile with distributed support"              OFF)
@@ -75,20 +56,32 @@ option(REPLACE_ENFORCE_GLOG "Replace PADDLE_ENFORCE with glog/CHECK for better d
 # TODO(Superjomn) Remove WITH_ANAKIN option if not needed latter.
 if(ANDROID OR IOS OR ARMLINUX)
     set(WITH_GPU OFF CACHE STRING
-        "Disable GPU when cross-compiling for Android and iOS" FORCE)
+            "Disable GPU when cross-compiling for Android and iOS" FORCE)
     set(WITH_DSO OFF CACHE STRING
-        "Disable DSO when cross-compiling for Android and iOS" FORCE)
+            "Disable DSO when cross-compiling for Android and iOS" FORCE)
     set(WITH_AVX OFF CACHE STRING
-        "Disable AVX when cross-compiling for Android and iOS" FORCE)
+            "Disable AVX when cross-compiling for Android and iOS" FORCE)
     set(WITH_PYTHON OFF CACHE STRING
-        "Disable PYTHON when cross-compiling for Android and iOS" FORCE)
+            "Disable PYTHON when cross-compiling for Android and iOS" FORCE)
     set(WITH_RDMA OFF CACHE STRING
-        "Disable RDMA when cross-compiling for Android and iOS" FORCE)
+            "Disable RDMA when cross-compiling for Android and iOS" FORCE)
     set(WITH_MKL OFF CACHE STRING
-        "Disable MKL when cross-compiling for Android and iOS" FORCE)
+            "Disable MKL when cross-compiling for Android and iOS" FORCE)
 endif()
 
-
+# for lite, both server and mobile framework.
+option(LITE_WITH_JAVA "Enable Java JNI lib in lite mode" OFF)
+option(LITE_WITH_CUDA "Enable CUDA in lite mode" OFF)
+option(LITE_WITH_X86  "Enable X86 in lite mode"  ON)
+option(LITE_WITH_ARM  "Enable ARM in lite mode"  OFF)
+option(LITE_WITH_NPU  "Enable NPU in lite mode"  OFF)
+option(LITE_WITH_OPENMP "Enable OpenMP in lite framework" ON)
+option(LITE_WITH_OPENCL   "Enable OpenCL support in lite" OFF)
+option(LITE_WITH_FPGA   "Enable FPGA support in lite" OFF)
+option(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK  "Enable light-weight framework" OFF)
+option(LITE_WITH_PROFILE  "Enable profile mode in lite framework"  OFF)
+option(LITE_SHUTDOWN_LOG "Shutdown log system or not." OFF)
+option(LITE_ON_TINY_PUBLISH "Publish tiny predictor lib." OFF)
 
 set(THIRD_PARTY_PATH "${CMAKE_BINARY_DIR}/third_party" CACHE STRING
         "A path setting third party libraries download & build directories.")
@@ -115,7 +108,7 @@ if (WITH_LITE AND LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
     message(STATUS "Building the mobile framework")
     include(cross_compiling/postproject)
     include(cross_compiling/npu) # check and prepare NPU DDK
-    
+
     # include the necessary thirdparty dependencies
     include(external/gflags)    # download, build, install gflags
 
