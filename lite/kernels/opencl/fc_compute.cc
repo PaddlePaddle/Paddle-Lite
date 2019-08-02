@@ -31,10 +31,6 @@ class FcCompute
   using param_t = operators::FcParam;
 
   void PrepareForRun() override {
-    auto& context = ctx_->As<OpenCLContext>();
-    context.cl_context()->AddKernel(
-        kernel_func_name_, "buffer/fc_kernel.cl", build_options_);
-
     const auto& param = *param_.get_mutable<param_t>();
     const auto x_dims = param.input->dims();
     const auto w_dims = param.w->dims();
@@ -47,7 +43,23 @@ class FcCompute
     k_ = x_dims.Slice(param.in_num_col_dims, x_dims.size()).production();
     n_ = w_dims[1];
     CHECK_EQ(k_, static_cast<int>(w_dims[0]));
+    VLOG(4) << "x_dims:" << x_dims[0] << " " << x_dims[1] << " " << x_dims[2]
+            << " " << x_dims[3];
+    VLOG(4) << "w_dims:" << w_dims[0] << " " << w_dims[1] << " " << w_dims[2]
+            << " " << w_dims[3];
     VLOG(4) << "m_: " << m_ << " n_: " << n_ << " k_: " << k_;
+
+    if (m_ == 1) {  // gemv
+      kernel_func_name_ = "fc_gemv_1x4";
+      global_work_size_ = cl::NDRange{static_cast<size_t>((n_ + 3) / 4)};
+    } else {  // gemm
+      kernel_func_name_ = "fc_gemm_4x4";
+      global_work_size_ = cl::NDRange{static_cast<size_t>((m_ + 3) / 4),
+                                      static_cast<size_t>((n_ + 3) / 4)};
+    }
+    auto& context = ctx_->As<OpenCLContext>();
+    context.cl_context()->AddKernel(
+        kernel_func_name_, "buffer/fc_kernel.cl", build_options_);
   }
 
   void Run() override {
@@ -81,12 +93,10 @@ class FcCompute
     status = kernel.setArg(++arg_idx, static_cast<const int>(k_));
     CL_CHECK_FATAL(status);
 
-    auto global_work_size = cl::NDRange{static_cast<size_t>((m_ + 3) / 4),
-                                        static_cast<size_t>((n_ + 3) / 4)};
     status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
         kernel,
         cl::NullRange,
-        global_work_size,
+        global_work_size_,
         cl::NullRange,
         nullptr,
         event_.get());
@@ -96,8 +106,9 @@ class FcCompute
 
  private:
   int m_, n_, k_;
-  std::string kernel_func_name_{"fc"};
+  std::string kernel_func_name_{};
   std::string build_options_{"-DCL_DTYPE=float"};
+  cl::NDRange global_work_size_;
   std::shared_ptr<cl::Event> event_{new cl::Event};
 };
 
