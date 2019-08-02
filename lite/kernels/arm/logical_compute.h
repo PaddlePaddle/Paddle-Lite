@@ -22,8 +22,10 @@ namespace paddle {
 namespace lite {
 namespace kernels {
 namespace arm {
-
-class LogicalXorCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+// template <typename Functor>
+template <template <typename> class Functor>
+class BinaryLogicalCompute
+    : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
  public:
   using param_t = operators::LogicalParam;
 
@@ -31,9 +33,11 @@ class LogicalXorCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
 
   void Run() override;
 
-  ~LogicalXorCompute() {}
+  ~BinaryLogicalCompute() {}
 };
-class LogicalAndCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+
+template <template <typename> class Functor>
+class UnaryLogicalCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
  public:
   using param_t = operators::LogicalParam;
 
@@ -41,9 +45,8 @@ class LogicalAndCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
 
   void Run() override;
 
-  ~LogicalAndCompute() {}
+  ~UnaryLogicalCompute() {}
 };
-
 }  // namespace arm
 }  // namespace kernels
 }  // namespace lite

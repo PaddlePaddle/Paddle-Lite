@@ -19,14 +19,14 @@ namespace paddle {
 namespace lite {
 namespace operators {
 
-bool LessThanOp::CheckShape() const {
+bool CompareOp::CheckShape() const {
   CHECK_OR_FALSE(param_.X);
   CHECK_OR_FALSE(param_.Y);
   CHECK_OR_FALSE(param_.Out);
   return true;
 }
 
-bool LessThanOp::InferShape() const {
+bool CompareOp::InferShape() const {
   CHECK_OR_FALSE(param_.Out);
   // TODO(Superjomn) Enable data sharing.
   auto input_dims = param_.X->dims();
@@ -34,7 +34,7 @@ bool LessThanOp::InferShape() const {
   return true;
 }
 
-bool LessThanOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
+bool CompareOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   param_.X =
       scope->FindVar(opdesc.Input("X").front())->GetMutable<lite::Tensor>();
   param_.Y =
@@ -53,4 +53,9 @@ bool LessThanOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(less_than, paddle::lite::operators::LessThanOp);
+REGISTER_LITE_OP(equal, paddle::lite::operators::CompareOp);
+REGISTER_LITE_OP(notequal, paddle::lite::operators::CompareOp);
+REGISTER_LITE_OP(less_than, paddle::lite::operators::CompareOp);
+REGISTER_LITE_OP(less_equal, paddle::lite::operators::CompareOp);
+REGISTER_LITE_OP(greater_than, paddle::lite::operators::CompareOp);
+REGISTER_LITE_OP(greater_equal, paddle::lite::operators::CompareOp);

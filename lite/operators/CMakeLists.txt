@@ -54,7 +54,14 @@ lite_cc_library(write_to_array_op SRCS write_to_array_op.cc DEPS ${op_DEPS})
 lite_cc_library(graph_op_lite SRCS graph_op.cc DEPS ${op_DEPS})
 lite_cc_library(logical_xor  SRCS logical_op.cc DEPS ${op_DEPS})
 lite_cc_library(logical_and  SRCS logical_op.cc DEPS ${op_DEPS})
+lite_cc_library(logical_or  SRCS logical_op.cc DEPS ${op_DEPS})
+lite_cc_library(logical_not  SRCS logical_op.cc DEPS ${op_DEPS})
 lite_cc_library(less_than  SRCS compare_op.cc DEPS ${op_DEPS})
+lite_cc_library(equal  SRCS compare_op.cc DEPS ${op_DEPS})
+lite_cc_library(not_equal  SRCS compare_op.cc DEPS ${op_DEPS})
+lite_cc_library(less_equal  SRCS compare_op.cc DEPS ${op_DEPS})
+lite_cc_library(greater_than  SRCS compare_op.cc DEPS ${op_DEPS})
+lite_cc_library(greater_equal  SRCS compare_op.cc DEPS ${op_DEPS})
 lite_cc_library(read_from_array_op SRCS read_from_array_op.cc DEPS ${op_DEPS})
 lite_cc_library(beam_search_op SRCS beam_search_op.cc DEPS ${op_DEPS})
 lite_cc_library(sequence_pool_op_lite SRCS sequence_pool_op.cc DEPS ${op_DEPS})
@@ -110,7 +117,14 @@ set(ops
         norm_op
         logical_xor        
         logical_and        
+        logical_or        
+        logical_not        
+        equal        
+        not_equal        
         less_than        
+        less_equal        
+        greater_than        
+        greater_equal        
         graph_op
         topk_op
         increment_op
