@@ -180,7 +180,8 @@ void FcComputeInt8<Ptype_out>::Run() {
     int8_t* packed_in =
         static_cast<int8_t*>(ctx.template workspace_data<int8_t>()) +
         ctx.llc_size() / sizeof(int8_t);
-    lite::arm::math::prepackA_int8(packed_in, i_data, k_, 0, m_, 0, k_, false);
+    lite::arm::math::prepackA_int8(
+        packed_in, i_data, k_, 0, m_, 0, k_, false, &ctx);
     lite::arm::math::gemm_prepack_int8(packed_in,
                                        w_data,
                                        b_data,

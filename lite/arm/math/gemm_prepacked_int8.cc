@@ -181,7 +181,8 @@ void prepackA_int8(TensorLite* tout,
     const char* weights_group = tin.data<char>() + g * m * k;
     char* weights_trans_ptr =
         tout->mutable_data<char>() + g * group_size_round_up;
-    prepackA_int8(weights_trans_ptr, weights_group, lda, 0, m, 0, k, is_trans);
+    prepackA_int8(
+        weights_trans_ptr, weights_group, lda, 0, m, 0, k, is_trans, ctx);
   }
 }
 
@@ -3773,7 +3774,7 @@ void packb_sdot_trans_int8(int8_t* out,
             "st1 {v6.8b}, [%[outptr_row0]], #8 \n"
             "st1 {v7.8b}, [%[outptr_row1]], #8 \n"
             : [inptr0] "+r"(inptr_row[0]), [inptr1] "+r"(inptr_row[1]),
-              inptr2] "+r"(inptr_row[2]), [inptr3] "+r"(inptr_row[3]),
+              [inptr2] "+r"(inptr_row[2]), [inptr3] "+r"(inptr_row[3]),
               [inptr4] "+r"(inptr_row[4]), [inptr5] "+r"(inptr_row[5]),
               [inptr6] "+r"(inptr_row[6]), [inptr7] "+r"(inptr_row[7]),
               [inptr8] "+r"(inptr_row[8]), [inptr9] "+r"(inptr_row[9]),

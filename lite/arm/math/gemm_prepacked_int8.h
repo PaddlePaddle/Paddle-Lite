@@ -51,7 +51,7 @@ inline int get_hblock_int8(const ARMContext* ctx) {
 const int MBLOCK_INT8_OTH = 4;
 const int NBLOCK_INT8_OTH = 8;
 
-inline int get_hblock_int8(const Context* ctx) { return 4; }
+inline int get_hblock_int8(const ARMContext* ctx) { return 4; }
 #endif  // __aarch64__
 
 void prepackA_int8(void* out,
@@ -61,7 +61,8 @@ void prepackA_int8(void* out,
                    int mmax,
                    int k0,
                    int kmax,
-                   bool is_trans);
+                   bool is_trans,
+                   ARMContext* ctx);
 
 void prepackA_int8(TensorLite* tout,
                    const TensorLite& tin,
