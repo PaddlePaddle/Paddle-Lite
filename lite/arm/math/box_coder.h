@@ -13,34 +13,24 @@
 // limitations under the License.
 
 #pragma once
-#include <algorithm>
+
 #include <string>
-#include <vector>
-#include "lite/core/kernel.h"
-#include "lite/operators/pad2d_op.h"
+#include "lite/core/tensor.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
 namespace arm {
+namespace math {
 
-class Pad2dCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
- public:
-  using param_t = operators::Pad2dParam;
+void box_coder(lite::Tensor* proposals,
+               const lite::Tensor* anchors,
+               const lite::Tensor* variances,
+               const lite::Tensor* bbox_deltas,
+               const std::string code_type,
+               bool box_normalized,
+               int axis);
 
-  void Run() override;
-
-  virtual ~Pad2dCompute() = default;
-
- private:
-  int mode_;
-  std::vector<int> pad_h_{0, 0};
-  std::vector<int> pad_w_{0, 0};
-  float pad_value_ = 0.f;
-  std::string data_format_{"NCHW"};
-};
-
+}  // namespace math
 }  // namespace arm
-}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

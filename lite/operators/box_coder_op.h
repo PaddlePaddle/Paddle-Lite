@@ -13,34 +13,33 @@
 // limitations under the License.
 
 #pragma once
-#include <algorithm>
+
 #include <string>
 #include <vector>
-#include "lite/core/kernel.h"
-#include "lite/operators/pad2d_op.h"
+#include "lite/core/op_lite.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
-namespace arm {
+namespace operators {
 
-class Pad2dCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+class BoxCoderOpLite : public OpLite {
  public:
-  using param_t = operators::Pad2dParam;
+  BoxCoderOpLite() {}
+  explicit BoxCoderOpLite(const std::string &op_type) : OpLite(op_type) {}
 
-  void Run() override;
+  bool CheckShape() const override;
 
-  virtual ~Pad2dCompute() = default;
+  bool InferShape() const override;
+
+  bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
+
+  void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
+  std::string DebugString() const override { return "box_coder"; }
 
  private:
-  int mode_;
-  std::vector<int> pad_h_{0, 0};
-  std::vector<int> pad_w_{0, 0};
-  float pad_value_ = 0.f;
-  std::string data_format_{"NCHW"};
+  mutable BoxCoderParam param_;
 };
 
-}  // namespace arm
-}  // namespace kernels
+}  // namespace operators
 }  // namespace lite
 }  // namespace paddle

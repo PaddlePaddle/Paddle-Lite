@@ -22,30 +22,57 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
+inline void ExpandAspectRatios(const std::vector<float>& input_aspect_ratior,
+                               bool flip,
+                               std::vector<float>* output_aspect_ratior) {
+  constexpr float epsilon = 1e-6;
+  output_aspect_ratior->clear();
+  output_aspect_ratior->push_back(1.0f);
+  for (size_t i = 0; i < input_aspect_ratior.size(); ++i) {
+    float ar = input_aspect_ratior[i];
+    bool already_exist = false;
+    for (size_t j = 0; j < output_aspect_ratior->size(); ++j) {
+      if (fabs(ar - output_aspect_ratior->at(j)) < epsilon) {
+        already_exist = true;
+        break;
+      }
+    }
+    if (!already_exist) {
+      output_aspect_ratior->push_back(ar);
+      if (flip) {
+        output_aspect_ratior->push_back(1.0f / ar);
+      }
+    }
+  }
+}
+
 void PriorBoxCompute::Run() {
   auto& param = Param<operators::PriorBoxParam>();
 
-  CHECK_EQ(param.ins.size(), 2);  // inputs[0]-feature_map  inputs[1]-image_data
-
-  bool is_flip = param.is_flip;
-  bool is_clip = param.is_clip;
-  std::vector<float> min_size = param.min_size;
-  std::vector<float> max_size = param.max_size;
-  std::vector<float> aspect_ratio = param.aspect_ratio;
-  std::vector<float> variance = param.variance;
+  bool is_flip = param.flip;
+  bool is_clip = param.clip;
+  std::vector<float> min_size = param.min_sizes;
+  std::vector<float> max_size = param.max_sizes;
+  std::vector<float> aspect_ratio = param.aspect_ratios;
+  std::vector<float> variance = param.variances_;
   int img_w = param.img_w;
   int img_h = param.img_h;
   float step_w = param.step_w;
   float step_h = param.step_h;
   float offset = param.offset;
-  int prior_num = param.prior_num;
+  std::vector<float> aspect_ratios_vec;
+  ExpandAspectRatios(aspect_ratio, is_flip, &aspect_ratios_vec);
+  size_t prior_num = aspect_ratios_vec.size() * min_size.size();
+  prior_num += max_size.size();
   std::vector<std::string> order = param.order;
 
-  lite::arm::math::prior_box(param.ins,
-                             &param.outs,
+  lite::arm::math::prior_box(param.input,
+                             param.image,
+                             &param.boxes,
+                             &param.variances,
                              min_size,
                              max_size,
-                             aspect_ratio,
+                             aspect_ratios_vec,
                              variance,
                              img_w,
                              img_h,
@@ -70,5 +97,7 @@ REGISTER_LITE_KERNEL(prior_box,
                      paddle::lite::kernels::arm::PriorBoxCompute,
                      def)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Output", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Image", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Boxes", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Variances", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();

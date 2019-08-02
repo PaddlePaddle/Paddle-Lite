@@ -22,6 +22,7 @@
 #include "lite/arm/math/argmax.h"
 #include "lite/arm/math/axpy.h"
 #include "lite/arm/math/beam_search.h"
+#include "lite/arm/math/box_coder.h"
 #include "lite/arm/math/col_im_transform.h"
 #include "lite/arm/math/concat.h"
 #include "lite/arm/math/conv_depthwise.h"

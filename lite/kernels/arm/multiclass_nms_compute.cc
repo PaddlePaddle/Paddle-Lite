@@ -23,19 +23,23 @@ namespace arm {
 
 void MulticlassNmsCompute::Run() {
   auto& param = Param<operators::MulticlassNmsParam>();
+  // bbox shape : N, M, 4
+  // scores shape : N, C, M
   const float* bbox_data = param.bbox_data->data<float>();
   const float* conf_data = param.conf_data->data<float>();
 
   CHECK_EQ(param.bbox_data->dims().production() % 4, 0);
 
   std::vector<float> result;
-  std::vector<int> priors = param.priors;
-  int class_num = param.class_num;
-  int background_id = param.background_id;
-  int keep_topk = param.keep_topk;
-  int nms_topk = param.nms_topk;
-  float conf_thresh = param.conf_thresh;
-  float nms_thresh = param.nms_thresh;
+  int N = param.bbox_data->dims()[0];
+  int M = param.bbox_data->dims()[1];
+  std::vector<int> priors(N, M);
+  int class_num = param.conf_data->dims()[1];
+  int background_label = param.background_label;
+  int keep_top_k = param.keep_top_k;
+  int nms_top_k = param.nms_top_k;
+  float score_threshold = param.score_threshold;
+  float nms_threshold = param.nms_threshold;
   float nms_eta = param.nms_eta;
   bool share_location = param.share_location;
 
@@ -44,19 +48,19 @@ void MulticlassNmsCompute::Run() {
                                   &result,
                                   priors,
                                   class_num,
-                                  background_id,
-                                  keep_topk,
-                                  nms_topk,
-                                  conf_thresh,
-                                  nms_thresh,
+                                  background_label,
+                                  keep_top_k,
+                                  nms_top_k,
+                                  score_threshold,
+                                  nms_threshold,
                                   nms_eta,
                                   share_location);
   lite::LoD* lod = param.out->mutable_lod();
   std::vector<uint64_t> lod_info;
+  lod_info.push_back(0);
   std::vector<float> result_corrected;
   int tmp_batch_id;
   uint64_t num = 0;
-
   for (int i = 0; i < result.size(); ++i) {
     if (i == 0) {
       tmp_batch_id = result[i];
@@ -73,6 +77,7 @@ void MulticlassNmsCompute::Run() {
       result_corrected.push_back(result[i]);
     }
   }
+  lod_info.push_back(num);
 
   (*lod).push_back(lod_info);
   param.out->Resize({static_cast<int64_t>(result_corrected.size() / 6), 6});
@@ -92,7 +97,7 @@ REGISTER_LITE_KERNEL(multiclass_nms,
                      kNCHW,
                      paddle::lite::kernels::arm::MulticlassNmsCompute,
                      def)
-    .BindInput("Bbox", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("Conf", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("BBoxes", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Scores", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
