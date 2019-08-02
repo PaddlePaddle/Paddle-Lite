@@ -486,6 +486,14 @@ struct BeamSearchDecodeParam {
   int end_id;
 };
 
+/// ----------------------- LookupTable operators ----------------------f
+struct LookupTableParam {
+  lite::Tensor* W{nullptr};
+  lite::Tensor* Ids{nullptr};
+  lite::Tensor* Out{nullptr};
+  int64_t padding_idx{-1};
+};
+
 struct Im2SequenceParam {
   std::vector<lite::Tensor*> X{};
   lite::Tensor* Out{};
