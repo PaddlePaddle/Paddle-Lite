@@ -95,4 +95,7 @@ REGISTER_OPERATOR_CPU(density_prior_box, ops::DensityPriorBoxOp);
 #ifdef PRIORBOX_OP
 REGISTER_OPERATOR_CL(prior_box, ops::PriorBoxOp);
 #endif  // PRIORBOX_OP
+#ifdef DENSITY_PRIORBOX_OP
+REGISTER_OPERATOR_CL(density_prior_box, ops::DensityPriorBoxOp);
+#endif  // DENSITY_PRIORBOX_OP
 #endif  // PADDLE_MOBILE_CL
