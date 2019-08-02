@@ -37,7 +37,6 @@ std::list<std::unique_ptr<KernelBase>> KernelRegistry::Create(
                     PRECISION(precision__),                                  \
                     DATALAYOUT(kAny)>(op_type);                              \
     case DATALAYOUT(kNHWC):                                                  \
-      LOG(ERROR) << "create nhwc";                                           \
       return Create<TARGET(target__),                                        \
                     PRECISION(precision__),                                  \
                     DATALAYOUT(kNHWC)>(op_type);                             \

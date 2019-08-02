@@ -104,9 +104,7 @@ Node *SSAGraph::GraphCreateInstructNode(
   // TODO(Superjomn) remove one valid_places here.
   op->SetValidPlaces(valid_places);
   auto &new_node = node_storage_.back();
-  LOG(ERROR) << "ssa_graph_istruct node begin!";
   auto kernels = op->CreateKernels(valid_places);
-  LOG(ERROR) << "ssa_graph_istruct node end!";
   node_storage_.back().AsStmt(op->op_type_, std::move(kernels), op);
 
   CHECK(new_node.inlinks.empty()) << "duplicate Build found";
@@ -129,7 +127,6 @@ void SSAGraph::Build(const Program &program,
   for (auto &op : program.ops()) {
     VLOG(3) << op->op_info()->Type();
     auto *op_node = GraphCreateInstructNode(op, valid_places);
-    LOG(ERROR) << "ssa_graph create node finished!";
     for (const std::string &name : op->op_info()->input_names()) {
       mir::Node *arg_node = nullptr;
       if (arg_update_node_map_.count(name)) {
@@ -140,7 +137,6 @@ void SSAGraph::Build(const Program &program,
         arg_node->AsArg(name, node_storage_.size() - 1);
         arg_update_node_map_[name] = arg_node;
       }
-      LOG(ERROR) << "ssa_graph arg_update_node finished!";
       if (is_weights(name)) arg_node->AsArg().is_weight = true;
       CHECK(arg_node->IsRoleSet());
       DirectedLink(arg_node, op_node);

@@ -191,11 +191,23 @@ static bool DataLayoutCompatibleTo(const Type& a, const Type& b) {
          (a.IsTensor() && b.IsTensor() && (a.layout() == b.layout() ||  //
                                            b.layout() == DATALAYOUT(kAny)));
 }
+static bool DataLayoutCompatible(const Type& a, const Type& b) {
+  return a.IsVoid() || b.IsVoid() ||                                    //
+         (a.IsTensor() && b.IsTensor() && (a.layout() == b.layout() ||  //
+                                           b.layout() == DATALAYOUT(kAny) ||
+                                           a.layout() == DATALAYOUT(kAny)));
+}
 
 static bool PrecisionCompatibleTo(const Type& a, const Type& b) {
   return a.IsVoid() ||                                                        //
          (a.IsTensor() && b.IsTensor() && (a.precision() == b.precision() ||  //
                                            b.precision() == PRECISION(kAny)));
+}
+static bool PrecisionCompatible(const Type& a, const Type& b) {
+  return a.IsVoid() || b.IsVoid() ||                                          //
+         (a.IsTensor() && b.IsTensor() && (a.precision() == b.precision() ||  //
+                                           b.precision() == PRECISION(kAny) ||
+                                           a.precision() == PRECISION(kAny)));
 }
 
 static bool DeviceCompatibleTo(const Type& a, const Type& b) {
@@ -207,6 +219,10 @@ static bool DeviceCompatibleTo(const Type& a, const Type& b) {
 static bool TypeCompatibleTo(const Type& a, const Type& b) {
   return TargetCompatibleTo(a, b) && DataLayoutCompatibleTo(a, b) &&
          PrecisionCompatibleTo(a, b) && DeviceCompatibleTo(a, b);
+}
+static bool TypeCompatible(const Type& a, const Type& b) {
+  return TargetCompatibleTo(a, b) && DataLayoutCompatible(a, b) &&
+         PrecisionCompatible(a, b) && DeviceCompatibleTo(a, b);
 }
 
 /*

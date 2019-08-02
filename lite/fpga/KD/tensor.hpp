@@ -451,7 +451,7 @@ class Tensor {
       tem_dims.push_back(lite_dim[i]);
     }
     shape_ = new Shape(NCHW, tem_dims);
-    dataType_ = FP16;
+    // dataType_ = FP16;
   }
   void fill_to_tensorlite(lite::Tensor* lite_tensor) {
     float16* ptr = mutableData<float16>();

@@ -68,7 +68,9 @@ class VariablePlaceInferencePass : public DebugPass {
     for (auto& x : graph->StmtTopologicalOrder()) {
       auto& inst = x->AsStmt();
       // The IoCopyOp is a tool operator, it won't support the type inference.
-      if (inst.op_type() == "io_copy") continue;
+      if (inst.op_type() == "io_copy" || inst.op_type() == "io_copy_once" ||
+          inst.op_type() == "calib")
+        continue;
       // LOG(INFO) << "- inferencing type " <<
       // deal with inputs
       LOG(INFO) << "Infering op " << inst.op_info()->Repr();

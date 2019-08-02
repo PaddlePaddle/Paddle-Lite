@@ -31,6 +31,7 @@ void ConvCompute::PrepareForRun() {
   input_.share_from_tensorlite(*param.x);
   output_.share_from_tensorlite(*param.output);
   filter_.share_from_tensorlite(*param.filter);
+  LOG(ERROR) << param.x << " " << param.output << " " << param.filter;
 
   conv_param.input = &input_;
   conv_param.output = &output_;

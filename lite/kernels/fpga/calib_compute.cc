@@ -51,31 +51,31 @@ void CalibComputeFP16ToFp32::Run() {
 REGISTER_LITE_KERNEL(calib,
                      kFPGA,
                      kFP16,
-                     kNHWC,
+                     kAny,
                      paddle::lite::kernels::fpga::CalibComputeFp32ToFP16,
-                     fp32_to_fp16_fpga_chw)
+                     fp32_to_fp16_fpga)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kFPGA),
                                       PRECISION(kFloat),
-                                      DATALAYOUT(kNCHW))})
+                                      DATALAYOUT(kAny))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kFPGA),
                                        PRECISION(kFP16),
-                                       DATALAYOUT(kNCHW))})
+                                       DATALAYOUT(kAny))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(calib,
                      kFPGA,
                      kFP16,
-                     kNHWC,
+                     kAny,
                      paddle::lite::kernels::fpga::CalibComputeFP16ToFp32,
-                     fp16_to_fp32_fpga_chw)
+                     fp16_to_fp32_fpga)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kFPGA),
                                       PRECISION(kFP16),
-                                      DATALAYOUT(kNCHW))})
+                                      DATALAYOUT(kAny))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kFPGA),
                                        PRECISION(kFloat),
-                                       DATALAYOUT(kNCHW))})
+                                       DATALAYOUT(kAny))})
     .Finalize();
