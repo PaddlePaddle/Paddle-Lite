@@ -700,7 +700,7 @@ void DeviceInfo::SetCPUInfoByProb() {
 #endif  // LITE_WITH_LINUX
 }
 
-void DeviceInfo::RequestPowerFullMode(const int thread_num) {
+void DeviceInfo::RequestPowerFullMode(int thread_num) {
   int big_core_size = big_core_ids_.size();
   int little_core_size = little_core_ids_.size();
   active_ids_.clear();
@@ -714,7 +714,7 @@ void DeviceInfo::RequestPowerFullMode(const int thread_num) {
   mode_ = LITE_POWER_FULL;
 }
 
-void DeviceInfo::RequestPowerHighMode(const int thread_num) {
+void DeviceInfo::RequestPowerHighMode(int thread_num) {
   int big_core_size = big_core_ids_.size();
   int little_core_size = little_core_ids_.size();
   active_ids_.clear();
@@ -743,7 +743,7 @@ void DeviceInfo::RequestPowerHighMode(const int thread_num) {
   }
 }
 
-void DeviceInfo::RequestPowerLowMode(const int thread_num) {
+void DeviceInfo::RequestPowerLowMode(int thread_num) {
   int big_core_size = big_core_ids_.size();
   int little_core_size = little_core_ids_.size();
   active_ids_.clear();
@@ -772,7 +772,7 @@ void DeviceInfo::RequestPowerLowMode(const int thread_num) {
   }
 }
 
-void DeviceInfo::RequestPowerNoBindMode(const int thread_num) {
+void DeviceInfo::RequestPowerNoBindMode(int thread_num) {
   active_ids_.clear();
   if (thread_num > core_ids_.size()) {
     active_ids_ = core_ids_;
@@ -789,8 +789,7 @@ void DeviceInfo::RequestPowerNoBindMode(const int thread_num) {
   mode_ = LITE_POWER_NO_BIND;
 }
 
-void DeviceInfo::RequestPowerRandHighMode(const int shift_num,
-                                          const int thread_num) {
+void DeviceInfo::RequestPowerRandHighMode(int shift_num, int thread_num) {
   int big_core_size = big_core_ids_.size();
   int little_core_size = little_core_ids_.size();
   active_ids_.clear();
@@ -819,8 +818,7 @@ void DeviceInfo::RequestPowerRandHighMode(const int shift_num,
   }
 }
 
-void DeviceInfo::RequestPowerRandLowMode(const int shift_num,
-                                         const int thread_num) {
+void DeviceInfo::RequestPowerRandLowMode(int shift_num, int thread_num) {
   int big_core_size = big_core_ids_.size();
   int little_core_size = little_core_ids_.size();
   active_ids_.clear();

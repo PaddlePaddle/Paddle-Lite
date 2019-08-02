@@ -96,6 +96,9 @@ class DeviceInfo {
   std::vector<int> little_core_ids_;
   std::vector<int> cluster_ids_;
   std::vector<ARMArch> archs_;
+  std::vector<bool> _fp32;
+  std::vector<bool> _fp16;
+  std::vector<bool> _dot;
 
   ARMArch arch_;
   // LITE_POWER_HIGH stands for using big cores,
@@ -110,12 +113,12 @@ class DeviceInfo {
   void SetArchInfo(int argc, ...);
   bool SetCPUInfoByName();
   void SetCPUInfoByProb();
-  void RequestPowerFullMode(const int thread_num);
-  void RequestPowerHighMode(const int thread_num);
-  void RequestPowerLowMode(const int thread_num);
-  void RequestPowerNoBindMode(const int thread_num);
-  void RequestPowerRandHighMode(const int shift_num, const int thread_num);
-  void RequestPowerRandLowMode(const int shift_num, const int thread_num);
+  void RequestPowerFullMode(int thread_num);
+  void RequestPowerHighMode(int thread_num);
+  void RequestPowerLowMode(int thread_num);
+  void RequestPowerNoBindMode(int thread_num);
+  void RequestPowerRandHighMode(int shift_num, int thread_num);
+  void RequestPowerRandLowMode(int shift_num, int thread_num);
 
   DeviceInfo() = default;
 };
