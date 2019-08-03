@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/model_parser/naive_buffer/naive_buffer.h"
+#include <stdio.h>
 
 namespace paddle {
 namespace lite {
@@ -34,26 +35,32 @@ void BinaryTable::Consume(size_t bytes) {
 }
 
 void BinaryTable::SaveToFile(const std::string &filename) const {
-  std::ofstream file(filename, std::ios::binary);
-  CHECK(file.is_open()) << "failed to open " << filename;
-  file.write(reinterpret_cast<const char *>(data()), size());
-  file.close();
+  FILE *fp = fopen(filename.c_str(), "wb");
+  CHECK(fp) << "Unable to open file: " << filename;
+  if (fwrite(reinterpret_cast<const char *>(data()), 1, size(), fp) != size()) {
+    fclose(fp);
+    LOG(FATAL) << "Write file error: " << filename;
+  }
+  fclose(fp);
 }
 
 void BinaryTable::LoadFromFile(const std::string &filename) {
   // get file size
-  std::ifstream file(filename, std::ios::binary);
-  CHECK(file.is_open()) << "Unable to open file: " << filename;
-  const auto fbegin = file.tellg();
-  file.seekg(0, std::ios::end);
-  const auto fend = file.tellg();
-  size_t file_size = fend - fbegin;
+  FILE *fp = fopen(filename.c_str(), "rb");
+  CHECK(fp) << "Unable to open file: " << filename;
+  fseek(fp, 0L, SEEK_END);
+  size_t file_size = ftell(fp);
+  LOG(INFO) << "file size " << file_size;
 
   // load data.
-  LOG(INFO) << "file size " << file_size;
-  file.seekg(0, std::ios::beg);
+  fseek(fp, 0L, SEEK_SET);
   Require(file_size);
-  file.read(reinterpret_cast<char *>(&bytes_[0]), file_size);
+  if (fread(reinterpret_cast<char *>(&bytes_[0]), 1, file_size, fp) !=
+      file_size) {
+    fclose(fp);
+    LOG(FATAL) << "Read file error: " << filename;
+  }
+  fclose(fp);
 
   // Set readonly.
   is_mutable_mode_ = false;

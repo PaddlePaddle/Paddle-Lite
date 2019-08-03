@@ -25,7 +25,7 @@
 namespace paddle {
 namespace lite {
 
-void gen_log(std::ostream& log_stream_,
+void gen_log(STL::ostream& log_stream_,
              const char* file,
              const char* func,
              int lineno,

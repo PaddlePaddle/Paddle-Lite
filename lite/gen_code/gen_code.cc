@@ -65,7 +65,7 @@ void Module::AddHeaderIncludeGenCode() {
 }
 
 std::string Module::DataRepr(const std::string &raw_data, PrecisionType dtype) {
-  std::stringstream ss;
+  STL::stringstream ss;
   switch (dtype) {
     case PRECISION(kFloat): {
       const float *raw = reinterpret_cast<const float *>(raw_data.c_str());

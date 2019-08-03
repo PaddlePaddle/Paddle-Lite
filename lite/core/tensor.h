@@ -62,7 +62,7 @@ class DDimLite {
 
   std::string repr() const;
 
-  friend std::ostream &operator<<(std::ostream &os, const DDimLite &dims) {
+  friend STL::ostream &operator<<(STL::ostream &os, const DDimLite &dims) {
     os << dims.repr();
     return os;
   }
@@ -147,7 +147,7 @@ class TensorLite {
 
   TargetType target() const { return target_; }
 
-  friend std::ostream &operator<<(std::ostream &os, const TensorLite &tensor) {
+  friend STL::ostream &operator<<(STL::ostream &os, const TensorLite &tensor) {
     os << "Tensor:" << '\n';
     os << "dim: " << tensor.dims() << '\n';
     for (int i = 0; i < tensor.dims().production(); i++) {

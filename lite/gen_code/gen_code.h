@@ -24,7 +24,7 @@
 #include "lite/model_parser/cpp/op_desc.h"
 #include "lite/model_parser/desc_apis.h"
 #include "lite/model_parser/pb/op_desc.h"
-#include "lite/utils/string.h"
+#include "lite/utils/all.h"
 
 namespace paddle {
 namespace lite {
@@ -48,7 +48,7 @@ class Module {
   std::vector<cpp::OpDesc> ops;
   std::vector<TensorRepr> weights;
   std::vector<std::string> tmp_vars_;
-  std::stringstream stream_;
+  STL::stringstream stream_;
   std::set<std::string> kernel_kinds_;
   std::set<std::string> op_kinds_;
 
@@ -60,7 +60,7 @@ class Module {
   void NewWeight(const TensorRepr &x) { weights.push_back(x); }
   void NewTmpVar(const std::string &x) { tmp_vars_.push_back(x); }
 
-  std::stringstream &stream() { return stream_; }
+  STL::stringstream &stream() { return stream_; }
 
   void AddHeaderIncludeGenCode();
 
