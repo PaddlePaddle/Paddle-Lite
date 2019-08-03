@@ -16,50 +16,23 @@
 #include <stdint.h>
 #include "lite/arm/math/type_trans.h"
 #include "lite/core/kernel.h"
+#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace arm {
-
-class FcCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+class SliceCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
  public:
-  using param_t = operators::FcParam;
+  using param_t = operators::SliceParam;
 
   void PrepareForRun() override;
 
   void Run() override;
 
-  ~FcCompute() override {
-    if (transed_weight_) {
-      delete transed_weight_;
-    }
-  };
+  ~SliceCompute() {}
 
  private:
-  lite::Tensor* transed_weight_{nullptr};
-  int m_, n_, k_;
-};
-
-template <PrecisionType Ptype_out>
-class FcComputeInt8 : public KernelLite<TARGET(kARM), PRECISION(kInt8)> {
- public:
-  using param_t = operators::FcParam;
-
-  void PrepareForRun() override;
-
-  void Run() override;
-
-  ~FcComputeInt8() override {
-    if (transed_weight_) {
-      delete transed_weight_;
-    }
-  };
-
- private:
-  lite::Tensor* transed_weight_{nullptr};
-  Tensor* tmp_int32_out_{nullptr};
-  int m_, n_, k_;
 };
 
 }  // namespace arm

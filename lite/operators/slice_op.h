@@ -13,47 +13,33 @@
 // limitations under the License.
 
 #pragma once
-
 #include <string>
 #include <vector>
-#include "lite/core/kernel.h"
 #include "lite/core/op_lite.h"
 #include "lite/core/scope.h"
-#include "lite/core/tensor.h"
-#include "lite/operators/op_params.h"
 #include "lite/utils/all.h"
 
 namespace paddle {
 namespace lite {
 namespace operators {
 
-class FcOpLite : public OpLite {
+class SliceOp : public OpLite {
  public:
-  FcOpLite() {}
-
-  explicit FcOpLite(const std::string &type) : OpLite(type) {}
+  SliceOp() {}
+  explicit SliceOp(const std::string &op_type) : OpLite(op_type) {}
 
   bool CheckShape() const override;
 
   bool InferShape() const override;
 
-  /*
-  bool Run() override {
-    CHECK(kernel_);
-    kernel_->Run();
-    return true;
-  }
-   */
-
-  // TODO(Superjomn) replace framework::OpDesc with a lite one.
-  bool AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) override;
+  bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
-  std::string DebugString() const override { return "fc"; }
+  std::string DebugString() const override { return "slice"; }
 
  private:
-  mutable FcParam param_;
+  mutable SliceParam param_;
 };
 
 }  // namespace operators

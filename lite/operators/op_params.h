@@ -68,10 +68,10 @@ struct GraphParam {
 /// -------------------------- NN operators ------------------------------------
 
 struct FcParam {
-  lite::Tensor* input{};
-  lite::Tensor* w{};
-  lite::Tensor* bias{};
-  lite::Tensor* output{};
+  lite::Tensor* input{nullptr};
+  lite::Tensor* w{nullptr};
+  lite::Tensor* bias{nullptr};
+  lite::Tensor* output{nullptr};
   lite::DDim in_mat_dims;
   int in_num_col_dims{1};
   bool weight_transposed{false};
@@ -643,6 +643,28 @@ struct ReduceMaxParam {
   lite::Tensor* Out{};
   std::vector<int> dim{};
   bool keep_dim{false};
+};
+
+/// ----------------------- shape operators ----------------------
+struct ShapeParam {
+  const lite::Tensor* X{};
+  lite::Tensor* Out{};
+};
+
+struct CastParam {
+  const lite::Tensor* X{};
+  lite::Tensor* Out{};
+  int out_dtype{2};
+  int in_dtype{2};
+};
+
+struct SliceParam {
+  const lite::Tensor* X{};
+  lite::Tensor* Out{};
+  std::vector<int> axes{};
+  std::vector<int> starts{};
+  std::vector<int> ends{};
+  std::vector<int> decrease_axis{};
 };
 
 }  // namespace operators

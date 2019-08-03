@@ -12,57 +12,43 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
-#include <stdint.h>
-#include "lite/arm/math/type_trans.h"
 #include "lite/core/kernel.h"
+#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace arm {
 
-class FcCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+template <typename T>
+class FillConstantCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
  public:
-  using param_t = operators::FcParam;
+  using param_t = operators::FillConstantParam;
 
-  void PrepareForRun() override;
+  void Run() override {
+    auto& param = *param_.get_mutable<param_t>();
+    auto& context = ctx_->As<ARMContext>();
 
-  void Run() override;
-
-  ~FcCompute() override {
-    if (transed_weight_) {
-      delete transed_weight_;
+    auto data = param.Out->template mutable_data<T>();
+    for (int i = 0; i < param.Out->numel(); i++) {
+      data[i] = param.value;
     }
-  };
+  }
 
- private:
-  lite::Tensor* transed_weight_{nullptr};
-  int m_, n_, k_;
-};
-
-template <PrecisionType Ptype_out>
-class FcComputeInt8 : public KernelLite<TARGET(kARM), PRECISION(kInt8)> {
- public:
-  using param_t = operators::FcParam;
-
-  void PrepareForRun() override;
-
-  void Run() override;
-
-  ~FcComputeInt8() override {
-    if (transed_weight_) {
-      delete transed_weight_;
-    }
-  };
-
- private:
-  lite::Tensor* transed_weight_{nullptr};
-  Tensor* tmp_int32_out_{nullptr};
-  int m_, n_, k_;
+  virtual ~FillConstantCompute() = default;
 };
 
 }  // namespace arm
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
+
+// float
+REGISTER_LITE_KERNEL(fill_constant,
+                     kARM,
+                     kFloat,
+                     kNCHW,
+                     paddle::lite::kernels::arm::FillConstantCompute<float>,
+                     def)
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .Finalize();
