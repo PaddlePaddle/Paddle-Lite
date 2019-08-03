@@ -68,10 +68,10 @@ struct GraphParam {
 /// -------------------------- NN operators ------------------------------------
 
 struct FcParam {
-  lite::Tensor* input{};
-  lite::Tensor* w{};
-  lite::Tensor* bias{};
-  lite::Tensor* output{};
+  lite::Tensor* input{nullptr};
+  lite::Tensor* w{nullptr};
+  lite::Tensor* bias{nullptr};
+  lite::Tensor* output{nullptr};
   lite::DDim in_mat_dims;
   int in_num_col_dims{1};
   bool weight_transposed{false};

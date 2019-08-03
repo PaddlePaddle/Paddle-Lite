@@ -67,7 +67,7 @@ class TestCase {
   /// in two scopes, one of the instruction execution, and the other for the
   /// baseline.
   template <typename T>
-  void CheckPrecision(const std::string& var_name, float abs_error);
+  bool CheckPrecision(const std::string& var_name, float abs_error);
 
   const cpp::OpDesc& op_desc() { return *op_desc_; }
 
@@ -159,15 +159,19 @@ class Arena {
     tester_->Prepare();
   }
 
-  void TestPrecision() {
+  bool TestPrecision() {
     tester_->RunBaseline(tester_->baseline_scope());
     tester_->RunInstruction();
 
+    bool success = true;
     for (auto& out : tester_->op_desc().OutputArgumentNames()) {
       for (auto& var : tester_->op_desc().Output(out)) {
-        CompareTensor(out, var);
+        LOG(INFO) << "Testing var " << out;
+        success = success && CompareTensor(out, var);
       }
     }
+    LOG(INFO) << "done";
+    return success;
   }
 
   void TestPerformance(int times = 100) {
@@ -182,24 +186,20 @@ class Arena {
 
  private:
   // input_name: X
-  void CompareTensor(const std::string& arg_name, const std::string& var_name) {
+  bool CompareTensor(const std::string& arg_name, const std::string& var_name) {
     // get tensor type.
     const Type* type =
         tester_->instruction().kernel()->GetOutputDeclType(arg_name);
 
     switch (type->precision()) {
       case PRECISION(kFloat):
-        tester_->CheckPrecision<float>(var_name, abs_error_);
-        break;
+        return tester_->CheckPrecision<float>(var_name, abs_error_);
       case PRECISION(kInt8):
-        tester_->CheckPrecision<int8_t>(var_name, abs_error_);
-        break;
+        return tester_->CheckPrecision<int8_t>(var_name, abs_error_);
       case PRECISION(kInt32):
-        tester_->CheckPrecision<int32_t>(var_name, abs_error_);
-        break;
+        return tester_->CheckPrecision<int32_t>(var_name, abs_error_);
       case PRECISION(kBool):
-        tester_->CheckPrecision<bool>(var_name, abs_error_);
-        break;
+        return tester_->CheckPrecision<bool>(var_name, abs_error_);
 
       default:
         LOG(FATAL) << "not support type " << PrecisionToStr(type->precision());
@@ -212,7 +212,7 @@ class Arena {
 };
 
 template <typename T>
-void TestCase::CheckPrecision(const std::string& var_name, float abs_error) {
+bool TestCase::CheckPrecision(const std::string& var_name, float abs_error) {
   auto a_tensor = inst_scope_->FindTensor(var_name);
   auto b_tensor = base_scope_->FindTensor(var_name);
   CHECK(a_tensor);
@@ -244,9 +244,14 @@ void TestCase::CheckPrecision(const std::string& var_name, float abs_error) {
 
   const T* b_data = static_cast<const T*>(b_tensor->raw_data());
 
+  bool success = true;
   for (int i = 0; i < a_tensor->dims().production(); i++) {
     EXPECT_NEAR(a_data[i], b_data[i], abs_error);
+    if (fabsf(a_data[i] - b_data[i]) > abs_error) {
+      success = false;
+    }
   }
+  return success;
 }
 
 }  // namespace arena
