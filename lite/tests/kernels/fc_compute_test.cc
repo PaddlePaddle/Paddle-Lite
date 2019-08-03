@@ -144,17 +144,14 @@ class FcOPTest : public arena::TestCase {
 
   void PrepareData() override {
     std::vector<float> din(dims_.production());
-    //    fill_data_rand(din.data(), -1.f, 1.f, dims_.production());
-    fill_data_const(din.data(), 1.f, dims_.production());
+    fill_data_rand(din.data(), -1.f, 1.f, dims_.production());
 
     std::vector<float> win(wdims_.production());
-    //    fill_data_rand(win.data(), -1.f, 1.f, wdims_.production());
-    fill_data_const(win.data(), 1.f, wdims_.production());
+    fill_data_rand(win.data(), -1.f, 1.f, wdims_.production());
 
     bool flag_bias = bdims_.production() > 0;
     std::vector<float> bin(bdims_.production());
-    //    fill_data_rand(bin.data(), -1.f, 1.f, bdims_.production());
-    fill_data_const(bin.data(), 1.f, bdims_.production());
+    fill_data_rand(bin.data(), -1.f, 1.f, bdims_.production());
 
     SetCommonTensor(input_, dims_, din.data());
     SetCommonTensor(weight_, wdims_, win.data());
@@ -177,8 +174,10 @@ void test_fc(Place place) {
           DDim bdim{{bflag ? n : 0}};
           std::unique_ptr<arena::TestCase> tester(
               new FcOPTest(place, "def", dim_in, wdim, bdim, 1));
+#ifdef WITH_ARM_LITE
           auto& ctx = tester->context()->As<ARMContext>();
           ctx.SetRunMode(LITE_POWER_HIGH, 1);
+#endif
           arena::Arena arena(std::move(tester), place, 6e-5);
           if (!arena.TestPrecision()) {
             LOG(ERROR) << "run m: " << m << ", n: " << n << ", k: " << k
