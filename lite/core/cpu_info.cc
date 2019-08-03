@@ -980,6 +980,10 @@ int DeviceInfo::Setup() {
   for (int i = 0; i < core_num_; ++i) {
     LOG(INFO) << L2_cache_[i] / 1024 << " KB";
   }
+  LOG(INFO) << "L3 Cache size is: ";
+  for (int i = 0; i < core_num_; ++i) {
+    LOG(INFO) << L3_cache_[i] / 1024 << " KB";
+  }
   LOG(INFO) << "Total memory: " << mem_size_ << "KB";
 #endif
   // set default run mode
