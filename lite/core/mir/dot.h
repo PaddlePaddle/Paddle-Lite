@@ -19,11 +19,12 @@
  */
 #pragma once
 
-#include <sstream>
 #include <string>
 #include <unordered_map>
 #include <vector>
 #include "lite/utils/cp_logging.h"
+#include "lite/utils/replace_stl/stream.h"
+#include "lite/utils/string.h"
 
 namespace paddle {
 namespace inference {
@@ -44,7 +45,7 @@ class Dot {
         : key(key), value(value) {}
 
     std::string repr() const {
-      std::stringstream ss;
+      STL::stringstream ss;
       ss << key << "=" << '"' << value << '"';
       return ss.str();
     }
@@ -56,7 +57,7 @@ class Dot {
 
     Node(const std::string& name, const std::vector<Attr>& attrs)
         : name(name), attrs(attrs) {
-      std::stringstream ss;
+      STL::stringstream ss;
       ss << "node_" << dot_node_counter++;
       id_ = ss.str();
     }
@@ -64,7 +65,7 @@ class Dot {
     std::string id() const { return id_; }
 
     std::string repr() const {
-      std::stringstream ss;
+      STL::stringstream ss;
       CHECK(!name.empty());
       ss << id_;
       if (attrs.empty()) {
@@ -96,7 +97,7 @@ class Dot {
         : source(source), target(target), attrs(attrs) {}
 
     std::string repr() const {
-      std::stringstream ss;
+      STL::stringstream ss;
       CHECK(!source.empty());
       CHECK(!target.empty());
       ss << source << "->" << target;
@@ -135,7 +136,7 @@ class Dot {
 
   // Compile to DOT language codes.
   std::string Build() const {
-    std::stringstream ss;
+    STL::stringstream ss;
     const std::string indent = "   ";
     ss << "digraph G {" << '\n';
 

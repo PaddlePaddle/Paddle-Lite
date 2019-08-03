@@ -14,6 +14,7 @@ limitations under the License. */
 
 #include <cl_common.h>
 
+
 #define SRC(i, j) src[i * src_width + j]
 #define DST(i, j) dst[i * src_height + j]
 __kernel
@@ -25,17 +26,17 @@ void mat_transpose(__global const CL_DTYPE* src,
   DST(col, row) = SRC(row, col);
 }
 
-#if 0
-// naive gemm: keep for check
+
+// fc_gemm_naive: keep for check
 // a: x_d
 // b: filter_d
 // c: output_d
 __kernel
-void fc(__global const CL_DTYPE* a,
-        __global const CL_DTYPE* b,
-        __global const CL_DTYPE* bias,
-        __global CL_DTYPE* c,
-        const int M, const int N, const int K) {
+void fc_gemm_naive(__global const CL_DTYPE* a,
+                   __global const CL_DTYPE* b,
+                   __global const CL_DTYPE* bias,
+                   __global CL_DTYPE* c,
+                   const int M, const int N, const int K) {
   const int row = get_global_id(0); // [0, M) height of out == m
   const int col = get_global_id(1); // [0, N) width of out == n
 
@@ -52,21 +53,288 @@ void fc(__global const CL_DTYPE* a,
     c0 += a0 * b0;
   }
 
-#if defined(RELU)
+#ifdef RELU
   c[row * N + col] = activation(c0);
 #else
   c[row * N + col] = c0;
 #endif
-
 }
-#endif // naive gemm
+
+
+// gemm_batch: used for conv1x1, gemm of im2col_gemm
+// a: filter_d
+// b: x_d
+// c: output_d
+__kernel
+void gemm_batch(__global const CL_DTYPE* a,
+                __global const CL_DTYPE* b,
+                __global const CL_DTYPE* bias,
+                __global CL_DTYPE* c,
+                const int M, const int N, const int K, const int batch_size) {
+  const int row = get_global_id(0); // [0, M) height of out == m
+  const int col = get_global_id(1); // [0, N) width of out == n
+  const int bidx = get_global_id(2); // [0, batch_size)
+
+  const __global CL_DTYPE* cur_b = b + K * N * bidx;
+  __global CL_DTYPE* cur_c = c + M * N * bidx;
+
+  if ((col >= N) || (row >= M) || (bidx >= batch_size)) {
+    return;
+  }
+
+  CL_DTYPE a0, b0,
+      c0 = (bias && col < N) ? bias[row] : 0;
+
+  for (int p = 0; p < K; ++p) {
+    a0 = *(a + row * K + p);
+    b0 = *(cur_b + p * N + col);
+    c0 += a0 * b0;
+  }
+
+#ifdef RELU
+  cur_c[row * N + col] = activation(c0);
+#else
+  cur_c[row * N + col] = c0;
+#endif
+}
+
+
+#if 0
+// gemm_batch_8x4: used for conv1x1, gemm of im2col_gemm
+// a: filter_d
+// b: x_d
+// c: output_d
 
 __kernel
-void fc(__global const CL_DTYPE* a,
-        __global const CL_DTYPE* b,
-        __global const CL_DTYPE* bias,
-        __global CL_DTYPE* c,
-        const int M, const int N, const int K) {
+void gemm_batch_8x4(__global const CL_DTYPE* A,
+                    __global const CL_DTYPE* B,
+                    __global const CL_DTYPE* bias,
+                    __global CL_DTYPE* C,
+                    const int M, const int N, const int K, const int batch_size) {
+    const int row = get_global_id(0) << 3; // [0, M >> 3) height of out == m
+    const int col = get_global_id(1) << 2; // [0, N >> 2) width of out == n
+    const int bidx = get_global_id(2); // [0, batch_size)
+
+    if ((col >= N) || (row >= M) || (bidx >= batch_size)) {
+        return;
+    }
+
+     const __global CL_DTYPE* cur_b = B + K * N * bidx;
+    __global CL_DTYPE* cur_c = C + M * N * bidx;
+
+    if ((col < N) && (row < M)) {
+        CL_DTYPE4 a8x4[8];
+        CL_DTYPE4 b[4];
+        CL_DTYPE4 c[8] = {0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f};
+#ifdef BIAS
+        c[0] = bias[row];
+        c[1] = bias[row + 1];
+        c[2] = bias[row + 2];
+        c[3] = bias[row + 3];
+        c[4] = bias[row + 4];
+        c[5] = bias[row + 5];
+        c[6] = bias[row + 6];
+        c[7] = bias[row + 7];
+#endif
+        A += row * K;
+        B += col;
+        short pos = 0;
+        for (; pos < K - 3; pos += 4) {
+            const CL_DTYPE* Aptr = A + pos;
+            b[0] = vload4(0, B);
+            b[1] = vload4(0, B + N);
+            b[2] = vload4(0, B + 2 * N);
+            b[3] = vload4(0, B + 3 * N);
+#pragma unroll(8)
+            for (int i = 0; i < 8; i++){
+                a8x4[i] = vload4(0, Aptr + mul24(i, K));
+                c[i] += a8x4[i].x * b[0] + a8x4[i].y * b[1] + a8x4[i].z * b[2] + a8x4[i].w * b[3];
+            }
+            B += 4 * N;
+        }
+        if (pos < K) {
+            const CL_DTYPE* Aptr = A + pos;
+            b[0] = (CL_DTYPE4)(0.f, 0.f,0.f, 0.f);
+            b[1] = (CL_DTYPE4)(0.f, 0.f,0.f, 0.f);
+            b[2] = (CL_DTYPE4)(0.f, 0.f,0.f, 0.f);
+            b[3] = (CL_DTYPE4)(0.f, 0.f,0.f, 0.f);
+            switch (K - pos) {
+                case 3:
+                    b[2] = vload4(0, B + 2 * N);
+                case 2:
+                    b[1] = vload4(0, B + N);
+                case 1:
+                    b[0] = vload4(0, B);
+            }
+#pragma unroll(8)
+            for (int i = 0; i < 8; i++){
+                a[i] = vload4(0, Aptr + mul24(i, K));
+                c[i] += a[i].x * b[0] + a[i].y * b[1] + a[i].z * b[2] + a[i].w * b[3];
+            }
+        }
+#ifdef RELU
+        #pragma unroll(8)
+        for (int i = 0; i < 8; i++) {
+            c[i] = max(c[i], 0.f);
+        }
+#endif
+#pragma unroll(8)
+        for (int i = 0; i < 8; i++){
+            int C_offs = mul24((row + i), N) + col;
+            vstore4(c[i], 0, C + C_offs);
+        }
+    }
+}
+#endif
+
+
+// fc_gemv_naive: keep for check
+// used for fc with M = 1
+// a: param.input  {M, K}
+// b: param.w      {K, N}
+// c: param.output {M, N}
+__kernel
+void fc_gemv_naive(__global const CL_DTYPE* a,
+                   __global const CL_DTYPE* b,
+                   __global const CL_DTYPE* bias,
+                   __global CL_DTYPE* c,
+                   const int M, const int N, const int K) {
+    const int col = get_global_id(0); // gws[0]: [0, N) width of B == N
+
+    if (col >= N) {
+        return;
+    }
+    CL_DTYPE c0 = bias ? bias[col] : 0;
+    for (int p = 0; p < K; ++p) {
+      CL_DTYPE a0 = *(a + p);
+      CL_DTYPE b0 = *(b + p * N + col);
+      c0 += a0 * b0;
+    }
+
+#ifdef RELU
+  c[col] = activation(c0);
+#else
+  c[col] = c0;
+#endif
+}
+
+
+// fc_gemv_1x4: for fc with M = 1
+// a: param.input  {M, K}
+// b: param.w      {K, N}
+// c: param.output {M, N}
+__kernel
+void fc_gemv_1x4(__global const CL_DTYPE* a,
+                 __global const CL_DTYPE* b,
+                 __global const CL_DTYPE* bias,
+                 __global CL_DTYPE* c,
+                 const int M, const int N, const int K) {
+    const int col = get_global_id(0) << 2; // gws[0]: [0, N >> 2) height of B == N
+
+    if (col + 3 < N) {
+        CL_DTYPE4 c0 = 0.0f;
+        if (bias) {
+            c0.x = bias[col];
+            c0.y = bias[col+1];
+            c0.z = bias[col+2];
+            c0.w = bias[col+3];
+        }
+
+        // main loop of K
+        int p = 0;
+        for (; p < K - 3; p += 4) {
+            CL_DTYPE4 a0 = vload4(0, a + p);
+            CL_DTYPE4 b0 = vload4(0, b + p * N + col);
+            CL_DTYPE4 b1 = vload4(0, b + (p+1) * N + col);
+            CL_DTYPE4 b2 = vload4(0, b + (p+2) * N + col);
+            CL_DTYPE4 b3 = vload4(0, b + (p+3) * N + col);
+
+            c0 += a0.x * b0;
+            c0 += a0.y * b1;
+            c0 += a0.z * b2;
+            c0 += a0.w * b3;
+        }
+
+        // compute left K
+        CL_DTYPE4 b2 = 0.0f,
+                  b1 = 0.0f,
+                  b0 = 0.0f,
+                  a0 = 0.0f;
+        switch (K - p) {
+            case 3: {
+                b2 = vload4(0, b + (p+2) * N + col);
+                a0.z = a[p + 2];
+            }
+            case 2: {
+                b1 = vload4(0, b + (p+1) * N + col);
+                a0.y = a[p + 1];
+            }
+            case 1: {
+                b0 = vload4(0, b + (p) * N + col);
+                a0.x = a[p];
+            }
+        }
+        c0 += a0.x * b0;
+        c0 += a0.y * b1;
+        c0 += a0.z * b2;
+
+        // store res
+#ifdef RELU
+       if (col % 4 == 0) {
+            vstore4(fmax(c0, (CL_DTYPE4)0.f), 0, c + col);
+        } else {
+            switch (col % 4) {
+                case 3:
+                    c[col + 2] = activation(c0.z);
+                case 2:
+                    c[col + 1] = activation(c0.y);
+                case 1:
+                    c[col] = activation(c0.x);
+            }
+        }
+#else
+       if (col % 4 == 0) {
+            vstore4(c0, 0, c + col);
+        } else {
+            switch (col % 4) {
+                case 3:
+                    c[col + 2] = c0.z;
+                case 2:
+                    c[col + 1] = c0.y;
+                case 1:
+                    c[col] = c0.x;
+            }
+        }
+#endif
+    } else {
+       const int left_col = N - col;
+       for (int col_offset = 0; col_offset < left_col; ++col_offset) {
+           CL_DTYPE c0 = bias ? bias[col] : 0;
+           for (int p = 0; p < K; ++p) {
+               CL_DTYPE b0 = *(b + p * N + col + col_offset);
+               CL_DTYPE a0 = *(a + p);
+               c0 += a0 * b0;
+           }
+#ifdef RELU
+           c[col + col_offset] = activation(c0);
+#else
+           c[col + col_offset] = c0;
+#endif
+       }
+    }
+}
+
+
+// fc_gemm_4x4: for fc with M = 1
+// a: param.input  {M, K}
+// b: param.w      {K, N}
+// c: param.output {M, N}
+__kernel
+void fc_gemm_4x4(__global const CL_DTYPE* a,
+                 __global const CL_DTYPE* b,
+                 __global const CL_DTYPE* bias,
+                 __global CL_DTYPE* c,
+                 const int M, const int N, const int K) {
     const int row = get_global_id(0) << 2; // id: [0, M>>2) height of out == M
     const int col = get_global_id(1) << 2; // id: [0, N>>2) width of out == N
 
@@ -119,49 +387,11 @@ void fc(__global const CL_DTYPE* a,
                     c0 += a0 * b0;
                 }
 #if defined(RELU)
-                c[ridx * N + cidx] = activation(c0);
+                c[ridx * N + cidx] = fmax(c0, 0);
 #else
                 c[ridx * N + cidx] = c0;
 #endif
             }
         }
     }
-}
-
-// gemm_batch: used for conv1x1, gemm of im2col_gemm
-// a: filter_d
-// b: x_d
-// c: output_d
-__kernel
-void gemm_batch(__global const CL_DTYPE* a,
-                __global const CL_DTYPE* b,
-                __global const CL_DTYPE* bias,
-                __global CL_DTYPE* c,
-                const int M, const int N, const int K, const int batch_size) {
-  const int row = get_global_id(0); // [0, M) height of out == m
-  const int col = get_global_id(1); // [0, N) width of out == n
-  const int bidx = get_global_id(2); // [0, batch_size)
-
-  const __global CL_DTYPE* cur_b = b + K * N * bidx;
-  __global CL_DTYPE* cur_c = c + M * N * bidx;
-
-  if ((col >= N) || (row >= M) || (bidx >= batch_size)) {
-    return;
-  }
-
-  CL_DTYPE a0, b0,
-      c0 = (bias && col < N) ? bias[row] : 0;
-
-  for (int p = 0; p < K; ++p) {
-    a0 = *(a + row * K + p);
-    b0 = *(cur_b + p * N + col);
-    c0 += a0 * b0;
-  }
-
-#ifdef RELU
-  cur_c[row * N + col] = activation(c0);
-#else
-  cur_c[row * N + col] = c0;
-#endif
-
 }

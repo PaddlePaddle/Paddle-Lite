@@ -15,6 +15,7 @@
 #include "lite/api/paddle_place.h"
 #include "lite/utils/cp_logging.h"
 #include "lite/utils/hash.h"
+#include "lite/utils/string.h"
 
 namespace paddle {
 namespace lite_api {
@@ -37,7 +38,7 @@ bool operator<(const Place& a, const Place& b) {
 }
 
 std::string Place::DebugString() const {
-  std::stringstream os;
+  STL::stringstream os;
   os << TargetToStr(target) << "/" << PrecisionToStr(precision) << "/"
      << DataLayoutToStr(layout);
   return os.str();

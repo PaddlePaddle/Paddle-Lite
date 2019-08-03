@@ -103,7 +103,7 @@ void Instruction::Run() {
   has_run_ = true;
 }
 
-std::ostream& operator<<(std::ostream& os, const Instruction& other) {
+STL::ostream& operator<<(STL::ostream& os, const Instruction& other) {
   os << other.kernel_->summary() << "\t(" << other.kernel_->doc() << ")";
   return os;
 }

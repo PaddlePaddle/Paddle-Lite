@@ -51,7 +51,7 @@ endif()
 
 check_input_var(ANDROID_ARCH_ABI DEFAULT ${ANDROID_ARCH_ABI} LIST "arm64-v8a" "armeabi-v7a"
     "armeabi-v6" "armeabi" "mips" "mips64" "x86" "x86_64")
-check_input_var(ANDROID_STL_TYPE DEFAULT "c++_static" LIST "c++_static" "gnustl_static")
+check_input_var(ANDROID_STL_TYPE DEFAULT "c++_static" LIST "c++_static" "gnustl_static" "c++_shared")
 
 if(ANDROID_ARCH_ABI STREQUAL "armeabi-v7a")
     message(STATUS "armeabi-v7a use softfp by default.")

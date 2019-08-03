@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <gtest/gtest.h>
+#include <string>
 #include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
 #include "lite/core/arena/framework.h"
@@ -35,13 +36,13 @@ class ActivationComputeTester : public arena::TestCase {
   // common attributes for this op.
   std::string input_ = "x";
   std::string output_ = "out";
-  std::string prelu_channel_slope_ = "prelu_channel_slope";
+  std::string prelu_alpha_ = "prelu_alpha";
   float leaky_relu_alpha_ = 0.01;
   float relu_clipped_coef_ = 6.;
-  bool prelu_channel_shared_ = false;
+  std::string prelu_mode_ = "";
   float swish_beta_ = 0.;
   DDim dims_{{1}};
-  std::string type_ = "relu";
+  std::string type_ = "";
   activation_type_test act_type_ = RELU;
 
  public:
@@ -49,7 +50,7 @@ class ActivationComputeTester : public arena::TestCase {
                           const std::string& alias,
                           float leaky_relu_alpha,
                           float relu_clipped_coef,
-                          bool prelu_channel_shared,
+                          std::string prelu_mode,
                           float swish_beta,
                           DDim dims,
                           std::string type,
@@ -57,7 +58,7 @@ class ActivationComputeTester : public arena::TestCase {
       : TestCase(place, alias),
         leaky_relu_alpha_(leaky_relu_alpha),
         relu_clipped_coef_(relu_clipped_coef),
-        prelu_channel_shared_(prelu_channel_shared),
+        prelu_mode_(prelu_mode),
         swish_beta_(swish_beta),
         dims_(dims),
         type_(type),
@@ -95,27 +96,33 @@ class ActivationComputeTester : public arena::TestCase {
         break;
       }
       case PRELU: {
-        auto* prelu_channel_slope = scope->FindTensor(prelu_channel_slope_);
-        const auto* prelu_channel_slope_data =
-            prelu_channel_slope->data<float>();
+        auto* alpha = scope->FindTensor(prelu_alpha_);
+        const auto* alpha_data = alpha->data<float>();
 
         int num = dims_[0];
         int channel = dims_[1];
         int csize = dims_[2] * dims_[3];
         int bsize = channel * csize;
-        for (int n = 0; n < num; n++) {
-          auto x_data_bptr = x_data + n * bsize;
-          auto output_data_bptr = output_data + n * bsize;
-          for (int c = 0; c < channel; c++) {
-            auto x_data_cptr = x_data_bptr + c * csize;
-            auto output_data_cptr = output_data_bptr + c * csize;
-            float slope = prelu_channel_shared_ ? prelu_channel_slope_data[0]
-                                                : prelu_channel_slope_data[c];
-            for (int i = 0; i < csize; i++) {
-              output_data_cptr[i] = x_data_cptr[i] > 0.f
-                                        ? x_data_cptr[i]
-                                        : x_data_cptr[i] * slope;
+        if (prelu_mode_ == "all" || prelu_mode_ == "channel") {
+          for (int n = 0; n < num; n++) {
+            auto x_data_bptr = x_data + n * bsize;
+            auto output_data_bptr = output_data + n * bsize;
+            for (int c = 0; c < channel; c++) {
+              auto x_data_cptr = x_data_bptr + c * csize;
+              auto output_data_cptr = output_data_bptr + c * csize;
+              float slope =
+                  prelu_mode_ == "all" ? alpha_data[0] : alpha_data[c];
+              for (int i = 0; i < csize; i++) {
+                output_data_cptr[i] = x_data_cptr[i] > 0.f
+                                          ? x_data_cptr[i]
+                                          : x_data_cptr[i] * slope;
+              }
             }
+          }
+        } else {
+          for (int i = 0; i < dims_.production(); i++) {
+            output_data[i] =
+                x_data[i] > 0.f ? x_data[i] : x_data[i] * alpha_data[i];
           }
         }
         break;
@@ -157,8 +164,8 @@ class ActivationComputeTester : public arena::TestCase {
     op_desc->SetInput("X", {input_});
     op_desc->SetOutput("Out", {output_});
     if (act_type_ == PRELU) {
-      op_desc->SetInput("Prelu_channel_slope", {prelu_channel_slope_});
-      op_desc->SetAttr("Prelu_channel_shared", prelu_channel_shared_);
+      op_desc->SetInput("Alpha", {prelu_alpha_});
+      op_desc->SetAttr("mode", prelu_mode_);
     }
     if (act_type_ == LEAKY_RELU) {
       op_desc->SetAttr("alpha", leaky_relu_alpha_);
@@ -180,15 +187,25 @@ class ActivationComputeTester : public arena::TestCase {
     SetCommonTensor(input_, dims_, data.data());
 
     if (type_ == "prelu") {
-      int64_t slope_len = prelu_channel_shared_ ? 1 : dims_[1];
-      std::vector<float> slope_data(slope_len);
-      for (int i = 0; i < slope_len; i++) {
-        float sign = i % 3 == 0 ? -1.0f : 1.0f;
-        slope_data[i] = sign * static_cast<float>(i % 128) * 0.013f + 0.001;
+      int64_t alpha_len = 0;
+      DDim alpha_dims;
+      if (prelu_mode_ == "all") {
+        alpha_len = 1;
+        alpha_dims = DDim(std::vector<int64_t>({alpha_len}));
+      } else if (prelu_mode_ == "channel") {
+        alpha_len = dims_[1];
+        alpha_dims = DDim(std::vector<int64_t>({alpha_len}));
+      } else if (prelu_mode_ == "element") {
+        alpha_len = dims_.production();
+        alpha_dims = dims_;
       }
-      SetCommonTensor(prelu_channel_slope_,
-                      DDim(std::vector<int64_t>({slope_len})),
-                      slope_data.data());
+      std::vector<float> prelu_alpha_data(alpha_len);
+      for (int i = 0; i < alpha_len; i++) {
+        float sign = i % 3 == 0 ? -1.0f : 1.0f;
+        prelu_alpha_data[i] =
+            sign * static_cast<float>(i % 128) * 0.013f + 0.001;
+      }
+      SetCommonTensor(prelu_alpha_, alpha_dims, prelu_alpha_data.data());
     }
   }
 };
@@ -208,7 +225,7 @@ TEST(Activation_relu, precision) {
                 "def",
                 0.01,
                 6.,
-                false,
+                "all",
                 0.,
                 DDim(std::vector<int64_t>({n, c, h, w})),
                 "relu",
@@ -238,7 +255,7 @@ TEST(Activation_leaky_relu, precision) {
                 "def",
                 slope,
                 6.,
-                false,
+                "all",
                 0.,
                 DDim(std::vector<int64_t>({n, c, h, w})),
                 "leaky_relu",
@@ -268,7 +285,7 @@ TEST(Activation_relu_clipped, precision) {
                 "def",
                 0.01,
                 coef,
-                false,
+                "all",
                 0.,
                 DDim(std::vector<int64_t>({n, c, h, w})),
                 "relu_clipped",
@@ -292,13 +309,13 @@ TEST(Activation_prelu, precision) {
     for (auto c : {3, 6}) {
       for (auto h : {9, 18}) {
         for (auto w : {9, 18}) {
-          for (auto flag : {false, true}) {
+          for (auto mode : {"all", "channel", "element"}) {
             std::unique_ptr<arena::TestCase> tester(new ActivationComputeTester(
                 place,
                 "def",
                 0.01,
                 6,
-                flag,
+                mode,
                 0.,
                 DDim(std::vector<int64_t>({n, c, h, w})),
                 "prelu",
@@ -327,7 +344,7 @@ TEST(Activation_sigmoid, precision) {
               "def",
               0.01,
               6.,
-              false,
+              "all",
               0.,
               DDim(std::vector<int64_t>({n, c, h, w})),
               "sigmoid",
@@ -355,7 +372,7 @@ TEST(Activation_tanh, precision) {
               "def",
               0.01,
               6.,
-              false,
+              "all",
               0.,
               DDim(std::vector<int64_t>({n, c, h, w})),
               "tanh",
@@ -384,7 +401,7 @@ TEST(Activation_swish, precision) {
                 "def",
                 0.01,
                 6,
-                false,
+                "all",
                 coef,
                 DDim(std::vector<int64_t>({n, c, h, w})),
                 "swish",
@@ -414,7 +431,7 @@ TEST(Activation_relu6, precision) {
                 "def",
                 0.01,
                 6.,
-                false,
+                "all",
                 0.,
                 DDim(std::vector<int64_t>({n, c, h, w})),
                 "relu6",

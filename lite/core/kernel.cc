@@ -14,12 +14,13 @@
 
 #include "lite/core/kernel.h"
 #include <cstdlib>
+#include "lite/utils/string.h"
 
 namespace paddle {
 namespace lite {
 
 std::string KernelBase::summary() const {
-  std::stringstream ss;
+  STL::stringstream ss;
   ss << op_type() << ":" << TargetToStr(target()) << "/"
      << PrecisionToStr(precision()) << "/" << DataLayoutToStr(layout()) << "("
      << alias() << ")";
@@ -46,7 +47,7 @@ const Type *KernelBase::GetOutputDeclType(const std::string &arg_name) const {
 }
 
 std::string KernelBase::GenParamTypeKey() const {
-  std::stringstream ss;
+  STL::stringstream ss;
   ss << op_type() << "/" << alias_;
   return ss.str();
 }
@@ -55,13 +56,16 @@ void KernelBase::ParseKernelType(const std::string &kernel_type,
                                  std::string *op_type,
                                  std::string *alias,
                                  Place *place) {
-  std::stringstream ss(kernel_type);
-  std::getline(ss, *op_type, '/');
-  std::getline(ss, *alias, '/');
+  auto parts = Split(kernel_type, "/");
+  CHECK_EQ(parts.size(), 5);
+  *op_type = parts[0];
+  *alias = parts[1];
+
   std::string target, precision, layout;
-  std::getline(ss, target, '/');
-  std::getline(ss, precision, '/');
-  std::getline(ss, layout, '/');
+
+  target = parts[2];
+  precision = parts[3];
+  layout = parts[4];
 
   place->target = static_cast<TargetType>(std::atoi(target.c_str()));
   place->precision = static_cast<PrecisionType>(std::atoi(precision.c_str()));
@@ -71,7 +75,7 @@ void KernelBase::ParseKernelType(const std::string &kernel_type,
 std::string KernelBase::SerializeKernelType(const std::string &op_type,
                                             const std::string &alias,
                                             const Place &place) {
-  std::stringstream ss;
+  STL::stringstream ss;
   ss << op_type << "/";
   ss << alias << "/";
   // We serialize the place value not the string representation here for
@@ -88,7 +92,7 @@ bool ParamTypeRegistry::KeyCmp::operator()(
   return a.hash() < b.hash();
 }
 
-std::ostream &operator<<(std::ostream &os,
+STL::ostream &operator<<(STL::ostream &os,
                          const ParamTypeRegistry::KernelIdTy &other) {
   std::string io_s = other.io == ParamTypeRegistry::IO::kInput ? "in" : "out";
   os << other.kernel_type << ":" << other.arg_name << ":" << io_s << ":"

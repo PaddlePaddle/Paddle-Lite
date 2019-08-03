@@ -57,8 +57,8 @@ void PReluCompute::Run() {
   auto& ctx = this->ctx_->template As<ARMContext>();
   auto x_dims = param.X->dims();
   auto x_data = param.X->data<float>();
-  auto channel_shared = param.Prelu_channel_shared;
-  auto channel_slope = param.Prelu_channel_slope->data<float>();
+  auto mode = param.Prelu_mode;
+  auto alpha_data = param.Prelu_alpha->data<float>();
   auto output_data = param.Out->mutable_data<float>();
 
   int outer_size = x_dims[0];
@@ -69,8 +69,8 @@ void PReluCompute::Run() {
                                     outer_size,
                                     channel_size,
                                     inner_size,
-                                    channel_shared,
-                                    channel_slope,
+                                    mode,
+                                    alpha_data,
                                     ctx.threads());
 }
 
@@ -149,8 +149,8 @@ REGISTER_LITE_KERNEL(relu_clipped,
 REGISTER_LITE_KERNEL(
     prelu, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::PReluCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("Prelu_channel_shared", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("Prelu_channel_slope", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("mode", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Alpha", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
 REGISTER_LITE_KERNEL(sigmoid,

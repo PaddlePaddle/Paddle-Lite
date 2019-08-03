@@ -20,7 +20,9 @@
 #include <string>
 #include <unordered_map>
 #include <utility>
+#include "lite/utils/all.h"
 #include "lite/utils/cp_logging.h"
+#include "lite/utils/replace_stl/stream.h"
 
 namespace paddle {
 namespace lite {
@@ -72,9 +74,9 @@ class Factory {
   }
 
   std::string DebugString() const {
-    std::stringstream ss;
+    STL::stringstream ss;
     for (const auto& item : creators_) {
-      ss << "  - " << item.first << std::endl;
+      ss << "  - " << item.first << "\n";
     }
     return ss.str();
   }

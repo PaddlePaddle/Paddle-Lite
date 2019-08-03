@@ -47,7 +47,7 @@ bool KernelPickFactor::IsDeviceConsidered() const {
   return data_ & static_cast<int>(Factor::DeviceFirst);
 }
 
-std::ostream& operator<<(std::ostream& os, const KernelPickFactor& k) {
+STL::ostream& operator<<(STL::ostream& os, const KernelPickFactor& k) {
   std::stack<bool> bits;
   auto data = k.data_;
   while (data) {
