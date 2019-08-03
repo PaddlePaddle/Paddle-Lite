@@ -26,6 +26,9 @@ lite_cc_library(crop_compute_arm SRCS crop_compute.cc DEPS ${lite_kernel_deps} m
 lite_cc_library(dropout_compute_arm SRCS dropout_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(calib_compute_arm SRCS calib_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(transpose_compute_arm SRCS transpose_compute.cc DEPS ${lite_kernel_deps} math_arm)
+lite_cc_library(power_compute_arm SRCS power_compute.cc DEPS ${lite_kernel_deps} math_arm)
+lite_cc_library(yolobox_compute_arm SRCS yolobox_compute.cc DEPS ${lite_kernel_deps} math_arm)
+lite_cc_library(shuffle_channel_compute_arm SRCS shuffle_channel_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(argmax_compute_arm SRCS argmax_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(axpy_compute_arm SRCS axpy_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(conv_transpose_compute_arm SRCS conv_transpose_compute.cc DEPS ${lite_kernel_deps} math_arm)
@@ -36,6 +39,7 @@ lite_cc_library(lookup_table_compute_arm SRCS lookup_table_compute.cc DEPS ${lit
 lite_cc_library(im2sequence_compute_arm SRCS im2sequence_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(sequence_softmax_compute_arm SRCS sequence_softmax_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(norm_compute_arm SRCS norm_compute.cc DEPS ${lite_kernel_deps} math_arm)
+lite_cc_library(interpolate_compute_arm SRCS interpolate_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(logical_compute_arm SRCS logical_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(compare_compute_arm SRCS compare_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(topk_compute_arm SRCS topk_compute.cc DEPS ${lite_kernel_deps} math_arm)
@@ -101,6 +105,10 @@ set(arm_kernels
     im2sequence_compute_arm
     sequence_softmax_compute_arm
     norm_compute_arm
+    power_compute_arm
+    shuffle_channel_compute_arm
+    yolobox_compute_arm
+    interpolate_compute_arm
     logical_compute_arm
     compare_compute_arm
     topk_compute_arm

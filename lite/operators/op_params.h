@@ -79,6 +79,19 @@ struct FcParam {
   WITH_INT8_CONFIG
 };
 
+// For Interpolate Op
+struct InterpolateParam {
+  lite::Tensor* X{};
+  lite::Tensor* OutSize{};
+  lite::Tensor* Out{};
+
+  float scale{0.f};
+  int out_h{-1};
+  int out_w{-1};
+  bool align_corners{true};
+  std::string interp_method{"Nearest"};
+};
+
 // For Mul Op
 struct MulParam {
   const lite::Tensor* x{};
@@ -100,6 +113,36 @@ struct MulGradParam {
 
   int x_num_col_dims{1};
   int y_num_col_dims{1};
+};
+
+// For Power Op
+struct PowerParam {
+  const lite::Tensor* X{};
+  lite::Tensor* Out{};
+
+  float scale{};
+  float shift{};
+  float power{};
+};
+
+struct ShuffleChannelParam {
+  const lite::Tensor* X{};
+  lite::Tensor* Out{};
+
+  int group;
+};
+
+// For Yolobox
+struct YoloBoxParam {
+  lite::Tensor* X{};
+  lite::Tensor* ImgSize{};
+  lite::Tensor* Boxes{};
+  lite::Tensor* Scores{};
+
+  std::vector<int> anchors{};
+  int class_num{0};
+  float conf_thresh{0.f};
+  int downsample_ratio{0};
 };
 
 // For Scale Op

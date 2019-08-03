@@ -35,6 +35,7 @@
 #include "lite/arm/math/fill_bias_relu.h"
 #include "lite/arm/math/im2sequence.h"
 #include "lite/arm/math/increment.h"
+#include "lite/arm/math/interpolate.h"
 #include "lite/arm/math/lrn.h"
 #include "lite/arm/math/multiclass_nms.h"
 #include "lite/arm/math/negative.h"
@@ -42,6 +43,7 @@
 #include "lite/arm/math/packed_sgemm.h"
 #include "lite/arm/math/pad2d.h"
 #include "lite/arm/math/pooling.h"
+#include "lite/arm/math/power.h"
 #include "lite/arm/math/prior_box.h"
 #include "lite/arm/math/reduce_max.h"
 #include "lite/arm/math/scale.h"
@@ -50,10 +52,11 @@
 #include "lite/arm/math/sequence_softmax.h"
 #include "lite/arm/math/sgemm.h"
 #include "lite/arm/math/sgemv.h"
+#include "lite/arm/math/shuffle_channel.h"
 #include "lite/arm/math/softmax.h"
 #include "lite/arm/math/split.h"
 #include "lite/arm/math/topk.h"
-
+#include "lite/arm/math/yolobox.h"
 namespace paddle {
 namespace lite {
 namespace arm {
