@@ -79,7 +79,7 @@ void OpDesc::Parse(const framework::proto::OpDesc& desc) {
         attrs[attr.name()] = attr.blocks_idx();
         break;
       default:
-        LOG(ERROR) << "unknown attribute type found";
+        LOG(FATAL) << "unknown attribute type found";
     }
   }
 }
@@ -100,7 +100,7 @@ void VarType::Parse(const framework::proto::VarType& proto) {
       break;
 
     default:
-      LOG(ERROR) << "no valid var type found";
+      LOG(FATAL) << "no valid var type found";
       return;
   }
 }

@@ -120,8 +120,7 @@ class OpDesc : public OpDescAPI {
       DEF_ONE(BLOCKS);
       DEF_ONE(LONGS);
       default:
-        LOG(ERROR) << "Unknown attribute type";
-        return AttrType::UNK;
+        LOG(FATAL) << "Unknown attribute type";
     }
 #undef DEF_ONE
   }

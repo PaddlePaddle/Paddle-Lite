@@ -95,7 +95,7 @@ struct Instruction {
   // Run the instruction.
   void Run();
 
-  friend std::ostream& operator<<(std::ostream& os, const Instruction& other);
+  friend STL::ostream& operator<<(STL::ostream& os, const Instruction& other);
 
   const OpLite* op() const { return op_.get(); }
   const KernelBase* kernel() const { return kernel_.get(); }

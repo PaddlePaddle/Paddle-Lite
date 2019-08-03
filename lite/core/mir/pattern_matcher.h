@@ -20,7 +20,6 @@
 
 #include <memory>
 #include <numeric>
-#include <sstream>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
@@ -30,6 +29,7 @@
 #include "lite/core/mir/ssa_graph.h"
 #include "lite/model_parser/pb/op_desc.h"
 #include "lite/utils/cp_logging.h"
+#include "lite/utils/replace_stl/stream.h"
 #include "lite/utils/string.h"
 
 namespace paddle {
@@ -347,7 +347,7 @@ static std::string PMNodeName(const std::string& name_scope,
                               const std::string& repr,
                               size_t id,
                               const std::string& name) {
-  std::stringstream ss;
+  STL::stringstream ss;
   ss << name_scope << "/" << repr << "/" << id << "/" << name;
   return ss.str();
 }
@@ -355,7 +355,7 @@ static std::string PMNodeName(const std::string& name_scope,
 // The format is {name_scope}/{repr}/{id}
 static std::string PMNodeName(const std::string& name_scope,
                               const std::string& repr) {
-  std::stringstream ss;
+  STL::stringstream ss;
   ss << name_scope << "/" << repr << "/"
      << KeyCounter::Instance().IncCounter(repr);
   return ss.str();
@@ -364,7 +364,7 @@ static std::string PMNodeName(const std::string& name_scope,
 // name.
 // The format is {repr}/{id}
 static std::string UniqueKey(const std::string& repr) {
-  std::stringstream ss;
+  STL::stringstream ss;
   ss << repr << "/" << KeyCounter::Instance().IncCounter(repr);
   return ss.str();
 }

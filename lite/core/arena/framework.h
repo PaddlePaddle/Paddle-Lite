@@ -165,12 +165,9 @@ class Arena {
 
     for (auto& out : tester_->op_desc().OutputArgumentNames()) {
       for (auto& var : tester_->op_desc().Output(out)) {
-        LOG(INFO) << "Testing var " << out;
         CompareTensor(out, var);
       }
     }
-
-    LOG(INFO) << "done";
   }
 
   void TestPerformance(int times = 100) {

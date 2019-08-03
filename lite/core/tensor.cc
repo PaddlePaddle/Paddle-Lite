@@ -14,6 +14,7 @@
 
 #include "lite/core/tensor.h"
 #include <string>
+#include "lite/utils/string.h"
 
 namespace paddle {
 namespace lite {
@@ -54,7 +55,7 @@ DDimLite DDimLite::Slice(int start, int end) const {
 }
 
 std::string DDimLite::repr() const {
-  std::stringstream ss;
+  STL::stringstream ss;
   if (empty()) {
     ss << "{}";
     return ss.str();

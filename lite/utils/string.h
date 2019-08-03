@@ -17,9 +17,9 @@
 #include <algorithm>
 #include <cstring>
 #include <memory>  // For std::unique_ptr
-#include <sstream>
 #include <string>
 #include <vector>
+#include "lite/utils/replace_stl/stream.h"
 
 namespace paddle {
 namespace lite {
@@ -46,9 +46,9 @@ static std::string string_format(const std::string fmt_str, ...) {
 
 template <typename T>
 static std::string to_string_with_precision(const T& v, const int n = 6) {
-  std::stringstream ss;
+  STL::stringstream ss;
   ss.precision(n);
-  ss << std::fixed << v;
+  // ss << std::fixed << v;
   return ss.str();
 }
 
@@ -56,7 +56,7 @@ template <typename T>
 std::string Join(const std::vector<T>& vec, const std::string& delim) {
   if (vec.empty()) return "";
 
-  std::stringstream ss;
+  STL::stringstream ss;
   for (size_t i = 0; i < vec.size() - 1; i++) ss << vec[i] << delim;
   if (!vec.empty()) {
     ss << vec.back();

@@ -25,7 +25,7 @@
 #include "lite/core/tensor.h"
 #include "lite/model_parser/pb/op_desc.h"
 #include "lite/model_parser/pb/var_desc.h"
-#include "lite/utils/string.h"
+#include "lite/utils/all.h"
 
 DEFINE_string(model_dir, "", "Model dir path");
 DEFINE_string(input_file, "", "Input datas file path");
@@ -73,7 +73,7 @@ std::vector<T> Split2Vector(const std::string& input,
   std::vector<T> tgt;
   std::vector<std::string> inputs = Split(input, separator);
   tgt.resize(inputs.size());
-  std::stringstream ss;
+  STL::stringstream ss;
   for (int i = 0; i < inputs.size(); ++i) {
     ss << inputs[i] << " ";
   }
@@ -276,7 +276,7 @@ std::unordered_set<std::string> CollectUnusedVars(
 }
 
 std::string GetTensorRepr(const lite::Tensor& tensor, int out_data_len) {
-  std::stringstream ss;
+  STL::stringstream ss;
   auto size = tensor.dims().production();
   if (out_data_len >= 0) {
     size = std::min(size, static_cast<DDim::value_type>(out_data_len));

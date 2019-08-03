@@ -14,7 +14,7 @@
 
 #pragma once
 #include <string>
-#include "lite/utils/macros.h"
+#include "lite/utils/all.h"
 
 namespace paddle {
 namespace lite_api {
@@ -124,7 +124,7 @@ struct LITE_API Place {
 
   friend bool operator<(const Place& a, const Place& b);
 
-  friend std::ostream& operator<<(std::ostream& os, const Place& other) {
+  friend STL::ostream& operator<<(STL::ostream& os, const Place& other) {
     os << other.DebugString();
     return os;
   }

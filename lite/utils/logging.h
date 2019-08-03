@@ -23,10 +23,8 @@
 #include <time.h>
 #include <cstdlib>
 #include <cstring>
-#include <iomanip>
-#include <iostream>
-#include <sstream>
 #include <string>
+#include "lite/utils/replace_stl/stream.h"
 
 // NOLINTFILE()
 
@@ -77,7 +75,7 @@ namespace paddle {
 namespace lite {
 
 #ifndef LITE_SHUTDOWN_LOG
-void gen_log(std::ostream& log_stream_,
+void gen_log(STL::ostream& log_stream_,
              const char* file,
              const char* func,
              int lineno,
@@ -99,10 +97,10 @@ class LogMessage {
     fprintf(stderr, "%s", log_stream_.str().c_str());
   }
 
-  std::ostream& stream() { return log_stream_; }
+  STL::ostream& stream() { return log_stream_; }
 
  protected:
-  std::stringstream log_stream_;
+  STL::stringstream log_stream_;
 
   LogMessage(const LogMessage&) = delete;
   void operator=(const LogMessage&) = delete;
@@ -153,10 +151,10 @@ class VLogMessage {
     fprintf(stderr, "%s", log_stream_.str().c_str());
   }
 
-  std::ostream& stream() { return log_stream_; }
+  STL::ostream& stream() { return log_stream_; }
 
  protected:
-  std::stringstream log_stream_;
+  STL::stringstream log_stream_;
   int32_t GLOG_v_int;
   int32_t level_int;
 
@@ -173,7 +171,6 @@ class Voidify {
   Voidify& operator<<(const T& obj) {
     return *this;
   }
-  Voidify& operator<<(std::ostream& (*func)(std::ostream&)) { return *this; }
 };
 
 class VoidifyFatal : public Voidify {

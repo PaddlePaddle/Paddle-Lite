@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <sstream>
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 #include "lite/opencl/cl_include.h"
 #include "lite/operators/op_params.h"
+#include "lite/utils/replace_stl/stream.h"
 
 namespace paddle {
 namespace lite {
@@ -43,7 +43,7 @@ class ReluCompute
     CHECK(context.cl_context() != nullptr);
     auto* x_buf = param.X->data<float, cl::Buffer>();
     auto* out_buf = param.Out->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
-    std::stringstream kernel_key;
+    STL::stringstream kernel_key;
     kernel_key << kernel_func_name_ << build_options_;
     auto kernel = context.cl_context()->GetKernel(kernel_key.str());
     VLOG(4) << TargetToStr(param.X->target());
