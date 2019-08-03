@@ -70,7 +70,7 @@ USE_LITE_KERNEL(im2sequence, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(logical_xor, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(logical_and, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(less_than, kARM, kFloat, kNCHW, def);
-USE_LITE_KERNEL(topk, kARM, kFloat, kNCHW, def);
+USE_LITE_KERNEL(top_k, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(increment, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(write_to_array, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(read_from_array, kARM, kFloat, kNCHW, def);
@@ -88,6 +88,7 @@ USE_LITE_KERNEL(fc, kARM, kInt8, kNCHW, fp32out);
 USE_LITE_KERNEL(gru_unit, kARM, kFloat, kNCHW, def)
 USE_LITE_KERNEL(gru, kARM, kFloat, kNCHW, def)
 USE_LITE_KERNEL(beam_search_decode, kARM, kFloat, kNCHW, def)
+USE_LITE_KERNEL(beam_search, kARM, kFloat, kNCHW, def)
 USE_LITE_KERNEL(while, kARM, kFloat, kNCHW, def)
 USE_LITE_KERNEL(fill_constant, kARM, kFloat, kNCHW, def)
 USE_LITE_KERNEL(lod_reset, kARM, kFloat, kNCHW, def)

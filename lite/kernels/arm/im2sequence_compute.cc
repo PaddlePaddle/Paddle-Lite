@@ -116,7 +116,7 @@ void Im2SequenceCompute::Run() {
                                    out_w,
                                    o_data + im_id * out_size_per_im,
                                    &ctx);
-      im_offset.push_back(uint64_t(im_id * out_h * out_w));
+      im_offset.push_back(uint64_t((im_id + 1) * out_h * out_w));
     }
     auto lod = param.Out->mutable_lod();
     lod->resize(1);

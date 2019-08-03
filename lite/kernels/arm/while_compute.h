@@ -36,19 +36,24 @@ class StepExecutor {
       auto &op_desc = *block->template GetOp<cpp::OpDesc>(i);
       auto op_type = op_desc.Type();
       auto op_handler = lite::LiteOpRegistry::Global().Create(op_desc.Type());
-      LOG(INFO) << "while: creating Op [" << op_type << "]";
+      VLOG(4) << "while: creating Op [" << op_type << "]";
       op_handler->Attach(op_desc, scope);
-      auto kernels = op_handler->CreateKernels({place_});
+
+      auto hostplace = place_;
+      hostplace.target = TARGET(kHost);
+      auto kernels = op_handler->CreateKernels({place_, hostplace});
       CHECK_GT(kernels.size(), 0) << "cannot create kernel";
       op_handler->AttachKernel(kernels[0].get());
+      op_handler->SetKernel(kernels);
       ops_of_block_.push_back(op_handler);
     }
   }
 
   void Run() {
     for (auto &op_handler : ops_of_block_) {
-      LOG(INFO) << op_handler->op_info()->Type();
+      VLOG(4) << op_handler->op_info()->Repr();
       op_handler->InferShape();
+      VLOG(4) << "while: infered shape";
       op_handler->Run();
     }
   }

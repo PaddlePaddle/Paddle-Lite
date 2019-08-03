@@ -49,7 +49,7 @@ bool LodResetOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   CHECK(param_.X);
   CHECK(param_.Out);
   param_.target_lod = opdesc.GetAttr<std::vector<int>>("target_lod");
-  param_.append = opdesc.GetAttr<bool>("append");
+  // param_.append = opdesc.GetAttr<bool>("append");
   return true;
 }
 

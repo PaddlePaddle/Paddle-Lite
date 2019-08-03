@@ -74,13 +74,14 @@ USE_LITE_OP(sequence_softmax);
 USE_LITE_OP(logical_xor);
 USE_LITE_OP(logical_and);
 USE_LITE_OP(less_than);
-USE_LITE_OP(topk);
+USE_LITE_OP(top_k);
 USE_LITE_OP(increment);
 USE_LITE_OP(write_to_array);
 USE_LITE_OP(read_from_array);
 USE_LITE_OP(gru_unit)
 USE_LITE_OP(gru)
 USE_LITE_OP(beam_search_decode)
+USE_LITE_OP(beam_search)
 USE_LITE_OP(fill_constant)
 USE_LITE_OP(while)
 USE_LITE_OP(lod_reset)

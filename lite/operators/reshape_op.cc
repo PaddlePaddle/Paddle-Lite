@@ -30,6 +30,8 @@ bool ReshapeOp::InferShape() const {
   auto x_dims = param_.x->dims();
   auto output_dims = ValidateShape(param_.shape, x_dims);
   param_.output->Resize(output_dims);
+  auto out_lod = param_.output->mutable_lod();
+  *out_lod = param_.x->lod();
   return true;
 }
 

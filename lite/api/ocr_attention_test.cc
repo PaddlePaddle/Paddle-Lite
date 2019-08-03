@@ -42,26 +42,26 @@ void TestModel(const std::vector<Place>& valid_places,
     data[i] = 1;
   }
 
-  auto* init_scores = predictor.GetInput(1);
+  auto* init_scores = predictor.GetInput(2);
   init_scores->Resize(DDim(std::vector<DDim::value_type>({1, 1})));
   auto* data_scores = init_scores->mutable_data<float>();
   auto scores_size = input_tensor->dims().production();
   for (int i = 0; i < scores_size; i++) {
-    data_scores[i] = 1;
+    data_scores[i] = 0;
   }
   auto lod_scores = init_scores->mutable_lod();
-  std::vector<std::vector<uint64_t>> lod_s{{0, 1}};
+  std::vector<std::vector<uint64_t>> lod_s{{0, 1}, {0, 1}};
   *lod_scores = lod_s;
 
-  auto* init_ids = predictor.GetInput(2);
+  auto* init_ids = predictor.GetInput(1);
   init_ids->Resize(DDim(std::vector<DDim::value_type>({1, 1})));
   auto* data_ids = init_ids->mutable_data<float>();
   auto ids_size = init_ids->dims().production();
   for (int i = 0; i < ids_size; i++) {
-    data_ids[i] = 1;
+    data_ids[i] = 0;
   }
-  auto lod_ids = init_scores->mutable_lod();
-  std::vector<std::vector<uint64_t>> lod_i{{0, 1}};
+  auto lod_ids = init_ids->mutable_lod();
+  std::vector<std::vector<uint64_t>> lod_i{{0, 1}, {0, 1}};
   *lod_ids = lod_i;
 
   for (int i = 0; i < FLAGS_warmup; ++i) {

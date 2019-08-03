@@ -29,6 +29,7 @@ void WriteToArrayCompute::Run() {
   CHECK_EQ(param.I->numel(), 1) << "input2 should have only one element";
   const auto* x_data = param.X->data<float>();
   int id = param.I->data<int>()[0];
+  int id_test = param.I->data<int64_t>()[0];
   if (id >= param.Out->size()) {
     for (int i = param.Out->size(); i < id + 1; i++) {
       lite::Tensor tmp;

@@ -40,7 +40,7 @@ void TopkCompute::Run() {
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(
-    topk, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::TopkCompute, def)
+    top_k, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::TopkCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
