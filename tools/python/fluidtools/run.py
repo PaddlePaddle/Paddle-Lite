@@ -155,7 +155,7 @@ def load_feed_kv():
         expected_len = 1
         for dim in feed_shape:
             expected_len *= dim
-        if len(data) != expected_len:
+        if len(np.atleast_1d(data)) != expected_len:
             return None
         data = data.reshape(feed_shape).astype("float32")
         
