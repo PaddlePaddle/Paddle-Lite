@@ -602,6 +602,28 @@ struct ReduceMaxParam {
   bool keep_dim{false};
 };
 
+/// ----------------------- shape operators ----------------------
+struct ShapeParam {
+  const lite::Tensor* X{};
+  lite::Tensor* Out{};
+};
+
+struct CastParam {
+  const lite::Tensor* X{};
+  lite::Tensor* Out{};
+  int out_dtype{2};
+  int in_dtype{2};
+};
+
+struct SliceParam {
+  const lite::Tensor* X{};
+  lite::Tensor* Out{};
+  std::vector<int> axes{};
+  std::vector<int> starts{};
+  std::vector<int> ends{};
+  std::vector<int> decrease_axis{};
+};
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle

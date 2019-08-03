@@ -68,6 +68,9 @@ lite_cc_library(beam_search_op SRCS beam_search_op.cc DEPS ${op_DEPS})
 lite_cc_library(sequence_pool_op_lite SRCS sequence_pool_op.cc DEPS ${op_DEPS})
 lite_cc_library(sequence_expand_op_lite SRCS sequence_expand_op.cc DEPS ${op_DEPS})
 lite_cc_library(reduce_max_op_lite SRCS reduce_max_op.cc DEPS ${op_DEPS})
+lite_cc_library(shape_op_lite SRCS shape_op.cc DEPS ${op_DEPS})
+lite_cc_library(cast_op_lite SRCS cast_op.cc DEPS ${op_DEPS})
+lite_cc_library(slice_op_lite SRCS slice_op.cc DEPS ${op_DEPS})
 
 
 set(ops
@@ -136,6 +139,9 @@ set(ops
         sequence_pool_op_lite
         sequence_expand_op_lite
         reduce_max_op_lite
+        shape_op_lite
+        cast_op_lite
+        slice_op_lite
         CACHE INTERNAL "ops lite")
 
 if (NOT LITE_WITH_X86)

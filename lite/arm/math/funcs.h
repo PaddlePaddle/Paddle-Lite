@@ -50,6 +50,7 @@
 #include "lite/arm/math/sequence_softmax.h"
 #include "lite/arm/math/sgemm.h"
 #include "lite/arm/math/sgemv.h"
+#include "lite/arm/math/slice.h"
 #include "lite/arm/math/softmax.h"
 #include "lite/arm/math/split.h"
 #include "lite/arm/math/topk.h"

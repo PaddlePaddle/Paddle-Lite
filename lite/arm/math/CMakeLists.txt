@@ -99,6 +99,7 @@ if (NOT HAS_ARM_MATH_LIB_DIR)
       reduce_max.cc
       sequence_pool.cc
       sequence_expand.cc
+      slice.cc
       DEPS ${lite_kernel_deps})
 endif()
  
