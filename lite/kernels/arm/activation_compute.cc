@@ -63,7 +63,8 @@ void PReluCompute::Run() {
 
   int outer_size = x_dims[0];
   int channel_size = x_dims[1];
-  int inner_size = x_dims[2] * x_dims[3];
+  int inner_size = x_dims.count(2, x_dims.size());
+
   lite::arm::math::act_prelu<float>(x_data,
                                     output_data,
                                     outer_size,
