@@ -36,9 +36,69 @@ void RuntimeProgram::SaveOpInfosToProgram(cpp::ProgramDesc* desc) {
 
 void RuntimeProgram::Run() {
   for (auto& inst : instructions_) {
-    VLOG(4) << ">> Running kernel: " << inst.op()->op_info()->Repr()
-            << " on Target " << TargetToStr(inst.kernel()->target());
+#ifdef LITE_WITH_PROFILE
+    LOG(INFO) << ">> Running kernel: " << inst.op()->op_info()->Repr()
+              << " on Target " << TargetToStr(inst.kernel()->target());
+#endif
     inst.Run();
+#ifdef LITE_WITH_PROFILE
+    auto tensor_mean = [](const Tensor* in, PrecisionType ptype) -> double {
+      double sum = 0.;
+      switch (ptype) {
+        case PRECISION(kFloat): {
+          auto ptr = in->data<float>();
+          for (int i = 0; i < in->numel(); ++i) {
+            sum += ptr[i];
+          }
+          return sum / in->numel();
+        }
+        case PRECISION(kInt8): {
+          auto ptr = in->data<int8_t>();
+          for (int i = 0; i < in->numel(); ++i) {
+            sum += ptr[i];
+          }
+          return sum / in->numel();
+        }
+        case PRECISION(kInt32): {
+          auto ptr = in->data<int32_t>();
+          for (int i = 0; i < in->numel(); ++i) {
+            sum += ptr[i];
+          }
+          return sum / in->numel();
+        }
+        default:
+          LOG(INFO) << "unsupport data type: " << PrecisionToStr(ptype);
+          return 0.;
+      }
+    };
+    if (inst.op()->op_info()->Type() != "fetch") {
+      auto op = const_cast<lite::OpLite*>(inst.op());
+      auto kernel = inst.kernel();
+      auto op_scope = op->scope();
+      auto out_names = op->op_info()->output_names();
+      for (auto& out_name : out_names) {
+        std::string out_arg_name;
+        op->op_info()->GetOutputArgname(out_name, &out_arg_name);
+        auto type = kernel->GetOutputDeclType(out_arg_name);
+        if (type->IsTensor()) {
+          auto tout = op_scope->FindVar(out_name)->GetMutable<Tensor>();
+          double mean = tensor_mean(tout, type->precision());
+          LOG(INFO) << "output name: " << out_name << ", dims: " << tout->dims()
+                    << ", precision: " << PrecisionToStr(type->precision())
+                    << ", mean value: " << mean;
+        } else if (type->IsTensorList()) {
+          auto tout =
+              op_scope->FindVar(out_name)->GetMutable<std::vector<Tensor>>();
+          for (auto& t : *tout) {
+            double mean = tensor_mean(&t, type->precision());
+            LOG(INFO) << "output name: " << out_name << ", dims: " << t.dims()
+                      << ", precision: " << PrecisionToStr(type->precision())
+                      << ", mean value: " << mean;
+          }
+        }
+      }
+    }
+#endif
   }
 }
 

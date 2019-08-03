@@ -132,7 +132,7 @@ class OpLite : public Registry {
   }
 
  protected:
-  lite::Scope *scope_{};
+  lite::Scope *scope_{nullptr};
   std::unique_ptr<KernelBase> kernel_;
   std::string op_type_;
   std::vector<Place> valid_places_;
