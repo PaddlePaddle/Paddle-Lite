@@ -534,7 +534,7 @@ class BilinearInterpComputeTester : public arena::TestCase {
 
     std::vector<int> data1(_dims1_.production());
     for (int i = 0; i < _dims1_.production(); i++) {
-      data1[i] = 16;  // ceil((i + 10) * 1.000001);
+      data1[i] = 16;
     }
     SetCommonTensor(input1_, _dims1_, data1.data());
   }
