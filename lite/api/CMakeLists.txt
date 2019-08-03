@@ -131,6 +131,13 @@ if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND WITH_TESTING)
     add_dependencies(test_inceptionv4 extern_lite_download_inception_v4_simple_tar_gz)
 endif()
 
+lite_cc_test(test_unet SRCS unet_test.cc
+    DEPS ${lite_model_test_DEPS}
+    CL_DEPS ${opencl_kernels}
+    ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/opencl
+        --model_dir=${LITE_MODEL_DIR}/unet SERIAL)
+# add_dependencies(test_unet extern_lite_download_unet_tar_gz)
+
 # These tests needs CLI arguments, and is not supported in ARM CI.
 # TODO(Superjomn) support latter.
 lite_cc_test(test_light_api SRCS light_api_test.cc
