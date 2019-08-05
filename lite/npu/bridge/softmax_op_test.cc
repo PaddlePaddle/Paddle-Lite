@@ -75,7 +75,7 @@ void softmax_ref(const std::shared_ptr<operators::SoftmaxOp> op) {
   }
 }
 
-void test_softmax(int bs, int ic, int ih, int iw) {
+void test_softmax(int bs, int ic, int ih, int iw, int axis) {
   const auto& bridges = lite::npu::bridge::Factory::Instance();
   const auto& supported_lists = bridges.AllFunctions();
   CHECK(bridges.HasType("softmax"));
@@ -95,9 +95,8 @@ void test_softmax(int bs, int ic, int ih, int iw) {
   std::default_random_engine rand_eng;
   std::uniform_real_distribution<float> rand_dist(-5.0f, 5.0f);
   for (int i = 0; i < x->numel(); i++) {
-    float fp32_value = rand_dist(rand_eng);
-    float fp16_value = half2float(float2half(fp32_value));
-    x->mutable_data<float>()[i] = fp16_value;
+    float rand_value = half2float(float2half(rand_dist(rand_eng)));
+    x->mutable_data<float>()[i] = rand_value;
   }
 
   // create op
@@ -105,21 +104,19 @@ void test_softmax(int bs, int ic, int ih, int iw) {
   softmax_op_desc.SetType("softmax");
   softmax_op_desc.SetInput("X", {x_var_name});
   softmax_op_desc.SetOutput("Out", {out_var_name});
-  softmax_op_desc.SetAttr("axis", -1);
+  softmax_op_desc.SetAttr("axis", axis);
 
-  std::shared_ptr<operators::SoftmaxOp> softmax_op =
-      std::make_shared<operators::SoftmaxOp>("softmax");
+  auto softmax_op = std::make_shared<operators::SoftmaxOp>("softmax");
   softmax_op->SetValidPlaces({Place{TARGET(kHost), PRECISION(kFloat)},
                               Place{TARGET(kARM), PRECISION(kFloat)}});
-  softmax_op->Attach(softmax_op_desc, &scope);
-  softmax_op->CheckShape();
-  softmax_op->InferShape();
+  CHECK(softmax_op->Attach(softmax_op_desc, &scope));
+  CHECK(softmax_op->CheckShape());
+  CHECK(softmax_op->InferShape());
 
   // convert op and build IR graph
   ge::TensorDesc x_desc(
       ge::Shape(x->dims().Vectorize()), ge::FORMAT_NCHW, ge::DT_FLOAT);
-  std::shared_ptr<ge::op::Data> x_node =
-      std::make_shared<ge::op::Data>(x_var_name);
+  auto x_node = std::make_shared<ge::op::Data>(x_var_name);
   x_node->update_input_desc_x(x_desc);
   node_map_type inputs_map;
   inputs_map[x_var_name] = x_node;
@@ -140,12 +137,11 @@ void test_softmax(int bs, int ic, int ih, int iw) {
   graph_op_desc.SetOutput("Outputs", {out_var_name});
   graph_op_desc.SetAttr("model_name", model_name);
 
-  std::shared_ptr<operators::GraphOpLite> graph_op =
-      std::make_shared<operators::GraphOpLite>("graph_op");
+  auto graph_op = std::make_shared<operators::GraphOpLite>("graph_op");
   graph_op->SetValidPlaces({Place{TARGET(kNPU), PRECISION(kFloat)}});
-  graph_op->Attach(graph_op_desc, &scope);
-  graph_op->CheckShape();
-  graph_op->InferShape();
+  CHECK(graph_op->Attach(graph_op_desc, &scope));
+  CHECK(graph_op->CheckShape());
+  CHECK(graph_op->InferShape());
 
   // create graph op kernel
   auto graph_kernels =
@@ -169,6 +165,10 @@ void test_softmax(int bs, int ic, int ih, int iw) {
   for (int i = 0; i < out->numel(); i++) {
     EXPECT_NEAR(out_data[i], out_ref_data[i], 1e-2);
   }
+
+  // model release
+  npu::OpList::Global().clear();
+  npu::DeviceInfo::Global().Clear();
 }
 
 TEST(NPUBridges, softmax) {
@@ -176,7 +176,9 @@ TEST(NPUBridges, softmax) {
     for (auto ic : {7}) {
       for (auto ih : {2}) {
         for (auto iw : {4}) {
-          test_softmax(bs, ic, ih, iw);
+          for (auto axis : {-1}) {
+            test_softmax(bs, ic, ih, iw, axis);
+          }
         }
       }
     }

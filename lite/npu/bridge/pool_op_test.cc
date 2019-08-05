@@ -41,7 +41,7 @@ void pool_ref(const std::shared_ptr<operators::PoolOpLite> op) {
   std::vector<int> ksize = op_info->GetAttr<std::vector<int>>("ksize");
   std::vector<int> strides = op_info->GetAttr<std::vector<int>>("strides");
   std::vector<int> paddings = op_info->GetAttr<std::vector<int>>("paddings");
-
+  bool exclusive = false;  // op_info->GetAttr<bool>("exclusive");
   std::string pooling_type = op_info->GetAttr<std::string>("pooling_type");
   bool global_pooling = op_info->GetAttr<bool>("global_pooling");
 
@@ -116,7 +116,11 @@ void pool_ref(const std::shared_ptr<operators::PoolOpLite> op) {
               }
             }
             if (pooling_type == "avg") {
-              res /= pooling_size;
+              if (exclusive) {
+                res /= pooling_size;
+              } else {
+                res /= window_h * window_w;
+              }
             }
             dst_ptr[n * size_out_n + c * size_out_c + h * out_w + w] = res;
           }
@@ -126,7 +130,17 @@ void pool_ref(const std::shared_ptr<operators::PoolOpLite> op) {
   }
 }
 
-void test_pool(int bs, int ic, int ih, int iw) {
+void test_pool(int bs,
+               int ic,
+               int ih,
+               int iw,
+               std::string pooling_type,
+               bool ceil_mode,
+               bool global_pooling,
+               bool exclusive,
+               int ksize,
+               int stride,
+               int padding) {
   const auto& bridges = lite::npu::bridge::Factory::Instance();
   const auto& supported_lists = bridges.AllFunctions();
   CHECK(bridges.HasType("pool2d"));
@@ -146,9 +160,8 @@ void test_pool(int bs, int ic, int ih, int iw) {
   std::default_random_engine rand_eng;
   std::uniform_real_distribution<float> rand_dist(-5.0f, 5.0f);
   for (int i = 0; i < x->numel(); i++) {
-    float fp32_value = rand_dist(rand_eng);
-    float fp16_value = half2float(float2half(fp32_value));
-    x->mutable_data<float>()[i] = fp16_value;
+    float rand_value = half2float(float2half(rand_dist(rand_eng)));
+    x->mutable_data<float>()[i] = rand_value;
   }
 
   // create op
@@ -156,25 +169,23 @@ void test_pool(int bs, int ic, int ih, int iw) {
   pool_op_desc.SetType("pool2d");
   pool_op_desc.SetInput("X", {x_var_name});
   pool_op_desc.SetOutput("Out", {out_var_name});
-  pool_op_desc.SetAttr("pooling_type", std::string("max"));
-  pool_op_desc.SetAttr("ksize", std::vector<int>({3, 3}));
-  pool_op_desc.SetAttr("global_pooling", false);
-  pool_op_desc.SetAttr("strides", std::vector<int>({1, 1}));
-  pool_op_desc.SetAttr("paddings", std::vector<int>({1, 1}));
+  pool_op_desc.SetAttr("pooling_type", pooling_type);
+  pool_op_desc.SetAttr("ksize", std::vector<int>({ksize, ksize}));
+  pool_op_desc.SetAttr("global_pooling", global_pooling);
+  pool_op_desc.SetAttr("strides", std::vector<int>({stride, stride}));
+  pool_op_desc.SetAttr("paddings", std::vector<int>({padding, padding}));
 
-  std::shared_ptr<operators::PoolOpLite> pool_op =
-      std::make_shared<operators::PoolOpLite>("pool2d");
+  auto pool_op = std::make_shared<operators::PoolOpLite>(pool_op_desc.Type());
   pool_op->SetValidPlaces({Place{TARGET(kX86), PRECISION(kFloat)},
                            Place{TARGET(kARM), PRECISION(kFloat)}});
-  pool_op->Attach(pool_op_desc, &scope);
-  pool_op->CheckShape();
-  pool_op->InferShape();
+  CHECK(pool_op->Attach(pool_op_desc, &scope));
+  CHECK(pool_op->CheckShape());
+  CHECK(pool_op->InferShape());
 
   // convert op and build IR graph
   ge::TensorDesc x_desc(
       ge::Shape(x->dims().Vectorize()), ge::FORMAT_NCHW, ge::DT_FLOAT);
-  std::shared_ptr<ge::op::Data> x_node =
-      std::make_shared<ge::op::Data>(x_var_name);
+  auto x_node = std::make_shared<ge::op::Data>(x_var_name);
   x_node->update_input_desc_x(x_desc);
   node_map_type inputs_map;
   inputs_map[x_var_name] = x_node;
@@ -195,12 +206,12 @@ void test_pool(int bs, int ic, int ih, int iw) {
   graph_op_desc.SetOutput("Outputs", {out_var_name});
   graph_op_desc.SetAttr("model_name", model_name);
 
-  std::shared_ptr<operators::GraphOpLite> graph_op =
-      std::make_shared<operators::GraphOpLite>("graph_op");
+  auto graph_op =
+      std::make_shared<operators::GraphOpLite>(graph_op_desc.Type());
   graph_op->SetValidPlaces({Place{TARGET(kNPU), PRECISION(kFloat)}});
-  graph_op->Attach(graph_op_desc, &scope);
-  graph_op->CheckShape();
-  graph_op->InferShape();
+  CHECK(graph_op->Attach(graph_op_desc, &scope));
+  CHECK(graph_op->CheckShape());
+  CHECK(graph_op->InferShape());
 
   // create graph op kernel
   auto graph_kernels =
@@ -222,16 +233,44 @@ void test_pool(int bs, int ic, int ih, int iw) {
   auto* out_data = out->mutable_data<float>();
   auto* out_ref_data = out_ref->mutable_data<float>();
   for (int i = 0; i < out->numel(); i++) {
-    EXPECT_NEAR(out_data[i], out_ref_data[i], 1e-5);
+    EXPECT_NEAR(out_data[i], out_ref_data[i], 1e-2);
   }
+
+  // model release
+  npu::OpList::Global().clear();
+  npu::DeviceInfo::Global().Clear();
 }
 
 TEST(NPUBridges, pool) {
-  for (auto bs : {3}) {
-    for (auto ic : {7}) {
-      for (auto ih : {2}) {
-        for (auto iw : {4}) {
-          test_pool(bs, ic, ih, iw);
+  for (auto pooling_type : {/*"max", */ "avg"}) {
+    for (auto ceil_mode : {/* true, */ false}) {
+      for (auto global_pooling : {true /*, false*/}) {
+        for (auto exclusive : {true /*, false*/}) {
+          for (auto ksize : {7}) {
+            for (auto stride : {1}) {
+              for (auto padding : {0}) {
+                for (auto bs : {1}) {
+                  for (auto ic : {1280}) {
+                    for (auto ih : {7}) {
+                      for (auto iw : {7}) {
+                        test_pool(bs,
+                                  ic,
+                                  ih,
+                                  iw,
+                                  pooling_type,
+                                  ceil_mode,
+                                  global_pooling,
+                                  exclusive,
+                                  ksize,
+                                  stride,
+                                  padding);
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
         }
       }
     }

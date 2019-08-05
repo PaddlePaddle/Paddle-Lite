@@ -48,8 +48,9 @@ bool BuildNPUClient(std::vector<ge::Operator>& inputs,   // NOLINT
     LOG(WARNING) << "[NPU] Failed BuildIRModel: " << npu_model.GetName();
     return false;
   }
-
-  return BuildNPUClient(om_model_buffer.data, om_model_buffer.length, name);
+  bool ret = BuildNPUClient(om_model_buffer.data, om_model_buffer.length, name);
+  ir_build.ReleaseModelBuff(om_model_buffer);
+  return ret;
 }
 
 bool BuildNPUClient(const string& om_model_file_path, const string& name) {

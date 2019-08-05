@@ -158,9 +158,6 @@ class FcOPTest : public arena::TestCase {
     if (flag_bias) {
       SetCommonTensor(bias_, bdims_, bin.data());
     }
-    LOG(INFO) << "input dims: " << dims_;
-    LOG(INFO) << "weight dims: " << wdims_;
-    LOG(INFO) << "bias dims: " << bdims_;
   }
 };
 

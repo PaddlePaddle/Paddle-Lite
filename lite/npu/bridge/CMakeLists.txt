@@ -6,7 +6,6 @@ set(npu_bridge_deps npu_bridge_registry npu_bridge_utils op)
 
 lite_cc_library(npu_bridge_fc_op SRCS fc_op.cc DEPS ${npu_bridge_deps})
 lite_cc_library(npu_bridge_conv_op SRCS conv_op.cc DEPS ${npu_bridge_deps})
-#lite_cc_library(npu_bridge_depthwise_conv_op SRCS depthwise_conv_op.cc DEPS ${npu_bridge_deps})
 lite_cc_library(npu_bridge_mul_op SRCS mul_op.cc DEPS ${npu_bridge_deps})
 lite_cc_library(npu_bridge_act_op SRCS act_op.cc DEPS ${npu_bridge_deps})
 lite_cc_library(npu_bridge_scale_op SRCS scale_op.cc DEPS ${npu_bridge_deps})
@@ -20,7 +19,6 @@ set(npu_bridges
         npu_bridge_utils
         npu_bridge_fc_op
         npu_bridge_conv_op
-        #npu_bridge_depthwise_conv_op
         npu_bridge_mul_op
         npu_bridge_act_op
         npu_bridge_scale_op
