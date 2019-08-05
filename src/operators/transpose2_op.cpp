@@ -100,6 +100,9 @@ void Transpose2Op<Dtype, T>::InferShape() const {
     xshape_dims[i + 1] = input_x_dims[i];
   }
   this->param_.OutputXShape()->Resize(framework::make_ddim(xshape_dims));
+#ifdef PADDLE_MOBILE_CL
+  this->param_.OutputXShape()->Resize(input_x_dims);
+#endif
 }
 
 }  // namespace operators

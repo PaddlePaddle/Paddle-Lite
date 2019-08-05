@@ -1027,7 +1027,7 @@ void Executor<GPU_CL, float>::InitCombineMemory() {
         bool shouldResize = true;
         if (ddim.size() > 4) {
           for (int i = 0; i < ddim.size() - 4; ++i) {
-            if (ddim[i] != 0) {
+            if (ddim[i] != 0 && ddim[i] != 1) {
               shouldResize = false;
               break;
             }

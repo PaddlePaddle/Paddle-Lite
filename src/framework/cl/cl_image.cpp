@@ -122,6 +122,8 @@ Print &operator<<(Print &printer, const CLImage &cl_image) {
 
   CL_CHECK_ERRORS(err);
 
+  PADDLE_MOBILE_ENFORCE(cl_image.numel() != 0,
+                        "cl_image numel should not be 0 ");
   float *tensor_data = new float[cl_image.numel()];
   auto converter = cl_image.Converter();
   converter->ImageToNCHW(image_data, tensor_data, cl_image.ImageDims(),
