@@ -175,7 +175,7 @@ void GenerateNPUProgramPass::ConvertSubgraph(
         LOG(INFO) << "[NPU] Build NPU Client success subgraph " << id;
 
         // Then InsertNewNode(graph, matched); make one function
-        cpp::OpDesc op_desc = *matched.at("target_op")->stmt()->op_info();
+        cpp::OpDesc op_desc;
         op_desc.SetType("graph_op");
         // change to vectors
         op_desc.SetInput("Inputs", {matched.at("Input")->arg()->name});
