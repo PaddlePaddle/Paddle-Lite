@@ -22,37 +22,6 @@
 namespace paddle {
 namespace lite {
 
-void nearest_interp(const float* src,
-                    int w_in,
-                    int h_in,
-                    float* dst,
-                    int w_out,
-                    int h_out,
-                    float scale_x,
-                    float scale_y,
-                    bool align_corners) {
-  float scale_w_new;
-  float scale_h_new;
-  if (align_corners) {
-    scale_w_new = static_cast<float>(w_in - 1) / (w_out - 1);
-    scale_h_new = static_cast<float>(h_in - 1) / (h_out - 1);
-  } else {
-    scale_w_new = static_cast<float>(w_in / w_out);
-    scale_h_new = static_cast<float>(h_in / h_out);
-  }
-
-#pragma omp parallel for collapse(2) schedule(static)
-  for (int h = 0; h < h_out; ++h) {
-    for (int w = 0; w < w_out; ++w) {
-      int near_x = static_cast<int>(scale_w_new * w + 0.5);
-      int near_y = static_cast<int>(scale_h_new * h + 0.5);
-      near_x = near_x < 0 ? 0 : near_x;
-      near_y = near_y < 0 ? 0 : near_y;
-      dst[h * w_out + w] = src[near_y * w_in + near_x];
-    }
-  }
-}
-
 template <typename dtype>
 void resize_nearest_align(std::vector<const lite::Tensor*> inputs,
                           lite::Tensor* output,
@@ -153,7 +122,7 @@ class NearestInterpComputeTester : public arena::TestCase {
       int c_cout = outputs->dims()[1];
       outputs->Resize({num_cout, c_cout, h_out, w_out});
     }
-    resize_nearest_align(inputs, outputs, align_corners_);
+    resize_nearest_align<float>(inputs, outputs, align_corners_);
   }
 
   void PrepareOpDesc(cpp::OpDesc* op_desc) {
