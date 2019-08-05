@@ -60,7 +60,7 @@ USE_LITE_OP(negative)
 USE_LITE_OP(pad2d)
 USE_LITE_OP(power)
 USE_LITE_OP(shuffle_channel)
-USE_LITE_OP(yolobox)
+USE_LITE_OP(yolo_box)
 USE_LITE_OP(bilinear_interp)
 USE_LITE_OP(nearest_interp)
 

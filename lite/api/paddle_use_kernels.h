@@ -50,7 +50,7 @@ USE_LITE_KERNEL(transpose2, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(batch_norm, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(power, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(shuffle_channel, kARM, kFloat, kNCHW, def);
-USE_LITE_KERNEL(yolobox, kARM, kFloat, kNCHW, def);
+USE_LITE_KERNEL(yolo_box, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(argmax, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(axpy, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(leaky_relu, kARM, kFloat, kNCHW, def);
