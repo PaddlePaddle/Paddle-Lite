@@ -53,10 +53,10 @@ void resize_bilinear_align(std::vector<const lite::Tensor*> inputs,
         for (int w = 0; w < wout; ++w) {
           dtype fw = w * scale_w;
           dtype fh = h * scale_h;
-          int w_start = static_cast<int> fw;
+          int w_start = static_cast<int>(fw);
           int w_id = w_start < win - 1 ? 1 : 0;
           int w_end = static_cast<int>(fw + w_id);
-          int h_start = static_cast<int> fh;
+          int h_start = static_cast<int>(fh);
           int h_id = h_start < hin - 1 ? 1 : 0;
           int h_end = static_cast<int>(fh + h_id);
           fw -= w_start;
@@ -114,10 +114,10 @@ void resize_bilinear_no_align(std::vector<const lite::Tensor*> inputs,
           fw = (fw < 0) ? 0 : fw;
           dtype fh = scale_h * (h + 0.5f) - 0.5f;
           fh = (fh < 0) ? 0 : fh;
-          int w_start = static_cast<int> fw;
+          int w_start = static_cast<int>(fw);
           int w_id = w_start < win - 1 ? 1 : 0;
           int w_end = static_cast<int>(fw + w_id);
-          int h_start = static_cast<int> fh;
+          int h_start = static_cast<int>(fh);
           int h_id = h_start < hin - 1 ? 1 : 0;
           int h_end = static_cast<int>(fh + h_id);
           fw -= w_start;
