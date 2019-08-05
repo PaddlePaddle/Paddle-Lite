@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <gflags/gflags.h>
+#include <gtest/gtest.h>
 #include <string>
 #include <vector>
 #include "lite/api/paddle_api.h"
@@ -23,12 +25,16 @@
 #include "lite/utils/cp_logging.h"
 #include "lite/utils/string.h"
 
+DEFINE_string(input_shape,
+              "1,3,224,224",
+              "input shapes, separated by colon and comma");
+
 namespace paddle {
 namespace lite_api {
 
 void OutputOptModel(const std::string& load_model_dir,
                     const std::string& save_optimized_model_dir,
-                    const std::vector<int64_t>& input_shape) {
+                    const std::vector<std::vector<int64_t>>& input_shapes) {
   lite_api::CxxConfig config;
   config.set_model_dir(load_model_dir);
   config.set_preferred_place(Place{TARGET(kX86), PRECISION(kFloat)});
@@ -51,11 +57,11 @@ void OutputOptModel(const std::string& load_model_dir,
 }
 
 #ifdef LITE_WITH_LIGHT_WEIGHT_FRAMEWORK
-void Run(const std::vector<int64_t>& input_shape,
+void Run(const std::vector<std::vector<int64_t>>& input_shapes,
          const std::string& model_dir,
          const int repeat,
          const int thread_num,
-         const int warmup_times = 10) {
+         const int warmup_times = 0) {
 #ifdef LITE_WITH_ARM
   lite::DeviceInfo::Init();
   lite::DeviceInfo::Global().SetRunMode(lite::LITE_POWER_HIGH, thread_num);
@@ -65,15 +71,17 @@ void Run(const std::vector<int64_t>& input_shape,
 
   auto predictor = lite_api::CreatePaddlePredictor(config);
 
-  auto input_tensor = predictor->GetInput(0);
-  input_tensor->Resize(input_shape);
-  float* input_data = input_tensor->mutable_data<float>();
-  int input_num = 1;
-  for (int i = 0; i < input_shape.size(); ++i) {
-    input_num *= input_shape[i];
-  }
-  for (int i = 0; i < input_num; ++i) {
-    input_data[i] = i;
+  for (int j = 0; j < input_shapes.size(); ++j) {
+    auto input_tensor = predictor->GetInput(j);
+    input_tensor->Resize(input_shapes[j]);
+    auto input_data = input_tensor->mutable_data<float>();
+    int input_num = 1;
+    for (int i = 0; i < input_shapes[j].size(); ++i) {
+      input_num *= input_shapes[j][i];
+    }
+    for (int i = 0; i < input_num; ++i) {
+      input_data[i] = 1.f;
+    }
   }
 
   for (int i = 0; i < warmup_times; ++i) {
@@ -93,7 +101,7 @@ void Run(const std::vector<int64_t>& input_shape,
             << " ms in average.";
 
   auto output = predictor->GetOutput(0);
-  const float* out = output->data<float>();
+  auto out = output->data<float>();
   LOG(INFO) << "out " << out[0];
   LOG(INFO) << "out " << out[1];
   auto output_shape = output->shape();
@@ -109,29 +117,65 @@ void Run(const std::vector<int64_t>& input_shape,
 }  // namespace paddle
 
 int main(int argc, char** argv) {
-  if (argc < 4) {
-    LOG(INFO) << "usage: " << argv[0] << " <model_dir> <repeat> <thread_num>";
+  gflags::ParseCommandLineFlags(&argc, &argv, true);
+  if (FLAGS_model_dir == "") {
+    LOG(INFO) << "usage: "
+              << "--model_dir /path/to/your/model";
     exit(0);
   }
-  std::string load_model_dir = argv[1];
-  std::string save_optimized_model_dir = load_model_dir + "opt2";
+  std::string save_optimized_model_dir = FLAGS_model_dir + "opt2";
 
-#ifdef LITE_WITH_LIGHT_WEIGHT_FRAMEWORK
-  int repeat = std::stoi(argv[2]);
-  int thread_num = std::stoi(argv[3]);
-#endif
+  auto split_string =
+      [](const std::string& str_in) -> std::vector<std::string> {
+    std::vector<std::string> str_out;
+    std::string tmp_str = str_in;
+    while (!tmp_str.empty()) {
+      size_t next_offset = tmp_str.find(":");
+      str_out.push_back(tmp_str.substr(0, next_offset));
+      if (next_offset == std::string::npos) {
+        break;
+      } else {
+        tmp_str = tmp_str.substr(next_offset + 1);
+      }
+    }
+    return str_out;
+  };
 
-  std::vector<int64_t> input_shape{1, 3, 224, 224};
+  auto get_shape = [](const std::string& str_shape) -> std::vector<int64_t> {
+    std::vector<int64_t> shape;
+    std::string tmp_str = str_shape;
+    while (!tmp_str.empty()) {
+      int dim = atoi(tmp_str.data());
+      shape.push_back(dim);
+      size_t next_offset = tmp_str.find(",");
+      if (next_offset == std::string::npos) {
+        break;
+      } else {
+        tmp_str = tmp_str.substr(next_offset + 1);
+      }
+    }
+    return shape;
+  };
+
+  LOG(INFO) << "input shapes: " << FLAGS_input_shape;
+  std::vector<std::string> str_input_shapes = split_string(FLAGS_input_shape);
+  std::vector<std::vector<int64_t>> input_shapes;
+  for (int i = 0; i < str_input_shapes.size(); ++i) {
+    LOG(INFO) << "input shape: " << str_input_shapes[i];
+    input_shapes.push_back(get_shape(str_input_shapes[i]));
+  }
 
   // Output optimized model
   paddle::lite_api::OutputOptModel(
-      load_model_dir, save_optimized_model_dir, input_shape);
+      FLAGS_model_dir, save_optimized_model_dir, input_shapes);
 
 #ifdef LITE_WITH_LIGHT_WEIGHT_FRAMEWORK
   // Run inference using optimized model
-  paddle::lite_api::Run(
-      input_shape, save_optimized_model_dir, repeat, thread_num);
+  paddle::lite_api::Run(input_shapes,
+                        save_optimized_model_dir,
+                        FLAGS_repeats,
+                        FLAGS_threads,
+                        FLAGS_warmup);
 #endif
-
   return 0;
 }
