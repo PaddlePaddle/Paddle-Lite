@@ -136,6 +136,13 @@ if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND WITH_TESTING)
     ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/opencl
         --model_dir=${LITE_MODEL_DIR}/unet SERIAL)
     # add_dependencies(test_unet extern_lite_download_unet_tar_gz)
+
+    lite_cc_test(test_yolov3 SRCS mobilenetv1_yolov3_test.cc
+    DEPS ${lite_model_test_DEPS}
+    CL_DEPS ${opencl_kernels}
+    ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/opencl
+        --model_dir=${LITE_MODEL_DIR}/unet SERIAL)
+    # add_dependencies(test_unet extern_lite_download_unet_tar_gz)
     
 endif()
 
