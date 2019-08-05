@@ -29,6 +29,10 @@
 #endif
 #include "lite/utils/io.h"
 
+#ifdef LITE_WITH_NPU
+#include "lite/npu/npu_helper.h"
+#endif
+
 namespace paddle {
 namespace lite {
 
@@ -187,6 +191,24 @@ void LoadModelPb(const std::string &model_dir,
         CHECK(false) << "unknown weight type";
     }
   }
+#ifdef LITE_WITH_NPU
+  for (auto &op : main_block.ops()) {
+    LOG(INFO) << "op type:" << op.type();
+    if (op.type() != "graph_op") {
+      continue;
+    }
+    auto xs = op.attrs();
+    auto it = std::find_if(
+        xs.begin(), xs.end(), [&](const framework::proto::OpDesc_Attr &x) {
+          return x.name() == "model_name";
+        });
+    CHECK(it != xs.end());
+    auto model_name = it->s();
+    std::string file_path = model_dir + "/" + model_name;
+    CHECK(npu::BuildNPUClient(file_path, model_name))
+        << "NPU model load failed!";
+  }
+#endif
   VLOG(4) << "Load protobuf model in '" << model_dir << "'' successfully";
 }
 
@@ -458,6 +480,20 @@ void LoadModelNaive(const std::string &model_dir,
         CHECK(false) << "unknown weight type";
     }
   }
+
+#ifdef LITE_WITH_NPU
+  for (size_t i = 0; i < main_block_desc.OpsSize(); ++i) {
+    auto &op = *main_block_desc.GetOp<cpp::OpDesc>(i);
+    if (op.Type() != "graph_op") {
+      continue;
+    }
+    auto model_name = op.GetAttr<std::string>("model_name");
+    std::string file_path = model_dir + "/" + model_name;
+    CHECK(npu::BuildNPUClient(file_path, model_name))
+        << "NPU model load failed!";
+  }
+#endif
+
   VLOG(4) << "Load naive buffer model in '" << model_dir << "' successfully";
 }
 

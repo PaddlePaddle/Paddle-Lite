@@ -48,9 +48,15 @@ void GraphCompute::PrepareForRun() {
   }
 
   for (size_t i = 0; i < npu_odims_.size(); ++i) {
-    CHECK_EQ(param.outputs[i]->dims().production(),
-             npu_odims_[i].GetNumber() * npu_odims_[i].GetChannel() *
-                 npu_odims_[i].GetHeight() * npu_odims_[i].GetWidth());
+    auto out_size = npu_odims_[i].GetNumber() * npu_odims_[i].GetChannel() *
+                    npu_odims_[i].GetHeight() * npu_odims_[i].GetWidth();
+    LOG(INFO) << param.outputs[i]->dims().size();
+    if (param.outputs[i]->dims().production() != out_size) {
+      param.outputs[i]->Resize({npu_odims_[i].GetNumber(),
+                                npu_odims_[i].GetChannel(),
+                                npu_odims_[i].GetHeight(),
+                                npu_odims_[i].GetWidth()});
+    }
     npu_otensors_[i].reset(new hiai::AiTensor);
     npu_otensors_[i]->Init(&(npu_odims_[i]));
   }
@@ -58,7 +64,6 @@ void GraphCompute::PrepareForRun() {
 
 bool GraphCompute::input_dims_changed() const {
   auto& param = this->Param<param_t>();
-
   CHECK_EQ(param.inputs.size(), npu_idims_.size());
   for (size_t i = 0; i < param.inputs.size(); ++i) {
     auto param_idims = param.inputs[i]->dims();
@@ -133,6 +138,6 @@ REGISTER_LITE_KERNEL(graph_op,
                      kNCHW,
                      paddle::lite::kernels::npu::GraphCompute,
                      def)
-    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kHost))})
-    .BindOutput("Output", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindInput("Inputs", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindOutput("Outputs", {LiteType::GetTensorTy(TARGET(kHost))})
     .Finalize();

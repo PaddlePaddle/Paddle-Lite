@@ -27,53 +27,29 @@ namespace paddle {
 namespace lite {
 namespace npu {
 
-bool BuildNPUClient(std::vector<ge::Operator>& inputs,   // NOLINT
-                    std::vector<ge::Operator>& outputs,  // NOLINT
-                    const string& name) {
-  LOG(INFO) << "[NPU] Building Client";
-  ge::Graph npu_subgraph("npu_subgraph" + name);
-  npu_subgraph.SetInputs(inputs).SetOutputs(outputs);
-
-  ge::Model npu_model("model", "npu_model" + name);
-  npu_model.SetGraph(npu_subgraph);
-
-  // compile IR graph and output om model to memory
-  domi::HiaiIrBuild ir_build;
-  domi::ModelBufferData om_model_buffer;
-  if (!ir_build.CreateModelBuff(npu_model, om_model_buffer)) {
-    LOG(WARNING) << "[NPU] Failed CreateModelBuff: " << npu_model.GetName();
+bool SaveNPUModel(const void* om_model_data,
+                  const size_t om_model_size,
+                  const std::string& om_file_path) {
+  std::FILE* fp;
+  fp = std::fopen(om_file_path.c_str(), "wb");
+  if (fp == NULL) {
+    LOG(WARNING) << "[NPU] " << om_file_path << " open failed!";
     return false;
   }
-  if (!ir_build.BuildIRModel(npu_model, om_model_buffer)) {
-    LOG(WARNING) << "[NPU] Failed BuildIRModel: " << npu_model.GetName();
+
+  size_t write_size = std::fwrite(om_model_data, 1, om_model_size, fp);
+  if (write_size != om_model_size) {
+    std::fclose(fp);
+    LOG(WARNING) << "[NPU] Write NPU model failed: " << om_file_path;
     return false;
   }
-  bool ret = BuildNPUClient(om_model_buffer.data, om_model_buffer.length, name);
-  ir_build.ReleaseModelBuff(om_model_buffer);
-  return ret;
-}
-
-bool BuildNPUClient(const string& om_model_file_path, const string& name) {
-  // load om model from file
-  std::ifstream file(om_model_file_path, std::ios::binary);
-  CHECK(file.is_open()) << "[NPU] Unable to open om model file: "
-                        << om_model_file_path;
-  const auto fbegin = file.tellg();
-  file.seekg(0, std::ios::end);
-  const auto fend = file.tellg();
-  size_t om_model_size = fend - fbegin;
-  VLOG(5) << "[NPU] om model file size: " << om_model_size;
-  file.seekg(0, std::ios::beg);
-  std::vector<char> om_model_data(om_model_size);
-  file.read(om_model_data.data(), om_model_size);
-
-  return BuildNPUClient(
-      reinterpret_cast<void*>(om_model_data.data()), om_model_size, name);
+  std::fclose(fp);
+  return true;
 }
 
 bool BuildNPUClient(const void* om_model_data,
                     const size_t om_model_size,
-                    const string& name) {
+                    const std::string& name) {
   std::unique_ptr<hiai::AiModelMngerClient> client(
       new hiai::AiModelMngerClient);
   int ret = client->Init(nullptr);
@@ -99,8 +75,61 @@ bool BuildNPUClient(const void* om_model_data,
   }
 
   DeviceInfo::Global().Insert(name, std::move(client));
-
   return true;
+}
+
+// If build from inputs and outputs will save the npu offline model
+bool BuildNPUClient(std::vector<ge::Operator>& inputs,   // NOLINT
+                    std::vector<ge::Operator>& outputs,  // NOLINT
+                    const std::string& name) {
+  LOG(INFO) << "[NPU] Building Client";
+  ge::Graph npu_subgraph("npu_subgraph" + name);
+  npu_subgraph.SetInputs(inputs).SetOutputs(outputs);
+
+  ge::Model npu_model("model", "npu_model" + name);
+  npu_model.SetGraph(npu_subgraph);
+
+  // compile IR graph and output om model to memory
+  domi::HiaiIrBuild ir_build;
+  domi::ModelBufferData om_model_buffer;
+  if (!ir_build.CreateModelBuff(npu_model, om_model_buffer)) {
+    LOG(WARNING) << "[NPU] Failed CreateModelBuff: " << npu_model.GetName();
+    return false;
+  }
+  if (!ir_build.BuildIRModel(npu_model, om_model_buffer)) {
+    LOG(WARNING) << "[NPU] Failed BuildIRModel: " << npu_model.GetName();
+    return false;
+  }
+
+  if (BuildNPUClient(om_model_buffer.data, om_model_buffer.length, name)) {
+    // save npu offline model
+    if (!SaveNPUModel(om_model_buffer.data, om_model_buffer.length, name)) {
+      LOG(WARNING) << "[NPU] Save model " << name << " failed.";
+    }
+    ir_build.ReleaseModelBuff(om_model_buffer);
+    return true;
+  }
+  return false;
+}
+
+// If build from path will not save the npu offline model
+bool BuildNPUClient(const std::string& om_model_file_path,
+                    const std::string& name) {
+  // load om model from file
+  std::ifstream file(om_model_file_path, std::ios::binary);
+  CHECK(file.is_open()) << "[NPU] Unable to open om model file: "
+                        << om_model_file_path;
+  const auto fbegin = file.tellg();
+  file.seekg(0, std::ios::end);
+  const auto fend = file.tellg();
+  size_t om_model_size = fend - fbegin;
+  VLOG(5) << "[NPU] om model file size: " << om_model_size;
+  file.seekg(0, std::ios::beg);
+  std::vector<char> om_model_data(om_model_size);
+  file.read(om_model_data.data(), om_model_size);
+
+  return BuildNPUClient(
+      reinterpret_cast<void*>(om_model_data.data()), om_model_size, name);
 }
 
 }  // namespace npu
