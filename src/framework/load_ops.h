@@ -127,6 +127,9 @@ LOAD_OP2(transpose2, CPU, GPU_CL);
 #ifdef PRIORBOX_OP
 LOAD_OP2(prior_box, CPU, GPU_CL);
 #endif
+#ifdef DENSITY_PRIORBOX_OP
+LOAD_OP2(density_prior_box, CPU, GPU_CL);
+#endif
 #ifdef FUSION_CONVADDRELU_OP
 LOAD_OP3(fusion_conv_add_relu, CPU, GPU_CL, FPGA);
 LOAD_FUSION_MATCHER(fusion_conv_add_relu);
@@ -158,7 +161,9 @@ LOAD_OP1(prelu, CPU);
 #endif
 #ifdef FLATTEN_OP
 LOAD_OP1(flatten, CPU);
-LOAD_OP1(flatten2, CPU);
+#endif
+#ifdef FLATTEN2_OP
+LOAD_OP2(flatten2, CPU, GPU_CL);
 #endif
 #ifdef FUSION_CONVBNADDRELU_OP
 LOAD_OP3(fusion_conv_bn_add_relu, CPU, GPU_CL, FPGA);
