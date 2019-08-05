@@ -433,10 +433,10 @@ void nearest_interp(const float* src,
                     bool with_align) {
   float scale_w_new = (with_align)
                           ? (static_cast<float>(w_in - 1) / (w_out - 1))
-                          : (static_cast<float>(w_in / w_out));
+                          : (static_cast<float>(w_in) / (w_out));
   float scale_h_new = (with_align)
                           ? (static_cast<float>(h_in - 1) / (h_out - 1))
-                          : (static_cast<float>(h_in / h_out));
+                          : (static_cast<float>(h_in) / (h_out));
 
 #pragma omp parallel for collapse(2) schedule(static)
   for (int h = 0; h < h_out; ++h) {

@@ -53,6 +53,51 @@ void nearest_interp(const float* src,
   }
 }
 
+template <typename dtype>
+void resize_nearest_align(std::vector<const lite::Tensor*> inputs,
+                          lite::Tensor* output,
+                          bool with_align) {
+  int hin = inputs[0]->dims()[2];
+  int win = inputs[0]->dims()[3];
+  int channels = inputs[0]->dims()[1];
+  int num = inputs[0]->dims()[0];
+  int hout = output->dims()[2];
+  int wout = output->dims()[3];
+  dtype scale_w = (with_align) ? (static_cast<float>(win - 1) / (wout - 1))
+                               : (static_cast<float>(win) / (wout));
+  dtype scale_h = (with_align) ? (static_cast<float>(hin - 1) / (hout - 1))
+                               : (static_cast<float>(hin) / (hout));
+  const dtype* src = inputs[0]->data<dtype>();
+  dtype* dst = output->mutable_data<dtype>();
+  int dst_stride_w = 1;
+  int dst_stride_h = wout;
+  int dst_stride_c = wout * hout;
+  int dst_stride_batch = wout * hout * channels;
+  int src_stride_w = 1;
+  int src_stride_h = win;
+  int src_stride_c = win * hin;
+  int src_stride_batch = win * hin * channels;
+  for (int n = 0; n < num; ++n) {
+    for (int c = 0; c < channels; ++c) {
+      int src_index = n * src_stride_batch + c * src_stride_c;
+      for (int h = 0; h < hout; ++h) {
+        for (int w = 0; w < wout; ++w) {
+          dtype fw = scale_w * w + 0.5;
+          fw = (fw < 0) ? 0 : fw;
+          dtype fh = scale_h * h + 0.5;
+          fh = (fh < 0) ? 0 : fh;
+          int w_start = static_cast<int>(fw);
+          int h_start = static_cast<int>(fh);
+          int dst_index = n * dst_stride_batch + c * dst_stride_c +
+                          h * dst_stride_h + w * dst_stride_w;
+          dst[dst_index] =
+              src[src_index + w_start * src_stride_w + h_start * src_stride_h];
+        }
+      }
+    }
+  }
+}
+
 class NearestInterpComputeTester : public arena::TestCase {
  protected:
   // common attributes for this op.
@@ -108,26 +153,7 @@ class NearestInterpComputeTester : public arena::TestCase {
       int c_cout = outputs->dims()[1];
       outputs->Resize({num_cout, c_cout, h_out, w_out});
     }
-    float* dout = outputs->mutable_data<float>();
-    const float* din = inputs[0]->data<float>();
-    int out_num = outputs->dims()[0];
-    int out_c = outputs->dims()[1];
-    int count = out_num * out_c;
-    int in_h = inputs[0]->dims()[2];
-    int in_w = inputs[0]->dims()[3];
-    int out_h = outputs->dims()[2];
-    int out_w = outputs->dims()[3];
-    int spatial_in = in_h * in_w;
-    int spatial_out = out_h * out_w;
-    nearest_interp(din,
-                   in_w,
-                   in_h,
-                   dout,
-                   out_w,
-                   out_h,
-                   1.f / width_scale_,
-                   1.f / height_scale_,
-                   align_corners_);
+    resize_nearest_align(inputs, outputs, align_corners_);
   }
 
   void PrepareOpDesc(cpp::OpDesc* op_desc) {
