@@ -211,9 +211,9 @@ class BilinearInterpComputeTester : public arena::TestCase {
     }
 
     if (align_corners_) {
-      resize_bilinear_align(inputs, outputs);
+      resize_bilinear_align<float>(inputs, outputs);
     } else {
-      resize_bilinear_no_align(inputs, outputs);
+      resize_bilinear_no_align<float>(inputs, outputs);
     }
   }
 
