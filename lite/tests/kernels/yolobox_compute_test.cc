@@ -149,14 +149,14 @@ class YoloBoxComputeTester : public arena::TestCase {
 
     auto anchors_data = anchors.data();
     const float* in_data = in->data<float>();
-    const int* imgsize_data = imgsize->data<int>();
+    float* imgsize_data = imgsize->mutable_data<float>();
     float* boxes_data = boxes->mutable_data<float>();
     float* scores_data = scores->mutable_data<float>();
 
     float box[4];
     for (int i = 0; i < n; i++) {
-      int img_height = imgsize_data[2 * i];
-      int img_width = imgsize_data[2 * i + 1];
+      int img_height = static_cast<int>(imgsize_data[2 * i]);
+      int img_width = static_cast<int>(imgsize_data[2 * i + 1]);
       for (int j = 0; j < an_num; j++) {
         for (int k = 0; k < h; k++) {
           for (int l = 0; l < w; l++) {
