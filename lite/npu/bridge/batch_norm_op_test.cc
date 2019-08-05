@@ -113,17 +113,24 @@ void test_batch_norm(int bs, int ic, int ih, int iw) {
   std::default_random_engine rand_eng;
   std::uniform_real_distribution<float> rand_dist(-5.0f, 5.0f);
   for (int i = 0; i < x->numel(); i++) {
-    float fp32_value = rand_dist(rand_eng);
-    float fp16_value = half2float(float2half(fp32_value));
-    x->mutable_data<float>()[i] = fp16_value;
+    float rand_value = half2float(float2half(rand_dist(rand_eng)));
+    x->mutable_data<float>()[i] = rand_value;
   }
   for (int i = 0; i < scale->numel(); i++) {
-    float fp32_value = rand_dist(rand_eng);
-    float fp16_value = half2float(float2half(fp32_value));
-    scale->mutable_data<float>()[i] = fp16_value;
-    bias->mutable_data<float>()[i] = fp16_value;
-    mean->mutable_data<float>()[i] = fp16_value;
-    variance->mutable_data<float>()[i] = fp16_value;
+    float rand_value = half2float(float2half(rand_dist(rand_eng)));
+    scale->mutable_data<float>()[i] = rand_value;
+  }
+  for (int i = 0; i < bias->numel(); i++) {
+    float rand_value = half2float(float2half(rand_dist(rand_eng)));
+    bias->mutable_data<float>()[i] = rand_value;
+  }
+  for (int i = 0; i < mean->numel(); i++) {
+    float rand_value = half2float(float2half(rand_dist(rand_eng)));
+    mean->mutable_data<float>()[i] = rand_value;
+  }
+  for (int i = 0; i < variance->numel(); i++) {
+    float rand_value = half2float(float2half(rand_dist(rand_eng)));
+    variance->mutable_data<float>()[i] = rand_value;
   }
 
   // create op
@@ -141,19 +148,18 @@ void test_batch_norm(int bs, int ic, int ih, int iw) {
   batch_norm_op_desc.SetAttr("momentum", 0.9f);
   batch_norm_op_desc.SetAttr("data_layout", std::string("NCHW"));
 
-  std::shared_ptr<operators::BatchNormOp> batch_norm_op =
-      std::make_shared<operators::BatchNormOp>("batch_norm");
+  auto batch_norm_op =
+      std::make_shared<operators::BatchNormOp>(batch_norm_op_desc.Type());
   batch_norm_op->SetValidPlaces({Place{TARGET(kHost), PRECISION(kFloat)},
                                  Place{TARGET(kARM), PRECISION(kFloat)}});
-  batch_norm_op->Attach(batch_norm_op_desc, &scope);
-  batch_norm_op->CheckShape();
-  batch_norm_op->InferShape();
+  CHECK(batch_norm_op->Attach(batch_norm_op_desc, &scope));
+  CHECK(batch_norm_op->CheckShape());
+  CHECK(batch_norm_op->InferShape());
 
   // convert op and build IR graph
   ge::TensorDesc x_desc(
       ge::Shape(x->dims().Vectorize()), ge::FORMAT_NCHW, ge::DT_FLOAT);
-  std::shared_ptr<ge::op::Data> x_node =
-      std::make_shared<ge::op::Data>(x_var_name);
+  auto x_node = std::make_shared<ge::op::Data>(x_var_name);
   x_node->update_input_desc_x(x_desc);
   node_map_type inputs_map;
   inputs_map[x_var_name] = x_node;
@@ -174,12 +180,12 @@ void test_batch_norm(int bs, int ic, int ih, int iw) {
   graph_op_desc.SetOutput("Outputs", {out_var_name});
   graph_op_desc.SetAttr("model_name", model_name);
 
-  std::shared_ptr<operators::GraphOpLite> graph_op =
-      std::make_shared<operators::GraphOpLite>("graph_op");
+  auto graph_op =
+      std::make_shared<operators::GraphOpLite>(graph_op_desc.Type());
   graph_op->SetValidPlaces({Place{TARGET(kNPU), PRECISION(kFloat)}});
-  graph_op->Attach(graph_op_desc, &scope);
-  graph_op->CheckShape();
-  graph_op->InferShape();
+  CHECK(graph_op->Attach(graph_op_desc, &scope));
+  CHECK(graph_op->CheckShape());
+  CHECK(graph_op->InferShape());
 
   // create graph op kernel
   auto graph_kernels =
@@ -203,6 +209,10 @@ void test_batch_norm(int bs, int ic, int ih, int iw) {
   for (int i = 0; i < out->numel(); i++) {
     EXPECT_NEAR(out_data[i], out_ref_data[i], 1e-5);
   }
+
+  // release model resources
+  npu::OpList::Global().clear();
+  npu::DeviceInfo::Global().Clear();
 }
 
 TEST(NPUBridges, batch_norm) {

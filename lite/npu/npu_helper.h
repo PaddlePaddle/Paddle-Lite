@@ -43,6 +43,8 @@ class DeviceInfo {
     clients_.emplace(std::make_pair(name, std::move(client)));
   }
 
+  void Clear() { clients_.clear(); }
+
   hiai::AiModelMngerClient* client(const std::string& model_name) const {
     if (clients_.find(model_name) != clients_.end()) {
       return clients_.at(model_name).get();

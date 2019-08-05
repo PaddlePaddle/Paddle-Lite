@@ -37,6 +37,9 @@ node_map_type ScaleConverter(const std::shared_ptr<lite::OpLite> scale_op,
   auto x_var_name = op_info->Input("X").front();
   CHECK(inputs_map.count(x_var_name));
   output_node->set_input_x(*inputs_map.at(x_var_name));
+  OpList::Global().add(inputs_map.at(x_var_name));
+  OpList::Global().add(output_node);
+
   // set attributes
   float scale = op_info->GetAttr<float>("scale");
   float bias = op_info->GetAttr<float>("bias");
@@ -51,11 +54,11 @@ node_map_type ScaleConverter(const std::shared_ptr<lite::OpLite> scale_op,
         scope->FindVar(input_var_name)->GetMutable<lite::Tensor>();
     auto input_shape = input->dims().Vectorize();
     // create bias tensor and build constant node
-    ge::op::Const bias_const_node =
-        ge::op::Const(UniqueName("bias"))
-            .set_attr_value(CreateTensorAndFillData(bias, input_shape));
-    output_node->set_input_bias(bias_const_node);
+    auto bias_const_node = std::make_shared<ge::op::Const>(UniqueName("bias"));
+    bias_const_node->set_attr_value(CreateTensorAndFillData(bias, input_shape));
+    output_node->set_input_bias(*bias_const_node);
     output_node->set_attr_has_bias_value(true);
+    OpList::Global().add(bias_const_node);
   }
   output_node->set_attr_filler_type("constant");
   output_node->set_attr_filler_value(scale);
