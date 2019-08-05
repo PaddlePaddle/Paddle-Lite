@@ -71,8 +71,7 @@ void test_relu(int bs, int ic, int ih, int iw) {
   act_op_desc.SetInput("X", {x_var_name});
   act_op_desc.SetOutput("Out", {out_var_name});
 
-  std::shared_ptr<operators::ReluOp> act_op =
-      std::make_shared<operators::ReluOp>(act_op_desc.Type());
+  auto act_op = std::make_shared<operators::ReluOp>(act_op_desc.Type());
   act_op->SetValidPlaces({Place{TARGET(kHost), PRECISION(kFloat)},
                           Place{TARGET(kARM), PRECISION(kFloat)}});
   act_op->Attach(act_op_desc, &scope);
@@ -82,8 +81,7 @@ void test_relu(int bs, int ic, int ih, int iw) {
   // convert act op and build IR graph
   ge::TensorDesc x_desc(
       ge::Shape(x->dims().Vectorize()), ge::FORMAT_NCHW, ge::DT_FLOAT);
-  std::shared_ptr<ge::op::Data> x_node =
-      std::make_shared<ge::op::Data>(x_var_name);
+  auto x_node = std::make_shared<ge::op::Data>(x_var_name);
   x_node->update_input_desc_x(x_desc);
   node_map_type inputs_map;
   inputs_map[x_var_name] = x_node;
@@ -104,12 +102,12 @@ void test_relu(int bs, int ic, int ih, int iw) {
   graph_op_desc.SetOutput("Outputs", {out_var_name});
   graph_op_desc.SetAttr("model_name", model_name);
 
-  std::shared_ptr<operators::GraphOpLite> graph_op =
+  auto graph_op =
       std::make_shared<operators::GraphOpLite>(graph_op_desc.Type());
   graph_op->SetValidPlaces({Place{TARGET(kNPU), PRECISION(kFloat)}});
-  graph_op->Attach(graph_op_desc, &scope);
-  graph_op->CheckShape();
-  graph_op->InferShape();
+  CHECK(graph_op->Attach(graph_op_desc, &scope));
+  CHECK(graph_op->CheckShape());
+  CHECK(graph_op->InferShape());
 
   // create graph op kernel
   auto graph_kernels =
@@ -133,13 +131,17 @@ void test_relu(int bs, int ic, int ih, int iw) {
   for (int i = 0; i < out->dims().production(); i++) {
     EXPECT_NEAR(out_data[i], out_ref_data[i], 1e-5);
   }
+
+  // release model resources
+  npu::OpList::Global().clear();
+  npu::DeviceInfo::Global().Clear();
 }
 
 TEST(NPUBridges, relu) {
-  for (auto bs : {3}) {
-    for (auto ic : {7}) {
-      for (auto ih : {2}) {
-        for (auto iw : {4}) {
+  for (auto bs : {1, 3}) {
+    for (auto ic : {2, 4, 7}) {
+      for (auto ih : {1, 4, 9}) {
+        for (auto iw : {1, 4, 9}) {
           test_relu(bs, ic, ih, iw);
         }
       }
