@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/arm/yolobox_compute.h"
+#include "lite/kernels/arm/yolo_box_compute.h"
 #include <vector>
 #include "lite/arm/math/funcs.h"
 #include "lite/core/tensor.h"

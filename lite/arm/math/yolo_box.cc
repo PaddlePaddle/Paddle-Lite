@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/arm/math/yolobox.h"
+#include "lite/arm/math/yolo_box.h"
 #include "lite/arm/math/funcs.h"
 
 namespace paddle {

@@ -79,7 +79,7 @@ if (NOT HAS_ARM_MATH_LIB_DIR)
       split.cc
       shuffle_channel.cc
       activation.cc
-      yolobox.cc
+      yolo_box.cc
       dropout.cc
       gemm_prepacked_int8.cc
       gemv_arm_int8.cc

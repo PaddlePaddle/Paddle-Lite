@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/operators/yolobox_op.h"
+#include "lite/operators/yolo_box_op.h"
 #include <vector>
 #include "lite/core/op_lite.h"
 #include "lite/core/op_registry.h"

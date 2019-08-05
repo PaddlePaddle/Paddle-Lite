@@ -26,7 +26,7 @@ lite_cc_library(sgd_op SRCS sgd_op.cc DEPS ${op_DEPS})
 lite_cc_library(uniform_random_op SRCS uniform_random_op.cc DEPS ${op_DEPS})
 lite_cc_library(power_op SRCS power_op.cc DEPS ${op_DEPS})
 lite_cc_library(shuffle_channel_op SRCS shuffle_channel_op.cc DEPS ${op_DEPS})
-lite_cc_library(yolobox_op SRCS yolobox_op.cc DEPS ${op_DEPS})
+lite_cc_library(yolo_box_op SRCS yolo_box_op.cc DEPS ${op_DEPS})
 lite_cc_library(interpolate_op SRCS interpolate_op.cc DEPS ${op_DEPS})
 lite_cc_library(argmax_op SRCS argmax_op.cc DEPS ${op_DEPS})
 lite_cc_library(axpy_op SRCS axpy_op.cc DEPS ${op_DEPS})
@@ -119,7 +119,7 @@ set(ops
         sgd_op
         uniform_random_op
         power_op
-        yolobox_op
+        yolo_box_op
         shuffle_channel_op
         argmax_op
         axpy_op

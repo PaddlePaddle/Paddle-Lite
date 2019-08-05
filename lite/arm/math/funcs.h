@@ -57,7 +57,7 @@
 #include "lite/arm/math/softmax.h"
 #include "lite/arm/math/split.h"
 #include "lite/arm/math/topk.h"
-#include "lite/arm/math/yolobox.h"
+#include "lite/arm/math/yolo_box.h"
 namespace paddle {
 namespace lite {
 namespace arm {

@@ -27,7 +27,7 @@ lite_cc_library(dropout_compute_arm SRCS dropout_compute.cc DEPS ${lite_kernel_d
 lite_cc_library(calib_compute_arm SRCS calib_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(transpose_compute_arm SRCS transpose_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(power_compute_arm SRCS power_compute.cc DEPS ${lite_kernel_deps} math_arm)
-lite_cc_library(yolobox_compute_arm SRCS yolobox_compute.cc DEPS ${lite_kernel_deps} math_arm)
+lite_cc_library(yolo_box_compute_arm SRCS yolo_box_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(shuffle_channel_compute_arm SRCS shuffle_channel_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(argmax_compute_arm SRCS argmax_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(axpy_compute_arm SRCS axpy_compute.cc DEPS ${lite_kernel_deps} math_arm)
@@ -112,7 +112,7 @@ set(arm_kernels
     norm_compute_arm
     power_compute_arm
     shuffle_channel_compute_arm
-    yolobox_compute_arm
+    yolo_box_compute_arm
     interpolate_compute_arm
     logical_compute_arm
     compare_compute_arm
