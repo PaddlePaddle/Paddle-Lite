@@ -22,17 +22,18 @@
 namespace paddle {
 namespace lite {
 
-void Predictor::SaveModel(const std::string &dir, LiteModelType model_type) {
+void Predictor::SaveModel(const std::string &dir,
+                          lite_api::LiteModelType model_type) {
   if (!program_) {
     GenRuntimeProgram();
   }
   program_->SaveOpInfosToProgram(&program_desc_);
   LOG(INFO) << "Save model to " << dir;
   switch (model_type) {
-    case LiteModelType::kProtobuf:
+    case lite_api::LiteModelType::kProtobuf:
       SaveModelPb(dir, *program_->exec_scope(), program_desc_);
       break;
-    case LiteModelType::kNaiveBuffer:
+    case lite_api::LiteModelType::kNaiveBuffer:
       SaveModelNaive(dir, *program_->exec_scope(), program_desc_);
       break;
     default:
@@ -67,13 +68,13 @@ void Predictor::Build(const std::string &model_path,
                       const Place &prefer_place,
                       const std::vector<Place> &valid_places,
                       const std::vector<std::string> &passes,
-                      LiteModelType model_type) {
+                      lite_api::LiteModelType model_type) {
   LOG(INFO) << "Load model from " << model_path;
   switch (model_type) {
-    case LiteModelType::kProtobuf:
+    case lite_api::LiteModelType::kProtobuf:
       LoadModelPb(model_path, scope_.get(), &program_desc_);
       break;
-    case LiteModelType::kNaiveBuffer:
+    case lite_api::LiteModelType::kNaiveBuffer:
       LoadModelNaive(model_path, scope_.get(), &program_desc_);
       break;
     default:

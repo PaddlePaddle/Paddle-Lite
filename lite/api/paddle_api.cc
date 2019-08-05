@@ -54,8 +54,9 @@ shape_t Tensor::shape() const {
   return ctensor(raw_tensor_)->dims().Vectorize();
 }
 
-void PaddlePredictor::SaveOptimizedModel(const std::string &model_dir) {
-  LOG(ERROR)
+void PaddlePredictor::SaveOptimizedModel(const std::string &model_dir,
+                                         LiteModelType model_type) {
+  LOG(FATAL)
       << "The SaveOptimizedModel API is only supported by CxxConfig predictor.";
 }
 

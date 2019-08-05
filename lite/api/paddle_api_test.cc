@@ -54,12 +54,14 @@ TEST(CxxApi, run) {
   EXPECT_NEAR(out[1], -28.8729, 1e-3);
 
   predictor->SaveOptimizedModel(FLAGS_model_dir + ".opt2");
+  predictor->SaveOptimizedModel(FLAGS_model_dir + ".opt2.naive",
+                                LiteModelType::kNaiveBuffer);
 }
 
 #ifdef LITE_WITH_LIGHT_WEIGHT_FRAMEWORK
 TEST(LightApi, run) {
   lite_api::MobileConfig config;
-  config.set_model_dir(FLAGS_model_dir + ".opt2");
+  config.set_model_dir(FLAGS_model_dir + ".opt2.naive");
 
   auto predictor = lite_api::CreatePaddlePredictor(config);
 

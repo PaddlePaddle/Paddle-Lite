@@ -687,7 +687,6 @@ function build_test_arm {
 }
 
 function build_test_npu {
-    ########################################################################
     local test_name=$1
     local port_armv8=5554
     local port_armv7=5556
@@ -718,6 +717,38 @@ function build_test_npu {
     # just test the model on armv8
     # adb devices | grep emulator | cut -f1 | while read line; do adb -s $line emu kill; done
     echo "Done"
+}
+
+function mobile_publish {
+    # only check os=android abi=armv8 lang=gcc now
+    local os=android
+    local abi=armv8
+    local lang=gcc
+
+    # Install java sdk tmp, remove this when Dockerfile.mobile update
+    apt-get install -y --no-install-recommends default-jdk
+
+    cur_dir=$(pwd)
+    build_dir=$cur_dir/build.lite.${os}.${abi}.${lang}
+    mkdir -p $build_dir
+    cd $build_dir
+
+    cmake .. \
+        -DWITH_GPU=OFF \
+        -DWITH_MKL=OFF \
+        -DWITH_LITE=ON \
+        -DLITE_WITH_CUDA=OFF \
+        -DLITE_WITH_X86=OFF \
+        -DLITE_WITH_ARM=ON \
+        -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
+        -DWITH_TESTING=OFF \
+        -DLITE_WITH_JAVA=ON \
+        -DLITE_SHUTDOWN_LOG=ON \
+        -DLITE_ON_TINY_PUBLISH=ON \
+        -DARM_TARGET_OS=${os} -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
+
+    make publish_inference -j$NUM_CORES_FOR_COMPILE
+    cd - > /dev/null
 }
 
 ############################# MAIN #################################
@@ -866,6 +897,10 @@ function main {
                 ;;
             check_need_ci)
                 check_need_ci
+                shift
+                ;;
+            mobile_publish)
+                mobile_publish
                 shift
                 ;;
             *)

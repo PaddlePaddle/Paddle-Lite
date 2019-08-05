@@ -22,6 +22,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include "lite/api/paddle_api.h"
 #include "lite/core/context.h"
 #include "lite/core/program.h"
 #include "lite/core/tensor.h"
@@ -37,8 +38,9 @@ namespace lite {
  */
 class LITE_API LightPredictor {
  public:
-  explicit LightPredictor(const std::string& model_dir,
-                          LiteModelType model_type = LiteModelType::kProtobuf);
+  explicit LightPredictor(
+      const std::string& model_dir,
+      lite_api::LiteModelType model_type = lite_api::LiteModelType::kProtobuf);
 
   void Run() { program_->Run(); }
 
@@ -54,8 +56,9 @@ class LITE_API LightPredictor {
   }
 
  private:
-  void Build(const std::string& model_dir,
-             LiteModelType model_type = LiteModelType::kProtobuf);
+  void Build(
+      const std::string& model_dir,
+      lite_api::LiteModelType model_type = lite_api::LiteModelType::kProtobuf);
   void BuildRuntimeProgram(const cpp::ProgramDesc& prog);
 
  private:

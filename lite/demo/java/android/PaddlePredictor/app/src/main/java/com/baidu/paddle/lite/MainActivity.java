@@ -11,7 +11,6 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Date;
-import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -21,32 +20,32 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         String textOutput = "";
-        ArrayList<Tensor> output;
-        output = setInputAndRunNaiveModel("lite_naive_model", this);
-        textOutput += "lite_naive_model output: " + output.get(0).getFloatData()[0] + ", "
-                + output.get(1).getFloatData()[1] + "\n";
+        Tensor output;
+        output = setInputAndRunNaiveModel("lite_naive_model_opt.nb", this);
+        textOutput += "lite_naive_model output: " + output.getFloatData()[0] + ", "
+                + output.getFloatData()[1] + "\n";
         textOutput += "expected: 50.2132, -28.8729\n";
 
         Date start = new Date();
-        output = setInputAndRunImageModel("inception_v4_simple", this);
+        output = setInputAndRunImageModel("inception_v4_simple_opt.nb", this);
         Date end = new Date();
         textOutput += "\ninception_v4_simple test: " + testInceptionV4Simple(output) + "\n";
         textOutput += "time: " + (end.getTime() - start.getTime()) + " ms\n";
 
         start = new Date();
-        output = setInputAndRunImageModel("resnet50", this);
+        output = setInputAndRunImageModel("resnet50_opt.nb", this);
         end = new Date();
         textOutput += "\nresnet50 test: " + testResnet50(output) + "\n";
         textOutput += "time: " + (end.getTime() - start.getTime()) + " ms\n";
 
         start = new Date();
-        output = setInputAndRunImageModel("mobilenet_v1", this);
+        output = setInputAndRunImageModel("mobilenet_v1_opt.nb", this);
         end = new Date();
         textOutput += "\nmobilenet_v1 test: " + testMobileNetV1(output) + "\n";
         textOutput += "time: " + (end.getTime() - start.getTime()) + " ms\n";
 
         start = new Date();
-        output = setInputAndRunImageModel("mobilenet_v2_relu", this);
+        output = setInputAndRunImageModel("mobilenet_v2_relu_opt.nb", this);
         end = new Date();
         textOutput += "\nmobilenet_v2 test: " + testMobileNetV2Relu(output) + "\n";
         textOutput += "time: " + (end.getTime() - start.getTime()) + " ms\n";
@@ -87,54 +86,25 @@ public class MainActivity extends AppCompatActivity {
         return desDir.getPath();
     }
 
-    public static ArrayList<Tensor> runModel(String modelName, long[] dims, float[] inputBuffer, Context context) {
+    public static Tensor runModel(String modelName, long[] dims, float[] inputBuffer, Context context) {
         String modelPath = copyFromAssetsToCache(modelName, context);
 
-        // Cxx Model
-        Place[] validPlaces = new Place[2];
-        validPlaces[0] = new Place(Place.TargetType.X86, Place.PrecisionType.FLOAT);
-        validPlaces[1] = new Place(Place.TargetType.ARM, Place.PrecisionType.FLOAT);
-        Place preferredPlace = validPlaces[1];
-
-        CxxConfig cxxConfig = new CxxConfig();
-        cxxConfig.setModelDir(modelPath);
-        cxxConfig.setPreferredPlace(preferredPlace);
-        cxxConfig.setValidPlaces(validPlaces);
-
-        PaddlePredictor predictor = PaddlePredictor.createPaddlePredictor(cxxConfig);
+        MobileConfig config = new MobileConfig();
+        config.setModelDir(modelPath);
+        PaddlePredictor predictor = PaddlePredictor.createPaddlePredictor(config);
 
         Tensor input = predictor.getInput(0);
         input.resize(dims);
         input.setData(inputBuffer);
-
-        predictor.run();
-        Tensor cxxOutput = predictor.getOutput(0);
-
-        String optimizedModelPath = modelPath + ".opt";
-        if (!new File(optimizedModelPath).exists()) {
-            predictor.saveOptimizedModel(optimizedModelPath);
-        }
-
-        // Mobile Model
-        MobileConfig mobileConfig = new MobileConfig();
-        mobileConfig.setModelDir(optimizedModelPath);
-        predictor = PaddlePredictor.createPaddlePredictor(mobileConfig);
-
-        input = predictor.getInput(0);
-        input.resize(dims);
-        input.setData(inputBuffer);
         predictor.run();
 
-        Tensor mobileOutput = predictor.getOutput(0);
+        Tensor output = predictor.getOutput(0);
 
-        ArrayList<Tensor> result = new ArrayList<>();
-        result.add(cxxOutput);
-        result.add(mobileOutput);
-        return result;
+        return output;
     }
 
 
-    public static ArrayList<Tensor> setInputAndRunNaiveModel(String modelName, Context context) {
+    public static Tensor setInputAndRunNaiveModel(String modelName, Context context) {
         long[] dims = {100, 100};
         float[] inputBuffer = new float[10000];
         for (int i = 0; i < 10000; ++i) {
@@ -149,7 +119,7 @@ public class MainActivity extends AppCompatActivity {
      * @param modelName
      * @return
      */
-    public static ArrayList<Tensor> setInputAndRunImageModel(String modelName, Context context) {
+    public static Tensor setInputAndRunImageModel(String modelName, Context context) {
         long[] dims = {1, 3, 224, 224};
         int item_size = 3 * 224 * 224;
         float[] inputBuffer = new float[item_size];
@@ -163,39 +133,27 @@ public class MainActivity extends AppCompatActivity {
         return a >= b - delta && a <= b + delta;
     }
 
-    public boolean expectedResult(float[] expected, ArrayList<Tensor> result) {
-        if (result.size() != 2) {
-            return false;
-        }
+    public boolean expectedResult(float[] expected, Tensor result) {
         if (expected.length != 20) {
             return false;
         }
 
-        Tensor tensor = result.get(0);
-        Tensor tensor1 = result.get(1);
+        long[] shape = result.shape();
 
-        long[] shape = tensor.shape();
-        long[] shape1 = tensor1.shape();
-
-        if (shape.length != 2 || shape1.length != 2) {
+        if (shape.length != 2) {
             return false;
         }
 
-        if (shape[0] != 1 || shape1[0] != 1 || shape[1] != 1000 || shape1[1] != 1000) {
+        if (shape[0] != 1 || shape[1] != 1000) {
             return false;
         }
 
-        float[] output = tensor.getFloatData();
-        float[] output1 = tensor.getFloatData();
+        float[] output = result.getFloatData();
 
-        if (output.length != output1.length || output.length != 1000) {
+        if (output.length != 1000) {
             return false;
         }
-        for (int i = 0; i < output.length; ++i) {
-            if (!equalsNear(output[i], output1[i], 1e-6f)) {
-                return false;
-            }
-        }
+
         int step = 50;
         for (int i = 0; i < expected.length; ++i) {
             if (!equalsNear(output[i * step], expected[i], 1e-6f)) {
@@ -206,7 +164,7 @@ public class MainActivity extends AppCompatActivity {
         return true;
     }
 
-    public boolean testInceptionV4Simple(ArrayList<Tensor> output) {
+    public boolean testInceptionV4Simple(Tensor output) {
         float[] expected = {0.0011684548f, 0.0010390386f, 0.0011301535f, 0.0010133048f,
                 0.0010259597f, 0.0010982729f, 0.00093195855f, 0.0009141837f,
                 0.00096620916f, 0.00089982944f, 0.0010064574f, 0.0010474789f,
@@ -215,7 +173,7 @@ public class MainActivity extends AppCompatActivity {
         return expectedResult(expected, output);
     }
 
-    public boolean testResnet50(ArrayList<Tensor> output) {
+    public boolean testResnet50(Tensor output) {
         float[] expected = {0.00024139918f, 0.00020566184f, 0.00022418296f, 0.00041731037f,
                 0.0005366107f, 0.00016948722f, 0.00028638865f, 0.0009257241f,
                 0.00072681636f, 8.531815e-05f, 0.0002129998f, 0.0021168243f,
@@ -224,7 +182,7 @@ public class MainActivity extends AppCompatActivity {
         return expectedResult(expected, output);
     }
 
-    public boolean testMobileNetV1(ArrayList<Tensor> output) {
+    public boolean testMobileNetV1(Tensor output) {
         float[] expected = {0.00019130898f, 9.467885e-05f, 0.00015971427f, 0.0003650665f,
                 0.00026431272f, 0.00060884043f, 0.0002107942f, 0.0015819625f,
                 0.0010323516f, 0.00010079765f, 0.00011006987f, 0.0017364529f,
@@ -233,7 +191,7 @@ public class MainActivity extends AppCompatActivity {
         return expectedResult(expected, output);
     }
 
-    public boolean testMobileNetV2Relu(ArrayList<Tensor> output) {
+    public boolean testMobileNetV2Relu(Tensor output) {
         float[] expected = {0.00017082224f, 5.699624e-05f, 0.000260885f, 0.00016412718f,
                 0.00034818667f, 0.00015230637f, 0.00032959113f, 0.0014772735f,
                 0.0009059976f, 9.5378724e-05f, 5.386537e-05f, 0.0006427285f,
