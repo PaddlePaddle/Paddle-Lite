@@ -92,13 +92,14 @@ void resize_bilinear_no_align(std::vector<const lite::Tensor*> inputs,
   int num = inputs[0]->dims()[0];
   int hout = output->dims()[2];
   int wout = output->dims()[3];
-  dtype scale_w = static_cast<dtype> win / wout;
-  dtype scale_h = static_cast<dtype> hin / hout;
+  dtype scale_w = static_cast<dtype>(win) / (wout);
+  dtype scale_h = static_cast<dtype>(hin) / (hout);
   const dtype* src = inputs[0]->data<dtype>();
   dtype* dst = output->mutable_data<dtype>();
   int dst_stride_w = 1;
   int dst_stride_h = wout;
-  int dst_stride_c = wout* hout int dst_stride_batch = wout * hout * channels;
+  int dst_stride_c = wout * hout;
+  int dst_stride_batch = wout * hout * channels;
   int src_stride_w = 1;
   int src_stride_h = win;
   int src_stride_c = win * hin;
