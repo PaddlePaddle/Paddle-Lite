@@ -39,11 +39,12 @@ class LITE_API Predictor {
       : scope_(root_scope) {}
 
   // Build from a model, with places set for hardware config.
-  void Build(const std::string& model_path,
-             const Place& prefer_place,
-             const std::vector<Place>& valid_places,
-             const std::vector<std::string>& passes = {},
-             LiteModelType model_type = LiteModelType::kProtobuf);
+  void Build(
+      const std::string& model_path,
+      const Place& prefer_place,
+      const std::vector<Place>& valid_places,
+      const std::vector<std::string>& passes = {},
+      lite_api::LiteModelType model_type = lite_api::LiteModelType::kProtobuf);
 
   void Build(const cpp::ProgramDesc& desc,
              const Place& prefer_place,
@@ -73,8 +74,9 @@ class LITE_API Predictor {
   const RuntimeProgram& runtime_program() const;
 
   // This method is disabled in mobile, for unnecessary dependencies required.
-  void SaveModel(const std::string& dir,
-                 LiteModelType model_type = LiteModelType::kProtobuf);
+  void SaveModel(
+      const std::string& dir,
+      lite_api::LiteModelType model_type = lite_api::LiteModelType::kProtobuf);
 
 #ifdef LITE_WITH_TRAIN
   void Run(const std::vector<framework::Tensor>& tensors) {

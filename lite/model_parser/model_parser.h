@@ -30,8 +30,6 @@
 namespace paddle {
 namespace lite {
 
-enum class LiteModelType { kProtobuf = 0, kNaiveBuffer, UNK };
-
 #ifndef LITE_ON_TINY_PUBLISH
 // Read a __model__ file.
 std::unique_ptr<framework::proto::ProgramDesc> LoadProgram(

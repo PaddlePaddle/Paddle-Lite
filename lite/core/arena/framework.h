@@ -166,7 +166,6 @@ class Arena {
     bool success = true;
     for (auto& out : tester_->op_desc().OutputArgumentNames()) {
       for (auto& var : tester_->op_desc().Output(out)) {
-        LOG(INFO) << "Testing var " << out;
         success = success && CompareTensor(out, var);
       }
     }

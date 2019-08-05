@@ -39,12 +39,9 @@ class LightPredictorImpl : public PaddlePredictor {
 };
 
 void LightPredictorImpl::Init(const MobileConfig& config) {
-#ifdef LITE_ON_TINY_PUBLISH
-  raw_predictor_.reset(new lite::LightPredictor(
-      config.model_dir(), lite::LiteModelType::kNaiveBuffer));
-#else
-  raw_predictor_.reset(new lite::LightPredictor(config.model_dir()));
-#endif
+  // LightPredictor Only support NaiveBuffer backend in publish lib
+  raw_predictor_.reset(new lite::LightPredictor(config.model_dir(),
+                                                LiteModelType::kNaiveBuffer));
 }
 
 std::unique_ptr<Tensor> LightPredictorImpl::GetInput(int i) {

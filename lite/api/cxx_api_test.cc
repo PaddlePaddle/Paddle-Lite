@@ -49,9 +49,10 @@ TEST(CXXApi, save_model) {
       FLAGS_model_dir, Place{TARGET(kCUDA), PRECISION(kFloat)}, valid_places);
 
   LOG(INFO) << "Save optimized model to " << FLAGS_optimized_model;
-  predictor.SaveModel(FLAGS_optimized_model, LiteModelType::kProtobuf);
+  predictor.SaveModel(FLAGS_optimized_model,
+                      lite_api::LiteModelType::kProtobuf);
   predictor.SaveModel(FLAGS_optimized_model + ".naive",
-                      LiteModelType::kNaiveBuffer);
+                      lite_api::LiteModelType::kNaiveBuffer);
 }
 
 /*TEST(CXXTrainer, train) {
@@ -98,7 +99,7 @@ TEST(CXXApi, save_model) {
   LOG(INFO) << "Save optimized model to " << FLAGS_optimized_model;
   predictor.SaveModel(FLAGS_optimized_model);
   predictor.SaveModel(FLAGS_optimized_model + ".naive",
-                      LiteModelType::kNaiveBuffer);
+                      lite_api::LiteModelType::kNaiveBuffer);
 }
 
 TEST(CXXApi, load_model_naive) {
@@ -109,7 +110,7 @@ TEST(CXXApi, load_model_naive) {
                   Place{TARGET(kARM), PRECISION(kFloat)},
                   valid_places,
                   {},
-                  LiteModelType::kNaiveBuffer);
+                  lite_api::LiteModelType::kNaiveBuffer);
 
   auto* input_tensor = predictor.GetInput(0);
   input_tensor->Resize(std::vector<int64_t>({1, 100}));

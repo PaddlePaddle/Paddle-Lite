@@ -29,6 +29,8 @@ namespace lite_api {
 
 using shape_t = std::vector<int64_t>;
 
+enum class LiteModelType { kProtobuf = 0, kNaiveBuffer, UNK };
+
 struct LITE_API Tensor {
   explicit Tensor(void* raw);
   explicit Tensor(const void* raw);
@@ -69,7 +71,9 @@ class LITE_API PaddlePredictor {
 
   /// Persist the optimized model to disk. This API is only supported by
   /// CxxConfig, and the persisted model can be reused for MobileConfig.
-  virtual void SaveOptimizedModel(const std::string& model_dir);
+  virtual void SaveOptimizedModel(
+      const std::string& model_dir,
+      LiteModelType model_type = LiteModelType::kProtobuf);
 
   virtual ~PaddlePredictor() = default;
 };
