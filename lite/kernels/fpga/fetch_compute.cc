@@ -20,18 +20,18 @@ namespace lite {
 namespace kernels {
 namespace fpga {
 
+using float16 = zynqmp::float16;
+
 void FetchCompute::PrepareForRun() {
   auto& param = this->Param<param_t>();
   // ====================================================
   zynqmp::OutputParam& conv_param = pe_.param();
 
   Tensor& out = param.fetch_list->at(param.col);
+  out->mutable_data<float16>();
 
-  input_.share_from_tensorlite(*param.input);
-  output_.share_from_tensorlite(out);
-
-  conv_param.input = &input_;
-  conv_param.output = &output_;
+  conv_param.input = param.input->ZynqTensor();
+  conv_param.output = out->ZynqTensor();
 
   pe_.init();
   pe_.apply();

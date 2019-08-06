@@ -23,21 +23,24 @@ namespace lite {
 namespace kernels {
 namespace fpga {
 
+using float16 = zynqmp::float16;
+
 void PoolCompute::PrepareForRun() {
+  std::cout << "Pool PrepareForRun \n";
   zynqmp::PoolingParam& pool_param = pe_.param();
   auto& param = Param<operators::PoolParam>();
 
-  input_.share_from_tensorlite(*param.x);
-  output_.share_from_tensorlite(*param.output);
-  pool_param.input = &input_;
-  pool_param.output = &output_;
-  pool_param.relu.enabled = false;
+  param.output->mutable_data<float16>();
 
-  LOG(ERROR) << input_;
+  pool_param.input = param.x->ZynqTensor();
+  pool_param.output = param.output->ZynqTensor();
+  pool_param.relu.enabled = false;
+  std::cout << "after share y \n";
+  // LOG(ERROR) << input_;
 
   auto& in_dims = param.x->dims();
   auto& out_dims = param.output->dims();
-
+  std::cout << "1 \n";
   //   bool exclusive = param.exclusive;
   //   bool adaptive = param.adaptive;
   //   bool ceil_mode = param.ceil_mode;
@@ -50,8 +53,9 @@ void PoolCompute::PrepareForRun() {
   pool_param.kernelSize = param.ksize;
   pool_param.strides = param.strides;
   pool_param.paddings = param.paddings;
-
+  std::cout << "before init \n";
   pe_.init();
+  std::cout << "before apply \n";
   pe_.apply();
   LOG(ERROR) << "init succes";
 }
@@ -59,7 +63,7 @@ void PoolCompute::PrepareForRun() {
 void PoolCompute::Run() {
   LOG(ERROR) << "Run";
   pe_.dispatch();
-  LOG(ERROR) << output_;
+  // LOG(ERROR) << output_;
 }
 
 }  // namespace fpga

@@ -21,21 +21,20 @@ namespace lite {
 namespace kernels {
 namespace fpga {
 
+using float16 = zynqmp::float16;
+
 void FcCompute::PrepareForRun() {
   auto& param = this->Param<param_t>();
 
   // ====================================================
   zynqmp::FullyConnectedParam& fc_param = pe_.param();
 
-  input_.share_from_tensorlite(*param.input);
-  output_.share_from_tensorlite(*param.output);
-  filter_.share_from_tensorlite(*param.w);
-  bias_.share_from_tensorlite(*param.bias);
+  param.output->mutable_data<float16>();
 
-  fc_param.input = &input_;
-  fc_param.output = &output_;
-  fc_param.filter = &filter_;
-  fc_param.bias = &bias_;
+  fc_param.input = param.input->ZynqTensor();
+  fc_param.output = param.output->ZynqTensor();
+  fc_param.filter = param.w->ZynqTensor();
+  fc_param.bias = param.bias->ZynqTensor();
 
   // std::vector<int> kernelSize;
   pe_.init();

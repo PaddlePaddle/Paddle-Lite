@@ -21,6 +21,8 @@ namespace lite {
 namespace kernels {
 namespace fpga {
 
+using float16 = zynqmp::float16;
+
 void ConvCompute::PrepareForRun() {
   auto& param = this->Param<param_t>();
 
@@ -28,26 +30,27 @@ void ConvCompute::PrepareForRun() {
   zynqmp::ConvParam& conv_param = pe_.param();
   // auto& param = Param<operators::ConvParam>();
 
-  input_.share_from_tensorlite(*param.x);
-  output_.share_from_tensorlite(*param.output);
-  filter_.share_from_tensorlite(*param.filter);
+  param.output->mutable_data<float16>();
 
-  conv_param.input = &input_;
-  conv_param.output = &output_;
-  conv_param.filter = &filter_;
+  filter_.setDataType(zynqmp::FP32);
+  conv_param.input = param.x->ZynqTensor();
+  conv_param.output = param.output->ZynqTensor();
+  conv_param.filter = param.filter->ZynqTensor();
   conv_param.groups = param.groups;
   conv_param.strides = param.strides;
   conv_param.paddings = param.paddings;
   conv_param.dilations = param.dilations;
-
+  fill_scale_bias_const(&conv_param);
   // std::vector<int> kernelSize;
   pe_.init();
   pe_.apply();
 }
 
 void ConvCompute::Run() {
+  std::cout << "Conv Run \n";
   auto& param = this->Param<param_t>();
   pe_.dispatch();
+  std::cout << "after dispatch\n";
 }
 
 }  // namespace fpga

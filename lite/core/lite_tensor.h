@@ -14,14 +14,6 @@
 
 #pragma once
 
-#ifdef LITE_WITH_FPGA
-#include "lite/core/lite_tensor.h"
-#endif
-
-#ifndef LITE_WITH_FPGA
-
-
-
 #include <algorithm>
 #include <functional>  // for multiplies
 #include <memory>
@@ -30,6 +22,7 @@
 #include <vector>
 
 #include "lite/core/memory.h"
+#include "lite/fpga/KD/tensor.hpp"
 
 namespace paddle {
 namespace lite {
@@ -116,7 +109,9 @@ class TensorLite {
     return static_cast<const R *>(buffer_->data());
   }
 
-  void Resize(const DDimLite &ddim) { dims_ = ddim; }
+  void Resize(const DDimLite &ddim) {
+    dims_ = ddim;
+  }
   void Resize(const std::vector<int64_t> &x) { dims_ = DDimLite(x); }
 
   const DDimLite &dims() const { return dims_; }
@@ -156,6 +151,10 @@ class TensorLite {
 
   TargetType target() const { return target_; }
 
+  zynqmp::Tensor* ZynqTensor() const {
+    return zynq_tensor_;
+  }
+
   friend std::ostream &operator<<(std::ostream &os, const TensorLite &tensor) {
     os << "Tensor:" << '\n';
     os << "dim: " << tensor.dims() << '\n';
@@ -172,21 +171,55 @@ class TensorLite {
   std::shared_ptr<Buffer> buffer_;
   LoD lod_;
   size_t memory_size_{};
+
+  zynqmp::Tensor* zynq_tensor_ = new zynqmp::Tensor();
+
+  template <typename T>
+  void mutable_data_internal();
 };
 
 template <typename T, typename R>
 R *TensorLite::mutable_data() {
-  memory_size_ = dims_.production() * sizeof(T);
-  buffer_->ResetLazy(target_, memory_size_);
-  return static_cast<R *>(buffer_->data());
+  std::vector<int> v;
+  for (int i = 0; i < dims_.size(); i++) {
+    v.push_back(dims_[i]);
+  }
+  zynqmp::LayoutType layout_type = zynqmp::NCHW;
+  switch (v.size()) {
+    case 1:
+      layout_type = zynqmp::N;
+      break;
+    case 2:
+      layout_type = zynqmp::NC;
+      break;
+    case 3:
+      layout_type = zynqmp::NHW;
+      break;
+    case 4:
+      layout_type = zynqmp::NCHW;
+      break;
+  }
+  zynqmp::Shape input_shape(layout_type, v);
+
+  zynqmp::DataType data_type = zynqmp::FP32;
+  if (typeid(T) == typeid(float)) {
+    data_type = zynqmp::FP32;
+  }
+  if (typeid(T) == typeid(zynqmp::float16)) {
+    data_type = zynqmp::FP16;
+  }
+  zynq_tensor_->mutableData<float>(data_type, input_shape);
+  return zynq_tensor_->data<R>();
 }
 
 template <typename T, typename R>
 R *TensorLite::mutable_data(TargetType target) {
   target_ = target;
-  memory_size_ = dims_.production() * sizeof(T);
-  buffer_->ResetLazy(target, memory_size());
-  return static_cast<R *>(buffer_->data());
+  // memory_size_ = dims_.production() * sizeof(T);
+  // buffer_->ResetLazy(target, memory_size());
+  // return static_cast<R *>(buffer_->data());
+  // return zynq_tensor_->data<R>();
+  return mutable_data<T>();
 }
 
 template <typename TensorT>
@@ -198,5 +231,3 @@ bool TensorCompareWith(const TensorT &a, const TensorT &b) {
 
 }  // namespace lite
 }  // namespace paddle
-
-#endif
