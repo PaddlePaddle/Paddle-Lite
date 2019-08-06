@@ -30,7 +30,7 @@ void FeedCompute::PrepareForRun() {
   Tensor& x = param.feed_list->at(param.col);
 
   param.out->mutable_data<float16>();
-  conv_param.input = x->ZynqTensor();
+  conv_param.input = x.ZynqTensor();
   conv_param.output = param.out->ZynqTensor();
   pe_.init();
   pe_.apply();
@@ -48,6 +48,12 @@ void FeedCompute::Run() {
 
 REGISTER_LITE_KERNEL(
     feed, kFPGA, kFP16, kNHWC, paddle::lite::kernels::fpga::FeedCompute, def)
-    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kFPGA))})
-    .BindOutput("Output", {LiteType::GetTensorTy(TARGET(kFPGA))})
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kFPGA),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kNHWC))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kFPGA),
+                                       PRECISION(kFP16),
+                                       DATALAYOUT(kNHWC))})
     .Finalize();

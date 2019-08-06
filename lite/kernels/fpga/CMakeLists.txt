@@ -29,6 +29,8 @@ lite_cc_test(test_fc_compute_fpga SRCS fc_compute_test.cc DEPS ${lite_kernel_dep
 lite_cc_library(io_copy_compute_fpga SRCS io_copy_compute.cc DEPS ${fpga_deps})
 lite_cc_library(calib_compute_fpga SRCS calib_compute.cc DEPS ${fpga_deps})
 lite_cc_library(layout_compute_fpga SRCS layout_compute.cc DEPS ${fpga_deps})
+lite_cc_library(feed_compute_fpga SRCS feed_compute.cc DEPS ${fpga_deps})
+#lite_cc_library(fetch_compute_fpga SRCS fetch_compute.cc DEPS ${fpga_deps})
 
 set (fpga_kernels 
      activation_compute_fpga
@@ -41,6 +43,8 @@ set (fpga_kernels
      io_copy_compute_fpga 
      calib_compute_fpga
      layout_compute_fpga
+     feed_compute_fpga
+ #    fetch_compute_fpga
 )
 
 set(fpga_kernels "${fpga_kernels}" CACHE INTERNAL "fpga kernels")

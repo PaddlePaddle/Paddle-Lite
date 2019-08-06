@@ -21,7 +21,8 @@ namespace lite {
 namespace kernels {
 namespace fpga {
 
-class FeedCompute : public KernelLite<TARGET(kFPGA), PRECISION(kFP16)> {
+class FeedCompute
+    : public KernelLite<TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)> {
  public:
   using param_t = operators::FeedParam;
 

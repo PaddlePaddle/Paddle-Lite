@@ -433,6 +433,7 @@ class Tensor {
       shape_ = nullptr;
     }
   }
+  /*
   // add by tianxiaogang
   // get from tensorlite
   void share_from_tensorlite(const lite::Tensor& lite_tensor) {
@@ -464,7 +465,7 @@ class Tensor {
     lite_tensor->Assign<float16, lite::DDimLite, lite_api::TargetType::kFPGA>(
         ptr, lite_dim);
   }
-
+  */
  private:
   int offset = 0;
   std::shared_ptr<PlaceHolder> placeHolder_;
