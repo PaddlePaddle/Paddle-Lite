@@ -263,6 +263,8 @@ void beam_search(const Tensor *pre_ids,
   lod[1].assign(low_level.begin(), low_level.end());
   *(selected_ids->mutable_lod()) = lod;
   *(selected_scores->mutable_lod()) = lod;
+  LOG(INFO) << *selected_ids;
+  LOG(INFO) << *selected_scores;
 }
 
 }  // namespace math

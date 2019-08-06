@@ -555,7 +555,8 @@ struct WhileParam {
 
 struct TopkParam {
   const lite::Tensor* X{};
-  std::vector<lite::Tensor*> Out{};
+  lite::Tensor* Out{};
+  lite::Tensor* Indices{};
   int K{1};
 };
 

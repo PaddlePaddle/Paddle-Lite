@@ -26,12 +26,14 @@ bool TopkOp::CheckShape() const {
 bool TopkOp::InferShape() const {
   auto out_dims = param_.X->dims();
   out_dims[out_dims.size() - 1] = param_.K;
-  for (auto out : param_.Out) {
-    out->Resize(out_dims);
-    auto out_lod = out->mutable_lod();
-    *out_lod = param_.X->lod();
-    LOG(INFO) << "out_lod:" << out_lod->size() << " " << param_.X->lod().size();
-  }
+  auto out = param_.Out;
+  out->Resize(out_dims);
+  auto out_lod = out->mutable_lod();
+  *out_lod = param_.X->lod();
+  auto ind = param_.Indices;
+  ind->Resize(out_dims);
+  auto ind_lod = out->mutable_lod();
+  *ind_lod = param_.X->lod();
   return true;
 }
 
@@ -41,12 +43,11 @@ bool TopkOp::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
 
   auto outputs0 = op_desc.Output("Out").front();
   auto outputs1 = op_desc.Output("Indices").front();
-  param_.Out.push_back(scope->FindVar(outputs0)->GetMutable<lite::Tensor>());
-  param_.Out.push_back(scope->FindVar(outputs1)->GetMutable<lite::Tensor>());
+  param_.Out = scope->FindVar(outputs0)->GetMutable<lite::Tensor>();
+  param_.Indices = scope->FindVar(outputs1)->GetMutable<lite::Tensor>();
   param_.K = op_desc.GetAttr<int>("k");
 
   CHECK(param_.X);
-  CHECK_EQ(param_.Out.size(), 2) << "topk out tensor is 2";
   CHECK_GE(param_.K, 1) << "topK param is not valid";
   return true;
 }

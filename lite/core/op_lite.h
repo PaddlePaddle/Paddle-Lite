@@ -95,6 +95,10 @@ class OpLite : public Registry {
         ContextScheduler::Global().NewContext(kernel_->target()));
   }
 
+  KernelBase *GetKernel() {  // NOLINT
+    return kernel_.get();
+  }
+
   virtual ~OpLite() = default;
 
  protected:
