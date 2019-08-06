@@ -496,6 +496,22 @@ function build_npu {
     fi
 }
 
+function __prepare_multiclass_nms_test_files {
+    local port=$1
+    local adb_work_dir="/data/local/tmp"
+
+    wget --no-check-certificate https://raw.githubusercontent.com/jiweibo/TestData/master/multiclass_nms_bboxes_file.txt \
+        -O lite/tests/kernels/multiclass_nms_bboxes_file.txt
+    wget --no-check-certificate https://raw.githubusercontent.com/jiweibo/TestData/master/multiclass_nms_scores_file.txt \
+        -O lite/tests/kernels/multiclass_nms_scores_file.txt
+    wget --no-check-certificate https://raw.githubusercontent.com/jiweibo/TestData/master/multiclass_nms_out_file.txt \
+        -O lite/tests/kernels/multiclass_nms_out_file.txt
+
+    adb -s emulator-${port} push lite/tests/kernels/multiclass_nms_bboxes_file.txt ${adb_work_dir}
+    adb -s emulator-${port} push lite/tests/kernels/multiclass_nms_scores_file.txt ${adb_work_dir}
+    adb -s emulator-${port} push lite/tests/kernels/multiclass_nms_out_file.txt ${adb_work_dir}
+}
+
 # $1: ARM_TARGET_OS in "android" , "armlinux"
 # $2: ARM_TARGET_ARCH_ABI in "armv8", "armv7" ,"armv7hf"
 # $3: ARM_TARGET_LANG in "gcc" "clang"
@@ -517,6 +533,9 @@ function test_arm {
         echo "android do not need armv7hf"
         return 0
     fi
+
+    echo "prepare multiclass_nms_test files..."
+    __prepare_multiclass_nms_test_files $port
 
     echo "test file: ${TESTS_FILE}"
     for _test in $(cat $TESTS_FILE); do
