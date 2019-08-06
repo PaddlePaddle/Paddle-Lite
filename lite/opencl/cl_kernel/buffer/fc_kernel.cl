@@ -61,16 +61,16 @@ void fc_gemm_naive(__global const CL_DTYPE* a,
 }
 
 
-// gemm_batch: used for conv1x1, gemm of im2col_gemm
+// gemm_batch_naive: used for conv1x1, gemm of im2col_gemm
 // a: filter_d
 // b: x_d
 // c: output_d
 __kernel
-void gemm_batch(__global const CL_DTYPE* a,
-                __global const CL_DTYPE* b,
-                __global const CL_DTYPE* bias,
-                __global CL_DTYPE* c,
-                const int M, const int N, const int K, const int batch_size) {
+void gemm_batch_naive(__global const CL_DTYPE* a,
+                      __global const CL_DTYPE* b,
+                      __global const CL_DTYPE* bias,
+                      __global CL_DTYPE* c,
+                      const int M, const int N, const int K, const int batch_size) {
   const int row = get_global_id(0); // [0, M) height of out == m
   const int col = get_global_id(1); // [0, N) width of out == n
   const int bidx = get_global_id(2); // [0, batch_size)
@@ -99,93 +99,122 @@ void gemm_batch(__global const CL_DTYPE* a,
 }
 
 
-#if 0
-// gemm_batch_8x4: used for conv1x1, gemm of im2col_gemm
+// gemm_batch_8x4_buf_buf_N_N: used for conv1x1, gemm of im2col_gemm
 // a: filter_d
 // b: x_d
 // c: output_d
 
+//#define PRINT_KERNEL
 __kernel
-void gemm_batch_8x4(__global const CL_DTYPE* A,
-                    __global const CL_DTYPE* B,
-                    __global const CL_DTYPE* bias,
-                    __global CL_DTYPE* C,
-                    const int M, const int N, const int K, const int batch_size) {
-    const int row = get_global_id(0) << 3; // [0, M >> 3) height of out == m
-    const int col = get_global_id(1) << 2; // [0, N >> 2) width of out == n
+void gemm_batch(__global const CL_DTYPE* A,
+                __global const CL_DTYPE* B,
+                __global const CL_DTYPE* bias,
+                __global CL_DTYPE* C,
+                const int M, const int N, const int K, const int batch_size) {
+
+    int row = get_global_id(0) << 3; // [0, M >> 3) height of out == m
+    int col = get_global_id(1) << 2; // [0, N >> 2) width of out == n
     const int bidx = get_global_id(2); // [0, batch_size)
 
-    if ((col >= N) || (row >= M) || (bidx >= batch_size)) {
-        return;
+    // update B(input), C(output) with batch_size
+    B += K * N * bidx;
+    C += M * N * bidx;
+    __global const CL_DTYPE* Aptr = A + row * K;
+    __global const CL_DTYPE* Bptr = B + col;
+    __global CL_DTYPE* Cptr = C + row * N;
+
+    CL_DTYPE4 a8x4[8];
+    CL_DTYPE4 b4x4[4] = {0.f, 0.f, 0.f, 0.f};
+    CL_DTYPE4 c8x4[8] = {0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f};
+
+    if (bias) {
+        c8x4[0] = row < M ? bias[row] : 0;
+        c8x4[1] = row+1 < M ? bias[row + 1] : 0;
+        c8x4[2] = row+2 < M ? bias[row + 2] : 0;
+        c8x4[3] = row+3 < M ? bias[row + 3] : 0;
+        c8x4[4] = row+4 < M ? bias[row + 4] : 0;
+        c8x4[5] = row+5 < M ? bias[row + 5] : 0;
+        c8x4[6] = row+6 < M ? bias[row + 6] : 0;
+        c8x4[7] = row+7 < M ? bias[row + 7] : 0;
     }
 
-     const __global CL_DTYPE* cur_b = B + K * N * bidx;
-    __global CL_DTYPE* cur_c = C + M * N * bidx;
+    // main loop of K
+    short pos = 0;
+    for (; pos < K - 3; pos += 4) {
+        b4x4[0] = vload4(0, Bptr + mul24(pos, N));
+        b4x4[1] = vload4(0, Bptr + mul24(pos+1, N));
+        b4x4[2] = vload4(0, Bptr + mul24(pos+2, N));
+        b4x4[3] = vload4(0, Bptr + mul24(pos+3, N));
 
-    if ((col < N) && (row < M)) {
-        CL_DTYPE4 a8x4[8];
-        CL_DTYPE4 b[4];
-        CL_DTYPE4 c[8] = {0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f};
-#ifdef BIAS
-        c[0] = bias[row];
-        c[1] = bias[row + 1];
-        c[2] = bias[row + 2];
-        c[3] = bias[row + 3];
-        c[4] = bias[row + 4];
-        c[5] = bias[row + 5];
-        c[6] = bias[row + 6];
-        c[7] = bias[row + 7];
-#endif
-        A += row * K;
-        B += col;
-        short pos = 0;
-        for (; pos < K - 3; pos += 4) {
-            const CL_DTYPE* Aptr = A + pos;
-            b[0] = vload4(0, B);
-            b[1] = vload4(0, B + N);
-            b[2] = vload4(0, B + 2 * N);
-            b[3] = vload4(0, B + 3 * N);
-#pragma unroll(8)
-            for (int i = 0; i < 8; i++){
-                a8x4[i] = vload4(0, Aptr + mul24(i, K));
-                c[i] += a8x4[i].x * b[0] + a8x4[i].y * b[1] + a8x4[i].z * b[2] + a8x4[i].w * b[3];
-            }
-            B += 4 * N;
+        // main compute of main loop K: pos + 3 < K
+        #pragma unroll(8)
+        for (int i = 0; i < 8 && i < M; ++i) { // M direction
+            a8x4[i] = vload4(0, Aptr + mad24(i, K, pos));
+
+            c8x4[i] += a8x4[i].x * b4x4[0];
+            c8x4[i] += a8x4[i].y * b4x4[1];
+            c8x4[i] += a8x4[i].z * b4x4[2];
+            c8x4[i] += a8x4[i].w * b4x4[3];
         }
-        if (pos < K) {
-            const CL_DTYPE* Aptr = A + pos;
-            b[0] = (CL_DTYPE4)(0.f, 0.f,0.f, 0.f);
-            b[1] = (CL_DTYPE4)(0.f, 0.f,0.f, 0.f);
-            b[2] = (CL_DTYPE4)(0.f, 0.f,0.f, 0.f);
-            b[3] = (CL_DTYPE4)(0.f, 0.f,0.f, 0.f);
-            switch (K - pos) {
-                case 3:
-                    b[2] = vload4(0, B + 2 * N);
-                case 2:
-                    b[1] = vload4(0, B + N);
-                case 1:
-                    b[0] = vload4(0, B);
-            }
-#pragma unroll(8)
-            for (int i = 0; i < 8; i++){
-                a[i] = vload4(0, Aptr + mul24(i, K));
-                c[i] += a[i].x * b[0] + a[i].y * b[1] + a[i].z * b[2] + a[i].w * b[3];
-            }
+    }
+
+    // compute left K
+    if (pos < K) {
+        b4x4[0] = 0.0f;
+        b4x4[1] = 0.0f;
+        b4x4[2] = 0.0f;
+        // b4x4[3] = 0.0f; // impossible used
+        switch (K - pos) {
+            case 3:
+                b4x4[2] = vload4(0, Bptr + mul24(pos+2, N));
+
+            case 2:
+                b4x4[1] = vload4(0, Bptr + mul24(pos+1, N));
+
+            case 1:
+                b4x4[0] = vload4(0, Bptr + mul24(pos, N));
         }
-#ifdef RELU
+
         #pragma unroll(8)
         for (int i = 0; i < 8; i++) {
-            c[i] = max(c[i], 0.f);
+            a8x4[i] = vload4(0, Aptr + mad24(i, K, pos));
+
+            c8x4[i] += a8x4[i].x * b4x4[0] +
+                       a8x4[i].y * b4x4[1] +
+                       a8x4[i].z * b4x4[2];
         }
+    }
+
+#ifdef RELU
+    #pragma unroll(8)
+    for (int i = 0; i < 8; i++) {
+        c8x4[i] = fmax(c8x4[i], (CL_DTYPE4)0.f);
+    }
 #endif
-#pragma unroll(8)
-        for (int i = 0; i < 8; i++){
-            int C_offs = mul24((row + i), N) + col;
-            vstore4(c[i], 0, C + C_offs);
+
+    // store c
+    if (row + 7 < M && col + 3 < N) {
+        #pragma unroll(8)
+        for (int i = 0; i < 8; i++) { // M direction
+            vstore4(c8x4[i], 0, Cptr + mad24(i, N, col));
+        }
+    } else {
+        for (int i = 0; i < 8 && i + row < M; ++i) { // M direction
+            if (col + 3 < N) {
+                vstore4(c8x4[i], 0, Cptr + mad24(i, N, col));
+            } else {
+                switch (N - col) {
+                    case 3:
+                        *(Cptr + mad24(i, N, col + 2))  = c8x4[i].s2;
+                    case 2:
+                        *(Cptr + mad24(i, N, col + 1))  = c8x4[i].s1;
+                    case 1:
+                        *(Cptr + mad24(i, N, col))  = c8x4[i].s0;
+               }
+            }
         }
     }
 }
-#endif
 
 
 // fc_gemv_naive: keep for check
