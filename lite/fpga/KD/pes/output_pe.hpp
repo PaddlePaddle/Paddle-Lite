@@ -31,15 +31,24 @@ class OutputPE : public PE {
   bool dispatch() {
     Tensor* input = param_.input;
     Tensor* output = param_.output;
+    std::cout << input->data<float16>() << " " << output->data<float16>()
+              << std::endl;
     if (input->aligned()) {
+      std::cout << " 1" << std::endl;
       Tensor tmp;
       tmp.setAligned(true);
+      std::cout << " 1" << std::endl;
       tmp.mutableData<float16>(FP16, input->shape());
+      std::cout << " 1" << std::endl;
       tmp.copyFrom(input);
+      std::cout << " 1" << std::endl;
       tmp.unalignImage();
+      std::cout << " 1" << std::endl;
       output->copyFrom(&tmp);
+      std::cout << " 1" << std::endl;
     } else {
       output->copyFrom(input);
+      std::cout << " copy" << std::endl;
     }
     return true;
   }

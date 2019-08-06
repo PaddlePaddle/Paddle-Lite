@@ -21,7 +21,8 @@ namespace lite {
 namespace kernels {
 namespace fpga {
 
-class FetchCompute : public KernelLite<TARGET(kFPGA), PRECISION(kFP16)> {
+class FetchCompute
+    : public KernelLite<TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)> {
  public:
   using param_t = operators::FetchParam;
 

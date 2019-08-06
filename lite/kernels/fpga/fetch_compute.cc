@@ -26,12 +26,16 @@ void FetchCompute::PrepareForRun() {
   auto& param = this->Param<param_t>();
   // ====================================================
   zynqmp::OutputParam& conv_param = pe_.param();
-
+  auto fetch_list = param.fetch_list;
+  if (fetch_list->size() <= static_cast<size_t>(param.col)) {
+    fetch_list->resize(param.col + 1);
+  }
   Tensor& out = param.fetch_list->at(param.col);
-  out->mutable_data<float16>();
+  out.Resize(param.input->dims());
+  out.mutable_data<float16>();
 
   conv_param.input = param.input->ZynqTensor();
-  conv_param.output = out->ZynqTensor();
+  conv_param.output = out.ZynqTensor();
 
   pe_.init();
   pe_.apply();

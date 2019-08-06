@@ -38,16 +38,16 @@ void ElementwiseAddCompute::PrepareForRun() {
   pe_.apply();
 }
 void ElementwiseAddCompute::Run() {
-  input_x_.flush();
-  input_y_.flush();
+  //  input_x_.flush();
+  //  input_y_.flush();
 
   LOG(ERROR) << "input x_";
-  LOG(ERROR) << input_x_;
-  LOG(ERROR) << input_y_;
+  // LOG(ERROR) << input_x_;
+  // LOG(ERROR) << input_y_;
 
   pe_.dispatch();
   LOG(ERROR) << "after dispatch";
-  output_.invalidate();
+  //  output_.invalidate();
 }
 
 void ElementwiseAddActivationCompute::PrepareForRun() {
@@ -60,6 +60,7 @@ void ElementwiseAddActivationCompute::PrepareForRun() {
   // input_x_.share_from_tensorlite(*param.X);
   // input_y_.share_from_tensorlite(*param.Y);
   // output_.share_from_tensorlite(*param.Out);
+  param.Out->mutable_data<float16>();
   ew_param.inputs = {param.X->ZynqTensor(), param.Y->ZynqTensor()};
   ew_param.output = param.Out->ZynqTensor();
   ew_param.axis = param.axis;
@@ -68,10 +69,10 @@ void ElementwiseAddActivationCompute::PrepareForRun() {
   pe_.apply();
 }
 void ElementwiseAddActivationCompute::Run() {
-  input_x_.flush();
-  input_y_.flush();
+  // input_x_.flush();
+  // input_y_.flush();
   pe_.dispatch();
-  output_.invalidate();
+  // output_.invalidate();
   auto& param = Param<operators::FusionElementwiseActivationParam>();
 }
 

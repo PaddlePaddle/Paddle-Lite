@@ -20,13 +20,13 @@
 #include "paddle_lite_factory_helper.h"  // NOLINT
 #ifndef LITE_WITH_FPGA
 USE_LITE_KERNEL(feed, kHost, kAny, kAny, def);
-// USE_LITE_KERNEL(fetch, kHost, kAny, kAny, def);
+USE_LITE_KERNEL(fetch, kHost, kAny, kAny, def);
 #else
 USE_LITE_KERNEL(feed, kFPGA, kFP16, kNHWC, def);
-// USE_LITE_KERNEL(fetch, kFPGA, kFP16, kNHWC, def);
+USE_LITE_KERNEL(fetch, kFPGA, kFP16, kNHWC, def);
 #endif
 
-USE_LITE_KERNEL(fetch, kHost, kAny, kAny, def);
+// USE_LITE_KERNEL(fetch, kHost, kAny, kAny, def);
 
 #ifdef LITE_WITH_ARM
 USE_LITE_KERNEL(fc, kARM, kFloat, kNCHW, def);

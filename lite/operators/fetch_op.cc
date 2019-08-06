@@ -41,6 +41,7 @@ class FetchOp : public OpLite {
 
     auto _out = opdesc.Output("Out").front();
     auto* out = scope->FindVar(_out);
+    LOG(INFO) << " out" << _out;
     param_.fetch_list = out->GetMutable<std::vector<lite::Tensor>>();
 
     param_.col = opdesc.GetAttr<int>("col");

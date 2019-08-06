@@ -117,32 +117,6 @@ TEST(ResNet50, test) {
   }
 
   LOG(INFO) << "================== Speed Report ===================";
-  LOG(INFO) << "Model: " << FLAGS_model_dir << ", threads num " << FLAGS_threads
-            << ", warmup: " << FLAGS_warmup << ", repeats: " << FLAGS_repeats
-            << ", spend " << (GetCurrentUS() - start) / FLAGS_repeats / 1000.0
-            << " ms in average.";
-
-  std::vector<std::vector<float>> results;
-  // i = 1
-  results.emplace_back(std::vector<float>(
-      {0.00024139918, 0.00020566184, 0.00022418296, 0.00041731037,
-       0.0005366107,  0.00016948722, 0.00028638865, 0.0009257241,
-       0.00072681636, 8.531815e-05,  0.0002129998,  0.0021168243,
-       0.006387163,   0.0037145028,  0.0012812682,  0.00045948103,
-       0.00013535398, 0.0002483765,  0.00076759676, 0.0002773295}));
-  auto* out = predictor.GetOutput(0);
-  ASSERT_EQ(out->dims().size(), 2);
-  ASSERT_EQ(out->dims()[0], 1);
-  ASSERT_EQ(out->dims()[1], 1000);
-
-  int step = 50;
-  for (int i = 0; i < results.size(); ++i) {
-    for (int j = 0; j < results[i].size(); ++j) {
-      EXPECT_NEAR(out->data<float>()[j * step + (out->dims()[1] * i)],
-                  results[i][j],
-                  1e-6);
-    }
-  }
 }
 #endif
 
