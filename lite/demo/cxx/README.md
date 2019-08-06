@@ -1,4 +1,4 @@
-# C++ Android Demo
+# C++ Demo
 1. 使用`lite/tools/Dockerfile.mobile`生成docker镜像
 2. 运行并进入docker镜像环境，执行`wget http://paddle-inference-dist.bj.bcebos.com/lite_release/r0.1/inference_lite_lib.android.armv8.tar.gz `下载所需demo环境。(armv7 demo可使用命令`wget http://paddle-inference-dist.bj.bcebos.com/lite_release/r0.1/inference_lite_lib.android.armv7.tar.gz` 进行下载)。
 3. 解压下载文件`tar zxvf inference_lite_lib.android.armv8.tar.gz `

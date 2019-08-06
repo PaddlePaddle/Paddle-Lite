@@ -221,6 +221,7 @@ function(lite_cc_test TARGET)
     endif()
 endfunction()
 
+add_subdirectory(utils)
 add_subdirectory(operators)
 add_subdirectory(kernels)
 add_subdirectory(npu)
@@ -232,7 +233,6 @@ add_subdirectory(cuda)
 add_subdirectory(opencl)
 add_subdirectory(fpga)
 add_subdirectory(model_parser)
-add_subdirectory(utils)
 add_subdirectory(api)
 if (NOT LITE_ON_TINY_PUBLISH)
     add_subdirectory(tests)
@@ -270,7 +270,6 @@ if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM)
 
     # The final target for publish lite lib
     add_custom_target(publish_inference)
-
     if (NOT LITE_ON_TINY_PUBLISH)
         # add cxx lib
         add_custom_target(publish_inference_cxx_lib ${TARGET}
@@ -318,7 +317,6 @@ if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM)
                 COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/third_party"
                 COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/demo/cxx"
                 COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/include"
-                COMMAND cp "${CMAKE_SOURCE_DIR}/lite/utils/logging.h" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/include/logging.h"
                 COMMAND cp -r "${CMAKE_BINARY_DIR}/third_party/install/gflags" "${INFER_LITE_PUBLISH_ROOT}/third_party"
                 COMMAND cp "${CMAKE_SOURCE_DIR}/lite/demo/cxx/Makefile.def" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx"
                 COMMAND cp "${CMAKE_SOURCE_DIR}/lite/demo/cxx/README.md" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx"

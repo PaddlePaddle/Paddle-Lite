@@ -19,8 +19,8 @@
 #include <numeric>
 #include <string>
 #include <vector>
-
 #include "lite/core/memory.h"
+#include "lite/utils/replace_stl/stream.h"
 
 namespace paddle {
 namespace lite {
