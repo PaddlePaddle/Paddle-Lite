@@ -21,14 +21,16 @@ namespace lite {
 namespace kernels {
 namespace fpga {
 
+using float16 = zynqmp::float16;
+
 void ElementwiseAddCompute::PrepareForRun() {
   zynqmp::ElementwiseAddParam& ew_param = pe_.param();
   auto& param = Param<operators::ElementwiseParam>();
-  input_x_.share_from_tensorlite(*param.X);
-  input_y_.share_from_tensorlite(*param.Y);
-  output_.share_from_tensorlite(*param.Out);
-  ew_param.inputs = {&input_x_, &input_y_};
-  ew_param.output = &output_;
+
+  param.Out->mutable_data<float16>();
+
+  ew_param.inputs = {param.X->ZynqTensor(), param.Y->ZynqTensor()};
+  ew_param.output = param.Out->ZynqTensor();
   ew_param.axis = param.axis;
   ew_param.relu.enabled = false;
 
@@ -54,11 +56,11 @@ void ElementwiseAddActivationCompute::PrepareForRun() {
   if (param.act_type != "relu") {
     LOG(FATAL) << "unsupported Activation type: " << param.act_type;
   }
-  input_x_.share_from_tensorlite(*param.X);
-  input_y_.share_from_tensorlite(*param.Y);
-  output_.share_from_tensorlite(*param.Out);
-  ew_param.inputs = {&input_x_, &input_y_};
-  ew_param.output = &output_;
+  // input_x_.share_from_tensorlite(*param.X);
+  // input_y_.share_from_tensorlite(*param.Y);
+  // output_.share_from_tensorlite(*param.Out);
+  ew_param.inputs = {param.X->ZynqTensor(), param.Y->ZynqTensor()};
+  ew_param.output = param.Out->ZynqTensor();
   ew_param.axis = param.axis;
   ew_param.relu.enabled = true;
   pe_.init();

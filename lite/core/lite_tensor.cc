@@ -12,9 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef LITE_WITH_FPGA
-
-#include "lite/core/tensor.h"
+#include "lite/core/lite_tensor.h"
 #include <string>
 
 namespace paddle {
@@ -73,6 +71,7 @@ std::string DDimLite::repr() const {
 void TensorLite::ShareDataWith(const TensorLite &other) {
   buffer_ = other.buffer_;
   dims_ = other.dims_;
+  zynq_tensor_ = other.zynq_tensor_;
   target_ = other.target_;
   lod_ = other.lod_;
   memory_size_ = other.memory_size_;
@@ -97,7 +96,10 @@ void TensorLite::CopyDataFrom(const TensorLite &other) {
   buffer_->CopyDataFrom(*other.buffer_, memory_size_);
 }
 
+// template <typename T>
+// void TensorLite::mutable_data_internal() {
+
+// }
+
 }  // namespace lite
 }  // namespace paddle
-
-#endif

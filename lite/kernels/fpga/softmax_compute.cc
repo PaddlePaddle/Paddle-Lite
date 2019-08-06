@@ -20,14 +20,15 @@ namespace lite {
 namespace kernels {
 namespace fpga {
 
+using float16 = zynqmp::float16;
+
 void SoftmaxCompute::Run() {
   zynqmp::SoftmaxParam& softmax_param = pe_.param();
   auto& param = Param<operators::SoftmaxParam>();
-  input_x_.share_from_tensorlite(*param.x);
-  output_.share_from_tensorlite(*param.output);
-  softmax_param.input = &input_x_;
-  softmax_param.output = &output_;
 
+  param.output->mutable_data<float16>();
+  softmax_param.input = param.x->ZynqTensor();
+  softmax_param.output = param.output->ZynqTensor();
   pe_.init();
   pe_.apply();
 }

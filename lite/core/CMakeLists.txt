@@ -9,7 +9,11 @@ lite_cc_library(target_wrapper SRCS target_wrapper.cc
   FPGA_DEPS fpga_target_wrapper)
 
 lite_cc_library(memory SRCS memory.cc DEPS target_wrapper CL_DEPS cl_target_wrapper)
-lite_cc_library(tensor SRCS tensor.cc DEPS memory)
+
+
+
+lite_cc_library(tensor SRCS tensor.cc lite_tensor.cc DEPS memory)
+
 
 proto_library(framework_proto SRCS framework.proto)
 

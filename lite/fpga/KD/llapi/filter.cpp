@@ -22,7 +22,7 @@ namespace paddle {
 namespace zynqmp {
 namespace filter {
 
-static int FILTER_SIZE = 512;
+static int FILTER_SIZE = 2048;
 
 void set_filter_capacity(uint32_t cap) { FILTER_SIZE = cap; }
 

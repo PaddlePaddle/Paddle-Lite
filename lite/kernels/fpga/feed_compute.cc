@@ -21,17 +21,17 @@ namespace lite {
 namespace kernels {
 namespace fpga {
 
+using float16 = zynqmp::float16;
+
 void FeedCompute::PrepareForRun() {
   auto& param = this->Param<param_t>();
   // ====================================================
   zynqmp::InputParam& conv_param = pe_.param();
   Tensor& x = param.feed_list->at(param.col);
-  input_.share_from_tensorlite(x);
-  output_.share_from_tensorlite(*param.out);
 
-  conv_param.input = &input_;
-  conv_param.output = &output_;
-
+  param.out->mutable_data<float16>();
+  conv_param.input = x->ZynqTensor();
+  conv_param.output = param.out->ZynqTensor();
   pe_.init();
   pe_.apply();
 }
