@@ -23,6 +23,8 @@ namespace lite {
 namespace kernels {
 namespace fpga {
 
+  using float16 = zynqmp::float16;
+
 void CopyFromHostSync(void* target, const void* source, size_t size) {
   LOG(INFO) << "copying " << target << ":" << source << ":" << size;
   TargetWrapper<TARGET(kFPGA)>::MemcpySync(
@@ -44,14 +46,18 @@ class IoCopyHostToFpgaCompute
     auto& param = Param<operators::IoCopyParam>();
     CHECK(param.x->target() == TARGET(kHost) ||
           param.x->target() == TARGET(kFPGA));
-    auto mem_size = param.x->memory_size();
-    LOG(INFO) << "copy size " << mem_size;
-    auto* data = param.y->mutable_data(TARGET(kFPGA), mem_size);
-    LOG(INFO) << "size:" << param.y->memory_size() << ":"
-              << param.x->memory_size();
-    LOG(INFO) << "get_data: " << data << ":" << param.x->raw_data();
-    CopyFromHostSync(data, param.x->raw_data(), mem_size);
-    LOG(INFO) << "copy_from_host ";
+    // auto mem_size = param.x->memory_size();
+    // LOG(INFO) << "copy size " << mem_size;
+    // auto* data = param.y->mutable_data(TARGET(kFPGA), mem_size);
+    // LOG(INFO) << "size:" << param.y->memory_size() << ":"
+    //           << param.x->memory_size();
+    // LOG(INFO) << "get_data: " << data << ":" << param.x->raw_data();
+    // CopyFromHostSync(data, param.x->raw_data(), mem_size);
+    // LOG(INFO) << "copy_from_host ";
+
+    param.y->CopyDataFrom(*param.x);
+
+    std::cout << "x:" << param.x->data<float16>() << "   y:" << param.y->data<float16>() << std::endl;
   }
 
   std::unique_ptr<type_infer_handler_t> GetTypeInferHandler() override {

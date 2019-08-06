@@ -140,7 +140,7 @@ class TensorLite {
 
   size_t data_size() const { return this->dims().production(); }
 
-  size_t memory_size() const { return memory_size_; }
+  size_t memory_size() const { return zynq_tensor_->memorySize(); }
 
   bool IsInitialized() const { return buffer_->data(); }
 

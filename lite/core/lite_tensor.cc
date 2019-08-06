@@ -80,6 +80,9 @@ void TensorLite::ShareDataWith(const TensorLite &other) {
 void *TensorLite::mutable_data(size_t memory_size) {
   memory_size_ = memory_size;
   buffer_->ResetLazy(target_, memory_size_);
+  // throw -1;
+  std::cout << " \n\n\n======================= mem size:=========================\n";
+  std::cout << memory_size << std::endl;
   return buffer_->data();
 }
 
@@ -92,8 +95,9 @@ void TensorLite::CopyDataFrom(const TensorLite &other) {
   dims_ = other.dims_;
   target_ = other.target_;
   lod_ = other.lod_;
-  memory_size_ = other.memory_size_;
-  buffer_->CopyDataFrom(*other.buffer_, memory_size_);
+  // memory_size_ = other.memory_size_;
+  // buffer_->CopyDataFrom(*other.buffer_, memory_size_);
+  zynq_tensor_->mutableData<void>(other.zynq_tensor_->dataType(), other.zynq_tensor_->shape());
 }
 
 // template <typename T>
