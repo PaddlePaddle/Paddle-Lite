@@ -106,7 +106,8 @@ class TensorLite {
   // For other devices, T and R may be the same type.
   template <typename T, typename R = T>
   const R *data() const {
-    return static_cast<const R *>(buffer_->data());
+    // return static_cast<const R *>(buffer_->data());
+    return zynq_tensor_->data<R>();
   }
 
   void Resize(const DDimLite &ddim) {
@@ -208,8 +209,8 @@ R *TensorLite::mutable_data() {
   if (typeid(T) == typeid(zynqmp::float16)) {
     data_type = zynqmp::FP16;
   }
-  zynq_tensor_->mutableData<float>(data_type, input_shape);
-  return zynq_tensor_->data<R>();
+  return zynq_tensor_->mutableData<R>(data_type, input_shape);
+  // return zynq_tensor_->data<R>();
 }
 
 template <typename T, typename R>

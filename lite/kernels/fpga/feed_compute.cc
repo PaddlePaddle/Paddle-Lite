@@ -29,6 +29,7 @@ void FeedCompute::PrepareForRun() {
   zynqmp::InputParam& conv_param = pe_.param();
   Tensor& x = param.feed_list->at(param.col);
 
+  param.out->Resize(x.dims());
   param.out->mutable_data<float16>();
   conv_param.input = x.ZynqTensor();
   conv_param.output = param.out->ZynqTensor();

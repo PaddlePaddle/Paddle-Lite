@@ -53,6 +53,7 @@ void ElementwiseAddCompute::Run() {
 void ElementwiseAddActivationCompute::PrepareForRun() {
   zynqmp::ElementwiseAddParam& ew_param = pe_.param();
   auto& param = Param<operators::FusionElementwiseActivationParam>();
+  // param.Y->mutable_data<float16>();
   if (param.act_type != "relu") {
     LOG(FATAL) << "unsupported Activation type: " << param.act_type;
   }
