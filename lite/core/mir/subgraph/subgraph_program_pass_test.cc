@@ -16,130 +16,23 @@
 #include <gflags/gflags.h>
 #include <gtest/gtest.h>
 #include <vector>
-#include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
 #include "lite/api/paddle_use_passes.h"
 #include "lite/core/mir/graph_visualize_pass.h"
 #include "lite/core/mir/ssa_graph.h"
 #include "lite/core/program.h"
+#include "lite/model_parser/cpp/program_desc.h"
 #include "lite/model_parser/model_parser.h"
-#include "lite/model_parser/pb/program_desc.h"
 
 DEFINE_string(model_dir, "", "model_dir");
 
 namespace paddle {
 namespace lite {
 
-// std::unique_ptr<SSAGraph> BuildGraph(framework::ProgramDesc* program_desc,
-//                                      const std::shared_ptr<Scope>& scope,
-//                                      const std::vector<Place>& valid_places)
-//                                      {
-//   auto* main_block = program_desc->MutableBlock(0);
-//   auto* conv_op = main_block->AppendOp();
-//   auto* bn_op = main_block->AppendOp();
-//   main_block->Var("conv_i");
-//   main_block->Var("conv_param");
-//   main_block->Var("conv_out");
-
-//   main_block->Var("bn_scale");
-//   main_block->Var("bn_bias");
-//   main_block->Var("bn_mean");
-//   main_block->Var("bn_var");
-//   main_block->Var("bn_out");
-//   main_block->Var("bn_mean_out");
-//   main_block->Var("bn_var_out");
-//   main_block->Var("bn_saved_mean");
-//   main_block->Var("bn_saved_var");
-
-//   scope->Var("conv_i")->GetMutable<lite::Tensor>();
-//   auto conv_param_t = scope->Var("conv_param")->GetMutable<lite::Tensor>();
-//   std::vector<int64_t> conv_param_shape = {3, 1, 2, 2};
-//   conv_param_t->Resize(lite::DDim(conv_param_shape));
-//   conv_param_t->mutable_data<float>();
-//   scope->Var("conv_out")->GetMutable<lite::Tensor>();
-//   auto bn_scale_t = scope->Var("bn_scale")->GetMutable<lite::Tensor>();
-//   std::vector<int64_t> bn_scale_shape = {3};
-//   bn_scale_t->Resize(lite::DDim(bn_scale_shape));
-//   bn_scale_t->mutable_data<float>();
-
-//   auto bn_bias_t = scope->Var("bn_bias")->GetMutable<lite::Tensor>();
-//   std::vector<int64_t> bn_bias_shape = {3};
-//   bn_bias_t->Resize(lite::DDim(bn_bias_shape));
-//   bn_bias_t->mutable_data<float>();
-
-//   auto bn_mean_t = scope->Var("bn_mean")->GetMutable<lite::Tensor>();
-//   bn_mean_t->Resize(lite::DDim(bn_bias_shape));
-//   bn_mean_t->mutable_data<float>();
-
-//   auto bn_var_t = scope->Var("bn_var")->GetMutable<lite::Tensor>();
-//   bn_var_t->Resize(lite::DDim(bn_bias_shape));
-//   bn_var_t->mutable_data<float>();
-
-//   scope->Var("bn_out")->GetMutable<lite::Tensor>();
-//   scope->Var("bn_mean_out")->GetMutable<lite::Tensor>();
-//   scope->Var("bn_var_out")->GetMutable<lite::Tensor>();
-//   scope->Var("bn_saved_mean")->GetMutable<lite::Tensor>();
-//   scope->Var("bn_saved_var")->GetMutable<lite::Tensor>();
-
-//   conv_op->SetType("conv2d");
-//   conv_op->SetInput("Input", {"conv_i"});
-//   conv_op->SetInput("Filter", {"conv_param"});
-//   conv_op->SetOutput("Output", {"conv_out"});
-//   const std::vector<int> strides({1, 1});
-//   const std::vector<int> paddings({1, 1});
-//   const std::vector<int> dilations({1, 1});
-//   const int groups = 1;
-//   conv_op->SetAttr("strides", strides);
-//   conv_op->SetAttr("paddings", paddings);
-//   conv_op->SetAttr("dilations", dilations);
-//   conv_op->SetAttr("groups", groups);
-//   conv_op->SetAttr("fuse_relu", false);
-
-//   bn_op->SetType("batch_norm");
-//   bn_op->SetInput("X", {"conv_out"});
-//   bn_op->SetInput("Bias", {"bn_bias"});
-//   bn_op->SetInput("Mean", {"bn_mean"});
-//   bn_op->SetInput("Scale", {"bn_scale"});
-//   bn_op->SetInput("Variance", {"bn_var"});
-
-//   bn_op->SetOutput("Y", {"bn_out"});
-//   bn_op->SetOutput("MeanOut", {"bn_mean_out"});
-//   bn_op->SetOutput("VarianceOut", {"bn_var_out"});
-//   bn_op->SetOutput("SavedMean", {"bn_saved_mean"});
-//   bn_op->SetOutput("SavedVariance", {"bn_saved_var"});
-//   float eps = 1e-5;
-//   bn_op->SetAttr("epsilon", eps);
-//   bn_op->SetAttr("is_test", static_cast<int>(1));
-//   bn_op->SetAttr("use_global_stats", false);
-//   bn_op->SetAttr("momentum", 0.9f);
-//   bn_op->SetAttr("data_layout", std::string("NCHW"));
-
-//   program_desc->Flush();
-
-//   lite::Program program(*program_desc->Proto(), scope, valid_places);
-//   auto graph = std::unique_ptr<SSAGraph>(new SSAGraph());
-//   graph->Build(program, valid_places);
-
-//   return graph;
-// }
-
-// TEST(SubGraphTest, smallnet) {
-//   cpp::ProgramDesc desc;
-//   std::vector<Place> places{{TARGET(kHost),
-//   PRECISION(kFloat)}，{TARGET(kNPU), PRECISION(kFloat)}};
-//   auto scope = std::make_shared<Scope>();
-//   auto graph = BuildGraph(&program_desc, scope, places);
-//   const int num_nodes = graph->nodes().size();
-//   auto* pass = new GenerateNPUProgramPass;
-//   pass->Apply(graph);
-//   ASSERT_EQ(graph->nodes().size(),
-//             num_nodes - 8UL /*nodes removed */ + 1UL /* eltwise_add node*/);
-// }
-
 TEST(SubgraphTest, mobilenetv1) {
-  cpp::ProgramDesc desc;
+  cpp::ProgramDesc program_desc;
   auto scope = std::make_shared<Scope>();
-  LoadModelPb(FLAGS_model_dir, scope.get(), &desc);
+  LoadModelPb(FLAGS_model_dir, scope.get(), &program_desc);
   std::vector<Place> valid_places({
       Place{TARGET(kHost), PRECISION(kFloat)},
 #ifdef LITE_WITH_ARM
@@ -149,22 +42,98 @@ TEST(SubgraphTest, mobilenetv1) {
       Place{TARGET(kNPU), PRECISION(kFloat)},
 #endif
   });
-  lite::Program program(desc, scope, valid_places);
+  lite::Program program(program_desc, scope, valid_places);
   auto graph = std::unique_ptr<mir::SSAGraph>(new mir::SSAGraph());
   graph->Build(program, valid_places);
 
   std::vector<std::string> supported_op_types{"conv2d",
                                               "depthwise_conv2d",
+                                              "batch_norm",
                                               "scale",
                                               "pool2d",
                                               "mul",
                                               "elementwise_add",
-                                              "fc",
                                               "softmax",
-                                              "batch_norm",
                                               "relu"};
   auto* pass = new mir::subgraph::SubgraphProgramPass;
   ASSERT_EQ(pass->FuseSubgraph(graph, supported_op_types), 1);
+}
+
+// return output_var_names
+std::vector<std::string> AddFCDesc(
+    cpp::BlockDesc* block_desc,
+    const std::shared_ptr<Scope>& scope,
+    const std::vector<std::string>& input_var_names,
+    const std::vector<int64_t>& wshape) {
+  CHECK_EQ(input_var_names.size(), 1);
+  CHECK_EQ(wshape.size(), 2);
+  static int id = 0;
+  std::string prefix = "fc_" + std::to_string(id);
+  auto* op_desc = block_desc->AddOp<cpp::OpDesc>();
+  auto* wgt = block_desc->AddVar<cpp::VarDesc>();
+  auto* bias = block_desc->AddVar<cpp::VarDesc>();
+  auto* out = block_desc->AddVar<cpp::VarDesc>();
+
+  wgt->SetName(prefix + "_W");
+  bias->SetName(prefix + "_Bias");
+  out->SetName(prefix + "_Out");
+  std::vector<std::string> out_var_names{prefix + "_Out"};
+
+  auto* wtensor = scope->Var(prefix + "_W")->GetMutable<lite::Tensor>();
+  wtensor->Resize(wshape);
+  wtensor->mutable_data<float>();
+
+  auto* btensor = scope->Var(prefix + "_Bias")->GetMutable<lite::Tensor>();
+  btensor->Resize({wshape[1]});
+  btensor->mutable_data<float>();
+
+  scope->Var(prefix + "_Out")->GetMutable<lite::Tensor>();
+
+  op_desc->SetType("fc");
+  op_desc->SetInput("Input", input_var_names);
+  op_desc->SetInput("W", {prefix + "_W"});
+  op_desc->SetInput("Bias", {prefix + "_Bias"});
+  op_desc->SetAttr<int>("in_num_col_dims", 1);
+  op_desc->SetOutput("Out", out_var_names);
+  id++;
+  return out_var_names;
+}
+
+std::unique_ptr<mir::SSAGraph> BuildSimpleNet(
+    cpp::ProgramDesc* program_desc,
+    const std::shared_ptr<Scope>& scope,
+    const std::vector<Place>& valid_places) {
+  program_desc->ClearBlocks();
+  auto* block_desc = program_desc->AddBlock<cpp::BlockDesc>();
+  block_desc->ClearOps();
+  block_desc->ClearVars();
+
+  auto* var_desc = block_desc->AddVar<cpp::VarDesc>();
+  var_desc->SetName("feed_var");
+  auto* feed_var = scope->Var("feed_var")->GetMutable<lite::Tensor>();
+  feed_var->Resize({1, 4});
+  auto fc1_out = AddFCDesc(block_desc, scope, {"feed_var"}, {4, 5});
+  auto fc2_out = AddFCDesc(block_desc, scope, fc1_out, {5, 2});
+
+  lite::Program program(*program_desc, scope, valid_places);
+  auto graph = std::unique_ptr<mir::SSAGraph>(new mir::SSAGraph());
+  graph->Build(program, valid_places);
+
+  return graph;
+}
+
+TEST(SubGraphTest, SimpleNet) {
+  cpp::ProgramDesc program_desc;
+  std::vector<Place> places{{TARGET(kHost), PRECISION(kFloat)}};
+  auto scope = std::make_shared<Scope>();
+  auto graph = BuildSimpleNet(&program_desc, scope, places);
+
+  std::vector<std::string> supported_op_types{"fc"};
+  auto* pass = new mir::subgraph::SubgraphProgramPass;
+  ASSERT_EQ(pass->FuseSubgraph(graph, supported_op_types), 1);
+
+  const int num_nodes = graph->nodes().size();
+  ASSERT_EQ(graph->nodes().size(), 9);
 }
 
 }  // namespace lite
