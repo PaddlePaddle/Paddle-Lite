@@ -14,7 +14,29 @@
 
 #pragma once
 #include <string>
-#include "lite/utils/all.h"
+
+// Generic helper definitions for shared library support
+#if defined _WIN32 || defined __CYGWIN__
+#define PADDLE_LITE_HELPER_DLL_IMPORT __declspec(dllimport)
+#define PADDLE_LITE_HELPER_DLL_EXPORT __declspec(dllexport)
+#define PADDLE_LITE_HELPER_DLL_LOCAL
+#else
+#if __GNUC__ >= 4
+#define PADDLE_LITE_HELPER_DLL_IMPORT __attribute__((visibility("default")))
+#define PADDLE_LITE_HELPER_DLL_EXPORT __attribute__((visibility("default")))
+#else
+#define PADDLE_LITE_HELPER_DLL_IMPORT
+#define PADDLE_LITE_HELPER_DLL_EXPORT
+#endif
+#endif
+
+#ifdef LITE_ON_TINY_PUBLISH
+#define LITE_API PADDLE_LITE_HELPER_DLL_EXPORT
+#define LITE_API_IMPORT PADDLE_LITE_HELPER_DLL_IMPORT
+#else
+#define LITE_API
+#define LITE_API_IMPORT
+#endif
 
 namespace paddle {
 namespace lite_api {
@@ -123,11 +145,6 @@ struct LITE_API Place {
   bool operator!=(const Place& other) const { return !(*this == other); }
 
   friend bool operator<(const Place& a, const Place& b);
-
-  friend STL::ostream& operator<<(STL::ostream& os, const Place& other) {
-    os << other.DebugString();
-    return os;
-  }
 
   std::string DebugString() const;
 };

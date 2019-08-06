@@ -55,7 +55,7 @@ void mir::Node::Stmt::ResetOp(const cpp::OpDesc &op_desc,
 }
 
 std::ostream &mir::operator<<(std::ostream &os, const mir::Node::Stmt &other) {
-  os << "Statement " << other.op_type() << " " << other.place();
+  os << "Statement " << other.op_type() << " " << other.place().DebugString();
   return os;
 }
 
