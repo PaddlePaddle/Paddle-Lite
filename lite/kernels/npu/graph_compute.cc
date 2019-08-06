@@ -50,13 +50,13 @@ void GraphCompute::PrepareForRun() {
   for (size_t i = 0; i < npu_odims_.size(); ++i) {
     auto out_size = npu_odims_[i].GetNumber() * npu_odims_[i].GetChannel() *
                     npu_odims_[i].GetHeight() * npu_odims_[i].GetWidth();
-    LOG(INFO) << param.outputs[i]->dims().size();
     if (param.outputs[i]->dims().production() != out_size) {
       param.outputs[i]->Resize({npu_odims_[i].GetNumber(),
                                 npu_odims_[i].GetChannel(),
                                 npu_odims_[i].GetHeight(),
                                 npu_odims_[i].GetWidth()});
     }
+    LOG(INFO) << param.outputs[i]->dims();
     npu_otensors_[i].reset(new hiai::AiTensor);
     npu_otensors_[i]->Init(&(npu_odims_[i]));
   }
