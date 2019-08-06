@@ -26,7 +26,7 @@ using float16 = zynqmp::float16;
 void CalibComputeFp32ToFP16::Run() {
   auto& param = this->Param<operators::CalibParam>();
   const auto* din = param.input->data<float>();
-  auto* dout = param.output->mutable_data<float16>();
+  auto* dout = param.output->mutable_data<float16>(TARGET(kFPGA));
   for (int i = 0; i < param.input->numel(); ++i) {
     dout[i] = zynqmp::float_to_half(din[i]);
   }
@@ -36,7 +36,7 @@ void CalibComputeFp32ToFP16::Run() {
 void CalibComputeFP16ToFp32::Run() {
   auto& param = this->Param<operators::CalibParam>();
   const auto* din = param.input->data<float16>();
-  auto* dout = param.output->mutable_data<float>();
+  auto* dout = param.output->mutable_data<float>(TARGET(kFPGA));
   for (int i = 0; i < param.input->numel(); ++i) {
     dout[i] = zynqmp::half_to_float(din[i]);
   }
@@ -51,31 +51,31 @@ void CalibComputeFP16ToFp32::Run() {
 REGISTER_LITE_KERNEL(calib,
                      kFPGA,
                      kFP16,
-                     kAny,
+                     kNHWC,
                      paddle::lite::kernels::fpga::CalibComputeFp32ToFP16,
                      fp32_to_fp16_fpga)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kFPGA),
                                       PRECISION(kFloat),
-                                      DATALAYOUT(kAny))})
+                                      DATALAYOUT(kNCHW))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kFPGA),
                                        PRECISION(kFP16),
-                                       DATALAYOUT(kAny))})
+                                       DATALAYOUT(kNCHW))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(calib,
                      kFPGA,
                      kFP16,
-                     kAny,
+                     kNHWC,
                      paddle::lite::kernels::fpga::CalibComputeFP16ToFp32,
                      fp16_to_fp32_fpga)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kFPGA),
                                       PRECISION(kFP16),
-                                      DATALAYOUT(kAny))})
+                                      DATALAYOUT(kNHWC))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kFPGA),
                                        PRECISION(kFloat),
-                                       DATALAYOUT(kAny))})
+                                       DATALAYOUT(kNHWC))})
     .Finalize();

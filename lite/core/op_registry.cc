@@ -108,6 +108,9 @@ KernelRegistry::KernelRegistry()
   INIT_FOR(kHost, kFloat, kNCHW);
   INIT_FOR(kHost, kAny, kNCHW);
   INIT_FOR(kHost, kFloat, kNHWC);
+  INIT_FOR(kHost, kFloat, kAny);
+  INIT_FOR(kHost, kAny, kNHWC);
+  INIT_FOR(kHost, kAny, kAny);
   INIT_FOR(kHost, kAny, kNHWC);
   INIT_FOR(kHost, kAny, kAny);
 

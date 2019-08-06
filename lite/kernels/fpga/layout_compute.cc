@@ -17,11 +17,14 @@
 #include "lite/core/op_registry.h"
 #include "lite/core/target_wrapper.h"
 #include "lite/core/type_system.h"
+#include "lite/fpga/KD/float16.hpp"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace fpga {
+
+using float16 = zynqmp::float16;
 
 void TransHwcToChw(Tensor* dest, const Tensor* src) {}
 void TransChwToHwc(Tensor* dest, const Tensor* src) {}
@@ -30,7 +33,8 @@ class TransHwcToChwCompute
     : public KernelLite<TARGET(kFPGA), PRECISION(kAny), DATALAYOUT(kNHWC)> {
  public:
   void Run() override {
-    auto& param = Param<operators::IoCopyParam>();
+    auto& param = Param<operators::LayoutParam>();
+    auto out_data = param.y->mutable_data<float16>(TARGET(kFPGA));
     TransHwcToChw(param.y, param.x);
   }
 
@@ -65,6 +69,7 @@ class TransChwToHwcCompute
  public:
   void Run() override {
     auto& param = Param<operators::LayoutParam>();
+    auto out_data = param.y->mutable_data<float16>(TARGET(kFPGA));
     TransChwToHwc(param.y, param.x);
   }
 

@@ -68,9 +68,10 @@ class VariablePlaceInferencePass : public DebugPass {
     for (auto& x : graph->StmtTopologicalOrder()) {
       auto& inst = x->AsStmt();
       // The IoCopyOp is a tool operator, it won't support the type inference.
-      if (inst.op_type() == "io_copy" || inst.op_type() == "io_copy_once" ||
-          inst.op_type() == "calib")
-        continue;
+      // ***if (inst.op_type() == "io_copy" || inst.op_type() == "io_copy_once"
+      // ||
+      // ***    inst.op_type() == "calib")
+      // ***  continue;
       // LOG(INFO) << "- inferencing type " <<
       // deal with inputs
       LOG(INFO) << "Infering op " << inst.op_info()->Repr();
@@ -97,7 +98,7 @@ class VariablePlaceInferencePass : public DebugPass {
                   << "-- node name :" << node_name;
         auto type = inst.picked_kernel().GetInputDeclType(arg_name);
         if (!x_in->AsArg().type) {
-          VLOG(4) << "set type " << *type << " " << x_in;
+          LOG(INFO) << "set type " << *type << " " << x_in->AsArg().name;
           if (x_in->AsArg().is_weight) {
             SetWeightType(x_in, *type);
           } else {
@@ -106,7 +107,7 @@ class VariablePlaceInferencePass : public DebugPass {
         }
       }
 
-      VLOG(3) << "inst " << inst.op_info()->Repr();
+      LOG(INFO) << "inst " << inst.op_info()->Repr();
       for (auto* x_out : x->outlinks) {
         std::string node_name = x_out->AsArg().name;
         std::string arg_name =
@@ -114,10 +115,10 @@ class VariablePlaceInferencePass : public DebugPass {
         CHECK(arg_name.size() > 0) << "can not found op arguments for node "
                                    << node_name << " in Inst "
                                    << inst.op_type();
-        VLOG(3) << "-- output arg_name " << arg_name;
+        LOG(INFO) << "-- output arg_name " << arg_name;
         auto type = inst.picked_kernel().GetOutputDeclType(arg_name);
         if (!x_out->AsArg().type) {
-          VLOG(4) << "set type " << *type << " " << x_out;
+          LOG(INFO) << "set type " << *type << " " << x_out->AsArg().name;
           if (x_out->AsArg().is_weight) {
             SetWeightType(x_out, *type);
           } else {

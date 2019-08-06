@@ -23,7 +23,7 @@ namespace paddle {
 namespace lite {
 namespace kernels {
 namespace fpga {
-
+using float16 = zynqmp::float16;
 class ConvCompute
     : public KernelLite<TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)> {
  public:

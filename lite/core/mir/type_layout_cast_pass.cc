@@ -33,8 +33,6 @@ void TypeLayoutTransformPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
     nodes.push_back(&node);
   }
 
-  CHECK(!valid_places_.empty());
-
   for (auto& node : nodes) {
     if (!node->IsStmt()) continue;
     auto inlinks = node->inlinks;
@@ -62,12 +60,16 @@ void TypeLayoutTransformPass::ComplementInputs(SSAGraph* graph,
   CHECK(inst.op_info()->GetInputArgname(in_arg_name, &tmp));
   auto decl_arg_type = inst.picked_kernel().GetInputDeclType(tmp);
   CHECK(in->AsArg().type);
-  if (!LayoutCompatibleTo(*in->AsArg().type, *decl_arg_type)) {
+  if (!DataLayoutCompatibleTo(*in->AsArg().type, *decl_arg_type)) {
     LOG(INFO) << "found Layout unmatched tensor: " << in->AsArg().name
               << " for kernel " << inst.op()->DebugString() << " "
               << *in->AsArg().type << " -> " << *decl_arg_type;
-    AddLayoutInst(
-        *in->AsArg().type, *decl_arg_type, in, graph, inst_node, valid_places_);
+    AddLayoutInst(*in->AsArg().type,
+                  *decl_arg_type,
+                  in,
+                  graph,
+                  inst_node,
+                  graph->valid_places());
   }
 }
 
@@ -104,6 +106,7 @@ void TypeLayoutTransformPass::AddLayoutInst(
   layout_op->Attach(op_desc, inst_node->AsStmt().op()->scope());
   auto kernels = layout_op->CreateKernels(valid_places);
   LOG(INFO) << "in pass add_layout: layout create kernels " << kernels.size();
+  std::vector<std::unique_ptr<KernelBase>> selected_kernels;
   // fix(MyPandaShaoxiang): select kernel that input_dcl_type same as in.type
   bool is_found = false;
   for (auto& kernel : kernels) {

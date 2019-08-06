@@ -108,12 +108,12 @@ REGISTER_LITE_KERNEL(io_copy,
                      host_to_device)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kHost),
-                                      PRECISION(kAny),
-                                      DATALAYOUT(kAny))})
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kNCHW))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kFPGA),
-                                       PRECISION(kAny),
-                                       DATALAYOUT(kAny))})
+                                       PRECISION(kFloat),
+                                       DATALAYOUT(kNCHW))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(io_copy,
@@ -124,8 +124,8 @@ REGISTER_LITE_KERNEL(io_copy,
                      device_to_host)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kFPGA),
-                                      PRECISION(kAny),
-                                      DATALAYOUT(kAny))})
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kNHWC))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kHost),
                                        PRECISION(kAny),
@@ -140,12 +140,12 @@ REGISTER_LITE_KERNEL(io_copy_once,
                      host_to_device_once)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kHost),
-                                      PRECISION(kAny),
-                                      DATALAYOUT(kAny))})
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kNCHW))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kFPGA),
-                                       PRECISION(kAny),
-                                       DATALAYOUT(kAny))})
+                                       PRECISION(kFloat),
+                                       DATALAYOUT(kNCHW))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(io_copy_once,
@@ -156,8 +156,8 @@ REGISTER_LITE_KERNEL(io_copy_once,
                      device_to_host_once)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kFPGA),
-                                      PRECISION(kAny),
-                                      DATALAYOUT(kAny))})
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kNHWC))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kHost),
                                        PRECISION(kAny),

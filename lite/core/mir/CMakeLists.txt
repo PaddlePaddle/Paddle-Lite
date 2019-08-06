@@ -19,6 +19,7 @@ lite_cc_library(mir_passes
       static_kernel_pick_pass.cc
       variable_place_inference_pass.cc
       type_target_cast_pass.cc
+      type_layout_cast_pass.cc
       type_precision_cast_pass.cc
       io_copy_kernel_pick_pass.cc
       graph_visualize_pass.cc

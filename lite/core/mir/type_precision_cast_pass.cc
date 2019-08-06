@@ -111,6 +111,8 @@ void PrecisionCastPass::AddCastInst(const Type& from,
   }
   cast_op->Attach(op_desc, inst_node->AsStmt().op()->scope());
   auto kernels = cast_op->CreateKernels(valid_places);
+  LOG(INFO) << "places:" << valid_places[0] << " " << valid_places[1];
+  LOG(INFO) << kernels[0]->place() << " " << kernels[1]->place();
   std::vector<std::unique_ptr<KernelBase>> selected_kernels;
   bool is_found = false;
   for (auto& kernel : kernels) {

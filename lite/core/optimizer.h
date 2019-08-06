@@ -92,6 +92,10 @@ class Optimizer {
            "variable_place_inference_pass",  //
            "argument_type_display_pass",     //
 
+           "type_layout_cast_pass",          //
+           "variable_place_inference_pass",  //
+           "argument_type_display_pass",     //
+
            "trans_weight_pass",            //
            "runtime_context_assign_pass",  //
            "graph_visualze"}});

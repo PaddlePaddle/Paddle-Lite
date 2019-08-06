@@ -31,7 +31,15 @@ void ConvCompute::PrepareForRun() {
   input_.share_from_tensorlite(*param.x);
   output_.share_from_tensorlite(*param.output);
   filter_.share_from_tensorlite(*param.filter);
-  LOG(ERROR) << param.x << " " << param.output << " " << param.filter;
+  auto param_out_data = param.output->mutable_data<float16>(TARGET(kFPGA));
+  LOG(ERROR) << param.x->data<float16>() << " " << param.output->data<float16>()
+             << " " << param.filter->data<float>();
+  LOG(ERROR) << param.output->data<float16>()[0] << " "
+             << param.output->data<float16>()[1];
+  LOG(ERROR) << param.x->data<float16>()[0] << " "
+             << param.x->data<float16>()[1];
+  LOG(ERROR) << param.filter->data<float>()[0] << " "
+             << param.filter->data<float>()[1];
 
   conv_param.input = &input_;
   conv_param.output = &output_;
