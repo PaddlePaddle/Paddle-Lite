@@ -34,6 +34,42 @@ inline void ElementwiseAddCompute(const ElementwiseAddParam<CPU> &param) {
   math::AddElememtWise<IDENTITY>(input_x, input_y, axis, output);
 }
 
+template <typename Dtype, ActivationType Act>
+struct AddElememtWiseStruct {
+  void operator()(const Tensor *X, const Tensor *Y, const int Axis,
+                  Tensor *Out) {}
+};
+
+template <ActivationType Act>
+struct AddElememtWiseStruct<int, Act> {
+  void operator()(const Tensor *input, const Tensor *bias, const int Axis,
+                  Tensor *output) {
+    const auto &x_dims = input->dims();
+    const auto &y_dims = bias->dims();
+    const int *input_data = input->data<int>();
+    const int *bias_data = bias->data<int>();
+    int *output_data = output->mutable_data<int>();
+
+    if (x_dims == y_dims) {
+      size_t channels = 1;
+      size_t elementwise_num = 1;
+      for (int i = 0; i < y_dims.size(); ++i) {
+        channels *= y_dims[i];
+      }
+#pragma omp parallel for
+      for (int j = 0; j < channels; ++j) {
+        size_t offset = (0 * channels + j) * elementwise_num;
+        const int *input = input_data + offset;
+        const int bias = bias_data[j];
+        int *output = output_data + offset;
+        for (int k = 0; k < elementwise_num; ++k) {
+          output[k] = math::Active<Act>(input[k] + bias);
+        }
+      }
+    }
+  }
+};
+
 template class ElementwiseAddKernel<CPU, float>;
 
 }  // namespace operators

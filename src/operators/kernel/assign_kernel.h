@@ -12,23 +12,42 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#ifdef ASSIGN_OP
+
 #pragma once
 
-#include <string>
+#include <vector>
 #include "framework/operator.h"
-#include "operators/kernel/compare_kernel.h"
 #include "operators/op_param.h"
 
 namespace paddle_mobile {
 namespace operators {
 
-#ifdef LESS_THAN_OP
-DECLARE_OPERATOR(LessThan, CompareParam, LessThanKernel);
-#endif  // LESS_THAN_OP
+template <typename Dtype>
+class AssignParam : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
 
-#ifdef EQUAL_OP
-DECLARE_OPERATOR(Equal, CompareParam, EqualKernel);
-#endif  // EQUAL_OP
+ public:
+  AssignParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
+              const AttributeMap &attrs, Scope *scope)
+      : OpParam(inputs, outputs, attrs, scope) {
+    input_ = OpParam::InputXFrom<GType>(inputs, *scope);
+    output_ = OpParam::OutFrom<GType>(outputs, *scope);
+  }
+
+  const GType *Input() const { return input_; }
+
+  GType *Output() const { return output_; }
+
+ private:
+  GType *input_;
+  GType *output_;
+};
+
+DECLARE_KERNEL(Assign, AssignParam);
 
 }  // namespace operators
 }  // namespace paddle_mobile
+
+#endif  // ASSIGN_OP
