@@ -37,29 +37,14 @@ void ElementwiseAddCompute::PrepareForRun() {
   pe_.init();
   pe_.apply();
 }
-void ElementwiseAddCompute::Run() {
-  //  input_x_.flush();
-  //  input_y_.flush();
-
-  LOG(ERROR) << "input x_";
-  // LOG(ERROR) << input_x_;
-  // LOG(ERROR) << input_y_;
-
-  pe_.dispatch();
-  LOG(ERROR) << "after dispatch";
-  //  output_.invalidate();
-}
+void ElementwiseAddCompute::Run() { pe_.dispatch(); }
 
 void ElementwiseAddActivationCompute::PrepareForRun() {
   zynqmp::ElementwiseAddParam& ew_param = pe_.param();
   auto& param = Param<operators::FusionElementwiseActivationParam>();
-  // param.Y->mutable_data<float16>();
   if (param.act_type != "relu") {
     LOG(FATAL) << "unsupported Activation type: " << param.act_type;
   }
-  // input_x_.share_from_tensorlite(*param.X);
-  // input_y_.share_from_tensorlite(*param.Y);
-  // output_.share_from_tensorlite(*param.Out);
   param.Out->mutable_data<float16>();
   ew_param.inputs = {param.X->ZynqTensor(), param.Y->ZynqTensor()};
   ew_param.output = param.Out->ZynqTensor();
@@ -68,13 +53,7 @@ void ElementwiseAddActivationCompute::PrepareForRun() {
   pe_.init();
   pe_.apply();
 }
-void ElementwiseAddActivationCompute::Run() {
-  // input_x_.flush();
-  // input_y_.flush();
-  pe_.dispatch();
-  // output_.invalidate();
-  auto& param = Param<operators::FusionElementwiseActivationParam>();
-}
+void ElementwiseAddActivationCompute::Run() { pe_.dispatch(); }
 
 }  // namespace fpga
 }  // namespace kernels

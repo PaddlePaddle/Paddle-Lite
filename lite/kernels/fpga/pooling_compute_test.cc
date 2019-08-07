@@ -253,9 +253,7 @@ TEST(pool_fpga, compute) {
                         // compute
                         pool.SetParam(param);
                         pool.PrepareForRun();
-                        LOG(ERROR) << "after prepare for run";
                         pool.Run();
-                        LOG(ERROR) << "after run";
                         // compute ref
                         param.output = &output_ref;
                         pool_compute_ref(param);

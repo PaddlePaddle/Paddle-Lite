@@ -203,39 +203,30 @@ inline void format_fc_filter(Tensor* filter, Tensor* quantized_filter) {
 
 inline void split_filter_num(const ConvParam& c_param) {
   ConvParam& param = const_cast<ConvParam&>(c_param);
-  // std::cout << "1\n";
   Tensor* input = param.input;
   Tensor* out = param.output;
   Tensor* filter = param.filter;
   auto channel = out->shape().channel();
-  // std::cout << "2\n";
   int split_num = param.groups == 1 ? get_split_num(param.filter) : 1;
   int filter_num_per_div = get_filter_num_per_div(filter, param.groups);
-  // std::cout << "3\n";
   Shape& out_shape = out->shape();
   for (int i = 0; i < split_num; i++) {
-    // std::cout << "4\n";
     BasicConvParam* conv_param = new BasicConvParam();
     conv_param->output.setDataLocation(Device);
     conv_param->output.setAligned(true);
-    // std::cout << "5\n";
     int filter_num = filter->shape().num();
     float16* out_address = nullptr;
     float* out_scale_address = nullptr;
-    // std::cout << "6\n";
     ConvArgs& args = conv_param->args;
 
     if (split_num == 1) {
-      // std::cout << "7\n";
       out_address = out->data<float16>();
       out_scale_address = out->scale();
     }
     filter_num = i == split_num - 1
                      ? channel - (split_num - 1) * filter_num_per_div  // NOLINT
                      : filter_num_per_div;
-    // std::cout << "8\n";
     if (split_num != 1) {
-      // std::cout << "9\n";
       Shape shape(NHWC, {1, out_shape.height(), out_shape.width(), filter_num});
       out_address = conv_param->output.mutableData<float16>(FP16, shape);
       out_scale_address = conv_param->output.scale();
@@ -245,7 +236,6 @@ inline void split_filter_num(const ConvParam& c_param) {
                    filter->shape().channel(),
                    filter->shape().height(),
                    filter->shape().width()});
-    // std::cout << "10\n";
     Tensor new_filter;
     float* new_filter_data = new_filter.mutableData<float>(FP32, f_shape);
     int filter_hwc = filter->shape().height() * filter->shape().width() *
@@ -255,11 +245,9 @@ inline void split_filter_num(const ConvParam& c_param) {
            filter->data<float>() + i * filter_num_per_div * filter_hwc,
            filter_num * filter_hwc * sizeof(float));
     new_filter.flush();
-    // std::cout << "11\n";
 
     conv_param->filter.mutableData<float>(FP32, f_shape);
     format_filter(&new_filter, &(conv_param->filter), param.groups);
-    // std::cout << "12\n";
     int sb_num = 2 * align_to_x(filter_num, BS_NUM_ALIGNMENT);
     Tensor scale;
     Tensor bias;
@@ -275,7 +263,6 @@ inline void split_filter_num(const ConvParam& c_param) {
     for (int n = 0; n < filter_num; n++) {
       bias_data[n] = param.bias()->data<float>()[n + chnnnel_start];
     }
-    // std::cout << "13\n";
     Shape sb_shape(N, {sb_num});
     format_scale_bias(&scale,
                       &bias,
@@ -283,7 +270,6 @@ inline void split_filter_num(const ConvParam& c_param) {
                       &conv_param->scaleBias,
                       param.groups);
     conv_param->scaleBias.flush();
-    // std::cout << "14\n";
 
     args.group_num = param.groups;
     args.relu_enabled = param.relu.enabled;
@@ -305,7 +291,6 @@ inline void split_filter_num(const ConvParam& c_param) {
     args.image.pad_height = param.paddings[0];
     args.output.address = out_address;
     args.output.scale_address = out_scale_address;
-    // std::cout << "15\n";
     param.splitParams().push_back(conv_param);
   }
 }
@@ -318,7 +303,6 @@ inline void split_channel(const ConvParam& c_param) {
 
   int num = ceil(input->shape().channel() * 1.0f / 2047);
   int channel = input->shape().channel() / num;
-  std::cout << "channel::" << channel << "num::" << num << std::endl;
   Shape bs_shape(N, {channel});
 
   for (int i = 0; i < num; i++) {
@@ -415,7 +399,6 @@ inline bool compute_conv(const ConvParam& c_conv_params) {
     for (int i = 0; i < 1; i++) {
       for (int i = 0; i < img.shape().numel(); i++) {
         float value = half_to_float(img.data<float16>()[i]);
-        std::cout << "value:" << value << std::endl;
       }
     }
   }

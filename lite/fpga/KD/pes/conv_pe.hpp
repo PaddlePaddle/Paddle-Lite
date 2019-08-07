@@ -89,7 +89,6 @@ class ConvPE : public PE {
   }
 
   bool dispatch() {
-    std::cout << "1\n";
     inplace_.relu_enable = param_.relu.enabled;
     inplace_.power_enable = false;
     inplace_.normalize_enable = false;
@@ -97,29 +96,23 @@ class ConvPE : public PE {
     if (param_.relu.enabled) {
       inplace_.relu_enable = param_.relu.enabled;
       config_inplace(inplace_);
-      std::cout << "2\n";
     }
 
     std::vector<BasicConvParam*>& params = param_.splitParams();
     int ret = 0;
     for (auto conv_param : params) {
-      std::cout << "3\n";
       ret |= compute_fpga_conv_basic(conv_param->args);
     }
-    std::cout << "4\n";
     if (param_.relu.enabled) {
-      std::cout << "5\n";
       inplace_.relu_enable = false;
       config_inplace(inplace_);
     }
 
     size_t size = params.size();
     if (split_axis == 0 && ret == 0 && size > 1) {
-      std::cout << "6\n";
       concatPE_.dispatch();
     }
     if (split_axis == 1 && ret == 0 && size > 1) {
-      std::cout << "7\n";
       ElementwiseAddParam& add_param = addPE_.param();
       add_param.inputs = {&params[0]->output, &params[1]->output};
       add_param.output = param_.output;

@@ -152,7 +152,6 @@ class PoolingPE : public PE {
     }
     output->scale()[0] = scale_max / 127.0f;
     output->scale()[1] = 127.0f / scale_max;
-    std::cout << "pool scale:" << scale_max / 127.0f << std::endl;
     output->flush();
   }
 

@@ -28,7 +28,6 @@ void ConvCompute::PrepareForRun() {
 
   // ====================================================
   zynqmp::ConvParam& conv_param = pe_.param();
-  // auto& param = Param<operators::ConvParam>();
 
   param.output->mutable_data<float16>();
 
@@ -41,17 +40,11 @@ void ConvCompute::PrepareForRun() {
   conv_param.paddings = param.paddings;
   conv_param.dilations = param.dilations;
   fill_scale_bias_const(&conv_param);
-  // std::vector<int> kernelSize;
   pe_.init();
   pe_.apply();
 }
 
-void ConvCompute::Run() {
-  std::cout << "Conv Run \n";
-  auto& param = this->Param<param_t>();
-  pe_.dispatch();
-  std::cout << "after dispatch\n";
-}
+void ConvCompute::Run() { pe_.dispatch(); }
 
 }  // namespace fpga
 }  // namespace kernels

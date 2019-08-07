@@ -25,15 +25,10 @@ namespace fpga {
 using float16 = zynqmp::float16;
 void CalibComputeFp32ToFP16::Run() {
   auto& param = this->Param<operators::CalibParam>();
-  // std::cout << "1\n";
   const auto* din = param.input->data<float>();
-  // std::cout << "2\n";
   auto* dout = param.output->mutable_data<float16>(TARGET(kFPGA));
-  // std::cout <<  "din:" << din << "out:" << dout << std::endl;
-  
-  
+
   for (int i = 0; i < param.input->numel(); ++i) {
-    // std::cout << "for\n";
     dout[i] = zynqmp::float_to_half(din[i]);
   }
   return;

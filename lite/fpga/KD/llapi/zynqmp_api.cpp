@@ -66,7 +66,6 @@ void *fpga_malloc(size_t size) {
   void *ptr = reinterpret_cast<void *>(
       mmap64(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0));
   if (ptr == NULL) {
-    std::cout << "not enough memory !";
     exit(-1);
   }
   memory_map.insert(std::make_pair(ptr, size));
@@ -162,7 +161,6 @@ int compute_fpga_conv(const struct SplitConvArgs &args) {
   }
 
   if (split_num > 1) {
-    std::cout << "Split num > 1 !!!!!!!!!!!!!!!!!!" << std::endl;
     exit(-1);
   }
   return ret;
@@ -234,47 +232,12 @@ int compute_fpga_concat(const struct ConcatArgs &args) { return -1; }
 
 int compute_fpga_scale(const struct ScaleArgs &args) {
 #ifdef ENABLE_DEBUG
-  std::cout << "======Compute Scale======";
-  std::cout << "scale_address:" << args.scale_address << std::endl;
-  std::cout << "bias_address:" << args.bias_address << std::endl;
-
-  std::cout << "wc_alignment:" << args.wc_alignment << std::endl;
-  std::cout << "channel_alignment:" << args.channel_alignment << std::endl;
-
-  std::cout << "   image_address:" << args.image.address
-            << "   image_scale_address:" << args.image.scale_address
-            << "   image_channels:" << args.image.channels
-            << "   image_height:" << args.image.height
-            << "   image_width:" << args.image.width
-            << "   pad_height:" << args.image.pad_height
-            << "   pad_width:" << args.image.pad_width;
-
-  std::cout << "   out_address:" << args.output.address
-            << "   out_scale_address:" << args.output.scale_address;
-
 #endif
   return do_ioctl(IOCTL_CONFIG_SCALE, &args);
 }
 
 int compute_fpga_dwconv(const struct DWconvArgs &args) {
 #ifdef ENABLE_DEBUG
-  std::cout << "======Compute Basic Conv======";
-  std::cout << "   relu_enabled:" << args.relu_enabled
-            << "   filter_address:" << args.filter_address;
-  std::cout << "   image_address:" << args.image.address
-            << "   image_scale_address:" << args.image.scale_address
-            << "   image_channels:" << args.image.channels
-            << "   image_height:" << args.image.height
-            << "   image_width:" << args.image.width
-            << "   pad_height:" << args.image.pad_height
-            << "   pad_width:" << args.image.pad_width;
-  std::cout << "   kernel_height:" << args.kernel.height
-            << "   kernel_width:" << args.kernel.width
-            << "   stride_h:" << args.kernel.stride_h
-            << "   stride_w:" << args.kernel.stride_w;
-  std::cout << "   out_address:" << args.output.address
-            << "   out_scale_address:" << args.output.scale_address;
-
 #endif
   return do_ioctl(IOCTL_CONFIG_DWCONV, &args);
 }
