@@ -39,7 +39,7 @@ class VariablePlaceInferencePass : public DebugPass {
     for (const auto& v : graph->inputs()) {
       // the feed op might in the inputs
       if (v->IsStmt()) {
-        LOG(INFO) << "found kernel in inputs " << v->AsStmt().op_type();
+        VLOG(4) << "found kernel in inputs " << v->AsStmt().op_type();
         continue;
       }
     }
@@ -94,11 +94,11 @@ class VariablePlaceInferencePass : public DebugPass {
         std::string arg_name = get_argname(node_name, inst.op_info()->inputs());
         CHECK(arg_name.size() > 0) << "can not found op arguments for node "
                                    << node_name;
-        LOG(INFO) << "-- input arg_name " << arg_name
-                  << "-- node name :" << node_name;
+        VLOG(4) << "-- input arg_name " << arg_name
+                << "-- node name :" << node_name;
         auto type = inst.picked_kernel().GetInputDeclType(arg_name);
         if (!x_in->AsArg().type) {
-          LOG(INFO) << "set type " << *type << " " << x_in->AsArg().name;
+          VLOG(4) << "set type " << *type << " " << x_in->AsArg().name;
           if (x_in->AsArg().is_weight) {
             SetWeightType(x_in, *type);
           } else {
@@ -107,7 +107,7 @@ class VariablePlaceInferencePass : public DebugPass {
         }
       }
 
-      LOG(INFO) << "inst " << inst.op_info()->Repr();
+      VLOG(4) << "inst " << inst.op_info()->Repr();
       for (auto* x_out : x->outlinks) {
         std::string node_name = x_out->AsArg().name;
         std::string arg_name =
@@ -115,10 +115,10 @@ class VariablePlaceInferencePass : public DebugPass {
         CHECK(arg_name.size() > 0) << "can not found op arguments for node "
                                    << node_name << " in Inst "
                                    << inst.op_type();
-        LOG(INFO) << "-- output arg_name " << arg_name;
+        VLOG(4) << "-- output arg_name " << arg_name;
         auto type = inst.picked_kernel().GetOutputDeclType(arg_name);
         if (!x_out->AsArg().type) {
-          LOG(INFO) << "set type " << *type << " " << x_out->AsArg().name;
+          VLOG(4) << "set type " << *type << " " << x_out->AsArg().name;
           if (x_out->AsArg().is_weight) {
             SetWeightType(x_out, *type);
           } else {

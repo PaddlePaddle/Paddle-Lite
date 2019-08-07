@@ -93,7 +93,10 @@ void PrecisionCastPass::AddCastInst(const Type& from,
   auto* cast_inst = graph->NewInstructNode();
 
   // create Op and kernels.
-  auto cast_op = LiteOpRegistry::Global().Create("calib");
+  bool in_persist = in->AsArg().is_weight || in->AsArg().is_persist;
+  std::string cast_type = in_persist ? "calib_once" : "calib";
+  cast_op_output_arg->AsArg().is_persist = in_persist;
+  auto cast_op = LiteOpRegistry::Global().Create(cast_type);
   CHECK(cast_op) << "create op [" << cast_op << "] failed";
 
   // Create the new var manually.
@@ -101,7 +104,7 @@ void PrecisionCastPass::AddCastInst(const Type& from,
 
   // Create Calib Instruction.
   cpp::OpDesc op_desc;
-  op_desc.SetType("calib");
+  op_desc.SetType(cast_type);
   op_desc.SetInput("Input", {in->AsArg().name});
   op_desc.SetOutput("Out", {cast_op_output_name});
   if (inst_node->AsStmt().op_info()->HasAttr("input_scale")) {
@@ -119,7 +122,7 @@ void PrecisionCastPass::AddCastInst(const Type& from,
       is_found = true;
       selected_kernels.emplace_back(std::move(kernel));
       // we pick the kernel
-      cast_inst->AsStmt("calib", std::move(selected_kernels), cast_op);
+      cast_inst->AsStmt(cast_type, std::move(selected_kernels), cast_op);
       break;
     }
   }

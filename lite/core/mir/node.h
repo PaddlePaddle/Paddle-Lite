@@ -92,6 +92,10 @@ class Node {
     // Weight is a special kind of argument, it is marked as weight explicitly
     // so that some weight related optimization can take place.
     bool is_weight{false};
+    // is_persist indicate that whether is the argument trans from Weight
+    // if the need more than one tool operator(eg. io_copy layout calib), the
+    // argument between them should be persist to make sure it's only run once
+    bool is_persist{false};
   };
 
   Arg& AsArg(const std::string& name, int id);

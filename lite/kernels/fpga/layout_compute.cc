@@ -112,3 +112,35 @@ REGISTER_LITE_KERNEL(layout,
                                        PRECISION(kFP16),
                                        DATALAYOUT(kNHWC))})
     .Finalize();
+
+REGISTER_LITE_KERNEL(layout_once,
+                     kFPGA,
+                     kAny,
+                     kNHWC,
+                     paddle::lite::kernels::fpga::TransHwcToChwCompute,
+                     hwc_to_chw_fpga_fp16)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kFPGA),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kNHWC))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kFPGA),
+                                       PRECISION(kFP16),
+                                       DATALAYOUT(kNCHW))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(layout_once,
+                     kFPGA,
+                     kAny,
+                     kNHWC,
+                     paddle::lite::kernels::fpga::TransChwToHwcCompute,
+                     chw_to_hwc_fpga_fp16)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kFPGA),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kNCHW))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kFPGA),
+                                       PRECISION(kFP16),
+                                       DATALAYOUT(kNHWC))})
+    .Finalize();

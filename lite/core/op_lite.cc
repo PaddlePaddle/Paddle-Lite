@@ -64,7 +64,7 @@ std::vector<std::unique_ptr<KernelBase>> OpLite::CreateKernels(
     targets.insert(place.target);
   }
 
-  LOG(INFO) << "op " << op_type_ << " get " << kernels.size() << " kernels";
+  VLOG(4) << "op " << op_type_ << " get " << kernels.size() << " kernels";
   return kernels;
 }
 

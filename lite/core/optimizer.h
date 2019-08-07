@@ -46,16 +46,11 @@ class Optimizer {
     CHECK(!valid_places.empty()) << "At least one valid_place should be set";
     CHECK(!graph_) << "duplicate optimize found";
     graph_.reset(new mir::SSAGraph);
-    LOG(INFO) << "graph set finished!!";
     graph_->Build(program, valid_places);
-    LOG(INFO) << "graph build finished!!";
     graph_->SetValidPlaces(valid_places);
-    LOG(INFO) << "graph set_valid finished!!";
 
     SpecifyKernelPickTactic(kernel_pick_factor);
-    LOG(INFO) << "graph set_kernel_pick finished!!";
     InitTargetTypeTransformPass();
-    LOG(INFO) << "graph init target finished!!";
 
     if (passes.empty()) {
       RunPasses(std::vector<std::string>{
@@ -157,7 +152,6 @@ class Optimizer {
             "type_target_cast_pass");
     CHECK(pass);
     CHECK(!valid_places_.empty());
-    LOG(INFO) << "valid_places.size " << valid_places_.size();
     pass->SetValidPlaces(valid_places_);
   }
 

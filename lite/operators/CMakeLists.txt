@@ -29,6 +29,7 @@ lite_cc_library(axpy_op SRCS axpy_op.cc DEPS ${op_DEPS})
 lite_cc_library(gru_unit_op SRCS gru_unit_op.cc DEPS ${op_DEPS})
 lite_cc_library(gru_op SRCS gru_op.cc DEPS ${op_DEPS})
 lite_cc_library(layout_op SRCS layout_op.cc DEPS ${op_DEPS})
+lite_cc_library(layout_once_op SRCS layout_once_op.cc DEPS ${op_DEPS})
 lite_cc_library(while_op SRCS while_op.cc DEPS ${op_DEPS})
 lite_cc_library(lookup_table_op SRCS lookup_table_op.cc DEPS ${op_DEPS})
 lite_cc_library(beam_search_decode_op SRCS beam_search_decode_op.cc DEPS ${op_DEPS})
@@ -42,6 +43,7 @@ lite_cc_library(pad2d_op SRCS pad2d_op.cc DEPS ${op_DEPS})
 lite_cc_library(negative_op SRCS negative_op.cc DEPS ${op_DEPS})
 lite_cc_library(crop_op SRCS crop_op.cc DEPS ${op_DEPS})
 lite_cc_library(calib_op SRCS calib_op.cc DEPS ${op_DEPS})
+lite_cc_library(calib_once_op SRCS calib_once_op.cc DEPS ${op_DEPS})
 lite_cc_library(split_op SRCS split_op.cc DEPS ${op_DEPS})
 lite_cc_library(transpose_op SRCS transpose_op.cc DEPS ${op_DEPS})
 lite_cc_library(fake_quant SRCS fake_quantize_moving_avg_max_abs.cc DEPS ${op_DEPS})
@@ -110,6 +112,7 @@ set(ops
         density_prior_box_op
         negative_op
         calib_op
+        calib_once_op
         split_op
         transpose_op
         fake_quant
@@ -124,6 +127,7 @@ set(ops
         norm_op
         io_copy_once_op
         layout_op
+        layout_once_op
         while_op
         logical_xor        
         logical_and        

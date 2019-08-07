@@ -61,9 +61,9 @@ void TypeLayoutTransformPass::ComplementInputs(SSAGraph* graph,
   auto decl_arg_type = inst.picked_kernel().GetInputDeclType(tmp);
   CHECK(in->AsArg().type);
   if (!DataLayoutCompatibleTo(*in->AsArg().type, *decl_arg_type)) {
-    LOG(INFO) << "found Layout unmatched tensor: " << in->AsArg().name
-              << " for kernel " << inst.op()->DebugString() << " "
-              << *in->AsArg().type << " -> " << *decl_arg_type;
+    VLOG(4) << "found Layout unmatched tensor: " << in->AsArg().name
+            << " for kernel " << inst.op()->DebugString() << " "
+            << *in->AsArg().type << " -> " << *decl_arg_type;
     AddLayoutInst(*in->AsArg().type,
                   *decl_arg_type,
                   in,
@@ -89,10 +89,12 @@ void TypeLayoutTransformPass::AddLayoutInst(
   auto* layout_output_arg = graph->NewArgumentNode(layout_output_name);
   auto* layout_inst = graph->NewInstructNode();
 
-  std::string layout_type = "layout";
+  bool in_persist = in->AsArg().is_weight || in->AsArg().is_persist;
+  std::string layout_type = in_persist ? "layout_once" : "layout";
   // create Op and kernels.
   auto layout_op = LiteOpRegistry::Global().Create(layout_type);
   CHECK(layout_op) << "create op [" << layout_op << "] failed";
+  layout_output_arg->AsArg().is_persist = in_persist;
   // CHECK(layout_op);
   // Create the new var manually.
   inst_node->AsStmt().op()->scope()->Var(layout_output_name);
@@ -105,7 +107,6 @@ void TypeLayoutTransformPass::AddLayoutInst(
 
   layout_op->Attach(op_desc, inst_node->AsStmt().op()->scope());
   auto kernels = layout_op->CreateKernels(valid_places);
-  LOG(INFO) << "in pass add_layout: layout create kernels " << kernels.size();
   std::vector<std::unique_ptr<KernelBase>> selected_kernels;
   // fix(MyPandaShaoxiang): select kernel that input_dcl_type same as in.type
   bool is_found = false;
@@ -159,7 +160,6 @@ void TypeLayoutTransformPass::AddLayoutInst(
   }
 
   for (auto& kernel : inst_node->AsStmt().kernels()) {
-    LOG(INFO) << "kernel info: " << kernel->name();
     inst_node->AsStmt().op()->AttachKernel(kernel.get());
   }
 

@@ -93,9 +93,7 @@ void Predictor::Build(const std::string &model_path,
     default:
       LOG(FATAL) << "Unknown model type";
   }
-  LOG(INFO) << "build 1 finished!!";
   Build(program_desc_, prefer_place, valid_places, passes);
-  LOG(INFO) << "build 2 finished!!";
 }
 
 void Predictor::Build(const cpp::ProgramDesc &desc,
@@ -104,14 +102,12 @@ void Predictor::Build(const cpp::ProgramDesc &desc,
                       const std::vector<std::string> &passes) {
   program_desc_ = desc;
   Program program(desc, scope_, valid_places);
-  LOG(INFO) << "build program finished!!";
 
   optimizer_.KernelPickPreferPlace(prefer_place);
   core::KernelPickFactor factor;
   factor.ConsiderTarget();
   factor.ConsiderPrecision();
   optimizer_.Run(std::move(program), valid_places, factor, passes);
-  LOG(INFO) << "optimizer finished!!";
 
   exec_scope_ = optimizer_.exec_scope();
 }

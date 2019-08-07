@@ -90,7 +90,9 @@ void TypeTargetTransformPass::AddIoCopyInst(
   auto* io_copy_output_arg = graph->NewArgumentNode(io_copy_output_name);
   auto* io_copy_inst = graph->NewInstructNode();
 
-  std::string io_copy_type = in->AsArg().is_weight ? "io_copy_once" : "io_copy";
+  bool in_persist = in->AsArg().is_weight || in->AsArg().is_persist;
+  std::string io_copy_type = in_persist ? "io_copy_once" : "io_copy";
+  io_copy_output_arg->AsArg().is_persist = in_persist;
   // create Op and kernels.
   auto io_copy_op = LiteOpRegistry::Global().Create(io_copy_type);
   CHECK(io_copy_op) << "create op [" << io_copy_op << "] failed";
@@ -106,7 +108,6 @@ void TypeTargetTransformPass::AddIoCopyInst(
 
   io_copy_op->Attach(op_desc, inst_node->AsStmt().op()->scope());
   auto kernels = io_copy_op->CreateKernels(valid_places);
-  LOG(INFO) << "in pass add_io_copy: io_copy create kernels " << kernels.size();
   // fix(MyPandaShaoxiang): select kernel that input_dcl_type same as in.type
   bool is_found = false;
   std::vector<std::unique_ptr<KernelBase>> selected_kernels;
