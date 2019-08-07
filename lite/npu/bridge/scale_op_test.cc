@@ -15,11 +15,9 @@
 #include "lite/operators/scale_op.h"
 #include <gtest/gtest.h>
 #include <random>
-#include "ai_ddk_lib/include/graph/op/all_ops.h"
 #include "lite/core/op_registry.h"
 #include "lite/npu/bridge/registry.h"
-#include "lite/npu/bridge/utils.h"
-#include "lite/operators/graph_op.h"
+#include "lite/npu/bridge/test_helper.h"
 
 namespace paddle {
 namespace lite {
@@ -71,85 +69,35 @@ void test_scale(int bs,
 
   // initialize input&output data
   std::default_random_engine rand_eng;
-  std::uniform_real_distribution<float> rand_dist(-5.0f, 5.0f);
+  std::uniform_int_distribution<int> rand_dist(-5, 5);
   for (int i = 0; i < x->dims().production(); i++) {
-    float rand_value = half2float(float2half(rand_dist(rand_eng)));
-    x->mutable_data<float>()[i] = rand_value;
+    x->mutable_data<float>()[i] = static_cast<float>(rand_dist(rand_eng));
   }
 
-  // create scale op
-  cpp::OpDesc scale_op_desc;
-  scale_op_desc.SetType("scale");
-  scale_op_desc.SetInput("X", {x_var_name});
-  scale_op_desc.SetOutput("Out", {out_var_name});
-  scale_op_desc.SetAttr("bias_after_scale", bias_after_scale);
-  scale_op_desc.SetAttr("scale", half2float(float2half(scale)));
-  scale_op_desc.SetAttr("bias", half2float(float2half(bias)));
+  // initialize op desc
+  cpp::OpDesc opdesc;
+  opdesc.SetType("scale");
+  opdesc.SetInput("X", {x_var_name});
+  opdesc.SetOutput("Out", {out_var_name});
+  opdesc.SetAttr("bias_after_scale", bias_after_scale);
+  opdesc.SetAttr("scale", scale);
+  opdesc.SetAttr("bias", bias);
 
-  auto scale_op = std::make_shared<operators::ScaleOp>(scale_op_desc.Type());
-  scale_op->SetValidPlaces({Place{TARGET(kHost), PRECISION(kFloat)},
-                            Place{TARGET(kARM), PRECISION(kFloat)}});
-  CHECK(scale_op->Attach(scale_op_desc, &scope));
-  CHECK(scale_op->CheckShape());
-  CHECK(scale_op->InferShape());
-
-  // convert scale op and build IR graph
-  ge::TensorDesc x_desc(
-      ge::Shape(x->dims().Vectorize()), ge::FORMAT_NCHW, ge::DT_FLOAT);
-  auto x_node = std::make_shared<ge::op::Data>(x_var_name);
-  x_node->update_input_desc_x(x_desc);
-  node_map_type inputs_map;
-  inputs_map[x_var_name] = x_node;
-  auto outputs_map =
-      supported_lists.at(scale_op->op_info()->Type())(scale_op, inputs_map);
-  CHECK_GT(outputs_map.size(), 0);
-
-  // compile IR graph to om model
-  std::vector<ge::Operator> graph_inputs{*inputs_map[x_var_name]};
-  std::vector<ge::Operator> graph_outputs{*outputs_map[out_var_name]};
-  std::string model_name(UniqueName("test_scale") + ".om");
-  CHECK(npu::BuildNPUClient(graph_inputs, graph_outputs, model_name));
-
-  // create graph op
-  cpp::OpDesc graph_op_desc;
-  graph_op_desc.SetType("graph_op");
-  graph_op_desc.SetInput("Inputs", {x_var_name});
-  graph_op_desc.SetOutput("Outputs", {out_var_name});
-  graph_op_desc.SetAttr("model_name", model_name);
-
-  auto graph_op =
-      std::make_shared<operators::GraphOpLite>(graph_op_desc.Type());
-  graph_op->SetValidPlaces({Place{TARGET(kNPU), PRECISION(kFloat)}});
-  CHECK(graph_op->Attach(graph_op_desc, &scope));
-  CHECK(graph_op->CheckShape());
-  CHECK(graph_op->InferShape());
-
-  // create graph op kernel
-  auto graph_kernels =
-      graph_op->CreateKernels({Place{TARGET(kNPU), PRECISION(kFloat)}});
-  CHECK(!graph_kernels.empty());
-  auto graph_kernel =
-      std::move(graph_kernels.front());  // use the first kernel by default
-  auto graph_ctx = ContextScheduler::Global().NewContext(TARGET(kNPU));
-  graph_kernel->SetContext(std::move(graph_ctx));
-
-  // perform graph op kernel and copy output tensor('out') to 'out_ref'
-  graph_kernel->Launch();
+  // create and convert op to NPU model, then run it on NPU
+  auto op = CreateOp<operators::ScaleOp>(opdesc, &scope);
+  LauchOp(op, {x_var_name}, {out_var_name});
   out_ref->CopyDataFrom(*out);
 
   // execute reference implementation and save to output tensor('out')
-  scale_ref(scale_op);
+  scale_ref(op);
 
   // compare results
   auto* out_data = out->mutable_data<float>();
   auto* out_ref_data = out_ref->mutable_data<float>();
   for (int i = 0; i < out->dims().production(); i++) {
+    VLOG(5) << i;
     EXPECT_NEAR(out_data[i], out_ref_data[i], 1e-5);
   }
-
-  // model release
-  npu::OpList::Global().clear();
-  npu::DeviceInfo::Global().Clear();
 }
 
 TEST(NPUBridges, scale) {
@@ -158,8 +106,12 @@ TEST(NPUBridges, scale) {
       for (auto ih : {3, 4}) {
         for (auto iw : {4, 3}) {
           for (auto bias_after_scale : {true, false}) {
-            for (auto scale : {-1.0f, 0.13f}) {
-              for (auto bias : {-15.f, 0.11234f}) {
+            for (auto scale : {-1.0f, 5.0f}) {
+              for (auto bias : {-2.0f, 30.0f}) {
+                VLOG(3) << "bs: " << bs << " ic: " << ic << " ih: " << ih
+                        << " iw: " << iw
+                        << " bias_after_scale: " << bias_after_scale
+                        << " scale: " << scale << " bias: " << bias;
                 test_scale(bs, ic, ih, iw, bias_after_scale, scale, bias);
               }
             }
@@ -177,6 +129,3 @@ TEST(NPUBridges, scale) {
 
 USE_LITE_OP(scale);
 USE_NPU_BRIDGE(scale);
-
-USE_LITE_OP(graph_op);
-USE_LITE_KERNEL(graph_op, kNPU, kFloat, kNCHW, def);

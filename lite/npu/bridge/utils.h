@@ -36,6 +36,7 @@ ge::DataType PrecisionConverter(PrecisionType itype);
 ge::Format DataLayoutConverter(DataLayoutType itype);
 
 ge::TensorPtr CvtFromLiteTensor(Tensor* in_tensor,
+                                std::vector<int64_t> out_shape = {},
                                 PrecisionType in_ptype = PRECISION(kFloat),
                                 DataLayoutType in_ltype = DATALAYOUT(kNCHW));
 
