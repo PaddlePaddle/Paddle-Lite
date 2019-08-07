@@ -217,6 +217,8 @@ class RoiPerspectiveParam : public OpParam {
   framework::Tensor *input_x_;
   framework::LoDTensor *input_rois_;
   framework::Tensor *output_;
+  framework::Tensor *transform_Matrix_;
+  framework::Tensor *mask;
 
   float spatial_scale_;
   int transformed_height_;

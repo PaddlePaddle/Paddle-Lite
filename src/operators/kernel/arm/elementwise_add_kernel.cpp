@@ -28,7 +28,12 @@ bool ElementwiseAddKernel<CPU, float>::Init(ElementwiseAddParam<CPU> *param) {
 template <>
 void ElementwiseAddKernel<CPU, float>::Compute(
     const ElementwiseAddParam<CPU> &param) {
-  ElementwiseAddCompute<float>(param);
+  if (param.InputX()->type() == type_id<float>().hash_code()) {
+    ElementwiseAddCompute<float>(param);
+  } else if (param.InputX()->type() == type_id<int>().hash_code()) {
+    AddElememtWiseStruct<int, IDENTITY>()(param.InputX(), param.InputY(),
+                                          param.Axis(), param.Out());
+  }
   param.Out()->set_lod(param.InputX()->lod());
 }
 

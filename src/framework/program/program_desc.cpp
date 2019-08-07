@@ -14,6 +14,7 @@ limitations under the License. */
 
 #include <string>
 #include <vector>
+#include "framework/operator.h"
 
 #include "framework/program/program_desc.h"
 #include "framework/program/tensor_desc.h"
@@ -50,6 +51,17 @@ void ProgramDesc::Description(std::string header) const {
 #ifdef PADDLE_MOBILE_DEBUG
   if (header.size()) {
     LOG(kLOG_INFO) << header;
+  }
+  for (int i = 0; i < this->blocks_.size(); ++i) {
+    auto block = this->blocks_[i];
+    for (int j = 0; j < block->Ops().size(); ++j) {
+      std::shared_ptr<OpDesc> op_desc = block->Ops()[j];
+      auto op_info_ptr =
+          OpInfoMap<CPU>::Instance()->GetNullable(op_desc->Type());
+      if (op_info_ptr == nullptr) {
+        DLOG << "Operator has not been registered :" << op_desc->Type().c_str();
+      }
+    }
   }
 
   for (int i = 0; i < this->blocks_.size(); ++i) {
