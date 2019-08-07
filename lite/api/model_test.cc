@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #include <gflags/gflags.h>
-#include <gtest/gtest.h>
 #include <string>
 #include <vector>
 #include "lite/api/paddle_api.h"

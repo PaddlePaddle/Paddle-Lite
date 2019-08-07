@@ -75,25 +75,30 @@ ge::Format DataLayoutConverter(DataLayoutType itype) {
 }
 
 ge::TensorPtr CvtFromLiteTensor(lite::Tensor* in_tensor,
+                                std::vector<int64_t> out_shape,
                                 PrecisionType in_ptype,
                                 DataLayoutType in_ltype) {
   uint8_t* in_data = nullptr;
-  int in_size = in_tensor->dims().production();
+  auto in_size = in_tensor->dims().production();
+  auto in_shape = in_tensor->dims().Vectorize();
+  if (out_shape.empty()) {
+    out_shape = in_shape;
+  }
+  int in_bytes;
   if (in_ptype == PRECISION(kFloat)) {
     in_data = reinterpret_cast<uint8_t*>(in_tensor->mutable_data<float>());
-    in_size *= sizeof(float);
+    in_bytes = in_size * sizeof(float);
   } else if (in_ptype == PRECISION(kInt32)) {
     in_data = reinterpret_cast<uint8_t*>(in_tensor->mutable_data<int32_t>());
-    in_size *= sizeof(int32_t);
+    in_bytes = in_size * sizeof(int32_t);
   } else if (in_ptype == PRECISION(kInt8)) {
     in_data = reinterpret_cast<uint8_t*>(in_tensor->mutable_data<int8_t>());
-    in_size *= sizeof(int8_t);
+    in_bytes = in_size * sizeof(int8_t);
   } else {
     LOG(FATAL) << "Unknow precision type " << PrecisionToStr(in_ptype);
   }
   ge::DataType out_ptype = PrecisionConverter(in_ptype);
   ge::Format out_ltype = DataLayoutConverter(in_ltype);
-  auto dims = in_tensor->dims().Vectorize();
 
   // if (out_ltype == ge::FORMAT_NCHW) {
   //   if (dims.size() == 1) {
@@ -109,15 +114,15 @@ ge::TensorPtr CvtFromLiteTensor(lite::Tensor* in_tensor,
   //   CHECK_EQ(dims.size(), 4);
   // }
 
-  ge::TensorDesc desc(ge::Shape(dims), out_ltype, out_ptype);
+  ge::TensorDesc out_desc(ge::Shape(out_shape), out_ltype, out_ptype);
   CHECK_EQ(out_ltype, ge::FORMAT_NCHW);
 
-  auto size = desc.GetShape().GetShapeSize();
-  CHECK_EQ(size, in_size / sizeof(float));
+  auto out_size = out_desc.GetShape().GetShapeSize();
+  CHECK_EQ(out_size, in_size);
 
   ge::TensorPtr out_tensor = std::make_shared<ge::Tensor>();
-  out_tensor->SetTensorDesc(desc);
-  out_tensor->SetData(in_data, in_size);
+  out_tensor->SetTensorDesc(out_desc);
+  out_tensor->SetData(in_data, in_bytes);
   return out_tensor;
 }
 

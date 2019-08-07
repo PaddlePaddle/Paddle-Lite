@@ -238,7 +238,7 @@ function test_arm_android {
     echo "test name: ${test_name}"
     adb_work_dir="/data/local/tmp"
 
-    skip_list=("test_model_parser" "test_mobilenetv1" "test_mobilenetv2" "test_resnet50" "test_inceptionv4" "test_light_api" "test_apis" "test_paddle_api" "test_cxx_api" "test_gen_code" "test_mobilenetv1_int8")
+    skip_list=("test_model_parser" "test_mobilenetv1" "test_mobilenetv2" "test_resnet50" "test_inceptionv4" "test_light_api" "test_apis" "test_paddle_api" "test_cxx_api" "test_gen_code" "test_mobilenetv1_int8" "test_subgraph_pass")
     for skip_name in ${skip_list[@]} ; do
         [[ $skip_name =~ (^|[[:space:]])$test_name($|[[:space:]]) ]] && echo "skip $test_name" && return
     done
@@ -496,6 +496,22 @@ function build_npu {
     fi
 }
 
+function __prepare_multiclass_nms_test_files {
+    local port=$1
+    local adb_work_dir="/data/local/tmp"
+
+    wget --no-check-certificate https://raw.githubusercontent.com/jiweibo/TestData/master/multiclass_nms_bboxes_file.txt \
+        -O lite/tests/kernels/multiclass_nms_bboxes_file.txt
+    wget --no-check-certificate https://raw.githubusercontent.com/jiweibo/TestData/master/multiclass_nms_scores_file.txt \
+        -O lite/tests/kernels/multiclass_nms_scores_file.txt
+    wget --no-check-certificate https://raw.githubusercontent.com/jiweibo/TestData/master/multiclass_nms_out_file.txt \
+        -O lite/tests/kernels/multiclass_nms_out_file.txt
+
+    adb -s emulator-${port} push lite/tests/kernels/multiclass_nms_bboxes_file.txt ${adb_work_dir}
+    adb -s emulator-${port} push lite/tests/kernels/multiclass_nms_scores_file.txt ${adb_work_dir}
+    adb -s emulator-${port} push lite/tests/kernels/multiclass_nms_out_file.txt ${adb_work_dir}
+}
+
 # $1: ARM_TARGET_OS in "android" , "armlinux"
 # $2: ARM_TARGET_ARCH_ABI in "armv8", "armv7" ,"armv7hf"
 # $3: ARM_TARGET_LANG in "gcc" "clang"
@@ -517,6 +533,9 @@ function test_arm {
         echo "android do not need armv7hf"
         return 0
     fi
+
+    echo "prepare multiclass_nms_test files..."
+    __prepare_multiclass_nms_test_files $port
 
     echo "test file: ${TESTS_FILE}"
     for _test in $(cat $TESTS_FILE); do

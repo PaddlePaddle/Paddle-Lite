@@ -13,7 +13,9 @@
 // limitations under the License.
 
 #pragma once
+#include "lite/api/paddle_place.h"
 #include "lite/core/target_wrapper.h"
+#include "lite/utils/macros.h"
 
 #ifdef LITE_WITH_OPENCL
 #include "lite/opencl/target_wrapper.h"

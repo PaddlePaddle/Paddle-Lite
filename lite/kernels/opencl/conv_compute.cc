@@ -195,6 +195,7 @@ void ConvCompute::GemmlikeConv2d() {
   GemmBatched(
       gemm_kernel, col_buf, filter_buf, bias_buf, output_buf, bs, m, n, k);
 }
+
 void ConvCompute::Conv2d1x1() {
   const auto& param = *param_.get_mutable<param_t>();
   const int batch_size = param.x->dims()[0];
@@ -238,12 +239,12 @@ void ConvCompute::GemmBatched(cl::Kernel& kernel,
                               const int m,
                               const int n,
                               const int k) {
-  auto global_work_size = cl::NDRange{static_cast<size_t>(m),
-                                      static_cast<size_t>(n),
+  auto global_work_size = cl::NDRange{static_cast<size_t>((m + 7) / 8),
+                                      static_cast<size_t>((n + 3) / 4),
                                       static_cast<size_t>(batch_size)};
+  auto local_work_size = cl::NDRange{16, 16};  // cl::NullRange;
 
   auto& context = ctx_->As<OpenCLContext>();
-
   cl_int status;
   int arg_idx = 0;
   status = kernel.setArg(arg_idx, *filter_d);
@@ -267,7 +268,7 @@ void ConvCompute::GemmBatched(cl::Kernel& kernel,
       kernel,
       cl::NullRange,
       global_work_size,
-      cl::NullRange,
+      local_work_size,
       nullptr,
       event_.get());
   CL_CHECK_FATAL(status);

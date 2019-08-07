@@ -20,7 +20,6 @@
 #include <unordered_set>
 #include <vector>
 #include "lite/core/mir/pass.h"
-#include "lite/npu/npu_helper.h"
 
 namespace paddle {
 namespace lite {
