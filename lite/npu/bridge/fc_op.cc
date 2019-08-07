@@ -36,11 +36,10 @@ node_map_type FCConverter(const std::shared_ptr<lite::OpLite> fc_op,
 
   auto x_var_name = op_info->Input("Input").front();
   auto w_var_name = op_info->Input("W").front();
-  auto b_var_name = op_info->Input("Bias").front();
+
   int in_num_col_dims = op_info->GetAttr<int>("in_num_col_dims");
   auto* xtensor = scope->FindVar(x_var_name)->GetMutable<lite::Tensor>();
   auto* wtensor = scope->FindVar(w_var_name)->GetMutable<lite::Tensor>();
-  auto* btensor = scope->FindVar(b_var_name)->GetMutable<lite::Tensor>();
   auto x_dims = xtensor->dims();
   auto w_dims = wtensor->dims();
 
@@ -51,21 +50,14 @@ node_map_type FCConverter(const std::shared_ptr<lite::OpLite> fc_op,
   int k = x_dims.Slice(in_num_col_dims, x_dims.size()).production();
   int n = w_dims[1];
 
-  if (btensor) {
-    CHECK_EQ(btensor->numel(), n);
-  }
-
   CHECK(inputs_map.count(x_var_name));
   CHECK(!inputs_map.count(w_var_name));
-  CHECK(!inputs_map.count(b_var_name));
 
   LOG(INFO) << "m:" << m << ",n:" << n << ",k:" << k;
   LOG(INFO) << "x_var_name:" << x_var_name
             << ", is data: " << inputs_map.count(x_var_name);
   LOG(INFO) << "w_var_name:" << w_var_name
             << ", is data: " << inputs_map.count(w_var_name);
-  LOG(INFO) << "b_var_name:" << b_var_name
-            << ", is data: " << inputs_map.count(b_var_name);
 
   auto xsrc = inputs_map.at(x_var_name);
   auto reshapex = std::make_shared<ge::op::Reshape>(x_var_name + "_reshape");
@@ -88,8 +80,17 @@ node_map_type FCConverter(const std::shared_ptr<lite::OpLite> fc_op,
   OpList::Global().add(wconst);
   output_node->set_input_w(*wconst);
 
-  if (btensor) {
+  auto iarg_names = op_info->input_argnames();
+  if (std::find(iarg_names.begin(), iarg_names.end(), "Bias") !=
+      iarg_names.end()) {
+    auto b_var_name = op_info->Input("Bias").front();
+    auto* btensor = scope->FindVar(b_var_name)->GetMutable<lite::Tensor>();
+
+    LOG(INFO) << "b_var_name:" << b_var_name
+              << ", is data: " << inputs_map.count(b_var_name);
+    CHECK(!inputs_map.count(b_var_name));
     CHECK_EQ(btensor->numel(), n);
+
     auto bconst = std::make_shared<ge::op::Const>(b_var_name);
     ge::TensorDesc bdesc(
         ge::Shape({1, n, 1, 1}), ge::FORMAT_NCHW, ge::DT_FLOAT);

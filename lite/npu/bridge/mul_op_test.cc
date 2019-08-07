@@ -14,12 +14,9 @@
 
 #include "lite/operators/mul_op.h"
 #include <gtest/gtest.h>
-#include <random>
-#include "ai_ddk_lib/include/graph/op/all_ops.h"
 #include "lite/core/op_registry.h"
 #include "lite/npu/bridge/registry.h"
-#include "lite/npu/bridge/utils.h"
-#include "lite/operators/graph_op.h"
+#include "lite/npu/bridge/test_helper.h"
 
 namespace paddle {
 namespace lite {
@@ -54,45 +51,28 @@ void mul_ref(const std::shared_ptr<operators::MulOpLite> op) {
   }
 }
 
-void test_mul(
-    int n, int c, int h, int w, int o, int x_num_col_dims, int y_num_col_dims) {
+void test_mul(const std::vector<int64_t>& x_shape,
+              const std::vector<int64_t>& y_shape,
+              int x_num_col_dims,
+              int y_num_col_dims) {
   const auto& bridges = lite::npu::bridge::Factory::Instance();
   const auto& supported_lists = bridges.AllFunctions();
   CHECK(bridges.HasType("mul"));
 
-  // prepare input&output variables
   Scope scope;
-  std::string x_var_name("x");
-  std::string y_var_name("y");
-  std::string out_var_name("out");
+  std::string x_var_name("X");
+  std::string y_var_name("Y");
+  std::string out_var_name("Out");
   std::string out_ref_var_name("out_ref");
   auto* x = scope.Var(x_var_name)->GetMutable<Tensor>();
   auto* y = scope.Var(y_var_name)->GetMutable<Tensor>();
   auto* out = scope.Var(out_var_name)->GetMutable<Tensor>();
   auto* out_ref = scope.Var(out_ref_var_name)->GetMutable<Tensor>();
-  x->Resize({n, c, h, w});
-
-  // get y shape
-  auto x_mat_dims = x->dims().Flattern2D(x_num_col_dims);
-  std::vector<int64_t> y_shape;
-  for (int i = 0; i < y_num_col_dims - 1; i++) {
-    y_shape.push_back(1);
-  }
-  y_shape.push_back(x_mat_dims[1]);
-  y_shape.push_back(o);
+  x->Resize(x_shape);
   y->Resize(y_shape);
 
-  // initialize input&output data
-  std::default_random_engine rand_eng;
-  std::uniform_real_distribution<float> rand_dist(-5.0f, 5.0f);
-  for (int i = 0; i < x->dims().production(); i++) {
-    float rand_value = half2float(float2half(rand_dist(rand_eng)));
-    x->mutable_data<float>()[i] = rand_value;
-  }
-  for (int i = 0; i < y->dims().production(); i++) {
-    float rand_value = half2float(float2half(rand_dist(rand_eng)));
-    y->mutable_data<float>()[i] = rand_value;
-  }
+  FillTensor<float, int>(x);
+  FillTensor<float, int>(y);
 
   // create mul op
   cpp::OpDesc mul_op_desc;
@@ -103,64 +83,10 @@ void test_mul(
   mul_op_desc.SetAttr("x_num_col_dims", static_cast<int>(x_num_col_dims));
   mul_op_desc.SetAttr("y_num_col_dims", static_cast<int>(y_num_col_dims));
 
-  auto mul_op = std::make_shared<operators::MulOpLite>(mul_op_desc.Type());
-  mul_op->SetValidPlaces({Place{TARGET(kHost), PRECISION(kFloat)},
-                          Place{TARGET(kARM), PRECISION(kFloat)}});
-  CHECK(mul_op->Attach(mul_op_desc, &scope));
-  CHECK(mul_op->CheckShape());
-  CHECK(mul_op->InferShape());
-
-  // convert mul op and build IR graph
-  ge::TensorDesc x_desc(
-      ge::Shape(x->dims().Vectorize()), ge::FORMAT_NCHW, ge::DT_FLOAT);
-  ge::TensorDesc y_desc(
-      ge::Shape(y->dims().Vectorize()), ge::FORMAT_NCHW, ge::DT_FLOAT);
-  auto x_node = std::make_shared<ge::op::Data>(x_var_name);
-  auto y_node = std::make_shared<ge::op::Data>(y_var_name);
-  x_node->update_input_desc_x(x_desc);
-  y_node->update_input_desc_x(y_desc);
-  node_map_type inputs_map;
-  inputs_map[x_var_name] = x_node;
-  inputs_map[y_var_name] = y_node;
-  auto outputs_map =
-      supported_lists.at(mul_op->op_info()->Type())(mul_op, inputs_map);
-  CHECK_GT(outputs_map.size(), 0);
-
-  // compile IR graph to om model
-  std::vector<ge::Operator> graph_inputs{*inputs_map[x_var_name],
-                                         *inputs_map[y_var_name]};
-  std::vector<ge::Operator> graph_outputs{*outputs_map[out_var_name]};
-  std::string model_name(UniqueName("test_mul") + ".om");
-  CHECK(npu::BuildNPUClient(graph_inputs, graph_outputs, model_name));
-
-  // create graph op
-  cpp::OpDesc graph_op_desc;
-  graph_op_desc.SetType("graph_op");
-  graph_op_desc.SetInput("Inputs", {x_var_name});
-  graph_op_desc.SetOutput("Outputs", {y_var_name});
-  graph_op_desc.SetAttr("model_name", model_name);
-
-  auto graph_op =
-      std::make_shared<operators::GraphOpLite>(graph_op_desc.Type());
-  graph_op->SetValidPlaces({Place{TARGET(kNPU), PRECISION(kFloat)}});
-  CHECK(graph_op->Attach(graph_op_desc, &scope));
-  CHECK(graph_op->CheckShape());
-  CHECK(graph_op->InferShape());
-
-  // create graph op kernel
-  auto graph_kernels =
-      graph_op->CreateKernels({Place{TARGET(kNPU), PRECISION(kFloat)}});
-  CHECK(!graph_kernels.empty());
-  auto graph_kernel =
-      std::move(graph_kernels.front());  // use the first kernel by default
-  auto graph_ctx = ContextScheduler::Global().NewContext(TARGET(kNPU));
-  graph_kernel->SetContext(std::move(graph_ctx));
-
-  // perform graph op kernel and copy output tensor('out') to 'out_ref'
-  graph_kernel->Launch();
+  auto mul_op = CreateOp<operators::MulOpLite>(mul_op_desc, &scope);
+  LauchOp(mul_op, {x_var_name}, {out_var_name});
   out_ref->CopyDataFrom(*out);
 
-  // execute reference implementation and save to output tensor('out')
   mul_ref(mul_op);
 
   // compare results
@@ -176,21 +102,9 @@ void test_mul(
 }
 
 TEST(NPUBridges, mul) {
-  for (auto n : {1, 3}) {
-    for (auto c : {2, 4}) {
-      for (auto h : {5, 7}) {
-        for (auto w : {8, 9}) {
-          for (auto o : {3, 7}) {
-            for (auto x_num_col_dims : {1 /*, 2, 3*/}) {
-              for (auto y_num_col_dims : {1 /*, 2, 3*/}) {
-                test_mul(n, c, h, w, o, x_num_col_dims, y_num_col_dims);
-              }
-            }
-          }
-        }
-      }
-    }
-  }
+  test_mul({1, 8, 8, 1}, {1, 8, 2, 2}, 2, 2);
+  test_mul({1, 5, 5, 1}, {1, 5, 7, 7}, 2, 2);
+  test_mul({1, 4, 1, 1}, {4, 8}, 1, 1);
 }
 
 }  // namespace bridge
@@ -200,6 +114,3 @@ TEST(NPUBridges, mul) {
 
 USE_LITE_OP(mul);
 USE_NPU_BRIDGE(mul);
-
-USE_LITE_OP(graph_op);
-USE_LITE_KERNEL(graph_op, kNPU, kFloat, kNCHW, def);
