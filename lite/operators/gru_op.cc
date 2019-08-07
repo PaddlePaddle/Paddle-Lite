@@ -59,7 +59,6 @@ bool GRUOpLite::InferShape() const {
 
   param_.batch_gate->Resize(input_dims);
   param_.batch_reset_hidden_prev->Resize(lite::DDim({batch_size, frame_size}));
-  LOG(INFO) << "GRU infershape" << batch_size << " " << frame_size;
   param_.batch_hidden->Resize(lite::DDim({batch_size, frame_size}));
   param_.hidden->Resize(lite::DDim({batch_size, frame_size}));
 

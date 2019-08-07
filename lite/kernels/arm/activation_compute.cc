@@ -125,8 +125,6 @@ void LogCompute::Run() {
   auto output_data = param.Out->mutable_data<float>();
   lite::arm::math::act_log<float>(
       x_data, output_data, x_dims.production(), ctx.threads());
-  LOG(INFO) << "log in" << *param.X;
-  LOG(INFO) << "log out" << *param.Out;
 }
 
 }  // namespace arm

@@ -23,7 +23,6 @@ bool WriteToArrayOp::CheckShape() const { return true; }
 
 bool WriteToArrayOp::InferShape() const {
   auto in_dims = param_.X->dims();
-  LOG(INFO) << "param_.out " << param_.Out->size();
   for (auto out : *param_.Out) {
     out.Resize(in_dims);
   }
@@ -39,7 +38,6 @@ bool WriteToArrayOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
 
   auto out = opdesc.Output("Out").front();
   param_.Out = scope->FindVar(out)->GetMutable<std::vector<lite::Tensor>>();
-  LOG(INFO) << "param_.out " << param_.Out->size();
   return true;
 }
 

@@ -67,8 +67,6 @@ void GRUCompute::Run() {
   lite::arm::math::LoDTensor2BatchFunctor<float> to_batch;
   to_batch(*input, batch_gate, true, param.is_reverse);
 
-  LOG(INFO) << "to batch";
-
   if (bias) {
     auto bias_data = bias->data<float>();
     lite::arm::math::gru_add_with_bias(batch_gate_data,
@@ -77,7 +75,6 @@ void GRUCompute::Run() {
                                        batch_size,
                                        frame_size * 3);
   }
-  LOG(INFO) << "bias finished";
 
   lite::arm::math::GRUMetaValue<float> gru_value;
 
@@ -97,20 +94,16 @@ void GRUCompute::Run() {
   } else {
     gru_value.prev_out_value = nullptr;
   }
-  LOG(INFO) << "h0 init finished";
   auto batch_starts = batch_gate->lod()[0];
   size_t seq_len = batch_starts.size() - 1;
   auto active_node = get_gru_act_type(param.activation);
   auto active_gate = get_gru_act_type(param.gate_activation);
-  LOG(INFO) << "for start" << seq_len;
 
   for (size_t n = 0; n < seq_len; n++) {
-    LOG(INFO) << "batch_starts.size()" << batch_starts.size();
     int bstart = static_cast<int>(batch_starts[n]);
     int bend = static_cast<int>(batch_starts[n + 1]);
     int cur_batch_size = bend - bstart;
 
-    LOG(INFO) << "data prepare";
     gru_value.output_value =
         batch_hidden->mutable_data<float>() + bstart * batch_hidden->dims()[1];
     gru_value.gate_value =
@@ -119,7 +112,6 @@ void GRUCompute::Run() {
         batch_reset_hidden_prev->mutable_data<float>() +
         bstart * batch_reset_hidden_prev->dims()[1];
 
-    LOG(INFO) << "GRU unit start";
     lite::arm::math::GRUUnitFunctor<float>::compute(gru_value,
                                                     frame_size,
                                                     cur_batch_size,
@@ -127,7 +119,6 @@ void GRUCompute::Run() {
                                                     active_gate,
                                                     param.origin_mode,
                                                     &ctx);
-    LOG(INFO) << "GRU unit finished";
 
     gru_value.prev_out_value = gru_value.output_value;
   }
@@ -135,7 +126,6 @@ void GRUCompute::Run() {
   *(batch_hidden->mutable_lod()) = batch_gate->lod();
   batch_hidden->mutable_data<float>();
   to_seq(*batch_hidden, hidden);
-  LOG(INFO) << "to seq finished";
 }
 
 }  // namespace arm
