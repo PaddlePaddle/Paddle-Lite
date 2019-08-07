@@ -15,11 +15,9 @@
 #include "lite/operators/pool_op.h"
 #include <gtest/gtest.h>
 #include <random>
-#include "ai_ddk_lib/include/graph/op/all_ops.h"
 #include "lite/core/op_registry.h"
 #include "lite/npu/bridge/registry.h"
-#include "lite/npu/bridge/utils.h"
-#include "lite/operators/graph_op.h"
+#include "lite/npu/bridge/test_helper.h"
 
 namespace paddle {
 namespace lite {
@@ -41,7 +39,7 @@ void pool_ref(const std::shared_ptr<operators::PoolOpLite> op) {
   std::vector<int> ksize = op_info->GetAttr<std::vector<int>>("ksize");
   std::vector<int> strides = op_info->GetAttr<std::vector<int>>("strides");
   std::vector<int> paddings = op_info->GetAttr<std::vector<int>>("paddings");
-  bool exclusive = false;  // op_info->GetAttr<bool>("exclusive");
+  bool exclusive = op_info->GetAttr<bool>("exclusive");
   std::string pooling_type = op_info->GetAttr<std::string>("pooling_type");
   bool global_pooling = op_info->GetAttr<bool>("global_pooling");
 
@@ -141,118 +139,59 @@ void test_pool(int bs,
                int ksize,
                int stride,
                int padding) {
-  const auto& bridges = lite::npu::bridge::Factory::Instance();
-  const auto& supported_lists = bridges.AllFunctions();
-  CHECK(bridges.HasType("pool2d"));
-
+  // prepare input&output variables
+  Scope scope;
   std::string x_var_name = "x";
   std::string out_var_name = "out";
   std::string out_ref_var_name = "out_ref";
-
-  // prepare input&output variables
-  Scope scope;
   auto* x = scope.Var(x_var_name)->GetMutable<Tensor>();
   auto* out = scope.Var(out_var_name)->GetMutable<Tensor>();
   auto* out_ref = scope.Var(out_ref_var_name)->GetMutable<Tensor>();
   x->Resize({bs, ic, ih, iw});
 
   // initialize input&output data
-  std::default_random_engine rand_eng;
-  std::uniform_real_distribution<float> rand_dist(-5.0f, 5.0f);
-  for (int i = 0; i < x->numel(); i++) {
-    float rand_value = half2float(float2half(rand_dist(rand_eng)));
-    x->mutable_data<float>()[i] = rand_value;
-  }
+  FillTensor<float>(x);
 
-  // create op
-  cpp::OpDesc pool_op_desc;
-  pool_op_desc.SetType("pool2d");
-  pool_op_desc.SetInput("X", {x_var_name});
-  pool_op_desc.SetOutput("Out", {out_var_name});
-  pool_op_desc.SetAttr("pooling_type", pooling_type);
-  pool_op_desc.SetAttr("ksize", std::vector<int>({ksize, ksize}));
-  pool_op_desc.SetAttr("global_pooling", global_pooling);
-  pool_op_desc.SetAttr("strides", std::vector<int>({stride, stride}));
-  pool_op_desc.SetAttr("paddings", std::vector<int>({padding, padding}));
+  // initialize op desc
+  cpp::OpDesc opdesc;
+  opdesc.SetType("pool2d");
+  opdesc.SetInput("X", {x_var_name});
+  opdesc.SetOutput("Out", {out_var_name});
+  opdesc.SetAttr("pooling_type", pooling_type);
+  opdesc.SetAttr("ksize", std::vector<int>({ksize, ksize}));
+  opdesc.SetAttr("global_pooling", global_pooling);
+  opdesc.SetAttr("exclusive", exclusive);
+  opdesc.SetAttr("strides", std::vector<int>({stride, stride}));
+  opdesc.SetAttr("paddings", std::vector<int>({padding, padding}));
 
-  auto pool_op = std::make_shared<operators::PoolOpLite>(pool_op_desc.Type());
-  pool_op->SetValidPlaces({Place{TARGET(kX86), PRECISION(kFloat)},
-                           Place{TARGET(kARM), PRECISION(kFloat)}});
-  CHECK(pool_op->Attach(pool_op_desc, &scope));
-  CHECK(pool_op->CheckShape());
-  CHECK(pool_op->InferShape());
-
-  // convert op and build IR graph
-  ge::TensorDesc x_desc(
-      ge::Shape(x->dims().Vectorize()), ge::FORMAT_NCHW, ge::DT_FLOAT);
-  auto x_node = std::make_shared<ge::op::Data>(x_var_name);
-  x_node->update_input_desc_x(x_desc);
-  node_map_type inputs_map;
-  inputs_map[x_var_name] = x_node;
-  auto outputs_map =
-      supported_lists.at(pool_op->op_info()->Type())(pool_op, inputs_map);
-  CHECK_GT(outputs_map.size(), 0);
-
-  // compile IR graph to om model
-  std::vector<ge::Operator> graph_inputs{*inputs_map[x_var_name]};
-  std::vector<ge::Operator> graph_outputs{*outputs_map[out_var_name]};
-  std::string model_name(UniqueName("test_pool") + ".om");
-  CHECK(npu::BuildNPUClient(graph_inputs, graph_outputs, model_name));
-
-  // create graph op
-  cpp::OpDesc graph_op_desc;
-  graph_op_desc.SetType("graph_op");
-  graph_op_desc.SetInput("Inputs", {x_var_name});
-  graph_op_desc.SetOutput("Outputs", {out_var_name});
-  graph_op_desc.SetAttr("model_name", model_name);
-
-  auto graph_op =
-      std::make_shared<operators::GraphOpLite>(graph_op_desc.Type());
-  graph_op->SetValidPlaces({Place{TARGET(kNPU), PRECISION(kFloat)}});
-  CHECK(graph_op->Attach(graph_op_desc, &scope));
-  CHECK(graph_op->CheckShape());
-  CHECK(graph_op->InferShape());
-
-  // create graph op kernel
-  auto graph_kernels =
-      graph_op->CreateKernels({Place{TARGET(kNPU), PRECISION(kFloat)}});
-  CHECK(!graph_kernels.empty());
-  auto graph_kernel =
-      std::move(graph_kernels.front());  // use the first kernel by default
-  auto graph_ctx = ContextScheduler::Global().NewContext(TARGET(kNPU));
-  graph_kernel->SetContext(std::move(graph_ctx));
-
-  // perform graph op kernel and copy output tensor('out') to 'out_ref'
-  graph_kernel->Launch();
+  // create and convert op to NPU model, then run it on NPU
+  auto op = CreateOp<operators::PoolOpLite>(opdesc, &scope);
+  LauchOp(op, {x_var_name}, {out_var_name});
   out_ref->CopyDataFrom(*out);
 
-  // execute reference implementation and save to output tensor('out')
-  pool_ref(pool_op);
+  // execute reference implementation and save to output tensor
+  pool_ref(op);
 
   // compare results
   auto* out_data = out->mutable_data<float>();
   auto* out_ref_data = out_ref->mutable_data<float>();
-  for (int i = 0; i < out->numel(); i++) {
+  for (int i = 0; i < out->dims().production(); i++) {
     EXPECT_NEAR(out_data[i], out_ref_data[i], 1e-2);
   }
-
-  // model release
-  npu::OpList::Global().clear();
-  npu::DeviceInfo::Global().Clear();
 }
 
 TEST(NPUBridges, pool) {
-  for (auto pooling_type : {/*"max", */ "avg"}) {
-    for (auto ceil_mode : {/* true, */ false}) {
-      for (auto global_pooling : {true /*, false*/}) {
+  for (auto pooling_type : {"max", "avg"}) {
+    for (auto ceil_mode : {true, false}) {
+      for (auto global_pooling : {/*true, */ false}) {
         for (auto exclusive : {true /*, false*/}) {
-          for (auto ksize : {7}) {
-            for (auto stride : {1}) {
-              for (auto padding : {0}) {
-                for (auto bs : {1}) {
-                  for (auto ic : {1280}) {
-                    for (auto ih : {7}) {
-                      for (auto iw : {7}) {
+          for (auto ksize : {2, 3}) {
+            for (auto stride : {1, 2}) {
+              for (auto padding : {0, 1}) {
+                for (auto bs : {1, 3}) {
+                  for (auto ic : {1, 3}) {
+                    for (auto ih : {3, 7}) {
+                      for (auto iw : {3, 7}) {
                         test_pool(bs,
                                   ic,
                                   ih,
@@ -275,6 +214,30 @@ TEST(NPUBridges, pool) {
       }
     }
   }
+  for (auto pooling_type : {"max", "avg"}) {
+    for (auto ceil_mode : {true, false}) {
+      bool global_pooling = true;
+      bool exclusive = true;
+      int ksize = 2;
+      int stride = 1;
+      int padding = 0;
+      int bs = 6;
+      int ic = 6;
+      int ih = 6;
+      int iw = 6;
+      test_pool(bs,
+                ic,
+                ih,
+                iw,
+                pooling_type,
+                ceil_mode,
+                global_pooling,
+                exclusive,
+                ksize,
+                stride,
+                padding);
+    }
+  }
 }
 
 }  // namespace bridge
@@ -284,6 +247,3 @@ TEST(NPUBridges, pool) {
 
 USE_LITE_OP(pool2d);
 USE_NPU_BRIDGE(pool2d);
-
-USE_LITE_OP(graph_op);
-USE_LITE_KERNEL(graph_op, kNPU, kFloat, kNCHW, def);

@@ -15,11 +15,9 @@
 #include "lite/operators/elementwise_ops.h"
 #include <gtest/gtest.h>
 #include <random>
-#include "ai_ddk_lib/include/graph/op/all_ops.h"
 #include "lite/core/op_registry.h"
 #include "lite/npu/bridge/registry.h"
-#include "lite/npu/bridge/utils.h"
-#include "lite/operators/graph_op.h"
+#include "lite/npu/bridge/test_helper.h"
 
 namespace paddle {
 namespace lite {
@@ -121,18 +119,13 @@ void elementwise_add_ref(const std::shared_ptr<operators::ElementwiseOp> op) {
   }
 }
 
-void test_elementwise_add(int bs, int ic, int ih, int iw) {
-  const auto& bridges = lite::npu::bridge::Factory::Instance();
-  const auto& supported_lists = bridges.AllFunctions();
-  CHECK(bridges.HasType("elementwise_add"));
-
+void test_elementwise_add(int bs, int ic, int ih, int iw, int axis) {
+  // prepare input&output variables
+  Scope scope;
   std::string x_var_name = "x";
   std::string y_var_name = "y";
   std::string out_var_name = "out";
   std::string out_ref_var_name = "out_ref";
-
-  // prepare input&output variables
-  Scope scope;
   auto* x = scope.Var(x_var_name)->GetMutable<Tensor>();
   auto* y = scope.Var(y_var_name)->GetMutable<Tensor>();
   auto* out = scope.Var(out_var_name)->GetMutable<Tensor>();
@@ -141,103 +134,39 @@ void test_elementwise_add(int bs, int ic, int ih, int iw) {
   y->Resize({bs, ic, ih, iw});
 
   // initialize input&output data
-  std::default_random_engine rand_eng;
-  std::uniform_real_distribution<float> rand_dist(-5.0f, 5.0f);
-  for (int i = 0; i < x->numel(); i++) {
-    float rand_value = half2float(float2half(rand_dist(rand_eng)));
-    x->mutable_data<float>()[i] = rand_value;
-  }
-  for (int i = 0; i < y->numel(); i++) {
-    float rand_value = half2float(float2half(rand_dist(rand_eng)));
-    y->mutable_data<float>()[i] = rand_value;
-  }
+  FillTensor<float>(x);
+  FillTensor<float>(y);
 
-  // create op
-  cpp::OpDesc elementwise_add_op_desc;
-  elementwise_add_op_desc.SetType("elementwise_add");
-  elementwise_add_op_desc.SetInput("X", {x_var_name});
-  elementwise_add_op_desc.SetInput("Y", {y_var_name});
-  elementwise_add_op_desc.SetOutput("Out", {out_var_name});
-  elementwise_add_op_desc.SetAttr("axis", -1);
+  // initialize op desc
+  cpp::OpDesc opdesc;
+  opdesc.SetType("elementwise_add");
+  opdesc.SetInput("X", {x_var_name});
+  opdesc.SetInput("Y", {y_var_name});
+  opdesc.SetOutput("Out", {out_var_name});
+  opdesc.SetAttr("axis", axis);
 
-  auto elementwise_add_op =
-      std::make_shared<operators::ElementwiseOp>("elementwise_add");
-  elementwise_add_op->SetValidPlaces({Place{TARGET(kHost), PRECISION(kFloat)},
-                                      Place{TARGET(kARM), PRECISION(kFloat)}});
-  CHECK(elementwise_add_op->Attach(elementwise_add_op_desc, &scope));
-  CHECK(elementwise_add_op->CheckShape());
-  CHECK(elementwise_add_op->InferShape());
-
-  // convert op and build IR graph
-  ge::TensorDesc x_desc(
-      ge::Shape(x->dims().Vectorize()), ge::FORMAT_NCHW, ge::DT_FLOAT);
-  ge::TensorDesc y_desc(
-      ge::Shape(y->dims().Vectorize()), ge::FORMAT_NCHW, ge::DT_FLOAT);
-  auto x_node = std::make_shared<ge::op::Data>(x_var_name);
-  auto y_node = std::make_shared<ge::op::Data>(y_var_name);
-  x_node->update_input_desc_x(x_desc);
-  y_node->update_input_desc_x(y_desc);
-  node_map_type inputs_map;
-  inputs_map[x_var_name] = x_node;
-  inputs_map[y_var_name] = y_node;
-  auto outputs_map = supported_lists.at(elementwise_add_op->op_info()->Type())(
-      elementwise_add_op, inputs_map);
-  CHECK_GT(outputs_map.size(), 0);
-
-  // compile IR graph to om model
-  std::vector<ge::Operator> graph_inputs{*inputs_map[x_var_name],
-                                         *inputs_map[y_var_name]};
-  std::vector<ge::Operator> graph_outputs{*outputs_map[out_var_name]};
-  std::string model_name(UniqueName("test_elementwise_add") + ".om");
-  CHECK(npu::BuildNPUClient(graph_inputs, graph_outputs, model_name));
-
-  // create graph op
-  cpp::OpDesc graph_op_desc;
-  graph_op_desc.SetType("graph_op");
-  graph_op_desc.SetInput("Inputs", {x_var_name, y_var_name});
-  graph_op_desc.SetOutput("Outputs", {out_var_name});
-  graph_op_desc.SetAttr("model_name", model_name);
-
-  auto graph_op = std::make_shared<operators::GraphOpLite>("graph_op");
-  graph_op->SetValidPlaces({Place{TARGET(kNPU), PRECISION(kFloat)}});
-  CHECK(graph_op->Attach(graph_op_desc, &scope));
-  CHECK(graph_op->CheckShape());
-  CHECK(graph_op->InferShape());
-
-  // create graph op kernel
-  auto graph_kernels =
-      graph_op->CreateKernels({Place{TARGET(kNPU), PRECISION(kFloat)}});
-  CHECK(!graph_kernels.empty());
-  auto graph_kernel =
-      std::move(graph_kernels.front());  // use the first kernel by default
-  auto graph_ctx = ContextScheduler::Global().NewContext(TARGET(kNPU));
-  graph_kernel->SetContext(std::move(graph_ctx));
-
-  // perform graph op kernel and copy output tensor('out') to 'out_ref'
-  graph_kernel->Launch();
+  // create and convert op to NPU model, then run it on NPU
+  auto op = CreateOp<operators::ElementwiseOp>(opdesc, &scope);
+  LauchOp(op, {x_var_name}, {out_var_name});
   out_ref->CopyDataFrom(*out);
 
-  // execute reference implementation and save to output tensor('out')
-  elementwise_add_ref<float>(elementwise_add_op);
+  // execute reference implementation and save to output tensor
+  elementwise_add_ref<float>(op);
 
   // compare results
   auto* out_data = out->mutable_data<float>();
   auto* out_ref_data = out_ref->mutable_data<float>();
-  for (int i = 0; i < out->numel(); i++) {
-    EXPECT_NEAR(out_data[i], out_ref_data[i], 1e-5);
+  for (int i = 0; i < out->dims().production(); i++) {
+    EXPECT_NEAR(out_data[i], out_ref_data[i], 1e-1);
   }
-
-  // model release
-  npu::OpList::Global().clear();
-  npu::DeviceInfo::Global().Clear();
 }
 
 TEST(NPUBridges, elementwise_add) {
-  for (auto bs : {3}) {
-    for (auto ic : {7}) {
-      for (auto ih : {2}) {
-        for (auto iw : {4}) {
-          test_elementwise_add(bs, ic, ih, iw);
+  for (auto bs : {1, 4, 7}) {
+    for (auto ic : {1, 4, 7}) {
+      for (auto ih : {1, 4, 7}) {
+        for (auto iw : {1, 4, 7}) {
+          for (auto axis : {-1}) test_elementwise_add(bs, ic, ih, iw, axis);
         }
       }
     }
@@ -251,6 +180,3 @@ TEST(NPUBridges, elementwise_add) {
 
 USE_LITE_OP(elementwise_add);
 USE_NPU_BRIDGE(elementwise_add);
-
-USE_LITE_OP(graph_op);
-USE_LITE_KERNEL(graph_op, kNPU, kFloat, kNCHW, def);
