@@ -247,6 +247,7 @@ function test_arm_android {
 
     adb -s emulator-${port} push ${testpath} ${adb_work_dir}
     adb -s emulator-${port} shell "cd ${adb_work_dir} && ./${test_name}"
+    adb -s emulator-${port} shell "rm {adb_work_dir}/${test_name}"
 }
 
 # test_npu <some_test_name> <adb_port_number>
