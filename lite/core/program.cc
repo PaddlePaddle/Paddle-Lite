@@ -94,7 +94,7 @@ void Program::PrepareWorkspace(const cpp::ProgramDesc& prog) {
         tmp_vars_.push_back(var_desc.Name());
         exec_scope_->Var(var_desc.Name());
         if (b > 0) {
-          LOG(INFO) << "var: " << var_desc.Name();
+          VLOG(4) << "var: " << var_desc.Name();
         }
       } else {
         if (var_desc.Name() == "feed" || var_desc.Name() == "fetch") continue;

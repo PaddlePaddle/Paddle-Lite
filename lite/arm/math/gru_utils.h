@@ -383,7 +383,6 @@ struct GRUUnitFunctor {
                       const lite_api::ActivationType active_gate,
                       bool origin_mode,
                       ARMContext* ctx) {
-    LOG(INFO) << "first sgemm begin";
     if (value.prev_out_value) {
       sgemm(false,
             false,
@@ -403,9 +402,7 @@ struct GRUUnitFunctor {
             false,
             ctx);
     }
-    LOG(INFO) << "first sgemm";
     gru_unit_reset_act(active_gate, value, frame_size, batch_size);
-    LOG(INFO) << "act ";
 
     if (value.prev_out_value) {
       sgemm(false,
@@ -426,10 +423,8 @@ struct GRUUnitFunctor {
             false,
             ctx);
     }
-    LOG(INFO) << "second gemm ";
 
     gru_unit_out_act(active_node, origin_mode, value, frame_size, batch_size);
-    LOG(INFO) << "out act";
   }
 };
 

@@ -71,9 +71,7 @@ bool OpLite::Run() {
   CHECK(kernel_);
   SyncInputEvents();
 
-  LOG(INFO) << "kernel_ launch start" << op_type_;
   kernel_->Launch();
-  LOG(INFO) << "kernel_ launch end" << op_type_;
 
   RecordOutputEvents();
   return true;
