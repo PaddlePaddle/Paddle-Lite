@@ -108,7 +108,6 @@ void Predictor::Build(const cpp::ProgramDesc &desc,
   factor.ConsiderTarget();
   factor.ConsiderPrecision();
   optimizer_.Run(std::move(program), valid_places, factor, passes);
-
   exec_scope_ = optimizer_.exec_scope();
 }
 

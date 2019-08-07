@@ -96,7 +96,6 @@ function (lite_deps TARGET)
     endforeach(var)
   endif()
 
-
   set(${TARGET} ${deps} PARENT_SCOPE)
 endfunction()
 

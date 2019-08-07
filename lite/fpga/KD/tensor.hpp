@@ -433,39 +433,7 @@ class Tensor {
       shape_ = nullptr;
     }
   }
-  /*
-  // add by tianxiaogang
-  // get from tensorlite
-  void share_from_tensorlite(const lite::Tensor& lite_tensor) {
-    const void* lite_ptr = lite_tensor.data<void>();
-    size_t mem_size = lite_tensor.memory_size();
-    const lite::DDimLite lite_dim = lite_tensor.dims();
-    if (placeHolder_ == nullptr) {
-      placeHolder_ = std::make_shared<PlaceHolder>();
-    }
-    placeHolder_->set_data(lite_ptr);
-    placeHolder_->set_size(mem_size);
-    if (shape_ != nullptr) {
-      delete shape_;
-    }
-    std::vector<int> tem_dims;
-    for (int i = 0; i < lite_dim.size(); ++i) {
-      tem_dims.push_back(lite_dim[i]);
-    }
-    shape_ = new Shape(NCHW, tem_dims);
-    // dataType_ = FP16;
-  }
-  void fill_to_tensorlite(lite::Tensor* lite_tensor) {
-    float16* ptr = mutableData<float16>();
-    std::vector<int64_t> dim;
-    for (auto i : shape_->dims()) {
-      dim.push_back(i);
-    }
-    lite::DDimLite lite_dim(dim);
-    lite_tensor->Assign<float16, lite::DDimLite, lite_api::TargetType::kFPGA>(
-        ptr, lite_dim);
-  }
-  */
+
  private:
   int offset = 0;
   std::shared_ptr<PlaceHolder> placeHolder_;

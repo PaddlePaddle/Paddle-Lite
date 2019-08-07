@@ -26,6 +26,8 @@ void ReluCompute::Run() {
   auto x_dims = param.X->dims();
   auto x_data = param.X->data<float>();
   auto output_data = param.Out->mutable_data<float>();
+  lite::arm::math::act_relu<float>(
+      x_data, output_data, x_dims.production(), ctx.threads());
 }
 
 void LeakyReluCompute::Run() {

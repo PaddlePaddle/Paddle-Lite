@@ -19,20 +19,7 @@ namespace lite {
 namespace kernels {
 namespace fpga {
 
-void ScaleCompute::Run() {
-  //   auto& param = Param<operators::ScaleParam>();
-  //   const float* x_data = param.x->data<float>();
-  //   float* output_data = param.output->mutable_data<float>();
-  //   DDim x_dims = param.x->dims();
-  //   bool bias_after_scale = param.bias_after_scale;
-  //   float scale = param.scale;
-  //   float bias = param.bias;
-  //   if (!bias_after_scale) {
-  //     bias *= scale;
-  //   }
-  //   lite::arm::math::scale(x_data, output_data, x_dims.production(), scale,
-  //   bias);
-}
+void ScaleCompute::Run() {}
 
 }  // namespace fpga
 }  // namespace kernels

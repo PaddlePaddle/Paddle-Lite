@@ -64,10 +64,6 @@ PaddlePredictor::PaddlePredictor() {
   raw_exe_scope_ = &(static_cast<lite::Scope *>(raw_scope_)->NewScope());
 }
 
-void PaddlePredictor::Init() {
-  // TODO(arthurbrown@163.com) is it right?
-}
-
 std::unique_ptr<Tensor> PaddlePredictor::GetTensor(
     const std::string &id) const {
   auto *exe_scope = static_cast<lite::Scope *>(raw_exe_scope_);

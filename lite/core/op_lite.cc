@@ -50,7 +50,6 @@ std::vector<std::unique_ptr<KernelBase>> OpLite::CreateKernels(
   std::set<Place> place_set;
   for (auto place : places) {
     place_set.insert(place);
-    auto old_precision = place.precision;
     // Pick kernels those support any Precision and any DataLayout
     place.precision = PRECISION(kAny);
     place_set.insert(place);

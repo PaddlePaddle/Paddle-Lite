@@ -82,8 +82,6 @@ void *TensorLite::mutable_data(size_t memory_size) {
   memory_size_ = memory_size;
   buffer_->ResetLazy(target_, memory_size_);
   // throw -1;
-  std::cout
-      << " \n\n\n======================= mem size:=========================\n";
   std::cout << memory_size << std::endl;
   return buffer_->data();
 }

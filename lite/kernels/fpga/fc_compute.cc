@@ -36,7 +36,6 @@ void FcCompute::PrepareForRun() {
   fc_param.filter = param.w->ZynqTensor();
   fc_param.bias = param.bias->ZynqTensor();
 
-  // std::vector<int> kernelSize;
   pe_.init();
   pe_.apply();
 }

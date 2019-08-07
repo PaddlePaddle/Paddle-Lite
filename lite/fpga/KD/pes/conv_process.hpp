@@ -207,16 +207,20 @@ inline void split_filter_num(const ConvParam& c_param) {
   Tensor* out = param.output;
   Tensor* filter = param.filter;
   auto channel = out->shape().channel();
+
   int split_num = param.groups == 1 ? get_split_num(param.filter) : 1;
   int filter_num_per_div = get_filter_num_per_div(filter, param.groups);
+
   Shape& out_shape = out->shape();
   for (int i = 0; i < split_num; i++) {
     BasicConvParam* conv_param = new BasicConvParam();
     conv_param->output.setDataLocation(Device);
     conv_param->output.setAligned(true);
+
     int filter_num = filter->shape().num();
     float16* out_address = nullptr;
     float* out_scale_address = nullptr;
+
     ConvArgs& args = conv_param->args;
 
     if (split_num == 1) {
@@ -226,6 +230,7 @@ inline void split_filter_num(const ConvParam& c_param) {
     filter_num = i == split_num - 1
                      ? channel - (split_num - 1) * filter_num_per_div  // NOLINT
                      : filter_num_per_div;
+
     if (split_num != 1) {
       Shape shape(NHWC, {1, out_shape.height(), out_shape.width(), filter_num});
       out_address = conv_param->output.mutableData<float16>(FP16, shape);
@@ -236,6 +241,7 @@ inline void split_filter_num(const ConvParam& c_param) {
                    filter->shape().channel(),
                    filter->shape().height(),
                    filter->shape().width()});
+
     Tensor new_filter;
     float* new_filter_data = new_filter.mutableData<float>(FP32, f_shape);
     int filter_hwc = filter->shape().height() * filter->shape().width() *
@@ -248,6 +254,7 @@ inline void split_filter_num(const ConvParam& c_param) {
 
     conv_param->filter.mutableData<float>(FP32, f_shape);
     format_filter(&new_filter, &(conv_param->filter), param.groups);
+
     int sb_num = 2 * align_to_x(filter_num, BS_NUM_ALIGNMENT);
     Tensor scale;
     Tensor bias;
@@ -303,6 +310,7 @@ inline void split_channel(const ConvParam& c_param) {
 
   int num = ceil(input->shape().channel() * 1.0f / 2047);
   int channel = input->shape().channel() / num;
+  std::cout << "channel::" << channel << "num::" << num << std::endl;
   Shape bs_shape(N, {channel});
 
   for (int i = 0; i < num; i++) {
@@ -399,6 +407,7 @@ inline bool compute_conv(const ConvParam& c_conv_params) {
     for (int i = 0; i < 1; i++) {
       for (int i = 0; i < img.shape().numel(); i++) {
         float value = half_to_float(img.data<float16>()[i]);
+        std::cout << "value:" << value << std::endl;
       }
     }
   }

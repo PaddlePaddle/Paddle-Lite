@@ -20,7 +20,6 @@
 #include <random>
 #include <utility>
 #include <vector>
-// #include "lite/arm/math/funcs.h"
 #include "lite/core/op_registry.h"
 
 namespace paddle {
@@ -186,12 +185,7 @@ TEST(fc_fpga, num_col_dims) {
     param.in_num_col_dims = 2;
     param.in_mat_dims = x.dims();
 
-    // std::unique_ptr<KernelContext> ctx(new KernelContext);
-    // ctx->As<ARMContext>();
-    // DeviceInfo::Init();
-
     fc.SetParam(param);
-    // fc.SetContext(std::move(ctx));
     fc.PrepareForRun();
     fc.Run();
 

@@ -95,7 +95,6 @@ void TypeLayoutTransformPass::AddLayoutInst(
   auto layout_op = LiteOpRegistry::Global().Create(layout_type);
   CHECK(layout_op) << "create op [" << layout_op << "] failed";
   layout_output_arg->AsArg().is_persist = in_persist;
-  // CHECK(layout_op);
   // Create the new var manually.
   inst_node->AsStmt().op()->scope()->Var(layout_output_name);
 

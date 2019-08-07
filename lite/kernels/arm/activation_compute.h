@@ -29,8 +29,6 @@ class ReluCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
   void Run() override;
 
   virtual ~ReluCompute() = default;
-
- private:
 };
 
 class LeakyReluCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {

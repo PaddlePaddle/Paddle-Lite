@@ -106,7 +106,6 @@ class TensorLite {
   // For other devices, T and R may be the same type.
   template <typename T, typename R = T>
   const R *data() const {
-    // return static_cast<const R *>(buffer_->data());
     return zynq_tensor_->data<R>();
   }
 
@@ -206,16 +205,11 @@ R *TensorLite::mutable_data() {
     data_type = zynqmp::FP16;
   }
   return zynq_tensor_->mutableData<R>(data_type, input_shape);
-  // return zynq_tensor_->data<R>();
 }
 
 template <typename T, typename R>
 R *TensorLite::mutable_data(TargetType target) {
   target_ = target;
-  // memory_size_ = dims_.production() * sizeof(T);
-  // buffer_->ResetLazy(target, memory_size());
-  // return static_cast<R *>(buffer_->data());
-  // return zynq_tensor_->data<R>();
   return mutable_data<T>();
 }
 

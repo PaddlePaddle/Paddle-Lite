@@ -56,11 +56,8 @@ class VariablePlaceInferencePass : public DebugPass {
 
   // Set the tye of the weight
   void SetWeightType(Node* w, const LiteType& type) {
-    w->AsArg().type =
-        // LiteType::GetTensorTy(TARGET(kHost), type.precision(),
-        // type.layout());
-        LiteType::GetTensorTy(
-            TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
+    w->AsArg().type = LiteType::GetTensorTy(
+        TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
   }
 
   void InferenceArgumentPlace(SSAGraph* graph) {

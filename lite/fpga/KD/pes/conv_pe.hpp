@@ -103,6 +103,7 @@ class ConvPE : public PE {
     for (auto conv_param : params) {
       ret |= compute_fpga_conv_basic(conv_param->args);
     }
+
     if (param_.relu.enabled) {
       inplace_.relu_enable = false;
       config_inplace(inplace_);
