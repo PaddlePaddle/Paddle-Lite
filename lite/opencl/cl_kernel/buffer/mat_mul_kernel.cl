@@ -12,8 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#pragma OPENCL EXTENSION cl_khr_fp16 : enable
-#define CL_DTYPE float
+#include <cl_common.h>
 
 #if 0
 // naive gemm: keep for check
@@ -33,12 +32,12 @@ void mat_mul(__global const CL_DTYPE* x,
         out0 = 0;
 
   for (int p = 0; p < K; ++p) {
-    x0 = *( (__global CL_DTYPE*)(x + row * K + p) );
-    y0 = *( (__global CL_DTYPE*)(y + p * N + col) );
+    x0 = *(x + row * K + p);
+    y0 = *(y + p * N + col);
     out0 += x0 * y0;
   }
 
-  out[row * M + col] = out0;
+  out[row * N + col] = out0;
 }
 #endif // naive gemm
 

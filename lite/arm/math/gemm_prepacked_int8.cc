@@ -14,6 +14,7 @@
 
 #include "lite/arm/math/gemm_prepacked_int8.h"
 #include <arm_neon.h>
+#include "lite/arm/math/dot_toolchain_support.h"
 
 namespace paddle {
 namespace lite {
@@ -22,43 +23,120 @@ namespace math {
 
 void prepackA_m4k2x2_int8(int8_t* out,
                           const int8_t* in,
-                          const int ldin,
-                          const int m0,
-                          const int mmax,
-                          const int k0,
-                          const int kmax);
+                          int ldin,
+                          int m0,
+                          int mmax,
+                          int k0,
+                          int kmax);
+
 void prepackA_m4k2x2_trans_int8(int8_t* out,
                                 const int8_t* in,
-                                const int ldin,
-                                const int m0,
-                                const int mmax,
-                                const int k0,
-                                const int kmax);
+                                int ldin,
+                                int m0,
+                                int mmax,
+                                int k0,
+                                int kmax);
+
 void packb_int8(int8_t* out,
                 const int8_t* in,
-                const int ldin,
-                const int k0,
-                const int kmax,
-                const int n0,
-                const int nmax,
+                int ldin,
+                int k0,
+                int kmax,
+                int n0,
+                int nmax,
                 const int8_t* zerobuf);
+
 void packb_trans_int8(int8_t* out,
                       const int8_t* in,
-                      const int ldin,
-                      const int k0,
-                      const int kmax,
-                      const int n0,
-                      const int nmax,
+                      int ldin,
+                      int k0,
+                      int kmax,
+                      int n0,
+                      int nmax,
                       const int8_t* zerobuf);
+
+#ifdef WITH_ARM_DOTPROD
+void prepackA_m8k4_int8(int8_t* out,
+                        const int8_t* in,
+                        int ldin,
+                        int m0,
+                        int mmax,
+                        int k0,
+                        int kmax);
+
+void prepackA_m8k4_trans_int8(int8_t* out,
+                              const int8_t* in,
+                              int ldin,
+                              int m0,
+                              int mmax,
+                              int k0,
+                              int kmax);
+
+void packb_sdot_int8(int8_t* out,
+                     const int8_t* in,
+                     int ldin,
+                     int k0,
+                     int kmax,
+                     int n0,
+                     int nmax);
+
+void packb_sdot_trans_int8(int8_t* out,
+                           const int8_t* in,
+                           int ldin,
+                           int k0,
+                           int kmax,
+                           int n0,
+                           int nmax);
+#endif
 
 void prepackA_int8(void* out,
                    const void* in,
-                   const int ldin,
-                   const int m0,
-                   const int mmax,
-                   const int k0,
-                   const int kmax,
-                   bool is_trans) {
+                   int ldin,
+                   int m0,
+                   int mmax,
+                   int k0,
+                   int kmax,
+                   bool is_trans,
+                   ARMContext* ctx) {
+#if defined(__aarch64__) && defined(WITH_ARM_DOTPROD)
+  if (is_trans) {
+    if (ctx->has_dot()) {
+      prepackA_m8k4_trans_int8(static_cast<int8_t*>(out),
+                               static_cast<const int8_t*>(in),
+                               ldin,
+                               m0,
+                               mmax,
+                               k0,
+                               kmax);
+    } else {
+      prepackA_m4k2x2_trans_int8(static_cast<int8_t*>(out),
+                                 static_cast<const int8_t*>(in),
+                                 ldin,
+                                 m0,
+                                 mmax,
+                                 k0,
+                                 kmax);
+    }
+  } else {
+    if (ctx->has_dot()) {
+      prepackA_m8k4_int8(static_cast<int8_t*>(out),
+                         static_cast<const int8_t*>(in),
+                         ldin,
+                         m0,
+                         mmax,
+                         k0,
+                         kmax);
+    } else {
+      prepackA_m4k2x2_int8(static_cast<int8_t*>(out),
+                           static_cast<const int8_t*>(in),
+                           ldin,
+                           m0,
+                           mmax,
+                           k0,
+                           kmax);
+    }
+  }
+#else
   if (is_trans) {
     prepackA_m4k2x2_trans_int8(static_cast<int8_t*>(out),
                                static_cast<const int8_t*>(in),
@@ -76,7 +154,9 @@ void prepackA_int8(void* out,
                          k0,
                          kmax);
   }
+#endif
 }
+
 void prepackA_int8(TensorLite* tout,
                    const TensorLite& tin,
                    int m,
@@ -84,7 +164,7 @@ void prepackA_int8(TensorLite* tout,
                    int group,
                    bool is_trans,
                    ARMContext* ctx) {
-  int hblock = get_hblock_int8(ctx->arch());
+  int hblock = get_hblock_int8(ctx);
   int m_roundup = ROUNDUP(m, hblock);
   // round up to 128 bits
   int kup = ROUNDUP(k, KBLOCK_INT8);
@@ -101,15 +181,17 @@ void prepackA_int8(TensorLite* tout,
     const char* weights_group = tin.data<char>() + g * m * k;
     char* weights_trans_ptr =
         tout->mutable_data<char>() + g * group_size_round_up;
-    prepackA_int8(weights_trans_ptr, weights_group, lda, 0, m, 0, k, is_trans);
+    prepackA_int8(
+        weights_trans_ptr, weights_group, lda, 0, m, 0, k, is_trans, ctx);
   }
 }
+
 template <typename Dtype>
 inline void gemm_int8_kernel(const int8_t* a_ptr,
                              const int8_t*& b_ptr,  // NOLINT
                              const int32_t* bias,
                              Dtype*& c_ptr0,  // NOLINT
-                             Dtype*& c_ptr1,
+                             Dtype*& c_ptr1,  // NOLINT
                              Dtype*& c_ptr2,  // NOLINT
                              Dtype*& c_ptr3,  // NOLINT
                              const float* scale,
@@ -543,10 +625,10 @@ template <>
 inline void gemm_int8_kernel(const int8_t* a_ptr,
                              const int8_t*& b_ptr,  // NOLINT
                              const int32_t* bias,
-                             int32_t*& c_ptr0,  // NOLINT
-                             int32_t*& c_ptr1,
-                             int32_t*& c_ptr2,  // NOLINT
-                             int32_t*& c_ptr3,
+                             int32_t*& c_ptr0,    // NOLINT
+                             int32_t*& c_ptr1,    // NOLINT
+                             int32_t*& c_ptr2,    // NOLINT
+                             int32_t*& c_ptr3,    // NOLINT
                              const float* scale,  // NOLINT
                              bool is_relu,        // NOLINT
                              int k,
@@ -599,7 +681,7 @@ inline void gemm_int8_kernel(const int8_t* a_ptr,
                              const int8_t*& b_ptr,  // NOLINT
                              const int32_t* bias,
                              float*& c_ptr0,  // NOLINT
-                             float*& c_ptr1,
+                             float*& c_ptr1,  // NOLINT
                              float*& c_ptr2,  // NOLINT
                              float*& c_ptr3,  // NOLINT
                              const float* scale,
@@ -658,7 +740,7 @@ inline void gemm_int8_kernel(const int8_t* a_ptr,
                              const int8_t*& b_ptr,  // NOLINT
                              const int32_t* bias,
                              int8_t*& c_ptr0,  // NOLINT
-                             int8_t*& c_ptr1,
+                             int8_t*& c_ptr1,  // NOLINT
                              int8_t*& c_ptr2,  // NOLINT
                              int8_t*& c_ptr3,  // NOLINT
                              const float* scale,
@@ -711,6 +793,794 @@ inline void gemm_int8_kernel(const int8_t* a_ptr,
                  "v31",
                  "cc");
 }
+
+#ifdef WITH_ARM_DOTPROD
+template <typename Dtype>
+inline void sgemm_sdot_int8_kernel(const int8_t* a_ptr,
+                                   const int8_t*& b_ptr,  // NOLINT
+                                   const int32_t* bias,
+                                   Dtype*& c_ptr0,  // NOLINT
+                                   Dtype*& c_ptr1,  // NOLINT
+                                   Dtype*& c_ptr2,  // NOLINT
+                                   Dtype*& c_ptr3,  // NOLINT
+                                   Dtype*& c_ptr4,  // NOLINT
+                                   Dtype*& c_ptr5,  // NOLINT
+                                   Dtype*& c_ptr6,  // NOLINT
+                                   Dtype*& c_ptr7,  // NOLINT
+                                   const float32_t* scale,
+                                   bool is_relu,
+                                   int k,
+                                   int rem);
+
+#define GEMM_SDOT_INT8_KERNEL                                              \
+  "ldp    q2, q3, [%[bias_ptr]]\n"       /* load bias to q2, q3*/          \
+  "ldp    q0, q1, [%[a_ptr]], #32\n"     /* load a00,a01 to q0, q1*/       \
+  "ldp    q4, q5, [%[b_ptr]], #32\n"     /* load b0, b1 to q4, q5*/        \
+  "dup    v8.4s,  v2.s[0]\n"             /* out0 = 0 */                    \
+  "dup    v9.4s,  v2.s[0]\n"             /* out1 = 0*/                     \
+  "dup    v10.4s, v2.s[0]\n"             /* out2 = 0*/                     \
+  "dup    v11.4s, v2.s[1]\n"             /* out3 = 0*/                     \
+  "dup    v12.4s, v2.s[1]\n"             /* out4 = 0*/                     \
+  "prfm   pldl1keep, [%[b_ptr], #64]\n"  /* preload b*/                    \
+  "dup    v13.4s, v2.s[1]\n"             /* out5 = 0*/                     \
+  "prfm   pldl1keep, [%[a_ptr], #64]\n"  /* preload a*/                    \
+  "dup    v14.4s, v2.s[2]\n"             /* out6 = 0*/                     \
+  "prfm   pldl1keep, [%[b_ptr], #128]\n" /* preload b*/                    \
+  "dup    v15.4s, v2.s[2]\n"             /* out7 = 0*/                     \
+  "prfm   pldl1keep, [%[a_ptr], #128]\n" /* preload a*/                    \
+  "dup    v16.4s, v2.s[2]\n"             /* out8 = 0*/                     \
+  "prfm   pldl1keep, [%[b_ptr], #192]\n" /* preload b*/                    \
+  "dup    v17.4s, v2.s[3]\n"             /* out9 = 0*/                     \
+  "prfm   pldl1keep, [%[b_ptr], #256]\n" /* preload b*/                    \
+  "dup    v18.4s, v2.s[3]\n"             /* out10 = 0*/                    \
+  "prfm   pldl1keep, [%[a_ptr], #192]\n" /* preload a*/                    \
+  "dup    v19.4s, v2.s[3]\n"             /* out11 = 0*/                    \
+  "prfm   pldl1keep, [%[b_ptr], #320]\n" /* preload b*/                    \
+  "dup    v20.4s, v3.s[0]\n"             /* out12 = 0*/                    \
+  "prfm   pldl1keep, [%[a_ptr], #256]\n" /* preload a*/                    \
+  "dup    v21.4s, v3.s[0]\n"             /* out13 = 0*/                    \
+  "prfm   pldl1keep, [%[b_ptr], #384]\n" /* preload b*/                    \
+  "dup    v22.4s, v3.s[0]\n"             /* out14 = 0*/                    \
+  "dup    v23.4s, v3.s[1]\n"             /* out15 = 0*/                    \
+  "dup    v24.4s, v3.s[1]\n"             /* out16 = 0*/                    \
+  "dup    v25.4s, v3.s[1]\n"             /* out17 = 0*/                    \
+  "dup    v26.4s, v3.s[2]\n"             /* out18 = 0*/                    \
+  "dup    v27.4s, v3.s[2]\n"             /* out19 = 0*/                    \
+  "dup    v28.4s, v3.s[2]\n"             /* out20 = 0*/                    \
+  "dup    v29.4s, v3.s[3]\n"             /* out21 = 0*/                    \
+  "dup    v30.4s, v3.s[3]\n"             /* out22 = 0*/                    \
+  "dup    v31.4s, v3.s[3]\n"             /* out23 = 0*/                    \
+  "cbz    %w[k], 2f\n"                   /* check loop count > 0 */        \
+  "1:\n"                                 /* main loop */                   \
+  "sdot   v8.4s ,  v4.16b,  v0.4b[0]\n"  /* out0 = b0 * a00[0], b0 = q4 */ \
+  "sdot   v11.4s ,  v4.16b,  v0.4b[1]\n" /* out1 = b0 * a00[1], b0 = q4 */ \
+  "ldp    q6, q7, [%[b_ptr]], #32\n"     /* load b2, b0 to q6, q7       */ \
+  "sdot   v14.4s,  v4.16b,  v0.4b[2]\n"  /* out2 = b0 * a00[2], b0 = q4 */ \
+  "sdot   v17.4s,  v4.16b,  v0.4b[3]\n"  /* out3 = b0 * a00[3], b0 = q4 */ \
+  "ldp    q2, q3, [%[a_ptr]], #32\n"     /* load a10, a11 to q3, q4     */ \
+  "sdot   v20.4s,  v4.16b,  v1.4b[0]\n"  /* out4 = b0 * a01[0], b0 = q4 */ \
+  "sdot   v23.4s,  v4.16b,  v1.4b[1]\n"  /* out5 = b0 * a01[1], b0 = q4 */ \
+  "sdot   v26.4s,  v4.16b,  v1.4b[2]\n"  /* out6 = b0 * a01[2], b0 = q4 */ \
+  "sdot   v29.4s,  v4.16b,  v1.4b[3]\n"  /* out7 = b0 * a01[3], b0 = q4 */ \
+  "sdot   v9.4s,  v5.16b,  v0.4b[0]\n"   /* out8 = b1 * a00[0], b1 = q5 */ \
+  "sdot   v12.4s,  v5.16b,  v0.4b[1]\n"  /* out9 = b1 * a00[1], b1 = q5 */ \
+  "sdot   v15.4s,  v5.16b,  v0.4b[2]\n"  /* out10 = b1 * a00[2], b1 = q5*/ \
+  "sdot   v18.4s,  v5.16b,  v0.4b[3]\n"  /* out11 = b1 * a00[3], b1 = q5*/ \
+  "sdot   v21.4s,  v5.16b,  v1.4b[0]\n"  /* out12 = b1 * a01[0], b1 = q5*/ \
+  "sdot   v24.4s,  v5.16b,  v1.4b[1]\n"  /* out13 = b1 * a01[1], b1 = q5*/ \
+  "sdot   v27.4s,  v5.16b,  v1.4b[2]\n"  /* out14 = b1 * a01[2], b1 = q5*/ \
+  "sdot   v30.4s,  v5.16b,  v1.4b[3]\n"  /* out15 = b1 * a01[3], b1 = q5*/ \
+  "ldp    q4, q5, [%[b_ptr]], #32\n"     /* load b1, b2 to q4, q5       */ \
+  "sdot   v10.4s,  v6.16b,  v0.4b[0]\n"  /* out16 = b2 * a00[0], b2 = q6*/ \
+  "sdot   v13.4s,  v6.16b,  v0.4b[1]\n"  /* out17 = b2 * a00[1], b2 = q6*/ \
+  "prfm   pldl1keep, [%[b_ptr], #384]\n"                                   \
+  "sdot   v16.4s,  v6.16b,  v0.4b[2]\n"  /* out18 = b2 * a00[2], b2 = q6*/ \
+  "sdot   v19.4s,  v6.16b,  v0.4b[3]\n"  /* out19 = b2 * a00[3], b2 = q6*/ \
+  "sdot   v22.4s,  v6.16b,  v1.4b[0]\n"  /* out20 = b2 * a00[0], b2 = q6*/ \
+  "sdot   v25.4s,  v6.16b,  v1.4b[1]\n"  /* out21 = b2 * a00[1], b2 = q6*/ \
+  "sdot   v28.4s,  v6.16b,  v1.4b[2]\n"  /* out22 = b2 * a00[2], b2 = q6*/ \
+  "sdot   v31.4s,  v6.16b,  v1.4b[3]\n"  /* out23 = b2 * a00[3], b2 = q6*/ \
+  "ldp    q0, q1, [%[a_ptr]], #32\n"     /* load a00, a01 to q0, q1     */ \
+  "sdot   v8.4s ,  v7.16b,  v2.4b[0]\n"  /* out0 = b0 * a10[0], b0 = q7 */ \
+  "sdot   v11.4s ,  v7.16b,  v2.4b[1]\n" /* out1 = b0 * a10[1], b0 = q7 */ \
+  "sdot   v14.4s,  v7.16b,  v2.4b[2]\n"  /* out2 = b0 * a10[2], b0 = q7 */ \
+  "prfm   pldl1keep, [%[a_ptr], #256]\n"                                   \
+  "sdot   v17.4s,  v7.16b,  v2.4b[3]\n"  /* out3 = b0 * a10[3], b0 = q7 */ \
+  "sdot   v20.4s,  v7.16b,  v3.4b[0]\n"  /* out4 = b0 * a11[0], b0 = q7 */ \
+  "sdot   v23.4s,  v7.16b,  v3.4b[1]\n"  /* out5 = b0 * a11[1], b0 = q7 */ \
+  "sdot   v26.4s,  v7.16b,  v3.4b[2]\n"  /* out6 = b0 * a11[2], b0 = q7 */ \
+  "sdot   v29.4s,  v7.16b,  v3.4b[3]\n"  /* out7 = b0 * a11[3], b0 = q7 */ \
+  "ldp    q6, q7, [%[b_ptr]], #32\n"     /* load b0, b1 to q6, q7       */ \
+  "sdot   v9.4s,  v4.16b,  v2.4b[0]\n"   /* out8 = b0 * a10[0], b1 = q4 */ \
+  "sdot   v12.4s,  v4.16b,  v2.4b[1]\n"  /* out9 = b0 * a10[1], b1 = q4 */ \
+  "sdot   v15.4s,  v4.16b,  v2.4b[2]\n"  /* out10 = b1 * a10[2], b1 = q4*/ \
+  "sdot   v18.4s,  v4.16b,  v2.4b[3]\n"  /* out11 = b1 * a10[3], b1 = q4*/ \
+  "sdot   v21.4s,  v4.16b,  v3.4b[0]\n"  /* out12 = b1 * a10[0], b1 = q4*/ \
+  "sdot   v24.4s,  v4.16b,  v3.4b[1]\n"  /* out13 = b1 * a10[1], b1 = q4*/ \
+  "sdot   v27.4s,  v4.16b,  v3.4b[2]\n"  /* out14 = b1 * a10[2], b1 = q4*/ \
+  "sdot   v30.4s,  v4.16b,  v3.4b[3]\n"  /* out15 = b1 * a10[3], b1 = q4*/ \
+  "sdot   v10.4s,  v5.16b,  v2.4b[0]\n"  /* out16 = b2 * a10[0], b2 = q5*/ \
+  "sdot   v13.4s,  v5.16b,  v2.4b[1]\n"  /* out17 = b2 * a10[0], b2 = q5*/ \
+  "sdot   v16.4s,  v5.16b,  v2.4b[2]\n"  /* out18 = b2 * a10[0], b2 = q5*/ \
+  "sdot   v19.4s,  v5.16b,  v2.4b[3]\n"  /* out19 = b2 * a10[0], b2 = q5*/ \
+  "sdot   v22.4s,  v5.16b,  v3.4b[0]\n"  /* out20 = b2 * a10[0], b2 = q5*/ \
+  "sdot   v25.4s,  v5.16b,  v3.4b[1]\n"  /* out21 = b2 * a10[0], b2 = q5*/ \
+  "sdot   v28.4s,  v5.16b,  v3.4b[2]\n"  /* out22 = b2 * a10[0], b2 = q5*/ \
+  "sdot   v31.4s,  v5.16b,  v3.4b[3]\n"  /* out23 = b2 * a10[0], b2 = q5*/ \
+  "ldp    q4, q5, [%[b_ptr]], #32\n"     /* load b2, b0 to q4, q5       */ \
+  "sdot   v8.4s ,  v6.16b,  v0.4b[0]\n"  /* out0 = b0 * a00[0], b0 = q6 */ \
+  "sdot   v11.4s ,  v6.16b,  v0.4b[1]\n" /* out1 = b0 * a00[1], b0 = q6 */ \
+  "ldp    q2, q3, [%[a_ptr]], #32\n"     /* load a10, a11 to q3, q4*/      \
+  "sdot   v14.4s,  v6.16b,  v0.4b[2]\n"  /* out2 = b0 * a00[2], b0 = q6*/  \
+  "sdot   v17.4s,  v6.16b,  v0.4b[3]\n"  /* out3 = b0 * a00[3], b0 = q6*/  \
+  "sdot   v20.4s,  v6.16b,  v1.4b[0]\n"  /* out4 = b0 * a01[0], b0 = q6*/  \
+  "sdot   v23.4s,  v6.16b,  v1.4b[1]\n"  /* out5 = b0 * a01[1], b0 = q6*/  \
+  "sdot   v26.4s,  v6.16b,  v1.4b[2]\n"  /* out6 = b0 * a01[2], b0 = q6*/  \
+  "sdot   v29.4s,  v6.16b,  v1.4b[3]\n"  /* out7 = b0 * a01[3], b0 = q6*/  \
+  "sdot   v9.4s,  v7.16b,  v0.4b[0]\n"   /* out8 = b1 * a00[0], b1 = q7*/  \
+  "sdot   v12.4s,  v7.16b,  v0.4b[1]\n"  /* out9 = b1 * a00[1], b1 = q7*/  \
+  "prfm   pldl1keep, [%[b_ptr], #384]\n"                                   \
+  "sdot   v15.4s,  v7.16b,  v0.4b[2]\n" /* out10 = b1 * a00[2], b1 = q7*/  \
+  "sdot   v18.4s,  v7.16b,  v0.4b[3]\n" /* out11 = b1 * a00[3], b1 = q7*/  \
+  "sdot   v21.4s,  v7.16b,  v1.4b[0]\n" /* out12 = b1 * a01[0], b1 = q7*/  \
+  "sdot   v24.4s,  v7.16b,  v1.4b[1]\n" /* out13 = b1 * a01[1], b1 = q7*/  \
+  "sdot   v27.4s,  v7.16b,  v1.4b[2]\n" /* out14 = b1 * a01[2], b1 = q7*/  \
+  "sdot   v30.4s,  v7.16b,  v1.4b[3]\n" /* out15 = b1 * a01[3], b1 = q7*/  \
+  "ldp    q6, q7, [%[b_ptr]], #32\n"    /* load b1, b2 to q6, q7*/         \
+  "sdot   v10.4s,  v4.16b,  v0.4b[0]\n" /* out16 = b2 * a00[0], b2 = q4*/  \
+  "sdot   v13.4s,  v4.16b,  v0.4b[1]\n" /* out17 = b2 * a00[1], b2 = q4*/  \
+  "sdot   v16.4s,  v4.16b,  v0.4b[2]\n" /* out18 = b2 * a00[2], b2 = q4*/  \
+  "sdot   v19.4s,  v4.16b,  v0.4b[3]\n" /* out19 = b2 * a00[3], b2 = q4*/  \
+  "sdot   v22.4s,  v4.16b,  v1.4b[0]\n" /* out20 = b2 * a00[0], b2 = q4*/  \
+  "sdot   v25.4s,  v4.16b,  v1.4b[1]\n" /* out21 = b2 * a00[1], b2 = q4*/  \
+  "sdot   v28.4s,  v4.16b,  v1.4b[2]\n" /* out22 = b2 * a00[2], b2 = q4*/  \
+  "sdot   v31.4s,  v4.16b,  v1.4b[3]\n" /* out23 = b2 * a00[3], b2 = q4*/  \
+  "ldp    q0, q1, [%[a_ptr]], #32\n" /* load a00, a01 */ /* unrool 3*/     \
+  "sdot   v8.4s ,  v5.16b,  v2.4b[0]\n"  /* out0 = b0 * a10[0], b0 = q5*/  \
+  "sdot   v11.4s ,  v5.16b,  v2.4b[1]\n" /* out1 = b0 * a10[1], b0 = q5*/  \
+  "sdot   v14.4s,  v5.16b,  v2.4b[2]\n"  /* out2 = b0 * a10[2], b0 = q5*/  \
+  "sdot   v17.4s,  v5.16b,  v2.4b[3]\n"  /* out3 = b0 * a10[3], b0 = q5*/  \
+  "sdot   v20.4s,  v5.16b,  v3.4b[0]\n"  /* out4 = b0 * a11[0], b0 = q5*/  \
+  "sdot   v23.4s,  v5.16b,  v3.4b[1]\n"  /* out5 = b0 * a11[1], b0 = q5*/  \
+  "sdot   v26.4s,  v5.16b,  v3.4b[2]\n"  /* out6 = b0 * a11[2], b0 = q5*/  \
+  "sdot   v29.4s,  v5.16b,  v3.4b[3]\n"  /* out7 = b0 * a11[3], b0 = q5*/  \
+  "ldp    q4, q5, [%[b_ptr]], #32\n"     /* load b0, b1 to q4, q5*/        \
+  "sdot   v9.4s,  v6.16b,  v2.4b[0]\n"   /* out8 = b0 * a10[0], b1 = q6*/  \
+  "sdot   v12.4s,  v6.16b,  v2.4b[1]\n"  /* out9 = b0 * a10[1], b1 = q6*/  \
+  "prfm   pldl1keep, [%[a_ptr], #256]\n"                                   \
+  "sdot   v15.4s,  v6.16b,  v2.4b[2]\n" /* out10 = b1 * a10[2], b1 = q6*/  \
+  "sdot   v18.4s,  v6.16b,  v2.4b[3]\n" /* out11 = b1 * a10[3], b1 = q6*/  \
+  "sdot   v21.4s,  v6.16b,  v3.4b[0]\n" /* out12 = b1 * a10[0], b1 = q6*/  \
+  "sdot   v24.4s,  v6.16b,  v3.4b[1]\n" /* out13 = b1 * a10[1], b1 = q6*/  \
+  "sdot   v27.4s,  v6.16b,  v3.4b[2]\n" /* out14 = b1 * a10[2], b1 = q6*/  \
+  "prfm   pldl1keep, [%[b_ptr], #384]\n"                                   \
+  "sdot   v30.4s,  v6.16b,  v3.4b[3]\n" /* out15 = b1 * a10[3], b1 = q6*/  \
+  "sdot   v10.4s,  v7.16b,  v2.4b[0]\n" /* out16 = b2 * a10[0], b2 = q7*/  \
+  "sdot   v13.4s,  v7.16b,  v2.4b[1]\n" /* out17 = b2 * a10[0], b2 = q7*/  \
+  "sdot   v16.4s,  v7.16b,  v2.4b[2]\n" /* out18 = b2 * a10[0], b2 = q7*/  \
+  "sdot   v19.4s,  v7.16b,  v2.4b[3]\n" /* out19 = b2 * a10[0], b2 = q7*/  \
+  "sdot   v22.4s,  v7.16b,  v3.4b[0]\n" /* out20 = b2 * a10[0], b2 = q7*/  \
+  "sdot   v25.4s,  v7.16b,  v3.4b[1]\n" /* out21 = b2 * a10[0], b2 = q7*/  \
+  "subs   %w[k], %w[k], #1\n"           /* loop count - 1*/                \
+  "sdot   v28.4s,  v7.16b,  v3.4b[2]\n" /* out22 = b2 * a10[0], b2 = q7*/  \
+  "sdot   v31.4s,  v7.16b,  v3.4b[3]\n" /* out23 = b2 * a10[0], b2 = q7*/  \
+  "bne    1b\n"                                                            \
+  "2:\n"                                /* process tail*/                  \
+  "subs       %w[tail], %w[tail], #1\n" /* tail--*/                        \
+  "beq        3f\n"                                                        \
+  "sdot   v8.4s ,  v4.16b,  v0.4b[0]\n"  /* out0 = b0 * a00[0], b0 = q4*/  \
+  "sdot   v11.4s ,  v4.16b,  v0.4b[1]\n" /* out1 = b0 * a00[1], b0 = q4*/  \
+  "ldp    q6, q7, [%[b_ptr]], #32\n"     /* load b2, b0 to q6, q7*/        \
+  "sdot   v14.4s,  v4.16b,  v0.4b[2]\n"  /* out2 = b0 * a00[2], b0 = q4*/  \
+  "sdot   v17.4s,  v4.16b,  v0.4b[3]\n"  /* out3 = b0 * a00[3], b0 = q4*/  \
+  "ldp    q2, q3, [%[a_ptr]], #32\n"     /* load a10, a11 to q2, q3*/      \
+  "sdot   v20.4s,  v4.16b,  v1.4b[0]\n"  /* out4 = b0 * a01[0], b0 = q4*/  \
+  "sdot   v23.4s,  v4.16b,  v1.4b[1]\n"  /* out5 = b0 * a01[1], b0 = q4*/  \
+  "sdot   v26.4s,  v4.16b,  v1.4b[2]\n"  /* out6 = b0 * a01[2], b0 = q4*/  \
+  "sdot   v29.4s,  v4.16b,  v1.4b[3]\n"  /* out7 = b0 * a01[3], b0 = q4*/  \
+  "subs   %w[tail], %w[tail], #1\n"      /* tail--*/                       \
+  "sdot   v9.4s,  v5.16b,  v0.4b[0]\n"   /* out8 = b1 * a00[0], b1 = q5*/  \
+  "sdot   v12.4s,  v5.16b,  v0.4b[1]\n"  /* out9 = b1 * a00[1], b1 = q5*/  \
+  "sdot   v15.4s,  v5.16b,  v0.4b[2]\n"  /* out10 = b1 * a00[2], b1 = q5*/ \
+  "sdot   v18.4s,  v5.16b,  v0.4b[3]\n"  /* out11 = b1 * a00[3], b1 = q5*/ \
+  "sdot   v21.4s,  v5.16b,  v1.4b[0]\n"  /* out12 = b1 * a01[0], b1 = q5*/ \
+  "sdot   v24.4s,  v5.16b,  v1.4b[1]\n"  /* out13 = b1 * a01[1], b1 = q5*/ \
+  "sdot   v27.4s,  v5.16b,  v1.4b[2]\n"  /* out14 = b1 * a01[2], b1 = q5*/ \
+  "sdot   v30.4s,  v5.16b,  v1.4b[3]\n"  /* out15 = b1 * a01[3], b1 = q5*/ \
+  "ldp    q4, q5, [%[b_ptr]], #32\n"     /* load b1, b2 to q4, q5*/        \
+  "sdot   v10.4s,  v6.16b,  v0.4b[0]\n"  /* out16 = b2 * a00[0], b2 = q6*/ \
+  "sdot   v13.4s,  v6.16b,  v0.4b[1]\n"  /* out17 = b2 * a00[1], b2 = q6*/ \
+  "sdot   v16.4s,  v6.16b,  v0.4b[2]\n"  /* out18 = b2 * a00[2], b2 = q6*/ \
+  "sdot   v19.4s,  v6.16b,  v0.4b[3]\n"  /* out19 = b2 * a00[3], b2 = q6*/ \
+  "sdot   v22.4s,  v6.16b,  v1.4b[0]\n"  /* out20 = b2 * a00[0], b2 = q6*/ \
+  "sdot   v25.4s,  v6.16b,  v1.4b[1]\n"  /* out21 = b2 * a00[1], b2 = q6*/ \
+  "sdot   v28.4s,  v6.16b,  v1.4b[2]\n"  /* out22 = b2 * a00[2], b2 = q6*/ \
+  "sdot   v31.4s,  v6.16b,  v1.4b[3]\n"  /* out23 = b2 * a00[3], b2 = q6*/ \
+  "beq        4f\n" /*jump to tail = 2*/ /* unrool 1, tail > 2*/           \
+  "ldp    q0, q1, [%[a_ptr]], #32\n"     /* load a00, a01 to q0, q1*/      \
+  "sdot   v8.4s ,  v7.16b,  v2.4b[0]\n"  /* out0 = b0 * a10[0], b0 = q7*/  \
+  "sdot   v11.4s ,  v7.16b,  v2.4b[1]\n" /* out1 = b0 * a10[1], b0 = q7*/  \
+  "sdot   v14.4s,  v7.16b,  v2.4b[2]\n"  /* out2 = b0 * a10[2], b0 = q7*/  \
+  "sdot   v17.4s,  v7.16b,  v2.4b[3]\n"  /* out3 = b0 * a10[3], b0 = q7*/  \
+  "sdot   v20.4s,  v7.16b,  v3.4b[0]\n"  /* out4 = b0 * a11[0], b0 = q7*/  \
+  "sdot   v23.4s,  v7.16b,  v3.4b[1]\n"  /* out5 = b0 * a11[1], b0 = q7*/  \
+  "sdot   v26.4s,  v7.16b,  v3.4b[2]\n"  /* out6 = b0 * a11[2], b0 = q7*/  \
+  "sdot   v29.4s,  v7.16b,  v3.4b[3]\n"  /* out7 = b0 * a11[3], b0 = q7*/  \
+  "ldp    q6, q7, [%[b_ptr]], #32\n"     /* load b0, b1 to q6, q7*/        \
+  "sdot   v9.4s,  v4.16b,  v2.4b[0]\n"   /* out8 = b0 * a10[0], b1 = q4*/  \
+  "sdot   v12.4s,  v4.16b,  v2.4b[1]\n"  /* out9 = b0 * a10[1], b1 = q4*/  \
+  "sdot   v15.4s,  v4.16b,  v2.4b[2]\n"  /* out10 = b1 * a10[2], b1 = q4*/ \
+  "sdot   v18.4s,  v4.16b,  v2.4b[3]\n"  /* out11 = b1 * a10[3], b1 = q4*/ \
+  "sdot   v21.4s,  v4.16b,  v3.4b[0]\n"  /* out12 = b1 * a10[0], b1 = q4*/ \
+  "sdot   v24.4s,  v4.16b,  v3.4b[1]\n"  /* out13 = b1 * a10[1], b1 = q4*/ \
+  "sdot   v27.4s,  v4.16b,  v3.4b[2]\n"  /* out14 = b1 * a10[2], b1 = q4*/ \
+  "sdot   v30.4s,  v4.16b,  v3.4b[3]\n"  /* out15 = b1 * a10[3], b1 = q4*/ \
+  "subs   %w[tail], %w[tail], #1\n"      /* tail--*/                       \
+  "sdot   v10.4s,  v5.16b,  v2.4b[0]\n"  /* out16 = b2 * a10[0], b2 = q5*/ \
+  "sdot   v13.4s,  v5.16b,  v2.4b[1]\n"  /* out17 = b2 * a10[0], b2 = q5*/ \
+  "sdot   v16.4s,  v5.16b,  v2.4b[2]\n"  /* out18 = b2 * a10[0], b2 = q5*/ \
+  "sdot   v19.4s,  v5.16b,  v2.4b[3]\n"  /* out19 = b2 * a10[0], b2 = q5*/ \
+  "sdot   v22.4s,  v5.16b,  v3.4b[0]\n"  /* out20 = b2 * a10[0], b2 = q5*/ \
+  "sdot   v25.4s,  v5.16b,  v3.4b[1]\n"  /* out21 = b2 * a10[0], b2 = q5*/ \
+  "sdot   v28.4s,  v5.16b,  v3.4b[2]\n"  /* out22 = b2 * a10[0], b2 = q5*/ \
+  "sdot   v31.4s,  v5.16b,  v3.4b[3]\n"  /* out23 = b2 * a10[0], b2 = q5*/ \
+  "beq        5f\n" /*jump to tail = 3*/ /* unrool 2, tail = 4*/           \
+  "ldp    q4, q5, [%[b_ptr]], #32\n"     /* load b2, b0 to q4, q5*/        \
+  "sdot   v8.4s ,  v6.16b,  v0.4b[0]\n"  /* out0 = b0 * a00[0], b0 = q6*/  \
+  "sdot   v11.4s ,  v6.16b,  v0.4b[1]\n" /* out1 = b0 * a00[1], b0 = q6*/  \
+  "ldp    q2, q3, [%[a_ptr]], #32\n"     /* load a10, a11 to q3, q4*/      \
+  "sdot   v14.4s,  v6.16b,  v0.4b[2]\n"  /* out2 = b0 * a00[2], b0 = q6*/  \
+  "sdot   v17.4s,  v6.16b,  v0.4b[3]\n"  /* out3 = b0 * a00[3], b0 = q6*/  \
+  "sdot   v20.4s,  v6.16b,  v1.4b[0]\n"  /* out4 = b0 * a01[0], b0 = q6*/  \
+  "sdot   v23.4s,  v6.16b,  v1.4b[1]\n"  /* out5 = b0 * a01[1], b0 = q6*/  \
+  "sdot   v26.4s,  v6.16b,  v1.4b[2]\n"  /* out6 = b0 * a01[2], b0 = q6*/  \
+  "sdot   v29.4s,  v6.16b,  v1.4b[3]\n"  /* out7 = b0 * a01[3], b0 = q6*/  \
+  "sdot   v9.4s,  v7.16b,  v0.4b[0]\n"   /* out8 = b1 * a00[0], b1 = q7*/  \
+  "sdot   v12.4s,  v7.16b,  v0.4b[1]\n"  /* out9 = b1 * a00[1], b1 = q7*/  \
+  "sdot   v15.4s,  v7.16b,  v0.4b[2]\n"  /* out10 = b1 * a00[2], b1 = q7*/ \
+  "sdot   v18.4s,  v7.16b,  v0.4b[3]\n"  /* out11 = b1 * a00[3], b1 = q7*/ \
+  "sdot   v21.4s,  v7.16b,  v1.4b[0]\n"  /* out12 = b1 * a01[0], b1 = q7*/ \
+  "sdot   v24.4s,  v7.16b,  v1.4b[1]\n"  /* out13 = b1 * a01[1], b1 = q7*/ \
+  "sdot   v27.4s,  v7.16b,  v1.4b[2]\n"  /* out14 = b1 * a01[2], b1 = q7*/ \
+  "sdot   v30.4s,  v7.16b,  v1.4b[3]\n"  /* out15 = b1 * a01[3], b1 = q7*/ \
+  "ldp    q6, q7, [%[b_ptr]], #32\n"     /* load b1, b2 to q6, q7*/        \
+  "sdot   v10.4s,  v4.16b,  v0.4b[0]\n"  /* out16 = b2 * a00[0], b2 = q4*/ \
+  "sdot   v13.4s,  v4.16b,  v0.4b[1]\n"  /* out17 = b2 * a00[1], b2 = q4*/ \
+  "sdot   v16.4s,  v4.16b,  v0.4b[2]\n"  /* out18 = b2 * a00[2], b2 = q4*/ \
+  "sdot   v19.4s,  v4.16b,  v0.4b[3]\n"  /* out19 = b2 * a00[3], b2 = q4*/ \
+  "sdot   v22.4s,  v4.16b,  v1.4b[0]\n"  /* out20 = b2 * a00[0], b2 = q4*/ \
+  "sdot   v25.4s,  v4.16b,  v1.4b[1]\n"  /* out21 = b2 * a00[1], b2 = q4*/ \
+  "sdot   v28.4s,  v4.16b,  v1.4b[2]\n"  /* out22 = b2 * a00[2], b2 = q4*/ \
+  "sdot   v31.4s,  v4.16b,  v1.4b[3]\n"  /* out23 = b2 * a00[3], b2 = q4*/ \
+  "sdot   v8.4s ,  v5.16b,  v2.4b[0]\n"  /* out0 = b0 * a10[0], b0 = q5*/  \
+  "sdot   v11.4s ,  v5.16b,  v2.4b[1]\n" /* out1 = b0 * a10[1], b0 = q5*/  \
+  "sdot   v14.4s,  v5.16b,  v2.4b[2]\n"  /* out2 = b0 * a10[2], b0 = q5*/  \
+  "sdot   v17.4s,  v5.16b,  v2.4b[3]\n"  /* out3 = b0 * a10[3], b0 = q5*/  \
+  "sdot   v20.4s,  v5.16b,  v3.4b[0]\n"  /* out4 = b0 * a11[0], b0 = q5*/  \
+  "sdot   v23.4s,  v5.16b,  v3.4b[1]\n"  /* out5 = b0 * a11[1], b0 = q5*/  \
+  "sdot   v26.4s,  v5.16b,  v3.4b[2]\n"  /* out6 = b0 * a11[2], b0 = q5*/  \
+  "sdot   v29.4s,  v5.16b,  v3.4b[3]\n"  /* out7 = b0 * a11[3], b0 = q5*/  \
+  "sdot   v9.4s,  v6.16b,  v2.4b[0]\n"   /* out8 = b0 * a10[0], b1 = q6*/  \
+  "sdot   v12.4s,  v6.16b,  v2.4b[1]\n"  /* out9 = b1 * a10[1], b1 = q6*/  \
+  "sdot   v15.4s,  v6.16b,  v2.4b[2]\n"  /* out10 = b1 * a10[2], b1 = q6*/ \
+  "sdot   v18.4s,  v6.16b,  v2.4b[3]\n"  /* out11 = b1 * a10[3], b1 = q6*/ \
+  "sdot   v21.4s,  v6.16b,  v3.4b[0]\n"  /* out12 = b1 * a10[0], b1 = q6*/ \
+  "sdot   v24.4s,  v6.16b,  v3.4b[1]\n"  /* out13 = b1 * a10[1], b1 = q6*/ \
+  "sdot   v27.4s,  v6.16b,  v3.4b[2]\n"  /* out14 = b1 * a10[2], b1 = q6*/ \
+  "sdot   v30.4s,  v6.16b,  v3.4b[3]\n"  /* out15 = b1 * a10[3], b1 = q6*/ \
+  "sdot   v10.4s,  v7.16b,  v2.4b[0]\n"  /* out16 = b2 * a10[0], b2 = q7*/ \
+  "sdot   v13.4s,  v7.16b,  v2.4b[1]\n"  /* out17 = b2 * a10[0], b2 = q7*/ \
+  "sdot   v16.4s,  v7.16b,  v2.4b[2]\n"  /* out18 = b2 * a10[0], b2 = q7*/ \
+  "sdot   v19.4s,  v7.16b,  v2.4b[3]\n"  /* out19 = b2 * a10[0], b2 = q7*/ \
+  "sdot   v22.4s,  v7.16b,  v3.4b[0]\n"  /* out20 = b2 * a10[0], b2 = q7*/ \
+  "sdot   v25.4s,  v7.16b,  v3.4b[1]\n"  /* out21 = b2 * a10[0], b2 = q7*/ \
+  "sdot   v28.4s,  v7.16b,  v3.4b[2]\n"  /* out22 = b2 * a10[0], b2 = q7*/ \
+  "sdot   v31.4s,  v7.16b,  v3.4b[3]\n"  /* out23 = b2 * a10[0], b2 = q7*/ \
+  "b      11f\n"                         /* tails==1 final tail*/          \
+  "3: \n"                                /* tail=1*/                       \
+  "ldr    q6, [%[b_ptr]], #16\n"         /* load b2 to q6*/                \
+  "sdot   v8.4s ,  v4.16b,  v0.4b[0]\n"  /* out0 = b0 * a10[0], b0 = q5*/  \
+  "sdot   v11.4s ,  v4.16b,  v0.4b[1]\n" /* out1 = b0 * a10[1], b0 = q5*/  \
+  "sdot   v14.4s,  v4.16b,  v0.4b[2]\n"  /* out2 = b0 * a10[2], b0 = q5*/  \
+  "sdot   v17.4s,  v4.16b,  v0.4b[3]\n"  /* out3 = b0 * a10[3], b0 = q5*/  \
+  "sdot   v20.4s,  v4.16b,  v1.4b[0]\n"  /* out4 = b0 * a11[0], b0 = q5*/  \
+  "sdot   v23.4s,  v4.16b,  v1.4b[1]\n"  /* out5 = b0 * a11[1], b0 = q5*/  \
+  "sdot   v26.4s,  v4.16b,  v1.4b[2]\n"  /* out6 = b0 * a11[2], b0 = q5*/  \
+  "sdot   v29.4s,  v4.16b,  v1.4b[3]\n"  /* out7 = b0 * a11[3], b0 = q5*/  \
+  "sdot   v9.4s,  v5.16b,  v0.4b[0]\n"   /* out8 = b0 * a10[0], b1 = q6*/  \
+  "sdot   v12.4s,  v5.16b,  v0.4b[1]\n"  /* out9 = b1 * a10[1], b1 = q6*/  \
+  "sdot   v15.4s,  v5.16b,  v0.4b[2]\n"  /* out10 = b1 * a10[2], b1 = q6*/ \
+  "sdot   v18.4s,  v5.16b,  v0.4b[3]\n"  /* out11 = b1 * a10[3], b1 = q6*/ \
+  "sdot   v21.4s,  v5.16b,  v1.4b[0]\n"  /* out12 = b1 * a10[0], b1 = q6*/ \
+  "sdot   v24.4s,  v5.16b,  v1.4b[1]\n"  /* out13 = b1 * a10[1], b1 = q6*/ \
+  "sdot   v27.4s,  v5.16b,  v1.4b[2]\n"  /* out14 = b1 * a10[2], b1 = q6*/ \
+  "sdot   v30.4s,  v5.16b,  v1.4b[3]\n"  /* out15 = b1 * a10[3], b1 = q6*/ \
+  "sdot   v10.4s,  v6.16b,  v0.4b[0]\n"  /* out16 = b2 * a10[0], b2 = q7*/ \
+  "sdot   v13.4s,  v6.16b,  v0.4b[1]\n"  /* out17 = b2 * a10[0], b2 = q7*/ \
+  "sdot   v16.4s,  v6.16b,  v0.4b[2]\n"  /* out18 = b2 * a10[0], b2 = q7*/ \
+  "sdot   v19.4s,  v6.16b,  v0.4b[3]\n"  /* out19 = b2 * a10[0], b2 = q7*/ \
+  "sdot   v22.4s,  v6.16b,  v1.4b[0]\n"  /* out20 = b2 * a10[0], b2 = q7*/ \
+  "sdot   v25.4s,  v6.16b,  v1.4b[1]\n"  /* out21 = b2 * a10[0], b2 = q7*/ \
+  "sdot   v28.4s,  v6.16b,  v1.4b[2]\n"  /* out22 = b2 * a10[0], b2 = q7*/ \
+  "sdot   v31.4s,  v6.16b,  v1.4b[3]\n"  /* out23 = b2 * a10[0], b2 = q7*/ \
+  "b      11f\n"                         /* tails==2 final tail*/          \
+  "4:\n"                                 /* tail = 2*/                     \
+  "sdot   v8.4s ,  v7.16b,  v2.4b[0]\n"  /* out0 = b0 * a10[0], b0 = q5*/  \
+  "sdot   v11.4s ,  v7.16b,  v2.4b[1]\n" /* out1 = b0 * a10[1], b0 = q5*/  \
+  "sdot   v14.4s,  v7.16b,  v2.4b[2]\n"  /* out2 = b0 * a10[2], b0 = q5*/  \
+  "sdot   v17.4s,  v7.16b,  v2.4b[3]\n"  /* out3 = b0 * a10[3], b0 = q5*/  \
+  "sdot   v20.4s,  v7.16b,  v3.4b[0]\n"  /* out4 = b0 * a11[0], b0 = q5*/  \
+  "sdot   v23.4s,  v7.16b,  v3.4b[1]\n"  /* out5 = b0 * a11[1], b0 = q5*/  \
+  "sdot   v26.4s,  v7.16b,  v3.4b[2]\n"  /* out6 = b0 * a11[2], b0 = q5*/  \
+  "sdot   v29.4s,  v7.16b,  v3.4b[3]\n"  /* out7 = b0 * a11[3], b0 = q5*/  \
+  "sdot   v9.4s,  v4.16b,  v2.4b[0]\n"   /* out8 = b0 * a10[0], b1 = q6*/  \
+  "sdot   v12.4s,  v4.16b,  v2.4b[1]\n"  /* out9 = b1 * a10[1], b1 = q6*/  \
+  "sdot   v15.4s,  v4.16b,  v2.4b[2]\n"  /* out10 = b1 * a10[2], b1 = q6*/ \
+  "sdot   v18.4s,  v4.16b,  v2.4b[3]\n"  /* out11 = b1 * a10[3], b1 = q6*/ \
+  "sdot   v21.4s,  v4.16b,  v3.4b[0]\n"  /* out12 = b1 * a10[0], b1 = q6*/ \
+  "sdot   v24.4s,  v4.16b,  v3.4b[1]\n"  /* out13 = b1 * a10[1], b1 = q6*/ \
+  "sdot   v27.4s,  v4.16b,  v3.4b[2]\n"  /* out14 = b1 * a10[2], b1 = q6*/ \
+  "sdot   v30.4s,  v4.16b,  v3.4b[3]\n"  /* out15 = b1 * a10[3], b1 = q6*/ \
+  "sdot   v10.4s,  v5.16b,  v2.4b[0]\n"  /* out16 = b2 * a10[0], b2 = q7*/ \
+  "sdot   v13.4s,  v5.16b,  v2.4b[1]\n"  /* out17 = b2 * a10[0], b2 = q7*/ \
+  "sdot   v16.4s,  v5.16b,  v2.4b[2]\n"  /* out18 = b2 * a10[0], b2 = q7*/ \
+  "sdot   v19.4s,  v5.16b,  v2.4b[3]\n"  /* out19 = b2 * a10[0], b2 = q7*/ \
+  "sdot   v22.4s,  v5.16b,  v3.4b[0]\n"  /* out20 = b2 * a10[0], b2 = q7*/ \
+  "sdot   v25.4s,  v5.16b,  v3.4b[1]\n"  /* out21 = b2 * a10[0], b2 = q7*/ \
+  "sdot   v28.4s,  v5.16b,  v3.4b[2]\n"  /* out22 = b2 * a10[0], b2 = q7*/ \
+  "sdot   v31.4s,  v5.16b,  v3.4b[3]\n"  /* out23 = b2 * a10[0], b2 = q7*/ \
+  "b      11f\n"                         /* tails==3 final tail*/          \
+  "5:\n"                                 /* tail = 3*/                     \
+  "ldr    q4, [%[b_ptr]], #16\n"         /* load b2, b0 to q4*/            \
+  "sdot   v8.4s ,  v6.16b,  v0.4b[0]\n"  /* out0 = b0 * a10[0], b0 = q5*/  \
+  "sdot   v11.4s ,  v6.16b,  v0.4b[1]\n" /* out1 = b0 * a10[1], b0 = q5*/  \
+  "sdot   v14.4s,  v6.16b,  v0.4b[2]\n"  /* out2 = b0 * a10[2], b0 = q5*/  \
+  "sdot   v17.4s,  v6.16b,  v0.4b[3]\n"  /* out3 = b0 * a10[3], b0 = q5*/  \
+  "sdot   v20.4s,  v6.16b,  v1.4b[0]\n"  /* out4 = b0 * a11[0], b0 = q5*/  \
+  "sdot   v23.4s,  v6.16b,  v1.4b[1]\n"  /* out5 = b0 * a11[1], b0 = q5*/  \
+  "sdot   v26.4s,  v6.16b,  v1.4b[2]\n"  /* out6 = b0 * a11[2], b0 = q5*/  \
+  "sdot   v29.4s,  v6.16b,  v1.4b[3]\n"  /* out7 = b0 * a11[3], b0 = q5*/  \
+  "sdot   v9.4s,  v7.16b,  v0.4b[0]\n"   /* out8 = b0 * a10[0], b1 = q6*/  \
+  "sdot   v12.4s,  v7.16b,  v0.4b[1]\n"  /* out9 = b1 * a10[1], b1 = q6*/  \
+  "sdot   v15.4s,  v7.16b,  v0.4b[2]\n"  /* out10 = b1 * a10[2], b1 = q6*/ \
+  "sdot   v18.4s,  v7.16b,  v0.4b[3]\n"  /* out11 = b1 * a10[3], b1 = q6*/ \
+  "sdot   v21.4s,  v7.16b,  v1.4b[0]\n"  /* out12 = b1 * a10[0], b1 = q6*/ \
+  "sdot   v24.4s,  v7.16b,  v1.4b[1]\n"  /* out13 = b1 * a10[1], b1 = q6*/ \
+  "sdot   v27.4s,  v7.16b,  v1.4b[2]\n"  /* out14 = b1 * a10[2], b1 = q6*/ \
+  "sdot   v30.4s,  v7.16b,  v1.4b[3]\n"  /* out15 = b1 * a10[3], b1 = q6*/ \
+  "sdot   v10.4s,  v4.16b,  v0.4b[0]\n"  /* out16 = b2 * a10[0], b2 = q7*/ \
+  "sdot   v13.4s,  v4.16b,  v0.4b[1]\n"  /* out17 = b2 * a10[0], b2 = q7*/ \
+  "sdot   v16.4s,  v4.16b,  v0.4b[2]\n"  /* out18 = b2 * a10[0], b2 = q7*/ \
+  "sdot   v19.4s,  v4.16b,  v0.4b[3]\n"  /* out19 = b2 * a10[0], b2 = q7*/ \
+  "sdot   v22.4s,  v4.16b,  v1.4b[0]\n"  /* out20 = b2 * a10[0], b2 = q7*/ \
+  "sdot   v25.4s,  v4.16b,  v1.4b[1]\n"  /* out21 = b2 * a10[0], b2 = q7*/ \
+  "sdot   v28.4s,  v4.16b,  v1.4b[2]\n"  /* out22 = b2 * a10[0], b2 = q7*/ \
+  "sdot   v31.4s,  v4.16b,  v1.4b[3]\n"  /* out23 = b2 * a10[0], b2 = q7*/ \
+  "11: \n"                               /* check if relu */               \
+  "cbz    %w[relu],   12f\n"             /* skip relu */                   \
+  "movi   v2.4s, #0\n"                   /* for relu*/                     \
+  "smax   v8.4s, v8.4s, v2.4s\n"         /* relu*/                         \
+  "smax   v9.4s, v9.4s, v2.4s\n"         /* relu*/                         \
+  "smax   v10.4s, v10.4s, v2.4s\n"       /* relu*/                         \
+  "smax   v11.4s, v11.4s, v2.4s\n"       /* relu*/                         \
+  "smax   v12.4s, v12.4s, v2.4s\n"       /* relu*/                         \
+  "smax   v13.4s, v13.4s, v2.4s\n"       /* relu*/                         \
+  "smax   v14.4s, v14.4s, v2.4s\n"       /* relu*/                         \
+  "smax   v15.4s, v15.4s, v2.4s\n"       /* relu*/                         \
+  "smax   v16.4s,v16.4s,v2.4s\n"         /* relu*/                         \
+  "smax   v17.4s,v17.4s,v2.4s\n"         /* relu*/                         \
+  "smax   v18.4s, v18.4s, v2.4s\n"       /* relu*/                         \
+  "smax   v19.4s, v19.4s, v2.4s\n"       /* relu*/                         \
+  "smax   v20.4s, v20.4s, v2.4s\n"       /* relu*/                         \
+  "smax   v21.4s, v21.4s, v2.4s\n"       /* relu*/                         \
+  "smax   v22.4s, v22.4s, v2.4s\n"       /* relu*/                         \
+  "smax   v23.4s, v23.4s, v2.4s\n"       /* relu*/                         \
+  "smax   v24.4s, v24.4s, v2.4s\n"       /* relu*/                         \
+  "smax   v25.4s, v25.4s, v2.4s\n"       /* relu*/                         \
+  "smax   v26.4s, v26.4s, v2.4s\n"       /* relu*/                         \
+  "smax   v27.4s, v27.4s, v2.4s\n"       /* relu*/                         \
+  "smax   v28.4s, v28.4s, v2.4s\n"       /* relu*/                         \
+  "smax   v29.4s, v29.4s, v2.4s\n"       /* relu*/                         \
+  "smax   v30.4s, v30.4s, v2.4s\n"       /* relu*/                         \
+  "smax   v31.4s, v31.4s, v2.4s\n"       /* relu*/                         \
+  "12: \n"
+
+#define GEMM_SDOT_INT32_OUT                                        \
+  "st1 {v8.4s, v9.4s, v10.4s},[%[c_ptr0]], #48\n"   /* store r0 */ \
+  "st1 {v11.4s, v12.4s, v13.4s},[%[c_ptr1]], #48\n" /* store r1 */ \
+  "st1 {v14.4s, v15.4s, v16.4s},[%[c_ptr2]], #48\n" /* store r2 */ \
+  "st1 {v17.4s, v18.4s, v19.4s},[%[c_ptr3]], #48\n" /* store r3 */ \
+  "st1 {v20.4s, v21.4s, v22.4s},[%[c_ptr4]], #48\n" /* store r4 */ \
+  "st1 {v23.4s, v24.4s, v25.4s},[%[c_ptr5]], #48\n" /* store r5 */ \
+  "st1 {v26.4s, v27.4s, v28.4s},[%[c_ptr6]], #48\n" /* store r6 */ \
+  "st1 {v29.4s, v30.4s, v31.4s},[%[c_ptr7]], #48\n" /* store r7 */
+
+#define GEMM_SDOT_FP32_OUT                                          \
+  "ldp  q0, q1, [%[scale]]\n"     /* load scale */                  \
+  "scvtf  v2.4s , v8.4s\n"        /*  00, convert to fp32 */        \
+  "scvtf  v3.4s , v9.4s\n"        /*  01, convert to fp32 */        \
+  "scvtf  v4.4s , v10.4s\n"       /*  02, convert to fp32 */        \
+  "scvtf  v5.4s , v11.4s\n"       /*  03, convert to fp32 */        \
+  "scvtf  v6.4s , v12.4s\n"       /*  00, convert to fp32 */        \
+  "scvtf  v7.4s , v13.4s\n"       /*  00, convert to fp32 */        \
+  "fmul v8.4s, v2.4s, v0.s[0]\n"  /*  00, mul scale to get final */ \
+  "fmul v9.4s, v3.4s, v0.s[0]\n"  /*  00, mul scale to get final */ \
+  "fmul v10.4s, v4.4s, v0.s[0]\n" /*  00, mul scale to get final */ \
+  "fmul v11.4s, v5.4s, v0.s[1]\n" /*  00, mul scale to get final */ \
+  "fmul v12.4s, v6.4s, v0.s[1]\n" /*  00, mul scale to get final */ \
+  "fmul v13.4s, v7.4s, v0.s[1]\n" /*  00, mul scale to get final */ \
+  "scvtf  v2.4s , v14.4s\n"       /*  00, convert to fp32 */        \
+  "scvtf  v3.4s , v15.4s\n"       /*  01, convert to fp32 */        \
+  "scvtf  v4.4s , v16.4s\n"       /*  02, convert to fp32 */        \
+  "scvtf  v5.4s , v17.4s\n"       /*  03, convert to fp32 */        \
+  "scvtf  v6.4s , v18.4s\n"       /*  00, convert to fp32 */        \
+  "scvtf  v7.4s , v19.4s\n"       /*  00, convert to fp32 */        \
+  "st1 {v8.4s, v9.4s, v10.4s},[%[c_ptr0]], #48\n"   /* store r0 */  \
+  "st1 {v11.4s, v12.4s, v13.4s},[%[c_ptr1]], #48\n" /* store r1 */  \
+  "fmul v14.4s, v2.4s, v0.s[2]\n" /*  00, mul scale to get final */ \
+  "fmul v15.4s, v3.4s, v0.s[2]\n" /*  00, mul scale to get final */ \
+  "fmul v16.4s, v4.4s, v0.s[2]\n" /*  00, mul scale to get final */ \
+  "fmul v17.4s, v5.4s, v0.s[3]\n" /*  00, mul scale to get final */ \
+  "fmul v18.4s, v6.4s, v0.s[3]\n" /*  00, mul scale to get final */ \
+  "fmul v19.4s, v7.4s, v0.s[3]\n" /*  00, mul scale to get final */ \
+  "scvtf  v2.4s , v20.4s\n"       /*  00, convert to fp32 */        \
+  "scvtf  v3.4s , v21.4s\n"       /*  01, convert to fp32 */        \
+  "scvtf  v4.4s , v22.4s\n"       /*  02, convert to fp32 */        \
+  "scvtf  v5.4s , v23.4s\n"       /*  03, convert to fp32 */        \
+  "scvtf  v6.4s , v24.4s\n"       /*  00, convert to fp32 */        \
+  "scvtf  v7.4s , v25.4s\n"       /*  00, convert to fp32 */        \
+  "st1 {v14.4s, v15.4s, v16.4s},[%[c_ptr2]], #48\n" /* store r2 */  \
+  "st1 {v17.4s, v18.4s, v19.4s},[%[c_ptr3]], #48\n" /* store r3 */  \
+  "fmul v20.4s, v2.4s, v1.s[0]\n" /*  00, mul scale to get final */ \
+  "fmul v21.4s, v3.4s, v1.s[0]\n" /*  00, mul scale to get final */ \
+  "fmul v22.4s, v4.4s, v1.s[0]\n" /*  00, mul scale to get final */ \
+  "fmul v23.4s, v5.4s, v1.s[1]\n" /*  00, mul scale to get final */ \
+  "fmul v24.4s, v6.4s, v1.s[1]\n" /*  00, mul scale to get final */ \
+  "fmul v25.4s, v7.4s, v1.s[1]\n" /*  00, mul scale to get final */ \
+  "scvtf  v2.4s , v26.4s\n"       /*  00, convert to fp32 */        \
+  "scvtf  v3.4s , v27.4s\n"       /*  01, convert to fp32 */        \
+  "scvtf  v4.4s , v28.4s\n"       /*  02, convert to fp32 */        \
+  "scvtf  v5.4s , v29.4s\n"       /*  03, convert to fp32 */        \
+  "scvtf  v6.4s , v30.4s\n"       /*  00, convert to fp32 */        \
+  "scvtf  v7.4s , v31.4s\n"       /*  00, convert to fp32 */        \
+  "st1 {v20.4s, v21.4s, v22.4s},[%[c_ptr4]], #48\n" /* store r4 */  \
+  "st1 {v23.4s, v24.4s, v25.4s},[%[c_ptr5]], #48\n" /* store r5 */  \
+  "fmul v26.4s, v2.4s, v1.s[2]\n" /*  00, mul scale to get final */ \
+  "fmul v27.4s, v3.4s, v1.s[2]\n" /*  00, mul scale to get final */ \
+  "fmul v28.4s, v4.4s, v1.s[2]\n" /*  00, mul scale to get final */ \
+  "fmul v29.4s, v5.4s, v1.s[3]\n" /*  00, mul scale to get final */ \
+  "fmul v30.4s, v6.4s, v1.s[3]\n" /*  00, mul scale to get final */ \
+  "fmul v31.4s, v7.4s, v1.s[3]\n" /*  00, mul scale to get final */ \
+  "st1 {v26.4s, v27.4s, v28.4s},[%[c_ptr6]], #48\n" /* store r6 */  \
+  "st1 {v29.4s, v30.4s, v31.4s},[%[c_ptr7]], #48\n" /* store r7 */
+
+#define GEMM_SDOT_INT8_OUT                                          \
+  "ldp  q0, q1, [%[scale]]\n"      /* load scale */                 \
+  "scvtf  v2.4s , v8.4s\n"         /*  00, convert to fp32 */       \
+  "scvtf  v3.4s , v9.4s\n"         /*  01, convert to fp32 */       \
+  "scvtf  v4.4s , v10.4s\n"        /*  02, convert to fp32 */       \
+  "scvtf  v5.4s , v11.4s\n"        /*  03, convert to fp32 */       \
+  "scvtf  v6.4s , v12.4s\n"        /*  00, convert to fp32 */       \
+  "scvtf  v7.4s , v13.4s\n"        /*  00, convert to fp32 */       \
+  "fmul v8.4s, v2.4s, v0.s[0]\n"   /*  00, mul scale to get final*/ \
+  "fmul v9.4s, v3.4s, v0.s[0]\n"   /*  00, mul scale to get final*/ \
+  "fmul v10.4s, v4.4s, v0.s[0]\n"  /*  00, mul scale to get final*/ \
+  "fmul v11.4s, v5.4s, v0.s[1]\n"  /*  00, mul scale to get final*/ \
+  "fmul v12.4s, v6.4s, v0.s[1]\n"  /*  00, mul scale to get final*/ \
+  "fmul v13.4s, v7.4s, v0.s[1]\n"  /*  00, mul scale to get final*/ \
+  "scvtf  v2.4s , v14.4s\n"        /*  00, convert to fp32 */       \
+  "scvtf  v3.4s , v15.4s\n"        /*  01, convert to fp32 */       \
+  "scvtf  v4.4s , v16.4s\n"        /*  02, convert to fp32 */       \
+  "scvtf  v5.4s , v17.4s\n"        /*  03, convert to fp32 */       \
+  "scvtf  v6.4s , v18.4s\n"        /*  00, convert to fp32 */       \
+  "scvtf  v7.4s , v19.4s\n"        /*  00, convert to fp32 */       \
+  "fmul v14.4s, v2.4s, v0.s[2]\n"  /*  00, mul scale to get final*/ \
+  "fmul v15.4s, v3.4s, v0.s[2]\n"  /*  00, mul scale to get final*/ \
+  "fmul v16.4s, v4.4s, v0.s[2]\n"  /*  00, mul scale to get final*/ \
+  "fmul v17.4s, v5.4s, v0.s[3]\n"  /*  00, mul scale to get final*/ \
+  "fmul v18.4s, v6.4s, v0.s[3]\n"  /*  00, mul scale to get final*/ \
+  "fmul v19.4s, v7.4s, v0.s[3]\n"  /*  00, mul scale to get final*/ \
+  "scvtf  v2.4s , v20.4s\n"        /*  00, convert to fp32 */       \
+  "scvtf  v3.4s , v21.4s\n"        /*  01, convert to fp32 */       \
+  "scvtf  v4.4s , v22.4s\n"        /*  02, convert to fp32 */       \
+  "scvtf  v5.4s , v23.4s\n"        /*  03, convert to fp32 */       \
+  "scvtf  v6.4s , v24.4s\n"        /*  00, convert to fp32 */       \
+  "scvtf  v7.4s , v25.4s\n"        /*  00, convert to fp32 */       \
+  "fmul v20.4s, v2.4s, v1.s[0]\n"  /*  00, mul scale to get final*/ \
+  "fmul v21.4s, v3.4s, v1.s[0]\n"  /*  00, mul scale to get final*/ \
+  "fmul v22.4s, v4.4s, v1.s[0]\n"  /*  00, mul scale to get final*/ \
+  "fmul v23.4s, v5.4s, v1.s[1]\n"  /*  00, mul scale to get final*/ \
+  "fmul v24.4s, v6.4s, v1.s[1]\n"  /*  00, mul scale to get final*/ \
+  "fmul v25.4s, v7.4s, v1.s[1]\n"  /*  00, mul scale to get final*/ \
+  "scvtf  v2.4s , v26.4s\n"        /*  00, convert to fp32 */       \
+  "scvtf  v3.4s , v27.4s\n"        /*  01, convert to fp32 */       \
+  "scvtf  v4.4s , v28.4s\n"        /*  02, convert to fp32 */       \
+  "scvtf  v5.4s , v29.4s\n"        /*  03, convert to fp32 */       \
+  "scvtf  v6.4s , v30.4s\n"        /*  00, convert to fp32 */       \
+  "scvtf  v7.4s , v31.4s\n"        /*  00, convert to fp32 */       \
+  "fmul v26.4s, v2.4s, v1.s[2]\n"  /*  00, mul scale to get final*/ \
+  "fmul v27.4s, v3.4s, v1.s[2]\n"  /*  00, mul scale to get final*/ \
+  "fmul v28.4s, v4.4s, v1.s[2]\n"  /*  00, mul scale to get final*/ \
+  "fmul v29.4s, v5.4s, v1.s[3]\n"  /*  00, mul scale to get final*/ \
+  "fmul v30.4s, v6.4s, v1.s[3]\n"  /*  00, mul scale to get final*/ \
+  "fmul v31.4s, v7.4s, v1.s[3]\n"  /*  00, mul scale to get final*/ \
+  "fcvtas v0.4s, v8.4s\n"          /*  00, cvt to int */            \
+  "fcvtas v1.4s, v9.4s\n"          /*  00, cvt to int */            \
+  "fcvtas v2.4s, v10.4s\n"         /*  00, cvt to int */            \
+  "fcvtas v3.4s, v11.4s\n"         /*  00, cvt to int */            \
+  "fcvtas v4.4s, v12.4s\n"         /*  00, cvt to int */            \
+  "fcvtas v5.4s, v13.4s\n"         /*  00, cvt to int */            \
+  "sqxtn  v8.4h, v0.4s\n"          /*  00, cvt int32 to int16 */    \
+  "sqxtn2  v8.8h, v1.4s\n"         /*  00, cvt int32 to int16 */    \
+  "sqxtn  v9.4h, v2.4s\n"          /*  00, cvt int32 to int16 */    \
+  "fcvtas v0.4s, v14.4s\n"         /*  00, cvt to int */            \
+  "fcvtas v1.4s, v15.4s\n"         /*  00, cvt to int */            \
+  "fcvtas v2.4s, v16.4s\n"         /*  00, cvt to int */            \
+  "sqxtn  v11.4h, v3.4s\n"         /*  00, cvt int32 to int16 */    \
+  "sqxtn2  v11.8h, v4.4s\n"        /*  00, cvt int32 to int16 */    \
+  "sqxtn  v12.4h, v5.4s\n"         /*  00, cvt int32 to int16 */    \
+  "fcvtas v3.4s, v17.4s\n"         /*  00, cvt to int */            \
+  "fcvtas v4.4s, v18.4s\n"         /*  00, cvt to int */            \
+  "fcvtas v5.4s, v19.4s\n"         /*  00, cvt to int */            \
+  "sqxtn  v14.4h, v0.4s\n"         /*  00, cvt int32 to int16 */    \
+  "sqxtn2  v14.8h, v1.4s\n"        /*  00, cvt int32 to int16 */    \
+  "sqxtn  v15.4h, v2.4s\n"         /*  00, cvt int32 to int16 */    \
+  "fcvtas v0.4s, v20.4s\n"         /*  00, cvt to int */            \
+  "fcvtas v1.4s, v21.4s\n"         /*  00, cvt to int */            \
+  "fcvtas v2.4s, v22.4s\n"         /*  00, cvt to int */            \
+  "sqxtn  v17.4h, v3.4s\n"         /*  00, cvt int32 to int16 */    \
+  "sqxtn2  v17.8h, v4.4s\n"        /*  00, cvt int32 to int16 */    \
+  "sqxtn  v18.4h, v5.4s\n"         /*  00, cvt int32 to int16 */    \
+  "fcvtas v3.4s, v23.4s\n"         /*  00, cvt to int */            \
+  "fcvtas v4.4s, v24.4s\n"         /*  00, cvt to int */            \
+  "fcvtas v5.4s, v25.4s\n"         /*  00, cvt to int */            \
+  "sqxtn  v20.4h, v0.4s\n"         /*  00, cvt int32 to int16 */    \
+  "sqxtn2  v20.8h, v1.4s\n"        /*  00, cvt int32 to int16 */    \
+  "sqxtn  v21.4h, v2.4s\n"         /*  00, cvt int32 to int16 */    \
+  "fcvtas v0.4s, v26.4s\n"         /*  00, cvt to int */            \
+  "fcvtas v1.4s, v27.4s\n"         /*  00, cvt to int */            \
+  "fcvtas v2.4s, v28.4s\n"         /*  00, cvt to int */            \
+  "sqxtn  v23.4h, v3.4s\n"         /*  00, cvt int32 to int16 */    \
+  "sqxtn2  v23.8h, v4.4s\n"        /*  00, cvt int32 to int16 */    \
+  "sqxtn  v24.4h, v5.4s\n"         /*  00, cvt int32 to int16 */    \
+  "fcvtas v3.4s, v29.4s\n"         /*  00, cvt to int */            \
+  "fcvtas v4.4s, v30.4s\n"         /*  00, cvt to int */            \
+  "fcvtas v5.4s, v31.4s\n"         /*  00, cvt to int */            \
+  "sqxtn  v26.4h, v0.4s\n"         /*  00, cvt int32 to int16 */    \
+  "sqxtn2  v26.8h, v1.4s\n"        /*  00, cvt int32 to int16 */    \
+  "sqxtn  v27.4h, v2.4s\n"         /*  00, cvt int32 to int16 */    \
+  "sqxtn  v29.4h, v3.4s\n"         /*  00, cvt int32 to int16 */    \
+  "sqxtn2  v29.8h, v4.4s\n"        /*  00, cvt int32 to int16 */    \
+  "sqxtn  v30.4h, v5.4s\n"         /*  00, cvt int32 to int16 */    \
+  "sqxtn  v4.8b, v8.8h\n"          /*  00, 01, cvt int16 to int8 */ \
+  "sqxtn  v0.8b, v9.8h\n"          /*  00, 01, cvt int16 to int8 */ \
+  "sqxtn  v5.8b, v11.8h\n"         /*  00, 01, cvt int16 to int8 */ \
+  "sqxtn  v1.8b, v12.8h\n"         /*  00, 01, cvt int16 to int8 */ \
+  "sqxtn  v6.8b, v14.8h\n"         /*  00, 01, cvt int16 to int8 */ \
+  "sqxtn  v2.8b, v15.8h\n"         /*  00, 01, cvt int16 to int8 */ \
+  "sqxtn  v7.8b, v17.8h\n"         /*  00, 01, cvt int16 to int8 */ \
+  "sqxtn  v3.8b, v18.8h\n"         /*  00, 01, cvt int16 to int8 */ \
+  "sqxtn  v16.8b, v20.8h\n"        /*  00, 01, cvt int16 to int8 */ \
+  "sqxtn  v15.8b, v21.8h\n"        /*  00, 01, cvt int16 to int8 */ \
+  "sqxtn  v20.8b, v23.8h\n"        /*  00, 01, cvt int16 to int8 */ \
+  "sqxtn  v17.8b, v24.8h\n"        /*  00, 01, cvt int16 to int8 */ \
+  "sqxtn  v24.8b, v26.8h\n"        /*  00, 01, cvt int16 to int8 */ \
+  "sqxtn  v18.8b, v27.8h\n"        /*  00, 01, cvt int16 to int8 */ \
+  "sqxtn  v28.8b, v29.8h\n"        /*  00, 01, cvt int16 to int8 */ \
+  "sqxtn  v19.8b, v30.8h\n"        /*  00, 01, cvt int16 to int8 */ \
+  "st1 {v4.8b},[%[c_ptr0]], #8\n"  /* store r0 */                   \
+  "st1 {v5.8b},[%[c_ptr1]], #8\n"  /* store r0 */                   \
+  "st1 {v6.8b},[%[c_ptr2]], #8\n"  /* store r0 */                   \
+  "st1 {v7.8b},[%[c_ptr3]], #8\n"  /* store r0 */                   \
+  "st1 {v16.8b},[%[c_ptr4]], #8\n" /* store r0 */                   \
+  "st1 {v20.8b},[%[c_ptr5]], #8\n" /* store r0 */                   \
+  "st1 {v24.8b},[%[c_ptr6]], #8\n" /* store r0 */                   \
+  "st1 {v28.8b},[%[c_ptr7]], #8\n" /* store r0 */                   \
+  "str s0,[%[c_ptr0]], #4\n"       /* store r0 */                   \
+  "str s1,[%[c_ptr1]], #4\n"       /* store r0 */                   \
+  "str s2,[%[c_ptr2]], #4\n"       /* store r0 */                   \
+  "str s3,[%[c_ptr3]], #4\n"       /* store r0 */                   \
+  "str s15,[%[c_ptr4]], #4\n"      /* store r0 */                   \
+  "str s17,[%[c_ptr5]], #4\n"      /* store r0 */                   \
+  "str s18,[%[c_ptr6]], #4\n"      /* store r0 */                   \
+  "str s19,[%[c_ptr7]], #4\n"      /* store r0 */
+
+template <>
+inline void sgemm_sdot_int8_kernel(const int8_t* a_ptr,
+                                   const int8_t*& b_ptr,  // NOLINT
+                                   const int32_t* bias,
+                                   int32_t*& c_ptr0,  // NOLINT
+                                   int32_t*& c_ptr1,  // NOLINT
+                                   int32_t*& c_ptr2,  // NOLINT
+                                   int32_t*& c_ptr3,  // NOLINT
+                                   int32_t*& c_ptr4,  // NOLINT
+                                   int32_t*& c_ptr5,  // NOLINT
+                                   int32_t*& c_ptr6,  // NOLINT
+                                   int32_t*& c_ptr7,  // NOLINT
+                                   const float32_t* scale,
+                                   bool is_relu,
+                                   int k,
+                                   int tail) {
+  asm volatile(_DECLARE_SDOT_ELEMENT GEMM_SDOT_INT8_KERNEL GEMM_SDOT_INT32_OUT
+               : [a_ptr] "+r"(a_ptr),
+                 [b_ptr] "+r"(b_ptr),
+                 [k] "+r"(k),
+                 [tail] "+r"(tail),
+                 [c_ptr0] "+r"(c_ptr0),
+                 [c_ptr1] "+r"(c_ptr1),
+                 [c_ptr2] "+r"(c_ptr2),
+                 [c_ptr3] "+r"(c_ptr3),
+                 [c_ptr4] "+r"(c_ptr4),
+                 [c_ptr5] "+r"(c_ptr5),
+                 [c_ptr6] "+r"(c_ptr6),
+                 [c_ptr7] "+r"(c_ptr7)
+               : [bias_ptr] "r"(bias), [scale] "r"(scale), [relu] "r"(is_relu)
+               : "cc",
+                 "memory",
+                 "v0",
+                 "v1",
+                 "v2",
+                 "v3",
+                 "v4",
+                 "v5",
+                 "v6",
+                 "v7",
+                 "v8",
+                 "v9",
+                 "v10",
+                 "v11",
+                 "v12",
+                 "v13",
+                 "v14",
+                 "v15",
+                 "v16",
+                 "v17",
+                 "v18",
+                 "v19",
+                 "v20",
+                 "v21",
+                 "v22",
+                 "v23",
+                 "v24",
+                 "v25",
+                 "v26",
+                 "v27",
+                 "v28",
+                 "v29",
+                 "v30",
+                 "v31");
+}
+template <>
+inline void sgemm_sdot_int8_kernel(const int8_t* a_ptr,
+                                   const int8_t*& b_ptr,  // NOLINT
+                                   const int32_t* bias,
+                                   float32_t*& c_ptr0,  // NOLINT
+                                   float32_t*& c_ptr1,  // NOLINT
+                                   float32_t*& c_ptr2,  // NOLINT
+                                   float32_t*& c_ptr3,  // NOLINT
+                                   float32_t*& c_ptr4,  // NOLINT
+                                   float32_t*& c_ptr5,  // NOLINT
+                                   float32_t*& c_ptr6,  // NOLINT
+                                   float32_t*& c_ptr7,  // NOLINT
+                                   const float32_t* scale,
+                                   bool is_relu,
+                                   int k,
+                                   int tail) {
+  asm volatile(GEMM_SDOT_INT8_KERNEL GEMM_SDOT_FP32_OUT
+               : [a_ptr] "+r"(a_ptr),
+                 [b_ptr] "+r"(b_ptr),
+                 [k] "+r"(k),
+                 [tail] "+r"(tail),
+                 [c_ptr0] "+r"(c_ptr0),
+                 [c_ptr1] "+r"(c_ptr1),
+                 [c_ptr2] "+r"(c_ptr2),
+                 [c_ptr3] "+r"(c_ptr3),
+                 [c_ptr4] "+r"(c_ptr4),
+                 [c_ptr5] "+r"(c_ptr5),
+                 [c_ptr6] "+r"(c_ptr6),
+                 [c_ptr7] "+r"(c_ptr7)
+               : [bias_ptr] "r"(bias), [scale] "r"(scale), [relu] "r"(is_relu)
+               : "cc",
+                 "memory",
+                 "v0",
+                 "v1",
+                 "v2",
+                 "v3",
+                 "v4",
+                 "v5",
+                 "v6",
+                 "v7",
+                 "v8",
+                 "v9",
+                 "v10",
+                 "v11",
+                 "v12",
+                 "v13",
+                 "v14",
+                 "v15",
+                 "v16",
+                 "v17",
+                 "v18",
+                 "v19",
+                 "v20",
+                 "v21",
+                 "v22",
+                 "v23",
+                 "v24",
+                 "v25",
+                 "v26",
+                 "v27",
+                 "v28",
+                 "v29",
+                 "v30",
+                 "v31");
+}
+template <>
+inline void sgemm_sdot_int8_kernel(const int8_t* a_ptr,
+                                   const int8_t*& b_ptr,  // NOLINT
+                                   const int32_t* bias,
+                                   int8_t*& c_ptr0,  // NOLINT
+                                   int8_t*& c_ptr1,  // NOLINT
+                                   int8_t*& c_ptr2,  // NOLINT
+                                   int8_t*& c_ptr3,  // NOLINT
+                                   int8_t*& c_ptr4,  // NOLINT
+                                   int8_t*& c_ptr5,  // NOLINT
+                                   int8_t*& c_ptr6,  // NOLINT
+                                   int8_t*& c_ptr7,  // NOLINT
+                                   const float32_t* scale,
+                                   bool is_relu,
+                                   int k,
+                                   int tail) {
+  asm volatile(GEMM_SDOT_INT8_KERNEL GEMM_SDOT_INT8_OUT
+               : [a_ptr] "+r"(a_ptr),
+                 [b_ptr] "+r"(b_ptr),
+                 [k] "+r"(k),
+                 [tail] "+r"(tail),
+                 [c_ptr0] "+r"(c_ptr0),
+                 [c_ptr1] "+r"(c_ptr1),
+                 [c_ptr2] "+r"(c_ptr2),
+                 [c_ptr3] "+r"(c_ptr3),
+                 [c_ptr4] "+r"(c_ptr4),
+                 [c_ptr5] "+r"(c_ptr5),
+                 [c_ptr6] "+r"(c_ptr6),
+                 [c_ptr7] "+r"(c_ptr7)
+               : [bias_ptr] "r"(bias), [scale] "r"(scale), [relu] "r"(is_relu)
+               : "cc",
+                 "memory",
+                 "v0",
+                 "v1",
+                 "v2",
+                 "v3",
+                 "v4",
+                 "v5",
+                 "v6",
+                 "v7",
+                 "v8",
+                 "v9",
+                 "v10",
+                 "v11",
+                 "v12",
+                 "v13",
+                 "v14",
+                 "v15",
+                 "v16",
+                 "v17",
+                 "v18",
+                 "v19",
+                 "v20",
+                 "v21",
+                 "v22",
+                 "v23",
+                 "v24",
+                 "v25",
+                 "v26",
+                 "v27",
+                 "v28",
+                 "v29",
+                 "v30",
+                 "v31");
+}
+#endif
 
 #else  // armv7
 // clang-format off
@@ -1018,47 +1888,55 @@ inline void gemm_int8_kernel(const int8_t* a_ptr, const int8_t*& b_ptr,   // NOL
 
 // gemm wrapper
 template <typename Dtype>
-void gemm_prepack_int8(const int8_t* A_packed, const int8_t* B, const int* bias,
-                       Dtype* C, int M, int N, int K, bool is_bias,
-                       bool is_relu, bool is_transB, const float* scale,
-                       ARMContext* ctx) {
-  const int MBLOCK = 4;
+void gemm_prepack_oth_int8(const int8_t* A_packed,
+                           const int8_t* B,
+                           const int* bias,
+                           Dtype* C,
+                           int M,
+                           int N,
+                           int K,
+                           bool is_bias,
+                           bool is_relu,
+                           bool is_transB,
+                           const float* scale,
+                           ARMContext* ctx) {
   const int KUP = ROUNDUP(K, KBLOCK_INT8);
-  size_t l2_cache =
-      ctx->l2_cache_size() > 0 ? ctx->l2_cache_size() : 512 * 1024;
-  auto* workspace = ctx->workspace_data<int8_t>();
+  size_t llc_size = ctx->llc_size() / 4;
+  auto workspace = ctx->workspace_data<int8_t>();
   int threads = ctx->threads();
-  int x_block = l2_cache / (sizeof(int8_t) * (KUP + MBLOCK));
-  x_block /= NBLOCK_INT8;
-  x_block *= NBLOCK_INT8;
+  int x_block = llc_size / (sizeof(int8_t) * (KUP + MBLOCK_INT8_OTH));
+  x_block /= NBLOCK_INT8_OTH;
+  x_block *= NBLOCK_INT8_OTH;
   int x_num = (N + (x_block - 1)) / x_block;
   x_block = (N + x_num - 1) / x_num;
-  x_block = (x_block + NBLOCK_INT8 - 1) / NBLOCK_INT8;
-  x_block *= NBLOCK_INT8;
+  x_block = (x_block + NBLOCK_INT8_OTH - 1) / NBLOCK_INT8_OTH;
+  x_block *= NBLOCK_INT8_OTH;
   int k = K / KBLOCK_INT8;
   int k_rem = K & (KBLOCK_INT8 - 1);
   if (k_rem > KBLOCK_INT8 / 2) {
     k_rem = 0;
     k += 1;
   }
-  int n_rem = N & (NBLOCK_INT8 - 1);
-  bool flag_rem = n_rem > 0;
+  int n_rem = N & (NBLOCK_INT8_OTH - 1);
 
   auto* b_tmp = static_cast<int8_t*>(workspace);
 
-  auto* zerobuf =
-      static_cast<int8_t*>(malloc(x_block * (sizeof(int8_t) + sizeof(Dtype))));
+  auto* zerobuf = static_cast<int8_t *>(malloc(x_block * \
+                  (sizeof(int8_t) + sizeof(Dtype))));
   memset(zerobuf, 0, x_block * sizeof(int8_t));
-  auto* trash_ptr =
-      reinterpret_cast<Dtype*>(zerobuf + x_block * sizeof(int8_t));
+  auto* trash_ptr = reinterpret_cast<Dtype*>(zerobuf + \
+                  x_block * sizeof(int8_t));
 
   //! apanel is pre_compute outside gemm
+
   for (unsigned int x0 = 0; x0 < N; x0 += x_block) {
     unsigned int xmax = x0 + x_block;
-    if (xmax > N) {
+    bool flag_rem = false;
+    if (xmax >= N) {
       xmax = N;
+      flag_rem = n_rem > 0;
     }
-    int bblocks = (xmax - x0 + NBLOCK_INT8 - 1) / NBLOCK_INT8;
+    int bblocks = (xmax - x0 + NBLOCK_INT8_OTH - 1) / NBLOCK_INT8_OTH;
     //! load bpanel
     int8_t* b_pannel = b_tmp;
     if (is_transB) {
@@ -1068,11 +1946,11 @@ void gemm_prepack_int8(const int8_t* A_packed, const int8_t* B, const int* bias,
     }
 
 #pragma omp parallel for num_threads(threads)
-    for (unsigned int y = 0; y < M; y += MBLOCK) {
-      Dtype out0[NBLOCK_INT8] = {0};
-      Dtype out1[NBLOCK_INT8] = {0};
-      Dtype out2[NBLOCK_INT8] = {0};
-      Dtype out3[NBLOCK_INT8] = {0};
+    for (unsigned int y = 0; y < M; y += MBLOCK_INT8_OTH) {
+      Dtype out0[NBLOCK_INT8_OTH] = {0};
+      Dtype out1[NBLOCK_INT8_OTH] = {0};
+      Dtype out2[NBLOCK_INT8_OTH] = {0};
+      Dtype out3[NBLOCK_INT8_OTH] = {0};
       Dtype* c_ptr0 = C + y * N + x0;
       Dtype* c_ptr1 = c_ptr0 + N;
       Dtype* c_ptr2 = c_ptr1 + N;
@@ -1081,7 +1959,7 @@ void gemm_prepack_int8(const int8_t* A_packed, const int8_t* B, const int* bias,
       Dtype* tmp1 = nullptr;
       Dtype* tmp2 = nullptr;
       Dtype* tmp3 = nullptr;
-      float scale_local[4];
+      float32_t scale_local[4];
       int32_t bias_local[4] = {0, 0, 0, 0};
       if (is_bias) {
         bias_local[0] = bias[y];
@@ -1095,8 +1973,8 @@ void gemm_prepack_int8(const int8_t* A_packed, const int8_t* B, const int* bias,
         scale_local[2] = scale[y + 2];
         scale_local[3] = scale[y + 3];
       }
-      if (y + MBLOCK > M) {
-        switch (y + MBLOCK - M) {
+      if (y + MBLOCK_INT8_OTH > M) {
+        switch (y + MBLOCK_INT8_OTH - M) {
           case 3:
             c_ptr1 = trash_ptr;
           case 2:
@@ -1120,8 +1998,9 @@ void gemm_prepack_int8(const int8_t* A_packed, const int8_t* B, const int* bias,
           c_ptr2 = out2;
           c_ptr3 = out3;
         }
-        gemm_int8_kernel<Dtype>(a_ptr_l, b_ptr, bias_local, c_ptr0, c_ptr1,
-                                c_ptr2, c_ptr3, scale_local, is_relu, k, k_rem);
+        gemm_int8_kernel<Dtype>(a_ptr_l, b_ptr, bias_local,
+                        c_ptr0, c_ptr1, c_ptr2, c_ptr3,
+                        scale_local, is_relu, k, k_rem);
         if (flag_rem && (xb == bblocks - 1)) {
           for (int i = 0; i < n_rem; ++i) {
             *(tmp0++) = out0[i];
@@ -1135,23 +2014,6 @@ void gemm_prepack_int8(const int8_t* A_packed, const int8_t* B, const int* bias,
   }
   free(zerobuf);
 }
-
-template void gemm_prepack_int8<float>(const int8_t* A_packed, const int8_t* B,
-                                       const int* bias, float* C, int M, int N,
-                                       int K, bool is_bias, bool is_relu,
-                                       bool is_transB, const float* scale,
-                                       ARMContext* ctx);
-template void gemm_prepack_int8<int32_t>(const int8_t* A_packed,
-                                         const int8_t* B, const int* bias,
-                                         int32_t* C, int M, int N, int K,
-                                         bool is_bias, bool is_relu,
-                                         bool is_transB, const float* scale,
-                                         ARMContext* ctx);
-template void gemm_prepack_int8<int8_t>(const int8_t* A_packed, const int8_t* B,
-                                        const int* bias, int8_t* C, int M,
-                                        int N, int K, bool is_bias,
-                                        bool is_relu, bool is_transB,
-                                        const float* scale, ARMContext* ctx);
 
 /***********************************************************************/
 // prepack A according to gemm kernel
@@ -1174,21 +2036,21 @@ void prepackA_m4k2x2_int8(int8_t* out, const int8_t* in, const int ldin,
   int y_len = mmax - m0;
   int x_len = kmax - k0;
   int x_len_roundup = ROUNDUP(x_len, KBLOCK_INT8);
-  int8_t* zerobuff = static_cast<int8_t*>(malloc(x_len_roundup * sizeof(char)));
+  auto zerobuff = static_cast<int8_t*>(malloc(x_len_roundup * sizeof(char)));
   memset(zerobuff, 0, sizeof(char) * x_len_roundup);
 
   const int8_t* inptr = in + m0 * ldin + k0;
   uint8_t remain = static_cast<uint8_t>(x_len & (KBLOCK_INT8 - 1));
 
 #pragma omp parallel for
-  for (int y = 0; y < y_len; y += MBLOCK_INT8) {
+  for (int y = 0; y < y_len; y += MBLOCK_INT8_OTH) {
     const int8_t* ptr0 = inptr + y * ldin;
     const int8_t* ptr1 = ptr0 + ldin;
     const int8_t* ptr2 = ptr1 + ldin;
     const int8_t* ptr3 = ptr2 + ldin;
     //! cope with row index exceed real size, set to zero buffer
-    if ((y + MBLOCK_INT8) > y_len) {
-      switch ((y + MBLOCK_INT8) - y_len) {
+    if ((y + MBLOCK_INT8_OTH) > y_len) {
+      switch ((y + MBLOCK_INT8_OTH) - y_len) {
         case 3:
           ptr1 = zerobuff;
         case 2:
@@ -1366,19 +2228,19 @@ void prepackA_m4k2x2_trans_int8(int8_t* out, const int8_t* in, const int ldin,
   int xlen = mmax - m0;
   int ylen = kmax - k0;
   int ylen_roundup = ROUNDUP(ylen, KBLOCK_INT8);
-  int xlen_roundup = ROUNDUP(xlen, MBLOCK_INT8);
+  int xlen_roundup = ROUNDUP(xlen, MBLOCK_INT8_OTH);
 
   const int MUNROLL = 4;
-  int mcnt = xlen / (MUNROLL * MBLOCK_INT8);
-  int x_rem = xlen & (MUNROLL * MBLOCK_INT8 - 1);
-  int m_rem = (x_rem + MBLOCK_INT8 - 1) / MBLOCK_INT8;
+  int mcnt = xlen / (MUNROLL * MBLOCK_INT8_OTH);
+  int x_rem = xlen & (MUNROLL * MBLOCK_INT8_OTH - 1);
+  int m_rem = (x_rem + MBLOCK_INT8_OTH - 1) / MBLOCK_INT8_OTH;
 
   const uint8_t mask_buffer[16] = {0, 1, 2,  3,  4,  5,  6,  7,
                                    8, 9, 10, 11, 12, 13, 14, 15};
   int8x16_t vzero = vdupq_n_s8(0);
   uint8x16_t vmask = vcltq_u8(vld1q_u8(mask_buffer), vdupq_n_u8(x_rem));
 
-  int stride_out = ylen_roundup * MBLOCK_INT8;
+  int stride_out = ylen_roundup * MBLOCK_INT8_OTH;
 
   int8_t* zerobuf = static_cast<int8_t*>(malloc(xlen_roundup));
   memset(zerobuf, 0, xlen_roundup);
@@ -1390,7 +2252,7 @@ void prepackA_m4k2x2_trans_int8(int8_t* out, const int8_t* in, const int ldin,
     const int8_t* ptr1 = ptr0 + ldin;
     const int8_t* ptr2 = ptr1 + ldin;
     const int8_t* ptr3 = ptr2 + ldin;
-    int8_t* ptr_out = out + MBLOCK_INT8 * y;
+    int8_t* ptr_out = out + MBLOCK_INT8_OTH * y;
     if (y + KBLOCK_INT8 > ylen) {
       switch (y + KBLOCK_INT8 - ylen) {
         case 3:
@@ -1689,9 +2551,9 @@ void packb_int8(int8_t* out, const int8_t* in, const int ldin, const int k0,
   int x_len = nmax - n0;
   int y_len = kmax - k0;
   int kup = ROUNDUP(y_len, KBLOCK_INT8);
-  int kcnt = x_len / NBLOCK_INT8;
-  int rem = x_len & (NBLOCK_INT8 - 1);
-  int stride_out = NBLOCK_INT8 * kup;
+  int kcnt = x_len / NBLOCK_INT8_OTH;
+  int rem = x_len & (NBLOCK_INT8_OTH - 1);
+  int stride_out = NBLOCK_INT8_OTH * kup;
 
   int8x16_t vzero = vdupq_n_s8(0);
   uint8x16_t vmask = vcltq_u8(vld1q_u8(mask_buffer), vdupq_n_u8(rem));
@@ -1713,117 +2575,117 @@ void packb_int8(int8_t* out, const int8_t* in, const int ldin, const int k0,
           break;
       }
     }
-    int8_t* outptr_row_col = out + y * NBLOCK_INT8;
+    int8_t* outptr_row_col = out + y * NBLOCK_INT8_OTH;
     int k = kcnt;
 #ifdef __aarch64__
     asm volatile(
-        "ld1    {v0.16b},   [%[ptr0]],  #16\n" /* load r0 */
-        "ld1    {v1.16b},   [%[ptr1]],  #16\n" /* load r1 */
-        "ld1    {v2.16b},   [%[ptr2]],  #16\n" /* load r2 */
-        "ld1    {v3.16b},   [%[ptr3]],  #16\n" /* load r3 */
-        "cbz    %w[k], 1f\n"                   /* jump to remain */
-        "0:\n"                                 /* main loop */
-        /* trans 16b */
-        "trn1   v4.16b, v0.16b, v1.16b\n" /* get a0,b0, a2,b2, a4,b4, a6,b6,
-                                             a8,b8, a10,b10, a12,b12, a14,b14 */
-        "trn2   v5.16b, v0.16b, v1.16b\n" /* get a1,b1, a3,b3, a5,b5, a7,b7,
-                                             a9,b9, a11,b11, a13,b13, a15,b15 */
-        "trn1   v6.16b, v2.16b, v3.16b\n" /* get c0,d0, c2,d2, c4,d4, c6,d6,
-                                             c8,d8, c10,d10, c12,d12, c14,d14 */
-        "trn2   v7.16b, v2.16b, v3.16b\n" /* get c1,d1, c3,d3, c5,d5, c7,d7,
-                                             c9,d9, c11,d11, c13,d13, c15,d15 */
-        "ld1    {v0.16b},   [%[ptr0]],  #16\n" /* load r0 */
-        "ld1    {v1.16b},   [%[ptr1]],  #16\n" /* load r1 */
-        "subs   %w[k], %w[k], #1\n"            /* loop cnt -1 */
-        /* trans 8h */
-        "trn1   v8.8h, v4.8h, v5.8h\n" /* get a0,b0, a1,b1, a4,b4, a5,b5, a8,b8,
-                                          a9,b9, a12,b12, a13,b13 */
-        "trn2   v9.8h, v4.8h, v5.8h\n" /* get a2,b2, a3,b3, a6,b6, a7,b7,
-                                          a10,b10, a11,b11, a14,b14, a15,b15 */
-        "trn1   v10.8h, v6.8h, v7.8h\n" /* get c0,d0, c1,d1, c4,d4, c5,d5,
-                                           c8,d8, c9,d9, c12,d12, c13,d13 */
-        "trn2   v11.8h, v6.8h, v7.8h\n" /* get c2,d2, c3,d3, c6,d6, c7,d7,
-                                           c10,d10, c11,d11, c14,d14, c15,d15 */
-        /* trans 4s */
-        "ld1    {v2.16b},   [%[ptr2]],  #16\n" /* load r2 */
-        "trn1   v4.4s, v8.4s, v9.4s\n" /* get a0,b0, a1,b1, a2,b2, a3,b3, a8,b8,
-                                          a9,b9, a10,b10, a11,b11 */
-        "trn2   v5.4s, v8.4s, v9.4s\n" /* get a4,b4, a5,b5, a6,b6, a7,b7,
-                                          a12,b12, a13,b13, a14,b14, a15,b15 */
-        "trn1   v6.4s, v10.4s, v11.4s\n" /* get c0,d0, c1,d1, c2,d2, c3,d3,
-                                            c8,d8, c9,d9, c10,d10, c11,d11 */
-        "trn2   v7.4s, v10.4s, v11.4s\n" /* get c4,d4, c5,d5, c6,d6, c7,d7,
-                                            c12,d12, c13,d13, c14,d14, c15,d15
-                                            */
-        /* trans 2d */
-        "ld1    {v3.16b},   [%[ptr3]],  #16\n" /* load r3 */
-        "trn1   v8.2d, v4.2d, v6.2d\n" /* get a0,b0, a1,b1, a2,b2, a3,b3, c0,d0,
-                                          c1,d1, c2,d2, c3,d3 */
-        "trn2   v10.2d, v4.2d, v6.2d\n" /* get a8,b8, a9,b9, a10,b10, a11,b11,
-                                           c8,d8, c9,d9, c10,d10, c11,d11 */
-        "trn1   v9.2d, v5.2d, v7.2d\n" /* get a4,b4, a5,b5, a6,b6, a7,b7, c4,d4,
-                                          c5,d5, c6,d6, c7,d7 */
-        "trn2   v11.2d, v5.2d, v7.2d\n" /* get a12,b12, a13,b13, a14,b14,
-                                           a15,b15, c12,d12, c13,d13, c14,d14,
-                                           c15,d15 */
-        "st1    {v8.16b, v9.16b, v10.16b, v11.16b},   [%[ptr_out]], %[stride]\n"
-        "bgt    0b\n"          /* jump to main loop */
-        "1:\n"                 /* process remain */
-        "cbz    %w[rem], 2f\n" /* jump to remain */
-        /* bit select */
-        "bif    v0.16b, %[vzero].16b, %[mask].16b\n" /* pad 0 */
-        "bif    v1.16b, %[vzero].16b, %[mask].16b\n" /* pad 0 */
-        "bif    v2.16b, %[vzero].16b, %[mask].16b\n" /* pad 0 */
-        "bif    v3.16b, %[vzero].16b, %[mask].16b\n" /* pad 0 */
-        /* trans 16b */
-        "trn1   v4.16b, v0.16b, v1.16b\n" /* get a0,b0, a2,b2, a4,b4, a6,b6,
-                                             a8,b8, a10,b10, a12,b12, a14,b14 */
-        "trn2   v5.16b, v0.16b, v1.16b\n" /* get a1,b1, a3,b3, a5,b5, a7,b7,
-                                             a9,b9, a11,b11, a13,b13, a15,b15 */
-        "trn1   v6.16b, v2.16b, v3.16b\n" /* get c0,d0, c2,d2, c4,d4, c6,d6,
-                                             c8,d8, c10,d10, c12,d12, c14,d14 */
-        "trn2   v7.16b, v2.16b, v3.16b\n" /* get c1,d1, c3,d3, c5,d5, c7,d7,
-                                             c9,d9, c11,d11, c13,d13, c15,d15 */
-        /* trans 8h */
-        "trn1   v8.8h, v4.8h, v5.8h\n" /* get a0,b0, a1,b1, a4,b4, a5,b5, a8,b8,
-                                          a9,b9, a12,b12, a13,b13 */
-        "trn2   v9.8h, v4.8h, v5.8h\n" /* get a2,b2, a3,b3, a6,b6, a7,b7,
-                                          a10,b10, a11,b11, a14,b14, a15,b15 */
-        "trn1   v10.8h, v6.8h, v7.8h\n" /* get c0,d0, c1,d1, c4,d4, c5,d5,
-                                           c8,d8, c9,d9, c12,d12, c13,d13 */
-        "trn2   v11.8h, v6.8h, v7.8h\n" /* get c2,d2, c3,d3, c6,d6, c7,d7,
-                                           c10,d10, c11,d11, c14,d14, c15,d15 */
-        /* trans 4s */
-        "trn1   v4.4s, v8.4s, v9.4s\n" /* get a0,b0, a1,b1, a2,b2, a3,b3, a8,b8,
-                                          a9,b9, a10,b10, a11,b11 */
-        "trn2   v5.4s, v8.4s, v9.4s\n" /* get a4,b4, a5,b5, a6,b6, a7,b7,
-                                          a12,b12, a13,b13, a14,b14, a15,b15 */
-        "trn1   v6.4s, v10.4s, v11.4s\n" /* get c0,d0, c1,d1, c2,d2, c3,d3,
-                                            c8,d8, c9,d9, c10,d10, c11,d11 */
-        "trn2   v7.4s, v10.4s, v11.4s\n" /* get c4,d4, c5,d5, c6,d6, c7,d7,
-                                            c12,d12, c13,d13, c14,d14, c15,d15
-                                            */
-        /* trans 2d */
-        "trn1   v8.2d, v4.2d, v6.2d\n" /* get a0,b0, a1,b1, a2,b2, a3,b3, c0,d0,
-                                          c1,d1, c2,d2, c3,d3 */
-        "trn2   v10.2d, v4.2d, v6.2d\n" /* get a8,b8, a9,b9, a10,b10, a11,b11,
-                                           c8,d8, c9,d9, c10,d10, c11,d11 */
-        "trn1   v9.2d, v5.2d, v7.2d\n" /* get a4,b4, a5,b5, a6,b6, a7,b7, c4,d4,
-                                          c5,d5, c6,d6, c7,d7 */
-        "trn2   v11.2d, v5.2d, v7.2d\n" /* get a12,b12, a13,b13, a14,b14,
-                                           a15,b15, c12,d12, c13,d13, c14,d14,
-                                           c15,d15 */
-        "st1    {v8.16b, v9.16b, v10.16b, v11.16b},   [%[ptr_out]]\n" /* save to
-                                                                         memory
-                                                                         */
-        /* end */
-        "2:\n" /* end */
-        : [ptr0] "+r"(ptr0), [ptr1] "+r"(ptr1), [ptr2] "+r"(ptr2),
-          [ptr3] "+r"(ptr3), [k] "+r"(k), [ptr_out] "+r"(outptr_row_col)
-        : [rem] "r"(rem), [mask] "w"(vmask), [vzero] "w"(vzero),
-          [stride] "r"(stride_out)
-        : "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9", "v10",
-          "v11", "cc");
+    "ld1    {v0.16b},   [%[ptr0]],  #16\n" /* load r0 */
+    "ld1    {v1.16b},   [%[ptr1]],  #16\n" /* load r1 */
+    "ld1    {v2.16b},   [%[ptr2]],  #16\n" /* load r2 */
+    "ld1    {v3.16b},   [%[ptr3]],  #16\n" /* load r3 */
+    "cbz    %w[k], 1f\n"                   /* jump to remain */
+    "0:\n"                                 /* main loop */
+    /* trans 16b */
+    "trn1   v4.16b, v0.16b, v1.16b\n" /* get a0,b0, a2,b2, a4,b4, a6,b6,
+                                         a8,b8, a10,b10, a12,b12, a14,b14 */
+    "trn2   v5.16b, v0.16b, v1.16b\n" /* get a1,b1, a3,b3, a5,b5, a7,b7,
+                                         a9,b9, a11,b11, a13,b13, a15,b15 */
+    "trn1   v6.16b, v2.16b, v3.16b\n" /* get c0,d0, c2,d2, c4,d4, c6,d6,
+                                         c8,d8, c10,d10, c12,d12, c14,d14 */
+    "trn2   v7.16b, v2.16b, v3.16b\n" /* get c1,d1, c3,d3, c5,d5, c7,d7,
+                                         c9,d9, c11,d11, c13,d13, c15,d15 */
+    "ld1    {v0.16b},   [%[ptr0]],  #16\n" /* load r0 */
+    "ld1    {v1.16b},   [%[ptr1]],  #16\n" /* load r1 */
+    "subs   %w[k], %w[k], #1\n"            /* loop cnt -1 */
+    /* trans 8h */
+    "trn1   v8.8h, v4.8h, v5.8h\n" /* get a0,b0, a1,b1, a4,b4, a5,b5, a8,b8,
+                                      a9,b9, a12,b12, a13,b13 */
+    "trn2   v9.8h, v4.8h, v5.8h\n" /* get a2,b2, a3,b3, a6,b6, a7,b7,
+                                      a10,b10, a11,b11, a14,b14, a15,b15 */
+    "trn1   v10.8h, v6.8h, v7.8h\n" /* get c0,d0, c1,d1, c4,d4, c5,d5,
+                                       c8,d8, c9,d9, c12,d12, c13,d13 */
+    "trn2   v11.8h, v6.8h, v7.8h\n" /* get c2,d2, c3,d3, c6,d6, c7,d7,
+                                       c10,d10, c11,d11, c14,d14, c15,d15 */
+    /* trans 4s */
+    "ld1    {v2.16b},   [%[ptr2]],  #16\n" /* load r2 */
+    "trn1   v4.4s, v8.4s, v9.4s\n" /* get a0,b0, a1,b1, a2,b2, a3,b3, a8,b8,
+                                      a9,b9, a10,b10, a11,b11 */
+    "trn2   v5.4s, v8.4s, v9.4s\n" /* get a4,b4, a5,b5, a6,b6, a7,b7,
+                                      a12,b12, a13,b13, a14,b14, a15,b15 */
+    "trn1   v6.4s, v10.4s, v11.4s\n" /* get c0,d0, c1,d1, c2,d2, c3,d3,
+                                        c8,d8, c9,d9, c10,d10, c11,d11 */
+    "trn2   v7.4s, v10.4s, v11.4s\n" /* get c4,d4, c5,d5, c6,d6, c7,d7,
+                                        c12,d12, c13,d13, c14,d14, c15,d15
+                                        */
+    /* trans 2d */
+    "ld1    {v3.16b},   [%[ptr3]],  #16\n" /* load r3 */
+    "trn1   v8.2d, v4.2d, v6.2d\n" /* get a0,b0, a1,b1, a2,b2, a3,b3, c0,d0,
+                                      c1,d1, c2,d2, c3,d3 */
+    "trn2   v10.2d, v4.2d, v6.2d\n" /* get a8,b8, a9,b9, a10,b10, a11,b11,
+                                       c8,d8, c9,d9, c10,d10, c11,d11 */
+    "trn1   v9.2d, v5.2d, v7.2d\n" /* get a4,b4, a5,b5, a6,b6, a7,b7, c4,d4,
+                                      c5,d5, c6,d6, c7,d7 */
+    "trn2   v11.2d, v5.2d, v7.2d\n" /* get a12,b12, a13,b13, a14,b14,
+                                       a15,b15, c12,d12, c13,d13, c14,d14,
+                                       c15,d15 */
+    "st1    {v8.16b, v9.16b, v10.16b, v11.16b},   [%[ptr_out]], %[stride]\n"
+    "bgt    0b\n"          /* jump to main loop */
+    "1:\n"                 /* process remain */
+    "cbz    %w[rem], 2f\n" /* jump to remain */
+    /* bit select */
+    "bif    v0.16b, %[vzero].16b, %[mask].16b\n" /* pad 0 */
+    "bif    v1.16b, %[vzero].16b, %[mask].16b\n" /* pad 0 */
+    "bif    v2.16b, %[vzero].16b, %[mask].16b\n" /* pad 0 */
+    "bif    v3.16b, %[vzero].16b, %[mask].16b\n" /* pad 0 */
+    /* trans 16b */
+    "trn1   v4.16b, v0.16b, v1.16b\n" /* get a0,b0, a2,b2, a4,b4, a6,b6,
+                                         a8,b8, a10,b10, a12,b12, a14,b14 */
+    "trn2   v5.16b, v0.16b, v1.16b\n" /* get a1,b1, a3,b3, a5,b5, a7,b7,
+                                         a9,b9, a11,b11, a13,b13, a15,b15 */
+    "trn1   v6.16b, v2.16b, v3.16b\n" /* get c0,d0, c2,d2, c4,d4, c6,d6,
+                                         c8,d8, c10,d10, c12,d12, c14,d14 */
+    "trn2   v7.16b, v2.16b, v3.16b\n" /* get c1,d1, c3,d3, c5,d5, c7,d7,
+                                         c9,d9, c11,d11, c13,d13, c15,d15 */
+    /* trans 8h */
+    "trn1   v8.8h, v4.8h, v5.8h\n" /* get a0,b0, a1,b1, a4,b4, a5,b5, a8,b8,
+                                      a9,b9, a12,b12, a13,b13 */
+    "trn2   v9.8h, v4.8h, v5.8h\n" /* get a2,b2, a3,b3, a6,b6, a7,b7,
+                                      a10,b10, a11,b11, a14,b14, a15,b15 */
+    "trn1   v10.8h, v6.8h, v7.8h\n" /* get c0,d0, c1,d1, c4,d4, c5,d5,
+                                       c8,d8, c9,d9, c12,d12, c13,d13 */
+    "trn2   v11.8h, v6.8h, v7.8h\n" /* get c2,d2, c3,d3, c6,d6, c7,d7,
+                                       c10,d10, c11,d11, c14,d14, c15,d15 */
+    /* trans 4s */
+    "trn1   v4.4s, v8.4s, v9.4s\n" /* get a0,b0, a1,b1, a2,b2, a3,b3, a8,b8,
+                                      a9,b9, a10,b10, a11,b11 */
+    "trn2   v5.4s, v8.4s, v9.4s\n" /* get a4,b4, a5,b5, a6,b6, a7,b7,
+                                      a12,b12, a13,b13, a14,b14, a15,b15 */
+    "trn1   v6.4s, v10.4s, v11.4s\n" /* get c0,d0, c1,d1, c2,d2, c3,d3,
+                                        c8,d8, c9,d9, c10,d10, c11,d11 */
+    "trn2   v7.4s, v10.4s, v11.4s\n" /* get c4,d4, c5,d5, c6,d6, c7,d7,
+                                        c12,d12, c13,d13, c14,d14, c15,d15
+                                        */
+    /* trans 2d */
+    "trn1   v8.2d, v4.2d, v6.2d\n" /* get a0,b0, a1,b1, a2,b2, a3,b3, c0,d0,
+                                      c1,d1, c2,d2, c3,d3 */
+    "trn2   v10.2d, v4.2d, v6.2d\n" /* get a8,b8, a9,b9, a10,b10, a11,b11,
+                                       c8,d8, c9,d9, c10,d10, c11,d11 */
+    "trn1   v9.2d, v5.2d, v7.2d\n" /* get a4,b4, a5,b5, a6,b6, a7,b7, c4,d4,
+                                      c5,d5, c6,d6, c7,d7 */
+    "trn2   v11.2d, v5.2d, v7.2d\n" /* get a12,b12, a13,b13, a14,b14,
+                                       a15,b15, c12,d12, c13,d13, c14,d14,
+                                       c15,d15 */
+    "st1    {v8.16b, v9.16b, v10.16b, v11.16b},   [%[ptr_out]]\n" /* save to
+                                                                     memory
+                                                                     */
+    /* end */
+    "2:\n" /* end */
+    : [ptr0] "+r"(ptr0), [ptr1] "+r"(ptr1), [ptr2] "+r"(ptr2),
+      [ptr3] "+r"(ptr3), [k] "+r"(k), [ptr_out] "+r"(outptr_row_col)
+    : [rem] "r"(rem), [mask] "w"(vmask), [vzero] "w"(vzero),
+      [stride] "r"(stride_out)
+    : "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9", "v10",
+      "v11", "cc");
 #else   // armv7
     asm volatile(
         "vld1.8 {d0},   [%[ptr0]]!\n" /* load r0, a0,a1,a2,a3,a4,a5,a6,a7 */
@@ -1929,20 +2791,20 @@ void packb_trans_int8(int8_t* out, const int8_t* in, const int ldin,
                       const int nmax, const int8_t* zerobuf) {
   const int KUNROLL = 4;
   const int NUNROLL = 8;
-  const int RATIO = NBLOCK_INT8 / NUNROLL;
+  const int RATIO = NBLOCK_INT8_OTH / NUNROLL;
   const int8_t* inptr = in + n0 * ldin + k0;
   const uint8_t mask_buffer[16] = {0, 1, 2,  3,  4,  5,  6,  7,
                                    8, 9, 10, 11, 12, 13, 14, 15};
   int y_len = nmax - n0;
   int x_len = kmax - k0;
-  int yup = ROUNDUP(y_len, NBLOCK_INT8);
+  int yup = ROUNDUP(y_len, NBLOCK_INT8_OTH);
   const int kup = ROUNDUP(x_len, KBLOCK_INT8);
   const int KSTRIDE = KBLOCK_INT8 * KUNROLL;
   int kcnt = x_len / KSTRIDE;
   int x_rem = (x_len & (KSTRIDE - 1));
   int k_rem = (x_rem + KBLOCK_INT8 - 1) / KBLOCK_INT8;
   const int stride_inner = KBLOCK_INT8 * NUNROLL;
-  const int stride_outer = kup * NBLOCK_INT8;
+  const int stride_outer = kup * NBLOCK_INT8_OTH;
   const int ncnt = yup / NUNROLL;
 
   int8x16_t vzero = vdupq_n_s8(0);
@@ -2218,6 +3080,860 @@ void packb_trans_int8(int8_t* out, const int8_t* in, const int ldin,
         : "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7", "cc");
 #endif  //__aarch64__  // NOLINT
   }
+}
+
+#if defined(__aarch64__) && defined(WITH_ARM_DOTPROD)
+
+template <typename Dtype>
+void gemm_prepack_sdot_int8(const int8_t* A_packed,
+                            const int8_t* B,
+                            const int* bias,
+                            Dtype* C,
+                            int M,
+                            int N,
+                            int K,
+                            bool is_bias,
+                            bool is_relu,
+                            bool is_transB,
+                            const float* scale,
+                            ARMContext* ctx) {
+    size_t llc_size = ctx->llc_size() / 4;
+    auto workspace = ctx->workspace_data<int8_t>();
+    //! MBLOCK_INT8_DOT * x (result) + MBLOCK_INT8_DOT * k (A) + x * k (B) = l2
+    int x_block = (llc_size - (MBLOCK_INT8_DOT * K)) / \
+                  (sizeof(int8_t) * (K + MBLOCK_INT8_DOT));
+    x_block /= NBLOCK_INT8_DOT;
+    x_block *= NBLOCK_INT8_DOT;
+    int x_num = (N + (x_block - 1)) / x_block;
+    x_block = (N + x_num - 1) / x_num;
+    x_block = (x_block + NBLOCK_INT8_DOT - 1) / NBLOCK_INT8_DOT;
+    x_block *= NBLOCK_INT8_DOT;
+    x_block = x_block < NBLOCK_INT8_DOT ? NBLOCK_INT8_DOT : x_block;
+
+    int kup = ROUNDUP(K, KBLOCK_INT8);
+    // unroll 2 loop
+    int tail_pre = ((kup / 4) & (KBLOCK_INT8 - 1));
+    int k_pre = (((kup / 4) + KBLOCK_INT8 - 1) / KBLOCK_INT8) - 1;
+
+    bool flag_p_remain = false;
+    int remain = 0;
+
+    //! apanel is pre_compute outside gemm
+    for (unsigned int x0 = 0; x0 < N; x0 += x_block) {
+        unsigned int xmax = x0 + x_block;
+        if (xmax > N) {
+            xmax = N;
+        }
+        int bblocks = (xmax - x0 + NBLOCK_INT8_DOT - 1) / NBLOCK_INT8_DOT;
+        remain = xmax - x0 - (bblocks - 1) * NBLOCK_INT8_DOT;
+        if (remain > 0) {
+            flag_p_remain = true;
+        }
+        //! load bpanel
+        auto b_pannel = static_cast<int8_t *>(workspace);
+        if (!is_transB) {
+          // K * N
+          packb_sdot_int8(b_pannel, B, N, 0, K, x0, xmax);
+        } else {
+          // N X K
+          packb_sdot_trans_int8(b_pannel, B, K, 0, K, x0, xmax);
+        }
+#pragma omp parallel for
+        for (unsigned int y = 0; y < M; y += MBLOCK_INT8_DOT) {
+            unsigned int ymax = y + MBLOCK_INT8_DOT;
+            if (ymax > M) {
+                ymax = M;
+            }
+
+            int32_t bias_local[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+            if (is_bias) {
+                bias_local[0] = bias[y];
+                bias_local[1] = bias[y + 1];
+                bias_local[2] = bias[y + 2];
+                bias_local[3] = bias[y + 3];
+                bias_local[4] = bias[y + 4];
+                bias_local[5] = bias[y + 5];
+                bias_local[6] = bias[y + 6];
+                bias_local[7] = bias[y + 7];
+            }
+            float32_t scale_local[8];
+            if (scale) {
+                scale_local[0] = scale[y];
+                scale_local[1] = scale[y + 1];
+                scale_local[2] = scale[y + 2];
+                scale_local[3] = scale[y + 3];
+                scale_local[4] = scale[y + 4];
+                scale_local[5] = scale[y + 5];
+                scale_local[6] = scale[y + 6];
+                scale_local[7] = scale[y + 7];
+            }
+
+            Dtype cout0[NBLOCK_INT8_DOT];
+            Dtype cout1[NBLOCK_INT8_DOT];
+            Dtype cout2[NBLOCK_INT8_DOT];
+            Dtype cout3[NBLOCK_INT8_DOT];
+            Dtype cout4[NBLOCK_INT8_DOT];
+            Dtype cout5[NBLOCK_INT8_DOT];
+            Dtype cout6[NBLOCK_INT8_DOT];
+            Dtype cout7[NBLOCK_INT8_DOT];
+
+            Dtype *c_ptr0 = C + y * N + x0;
+            Dtype *c_ptr1 = c_ptr0 + N;
+            Dtype *c_ptr2 = c_ptr1 + N;
+            Dtype *c_ptr3 = c_ptr2 + N;
+            Dtype *c_ptr4 = c_ptr3 + N;
+            Dtype *c_ptr5 = c_ptr4 + N;
+            Dtype *c_ptr6 = c_ptr5 + N;
+            Dtype *c_ptr7 = c_ptr6 + N;
+
+            Dtype *pout0 = c_ptr0;
+            Dtype *pout1 = c_ptr1;
+            Dtype *pout2 = c_ptr2;
+            Dtype *pout3 = c_ptr3;
+            Dtype *pout4 = c_ptr4;
+            Dtype *pout5 = c_ptr5;
+            Dtype *pout6 = c_ptr6;
+            Dtype *pout7 = c_ptr7;
+
+            // const int8_t *a_ptr_l = A_packed + y * K;
+            const int8_t *a_ptr_l = A_packed + y * kup;
+            const int8_t *b_ptr = b_pannel;
+            for (int xb = 0; xb < bblocks; xb++) {
+                if ((y + 7) >= ymax) {
+                    switch ((y + 7) - ymax) {
+                        case 6:
+                            c_ptr1 = cout1;
+                        case 5:
+                            c_ptr2 = cout2;
+                        case 4:
+                            c_ptr3 = cout3;
+                        case 3:
+                            c_ptr4 = cout4;
+                        case 2:
+                            c_ptr5 = cout5;
+                        case 1:
+                            c_ptr6 = cout6;
+                        case 0:
+                            c_ptr7 = cout7;
+                        default:
+                            break;
+                    }
+                }
+                if (flag_p_remain && (xb == bblocks - 1)) {
+                    pout0 = c_ptr0;
+                    pout1 = c_ptr1;
+                    pout2 = c_ptr2;
+                    pout3 = c_ptr3;
+                    pout4 = c_ptr4;
+                    pout5 = c_ptr5;
+                    pout6 = c_ptr6;
+                    pout7 = c_ptr7;
+
+                    c_ptr0 = cout0;
+                    c_ptr1 = cout1;
+                    c_ptr2 = cout2;
+                    c_ptr3 = cout3;
+                    c_ptr4 = cout4;
+                    c_ptr5 = cout5;
+                    c_ptr6 = cout6;
+                    c_ptr7 = cout7;
+                }
+                const int8_t *a_ptr = a_ptr_l;
+                int tail = tail_pre;
+                int k = k_pre;
+                sgemm_sdot_int8_kernel<Dtype>(a_ptr, b_ptr,
+                        bias_local, c_ptr0, c_ptr1, c_ptr2, c_ptr3, \
+                        c_ptr4, c_ptr5, c_ptr6, c_ptr7, scale_local, \
+                        is_relu, k, tail);
+                if (flag_p_remain && (xb == bblocks - 1)) {
+                    for (int i = 0; i < remain; ++i) {
+                        *pout0++ = cout0[i];
+                        *pout1++ = cout1[i];
+                        *pout2++ = cout2[i];
+                        *pout3++ = cout3[i];
+                        *pout4++ = cout4[i];
+                        *pout5++ = cout5[i];
+                        *pout6++ = cout6[i];
+                        *pout7++ = cout7[i];
+                    }
+                }
+            }
+        }
+    }
+}
+
+void prepackA_m8k4_int8(int8_t* out,
+                        const int8_t* in,
+                        const int ldin,
+                        const int m0,
+                        const int mmax,
+                        const int k0,
+                        const int kmax) {
+    int x_len = (kmax - k0);
+    int8_t zerobuff[x_len];  //NOLINT
+    memset(zerobuff, 0, sizeof(int8_t) * x_len);
+
+    int8_t *dout = out;
+    const int8_t *inptr = in;
+    int kup = ROUNDUP(x_len, KBLOCK_INT8);
+    int stride = kup * 8;
+    int remain = x_len % 4;
+#pragma omp parallel for
+    for (int y = m0; y < mmax; y += 8) {
+        int8_t* outptr = dout + stride * (y - m0) / 8;
+        const int8_t * inptr_row[8];
+        inptr_row[0] = inptr + y * ldin + k0;
+        for (int i = 1; i < 8; i++) {
+            inptr_row[i] = inptr_row[i - 1] + ldin;
+        }
+        //! cope with row index exceed real size, set to zero buffer
+        if ((y + 7) >= mmax) {
+            switch ((y + 7) - mmax) {
+                case 6:
+                    inptr_row[1] = zerobuff;
+                case 5:
+                    inptr_row[2] = zerobuff;
+                case 4:
+                    inptr_row[3] = zerobuff;
+                case 3:
+                    inptr_row[4] = zerobuff;
+                case 2:
+                    inptr_row[5] = zerobuff;
+                case 1:
+                    inptr_row[6] = zerobuff;
+                case 0:
+                    inptr_row[7] = zerobuff;
+                default:
+                    break;
+            }
+        }
+        asm volatile(
+        "prfm   pldl1keep, [%[ptr0]]                \n"
+        "prfm   pldl1keep, [%[ptr0], #64]   \n"
+        "prfm   pldl1keep, [%[ptr1]]        \n"
+        "prfm   pldl1keep, [%[ptr1], #64]   \n"
+        "prfm   pldl1keep, [%[ptr2]]        \n"
+        "prfm   pldl1keep, [%[ptr2], #64]   \n"
+        "prfm   pldl1keep, [%[ptr3]]        \n"
+        "prfm   pldl1keep, [%[ptr3], #64]   \n"
+        "prfm   pldl1keep, [%[ptr4]]        \n"
+        "prfm   pldl1keep, [%[ptr4], #64]   \n"
+        "prfm   pldl1keep, [%[ptr5]]        \n"
+        "prfm   pldl1keep, [%[ptr5], #64]   \n"
+        "prfm   pldl1keep, [%[ptr6]]        \n"
+        "prfm   pldl1keep, [%[ptr6], #64]   \n"
+        "prfm   pldl1keep, [%[ptr7]]        \n"
+        "prfm   pldl1keep, [%[ptr7], #64]   \n"
+        :
+        :[ptr0] "r"(inptr_row[0]),[ptr1] "r"(inptr_row[1]),[ptr2] "r"(inptr_row[2]),[ptr3] "r"(inptr_row[3]),\
+                [ptr4] "r"(inptr_row[4]),[ptr5] "r"(inptr_row[5]),[ptr6] "r"(inptr_row[6]),[ptr7] "r"(inptr_row[7])
+        :"memory"
+        );
+
+        int x = x_len;
+
+        for (; x > 7; x -= 8) {
+            asm volatile(
+            "ld1 {v0.8b}, [%[inptr0]], #8 \n" // v0=a0a1a2a3a4a5a6a7
+            "ld1 {v1.8b}, [%[inptr1]], #8 \n" // v1=b0b1b2b3b4b5b6b7
+            "ld1 {v2.8b}, [%[inptr2]], #8 \n" // v2=c0c1c2c3c4c5c6c7
+            "ld1 {v3.8b}, [%[inptr3]], #8 \n" // v3=d0d1d2d3d4d5d6d7
+
+            "ld1 {v4.8b}, [%[inptr4]], #8 \n" // v0=e0e1a2a3a4a5a6a7
+            "ld1 {v5.8b}, [%[inptr5]], #8 \n" // v1=f0f1b2b3b4b5b6b7
+            "ld1 {v6.8b}, [%[inptr6]], #8 \n" // v2=g0g1c2c3c4c5c6c7
+            "ld1 {v7.8b}, [%[inptr7]], #8 \n" // v3=h0h1d2d3d4d5d6d7
+
+            "trn1 v8.2s, v0.2s, v1.2s \n" // v0=a0a1a2a3b0b1b2b3
+            "trn2 v9.2s, v0.2s, v1.2s \n" // v0=a4a5a6a7b4b5b6b7
+            "trn1 v10.2s, v2.2s, v3.2s \n" // v0=c0c1c2c3d0d1d2d3
+            "trn2 v11.2s, v2.2s, v3.2s \n" // v0=c4c5c6c7d4d5d6d7
+
+            "trn1 v12.2s, v4.2s, v5.2s \n" // v0=e0e1e2e3f0f1f2f3
+            "trn2 v13.2s, v4.2s, v5.2s \n" // v0=e4e5e6e7f4f5f6f7
+            "trn1 v14.2s, v6.2s, v7.2s \n" // v0=g0g1g2g3h0h1h2h3
+            "trn2 v15.2s, v6.2s, v7.2s \n" // v0=g4g5g6g7h4h5h6h7
+
+            "st1 {v8.2s}, [%[outptr]], #8\n"
+            "st1 {v10.2s}, [%[outptr]], #8\n"
+            "st1 {v12.2s}, [%[outptr]], #8\n"
+            "st1 {v14.2s}, [%[outptr]], #8\n"
+
+            "st1 {v9.2s}, [%[outptr]], #8\n"
+            "st1 {v11.2s}, [%[outptr]], #8\n"
+            "st1 {v13.2s}, [%[outptr]], #8\n"
+            "st1 {v15.2s}, [%[outptr]], #8\n"
+
+            :[inptr0] "+r"(inptr_row[0]), [inptr1] "+r"(inptr_row[1]),
+            [inptr2] "+r"(inptr_row[2]), [inptr3] "+r"(inptr_row[3]),
+            [inptr4] "+r"(inptr_row[4]), [inptr5] "+r"(inptr_row[5]),
+            [inptr6] "+r"(inptr_row[6]), [inptr7] "+r"(inptr_row[7]),
+            [outptr] "+r"(outptr)
+            :
+            : "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9", "v10", "v11", "v12",
+                    "v13", "v14", "v15", "v16", "cc", "memory"
+            );
+        }
+        if (x >= 4) {
+            asm volatile(
+            "mov x1, #4 \n"
+            "ld1 {v0.8b}, [%[inptr0]], x1 \n" // v0=a0a1a2a3a4a5a6a7
+            "ld1 {v1.8b}, [%[inptr1]], x1 \n" // v1=b0b1b2b3b4b5b6b7
+            "ld1 {v2.8b}, [%[inptr2]], x1 \n" // v2=c0c1c2c3c4c5c6c7
+            "ld1 {v3.8b}, [%[inptr3]], x1 \n" // v3=d0d1d2d3d4d5d6d7
+
+            "ld1 {v4.8b}, [%[inptr4]], x1 \n" // v0=e0e1a2a3a4a5a6a7
+            "ld1 {v5.8b}, [%[inptr5]], x1 \n" // v1=f0f1b2b3b4b5b6b7
+            "ld1 {v6.8b}, [%[inptr6]], x1 \n" // v2=g0g1c2c3c4c5c6c7
+            "ld1 {v7.8b}, [%[inptr7]], x1 \n" // v3=h0h1d2d3d4d5d6d7
+
+            "trn1 v8.2s, v0.2s, v1.2s \n" // v0=a0a1a2a3b0b1b2b3
+            "trn1 v10.2s, v2.2s, v3.2s \n" // v0=c0c1c2c3d0d1d2d3
+
+            "trn1 v12.2s, v4.2s, v5.2s \n" // v0=e0e1e2e3f0f1f2f3
+            "trn1 v14.2s, v6.2s, v7.2s \n" // v0=g0g1g2g3h0h1h2h3
+
+            "st1 {v8.2s}, [%[outptr]], #8\n"
+            "st1 {v10.2s}, [%[outptr]], #8\n"
+
+            "st1 {v12.2s}, [%[outptr]], #8\n"
+            "st1 {v14.2s}, [%[outptr]], #8\n"
+
+            :[inptr0] "+r"(inptr_row[0]), [inptr1] "+r"(inptr_row[1]),
+            [inptr2] "+r"(inptr_row[2]), [inptr3] "+r"(inptr_row[3]),
+            [inptr4] "+r"(inptr_row[4]), [inptr5] "+r"(inptr_row[5]),
+            [inptr6] "+r"(inptr_row[6]), [inptr7] "+r"(inptr_row[7]),
+            [outptr] "+r"(outptr)
+            :
+            : "x1", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9", "v10", "v11", "v12",
+                    "v13", "v14", "v15", "v16", "cc", "memory"
+            );
+            x -= 4;
+        }
+        if (x > 0) {
+            for (int i = 0; i < 8; i++) {
+                for (int j = x; j > 0; j--) {
+                    *outptr++ = *inptr_row[i]++;
+                }
+                for (int j = 0; j < 4 - remain; j++) {
+                    *outptr++ = 0;
+                }
+            }
+        }
+    }
+}
+
+void prepackA_m8k4_trans_int8(int8_t* out,
+                              const int8_t* in,
+                              const int ldin,
+                              const int m0,
+                              const int mmax,
+                              const int k0,
+                              const int kmax) {
+    int8_t *outptr = out;
+    const int8_t *inptr = in + k0 * ldin + m0;
+    int x_len = mmax - m0;
+    int y_len = kmax - k0;
+    int right_remain = x_len % 8;
+    int kup = ROUNDUP(y_len, KBLOCK_INT8);
+
+    int stride_out = 8 * kup;
+    int8_t zerobuff[x_len];    //NOLINT
+    memset(zerobuff, 0, sizeof(int8_t) * x_len);
+    printf("right_remain: %d \n", right_remain);
+
+#pragma omp parallel for
+    for (int y = 0; y < y_len; y += 4) {
+        const int8_t* inptr0 = inptr + y * ldin;
+        const int8_t* inptr1 = inptr0 + ldin;
+        const int8_t* inptr2 = inptr1 + ldin;
+        const int8_t* inptr3 = inptr2 + ldin;
+
+        if (y + 4 > y_len) {
+            switch (y + 4 - y_len) {
+                case 3:
+                    inptr1 = zerobuff;
+                case 2:
+                    inptr2 = zerobuff;
+                case 1:
+                    inptr3 = zerobuff;
+                default:
+                    break;
+            }
+        }
+        asm volatile(
+        "prfm   pldl1keep, [%[ptr0]]                \n"
+        "prfm   pldl1keep, [%[ptr0], #64]   \n"
+        "prfm   pldl1keep, [%[ptr1]]        \n"
+        "prfm   pldl1keep, [%[ptr1], #64]   \n"
+        "prfm   pldl1keep, [%[ptr2]]        \n"
+        "prfm   pldl1keep, [%[ptr2], #64]   \n"
+        "prfm   pldl1keep, [%[ptr3]]        \n"
+        "prfm   pldl1keep, [%[ptr3], #64]   \n"
+        :
+        :[ptr0] "r"(inptr0),[ptr1] "r"(inptr1),[ptr2] "r"(inptr2),
+        [ptr3] "r"(inptr3)
+        :"memory"
+        );
+
+        int8_t *outptr_row = outptr + y * 8;
+        int x = 0;
+        for (; x < x_len - 7; x += 8) {
+            int8_t *out0 = outptr_row;
+            asm volatile (
+            "ld1 {v0.8b}, [%[inptr0]], #8 \n" // v0 = a0a1a2a3a4a5a6a7
+            "ld1 {v1.8b}, [%[inptr1]], #8 \n" // v0 = b0b1b2b3b4b5b6b7
+            "ld1 {v2.8b}, [%[inptr2]], #8 \n" // v0 = c0c1c2c3c4c5c6c7
+            "ld1 {v3.8b}, [%[inptr3]], #8 \n" // v0 = d0d1d2d3d4d5d6d7
+
+            "trn1 v4.8b, v0.8b, v1.8b \n" // v4 = a0b0a2b2a4b4a6b6
+            "trn2 v5.8b, v0.8b, v1.8b \n" // v4 = a1b1a3b3a5b5a7b7
+            "trn1 v6.8b, v2.8b, v3.8b \n" // v4 = c0d0c2d2a4b4a6b6
+            "trn2 v7.8b, v2.8b, v3.8b \n" // v4 = c1d1c3d3a5b5a7b7
+
+            "trn1 v0.4h, v4.4h, v6.4h \n" // v4 = a0b0c0d0a4b4c4d4
+            "trn2 v1.4h, v4.4h, v6.4h \n" // v4 = a2b2c2d2a6b6c6d6
+            "trn1 v2.4h, v5.4h, v7.4h \n" // v4 = a1b1c1d1a5b5c5d5
+            "trn2 v3.4h, v5.4h, v7.4h \n" // v4 = a3b3c3d3a7b7c7d7
+
+            "trn1 v4.2s, v0.2s, v2.2s \n" //v4 =a0b0c0d0a1b1c1d1
+            "trn2 v5.2s, v0.2s, v2.2s \n" //v4 =a4b4c4d4a5b5c5d5
+            "trn1 v6.2s, v1.2s, v3.2s \n" //v4 =a2b2c2d2a3b3c3d3
+            "trn2 v7.2s, v1.2s, v3.2s \n" //v4 =a6b6c6d6a7b7c7d7
+
+            "st1 {v4.2s}, [%[outr]], #8\n"
+            "st1 {v6.2s}, [%[outr]], #8\n"
+            "st1 {v5.2s}, [%[outr]], #8\n"
+            "st1 {v7.2s}, [%[outr]], #8\n"
+            : [inptr0] "+r"(inptr0), [inptr1] "+r"(inptr1),
+              [inptr2] "+r"(inptr2), [inptr3] "+r"(inptr3),
+              [outr] "+r"(out0)
+            :
+            : "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8",
+              "v9", "v10", "v11", "v12", "v13", "v14", "v15", "v16",
+              "cc", "memory"
+            );
+            outptr_row += stride_out;
+        }
+        if (right_remain > 0) {
+            int8_t *out0 = outptr_row;
+            for (; x < x_len; x++) {
+                *out0++ = *inptr0++;
+                *out0++ = *inptr1++;
+                *out0++ = *inptr2++;
+                *out0++ = *inptr3++;
+            }
+            for (int i = 0; i < 8 - right_remain; i++) {
+                *out0++ = 0;
+                *out0++ = 0;
+                *out0++ = 0;
+                *out0++ = 0;
+            }
+        }
+    }
+}
+
+void packb_sdot_int8(int8_t* out,
+        const int8_t* in,
+        const int ldin,
+        const int k0,
+        const int kmax,
+        const int n0,
+        const int nmax) {
+    int y_len = kmax - k0;
+    int x_len = nmax - n0;
+    int kup = ROUNDUP(y_len, KBLOCK_INT8);  //  4k
+    int8_t zerobuff[x_len];    //NOLINT
+    memset(zerobuff, 0, sizeof(int8_t) * x_len);
+    int8_t *outptr = out;
+    const int8_t *inptr = in + k0 * ldin + n0;
+
+    int stride_out = 12 * kup;
+    // int stride_y = 48;
+    int remain = x_len % 12;
+
+    // data B is not transposed, transpose B to k * 12
+#pragma omp parallel for
+    for (int y = 0; y < y_len; y += 4) {
+        // cope with row index exceed real size, set to zero
+        const int8_t *inptr0 = inptr + y * ldin;
+        const int8_t *inptr1 = inptr0 + ldin;
+        const int8_t *inptr2 = inptr1 + ldin;
+        const int8_t *inptr3 = inptr2 + ldin;
+        if (y + 4 > y_len) {
+            switch (y + 4 - y_len) {
+                case 3:
+                    inptr1 = zerobuff;
+                case 2:
+                    inptr2 = zerobuff;
+                case 1:
+                    inptr3 = zerobuff;
+                default:
+                    break;
+            }
+        }
+        asm volatile(
+        "prfm   pldl1keep, [%[inptr0]]                \n"
+        "prfm   pldl1keep, [%[inptr0], #64]        \n"
+        "prfm   pldl1keep, [%[inptr1]]        \n"
+        "prfm   pldl1keep, [%[inptr1], #64]        \n"
+        "prfm   pldl1keep, [%[inptr2]]        \n"
+        "prfm   pldl1keep, [%[inptr2], #64]        \n"
+        "prfm   pldl1keep, [%[inptr3]]        \n"
+        "prfm   pldl1keep, [%[inptr3], #64]        \n"
+        :
+        :[inptr0] "r"(inptr0), [inptr1] "r"(inptr1),
+          [inptr2] "r"(inptr2), [inptr3] "r"(inptr3)
+        :"memory"
+        );
+        int8_t* outptr_row = outptr + y * 12;
+        int x = 0;
+        for (; x < x_len - 11; x += 12) {
+            int8_t *out0 = outptr_row;
+            asm volatile (
+            "mov x1, #4 \n"
+            "ld1 {v0.8b}, [%[inptr0]], #8 \n" // v0 = a0a1a2a3a4a5a6a7
+            "ld1 {v1.8b}, [%[inptr1]], #8 \n" // v0 = b0b1b2b3b4b5b6b7
+            "ld1 {v2.8b}, [%[inptr2]], #8 \n" // v0 = c0c1c2c3c4c5c6c7
+            "ld1 {v3.8b}, [%[inptr3]], #8 \n" // v0 = d0d1d2d3d4d5d6d7
+
+            "ld1 {v8.8b}, [%[inptr0]]  \n" // v0 = a8a9a10a11
+            "ld1 {v9.8b}, [%[inptr1]]  \n" // v0 = b8b9b10b11
+            "ld1 {v10.8b}, [%[inptr2]]  \n" // v0 = c8c9c10c11
+            "ld1 {v11.8b}, [%[inptr3]]  \n" // v0 = d8d9d10d11
+
+            "trn1 v4.8b, v0.8b, v1.8b \n" // v4 = a0b0a2b2a4b4a6b6
+            "trn2 v5.8b, v0.8b, v1.8b \n" // v4 = a1b1a3b3a5b5a7b7
+            "trn1 v6.8b, v2.8b, v3.8b \n" // v4 = c0d0c2d2a4b4a6b6
+            "trn2 v7.8b, v2.8b, v3.8b \n" // v4 = c1d1c3d3a5b5a7b7
+
+            "trn1 v12.8b, v8.8b, v9.8b \n" // v4 = a8b8a10b10a4b4a6b6
+            "trn2 v13.8b, v8.8b, v9.8b \n" // v4 = a9b9a11b11a5b5a7b7
+            "trn1 v14.8b, v10.8b, v11.8b \n" // v4 = c8d8c10d10a4b4a6b6
+            "trn2 v15.8b, v10.8b, v11.8b \n" // v4 = c9d9c11d11a5b5a7b7
+
+            "trn1 v0.4h, v4.4h, v6.4h \n" // v4 = a0b0c0d0a4b4c4d4
+            "trn2 v1.4h, v4.4h, v6.4h \n" // v4 = a2b2c2d2a6b6c6d6
+            "trn1 v2.4h, v5.4h, v7.4h \n" // v4 = a1b1c1d1a5b5c5d5
+            "trn2 v3.4h, v5.4h, v7.4h \n" // v4 = a3b3c3d3a7b7c7d7
+
+            "trn1 v8.4h, v12.4h, v14.4h \n" // v4 = a8b8c8d8
+            "trn2 v9.4h, v12.4h, v14.4h \n" // v4 = a10b10c10d10
+            "trn1 v10.4h, v13.4h, v15.4h \n" // v4 = a9b9c9d9
+            "trn2 v11.4h, v13.4h, v15.4h \n" // v4 = a11b11c11d11
+
+            "trn1 v4.2s, v0.2s, v2.2s \n" //v4 =a0b0c0d0a1b1c1d1
+            "trn2 v5.2s, v0.2s, v2.2s \n" //v4 =a4b4c4d4a5b5c5d5
+            "trn1 v6.2s, v1.2s, v3.2s \n" //v4 =a2b2c2d2a3b3c3d3
+            "trn2 v7.2s, v1.2s, v3.2s \n" //v4 =a6b6c6d6a7b7c7d7
+
+            "trn1 v0.2s, v8.2s, v10.2s \n" //v4 =a8b8c8d8a9b9c9d9
+            "trn1 v1.2s, v9.2s, v11.2s \n" //v4 =a10b10c10d10a11b11c11d11
+
+            "st1 {v4.2s}, [%[outr]], #8\n"
+            "st1 {v6.2s}, [%[outr]], #8\n"
+            "add %[inptr0], %[inptr0], #4\n"
+            "add %[inptr1], %[inptr1], #4\n"
+            "st1 {v5.2s}, [%[outr]], #8\n"
+            "st1 {v7.2s}, [%[outr]], #8\n"
+            "add %[inptr2], %[inptr2], #4\n"
+            "add %[inptr3], %[inptr3], #4\n"
+            "st1 {v0.2s}, [%[outr]], #8\n"
+            "st1 {v1.2s}, [%[outr]], #8\n"
+            : [inptr0] "+r"(inptr0), [inptr1] "+r"(inptr1),
+              [inptr2] "+r"(inptr2), [inptr3] "+r"(inptr3),
+              [outr] "+r"(out0)
+            :
+            : "x1", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",
+              "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15",
+              "v16", "cc", "memory"
+            );
+            outptr_row += stride_out;
+        }
+        int8_t* out0 = outptr_row;  //  outptr + stride_out + y * remain;
+        for (; x < x_len; x++) {
+            *out0++ = *inptr0++;
+            *out0++ = *inptr1++;
+            *out0++ = *inptr2++;
+            *out0++ = *inptr3++;
+        }
+        for (int i = 0; i < 12 - remain; i++) {
+            *out0++ = 0;
+            *out0++ = 0;
+            *out0++ = 0;
+            *out0++ = 0;
+        }
+    }
+}
+
+void packb_sdot_trans_int8(int8_t* out,
+                           const int8_t* in,
+                           const int ldin,
+                           const int k0,
+                           const int kmax,
+                           const int n0,
+                           const int nmax) {
+    int8_t *outptr = out;
+    const int8_t *inptr = in + n0 * ldin + k0;
+    int y_len = nmax - n0;
+    int x_len = kmax - k0;
+
+    int kup = ROUNDUP(x_len, KBLOCK_INT8);  //  4
+
+    int8_t zerobuff[kup];    //NOLINT
+    memset(zerobuff, 0, sizeof(int8_t) * kup);
+
+    int stride_y = 48;
+    int stride_out = kup;
+
+    int remain = x_len % 8;
+
+#pragma omp parallel for
+    for (int y = 0; y < y_len; y += 12) {
+        const int8_t *inptr_row[12];
+        inptr_row[0] = inptr + y * ldin;
+        for (int i = 1; i < 12; i++) {
+            inptr_row[i] = inptr_row[i - 1] + ldin;
+        }
+        if (y + 12 > y_len) {
+            for (int i = y + 12 - y_len; i > 0; i--) {
+                // inptr_row[12 - i] = zero_ptr[12 - i - 1];
+                inptr_row[12 - i] = zerobuff;
+            }
+        }
+        asm volatile(
+        "prfm   pldl1keep, [%[ptr0]]                \n"
+        "prfm   pldl1keep, [%[ptr1]]        \n"
+        "prfm   pldl1keep, [%[ptr2]]        \n"
+        "prfm   pldl1keep, [%[ptr3]]        \n"
+        "prfm   pldl1keep, [%[ptr4]]        \n"
+        "prfm   pldl1keep, [%[ptr5]]        \n"
+        "prfm   pldl1keep, [%[ptr6]]        \n"
+        "prfm   pldl1keep, [%[ptr7]]        \n"
+        "prfm   pldl1keep, [%[ptr8]]        \n"
+        "prfm   pldl1keep, [%[ptr9]]        \n"
+        "prfm   pldl1keep, [%[ptr10]]        \n"
+        "prfm   pldl1keep, [%[ptr11]]        \n"
+        :
+        :[ptr0] "r"(inptr_row[0]), [ptr1] "r"(inptr_row[1]),
+         [ptr2] "r"(inptr_row[2]), [ptr3] "r"(inptr_row[3]),
+         [ptr4] "r"(inptr_row[4]), [ptr5] "r"(inptr_row[5]),
+         [ptr6] "r"(inptr_row[6]), [ptr7] "r"(inptr_row[7]),
+         [ptr8] "r"(inptr_row[8]), [ptr9] "r"(inptr_row[9]),
+         [ptr10] "r"(inptr_row[10]), [ptr11] "r"(inptr_row[11])
+        :"memory"
+        );
+        int right_remain = remain;
+        int8_t *outptr_row = outptr + y * stride_out;
+        for (int x = 0; x < x_len - 7; x += 8) {
+            int8_t *out0 = outptr_row;
+            int8_t *out1 = out0 + stride_y;
+            asm volatile(
+            "ld1  {v0.8b}, [%[inptr0]], #8 \n" // q0=A0A1A2A3A4A5A6A7
+            "ld1  {v1.8b}, [%[inptr1]], #8 \n" // q0=B0b1b2b3A4A5A6A7
+            "ld1  {v2.8b}, [%[inptr2]], #8 \n" // q0=c0c1c2c3A4A5A6A7
+            "ld1  {v3.8b}, [%[inptr3]], #8 \n" // q0=d0d1d2d3A4A5A6A7
+
+            "ld1  {v4.8b}, [%[inptr4]], #8 \n" // q0=A0A1A2A3A4A5A6A7
+            "ld1  {v5.8b}, [%[inptr5]], #8 \n" // q0=B0b1b2b3A4A5A6A7
+            "ld1  {v6.8b}, [%[inptr6]], #8 \n" // q0=c0c1c2c3A4A5A6A7
+            "ld1  {v7.8b}, [%[inptr7]], #8 \n" // q0=d0d1d2d3A4A5A6A7
+
+            "trn1  v8.2s, v0.2s, v1.2s \n"  //v0=a0a1a2a3'b0b1b2b3 -00 01
+            "trn2  v12.2s, v0.2s, v1.2s \n"  //v0=a4a5a6a7'b4b5b6b7 - 10 11
+            "trn1  v9.2s, v2.2s, v3.2s \n"  //v0=c0c1a2a3'd0b1b2b3 -02 03
+            "trn2  v13.2s, v2.2s, v3.2s \n"  //v0=c4a5a6a7'c4b5b6b7 - 12 13
+
+            "ld1  {v0.8b}, [%[inptr8]], #8 \n" // q0=A0A1A2A3A4A5A6A7
+            "ld1  {v1.8b}, [%[inptr9]], #8 \n" // q0=B0b1b2b3A4A5A6A7
+            "ld1  {v2.8b}, [%[inptr10]], #8 \n" // q0=c0c1c2c3A4A5A6A7
+            "ld1  {v3.8b}, [%[inptr11]], #8 \n" // q0=d0d1d2d3A4A5A6A7
+
+            "st1 {v8.8b}, [%[outptr_row0]], #8 \n"
+            "st1 {v12.8b}, [%[outptr_row1]], #8 \n"
+            "st1 {v9.8b}, [%[outptr_row0]], #8 \n"
+            "st1 {v13.8b}, [%[outptr_row1]], #8 \n"
+
+            "trn1  v10.2s, v4.2s, v5.2s \n"  //v0=a0b0a0b0'a4b4a4b4 -04 05
+            "trn2  v14.2s, v4.2s, v5.2s \n"  //v0=a2b2a2b2'a6b6a6b6 -14 15
+            "trn1  v11.2s, v6.2s, v7.2s \n"  //v0=a0b0a0b0'a4b4a4b4 -06 07
+            "trn2  v15.2s, v6.2s, v7.2s \n"  //v0=a2b2a2b2'a6b6a6b6 -16 17
+
+            "trn1  v4.2s, v0.2s, v1.2s \n"  //v0=a0b0a0b0'a4b4a4b4 -08 09
+            "trn2  v5.2s, v0.2s, v1.2s \n"  //v0=a2b2a2b2'a6b6a6b6 -18 19
+            "trn1  v6.2s, v2.2s, v3.2s \n"  //v0=a0b0a0b0'a4b4a4b4 -010 011
+            "trn2  v7.2s, v2.2s, v3.2s \n"  //v0=a2b2a2b2'a6b6a6b6 -110 111
+
+            "st1 {v10.8b}, [%[outptr_row0]], #8 \n"
+            "st1 {v14.8b}, [%[outptr_row1]], #8 \n"
+            "st1 {v11.8b}, [%[outptr_row0]], #8 \n"
+            "st1 {v15.8b}, [%[outptr_row1]], #8 \n"
+
+            "st1 {v4.8b}, [%[outptr_row0]], #8 \n"
+            "st1 {v5.8b}, [%[outptr_row1]], #8 \n"
+            "st1 {v6.8b}, [%[outptr_row0]], #8 \n"
+            "st1 {v7.8b}, [%[outptr_row1]], #8 \n"
+            : [inptr0] "+r"(inptr_row[0]), [inptr1] "+r"(inptr_row[1]),
+              [inptr2] "+r"(inptr_row[2]), [inptr3] "+r"(inptr_row[3]),
+              [inptr4] "+r"(inptr_row[4]), [inptr5] "+r"(inptr_row[5]),
+              [inptr6] "+r"(inptr_row[6]), [inptr7] "+r"(inptr_row[7]),
+              [inptr8] "+r"(inptr_row[8]), [inptr9] "+r"(inptr_row[9]),
+              [inptr10] "+r"(inptr_row[10]), [inptr11] "+r"(inptr_row[11]),
+              [outptr_row0] "+r"(out0), [outptr_row1] "+r"(out1)
+            :
+            : "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9",
+              "v10", "v11", "v12", "v13", "v14", "v15", "v16", "cc", "memory"
+            );
+            outptr_row += 96;
+        }
+        int8_t *out0 = outptr_row;
+        if (right_remain >= 4) {
+            asm volatile(
+            "mov x1, #4 \n"
+            "ld1  {v0.8b}, [%[inptr0]], x1 \n" // q0=A0A1A2A3A4A5A6A7
+            "ld1  {v1.8b}, [%[inptr1]], x1 \n" // q0=B0b1b2b3A4A5A6A7
+            "ld1  {v2.8b}, [%[inptr2]], x1 \n" // q0=c0c1c2c3A4A5A6A7
+            "ld1  {v3.8b}, [%[inptr3]], x1 \n" // q0=d0d1d2d3A4A5A6A7
+
+            "ld1  {v4.8b}, [%[inptr4]], x1 \n" // q0=A0A1A2A3A4A5A6A7
+            "ld1  {v5.8b}, [%[inptr5]], x1 \n" // q0=B0b1b2b3A4A5A6A7
+            "ld1  {v6.8b}, [%[inptr6]], x1 \n" // q0=c0c1c2c3A4A5A6A7
+            "ld1  {v7.8b}, [%[inptr7]], x1 \n" // q0=d0d1d2d3A4A5A6A7
+
+            "trn1  v8.2s, v0.2s, v1.2s \n"  //v0=a0a1a2a3'b0b1b2b3 -00 01
+            "trn1  v9.2s, v2.2s, v3.2s \n"  //v0=c0c1a2a3'd0b1b2b3 -02 03
+
+            "ld1  {v12.8b}, [%[inptr8]], x1 \n" // q0=A0A1A2A3A4A5A6A7
+            "ld1  {v13.8b}, [%[inptr9]], x1 \n" // q0=B0b1b2b3A4A5A6A7
+            "ld1  {v14.8b}, [%[inptr10]], x1 \n" // q0=c0c1c2c3A4A5A6A7
+            "ld1  {v15.8b}, [%[inptr11]], x1 \n" // q0=d0d1d2d3A4A5A6A7
+
+            "trn1  v10.2s, v4.2s, v5.2s \n"  //v0=a0b0a0b0'a4b4a4b4 -04 05
+            "trn1  v11.2s, v6.2s, v7.2s \n"  //v0=a0b0a0b0'a4b4a4b4 -06 07
+
+            "trn1  v4.2s, v12.2s, v13.2s \n"  //v0=a0b0a0b0'a4b4a4b4 -08 09
+            "trn1  v6.2s, v14.2s, v15.2s \n"  //v0=a0b0a0b0'a4b4a4b4 -010 011
+
+            "st1 {v8.8b}, [%[outptr_row0]], #8 \n"
+            "st1 {v9.8b}, [%[outptr_row0]], #8 \n"
+            "st1 {v10.8b}, [%[outptr_row0]], #8 \n"
+            "st1 {v11.8b}, [%[outptr_row0]], #8 \n"
+            "st1 {v4.8b}, [%[outptr_row0]], #8 \n"
+            "st1 {v6.8b}, [%[outptr_row0]], #8 \n"
+            : [inptr0] "+r"(inptr_row[0]), [inptr1] "+r"(inptr_row[1]),
+            [inptr2] "+r"(inptr_row[2]), [inptr3] "+r"(inptr_row[3]),
+             [inptr4] "+r"(inptr_row[4]), [inptr5] "+r"(inptr_row[5]),
+             [inptr6] "+r"(inptr_row[6]), [inptr7] "+r"(inptr_row[7]),
+             [inptr8] "+r"(inptr_row[8]), [inptr9] "+r"(inptr_row[9]),
+             [inptr10] "+r"(inptr_row[10]), [inptr11] "+r"(inptr_row[11]), \
+              [outptr_row0] "+r"(out0)
+            :
+            : "x1", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8",
+            "v9", "v10", "v11", "v12", "v13", "v14", "v15", "v16", "cc", "memory"
+            );
+            right_remain -= 4;
+        }
+        if (right_remain > 0) {
+            for (int i = 0; i < 12; i++) {
+                for (int x = 0; x < right_remain; x++) {
+                    *out0++ = *inptr_row[i]++;
+                }
+                for (int x = 0; x < 4 - right_remain; x++) {
+                    *out0++ = 0;
+                }
+            }
+        }
+    }
+}
+#endif //dotprod  //NOLINT
+
+template <>
+void gemm_prepack_int8(const int8_t* A_packed,
+                       const int8_t* B,
+                       const int* bias,
+                       float32_t* C,
+                       int M,
+                       int N,
+                       int K,
+                       bool is_bias,
+                       bool is_relu,
+                       bool is_transB,
+                       const float* scale,
+                       ARMContext* ctx) {
+#if defined(__aarch64__) && defined(WITH_ARM_DOTPROD)
+  if (ctx->has_dot()) {
+        gemm_prepack_sdot_int8<float32_t>(A_packed,
+                B, bias, C, M, N, K, is_bias, is_relu,
+                is_transB, scale, ctx);
+    } else {
+        gemm_prepack_oth_int8<float32_t>(A_packed, B,
+                bias, C, M, N, K, is_bias, is_relu,
+                is_transB, scale, ctx);
+    }
+#else
+  gemm_prepack_oth_int8<float32_t>(A_packed, B,
+          bias, C, M, N, K, is_bias, is_relu,
+          is_transB, scale, ctx);
+#endif
+}
+
+template <>
+void gemm_prepack_int8(const int8_t* A_packed,
+                       const int8_t* B,
+                       const int* bias,
+                       int8_t* C,
+                       int M,
+                       int N,
+                       int K,
+                       bool is_bias,
+                       bool is_relu,
+                       bool is_transB,
+                       const float* scale,
+                       ARMContext* ctx) {
+#if defined(__aarch64__) && defined(WITH_ARM_DOTPROD)
+  if (ctx->has_dot()) {
+        gemm_prepack_sdot_int8<int8_t>(A_packed, B, bias,
+                C, M, N, K, is_bias, is_relu,
+                is_transB, scale, ctx);
+    } else {
+        gemm_prepack_oth_int8<int8_t>(A_packed, B, bias,
+                C, M, N, K, is_bias, is_relu,
+                is_transB, scale, ctx);
+    }
+#else
+  gemm_prepack_oth_int8<int8_t>(A_packed, B, bias,
+          C, M, N, K, is_bias, is_relu,
+          is_transB, scale, ctx);
+#endif
+}
+
+template <>
+void gemm_prepack_int8(const int8_t* A_packed,
+                       const int8_t* B,
+                       const int* bias,
+                       int32_t* C,
+                       int M,
+                       int N,
+                       int K,
+                       bool is_bias,
+                       bool is_relu,
+                       bool is_transB,
+                       const float* scale,
+                       ARMContext* ctx) {
+#if defined(__aarch64__) && defined(WITH_ARM_DOTPROD)
+  if (ctx->has_dot()) {
+        gemm_prepack_sdot_int8<int32_t>(A_packed, B,
+                bias, C, M, N, K, is_bias, is_relu,
+                is_transB, scale, ctx);
+    } else {
+        gemm_prepack_oth_int8<int32_t>(A_packed, B,
+                bias, C, M, N, K, is_bias, is_relu,
+                is_transB, scale, ctx);
+    }
+#else
+  gemm_prepack_oth_int8<int32_t>(A_packed, B, bias,
+          C, M, N, K, is_bias, is_relu, is_transB, scale, ctx);
+#endif
 }
 
 }  // namespace math

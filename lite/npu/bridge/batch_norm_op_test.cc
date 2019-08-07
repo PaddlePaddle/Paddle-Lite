@@ -14,81 +14,217 @@
 
 #include "lite/operators/batch_norm_op.h"
 #include <gtest/gtest.h>
+#include <random>
 #include "ai_ddk_lib/include/graph/op/all_ops.h"
 #include "lite/core/op_registry.h"
 #include "lite/npu/bridge/registry.h"
+#include "lite/npu/bridge/utils.h"
+#include "lite/operators/graph_op.h"
 
 namespace paddle {
 namespace lite {
 namespace npu {
 namespace bridge {
 
-TEST(npu_bridge_batch_norm_op, test) {
+template <typename dtype>
+void batch_norm_ref(const std::shared_ptr<operators::BatchNormOp> op) {
+  Scope* scope = op->scope();
+  const OpInfo* op_info = op->op_info();
+  auto x = scope->FindVar(op_info->Input("X").front())->GetMutable<Tensor>();
+  auto y = scope->FindVar(op_info->Output("Y").front())->GetMutable<Tensor>();
+  auto bias =
+      scope->FindVar(op_info->Input("Bias").front())->GetMutable<Tensor>();
+  auto scale =
+      scope->FindVar(op_info->Input("Scale").front())->GetMutable<Tensor>();
+  auto mean =
+      scope->FindVar(op_info->Input("Mean").front())->GetMutable<Tensor>();
+  auto variance =
+      scope->FindVar(op_info->Input("Variance").front())->GetMutable<Tensor>();
+
+  auto x_data = x->data<dtype>();
+  auto y_data = y->mutable_data<dtype>();
+  auto scale_data = scale->mutable_data<dtype>();
+  auto bias_data = bias->mutable_data<dtype>();
+  auto mean_data = mean->mutable_data<dtype>();
+  auto variance_data = variance->mutable_data<dtype>();
+  DDim x_dims = x->dims();
+
+  float epsilon = op_info->GetAttr<float>("epsilon");
+  float momentum = op_info->GetAttr<float>("momentum");
+  auto data_layout = op_info->GetAttr<std::string>("data_layout");
+
+  bool global_stats = op_info->GetAttr<bool>("use_global_stats");
+  if (global_stats) {
+    int64_t outer_size = 0;
+    int64_t channel_size = 0;
+    int64_t inner_size = 0;
+    if (data_layout == "NCHW") {
+      outer_size = x_dims[0];
+      channel_size = x_dims[1];
+      inner_size = x_dims.Slice(2, x_dims.size()).production();
+    } else {
+      LOG(FATAL) << "Unknown storage order: " << data_layout;
+    }
+    auto x_ptr = x_data;
+    auto y_ptr = y_data;
+    for (int o = 0; o < outer_size; o++) {
+      for (int c = 0; c < channel_size; c++) {
+        for (int i = 0; i < inner_size; i++) {
+          dtype norm_x =
+              (*x_ptr - mean_data[c]) / std::sqrt(variance_data[c] + epsilon);
+          *y_ptr = norm_x * scale_data[c] + bias_data[c];
+          x_ptr++;
+          y_ptr++;
+        }
+      }
+    }
+  }
+}
+
+void test_batch_norm(int bs, int ic, int ih, int iw) {
   const auto& bridges = lite::npu::bridge::Factory::Instance();
   const auto& supported_lists = bridges.AllFunctions();
   CHECK(bridges.HasType("batch_norm"));
 
-  // prepare variables
+  std::string x_var_name = "x";
+  std::string out_var_name = "out";
+  std::string out_ref_var_name = "out_ref";
+  std::string scale_var_name = "scale";
+  std::string bias_var_name = "bias";
+  std::string mean_var_name = "mean";
+  std::string variance_var_name = "variance";
+
+  // prepare input&output variables
   Scope scope;
-  auto* x = scope.Var("x")->GetMutable<Tensor>();
-  auto* scale = scope.Var("scale")->GetMutable<Tensor>();
-  auto* bias = scope.Var("bias")->GetMutable<Tensor>();
-  auto* mean = scope.Var("mean")->GetMutable<Tensor>();
-  auto* variance = scope.Var("variance")->GetMutable<Tensor>();
-  auto* y = scope.Var("y")->GetMutable<Tensor>();
-  auto* y_ref = scope.Var("y_ref")->GetMutable<Tensor>();
-  x->Resize({1, 32, 10, 20});
-  auto x_dims = x->dims();
-  const int64_t channel_size = x_dims[1];  // NCHW
-  scale->Resize({channel_size});
-  bias->Resize({channel_size});
-  mean->Resize({channel_size});
-  variance->Resize({channel_size});
+  auto* x = scope.Var(x_var_name)->GetMutable<Tensor>();
+  auto* scale = scope.Var(scale_var_name)->GetMutable<Tensor>();
+  auto* bias = scope.Var(bias_var_name)->GetMutable<Tensor>();
+  auto* mean = scope.Var(mean_var_name)->GetMutable<Tensor>();
+  auto* variance = scope.Var(variance_var_name)->GetMutable<Tensor>();
+  auto* out = scope.Var(out_var_name)->GetMutable<Tensor>();
+  auto* out_ref = scope.Var(out_ref_var_name)->GetMutable<Tensor>();
+  x->Resize({bs, ic, ih, iw});
+  scale->Resize({ic});
+  bias->Resize({ic});
+  mean->Resize({ic});
+  variance->Resize({ic});
 
-  // set data
-  for (int i = 0; i < x_dims.production(); i++) {
-    x->mutable_data<float>()[i] = 1.0f;
+  // initialize input&output data
+  std::default_random_engine rand_eng;
+  std::uniform_real_distribution<float> rand_dist(-5.0f, 5.0f);
+  for (int i = 0; i < x->numel(); i++) {
+    float rand_value = half2float(float2half(rand_dist(rand_eng)));
+    x->mutable_data<float>()[i] = rand_value;
   }
-  for (int i = 0; i < channel_size; i++) {
-    scale->mutable_data<float>()[i] = 1.f;
-    bias->mutable_data<float>()[i] = 1.f;
-    mean->mutable_data<float>()[i] = 1.f;
-    variance->mutable_data<float>()[i] = 1.f;
+  for (int i = 0; i < scale->numel(); i++) {
+    float rand_value = half2float(float2half(rand_dist(rand_eng)));
+    scale->mutable_data<float>()[i] = rand_value;
+  }
+  for (int i = 0; i < bias->numel(); i++) {
+    float rand_value = half2float(float2half(rand_dist(rand_eng)));
+    bias->mutable_data<float>()[i] = rand_value;
+  }
+  for (int i = 0; i < mean->numel(); i++) {
+    float rand_value = half2float(float2half(rand_dist(rand_eng)));
+    mean->mutable_data<float>()[i] = rand_value;
+  }
+  for (int i = 0; i < variance->numel(); i++) {
+    float rand_value = half2float(float2half(rand_dist(rand_eng)));
+    variance->mutable_data<float>()[i] = rand_value;
   }
 
-  // prepare op desc
-  cpp::OpDesc op_desc;
-  op_desc.SetType("batch_norm");
-  op_desc.SetInput("X", {"x"});
-  op_desc.SetInput("Scale", {"scale"});
-  op_desc.SetInput("Bias", {"bias"});
-  op_desc.SetInput("Mean", {"mean"});
-  op_desc.SetInput("Variance", {"variance"});
-  op_desc.SetOutput("Y", {"y"});
-  op_desc.SetAttr("is_test", static_cast<int>(1));
-  op_desc.SetAttr("use_global_stats", false);
-  op_desc.SetAttr("epsilon", 1e-5f);
-  op_desc.SetAttr("momentum", 0.9f);
-  op_desc.SetAttr("data_layout", std::string("NCHW"));
+  // create op
+  cpp::OpDesc batch_norm_op_desc;
+  batch_norm_op_desc.SetType("batch_norm");
+  batch_norm_op_desc.SetInput("X", {x_var_name});
+  batch_norm_op_desc.SetInput("Scale", {scale_var_name});
+  batch_norm_op_desc.SetInput("Bias", {bias_var_name});
+  batch_norm_op_desc.SetInput("Mean", {mean_var_name});
+  batch_norm_op_desc.SetInput("Variance", {variance_var_name});
+  batch_norm_op_desc.SetOutput("Y", {out_var_name});
+  batch_norm_op_desc.SetAttr("is_test", static_cast<int>(1));
+  batch_norm_op_desc.SetAttr("use_global_stats", true);
+  batch_norm_op_desc.SetAttr("epsilon", 1e-5f);
+  batch_norm_op_desc.SetAttr("momentum", 0.9f);
+  batch_norm_op_desc.SetAttr("data_layout", std::string("NCHW"));
 
-  std::shared_ptr<operators::BatchNormOp> batch_norm_op =
-      std::make_shared<operators::BatchNormOp>("batch_norm");
+  auto batch_norm_op =
+      std::make_shared<operators::BatchNormOp>(batch_norm_op_desc.Type());
+  batch_norm_op->SetValidPlaces({Place{TARGET(kHost), PRECISION(kFloat)},
+                                 Place{TARGET(kARM), PRECISION(kFloat)}});
+  CHECK(batch_norm_op->Attach(batch_norm_op_desc, &scope));
+  CHECK(batch_norm_op->CheckShape());
+  CHECK(batch_norm_op->InferShape());
 
-  batch_norm_op->SetValidPlaces({Place{TARGET(kHost), PRECISION(kFloat)}});
-  batch_norm_op->Attach(op_desc, &scope);
-  batch_norm_op->CheckShape();
-  batch_norm_op->InferShape();
+  // convert op and build IR graph
+  ge::TensorDesc x_desc(
+      ge::Shape(x->dims().Vectorize()), ge::FORMAT_NCHW, ge::DT_FLOAT);
+  auto x_node = std::make_shared<ge::op::Data>(x_var_name);
+  x_node->update_input_desc_x(x_desc);
+  node_map_type inputs_map;
+  inputs_map[x_var_name] = x_node;
+  auto outputs_map = supported_lists.at(batch_norm_op->op_info()->Type())(
+      batch_norm_op, inputs_map);
+  CHECK_GT(outputs_map.size(), 0);
 
-  // convert op
-  ge::TensorDesc input_desc(
-      ge::Shape(x_dims.Vectorize()), ge::FORMAT_NCHW, ge::DT_FLOAT);
-  std::shared_ptr<ge::op::Data> input_node =
-      std::make_shared<ge::op::Data>("data");
-  input_node->update_input_desc_x(input_desc);
-  std::vector<std::shared_ptr<ge::Operator>> input_nodes{input_node};
-  auto output_nodes = supported_lists.at(batch_norm_op->op_info()->Type())(
-      batch_norm_op, input_nodes);
-  CHECK_GT(output_nodes.size(), 0);
+  // compile IR graph to om model
+  std::vector<ge::Operator> graph_inputs{*inputs_map[x_var_name]};
+  std::vector<ge::Operator> graph_outputs{*outputs_map[out_var_name]};
+  std::string model_name(UniqueName("test_batch_norm") + ".om");
+  CHECK(npu::BuildNPUClient(graph_inputs, graph_outputs, model_name));
+
+  // create graph op
+  cpp::OpDesc graph_op_desc;
+  graph_op_desc.SetType("graph_op");
+  graph_op_desc.SetInput("Inputs", {x_var_name});
+  graph_op_desc.SetOutput("Outputs", {out_var_name});
+  graph_op_desc.SetAttr("model_name", model_name);
+
+  auto graph_op =
+      std::make_shared<operators::GraphOpLite>(graph_op_desc.Type());
+  graph_op->SetValidPlaces({Place{TARGET(kNPU), PRECISION(kFloat)}});
+  CHECK(graph_op->Attach(graph_op_desc, &scope));
+  CHECK(graph_op->CheckShape());
+  CHECK(graph_op->InferShape());
+
+  // create graph op kernel
+  auto graph_kernels =
+      graph_op->CreateKernels({Place{TARGET(kNPU), PRECISION(kFloat)}});
+  CHECK(!graph_kernels.empty());
+  auto graph_kernel =
+      std::move(graph_kernels.front());  // use the first kernel by default
+  auto graph_ctx = ContextScheduler::Global().NewContext(TARGET(kNPU));
+  graph_kernel->SetContext(std::move(graph_ctx));
+
+  // perform graph op kernel and copy output tensor('out') to 'out_ref'
+  graph_kernel->Launch();
+  out_ref->CopyDataFrom(*out);
+
+  // execute reference implementation and save to output tensor('out')
+  batch_norm_ref<float>(batch_norm_op);
+
+  // compare results
+  auto* out_data = out->mutable_data<float>();
+  auto* out_ref_data = out_ref->mutable_data<float>();
+  for (int i = 0; i < out->numel(); i++) {
+    EXPECT_NEAR(out_data[i], out_ref_data[i], 1e-5);
+  }
+
+  // release model resources
+  npu::OpList::Global().clear();
+  npu::DeviceInfo::Global().Clear();
+}
+
+TEST(NPUBridges, batch_norm) {
+  for (auto bs : {3}) {
+    for (auto ic : {7}) {
+      for (auto ih : {2}) {
+        for (auto iw : {4}) {
+          test_batch_norm(bs, ic, ih, iw);
+        }
+      }
+    }
+  }
 }
 
 }  // namespace bridge
@@ -98,3 +234,6 @@ TEST(npu_bridge_batch_norm_op, test) {
 
 USE_LITE_OP(batch_norm);
 USE_NPU_BRIDGE(batch_norm);
+
+USE_LITE_OP(graph_op);
+USE_LITE_KERNEL(graph_op, kNPU, kFloat, kNCHW, def);

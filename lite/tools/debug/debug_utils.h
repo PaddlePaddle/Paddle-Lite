@@ -25,7 +25,7 @@
 #include "lite/core/tensor.h"
 #include "lite/model_parser/pb/op_desc.h"
 #include "lite/model_parser/pb/var_desc.h"
-#include "lite/utils/string.h"
+#include "lite/utils/all.h"
 
 DEFINE_string(model_dir, "", "Model dir path");
 DEFINE_string(input_file, "", "Input datas file path");
@@ -73,7 +73,7 @@ std::vector<T> Split2Vector(const std::string& input,
   std::vector<T> tgt;
   std::vector<std::string> inputs = Split(input, separator);
   tgt.resize(inputs.size());
-  std::stringstream ss;
+  STL::stringstream ss;
   for (int i = 0; i < inputs.size(); ++i) {
     ss << inputs[i] << " ";
   }
@@ -245,13 +245,13 @@ void CollectAndDumpTopoInfo(const std::vector<Instruction>& instructions,
 
 void CollectVarDescs(
     std::unordered_map<std::string, lite::pb::VarDesc>* var_descs,
-    const framework::proto::ProgramDesc& desc) {
+    framework::proto::ProgramDesc* desc) {
+  CHECK(desc);
   CHECK(var_descs);
-  CHECK(!desc.blocks().empty());
+  CHECK(!desc->blocks().empty());
   std::unordered_set<std::string> weights;
-  for (const auto& proto_var_desc : desc.blocks(0).vars()) {
-    auto tmp_var = proto_var_desc;
-    lite::pb::VarDesc var_desc(&tmp_var);
+  for (auto& proto_var_desc : *desc->mutable_blocks(0)->mutable_vars()) {
+    lite::pb::VarDesc var_desc(&proto_var_desc);
     (*var_descs).emplace(var_desc.Name(), std::move(var_desc));
   }
 }
@@ -276,7 +276,7 @@ std::unordered_set<std::string> CollectUnusedVars(
 }
 
 std::string GetTensorRepr(const lite::Tensor& tensor, int out_data_len) {
-  std::stringstream ss;
+  STL::stringstream ss;
   auto size = tensor.dims().production();
   if (out_data_len >= 0) {
     size = std::min(size, static_cast<DDim::value_type>(out_data_len));
@@ -289,7 +289,6 @@ std::string GetTensorRepr(const lite::Tensor& tensor, int out_data_len) {
 }
 
 void CollectAndDumpTensorInfo(const std::vector<Instruction>& instructions,
-                              const framework::proto::ProgramDesc& desc,
                               const DebugConfig& conf) {
   CHECK(instructions.size() > 0) << "No instruction found";
   const auto* scope = const_cast<lite::OpLite*>(instructions[0].op())->scope();

@@ -69,8 +69,7 @@ bool GemmLikeConv<PRECISION(kFloat)>::create(const operators::ConvParam& param,
     }
     //! im2col gemmlike conv
     impl_ = conv_im2col_gemm;
-    this->ctx_->ExtendWorkspace(
-        DDim(std::vector<DDim::value_type>({1, 1, 1, k * n})));
+    this->ctx_->ExtendWorkspace(k * n * sizeof(float));
   }
 
   if (n > 1) {
@@ -210,8 +209,7 @@ bool GemmLikeConvInt8<Ptype_out>::create(const operators::ConvParam& param,
     }
     //! im2col gemmlike conv
     impl_int8_ = conv_im2col_gemm_int8;
-    this->ctx_->ExtendWorkspace(
-        DDim(std::vector<DDim::value_type>({1, 1, 1, (k * n + 3) / 4})));
+    this->ctx_->ExtendWorkspace(k * n);
   }
 
   if (n > 1) {

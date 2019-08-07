@@ -86,8 +86,8 @@ std::unique_ptr<cl::Program> CLRuntime::CreateProgram(
   sources.push_back(content);
   auto prog =
       std::unique_ptr<cl::Program>(new cl::Program(context, sources, &status_));
-  LOG(INFO) << "OpenCL kernel file name: " << file_name;
-  LOG(INFO) << "Program source size: " << content.size();
+  VLOG(4) << "OpenCL kernel file name: " << file_name;
+  VLOG(4) << "Program source size: " << content.size();
   CL_CHECK_FATAL(status_);
   return std::move(prog);
 }
@@ -152,7 +152,7 @@ bool CLRuntime::InitializeDevice() {
     return false;
   }
   auto ext_data = device_->getInfo<CL_DEVICE_EXTENSIONS>();
-  LOG(INFO) << "The extensions supported by this device: " << ext_data;
+  VLOG(4) << "The extensions supported by this device: " << ext_data;
   if (ext_data.find("cl_khr_fp16") != std::string::npos) {
     LOG(INFO) << "The chosen device supports the half data type.";
   } else {

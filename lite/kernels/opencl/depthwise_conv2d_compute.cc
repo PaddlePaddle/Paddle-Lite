@@ -17,6 +17,7 @@
 #include "lite/core/op_registry.h"
 #include "lite/opencl/cl_include.h"
 #include "lite/operators/op_params.h"
+#include "lite/utils/replace_stl/stream.h"
 
 namespace paddle {
 namespace lite {
@@ -27,6 +28,16 @@ class DepthwiseConv2dCompute
     : public KernelLite<TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW)> {
  public:
   using param_t = operators::ConvParam;
+
+  void PrepareForRun() override {
+    const auto& param = *param_.get_mutable<param_t>();
+    if (param.fuse_relu) {
+      build_options_ += " -DRELU";
+    }
+    auto& context = ctx_->As<OpenCLContext>();
+    context.cl_context()->AddKernel(
+        kernel_func_name_, "buffer/depthwise_conv2d_kernel.cl", build_options_);
+  }
 
   void Run() override {
     const auto& param = *param_.get_mutable<param_t>();
@@ -45,7 +56,11 @@ class DepthwiseConv2dCompute
                          : param.bias->data<float, cl::Buffer>();
     auto* output_buf =
         param.output->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
-    auto kernel = context.cl_context()->GetKernel("depthwise_conv2d");
+
+    STL::stringstream kernel_key;
+    kernel_key << kernel_func_name_ << build_options_;
+    auto kernel = context.cl_context()->GetKernel(kernel_key.str());
+
     cl_int status;
     auto numel = output_dims.production();
     int arg_idx = 0;
@@ -81,7 +96,6 @@ class DepthwiseConv2dCompute
     CL_CHECK_FATAL(status);
     status = kernel.setArg(++arg_idx, *bias_buf);
     CL_CHECK_FATAL(status);
-    cl::Event event;
     auto global_work_size = cl::NDRange(static_cast<size_t>(numel));
     status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
         kernel,
@@ -89,11 +103,15 @@ class DepthwiseConv2dCompute
         global_work_size,
         cl::NullRange,
         nullptr,
-        &event);
+        event_.get());
     CL_CHECK_FATAL(status);
-    status = event.wait();
-    CL_CHECK_FATAL(status);
+    context.cl_wait_list()->emplace(output_buf, event_);
   }
+
+ private:
+  std::string kernel_func_name_{"depthwise_conv2d"};
+  std::string build_options_{"-DCL_DTYPE=float"};
+  std::shared_ptr<cl::Event> event_{new cl::Event};
 };
 
 }  // namespace opencl

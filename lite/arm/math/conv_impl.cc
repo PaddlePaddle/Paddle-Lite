@@ -373,7 +373,7 @@ void conv1x1s1_gemm_int8(const int8_t* i_data,
   const int m = oc / group;
   const int n = oh * ow;
   const int k = ic / group;
-  int hblock = get_hblock_int8(ctx->arch());
+  int hblock = get_hblock_int8(ctx);
   int k_roundup = ROUNDUP(k, KBLOCK_INT8);
   int m_roundup = ROUNDUP(m, hblock);
   int weights_size_per_group = m * k;
@@ -521,7 +521,7 @@ void conv_im2col_gemm(const float* i_data,
                        param.strides[0] == 1 && param.strides[1] == 1 && n > 1);
 
   float* tmp_work_space =
-      ctx->workspace_data<float>() + ctx->l2_cache_size() / sizeof(float);
+      ctx->workspace_data<float>() + ctx->llc_size() / sizeof(float);
 
   //! use gemv when the output channel size = 1
   for (int b = 0; b < num; ++b) {
@@ -633,7 +633,7 @@ void conv_im2col_gemm_int8(const int8_t* i_data,
   bool flag_relu = param.fuse_relu;
   bool flag_bias = param.bias != nullptr;
 
-  int hblock = get_hblock_int8(ctx->arch());
+  int hblock = get_hblock_int8(ctx);
   int k_roundup = ROUNDUP(k, KBLOCK_INT8);
   int m_roundup = ROUNDUP(m, hblock);
   int weights_size_per_group = m * k;
@@ -645,7 +645,7 @@ void conv_im2col_gemm_int8(const int8_t* i_data,
                        stride_w == 1 && n > 1);
 
   int8_t* tmp_work_space =
-      ctx->workspace_data<int8_t>() + ctx->l2_cache_size() / sizeof(int8_t);
+      ctx->workspace_data<int8_t>() + ctx->llc_size() / sizeof(int8_t);
 
   //! use gemv when the output channel size = 1
   for (int b = 0; b < num; ++b) {

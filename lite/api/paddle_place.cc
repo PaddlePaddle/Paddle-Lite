@@ -15,6 +15,8 @@
 #include "lite/api/paddle_place.h"
 #include "lite/utils/cp_logging.h"
 #include "lite/utils/hash.h"
+#include "lite/utils/replace_stl/stream.h"
+#include "lite/utils/string.h"
 
 namespace paddle {
 namespace lite_api {
@@ -37,7 +39,7 @@ bool operator<(const Place& a, const Place& b) {
 }
 
 std::string Place::DebugString() const {
-  std::stringstream os;
+  STL::stringstream os;
   os << TargetToStr(target) << "/" << PrecisionToStr(precision) << "/"
      << DataLayoutToStr(layout);
   return os.str();
@@ -45,7 +47,7 @@ std::string Place::DebugString() const {
 
 const std::string& TargetToStr(TargetType target) {
   static const std::string target2string[] = {
-      "unk", "host", "x86", "cuda", "arm", "opencl", "any", "fpga"};
+      "unk", "host", "x86", "cuda", "arm", "opencl", "any", "fpga", "npu"};
   auto x = static_cast<int>(target);
   CHECK_LT(x, static_cast<int>(TARGET(NUM)));
   return target2string[x];
@@ -67,8 +69,15 @@ const std::string& DataLayoutToStr(DataLayoutType layout) {
 }
 
 const std::string& TargetRepr(TargetType target) {
-  static const std::string target2string[] = {
-      "kUnk", "kHost", "kX86", "kCUDA", "kARM", "kOpenCL", "kAny", "kFPGA"};
+  static const std::string target2string[] = {"kUnk",
+                                              "kHost",
+                                              "kX86",
+                                              "kCUDA",
+                                              "kARM",
+                                              "kOpenCL",
+                                              "kAny",
+                                              "kFPGA",
+                                              "kNPU"};
   auto x = static_cast<int>(target);
   CHECK_LT(x, static_cast<int>(TARGET(NUM)));
   return target2string[x];

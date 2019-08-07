@@ -23,10 +23,12 @@ cmake .. \
 -DLITE_WITH_X86=OFF \
 -DLITE_WITH_ARM=ON \
 -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
--DWITH_TESTING=ON \
+-DWITH_TESTING=OFF \
+-DLITE_SHUTDOWN_LOG=ON \
+-DLITE_ON_TINY_PUBLISH=ON \
 -DARM_TARGET_OS=android -DARM_TARGET_ARCH_ABI=armv8 -DARM_TARGET_LANG=gcc
 
-make publish_inference_lite -j 4
+make publish_inference -j4
 ```
 
 Make完成后查看要存在
@@ -70,11 +72,11 @@ bash prepare_demo.bash armv8
 下载我们的5个模型文件，并解压缩到 `PaddlePredictor/app/src/main/assets` 这个文件夹中
 需要拷贝的模型文件和下载地址：
 
-    inception_v4_simple http://paddle-inference-dist.bj.bcebos.com/inception_v4_simple.tar.gz
-    lite_naive_model    http://paddle-inference-dist.bj.bcebos.com/lite_naive_model.tar.gz
-    mobilenet_v1        http://paddle-inference-dist.bj.bcebos.com/mobilenet_v1.tar.gz
-    mobilenet_v2_relu   http://paddle-inference-dist.bj.bcebos.com/mobilenet_v2_relu.tar.gz
-    resnet50            http://paddle-inference-dist.bj.bcebos.com/resnet50.tar.gz
+    inception_v4_simple_opt.nb http://paddle-inference-dist.bj.bcebos.com/inception_v4_simple_opt.nb.tar.gz
+    lite_naive_model_opt.nb    http://paddle-inference-dist.bj.bcebos.com/lite_naive_model_opt.nb.tar.gz
+    mobilenet_v1_opt.nb        http://paddle-inference-dist.bj.bcebos.com/mobilenet_v1_opt.nb.tar.gz
+    mobilenet_v2_relu_opt.nb   http://paddle-inference-dist.bj.bcebos.com/mobilenet_v2_relu_opt.nb.tar.gz
+    resnet50_opt.nb            http://paddle-inference-dist.bj.bcebos.com/resnet50_opt.nb.tar.gz
 
 下载完后，assets文件夹里要包含解压后的上面五个模型文件夹，但demo里不需要保存原压缩.tar.gz 文件。
 
@@ -87,16 +89,16 @@ bash prepare_demo.bash armv8
     expected: 50.2132, -28.8729
 
     inception_v4_simple test:true
-    time: 2078 ms
+    time: xxx ms
 
     resnet50 test:true
-    time: 2078 ms
+    time: xxx ms
 
     mobilenet_v1 test:true
-    time: 2078 ms
+    time: xxx ms
 
     mobilenet_v2 test:true
-    time: 2078 ms
+    time: xxx ms
 
 该 demo 程序跑我们的 5 个模型，第一个模型结果将真正的头两个数字输出，并在第二行附上期望的正确值。你应该要
 看到他们的误差小于0.001。后面四个模型如果你看到 test:true 字样，说明模型输出通过了我们在 demo 程序里对其输出

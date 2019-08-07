@@ -20,6 +20,7 @@
 #include "lite/api/paddle_use_ops.h"
 #include "lite/api/paddle_use_passes.h"
 #include "lite/core/op_registry.h"
+#include "lite/model_parser/model_parser.h"
 #include "lite/model_parser/pb/program_desc.h"
 #include "lite/tools/debug/debug_utils.h"
 
@@ -68,20 +69,22 @@ void Run(DebugConfig* conf) {
                   valid_places,
                   passes);
 
+  predictor.GenRuntimeProgram();
   auto& instructions = predictor.runtime_program().instructions();
-  auto& cpp_program_desc = predictor.program_desc();
+  CHECK(!instructions.empty()) << "No instruction found";
   auto* scope = const_cast<lite::OpLite*>(instructions[0].op())->scope();
 
-  framework::proto::ProgramDesc program_desc;
-  lite::pb::ProgramDesc pb_desc(&program_desc);
-  TransformProgramDescCppToAny(cpp_program_desc, &pb_desc);
+  // TODO(sangoly): Reload pb program for debug, this may not be a good manner,
+  // refine this
+  std::unique_ptr<framework::proto::ProgramDesc> program_desc =
+      LoadProgram(conf->model_dir + "/__model__");
+  CollectVarDescs(&(conf->var_descs), program_desc.get());
+  PrepareModelInputTensor(*conf, scope, *program_desc);
 
-  CollectVarDescs(&(conf->var_descs), program_desc);
-  PrepareModelInputTensor(*conf, scope, program_desc);
   predictor.Run();
 
   CollectAndDumpTopoInfo(instructions, *conf);
-  CollectAndDumpTensorInfo(instructions, program_desc, *conf);
+  CollectAndDumpTensorInfo(instructions, *conf);
 
   // TODO(sangoly): Maybe add some profile info here
   auto* out = predictor.GetOutput(0);

@@ -27,17 +27,19 @@ namespace lite {
 namespace npu {
 namespace bridge {
 
-std::vector<std::shared_ptr<ge::Operator>> ScaleConverter(
-    const std::shared_ptr<lite::OpLite> op,
-    const std::vector<std::shared_ptr<ge::Operator>>& input_nodes) {
-  const std::shared_ptr<lite::operators::ScaleOp> scale_op =
-      static_pointer_cast<lite::operators::ScaleOp>(op);
+node_map_type ScaleConverter(const std::shared_ptr<lite::OpLite> scale_op,
+                             const node_map_type& inputs_map) {
   lite::Scope* scope = scale_op->scope();
   const lite::OpInfo* op_info = scale_op->op_info();
-  // build conv op node
   std::shared_ptr<ge::op::Scale> output_node =
       std::make_shared<ge::op::Scale>(UniqueName("scale"));
-  output_node->set_input_x(*input_nodes[0]);
+
+  auto x_var_name = op_info->Input("X").front();
+  CHECK(inputs_map.count(x_var_name));
+  output_node->set_input_x(*inputs_map.at(x_var_name));
+  OpList::Global().add(inputs_map.at(x_var_name));
+  OpList::Global().add(output_node);
+
   // set attributes
   float scale = op_info->GetAttr<float>("scale");
   float bias = op_info->GetAttr<float>("bias");
@@ -47,22 +49,23 @@ std::vector<std::shared_ptr<ge::Operator>> ScaleConverter(
   }
   if (fabs(bias) > 1e-6f) {
     // get input tensor shape
-    auto input_var_name = op_info->Input("Input").front();
+    auto input_var_name = op_info->Input("X").front();
     lite::Tensor* input =
         scope->FindVar(input_var_name)->GetMutable<lite::Tensor>();
     auto input_shape = input->dims().Vectorize();
     // create bias tensor and build constant node
-    ge::op::Const bias_const_node =
-        ge::op::Const(UniqueName("bias"))
-            .set_attr_value(CreateTensorAndFillData(bias, input_shape));
-    output_node->set_input_bias(bias_const_node);
+    auto bias_const_node = std::make_shared<ge::op::Const>(UniqueName("bias"));
+    bias_const_node->set_attr_value(CreateTensorAndFillData(bias, input_shape));
+    output_node->set_input_bias(*bias_const_node);
     output_node->set_attr_has_bias_value(true);
+    OpList::Global().add(bias_const_node);
   }
   output_node->set_attr_filler_type("constant");
   output_node->set_attr_filler_value(scale);
-  std::vector<std::shared_ptr<ge::Operator>> output_nodes;
-  output_nodes.push_back(output_node);
-  return output_nodes;
+
+  node_map_type outputs_map;
+  outputs_map[op_info->Output("Out").front()] = output_node;
+  return outputs_map;
 }
 
 }  // namespace bridge

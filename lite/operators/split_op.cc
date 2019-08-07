@@ -66,7 +66,7 @@ bool SplitOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   param_.axis = opdesc.GetAttr<int>("axis");
   param_.num = opdesc.GetAttr<int>("num");
   param_.sections = opdesc.GetAttr<std::vector<int>>("sections");
-  auto input = opdesc.Input("Input").front();
+  auto input = opdesc.Input("X").front();
   auto outs = opdesc.Output("Out");
   param_.x = scope->FindVar(input)->GetMutable<lite::Tensor>();
   for (auto var : outs) {

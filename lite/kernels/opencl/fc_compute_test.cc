@@ -67,16 +67,25 @@ void PrintData(std::string name, float* a, const int rows, const int cols) {
 }
 
 // #define PRINT_RESULT
-// #define LOOP_TEST
+#define LOOP_TEST
 TEST(fc, compute) {
+  std::unique_ptr<KernelContext> context(new KernelContext);
+  context->As<OpenCLContext>().InitOnce();
+
 #ifdef LOOP_TEST
   for (int m = 1; m < 213; m += 71) {
     for (int k = 1; k < 123; k += 31) {
       for (int n = 1; n < 123; n += 121) {
 #else
-  const int m = 213;
-  const int k = 123;
-  const int n = 123;
+#if 0
+  const int m = 1;
+  const int k = 1024;
+  const int n = 1000;
+#else
+  const int m = 2;
+  const int k = 3;
+  const int n = 1;
+#endif
 #endif
         LOG(INFO) << "m=" << m << " n=" << n << " k=" << k;
 
@@ -93,11 +102,11 @@ TEST(fc, compute) {
         param.output = &out;
         param.in_num_col_dims = 1;
 
-        std::unique_ptr<KernelContext> context(new KernelContext);
-        context->As<OpenCLContext>().InitOnce();
-
         kernel->SetParam(param);
-        kernel->SetContext(std::move(context));
+        std::unique_ptr<KernelContext> fc_context(new KernelContext);
+        context->As<OpenCLContext>().CopySharedTo(
+            &(fc_context->As<OpenCLContext>()));
+        kernel->SetContext(std::move(fc_context));
 
         const DDim x_dim = DDim(std::vector<DDim::value_type>{m, k});
         const DDim w_dim = DDim(std::vector<DDim::value_type>{k, n});
@@ -134,6 +143,24 @@ TEST(fc, compute) {
 
         // run opencl kernel
         kernel->Launch();
+
+        auto* wait_list = context->As<OpenCLContext>().cl_wait_list();
+        auto* out_ptr = param.output->data<float, cl::Buffer>();
+        auto it = wait_list->find(out_ptr);
+        if (it != wait_list->end()) {
+          VLOG(4) << "--- Find the sync event for the target cl tensor. ---";
+          auto& event = *(it->second);
+          event.wait();
+          double start_nanos =
+              event.getProfilingInfo<CL_PROFILING_COMMAND_START>();
+          double stop_nanos =
+              event.getProfilingInfo<CL_PROFILING_COMMAND_END>();
+          double elapsed_micros = (stop_nanos - start_nanos) / 1000.0;
+          LOG(INFO) << "Kernel Run Cost Time: " << elapsed_micros << " us.";
+        } else {
+          LOG(FATAL)
+              << "Could not find the sync event for the target cl tensor.";
+        }
 
         // run cpu ref
         auto* out_ref_data = out_ref.mutable_data<float>(TARGET(kARM));

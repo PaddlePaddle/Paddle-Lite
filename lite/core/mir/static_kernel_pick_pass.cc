@@ -71,8 +71,36 @@ void StaticKernelPickPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
         }
         if (!out_type_int8) break;
       }
+      // If the out_type_int8 is true, it turns out that the output type of this
+      // op can be int8.
+      // So we need to specify output scale for this op.
+      if (out_type_int8) {
+        auto out_node = node.outlinks.front();
+        CHECK(out_node->IsArg());
+        auto one_adj_op_node = out_node->outlinks.front();
+        CHECK(one_adj_op_node->IsStmt());
+        auto& one_adj_instruct = one_adj_op_node->AsStmt();
+        CHECK(one_adj_instruct.op_info()->HasAttr("enable_int8"));
+        CHECK(one_adj_instruct.op_info()->HasAttr("input_scale"));
 
-      // According to the out type, we pick the kernel.
+        instruct.mutable_op_info()->SetAttr(
+            "output_scale",
+            one_adj_instruct.op_info()->GetAttr<float>("input_scale"));
+
+        auto update_desc = *instruct.mutable_op_info();
+        instruct.ResetOp(update_desc, graph->valid_places());
+        scored.clear();
+        for (auto&& kernel : instruct.kernels()) {
+          size_t score = KernelGrade(*kernel);
+          scored.emplace_back(score, std::move(kernel));
+        }
+        std::sort(scored.begin(), scored.end(), KernelScoreCmp);
+        instruct.kernels().clear();
+      }
+      // If the out_type_int8 is true, we should pick the kernel with the
+      // int8 input and int8 output.
+      // If the out_type_int8 is false, we should pick the kernel with the
+      // int8 input and fp32 output.
       auto output_arguments = instruct.op_info()->OutputArgumentNames();
       for (auto& candidate : scored) {
         bool all_output_type_match = true;

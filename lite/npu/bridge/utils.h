@@ -16,9 +16,13 @@
 
 #include <memory>
 #include <string>
+#include <unordered_map>
 #include <vector>
 #include "ai_ddk_lib/include/graph/operator_reg.h"
+#include "lite/core/mir/node.h"
 #include "lite/core/op_lite.h"
+#include "lite/core/target_wrapper.h"
+#include "lite/core/tensor.h"
 
 namespace paddle {
 namespace lite {
@@ -31,9 +35,9 @@ ge::DataType PrecisionConverter(PrecisionType itype);
 
 ge::Format DataLayoutConverter(DataLayoutType itype);
 
-ge::TensorPtr TensorConverter(lite::Tensor* in_tensor,
-                              PrecisionType in_ptype = PRECISION(kFloat),
-                              DataLayoutType in_ltype = DATALAYOUT(kNCHW));
+ge::TensorPtr CvtFromLiteTensor(Tensor* in_tensor,
+                                PrecisionType in_ptype = PRECISION(kFloat),
+                                DataLayoutType in_ltype = DATALAYOUT(kNCHW));
 
 template <typename T>
 ge::TensorPtr CreateTensorAndFillData(T value,
@@ -53,16 +57,23 @@ ge::TensorPtr CreateTensorAndFillData(T value,
   ge::TensorDesc desc(ge::Shape(shape), format, type);
   ge::TensorPtr tensor = std::make_shared<ge::Tensor>();
   tensor->SetTensorDesc(desc);
-  int i;
-  int64_t num = 1;
-  for (i = 0; i < shape.size(); i++) {
-    num *= shape[i];
+  int64_t data_num = 1;
+  for (auto i : shape) {
+    data_num *= i;
   }
-  T* data_ptr = reinterpret_cast<T*>(tensor->MutableData().GetData());
-  for (i = 0; i < num; i++) {
-    data_ptr[i] = value;
-  }
+  std::vector<T> data_value(data_num, value);
+  tensor->SetData(reinterpret_cast<uint8_t*>(data_value.data()),
+                  data_num * sizeof(T));
+  return tensor;
 }
+
+std::shared_ptr<ge::Operator> CvtNode2Tensor(const lite::mir::Node* arg_node);
+
+std::shared_ptr<ge::Operator> CvtNode(lite::mir::Node* var_node,
+                                      const Scope* scope);
+
+int16_t float2half(float f);
+float half2float(int16_t h);
 
 }  // namespace bridge
 }  // namespace npu

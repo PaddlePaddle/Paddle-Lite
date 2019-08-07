@@ -42,7 +42,6 @@ void TypeTargetTransformPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
       ComplementInputs(graph.get(), node, in);
     }
   }
-  VLOG(3) << "\n" << Visualize(graph.get());
 }
 
 void TypeTargetTransformPass::ComplementInputs(SSAGraph* graph,
@@ -63,9 +62,9 @@ void TypeTargetTransformPass::ComplementInputs(SSAGraph* graph,
   auto decl_arg_type = inst.picked_kernel().GetInputDeclType(tmp);
   CHECK(in->AsArg().type);
   if (!TargetCompatibleTo(*in->AsArg().type, *decl_arg_type)) {
-    LOG(INFO) << "found Target unmatched tensor: " << in->AsArg().name
-              << " for kernel " << inst.op()->DebugString() << " "
-              << *in->AsArg().type << " -> " << *decl_arg_type;
+    VLOG(4) << "found Target unmatched tensor: " << in->AsArg().name
+            << " for kernel " << inst.op()->DebugString() << " "
+            << *in->AsArg().type << " -> " << *decl_arg_type;
     // Add an IoCopy instruction to make the input compatible with other dist.
     AddIoCopyInst(
         *in->AsArg().type, *decl_arg_type, in, graph, inst_node, valid_places_);
@@ -160,7 +159,7 @@ void TypeTargetTransformPass::AddIoCopyInst(
   }
 
   for (auto& kernel : inst_node->AsStmt().kernels()) {
-    LOG(INFO) << "kernel info: " << kernel->name();
+    VLOG(4) << "kernel info: " << kernel->name();
     inst_node->AsStmt().op()->AttachKernel(kernel.get());
   }
 

@@ -70,12 +70,19 @@ class DeviceInfo {
   int l1_cache_size() const { return L1_cache_[active_ids_[0]]; }
   int l2_cache_size() const { return L2_cache_[active_ids_[0]]; }
   int l3_cache_size() const { return L3_cache_[active_ids_[0]]; }
+  int llc_size() const {
+    auto size = L3_cache_[active_ids_[0]] > 0 ? L3_cache_[active_ids_[0]]
+                                              : L2_cache_[active_ids_[0]];
+    return size > 0 ? size : 512 * 1024;
+  }
+  bool has_dot() const { return dot_[active_ids_[0]]; }
+  bool has_fp16() const { return fp16_[active_ids_[0]]; }
 
   template <typename T>
   T* workspace_data() {
-    return reinterpret_cast<T*>(workspace_.mutable_data<float>());
+    return reinterpret_cast<T*>(workspace_.mutable_data<int8_t>());
   }
-  bool ExtendWorkspace(DDimLite dims);
+  bool ExtendWorkspace(size_t size);
 
  private:
   int core_num_;
@@ -92,6 +99,9 @@ class DeviceInfo {
   std::vector<int> little_core_ids_;
   std::vector<int> cluster_ids_;
   std::vector<ARMArch> archs_;
+  std::vector<bool> fp32_;
+  std::vector<bool> fp16_;
+  std::vector<bool> dot_;
 
   ARMArch arch_;
   // LITE_POWER_HIGH stands for using big cores,
@@ -102,16 +112,19 @@ class DeviceInfo {
   TensorLite workspace_;
   int64_t count_{0};
 
+  void SetDotInfo(int argc, ...);
+  void SetFP16Info(int argc, ...);
+  void SetFP32Info(int argc, ...);
   void SetCacheInfo(int cache_id, int argc, ...);
   void SetArchInfo(int argc, ...);
   bool SetCPUInfoByName();
   void SetCPUInfoByProb();
-  void RequestPowerFullMode(const int thread_num);
-  void RequestPowerHighMode(const int thread_num);
-  void RequestPowerLowMode(const int thread_num);
-  void RequestPowerNoBindMode(const int thread_num);
-  void RequestPowerRandHighMode(const int shift_num, const int thread_num);
-  void RequestPowerRandLowMode(const int shift_num, const int thread_num);
+  void RequestPowerFullMode(int thread_num);
+  void RequestPowerHighMode(int thread_num);
+  void RequestPowerLowMode(int thread_num);
+  void RequestPowerNoBindMode(int thread_num);
+  void RequestPowerRandHighMode(int shift_num, int thread_num);
+  void RequestPowerRandLowMode(int shift_num, int thread_num);
 
   DeviceInfo() = default;
 };

@@ -106,6 +106,15 @@ class KernelRegistry final {
               KernelRegistryForTarget<TARGET(kOpenCL),
                                       PRECISION(kInt8),
                                       DATALAYOUT(kNCHW)> *,  //
+              KernelRegistryForTarget<TARGET(kNPU),
+                                      PRECISION(kAny),
+                                      DATALAYOUT(kAny)> *,  //
+              KernelRegistryForTarget<TARGET(kNPU),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kNCHW)> *,  //
+              KernelRegistryForTarget<TARGET(kNPU),
+                                      PRECISION(kInt8),
+                                      DATALAYOUT(kNCHW)> *,  //
               KernelRegistryForTarget<TARGET(kFPGA),
                                       PRECISION(kFloat),
                                       DATALAYOUT(kNCHW)> *,  //
@@ -181,8 +190,8 @@ class KernelRegistry final {
   }
 
   std::string DebugString() const {
-    std::stringstream ss;
-    ss << "KernelCreator<host, float>:" << std::endl;
+    STL::stringstream ss;
+    ss << "KernelCreator<host, float>:\n";
     constexpr TargetType tgt = TARGET(kHost);
     constexpr PrecisionType dt = PRECISION(kFloat);
     constexpr DataLayoutType lt = DATALAYOUT(kNCHW);
@@ -190,8 +199,9 @@ class KernelRegistry final {
     using kernel_registor_t = KernelRegistryForTarget<tgt, dt, lt>;
     auto *reg = registries_[GetKernelOffset<tgt, dt, kany>()]
                     .template get<kernel_registor_t *>();
-    ss << reg->DebugString() << std::endl;
+    ss << reg->DebugString() << "\n";
     return ss.str();
+    return "";
   }
 
  private:

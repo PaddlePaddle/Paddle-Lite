@@ -23,20 +23,21 @@
 #include "ai_ddk_lib/include/graph/operator_reg.h"
 #include "lite/npu/bridge/registry.h"
 #include "lite/npu/bridge/utils.h"
+#include "lite/npu/npu_helper.h"
 
 namespace paddle {
 namespace lite {
 namespace npu {
 namespace bridge {
 
-std::vector<std::shared_ptr<ge::Operator>> PoolConverter(
-    const std::shared_ptr<lite::OpLite> op,
-    const std::vector<std::shared_ptr<ge::Operator>>& input_nodes) {
-  const std::shared_ptr<lite::operators::PoolOpLite> pool_op =
-      static_pointer_cast<lite::operators::PoolOpLite>(op);
+node_map_type PoolConverter(const std::shared_ptr<lite::OpLite> pool_op,
+                            const node_map_type& inputs_map) {
   lite::Scope* scope = pool_op->scope();
   const lite::OpInfo* op_info = pool_op->op_info();
 
+  std::shared_ptr<ge::op::Pooling> output_node =
+      std::make_shared<ge::op::Pooling>(UniqueName("pool"));
+  auto x_var_name = op_info->Input("X").front();
   auto pooling_type = op_info->GetAttr<std::string>("pooling_type");
   int npu_mode = 0;
   if (pooling_type == "max") {
@@ -50,8 +51,10 @@ std::vector<std::shared_ptr<ge::Operator>> PoolConverter(
   bool npu_global_pooling = op_info->GetAttr<bool>("global_pooling");
   auto ksize = op_info->GetAttr<std::vector<int>>("ksize");
   auto npu_window = ge::AttrValue::LIST_INT(ksize.begin(), ksize.end());
+
   auto padding = op_info->GetAttr<std::vector<int>>("paddings");
-  auto npu_pad = ge::AttrValue::LIST_INT(padding.begin(), padding.end());
+  auto npu_pad =
+      ge::AttrValue::LIST_INT{padding[0], padding[0], padding[1], padding[1]};
   auto strides = op_info->GetAttr<std::vector<int>>("strides");
   auto npu_stride = ge::AttrValue::LIST_INT(strides.begin(), strides.end());
   int npu_ceil_mode = 0;
@@ -59,11 +62,7 @@ std::vector<std::shared_ptr<ge::Operator>> PoolConverter(
     npu_ceil_mode = op_info->GetAttr<bool>("ceil_mode") ? 1 : 0;
   }
 
-  // int64_t npu_data_mode = static_cast<int64_t>(1); ??
-
-  std::shared_ptr<ge::op::Pooling> output_node =
-      std::make_shared<ge::op::Pooling>(UniqueName("pool"));
-  output_node->set_input_x(*input_nodes[0]);
+  output_node->set_input_x(*inputs_map.at(x_var_name));
   output_node->set_attr_mode(npu_mode);
   output_node->set_attr_pad_mode(npu_pad_mode);
   output_node->set_attr_global_pooling(npu_global_pooling);
@@ -73,9 +72,12 @@ std::vector<std::shared_ptr<ge::Operator>> PoolConverter(
   output_node->set_attr_ceil_mode(npu_ceil_mode);
   // output_node->set_attr_data_mode(npu_data_mode);
 
-  std::vector<std::shared_ptr<ge::Operator>> output_nodes;
-  output_nodes.push_back(output_node);
-  return output_nodes;
+  OpList::Global().add(inputs_map.at(x_var_name));
+  OpList::Global().add(output_node);
+
+  node_map_type outputs_map;
+  outputs_map[op_info->Output("Out").front()] = output_node;
+  return outputs_map;
 }
 
 }  // namespace bridge

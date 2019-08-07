@@ -17,6 +17,7 @@
 #include "lite/core/op_registry.h"
 #include "lite/opencl/cl_include.h"
 #include "lite/operators/op_params.h"
+#include "lite/utils/replace_stl/stream.h"
 #include "lite/utils/string.h"
 
 namespace paddle {
@@ -29,9 +30,10 @@ class MulCompute
  public:
   using param_t = operators::MulParam;
 
-  void PrepareForRun() {
-    kernel_func_name_ = "mat_mul";
-
+  void PrepareForRun() override {
+    auto& context = ctx_->As<OpenCLContext>();
+    context.cl_context()->AddKernel(
+        kernel_func_name_, "buffer/mat_mul_kernel.cl", build_options_);
     const auto& param = *param_.get_mutable<param_t>();
     const auto* x_data = param.x->data<float>();
     const auto* y_data = param.y->data<float>();
@@ -65,7 +67,9 @@ class MulCompute
     auto* out_buf =
         param.output->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
 
-    auto kernel = context.cl_context()->GetKernel(kernel_func_name_);
+    STL::stringstream kernel_key;
+    kernel_key << kernel_func_name_ << build_options_;
+    auto kernel = context.cl_context()->GetKernel(kernel_key.str());
 
     cl_int status;
     int arg_idx = 0;
@@ -75,14 +79,13 @@ class MulCompute
     CL_CHECK_FATAL(status);
     status = kernel.setArg(++arg_idx, *out_buf);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(m_));
+    status = kernel.setArg(++arg_idx, m_);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(n_));
+    status = kernel.setArg(++arg_idx, n_);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(k_));
+    status = kernel.setArg(++arg_idx, k_);
     CL_CHECK_FATAL(status);
 
-    cl::Event event;
     auto global_work_size = cl::NDRange{static_cast<size_t>((m_ + 3) / 4),
                                         static_cast<size_t>((n_ + 3) / 4)};
     status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
@@ -91,15 +94,16 @@ class MulCompute
         global_work_size,
         cl::NullRange,
         nullptr,
-        &event);
+        event_.get());
     CL_CHECK_FATAL(status);
-    status = event.wait();
-    CL_CHECK_FATAL(status);
+    context.cl_wait_list()->emplace(out_buf, event_);
   }
 
  private:
   int m_, n_, k_;
-  std::string kernel_func_name_;
+  std::string kernel_func_name_{"mat_mul"};
+  std::string build_options_{"-DCL_DTYPE=float"};
+  std::shared_ptr<cl::Event> event_{new cl::Event};
 };
 
 }  // namespace opencl

@@ -22,17 +22,21 @@
 #include "lite/api/test_helper.h"
 #include "lite/core/op_registry.h"
 
+DEFINE_string(optimized_model, "", "optimized_model");
+
 namespace paddle {
 namespace lite {
 
 void TestModel(const std::vector<Place>& valid_places,
                const Place& preferred_place,
-               bool use_npu = false) {
+               const std::string& model_dir = FLAGS_model_dir,
+               bool gen_npu = false,
+               bool save_model = false) {
   DeviceInfo::Init();
   DeviceInfo::Global().SetRunMode(LITE_POWER_HIGH, FLAGS_threads);
   lite::Predictor predictor;
 
-  predictor.Build(FLAGS_model_dir, preferred_place, valid_places);
+  predictor.Build(model_dir, preferred_place, valid_places);
 
   auto* input_tensor = predictor.GetInput(0);
   input_tensor->Resize(DDim(std::vector<DDim::value_type>({1, 3, 224, 224})));
@@ -42,7 +46,7 @@ void TestModel(const std::vector<Place>& valid_places,
     data[i] = 1;
   }
 
-  if (use_npu) {
+  if (gen_npu) {
     predictor.GenNPURuntimeProgram();
   }
 
@@ -55,33 +59,50 @@ void TestModel(const std::vector<Place>& valid_places,
     predictor.Run();
   }
 
+  if (save_model) {
+    LOG(INFO) << "Save optimized model to " << FLAGS_optimized_model;
+    predictor.SaveModel(FLAGS_optimized_model);
+  }
+
   LOG(INFO) << "================== Speed Report ===================";
   LOG(INFO) << "Model: " << FLAGS_model_dir << ", threads num " << FLAGS_threads
             << ", warmup: " << FLAGS_warmup << ", repeats: " << FLAGS_repeats
             << ", spend " << (GetCurrentUS() - start) / FLAGS_repeats / 1000.0
             << " ms in average.";
 
-  std::vector<std::vector<float>> results;
-  // i = 1
-  results.emplace_back(std::vector<float>(
+  std::vector<std::vector<float>> ref;
+  ref.emplace_back(std::vector<float>(
       {0.00019130898, 9.467885e-05,  0.00015971427, 0.0003650665,
        0.00026431272, 0.00060884043, 0.0002107942,  0.0015819625,
        0.0010323516,  0.00010079765, 0.00011006987, 0.0017364529,
        0.0048292773,  0.0013995157,  0.0018453331,  0.0002428986,
        0.00020211363, 0.00013668182, 0.0005855956,  0.00025901722}));
   auto* out = predictor.GetOutput(0);
+  const auto* pdata = out->data<float>();
+  int step = 50;
+#ifdef LITE_WITH_NPU
+  ASSERT_EQ(out->dims().production(), 1000);
+  double eps = 0.1;
+  for (int i = 0; i < ref.size(); ++i) {
+    for (int j = 0; j < ref[i].size(); ++j) {
+      auto result = out->data<float>()[j * step + (out->dims()[1] * i)];
+      auto diff = std::fabs((result - ref[i][j]) / ref[i][j]);
+      VLOG(3) << diff;
+      EXPECT_LT(diff, eps);
+    }
+  }
+#else
   ASSERT_EQ(out->dims().size(), 2);
   ASSERT_EQ(out->dims()[0], 1);
   ASSERT_EQ(out->dims()[1], 1000);
-
-  int step = 50;
-  for (int i = 0; i < results.size(); ++i) {
-    for (int j = 0; j < results[i].size(); ++j) {
-      EXPECT_NEAR(out->data<float>()[j * step + (out->dims()[1] * i)],
-                  results[i][j],
-                  1e-6);
+  double eps = 1e-6;
+  for (int i = 0; i < ref.size(); ++i) {
+    for (int j = 0; j < ref[i].size(); ++j) {
+      auto result = out->data<float>()[j * step + (out->dims()[1] * i)];
+      EXPECT_NEAR(result, ref[i][j], eps);
     }
   }
+#endif
 }
 
 #ifdef LITE_WITH_NPU
@@ -89,12 +110,20 @@ TEST(MobileNetV1, test_npu) {
   std::vector<Place> valid_places({
       Place{TARGET(kHost), PRECISION(kFloat)},
       Place{TARGET(kARM), PRECISION(kFloat)},
-      //  Place{TARGET(kNPU), PRECISION(kFloat)},
+      Place{TARGET(kNPU), PRECISION(kFloat)},
   });
 
   TestModel(valid_places,
             Place({TARGET(kARM), PRECISION(kFloat)}),
-            true /* use_npu */);
+            FLAGS_model_dir,
+            true /* gen_npu */,
+            true /* save_model*/);
+
+  TestModel(valid_places,
+            Place({TARGET(kARM), PRECISION(kFloat)}),
+            FLAGS_optimized_model,
+            false /* gen_npu */,
+            false /* save model */);
 }
 #endif
 
@@ -107,6 +136,7 @@ TEST(MobileNetV1, test_arm) {
   TestModel(valid_places, Place({TARGET(kARM), PRECISION(kFloat)}));
 }
 
+#ifdef LITE_WITH_OPENCL
 TEST(MobileNetV1, test_opencl) {
   std::vector<Place> valid_places({
       Place{TARGET(kHost), PRECISION(kFloat)},
@@ -116,6 +146,7 @@ TEST(MobileNetV1, test_opencl) {
 
   TestModel(valid_places, Place({TARGET(kOpenCL), PRECISION(kFloat)}));
 }
+#endif  // LITE_WITH_OPENCL
 
 }  // namespace lite
 }  // namespace paddle

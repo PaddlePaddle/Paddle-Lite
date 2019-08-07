@@ -25,7 +25,7 @@ std::list<std::unique_ptr<KernelBase>> KernelRegistry::Create(
     PrecisionType precision,
     DataLayoutType layout) {
   Place place{target, precision, layout};
-  VLOG(5) << "creating " << op_type << " kernel for " << place;
+  VLOG(5) << "creating " << op_type << " kernel for " << place.DebugString();
 #define CREATE_KERNEL1(target__, precision__)                                \
   switch (layout) {                                                          \
     case DATALAYOUT(kNCHW):                                                  \
@@ -74,6 +74,9 @@ std::list<std::unique_ptr<KernelBase>> KernelRegistry::Create(
     } break;
     case TARGET(kOpenCL): {
       CREATE_KERNEL(kOpenCL);
+    } break;
+    case TARGET(kNPU): {
+      CREATE_KERNEL(kNPU);
     } break;
     case TARGET(kFPGA): {
       CREATE_KERNEL(kFPGA);

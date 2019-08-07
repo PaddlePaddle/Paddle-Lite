@@ -12,8 +12,10 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#include <cl_common.h>
+
 __kernel void depthwise_conv2d(const int numel, // num of elements
-                       __global float* input_data,
+                       __global CL_DTYPE* input_data,
                        const int height,
                        const int width,
                        const int conved_channel,
@@ -25,9 +27,9 @@ __kernel void depthwise_conv2d(const int numel, // num of elements
                        const int stride_w,
                        const int pad_h,
                        const int pad_w,
-                       __global float* output_data,
-                       __global float* weight_data,
-                       __global float* bias_data) {
+                       __global CL_DTYPE* output_data,
+                       __global CL_DTYPE* weight_data,
+                       __global CL_DTYPE* bias_data) {
       int index = get_global_id(0);
       int tmp = get_global_size(0);
       for(index; index < numel; index += tmp) {
@@ -43,10 +45,10 @@ __kernel void depthwise_conv2d(const int numel, // num of elements
           wstart = max(wstart, 0);
           hend = min(hend, height);
           wend = min(wend, width);
-          float v = 0;
-          __global float* input_slice =
+          CL_DTYPE v = 0;
+          __global CL_DTYPE* input_slice =
               input_data + (n * conved_channel + c) * height * width;
-          __global float* weight_slice =
+          __global CL_DTYPE* weight_slice =
               weight_data + c * kernel_h * kernel_w;
           int khstart = hend < kernel_h ? kernel_h - hend : 0;
           int kwstart = wend < kernel_w? kernel_w - wend : 0;
@@ -59,6 +61,10 @@ __kernel void depthwise_conv2d(const int numel, // num of elements
           if(bias_data != NULL){
               v += bias_data[c];
           }
+#ifdef RELU
+          output_data[index] = activation(v);
+#else
           output_data[index] = v;
+#endif
       }
 }

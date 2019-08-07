@@ -23,29 +23,46 @@
 #include <time.h>
 #include <cstdlib>
 #include <cstring>
-#include <iomanip>
-#include <iostream>
-#include <sstream>
 #include <string>
+#include "lite/utils/replace_stl/stream.h"
 
 // NOLINTFILE()
 
 // LOG()
-#define LOG(status) LOG_##status.stream()
+#ifdef LITE_SHUTDOWN_LOG
+#define LOG(status) LOG_##status
+#define LOG_INFO paddle::lite::Voidify()
 #define LOG_ERROR LOG_INFO
+#define LOG_WARNING LOG_INFO
+#define LOG_FATAL paddle::lite::VoidifyFatal()
+#else
+#define LOG(status) LOG_##status.stream()
 #define LOG_INFO paddle::lite::LogMessage(__FILE__, __FUNCTION__, __LINE__, "I")
+#define LOG_ERROR LOG_INFO
 #define LOG_WARNING \
   paddle::lite::LogMessage(__FILE__, __FUNCTION__, __LINE__, "W")
 #define LOG_FATAL \
   paddle::lite::LogMessageFatal(__FILE__, __FUNCTION__, __LINE__)
+#endif
 
+#ifdef LITE_SHUTDOWN_LOG
+#define VLOG(level) paddle::lite::Voidify()
+#else
 // VLOG()
 #define VLOG(level) \
   paddle::lite::VLogMessage(__FILE__, __FUNCTION__, __LINE__, level).stream()
+#endif
 
 // CHECK()
 // clang-format off
+#ifdef LITE_SHUTDOWN_LOG
+#define CHECK(x) if (!(x)) paddle::lite::VoidifyFatal()
+#define _CHECK_BINARY(x, cmp, y) CHECK(x cmp y)
+#else
 #define CHECK(x) if (!(x)) paddle::lite::LogMessageFatal(__FILE__, __FUNCTION__, __LINE__).stream() << "Check failed: " #x << ": " // NOLINT(*)
+#define _CHECK_BINARY(x, cmp, y) CHECK(x cmp y) << x << "!" #cmp << y << " "
+#endif
+
 // clang-format on
 #define CHECK_EQ(x, y) _CHECK_BINARY(x, ==, y)
 #define CHECK_NE(x, y) _CHECK_BINARY(x, !=, y)
@@ -53,12 +70,12 @@
 #define CHECK_LE(x, y) _CHECK_BINARY(x, <=, y)
 #define CHECK_GT(x, y) _CHECK_BINARY(x, >, y)
 #define CHECK_GE(x, y) _CHECK_BINARY(x, >=, y)
-#define _CHECK_BINARY(x, cmp, y) CHECK(x cmp y) << x << "!" #cmp << y << " "
 
 namespace paddle {
 namespace lite {
 
-void gen_log(std::ostream& log_stream_,
+#ifndef LITE_SHUTDOWN_LOG
+void gen_log(STL::ostream& log_stream_,
              const char* file,
              const char* func,
              int lineno,
@@ -80,10 +97,10 @@ class LogMessage {
     fprintf(stderr, "%s", log_stream_.str().c_str());
   }
 
-  std::ostream& stream() { return log_stream_; }
+  STL::ostream& stream() { return log_stream_; }
 
  protected:
-  std::stringstream log_stream_;
+  STL::stringstream log_stream_;
 
   LogMessage(const LogMessage&) = delete;
   void operator=(const LogMessage&) = delete;
@@ -101,7 +118,11 @@ class LogMessageFatal : public LogMessage {
   ~LogMessageFatal() {
     log_stream_ << '\n';
     fprintf(stderr, "%s", log_stream_.str().c_str());
+#ifndef LITE_ON_TINY_PUBLISH
     abort();
+#else
+    assert(false);
+#endif
   }
 };
 
@@ -130,16 +151,34 @@ class VLogMessage {
     fprintf(stderr, "%s", log_stream_.str().c_str());
   }
 
-  std::ostream& stream() { return log_stream_; }
+  STL::ostream& stream() { return log_stream_; }
 
  protected:
-  std::stringstream log_stream_;
+  STL::stringstream log_stream_;
   int32_t GLOG_v_int;
   int32_t level_int;
 
   VLogMessage(const VLogMessage&) = delete;
   void operator=(const VLogMessage&) = delete;
 };
+#else
+class Voidify {
+ public:
+  Voidify() {}
+  ~Voidify() {}
+
+  template <typename T>
+  Voidify& operator<<(const T& obj) {
+    return *this;
+  }
+};
+
+class VoidifyFatal : public Voidify {
+ public:
+  ~VoidifyFatal() { assert(false); }
+};
+
+#endif
 
 }  // namespace lite
 }  // namespace paddle

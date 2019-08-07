@@ -18,26 +18,40 @@
 #include <utility>
 #include <vector>
 #include "lite/utils/io.h"
+#ifdef LITE_WITH_NPU
+#include "lite/npu/npu_helper.h"
+#endif
 
 namespace paddle {
 namespace lite {
 
-void Predictor::SaveModel(const std::string &dir, LiteModelType model_type) {
+void Predictor::SaveModel(const std::string &dir,
+                          lite_api::LiteModelType model_type) {
   if (!program_) {
     GenRuntimeProgram();
   }
   program_->SaveOpInfosToProgram(&program_desc_);
   LOG(INFO) << "Save model to " << dir;
   switch (model_type) {
-    case LiteModelType::kProtobuf:
+    case lite_api::LiteModelType::kProtobuf:
       SaveModelPb(dir, *program_->exec_scope(), program_desc_);
       break;
-    case LiteModelType::kNaiveBuffer:
+    case lite_api::LiteModelType::kNaiveBuffer:
       SaveModelNaive(dir, *program_->exec_scope(), program_desc_);
       break;
     default:
       LOG(FATAL) << "Unknown model type";
   }
+#ifdef LITE_WITH_NPU
+  for (auto name : npu::DeviceInfo::Global().AllClientNames()) {
+    // the npu offline model is saved in current dir
+    // so just copy to dst dir
+    CHECK_EQ(
+        system(string_format("cp -r %s %s", name.c_str(), dir.c_str()).c_str()),
+        0)
+        << "Failed copy NPU model to " << dir;
+  }
+#endif
 }
 
 lite::Tensor *Predictor::GetInput(size_t offset) {
@@ -67,13 +81,13 @@ void Predictor::Build(const std::string &model_path,
                       const Place &prefer_place,
                       const std::vector<Place> &valid_places,
                       const std::vector<std::string> &passes,
-                      LiteModelType model_type) {
+                      lite_api::LiteModelType model_type) {
   LOG(INFO) << "Load model from " << model_path;
   switch (model_type) {
-    case LiteModelType::kProtobuf:
+    case lite_api::LiteModelType::kProtobuf:
       LoadModelPb(model_path, scope_.get(), &program_desc_);
       break;
-    case LiteModelType::kNaiveBuffer:
+    case lite_api::LiteModelType::kNaiveBuffer:
       LoadModelNaive(model_path, scope_.get(), &program_desc_);
       break;
     default:

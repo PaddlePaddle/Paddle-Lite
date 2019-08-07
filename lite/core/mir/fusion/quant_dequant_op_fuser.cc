@@ -121,36 +121,59 @@ void QuantDequantOpFuser::InsertNewNode(SSAGraph* graph,
   int range = ((1 << (bit_length - 1)) - 1);
   auto input_scale_t = scope->FindVar(quant_op_in_scale->arg()->name)
                            ->GetMutable<lite::Tensor>();
-  float input_scale = input_scale_t->data<float>()[0];
+  float input_scale = input_scale_t->data<float>()[0] / range;
 
+  VLOG(4) << "range: " << range << " input_scale: " << input_scale;
   for (int i = 0; i < times_; i++) {
     float max_range = nodes[i * kNumFields + kDequantOpOffset]
                           ->stmt()
                           ->op_info()
                           ->GetAttr<float>("max_range");
-    float weight_scale = (range * range) / max_range;
+    // weight_scale = max(abs(weight))
+    float whole_weight_scale =
+        static_cast<float>(range * range) / max_range / range;
 
     cpp::OpDesc op_desc =
         *nodes[i * kNumFields + kQuantizedOpOffset]->stmt()->op_info();
-    if (op_type_ == "conv2d" || op_type_ == "depthwise_conv2d") {
-      op_desc.SetInput("Input", {matched.at("quant_op_input")->arg()->name});
-      op_desc.SetOutput(
-          "Output", {nodes[i * kNumFields + kDequantOpOutOffset]->arg()->name});
-    } else if (op_type_ == "mul") {
-      op_desc.SetInput("X", {matched.at("quant_op_input")->arg()->name});
-      op_desc.SetOutput(
-          "Out", {nodes[i * kNumFields + kDequantOpOutOffset]->arg()->name});
-    }
-    op_desc.SetAttr("enable_int8", true);
-    op_desc.SetAttr("input_scale", input_scale);
+
     auto quantized_weight_var_name =
         nodes[i * kNumFields + kQuantizedWeightOffset]->arg()->name;
     auto quantized_weight_t =
         scope->FindVar(quantized_weight_var_name)->GetMutable<lite::Tensor>();
-    float* quantized_weight_data = quantized_weight_t->mutable_data<float>();
+    std::vector<float> weight_scale;
+    int weight_scale_size;
+
+    if (op_type_ == "conv2d" || op_type_ == "depthwise_conv2d") {
+      op_desc.SetInput("Input", {matched.at("quant_op_input")->arg()->name});
+      op_desc.SetOutput(
+          "Output", {nodes[i * kNumFields + kDequantOpOutOffset]->arg()->name});
+      // Conv weight shape: Cout * Cin * kh * hw, the weight_scale_size should
+      // be Cout.
+      weight_scale_size = quantized_weight_t->dims()[0];
+    } else if (op_type_ == "mul") {
+      op_desc.SetInput("X", {matched.at("quant_op_input")->arg()->name});
+      op_desc.SetOutput(
+          "Out", {nodes[i * kNumFields + kDequantOpOutOffset]->arg()->name});
+      // Fc weight: Cin * Cout, the weight_scale_size should be Cout.
+      weight_scale_size = quantized_weight_t->dims()[1];
+    }
+    for (int i = 0; i < weight_scale_size; i++) {
+      weight_scale.push_back(whole_weight_scale);
+    }
+    op_desc.SetAttr("enable_int8", true);
+    op_desc.SetAttr("input_scale", input_scale);
+    op_desc.SetAttr("weight_scale", weight_scale);
+
+    Tensor temp_tensor;
+    temp_tensor.CopyDataFrom(*quantized_weight_t);
+    float* temp_data = temp_tensor.mutable_data<float>();
+
     size_t weight_num = quantized_weight_t->data_size();
+    int8_t* quantized_weight_data = quantized_weight_t->mutable_data<int8_t>();
+
+    // change the weight from the float type to int8 type.
     for (size_t i = 0; i < weight_num; i++) {
-      quantized_weight_data[i] *= (weight_scale / range);
+      quantized_weight_data[i] = static_cast<int8_t>(temp_data[i]);
     }
     auto quantized_op = LiteOpRegistry::Global().Create(op_type_);
 

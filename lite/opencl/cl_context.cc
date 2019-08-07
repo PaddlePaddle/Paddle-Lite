@@ -12,15 +12,14 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#include "lite/opencl/cl_context.h"
 #include <memory>
 #include <string>
 #include <utility>
-
-#include "lite/opencl/cl_context.h"
 #include "lite/opencl/cl_runtime.h"
 #include "lite/opencl/cl_utility.h"
-
 #include "lite/utils/cp_logging.h"
+#include "lite/utils/replace_stl/stream.h"
 
 namespace paddle {
 namespace lite {
@@ -33,10 +32,9 @@ cl::Context &CLContext::GetContext() { return CLRuntime::Global()->context(); }
 
 cl::Program &CLContext::GetProgram(const std::string &file_name,
                                    const std::string &options) {
-  std::string program_key = file_name;
-  if (!options.empty()) {
-    program_key += options;
-  }
+  STL::stringstream program_key_ss;
+  program_key_ss << file_name << options;
+  std::string program_key = program_key_ss.str();
   auto it = programs_.find(program_key);
   if (it != programs_.end()) {
     VLOG(3) << " --- program -> " << program_key << " has been built --- ";
@@ -68,7 +66,9 @@ void CLContext::AddKernel(const std::string &kernel_name,
   CL_CHECK_FATAL(status);
   VLOG(3) << " --- end create kernel --- ";
   kernels_.emplace_back(std::move(kernel));
-  kernel_offset_[kernel_name] = kernels_.size() - 1;
+  STL::stringstream kernel_key;
+  kernel_key << kernel_name << options;
+  kernel_offset_[kernel_key.str()] = kernels_.size() - 1;
 }
 
 cl::Kernel &CLContext::GetKernel(const int index) {

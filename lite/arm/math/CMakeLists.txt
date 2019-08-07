@@ -54,9 +54,13 @@ if (NOT HAS_ARM_MATH_LIB_DIR)
       scale.cc
       pooling.cc
       elementwise.cc
+      lrn.cc
+      decode_bboxes.cc
+      multiclass_nms.cc
       concat.cc
       sgemv.cc
       type_trans.cc
+      box_coder.cc
       conv_impl.cc
       conv_direct_3x3s1.cc
       conv_direct_3x3s2.cc
@@ -79,11 +83,23 @@ if (NOT HAS_ARM_MATH_LIB_DIR)
       gemv_arm_int8.cc
       conv3x3s1_direct_int8.cc
       conv3x3s2_direct_int8.cc
+      argmax.cc
+      axpy.cc
+      fill_bias_relu.cc
+      col_im_transform.cc
       im2sequence.cc
+      prior_box.cc
       sequence_softmax.cc
       norm.cc
+      topk.cc
+      increment.cc
       pad2d.cc
       negative.cc
-      DEPS ${lite_kernel_deps} framework_proto)
+      beam_search.cc
+      reduce_max.cc
+      sequence_pool.cc
+      sequence_expand.cc
+      slice.cc
+      DEPS ${lite_kernel_deps})
 endif()
  

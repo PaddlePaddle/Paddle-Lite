@@ -159,12 +159,8 @@ bool DirectConvInt8<Ptype_out>::create(const operators::ConvParam& param,
     int tmp_size_out = wout_round * row_out * cblock;
     int in_len = win_round * ic;
     int tmp_size_in = row_in * in_len;
-    ctx_->ExtendWorkspace(
-        DDimLite({1,
-                  1,
-                  1,
-                  ctx_->threads() * tmp_size_out + (tmp_size_in + 3) / 4 * 4 +
-                      wout_round + win_round}));
+    ctx_->ExtendWorkspace(ctx_->threads() * tmp_size_out +
+                          (tmp_size_in + 3) / 4 * 4 + wout_round + win_round);
     is_weights_transed_ = true;
 
   } else if (kw == 3 && sw == 2) {
@@ -231,7 +227,8 @@ bool DirectConvInt8<Ptype_out>::run(const operators::ConvParam& param) {
              Ptype_out,
              w_scale_.data());
 
-  // timer end
+  // Modified from int32 for debug convenience
+  if (Ptype_out == PRECISION(kInt8)) param.output->mutable_data<int8_t>();
   return true;
 }
 

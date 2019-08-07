@@ -17,6 +17,7 @@
 #include "lite/core/op_registry.h"
 #include "lite/opencl/cl_include.h"
 #include "lite/operators/op_params.h"
+#include "lite/utils/replace_stl/stream.h"
 #include "lite/utils/string.h"
 
 namespace paddle {
@@ -29,9 +30,7 @@ class FcCompute
  public:
   using param_t = operators::FcParam;
 
-  void PrepareForRun() {
-    kernel_func_name_ = "fc";
-
+  void PrepareForRun() override {
     const auto& param = *param_.get_mutable<param_t>();
     const auto x_dims = param.input->dims();
     const auto w_dims = param.w->dims();
@@ -44,7 +43,23 @@ class FcCompute
     k_ = x_dims.Slice(param.in_num_col_dims, x_dims.size()).production();
     n_ = w_dims[1];
     CHECK_EQ(k_, static_cast<int>(w_dims[0]));
-    LOG(INFO) << "m_: " << m_ << " n_: " << n_ << " k_: " << k_;
+    VLOG(4) << "x_dims:" << x_dims[0] << " " << x_dims[1] << " " << x_dims[2]
+            << " " << x_dims[3];
+    VLOG(4) << "w_dims:" << w_dims[0] << " " << w_dims[1] << " " << w_dims[2]
+            << " " << w_dims[3];
+    VLOG(4) << "m_: " << m_ << " n_: " << n_ << " k_: " << k_;
+
+    if (m_ == 1) {  // gemv
+      kernel_func_name_ = "fc_gemv_1x4";
+      global_work_size_ = cl::NDRange{static_cast<size_t>((n_ + 3) / 4)};
+    } else {  // gemm
+      kernel_func_name_ = "fc_gemm_4x4";
+      global_work_size_ = cl::NDRange{static_cast<size_t>((m_ + 3) / 4),
+                                      static_cast<size_t>((n_ + 3) / 4)};
+    }
+    auto& context = ctx_->As<OpenCLContext>();
+    context.cl_context()->AddKernel(
+        kernel_func_name_, "buffer/fc_kernel.cl", build_options_);
   }
 
   void Run() override {
@@ -57,7 +72,10 @@ class FcCompute
     auto* out_buf =
         param.output->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
 
-    auto kernel = context.cl_context()->GetKernel(kernel_func_name_);
+    STL::stringstream kernel_key;
+    kernel_key << kernel_func_name_ << build_options_;
+    auto kernel = context.cl_context()->GetKernel(kernel_key.str());
+
     cl_int status;
     int arg_idx = 0;
     status = kernel.setArg(arg_idx, *x_buf);
@@ -75,24 +93,23 @@ class FcCompute
     status = kernel.setArg(++arg_idx, static_cast<const int>(k_));
     CL_CHECK_FATAL(status);
 
-    cl::Event event;
-    auto global_work_size = cl::NDRange{static_cast<size_t>((m_ + 3) / 4),
-                                        static_cast<size_t>((n_ + 3) / 4)};
     status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
         kernel,
         cl::NullRange,
-        global_work_size,
+        global_work_size_,
         cl::NullRange,
         nullptr,
-        &event);
+        event_.get());
     CL_CHECK_FATAL(status);
-    status = event.wait();
-    CL_CHECK_FATAL(status);
+    context.cl_wait_list()->emplace(out_buf, event_);
   }
 
  private:
   int m_, n_, k_;
-  std::string kernel_func_name_;
+  std::string kernel_func_name_{};
+  std::string build_options_{"-DCL_DTYPE=float"};
+  cl::NDRange global_work_size_;
+  std::shared_ptr<cl::Event> event_{new cl::Event};
 };
 
 }  // namespace opencl

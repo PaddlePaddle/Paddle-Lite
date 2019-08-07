@@ -46,32 +46,7 @@ class FcOpLite : public OpLite {
    */
 
   // TODO(Superjomn) replace framework::OpDesc with a lite one.
-  bool AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) override {
-    auto input = op_desc.Input("Input").front();
-    auto W = op_desc.Input("W").front();
-    auto bias = op_desc.Input("Bias").front();
-    auto out = op_desc.Output("Out").front();
-
-    param_.input = scope->FindVar(input)->GetMutable<lite::Tensor>();
-    param_.w = scope->FindVar(W)->GetMutable<lite::Tensor>();
-    param_.bias = scope->FindVar(bias)->GetMutable<lite::Tensor>();
-    CHECK(scope->FindVar(out));
-    param_.output = scope->FindVar(out)->GetMutable<lite::Tensor>();
-    param_.in_num_col_dims = op_desc.GetAttr<int>("in_num_col_dims");
-
-    // For Int8
-    if (op_desc.HasAttr("enable_int8")) {
-      param_.enable_int8 = op_desc.GetAttr<bool>("enable_int8");
-      if (op_desc.HasAttr("input_scale"))
-        param_.input_scale = op_desc.GetAttr<float>("input_scale");
-      if (op_desc.HasAttr("weight_scale"))
-        param_.weight_scale =
-            op_desc.GetAttr<std::vector<float>>("weight_scale");
-      if (op_desc.HasAttr("output_scale"))
-        param_.output_scale = op_desc.GetAttr<float>("output_scale");
-    }
-    return true;
-  }
+  bool AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) override;
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 

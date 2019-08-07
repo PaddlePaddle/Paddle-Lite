@@ -13,10 +13,13 @@
 // limitations under the License.
 
 #include "lite/core/program.h"
-#include "lite/core/optimizer.h"
 #include "lite/model_parser/cpp/block_desc.h"
 #include "lite/model_parser/cpp/op_desc.h"
 #include "lite/model_parser/cpp/var_desc.h"
+#include "lite/operators/while_op.h"
+#ifdef LITE_WITH_PROFILE
+#include "lite/core/profile/precision_profiler.h"
+#endif
 
 namespace paddle {
 namespace lite {
@@ -37,9 +40,10 @@ void RuntimeProgram::SaveOpInfosToProgram(cpp::ProgramDesc* desc) {
 
 void RuntimeProgram::Run() {
   for (auto& inst : instructions_) {
-    LOG(INFO) << ">> Running kernel: " << inst.op()->op_info()->Repr()
-              << " on Target " << TargetToStr(inst.kernel()->target());
     inst.Run();
+#ifdef LITE_WITH_PROFILE
+    LITE_PRECISION_PROFILE(inst)
+#endif
   }
 }
 
@@ -54,11 +58,16 @@ void Program::Build(const cpp::ProgramDesc& prog) {
     auto& op_desc = *main_block.GetOp<cpp::OpDesc>(i);
     auto op_type = op_desc.Type();
     // if (op_type == "feed" || op_type == "fetch") continue;
-    LOG(INFO) << "create Op [" << op_type << "]";
+    VLOG(4) << "create Op [" << op_type << "]";
     auto op = LiteOpRegistry::Global().Create(op_type);
     CHECK(op) << "no Op found for " << op_type;
     ops_.emplace_back(std::move(op));
     ops_.back()->Attach(op_desc, exec_scope_);
+    if (op_type == "while") {
+      auto sub_block_idx = op_desc.GetAttr<int32_t>("block_idx");
+      auto sub_block = program.GetBlock<cpp::BlockDesc>(sub_block_idx);
+      static_cast<operators::WhileOpLite*>(op.get())->SetSubBlock(sub_block);
+    }
   }
 }
 
@@ -99,15 +108,12 @@ void Instruction::Run() {
   }
 
   if (op_->run_once() && has_run_) return;
-  LOG(INFO) << "op infershape";
   op_->InferShape();
-  LOG(INFO) << "kernel launch";
   kernel_->Launch();
-  LOG(INFO) << "kernel launch finished";
   has_run_ = true;
 }
 
-std::ostream& operator<<(std::ostream& os, const Instruction& other) {
+STL::ostream& operator<<(STL::ostream& os, const Instruction& other) {
   os << other.kernel_->summary() << "\t(" << other.kernel_->doc() << ")";
   return os;
 }

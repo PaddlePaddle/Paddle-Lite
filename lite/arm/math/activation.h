@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #pragma once
+#include <string>
 
 namespace paddle {
 namespace lite {
@@ -24,11 +25,10 @@ void act_relu(const T* din, T* dout, int size, int threads);
 
 template <typename T>
 void act_relu_neg(
-    const T* din, T* dout, int size, const float negative_slope, int threads);
+    const T* din, T* dout, int size, float negative_slope, int threads);
 
 template <typename T>
-void act_clipped_relu(
-    const T* din, T* dout, int size, const float coef, int threads);
+void act_clipped_relu(const T* din, T* dout, int size, float coef, int threads);
 
 template <typename T>
 void act_prelu(const T* din,
@@ -36,8 +36,8 @@ void act_prelu(const T* din,
                int outer_size,
                int channel_size,
                int inner_size,
-               bool channel_shared,
-               float* channel_slope,
+               std::string mode,
+               const float* alpha_data,
                int threads);
 
 template <typename T>
@@ -47,7 +47,7 @@ template <typename T>
 void act_tanh(const T* din, T* dout, int size, int threads);
 
 template <typename T>
-void act_swish(const T* din, T* dout, int size, const float coef, int threads);
+void act_swish(const T* din, T* dout, int size, float coef, int threads);
 
 }  // namespace math
 }  // namespace arm

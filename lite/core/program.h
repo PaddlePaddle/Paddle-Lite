@@ -19,7 +19,6 @@
 #include <utility>
 #include <vector>
 #include "lite/core/kernel.h"
-#include "lite/core/mir/node.h"
 #include "lite/core/op_lite.h"
 #include "lite/core/op_registry.h"
 #include "lite/model_parser/cpp/program_desc.h"
@@ -96,7 +95,7 @@ struct Instruction {
   // Run the instruction.
   void Run();
 
-  friend std::ostream& operator<<(std::ostream& os, const Instruction& other);
+  friend STL::ostream& operator<<(STL::ostream& os, const Instruction& other);
 
   const OpLite* op() const { return op_.get(); }
   const KernelBase* kernel() const { return kernel_.get(); }
@@ -117,7 +116,7 @@ struct Instruction {
 /*
  * A program contains kernels for runtime.
  */
-class RuntimeProgram {
+class LITE_API RuntimeProgram {
  public:
   explicit RuntimeProgram(std::vector<Instruction>&& insts)
       : instructions_(std::move(insts)) {

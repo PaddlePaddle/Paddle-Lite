@@ -9,7 +9,7 @@ else
   echo "Warning: didn't copy JNI .so lib because arch name is empty"
 fi
 
-MODELS=(inception_v4_simple lite_naive_model mobilenet_v1 mobilenet_v2_relu resnet50)
+MODELS=(inception_v4_simple_opt.nb lite_naive_model_opt.nb mobilenet_v1_opt.nb mobilenet_v2_relu_opt.nb resnet50_opt.nb)
 MODELS_DIR=PaddlePredictor/app/src/main/assets/
 
 for m in "${MODELS[@]}"

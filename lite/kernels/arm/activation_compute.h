@@ -31,9 +31,70 @@ class ReluCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
   virtual ~ReluCompute() = default;
 
  private:
-
 };
 
+class LeakyReluCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::ActivationParam;
+
+  void Run() override;
+
+  virtual ~LeakyReluCompute() = default;
+};
+
+class ReluClippedCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::ActivationParam;
+
+  void Run() override;
+
+  virtual ~ReluClippedCompute() = default;
+};
+
+class PReluCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::ActivationParam;
+
+  void Run() override;
+
+  virtual ~PReluCompute() = default;
+};
+
+class SigmoidCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::ActivationParam;
+
+  void Run() override;
+
+  virtual ~SigmoidCompute() = default;
+};
+
+class TanhCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::ActivationParam;
+
+  void Run() override;
+
+  virtual ~TanhCompute() = default;
+};
+
+class SwishCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::ActivationParam;
+
+  void Run() override;
+
+  virtual ~SwishCompute() = default;
+};
+
+class Relu6Compute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::ActivationParam;
+
+  void Run() override;
+
+  virtual ~Relu6Compute() = default;
+};
 }  // namespace arm
 }  // namespace kernels
 }  // namespace lite

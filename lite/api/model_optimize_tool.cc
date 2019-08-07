@@ -24,9 +24,13 @@
 #include "lite/utils/string.h"
 
 DEFINE_string(model_dir, "", "path of the model");
+DEFINE_string(
+    optimize_out_type,
+    "protobuf",
+    "store type of the output optimized model. protobuf/naive_buffer");
 DEFINE_string(optimize_out, "", "path of the output optimized model");
 DEFINE_string(valid_targets,
-              "ARM",
+              "arm",
               "The targets this model optimized for, should be one of (arm, "
               "opencl, x86), splitted by space");
 DEFINE_bool(int8_mode, false, "Support Int8 quantitative mode");
@@ -66,7 +70,17 @@ void Main() {
   config.set_valid_places(valid_places);
 
   auto predictor = lite_api::CreatePaddlePredictor(config);
-  predictor->SaveOptimizedModel(FLAGS_optimize_out);
+
+  LiteModelType model_type;
+  if (FLAGS_optimize_out_type == "protobuf") {
+    model_type = LiteModelType::kProtobuf;
+  } else if (FLAGS_optimize_out_type == "naive_buffer") {
+    model_type = LiteModelType::kNaiveBuffer;
+  } else {
+    LOG(FATAL) << "Unsupported Model type :" << FLAGS_optimize_out_type;
+  }
+
+  predictor->SaveOptimizedModel(FLAGS_optimize_out, model_type);
 }
 
 }  // namespace lite_api

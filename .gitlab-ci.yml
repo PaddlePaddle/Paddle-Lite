@@ -40,7 +40,7 @@ check:prebuilt:
         - pip install pre-commit
         - pre-commit install
 
-        - ./lite/tools/build.sh check_style
+        - ./lite/tools/ci_build.sh check_style
 
     cache:
         key: check_style
@@ -64,14 +64,14 @@ build:server:
         # run build and test
         - mkdir -p build
         - cd build
-        - ../lite/tools/build.sh cmake_x86
+        - ../lite/tools/ci_build.sh cmake_x86
         #- make extern_eigen3
         #- make extern_boost
         - make framework_proto
         #- make extern_warpctc
         - cd ..
         - export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$PWD/build/third_party/install/mklml/lib
-        - ./lite/tools/build.sh build_test_server
+        - ./lite/tools/ci_build.sh build_test_server
     dependencies:
         - check:prebuilt
 
@@ -89,7 +89,7 @@ build:mobile_android:
             - $CI_PROJECT_DIR/build_mobile_ccache
     script:
         - export CCACHE_DIR=$CI_PROJECT_DIR/build_mobile_ccache
-        - ./lite/tools/build.sh build_test_arm_subtask_android
+        - ./lite/tools/ci_build.sh build_test_arm_subtask_android
 
     dependencies:
       - check:prebuilt
@@ -109,7 +109,7 @@ build:mobile_android_cl:
             - $CI_PROJECT_DIR/build_mobile_ccache_cl
     script:
         - export CCACHE_DIR=$CI_PROJECT_DIR/build_mobile_ccache_cl
-        - ./lite/tools/build.sh build_test_arm_opencl
+        - ./lite/tools/ci_build.sh build_test_arm_opencl
 
     dependencies:
       - check:prebuilt
@@ -130,7 +130,7 @@ build:mobile_armlinux:
             - $CI_PROJECT_DIR/build_mobile_ccache2
     script:
         - export CCACHE_DIR=$CI_PROJECT_DIR/build_mobile_ccache2
-        - ./lite/tools/build.sh build_test_arm_subtask_armlinux
+        - ./lite/tools/ci_build.sh build_test_arm_subtask_armlinux
 
     dependencies:
         - build:server
@@ -144,7 +144,7 @@ build:mobile_model_mobilenetv1:
 
     script:
         - export CCACHE_DIR=$CI_PROJECT_DIR/build_mobile_model_mobilenetv1
-        - ./lite/tools/build.sh build_test_arm_model_mobilenetv1
+        - ./lite/tools/ci_build.sh build_test_arm_model_mobilenetv1
 
     dependencies:
         - build:server
@@ -165,7 +165,7 @@ build:mobile_model_mobilenetv2:
 
     script:
         - export CCACHE_DIR=$CI_PROJECT_DIR/build_mobile_model_mobilenetv2
-        - ./lite/tools/build.sh build_test_arm_model_mobilenetv2
+        - ./lite/tools/ci_build.sh build_test_arm_model_mobilenetv2
 
     dependencies:
         - build:server
@@ -186,7 +186,7 @@ build:mobile_model_resnet50:
 
     script:
         - export CCACHE_DIR=$CI_PROJECT_DIR/build_mobile_model_resnet50
-        - ./lite/tools/build.sh build_test_arm_model_resnet50
+        - ./lite/tools/ci_build.sh build_test_arm_model_resnet50
 
     dependencies:
         - build:server
@@ -207,7 +207,7 @@ build:mobile_model_inceptionv4:
 
     script:
         - export CCACHE_DIR=$CI_PROJECT_DIR/build_mobile_model_inceptionv4
-        - ./lite/tools/build.sh build_test_arm_model_inceptionv4
+        - ./lite/tools/ci_build.sh build_test_arm_model_inceptionv4
 
     dependencies:
         - build:server
@@ -219,6 +219,27 @@ build:mobile_model_inceptionv4:
             - build.lite.android.armv8.gcc
             - ~/.ccache
             - $CI_PROJECT_DIR/build_mobile_model_inceptionv4
+
+# build:mobile_publish:
+#     tags:
+#         - lite
+#     stage: build_mobile
+#     image: $MOBILE_LITE_DOCKER_IMAGE
+# 
+#     script:
+#         - export CCACHE_DIR=$CI_PROJECT_DIR/mobile_publish
+#         - ./lite/tools/ci_build.sh mobile_publish
+# 
+#     dependencies:
+#         - build:server
+#         - check:prebuilt
+# 
+#     cache:
+#         key: mobile_thirdparty
+#         paths:
+#             - build.lite.android.armv8.gcc
+#             - ~/.ccache
+#             - $CI_PROJECT_DIR/mobile_publish
 
 approval_check:
   tags:

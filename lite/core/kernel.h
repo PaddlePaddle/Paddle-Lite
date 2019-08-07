@@ -17,10 +17,10 @@
 #include <map>
 #include <memory>
 #include <set>
-#include <sstream>
 #include <string>
 #include <utility>
 #include <vector>
+#include "lite/arm/math/type_trans.h"
 #include "lite/core/context.h"
 #include "lite/core/target_wrapper.h"
 #include "lite/core/type_system.h"
@@ -28,6 +28,7 @@
 #include "lite/core/workspace.h"
 #include "lite/operators/op_params.h"
 #include "lite/utils/all.h"
+#include "lite/utils/replace_stl/stream.h"
 
 namespace paddle {
 namespace lite {
@@ -56,7 +57,6 @@ class KernelBase {
       PrepareForRun();
       is_first_epoch_ = false;
     }
-    LOG(INFO) << "prepare run";
 
     // Reset the workspace to make every kernel in the same thread to share the
     // temporary memory.
@@ -67,9 +67,7 @@ class KernelBase {
 #if defined(LITE_WITH_CUDA)
     WorkSpace::Global_CUDA().AllocReset();
 #endif
-    LOG(INFO) << "before run";
     Run();
-    LOG(INFO) << " run finished";
   }
 
   void SetContext(std::unique_ptr<KernelContext>&& ctx) {

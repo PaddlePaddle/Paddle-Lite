@@ -13,9 +13,8 @@
 // limitations under the License.
 
 #include <gflags/gflags.h>
-#include <iostream>
+#include <stdio.h>
 #include <vector>
-#include "logging.h"             // NOLINT
 #include "paddle_api.h"          // NOLINT
 #include "paddle_use_kernels.h"  // NOLINT
 #include "paddle_use_ops.h"      // NOLINT
@@ -57,14 +56,14 @@ void RunModel() {
   // 5. Get output
   std::unique_ptr<const Tensor> output_tensor(
       std::move(predictor->GetOutput(0)));
-  LOG(INFO) << "Ouput dim: " << output_tensor->shape()[1] << std::endl;
+  printf("Output dim: %d\n", output_tensor->shape()[1]);
   for (int i = 0; i < ShapeProduction(output_tensor->shape()); i += 100) {
-    LOG(INFO) << "Output[" << i << "]: " << output_tensor->data<float>()[i]
-              << std::endl;
+    printf("Output[%d]: %f\n", i, output_tensor->data<float>()[i]);
   }
 
   // 6. Save optimition model
-  predictor->SaveOptimizedModel(FLAGS_optimized_model_dir);
+  predictor->SaveOptimizedModel(FLAGS_optimized_model_dir,
+                                LiteModelType::kNaiveBuffer);
 }
 
 int main(int argc, char** argv) {

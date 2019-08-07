@@ -87,7 +87,7 @@ class KernelPickFactor {
   bool IsDataLayoutConsidered() const;
   bool IsDeviceConsidered() const;
 
-  friend std::ostream& operator<<(std::ostream& os, const KernelPickFactor& k);
+  friend STL::ostream& operator<<(STL::ostream& os, const KernelPickFactor& k);
 
  private:
   unsigned char data_{};

@@ -18,14 +18,16 @@ namespace paddle {
 namespace lite {
 
 void LightPredictor::Build(const std::string& model_dir,
-                           LiteModelType model_type) {
+                           lite_api::LiteModelType model_type) {
   cpp::ProgramDesc desc;
   LOG(INFO) << "Load model from " << model_dir;
   switch (model_type) {
-    case LiteModelType::kProtobuf:
+#ifndef LITE_ON_TINY_PUBLISH
+    case lite_api::LiteModelType::kProtobuf:
       LoadModelPb(model_dir, scope_.get(), &desc);
       break;
-    case LiteModelType::kNaiveBuffer:
+#endif
+    case lite_api::LiteModelType::kNaiveBuffer:
       LoadModelNaive(model_dir, scope_.get(), &desc);
       break;
     default:
@@ -82,9 +84,9 @@ void LightPredictor::BuildRuntimeProgram(const cpp::ProgramDesc& prog) {
 }
 
 LightPredictor::LightPredictor(const std::string& model_dir,
-                               LiteModelType model_type) {
+                               lite_api::LiteModelType model_type) {
   scope_ = std::make_shared<Scope>();
-  Build(model_dir);
+  Build(model_dir, model_type);
 }
 
 }  // namespace lite
