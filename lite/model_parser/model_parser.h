@@ -30,8 +30,6 @@
 namespace paddle {
 namespace lite {
 
-enum class LiteModelType { kProtobuf = 0, kNaiveBuffer, UNK };
-
 #ifndef LITE_ON_TINY_PUBLISH
 // Read a __model__ file.
 std::unique_ptr<framework::proto::ProgramDesc> LoadProgram(
@@ -62,24 +60,24 @@ void SerializeTensor(std::ostream& os,
 void TensorToStream(std::ostream& os, const lite::Tensor& tensor);
 
 void ReadBinaryFile(const std::string& filename, std::string* contents);
-#endif
 
 // For naive buffer
-void LoadParamNaive(const std::string& path,
-                    lite::Scope* scope,
-                    const std::string& name);
-
 void SaveParamNaive(const std::string& path,
                     const lite::Scope& exec_scope,
                     const std::string& var_name);
 
-void LoadModelNaive(const std::string& model_dir,
-                    lite::Scope* scope,
-                    cpp::ProgramDesc* prog);
-
 void SaveModelNaive(const std::string& model_dir,
                     const Scope& exec_scope,
                     const cpp::ProgramDesc& cpp_prog);
+#endif
+
+void LoadParamNaive(const std::string& path,
+                    lite::Scope* scope,
+                    const std::string& name);
+
+void LoadModelNaive(const std::string& model_dir,
+                    lite::Scope* scope,
+                    cpp::ProgramDesc* prog);
 
 }  // namespace lite
 }  // namespace paddle

@@ -29,6 +29,10 @@
 #endif
 #include "lite/utils/io.h"
 
+#ifdef LITE_WITH_NPU
+#include "lite/npu/npu_helper.h"
+#endif
+
 namespace paddle {
 namespace lite {
 
@@ -187,6 +191,24 @@ void LoadModelPb(const std::string &model_dir,
         CHECK(false) << "unknown weight type";
     }
   }
+#ifdef LITE_WITH_NPU
+  for (auto &op : main_block.ops()) {
+    LOG(INFO) << "op type:" << op.type();
+    if (op.type() != "graph_op") {
+      continue;
+    }
+    auto xs = op.attrs();
+    auto it = std::find_if(
+        xs.begin(), xs.end(), [&](const framework::proto::OpDesc_Attr &x) {
+          return x.name() == "model_name";
+        });
+    CHECK(it != xs.end());
+    auto model_name = it->s();
+    std::string file_path = model_dir + "/" + model_name;
+    CHECK(npu::BuildNPUClient(file_path, model_name))
+        << "NPU model load failed!";
+  }
+#endif
   VLOG(4) << "Load protobuf model in '" << model_dir << "'' successfully";
 }
 
@@ -292,9 +314,81 @@ void SerializeTensor(std::ostream &os,
   const auto &tensor = var->Get<lite::Tensor>();
   TensorToStream(os, tensor);
 }
-#endif
 
 /// For navie buffer
+void SaveParamNaive(const std::string &path,
+                    const lite::Scope &scope,
+                    const std::string &var_name) {
+  // the 1st field, uint32_t version
+  constexpr uint32_t version = 0;
+
+  auto *var = scope.FindVar(var_name);
+  const auto &tensor = var->Get<lite::Tensor>();
+
+  naive_buffer::BinaryTable table;
+  naive_buffer::proto::ParamDesc pt_desc(&table);
+  naive_buffer::ParamDesc desc(&pt_desc);
+
+  desc.SetModelVersion(version);
+  desc.SetTensorVersion(version);
+
+  desc.SetLoDLevel(tensor.lod().size());
+  desc.SetLoD(tensor.lod());
+
+  // TODO(sangoly): support other data types.
+  desc.SetDataType(VarDescAPI::VarDataType::FP32);
+  desc.SetDim(tensor.dims().Vectorize());
+  uint64_t size = tensor.memory_size();
+  CHECK_LT(size, std::numeric_limits<std::streamsize>::max())
+      << "Index overflow when writing tensor";
+
+#ifdef LITE_WITH_CUDA
+  if (tensor.target() == TARGET(kCUDA)) {
+    std::unique_ptr<float> tmp_buffer(new float[tensor.data_size()]);
+    TargetWrapperCuda::MemcpySync(tmp_buffer.get(),
+                                  tensor.data<float>(),
+                                  tensor.data_size(),
+                                  IoDirection::DtoH);
+    desc.SetData<float>(tmp_buffer.get(), tensor.data_size());
+  } else  // NOLINT
+#endif    // LITE_WITH_CUDA
+  {
+    desc.SetData<float>(tensor.data<float>(), tensor.data_size());
+  }
+
+  // Save param
+  pt_desc.Save();
+  table.SaveToFile(path);
+}
+
+void SaveModelNaive(const std::string &model_dir,
+                    const Scope &exec_scope,
+                    const cpp::ProgramDesc &cpp_prog) {
+  MkDirRecur(model_dir);
+  // Save program
+  const std::string prog_path = model_dir + "/__model__";
+  naive_buffer::BinaryTable table;
+  naive_buffer::proto::ProgramDesc nb_proto_prog(&table);
+  naive_buffer::ProgramDesc nb_prog(&nb_proto_prog);
+  TransformProgramDescCppToAny(cpp_prog, &nb_prog);
+  nb_proto_prog.Save();
+  table.SaveToFile(prog_path);
+
+  // Save Params
+  // NOTE: Only main block be used now.
+  auto prog = cpp_prog;
+  auto &main_block_desc = *prog.GetBlock<cpp::BlockDesc>(0);
+  for (size_t i = 0; i < main_block_desc.VarsSize(); ++i) {
+    auto &var = *main_block_desc.GetVar<cpp::VarDesc>(i);
+    if (var.Name() == "feed" || var.Name() == "fetch" || !var.Persistable())
+      continue;
+    const std::string path = model_dir + "/" + var.Name();
+    SaveParamNaive(path, exec_scope, var.Name());
+  }
+  VLOG(4) << "Save naive buffer model in '" << model_dir << "'' successfully";
+}
+#endif
+
 template <typename T>
 void SetTensorDataNaive(T *out, size_t size, const std::vector<T> &src) {
   CHECK(out);
@@ -348,51 +442,6 @@ void LoadParamNaive(const std::string &path,
   }
 }
 
-void SaveParamNaive(const std::string &path,
-                    const lite::Scope &scope,
-                    const std::string &var_name) {
-  // the 1st field, uint32_t version
-  constexpr uint32_t version = 0;
-
-  auto *var = scope.FindVar(var_name);
-  const auto &tensor = var->Get<lite::Tensor>();
-
-  naive_buffer::BinaryTable table;
-  naive_buffer::proto::ParamDesc pt_desc(&table);
-  naive_buffer::ParamDesc desc(&pt_desc);
-
-  desc.SetModelVersion(version);
-  desc.SetTensorVersion(version);
-
-  desc.SetLoDLevel(tensor.lod().size());
-  desc.SetLoD(tensor.lod());
-
-  // TODO(sangoly): support other data types.
-  desc.SetDataType(VarDescAPI::VarDataType::FP32);
-  desc.SetDim(tensor.dims().Vectorize());
-  uint64_t size = tensor.memory_size();
-  CHECK_LT(size, std::numeric_limits<std::streamsize>::max())
-      << "Index overflow when writing tensor";
-
-#ifdef LITE_WITH_CUDA
-  if (tensor.target() == TARGET(kCUDA)) {
-    std::unique_ptr<float> tmp_buffer(new float[tensor.data_size()]);
-    TargetWrapperCuda::MemcpySync(tmp_buffer.get(),
-                                  tensor.data<float>(),
-                                  tensor.data_size(),
-                                  IoDirection::DtoH);
-    desc.SetData<float>(tmp_buffer.get(), tensor.data_size());
-  } else  // NOLINT
-#endif    // LITE_WITH_CUDA
-  {
-    desc.SetData<float>(tensor.data<float>(), tensor.data_size());
-  }
-
-  // Save param
-  pt_desc.Save();
-  table.SaveToFile(path);
-}
-
 void LoadModelNaive(const std::string &model_dir,
                     Scope *scope,
                     cpp::ProgramDesc *cpp_prog) {
@@ -423,7 +472,6 @@ void LoadModelNaive(const std::string &model_dir,
     std::string file_path = model_dir + "/" + var.Name();
     VLOG(4) << "reading weight " << var.Name();
 
-    std::ifstream file(file_path);
     switch (var.GetType()) {
       case VarDescAPI::Type::LOD_TENSOR:
         LoadParamNaive(file_path, scope, var.Name());
@@ -432,34 +480,21 @@ void LoadModelNaive(const std::string &model_dir,
         CHECK(false) << "unknown weight type";
     }
   }
-  VLOG(4) << "Load naive buffer model in '" << model_dir << "' successfully";
-}
 
-void SaveModelNaive(const std::string &model_dir,
-                    const Scope &exec_scope,
-                    const cpp::ProgramDesc &cpp_prog) {
-  MkDirRecur(model_dir);
-  // Save program
-  const std::string prog_path = model_dir + "/__model__";
-  naive_buffer::BinaryTable table;
-  naive_buffer::proto::ProgramDesc nb_proto_prog(&table);
-  naive_buffer::ProgramDesc nb_prog(&nb_proto_prog);
-  TransformProgramDescCppToAny(cpp_prog, &nb_prog);
-  nb_proto_prog.Save();
-  table.SaveToFile(prog_path);
-
-  // Save Params
-  // NOTE: Only main block be used now.
-  auto prog = cpp_prog;
-  auto &main_block_desc = *prog.GetBlock<cpp::BlockDesc>(0);
-  for (size_t i = 0; i < main_block_desc.VarsSize(); ++i) {
-    auto &var = *main_block_desc.GetVar<cpp::VarDesc>(i);
-    if (var.Name() == "feed" || var.Name() == "fetch" || !var.Persistable())
+#ifdef LITE_WITH_NPU
+  for (size_t i = 0; i < main_block_desc.OpsSize(); ++i) {
+    auto &op = *main_block_desc.GetOp<cpp::OpDesc>(i);
+    if (op.Type() != "graph_op") {
       continue;
-    const std::string path = model_dir + "/" + var.Name();
-    SaveParamNaive(path, exec_scope, var.Name());
+    }
+    auto model_name = op.GetAttr<std::string>("model_name");
+    std::string file_path = model_dir + "/" + model_name;
+    CHECK(npu::BuildNPUClient(file_path, model_name))
+        << "NPU model load failed!";
   }
-  VLOG(4) << "Save naive buffer model in '" << model_dir << "'' successfully";
+#endif
+
+  VLOG(4) << "Load naive buffer model in '" << model_dir << "' successfully";
 }
 
 }  // namespace lite

@@ -39,6 +39,9 @@ node_map_type ActConverter(const std::shared_ptr<lite::OpLite> act_op,
   auto x_var_name = op_info->Input("X").front();
   CHECK(inputs_map.count(x_var_name));
   output_node->set_input_x(*inputs_map.at(x_var_name));
+  OpList::Global().add(inputs_map.at(x_var_name));
+  OpList::Global().add(output_node);
+
   // set attributes
   int act_mode = 1;
   if (act_type == "sigmod") {

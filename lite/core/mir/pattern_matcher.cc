@@ -20,6 +20,7 @@
 #include "lite/core/mir/dot.h"
 #include "lite/core/mir/pattern_matcher.h"
 #include "lite/core/op_lite.h"
+#include "lite/utils/string.h"
 
 namespace paddle {
 namespace lite {
@@ -284,9 +285,10 @@ void PatternMatcher::UniquePatterns(
     // Sort the items in the sub-graph, and transform to a string key.
     std::vector<std::pair<PMNode *, Node *>> sorted_keys(g.begin(), g.end());
     std::sort(sorted_keys.begin(), sorted_keys.end(), GraphItemLessThan());
-    std::stringstream ss;
+    STL::stringstream ss;
     for (auto &item : sorted_keys) {
-      ss << item.first << ":" << item.second;
+      ss << reinterpret_cast<size_t>(item.first) << ":"
+         << reinterpret_cast<size_t>(item.second);
     }
     auto key = hasher(ss.str());
     if (!set.count(key)) {

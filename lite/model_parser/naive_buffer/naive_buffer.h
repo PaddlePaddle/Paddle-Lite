@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #pragma once
-#include <fstream>
 #include <memory>
 #include <string>
 #include <vector>

@@ -14,9 +14,10 @@
 
 #pragma once
 #include <map>
-#include <sstream>
 #include <string>
 #include <vector>
+#include "lite/utils/all.h"
+#include "lite/utils/replace_stl/stream.h"
 
 namespace paddle {
 namespace lite {
@@ -136,7 +137,7 @@ class OpDescAPI {
   T GetAttr(const std::string& name) const;
 
   std::string Repr() const {
-    std::stringstream ss;
+    STL::stringstream ss;
     ss << Type();
     ss << "(";
     for (auto& arg : InputArgumentNames()) {

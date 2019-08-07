@@ -43,6 +43,8 @@ class DeviceInfo {
     clients_.emplace(std::make_pair(name, std::move(client)));
   }
 
+  void Clear() { clients_.clear(); }
+
   hiai::AiModelMngerClient* client(const std::string& model_name) const {
     if (clients_.find(model_name) != clients_.end()) {
       return clients_.at(model_name).get();
@@ -50,6 +52,14 @@ class DeviceInfo {
       return nullptr;
     }
   }
+  std::vector<std::string> AllClientNames() {
+    std::vector<std::string> names;
+    for (auto& i : clients_) {
+      names.push_back(i.first);
+    }
+    return names;
+  }
+
   int freq_level() { return freq_level_; }
   int framework_type() { return framework_type_; }
   int model_type() { return model_type_; }
@@ -78,15 +88,22 @@ class OpList {
   std::vector<std::shared_ptr<ge::Operator>> lists_;
 };
 
+bool SaveNPUModel(const void* om_model_data,
+                  const size_t om_model_size,
+                  const std::string& om_file_path);
+
+// If build from inputs and outputs will save the npu offline model
 bool BuildNPUClient(std::vector<ge::Operator>& inputs,   // NOLINT
                     std::vector<ge::Operator>& outputs,  // NOLINT
-                    const string& name);
+                    const std::string& name);
 
-bool BuildNPUClient(const string& om_model_file_path, const string& name);
+// If build from path will not save the npu offline model
+bool BuildNPUClient(const std::string& om_model_file_path,
+                    const std::string& name);
 
 bool BuildNPUClient(const void* om_model_data,
                     const size_t om_model_size,
-                    const string& name);
+                    const std::string& name);
 
 }  // namespace npu
 }  // namespace lite

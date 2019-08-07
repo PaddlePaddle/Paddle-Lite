@@ -145,18 +145,25 @@ void gemm_batch_bias(const int batch_size,
   }
 }
 
-void PrintData(std::string name, float* a, const int rows, const int cols) {
+void PrintData(std::string name,
+               float* a,
+               const int rows,
+               const int cols,
+               const int batch_size = 1) {
   std::cout << "==== " << name << " ====" << std::endl;
-  for (int r = 0; r < rows; ++r) {
-    for (int c = 0; c < cols; ++c) {
-      std::cout << " " << a[r * cols + c];
+  for (int b = 0; b < batch_size; ++b) {
+    std::cout << "-- bidx = " << b << " --" << std::endl;
+    for (int r = 0; r < rows; ++r) {
+      for (int c = 0; c < cols; ++c) {
+        std::cout << " " << a[b * rows * cols + r * cols + c];
+      }
+      std::cout << std::endl;
     }
-    std::cout << std::endl;
   }
 }
 
 // #define PRINT_RESULT
-// #define LOOP_TEST
+#define LOOP_TEST
 TEST(conv2d, compute_conv2d_1x1) {
   // conv2d 1x1 note
   // kernel/filter size = 1x1, group = 1, pad = 0, stride = 1, dilation = 1
@@ -171,28 +178,40 @@ TEST(conv2d, compute_conv2d_1x1) {
   const int pad = 0;
   const int group = 1;
   const int dilation = 1;
+  int loop_cnt = 0;
 
 #ifdef LOOP_TEST
   for (int batch_size = 1; batch_size < 4; ++batch_size) {
-    for (int oc = 1; oc < 213; oc += 71) {         // m
-      for (int ih = 1; ih < 123; ih += 31) {       // ih
-        for (int iw = 1; iw < 123; iw += 31) {     // iw
-          for (int ic = 1; ic < 123; ic += 121) {  // k
+    for (int oc = 1; oc < 10; oc += 1) {                       // m
+      for (int ih = 1; ih < 9; ih += 1) {                      // ih
+        /*int iw = ih;*/ for (int iw = 1; iw < 10; iw += 1) {  // iw
+          for (int ic = 1; ic < 10; ic += 1) {                 // k
+            for (bool bias_flag : {true /*, false*/}) {
+              for (bool relu_flag : {true /*, false*/}) {
 #else
   // groups:1 stride_h:1 stride_w:1 pad_h:0 pad_w:0 kernel_h:1 kernel_h:1
   // x_dims:1 32 112 112
   // output_dims:1 64 112 112
   // filter_dims:64 32 1 1
+  const bool bias_flag = true;
+  const bool relu_flag = true;
   const int batch_size = 8;
   const int oc = 64;
   const int ih = 112;
   const int iw = 112;
   const int ic = 32;
 #endif
-            for (bool bias_flag : {true, false}) {
-              for (bool relu_flag : {true, false}) {
                 const int oh = ih;
                 const int ow = iw;
+
+                const int m = oc;
+                const int n = ih * iw;
+                const int k = ic;
+                LOG(INFO) << "loop_cnt=" << ++loop_cnt << " bs=" << batch_size
+                          << " m=oc=" << m << " n=ih*iw=" << n << " k=ic=" << ic
+                          << " relu_fuse=" << relu_flag
+                          << " bias_flag=" << bias_flag;
+
                 auto kernels =
                     KernelRegistry::Global().Create("conv2d",
                                                     TARGET(kOpenCL),
@@ -218,6 +237,9 @@ TEST(conv2d, compute_conv2d_1x1) {
                 context->As<OpenCLContext>().CopySharedTo(
                     &(conv_context->As<OpenCLContext>()));
                 kernel->SetContext(std::move(conv_context));
+                // a: filter_d ==> <m, k> <=> <oc, ic>
+                // b: x_d      ==> <k, n> <=> <ic, ih*iw>
+                // c: output_d ==> <m, n> <=> <oc, ih*iw>
 
                 const DDim x_dim =
                     DDim(std::vector<DDim::value_type>{batch_size, ic, ih, iw});
@@ -254,8 +276,13 @@ TEST(conv2d, compute_conv2d_1x1) {
                 }
                 auto* mapped_bias = static_cast<float*>(TargetWrapperCL::Map(
                     bias_data, 0, sizeof(float) * bias_dim.production()));
+                float* bias_cpu_data =
+                    bias_flag ? reinterpret_cast<float*>(calloc(
+                                    sizeof(float), bias_dim.production()))
+                              : nullptr;
                 for (int i = 0; i < bias_dim.production(); ++i) {
                   mapped_bias[i] = static_cast<int>(dist(engine));
+                  bias_cpu_data[i] = mapped_bias[i];
                 }
 
                 // run opencl kernel
@@ -269,6 +296,13 @@ TEST(conv2d, compute_conv2d_1x1) {
                              "tensor. ---";
                   auto& event = *(it->second);
                   event.wait();
+                  double start_nanos =
+                      event.getProfilingInfo<CL_PROFILING_COMMAND_START>();
+                  double stop_nanos =
+                      event.getProfilingInfo<CL_PROFILING_COMMAND_END>();
+                  double elapsed_micros = (stop_nanos - start_nanos) / 1000.0;
+                  LOG(INFO) << "Kernel Run Cost Time: " << elapsed_micros
+                            << " us.";
                 } else {
                   LOG(FATAL) << "Could not find the sync event for the target "
                                 "cl tensor.";
@@ -276,92 +310,135 @@ TEST(conv2d, compute_conv2d_1x1) {
 
                 // run cpu ref
                 auto* out_ref_data = out_ref.mutable_data<float>(TARGET(kARM));
-                conv_basic(mapped_x,
-                           out_ref_data,
-                           batch_size,
-                           oc,
-                           oh,
-                           ow,
-                           ic,
-                           ih,
-                           iw,
-                           mapped_filter,
-                           mapped_bias,
-                           group,
-                           ksize,
-                           ksize,
-                           stride,
-                           stride,
-                           dilation,
-                           dilation,
-                           pad,
-                           pad,
-                           bias_flag,
-                           relu_flag);
+                conv_basic<float, float>(mapped_x,
+                                         out_ref_data,
+                                         batch_size,
+                                         oc,
+                                         oh,
+                                         ow,
+                                         ic,
+                                         ih,
+                                         iw,
+                                         mapped_filter,
+                                         bias_cpu_data,  // mapped_bias,
+                                         group,
+                                         ksize,
+                                         ksize,
+                                         stride,
+                                         stride,
+                                         dilation,
+                                         dilation,
+                                         pad,
+                                         pad,
+                                         bias_flag,
+                                         relu_flag);
 
                 auto* out_data = out.mutable_data<float, cl::Buffer>();
                 auto* mapped_out = static_cast<float*>(TargetWrapperCL::Map(
                     out_data, 0, sizeof(float) * out_dim.production()));
 
 #ifdef PRINT_RESULT
-                PrintData("mapped_x", static_cast<float*>(mapped_x), m, k);
+                // a: filter_d ==> <m, k> <=> <oc, ic>
+                // b: x_d      ==> <k, n> <=> <ic, ih*iw>
+                // c: output_d ==> <m, n> <=> <oc, ih*iw>
                 PrintData(
-                    "mapped_filter", static_cast<float*>(mapped_filter), k, n);
+                    "mapped_filter", static_cast<float*>(mapped_filter), m, k);
+                PrintData("mapped_x",
+                          static_cast<float*>(mapped_x),
+                          k,
+                          n,
+                          batch_size);
                 PrintData(
-                    "mapped_bias", static_cast<float*>(mapped_bias), 1, n);
-                PrintData(
-                    "out_ref_data", static_cast<float*>(out_ref_data), m, n);
-                PrintData("mapped_out", static_cast<float*>(mapped_out), m, n);
+                    "mapped_bias", static_cast<float*>(mapped_bias), m, 1);
+                std::cout << "mapped_bias[0]:" << mapped_bias[0] << std::endl;
+                PrintData("out_ref_data",
+                          static_cast<float*>(out_ref_data),
+                          m,
+                          n,
+                          batch_size);
+                PrintData("mapped_out",
+                          static_cast<float*>(mapped_out),
+                          m,
+                          n,
+                          batch_size);
 #endif
 
                 for (int i = 0; i < out_dim.production(); i++) {
                   EXPECT_NEAR(mapped_out[i], out_ref_data[i], 1e-6);
+                  if (abs(mapped_out[i] - out_ref_data[i]) > 1e-6) {
+                    LOG(FATAL) << "error idx:" << i;
+                  }
                 }
 
+                free(bias_cpu_data);
                 TargetWrapperCL::Unmap(x_data, mapped_x);
                 TargetWrapperCL::Unmap(filter_data, mapped_filter);
                 TargetWrapperCL::Unmap(bias_data, mapped_bias);
                 TargetWrapperCL::Unmap(out_data, mapped_out);
-              }
-            }
 #ifdef LOOP_TEST
-          }  // ic
-        }    // iw
-      }      // ih
-    }        // oc
-  }          // batch_size
+              }  // relu
+            }    // bias
+          }      // ic
+        }        // iw
+      }          // ih
+    }            // oc
+  }              // batch_size
 #endif
 }
+#undef LOOP_TEST
+#undef PRINT_RESULT
 
+// #define PRINT_RESULT
+#define LOOP_TEST
 TEST(conv2d, compute_conv2d_gemm) {
   std::unique_ptr<KernelContext> context(new KernelContext);
   context->As<OpenCLContext>().InitOnce();
   // x_dims:1 3 224 224
   // output_dims:1 32 112 112
   // filter_dims:32 3 3 3
-  const int ksize = 3;
+  int ksize = 3;
   const int stride = 2;
   const int pad = 1;
   const int group = 1;
   const int dilation = 1;
+  int loop_cnt = 0;
 
 #ifdef LOOP_TEST
-  for (int batch_size = 1; batch_size < 4; ++batch_size) {
-    for (int oc = 1; oc < 213; oc += 71) {         // m
-      for (int ih = 1; ih < 123; ih += 31) {       // ih
-        for (int iw = 1; iw < 123; iw += 31) {     // iw
-          for (int ic = 1; ic < 123; ic += 121) {  // k
-#else
-            const int batch_size = 8;
-            const int oc = 32;
-            const int ih = 224;
-            const int iw = 224;
-            const int ic = 3;
-#endif
+  for (int batch_size = 1; batch_size < 3; ++batch_size) {
+    for (int oc = 1; oc < 10; oc += 1) {        // m
+      for (int ih = 1; ih < 10; ih += 1) {      // ih
+        for (int iw = 1; iw < 10; iw += 1) {    // iw
+          for (int ic = 1; ic < 10; ic += 1) {  // k
             for (bool bias_flag : {true, false}) {
               for (bool relu_flag : {true, false}) {
+#else
+
+                const int batch_size = 8;
+                const int oc = 32;
+                const int ih = 224;
+                const int iw = 224;
+                const int ic = 3;
+                const bool bias_flag = true;
+                const bool relu_flag = true;
+
+#endif
                 const int oh = (ih + 2 * pad - ksize) / stride + 1;
                 const int ow = (iw + 2 * pad - ksize) / stride + 1;
+                // a: filter_d ==> <m, k> <=> <oc, ic>
+                // b: x_d      ==> <k, n> <=> <ic, ih*iw>
+                // c: output_d ==> <m, n> <=> <oc, ih*iw>
+
+                int m = oc;
+                int k = ic * ksize * ksize;
+                int n = oc;
+                LOG(INFO) << "bs=" << batch_size << " oc=" << oc << " ic=" << ic
+                          << " ih=" << ih << " iw=" << iw << " oh=" << oh
+                          << " ow=" << ow << " bias_flag=" << bias_flag
+                          << " relu_flag=" << relu_flag;
+                LOG(INFO) << "m=oc=" << oc
+                          << " k=ic*ksize*ksize=" << ic * ksize * ksize
+                          << " n=oc=" << oc;
+
                 auto kernels =
                     KernelRegistry::Global().Create("conv2d",
                                                     TARGET(kOpenCL),
@@ -438,6 +515,13 @@ TEST(conv2d, compute_conv2d_gemm) {
                              "tensor. ---";
                   auto& event = *(it->second);
                   event.wait();
+                  double start_nanos =
+                      event.getProfilingInfo<CL_PROFILING_COMMAND_START>();
+                  double stop_nanos =
+                      event.getProfilingInfo<CL_PROFILING_COMMAND_END>();
+                  double elapsed_micros = (stop_nanos - start_nanos) / 1000.0;
+                  LOG(INFO) << "Kernel Run Cost Time: " << elapsed_micros
+                            << " us.";
                 } else {
                   LOG(FATAL) << "Could not find the sync event for the target "
                                 "cl tensor.";
@@ -445,59 +529,70 @@ TEST(conv2d, compute_conv2d_gemm) {
 
                 // run cpu ref
                 auto* out_ref_data = out_ref.mutable_data<float>(TARGET(kARM));
-                conv_basic(mapped_x,
-                           out_ref_data,
-                           batch_size,
-                           oc,
-                           oh,
-                           ow,
-                           ic,
-                           ih,
-                           iw,
-                           mapped_filter,
-                           mapped_bias,
-                           group,
-                           ksize,
-                           ksize,
-                           stride,
-                           stride,
-                           dilation,
-                           dilation,
-                           pad,
-                           pad,
-                           bias_flag,
-                           relu_flag);
+                conv_basic<float, float>(mapped_x,
+                                         out_ref_data,
+                                         batch_size,
+                                         oc,
+                                         oh,
+                                         ow,
+                                         ic,
+                                         ih,
+                                         iw,
+                                         mapped_filter,
+                                         mapped_bias,
+                                         group,
+                                         ksize,
+                                         ksize,
+                                         stride,
+                                         stride,
+                                         dilation,
+                                         dilation,
+                                         pad,
+                                         pad,
+                                         bias_flag,
+                                         relu_flag);
                 auto* out_data = out.mutable_data<float, cl::Buffer>();
                 auto* mapped_out = static_cast<float*>(TargetWrapperCL::Map(
                     out_data, 0, sizeof(float) * out_dim.production()));
 
 #ifdef PRINT_RESULT
-                PrintData("mapped_x", static_cast<float*>(mapped_x), m, k);
                 PrintData(
                     "mapped_filter", static_cast<float*>(mapped_filter), k, n);
+                PrintData("mapped_x",
+                          static_cast<float*>(mapped_x),
+                          batch_size * m,
+                          k);
                 PrintData(
                     "mapped_bias", static_cast<float*>(mapped_bias), 1, n);
-                PrintData(
-                    "out_ref_data", static_cast<float*>(out_ref_data), m, n);
-                PrintData("mapped_out", static_cast<float*>(mapped_out), m, n);
+                PrintData("out_ref_data",
+                          static_cast<float*>(out_ref_data),
+                          batch_size * m,
+                          n);
+                PrintData("mapped_out",
+                          static_cast<float*>(mapped_out),
+                          batch_size * m,
+                          n);
 #endif
 
                 for (int i = 0; i < out_dim.production(); i++) {
                   EXPECT_NEAR(mapped_out[i], out_ref_data[i], 1e-6);
+                  if (abs(mapped_out[i] - out_ref_data[i]) > 1e-6) {
+                    LOG(FATAL) << "error output idx:" << i;
+                  }
                 }
 
                 TargetWrapperCL::Unmap(x_data, mapped_x);
                 TargetWrapperCL::Unmap(filter_data, mapped_filter);
                 TargetWrapperCL::Unmap(bias_data, mapped_bias);
                 TargetWrapperCL::Unmap(out_data, mapped_out);
-              }
-            }
 #ifdef LOOP_TEST
-          }  // ic
-        }    // iw
-      }      // ih
-    }        // oc
-  }          // batch_size
+              }  // with_relu
+            }    // with_bias
+          }      // ic
+        }        // iw
+      }          // ih
+    }            // oc
+  }              // batch_size
 #endif
 }
 

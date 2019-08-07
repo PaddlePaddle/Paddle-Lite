@@ -220,6 +220,27 @@ build:mobile_model_inceptionv4:
             - ~/.ccache
             - $CI_PROJECT_DIR/build_mobile_model_inceptionv4
 
+# build:mobile_publish:
+#     tags:
+#         - lite
+#     stage: build_mobile
+#     image: $MOBILE_LITE_DOCKER_IMAGE
+# 
+#     script:
+#         - export CCACHE_DIR=$CI_PROJECT_DIR/mobile_publish
+#         - ./lite/tools/ci_build.sh mobile_publish
+# 
+#     dependencies:
+#         - build:server
+#         - check:prebuilt
+# 
+#     cache:
+#         key: mobile_thirdparty
+#         paths:
+#             - build.lite.android.armv8.gcc
+#             - ~/.ccache
+#             - $CI_PROJECT_DIR/mobile_publish
+
 approval_check:
   tags:
     - lite

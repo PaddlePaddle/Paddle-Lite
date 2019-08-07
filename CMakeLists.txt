@@ -43,6 +43,7 @@ option(WITH_AVX         "Compile PaddlePaddle with AVX intrinsics"      ${AVX_FO
 option(WITH_PYTHON      "Compile PaddlePaddle with python interpreter"  ON)
 option(WITH_TESTING     "Compile PaddlePaddle with unit testing"        OFF)
 option(WITH_MKL         "Compile PaddlePaddle with MKL support."        ${AVX_FOUND})
+option(WITH_ARM_DOTPROD "Compile PaddlePaddle with ARM dot production"  ON)
 option(WITH_SYSTEM_BLAS   "Use system blas library"           OFF)
 option(WITH_DISTRIBUTE  "Compile with distributed support"              OFF)
 option(WITH_BRPC_RDMA     "Use brpc rdma as the rpc protocal"           OFF)
@@ -55,17 +56,17 @@ option(REPLACE_ENFORCE_GLOG "Replace PADDLE_ENFORCE with glog/CHECK for better d
 # TODO(Superjomn) Remove WITH_ANAKIN option if not needed latter.
 if(ANDROID OR IOS OR ARMLINUX)
     set(WITH_GPU OFF CACHE STRING
-        "Disable GPU when cross-compiling for Android and iOS" FORCE)
+            "Disable GPU when cross-compiling for Android and iOS" FORCE)
     set(WITH_DSO OFF CACHE STRING
-        "Disable DSO when cross-compiling for Android and iOS" FORCE)
+            "Disable DSO when cross-compiling for Android and iOS" FORCE)
     set(WITH_AVX OFF CACHE STRING
-        "Disable AVX when cross-compiling for Android and iOS" FORCE)
+            "Disable AVX when cross-compiling for Android and iOS" FORCE)
     set(WITH_PYTHON OFF CACHE STRING
-        "Disable PYTHON when cross-compiling for Android and iOS" FORCE)
+            "Disable PYTHON when cross-compiling for Android and iOS" FORCE)
     set(WITH_RDMA OFF CACHE STRING
-        "Disable RDMA when cross-compiling for Android and iOS" FORCE)
+            "Disable RDMA when cross-compiling for Android and iOS" FORCE)
     set(WITH_MKL OFF CACHE STRING
-        "Disable MKL when cross-compiling for Android and iOS" FORCE)
+            "Disable MKL when cross-compiling for Android and iOS" FORCE)
 endif()
 
 # for lite, both server and mobile framework.
@@ -107,7 +108,7 @@ if (WITH_LITE AND LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
     message(STATUS "Building the mobile framework")
     include(cross_compiling/postproject)
     include(cross_compiling/npu) # check and prepare NPU DDK
-    
+
     # include the necessary thirdparty dependencies
     include(external/gflags)    # download, build, install gflags
 

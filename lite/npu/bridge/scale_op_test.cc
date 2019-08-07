@@ -86,19 +86,17 @@ void test_scale(int bs,
   scale_op_desc.SetAttr("scale", half2float(float2half(scale)));
   scale_op_desc.SetAttr("bias", half2float(float2half(bias)));
 
-  std::shared_ptr<operators::ScaleOp> scale_op =
-      std::make_shared<operators::ScaleOp>(scale_op_desc.Type());
+  auto scale_op = std::make_shared<operators::ScaleOp>(scale_op_desc.Type());
   scale_op->SetValidPlaces({Place{TARGET(kHost), PRECISION(kFloat)},
                             Place{TARGET(kARM), PRECISION(kFloat)}});
-  scale_op->Attach(scale_op_desc, &scope);
-  scale_op->CheckShape();
-  scale_op->InferShape();
+  CHECK(scale_op->Attach(scale_op_desc, &scope));
+  CHECK(scale_op->CheckShape());
+  CHECK(scale_op->InferShape());
 
   // convert scale op and build IR graph
   ge::TensorDesc x_desc(
       ge::Shape(x->dims().Vectorize()), ge::FORMAT_NCHW, ge::DT_FLOAT);
-  std::shared_ptr<ge::op::Data> x_node =
-      std::make_shared<ge::op::Data>(x_var_name);
+  auto x_node = std::make_shared<ge::op::Data>(x_var_name);
   x_node->update_input_desc_x(x_desc);
   node_map_type inputs_map;
   inputs_map[x_var_name] = x_node;
@@ -109,22 +107,22 @@ void test_scale(int bs,
   // compile IR graph to om model
   std::vector<ge::Operator> graph_inputs{*inputs_map[x_var_name]};
   std::vector<ge::Operator> graph_outputs{*outputs_map[out_var_name]};
-  std::string graph_name(UniqueName("test_scale") + ".om");
-  CHECK(npu::BuildNPUClient(graph_inputs, graph_outputs, graph_name));
+  std::string model_name(UniqueName("test_scale") + ".om");
+  CHECK(npu::BuildNPUClient(graph_inputs, graph_outputs, model_name));
 
   // create graph op
   cpp::OpDesc graph_op_desc;
   graph_op_desc.SetType("graph_op");
-  graph_op_desc.SetInput("Input", {x_var_name});
-  graph_op_desc.SetOutput("Output", {out_var_name});
-  graph_op_desc.SetAttr("graph_name", graph_name);
+  graph_op_desc.SetInput("Inputs", {x_var_name});
+  graph_op_desc.SetOutput("Outputs", {out_var_name});
+  graph_op_desc.SetAttr("model_name", model_name);
 
-  std::shared_ptr<operators::GraphOpLite> graph_op =
+  auto graph_op =
       std::make_shared<operators::GraphOpLite>(graph_op_desc.Type());
   graph_op->SetValidPlaces({Place{TARGET(kNPU), PRECISION(kFloat)}});
-  graph_op->Attach(graph_op_desc, &scope);
-  graph_op->CheckShape();
-  graph_op->InferShape();
+  CHECK(graph_op->Attach(graph_op_desc, &scope));
+  CHECK(graph_op->CheckShape());
+  CHECK(graph_op->InferShape());
 
   // create graph op kernel
   auto graph_kernels =
@@ -148,6 +146,10 @@ void test_scale(int bs,
   for (int i = 0; i < out->dims().production(); i++) {
     EXPECT_NEAR(out_data[i], out_ref_data[i], 1e-5);
   }
+
+  // model release
+  npu::OpList::Global().clear();
+  npu::DeviceInfo::Global().Clear();
 }
 
 TEST(NPUBridges, scale) {

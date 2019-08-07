@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #pragma once
+#include <string>
 
 namespace paddle {
 namespace lite {
@@ -35,8 +36,8 @@ void act_prelu(const T* din,
                int outer_size,
                int channel_size,
                int inner_size,
-               bool channel_shared,
-               const float* channel_slope,
+               std::string mode,
+               const float* alpha_data,
                int threads);
 
 template <typename T>

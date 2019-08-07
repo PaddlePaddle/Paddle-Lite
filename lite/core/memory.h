@@ -13,7 +13,9 @@
 // limitations under the License.
 
 #pragma once
+#include "lite/api/paddle_place.h"
 #include "lite/core/target_wrapper.h"
+#include "lite/utils/macros.h"
 
 #ifdef LITE_WITH_OPENCL
 #include "lite/opencl/target_wrapper.h"
@@ -28,7 +30,7 @@ LITE_API void* TargetMalloc(TargetType target, size_t size);
 
 // Free memory for a specific Target. All the targets should be an element in
 // the `switch` here.
-void TargetFree(TargetType target, void* data);
+void LITE_API TargetFree(TargetType target, void* data);
 
 // Copy a buffer from host to another target.
 void TargetCopy(TargetType target, void* dst, const void* src, size_t size);

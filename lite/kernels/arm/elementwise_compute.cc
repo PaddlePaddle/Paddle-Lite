@@ -14,12 +14,31 @@
 
 #include "lite/kernels/arm/elementwise_compute.h"
 #include <string>
+#include <vector>
 #include "lite/arm/math/funcs.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace arm {
+
+inline DDim trim_trailing_singular_dims(const DDim& dims) {
+  // Remove trailing dimensions of size 1 for y
+  auto actual_dims_size = dims.size();
+  for (; actual_dims_size != 0; --actual_dims_size) {
+    if (dims[actual_dims_size - 1] != 1) break;
+  }
+
+  std::vector<int64_t> trim_dims;
+  trim_dims.resize(actual_dims_size);
+  for (int i = 0; i < actual_dims_size; ++i) {
+    trim_dims[i] = dims[i];
+  }
+  if (trim_dims.size() == 0) {
+    return DDim({1});
+  }
+  return DDim(trim_dims);
+}
 
 inline bool is_broadcast(const DDim& x_dims,
                          const DDim& y_dims,
@@ -30,7 +49,8 @@ inline bool is_broadcast(const DDim& x_dims,
   if (axis < 0) {
     axis = x_dims.size() - y_dims.size();
   }
-  if (x_dims.size() == y_dims.size()) {
+  DDim y_dim_trim = trim_trailing_singular_dims(y_dims);
+  if (x_dims.size() == y_dim_trim.size()) {
     return false;
   }
   *pre = 1;
@@ -39,11 +59,12 @@ inline bool is_broadcast(const DDim& x_dims,
   for (int i = 0; i < axis; ++i) {
     (*pre) *= x_dims[i];
   }
-  for (int i = 0; i < y_dims.size(); ++i) {
-    CHECK_EQ(x_dims[i + axis], y_dims[i]) << "Broadcast dimension mismatch.";
-    (*n) *= y_dims[i];
+  for (int i = 0; i < y_dim_trim.size(); ++i) {
+    CHECK_EQ(x_dims[i + axis], y_dim_trim[i])
+        << "Broadcast dimension mismatch.";
+    (*n) *= y_dim_trim[i];
   }
-  for (int i = axis + y_dims.size(); i < x_dims.size(); ++i) {
+  for (int i = axis + y_dim_trim.size(); i < x_dims.size(); ++i) {
     (*post) *= x_dims[i];
   }
   return true;

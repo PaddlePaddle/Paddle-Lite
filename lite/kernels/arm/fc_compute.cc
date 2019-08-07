@@ -39,6 +39,7 @@ void FcCompute::PrepareForRun() {
 
   m_ = x_dims.Slice(0, param.in_num_col_dims).production();
   k_ = x_dims.Slice(param.in_num_col_dims, x_dims.size()).production();
+  CHECK_EQ(k_, w_dims[0]);
   n_ = w_dims[1];
   CHECK_EQ(k_, static_cast<int>(w_dims[0]));
 
@@ -57,12 +58,6 @@ void FcCompute::PrepareForRun() {
       }
     }
   }
-
-  if (m_ > 1) {
-    int hblock = lite::arm::math::get_hblock(ctx.arch());
-    int m_round = hblock * ((m_ + hblock - 1) / hblock);
-    ctx.ExtendWorkspace(m_round * k_ * sizeof(float));
-  }
 }
 
 void FcCompute::Run() {
@@ -75,24 +70,23 @@ void FcCompute::Run() {
 
   auto& ctx = this->ctx_->template As<ARMContext>();
   if (m_ > 1) {
-    float* packed_in =
-        ctx.workspace_data<float>() + ctx.llc_size() / sizeof(float);
-    lite::arm::math::prepackA(
-        packed_in, i_data, 1.f, k_, 0, m_, 0, k_, false, &ctx);
-    lite::arm::math::sgemm_prepack(false,
-                                   m_,
-                                   n_,
-                                   k_,
-                                   packed_in,
-                                   w_data,
-                                   n_,
-                                   0.f,
-                                   o_data,
-                                   n_,
-                                   b_data,
-                                   false,
-                                   false,
-                                   &ctx);
+    lite::arm::math::sgemm(false,
+                           false,
+                           m_,
+                           n_,
+                           k_,
+                           1.f,
+                           i_data,
+                           k_,
+                           w_data,
+                           n_,
+                           0.f,
+                           o_data,
+                           n_,
+                           b_data,
+                           false,
+                           false,
+                           &ctx);
     if (param.bias) {
       CHECK_EQ(param.bias->numel(), n_);
       lite::arm::math::fill_bias_fc(o_data, b_data, m_, n_);
@@ -180,7 +174,8 @@ void FcComputeInt8<Ptype_out>::Run() {
     int8_t* packed_in =
         static_cast<int8_t*>(ctx.template workspace_data<int8_t>()) +
         ctx.llc_size() / sizeof(int8_t);
-    lite::arm::math::prepackA_int8(packed_in, i_data, k_, 0, m_, 0, k_, false);
+    lite::arm::math::prepackA_int8(
+        packed_in, i_data, k_, 0, m_, 0, k_, false, &ctx);
     lite::arm::math::gemm_prepack_int8(packed_in,
                                        w_data,
                                        b_data,

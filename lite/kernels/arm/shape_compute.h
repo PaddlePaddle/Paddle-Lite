@@ -12,28 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/mir/fusion/conv_elementwise_add_relu_fuse_pass.h"
-#include <memory>
-#include <vector>
-#include "lite/core/mir/fusion/conv_elementwise_add_relu_fuser.h"
-#include "lite/core/mir/pass_registry.h"
+#pragma once
+#include "lite/core/kernel.h"
+#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
-namespace mir {
+namespace kernels {
+namespace arm {
 
-void ConvElementwiseAddReLUFusePass::Apply(
-    const std::unique_ptr<SSAGraph>& graph) {
-  fusion::ConvElementwiseAddReLUFuser fuser("conv2d");
-  fuser(graph.get());
+class ShapeCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+ public:
+  void Run() override;
 
-  fusion::ConvElementwiseAddReLUFuser depthwise_fuser("depthwise_conv2d");
-  depthwise_fuser(graph.get());
-}
+  virtual ~ShapeCompute() = default;
+};
 
-}  // namespace mir
+}  // namespace arm
+}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
-
-REGISTER_MIR_PASS(lite_conv_elementwise_add_act_fuse_pass,
-                  paddle::lite::mir::ConvElementwiseAddReLUFusePass);

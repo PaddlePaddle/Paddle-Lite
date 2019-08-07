@@ -148,6 +148,7 @@ void test_conv(int bs,
 
   // get group size and input&filter shape
   int groups = 1;
+  depthwise &= ks != 1;
   if (depthwise) {  // depthwise convolution ?
     groups = oc = ic;
   }
@@ -170,7 +171,7 @@ void test_conv(int bs,
 
   // create conv2d op
   cpp::OpDesc conv_op_desc;
-  conv_op_desc.SetType("conv2d");
+  conv_op_desc.SetType(depthwise ? "depthwise_conv2d" : "conv2d");
   conv_op_desc.SetInput("Input", {input_var_name});
   conv_op_desc.SetInput("Filter", {filter_var_name});
   conv_op_desc.SetOutput("Output", {output_var_name});
@@ -178,9 +179,9 @@ void test_conv(int bs,
   conv_op_desc.SetAttr("strides", std::vector<int32_t>({stride, stride}));
   conv_op_desc.SetAttr("paddings", std::vector<int32_t>({padding, padding}));
   conv_op_desc.SetAttr("groups", groups);
-  conv_op_desc.SetAttr("fuse_relu", fuse_relu);
+  conv_op_desc.SetAttr("fuse_relu", static_cast<bool>(fuse_relu));
   if (has_bias) {
-    bias->Resize({oc});
+    bias->Resize({bs, oc, 1, 1});
     for (int i = 0; i < bias->dims().production(); i++) {
       float rand_value = half2float(float2half(rand_dist(rand_eng) * 0.01f));
       bias->mutable_data<float>()[i] = rand_value;
@@ -188,19 +189,17 @@ void test_conv(int bs,
     conv_op_desc.SetInput("Bias", {bias_var_name});
   }
 
-  std::shared_ptr<operators::ConvOpLite> conv_op =
-      std::make_shared<operators::ConvOpLite>(conv_op_desc.Type());
+  auto conv_op = std::make_shared<operators::ConvOpLite>(conv_op_desc.Type());
   conv_op->SetValidPlaces({Place{TARGET(kHost), PRECISION(kFloat)},
                            Place{TARGET(kARM), PRECISION(kFloat)}});
-  conv_op->Attach(conv_op_desc, &scope);
-  conv_op->CheckShape();
-  conv_op->InferShape();
+  CHECK(conv_op->Attach(conv_op_desc, &scope));
+  CHECK(conv_op->CheckShape());
+  CHECK(conv_op->InferShape());
 
   // convert conv2d op and build IR graph
   ge::TensorDesc input_desc(
       ge::Shape(input->dims().Vectorize()), ge::FORMAT_NCHW, ge::DT_FLOAT);
-  std::shared_ptr<ge::op::Data> input_node =
-      std::make_shared<ge::op::Data>(input_var_name);
+  auto input_node = std::make_shared<ge::op::Data>(input_var_name);
   input_node->update_input_desc_x(input_desc);
   node_map_type inputs_map;
   inputs_map[input_var_name] = input_node;
@@ -211,22 +210,22 @@ void test_conv(int bs,
   // compile IR graph to om model
   std::vector<ge::Operator> graph_inputs{*inputs_map[input_var_name]};
   std::vector<ge::Operator> graph_outputs{*outputs_map[output_var_name]};
-  std::string graph_name(UniqueName("test_conv2d") + ".om");
-  CHECK(npu::BuildNPUClient(graph_inputs, graph_outputs, graph_name));
+  std::string model_name(UniqueName("test_conv2d") + ".om");
+  CHECK(npu::BuildNPUClient(graph_inputs, graph_outputs, model_name));
 
   // create graph op
   cpp::OpDesc graph_op_desc;
   graph_op_desc.SetType("graph_op");
-  graph_op_desc.SetInput("Input", {input_var_name});
-  graph_op_desc.SetOutput("Output", {output_var_name});
-  graph_op_desc.SetAttr("graph_name", graph_name);
+  graph_op_desc.SetInput("Inputs", {input_var_name});
+  graph_op_desc.SetOutput("Outputs", {output_var_name});
+  graph_op_desc.SetAttr("model_name", model_name);
 
-  std::shared_ptr<operators::GraphOpLite> graph_op =
+  auto graph_op =
       std::make_shared<operators::GraphOpLite>(graph_op_desc.Type());
   graph_op->SetValidPlaces({Place{TARGET(kNPU), PRECISION(kFloat)}});
-  graph_op->Attach(graph_op_desc, &scope);
-  graph_op->CheckShape();
-  graph_op->InferShape();
+  CHECK(graph_op->Attach(graph_op_desc, &scope));
+  CHECK(graph_op->CheckShape());
+  CHECK(graph_op->InferShape());
 
   // create graph op kernel
   auto graph_kernels =
@@ -248,23 +247,37 @@ void test_conv(int bs,
   auto* output_data = output->mutable_data<float>();
   auto* output_ref_data = output_ref->mutable_data<float>();
   for (int i = 0; i < output->dims().production(); i++) {
-    EXPECT_NEAR(output_data[i], output_ref_data[i], 1e-5);
+    EXPECT_NEAR(output_data[i], output_ref_data[i], 1e-1);
   }
+
+  // model release
+  npu::OpList::Global().clear();
+  npu::DeviceInfo::Global().Clear();
 }
 
 TEST(NPUBridges, conv) {
-  for (auto bs : {2}) {
-    for (auto ic : {6}) {
-      for (auto oc : {6}) {
-        for (auto ih : {9}) {
-          for (auto iw : {9}) {
-            for (auto has_bias : {false, true}) {
+#if 0
+  for (auto bs : {1}) {
+    for (auto ic : {3, 6}) {
+      for (auto oc : {6, 9}) {
+        for (auto ih : {14, 28}) {
+          for (auto iw : {14, 28}) {
+            for (auto has_bias : {false /*, true*/}) {
               for (auto fuse_relu : {false /*, true*/}) {
-                for (auto depthwise : {false, true}) {
+                for (auto depthwise : {/* false,*/ true}) {
                   for (auto dilation : {1}) {
                     for (auto stride : {1, 2}) {
-                      for (auto padding : {0, 1, 2}) {
-                        for (auto ks : {1, 3, 5}) {
+                      for (auto padding : {0, 1 /*, 2*/}) {
+                        for (auto ks : {1, 3 /* , 5*/}) {
+                          LOG(INFO)
+                              << "bs: " << bs << " ic: " << ic << " oc: " << oc
+                              << " ih: " << ih << " iw: " << iw
+                              << " has_bias: " << has_bias
+                              << " fuse_relu: " << fuse_relu
+                              << " depthwise: " << depthwise
+                              << " dilation: " << dilation
+                              << " stride: " << stride
+                              << " padding: " << padding << " ks: " << ks;
                           test_conv(bs,
                                     ic,
                                     oc,
@@ -289,6 +302,9 @@ TEST(NPUBridges, conv) {
       }
     }
   }
+#else
+  test_conv(1, 8, 6, 14, 14, false, false, true, 1, 1, 1, 3);
+#endif
 }
 
 }  // namespace bridge

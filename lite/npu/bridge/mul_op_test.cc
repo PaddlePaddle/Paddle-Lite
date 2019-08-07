@@ -103,25 +103,22 @@ void test_mul(
   mul_op_desc.SetAttr("x_num_col_dims", static_cast<int>(x_num_col_dims));
   mul_op_desc.SetAttr("y_num_col_dims", static_cast<int>(y_num_col_dims));
 
-  std::shared_ptr<operators::MulOpLite> mul_op =
-      std::make_shared<operators::MulOpLite>(mul_op_desc.Type());
+  auto mul_op = std::make_shared<operators::MulOpLite>(mul_op_desc.Type());
   mul_op->SetValidPlaces({Place{TARGET(kHost), PRECISION(kFloat)},
                           Place{TARGET(kARM), PRECISION(kFloat)}});
-  mul_op->Attach(mul_op_desc, &scope);
-  mul_op->CheckShape();
-  mul_op->InferShape();
+  CHECK(mul_op->Attach(mul_op_desc, &scope));
+  CHECK(mul_op->CheckShape());
+  CHECK(mul_op->InferShape());
 
   // convert mul op and build IR graph
   ge::TensorDesc x_desc(
       ge::Shape(x->dims().Vectorize()), ge::FORMAT_NCHW, ge::DT_FLOAT);
   ge::TensorDesc y_desc(
       ge::Shape(y->dims().Vectorize()), ge::FORMAT_NCHW, ge::DT_FLOAT);
-  std::shared_ptr<ge::op::Data> x_node =
-      std::make_shared<ge::op::Data>(x_var_name);
-  std::shared_ptr<ge::op::Data> y_node =
-      std::make_shared<ge::op::Data>(y_var_name);
-  x_node->update_input_desc_x(input_x_desc);
-  y_node->update_input_desc_x(input_y_desc);
+  auto x_node = std::make_shared<ge::op::Data>(x_var_name);
+  auto y_node = std::make_shared<ge::op::Data>(y_var_name);
+  x_node->update_input_desc_x(x_desc);
+  y_node->update_input_desc_x(y_desc);
   node_map_type inputs_map;
   inputs_map[x_var_name] = x_node;
   inputs_map[y_var_name] = y_node;
@@ -133,22 +130,22 @@ void test_mul(
   std::vector<ge::Operator> graph_inputs{*inputs_map[x_var_name],
                                          *inputs_map[y_var_name]};
   std::vector<ge::Operator> graph_outputs{*outputs_map[out_var_name]};
-  std::string graph_name(UniqueName("test_mul") + ".om");
-  CHECK(npu::BuildNPUClient(graph_inputs, graph_outputs, graph_name));
+  std::string model_name(UniqueName("test_mul") + ".om");
+  CHECK(npu::BuildNPUClient(graph_inputs, graph_outputs, model_name));
 
   // create graph op
   cpp::OpDesc graph_op_desc;
   graph_op_desc.SetType("graph_op");
-  graph_op_desc.SetInput("Input", {x_var_name});
-  graph_op_desc.SetOutput("Output", {y_var_name});
-  graph_op_desc.SetAttr("graph_name", graph_name);
+  graph_op_desc.SetInput("Inputs", {x_var_name});
+  graph_op_desc.SetOutput("Outputs", {y_var_name});
+  graph_op_desc.SetAttr("model_name", model_name);
 
-  std::shared_ptr<operators::GraphOpLite> graph_op =
+  auto graph_op =
       std::make_shared<operators::GraphOpLite>(graph_op_desc.Type());
   graph_op->SetValidPlaces({Place{TARGET(kNPU), PRECISION(kFloat)}});
-  graph_op->Attach(graph_op_desc, &scope);
-  graph_op->CheckShape();
-  graph_op->InferShape();
+  CHECK(graph_op->Attach(graph_op_desc, &scope));
+  CHECK(graph_op->CheckShape());
+  CHECK(graph_op->InferShape());
 
   // create graph op kernel
   auto graph_kernels =
@@ -172,6 +169,10 @@ void test_mul(
   for (int i = 0; i < out->dims().production(); i++) {
     EXPECT_NEAR(out_data[i], out_ref_data[i], 1e-5);
   }
+
+  // model release
+  npu::OpList::Global().clear();
+  npu::DeviceInfo::Global().Clear();
 }
 
 TEST(NPUBridges, mul) {

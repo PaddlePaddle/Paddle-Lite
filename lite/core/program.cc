@@ -17,6 +17,9 @@
 #include "lite/model_parser/cpp/op_desc.h"
 #include "lite/model_parser/cpp/var_desc.h"
 #include "lite/operators/while_op.h"
+#ifdef LITE_WITH_PROFILE
+#include "lite/core/profile/precision_profiler.h"
+#endif
 
 namespace paddle {
 namespace lite {
@@ -39,73 +42,10 @@ void RuntimeProgram::Run() {
   for (auto& inst : instructions_) {
     VLOG(4) << ">> Running kernel: " << inst.op()->op_info()->Repr()
             << " on Target " << TargetToStr(inst.kernel()->target());
-    LOG(INFO) << ">> Running kernel: " << inst.op()->op_info()->Repr()
-              << " on Target " << TargetToStr(inst.kernel()->target());
-
     inst.Run();
-    auto tensor_mean = [](const Tensor* in, PrecisionType ptype) -> double {
-      double sum = 0.;
-      switch (ptype) {
-        case PRECISION(kFloat): {
-          auto ptr = in->data<float>();
-          if (!ptr) {
-            return 0;
-          }
-          for (int i = 0; i < in->numel(); ++i) {
-            sum += ptr[i];
-          }
-          return sum / in->numel();
-        }
-        case PRECISION(kInt8): {
-          auto ptr = in->data<int8_t>();
-          for (int i = 0; i < in->numel(); ++i) {
-            sum += ptr[i];
-          }
-          return sum / in->numel();
-        }
-        case PRECISION(kInt32): {
-          auto ptr = in->data<int32_t>();
-          for (int i = 0; i < in->numel(); ++i) {
-            sum += ptr[i];
-          }
-          return sum / in->numel();
-        }
-        default:
-          LOG(INFO) << "unsupport data type: " << PrecisionToStr(ptype);
-          return 0.;
-      }
-    };
-    if (inst.op()->op_info()->Type() != "fetch" &&
-        inst.op()->op_info()->Type() != "write_to_array" &&
-        inst.op()->op_info()->Type() != "while") {
-      auto op = const_cast<lite::OpLite*>(inst.op());
-      auto kernel = inst.kernel();
-      auto op_scope = op->scope();
-      auto out_names = op->op_info()->output_names();
-      for (auto& out_name : out_names) {
-        std::string out_arg_name;
-        op->op_info()->GetOutputArgname(out_name, &out_arg_name);
-        auto type = kernel->GetOutputDeclType(out_arg_name);
-        if (type->IsTensor()) {
-          auto tout = op_scope->FindVar(out_name)->GetMutable<Tensor>();
-          double mean = tensor_mean(tout, type->precision());
-          LOG(INFO) << "output name: " << out_name << ", dims: " << tout->dims()
-                    << ", precision: " << PrecisionToStr(type->precision())
-                    << ", mean value: " << mean;
-        } else if (type->IsTensorList()) {
-          auto tout =
-              op_scope->FindVar(out_name)->GetMutable<std::vector<Tensor>>();
-          for (auto& t : *tout) {
-            double mean = tensor_mean(&t, type->precision());
-            LOG(INFO) << "output name: " << out_name << ", dims: " << t.dims()
-                      << ", precision: " << PrecisionToStr(type->precision())
-                      << ", mean value: " << mean;
-          }
-        }
-      }
-    }
-
-    LOG(INFO) << inst.op()->op_info()->Repr() << "finished";
+#ifdef LITE_WITH_PROFILE
+    LITE_PRECISION_PROFILE(inst)
+#endif
   }
 }
 
@@ -121,7 +61,6 @@ void Program::Build(const cpp::ProgramDesc& prog) {
     auto op_type = op_desc.Type();
     // if (op_type == "feed" || op_type == "fetch") continue;
     VLOG(4) << "create Op [" << op_type << "]";
-    LOG(INFO) << "create Op [" << op_type << "]";
     auto op = LiteOpRegistry::Global().Create(op_type);
     CHECK(op) << "no Op found for " << op_type;
     if (op_type == "while") {
@@ -178,15 +117,13 @@ void Instruction::Run() {
   }
 
   if (op_->run_once() && has_run_) return;
-  LOG(INFO) << "op infershape";
+  VLOG(4) << "kernel launch";
   op_->InferShape();
-  LOG(INFO) << "kernel launch";
   kernel_->Launch();
-  LOG(INFO) << "kernel launched";
   has_run_ = true;
 }
 
-std::ostream& operator<<(std::ostream& os, const Instruction& other) {
+STL::ostream& operator<<(STL::ostream& os, const Instruction& other) {
   os << other.kernel_->summary() << "\t(" << other.kernel_->doc() << ")";
   return os;
 }

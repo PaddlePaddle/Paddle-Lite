@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/core/type_system.h"
+#include "lite/utils/string.h"
 
 namespace paddle {
 namespace lite {
@@ -26,7 +27,7 @@ size_t ParamTypeRegistry::KernelIdTy::hash() const {
   return hash;
 }
 
-std::ostream &operator<<(std::ostream &os, const Type &other) {
+STL::ostream &operator<<(STL::ostream &os, const Type &other) {
   os << other.name();
   return os;
 }
@@ -57,7 +58,7 @@ const Type *Type::GetTensorTy(TargetType target,
   HASH_ONE(device);
 #undef HASH_ONE
 
-  std::stringstream name;
+  STL::stringstream name;
   name << "Tensor<";
   name << TargetToStr(target) << ",";
   name << PrecisionToStr(precision) << ",";
@@ -89,7 +90,7 @@ const Type *Type::GetTensorListTy(TargetType target,
   HASH_ONE(device);
 #undef HASH_ONE
 
-  std::stringstream name;
+  STL::stringstream name;
   name << "TensorList<";
   name << TargetToStr(target) << ",";
   name << PrecisionToStr(precision) << ",";

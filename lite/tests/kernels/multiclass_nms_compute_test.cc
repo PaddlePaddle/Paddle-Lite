@@ -101,6 +101,7 @@ class MulticlassNmsComputeTester : public arena::TestCase {
     out->Resize(DDim({static_cast<int64_t>(vout.size() / 6), 6}));
     auto* out_data = out->mutable_data<float>();
     memcpy(out_data, vout.data(), vout.size() * sizeof(float));
+    out->mutable_lod()->push_back(std::vector<uint64_t>({0, 10}));
   }
 
   void PrepareOpDesc(cpp::OpDesc* op_desc) {
@@ -108,13 +109,11 @@ class MulticlassNmsComputeTester : public arena::TestCase {
     op_desc->SetInput("BBoxes", {bbox_});
     op_desc->SetInput("Scores", {conf_});
     op_desc->SetOutput("Out", {out_});
-    op_desc->SetAttr("priors", priors_);
-    op_desc->SetAttr("class_num", class_num_);
-    op_desc->SetAttr("background_id", background_id_);
-    op_desc->SetAttr("keep_topk", keep_topk_);
-    op_desc->SetAttr("nms_topk", nms_topk_);
-    op_desc->SetAttr("conf_thresh", conf_thresh_);
-    op_desc->SetAttr("nms_thresh", nms_thresh_);
+    op_desc->SetAttr("background_label", background_id_);
+    op_desc->SetAttr("keep_top_k", keep_topk_);
+    op_desc->SetAttr("nms_top_k", nms_topk_);
+    op_desc->SetAttr("score_threshold", conf_thresh_);
+    op_desc->SetAttr("nms_threshold", nms_thresh_);
     op_desc->SetAttr("nms_eta", nms_eta_);
     op_desc->SetAttr("share_location", share_location_);
   }
@@ -137,14 +136,7 @@ class MulticlassNmsComputeTester : public arena::TestCase {
   }
 };
 
-TEST(MulticlassNms, precision) {
-#ifdef LITE_WITH_X86
-  Place place(TARGET(kX86));
-#endif
-#ifdef LITE_WITH_ARM
-  Place place(TARGET(kARM));
-#endif
-
+void test_multiclass_nms(Place place) {
   int keep_top_k = 200;
   int nms_top_k = 400;
   float nms_eta = 1.;
@@ -170,9 +162,19 @@ TEST(MulticlassNms, precision) {
                                      nms_eta,
                                      share_location,
                                      DDim({N, M, 4}),
-                                     DDim({class_num, M, 4})));
+                                     DDim({N, class_num, M})));
   arena::Arena arena(std::move(tester), place, 2e-5);
   arena.TestPrecision();
+}
+
+TEST(MulticlassNms, precision) {
+#ifdef LITE_WITH_X86
+  Place place(TARGET(kX86));
+#endif
+#ifdef LITE_WITH_ARM
+  Place place(TARGET(kARM));
+  test_multiclass_nms(place);
+#endif
 }
 
 }  // namespace lite

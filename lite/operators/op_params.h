@@ -69,10 +69,10 @@ struct GraphParam {
 /// -------------------------- NN operators ------------------------------------
 
 struct FcParam {
-  lite::Tensor* input{};
-  lite::Tensor* w{};
-  lite::Tensor* bias{};
-  lite::Tensor* output{};
+  lite::Tensor* input{nullptr};
+  lite::Tensor* w{nullptr};
+  lite::Tensor* bias{nullptr};
+  lite::Tensor* output{nullptr};
   lite::DDim in_mat_dims;
   int in_num_col_dims{1};
   bool weight_transposed{false};
@@ -258,11 +258,12 @@ struct FusionElementwiseActivationGradParam : public ElementwiseGradParam {
 /// ----------------------- activation operators ----------------------
 struct ActivationParam {
   const lite::Tensor* X{};
-  float Leaky_relu_alpha{0};            // leaky_relu param
-  float Relu_clipped_coef{6};           // relu_clipped param
-  bool Prelu_channel_shared{false};     // prelu param
-  lite::Tensor* Prelu_channel_slope{};  // prelu param
-  float Swish_beta;                     // swish param
+  float Leaky_relu_alpha{0};   // leaky_relu param
+  float Relu_clipped_coef{6};  // relu_clipped param
+  std::string Prelu_mode{
+      "channel"};  // prelu param, can be "all", "channel" or "element"
+  lite::Tensor* Prelu_alpha{};  // prelu param
+  float Swish_beta;             // swish param
   lite::Tensor* Out{};
 };
 
@@ -624,6 +625,28 @@ struct IsEmptyParam {
   const lite::Tensor* X{};
   lite::Tensor* Out{};
 };
+/// ----------------------- shape operators ----------------------
+struct ShapeParam {
+  const lite::Tensor* X{};
+  lite::Tensor* Out{};
+};
+
+struct CastParam {
+  const lite::Tensor* X{};
+  lite::Tensor* Out{};
+  int out_dtype{2};
+  int in_dtype{2};
+};
+
+struct SliceParam {
+  const lite::Tensor* X{};
+  lite::Tensor* Out{};
+  std::vector<int> axes{};
+  std::vector<int> starts{};
+  std::vector<int> ends{};
+  std::vector<int> decrease_axis{};
+};
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle

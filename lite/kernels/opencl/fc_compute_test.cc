@@ -77,9 +77,15 @@ TEST(fc, compute) {
     for (int k = 1; k < 123; k += 31) {
       for (int n = 1; n < 123; n += 121) {
 #else
-  const int m = 213;
-  const int k = 123;
-  const int n = 123;
+#if 0
+  const int m = 1;
+  const int k = 1024;
+  const int n = 1000;
+#else
+  const int m = 2;
+  const int k = 3;
+  const int n = 1;
+#endif
 #endif
         LOG(INFO) << "m=" << m << " n=" << n << " k=" << k;
 
@@ -145,6 +151,12 @@ TEST(fc, compute) {
           VLOG(4) << "--- Find the sync event for the target cl tensor. ---";
           auto& event = *(it->second);
           event.wait();
+          double start_nanos =
+              event.getProfilingInfo<CL_PROFILING_COMMAND_START>();
+          double stop_nanos =
+              event.getProfilingInfo<CL_PROFILING_COMMAND_END>();
+          double elapsed_micros = (stop_nanos - start_nanos) / 1000.0;
+          LOG(INFO) << "Kernel Run Cost Time: " << elapsed_micros << " us.";
         } else {
           LOG(FATAL)
               << "Could not find the sync event for the target cl tensor.";

@@ -78,6 +78,10 @@ USE_LITE_KERNEL(multiclass_nms, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(reduce_max, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(sequence_expand, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(sequence_pool, kARM, kFloat, kNCHW, def);
+USE_LITE_KERNEL(shape, kARM, kFloat, kNCHW, def);
+USE_LITE_KERNEL(fill_constant, kARM, kFloat, kNCHW, def);
+USE_LITE_KERNEL(cast, kARM, kFloat, kNCHW, def)
+USE_LITE_KERNEL(slice, kARM, kFloat, kNCHW, def)
 
 USE_LITE_KERNEL(calib, kARM, kInt8, kNCHW, fp32_to_int8);
 USE_LITE_KERNEL(calib, kARM, kInt8, kNCHW, int8_to_fp32);

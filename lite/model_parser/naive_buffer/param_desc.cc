@@ -85,7 +85,7 @@ VarDescAPI::VarDataType ParamDesc::GetDataType() const {
     GET_DATA_TYPE_CASE_ITEM(FP32);
     GET_DATA_TYPE_CASE_ITEM(FP64);
     default:
-      LOG(ERROR) << "Unknown var data type";
+      LOG(FATAL) << "Unknown var data type";
   }
 #undef GET_DATA_TYPE_CASE_ITEM
 }
@@ -111,7 +111,7 @@ void ParamDesc::SetDataType(VarDescAPI::VarDataType data_type) {
     SET_DATA_TYPE_CASE_ITEM(FP32);
     SET_DATA_TYPE_CASE_ITEM(FP64);
     default:
-      LOG(ERROR) << "Unknown var data type";
+      LOG(FATAL) << "Unknown var data type";
 #undef SET_DATA_TYPE_CASE_ITEM
   }
 }

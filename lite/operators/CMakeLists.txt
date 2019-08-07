@@ -71,6 +71,9 @@ lite_cc_library(sequence_expand_op_lite SRCS sequence_expand_op.cc DEPS ${op_DEP
 lite_cc_library(reduce_max_op_lite SRCS reduce_max_op.cc DEPS ${op_DEPS})
 lite_cc_library(lod_reset_op SRCS lod_reset_op.cc DEPS ${op_DEPS})
 lite_cc_library(is_empty SRCS is_empty_op.cc DEPS ${op_DEPS})
+lite_cc_library(shape_op_lite SRCS shape_op.cc DEPS ${op_DEPS})
+lite_cc_library(cast_op_lite SRCS cast_op.cc DEPS ${op_DEPS})
+lite_cc_library(slice_op_lite SRCS slice_op.cc DEPS ${op_DEPS})
 
 
 set(ops
@@ -144,6 +147,9 @@ set(ops
         reduce_max_op_lite
         lod_reset_op
         is_empty 
+        shape_op_lite
+        cast_op_lite
+        slice_op_lite
         CACHE INTERNAL "ops lite")
 
 if (NOT LITE_WITH_X86)
