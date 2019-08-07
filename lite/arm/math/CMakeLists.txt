@@ -86,9 +86,6 @@ if (NOT HAS_ARM_MATH_LIB_DIR)
       conv3x3s1_direct_int8.cc
       conv3x3s2_direct_int8.cc
       power.cc
-      im2sequence.cc
-      sequence_softmax.cc
-      norm.cc
       interpolate.cc
       argmax.cc
       axpy.cc
