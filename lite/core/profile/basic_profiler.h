@@ -21,13 +21,13 @@
 #include <time.h>
 #include <algorithm>
 #include <chrono>  // NOLINT
-#include <iomanip>
 #include <limits>
 #include <memory>
-#include <sstream>
 #include <string>
 #include <vector>
 #include "lite/utils/cp_logging.h"
+#include "lite/utils/replace_stl/stream.h"
+#include "lite/utils/string.h"
 
 namespace paddle {
 namespace lite {
@@ -90,7 +90,7 @@ class BasicTimer : TimerBase<BasicTimer> {
   }
 
   static std::string basic_repr_header() {
-    std::stringstream ss;
+    STL::stringstream ss;
     ss << std::setw(name_w) << "kernel"   //
        << std::setw(data_w) << "average"  //
        << std::setw(data_w) << "min"      //
@@ -100,7 +100,7 @@ class BasicTimer : TimerBase<BasicTimer> {
   }
 
   std::string basic_repr() const {
-    std::stringstream ss;
+    STL::stringstream ss;
     ss << std::setw(name_w) << key()  //
        << std::setw(data_w) << ave()  //
        << std::setw(data_w) << min()  //
@@ -158,7 +158,7 @@ class BasicProfiler {
   }
 
   std::string basic_repr() const {
-    std::stringstream ss;
+    STL::stringstream ss;
     for (const auto &rcd : records_) {
       ss << rcd.basic_repr() << "\n";
     }

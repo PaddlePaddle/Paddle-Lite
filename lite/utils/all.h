@@ -22,3 +22,7 @@
 #include "lite/utils/io.h"
 #include "lite/utils/macros.h"
 #include "lite/utils/varient.h"
+
+#ifdef LITE_ON_TINY_PUBLISH
+#include "lite/utils/replace_stl/stream.h"
+#endif

@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <sstream>
 #include <vector>
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 #include "lite/opencl/cl_include.h"
 #include "lite/operators/op_params.h"
+#include "lite/utils/replace_stl/stream.h"
 
 namespace paddle {
 namespace lite {
@@ -30,6 +30,10 @@ class DepthwiseConv2dCompute
   using param_t = operators::ConvParam;
 
   void PrepareForRun() override {
+    const auto& param = *param_.get_mutable<param_t>();
+    if (param.fuse_relu) {
+      build_options_ += " -DRELU";
+    }
     auto& context = ctx_->As<OpenCLContext>();
     context.cl_context()->AddKernel(
         kernel_func_name_, "buffer/depthwise_conv2d_kernel.cl", build_options_);
@@ -53,7 +57,7 @@ class DepthwiseConv2dCompute
     auto* output_buf =
         param.output->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
 
-    std::stringstream kernel_key;
+    STL::stringstream kernel_key;
     kernel_key << kernel_func_name_ << build_options_;
     auto kernel = context.cl_context()->GetKernel(kernel_key.str());
 

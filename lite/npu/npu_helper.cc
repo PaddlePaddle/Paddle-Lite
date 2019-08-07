@@ -27,29 +27,94 @@ namespace paddle {
 namespace lite {
 namespace npu {
 
+bool SaveNPUModel(const void* om_model_data,
+                  const size_t om_model_size,
+                  const std::string& om_file_path) {
+  std::FILE* fp;
+  fp = std::fopen(om_file_path.c_str(), "wb");
+  if (fp == NULL) {
+    LOG(WARNING) << "[NPU] " << om_file_path << " open failed!";
+    return false;
+  }
+
+  size_t write_size = std::fwrite(om_model_data, 1, om_model_size, fp);
+  if (write_size != om_model_size) {
+    std::fclose(fp);
+    LOG(WARNING) << "[NPU] Write NPU model failed: " << om_file_path;
+    return false;
+  }
+  std::fclose(fp);
+  return true;
+}
+
+bool BuildNPUClient(const void* om_model_data,
+                    const size_t om_model_size,
+                    const std::string& name) {
+  std::unique_ptr<hiai::AiModelMngerClient> client(
+      new hiai::AiModelMngerClient);
+  int ret = client->Init(nullptr);
+  if (ret != hiai::AI_SUCCESS) {
+    LOG(WARNING) << "[NPU] Failed building NPU client " << name
+                 << ", ret: " << ret;
+    return false;
+  }
+
+  auto desc = std::make_shared<hiai::AiModelDescription>(
+      name,
+      DeviceInfo::Global().freq_level(),
+      DeviceInfo::Global().framework_type(),
+      DeviceInfo::Global().model_type(),
+      DeviceInfo::Global().device_type());
+  desc->SetModelBuffer(om_model_data, om_model_size);
+
+  std::vector<std::shared_ptr<hiai::AiModelDescription>> model_desc;
+  model_desc.push_back(desc);
+  if (client->Load(model_desc) != hiai::AI_SUCCESS) {
+    LOG(WARNING) << "[NPU] Model Load Failed: " << desc->GetName();
+    return false;
+  }
+
+  DeviceInfo::Global().Insert(name, std::move(client));
+  return true;
+}
+
+// If build from inputs and outputs will save the npu offline model
 bool BuildNPUClient(std::vector<ge::Operator>& inputs,   // NOLINT
                     std::vector<ge::Operator>& outputs,  // NOLINT
-                    const string& name) {
-  // build IR graph
+                    const std::string& name) {
+  LOG(INFO) << "[NPU] Building Client";
   ge::Graph npu_subgraph("npu_subgraph" + name);
   npu_subgraph.SetInputs(inputs).SetOutputs(outputs);
 
-  ge::Model npu_model("npu_model" + name, "npu_model" + name);
+  ge::Model npu_model("model", "npu_model" + name);
   npu_model.SetGraph(npu_subgraph);
 
   // compile IR graph and output om model to memory
   domi::HiaiIrBuild ir_build;
   domi::ModelBufferData om_model_buffer;
-  ir_build.CreateModelBuff(npu_model, om_model_buffer);
+  if (!ir_build.CreateModelBuff(npu_model, om_model_buffer)) {
+    LOG(WARNING) << "[NPU] Failed CreateModelBuff: " << npu_model.GetName();
+    return false;
+  }
   if (!ir_build.BuildIRModel(npu_model, om_model_buffer)) {
     LOG(WARNING) << "[NPU] Failed BuildIRModel: " << npu_model.GetName();
     return false;
   }
 
-  return BuildNPUClient(om_model_buffer.data, om_model_buffer.length, name);
+  if (BuildNPUClient(om_model_buffer.data, om_model_buffer.length, name)) {
+    // save npu offline model
+    if (!SaveNPUModel(om_model_buffer.data, om_model_buffer.length, name)) {
+      LOG(WARNING) << "[NPU] Save model " << name << " failed.";
+    }
+    ir_build.ReleaseModelBuff(om_model_buffer);
+    return true;
+  }
+  return false;
 }
 
-bool BuildNPUClient(const string& om_model_file_path, const string& name) {
+// If build from path will not save the npu offline model
+bool BuildNPUClient(const std::string& om_model_file_path,
+                    const std::string& name) {
   // load om model from file
   std::ifstream file(om_model_file_path, std::ios::binary);
   CHECK(file.is_open()) << "[NPU] Unable to open om model file: "
@@ -65,38 +130,6 @@ bool BuildNPUClient(const string& om_model_file_path, const string& name) {
 
   return BuildNPUClient(
       reinterpret_cast<void*>(om_model_data.data()), om_model_size, name);
-}
-
-bool BuildNPUClient(const void* om_model_data,
-                    const size_t om_model_size,
-                    const string& name) {
-  std::unique_ptr<hiai::AiModelMngerClient> client(
-      new hiai::AiModelMngerClient);
-  int ret = client->Init(nullptr);
-  if (ret != hiai::AI_SUCCESS) {
-    LOG(WARNING) << "[NPU] Failed building NPU client " << name
-                 << ", ret: " << ret;
-    return false;
-  }
-
-  auto desc = std::make_shared<hiai::AiModelDescription>(
-      "hiai" + name + ".om",
-      DeviceInfo::Global().freq_level(),
-      DeviceInfo::Global().framework_type(),
-      DeviceInfo::Global().model_type(),
-      DeviceInfo::Global().device_type());
-  desc->SetModelBuffer(om_model_data, om_model_size);
-
-  std::vector<std::shared_ptr<hiai::AiModelDescription>> model_desc;
-  model_desc.push_back(desc);
-  if (client->Load(model_desc) != hiai::AI_SUCCESS) {
-    LOG(WARNING) << "[NPU] Model Load Failed: " << desc->GetName();
-    return false;
-  }
-
-  DeviceInfo::Global().Insert(name, std::move(client));
-
-  return true;
 }
 
 }  // namespace npu

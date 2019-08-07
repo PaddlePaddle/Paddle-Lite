@@ -53,35 +53,32 @@ class Optimizer {
     InitTargetTypeTransformPass();
 
     if (passes.empty()) {
-      RunPasses(std::vector<std::string>{
-          {"lite_quant_dequant_fuse_pass",  //
-           "lite_conv_bn_fuse_pass",        //
-// This pass is disabled to force some opencl kernels selected for final
-// running, otherwise, they will be fused to ARM fusion kernels, and the OpenCL
-// devices will be discarded.
-// TODO(Superjomn) Refine the fusion related design to select fusion kernels for
-// devices automatically.
-#ifndef LITE_WITH_OPENCL
-           "lite_conv_elementwise_add_activation_fuse_pass",  //
-#endif
-           "lite_fc_fuse_pass",              //
-           "identity_scale_eliminate_pass",  //
+      RunPasses(std::vector<std::string>{{
+          "lite_quant_dequant_fuse_pass",  //
+          "lite_conv_bn_fuse_pass",        //
+          // This pass is disabled to force some opencl kernels selected for
+          // final running, otherwise, they will be fused to ARM fusion
+          // kernels, and the OpenCL devices will be discarded.
+          // TODO(Superjomn) Refine the fusion related design to select fusion
+          // kernels for devices automatically.
+          "lite_conv_elementwise_add_activation_fuse_pass",  //
+          "lite_fc_fuse_pass",                               //
+          "identity_scale_eliminate_pass",                   //
 #ifdef LITE_WITH_LIGHT_WEIGHT_FRAMEWORK
-           "lite_elementwise_add_activation_fuse_pass",  //
+          "lite_elementwise_add_activation_fuse_pass",  //
 #endif
-           "static_kernel_pick_pass",        //
-           "variable_place_inference_pass",  //
-           "argument_type_display_pass",     //
-           "type_target_cast_pass",          //
-           "variable_place_inference_pass",  //
-           "argument_type_display_pass",     //
-           "io_copy_kernel_pick_pass",       //
-           "variable_place_inference_pass",  //
-           "type_precision_cast_pass",       //
-           "argument_type_display_pass",     //
-           "trans_weight_pass",              //
-           "runtime_context_assign_pass",    //
-           "graph_visualze"}});
+          "static_kernel_pick_pass",        //
+          "variable_place_inference_pass",  //
+          "argument_type_display_pass",     //
+          "type_target_cast_pass",          //
+          "variable_place_inference_pass",  //
+          "argument_type_display_pass",     //
+          "io_copy_kernel_pick_pass",       //
+          "variable_place_inference_pass",  //
+          "type_precision_cast_pass",       //
+          "argument_type_display_pass",     //
+          "runtime_context_assign_pass",    //
+      }});
     } else {
       RunPasses(passes);
     }
@@ -125,8 +122,9 @@ class Optimizer {
   std::unique_ptr<RuntimeProgram> GenNPURuntimeProgram() {
 #ifdef LITE_WITH_NPU
     CheckInputDimsNotEmpty(exec_scope_);
-    auto pass = mir::PassManager::Global().LookUp<mir::GenerateNPUProgramPass>(
-        "generate_npu_program_pass");
+    auto pass = mir::PassManager::Global()
+                    .LookUp<mir::subgraph::GenerateNPUProgramPass>(
+                        "generate_npu_program_pass");
     pass->Apply(graph_);
 
     auto program = pass->GenProgram();
@@ -174,6 +172,7 @@ class Optimizer {
       auto* pass = mir::PassManager::Global().LookUp(x);
       CHECK(pass) << "Can not find pass: " << x;
       pass->Apply(graph_);
+      LOG(INFO) << "== Running pass Done." << x;
     }
   }
 

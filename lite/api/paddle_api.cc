@@ -13,8 +13,7 @@
 // limitations under the License.
 
 #include "lite/api/paddle_api.h"
-#include "lite/api/cxx_api.h"
-#include "lite/api/light_api.h"
+#include "lite/core/tensor.h"
 
 namespace paddle {
 namespace lite_api {
@@ -55,8 +54,9 @@ shape_t Tensor::shape() const {
   return ctensor(raw_tensor_)->dims().Vectorize();
 }
 
-void PaddlePredictor::SaveOptimizedModel(const std::string &model_dir) {
-  LOG(ERROR)
+void PaddlePredictor::SaveOptimizedModel(const std::string &model_dir,
+                                         LiteModelType model_type) {
+  LOG(FATAL)
       << "The SaveOptimizedModel API is only supported by CxxConfig predictor.";
 }
 

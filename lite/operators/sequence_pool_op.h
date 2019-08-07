@@ -13,20 +13,31 @@
 // limitations under the License.
 
 #pragma once
-
-#include <memory>
 #include <string>
-#include "lite/core/mir/pass.h"
+#include <vector>
+#include "lite/core/op_lite.h"
+#include "lite/core/scope.h"
+#include "lite/utils/all.h"
 
 namespace paddle {
 namespace lite {
-namespace mir {
+namespace operators {
 
-class ConvElementwiseAddReLUFusePass : public ProgramPass {
+class SequencePoolOp : public OpLite {
  public:
-  void Apply(const std::unique_ptr<SSAGraph>& graph) override;
+  SequencePoolOp() {}
+  explicit SequencePoolOp(const std::string &op_type) : OpLite(op_type) {}
+  bool CheckShape() const override;
+  bool InferShape() const override;
+  bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
+
+  void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
+  std::string DebugString() const override { return "sequence_pool"; }
+
+ private:
+  mutable SequencePoolParam param_;
 };
 
-}  // namespace mir
+}  // namespace operators
 }  // namespace lite
 }  // namespace paddle

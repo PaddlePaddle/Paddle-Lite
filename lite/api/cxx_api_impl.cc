@@ -34,7 +34,9 @@ class CxxPaddleApiImpl : public lite_api::PaddlePredictor {
   std::unique_ptr<const lite_api::Tensor> GetTensor(
       const std::string &name) const override;
 
-  void SaveOptimizedModel(const std::string &model_dir) override;
+  void SaveOptimizedModel(const std::string &model_dir,
+                          lite_api::LiteModelType model_type =
+                              lite_api::LiteModelType::kProtobuf) override;
 
  private:
   Predictor raw_predictor_;
@@ -67,8 +69,9 @@ std::unique_ptr<const lite_api::Tensor> CxxPaddleApiImpl::GetTensor(
   return std::unique_ptr<const lite_api::Tensor>(new lite_api::Tensor(x));
 }
 
-void CxxPaddleApiImpl::SaveOptimizedModel(const std::string &model_dir) {
-  raw_predictor_.SaveModel(model_dir);
+void CxxPaddleApiImpl::SaveOptimizedModel(const std::string &model_dir,
+                                          lite_api::LiteModelType model_type) {
+  raw_predictor_.SaveModel(model_dir, model_type);
 }
 
 }  // namespace lite

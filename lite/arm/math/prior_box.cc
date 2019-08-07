@@ -44,8 +44,10 @@ void fast_free(void* ptr) {
   }
 }
 
-void density_prior_box(const std::vector<lite::Tensor*>& inputs,
-                       const std::vector<lite::Tensor*>* outputs,
+void density_prior_box(const lite::Tensor* input,
+                       const lite::Tensor* image,
+                       lite::Tensor** boxes,
+                       lite::Tensor** variances,
                        const std::vector<float>& min_size_,
                        const std::vector<float>& fixed_size_,
                        const std::vector<float>& fixed_ratio_,
@@ -63,30 +65,22 @@ void density_prior_box(const std::vector<lite::Tensor*>& inputs,
                        bool is_clip_,
                        const std::vector<std::string>& order_) {
   // compute output shape
-  LOG(INFO) << "input tensor size: " << inputs.size();
+  int win1 = input->dims()[3];
+  int hin1 = input->dims()[2];
+  DDim shape_out({hin1, win1, prior_num_, 4});
+  (*boxes)->Resize(shape_out);
+  (*variances)->Resize(shape_out);
 
-  int win1 = inputs[0]->dims()[3];
-  int hin1 = inputs[0]->dims()[2];
-  int wout = win1 * hin1 * prior_num_ * 4;
-  DDim shape_out({1, 2, wout});
-  (*outputs)[0]->Resize(shape_out);
-
-  float* _cpu_data = (*outputs)[0]->mutable_data<float>();
-
-  // uint64_t out_size = (*outputs)[0].numel();
-  // uint64_t _size = out_size;
-  // float* _cpu_data{nullptr};
-  // lite::Tensor _tensor_tmp;
-  // _cpu_data = fast_malloc(sizeof(float) * _size);
-  // _tensor_tmp.Resize(outputs[0]->dims());
+  float* _cpu_data = (*boxes)->mutable_data<float>();
+  float* _variance_data = (*variances)->mutable_data<float>();
 
   const int width = win1;
   const int height = hin1;
   int img_width = img_w_;
   int img_height = img_h_;
   if (img_width == 0 || img_height == 0) {
-    img_width = inputs[1]->dims()[3];
-    img_height = inputs[1]->dims()[2];
+    img_width = image->dims()[3];
+    img_height = image->dims()[2];
   }
 
   float step_w = step_w_;
@@ -144,7 +138,7 @@ void density_prior_box(const std::vector<lite::Tensor*>& inputs,
                       (center_x_temp + box_width_ratio / 2.f) / img_width <= 1
                           ? (center_x_temp + box_width_ratio / 2.f) / img_width
                           : 1;
-                  // yamx
+                  // ymax
                   _cpu_data[idx++] =
                       (center_y_temp + box_height_ratio / 2.f) / img_height <= 1
                           ? (center_y_temp + box_height_ratio / 2.f) /
@@ -196,7 +190,7 @@ void density_prior_box(const std::vector<lite::Tensor*>& inputs,
               float ar = aspect_ratio_[r];
 
               if (fabs(ar - 1.) < 1e-6) {
-                return;
+                continue;
               }
 
               int density = density_size_[s];
@@ -258,7 +252,7 @@ void density_prior_box(const std::vector<lite::Tensor*>& inputs,
           min_buf[min_idx++] = (center_y - box_height / 2.f) / img_height;
           //! xmax
           min_buf[min_idx++] = (center_x + box_width / 2.f) / img_width;
-          // ymax
+          //! ymax
           min_buf[min_idx++] = (center_y + box_height / 2.f) / img_height;
 
           if (max_size_.size() > 0) {
@@ -292,19 +286,12 @@ void density_prior_box(const std::vector<lite::Tensor*>& inputs,
             //! ymax
             com_buf[com_idx++] = (center_y + box_height / 2.f) / img_height;
           }
-
-          for (const auto& type : order_) {
-            if (type == "prior_min") {
-              memcpy(_cpu_data + idx, min_buf, sizeof(float) * min_idx);
-              idx += min_idx;
-            } else if (type == "prior_max") {
-              memcpy(_cpu_data + idx, max_buf, sizeof(float) * max_idx);
-              idx += max_idx;
-            } else if (type == "prior_com") {
-              memcpy(_cpu_data + idx, com_buf, sizeof(float) * com_idx);
-              idx += com_idx;
-            }
-          }
+          memcpy(_cpu_data + idx, min_buf, sizeof(float) * min_idx);
+          idx += min_idx;
+          memcpy(_cpu_data + idx, com_buf, sizeof(float) * com_idx);
+          idx += com_idx;
+          memcpy(_cpu_data + idx, max_buf, sizeof(float) * max_idx);
+          idx += max_idx;
         }
         fast_free(min_buf);
         fast_free(max_buf);
@@ -312,7 +299,6 @@ void density_prior_box(const std::vector<lite::Tensor*>& inputs,
       }
     }
   }
-
   //! clip the prior's coordinate such that it is within [0, 1]
   if (is_clip_) {
     for (int d = 0; d < channel_size; ++d) {
@@ -320,13 +306,12 @@ void density_prior_box(const std::vector<lite::Tensor*>& inputs,
     }
   }
   //! set the variance.
-  float* ptr = _cpu_data + channel_size;
   int count = 0;
   for (int h = 0; h < height; ++h) {
     for (int w = 0; w < width; ++w) {
       for (int i = 0; i < prior_num_; ++i) {
         for (int j = 0; j < 4; ++j) {
-          ptr[count] = variance_[j];
+          _variance_data[count] = variance_[j];
           ++count;
         }
       }
@@ -334,12 +319,14 @@ void density_prior_box(const std::vector<lite::Tensor*>& inputs,
   }
 }
 
-void prior_box(const std::vector<lite::Tensor*>& inputs,
-               std::vector<lite::Tensor*>* outputs,
-               std::vector<float> min_size,
-               std::vector<float> max_size,
-               std::vector<float> aspect_ratio,
-               std::vector<float> variance,
+void prior_box(const lite::Tensor* input,
+               const lite::Tensor* image,
+               lite::Tensor** boxes,
+               lite::Tensor** variances,
+               const std::vector<float>& min_size,
+               const std::vector<float>& max_size,
+               const std::vector<float>& aspect_ratio,
+               const std::vector<float>& variance,
                int img_w,
                int img_h,
                float step_w,
@@ -348,9 +335,11 @@ void prior_box(const std::vector<lite::Tensor*>& inputs,
                int prior_num,
                bool is_flip,
                bool is_clip,
-               std::vector<std::string> order) {
-  density_prior_box(inputs,
-                    outputs,
+               const std::vector<std::string>& order) {
+  density_prior_box(input,
+                    image,
+                    boxes,
+                    variances,
                     min_size,
                     std::vector<float>(),
                     std::vector<float>(),

@@ -417,14 +417,15 @@ TEST(conv2d_transpose, precision) {
                       for (auto ks : {2, 5}) {
                         for (auto group : {1, 2}) {
                           // obtain shape
-                          LOG(INFO) << "n:" << n << ",ic:" << ic << ",oc:" << oc
-                                    << ",ih:" << ih << ",iw:" << iw
-                                    << ",flag_bias:" << flag_bias
-                                    << ",flag_relu:" << flag_relu
-                                    << ",dila:" << dilation
-                                    << ",stride:" << stride
-                                    << ",padding:" << padding << ",ks:" << ks
-                                    << ",group:" << group;
+                          // LOG(INFO) << "n:" << n << ",ic:" << ic << ",oc:" <<
+                          // oc
+                          //           << ",ih:" << ih << ",iw:" << iw
+                          //           << ",flag_bias:" << flag_bias
+                          //           << ",flag_relu:" << flag_relu
+                          //           << ",dila:" << dilation
+                          //           << ",stride:" << stride
+                          //           << ",padding:" << padding << ",ks:" << ks
+                          //           << ",group:" << group;
                           if (ic % group != 0 || oc % group != 0) {
                             group = 1;
                           }

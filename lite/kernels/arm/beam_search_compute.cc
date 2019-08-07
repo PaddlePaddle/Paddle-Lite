@@ -44,7 +44,7 @@ void BeamSearchCompute::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(norm,
+REGISTER_LITE_KERNEL(beam_search,
                      kARM,
                      kFloat,
                      kNCHW,

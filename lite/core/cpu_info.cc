@@ -444,6 +444,78 @@ bool bind_threads(const std::vector<int> cpu_ids) {
 
 #endif  // LITE_WITH_LINUX
 
+void DeviceInfo::SetDotInfo(int argc, ...) {
+  va_list arg_ptr;
+  va_start(arg_ptr, argc);
+  dot_.resize(core_num_);
+  if (argc == 1) {
+    bool flag = va_arg(arg_ptr, int) > 0;
+    for (int i = 0; i < core_num_; ++i) {
+      dot_[i] = flag;
+    }
+  } else {
+    bool flag_big_core = va_arg(arg_ptr, int) > 0;
+    bool flag_little_core = va_arg(arg_ptr, int) > 0;
+    int big_core_num = big_core_ids_.size();
+    int little_core_num = little_core_ids_.size();
+    for (int i = 0; i < big_core_num; ++i) {
+      dot_[big_core_ids_[i]] = flag_big_core;
+    }
+    for (int i = 0; i < little_core_num; ++i) {
+      dot_[little_core_ids_[i]] = flag_little_core;
+    }
+  }
+  va_end(arg_ptr);
+}
+
+void DeviceInfo::SetFP16Info(int argc, ...) {
+  va_list arg_ptr;
+  va_start(arg_ptr, argc);
+  fp16_.resize(core_num_);
+  if (argc == 1) {
+    bool flag = va_arg(arg_ptr, int) > 0;
+    for (int i = 0; i < core_num_; ++i) {
+      fp16_[i] = flag;
+    }
+  } else {
+    bool flag_big_core = va_arg(arg_ptr, int) > 0;
+    bool flag_little_core = va_arg(arg_ptr, int) > 0;
+    int big_core_num = big_core_ids_.size();
+    int little_core_num = little_core_ids_.size();
+    for (int i = 0; i < big_core_num; ++i) {
+      fp16_[big_core_ids_[i]] = flag_big_core;
+    }
+    for (int i = 0; i < little_core_num; ++i) {
+      fp16_[little_core_ids_[i]] = flag_little_core;
+    }
+  }
+  va_end(arg_ptr);
+}
+
+void DeviceInfo::SetFP32Info(int argc, ...) {
+  va_list arg_ptr;
+  va_start(arg_ptr, argc);
+  fp32_.resize(core_num_);
+  if (argc == 1) {
+    bool flag = va_arg(arg_ptr, int) > 0;
+    for (int i = 0; i < core_num_; ++i) {
+      fp32_[i] = flag;
+    }
+  } else {
+    bool flag_big_core = va_arg(arg_ptr, int) > 0;
+    bool flag_little_core = va_arg(arg_ptr, int) > 0;
+    int big_core_num = big_core_ids_.size();
+    int little_core_num = little_core_ids_.size();
+    for (int i = 0; i < big_core_num; ++i) {
+      fp32_[big_core_ids_[i]] = flag_big_core;
+    }
+    for (int i = 0; i < little_core_num; ++i) {
+      fp32_[little_core_ids_[i]] = flag_little_core;
+    }
+  }
+  va_end(arg_ptr);
+}
+
 // cache_id : 0 -> L1, 1 -> L2, 2 -> L3
 void DeviceInfo::SetCacheInfo(int cache_id, int argc, ...) {
   va_list arg_ptr;
@@ -519,6 +591,8 @@ bool DeviceInfo::SetCPUInfoByName() {
     SetCacheInfo(0, 2, 64 * 1024, 32 * 1024);
     SetCacheInfo(1, 2, 256 * 1024, 128 * 1024);
     SetCacheInfo(2, 1, 2048 * 1024);
+    SetFP16Info(1, 1);
+    SetDotInfo(1, 1);
     return true;
   } else if (dev_name_.find("SDM845") != std::string::npos) {  // 845
     core_num_ = 8;
@@ -530,6 +604,7 @@ bool DeviceInfo::SetCPUInfoByName() {
     SetCacheInfo(0, 2, 64 * 1024, 32 * 1024);
     SetCacheInfo(1, 2, 256 * 1024, 128 * 1024);
     SetCacheInfo(2, 1, 2048 * 1024);
+    SetFP16Info(1, 1);
     return true;
   } else if (dev_name_.find("SDM710") != std::string::npos) {  // 710
     core_num_ = 8;
@@ -676,6 +751,19 @@ bool DeviceInfo::SetCPUInfoByName() {
     cluster_ids_ = {0, 0, 0, 0};
     SetArchInfo(1, kA53);
     return true;
+  } else if (dev_name_.find("KIRIN980") != std::string::npos) {  // Kirin 980
+    core_num_ = 8;
+    core_ids_ = {0, 1, 2, 3, 4, 5, 6, 7};
+    big_core_ids_ = {4, 5, 6, 7};
+    little_core_ids_ = {0, 1, 2, 3};
+    cluster_ids_ = {1, 1, 1, 1, 0, 0, 0, 0};
+    SetArchInfo(2, kA76, kA55);
+    SetCacheInfo(0, 2, 64 * 1024, 32 * 1024);
+    SetCacheInfo(1, 2, 512 * 1024, 128 * 1024);
+    SetCacheInfo(2, 1, 4096 * 1024);
+    SetFP16Info(1, 1);
+    SetDotInfo(1, 1);
+    return true;
   }
   return false;
 }
@@ -700,7 +788,7 @@ void DeviceInfo::SetCPUInfoByProb() {
 #endif  // LITE_WITH_LINUX
 }
 
-void DeviceInfo::RequestPowerFullMode(const int thread_num) {
+void DeviceInfo::RequestPowerFullMode(int thread_num) {
   int big_core_size = big_core_ids_.size();
   int little_core_size = little_core_ids_.size();
   active_ids_.clear();
@@ -714,7 +802,7 @@ void DeviceInfo::RequestPowerFullMode(const int thread_num) {
   mode_ = LITE_POWER_FULL;
 }
 
-void DeviceInfo::RequestPowerHighMode(const int thread_num) {
+void DeviceInfo::RequestPowerHighMode(int thread_num) {
   int big_core_size = big_core_ids_.size();
   int little_core_size = little_core_ids_.size();
   active_ids_.clear();
@@ -743,7 +831,7 @@ void DeviceInfo::RequestPowerHighMode(const int thread_num) {
   }
 }
 
-void DeviceInfo::RequestPowerLowMode(const int thread_num) {
+void DeviceInfo::RequestPowerLowMode(int thread_num) {
   int big_core_size = big_core_ids_.size();
   int little_core_size = little_core_ids_.size();
   active_ids_.clear();
@@ -772,7 +860,7 @@ void DeviceInfo::RequestPowerLowMode(const int thread_num) {
   }
 }
 
-void DeviceInfo::RequestPowerNoBindMode(const int thread_num) {
+void DeviceInfo::RequestPowerNoBindMode(int thread_num) {
   active_ids_.clear();
   if (thread_num > core_ids_.size()) {
     active_ids_ = core_ids_;
@@ -789,8 +877,7 @@ void DeviceInfo::RequestPowerNoBindMode(const int thread_num) {
   mode_ = LITE_POWER_NO_BIND;
 }
 
-void DeviceInfo::RequestPowerRandHighMode(const int shift_num,
-                                          const int thread_num) {
+void DeviceInfo::RequestPowerRandHighMode(int shift_num, int thread_num) {
   int big_core_size = big_core_ids_.size();
   int little_core_size = little_core_ids_.size();
   active_ids_.clear();
@@ -819,8 +906,7 @@ void DeviceInfo::RequestPowerRandHighMode(const int shift_num,
   }
 }
 
-void DeviceInfo::RequestPowerRandLowMode(const int shift_num,
-                                         const int thread_num) {
+void DeviceInfo::RequestPowerRandLowMode(int shift_num, int thread_num) {
   int big_core_size = big_core_ids_.size();
   int little_core_size = little_core_ids_.size();
   active_ids_.clear();
@@ -858,6 +944,9 @@ int DeviceInfo::Setup() {
   SetCacheInfo(0, 1, DEFAULT_L1_CACHE_SIZE);
   SetCacheInfo(1, 1, DEFAULT_L2_CACHE_SIZE);
   SetCacheInfo(2, 1, DEFAULT_L3_CACHE_SIZE);
+  SetFP32Info(1, 1);
+  SetFP16Info(1, 0);
+  SetDotInfo(1, 0);
 #ifdef LITE_WITH_LINUX
   // get max&min freq
   max_freqs_.resize(core_num_);
@@ -890,6 +979,10 @@ int DeviceInfo::Setup() {
   LOG(INFO) << "L2 Cache size is: ";
   for (int i = 0; i < core_num_; ++i) {
     LOG(INFO) << L2_cache_[i] / 1024 << " KB";
+  }
+  LOG(INFO) << "L3 Cache size is: ";
+  for (int i = 0; i < core_num_; ++i) {
+    LOG(INFO) << L3_cache_[i] / 1024 << " KB";
   }
   LOG(INFO) << "Total memory: " << mem_size_ << "KB";
 #endif

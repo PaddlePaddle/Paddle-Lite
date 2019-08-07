@@ -20,6 +20,8 @@ USE_MIR_PASS(static_kernel_pick_pass);
 USE_MIR_PASS(variable_place_inference_pass);
 USE_MIR_PASS(type_target_cast_pass);
 USE_MIR_PASS(generate_program_pass);
+USE_MIR_PASS(subgraph_program_pass);
+
 USE_MIR_PASS(io_copy_kernel_pick_pass);
 USE_MIR_PASS(argument_type_display_pass);
 USE_MIR_PASS(runtime_context_assign_pass);
@@ -32,4 +34,3 @@ USE_MIR_PASS(lite_conv_elementwise_add_activation_fuse_pass);
 USE_MIR_PASS(lite_elementwise_add_activation_fuse_pass);
 USE_MIR_PASS(lite_quant_dequant_fuse_pass);
 USE_MIR_PASS(type_precision_cast_pass);
-USE_MIR_PASS(trans_weight_pass);

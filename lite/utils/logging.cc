@@ -20,11 +20,12 @@
 #include "lite/utils/logging.h"
 
 #ifdef LITE_WITH_LIGHT_WEIGHT_FRAMEWORK
+#ifndef LITE_SHUTDOWN_LOG
 
 namespace paddle {
 namespace lite {
 
-void gen_log(std::ostream& log_stream_,
+void gen_log(STL::ostream& log_stream_,
              const char* file,
              const char* func,
              int lineno,
@@ -57,4 +58,5 @@ void gen_log(std::ostream& log_stream_,
 }  // namespace lite
 }  // namespace paddle
 
+#endif  // LITE_SHUTDOWN_LOG
 #endif  // LITE_WITH_LIGHT_FRAMEWORK

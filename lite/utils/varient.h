@@ -114,25 +114,35 @@ struct variant {
   template <typename T>
   const T& get() const {
     // It is a dynamic_cast-like behaviour
-    if (type_id == typeid(T).hash_code())
+    if (type_id == typeid(T).hash_code()) {
       return *reinterpret_cast<const T*>(&data);
-    else
+    } else {
+#ifdef LITE_ON_TINY_PUBLISH
+      LOG(FATAL) << "unmatched type, store as " << type_id
+                 << " , but want to get " << typeid(T).name();
+#else
       throw std::invalid_argument(
           string_format("unmatched type, store as %d, but want to get %s",
                         type_id,
                         typeid(T).name()));
+#endif
+    }
     return *reinterpret_cast<const T*>(&data);
   }
 
   template <typename T>
   T* get_mutable() {
     // It is a dynamic_cast-like behaviour
-    if (type_id == typeid(T).hash_code())
+    if (type_id == typeid(T).hash_code()) {
       return reinterpret_cast<T*>(&data);
-    else
+    } else {
+#ifdef LITE_ON_TINY_PUBLISH
       LOG(ERROR) << "unmatched type get, should be " << type_id << " but get "
                  << typeid(T).name();
-    throw std::invalid_argument("unmatched type");
+#else
+      throw std::invalid_argument("unmatched type");
+#endif
+    }
   }
   ~variant() { helper_t::destroy(type_id, &data); }
 };

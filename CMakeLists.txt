@@ -43,6 +43,7 @@ option(WITH_AVX         "Compile PaddlePaddle with AVX intrinsics"      ${AVX_FO
 option(WITH_PYTHON      "Compile PaddlePaddle with python interpreter"  ON)
 option(WITH_TESTING     "Compile PaddlePaddle with unit testing"        OFF)
 option(WITH_MKL         "Compile PaddlePaddle with MKL support."        ${AVX_FOUND})
+option(WITH_ARM_DOTPROD "Compile PaddlePaddle with ARM dot production"  ON)
 option(WITH_SYSTEM_BLAS   "Use system blas library"           OFF)
 option(WITH_DISTRIBUTE  "Compile with distributed support"              OFF)
 option(WITH_BRPC_RDMA     "Use brpc rdma as the rpc protocal"           OFF)
@@ -53,24 +54,22 @@ option(WITH_COVERAGE    "Compile PaddlePaddle with code coverage"       OFF)
 option(COVERALLS_UPLOAD "Package code coverage data to coveralls"       OFF)
 option(REPLACE_ENFORCE_GLOG "Replace PADDLE_ENFORCE with glog/CHECK for better debug." OFF)
 # TODO(Superjomn) Remove WITH_ANAKIN option if not needed latter.
-
 if(ANDROID OR IOS OR ARMLINUX)
     set(WITH_GPU OFF CACHE STRING
-        "Disable GPU when cross-compiling for Android and iOS" FORCE)
+            "Disable GPU when cross-compiling for Android and iOS" FORCE)
     set(WITH_DSO OFF CACHE STRING
-        "Disable DSO when cross-compiling for Android and iOS" FORCE)
+            "Disable DSO when cross-compiling for Android and iOS" FORCE)
     set(WITH_AVX OFF CACHE STRING
-        "Disable AVX when cross-compiling for Android and iOS" FORCE)
+            "Disable AVX when cross-compiling for Android and iOS" FORCE)
     set(WITH_PYTHON OFF CACHE STRING
-        "Disable PYTHON when cross-compiling for Android and iOS" FORCE)
+            "Disable PYTHON when cross-compiling for Android and iOS" FORCE)
     set(WITH_RDMA OFF CACHE STRING
-        "Disable RDMA when cross-compiling for Android and iOS" FORCE)
+            "Disable RDMA when cross-compiling for Android and iOS" FORCE)
     set(WITH_MKL OFF CACHE STRING
-        "Disable MKL when cross-compiling for Android and iOS" FORCE)
+            "Disable MKL when cross-compiling for Android and iOS" FORCE)
 endif()
 
 # for lite, both server and mobile framework.
-option(WITH_LITE "Enable lite framework" OFF)
 option(LITE_WITH_JAVA "Enable Java JNI lib in lite mode" OFF)
 option(LITE_WITH_CUDA "Enable CUDA in lite mode" OFF)
 option(LITE_WITH_X86  "Enable X86 in lite mode"  ON)
@@ -81,7 +80,8 @@ option(LITE_WITH_OPENCL   "Enable OpenCL support in lite" OFF)
 option(LITE_WITH_FPGA   "Enable FPGA support in lite" OFF)
 option(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK  "Enable light-weight framework" OFF)
 option(LITE_WITH_PROFILE  "Enable profile mode in lite framework"  OFF)
-
+option(LITE_SHUTDOWN_LOG "Shutdown log system or not." OFF)
+option(LITE_ON_TINY_PUBLISH "Publish tiny predictor lib." OFF)
 
 set(THIRD_PARTY_PATH "${CMAKE_BINARY_DIR}/third_party" CACHE STRING
         "A path setting third party libraries download & build directories.")
@@ -93,19 +93,34 @@ if(NOT CMAKE_BUILD_TYPE)
             FORCE)
 endif()
 
+# check options
+if (LITE_ON_TINY_PUBLISH)
+    if (NOT (WITH_LITE AND LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_JAVA AND NOT WITH_TESTING))
+        message(FATAL_ERROR "LITE_ON_TINY_PUBLISH=ON must be used with WITH_LITE=ON LITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON LITE_WITH_JAVA=ON WITH_TESTING=OFF")
+        return()
+    endif()
+endif()
+
 include_directories("${PADDLE_SOURCE_DIR}")
 
 # for mobile
 if (WITH_LITE AND LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
     message(STATUS "Building the mobile framework")
     include(cross_compiling/postproject)
+    include(cross_compiling/npu) # check and prepare NPU DDK
 
     # include the necessary thirdparty dependencies
     include(external/gflags)    # download, build, install gflags
-    include(external/glog)      # download, build, install glog
+
+    # LITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON will disable glog
+    # TODO(sangoly): refine WITH_LITE and LITE_WITH_LIGHT_WEIGHT_FRAMEWORK
+    #include(external/glog)     # download, build, install glog
     include(external/gtest)     # download, build, install gtest
-    include(external/protobuf)  # download, build, install protobuf
     include(ccache)             # set ccache for compilation
+
+    if (NOT LITE_ON_TINY_PUBLISH)
+        include(external/protobuf)  # download, build, install protobuf
+    endif()
 
     # for opencl
     if (LITE_WITH_OPENCL)
@@ -120,8 +135,6 @@ if (WITH_LITE AND LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
     return()
 endif()
 
-
-
 set(WITH_MKLML ${WITH_MKL})
 if (NOT DEFINED WITH_MKLDNN)
     if (WITH_MKL AND AVX2_FOUND)
@@ -132,9 +145,6 @@ if (NOT DEFINED WITH_MKLDNN)
     endif()
 endif()
 
-if (REPLACE_ENFORCE_GLOG)
-  add_definitions("-DREPLACE_ENFORCE_GLOG")
-endif()
 ########################################################################################
 
 include(external/mklml)     # download mklml package

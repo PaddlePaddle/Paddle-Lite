@@ -35,10 +35,10 @@ void LeakyReluCompute::Run() {
   auto& ctx = this->ctx_->template As<ARMContext>();
   auto x_dims = param.X->dims();
   auto x_data = param.X->data<float>();
-  auto slope = param.Leaky_relu_slope;
+  auto alpha = param.Leaky_relu_alpha;
   auto output_data = param.Out->mutable_data<float>();
   lite::arm::math::act_relu_neg<float>(
-      x_data, output_data, x_dims.production(), slope, ctx.threads());
+      x_data, output_data, x_dims.production(), alpha, ctx.threads());
 }
 
 void ReluClippedCompute::Run() {
@@ -57,20 +57,21 @@ void PReluCompute::Run() {
   auto& ctx = this->ctx_->template As<ARMContext>();
   auto x_dims = param.X->dims();
   auto x_data = param.X->data<float>();
-  auto channel_shared = param.Prelu_channel_shared;
-  auto channel_slope = param.Prelu_channel_slope->data<float>();
+  auto mode = param.Prelu_mode;
+  auto alpha_data = param.Prelu_alpha->data<float>();
   auto output_data = param.Out->mutable_data<float>();
 
   int outer_size = x_dims[0];
   int channel_size = x_dims[1];
-  int inner_size = x_dims[2] * x_dims[3];
+  int inner_size = x_dims.count(2, x_dims.size());
+
   lite::arm::math::act_prelu<float>(x_data,
                                     output_data,
                                     outer_size,
                                     channel_size,
                                     inner_size,
-                                    channel_shared,
-                                    channel_slope,
+                                    mode,
+                                    alpha_data,
                                     ctx.threads());
 }
 
@@ -99,10 +100,10 @@ void SwishCompute::Run() {
   auto& ctx = this->ctx_->template As<ARMContext>();
   auto x_dims = param.X->dims();
   auto x_data = param.X->data<float>();
-  auto coef = param.Swish_coef;
+  auto beta = param.Swish_beta;
   auto output_data = param.Out->mutable_data<float>();
   lite::arm::math::act_swish<float>(
-      x_data, output_data, x_dims.production(), coef, ctx.threads());
+      x_data, output_data, x_dims.production(), beta, ctx.threads());
 }
 
 void Relu6Compute::Run() {
@@ -133,7 +134,7 @@ REGISTER_LITE_KERNEL(leaky_relu,
                      paddle::lite::kernels::arm::LeakyReluCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("Leaky_relu_slope", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("alpha", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
 REGISTER_LITE_KERNEL(relu_clipped,
@@ -149,8 +150,8 @@ REGISTER_LITE_KERNEL(relu_clipped,
 REGISTER_LITE_KERNEL(
     prelu, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::PReluCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("Prelu_channel_shared", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("Prelu_channel_slope", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("mode", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Alpha", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
 REGISTER_LITE_KERNEL(sigmoid,
@@ -170,7 +171,7 @@ REGISTER_LITE_KERNEL(
 REGISTER_LITE_KERNEL(
     swish, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::SwishCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("Swish_coef", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("beta", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
 REGISTER_LITE_KERNEL(

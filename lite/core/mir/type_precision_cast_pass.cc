@@ -39,7 +39,6 @@ void PrecisionCastPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
       ComplementInputs(graph.get(), node, in);
     }
   }
-  VLOG(3) << "\n" << Visualize(graph.get());
 }
 
 void PrecisionCastPass::ComplementInputs(SSAGraph* graph,
@@ -59,13 +58,13 @@ void PrecisionCastPass::ComplementInputs(SSAGraph* graph,
   CHECK(inst.op_info()->GetInputArgname(in_arg_name, &tmp));
   auto decl_arg_type = inst.picked_kernel().GetInputDeclType(tmp);
   CHECK(in->AsArg().type);
-  LOG(INFO) << inst.picked_kernel().name();
+  VLOG(4) << inst.picked_kernel().name();
   // if (!in->AsArg().is_weight && !PrecisionCompatibleTo(*in->AsArg().type,
   // *decl_arg_type)) {
   if (!PrecisionCompatibleTo(*in->AsArg().type, *decl_arg_type)) {
-    LOG(INFO) << "found Target unmatched tensor: " << in->AsArg().name
-              << " for kernel " << inst.op()->DebugString() << " "
-              << *in->AsArg().type << " -> " << *decl_arg_type;
+    VLOG(4) << "found Target unmatched tensor: " << in->AsArg().name
+            << " for kernel " << inst.op()->DebugString() << " "
+            << *in->AsArg().type << " -> " << *decl_arg_type;
     // Add an Cast instruction to make the input compatible with other dist.
     AddCastInst(*in->AsArg().type,
                 *decl_arg_type,
@@ -156,7 +155,7 @@ void PrecisionCastPass::AddCastInst(const Type& from,
   inst_node->AsStmt().kernels().emplace_back(
       std::move(original_selected_kernel));
   for (auto& kernel : inst_node->AsStmt().kernels()) {
-    LOG(INFO) << "kernel info: " << kernel->name();
+    VLOG(4) << "kernel info: " << kernel->name();
     inst_node->AsStmt().op()->AttachKernel(kernel.get());
   }
   graph->CheckValid();

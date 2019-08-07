@@ -14,13 +14,13 @@
 
 #pragma once
 
-#include <gflags/gflags.h>
 #include "lite/utils/any.h"
 #ifdef LITE_WITH_CUDA
 #include "lite/cuda/blas.h"
 #include "lite/cuda/cuda_utils.h"
 #endif
 #ifdef LITE_WITH_OPENCL
+#include <gflags/gflags.h>
 #include <unordered_map>
 #include "lite/opencl/cl_context.h"
 #include "lite/opencl/cl_runtime.h"
@@ -116,6 +116,8 @@ class Context<TargetType::kARM> {
   int l2_cache_size() const { return DeviceInfo::Global().l2_cache_size(); }
   int l3_cache_size() const { return DeviceInfo::Global().l3_cache_size(); }
   int llc_size() const { return DeviceInfo::Global().llc_size(); }
+  bool has_dot() const { return DeviceInfo::Global().has_dot(); }
+  bool has_fp16() const { return DeviceInfo::Global().has_fp16(); }
 
   template <typename T>
   T* workspace_data() {

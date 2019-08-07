@@ -20,10 +20,10 @@ namespace lite {
 namespace operators {
 
 bool DensityPriorBoxOpLite::CheckShape() const {
-  // CHECK_OR_FALSE(param_.ins);
-  // CHECK_OR_FALSE(param_.outs);
-
-  CHECK_EQ(param_.ins.size(), 2);
+  CHECK_OR_FALSE(param_.input);
+  CHECK_OR_FALSE(param_.image);
+  CHECK_OR_FALSE(param_.boxes);
+  CHECK_OR_FALSE(param_.variances);
   return true;
 }
 
@@ -31,32 +31,44 @@ bool DensityPriorBoxOpLite::InferShape() const { return true; }
 
 bool DensityPriorBoxOpLite::AttachImpl(const cpp::OpDesc& opdesc,
                                        lite::Scope* scope) {
-  auto inputs = opdesc.Input("Input");
-  auto outputs = opdesc.Output("Output");
+  auto input = opdesc.Input("Input").front();
+  auto image = opdesc.Input("Image").front();
+  auto boxes = opdesc.Output("Boxes").front();
+  auto variances = opdesc.Output("Variances").front();
 
-  for (auto var : inputs) {
-    param_.ins.push_back(scope->FindVar(var)->GetMutable<lite::Tensor>());
-  }
-  for (auto var : outputs) {
-    param_.outs.push_back(scope->FindVar(var)->GetMutable<lite::Tensor>());
-  }
+  param_.input = scope->FindVar(input)->GetMutable<lite::Tensor>();
+  param_.image = scope->FindVar(image)->GetMutable<lite::Tensor>();
+  param_.boxes = scope->FindVar(boxes)->GetMutable<lite::Tensor>();
+  param_.variances = scope->FindVar(variances)->GetMutable<lite::Tensor>();
 
-  param_.is_flip = opdesc.GetAttr<bool>("is_flip");
-  param_.is_clip = opdesc.GetAttr<bool>("is_clip");
-  param_.min_size = opdesc.GetAttr<std::vector<float>>("min_size");
-  param_.fixed_size = opdesc.GetAttr<std::vector<float>>("fixed_size");
-  param_.fixed_ratio = opdesc.GetAttr<std::vector<float>>("fixed_ratio");
-  param_.density_size = opdesc.GetAttr<std::vector<float>>("density_size");
-  param_.max_size = opdesc.GetAttr<std::vector<float>>("max_size");
-  param_.aspect_ratio = opdesc.GetAttr<std::vector<float>>("aspect_ratio");
-  param_.variance = opdesc.GetAttr<std::vector<float>>("variance");
-  param_.img_w = opdesc.GetAttr<int>("img_w");
-  param_.img_h = opdesc.GetAttr<int>("img_h");
-  param_.step_w = opdesc.GetAttr<float>("step_w");
-  param_.step_h = opdesc.GetAttr<float>("step_h");
+  param_.flip = opdesc.GetAttr<bool>("flip");
+  param_.clip = opdesc.GetAttr<bool>("clip");
+  param_.min_sizes = opdesc.GetAttr<std::vector<float>>("min_sizes");
+  param_.fixed_sizes = opdesc.GetAttr<std::vector<float>>("fixed_sizes");
+  param_.fixed_ratios = opdesc.GetAttr<std::vector<float>>("fixed_ratios");
+  param_.density_sizes = opdesc.GetAttr<std::vector<float>>("density_sizes");
+  param_.max_sizes = opdesc.GetAttr<std::vector<float>>("max_sizes");
+  param_.aspect_ratios = opdesc.GetAttr<std::vector<float>>("aspect_ratios");
+  param_.variances_ = opdesc.GetAttr<std::vector<float>>("variances");
+  if (opdesc.HasAttr("img_w")) {
+    param_.img_w = opdesc.GetAttr<int>("img_w");
+  }
+  if (opdesc.HasAttr("img_h")) {
+    param_.img_h = opdesc.GetAttr<int>("img_h");
+  }
+  if (opdesc.HasAttr("step_w")) {
+    param_.step_w = opdesc.GetAttr<float>("step_w");
+  }
+  if (opdesc.HasAttr("step_h")) {
+    param_.step_h = opdesc.GetAttr<float>("step_h");
+  }
   param_.offset = opdesc.GetAttr<float>("offset");
-  param_.prior_num = opdesc.GetAttr<int>("prior_num");
-  param_.order = opdesc.GetAttr<std::vector<std::string>>("order");
+  if (opdesc.HasAttr("prior_num")) {
+    param_.prior_num = opdesc.GetAttr<int>("prior_num");
+  }
+  if (opdesc.HasAttr("order")) {
+    param_.order = opdesc.GetAttr<std::vector<std::string>>("order");
+  }
   return true;
 }
 

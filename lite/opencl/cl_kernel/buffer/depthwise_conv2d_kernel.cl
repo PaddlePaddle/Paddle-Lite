@@ -61,6 +61,10 @@ __kernel void depthwise_conv2d(const int numel, // num of elements
           if(bias_data != NULL){
               v += bias_data[c];
           }
+#ifdef RELU
+          output_data[index] = activation(v);
+#else
           output_data[index] = v;
+#endif
       }
 }

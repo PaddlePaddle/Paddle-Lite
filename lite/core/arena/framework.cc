@@ -20,18 +20,19 @@ namespace lite {
 namespace arena {
 
 void TestCase::CreateInstruction() {
-  LOG(INFO) << "Create op for " << op_desc().Type();
   auto op = LiteOpRegistry::Global().Create(op_desc().Type());
   CHECK(op) << "no op for " << op_desc().Type();
   op->Attach(*op_desc_, inst_scope_);
   auto kernels = op->CreateKernels({place_});
   // filter out the target kernel
-  CHECK(!kernels.empty()) << "No kernel found for place " << place_;
+  CHECK(!kernels.empty()) << "No kernel found for place "
+                          << place_.DebugString();
   auto it = std::remove_if(
       kernels.begin(), kernels.end(), [&](std::unique_ptr<KernelBase>& k) {
         return k->alias() == alias_;
       });
-  CHECK(it != kernels.end()) << "failed to create the kernel in " << place_
+  CHECK(it != kernels.end()) << "failed to create the kernel in "
+                             << place_.DebugString()
                              << " with alias: " << alias_;
   // prepare context
   (*it)->SetContext(std::move(ctx_));

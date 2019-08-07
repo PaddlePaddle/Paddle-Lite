@@ -13,11 +13,13 @@
 // limitations under the License.
 
 #include "lite/core/program.h"
-#include "lite/core/optimizer.h"
 #include "lite/model_parser/cpp/block_desc.h"
 #include "lite/model_parser/cpp/op_desc.h"
 #include "lite/model_parser/cpp/var_desc.h"
 #include "lite/operators/while_op.h"
+#ifdef LITE_WITH_PROFILE
+#include "lite/core/profile/precision_profiler.h"
+#endif
 
 namespace paddle {
 namespace lite {
@@ -38,9 +40,10 @@ void RuntimeProgram::SaveOpInfosToProgram(cpp::ProgramDesc* desc) {
 
 void RuntimeProgram::Run() {
   for (auto& inst : instructions_) {
-    VLOG(4) << ">> Running kernel: " << inst.op()->op_info()->Repr()
-            << " on Target " << TargetToStr(inst.kernel()->target());
     inst.Run();
+#ifdef LITE_WITH_PROFILE
+    LITE_PRECISION_PROFILE(inst)
+#endif
   }
 }
 
@@ -55,7 +58,7 @@ void Program::Build(const cpp::ProgramDesc& prog) {
     auto& op_desc = *main_block.GetOp<cpp::OpDesc>(i);
     auto op_type = op_desc.Type();
     // if (op_type == "feed" || op_type == "fetch") continue;
-    LOG(INFO) << "create Op [" << op_type << "]";
+    VLOG(4) << "create Op [" << op_type << "]";
     auto op = LiteOpRegistry::Global().Create(op_type);
     CHECK(op) << "no Op found for " << op_type;
     ops_.emplace_back(std::move(op));
@@ -110,7 +113,7 @@ void Instruction::Run() {
   has_run_ = true;
 }
 
-std::ostream& operator<<(std::ostream& os, const Instruction& other) {
+STL::ostream& operator<<(STL::ostream& os, const Instruction& other) {
   os << other.kernel_->summary() << "\t(" << other.kernel_->doc() << ")";
   return os;
 }

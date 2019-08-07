@@ -38,7 +38,7 @@ VarDescAPI::Type VarDesc::GetType() const {
     GET_TYPE_CASE_ITEM(PLACE_LIST);
     GET_TYPE_CASE_ITEM(READER);
     default:
-      LOG(ERROR) << "Unknown var type";
+      LOG(FATAL) << "Unknown var type";
   }
 #undef GET_TYPE_CASE_ITEM
 }
@@ -60,7 +60,7 @@ void VarDesc::SetType(VarDescAPI::Type type) {
     SET_TYPE_CASE_ITEM(PLACE_LIST);
     SET_TYPE_CASE_ITEM(READER);
     default:
-      LOG(ERROR) << "Unknown var type";
+      LOG(FATAL) << "Unknown var type";
   }
 #undef SET_TYPE_CASE_ITEM
 }

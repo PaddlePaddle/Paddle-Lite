@@ -1,10 +1,9 @@
-lite_cc_library(debug_utils SRCS debug_utils.cc DEPS op_params)
+lite_cc_library(debug_utils SRCS debug_utils.cc DEPS op_params model_parser)
 
 lite_cc_binary(lite_model_debug_tool SRCS model_debug_tool.cc
     DEPS
     cxx_api
     debug_utils
-    model_parser
     target_wrapper_host
     mir_passes
     gflags

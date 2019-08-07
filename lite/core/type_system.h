@@ -152,7 +152,7 @@ class Type : public DataType {
   bool operator==(const Type& other) {
     return id_ == other.id() && place_ == other.place();
   }
-  friend std::ostream& operator<<(std::ostream& os, const Type& other);
+  friend STL::ostream& operator<<(STL::ostream& os, const Type& other);
 
   virtual ~Type() = default;
 
@@ -195,7 +195,8 @@ static bool DataLayoutCompatibleTo(const Type& a, const Type& b) {
 static bool PrecisionCompatibleTo(const Type& a, const Type& b) {
   return a.IsVoid() ||                                                        //
          (a.IsTensor() && b.IsTensor() && (a.precision() == b.precision() ||  //
-                                           b.precision() == PRECISION(kAny)));
+                                           b.precision() == PRECISION(kAny) ||
+                                           a.precision() == PRECISION(kAny)));
 }
 
 static bool DeviceCompatibleTo(const Type& a, const Type& b) {
@@ -324,7 +325,7 @@ class ParamTypeRegistry {
     return x;
   }
 
-  friend std::ostream& operator<<(std::ostream& os,
+  friend STL::ostream& operator<<(STL::ostream& os,
                                   const ParamTypeRegistry& other) {
     for (auto& item : other.types_) {
       os << item.first << " " << item.second.DebugString() << "\n";
@@ -355,7 +356,7 @@ class ParamTypeRegistry {
     std::string arg_name;
 
     size_t hash() const;
-    friend std::ostream& operator<<(std::ostream& os, const KernelIdTy& other);
+    friend STL::ostream& operator<<(STL::ostream& os, const KernelIdTy& other);
   };
 
   using key_t = KernelIdTy;

@@ -521,7 +521,7 @@ void int32_to_fp32(const int* din,
 }
 
 void int32_to_int8(const int* din,
-                   signed char* dout,
+                   int8_t* dout,
                    const float* scale,
                    int axis_size,
                    int64_t outer_size,
@@ -533,7 +533,7 @@ void int32_to_int8(const int* din,
   for (int64_t n = 0; n < loop_size; ++n) {
     float in_scale = scale[n % axis_size];
     const int* din_c = din + n * inner_size;
-    signed char* dout_c = dout + n * inner_size;
+    int8_t* dout_c = dout + n * inner_size;
     float32x4_t vscale = vdupq_n_f32(in_scale);
     float32x4_t vzero = vdupq_n_f32(0.f);
     float32x4_t vpoff = vdupq_n_f32(0.5f);
@@ -541,7 +541,7 @@ void int32_to_int8(const int* din,
     if (cnt > 0) {
       int loop = cnt;
       const int* din_ptr = din_c;
-      signed char* dout_ptr = dout_c;
+      int8_t* dout_ptr = dout_c;
 #ifdef __aarch64__
       asm volatile(
           "0:                                        \n"
@@ -805,9 +805,10 @@ bool trans_tensor_int32_to_int8(Tensor* tin,
   int inner_size = i_dims.count(axis + 1, i_dims.size());
 
   const int* i_data = tin->data<int32_t>();
-  signed char* o_data = tout->mutable_data<signed char>();
+  int8_t* o_data = tout->mutable_data<int8_t>();
   int32_to_int8(
       i_data, o_data, scale.data(), axis_size, outer_size, inner_size);
+
   return true;
 }
 

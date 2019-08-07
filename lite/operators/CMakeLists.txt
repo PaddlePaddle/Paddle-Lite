@@ -17,6 +17,7 @@ lite_cc_library(activation_ops SRCS activation_ops.cc DEPS ${op_DEPS})
 lite_cc_library(elementwise_ops SRCS elementwise_ops.cc DEPS ${op_DEPS})
 lite_cc_library(lrn_op_lite SRCS lrn_op.cc DEPS ${op_DEPS})
 lite_cc_library(decode_bboxes_op_lite SRCS decode_bboxes_op.cc DEPS ${op_DEPS})
+lite_cc_library(box_coder_op_lite SRCS box_coder_op.cc DEPS ${op_DEPS})
 lite_cc_library(multiclass_nms_op_lite SRCS multiclass_nms_op.cc DEPS ${op_DEPS})
 lite_cc_library(fusion_elementwise_activation_ops SRCS fusion_elementwise_activation_ops.cc DEPS elementwise_ops ${op_DEPS})
 lite_cc_library(mean_op SRCS mean_op.cc DEPS ${op_DEPS})
@@ -28,15 +29,17 @@ lite_cc_library(axpy_op SRCS axpy_op.cc DEPS ${op_DEPS})
 lite_cc_library(gru_unit_op SRCS gru_unit_op.cc DEPS ${op_DEPS})
 lite_cc_library(gru_op SRCS gru_op.cc DEPS ${op_DEPS})
 lite_cc_library(while_op SRCS while_op.cc DEPS ${op_DEPS})
+lite_cc_library(lookup_table_op SRCS lookup_table_op.cc DEPS ${op_DEPS})
 lite_cc_library(beam_search_decode_op SRCS beam_search_decode_op.cc DEPS ${op_DEPS})
 lite_cc_library(prior_box_op SRCS prior_box_op.cc DEPS ${op_DEPS})
 lite_cc_library(density_prior_box_op SRCS density_prior_box_op.cc DEPS ${op_DEPS})
 
-lite_cc_library(op_params SRCS op_params.cc DEPS tensor any framework_proto)
+lite_cc_library(op_params SRCS op_params.cc DEPS tensor any)
 lite_cc_library(dropout_op SRCS dropout_op.cc DEPS ${op_DEPS})
 lite_cc_library(concat_op SRCS concat_op.cc DEPS ${op_DEPS})
 lite_cc_library(pad2d_op SRCS pad2d_op.cc DEPS ${op_DEPS})
 lite_cc_library(negative_op SRCS negative_op.cc DEPS ${op_DEPS})
+lite_cc_library(crop_op SRCS crop_op.cc DEPS ${op_DEPS})
 lite_cc_library(calib_op SRCS calib_op.cc DEPS ${op_DEPS})
 lite_cc_library(split_op SRCS split_op.cc DEPS ${op_DEPS})
 lite_cc_library(transpose_op SRCS transpose_op.cc DEPS ${op_DEPS})
@@ -50,8 +53,26 @@ lite_cc_library(graph_op SRCS graph_op.cc DEPS ${op_DEPS})
 lite_cc_library(topk_op SRCS topk_op.cc DEPS ${op_DEPS})
 lite_cc_library(increment_op SRCS increment_op.cc DEPS ${op_DEPS})
 lite_cc_library(write_to_array_op SRCS write_to_array_op.cc DEPS ${op_DEPS})
+lite_cc_library(graph_op_lite SRCS graph_op.cc DEPS ${op_DEPS})
+lite_cc_library(logical_xor  SRCS logical_op.cc DEPS ${op_DEPS})
+lite_cc_library(logical_and  SRCS logical_op.cc DEPS ${op_DEPS})
+lite_cc_library(logical_or  SRCS logical_op.cc DEPS ${op_DEPS})
+lite_cc_library(logical_not  SRCS logical_op.cc DEPS ${op_DEPS})
+lite_cc_library(less_than  SRCS compare_op.cc DEPS ${op_DEPS})
+lite_cc_library(equal  SRCS compare_op.cc DEPS ${op_DEPS})
+lite_cc_library(not_equal  SRCS compare_op.cc DEPS ${op_DEPS})
+lite_cc_library(less_equal  SRCS compare_op.cc DEPS ${op_DEPS})
+lite_cc_library(greater_than  SRCS compare_op.cc DEPS ${op_DEPS})
+lite_cc_library(greater_equal  SRCS compare_op.cc DEPS ${op_DEPS})
 lite_cc_library(read_from_array_op SRCS read_from_array_op.cc DEPS ${op_DEPS})
 lite_cc_library(beam_search_op SRCS beam_search_op.cc DEPS ${op_DEPS})
+lite_cc_library(sequence_pool_op_lite SRCS sequence_pool_op.cc DEPS ${op_DEPS})
+lite_cc_library(sequence_expand_op_lite SRCS sequence_expand_op.cc DEPS ${op_DEPS})
+lite_cc_library(reduce_max_op_lite SRCS reduce_max_op.cc DEPS ${op_DEPS})
+lite_cc_library(shape_op_lite SRCS shape_op.cc DEPS ${op_DEPS})
+lite_cc_library(cast_op_lite SRCS cast_op.cc DEPS ${op_DEPS})
+lite_cc_library(slice_op_lite SRCS slice_op.cc DEPS ${op_DEPS})
+
 
 set(ops
         conv_op
@@ -68,19 +89,22 @@ set(ops
         gru_unit_op
         gru_op
         beam_search_decode_op
+        lookup_table_op
         io_copy_op
         io_copy_once_op
         elementwise_ops
         fusion_elementwise_activation_ops
         lrn_op_lite
-	    decode_bboxes_op_lite
-	    multiclass_nms_op_lite
+        decode_bboxes_op_lite
+        box_coder_op_lite
+        multiclass_nms_op_lite
         mean_op
         fill_constant_op
         activation_ops
         dropout_op
         concat_op
         pad2d_op
+        crop_op
         prior_box_op
         density_prior_box_op
         negative_op
@@ -98,12 +122,28 @@ set(ops
         sequence_softmax_op
         norm_op
         while_op
+        logical_xor        
+        logical_and        
+        logical_or        
+        logical_not        
+        equal        
+        not_equal        
+        less_than        
+        less_equal        
+        greater_than        
+        greater_equal        
         graph_op
         topk_op
         increment_op
         write_to_array_op
         read_from_array_op
         beam_search_op
+        sequence_pool_op_lite
+        sequence_expand_op_lite
+        reduce_max_op_lite
+        shape_op_lite
+        cast_op_lite
+        slice_op_lite
         CACHE INTERNAL "ops lite")
 
 if (NOT LITE_WITH_X86)

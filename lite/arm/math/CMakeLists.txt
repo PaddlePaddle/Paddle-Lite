@@ -60,6 +60,7 @@ if (NOT HAS_ARM_MATH_LIB_DIR)
       concat.cc
       sgemv.cc
       type_trans.cc
+      box_coder.cc
       conv_impl.cc
       conv_direct_3x3s1.cc
       conv_direct_3x3s2.cc
@@ -95,6 +96,10 @@ if (NOT HAS_ARM_MATH_LIB_DIR)
       pad2d.cc
       negative.cc
       beam_search.cc
-      DEPS ${lite_kernel_deps} framework_proto)
+      reduce_max.cc
+      sequence_pool.cc
+      sequence_expand.cc
+      slice.cc
+      DEPS ${lite_kernel_deps})
 endif()
  

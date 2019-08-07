@@ -21,6 +21,8 @@
 
 USE_LITE_KERNEL(feed, kHost, kAny, kAny, def);
 USE_LITE_KERNEL(fetch, kHost, kAny, kAny, def);
+USE_LITE_KERNEL(reshape, kHost, kAny, kAny, def);
+USE_LITE_KERNEL(reshape2, kHost, kAny, kAny, def);
 
 #ifdef LITE_WITH_ARM
 USE_LITE_KERNEL(fc, kARM, kFloat, kNCHW, def);
@@ -29,6 +31,7 @@ USE_LITE_KERNEL(scale, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(softmax, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(lrn, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(decode_bboxes, kARM, kFloat, kNCHW, def);
+USE_LITE_KERNEL(box_coder, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(conv2d, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(depthwise_conv2d, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(elementwise_add, kARM, kFloat, kNCHW, def);
@@ -58,13 +61,26 @@ USE_LITE_KERNEL(pad2d, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(prior_box, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(density_prior_box, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(negative, kARM, kFloat, kNCHW, def);
+USE_LITE_KERNEL(crop, kARM, kFloat, kNCHW, def);
+
 USE_LITE_KERNEL(norm, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(sequence_softmax, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(im2sequence, kARM, kFloat, kNCHW, def);
+USE_LITE_KERNEL(logical_xor, kARM, kFloat, kNCHW, def);
+USE_LITE_KERNEL(logical_and, kARM, kFloat, kNCHW, def);
+USE_LITE_KERNEL(less_than, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(topk, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(increment, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(write_to_array, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(read_from_array, kARM, kFloat, kNCHW, def);
+USE_LITE_KERNEL(multiclass_nms, kARM, kFloat, kNCHW, def);
+USE_LITE_KERNEL(reduce_max, kARM, kFloat, kNCHW, def);
+USE_LITE_KERNEL(sequence_expand, kARM, kFloat, kNCHW, def);
+USE_LITE_KERNEL(sequence_pool, kARM, kFloat, kNCHW, def);
+USE_LITE_KERNEL(shape, kARM, kFloat, kNCHW, def);
+USE_LITE_KERNEL(fill_constant, kARM, kFloat, kNCHW, def);
+USE_LITE_KERNEL(cast, kARM, kFloat, kNCHW, def)
+USE_LITE_KERNEL(slice, kARM, kFloat, kNCHW, def)
 
 USE_LITE_KERNEL(calib, kARM, kInt8, kNCHW, fp32_to_int8);
 USE_LITE_KERNEL(calib, kARM, kInt8, kNCHW, int8_to_fp32);
@@ -75,6 +91,7 @@ USE_LITE_KERNEL(fc, kARM, kInt8, kNCHW, fp32out);
 USE_LITE_KERNEL(gru_unit, kARM, kFloat, kNCHW, def)
 USE_LITE_KERNEL(gru, kARM, kFloat, kNCHW, def)
 USE_LITE_KERNEL(beam_search_decode, kARM, kFloat, kNCHW, def)
+USE_LITE_KERNEL(lookup_table, kARM, kFloat, kNCHW, def)
 #endif
 
 #ifdef LITE_WITH_X86
@@ -116,4 +133,9 @@ USE_LITE_KERNEL(fusion_elementwise_add_activation, kOpenCL, kFloat, kNCHW, def);
 USE_LITE_KERNEL(pool2d, kOpenCL, kFloat, kNCHW, def);
 USE_LITE_KERNEL(relu, kOpenCL, kFloat, kNCHW, def);
 USE_LITE_KERNEL(depthwise_conv2d, kOpenCL, kFloat, kNCHW, def);
+USE_LITE_KERNEL(conv2d, kOpenCL, kFloat, kNCHW, def);
+#endif
+
+#ifdef LITE_WITH_NPU
+USE_LITE_KERNEL(graph_op, kNPU, kFloat, kNCHW, def);
 #endif

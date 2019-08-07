@@ -15,6 +15,29 @@
 #pragma once
 #include <string>
 
+// Generic helper definitions for shared library support
+#if defined _WIN32 || defined __CYGWIN__
+#define PADDLE_LITE_HELPER_DLL_IMPORT __declspec(dllimport)
+#define PADDLE_LITE_HELPER_DLL_EXPORT __declspec(dllexport)
+#define PADDLE_LITE_HELPER_DLL_LOCAL
+#else
+#if __GNUC__ >= 4
+#define PADDLE_LITE_HELPER_DLL_IMPORT __attribute__((visibility("default")))
+#define PADDLE_LITE_HELPER_DLL_EXPORT __attribute__((visibility("default")))
+#else
+#define PADDLE_LITE_HELPER_DLL_IMPORT
+#define PADDLE_LITE_HELPER_DLL_EXPORT
+#endif
+#endif
+
+#ifdef LITE_ON_TINY_PUBLISH
+#define LITE_API PADDLE_LITE_HELPER_DLL_EXPORT
+#define LITE_API_IMPORT PADDLE_LITE_HELPER_DLL_IMPORT
+#else
+#define LITE_API
+#define LITE_API_IMPORT
+#endif
+
 namespace paddle {
 namespace lite_api {
 
@@ -37,7 +60,8 @@ enum class PrecisionType : int {
   kFP16 = 5,
   kInt32 = 3,
   kAny = 4,  // any precision
-  NUM = 6,   // number of fields.
+  kBool = 6,
+  NUM = 7,  // number of fields.
 };
 enum class DataLayoutType : int {
   kUnk = 0,
@@ -93,7 +117,7 @@ const std::string& DataLayoutRepr(DataLayoutType layout);
  * Place specifies the execution context of a Kernel or input/output for a
  * kernel. It is used to make the analysis of the MIR more clear and accurate.
  */
-struct Place {
+struct LITE_API Place {
   TargetType target{TARGET(kUnk)};
   PrecisionType precision{PRECISION(kUnk)};
   DataLayoutType layout{DATALAYOUT(kUnk)};
@@ -121,11 +145,6 @@ struct Place {
   bool operator!=(const Place& other) const { return !(*this == other); }
 
   friend bool operator<(const Place& a, const Place& b);
-
-  friend std::ostream& operator<<(std::ostream& os, const Place& other) {
-    os << other.DebugString();
-    return os;
-  }
 
   std::string DebugString() const;
 };

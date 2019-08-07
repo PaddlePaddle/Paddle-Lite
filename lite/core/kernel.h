@@ -17,10 +17,10 @@
 #include <map>
 #include <memory>
 #include <set>
-#include <sstream>
 #include <string>
 #include <utility>
 #include <vector>
+#include "lite/arm/math/type_trans.h"
 #include "lite/core/context.h"
 #include "lite/core/target_wrapper.h"
 #include "lite/core/type_system.h"
@@ -28,6 +28,7 @@
 #include "lite/core/workspace.h"
 #include "lite/operators/op_params.h"
 #include "lite/utils/all.h"
+#include "lite/utils/replace_stl/stream.h"
 
 namespace paddle {
 namespace lite {

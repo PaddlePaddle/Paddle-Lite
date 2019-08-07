@@ -162,6 +162,10 @@ if(WITH_WBAES)
     add_definitions(-DPADDLE_WITH_WBAES)
 endif(WITH_WBAES)
 
+if (REPLACE_ENFORCE_GLOG)
+  add_definitions("-DREPLACE_ENFORCE_GLOG")
+endif()
+
 # for lite
 # TODO(Superjomn) not work fine with the option
 if (LITE_WITH_CUDA)
@@ -174,6 +178,10 @@ endif()
 
 if (LITE_WITH_ARM)
     add_definitions("-DLITE_WITH_ARM")
+endif()
+
+if (WITH_ARM_DOTPROD)
+    add_definitions("-DWITH_ARM_DOTPROD")
 endif()
 
 if (LITE_WITH_NPU)
@@ -194,4 +202,12 @@ endif()
 
 if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
   add_definitions("-DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK")
+endif()
+
+if (LITE_SHUTDOWN_LOG)
+  add_definitions("-DLITE_SHUTDOWN_LOG")
+endif()
+
+if (LITE_ON_TINY_PUBLISH)
+  add_definitions("-DLITE_ON_TINY_PUBLISH")
 endif()

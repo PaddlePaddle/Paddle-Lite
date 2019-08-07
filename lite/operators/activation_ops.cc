@@ -35,19 +35,19 @@ bool ActivationOp::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
   auto out_name = opdesc.Output("Out").front();
   param_.X = scope->FindVar(x_name)->GetMutable<lite::Tensor>();
   if (opdesc.Type() == "leaky_relu") {
-    param_.Leaky_relu_slope = opdesc.GetAttr<float>("Leaky_relu_slope");
+    param_.Leaky_relu_alpha = opdesc.GetAttr<float>("alpha");
   }
   if (opdesc.Type() == "relu_clipped") {
     param_.Relu_clipped_coef = opdesc.GetAttr<float>("Relu_clipped_coef");
   }
   if (opdesc.Type() == "prelu") {
-    auto prelu_channel_slope_name = opdesc.Input("Prelu_channel_slope").front();
-    param_.Prelu_channel_shared = opdesc.GetAttr<bool>("Prelu_channel_shared");
-    param_.Prelu_channel_slope =
-        scope->FindVar(prelu_channel_slope_name)->GetMutable<lite::Tensor>();
+    param_.Prelu_mode = opdesc.GetAttr<std::string>("mode");
+    auto prelu_alpha_name = opdesc.Input("Alpha").front();
+    param_.Prelu_alpha =
+        scope->FindVar(prelu_alpha_name)->GetMutable<lite::Tensor>();
   }
   if (opdesc.Type() == "swish") {
-    param_.Swish_coef = opdesc.GetAttr<float>("Swish_coef");
+    param_.Swish_beta = opdesc.GetAttr<float>("beta");
   }
   param_.Out = scope->FindVar(out_name)->GetMutable<lite::Tensor>();
   return true;

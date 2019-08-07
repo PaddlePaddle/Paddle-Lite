@@ -76,8 +76,8 @@ class StaticKernelPickPass : public mir::StmtPass {
                           core::KernelPickFactor::Factor::DataLayoutFirst);
     }
     VLOG(4) << "picker tactic " << kernel_pick_factors_;
-    VLOG(4) << "kernel place " << kernel.place();
-    VLOG(4) << "picker place " << place();
+    VLOG(4) << "kernel place " << kernel.place().DebugString();
+    VLOG(4) << "picker place " << place().DebugString();
     VLOG(4) << "score " << score;
 
     // The data layout is not considered, for the input and output arguments
