@@ -12,23 +12,28 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#pragma once
+#ifdef ASSIGN_OP
 
-#include <string>
-#include "framework/operator.h"
-#include "operators/kernel/compare_kernel.h"
-#include "operators/op_param.h"
+#include "operators/kernel/assign_kernel.h"
+#include "framework/data_type.h"
 
 namespace paddle_mobile {
 namespace operators {
 
-#ifdef LESS_THAN_OP
-DECLARE_OPERATOR(LessThan, CompareParam, LessThanKernel);
-#endif  // LESS_THAN_OP
+template <>
+bool AssignKernel<CPU, float>::Init(AssignParam<CPU>* param) {
+  return true;
+}
 
-#ifdef EQUAL_OP
-DECLARE_OPERATOR(Equal, CompareParam, EqualKernel);
-#endif  // EQUAL_OP
+template <>
+void AssignKernel<CPU, float>::Compute(const AssignParam<CPU>& param) {
+  const auto* input = param.Input();
+  auto* out = param.Output();
+  out->mutable_data<float>();
+  framework::TensorCopy(*input, out);
+}
 
 }  // namespace operators
 }  // namespace paddle_mobile
+
+#endif  // ASSIGN_OP

@@ -204,6 +204,9 @@ class RoiPerspectiveParam : public OpParam {
         OpParam::GetVarValue<framework::LoDTensor>("ROIs", inputs, *scope);
     output_ =
         OpParam::GetVarValue<framework::LoDTensor>("Out", outputs, *scope);
+    transform_Matrix_ = OpParam::GetVarValue<framework::LoDTensor>(
+        "TransformMatrix", outputs, *scope);
+    mask = OpParam::GetVarValue<framework::LoDTensor>("Mask", outputs, *scope);
 
     spatial_scale_ = OpParam::GetAttr<float>("spatial_scale", attrs);
     transformed_height_ = OpParam::GetAttr<int>("transformed_height", attrs);

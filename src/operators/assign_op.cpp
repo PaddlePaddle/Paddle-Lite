@@ -12,23 +12,28 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#pragma once
+#ifdef ASSIGN_OP
 
-#include <string>
-#include "framework/operator.h"
-#include "operators/kernel/compare_kernel.h"
-#include "operators/op_param.h"
+#include "operators/assign_op.h"
 
 namespace paddle_mobile {
 namespace operators {
 
-#ifdef LESS_THAN_OP
-DECLARE_OPERATOR(LessThan, CompareParam, LessThanKernel);
-#endif  // LESS_THAN_OP
-
-#ifdef EQUAL_OP
-DECLARE_OPERATOR(Equal, CompareParam, EqualKernel);
-#endif  // EQUAL_OP
+template <typename Dtype, typename T>
+void AssignOp<Dtype, T>::InferShape() const {
+  PADDLE_MOBILE_ENFORCE(this->param_.Input() != nullptr,
+                        "Input (X) of Assign op should not be null.");
+  PADDLE_MOBILE_ENFORCE(this->param_.Output() != nullptr,
+                        "Output (Output) of Assign op should not be null.");
+}
 
 }  // namespace operators
 }  // namespace paddle_mobile
+
+namespace ops = paddle_mobile::operators;
+
+#ifdef PADDLE_MOBILE_CPU
+REGISTER_OPERATOR_CPU(assign, ops::AssignOp);
+#endif
+
+#endif  // ASSIGN_OP

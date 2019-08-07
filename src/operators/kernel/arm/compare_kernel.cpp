@@ -41,6 +41,11 @@ inline uint8_t Compare(const float x, const float y) {
   return static_cast<uint8_t>(x < y);
 }
 
+template <CompareType Comp = EQUAL>
+inline uint8_t Compare(const int x, const int y) {
+  return static_cast<uint8_t>(x == y);
+}
+
 template <CompareType Comp = LESS_THAN>
 inline uint8_t Compare(const int64_t x, const int64_t y) {
   return static_cast<uint8_t>(x < y);
@@ -184,6 +189,51 @@ struct CompareCompute<int64_t, Comp> {
   }
 };
 
+template <CompareType Comp>
+struct CompareCompute<int, Comp> {
+  void operator()(const Tensor *X, const Tensor *Y, const int Axis,
+                  Tensor *Out) {
+    const int *x = X->data<int>();
+    const int *y = Y->data<int>();
+    uint8_t *output = reinterpret_cast<uint8_t *>(Out->mutable_data<bool>());
+    const auto &x_dims = X->dims();
+    const auto &y_dims = Y->dims();
+    /// axis = -1 represent the last dimensions.
+    int axis = (Axis == -1 ? x_dims.size() - y_dims.size() : Axis);
+    int batch = 1;
+    int channels = 1;
+    int elementwise_num = 1;
+    for (int i = 0; i < axis; ++i) {
+      batch *= x_dims[i];
+    }
+    for (int i = 0; i < y_dims.size(); ++i) {
+      channels *= y_dims[i];
+    }
+    for (int i = y_dims.size() + axis; i < x_dims.size(); ++i) {
+      elementwise_num *= x_dims[i];
+    }
+    // if elementwise_num == 1, compare rowwise
+    if (elementwise_num == 1) {
+      for (int i = 0; i < batch; ++i) {
+        for (int j = 0; j < channels; ++j) {
+          int x_offset = i * channels + j;
+          output[x_offset] = Compare<Comp>(x[x_offset], y[j]);
+        }
+      }
+    } else {
+      for (int i = 0; i < batch; ++i) {
+        for (int j = 0; j < channels; ++j) {
+          int x_offset = (i * channels + j) * elementwise_num;
+          int y_offset = j * elementwise_num;
+          for (int k = 0; k < elementwise_num; ++k) {
+            output[x_offset + k] = Compare<Comp>(x[x_offset + k], y[y_offset]);
+          }
+        }
+      }
+    }
+  }
+};
+
 #ifdef LESS_THAN_OP
 template <>
 bool LessThanKernel<CPU, float>::Init(CompareParam<CPU> *param) {
@@ -204,6 +254,21 @@ void LessThanKernel<CPU, float>::Compute(const CompareParam<CPU> &param) {
   }
 }
 #endif  // LESS_THAN_OP
+
+#ifdef EQUAL_OP
+template <>
+bool EqualKernel<CPU, float>::Init(CompareParam<CPU> *param) {
+  return true;
+}
+
+template <>
+void EqualKernel<CPU, float>::Compute(const CompareParam<CPU> &param) {
+  if (param.input_x_->type() == type_id<int>().hash_code()) {
+    CompareCompute<int, EQUAL>()(param.input_x_, param.input_y_, param.axis_,
+                                 param.output_);
+  }
+}
+#endif  // EQUAL_OP
 
 }  // namespace operators
 }  // namespace paddle_mobile

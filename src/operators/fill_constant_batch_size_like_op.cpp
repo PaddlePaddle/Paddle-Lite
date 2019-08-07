@@ -12,23 +12,14 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#pragma once
+#ifdef FILL_CONSTANT_BATCH_SIZE_LIKE_OP
 
-#include <string>
-#include "framework/operator.h"
-#include "operators/kernel/compare_kernel.h"
-#include "operators/op_param.h"
+#include "operators/fill_constant_batch_size_like_op.h"
 
-namespace paddle_mobile {
-namespace operators {
+namespace ops = paddle_mobile::operators;
+#ifdef PADDLE_MOBILE_CPU
+REGISTER_OPERATOR_CPU(fill_constant_batch_size_like,
+                      ops::FillConstantBatchSizeLikeOp);
+#endif
 
-#ifdef LESS_THAN_OP
-DECLARE_OPERATOR(LessThan, CompareParam, LessThanKernel);
-#endif  // LESS_THAN_OP
-
-#ifdef EQUAL_OP
-DECLARE_OPERATOR(Equal, CompareParam, EqualKernel);
-#endif  // EQUAL_OP
-
-}  // namespace operators
-}  // namespace paddle_mobile
+#endif

@@ -19,6 +19,7 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace operators {
 
+template <typename Dtype>
 void SliceCompute(const SliceParam<CPU>& param) {
   auto input = param.input_;
   auto output = param.output_;
@@ -53,6 +54,16 @@ template <>
 void SliceKernel<CPU, float>::Compute(const SliceParam<CPU>& param) {
   int rank = param.input_->dims().size();
   switch (rank) {
+    case 1:
+      if (param.input_->type() == type_id<int>().hash_code()) {
+        SliceCompute<int>(param);
+      } else if (param.input_->type() == type_id<float>().hash_code()) {
+        SliceCompute<float>(param);
+      }
+      break;
+    case 2:
+      SliceCompute<float>(param);
+      break;
     case 4:
       SliceCompute(param);
       break;

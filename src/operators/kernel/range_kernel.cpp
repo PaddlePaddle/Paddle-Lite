@@ -12,23 +12,38 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#pragma once
+#ifdef RANGE_OP
 
-#include <string>
-#include "framework/operator.h"
-#include "operators/kernel/compare_kernel.h"
-#include "operators/op_param.h"
+#include "operators/kernel/range_kernel.h"
+#include "framework/data_type.h"
 
 namespace paddle_mobile {
 namespace operators {
 
-#ifdef LESS_THAN_OP
-DECLARE_OPERATOR(LessThan, CompareParam, LessThanKernel);
-#endif  // LESS_THAN_OP
+template <>
+bool RangeKernel<CPU, float>::Init(RangeParam<CPU>* param) {
+  return true;
+}
 
-#ifdef EQUAL_OP
-DECLARE_OPERATOR(Equal, CompareParam, EqualKernel);
-#endif  // EQUAL_OP
+template <>
+void RangeKernel<CPU, float>::Compute(const RangeParam<CPU>& param) {
+  int start = param.Start()->data<int>()[0];
+  int end = param.End()->data<int>()[0];
+  int step = param.Step()->data<int>()[0];
+  auto* out = param.Output();
+
+  int64_t size = 0;
+  GetSize(start, end, step, &size);
+  out->Resize(framework::make_ddim({size}));
+  auto* out_data = out->mutable_data<int>();
+  auto value = start;
+  for (int64_t i = 0; i < size; ++i) {
+    out_data[i] = value;
+    value += step;
+  }
+}
 
 }  // namespace operators
 }  // namespace paddle_mobile
+
+#endif  // RANGE_OP

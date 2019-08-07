@@ -12,23 +12,22 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#ifdef REDUCE_PROD_OP
+
 #pragma once
 
 #include <string>
+
 #include "framework/operator.h"
-#include "operators/kernel/compare_kernel.h"
+#include "operators/kernel/reduce_prod_kernel.h"
 #include "operators/op_param.h"
 
 namespace paddle_mobile {
 namespace operators {
 
-#ifdef LESS_THAN_OP
-DECLARE_OPERATOR(LessThan, CompareParam, LessThanKernel);
-#endif  // LESS_THAN_OP
-
-#ifdef EQUAL_OP
-DECLARE_OPERATOR(Equal, CompareParam, EqualKernel);
-#endif  // EQUAL_OP
+DECLARE_OPERATOR(ReduceProd, ReduceProdParam, ReduceProdKernel);
 
 }  // namespace operators
 }  // namespace paddle_mobile
+
+#endif

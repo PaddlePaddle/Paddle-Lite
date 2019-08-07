@@ -12,23 +12,23 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#pragma once
+#ifdef CONDITIONAL_BLOCK_OP
 
-#include <string>
-#include "framework/operator.h"
-#include "operators/kernel/compare_kernel.h"
-#include "operators/op_param.h"
+#include "operators/conditional_block_op.h"
 
 namespace paddle_mobile {
 namespace operators {
 
-#ifdef LESS_THAN_OP
-DECLARE_OPERATOR(LessThan, CompareParam, LessThanKernel);
-#endif  // LESS_THAN_OP
-
-#ifdef EQUAL_OP
-DECLARE_OPERATOR(Equal, CompareParam, EqualKernel);
-#endif  // EQUAL_OP
+template <typename Dtype, typename T>
+void ConditionalBlockOp<Dtype, T>::InferShape() const {}
 
 }  // namespace operators
 }  // namespace paddle_mobile
+
+namespace ops = paddle_mobile::operators;
+
+#ifdef PADDLE_MOBILE_CPU
+REGISTER_OPERATOR_CPU(conditional_block, ops::ConditionalBlockOp);
+#endif
+
+#endif  // CONDITIONAL_BLOCK_OP
