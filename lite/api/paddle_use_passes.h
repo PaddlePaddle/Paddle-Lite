@@ -35,4 +35,3 @@ USE_MIR_PASS(lite_elementwise_add_activation_fuse_pass);
 USE_MIR_PASS(lite_quant_dequant_fuse_pass);
 USE_MIR_PASS(type_precision_cast_pass);
 USE_MIR_PASS(type_layout_cast_pass);
-USE_MIR_PASS(trans_weight_pass);

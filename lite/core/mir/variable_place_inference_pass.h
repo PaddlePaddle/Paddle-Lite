@@ -67,14 +67,14 @@ class VariablePlaceInferencePass : public DebugPass {
     VLOG(3) << "param-type-registry:\n" << ParamTypeRegistry::Global();
     for (auto& x : graph->StmtTopologicalOrder()) {
       auto& inst = x->AsStmt();
-      // The IoCopyOp is a tool operator, it won't support the type inference.
-      // ***if (inst.op_type() == "io_copy" || inst.op_type() == "io_copy_once"
-      // ||
-      // ***    inst.op_type() == "calib")
-      // ***  continue;
-      // LOG(INFO) << "- inferencing type " <<
+// The IoCopyOp is a tool operator, it won't support the type inference.
+// in fpga, we has io_copy+cali+layout tool ops, so we need type inference for
+// tool operator
+#ifndef LITE_WITH_FPGA
+      if (inst.op_type() == "io_copy") continue;
+#endif
       // deal with inputs
-      LOG(INFO) << "Infering op " << inst.op_info()->Repr();
+      VLOG(4) << "Infering op " << inst.op_info()->Repr();
       // TODO(zhaolong): Add check if the node's name in op's arguments.
 
       auto get_argname = [&](
