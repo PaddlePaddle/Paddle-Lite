@@ -12,28 +12,38 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef LOD_RESET_OP
+#ifdef RANGE_OP
 
-#include "operators/lod_reset_op.h"
+#include "operators/kernel/range_kernel.h"
+#include "framework/data_type.h"
 
 namespace paddle_mobile {
 namespace operators {
 
-template <typename Dtype, typename T>
-void LodResetOp<Dtype, T>::InferShape() const {
-  const auto &input_dims = this->param_.input_x_->dims();
-  this->param_.output_->Resize(input_dims);
-  if (this->param_.append) {
-    this->param_.output_->set_lod(this->param_.input_x_->lod());
+template <>
+bool RangeKernel<CPU, float>::Init(RangeParam<CPU>* param) {
+  return true;
+}
+
+template <>
+void RangeKernel<CPU, float>::Compute(const RangeParam<CPU>& param) {
+  int start = param.Start()->data<int>()[0];
+  int end = param.End()->data<int>()[0];
+  int step = param.Step()->data<int>()[0];
+  auto* out = param.Output();
+
+  int64_t size = 0;
+  GetSize(start, end, step, &size);
+  out->Resize(framework::make_ddim({size}));
+  auto* out_data = out->mutable_data<int>();
+  auto value = start;
+  for (int64_t i = 0; i < size; ++i) {
+    out_data[i] = value;
+    value += step;
   }
 }
 
 }  // namespace operators
 }  // namespace paddle_mobile
 
-namespace ops = paddle_mobile::operators;
-#ifdef PADDLE_MOBILE_CPU
-REGISTER_OPERATOR_CPU(lod_reset, ops::LodResetOp);
-#endif
-
-#endif  // LOD_RESET_OP
+#endif  // RANGE_OP

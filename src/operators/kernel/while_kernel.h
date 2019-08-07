@@ -30,12 +30,14 @@ class WhileParam : public OpParam {
     cond_ =
         OpParam::GetVarValue<framework::LoDTensor>("Condition", inputs, *scope);
     sub_block_ = OpParam::GetAttr<framework::BlockDesc *>("sub_block", attrs);
+    is_test = OpParam::GetAttr<bool>("is_test", attrs);
   }
 
  public:
-  const Scope *scope_;
+  Scope *scope_;
   framework::LoDTensor *cond_;
   framework::BlockDesc *sub_block_;
+  bool is_test;
 };
 
 DECLARE_KERNEL(While, WhileParam);
