@@ -583,6 +583,155 @@ __kernel void depth_conv_3x3(__private const int global_size_dim0,
 }
 
 
+
+__kernel void depth_conv_3x3s1(__private const int ou_ch_blk,
+                                              __private const int ou_w_blk,
+                                              __private const int ou_nh,
+                                              __read_only image2d_t input,
+                                              __read_only image2d_t filter,
+#if defined(BIASE_CH) || defined(BIASE_ELE)
+                                              __read_only image2d_t bias,
+#endif
+#ifdef BATCH_NORM
+                                              __read_only image2d_t new_scale,
+                                              __read_only image2d_t new_biase,
+#endif
+                                              __write_only image2d_t output_image,
+                                              __private const int stride,
+                                              __private const int pad,
+                                              __private const int dilation,
+                                              __private const int in_ch,
+                                              __private const int in_w,/* of one block */
+                                              __private const int in_h, /* of one block */
+                                              __private const int ou_w,
+                                              __private const int ou_h) {
+
+    const int ou_ch_blk_id = get_global_id(0);
+    const int ou_w_blk_id = get_global_id(1);
+    const int ou_nh_id = get_global_id(2);
+    const int w_blk_size = 2;
+
+    const int batch_id = ou_nh_id / ou_h;
+    int ou_col_id = ou_w_blk_id * w_blk_size;
+    int ou_row_id = ou_nh_id % ou_h;
+    int ou_x = mad24(ou_ch_blk_id, ou_w, ou_col_id);
+
+    // input pos in one block and on batch
+    int col_id = ou_col_id - pad;
+    int row_id = ou_row_id - pad;
+
+    const sampler_t sampler = CLK_NORMALIZED_COORDS_TRUE |
+                              CLK_ADDRESS_CLAMP          |
+                              CLK_FILTER_NEAREST;
+
+#ifdef BIASE_CH
+    half4 output[2];
+    output[0] = read_imageh(bias, sampler, (int2)(ou_ch_blk_id, 0));
+    output[1] = output[0];
+#elif defined(BIASE_ELE)
+    half4 output[2];
+    output[0] = read_imageh(bias, sampler, (int2)(ou_x, ou_nh_id));
+    if (ou_col_id + 1 < ou_w) {
+        output[1] = read_imageh(bias, sampler, (int2)(ou_x + 1, ou_nh_id));
+    }
+#else
+    half4 output[2] = {0.0f};
+#endif
+
+    half4 inputs[12];
+
+    int filter_x = ou_ch_blk_id * 3;
+    int filter_y = 0;
+    half4 filters[9];
+    filters[0] =  read_imageh(filter, sampler,(int2)(filter_x,filter_y));
+    filters[1] =  read_imageh(filter, sampler,(int2)(filter_x + 1,filter_y));
+    filters[2] =  read_imageh(filter, sampler,(int2)(filter_x + 2,filter_y));
+
+    int in_x = mad24(ou_ch_blk_id, in_w, col_id);
+    int in_y = mad24(batch_id, in_h, row_id);
+
+    int y0 = select(in_y, -1, row_id < 0 || row_id >= in_h);
+    int x0 = select(in_x, -1, col_id < 0 || col_id >= in_w);
+    inputs[0] = read_imageh(input, sampler, (int2)(x0, y0));
+    int x1 = select(in_x + 1, -1, col_id + 1 < 0 || col_id + 1 >= in_w);
+    inputs[1] = read_imageh(input, sampler, (int2)(x1, y0));
+    int x2 = select(in_x + 2, -1, col_id + 2 < 0 || col_id + 2 >= in_w);
+    inputs[2] = read_imageh(input, sampler, (int2)(x2, y0));
+    int x3 = select(in_x + 3, -1, col_id + 3 < 0 || col_id + 3 >= in_w);
+    inputs[3] = read_imageh(input, sampler, (int2)(x3, y0));
+
+    output[0] = mad(inputs[0], filters[0], output[0]);
+    output[1] = mad(inputs[1], filters[0], output[1]);
+
+    output[0] = mad(inputs[1], filters[1], output[0]);
+    output[1] = mad(inputs[2], filters[1], output[1]);
+
+    output[0] = mad(inputs[2], filters[2], output[0]);
+    output[1] = mad(inputs[3], filters[2], output[1]);
+
+
+    filters[3] =  read_imageh(filter, sampler,(int2)(filter_x,filter_y + 1));
+    filters[4] =  read_imageh(filter, sampler,(int2)(filter_x + 1,filter_y + 1));
+    filters[5] =  read_imageh(filter, sampler,(int2)(filter_x + 2,filter_y + 1));
+
+
+    int y1 = select(in_y + 1, -1, row_id + 1 < 0 || row_id + 1 >= in_h);
+    inputs[4] = read_imageh(input, sampler, (int2)(x0, y1));
+    inputs[5] = read_imageh(input, sampler, (int2)(x1, y1));
+    inputs[6] = read_imageh(input, sampler, (int2)(x2, y1));
+    inputs[7] = read_imageh(input, sampler, (int2)(x3, y1));
+
+
+    output[0] = mad(inputs[4], filters[3], output[0]);
+    output[1] = mad(inputs[5], filters[3], output[1]);
+
+    output[0] = mad(inputs[5], filters[4], output[0]);
+    output[1] = mad(inputs[6], filters[4], output[1]);
+
+    output[0] = mad(inputs[6], filters[5], output[0]);
+    output[1] = mad(inputs[7], filters[5], output[1]);
+
+
+    filters[6] =  read_imageh(filter, sampler,(int2)(filter_x,filter_y + 2));
+    filters[7] =  read_imageh(filter, sampler,(int2)(filter_x + 1,filter_y + 2));
+    filters[8] =  read_imageh(filter, sampler,(int2)(filter_x + 2,filter_y + 2));
+
+    int y2 = select(in_y + 2, -1, row_id + 2 < 0 || row_id + 2 >= in_h);
+    inputs[8] = read_imageh(input, sampler, (int2)(x0, y2));
+    inputs[9] = read_imageh(input, sampler, (int2)(x1, y2));
+    inputs[10] = read_imageh(input, sampler, (int2)(x2, y2));
+    inputs[11] = read_imageh(input, sampler, (int2)(x3, y2));
+
+
+    output[0] = mad(inputs[8], filters[6], output[0]);
+    output[1] = mad(inputs[9], filters[6], output[1]);
+
+    output[0] = mad(inputs[9], filters[7], output[0]);
+    output[1] = mad(inputs[10], filters[7], output[1]);
+
+    output[0] = mad(inputs[10], filters[8], output[0]);
+    output[1] = mad(inputs[11], filters[8], output[1]);
+#ifdef BATCH_NORM
+    half4 scale = read_imageh(new_scale, sampler, (int2)(ou_ch_blk_id, 0));
+    half4 biase = read_imageh(new_biase, sampler, (int2)(ou_ch_blk_id, 0));
+    output[0] = mad(scale, output[0], biase);
+    if (ou_col_id + 1 < ou_w) {
+        output[1] = mad(scale, output[1], biase);
+    }
+#endif
+
+#ifdef RELU
+    output[0] = activation(output[0]);
+    output[1] = activation(output[1]);
+#endif
+
+    write_imageh(output_image, (int2)(ou_x, ou_nh_id), output[0]);
+    if (ou_col_id + 1 < ou_w) {
+        write_imageh(output_image, (int2)(ou_x + 1, ou_nh_id), output[1]);
+    }
+
+}
+
 __kernel void conv_1x1(__private const int global_size_dim0,
                        __private const int global_size_dim1,
                        __private const int global_size_dim2,
