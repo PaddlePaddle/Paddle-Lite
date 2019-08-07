@@ -110,9 +110,7 @@ class TensorLite {
     return zynq_tensor_->data<R>();
   }
 
-  void Resize(const DDimLite &ddim) {
-    dims_ = ddim;
-  }
+  void Resize(const DDimLite &ddim) { dims_ = ddim; }
   void Resize(const std::vector<int64_t> &x) { dims_ = DDimLite(x); }
 
   const DDimLite &dims() const { return dims_; }
@@ -152,9 +150,7 @@ class TensorLite {
 
   TargetType target() const { return target_; }
 
-  zynqmp::Tensor* ZynqTensor() const {
-    return zynq_tensor_;
-  }
+  zynqmp::Tensor *ZynqTensor() const { return zynq_tensor_; }
 
   friend std::ostream &operator<<(std::ostream &os, const TensorLite &tensor) {
     os << "Tensor:" << '\n';
@@ -173,7 +169,7 @@ class TensorLite {
   LoD lod_;
   size_t memory_size_{};
 
-  zynqmp::Tensor* zynq_tensor_ = new zynqmp::Tensor();
+  zynqmp::Tensor *zynq_tensor_ = new zynqmp::Tensor();
 
   template <typename T>
   void mutable_data_internal();
