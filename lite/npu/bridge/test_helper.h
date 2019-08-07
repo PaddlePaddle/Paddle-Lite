@@ -15,6 +15,7 @@
 #pragma once
 
 #include <memory>
+#include <random>
 #include <string>
 #include <vector>
 #include "lite/core/op_lite.h"
@@ -28,11 +29,29 @@ template <typename T>
 std::shared_ptr<T> CreateOp(const cpp::OpDesc& opdesc, lite::Scope* scope) {
   auto op = std::make_shared<T>(opdesc.Type());
   op->SetValidPlaces({Place{TARGET(kHost), PRECISION(kFloat)},
-                      Place{TARGET(kARM), PRECISION(kFloat)}});
+                      Place{TARGET(kARM), PRECISION(kFloat)},
+                      Place{TARGET(kNPU), PRECISION(kFloat)}});
   CHECK(op->Attach(opdesc, scope));
   CHECK(op->CheckShape());
   CHECK(op->InferShape());
   return op;
+}
+
+// T is the target data type
+// R is the range data type, e.g. int, half
+template <typename T, typename R = float>
+void FillTensor(Tensor* x,
+                T lower = static_cast<T>(-2),
+                T upper = static_cast<T>(2)) {
+  static unsigned int seed = 100;
+  std::mt19937 rng(seed++);
+  std::uniform_real_distribution<double> uniform_dist(0, 1);
+
+  T* x_data = x->mutable_data<T>();
+  for (int i = 0; i < x->dims().production(); ++i) {
+    auto r = uniform_dist(rng) * (upper - lower) + lower;
+    x_data[i] = static_cast<T>(static_cast<R>(r));
+  }
 }
 
 void LauchOp(const std::shared_ptr<lite::OpLite> op,
