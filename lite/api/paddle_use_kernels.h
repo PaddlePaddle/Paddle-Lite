@@ -105,7 +105,7 @@ USE_LITE_KERNEL(is_empty, kARM, kFloat, kNCHW, def)
 // USE_LITE_KERNEL(mul, kX86, kFloat, kNCHW, def);
 // USE_LITE_KERNEL(fc, kX86, kFloat, kNCHW, def);
 USE_LITE_KERNEL(scale, kX86, kFloat, kNCHW, def);
-USE_LITE_KERNEL(fill_constant, kX86, kFloat, kNCHW, def);
+// USE_LITE_KERNEL(fill_constant, kX86, kFloat, kNCHW, def);
 // USE_LITE_KERNEL(square, kX86, kFloat, kNCHW, def);
 // USE_LITE_KERNEL(elementwise_sub, kX86, kFloat, kNCHW, def);
 // USE_LITE_KERNEL(elementwise_add, kX86, kFloat, kNCHW, def);
