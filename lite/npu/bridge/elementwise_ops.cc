@@ -13,8 +13,6 @@
 // limitations under the License.
 
 #include "lite/operators/elementwise_ops.h"
-#include <string>
-#include <vector>
 #include "ai_ddk_lib/include/graph/buffer.h"
 #include "ai_ddk_lib/include/graph/graph.h"
 #include "ai_ddk_lib/include/graph/model.h"
@@ -23,7 +21,6 @@
 #include "ai_ddk_lib/include/graph/operator_reg.h"
 #include "lite/npu/bridge/registry.h"
 #include "lite/npu/bridge/utils.h"
-#include "lite/npu/npu_helper.h"
 
 namespace paddle {
 namespace lite {
@@ -35,24 +32,34 @@ node_map_type ElementwiseConverter(
     const node_map_type& inputs_map) {
   lite::Scope* scope = elementwise_op->scope();
   const lite::OpInfo* op_info = elementwise_op->op_info();
-
   std::shared_ptr<ge::op::Eltwise> output_node =
       std::make_shared<ge::op::Eltwise>(UniqueName("elementwise"));
+
   auto x_var_name = op_info->Input("X").front();
   auto y_var_name = op_info->Input("Y").front();
-  // paddlelite has sum only
-  int npu_mode = 1;
-  CHECK_EQ(op_info->GetAttr<int>("axis"), -1)
-      << "npu only support inputs with same size";
-  CHECK_EQ(inputs_map.size(), 2);
 
+  CHECK_EQ(op_info->GetAttr<int>("axis"), -1)
+      << "npu elementwise only support inputs with same size";
+
+  CHECK(inputs_map.find(x_var_name) != inputs_map.end());
+  output_node->set_input_x1(*inputs_map.at(x_var_name));
   OpList::Global().add(inputs_map.at(x_var_name));
-  OpList::Global().add(inputs_map.at(y_var_name));
+
+  if (inputs_map.find(y_var_name) != inputs_map.end()) {
+    output_node->set_input_x2(*inputs_map.at(y_var_name));
+    OpList::Global().add(inputs_map.at(y_var_name));
+  } else {
+    auto consty = std::make_shared<ge::op::Const>(y_var_name);
+    auto* y = scope->FindVar(y_var_name)->GetMutable<Tensor>();
+    consty->set_attr_value(CvtFromLiteTensor(y));
+    output_node->set_input_x2(*consty);
+    OpList::Global().add(consty);
+  }
+
   OpList::Global().add(output_node);
 
-  output_node->set_input_x1(*inputs_map.at(x_var_name));
-  output_node->set_input_x2(*inputs_map.at(y_var_name));
-  output_node->set_attr_mode(npu_mode);
+  // paddlelite has sum only
+  output_node->set_attr_mode(1);
 
   node_map_type outputs_map;
   outputs_map[op_info->Output("Out").front()] = output_node;

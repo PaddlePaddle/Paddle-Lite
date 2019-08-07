@@ -13,8 +13,6 @@
 // limitations under the License.
 
 #include "lite/operators/pool_op.h"
-#include <string>
-#include <vector>
 #include "ai_ddk_lib/include/graph/buffer.h"
 #include "ai_ddk_lib/include/graph/graph.h"
 #include "ai_ddk_lib/include/graph/model.h"
@@ -23,7 +21,6 @@
 #include "ai_ddk_lib/include/graph/operator_reg.h"
 #include "lite/npu/bridge/registry.h"
 #include "lite/npu/bridge/utils.h"
-#include "lite/npu/npu_helper.h"
 
 namespace paddle {
 namespace lite {
@@ -44,10 +41,11 @@ node_map_type PoolConverter(const std::shared_ptr<lite::OpLite> pool_op,
     npu_mode = 0;
   } else if (pooling_type == "avg") {
     npu_mode = 1;
+    CHECK(op_info->GetAttr<bool>("exclusive"))
+        << "exclusive must be true when use npu";
   } else {
-    LOG(INFO) << "npu doesn't have this type of pooling";
+    LOG(FATAL) << "Unsupported pooling type: " << pooling_type;
   }
-  int npu_pad_mode = 0;
   bool npu_global_pooling = op_info->GetAttr<bool>("global_pooling");
   auto ksize = op_info->GetAttr<std::vector<int>>("ksize");
   auto npu_window = ge::AttrValue::LIST_INT(ksize.begin(), ksize.end());
@@ -64,7 +62,7 @@ node_map_type PoolConverter(const std::shared_ptr<lite::OpLite> pool_op,
 
   output_node->set_input_x(*inputs_map.at(x_var_name));
   output_node->set_attr_mode(npu_mode);
-  output_node->set_attr_pad_mode(npu_pad_mode);
+  output_node->set_attr_pad_mode(0);
   output_node->set_attr_global_pooling(npu_global_pooling);
   output_node->set_attr_window(npu_window);
   output_node->set_attr_pad(npu_pad);
