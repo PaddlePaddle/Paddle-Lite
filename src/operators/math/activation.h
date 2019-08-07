@@ -131,6 +131,11 @@ inline float Active(const float &x) {
   return x;
 }
 
+template <ActivationType Act = IDENTITY>
+inline int Active(const int &x) {
+  return x;
+}
+
 template <>
 inline float Active<RELU>(const float &x) {
   return std::max(x, 0.f);

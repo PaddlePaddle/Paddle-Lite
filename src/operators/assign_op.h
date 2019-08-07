@@ -12,28 +12,22 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef LOD_RESET_OP
+#ifdef ASSIGN_OP
 
-#include "operators/lod_reset_op.h"
+#pragma once
+
+#include <string>
+
+#include "framework/operator.h"
+#include "operators/kernel/assign_kernel.h"
+#include "operators/op_param.h"
 
 namespace paddle_mobile {
 namespace operators {
 
-template <typename Dtype, typename T>
-void LodResetOp<Dtype, T>::InferShape() const {
-  const auto &input_dims = this->param_.input_x_->dims();
-  this->param_.output_->Resize(input_dims);
-  if (this->param_.append) {
-    this->param_.output_->set_lod(this->param_.input_x_->lod());
-  }
-}
+DECLARE_OPERATOR(Assign, AssignParam, AssignKernel);
 
 }  // namespace operators
 }  // namespace paddle_mobile
 
-namespace ops = paddle_mobile::operators;
-#ifdef PADDLE_MOBILE_CPU
-REGISTER_OPERATOR_CPU(lod_reset, ops::LodResetOp);
 #endif
-
-#endif  // LOD_RESET_OP

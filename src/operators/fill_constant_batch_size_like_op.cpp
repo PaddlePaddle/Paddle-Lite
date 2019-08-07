@@ -12,28 +12,14 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef LOD_RESET_OP
+#ifdef FILL_CONSTANT_BATCH_SIZE_LIKE_OP
 
-#include "operators/lod_reset_op.h"
-
-namespace paddle_mobile {
-namespace operators {
-
-template <typename Dtype, typename T>
-void LodResetOp<Dtype, T>::InferShape() const {
-  const auto &input_dims = this->param_.input_x_->dims();
-  this->param_.output_->Resize(input_dims);
-  if (this->param_.append) {
-    this->param_.output_->set_lod(this->param_.input_x_->lod());
-  }
-}
-
-}  // namespace operators
-}  // namespace paddle_mobile
+#include "operators/fill_constant_batch_size_like_op.h"
 
 namespace ops = paddle_mobile::operators;
 #ifdef PADDLE_MOBILE_CPU
-REGISTER_OPERATOR_CPU(lod_reset, ops::LodResetOp);
+REGISTER_OPERATOR_CPU(fill_constant_batch_size_like,
+                      ops::FillConstantBatchSizeLikeOp);
 #endif
 
-#endif  // LOD_RESET_OP
+#endif

@@ -294,6 +294,11 @@ void MultiClassNMSCompute(const MultiClassNMSParam<CPU>& param) {
       }
     }
   }
+
+  framework::LoD lod;
+  lod.emplace_back(batch_starts);
+
+  outs->set_lod(lod);
 }
 
 }  // namespace operators

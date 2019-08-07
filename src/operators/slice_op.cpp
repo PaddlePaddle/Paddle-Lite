@@ -56,10 +56,37 @@ void SliceOp<Dtype, T>::InferShape() const {
                           this->param_.output_->dims().size())) ==
           3,
       "op only support slice channel now");
-#else
-  PADDLE_MOBILE_ENFORCE(input->dims().size() - axes[0] == 3,
-                        "op only support slice channel now");
 #endif
+  if (input->dims().size() >= 4) {
+    PADDLE_MOBILE_ENFORCE(input->dims().size() - axes[0] == 3,
+                          "op only support slice channel now");
+  }
+  auto starts = this->param_.starts_;
+  auto ends = this->param_.ends_;
+  framework::DDim out_dims(input->dims());
+  PADDLE_MOBILE_ENFORCE(starts.size() == ends.size(),
+                        "starts.size should equal ends.size");
+  PADDLE_MOBILE_ENFORCE(axes.size() == starts.size(),
+                        "axes.size should equal starts.size");
+  int dim_value, start, end;
+  for (size_t i = 0; i < axes.size(); ++i) {
+    dim_value = out_dims[axes[i]];
+    if (dim_value > 0) {
+      start = starts[i] < 0 ? (starts[i] + dim_value) : starts[i];
+      end = ends[i] < 0 ? (ends[i] + dim_value) : ends[i];
+      start = std::max(start, 0);
+      end = std::max(end, 0);
+      // start = std::min(start, dim_value);
+      end = std::min(end, dim_value);
+      // start = std::min(start, end);
+      PADDLE_MOBILE_ENFORCE(end > start, "end should greater than start");
+      out_dims[axes[i]] = end - start;
+    }
+  }
+  output->Resize(out_dims);
+  if (axes[0] != 0) {
+    output->set_lod(input->lod());
+  }
 }
 
 }  // namespace operators

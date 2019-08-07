@@ -19,18 +19,22 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace operators {
 
+template <typename Dtype>
 void SliceCompute(const SliceParam<CPU>& param) {
   auto input = param.input_;
   auto output = param.output_;
-  auto* input_ptr = input->data<float>();
-  auto* output_ptr = output->mutable_data<float>();
+  auto* input_ptr = input->data<Dtype>();
+  auto* output_ptr = output->mutable_data<Dtype>();
   auto out_dims = output->dims();
   auto in_dims = input->dims();
   auto starts = param.starts_;
   auto ends = param.ends_;
   int axes = param.axes_[0];
-  int HW = input->dims()[axes + 1] * input->dims()[axes + 2];
-  int batch_size = out_dims[axes - 1];
+  int HW = 1;
+  if (in_dims.size() >= 2 && axes <= in_dims.size() - 2) {
+    HW = in_dims[axes + 1] * input->dims()[axes + 2];
+  }
+  int batch_size = (out_dims.size() == 1) ? 1 : out_dims[axes - 1];
   int input_channel = in_dims[axes];
   int output_channel = out_dims[axes];
 
@@ -53,12 +57,22 @@ template <>
 void SliceKernel<CPU, float>::Compute(const SliceParam<CPU>& param) {
   int rank = param.input_->dims().size();
   switch (rank) {
+    case 1:
+      if (param.input_->type() == type_id<int>().hash_code()) {
+        SliceCompute<int>(param);
+      } else if (param.input_->type() == type_id<float>().hash_code()) {
+        SliceCompute<float>(param);
+      }
+      break;
+    case 2:
+      SliceCompute<float>(param);
+      break;
     case 4:
-      SliceCompute(param);
+      SliceCompute<float>(param);
       break;
     case 5:
       if (param.input_->dims()[0] == 1) {
-        SliceCompute(param);
+        SliceCompute<float>(param);
       }
       break;
     default:
