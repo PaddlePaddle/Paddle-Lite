@@ -42,7 +42,7 @@ bool SequencePoolOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
       &scope->FindVar(opdesc.Input("X").front())->Get<lite::Tensor>());
   param_.Out =
       scope->FindVar(opdesc.Output("Out").front())->GetMutable<lite::Tensor>();
-  param_.pool_type = opdesc.GetAttr<std::string>("pooltype");
+  param_.pool_type = opdesc.GetAttr<std::string>("pool_type");
   CHECK(param_.X);
   CHECK(param_.Out);
   return true;
