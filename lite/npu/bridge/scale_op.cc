@@ -29,42 +29,54 @@ namespace bridge {
 
 node_map_type ScaleConverter(const std::shared_ptr<lite::OpLite> scale_op,
                              const node_map_type& inputs_map) {
-  lite::Scope* scope = scale_op->scope();
-  const lite::OpInfo* op_info = scale_op->op_info();
-  std::shared_ptr<ge::op::Scale> output_node =
-      std::make_shared<ge::op::Scale>(UniqueName("scale"));
+  VLOG(3) << "invoking ScaleConverter...";
+  auto scope = scale_op->scope();
+  auto op_info = scale_op->op_info();
+  auto op_type = op_info->Type();
 
+  // get input, output and op attributes
   auto x_var_name = op_info->Input("X").front();
-  CHECK(inputs_map.count(x_var_name));
-  output_node->set_input_x(*inputs_map.at(x_var_name));
-  OpList::Global().add(inputs_map.at(x_var_name));
-  OpList::Global().add(output_node);
-
-  // set attributes
+  auto x = scope->FindVar(x_var_name)->GetMutable<lite::Tensor>();
+  auto x_dims = x->dims().Vectorize();
+  CHECK_GE(x_dims.size(), 2);
+  std::vector<int64_t> scale_bias_shape = {x_dims[1]};
   float scale = op_info->GetAttr<float>("scale");
   float bias = op_info->GetAttr<float>("bias");
   bool bias_after_scale = op_info->GetAttr<bool>("bias_after_scale");
   if (!bias_after_scale) {
     bias *= scale;
   }
+
+  // create scale node and set input node from inputs_map
+  auto scale_node = std::make_shared<ge::op::Scale>(UniqueName(op_type));
+  CHECK(inputs_map.count(x_var_name));
+  scale_node->set_input_x(*inputs_map.at(x_var_name));
+  OpList::Global().add(inputs_map.at(x_var_name));
+  OpList::Global().add(scale_node);
+
+  // add filter node(fill with scale)
+  auto filter_const_node =
+      std::make_shared<ge::op::Const>(UniqueName(op_type + "/filter"));
+  filter_const_node->set_attr_value(
+      CreateTensorAndFillData(scale, scale_bias_shape));
+  scale_node->set_input_filter(*filter_const_node);
+  OpList::Global().add(filter_const_node);
+
+  // add bias node(fill with bias)
   if (fabs(bias) > 1e-6f) {
-    // get input tensor shape
-    auto input_var_name = op_info->Input("X").front();
-    lite::Tensor* input =
-        scope->FindVar(input_var_name)->GetMutable<lite::Tensor>();
-    auto input_shape = input->dims().Vectorize();
-    // create bias tensor and build constant node
-    auto bias_const_node = std::make_shared<ge::op::Const>(UniqueName("bias"));
-    bias_const_node->set_attr_value(CreateTensorAndFillData(bias, input_shape));
-    output_node->set_input_bias(*bias_const_node);
-    output_node->set_attr_has_bias_value(true);
+    auto bias_const_node =
+        std::make_shared<ge::op::Const>(UniqueName(op_type + "/bias"));
+    bias_const_node->set_attr_value(
+        CreateTensorAndFillData(bias, scale_bias_shape));
+    scale_node->set_input_bias(*bias_const_node);
+    scale_node->set_attr_has_bias_value(true);
     OpList::Global().add(bias_const_node);
   }
-  output_node->set_attr_filler_type("constant");
-  output_node->set_attr_filler_value(scale);
+
+  scale_node->set_attr_axis(1);
 
   node_map_type outputs_map;
-  outputs_map[op_info->Output("Out").front()] = output_node;
+  outputs_map[op_info->Output("Out").front()] = scale_node;
   return outputs_map;
 }
 

@@ -29,47 +29,46 @@ namespace bridge {
 
 node_map_type ActConverter(const std::shared_ptr<lite::OpLite> act_op,
                            const node_map_type& inputs_map) {
-  lite::Scope* scope = act_op->scope();
-  const lite::OpInfo* op_info = act_op->op_info();
-  const std::string act_type = op_info->Type();
+  VLOG(3) << "invoking ActConverter...";
+  auto scope = act_op->scope();
+  auto op_info = act_op->op_info();
+  auto op_type = op_info->Type();
 
-  // build act op node
-  std::shared_ptr<ge::op::Activation> output_node =
-      std::make_shared<ge::op::Activation>(UniqueName("act"));
+  // create act node and set input node from inputs_map
   auto x_var_name = op_info->Input("X").front();
+  auto act_node = std::make_shared<ge::op::Activation>(UniqueName(op_type));
   CHECK(inputs_map.count(x_var_name));
-  output_node->set_input_x(*inputs_map.at(x_var_name));
+  act_node->set_input_x(*inputs_map.at(x_var_name));
   OpList::Global().add(inputs_map.at(x_var_name));
-  OpList::Global().add(output_node);
+  OpList::Global().add(act_node);
 
-  // set attributes
+  // parse and set activation type
   int act_mode = 1;
-  if (act_type == "sigmod") {
+  if (op_type == "sigmod") {
     act_mode = 0;
-  } else if (act_type == "relu") {
+  } else if (op_type == "relu") {
     act_mode = 1;
-  } else if (act_type == "tanh") {
+  } else if (op_type == "tanh") {
     act_mode = 2;
-  } else if (act_type == "elu") {
+  } else if (op_type == "elu") {
     act_mode = 4;
-  } else if (act_type == "abs") {
+  } else if (op_type == "abs") {
     act_mode = 6;
-  } else if (act_type == "softsign") {
+  } else if (op_type == "softsign") {
     act_mode = 8;
-  } else if (act_type == "softplus") {
+  } else if (op_type == "softplus") {
     act_mode = 9;
-  } else if (act_type == "hardsigmoid") {
+  } else if (op_type == "hardsigmoid") {
     act_mode = 10;
   } else {
     // TODO(hong19860320) add more activation mode, and set the coef value
     // clipped ReLU, LEAKY_RELU, relu1, threshold, selu and linear
-    LOG(FATAL) << "Unsupported activation type " << act_type;
+    LOG(FATAL) << "Unsupported activation type " << op_type;
   }
-  output_node->set_attr_mode(act_mode);
+  act_node->set_attr_mode(act_mode);
 
   node_map_type outputs_map;
-  outputs_map[op_info->Output("Out").front()] = output_node;
-
+  outputs_map[op_info->Output("Out").front()] = act_node;
   return outputs_map;
 }
 

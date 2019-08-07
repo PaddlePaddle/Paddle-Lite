@@ -29,57 +29,65 @@ namespace bridge {
 
 node_map_type ConvConverter(const std::shared_ptr<lite::OpLite> conv_op,
                             const node_map_type& inputs_map) {
-  LOG(INFO) << "converting Conv...";
-  lite::Scope* scope = conv_op->scope();
-  const lite::OpInfo* op_info = conv_op->op_info();
+  VLOG(3) << "invoking ConvConverter...";
+  auto scope = conv_op->scope();
+  auto op_info = conv_op->op_info();
+  auto op_type = op_info->Type();
 
-  auto conv_node = std::make_shared<ge::op::Convolution>(UniqueName("conv2d"));
+  // get input, output and op attributes
   auto input_var_name = op_info->Input("Input").front();
+  auto input = scope->FindVar(input_var_name)->GetMutable<lite::Tensor>();
+  auto input_dims = input->dims();
+  auto filter_var_name = op_info->Input("Filter").front();
+  auto filter = scope->FindVar(filter_var_name)->GetMutable<lite::Tensor>();
+  auto filter_dims = filter->dims();
+  CHECK_EQ(filter_dims.size(), 4);
+  auto strides = op_info->GetAttr<std::vector<int>>("strides");
+  auto paddings = op_info->GetAttr<std::vector<int>>("paddings");
+  auto groups = op_info->GetAttr<int>("groups");
+  auto dilations = op_info->GetAttr<std::vector<int>>("dilations");
+  auto fuse_relu = op_info->GetAttr<bool>("fuse_relu");
+  CHECK_EQ(strides.size(), 2);
+  CHECK_EQ(paddings.size(), 2);
+  CHECK_EQ(dilations.size(), 2);
+
+  // check depthwise mode
+  bool depthwise_mode = input_dims[1] == groups && filter_dims[0] == groups;
+  CHECK(!depthwise_mode || ((groups == 1 || groups >= 5) && dilations[0] == 1 &&
+                            dilations[1] == 1))
+      << "Only dilation = 1 and groups >= 5 (or groups = 1) is supported in "
+         "depthwise convolution mode for NPU "
+         "Convolution op";
+
+  // create conv node and set input node from inputs_map
+  auto conv_node = std::make_shared<ge::op::Convolution>(UniqueName(op_type));
   CHECK(inputs_map.count(input_var_name));
   conv_node->set_input_x(*inputs_map.at(input_var_name));
   OpList::Global().add(inputs_map.at(input_var_name));
 
-  // build filter and bias node
-  auto filter_var_name = op_info->Input("Filter").front();
+  // add filter node
   CHECK(!inputs_map.count(filter_var_name));
-
-  lite::Tensor* filter =
-      scope->FindVar(filter_var_name)->GetMutable<lite::Tensor>();
-  auto filter_dims = filter->dims();
-  CHECK_EQ(filter_dims.size(), 4);
   auto filter_const_node = std::make_shared<ge::op::Const>(filter_var_name);
   filter_const_node->set_attr_value(CvtFromLiteTensor(filter));
   conv_node->set_input_w(*filter_const_node);
   OpList::Global().add(filter_const_node);
 
+  // add bias node if has bias
   if (op_info->HasInput("Bias")) {
     auto bias_var_name = op_info->Input("Bias").front();
-    LOG(INFO) << "bias_var_name:" << bias_var_name;
     CHECK(!inputs_map.count(bias_var_name));
     auto* bias = scope->FindVar(bias_var_name)->GetMutable<lite::Tensor>();
-    LOG(INFO) << "bias dims:" << bias->dims();
-    int n = bias->numel();
-    CHECK_EQ(n, bias->dims().production());
+    auto bias_channel_size = bias->numel();
+    CHECK_EQ(bias_channel_size, filter_dims[0]);
     auto bias_const_node = std::make_shared<ge::op::Const>(bias_var_name);
-
-    ge::TensorDesc bdesc(
-        ge::Shape({1, n, 1, 1}), ge::FORMAT_NCHW, ge::DT_FLOAT);
-    auto size = bdesc.GetShape().GetShapeSize();
-    CHECK_EQ(size, n);
-    ge::TensorPtr ptensor = std::make_shared<ge::Tensor>();
-    ptensor->SetTensorDesc(bdesc);
-    auto* pdata = reinterpret_cast<uint8_t*>(bias->mutable_data<float>());
-    ptensor->SetData(pdata, size * sizeof(float));
-    bias_const_node->set_attr_value(ptensor);
+    bias_const_node->set_attr_value(
+        CvtFromLiteTensor(bias, {1, bias_channel_size, 1, 1}));
     conv_node->set_input_b(*bias_const_node);
     OpList::Global().add(bias_const_node);
   }
 
-  // set attributes
-  std::vector<int> strides = op_info->GetAttr<std::vector<int>>("strides");
-  std::vector<int> paddings = op_info->GetAttr<std::vector<int>>("paddings");
-  int groups = op_info->GetAttr<int>("groups");
-  std::vector<int> dilations = op_info->GetAttr<std::vector<int>>("dilations");
+  // set attributes includes stride, kernel size, padding size, and dilation
+  // size
   conv_node->set_attr_pad_mode(0);  // NOTSET
   conv_node->set_attr_group(groups);
   conv_node->set_attr_pad(ge::AttrValue::LIST_INT(
@@ -90,36 +98,30 @@ node_map_type ConvConverter(const std::shared_ptr<lite::OpLite> conv_op,
   conv_node->set_attr_kernel(
       ge::AttrValue::LIST_INT({filter_dims[2], filter_dims[3]}));
 
-  // if (ic = groups && oc == groups) {
-  //  conv_node->set_attr_mode(3);
-  // } else {
   conv_node->set_attr_mode(1);
-  // }
-  // conv_node->set_attr_num_output(oc);
 
   node_map_type outputs_map;
-  if (op_info->GetAttr<bool>("fuse_relu")) {
+  if (fuse_relu) {
+    // append relu node if fuse_relu is true
     auto relu_node =
-        std::make_shared<ge::op::Activation>(UniqueName("conv2d/relu"));
+        std::make_shared<ge::op::Activation>(UniqueName(op_type + "/relu"));
     relu_node->set_input_x(*conv_node);
     relu_node->set_attr_mode(1);
-    outputs_map[op_info->Output("Output").front()] = relu_node;
-
     OpList::Global().add(relu_node);
+    outputs_map[op_info->Output("Output").front()] = relu_node;
   } else {
     outputs_map[op_info->Output("Output").front()] = conv_node;
   }
   OpList::Global().add(conv_node);
-
   return outputs_map;
 }
 
 node_map_type DepthwiseConvConverter(
     const std::shared_ptr<lite::OpLite> conv_op,
     const node_map_type& inputs_map) {
-  LOG(INFO) << "converting DepthwiseConv...";
-  lite::Scope* scope = conv_op->scope();
-  const lite::OpInfo* op_info = conv_op->op_info();
+  VLOG(3) << "invoking DepthwiseConvConverter...";
+  auto scope = conv_op->scope();
+  auto op_info = conv_op->op_info();
 
   auto conv_node = std::make_shared<ge::op::ConvolutionDepthwise>(
       UniqueName("depthwise_conv2d"));
@@ -128,12 +130,10 @@ node_map_type DepthwiseConvConverter(
   conv_node->set_input_x(*inputs_map.at(input_var_name));
   OpList::Global().add(inputs_map.at(input_var_name));
 
-  // build filter
+  // add filter node
   auto filter_var_name = op_info->Input("Filter").front();
   CHECK(!inputs_map.count(filter_var_name));
-
-  lite::Tensor* filter =
-      scope->FindVar(filter_var_name)->GetMutable<lite::Tensor>();
+  auto filter = scope->FindVar(filter_var_name)->GetMutable<lite::Tensor>();
   auto filter_dims = filter->dims();
   CHECK_EQ(filter_dims.size(), 4);
   auto filter_const_node = std::make_shared<ge::op::Const>(filter_var_name);
@@ -141,34 +141,26 @@ node_map_type DepthwiseConvConverter(
   conv_node->set_input_filter(*filter_const_node);
   OpList::Global().add(filter_const_node);
 
+  // add bias node if has bias
   if (op_info->HasInput("Bias")) {
     auto bias_var_name = op_info->Input("Bias").front();
-    LOG(INFO) << "bias_var_name:" << bias_var_name;
     CHECK(!inputs_map.count(bias_var_name));
     auto* bias = scope->FindVar(bias_var_name)->GetMutable<lite::Tensor>();
-    LOG(INFO) << "bias dims:" << bias->dims();
-    int n = bias->numel();
-    CHECK_EQ(n, bias->dims().production());
+    auto bias_channel_size = bias->numel();
+    CHECK_EQ(bias_channel_size, filter_dims[0]);
     auto bias_const_node = std::make_shared<ge::op::Const>(bias_var_name);
-
-    ge::TensorDesc bdesc(
-        ge::Shape({1, n, 1, 1}), ge::FORMAT_NCHW, ge::DT_FLOAT);
-    auto size = bdesc.GetShape().GetShapeSize();
-    CHECK_EQ(size, n);
-    ge::TensorPtr ptensor = std::make_shared<ge::Tensor>();
-    ptensor->SetTensorDesc(bdesc);
-    auto* pdata = reinterpret_cast<uint8_t*>(bias->mutable_data<float>());
-    ptensor->SetData(pdata, size * sizeof(float));
-    bias_const_node->set_attr_value(ptensor);
+    bias_const_node->set_attr_value(
+        CvtFromLiteTensor(bias, {1, bias_channel_size, 1, 1}));
     // conv_node->set_input_b(*bias_const_node);
     // OpList::Global().add(bias_const_node);
   }
 
-  // set attributes
-  std::vector<int> strides = op_info->GetAttr<std::vector<int>>("strides");
-  std::vector<int> paddings = op_info->GetAttr<std::vector<int>>("paddings");
-  int groups = op_info->GetAttr<int>("groups");
-  std::vector<int> dilations = op_info->GetAttr<std::vector<int>>("dilations");
+  // set attributes includes stride, kernel size, padding size, and dilation
+  // size
+  auto strides = op_info->GetAttr<std::vector<int>>("strides");
+  auto paddings = op_info->GetAttr<std::vector<int>>("paddings");
+  auto groups = op_info->GetAttr<int>("groups");
+  auto dilations = op_info->GetAttr<std::vector<int>>("dilations");
   conv_node->set_attr_pad_mode(5);  // NOTSET
   conv_node->set_attr_group(groups);
   conv_node->set_attr_pad(ge::AttrValue::LIST_INT(
@@ -185,18 +177,17 @@ node_map_type DepthwiseConvConverter(
 
   node_map_type outputs_map;
   if (op_info->GetAttr<bool>("fuse_relu")) {
+    // append relu node if fuse_relu is true
     auto relu_node =
         std::make_shared<ge::op::Activation>(UniqueName("conv2d/relu"));
     relu_node->set_input_x(*conv_node);
     relu_node->set_attr_mode(1);
-    outputs_map[op_info->Output("Output").front()] = relu_node;
-
     OpList::Global().add(relu_node);
+    outputs_map[op_info->Output("Output").front()] = relu_node;
   } else {
     outputs_map[op_info->Output("Output").front()] = conv_node;
   }
   OpList::Global().add(conv_node);
-
   return outputs_map;
 }
 
