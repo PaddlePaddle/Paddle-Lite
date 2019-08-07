@@ -118,7 +118,11 @@ class TensorBase {
 
     virtual void resize(size_t size) = 0;
 
-    virtual void realloc(size_t size) = 0;
+    virtual void resetMaxSize() = 0;
+
+    virtual void updateMaxSize(size_t size) = 0;
+
+    virtual void checkMemory() = 0;
   };
 
   /**

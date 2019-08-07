@@ -299,26 +299,31 @@ void Executor<Device, T>::InitNoPersistableMemory(const Tensor &input_tensor) {
   for (const auto &block : program_desc_->Blocks()) {
     for (const auto &var_desc : block->Vars()) {
       auto var = program_.scope->Var(var_desc->Name());
-      if (!var_desc->Persistable() &&
-          var_desc->Type() == VARTYPE_TYPE_LOD_TENSOR) {
-        DLOG << "InitNoPersistableMemory var " << var_desc->Name();
-        auto tensor = var->template GetMutable<LoDTensor>();
-        if (tensor->IsInitialized()) {
-          DLOG << "var's tensor is Initialized";
+      auto tensor = var->template GetMutable<LoDTensor>();
+      if (var_desc->Persistable()) {
+        if (var_desc->Name() == "feed" || var_desc->Name() == "fetch") {
+          var->template GetMutable<framework::LoDTensorArray>();
+          continue;
+        }
+      } else {
+        if (var_desc->Type() == VARTYPE_TYPE_LOD_TENSOR) {
           DDim tensor_dim = tensor->dims();
           DDim new_dim =
               make_ddim({tensor_dim[0], tensor_dim[1], input_tensor.dims()[2],
                          input_tensor.dims()[3]});
           tensor->Resize(new_dim);
-          tensor->template mutable_data_new<T>();
-          DLOG << "var's tensor dims " << tensor_dim;
-          DLOG << "var's tensor new dims " << new_dim;
+          tensor->template mutable_data<T>();
         } else {
-          DLOG << "var's tensor is not Initialized ???";
+          PADDLE_MOBILE_THROW_EXCEPTION("Unsupported var type `%d`",
+                                        var_desc->Type());
         }
       }
     }
   }
+
+  std::shared_ptr<LoDTensor> output = GetOutput("fetch");
+  output->Resize(input_tensor.dims());
+  output->mutable_data<T>();
 }
 
 template <typename Device, typename T>
@@ -406,9 +411,6 @@ void Executor<Device, T>::SetInput(const Tensor &input,
   target.ShareDataWith(input);
   if (feed_indices_.size() == 1) {
     auto &dim = input.dims();
-    if (lod_mode_ && product(dim) < 0.9 * product(input_dim_last_)) {
-      InitNoPersistableMemory(target);
-    }
     input_dim_has_changed_ = input_dim_last_ != dim;
     input_dim_last_ = static_cast<DDim>(dim);
   }
@@ -430,9 +432,6 @@ void Executor<Device, T>::SetInput(const LoDTensor &input,
   target.set_lod(input.lod());
   if (feed_indices_.size() == 1) {
     auto &dim = input.dims();
-    if (lod_mode_ && product(dim) < 0.9 * product(input_dim_last_)) {
-      InitNoPersistableMemory(target);
-    }
     input_dim_has_changed_ = input_dim_last_ != dim;
     input_dim_last_ = static_cast<DDim>(dim);
   }
@@ -488,17 +487,34 @@ PMStatus Executor<Device, T>::Predict() {
   struct timespec ts;
   int op_index = 0;
 #endif
+  if (lod_mode_ && input_dim_has_changed_) {
+    for (int i = 0; i < ops_of_block0_.size(); ++i) {
+      auto &op_handler = ops_of_block0_[i];
+      op_handler->InferShape();
+    }
+    for (const auto &block : program_desc_->Blocks()) {
+      for (const auto &var_desc : block->Vars()) {
+        if (!var_desc->Persistable() &&
+            var_desc->Type() == VARTYPE_TYPE_LOD_TENSOR) {
+          auto var = program_.scope->Var(var_desc->Name());
+          auto tensor = var->template GetMutable<LoDTensor>();
+          tensor->checkMemory();
+        }
+      }
+    }
+  }
+
   for (int i = 0; i < ops_of_block0_.size(); ++i) {
     auto &op_handler = ops_of_block0_[i];
 #ifdef PADDLE_MOBILE_PROFILE
     clock_gettime(CLOCK_MONOTONIC, &ts);
     profile[op_index].runBegin = (uint64_t)ts.tv_sec * 1e9 + ts.tv_nsec;
+//    if (lod_mode_ && input_dim_has_changed_) {
+//      op_handler->InferShape();
+//    }
 #endif
     DLOG << i << "th, "
          << "run op: " << op_handler->Type();
-    if (lod_mode_ && input_dim_has_changed_) {
-      op_handler->InferShape();
-    }
     op_handler->Run();
 #ifdef PADDLE_MOBILE_PROFILE
     clock_gettime(CLOCK_MONOTONIC, &ts);

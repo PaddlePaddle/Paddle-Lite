@@ -83,7 +83,18 @@ class Tensor : public TensorBase {
   /*! Resize the dimensions of the memory block. */
   inline Tensor &Resize(const DDim &dims) {
     dims_ = dims;
+    if (holder_ != nullptr) {
+      kTypeId_t type = holder_->type();
+      int64_t size = numel() * SizeOfType(type) + offset_;
+      holder_->updateMaxSize(size);
+    }
     return *this;
+  }
+
+  inline void checkMemory() {
+    if (holder_ != nullptr) {
+      holder_->checkMemory();
+    }
   }
 
   /*! The internal of two tensors share the same memory block. */
@@ -102,29 +113,6 @@ class Tensor : public TensorBase {
       holder_ = src.holder_;
     }
     return *this;
-  }
-
-  template <typename T>
-  inline T *mutable_data_new() {
-    static_assert(std::is_pod<T>::value, "T must be POD");
-    const kTypeId_t type = type_id<T>().hash_code();
-
-    if (holder_ != nullptr) {
-      holder_->set_type(type);
-    }
-
-    PADDLE_MOBILE_ENFORCE(numel() >= 0, "the Tensor's numel must >=0.")
-    int64_t size = numel() * SizeOfType(type);
-    if (holder_ == nullptr || holder_->size() != size + offset_) {
-      if (holder_ == nullptr) {
-        holder_.reset(new PlaceholderImpl(size, type));
-      } else {
-        holder_->realloc(size);
-      }
-      offset_ = 0;
-    }
-    return reinterpret_cast<T *>(reinterpret_cast<uintptr_t>(holder_->ptr()) +
-                                 offset_);
   }
 
   inline void *mutable_data(const kTypeId_t type) {
@@ -238,7 +226,8 @@ class Tensor : public TensorBase {
                [](uint8_t *ptr) { memory::PODDeleter<uint8_t>()(ptr); }),
           size_(size),
           capatity_(size),
-          type_(type) {
+          type_(type),
+          maxSize_(0) {
       PADDLE_MOBILE_ENFORCE(ptr_ != nullptr,
                             "Insufficient memory to allocation");
     }
@@ -247,7 +236,8 @@ class Tensor : public TensorBase {
         : ptr_(ptr, [](uint8_t *ptr) {}),
           size_(size),
           capatity_(size),
-          type_(type) {
+          type_(type),
+          maxSize_(0) {
       PADDLE_MOBILE_ENFORCE(ptr_ != nullptr,
                             "Insufficient memory to allocation");
     }
@@ -268,10 +258,21 @@ class Tensor : public TensorBase {
       size_ = size;
     }
 
-    virtual void realloc(size_t size) {
-      capatity_ = size;
-      ptr_.reset(static_cast<uint8_t *>(memory::Alloc(capatity_)));
-      size_ = size;
+    virtual void updateMaxSize(size_t size) {
+      if (size > maxSize_) {
+        maxSize_ = size;
+      }
+    }
+
+    virtual void resetMaxSize() { maxSize_ = 0; }
+
+    virtual void checkMemory() {
+      if (maxSize_ > 0 && maxSize_ < 0.9 * capatity_) {
+        capatity_ = maxSize_;
+        size_ = capatity_;
+        ptr_.reset(static_cast<uint8_t *>(memory::Alloc(capatity_)));
+      }
+      resetMaxSize();
     }
 
     std::unique_ptr<uint8_t, std::function<void(uint8_t *)>> ptr_;
@@ -280,6 +281,8 @@ class Tensor : public TensorBase {
     size_t size_;
 
     size_t capatity_;
+
+    size_t maxSize_;
 
     /* the current type of memory */
     kTypeId_t type_;
