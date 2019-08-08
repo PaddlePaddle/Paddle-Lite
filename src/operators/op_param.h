@@ -3285,7 +3285,9 @@ class LodResetParam : public OpParam {
     } else {
       target_lod_ = OpParam::GetAttr<vector<int>>("target_lod", attrs);
     }
-    append = OpParam::GetAttr<bool>("append", attrs);
+    if (HasAttr("append", attrs)) {
+      append = OpParam::GetAttr<bool>("append", attrs);
+    }
   }
 
  public:
