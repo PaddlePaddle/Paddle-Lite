@@ -12,29 +12,36 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/mir/fusion/conv_elementwise_add_activation_fuse_pass.h"
+#pragma once
+
 #include <memory>
-#include <vector>
-#include "lite/core/mir/fusion/conv_elementwise_add_activation_fuser.h"
-#include "lite/core/mir/pass_registry.h"
+#include <string>
+#include "lite/core/mir/pattern_matcher_high_api.h"
 
 namespace paddle {
 namespace lite {
 namespace mir {
+namespace fusion {
 
-void ConvElementwiseAddActivationFusePass::Apply(
-    const std::unique_ptr<SSAGraph>& graph) {
-  fusion::ConvElementwiseAddActivationFuser fuser("conv2d", "relu");
-  fuser(graph.get());
+class ConvActivationFuser : public FuseBase {
+ public:
+  explicit ConvActivationFuser(const std::string& conv_type,
+                               const std::string& act_type) {
+    CHECK(act_type == "relu") << "Only relu activation be supported now";
+    conv_type_ = conv_type;
+    act_type_ = act_type;
+  }
 
-  fusion::ConvElementwiseAddActivationFuser depthwise_fuser("depthwise_conv2d",
-                                                            "relu");
-  depthwise_fuser(graph.get());
-}
+  void BuildPattern() override;
+  void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override;
 
+ private:
+  cpp::OpDesc GenOpDesc(const key2nodes_t& matched) override;
+  std::string conv_type_;
+  std::string act_type_;
+};
+
+}  // namespace fusion
 }  // namespace mir
 }  // namespace lite
 }  // namespace paddle
-
-REGISTER_MIR_PASS(lite_conv_elementwise_add_activation_fuse_pass,
-                  paddle::lite::mir::ConvElementwiseAddActivationFusePass);
