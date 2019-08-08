@@ -87,6 +87,8 @@ USE_LITE_KERNEL(slice, kARM, kFloat, kNCHW, def)
 
 USE_LITE_KERNEL(calib, kARM, kInt8, kNCHW, fp32_to_int8);
 USE_LITE_KERNEL(calib, kARM, kInt8, kNCHW, int8_to_fp32);
+USE_LITE_KERNEL(calib_once, kARM, kInt8, kNCHW, fp32_to_int8);
+USE_LITE_KERNEL(calib_once, kARM, kInt8, kNCHW, int8_to_fp32);
 USE_LITE_KERNEL(conv2d, kARM, kInt8, kNCHW, int8_out);
 USE_LITE_KERNEL(conv2d, kARM, kInt8, kNCHW, fp32_out);
 USE_LITE_KERNEL(fc, kARM, kInt8, kNCHW, int8out);
