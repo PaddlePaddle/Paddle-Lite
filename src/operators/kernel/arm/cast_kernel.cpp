@@ -70,8 +70,11 @@ void CastKernel<CPU, float>::Compute(const CastParam<CPU>& param) {
   } else if (input->type() == type_id<int64_t>()) {
     framework::VisitDataType(framework::ToDataType(param.output_type_),
                              CastOutOpFunctor<int64_t>(input, output));
+  } else if (input->type() == type_id<int>()) {
+    framework::VisitDataType(framework::ToDataType(param.output_type_),
+                             CastOutOpFunctor<int>(input, output));
   } else {
-    // todo:other input type need impl
+    PADDLE_MOBILE_ENFORCE(0, "input tpye not support now!")
   }
 }
 
