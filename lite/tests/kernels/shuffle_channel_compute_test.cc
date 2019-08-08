@@ -15,7 +15,6 @@
 // TODO(zhengxi)
 // shuffle_channel_test can pass on local compilation
 // while on ci compilation, the test will be killed immediately.
-// what's more, the memory this operator use on ci is larger than local
 
 /*
 #include <gtest/gtest.h>
