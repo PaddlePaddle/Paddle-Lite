@@ -52,11 +52,7 @@ void test_relu(int bs, int ic, int ih, int iw) {
   x->Resize({bs, ic, ih, iw});
 
   // initialize input&output data
-  std::default_random_engine rand_eng;
-  std::uniform_int_distribution<int> rand_dist(-5, 5);
-  for (int i = 0; i < x->dims().production(); i++) {
-    x->mutable_data<float>()[i] = static_cast<float>(rand_dist(rand_eng));
-  }
+  FillTensor<float, int>(x);
 
   // initialize op desc
   cpp::OpDesc opdesc;
