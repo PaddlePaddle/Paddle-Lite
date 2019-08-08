@@ -56,5 +56,5 @@ REGISTER_LITE_KERNEL(beam_search,
     .BindInput("scores", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("selected_ids", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("selected_scores", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("parent_ids", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("parent_idx", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();

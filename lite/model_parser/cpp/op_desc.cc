@@ -28,9 +28,11 @@ namespace cpp {
   }
 
 SET_ATTR_IMPL(int32_t, INT);
+SET_ATTR_IMPL(int16_t, INT);
 SET_ATTR_IMPL(float, FLOAT);
 SET_ATTR_IMPL(std::string, STRING);
 SET_ATTR_IMPL(bool, BOOLEAN);
+SET_ATTR_IMPL(int64_t, LONG);
 SET_ATTR_IMPL(std::vector<int>, INTS);
 SET_ATTR_IMPL(std::vector<float>, FLOATS);
 SET_ATTR_IMPL(std::vector<std::string>, STRINGS);
@@ -56,15 +58,6 @@ FindAttr(const cpp::OpDesc& desc, const std::string& name) {
   }
 
 GET_IMPL_ONE(int32_t, INT)
-GET_IMPL_ONE(int64_t, LONG)
-GET_IMPL_ONE(float, FLOAT);
-GET_IMPL_ONE(std::string, STRING);
-GET_IMPL_ONE(bool, BOOLEAN);
-GET_IMPL_ONE(std::vector<int64_t>, LONGS);
-GET_IMPL_ONE(std::vector<float>, FLOATS);
-GET_IMPL_ONE(std::vector<int>, INTS);
-GET_IMPL_ONE(std::vector<std::string>, STRINGS);
-
 std::vector<std::string> OpDesc::OutputArgumentNames() const {
   std::vector<std::string> res;
   for (const auto& x : outputs_) res.push_back(x.first);
@@ -113,6 +106,16 @@ bool OpDesc::HasOutput(const std::string& param) const {
   auto it = outputs_.find(param);
   return it != outputs_.end();
 }
+
+GET_IMPL_ONE(float, FLOAT);
+GET_IMPL_ONE(int16_t, INT);
+GET_IMPL_ONE(std::string, STRING);
+GET_IMPL_ONE(int64_t, LONG);
+GET_IMPL_ONE(bool, BOOLEAN);
+GET_IMPL_ONE(std::vector<int64_t>, LONGS);
+GET_IMPL_ONE(std::vector<float>, FLOATS);
+GET_IMPL_ONE(std::vector<int>, INTS);
+GET_IMPL_ONE(std::vector<std::string>, STRINGS);
 
 }  // namespace cpp
 }  // namespace lite

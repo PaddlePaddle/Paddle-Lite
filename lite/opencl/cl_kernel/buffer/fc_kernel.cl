@@ -106,10 +106,10 @@ void gemm_batch_naive(__global const CL_DTYPE* a,
 
 //#define PRINT_KERNEL
 __kernel
-void gemm_batch(__global const CL_DTYPE* A,
-                __global const CL_DTYPE* B,
+void gemm_batch(__global const CL_DTYPE* Aptr,
+                __global const CL_DTYPE* Bptr,
                 __global const CL_DTYPE* bias,
-                __global CL_DTYPE* C,
+                __global CL_DTYPE* Cptr,
                 const int M, const int N, const int K, const int batch_size) {
 
     int row = get_global_id(0) << 3; // [0, M >> 3) height of out == m
@@ -117,25 +117,23 @@ void gemm_batch(__global const CL_DTYPE* A,
     const int bidx = get_global_id(2); // [0, batch_size)
 
     // update B(input), C(output) with batch_size
-    B += K * N * bidx;
-    C += M * N * bidx;
-    __global const CL_DTYPE* Aptr = A + row * K;
-    __global const CL_DTYPE* Bptr = B + col;
-    __global CL_DTYPE* Cptr = C + row * N;
+    Aptr += mul24(row, K); // A += row * K
+    Bptr += mad24(mul24(K, N), bidx, col); // B += K * N * bidx + col
+    Cptr += mad24(mul24(M, N), bidx, mul24(row, N)); // C += M * N * bidx + row * N
 
     CL_DTYPE4 a8x4[8];
     CL_DTYPE4 b4x4[4] = {0.f, 0.f, 0.f, 0.f};
     CL_DTYPE4 c8x4[8] = {0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f};
 
     if (bias) {
-        c8x4[0] = row < M ? bias[row] : 0;
-        c8x4[1] = row+1 < M ? bias[row + 1] : 0;
-        c8x4[2] = row+2 < M ? bias[row + 2] : 0;
-        c8x4[3] = row+3 < M ? bias[row + 3] : 0;
-        c8x4[4] = row+4 < M ? bias[row + 4] : 0;
-        c8x4[5] = row+5 < M ? bias[row + 5] : 0;
-        c8x4[6] = row+6 < M ? bias[row + 6] : 0;
-        c8x4[7] = row+7 < M ? bias[row + 7] : 0;
+        c8x4[0] = bias[row];
+        c8x4[1] = bias[row + 1];
+        c8x4[2] = bias[row + 2];
+        c8x4[3] = bias[row + 3];
+        c8x4[4] = bias[row + 4];
+        c8x4[5] = bias[row + 5];
+        c8x4[6] = bias[row + 6];
+        c8x4[7] = bias[row + 7];
     }
 
     // main loop of K
@@ -187,7 +185,7 @@ void gemm_batch(__global const CL_DTYPE* A,
 
 #ifdef RELU
     #pragma unroll(8)
-    for (int i = 0; i < 8; i++) {
+    for (int i = 0; i < 8; ++i) {
         c8x4[i] = fmax(c8x4[i], (CL_DTYPE4)0.f);
     }
 #endif

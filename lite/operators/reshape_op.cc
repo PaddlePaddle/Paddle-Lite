@@ -30,6 +30,8 @@ bool ReshapeOp::InferShape() const {
   auto x_dims = param_.x->dims();
   auto output_dims = ValidateShape(param_.shape, x_dims);
   param_.output->Resize(output_dims);
+  auto out_lod = param_.output->mutable_lod();
+  *out_lod = param_.x->lod();
   return true;
 }
 
@@ -71,7 +73,7 @@ bool Reshape2Op::CheckShape() const {
 bool Reshape2Op::InferShape() const {
   ReshapeOp::InferShape();
   auto x_dims = param_.x->dims();
-  std::vector<DDim::value_type> xshape_dims(x_dims.size() + 1, 0);
+  std::vector<DDim::value_type> xshape_dims(x_dims.size() + 1, 1);
   for (size_t i = 0; i < x_dims.size(); i++) {
     xshape_dims[i + 1] = x_dims[i];
   }

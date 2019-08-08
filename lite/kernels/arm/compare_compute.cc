@@ -87,8 +87,8 @@ void CompareCompute<Functor>::Run() {
   auto x_dims = param.X->dims();
   auto y_dims = param.Y->dims();
   bool *z = param.Out->template mutable_data<bool>();
-  const float *x = param.X->template data<float>();
-  const float *y = param.Y->template data<float>();
+  const auto *x = param.X->template data<int>();
+  const auto *y = param.Y->template data<float>();
   auto axis = param.axis;
   bool force_cpu = param.force_cpu;
   if (x_size == y_size) {
@@ -102,7 +102,7 @@ void CompareCompute<Functor>::Run() {
     get_mid_dims(x_dims, y_dims, axis, &outer_num, &mid_num, &inner_num);
     for (int outer_id = 0; outer_id < outer_num; ++outer_id) {
       for (int mid_id = 0; mid_id < mid_num; ++mid_id) {
-        float y_data = y[mid_id];
+        auto y_data = y[mid_id];
         for (int inner_id = 0; inner_id < inner_num; ++inner_id) {
           int index = (outer_id * mid_num + mid_id) * inner_num + inner_id;
           z[index] = CompareFunctor()(x[index], y_data);

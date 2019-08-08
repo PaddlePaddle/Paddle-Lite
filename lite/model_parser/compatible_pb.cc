@@ -92,6 +92,10 @@ void OpAttrsAnyToCpp(const OpDescType &any_desc, cpp::OpDesc *cpp_desc) {
         cpp_desc->SetAttr<std::string>(
             name, any_desc.template GetAttr<std::string>(name));
         break;
+      case AttrType::LONG:
+        cpp_desc->SetAttr<int64_t>(name,
+                                   any_desc.template GetAttr<int64_t>(name));
+        break;
       case AttrType::INTS:
         cpp_desc->SetAttr<std::vector<int>>(
             name, any_desc.template GetAttr<std::vector<int>>(name));
@@ -111,6 +115,16 @@ void OpAttrsAnyToCpp(const OpDescType &any_desc, cpp::OpDesc *cpp_desc) {
         cpp_desc->SetAttr<std::vector<int64_t>>(
             name, any_desc.template GetAttr<std::vector<int64_t>>(name));
         break;
+      case AttrType::BLOCK: {
+        LOG(INFO) << "loading block " << name;
+        auto i = any_desc.template GetAttr<int16_t>(name);
+        LOG(INFO) << i;
+        cpp_desc->SetAttr<int16_t>(name, i);
+        // naive_buffer::BlockDesc* sub_block = any_desc.template
+        // GetAttr<naive_buffer::BlockDesc*>(name);
+        // LOG(INFO) << sub_block->OpsSize();
+        break;
+      }
       default:
         LOG(FATAL) << "Unsupported attr type found " << static_cast<int>(type);
     }

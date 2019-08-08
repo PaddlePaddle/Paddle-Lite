@@ -13,29 +13,38 @@
 // limitations under the License.
 
 #include "lite/operators/while_op.h"
+#include "lite/core/op_lite.h"
 #include "lite/core/op_registry.h"
+
 namespace paddle {
 namespace lite {
 namespace operators {
 
-bool WhileOp::CheckShape() const {
-  CHECK_OR_FALSE(param_.x);
-  CHECK_OR_FALSE(param_.output);
+bool WhileOpLite::CheckShape() const {
+  CHECK_OR_FALSE(param_.sub_block);
+  CHECK_OR_FALSE(param_.scope);
+  CHECK_OR_FALSE(param_.cond);
   return true;
 }
 
-bool WhileOp::InferShape() const { return true; }
+bool WhileOpLite::InferShape() const { return true; }
 
-bool WhileOp::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
-  auto x = op_desc.Input("X").front();
-  auto output = op_desc.Output("Out").front();
-  param_.x = scope->FindVar(x)->GetMutable<Tensor>();
-  param_.output = scope->FindMutableTensor(output);
-  param_.scale = op_desc.GetAttr<float>("scale");
-  param_.bias = op_desc.GetAttr<float>("bias");
-  param_.bias_after_scale = op_desc.GetAttr<bool>("bias_after_scale");
-  CHECK(param_.x);
-  CHECK(param_.output);
+bool WhileOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
+  auto inputs = op_desc.Input("X");
+  auto outs = op_desc.Output("Out");
+
+  for (auto var : inputs) {
+    // param_.x.push_back(scope->FindVar(var)->GetMutable<lite::Tensor>());
+  }
+  for (auto var : outs) {
+    // param_.outs.push_back(scope->FindVar(var)->GetMutable<lite::Tensor>());
+  }
+  param_.sub_block = sub_block_;
+
+  auto condition = op_desc.Input("Condition");
+  param_.cond = scope->FindVar(condition[0])->GetMutable<lite::Tensor>();
+  param_.scope = scope;
+
   return true;
 }
 
@@ -43,4 +52,4 @@ bool WhileOp::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(while, paddle::lite::operators::WhileOp);
+REGISTER_LITE_OP(while, paddle::lite::operators::WhileOpLite);

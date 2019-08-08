@@ -37,8 +37,8 @@ void LookupTableCompute::Run() {
 
   auto table_dim = w->dims();
   int64_t ids_numel = ids->numel();
-  auto ids_data = ids->data<int64_t>();
-
+  auto ids_data = ids->data<float>();
+  int ids_int = ids_data[0];
   int64_t row_number = table_dim[0];
   int64_t row_width = table_dim[1];
   auto table_data = w->data<float>();
@@ -53,7 +53,7 @@ void LookupTableCompute::Run() {
       CHECK_GE(ids_data[i], 0) << "lookuptable ids[i] >= 0 check failed";
 
       memcpy(dout + i * row_width,
-             table_data + ids_data[i] * row_width,
+             table_data + ids_int * row_width,
              row_width * sizeof(float));
     }
   }

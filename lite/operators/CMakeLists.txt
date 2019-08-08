@@ -32,6 +32,7 @@ lite_cc_library(argmax_op SRCS argmax_op.cc DEPS ${op_DEPS})
 lite_cc_library(axpy_op SRCS axpy_op.cc DEPS ${op_DEPS})
 lite_cc_library(gru_unit_op SRCS gru_unit_op.cc DEPS ${op_DEPS})
 lite_cc_library(gru_op SRCS gru_op.cc DEPS ${op_DEPS})
+lite_cc_library(while_op SRCS while_op.cc DEPS ${op_DEPS})
 lite_cc_library(lookup_table_op SRCS lookup_table_op.cc DEPS ${op_DEPS})
 lite_cc_library(beam_search_decode_op SRCS beam_search_decode_op.cc DEPS ${op_DEPS})
 lite_cc_library(prior_box_op SRCS prior_box_op.cc DEPS ${op_DEPS})
@@ -72,6 +73,8 @@ lite_cc_library(beam_search_op SRCS beam_search_op.cc DEPS ${op_DEPS})
 lite_cc_library(sequence_pool_op_lite SRCS sequence_pool_op.cc DEPS ${op_DEPS})
 lite_cc_library(sequence_expand_op_lite SRCS sequence_expand_op.cc DEPS ${op_DEPS})
 lite_cc_library(reduce_max_op_lite SRCS reduce_max_op.cc DEPS ${op_DEPS})
+lite_cc_library(lod_reset_op SRCS lod_reset_op.cc DEPS ${op_DEPS})
+lite_cc_library(is_empty SRCS is_empty_op.cc DEPS ${op_DEPS})
 lite_cc_library(shape_op_lite SRCS shape_op.cc DEPS ${op_DEPS})
 lite_cc_library(cast_op_lite SRCS cast_op.cc DEPS ${op_DEPS})
 lite_cc_library(slice_op_lite SRCS slice_op.cc DEPS ${op_DEPS})
@@ -98,6 +101,8 @@ set(ops
         elementwise_ops
         fusion_elementwise_activation_ops
         lrn_op_lite
+	decode_bboxes_op_lite
+	multiclass_nms_op_lite
         decode_bboxes_op_lite
         box_coder_op_lite
         multiclass_nms_op_lite
@@ -135,6 +140,7 @@ set(ops
         equal        
         not_equal        
         less_than        
+        while_op
         less_equal        
         greater_than        
         greater_equal        
@@ -147,6 +153,8 @@ set(ops
         sequence_pool_op_lite
         sequence_expand_op_lite
         reduce_max_op_lite
+        lod_reset_op
+        is_empty 
         shape_op_lite
         cast_op_lite
         slice_op_lite
@@ -162,7 +170,7 @@ if (NOT LITE_WITH_X86)
                 ARM_DEPS pool_compute_arm)
     lite_cc_test(test_scale_op SRCS scale_op_test.cc DEPS scale_op memory)
     lite_cc_test(test_softmax_op SRCS softmax_op_test.cc DEPS softmax_op memory)
-    lite_cc_test(test_reshape_op SRCS reshape_op_test.cc DEPS reshape_op memory)
+    #lite_cc_test(test_reshape_op SRCS reshape_op_test.cc DEPS reshape_op memory)
     lite_cc_test(test_batch_norm_op SRCS batch_norm_op_test.cc DEPS batch_norm_op memory)
     lite_cc_test(test_concat_op SRCS concat_op_test.cc DEPS concat_op memory)
     lite_cc_test(test_calib_op SRCS calib_op_test.cc DEPS calib_op memory ARM_DEPS calib_compute_arm)

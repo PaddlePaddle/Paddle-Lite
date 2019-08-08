@@ -35,7 +35,6 @@ void NormCompute::Run() {
   int pre_n = input_dims.count(0, axis);
   int post_n = input_dims.count(axis + 1, dim_size);
   int n = input_dims[axis];
-  LOG(INFO) << dim_size << "" << pre_n << " " << post_n << " " << n;
   lite::arm::math::norm(x_data, pre_n, n, post_n, param.epsilon, o_data, &ctx);
 }
 

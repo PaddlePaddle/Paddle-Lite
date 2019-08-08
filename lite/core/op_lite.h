@@ -89,6 +89,15 @@ class OpLite : public Registry {
 
   // Assign op param to kernel.
   virtual void AttachKernel(KernelBase *kernel) = 0;
+  void SetKernel(std::vector<std::unique_ptr<KernelBase>> &kernels) {  // NOLINT
+    kernel_ = std::move(kernels.front());
+    kernel_->SetContext(
+        ContextScheduler::Global().NewContext(kernel_->target()));
+  }
+
+  KernelBase *GetKernel() {  // NOLINT
+    return kernel_.get();
+  }
 
   virtual ~OpLite() = default;
 
