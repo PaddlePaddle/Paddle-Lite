@@ -130,6 +130,11 @@ KernelRegistry::KernelRegistry()
   INIT_FOR(kOpenCL, kAny, kNCHW);
   INIT_FOR(kOpenCL, kAny, kAny);
 
+  INIT_FOR(kNPU, kFloat, kNCHW);
+  INIT_FOR(kNPU, kInt8, kNCHW);
+  INIT_FOR(kNPU, kAny, kNCHW);
+  INIT_FOR(kNPU, kAny, kAny);
+
   INIT_FOR(kFPGA, kFP16, kNHWC);
   INIT_FOR(kFPGA, kFP16, kAny);
   INIT_FOR(kFPGA, kFloat, kNHWC);

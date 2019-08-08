@@ -37,6 +37,7 @@ class GenerateProgramPass : public ProgramPass {
     LOG(INFO) << "insts.size " << insts_.size();
     std::unique_ptr<RuntimeProgram> program(
         new RuntimeProgram(std::move(insts_)));
+
     return program;
   }
 

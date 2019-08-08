@@ -87,6 +87,7 @@ class Optimizer {
            "variable_place_inference_pass",  //
            "argument_type_display_pass",     //
 
+           "runtime_context_assign_pass",
            "graph_visualze"}});
     } else {
       RunPasses(passes);
@@ -105,7 +106,6 @@ class Optimizer {
 
   // Generate a new program based on the mir graph.
   std::unique_ptr<RuntimeProgram> GenRuntimeProgram() {
-    LOG(INFO) << "generate program";
     auto pass = mir::PassManager::Global().LookUp<mir::GenerateProgramPass>(
         "generate_program_pass");
     pass->Apply(graph_);
