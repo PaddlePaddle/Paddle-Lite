@@ -118,7 +118,13 @@ void PrecisionCastPass::AddCastInst(const Type& from,
   for (auto& kernel : kernels) {
     const Type* in_arg_ty = kernel->GetInputDeclType("Input");
     const Type* out_arg_ty = kernel->GetOutputDeclType("Out");
+// TODO(xg): to optimize this
+#ifndef LITE_WITH_FPGA
+    if (in_arg_ty->precision() == from.precision() &&
+        out_arg_ty->precision() == to.precision()) {
+#else
     if (TypeCompatible(*in_arg_ty, from)) {
+#endif
       is_found = true;
       selected_kernels.emplace_back(std::move(kernel));
       // we pick the kernel
