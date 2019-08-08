@@ -28,7 +28,7 @@ void ConvActivationFuser::BuildPattern() {
   auto* filter =
       VarNode("filter")->assert_is_op_input(conv_type_, "Filter")->AsInput();
   auto* bias =
-      VarNode("bias")->assert_is_op_input("elementwise_add", "Y")->AsInput();
+      VarNode("bias")->assert_is_op_input(conv_type_, "Bias")->AsInput();
 
   // create op nodes
   auto* conv2d =
@@ -49,9 +49,8 @@ void ConvActivationFuser::BuildPattern() {
 
   // create topology.
   std::vector<PMNode*> conv2d_inputs{filter, input, bias};
-  std::vector<PMNode*> act_inputs{conv2d_out};
   conv2d_inputs >> *conv2d >> *conv2d_out;
-  act_inputs >> *act >> *out;
+  *conv2d_out >> *act >> *out;
 }
 
 void ConvActivationFuser::InsertNewNode(SSAGraph* graph,
