@@ -31,7 +31,6 @@ void Predictor::SaveModel(const std::string &dir,
     GenRuntimeProgram();
   }
   program_->SaveOpInfosToProgram(&program_desc_);
-  LOG(INFO) << "Save model to " << dir;
   switch (model_type) {
     case lite_api::LiteModelType::kProtobuf:
       SaveModelPb(dir, *program_->exec_scope(), program_desc_);
@@ -102,7 +101,6 @@ void Predictor::Build(const cpp::ProgramDesc &desc,
                       const std::vector<std::string> &passes) {
   program_desc_ = desc;
   Program program(desc, scope_, valid_places);
-
   optimizer_.KernelPickPreferPlace(prefer_place);
   core::KernelPickFactor factor;
   factor.ConsiderTarget();

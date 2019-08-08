@@ -14,7 +14,10 @@
 
 #pragma once
 #include <algorithm>
+#include <memory>
+#include <vector>
 #include "lite/core/kernel.h"
+#include "lite/core/op_registry.h"
 #include "lite/operators/while_op.h"
 
 namespace paddle {
@@ -22,13 +25,56 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
+class StepExecutor {
+  typedef std::shared_ptr<OpLite> OpPtr;
+
+ public:
+  StepExecutor(cpp::BlockDesc *block, Scope *scope, Place place)
+      : scope_(scope), place_(place) {
+    int32_t op_size = block->OpsSize();
+    for (int32_t i = 0; i < op_size; ++i) {
+      auto &op_desc = *block->template GetOp<cpp::OpDesc>(i);
+      auto op_type = op_desc.Type();
+      auto op_handler = lite::LiteOpRegistry::Global().Create(op_desc.Type());
+      VLOG(4) << "while: creating Op [" << op_type << "]";
+      op_handler->Attach(op_desc, scope);
+
+      auto hostplace = place_;
+      hostplace.target = TARGET(kHost);
+      auto kernels = op_handler->CreateKernels({place_, hostplace});
+      CHECK_GT(kernels.size(), 0) << "cannot create kernel";
+      op_handler->AttachKernel(kernels[0].get());
+      op_handler->SetKernel(kernels);
+      ops_of_block_.push_back(op_handler);
+    }
+  }
+
+  void Run() {
+    for (auto &op_handler : ops_of_block_) {
+      VLOG(4) << op_handler->op_info()->Repr();
+      op_handler->InferShape();
+      VLOG(4) << "while: infered shape";
+      op_handler->Run();
+    }
+  }
+
+ private:
+  Scope *scope_;
+  Place place_;
+  std::vector<OpPtr> ops_of_block_;
+};
+
 class WhileCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
  public:
   using param_t = operators::WhileParam;
 
   void Run() override;
+  void PrepareForRun() override;
 
   virtual ~WhileCompute() = default;
+
+ private:
+  std::shared_ptr<StepExecutor> executor_;
 };
 
 }  // namespace arm

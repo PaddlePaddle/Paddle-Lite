@@ -124,6 +124,7 @@ void GRUCompute::Run() {
   }
   lite::arm::math::Batch2LoDTensorFunctor<float> to_seq;
   *(batch_hidden->mutable_lod()) = batch_gate->lod();
+  batch_hidden->mutable_data<float>();
   to_seq(*batch_hidden, hidden);
 }
 

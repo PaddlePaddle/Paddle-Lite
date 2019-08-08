@@ -30,8 +30,7 @@ bool Im2SequenceOp::InferShape() const {
   CHECK_OR_FALSE(param_.Out);
   // TODO(Superjomn) Enable data sharing.
   auto inputs = param_.X;
-  int num_in = param_.X.size();
-  auto input_dims = param_.X[0]->dims();
+  auto input_dims = param_.X->dims();
   int img_num = input_dims[0];
   int img_channels = input_dims[1];
   int img_height = input_dims[2];
@@ -55,9 +54,11 @@ bool Im2SequenceOp::InferShape() const {
 }
 
 bool Im2SequenceOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
-  auto inputs = opdesc.Input("X");
-  for (auto var : inputs) {
-    param_.X.push_back(scope->FindVar(var)->GetMutable<lite::Tensor>());
+  param_.X =
+      scope->FindVar(opdesc.Input("X").front())->GetMutable<lite::Tensor>();
+  if (opdesc.Input("Y").size()) {
+    param_.Y =
+        scope->FindVar(opdesc.Input("Y").front())->GetMutable<lite::Tensor>();
   }
   param_.Out =
       scope->FindVar(opdesc.Output("Out").front())->GetMutable<lite::Tensor>();
@@ -65,7 +66,7 @@ bool Im2SequenceOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   param_.strides = opdesc.GetAttr<std::vector<int>>("strides");
   param_.paddings = opdesc.GetAttr<std::vector<int>>("paddings");
   param_.kernels = opdesc.GetAttr<std::vector<int>>("kernels");
-  param_.out_strides = opdesc.GetAttr<std::vector<int>>("out_strides");
+  param_.out_strides = opdesc.GetAttr<std::vector<int>>("out_stride");
   return true;
 }
 

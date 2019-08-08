@@ -199,10 +199,12 @@ static bool DataLayoutCompatible(const Type& a, const Type& b) {
 }
 
 static bool PrecisionCompatibleTo(const Type& a, const Type& b) {
-  return a.IsVoid() ||                                                        //
-         (a.IsTensor() && b.IsTensor() && (a.precision() == b.precision() ||  //
-                                           b.precision() == PRECISION(kAny) ||
-                                           a.precision() == PRECISION(kAny)));
+  return a.IsVoid() ||  //
+         (((a.IsTensor() && b.IsTensor()) ||
+           (a.IsTensorList() && b.IsTensorList())) &&
+          (a.precision() == b.precision() ||  //
+           b.precision() == PRECISION(kAny) ||
+           a.precision() == PRECISION(kAny)));
 }
 static bool PrecisionCompatible(const Type& a, const Type& b) {
   return a.IsVoid() || b.IsVoid() ||                                          //

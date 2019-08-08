@@ -27,6 +27,8 @@ bool ActivationOp::CheckShape() const {
 
 bool ActivationOp::InferShape() const {
   param_.Out->Resize(param_.X->dims());
+  auto out_lod = param_.Out->mutable_lod();
+  *out_lod = param_.X->lod();
   return true;
 }
 
@@ -106,6 +108,7 @@ REGISTER_LITE_OP(sigmoid, paddle::lite::operators::ActivationOp);
 REGISTER_LITE_OP(tanh, paddle::lite::operators::ActivationOp);
 REGISTER_LITE_OP(swish, paddle::lite::operators::ActivationOp);
 REGISTER_LITE_OP(relu6, paddle::lite::operators::ActivationOp);
+REGISTER_LITE_OP(log, paddle::lite::operators::ActivationOp);
 
 #ifdef LITE_WITH_TRAIN
 REGISTER_LITE_OP(square_grad, paddle::lite::operators::ActivationGradOp);

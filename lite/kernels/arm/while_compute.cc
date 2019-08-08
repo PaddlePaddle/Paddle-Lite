@@ -17,7 +17,6 @@
 #include <string>
 #include <vector>
 #include "lite/arm/math/funcs.h"
-#include "lite/core/op_registry.h"
 #include "lite/core/tensor.h"
 #include "lite/core/type_system.h"
 
@@ -26,43 +25,17 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
-class StepExecutor {
-  typedef std::shared_ptr<OpLite> OpPtr;
+void WhileCompute::PrepareForRun() {
+  auto &param = Param<operators::WhileParam>();
+  auto cur_scope = param.scope;
 
- public:
-  StepExecutor(cpp::BlockDesc *block, Scope *scope, Place place)
-      : scope_(scope), place_(place) {
-    int32_t op_size = block->OpsSize();
-    for (int32_t i = 0; i < op_size; ++i) {
-      cpp::OpDesc *op_desc = block->template GetOp<cpp::OpDesc>(i);
-      auto op_handler = lite::LiteOpRegistry::Global().Create(op_desc->Type());
-      op_handler->Attach(*op_desc, scope);
-      auto kernels = op_handler->CreateKernels({place_});
-      // ASSERT(kernels.empty());
-      op_handler->AttachKernel(kernels[0].get());
-      ops_of_block_.push_back(op_handler);
-    }
-  }
-
-  void Run() {
-    for (auto &op_handler : ops_of_block_) {
-      op_handler->InferShape();
-      op_handler->Run();
-    }
-  }
-
- private:
-  lite::Scope *scope_;
-  std::vector<OpPtr> ops_of_block_;
-  lite::Place place_;
-};
-
+  executor_ =
+      std::make_shared<StepExecutor>(param.sub_block, cur_scope, place());
+}
 void WhileCompute::Run() {
   auto &param = Param<operators::WhileParam>();
-  auto &cur_scope = param.scope->NewScope();
-  StepExecutor executor(param.sub_block, &cur_scope, place());
   while (param.cond->data<bool>()[0]) {
-    executor.Run();
+    executor_->Run();
   }
 }
 
@@ -74,5 +47,8 @@ void WhileCompute::Run() {
 REGISTER_LITE_KERNEL(
     while, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::WhileCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Condition",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kBool))})
+    .BindOutput("Out", {LiteType::GetTensorListTy(TARGET(kARM))})
+    .BindOutput("StepScopes", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();

@@ -70,7 +70,7 @@ void PruneEndBeams(const Tensor *pre_ids,
                    std::vector<std::vector<Item>> *items,
                    size_t lod_level,
                    int end_id) {
-  auto *pre_ids_data = pre_ids->data<int64_t>();
+  auto *pre_ids_data = pre_ids->data<float>();
   auto &high_level = abs_lod[lod_level];
   for (size_t src_idx = 0; src_idx < high_level.size() - 1; ++src_idx) {
     size_t src_prefix_start = high_level[src_idx];
@@ -152,11 +152,10 @@ std::vector<std::vector<Item>> SelectTopBeamSizeItems(const Tensor *pre_ids,
   // find the current candidates
   // auto abs_lod = framework::ToAbsOffset(scores->lod());
   auto abs_lod = scores->lod();
-
-  auto *pre_ids_data = pre_ids->data<int64_t>();
+  auto *pre_ids_data = pre_ids->data<float>();
   auto *pre_scores_data = pre_scores->data<float>();
 
-  auto *ids_data = ids ? ids->data<int64_t>() : nullptr;
+  auto *ids_data = ids ? ids->data<int>() : nullptr;
   auto *scores_data = scores->data<float>();
 
   size_t num_seqs = abs_lod[lod_level].size() - 1;
@@ -213,7 +212,6 @@ void beam_search(const Tensor *pre_ids,
   // auto abs_lod = framework::ToAbsOffset(scores->lod());
   auto abs_lod = scores->lod();
   auto &high_level = abs_lod[level];
-
   auto items = SelectTopBeamSizeItems(pre_ids,
                                       pre_scores,
                                       ids,
@@ -238,7 +236,7 @@ void beam_search(const Tensor *pre_ids,
   if (parent_idx) {
     parent_idx->Resize(dims);
   }
-  auto *selected_ids_data = selected_ids->mutable_data<int64_t>();
+  auto *selected_ids_data = selected_ids->mutable_data<float>();
   auto *selected_scores_data = selected_scores->mutable_data<float>();
   auto *parent_idx_data =
       parent_idx ? parent_idx->mutable_data<int>() : nullptr;
