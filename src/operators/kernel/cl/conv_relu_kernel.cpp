@@ -52,12 +52,18 @@ bool ConvReluKernel<GPU_CL, float>::Init(FusionConvReluParam<GPU_CL> *param) {
   } else if (param->Filter()->dims()[1] == 1 &&
              param->Input()->dims()[1] == param->Output()->dims()[1] &&
              param->Filter()->dims()[2] == 3) {
-    param->ExecMode() = ConvParam<GPU_CL>::EXEC_DEPTHWISE3x3_FLOAT;
     param->Filter()->InitDWImage(cl_helper_.CLContext(),
                                  cl_helper_.CLCommandQueue());
+    if (param->Strides()[0] == 1 && param->Dilations()[0] == 1) {
+      param->ExecMode() = ConvParam<GPU_CL>::EXEC_DEPTHWISE3x3S1_FLOAT;
+      this->cl_helper_.AddKernel("depth_conv_3x3s1", conv_kernel_file,
+                                 build_options);
+    } else {
+      param->ExecMode() = ConvParam<GPU_CL>::EXEC_DEPTHWISE3x3_FLOAT;
+      this->cl_helper_.AddKernel("depth_conv_3x3", conv_kernel_file,
+                                 build_options);
+    }
 
-    this->cl_helper_.AddKernel("depth_conv_3x3", conv_kernel_file,
-                               build_options);
     DLOG << "depth_conv 3x3";
 
   } else if (param->Filter()->dims()[2] == 3 &&
@@ -102,6 +108,9 @@ void ConvReluKernel<GPU_CL, float>::Compute(
     case ConvParam<GPU_CL>::EXEC_SLIDINGWINDOW3x3_FLOAT:
     case ConvParam<GPU_CL>::EXEC_DEPTHWISE3x3_FLOAT:
       ConvAddBnRelu(&this->cl_helper_, param, true);
+      break;
+    case ConvParam<GPU_CL>::EXEC_DEPTHWISE3x3S1_FLOAT:
+      DWConvAddBnRelu(&this->cl_helper_, param, true);
       break;
     default:
       PADDLE_MOBILE_THROW_EXCEPTION("Invalid convolution execute mode %d",

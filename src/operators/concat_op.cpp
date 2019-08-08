@@ -32,8 +32,6 @@ void ConcatOp<Dtype, T>::InferShape() const {
     inputs_dims.push_back(inputs[i]->dims());
   }
 
-  auto axis = static_cast<size_t>(this->param_.Axis());
-
   if (n == 1) {
     DLOG << "Warning: concat op have only one input, "
             "may waste memory";
@@ -41,6 +39,8 @@ void ConcatOp<Dtype, T>::InferShape() const {
 
   /// add all dim[axis] and check other dims if equal.
   auto out_dims = inputs_dims[0];
+  auto axis = static_cast<size_t>(this->param_.Axis()) -
+              (this->param_.original_output_dims_size_ - out_dims.size());
   int in_zero_dims_size = out_dims.size();
   for (size_t i = 1; i < n; i++) {
     for (size_t j = 0; j < in_zero_dims_size; j++) {

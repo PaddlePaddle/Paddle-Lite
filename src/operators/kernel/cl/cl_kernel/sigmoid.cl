@@ -17,14 +17,18 @@ limitations under the License. */
 __kernel void sigmoid(__read_only image2d_t input,
                    __write_only image2d_t output){
 
-  const int x = get_global_id(0);
-  const int y = get_global_id(1);
+   const int x = get_global_id(0);
+   const int y = get_global_id(1);
 
-  const sampler_t sampler = CLK_NORMALIZED_COORDS_TRUE |
-                            CLK_ADDRESS_CLAMP |
-                            CLK_FILTER_NEAREST;
+   const sampler_t sampler = CLK_NORMALIZED_COORDS_TRUE |
+                             CLK_ADDRESS_CLAMP |
+                             CLK_FILTER_NEAREST;
 
-  half4 in = read_imageh(input, sampler, (int2)(x, y));
-  in = 1.0f / (1 + exp(-in));
-  write_imageh(output, (int2)(x, y), in);
+   half4 in = read_imageh(input, sampler, (int2)(x, y));
+   half4 out;
+   out.x = 1.0 / (1.0 + pow(2.71828182, -1.0 * (float)(in.x)));
+   out.y = 1.0 / (1.0 + pow(2.71828182, -1.0 * (float)(in.y)));
+   out.z = 1.0 / (1.0 + pow(2.71828182, -1.0 * (float)(in.z)));
+   out.w = 1.0 / (1.0 + pow(2.71828182, -1.0 * (float)(in.w)));
+   write_imageh(output, (int2)(x, y), out);
 }

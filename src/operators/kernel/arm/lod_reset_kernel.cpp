@@ -28,6 +28,7 @@ template <>
 void LodResetKernel<CPU, float>::Compute(const LodResetParam<CPU> &param) {
   const auto *input = param.input_x_;
   const auto *lod_t = param.input_y_;
+  bool append = param.append;
   auto *output = param.output_;
 
   output->ShareDataWith(*input);
@@ -47,13 +48,17 @@ void LodResetKernel<CPU, float>::Compute(const LodResetParam<CPU> &param) {
 
   // cast level0 to size_t
   std::vector<size_t> ulevel0(level0.size(), 0);
-  for (int i = 0; i < level0.size(); ++i) {
-    ulevel0[i] = level0[i];
-  }
+  std::transform(level0.begin(), level0.end(), ulevel0.begin(),
+                 [](int a) { return static_cast<size_t>(a); });
 
-  framework::LoD target_lod;
-  target_lod.push_back(std::move(ulevel0));
-  output->set_lod(target_lod);
+  if (append) {
+    auto *out_lod = output->mutable_lod();
+    out_lod->push_back(ulevel0);
+  } else {
+    framework::LoD target_lod;
+    target_lod.push_back(ulevel0);
+    output->set_lod(target_lod);
+  }
 }
 
 }  // namespace operators

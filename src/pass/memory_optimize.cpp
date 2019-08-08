@@ -57,6 +57,7 @@ void MemoryOptPass::operator()(
     AppendBlockVars(block.get());
 
     reused_nodes_.clear();
+    memoryDeputies_.clear();
     // collect all not persistable variables, and accumulate
     // it's reference count
     std::stack<VarNode *> empty_var_nodes;
@@ -156,12 +157,30 @@ void MemoryOptPass::operator()(
       auto *reuse_tensor =
           reused_var->template GetMutable<framework::LoDTensor>();
       reuse_tensor->mutable_data<float>();
+      framework::Variable *deputyVar;
+      int64_t varSize = 0;
       for (const auto &node : list) {
         DLOG << node->name;
         auto *var = scope->Var(node->name);
         auto *tensor = var->template GetMutable<framework::LoDTensor>();
         tensor->ShareHolderWith(*reuse_tensor);
+        if (tensor->numel() > varSize) {
+          varSize = tensor->numel();
+          deputyVar = var;
+        }
       }
+      if (deputyVar) {
+        memoryDeputies_.push_back(deputyVar);
+      }
+    }
+  }
+}
+
+void MemoryOptPass::AdjustMemory() {
+  for (auto &deputy : memoryDeputies_) {
+    if (deputy->IsType<framework::LoDTensor>()) {
+      auto *tensor = deputy->template GetMutable<framework::LoDTensor>();
+      tensor->mutable_data_new();
     }
   }
 }

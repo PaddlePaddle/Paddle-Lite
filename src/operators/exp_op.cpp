@@ -30,7 +30,7 @@ REGISTER_OPERATOR_CPU(exp, ops::EXPOp);
 #endif
 
 #ifdef PADDLE_MOBILE_CL
-// REGISTER_OPERATOR_CL(exp, ops::EXPOp);
+REGISTER_OPERATOR_CL(exp, ops::EXPOp);
 #endif
 
 #endif

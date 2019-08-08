@@ -48,9 +48,11 @@ void test(int argc, char *argv[]) {
   //  config.load_when_predict = true;
   paddle_mobile::PaddleMobile<paddle_mobile::GPU_CL> paddle_mobile(config);
   paddle_mobile.SetCLPath("/data/local/tmp/bin");
+  std::cout << "testing opencl yyz " << std::endl;
 #else
   paddle_mobile::PaddleMobile<paddle_mobile::CPU> paddle_mobile(config);
   paddle_mobile.SetThreadNum(1);
+  std::cout << "testing cpu yyz " << std::endl;
 #endif
 
   int dim_count = std::stoi(argv[arg_index]);
@@ -100,7 +102,7 @@ void test(int argc, char *argv[]) {
               << " load-time-cost :" << time_diff(time1, time2) << "ms"
               << std::endl;
 
-    float input_data_array[size];
+    float *input_data_array = new float[size];
     std::ifstream in("input.txt", std::ios::in);
     for (int i = 0; i < size; i++) {
       float num;
@@ -167,6 +169,44 @@ void test(int argc, char *argv[]) {
       paddle_mobile.Feed(var_names[0], input_tensor);
       paddle_mobile.Predict();
     }
+#ifdef PADDLE_MOBILE_CL
+    for (auto var_name : var_names) {
+      auto cl_image = paddle_mobile.FetchImage(var_name);
+      auto len = cl_image->numel();
+      if (len == 0) {
+        continue;
+      }
+      int width = cl_image->ImageDims()[0];
+      int height = cl_image->ImageDims()[1];
+      paddle_mobile::framework::half_t *image_data =
+          new paddle_mobile::framework::half_t[height * width * 4];
+      cl_int err;
+      cl_mem image = cl_image->GetCLImage();
+      size_t origin[3] = {0, 0, 0};
+      size_t region[3] = {width, height, 1};
+      err = clEnqueueReadImage(cl_image->CommandQueue(), image, CL_TRUE, origin,
+                               region, 0, 0, image_data, 0, NULL, NULL);
+      CL_CHECK_ERRORS(err);
+      float *tensor_data = new float[cl_image->numel()];
+      auto converter = cl_image->Converter();
+      converter->ImageToNCHW(image_data, tensor_data, cl_image->ImageDims(),
+                             cl_image->dims());
+
+      auto data = tensor_data;
+      std::string sample = "";
+      if (!is_sample_step) {
+        sample_step = len / sample_num;
+      }
+      if (sample_step <= 0) {
+        sample_step = 1;
+      }
+      for (int i = 0; i < len; i += sample_step) {
+        sample += " " + std::to_string(data[i]);
+      }
+      std::cout << "auto-test"
+                << " var " << var_name << sample << std::endl;
+    }
+#else
     for (auto var_name : var_names) {
       auto out = paddle_mobile.Fetch(var_name);
       auto len = out->numel();
@@ -206,6 +246,7 @@ void test(int argc, char *argv[]) {
                   << " var " << var_name << sample << std::endl;
       }
     }
+#endif
     std::cout << std::endl;
   }
 }

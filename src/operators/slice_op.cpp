@@ -24,11 +24,69 @@ void SliceOp<Dtype, T>::InferShape() const {
   auto axes = this->param_.axes_;
   auto input = this->param_.input_;
   auto output = this->param_.output_;
+#ifdef PADDLE_MOBILE_CL
+  auto output_dims = output->dims();
+  auto output_dims_size = output_dims.size();
+  bool should_resize = true;
+  if (output_dims_size > 4) {
+    for (int i = 0; i < output_dims_size - 4; ++i) {
+      if (output_dims[i] != 0 && output_dims[i] != 1) {
+        should_resize = false;
+        break;
+      }
+    }
+    if (should_resize) {
+      std::vector<int64_t> temp_output_dims;
+      temp_output_dims.reserve(static_cast<size_t>(4));
+      for (int i = output_dims_size - 4; i < output_dims_size; ++i) {
+        temp_output_dims.push_back(output_dims[i]);
+      }
+      framework::DDim temp_ddim = framework::make_ddim(temp_output_dims);
+      this->param_.output_->Resize(temp_ddim);
+    }
+  }
+#endif
   PADDLE_MOBILE_ENFORCE(axes.size() == 1, "axes size should equals 1");
   PADDLE_MOBILE_ENFORCE(input->dims().size() == output->dims().size(),
                         "input dim size should equals output dim size");
-  PADDLE_MOBILE_ENFORCE(input->dims().size() - axes[0] == 3,
-                        "op only support slice channel now");
+#ifdef PADDLE_MOBILE_CL
+  PADDLE_MOBILE_ENFORCE(
+      input->dims().size() -
+              (axes[0] - (this->param_.original_output_dims_size_ -
+                          this->param_.output_->dims().size())) ==
+          3,
+      "op only support slice channel now");
+#endif
+  if (input->dims().size() >= 4) {
+    PADDLE_MOBILE_ENFORCE(input->dims().size() - axes[0] == 3,
+                          "op only support slice channel now");
+  }
+  auto starts = this->param_.starts_;
+  auto ends = this->param_.ends_;
+  framework::DDim out_dims(input->dims());
+  PADDLE_MOBILE_ENFORCE(starts.size() == ends.size(),
+                        "starts.size should equal ends.size");
+  PADDLE_MOBILE_ENFORCE(axes.size() == starts.size(),
+                        "axes.size should equal starts.size");
+  int dim_value, start, end;
+  for (size_t i = 0; i < axes.size(); ++i) {
+    dim_value = out_dims[axes[i]];
+    if (dim_value > 0) {
+      start = starts[i] < 0 ? (starts[i] + dim_value) : starts[i];
+      end = ends[i] < 0 ? (ends[i] + dim_value) : ends[i];
+      start = std::max(start, 0);
+      end = std::max(end, 0);
+      // start = std::min(start, dim_value);
+      end = std::min(end, dim_value);
+      // start = std::min(start, end);
+      PADDLE_MOBILE_ENFORCE(end > start, "end should greater than start");
+      out_dims[axes[i]] = end - start;
+    }
+  }
+  output->Resize(out_dims);
+  if (axes[0] != 0) {
+    output->set_lod(input->lod());
+  }
 }
 
 }  // namespace operators
@@ -41,4 +99,7 @@ REGISTER_OPERATOR_CPU(slice, ops::SliceOp);
 #ifdef PADDLE_MOBILE_FPGA
 REGISTER_OPERATOR_FPGA(slice, ops::SliceOp);
 #endif
+#ifdef PADDLE_MOBILE_CL
+REGISTER_OPERATOR_CL(slice, ops::SliceOp);
 #endif
+#endif  // SLICE_OP

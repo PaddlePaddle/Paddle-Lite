@@ -27,6 +27,7 @@ limitations under the License. */
 #include "framework/program/program.h"
 #include "framework/tensor.h"
 #include "framework/type_trait.h"
+#include "pass/memory_optimize.h"
 
 namespace paddle_mobile {
 namespace framework {
@@ -53,6 +54,9 @@ class Executor {
   void SetInput(const LoDTensor &input, const std::string &var_name);
 
   std::shared_ptr<LoDTensor> GetOutput(const std::string &var_name);
+#ifdef PADDLE_MOBILE_CL
+  const CLImage *GetOutputImage(const std::string &var_name);
+#endif
 
   void FeedTensorData(const std::vector<framework::Tensor> &v);
   void GetTensorResults(std::vector<framework::Tensor *> *v);
@@ -100,6 +104,9 @@ class Executor {
   // for super resoltion
   DDim input_dim_last_;
   bool input_dim_has_changed_ = true;
+
+  bool shouldAdjustMemory_ = false;
+  std::shared_ptr<pass::MemoryOptPass> memoryOpt_;
 
 #ifdef PADDLE_MOBILE_PROFILE
   typedef typename DtypeTensorTrait<Device>::gtype ProfileTensorType;
