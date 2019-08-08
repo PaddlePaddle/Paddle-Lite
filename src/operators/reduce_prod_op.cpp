@@ -64,10 +64,12 @@ void ReduceProdOp<Dtype, T>::InferShape() const {
     }
     auto out_dims = framework::make_ddim(dims_vector);
     this->param_.Output()->Resize(out_dims);
+#ifdef PADDLE_MOBILE_CPU
     if (dims[0] != 0) {
       // Only pass LoD when not reducing on the first dim.
       this->param_.Output()->set_lod(this->param_.Input()->lod());
     }
+#endif
   }
 }
 

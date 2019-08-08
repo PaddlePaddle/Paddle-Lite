@@ -40,20 +40,20 @@ struct CastOutOpFunctor {
   }
 };
 
-struct CastOpFunctor {
-  const framework::Tensor* in_;
-  framework::Tensor* out_;
-  int output_type_;
-  CastOpFunctor(const framework::Tensor* in, framework::Tensor* out,
-                const int output_type)
-      : in_(in), out_(out), output_type_(output_type) {}
-
-  template <typename InT>
-  void apply() const {
-    framework::VisitDataType(framework::ToDataType(output_type_),
-                             CastOutOpFunctor<InT>(in_, out_));
-  }
-};
+// struct CastOpFunctor {
+//  const framework::Tensor* in_;
+//  framework::Tensor* out_;
+//  int output_type_;
+//  CastOpFunctor(const framework::Tensor* in, framework::Tensor* out,
+//                const int output_type)
+//      : in_(in), out_(out), output_type_(output_type) {}
+//
+//  template <typename InT>
+//  void apply() const {
+//    framework::VisitDataType(framework::ToDataType(output_type_),
+//                             CastOutOpFunctor<InT>(in_, out_));
+//  }
+//};
 
 template <>
 bool CastKernel<CPU, float>::Init(CastParam<CPU>* param) {
@@ -64,8 +64,18 @@ template <>
 void CastKernel<CPU, float>::Compute(const CastParam<CPU>& param) {
   const Tensor* input = param.input_;
   Tensor* output = param.output_;
-  framework::VisitDataType(framework::ToDataType(param.input_type_),
-                           CastOpFunctor(input, output, param.output_type_));
+  if (input->type() == type_id<float>()) {
+    framework::VisitDataType(framework::ToDataType(param.output_type_),
+                             CastOutOpFunctor<float>(input, output));
+  } else if (input->type() == type_id<int64_t>()) {
+    framework::VisitDataType(framework::ToDataType(param.output_type_),
+                             CastOutOpFunctor<int64_t>(input, output));
+  } else if (input->type() == type_id<int>()) {
+    framework::VisitDataType(framework::ToDataType(param.output_type_),
+                             CastOutOpFunctor<int>(input, output));
+  } else {
+    PADDLE_MOBILE_ENFORCE(0, "input tpye not support now!")
+  }
 }
 
 }  // namespace operators
