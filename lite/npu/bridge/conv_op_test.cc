@@ -150,14 +150,8 @@ void test_conv(int bs,
   filter->Resize(filter_shape);
 
   // initialize input&output data
-  std::default_random_engine rand_eng;
-  std::uniform_int_distribution<int> rand_dist(-5, 5);
-  for (int i = 0; i < input->dims().production(); i++) {
-    input->mutable_data<float>()[i] = static_cast<float>(rand_dist(rand_eng));
-  }
-  for (int i = 0; i < filter->dims().production(); i++) {
-    filter->mutable_data<float>()[i] = static_cast<float>(rand_dist(rand_eng));
-  }
+  FillTensor<float, int>(input);
+  FillTensor<float, int>(filter);
 
   // initialize op desc
   cpp::OpDesc opdesc;
@@ -172,9 +166,7 @@ void test_conv(int bs,
   opdesc.SetAttr("fuse_relu", static_cast<bool>(fuse_relu));
   if (has_bias) {
     bias->Resize({1, oc, 1, 1});
-    for (int i = 0; i < bias->dims().production(); i++) {
-      bias->mutable_data<float>()[i] = static_cast<float>(rand_dist(rand_eng));
-    }
+    FillTensor<float, int>(bias);
     opdesc.SetInput("Bias", {bias_var_name});
   }
 
@@ -213,13 +205,6 @@ TEST(NPUBridges, conv) {
                           paddings.push_back(0);
                         }
                         for (auto padding : paddings) {
-                          // Only dilation = 1 and groups >= 5 (or groups = 1)
-                          // is supported in depthwise convolution mode for NPU
-                          // Convolution op
-                          if (depthwise &&
-                              !((ic == 1 || ic >= 5) && dilation == 1)) {
-                            continue;
-                          }
                           VLOG(3) << "bs: " << bs << " ic: " << ic
                                   << " oc: " << oc << " ih: " << ih
                                   << " iw: " << iw << " has_bias: " << has_bias
@@ -254,7 +239,7 @@ TEST(NPUBridges, conv) {
     }
   }
 #else
-  test_conv(1, 3, 3, 16, 14, false, false, true, 0, 1, 0, 3);
+  test_conv(2, 3, 3, 8, 8, true, true, true, 1, 1, 1, 3);
 #endif
 }
 

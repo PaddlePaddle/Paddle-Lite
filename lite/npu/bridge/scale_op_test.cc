@@ -53,10 +53,6 @@ void test_scale(int bs,
                 bool bias_after_scale,
                 float scale,
                 float bias) {
-  const auto& bridges = lite::npu::bridge::Factory::Instance();
-  const auto& supported_lists = bridges.AllFunctions();
-  CHECK(bridges.HasType("scale"));
-
   // prepare input&output variables
   Scope scope;
   std::string x_var_name("x");
@@ -68,11 +64,7 @@ void test_scale(int bs,
   x->Resize({bs, ic, ih, iw});
 
   // initialize input&output data
-  std::default_random_engine rand_eng;
-  std::uniform_int_distribution<int> rand_dist(-5, 5);
-  for (int i = 0; i < x->dims().production(); i++) {
-    x->mutable_data<float>()[i] = static_cast<float>(rand_dist(rand_eng));
-  }
+  FillTensor<float, int>(x);
 
   // initialize op desc
   cpp::OpDesc opdesc;
