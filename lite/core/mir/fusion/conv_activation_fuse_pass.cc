@@ -12,23 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/mir/fusion/conv_elementwise_add_activation_fuse_pass.h"
+#include "lite/core/mir/fusion/conv_activation_fuse_pass.h"
 #include <memory>
 #include <vector>
-#include "lite/core/mir/fusion/conv_elementwise_add_activation_fuser.h"
+#include "lite/core/mir/fusion/conv_activation_fuser.h"
 #include "lite/core/mir/pass_registry.h"
 
 namespace paddle {
 namespace lite {
 namespace mir {
 
-void ConvElementwiseAddActivationFusePass::Apply(
-    const std::unique_ptr<SSAGraph>& graph) {
-  fusion::ConvElementwiseAddActivationFuser fuser("conv2d", "relu");
+void ConvActivationFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
+  fusion::ConvActivationFuser fuser("conv2d", "relu");
   fuser(graph.get());
 
-  fusion::ConvElementwiseAddActivationFuser depthwise_fuser("depthwise_conv2d",
-                                                            "relu");
+  fusion::ConvActivationFuser depthwise_fuser("depthwise_conv2d", "relu");
   depthwise_fuser(graph.get());
 }
 
@@ -36,5 +34,5 @@ void ConvElementwiseAddActivationFusePass::Apply(
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_MIR_PASS(lite_conv_elementwise_add_activation_fuse_pass,
-                  paddle::lite::mir::ConvElementwiseAddActivationFusePass);
+REGISTER_MIR_PASS(lite_conv_activation_fuse_pass,
+                  paddle::lite::mir::ConvActivationFusePass);

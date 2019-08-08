@@ -23,13 +23,10 @@ namespace lite {
 namespace mir {
 namespace fusion {
 
-class ConvElementwiseAddActivationFuser : public FuseBase {
+class ConvElementwiseFuser : public FuseBase {
  public:
-  explicit ConvElementwiseAddActivationFuser(const std::string& conv_type,
-                                             const std::string& act_type) {
-    CHECK(act_type == "relu") << "Only relu activation be supported now";
+  explicit ConvElementwiseFuser(const std::string& conv_type) {
     conv_type_ = conv_type;
-    act_type_ = act_type;
   }
 
   void BuildPattern() override;
@@ -38,7 +35,6 @@ class ConvElementwiseAddActivationFuser : public FuseBase {
  private:
   cpp::OpDesc GenOpDesc(const key2nodes_t& matched) override;
   std::string conv_type_;
-  std::string act_type_;
 };
 
 }  // namespace fusion

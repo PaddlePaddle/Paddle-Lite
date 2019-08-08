@@ -12,12 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/mir/fusion/conv_elementwise_add_activation_fuse_pass.h"
 #include <gflags/gflags.h>
 #include <gtest/gtest.h>
 #include <vector>
 #include "lite/api/cxx_api.h"
 #include "lite/api/paddle_use_passes.h"
+#include "lite/core/mir/fusion/conv_activation_fuse_pass.h"
+#include "lite/core/mir/fusion/conv_elementwise_fuse_pass.h"
 #include "lite/core/mir/graph_visualize_pass.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/program.h"
@@ -135,8 +136,11 @@ TEST(conv_elementwise_add_relu_fuse_pass, fuse_test_op) {
   auto graph = BuildGraph(&program_desc, scope, places);
   Visualize(graph.get());
   const int num_nodes = graph->nodes().size();
-  auto* fuser = new ConvElementwiseAddActivationFusePass;
-  fuser->Apply(graph);
+  auto* fuser_eltwise = new ConvElementwiseFusePass;
+  auto* fuser_act = new ConvActivationFusePass;
+  fuser_eltwise->Apply(graph);
+  fuser_act->Apply(graph);
+
   Visualize(graph.get());
   ASSERT_EQ(graph->nodes().size(),
             num_nodes - 5UL * 2 /*nodes removed */ + 1UL * 2 /* fused nodes*/);

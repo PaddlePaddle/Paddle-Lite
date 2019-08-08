@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/mir/fusion/conv_elementwise_add_activation_fuser.h"
+#include "lite/core/mir/fusion/conv_activation_fuser.h"
 #include <memory>
 #include <vector>
 
@@ -21,7 +21,7 @@ namespace lite {
 namespace mir {
 namespace fusion {
 
-void ConvElementwiseAddActivationFuser::BuildPattern() {
+void ConvActivationFuser::BuildPattern() {
   // create input nodes.
   auto* input =
       VarNode("input")->assert_is_op_input(conv_type_, "Input")->AsInput();
@@ -33,36 +33,29 @@ void ConvElementwiseAddActivationFuser::BuildPattern() {
   // create op nodes
   auto* conv2d =
       OpNode("conv2d", conv_type_)->assert_is_op(conv_type_)->AsIntermediate();
-  auto* add = OpNode("add", "elementwise_add")
-                  ->assert_is_op("elementwise_add")
-                  ->AsIntermediate();
+
   auto* act =
       OpNode("act", act_type_)->assert_is_op(act_type_)->AsIntermediate();
 
   // create intermediate nodes
   auto* conv2d_out = VarNode("conv2d_out")
                          ->assert_is_op_output(conv_type_, "Output")
-                         ->assert_is_op_input("elementwise_add", "X")
+                         ->assert_is_op_input(act_type_, "X")
                          ->AsIntermediate();
-  auto* add_out = VarNode("add_out")
-                      ->assert_is_op_output("elementwise_add", "Out")
-                      ->assert_is_op_input(act_type_, "X")
-                      ->AsIntermediate();
 
   // create output node
   auto* out =
       VarNode("output")->assert_is_op_output(act_type_, "Out")->AsOutput();
 
   // create topology.
-  std::vector<PMNode*> conv2d_inputs{filter, input};
-  std::vector<PMNode*> add_inputs{conv2d_out, bias};
+  std::vector<PMNode*> conv2d_inputs{filter, input, bias};
+  std::vector<PMNode*> act_inputs{conv2d_out};
   conv2d_inputs >> *conv2d >> *conv2d_out;
-  add_inputs >> *add >> *add_out;
-  *add_out >> *act >> *out;
+  act_inputs >> *act >> *out;
 }
 
-void ConvElementwiseAddActivationFuser::InsertNewNode(
-    SSAGraph* graph, const key2nodes_t& matched) {
+void ConvActivationFuser::InsertNewNode(SSAGraph* graph,
+                                        const key2nodes_t& matched) {
   auto op_desc = GenOpDesc(matched);
   auto conv_op = LiteOpRegistry::Global().Create(conv_type_);
   auto conv_old = matched.at("conv2d")->stmt()->op();
@@ -78,8 +71,7 @@ void ConvElementwiseAddActivationFuser::InsertNewNode(
   IR_NODE_LINK_TO(new_op_node, matched.at("output"));
 }
 
-cpp::OpDesc ConvElementwiseAddActivationFuser::GenOpDesc(
-    const key2nodes_t& matched) {
+cpp::OpDesc ConvActivationFuser::GenOpDesc(const key2nodes_t& matched) {
   auto* desc = matched.at("conv2d")->stmt()->op_info();
 
   cpp::OpDesc op_desc = *desc;

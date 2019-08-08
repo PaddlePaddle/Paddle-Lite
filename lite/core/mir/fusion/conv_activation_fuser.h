@@ -23,10 +23,10 @@ namespace lite {
 namespace mir {
 namespace fusion {
 
-class ConvElementwiseAddActivationFuser : public FuseBase {
+class ConvActivationFuser : public FuseBase {
  public:
-  explicit ConvElementwiseAddActivationFuser(const std::string& conv_type,
-                                             const std::string& act_type) {
+  explicit ConvActivationFuser(const std::string& conv_type,
+                               const std::string& act_type) {
     CHECK(act_type == "relu") << "Only relu activation be supported now";
     conv_type_ = conv_type;
     act_type_ = act_type;
