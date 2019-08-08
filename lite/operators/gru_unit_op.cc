@@ -64,6 +64,8 @@ bool GRUUnitOpLite::InferShape() const {
   param_.reset_hidden_prev->Resize(lite::DDim({batch_size, frame_size}));
   param_.hidden->Resize(lite::DDim({batch_size, frame_size}));
 
+  auto out_lod = param_.hidden->mutable_lod();
+  *out_lod = param_.input->lod();
   return true;
 }
 

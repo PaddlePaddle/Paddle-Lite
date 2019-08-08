@@ -40,6 +40,8 @@ void RuntimeProgram::SaveOpInfosToProgram(cpp::ProgramDesc* desc) {
 
 void RuntimeProgram::Run() {
   for (auto& inst : instructions_) {
+    VLOG(4) << ">> Running kernel: " << inst.op()->op_info()->Repr()
+            << " on Target " << TargetToStr(inst.kernel()->target());
     inst.Run();
 #ifdef LITE_WITH_PROFILE
     LITE_PRECISION_PROFILE(inst)
@@ -61,13 +63,15 @@ void Program::Build(const cpp::ProgramDesc& prog) {
     VLOG(4) << "create Op [" << op_type << "]";
     auto op = LiteOpRegistry::Global().Create(op_type);
     CHECK(op) << "no Op found for " << op_type;
-    ops_.emplace_back(std::move(op));
-    ops_.back()->Attach(op_desc, exec_scope_);
     if (op_type == "while") {
-      auto sub_block_idx = op_desc.GetAttr<int32_t>("block_idx");
-      auto sub_block = program.GetBlock<cpp::BlockDesc>(sub_block_idx);
+      auto sub_block_idx = op_desc.GetAttr<int16_t>("sub_block");
+      auto sub_block =
+          const_cast<cpp::ProgramDesc&>(prog).GetBlock<cpp::BlockDesc>(
+              sub_block_idx);
       static_cast<operators::WhileOpLite*>(op.get())->SetSubBlock(sub_block);
     }
+    ops_.emplace_back(std::move(op));
+    ops_.back()->Attach(op_desc, exec_scope_);
   }
 }
 
@@ -82,16 +86,21 @@ void Program::PrepareWorkspace(const cpp::ProgramDesc& prog) {
 
   auto program = prog;
   CHECK(program.BlocksSize());
-  auto& main_block = *program.GetBlock<cpp::BlockDesc>(0);
-  for (size_t i = 0; i < main_block.VarsSize(); ++i) {
-    auto& var_desc = *main_block.GetVar<cpp::VarDesc>(i);
-    if (!var_desc.Persistable()) {
-      tmp_vars_.push_back(var_desc.Name());
-      exec_scope_->Var(var_desc.Name());
-    } else {
-      if (var_desc.Name() == "feed" || var_desc.Name() == "fetch") continue;
-      weights_.push_back(var_desc.Name());
-      if (var_desc.Persistable()) scope_->Var(var_desc.Name());
+  for (size_t b = 0; b < program.BlocksSize(); ++b) {
+    auto& main_block = *program.GetBlock<cpp::BlockDesc>(b);
+    for (size_t i = 0; i < main_block.VarsSize(); ++i) {
+      auto& var_desc = *main_block.GetVar<cpp::VarDesc>(i);
+      if (!var_desc.Persistable()) {
+        tmp_vars_.push_back(var_desc.Name());
+        exec_scope_->Var(var_desc.Name());
+        if (b > 0) {
+          VLOG(4) << "var: " << var_desc.Name();
+        }
+      } else {
+        if (var_desc.Name() == "feed" || var_desc.Name() == "fetch") continue;
+        weights_.push_back(var_desc.Name());
+        if (var_desc.Persistable()) scope_->Var(var_desc.Name());
+      }
     }
   }
 }
@@ -100,14 +109,15 @@ void Instruction::Run() {
 #ifdef LITE_WITH_PROFILE
   profile::ProfileBlock x(profile_id_);
 #endif  // LITE_WITH_PROFILE
-  CHECK(op_);
-  CHECK(kernel_);
+  CHECK(op_) << "op null";
+  CHECK(kernel_) << "kernel null";
   if (first_epoch_) {
     first_epoch_ = false;
     CHECK(op_->CheckShape());
   }
 
   if (op_->run_once() && has_run_) return;
+  VLOG(4) << "kernel launch";
   op_->InferShape();
   kernel_->Launch();
   has_run_ = true;

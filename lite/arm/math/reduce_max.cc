@@ -14,6 +14,7 @@ limitations under the License. */
 
 #include "lite/arm/math/reduce_max.h"
 #include "lite/arm/math/funcs.h"
+#include "lite/core/tensor.h"
 
 namespace paddle {
 namespace lite {

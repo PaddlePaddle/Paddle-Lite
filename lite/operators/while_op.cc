@@ -20,7 +20,12 @@ namespace paddle {
 namespace lite {
 namespace operators {
 
-bool WhileOpLite::CheckShape() const { return true; }
+bool WhileOpLite::CheckShape() const {
+  CHECK_OR_FALSE(param_.sub_block);
+  CHECK_OR_FALSE(param_.scope);
+  CHECK_OR_FALSE(param_.cond);
+  return true;
+}
 
 bool WhileOpLite::InferShape() const { return true; }
 
@@ -29,13 +34,15 @@ bool WhileOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
   auto outs = op_desc.Output("Out");
 
   for (auto var : inputs) {
-    param_.x.push_back(scope->FindVar(var)->GetMutable<lite::Tensor>());
+    // param_.x.push_back(scope->FindVar(var)->GetMutable<lite::Tensor>());
   }
   for (auto var : outs) {
-    param_.outs.push_back(scope->FindVar(var)->GetMutable<lite::Tensor>());
+    // param_.outs.push_back(scope->FindVar(var)->GetMutable<lite::Tensor>());
   }
   param_.sub_block = sub_block_;
-  param_.cond = scope->FindVar("Condition")->GetMutable<lite::Tensor>();
+
+  auto condition = op_desc.Input("Condition");
+  param_.cond = scope->FindVar(condition[0])->GetMutable<lite::Tensor>();
   param_.scope = scope;
 
   return true;

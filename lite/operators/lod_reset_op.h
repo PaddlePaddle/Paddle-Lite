@@ -13,21 +13,35 @@
 // limitations under the License.
 
 #pragma once
-
-#include <cmath>
-#include "lite/core/context.h"
+#include <string>
+#include <vector>
+#include "lite/core/op_lite.h"
+#include "lite/core/scope.h"
+#include "lite/utils/all.h"
 
 namespace paddle {
 namespace lite {
-namespace arm {
-namespace math {
-void increment(const int* input,
-               const int n,
-               const float step,
-               int* out,
-               Context<TARGET(kARM)>* ctx);
+namespace operators {
 
-}  // namespace math
-}  // namespace arm
+class LodResetOp : public OpLite {
+ public:
+  LodResetOp() {}
+  explicit LodResetOp(const std::string &op_type) : OpLite(op_type) {}
+
+  bool CheckShape() const override;
+
+  bool InferShape() const override;
+
+  bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
+
+  void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
+
+  std::string DebugString() const override { return "lod_reset"; }
+
+ private:
+  mutable LodResetParam param_;
+};
+
+}  // namespace operators
 }  // namespace lite
 }  // namespace paddle

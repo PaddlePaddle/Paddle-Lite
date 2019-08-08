@@ -36,22 +36,25 @@ lite_cc_library(lookup_table_compute_arm SRCS lookup_table_compute.cc DEPS ${lit
 lite_cc_library(im2sequence_compute_arm SRCS im2sequence_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(sequence_softmax_compute_arm SRCS sequence_softmax_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(norm_compute_arm SRCS norm_compute.cc DEPS ${lite_kernel_deps} math_arm)
-lite_cc_library(while_compute_arm SRCS while_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(logical_compute_arm SRCS logical_compute.cc DEPS ${lite_kernel_deps} math_arm)
+lite_cc_library(less_than_arm SRCS compare_compute.cc DEPS ${lite_kernel_deps} math_arm)
+lite_cc_library(while_compute_arm SRCS while_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(compare_compute_arm SRCS compare_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(topk_compute_arm SRCS topk_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(increment_compute_arm SRCS increment_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(write_to_array_compute_arm SRCS write_to_array_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(read_from_array_compute_arm SRCS read_from_array_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(beam_search_compute_arm SRCS beam_search_compute.cc DEPS ${lite_kernel_deps} math_arm)
+lite_cc_library(fill_constant_compute_arm SRCS fill_constant_compute.cc DEPS ${lite_kernel_deps} math_arm)
+lite_cc_library(lod_reset_compute_arm SRCS lod_reset_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(box_coder_compute_arm SRCS box_coder_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(sequence_pool_compute_arm SRCS sequence_pool_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(sequence_expand_compute_arm SRCS sequence_expand_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(reduce_max_compute_arm SRCS reduce_max_compute.cc DEPS ${lite_kernel_deps} math_arm)
+lite_cc_library(is_empty_compute_arm SRCS is_empty_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(shape_compute_arm SRCS shape_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(slice_compute_arm SRCS slice_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(cast_compute_arm SRCS cast_compute.cc DEPS ${lite_kernel_deps} math_arm)
-lite_cc_library(fill_constant_compute_arm SRCS fill_constant_compute.cc DEPS ${lite_kernel_deps} math_arm)
 
 lite_cc_test(test_fc_compute_arm SRCS fc_compute_test.cc DEPS fc_compute_arm math_arm)
 lite_cc_test(test_scale_compute_arm SRCS scale_compute_test.cc DEPS scale_compute_arm)
@@ -102,23 +105,26 @@ set(arm_kernels
     gru_unit_compute_arm
     gru_compute_arm
     beam_search_decode_compute_arm
-    fill_constant_compute_arm
     lookup_table_compute_arm
     im2sequence_compute_arm
     sequence_softmax_compute_arm
     norm_compute_arm
-    while_compute_arm
     logical_compute_arm
+    less_than_arm
+    while_compute_arm
     compare_compute_arm
     topk_compute_arm
     increment_compute_arm
     write_to_array_compute_arm
     read_from_array_compute_arm
     beam_search_compute_arm
+    fill_constant_compute_arm
+    lod_reset_compute_arm
     box_coder_compute_arm
     reduce_max_compute_arm
     sequence_expand_compute_arm
     sequence_pool_compute_arm
+    is_empty_compute_arm
     shape_compute_arm
     slice_compute_arm
     cast_compute_arm

@@ -59,6 +59,8 @@ node_map_type MulConverter(const std::shared_ptr<lite::OpLite> mul_op,
             << ", is data: " << inputs_map.count(x_var_name);
   LOG(INFO) << "y_var_name:" << y_var_name
             << ", is data: " << inputs_map.count(y_var_name);
+  CHECK(inputs_map.count(x_var_name))
+      << "[NPU] MatMul only support X is data, Y is const yet";
   if (inputs_map.count(x_var_name)) {
     auto xsrc = inputs_map.at(x_var_name);
     auto reshapex = std::make_shared<ge::op::Reshape>(x_var_name + "_reshape");

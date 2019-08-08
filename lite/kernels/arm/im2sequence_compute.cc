@@ -29,24 +29,22 @@ void Im2SequenceCompute::PrepareForRun() {}
 void Im2SequenceCompute::Run() {
   auto& ctx = this->ctx_->template As<ARMContext>();
   auto& param = this->Param<operators::Im2SequenceParam>();
-  int num = param.X.size();
   auto kernels = param.kernels;
   auto strides = param.strides;
   auto paddings = param.paddings;
 
-  const auto* x_data = param.X[0]->data<float>();
+  const auto* x_data = param.X->data<float>();
   auto* o_data = param.Out->mutable_data<float>();
-  auto input_dims = param.X[0]->dims();
+  auto input_dims = param.X->dims();
   int im_num = input_dims[0];
-  int im_size = param.X[0]->numel() / im_num;
+  int im_size = param.X->numel() / im_num;
   int out_cols = input_dims[1] * kernels[0] * kernels[1];
-  LOG(INFO) << "out_cols" << out_cols;
 
   int total_rows = 0;
   std::vector<uint64_t> im_offset;
   im_offset.push_back(total_rows);
-  if (param.X.size() > 1) {
-    const auto* y_data = param.X[1]->data<int>();
+  if (param.Y) {
+    const auto* y_data = param.Y->data<int>();
     auto out_strides = param.out_strides;
     std::vector<int> im_real_h;
     std::vector<int> im_real_w;
@@ -118,7 +116,7 @@ void Im2SequenceCompute::Run() {
                                    out_w,
                                    o_data + im_id * out_size_per_im,
                                    &ctx);
-      im_offset.push_back(uint64_t(im_id * out_h * out_w));
+      im_offset.push_back(uint64_t((im_id + 1) * out_h * out_w));
     }
     auto lod = param.Out->mutable_lod();
     lod->resize(1);
@@ -137,6 +135,7 @@ REGISTER_LITE_KERNEL(im2sequence,
                      kNCHW,
                      paddle::lite::kernels::arm::Im2SequenceCompute,
                      def)
-    .BindInput("X", {LiteType::GetTensorListTy(TARGET(kARM))})
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();

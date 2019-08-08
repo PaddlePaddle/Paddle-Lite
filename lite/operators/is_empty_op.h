@@ -13,21 +13,35 @@
 // limitations under the License.
 
 #pragma once
-
-#include <cmath>
-#include "lite/core/context.h"
+#include <string>
+#include <vector>
+#include "lite/core/op_lite.h"
+#include "lite/core/scope.h"
+#include "lite/utils/all.h"
 
 namespace paddle {
 namespace lite {
-namespace arm {
-namespace math {
-void increment(const int* input,
-               const int n,
-               const float step,
-               int* out,
-               Context<TARGET(kARM)>* ctx);
+namespace operators {
 
-}  // namespace math
-}  // namespace arm
+class IsEmptyOp : public OpLite {
+ public:
+  IsEmptyOp() {}
+  explicit IsEmptyOp(const std::string &op_type) : OpLite(op_type) {}
+
+  bool CheckShape() const override;
+
+  bool InferShape() const override;
+
+  bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
+
+  void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
+
+  std::string DebugString() const override { return "binary logical"; }
+
+ private:
+  mutable IsEmptyParam param_;
+};
+
+}  // namespace operators
 }  // namespace lite
 }  // namespace paddle

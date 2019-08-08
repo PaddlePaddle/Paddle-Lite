@@ -12,50 +12,36 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/arm/write_to_array_compute.h"
+#include "lite/kernels/arm/is_empty_compute.h"
+#include <vector>
+#include "lite/api/paddle_place.h"
 #include "lite/arm/math/funcs.h"
+#include "lite/core/op_registry.h"
+#include "lite/core/type_system.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace arm {
 
-void WriteToArrayCompute::PrepareForRun() {}
+void IsEmptyCompute::PrepareForRun() {}
 
-void WriteToArrayCompute::Run() {
-  auto& ctx = this->ctx_->template As<ARMContext>();
-  auto& param = this->Param<operators::WriteToArrayParam>();
-
-  CHECK_EQ(param.I->numel(), 1) << "input2 should have only one element";
-  const auto* x_data = param.X->data<float>();
-  int id = param.I->data<int>()[0];
-  int id_test = param.I->data<int64_t>()[0];
-  if (id >= param.Out->size()) {
-    for (int i = param.Out->size(); i < id + 1; i++) {
-      lite::Tensor tmp;
-      param.Out->push_back(tmp);
-    }
-  }
-  (*param.Out)[id].Resize(param.X->dims());
-  auto out_lod = (*param.Out)[id].mutable_lod();
-  *out_lod = param.X->lod();
-  auto* o_data = (*param.Out)[id].mutable_data<float>(TARGET(kHost));
-  int input_size = param.X->numel();
-  memcpy(o_data, x_data, sizeof(float) * input_size);
+void IsEmptyCompute::Run() {
+  auto& param = this->Param<operators::IsEmptyParam>();
+  const size_t count = param.X->numel();
+  param.Out->mutable_data<bool>()[0] = (count == 0);
 }
 
 }  // namespace arm
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
-
-REGISTER_LITE_KERNEL(write_to_array,
+REGISTER_LITE_KERNEL(is_empty,
                      kARM,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::arm::WriteToArrayCompute,
+                     paddle::lite::kernels::arm::IsEmptyCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("I", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();

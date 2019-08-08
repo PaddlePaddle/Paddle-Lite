@@ -29,6 +29,8 @@ bool ElementwiseOp::CheckShape() const {
 bool ElementwiseOp::InferShape() const {
   CHECK_OR_FALSE(param_.X->dims().size() >= param_.Y->dims().size());
   param_.Out->Resize(param_.X->dims());
+  auto out_lod = param_.Out->mutable_lod();
+  *out_lod = param_.X->lod();
   return true;
 }
 
