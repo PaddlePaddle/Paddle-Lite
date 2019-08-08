@@ -42,7 +42,7 @@ class ShuffleChannelComputeTester : public arena::TestCase {
     auto* x = scope->FindTensor(input_);
     const auto* inputs = x->data<float>();
     DDim x_dims = x->dims();
-    int num = x_dims.production();
+    int num = x->dims()[0];
     int channel = x->dims()[1];
     int height = x->dims()[2];
     int width = x->dims()[3];

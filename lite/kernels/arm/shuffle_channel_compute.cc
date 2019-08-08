@@ -26,7 +26,7 @@ void ShuffleChannelCompute::Run() {
   float* output_data = param.Out->mutable_data<float>();
   DDim x_dims = param.X->dims();
   int group = param.group;
-  int num = x_dims.production();
+  int num = param.X->dims()[0];
   int channel = param.X->dims()[1];
   int height = param.X->dims()[2];
   int width = param.X->dims()[3];
