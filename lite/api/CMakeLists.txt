@@ -135,7 +135,9 @@ if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND WITH_TESTING)
     add_dependencies(test_resnet50 extern_lite_download_resnet50_tar_gz)
 
     lite_cc_test(test_resnet50_fpga SRCS resnet50_test_fpga.cc
-       DEPS ${lite_model_test_DEPS})
+       DEPS ${lite_model_test_DEPS}
+       CL_DEPS ${opencl_kernels}
+       FPGA_DEPS ${fpga_kernels})
 
     lite_cc_test(test_inceptionv4 SRCS inceptionv4_test.cc
        DEPS ${lite_model_test_DEPS}
