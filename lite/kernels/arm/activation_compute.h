@@ -93,6 +93,15 @@ class Relu6Compute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
 
   virtual ~Relu6Compute() = default;
 };
+
+class LogCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::ActivationParam;
+
+  void Run() override;
+
+  virtual ~LogCompute() = default;
+};
 }  // namespace arm
 }  // namespace kernels
 }  // namespace lite

@@ -15,10 +15,11 @@
 #pragma once
 #include <string>
 #include <vector>
+#include "lite/core/scope.h"
 #include "lite/core/tensor.h"
+#include "lite/model_parser/cpp/block_desc.h"
 #include "lite/model_parser/desc_apis.h"
 #include "lite/utils/all.h"
-
 /*
  * This file contains all the argument parameter data structure for operators.
  */
@@ -510,7 +511,8 @@ struct LookupTableParam {
 };
 
 struct Im2SequenceParam {
-  std::vector<lite::Tensor*> X{};
+  const lite::Tensor* X{};
+  const lite::Tensor* Y{};
   lite::Tensor* Out{};
   std::vector<int> kernels{3, 3};
   std::vector<int> strides{1, 1};
@@ -544,9 +546,18 @@ struct CompareParam {
   lite::Tensor* Out{};
 };
 
+struct WhileParam {
+  Scope* scope{};
+  Tensor* cond{};
+  cpp::BlockDesc* sub_block{};
+  std::vector<Tensor*> x{};
+  std::vector<Tensor*> outs{};
+};
+
 struct TopkParam {
   const lite::Tensor* X{};
-  std::vector<lite::Tensor*> Out{};
+  lite::Tensor* Out{};
+  lite::Tensor* Indices{};
   int K{1};
 };
 
@@ -559,11 +570,11 @@ struct IncrementParam {
 struct WriteToArrayParam {
   const lite::Tensor* X{};
   const lite::Tensor* I{};
-  std::vector<lite::Tensor*> Out{};
+  std::vector<lite::Tensor>* Out{};
 };
 
 struct ReadFromArrayParam {
-  std::vector<lite::Tensor*> X{};
+  std::vector<lite::Tensor>* X{};
   lite::Tensor* I{};
   lite::Tensor* Out{};
 };
@@ -602,6 +613,18 @@ struct ReduceMaxParam {
   bool keep_dim{false};
 };
 
+struct LodResetParam {
+  const lite::Tensor* X{};
+  const lite::Tensor* Y{};
+  lite::Tensor* Out{};
+  std::vector<int> target_lod;
+  bool append;
+};
+
+struct IsEmptyParam {
+  const lite::Tensor* X{};
+  lite::Tensor* Out{};
+};
 /// ----------------------- shape operators ----------------------
 struct ShapeParam {
   const lite::Tensor* X{};

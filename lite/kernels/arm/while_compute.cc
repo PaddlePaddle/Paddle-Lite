@@ -12,26 +12,31 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/arm/topk_compute.h"
+#include "lite/kernels/arm/while_compute.h"
+#include <memory>
+#include <string>
+#include <vector>
 #include "lite/arm/math/funcs.h"
+#include "lite/core/tensor.h"
+#include "lite/core/type_system.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace arm {
 
-void TopkCompute::Run() {
-  auto& ctx = this->ctx_->template As<ARMContext>();
-  auto& param = Param<operators::TopkParam>();
-  const float* x_data = param.X->data<float>();
-  float* out_val = param.Out->mutable_data<float>();
-  int* out_ind = param.Indices->mutable_data<int>();
-  DDim x_dims = param.X->dims();
-  int K = param.K;
-  int dim_size = x_dims.size();
-  int m = x_dims.production() / x_dims[dim_size - 1];
-  int n = x_dims[dim_size - 1];
-  lite::arm::math::topk(x_data, out_val, out_ind, m, n, K, &ctx);
+void WhileCompute::PrepareForRun() {
+  auto &param = Param<operators::WhileParam>();
+  auto cur_scope = param.scope;
+
+  executor_ =
+      std::make_shared<StepExecutor>(param.sub_block, cur_scope, place());
+}
+void WhileCompute::Run() {
+  auto &param = Param<operators::WhileParam>();
+  while (param.cond->data<bool>()[0]) {
+    executor_->Run();
+  }
 }
 
 }  // namespace arm
@@ -40,8 +45,10 @@ void TopkCompute::Run() {
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(
-    top_k, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::TopkCompute, def)
+    while, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::WhileCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Indices", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Condition",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kBool))})
+    .BindOutput("Out", {LiteType::GetTensorListTy(TARGET(kARM))})
+    .BindOutput("StepScopes", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();

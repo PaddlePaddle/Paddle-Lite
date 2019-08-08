@@ -49,6 +49,8 @@ void act_tanh(const T* din, T* dout, int size, int threads);
 template <typename T>
 void act_swish(const T* din, T* dout, int size, float coef, int threads);
 
+template <typename T>
+void act_log(const T* din, T* dout, int size, int threads);
 }  // namespace math
 }  // namespace arm
 }  // namespace lite

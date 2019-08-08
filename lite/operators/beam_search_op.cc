@@ -35,11 +35,11 @@ bool BeamSearchOp::InferShape() const { return true; }
 bool BeamSearchOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   param_.pre_ids = scope->FindVar(opdesc.Input("pre_ids").front())
                        ->GetMutable<lite::Tensor>();
-  param_.pre_scores = scope->FindVar(opdesc.Output("pre_scores").front())
+  param_.pre_scores = scope->FindVar(opdesc.Input("pre_scores").front())
                           ->GetMutable<lite::Tensor>();
   param_.ids =
-      scope->FindVar(opdesc.Output("ids").front())->GetMutable<lite::Tensor>();
-  param_.scores = scope->FindVar(opdesc.Output("scores").front())
+      scope->FindVar(opdesc.Input("ids").front())->GetMutable<lite::Tensor>();
+  param_.scores = scope->FindVar(opdesc.Input("scores").front())
                       ->GetMutable<lite::Tensor>();
   param_.selected_ids = scope->FindVar(opdesc.Output("selected_ids").front())
                             ->GetMutable<lite::Tensor>();
@@ -48,13 +48,13 @@ bool BeamSearchOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
           ->GetMutable<lite::Tensor>();
   param_.parent_idx = scope->FindVar(opdesc.Output("parent_idx").front())
                           ->GetMutable<lite::Tensor>();
-  CHECK(param_.pre_ids);
-  CHECK(param_.pre_scores);
-  CHECK(param_.ids);
-  CHECK(param_.scores);
-  CHECK(param_.selected_ids);
-  CHECK(param_.selected_scores);
-  CHECK(param_.parent_idx);
+  CHECK(param_.pre_ids) << "id null";
+  CHECK(param_.pre_scores) << "pre score null";
+  CHECK(param_.ids) << "ids null";
+  CHECK(param_.scores) << "scores null";
+  CHECK(param_.selected_ids) << "select ids null";
+  CHECK(param_.selected_scores) << "select score null";
+  CHECK(param_.parent_idx) << "parent idx null";
   param_.level = opdesc.GetAttr<int>("level");
   param_.beam_size = opdesc.GetAttr<int>("beam_size");
   param_.end_id = opdesc.GetAttr<int>("end_id");

@@ -38,6 +38,7 @@ void SequenceSoftmaxCompute::Run() {
   CHECK_EQ(in_w, 1) << "input dims is not valid";
   auto seq_offset = param.X->lod()[0];
   CHECK_EQ(in_h, seq_offset.back()) << "input dims is not valid";
+
   lite::arm::math::sequence_softmax(x_data, seq_offset, o_data, &ctx);
 }
 

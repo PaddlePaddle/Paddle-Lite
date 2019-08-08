@@ -23,10 +23,10 @@ namespace paddle {
 namespace lite {
 namespace operators {
 
-class WhileOp : public OpLite {
+class WhileOpLite : public OpLite {
  public:
-  WhileOp() {}
-  explicit WhileOp(const std::string &op_type) : OpLite(op_type) {}
+  WhileOpLite() {}
+  explicit WhileOpLite(const std::string &op_type) : OpLite(op_type) {}
 
   bool CheckShape() const override;
 
@@ -35,10 +35,12 @@ class WhileOp : public OpLite {
   bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
-  std::string DebugString() const override { return "scale"; }
+  std::string DebugString() const override { return "while"; }
+  void SetSubBlock(cpp::BlockDesc *desc) { sub_block_ = desc; }
 
  private:
   mutable WhileParam param_;
+  cpp::BlockDesc *sub_block_;
 };
 
 }  // namespace operators

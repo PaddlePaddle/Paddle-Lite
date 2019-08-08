@@ -12,33 +12,44 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/operators/relu_op.h"
+#include "lite/operators/lod_reset_op.h"
 #include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
 namespace operators {
 
-bool ReluOp::CheckShape() const { return true; }
-bool ReluOp::InferShape() const {
+bool LodResetOp::CheckShape() const {
   CHECK_OR_FALSE(param_.X);
   CHECK_OR_FALSE(param_.Out);
-  // TODO(Superjomn) Enable data sharing.
-  param_.Out->Resize(param_.X->dims());
-  auto out_lod = param_.Out->mutable_lod();
-  *out_lod = param_.X->lod();
-  // share lod
-  // param_.output->set_lod(param_.X->lod());
   return true;
 }
 
-bool ReluOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
-  param_.X = const_cast<lite::Tensor *>(
-      &scope->FindVar(opdesc.Input("X").front())->Get<lite::Tensor>());
+bool LodResetOp::InferShape() const {
+  CHECK_OR_FALSE(param_.Out);
+  // TODO(Superjomn) Enable data sharing.
+  param_.Out->Resize(param_.X->dims());
+  if (param_.Y) {
+  } else {
+    CHECK_GT(param_.target_lod.size(), 0)
+        << "target lod must be provided when Y is not exist";
+  }
+  return true;
+}
+
+bool LodResetOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
+  param_.X =
+      scope->FindVar(opdesc.Input("X").front())->GetMutable<lite::Tensor>();
+  if (opdesc.Input("Y").size()) {
+    param_.Y =
+        scope->FindVar(opdesc.Input("Y").front())->GetMutable<lite::Tensor>();
+  }
   param_.Out =
       scope->FindVar(opdesc.Output("Out").front())->GetMutable<lite::Tensor>();
   CHECK(param_.X);
   CHECK(param_.Out);
+  param_.target_lod = opdesc.GetAttr<std::vector<int>>("target_lod");
+  // param_.append = opdesc.GetAttr<bool>("append");
   return true;
 }
 
@@ -46,4 +57,4 @@ bool ReluOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
 }  // namespace lite
 }  // namespace paddle
 
-// REGISTER_LITE_OP(relu, paddle::lite::operators::ReluOp);
+REGISTER_LITE_OP(lod_reset, paddle::lite::operators::LodResetOp);

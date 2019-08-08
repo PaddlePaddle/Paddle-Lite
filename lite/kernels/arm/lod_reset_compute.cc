@@ -12,36 +12,39 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/arm/write_to_array_compute.h"
+#include "lite/kernels/arm/lod_reset_compute.h"
 #include "lite/arm/math/funcs.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace arm {
+void LodResetCompute::PrepareForRun() {}
 
-void WriteToArrayCompute::PrepareForRun() {}
-
-void WriteToArrayCompute::Run() {
+void LodResetCompute::Run() {
   auto& ctx = this->ctx_->template As<ARMContext>();
-  auto& param = this->Param<operators::WriteToArrayParam>();
-
-  CHECK_EQ(param.I->numel(), 1) << "input2 should have only one element";
+  auto& param = this->Param<operators::LodResetParam>();
   const auto* x_data = param.X->data<float>();
-  int id = param.I->data<int>()[0];
-  int id_test = param.I->data<int64_t>()[0];
-  if (id >= param.Out->size()) {
-    for (int i = param.Out->size(); i < id + 1; i++) {
-      lite::Tensor tmp;
-      param.Out->push_back(tmp);
+  auto* o_data = param.Out->mutable_data<float>();
+  memcpy(o_data, x_data, sizeof(float) * param.X->numel());
+  auto lod = param.Out->mutable_lod();
+  if (param.Y) {
+    if (param.Y->lod().size()) {
+      *lod = param.Y->lod();
+    } else {
+      const auto* y_data = param.Y->data<int>();
+      (*lod).resize(1);
+      (*lod)[0].resize(param.Y->numel());
+      for (int i = 0; i < param.Y->numel(); i++) {
+        (*lod)[0][i] = y_data[i];
+      }
+    }
+  } else {
+    (*lod).resize(1);
+    for (auto id : param.target_lod) {
+      (*lod)[0].push_back(id);
     }
   }
-  (*param.Out)[id].Resize(param.X->dims());
-  auto out_lod = (*param.Out)[id].mutable_lod();
-  *out_lod = param.X->lod();
-  auto* o_data = (*param.Out)[id].mutable_data<float>(TARGET(kHost));
-  int input_size = param.X->numel();
-  memcpy(o_data, x_data, sizeof(float) * input_size);
 }
 
 }  // namespace arm
@@ -49,13 +52,13 @@ void WriteToArrayCompute::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(write_to_array,
+REGISTER_LITE_KERNEL(lod_reset,
                      kARM,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::arm::WriteToArrayCompute,
+                     paddle::lite::kernels::arm::LodResetCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("I", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();

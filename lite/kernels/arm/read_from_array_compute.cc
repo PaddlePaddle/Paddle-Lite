@@ -26,18 +26,18 @@ void ReadFromArrayCompute::Run() {
   auto& ctx = this->ctx_->template As<ARMContext>();
   auto& param = this->Param<operators::ReadFromArrayParam>();
 
-  int in_num = param.X.size();
+  int in_num = param.X->size();
   CHECK_EQ(param.I->numel(), 1) << "I should have only one element";
   int id = param.I->data<int>()[0];
   CHECK_LE(id, in_num) << "id is not valid";
-  int input_size = param.X[id]->numel();
+  int input_size = (*param.X)[id].numel();
 
-  param.Out->Resize(param.X[id]->dims());
+  param.Out->Resize((*param.X)[id].dims());
   auto* o_data = param.Out->mutable_data<float>();
-  const auto* x_data = param.X[id]->data<float>();
+  const auto* x_data = (*param.X)[id].data<float>();
   memcpy(o_data, x_data, sizeof(float) * input_size);
   auto out_lod = param.Out->mutable_lod();
-  *out_lod = param.X[id]->lod();
+  *out_lod = (*param.X)[id].lod();
 }
 
 }  // namespace arm
@@ -51,7 +51,7 @@ REGISTER_LITE_KERNEL(read_from_array,
                      kNCHW,
                      paddle::lite::kernels::arm::ReadFromArrayCompute,
                      def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("X", {LiteType::GetTensorListTy(TARGET(kARM))})
     .BindInput("I", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
