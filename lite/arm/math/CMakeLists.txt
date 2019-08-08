@@ -39,7 +39,7 @@ if(ARM_MATH_LIB_DIR AND EXISTS "${ARM_MATH_LIB_DIR}")
     message(STATUS "ARM math library imported: ${math_arm_file}")
     set(HAS_ARM_MATH_LIB_DIR ON)
   else()
-    message(WARNING "Can not find arm math library ${arm_math_name} in ${ARM_MATH_LIB_DIR")
+    message(WARNING "Can not find arm math library ${arm_math_name} in ${ARM_MATH_LIB_DIR}")
   endif()
 endif()
 
@@ -77,12 +77,16 @@ if (NOT HAS_ARM_MATH_LIB_DIR)
       conv_winograd_3x3.cc
       conv_winograd.cc
       split.cc
+      shuffle_channel.cc
       activation.cc
+      yolo_box.cc
       dropout.cc
       gemm_prepacked_int8.cc
       gemv_arm_int8.cc
       conv3x3s1_direct_int8.cc
       conv3x3s2_direct_int8.cc
+      power.cc
+      interpolate.cc
       argmax.cc
       axpy.cc
       fill_bias_relu.cc
