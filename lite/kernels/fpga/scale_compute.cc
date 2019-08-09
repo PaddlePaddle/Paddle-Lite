@@ -12,21 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
-
-#include <memory>
-#include <string>
-#include "lite/core/mir/pass.h"
+#include "lite/kernels/fpga/scale_compute.h"
 
 namespace paddle {
 namespace lite {
-namespace mir {
+namespace kernels {
+namespace fpga {
 
-class ConvElementwiseAddActivationFusePass : public ProgramPass {
- public:
-  void Apply(const std::unique_ptr<SSAGraph>& graph) override;
-};
+void ScaleCompute::Run() {}
 
-}  // namespace mir
+}  // namespace fpga
+}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
+
+REGISTER_LITE_KERNEL(
+    scale, kFPGA, kFP16, kNHWC, paddle::lite::kernels::fpga::ScaleCompute, def)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kFPGA),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kNHWC))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kFPGA),
+                                       PRECISION(kFP16),
+                                       DATALAYOUT(kNHWC))})
+    .Finalize();

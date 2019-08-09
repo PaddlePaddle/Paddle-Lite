@@ -68,3 +68,23 @@ REGISTER_LITE_KERNEL(calib,
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt8))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
     .Finalize();
+REGISTER_LITE_KERNEL(calib_once,
+                     kARM,
+                     kInt8,
+                     kNCHW,
+                     paddle::lite::kernels::arm::CalibComputeFp32ToInt8,
+                     fp32_to_int8)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt8))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(calib_once,
+                     kARM,
+                     kInt8,
+                     kNCHW,
+                     paddle::lite::kernels::arm::CalibComputeInt8ToFp32,
+                     int8_to_fp32)
+    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt8))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
+    .Finalize();

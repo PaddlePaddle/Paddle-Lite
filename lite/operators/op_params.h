@@ -54,6 +54,11 @@ struct IoCopyParam {
   lite::Tensor* y{};
 };
 
+struct LayoutParam {
+  const lite::Tensor* x{};
+  lite::Tensor* y{};
+};
+
 struct CalibParam {
   const lite::Tensor* input{};
   lite::Tensor* output{};
@@ -689,7 +694,6 @@ struct SliceParam {
   std::vector<int> ends{};
   std::vector<int> decrease_axis{};
 };
-
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle

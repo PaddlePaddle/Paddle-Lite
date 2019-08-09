@@ -87,10 +87,13 @@ void TypeTargetTransformPass::AddIoCopyInst(
   auto node_id = [&] { return graph->nodes().size(); };
   auto io_copy_output_name =
       string_format("%s/trans/%d", in->AsArg().name.c_str(), node_id());
+  // TODO(MyPandaShaoxiang) should set same place with input?
   auto* io_copy_output_arg = graph->NewArgumentNode(io_copy_output_name);
   auto* io_copy_inst = graph->NewInstructNode();
 
-  std::string io_copy_type = in->AsArg().is_weight ? "io_copy_once" : "io_copy";
+  bool in_persist = in->AsArg().is_weight || in->AsArg().is_persist;
+  std::string io_copy_type = in_persist ? "io_copy_once" : "io_copy";
+  io_copy_output_arg->AsArg().is_persist = in_persist;
   // create Op and kernels.
   auto io_copy_op = LiteOpRegistry::Global().Create(io_copy_type);
   CHECK(io_copy_op) << "create op [" << io_copy_op << "] failed";
@@ -106,7 +109,24 @@ void TypeTargetTransformPass::AddIoCopyInst(
 
   io_copy_op->Attach(op_desc, inst_node->AsStmt().op()->scope());
   auto kernels = io_copy_op->CreateKernels(valid_places);
-  io_copy_inst->AsStmt(io_copy_type, std::move(kernels), io_copy_op);
+  // fix(MyPandaShaoxiang): select kernel that input_dcl_type same as in.type
+  bool is_found = false;
+  std::vector<std::unique_ptr<KernelBase>> selected_kernels;
+  for (auto& kernel : kernels) {
+    const Type* in_arg_ty = kernel->GetInputDeclType("Input");
+    const Type* out_arg_ty = kernel->GetOutputDeclType("Out");
+    if (TypeCompatible(*in_arg_ty, from)) {
+      is_found = true;
+      selected_kernels.emplace_back(std::move(kernel));
+      // we pick the kernel
+      io_copy_inst->AsStmt(
+          io_copy_type, std::move(selected_kernels), io_copy_op);
+      break;
+    }
+  }
+  CHECK(is_found) << "Can't find a io_copy  kernel for io_copy op: " << from
+                  << ":" << in->AsArg().name << "->" << to << ":"
+                  << inst_node->AsStmt().op_info()->Type();
 
   // Remove the old link
   RemoveDirectedLink(in, inst_node);

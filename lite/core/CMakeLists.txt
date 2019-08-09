@@ -9,7 +9,13 @@ lite_cc_library(target_wrapper SRCS target_wrapper.cc
   FPGA_DEPS fpga_target_wrapper)
 
 lite_cc_library(memory SRCS memory.cc DEPS target_wrapper CL_DEPS cl_target_wrapper)
-lite_cc_library(tensor SRCS tensor.cc DEPS memory)
+
+set(tensor_extra_deps "")
+if (LITE_WITH_FPGA)
+    set(tensor_extra_deps lite_tensor_fpga)
+endif()
+lite_cc_library(tensor SRCS tensor.cc DEPS memory ${tensor_extra_deps})
+
 
 if (NOT LITE_ON_TINY_PUBLISH)
     proto_library(framework_proto SRCS framework.proto)

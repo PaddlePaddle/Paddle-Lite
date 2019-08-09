@@ -42,6 +42,7 @@ void RuntimeProgram::Run() {
   for (auto& inst : instructions_) {
     VLOG(4) << ">> Running kernel: " << inst.op()->op_info()->Repr()
             << " on Target " << TargetToStr(inst.kernel()->target());
+
     inst.Run();
 #ifdef LITE_WITH_PROFILE
     LITE_PRECISION_PROFILE(inst)

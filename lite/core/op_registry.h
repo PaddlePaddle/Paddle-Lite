@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #pragma once
+
 #include <list>
 #include <memory>
 #include <set>
@@ -79,6 +80,12 @@ class KernelRegistry final {
                                       PRECISION(kFloat),
                                       DATALAYOUT(kNCHW)> *,  //
               KernelRegistryForTarget<TARGET(kHost),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kNHWC)> *,  //
+              KernelRegistryForTarget<TARGET(kHost),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kAny)> *,  //
+              KernelRegistryForTarget<TARGET(kHost),
                                       PRECISION(kAny),
                                       DATALAYOUT(kAny)> *,  //
               KernelRegistryForTarget<TARGET(kCUDA),
@@ -112,6 +119,12 @@ class KernelRegistry final {
                                       PRECISION(kFloat),
                                       DATALAYOUT(kNCHW)> *,  //
               KernelRegistryForTarget<TARGET(kFPGA),
+                                      PRECISION(kAny),
+                                      DATALAYOUT(kNCHW)> *,  //
+              KernelRegistryForTarget<TARGET(kFPGA),
+                                      PRECISION(kAny),
+                                      DATALAYOUT(kNCHW)> *,  //
+              KernelRegistryForTarget<TARGET(kFPGA),
                                       PRECISION(kFloat),
                                       DATALAYOUT(kNHWC)> *,  //
               KernelRegistryForTarget<TARGET(kFPGA),
@@ -119,7 +132,13 @@ class KernelRegistry final {
                                       DATALAYOUT(kNCHW)> *,  //
               KernelRegistryForTarget<TARGET(kFPGA),
                                       PRECISION(kFP16),
-                                      DATALAYOUT(kNHWC)> *  //
+                                      DATALAYOUT(kNHWC)> *,  //
+              KernelRegistryForTarget<TARGET(kFPGA),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kAny)> *,  //
+              KernelRegistryForTarget<TARGET(kFPGA),
+                                      PRECISION(kAny),
+                                      DATALAYOUT(kAny)> *  //
               >;
 
   KernelRegistry();

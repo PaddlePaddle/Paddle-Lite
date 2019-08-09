@@ -16,9 +16,10 @@ limitations under the License. */
 
 #include <vector>
 
-#include "lite/fpga/KD/conv_process.hpp"
 #include "lite/fpga/KD/pe.hpp"
 #include "lite/fpga/KD/pe_params.hpp"
+#include "lite/fpga/KD/pes/conv_pe.hpp"
+#include "lite/fpga/KD/pes/conv_process.hpp"
 
 namespace paddle {
 namespace zynqmp {

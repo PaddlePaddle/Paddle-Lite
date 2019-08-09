@@ -11,7 +11,8 @@ add_subdirectory(subgraph)
 lite_cc_library(mir_passes
   SRCS
       fusion/fc_fuse_pass.cc
-      fusion/conv_elementwise_add_activation_fuse_pass.cc
+      fusion/conv_elementwise_fuse_pass.cc
+      fusion/conv_activation_fuse_pass.cc
       fusion/conv_bn_fuse_pass.cc
       fusion/elementwise_add_activation_fuse_pass.cc
       fusion/quant_dequant_fuse_pass.cc
@@ -19,6 +20,7 @@ lite_cc_library(mir_passes
       static_kernel_pick_pass.cc
       variable_place_inference_pass.cc
       type_target_cast_pass.cc
+      type_layout_cast_pass.cc
       type_precision_cast_pass.cc
       io_copy_kernel_pick_pass.cc
       graph_visualize_pass.cc

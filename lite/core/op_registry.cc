@@ -110,6 +110,11 @@ KernelRegistry::KernelRegistry()
 
   INIT_FOR(kHost, kFloat, kNCHW);
   INIT_FOR(kHost, kAny, kNCHW);
+  INIT_FOR(kHost, kFloat, kNHWC);
+  INIT_FOR(kHost, kFloat, kAny);
+  INIT_FOR(kHost, kAny, kNHWC);
+  INIT_FOR(kHost, kAny, kAny);
+  INIT_FOR(kHost, kAny, kNHWC);
   INIT_FOR(kHost, kAny, kAny);
 
   INIT_FOR(kX86, kFloat, kNCHW);
@@ -130,10 +135,11 @@ KernelRegistry::KernelRegistry()
   INIT_FOR(kNPU, kAny, kNCHW);
   INIT_FOR(kNPU, kAny, kAny);
 
-  INIT_FOR(kFPGA, kFloat, kNCHW);
-  INIT_FOR(kFPGA, kFP16, kNCHW);
-  INIT_FOR(kFPGA, kFloat, kNHWC);
   INIT_FOR(kFPGA, kFP16, kNHWC);
+  INIT_FOR(kFPGA, kFP16, kAny);
+  INIT_FOR(kFPGA, kFloat, kNHWC);
+  INIT_FOR(kFPGA, kAny, kNHWC);
+  INIT_FOR(kFPGA, kAny, kAny);
 #undef INIT_FOR
 }
 

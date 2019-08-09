@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#ifndef LITE_WITH_FPGA
+
 #include "lite/core/tensor.h"
 #include <string>
 #include "lite/utils/string.h"
@@ -98,3 +100,5 @@ void TensorLite::CopyDataFrom(const TensorLite &other) {
 
 }  // namespace lite
 }  // namespace paddle
+
+#endif

@@ -16,32 +16,17 @@
 
 #include <memory>
 #include <string>
-#include "lite/core/mir/pattern_matcher_high_api.h"
+#include "lite/core/mir/pass.h"
 
 namespace paddle {
 namespace lite {
 namespace mir {
-namespace fusion {
 
-class ConvElementwiseAddActivationFuser : public FuseBase {
+class ConvElementwiseFusePass : public ProgramPass {
  public:
-  explicit ConvElementwiseAddActivationFuser(const std::string& conv_type,
-                                             const std::string& act_type) {
-    CHECK(act_type == "relu") << "Only relu activation be supported now";
-    conv_type_ = conv_type;
-    act_type_ = act_type;
-  }
-
-  void BuildPattern() override;
-  void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override;
-
- private:
-  cpp::OpDesc GenOpDesc(const key2nodes_t& matched) override;
-  std::string conv_type_;
-  std::string act_type_;
+  void Apply(const std::unique_ptr<SSAGraph>& graph) override;
 };
 
-}  // namespace fusion
 }  // namespace mir
 }  // namespace lite
 }  // namespace paddle

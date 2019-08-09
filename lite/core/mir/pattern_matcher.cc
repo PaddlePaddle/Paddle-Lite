@@ -105,7 +105,6 @@ void PatternMatcher::operator()(SSAGraph *graph,
   ValidateByNodeRole(&subgraphs);
 
   if (subgraphs.empty()) return;
-  LOG(INFO) << "---  detected " << subgraphs.size() << " subgraphs.";
   int id = 0;
   for (auto &g : subgraphs) {
     VLOG(3) << "optimizing #" << id++ << " subgraph";
@@ -335,7 +334,6 @@ std::string PMPattern::DotString() const {
   // Create Edges
   for (const auto &edge : edges()) {
     if (!node2dot.count(edge.first) || !node2dot.count(edge.second)) {
-      LOG(ERROR) << "no node " << edge.first << " " << edge.second;
       continue;
     }
     auto &src = node2dot.at(edge.first);

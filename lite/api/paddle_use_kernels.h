@@ -18,11 +18,13 @@
 
 #pragma once
 #include "paddle_lite_factory_helper.h"  // NOLINT
-
+#ifndef LITE_WITH_FPGA
 USE_LITE_KERNEL(feed, kHost, kAny, kAny, def);
 USE_LITE_KERNEL(fetch, kHost, kAny, kAny, def);
-USE_LITE_KERNEL(reshape, kHost, kAny, kAny, def);
-USE_LITE_KERNEL(reshape2, kHost, kAny, kAny, def);
+#else
+USE_LITE_KERNEL(feed, kFPGA, kFP16, kNHWC, def);
+USE_LITE_KERNEL(fetch, kFPGA, kFP16, kNHWC, def);
+#endif
 
 #ifdef LITE_WITH_ARM
 USE_LITE_KERNEL(fc, kARM, kFloat, kNCHW, def);
@@ -90,6 +92,8 @@ USE_LITE_KERNEL(slice, kARM, kFloat, kNCHW, def)
 
 USE_LITE_KERNEL(calib, kARM, kInt8, kNCHW, fp32_to_int8);
 USE_LITE_KERNEL(calib, kARM, kInt8, kNCHW, int8_to_fp32);
+USE_LITE_KERNEL(calib_once, kARM, kInt8, kNCHW, fp32_to_int8);
+USE_LITE_KERNEL(calib_once, kARM, kInt8, kNCHW, int8_to_fp32);
 USE_LITE_KERNEL(conv2d, kARM, kInt8, kNCHW, int8_out);
 USE_LITE_KERNEL(conv2d, kARM, kInt8, kNCHW, fp32_out);
 USE_LITE_KERNEL(fc, kARM, kInt8, kNCHW, int8out);
@@ -149,4 +153,26 @@ USE_LITE_KERNEL(conv2d, kOpenCL, kFloat, kNCHW, def);
 
 #ifdef LITE_WITH_NPU
 USE_LITE_KERNEL(graph_op, kNPU, kFloat, kNCHW, def);
+#endif
+#ifdef LITE_WITH_FPGA
+USE_LITE_KERNEL(relu, kFPGA, kFP16, kNHWC, def);
+USE_LITE_KERNEL(conv2d, kFPGA, kFP16, kNHWC, def);
+USE_LITE_KERNEL(elementwise_add, kFPGA, kFP16, kNHWC, def);
+USE_LITE_KERNEL(fusion_elementwise_add_activation, kFPGA, kFP16, kNHWC, def);
+USE_LITE_KERNEL(fc, kFPGA, kFP16, kNHWC, def);
+USE_LITE_KERNEL(pool2d, kFPGA, kFP16, kNHWC, def);
+USE_LITE_KERNEL(scale, kFPGA, kFP16, kNHWC, def);
+USE_LITE_KERNEL(softmax, kFPGA, kFP16, kNHWC, def);
+USE_LITE_KERNEL(io_copy, kFPGA, kAny, kAny, host_to_device);
+USE_LITE_KERNEL(io_copy, kFPGA, kAny, kAny, device_to_host);
+USE_LITE_KERNEL(io_copy_once, kFPGA, kAny, kAny, host_to_device_once);
+USE_LITE_KERNEL(io_copy_once, kFPGA, kAny, kAny, device_to_host_once);
+USE_LITE_KERNEL(calib, kFPGA, kFP16, kNHWC, fp32_to_fp16_fpga);
+USE_LITE_KERNEL(calib, kFPGA, kFP16, kNHWC, fp16_to_fp32_fpga);
+USE_LITE_KERNEL(calib_once, kFPGA, kFP16, kNHWC, fp32_to_fp16_fpga);
+USE_LITE_KERNEL(calib_once, kFPGA, kFP16, kNHWC, fp16_to_fp32_fpga);
+USE_LITE_KERNEL(layout, kFPGA, kAny, kNHWC, hwc_to_chw_fpga_fp16);
+USE_LITE_KERNEL(layout, kFPGA, kAny, kNHWC, chw_to_hwc_fpga_fp16);
+USE_LITE_KERNEL(layout_once, kFPGA, kAny, kNHWC, hwc_to_chw_fpga_fp16);
+USE_LITE_KERNEL(layout_once, kFPGA, kAny, kNHWC, chw_to_hwc_fpga_fp16);
 #endif

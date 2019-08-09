@@ -21,7 +21,9 @@ limitations under the License. */
 #include "lite/fpga/KD/float16.hpp"
 #include "lite/fpga/KD/llapi/bias_scale.h"
 #include "lite/fpga/KD/llapi/filter.h"
+#include "lite/fpga/KD/pe_params.hpp"
 #include "lite/fpga/KD/tensor.hpp"
+#include "lite/fpga/KD/tensor_util.hpp"
 
 namespace paddle {
 namespace zynqmp {

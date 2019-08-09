@@ -54,10 +54,12 @@ class ReluPE : public PE {
 
   bool dispatch() {
     inplace_.relu_enable = true;
+    config_inplace(inplace_);
     param_.input->syncToDevice();
     param_.output->copyFrom(param_.input);
     param_.output->invalidate();
     inplace_.relu_enable = false;
+    config_inplace(inplace_);
     return true;
   }
 

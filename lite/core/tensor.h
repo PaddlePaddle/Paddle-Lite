@@ -13,6 +13,13 @@
 // limitations under the License.
 
 #pragma once
+
+#ifdef LITE_WITH_FPGA
+#include "lite/fpga/lite_tensor.h"
+#endif
+
+#ifndef LITE_WITH_FPGA
+
 #include <algorithm>
 #include <functional>  // for multiplies
 #include <memory>
@@ -189,3 +196,5 @@ bool TensorCompareWith(const TensorT &a, const TensorT &b) {
 
 }  // namespace lite
 }  // namespace paddle
+
+#endif

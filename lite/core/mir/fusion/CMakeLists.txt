@@ -1,8 +1,11 @@
 lite_cc_library(fuse_fc
         SRCS fc_fuser.cc
         DEPS pattern_matcher_high_api)
-lite_cc_library(fuse_conv_elementwise_add_activation
-        SRCS conv_elementwise_add_activation_fuser.cc
+lite_cc_library(fuse_conv_elementwise
+        SRCS conv_elementwise_fuser.cc
+        DEPS pattern_matcher_high_api)
+lite_cc_library(fuse_conv_activation
+        SRCS conv_activation_fuser.cc
         DEPS pattern_matcher_high_api)
 lite_cc_library(fuse_conv_bn
         SRCS conv_bn_fuser.cc
@@ -16,7 +19,8 @@ lite_cc_library(fuse_quant_dequant
 
 set(mir_fusers
     fuse_fc
-    fuse_conv_elementwise_add_activation
+    fuse_conv_elementwise
+    fuse_conv_activation
     fuse_conv_bn
     fuse_quant_dequant
     fuse_elementwise_add_activation

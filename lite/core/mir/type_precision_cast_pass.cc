@@ -93,7 +93,10 @@ void PrecisionCastPass::AddCastInst(const Type& from,
   auto* cast_inst = graph->NewInstructNode();
 
   // create Op and kernels.
-  auto cast_op = LiteOpRegistry::Global().Create("calib");
+  bool in_persist = in->AsArg().is_weight || in->AsArg().is_persist;
+  std::string cast_type = in_persist ? "calib_once" : "calib";
+  cast_op_output_arg->AsArg().is_persist = in_persist;
+  auto cast_op = LiteOpRegistry::Global().Create(cast_type);
   CHECK(cast_op) << "create op [" << cast_op << "] failed";
 
   // Create the new var manually.
@@ -101,13 +104,13 @@ void PrecisionCastPass::AddCastInst(const Type& from,
 
   // Create Calib Instruction.
   cpp::OpDesc op_desc;
-  op_desc.SetType("calib");
+  op_desc.SetType(cast_type);
   op_desc.SetInput("Input", {in->AsArg().name});
   op_desc.SetOutput("Out", {cast_op_output_name});
-  CHECK(inst_node->AsStmt().op_info()->HasAttr("input_scale"));
-  op_desc.SetAttr("scale",
-                  inst_node->AsStmt().op_info()->GetAttr<float>("input_scale"));
-
+  if (inst_node->AsStmt().op_info()->HasAttr("input_scale")) {
+    op_desc.SetAttr(
+        "scale", inst_node->AsStmt().op_info()->GetAttr<float>("input_scale"));
+  }
   cast_op->Attach(op_desc, inst_node->AsStmt().op()->scope());
   auto kernels = cast_op->CreateKernels(valid_places);
   std::vector<std::unique_ptr<KernelBase>> selected_kernels;
@@ -115,12 +118,17 @@ void PrecisionCastPass::AddCastInst(const Type& from,
   for (auto& kernel : kernels) {
     const Type* in_arg_ty = kernel->GetInputDeclType("Input");
     const Type* out_arg_ty = kernel->GetOutputDeclType("Out");
+// TODO(xg): to optimize this
+#ifndef LITE_WITH_FPGA
     if (in_arg_ty->precision() == from.precision() &&
         out_arg_ty->precision() == to.precision()) {
+#else
+    if (TypeCompatible(*in_arg_ty, from)) {
+#endif
       is_found = true;
       selected_kernels.emplace_back(std::move(kernel));
       // we pick the kernel
-      cast_inst->AsStmt("calib", std::move(selected_kernels), cast_op);
+      cast_inst->AsStmt(cast_type, std::move(selected_kernels), cast_op);
       break;
     }
   }

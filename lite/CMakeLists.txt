@@ -84,14 +84,14 @@ function (lite_deps TARGET)
     endforeach(var)
   endif()
 
-  if (LITE_WITH_NPU)
-    foreach(var ${lite_deps_NPU_DEPS})
+  if (LITE_WITH_FPGA)
+    foreach(var ${lite_deps_FPGA_DEPS})
       set(deps ${deps} ${var})
     endforeach(var)
   endif()
 
-  if (LITE_WITH_FPGA)
-    foreach(var ${lite_deps_FPGA_DEPS})
+  if (LITE_WITH_NPU)
+    foreach(var ${lite_deps_NPU_DEPS})
       set(deps ${deps} ${var})
     endforeach(var)
   endif()
@@ -120,7 +120,7 @@ file(WRITE ${offline_lib_registry_file} "") # clean
 function(lite_cc_library TARGET)
     set(options SHARED shared STATIC static MODULE module)
     set(oneValueArgs "")
-    set(multiValueArgs SRCS DEPS X86_DEPS CUDA_DEPS CL_DEPS NPU_DEPS ARM_DEPS PROFILE_DEPS LIGHT_DEPS
+    set(multiValueArgs SRCS DEPS X86_DEPS CUDA_DEPS CL_DEPS NPU_DEPS ARM_DEPS FPGA_DEPS PROFILE_DEPS LIGHT_DEPS
       HVY_DEPS EXCLUDE_COMPILE_DEPS ARGS)
     cmake_parse_arguments(args "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
@@ -132,6 +132,7 @@ function(lite_cc_library TARGET)
             CL_DEPS ${args_CL_DEPS}
             NPU_DEPS ${args_NPU_DEPS}
             ARM_DEPS ${args_ARM_DEPS}
+            FPGA_DEPS ${args_FPGA_DEPS}
             PROFILE_DEPS ${args_PROFILE_DEPS}
             LIGHT_DEPS ${args_LIGHT_DEPS}
             HVY_DEPS ${args_HVY_DEPS}

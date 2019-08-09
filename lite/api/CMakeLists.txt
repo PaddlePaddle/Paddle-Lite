@@ -11,11 +11,16 @@ if (WITH_TESTING)
       CUDA_DEPS kernels_cuda
       X86_DEPS ${x86_kernels})
 endif()
+if(LITE_WITH_FPGA)
+    set(light_api_deps ${light_api_deps} ${fpga_deps})
+    set(cxx_api_deps ${cxx_api_deps} ${fpga_deps})
+endif()
 
 message(STATUS "get ops ${ops}")
 message(STATUS "get Host kernels ${host_kernels}")
 message(STATUS "get ARM kernels ${arm_kernels}")
 message(STATUS "get NPU kernels ${npu_kernels}")
+message(STATUS "get FPGA kernels ${fpga_kernels}")
 
 # for full api
 if (NOT LITE_ON_TINY_PUBLISH)
@@ -32,7 +37,8 @@ if (NOT LITE_ON_TINY_PUBLISH)
                     X86_DEPS ${x86_kernels}
                     ARM_DEPS ${arm_kernels}
                     NPU_DEPS ${npu_kernels} ${npu_bridges} npu_pass
-                    CL_DEPS ${opencl_kenrels})
+                    CL_DEPS ${opencl_kenrels}
+                    FPGA_DEPS ${fpga_kenrels})
 endif()
 
 # for light api
@@ -48,7 +54,8 @@ lite_cc_library(light_api SRCS light_api.cc
         X86_DEPS ${x86_kernels}
         ARM_DEPS ${arm_kernels}
         NPU_DEPS ${npu_kernels} ${npu_bridges} npu_pass
-        CL_DEPS ${opencl_kenrels})
+        CL_DEPS ${opencl_kenrels}
+        FPGA_DEPS ${fpga_kenrels})
 
 include(ExternalProject)
 set(LITE_DEMO_INSTALL_DIR "${THIRD_PARTY_PATH}/inference_demo" CACHE STRING
@@ -62,6 +69,7 @@ if(WITH_TESTING)
        ARM_DEPS ${arm_kernels}
        NPU_DEPS ${npu_kernels}
        CL_DEPS ${opencl_kernels}
+       FPGA_DEPS ${fpga_kernels}
        EXCLUDE_COMPILE_DEPS "ON"
        ARGS --model_dir=${LITE_MODEL_DIR}/lite_naive_model
             --optimized_model=${LITE_MODEL_DIR}/lite_naive_model_opt SERIAL)
@@ -91,7 +99,7 @@ if(WITH_TESTING)
 endif()
 
 if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND WITH_TESTING)
-    set(lite_model_test_DEPS cxx_api mir_passes ${ops} ${host_kernels} ${arm_kernels} ${npu_kernels})
+    set(lite_model_test_DEPS cxx_api mir_passes ${ops} ${host_kernels} ${arm_kernels} ${npu_kernels} ${fpga_kernels})
 
     lite_cc_test(test_mobilenetv1_int8 SRCS mobilenetv1_int8_test.cc
        DEPS ${lite_model_test_DEPS}
@@ -121,9 +129,15 @@ if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND WITH_TESTING)
     lite_cc_test(test_resnet50 SRCS resnet50_test.cc
        DEPS ${lite_model_test_DEPS}
        CL_DEPS ${opencl_kernels}
+       FPGA_DEPS ${fpga_kernels}
        ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/opencl
             --model_dir=${LITE_MODEL_DIR}/resnet50 SERIAL)
     add_dependencies(test_resnet50 extern_lite_download_resnet50_tar_gz)
+
+    lite_cc_test(test_resnet50_fpga SRCS resnet50_test_fpga.cc
+       DEPS ${lite_model_test_DEPS}
+       CL_DEPS ${opencl_kernels}
+       FPGA_DEPS ${fpga_kernels})
 
     lite_cc_test(test_inceptionv4 SRCS inceptionv4_test.cc
        DEPS ${lite_model_test_DEPS}
@@ -140,12 +154,14 @@ endif()
 lite_cc_test(test_light_api SRCS light_api_test.cc
     DEPS light_api program mir_passes
     CL_DEPS ${opencl_kernels}
+    FPGA_DEPS ${fpga_kernels}
     ARGS --optimized_model=${LITE_MODEL_DIR}/lite_naive_model_opt SERIAL)
 
 lite_cc_test(test_apis SRCS apis_test.cc
   DEPS cxx_api light_api ${ops}
   CL_DEPS ${opencl_kernels}
   X86_DEPS ${x86_kernels}
+    FPGA_DEPS ${fpga_kernels}
   ARGS --model_dir=${LITE_MODEL_DIR}/lite_naive_model
        --optimized_model=${LITE_MODEL_DIR}/lite_naive_model_opt SERIAL)
 
@@ -159,7 +175,8 @@ if (NOT LITE_ON_TINY_PUBLISH)
       ${ops}
       ARM_DEPS ${arm_kernels}
       NPU_DEPS ${npu_kernels}
-      CL_DEPS ${opencl_kernels})
+      CL_DEPS ${opencl_kernels}
+      FPGA_DEPS ${fpga_kernels})
     # The final inference library for just MobileConfig.
     bundle_static_library(paddle_api_full paddle_api_full_bundled bundle_full_api)
 endif()
@@ -179,6 +196,7 @@ lite_cc_test(test_paddle_api SRCS paddle_api_test.cc DEPS paddle_api_full paddle
   NPU_DEPS ${npu_kernels}
   CL_DEPS ${opencl_kernels}
   X86_DEPS ${x86_kernels}
+  FPGA_DEPS ${fpga_kernels}
   ARGS --model_dir=${LITE_MODEL_DIR}/lite_naive_model SERIAL)
 if (WITH_TESTING)
     add_dependencies(test_paddle_api extern_lite_download_lite_naive_model_tar_gz)
@@ -191,6 +209,7 @@ if(NOT IOS)
     ARM_DEPS ${arm_kernels}
     NPU_DEPS ${npu_kernels}
     CL_DEPS ${opencl_kernels}
+    FPGA_DEPS ${fpga_kernels}
     X86_DEPS ${x86_kernels})
 endif()
 

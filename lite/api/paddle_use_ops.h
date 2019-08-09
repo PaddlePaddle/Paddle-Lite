@@ -74,7 +74,10 @@ USE_LITE_OP(split)
 USE_LITE_OP(fake_quantize_moving_average_abs_max);
 USE_LITE_OP(fake_dequantize_max_abs);
 USE_LITE_OP(calib);
+USE_LITE_OP(calib_once);
 USE_LITE_OP(norm);
+USE_LITE_OP(layout);
+USE_LITE_OP(layout_once);
 USE_LITE_OP(im2sequence);
 USE_LITE_OP(sequence_softmax);
 USE_LITE_OP(logical_xor);

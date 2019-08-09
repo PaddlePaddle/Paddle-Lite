@@ -39,7 +39,7 @@ class VariablePlaceInferencePass : public DebugPass {
     for (const auto& v : graph->inputs()) {
       // the feed op might in the inputs
       if (v->IsStmt()) {
-        LOG(INFO) << "found kernel in inputs " << v->AsStmt().op_type();
+        VLOG(4) << "found kernel in inputs " << v->AsStmt().op_type();
         continue;
       }
     }
@@ -56,17 +56,26 @@ class VariablePlaceInferencePass : public DebugPass {
 
   // Set the tye of the weight
   void SetWeightType(Node* w, const LiteType& type) {
+// TODO(xg) to optimize this
+#ifndef LITE_WITH_FPGA
     w->AsArg().type =
         LiteType::GetTensorTy(TARGET(kHost), type.precision(), type.layout());
+#else
+    w->AsArg().type = LiteType::GetTensorTy(
+        TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
+#endif
   }
 
   void InferenceArgumentPlace(SSAGraph* graph) {
     VLOG(3) << "param-type-registry:\n" << ParamTypeRegistry::Global();
     for (auto& x : graph->StmtTopologicalOrder()) {
       auto& inst = x->AsStmt();
-      // The IoCopyOp is a tool operator, it won't support the type inference.
+// The IoCopyOp is a tool operator, it won't support the type inference.
+// in fpga, we has io_copy+cali+layout tool ops, so we need type inference for
+// tool operator
+#ifndef LITE_WITH_FPGA
       if (inst.op_type() == "io_copy") continue;
-      // LOG(INFO) << "- inferencing type " <<
+#endif
       // deal with inputs
       VLOG(4) << "Infering op " << inst.op_info()->Repr();
       // TODO(zhaolong): Add check if the node's name in op's arguments.
@@ -88,10 +97,11 @@ class VariablePlaceInferencePass : public DebugPass {
         std::string arg_name = get_argname(node_name, inst.op_info()->inputs());
         CHECK(arg_name.size() > 0) << "can not found op arguments for node "
                                    << node_name;
-        VLOG(3) << "-- input arg_name " << arg_name;
+        VLOG(4) << "-- input arg_name " << arg_name
+                << "-- node name :" << node_name;
         auto type = inst.picked_kernel().GetInputDeclType(arg_name);
         if (!x_in->AsArg().type) {
-          VLOG(4) << "set type " << *type << " " << x_in;
+          VLOG(4) << "set type " << *type << " " << x_in->AsArg().name;
           if (x_in->AsArg().is_weight) {
             SetWeightType(x_in, *type);
           } else {
@@ -100,7 +110,7 @@ class VariablePlaceInferencePass : public DebugPass {
         }
       }
 
-      VLOG(3) << "inst " << inst.op_info()->Repr();
+      VLOG(4) << "inst " << inst.op_info()->Repr();
       for (auto* x_out : x->outlinks) {
         std::string node_name = x_out->AsArg().name;
         std::string arg_name =
@@ -108,10 +118,10 @@ class VariablePlaceInferencePass : public DebugPass {
         CHECK(arg_name.size() > 0) << "can not found op arguments for node "
                                    << node_name << " in Inst "
                                    << inst.op_type();
-        VLOG(3) << "-- output arg_name " << arg_name;
+        VLOG(4) << "-- output arg_name " << arg_name;
         auto type = inst.picked_kernel().GetOutputDeclType(arg_name);
         if (!x_out->AsArg().type) {
-          VLOG(4) << "set type " << *type << " " << x_out;
+          VLOG(4) << "set type " << *type << " " << x_out->AsArg().name;
           if (x_out->AsArg().is_weight) {
             SetWeightType(x_out, *type);
           } else {
