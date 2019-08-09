@@ -11,7 +11,7 @@ endif()
 include_directories(${JNI_INCLUDE_DIRS} ${_classDir} ${_stubDir})
 if (NOT LITE_ON_TINY_PUBLISH)
     lite_cc_library(paddle_lite_jni MODULE 
-        SRCS paddle_init_jni.cc paddle_lite_jni.cc tensor_jni.cc
+        SRCS paddle_lite_jni.cc tensor_jni.cc
         DEPS ${lib_DEPS}
         ARM_DEPS ${arm_kernels} NPU_DEPS ${npu_kernels})
     # Unlike static library, module library has to link target to be able to work
@@ -19,7 +19,7 @@ if (NOT LITE_ON_TINY_PUBLISH)
     target_link_libraries(paddle_lite_jni ${lib_DEPS} ${arm_kernels} ${npu_kernels})
 else()
     add_library(paddle_lite_jni SHARED "")
-    target_sources(paddle_lite_jni PUBLIC ${__lite_cc_files} paddle_init_jni.cc paddle_lite_jni.cc tensor_jni.cc)
+    target_sources(paddle_lite_jni PUBLIC ${__lite_cc_files} paddle_lite_jni.cc tensor_jni.cc)
     #add_dependencies(paddle_lite_jni ${lib_DEPS} ${arm_kernels} ${npu_kernels})
 endif()
 
