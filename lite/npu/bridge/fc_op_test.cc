@@ -45,7 +45,7 @@ void fc_ref(const std::shared_ptr<operators::FcOpLite> op) {
   auto input_data = input->data<float>();
   auto w_data = w->mutable_data<float>();
   auto out_data = out->mutable_data<float>();
-  auto in_mat_dims = input->dims().Flattern2D(in_num_col_dims);
+  auto in_mat_dims = input->dims().Flatten2D(in_num_col_dims);
   int out_num_classes = w->dims()[1];
   const int M = in_mat_dims[0];
   const int K = in_mat_dims[1];
@@ -88,6 +88,11 @@ void test_fc(const std::vector<int64_t>& x_shape,
   auto* out = scope.Var(out_var_name)->GetMutable<Tensor>();
   auto* out_ref = scope.Var(out_ref_var_name)->GetMutable<Tensor>();
   x->Resize(x_shape);
+  input->Resize({bs, ic, ih, iw});
+
+  // get w shape
+  auto in_mat_dims = input->dims().Flatten2D(in_num_col_dims);
+  std::vector<int64_t> w_shape = {in_mat_dims[1], out_num_classes};
   w->Resize(w_shape);
 
   FillTensor<float, int>(x);

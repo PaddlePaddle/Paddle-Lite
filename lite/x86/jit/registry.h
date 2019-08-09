@@ -90,7 +90,7 @@ class JitKernelRegistrar {
       "REGISTER_KERNEL_REFER must be called in global namespace");  \
   static ::paddle::lite::jit::JitKernelRegistrar<                   \
       ::paddle::lite::jit::ReferKernelPool,                         \
-      ::paddle::fluid::CPUPlace,                                    \
+      ::paddle::lite::fluid::CPUPlace,                              \
       __VA_ARGS__>                                                  \
       __jit_kernel_registrar_##kernel_type##_refer_CPUPlace_(       \
           ::paddle::lite::jit::KernelType::kernel_type);            \
@@ -110,7 +110,7 @@ class JitKernelRegistrar {
       UNUSED = TouchJitKernelReg_##kernel_type##_refer_CPUPlace_();           \
   static ::paddle::lite::jit::JitKernelRegistrar<                             \
       ::paddle::lite::jit::KernelPool,                                        \
-      ::paddle::fluid::place_type,                                            \
+      ::paddle::lite::fluid::place_type,                                      \
       __VA_ARGS__>                                                            \
       __jit_kernel_registrar_##kernel_type##_##impl_type##_##place_type##_(   \
           ::paddle::lite::jit::KernelType::kernel_type);                      \
@@ -135,7 +135,7 @@ class JitKernelRegistrar {
       TouchJitKernelReg_##kernel_type##_refer_CPUPlace_();          \
   static ::paddle::lite::jit::JitKernelRegistrar<                   \
       ::paddle::lite::jit::JitCodeCreatorPool,                      \
-      ::paddle::fluid::CPUPlace,                                    \
+      ::paddle::lite::fluid::CPUPlace,                              \
       __VA_ARGS__>                                                  \
       __jit_kernel_registrar_gen_##kernel_type##_CPUPlace_(         \
           ::paddle::lite::jit::KernelType::kernel_type);            \

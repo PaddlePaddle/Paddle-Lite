@@ -15,6 +15,7 @@
 #pragma once
 
 namespace paddle {
+namespace lite {
 namespace fluid {
 
 // Fake the legacy Place.
@@ -25,4 +26,5 @@ struct Place {
 struct CPUPlace : Place {};
 
 }  // namespace fluid
+}  // namespace lite
 }  // namespace paddle

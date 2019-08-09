@@ -19,7 +19,7 @@ if(WITH_XBYAK)
 endif()
 
 lite_cc_library(jit_kernel_helper SRCS ${jit_kernel_cc_srcs} DEPS ${JIT_KERNEL_DEPS})
-lite_cc_test(jit_kernel_test SRCS test.cc DEPS jit_kernel_helper)
+#lite_cc_test(jit_kernel_test SRCS test.cc DEPS jit_kernel_helper)
 
 #if(NOT WIN32)
     #lite_cc_binary(jit_kernel_benchmark SRCS benchmark.cc DEPS jit_kernel_helper tensor)

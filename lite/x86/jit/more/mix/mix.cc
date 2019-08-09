@@ -22,7 +22,7 @@ namespace jit {
 namespace more {
 namespace mix {
 
-using CPUPlace = fluid::CPUPlace;
+using CPUPlace = lite::fluid::CPUPlace;
 
 void VSigmoid(const T* x, T* y, int n) {
   const float min = SIGMOID_THRESHOLD_MIN;

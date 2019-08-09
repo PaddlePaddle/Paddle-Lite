@@ -67,7 +67,7 @@ class Conv2dCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
       col_shape_vec[j + 1 + data_dim] = output_shape_vec[j + 2];
     }
     lite::DDim col_shape(col_shape_vec);
-    lite::DDim col_matrix_shape = col_shape.Flattern2D(data_dim + 1);
+    lite::DDim col_matrix_shape = col_shape.Flatten2D(data_dim + 1);
     bool is_expand = IsExpand(
         filter_shape_vec, param.strides, param.paddings, param.dilations);
 

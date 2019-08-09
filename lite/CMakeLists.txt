@@ -235,6 +235,7 @@ add_subdirectory(opencl)
 add_subdirectory(fpga)
 add_subdirectory(model_parser)
 add_subdirectory(api)
+add_subdirectory(fluid)
 if (NOT LITE_ON_TINY_PUBLISH)
     add_subdirectory(tests)
     add_subdirectory(tools)
@@ -290,7 +291,7 @@ if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM)
         add_dependencies(publish_inference_cxx_lib bundle_light_api)
         add_dependencies(publish_inference_cxx_lib test_model_bin)
         add_dependencies(publish_inference publish_inference_cxx_lib)
-        add_custom_command(TARGET publish_inference_cxx_lib POST_BUILD 
+        add_custom_command(TARGET publish_inference_cxx_lib POST_BUILD
                                        COMMAND ${CMAKE_STRIP} "--strip-debug" ${INFER_LITE_PUBLISH_ROOT}/cxx/lib/*.a)
     endif()
 
@@ -355,4 +356,3 @@ if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM)
         add_dependencies(publish_inference_cxx_lib publish_inference_opencl)
     endif()
 endif()
- 

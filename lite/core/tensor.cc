@@ -98,6 +98,17 @@ void TensorLite::CopyDataFrom(const TensorLite &other) {
   buffer_->CopyDataFrom(*other.buffer_, memory_size_);
 }
 
+// static LoD TensorLite::ToAbsOffset(const LoD &lod) {
+//  if (lod.empty() || lod.size() == 1) return lod;
+//  LoD ret = lod;
+//  for (int level = static_cast<int>(lod.size()) - 2; level >= 0; --level) {
+//    for (size_t i = 0; i < lod[level].size(); ++i) {
+//      size_t index = lod[level][i];
+//      result[level][i] = result[level + 1][index];
+//    }
+//  }
+//}
+
 }  // namespace lite
 }  // namespace paddle
 

@@ -33,9 +33,10 @@ struct KernelKey {
   };
 
   KernelType type_;
-  fluid::Place place_;
+  lite::fluid::Place place_;
 
-  KernelKey(KernelType type, fluid::Place place) : type_(type), place_(place) {}
+  KernelKey(KernelType type, lite::fluid::Place place)
+      : type_(type), place_(place) {}
   size_t hash_key() const { return Hash()(*this); }
 
   bool operator==(const KernelKey& o) const {
