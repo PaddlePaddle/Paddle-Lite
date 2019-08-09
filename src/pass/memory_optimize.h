@@ -51,14 +51,11 @@ class MemoryOptPass : public PassBase {
 
   VarNode *CreateNode(const std::string name);
 
-  void AdjustMemory();
-
  private:
   std::stack<VarNode *> analysis_nodes_;
   std::vector<std::vector<VarNode *>> reused_nodes_;
   std::unordered_map<std::string, VarNode *> created_nodes_;
   std::unordered_map<std::string, framework::VarDesc *> block_vars_;
-  std::vector<framework::Variable *> memoryDeputies_;
 };
 
 }  // namespace pass
