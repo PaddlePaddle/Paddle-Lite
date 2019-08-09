@@ -29,6 +29,7 @@ limitations under the License. */
 #include "framework/scope.h"
 #include "framework/tensor.h"
 #include "memory/t_malloc.h"
+#include "pass/memory_optimize.h"
 #include "pass/model_obfuscate.h"
 #ifdef PADDLE_MOBILE_CL
 #include "framework/cl/cl_image.h"
@@ -66,9 +67,8 @@ Executor<Device, T>::Executor(const Program<Device> &program,
 #if !defined(PADDLE_MOBILE_FPGA) && !defined(PADDLE_MOBILE_FPGA_KD) && \
     !defined(PADDLE_MOBILE_CL)
   if (config_.memory_optimization_level != NoMemoryOptimization) {
-    memoryOpt_ = std::make_shared<pass::MemoryOptPass>();
-    (*memoryOpt_)(program_desc_.get(), program_.scope.get(),
-                  config_.memory_optimization_level);
+    pass::MemoryOptPass()(program_desc_.get(), program_.scope.get(),
+                          config_.memory_optimization_level);
   }
 #endif
   // resize feed and fetch list
@@ -296,34 +296,32 @@ static void ClearNoPersistableTensorArray(const framework::ProgramDesc *program,
 
 template <typename Device, typename T>
 void Executor<Device, T>::InitNoPersistableMemory(const Tensor &input_tensor) {
+  if (input_tensor.dims().size() != 4) {
+    return;
+  }
   for (const auto &block : program_desc_->Blocks()) {
     for (const auto &var_desc : block->Vars()) {
       auto var = program_.scope->Var(var_desc->Name());
-      auto tensor = var->template GetMutable<LoDTensor>();
-      if (var_desc->Persistable()) {
-        if (var_desc->Name() == "feed" || var_desc->Name() == "fetch") {
-          var->template GetMutable<framework::LoDTensorArray>();
-          continue;
-        }
-      } else {
-        if (var_desc->Type() == VARTYPE_TYPE_LOD_TENSOR) {
+      if (!var_desc->Persistable() &&
+          var_desc->Type() == VARTYPE_TYPE_LOD_TENSOR) {
+        DLOG << "InitNoPersistableMemory var " << var_desc->Name();
+        auto tensor = var->template GetMutable<LoDTensor>();
+        if (tensor->IsInitialized() && tensor->dims().size() == 4) {
+          DLOG << "var's tensor is Initialized or dims size != 4";
           DDim tensor_dim = tensor->dims();
           DDim new_dim =
               make_ddim({tensor_dim[0], tensor_dim[1], input_tensor.dims()[2],
                          input_tensor.dims()[3]});
           tensor->Resize(new_dim);
-          tensor->template mutable_data<T>();
+          tensor->template mutable_data_new<T>();
+          DLOG << "var's tensor dims " << tensor_dim;
+          DLOG << "var's tensor new dims " << new_dim;
         } else {
-          PADDLE_MOBILE_THROW_EXCEPTION("Unsupported var type `%d`",
-                                        var_desc->Type());
+          DLOG << "var's tensor is not Initialized ???";
         }
       }
     }
   }
-
-  std::shared_ptr<LoDTensor> output = GetOutput("fetch");
-  output->Resize(input_tensor.dims());
-  output->mutable_data<T>();
 }
 
 template <typename Device, typename T>
@@ -411,7 +409,9 @@ void Executor<Device, T>::SetInput(const Tensor &input,
   target.ShareDataWith(input);
   if (feed_indices_.size() == 1) {
     auto &dim = input.dims();
-    shouldAdjustMemory_ = (product(dim) < 0.9 * product(input_dim_last_));
+    if (lod_mode_ && product(dim) < 0.9 * product(input_dim_last_)) {
+      InitNoPersistableMemory(target);
+    }
     input_dim_has_changed_ = input_dim_last_ != dim;
     input_dim_last_ = static_cast<DDim>(dim);
   }
@@ -433,7 +433,9 @@ void Executor<Device, T>::SetInput(const LoDTensor &input,
   target.set_lod(input.lod());
   if (feed_indices_.size() == 1) {
     auto &dim = input.dims();
-    shouldAdjustMemory_ = (product(dim) < 0.9 * product(input_dim_last_));
+    if (lod_mode_ && product(dim) < 0.9 * product(input_dim_last_)) {
+      InitNoPersistableMemory(target);
+    }
     input_dim_has_changed_ = input_dim_last_ != dim;
     input_dim_last_ = static_cast<DDim>(dim);
   }
@@ -483,16 +485,7 @@ PMStatus Executor<Device, T>::Predict() {
   // clear all no persistable tensor array since write_to_array
   // is always push back a new tensor in the array
   ClearNoPersistableTensorArray(program_desc_.get(), program_.scope.get());
-  if (lod_mode_ && input_dim_has_changed_) {
-    for (int i = 0; i < ops_of_block0_.size(); ++i) {
-      auto &op_handler = ops_of_block0_[i];
-      op_handler->InferShape();
-    }
-    if (memoryOpt_ != nullptr && shouldAdjustMemory_) {
-      shouldAdjustMemory_ = false;
-      memoryOpt_->AdjustMemory();
-    }
-  }
+
 #ifdef PADDLE_MOBILE_PROFILE
   std::vector<ProfInfo> profile(ops_of_block0_.size());
   struct timespec ts;
@@ -503,12 +496,12 @@ PMStatus Executor<Device, T>::Predict() {
 #ifdef PADDLE_MOBILE_PROFILE
     clock_gettime(CLOCK_MONOTONIC, &ts);
     profile[op_index].runBegin = (uint64_t)ts.tv_sec * 1e9 + ts.tv_nsec;
-//    if (lod_mode_ && input_dim_has_changed_) {
-//      op_handler->InferShape();
-//    }
 #endif
     DLOG << i << "th, "
          << "run op: " << op_handler->Type();
+    if (lod_mode_ && input_dim_has_changed_) {
+      op_handler->InferShape();
+    }
     op_handler->Run();
 #ifdef PADDLE_MOBILE_PROFILE
     clock_gettime(CLOCK_MONOTONIC, &ts);
