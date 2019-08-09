@@ -18,15 +18,6 @@ public class PaddleLiteInitializer {
      */
     protected static boolean init() {
         System.loadLibrary(JNI_LIB_NAME);
-        initNative();
         return true;
-    }
-
-    /** Initializes at native C++ side. */
-    private static native void initNative();
-
-    /* Initializes at the beginning. */
-    static {
-        init();
     }
 }
