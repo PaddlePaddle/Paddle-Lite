@@ -29,11 +29,11 @@ namespace bridge {
 
 node_map_type ConvConverter(const std::shared_ptr<lite::OpLite> conv_op,
                             const node_map_type& inputs_map) {
-  VLOG(3) << "invoking ConvConverter...";
   auto scope = conv_op->scope();
   auto op_info = conv_op->op_info();
   auto op_type = op_info->Type();
   auto unique_op_type = UniqueName(op_type);
+  LOG(INFO) << "Converting " << op_type << " ... ";
 
   // get input, output and op attributes
   auto input_var_name = op_info->Input("Input").front();
@@ -83,7 +83,7 @@ node_map_type ConvConverter(const std::shared_ptr<lite::OpLite> conv_op,
 
   // create bias node if has bias
   std::shared_ptr<ge::op::Const> bias_const_node = nullptr;
-  if (op_info->HasInput("Bias")) {
+  if (HasInputArg(op_info, scope, "Bias")) {
     auto bias_var_name = op_info->Input("Bias").front();
     CHECK(!inputs_map.count(bias_var_name));
     auto* bias = scope->FindVar(bias_var_name)->GetMutable<lite::Tensor>();

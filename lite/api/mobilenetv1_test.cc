@@ -65,7 +65,7 @@ void TestModel(const std::vector<Place>& valid_places,
   }
 
   LOG(INFO) << "================== Speed Report ===================";
-  LOG(INFO) << "Model: " << FLAGS_model_dir << ", threads num " << FLAGS_threads
+  LOG(INFO) << "Model: " << model_dir << ", threads num " << FLAGS_threads
             << ", warmup: " << FLAGS_warmup << ", repeats: " << FLAGS_repeats
             << ", spend " << (GetCurrentUS() - start) / FLAGS_repeats / 1000.0
             << " ms in average.";
@@ -85,7 +85,7 @@ void TestModel(const std::vector<Place>& valid_places,
   double eps = 0.1;
   for (int i = 0; i < ref.size(); ++i) {
     for (int j = 0; j < ref[i].size(); ++j) {
-      auto result = out->data<float>()[j * step + (out->dims()[1] * i)];
+      auto result = pdata[j * step + (out->dims()[1] * i)];
       auto diff = std::fabs((result - ref[i][j]) / ref[i][j]);
       VLOG(3) << diff;
       EXPECT_LT(diff, eps);
@@ -98,7 +98,7 @@ void TestModel(const std::vector<Place>& valid_places,
   double eps = 1e-6;
   for (int i = 0; i < ref.size(); ++i) {
     for (int j = 0; j < ref[i].size(); ++j) {
-      auto result = out->data<float>()[j * step + (out->dims()[1] * i)];
+      auto result = pdata[j * step + (out->dims()[1] * i)];
       EXPECT_NEAR(result, ref[i][j], eps);
     }
   }
@@ -125,7 +125,7 @@ TEST(MobileNetV1, test_npu) {
             false /* gen_npu */,
             false /* save model */);
 }
-#endif
+#endif  // LITE_WITH_NPU
 
 TEST(MobileNetV1, test_arm) {
   std::vector<Place> valid_places({

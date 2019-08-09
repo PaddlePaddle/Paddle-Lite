@@ -29,7 +29,7 @@ namespace bridge {
 
 node_map_type FCConverter(const std::shared_ptr<lite::OpLite> fc_op,
                           const node_map_type& inputs_map) {
-  LOG(INFO) << "converting fc...";
+  LOG(INFO) << "Converting fc...";
   lite::Scope* scope = fc_op->scope();
   const lite::OpInfo* op_info = fc_op->op_info();
   auto output_node = std::make_shared<ge::op::MatMul>(UniqueName("fc"));
@@ -80,9 +80,7 @@ node_map_type FCConverter(const std::shared_ptr<lite::OpLite> fc_op,
   OpList::Global().add(wconst);
   output_node->set_input_w(*wconst);
 
-  auto iarg_names = op_info->input_argnames();
-  if (std::find(iarg_names.begin(), iarg_names.end(), "Bias") !=
-      iarg_names.end()) {
+  if (HasInputArg(op_info, scope, "Bias")) {
     auto b_var_name = op_info->Input("Bias").front();
     auto* btensor = scope->FindVar(b_var_name)->GetMutable<lite::Tensor>();
 

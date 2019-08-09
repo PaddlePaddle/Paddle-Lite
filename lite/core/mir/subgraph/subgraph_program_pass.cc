@@ -63,15 +63,16 @@ void SubgraphProgramPass::InitSubgraphID(
 }
 
 // mark current and all output supported nodes
-void SubgraphProgramPass::ChangeAllOutConnectedID(Node* op_node,
+void SubgraphProgramPass::ChangeAllOutConnectedID(Node* node,
                                                   int to_id,
                                                   int from_id) {
-  if (!op_node) return;
-  if (op_node->IsStmt()) {
-    auto& stmt = op_node->AsStmt();
+  if (!node) return;
+  if (node->IsStmt()) {
+    auto& stmt = node->AsStmt();
     if (stmt.subgraph_id() == from_id) {
       stmt.SetSubgraphID(to_id);
-      for (auto& i : op_node->outlinks) {
+      nodes2rm_[to_id].insert(node);
+      for (auto& i : node->outlinks) {
         ChangeAllOutConnectedID(i, to_id, from_id);
       }
     } else {
@@ -79,8 +80,27 @@ void SubgraphProgramPass::ChangeAllOutConnectedID(Node* op_node,
       return;
     }
   } else {
-    for (auto& i : op_node->outlinks) {
-      ChangeAllOutConnectedID(i, to_id, from_id);
+    // this it arg node
+    bool all_out_op_supported = true;
+    for (auto& i : node->outlinks) {
+      if (!i->IsStmt()) return;
+      auto& stmt = i->AsStmt();
+      if (stmt.subgraph_id() != from_id) {
+        all_out_op_supported = false;
+      }
+    }
+    if (!all_out_op_supported) {
+      return;
+    }
+    for (auto& i : node->outlinks) {
+      CHECK(i->IsStmt());
+      auto& stmt = i->AsStmt();
+      CHECK_EQ(stmt.subgraph_id(), from_id);
+      stmt.SetSubgraphID(to_id);
+      nodes2rm_[to_id].insert(i);
+      for (auto& o : i->outlinks) {
+        ChangeAllOutConnectedID(o, to_id, from_id);
+      }
     }
   }
 }
@@ -89,7 +109,6 @@ int SubgraphProgramPass::FuseSubgraphID(
     const std::unique_ptr<SSAGraph>& graph) {
   int sub_id = 1;  // id start from 1 not 0
   for (auto& item : graph->StmtTopologicalOrder()) {
-    // TODO(TJ): support node have vector inputs and output
     if (!item->IsStmt()) continue;
     auto& stmt = item->AsStmt();
     if (stmt.subgraph_id() != 0) continue;
@@ -103,6 +122,9 @@ int SubgraphProgramPass::FuseSubgraph(
     const std::unique_ptr<SSAGraph>& graph,
     const std::vector<std::string>& supported_op_types) {
   InitSubgraphID(graph, supported_op_types);
+  nodes2rm_.clear();
+  i_nodes_.clear();
+  o_nodes_.clear();
   int num_subgraph = FuseSubgraphID(graph);
   LOG(INFO) << "detected " << num_subgraph << " subgraph";
   return num_subgraph;
