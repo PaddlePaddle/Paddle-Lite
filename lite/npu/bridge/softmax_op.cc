@@ -29,6 +29,7 @@ namespace bridge {
 
 node_map_type SoftmaxConverter(const std::shared_ptr<lite::OpLite> softmax_op,
                                const node_map_type& inputs_map) {
+  LOG(INFO) << "converting softmax...";
   lite::Scope* scope = softmax_op->scope();
   const lite::OpInfo* op_info = softmax_op->op_info();
 
@@ -36,9 +37,17 @@ node_map_type SoftmaxConverter(const std::shared_ptr<lite::OpLite> softmax_op,
       std::make_shared<ge::op::Softmax>(UniqueName("softmax"));
   auto x_var_name = op_info->Input("X").front();
 
+  auto x_dims = scope->FindVar(x_var_name)->GetMutable<Tensor>()->dims();
+  auto axis = op_info->GetAttr<int>("axis");
+  if (x_dims.size() > 3) {
+    CHECK(!(axis == 2 && x_dims[3] > 1))
+        << "unsupported npu softmax params: axis = " << axis
+        << "  :x_w = " << x_dims[3];
+  }
+
   CHECK(inputs_map.count(x_var_name));
   output_node->set_input_x(*inputs_map.at(x_var_name));
-  output_node->set_attr_axis(op_info->GetAttr<int>("axis"));
+  output_node->set_attr_axis(axis);
 
   OpList::Global().add(inputs_map.at(x_var_name));
   OpList::Global().add(output_node);

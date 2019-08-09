@@ -29,6 +29,7 @@ namespace bridge {
 
 node_map_type PoolConverter(const std::shared_ptr<lite::OpLite> pool_op,
                             const node_map_type& inputs_map) {
+  LOG(INFO) << "converting pool...";
   lite::Scope* scope = pool_op->scope();
   const lite::OpInfo* op_info = pool_op->op_info();
 
