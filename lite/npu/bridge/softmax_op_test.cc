@@ -114,8 +114,8 @@ TEST(NPUBridges, softmax) {
     for (auto ic : {1, 4, 7}) {
       for (auto ih : {1, 4, 7}) {
         for (auto iw : {1, 4, 7}) {
-          // npu softmax exists bugs when axis is 2 and iw > 1
           for (auto axis : {-3, -1, 0, 1, 2, 3}) {
+            // npu softmax exists bugs when axis is 2 and iw > 1
             if (axis == 2 && iw > 1) continue;
             test_softmax(bs, ic, ih, iw, axis);
           }

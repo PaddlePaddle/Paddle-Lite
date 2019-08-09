@@ -103,11 +103,12 @@ void test_batch_norm(
   variance->Resize({ic});
 
   // initialize input&output data
-  FillTensor<float>(x);
-  FillTensor<float>(scale);
-  FillTensor<float>(bias);
-  FillTensor<float>(mean);
-  FillTensor<float>(variance);
+  FillTensor<float, int>(x);
+  FillTensor<float, int>(scale);
+  FillTensor<float, int>(bias);
+  FillTensor<float, int>(mean);
+  // variance > 0
+  FillTensor<float, int>(variance, 1.f, 5.f);
 
   // initialize op desc
   cpp::OpDesc opdesc;

@@ -30,6 +30,7 @@ namespace bridge {
 node_map_type ElementwiseConverter(
     const std::shared_ptr<lite::OpLite> elementwise_op,
     const node_map_type& inputs_map) {
+  LOG(INFO) << "converting elementwise...";
   lite::Scope* scope = elementwise_op->scope();
   const lite::OpInfo* op_info = elementwise_op->op_info();
   std::shared_ptr<ge::op::Eltwise> output_node =

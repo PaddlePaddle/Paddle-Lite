@@ -30,6 +30,7 @@ namespace bridge {
 node_map_type BatchNormConverter(
     const std::shared_ptr<lite::OpLite> batch_norm_op,
     const node_map_type& inputs_map) {
+  LOG(INFO) << "converting batchnorm...";
   lite::Scope* scope = batch_norm_op->scope();
   const lite::OpInfo* op_info = batch_norm_op->op_info();
 
@@ -39,24 +40,28 @@ node_map_type BatchNormConverter(
 
   auto scale_var_name = op_info->Input("Scale").front();
   lite::Tensor* scale = scope->FindVar(scale_var_name)->GetMutable<Tensor>();
-  ge::op::Const npu_scale =
-      ge::op::Const(scale_var_name).set_attr_value(CvtFromLiteTensor(scale));
+  auto npu_scale = std::make_shared<ge::op::Const>(scale_var_name);
+  npu_scale->set_attr_value(CvtFromLiteTensor(scale));
+  OpList::Global().add(npu_scale);
 
   auto bias_var_name = op_info->Input("Bias").front();
   lite::Tensor* bias = scope->FindVar(bias_var_name)->GetMutable<Tensor>();
-  ge::op::Const npu_bias =
-      ge::op::Const(bias_var_name).set_attr_value(CvtFromLiteTensor(bias));
+  auto npu_bias = std::make_shared<ge::op::Const>(bias_var_name);
+  npu_bias->set_attr_value(CvtFromLiteTensor(bias));
+  OpList::Global().add(npu_bias);
 
   auto mean_var_name = op_info->Input("Mean").front();
   lite::Tensor* mean = scope->FindVar(mean_var_name)->GetMutable<Tensor>();
-  ge::op::Const npu_mean =
-      ge::op::Const(mean_var_name).set_attr_value(CvtFromLiteTensor(mean));
+  auto npu_mean = std::make_shared<ge::op::Const>(mean_var_name);
+  npu_mean->set_attr_value(CvtFromLiteTensor(mean));
+  OpList::Global().add(npu_mean);
 
   auto variance_var_name = op_info->Input("Variance").front();
   lite::Tensor* variance =
       scope->FindVar(variance_var_name)->GetMutable<Tensor>();
-  ge::op::Const npu_variance = ge::op::Const(variance_var_name)
-                                   .set_attr_value(CvtFromLiteTensor(variance));
+  auto npu_variance = std::make_shared<ge::op::Const>(variance_var_name);
+  npu_variance->set_attr_value(CvtFromLiteTensor(variance));
+  OpList::Global().add(npu_variance);
 
   float npu_momentum = op_info->GetAttr<float>("momentum");
   float npu_epsilon = op_info->GetAttr<float>("epsilon");
@@ -64,10 +69,10 @@ node_map_type BatchNormConverter(
   bool npu_use_global_stats = op_info->GetAttr<bool>("use_global_stats");
 
   output_node->set_input_x(*inputs_map.at(x_var_name));
-  output_node->set_input_scale(npu_scale);
-  output_node->set_input_b(npu_bias);
-  output_node->set_input_mean(npu_mean);
-  output_node->set_input_variance(npu_variance);
+  output_node->set_input_scale(*npu_scale);
+  output_node->set_input_b(*npu_bias);
+  output_node->set_input_mean(*npu_mean);
+  output_node->set_input_variance(*npu_variance);
   output_node->set_attr_momentum(npu_momentum);
   output_node->set_attr_epsilon(npu_epsilon);
   output_node->set_attr_mode(npu_mode);

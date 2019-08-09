@@ -101,20 +101,6 @@ ge::TensorPtr CvtFromLiteTensor(lite::Tensor* in_tensor,
   ge::DataType out_ptype = PrecisionConverter(in_ptype);
   ge::Format out_ltype = DataLayoutConverter(in_ltype);
 
-  // if (out_ltype == ge::FORMAT_NCHW) {
-  //   if (dims.size() == 1) {
-  //     dims.push_back(dims[0]);
-  //     dims[0] = 1;
-  //     dims.push_back(1);
-  //     dims.push_back(1);
-  //   } else if (dims.size() < 4) {
-  //     for (size_t i = 4 - dims.size(); i > 0; --i) {
-  //       dims.push_back(1);
-  //     }
-  //   }
-  //   CHECK_EQ(dims.size(), 4);
-  // }
-
   ge::TensorDesc out_desc(ge::Shape(out_shape), out_ltype, out_ptype);
   CHECK_EQ(out_ltype, ge::FORMAT_NCHW);
 
