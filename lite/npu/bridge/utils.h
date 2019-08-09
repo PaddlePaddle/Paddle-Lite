@@ -73,6 +73,10 @@ std::shared_ptr<ge::Operator> CvtNode2Tensor(const lite::mir::Node* arg_node);
 std::shared_ptr<ge::Operator> CvtNode(lite::mir::Node* var_node,
                                       const Scope* scope);
 
+bool HasInputArg(const OpInfo* op_info,
+                 const Scope* scope,
+                 const std::string& argname);
+
 }  // namespace bridge
 }  // namespace npu
 }  // namespace lite

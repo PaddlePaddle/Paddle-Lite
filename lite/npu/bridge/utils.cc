@@ -19,6 +19,7 @@
 #include <unordered_map>
 #include "ai_ddk_lib/include/graph/op/all_ops.h"  // for ge::op::Data
 #include "ai_ddk_lib/include/graph/tensor.h"      // for ge::TensorUtils
+#include "lite/core/op_lite.h"
 
 namespace paddle {
 namespace lite {
@@ -166,6 +167,24 @@ std::shared_ptr<ge::Operator> CvtNode(lite::mir::Node* var_node,
     return data;
   }
   return nullptr;
+}
+
+bool HasInputArg(const OpInfo* op_info,
+                 const Scope* scope,
+                 const std::string& argname) {
+  auto iarg_names = op_info->input_argnames();
+  if (std::find(iarg_names.begin(), iarg_names.end(), argname) !=
+      iarg_names.end()) {
+    auto inputs = op_info->Input(argname);
+    if (inputs.empty()) {
+      return false;
+    }
+    auto var_name = inputs.front();
+    auto var = scope->FindVar(var_name);
+    return var != nullptr;
+  } else {
+    return false;
+  }
 }
 
 }  // namespace bridge

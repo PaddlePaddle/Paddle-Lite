@@ -17,6 +17,7 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <unordered_map>
 #include <unordered_set>
 #include <vector>
 #include "lite/core/mir/pass.h"
@@ -52,6 +53,15 @@ class SubgraphProgramPass : public ProgramPass {
   // std::unique_ptr<SSAGraph> GenerateFusedGraph(const
   // std::unique_ptr<SSAGraph>& graph, int sub_num);
   void ChangeAllOutConnectedID(Node* node, int to_id, int from_id = 0);
+
+ private:
+  // {1: {nodes2rm_in_subgraph1, ...},
+  //  2: {nodes2rm_in_subgraph2, ...}}
+  std::unordered_map<int, std::unordered_set<const Node*>> nodes2rm_;
+  // inputs nodes
+  std::unordered_map<int, std::unordered_set<const Node*>> i_nodes_;
+  // outputs nodes
+  std::unordered_map<int, std::unordered_set<const Node*>> o_nodes_;
 };
 
 }  // namespace subgraph
