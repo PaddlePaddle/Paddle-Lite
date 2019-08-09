@@ -45,6 +45,8 @@ class DDimLite {
   DDimLite() = default;
 
   explicit DDimLite(const std::vector<value_type> &x) { ConstructFrom(x); }
+  // DDimLite(std::initializer_list<value_type> init_list) :
+  // DDimLite(std::vector<value_type>(init_list)) {}
 
   void ConstructFrom(const std::vector<value_type> &x) { data_ = x; }
 
@@ -62,7 +64,7 @@ class DDimLite {
 
   DDimLite Slice(int start, int end) const;
 
-  DDimLite Flattern2D(int col) const {
+  DDimLite Flatten2D(int col) const {
     return DDimLite(std::vector<value_type>(
         {Slice(0, col).production(), Slice(col, size()).production()}));
   }
@@ -122,6 +124,7 @@ class TensorLite {
 
   const LoD &lod() const { return lod_; }
   LoD *mutable_lod() { return &lod_; }
+  void set_lod(const LoD &lod) { lod_ = lod; }
 
   // T is the data type and R is the return type
   // For OpenCL, the return type can be cl::Buffer
@@ -139,11 +142,16 @@ class TensorLite {
   void *mutable_data(size_t memory_size);
   void *mutable_data(TargetType target, size_t memory_size);
 
-  const void *raw_data() const { return buffer_->data(); }
+  const void *raw_data() const {
+    return static_cast<char *>(
+        (static_cast<char *>(buffer_->data()) + offset_));
+  }
 
   size_t data_size() const { return this->dims().production(); }
 
   size_t memory_size() const { return memory_size_; }
+
+  size_t offset() const { return offset_; }
 
   bool IsInitialized() const { return buffer_->data(); }
 
@@ -154,7 +162,10 @@ class TensorLite {
 
   TargetType target() const { return target_; }
 
-  friend STL::ostream &operator<<(STL::ostream &os, const TensorLite &tensor) {
+  template <typename T>
+  TensorLite Slice(int64_t begin, int64_t end) const;
+
+  friend STL::ostream &operator<<(std::ostream &os, const TensorLite &tensor) {
     os << "Tensor:" << '\n';
     os << "dim: " << tensor.dims() << '\n';
     for (int i = 0; i < tensor.dims().production(); i++) {
@@ -170,6 +181,9 @@ class TensorLite {
   std::shared_ptr<Buffer> buffer_;
   LoD lod_;
   size_t memory_size_{};
+
+  /// @brief Buffer may be shared with other tensors
+  size_t offset_{0};
 };
 
 template <typename T, typename R>
@@ -185,6 +199,19 @@ R *TensorLite::mutable_data(TargetType target) {
   memory_size_ = dims_.production() * sizeof(T);
   buffer_->ResetLazy(target, memory_size());
   return static_cast<R *>(buffer_->data());
+}
+
+template <typename T>
+TensorLite TensorLite::Slice(int64_t begin, int64_t end) const {
+  int64_t base = numel() / dims_[0];
+
+  TensorLite dst;
+  dst.buffer_ = buffer_;
+  dst.target_ = target_;
+  auto dst_dims = dims_;
+  dst_dims[0] = end - begin;
+  dst.Resize(dst_dims);
+  dst.offset_ = offset_ + static_cast<size_t>(begin * base) * sizeof(T);
 }
 
 template <typename TensorT>

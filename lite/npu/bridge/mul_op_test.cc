@@ -35,8 +35,8 @@ void mul_ref(const std::shared_ptr<operators::MulOpLite> op) {
   auto x_data = x->mutable_data<float>();
   auto y_data = y->mutable_data<float>();
   auto out_data = out->mutable_data<float>();
-  auto x_mat_dims = x->dims().Flattern2D(x_num_col_dims);
-  auto y_mat_dims = y->dims().Flattern2D(y_num_col_dims);
+  auto x_mat_dims = x->dims().Flatten2D(x_num_col_dims);
+  auto y_mat_dims = y->dims().Flatten2D(y_num_col_dims);
   CHECK_EQ(x_mat_dims[1], y_mat_dims[0]);
   const int M = x_mat_dims[0];
   const int K = x_mat_dims[1];
@@ -69,6 +69,15 @@ void test_mul(const std::vector<int64_t>& x_shape,
   auto* out = scope.Var(out_var_name)->GetMutable<Tensor>();
   auto* out_ref = scope.Var(out_ref_var_name)->GetMutable<Tensor>();
   x->Resize(x_shape);
+
+  // get y shape
+  auto x_mat_dims = x->dims().Flatten2D(x_num_col_dims);
+  std::vector<int64_t> y_shape;
+  for (int i = 0; i < y_num_col_dims - 1; i++) {
+    y_shape.push_back(1);
+  }
+  y_shape.push_back(x_mat_dims[1]);
+  y_shape.push_back(o);
   y->Resize(y_shape);
 
   FillTensor<float, int>(x);

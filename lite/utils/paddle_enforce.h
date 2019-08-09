@@ -33,3 +33,7 @@
   CHECK_GE((a), (b)) << paddle::lite::string_format("" __VA_ARGS__);
 #define PADDLE_ENFORCE_GT(a, b, ...) \
   CHECK_GT((a), (b)) << paddle::lite::string_format("" __VA_ARGS__);
+
+#ifndef PADDLE_THROW
+#define PADDLE_THROW
+#endif

@@ -510,7 +510,7 @@ void BenchKernelVBroadcast() {
 #define BenchKernelGRUHtPart1 BenchKernelGRU
 #define BenchKernelGRUHtPart2 BenchKernelGRU
 
-using CPUPlace = paddle::fluid::CPUPlace;
+using CPUPlace = paddle::lite::fluid::CPUPlace;
 
 #define BENCH_FP32_CPU(name)                                \
   BENCH_JITKERNEL(name, FP32, CPU) {                        \

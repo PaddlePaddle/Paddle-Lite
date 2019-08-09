@@ -65,7 +65,7 @@ std::vector<int> TestSizes() {
 }
 
 namespace jit = paddle::lite::jit;
-using CPUPlace = paddle::fluid::CPUPlace;
+using CPUPlace = paddle::lite::fluid::CPUPlace;
 
 template <typename KernelTuple,
           typename PlaceType,

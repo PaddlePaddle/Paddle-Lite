@@ -42,7 +42,7 @@ bool FcOpLite::CheckShape() const {
   CHECK_GT_OR_FALSE(input_dims.size(),
                     static_cast<size_t>(param_.in_num_col_dims));
 
-  param_.in_mat_dims = input_dims.Flattern2D(param_.in_num_col_dims);
+  param_.in_mat_dims = input_dims.Flatten2D(param_.in_num_col_dims);
   // CHECK_EQ_OR_FALSE(param_.in_mat_dims[1], w_dims[0]);
 
   return true;

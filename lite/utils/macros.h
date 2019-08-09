@@ -39,3 +39,17 @@
 #define UNLIKELY(x) (x)
 #endif
  */
+
+#ifdef __CUDACC__
+#define HOSTDEVICE __host__ __device__
+#define DEVICE __device__
+#define HOST __host__
+#else
+#define HOSTDEVICE
+#define DEVICE
+#define HOST
+#endif
+
+#if defined(__FLT_MAX__)
+#define FLT_MAX __FLT_MAX__
+#endif  // __FLT_MAX__
