@@ -60,7 +60,7 @@ void TypeLayoutTransformPass::ComplementInputs(SSAGraph* graph,
   CHECK(inst.op_info()->GetInputArgname(in_arg_name, &tmp));
   auto decl_arg_type = inst.picked_kernel().GetInputDeclType(tmp);
   CHECK(in->AsArg().type);
-  if (!DataLayoutCompatibleTo(*in->AsArg().type, *decl_arg_type)) {
+  if (!DataLayoutCompatible(*in->AsArg().type, *decl_arg_type)) {
     VLOG(4) << "found Layout unmatched tensor: " << in->AsArg().name
             << " for kernel " << inst.op()->DebugString() << " "
             << *in->AsArg().type << " -> " << *decl_arg_type;
@@ -107,14 +107,11 @@ void TypeLayoutTransformPass::AddLayoutInst(
   layout_op->Attach(op_desc, inst_node->AsStmt().op()->scope());
   auto kernels = layout_op->CreateKernels(valid_places);
   std::vector<std::unique_ptr<KernelBase>> selected_kernels;
-  // fix(MyPandaShaoxiang): select kernel that input_dcl_type same as in.type
   bool is_found = false;
   for (auto& kernel : kernels) {
     const Type* in_arg_ty = kernel->GetInputDeclType("Input");
     const Type* out_arg_ty = kernel->GetOutputDeclType("Out");
-    if (in_arg_ty->precision() == from.precision() &&
-        in_arg_ty->target() == from.target() &&
-        in_arg_ty->layout() == from.layout()) {
+    if (TypeCompatible(*in_arg_ty, from)) {
       is_found = true;
       selected_kernels.emplace_back(std::move(kernel));
       // we pick the kernel
