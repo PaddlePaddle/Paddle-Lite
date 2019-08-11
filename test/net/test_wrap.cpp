@@ -18,29 +18,31 @@ limitations under the License. */
 #include "../test_include.h"
 #include "io/paddle_mobile_wrap.h"
 
-int main(int argc, char* argv[]) {
-    paddle_mobile::wrap::Net<paddle_mobile::wrap::CPU> *net = new paddle_mobile::wrap::Net<paddle_mobile::wrap::CPU>();
-    net->Load("./checked_model/model", "./checked_model/params", false, false, 1, true);
-    int size = 1 * 3 * 64 * 64;
-    float *data = new float[size];
-    for (int i = 0; i < size; i++) {
-        data[i] = 0.0;
-    }
-    std::vector<int64_t> shape{1, 3, 64, 64};
-    paddle_mobile::wrap::Tensor input(data, paddle_mobile::wrap::make_ddim(shape));
-    net->Feed("data", input);
-    net->Predict();
-    auto output = net->Fetch("save_infer_model/scale_0");
-    int output_size = 1;
-    std::cout << "output shape: ";
-    for (int i = 0; i < output->dims().size(); i++) {
-        std::cout << output->dims()[i] << " ";
-        output_size *= output->dims()[i];
-    }
-    std::cout << std::endl;
-    std::cout << "output data: ";
-    for (int i = 0; i < output_size; i++) {
-        std::cout << output->data<float>()[i] << std::endl;
-    }
+int main(int argc, char *argv[]) {
+  paddle_mobile::wrap::Net<paddle_mobile::wrap::CPU> *net =
+      new paddle_mobile::wrap::Net<paddle_mobile::wrap::CPU>();
+  net->Load("./checked_model/model", "./checked_model/params", false, false, 1,
+            true);
+  int size = 1 * 3 * 64 * 64;
+  float *data = new float[size];
+  for (int i = 0; i < size; i++) {
+    data[i] = 0.0;
+  }
+  std::vector<int64_t> shape{1, 3, 64, 64};
+  paddle_mobile::wrap::Tensor input(data,
+                                    paddle_mobile::wrap::make_ddim(shape));
+  net->Feed("data", input);
+  net->Predict();
+  auto output = net->Fetch("save_infer_model/scale_0");
+  int output_size = 1;
+  std::cout << "output shape: ";
+  for (int i = 0; i < output->dims().size(); i++) {
+    std::cout << output->dims()[i] << " ";
+    output_size *= output->dims()[i];
+  }
+  std::cout << std::endl;
+  std::cout << "output data: ";
+  for (int i = 0; i < output_size; i++) {
+    std::cout << output->data<float>()[i] << std::endl;
+  }
 }
-

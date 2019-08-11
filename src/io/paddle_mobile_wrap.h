@@ -1,11 +1,25 @@
+/* Copyright (c) 2018 PaddlePaddle Authors. All Rights Reserved.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License. */
+
 #pragma once
 
+#include <cstdint>
 #include <map>
 #include <string>
 #include <unordered_map>
 #include <utility>
 #include <vector>
-#include <cstdint>
 
 namespace paddle_mobile {
 namespace wrap {
@@ -29,26 +43,26 @@ typedef DeviceType<kGPU_CL> GPU_CL;
 
 // ddim class
 class DDim {
-    public:
-        int size();
-        int64_t &operator[](int idx);
-        int64_t operator[](int idx) const;
+ public:
+  int size();
+  int64_t &operator[](int idx);
+  int64_t operator[](int idx) const;
 
-        std::vector<int64_t> dims;
+  std::vector<int64_t> dims;
 };
 DDim make_ddim(const std::vector<int64_t> &dims);
 
 // tensor class
 class Tensor {
-    public:
-        Tensor(float *data, DDim ddim);
+ public:
+  Tensor(float *data, DDim ddim);
 
-        template <typename T>
-        float *data() const;
-        DDim dims() const;
+  template <typename T>
+  float *data() const;
+  DDim dims() const;
 
-        float *data_;
-        DDim ddim_;
+  float *data_;
+  DDim ddim_;
 };
 
 // pm status
@@ -67,28 +81,29 @@ enum PMStatus {
 // net class
 template <typename Device>
 class Net {
-    public:
-        Net();
-        ~Net();
-        void SetThreadNum(int thread_num);
-        PMStatus Load(const std::string &dirname, const bool optimize = false,
-                      const bool quantification = false, const int batch_size = 1,
-                      const bool lod_mode = false);
-        PMStatus Load(const std::string &model_path, const std::string &para_path,
+ public:
+  Net();
+  ~Net();
+  void SetThreadNum(int thread_num);
+  PMStatus Load(const std::string &dirname, const bool optimize = false,
+                const bool quantification = false, const int batch_size = 1,
+                const bool lod_mode = false);
+  PMStatus Load(const std::string &model_path, const std::string &para_path,
                 const bool optimize = false, const bool quantification = false,
                 const int batch_size = 1, const bool lod_mode = false);
-        bool LoadCombinedMemory(size_t model_len, const uint8_t *model_buf,
-                                size_t combined_params_len,
-                                uint8_t *combined_params_buf, bool optimize = false,
-                                bool quantification = false, int batch_size = 1,
-                                bool lod_mode = false);
-        PMStatus Predict(const Tensor &input);
-        std::vector<float> Predict(const std::vector<float> &input, const std::vector<int64_t> &dims);
-        PMStatus Predict();
-        void Feed(const std::string &var_name, const Tensor &input);
-        std::shared_ptr<Tensor> Fetch(const std::string &var_name);
-        void *engine_ = nullptr;
+  bool LoadCombinedMemory(size_t model_len, const uint8_t *model_buf,
+                          size_t combined_params_len,
+                          uint8_t *combined_params_buf, bool optimize = false,
+                          bool quantification = false, int batch_size = 1,
+                          bool lod_mode = false);
+  PMStatus Predict(const Tensor &input);
+  std::vector<float> Predict(const std::vector<float> &input,
+                             const std::vector<int64_t> &dims);
+  PMStatus Predict();
+  void Feed(const std::string &var_name, const Tensor &input);
+  std::shared_ptr<Tensor> Fetch(const std::string &var_name);
+  void *engine_ = nullptr;
 };
 
-} // namespace wrap
-} // namespace paddle_mobile
+}  // namespace wrap
+}  // namespace paddle_mobile
