@@ -132,7 +132,7 @@ class SequencePoolComputeTester : public arena::TestCase {
     op_desc->SetType("sequence_pool");
     op_desc->SetInput("X", {input_});
     op_desc->SetOutput("Out", {output_});
-    op_desc->SetAttr("pool_type", pool_type_);
+    op_desc->SetAttr("pooltype", pool_type_);
   }
 
   void PrepareData() override {
