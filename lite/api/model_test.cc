@@ -50,7 +50,8 @@ void OutputOptModel(const std::string& load_model_dir,
   if (ret == 0) {
     LOG(INFO) << "delete old optimized model " << save_optimized_model_dir;
   }
-  predictor->SaveOptimizedModel(save_optimized_model_dir);
+  predictor->SaveOptimizedModel(save_optimized_model_dir,
+                                LiteModelType::kNaiveBuffer);
   LOG(INFO) << "Load model from " << load_model_dir;
   LOG(INFO) << "Save optimized model to " << save_optimized_model_dir;
 }
