@@ -28,6 +28,7 @@ namespace paddle {
 namespace lite_api {
 
 using shape_t = std::vector<int64_t>;
+using lod_t = std::vector<std::vector<uint64_t>>;
 
 enum class LiteModelType { kProtobuf = 0, kNaiveBuffer, UNK };
 
@@ -46,6 +47,12 @@ struct LITE_API Tensor {
 
   /// Shape of the tensor.
   shape_t shape() const;
+
+  // LoD of the tensor
+  lod_t lod() const;
+
+  // Set LoD of the tensor
+  void SetLoD(const lod_t& lod);
 
  private:
   void* raw_tensor_;
