@@ -1,4 +1,4 @@
 *
 !run.py
 !.gitignore
-info.txt
+!/model-encrypt-tool

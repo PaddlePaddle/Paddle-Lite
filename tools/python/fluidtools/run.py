@@ -17,6 +17,8 @@ fast_check = False
 is_sample_step = False
 sample_step = 1
 sample_num = 20
+need_encrypt = False
+checked_encrypt_model_path = "checked_encrypt_model"
 
 np.set_printoptions(linewidth=150)
 
@@ -106,6 +108,27 @@ def resave_model(feed_kv):
     else:
         pp_green("has not found wrong shape", 1)
     pp_green("new model is saved into directory 【{}】".format(checked_model_path), 1)
+
+# 分别加密model和params，加密key使用同一个
+def encrypt_model():
+    if not need_encrypt:
+        return
+    pp_yellow(dot + dot + " encrypting model")
+    if not os.path.exists(checked_encrypt_model_path):
+        os.mkdir(checked_encrypt_model_path)
+    res = sh("model-encrypt-tool/enc_key_gen -l 20 -c 232")
+    lines = res.split("\n")
+
+    for line in lines:
+        if line.startswith("key:"):
+            line = line.replace('key:','')
+            sh("model-encrypt-tool/enc_model_gen -k '{}' -c 2 -i checked_model/model -o "
+               "checked_model/model.ml".format(line))
+            sh("model-encrypt-tool/enc_model_gen -k '{}' -c 2 -i checked_model/params  -o checked_model/params.ml".format(line))
+            pp_green("model has been encrypted, key is : {}".format(line), 1)
+            sh("mv {} {}".format(checked_model_path + "/*.ml", checked_encrypt_model_path))
+            return
+    pp_red("model encrypt error", 1)
 
 # 生成feed的key-value对
 def gen_feed_kv():
@@ -413,6 +436,8 @@ def main():
     # 重新保存模型
     pp_yellow(dot + dot + " checking model correctness")
     resave_model(feed_kv=feed_kv)
+    # 输出加密模型
+    encrypt_model()
     # 输出所有中间结果
     pp_yellow(dot + dot + " checking output result of every op")
     save_all_op_output(feed_kv=feed_kv)
