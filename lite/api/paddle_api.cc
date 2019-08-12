@@ -54,6 +54,10 @@ shape_t Tensor::shape() const {
   return ctensor(raw_tensor_)->dims().Vectorize();
 }
 
+lod_t Tensor::lod() const { return ctensor(raw_tensor_)->lod(); }
+
+void Tensor::SetLoD(const lod_t &lod) { tensor(raw_tensor_)->set_lod(lod); }
+
 void PaddlePredictor::SaveOptimizedModel(const std::string &model_dir,
                                          LiteModelType model_type) {
   LOG(FATAL)
