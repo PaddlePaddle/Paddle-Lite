@@ -19,7 +19,7 @@ limitations under the License. */
 #include "io/paddle_mobile_wrap.h"
 
 int main(int argc, char *argv[]) {
-#if defined(PADDLE_MOBILE_FPGA)
+#ifndef PADDLE_MOBILE_FPGA
   paddle_mobile::wrap::Net<paddle_mobile::wrap::CPU> *net =
       new paddle_mobile::wrap::Net<paddle_mobile::wrap::CPU>();
   net->Load("./checked_model/model", "./checked_model/params", false, false, 1,

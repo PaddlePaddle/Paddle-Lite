@@ -20,7 +20,7 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace wrap {
 
-#if defined(PADDLE_MOBILE_FPGA)
+#ifndef PADDLE_MOBILE_FPGA
 
 // ddim class
 int DDim::size() { return dims.size(); }
