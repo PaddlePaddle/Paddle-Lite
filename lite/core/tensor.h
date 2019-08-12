@@ -165,7 +165,7 @@ class TensorLite {
   template <typename T>
   TensorLite Slice(int64_t begin, int64_t end) const;
 
-  friend STL::ostream &operator<<(std::ostream &os, const TensorLite &tensor) {
+  friend STL::ostream &operator<<(STL::ostream &os, const TensorLite &tensor) {
     os << "Tensor:" << '\n';
     os << "dim: " << tensor.dims() << '\n';
     for (int i = 0; i < tensor.dims().production(); i++) {
