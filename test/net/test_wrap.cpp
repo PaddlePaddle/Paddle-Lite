@@ -19,6 +19,7 @@ limitations under the License. */
 #include "io/paddle_mobile_wrap.h"
 
 int main(int argc, char *argv[]) {
+#if defined(PADDLE_MOBILE_FPGA)
   paddle_mobile::wrap::Net<paddle_mobile::wrap::CPU> *net =
       new paddle_mobile::wrap::Net<paddle_mobile::wrap::CPU>();
   net->Load("./checked_model/model", "./checked_model/params", false, false, 1,
@@ -45,4 +46,5 @@ int main(int argc, char *argv[]) {
   for (int i = 0; i < output_size; i++) {
     std::cout << output->data<float>()[i] << std::endl;
   }
+#endif
 }

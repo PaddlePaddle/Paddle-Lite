@@ -24,6 +24,8 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace wrap {
 
+#if !defined(PADDLE_MOBILE_FPGA)
+
 // device type
 enum DeviceTypeEnum {
   kINVALID = -1,
@@ -104,6 +106,8 @@ class Net {
   std::shared_ptr<Tensor> Fetch(const std::string &var_name);
   void *engine_ = nullptr;
 };
+
+#endif
 
 }  // namespace wrap
 }  // namespace paddle_mobile

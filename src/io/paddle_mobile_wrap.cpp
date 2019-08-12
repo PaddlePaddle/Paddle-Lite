@@ -20,6 +20,8 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace wrap {
 
+#if defined(PADDLE_MOBILE_FPGA)
+
 // ddim class
 int DDim::size() { return dims.size(); }
 
@@ -207,6 +209,8 @@ Net<Device>::~Net() {
 
 template class Net<CPU>;
 template float *Tensor::data<float>() const;
+
+#endif
 
 }  // namespace wrap
 }  // namespace paddle_mobile
