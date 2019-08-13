@@ -185,6 +185,7 @@ class ParamDesc : public StructBuilder {
  public:
   using lod_type = ListBuilder<ListBuilder<UInt64Builder>>;
   explicit ParamDesc(BinaryTable* table) : StructBuilder(table) {
+    NewStr("name");
     NewUInt32("model_version");
     NewUInt64("lod_level");
     New<lod_type>("lod");
@@ -193,6 +194,8 @@ class ParamDesc : public StructBuilder {
     New<ListBuilder<CharBuilder>>("data");
   }
 };
+
+using CombinedParamsDesc = ListBuilder<ParamDesc>;
 
 }  // namespace proto
 }  // namespace naive_buffer
