@@ -31,6 +31,9 @@ template <>
 void ScaleKernel<CPU, float>::Compute(const ScaleParam<CPU> &param) {
   const auto input = param.InputX();
   auto output = param.Out();
+  if (input->dims() != output->dims()) {
+    output->Resize(input->dims());
+  }
   const float scale = param.Scale();
   const float bias = param.Bias();
   if (input->type() == type_id<int64_t>().hash_code()) {
