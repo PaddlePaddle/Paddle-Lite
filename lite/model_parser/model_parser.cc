@@ -16,10 +16,12 @@
 #include <algorithm>
 #include <fstream>
 #include <limits>
+#include <set>
 #include "lite/core/scope.h"
 #include "lite/core/tensor.h"
 #include "lite/core/variable.h"
 #include "lite/model_parser/desc_apis.h"
+#include "lite/model_parser/naive_buffer/combined_params_desc.h"
 #include "lite/model_parser/naive_buffer/param_desc.h"
 #include "lite/model_parser/naive_buffer/program_desc.h"
 #include "lite/model_parser/naive_buffer/var_desc.h"
@@ -316,18 +318,19 @@ void SerializeTensor(std::ostream &os,
 }
 
 /// For navie buffer
-void SaveParamNaive(const std::string &path,
-                    const lite::Scope &scope,
-                    const std::string &var_name) {
+void SetParamInfoNaive(naive_buffer::ParamDesc *param_desc,
+                       const lite::Scope &scope,
+                       const std::string &var_name) {
+  CHECK(param_desc);
+  auto &desc = *param_desc;
+
   // the 1st field, uint32_t version
   constexpr uint32_t version = 0;
 
   auto *var = scope.FindVar(var_name);
   const auto &tensor = var->Get<lite::Tensor>();
 
-  naive_buffer::BinaryTable table;
-  naive_buffer::proto::ParamDesc pt_desc(&table);
-  naive_buffer::ParamDesc desc(&pt_desc);
+  desc.SetName(var_name);
 
   desc.SetModelVersion(version);
   desc.SetTensorVersion(version);
@@ -355,18 +358,50 @@ void SaveParamNaive(const std::string &path,
   {
     desc.SetData<float>(tensor.data<float>(), tensor.data_size());
   }
+}
+
+void SaveParamNaive(const std::string &path,
+                    const lite::Scope &scope,
+                    const std::string &var_name) {
+  naive_buffer::BinaryTable table;
+  naive_buffer::proto::ParamDesc pt_desc(&table);
+  naive_buffer::ParamDesc desc(&pt_desc);
+
+  SetParamInfoNaive(&desc, scope, var_name);
 
   // Save param
   pt_desc.Save();
   table.SaveToFile(path);
 }
 
+void SaveCombinedParamsNaive(const std::string &path,
+                             const lite::Scope &exec_scope,
+                             const cpp::ProgramDesc &cpp_prog) {
+  naive_buffer::BinaryTable table;
+  naive_buffer::proto::CombinedParamsDesc pt_desc(&table);
+  naive_buffer::CombinedParamsDesc desc(&pt_desc);
+
+  auto prog = cpp_prog;
+  auto &main_block_desc = *prog.GetBlock<cpp::BlockDesc>(0);
+  for (size_t i = 0; i < main_block_desc.VarsSize(); ++i) {
+    auto &var = *main_block_desc.GetVar<cpp::VarDesc>(i);
+    if (var.Name() == "feed" || var.Name() == "fetch" || !var.Persistable())
+      continue;
+    naive_buffer::ParamDesc param_desc(desc.AddParam());
+    SetParamInfoNaive(&param_desc, exec_scope, var.Name());
+  }
+
+  pt_desc.Save();
+  table.SaveToFile(path);
+}
+
 void SaveModelNaive(const std::string &model_dir,
                     const Scope &exec_scope,
-                    const cpp::ProgramDesc &cpp_prog) {
+                    const cpp::ProgramDesc &cpp_prog,
+                    bool combined) {
   MkDirRecur(model_dir);
   // Save program
-  const std::string prog_path = model_dir + "/__model__";
+  const std::string prog_path = model_dir + "/__model__.nb";
   naive_buffer::BinaryTable table;
   naive_buffer::proto::ProgramDesc nb_proto_prog(&table);
   naive_buffer::ProgramDesc nb_prog(&nb_proto_prog);
@@ -376,14 +411,19 @@ void SaveModelNaive(const std::string &model_dir,
 
   // Save Params
   // NOTE: Only main block be used now.
-  auto prog = cpp_prog;
-  auto &main_block_desc = *prog.GetBlock<cpp::BlockDesc>(0);
-  for (size_t i = 0; i < main_block_desc.VarsSize(); ++i) {
-    auto &var = *main_block_desc.GetVar<cpp::VarDesc>(i);
-    if (var.Name() == "feed" || var.Name() == "fetch" || !var.Persistable())
-      continue;
-    const std::string path = model_dir + "/" + var.Name();
-    SaveParamNaive(path, exec_scope, var.Name());
+  if (combined) {
+    const std::string combined_params_path = model_dir + "/param.nb";
+    SaveCombinedParamsNaive(combined_params_path, exec_scope, cpp_prog);
+  } else {
+    auto prog = cpp_prog;
+    auto &main_block_desc = *prog.GetBlock<cpp::BlockDesc>(0);
+    for (size_t i = 0; i < main_block_desc.VarsSize(); ++i) {
+      auto &var = *main_block_desc.GetVar<cpp::VarDesc>(i);
+      if (var.Name() == "feed" || var.Name() == "fetch" || !var.Persistable())
+        continue;
+      const std::string path = model_dir + "/" + var.Name() + ".nb";
+      SaveParamNaive(path, exec_scope, var.Name());
+    }
   }
   VLOG(4) << "Save naive buffer model in '" << model_dir << "'' successfully";
 }
@@ -398,18 +438,15 @@ void SetTensorDataNaive(T *out, size_t size, const std::vector<T> &src) {
   }
 }
 
-void LoadParamNaive(const std::string &path,
-                    lite::Scope *scope,
-                    const std::string &name) {
+void GetParamInfoNaive(const naive_buffer::ParamDesc &desc,
+                       lite::Scope *scope,
+                       const std::string &name) {
   CHECK(scope);
-  auto *tensor = scope->Var(name)->GetMutable<lite::Tensor>();
+  CHECK_EQ(desc.Name(), name)
+      << "Var name not equal: ParamDesc.name=" << desc.Name()
+      << "vs filename=" << name;
 
-  // Load param
-  naive_buffer::BinaryTable table;
-  table.LoadFromFile(path);
-  naive_buffer::proto::ParamDesc pt_desc(&table);
-  pt_desc.Load();
-  naive_buffer::ParamDesc desc(&pt_desc);
+  auto *tensor = scope->Var(name)->GetMutable<lite::Tensor>();
 
   VLOG(3) << "model version " << desc.ModelVersion();
   CHECK_EQ(desc.TensorVersion(), 0U) << "Only version 0 is supported";
@@ -442,15 +479,56 @@ void LoadParamNaive(const std::string &path,
   }
 }
 
+void LoadParamNaive(const std::string &path,
+                    lite::Scope *scope,
+                    const std::string &name) {
+  // Load param
+  naive_buffer::BinaryTable table;
+  table.LoadFromFile(path);
+  naive_buffer::proto::ParamDesc pt_desc(&table);
+  pt_desc.Load();
+  naive_buffer::ParamDesc desc(&pt_desc);
+  GetParamInfoNaive(desc, scope, name);
+}
+
+void LoadCombinedParamsNaive(const std::string &path,
+                             lite::Scope *scope,
+                             const cpp::ProgramDesc &cpp_prog) {
+  naive_buffer::BinaryTable table;
+  table.LoadFromFile(path);
+  naive_buffer::proto::CombinedParamsDesc pt_desc(&table);
+  pt_desc.Load();
+  naive_buffer::CombinedParamsDesc desc(&pt_desc);
+
+  std::set<std::string> param_names;
+  for (size_t i = 0; i < desc.ParamsSize(); ++i) {
+    naive_buffer::ParamDesc param_desc(desc.GetParam(i));
+    GetParamInfoNaive(param_desc, scope, param_desc.Name());
+    param_names.insert(param_desc.Name());
+  }
+
+  // Check all params loaded
+  auto prog = cpp_prog;
+  auto &main_block_desc = *prog.GetBlock<cpp::BlockDesc>(0);
+  for (size_t i = 0; i < main_block_desc.VarsSize(); ++i) {
+    auto &var = *main_block_desc.GetVar<cpp::VarDesc>(i);
+    if (var.Name() == "feed" || var.Name() == "fetch" || !var.Persistable())
+      continue;
+    CHECK(param_names.count(var.Name())) << "Persistable var[" << var.Name()
+                                         << "] not found";
+  }
+}
+
 void LoadModelNaive(const std::string &model_dir,
                     Scope *scope,
-                    cpp::ProgramDesc *cpp_prog) {
+                    cpp::ProgramDesc *cpp_prog,
+                    bool combined) {
   CHECK(cpp_prog);
   CHECK(scope);
   cpp_prog->ClearBlocks();
 
   // Load model
-  const std::string prog_path = model_dir + "/__model__";
+  const std::string prog_path = model_dir + "/__model__.nb";
   naive_buffer::BinaryTable table;
   table.LoadFromFile(prog_path);
   naive_buffer::proto::ProgramDesc nb_proto_prog(&table);
@@ -462,22 +540,27 @@ void LoadModelNaive(const std::string &model_dir,
 
   // Load Params
   // NOTE: Only main block be used now.
-  auto &prog = *cpp_prog;
-  auto &main_block_desc = *prog.GetBlock<cpp::BlockDesc>(0);
-  for (size_t i = 0; i < main_block_desc.VarsSize(); ++i) {
-    auto &var = *main_block_desc.GetVar<cpp::VarDesc>(i);
-    if (var.Name() == "feed" || var.Name() == "fetch" || !var.Persistable())
-      continue;
+  if (combined) {
+    const std::string combined_params_path = model_dir + "/param.nb";
+    LoadCombinedParamsNaive(combined_params_path, scope, *cpp_prog);
+  } else {
+    auto &prog = *cpp_prog;
+    auto &main_block_desc = *prog.GetBlock<cpp::BlockDesc>(0);
+    for (size_t i = 0; i < main_block_desc.VarsSize(); ++i) {
+      auto &var = *main_block_desc.GetVar<cpp::VarDesc>(i);
+      if (var.Name() == "feed" || var.Name() == "fetch" || !var.Persistable())
+        continue;
 
-    std::string file_path = model_dir + "/" + var.Name();
-    VLOG(4) << "reading weight " << var.Name();
+      std::string file_path = model_dir + "/" + var.Name() + ".nb";
+      VLOG(4) << "reading weight " << var.Name();
 
-    switch (var.GetType()) {
-      case VarDescAPI::Type::LOD_TENSOR:
-        LoadParamNaive(file_path, scope, var.Name());
-        break;
-      default:
-        CHECK(false) << "unknown weight type";
+      switch (var.GetType()) {
+        case VarDescAPI::Type::LOD_TENSOR:
+          LoadParamNaive(file_path, scope, var.Name());
+          break;
+        default:
+          CHECK(false) << "unknown weight type";
+      }
     }
   }
 
