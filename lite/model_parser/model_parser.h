@@ -66,18 +66,28 @@ void SaveParamNaive(const std::string& path,
                     const lite::Scope& exec_scope,
                     const std::string& var_name);
 
+void SaveCombinedParamsNaive(const std::string& path,
+                             const lite::Scope& exec_scope,
+                             const cpp::ProgramDesc& cpp_prog);
+
 void SaveModelNaive(const std::string& model_dir,
                     const Scope& exec_scope,
-                    const cpp::ProgramDesc& cpp_prog);
+                    const cpp::ProgramDesc& cpp_prog,
+                    bool combined = true);
 #endif
 
 void LoadParamNaive(const std::string& path,
                     lite::Scope* scope,
                     const std::string& name);
 
+void LoadCombinedParamsNaive(const std::string& path,
+                             lite::Scope* scope,
+                             const cpp::ProgramDesc& cpp_prog);
+
 void LoadModelNaive(const std::string& model_dir,
                     lite::Scope* scope,
-                    cpp::ProgramDesc* prog);
+                    cpp::ProgramDesc* prog,
+                    bool combined = true);
 
 }  // namespace lite
 }  // namespace paddle
