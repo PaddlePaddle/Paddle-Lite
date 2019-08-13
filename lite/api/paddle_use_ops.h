@@ -73,6 +73,7 @@ USE_LITE_OP(reshape2)
 USE_LITE_OP(split)
 USE_LITE_OP(fake_quantize_moving_average_abs_max);
 USE_LITE_OP(fake_dequantize_max_abs);
+USE_LITE_OP(fake_quantize_range_abs_max);
 USE_LITE_OP(calib);
 USE_LITE_OP(calib_once);
 USE_LITE_OP(norm);

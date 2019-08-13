@@ -51,6 +51,7 @@ lite_cc_library(calib_once_op SRCS calib_once_op.cc DEPS ${op_DEPS})
 lite_cc_library(split_op SRCS split_op.cc DEPS ${op_DEPS})
 lite_cc_library(transpose_op SRCS transpose_op.cc DEPS ${op_DEPS})
 lite_cc_library(fake_quant SRCS fake_quantize_moving_avg_max_abs.cc DEPS ${op_DEPS})
+lite_cc_library(fake_quant_range SRCS fake_quantize_range_abs_max.cc DEPS ${op_DEPS})
 lite_cc_library(fake_dequant SRCS fake_dequantize_max_abs.cc DEPS ${op_DEPS})
 lite_cc_library(conv_transpose_op SRCS conv_transpose_op.cc DEPS ${op_DEPS})
 lite_cc_library(im2sequence_op SRCS im2sequence_op.cc DEPS ${op_DEPS})
@@ -124,6 +125,7 @@ set(ops
         split_op
         transpose_op
         fake_quant
+        fake_quant_range
         fake_dequant
         sgd_op
         uniform_random_op
