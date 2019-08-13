@@ -58,7 +58,7 @@ void SigmoidKernel<FPGA, float>::Compute(const SigmoidParam<FPGA> &param) {
                                                   param.Out()->zynqmpTensor());
 #endif
 
-  exit(-1);
+  // exit(-1);
 }
 
 }  // namespace operators

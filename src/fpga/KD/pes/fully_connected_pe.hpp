@@ -18,6 +18,7 @@ limitations under the License. */
 
 #include "../pe.hpp"
 #include "../pe_params.hpp"
+#include "conv_pe.hpp"
 #include "conv_process.hpp"
 
 namespace paddle_mobile {

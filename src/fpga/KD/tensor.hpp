@@ -68,7 +68,7 @@ class PlaceHolder {
  public:
   explicit PlaceHolder(size_t size) {
     size_ = size;
-    data_ = fpga_malloc(size_);
+    data_ = fpga_malloc(size_ * 1.5);
   }
 
   void* data() { return data_; }
@@ -381,7 +381,7 @@ class Tensor {
   }
 
   void save_file_with_name(std::string path) {
-    return;
+    // return;
     invalidate();
 
     Tensor* t;
@@ -394,7 +394,7 @@ class Tensor {
       unaligned.copyFrom(this);
       unaligned.unalignImage();
       unaligned.syncToCPU();
-      
+
       std::ofstream ofs;
       ofs.open(path);
       for (int i = 0; i < shape_->numel(); i++) {
@@ -409,7 +409,7 @@ class Tensor {
       ofs.close();
       return;
     }
-    
+
     std::ofstream ofs;
 
     ofs.open(path);
@@ -425,9 +425,7 @@ class Tensor {
     ofs.close();
   }
 
-  void releaseData() {
-    placeHolder_.reset();
-  }
+  void releaseData() { placeHolder_.reset(); }
 
   void readFromFile(std::string path) {
     std::ifstream file_stream;

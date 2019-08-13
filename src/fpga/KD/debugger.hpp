@@ -20,6 +20,7 @@ limitations under the License. */
 
 #include "llapi/filter.h"
 #include "llapi/zynqmp_api.h"
+#include "tensor.hpp"
 
 namespace paddle_mobile {
 namespace zynqmp {

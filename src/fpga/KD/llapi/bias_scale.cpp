@@ -79,6 +79,7 @@ void format_bias_scale_array(float **bias_scale_array,
   interleave(bias_scale_array, div_num * element_num_after_division);
   fpga_flush(*bias_scale_array, 2 * element_num_after_division * sizeof(float));
 }
+
 void format_bias_array(float **bias_array, int num) {
   float *ptr_unaligned = *bias_array;
   int num_before_align = num;

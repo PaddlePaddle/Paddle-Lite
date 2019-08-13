@@ -123,17 +123,42 @@ inline void format_scale_bias(Tensor* scale, Tensor* bias, Tensor* filter,
     bias_data = bias->data<float>();
   }
   int channel = filter->shape().num();
-  Shape bias_scale_shape(N, {2 * channel});
+  int num_per_group = filter->shape().num() / group;
+  int aligned_num_per_group = align_to_x(filter->shape().num() / group, 8);
+
+  // int bs_len = filter->shape().num() / group;
+  int bs_len = aligned_num_per_group * group;
+  Shape bias_scale_shape(N, {2 * bs_len});
   float* bs_data = scale_bias->mutableData<float>(FP32, bias_scale_shape);
-  for (int i = 0; i < channel; i++) {
-    float scale_value = scale_data == nullptr ? 1 : scale_data[i];
-    float bias_value = bias_data == nullptr ? 0 : bias_data[i];
-    bs_data[i + channel] = scale_value;
-    bs_data[i] = bias_value;
+  memset(bs_data, 0, 2 * bs_len * sizeof(float));
+
+  float* tmp_data = (float*)fpga_malloc(2 * bs_len * sizeof(float));
+  memset(tmp_data, 0, 2 * bs_len * sizeof(float));
+
+  int div_per_group = filter->shape().num() / group;
+
+  for (int g = 0; g < group; g++) {
+    for (int c = 0; c < num_per_group; c++) {
+      int dst_index = g * aligned_num_per_group + c;
+      int src_index = g * num_per_group + c;
+      float scale_value = scale_data == nullptr ? 1 : scale_data[src_index];
+      float bias_value = bias_data == nullptr ? 0 : bias_data[src_index];
+      tmp_data[dst_index + channel] = scale_value;
+      tmp_data[dst_index] = bias_value;
+    }
   }
 
+  // for (int i = 0; i < bs_len; i++) {
+  //   // TODO
+  //   float scale_value = scale_data == nullptr ? 1 : scale_data[i];
+  //   float bias_value = bias_data == nullptr ? 0 : bias_data[i];
+  //   tmp_data[i + channel] = scale_value;
+  //   tmp_data[i] = bias_value;
+  // }
+
   int element_num_per_div = get_filter_num_per_div(filter, group);
-  bias_scale::format_bias_scale_array(&bs_data, element_num_per_div, channel);
+  bias_scale::format_bias_scale_array(&tmp_data, bs_len / group, bs_len);
+  memcpy(bs_data, tmp_data, 2 * bs_len * sizeof(float));
 }
 
 inline void format_filter(Tensor* filter, Tensor* quantized_filter, int group,
@@ -202,12 +227,39 @@ inline void split_filter_num(const ConvParam& c_param) {
   Tensor* input = param.input;
   Tensor* out = param.output;
   Tensor* filter = param.filter;
+
+  int bs_len = filter->shape().num() / param.groups;
+
   auto channel = out->shape().channel();
 
   int split_num = param.groups == 1 ? get_split_num(param.filter) : 1;
   int filter_num_per_div = get_filter_num_per_div(filter, param.groups);
 
+  int filter_chw = filter->shape().channel() * filter->shape().height() *
+                   filter->shape().width();
+  int group = param.groups;
+  int num_per_group = filter->shape().num() / group;
+  int aligned_num_per_group = align_to_x(num_per_group, FILTER_NUM_ALIGNMENT);
+  int aligned_chw = align_to_x(
+      num_per_group * filter->shape().height() * filter->shape().width(),
+      FILTER_ELEMENT_ALIGNMENT);
+
   // std::cout << "\n split_num:" << split_num << std::endl;
+  // 1, align_num = group * align_to_x(num / group, 32) * align_to_x(height *
+  // width * channel, 16);  2, fpga_bias_scale_len = api::align_to_x(_filter_num
+  // / group_num, 8) * group_num;
+
+  // 3.cout << fpga_bias_scale_len << endl;
+  // for (int i = 0; i < fpga_bias_scale_len; i++) {
+  //     _bias_in_addr[i] = 0.0;
+  //     _scale_in_addr[i] = 1.0;
+  // }
+
+  // paddle_mobile::fpga::bias_scale::format_bias_scale_array(&_bias_scale_fpga,
+  // fpga_bias_scale_len/group_num, fpga_bias_scale_len);
+
+  // 4. convert to hwc,
+  // 5 format filter;
   Shape& out_shape = out->shape();
   for (int i = 0; i < split_num; i++) {
     BasicConvParam* conv_param = new BasicConvParam();
@@ -236,10 +288,31 @@ inline void split_filter_num(const ConvParam& c_param) {
     Shape f_shape(NCHW, {filter_num, filter->shape().channel(),
                          filter->shape().height(), filter->shape().width()});
 
+    int total = group * aligned_num_per_group * aligned_chw;
+    if (group != 1) {
+      std::cout << "aligned_num_per_group:" << aligned_num_per_group
+                << std::endl;
+      std::cout << "total:" << total << std::endl;
+      // exit(-1);
+    }
+    auto alignment = [total](Shape& s) { return total; };
+    f_shape.setAligmentFunction(alignment);
+
+    // Shape adjusted_shape(NCHW, {group * aligned_num_per_group,
+    // filter->shape().channel(),
+    //   filter->shape().height(), filter->shape().width()});
+
     Tensor new_filter;
     float* new_filter_data = new_filter.mutableData<float>(FP32, f_shape);
     int filter_hwc = filter->shape().height() * filter->shape().width() *
                      filter->shape().channel();
+
+    // memset(new_filter_data, 0, group * aligned_num_per_group * filter_hwc *
+    // sizeof(float)); for (size_t g = 0; g < group; g++) {
+    //   float* src = filter->data<float>() + g * num_per_group * filter_chw;
+    //   float* dst = new_filter_data + g * aligned_num_per_group * filter_chw;
+    //   memcpy(dst ,src , num_per_group * filter_chw * sizeof(float));
+    // }
 
     memcpy(new_filter_data,
            filter->data<float>() + i * filter_num_per_div * filter_hwc,
@@ -250,6 +323,7 @@ inline void split_filter_num(const ConvParam& c_param) {
 
     std::vector<float> filter_max;
     format_filter(&new_filter, &(conv_param->filter), param.groups, filter_max);
+    // format_filter(&new_filter, &(conv_param->filter), 1, filter_max);
 
     int sb_num = 2 * align_to_x(filter_num, BS_NUM_ALIGNMENT);
     Tensor scale;
@@ -322,6 +396,7 @@ inline void split_channel(const ConvParam& c_param) {
 
     // filter transformation;
     Shape f_shape(NCHW, {param.filter->shape().num(), channel, 1, 1});
+
     Tensor new_filter;
 
     float* dst = new_filter.mutableData<float>(FP32, f_shape);
