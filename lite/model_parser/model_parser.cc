@@ -565,6 +565,8 @@ void LoadModelNaive(const std::string &model_dir,
   }
 
 #ifdef LITE_WITH_NPU
+  auto &prog = *cpp_prog;
+  auto &main_block_desc = *prog.GetBlock<cpp::BlockDesc>(0);
   for (size_t i = 0; i < main_block_desc.OpsSize(); ++i) {
     auto &op = *main_block_desc.GetOp<cpp::OpDesc>(i);
     if (op.Type() != "graph_op") {
