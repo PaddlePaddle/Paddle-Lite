@@ -187,15 +187,15 @@ static bool TargetCompatibleTo(const Type& a, const Type& b) {
 }
 
 static bool DataLayoutCompatibleTo(const Type& a, const Type& b) {
-  return a.IsVoid() ||                                                  //
-         (a.IsTensor() && b.IsTensor() && (a.layout() == b.layout() ||  //
-                                           b.layout() == DATALAYOUT(kAny)));
+  return a.IsVoid() ||                  //
+         ((a.layout() == b.layout() ||  //
+           b.layout() == DATALAYOUT(kAny)));
 }
 static bool DataLayoutCompatible(const Type& a, const Type& b) {
-  return a.IsVoid() || b.IsVoid() ||                                    //
-         (a.IsTensor() && b.IsTensor() && (a.layout() == b.layout() ||  //
-                                           b.layout() == DATALAYOUT(kAny) ||
-                                           a.layout() == DATALAYOUT(kAny)));
+  return a.IsVoid() || b.IsVoid() ||    //
+         ((a.layout() == b.layout() ||  //
+           b.layout() == DATALAYOUT(kAny) ||
+           a.layout() == DATALAYOUT(kAny)));
 }
 
 static bool PrecisionCompatibleTo(const Type& a, const Type& b) {
