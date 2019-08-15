@@ -25,3 +25,7 @@ USE_NPU_BRIDGE(relu);
 USE_NPU_BRIDGE(elementwise_add);
 USE_NPU_BRIDGE(scale);
 USE_NPU_BRIDGE(softmax);
+USE_NPU_BRIDGE(concat);
+USE_NPU_BRIDGE(split);
+USE_NPU_BRIDGE(transpose);
+USE_NPU_BRIDGE(transpose2);
