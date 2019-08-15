@@ -8,6 +8,7 @@ lite_cc_library(mul_op SRCS mul_op.cc DEPS ${op_DEPS})
 lite_cc_library(scale_op SRCS scale_op.cc DEPS ${op_DEPS})
 lite_cc_library(softmax_op SRCS softmax_op.cc DEPS ${op_DEPS})
 lite_cc_library(reshape_op SRCS reshape_op.cc DEPS ${op_DEPS} )
+lite_cc_library(flatten_op SRCS flatten_op.cc DEPS ${op_DEPS} )
 lite_cc_library(batch_norm_op SRCS batch_norm_op.cc DEPS ${op_DEPS})
 lite_cc_library(feed_op SRCS feed_op.cc DEPS ${op_DEPS})
 lite_cc_library(fetch_op SRCS fetch_op.cc DEPS ${op_DEPS})
@@ -93,6 +94,7 @@ set(ops
         scale_op
         softmax_op
         reshape_op
+        flatten_op
         batch_norm_op
         feed_op
         fetch_op

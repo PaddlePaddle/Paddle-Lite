@@ -34,8 +34,12 @@ TEST(model, test) {
                                    Place{TARGET(kARM), PRECISION(kFloat)},
                                    Place{TARGET(kARM), PRECISION(kInt8)}});
 
+  auto precision = PRECISION(kFloat);
+  if (FLAGS_int8) {
+    precision = PRECISION(kInt8);
+  }
   predictor.Build(
-      FLAGS_model_dir, Place{TARGET(kARM), PRECISION(kFloat)}, valid_places);
+      FLAGS_model_dir, Place{TARGET(kARM), precision}, valid_places);
   int im_width = FLAGS_im_width;
   int im_height = FLAGS_im_height;
   auto* input_tensor = predictor.GetInput(0);
