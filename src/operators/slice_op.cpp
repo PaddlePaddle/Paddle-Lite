@@ -84,7 +84,7 @@ void SliceOp<Dtype, T>::InferShape() const {
     }
   }
   output->Resize(out_dims);
-#ifdef PADDLE_MOBILE_CPU
+#if !defined(PADDLE_MOBILE_CL) && defined(PADDLE_MOBILE_CPU)
   if (axes[0] != 0) {
     output->set_lod(input->lod());
   }

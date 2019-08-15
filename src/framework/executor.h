@@ -27,6 +27,7 @@ limitations under the License. */
 #include "framework/program/program.h"
 #include "framework/tensor.h"
 #include "framework/type_trait.h"
+#include "pass/memory_optimize.h"
 
 namespace paddle_mobile {
 namespace framework {

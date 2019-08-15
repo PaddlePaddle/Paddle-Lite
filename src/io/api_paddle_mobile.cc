@@ -242,8 +242,6 @@ CreatePaddlePredictor<PaddleMobileConfig, PaddleEngineKind::kPaddleMobile>(
       x.reset(new PaddleMobilePredictor<CPU, float>(config));
     } else if (config.device == PaddleMobileConfig::kFPGA) {
       x.reset(new PaddleMobilePredictor<FPGA, float>(config));
-    } else if (config.device == PaddleMobileConfig::kGPU_MALI) {
-      x.reset(new PaddleMobilePredictor<GPU_MALI, float>(config));
     } else if (config.device == PaddleMobileConfig::kGPU_CL) {
       x.reset(new PaddleMobilePredictor<GPU_CL, float>(config));
     } else {

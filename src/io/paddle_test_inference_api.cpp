@@ -30,7 +30,6 @@ double PaddleTester<Device, T>::CaculatePredictTime(std::string *cl_path) {
 }
 template class PaddleTester<CPU, float>;
 template class PaddleTester<FPGA, float>;
-template class PaddleTester<GPU_MALI, float>;
 
 template class PaddleTester<GPU_CL, float>;
 
