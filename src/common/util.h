@@ -21,4 +21,6 @@ namespace paddle_mobile {
 
 char *ReadFileToBuff(std::string filename);
 
+int GetFileLength(std::string filename);
+
 }  // namespace paddle_mobile

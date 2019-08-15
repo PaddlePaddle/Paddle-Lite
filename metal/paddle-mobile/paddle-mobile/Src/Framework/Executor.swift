@@ -36,7 +36,7 @@ var isTest = false
     }
     
     public override var description: String {
-        fatalError()
+        return ""
     }
     
 }
@@ -65,12 +65,8 @@ public class Executor<P: PrecisionProtocol>: Executorable{
             //block.ops.count
             for i in 0..<block.ops.count {
                 let opDesc = block.ops[i]
-                do {
-                    let op = try OpCreator<P>.shared.creat(device: inDevice, opDesc: opDesc, scope: inProgram.scope, initContext: initContext)
-                    ops.append(op)
-                } catch let error {
-                    throw error
-                }
+                let op = try OpCreator<P>.shared.creat(device: inDevice, opDesc: opDesc, scope: inProgram.scope, initContext: initContext)
+                ops.append(op)
             }
         }
     }
@@ -79,21 +75,17 @@ public class Executor<P: PrecisionProtocol>: Executorable{
         inflightSemaphore.wait()
         guard isValid else {
             inflightSemaphore.signal()
-            throw PaddleMobileError.predictError(message: "Executor is cleared and invalid")
+            throw PaddleMobileError.makeError(type: .predictError, msg: "Executor is cleared and invalid")
         }
         guard let buffer = queue.makeCommandBuffer() else {
             inflightSemaphore.signal()
-            throw PaddleMobileError.predictError(message: "CommandBuffer is nil")
+            throw PaddleMobileError.makeError(type: .predictError, msg: "CommandBuffer is nil")
         }
         
         let resInput: MTLTexture
         if let inPre = preProcessKernle {
-            do {
-                try inPre.compute(inputTexuture: input, commandBuffer: buffer)
-                resInput = inPre.outputTexture
-            } catch let error {
-                throw error
-            }
+            try inPre.compute(inputTexuture: input, commandBuffer: buffer)
+            resInput = inPre.outputTexture
         } else {
             resInput = input
         }
@@ -103,16 +95,12 @@ public class Executor<P: PrecisionProtocol>: Executorable{
         //(ops.count - except)
         for i in 0..<(ops.count - except) {
             let op = ops[i]
-            do {
-                try op.run(device: device, buffer: buffer)
-            } catch let error {
-                throw error
-            }
+            try op.run(device: device, buffer: buffer)
         }
         
         var outputTextures: [String : [MTLBuffer]]?
         if except > 0 {
-            ops[ops.count - except].computeMiddleResult(device: device, buffer: buffer)
+            try ops[ops.count - except].computeMiddleResult(device: device, buffer: buffer)
             outputTextures = ops[ops.count - except].inputVariant()
         }
         
@@ -153,8 +141,8 @@ public class Executor<P: PrecisionProtocol>: Executorable{
             var resultHolder: GPUResultHolder?
             if except > 0 {
                 resultHolder = GPUResultHolder.init(inDim: [], inPointer: nil, inCapacity: 0,  inIntermediateResults: outputTextures)
-            } else if let output = SSelf.program.scope.output() as? FetchHolder {
-                resultHolder = GPUResultHolder.init(inDim: output.dim.dims, inPointer: output.result, inCapacity: output.capacity)
+            } else if let output = SSelf.program.scope.output() as? FetchHolder, let outputResult = output.result {
+                resultHolder = GPUResultHolder.init(inDim: output.dim.dims, inPointer: outputResult, inCapacity: output.capacity)
             }
             if let resultHolder = resultHolder {
                 safeComplete(true, [resultHolder])

@@ -18,21 +18,17 @@ import Metal
 class BatchNormParam<P: PrecisionProtocol>: OpParam {
     //typealias ParamPrecisionType = P
     required init(opDesc: PMOpDesc, inScope: Scope) throws {
-        do {
-            input = try BatchNormParam.inputX(inputs: opDesc.inputs, from: inScope)
-            if input.transpose != [0, 2, 3, 1] {
-                fatalError("batch norm only accepts NHWC")
-            }
-            output = try BatchNormParam.outputY(outputs: opDesc.outputs, from: inScope)
-            bias = try BatchNormParam.getFirstTensor(key: "Bias", map: opDesc.paraInputs, from: inScope)
-            mean = try BatchNormParam.getFirstTensor(key: "Mean", map: opDesc.paraInputs, from: inScope)
-            scale = try BatchNormParam.getFirstTensor(key: "Scale", map: opDesc.paraInputs, from: inScope)
-            variance = try BatchNormParam.getFirstTensor(key: "Variance", map: opDesc.paraInputs, from: inScope)
-            epsilon = try BatchNormParam.getAttr(key: "epsilon", attrs: opDesc.attrs)
-            momentum = try BatchNormParam.getAttr(key: "momentum", attrs: opDesc.attrs)
-        } catch let error {
-            throw error
+        input = try BatchNormParam.inputX(inputs: opDesc.inputs, from: inScope)
+        if input.transpose != [0, 2, 3, 1] {
+            throw PaddleMobileError.makeError(type: .netError, msg: "batch norm only accepts NHWC")
         }
+        output = try BatchNormParam.outputY(outputs: opDesc.outputs, from: inScope)
+        bias = try BatchNormParam.getFirstTensor(key: "Bias", map: opDesc.paraInputs, from: inScope)
+        mean = try BatchNormParam.getFirstTensor(key: "Mean", map: opDesc.paraInputs, from: inScope)
+        scale = try BatchNormParam.getFirstTensor(key: "Scale", map: opDesc.paraInputs, from: inScope)
+        variance = try BatchNormParam.getFirstTensor(key: "Variance", map: opDesc.paraInputs, from: inScope)
+        epsilon = try BatchNormParam.getAttr(key: "epsilon", attrs: opDesc.attrs)
+        momentum = try BatchNormParam.getAttr(key: "momentum", attrs: opDesc.attrs)
     }
     let input: Texture
     var output: Texture
@@ -51,17 +47,11 @@ class BatchNormOp<P: PrecisionProtocol>: Operator<BatchNormKernel<P>, BatchNormP
         para.output.dim = para.input.dim
     }
     func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
-        do {
-            try kernel.compute(commandBuffer: buffer, param: para)
-        } catch let error {
-            throw error
-        }
+        try kernel.compute(commandBuffer: buffer, param: para)
     }
     
     func delogOutput() {
         print(" \(type) output: ")
-        let device = para.output.metalTexture!.device
-        let outputArray: [Float32] = device.texture2tensor(texture: para.output.metalTexture, dim: para.output.tensorDim.dims, transpose: para.output.transpose)
-        print(outputArray.strideArray())
+        para.output.delog()
     }
 }

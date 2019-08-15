@@ -30,6 +30,7 @@ limitations under the License. */
 #include "framework/tensor.h"
 #include "memory/t_malloc.h"
 #include "pass/memory_optimize.h"
+#include "pass/model_obfuscate.h"
 #ifdef PADDLE_MOBILE_CL
 #include "framework/cl/cl_image.h"
 #endif
@@ -65,8 +66,9 @@ Executor<Device, T>::Executor(const Program<Device> &program,
                         "program_desc_ should not be nullptr");
 #if !defined(PADDLE_MOBILE_FPGA) && !defined(PADDLE_MOBILE_FPGA_KD) && \
     !defined(PADDLE_MOBILE_CL)
-  if (config_.enable_memory_optimization) {
-    pass::MemoryOptPass()(program_desc_.get(), program_.scope.get());
+  if (config_.memory_optimization_level != NoMemoryOptimization) {
+    pass::MemoryOptPass()(program_desc_.get(), program_.scope.get(),
+                          config_.memory_optimization_level);
   }
 #endif
   // resize feed and fetch list
@@ -240,9 +242,17 @@ void Executor<Device, T>::InitCombineMemory() {
   if (program_.combined_params_buf && program_.combined_params_len) {
     origin_data = reinterpret_cast<char *>(
         const_cast<uint8_t *>(program_.combined_params_buf));
+    if (config_.model_obfuscate_key != "") {
+      auto obfuscator = pass::ModelObfuscatePass(config_.model_obfuscate_key);
+      obfuscator.convert_data(origin_data, program_.combined_params_len);
+    }
   } else {
     self_alloc = true;
     origin_data = ReadFileToBuff(program_.para_path);
+    if (config_.model_obfuscate_key != "") {
+      auto obfuscator = pass::ModelObfuscatePass(config_.model_obfuscate_key);
+      obfuscator.convert_data(origin_data, GetFileLength(program_.para_path));
+    }
   }
   PADDLE_MOBILE_ENFORCE(origin_data != nullptr, "data == nullptr");
   char *data = origin_data;
@@ -286,34 +296,32 @@ static void ClearNoPersistableTensorArray(const framework::ProgramDesc *program,
 
 template <typename Device, typename T>
 void Executor<Device, T>::InitNoPersistableMemory(const Tensor &input_tensor) {
+  if (input_tensor.dims().size() != 4) {
+    return;
+  }
   for (const auto &block : program_desc_->Blocks()) {
     for (const auto &var_desc : block->Vars()) {
       auto var = program_.scope->Var(var_desc->Name());
-      auto tensor = var->template GetMutable<LoDTensor>();
-      if (var_desc->Persistable()) {
-        if (var_desc->Name() == "feed" || var_desc->Name() == "fetch") {
-          var->template GetMutable<framework::LoDTensorArray>();
-          continue;
-        }
-      } else {
-        if (var_desc->Type() == VARTYPE_TYPE_LOD_TENSOR) {
+      if (!var_desc->Persistable() &&
+          var_desc->Type() == VARTYPE_TYPE_LOD_TENSOR) {
+        DLOG << "InitNoPersistableMemory var " << var_desc->Name();
+        auto tensor = var->template GetMutable<LoDTensor>();
+        if (tensor->IsInitialized() && tensor->dims().size() == 4) {
+          DLOG << "var's tensor is Initialized or dims size != 4";
           DDim tensor_dim = tensor->dims();
           DDim new_dim =
               make_ddim({tensor_dim[0], tensor_dim[1], input_tensor.dims()[2],
                          input_tensor.dims()[3]});
           tensor->Resize(new_dim);
-          tensor->template mutable_data<T>();
+          tensor->template mutable_data_new<T>();
+          DLOG << "var's tensor dims " << tensor_dim;
+          DLOG << "var's tensor new dims " << new_dim;
         } else {
-          PADDLE_MOBILE_THROW_EXCEPTION("Unsupported var type `%d`",
-                                        var_desc->Type());
+          DLOG << "var's tensor is not Initialized ???";
         }
       }
     }
   }
-
-  std::shared_ptr<LoDTensor> output = GetOutput("fetch");
-  output->Resize(input_tensor.dims());
-  output->mutable_data<T>();
 }
 
 template <typename Device, typename T>
@@ -399,6 +407,14 @@ void Executor<Device, T>::SetInput(const Tensor &input,
 
   target.Resize(input.dims());
   target.ShareDataWith(input);
+  if (feed_indices_.size() == 1) {
+    auto &dim = input.dims();
+    if (lod_mode_ && product(dim) < 0.9 * product(input_dim_last_)) {
+      InitNoPersistableMemory(target);
+    }
+    input_dim_has_changed_ = input_dim_last_ != dim;
+    input_dim_last_ = static_cast<DDim>(dim);
+  }
 }
 
 template <typename Device, typename T>
@@ -415,6 +431,14 @@ void Executor<Device, T>::SetInput(const LoDTensor &input,
   target.Resize(input.dims());
   target.ShareDataWith(input);
   target.set_lod(input.lod());
+  if (feed_indices_.size() == 1) {
+    auto &dim = input.dims();
+    if (lod_mode_ && product(dim) < 0.9 * product(input_dim_last_)) {
+      InitNoPersistableMemory(target);
+    }
+    input_dim_has_changed_ = input_dim_last_ != dim;
+    input_dim_last_ = static_cast<DDim>(dim);
+  }
 }
 
 template <typename Device, typename T>
@@ -439,6 +463,20 @@ std::shared_ptr<LoDTensor> Executor<Device, T>::GetOutput(
   }
 }
 
+#ifdef PADDLE_MOBILE_CL
+template <typename Device, typename T>
+const CLImage *Executor<Device, T>::GetOutputImage(
+    const std::string &var_name) {
+  auto var = program_.scope->FindVar(var_name);
+  if (var->IsInitialized() && var->template IsType<framework::CLImage>()) {
+    const CLImage *cl_image = var->template Get<framework::CLImage>();
+    return cl_image;
+  } else {
+    return nullptr;
+  }
+}
+#endif
+
 template <typename Device, typename T>
 PMStatus Executor<Device, T>::Predict() {
 #if _OPENMP
@@ -453,13 +491,15 @@ PMStatus Executor<Device, T>::Predict() {
   struct timespec ts;
   int op_index = 0;
 #endif
-  for (auto &op_handler : ops_of_block0_) {
+  for (int i = 0; i < ops_of_block0_.size(); ++i) {
+    auto &op_handler = ops_of_block0_[i];
 #ifdef PADDLE_MOBILE_PROFILE
     clock_gettime(CLOCK_MONOTONIC, &ts);
     profile[op_index].runBegin = (uint64_t)ts.tv_sec * 1e9 + ts.tv_nsec;
 #endif
-    DLOG << "run op: " << op_handler->Type();
-    if (lod_mode_) {
+    DLOG << i << "th, "
+         << "run op: " << op_handler->Type();
+    if (lod_mode_ && input_dim_has_changed_) {
       op_handler->InferShape();
     }
     op_handler->Run();
@@ -468,6 +508,9 @@ PMStatus Executor<Device, T>::Predict() {
     profile[op_index].runEnd = (uint64_t)ts.tv_sec * 1e9 + ts.tv_nsec;
     ++op_index;
 #endif
+  }
+  if (feed_indices_.size() == 1) {
+    input_dim_has_changed_ = false;
   }
 
 #ifdef PADDLE_MOBILE_PROFILE
@@ -783,6 +826,9 @@ void Executor<GPU_CL, float>::SetInput(const Tensor &input,
     DLOG << "SetInput ---- > ShareDataWith";
   }
   target_tensor->ShareDataWith(input);
+  if (feed_indices_.size() == 1) {
+    input_dim_has_changed_ = input_dim_last_ != input.dims();
+  }
   auto &dim = input.dims();
   input_dim_last_ = static_cast<DDim>(dim);
 }
@@ -929,10 +975,18 @@ void Executor<GPU_CL, float>::InitCombineMemory() {
   if (program_.combined_params_buf && program_.combined_params_len) {
     LOG(kLOG_INFO) << "use outter memory";
     origin_data = reinterpret_cast<char *>(program_.combined_params_buf);
+    if (config_.model_obfuscate_key != "") {
+      auto obfuscator = pass::ModelObfuscatePass(config_.model_obfuscate_key);
+      obfuscator.convert_data(origin_data, program_.combined_params_len);
+    }
   } else {
     LOG(kLOG_INFO) << " begin init combine memory";
     self_alloc = true;
     origin_data = ReadFileToBuff(program_.para_path);
+    if (config_.model_obfuscate_key != "") {
+      auto obfuscator = pass::ModelObfuscatePass(config_.model_obfuscate_key);
+      obfuscator.convert_data(origin_data, GetFileLength(program_.para_path));
+    }
   }
   PADDLE_MOBILE_ENFORCE(origin_data != nullptr, "origin_data==nullptr!!!");
   float *data = reinterpret_cast<float *>(origin_data);
@@ -976,7 +1030,7 @@ void Executor<GPU_CL, float>::InitCombineMemory() {
         bool shouldResize = true;
         if (ddim.size() > 4) {
           for (int i = 0; i < ddim.size() - 4; ++i) {
-            if (ddim[i] != 0) {
+            if (ddim[i] != 0 && ddim[i] != 1) {
               shouldResize = false;
               break;
             }

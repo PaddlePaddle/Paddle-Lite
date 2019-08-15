@@ -37,12 +37,12 @@ kernel void FUNC3_(elementwise_add, PRELU_TYPE, P)(texture2d_array<P, access::re
         gid.y >= outTexture.get_height() ||
         gid.z >= outTexture.get_array_size()) return;
     VECTOR(P, 4) rx, ry;
-    
+    rx = inputX.read(gid.xy, gid.z);
     if (pm.fast == 1) {
-        rx = inputX.read(gid.xy, gid.z);
         ry = inputY.read(gid.xy, gid.z);
+    } else if (pm.addByChannel == 1) {
+        ry = inputY.read(uint2(0, 0), gid.z);
     } else {
-        rx = inputX.read(gid.xy, gid.z);
         int32_t x_xyzn[4] = {int32_t(gid.x), int32_t(gid.y), int32_t(gid.z), 0}, x_abcd[4], t_abcd[4];
         int32_t y_abcd[4] = {0, 0, 0, 0}, y_xyzn[4];
         int32_t xtrans[4] = {pm.xtrans[0], pm.xtrans[1], pm.xtrans[2], pm.xtrans[3]};

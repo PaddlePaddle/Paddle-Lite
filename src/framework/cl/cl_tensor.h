@@ -168,6 +168,13 @@ class CLTensor : public TensorBase {
       size_ = size;
     }
 
+    virtual void realloc(size_t size) {
+      capatity_ = size;
+      ptr_.reset(
+          clCreateBuffer(context_, CL_MEM_READ_WRITE, capatity_, NULL, NULL));
+      size_ = size;
+    }
+
     std::unique_ptr<_cl_mem, CLMemDeleter> ptr_;
 
     size_t size_;

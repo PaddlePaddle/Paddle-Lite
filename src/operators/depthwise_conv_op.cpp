@@ -56,5 +56,7 @@ namespace ops = paddle_mobile::operators;
 #ifdef PADDLE_MOBILE_CPU
 REGISTER_OPERATOR_CPU(depthwise_conv2d, ops::DepthwiseConvOp);
 #endif
-
+#ifdef PADDLE_MOBILE_CL
+REGISTER_OPERATOR_CL(depthwise_conv2d, ops::DepthwiseConvOp);
+#endif
 #endif

@@ -23,7 +23,8 @@ void FeedOp<DeviceType, T>::InferShape() const {
   out_dims[0] = this->param_.BatchSize();
   int col = this->param_.Col();
   auto input_dims = this->param_.InputX()->at(col).dims();
-  if (input_dims.size() == 4) {
+  this->param_.Out()->Resize(input_dims);
+  if (input_dims.size() == 4 || input_dims.size() == 2) {
     this->param_.Out()->Resize(input_dims);
   } else {
     this->param_.Out()->Resize(out_dims);

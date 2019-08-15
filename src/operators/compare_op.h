@@ -26,5 +26,9 @@ namespace operators {
 DECLARE_OPERATOR(LessThan, CompareParam, LessThanKernel);
 #endif  // LESS_THAN_OP
 
+#ifdef EQUAL_OP
+DECLARE_OPERATOR(Equal, CompareParam, EqualKernel);
+#endif  // EQUAL_OP
+
 }  // namespace operators
 }  // namespace paddle_mobile

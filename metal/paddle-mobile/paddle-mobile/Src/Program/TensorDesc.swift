@@ -19,7 +19,7 @@ class TensorDesc {
     let originDimsCount: Int
     let dataType: VarTypeType
     let dataLayout: DataLayout = DataLayout.NCHW()
-    var NCHWDim: [Int] {
+    var NCHWDim: [Int]? {
         get {
             if dims.count != 4 {
                 return dims
@@ -31,12 +31,13 @@ class TensorDesc {
                 resultDims.swapAt(1, 3)
                 return resultDims
             } else {
-                fatalError(" not support other layout")
+                paddleMobileLog("not support other layout", logLevel: .FatalError, callStack: Thread.callStackSymbols)
+                return nil
             }
         }
     }
     
-    var NHWCDim: [Int] {
+    var NHWCDim: [Int]? {
         get {
             if dims.count != 4 {
                 return dims
@@ -48,12 +49,13 @@ class TensorDesc {
                 resultDims.swapAt(1, 3)
                 return resultDims
             } else {
-                fatalError(" not support other layout")
+                paddleMobileLog("not support other layout", logLevel: .FatalError, callStack: Thread.callStackSymbols)
+                return nil
             }
         }
     }
     
-    init(protoTensorDesc: VarType_TensorDesc) {
+    init?(protoTensorDesc: VarType_TensorDesc) {
         //        dims = protoTensorDesc.dimsArray.map{ Int64($0)! > 0 ? Int64($0) : abs(Int64($0)) }
         
         var dimsArray = [Int]()
@@ -70,7 +72,8 @@ class TensorDesc {
             let headDims = Int(dimsCount - 4)
             for i in 0..<headDims {
                 guard dimsArray[i] <= 1 else {
-                    fatalError("dims count is larger than 4 and can't be truncated to 4")
+                    paddleMobileLog("dims count is larger than 4 and can't be truncated to 4", logLevel: .FatalError, callStack: Thread.callStackSymbols)
+                    return nil
                 }
             }
             for _ in 0..<headDims {

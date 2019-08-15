@@ -61,159 +61,98 @@ extension OpParam {
     
     static func getFirstTensor<VarType: Variant>(key: String, map: [String : [String]], from: Scope) throws -> VarType {
         guard let mapKeys = map[key], mapKeys.count > 0 else {
-            throw PaddleMobileError.paramError(message: key + " not found in \(map) or maped values is empty")
+            throw PaddleMobileError.makeError(type: .paramError, msg: key + " not found in \(map) or maped values is empty")
         }
         guard let variant = from[mapKeys[0]] else {
-            throw PaddleMobileError.paramError(message: mapKeys[0] + " not found in scope")
+            throw PaddleMobileError.makeError(type: .paramError, msg: mapKeys[0] + " not found in scope")
         }
         
         guard let v = variant as? VarType else {
-            throw PaddleMobileError.paramError(message: " type error")
-            
+            throw PaddleMobileError.makeError(type: .paramError, msg: "type error")
         }
         return v
     }
     
     static func outputVariances<VarType: Variant>(outputs: [String : [String]], from: Scope) throws -> VarType {
-        do {
-            let tensorVariances: VarType = try getFirstTensor(key: "Variances", map: outputs, from: from)
-            return tensorVariances
-        } catch let error {
-            throw error
-        }
+        let tensorVariances: VarType = try getFirstTensor(key: "Variances", map: outputs, from: from)
+        return tensorVariances
     }
     
     static func paramInputAlpha<VarType: Variant>(inputs: [String : [String]], from: Scope) throws -> VarType {
-        do {
-            let alphaTensor: VarType = try getFirstTensor(key: "Alpha", map: inputs, from: from)
-            return alphaTensor
-        } catch let error {
-            throw error
-        }
+        let alphaTensor: VarType = try getFirstTensor(key: "Alpha", map: inputs, from: from)
+        return alphaTensor
     }
     
     
     static func inputImage<VarType: Variant>(inputs: [String : [String]], from: Scope) throws -> VarType {
-        do {
-            let tensorImage: VarType = try getFirstTensor(key: "Image", map: inputs, from: from)
-            return tensorImage
-        } catch let error {
-            throw error
-        }
+        let tensorImage: VarType = try getFirstTensor(key: "Image", map: inputs, from: from)
+        return tensorImage
     }
     
     static func inputX<VarType: Variant>(inputs: [String : [String]], from: Scope) throws -> VarType {
-        do {
-            let tensorX: VarType = try getFirstTensor(key: "X", map: inputs, from: from)
-            return tensorX
-        } catch let error {
-            throw error
-        }
+        let tensorX: VarType = try getFirstTensor(key: "X", map: inputs, from: from)
+        return tensorX
     }
     
     static func outputBoxes<VarType: Variant>(outputs: [String : [String]], from: Scope) throws -> VarType {
-        do {
-            let tensorBox: VarType = try getFirstTensor(key: "Boxes", map: outputs, from: from)
-            return tensorBox
-        } catch let error {
-            throw error
-        }
+        let tensorBox: VarType = try getFirstTensor(key: "Boxes", map: outputs, from: from)
+        return tensorBox
     }
     
     static func input<VarType: Variant>(inputs: [String : [String]], from: Scope) throws -> VarType {
-        do {
-            let tensorInput: VarType = try getFirstTensor(key: "Input", map: inputs, from: from)
-            return tensorInput
-        } catch let error {
-            throw error
-        }
+        let tensorInput: VarType = try getFirstTensor(key: "Input", map: inputs, from: from)
+        return tensorInput
     }
     
     static func output<VarType: Variant>(outputs: [String : [String]], from: Scope) throws -> VarType {
-        do {
-            let tensorOutput: VarType = try getFirstTensor(key: "Output", map: outputs, from: from)
-            return tensorOutput
-        } catch let error {
-            throw error
-        }
+        let tensorOutput: VarType = try getFirstTensor(key: "Output", map: outputs, from: from)
+        return tensorOutput
     }
     static func outputY<VarType: Variant>(outputs: [String : [String]], from: Scope) throws -> VarType {
-        do {
-            let tensorOutputY: VarType = try getFirstTensor(key: "Y", map: outputs, from: from)
-            return tensorOutputY
-        } catch let error {
-            throw error
-        }
+        let tensorOutputY: VarType = try getFirstTensor(key: "Y", map: outputs, from: from)
+        return tensorOutputY
     }
     static func inputY<VarType: Variant>(inputs: [String : [String]], from: Scope) throws -> VarType {
-        do {
-            let tensorY: VarType = try getFirstTensor(key: "Y", map: inputs, from: from)
-            return tensorY
-        } catch let error {
-            throw error
-        }
+        let tensorY: VarType = try getFirstTensor(key: "Y", map: inputs, from: from)
+        return tensorY
     }
     
     static func outputOut<VarType: Variant>(outputs: [String : [String]], from: Scope) throws -> VarType {
-        do {
-            let out: VarType = try getFirstTensor(key: "Out", map: outputs, from: from)
-            return out
-        } catch let error {
-            throw error
-        }
+        let out: VarType = try getFirstTensor(key: "Out", map: outputs, from: from)
+        return out
     }
     static func inputFilter<VarType: Variant>(paraInputs: [String : [String]], from: Scope) throws -> VarType {
-        do {
-            let tensorFilter: VarType = try getFirstTensor(key: "Filter", map: paraInputs, from: from)
-            return tensorFilter
-        } catch let error {
-            throw error
-        }
+        let tensorFilter: VarType = try getFirstTensor(key: "Filter", map: paraInputs, from: from)
+        return tensorFilter
     }
     
     static func inputBiase<VarType: Variant>(inputs: [String : [String]], from: Scope) throws -> VarType {
-        do {
-            let tensorBias: VarType = try getFirstTensor(key: "Bias", map: inputs, from: from)
-            return tensorBias
-        } catch let error {
-            throw error
-        }
+        let tensorBias: VarType = try getFirstTensor(key: "Bias", map: inputs, from: from)
+        return tensorBias
     }
     
     static func inputMean<VarType: Variant>(inputs: [String : [String]], from: Scope) throws -> VarType {
-        do {
-            let tensorMean: VarType = try getFirstTensor(key: "Mean", map: inputs, from: from)
-            return tensorMean
-        } catch let error {
-            throw error
-        }
+        let tensorMean: VarType = try getFirstTensor(key: "Mean", map: inputs, from: from)
+        return tensorMean
     }
     
     static func inputScale<VarType: Variant>(inputs: [String : [String]], from: Scope) throws -> VarType {
-        do {
-            let tensorScale: VarType = try getFirstTensor(key: "Scale", map: inputs, from: from)
-            return tensorScale
-        } catch let error {
-            throw error
-        }
+        let tensorScale: VarType = try getFirstTensor(key: "Scale", map: inputs, from: from)
+        return tensorScale
     }
     
     static func inputVariance<VarType: Variant>(inputs: [String : [String]], from: Scope) throws -> VarType {
-        do {
-            let tensorVariance: VarType = try getFirstTensor(key: "Variance", map: inputs, from: from)
-            return tensorVariance
-        } catch let error {
-            throw error
-        }
+        let tensorVariance: VarType = try getFirstTensor(key: "Variance", map: inputs, from: from)
+        return tensorVariance
     }
     
-    static func getAttr<T>(key: String, attrs: [String : Attr]) throws -> T{
+    static func getAttr<T>(key: String, attrs: [String : Attr]) throws -> T {
         guard let attr = attrs[key] else {
-            throw PaddleMobileError.paramError(message: "attr \(key) can't found in: \(attrs)" )
+            throw PaddleMobileError.makeError(type: .paramError, msg: "attr \(key) can't found in: \(attrs)")
         }
         
         guard let tAttr = attr as? T else {
-            throw PaddleMobileError.paramError(message: "key: \(key) attr: \(attr) type error" )
+            throw PaddleMobileError.makeError(type: .paramError, msg: "key: \(key) attr: \(attr) type error")
         }
         return tAttr
     }

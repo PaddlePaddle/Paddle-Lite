@@ -1,4 +1,4 @@
-/* Copyright (c) 2018 PaddlePaddle Authors. All Rights Reserved.
+/* Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -11,6 +11,23 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
+
+// Tencent is pleased to support the open source community by making ncnn
+// available.
+//
+// Copyright (C) 2017 THL A29 Limited, a Tencent company. All rights reserved.
+//
+// Licensed under the BSD 3-Clause License (the "License"); you may not use this
+// file except in compliance with the License. You may obtain a copy of the
+// License at
+//
+// https://opensource.org/licenses/BSD-3-Clause
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+// WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+// License for the specific language governing permissions and limitations under
+// the License.
 
 #pragma once
 
@@ -43,12 +60,14 @@ struct CPUContext {
   int get_thread_num();
   PowerMode get_power_mode() const { return _power_mode; }
   int get_cache_size(int level);
+  ARMArch get_arch() const { return _arch; }
   int get_l1_cache_size() { return get_cache_size(1); }
   int get_l2_cache_size() { return get_cache_size(2); }
   int get_l3_cache_size() { return get_cache_size(3); }
   void* get_work_space(int size_in_byte);
 
   int _cpu_num;
+  ARMArch _arch;
   PowerMode _power_mode;
   std::vector<int> _big_core_ids;
   std::vector<int> _little_core_ids;

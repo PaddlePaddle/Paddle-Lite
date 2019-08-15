@@ -132,9 +132,29 @@ enum PowerMode {
   AUTO = 4,                  // scheduled by system
 };
 
+enum MemoryOptimizationLevel {
+  NoMemoryOptimization = 0,
+  MemoryOptimizationWithoutFeeds = 1,
+  FullMemoryOptimization = 2,
+};
+
 struct PaddleMobileConfigInternal {
   bool load_when_predict = false;
-  bool enable_memory_optimization = true;
+  MemoryOptimizationLevel memory_optimization_level =
+      MemoryOptimizationWithoutFeeds;
+  std::string model_obfuscate_key = "";
+};
+
+enum ARMArch {
+  APPLE = 0,
+  A53 = 53,
+  A55 = 55,
+  A57 = 57,
+  A72 = 72,
+  A73 = 73,
+  A75 = 75,
+  A76 = 76,
+  ARM_UNKOWN = -1
 };
 
 extern const char *G_OP_TYPE_CONV;

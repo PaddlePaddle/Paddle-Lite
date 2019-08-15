@@ -16,6 +16,7 @@ import Foundation
 
 struct ElementwiseAddMetalParam {
     var fast: Int32 = 0
+    var addByChannel: Int32 = 0
     var axis: Int32 = 0
     var ylen: Int32 = 0
     var xdim: (Int32, Int32, Int32, Int32) = (0, 0, 0, 0)
@@ -28,33 +29,45 @@ class ElementwiseAddKernel<P: PrecisionProtocol>: Kernel, Computable {
     var metalParam: ElementwiseAddMetalParam
     required init(device: MTLDevice, param: ElementwiseAddParam<P>, initContext: InitContext) throws {
         
-        do {
-            try param.output.initTexture(device: device, inTranspose: param.inputX.transpose, computePrecision: GlobalConfig.shared.computePrecision)
-        } catch let error {
-            throw error
-        }
+        try param.output.initTexture(device: device, inTranspose: param.inputX.transpose, computePrecision: GlobalConfig.shared.computePrecision)
         
         metalParam = ElementwiseAddKernel.metalParamFrom(inputX: param.inputX, inputY: param.inputY, axis: param.axis)
         
         if GlobalConfig.shared.computePrecision == .Float32 {
-            super.init(device: device, inFunctionName: "elementwise_add", initContext: initContext)
+            try super.init(device: device, inFunctionName: "elementwise_add", initContext: initContext)
         } else if GlobalConfig.shared.computePrecision == .Float16 {
-            super.init(device: device, inFunctionName: "elementwise_add_half", initContext: initContext)
+            try super.init(device: device, inFunctionName: "elementwise_add_half", initContext: initContext)
         } else {
-            fatalError()
+            throw PaddleMobileError.makeError(type: .predictError, msg: "unsupported compute precision: \(GlobalConfig.shared.computePrecision)")
         }
     }
     
     func compute(commandBuffer: MTLCommandBuffer, param: ElementwiseAddParam<P>) throws {
-        guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
-            throw PaddleMobileError.predictError(message: " encode is nil")
+        guard let tempPipline = pipline else {
+            throw PaddleMobileError.makeError(type: .predictError, msg: "pipline is nil")
         }
-        encoder.setTexture(param.inputX.metalTexture, index: 0)
-        encoder.setTexture(param.inputY.metalTexture, index: 1)
-        encoder.setTexture(param.output.metalTexture, index: 2)
-        encoder.setBytes(&metalParam, length: MemoryLayout<ElementwiseAddMetalParam>.size, index: 0)
-        encoder.dispatch(computePipline: pipline, outTexture: param.output.metalTexture)
-        encoder.endEncoding()
+        guard let inputXMetalTexture = param.inputX.metalTexture else {
+            throw PaddleMobileError.makeError(type: .predictError, msg: "inputX metaltexture is nil")
+        }
+        guard let inputYMetalTexture = param.inputY.metalTexture else {
+            throw PaddleMobileError.makeError(type: .predictError, msg: "inputY metaltexture is nil")
+        }
+        guard let outputMetalTexture = param.output.metalTexture else {
+            throw PaddleMobileError.makeError(type: .predictError, msg: "output metaltexture is nil")
+        }
+        do {
+            guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
+                throw PaddleMobileError.makeError(type: .predictError, msg: "encoder is nil")
+            }
+            defer {
+                encoder.endEncoding()
+            }
+            encoder.setTexture(inputXMetalTexture, index: 0)
+            encoder.setTexture(inputYMetalTexture, index: 1)
+            encoder.setTexture(outputMetalTexture, index: 2)
+            encoder.setBytes(&metalParam, length: MemoryLayout<ElementwiseAddMetalParam>.size, index: 0)
+            try encoder.dispatch(computePipline: tempPipline, outTexture: outputMetalTexture)
+        }
     }
     
     static func metalParamFrom(inputX: Texture, inputY: Texture, axis: Int) -> ElementwiseAddMetalParam {
@@ -78,6 +91,9 @@ class ElementwiseAddKernel<P: PrecisionProtocol>: Kernel, Computable {
         if (inputX.dim == inputY.dim) && (inputX.transpose == inputY.transpose) {
             //      print("===> elementwise_add fast!!!")
             metalParam.fast = 1
+        }
+        if inputY.tensorDim.cout() == 1 && (axis == 1 || (axis == -1 && inputY.tensorDim.dims[0] == inputX.padToFourDim[1])) {
+            metalParam.addByChannel = 1
         }
         return metalParam
     }

@@ -14,6 +14,7 @@ limitations under the License. */
 
 #include <string>
 #include <vector>
+#include "framework/operator.h"
 
 #include "framework/program/program_desc.h"
 #include "framework/program/tensor_desc.h"
@@ -51,6 +52,17 @@ void ProgramDesc::Description(std::string header) const {
   if (header.size()) {
     LOG(kLOG_INFO) << header;
   }
+  for (int i = 0; i < this->blocks_.size(); ++i) {
+    auto block = this->blocks_[i];
+    for (int j = 0; j < block->Ops().size(); ++j) {
+      std::shared_ptr<OpDesc> op_desc = block->Ops()[j];
+      auto op_info_ptr =
+          OpInfoMap<CPU>::Instance()->GetNullable(op_desc->Type());
+      if (op_info_ptr == nullptr) {
+        DLOG << "Operator has not been registered :" << op_desc->Type().c_str();
+      }
+    }
+  }
 
   for (int i = 0; i < this->blocks_.size(); ++i) {
     auto block = this->blocks_[i];
@@ -58,7 +70,7 @@ void ProgramDesc::Description(std::string header) const {
     LOG(kLOG_INFO) << "block ops size: " << block->Ops().size();
     for (int j = 0; j < block->Ops().size(); ++j) {
       auto op = block->Ops()[j];
-      LOG(kLOG_DEBUG1) << "op: " << op->Type();
+      LOG(kLOG_DEBUG1) << j << "th, op: " << op->Type();
       for (auto &input : op->GetInputs()) {
         LOG(kLOG_DEBUG2) << "input parameter: " << input.first;
         for (auto &n : input.second) {

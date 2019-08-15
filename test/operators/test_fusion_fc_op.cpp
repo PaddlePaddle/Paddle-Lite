@@ -90,6 +90,11 @@ int TestFcOP() {
   auto bias = bias_var->template GetMutable<framework::LoDTensor>();
   SetupTensor<S>(bias, bias_shape, -127, 127);
 
+  framework::Tensor origin_matrix;
+  T *origin_inputB_ptr = origin_matrix.mutable_data<T>(inputB_shape);
+  memcpy(origin_inputB_ptr, inputB->data<T>(),
+         sizeof(*origin_inputB_ptr) * k * n);
+
   auto scale_var = scope.get()->Var("scale");
   auto scale = scale_var->template GetMutable<framework::LoDTensor>();
   scale->Resize(framework::make_ddim({1}));
@@ -105,13 +110,14 @@ int TestFcOP() {
   op = new operators::FusionFcOp<CPU, T>("fusion_fc", inputs, outputs, attrs,
                                          scope.get());
   op->InferShape();
+  op->Init();
   op->Run();
   auto output = output_var->template Get<framework::LoDTensor>();
   const T *output_data = output->data<T>();
   // compare
   T *c = static_cast<T *>(memory::Alloc(sizeof(T) * m * n));
   T *a = inputA->data<T>();
-  T *b = inputB->data<T>();
+  T *b = origin_inputB_ptr;
   S *bias_data = bias->data<S>();
   for (int32_t i = 0; i < m; ++i) {
     for (int32_t j = 0; j < n; ++j) {

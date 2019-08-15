@@ -59,12 +59,13 @@ int main(int argc, char* argv[]) {
       paddle_mobile.Predict(input);
     }
     auto time3 = time();
-    for (int i = 0; i < 10; ++i) {
+    int test_count = 100;
+    for (int i = 0; i < test_count; ++i) {
       paddle_mobile.Predict(input);
     }
-
     auto time4 = time();
-    std::cout << "predict cost :" << time_diff(time3, time4) / 10 << "ms\n";
+    std::cout << "predict cost :" << time_diff(time3, time4) / test_count
+              << "ms\n";
     std::ostringstream os("output tensor size: ");
     output = paddle_mobile.Fetch();
     os << output->numel() << "\n" << output->data<float>()[0];

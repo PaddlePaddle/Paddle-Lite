@@ -21,6 +21,7 @@ limitations under the License. */
 #include "./test_helper.h"
 #include "common/enforce.h"
 #include "common/log.h"
+#include "common/util.h"
 #include "executor_for_test.h"
 #include "framework/ddim.h"
 #include "framework/lod_tensor.h"
@@ -32,3 +33,7 @@ limitations under the License. */
 #include "framework/tensor.h"
 #include "framework/variable.h"
 #include "io/paddle_mobile.h"
+
+#ifdef PADDLE_MOBILE_CL
+#include "framework/cl/cl_image.h"
+#endif

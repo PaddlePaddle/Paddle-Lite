@@ -1,0 +1,115 @@
+<!DOCYTPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>paddle web unitTest</title>
+    <meta name="viewport" content="width=device-width,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+        .paddle-web-wrapper {
+            position: relative;
+            width: 100%;
+        }
+        .paddle-web-title {
+            width: 100%;
+            background-color: blueviolet;
+            height: 44px;
+            text-align: center;
+            color: #fff;
+            line-height: 44px;
+            font-size: 18px;
+
+        }
+        .paddle-web-body {
+
+        }
+        #paddle-web-unit-list {
+
+        }
+        #paddle-web-unit-list li {
+
+        }
+        .unit-li-name {
+            font-size: 16px;
+            margin: 5px;
+            font-weight: 700;
+            letter-spacing: 0;
+            line-height: 14px;
+        }
+        .unit-li-assert {
+            font-size: 16px;
+            margin: 5px;
+            font-weight: 700;
+            letter-spacing: 0;
+            line-height: 14px;
+        }
+        .pass {
+            color: #34B458;
+        }
+        .no-pass {
+            color: #b4231b;
+        }
+        .unit-li-diff {
+            margin: 5px;
+            border: 1px dotted #f71111;
+        }
+        p {
+            word-wrap: break-word;
+            word-break: normal;
+        }
+        span {
+            word-wrap: break-word;
+            word-break: normal;
+        }
+        #display {
+            width: 100%;
+
+        }
+    </style>
+    <!--<script src="unitTest.es6"></script>-->
+    <!--<script src="testUtils/diff.js"></script>-->
+    <script src="testUtils/testUtils.es6"></script>
+</head>
+<body>
+<div class="paddle-web-wrapper">
+    <div class="paddle-web-title">
+        paddle Web Unit Test
+    </div>
+    <div class="paddle-web-body">
+        <ul id="paddle-web-unit-list">
+            <li class="unit-li">
+                <div class="unit-li-name">pool</div>
+                <div class="unit-li-assert pass">pass</div>
+            </li>
+            <li class="unit-li">
+                <div class="unit-li-name">relu</div>
+                <div class="unit-li-assert pass">pass</div>
+            </li>
+            <li class="unit-li">
+                <div class="unit-li-name">prelu</div>
+                <div class="unit-li-assert pass">pass</div>
+            </li>
+            <li class="unit-li">
+                <div class="unit-li-name">softmax</div>
+                <div class="unit-li-assert pass">pass</div>
+            </li>
+            <li class="unit-li">
+                <div class="unit-li-name">dropout</div>
+                <div class="unit-li-assert pass">pass</div>
+            </li>
+            <li class="unit-li">
+                <div class="unit-li-name">conv2d</div>
+                <div class="unit-li-assert pass">pass</div>
+            </li>
+        </ul>
+        <div id="display"></div>
+    </div>
+
+</div>
+
+
+</body>
+</html>

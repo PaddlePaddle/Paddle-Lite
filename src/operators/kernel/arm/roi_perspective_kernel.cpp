@@ -208,6 +208,8 @@ void RoiPerspectiveKernel<CPU, float>::Compute(
   const auto *input_x = param.input_x_;
   const auto *input_rois = param.input_rois_;
   auto *output = param.output_;
+  auto *transform_Matrix = param.transform_Matrix_;
+  auto *mask = param.mask;
 
   const auto &in_dims = input_x->dims();
   const int channels = in_dims[1];
@@ -221,6 +223,9 @@ void RoiPerspectiveKernel<CPU, float>::Compute(
   const float *input_data = input_x->data<float>();
   const float *rois_data = input_rois->data<float>();
   float *output_data = output->mutable_data<float>();
+  int *mask_data = mask->mutable_data<int>();
+  float *transform_matrix =
+      transform_Matrix->mutable_data<float>({rois_num, 9});
 
   std::vector<int> roi2image(rois_num);
   const auto &lod = input_rois->lod().back();
@@ -240,9 +245,13 @@ void RoiPerspectiveKernel<CPU, float>::Compute(
     }
     int image_id = roi2image[n];
     // Get transform matrix
-    float transform_matrix[9];
+    //    float transform_matrix[9];
+    float matrix[9];
     get_transform_matrix<float>(transformed_width, transformed_height, roi_x,
-                                roi_y, transform_matrix);
+                                roi_y, matrix);
+    for (int i = 0; i < 9; i++) {
+      transform_matrix[n * 9 + i] = matrix[i];
+    }
     for (int c = 0; c < channels; ++c) {
       for (int out_h = 0; out_h < transformed_height; ++out_h) {
         for (int out_w = 0; out_w < transformed_width; ++out_w) {
@@ -251,19 +260,24 @@ void RoiPerspectiveKernel<CPU, float>::Compute(
               c * transformed_height * transformed_width +
               out_h * transformed_width + out_w;
           float in_w, in_h;
-          get_source_coords<float>(transform_matrix, out_w, out_h, &in_w,
-                                   &in_h);
+          get_source_coords<float>(matrix, out_w, out_h, &in_w, &in_h);
           if (in_quad<float>(in_w, in_h, roi_x, roi_y)) {
             if ((-0.5 > in_w) || (in_w > (in_width - 0.5)) || (-0.5 > in_h) ||
                 (in_h > (in_height - 0.5))) {
               output_data[out_index] = 0.0;
+              mask_data[(n * transformed_height + out_h) * transformed_width +
+                        out_w] = 0;
             } else {
               bilinear_interpolate<float>(input_data, channels, in_width,
                                           in_height, image_id, c, in_w, in_h,
                                           output_data + out_index);
+              mask_data[(n * transformed_height + out_h) * transformed_width +
+                        out_w] = 1;
             }
           } else {
             output_data[out_index] = 0.0;
+            mask_data[(n * transformed_height + out_h) * transformed_width +
+                      out_w] = 1;
           }
         }
       }

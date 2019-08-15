@@ -44,6 +44,7 @@ int TestRelu6Op(const std::vector<int> input_shape) {
   auto output_var = scope.get()->Var("output");
 
   framework::AttributeMap attrs;
+  attrs["threshold"].Set<float>(6.f);
   auto *op = new operators::Relu6Op<CPU, float>("relu6", inputs, outputs, attrs,
                                                 scope.get());
   op->InferShape();

@@ -25,11 +25,7 @@ class FeedParam<P: PrecisionProtocol>: OpParam{
     
     required init(opDesc: PMOpDesc, inScope: Scope) throws {
         scope = inScope
-        do {
-            output = try FeedParam.outputOut(outputs: opDesc.outputs, from: inScope)
-        } catch let error {
-            throw error
-        }
+        output = try FeedParam.outputOut(outputs: opDesc.outputs, from: inScope)
     }
     
     //typealias ParamPrecisionType = P
@@ -40,17 +36,13 @@ class FeedOp<P: PrecisionProtocol>: Operator<Texture2DTo2DArrayKernel<P>, FeedPa
     
     func inferShape() {
         //        print("feed  input: \(para.input.expectDim)")
-        print("feed output: \(para.output.dim)")
+        paddleMobileLog("feed output: \(para.output.dim)")
         //        para.output.dim =
         //        para.output.dim = para.input.expectDim
     }
     
     func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
-        do {
-            try kernel.compute(commandBuffer: buffer, param: para)
-        } catch let error {
-            throw error
-        }
+        try kernel.compute(commandBuffer: buffer, param: para)
         
         //        let resizeKernel = ResizeKernel<P>.init(device: device)
         //        let resizeParam = ResizeParam.init(input: para.input.mtlTexture, output: para.output.metalTexture, expectDim: para.input.expectDim)
@@ -63,8 +55,13 @@ class FeedOp<P: PrecisionProtocol>: Operator<Texture2DTo2DArrayKernel<P>, FeedPa
     
     func delogOutput() {
         print(" \(type) output: ")
-        print(para.output.metalTexture)
-        print(para.output.toTensor().strideArray())
+        print(para.output.metalTexture ?? "")
+        do {
+            let output = try para.output.metalTexture?.toTensor(dim: (n: para.output.padToFourDim[0], c: para.output.padToFourDim[1], h: para.output.padToFourDim[2], w: para.output.padToFourDim[3])).strideArray()
+            print(output ?? "")
+        } catch let error {
+            print(error)
+        }
     }
 }
 

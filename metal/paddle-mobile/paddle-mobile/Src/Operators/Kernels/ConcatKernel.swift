@@ -35,34 +35,44 @@ class ConcatKernel<P: PrecisionProtocol>: Kernel, Computable{
     var v = "normal"
     var pm = ConcatMetalParam.init()
     func compute(commandBuffer: MTLCommandBuffer, param: ConcatParam<P>) throws {
-        
-        guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
-            throw PaddleMobileError.predictError(message: " encode is nil")
+        guard let tempPipline = pipline else {
+            throw PaddleMobileError.makeError(type: .predictError, msg: "pipline is nil")
         }
-        let num = param.input.count
-        for i in 0..<num {
-            encoder.setTexture(param.input[i].metalTexture, index: i)
+        guard let outputMetalTexture = param.output.metalTexture else {
+            throw PaddleMobileError.makeError(type: .predictError, msg: "output metaltexture is nil")
         }
-        encoder.setTexture(param.output.metalTexture, index: num)
-        if v == "normal" {
-            encoder.setTexture(param.output.metalTexture, index: num + 1)
+        do {
+            guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
+                throw PaddleMobileError.makeError(type: .predictError, msg: "encoder is nil")
+            }
+            defer {
+                encoder.endEncoding()
+            }
+            let num = param.input.count
+            for i in 0..<num {
+                guard let inputMetalTexture = param.input[i].metalTexture else {
+                    throw PaddleMobileError.makeError(type: .predictError, msg: "input metaltexture \(i) is nil")
+                }
+                encoder.setTexture(inputMetalTexture, index: i)
+            }
+            encoder.setTexture(outputMetalTexture, index: num)
+            if v == "normal" {
+                encoder.setTexture(param.output.metalTexture, index: num + 1)
+            }
+            encoder.setBytes(&pm, length: MemoryLayout<ConcatMetalParam>.size, index: 0)
+            try encoder.dispatch(computePipline: tempPipline, outTexture: outputMetalTexture)
         }
-        encoder.setBytes(&pm, length: MemoryLayout<ConcatMetalParam>.size, index: 0)
-        encoder.dispatch(computePipline: pipline, outTexture: param.output.metalTexture)
-        encoder.endEncoding()
     }
     
     required init(device: MTLDevice, param: ConcatParam<P>, initContext: InitContext) throws {
         
-        do {
-            try param.output.initTexture(device: device, inTranspose: param.transpose, computePrecision: GlobalConfig.shared.computePrecision)
-        } catch let error {
-            throw error
-        }
+        try param.output.initTexture(device: device, inTranspose: param.transpose, computePrecision: GlobalConfig.shared.computePrecision)
         
         let orank = param.output.tensorDim.cout()
         let num = param.input.count
-        assert(num <= 6)
+        guard num <= 6 else {
+            throw PaddleMobileError.makeError(type: .netError, msg: "param input count must be less than or equal to 6")
+        }
         var axis = 4 - param.output.tensorDim.cout() + param.axis
         for i in 0..<4 {
             if param.transpose[i] == axis {
@@ -140,15 +150,15 @@ class ConcatKernel<P: PrecisionProtocol>: Kernel, Computable{
         }
         pm.vdim = (Int32(vdim[0]), Int32(vdim[1]), Int32(vdim[2]), Int32(vdim[3]), Int32(vdim[4]), Int32(vdim[5]))
         if GlobalConfig.shared.computePrecision == .Float32 {
-            super.init(device: device, inFunctionName: "concat_\(orank)_\(num)_\(v)_float", initContext: initContext)
+            try super.init(device: device, inFunctionName: "concat_\(orank)_\(num)_\(v)_float", initContext: initContext)
         } else if GlobalConfig.shared.computePrecision == .Float16 {
-            super.init(device: device, inFunctionName: "concat_\(orank)_\(num)_\(v)_half", initContext: initContext)
+            try super.init(device: device, inFunctionName: "concat_\(orank)_\(num)_\(v)_half", initContext: initContext)
         } else {
-            fatalError()
+            throw PaddleMobileError.makeError(type: .predictError, msg: "unsupported compute precision: \(GlobalConfig.shared.computePrecision)")
         }
     }
     
-    required init(device: MTLDevice, testParam: ConcatTestParam, initContext: InitContext) {
-        super.init(device: device, inFunctionName: "concat", initContext: initContext)
+    required init(device: MTLDevice, testParam: ConcatTestParam, initContext: InitContext) throws {
+        try super.init(device: device, inFunctionName: "concat", initContext: initContext)
     }
 }

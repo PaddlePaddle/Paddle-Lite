@@ -14,6 +14,16 @@
 
 import Foundation
 
+public enum PaddleMobileErrorType {
+    case loaderError
+    case netError
+    case memoryError
+    case paramError
+    case opError
+    case predictError
+    case defaultError
+}
+
 public enum PaddleMobileError: Error{
     case loaderError(message: String)
     case netError(message: String)
@@ -21,4 +31,26 @@ public enum PaddleMobileError: Error{
     case paramError(message: String)
     case opError(message: String)
     case predictError(message: String)
+    case defaultError(message: String)
+    
+    static public func makeError(type: PaddleMobileErrorType, msg: String, file: String = #file, line: Int = #line, function: String = #function, callStack: Array<String> = Thread.callStackSymbols) -> PaddleMobileError {
+        paddleMobileLog(msg, logLevel: .FatalError, file: file, line: line, function: function, callStack: callStack)
+        let debugMsg = "\(msg) -file: \(file) -line: \(line) -function:\(function) -calling stack: \(callStack)"
+        switch type {
+        case .loaderError:
+            return PaddleMobileError.loaderError(message: debugMsg)
+        case .netError:
+            return PaddleMobileError.netError(message: debugMsg)
+        case .memoryError:
+            return PaddleMobileError.memoryError(message: debugMsg)
+        case .paramError:
+            return PaddleMobileError.paramError(message: debugMsg)
+        case .opError:
+            return PaddleMobileError.opError(message: debugMsg)
+        case .predictError:
+            return PaddleMobileError.predictError(message: debugMsg)
+        case .defaultError:
+            return PaddleMobileError.defaultError(message: debugMsg)
+        }
+    }
 }

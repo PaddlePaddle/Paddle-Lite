@@ -174,7 +174,7 @@ int do_sgemm_with_bias(int m, int n, int k, bool relu, int pr,
   int lda = k;
   int ldb = n;
   int ldc = n;
-  float scale = 0.00628f;
+  float scale = 1;
   default_random_engine e;
   uniform_int_distribution<int8_t> pixel(-127, 127);
   int8_t *a = static_cast<int8_t *>(
