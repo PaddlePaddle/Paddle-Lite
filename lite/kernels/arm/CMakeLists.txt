@@ -59,6 +59,8 @@ lite_cc_library(is_empty_compute_arm SRCS is_empty_compute.cc DEPS ${lite_kernel
 lite_cc_library(shape_compute_arm SRCS shape_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(slice_compute_arm SRCS slice_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(cast_compute_arm SRCS cast_compute.cc DEPS ${lite_kernel_deps} math_arm)
+lite_cc_library(squeeze_compute_arm SRCS squeeze_compute.cc DEPS ${lite_kernel_deps} math_arm)
+lite_cc_library(expand_compute_arm SRCS expand_compute.cc DEPS ${lite_kernel_deps} math_arm)
 
 lite_cc_test(test_fc_compute_arm SRCS fc_compute_test.cc DEPS fc_compute_arm math_arm)
 lite_cc_test(test_scale_compute_arm SRCS scale_compute_test.cc DEPS scale_compute_arm)
@@ -136,6 +138,8 @@ set(arm_kernels
     shape_compute_arm
     slice_compute_arm
     cast_compute_arm
+    squeeze_compute_arm
+    expand_compute_arm
     )
 
 set(arm_kernels "${arm_kernels}" CACHE INTERNAL "arm kernels")

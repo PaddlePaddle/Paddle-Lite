@@ -195,7 +195,7 @@ REGISTER_LITE_KERNEL(
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
 REGISTER_LITE_KERNEL(
-    relu6, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::ReluCompute, def)
+    relu6, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::Relu6Compute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();

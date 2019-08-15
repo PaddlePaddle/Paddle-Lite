@@ -35,7 +35,8 @@ class ShapeComputeTester : public arena::TestCase {
     CHECK(input);
     auto* out = scope->NewTensor(out_);
     CHECK(out);
-    out->Resize(DDim({input->dims().size()}));
+    int64_t sz = input->dims().size();
+    out->Resize(DDim({sz}));
     auto* out_data = out->mutable_data<int>();
     for (int i = 0; i < input->dims().size(); ++i) {
       out_data[i] = input->dims()[i];

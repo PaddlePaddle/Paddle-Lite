@@ -21,6 +21,7 @@
 USE_LITE_OP(mul);
 USE_LITE_OP(fc);
 USE_LITE_OP(relu);
+USE_LITE_OP(relu6);
 USE_LITE_OP(scale);
 USE_LITE_OP(feed);
 USE_LITE_OP(lrn);
@@ -105,3 +106,6 @@ USE_LITE_OP(is_empty)
 USE_LITE_OP(shape)
 USE_LITE_OP(slice)
 USE_LITE_OP(cast)
+USE_LITE_OP(squeeze)   // for x2paddle
+USE_LITE_OP(squeeze2)  // for x2paddle
+USE_LITE_OP(expand)    // for x2paddle
