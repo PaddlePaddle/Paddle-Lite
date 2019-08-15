@@ -81,6 +81,8 @@ lite_cc_library(is_empty SRCS is_empty_op.cc DEPS ${op_DEPS})
 lite_cc_library(shape_op_lite SRCS shape_op.cc DEPS ${op_DEPS})
 lite_cc_library(cast_op_lite SRCS cast_op.cc DEPS ${op_DEPS})
 lite_cc_library(slice_op_lite SRCS slice_op.cc DEPS ${op_DEPS})
+lite_cc_library(squeeze_op_lite SRCS squeeze_op.cc DEPS ${op_DEPS})
+lite_cc_library(expand_op_lite SRCS expand_op.cc DEPS ${op_DEPS})
 
 
 set(ops
@@ -164,6 +166,8 @@ set(ops
         shape_op_lite
         cast_op_lite
         slice_op_lite
+        squeeze_op_lite
+        expand_op_lite
         CACHE INTERNAL "ops lite")
 
 if (NOT LITE_WITH_X86)
