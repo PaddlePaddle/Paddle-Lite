@@ -17,14 +17,14 @@ import MetalPerformanceShaders
 
 public class ScaleKernel: CusomKernel {
     var lanczos: MPSImageLanczosScale!
-    public init(device: MTLDevice, shape: Shape, metalLoadMode: MetalLoadMode, metalLibPath: String?) {
+    public init(device: MTLDevice, shape: Shape, metalLoadMode: MetalLoadMode, metalLibPath: String?) throws {
         lanczos = MPSImageLanczosScale(device: device)        
         if GlobalConfig.shared.computePrecision == .Float32 {
-            super.init(device: device, inFunctionName: nil, outputDim: shape, metalLoadModel: metalLoadMode, metalLibPath: metalLibPath)
+            try super.init(device: device, inFunctionName: nil, outputDim: shape, metalLoadModel: metalLoadMode, metalLibPath: metalLibPath)
         } else if GlobalConfig.shared.computePrecision == .Float16 {
-            super.init(device: device, inFunctionName: nil, outputDim: shape, metalLoadModel: metalLoadMode, metalLibPath: metalLibPath)
+            try super.init(device: device, inFunctionName: nil, outputDim: shape, metalLoadModel: metalLoadMode, metalLibPath: metalLibPath)
         } else {
-            fatalError(" unsupport ")
+            throw PaddleMobileError.makeError(type: .predictError, msg: "unsupported compute precision: \(GlobalConfig.shared.computePrecision)")
         }
     }
     

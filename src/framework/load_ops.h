@@ -127,6 +127,9 @@ LOAD_OP2(transpose2, CPU, GPU_CL);
 #ifdef PRIORBOX_OP
 LOAD_OP2(prior_box, CPU, GPU_CL);
 #endif
+#ifdef DENSITY_PRIORBOX_OP
+LOAD_OP2(density_prior_box, CPU, GPU_CL);
+#endif
 #ifdef FUSION_CONVADDRELU_OP
 LOAD_OP3(fusion_conv_add_relu, CPU, GPU_CL, FPGA);
 LOAD_FUSION_MATCHER(fusion_conv_add_relu);
@@ -142,7 +145,7 @@ LOAD_OP2(softmax, CPU, GPU_CL);
 LOAD_OP1(shape, CPU);
 #endif
 #ifdef DEPTHWISECONV_OP
-LOAD_OP1(depthwise_conv2d, CPU);
+LOAD_OP2(depthwise_conv2d, CPU, GPU_CL);
 #endif
 #ifdef CONV_TRANSPOSE_OP
 LOAD_OP1(conv2d_transpose, CPU);
@@ -158,7 +161,9 @@ LOAD_OP1(prelu, CPU);
 #endif
 #ifdef FLATTEN_OP
 LOAD_OP1(flatten, CPU);
-LOAD_OP1(flatten2, CPU);
+#endif
+#ifdef FLATTEN2_OP
+LOAD_OP2(flatten2, CPU, GPU_CL);
 #endif
 #ifdef FUSION_CONVBNADDRELU_OP
 LOAD_OP3(fusion_conv_bn_add_relu, CPU, GPU_CL, FPGA);
@@ -200,7 +205,7 @@ LOAD_OP1(norm, CPU);
 #endif
 #ifdef RELU_OP
 LOAD_OP2(relu, CPU, GPU_CL);
-LOAD_OP1(relu6, CPU);
+LOAD_OP2(relu6, CPU, GPU_CL);
 #endif
 #ifdef IM2SEQUENCE_OP
 LOAD_OP1(im2sequence, CPU);
@@ -344,4 +349,25 @@ LOAD_OP1(one_hot, CPU);
 #endif
 #ifdef ASSIGN_VALUE_OP
 LOAD_OP1(assign_value, CPU);
+#endif
+#ifdef EXP_OP
+LOAD_OP1(exp, CPU);
+#endif
+#ifdef ASSIGN_OP
+LOAD_OP1(assign, CPU);
+#endif
+#ifdef CONDITIONAL_BLOCK_OP
+LOAD_OP1(conditional_block, CPU);
+#endif
+#ifdef EQUAL_OP
+LOAD_OP1(equal, CPU);
+#endif
+#ifdef FILL_CONSTANT_BATCH_SIZE_LIKE_OP
+LOAD_OP1(fill_constant_batch_size_like, CPU);
+#endif
+#ifdef RANGE_OP
+LOAD_OP1(range, CPU);
+#endif
+#ifdef REDUCE_PROD_OP
+LOAD_OP1(reduce_prod, CPU);
 #endif

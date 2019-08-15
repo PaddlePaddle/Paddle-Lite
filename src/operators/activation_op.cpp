@@ -63,6 +63,7 @@ REGISTER_OPERATOR_FPGA(relu, ops::ReluOp);
 #endif
 #ifdef PADDLE_MOBILE_CL
 REGISTER_OPERATOR_CL(relu, ops::ReluOp);
+REGISTER_OPERATOR_CL(relu6, ops::Relu6Op);
 #endif
 #endif  // RELU_OP
 
@@ -84,10 +85,18 @@ REGISTER_OPERATOR_FPGA(tanh, ops::TanhOp);
 #endif
 #endif  // TANH_OP
 
+#ifdef PADDLE_MOBILE_CPU
 #ifdef LOG_OP
 REGISTER_OPERATOR_CPU(log, ops::LogOp);
 #endif  // LOG_OP
+#endif
 
 #ifdef LEAKY_RELU_OP
+#ifdef PADDLE_MOBILE_CPU
 REGISTER_OPERATOR_CPU(leaky_relu, ops::LeakyReluOp);
 #endif  // LEAKY_RELU_OP
+
+#ifdef PADDLE_MOBILE_CL
+REGISTER_OPERATOR_CL(leaky_relu, ops::LeakyReluOp);
+#endif
+#endif

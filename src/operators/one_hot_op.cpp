@@ -26,7 +26,9 @@ void OnehotOp<Dtype, T>::InferShape() const {
   framework::DDim out_dims(x_dims);
   out_dims[out_dims.size() - 1] = depth;
   this->param_.output_->Resize(out_dims);
+#ifdef PADDLE_MOBILE_CPU
   this->param_.output_->set_lod(this->param_.input_->lod());
+#endif
 }
 
 }  // namespace operators

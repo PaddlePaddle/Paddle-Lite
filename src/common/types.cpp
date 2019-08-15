@@ -91,6 +91,7 @@ const char *G_OP_TYPE_WRITE_TO_ARRAY = "write_to_array";
 const char *G_OP_TYPE_READ_FROM_ARRAY = "read_from_array";
 const char *G_OP_TYPE_IS_EMPTY = "is_empty";
 const char *G_OP_TYPE_INCREMENT = "increment";
+const char *G_OP_TYPE_EXP = "exp";
 
 const char *G_OP_TYPE_QUANTIZE = "quantize";
 const char *G_OP_TYPE_DEQUANTIZE = "dequantize";
@@ -121,6 +122,15 @@ const char *G_OP_TYPE_PAD2D = "pad2d";
 const char *G_OP_TYPE_FUSION_DECONV_ADD_BN_RELU = "fusion_deconv_add_bn_relu";
 const char *G_OP_TYPE_FUSION_DECONV_ADD_BN = "fusion_deconv_add_bn";
 const char *G_OP_TYPE_FUSION_DECONV_BN_RELU = "fusion_deconv_bn_relu";
+const char *G_OP_TYPE_ASSIGN = "assign";
+const char *G_OP_TYPE_REDUCE_PROD = "reduce_prod";
+const char *G_OP_TYPE_EQUAL = "equal";
+const char *G_OP_TYPE_CONDITIONAL_BLOCK = "conditional_block";
+const char *G_OP_TYPE_RANGE = "range";
+const char *G_OP_TYPE_WHILE = "while";
+const char *G_OP_TYPE_BEAM_SEARCH_DECODE = "beam_search_decode";
+const char *G_OP_TYPE_FILL_CONSTAN_BATCH_SIZE_LIKE =
+    "fill_constant_batch_size_like";
 
 std::unordered_map<
     std::string, std::pair<std::vector<std::string>, std::vector<std::string>>>
@@ -169,6 +179,7 @@ std::unordered_map<
         {G_OP_TYPE_FUSION_CONV_ADD_ADD_PRELU, {{"Input"}, {"Out"}}},
         {G_OP_TYPE_IM2SEQUENCE, {{"X"}, {"Out"}}},
         {G_OP_TYPE_DROPOUT, {{"X"}, {"Out"}}},
+        {G_OP_TYPE_EXP, {{"X"}, {"Out"}}},
         {G_OP_TYPE_FUSION_CONV_ADD_BN, {{"Input"}, {"Y"}}},
         {G_OP_TYPE_FUSION_POOL_BN, {{"X"}, {"Y"}}},
         {G_OP_TYPE_FUSION_ELEMENTWISE_ADD_RELU, {{"X", "Y"}, {"Out"}}},
@@ -232,5 +243,14 @@ std::unordered_map<
         {G_OP_TYPE_FUSION_DECONV_ADD_BN_RELU, {{"Input"}, {"Out"}}},
         {G_OP_TYPE_FUSION_DECONV_ADD_BN, {{"Input"}, {"Out"}}},
         {G_OP_TYPE_FUSION_DECONV_BN_RELU, {{"Input"}, {"Out"}}},
+        {G_OP_TYPE_REDUCE_PROD, {{"X"}, {"Out"}}},
+        {G_OP_TYPE_ASSIGN, {{"X"}, {"Out"}}},
+        {G_OP_TYPE_EQUAL, {{"X", "Y"}, {"Out"}}},
+        {G_OP_TYPE_RANGE, {{"Start", "End", "Step"}, {"Out"}}},
+        {G_OP_TYPE_CONDITIONAL_BLOCK, {{"Input", "Cond"}, {"Out", "Scope"}}},
+        {G_OP_TYPE_WHILE, {{"Condition", "X"}, {"Out", "StepScopes"}}},
+        {G_OP_TYPE_BEAM_SEARCH_DECODE,
+         {{"Ids", "Scores"}, {"SentenceIds", "SentenceScores"}}},
+        {G_OP_TYPE_FILL_CONSTAN_BATCH_SIZE_LIKE, {{"Input"}, {"Out"}}},
         {G_OP_TYPE_PAD2D, {{"X"}, {"Out"}}}};
 }  // namespace paddle_mobile

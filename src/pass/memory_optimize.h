@@ -19,6 +19,7 @@ limitations under the License. */
 #include <unordered_map>
 #include <vector>
 #include "framework/program/program.h"
+#include "pass/pass_base.h"
 
 namespace paddle_mobile {
 namespace pass {
@@ -28,12 +29,6 @@ typedef struct {
   int count;         // reference count
   bool visited;
 } VarNode;
-
-class PassBase {
- public:
-  PassBase() {}
-  virtual ~PassBase() {}
-};
 
 // MemoryOptPass will analyze the program, and reuse memory between
 // variables as much as possible
@@ -47,7 +42,8 @@ class MemoryOptPass : public PassBase {
   }
 
   void operator()(const framework::ProgramDesc *program,
-                  framework::Scope *scope);
+                  framework::Scope *scope,
+                  MemoryOptimizationLevel memory_optimization_level);
 
   void AppendBlockVars(const framework::BlockDesc *block);
 

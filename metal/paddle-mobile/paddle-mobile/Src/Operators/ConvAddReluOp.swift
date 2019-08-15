@@ -35,9 +35,9 @@ class ConvAddReluParam<P: PrecisionProtocol>: OpParam {
                 do {
                     let yTensor: Tensor<P> = try ConvAddReluParam.inputY(inputs: opDesc.paraInputs, from: inScope)
                     let device = input.metalTexture!.device
-                    y = Texture.init(device: device, inDim: yTensor.dim)
+                    y = try Texture.init(device: device, inDim: yTensor.dim)
                     let value: [P] = Array(UnsafeBufferPointer(start: yTensor.data.pointer, count: yTensor.dim.numel()))
-                    y?.metalTexture = device.tensor2texture(value: value, dim: yTensor.dim.dims, transpose: [0, 1, 2, 3], inComputePrecision: GlobalConfig.shared.computePrecision)
+                    y?.metalTexture = try device.tensor2texture(value: value, dim: yTensor.dim.dims, transpose: [0, 1, 2, 3], inComputePrecision: GlobalConfig.shared.computePrecision)
                     self.yTensor = yTensor
                 } catch {
                 }
@@ -106,16 +106,16 @@ class ConvAddReluOp<P: PrecisionProtocol>: Operator<ConvAddReluKernel<P>, ConvAd
     }
     
     func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
-        do {
-            try kernel.compute(commandBuffer: buffer, param: para)
-        } catch let error {
-            throw error
-        }
+        try kernel.compute(commandBuffer: buffer, param: para)
     }
     
     func delogOutput() {
         print(" \(type) output: ")
-        print(para.output.metalTexture)
-        print(para.output.metalTexture.toTensor(dim: (n: para.output.tensorDim[0], c: para.output.tensorDim[1], h: para.output.tensorDim[2], w: para.output.tensorDim[3])).strideArray())
+        print(para.output.metalTexture ?? "")
+        do {
+            let output = try para.output.metalTexture?.toTensor(dim: (n: para.output.tensorDim[0], c: para.output.tensorDim[1], h: para.output.tensorDim[2], w: para.output.tensorDim[3])).strideArray() ?? []
+            print(output)
+        } catch _ {
+        }
     }
 }

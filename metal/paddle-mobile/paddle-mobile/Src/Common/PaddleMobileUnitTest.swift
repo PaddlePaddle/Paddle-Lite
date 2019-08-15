@@ -78,11 +78,20 @@ public class PaddleMobileUnitTest {
                 odim *= dim[i]
             }
         }
-        assert(detectPos >= -1)
+        guard detectPos >= -1 else {
+            print("must satisfy detectPos >= -1")
+            return
+        }
         if (detectPos == -1) {
-            assert(tensor.count == odim)
+            guard tensor.count == odim else {
+                print("must satisfy tensor.count == odim")
+                return
+            }
         } else {
-            assert(tensor.count % odim == 0)
+            guard tensor.count % odim == 0 else {
+                print("must satisfy tensor.count % odim == 0")
+                return
+            }
             ndim[detectPos] = tensor.count / odim
         }
         indentPrintTensor(tensor: tensor, dim: ndim, ix: dim.map { $0 * 0 }, indentLevel: 0)
@@ -175,7 +184,9 @@ public class PaddleMobileUnitTest {
     
     public func testTranspose() {
         
-        let buffer = queue.makeCommandBuffer() ?! "buffer is nil"
+        guard let buffer = queue.makeCommandBuffer() else {
+            return
+        }
         //        var input: [Float32] = []
         //        for i in 0..<72 {
         //            input.append(Float32(i))
@@ -222,7 +233,9 @@ public class PaddleMobileUnitTest {
     }
     
     public func testConvAddBnRelu() {
-        let buffer = queue.makeCommandBuffer() ?! " buffer is nil "
+        guard let buffer = queue.makeCommandBuffer() else {
+            return
+        }
         
         let input: [Float32] = [
             1.0, 2.0, 3.0, 4.0,
@@ -299,16 +312,16 @@ public class PaddleMobileUnitTest {
         let inputeTexture = device.makeFloatTexture(value: input, textureWidth: 3, textureHeight: 3, arrayLength: 1)
         
         //filter
-        let filterBuffer = device.makeBuffer(value: filter)
+        let filterBuffer = try! device.makeBuffer(value: filter)
         
         // biase
-        let biaseBuffer = device.makeBuffer(value: biase)
+        let biaseBuffer = try! device.makeBuffer(value: biase)
         
         // new scale
-        let newScalueBuffer = device.makeBuffer(value: newScalue)
+        let newScalueBuffer = try! device.makeBuffer(value: newScalue)
         
         // new biase
-        let newBiaseBuffer = device.makeBuffer(value: newBiase)
+        let newBiaseBuffer = try! device.makeBuffer(value: newBiase)
         
         //output
         let outputTexture = device.makeFloatTexture(value: [Float32](), textureWidth: 2, textureHeight: 2, arrayLength: 1)
@@ -332,9 +345,9 @@ public class PaddleMobileUnitTest {
         let initContext = InitContext.init()
         initContext.metalLoadMode = .LoadMetalInDefaultLib
         
-        let convAddBnReluKernel = ConvAddBatchNormReluKernel<Float32>.init(device: device, testParam: param, initContext: initContext)
+        let convAddBnReluKernel = try! ConvAddBatchNormReluKernel<Float32>.init(device: device, testParam: param, initContext: initContext)
         
-        convAddBnReluKernel.test(commandBuffer: buffer, param: param)
+        try! convAddBnReluKernel.test(commandBuffer: buffer, param: param)
         
         buffer.addCompletedHandler { (buffer) in
             let _: Float32? = inputeTexture.logDesc(header: "input texture", stridable: false)

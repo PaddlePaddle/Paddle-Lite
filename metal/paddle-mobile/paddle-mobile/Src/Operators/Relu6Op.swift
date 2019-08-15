@@ -17,13 +17,9 @@ import Foundation
 
 class Relu6Param<P: PrecisionProtocol>: OpParam {
     required init(opDesc: PMOpDesc, inScope: Scope) throws {
-        do {
-            input = try Relu6Param.inputX(inputs: opDesc.inputs, from: inScope)
-            output = try Relu6Param.outputOut(outputs: opDesc.outputs, from: inScope)
-            threshold = try Relu6Param.getAttr(key: "threshold", attrs: opDesc.attrs)
-        } catch let error {
-            throw error
-        }
+        input = try Relu6Param.inputX(inputs: opDesc.inputs, from: inScope)
+        output = try Relu6Param.outputOut(outputs: opDesc.outputs, from: inScope)
+        threshold = try Relu6Param.getAttr(key: "threshold", attrs: opDesc.attrs)
     }
     let input: Texture
     var output: Texture
@@ -38,17 +34,17 @@ class Relu6Op<P: PrecisionProtocol>: Operator<Relu6Kernel<P>, Relu6Param<P>>, Ru
     }
     
     func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
-        do {
-            try kernel.compute(commandBuffer: buffer, param: para)
-        } catch let error {
-            throw error
-        }
+        try kernel.compute(commandBuffer: buffer, param: para)
     }
     
     func delogOutput() {
         print(" \(type) output: ")
-        print(para.output.metalTexture)
-        print(para.output.metalTexture.toTensor(dim: (n: para.output.tensorDim[0], c: para.output.tensorDim[1], h: para.output.tensorDim[2], w: para.output.tensorDim[3])).strideArray())
+        print(para.output.metalTexture ?? "")
+        do {
+            let output = try para.output.metalTexture?.toTensor(dim: (n: para.output.tensorDim[0], c: para.output.tensorDim[1], h: para.output.tensorDim[2], w: para.output.tensorDim[3])).strideArray() ?? []
+            print(output)
+        } catch _ {
+        }
     }
 }
 

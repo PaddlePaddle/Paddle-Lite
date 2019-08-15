@@ -17,17 +17,13 @@ import Foundation
 class MulticlassNMSParam<P: PrecisionProtocol>: OpParam {
     //typealias ParamPrecisionType = P
     required init(opDesc: PMOpDesc, inScope: Scope) throws {
-        do {
-            scores = try MulticlassNMSParam.getFirstTensor(key: "Scores", map: opDesc.inputs, from: inScope)
-            bboxes = try MulticlassNMSParam.getFirstTensor(key: "BBoxes", map: opDesc.inputs, from: inScope)
-            output = try MulticlassNMSParam.outputOut(outputs: opDesc.outputs, from: inScope)
-            
-            middleOutput = FetchHolder.init(inPaddedCapacity: scores.tensorDim.numel(), inDim: scores.tensorDim)
-            
-            bboxOutput = FetchHolder.init(inPaddedCapacity: bboxes.tensorDim.numel(), inDim: bboxes.tensorDim)
-        } catch let error {
-            throw error
-        }
+        scores = try MulticlassNMSParam.getFirstTensor(key: "Scores", map: opDesc.inputs, from: inScope)
+        bboxes = try MulticlassNMSParam.getFirstTensor(key: "BBoxes", map: opDesc.inputs, from: inScope)
+        output = try MulticlassNMSParam.outputOut(outputs: opDesc.outputs, from: inScope)
+        
+        middleOutput = FetchHolder.init(inPaddedCapacity: scores.tensorDim.numel(), inDim: scores.tensorDim)
+        
+        bboxOutput = FetchHolder.init(inPaddedCapacity: bboxes.tensorDim.numel(), inDim: bboxes.tensorDim)
     }
     var bboxOutput: FetchHolder
     var middleOutput: FetchHolder
@@ -38,19 +34,15 @@ class MulticlassNMSParam<P: PrecisionProtocol>: OpParam {
 
 class MulticlassNMSOp<P: PrecisionProtocol>: Operator<MulticlassNMSKernel<P>, MulticlassNMSParam<P>>, Runable, Creator, InferShaperable{
     
-    func inputVariant() -> [String : [MTLBuffer]] {
+    func inputVariant() -> [String : [MTLBuffer]]? {
         guard let scoreBuffer = para.middleOutput.resultBuffer, let bboxBuffer = para.middleOutput.resultBuffer else {
-            fatalError()
+            return nil
         }
         return ["Scores" : [scoreBuffer], "BBoxes" : [bboxBuffer]]
     }
     
-    func computeMiddleResult(device: MTLDevice, buffer: MTLCommandBuffer) {
-        do {
-            try kernel.compute(commandBuffer: buffer, param: para)
-        } catch let error {
-            fatalError("\(error)")
-        }
+    func computeMiddleResult(device: MTLDevice, buffer: MTLCommandBuffer) throws {
+        try kernel.compute(commandBuffer: buffer, param: para)
     }
     
     func inferShape() {
@@ -64,7 +56,11 @@ class MulticlassNMSOp<P: PrecisionProtocol>: Operator<MulticlassNMSKernel<P>, Mu
     
     func delogOutput() {
         print(" nms - output: ")
-        print(para.bboxes.metalTexture.float32Array().strideArray())
+        do {
+            let output = try para.bboxes.metalTexture?.float32Array().strideArray() ?? []
+            print(output)
+        } catch _ {
+        }
     }
 }
 

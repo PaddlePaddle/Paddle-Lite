@@ -1,4 +1,4 @@
-/* Copyright (c) 2018 PaddlePaddle Authors. All Rights Reserved.
+/* Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -11,6 +11,23 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
+
+// Tencent is pleased to support the open source community by making ncnn
+// available.
+//
+// Copyright (C) 2017 THL A29 Limited, a Tencent company. All rights reserved.
+//
+// Licensed under the BSD 3-Clause License (the "License"); you may not use this
+// file except in compliance with the License. You may obtain a copy of the
+// License at
+//
+// https://opensource.org/licenses/BSD-3-Clause
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+// WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+// License for the specific language governing permissions and limitations under
+// the License.
 
 #include "framework/context.h"
 #include <iostream>
@@ -261,7 +278,8 @@ int set_sched_affinity(const std::vector<int> &cpu_ids) {
   return 0;
 }
 
-int get_cpu_info_by_name(int *cpu_num, std::vector<int> *big_core_ids,
+int get_cpu_info_by_name(int *cpu_num, ARMArch *arch,
+                         std::vector<int> *big_core_ids,
                          std::vector<int> *little_core_ids,
                          std::vector<int> *l1_cache_sizes,
                          std::vector<int> *l2_cache_sizes,
@@ -270,6 +288,7 @@ int get_cpu_info_by_name(int *cpu_num, std::vector<int> *big_core_ids,
   /* Snapdragon */
   if (hardware_name.find("SDM845") != std::string::npos) {  // 845
     *cpu_num = 8;
+    *arch = A75;
     *big_core_ids = {4, 5, 6, 7};
     *little_core_ids = {0, 1, 2, 3};
     l1_cache_sizes->resize(*cpu_num);
@@ -282,6 +301,7 @@ int get_cpu_info_by_name(int *cpu_num, std::vector<int> *big_core_ids,
     return 0;
   } else if (hardware_name.find("SDM710") != std::string::npos) {  // 710
     *cpu_num = 8;
+    *arch = A75;
     *big_core_ids = {6, 7};
     *little_core_ids = {0, 1, 2, 3, 4, 5};
     l1_cache_sizes->resize(*cpu_num);
@@ -295,6 +315,7 @@ int get_cpu_info_by_name(int *cpu_num, std::vector<int> *big_core_ids,
     return 0;
   } else if (hardware_name.find("MSM8998") != std::string::npos) {  // 835
     *cpu_num = 8;
+    *arch = A73;
     *big_core_ids = {4, 5, 6, 7};
     *little_core_ids = {0, 1, 2, 3};
     l1_cache_sizes->resize(*cpu_num);
@@ -313,14 +334,51 @@ int get_cpu_info_by_name(int *cpu_num, std::vector<int> *big_core_ids,
     return 0;
   } else if (hardware_name.find("MSM8976") != std::string::npos) {  // 652,653
     *cpu_num = 8;
-    *big_core_ids = {0, 1, 2, 3, 4, 5, 6, 7};
-    *little_core_ids = {};
+    *arch = A72;
+    *big_core_ids = {4, 5, 6, 7};
+    *little_core_ids = {0, 1, 2, 3};
     l1_cache_sizes->resize(*cpu_num);
     l2_cache_sizes->resize(*cpu_num);
     l3_cache_sizes->resize(*cpu_num);
     fill_cpu_cache_size(l1_cache_sizes, 32 * 1024);
     fill_cpu_cache_size(l2_cache_sizes, 1024 * 1024);
     fill_cpu_cache_size(l3_cache_sizes, 0);
+    return 0;
+  } else if (hardware_name.find("SDM660") != std::string::npos ||
+             hardware_name.find("SDM636") != std::string::npos) {  // 660, 636
+    *cpu_num = 8;
+    *arch = A73;
+    *big_core_ids = {4, 5, 6, 7};
+    *little_core_ids = {0, 1, 2, 3};
+    l1_cache_sizes->resize(*cpu_num);
+    l2_cache_sizes->resize(*cpu_num);
+    l3_cache_sizes->resize(*cpu_num);
+    fill_cpu_cache_size(l1_cache_sizes, 64 * 1024);
+    fill_cpu_cache_size(l2_cache_sizes, 1024 * 1024);
+    fill_cpu_cache_size(l3_cache_sizes, 0);
+    return 0;
+
+    /* MediaTek */
+  } else if (hardware_name.find("MT6799") != std::string::npos) {  // X30
+    *cpu_num = 10;
+    *arch = A73;
+    *big_core_ids = {8, 9};
+    *little_core_ids = {0, 1, 2, 3, 4, 5, 6, 7};
+    return 0;
+  } else if (hardware_name.find("MT6771") != std::string::npos) {  // P60
+    *cpu_num = 8;
+    *arch = A73;
+    *big_core_ids = {4, 5, 6, 7};
+    *little_core_ids = {0, 1, 2, 3};
+    return 0;
+
+    /* Kirin */
+  } else if (hardware_name.find("KIRIN970") !=
+             std::string::npos) {  // Kirin 970
+    *cpu_num = 8;
+    *arch = A73;
+    *big_core_ids = {4, 5, 6, 7};
+    *little_core_ids = {0, 1, 2, 3};
     return 0;
   }
   return -1;
@@ -410,7 +468,7 @@ CPUContext::CPUContext() {
   // probe cpu info, and set big&litte clusters, L1, L2 and L3 cache sizes
   std::string cpu_name = get_cpu_name();
   bool failed =
-      get_cpu_info_by_name(&_cpu_num, &_big_core_ids, &_little_core_ids,
+      get_cpu_info_by_name(&_cpu_num, &_arch, &_big_core_ids, &_little_core_ids,
                            &_l1_cache_sizes, &_l2_cache_sizes, &_l3_cache_sizes,
                            cpu_name) != 0;
   if (failed) {

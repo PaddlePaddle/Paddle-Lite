@@ -1,7 +1,11 @@
 cmake_minimum_required(VERSION 3.0.0)
 
 # basic build option
-option(USE_OPENMP       "build with openmp support"      ON)
+if(IS_IOS)
+    option(USE_OPENMP       "build with openmp support"      OFF)
+else()
+    option(USE_OPENMP       "build with openmp support"      ON)
+endif()
 option(USE_EXCEPTION    "build with exception"           ON)
 option(WITH_LOGGING     "print logging for debug"        OFF)
 option(WITH_SYMBOL      "build with all symbols"         ON) # turn off if use jni or ios io
@@ -274,3 +278,11 @@ if(WITH_TEST AND WITH_SYMBOL)
 elseif(FPGA)
     add_subdirectory(test)
 endif()
+
+# # if you want to combine third party static librares into paddle mobile so, please uncomment this code block
+# target_link_libraries(
+#     paddle-mobile
+#     -Wl,--whole-archive
+#     "path_to_third_party_static_library"
+#     -Wl,--no-whole-archive
+# )

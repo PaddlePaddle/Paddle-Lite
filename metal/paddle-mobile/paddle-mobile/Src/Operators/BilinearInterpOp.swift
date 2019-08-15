@@ -18,16 +18,12 @@ import Metal
 class BilinearInterpParam<P: PrecisionProtocol>: OpParam {
     //typealias ParamPrecisionType = P
     required init(opDesc: PMOpDesc, inScope: Scope) throws {
-        do {
-            input = try BilinearInterpParam.inputX(inputs: opDesc.inputs, from: inScope)
-            output = try BilinearInterpParam.outputOut(outputs: opDesc.outputs, from: inScope)
-            out_h = try BilinearInterpParam.getAttr(key: "out_h", attrs: opDesc.attrs)
-            out_w = try BilinearInterpParam.getAttr(key: "out_w", attrs: opDesc.attrs)
-        } catch let error {
-            throw error
-        }
+        input = try BilinearInterpParam.inputX(inputs: opDesc.inputs, from: inScope)
+        output = try BilinearInterpParam.outputOut(outputs: opDesc.outputs, from: inScope)
+        out_h = try BilinearInterpParam.getAttr(key: "out_h", attrs: opDesc.attrs)
+        out_w = try BilinearInterpParam.getAttr(key: "out_w", attrs: opDesc.attrs)
         if (input.transpose != [0, 2, 3, 1]) || (input.tensorDim.cout() != 4) {
-            fatalError()
+            throw PaddleMobileError.makeError(type: .netError, msg: "BilinearInterpParam input transpose or tensordim not supported")
         }
     }
     let input: Texture
@@ -45,19 +41,12 @@ class BilinearInterpOp<P: PrecisionProtocol>: Operator<BilinearInterpKernel<P>, 
     }
     
     func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
-        do {
-            try kernel.compute(commandBuffer: buffer, param: para)
-        } catch let error {
-            throw error
-        }
+        try kernel.compute(commandBuffer: buffer, param: para)
     }
     
     func delogOutput() {
         print(" \(type) output: ")
-        let device = para.output.metalTexture!.device
-        let outputArray: [Float32] = device.texture2tensor(texture: para.output.metalTexture, dim: para.output.tensorDim.dims, transpose: para.output.transpose)
-        //    print(outputArray)
-        print(outputArray.strideArray())
+        para.output.delog()
     }
     
 }

@@ -13,6 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "pass/memory_optimize.h"
+#include <algorithm>
 #include "framework/lod_tensor.h"
 
 namespace paddle_mobile {
@@ -47,8 +48,9 @@ VarNode *MemoryOptPass::CreateNode(const std::string name) {
   return var;
 }
 
-void MemoryOptPass::operator()(const framework::ProgramDesc *program,
-                               framework::Scope *scope) {
+void MemoryOptPass::operator()(
+    const framework::ProgramDesc *program, framework::Scope *scope,
+    MemoryOptimizationLevel memory_optimization_level) {
   const auto &blocks = program->Blocks();
   for (const auto &block : blocks) {
     // access all variables in each block
@@ -60,12 +62,29 @@ void MemoryOptPass::operator()(const framework::ProgramDesc *program,
     std::stack<VarNode *> empty_var_nodes;
     analysis_nodes_.swap(empty_var_nodes);
 
+    std::vector<std::string> exclude_var_names;
+    for (const auto &op : block->Ops()) {
+      for (const auto &inputs : op->GetInputs()) {
+        for (const auto &input : inputs.second) {
+          if (!IsPersistable(input)) {
+            if (memory_optimization_level == MemoryOptimizationWithoutFeeds) {
+              if (op->Type() == "feed") {
+                exclude_var_names.push_back(input);
+              }
+            }
+          }
+        }
+      }
+    }
+
     std::vector<VarNode *> fetch_var_nodes;
     for (const auto &op : block->Ops()) {
       DLOG << "op_desc->Type(): " << op->Type();
       for (const auto &outputs : op->GetOutputs()) {
         for (const auto &output : outputs.second) {
-          if (!IsPersistable(output)) {
+          if (!IsPersistable(output) &&
+              std::find(exclude_var_names.begin(), exclude_var_names.end(),
+                        output) == exclude_var_names.end()) {
             DLOG << "output: " << output;
             VarNode *node = CreateNode(output);
             analysis_nodes_.push(node);
@@ -74,7 +93,9 @@ void MemoryOptPass::operator()(const framework::ProgramDesc *program,
       }
       for (const auto &inputs : op->GetInputs()) {
         for (const auto &input : inputs.second) {
-          if (!IsPersistable(input)) {
+          if (!IsPersistable(input) &&
+              std::find(exclude_var_names.begin(), exclude_var_names.end(),
+                        input) == exclude_var_names.end()) {
             DLOG << "input: " << input;
             VarNode *node = CreateNode(input);
             analysis_nodes_.push(node);
@@ -86,17 +107,15 @@ void MemoryOptPass::operator()(const framework::ProgramDesc *program,
       }
       for (const auto &outputs : op->GetOutputs()) {
         for (const auto &output : outputs.second) {
-          if (!IsPersistable(output)) {
+          if (!IsPersistable(output) &&
+              std::find(exclude_var_names.begin(), exclude_var_names.end(),
+                        output) == exclude_var_names.end()) {
             DLOG << "output: " << output;
             VarNode *node = CreateNode(output);
             analysis_nodes_.push(node);
           }
         }
       }
-    }
-
-    for (const auto &node : fetch_var_nodes) {
-      analysis_nodes_.push(node);
     }
 
     // apply optimize
@@ -109,7 +128,9 @@ void MemoryOptPass::operator()(const framework::ProgramDesc *program,
         bool reused = false;
         // find out a possable reuse list
         for (auto &list : reused_nodes_) {
-          if (list.back()->count == 0) {
+          if (list.back()->count == 0 &&
+              std::find(fetch_var_nodes.begin(), fetch_var_nodes.end(),
+                        list.back()) == fetch_var_nodes.end()) {
             list.push_back(node);
             reused = true;
             break;

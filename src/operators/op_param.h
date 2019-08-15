@@ -467,6 +467,7 @@ class ConvParam : public OpParam {
     EXEC_SLIDINGWINDOW3x3_FLOAT,
     EXEC_SLIDINGWINDOW5x5_FLOAT,
     EXEC_SLIDINGWINDOW7x7_FLOAT,
+    EXEC_GEMM1x1s1_FLOAT,
   };
 
   ExecMode &ExecMode() const { return exec_mode_; }
@@ -685,6 +686,7 @@ class ConcatParam : public OpParam {
     inputs_ = InputMultiFrom<GType>(inputs, *scope);
     out_ = OutFrom<GType>(outputs, *scope);
     axis_ = GetAttr<int>("axis", attrs);
+    original_output_dims_size_ = inputs_[0]->dims().size();
   }
 
   vector<GType *> Inputs() const { return inputs_; }
@@ -693,10 +695,11 @@ class ConcatParam : public OpParam {
 
   const int &Axis() const { return axis_; }
 
- private:
+ public:
   vector<GType *> inputs_;
   GType *out_;
   int axis_;
+  int original_output_dims_size_;
 #ifdef PADDLE_MOBILE_FPGA
 
  private:
@@ -909,7 +912,12 @@ class PoolParam : public OpParam {
     paddings_ = GetAttr<vector<int>>("paddings", attrs);
     ceil_mode_ = GetAttr<bool>("ceil_mode", attrs);
     global_pooling_ = GetAttr<bool>("global_pooling", attrs);
-    exclusive_ = GetAttr<bool>("exclusive", attrs);
+
+    if (HasAttr("exclusive", attrs)) {
+      exclusive_ = GetAttr<bool>("exclusive", attrs);
+    } else {
+      exclusive_ = true;
+    }
   }
 
   const GType *Input() const { return input_; }
@@ -1322,6 +1330,55 @@ class FillConstantParam : public OpParam {
 };
 #endif
 
+#ifdef FILL_CONSTANT_BATCH_SIZE_LIKE_OP
+template <typename Dtype>
+class FillConstantBatchSizeLikeParam : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
+ public:
+  FillConstantBatchSizeLikeParam(const VariableNameMap &inputs,
+                                 const VariableNameMap &outputs,
+                                 const AttributeMap &attrs, Scope *scope)
+      : OpParam(inputs, outputs, attrs, scope) {
+    input_ = InputFrom<GType>(inputs, *scope);
+    out_var_ = OutVarFrom(outputs, *scope);
+    out_ = OutFrom<GType>(outputs, *scope);
+    dtype_ = GetAttr<int>("dtype", attrs);
+    shape_ = GetAttr<vector<int>>("shape", attrs);
+    value_ = GetAttr<float>("value", attrs);
+    input_dim_idx_ = GetAttr<int>("input_dim_idx", attrs);
+    output_dim_idx_ = GetAttr<int>("output_dim_idx", attrs);
+  }
+
+  Variable *OutVar() const { return out_var_; }
+
+  const GType *Input() const { return input_; }
+
+  GType *Out() const { return out_; }
+
+  const int &DataDtype() const { return dtype_; }
+
+  const vector<int> &Shape() const { return shape_; }
+
+  const float &Value() const { return value_; }
+
+  int InputDimIdx() const { return input_dim_idx_; }
+
+  int OutputDimIdx() const { return output_dim_idx_; }
+
+ private:
+  GType *input_;
+  Variable *out_var_;
+  GType *out_;
+  int dtype_;
+  vector<int> shape_;
+  float value_;
+  int input_dim_idx_;
+  int output_dim_idx_;
+};
+#endif
+
 #ifdef TRANSPOSE_OP
 template <typename Dtype>
 class TransposeParam : public OpParam {
@@ -1584,6 +1641,8 @@ class SliceParam : public OpParam {
     axes_ = GetAttr<std::vector<int>>("axes", attrs);
     starts_ = GetAttr<std::vector<int>>("starts", attrs);
     ends_ = GetAttr<std::vector<int>>("ends", attrs);
+
+    original_output_dims_size_ = output_->dims().size();
   }
 
  public:
@@ -1592,6 +1651,7 @@ class SliceParam : public OpParam {
   std::vector<int> axes_;
   std::vector<int> starts_;
   std::vector<int> ends_;
+  int original_output_dims_size_;
 };
 #endif
 
@@ -1673,6 +1733,20 @@ template <typename Dtype>
 class ReluParam : public ReluParamBase<Dtype> {
  public:
   using ReluParamBase<Dtype>::ReluParamBase;
+};
+
+template <typename Dtype>
+class Relu6Param : public ReluParamBase<Dtype> {
+ public:
+  Relu6Param(const VariableNameMap &inputs, const VariableNameMap &outputs,
+             const AttributeMap &attrs, Scope *scope)
+      : ReluParamBase<Dtype>(inputs, outputs, attrs, scope) {
+    threshold = OpParam::GetAttr<float>("threshold", attrs);
+  }
+  float getThreshold() const { return threshold; }
+
+ private:
+  float threshold;
 };
 
 #ifdef PADDLE_MOBILE_CL
@@ -3211,6 +3285,9 @@ class LodResetParam : public OpParam {
     } else {
       target_lod_ = OpParam::GetAttr<vector<int>>("target_lod", attrs);
     }
+    if (HasAttr("append", attrs)) {
+      append = OpParam::GetAttr<bool>("append", attrs);
+    }
   }
 
  public:
@@ -3218,6 +3295,7 @@ class LodResetParam : public OpParam {
   GType *input_y_;
   GType *output_;
   std::vector<int> target_lod_;
+  bool append;
 };
 #endif  // LOD_RESET_OP
 
@@ -3411,6 +3489,26 @@ class Pad2dParam : public OpParam {
   RType *out_;
 };
 #endif
+#ifdef EXP_OP
+template <typename Dtype>
+class EXPParam : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
 
+ public:
+  EXPParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
+           const AttributeMap &attrs, Scope *scope)
+      : OpParam(inputs, outputs, attrs, scope) {
+    input_x_ = InputXFrom<GType>(inputs, *scope);
+    out_ = OutFrom<GType>(outputs, *scope);
+  }
+  const GType *InputX() const { return input_x_; }
+  GType *Out() const { return out_; }
+
+ private:
+  GType *input_x_;
+  GType *out_;
+};
+#endif
 }  // namespace operators
 }  // namespace paddle_mobile

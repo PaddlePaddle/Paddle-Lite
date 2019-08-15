@@ -657,10 +657,12 @@ void DepthwiseConv3x3S2<float, float>(const framework::Tensor &input,
   const int image_size = input_h * input_w;
   const int out_image_size = output_h * output_w;
   const int valid_h_start = (padding_h + 1) / 2;
-  const int valid_h_end = (input_h + padding_h - 1) / 2;
+  const int valid_h_end =
+      std::max((input_h + padding_h - 1) / 2, valid_h_start);
   const int valid_h = valid_h_end - valid_h_start;
   const int valid_w_start = (padding_w + 1) / 2;
-  const int valid_w_end = (input_w + padding_w - 1) / 2;
+  const int valid_w_end =
+      std::max((input_w + padding_w - 1) / 2, valid_w_start);
   const int valid_w = valid_w_end - valid_w_start;
   const int input_w_start = 2 * valid_w_start - padding_w;
 

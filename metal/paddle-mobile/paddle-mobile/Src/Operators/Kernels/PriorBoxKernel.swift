@@ -39,33 +39,29 @@ class PriorBoxKernel<P: PrecisionProtocol>: Kernel, Computable{
         param.output.tensorDim = Dim.init(inDim: [1, originDim[0], originDim[1], originDim[2] * originDim[3]])
         param.output.padToFourDim = Dim.init(inDim: [1, originDim[0], originDim[1], originDim[2] * originDim[3]])
         
-        do {
-            try param.output.initTexture(device: device, inTranspose: [0, 1, 2, 3], computePrecision: GlobalConfig.shared.computePrecision)
-            try param.outputVariances.initTexture(device: device, inTranspose: [2, 0, 1, 3], computePrecision: GlobalConfig.shared.computePrecision)
-        } catch let error {
-            throw error
-        }
+        try param.output.initTexture(device: device, inTranspose: [0, 1, 2, 3], computePrecision: GlobalConfig.shared.computePrecision)
+        try param.outputVariances.initTexture(device: device, inTranspose: [2, 0, 1, 3], computePrecision: GlobalConfig.shared.computePrecision)
         
         if GlobalConfig.shared.computePrecision == .Float32 {
             if param.min_max_aspect_ratios_order {
-                super.init(device: device, inFunctionName: "prior_box_MinMaxAspectRatiosOrder", initContext: initContext)
+                try super.init(device: device, inFunctionName: "prior_box_MinMaxAspectRatiosOrder", initContext: initContext)
             } else {
-                super.init(device: device, inFunctionName: "prior_box", initContext: initContext)
+                try super.init(device: device, inFunctionName: "prior_box", initContext: initContext)
             }
             
         } else if GlobalConfig.shared.computePrecision == .Float16 {
             if param.min_max_aspect_ratios_order {
-                super.init(device: device, inFunctionName: "prior_box_MinMaxAspectRatiosOrder_half", initContext: initContext)
+                try super.init(device: device, inFunctionName: "prior_box_MinMaxAspectRatiosOrder_half", initContext: initContext)
             } else {
-                super.init(device: device, inFunctionName: "prior_box_half", initContext: initContext)
+                try super.init(device: device, inFunctionName: "prior_box_half", initContext: initContext)
             }
         } else {
-            fatalError()
+            throw PaddleMobileError.makeError(type: .predictError, msg: "unsupported compute precision: \(GlobalConfig.shared.computePrecision)")
         }
         
         
         guard param.minSizes.count == 1 else {
-            fatalError(" need implement ")
+            throw PaddleMobileError.makeError(type: .netError, msg: "param.minSizes.count must equal to 1")
         }
         
         //    let n = 1
@@ -110,14 +106,14 @@ class PriorBoxKernel<P: PrecisionProtocol>: Kernel, Computable{
         
         if GlobalConfig.shared.computePrecision == .Float16 {
             let buffer = device.makeBuffer(length: outputAspectRatior.count * MemoryLayout<Float16>.size)
-            float32ToFloat16(input: &outputAspectRatior, output:(buffer?.contents())!, count: outputAspectRatior.count)
+            try float32ToFloat16(input: &outputAspectRatior, output:(buffer?.contents())!, count: outputAspectRatior.count)
             param.newAspectRatios = buffer
             
         } else if GlobalConfig.shared.computePrecision == .Float32 {
             let buffer = device.makeBuffer(bytes: outputAspectRatior, length: outputAspectRatior.count * MemoryLayout<Float32>.size, options: [])
             param.newAspectRatios = buffer
         } else {
-            fatalError()
+            throw PaddleMobileError.makeError(type: .predictError, msg: "unsupported compute precision: \(GlobalConfig.shared.computePrecision)")
         }
         
         let aspectRatiosSize = uint(outputAspectRatior.count)
@@ -135,20 +131,32 @@ class PriorBoxKernel<P: PrecisionProtocol>: Kernel, Computable{
     }
     
     func compute(commandBuffer: MTLCommandBuffer, param: PriorBoxParam<P>) throws {
-        guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
-            throw PaddleMobileError.predictError(message: " encode is nil")
+        guard let tempPipline = pipline else {
+            throw PaddleMobileError.makeError(type: .predictError, msg: "pipline is nil")
         }
-        
-        encoder.setTexture(param.input.metalTexture, index: 0)
-        encoder.setTexture(param.output.metalTexture, index: 1)
-        encoder.setTexture(param.outputVariances.metalTexture, index: 2)
-        
-        encoder.setBuffer(param.newAspectRatios!, offset: 0, index: 0)
-        
-        encoder.setBytes(&metalParam, length: MemoryLayout<PriorBoxMetalParam>.size, index: 1)
-        
-        encoder.setBytes(param.variances, length: MemoryLayout<Float32>.size * param.variances.count, index: 2)
-        encoder.dispatch(computePipline: pipline, outTexture: param.output.metalTexture)
-        encoder.endEncoding()
+        guard let inputMetalTexture = param.input.metalTexture else {
+            throw PaddleMobileError.makeError(type: .predictError, msg: "input metaltexture is nil")
+        }
+        guard let outputMetalTexture = param.output.metalTexture else {
+            throw PaddleMobileError.makeError(type: .predictError, msg: "output metaltexture is nil")
+        }
+        guard let outputVariancesMetalTexture = param.outputVariances.metalTexture else {
+            throw PaddleMobileError.makeError(type: .predictError, msg: "outputVariances metaltexture is nil")
+        }
+        do {
+            guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
+                throw PaddleMobileError.makeError(type: .predictError, msg: "encoder is nil")
+            }
+            defer {
+                encoder.endEncoding()
+            }
+            encoder.setTexture(inputMetalTexture, index: 0)
+            encoder.setTexture(outputMetalTexture, index: 1)
+            encoder.setTexture(outputVariancesMetalTexture, index: 2)
+            encoder.setBuffer(param.newAspectRatios!, offset: 0, index: 0)
+            encoder.setBytes(&metalParam, length: MemoryLayout<PriorBoxMetalParam>.size, index: 1)
+            encoder.setBytes(param.variances, length: MemoryLayout<Float32>.size * param.variances.count, index: 2)
+            try encoder.dispatch(computePipline: tempPipline, outTexture: outputMetalTexture)
+        }
     }
 }

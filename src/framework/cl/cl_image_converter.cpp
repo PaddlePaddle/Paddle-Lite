@@ -391,6 +391,8 @@ void CLImageConverterDWBlock::ImageToNCHW(half_t *image, float *tensor,
 
 const DDim &CLImageConverterNormal::InitImageDimInfoWith(
     const DDim &tensor_dim) {
+  PADDLE_MOBILE_ENFORCE(tensor_dim.size() <= 4 && tensor_dim.size() > 0,
+                        "tensor dim is not support ");
   size_t new_dims[] = {1, 1, 1, 1};
   for (int j = 0; j < tensor_dim.size(); ++j) {
     new_dims[4 - tensor_dim.size() + j] = tensor_dim[j];

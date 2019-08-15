@@ -116,10 +116,23 @@ inline float32x4_t vActiveq_f32<LEAKY_RELU>(const float32x4_t &x,
                                             const float32x4_t &alpha) {
   return vmaxq_f32(x, vmulq_f32(x, alpha));
 }
+
+template <>
+inline float32x4_t vActiveq_f32<RELU6>(const float32x4_t &x,
+                                       const float32x4_t &alpha) {
+  float32x4_t __zero = vdupq_n_f32(0.f);
+  float32x4_t __threshold = vdupq_n_f32(vgetq_lane_f32(alpha, 0));
+  return vminq_f32(vmaxq_f32(x, __zero), __threshold);
+}
 #endif
 
 template <ActivationType Act = IDENTITY>
 inline float Active(const float &x) {
+  return x;
+}
+
+template <ActivationType Act = IDENTITY>
+inline int Active(const int &x) {
   return x;
 }
 
@@ -162,6 +175,11 @@ inline float Active(const float &x, const float &alpha) {
 template <>
 inline float Active<LEAKY_RELU>(const float &x, const float &alpha) {
   return std::max(x, alpha * x);
+}
+
+template <>
+inline float Active<RELU6>(const float &x, const float &alpha) {
+  return std::min(std::max(x, 0.f), alpha);
 }
 
 }  // namespace math

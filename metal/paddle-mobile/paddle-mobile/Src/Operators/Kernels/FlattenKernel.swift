@@ -28,11 +28,7 @@ class FlattenKernel<P: PrecisionProtocol>: Kernel, Computable {
     
     required init(device: MTLDevice, param: FlattenParam<P>, initContext: InitContext) throws {
         
-        do {
-            try param.output.initTexture(device: device, computePrecision: GlobalConfig.shared.computePrecision)
-        } catch let error {
-            throw error
-        }
+        try param.output.initTexture(device: device, computePrecision: GlobalConfig.shared.computePrecision)
         
         var id: [Int32] = [1, 1, 1, 1]
         for i in 0..<param.input.tensorDim.cout() {
@@ -52,27 +48,40 @@ class FlattenKernel<P: PrecisionProtocol>: Kernel, Computable {
         )
         let irank = param.input.tensorDim.cout()
         let orank = param.output.tensorDim.cout()
-        assert(orank == 2)
+        guard orank == 2 else {
+            throw PaddleMobileError.makeError(type: .netError, msg: "output tensordim: \(param.output.tensorDim) rank must be 2")
+        }
         if GlobalConfig.shared.computePrecision == .Float32 {
-            super.init(device: device, inFunctionName: "reshape_\(irank)_2_float", initContext: initContext)
+            try super.init(device: device, inFunctionName: "reshape_\(irank)_2_float", initContext: initContext)
         } else if GlobalConfig.shared.computePrecision == .Float16 {
-            super.init(device: device, inFunctionName: "reshape_\(irank)_2_half", initContext: initContext)
+            try super.init(device: device, inFunctionName: "reshape_\(irank)_2_half", initContext: initContext)
         } else {
-            fatalError()
+            throw PaddleMobileError.makeError(type: .predictError, msg: "unsupported compute precision: \(GlobalConfig.shared.computePrecision)")
         }
     }
     
     func compute(commandBuffer: MTLCommandBuffer, param: FlattenParam<P>) throws {
-        guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
-            throw PaddleMobileError.predictError(message: " encoder is nil")
+        guard let tempPipline = pipline else {
+            throw PaddleMobileError.makeError(type: .predictError, msg: "pipline is nil")
         }
-        
-        encoder.setTexture(param.input.metalTexture, index: 0)
-        encoder.setTexture(param.output.metalTexture, index: 1)
-        
-        encoder.setBytes(&metalParam, length: MemoryLayout<ReshapeMetalParam>.size, index: 0)
-        encoder.dispatch(computePipline: pipline, outTexture: param.output.metalTexture)
-        encoder.endEncoding()
+        guard let inputMetalTexture = param.input.metalTexture else {
+            throw PaddleMobileError.makeError(type: .predictError, msg: "input metaltexture is nil")
+        }
+        guard let outputMetalTexture = param.output.metalTexture else {
+            throw PaddleMobileError.makeError(type: .predictError, msg: "output metaltexture is nil")
+        }
+        do {
+            guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
+                throw PaddleMobileError.makeError(type: .predictError, msg: "encoder is nil")
+            }
+            defer {
+                encoder.endEncoding()
+            }
+            encoder.setTexture(inputMetalTexture, index: 0)
+            encoder.setTexture(outputMetalTexture, index: 1)
+            encoder.setBytes(&metalParam, length: MemoryLayout<ReshapeMetalParam>.size, index: 0)
+            try encoder.dispatch(computePipline: tempPipline, outTexture: outputMetalTexture)
+        }
     }
 }
 
@@ -82,11 +91,7 @@ class Flatten2Kernel<P: PrecisionProtocol>: Kernel, Computable {
     
     required init(device: MTLDevice, param: Flatten2Param<P>, initContext: InitContext) throws {
         
-        do {
-            try param.output.initTexture(device: device, computePrecision: GlobalConfig.shared.computePrecision)
-        } catch let error {
-            throw error
-        }
+        try param.output.initTexture(device: device, computePrecision: GlobalConfig.shared.computePrecision)
         
         var id: [Int32] = [1, 1, 1, 1]
         for i in 0..<param.input.tensorDim.cout() {
@@ -106,26 +111,39 @@ class Flatten2Kernel<P: PrecisionProtocol>: Kernel, Computable {
         )
         let irank = param.input.tensorDim.cout()
         let orank = param.output.tensorDim.cout()
-        assert(orank == 2)
+        guard orank == 2 else {
+            throw PaddleMobileError.makeError(type: .netError, msg: "output tensordim: \(param.output.tensorDim) rank must be 2")
+        }
         if GlobalConfig.shared.computePrecision == .Float32 {
-            super.init(device: device, inFunctionName: "reshape_\(irank)_2_float", initContext: initContext)
+            try super.init(device: device, inFunctionName: "reshape_\(irank)_2_float", initContext: initContext)
         } else if GlobalConfig.shared.computePrecision == .Float16 {
-            super.init(device: device, inFunctionName: "reshape_\(irank)_2_half", initContext: initContext)
+            try super.init(device: device, inFunctionName: "reshape_\(irank)_2_half", initContext: initContext)
         } else {
-            fatalError()
+            throw PaddleMobileError.makeError(type: .predictError, msg: "unsupported compute precision: \(GlobalConfig.shared.computePrecision)")
         }
     }
     
     func compute(commandBuffer: MTLCommandBuffer, param: Flatten2Param<P>) throws {
-        guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
-            throw PaddleMobileError.predictError(message: " encoder is nil")
+        guard let tempPipline = pipline else {
+            throw PaddleMobileError.makeError(type: .predictError, msg: "pipline is nil")
         }
-        
-        encoder.setTexture(param.input.metalTexture, index: 0)
-        encoder.setTexture(param.output.metalTexture, index: 1)
-        
-        encoder.setBytes(&metalParam, length: MemoryLayout<ReshapeMetalParam>.size, index: 0)
-        encoder.dispatch(computePipline: pipline, outTexture: param.output.metalTexture)
-        encoder.endEncoding()
+        guard let inputMetalTexture = param.input.metalTexture else {
+            throw PaddleMobileError.makeError(type: .predictError, msg: "input metaltexture is nil")
+        }
+        guard let outputMetalTexture = param.output.metalTexture else {
+            throw PaddleMobileError.makeError(type: .predictError, msg: "output metaltexture is nil")
+        }
+        do {
+            guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
+                throw PaddleMobileError.makeError(type: .predictError, msg: "encoder is nil")
+            }
+            defer {
+                encoder.endEncoding()
+            }
+            encoder.setTexture(inputMetalTexture, index: 0)
+            encoder.setTexture(outputMetalTexture, index: 1)
+            encoder.setBytes(&metalParam, length: MemoryLayout<ReshapeMetalParam>.size, index: 0)
+            try encoder.dispatch(computePipline: tempPipline, outTexture: outputMetalTexture)
+        }
     }
 }

@@ -247,6 +247,12 @@ class Tensor : public TensorBase {
       size_ = size;
     }
 
+    virtual void realloc(size_t size) {
+      capatity_ = size;
+      // TODO(chonwhite) implement;
+      size_ = size;
+    }
+
     void resize(DDim ddim, const kTypeId_t type) {
       std::vector<int> v = framework::vectorize2int(ddim);
 

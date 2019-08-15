@@ -219,6 +219,10 @@ if (NOT FOUND_MATCH)
     target_link_libraries(test-net paddle-mobile)
 
     # gen test
+    ADD_EXECUTABLE(test-op-in-net net/test_op_in_net.cpp test_helper.h test_include.h executor_for_test.h)
+    target_link_libraries(test-op-in-net paddle-mobile)
+
+    # gen test
     ADD_EXECUTABLE(test-googlenet net/test_googlenet.cpp test_helper.h test_include.h executor_for_test.h)
     target_link_libraries(test-googlenet paddle-mobile)
 
@@ -520,4 +524,7 @@ if (NOT FOUND_MATCH)
 
     ADD_EXECUTABLE(test-conv-gpu operators/test_conv_gpu.cpp test_helper.h test_include.h)
     target_link_libraries(test-conv-gpu paddle-mobile)
+
+    ADD_EXECUTABLE(test-net-benchmark net/test_net_benchmark.cpp test_helper.h test_include.h)
+    target_link_libraries(test-net-benchmark paddle-mobile)
 endif ()
