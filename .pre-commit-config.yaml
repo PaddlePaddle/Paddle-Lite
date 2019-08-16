@@ -3,10 +3,12 @@ repos:
     sha: v1.0.1
     hooks:
     -   id: remove-crlf
-        files: (src/).*\.(md|py|mm|swift|java|c|cc|cxx|cpp|cu|h|hpp|hxx)$
-    -   id: remove-tabs
-        files: (test/|src/).*\.(md|py|mm|swift|java|c|cc|cxx|cpp|cu|h|hpp|hxx)$
-
+        files: (?!.*third_party)^.*$ | (?!.*book)^.*$ | (?!.*mobile)^.*$
+#-   repo: https://github.com/PaddlePaddle/mirrors-yapf.git
+    #sha: 0d79c0c469bab64f7229c9aca2b1186ef47f0e37
+    #hooks:
+    #-   id: yapf
+        #files: (.*\.(py|bzl)|BUILD|.*\.BUILD|WORKSPACE)$
 -   repo: https://github.com/pre-commit/pre-commit-hooks
     sha: 5bf6c09bfa1297d3692cadd621ef95f1284e33c0
     hooks:
@@ -14,47 +16,37 @@ repos:
     -   id: check-merge-conflict
     -   id: check-symlinks
     -   id: detect-private-key
-        files: (?!.*tar.gz)^.*$ 
+        files: (?!.*third_party)^.*$ | (?!.*book)^.*$
     -   id: end-of-file-fixer
-        files: (test/|src/).*\.(md|py|mm|swift|java|c|cc|cxx|cpp|h|hpp|hxx)$
-    -   id: trailing-whitespace
-        files: (test/|src/).*\.(md|py|mm|swift|java|c|cc|cxx|cpp|h|hpp|hxx)$
-
 -   repo: local
     hooks:
-    -   id: copyright
-        name: copyright
-        entry: python ./tools/pre-commit.hooks/copyright.hook
-        language: system
-        files: (test/|src/).*\.(c|cc|cxx|cpp|h|hpp|hxx|py)$
-        exclude: (?!.*third_party)^.*$ | (?!.*book)^.*$
-
--   repo: local
-    hooks:
-    -   id: clang-format
+    -   id: clang-format-with-version-check
         name: clang-format
         description: Format files with ClangFormat.
-        entry: bash ./tools/pre-commit.hooks/clang-format.hook -i
+        entry: bash ./tools/codestyle/clang_format.hook -i
         language: system
-        files: (test/|src/).*\.(c|cc|cxx|cpp|h|hpp|hxx)$
-
+        files: \.(c|cc|cxx|cpp|cu|h|hpp|hxx|proto)$
 -   repo: local
     hooks:
-    -   id: cpplint
+    -   id: cpplint-cpp-source
         name: cpplint
-        description: Check C++ code style using cpplint.
-        entry: bash ./tools/pre-commit.hooks/cpplint.hook
+        description: Check C++ code style using cpplint.py.
+        entry: bash ./tools/codestyle/cpplint_pre_commit.hook
         language: system
-        files: (test/|src/).*\.(c|cc|cxx|cpp|h|hpp|hxx)$
-        exclude: (?!.*third_party)^.*$ | (?!.*book)^.*$i | *\.pb\.cpp
-
-
-#
+        files: \.(c|cc|cxx|cpp|cu|h|hpp|hxx)$
 #-   repo: local
-#    hooks:
-#    -   id: clang-tidy
-#        name: clang-tidy
-#        description: Check C++ code style using clang-tidy.
-#        entry: bash ./tools/pre-commit.hooks/.clang-tidy.hook -i
-#        language: system
-#        files: (src).*\.(c|cc|cxx|cpp|h|hpp|hxx)$
+    #hooks:
+    #-   id: pylint-doc-string
+        #name: pylint
+        #description: Check python docstring style using docstring_checker.
+        #entry: bash ./tools/codestyle/pylint_pre_commit.hook
+        #language: system
+        #files: \.(py)$
+#-   repo: local
+    #hooks:
+    #-   id: copyright_checker
+        #name: copyright_checker
+        #entry: python ./tools/codestyle/copyright.hook
+        #language: system
+        #files: \.(c|cc|cxx|cpp|cu|h|hpp|hxx|proto|py)$
+        #exclude: (?!.*third_party)^.*$ | (?!.*book)^.*$
