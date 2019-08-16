@@ -284,8 +284,6 @@ template class Loader<CPU, float>;
 
 template class Loader<FPGA, float>;
 
-template class Loader<GPU_MALI, float>;
-
 template class Loader<GPU_CL, float>;
 
 }  // namespace framework

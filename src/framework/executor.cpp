@@ -33,6 +33,7 @@ limitations under the License. */
 #include "pass/model_obfuscate.h"
 #ifdef PADDLE_MOBILE_CL
 #include "framework/cl/cl_image.h"
+#include "pass/memory_optimize_super.h"
 #endif
 
 namespace paddle_mobile {
@@ -55,7 +56,7 @@ Executor<Device, T>::Executor(const Program<Device> &program,
       use_optimize_(use_optimize),
       lod_mode_(lod_mode),
       config_(config) {
-  DLOG << "executor in lod mode: " << lod_mode_;
+  DLOG << "executor in lod mode: " << lod_mode;
 
   Variable *variable_ptr = program_.scope->Var("batch_size");
   variable_ptr->SetValue<int>(batch_size);
@@ -805,27 +806,30 @@ void Executor<GPU_CL, float>::SetInput(const Tensor &input,
     index = feed_indices_.find(var_name)->second;
   }
   auto *feed_var = program_.scope->Var("feed");
-  framework::LoDTensor *target_tensor =
+  framework::LoDTensor *input_tensor =
       &(feed_var->template GetMutable<framework::LoDTensorArray>()->at(index));
 
   DLOG << "config_.load_when_predict   " << config_.load_when_predict;
-  DLOG << "target_tensor->IsInitialized() " << target_tensor->IsInitialized();
-  DLOG << "target_tensor->dims()   " << target_tensor->dims();
+  DLOG << "target_tensor->IsInitialized() " << input_tensor->IsInitialized();
+  DLOG << "target_tensor->dims()   " << input_tensor->dims();
   DLOG << "input.dims()   " << input.dims();
   DLOG << "input_dim_last_   " << input_dim_last_;
   if (config_.load_when_predict) {
     if (input_dim_last_ != input.dims()) {
       DLOG << "SetInput ---- > resize1";
-      target_tensor->Resize(input.dims());
-      target_tensor->mutable_data<float>();
-      InitNoPersistableMemory(*target_tensor);
+      input_tensor->Resize(input.dims());
+      input_tensor->mutable_data<float>();
+      //     InitNoPersistableMemory(*input_tensor);
+      pass::MemoryOptPassSuper()(program_desc_.get(), program_.scope.get(),
+                                 config_.memory_optimization_level,
+                                 input.dims());
     }
   } else {
     DLOG << "SetInput ---- > resize2";
-    target_tensor->Resize(input.dims());
+    input_tensor->Resize(input.dims());
     DLOG << "SetInput ---- > ShareDataWith";
   }
-  target_tensor->ShareDataWith(input);
+  input_tensor->ShareDataWith(input);
   if (feed_indices_.size() == 1) {
     input_dim_has_changed_ = input_dim_last_ != input.dims();
   }
@@ -1062,8 +1066,6 @@ template class Executor<CPU, float>;
 template class Executor<FPGA, float>;
 
 template class Executor<GPU_CL, float>;
-
-template class Executor<GPU_MALI, float>;
 
 }  // namespace framework
 }  // namespace paddle_mobile
