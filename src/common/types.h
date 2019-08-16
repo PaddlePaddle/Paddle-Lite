@@ -53,7 +53,6 @@ struct DeviceType {};
 
 typedef DeviceType<kCPU> CPU;
 typedef DeviceType<kFPGA> FPGA;
-typedef DeviceType<kGPU_MALI> GPU_MALI;
 typedef DeviceType<kGPU_CL> GPU_CL;
 
 //! data type

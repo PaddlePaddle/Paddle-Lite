@@ -11,6 +11,7 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
+#ifdef PADDLE_MOBILE_CL
 
 #pragma once
 
@@ -18,9 +19,10 @@ limitations under the License. */
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include "framework/lod_tensor.h"
 #include "framework/program/program.h"
 #include "pass/pass_base.h"
-
+// use for super resulotion  to be extend for all opencl
 namespace paddle_mobile {
 namespace pass {
 
@@ -28,14 +30,14 @@ typedef struct {
   std::string name;  // variable name
   int count;         // reference count
   bool visited;
-} VarNode;
+} ClVarNode;
 
 // MemoryOptPass will analyze the program, and reuse memory between
 // variables as much as possible
-class MemoryOptPass : public PassBase {
+class MemoryOptPassSuper : public PassBase {
  public:
-  MemoryOptPass() {}
-  virtual ~MemoryOptPass() {
+  MemoryOptPassSuper() {}
+  virtual ~MemoryOptPassSuper() {
     for (auto &it : created_nodes_) {
       delete it.second;
     }
@@ -43,20 +45,26 @@ class MemoryOptPass : public PassBase {
 
   void operator()(const framework::ProgramDesc *program,
                   framework::Scope *scope,
-                  MemoryOptimizationLevel memory_optimization_level);
+                  MemoryOptimizationLevel memory_optimization_level,
+                  framework::DDim dims);
 
   void AppendBlockVars(const framework::BlockDesc *block);
 
   bool IsPersistable(const std::string name);
 
-  VarNode *CreateNode(const std::string name);
+  ClVarNode *CreateNode(const std::string name);
+
+  void ShareData(framework::Scope *scope,
+                 MemoryOptimizationLevel memory_optimization_level,
+                 framework::DDim dims) const;
 
  private:
-  std::stack<VarNode *> analysis_nodes_;
-  std::vector<std::vector<VarNode *>> reused_nodes_;
-  std::unordered_map<std::string, VarNode *> created_nodes_;
+  std::stack<ClVarNode *> analysis_nodes_;
+  std::vector<std::vector<ClVarNode *>> reused_nodes_;
+  std::unordered_map<std::string, ClVarNode *> created_nodes_;
   std::unordered_map<std::string, framework::VarDesc *> block_vars_;
 };
 
 }  // namespace pass
 }  // namespace paddle_mobile
+#endif

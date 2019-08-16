@@ -104,14 +104,27 @@ class Tensor : public TensorBase {
     return *this;
   }
 
-  inline void mutable_data_new() {
+  template <typename T>
+  inline T *mutable_data_new() {
+    static_assert(std::is_pod<T>::value, "T must be POD");
+    const kTypeId_t type = type_id<T>().hash_code();
+
     if (holder_ != nullptr) {
-      PADDLE_MOBILE_ENFORCE(numel() >= 0, "the Tensor's numel must >=0.")
-      int64_t size = numel() * SizeOfType(holder_->type());
-      if (holder_->size() != size + offset_) {
-        holder_->realloc(size + offset_);
-      }
+      holder_->set_type(type);
     }
+
+    PADDLE_MOBILE_ENFORCE(numel() >= 0, "the Tensor's numel must >=0.")
+    int64_t size = numel() * SizeOfType(type);
+    if (holder_ == nullptr || holder_->size() != size + offset_) {
+      if (holder_ == nullptr) {
+        holder_.reset(new PlaceholderImpl(size, type));
+      } else {
+        holder_->realloc(size);
+      }
+      offset_ = 0;
+    }
+    return reinterpret_cast<T *>(reinterpret_cast<uintptr_t>(holder_->ptr()) +
+                                 offset_);
   }
 
   inline void *mutable_data(const kTypeId_t type) {

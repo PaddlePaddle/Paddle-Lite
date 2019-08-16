@@ -105,9 +105,6 @@ class Executor {
   DDim input_dim_last_;
   bool input_dim_has_changed_ = true;
 
-  bool shouldAdjustMemory_ = false;
-  std::shared_ptr<pass::MemoryOptPass> memoryOpt_;
-
 #ifdef PADDLE_MOBILE_PROFILE
   typedef typename DtypeTensorTrait<Device>::gtype ProfileTensorType;
 

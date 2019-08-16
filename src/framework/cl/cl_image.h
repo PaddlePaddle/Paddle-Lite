@@ -145,19 +145,59 @@ class CLImage {
     initialized_ = true;
     DLOG << " end init cl image";
   }
+  // create fake size cl_mem for mem share
+  void InitFakeSizeImage(cl_context context, cl_command_queue command_queue,
+                         const DDim &need_dims, const DDim &real_dims) {
+    PADDLE_MOBILE_ENFORCE(tensor_data_ == nullptr,
+                          " empty image tensor data shouldn't have value");
 
-  void InitEmptyWithImageDim(cl_context context, cl_command_queue command_queue,
-                             const DDim &image_dims) {
-    DLOG << " to get image dims ";
-    image_dims_ = image_dims;
-    DLOG << " end get image dims " << image_dims_;
+    CLImageConverterNormal *normal_converter = new CLImageConverterNormal();
 
+    real_image_dims = normal_converter->InitImageDimInfoWith(real_dims);
+    real_tensor_dims = real_dims;
+
+    image_dims_ = normal_converter->InitImageDimInfoWith(need_dims);
     InitCLImage(context, image_dims_[0], image_dims_[1], nullptr);
 
+    tensor_dims_ = need_dims;
     command_queue_ = command_queue;
+    image_converter_ = normal_converter;
     cl_event_ = CLEngine::Instance()->CreateEvent(context);
     initialized_ = true;
     DLOG << " end init cl image";
+  }
+
+  void InitWithExitedMem(cl_context context, cl_command_queue command_queue,
+                         DDim need_dims, CLImage &src) {
+    CLImageConverterNormal *normal_converter = new CLImageConverterNormal();
+
+    real_image_dims = normal_converter->InitImageDimInfoWith(src.dims());
+    real_tensor_dims = src.dims();
+
+    image_dims_ = normal_converter->InitImageDimInfoWith(need_dims);
+    // InitCLImage(context, image_dims_[0], image_dims_[1], nullptr);
+    if (cl_image_ != src.cl_image_) {
+      cl_image_.reset(src.cl_image_.get());
+    }
+
+    tensor_dims_ = need_dims;
+    command_queue_ = command_queue;
+    image_converter_ = normal_converter;
+    cl_event_ = CLEngine::Instance()->CreateEvent(context);
+    initialized_ = true;
+    DLOG << " end init cl image";
+  }
+
+  /*! The internal of two tensors share the same memory block. */
+  inline CLImage &ShareHolderWith(const CLImage &src) {
+    PADDLE_MOBILE_ENFORCE(
+        src.cl_image_ != nullptr,
+        "Tensor holds no memory. Call Tensor::mutable_data first.")
+
+    if (cl_image_ != src.cl_image_) {
+      cl_image_.reset(src.cl_image_.get());
+    }
+    return *this;
   }
 
   cl_mem GetCLImage() const { return cl_image_.get(); }
@@ -238,6 +278,10 @@ class CLImage {
   std::unique_ptr<_cl_event, CLEventDeleter> cl_event_;
   DDim tensor_dims_;
   DDim image_dims_;
+  // real image dims usually it is same as image_dims
+  DDim real_image_dims;
+  // real tensor dims usually it is same as tensor dims
+  DDim real_tensor_dims;
   float *tensor_data_ = nullptr;
   cl_context context_;
   cl_command_queue command_queue_;
