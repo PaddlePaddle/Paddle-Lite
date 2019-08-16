@@ -136,4 +136,3 @@ timeview.style.height = thread.size * 15 + 'px';
 </body>
 </html>
 EOF
-

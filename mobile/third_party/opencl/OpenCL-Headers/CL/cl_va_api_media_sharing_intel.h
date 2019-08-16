@@ -169,4 +169,3 @@ typedef CL_API_ENTRY cl_int (CL_API_CALL *clEnqueueReleaseVA_APIMediaSurfacesINT
 #endif
 
 #endif  /* __OPENCL_CL_VA_API_MEDIA_SHARING_INTEL_H */
-

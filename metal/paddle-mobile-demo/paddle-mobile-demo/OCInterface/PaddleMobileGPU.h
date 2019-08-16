@@ -104,5 +104,3 @@ typedef enum : NSUInteger {
 -(void)clear;
 
 @end
-
-

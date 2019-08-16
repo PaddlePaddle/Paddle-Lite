@@ -232,5 +232,3 @@ upstream
 2. 如果评审意见比较多：
    - 请给出总体的修改情况。
    - 请采用[start a review](https://help.github.com/articles/reviewing-proposed-changes-in-a-pull-request/)进行回复，而非直接回复的方式。原因是每个回复都会发送一封邮件，会造成邮件灾难。
-
-

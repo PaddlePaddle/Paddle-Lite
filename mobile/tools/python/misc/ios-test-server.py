@@ -124,4 +124,3 @@ if __name__ == "__main__":
     image.save("images/qrcode.png")
     os.popen("open -a \"/Applications/Google Chrome.app\" \"{}\"".format(host))
     app.run(host="0.0.0.0", port=8080)
-

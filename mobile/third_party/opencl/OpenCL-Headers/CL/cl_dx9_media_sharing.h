@@ -129,4 +129,3 @@ typedef CL_API_ENTRY cl_int (CL_API_CALL *clEnqueueReleaseDX9MediaSurfacesKHR_fn
 #endif
 
 #endif  /* __OPENCL_CL_DX9_MEDIA_SHARING_H */
-

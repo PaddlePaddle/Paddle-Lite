@@ -187,4 +187,3 @@ cd /data/local/tmp/bin/
 export LD_LIBRARY_PATH=.
 ./test-mobilenet
 ```
-

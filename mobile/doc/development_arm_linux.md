@@ -60,4 +60,3 @@ predict cost :121.462ms
 
 - 若编译中提示有不识别的编译选项等ARM Linux平台的编译问题，可尝试修改`tools/build.sh`中的相关编译参数；  
 - Android平台请参考Android开发文档.
-

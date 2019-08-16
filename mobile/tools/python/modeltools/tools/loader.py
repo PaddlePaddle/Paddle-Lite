@@ -9,5 +9,3 @@ def loadmdl(json_path):
         layers = (json_dick['layer'])
         for layer in layers:
             print(layer)
-
-

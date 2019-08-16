@@ -426,4 +426,3 @@ typedef cl_uint cl_diagnostics_verbose_level;
 #endif
 
 #endif /* __CL_EXT_INTEL_H */
-

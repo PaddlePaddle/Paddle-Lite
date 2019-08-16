@@ -35,5 +35,3 @@ cmake .
 make
 ./quantify 0 /Users/xiebaiyuan/PaddleProject/quali/models/googlenet ./googlenet_min
 ```
-
-
