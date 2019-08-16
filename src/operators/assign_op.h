@@ -12,33 +12,22 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef TOP_K_OP
+#ifdef ASSIGN_OP
 
-#include "operators/top_k_op.h"
+#pragma once
+
+#include <string>
+
+#include "framework/operator.h"
+#include "operators/kernel/assign_kernel.h"
+#include "operators/op_param.h"
 
 namespace paddle_mobile {
 namespace operators {
 
-template <typename DeviceType, typename T>
-void TopKOp<DeviceType, T>::InferShape() const {
-  const int k = this->param_.k_;
-  auto dims = this->param_.input_->dims();
-  // should check k <= dims[-1] && k >= 1
-  dims[dims.size() - 1] = k;
-  this->param_.output_->Resize(dims);
-  this->param_.indices_->Resize(dims);
-#ifdef PADDLE_MOBILE_CPU
-  this->param_.output_->set_lod(this->param_.input_->lod());
-  this->param_.indices_->set_lod(this->param_.input_->lod());
-#endif
-}
+DECLARE_OPERATOR(Assign, AssignParam, AssignKernel);
 
 }  // namespace operators
 }  // namespace paddle_mobile
 
-namespace ops = paddle_mobile::operators;
-#ifdef PADDLE_MOBILE_CPU
-REGISTER_OPERATOR_CPU(top_k, ops::TopKOp);
 #endif
-
-#endif  // TOP_K_OP

@@ -12,32 +12,14 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef ONE_HOT_OP
+#ifdef FILL_CONSTANT_BATCH_SIZE_LIKE_OP
 
-#include "operators/one_hot_op.h"
-
-namespace paddle_mobile {
-namespace operators {
-
-template <typename Dtype, typename T>
-void OnehotOp<Dtype, T>::InferShape() const {
-  const auto &x_dims = this->param_.input_->dims();
-  int depth = this->param_.depth_;
-  framework::DDim out_dims(x_dims);
-  out_dims[out_dims.size() - 1] = depth;
-  this->param_.output_->Resize(out_dims);
-#ifdef PADDLE_MOBILE_CPU
-  this->param_.output_->set_lod(this->param_.input_->lod());
-#endif
-}
-
-}  // namespace operators
-}  // namespace paddle_mobile
+#include "operators/fill_constant_batch_size_like_op.h"
 
 namespace ops = paddle_mobile::operators;
-
 #ifdef PADDLE_MOBILE_CPU
-REGISTER_OPERATOR_CPU(one_hot, ops::OnehotOp);
+REGISTER_OPERATOR_CPU(fill_constant_batch_size_like,
+                      ops::FillConstantBatchSizeLikeOp);
 #endif
 
-#endif  // ONE_HOT_OP
+#endif

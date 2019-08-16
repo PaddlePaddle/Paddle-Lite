@@ -12,33 +12,38 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef TOP_K_OP
+#ifdef RANGE_OP
 
-#include "operators/top_k_op.h"
+#include "operators/kernel/range_kernel.h"
+#include "framework/data_type.h"
 
 namespace paddle_mobile {
 namespace operators {
 
-template <typename DeviceType, typename T>
-void TopKOp<DeviceType, T>::InferShape() const {
-  const int k = this->param_.k_;
-  auto dims = this->param_.input_->dims();
-  // should check k <= dims[-1] && k >= 1
-  dims[dims.size() - 1] = k;
-  this->param_.output_->Resize(dims);
-  this->param_.indices_->Resize(dims);
-#ifdef PADDLE_MOBILE_CPU
-  this->param_.output_->set_lod(this->param_.input_->lod());
-  this->param_.indices_->set_lod(this->param_.input_->lod());
-#endif
+template <>
+bool RangeKernel<CPU, float>::Init(RangeParam<CPU>* param) {
+  return true;
+}
+
+template <>
+void RangeKernel<CPU, float>::Compute(const RangeParam<CPU>& param) {
+  int start = param.Start()->data<int>()[0];
+  int end = param.End()->data<int>()[0];
+  int step = param.Step()->data<int>()[0];
+  auto* out = param.Output();
+
+  int64_t size = 0;
+  GetSize(start, end, step, &size);
+  out->Resize(framework::make_ddim({size}));
+  auto* out_data = out->mutable_data<int>();
+  auto value = start;
+  for (int64_t i = 0; i < size; ++i) {
+    out_data[i] = value;
+    value += step;
+  }
 }
 
 }  // namespace operators
 }  // namespace paddle_mobile
 
-namespace ops = paddle_mobile::operators;
-#ifdef PADDLE_MOBILE_CPU
-REGISTER_OPERATOR_CPU(top_k, ops::TopKOp);
-#endif
-
-#endif  // TOP_K_OP
+#endif  // RANGE_OP

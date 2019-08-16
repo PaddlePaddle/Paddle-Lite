@@ -353,3 +353,21 @@ LOAD_OP1(assign_value, CPU);
 #ifdef EXP_OP
 LOAD_OP1(exp, CPU);
 #endif
+#ifdef ASSIGN_OP
+LOAD_OP1(assign, CPU);
+#endif
+#ifdef CONDITIONAL_BLOCK_OP
+LOAD_OP1(conditional_block, CPU);
+#endif
+#ifdef EQUAL_OP
+LOAD_OP1(equal, CPU);
+#endif
+#ifdef FILL_CONSTANT_BATCH_SIZE_LIKE_OP
+LOAD_OP1(fill_constant_batch_size_like, CPU);
+#endif
+#ifdef RANGE_OP
+LOAD_OP1(range, CPU);
+#endif
+#ifdef REDUCE_PROD_OP
+LOAD_OP1(reduce_prod, CPU);
+#endif

@@ -25,6 +25,14 @@ void LessThanOp<Dtype, T>::InferShape() const {
 }
 #endif  // LESS_THAN_OP
 
+#ifdef EQUAL_OP
+template <typename Dtype, typename T>
+void EqualOp<Dtype, T>::InferShape() const {
+  const auto &input_dims = this->param_.input_x_->dims();
+  this->param_.output_->Resize(input_dims);
+}
+#endif  // EQUAL_OP
+
 }  // namespace operators
 }  // namespace paddle_mobile
 
@@ -32,3 +40,6 @@ namespace ops = paddle_mobile::operators;
 #ifdef LESS_THAN_OP
 REGISTER_OPERATOR_CPU(less_than, ops::LessThanOp);
 #endif  // LESS_THAN_OP
+#ifdef EQUAL_OP
+REGISTER_OPERATOR_CPU(equal, ops::EqualOp);
+#endif  // EQUAL_OP

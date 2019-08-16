@@ -12,33 +12,23 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef TOP_K_OP
+#ifdef CONDITIONAL_BLOCK_OP
 
-#include "operators/top_k_op.h"
+#include "operators/conditional_block_op.h"
 
 namespace paddle_mobile {
 namespace operators {
 
-template <typename DeviceType, typename T>
-void TopKOp<DeviceType, T>::InferShape() const {
-  const int k = this->param_.k_;
-  auto dims = this->param_.input_->dims();
-  // should check k <= dims[-1] && k >= 1
-  dims[dims.size() - 1] = k;
-  this->param_.output_->Resize(dims);
-  this->param_.indices_->Resize(dims);
-#ifdef PADDLE_MOBILE_CPU
-  this->param_.output_->set_lod(this->param_.input_->lod());
-  this->param_.indices_->set_lod(this->param_.input_->lod());
-#endif
-}
+template <typename Dtype, typename T>
+void ConditionalBlockOp<Dtype, T>::InferShape() const {}
 
 }  // namespace operators
 }  // namespace paddle_mobile
 
 namespace ops = paddle_mobile::operators;
+
 #ifdef PADDLE_MOBILE_CPU
-REGISTER_OPERATOR_CPU(top_k, ops::TopKOp);
+REGISTER_OPERATOR_CPU(conditional_block, ops::ConditionalBlockOp);
 #endif
 
-#endif  // TOP_K_OP
+#endif  // CONDITIONAL_BLOCK_OP
