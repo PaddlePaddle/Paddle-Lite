@@ -19,6 +19,7 @@ limitations under the License. */
 
 namespace paddle_mobile {
 namespace operators {
+bool use_lws = true;
 
 template <>
 void winograd_transform_weight<4, 3>(framework::CLHelper *cl_helper,
@@ -144,9 +145,18 @@ void ConvAddBnRelu(framework::CLHelper *cl_helper,
         static_cast<const uint32_t>(maped_w),
         static_cast<const uint32_t>(default_work_size.data()[2])};
 
-    status = clEnqueueNDRangeKernel(cl_helper->CLCommandQueue(), kernel,
-                                    default_work_size.size(), NULL, work_size,
-                                    NULL, 0, NULL, NULL);
+    if (work_size[1] % 60 == 0 && use_lws) {
+      const size_t local_work_size[3] = {static_cast<const uint32_t>(1),
+                                         static_cast<const uint32_t>(60),
+                                         static_cast<const uint32_t>(1)};
+      status = clEnqueueNDRangeKernel(cl_helper->CLCommandQueue(), kernel,
+                                      default_work_size.size(), NULL, work_size,
+                                      local_work_size, 0, NULL, NULL);
+    } else {
+      status = clEnqueueNDRangeKernel(cl_helper->CLCommandQueue(), kernel,
+                                      default_work_size.size(), NULL, work_size,
+                                      NULL, 0, NULL, NULL);
+    }
     CL_CHECK_ERRORS(status);
   } else {
     status = clSetKernelArg(kernel, index++, sizeof(int), &c_block);
@@ -335,11 +345,128 @@ void DWConvAddBnRelu(framework::CLHelper *cl_helper,
   status = clSetKernelArg(kernel, index++, sizeof(int), &output_height);
   CL_CHECK_ERRORS(status);
 
-  status = clEnqueueNDRangeKernel(
-      cl_helper->CLCommandQueue(), kernel, default_work_size.size(), NULL,
-      default_work_size.data(), NULL, 0, NULL, NULL);
+  if (default_work_size.data()[1] % 60 == 0 && use_lws) {
+    const size_t local_work_size[3] = {static_cast<const uint32_t>(1),
+                                       static_cast<const uint32_t>(60),
+                                       static_cast<const uint32_t>(1)};
+    status = clEnqueueNDRangeKernel(
+        cl_helper->CLCommandQueue(), kernel, default_work_size.size(), NULL,
+        default_work_size.data(), local_work_size, 0, NULL, NULL);
+  } else {
+    status = clEnqueueNDRangeKernel(
+        cl_helper->CLCommandQueue(), kernel, default_work_size.size(), NULL,
+        default_work_size.data(), NULL, 0, NULL, NULL);
+  }
+
   CL_CHECK_ERRORS(status);
 }
 
+void SWConvAddBnRelu(framework::CLHelper *cl_helper,
+                     const ConvParam<GPU_CL> &param, bool ifRelu,
+                     const framework::CLImage *biase,
+                     const framework::CLImage *new_scale,
+                     const framework::CLImage *new_bias) {
+  auto kernel = cl_helper->KernelAt(0);
+  auto default_work_size = cl_helper->DefaultWorkSize(*param.Output());
+  int c_block = default_work_size[0];
+  int w = default_work_size[1];
+  int nh = default_work_size[2];
+
+  int w_blk_size = 5;
+  int w_blk = (w + w_blk_size - 1) / w_blk_size;
+  default_work_size[1] = w_blk;
+
+  int h_blk_size = 1;
+  int h_blk = (nh + h_blk_size - 1) / h_blk_size;
+  default_work_size[2] = h_blk;
+
+  auto input = param.Input()->GetCLImage();
+  auto filter = param.Filter()->GetCLImage();
+
+  auto output = param.Output()->GetCLImage();
+  int stride = param.Strides()[0];
+  int pad = param.Paddings()[0];
+  int dilation = param.Dilations()[0];
+
+  int input_channel = param.Input()->dims()[1];
+  int input_height = param.Input()->dims()[2];
+  int input_width = param.Input()->dims()[3];
+
+  int output_height = param.Output()->dims()[2];
+  int output_width = param.Output()->dims()[3];
+
+  cl_int status;
+  int index = 0;
+
+  status = clSetKernelArg(kernel, index++, sizeof(int), &c_block);
+  CL_CHECK_ERRORS(status);
+
+  status = clSetKernelArg(kernel, index++, sizeof(int), &w_blk);
+  CL_CHECK_ERRORS(status);
+
+  status = clSetKernelArg(kernel, index++, sizeof(int), &h_blk);
+  CL_CHECK_ERRORS(status);
+
+  status = clSetKernelArg(kernel, index++, sizeof(cl_mem), &input);
+  CL_CHECK_ERRORS(status);
+
+  status = clSetKernelArg(kernel, index++, sizeof(cl_mem), &filter);
+  CL_CHECK_ERRORS(status);
+
+  if (biase) {
+    auto bias_mem = biase->GetCLImage();
+    status = clSetKernelArg(kernel, index++, sizeof(cl_mem), &bias_mem);
+    CL_CHECK_ERRORS(status);
+  }
+
+  if (new_scale && new_bias) {
+    auto new_scale_mem = new_scale->GetCLImage();
+    status = clSetKernelArg(kernel, index++, sizeof(cl_mem), &new_scale_mem);
+    CL_CHECK_ERRORS(status);
+
+    auto new_bias_mem = new_bias->GetCLImage();
+    status = clSetKernelArg(kernel, index++, sizeof(cl_mem), &new_bias_mem);
+    CL_CHECK_ERRORS(status);
+  }
+
+  status = clSetKernelArg(kernel, index++, sizeof(cl_mem), &output);
+  CL_CHECK_ERRORS(status);
+
+  status = clSetKernelArg(kernel, index++, sizeof(int), &stride);
+  CL_CHECK_ERRORS(status);
+
+  status = clSetKernelArg(kernel, index++, sizeof(int), &pad);
+  CL_CHECK_ERRORS(status);
+  status = clSetKernelArg(kernel, index++, sizeof(int), &dilation);
+  CL_CHECK_ERRORS(status);
+
+  status = clSetKernelArg(kernel, index++, sizeof(int), &input_channel);
+  CL_CHECK_ERRORS(status);
+
+  status = clSetKernelArg(kernel, index++, sizeof(int), &input_width);
+  CL_CHECK_ERRORS(status);
+
+  status = clSetKernelArg(kernel, index++, sizeof(int), &input_height);
+  CL_CHECK_ERRORS(status);
+  status = clSetKernelArg(kernel, index++, sizeof(int), &output_width);
+  CL_CHECK_ERRORS(status);
+
+  status = clSetKernelArg(kernel, index++, sizeof(int), &output_height);
+  CL_CHECK_ERRORS(status);
+
+  if (default_work_size.data()[1] % 60 == 0 && use_lws) {
+    const size_t local_work_size[3] = {static_cast<const uint32_t>(1),
+                                       static_cast<const uint32_t>(60),
+                                       static_cast<const uint32_t>(1)};
+    status = clEnqueueNDRangeKernel(
+        cl_helper->CLCommandQueue(), kernel, default_work_size.size(), NULL,
+        default_work_size.data(), local_work_size, 0, NULL, NULL);
+  } else {
+    status = clEnqueueNDRangeKernel(
+        cl_helper->CLCommandQueue(), kernel, default_work_size.size(), NULL,
+        default_work_size.data(), NULL, 0, NULL, NULL);
+  }
+  CL_CHECK_ERRORS(status);
+}
 }  // namespace operators
 }  // namespace paddle_mobile
