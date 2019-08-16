@@ -37,7 +37,8 @@ void BatchnormCompute(const BatchNormParam<CPU> &param) {
   const float *input_ptr = input->data<float>();
   framework::Tensor *output = param.OutputY();
   float *output_ptr = output->mutable_data<float>();
-  size_t spatial_size = output->dims()[2] * output->dims()[3];
+  size_t spatial_size = output->dims()[output->dims().size() - 2] *
+                        output->dims()[output->dims().size() - 1];
   int channels = output->dims()[1];
 
   #pragma omp parallel for collapse(2)
