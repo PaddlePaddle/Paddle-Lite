@@ -11,5 +11,3 @@ module.exports.create = function (args, scope, gl) {
     }
   }
 }
-
-

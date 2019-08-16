@@ -22,5 +22,3 @@
 
 //! Project version string for paddle_mobile.
 //FOUNDATION_EXPORT const unsigned char paddle_mobileVersionString[];
-
-
