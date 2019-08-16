@@ -82,11 +82,17 @@ bool ConvAddKernel<GPU_CL, float>::Init(FusionConvAddParam<GPU_CL> *param) {
     //      winograd_transform_weight<4, 3>(&this->cl_helper_, param->Filter());
     //
     //    } else {
-    param->ExecMode() = ConvParam<GPU_CL>::EXEC_SLIDINGWINDOW3x3_FLOAT;
-    param->Filter()->InitCLImage(cl_helper_.CLContext(),
-                                 cl_helper_.CLCommandQueue());
-
-    this->cl_helper_.AddKernel("conv_3x3", conv_kernel_file, build_options);
+    if (param->Strides()[0] == 1 && param->Dilations()[0] == 1) {
+      param->ExecMode() = ConvParam<GPU_CL>::EXEC_SLIDINGWINDOW3x3S1_FLOAT;
+      param->Filter()->InitCLImage(cl_helper_.CLContext(),
+                                   cl_helper_.CLCommandQueue());
+      this->cl_helper_.AddKernel("conv_3x3s1", conv_kernel_file, build_options);
+    } else {
+      param->ExecMode() = ConvParam<GPU_CL>::EXEC_SLIDINGWINDOW3x3_FLOAT;
+      param->Filter()->InitCLImage(cl_helper_.CLContext(),
+                                   cl_helper_.CLCommandQueue());
+      this->cl_helper_.AddKernel("conv_3x3", conv_kernel_file, build_options);
+    }
     //    }
 
   } else if (param->Filter()->dims()[2] == 7 &&
@@ -125,6 +131,9 @@ void ConvAddKernel<GPU_CL, float>::Compute(
       break;
     case ConvParam<GPU_CL>::EXEC_DEPTHWISE3x3S1_FLOAT:
       DWConvAddBnRelu(&this->cl_helper_, param, false, param.Bias());
+      break;
+    case ConvParam<GPU_CL>::EXEC_SLIDINGWINDOW3x3S1_FLOAT:
+      SWConvAddBnRelu(&this->cl_helper_, param, false, param.Bias());
       break;
     default:
       PADDLE_MOBILE_THROW_EXCEPTION("Invalid convolution execute mode %d",
