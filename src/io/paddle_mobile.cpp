@@ -525,7 +525,6 @@ int PaddleMobile<Device, T>::readText(
 
 template class PaddleMobile<CPU, float>;
 template class PaddleMobile<FPGA, float>;
-template class PaddleMobile<GPU_MALI, float>;
 template class PaddleMobile<GPU_CL, float>;
 
 }  // namespace paddle_mobile
