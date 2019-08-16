@@ -29,3 +29,4 @@ USE_NPU_BRIDGE(concat);
 USE_NPU_BRIDGE(split);
 USE_NPU_BRIDGE(transpose);
 USE_NPU_BRIDGE(transpose2);
+USE_NPU_BRIDGE(shuffle_channel);
