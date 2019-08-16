@@ -52,7 +52,8 @@ bool ElementwiseMulKernel<FPGA, float>::Init(ElementwiseMulParam<FPGA>* param) {
   bias->flush();
 
   scale_param.bias = bias;
-  scale_param.scale = scale;
+  // scale_param.scale = scale;
+  scale_param.scale = param->InputY()->zynqmpTensor();
 
   pe.init();
   pe.apply();
@@ -65,6 +66,7 @@ void ElementwiseMulKernel<FPGA, float>::Compute(
     const ElementwiseMulParam<FPGA>& param) {
   zynqmp::Context& context = const_cast<zynqmp::Context&>(param.context_);
   zynqmp::ScalePE& pe = context.pe<zynqmp::ScalePE>();
+  // pe.apply();
   pe.dispatch();
 #ifdef PADDLE_MOBILE_DEBUG
   zynqmp::Debugger::get_instance().registerOutput("ew_mul",

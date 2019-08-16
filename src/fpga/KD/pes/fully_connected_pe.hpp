@@ -79,6 +79,9 @@ class FullyConnectedPE : public PE {
     convParam_.scale()->flush();
     convParam_.bias()->flush();
 
+    // convParam_.scale()->saveToFile("fc_scale.txt");
+    // convParam_.bias()->saveToFile("fc_bias.txt");
+
     convPE_.init();
     convPE_.apply();
   }

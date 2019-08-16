@@ -46,7 +46,8 @@ inline int get_split_num(Tensor* filter) {
              filter->shape().width();
   auto num = filter->shape().num();
   int div_capacity = filter::calc_division_capacity(chw);
-  return filter::calc_split_num(num, div_capacity);
+  int aligned_num = align_to_x(num ,FILTER_NUM_ALIGNMENT);
+  return filter::calc_split_num(aligned_num, div_capacity);
 }
 
 inline void fill_scale_bias_const(ConvParam* param_) {
@@ -115,50 +116,58 @@ inline void combine_add_bn_params(BatchnormParam* bn, Tensor* bias,
 inline void format_scale_bias(Tensor* scale, Tensor* bias, Tensor* filter,
                               Tensor* scale_bias, int group) {
   float* scale_data = nullptr;
-  float* bias_data = nullptr;
-  if (scale != nullptr) {
-    scale_data = scale->data<float>();
-  }
-  if (bias != nullptr) {
-    bias_data = bias->data<float>();
-  }
-  int channel = filter->shape().num();
-  int num_per_group = filter->shape().num() / group;
-  int aligned_num_per_group = align_to_x(filter->shape().num() / group, 8);
-
-  // int bs_len = filter->shape().num() / group;
-  int bs_len = aligned_num_per_group * group;
-  Shape bias_scale_shape(N, {2 * bs_len});
-  float* bs_data = scale_bias->mutableData<float>(FP32, bias_scale_shape);
-  memset(bs_data, 0, 2 * bs_len * sizeof(float));
-
-  float* tmp_data = (float*)fpga_malloc(2 * bs_len * sizeof(float));
-  memset(tmp_data, 0, 2 * bs_len * sizeof(float));
-
-  int div_per_group = filter->shape().num() / group;
-
-  for (int g = 0; g < group; g++) {
-    for (int c = 0; c < num_per_group; c++) {
-      int dst_index = g * aligned_num_per_group + c;
-      int src_index = g * num_per_group + c;
-      float scale_value = scale_data == nullptr ? 1 : scale_data[src_index];
-      float bias_value = bias_data == nullptr ? 0 : bias_data[src_index];
-      tmp_data[dst_index + channel] = scale_value;
-      tmp_data[dst_index] = bias_value;
+    float* bias_data = nullptr;
+    if (scale != nullptr) {
+        scale_data = scale->data<float>();
     }
-  }
+    if (bias != nullptr) {
+        bias_data = bias->data<float>();
+    }
+    int channel = filter->shape().num();
+    int scale_bias_len = align_to_x(channel / group, BS_NUM_ALIGNMENT) * group;
 
-  // for (int i = 0; i < bs_len; i++) {
-  //   // TODO
-  //   float scale_value = scale_data == nullptr ? 1 : scale_data[i];
-  //   float bias_value = bias_data == nullptr ? 0 : bias_data[i];
-  //   tmp_data[i + channel] = scale_value;
-  //   tmp_data[i] = bias_value;
-  // }
+    int c_per_group = channel / group;
+    int aligned_c_per_group = align_to_x(channel / group, BS_NUM_ALIGNMENT);
 
-  int element_num_per_div = get_filter_num_per_div(filter, group);
-  bias_scale::format_bias_scale_array(&tmp_data, bs_len / group, bs_len);
-  memcpy(bs_data, tmp_data, 2 * bs_len * sizeof(float));
+    Shape bias_scale_shape(N, {2 * scale_bias_len});
+    float* bs_data = scale_bias->mutableData<float>(FP32, bias_scale_shape);
+    float* temp_data = (float*)fpga_malloc(2 * scale_bias_len * sizeof(float)) ;
+    memset(temp_data, 0, 2 * scale_bias_len * sizeof(float));
+
+    std::vector<float> scales;
+    if (scale_data != nullptr) {
+      for (int i = 0; i < channel; ++i) {
+        scales.push_back(scale_data[i]);
+      }
+      for (int i = 0;i < scale_bias_len - channel; i++) {
+        scales.push_back(1);
+      }
+    } else {
+      for (int i = 0;i < scale_bias_len; i++) {
+        scales.push_back(1);
+      }
+    }
+
+    for (int i = 0; i < scale_bias_len; ++i) {
+      temp_data[i + scale_bias_len] = 1;
+      temp_data[i] = 0;
+    }
+
+    for (int g = 0; g < group; g++) {
+      for (int c = 0; c < c_per_group; c++) {
+        int src_index = g * c_per_group + c;
+        int dst_index = g * aligned_c_per_group + c;
+        float scale_value = scales[src_index];
+        float bias_value = bias_data == nullptr ? 0 : bias_data[src_index];
+        temp_data[dst_index + scale_bias_len] = scale_value;
+        temp_data[dst_index] = bias_value;
+      }
+    }
+
+    // int element_num_per_div = get_filter_num_per_div(filter, group);
+    // int scale_bias_len = align_to_x(channel / group, 8) * group;
+    bias_scale::format_bias_scale_array(&temp_data, scale_bias_len / group, scale_bias_len);
+    memcpy(bs_data, temp_data, 2 * scale_bias_len * sizeof(float));
 }
 
 inline void format_filter(Tensor* filter, Tensor* quantized_filter, int group,
@@ -170,19 +179,30 @@ inline void format_filter(Tensor* filter, Tensor* quantized_filter, int group,
   quantized_filter->scale()[0] = max_value / 127.0f;
   quantized_filter->scale()[1] = 127.0f / max_value;
 
-  auto memory_size = filter->shape().memorySize(sizeof(float));
-  auto new_data = filter->data<float>();
-  int mem_size;
-  int8_t* qdata = filter::format_filter(
-      new_data, mem_size, filter_shape.num(), filter_shape.channel(),
-      filter_shape.height(), filter_shape.width(), group, max_value, scales);
   int8_t* src = quantized_filter->mutableData<int8_t>(INT8, filter->shape());
-  memcpy(src, qdata, mem_size);
+  int mem_size;
+  std::vector<float> max_values;
+  int8_t* quantized_data = filter::format_filter(filter->data<float>(), mem_size ,filter_shape.num(),
+    filter_shape.channel(), filter_shape.height(), filter_shape.width(), group, max_value, max_values);
+
+  memcpy(src, quantized_data, mem_size);
   quantized_filter->flush();
 
-  for (size_t i = 0; i < scales.size(); i++) {
-    scales[i] = scales[i] / max_value;
-  }
+  // for (size_t i = 0; i < max_values.size(); i++) {
+  //   // scales.push_back(max_values[i] / max_value);
+  //   scales.push_back(1.0f);
+  // }
+
+  // filter->saveToFile("filter.txt");
+  // std::ofstream ofs;
+  // ofs.open("quant.txt");
+  // for (int i = 0; i < mem_size; i++) {
+  //   float value = quantized_data[i];
+  //   ofs << value << std::endl;
+  // }
+  // ofs.close();
+  // exit(-1);
+
 }
 
 inline void format_dw_filter(Tensor* filter, Tensor* quantized_filter,
@@ -227,39 +247,18 @@ inline void split_filter_num(const ConvParam& c_param) {
   Tensor* input = param.input;
   Tensor* out = param.output;
   Tensor* filter = param.filter;
-
-  int bs_len = filter->shape().num() / param.groups;
-
   auto channel = out->shape().channel();
-
   int split_num = param.groups == 1 ? get_split_num(param.filter) : 1;
   int filter_num_per_div = get_filter_num_per_div(filter, param.groups);
 
-  int filter_chw = filter->shape().channel() * filter->shape().height() *
-                   filter->shape().width();
-  int group = param.groups;
-  int num_per_group = filter->shape().num() / group;
-  int aligned_num_per_group = align_to_x(num_per_group, FILTER_NUM_ALIGNMENT);
-  int aligned_chw = align_to_x(
-      num_per_group * filter->shape().height() * filter->shape().width(),
-      FILTER_ELEMENT_ALIGNMENT);
+  auto chw = filter->shape().channel() * filter->shape().height() *
+           filter->shape().width();
+  auto num = filter->shape().num();
+  int div_capacity = filter::calc_division_capacity(chw);
 
-  // std::cout << "\n split_num:" << split_num << std::endl;
-  // 1, align_num = group * align_to_x(num / group, 32) * align_to_x(height *
-  // width * channel, 16);  2, fpga_bias_scale_len = api::align_to_x(_filter_num
-  // / group_num, 8) * group_num;
+  int aligned_num = align_to_x(num / param.groups ,FILTER_NUM_ALIGNMENT) * param.groups;
+  split_num = filter::calc_split_num(aligned_num, div_capacity);
 
-  // 3.cout << fpga_bias_scale_len << endl;
-  // for (int i = 0; i < fpga_bias_scale_len; i++) {
-  //     _bias_in_addr[i] = 0.0;
-  //     _scale_in_addr[i] = 1.0;
-  // }
-
-  // paddle_mobile::fpga::bias_scale::format_bias_scale_array(&_bias_scale_fpga,
-  // fpga_bias_scale_len/group_num, fpga_bias_scale_len);
-
-  // 4. convert to hwc,
-  // 5 format filter;
   Shape& out_shape = out->shape();
   for (int i = 0; i < split_num; i++) {
     BasicConvParam* conv_param = new BasicConvParam();
@@ -273,57 +272,40 @@ inline void split_filter_num(const ConvParam& c_param) {
     ConvArgs& args = conv_param->args;
 
     if (split_num == 1) {
-      out_address = out->data<float16>();
-      out_scale_address = out->scale();
+        out_address = out->data<float16>();
+        out_scale_address = out->scale();
     }
     filter_num = i == split_num - 1
-                     ? channel - (split_num - 1) * filter_num_per_div  // NOLINT
-                     : filter_num_per_div;
+                 ? channel - (split_num - 1) * filter_num_per_div  // NOLINT
+                 : filter_num_per_div;
 
     if (split_num != 1) {
-      Shape shape(NHWC, {1, out_shape.height(), out_shape.width(), filter_num});
-      out_address = conv_param->output.mutableData<float16>(FP16, shape);
-      out_scale_address = conv_param->output.scale();
+        Shape shape(NHWC, {1, out_shape.height(), out_shape.width(), filter_num});
+        out_address = conv_param->output.mutableData<float16>(FP16, shape);
+        out_scale_address = conv_param->output.scale();
     }
     Shape f_shape(NCHW, {filter_num, filter->shape().channel(),
-                         filter->shape().height(), filter->shape().width()});
-
-    int total = group * aligned_num_per_group * aligned_chw;
-    if (group != 1) {
-      std::cout << "aligned_num_per_group:" << aligned_num_per_group
-                << std::endl;
-      std::cout << "total:" << total << std::endl;
-      // exit(-1);
-    }
-    auto alignment = [total](Shape& s) { return total; };
-    f_shape.setAligmentFunction(alignment);
-
-    // Shape adjusted_shape(NCHW, {group * aligned_num_per_group,
-    // filter->shape().channel(),
-    //   filter->shape().height(), filter->shape().width()});
+                     filter->shape().height(), filter->shape().width()});
 
     Tensor new_filter;
     float* new_filter_data = new_filter.mutableData<float>(FP32, f_shape);
     int filter_hwc = filter->shape().height() * filter->shape().width() *
                      filter->shape().channel();
 
-    // memset(new_filter_data, 0, group * aligned_num_per_group * filter_hwc *
-    // sizeof(float)); for (size_t g = 0; g < group; g++) {
-    //   float* src = filter->data<float>() + g * num_per_group * filter_chw;
-    //   float* dst = new_filter_data + g * aligned_num_per_group * filter_chw;
-    //   memcpy(dst ,src , num_per_group * filter_chw * sizeof(float));
-    // }
-
     memcpy(new_filter_data,
            filter->data<float>() + i * filter_num_per_div * filter_hwc,
            filter_num * filter_hwc * sizeof(float));
     new_filter.flush();
-
     conv_param->filter.mutableData<float>(FP32, f_shape);
 
-    std::vector<float> filter_max;
-    format_filter(&new_filter, &(conv_param->filter), param.groups, filter_max);
-    // format_filter(&new_filter, &(conv_param->filter), 1, filter_max);
+    if (param.groups != 1) {
+      int mem_factor = 32 / filter_num_per_div; // TODO
+      conv_param->filter.setMemScale(mem_factor);
+    }
+
+    std::vector<float> v; // TODO
+    format_filter(&new_filter, &(conv_param->filter), param.groups, v);
+    conv_param->filter.setDataType(INT8);
 
     int sb_num = 2 * align_to_x(filter_num, BS_NUM_ALIGNMENT);
     Tensor scale;
@@ -335,24 +317,28 @@ inline void split_filter_num(const ConvParam& c_param) {
     float* scale_data = scale.mutableData<float>(FP32, s_shape);
     float* bias_data = bias.mutableData<float>(FP32, s_shape);
     for (int n = 0; n < filter_num; n++) {
-      // float s = filter_max[n] / max;
-      // std::cout << filter_max[n] << std::endl;
-      scale_data[n] =
-          param.scale()->data<float>()[n + chnnnel_start] * filter_max[n];
+        // scale_data[n] = param.scale()->data<float>()[n + chnnnel_start] * v[n];
+      scale_data[n] = param.scale()->data<float>()[n + chnnnel_start];
     }
-
-    // exit(-1);
     for (int n = 0; n < filter_num; n++) {
-      bias_data[n] = param.bias()->data<float>()[n + chnnnel_start];
+        bias_data[n] = param.bias()->data<float>()[n + chnnnel_start];
     }
     Shape sb_shape(N, {sb_num});
     format_scale_bias(&scale, &bias, &conv_param->filter,
                       &conv_param->scaleBias, param.groups);
+    // conv_param->scaleBias.saveToFile("sb.txt");
     conv_param->scaleBias.flush();
+    float* bs_data = conv_param->scaleBias.data<float>();
+    // conv_param->scaleBias.saveToFile("sb.txt");
+    // param.scale()->saveToFile("scale.txt");
+    // param.bias()->saveToFile("bias.txt");
+
+    // exit(-1);
 
     args.group_num = param.groups;
     args.relu_enabled = param.relu.enabled;
     args.sb_address = conv_param->scaleBias.data<float>();
+    args.sb_address = bs_data;
     args.kernel.stride_h = param.strides[1];
     args.kernel.stride_w = param.strides[0];
     args.kernel.height = new_filter.shape().height();
@@ -368,6 +354,7 @@ inline void split_filter_num(const ConvParam& c_param) {
     args.image.height = input->shape().height();
     args.image.pad_width = param.paddings[1];
     args.image.pad_height = param.paddings[0];
+
     args.output.address = out_address;
     args.output.scale_address = out_scale_address;
     param.splitParams().push_back(conv_param);
@@ -382,7 +369,6 @@ inline void split_channel(const ConvParam& c_param) {
 
   int num = ceil(input->shape().channel() * 1.0f / 2047);
   int channel = input->shape().channel() / num;
-  std::cout << "channel::" << channel << "num::" << num << std::endl;
   Shape bs_shape(N, {channel});
 
   for (int i = 0; i < num; i++) {
@@ -412,9 +398,6 @@ inline void split_channel(const ConvParam& c_param) {
 
     Tensor bias;
     Tensor scale;
-    // bias.shareDataWith(param.bias(), bs_shape, i * channel);
-
-    // param.bias()->saveToFile("param.bias.txt");
 
     float* bias_data = bias.mutableData<float>(FP32, bs_shape);
     float* scale_data = scale.mutableData<float>(FP32, bs_shape);
@@ -424,14 +407,11 @@ inline void split_channel(const ConvParam& c_param) {
     }
     scale.flush();
     bias.flush();
-    // bias.saveToFile("bias.txt");
-    // new_filter.saveToFile("new_filter.txt");
-
     // Shape sb_shape(N, {2 * channel});
     format_scale_bias(&scale, &bias, &conv_param->filter,
                       &conv_param->scaleBias, param.groups);
     conv_param->scaleBias.flush();
-    // conv_param->scaleBias.saveToFile("sb.txt");
+    conv_param->scaleBias.saveToFile("sb.txt");
 
     ConvArgs& args = conv_param->args;
     args.group_num = param.groups;
@@ -445,8 +425,6 @@ inline void split_channel(const ConvParam& c_param) {
     args.filter_address = conv_param->filter.data<int8_t>();
     args.filter_num = f_shape.num();
     args.filter_scale_address = conv_param->filter.scale();
-    // std::cout << "filter_scale:\n" ;
-    // conv_param->filter.printScale();
     args.image.address = conv_param->input.mutableData<void>();
     args.image.scale_address = conv_param->input.scale();
 
@@ -490,7 +468,6 @@ inline bool compute_conv(const ConvParam& c_conv_params) {
     for (int i = 0; i < 1; i++) {
       for (int i = 0; i < img.shape().numel(); i++) {
         float value = half_to_float(img.data<float16>()[i]);
-        std::cout << "value:" << value << std::endl;
       }
     }
   }

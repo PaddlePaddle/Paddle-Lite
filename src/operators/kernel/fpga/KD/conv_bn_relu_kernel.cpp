@@ -47,6 +47,9 @@ bool ConvBNReluKernel<FPGA, float>::Init(FusionConvBNReluParam<FPGA>* param) {
   conv_param.paddings = param->Paddings();
 
   combine_bn_params(bn_param, &conv_param);
+  // fill_scale_bias_const(&conv_param);
+
+
   pe.init();
   pe.apply();
   delete bn_param;
@@ -65,6 +68,8 @@ void ConvBNReluKernel<FPGA, float>::Compute(
   zynqmp::Debugger::get_instance().registerOutput(
       "conv_bn_relu", param.Output()->zynqmpTensor());
 #endif
+
+  // exit(-1);
 }
 
 }  // namespace operators

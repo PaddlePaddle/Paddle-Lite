@@ -33,7 +33,8 @@ class Debugger {
   }
 
   void registerOutput(std::string op_type, Tensor* tensor) {
-    tensor->saveToFile(op_type, true);
+    // tensor->printScale();
+    // tensor->saveToFile(op_type, true);
   }
 
  private:

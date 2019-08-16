@@ -35,12 +35,15 @@ class PoolingPE : public PE {
     Tensor* input = param_.input;
     Tensor* output = param_.output;
 
-    uint32_t k_width = param_.kernelSize[0];
-    uint32_t k_height = param_.kernelSize[1];
+    uint32_t k_height = param_.kernelSize[0];
+    uint32_t k_width = param_.kernelSize[1];
+
 
     if (param_.globalPooling) {
       k_width = input->shape().width();
       k_height = input->shape().height();
+      param_.kernelSize[0] = k_height;
+      param_.kernelSize[1] = k_width;
     }
 
     PoolingArgs args = {0};
@@ -138,9 +141,9 @@ class PoolingPE : public PE {
     input->syncToCPU();
 
     Tensor float_input;
-    // Tensor float_output;
     float_input.mutableData<float>(FP32, input->shape());
     float_input.copyFrom(input);
+    // float_input.saveToFile("pool_float.txt");
     float16* data_out = output->data<float16>();
 
     int kernel_hw = param_.kernelSize[0] * param_.kernelSize[1];
@@ -150,7 +153,6 @@ class PoolingPE : public PE {
       float sum = 0;
       for (int j = 0; j < kernel_hw; j++) {
         float value = half_to_float(input->data<float16>()[i * kernel_hw + j]);
-        // max = std::max(max, value);
         sum += value;
       }
       float value = sum / kernel_hw;
@@ -159,7 +161,6 @@ class PoolingPE : public PE {
     }
     output->scale()[0] = scale_max / 127.0f;
     output->scale()[1] = 127.0f / scale_max;
-    std::cout << "pool scale:" << scale_max / 127.0f << std::endl;
     output->flush();
     // exit(-1);
   }
@@ -168,6 +169,7 @@ class PoolingPE : public PE {
     if (use_cpu_) {
       // cpu_compute();
       compute();
+      // exit(-1);
       return true;
     }
     param_.input->syncToDevice();

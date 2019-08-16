@@ -68,7 +68,7 @@ class PlaceHolder {
  public:
   explicit PlaceHolder(size_t size) {
     size_ = size;
-    data_ = fpga_malloc(size_ * 1.5);
+    data_ = fpga_malloc(size_);
   }
 
   void* data() { return data_; }
@@ -115,7 +115,7 @@ class Tensor {
 
   template <typename Dtype>
   Dtype* mutableData() {
-    size_t memorySize = shape_->memorySize(CellSize(dataType_));
+    size_t memorySize = shape_->memorySize(CellSize(dataType_)) * mem_factor_;
     if (placeHolder_ != nullptr) {
       if (memorySize > placeHolder_->memorySize()) {
         placeHolder_.reset(new PlaceHolder(memorySize));
@@ -133,6 +133,10 @@ class Tensor {
     }
     return placeHolder_->memorySize();
     // return shape_->memorySize(CellSize(dataType_));
+  }
+
+  void setMemScale(int mem_factor) {
+    mem_factor_ = mem_factor;
   }
 
   void setDataType(DataType dataType) { this->dataType_ = dataType; }
@@ -459,6 +463,7 @@ class Tensor {
 
  private:
   int offset = 0;
+  int mem_factor_ = 1;
   std::shared_ptr<PlaceHolder> placeHolder_;
   Shape* shape_ = nullptr;
   DataType dataType_ = FP32;
