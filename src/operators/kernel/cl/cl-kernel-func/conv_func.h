@@ -47,6 +47,12 @@ void DWConvAddBnRelu(framework::CLHelper *cl_helper,
                      const framework::CLImage *new_scale = nullptr,
                      const framework::CLImage *new_bias = nullptr);
 
+void SWConvAddBnRelu(framework::CLHelper *cl_helper,
+                     const ConvParam<GPU_CL> &param, bool ifRelu = false,
+                     const framework::CLImage *biase = nullptr,
+                     const framework::CLImage *new_scale = nullptr,
+                     const framework::CLImage *new_bias = nullptr);
+
 }  // namespace operators
 }  // namespace paddle_mobile
 
