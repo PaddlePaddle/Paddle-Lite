@@ -148,7 +148,6 @@ void OperatorBase<Dtype>::InsertTensors() {
 
 template class OperatorBase<CPU>;
 template class OperatorBase<FPGA>;
-template class OperatorBase<GPU_MALI>;
 template class OperatorBase<GPU_CL>;
 
 }  // namespace framework
