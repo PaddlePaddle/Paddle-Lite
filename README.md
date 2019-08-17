@@ -1,137 +1,67 @@
-# Paddle-Mobile
+[中文版](./README_cn.md)
+
+# Paddle Lite
 
 [![Build Status](https://travis-ci.org/PaddlePaddle/paddle-mobile.svg?branch=develop&longCache=true&style=flat-square)](https://travis-ci.org/PaddlePaddle/paddle-mobile)
 [![Documentation Status](https://img.shields.io/badge/中文文档-最新-brightgreen.svg)](https://github.com/PaddlePaddle/paddle-mobile/tree/develop/doc)
 [![License](https://img.shields.io/badge/license-Apache%202-blue.svg)](LICENSE)
+<!-- [![Release](https://img.shields.io/github/release/PaddlePaddle/Paddle-Mobile.svg)](https://github.com/PaddlePaddle/Paddle-Mobile/releases) -->
 
-<!--[![Release](https://img.shields.io/github/release/PaddlePaddle/Paddle-Mobile.svg)](https://github.com/PaddlePaddle/Paddle-Mobile/releases)
-[![License](https://img.shields.io/badge/license-Apache%202-blue.svg)](LICENSE)-->
+Paddle Lite is an updated version of Paddle-Mobile, an open-open source deep learning framework designed to make it easy to perform inference on mobile devices. It is compatible with PaddlePaddle and pre-trained models from other sources.
 
-Welcome to Paddle-Mobile GitHub project。Paddle-Mobile is a project of PaddlePaddle as well as a deep learning framework for embedded platforms.
+For tutorials, please see [PaddleLite Wiki](https://github.com/PaddlePaddle/paddle-mobile/wiki).
 
-欢迎来到 Paddle-Mobile GitHub 项目。Paddle-Mobile是PaddlePaddle组织下的项目，是一个致力于嵌入式平台的深度学习的框架。
+## Key Features
 
-## Features
+### Light Weight
 
-- high performance in support of ARM CPU 
-- support Mali GPU
-- support Andreno GPU
-- support the realization of GPU Metal on Apple devices
-- support implementation on ZU5、ZU9 and other FPGA-based development boards
-- support implementation on Raspberry Pi and other arm-linux development boards
+On mobile devices, execution module can be deployed without third-party libraries, because our excecution module and analysis module are decoupled.
 
-## Features
+On ARM V7, only 800KB are taken up, while on ARM V8, 1.3MB are taken up with the 80 operators and 85 kernels in the dynamic libraries provided by Paddle Lite.
 
-- 高性能支持ARM CPU 
-- 支持Mali GPU
-- 支持Andreno GPU
-- 支持苹果设备的GPU Metal实现
-- 支持ZU5、ZU9等FPGA开发板
-- 支持树莓派等arm-linux开发板
+Paddle Lite enables immediate inference without extra optimization.
 
+### High Performance
 
-## Demo
-- [ANDROID](https://github.com/xiebaiyuan/paddle-mobile-demo)
+Paddle Lite enables device-optimized kernels, maximizing ARM CPU performance.
 
-### 原Domo目录
+It also supports INT8 quantizations with [PaddleSlim model compression tools](https://github.com/PaddlePaddle/models/tree/v1.5/PaddleSlim), reducing the size of models and increasing the performance of models.
 
-[https://github.com/PaddlePaddle/paddle-mobile/tree/develop/demo](https://github.com/PaddlePaddle/paddle-mobile/tree/develop/demo)
+On Huawei NPU and FPGA, the performance is also boosted.
 
-## Documentation
+### High Compatibility
 
-### Documentation of design
+Hardware compatibility: Paddle Lite supports a diversity of hardwares — ARM CPU, Mali GPU, Adreno GPU, Huawei NPU and FPGA. In the near future, we will also support AI microchips from Cambricon and Bitmain.
 
-If you want to know more details about the documentation of paddle-mobile design, please refer to the link as follows. There are many previous designs and discussion: [issue](https://github.com/PaddlePaddle/paddle-mobile/issues).
+Model compatibility: The Op of Paddle Lite is fully compatible to that of PaddlePaddle. The accuracy and performance of 18 models (mostly CV models and OCR models) and 85 operators have been validated. In the future, we will also support other models.
 
-[link of documentation of design](https://github.com/PaddlePaddle/paddle-mobile/blob/develop/doc/design_doc.md)
+Framework compatibility: In addition to models trained on PaddlePaddle, those trained on Caffe and TensorFlow can also be converted to be used on Paddle Lite, via [X2Paddle](https://github.com/PaddlePaddle/X2Paddle). In the future to come, we will also support models of ONNX format.
 
-### Documentation of development
+## Architecture
 
-Documentation of development is mainly about building, running and other tasks.As a developer,you can use it with the help of contributed documents.
-* [iOS](https://github.com/PaddlePaddle/paddle-mobile/blob/develop/doc/development_ios.md)
-* [Android_CPU](https://github.com/PaddlePaddle/paddle-mobile/blob/develop/doc/development_android.md)
-* [Android_GPU](https://github.com/PaddlePaddle/paddle-mobile/blob/develop/doc/development_android_GPU.md)
-* [FPGA](https://github.com/PaddlePaddle/paddle-mobile/blob/develop/doc/development_fpga.md)
-* [ARM_LINUX](https://github.com/PaddlePaddle/paddle-mobile/blob/develop/doc/development_arm_linux.md)
+Paddle Lite is designed to support a wide range of hardwares and devices, and it enables mixed execution of a single model on multiple devices, optimization on various phases, and leight-weighted applications on devices.
 
-### How to contribute your documents
-- [tutorial link to contribute documents](https://github.com/PaddlePaddle/paddle-mobile/blob/develop/CONTRIBUTING.md)
-- Main procedure of contributing code is covered in the document above.If you have other problems during the procedure,please send them as [issue](https://github.com/PaddlePaddle/paddle-mobile/issues). We will deal with it as quickly as possible.
+![img](https://github.com/Superjomn/_tmp_images/raw/master/images/paddle-lite-architecture.png)
 
-## 文档
+As is shown in the figure above, analysis phase includes Machine IR module, and it enables optimizations like Op fusion and redundant computation pruning. Besides, excecution phase only involves Kernal exevution, so it can be deployed on its own to ensure maximized light-weighted deployment.
 
-### 设计文档
+## Key Info about the Update
 
-关于paddle-mobile设计文档在下面链接中，如果想了解更多内容。[issue](https://github.com/PaddlePaddle/paddle-mobile/issues)中会有很多早期的设计和讨论过程。
-[设计文档链接](https://github.com/PaddlePaddle/paddle-mobile/blob/develop/doc/design_doc.md)
+The earlier Paddle-Mobile was designed to be compatible with PaddlePaddle and multiple hardwares, including ARM CPU, Mali GPU, Adreno GPU, FPGA, ARM-Linux and Apple's GPU Metal. Within Baidu, inc, many product lines have been using Paddle-Mobile. For more details, please see: [mobile/README](mobile/README).
 
-### 开发文档
+As an update of Paddle-Mobile, Paddle Lite has incorporated many older capabilities into the [new architecture](https://github.com/PaddlePaddle/paddle-mobile/tree/develop/lite). For the time being, the code of Paddle-mobile will be kept under the directory `mobile/`, before complete transfer to Paddle Lite.
 
-开发文档主要是关于编译、运行等问题。做为开发者，它可以和贡献文档共同结合使用。
-* [iOS](https://github.com/PaddlePaddle/paddle-mobile/blob/develop/doc/development_ios.md)
-* [Android_CPU](https://github.com/PaddlePaddle/paddle-mobile/blob/develop/doc/development_android.md)
-* [Android_GPU](https://github.com/PaddlePaddle/paddle-mobile/blob/develop/doc/development_android_GPU.md)
-* [FPGA](https://github.com/PaddlePaddle/paddle-mobile/blob/develop/doc/development_fpga.md)
-* [ARM_LINUX](https://github.com/PaddlePaddle/paddle-mobile/blob/develop/doc/development_arm_linux.md)
+For demands of Apple's GPU Metal and web front end inference, please see `./metal` and `./web` . These two modules will be further developed and maintained.
 
-### 贡献文档
-- [贡献文档链接](https://github.com/PaddlePaddle/paddle-mobile/blob/develop/CONTRIBUTING.md)
-- 上面文档中涵盖了主要的贡献代码流程，如果在实践中您还遇到了其他问题，可以发[issue](https://github.com/PaddlePaddle/paddle-mobile/issues)。我们看到后会尽快处理。
+## Special Thanks
 
-## Acquision of Models
-At present Paddle-Mobile only supports Paddle fluid training model. Models wiil be operated regularly after transformation if you have various models.
-### 1. Use Paddle Fluid directly to train
-It is the most reliable method to be recommanded
-### 2. Transform Caffe to Paddle Fluid model
-[caffe2fluid](https://github.com/PaddlePaddle/models/tree/develop/PaddleCV/caffe2fluid)
-### 3. ONNX
-ONNX is expanded as Open Neural Network Exchange. The project is aimed to make a full communication and usage among diffrent nerual network development frameworks.
+Paddle Lite has referenced the following open-source projects:
 
-Except for directly using fluid models trained by PaddlePaddle,you can also get certain Paddle fluid models through onnx transformation.
+- [ARM compute library](http://agroup.baidu.com/paddle-infer/md/article/%28https://github.com/ARM-software/ComputeLibrary%29)
+- [Anakin](https://github.com/PaddlePaddle/Anakin). The optimizations under Anakin has been incorporated into Paddle Lite, and so there will not be any future updates of Anakin. As another high-performance inference project under PaddlePaddle, Anakin has been forward-looking and helpful to the making of Paddle Lite. 
 
-At present，work in support of onnx is also under operation in Baidu. Related tranformation project can be referred to here：
-[https://github.com/PaddlePaddle/paddle-onnx](https://github.com/PaddlePaddle/paddle-onnx)
+## Feedback and Community Support
 
-### 4. Download parts of testing models and testing pictures
-[http://mms-graph.bj.bcebos.com/paddle-mobile%2FmodelsAndImages.zip](http://mms-graph.bj.bcebos.com/paddle-mobile%2FmodelsAndImages.zip)
-
-- input data generated by tools from `tools/python/imagetools`.
-
-
-## 模型获得
-目前Paddle-Mobile仅支持Paddle fluid训练的模型。如果你手中的模型是不同种类的模型，需要进行模型转换才可以运行。
-### 1. 直接使用Paddle Fluid训练
-该方式最为可靠，推荐方式
-### 2. caffe转为Paddle Fluid模型
-[caffe2fluid](https://github.com/PaddlePaddle/models/tree/develop/PaddleCV/caffe2fluid)
-### 3. ONNX
-ONNX全称为“Open Neural Network Exchange”，即“开放的神经网络切换”。该项目的目的是让不同的神经网络开发框架做到互通互用。
-
-除直接使用PaddlePaddle训练fluid版本的模型外，还可以通过onnx转换得到个别Paddle fluid模型。
-
-目前，百度也在做onnx支持工作。相关转换项目在这里：
-[https://github.com/PaddlePaddle/paddle-onnx](https://github.com/PaddlePaddle/paddle-onnx)
-
-### 4. 部分测试模型和测试图片下载
-[http://mms-graph.bj.bcebos.com/paddle-mobile%2FmodelsAndImages.zip](http://mms-graph.bj.bcebos.com/paddle-mobile%2FmodelsAndImages.zip)
-
-- 测试输入数据可由本仓库下的脚本`tools/python/imagetools`生成。
-
-## Communication
-- [Github Issues](https://github.com/PaddlePaddle/Paddle/issues): bug reports, feature requests, install issues, usage issues, etc.
-- QQ discussion group: 696965088 (Paddle-Mobile).
-- [Forums](http://ai.baidu.com/forum/topic/list/168?pageNo=1): discuss implementations, research, etc.
-
-## 交流与反馈
-- 欢迎您通过[Github Issues](https://github.com/PaddlePaddle/Paddle/issues)来提交问题、报告与建议
-- QQ群: 696965088 (Paddle-Mobile)
-- [论坛](http://ai.baidu.com/forum/topic/list/168): 欢迎大家在PaddlePaddle论坛分享在使用PaddlePaddle中遇到的问题和经验, 营造良好的论坛氛围
-
-## Old version Mobile-Deep-Learning
-Original MDL(Mobile-Deep-Learning) project has been transferred to [Mobile-Deep-Learning](https://github.com/allonli/mobile-deep-learning)
-
-## 旧版 Mobile-Deep-Learning
-原MDL(Mobile-Deep-Learning)工程被迁移到了这里 [Mobile-Deep-Learning](https://github.com/allonli/mobile-deep-learning)
-
-## Copyright and License
-[Apache-2.0 license](LICENSE).
+- Questions, reports, and suggestions are welcome through Github Issues!
+- Forum: Opinions and questions are welcome at our [PaddlePaddle Forum](https://ai.baidu.com/forum/topic/list/168)！
+- QQ group chat: 696965088
