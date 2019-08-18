@@ -30,6 +30,8 @@ It also supports INT8 quantizations with [PaddleSlim model compression tools](ht
 
 On Huawei NPU and FPGA, the performance is also boosted.
 
+The latest benchmark is located at [benchmark](https://github.com/PaddlePaddle/Paddle-Lite/wiki/benchmark)
+
 ### High Compatibility
 
 Hardware compatibility: Paddle Lite supports a diversity of hardwares — ARM CPU, Mali GPU, Adreno GPU, Huawei NPU and FPGA. In the near future, we will also support AI microchips from Cambricon and Bitmain.

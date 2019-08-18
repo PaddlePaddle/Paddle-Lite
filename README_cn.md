@@ -21,6 +21,8 @@ Paddle Lite为Paddle-Mobile的升级版，定位支持包括手机移动端在�
 支持INT8量化计算，结合 [PaddleSlim 模型压缩工具](https://github.com/PaddlePaddle/models/tree/v1.5/PaddleSlim) 中 INT8量化训练功能，可以提供高精度高性能的预测能力。
 在Huawei NPU， FPGA上也具有有很好的性能表现。
 
+最新 Benchmark 位于 [benchmark](https://github.com/PaddlePaddle/Paddle-Lite/wiki/benchmark)。
+
 ### 通用性
 硬件方面，Paddle Lite 的架构设计为多硬件兼容支持做了良好设计。除了支持ARM CPU、Mali GPU、Adreno GPU，还特别支持了华为 NPU，以及 FPGA 等边缘设备广泛使用的硬件。即将支持支持包括寒武纪、比特大陆等AI芯片，未来会增加对更多硬件的支持。
 
