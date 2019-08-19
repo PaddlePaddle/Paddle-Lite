@@ -50,7 +50,7 @@ As is shown in the figure above, analysis phase includes Machine IR module, and 
 
 ## Key Info about the Update
 
-The earlier Paddle-Mobile was designed to be compatible with PaddlePaddle and multiple hardwares, including ARM CPU, Mali GPU, Adreno GPU, FPGA, ARM-Linux and Apple's GPU Metal. Within Baidu, inc, many product lines have been using Paddle-Mobile. For more details, please see: [mobile/README](mobile/README).
+The earlier Paddle-Mobile was designed to be compatible with PaddlePaddle and multiple hardwares, including ARM CPU, Mali GPU, Adreno GPU, FPGA, ARM-Linux and Apple's GPU Metal. Within Baidu, inc, many product lines have been using Paddle-Mobile. For more details, please see: [mobile/README](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/mobile/README.md).
 
 As an update of Paddle-Mobile, Paddle Lite has incorporated many older capabilities into the [new architecture](https://github.com/PaddlePaddle/Paddle-Lite/tree/develop/lite). For the time being, the code of Paddle-mobile will be kept under the directory `mobile/`, before complete transfer to Paddle Lite.
 
