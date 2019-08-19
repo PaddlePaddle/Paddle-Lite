@@ -133,6 +133,10 @@ bool DDim::operator==(DDim d) const {
   std::vector<int64_t> v1 = vectorize(*this);
   std::vector<int64_t> v2 = vectorize(d);
 
+  if (v1.size() != v2.size()) {
+    return false;
+  }
+
   for (unsigned int i = 0; i < v1.size(); i++) {
     if (v1[i] != v2[i]) {
       return false;
