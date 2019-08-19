@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.0.0)
 
 option(USE_OPENMP    "build with openmp support" ON)
 option(USE_EXCEPTION "build with exception" ON)
-option(WITH_LOGGING  "print logging for debug" ON)
+option(WITH_LOGGING  "print logging for debug" OFF)
 option(WITH_SYMBOL   "build with all symbols" ON) # turn off if use jni or ios io
 option(WITH_PROFILE  "print op profile for debug" OFF)
 option(WITH_TEST     "build with unit tests" OFF)
@@ -35,11 +35,11 @@ include_directories(src/)
 #    SET(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3 -Wall")
 #endif()
 
-SET(CMAKE_BUILD_TYPE "Debug")
-SET(CMAKE_CXX_FLAGS_DEBUG "$ENV{CXXFLAGS} -O0 -Wall -g -ggdb")
+#SET(CMAKE_BUILD_TYPE "Debug")
+#SET(CMAKE_CXX_FLAGS_DEBUG "$ENV{CXXFLAGS} -O0 -Wall -g -ggdb")
 
-#SET(CMAKE_BUILD_TYPE "Release")
-#SET(CMAKE_CXX_FLAGS "-O3 -s -DNDEBUG ${CMAKE_CXX_FLAGS} -Wno-attributes")
+SET(CMAKE_BUILD_TYPE "Release")
+SET(CMAKE_CXX_FLAGS "-O3 -s -DNDEBUG ${CMAKE_CXX_FLAGS} -Wno-attributes")
 if(IS_IOS)
     set(CMAKE_CXX_FLAGS "-mfpu=neon -marm -fobjc-abi-version=2 -fobjc-arc \
         -std=gnu++11 -stdlib=libc++ -isysroot ${CMAKE_OSX_SYSROOT} ${CMAKE_CXX_FLAGS}")

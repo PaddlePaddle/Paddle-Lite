@@ -24,7 +24,7 @@ namespace operators {
 
 template <>
 bool SigmoidKernel<FPGA, float>::Init(SigmoidParam<FPGA> *param) {
-  param->Out()->mutable_data<float>();
+  param->Out()->mutable_data<half>();
   param->Out()->zynqmpTensor()->setAligned(false);
   param->Out()->zynqmpTensor()->setDataLocation(zynqmp::CPU);
   return true;
@@ -36,7 +36,7 @@ void SigmoidKernel<FPGA, float>::Compute(const SigmoidParam<FPGA> &param) {
   int numel = input_x->numel();
 
   float16 *in_data = input_x->zynqmpTensor()->data<float16>();
-  float *out_data = out->zynqmpTensor()->data<float>();
+  half *out_data = out->zynqmpTensor()->data<half>();
   input_x->zynqmpTensor()->syncToCPU();
   // input_x->zynqmpTensor()->saveToFile("sin.txt");
   float max = 0.0f;
@@ -44,7 +44,7 @@ void SigmoidKernel<FPGA, float>::Compute(const SigmoidParam<FPGA> &param) {
     /* code */
     float value = zynqmp::half_to_float(in_data[i]);
     value = 1 / (1 + exp(-value));
-    out_data[i] = value;
+    out_data[i] = zynqmp::float_to_half(value);
     // out_data[i] = zynqmp::float_to_half(value);
     max = std::max(std::abs(value), max);
   }

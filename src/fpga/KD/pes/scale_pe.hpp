@@ -58,31 +58,59 @@ class ScalePE : public PE {
     float16* bias_data = param_.alignedBias()->data<float16>();
     float16* scale_data = param_.alignedScale()->data<float16>();
 
-    if (param_.bias != nullptr) {
-      float* bias_data_float = param_.bias->data<float>();
+    if (param_.scale->dataType() == FP32) {
+      if (param_.bias != nullptr) {
+        float* bias_data_float = param_.bias->data<float>();
+        for (int i = 0; i < repeat; i++) {
+          for (int j = 0; j < length; j++) {
+            float16 value = float_to_half(bias_data_float[j]);
+            bias_data[i * length + j] = value;
+            // bias_data[i * length + j] = float_to_half(1.0f);
+          }
+        }
+      } else {
+        float16 zero = float_to_half(0.0f);
+        for (int i = 0; i < repeat; i++) {
+          for (int j = 0; j < length; j++) {
+            bias_data[i * length + j] = zero;
+          }
+        }
+      }
+
+      float* scale_data_float = param_.scale->data<float>();
       for (int i = 0; i < repeat; i++) {
         for (int j = 0; j < length; j++) {
-          float16 value = float_to_half(bias_data_float[j]);
-          bias_data[i * length + j] = value;
-          // bias_data[i * length + j] = float_to_half(1.0f);
+          float16 value = float_to_half(scale_data_float[j]);
+          scale_data[i * length + j] = value;
         }
       }
     } else {
-      float16 zero = float_to_half(0.0f);
+      if (param_.bias != nullptr) {
+        float16* bias_data_float = param_.bias->data<float16>();
+        for (int i = 0; i < repeat; i++) {
+          for (int j = 0; j < length; j++) {
+            float16 value = bias_data_float[j];
+            bias_data[i * length + j] = value;
+          }
+        }
+      } else {
+        float16 zero = float_to_half(0.0f);
+        for (int i = 0; i < repeat; i++) {
+          for (int j = 0; j < length; j++) {
+            bias_data[i * length + j] = zero;
+          }
+        }
+      }
+
+      float16* scale_data_float = param_.scale->data<float16>();
       for (int i = 0; i < repeat; i++) {
         for (int j = 0; j < length; j++) {
-          bias_data[i * length + j] = zero;
+          float16 value = scale_data_float[j];
+          scale_data[i * length + j] = value;
         }
       }
     }
 
-    float* scale_data_float = param_.scale->data<float>();
-    for (int i = 0; i < repeat; i++) {
-      for (int j = 0; j < length; j++) {
-        float16 value = float_to_half(scale_data_float[j]);
-        scale_data[i * length + j] = value;
-      }
-    }
 
     param_.alignedScale()->flush();
     param_.alignedBias()->flush();
@@ -137,17 +165,22 @@ class ScalePE : public PE {
       }
     }
     output->flush();
-    std::cout << "max:" << max << std::endl;
+    // std::cout << "max:" << max << std::endl;
     output->scale()[0] = max / 127.0f;
     output->scale()[1] = 127.0f / max;
   }
 
   bool dispatch() {
+    // std::cout << "data_type:" << param_.scale->dataType() << std::endl;
+    if (param_.scale->dataType() == FP16) {
+      // param_.scale->saveToFile("ps.txt");
+      apply();
+    }
     // param_.scale->saveToFile("scale.txt");
-    cpu_compute();
-    return true;
+    // cpu_compute();
+    // return true;
     // param_.input->syncToDevice();
-    // return compute_fpga_scale(param_.args) == 0;
+    return compute_fpga_scale(param_.args) == 0;
   }
 
   ScaleParam& param() { return param_; }
