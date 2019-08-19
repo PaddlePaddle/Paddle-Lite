@@ -63,7 +63,6 @@ bool ConvTransposeOpLite::AttachImpl(const cpp::OpDesc &op_desc,
   auto X = op_desc.Input("Input").front();
   auto Filter = op_desc.Input("Filter").front();
   auto Out = op_desc.Output("Output").front();
-
   param_.x = scope->FindVar(X)->GetMutable<lite::Tensor>();
   param_.filter = scope->FindVar(Filter)->GetMutable<lite::Tensor>();
   param_.output = scope->FindVar(Out)->GetMutable<lite::Tensor>();

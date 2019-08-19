@@ -33,7 +33,7 @@ int data_index(std::vector<int> pos, DDimLite dims) {
 std::vector<int> pos_trans(std::vector<int> in_pos, std::vector<int> axis) {
   std::vector<int> out_pos(in_pos.size());
   for (int i = 0; i < axis.size(); i++) {
-    out_pos[axis[i]] = in_pos[1];
+    out_pos[axis[i]] = in_pos[i];
   }
   return out_pos;
 }
@@ -88,11 +88,7 @@ void test_transpose(int bs, int ic, int ih, int iw, std::vector<int> axis) {
   x->Resize({bs, ic, ih, iw});
 
   // initialize input&output data
-  // FillTensor<float>(x);
-  auto* x_data = x->mutable_data<float>();
-  for (int i = 0; i < x->numel(); i++) {
-    x_data[i] = i;
-  }
+  FillTensor<float>(x);
 
   // initialize op desc
   cpp::OpDesc opdesc;
@@ -123,7 +119,12 @@ TEST(NPUBridges, transpose) {
     for (auto ic : {1, 4, 7}) {
       for (auto ih : {1, 4, 7}) {
         for (auto iw : {1, 4, 7}) {
-          for (auto axis : {std::vector<int>{0, 1, 2, 3}}) {
+          for (auto axis : {std::vector<int>{0, 1, 2, 3},
+                            std::vector<int>{0, 1, 3, 2},
+                            std::vector<int>{0, 3, 1, 2},
+                            std::vector<int>{1, 2, 3, 0},
+                            std::vector<int>{3, 2, 1, 0},
+                            std::vector<int>{2, 3, 1, 0}}) {
             test_transpose(bs, ic, ih, iw, axis);
           }
         }
@@ -131,8 +132,8 @@ TEST(NPUBridges, transpose) {
     }
   }
 #endif
-  // test_transpose(2, 3, 4, 5, std::vector<int>{0,1,3,2});
-  test_transpose(2, 3, 4, 5, std::vector<int>{0, 1, 2, 3});
+  test_transpose(2, 3, 4, 5, std::vector<int>{0, 1, 3, 2});
+  // test_transpose(2, 3, 4, 5, std::vector<int>{0, 1, 2, 3});
   // test_transpose(2, 2, 2, 2, std::vector<int>{0,1,3,2});
   // test_transpose(1, 1, 2, 2, std::vector<int>{0,1,3,2});
   // test_transpose(1, 1, 1, 2, std::vector<int>{0,1,2,3});

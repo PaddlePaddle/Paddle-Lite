@@ -21,14 +21,16 @@
 #ifndef LITE_WITH_FPGA
 USE_LITE_KERNEL(feed, kHost, kAny, kAny, def);
 USE_LITE_KERNEL(fetch, kHost, kAny, kAny, def);
-USE_LITE_KERNEL(reshape, kHost, kAny, kAny, def);
-USE_LITE_KERNEL(reshape2, kHost, kAny, kAny, def);
 USE_LITE_KERNEL(flatten, kHost, kAny, kAny, def);
 USE_LITE_KERNEL(flatten2, kHost, kAny, kAny, def);
 #else
 USE_LITE_KERNEL(feed, kFPGA, kFP16, kNHWC, def);
 USE_LITE_KERNEL(fetch, kFPGA, kFP16, kNHWC, def);
 #endif
+
+// host kernels
+USE_LITE_KERNEL(reshape, kHost, kAny, kAny, def);
+USE_LITE_KERNEL(reshape2, kHost, kAny, kAny, def);
 
 #ifdef LITE_WITH_ARM
 USE_LITE_KERNEL(fc, kARM, kFloat, kNCHW, def);
@@ -51,6 +53,7 @@ USE_LITE_KERNEL(dropout, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(concat, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(pool2d, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(relu, kARM, kFloat, kNCHW, def);
+USE_LITE_KERNEL(relu6, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(transpose, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(transpose2, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(batch_norm, kARM, kFloat, kNCHW, def);
@@ -66,6 +69,7 @@ USE_LITE_KERNEL(sigmoid, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(tanh, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(swish, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(log, kARM, kFloat, kNCHW, def);
+USE_LITE_KERNEL(exp, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(conv2d_transpose, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(pad2d, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(prior_box, kARM, kFloat, kNCHW, def);
@@ -93,6 +97,9 @@ USE_LITE_KERNEL(shape, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(fill_constant, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(cast, kARM, kFloat, kNCHW, def)
 USE_LITE_KERNEL(slice, kARM, kFloat, kNCHW, def)
+USE_LITE_KERNEL(squeeze, kARM, kFloat, kNCHW, def)   // for x2paddle
+USE_LITE_KERNEL(squeeze2, kARM, kFloat, kNCHW, def)  // for x2paddle
+USE_LITE_KERNEL(expand, kARM, kFloat, kNCHW, def)    // for x2paddle
 
 USE_LITE_KERNEL(calib, kARM, kInt8, kNCHW, fp32_to_int8);
 USE_LITE_KERNEL(calib, kARM, kInt8, kNCHW, int8_to_fp32);

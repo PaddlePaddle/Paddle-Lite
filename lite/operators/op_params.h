@@ -694,6 +694,22 @@ struct SliceParam {
   std::vector<int> ends{};
   std::vector<int> decrease_axis{};
 };
+
+/// ----------------------- shape operators ----------------------
+struct SqueezeParam {
+  const lite::Tensor* X{};
+  lite::Tensor* Out{};
+  lite::Tensor* XShape{};
+  std::vector<int> axes{};
+};
+
+/// ----------------------- expand operators ----------------------
+struct ExpandParam {
+  const lite::Tensor* X{};
+  lite::Tensor* Out{};
+  std::vector<int> expand_times{};
+};
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle

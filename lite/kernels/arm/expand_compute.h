@@ -13,20 +13,22 @@
 // limitations under the License.
 
 #pragma once
+#include "lite/core/kernel.h"
+#include "lite/core/op_registry.h"
 
-#include "lite/npu/bridge/registry.h"
+namespace paddle {
+namespace lite {
+namespace kernels {
+namespace arm {
 
-USE_NPU_BRIDGE(mul);
-USE_NPU_BRIDGE(fc);
-USE_NPU_BRIDGE(conv2d);
-USE_NPU_BRIDGE(depthwise_conv2d);
-USE_NPU_BRIDGE(pool2d);
-USE_NPU_BRIDGE(relu);
-USE_NPU_BRIDGE(elementwise_add);
-USE_NPU_BRIDGE(scale);
-USE_NPU_BRIDGE(softmax);
-USE_NPU_BRIDGE(concat);
-USE_NPU_BRIDGE(split);
-USE_NPU_BRIDGE(transpose);
-USE_NPU_BRIDGE(transpose2);
-USE_NPU_BRIDGE(shuffle_channel);
+class ExpandCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+ public:
+  void Run() override;
+
+  virtual ~ExpandCompute() = default;
+};
+
+}  // namespace arm
+}  // namespace kernels
+}  // namespace lite
+}  // namespace paddle

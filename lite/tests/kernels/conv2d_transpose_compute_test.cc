@@ -350,22 +350,22 @@ class Conv2DTransposeComputeTester : public arena::TestCase {
 
   void PrepareOpDesc(cpp::OpDesc* op_desc) {
     op_desc->SetType("conv2d_transpose");
-    op_desc->SetInput("x", {x_});
-    op_desc->SetInput("filter", {filter_});
-    op_desc->SetOutput("output", {output_});
+    op_desc->SetInput("Input", {x_});
+    op_desc->SetInput("Filter", {filter_});
+    op_desc->SetOutput("Output", {output_});
     op_desc->SetAttr("strides", strides_);
     op_desc->SetAttr("paddings", paddings_);
     op_desc->SetAttr("groups", groups_);
     op_desc->SetAttr("dilations", dilations_);
     if (flag_bias_) {
-      op_desc->SetInput("bias", {bias_});
+      op_desc->SetInput("Bias", {bias_});
     }
     op_desc->SetAttr("fuse_relu", flag_relu_);
   }
 
   void PrepareData() override {
     std::vector<int64_t> input_shape = {n_, ic_, ih_, iw_};
-    std::vector<int64_t> filter_shape = {oc_ / groups_, ic_, ks_, ks_};
+    std::vector<int64_t> filter_shape = {ic_, oc_ / groups_, ks_, ks_};
     std::vector<int64_t> bias_shape = {1, oc_, 1, 1};
 
     // x tensor

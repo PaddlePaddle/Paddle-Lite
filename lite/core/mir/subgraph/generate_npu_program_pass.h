@@ -17,6 +17,7 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <unordered_map>
 #include <unordered_set>
 #include <vector>
 #include "lite/core/mir/pass.h"
@@ -37,23 +38,27 @@ class GenerateNPUProgramPass : public SubgraphProgramPass {
   std::unique_ptr<RuntimeProgram> GenProgram();
 
  protected:
-  // TODO(TJ): maybe change a name
-  // convert all fused subgraphs to npu clients
-  // 1. if some subgraph failed, then skip.
-  // 2. add new graph nodes, kernels and context
-  // 3. remove unused nodes
-  void ConvertSubgraph(const std::unique_ptr<SSAGraph>& graph, int sub_num);
+  void NPUSortHelper(Node* node,
+                     const std::unordered_set<Node*>& nodes_all,
+                     std::unordered_set<const Node*>* visited_nodes,
+                     std::vector<Node*>* ret);
 
-  // call convert function from start node
-  // return if convert success and the nodes to remove
-  // return the output(arg.name, npu op)
-  lite::npu::bridge::node_map_type CvtOpNodes(
-      const lite::npu::bridge::cvt_map_type& cvtfunc_map,
-      const Node* op_node,
-      const lite::npu::bridge::node_map_type& inputs_map,
-      int sub_id,
-      std::unordered_set<const Node*>* nodes2rm,
-      key2nodes_t* matched);
+  // nodes2cvt: op nodes to convert
+  // in_vars_name: graph op's inputs var name
+  // out_vars_name: graph op's outputs var name
+  // vcted_vars:
+  // nodes2rm: op nodes and var nodes that need to be removed
+  void CvtOpNodes(const std::vector<Node*>& nodes2cvt,
+                  std::vector<std::string>* in_vars_name,
+                  std::vector<std::string>* out_vars_name,
+                  lite::npu::bridge::node_map_type* cvted_vars,
+                  std::unordered_set<const Node*>* nodes2rm);
+
+  void GenNPUGraphOpNode(const std::unique_ptr<SSAGraph>& graph,
+                         int sub_id,
+                         const std::unordered_set<Node*>& nodes_all);
+
+  void ConvertSubgraph(const std::unique_ptr<SSAGraph>& graph, int sub_num);
 
  private:
   std::vector<Instruction> insts_;

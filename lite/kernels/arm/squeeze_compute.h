@@ -13,9 +13,30 @@
 // limitations under the License.
 
 #pragma once
+#include <algorithm>
+#include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 
-USE_LITE_KERNEL(feed, kHost, kAny, kAny, def);
-USE_LITE_KERNEL(fetch, kHost, kAny, kAny, def);
-USE_LITE_KERNEL(reshape, kHost, kAny, kAny, def);
-USE_LITE_KERNEL(reshape2, kHost, kAny, kAny, def);
+namespace paddle {
+namespace lite {
+namespace kernels {
+namespace host {
+
+class SqueezeCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+ public:
+  void Run() override;
+
+  virtual ~SqueezeCompute() = default;
+};
+
+class Squeeze2Compute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+ public:
+  void Run() override;
+
+  virtual ~Squeeze2Compute() = default;
+};
+
+}  // namespace host
+}  // namespace kernels
+}  // namespace lite
+}  // namespace paddle
