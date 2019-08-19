@@ -88,6 +88,7 @@ bool ConvTransposeOpLite::AttachImpl(const cpp::OpDesc &op_desc,
   if (op_desc.HasAttr("fuse_relu")) {
     param_.fuse_relu = op_desc.GetAttr<bool>("fuse_relu");
   }
+  return true;
 }
 
 }  // namespace operators
