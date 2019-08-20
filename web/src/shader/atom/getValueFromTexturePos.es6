@@ -8,7 +8,7 @@
 // uniform sampler2D TEXTURE_NAME;
 export default `
 float getValueFromTexturePos_TEXTURE_NAME(vec3 pos) {
-    vec4 pixels = texture2D(TEXTURE_NAME, pos.xy);
+    vec4 pixels = TEXTURE2D(TEXTURE_NAME, pos.xy);
     int d = int(pos.z);
     if (d == 0) {
         return pixels.r;

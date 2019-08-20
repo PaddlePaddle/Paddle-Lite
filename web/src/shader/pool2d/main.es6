@@ -7,7 +7,7 @@ export default `
 void main(void) {
     float res = (-1.0 / exp(-20.0));
     // 获取output的坐标
-    ivec4 out_pos = getOutputTensorPos();
+    ivec4 out_pos = getOutputTensorPosLIMIT_OUT();
     // X、Y方向的移动步长
     int count_pool = 0;
     int oy_base = out_pos[2] * stride_v - padTop;
@@ -29,7 +29,7 @@ void main(void) {
                 continue;
             }
             // origin数据
-            float curr = getValueFromTensorPos_origin(out_pos[0], out_pos[1], oy, ox);
+            float curr = getValueFromTensorPosLIMIT_ORIGIN_origin(out_pos[0], out_pos[1], oy, ox);
             if (type_pool == 1) {
                 if (curr > res) {
                     res = curr;
@@ -44,6 +44,6 @@ void main(void) {
     if (type_pool != 1) {
         res = res / float(count_pool);
     }
-    gl_FragColor.r = res;
+    setOutput(res);
 }
 `;

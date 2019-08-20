@@ -13,6 +13,6 @@ void main(void) {
         float o = getValueFromTensorPos_origin(out_pos[0], out_pos[1], out_pos[2], j);
         res += c * o;
     }
-    gl_FragColor.r = res;
+    setOutput(res);
 }
 `;
