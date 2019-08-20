@@ -1,3 +1,5 @@
+[中文版](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/web/README_cn.md)
+
 # Web
 
 Web project is an open source deep learning framework designed to work on web browser. It could run on nearly every browser with WebGL support.
@@ -24,8 +26,10 @@ Web project could run TinyYolo model in less than 30ms on chrome. This is fast e
 cd web                        # enter root directory for web project
 npm i                         # install dependencies for npm
 mkdir dist                    # create deployment directory
+cd dist                       # enter deployment directory
 git clone https://github.com/DerekYangMing/Paddle-Web-Models.git # get models
 mv Paddle-Web-Models/separablemodel .                            # move models to specific directory
+cd ..                         # return to root directory for web project
 npm run testVideoDemo         # start demo
 ```
 
