@@ -1,6 +1,6 @@
 # Paddle Web
 
-Paddle Web is an open source deep learning framework designed to work on web browser. It is compatible with PaddlePaddle model.
+Paddle Web is an open source deep learning framework designed to work on web browser. It could run on nearly every browser with WebGL support.
 
 ## Key Features
 
@@ -12,12 +12,28 @@ Paddle Web is built on Atom system which is a versatile framework to support GPG
 
 Paddle Web could run TinyYolo model in less than 30ms on chrome. This is fast enough to run deep learning models in many realtime scenarios.
 
-## How To Build
+### Browser Coverage
+
+* PC: Chrome
+* Mac: Chrome
+* Android: Baidu App and QQ Browser
+
+## How To Build & Deploy Demo
 
 ```bash
-npm i
-npm run server
+cd web                        # enter root directory for Paddle Web
+npm i                         # install dependencies for npm
+mkdir dist                    # create deployment directory
+git clone https://github.com/DerekYangMing/Paddle-Web-Models.git # get models
+mv Paddle-Web-Models/separablemodel .                            # move models to specific directory
+npm run testVideoDemo         # start demo
 ```
+
+## How To Preview Demo
+
+1. Open chrome with url: https://localhost:8123/
+2. Start demo by pressing the 【start detection】 button.
+3. Ensure at least one face is recorded by the camera. The face detection rectangle should be displayed if everything goes fine.
 
 ## Feedback and Community Support
 
