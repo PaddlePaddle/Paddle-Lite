@@ -45,6 +45,7 @@ export default class GraphModel  {
             // op runner
             this.inst = Runtime.init();
             factory.setWebglVersion(this.inst.getWebglVersion());
+<<<<<<< HEAD
             // this.fetchJson(this.modelGonfig.dir + 'x.json').then(data => {
             //     const [b, c, h, w] = [1, 3, 320, 320];
             //     const size = data.length;
@@ -66,6 +67,36 @@ export default class GraphModel  {
     fetchOneChunk(path) {
         return this.fetch(path).then(request => {
             return request.arrayBuffer();
+=======
+            this.fetchJson(this.modelGonfig.dir + 'x.json').then(data => {
+                const [b, c, h, w] = [1, 3, 320, 320];
+                const size = data.length;
+                const total = 3 * 320 * 320;
+                this.testData = new Float32Array(total);
+                for (let i = 0; i < size; i++) {
+                    let j = i / (c * w) | 0;
+                    let k = i % (c * w);
+                    let b1 = j / h | 0;
+                    let h1 = j % h;
+                    let c1 = k % c;
+                    let w1 = k / c | 0;
+                    let l = b1 * (c * h * w) + c1 * (h * w) + h1 * (w) + w1;
+                    this.testData[i] = data[l];
+                }
+            });
+        }
+    }
+    fetchOneChunk(path) {
+        return fetch(path).then(request => {
+            return request.arrayBuffer();
+        })
+    }
+    fetchJson(path) {
+        console.time(path)
+        return fetch(path).then(request => {
+            console.timeEnd(path);
+            return request.json();
+>>>>>>> paddle web
         })
     }
     fetchJson(path) {
@@ -82,6 +113,28 @@ export default class GraphModel  {
                 this.fetchOneChunk(this.modelGonfig.dir + this.binaryOption.getFileName(i))
             );
         }
+<<<<<<< HEAD
+=======
+        // 1个文件
+        // let chunkArray = [this.fetchOneChunk('/faceModel/mergedData.dat')];
+        // this.fetchJson(this.modelGonfig.dir + 'x.json').then(data => {
+        //     const [b, c, h, w] = [1, 3, 320, 320];
+        //     const size = data.length;
+        //     const total = 3 * 320 * 320;
+        //     this.testData = new Float32Array(4 * total);
+        //     let offset = 0;
+        //     for (let i = 0; i < size; i++) {
+        //         let j = i / (c * w) | 0;
+        //         let k = i % (c * w);
+        //         let b1 = j / h | 0;
+        //         let h1 = j % h;
+        //         let c1 = k % c;
+        //         let w1 = k / c | 0;
+        //         let l = b1 * (c * h * w) + c1 * (h * w) + h1 * (w) + w1;
+        //         this.testData[i] = data[l];
+        //     }
+        // });
+>>>>>>> paddle web
         console.time('加载时间');
         return Promise.all(chunkArray).then(chunks => {
             console.timeEnd('加载时间');

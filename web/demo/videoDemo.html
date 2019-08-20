@@ -10,23 +10,41 @@
           margin: 0;
           padding: 0;
       }
+<<<<<<< HEAD
+=======
+      #myCanvas {
+          position: fixed;
+          top: 0;
+          left: 0;
+          opacity: 0.4;
+      }
+>>>>>>> paddle web
       #myDiv {
           position: fixed;
           border: 1px solid red;
           box-sizing: border-box;
+<<<<<<< HEAD
       }
       #video {
         background: red;
+=======
+          /* transition: all .3s; */
+>>>>>>> paddle web
       }
   </style>
 </head>
 <body>
+<<<<<<< HEAD
   <video id="video">
+=======
+  <video id="video" width="480" height="320" controls>
+>>>>>>> paddle web
   </video>
   <p>
     <button id="start">开始识别</button>
     <button id="stop">结束</button>
   </p>
+<<<<<<< HEAD
   <select id="videoSelect"></select>
   <p id="tips">tips</p>
   <div id="myDiv"></div>
@@ -34,3 +52,14 @@
   <script src="./videoDemo.es6"></script>
 </body>
 </html>
+=======
+  <canvas id="canvas" width="480" height="320"></canvas>
+  <canvas id="myCanvas" width="480" height="320"></canvas>
+  <div id="p-c" width="480" height="320"></div>
+  <!-- <img src="./badcase/bdc_1.png" id="tt" alt="" srcset=""> -->
+  <!-- <img src="./bbt1.jpg" id="tt" alt="" srcset=""> -->
+  <div id="myDiv"></div>
+  <script src="./videoDemo.es6"></script>
+</body>
+</html>
+>>>>>>> paddle web

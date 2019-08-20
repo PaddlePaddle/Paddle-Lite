@@ -11,7 +11,10 @@
  */
 
 import IO from '../feed/ImageFeed';
+<<<<<<< HEAD
 import DataFeed from '../feed/dataFeed';
+=======
+>>>>>>> paddle web
 import Graph from './loader';
 import PostProcess from './postProcess';
 import models from '../utils/models';
@@ -45,8 +48,11 @@ export default class Runner {
         const MODEL_URL = `/${path}/model.json`;
         const MODEL_CONFIG = {
             dir: `/${path}/`, // 存放模型的文件夹
+<<<<<<< HEAD
             // dir: `https://graph.baidu.com/mms/graph/static/asset/dll/${path}/`, // rd测试地址
             // dir: `/src/view/common/lib/paddle/dist/${path}/`, // 本地测试地址
+=======
+>>>>>>> paddle web
             main: 'model.json' // 主文件
         };
         const graphModel = new Graph();
@@ -69,16 +75,23 @@ export default class Runner {
     }
 
     // 跑一遍
+<<<<<<< HEAD
     async run(input, callback) {
         this.flags.isRunning = true;
         let {fh, fw} = this.modelConfig.feedShape;
         let path = this.modelConfig.modelPath;
+=======
+    async run(input) {
+        this.flags.isRunning = true;
+        let {fh, fw} = this.modelConfig.feedShape;
+>>>>>>> paddle web
         if (!this.model) {
             console.warn('It\'s better to preheat the model before running.');
             await this.preheat();
         }
         log.start('总耗时'); // eslint-disable-line
         log.start('预处理'); // eslint-disable-line
+<<<<<<< HEAD
         let feed;
         if (typeof input === 'string') {
             const dfIO = new DataFeed();
@@ -103,6 +116,22 @@ export default class Runner {
                 }
             });
         }
+=======
+        let feed = this.io.process({
+            input: input,
+            params: {
+                gapFillWith: '#000', // 缩放后用什么填充不足方形部分
+                targetSize: {
+                    height: fw,
+                    width: fh
+                },
+                targetShape: [1, 3, fh, fw], // 目标形状 为了兼容之前的逻辑所以改个名
+                // shape: [3, 608, 608], // 预设tensor形状
+                mean: [117.001, 114.697, 97.404] // 预设期望
+                // std: [0.229, 0.224, 0.225]  // 预设方差
+            }
+        });
+>>>>>>> paddle web
         log.end('预处理'); // eslint-disable-line
         log.start('运行耗时'); // eslint-disable-line
         let inst = this.model.execute({
@@ -126,18 +155,30 @@ export default class Runner {
                 }
             }
         }
+<<<<<<< HEAD
         this.postProcess.run(newData, input, callback);
+=======
+        this.postProcess.run(newData, input);
+>>>>>>> paddle web
         log.end('后处理'); // eslint-disable-line
         this.flags.isRunning = false;
         log.end('总耗时'); // eslint-disable-line
     }
 
     // 传入获取图片的function
+<<<<<<< HEAD
     async runStream(getMedia, callback) {
         await this.run(getMedia(), callback);
         if (!this.flags.runVideoPaused) {
             setTimeout(async () => {
                 await this.runStream(getMedia, callback);
+=======
+    async runStream(getMedia) {
+        await this.run(getMedia());
+        if (!this.flags.runVideoPaused) {
+            setTimeout(async () => {
+                await this.runStream(getMedia);
+>>>>>>> paddle web
             }, 0);
         }
     }
@@ -146,8 +187,14 @@ export default class Runner {
         this.flags.runVideoPaused = true;
     }
 
+<<<<<<< HEAD
     startStream(getMedia, callback) {
         this.flags.runVideoPaused = false;
         this.runStream(getMedia, callback);
+=======
+    startStream(getMedia) {
+        this.flags.runVideoPaused = false;
+        this.runStream(getMedia);
+>>>>>>> paddle web
     }
 }

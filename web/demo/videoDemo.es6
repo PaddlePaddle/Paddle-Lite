@@ -1,9 +1,14 @@
 import 'babel-polyfill';
 import Runner from '../src/executor/runner';
+<<<<<<< HEAD
 import Camera from '../src/executor/camera';
 // 调试工具
 // import vConsole from 'vconsole';
 // const theConsole = new vConsole();
+=======
+import Camera from './camera';
+
+>>>>>>> paddle web
 let startBtn = document.getElementById('start');
 let stopBtn = document.getElementById('stop')
 
@@ -12,6 +17,7 @@ const runner = new Runner({
     modelName: 'separate' // '608' | '320' | '320fused' | 'separate'
 });
 startBtn.disabled = true;
+<<<<<<< HEAD
 runner.preheat()
 .then(() =>{
     startBtn.disabled = false
@@ -50,6 +56,27 @@ const handleDiv = function (data) {
 startBtn.addEventListener('click', function () {
     startBtn.disabled = true;
     runner.startStream(() => camera.curVideo, handleDiv);
+=======
+runner.preheat().then(() => startBtn.disabled = false);
+
+let camera = new Camera({
+    videoDom: document.getElementById('video'), // 用来显示摄像头图像的dom
+    videoOption: {
+        video: {
+            width: 480,
+            height: 320,
+            frameRate: {
+                ideal: 8, max: 15
+            }
+        }
+    }
+});
+camera.run(); // 启动摄像头
+
+startBtn.addEventListener('click', function () {
+    startBtn.disabled = true;
+    runner.startStream(() => camera.curVideo);
+>>>>>>> paddle web
 });
 stopBtn.addEventListener('click', function () {
     startBtn.disabled = false;

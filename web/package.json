@@ -11,6 +11,13 @@
     "unit": "parcel ./test/unitTest.html",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
+<<<<<<< HEAD
+=======
+  "repository": {
+    "type": "git",
+    "url": "ssh://yangmingming@icode.baidu.com:8235/baidu/mms/paddle-web-demo"
+  },
+>>>>>>> paddle web
   "devDependencies": {
     "babel-core": "^6.26.3",
     "babel-plugin-transform-class-properties": "^6.24.1",

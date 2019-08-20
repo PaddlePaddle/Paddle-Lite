@@ -133,11 +133,19 @@ const reshapeMany = data => {
 export default class PostProcess {
     constructor(options) {
         this.modelConfig = models[options.modelName];
+<<<<<<< HEAD
+=======
+        this.div = document.getElementById('myDiv');
+>>>>>>> paddle web
         this.count = 0;
         this.lastRect = [0, 0, 0, 0]
     }
     
+<<<<<<< HEAD
     run(data, img, callback) {
+=======
+    run(data, img) {
+>>>>>>> paddle web
         let {from, to} = this.modelConfig.outputShapes;
         let shape = [].concat(from).reverse();
         // 1.从一维数组到1*25*19*19
@@ -167,7 +175,11 @@ export default class PostProcess {
         // console.log('final', finalData);
         // 5.处理画布
         // finalData.length && handleCanvas(finalData, img);
+<<<<<<< HEAD
         this.handleDiv(finalData, img, callback);
+=======
+        this.handleDiv(finalData, img);
+>>>>>>> paddle web
     }
 
     calSize(img) {
@@ -213,6 +225,7 @@ export default class PostProcess {
         return finalData;
     }
 
+<<<<<<< HEAD
     handleDiv(finalData, img, callback) {
         if (finalData.length < 1) {
             callback();
@@ -221,6 +234,24 @@ export default class PostProcess {
         let maxIndex = 0;
         if (finalData.length > 1) {
             for (let i = 1; i < finalData.length; i++) {
+=======
+    handleDiv(finalData, img) {
+        let myCanvas = this.div;
+        if (finalData.length < 1) {
+            if (this.count++ > 1) {
+                myCanvas.style.opacity = 0;
+            }
+            // window.currentPic && document.getElementById('p-c').appendChild(currentPic);
+            return false;
+        }
+
+        this.count = 0;
+        myCanvas.style.opacity = 1;
+        let maxIndex = 0;
+        if (finalData.length > 1) {
+            for (let i = 1; i < finalData.length; i++) {
+
+>>>>>>> paddle web
                 if (finalData[i].prob > finalData[maxIndex].prob) {
                     maxIndex = i;
                 }
@@ -230,7 +261,14 @@ export default class PostProcess {
 
         let [demoLeft, demoTop, demoWidth, demoHeight] = finalData[maxIndex];
         if (!isSimilar(this.lastRect, [demoLeft, demoTop, demoWidth, demoHeight])) {
+<<<<<<< HEAD
             callback([demoWidth, demoHeight,demoLeft, demoTop]);
+=======
+            myCanvas.style.width = demoWidth + 'px';
+            myCanvas.style.height = demoHeight + 'px';
+            myCanvas.style.left = demoLeft + 'px';
+            myCanvas.style.top = demoTop + 'px';
+>>>>>>> paddle web
         };
         this.lastRect = [demoLeft, demoTop, demoWidth, demoHeight];
     }
