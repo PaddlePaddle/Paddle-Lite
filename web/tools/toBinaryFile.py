@@ -99,10 +99,6 @@ class BinaryFileConverter:
 
 
 BinaryFileConverter(
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> paddle web
     delimiter = ',',
     ignorChar = ['[', ']'],
     ignorLine = ['[', ']'],
@@ -113,18 +109,3 @@ BinaryFileConverter(
     formatter = 'f',
     dotPrintRatio = 0,
     merge = 6).convert()
-<<<<<<< HEAD
-=======
-    delimiter = ',', 
-    ignorChar = ['[', ']'], 
-    ignorLine = ['[', ']'], 
-    types = ['.txt', '.json'], 
-    originDir = './mobileNet', 
-    resultDir = './binf', 
-    ext = '.dat', 
-    formatter = 'f', 
-    dotPrintRatio = 0, 
-    merge = 6).convert()
->>>>>>> paddle web
-=======
->>>>>>> paddle web
