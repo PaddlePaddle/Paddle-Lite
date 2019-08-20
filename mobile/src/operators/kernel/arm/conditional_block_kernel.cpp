@@ -14,6 +14,7 @@ limitations under the License. */
 
 #ifdef CONDITIONAL_BLOCK_OP
 
+#include <algorithm>
 #include "operators/kernel/conditional_block_kernel.h"
 #include <framework/program/block_desc.h>
 #include <framework/program/op_desc.h>
