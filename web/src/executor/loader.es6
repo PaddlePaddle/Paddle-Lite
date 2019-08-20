@@ -11,6 +11,7 @@ import Utils from '../utils/utils';
  */
 // 生成factory实例
 const factory = new Factory({});
+
 // 获取op的输入配置
 const opConfs = factory.getOpConfs();
 export default class GraphModel  {

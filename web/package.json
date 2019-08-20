@@ -8,7 +8,6 @@
     "testDemo": "parcel ./demo/index.html",
     "testSDemo": "parcel ./demo/index.html --port 8125 --https",
     "testVideoDemo": "parcel ./demo/videoDemo.html --port 8123 --https",
-    "unit": "parcel ./test/unitTest.html",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "devDependencies": {
@@ -21,8 +20,7 @@
     "babel-preset-react": "^6.24.1",
     "babel-preset-stage-0": "^6.24.1",
     "babel-runtime": "^6.26.0",
-    "parcel-bundler": "^1.10.3",
-    "axios": "^0.17.1"
+    "parcel-bundler": "^1.10.3"
   },
   "keywords": [],
   "author": "",
