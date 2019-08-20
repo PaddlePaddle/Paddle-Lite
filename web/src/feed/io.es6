@@ -3,6 +3,7 @@
  * @file io，loader相关输入输出
  * @author wangqun@baidu.com
  */
+
 export default class io {
     constructor() {
         this.fromPixels2DContext = document.createElement('canvas').getContext('2d');

@@ -7,6 +7,8 @@ import Utils from './utils';
 export default class Tensor {
     constructor(opts = {}) {
         this.opts = opts;
+        // 数据存储方式
+        this.isPacked = this.isPacked || false;
         // 设置tensor名字
         this.name = opts.name;
         // tensor的形状
@@ -23,36 +25,44 @@ export default class Tensor {
             this.shape = shape;
         }
         // 获取转换到texture后的信息
-        let {zeroNumber, shape: shape_texture} = Utils.getTextureInfoFromTensorShape(shape);
+        let {offsetX, offsetY, exceedMax, zeroNumber, shape: shape_texture} = Utils.getTextureInfoFromTensorShape(shape, opts.isPacked);
         this.shape_texture = shape_texture;
+        this.exceedMax = exceedMax;
+        this.offsetX = offsetX;
+        this.offsetY = offsetY;
         // tensor数据
-        let data = [];
-        if (opts.data && opts.data.length) {
+        let data;
+        if (opts.type === 'image' || opts.type === 'x') {
+            this.data = opts.data;
+        }
+        else if (opts.data && opts.data.length) {
+            data = new Float32Array(opts.data.length);
             if (!opts.notCompressed) {
                 let b = shape[0];
                 let c = shape[1];
                 let h = shape[2];
                 let w = shape[3];
+
                 for (let i = 0; i < opts.data.length; i++) {
-                    let j = Math.floor(i / (c * w));
-                    let k = Math.floor(i % (c * w));
-                    let b1 = Math.floor(j / h);
-                    let h1 = Math.floor(j % h);
-                    let c1 = Math.floor(k % c);
-                    let w1 = Math.floor(k / c);
+                    let j = i / (c * w) | 0;
+                    let k = i % (c * w);
+                    let b1 = j / h | 0;
+                    let h1 = j % h;
+                    let c1 = k % c;
+                    let w1 = k / c | 0;
                     let l = b1 * (c * h * w) + c1 * (h * w) + h1 * (w) + w1;
-                    data.push(opts.data[l]);
-                    data.push(0);
-                    data.push(0);
-                    data.push(0);
+                    data[i] = opts.data[l];
                 }
+                this.data = data;
             } else {
                 // batchnorm的scale
                 this.shape_texture = [4, 1, this.total / 4];
-                data = [].concat(opts.data);
+                // data = [].concat(opts.data);
+                this.data = new Float32Array(opts.data);
             }
 
-            this.data = new Float32Array(data);
+            // this.data = new Float32Array(data);
+            // console.log('this.data.length', this.data.length);
             // 清理缓存
             opts.data = null;
         }
@@ -104,6 +114,18 @@ export default class Tensor {
             return this.shape[length - 3];
         }
         return 0;
+    }
+
+    get offset_x() {
+        return this.offsetX;
+    }
+
+    get offset_y() {
+        return this.offsetY;
+    }
+
+    get limit() {
+        return this.exceedMax ? 'Limit' : '';
     }
 
     get length_shape() {
