@@ -1,7 +1,7 @@
 # Paddle-Mobile
 
 [![Build Status](https://travis-ci.org/PaddlePaddle/paddle-mobile.svg?branch=develop&longCache=true&style=flat-square)](https://travis-ci.org/PaddlePaddle/paddle-mobile)
-[![Documentation Status](https://img.shields.io/badge/中文文档-最新-brightgreen.svg)](https://github.com/PaddlePaddle/paddle-mobile/tree/develop/doc)
+[![Documentation Status](https://img.shields.io/badge/中文文档-最新-brightgreen.svg)](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/mobile/doc)
 [![License](https://img.shields.io/badge/license-Apache%202-blue.svg)](LICENSE)
 
 <!--[![Release](https://img.shields.io/github/release/PaddlePaddle/Paddle-Mobile.svg)](https://github.com/PaddlePaddle/Paddle-Mobile/releases)
@@ -35,48 +35,48 @@ Welcome to Paddle-Mobile GitHub project。Paddle-Mobile is a project of PaddlePa
 
 ### 原Domo目录
 
-[https://github.com/PaddlePaddle/paddle-mobile/tree/develop/demo](https://github.com/PaddlePaddle/paddle-mobile/tree/develop/demo)
+[https://github.com/PaddlePaddle/Paddle-Lite/tree/develop/mobile/demo](https://github.com/PaddlePaddle/Paddle-Lite/tree/develop/mobile/demo)
 
 ## Documentation
 
 ### Documentation of design
 
-If you want to know more details about the documentation of paddle-mobile design, please refer to the link as follows. There are many previous designs and discussion: [issue](https://github.com/PaddlePaddle/paddle-mobile/issues).
+If you want to know more details about the documentation of paddle-mobile design, please refer to the link as follows. There are many previous designs and discussion: [issue](https://github.com/PaddlePaddle/Paddle-Lite/issues).
 
-[link of documentation of design](https://github.com/PaddlePaddle/paddle-mobile/blob/develop/doc/design_doc.md)
+[link of documentation of design](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/mobile/doc/design_doc.md)
 
 ### Documentation of development
 
 Documentation of development is mainly about building, running and other tasks.As a developer,you can use it with the help of contributed documents.
-* [iOS](https://github.com/PaddlePaddle/paddle-mobile/blob/develop/doc/development_ios.md)
-* [Android_CPU](https://github.com/PaddlePaddle/paddle-mobile/blob/develop/doc/development_android.md)
-* [Android_GPU](https://github.com/PaddlePaddle/paddle-mobile/blob/develop/doc/development_android_GPU.md)
-* [FPGA](https://github.com/PaddlePaddle/paddle-mobile/blob/develop/doc/development_fpga.md)
-* [ARM_LINUX](https://github.com/PaddlePaddle/paddle-mobile/blob/develop/doc/development_arm_linux.md)
+* [iOS](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/mobile/doc/development_ios.md)
+* [Android_CPU](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/mobile/doc/development_android.md)
+* [Android_GPU](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/mobile/doc/development_android_GPU.md)
+* [FPGA](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/mobile/doc/development_fpga.md)
+* [ARM_LINUX](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/mobile/doc/development_arm_linux.md)
 
 ### How to contribute your documents
-- [tutorial link to contribute documents](https://github.com/PaddlePaddle/paddle-mobile/blob/develop/CONTRIBUTING.md)
-- Main procedure of contributing code is covered in the document above.If you have other problems during the procedure,please send them as [issue](https://github.com/PaddlePaddle/paddle-mobile/issues). We will deal with it as quickly as possible.
+- [tutorial link to contribute documents](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/mobile/CONTRIBUTING.md)
+- Main procedure of contributing code is covered in the document above.If you have other problems during the procedure,please send them as [issue](https://github.com/PaddlePaddle/Paddle-Lite/issues). We will deal with it as quickly as possible.
 
 ## 文档
 
 ### 设计文档
 
-关于paddle-mobile设计文档在下面链接中，如果想了解更多内容。[issue](https://github.com/PaddlePaddle/paddle-mobile/issues)中会有很多早期的设计和讨论过程。
-[设计文档链接](https://github.com/PaddlePaddle/paddle-mobile/blob/develop/doc/design_doc.md)
+关于paddle-mobile设计文档在下面链接中，如果想了解更多内容。[issue](https://github.com/PaddlePaddle/Paddle-Lite/issues)中会有很多早期的设计和讨论过程。
+[设计文档链接](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/mobile/doc/design_doc.md)
 
 ### 开发文档
 
 开发文档主要是关于编译、运行等问题。做为开发者，它可以和贡献文档共同结合使用。
-* [iOS](https://github.com/PaddlePaddle/paddle-mobile/blob/develop/doc/development_ios.md)
-* [Android_CPU](https://github.com/PaddlePaddle/paddle-mobile/blob/develop/doc/development_android.md)
-* [Android_GPU](https://github.com/PaddlePaddle/paddle-mobile/blob/develop/doc/development_android_GPU.md)
-* [FPGA](https://github.com/PaddlePaddle/paddle-mobile/blob/develop/doc/development_fpga.md)
-* [ARM_LINUX](https://github.com/PaddlePaddle/paddle-mobile/blob/develop/doc/development_arm_linux.md)
+* [iOS](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/mobile/doc/development_ios.md)
+* [Android_CPU](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/mobile/doc/development_android.md)
+* [Android_GPU](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/mobile/doc/development_android_GPU.md)
+* [FPGA](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/mobile/doc/development_fpga.md)
+* [ARM_LINUX](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/mobile/doc/development_arm_linux.md)
 
 ### 贡献文档
-- [贡献文档链接](https://github.com/PaddlePaddle/paddle-mobile/blob/develop/CONTRIBUTING.md)
-- 上面文档中涵盖了主要的贡献代码流程，如果在实践中您还遇到了其他问题，可以发[issue](https://github.com/PaddlePaddle/paddle-mobile/issues)。我们看到后会尽快处理。
+- [贡献文档链接](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/mobile/CONTRIBUTING.md)
+- 上面文档中涵盖了主要的贡献代码流程，如果在实践中您还遇到了其他问题，可以发[issue](https://github.com/PaddlePaddle/Paddle-Lite/issues)。我们看到后会尽快处理。
 
 ## Acquision of Models
 At present Paddle-Mobile only supports Paddle fluid training model. Models wiil be operated regularly after transformation if you have various models.
