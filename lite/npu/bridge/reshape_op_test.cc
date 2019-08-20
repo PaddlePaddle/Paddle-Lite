@@ -35,12 +35,16 @@ void reshape_ref(const std::shared_ptr<lite::OpLite> op) {
   auto shape = op_info->GetAttr<std::vector<int>>("shape");
   auto inplace = op_info->GetAttr<bool>("inplace");
   if (op_info->HasInput("Shape")) {
-    auto actual_shape = scope->FindVar(op_info->Input("Shape").front())
-                            ->GetMutable<lite::Tensor>();
-    auto actual_shape_dims = actual_shape->dims();
-    auto* actual_shape_data = actual_shape->data<int>();
-    shape = std::vector<int>(
-        actual_shape_data, actual_shape_data + actual_shape_dims.production());
+    auto actual_shape_var_names = op_info->Input("Shape");
+    if (actual_shape_var_names.size() > 0) {
+      auto actual_shape = scope->FindVar(actual_shape_var_names.front())
+                              ->GetMutable<lite::Tensor>();
+      auto actual_shape_dims = actual_shape->dims();
+      auto* actual_shape_data = actual_shape->data<int>();
+      shape =
+          std::vector<int>(actual_shape_data,
+                           actual_shape_data + actual_shape_dims.production());
+    }
   }
   if (inplace) {
     out->ShareDataWith(*x);
