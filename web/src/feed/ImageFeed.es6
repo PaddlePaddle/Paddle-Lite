@@ -30,7 +30,10 @@ export default class imageFeed {
             ...inputs.params
         };
         let output = [];
-
+        if (!this.result) {
+            const [b, c, h, w] = params.targetShape;
+            this.result = new Float32Array(h * w * 3);
+        }
         output = this.fromPixels(input, params);
         return output;
     };
@@ -74,21 +77,27 @@ export default class imageFeed {
      */
     allReshapeToRGB(imageData, opt, scaleSize) {
         const {sw, sh} = scaleSize;
-        const {width, height} = opt;
+        const [b, c, h, w] = opt.targetShape;
         let data = imageData.data;
         let mean = opt.mean;
         let dataLength = data.length;
-        let result = new Float32Array(dataLength * 3 / 4);
-        let offsetR = 0;
-        let offsetG = dataLength / 4;
-        let offsetB = dataLength / 2;
-        for (let i = 0; i < data.length; i += 4) {
-            result[offsetR++] = (data[i] - mean[0]) / 256;
-            result[offsetG++] = (data[i + 1] - mean[1]) / 256;
-            result[offsetB++] = (data[i + 2] - mean[2]) / 256;
-            // result.push((data[i] - mean[0]) / 256); // red
-            // result.push((data[i + 1] - mean[1]) / 256); // green
-            // result.push((data[i + 2] - mean[2]) / 256); // blue
+        // let result = new Float32Array(dataLength * 3);
+        let result = this.result;
+        // let offsetR = 0;
+        // let offsetG = dataLength / 4;
+        // let offsetB = dataLength / 2;
+        let offset = 0;
+        let size = h * w;
+        // h w c
+        for (let i = 0; i < h; ++i) {
+            let iw = i * w;
+            for (let j = 0; j < w; ++j) {
+                let iwj = iw + j;
+                for (let k = 0; k < c; ++k) {
+                    let a = iwj * 4 + k;
+                    result[offset++] = (data[a] - mean[k]) / 256;
+                }
+            }
         }
         return result;
     };
@@ -156,8 +165,10 @@ export default class imageFeed {
         else {
             this.fromPixels2DContext.drawImage(
                 image, 0, 0, sw, sh);
+            // currentPic = this.fromPixels2DContext.canvas.toDataURL();
         }
-        document.getElementById('p-c').appendChild(this.fromPixels2DContext.canvas);// test only, demele me
+        // window.currentPic = this.fromPixels2DContext.canvas;// test only, demele me
+        // document.getElementById('p-c').appendChild(this.fromPixels2DContext.canvas);// test only, demele me
         return {sw: targetWidth, sh: targetHeight};
     }
 

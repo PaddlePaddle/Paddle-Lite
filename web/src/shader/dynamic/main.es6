@@ -9,6 +9,6 @@ void main(void) {
     // 输出数据
     float o = getPixelsFromTexturePos_texture_origin(vCoord).r;
     float res = ACTIVE_FUNCTION(o, multi_value, bias_value);
-    gl_FragColor.r = res;
+    setOutput(res);
 }
 `;

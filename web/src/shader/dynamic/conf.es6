@@ -18,6 +18,7 @@ export default {
         'WIDTH_TEXTURE_OUT',
         'HEIGHT_TEXTURE_OUT',
         'CHANNEL_OUT',
+        'OFFSET_Y_OUT',
 
         'MULTI_VALUE',
         'BIAS_VALUE',

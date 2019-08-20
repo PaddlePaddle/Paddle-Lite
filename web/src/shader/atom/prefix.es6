@@ -11,4 +11,8 @@ export default `
     precision mediump float;
     precision mediump int;
 #endif
+
+    void setOutput(float result) {
+        gl_FragColor.r = result;
+    }
 `;
