@@ -1,16 +1,16 @@
-# Paddle Web
+# Web
 
-Paddle Web is an open source deep learning framework designed to work on web browser. It could run on nearly every browser with WebGL support.
+Web project is an open source deep learning framework designed to work on web browser. It could run on nearly every browser with WebGL support.
 
 ## Key Features
 
 ### Modular
 
-Paddle Web is built on Atom system which is a versatile framework to support GPGPU operation on WebGL. It is quite modular and could be used to make computation tasks faster by utilizing WebGL.
+Web project is built on Atom system which is a versatile framework to support GPGPU operation on WebGL. It is quite modular and could be used to make computation tasks faster by utilizing WebGL.
 
 ### High Performance
 
-Paddle Web could run TinyYolo model in less than 30ms on chrome. This is fast enough to run deep learning models in many realtime scenarios.
+Web project could run TinyYolo model in less than 30ms on chrome. This is fast enough to run deep learning models in many realtime scenarios.
 
 ### Browser Coverage
 
@@ -21,7 +21,7 @@ Paddle Web could run TinyYolo model in less than 30ms on chrome. This is fast en
 ## How To Build & Deploy Demo
 
 ```bash
-cd web                        # enter root directory for Paddle Web
+cd web                        # enter root directory for web project
 npm i                         # install dependencies for npm
 mkdir dist                    # create deployment directory
 git clone https://github.com/DerekYangMing/Paddle-Web-Models.git # get models
