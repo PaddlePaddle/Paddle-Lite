@@ -1,17 +1,19 @@
 {
-  "name": "paddle-web",
+  "name": "paddle-web-demo",
   "version": "1.0.0",
   "description": "paddle",
   "main": "index.js",
   "scripts": {
     "server": "parcel ./src/index.html",
     "testDemo": "parcel ./demo/index.html",
+    "testSDemo": "parcel ./demo/index.html --port 8125 --https",
+    "testVideoDemo": "parcel ./demo/videoDemo.html --port 8123 --https",
     "unit": "parcel ./test/unitTest.html",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/PaddlePaddle/paddle-mobile"
+    "url": "ssh://yangmingming@icode.baidu.com:8235/baidu/mms/paddle-web-demo"
   },
   "devDependencies": {
     "babel-core": "^6.26.3",
@@ -24,12 +26,13 @@
     "babel-preset-stage-0": "^6.24.1",
     "babel-runtime": "^6.26.0",
     "parcel-bundler": "^1.10.3",
-    "axios": ">=0.18.1"
+    "axios": "^0.17.1"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "js-file-download": "^0.4.5"
+    "js-file-download": "^0.4.5",
+    "vconsole": "^3.3.2"
   }
 }

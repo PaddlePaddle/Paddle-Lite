@@ -15,7 +15,8 @@ export default {
     conf: [
         'WIDTH_TEXTURE_ORIGIN',
         'HEIGHT_TEXTURE_ORIGIN',
-        'TOTAL_SHAPE_ORIGIN'
+        'TOTAL_SHAPE_ORIGIN',
+        'OFFSET_Y_OUT'
     ],
     input: [
         {

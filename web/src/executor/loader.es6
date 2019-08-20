@@ -26,6 +26,8 @@ export default class GraphModel  {
         this.feedOp = null;
         this.feedItem = null;
         this.isExecuted = false;
+        // 网络层数
+        this.iLayer = 0;
         // fetch xhr jsonp
         this.params = {type: 'fetch'};
         // 设置分片加载model
@@ -36,20 +38,41 @@ export default class GraphModel  {
                 this.binaryOption = loadOptions.binaryOption;
             }
         }
-        // op runner
-        this.inst = Runtime.init({
-            'width_raw_canvas': 512,
-            'height_raw_canvas': 512
-        });
-        if (this.loadOptions === null) {
+
+        if (!this.loadOptions) {
             this.loadOptions = {};
+        } else {
+            // op runner
+            this.inst = Runtime.init();
+            factory.setWebglVersion(this.inst.getWebglVersion());
+            this.fetchJson(this.modelGonfig.dir + 'x.json').then(data => {
+                const [b, c, h, w] = [1, 3, 320, 320];
+                const size = data.length;
+                const total = 3 * 320 * 320;
+                this.testData = new Float32Array(total);
+                for (let i = 0; i < size; i++) {
+                    let j = i / (c * w) | 0;
+                    let k = i % (c * w);
+                    let b1 = j / h | 0;
+                    let h1 = j % h;
+                    let c1 = k % c;
+                    let w1 = k / c | 0;
+                    let l = b1 * (c * h * w) + c1 * (h * w) + h1 * (w) + w1;
+                    this.testData[i] = data[l];
+                }
+            });
         }
     }
     fetchOneChunk(path) {
+        return fetch(path).then(request => {
+            return request.arrayBuffer();
+        })
+    }
+    fetchJson(path) {
         console.time(path)
         return fetch(path).then(request => {
             console.timeEnd(path);
-            return request.arrayBuffer();
+            return request.json();
         })
     }
     fetchAllData() {
@@ -63,6 +86,23 @@ export default class GraphModel  {
         }
         // 1个文件
         // let chunkArray = [this.fetchOneChunk('/faceModel/mergedData.dat')];
+        // this.fetchJson(this.modelGonfig.dir + 'x.json').then(data => {
+        //     const [b, c, h, w] = [1, 3, 320, 320];
+        //     const size = data.length;
+        //     const total = 3 * 320 * 320;
+        //     this.testData = new Float32Array(4 * total);
+        //     let offset = 0;
+        //     for (let i = 0; i < size; i++) {
+        //         let j = i / (c * w) | 0;
+        //         let k = i % (c * w);
+        //         let b1 = j / h | 0;
+        //         let h1 = j % h;
+        //         let c1 = k % c;
+        //         let w1 = k / c | 0;
+        //         let l = b1 * (c * h * w) + c1 * (h * w) + h1 * (w) + w1;
+        //         this.testData[i] = data[l];
+        //     }
+        // });
         console.time('加载时间');
         return Promise.all(chunkArray).then(chunks => {
             console.timeEnd('加载时间');
@@ -161,23 +201,13 @@ export default class GraphModel  {
     }
     async load() {
         let that = this;
-        console.time('生成op数据之前')
-        console.time('fetchModel');
         const artifacts = this.handler = await this.fetchModel();
-        console.timeEnd('fetchModel');
         if (this.multipart === true) {
-            console.time('6个文件准备好op数据');
             await this.fetchAllData()
                 .then(() => this.traverse(artifacts.vars));
-            console.timeEnd('6个文件准备好op数据');
         }
-        console.time('createOpsMap');
         const opsMap = this.createOpsMap(artifacts.ops, artifacts.vars);
-        console.timeEnd('createOpsMap');
-        console.time('constructOpsMap');
         this.weightMap = this.constructOpsMap(opsMap);
-        console.timeEnd('constructOpsMap');
-        console.timeEnd('生成op数据之前')
         // 生成op数据
         this.weightMap.forEach(op => {
             const type = op.type;
@@ -192,23 +222,27 @@ export default class GraphModel  {
         const opData = new OpData(op.type, tensor.inputs, tensor.outputs, tensor.attrs);
         const name = opData.name;
         const fsCode = factory.buildShader(name, opData.data);
-        opData.fshader = this.inst.createFragmentShader(fsCode);
+        opData.fsCode = fsCode;
+        opData.program = this.inst.createProgram(fsCode, opData.tensor['out']);
         opData.renderData = opConfs[name].map(elem => {
             let item = Object.assign({}, elem);
             const tensorData = opData.tensor[item.tensor];
             if (item.type === 'texture') {
                 item.data = tensorData.data;
-                if (this.feedOp.id === op.id) {
+                if (this.feedOp.id === op.id && item.tensor === 'origin') {
                     item.shape = tensorData.shape;
                     this.feedItem = item;
                 }
                 item['width_texture'] = tensorData['width_texture'];
                 item['height_texture'] = tensorData['height_texture'];
+                item['channel'] = tensorData['channel'];
             } else if (item.type === 'uniform') {
                 item.data = tensorData[item.variable];
             }
             return item;
         });
+        // console.timeEnd('opData.renderData');
+        opData.iLayer = this.iLayer++;
         op.opData = opData;
         // delete op.inputs;
         // delete op.outputs;
@@ -218,7 +252,7 @@ export default class GraphModel  {
         if (executor.type === 'fetch') {
             return;
         }
-        executor.execute(this.inst);
+        executor.execute(this.inst, this.isExecuted);
         if (executor.next) {
             const id = executor.next;
             const next = this.getTensor(id);
@@ -245,13 +279,12 @@ export default class GraphModel  {
         }
         let start = +Date.now();
         this.execute_(executor[0]);
-        console.log('总的执行时间是' + (+Date.now() - start));
         this.isExecuted = true;
         return this.inst;
     }
     updateFeed() {
         this.feedItem.data = this.feed.input[0].data;
-        Utils.img2texture(this.feedItem);
+        // Utils.img2texture(this.feedItem);
     }
     /**
      * predict enter
@@ -282,6 +315,7 @@ export default class GraphModel  {
                 input[key] = io.fromPixels(data, pixel);
             }
             else if ((key === 'Input') && (inputName === 'image' || inputName === 'x')) {
+                // that.feed.input[0].data = that.testData;
                 input[key] = that.feed.input;
                 that.feedOp = executor;
             }
@@ -289,6 +323,7 @@ export default class GraphModel  {
                 input[key] = that.getTensorAttr(input[key][0]);
             }
         });
+        // console.log(input);
         const tensor = {
             inputs: input,
             outputs: output,
