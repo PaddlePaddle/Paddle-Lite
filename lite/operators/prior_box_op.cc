@@ -46,7 +46,7 @@ bool PriorBoxOpLite::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
   param_.aspect_ratios = opdesc.GetAttr<std::vector<float>>("aspect_ratios");
   param_.variances_ = opdesc.GetAttr<std::vector<float>>("variances");
   if (opdesc.HasAttr("flip")) {
-    param_.flip = opdesc.GetAttr<int>("flip");
+    param_.flip = opdesc.GetAttr<bool>("flip");
   }
   if (opdesc.HasAttr("img_w")) {
     param_.img_w = opdesc.GetAttr<int>("img_w");
