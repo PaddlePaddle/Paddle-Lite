@@ -10,33 +10,27 @@
           margin: 0;
           padding: 0;
       }
-      #myCanvas {
-          position: fixed;
-          top: 0;
-          left: 0;
-          opacity: 0.4;
-      }
       #myDiv {
           position: fixed;
           border: 1px solid red;
           box-sizing: border-box;
-          /* transition: all .3s; */
+      }
+      #video {
+        background: red;
       }
   </style>
 </head>
 <body>
-  <video id="video" width="480" height="320" controls>
+  <video id="video">
   </video>
   <p>
     <button id="start">开始识别</button>
     <button id="stop">结束</button>
   </p>
-  <canvas id="canvas" width="480" height="320"></canvas>
-  <canvas id="myCanvas" width="480" height="320"></canvas>
-  <div id="p-c" width="480" height="320"></div>
-  <!-- <img src="./badcase/bdc_1.png" id="tt" alt="" srcset=""> -->
-  <!-- <img src="./bbt1.jpg" id="tt" alt="" srcset=""> -->
+  <select id="videoSelect"></select>
+  <p id="tips">tips</p>
   <div id="myDiv"></div>
+
   <script src="./videoDemo.es6"></script>
 </body>
 </html>
