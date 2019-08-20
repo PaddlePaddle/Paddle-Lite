@@ -14,6 +14,7 @@ limitations under the License. */
 
 #ifdef LOD_RESET_OP
 
+#include <algorithm>
 #include "operators/kernel/kernels.h"
 
 namespace paddle_mobile {
