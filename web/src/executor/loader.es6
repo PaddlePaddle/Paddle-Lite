@@ -46,6 +46,9 @@ export default class GraphModel  {
             this.inst = Runtime.init();
             factory.setWebglVersion(this.inst.getWebglVersion());
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> paddle web
             // this.fetchJson(this.modelGonfig.dir + 'x.json').then(data => {
             //     const [b, c, h, w] = [1, 3, 320, 320];
             //     const size = data.length;
@@ -62,6 +65,7 @@ export default class GraphModel  {
             //         this.testData[i] = data[l];
             //     }
             // });
+<<<<<<< HEAD
         }
     }
     fetchOneChunk(path) {
@@ -84,17 +88,17 @@ export default class GraphModel  {
                     this.testData[i] = data[l];
                 }
             });
+=======
+>>>>>>> paddle web
         }
     }
     fetchOneChunk(path) {
-        return fetch(path).then(request => {
+        return this.fetch(path).then(request => {
             return request.arrayBuffer();
         })
     }
     fetchJson(path) {
-        console.time(path)
-        return fetch(path).then(request => {
-            console.timeEnd(path);
+        return this.fetch(path).then(request => {
             return request.json();
 >>>>>>> paddle web
         })
@@ -113,6 +117,7 @@ export default class GraphModel  {
                 this.fetchOneChunk(this.modelGonfig.dir + this.binaryOption.getFileName(i))
             );
         }
+<<<<<<< HEAD
 <<<<<<< HEAD
 =======
         // 1个文件
@@ -134,6 +139,8 @@ export default class GraphModel  {
         //         this.testData[i] = data[l];
         //     }
         // });
+>>>>>>> paddle web
+=======
 >>>>>>> paddle web
         console.time('加载时间');
         return Promise.all(chunkArray).then(chunks => {
