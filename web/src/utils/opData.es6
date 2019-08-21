@@ -19,6 +19,9 @@ const tensorAttrs = [
     'height_shape',
     'width_texture',
     'height_texture',
+    'offset_x',
+    'offset_y',
+    'limit',
     'channel',
     'total_shape'
 ];
@@ -29,6 +32,9 @@ const shaderAttrs = {
         'scale': 'multi_value'
     },
     pool2d: {
+        'pooling_type': 'type_pool'
+    },
+    pool2d_winograd: {
         'pooling_type': 'type_pool'
     }
 };
@@ -48,7 +54,8 @@ const tensorName = {
 // unique behavior
 const opBehavior = {
     conv2d: [
-        'needBatch'
+        'needBatch',
+        'isApplySeparableConv'
     ],
     batchnorm: [
         'needBatch',
@@ -58,9 +65,15 @@ const opBehavior = {
         'broadcast',
         'needBatch'
     ],
+    conv2d_elementwise_add: [
+        'mergeAttrs',
+        'setActiveFunc',
+        'needBatch'
+    ],
     pool2d: [
         'isMax',
         'needBatch',
+        'setPacked',
         'isGlobalPooling'
     ],
     relu: [
@@ -76,10 +89,14 @@ const opBehavior = {
         'needBatch'
     ]
 };
+const mergeType = 'conv2d-elementwise_add';
 export default class OpData {
     constructor(name, input = {}, output = {}, attrs = {}) {
+        this.realName = name;
         this.name = name;
         this.attrs = attrs;
+        // 检查是否是融合op
+        this.checkIsMerge();
         // 是否忽略当前当前op, 使用dropout
         this.isPass = this.checkIsPass();
         if (this.isPass) {
@@ -133,6 +150,7 @@ export default class OpData {
         });
         // 生成tensor对象
         tensorData.forEach(data => {
+            // console.log(data);
             if (data) {
                 if (data.notTensor) {
                     this.tensor[data.tensorName] = {
@@ -142,11 +160,13 @@ export default class OpData {
                     };
                 } else {
                     this.tensor[data.tensorName] = new Tensor({
+                        type: data.name,
                         name: data.tensorName,
                         shape: data.shape,
                         data: data.data,
                         needBatch: data.needBatch || false,
-                        notCompressed: data.notCompressed || false
+                        notCompressed: data.notCompressed || false,
+                        isPacked: data.isPacked || false
                     });
                 }
             }
@@ -195,15 +215,74 @@ export default class OpData {
         }
     }
 
-    broadcast(tensorData = []) {
-        const x = tensorData[0];
-        const y = tensorData[1];
-        let small = y;
-        if (x.shape.length - y.shape.length < 0) {
-            small = x;
+    mergeAttrs() {
+        this.attrs = this.attrs.reduce((attrs, item) => {
+            return Object.assign(attrs, item);
+        }, {});
+    }
+
+    isApplyWinoGrad(tensorData = []) {
+        const filter = tensorData.filter(item => {
+            const [b, c, h, w] = item.shape;
+            return (h === 3) && (w === 3) && (item.tensorName === 'filter');
+        });
+        // 使用winograd算法
+        if (filter && filter.length) {
+            this.setPacked(tensorData);
+            this.applyWinograd(tensorData);
+            this.setOutputPacked(tensorData);
+            this.name += '_winograd';
         }
-        // face model
-        small.notTensor = true;
+    }
+
+    isApplySeparableConv(tensorData = []) {
+        const groups = this.attrs.groups;
+        const filter = tensorData.filter(item => {
+            const [b, c, h, w] = item.shape;
+            return (b === groups) && (c === 1) && (item.tensorName === 'filter');
+        });
+        if (filter && filter.length) {
+            // 可以执行separable conv
+            this.name += '_depthwise';
+        }
+    }
+
+    setPacked(tensorData = []) {
+        const isPacked = this.attrs.ispacked;
+        tensorData.forEach(item => {
+            if (item.tensorName === 'origin' && isPacked) {
+                item.isPacked = true;
+                if (this.name.indexOf('pool') > -1) {
+                    this.name += '_winograd';
+                }
+            }
+        });
+    }
+
+    applyWinograd(tensorData = []) {
+        tensorData.forEach(item => {
+            if (item.tensorName === 'filter') {
+                const [b, c, h, w] = item.shape;
+                item.shape = [b, c, 4, 4];
+                item.data = Utils.applyFilterWinograd(item.data, item.shape);
+            }
+        });
+    }
+
+    setOutputPacked(tensorData = []) {
+        tensorData.forEach(item => {
+            if (item.tensorName === 'out') {
+                item.isPacked = true;
+            }
+        });
+    }
+
+    broadcast(tensorData = []) {
+        tensorData.forEach(item => {
+            if (item.tensorName === 'counter') {
+                item.notTensor = true;
+            }
+        });
         return;
 
         // mobilenet model
@@ -227,6 +306,9 @@ export default class OpData {
     isMax(tensorData = []) {
         const type = this.attrs['pooling_type'] === 'max' ? 1 : 0;
         this.attrs['pooling_type'] = type;
+        if (type === 1) {
+            this.name += '_max';
+        }
     }
 
     transToPrelu(tensorData = []) {
@@ -240,10 +322,13 @@ export default class OpData {
         this.name = 'relu';
     }
 
-    setActiveFunc(tensorData = []) {
-        this.data['multi_value'] = '0.0';
-        this.data['active_function'] = 'softmax';
-
+    setActiveFunc() {
+        // 用于融合op
+        const suffix = this.realName.replace(mergeType + '-', '');
+        if (suffix === 'leaky_relu') {
+            this.data['multi_value'] = this.attrs.alpha;
+            this.data['active_function'] = 'leakyRelu';
+        }
     }
 
     reshape(tensorData = []) {
@@ -282,6 +367,16 @@ export default class OpData {
         tensorData.splice(result[constants[1] + 'Index'], 1, 0);
         tensorData.splice(result[constants[2] + 'Index'], 1, 0);
         tensorData.splice(result[constants[3] + 'Index'], 1, 0);
+    }
+
+    checkIsMerge() {
+        if (this.name.indexOf(mergeType) > -1
+            && Object.prototype.toString.apply(this.attrs) === '[object Array]') {
+            // 第一个融合op
+            this.name  = 'conv2d_elementwise_add';
+            return true;
+        }
+        return false;
     }
 
     checkIsPass() {

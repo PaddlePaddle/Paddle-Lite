@@ -13,6 +13,6 @@ void main(void) {
     vec4 scale = getPixelsFromTexturePos_texture_scale(vec2((float(int(oPos.g)) + 0.5) / float(width_texture_scale), 0.0));
     float x = (o - scale[3]) / sqrt(scale[2] + epsilon);
     float res = scale[0] * x + scale[1];
-    gl_FragColor.r = res;
+    setOutput(res);
 }
 `;

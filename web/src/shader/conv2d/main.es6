@@ -6,7 +6,7 @@
 export default `
     // start函数
     void main(void) {
-        ivec4 oPos = getOutputTensorPos();
+        ivec4 oPos = getOutputTensorPosLIMIT_OUT();
         int x = oPos.a;
         int c = oPos.g;
         int y = oPos.b;
@@ -35,14 +35,14 @@ export default `
                 }
                 // channel计算
                 for (int j = 0; j < channel_filter; j++) {
-                    float f = getValueFromTensorPos_filter(c, j, fy, fx);
-                    float o = getValueFromTensorPos_origin(b, oTensorChannel + j, oy, ox);
+                    float f = getValueFromTensorPosLIMIT_FILTER_filter(c, j, fy, fx);
+                    float o = getValueFromTensorPosLIMIT_ORIGIN_origin(b, oTensorChannel + j, oy, ox);
                     res += f * o;
                 }
                 ox += dilation_h;
             }
             oy += dilation_v;
         }
-        gl_FragColor.r = res;
+        setOutput(res);
     }
 `;

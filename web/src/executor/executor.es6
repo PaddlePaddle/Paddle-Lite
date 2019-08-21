@@ -10,7 +10,7 @@ export default class GraphExecutor {
     constructor(model) {
         this.inputs = model.inputs;
         this.outputs  = model.outputs;
-        this.attrs = model.attrs;
+        this.attrs = model.attrs || model['sub-attrs'];
         this.type = model.type;
         this.finish = false;
         this.next = null;
@@ -53,7 +53,7 @@ export default class GraphExecutor {
         else if (this.type === 'fetch') {
             return this.inputs.X;
         }
-        return null;
+        return this.inputs.Input || this.inputs.X;
     }
 
     get outputsName() {
@@ -68,29 +68,31 @@ export default class GraphExecutor {
             return this.outputs.Y;
         }
         else {
-            return this.outputs.Out;
+            return this.outputs.Out || this.outputs.Output;
         }
 
     }
 
     /**
      * 将输入数据和具体op进行关联，触发执行具体每一个op
-     * @param inputs
      * @param runtime
+     * @param isRendered
      */
-    execute(runtime) {
+    execute(runtime, isRendered) {
         // console.log(inputs, outputs);
         if (this.type !== 'feed') {
-            let time = +Date.now();
-            runtime.run(this.type, this.opData);
+            // let time = +Date.now();
+            log.start(this.opData.iLayer + '-' + this.type);
+            runtime.run(this.type, this.opData, isRendered);
+            log.end(this.opData.iLayer + '-' + this.type);
             // if (runtime.gpu.frameBufferIsComplete().isComplete) {
             //     var result = runtime.read();
             //     let res = Array.prototype.slice.call(result);
             //     fileDownload(res, "result.csv");
             // }
-            let length = statistic.length;
-            statistic[length - 1].type = this.type;
-            statistic[length - 1].runTime = +Date.now() - time;
+            // let length = statistic.length;
+            // statistic[length - 1].type = this.type;
+            // statistic[length - 1].runTime = +Date.now() - time;
             // if (this.type === 'scale') {
             //     console.log('时间是：' + (+Date.now() - start));
             // }

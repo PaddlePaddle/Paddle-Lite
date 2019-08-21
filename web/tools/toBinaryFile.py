@@ -99,13 +99,13 @@ class BinaryFileConverter:
 
 
 BinaryFileConverter(
-    delimiter = ',', 
-    ignorChar = ['[', ']'], 
-    ignorLine = ['[', ']'], 
-    types = ['.txt', '.json'], 
-    originDir = './mobileNet', 
-    resultDir = './binf', 
-    ext = '.dat', 
-    formatter = 'f', 
-    dotPrintRatio = 0, 
+    delimiter = ',',
+    ignorChar = ['[', ']'],
+    ignorLine = ['[', ']'],
+    types = ['.txt', '.json'],
+    originDir = './mobileNet',
+    resultDir = './binf',
+    ext = '.dat',
+    formatter = 'f',
+    dotPrintRatio = 0,
     merge = 6).convert()

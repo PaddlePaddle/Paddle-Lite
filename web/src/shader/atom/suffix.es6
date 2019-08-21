@@ -14,4 +14,29 @@ ivec4 getOutputTensorPos() {
     int b = int(outCoord.y / float(height_shape_out));
     return ivec4(b, c, y, x);
 }
+
+ivec4 getOutputTensorPosLimit() {
+    // 获取原始长度
+    vec2 outCoord = vCoord.xy * _2d_shape_texture_out;
+    float offsetY = floor(outCoord.y / float(height_shape_out));
+    int x = int(outCoord.x / float(channel_out));
+    if (mod(offsetY, 2.0) > 0.0) {
+        x += int(ceil(float(width_shape_out) / 2.0));
+    }
+    int y = int(mod(outCoord.y, float(height_shape_out)));
+    int c = int(mod(outCoord.x, float(channel_out)));
+    int b = int(outCoord.y / float(2 * height_shape_out));
+    return ivec4(b, c, y, x);
+}
+
+ivec4 getOutputPackedTensorPos() {
+    // 获取原始长度
+    vec2 outCoord = vCoord.xy * _2d_shape_texture_out;
+    int height = height_shape_out + offset_y_out;
+    int x = int(outCoord.x);
+    int c = int(outCoord.y / float(height / 2));
+    int y = int(mod(outCoord.y, float(height / 2)));
+    int b = 0;
+    return ivec4(b, c, y, x);
+}
 `;
