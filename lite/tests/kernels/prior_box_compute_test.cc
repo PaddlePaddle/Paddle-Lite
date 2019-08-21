@@ -561,7 +561,7 @@ class PriorBoxComputeTester : public arena::TestCase {
                           min_size_,
                           std::vector<float>(),
                           std::vector<float>(),
-                          std::vector<float>(),
+                          std::vector<int>(),
                           max_size_,
                           aspect_ratio_,
                           variance_,
@@ -621,7 +621,7 @@ void test_density_prior_box(Place place) {
   std::vector<float> variance{0.1f, 0.1f, 0.2f, 0.2f};
   std::vector<float> fixed_size{60, 30};
   std::vector<float> fixed_ratio{1., 2.};
-  std::vector<float> density_size{1., 3.};
+  std::vector<int> density_size{1, 3};
   bool flip = true;
   bool clip = false;
   float step_h = 0;

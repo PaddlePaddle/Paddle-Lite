@@ -62,7 +62,7 @@ bool DensityPriorBoxOpLite::AttachImpl(const cpp::OpDesc& opdesc,
     param_.min_sizes = opdesc.GetAttr<std::vector<float>>("min_sizes");
   }
   if (opdesc.HasAttr("flip")) {
-    param_.flip = opdesc.GetAttr<int>("flip");
+    param_.flip = opdesc.GetAttr<bool>("flip");
   }
   if (opdesc.HasAttr("img_w")) {
     param_.img_w = opdesc.GetAttr<int>("img_w");
