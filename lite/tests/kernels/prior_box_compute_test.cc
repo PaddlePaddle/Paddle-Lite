@@ -75,7 +75,7 @@ void prior_box_compute_ref(const lite::Tensor* input,
                            const std::vector<float>& min_size_,
                            const std::vector<float>& fixed_size_,
                            const std::vector<float>& fixed_ratio_,
-                           const std::vector<float>& density_size_,
+                           const std::vector<int>& density_size_,
                            const std::vector<float>& max_size_,
                            const std::vector<float>& aspect_ratio_,
                            const std::vector<float>& variance_,
@@ -352,7 +352,7 @@ class DensityPriorBoxComputeTester : public arena::TestCase {
   std::vector<float> min_size_;
   std::vector<float> fixed_size_;
   std::vector<float> fixed_ratio_;
-  std::vector<float> density_size_;
+  std::vector<int> density_size_;
   std::vector<float> max_size_;
   std::vector<float> aspect_ratio_;
   std::vector<float> variance_;
@@ -375,7 +375,7 @@ class DensityPriorBoxComputeTester : public arena::TestCase {
                                const std::vector<float>& min_size,
                                const std::vector<float>& fixed_size,
                                const std::vector<float>& fixed_ratio,
-                               const std::vector<float>& density_size,
+                               const std::vector<int>& density_size,
                                const std::vector<float>& max_size,
                                const std::vector<float>& aspect_ratio,
                                const std::vector<float>& variance,
