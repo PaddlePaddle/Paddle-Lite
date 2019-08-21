@@ -61,7 +61,7 @@ class LITE_API Predictor {
       GenRuntimeProgram();
     }
     program_->Run();
-    LOG(INFO) << "ru";
+    LOG(INFO) << "rul";
   }
 
   // Get offset-th col of feed inputs.
