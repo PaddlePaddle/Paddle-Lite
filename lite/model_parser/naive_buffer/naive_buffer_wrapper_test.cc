@@ -14,6 +14,7 @@
 
 #include <gtest/gtest.h>
 #include "lite/model_parser/naive_buffer/block_desc.h"
+#include "lite/model_parser/naive_buffer/combined_params_desc.h"
 #include "lite/model_parser/naive_buffer/op_desc.h"
 #include "lite/model_parser/naive_buffer/param_desc.h"
 #include "lite/model_parser/naive_buffer/program_desc.h"
@@ -97,6 +98,7 @@ TEST(NaiveBufferWrapper, ParamDesc) {
   ParamDesc nb_desc0(&pt_desc0);
 
   // Set ParamDesc
+  nb_desc0.SetName("fc_w.0");
   nb_desc0.SetModelVersion(0);
   nb_desc0.SetTensorVersion(1);
   std::vector<std::vector<uint64_t>> lod({{1, 2, 3}, {4, 5}});
@@ -122,6 +124,7 @@ TEST(NaiveBufferWrapper, ParamDesc) {
   pt_desc1.Load();
   ParamDesc nb_desc1(&pt_desc1);
 
+  ASSERT_EQ(nb_desc1.Name(), "fc_w.0");
   ASSERT_EQ(nb_desc1.ModelVersion(), 0);
   ASSERT_EQ(nb_desc1.TensorVersion(), 1);
   ASSERT_EQ(nb_desc1.LoDLevel(), 2);
@@ -131,6 +134,84 @@ TEST(NaiveBufferWrapper, ParamDesc) {
   ASSERT_EQ(data1.size(), data.size());
   for (size_t i = 0; i < data1.size(); ++i) {
     EXPECT_NEAR(data1[i], data[i], 1e-6);
+  }
+}
+
+TEST(NaiveBufferWrapper, CombinedParamsDesc) {
+  BinaryTable table0;
+  proto::CombinedParamsDesc pt_desc0(&table0);
+  CombinedParamsDesc nb_desc0(&pt_desc0);
+
+  // Set ParamDesc
+  ParamDesc param_desc0_0(nb_desc0.AddParam());
+  param_desc0_0.SetName("fc_w.0");
+  param_desc0_0.SetModelVersion(0);
+  param_desc0_0.SetTensorVersion(1);
+  std::vector<std::vector<uint64_t>> param_desc0_0_lod({{1, 2, 3}, {4, 5}});
+  param_desc0_0.SetLoDLevel(2);
+  param_desc0_0.SetLoD(param_desc0_0_lod);
+  std::vector<int64_t> param_desc0_0_dim({1, 2, 5});
+  param_desc0_0.SetDim(param_desc0_0_dim);
+  param_desc0_0.SetDataType(VarDescAPI::VarDataType::FP32);
+  std::vector<float> param_desc0_0_data;
+  for (int i = 0; i < 10; ++i) {
+    param_desc0_0_data.push_back(i / 10.0);
+  }
+  param_desc0_0.SetData(param_desc0_0_data);
+
+  ParamDesc param_desc0_1(nb_desc0.AddParam());
+  param_desc0_1.SetName("fc_b.0");
+  param_desc0_1.SetModelVersion(0);
+  param_desc0_1.SetTensorVersion(1);
+  std::vector<std::vector<uint64_t>> param_desc0_1_lod({{1}, {2, 3}, {4, 5}});
+  param_desc0_1.SetLoDLevel(3);
+  param_desc0_1.SetLoD(param_desc0_1_lod);
+  std::vector<int64_t> param_desc0_1_dim({1, 2, 2, 5});
+  param_desc0_1.SetDim(param_desc0_1_dim);
+  param_desc0_1.SetDataType(VarDescAPI::VarDataType::FP32);
+  std::vector<float> param_desc0_1_data;
+  for (int i = 0; i < 20; ++i) {
+    param_desc0_1_data.push_back((i - 10) / 10.0);
+  }
+  param_desc0_1.SetData(param_desc0_1_data);
+
+  // Save model
+  pt_desc0.Save();
+  table0.SaveToFile("4.bf");
+
+  // Load model
+  BinaryTable table1;
+  table1.LoadFromFile("4.bf");
+  proto::CombinedParamsDesc pt_desc1(&table1);
+  pt_desc1.Load();
+  CombinedParamsDesc nb_desc1(&pt_desc1);
+
+  ASSERT_EQ(nb_desc1.ParamsSize(), 2);
+
+  ParamDesc param_desc1_0(nb_desc1.GetParam(0));
+  ASSERT_EQ(param_desc1_0.Name(), "fc_w.0");
+  ASSERT_EQ(param_desc1_0.ModelVersion(), 0);
+  ASSERT_EQ(param_desc1_0.TensorVersion(), 1);
+  ASSERT_EQ(param_desc1_0.LoDLevel(), 2);
+  ASSERT_EQ(param_desc1_0.LoD(), param_desc0_0_lod);
+  ASSERT_EQ(param_desc1_0.Dim(), param_desc0_0_dim);
+  auto param_desc1_0_data = param_desc1_0.Data<float>();
+  ASSERT_EQ(param_desc1_0_data.size(), param_desc0_0_data.size());
+  for (size_t i = 0; i < param_desc1_0_data.size(); ++i) {
+    EXPECT_NEAR(param_desc1_0_data[i], param_desc0_0_data[i], 1e-6);
+  }
+
+  ParamDesc param_desc1_1(nb_desc1.GetParam(1));
+  ASSERT_EQ(param_desc1_1.Name(), "fc_b.0");
+  ASSERT_EQ(param_desc1_1.ModelVersion(), 0);
+  ASSERT_EQ(param_desc1_1.TensorVersion(), 1);
+  ASSERT_EQ(param_desc1_1.LoDLevel(), 3);
+  ASSERT_EQ(param_desc1_1.LoD(), param_desc0_1_lod);
+  ASSERT_EQ(param_desc1_1.Dim(), param_desc0_1_dim);
+  auto param_desc1_1_data = param_desc1_1.Data<float>();
+  ASSERT_EQ(param_desc1_1_data.size(), param_desc0_1_data.size());
+  for (size_t i = 0; i < param_desc1_1_data.size(); ++i) {
+    EXPECT_NEAR(param_desc1_1_data[i], param_desc0_1_data[i], 1e-6);
   }
 }
 
@@ -161,11 +242,11 @@ TEST(NaiveBufferWrapper, BlockDesc) {
 
   // Save model
   pt_desc0.Save();
-  table0.SaveToFile("4.bf");
+  table0.SaveToFile("5.bf");
 
   // Load model
   BinaryTable table1;
-  table1.LoadFromFile("4.bf");
+  table1.LoadFromFile("5.bf");
   proto::BlockDesc pt_desc1(&table1);
   pt_desc1.Load();
   BlockDesc nb_desc1(&pt_desc1);
@@ -217,11 +298,11 @@ TEST(NaiveBufferWrapper, ProgramDesc) {
 
   // Save model
   pt_desc0.Save();
-  table0.SaveToFile("5.bf");
+  table0.SaveToFile("6.bf");
 
   // Load model
   BinaryTable table1;
-  table1.LoadFromFile("5.bf");
+  table1.LoadFromFile("6.bf");
   proto::ProgramDesc pt_desc1(&table1);
   pt_desc1.Load();
   ProgramDesc nb_desc1(&pt_desc1);
