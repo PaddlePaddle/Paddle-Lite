@@ -710,6 +710,16 @@ struct ExpandParam {
   std::vector<int> expand_times{};
 };
 
+/// ----------------------- matmul operators ----------------------
+struct MatMulParam {
+  const lite::Tensor* X{};
+  const lite::Tensor* Y{};
+  lite::Tensor* Out{};
+  bool transpose_X{false};
+  bool transpose_Y{false};
+  float alpha{1.0f};
+};
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle
