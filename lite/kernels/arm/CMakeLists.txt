@@ -7,6 +7,7 @@ message(STATUS "compile with lite ARM kernels")
 lite_cc_library(fc_compute_arm SRCS fc_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(activation_compute_arm SRCS activation_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(mul_compute_arm SRCS mul_compute.cc DEPS ${lite_kernel_deps} math_arm)
+lite_cc_library(matmul_compute_arm SRCS matmul_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(scale_compute_arm SRCS scale_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(softmax_compute_arm SRCS softmax_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(conv_compute_arm SRCS conv_compute.cc DEPS ${lite_kernel_deps} math_arm)
@@ -59,6 +60,8 @@ lite_cc_library(is_empty_compute_arm SRCS is_empty_compute.cc DEPS ${lite_kernel
 lite_cc_library(shape_compute_arm SRCS shape_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(slice_compute_arm SRCS slice_compute.cc DEPS ${lite_kernel_deps} math_arm)
 lite_cc_library(cast_compute_arm SRCS cast_compute.cc DEPS ${lite_kernel_deps} math_arm)
+lite_cc_library(squeeze_compute_arm SRCS squeeze_compute.cc DEPS ${lite_kernel_deps} math_arm)
+lite_cc_library(expand_compute_arm SRCS expand_compute.cc DEPS ${lite_kernel_deps} math_arm)
 
 lite_cc_test(test_fc_compute_arm SRCS fc_compute_test.cc DEPS fc_compute_arm math_arm)
 lite_cc_test(test_scale_compute_arm SRCS scale_compute_test.cc DEPS scale_compute_arm)
@@ -84,6 +87,7 @@ set(arm_kernels
     fc_compute_arm
     activation_compute_arm
     mul_compute_arm
+    matmul_compute_arm
     scale_compute_arm
     softmax_compute_arm
     conv_compute_arm
@@ -136,6 +140,8 @@ set(arm_kernels
     shape_compute_arm
     slice_compute_arm
     cast_compute_arm
+    squeeze_compute_arm
+    expand_compute_arm
     )
 
 set(arm_kernels "${arm_kernels}" CACHE INTERNAL "arm kernels")

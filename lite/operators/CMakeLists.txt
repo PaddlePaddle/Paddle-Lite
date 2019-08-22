@@ -5,6 +5,7 @@ lite_cc_library(pool_op SRCS pool_op.cc DEPS ${op_DEPS})
 lite_cc_library(fc_op SRCS fc_op.cc DEPS ${op_DEPS})
 lite_cc_library(relu_op SRCS relu_op.cc DEPS ${op_DEPS})
 lite_cc_library(mul_op SRCS mul_op.cc DEPS ${op_DEPS})
+lite_cc_library(matmul_op SRCS matmul_op.cc DEPS ${op_DEPS})
 lite_cc_library(scale_op SRCS scale_op.cc DEPS ${op_DEPS})
 lite_cc_library(softmax_op SRCS softmax_op.cc DEPS ${op_DEPS})
 lite_cc_library(reshape_op SRCS reshape_op.cc DEPS ${op_DEPS} )
@@ -81,6 +82,8 @@ lite_cc_library(is_empty SRCS is_empty_op.cc DEPS ${op_DEPS})
 lite_cc_library(shape_op_lite SRCS shape_op.cc DEPS ${op_DEPS})
 lite_cc_library(cast_op_lite SRCS cast_op.cc DEPS ${op_DEPS})
 lite_cc_library(slice_op_lite SRCS slice_op.cc DEPS ${op_DEPS})
+lite_cc_library(squeeze_op_lite SRCS squeeze_op.cc DEPS ${op_DEPS})
+lite_cc_library(expand_op_lite SRCS expand_op.cc DEPS ${op_DEPS})
 
 
 set(ops
@@ -89,6 +92,7 @@ set(ops
         fc_op
         relu_op
         mul_op
+        matmul_op
         scale_op
         softmax_op
         reshape_op
@@ -164,6 +168,8 @@ set(ops
         shape_op_lite
         cast_op_lite
         slice_op_lite
+        squeeze_op_lite
+        expand_op_lite
         CACHE INTERNAL "ops lite")
 
 if (NOT LITE_WITH_X86)

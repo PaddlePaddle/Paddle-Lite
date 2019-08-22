@@ -173,7 +173,6 @@ include(ccache)             # set ccache for compilation
 include(util)               # set unittest and link libs
 include(version)            # set PADDLE_VERSION
 
-
 set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O3 -g -DNDEBUG")
 set(CMAKE_C_FLAGS_RELWITHDEBINFO "-O3 -g -DNDEBUG")
 

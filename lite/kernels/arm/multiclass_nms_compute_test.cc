@@ -235,6 +235,8 @@ void multiclass_nms_compute_ref(const operators::MulticlassNmsParam& param,
 
   if (num_kept == 0) {
     (*result).clear();
+    (*result).resize(1);
+    (*result)[0] = -1;
     return;
   } else {
     (*result).resize(num_kept * 6);
