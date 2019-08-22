@@ -539,7 +539,8 @@ function test_arm {
     __prepare_multiclass_nms_test_files $port
 
     # prepare for CXXApi test
-    adb shell mkdir -p /data/local/tmp/lite_naive_model_opt
+    local adb="adb -s emulator-${port}"
+    $adb shell mkdir -p /data/local/tmp/lite_naive_model_opt
 
     echo "test file: ${TESTS_FILE}"
     for _test in $(cat $TESTS_FILE); do
