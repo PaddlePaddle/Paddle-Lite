@@ -57,11 +57,15 @@ class SubgraphProgramPass : public ProgramPass {
  private:
   // {1: {nodes2rm_in_subgraph1, ...},
   //  2: {nodes2rm_in_subgraph2, ...}}
-  std::unordered_map<int, std::unordered_set<const Node*>> nodes2rm_;
+  // delete nodes
+  std::unordered_map<int, std::unordered_set<Node*>> nodes2rm_;
+  // std::unordered_map<int, std::unordered_set<const Node*>> nodes2rm_;
   // inputs nodes
-  std::unordered_map<int, std::unordered_set<const Node*>> i_nodes_;
+  std::unordered_map<int, std::unordered_set<Node*>> i_nodes_;
+  // std::unordered_map<int, std::unordered_set<const Node*>> i_nodes_;
   // outputs nodes
-  std::unordered_map<int, std::unordered_set<const Node*>> o_nodes_;
+  std::unordered_map<int, std::unordered_set<Node*>> o_nodes_;
+  // std::unordered_map<int, std::unordered_set<const Node*>> o_nodes_;
 };
 
 }  // namespace subgraph

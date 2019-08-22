@@ -29,10 +29,11 @@ namespace bridge {
 
 node_map_type ScaleConverter(const std::shared_ptr<lite::OpLite> scale_op,
                              const node_map_type& inputs_map) {
-  VLOG(3) << "invoking ScaleConverter...";
   auto scope = scale_op->scope();
   auto op_info = scale_op->op_info();
   auto op_type = op_info->Type();
+  auto unique_op_type = UniqueName(op_type);
+  LOG(INFO) << "Converting " + op_type + "...";
 
   // get input, output and op attributes
   auto x_var_name = op_info->Input("X").front();
@@ -48,7 +49,7 @@ node_map_type ScaleConverter(const std::shared_ptr<lite::OpLite> scale_op,
   }
 
   // create scale node and set input node from inputs_map
-  auto scale_node = std::make_shared<ge::op::Scale>(UniqueName(op_type));
+  auto scale_node = std::make_shared<ge::op::Scale>(unique_op_type);
   CHECK(inputs_map.count(x_var_name));
   scale_node->set_input_x(*inputs_map.at(x_var_name));
   OpList::Global().add(inputs_map.at(x_var_name));
@@ -56,7 +57,7 @@ node_map_type ScaleConverter(const std::shared_ptr<lite::OpLite> scale_op,
 
   // add filter node(fill with scale)
   auto filter_const_node =
-      std::make_shared<ge::op::Const>(UniqueName(op_type + "/filter"));
+      std::make_shared<ge::op::Const>(unique_op_type + "/filter");
   filter_const_node->set_attr_value(
       CreateTensorAndFillData(scale, scale_bias_shape));
   scale_node->set_input_filter(*filter_const_node);
@@ -65,7 +66,7 @@ node_map_type ScaleConverter(const std::shared_ptr<lite::OpLite> scale_op,
   // add bias node(fill with bias)
   if (fabs(bias) > 1e-6f) {
     auto bias_const_node =
-        std::make_shared<ge::op::Const>(UniqueName(op_type + "/bias"));
+        std::make_shared<ge::op::Const>(unique_op_type + "/bias");
     bias_const_node->set_attr_value(
         CreateTensorAndFillData(bias, scale_bias_shape));
     scale_node->set_input_bias(*bias_const_node);
