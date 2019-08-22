@@ -5,6 +5,7 @@ lite_cc_library(pool_op SRCS pool_op.cc DEPS ${op_DEPS})
 lite_cc_library(fc_op SRCS fc_op.cc DEPS ${op_DEPS})
 lite_cc_library(relu_op SRCS relu_op.cc DEPS ${op_DEPS})
 lite_cc_library(mul_op SRCS mul_op.cc DEPS ${op_DEPS})
+lite_cc_library(matmul_op SRCS matmul_op.cc DEPS ${op_DEPS})
 lite_cc_library(scale_op SRCS scale_op.cc DEPS ${op_DEPS})
 lite_cc_library(softmax_op SRCS softmax_op.cc DEPS ${op_DEPS})
 lite_cc_library(reshape_op SRCS reshape_op.cc DEPS ${op_DEPS} )
@@ -89,6 +90,7 @@ set(ops
         fc_op
         relu_op
         mul_op
+        matmul_op
         scale_op
         softmax_op
         reshape_op

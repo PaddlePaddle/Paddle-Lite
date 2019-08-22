@@ -19,6 +19,7 @@
 #include "paddle_lite_factory_helper.h"  // NOLINT
 
 USE_LITE_OP(mul);
+USE_LITE_OP(matmul);
 USE_LITE_OP(fc);
 USE_LITE_OP(relu);
 USE_LITE_OP(scale);

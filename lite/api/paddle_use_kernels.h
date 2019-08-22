@@ -31,6 +31,7 @@ USE_LITE_KERNEL(fetch, kFPGA, kFP16, kNHWC, def);
 #ifdef LITE_WITH_ARM
 USE_LITE_KERNEL(fc, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(mul, kARM, kFloat, kNCHW, def);
+USE_LITE_KERNEL(matmul, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(scale, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(softmax, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(lrn, kARM, kFloat, kNCHW, def);
