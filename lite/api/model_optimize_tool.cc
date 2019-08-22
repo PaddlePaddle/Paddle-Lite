@@ -33,7 +33,7 @@ DEFINE_string(valid_targets,
               "arm",
               "The targets this model optimized for, should be one of (arm, "
               "opencl, x86), splitted by space");
-DEFINE_bool(int8_mode, false, "Support Int8 quantitative mode");
+DEFINE_bool(prefer_int8_kernel, false, "Prefer to run model with int8 kernels");
 
 namespace paddle {
 namespace lite_api {
@@ -62,7 +62,7 @@ void Main() {
   CHECK(!valid_places.empty())
       << "At least one target should be set, should set the "
          "command argument 'valid_targets'";
-  if (FLAGS_int8_mode) {
+  if (FLAGS_prefer_int8_kernel) {
     LOG(WARNING) << "Int8 mode is only support by ARM target";
     valid_places.push_back(Place{TARGET(kARM), PRECISION(kInt8)});
     config.set_preferred_place(Place{TARGET(kARM), PRECISION(kInt8)});
