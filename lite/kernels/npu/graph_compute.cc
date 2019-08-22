@@ -40,6 +40,10 @@ void GraphCompute::PrepareForRun() {
   npu_otensors_.resize(npu_odims_.size());
 
   for (size_t i = 0; i < npu_idims_.size(); ++i) {
+    VLOG(3) << "npu_idims[" << i << "]: " << npu_idims_[i].GetNumber() << ","
+            << npu_idims_[i].GetChannel() << "," << npu_idims_[i].GetHeight()
+            << "," << npu_idims_[i].GetWidth();
+    VLOG(3) << "lite_idims[" << i << "]: " << param.inputs[i]->dims();
     CHECK_EQ(param.inputs[i]->dims().production(),
              npu_idims_[i].GetNumber() * npu_idims_[i].GetChannel() *
                  npu_idims_[i].GetHeight() * npu_idims_[i].GetWidth());
@@ -48,6 +52,10 @@ void GraphCompute::PrepareForRun() {
   }
 
   for (size_t i = 0; i < npu_odims_.size(); ++i) {
+    VLOG(3) << "npu_odims[" << i << "]: " << npu_odims_[i].GetNumber() << ","
+            << npu_odims_[i].GetChannel() << "," << npu_odims_[i].GetHeight()
+            << "," << npu_odims_[i].GetWidth();
+    VLOG(3) << "lite_odims[" << i << "]: " << param.outputs[i]->dims();
     auto out_size = npu_odims_[i].GetNumber() * npu_odims_[i].GetChannel() *
                     npu_odims_[i].GetHeight() * npu_odims_[i].GetWidth();
     if (param.outputs[i]->dims().production() != out_size) {

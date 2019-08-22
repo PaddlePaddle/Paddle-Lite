@@ -35,8 +35,9 @@ static bool IsFileExists(const std::string& path) {
 // ARM mobile not support mkdir in C++
 static void MkDirRecur(const std::string& path) {
 #ifndef LITE_WITH_ARM
-  CHECK_EQ(system(string_format("mkdir -p %s", path.c_str()).c_str()), 0)
-      << "Cann't mkdir " << path;
+  if(system(string_format("mkdir -p %s", path.c_str()).c_str()) != 0) {
+    LOG(ERROR) << "Cann't mkdir " << path;
+  }
 #else  // On ARM
   CHECK_NE(mkdir(path.c_str(), S_IRWXU), -1) << "Cann't mkdir " << path;
 #endif
