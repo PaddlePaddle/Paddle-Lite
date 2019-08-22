@@ -40,9 +40,9 @@ node_map_type TransposeConverter(
 
   // paddlelite doesn't have this input
   // w must be set, but it does nothing
-  auto w_var_name = "transpose_w";
+  auto w_var_name = UniqueName("transpose_w");
   auto* w = scope->Var(w_var_name)->GetMutable<Tensor>();
-  w->Resize(scope->FindVar(x_var_name)->GetMutable<Tensor>()->dims());
+  w->Resize({1});
   auto* w_data = w->mutable_data<float>();
   for (int i = 0; i < w->numel(); i++) {
     w_data[i] = 1.f;
