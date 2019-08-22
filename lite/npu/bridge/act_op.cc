@@ -29,14 +29,15 @@ namespace bridge {
 
 node_map_type ActConverter(const std::shared_ptr<lite::OpLite> act_op,
                            const node_map_type& inputs_map) {
-  VLOG(3) << "invoking ActConverter...";
   auto scope = act_op->scope();
   auto op_info = act_op->op_info();
   auto op_type = op_info->Type();
+  auto unique_op_type = UniqueName(op_type);
+  LOG(INFO) << "Converting " + op_type + "...";
 
   // create act node and set input node from inputs_map
   auto x_var_name = op_info->Input("X").front();
-  auto act_node = std::make_shared<ge::op::Activation>(UniqueName(op_type));
+  auto act_node = std::make_shared<ge::op::Activation>(unique_op_type);
   CHECK(inputs_map.count(x_var_name));
   act_node->set_input_x(*inputs_map.at(x_var_name));
   OpList::Global().add(inputs_map.at(x_var_name));

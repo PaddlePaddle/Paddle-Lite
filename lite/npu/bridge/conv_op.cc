@@ -33,20 +33,16 @@ node_map_type ConvConverter(const std::shared_ptr<lite::OpLite> conv_op,
   auto op_info = conv_op->op_info();
   auto op_type = op_info->Type();
   auto unique_op_type = UniqueName(op_type);
-  LOG(INFO) << "Converting " << op_type << " ... ";
+  LOG(INFO) << "Converting " << op_type << "... ";
 
-  // get input, output and op attributes
+  // get input, filter and op attributes
   auto input_var_name = op_info->Input("Input").front();
   auto input = scope->FindVar(input_var_name)->GetMutable<lite::Tensor>();
   auto input_dims = input->dims();
-  auto output_var_name = op_info->Output("Output").front();
-  auto output = scope->FindVar(output_var_name)->GetMutable<lite::Tensor>();
-  auto output_dims = output->dims();
   auto filter_var_name = op_info->Input("Filter").front();
   auto filter = scope->FindVar(filter_var_name)->GetMutable<lite::Tensor>();
   auto filter_dims = filter->dims();
   CHECK_EQ(input_dims.size(), 4);
-  CHECK_EQ(output_dims.size(), 4);
   CHECK_EQ(filter_dims.size(), 4);
   auto strides = op_info->GetAttr<std::vector<int>>("strides");
   auto paddings = op_info->GetAttr<std::vector<int>>("paddings");
@@ -89,33 +85,9 @@ node_map_type ConvConverter(const std::shared_ptr<lite::OpLite> conv_op,
     auto* bias = scope->FindVar(bias_var_name)->GetMutable<lite::Tensor>();
     auto channel_size = bias->dims().production();
     CHECK_EQ(channel_size, filter_dims[0]);
-    CHECK_EQ(channel_size, output_dims[1]);
     bias_const_node = std::make_shared<ge::op::Const>(bias_var_name);
-    if (use_depthwise_conv && is_depthwise_mode) {
-      // broadcast bias(1, oc, 1, 1) to (n, oc, oh, ow)
-      ge::TensorDesc bias_desc(
-          ge::Shape(output_dims.Vectorize()), ge::FORMAT_NCHW, ge::DT_FLOAT);
-      ge::TensorPtr bias_tensor = std::make_shared<ge::Tensor>();
-      bias_tensor->SetTensorDesc(bias_desc);
-      auto old_bias_data = bias->mutable_data<float>();
-      std::vector<float> new_bias_data(output_dims.production());
-      int batch_size = output_dims[0];
-      int inner_size = output_dims[2] * output_dims[3];
-      for (int k = 0; k < batch_size; k++) {
-        for (int j = 0; j < channel_size; j++) {
-          for (int i = 0; i < inner_size; i++) {
-            new_bias_data[i + j * inner_size + k * channel_size * inner_size] =
-                old_bias_data[j];
-          }
-        }
-      }
-      bias_tensor->SetData(reinterpret_cast<uint8_t*>(new_bias_data.data()),
-                           new_bias_data.size() * sizeof(float));
-      bias_const_node->set_attr_value(bias_tensor);
-    } else {
-      bias_const_node->set_attr_value(
-          CvtFromLiteTensor(bias, {1, channel_size, 1, 1}));
-    }
+    bias_const_node->set_attr_value(
+        CvtFromLiteTensor(bias, {1, channel_size, 1, 1}));
     OpList::Global().add(bias_const_node);
   }
 
@@ -142,13 +114,11 @@ node_map_type ConvConverter(const std::shared_ptr<lite::OpLite> conv_op,
     OpList::Global().add(depthwise_conv_node);
     conv_node = depthwise_conv_node;
     if (bias_const_node != nullptr) {
-      auto eltwise_add_node =
-          std::make_shared<ge::op::Eltwise>(unique_op_type + "/eltwise_add");
-      eltwise_add_node->set_input_x1(*depthwise_conv_node);
-      eltwise_add_node->set_input_x2(*bias_const_node);
-      eltwise_add_node->set_attr_mode(1);  // 0:product, 1:sum, 2:max
-      OpList::Global().add(eltwise_add_node);
-      conv_node = eltwise_add_node;
+      auto add_node = std::make_shared<ge::op::Add>(unique_op_type + "/add");
+      add_node->set_input_x1(*depthwise_conv_node);
+      add_node->set_input_x2(*bias_const_node);
+      OpList::Global().add(add_node);
+      conv_node = add_node;
     }
   } else {
     auto common_conv_node =
@@ -182,9 +152,9 @@ node_map_type ConvConverter(const std::shared_ptr<lite::OpLite> conv_op,
     relu_node->set_input_x(*conv_node);
     relu_node->set_attr_mode(1);
     OpList::Global().add(relu_node);
-    outputs_map[output_var_name] = relu_node;
+    outputs_map[op_info->Output("Output").front()] = relu_node;
   } else {
-    outputs_map[output_var_name] = conv_node;
+    outputs_map[op_info->Output("Output").front()] = conv_node;
   }
   return outputs_map;
 }

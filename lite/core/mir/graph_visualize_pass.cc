@@ -13,9 +13,11 @@
 // limitations under the License.
 
 #include "lite/core/mir/graph_visualize_pass.h"
+#include <map>
 #include <memory>
 #include <set>
 #include <string>
+#include <utility>
 #include "lite/core/mir/pass_registry.h"
 #include "lite/utils/string.h"
 
@@ -34,7 +36,15 @@ std::string Visualize(mir::SSAGraph* graph) {
 
   int id = 0;
   std::set<std::string> exists_args;
-
+  std::map<int, std::string> graph_col;  // Different colors of subgraphs
+  graph_col.insert({{1, "red"},
+                    {2, "green"},
+                    {3, "cyan"},
+                    {4, "bisque3"},
+                    {5, "coral"},
+                    {6, "darkseagreen1"},
+                    {7, "goldenrod1"},
+                    {8, "darkorchid"}});
   for (auto& node : graph->mutable_nodes()) {
     std::string key;
     if (node.IsArg()) {
@@ -44,7 +54,22 @@ std::string Visualize(mir::SSAGraph* graph) {
     }
 
     if (node.IsStmt()) {
-      dot.AddNode(key, {Dot::Attr("shape", "box")});
+      auto& stmt = node.AsStmt();
+      auto sub_id = stmt.subgraph_id();
+      auto it = graph_col.find(sub_id);
+      if (sub_id > 0 && it != graph_col.end()) {
+        dot.AddNode(key,
+                    {Dot::Attr("shape", "box"),
+                     Dot::Attr("style", "filled"),
+                     Dot::Attr("color", "black"),
+                     Dot::Attr("fillcolor", it->second)});
+      } else {
+        dot.AddNode(key,
+                    {Dot::Attr("shape", "box"),
+                     Dot::Attr("style", "filled"),
+                     Dot::Attr("color", "black"),
+                     Dot::Attr("fillcolor", "yellow")});
+      }
       for (auto& x : node.inlinks) {
         auto name = x->AsArg().name;
         if (!exists_args.count(name)) {
