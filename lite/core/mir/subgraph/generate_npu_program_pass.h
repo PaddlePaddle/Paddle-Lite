@@ -38,21 +38,27 @@ class GenerateNPUProgramPass : public SubgraphProgramPass {
   std::unique_ptr<RuntimeProgram> GenProgram();
 
  protected:
-  void NPUSortHelper(Node* node,
-                     const std::unordered_set<Node*>& nodes_all,
-                     std::unordered_set<const Node*>* visited_nodes,
-                     std::vector<Node*>* ret);
+  // sort nodes to operational sequence
+  void SubgraphSortHelper(Node* node,
+                          const std::unordered_set<Node*>& nodes_all,
+                          std::unordered_set<const Node*>* visited_nodes,
+                          std::vector<Node*>* ret);
 
   // nodes2cvt: op nodes to convert
-  // in_vars_name: graph op's inputs var name
-  // out_vars_name: graph op's outputs var name
-  // vcted_vars:
+  // cvted_vars: converted var nodes
   // nodes2rm: op nodes and var nodes that need to be removed
   void CvtOpNodes(const std::vector<Node*>& nodes2cvt,
-                  std::vector<std::string>* in_vars_name,
-                  std::vector<std::string>* out_vars_name,
-                  lite::npu::bridge::node_map_type* cvted_vars,
-                  std::unordered_set<const Node*>* nodes2rm);
+                  lite::npu::bridge::node_map_type* cvted_vars);
+
+  // achieve input and output vars/cvted_vars;
+  // achieve all nodes to remove
+  void GetIOVars(const std::vector<Node*>& nodes2cvt,
+                 const lite::npu::bridge::node_map_type& cvted_vars,
+                 std::unordered_set<const Node*>* nodes2rm,
+                 std::vector<Node*>* in_vars,
+                 std::vector<Node*>* out_vars,
+                 lite::npu::bridge::node_map_type* in_cvted_vars,
+                 lite::npu::bridge::node_map_type* out_cvted_vars);
 
   void GenNPUGraphOpNode(const std::unique_ptr<SSAGraph>& graph,
                          int sub_id,
