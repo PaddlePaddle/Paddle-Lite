@@ -146,13 +146,6 @@ void GenerateNPUProgramPass::GenNPUGraphOpNode(
             &out_vars,
             &in_cvted_vars,
             &out_cvted_vars);
-  /*
-  LOG(INFO)<<"----before remove: ";
-  Visualize(graph.get());
-  GraphSafeRemoveNodes(graph.get(), nodes2rm);
-  LOG(INFO)<<"----after remove: ";
-  Visualize(graph.get());
-  */
 
   std::vector<std::string> in_vars_name;
   std::vector<std::string> out_vars_name;
