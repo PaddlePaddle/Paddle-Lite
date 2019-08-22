@@ -41,8 +41,8 @@ ge::TensorPtr CvtFromLiteTensor(Tensor* in_tensor,
                                 DataLayoutType in_ltype = DATALAYOUT(kNCHW));
 
 template <typename T>
-ge::TensorPtr CreateTensorAndFillData(T value,
-                                      std::vector<int64_t> shape = {1},
+ge::TensorPtr CreateTensorAndFillData(std::vector<T> data,
+                                      std::vector<int64_t> shape = {},
                                       ge::Format format = ge::FORMAT_NCHW) {
   const std::type_info& info = typeid(T);
   ge::DataType type = ge::DT_FLOAT;
@@ -55,17 +55,33 @@ ge::TensorPtr CreateTensorAndFillData(T value,
   } else {
     LOG(FATAL) << "Unknow value type " << info.name();
   }
+  if (shape.empty()) {
+    shape = {static_cast<int64_t>(data.size())};
+  } else {
+    int size = 1;
+    for (auto i : shape) {
+      size *= i;
+    }
+    CHECK_EQ(data.size(), size);
+  }
   ge::TensorDesc desc(ge::Shape(shape), format, type);
   ge::TensorPtr tensor = std::make_shared<ge::Tensor>();
   tensor->SetTensorDesc(desc);
-  int64_t data_num = 1;
-  for (auto i : shape) {
-    data_num *= i;
-  }
-  std::vector<T> data_value(data_num, value);
-  tensor->SetData(reinterpret_cast<uint8_t*>(data_value.data()),
-                  data_num * sizeof(T));
+  tensor->SetData(reinterpret_cast<uint8_t*>(data.data()),
+                  data.size() * sizeof(T));
   return tensor;
+}
+
+template <typename T>
+ge::TensorPtr CreateTensorAndFillData(T value,
+                                      std::vector<int64_t> shape = {1},
+                                      ge::Format format = ge::FORMAT_NCHW) {
+  int64_t size = 1;
+  for (auto i : shape) {
+    size *= i;
+  }
+  std::vector<T> data(size, value);
+  return CreateTensorAndFillData(data, shape, format);
 }
 
 std::shared_ptr<ge::Operator> CvtNode2Tensor(const lite::mir::Node* arg_node);
