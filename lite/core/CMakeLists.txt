@@ -73,3 +73,18 @@ lite_cc_test(test_type_system SRCS type_system_test.cc DEPS type_system utils)
 lite_cc_test(test_types SRCS types_test.cc DEPS types)
 lite_cc_test(test_memory SRCS memory_test.cc DEPS memory)
 lite_cc_test(test_context SRCS context_test.cc DEPS context)
+
+
+# ----------------------------------------------- NOT CHANGE -----------------------------------------------
+# A trick to generate the paddle_use_kernels.h
+add_custom_command(TARGET kernel POST_BUILD
+  COMMAND python ${CMAKE_SOURCE_DIR}/lite/tools/cmake_tools/parse_kernel_registry.py
+  ${kernels_src_list}
+  ${CMAKE_SOURCE_DIR}/lite/api/paddle_use_kernels.h
+  )
+# A trick to generate the paddle_use_ops.h
+add_custom_command(TARGET op POST_BUILD
+  COMMAND python ${CMAKE_SOURCE_DIR}/lite/tools/cmake_tools/parse_op_registry.py
+  ${ops_src_list}
+  ${CMAKE_SOURCE_DIR}/lite/api/paddle_use_ops.h
+  )
