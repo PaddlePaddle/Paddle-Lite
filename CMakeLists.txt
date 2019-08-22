@@ -44,7 +44,6 @@ find_package(Threads REQUIRED)
 include(simd)
 
 ################################ Exposed Configurations #######################################
-option(WITH_GPU         "Compile PaddlePaddle with NVIDIA GPU"          ${CUDA_FOUND})
 option(WITH_DSO         "Compile PaddlePaddle with dynamic linked CUDA" ON)
 option(WITH_AVX         "Compile PaddlePaddle with AVX intrinsics"      ${AVX_FOUND})
 option(WITH_PYTHON      "Compile PaddlePaddle with python interpreter"  ON)
@@ -52,14 +51,6 @@ option(WITH_TESTING     "Compile PaddlePaddle with unit testing"        OFF)
 option(WITH_MKL         "Compile PaddlePaddle with MKL support."        ${AVX_FOUND})
 option(WITH_ARM_DOTPROD "Compile PaddlePaddle with ARM dot production"  ON)
 option(WITH_SYSTEM_BLAS   "Use system blas library"           OFF)
-option(WITH_DISTRIBUTE  "Compile with distributed support"              OFF)
-option(WITH_BRPC_RDMA     "Use brpc rdma as the rpc protocal"           OFF)
-################################ Internal Configurations #######################################
-option(WITH_PROFILER    "Compile PaddlePaddle with GPU profiler and gperftools"        OFF)
-option(WITH_JEMALLOC    "Compile PaddlePaddle with jemalloc"            OFF)
-option(WITH_COVERAGE    "Compile PaddlePaddle with code coverage"       OFF)
-option(COVERALLS_UPLOAD "Package code coverage data to coveralls"       OFF)
-option(REPLACE_ENFORCE_GLOG "Replace PADDLE_ENFORCE with glog/CHECK for better debug." OFF)
 # TODO(Superjomn) Remove WITH_ANAKIN option if not needed latter.
 if(ANDROID OR IOS OR ARMLINUX)
     set(WITH_GPU OFF CACHE STRING
@@ -172,7 +163,6 @@ include(generic)            # simplify cmake module
 include(ccache)             # set ccache for compilation
 include(util)               # set unittest and link libs
 include(version)            # set PADDLE_VERSION
-
 
 set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O3 -g -DNDEBUG")
 set(CMAKE_C_FLAGS_RELWITHDEBINFO "-O3 -g -DNDEBUG")

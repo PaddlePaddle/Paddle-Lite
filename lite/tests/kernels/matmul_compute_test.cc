@@ -313,8 +313,6 @@ void test_matmul2x2_no_transform(Place place) {
     for (int k : {1, 3, 5}) {
       for (int n : {1, 2, 4, 6}) {
         for (float alpha : {1., 2.}) {
-          LOG(INFO) << "m: " << m << " k: " << k << " n: " << n
-                    << " alpha: " << alpha;
           bool x_transform = false;
           bool y_transform = false;
           std::unique_ptr<arena::TestCase> tester(
