@@ -100,7 +100,8 @@ size_t get_mem_size() {
   return memsize;
 #elif defined(TARGET_IOS)
   // to be implemented
-  printf("not implemented\n");
+  printf("not implemented, set to default 4GB\n");
+  return 4096 * 1024;
 #endif
   return 0;
 }
@@ -190,7 +191,7 @@ void get_cpu_arch(std::vector<ARMArch>* archs, const int cpu_num) {
   }
 #elif defined(TARGET_IOS)
   for (int i = 0; i < cpu_num; ++i) {
-    archs->at(i) = APPLE;
+    archs->at(i) = kAPPLE;
   }
 #endif
 }
@@ -938,6 +939,7 @@ void DeviceInfo::RequestPowerRandLowMode(int shift_num, int thread_num) {
 
 int DeviceInfo::Setup() {
   core_num_ = get_cpu_num();
+  printf("core number: %d\n", core_num_);
   mem_size_ = get_mem_size();
   get_cpu_arch(&archs_, core_num_);
   // set defalut CPU info
@@ -947,10 +949,10 @@ int DeviceInfo::Setup() {
   SetFP32Info(1, 1);
   SetFP16Info(1, 0);
   SetDotInfo(1, 0);
-#ifdef LITE_WITH_LINUX
-  // get max&min freq
   max_freqs_.resize(core_num_);
   min_freqs_.resize(core_num_);
+#ifdef LITE_WITH_LINUX
+  // get max&min freq
   for (int i = 0; i < core_num_; ++i) {
     int max_freq, min_freq;
     get_cpu_max_min_freq(i, &max_freq, &min_freq);
@@ -962,6 +964,30 @@ int DeviceInfo::Setup() {
   if (!SetCPUInfoByName()) {
     SetCPUInfoByProb();
   }
+  core_ids_.resize(core_num_);
+  cluster_ids_.resize(core_num_);
+  for (int i = 0; i < core_num_; ++i) {
+    max_freqs_[i] = 1000000;
+    min_freqs_[i] = 1000000;
+    cluster_ids_[i] = 0;
+  }
+#else
+#ifdef TARGET_IOS
+  dev_name_ = "Apple";
+#else
+  dev_name_ = "Unknown";
+#endif
+  core_ids_.resize(core_num_);
+  cluster_ids_.resize(core_num_);
+  big_core_ids_.resize(core_num_);
+  for (int i = 0; i < core_num_; ++i) {
+    max_freqs_[i] = 1000000;
+    min_freqs_[i] = 1000000;
+    cluster_ids_[i] = 0;
+    core_ids_[i] = i;
+    big_core_ids_[i] = i;
+  }
+#endif
   // output info
   LOG(INFO) << "ARM multiprocessors name: " << dev_name_;
   LOG(INFO) << "ARM multiprocessors number: " << core_num_;
@@ -985,7 +1011,6 @@ int DeviceInfo::Setup() {
     LOG(INFO) << L3_cache_[i] / 1024 << " KB";
   }
   LOG(INFO) << "Total memory: " << mem_size_ << "KB";
-#endif
   // set default run mode
   SetRunMode(LITE_POWER_NO_BIND, 1);  // use single thread by default
   return 0;
@@ -1061,7 +1086,7 @@ void DeviceInfo::SetCache(int l1size, int l2size, int l3size) {
   workspace_.Resize({2 * (l1size + l2size)});
 }
 
-bool DeviceInfo::ExtendWorkspace(size_t size) {
+bool DeviceInfo::ExtendWorkspace(int size) {
   workspace_.Resize({size + llc_size()});
   workspace_.mutable_data<int8_t>();
   return true;
