@@ -17,6 +17,7 @@ if(LITE_WITH_FPGA)
 endif()
 
 message(STATUS "get ops ${ops}")
+message(STATUS "get X86 kernels ${x86_kernels}")
 message(STATUS "get Host kernels ${host_kernels}")
 message(STATUS "get ARM kernels ${arm_kernels}")
 message(STATUS "get NPU kernels ${npu_kernels}")
