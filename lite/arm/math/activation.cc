@@ -632,6 +632,40 @@ void act_log(const float* din, float* dout, int size, int threads) {
   }
 }
 
+template <>
+void act_exp(const float* din, float* dout, int size, int threads) {
+  int nums_per_thread = size / threads;
+  int remain = size - threads * nums_per_thread;
+  int neon_loop_cnt_dim4 = nums_per_thread >> 2;
+  int neon_loop_remain_dim4 = nums_per_thread - (neon_loop_cnt_dim4 << 2);
+
+  float32x4_t vzero = vdupq_n_f32(0.f);
+#pragma omp parallel for
+  for (int i = 0; i < threads; ++i) {
+    float32x4_t exp_vec = vdupq_n_f32(0.0f);
+    const float* ptr_in_thread = din + i * nums_per_thread;
+    float* ptr_out_thread = dout + i * nums_per_thread;
+    for (int k = 0; k < neon_loop_cnt_dim4; ++k) {
+      exp_vec = exp_ps(vld1q_f32(ptr_in_thread));
+      vst1q_f32(ptr_out_thread, exp_vec);
+      ptr_out_thread += 4;
+      ptr_in_thread += 4;
+    }
+    for (int j = 0; j < neon_loop_remain_dim4; ++j) {
+      ptr_out_thread[0] = expf(ptr_in_thread[0]);
+      ptr_in_thread++;
+      ptr_out_thread++;
+    }
+  }
+  float* ptr_out = dout + threads * nums_per_thread;
+  const float* ptr_in = din + threads * nums_per_thread;
+  for (int j = 0; j < remain; ++j) {
+    ptr_out[0] = expf(ptr_in[0]);
+    ptr_in++;
+    ptr_out++;
+  }
+}
+
 }  // namespace math
 }  // namespace arm
 }  // namespace lite

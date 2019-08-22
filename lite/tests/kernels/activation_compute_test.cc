@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <gtest/gtest.h>
+#include <cmath>
 #include <string>
 #include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
@@ -29,8 +30,11 @@ enum activation_type_test {
   SIGMOID,
   TANH,
   SWISH,
-  RELU6
+  RELU6,
+  LOG,
+  EXP
 };
+
 class ActivationComputeTester : public arena::TestCase {
  protected:
   // common attributes for this op.
@@ -154,6 +158,18 @@ class ActivationComputeTester : public arena::TestCase {
         }
         break;
       }
+      case LOG: {
+        for (int i = 0; i < dims_.production(); i++) {
+          output_data[i] = std::log(x_data[i]);
+        }
+        break;
+      }
+      case EXP: {
+        for (int i = 0; i < dims_.production(); i++) {
+          output_data[i] = std::exp(x_data[i]);
+        }
+        break;
+      }
       default:
         LOG(INFO) << "the type of activation is unknow.";
     }
@@ -182,6 +198,7 @@ class ActivationComputeTester : public arena::TestCase {
     std::vector<float> data(dims_.production());
     for (int i = 0; i < dims_.production(); i++) {
       float sign = i % 3 == 0 ? -1.0f : 1.0f;
+      sign = type_ == "log" ? 1 : sign;
       data[i] = sign * static_cast<float>(i % 128) * 0.013f + 0.001;
     }
     SetCommonTensor(input_, dims_, data.data());
@@ -417,7 +434,7 @@ TEST(Activation_swish, precision) {
 }
 
 TEST(Activation_relu6, precision) {
-  LOG(INFO) << "test relu6 op";
+  LOG(INFO) << "test relu6 op...";
 #ifdef LITE_WITH_ARM
   Place place(TARGET(kARM));
 
@@ -445,5 +462,62 @@ TEST(Activation_relu6, precision) {
   }
 #endif
 }
+
+TEST(Activation_log, precision) {
+  LOG(INFO) << "test log op";
+#ifdef LITE_WITH_ARM
+  Place place(TARGET(kARM));
+
+  for (auto n : {1, 3}) {
+    for (auto c : {3, 6}) {
+      for (auto h : {9, 18}) {
+        for (auto w : {9, 18}) {
+          std::unique_ptr<arena::TestCase> tester(new ActivationComputeTester(
+              place,
+              "def",
+              0.01,
+              6.,
+              "all",
+              0.,
+              DDim(std::vector<int64_t>({n, c, h, w})),
+              "log",
+              LOG));
+          arena::Arena arena(std::move(tester), place, 2e-5);
+          arena.TestPrecision();
+        }
+      }
+    }
+  }
+#endif
+}
+
+TEST(Activation_exp, precision) {
+  LOG(INFO) << "test exp op";
+#ifdef LITE_WITH_ARM
+  Place place(TARGET(kARM));
+
+  for (auto n : {1, 3}) {
+    for (auto c : {3, 6}) {
+      for (auto h : {9, 18}) {
+        for (auto w : {9, 18}) {
+          std::unique_ptr<arena::TestCase> tester(new ActivationComputeTester(
+              place,
+              "def",
+              0.01,
+              6.,
+              "all",
+              0.,
+              DDim(std::vector<int64_t>({n, c, h, w})),
+              "exp",
+              EXP));
+          arena::Arena arena(std::move(tester), place, 2e-5);
+          arena.TestPrecision();
+        }
+      }
+    }
+  }
+#endif
+}
+
 }  // namespace lite
 }  // namespace paddle
