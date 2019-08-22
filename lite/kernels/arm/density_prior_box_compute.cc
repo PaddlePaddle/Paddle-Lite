@@ -48,13 +48,12 @@ inline void ExpandAspectRatios(const std::vector<float>& input_aspect_ratior,
 
 void DensityPriorBoxCompute::Run() {
   auto& param = Param<operators::DensityPriorBoxParam>();
-
   bool is_flip = param.flip;
   bool is_clip = param.clip;
   std::vector<float> min_size = param.min_sizes;
   std::vector<float> fixed_size = param.fixed_sizes;
   std::vector<float> fixed_ratio = param.fixed_ratios;
-  std::vector<float> density_size = param.density_sizes;
+  auto density_size = param.density_sizes;
   std::vector<float> max_size = param.max_sizes;
   std::vector<float> aspect_ratio = param.aspect_ratios;
   std::vector<float> variance = param.variances_;

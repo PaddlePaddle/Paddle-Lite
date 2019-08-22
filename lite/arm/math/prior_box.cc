@@ -51,7 +51,7 @@ void density_prior_box(const lite::Tensor* input,
                        const std::vector<float>& min_size_,
                        const std::vector<float>& fixed_size_,
                        const std::vector<float>& fixed_ratio_,
-                       const std::vector<float>& density_size_,
+                       const std::vector<int>& density_size_,
                        const std::vector<float>& max_size_,
                        const std::vector<float>& aspect_ratio_,
                        const std::vector<float>& variance_,
@@ -82,14 +82,12 @@ void density_prior_box(const lite::Tensor* input,
     img_width = image->dims()[3];
     img_height = image->dims()[2];
   }
-
   float step_w = step_w_;
   float step_h = step_h_;
   if (step_w == 0 || step_h == 0) {
     step_w = static_cast<float>(img_width) / width;
     step_h = static_cast<float>(img_height) / height;
   }
-
   float offset = offset_;
   int step_average = static_cast<int>((step_w + step_h) * 0.5);  // add
   int channel_size = height * width * prior_num_ * 4;
@@ -343,7 +341,7 @@ void prior_box(const lite::Tensor* input,
                     min_size,
                     std::vector<float>(),
                     std::vector<float>(),
-                    std::vector<float>(),
+                    std::vector<int>(),
                     max_size,
                     aspect_ratio,
                     variance,

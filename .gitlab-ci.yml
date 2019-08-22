@@ -1,0 +1,258 @@
+before_script:
+  - env
+  - export CI_USER_DIR=$(pwd)
+
+  # prepare ccache
+  - apt install ccache
+
+  # for proxy
+  - export http_proxy=$CI_PROXY
+  - export https_proxy=$CI_PROXY
+
+  # merge the latest code
+  - git config --global user.email "you@example.com"
+  - git config --global user.name "Your Name"
+  - git reset --hard HEAD # ignore any local changes in CI node.
+  # store the commit for latter PR approval
+  #- export LITE_COMMIT=$(git log -n1 --pretty=format:"%h")
+  - git fetch origin incubate/lite
+  - git status -s
+  - git branch
+  - git merge --no-ff origin/incubate/lite
+  #- git checkout origin/incubate/lite && git log -1 && 
+
+
+image: $SERVER_LITE_DOCKER_IMAGE
+
+stages:
+  - ci
+  - build_server
+  - build_mobile
+  - approval_check
+
+check:prebuilt:
+    tags:
+        - lite
+    stage: ci
+    script:
+        # prepare for pre-commit
+        - rm -rf ~/.pip
+        - pip install pre-commit
+        - pre-commit install
+
+        - ./lite/tools/ci_build.sh check_style
+
+    cache:
+        key: check_style
+        paths:
+            - $CI_USER_DIR/.cache
+
+build:server:
+    tags:
+        - lite
+    image: $SERVER_LITE_DOCKER_IMAGE
+    stage: build_server
+    cache:
+        key: server_thirdparty
+        paths:
+            - build/third_party
+            - ~/.ccache
+            - $CI_PROJECT_DIR/_build_server_ccache
+    script:
+        # customize ccache path for specifying runner cache
+        - export CCACHE_DIR=$CI_PROJECT_DIR/_build_server_ccache
+        # run build and test
+        - mkdir -p build
+        - cd build
+        - ../lite/tools/ci_build.sh cmake_x86
+        #- make extern_eigen3
+        #- make extern_boost
+        - make framework_proto
+        #- make extern_warpctc
+        - cd ..
+        - export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$PWD/build/third_party/install/mklml/lib
+        - ./lite/tools/ci_build.sh build_test_server
+    dependencies:
+        - check:prebuilt
+
+build:mobile_android:
+    tags:
+        - lite
+    stage: build_mobile
+    image: $MOBILE_LITE_DOCKER_IMAGE
+    cache:
+        key: mobile_thirdparty
+        paths:
+            - build.lite.android.armv8.gcc/third_party
+            - build.lite.android.armv7.gcc/third_party
+            - ~/.ccache
+            - $CI_PROJECT_DIR/build_mobile_ccache
+    script:
+        - export CCACHE_DIR=$CI_PROJECT_DIR/build_mobile_ccache
+        - ./lite/tools/ci_build.sh build_test_arm_subtask_android
+
+    dependencies:
+      - check:prebuilt
+      - build:server
+
+build:mobile_android_cl:
+    tags:
+        - lite
+    stage: build_mobile
+    image: $MOBILE_LITE_DOCKER_IMAGE
+    cache:
+        key: mobile_thirdparty
+        paths:
+            - build.lite.android.armv8.gcc.opencl/third_party
+            - build.lite.android.armv7.gcc.opencl/third_party
+            - ~/.ccache
+            - $CI_PROJECT_DIR/build_mobile_ccache_cl
+    script:
+        - export CCACHE_DIR=$CI_PROJECT_DIR/build_mobile_ccache_cl
+        - ./lite/tools/ci_build.sh build_test_arm_opencl
+
+    dependencies:
+      - check:prebuilt
+      - build:server
+
+build:mobile_armlinux:
+    tags:
+        - lite
+    stage: build_mobile
+    image: $MOBILE_LITE_DOCKER_IMAGE
+    cache:
+        key: mobile_thirdparty
+        paths:
+            - build.lite.armlinux.armv8.gcc
+            - build.lite.armlinux.armv7.gcc
+            - build.lite.armlinux.armv7hf.gcc
+            - ~/.ccache
+            - $CI_PROJECT_DIR/build_mobile_ccache2
+    script:
+        - export CCACHE_DIR=$CI_PROJECT_DIR/build_mobile_ccache2
+        - ./lite/tools/ci_build.sh build_test_arm_subtask_armlinux
+
+    dependencies:
+        - build:server
+        - check:prebuilt
+
+build:mobile_model_mobilenetv1:
+    tags:
+        - lite
+    stage: build_mobile
+    image: $MOBILE_LITE_DOCKER_IMAGE
+
+    script:
+        - export CCACHE_DIR=$CI_PROJECT_DIR/build_mobile_model_mobilenetv1
+        - ./lite/tools/ci_build.sh build_test_arm_model_mobilenetv1
+
+    dependencies:
+        - build:server
+        - check:prebuilt
+
+    cache:
+        key: mobile_thirdparty
+        paths:
+            - build.lite.android.armv8.gcc
+            - ~/.ccache
+            - $CI_PROJECT_DIR/build_mobile_model_mobilenetv1
+
+build:mobile_model_mobilenetv2:
+    tags:
+        - lite
+    stage: build_mobile
+    image: $MOBILE_LITE_DOCKER_IMAGE
+
+    script:
+        - export CCACHE_DIR=$CI_PROJECT_DIR/build_mobile_model_mobilenetv2
+        - ./lite/tools/ci_build.sh build_test_arm_model_mobilenetv2
+
+    dependencies:
+        - build:server
+        - check:prebuilt
+
+    cache:
+        key: mobile_thirdparty
+        paths:
+            - build.lite.android.armv8.gcc
+            - ~/.ccache
+            - $CI_PROJECT_DIR/build_mobile_model_mobilenetv2
+
+build:mobile_model_resnet50:
+    tags:
+        - lite
+    stage: build_mobile
+    image: $MOBILE_LITE_DOCKER_IMAGE
+
+    script:
+        - export CCACHE_DIR=$CI_PROJECT_DIR/build_mobile_model_resnet50
+        - ./lite/tools/ci_build.sh build_test_arm_model_resnet50
+
+    dependencies:
+        - build:server
+        - check:prebuilt
+
+    cache:
+        key: mobile_thirdparty
+        paths:
+            - build.lite.android.armv8.gcc
+            - ~/.ccache
+            - $CI_PROJECT_DIR/build_mobile_model_resnet50
+
+build:mobile_model_inceptionv4:
+    tags:
+        - lite
+    stage: build_mobile
+    image: $MOBILE_LITE_DOCKER_IMAGE
+
+    script:
+        - export CCACHE_DIR=$CI_PROJECT_DIR/build_mobile_model_inceptionv4
+        - ./lite/tools/ci_build.sh build_test_arm_model_inceptionv4
+
+    dependencies:
+        - build:server
+        - check:prebuilt
+
+    cache:
+        key: mobile_thirdparty
+        paths:
+            - build.lite.android.armv8.gcc
+            - ~/.ccache
+            - $CI_PROJECT_DIR/build_mobile_model_inceptionv4
+
+# build:mobile_publish:
+#     tags:
+#         - lite
+#     stage: build_mobile
+#     image: $MOBILE_LITE_DOCKER_IMAGE
+# 
+#     script:
+#         - export CCACHE_DIR=$CI_PROJECT_DIR/mobile_publish
+#         - ./lite/tools/ci_build.sh mobile_publish
+# 
+#     dependencies:
+#         - build:server
+#         - check:prebuilt
+# 
+#     cache:
+#         key: mobile_thirdparty
+#         paths:
+#             - build.lite.android.armv8.gcc
+#             - ~/.ccache
+#             - $CI_PROJECT_DIR/mobile_publish
+
+approval_check:
+  tags:
+    - lite
+  stage: approval_check
+  script:
+    - ./lite/tools/gitlab_review.sh
+  dependencies:
+    - build:server
+    - build:mobile_android
+    - build:mobile_android_cl
+    - build:mobile_armlinux
+    - build:mobile_model_mobilenetv1
+    - build:mobile_model_mobilenetv2
+    - build:mobile_model_resnet50
+    - build:mobile_model_inceptionv4
