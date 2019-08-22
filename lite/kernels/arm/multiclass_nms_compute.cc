@@ -78,12 +78,19 @@ void MulticlassNmsCompute::Run() {
     }
   }
   lod_info.push_back(num);
-
   (*lod).push_back(lod_info);
-  param.out->Resize({static_cast<int64_t>(result_corrected.size() / 6), 6});
-  float* out = param.out->mutable_data<float>();
-  std::memcpy(
-      out, result_corrected.data(), sizeof(float) * result_corrected.size());
+
+  if (result_corrected.empty()) {
+    (*lod).clear();
+    (*lod).push_back(std::vector<uint64_t>({0, 1}));
+    param.out->Resize({static_cast<int64_t>(1)});
+    param.out->mutable_data<float>()[0] = -1.;
+  } else {
+    param.out->Resize({static_cast<int64_t>(result_corrected.size() / 6), 6});
+    float* out = param.out->mutable_data<float>();
+    std::memcpy(
+        out, result_corrected.data(), sizeof(float) * result_corrected.size());
+  }
 }
 
 }  // namespace arm

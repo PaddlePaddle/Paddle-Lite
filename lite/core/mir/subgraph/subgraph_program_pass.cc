@@ -85,21 +85,31 @@ void SubgraphProgramPass::ChangeAllOutConnectedID(Node* node,
     for (auto& i : node->outlinks) {
       if (!i->IsStmt()) return;
       auto& stmt = i->AsStmt();
-      if (stmt.subgraph_id() != from_id) {
+      if (stmt.subgraph_id() < from_id) {
         all_out_op_supported = false;
       }
     }
     if (!all_out_op_supported) {
       return;
     }
+    nodes2rm_[to_id].insert(node);
     for (auto& i : node->outlinks) {
       CHECK(i->IsStmt());
       auto& stmt = i->AsStmt();
-      CHECK_EQ(stmt.subgraph_id(), from_id);
-      stmt.SetSubgraphID(to_id);
-      nodes2rm_[to_id].insert(i);
-      for (auto& o : i->outlinks) {
-        ChangeAllOutConnectedID(o, to_id, from_id);
+      if (stmt.subgraph_id() == from_id) {
+        stmt.SetSubgraphID(to_id);
+        nodes2rm_[to_id].insert(i);
+        for (auto& o : i->outlinks) {
+          for (auto& j : o->outlinks) {
+            if (j->IsStmt()) {
+              auto& Nstmt = j->AsStmt();
+              if (Nstmt.subgraph_id() < from_id) {
+                o_nodes_[to_id].insert(o);
+              }
+            }
+          }
+          ChangeAllOutConnectedID(o, to_id, from_id);
+        }
       }
     }
   }
@@ -109,11 +119,61 @@ int SubgraphProgramPass::FuseSubgraphID(
     const std::unique_ptr<SSAGraph>& graph) {
   int sub_id = 1;  // id start from 1 not 0
   for (auto& item : graph->StmtTopologicalOrder()) {
+    bool inputvar = 0;
     if (!item->IsStmt()) continue;
     auto& stmt = item->AsStmt();
+    if (stmt.subgraph_id() == -1) {
+      for (auto& i : item->outlinks) {
+        for (auto& j : i->outlinks) {
+          if (j->IsStmt()) {
+            auto& jstmt = j->AsStmt();
+            // LOG(INFO) << "initial: "<<jstmt.op_type()<<"
+            // ："<<jstmt.subgraph_id();
+            if (jstmt.subgraph_id() == 0) inputvar = 1;
+          }
+        }
+      }
+      // LOG(INFO) << "initial: "<<stmt.op_type()<<" ："<<stmt.subgraph_id();
+      if (inputvar == 1) {
+        for (auto& i : item->outlinks) i_nodes_[sub_id].insert(i);
+      }
+    }
     if (stmt.subgraph_id() != 0) continue;
     ChangeAllOutConnectedID(item, sub_id);
     sub_id++;
+  }
+  for (auto& i : nodes2rm_) {
+    for (auto& item : i.second) {
+      if (item->IsStmt()) {
+        auto& stmt = item->AsStmt();
+        LOG(INFO) << "nodes2rm_:" << stmt.op_type();
+      } else if (item->IsArg()) {
+        auto& arg = item->AsArg();
+        LOG(INFO) << "nodes2rm_:" << arg.name;
+      }
+    }
+  }
+  for (auto& i : i_nodes_) {
+    for (auto& item : i.second) {
+      if (item->IsStmt()) {
+        auto& stmt = item->AsStmt();
+        LOG(INFO) << "i_nodes_: " << i.first << " " << stmt.op_type();
+      } else if (item->IsArg()) {
+        auto& arg = item->AsArg();
+        LOG(INFO) << "i_nodes_: " << i.first << " " << arg.name;
+      }
+    }
+  }
+  for (auto& i : o_nodes_) {
+    for (auto& item : i.second) {
+      if (item->IsStmt()) {
+        auto& stmt = item->AsStmt();
+        LOG(INFO) << "o_nodes_:" << i.first << " " << stmt.op_type();
+      } else if (item->IsArg()) {
+        auto& arg = item->AsArg();
+        LOG(INFO) << "o_nodes_: " << i.first << " " << arg.name;
+      }
+    }
   }
   return sub_id - 1;
 }
@@ -129,7 +189,6 @@ int SubgraphProgramPass::FuseSubgraph(
   LOG(INFO) << "detected " << num_subgraph << " subgraph";
   return num_subgraph;
 }
-
 }  // namespace subgraph
 }  // namespace mir
 }  // namespace lite
