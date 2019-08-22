@@ -21,6 +21,16 @@ namespace paddle {
 namespace lite {
 namespace naive_buffer {
 
+std::string ParamDesc::Name() const {
+  return desc_->GetField<StringBuilder>("name").data();
+}
+
+void ParamDesc::SetName(const std::string& name) {
+  auto* build = desc_->GetMutableField<StringBuilder>("name");
+  CHECK(build);
+  build->set(name);
+}
+
 uint32_t ParamDesc::ModelVersion() const { return Version("model_version"); }
 
 void ParamDesc::SetModelVersion(uint32_t version) {

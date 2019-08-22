@@ -40,6 +40,10 @@ class ParamDesc {
 
   const proto::ParamDesc &ReadonlyProto() const { return *desc_; }
 
+  std::string Name() const;
+
+  void SetName(const std::string &name);
+
   uint32_t ModelVersion() const;
 
   void SetModelVersion(uint32_t version);

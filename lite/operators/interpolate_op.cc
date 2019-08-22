@@ -67,9 +67,12 @@ bool InterpolateOp::InferShape() const {
 
 bool InterpolateOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
   auto X = op_desc.Input("X").front();
-  if (op_desc.Input("OutSize").size() > 0) {
-    auto OutSize = op_desc.Input("OutSize").front();
-    param_.OutSize = scope->FindVar(OutSize)->GetMutable<lite::Tensor>();
+  if (op_desc.HasInput("OutSize")) {
+    auto out_size_var_names = op_desc.Input("OutSize");
+    if (out_size_var_names.size() > 0) {
+      param_.OutSize = scope->FindVar(out_size_var_names.front())
+                           ->GetMutable<lite::Tensor>();
+    }
   } else {
     param_.OutSize = nullptr;
   }
