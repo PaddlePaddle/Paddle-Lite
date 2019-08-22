@@ -93,6 +93,8 @@ void test(int argc, char *argv[]) {
     var_names.push_back(var_name);
   }
   arg_index += var_count;
+  bool check_shape = std::stoi(argv[arg_index]) == 1;
+  arg_index++;
 
   auto time1 = time();
   if (paddle_mobile.Load("./checked_model/model", "./checked_model/params",
@@ -194,6 +196,11 @@ void test(int argc, char *argv[]) {
 
       auto data = tensor_data;
       std::string sample = "";
+      if (check_shape) {
+        for (int i = 0; i < cl_image->dims().size(); i++) {
+          sample += " " + std::to_string(cl_image->dims()[i]);
+        }
+      }
       if (!is_sample_step) {
         sample_step = len / sample_num;
       }
@@ -219,6 +226,11 @@ void test(int argc, char *argv[]) {
       if (out->type() == type_id<int>()) {
         auto data = out->data<int>();
         std::string sample = "";
+        if (check_shape) {
+          for (int i = 0; i < out->dims().size(); i++) {
+            sample += " " + std::to_string(out->dims()[i]);
+          }
+        }
         if (!is_sample_step) {
           sample_step = len / sample_num;
         }
@@ -233,6 +245,11 @@ void test(int argc, char *argv[]) {
       } else if (out->type() == type_id<float>()) {
         auto data = out->data<float>();
         std::string sample = "";
+        if (check_shape) {
+          for (int i = 0; i < out->dims().size(); i++) {
+            sample += " " + std::to_string(out->dims()[i]);
+          }
+        }
         if (!is_sample_step) {
           sample_step = len / sample_num;
         }
