@@ -62,27 +62,29 @@ void slice(const Dtype* input,
   }
   int out_num = out_dims[in_dims.size() - 1];
   for (int i = in_dims.size() - 2; i >= 0; i--) {
-    dst_step[i] = out_dims[i] * dst_step[i + 1];
-    src_step[i] = in_dims[i] * src_step[i + 1];
+    dst_step[i] = out_dims[i + 1] * dst_step[i + 1];
+    src_step[i] = in_dims[i + 1] * src_step[i + 1];
     out_num *= out_dims[i];
   }
 
   for (int dst_id = 0; dst_id < out_num; dst_id++) {
     int src_id = 0;
+    int t_dst_id = dst_id;
     for (int j = 0; j < out_dims.size(); j++) {
-      int cur_id = dst_id / dst_step[j];
+      int cur_id = t_dst_id / dst_step[j];
+      t_dst_id %= dst_step[j];
       src_id += (cur_id + real_starts[j]) * src_step[j];
     }
     out[dst_id] = input[src_id];
   }
 }
 
-template void slice(const int* input,
+template void slice(const float* input,
                     std::vector<int64_t> dims,
                     std::vector<int> axes,
                     std::vector<int> starts,
                     std::vector<int> ends,
-                    int* out,
+                    float* out,
                     Context<TARGET(kARM)>* ctx);
 
 }  // namespace math
