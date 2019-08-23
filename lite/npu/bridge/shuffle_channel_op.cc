@@ -30,22 +30,24 @@ namespace bridge {
 node_map_type ShuffleChannelConverter(
     const std::shared_ptr<lite::OpLite> shuffle_channel_op,
     const node_map_type& inputs_map) {
-  LOG(INFO) << "converting shuffle_channel...";
-  lite::Scope* scope = shuffle_channel_op->scope();
-  const lite::OpInfo* op_info = shuffle_channel_op->op_info();
+  auto scope = shuffle_channel_op->scope();
+  auto op_info = shuffle_channel_op->op_info();
+  auto op_type = op_info->Type();
+  auto unique_op_type = UniqueName(op_type);
+  LOG(INFO) << "Converting " + op_type + "...";
 
-  std::shared_ptr<ge::op::ShuffleChannel> output_node =
-      std::make_shared<ge::op::ShuffleChannel>(UniqueName("shuffle_channel"));
+  std::shared_ptr<ge::op::ShuffleChannel> shuffle_channel_node =
+      std::make_shared<ge::op::ShuffleChannel>(unique_op_type);
   auto x_var_name = op_info->Input("X").front();
 
-  output_node->set_input_x(*inputs_map.at(x_var_name));
-  output_node->set_attr_group(op_info->GetAttr<int>("group"));
+  shuffle_channel_node->set_input_x(*inputs_map.at(x_var_name));
+  shuffle_channel_node->set_attr_group(op_info->GetAttr<int>("group"));
 
   OpList::Global().add(inputs_map.at(x_var_name));
-  OpList::Global().add(output_node);
+  OpList::Global().add(shuffle_channel_node);
 
   node_map_type outputs_map;
-  outputs_map[op_info->Output("Out").front()] = output_node;
+  outputs_map[op_info->Output("Out").front()] = shuffle_channel_node;
   return outputs_map;
 }
 
