@@ -26,6 +26,7 @@ repos:
         entry: bash ./tools/codestyle/clang_format.hook -i
         language: system
         files: \.(c|cc|cxx|cpp|cu|h|hpp|hxx|proto)$
+        exclude: (?!.*mobile)^.*$ | (?!.*metal)^.*$ | (?!.*web)^.*$
 -   repo: local
     hooks:
     -   id: cpplint-cpp-source
@@ -34,6 +35,7 @@ repos:
         entry: bash ./tools/codestyle/cpplint_pre_commit.hook
         language: system
         files: \.(c|cc|cxx|cpp|cu|h|hpp|hxx)$
+        exclude: (?!.*mobile)^.*$ | (?!.*metal)^.*$ | (?!.*web)^.*$
 #-   repo: local
     #hooks:
     #-   id: pylint-doc-string
@@ -49,4 +51,4 @@ repos:
         entry: python ./tools/codestyle/copyright.hook
         language: system
         files: \.(c|cc|cxx|cpp|cu|h|hpp|hxx|proto|py)$
-        exclude: (?!.*third_party)^.*$ | (?!.*book)^.*$
+        exclude: (?!.*third_party)^.*$ | (?!.*book)^.*$ | (?!.*mobile)^.*$ | (?!.*metal)^.*$ | (?!.*web)^.*$
