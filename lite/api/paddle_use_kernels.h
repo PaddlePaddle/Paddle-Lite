@@ -21,6 +21,8 @@
 #ifndef LITE_WITH_FPGA
 USE_LITE_KERNEL(feed, kHost, kAny, kAny, def);
 USE_LITE_KERNEL(fetch, kHost, kAny, kAny, def);
+USE_LITE_KERNEL(flatten, kHost, kAny, kAny, def);
+USE_LITE_KERNEL(flatten2, kHost, kAny, kAny, def);
 #else
 USE_LITE_KERNEL(feed, kFPGA, kFP16, kNHWC, def);
 USE_LITE_KERNEL(fetch, kFPGA, kFP16, kNHWC, def);
