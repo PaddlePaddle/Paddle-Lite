@@ -1,3 +1,213 @@
+set(LITE_URL "http://paddle-inference-dist.bj.bcebos.com" CACHE STRING "inference download url")
+
+function(lite_download_and_uncompress INSTALL_DIR URL FILENAME)
+    message(STATUS "Download inference test stuff from ${URL}/${FILENAME}")
+    string(REGEX REPLACE "[-%.]" "_" FILENAME_EX ${FILENAME})
+    set(EXTERNAL_PROJECT_NAME "extern_lite_download_${FILENAME_EX}")
+    set(UNPACK_DIR "${INSTALL_DIR}/src/${EXTERNAL_PROJECT_NAME}")
+    ExternalProject_Add(
+            ${EXTERNAL_PROJECT_NAME}
+            ${EXTERNAL_PROJECT_LOG_ARGS}
+            PREFIX                ${INSTALL_DIR}
+            DOWNLOAD_COMMAND      wget --no-check-certificate -q -O ${INSTALL_DIR}/${FILENAME} ${URL}/${FILENAME} && ${CMAKE_COMMAND} -E tar xzf ${INSTALL_DIR}/${FILENAME}
+            DOWNLOAD_DIR          ${INSTALL_DIR}
+            DOWNLOAD_NO_PROGRESS  1
+            CONFIGURE_COMMAND     ""
+            BUILD_COMMAND         ""
+            UPDATE_COMMAND        ""
+            INSTALL_COMMAND       ""
+    )
+endfunction()
+
+function (lite_deps TARGET)
+  set(options "")
+  set(oneValueArgs "")
+  set(multiValueArgs DEPS X86_DEPS CUDA_DEPS ARM_DEPS PROFILE_DEPS LIGHT_DEPS HVY_DEPS CL_DEPS FPGA_DEPS NPU_DEPS ARGS)
+  cmake_parse_arguments(lite_deps "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+
+  set(deps ${lite_deps_DEPS})
+
+  if(LITE_WITH_X86)
+    foreach(var ${lite_deps_X86_DEPS})
+      set(deps ${deps} ${var})
+    endforeach(var)
+  endif()
+
+  if(LITE_WITH_CUDA)
+    foreach(var ${lite_deps_CUDA_DEPS})
+      set(deps ${deps} ${var})
+    endforeach(var)
+  endif()
+
+  if(LITE_WITH_ARM)
+    foreach(var ${lite_deps_ARM_DEPS})
+      set(deps ${deps} ${var})
+    endforeach(var)
+  endif()
+
+  if(LITE_WITH_PROFILE)
+    foreach(var ${lite_deps_PROFILE_DEPS})
+      set(deps ${deps} ${var})
+    endforeach(var)
+  endif()
+
+  if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
+    foreach(var ${lite_deps_LIGHT_DEPS})
+      set(deps ${deps} ${var})
+    endforeach(var)
+  endif()
+
+  if (NOT LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
+    foreach(var ${lite_deps_HVY_DEPS})
+      set(deps ${deps} ${var})
+    endforeach(var)
+  endif()
+
+  if (LITE_WITH_OPENCL)
+    foreach(var ${lite_deps_CL_DEPS})
+      set(deps ${deps} ${var})
+    endforeach(var)
+  endif()
+
+  if (LITE_WITH_FPGA)
+    foreach(var ${lite_deps_FPGA_DEPS})
+      set(deps ${deps} ${var})
+    endforeach(var)
+  endif()
+
+  if (LITE_WITH_NPU)
+    foreach(var ${lite_deps_NPU_DEPS})
+      set(deps ${deps} ${var})
+    endforeach(var)
+  endif()
+
+  set(${TARGET} ${deps} PARENT_SCOPE)
+endfunction()
+
+
+# A fake target to include all the libraries and tests the lite module depends.
+add_custom_target(lite_compile_deps COMMAND echo 1)
+
+# Add names for lite libraries for latter compile. We use this name list to avoid compiling
+# the whole fluid project to accelerate the compile speed.
+set(offline_lib_registry_file "${CMAKE_BINARY_DIR}/lite_libs.txt")
+file(WRITE ${offline_lib_registry_file} "") # clean
+
+# cc_library with branch support.
+# The branches:
+#  X86_DEPS: works only when LITE_WITH_X86 is ON.
+#  CUDA_DEPS:     LITE_WITH_CUDA
+#  ARM_DEPS:      LITE_WITH_ARM
+#  PROFILE_DEPS:  LITE_WITH_PROFILE
+#  LIGHT_DEPS:    LITE_WITH_LIGHT_WEIGHT_FRAMEWORK
+#  HVY_DEPS:      NOT LITE_WITH_LIGHT_WEIGHT_FRAMEWORK
+#  EXCLUDE_COMPILE_DEPS: TARGET will not be included in lite_compile_deps if this is not None
+function(lite_cc_library TARGET)
+    set(options SHARED shared STATIC static MODULE module)
+    set(oneValueArgs "")
+    set(multiValueArgs SRCS DEPS X86_DEPS CUDA_DEPS CL_DEPS NPU_DEPS ARM_DEPS FPGA_DEPS PROFILE_DEPS LIGHT_DEPS
+      HVY_DEPS EXCLUDE_COMPILE_DEPS ARGS)
+    cmake_parse_arguments(args "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+
+    set(deps "")
+    lite_deps(deps
+            DEPS ${args_DEPS}
+            X86_DEPS ${args_X86_DEPS}
+            CUDA_DEPS ${args_CUDA_DEPS}
+            CL_DEPS ${args_CL_DEPS}
+            NPU_DEPS ${args_NPU_DEPS}
+            ARM_DEPS ${args_ARM_DEPS}
+            FPGA_DEPS ${args_FPGA_DEPS}
+            PROFILE_DEPS ${args_PROFILE_DEPS}
+            LIGHT_DEPS ${args_LIGHT_DEPS}
+            HVY_DEPS ${args_HVY_DEPS}
+            )
+
+    if (args_SHARED OR ARGS_shared)
+        cc_library(${TARGET} SRCS ${args_SRCS} DEPS ${deps} ${args_DEPS} SHARED)
+    elseif (args_MODULE OR ARGS_module)
+        add_library(${TARGET} MODULE ${args_SRCS})
+        add_dependencies(${TARGET} ${deps} ${args_DEPS})
+    else()
+        cc_library(${TARGET} SRCS ${args_SRCS} DEPS ${deps} ${args_DEPS})
+    endif()
+    target_compile_options(${TARGET} BEFORE PRIVATE -Wno-ignored-qualifiers)
+
+    # collect targets need to compile for lite
+    if (args_SRCS AND NOT args_EXCLUDE_COMPILE_DEPS)
+        add_dependencies(lite_compile_deps ${TARGET})
+    endif()
+
+    # register a library name.
+    file(APPEND ${offline_lib_registry_file} "${TARGET}\n")
+endfunction()
+
+function(lite_cc_binary TARGET)
+    set(options "")
+    set(oneValueArgs "")
+    set(multiValueArgs SRCS DEPS X86_DEPS CUDA_DEPS CL_DEPS ARM_DEPS FPGA_DEPS PROFILE_DEPS
+      LIGHT_DEPS HVY_DEPS EXCLUDE_COMPILE_DEPS ARGS)
+    cmake_parse_arguments(args "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+
+    set(deps "")
+    lite_deps(deps
+            DEPS ${args_DEPS}
+            X86_DEPS ${args_X86_DEPS}
+            CUDA_DEPS ${args_CUDA_DEPS}
+            CL_DEPS ${args_CL_DEPS}
+            ARM_DEPS ${args_ARM_DEPS}
+            FPGA_DEPS ${args_FPGA_DEPS}
+            PROFILE_DEPS ${args_PROFILE_DEPS}
+            LIGHT_DEPS ${args_LIGHT_DEPS}
+            HVY_DEPS ${args_HVY_DEPS}
+            )
+    cc_binary(${TARGET} SRCS ${args_SRCS} DEPS ${deps} ${args_DEPS})
+    target_compile_options(${TARGET} BEFORE PRIVATE -Wno-ignored-qualifiers)
+    # collect targets need to compile for lite
+    if (NOT args_EXCLUDE_COMPILE_DEPS)
+        add_dependencies(lite_compile_deps ${TARGET})
+    endif()
+endfunction()
+
+# Add a unit-test name to file for latter offline manual test.
+set(offline_test_registry_file "${CMAKE_BINARY_DIR}/lite_tests.txt")
+file(WRITE ${offline_test_registry_file} "") # clean
+# Test lite modules.
+
+function(lite_cc_test TARGET)
+    if(NOT WITH_TESTING)
+        return()
+    endif()
+    set(options "")
+    set(oneValueArgs "")
+    set(multiValueArgs SRCS DEPS X86_DEPS CUDA_DEPS CL_DEPS ARM_DEPS FPGA_DEPS PROFILE_DEPS
+        LIGHT_DEPS HVY_DEPS EXCLUDE_COMPILE_DEPS
+        ARGS)
+    cmake_parse_arguments(args "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+
+    set(deps "")
+    lite_deps(deps
+              DEPS ${args_DEPS}
+              X86_DEPS ${args_X86_DEPS}
+              CUDA_DEPS ${args_CUDA_DEPS}
+              CL_DEPS ${args_CL_DEPS}
+              ARM_DEPS ${args_ARM_DEPS}
+              FPGA_DEPS ${args_FPGA_DEPS}
+              PROFILE_DEPS ${args_PROFILE_DEPS}
+              LIGHT_DEPS ${args_LIGHT_DEPS}
+              HVY_DEPS ${args_HVY_DEPS}
+              )
+    _lite_cc_test(${TARGET} SRCS ${args_SRCS} DEPS ${deps} ARGS ${args_ARGS})
+    target_compile_options(${TARGET} BEFORE PRIVATE -Wno-ignored-qualifiers)
+    file(APPEND ${offline_test_registry_file} "${TARGET}\n")
+
+    # collect targets need to compile for lite
+    if (NOT args_EXCLUDE_COMPILE_DEPS)
+        add_dependencies(lite_compile_deps ${TARGET})
+    endif()
+endfunction()
+
+
 # Bundle several static libraries into one.
 function(bundle_static_library tgt_name bundled_tgt_name fake_target)
   list(APPEND static_libs ${tgt_name})
@@ -75,7 +285,7 @@ function(bundle_static_library tgt_name bundled_tgt_name fake_target)
       OUTPUT ${bundled_tgt_full_name}
     )
   endif()
-  
+
   add_custom_target(${fake_target} ALL DEPENDS ${bundled_tgt_full_name})
   add_dependencies(${fake_target} ${tgt_name})
 
