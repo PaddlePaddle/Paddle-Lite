@@ -30,12 +30,14 @@ namespace bridge {
 node_map_type BatchNormConverter(
     const std::shared_ptr<lite::OpLite> batch_norm_op,
     const node_map_type& inputs_map) {
-  LOG(INFO) << "converting batchnorm...";
-  lite::Scope* scope = batch_norm_op->scope();
-  const lite::OpInfo* op_info = batch_norm_op->op_info();
+  auto scope = batch_norm_op->scope();
+  auto op_info = batch_norm_op->op_info();
+  auto op_type = op_info->Type();
+  auto unique_op_type = UniqueName(op_type);
+  LOG(INFO) << "Converting " + op_type + "...";
 
-  std::shared_ptr<ge::op::BatchNorm> output_node =
-      std::make_shared<ge::op::BatchNorm>(UniqueName("batch_norm"));
+  std::shared_ptr<ge::op::BatchNorm> batch_norm_node =
+      std::make_shared<ge::op::BatchNorm>(unique_op_type);
   auto x_var_name = op_info->Input("X").front();
 
   auto scale_var_name = op_info->Input("Scale").front();
@@ -68,21 +70,21 @@ node_map_type BatchNormConverter(
   int npu_mode = 1;  // bnScale, bnBias tensor dims are 1xCx1x1
   bool npu_use_global_stats = op_info->GetAttr<bool>("use_global_stats");
 
-  output_node->set_input_x(*inputs_map.at(x_var_name));
-  output_node->set_input_scale(*npu_scale);
-  output_node->set_input_b(*npu_bias);
-  output_node->set_input_mean(*npu_mean);
-  output_node->set_input_variance(*npu_variance);
-  output_node->set_attr_momentum(npu_momentum);
-  output_node->set_attr_epsilon(npu_epsilon);
-  output_node->set_attr_mode(npu_mode);
-  output_node->set_attr_use_global_stats(npu_use_global_stats);
+  batch_norm_node->set_input_x(*inputs_map.at(x_var_name));
+  batch_norm_node->set_input_scale(*npu_scale);
+  batch_norm_node->set_input_b(*npu_bias);
+  batch_norm_node->set_input_mean(*npu_mean);
+  batch_norm_node->set_input_variance(*npu_variance);
+  batch_norm_node->set_attr_momentum(npu_momentum);
+  batch_norm_node->set_attr_epsilon(npu_epsilon);
+  batch_norm_node->set_attr_mode(npu_mode);
+  batch_norm_node->set_attr_use_global_stats(npu_use_global_stats);
 
   OpList::Global().add(inputs_map.at(x_var_name));
-  OpList::Global().add(output_node);
+  OpList::Global().add(batch_norm_node);
 
   node_map_type outputs_map;
-  outputs_map[op_info->Output("Y").front()] = output_node;
+  outputs_map[op_info->Output("Y").front()] = batch_norm_node;
   return outputs_map;
 }
 

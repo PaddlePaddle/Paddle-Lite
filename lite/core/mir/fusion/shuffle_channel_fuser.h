@@ -14,27 +14,31 @@
 
 #pragma once
 
-#include <gflags/gflags.h>
-#include <sys/time.h>
-#include <time.h>
-
-// for eval
-DEFINE_string(model_dir, "", "model dir");
-DEFINE_int32(warmup, 0, "warmup times");
-DEFINE_int32(repeats, 1, "repeats times");
-DEFINE_int32(threads, 1, "threads num");
-DEFINE_int32(im_width, 224, "image width");
-DEFINE_int32(im_height, 224, "image height");
-DEFINE_bool(int8, false, "is run int8");
+#include <memory>
+#include <string>
+#include "lite/core/mir/pattern_matcher_high_api.h"
 
 namespace paddle {
 namespace lite {
+namespace mir {
+namespace fusion {
 
-inline double GetCurrentUS() {
-  struct timeval time;
-  gettimeofday(&time, NULL);
-  return 1e+6 * time.tv_sec + time.tv_usec;
-}
+class ShuffleChannelFuser : public FuseBase {
+ public:
+  explicit ShuffleChannelFuser(const std::string& reshape_type,
+                               const std::string& transpose_type)
+      : reshape_type_(reshape_type), transpose_type_(transpose_type) {}
 
+  void BuildPattern() override;
+  void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override;
+
+ private:
+  cpp::OpDesc GenOpDesc(const key2nodes_t& matched) override;
+  std::string reshape_type_;
+  std::string transpose_type_;
+};
+
+}  // namespace fusion
+}  // namespace mir
 }  // namespace lite
 }  // namespace paddle

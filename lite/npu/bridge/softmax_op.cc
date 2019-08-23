@@ -29,12 +29,14 @@ namespace bridge {
 
 node_map_type SoftmaxConverter(const std::shared_ptr<lite::OpLite> softmax_op,
                                const node_map_type& inputs_map) {
-  LOG(INFO) << "converting softmax...";
-  lite::Scope* scope = softmax_op->scope();
-  const lite::OpInfo* op_info = softmax_op->op_info();
+  auto scope = softmax_op->scope();
+  auto op_info = softmax_op->op_info();
+  auto op_type = op_info->Type();
+  auto unique_op_type = UniqueName(op_type);
+  LOG(INFO) << "Converting " + op_type + "...";
 
-  std::shared_ptr<ge::op::Softmax> output_node =
-      std::make_shared<ge::op::Softmax>(UniqueName("softmax"));
+  std::shared_ptr<ge::op::Softmax> softmax_node =
+      std::make_shared<ge::op::Softmax>(unique_op_type);
   auto x_var_name = op_info->Input("X").front();
 
   auto x_dims = scope->FindVar(x_var_name)->GetMutable<Tensor>()->dims();
@@ -46,14 +48,14 @@ node_map_type SoftmaxConverter(const std::shared_ptr<lite::OpLite> softmax_op,
   }
 
   CHECK(inputs_map.count(x_var_name));
-  output_node->set_input_x(*inputs_map.at(x_var_name));
-  output_node->set_attr_axis(axis);
+  softmax_node->set_input_x(*inputs_map.at(x_var_name));
+  softmax_node->set_attr_axis(axis);
 
   OpList::Global().add(inputs_map.at(x_var_name));
-  OpList::Global().add(output_node);
+  OpList::Global().add(softmax_node);
 
   node_map_type outputs_map;
-  outputs_map[op_info->Output("Out").front()] = output_node;
+  outputs_map[op_info->Output("Out").front()] = softmax_node;
   return outputs_map;
 }
 

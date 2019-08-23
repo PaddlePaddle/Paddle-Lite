@@ -12,29 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
-
-#include <gflags/gflags.h>
-#include <sys/time.h>
-#include <time.h>
-
-// for eval
-DEFINE_string(model_dir, "", "model dir");
-DEFINE_int32(warmup, 0, "warmup times");
-DEFINE_int32(repeats, 1, "repeats times");
-DEFINE_int32(threads, 1, "threads num");
-DEFINE_int32(im_width, 224, "image width");
-DEFINE_int32(im_height, 224, "image height");
-DEFINE_bool(int8, false, "is run int8");
+#include "lite/core/mir/fusion/shuffle_channel_fuse_pass.h"
+#include <memory>
+#include <vector>
+#include "lite/core/mir/fusion/shuffle_channel_fuser.h"
+#include "lite/core/mir/pass_registry.h"
 
 namespace paddle {
 namespace lite {
+namespace mir {
 
-inline double GetCurrentUS() {
-  struct timeval time;
-  gettimeofday(&time, NULL);
-  return 1e+6 * time.tv_sec + time.tv_usec;
+void ShuffleChannelFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
+  fusion::ShuffleChannelFuser fuser("reshape", "transpose");
+  fuser(graph.get());
+
+  fusion::ShuffleChannelFuser fuser2("reshape2", "transpose2");
+  fuser2(graph.get());
 }
 
+}  // namespace mir
 }  // namespace lite
 }  // namespace paddle
+
+REGISTER_MIR_PASS(lite_shuffle_channel_fuse_pass,
+                  paddle::lite::mir::ShuffleChannelFusePass);

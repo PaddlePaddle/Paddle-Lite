@@ -12,29 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
-
-#include <gflags/gflags.h>
-#include <sys/time.h>
-#include <time.h>
-
-// for eval
-DEFINE_string(model_dir, "", "model dir");
-DEFINE_int32(warmup, 0, "warmup times");
-DEFINE_int32(repeats, 1, "repeats times");
-DEFINE_int32(threads, 1, "threads num");
-DEFINE_int32(im_width, 224, "image width");
-DEFINE_int32(im_height, 224, "image height");
-DEFINE_bool(int8, false, "is run int8");
+#include "lite/operators/fake_quantize_range_abs_max.h"
+#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
-
-inline double GetCurrentUS() {
-  struct timeval time;
-  gettimeofday(&time, NULL);
-  return 1e+6 * time.tv_sec + time.tv_usec;
-}
-
+namespace operators {}  // namespace operators
 }  // namespace lite
 }  // namespace paddle
+
+REGISTER_LITE_OP(fake_quantize_range_abs_max,
+                 paddle::lite::operators::FakeQuantizeRangeMaxAbsOpLite);

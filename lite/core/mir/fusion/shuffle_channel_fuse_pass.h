@@ -14,27 +14,19 @@
 
 #pragma once
 
-#include <gflags/gflags.h>
-#include <sys/time.h>
-#include <time.h>
-
-// for eval
-DEFINE_string(model_dir, "", "model dir");
-DEFINE_int32(warmup, 0, "warmup times");
-DEFINE_int32(repeats, 1, "repeats times");
-DEFINE_int32(threads, 1, "threads num");
-DEFINE_int32(im_width, 224, "image width");
-DEFINE_int32(im_height, 224, "image height");
-DEFINE_bool(int8, false, "is run int8");
+#include <memory>
+#include <string>
+#include "lite/core/mir/pass.h"
 
 namespace paddle {
 namespace lite {
+namespace mir {
 
-inline double GetCurrentUS() {
-  struct timeval time;
-  gettimeofday(&time, NULL);
-  return 1e+6 * time.tv_sec + time.tv_usec;
-}
+class ShuffleChannelFusePass : public ProgramPass {
+ public:
+  void Apply(const std::unique_ptr<SSAGraph>& graph) override;
+};
 
+}  // namespace mir
 }  // namespace lite
 }  // namespace paddle
