@@ -40,12 +40,14 @@ bool PriorBoxOpLite::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
   param_.boxes = scope->FindVar(boxes)->GetMutable<lite::Tensor>();
   param_.variances = scope->FindVar(variances)->GetMutable<lite::Tensor>();
 
-  param_.flip = opdesc.GetAttr<bool>("flip");
   param_.clip = opdesc.GetAttr<bool>("clip");
   param_.min_sizes = opdesc.GetAttr<std::vector<float>>("min_sizes");
   param_.max_sizes = opdesc.GetAttr<std::vector<float>>("max_sizes");
   param_.aspect_ratios = opdesc.GetAttr<std::vector<float>>("aspect_ratios");
   param_.variances_ = opdesc.GetAttr<std::vector<float>>("variances");
+  if (opdesc.HasAttr("flip")) {
+    param_.flip = opdesc.GetAttr<bool>("flip");
+  }
   if (opdesc.HasAttr("img_w")) {
     param_.img_w = opdesc.GetAttr<int>("img_w");
   }

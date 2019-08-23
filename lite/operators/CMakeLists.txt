@@ -55,6 +55,7 @@ add_operator(graph_op basic SRCS graph_op.cc DEPS ${op_DEPS})
 add_operator(expand_op_lite basic SRCS expand_op.cc DEPS ${op_DEPS})
 add_operator(reduce_max_op_lite basic SRCS reduce_max_op.cc DEPS ${op_DEPS})
 add_operator(norm_op basic SRCS norm_op.cc DEPS ${op_DEPS})
+add_operator(shape_op_lite basic SRCS shape_op.cc DEPS ${op_DEPS})
 
 # for OCR specific
 add_operator(im2sequence_op extra SRCS im2sequence_op.cc DEPS ${op_DEPS})
@@ -78,7 +79,6 @@ add_operator(sequence_pool_op_lite extra SRCS sequence_pool_op.cc DEPS ${op_DEPS
 add_operator(sequence_expand_op_lite extra SRCS sequence_expand_op.cc DEPS ${op_DEPS})
 add_operator(lod_reset_op extra SRCS lod_reset_op.cc DEPS ${op_DEPS})
 add_operator(is_empty extra SRCS is_empty_op.cc DEPS ${op_DEPS})
-add_operator(shape_op_lite extra SRCS shape_op.cc DEPS ${op_DEPS})
 add_operator(cast_op_lite extra SRCS cast_op.cc DEPS ${op_DEPS})
 add_operator(slice_op_lite extra SRCS slice_op.cc DEPS ${op_DEPS})
 add_operator(squeeze_op_lite extra SRCS squeeze_op.cc DEPS ${op_DEPS})
