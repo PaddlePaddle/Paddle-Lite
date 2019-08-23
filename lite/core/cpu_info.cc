@@ -819,7 +819,7 @@ void DeviceInfo::RequestPowerFullMode(int thread_num) {
       active_ids_.push_back(little_core_ids_[i - big_core_size]);
     }
   }
-  mode_ = LITE_POWER_FULL;
+  mode_ = lite_api::PowerMode::LITE_POWER_FULL;
 }
 
 void DeviceInfo::RequestPowerHighMode(int thread_num) {
@@ -827,7 +827,7 @@ void DeviceInfo::RequestPowerHighMode(int thread_num) {
   int little_core_size = little_core_ids_.size();
   active_ids_.clear();
   if (big_core_size > 0) {
-    mode_ = LITE_POWER_HIGH;
+    mode_ =lite_api::PowerMode::LITE_POWER_HIGH;
     if (thread_num > big_core_size) {
       LOG(ERROR) << "Request thread num: " << thread_num
                  << ", exceed the big cores size: " << big_core_size
@@ -839,7 +839,7 @@ void DeviceInfo::RequestPowerHighMode(int thread_num) {
       }
     }
   } else {
-    mode_ = LITE_POWER_LOW;
+    mode_ = lite_api::PowerMode::LITE_POWER_LOW;
     LOG(ERROR) << "HIGH POWER MODE is not support, switch to little cores.";
     if (thread_num > little_core_size) {
       active_ids_ = little_core_ids_;
@@ -856,7 +856,7 @@ void DeviceInfo::RequestPowerLowMode(int thread_num) {
   int little_core_size = little_core_ids_.size();
   active_ids_.clear();
   if (little_core_size > 0) {
-    mode_ = LITE_POWER_LOW;
+    mode_ = lite_api::PowerMode::LITE_POWER_LOW;
     if (thread_num > little_core_size) {
       LOG(WARNING) << "Request thread num: " << thread_num
                    << ", exceed the little cores size: " << little_core_size
@@ -868,7 +868,7 @@ void DeviceInfo::RequestPowerLowMode(int thread_num) {
       }
     }
   } else {
-    mode_ = LITE_POWER_HIGH;
+    mode_ = lite_api::PowerMode::LITE_POWER_HIGH;
     LOG(WARNING) << "LOW POWER MODE is not support, switch to big cores";
     if (thread_num > big_core_size) {
       active_ids_ = big_core_ids_;
@@ -894,7 +894,7 @@ void DeviceInfo::RequestPowerNoBindMode(int thread_num) {
       }
     }
   }
-  mode_ = LITE_POWER_NO_BIND;
+  mode_ = lite_api::PowerMode::LITE_POWER_NO_BIND;
 }
 
 void DeviceInfo::RequestPowerRandHighMode(int shift_num, int thread_num) {
@@ -902,7 +902,7 @@ void DeviceInfo::RequestPowerRandHighMode(int shift_num, int thread_num) {
   int little_core_size = little_core_ids_.size();
   active_ids_.clear();
   if (big_core_size > 0) {
-    mode_ = LITE_POWER_RAND_HIGH;
+    mode_ = lite_api::PowerMode::LITE_POWER_RAND_HIGH;
     if (thread_num > big_core_size) {
       LOG(WARNING) << "Request thread num: " << thread_num
                    << ", exceed the big cores size: " << big_core_size
@@ -914,7 +914,7 @@ void DeviceInfo::RequestPowerRandHighMode(int shift_num, int thread_num) {
       }
     }
   } else {
-    mode_ = LITE_POWER_LOW;
+    mode_ = lite_api::PowerMode::LITE_POWER_LOW;
     LOG(WARNING) << "HIGH POWER MODE is not support, switch to little cores.";
     if (thread_num > little_core_size) {
       active_ids_ = little_core_ids_;
@@ -931,7 +931,7 @@ void DeviceInfo::RequestPowerRandLowMode(int shift_num, int thread_num) {
   int little_core_size = little_core_ids_.size();
   active_ids_.clear();
   if (little_core_size > 0) {
-    mode_ = LITE_POWER_RAND_LOW;
+    mode_ = lite_api::PowerMode::LITE_POWER_RAND_LOW;
     if (thread_num > little_core_size) {
       LOG(WARNING) << "Request thread num: " << thread_num
                    << ", exceed the little cores size: " << little_core_size
@@ -944,7 +944,7 @@ void DeviceInfo::RequestPowerRandLowMode(int shift_num, int thread_num) {
       }
     }
   } else {
-    mode_ = LITE_POWER_HIGH;
+    mode_ = lite_api::PowerMode::LITE_POWER_HIGH;
     LOG(WARNING) << "LOW POWER MODE is not support, switch to big cores.";
     if (thread_num > big_core_size) {
       active_ids_ = big_core_ids_;
@@ -1031,11 +1031,11 @@ int DeviceInfo::Setup() {
   }
   LOG(INFO) << "Total memory: " << mem_size_ << "KB";
   // set default run mode
-  SetRunMode(LITE_POWER_NO_BIND, 1);  // use single thread by default
+  SetRunMode(lite_api::PowerMode::LITE_POWER_NO_BIND, 1);  // use single thread by default
   return 0;
 }
 
-void DeviceInfo::SetRunMode(PowerMode mode, int thread_num) {
+void DeviceInfo::SetRunMode(lite_api::PowerMode mode, int thread_num) {
 #ifdef ARM_WITH_OMP
   thread_num = std::min(thread_num, core_num_);
 #else
@@ -1049,22 +1049,22 @@ void DeviceInfo::SetRunMode(PowerMode mode, int thread_num) {
   count_++;
   int shift_num = (count_ / 10) % big_core_size;
   switch (mode) {
-    case LITE_POWER_FULL:
+    case lite_api::LITE_POWER_FULL:
       RequestPowerFullMode(thread_num);
       break;
-    case LITE_POWER_HIGH:
+    case lite_api::LITE_POWER_HIGH:
       RequestPowerHighMode(thread_num);
       break;
-    case LITE_POWER_LOW:
+    case lite_api::LITE_POWER_LOW:
       RequestPowerLowMode(thread_num);
       break;
-    case LITE_POWER_NO_BIND:
+    case lite_api::LITE_POWER_NO_BIND:
       RequestPowerNoBindMode(thread_num);
       break;
-    case LITE_POWER_RAND_HIGH:
+    case lite_api::LITE_POWER_RAND_HIGH:
       RequestPowerRandHighMode(shift_num, thread_num);
       break;
-    case LITE_POWER_RAND_LOW:
+    case lite_api::LITE_POWER_RAND_LOW:
       RequestPowerRandLowMode(shift_num, thread_num);
       break;
     default:
@@ -1077,12 +1077,12 @@ void DeviceInfo::SetRunMode(PowerMode mode, int thread_num) {
 #ifdef ARM_WITH_OMP
   omp_set_num_threads(active_ids_.size());
 #endif
-  if (mode_ != LITE_POWER_NO_BIND) {
+  if (mode_ != lite_api::LITE_POWER_NO_BIND) {
     if (check_cpu_online(active_ids_)) {
       bind_threads(active_ids_);
     } else {
       LOG(WARNING) << "Some cores are offline, switch to NO BIND MODE";
-      mode_ = LITE_POWER_NO_BIND;
+      mode_ = lite_api::LITE_POWER_NO_BIND;
     }
   }
 #else  // LITE_WITH_LINUX

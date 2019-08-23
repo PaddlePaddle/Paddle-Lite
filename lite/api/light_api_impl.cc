@@ -40,6 +40,8 @@ class LightPredictorImpl : public PaddlePredictor {
 
 void LightPredictorImpl::Init(const MobileConfig& config) {
   // LightPredictor Only support NaiveBuffer backend in publish lib
+  lite::DeviceInfo::Init();
+  lite::DeviceInfo::Global().SetRunMode(config.power_mode(), config.threads());
   raw_predictor_.reset(new lite::LightPredictor(config.model_dir(),
                                                 LiteModelType::kNaiveBuffer));
 }
