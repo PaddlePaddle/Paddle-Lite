@@ -34,6 +34,25 @@ void beam_search(const Tensor* pre_ids,
                  int end_id,
                  bool is_accumulated,
                  Context<TARGET(kARM)>* ctx);
+void beam_search_special(const Tensor *pre_ids,
+                 const Tensor *pre_scores,
+                 const Tensor *ids,
+                 const Tensor *scores,
+                 Tensor *selected_ids,
+                 Tensor *selected_scores,
+                 Tensor *parent_idx,
+                 const Tensor *src_length,
+                 const Tensor *cur_length,
+                 Tensor *finish_scores,
+                 Tensor *finish_ids, 
+                 int level,
+                 int beam_size,
+                 int end_id,
+                 bool is_accumulated,
+                 int decode_length,
+                 float alpha,
+                 Context<TARGET(kARM)> *ctx);
+
 
 }  // namespace math
 }  // namespace arm

@@ -59,6 +59,30 @@ bool BeamSearchOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   param_.beam_size = opdesc.GetAttr<int>("beam_size");
   param_.end_id = opdesc.GetAttr<int>("end_id");
   param_.is_accumulated = opdesc.GetAttr<bool>("is_accumulated");
+
+  //for special implement
+  if (opdesc.HasInput("src_length")){
+    param_.src_length = scope->FindVar(opdesc.Input("src_length").front())
+                            ->GetMutable<lite::Tensor>();
+  }
+  if (opdesc.HasInput("cur_length")){
+    param_.cur_length = scope->FindVar(opdesc.Input("cur_length").front())
+                            ->GetMutable<lite::Tensor>();
+  }
+  if (opdesc.HasOutput("finish_ids")){
+    param_.finish_ids = scope->FindVar(opdesc.Output("finish_ids").front())
+                            ->GetMutable<lite::Tensor>();
+  }
+  if (opdesc.HasOutput("finish_scores")){
+    param_.finish_scores = scope->FindVar(opdesc.Output("finish_scores").front())
+                            ->GetMutable<lite::Tensor>();
+  }
+  if (opdesc.HasAttr("decode_length")){
+    param_.decode_length = opdesc.GetAttr<int>("decode_length");
+  }
+  if (opdesc.HasAttr("alpha")){
+    param_.alpha = opdesc.GetAttr<float>("alpha");
+  }
   return true;
 }
 
