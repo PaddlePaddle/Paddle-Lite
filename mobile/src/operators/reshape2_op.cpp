@@ -22,6 +22,9 @@ namespace operators {
 
 template <typename Dtype, typename T>
 void Reshape2Op<Dtype, T>::InferShape() const {
+  if (this->param_.InputShape() != nullptr) {
+    return;
+  }
   auto &shape = this->param_.Shape();
   auto input_x_dims = this->param_.InputX()->dims();
 #ifdef PADDLE_MOBILE_CL

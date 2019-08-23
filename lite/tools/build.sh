@@ -105,11 +105,28 @@ function print_usage {
     echo -e "compile all arm tests:"
     echo -e "   ./build.sh --arm_os=<os> --arm_abi=<abi> --arm_lang=<lang> test"
     echo
+    echo -e "argument choices:"
+    echo
+    echo -e "--arm_os:\t android"
+    echo -e "--arm_abi:\t armv8|armv7"
+    echo -e "--arm_lang:\t gcc|clang"
+    echo -e "--android_stl:\t c++_static|c++_shared"
+    echo
+    echo -e "tasks:"
+    echo
+    echo -e "tiny_publish: a small library for deployment."
+    echo -e "full_publish: a full library for debug and test."
+    echo -e "test: produce all the unittests."
     echo "----------------------------------------"
     echo
 }
 
 function main {
+    if [ -z "$1" ]; then
+        print_usage
+        exit -1
+    fi
+
     # Parse command line.
     for i in "$@"; do
         case $i in

@@ -215,10 +215,6 @@ if (NOT FOUND_MATCH)
     target_link_libraries(test_yolo_combined paddle-mobile)
 
     # gen test
-    ADD_EXECUTABLE(test-net net/test_net.cpp test_helper.h test_include.h executor_for_test.h)
-    target_link_libraries(test-net paddle-mobile)
-
-    # gen test
     ADD_EXECUTABLE(test-op-in-net net/test_op_in_net.cpp test_helper.h test_include.h executor_for_test.h)
     target_link_libraries(test-op-in-net paddle-mobile)
 
@@ -527,4 +523,8 @@ if (NOT FOUND_MATCH)
 
     ADD_EXECUTABLE(test-net-benchmark net/test_net_benchmark.cpp test_helper.h test_include.h)
     target_link_libraries(test-net-benchmark paddle-mobile)
+
+    # gen test
+    ADD_EXECUTABLE(test-net net/test_net.cpp test_helper.h test_include.h executor_for_test.h)
+    target_link_libraries(test-net paddle-mobile)
 endif ()
