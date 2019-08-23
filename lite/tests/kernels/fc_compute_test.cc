@@ -171,9 +171,9 @@ void test_fc(Place place) {
           DDim bdim{{bflag ? n : 0}};
           std::unique_ptr<arena::TestCase> tester(
               new FcOPTest(place, "def", dim_in, wdim, bdim, 1));
-#ifdef WITH_ARM_LITE
+#ifdef LITE_WITH_ARM
           auto& ctx = tester->context()->As<ARMContext>();
-          ctx.SetRunMode(LITE_POWER_HIGH, 1);
+          ctx.SetRunMode(lite_api::LITE_POWER_HIGH, 1);
 #endif
           arena::Arena arena(std::move(tester), place, 6e-5);
           if (!arena.TestPrecision()) {
