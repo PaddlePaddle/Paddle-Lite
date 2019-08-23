@@ -28,8 +28,6 @@ void SliceCompute::Run() {
 
   auto input_dims = param.X->dims();
   int dim_size = param.X->dims().size();
-  LOG(INFO) << "======slice_input============";
-  // LOG(INFO) << *param.X;
 
   std::vector<int> starts = param.starts;
   std::vector<int> ends = param.ends;
@@ -38,8 +36,6 @@ void SliceCompute::Run() {
   auto* o_data = param.Out->mutable_data<float>();
   lite::arm::math::slice(
       x_data, input_dims.data(), axes, starts, ends, o_data, &ctx);
-  LOG(INFO) << "=========slice_out==============";
-  // LOG(INFO) << *param.Out;
 }
 
 }  // namespace arm
