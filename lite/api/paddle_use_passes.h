@@ -29,6 +29,7 @@ USE_MIR_PASS(graph_visualze);
 
 USE_MIR_PASS(lite_conv_bn_fuse_pass);
 USE_MIR_PASS(lite_fc_fuse_pass);
+USE_MIR_PASS(lite_shuffle_channel_fuse_pass);
 USE_MIR_PASS(identity_scale_eliminate_pass);
 USE_MIR_PASS(lite_conv_elementwise_fuse_pass);
 USE_MIR_PASS(lite_conv_activation_fuse_pass);
