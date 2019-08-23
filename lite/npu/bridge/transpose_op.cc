@@ -30,19 +30,21 @@ namespace bridge {
 node_map_type TransposeConverter(
     const std::shared_ptr<lite::OpLite> transpose_op,
     const node_map_type& inputs_map) {
-  LOG(INFO) << "converting transpose...";
-  lite::Scope* scope = transpose_op->scope();
-  const lite::OpInfo* op_info = transpose_op->op_info();
+  auto scope = transpose_op->scope();
+  auto op_info = transpose_op->op_info();
+  auto op_type = op_info->Type();
+  auto unique_op_type = UniqueName(op_type);
+  LOG(INFO) << "Converting " + op_type + "...";
 
-  std::shared_ptr<ge::op::Permute> output_node =
-      std::make_shared<ge::op::Permute>(UniqueName("transpose"));
+  std::shared_ptr<ge::op::Permute> transpose_node =
+      std::make_shared<ge::op::Permute>(unique_op_type);
   auto x_var_name = op_info->Input("X").front();
 
   // paddlelite doesn't have this input
   // w must be set, but it does nothing
-  auto w_var_name = "transpose_w";
+  auto w_var_name = unique_op_type + "/w";
   auto* w = scope->Var(w_var_name)->GetMutable<Tensor>();
-  w->Resize(scope->FindVar(x_var_name)->GetMutable<Tensor>()->dims());
+  w->Resize({1});
   auto* w_data = w->mutable_data<float>();
   for (int i = 0; i < w->numel(); i++) {
     w_data[i] = 1.f;
@@ -55,15 +57,15 @@ node_map_type TransposeConverter(
   auto npu_axis = ge::AttrValue::LIST_INT(axis.begin(), axis.end());
 
   CHECK(inputs_map.count(x_var_name));
-  output_node->set_input_x(*inputs_map.at(x_var_name));
-  output_node->set_input_w(*npu_w);
-  output_node->set_attr_order(npu_axis);
+  transpose_node->set_input_x(*inputs_map.at(x_var_name));
+  transpose_node->set_input_w(*npu_w);
+  transpose_node->set_attr_order(npu_axis);
 
   OpList::Global().add(inputs_map.at(x_var_name));
-  OpList::Global().add(output_node);
+  OpList::Global().add(transpose_node);
 
   node_map_type outputs_map;
-  outputs_map[op_info->Output("Out").front()] = output_node;
+  outputs_map[op_info->Output("Out").front()] = transpose_node;
   return outputs_map;
 }
 
