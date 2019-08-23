@@ -14,6 +14,7 @@
 ''' Collect op registry information. '''
 
 import sys
+import logging
 
 ops_list_path = sys.argv[1]
 dest_path = sys.argv[2]
@@ -40,4 +41,5 @@ with open(ops_list_path) as f:
                     out_lines.append(out)
 
 with open(dest_path, 'w') as f:
+    logging.info("write op list to %s" % dest_path)
     f.write('\n'.join(out_lines))

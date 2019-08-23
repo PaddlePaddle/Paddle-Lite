@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import sys
+import logging
 
 ops_list_path = sys.argv[1]
 dest_path = sys.argv[2]
@@ -51,8 +52,8 @@ with open(ops_list_path) as f:
 
                         key = "USE_LITE_KERNEL(%s, %s, %s, %s, %s);" % (
                             op, target, precision, layout, alias)
-                        print key
                         out_lines.append(key)
 
 with open(dest_path, 'w') as f:
+    logging.info("write kernel list to %s" % dest_path)
     f.write('\n'.join(out_lines))
