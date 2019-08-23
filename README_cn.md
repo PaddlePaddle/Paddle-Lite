@@ -55,4 +55,12 @@ Paddle Lite 借鉴了以下开源项目：
 ##  交流与反馈
 * 欢迎您通过Github Issues来提交问题、报告与建议
 * QQ群: 696965088 
+
+<img width="200" height="200" src="https://user-images.githubusercontent.com/45189361/63563791-e471b680-c594-11e9-8a52-72a5a95350a2.png"/>
+
+* 微信公众号: 飞桨PaddlePaddle
+
+<img width="210" height="210" src="https://user-images.githubusercontent.com/45189361/63563799-ee93b500-c594-11e9-8e9a-38a9144e210c.jpg"/>
+
 * 论坛: 欢迎大家在[PaddlePaddle论坛](https://ai.baidu.com/forum/topic/list/168)分享在使用PaddlePaddle中遇到的问题和经验, 营造良好的论坛氛围
+
