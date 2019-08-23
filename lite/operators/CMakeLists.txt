@@ -1,4 +1,4 @@
-set(op_DEPS tensor op op_params)
+set(op_DEPS tensor op op_params scope memory)
 
 lite_cc_library(op_params SRCS op_params.cc DEPS tensor any)
 
@@ -100,7 +100,7 @@ if (NOT LITE_WITH_X86)
     lite_cc_test(test_softmax_op SRCS softmax_op_test.cc DEPS softmax_op memory)
     #lite_cc_test(test_reshape_op SRCS reshape_op_test.cc DEPS reshape_op memory)
     lite_cc_test(test_batch_norm_op SRCS batch_norm_op_test.cc DEPS batch_norm_op memory)
-    lite_cc_test(test_concat_op SRCS concat_op_test.cc DEPS concat_op memory)
+    lite_cc_test(test_concat_op SRCS concat_op_test.cc DEPS concat_op memory scope)
     lite_cc_test(test_calib_op SRCS calib_op_test.cc DEPS calib_op memory ARM_DEPS calib_compute_arm)
     lite_cc_test(test_fusion_elementwise_activation_ops
                 SRCS fusion_elementwise_activation_ops_test.cc

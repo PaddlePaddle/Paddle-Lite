@@ -184,8 +184,15 @@ function(lite_cc_test TARGET)
     set(oneValueArgs "")
     set(multiValueArgs SRCS DEPS X86_DEPS CUDA_DEPS CL_DEPS ARM_DEPS FPGA_DEPS PROFILE_DEPS
         LIGHT_DEPS HVY_DEPS EXCLUDE_COMPILE_DEPS
-        ARGS)
+        ARGS
+        COMPILE_LEVEL # (basic|extra)
+        )
     cmake_parse_arguments(args "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+
+    if (args_COMPILE_LEVEL STREQUAL "extra" AND (NOT LITE_BUILD_EXTRA))
+      MESSAGE(STATUS "Ignore test ${TARGET} due to compile level ${args_COMPILE_LEVEL}")
+      return()
+    endif()
 
     set(deps "")
     lite_deps(deps
@@ -272,6 +279,7 @@ function(add_kernel TARGET device level)
     endforeach()
 
     lite_cc_library(${TARGET} SRCS ${args_SRCS}
+              DEPS ${args_DEPS}
               X86_DEPS ${args_X86_DEPS}
               CUDA_DEPS ${args_CUDA_DEPS}
               CL_DEPS ${args_CL_DEPS}
@@ -307,6 +315,7 @@ function(add_operator TARGET level)
     endforeach()
 
     lite_cc_library(${TARGET} SRCS ${args_SRCS}
+              DEPS ${args_DEPS}
               X86_DEPS ${args_X86_DEPS}
               CUDA_DEPS ${args_CUDA_DEPS}
               CL_DEPS ${args_CL_DEPS}
