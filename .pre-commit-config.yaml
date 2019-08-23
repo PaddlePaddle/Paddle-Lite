@@ -25,7 +25,7 @@ repos:
         description: Format files with ClangFormat.
         entry: bash ./tools/codestyle/clang_format.hook -i
         language: system
-        files: \.(c|cc|cxx|cpp|cu|h|hpp|hxx|proto)$ ^mobile/ ^metal/ ^web/
+        files: \.(c|cc|cxx|cpp|cu|h|hpp|hxx|proto)$
 -   repo: local
     hooks:
     -   id: cpplint-cpp-source
@@ -33,7 +33,7 @@ repos:
         description: Check C++ code style using cpplint.py.
         entry: bash ./tools/codestyle/cpplint_pre_commit.hook
         language: system
-        files: \.(c|cc|cxx|cpp|cu|h|hpp|hxx)$ ^mobile/ ^metal/ ^web/
+        files: \.(c|cc|cxx|cpp|cu|h|hpp|hxx)$
 #-   repo: local
     #hooks:
     #-   id: pylint-doc-string
@@ -48,5 +48,5 @@ repos:
         name: copyright_checker
         entry: python ./tools/codestyle/copyright.hook
         language: system
-        files: \.(c|cc|cxx|cpp|cu|h|hpp|hxx|proto|py)$ ^mobile/ ^metal/ ^web/
+        files: \.(c|cc|cxx|cpp|cu|h|hpp|hxx|proto|py)$
         exclude: (?!.*third_party)^.*$ | (?!.*book)^.*$
