@@ -30,11 +30,14 @@ namespace bridge {
 node_map_type ElementwiseConverter(
     const std::shared_ptr<lite::OpLite> elementwise_op,
     const node_map_type& inputs_map) {
+  auto scope = elementwise_op->scope();
+  auto op_info = elementwise_op->op_info();
+  auto op_type = op_info->Type();
+  auto unique_op_type = UniqueName(op_type);
   LOG(INFO) << "converting elementwise...";
-  lite::Scope* scope = elementwise_op->scope();
-  const lite::OpInfo* op_info = elementwise_op->op_info();
-  std::shared_ptr<ge::op::Eltwise> output_node =
-      std::make_shared<ge::op::Eltwise>(UniqueName("elementwise"));
+
+  std::shared_ptr<ge::op::Eltwise> elementwise_node =
+      std::make_shared<ge::op::Eltwise>(unique_op_type);
 
   auto x_var_name = op_info->Input("X").front();
   auto y_var_name = op_info->Input("Y").front();
@@ -43,27 +46,27 @@ node_map_type ElementwiseConverter(
       << "npu elementwise only support inputs with same size";
 
   CHECK(inputs_map.find(x_var_name) != inputs_map.end());
-  output_node->set_input_x1(*inputs_map.at(x_var_name));
+  elementwise_node->set_input_x1(*inputs_map.at(x_var_name));
   OpList::Global().add(inputs_map.at(x_var_name));
 
   if (inputs_map.find(y_var_name) != inputs_map.end()) {
-    output_node->set_input_x2(*inputs_map.at(y_var_name));
+    elementwise_node->set_input_x2(*inputs_map.at(y_var_name));
     OpList::Global().add(inputs_map.at(y_var_name));
   } else {
     auto consty = std::make_shared<ge::op::Const>(y_var_name);
     auto* y = scope->FindVar(y_var_name)->GetMutable<Tensor>();
     consty->set_attr_value(CvtFromLiteTensor(y));
-    output_node->set_input_x2(*consty);
+    elementwise_node->set_input_x2(*consty);
     OpList::Global().add(consty);
   }
 
-  OpList::Global().add(output_node);
+  OpList::Global().add(elementwise_node);
 
   // paddlelite has sum only
-  output_node->set_attr_mode(1);
+  elementwise_node->set_attr_mode(1);
 
   node_map_type outputs_map;
-  outputs_map[op_info->Output("Out").front()] = output_node;
+  outputs_map[op_info->Output("Out").front()] = elementwise_node;
   return outputs_map;
 }
 
