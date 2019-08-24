@@ -14,10 +14,10 @@ limitations under the License. */
 
 #pragma once
 
+#include <map>
 #include <memory>
 #include <string>
 #include <unordered_map>
-#include <map>
 #include <vector>
 
 #include "CL/cl.h"
@@ -71,14 +71,15 @@ class CLScope {
     if (opencl_kernels.find(file_name) != opencl_kernels.end()) {
       auto it = opencl_kernels.find(file_name);
       std::string source(it->second.begin(), it->second.end());
-      if (std::find(need_conv_header_kernels.begin(), need_conv_header_kernels.end(), file_name) != need_conv_header_kernels.end()) {
+      if (std::find(need_conv_header_kernels.begin(),
+                    need_conv_header_kernels.end(),
+                    file_name) != need_conv_header_kernels.end()) {
         auto it = opencl_kernels.find("conv_kernel.inc.cl");
         std::string header(it->second.begin(), it->second.end());
         source = header + source;
       }
       auto program = CLEngine::Instance()->CreateProgramWithSource(
-          context_,
-          source.c_str());
+          context_, source.c_str());
 
       DLOG << " --- begin build program -> " << program_key << " --- ";
       CLEngine::Instance()->BuildProgram(program.get(), options);
