@@ -261,9 +261,10 @@ TEST(NPUBridges, conv) {
     }
   }
 #else
-  // test_conv(2, 3, 3, 8, 8, true, true, true, true, 1, 1, 1, 3);
-  test_conv(2, 5, 5, 8, 8, true, false, true, true, 1, 1, 1, 3);
-  test_conv(2, 5, 7, 8, 8, true, false, true, false, 1, 1, 1, 3);
+  test_conv(1, 3, 6, 14, 14, false, false, false, true, 2, 1, 1, 3);
+  test_conv(1, 3, 6, 14, 14, false, false, false, true, 2, 1, 0, 3);
+  test_conv(1, 3, 6, 14, 14, false, false, false, true, 2, 1, 2, 5);
+  test_conv(1, 3, 6, 14, 14, false, false, false, true, 2, 1, 0, 5);
 #endif
 }
 

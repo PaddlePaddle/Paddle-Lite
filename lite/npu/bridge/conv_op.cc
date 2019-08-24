@@ -39,11 +39,20 @@ node_map_type ConvConverter(const std::shared_ptr<lite::OpLite> conv_op,
   auto input_var_name = op_info->Input("Input").front();
   auto input = scope->FindVar(input_var_name)->GetMutable<lite::Tensor>();
   auto input_dims = input->dims();
+  auto output_var_name = op_info->Output("Output").front();
+  auto output = scope->FindVar(output_var_name)->GetMutable<lite::Tensor>();
+  auto output_dims = output->dims();
   auto filter_var_name = op_info->Input("Filter").front();
   auto filter = scope->FindVar(filter_var_name)->GetMutable<lite::Tensor>();
   auto filter_dims = filter->dims();
+  auto bs = input_dims[0];
+  auto ic = input_dims[1];
+  auto oc = filter_dims[0];
   CHECK_EQ(input_dims.size(), 4);
+  CHECK_EQ(output_dims.size(), 4);
   CHECK_EQ(filter_dims.size(), 4);
+  CHECK_EQ(output_dims[0], bs);
+  CHECK_EQ(output_dims[1], oc);
   auto strides = op_info->GetAttr<std::vector<int>>("strides");
   auto paddings = op_info->GetAttr<std::vector<int>>("paddings");
   auto groups = op_info->GetAttr<int>("groups");
@@ -52,25 +61,19 @@ node_map_type ConvConverter(const std::shared_ptr<lite::OpLite> conv_op,
   CHECK_EQ(strides.size(), 2);
   CHECK_EQ(paddings.size(), 2);
   CHECK_EQ(dilations.size(), 2);
-  // get output dims, note that we don't obtain it from output tensor
-  std::vector<int64_t> output_shape({input_dims[0], filter_dims[0]});
-  for (size_t i = 0; i < strides.size(); i++) {
-    const int dkernel = dilations[i] * (filter_dims[i + 2] - 1) + 1;
-    int output_size =
-        (input_dims[i + 2] + 2 * paddings[i] - dkernel) / strides[i] + 1;
-    output_shape.push_back(output_size);
-  }
-  DDim output_dims(output_shape);
 
   // check depthwise mode, and decide whether use ConvolutionDepthwise Op
   bool use_depthwise_conv =
       false;  // whether use ge::op::ConvolutionDepthwise ?
-  bool is_depthwise_mode = input_dims[1] == groups && filter_dims[0] == groups;
-  if (is_depthwise_mode && filter_dims[2] == 7 && filter_dims[3] == 7) {
+  bool is_depthwise_mode = ic == groups && oc == groups;
+  if (is_depthwise_mode &&
+      !((groups == 1 || groups >= 5) && dilations[0] == 1 &&
+        dilations[1] == 1)) {
     use_depthwise_conv = true;
-    LOG(WARNING) << "Output is wrong if using Convolution Op as depthwise "
-                    "conv2d and kernel size is 7x7, so force to use "
-                    "ConvolutionDepthwise Op";
+    LOG(WARNING) << "For depthwise mode, dilation = 1 and groups >= 5 (or "
+                    "groups = 1) is only supported in "
+                    "Convolution Op, so force to use ConvolutionDepthwise Op, "
+                    "but may lead poor performance.";
   }
 
   // check input
@@ -82,6 +85,47 @@ node_map_type ConvConverter(const std::shared_ptr<lite::OpLite> conv_op,
   auto filter_const_node = std::make_shared<ge::op::Const>(filter_var_name);
   filter_const_node->set_attr_value(CvtFromLiteTensor(filter));
   OpList::Global().add(filter_const_node);
+
+  // create bias node if has bias
+  // supports the bias nodes with the following dimensions
+  // 0: {oc}
+  // 1: {1, oc, oh, ow}
+  // 2: {n, oc, oh, ow}
+  std::shared_ptr<ge::Operator> bias_node = nullptr;
+  bool is_channel_bias = false;
+  if (HasInputArg(op_info, scope, "Bias")) {
+    auto bias_var_name = op_info->Input("Bias").front();
+    auto* bias = scope->FindVar(bias_var_name)->GetMutable<lite::Tensor>();
+    auto bias_dims = bias->dims();
+    auto bias_data_size = bias_dims.production();
+    auto output_data_size = output_dims.production();
+    std::vector<int64_t> bias_shape;
+    if (bias_data_size == oc) {
+      // 0: {oc}
+      bias_shape = {1, oc, 1, 1};
+      is_channel_bias = true;
+    } else if (bias_data_size == output_data_size / bs) {
+      // 1: {1, oc, oh, ow}
+      bias_shape = {1, output_dims[1], output_dims[2], output_dims[3]};
+    } else if (bias_data_size == output_data_size) {
+      // 2: {n, oc, oh, ow}
+      bias_shape = output_dims.Vectorize();
+    } else {
+      LOG(ERROR) << "bias dimension " << bias_dims
+                 << " isn't supported in conv2d Op when output dimension is "
+                 << output_dims;
+    }
+    if (inputs_map.count(bias_var_name)) {
+      // bias node from input map
+      bias_node = inputs_map.at(bias_var_name);
+    } else {
+      // bias node with const data
+      auto bias_const_node = std::make_shared<ge::op::Const>(bias_var_name);
+      bias_const_node->set_attr_value(CvtFromLiteTensor(bias, bias_shape));
+      bias_node = bias_const_node;
+    }
+    OpList::Global().add(bias_node);
+  }
 
   // create conv node and set input, filter, bias nodes and attributes
   std::shared_ptr<ge::Operator> conv_node = nullptr;
@@ -105,38 +149,12 @@ node_map_type ConvConverter(const std::shared_ptr<lite::OpLite> conv_op,
         ge::AttrValue::LIST_INT({filter_dims[2], filter_dims[3]}));
     OpList::Global().add(depthwise_conv_node);
     conv_node = depthwise_conv_node;
-    // create bias node if has bias
-    if (HasInputArg(op_info, scope, "Bias")) {
-      auto bias_var_name = op_info->Input("Bias").front();
-      auto* bias = scope->FindVar(bias_var_name)->GetMutable<lite::Tensor>();
-      auto bias_dims = bias->dims();
+    // ConvolutionDepthwise Op doesn't support bias, so append Add node to
+    // support bias
+    if (bias_node != nullptr) {
       auto add_node = std::make_shared<ge::op::Add>(unique_op_type + "/add");
       add_node->set_input_x1(*depthwise_conv_node);
-      if (inputs_map.count(bias_var_name)) {
-        CHECK(bias_dims.production() == filter_dims[0] ||
-              bias_dims.production() == output_dims.production())
-            << "bias dimension " << bias_dims
-            << " is'nt supported in conv2d Op when output dims is "
-            << output_dims;
-        add_node->set_input_x2(*inputs_map.at(bias_var_name));
-        OpList::Global().add(inputs_map.at(bias_var_name));
-      } else {
-        auto bias_const_node = std::make_shared<ge::op::Const>(bias_var_name);
-        if (bias_dims.production() == filter_dims[0]) {  // only has channel
-          bias_const_node->set_attr_value(
-              CvtFromLiteTensor(bias, {1, filter_dims[0], 1, 1}));
-        } else if (bias_dims.production() ==
-                   output_dims.production()) {  // bias dims = output dims
-          bias_const_node->set_attr_value(
-              CvtFromLiteTensor(bias, output_dims.Vectorize()));
-        } else {
-          LOG(ERROR) << "bias dimension " << bias_dims
-                     << " is'nt supported in conv2d Op when output dims is "
-                     << output_dims;
-        }
-        add_node->set_input_x2(*bias_const_node);
-        OpList::Global().add(bias_const_node);
-      }
+      add_node->set_input_x2(*bias_node);
       OpList::Global().add(add_node);
       conv_node = add_node;
     }
@@ -158,42 +176,17 @@ node_map_type ConvConverter(const std::shared_ptr<lite::OpLite> conv_op,
         ge::AttrValue::LIST_INT({filter_dims[2], filter_dims[3]}));
     OpList::Global().add(common_conv_node);
     conv_node = common_conv_node;
-    // create bias node if has bias
-    if (HasInputArg(op_info, scope, "Bias")) {
-      auto bias_var_name = op_info->Input("Bias").front();
-      auto* bias = scope->FindVar(bias_var_name)->GetMutable<lite::Tensor>();
-      auto bias_dims = bias->dims();
-      if (bias_dims.production() == filter_dims[0]) {  // only has channel
-        if (inputs_map.count(bias_var_name)) {
-          common_conv_node->set_input_b(*inputs_map.at(bias_var_name));
-          OpList::Global().add(inputs_map.at(bias_var_name));
-        } else {
-          auto bias_const_node = std::make_shared<ge::op::Const>(bias_var_name);
-          bias_const_node->set_attr_value(
-              CvtFromLiteTensor(bias, {1, filter_dims[0], 1, 1}));
-          common_conv_node->set_input_b(*bias_const_node);
-          OpList::Global().add(bias_const_node);
-        }
-      } else if (bias_dims.production() ==
-                 output_dims.production()) {  // bias dims = output dims
+    // Convolution Op only support bias with dimension {1, oc, 1, 1},
+    // so append Add node if dimension is {1, oc, oh, ow} or (n, oc, oh, ow)
+    if (bias_node != nullptr) {
+      if (is_channel_bias) {
+        common_conv_node->set_input_b(*bias_node);
+      } else {
         auto add_node = std::make_shared<ge::op::Add>(unique_op_type + "/add");
         add_node->set_input_x1(*common_conv_node);
-        if (inputs_map.count(bias_var_name)) {
-          add_node->set_input_x2(*inputs_map.at(bias_var_name));
-          OpList::Global().add(inputs_map.at(bias_var_name));
-        } else {
-          auto bias_const_node = std::make_shared<ge::op::Const>(bias_var_name);
-          bias_const_node->set_attr_value(
-              CvtFromLiteTensor(bias, output_dims.Vectorize()));
-          add_node->set_input_x2(*bias_const_node);
-          OpList::Global().add(bias_const_node);
-        }
+        add_node->set_input_x2(*bias_node);
         OpList::Global().add(add_node);
         conv_node = add_node;
-      } else {
-        LOG(ERROR) << "bias dimension " << bias_dims
-                   << " is'nt supported in conv2d Op when output dims is "
-                   << output_dims;
       }
     }
   }
