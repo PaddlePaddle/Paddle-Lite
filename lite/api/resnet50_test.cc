@@ -29,7 +29,7 @@ namespace lite {
 void TestModel(const std::vector<Place>& valid_places,
                const Place& preferred_place) {
   DeviceInfo::Init();
-  DeviceInfo::Global().SetRunMode(LITE_POWER_HIGH, FLAGS_threads);
+  DeviceInfo::Global().SetRunMode(lite_api::LITE_POWER_HIGH, FLAGS_threads);
   lite::Predictor predictor;
 
   predictor.Build(FLAGS_model_dir, preferred_place, valid_places);

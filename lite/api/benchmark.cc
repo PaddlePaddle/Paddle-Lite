@@ -69,10 +69,10 @@ void Run(const std::vector<std::vector<int64_t>>& input_shapes,
 #ifdef LITE_WITH_ARM
   lite::DeviceInfo::Init();
   if (thread_num == 1) {
-    lite::DeviceInfo::Global().SetRunMode(lite::LITE_POWER_HIGH, thread_num);
+    lite::DeviceInfo::Global().SetRunMode(LITE_POWER_HIGH, thread_num);
     LOG(INFO) << "LITE_POWER_HIGH";
   } else {
-    lite::DeviceInfo::Global().SetRunMode(lite::LITE_POWER_NO_BIND, thread_num);
+    lite::DeviceInfo::Global().SetRunMode(LITE_POWER_NO_BIND, thread_num);
     LOG(INFO) << "LITE_POWER_NO_BIND";
   }
 #endif
