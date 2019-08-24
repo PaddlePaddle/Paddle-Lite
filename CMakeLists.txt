@@ -80,6 +80,8 @@ option(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK  "Enable light-weight framework" OFF)
 option(LITE_WITH_PROFILE  "Enable profile mode in lite framework"  OFF)
 option(LITE_SHUTDOWN_LOG "Shutdown log system or not." OFF)
 option(LITE_ON_TINY_PUBLISH "Publish tiny predictor lib." OFF)
+# publish options
+option(LITE_BUILD_EXTRA "Enable extra algorithm support in Lite, both kernels and operators" OFF)
 
 set(THIRD_PARTY_PATH "${CMAKE_BINARY_DIR}/third_party" CACHE STRING
         "A path setting third party libraries download & build directories.")

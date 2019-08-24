@@ -13,7 +13,6 @@ set(LITE_MODEL_DIR "${THIRD_PARTY_PATH}/install")
 
 set(LITE_ON_MOBILE ${LITE_WITH_LIGHT_WEIGHT_FRAMEWORK})
 
-
 add_subdirectory(utils)
 add_subdirectory(operators)
 add_subdirectory(kernels)
