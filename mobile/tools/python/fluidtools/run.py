@@ -535,6 +535,7 @@ def main():
     push(checked_model_path)
     push(feed_path + "/" + last_feed_file_name, "input.txt")
     push(mobile_src_root + "/build/release/arm-v7a/build/libpaddle-mobile.so")
+    push(mobile_src_root + "/build/release/arm-v7a/build/cl_kernel")
     push(mobile_src_root + "/test/build/test-net")
     last_feed_var_shape = get_feed_var_shape(last_feed_var_name)
     args = str(len(last_feed_var_shape))

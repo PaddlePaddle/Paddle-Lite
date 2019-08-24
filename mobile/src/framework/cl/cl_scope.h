@@ -14,9 +14,11 @@ limitations under the License. */
 
 #pragma once
 
+#include <map>
 #include <memory>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 #include "CL/cl.h"
 #include "framework/cl/cl_deleter.h"
@@ -24,6 +26,10 @@ limitations under the License. */
 #include "framework/cl/cl_tool.h"
 
 namespace paddle_mobile {
+
+extern const std::map<std::string, std::vector<unsigned char>> opencl_kernels;
+extern const std::vector<std::string> need_conv_header_kernels;
+
 namespace framework {
 
 class CLScope {
@@ -62,15 +68,35 @@ class CLScope {
       return it->second.get();
     }
 
-    auto program = CLEngine::Instance()->CreateProgramWith(
-        context_,
-        CLEngine::Instance()->GetCLPath() + "/cl_kernel/" + file_name);
+    if (opencl_kernels.find(file_name) != opencl_kernels.end()) {
+      auto it = opencl_kernels.find(file_name);
+      std::string source(it->second.begin(), it->second.end());
+      if (std::find(need_conv_header_kernels.begin(),
+                    need_conv_header_kernels.end(),
+                    file_name) != need_conv_header_kernels.end()) {
+        auto it = opencl_kernels.find("conv_kernel.inc.cl");
+        std::string header(it->second.begin(), it->second.end());
+        source = header + source;
+      }
+      auto program = CLEngine::Instance()->CreateProgramWithSource(
+          context_, source.c_str());
 
-    DLOG << " --- begin build program -> " << program_key << " --- ";
-    CLEngine::Instance()->BuildProgram(program.get(), options);
-    DLOG << " --- end build program -> " << program_key << " --- ";
+      DLOG << " --- begin build program -> " << program_key << " --- ";
+      CLEngine::Instance()->BuildProgram(program.get(), options);
+      DLOG << " --- end build program -> " << program_key << " --- ";
 
-    programs_[program_key] = std::move(program);
+      programs_[program_key] = std::move(program);
+    } else {
+      auto program = CLEngine::Instance()->CreateProgramWith(
+          context_,
+          CLEngine::Instance()->GetCLPath() + "/cl_kernel/" + file_name);
+
+      DLOG << " --- begin build program -> " << program_key << " --- ";
+      CLEngine::Instance()->BuildProgram(program.get(), options);
+      DLOG << " --- end build program -> " << program_key << " --- ";
+
+      programs_[program_key] = std::move(program);
+    }
 
     return programs_[program_key].get();
   }
