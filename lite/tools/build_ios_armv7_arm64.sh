@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 build_dir=build.ios.armv7.arm64
 mkdir -p ${build_dir}
@@ -15,11 +16,15 @@ cmake .. \
         -DLITE_WITH_CUDA=OFF \
         -DLITE_WITH_X86=OFF \
         -DLITE_WITH_ARM=ON \
-        -DLITE_WITH_OPENMP=ON \
+        -DWITH_TESTING=OFF \
+        -DLITE_WITH_JAVA=OFF \
+        -DLITE_SHUTDOWN_LOG=ON \
+        -DLITE_ON_TINY_PUBLISH=ON \
+        -DLITE_WITH_OPENMP=OFF \
+        -DWITH_ARM_DOTPROD=OFF \
         -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
-        -DWITH_TESTING=ON \
         -DARM_TARGET_OS=ios
 
-make -j2
+make -j4
 
 cd -
