@@ -3,7 +3,8 @@ repos:
     sha: v1.0.1
     hooks:
     -   id: remove-crlf
-        files: (?!.*third_party)^.*$ | (?!.*book)^.*$ ^mobile/ ^metal/ ^web/
+        files: (?!.*third_party)^.*$|(?!.*book)^.*$
+        exclude: ^(mobile/|metal/|web/)
 #-   repo: https://github.com/PaddlePaddle/mirrors-yapf.git
     #sha: 0d79c0c469bab64f7229c9aca2b1186ef47f0e37
     #hooks:
@@ -16,7 +17,7 @@ repos:
     -   id: check-merge-conflict
     -   id: check-symlinks
     -   id: detect-private-key
-        files: (?!.*third_party)^.*$ | (?!.*book)^.*$
+        files: (?!.*third_party)^.*$|(?!.*book)^.*$
     -   id: end-of-file-fixer
 -   repo: local
     hooks:
@@ -25,7 +26,8 @@ repos:
         description: Format files with ClangFormat.
         entry: bash ./tools/codestyle/clang_format.hook -i
         language: system
-        files: \.(c|cc|cxx|cpp|cu|h|hpp|hxx|proto)$ ^mobile/ ^metal/ ^web/
+        files: \.(c|cc|cxx|cpp|cu|h|hpp|hxx|proto)$
+        exclude: ^(mobile/|metal/|web/)
 -   repo: local
     hooks:
     -   id: cpplint-cpp-source
@@ -33,7 +35,8 @@ repos:
         description: Check C++ code style using cpplint.py.
         entry: bash ./tools/codestyle/cpplint_pre_commit.hook
         language: system
-        files: \.(c|cc|cxx|cpp|cu|h|hpp|hxx)$ ^mobile/ ^metal/ ^web/
+        files: \.(c|cc|cxx|cpp|cu|h|hpp|hxx)$
+        exclude: ^(mobile/|metal/|web/)
 #-   repo: local
     #hooks:
     #-   id: pylint-doc-string
@@ -48,5 +51,6 @@ repos:
         name: copyright_checker
         entry: python ./tools/codestyle/copyright.hook
         language: system
-        files: \.(c|cc|cxx|cpp|cu|h|hpp|hxx|proto|py)$ ^mobile/ ^metal/ ^web/
-        exclude: (?!.*third_party)^.*$ | (?!.*book)^.*$
+        files: \.(c|cc|cxx|cpp|cu|h|hpp|hxx|proto|py)$
+        exclude: (?!.*third_party)^.*$|(?!.*book)^.*$
+        exclude: ^(mobile/|metal/|web/)
