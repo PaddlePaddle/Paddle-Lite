@@ -29,12 +29,14 @@ namespace bridge {
 
 node_map_type PoolConverter(const std::shared_ptr<lite::OpLite> pool_op,
                             const node_map_type& inputs_map) {
-  LOG(INFO) << "converting pool...";
-  lite::Scope* scope = pool_op->scope();
-  const lite::OpInfo* op_info = pool_op->op_info();
+  auto scope = pool_op->scope();
+  auto op_info = pool_op->op_info();
+  auto op_type = op_info->Type();
+  auto unique_op_type = UniqueName(op_type);
+  LOG(INFO) << "Converting " + op_type + "...";
 
-  std::shared_ptr<ge::op::Pooling> output_node =
-      std::make_shared<ge::op::Pooling>(UniqueName("pool"));
+  std::shared_ptr<ge::op::Pooling> pool_node =
+      std::make_shared<ge::op::Pooling>(unique_op_type);
   auto x_var_name = op_info->Input("X").front();
   auto pooling_type = op_info->GetAttr<std::string>("pooling_type");
   int npu_mode = 0;
@@ -61,21 +63,21 @@ node_map_type PoolConverter(const std::shared_ptr<lite::OpLite> pool_op,
     npu_ceil_mode = op_info->GetAttr<bool>("ceil_mode") ? 1 : 0;
   }
 
-  output_node->set_input_x(*inputs_map.at(x_var_name));
-  output_node->set_attr_mode(npu_mode);
-  output_node->set_attr_pad_mode(0);
-  output_node->set_attr_global_pooling(npu_global_pooling);
-  output_node->set_attr_window(npu_window);
-  output_node->set_attr_pad(npu_pad);
-  output_node->set_attr_stride(npu_stride);
-  output_node->set_attr_ceil_mode(npu_ceil_mode);
+  pool_node->set_input_x(*inputs_map.at(x_var_name));
+  pool_node->set_attr_mode(npu_mode);
+  pool_node->set_attr_pad_mode(0);
+  pool_node->set_attr_global_pooling(npu_global_pooling);
+  pool_node->set_attr_window(npu_window);
+  pool_node->set_attr_pad(npu_pad);
+  pool_node->set_attr_stride(npu_stride);
+  pool_node->set_attr_ceil_mode(npu_ceil_mode);
   // output_node->set_attr_data_mode(npu_data_mode);
 
   OpList::Global().add(inputs_map.at(x_var_name));
-  OpList::Global().add(output_node);
+  OpList::Global().add(pool_node);
 
   node_map_type outputs_map;
-  outputs_map[op_info->Output("Out").front()] = output_node;
+  outputs_map[op_info->Output("Out").front()] = pool_node;
   return outputs_map;
 }
 

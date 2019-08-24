@@ -10,7 +10,7 @@ endif()
 # lite_cc_library(fc_compute_x86 SRCS fc_compute.cc DEPS ${lite_kernel_deps})
 # lite_cc_library(mul_compute_x86 SRCS mul_compute.cc DEPS ${lite_kernel_deps})
 # lite_cc_library(relu_compute_x86 SRCS relu_compute.cc DEPS ${lite_kernel_deps})
-lite_cc_library(scale_compute_x86 SRCS scale_compute.cc DEPS ${lite_kernel_deps})
+add_kernel(scale_compute_x86 X86 basic SRCS scale_compute.cc DEPS ${lite_kernel_deps})
 # lite_cc_library(elementwise_compute_x86 SRCS elementwise_compute.cc DEPS ${lite_kernel_deps} elementwise_sub_op elementwise_add_op)
 # lite_cc_library(softmax_compute_x86 SRCS softmax_compute.cc DEPS ${lite_kernel_deps} softmax)
 # lite_cc_library(dropout_compute_x86 SRCS dropout_compute.cc DEPS ${lite_kernel_deps} )
@@ -31,23 +31,3 @@ lite_cc_library(scale_compute_x86 SRCS scale_compute.cc DEPS ${lite_kernel_deps}
 # lite_cc_test(test_scale_compute_x86 SRCS scale_compute_test.cc DEPS scale_compute_x86)
 # lite_cc_test(test_dropout_compute_x86 SRCS dropout_compute_test.cc DEPS dropout_compute_x86)
 # lite_cc_test(test_batch_norm_compute_x86 SRCS batch_norm_compute_test.cc DEPS batch_norm_compute_x86)
-
-
-set(x86_kernels
-#     activation_compute_x86
-#     elementwise_compute_x86
-#     mean_compute_x86
-#     fill_constant_compute_x86
-#     mul_compute_x86
-#     relu_compute_x86
-#     fc_compute_x86
-    scale_compute_x86
-#     softmax_compute_x86
-#     dropout_compute_x86
-#     concat_compute_x86
-#     conv_compute_x86
-#     pool_compute_x86
-#     batch_norm_compute_x86
-#     uniform_random_compute_x86
-#     sgd_compute_x86
-    CACHE INTERNAL "x86 kernels")
