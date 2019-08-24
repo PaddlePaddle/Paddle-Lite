@@ -24,6 +24,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <string>
+#include <assert.h>
 #include "lite/utils/replace_stl/stream.h"
 
 // NOLINTFILE()
