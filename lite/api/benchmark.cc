@@ -30,6 +30,7 @@ DEFINE_string(input_shape,
               "1,3,224,224",
               "input shapes, separated by colon and comma");
 DEFINE_string(result_filename, "", "save test result");
+DEFINE_bool(run_model_optimize, false, "apply model_optimize_tool to model, use optimized model to test");
 
 namespace paddle {
 namespace lite_api {
@@ -172,13 +173,16 @@ int main(int argc, char** argv) {
   }
 
   // Output optimized model
-  paddle::lite_api::OutputOptModel(
+  if (FLAGS_run_model_optimize) {
+    paddle::lite_api::OutputOptModel(
       FLAGS_model_dir, save_optimized_model_dir, input_shapes);
+  }
 
 #ifdef LITE_WITH_LIGHT_WEIGHT_FRAMEWORK
   // Run inference using optimized model
+  std::string run_model_dir = FLAGS_run_model_optimize ? save_optimized_model_dir : FLAGS_model_dir;
   paddle::lite_api::Run(input_shapes,
-                        save_optimized_model_dir,
+                        run_model_dir,
                         FLAGS_repeats,
                         FLAGS_threads,
                         FLAGS_warmup,
