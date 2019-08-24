@@ -32,6 +32,10 @@ function make_tiny_publish_so {
 
   cur_dir=$(pwd)
   build_dir=$cur_dir/build.lite.${os}.${abi}.${lang}
+  if [ -d $build_dir ]
+  then
+    rm -rf $build_dir
+  fi
   mkdir -p $build_dir
   cd $build_dir
 
@@ -56,6 +60,10 @@ function make_full_publish_so {
 
   cur_dir=$(pwd)
   build_dir=$cur_dir/build.lite.${os}.${abi}.${lang}
+  if [ -d $build_dir ]
+  then
+    rm -rf $build_dir
+  fi
   mkdir -p $build_dir
   cd $build_dir
 
@@ -79,6 +87,10 @@ function make_all_tests {
 
   cur_dir=$(pwd)
   build_dir=$cur_dir/build.lite.${os}.${abi}.${lang}
+  if [ -d $build_dir ]
+  then
+    rm -rf $build_dir
+  fi
   mkdir -p $build_dir
   cd $build_dir
 
