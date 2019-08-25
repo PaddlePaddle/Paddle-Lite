@@ -58,6 +58,8 @@ function make_full_publish_so {
   local lang=$3
   local android_stl=$4
 
+  git submodule update --init --recursive
+
   cur_dir=$(pwd)
   build_dir=$cur_dir/build.lite.${os}.${abi}.${lang}
   if [ -d $build_dir ]
@@ -85,6 +87,7 @@ function make_all_tests {
   local abi=$2
   local lang=$3
 
+  git submodule update --init --recursive
   cur_dir=$(pwd)
   build_dir=$cur_dir/build.lite.${os}.${abi}.${lang}
   if [ -d $build_dir ]
