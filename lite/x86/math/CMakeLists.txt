@@ -16,7 +16,7 @@ function(math_library TARGET)
     endif()
 
     list(LENGTH cc_srcs cc_srcs_len)
-    lite_cc_library(${TARGET} SRCS ${cc_srcs} DEPS ${math_library_DEPS} ${math_common_deps})
+    lite_cc_library(${TARGET} SRCS ${cc_srcs} DEPS ${math_library_DEPS} ${math_common_deps} eigen3)
 endfunction()
 
 # please add new math_library in alphabetical order
@@ -32,7 +32,7 @@ math_library(sampler)
 math_library(gru_compute DEPS activation_functions math_function)
 ## math_library(lstm_compute DEPS activation_functions)
 
-lite_cc_library(blas SRCS blas.cc DEPS cblas framework_proto)
+lite_cc_library(blas SRCS blas.cc DEPS cblas framework_proto eigen3)
 math_library(math_function DEPS blas)
 math_library(maxouting)
 math_library(pooling)
