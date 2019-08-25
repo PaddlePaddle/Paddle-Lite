@@ -242,13 +242,12 @@ FUNCTION(build_protobuf TARGET_NAME BUILD_FOR_HOST)
         ExternalProject_Add(
             ${TARGET_NAME}
             ${EXTERNAL_PROJECT_LOG_ARGS}
-            PREFIX          ${PROTOBUF_SOURCES_DIR}
-            SOURCE_SUBDIR   cmake
+            PREFIX          ${SOURCE_DIR}
             UPDATE_COMMAND  ""
             GIT_REPOSITORY  ""
             GIT_TAG         ${PROTOBUF_TAG}
             SOURCE_DIR      ${SOURCE_DIR}
-            CMAKE_ARGS
+            CONFIGURE_COMMAND ${CMAKE_COMMAND} ${SOURCE_DIR}/cmake
                 ${OPTIONAL_ARGS}
                 -Dprotobuf_BUILD_TESTS=OFF
                 -DCMAKE_SKIP_RPATH=ON
