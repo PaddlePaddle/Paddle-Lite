@@ -177,10 +177,12 @@ FUNCTION(build_protobuf TARGET_NAME BUILD_FOR_HOST)
         "${PROTOBUF_INSTALL_DIR}/bin/protoc${CMAKE_EXECUTABLE_SUFFIX}"
          PARENT_SCOPE)
 
-    SET(PROTOBUF_REPO "https://github.com/protocolbuffers/protobuf.git")
+    # https://github.com/protocolbuffers/protobuf.git
+    SET(PROTOBUF_REPO "")
     SET(PROTOBUF_TAG "9f75c5aa851cd877fb0d93ccc31b8567a6706546")
     SET(OPTIONAL_CACHE_ARGS "")
     SET(OPTIONAL_ARGS "")
+    SET(SOURCE_DIR "${CMAKE_SOURCE_DIR}/third-party/protobuf-host")
 
     IF(BUILD_FOR_HOST)
         SET(OPTIONAL_ARGS
@@ -191,8 +193,10 @@ FUNCTION(build_protobuf TARGET_NAME BUILD_FOR_HOST)
         SET(OPTIONAL_CACHE_ARGS "-DZLIB_ROOT:STRING=${ZLIB_ROOT}")
     ELSE()
         # protobuf have compile issue when use android stl c++_static
-        SET(PROTOBUF_REPO "https://github.com/tensor-tang/protobuf.git")
+        # https://github.com/tensor-tang/protobuf.git
+        SET(PROTOBUF_REPO "")
         SET(PROTOBUF_TAG "mobile")
+        SET(SOURCE_DIR "${CMAKE_SOURCE_DIR}/third-party/protobuf-mobile")
         SET(OPTIONAL_ARGS "-Dprotobuf_WITH_ZLIB=OFF"
                 ${CROSS_COMPILE_CMAKE_ARGS}
                 "-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}"
@@ -217,6 +221,7 @@ FUNCTION(build_protobuf TARGET_NAME BUILD_FOR_HOST)
             UPDATE_COMMAND  ""
             GIT_REPOSITORY  ${PROTOBUF_REPO}
             GIT_TAG         ${PROTOBUF_TAG}
+            SOURCE_DIR      ${SOURCE_DIR}
             CMAKE_ARGS
                 ${OPTIONAL_ARGS}
                 -Dprotobuf_BUILD_TESTS=OFF
