@@ -31,4 +31,4 @@ if(LITE_WITH_NPU)
 endif()
 
 set(subgraph_passes ${subgraph_passes} CACHE INTERNAL "subgraph_passes")
-message(STATUS "+++++ subgraph_passes: ${subgraph_passes}")
+message(STATUS "----> subgraph_passes: ${subgraph_passes}")

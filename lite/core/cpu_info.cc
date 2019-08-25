@@ -827,7 +827,7 @@ void DeviceInfo::RequestPowerHighMode(int thread_num) {
   int little_core_size = little_core_ids_.size();
   active_ids_.clear();
   if (big_core_size > 0) {
-    mode_ =lite_api::PowerMode::LITE_POWER_HIGH;
+    mode_ = lite_api::PowerMode::LITE_POWER_HIGH;
     if (thread_num > big_core_size) {
       LOG(ERROR) << "Request thread num: " << thread_num
                  << ", exceed the big cores size: " << big_core_size
@@ -1031,7 +1031,8 @@ int DeviceInfo::Setup() {
   }
   LOG(INFO) << "Total memory: " << mem_size_ << "KB";
   // set default run mode
-  SetRunMode(lite_api::PowerMode::LITE_POWER_NO_BIND, 1);  // use single thread by default
+  SetRunMode(lite_api::PowerMode::LITE_POWER_NO_BIND,
+             1);  // use single thread by default
   return 0;
 }
 

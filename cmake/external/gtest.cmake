@@ -12,15 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-#FIXME:(gongwb) Move brpc's gtest dependency.
-IF(WITH_TESTING OR (WITH_DISTRIBUTE AND NOT WITH_GRPC))
+# the gtest is only used when WITH_TESTING=ON
+IF(WITH_TESTING)
     IF(WITH_TESTING)
         ENABLE_TESTING()
     ENDIF(WITH_TESTING)
 
     INCLUDE(ExternalProject)
 
-    SET(GTEST_SOURCES_DIR ${THIRD_PARTY_PATH}/gtest)
+    SET(GTEST_SOURCES_DIR ${CMAKE_SOURCE_DIR}/third-party/googletest)
     SET(GTEST_INSTALL_DIR ${THIRD_PARTY_PATH}/install/gtest)
     SET(GTEST_INCLUDE_DIR "${GTEST_INSTALL_DIR}/include" CACHE PATH "gtest include directory." FORCE)
 
@@ -56,9 +56,10 @@ IF(WITH_TESTING OR (WITH_DISTRIBUTE AND NOT WITH_GRPC))
         extern_gtest
         ${EXTERNAL_PROJECT_LOG_ARGS}
         DEPENDS         ${GTEST_DEPENDS}
-        GIT_REPOSITORY  "https://github.com/google/googletest.git"
+        GIT_REPOSITORY  ""
+        SOURCE_DIR      ${GTEST_SOURCES_DIR}
         GIT_TAG         "release-1.8.0"
-        PREFIX          ${GTEST_SOURCES_DIR}
+        PREFIX          ${GTEST_INSTALL_DIR}
         UPDATE_COMMAND  ""
         CMAKE_ARGS      ${CROSS_COMPILE_CMAKE_ARGS}
                         ${OPTIONAL_ARGS}
@@ -82,4 +83,4 @@ IF(WITH_TESTING OR (WITH_DISTRIBUTE AND NOT WITH_GRPC))
     SET_PROPERTY(TARGET gtest_main PROPERTY IMPORTED_LOCATION ${GTEST_MAIN_LIBRARIES})
     ADD_DEPENDENCIES(gtest_main extern_gtest)
 
-ENDIF(WITH_TESTING OR (WITH_DISTRIBUTE AND NOT WITH_GRPC))
+ENDIF()

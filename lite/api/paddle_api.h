@@ -113,9 +113,14 @@ class LITE_API CxxConfig : public ConfigBase {
 class LITE_API MobileConfig : public ConfigBase {
   PowerMode mode_{LITE_POWER_HIGH};
   int threads_{1};
-public:
-  MobileConfig(Place preferred_place=Place(TARGET(kARM), PRECISION(kFloat), DATALAYOUT(kNCHW)),
-               PowerMode mode=LITE_POWER_HIGH, int threads=1) : mode_(mode), threads_(threads) {}
+
+ public:
+  MobileConfig(Place preferred_place = Place(TARGET(kARM),
+                                             PRECISION(kFloat),
+                                             DATALAYOUT(kNCHW)),
+               PowerMode mode = LITE_POWER_HIGH,
+               int threads = 1)
+      : mode_(mode), threads_(threads) {}
   void set_power_mode(PowerMode mode) { mode_ = mode; }
   void set_threads(int threads) { threads_ = threads; }
 
