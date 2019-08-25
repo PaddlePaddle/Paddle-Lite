@@ -219,7 +219,7 @@ FUNCTION(build_protobuf TARGET_NAME BUILD_FOR_HOST)
             PREFIX          ${PROTOBUF_SOURCES_DIR}
             SOURCE_SUBDIR   cmake
             UPDATE_COMMAND  ""
-            GIT_REPOSITORY  ${PROTOBUF_REPO}
+            GIT_REPOSITORY  ""
             GIT_TAG         ${PROTOBUF_TAG}
             SOURCE_DIR      ${SOURCE_DIR}
             CMAKE_ARGS
@@ -243,11 +243,12 @@ FUNCTION(build_protobuf TARGET_NAME BUILD_FOR_HOST)
             ${TARGET_NAME}
             ${EXTERNAL_PROJECT_LOG_ARGS}
             PREFIX          ${PROTOBUF_SOURCES_DIR}
+            SOURCE_SUBDIR   cmake
             UPDATE_COMMAND  ""
-            GIT_REPOSITORY  ${PROTOBUF_REPO}
+            GIT_REPOSITORY  ""
             GIT_TAG         ${PROTOBUF_TAG}
-            CONFIGURE_COMMAND
-            ${CMAKE_COMMAND} ${PROTOBUF_SOURCES_DIR}/src/${TARGET_NAME}/cmake
+            SOURCE_DIR      ${SOURCE_DIR}
+            CMAKE_ARGS
                 ${OPTIONAL_ARGS}
                 -Dprotobuf_BUILD_TESTS=OFF
                 -DCMAKE_SKIP_RPATH=ON
