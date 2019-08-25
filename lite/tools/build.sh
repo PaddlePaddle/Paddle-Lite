@@ -106,6 +106,7 @@ function make_all_tests {
 
 
 function print_usage {
+    set +x
     echo -e "\nUSAGE:"
     echo
     echo "----------------------------------------"

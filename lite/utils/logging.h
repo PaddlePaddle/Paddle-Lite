@@ -18,13 +18,13 @@
  */
 #pragma once
 
+#include <assert.h>
 #include <sys/time.h>
 #include <sys/types.h>
 #include <time.h>
 #include <cstdlib>
 #include <cstring>
 #include <string>
-#include <assert.h>
 #include "lite/utils/replace_stl/stream.h"
 
 // NOLINTFILE()
