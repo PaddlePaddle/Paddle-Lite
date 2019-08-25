@@ -23,6 +23,9 @@ DEFINE_string(model_dir, "", "model dir");
 DEFINE_int32(warmup, 0, "warmup times");
 DEFINE_int32(repeats, 1, "repeats times");
 DEFINE_int32(threads, 1, "threads num");
+DEFINE_int32(im_width, 224, "image width");
+DEFINE_int32(im_height, 224, "image height");
+DEFINE_bool(int8, false, "is run int8");
 
 namespace paddle {
 namespace lite {

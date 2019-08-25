@@ -521,7 +521,7 @@ struct PriorBoxParam {
 struct DensityPriorBoxParam : public PriorBoxParam {
   std::vector<float> fixed_sizes;
   std::vector<float> fixed_ratios;
-  std::vector<float> density_sizes;
+  std::vector<int> density_sizes;
 };
 /// ----------------------- GRU operators ----------------------f
 struct GRUParam {

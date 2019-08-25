@@ -20,7 +20,7 @@ if (NOT LITE_ON_TINY_PUBLISH)
 else()
     add_library(paddle_lite_jni SHARED "")
     target_sources(paddle_lite_jni PUBLIC ${__lite_cc_files} paddle_lite_jni.cc tensor_jni.cc)
-    #add_dependencies(paddle_lite_jni ${lib_DEPS} ${arm_kernels} ${npu_kernels})
+    add_dependencies(paddle_lite_jni op_list_h kernel_list_h)
 endif()
 
 if (APPLE)
