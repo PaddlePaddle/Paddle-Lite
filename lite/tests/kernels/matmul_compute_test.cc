@@ -180,8 +180,7 @@ class MatMulComputeTester : public arena::TestCase {
 
       if (y_dims_.size() > 2) {
         int y_inner = y_dims_[y_dims_.size() - 2] * y_dims_[y_dims_.size() - 1];
-        int o_inner =
-            dim_out_vec[x_dims_.size() - 2] * dim_out_vec[x_dims_.size() - 1];
+        int o_inner = dim_out_vec[x_dims_.size() - 2] * dim_out_vec[x_dims_.size() - 1];
         for (size_t i = 0; i < x_dims_.count(0, x_dims_.size() - 2); ++i) {
           mul_low_efficiency(
               DDim({x_dims_[x_dims_.size() - 2], x_dims_[x_dims_.size() - 1]}),
@@ -194,8 +193,7 @@ class MatMulComputeTester : public arena::TestCase {
               out_data + i * o_inner);
         }
       } else {
-        int o_inner =
-            dim_out_vec[x_dims_.size() - 2] * dim_out_vec[x_dims_.size() - 1];
+        int o_inner = dim_out_vec[x_dims_.size() - 2] * dim_out_vec[x_dims_.size() - 1];
         for (size_t i = 0; i < x_dims_.count(0, x_dims_.size() - 2); ++i) {
           mul_low_efficiency(
               DDim({x_dims_[x_dims_.size() - 2], x_dims_[x_dims_.size() - 1]}),
@@ -299,10 +297,10 @@ class MatMulComputeTester : public arena::TestCase {
     std::vector<float> y_data(y_dims_.production());
 
     for (int i = 0; i < x_dims_.production(); ++i) {
-      x_data[i] = 1;  // i * 1.1;
+      x_data[i] = 1; // i * 1.1;
     }
     for (int i = 0; i < y_dims_.production(); ++i) {
-      y_data[i] = 1;  // i * 0.9;
+      y_data[i] = 1; // i * 0.9;
     }
 
     SetCommonTensor(x_, x_dims_, x_data.data());
