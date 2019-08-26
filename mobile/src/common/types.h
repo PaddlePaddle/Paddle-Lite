@@ -83,7 +83,8 @@ enum PMStatus {
   PMOutOfAuthority = 0x05, /*!< Try to modified data not your own*/
   PMOutOfMem = 0x06,       /*!< OOM error*/
   PMUnImplError = 0x07,    /*!< Unimplement error. */
-  PMWrongDevice = 0x08     /*!< un-correct device. */
+  PMWrongDevice = 0x08,    /*!< un-correct device. */
+  PMException = 0x09       /*!< throw exception. */
 };
 
 enum RoundType {
