@@ -23,6 +23,7 @@ add_operator(decode_bboxes_op_lite basic SRCS decode_bboxes_op.cc DEPS ${op_DEPS
 add_operator(box_coder_op_lite basic SRCS box_coder_op.cc DEPS ${op_DEPS})
 add_operator(multiclass_nms_op_lite basic SRCS multiclass_nms_op.cc DEPS ${op_DEPS})
 add_operator(fusion_elementwise_activation_ops basic SRCS fusion_elementwise_activation_ops.cc DEPS elementwise_ops ${op_DEPS})
+add_operator(fusion_add_relu_dropout_op basic SRCS fusion_add_relu_dropout_op.cc DEPS ${op_DEPS})
 add_operator(mean_op basic SRCS mean_op.cc DEPS ${op_DEPS})
 add_operator(fill_constant_op basic SRCS fill_constant_op.cc DEPS ${op_DEPS})
 #add_operator(sgd_op basic SRCS sgd_op.cc DEPS ${op_DEPS})
@@ -86,7 +87,6 @@ add_operator(write_to_array_op extra SRCS write_to_array_op.cc DEPS ${op_DEPS})
 add_operator(topk_op extra SRCS topk_op.cc DEPS ${op_DEPS})
 add_operator(increment_op extra SRCS increment_op.cc DEPS ${op_DEPS})
 add_operator(sequence_softmax_op extra SRCS sequence_softmax_op.cc DEPS ${op_DEPS})
-
 
 if (NOT LITE_WITH_X86)
     lite_cc_test(test_fc_op SRCS fc_op_test.cc

@@ -114,6 +114,32 @@ void ElementwiseAddActivationCompute::Run() {
     }
   }
 }
+void ElementwiseAddActivationScaleCompute::Run() {
+  auto& param = Param<operators::FusionElementwiseActivationParam>();
+  const float* x_data = param.X->data<float>();
+  const float* y_data = param.Y->data<float>();
+  float* out_data = param.Out->mutable_data<float>();
+  int axis = param.axis;
+  std::string act_type = param.act_type;
+  auto x_dims = param.X->dims();
+  auto y_dims = param.Y->dims();
+  int pre, n, post;
+  if (is_broadcast(x_dims, y_dims, axis, &pre, &n, &post)) {
+    if (act_type == "relu") {
+      lite::arm::math::elementwise_add_relu_scale_broadcast(
+          x_data, y_data, out_data, pre, n, post, param.scale);
+    } else {
+      LOG(FATAL) << "unsupported Activation type: " << act_type;
+    }
+  } else {
+    if (act_type == "relu") {
+      lite::arm::math::elementwise_add_relu_scale(
+          x_data, y_data, out_data, x_dims.production(), param.scale);
+    } else {
+      LOG(FATAL) << "unsupported Activation type: " << act_type;
+    }
+  }
+}
 
 void ElementwiseMulCompute::Run() {
   auto& param = Param<operators::ElementwiseParam>();
@@ -223,6 +249,28 @@ REGISTER_LITE_KERNEL(elementwise_add,
 
 REGISTER_LITE_KERNEL(
     fusion_elementwise_add_activation,
+    kARM,
+    kFloat,
+    kNCHW,
+    paddle::lite::kernels::arm::ElementwiseAddActivationCompute,
+    def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .Finalize();
+REGISTER_LITE_KERNEL(
+    fusion_elementwise_add_activation_scale,
+    kARM,
+    kFloat,
+    kNCHW,
+    paddle::lite::kernels::arm::ElementwiseAddActivationCompute,
+    def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .Finalize();
+REGISTER_LITE_KERNEL(
+    fusion_add_relu_dropout,
     kARM,
     kFloat,
     kNCHW,

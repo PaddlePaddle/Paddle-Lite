@@ -49,6 +49,9 @@ USE_LITE_KERNEL(elementwise_max, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(fusion_elementwise_add_activation, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(fusion_elementwise_mul_activation, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(fusion_elementwise_max_activation, kARM, kFloat, kNCHW, def);
+USE_LITE_KERNEL(
+    fusion_elementwise_add_activation_scale, kARM, kFloat, kNCHW, def);
+USE_LITE_KERNEL(fusion_add_relu_dropout, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(split, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(dropout, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(concat, kARM, kFloat, kNCHW, def);
