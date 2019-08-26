@@ -37,7 +37,9 @@ void ElementwiseAddCompute::PrepareForRun() {
   pe_.init();
   pe_.apply();
 }
-void ElementwiseAddCompute::Run() { pe_.dispatch(); }
+void ElementwiseAddCompute::Run() { 
+  pe_.dispatch();
+}
 
 void ElementwiseAddActivationCompute::PrepareForRun() {
   zynqmp::ElementwiseAddParam& ew_param = pe_.param();
@@ -53,7 +55,9 @@ void ElementwiseAddActivationCompute::PrepareForRun() {
   pe_.init();
   pe_.apply();
 }
-void ElementwiseAddActivationCompute::Run() { pe_.dispatch(); }
+void ElementwiseAddActivationCompute::Run() { 
+  pe_.dispatch(); 
+}
 
 }  // namespace fpga
 }  // namespace kernels

@@ -45,7 +45,9 @@ void PoolCompute::PrepareForRun() {
   pe_.apply();
 }
 
-void PoolCompute::Run() { pe_.dispatch(); }
+void PoolCompute::Run() { 
+  pe_.dispatch(); 
+}
 
 }  // namespace fpga
 }  // namespace kernels

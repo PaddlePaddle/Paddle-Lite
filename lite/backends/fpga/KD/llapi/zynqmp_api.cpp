@@ -43,7 +43,7 @@ static inline int do_ioctl(uint64_t req, const void *arg) {
 #ifdef PADDLE_LITE_OS_LINUX
   ret = ioctl(fd, req, arg);
   if (ret != 0) {
-    throw - 1;
+    throw -1;
   }
 #else
   return ret;

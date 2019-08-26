@@ -339,6 +339,14 @@ class Tensor {
     }
   }
 
+  void printScale(std::string type) {
+    std::cout << type << " : " << std::to_string(shape_->num()) + "_" +
+           std::to_string(shape_->channel()) + "_" +
+           std::to_string(shape_->height()) << std::endl;
+    std::cout << type << " \n";
+    printScale();
+  }
+
   std::string dimsFileName() {
     return std::to_string(shape_->num()) + "_" +
            std::to_string(shape_->channel()) + "_" +
