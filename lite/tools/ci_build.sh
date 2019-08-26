@@ -22,6 +22,9 @@ function prepare_workspace {
     DEBUG_TOOL_PATH_PREFIX=lite/tools/debug
     mkdir -p ./${DEBUG_TOOL_PATH_PREFIX}
     cp ../${DEBUG_TOOL_PATH_PREFIX}/analysis_tool.py ./${DEBUG_TOOL_PATH_PREFIX}/
+
+    # clone submodule
+    git submodule update --init --recursive
 }
 
 function check_need_ci {

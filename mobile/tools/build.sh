@@ -2,6 +2,15 @@
 NETS=""
 declare -a supportedNets=("googlenet" "mobilenet" "yolo" "squeezenet" "resnet" "mobilenetssd" "nlp" "mobilenetfssd" "genet" "super" "op")
 
+# merge cl to so
+merge_cl_to_so=1
+rm ../src/operators/kernel/cl/opencl_kernels.cpp
+if [ $merge_cl_to_so == 1 ]; then
+    cd ../src/operators/kernel/cl
+    python gen_code.py > opencl_kernels.cpp
+    cd -
+fi
+
 build_for_mac() {
     if [ ! `which brew` ]; then
         echo "building failed! homebrew not found, please install homebrew."

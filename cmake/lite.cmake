@@ -57,6 +57,8 @@ function (lite_deps TARGET)
     endforeach(var)
   endif()
 
+
+
   if (NOT LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
     foreach(var ${lite_deps_HVY_DEPS})
       set(deps ${deps} ${var})
@@ -182,8 +184,15 @@ function(lite_cc_test TARGET)
     set(oneValueArgs "")
     set(multiValueArgs SRCS DEPS X86_DEPS CUDA_DEPS CL_DEPS ARM_DEPS FPGA_DEPS PROFILE_DEPS
         LIGHT_DEPS HVY_DEPS EXCLUDE_COMPILE_DEPS
-        ARGS)
+        ARGS
+        COMPILE_LEVEL # (basic|extra)
+        )
     cmake_parse_arguments(args "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+
+    if (args_COMPILE_LEVEL STREQUAL "extra" AND (NOT LITE_BUILD_EXTRA))
+      MESSAGE(STATUS "Ignore test ${TARGET} due to compile level ${args_COMPILE_LEVEL}")
+      return()
+    endif()
 
     set(deps "")
     lite_deps(deps
@@ -205,6 +214,117 @@ function(lite_cc_test TARGET)
     if (NOT args_EXCLUDE_COMPILE_DEPS)
         add_dependencies(lite_compile_deps ${TARGET})
     endif()
+endfunction()
+
+set(arm_kernels CACHE INTERNAL "arm kernels")
+set(x86_kernels CACHE INTERNAL "x86 kernels")
+set(fpga_kernels CACHE INTERNAL "fpga kernels")
+set(npu_kernels CACHE INTERNAL "npu kernels")
+set(opencl_kernels CACHE INTERNAL "opencl kernels")
+set(host_kernels CACHE INTERNAL "host kernels")
+
+set(kernels_src_list "${CMAKE_BINARY_DIR}/kernels_src_list.txt")
+file(WRITE ${kernels_src_list} "") # clean
+# add a kernel for some specific device
+# device: one of (Host, ARM, X86, NPU, FPGA, OPENCL, CUDA)
+# level: one of (basic, extra)
+function(add_kernel TARGET device level)
+    set(options "")
+    set(oneValueArgs "")
+    set(multiValueArgs SRCS DEPS X86_DEPS CUDA_DEPS CL_DEPS ARM_DEPS FPGA_DEPS PROFILE_DEPS
+        LIGHT_DEPS HVY_DEPS EXCLUDE_COMPILE_DEPS
+        ARGS)
+    cmake_parse_arguments(args "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+
+    if ("${level}" STREQUAL "extra" AND (NOT LITE_BUILD_EXTRA))
+        return()
+    endif()
+
+    if ("${device}" STREQUAL "Host")
+        set(host_kernels "${host_kernels};${TARGET}" CACHE INTERNAL "")
+    endif()
+    if ("${device}" STREQUAL "ARM")
+        if (NOT LITE_WITH_ARM)
+            return()
+        endif()
+        set(arm_kernels "${arm_kernels};${TARGET}" CACHE INTERNAL "")
+    endif()
+    if ("${device}" STREQUAL "X86")
+        if (NOT LITE_WITH_X86)
+            return()
+        endif()
+        set(x86_kernels "${x86_kernels};${TARGET}" CACHE INTERNAL "")
+    endif()
+    if ("${device}" STREQUAL "NPU")
+        if (NOT LITE_WITH_NPU)
+            return()
+        endif()
+        set(npu_kernels "${npu_kernels};${TARGET}" CACHE INTERNAL "")
+    endif()
+    if ("${device}" STREQUAL "FPGA")
+        if (NOT LITE_WITH_FPGA)
+            return()
+        endif()
+        set(fpga_kernels "${fpga_kernels};${TARGET}" CACHE INTERNAL "")
+    endif()
+    if ("${device}" STREQUAL "OPENCL")
+        if (NOT LITE_WITH_OPENCL)
+            return()
+        endif()
+        set(opencl_kernels "${opencl_kernels};${TARGET}" CACHE INTERNAL "")
+    endif()
+
+    foreach(src ${args_SRCS})
+        file(APPEND ${kernels_src_list} "${CMAKE_CURRENT_SOURCE_DIR}/${src}\n")
+    endforeach()
+
+    lite_cc_library(${TARGET} SRCS ${args_SRCS}
+              DEPS ${args_DEPS}
+              X86_DEPS ${args_X86_DEPS}
+              CUDA_DEPS ${args_CUDA_DEPS}
+              CL_DEPS ${args_CL_DEPS}
+              ARM_DEPS ${args_ARM_DEPS}
+              FPGA_DEPS ${args_FPGA_DEPS}
+              PROFILE_DEPS ${args_PROFILE_DEPS}
+              LIGHT_DEPS ${args_LIGHT_DEPS}
+              HVY_DEPS ${args_HVY_DEPS}
+      )
+endfunction()
+
+set(ops CACHE INTERNAL "ops")
+set(ops_src_list "${CMAKE_BINARY_DIR}/ops_src_list.txt")
+file(WRITE ${ops_src_list} "") # clean
+# add an operator
+# level: one of (basic, extra)
+function(add_operator TARGET level)
+    set(options "")
+    set(oneValueArgs "")
+    set(multiValueArgs SRCS DEPS X86_DEPS CUDA_DEPS CL_DEPS ARM_DEPS FPGA_DEPS PROFILE_DEPS
+        LIGHT_DEPS HVY_DEPS EXCLUDE_COMPILE_DEPS
+        ARGS)
+    cmake_parse_arguments(args "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+
+    if ("${level}" STREQUAL "extra" AND (NOT LITE_BUILD_EXTRA))
+        return()
+    endif()
+
+    set(ops "${ops};${TARGET}" CACHE INTERNAL "source")
+
+    foreach(src ${args_SRCS})
+      file(APPEND ${ops_src_list} "${CMAKE_CURRENT_SOURCE_DIR}/${src}\n")
+    endforeach()
+
+    lite_cc_library(${TARGET} SRCS ${args_SRCS}
+              DEPS ${args_DEPS}
+              X86_DEPS ${args_X86_DEPS}
+              CUDA_DEPS ${args_CUDA_DEPS}
+              CL_DEPS ${args_CL_DEPS}
+              ARM_DEPS ${args_ARM_DEPS}
+              FPGA_DEPS ${args_FPGA_DEPS}
+              PROFILE_DEPS ${args_PROFILE_DEPS}
+              LIGHT_DEPS ${args_LIGHT_DEPS}
+              HVY_DEPS ${args_HVY_DEPS}
+      )
 endfunction()
 
 
@@ -248,7 +368,7 @@ function(bundle_static_library tgt_name bundled_tgt_name fake_target)
   set(bundled_tgt_full_name
     ${CMAKE_BINARY_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${bundled_tgt_name}${CMAKE_STATIC_LIBRARY_SUFFIX})
 
-  message(STATUS "+++++ bundled_tgt_full_name: ${bundled_tgt_full_name}")
+  #message(STATUS "bundled_tgt_full_name: ${bundled_tgt_full_name}")
 
   if(NOT IOS)
     file(WRITE ${CMAKE_BINARY_DIR}/${bundled_tgt_name}.ar.in

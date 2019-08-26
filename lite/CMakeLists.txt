@@ -10,9 +10,7 @@ message(STATUS "LITE_WITH_FPGA:\t${LITE_WITH_FPGA}")
 message(STATUS "LITE_WITH_PROFILE:\t${LITE_WITH_PROFILE}")
 
 set(LITE_MODEL_DIR "${THIRD_PARTY_PATH}/install")
-
 set(LITE_ON_MOBILE ${LITE_WITH_LIGHT_WEIGHT_FRAMEWORK})
-
 
 add_subdirectory(utils)
 add_subdirectory(operators)
