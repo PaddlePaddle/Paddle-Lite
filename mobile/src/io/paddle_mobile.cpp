@@ -20,7 +20,7 @@ limitations under the License. */
 #endif  // _OPENMP
 #ifdef PADDLE_MOBILE_CL
 #include <CL/cl.h>
-#include <mutex>
+#include <mutex>  // NOLINT
 #include "framework/cl/cl_engine.h"
 #include "framework/cl/cl_tensor.h"
 #endif
@@ -63,6 +63,7 @@ PMStatus PaddleMobile<Device, T>::Load(const std::string &model_path,
   if (loader_.get() == nullptr) {
     loader_ = std::make_shared<framework::Loader<Device, T>>();
   } else {
+    LOG(kLOG_INFO) << "loader inited";
     LOG(kLOG_INFO) << "loader inited";
   }
 
