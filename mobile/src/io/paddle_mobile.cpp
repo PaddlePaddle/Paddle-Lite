@@ -187,6 +187,14 @@ void PaddleMobile<Device, T>::Clear() {
 template <typename Device, typename T>
 double PaddleMobile<Device, T>::GetPredictTime() {}
 
+template <typename Device, typename T>
+std::string PaddleMobile<Device, T>::GetExceptionMsg() {
+  if (executor_.get() != nullptr) {
+    return executor_->GetExceptionMsg();
+  }
+  return "";
+}
+
 #ifdef PADDLE_MOBILE_CPU
 template <>
 double PaddleMobile<CPU, float>::GetPredictTime() {
