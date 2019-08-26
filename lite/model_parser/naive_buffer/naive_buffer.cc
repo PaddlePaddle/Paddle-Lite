@@ -68,13 +68,13 @@ void BinaryTable::LoadFromFile(const std::string &filename) {
 
 void StringBuilder::Save() {
   // memory format: [size][string data]
-  size_t mem_size = sizeof(size_t) + data_.size();
+  uint64_t mem_size = sizeof(uint64_t) + data_.size();
   table()->Require(mem_size);
-  size_t str_len = data_.size();
+  uint64_t str_len = data_.size();
 
   // write meta data of size.
-  memcpy(table()->cursor(), &str_len, sizeof(size_t));
-  table()->Consume(sizeof(size_t));
+  memcpy(table()->cursor(), &str_len, sizeof(uint64_t));
+  table()->Consume(sizeof(uint64_t));
 
   // write the string data.
   memcpy(table()->cursor(),
@@ -85,9 +85,9 @@ void StringBuilder::Save() {
 
 void StringBuilder::Load() {
   // load meta data of size
-  size_t str_len{};
-  memcpy(&str_len, table()->cursor(), sizeof(size_t));
-  table()->Consume(sizeof(size_t));
+  uint64_t str_len{};
+  memcpy(&str_len, table()->cursor(), sizeof(uint64_t));
+  table()->Consume(sizeof(uint64_t));
 
   // load string data.
   data_.resize(str_len);
