@@ -61,11 +61,12 @@ class Optimizer {
            // kernels, and the OpenCL devices will be discarded.
            // TODO(Superjomn) Refine the fusion related design to select fusion
            // kernels for devices automatically.
-           "lite_conv_elementwise_fuse_pass",  //
-           "lite_conv_activation_fuse_pass",   //
-           "lite_fc_fuse_pass",                //
-           "lite_shuffle_channel_fuse_pass",   //
-           "identity_scale_eliminate_pass",    //
+           "lite_conv_elementwise_fuse_pass",             //
+           "lite_conv_activation_fuse_pass",              //
+           "lite_fc_fuse_pass",                           //
+           "lite_shuffle_channel_fuse_pass",              //
+           "lite_transpose_softmax_transpose_fuse_pass",  //
+           "identity_scale_eliminate_pass",               //
 #ifdef LITE_WITH_LIGHT_WEIGHT_FRAMEWORK
            "lite_elementwise_add_activation_fuse_pass",  //
 #endif
