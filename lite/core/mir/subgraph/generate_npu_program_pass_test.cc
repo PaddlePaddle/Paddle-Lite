@@ -17,6 +17,7 @@
 #include <vector>
 #include "lite/core/mir/graph_visualize_pass.h"
 #include "lite/core/mir/subgraph/subgraph_program_pass.h"
+#include "lite/core/op_registry.h"
 #include "lite/core/program.h"
 #include "lite/core/tensor.h"
 
@@ -24,16 +25,13 @@
 #include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
 #include "lite/api/paddle_use_passes.h"
-#include "lite/core/op_registry.h"
+#include "lite/api/test_helper.h"
 
 #include "lite/model_parser/pb/program_desc.h"
 
-DEFINE_string(model_dir, "", "model_dir");
 DEFINE_string(optimized_model, "", "optimized_model");
-DEFINE_int32(batch_size, "batch size", 1);
-DEFINE_int32(channel, "channel", 3);
-DEFINE_int32(height, "height", 224);
-DEFINE_int32(width, "width", 224);
+DEFINE_int32(batch_size, 1, "batch size");
+DEFINE_int32(im_channel, 3, "im_channel");
 
 namespace paddle {
 namespace lite {
@@ -46,20 +44,24 @@ void TestModel(lite::Predictor* predictor,
 
   auto* input_tensor = predictor->GetInput(0);
   input_tensor->Resize(DDim(std::vector<DDim::value_type>(
-      {FLAGS_batch_size, FLAGS_channel, FLAGS_height, FLAGS_width})));
+      {FLAGS_batch_size, FLAGS_im_channel, FLAGS_im_height, FLAGS_im_width})));
   auto* data = input_tensor->mutable_data<float>();
   auto item_size = input_tensor->dims().production();
   for (int i = 0; i < item_size; i++) {
     data[i] = 1;
   }
 
-  if (valid_places.count(Place{TARGET(kNPU), PRECISION(kFloat)})) {
+  if (std::find(valid_places.begin(),
+                valid_places.end(),
+                Place{TARGET(kNPU), PRECISION(kFloat)}) != valid_places.end()) {
     // TODO(TJ): change if valid npu so try use it, add rollback and move to api
     predictor->GenNPURuntimeProgram();
   }
-  predictor->Run();
 
-  if (valid_places.count(Place{TARGET(kNPU), PRECISION(kFloat)})) {
+  predictor->Run();
+  if (std::find(valid_places.begin(),
+                valid_places.end(),
+                Place{TARGET(kNPU), PRECISION(kFloat)}) != valid_places.end()) {
     predictor->SaveModel(FLAGS_optimized_model);
   }
 }
@@ -92,14 +94,14 @@ TEST(NPUSubgraph, compare) {
 
   CompareOutData(predictor_npu, predictor_arm);
   LOG(INFO) << "NPU speed: ";
-  for (int i = 0 i < 10; ++i) {
+  for (int i = 0; i < FLAGS_repeats; ++i) {
     auto start = GetCurrentUS();
     predictor_npu.Run();
     LOG(INFO) << GetCurrentUS() - start << "us";
   }
 
   LOG(INFO) << "ARM CPU speed: ";
-  for (int i = 0 i < 10; ++i) {
+  for (int i = 0; i < FLAGS_repeats; ++i) {
     auto start = GetCurrentUS();
     predictor_arm.Run();
     LOG(INFO) << GetCurrentUS() - start << "us";
