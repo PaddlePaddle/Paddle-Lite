@@ -138,6 +138,17 @@ void elementwise_compute_ref(const operators::ElementwiseParam& param,
       LOG(FATAL) << "unsupported Activation type: " << elt_type;
     }
   }
+  if (param.scale != 1){
+    for (int i = 0; i < batch; ++i) {
+        for (int j = 0; j < channels; ++j) {
+          dtype* dout_ptr = out_data + (i * channels + j) * num;
+          for (int k = 0; k < num; ++k) {
+            *dout_ptr = *dout_ptr * param.scale;
+            dout_ptr++;
+          }
+        }
+      }
+  }
 }
 
 TEST(elementwise_add, compute) {
@@ -311,6 +322,89 @@ TEST(fusion_elementwise_add_activation_arm, compute) {
                 for (int i = 0; i < output.dims().production(); i++) {
                   EXPECT_NEAR(output_data[i], output_ref_data[i], 1e-5);
                 }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+TEST(fusion_elementwise_add_activation_scale_arm, retrive_op) {
+  auto fusion_elementwise_add_activation_scale =
+      KernelRegistry::Global().Create<TARGET(kARM), PRECISION(kFloat)>(
+          "fusion_elementwise_add_activation_scale");
+  ASSERT_FALSE(fusion_elementwise_add_activation_scale.empty());
+  ASSERT_TRUE(fusion_elementwise_add_activation_scale.front());
+}
+
+TEST(fusion_elementwise_add_activation_scale_arm, init) {
+  ElementwiseAddActivationCompute fusion_elementwise_add_activation_scale;
+  ASSERT_EQ(fusion_elementwise_add_activation_scale.precision(), PRECISION(kFloat));
+  ASSERT_EQ(fusion_elementwise_add_activation_scale.target(), TARGET(kARM));
+}
+
+TEST(fusion_elementwise_add_activation_scale_arm, compute) {
+  ElementwiseAddActivationCompute fusion_elementwise_add_activation_scale;
+  operators::FusionElementwiseActivationParam param;
+  lite::Tensor x, y, output, output_ref;
+
+  for (auto act_type : {"relu"}) {
+    for (auto n : {1, 3, 4}) {
+      for (auto c : {1, 3, 4}) {
+        for (auto h : {1, 3, 4}) {
+          for (auto w : {1, 3, 4}) {
+            for (auto axis : {-1}) {
+              for (auto scale: {0.2, 0.4, 0.6}){
+              for (auto yd : {std::vector<int64_t>({n}),
+                              std::vector<int64_t>({c}),
+                              std::vector<int64_t>({h}),
+                              std::vector<int64_t>({w}),
+                              std::vector<int64_t>({n, c}),
+                              std::vector<int64_t>({h, w}),
+                              std::vector<int64_t>({n, c, h}),
+                              std::vector<int64_t>({n, c, h, w})}) {
+                auto x_dim = DDim(std::vector<int64_t>({n, c, h, w}));
+                auto y_dim = DDim(yd);
+                int axis_t = axis < 0 ? x_dim.size() - y_dim.size() : axis;
+
+                if (axis_t + y_dim.size() > 4) continue;
+                bool flag = false;
+                for (int i = 0; i < y_dim.size(); i++) {
+                  if (x_dim[i + axis_t] != y_dim[i]) flag = true;
+                }
+                if (flag) continue;
+
+                x.Resize(x_dim);
+                y.Resize(y_dim);
+                output.Resize(x_dim);
+                output_ref.Resize(x_dim);
+                auto* x_data = x.mutable_data<float>();
+                auto* y_data = y.mutable_data<float>();
+                auto* output_data = output.mutable_data<float>();
+                auto* output_ref_data = output_ref.mutable_data<float>();
+                for (int i = 0; i < x_dim.production(); i++) {
+                  float sign = i % 3 == 0 ? -1.0f : 1.0f;
+                  x_data[i] = i * sign;
+                }
+                for (int i = 0; i < y_dim.production(); i++) {
+                  float sign = i % 2 == 0 ? 0.5f : -0.5f;
+                  y_data[i] = i * sign;
+                }
+                param.X = &x;
+                param.Y = &y;
+                param.axis = axis;
+                param.Out = &output;
+                param.act_type = act_type;
+                fusion_elementwise_add_activation_scale.SetParam(param);
+                fusion_elementwise_add_activation_scale.Run();
+                param.Out = &output_ref;
+                elementwise_compute_ref<float>(param, "add", act_type);
+                for (int i = 0; i < output.dims().production(); i++) {
+                  EXPECT_NEAR(output_data[i], output_ref_data[i], 1e-5);
+                }
+              }
               }
             }
           }
@@ -715,6 +809,7 @@ TEST(fusion_elementwise_max_activation_arm, compute) {
 
 USE_LITE_KERNEL(elementwise_add, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(fusion_elementwise_add_activation, kARM, kFloat, kNCHW, def);
+USE_LITE_KERNEL(fusion_elementwise_add_activation_scale, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(elementwise_mul, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(fusion_elementwise_mul_activation, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(elementwise_max, kARM, kFloat, kNCHW, def);

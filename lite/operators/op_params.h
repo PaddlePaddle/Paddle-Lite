@@ -159,6 +159,7 @@ struct ScaleParam {
   float scale{1.};
   float bias{};
   bool bias_after_scale{true};
+  bool with_relu{false};
 };
 
 // For Softmax op
@@ -285,6 +286,7 @@ struct ElementwiseParam {
   const lite::Tensor* Y{};
   lite::Tensor* Out{};
   int axis{-1};  // for broadcasting.
+  float scale{1.f};
 };
 
 struct ElementwiseGradParam {

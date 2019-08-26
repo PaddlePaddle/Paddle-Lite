@@ -21,6 +21,7 @@ lite_cc_library(decode_bboxes_op_lite SRCS decode_bboxes_op.cc DEPS ${op_DEPS})
 lite_cc_library(box_coder_op_lite SRCS box_coder_op.cc DEPS ${op_DEPS})
 lite_cc_library(multiclass_nms_op_lite SRCS multiclass_nms_op.cc DEPS ${op_DEPS})
 lite_cc_library(fusion_elementwise_activation_ops SRCS fusion_elementwise_activation_ops.cc DEPS elementwise_ops ${op_DEPS})
+lite_cc_library(fusion_add_relu_dropout_op SRCS fusion_add_relu_dropout_op.cc DEPS ${op_DEPS})
 lite_cc_library(mean_op SRCS mean_op.cc DEPS ${op_DEPS})
 lite_cc_library(fill_constant_op SRCS fill_constant_op.cc DEPS ${op_DEPS})
 lite_cc_library(sgd_op SRCS sgd_op.cc DEPS ${op_DEPS})
@@ -170,6 +171,7 @@ set(ops
         slice_op_lite
         squeeze_op_lite
         expand_op_lite
+        fusion_add_relu_dropout_op
         CACHE INTERNAL "ops lite")
 
 if (NOT LITE_WITH_X86)

@@ -38,6 +38,14 @@ class ElementwiseAddActivationCompute
   virtual ~ElementwiseAddActivationCompute() = default;
 };
 
+class ElementwiseAddActivationScaleCompute
+    : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+ public:
+  void Run() override;
+
+  virtual ~ElementwiseAddActivationScaleCompute() = default;
+};
+
 class ElementwiseMulCompute
     : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
  public:
