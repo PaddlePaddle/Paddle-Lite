@@ -19,6 +19,7 @@ limitations under the License. */
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <utility>
 
 #include "CL/cl.h"
 #include "framework/cl/cl_deleter.h"

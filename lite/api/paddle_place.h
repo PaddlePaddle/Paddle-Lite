@@ -70,7 +70,6 @@ enum class DataLayoutType : int {
   kAny = 2,  // any data layout
   NUM = 4,   // number of fields.
 };
-
 typedef enum {
   LITE_POWER_HIGH = 0,
   LITE_POWER_LOW = 1,

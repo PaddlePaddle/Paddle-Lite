@@ -17,6 +17,7 @@ limitations under the License. */
 #include <cstring>
 #include <memory>
 #include <string>
+#include <utility>
 
 #include "CL/cl.h"
 #include "common/enforce.h"
