@@ -95,7 +95,7 @@ endif()
 
 # check options
 if (LITE_ON_TINY_PUBLISH)
-    if (NOT (WITH_LITE AND LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND NOT WITH_TESTING))#LITE_WITH_JAVA AND 
+    if (NOT (WITH_LITE AND LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND NOT WITH_TESTING))#LITE_WITH_JAVA AND
         message(FATAL_ERROR "LITE_ON_TINY_PUBLISH=ON must be used with WITH_LITE=ON LITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON LITE_WITH_JAVA=ON WITH_TESTING=OFF")
         return()
     endif()
@@ -109,16 +109,15 @@ if (WITH_LITE AND LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
     include(cross_compiling/postproject)
     include(cross_compiling/npu) # check and prepare NPU DDK
 
-    # include the necessary thirdparty dependencies
-    include(external/gflags)    # download, build, install gflags
-
-    # LITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON will disable glog
-    # TODO(sangoly): refine WITH_LITE and LITE_WITH_LIGHT_WEIGHT_FRAMEWORK
-    #include(external/glog)     # download, build, install glog
-    include(external/gtest)     # download, build, install gtest
-    include(ccache)             # set ccache for compilation
-
+    # We compile the mobile deployment library when LITE_ON_TINY_PUBLISH=ON
+    # So the following third party dependencies are not needed.
     if (NOT LITE_ON_TINY_PUBLISH)
+        # include the necessary thirdparty dependencies
+        include(external/gflags)    # download, build, install gflags
+        # LITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON will disable glog
+        # TODO(sangoly): refine WITH_LITE and LITE_WITH_LIGHT_WEIGHT_FRAMEWORK
+        include(external/gtest)     # download, build, install gtest
+        include(ccache)             # set ccache for compilation
         include(external/protobuf)  # download, build, install protobuf
     endif()
 
@@ -134,6 +133,7 @@ if (WITH_LITE AND LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
     add_subdirectory(lite)
     return()
 endif()
+#################################  End of mobile compile ##############################
 
 set(WITH_MKLML ${WITH_MKL})
 if (NOT DEFINED WITH_MKLDNN)
