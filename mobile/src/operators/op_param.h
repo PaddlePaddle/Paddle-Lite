@@ -16,6 +16,7 @@ limitations under the License. */
 
 #include <string>
 #include <vector>
+#include <memory>
 #include "common/log.h"
 #include "common/type_define.h"
 #include "common/types.h"
