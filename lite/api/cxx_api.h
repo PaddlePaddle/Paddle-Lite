@@ -69,6 +69,7 @@ class LITE_API Predictor {
 
   // Get offset-th col of fetch results.
   const lite::Tensor* GetOutput(size_t offset) const;
+  const std::vector<lite::Tensor>* GetOutputs() const;
 
   const cpp::ProgramDesc& program_desc() const;
   const lite::Tensor* GetTensor(const std::string& name) const;

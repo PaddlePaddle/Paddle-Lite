@@ -33,7 +33,8 @@ void Run(DebugConfig* conf) {
   CHECK(conf);
 #ifdef LITE_WITH_ARM
   DeviceInfo::Init();
-  DeviceInfo::Global().SetRunMode(LITE_POWER_HIGH, conf->arm_thread_num);
+  DeviceInfo::Global().SetRunMode(lite_api::LITE_POWER_HIGH,
+                                  conf->arm_thread_num);
 #endif
   lite::Predictor predictor;
   std::vector<Place> valid_places({

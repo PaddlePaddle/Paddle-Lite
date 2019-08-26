@@ -10,9 +10,7 @@ message(STATUS "LITE_WITH_FPGA:\t${LITE_WITH_FPGA}")
 message(STATUS "LITE_WITH_PROFILE:\t${LITE_WITH_PROFILE}")
 
 set(LITE_MODEL_DIR "${THIRD_PARTY_PATH}/install")
-
 set(LITE_ON_MOBILE ${LITE_WITH_LIGHT_WEIGHT_FRAMEWORK})
-
 
 add_subdirectory(utils)
 add_subdirectory(operators)
@@ -78,14 +76,16 @@ if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM)
                 COMMAND cp "${CMAKE_BINARY_DIR}/lite/gen_code/paddle_code_generator" "${INFER_LITE_PUBLISH_ROOT}/bin"
                 COMMAND cp "${CMAKE_BINARY_DIR}/lite/api/test_model_bin" "${INFER_LITE_PUBLISH_ROOT}/bin"
                 )
-        add_dependencies(publish_inference_cxx_lib model_optimize_tool)
-        add_dependencies(publish_inference_cxx_lib paddle_code_generator)
-        add_dependencies(publish_inference_cxx_lib bundle_full_api)
-        add_dependencies(publish_inference_cxx_lib bundle_light_api)
-        add_dependencies(publish_inference_cxx_lib test_model_bin)
-        add_dependencies(publish_inference publish_inference_cxx_lib)
-        add_custom_command(TARGET publish_inference_cxx_lib POST_BUILD
-                                       COMMAND ${CMAKE_STRIP} "--strip-debug" ${INFER_LITE_PUBLISH_ROOT}/cxx/lib/*.a)
+            if(NOT IOS)
+                add_dependencies(publish_inference_cxx_lib model_optimize_tool)
+                add_dependencies(publish_inference_cxx_lib paddle_code_generator)
+                add_dependencies(publish_inference_cxx_lib bundle_full_api)
+                add_dependencies(publish_inference_cxx_lib bundle_light_api)
+                add_dependencies(publish_inference_cxx_lib test_model_bin)
+                add_dependencies(publish_inference publish_inference_cxx_lib)
+                add_custom_command(TARGET publish_inference_cxx_lib POST_BUILD
+                        COMMAND ${CMAKE_STRIP} "--strip-debug" ${INFER_LITE_PUBLISH_ROOT}/cxx/lib/*.a)
+            endif()
     endif()
 
 

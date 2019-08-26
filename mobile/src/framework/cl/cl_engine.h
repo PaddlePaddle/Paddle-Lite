@@ -17,6 +17,7 @@ limitations under the License. */
 #include <cstring>
 #include <memory>
 #include <string>
+#include <utility>
 
 #include "CL/cl.h"
 #include "common/enforce.h"
@@ -88,6 +89,21 @@ class CLEngine {
         clCreateProgramWithSource(context, 1, &source, sourceSize, &status_);
 
     DLOG << " cl kernel file name: " << file_name;
+    DLOG << " source size: " << sourceSize[0];
+    CL_CHECK_ERRORS(status_);
+
+    std::unique_ptr<_cl_program, CLProgramDeleter> program_ptr(p);
+
+    return std::move(program_ptr);
+  }
+
+  std::unique_ptr<_cl_program, CLProgramDeleter> CreateProgramWithSource(
+      cl_context context, const char *source) {
+    size_t sourceSize[] = {strlen(source)};
+    cl_program p =
+        clCreateProgramWithSource(context, 1, &source, sourceSize, &status_);
+
+    DLOG << " cl kernel from source";
     DLOG << " source size: " << sourceSize[0];
     CL_CHECK_ERRORS(status_);
 

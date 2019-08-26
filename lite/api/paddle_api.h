@@ -110,7 +110,23 @@ class LITE_API CxxConfig : public ConfigBase {
 
 /// MobileConfig is the config for the light weight predictor, it will skip
 /// IR optimization or other unnecessary stages.
-class LITE_API MobileConfig : public ConfigBase {};
+class LITE_API MobileConfig : public ConfigBase {
+  PowerMode mode_{LITE_POWER_HIGH};
+  int threads_{1};
+
+ public:
+  MobileConfig(Place preferred_place = Place(TARGET(kARM),
+                                             PRECISION(kFloat),
+                                             DATALAYOUT(kNCHW)),
+               PowerMode mode = LITE_POWER_HIGH,
+               int threads = 1)
+      : mode_(mode), threads_(threads) {}
+  void set_power_mode(PowerMode mode) { mode_ = mode; }
+  void set_threads(int threads) { threads_ = threads; }
+
+  PowerMode power_mode() const { return mode_; }
+  int threads() const { return threads_; }
+};
 
 template <typename ConfigT>
 std::shared_ptr<PaddlePredictor> CreatePaddlePredictor(const ConfigT&);

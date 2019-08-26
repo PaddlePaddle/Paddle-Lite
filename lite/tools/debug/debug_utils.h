@@ -115,7 +115,7 @@ void FillTensorData(lite::Tensor* tensor, const DebugConfig& conf, int col) {
       data[i] = input_data[i];
     }
   } else {
-    LOG(INFO) << "------------> Use all-ones input";
+    LOG(INFO) << "-------------> Use all-ones input";
     for (int i = 0; i < dim_size; i++) {
       data[i] = 1;
     }

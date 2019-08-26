@@ -17,6 +17,7 @@ if(LITE_WITH_FPGA)
 endif()
 
 message(STATUS "get ops ${ops}")
+message(STATUS "get X86 kernels ${x86_kernels}")
 message(STATUS "get Host kernels ${host_kernels}")
 message(STATUS "get ARM kernels ${arm_kernels}")
 message(STATUS "get NPU kernels ${npu_kernels}")
@@ -117,7 +118,7 @@ if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND WITH_TESTING)
     add_dependencies(test_mobilenetv1 extern_lite_download_mobilenet_v1_tar_gz)
     set(LINK_FLAGS "-Wl,--version-script ${PADDLE_SOURCE_DIR}/lite/core/lite.map")
     set_target_properties(test_mobilenetv1 PROPERTIES LINK_FLAGS "${LINK_FLAGS}")
-    
+
     lite_cc_test(test_mobilenetv2 SRCS mobilenetv2_test.cc
        DEPS ${lite_model_test_DEPS}
        CL_DEPS ${opencl_kernels}
@@ -125,9 +126,9 @@ if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND WITH_TESTING)
             --model_dir=${LITE_MODEL_DIR}/mobilenet_v2_relu SERIAL)
     add_dependencies(test_mobilenetv2 extern_lite_download_mobilenet_v2_relu_tar_gz)
     set_target_properties(test_mobilenetv2 PROPERTIES LINK_FLAGS "${LINK_FLAGS}")
-    
+
     lite_cc_test(test_resnet50 SRCS resnet50_test.cc
-       DEPS ${lite_model_test_DEPS}
+       DEPS ${lite_model_test_DEPS} paddle_api_light
        CL_DEPS ${opencl_kernels}
        FPGA_DEPS ${fpga_kernels}
        ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/opencl
@@ -144,9 +145,14 @@ if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND WITH_TESTING)
        CL_DEPS ${opencl_kernels}
        ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/opencl
             --model_dir=${LITE_MODEL_DIR}/inception_v4 SERIAL)
-    add_dependencies(test_inceptionv4 extern_lite_download_inception_v4_simple_tar_gz)    
-#    lite_cc_test(test_ocr_attention SRCS ocr_attention_test.cc
-#       DEPS ${lite_model_test_DEPS})
+    add_dependencies(test_inceptionv4 extern_lite_download_inception_v4_simple_tar_gz)
+   # lite_cc_test(test_ocr_attention SRCS ocr_attention_test.cc
+   #    DEPS ${lite_model_test_DEPS})
+
+   # lite_cc_test(model_run_test_image SRCS model_run_test_image.cc
+   #    DEPS ${lite_model_test_DEPS}
+   #    CL_DEPS ${opencl_kernels}
+   #    FPGA_DEPS ${fpga_kernels})
 endif()
 
 # These tests needs CLI arguments, and is not supported in ARM CI.
@@ -169,7 +175,11 @@ lite_cc_library(paddle_api SRCS paddle_api.cc DEPS op_params tensor)
 
 #-----------------------------------------------------------------------------------------------------
 # The final inference library for both CxxConfig and MobileConfig.
-lite_cc_library(paddle_api_light SRCS light_api_impl.cc DEPS light_api paddle_api)
+if (LITE_ON_TINY_PUBLISH)
+    lite_cc_library(paddle_api_light SRCS light_api_impl.cc DEPS light_api paddle_api stream)
+else()
+    lite_cc_library(paddle_api_light SRCS light_api_impl.cc DEPS light_api paddle_api)
+endif()
 if (NOT LITE_ON_TINY_PUBLISH)
     lite_cc_library(paddle_api_full SRCS cxx_api_impl.cc DEPS cxx_api paddle_api light_api
       ${ops}

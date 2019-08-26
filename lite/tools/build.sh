@@ -1,4 +1,5 @@
 #!/bin/bash
+set -ex
 
 readonly CMAKE_COMMON_OPTIONS="-DWITH_GPU=OFF \
                                -DWITH_MKL=OFF \
@@ -7,6 +8,10 @@ readonly CMAKE_COMMON_OPTIONS="-DWITH_GPU=OFF \
                                -DLITE_WITH_X86=OFF \
                                -DLITE_WITH_ARM=ON \
                                -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON"
+
+readonly THIRDPARTY_TAR=https://paddle-inference-dist.bj.bcebos.com/PaddleLite/third-party-05b862.tar.gz
+
+readonly workspace=$PWD
 
 # for code gen, a source file is generated after a test, but is dependended by some targets in cmake.
 # here we fake an empty file to make cmake works.
@@ -23,6 +28,19 @@ function prepare_workspace {
     cp ../${DEBUG_TOOL_PATH_PREFIX}/analysis_tool.py ./${DEBUG_TOOL_PATH_PREFIX}/
 }
 
+function prepare_thirdparty {
+    if [ ! -d $workspace/third-party -o -f $workspace/third-party-05b862.tar.gz ]; then
+        rm -rf $workspace/third-party
+
+        if [ ! -f $workspace/third-party-05b862.tar.gz ]; then
+            wget $THIRDPARTY_TAR
+        fi
+        tar xzf third-party-05b862.tar.gz
+    else
+        git submodule update --init --recursive
+    fi
+}
+
 function make_tiny_publish_so {
   local os=$1
   local abi=$2
@@ -31,6 +49,10 @@ function make_tiny_publish_so {
 
   cur_dir=$(pwd)
   build_dir=$cur_dir/build.lite.${os}.${abi}.${lang}
+  if [ -d $build_dir ]
+  then
+    rm -rf $build_dir
+  fi
   mkdir -p $build_dir
   cd $build_dir
 
@@ -53,8 +75,15 @@ function make_full_publish_so {
   local lang=$3
   local android_stl=$4
 
+  #git submodule update --init --recursive
+  prepare_thirdparty
+
   cur_dir=$(pwd)
   build_dir=$cur_dir/build.lite.${os}.${abi}.${lang}
+  if [ -d $build_dir ]
+  then
+    rm -rf $build_dir
+  fi
   mkdir -p $build_dir
   cd $build_dir
 
@@ -76,8 +105,14 @@ function make_all_tests {
   local abi=$2
   local lang=$3
 
+  #git submodule update --init --recursive
+  prepare_thirdparty
   cur_dir=$(pwd)
   build_dir=$cur_dir/build.lite.${os}.${abi}.${lang}
+  if [ -d $build_dir ]
+  then
+    rm -rf $build_dir
+  fi
   mkdir -p $build_dir
   cd $build_dir
 
@@ -93,6 +128,7 @@ function make_all_tests {
 
 
 function print_usage {
+    set +x
     echo -e "\nUSAGE:"
     echo
     echo "----------------------------------------"

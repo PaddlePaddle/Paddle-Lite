@@ -30,6 +30,9 @@ DEFINE_string(input_shape,
               "1,3,224,224",
               "input shapes, separated by colon and comma");
 DEFINE_string(result_filename, "", "save test result");
+DEFINE_bool(run_model_optimize,
+            false,
+            "apply model_optimize_tool to model, use optimized model to test");
 
 namespace paddle {
 namespace lite_api {
@@ -69,10 +72,10 @@ void Run(const std::vector<std::vector<int64_t>>& input_shapes,
 #ifdef LITE_WITH_ARM
   lite::DeviceInfo::Init();
   if (thread_num == 1) {
-    lite::DeviceInfo::Global().SetRunMode(lite::LITE_POWER_HIGH, thread_num);
+    lite::DeviceInfo::Global().SetRunMode(LITE_POWER_HIGH, thread_num);
     LOG(INFO) << "LITE_POWER_HIGH";
   } else {
-    lite::DeviceInfo::Global().SetRunMode(lite::LITE_POWER_NO_BIND, thread_num);
+    lite::DeviceInfo::Global().SetRunMode(LITE_POWER_NO_BIND, thread_num);
     LOG(INFO) << "LITE_POWER_NO_BIND";
   }
 #endif
@@ -172,13 +175,17 @@ int main(int argc, char** argv) {
   }
 
   // Output optimized model
-  paddle::lite_api::OutputOptModel(
-      FLAGS_model_dir, save_optimized_model_dir, input_shapes);
+  if (FLAGS_run_model_optimize) {
+    paddle::lite_api::OutputOptModel(
+        FLAGS_model_dir, save_optimized_model_dir, input_shapes);
+  }
 
 #ifdef LITE_WITH_LIGHT_WEIGHT_FRAMEWORK
   // Run inference using optimized model
+  std::string run_model_dir =
+      FLAGS_run_model_optimize ? save_optimized_model_dir : FLAGS_model_dir;
   paddle::lite_api::Run(input_shapes,
-                        save_optimized_model_dir,
+                        run_model_dir,
                         FLAGS_repeats,
                         FLAGS_threads,
                         FLAGS_warmup,
