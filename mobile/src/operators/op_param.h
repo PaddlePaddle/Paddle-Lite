@@ -654,9 +654,9 @@ class MulParam : public OpParam {
     y_num_col_dims_ = GetAttr<int>("y_num_col_dims", attrs);
   }
 
-  const GType *InputX() const { return input_x_; }
+  GType *InputX() const { return input_x_; }
 
-  const GType *InputY() const { return input_y_; }
+  GType *InputY() const { return input_y_; }
 
   GType *Out() const { return out_; }
 
