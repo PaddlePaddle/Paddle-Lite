@@ -60,6 +60,7 @@ class Executor {
 
   void FeedTensorData(const std::vector<framework::Tensor> &v);
   void GetTensorResults(std::vector<framework::Tensor *> *v);
+  std::string GetExceptionMsg();
 
 #ifdef PADDLE_MOBILE_FPGA
   void InjectVariable(const Tensor &t, std::string var_name);
@@ -100,6 +101,7 @@ class Executor {
   std::vector<std::shared_ptr<OperatorBase<Device>>> ops_of_block0_;
   std::unordered_map<std::string, int> feed_indices_;
   std::unordered_map<std::string, int> fetch_indices_;
+  std::string exception_msg_;
 
   // for super resoltion
   DDim input_dim_last_;
