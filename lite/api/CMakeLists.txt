@@ -71,10 +71,6 @@ if(WITH_TESTING)
             --optimized_model=${LITE_MODEL_DIR}/lite_naive_model_opt SERIAL)
     add_dependencies(test_cxx_api extern_lite_download_lite_naive_model_tar_gz)
     if(NOT LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
-        lite_cc_test(test_leaky_relu_cuda SRCS test_leaky_relu.cc
-           DEPS cxx_api mir_passes lite_api_test_helper
-           ${ops} ${host_kernels} ${x86_kernels} ${cuda_kernels})
-         
         lite_cc_test(test_googlenet SRCS test_googlenet_lite.cc
            DEPS cxx_api mir_passes lite_api_test_helper
            ${ops} ${host_kernels} ${x86_kernels}
