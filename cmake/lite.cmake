@@ -368,7 +368,7 @@ function(bundle_static_library tgt_name bundled_tgt_name fake_target)
   set(bundled_tgt_full_name
     ${CMAKE_BINARY_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${bundled_tgt_name}${CMAKE_STATIC_LIBRARY_SUFFIX})
 
-  message(STATUS "+++++ bundled_tgt_full_name: ${bundled_tgt_full_name}")
+  #message(STATUS "bundled_tgt_full_name: ${bundled_tgt_full_name}")
 
   if(NOT IOS)
     file(WRITE ${CMAKE_BINARY_DIR}/${bundled_tgt_name}.ar.in
