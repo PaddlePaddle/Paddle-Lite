@@ -26,15 +26,6 @@ namespace lite {
 #ifdef LITE_WITH_ARM
 
 typedef enum {
-  LITE_POWER_HIGH = 0,
-  LITE_POWER_LOW = 1,
-  LITE_POWER_FULL = 2,
-  LITE_POWER_NO_BIND = 3,
-  LITE_POWER_RAND_HIGH = 4,
-  LITE_POWER_RAND_LOW = 5
-} PowerMode;
-
-typedef enum {
   kAPPLE = 0,
   kA53 = 53,
   kA55 = 55,
@@ -60,11 +51,11 @@ class DeviceInfo {
 
   int Setup();
 
-  void SetRunMode(PowerMode mode, int thread_num);
+  void SetRunMode(lite_api::PowerMode mode, int thread_num);
   void SetCache(int l1size, int l2size, int l3size);
   void SetArch(ARMArch arch) { arch_ = arch; }
 
-  PowerMode mode() const { return mode_; }
+  lite_api::PowerMode mode() const { return mode_; }
   int threads() const { return active_ids_.size(); }
   ARMArch arch() const { return arch_; }
   int l1_cache_size() const { return L1_cache_[active_ids_[0]]; }
@@ -82,7 +73,7 @@ class DeviceInfo {
   T* workspace_data() {
     return reinterpret_cast<T*>(workspace_.mutable_data<int8_t>());
   }
-  bool ExtendWorkspace(size_t size);
+  bool ExtendWorkspace(int size);
 
  private:
   int core_num_;
@@ -107,7 +98,7 @@ class DeviceInfo {
   // LITE_POWER_HIGH stands for using big cores,
   // LITE_POWER_LOW stands for using small core,
   // LITE_POWER_FULL stands for using all cores
-  PowerMode mode_;
+  lite_api::PowerMode mode_;
   std::vector<int> active_ids_;
   TensorLite workspace_;
   int64_t count_{0};
