@@ -4,10 +4,28 @@ set -ex
 TESTS_FILE="./lite_tests.txt"
 LIBS_FILE="./lite_libs.txt"
 
+
 readonly ADB_WORK_DIR="/data/local/tmp"
 readonly common_flags="-DWITH_LITE=ON -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF -DWITH_PYTHON=OFF -DWITH_TESTING=ON -DLITE_WITH_ARM=OFF"
 
+readonly THIRDPARTY_TAR=https://paddle-inference-dist.bj.bcebos.com/PaddleLite/third-party-05b862.tar.gz
+readonly workspace=$PWD
+
 NUM_CORES_FOR_COMPILE=8
+
+function prepare_thirdparty {
+    if [ ! -d $workspace/third-party -o -f $workspace/third-party-05b862.tar.gz ]; then
+        rm -rf $workspace/third-party
+
+        if [ ! -f $workspace/third-party-05b862.tar.gz ]; then
+            wget $THIRDPARTY_TAR
+        fi
+        tar xzf third-party-05b862.tar.gz
+    else
+        git submodule update --init --recursive
+    fi
+}
+
 
 # for code gen, a source file is generated after a test, but is dependended by some targets in cmake.
 # here we fake an empty file to make cmake works.
@@ -22,6 +40,10 @@ function prepare_workspace {
     DEBUG_TOOL_PATH_PREFIX=lite/tools/debug
     mkdir -p ./${DEBUG_TOOL_PATH_PREFIX}
     cp ../${DEBUG_TOOL_PATH_PREFIX}/analysis_tool.py ./${DEBUG_TOOL_PATH_PREFIX}/
+
+    # clone submodule
+    #git submodule update --init --recursive
+    prepare_thirdparty
 }
 
 function check_need_ci {

@@ -303,10 +303,10 @@ class ListBuilder : public FieldBuilder {
 template <typename Builder>
 void ListBuilder<Builder>::Save() {
   // store number of elements in the head.
-  size_t num_elems = size();
-  table()->Require(sizeof(size_t));
-  memcpy(table()->cursor(), &num_elems, sizeof(size_t));
-  table()->Consume(sizeof(size_t));
+  uint64_t num_elems = size();
+  table()->Require(sizeof(uint64_t));
+  memcpy(table()->cursor(), &num_elems, sizeof(uint64_t));
+  table()->Consume(sizeof(uint64_t));
 
   // Save all the elements.
   for (auto& elem : builders_) {
@@ -318,12 +318,12 @@ template <typename Builder>
 void ListBuilder<Builder>::Load() {
   CHECK(builders_.empty()) << "Duplicate load";
   // Load number of elements first.
-  size_t num_elems{};
-  memcpy(&num_elems, table()->cursor(), sizeof(num_elems));
-  table()->Consume(sizeof(size_t));
+  uint64_t num_elems{};
+  memcpy(&num_elems, table()->cursor(), sizeof(uint64_t));
+  table()->Consume(sizeof(uint64_t));
 
   // Load all the elements.
-  for (size_t i = 0; i < num_elems; i++) {
+  for (uint64_t i = 0; i < num_elems; i++) {
     builders_.emplace_back(table());
     builders_.back().Load();
   }

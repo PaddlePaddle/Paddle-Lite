@@ -58,9 +58,9 @@ add_operator(norm_op basic SRCS norm_op.cc DEPS ${op_DEPS})
 add_operator(shape_op_lite basic SRCS shape_op.cc DEPS ${op_DEPS})
 add_operator(sequence_expand_op_lite basic SRCS sequence_expand_op.cc DEPS ${op_DEPS})
 add_operator(squeeze_op_lite basic SRCS squeeze_op.cc DEPS ${op_DEPS})
+add_operator(im2sequence_op basic SRCS im2sequence_op.cc DEPS ${op_DEPS})
 
 # for OCR specific
-add_operator(im2sequence_op extra SRCS im2sequence_op.cc DEPS ${op_DEPS})
 add_operator(while_op extra SRCS while_op.cc DEPS ${op_DEPS})
 add_operator(lookup_table_op extra SRCS lookup_table_op.cc DEPS ${op_DEPS})
 add_operator(beam_search_decode_op extra SRCS beam_search_decode_op.cc DEPS ${op_DEPS})

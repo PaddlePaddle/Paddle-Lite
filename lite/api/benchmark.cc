@@ -30,6 +30,9 @@ DEFINE_string(input_shape,
               "1,3,224,224",
               "input shapes, separated by colon and comma");
 DEFINE_string(result_filename, "", "save test result");
+DEFINE_bool(run_model_optimize,
+            false,
+            "apply model_optimize_tool to model, use optimized model to test");
 
 namespace paddle {
 namespace lite_api {
@@ -46,7 +49,6 @@ void OutputOptModel(const std::string& load_model_dir,
   });
   auto predictor = lite_api::CreatePaddlePredictor(config);
 
-  // delete old optimized model
   int ret = system(
       paddle::lite::string_format("rm -rf %s", save_optimized_model_dir.c_str())
           .c_str());
@@ -66,17 +68,13 @@ void Run(const std::vector<std::vector<int64_t>>& input_shapes,
          const int thread_num,
          const int warmup_times,
          const std::string model_name) {
-#ifdef LITE_WITH_ARM
-  lite::DeviceInfo::Init();
-  if (thread_num == 1) {
-    lite::DeviceInfo::Global().SetRunMode(lite::LITE_POWER_HIGH, thread_num);
-    LOG(INFO) << "LITE_POWER_HIGH";
-  } else {
-    lite::DeviceInfo::Global().SetRunMode(lite::LITE_POWER_NO_BIND, thread_num);
-    LOG(INFO) << "LITE_POWER_NO_BIND";
-  }
-#endif
   lite_api::MobileConfig config;
+  config.set_threads(thread_num);
+  if (thread_num == 1) {
+    config.set_power_mode(LITE_POWER_HIGH);
+  } else {
+    config.set_power_mode(LITE_POWER_NO_BIND);
+  }
   config.set_model_dir(model_dir);
 
   auto predictor = lite_api::CreatePaddlePredictor(config);
@@ -172,13 +170,17 @@ int main(int argc, char** argv) {
   }
 
   // Output optimized model
-  paddle::lite_api::OutputOptModel(
-      FLAGS_model_dir, save_optimized_model_dir, input_shapes);
+  if (FLAGS_run_model_optimize) {
+    paddle::lite_api::OutputOptModel(
+        FLAGS_model_dir, save_optimized_model_dir, input_shapes);
+  }
 
 #ifdef LITE_WITH_LIGHT_WEIGHT_FRAMEWORK
   // Run inference using optimized model
+  std::string run_model_dir =
+      FLAGS_run_model_optimize ? save_optimized_model_dir : FLAGS_model_dir;
   paddle::lite_api::Run(input_shapes,
-                        save_optimized_model_dir,
+                        run_model_dir,
                         FLAGS_repeats,
                         FLAGS_threads,
                         FLAGS_warmup,

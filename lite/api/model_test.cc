@@ -64,7 +64,7 @@ void Run(const std::vector<std::vector<int64_t>>& input_shapes,
          const int warmup_times = 0) {
 #ifdef LITE_WITH_ARM
   lite::DeviceInfo::Init();
-  lite::DeviceInfo::Global().SetRunMode(lite::LITE_POWER_HIGH, thread_num);
+  lite::DeviceInfo::Global().SetRunMode(lite_api::LITE_POWER_HIGH, thread_num);
 #endif
   lite_api::MobileConfig config;
   config.set_model_dir(model_dir);

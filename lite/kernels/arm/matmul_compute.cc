@@ -36,6 +36,7 @@ void MatMulCompute::Run() {
 
   auto x_dims = param.X->dims();
   auto y_dims = param.Y->dims();
+  auto o_dims = param.Out->dims();
   bool x_transpose = param.transpose_X;
   bool y_transpose = param.transpose_Y;
   float alpha = param.alpha;
@@ -44,136 +45,102 @@ void MatMulCompute::Run() {
   if (x_dims.size() > 2 && y_dims.size() >= 2) {
     // x: [B, ..., M, K], y: [B, ..., K, N], out: [B, ..., M, N]
     // x: [B, M, K], y: [K, N], out: [B, M, N]
-    if (x_transpose || y_transpose) {
-      LOG(FATAL) << "not supported transpose for x or y.";
+
+    if (!x_transpose && !y_transpose) {
+      CHECK_EQ(x_dims[x_dims.size() - 1], y_dims[y_dims.size() - 2])
+          << "not supported x_dims(" << x_dims << ") and y_dims(" << y_dims
+          << ") x_transpose is " << x_transpose << "y_transpose is "
+          << y_transpose;
+    } else if (!x_transpose && y_transpose) {
+      CHECK_EQ(x_dims[x_dims.size() - 1], y_dims[y_dims.size() - 1])
+          << "not supported x_dims(" << x_dims << ") and y_dims(" << y_dims
+          << ") x_transpose is " << x_transpose << "y_transpose is "
+          << y_transpose;
+    } else if (x_transpose && !y_transpose) {
+      CHECK_EQ(x_dims[x_dims.size() - 2], y_dims[y_dims.size() - 2])
+          << "not supported x_dims(" << x_dims << ") and y_dims(" << y_dims
+          << ") x_transpose is " << x_transpose << "y_transpose is "
+          << y_transpose;
+    } else {
+      CHECK_EQ(x_dims[x_dims.size() - 2], y_dims[y_dims.size() - 1])
+          << "not supported x_dims(" << x_dims << ") and y_dims(" << y_dims
+          << ") x_transpose is " << x_transpose << "y_transpose is "
+          << y_transpose;
     }
-    CHECK_EQ(x_dims[x_dims.size() - 1], y_dims[y_dims.size() - 2])
-        << "not supported x_dims(" << x_dims << ") and y_dims(" << y_dims
-        << ")";
+
+    int lda, ldb, ldc;
+    if (!x_transpose) {
+      m_ = x_dims[x_dims.size() - 2];
+      k_ = x_dims[x_dims.size() - 1];
+      lda = k_;
+    } else {
+      m_ = x_dims[x_dims.size() - 1];
+      k_ = x_dims[x_dims.size() - 2];
+      lda = m_;
+    }
+
+    if (!y_transpose) {
+      n_ = y_dims[y_dims.size() - 1];
+      ldb = n_;
+    } else {
+      n_ = y_dims[y_dims.size() - 2];
+      ldb = k_;
+    }
+
+    ldc = n_;
+
+    int x_inner = x_dims[x_dims.size() - 2] * x_dims[x_dims.size() - 1];
+    int y_inner = y_dims[y_dims.size() - 2] * y_dims[y_dims.size() - 1];
+    int out_inner = o_dims[o_dims.size() - 2] * o_dims[o_dims.size() - 1];
+
+    float* x_data_trans = nullptr;
+    if (x_transpose) {
+      x_data_trans = static_cast<float*>(malloc(sizeof(float) * x_inner));
+    }
 
     if (y_dims.size() > 2) {
-      m_ = x_dims[x_dims.size() - 2];
-      k_ = y_dims[y_dims.size() - 2];
-      n_ = y_dims[y_dims.size() - 1];
-      int hblock = lite::arm::math::get_hblock(ctx.arch());
-      int m_round = 0;
-      m_round = hblock * ((m_ + hblock - 1) / hblock);
-      ctx.ExtendWorkspace(m_round * k_ * sizeof(float));
-      int x_inner = x_dims[x_dims.size() - 2] * x_dims[x_dims.size() - 1];
-      int y_inner = y_dims[y_dims.size() - 2] * y_dims[y_dims.size() - 1];
-      int out_inner = x_dims[x_dims.size() - 2] * y_dims[y_dims.size() - 1];
-      if (n_ == 1) {
-        for (size_t i = 0; i < x_dims.count(0, x_dims.size() - 2); ++i) {
-          lite::arm::math::sgemv(x_data + i * x_inner,
-                                 y_data + i * y_inner,
-                                 o_data + i * out_inner,
-                                 false,
-                                 m_,
-                                 k_,
-                                 false,
-                                 nullptr,
-                                 false);
-        }
-        if (fabsf(alpha - 1.f) > 1e-8f) {
-          for (size_t i = 0; i < param.Out->dims().production(); ++i) {
-            o_data[i] *= alpha;
-          }
-        }
-      } else {
-        for (size_t i = 0; i < x_dims.count(0, x_dims.size() - 2); ++i) {
-          float* packed_x = static_cast<float*>(ctx.workspace_data<float>()) +
-                            ctx.llc_size() / sizeof(float);
-          lite::arm::math::prepackA(packed_x,
-                                    x_data + i * x_inner,
-                                    alpha,
-                                    k_,
-                                    0,
-                                    m_,
-                                    0,
-                                    k_,
-                                    false,
-                                    &ctx);
-          int ldb = n_;
-          if (y_transpose) {
-            ldb = k_;
-          }
-          lite::arm::math::sgemm_prepack(y_transpose,
-                                         m_,
-                                         n_,
-                                         k_,
-                                         packed_x,
-                                         y_data + i * y_inner,
-                                         ldb,
-                                         0.f,
-                                         o_data + i * out_inner,
-                                         n_,
-                                         nullptr,
-                                         false,
-                                         false,
-                                         &ctx);
-        }
+      for (size_t i = 0; i < x_dims.count(0, x_dims.size() - 2); ++i) {
+        lite::arm::math::sgemm(x_transpose,
+                               y_transpose,
+                               m_,
+                               n_,
+                               k_,
+                               alpha,
+                               x_data + i * x_inner,
+                               lda,
+                               y_data + i * y_inner,
+                               ldb,
+                               0.f,
+                               o_data + i * out_inner,
+                               ldc,
+                               nullptr,
+                               false,
+                               false,
+                               &ctx);
       }
     } else {
-      m_ = x_dims[x_dims.size() - 2];
-      k_ = y_dims[0];
-      n_ = y_dims[1];
-      int hblock = lite::arm::math::get_hblock(ctx.arch());
-      int m_round = 0;
-      m_round = hblock * ((m_ + hblock - 1) / hblock);
-      ctx.ExtendWorkspace(m_round * k_ * sizeof(float));
-      int x_inner = x_dims[x_dims.size() - 2] * x_dims[x_dims.size() - 1];
-      int out_inner = x_dims[x_dims.size() - 2] * y_dims[1];
-      if (n_ == 1) {
-        for (size_t i = 0; i < x_dims.count(0, x_dims.size() - 2); ++i) {
-          lite::arm::math::sgemv(x_data + i * x_inner,
-                                 y_data,
-                                 o_data + i * out_inner,
-                                 false,
-                                 m_,
-                                 k_,
-                                 false,
-                                 nullptr,
-                                 false);
-        }
-        if (fabsf(param.alpha - 1.f) > 1e-8f) {
-          for (size_t i = 0; i < param.Out->dims().production(); ++i) {
-            o_data[i] *= param.alpha;
-          }
-        }
-      } else {
-        for (size_t i = 0; i < x_dims.count(0, x_dims.size() - 2); ++i) {
-          float* packed_x = static_cast<float*>(ctx.workspace_data<float>()) +
-                            ctx.llc_size() / sizeof(float);
-          lite::arm::math::prepackA(packed_x,
-                                    x_data + i * x_inner,
-                                    alpha,
-                                    k_,
-                                    0,
-                                    m_,
-                                    0,
-                                    k_,
-                                    false,
-                                    &ctx);
-          int ldb = n_;
-          if (y_transpose) {
-            ldb = k_;
-          }
-          lite::arm::math::sgemm_prepack(y_transpose,
-                                         m_,
-                                         n_,
-                                         k_,
-                                         packed_x,
-                                         y_data,
-                                         ldb,
-                                         0.f,
-                                         o_data + i * out_inner,
-                                         n_,
-                                         nullptr,
-                                         false,
-                                         false,
-                                         &ctx);
-        }
+      for (size_t i = 0; i < x_dims.count(0, x_dims.size() - 2); ++i) {
+        lite::arm::math::sgemm(x_transpose,
+                               y_transpose,
+                               m_,
+                               n_,
+                               k_,
+                               alpha,
+                               x_data + i * x_inner,
+                               lda,
+                               y_data,
+                               ldb,
+                               0.f,
+                               o_data + i * out_inner,
+                               ldc,
+                               nullptr,
+                               false,
+                               false,
+                               &ctx);
       }
+    }
+    if (x_data_trans) {
+      free(x_data_trans);
     }
   } else if (x_dims.size() == 2 && y_dims.size() == 2) {
     // x: [M, K], y: [K, N], out: [M, N]
@@ -198,50 +165,43 @@ void MatMulCompute::Run() {
           << "), x_transpose is " << x_transpose << ", y_transpose is "
           << y_transpose;
     }
-    // not supported transpose
-    if (x_transpose || y_transpose) {
-      LOG(FATAL) << "not supported transpose for x and y.";
-    }
-    m_ = x_dims[0];
-    k_ = x_dims[1];
-    n_ = y_dims[1];
-    int hblock = lite::arm::math::get_hblock(ctx.arch());
-    int m_round = 0;
-    m_round = hblock * ((m_ + hblock - 1) / hblock);
-    ctx.ExtendWorkspace(m_round * k_ * sizeof(float));
 
-    if (n_ == 1) {
-      lite::arm::math::sgemv(
-          x_data, y_data, o_data, x_transpose, m_, k_, false, nullptr, false);
-      if (fabsf(param.alpha - 1.f) > 1e-8f) {
-        for (size_t i = 0; i < param.Out->dims().production(); ++i) {
-          o_data[i] *= param.alpha;
-        }
-      }
+    int lda, ldb, ldc;
+    if (!x_transpose) {
+      m_ = x_dims[0];
+      k_ = x_dims[1];
+      lda = k_;
     } else {
-      float* packed_x = static_cast<float*>(ctx.workspace_data<float>()) +
-                        ctx.llc_size() / sizeof(float);
-      lite::arm::math::prepackA(
-          packed_x, x_data, alpha, k_, 0, m_, 0, k_, x_transpose, &ctx);
-      int ldb = n_;
-      if (y_transpose) {
-        ldb = k_;
-      }
-      lite::arm::math::sgemm_prepack(y_transpose,
-                                     m_,
-                                     n_,
-                                     k_,
-                                     packed_x,
-                                     y_data,
-                                     ldb,
-                                     0.f,
-                                     o_data,
-                                     n_,
-                                     nullptr,
-                                     false,
-                                     false,
-                                     &ctx);
+      m_ = x_dims[1];
+      k_ = x_dims[0];
+      lda = m_;
     }
+    if (!y_transpose) {
+      n_ = y_dims[1];
+      ldb = n_;
+    } else {
+      n_ = y_dims[0];
+      ldb = k_;
+    }
+    ldc = n_;
+
+    lite::arm::math::sgemm(x_transpose,
+                           y_transpose,
+                           m_,
+                           n_,
+                           k_,
+                           alpha,
+                           x_data,
+                           lda,
+                           y_data,
+                           ldb,
+                           0.f,
+                           o_data,
+                           ldc,
+                           nullptr,
+                           false,
+                           false,
+                           &ctx);
   } else if (x_dims.size() > 2 && y_dims.size() == 1) {
     // x: [B, M, K], y: [K], out: [B, M]
     CHECK_EQ(x_dims[x_dims.size() - 1], y_dims[0])
@@ -267,6 +227,9 @@ void MatMulCompute::Run() {
       m_ = x_dims[0];
       k_ = 1;
       n_ = y_dims[0];
+      int lda = k_;
+      int ldb = n_;
+      int ldc = n_;
       if (n_ == 1) {
         lite::arm::math::sgemv(
             x_data, y_data, o_data, false, m_, k_, false, nullptr, false);
@@ -276,25 +239,23 @@ void MatMulCompute::Run() {
           }
         }
       } else {
-        float* packed_x = static_cast<float*>(ctx.workspace_data<float>()) +
-                          ctx.llc_size() / sizeof(float);
-        lite::arm::math::prepackA(
-            packed_x, x_data, alpha, k_, 0, m_, 0, k_, false, &ctx);
-        int ldb = n_;
-        lite::arm::math::sgemm_prepack(false,
-                                       m_,
-                                       n_,
-                                       k_,
-                                       packed_x,
-                                       y_data,
-                                       ldb,
-                                       0.f,
-                                       o_data,
-                                       n_,
-                                       nullptr,
-                                       false,
-                                       false,
-                                       &ctx);
+        lite::arm::math::sgemm(false,
+                               false,
+                               m_,
+                               n_,
+                               k_,
+                               alpha,
+                               x_data,
+                               lda,
+                               y_data,
+                               ldb,
+                               0.f,
+                               o_data,
+                               ldc,
+                               nullptr,
+                               false,
+                               false,
+                               &ctx);
       }
     }
   } else {
