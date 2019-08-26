@@ -14,6 +14,8 @@
 
 #pragma once
 
+#include <string>
+#include <vector>
 template <typename type, typename type2>
 static void basic_gemm(bool trans_a,
                        bool trans_b,
@@ -183,6 +185,125 @@ static void conv_basic(const Dtype1* din,
                                           ? dst_data_ref[out_idx]
                                           : (Dtype2)0;
             }
+          }
+        }
+      }
+    }
+  }
+}
+
+static void pooling_basic(const float* din,
+                          float* dout,
+                          int num,
+                          int chout,
+                          int hout,
+                          int wout,
+                          int chin,
+                          int hin,
+                          int win,
+                          const std::vector<int>& ksize,
+                          const std::vector<int>& strides,
+                          const std::vector<int>& paddings,
+                          bool global_pooling,
+                          bool exclusive,
+                          bool adaptive,
+                          bool ceil_mode,
+                          bool use_quantizer,
+                          const std::string& pooling_type) {
+  // no need to pad input tensor, border is zero pad inside this function
+  memset(dout, 0, num * chout * hout * wout * sizeof(float));
+  int kernel_h = ksize[0];
+  int kernel_w = ksize[1];
+  int stride_h = strides[0];
+  int stride_w = strides[1];
+  int pad_h = paddings[0];
+  int pad_w = paddings[1];
+  int size_channel_in = win * hin;
+  int size_channel_out = wout * hout;
+  if (global_pooling) {
+    if (pooling_type == "max") {  // Pooling_max
+      for (int n = 0; n < num; ++n) {
+        float* dout_batch = dout + n * chout * size_channel_out;
+        const float* din_batch = din + n * chin * size_channel_in;
+#pragma omp parallel for
+        for (int c = 0; c < chout; ++c) {
+          const float* din_ch = din_batch + c * size_channel_in;  // in address
+          float tmp1 = din_ch[0];
+          for (int i = 0; i < size_channel_in; ++i) {
+            float tmp2 = din_ch[i];
+            tmp1 = tmp1 > tmp2 ? tmp1 : tmp2;
+          }
+          dout_batch[c] = tmp1;
+        }
+      }
+    } else if (pooling_type == "avg") {
+      for (int n = 0; n < num; ++n) {
+        float* dout_batch = dout + n * chout * size_channel_out;
+        const float* din_batch = din + n * chin * size_channel_in;
+#pragma omp parallel for
+        for (int c = 0; c < chout; ++c) {
+          const float* din_ch = din_batch + c * size_channel_in;  // in address
+          float sum = 0.f;
+          for (int i = 0; i < size_channel_in; ++i) {
+            sum += din_ch[i];
+          }
+          dout_batch[c] = sum / size_channel_in;
+        }
+      }
+    }
+  } else {
+    for (int ind_n = 0; ind_n < num; ++ind_n) {
+      for (int ind_c = 0; ind_c < chin; ++ind_c) {
+        for (int ind_h = 0; ind_h < hout; ++ind_h) {
+          int sh = ind_h * stride_h;
+          int eh = sh + kernel_h;
+          sh = (sh - pad_h) < 0 ? 0 : sh - pad_h;
+          eh = (eh - pad_h) > hin ? hin : eh - pad_h;
+          for (int ind_w = 0; ind_w < wout; ++ind_w) {
+            int sw = ind_w * stride_w;
+            int ew = sw + kernel_w;
+            sw = (sw - pad_w) < 0 ? 0 : sw - pad_w;
+            ew = (ew - pad_w) > win ? win : ew - pad_w;
+            float result = static_cast<float>(0);
+            int dst_ind = (ind_n * chout + ind_c) * size_channel_out +
+                          ind_h * wout + ind_w;
+            for (int kh = sh; kh < eh; ++kh) {
+              for (int kw = sw; kw < ew; ++kw) {
+                int src_ind =
+                    (ind_n * chin + ind_c) * size_channel_in + kh * win + kw;
+                if (kh == sh && kw == sw) {
+                  result = din[src_ind];
+                } else {
+                  if (pooling_type == "max") {
+                    result = result >= din[src_ind] ? result : din[src_ind];
+                  } else if (pooling_type == "avg") {
+                    result += din[src_ind];
+                  }
+                }
+              }
+            }
+            if (pooling_type == "avg") {
+              if (exclusive) {
+                int div = (ew - sw) * (eh - sh);
+                div = div > 0 ? div : 1;
+                result /= div;
+              } else {
+                int bh = kernel_h;
+                int bw = kernel_w;
+                if (ew == win) {
+                  bw = sw + kernel_w >= win + pad_w ? win + pad_w
+                                                    : sw + kernel_w;
+                  bw -= sw;
+                }
+                if (eh == hin) {
+                  bh = sh + kernel_h >= hin + pad_h ? hin + pad_h
+                                                    : sh + kernel_h;
+                  bh -= sh;
+                }
+                result /= bh * bw;
+              }
+            }
+            dout[dst_ind] = result;
           }
         }
       }

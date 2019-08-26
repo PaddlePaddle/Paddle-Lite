@@ -74,7 +74,6 @@ lite_cc_test(test_elementwise_compute_arm SRCS elementwise_compute_test.cc DEPS 
 lite_cc_test(test_lrn_compute_arm SRCS lrn_compute_test.cc DEPS lrn_compute_arm)
 lite_cc_test(test_decode_bboxes_compute_arm SRCS decode_bboxes_compute_test.cc DEPS decode_bboxes_compute_arm)
 lite_cc_test(test_multiclass_nms_compute_arm SRCS multiclass_nms_compute_test.cc DEPS multiclass_nms_compute_arm)
-lite_cc_test(test_pool_compute_arm SRCS pool_compute_test.cc DEPS pool_compute_arm)
 lite_cc_test(test_mul_compute_arm SRCS mul_compute_test.cc DEPS mul_compute_arm)
 lite_cc_test(test_split_compute_arm SRCS split_compute_test.cc DEPS split_compute_arm)
 lite_cc_test(test_concat_compute_arm SRCS concat_compute_test.cc DEPS concat_compute_arm)

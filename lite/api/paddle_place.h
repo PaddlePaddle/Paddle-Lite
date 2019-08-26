@@ -79,15 +79,6 @@ typedef enum {
   LITE_POWER_RAND_LOW = 5
 } PowerMode;
 
-typedef enum {
-  LITE_POWER_HIGH = 0,
-  LITE_POWER_LOW = 1,
-  LITE_POWER_FULL = 2,
-  LITE_POWER_NO_BIND = 3,
-  LITE_POWER_RAND_HIGH = 4,
-  LITE_POWER_RAND_LOW = 5
-} PowerMode;
-
 enum class ActivationType : int {
   kIndentity = 0,
   kRelu = 1,

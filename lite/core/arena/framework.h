@@ -169,7 +169,6 @@ class Arena {
         success = success && CompareTensor(out, var);
       }
     }
-    LOG(INFO) << "done";
     return success;
   }
 
@@ -247,6 +246,12 @@ bool TestCase::CheckPrecision(const std::string& var_name, float abs_error) {
   for (int i = 0; i < a_tensor->dims().production(); i++) {
     EXPECT_NEAR(a_data[i], b_data[i], abs_error);
     if (fabsf(a_data[i] - b_data[i]) > abs_error) {
+      success = false;
+    }
+    if (a_data[i] != a_data[i]) {
+      success = false;
+    }
+    if (b_data[i] != b_data[i]) {
       success = false;
     }
   }
