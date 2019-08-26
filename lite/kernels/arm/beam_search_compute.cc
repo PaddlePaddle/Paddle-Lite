@@ -75,7 +75,11 @@ REGISTER_LITE_KERNEL(beam_search,
     .BindInput("pre_scores", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("ids", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("scores", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("src_length", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("cur_length", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("selected_ids", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("selected_scores", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("parent_idx", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("finish_ids", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("finish_scores", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
