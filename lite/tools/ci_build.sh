@@ -71,6 +71,7 @@ function cmake_opencl {
         -DWITH_ARM_DOTPROD=ON   \
         -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
         -DWITH_TESTING=ON \
+        -DLITE_BUILD_EXTRA=ON \
         -DARM_TARGET_OS=$1 -DARM_TARGET_ARCH_ABI=$2 -DARM_TARGET_LANG=$3
 }
 
@@ -150,7 +151,8 @@ function build_opencl {
 # This method is only called in CI.
 function cmake_x86_for_CI {
     prepare_workspace # fake an empty __generated_code__.cc to pass cmake.
-    cmake ..  -DWITH_GPU=OFF -DWITH_MKLDNN=OFF -DLITE_WITH_X86=ON ${common_flags} -DLITE_WITH_PROFILE=ON -DWITH_MKL=OFF
+    cmake ..  -DWITH_GPU=OFF -DWITH_MKLDNN=OFF -DLITE_WITH_X86=ON ${common_flags} -DLITE_WITH_PROFILE=ON -DWITH_MKL=OFF \
+        -DLITE_BUILD_EXTRA=ON \
 
     # Compile and execute the gen_code related test, so it will generate some code, and make the compilation reasonable.
     # make test_gen_code -j$NUM_CORES_FOR_COMPILE
@@ -229,7 +231,8 @@ function build_test_train {
     cd ./build
     export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/paddle/build/third_party/install/mklml/lib"
     prepare_workspace # fake an empty __generated_code__.cc to pass cmake.
-    cmake .. -DWITH_LITE=ON -DWITH_GPU=OFF -DWITH_PYTHON=ON -DLITE_WITH_X86=ON -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF -DWITH_TESTING=ON -DWITH_MKL=OFF
+    cmake .. -DWITH_LITE=ON -DWITH_GPU=OFF -DWITH_PYTHON=ON -DLITE_WITH_X86=ON -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF -DWITH_TESTING=ON -DWITH_MKL=OFF \
+        -DLITE_BUILD_EXTRA=ON \
 
     make test_gen_code -j$NUM_CORES_FOR_COMPILE
     make test_cxx_api -j$NUM_CORES_FOR_COMPILE
@@ -441,6 +444,7 @@ function cmake_npu {
         -DWITH_TESTING=ON \
         -DLITE_WITH_NPU=ON \
         -DANDROID_API_LEVEL=24 \
+        -DLITE_BUILD_EXTRA=ON \
         -DNPU_DDK_ROOT="${build_dir}/../ai_ddk_lib/" \
         -DARM_TARGET_OS=$1 -DARM_TARGET_ARCH_ABI=$2 -DARM_TARGET_LANG=$3
 }
@@ -460,6 +464,7 @@ function cmake_arm {
         -DWITH_ARM_DOTPROD=ON   \
         -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
         -DWITH_TESTING=ON \
+        -DLITE_BUILD_EXTRA=ON \
         -DARM_TARGET_OS=$1 -DARM_TARGET_ARCH_ABI=$2 -DARM_TARGET_LANG=$3
 }
 
