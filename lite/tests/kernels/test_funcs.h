@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #pragma once
-
+#include <cstring>
 #include <string>
 #include <vector>
 template <typename type, typename type2>
