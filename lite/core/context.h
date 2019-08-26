@@ -35,7 +35,7 @@
 #include <string>
 #include <utility>
 #include <vector>
-#include "lite/core/cpu_info.h"
+#include "lite/core/device_info.h"
 #include "lite/core/target_wrapper.h"
 #include "lite/core/tensor.h"
 #include "lite/utils/all.h"
@@ -153,11 +153,39 @@ class Context<TargetType::kFPGA> {
 template <>
 class Context<TargetType::kCUDA> {
  public:
+  typename Env<TargetType::kCUDA>::Devs& devs =
+      Env<TargetType::kCUDA>::Global();
   // NOTE: InitOnce should only be used by ContextScheduler
   void InitOnce() {
     cublas_fp32_ = std::make_shared<lite::cuda::Blas<float>>();
   }
+  void Init(int dev_id, int exec_stream_id = 0, int io_stream_id = 0) {
+    CHECK_GT(devs.size(), 0)
+        << "Env is not initialized or current target is not exit!";
+    if (dev_id >= devs.size()) {
+      LOG(WARNING) << "device index exceeds the number of devices, set to "
+                      "default device(0)!";
+      device_id_ = 0;
+    } else {
+      device_id_ = dev_id;
+    }
+    if (io_stream_id >= devs[dev_id].max_stream()) {
+      LOG(WARNING) << "data stream index exceeds the maximum stream number, "
+                      "set to default stream(0)!";
+      io_stream_id = 0;
+    }
+    if (exec_stream_id >= devs[dev_id].max_stream()) {
+      LOG(WARNING) << "exec stream index exceeds the maximum stream number, "
+                      "set to default stream(0)!";
+      exec_stream_id = 0;
+    }
 
+    exec_stream_ = devs[dev_id].exec_streams()[exec_stream_id];
+    io_stream_ = devs[dev_id].io_streams()[io_stream_id];
+
+    exec_stream_id_ = exec_stream_id;
+    io_stream_id_ = io_stream_id;
+  }
   void CopySharedTo(CUDAContext* ctx) {
     CHECK(ctx);
     CHECK(cublas_fp32_) << "cublas_fp32 should be set first";
@@ -190,7 +218,10 @@ class Context<TargetType::kCUDA> {
   std::string name() const { return "CUDAContext"; }
 
  private:
+  int device_id_;
   // overall information
+  int exec_stream_id_;
+  int io_stream_id_;
   cudaStream_t exec_stream_;
   cudaStream_t io_stream_;
 
@@ -292,10 +323,13 @@ class ContextScheduler {
         break;
 #endif
 #ifdef LITE_WITH_CUDA
-      case TARGET(kCUDA):
+      case TARGET(kCUDA): {
+        int dev_id = TargetWrapper<TargetType::kCUDA>::GetCurDevice();
+        auto& context = ctx->As<CUDAContext>();
+        context.Init(dev_id);
         kernel_contexts_[TargetType::kCUDA].As<CUDAContext>().CopySharedTo(
-            &ctx->As<CUDAContext>());
-        break;
+            &context);
+      } break;
 #endif
 #ifdef LITE_WITH_ARM
       case TARGET(kARM):

@@ -8,7 +8,7 @@ if (WITH_TESTING)
     lite_cc_library(lite_api_test_helper SRCS lite_api_test_helper.cc
       DEPS scope optimizer target_wrapper_host model_parser program
            ${ops} ${host_kernels}
-      CUDA_DEPS kernels_cuda
+      CUDA_DEPS ${cuda_kernels}
       X86_DEPS ${x86_kernels})
 endif()
 if(LITE_WITH_FPGA)
@@ -27,11 +27,6 @@ message(STATUS "get FPGA kernels ${fpga_kernels}")
 if (NOT LITE_ON_TINY_PUBLISH)
     set(cxx_api_deps
       scope optimizer target_wrapper_host model_parser program)
-    if(LITE_WITH_CUDA)
-        set(cxx_api_deps ${cxx_api_deps} kernels_cuda)
-        lite_cc_library(cxx_api_cuda SRCS cxx_api.cc DEPS ${cxx_api_deps} target_wrapper_cuda)
-        nv_test(test_cxx_api_cuda SRCS cxx_api_test.cc DEPS cxx_api_cuda)
-    endif()
     lite_cc_library(cxx_api
                     SRCS cxx_api.cc
                     DEPS ${cxx_api_deps} ${ops} ${host_kernels} program
@@ -51,7 +46,7 @@ endif()
 lite_cc_library(light_api SRCS light_api.cc
         DEPS scope target_wrapper_host model_parser
             ${light_api_deps} ${ops} ${host_kernels} program
-        CUDA_DEPS target_wrapper_cuda
+        CUDA_DEPS ${cuda_kernels}
         X86_DEPS ${x86_kernels}
         ARM_DEPS ${arm_kernels}
         NPU_DEPS ${npu_kernels} ${npu_bridges} npu_pass
@@ -76,6 +71,10 @@ if(WITH_TESTING)
             --optimized_model=${LITE_MODEL_DIR}/lite_naive_model_opt SERIAL)
     add_dependencies(test_cxx_api extern_lite_download_lite_naive_model_tar_gz)
     if(NOT LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
+        lite_cc_test(test_leaky_relu_cuda SRCS test_leaky_relu.cc
+           DEPS cxx_api mir_passes lite_api_test_helper
+           ${ops} ${host_kernels} ${x86_kernels} ${cuda_kernels})
+         
         lite_cc_test(test_googlenet SRCS test_googlenet_lite.cc
            DEPS cxx_api mir_passes lite_api_test_helper
            ${ops} ${host_kernels} ${x86_kernels}

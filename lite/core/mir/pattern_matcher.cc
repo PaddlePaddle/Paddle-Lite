@@ -105,6 +105,7 @@ void PatternMatcher::operator()(SSAGraph *graph,
   ValidateByNodeRole(&subgraphs);
 
   if (subgraphs.empty()) return;
+  LOG(INFO) << "detected " << subgraphs.size() << " subgraph";
   int id = 0;
   for (auto &g : subgraphs) {
     VLOG(3) << "optimizing #" << id++ << " subgraph";

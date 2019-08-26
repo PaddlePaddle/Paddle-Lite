@@ -159,7 +159,12 @@ include(external/mkldnn)    # download, build, install mkldnn
 include(external/eigen)     # download eigen3
 include(external/xxhash)    # download install xxhash needed for x86 jit
 
+include(cudnn)
 include(configure)          # add paddle env configuration
+
+if(LITE_WITH_CUDA) 
+  include(cuda)
+endif()
 
 include(generic)            # simplify cmake module
 include(ccache)             # set ccache for compilation

@@ -50,7 +50,7 @@
 
 #include <algorithm>
 #include <limits>
-#include "lite/core/cpu_info.h"
+#include "lite/core/device_info.h"
 
 namespace paddle {
 namespace lite {
@@ -1087,6 +1087,40 @@ bool DeviceInfo::ExtendWorkspace(size_t size) {
 }
 
 #endif  // LITE_WITH_ARM
+
+#ifdef LITE_WITH_CUDA
+
+void Device<TARGET(kCUDA)>::Init() {
+  GetInfo();
+  CreateStream();
+}
+
+void Device<TARGET(kCUDA)>::GetInfo() {
+  cudaGetDeviceProperties(&device_prop_, idx_);
+  cudaRuntimeGetVersion(&runtime_version_);
+  sm_version_ = (device_prop_.major << 8 | device_prop_.minor);
+  has_hmma_ =
+      (sm_version_ == 0x0700 || sm_version_ == 0x0702 || sm_version_ == 0x0705);
+  has_fp16_ = (sm_version_ == 0x0602 || sm_version_ == 0x0600 ||
+               sm_version_ == 0x0503 || has_hmma_);
+  has_imma_ = (sm_version_ == 0x0702 || sm_version_ == 0x0705);
+  has_int8_ = (sm_version_ == 0x0601 || sm_version_ == 0x0700 || has_imma_);
+}
+
+void Device<TARGET(kCUDA)>::CreateStream() {
+  exec_stream_.clear();
+  io_stream_.clear();
+  for (int i = 0; i < max_stream_; i++) {
+    cudaStream_t exec_stream;
+    cudaStream_t io_stream;
+    cudaStreamCreate(&exec_stream);
+    cudaStreamCreate(&io_stream);
+    exec_stream_.push_back(exec_stream);
+    io_stream_.push_back(io_stream);
+  }
+}
+
+#endif
 
 }  // namespace lite
 }  // namespace paddle

@@ -1,4 +1,4 @@
-if(NOT WITH_GPU)
+if(NOT LITE_WITH_CUDA)
     return()
 endif()
 
@@ -34,10 +34,7 @@ list(APPEND CUDNN_CHECK_LIBRARY_DIRS
 	${CUDA_TOOLKIT_ROOT_DIR}
 	${CUDA_TOOLKIT_ROOT_DIR}/lib/x64
 	)
-set(CUDNN_LIB_NAME "")
-if (LINUX)
 set(CUDNN_LIB_NAME "libcudnn.so")
-endif(LINUX)
 
 if(WIN32)
 # only support cudnn7

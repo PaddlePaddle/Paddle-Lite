@@ -27,8 +27,7 @@ void* TargetMalloc(TargetType target, size_t size) {
       break;
 #ifdef LITE_WITH_CUDA
     case TargetType::kCUDA:
-      data =
-          TargetWrapper<TARGET(kCUDA), cudaStream_t, cudaEvent_t>::Malloc(size);
+      data = TargetWrapper<TARGET(kCUDA)>::Malloc(size);
       break;
 #endif  // LITE_WITH_CUDA
 #ifdef LITE_WITH_OPENCL
