@@ -152,29 +152,36 @@ class MatMulComputeTester : public arena::TestCase {
     auto* out = scope->NewTensor(out_);
     CHECK(out);
 
-    // todo alpha
     std::vector<int64_t> dim_out_vec;
     if (x_dims_.size() > 2 && y_dims_.size() >= 2) {
       // x: [B, ..., M, K], y: [B, ..., K, N], out: [B, ..., M, N]
       // x: [B, M, K], y: [K, N], out: [B, M, N]
-      if (x_transpose_ || y_transpose_) {
-        LOG(FATAL) << "not supported transpose for x and y.";
-      }
-      CHECK_EQ(x_dims_[x_dims_.size() - 1], y_dims_[y_dims_.size() - 2])
-          << "not supported x_dims(" << x_dims_ << ") and y_dims(" << y_dims_
-          << ")";
       dim_out_vec.resize(x_dims_.size());
-      for (size_t i = 0; i < x_dims_.size() - 1; ++i) {
+      for (size_t i = 0; i < x_dims_.size() - 2; ++i) {
         dim_out_vec[i] = x_dims_[i];
       }
-      dim_out_vec[x_dims_.size() - 1] = y_dims_[y_dims_.size() - 1];
+      if (!x_transpose_ && !y_transpose_) {
+        dim_out_vec[x_dims_.size() - 2] = x_dims_[x_dims_.size() - 2];
+        dim_out_vec[x_dims_.size() - 1] = y_dims_[y_dims_.size() - 1];
+      } else if (!x_transpose_ && y_transpose_) {
+        dim_out_vec[x_dims_.size() - 2] = x_dims_[x_dims_.size() - 2];
+        dim_out_vec[x_dims_.size() - 1] = y_dims_[y_dims_.size() - 2];
+      } else if (x_transpose_ && !y_transpose_) {
+        dim_out_vec[x_dims_.size() - 2] = x_dims_[x_dims_.size() - 1];
+        dim_out_vec[x_dims_.size() - 1] = y_dims_[y_dims_.size() - 1];
+      } else {
+        dim_out_vec[x_dims_.size() - 2] = x_dims_[x_dims_.size() - 1];
+        dim_out_vec[x_dims_.size() - 1] = y_dims_[y_dims_.size() - 2];
+      }
+
       out->Resize(dim_out_vec);
       auto* out_data = out->mutable_data<float>();
       int x_inner = x_dims_[x_dims_.size() - 2] * x_dims_[x_dims_.size() - 1];
 
       if (y_dims_.size() > 2) {
         int y_inner = y_dims_[y_dims_.size() - 2] * y_dims_[y_dims_.size() - 1];
-        int o_inner = x_dims_[x_dims_.size() - 2] * y_dims_[y_dims_.size() - 1];
+        int o_inner =
+            dim_out_vec[x_dims_.size() - 2] * dim_out_vec[x_dims_.size() - 1];
         for (size_t i = 0; i < x_dims_.count(0, x_dims_.size() - 2); ++i) {
           mul_low_efficiency(
               DDim({x_dims_[x_dims_.size() - 2], x_dims_[x_dims_.size() - 1]}),
@@ -187,7 +194,8 @@ class MatMulComputeTester : public arena::TestCase {
               out_data + i * o_inner);
         }
       } else {
-        int o_inner = x_dims_[x_dims_.size() - 2] * y_dims_[1];
+        int o_inner =
+            dim_out_vec[x_dims_.size() - 2] * dim_out_vec[x_dims_.size() - 1];
         for (size_t i = 0; i < x_dims_.count(0, x_dims_.size() - 2); ++i) {
           mul_low_efficiency(
               DDim({x_dims_[x_dims_.size() - 2], x_dims_[x_dims_.size() - 1]}),
@@ -240,7 +248,7 @@ class MatMulComputeTester : public arena::TestCase {
           out_data[i] += x_data[i * y_dims_[0] + j] * y_data[j] * alpha_;
         }
       }
-    } else if (x_dims_.size() == 1 && y_dims_.size() == 1) {  // todo
+    } else if (x_dims_.size() == 1 && y_dims_.size() == 1) {
       // x: [K], y: [K], out: [1]
       if (x_dims_[0] == y_dims_[0] && x_transpose_ == false &&
           y_transpose_ == false) {
@@ -325,14 +333,40 @@ void test_matmul2x2_no_transform(Place place) {
   }
 }
 
-void test_matmul2x2_transform(Place place) {
-  DDim x_dim({3, 2});
-  DDim y_dim({3, 2});
-  float alpha = 1.f;
-  std::unique_ptr<arena::TestCase> tester(
-      new MatMulComputeTester(place, "def", false, true, alpha, x_dim, y_dim));
-  arena::Arena arena(std::move(tester), place, 2e-5);
-  arena.TestPrecision();
+void test_matmul2x2_x_transpose(Place place) {
+  std::vector<DDim> x_dims({DDim({3, 4}), DDim({2, 5})});
+  std::vector<DDim> y_dims({DDim({3, 2}), DDim({2, 1})});
+  std::vector<float> alphas({1.f, 2.f});
+  for (int i = 0; i < x_dims.size(); ++i) {
+    std::unique_ptr<arena::TestCase> tester(new MatMulComputeTester(
+        place, "def", true, false, alphas[i], x_dims[i], y_dims[i]));
+    arena::Arena arena(std::move(tester), place, 2e-5);
+    arena.TestPrecision();
+  }
+}
+
+void test_matmul2x2_y_transpose(Place place) {
+  std::vector<DDim> x_dims({DDim({5, 2}), DDim({2, 5})});
+  std::vector<DDim> y_dims({DDim({3, 2}), DDim({1, 5})});
+  std::vector<float> alphas({1.f, 2.f});
+  for (int i = 0; i < x_dims.size(); ++i) {
+    std::unique_ptr<arena::TestCase> tester(new MatMulComputeTester(
+        place, "def", false, true, alphas[i], x_dims[i], y_dims[i]));
+    arena::Arena arena(std::move(tester), place, 2e-5);
+    arena.TestPrecision();
+  }
+}
+
+void test_matmul2x2_transpose(Place place) {
+  std::vector<DDim> x_dims({DDim({6, 2}), DDim({5, 3})});
+  std::vector<DDim> y_dims({DDim({3, 6}), DDim({1, 5})});
+  std::vector<float> alphas({1.f, 2.f});
+  for (int i = 0; i < x_dims.size(); ++i) {
+    std::unique_ptr<arena::TestCase> tester(new MatMulComputeTester(
+        place, "def", true, true, alphas[i], x_dims[i], y_dims[i]));
+    arena::Arena arena(std::move(tester), place, 5e-5);
+    arena.TestPrecision();
+  }
 }
 
 void test_matmul1x1_no_transpose(Place place) {
@@ -366,9 +400,9 @@ void test_matmul_nx1(Place place) {
 }
 
 void test_matmul_nx2_1(Place place) {
-  DDim x_dim({3, 4, 2, 5});
-  DDim y_dim({5, 1});
-  float alpha = 1.5f;
+  DDim x_dim({1, 2, 2, 3});
+  DDim y_dim({3, 1});
+  float alpha = 1.f;
   std::unique_ptr<arena::TestCase> tester(
       new MatMulComputeTester(place, "def", false, false, alpha, x_dim, y_dim));
   arena::Arena arena(std::move(tester), place, 2e-5);
@@ -376,13 +410,49 @@ void test_matmul_nx2_1(Place place) {
 }
 
 void test_matmul_nx2_2(Place place) {
-  DDim x_dim({3, 4, 2, 5});
-  DDim y_dim({5, 3});
+  DDim x_dim({1, 2, 2, 3});
+  DDim y_dim({3, 3});
   float alpha = 1.5f;
   std::unique_ptr<arena::TestCase> tester(
       new MatMulComputeTester(place, "def", false, false, alpha, x_dim, y_dim));
   arena::Arena arena(std::move(tester), place, 2e-5);
   arena.TestPrecision();
+}
+
+void test_matmulnx2_x_transpose(Place place) {
+  std::vector<DDim> x_dims({DDim({3, 4, 6, 2}), DDim({5, 3, 5, 2})});
+  std::vector<DDim> y_dims({DDim({6, 2}), DDim({5, 1})});
+  std::vector<float> alphas({1.f, 2.f});
+  for (int i = 0; i < x_dims.size(); ++i) {
+    std::unique_ptr<arena::TestCase> tester(new MatMulComputeTester(
+        place, "def", true, false, alphas[i], x_dims[i], y_dims[i]));
+    arena::Arena arena(std::move(tester), place, 2e-4);
+    arena.TestPrecision();
+  }
+}
+
+void test_matmulnx2_y_transpose(Place place) {
+  std::vector<DDim> x_dims({DDim({3, 4, 6, 2}), DDim({5, 3, 5, 2})});
+  std::vector<DDim> y_dims({DDim({6, 2}), DDim({1, 2})});
+  std::vector<float> alphas({1.f, 2.f});
+  for (int i = 0; i < x_dims.size(); ++i) {
+    std::unique_ptr<arena::TestCase> tester(new MatMulComputeTester(
+        place, "def", false, true, alphas[i], x_dims[i], y_dims[i]));
+    arena::Arena arena(std::move(tester), place, 5e-5);
+    arena.TestPrecision();
+  }
+}
+
+void test_matmulnx2_transpose(Place place) {
+  std::vector<DDim> x_dims({DDim({3, 4, 4, 3}), DDim({5, 3, 3, 2})});
+  std::vector<DDim> y_dims({DDim({2, 4}), DDim({1, 3})});
+  std::vector<float> alphas({1.f, 2.f});
+  for (int i = 0; i < x_dims.size(); ++i) {
+    std::unique_ptr<arena::TestCase> tester(new MatMulComputeTester(
+        place, "def", true, true, alphas[i], x_dims[i], y_dims[i]));
+    arena::Arena arena(std::move(tester), place, 5e-5);
+    arena.TestPrecision();
+  }
 }
 
 void test_matmul_nxn(Place place) {
@@ -391,8 +461,44 @@ void test_matmul_nxn(Place place) {
   float alpha = 1.5f;
   std::unique_ptr<arena::TestCase> tester(
       new MatMulComputeTester(place, "def", false, false, alpha, x_dim, y_dim));
-  arena::Arena arena(std::move(tester), place, 2e-5);
+  arena::Arena arena(std::move(tester), place, 1e-3);
   arena.TestPrecision();
+}
+
+void test_matmulnxn_x_transpose(Place place) {
+  std::vector<DDim> x_dims({DDim({3, 4, 6, 2}), DDim({5, 3, 5, 2})});
+  std::vector<DDim> y_dims({DDim({3, 4, 6, 2}), DDim({5, 3, 5, 1})});
+  std::vector<float> alphas({1.f, 2.f});
+  for (int i = 0; i < x_dims.size(); ++i) {
+    std::unique_ptr<arena::TestCase> tester(new MatMulComputeTester(
+        place, "def", true, false, alphas[i], x_dims[i], y_dims[i]));
+    arena::Arena arena(std::move(tester), place, 1e-3);
+    arena.TestPrecision();
+  }
+}
+
+void test_matmulnxn_y_transpose(Place place) {
+  std::vector<DDim> x_dims({DDim({3, 4, 6, 2}), DDim({5, 3, 5, 2})});
+  std::vector<DDim> y_dims({DDim({3, 4, 6, 2}), DDim({5, 3, 1, 2})});
+  std::vector<float> alphas({1.f, 2.f});
+  for (int i = 0; i < x_dims.size(); ++i) {
+    std::unique_ptr<arena::TestCase> tester(new MatMulComputeTester(
+        place, "def", false, true, alphas[i], x_dims[i], y_dims[i]));
+    arena::Arena arena(std::move(tester), place, 1e-3);
+    arena.TestPrecision();
+  }
+}
+
+void test_matmulnxn_transpose(Place place) {
+  std::vector<DDim> x_dims({DDim({3, 4, 4, 3}), DDim({5, 3, 3, 2})});
+  std::vector<DDim> y_dims({DDim({3, 4, 2, 4}), DDim({5, 3, 1, 3})});
+  std::vector<float> alphas({1.f, 2.f});
+  for (int i = 0; i < x_dims.size(); ++i) {
+    std::unique_ptr<arena::TestCase> tester(new MatMulComputeTester(
+        place, "def", true, true, alphas[i], x_dims[i], y_dims[i]));
+    arena::Arena arena(std::move(tester), place, 1e-3);
+    arena.TestPrecision();
+  }
 }
 
 TEST(Matmul2x2, precision) {
@@ -401,8 +507,36 @@ TEST(Matmul2x2, precision) {
 #endif
 #ifdef LITE_WITH_ARM
   Place place(TARGET(kARM));
-  // test_matmul2x2_transform(place);
   test_matmul2x2_no_transform(place);
+#endif
+}
+
+TEST(Matmul2x2_x_transpose, precision) {
+#ifdef LITE_WITH_X86
+  Place place(TARGET(kX86));
+#endif
+#ifdef LITE_WITH_ARM
+  Place place(TARGET(kARM));
+  test_matmul2x2_x_transpose(place);
+#endif
+}
+TEST(Matmul2x2_y_transpose, precision) {
+#ifdef LITE_WITH_X86
+  Place place(TARGET(kX86));
+#endif
+#ifdef LITE_WITH_ARM
+  Place place(TARGET(kARM));
+  test_matmul2x2_y_transpose(place);
+#endif
+}
+
+TEST(Matmul2x2_transpose, precision) {
+#ifdef LITE_WITH_X86
+  Place place(TARGET(kX86));
+#endif
+#ifdef LITE_WITH_ARM
+  Place place(TARGET(kARM));
+  test_matmul2x2_transpose(place);
 #endif
 }
 
@@ -435,6 +569,9 @@ TEST(Matmulnx2, precision) {
   Place place(TARGET(kARM));
   test_matmul_nx2_1(place);
   test_matmul_nx2_2(place);
+  test_matmulnx2_x_transpose(place);
+  test_matmulnx2_y_transpose(place);
+  test_matmulnx2_transpose(place);
 #endif
 }
 
@@ -445,6 +582,9 @@ TEST(Matmulnxn, precision) {
 #ifdef LITE_WITH_ARM
   Place place(TARGET(kARM));
   test_matmul_nxn(place);
+  test_matmulnxn_x_transpose(place);
+  test_matmulnxn_y_transpose(place);
+  test_matmulnxn_transpose(place);
 #endif
 }
 
