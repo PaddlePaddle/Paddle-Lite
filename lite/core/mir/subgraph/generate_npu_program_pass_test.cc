@@ -59,7 +59,8 @@ void TestModel(lite::Predictor* predictor,
   }
 
   predictor->Run();
-  if (std::find(valid_places.begin(),
+  if (model_dir != FLAGS_optimized_model &&
+      std::find(valid_places.begin(),
                 valid_places.end(),
                 Place{TARGET(kNPU), PRECISION(kFloat)}) != valid_places.end()) {
     predictor->SaveModel(FLAGS_optimized_model);
@@ -93,18 +94,18 @@ TEST(NPUSubgraph, compare) {
   TestModel(&predictor_npu, valid_places, FLAGS_model_dir);
 
   CompareOutData(predictor_npu, predictor_arm);
-  LOG(INFO) << "NPU speed: ";
+  LOG(INFO) << " ================ NPU speed ================== ";
   for (int i = 0; i < FLAGS_repeats; ++i) {
     auto start = GetCurrentUS();
     predictor_npu.Run();
-    LOG(INFO) << GetCurrentUS() - start << "us";
+    LOG(INFO) << i << ", " << GetCurrentUS() - start << "us";
   }
 
-  LOG(INFO) << "ARM CPU speed: ";
+  LOG(INFO) << " =================== ARM CPU speed =================== ";
   for (int i = 0; i < FLAGS_repeats; ++i) {
     auto start = GetCurrentUS();
     predictor_arm.Run();
-    LOG(INFO) << GetCurrentUS() - start << "us";
+    LOG(INFO) << i << ", " << GetCurrentUS() - start << "us";
   }
 
   TestModel(&predictor_npu_savedmodel, valid_places, FLAGS_optimized_model);
