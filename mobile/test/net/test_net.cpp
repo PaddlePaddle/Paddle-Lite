@@ -174,6 +174,9 @@ void test(int argc, char *argv[]) {
 #ifdef PADDLE_MOBILE_CL
     for (auto var_name : var_names) {
       auto cl_image = paddle_mobile.FetchImage(var_name);
+      if (cl_image == nullptr || cl_image->GetCLImage() == nullptr) {
+        continue;
+      }
       auto len = cl_image->numel();
       if (len == 0) {
         continue;
