@@ -11,30 +11,20 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 #pragma once
-#include <cmath>
-#include "lite/core/device_info.h"
+
+#include <cstddef>
+#include <vector>
+#include "lite/core/tensor.h"
 
 namespace paddle {
 namespace lite {
 namespace arm {
 namespace math {
 
-// fixme now only support transA = false
-template <typename dtype>
-bool gemv_int8(const int8_t* A,
-               const int8_t* x,
-               dtype* y,
-               bool transA,
-               int M,
-               int N,
-               const float* scale,
-               bool is_bias = false,
-               const int* bias = nullptr,
-               bool is_relu = false);
+void stack(std::vector<lite::Tensor*> x, lite::Tensor* out, int axis);
 
-}  // namespace math
-}  // namespace arm
-}  // namespace lite
-}  // namespace paddle
+} /* namespace math */
+} /* namespace arm */
+} /* namespace lite */
+} /* namespace paddle */

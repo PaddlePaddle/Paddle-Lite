@@ -13,28 +13,22 @@
 // limitations under the License.
 
 #pragma once
-#include <cmath>
-#include "lite/core/device_info.h"
+#include "lite/core/kernel.h"
+#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
+namespace kernels {
 namespace arm {
-namespace math {
 
-// fixme now only support transA = false
-template <typename dtype>
-bool gemv_int8(const int8_t* A,
-               const int8_t* x,
-               dtype* y,
-               bool transA,
-               int M,
-               int N,
-               const float* scale,
-               bool is_bias = false,
-               const int* bias = nullptr,
-               bool is_relu = false);
+class StackCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+ public:
+  void Run() override;
 
-}  // namespace math
-}  // namespace arm
-}  // namespace lite
-}  // namespace paddle
+  virtual ~StackCompute() = default;
+};
+
+} /* namespace arm */
+} /* namespace kernels */
+} /* namespace lite */
+} /* namespace paddle */

@@ -17,20 +17,26 @@
 namespace paddle {
 namespace lite {
 
-using TargetW = TargetWrapper<TARGET(kCUDA), cudaStream_t, cudaEvent_t>;
+size_t TargetWrapperCuda::num_devices() {
+  int count = 0;
+  cudaGetDeviceCount(&count);
+  return count;
+}
 
-void* TargetW::Malloc(size_t size) {
+void* TargetWrapperCuda::Malloc(size_t size) {
   void* ptr{};
   CHECK_EQ(cudaSuccess, cudaMalloc(&ptr, size));
   return ptr;
 }
 
-void TargetW::Free(void* ptr) { CHECK_EQ(cudaSuccess, cudaFree(ptr)); }
+void TargetWrapperCuda::Free(void* ptr) {
+  CHECK_EQ(cudaSuccess, cudaFree(ptr));
+}
 
-void TargetW::MemcpySync(void* dst,
-                         const void* src,
-                         size_t size,
-                         IoDirection dir) {
+void TargetWrapperCuda::MemcpySync(void* dst,
+                                   const void* src,
+                                   size_t size,
+                                   IoDirection dir) {
   switch (dir) {
     case IoDirection::DtoD:
       CHECK(cudaSuccess ==
@@ -47,11 +53,11 @@ void TargetW::MemcpySync(void* dst,
   }
 }
 
-void TargetW::MemcpyAsync(void* dst,
-                          const void* src,
-                          size_t size,
-                          IoDirection dir,
-                          const stream_t& stream) {
+void TargetWrapperCuda::MemcpyAsync(void* dst,
+                                    const void* src,
+                                    size_t size,
+                                    IoDirection dir,
+                                    const stream_t& stream) {
   switch (dir) {
     case IoDirection::DtoD:
       CHECK(cudaSuccess ==

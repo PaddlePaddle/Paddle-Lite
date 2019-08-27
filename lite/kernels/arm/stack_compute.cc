@@ -12,29 +12,31 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
-#include <cmath>
-#include "lite/core/device_info.h"
+#include "lite/kernels/arm/stack_compute.h"
+#include <vector>
+#include "lite/arm/math/funcs.h"
 
 namespace paddle {
 namespace lite {
+namespace kernels {
 namespace arm {
-namespace math {
 
-// fixme now only support transA = false
-template <typename dtype>
-bool gemv_int8(const int8_t* A,
-               const int8_t* x,
-               dtype* y,
-               bool transA,
-               int M,
-               int N,
-               const float* scale,
-               bool is_bias = false,
-               const int* bias = nullptr,
-               bool is_relu = false);
+void StackCompute::Run() {
+  auto& param = Param<operators::StackParam>();
+  std::vector<lite::Tensor*> x = param.X;
+  lite::Tensor* out = param.Out;
+  int axis = param.axis;
 
-}  // namespace math
-}  // namespace arm
-}  // namespace lite
-}  // namespace paddle
+  lite::arm::math::stack(x, out, axis);
+}
+
+} /* namespace arm */
+} /* namespace kernels */
+} /* namespace lite */
+} /* namespace paddle */
+
+REGISTER_LITE_KERNEL(
+    stack, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::StackCompute, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .Finalize();

@@ -13,28 +13,31 @@
 // limitations under the License.
 
 #pragma once
-#include <cmath>
-#include "lite/core/device_info.h"
+#include <string>
+#include <vector>
+#include "lite/core/op_lite.h"
+#include "lite/core/scope.h"
+#include "lite/utils/all.h"
 
 namespace paddle {
 namespace lite {
-namespace arm {
-namespace math {
+namespace operators {
 
-// fixme now only support transA = false
-template <typename dtype>
-bool gemv_int8(const int8_t* A,
-               const int8_t* x,
-               dtype* y,
-               bool transA,
-               int M,
-               int N,
-               const float* scale,
-               bool is_bias = false,
-               const int* bias = nullptr,
-               bool is_relu = false);
+class ReduceMeanOp : public OpLite {
+ public:
+  ReduceMeanOp() {}
+  explicit ReduceMeanOp(const std::string &op_type) : OpLite(op_type) {}
+  bool CheckShape() const override;
+  bool InferShape() const override;
+  bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
 
-}  // namespace math
-}  // namespace arm
+  void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
+  std::string DebugString() const override { return "reduce_mean"; }
+
+ private:
+  mutable ReduceMeanParam param_;
+};
+
+}  // namespace operators
 }  // namespace lite
 }  // namespace paddle

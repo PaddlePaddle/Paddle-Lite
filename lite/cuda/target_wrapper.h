@@ -19,11 +19,46 @@
 
 namespace paddle {
 namespace lite {
-namespace cuda {
 
-using TargetWrap = TargetWrapper<TARGET(kHost)>;
-using TargetWrapAsync = TargetWrapper<TARGET(kHost), cudaStream_t, cudaEvent_t>;
+using TargetWrapperCuda = TargetWrapper<TARGET(kCUDA)>;
 
-}  // namespace cuda
+template <>
+class TargetWrapper<TARGET(kCUDA)> {
+ public:
+  using stream_t = cudaStream_t;
+  using event_t = cudaEvent_t;
+
+  static size_t num_devices();
+  static size_t maximum_stream() { return 0; }
+
+  static size_t GetCurDevice() {
+    int dev_id;
+    cudaGetDevice(&dev_id);
+    return dev_id;
+  }
+  static void CreateStream(stream_t* stream) {}
+  static void DestroyStream(const stream_t& stream) {}
+
+  static void CreateEvent(event_t* event) {}
+  static void DestroyEvent(const event_t& event) {}
+
+  static void RecordEvent(const event_t& event) {}
+  static void SyncEvent(const event_t& event) {}
+
+  static void StreamSync(const stream_t& stream) {}
+
+  static void* Malloc(size_t size);
+  static void Free(void* ptr);
+
+  static void MemcpySync(void* dst,
+                         const void* src,
+                         size_t size,
+                         IoDirection dir);
+  static void MemcpyAsync(void* dst,
+                          const void* src,
+                          size_t size,
+                          IoDirection dir,
+                          const stream_t& stream);
+};
 }  // namespace lite
 }  // namespace paddle

@@ -101,6 +101,8 @@ USE_LITE_KERNEL(slice, kARM, kFloat, kNCHW, def)
 USE_LITE_KERNEL(squeeze, kARM, kFloat, kNCHW, def)   // for x2paddle
 USE_LITE_KERNEL(squeeze2, kARM, kFloat, kNCHW, def)  // for x2paddle
 USE_LITE_KERNEL(expand, kARM, kFloat, kNCHW, def)    // for x2paddle
+USE_LITE_KERNEL(reduce_mean, kARM, kFloat, kNCHW, def)
+USE_LITE_KERNEL(stack, kARM, kFloat, kNCHW, def)
 
 USE_LITE_KERNEL(calib, kARM, kInt8, kNCHW, fp32_to_int8);
 USE_LITE_KERNEL(calib, kARM, kInt8, kNCHW, int8_to_fp32);
@@ -145,6 +147,7 @@ USE_LITE_KERNEL(io_copy, kCUDA, kAny, kAny, host_to_device);
 USE_LITE_KERNEL(io_copy, kCUDA, kAny, kAny, device_to_host);
 USE_LITE_KERNEL(io_copy_once, kCUDA, kAny, kAny, host_to_device);
 USE_LITE_KERNEL(io_copy_once, kCUDA, kAny, kAny, device_to_host);
+USE_LITE_KERNEL(leaky_relu, kCUDA, kFloat, kNCHW, def);
 #endif
 
 #ifdef LITE_WITH_OPENCL
