@@ -26,7 +26,7 @@ TEST(memory, test) {
 #ifdef LITE_WITH_CUDA
   auto* buf_cuda = TargetMalloc(TARGET(kCUDA), 10);
   ASSERT_TRUE(buf_cuda);
-  TargetFree(Target(kCUDA), buf_cuda);
+  TargetFree(TARGET(kCUDA), buf_cuda);
 #endif
 }
 
