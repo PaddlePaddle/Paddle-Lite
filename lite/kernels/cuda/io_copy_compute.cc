@@ -21,7 +21,7 @@ namespace lite {
 namespace kernels {
 namespace cuda {
 
-using TargetW = TargetWrapper<TARGET(kCUDA), cudaStream_t, cudaEvent_t>;
+using TargetW = TargetWrapper<TARGET(kCUDA)>;
 
 // Host to CUDA memory.
 void CopyFromHostSync(void* target, const void* source, size_t size) {
@@ -89,7 +89,6 @@ class IoCopyCudaToHostCompute
     auto& param = Param<operators::IoCopyParam>();
     CHECK(param.x->target() == TARGET(kCUDA));
     auto mem_size = param.x->memory_size();
-    LOG(INFO) << "copy size " << mem_size;
     auto* data = param.y->mutable_data(TARGET(kHost), mem_size);
     CopyToHostSync(data, param.x->raw_data(), mem_size);
   }
