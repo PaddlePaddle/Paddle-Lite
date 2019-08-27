@@ -25,20 +25,24 @@ out_lines = [
     '',
 ]
 
+lines = set()
 with open(ops_list_path) as f:
     for line in f:
-        path = line.strip()
+        lines.add(line.strip())
 
-        with open(path) as g:
-            for line in g:
-                key = 'REGISTER_LITE_OP'
-                if line.startswith(key):
-                    end = line.find(',')
-                    op = line[len(key) + 1:end]
-                    if not op: continue
-                    if "_grad" in op: continue
-                    out = "USE_LITE_OP(%s);" % op
-                    out_lines.append(out)
+for line in lines:
+    path = line.strip()
+
+    with open(path) as g:
+        for line in g:
+            key = 'REGISTER_LITE_OP'
+            if line.startswith(key):
+                end = line.find(',')
+                op = line[len(key) + 1:end]
+                if not op: continue
+                if "_grad" in op: continue
+                out = "USE_LITE_OP(%s);" % op
+                out_lines.append(out)
 
 with open(dest_path, 'w') as f:
     logging.info("write op list to %s" % dest_path)

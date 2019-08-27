@@ -3,13 +3,11 @@ NETS=""
 declare -a supportedNets=("googlenet" "mobilenet" "yolo" "squeezenet" "resnet" "mobilenetssd" "nlp" "mobilenetfssd" "genet" "super" "op")
 
 # merge cl to so
-merge_cl_to_so=1
+merge_cl_to_so=0
 rm ../src/operators/kernel/cl/opencl_kernels.cpp
-if [ $merge_cl_to_so == 1 ]; then
-    cd ../src/operators/kernel/cl
-    python gen_code.py > opencl_kernels.cpp
-    cd -
-fi
+cd ../src/operators/kernel/cl
+python gen_code.py $merge_cl_to_so > opencl_kernels.cpp
+cd -
 
 build_for_mac() {
     if [ ! `which brew` ]; then
