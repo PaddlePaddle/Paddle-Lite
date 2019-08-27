@@ -17,7 +17,7 @@
 #include <cmath>
 #include "lite/arm/math/packed_sgemm.h"
 #include "lite/core/context.h"
-#include "lite/core/cpu_info.h"
+#include "lite/core/device_info.h"
 
 namespace paddle {
 namespace lite {

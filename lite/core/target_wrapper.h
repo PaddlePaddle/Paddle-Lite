@@ -165,44 +165,6 @@ class TargetWrapper<TARGET(kFPGA)> {
   }
 };
 #endif
-#ifdef LITE_WITH_CUDA
-using TargetWrapperCuda =
-    TargetWrapper<TARGET(kCUDA), cudaStream_t, cudaEvent_t>;
-// This interface should be specified by each kind of target.
-template <>
-class TargetWrapper<TARGET(kCUDA), cudaStream_t, cudaEvent_t> {
- public:
-  using stream_t = cudaStream_t;
-  using event_t = cudaEvent_t;
-
-  static size_t num_devices() { return 0; }
-  static size_t maximum_stream() { return 0; }
-
-  static void CreateStream(stream_t* stream) {}
-  static void DestroyStream(const stream_t& stream) {}
-
-  static void CreateEvent(event_t* event) {}
-  static void DestroyEvent(const event_t& event) {}
-
-  static void RecordEvent(const event_t& event) {}
-  static void SyncEvent(const event_t& event) {}
-
-  static void StreamSync(const stream_t& stream) {}
-
-  static void* Malloc(size_t size);
-  static void Free(void* ptr);
-
-  static void MemcpySync(void* dst,
-                         const void* src,
-                         size_t size,
-                         IoDirection dir);
-  static void MemcpyAsync(void* dst,
-                          const void* src,
-                          size_t size,
-                          IoDirection dir,
-                          const stream_t& stream);
-};
-#endif  // LITE_WITH_CUDA
 
 }  // namespace lite
 }  // namespace paddle
