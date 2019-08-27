@@ -9,6 +9,14 @@ readonly CMAKE_COMMON_OPTIONS="-DWITH_GPU=OFF \
                                -DLITE_WITH_ARM=ON \
                                -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON"
 
+
+# global variables
+BUILD_EXTRA=OFF
+
+readonly THIRDPARTY_TAR=https://paddle-inference-dist.bj.bcebos.com/PaddleLite/third-party-05b862.tar.gz
+
+readonly workspace=$PWD
+
 # for code gen, a source file is generated after a test, but is dependended by some targets in cmake.
 # here we fake an empty file to make cmake works.
 function prepare_workspace {
@@ -22,6 +30,19 @@ function prepare_workspace {
     DEBUG_TOOL_PATH_PREFIX=lite/tools/debug
     mkdir -p ./${DEBUG_TOOL_PATH_PREFIX}
     cp ../${DEBUG_TOOL_PATH_PREFIX}/analysis_tool.py ./${DEBUG_TOOL_PATH_PREFIX}/
+}
+
+function prepare_thirdparty {
+    if [ ! -d $workspace/third-party -o -f $workspace/third-party-05b862.tar.gz ]; then
+        rm -rf $workspace/third-party
+
+        if [ ! -f $workspace/third-party-05b862.tar.gz ]; then
+            wget $THIRDPARTY_TAR
+        fi
+        tar xzf third-party-05b862.tar.gz
+    else
+        git submodule update --init --recursive
+    fi
 }
 
 function make_tiny_publish_so {
@@ -46,6 +67,7 @@ function make_tiny_publish_so {
       -DLITE_SHUTDOWN_LOG=ON \
       -DLITE_ON_TINY_PUBLISH=ON \
       -DANDROID_STL_TYPE=$android_stl \
+      -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
       -DARM_TARGET_OS=${os} -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
 
   make publish_inference -j4
@@ -58,7 +80,8 @@ function make_full_publish_so {
   local lang=$3
   local android_stl=$4
 
-  git submodule update --init --recursive
+  #git submodule update --init --recursive
+  prepare_thirdparty
 
   cur_dir=$(pwd)
   build_dir=$cur_dir/build.lite.${os}.${abi}.${lang}
@@ -76,6 +99,7 @@ function make_full_publish_so {
       -DLITE_WITH_JAVA=ON \
       -DLITE_SHUTDOWN_LOG=ON \
       -DANDROID_STL_TYPE=$android_stl \
+      -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
       -DARM_TARGET_OS=${os} -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
 
   make publish_inference -j4
@@ -87,7 +111,8 @@ function make_all_tests {
   local abi=$2
   local lang=$3
 
-  git submodule update --init --recursive
+  #git submodule update --init --recursive
+  prepare_thirdparty
   cur_dir=$(pwd)
   build_dir=$cur_dir/build.lite.${os}.${abi}.${lang}
   if [ -d $build_dir ]
@@ -101,6 +126,7 @@ function make_all_tests {
   cmake .. \
       ${CMAKE_COMMON_OPTIONS} \
       -DWITH_TESTING=ON \
+      -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
       -DARM_TARGET_OS=${os} -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
 
   make lite_compile_deps -j4
@@ -122,8 +148,10 @@ function print_usage {
     echo -e "compile all arm tests:"
     echo -e "   ./build.sh --arm_os=<os> --arm_abi=<abi> --arm_lang=<lang> test"
     echo
-    echo -e "argument choices:"
+    echo -e "optional argument:"
+    echo -e "--build_extra: (OFF|ON); controls whether to publish extra operators and kernels for (sequence-related model such as OCR or NLP)"
     echo
+    echo -e "argument choices:"
     echo -e "--arm_os:\t android"
     echo -e "--arm_abi:\t armv8|armv7"
     echo -e "--arm_lang:\t gcc|clang"
@@ -161,6 +189,10 @@ function main {
                 ;;
             --android_stl=*)
                 ANDROID_STL="${i#*=}"
+                shift
+                ;;
+            --build_extra=*)
+                BUILD_EXTRA="${i#*=}"
                 shift
                 ;;
             tiny_publish)

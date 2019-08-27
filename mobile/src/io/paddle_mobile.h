@@ -90,6 +90,7 @@ class PaddleMobile {
                     PowerMode power_mode = PERFORMANCE_PRIORITY);
   void Clear();
   double GetPredictTime();
+  std::string GetExceptionMsg();
 
 #ifdef PADDLE_MOBILE_FPGA
   void InjectVariable(const framework::Tensor &t, std::string var_name);

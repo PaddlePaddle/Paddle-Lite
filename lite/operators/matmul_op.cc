@@ -37,14 +37,41 @@ bool MatMulOpLite::InferShape() const {
   if (x_dims.size() > 2 && y_dims.size() >= 2) {
     // x: [B, ..., M, K], y: [B, ..., K, N], out: [B, ..., M, N]
     // x: [B, M, K], y: [K, N], out: [B, M, N]
-    CHECK_EQ(x_dims[x_dims.size() - 1], y_dims[y_dims.size() - 2])
-        << "not supported x_dims(" << x_dims << ") and y_dims(" << y_dims
-        << ")";
+    if (!x_transpose && !y_transpose) {
+      CHECK_EQ(x_dims[x_dims.size() - 1], y_dims[y_dims.size() - 2])
+          << "not supported x_dims(" << x_dims << ") and y_dims(" << y_dims
+          << ")";
+    } else if (!x_transpose && y_transpose) {
+      CHECK_EQ(x_dims[x_dims.size() - 1], y_dims[y_dims.size() - 1])
+          << "not supported x_dims(" << x_dims << ") and y_dims(" << y_dims
+          << ")";
+    } else if (x_transpose && !y_transpose) {
+      CHECK_EQ(x_dims[x_dims.size() - 2], y_dims[y_dims.size() - 2])
+          << "not supported x_dims(" << x_dims << ") and y_dims(" << y_dims
+          << ")";
+    } else {
+      CHECK_EQ(x_dims[x_dims.size() - 2], y_dims[y_dims.size() - 1])
+          << "not supported x_dims(" << x_dims << ") and y_dims(" << y_dims
+          << ")";
+    }
+
     dim_out_vec.resize(x_dims.size());
-    for (size_t i = 0; i < x_dims.size() - 1; ++i) {
+    for (size_t i = 0; i < x_dims.size() - 2; ++i) {
       dim_out_vec[i] = x_dims[i];
     }
-    dim_out_vec[x_dims.size() - 1] = y_dims[y_dims.size() - 1];
+    if (!x_transpose && !y_transpose) {
+      dim_out_vec[x_dims.size() - 2] = x_dims[x_dims.size() - 2];
+      dim_out_vec[x_dims.size() - 1] = y_dims[y_dims.size() - 1];
+    } else if (!x_transpose && y_transpose) {
+      dim_out_vec[x_dims.size() - 2] = x_dims[x_dims.size() - 2];
+      dim_out_vec[x_dims.size() - 1] = y_dims[y_dims.size() - 2];
+    } else if (x_transpose && !y_transpose) {
+      dim_out_vec[x_dims.size() - 2] = x_dims[x_dims.size() - 1];
+      dim_out_vec[x_dims.size() - 1] = y_dims[y_dims.size() - 1];
+    } else {
+      dim_out_vec[x_dims.size() - 2] = x_dims[x_dims.size() - 1];
+      dim_out_vec[x_dims.size() - 1] = y_dims[y_dims.size() - 2];
+    }
   } else if (x_dims.size() == 2 && y_dims.size() == 2) {
     // x: [M, K], y: [K, N], out: [M, N]
     // x: [M, K], y: [K, N], out: [M, N]
