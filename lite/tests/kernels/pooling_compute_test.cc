@@ -150,7 +150,7 @@ class PoolOPTest : public arena::TestCase {
 void test_pool(Place place) {
   for (auto n : {1, 2}) {
     for (auto c : {1, 3, 32, 48}) {
-      for (auto h : {2, 3, 4, 11, 17, 28, 32, 75}) {
+      for (auto h : {2, 3, 4, 11, 17, 28, 32}) {
         for (auto ksize : {2, 3}) {
           for (auto stride : {1, 2}) {
             for (auto pad : {0, 1}) {
