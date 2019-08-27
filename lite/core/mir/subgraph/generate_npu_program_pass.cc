@@ -37,20 +37,40 @@ namespace lite {
 namespace mir {
 namespace subgraph {
 
-void GenerateNPUProgramPass::SubgraphSortHelper(
-    Node* node,
-    const std::unordered_set<Node*>& nodes_all,
-    std::unordered_set<const Node*>* visited_nodes,
-    std::vector<Node*>* ret) {
-  for (auto& var_node : node->inlinks) {
-    if (var_node->inlinks.empty()) continue;
-    auto* op_node = var_node->inlinks.front();
-    if (nodes_all.count(op_node) && !visited_nodes->count(op_node)) {
-      SubgraphSortHelper(op_node, nodes_all, visited_nodes, ret);
-    }
+std::shared_ptr<ge::Operator> GenerateNPUProgramPass::CvtVarNode(
+    lite::mir::Node* var_node, const Scope* scope) {
+  CHECK(var_node->IsArg());
+  const auto& arg = var_node->AsArg();
+  VLOG(4) << "Convert var node " << arg.name;
+
+  auto* var = scope->FindVar(arg.name);
+  CHECK(var);
+  auto* tensor = var->GetMutable<lite::Tensor>();
+  CHECK(tensor);
+  auto dims = tensor->dims();
+  if (arg.is_weight) {
+    auto wgt = std::make_shared<ge::op::Const>(arg.name);
+    LOG(INFO) << "in convert const:" << arg.name;
+    VLOG(4) << dims;
+    wgt->set_attr_value(lite::npu::bridge::CvtFromLiteTensor(tensor));
+    return wgt;
+  } else {
+    CHECK_EQ(dims.size(), 4);
+    LOG(INFO) << "in convert data:" << arg.name;
+    LOG(INFO) << dims;
+    // TODO(xxx): support more types and dims size
+    ge::TensorDesc desc(ge::Shape(dims.Vectorize()),
+                        ge::Format::FORMAT_NCHW,
+                        ge::DataType::DT_FLOAT);
+
+    //   auto size = desc.GetShape().GetShapeSize();
+    //  ge::TensorUtils::SetSize(desc, size*sizeof(float));
+    //  ge::TensorUtils::SetRealDimCnt(desc, 4);
+    auto data = std::make_shared<ge::op::Data>(arg.name);
+    data->update_input_desc_x(desc);
+    return data;
   }
-  ret->push_back(node);
-  visited_nodes->insert(node);
+  return nullptr;
 }
 
 void GenerateNPUProgramPass::CvtOpNodes(
@@ -65,12 +85,12 @@ void GenerateNPUProgramPass::CvtOpNodes(
     auto& stmt = node->AsStmt();
     for (auto& var_node : node->inlinks) {
       auto& arg = var_node->AsArg();
+      // weight should be handled in the converter
       if (arg.is_weight) continue;
       auto var_name = arg.name;
       if (!cvted_vars->count(var_name)) {
-        cvted_vars->insert(std::make_pair(
-            var_name,
-            lite::npu::bridge::CvtNode(var_node, stmt.op()->scope())));
+        cvted_vars->insert(
+            std::make_pair(var_name, CvtVarNode(var_node, stmt.op()->scope())));
       }
       node_inputs.insert(*cvted_vars->find(var_name));
     }
@@ -122,14 +142,8 @@ void GenerateNPUProgramPass::GetIOVars(
 void GenerateNPUProgramPass::GenNPUGraphOpNode(
     const std::unique_ptr<SSAGraph>& graph,
     int sub_id,
-    const std::unordered_set<Node*>& nodes_all) {
-  std::unordered_set<const Node*> visited_nodes;
-  std::vector<Node*> ret;
-  for (auto& node : nodes_all) {
-    if (!node->IsStmt()) continue;
-    if (visited_nodes.count(node)) continue;
-    SubgraphSortHelper(node, nodes_all, &visited_nodes, &ret);
-  }
+    const std::unordered_set<Node*>& nodes) {
+  auto ret = GetTopologicalOrder(nodes);
 
   lite::npu::bridge::node_map_type cvted_vars;
   CvtOpNodes(ret, &cvted_vars);
@@ -229,11 +243,18 @@ void GenerateNPUProgramPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
     LOG(INFO) << i.first;
     supported_op_types.push_back(i.first);
   }
-  int num_subgraph = FuseSubgraph(graph, supported_op_types);
-  LOG(INFO) << "detected " << num_subgraph << " NPU subgraph";
 
-  InferOnce(graph);
-  ConvertSubgraph(graph, num_subgraph);
+  try {
+    int num_subgraph = FuseSubgraph(graph, supported_op_types);
+    LOG(INFO) << "detected " << num_subgraph << " NPU subgraph";
+
+    InferOnce(graph);
+    ConvertSubgraph(graph, num_subgraph);
+  } catch (...) {
+    // exception = true;
+    LOG(WARNING) << "Build NPU graph failed";
+  }
+
   LOG(INFO) << "After NPU Pass \n" << Visualize(graph.get());
 
   for (auto& item : graph->StmtTopologicalOrder()) {

@@ -26,6 +26,34 @@ namespace lite {
 namespace mir {
 namespace subgraph {
 
+void SubgraphProgramPass::SortHelper(
+    Node* node,
+    const std::unordered_set<Node*>& nodes_all,
+    std::unordered_set<const Node*>* visited_nodes,
+    std::vector<Node*>* ret) {
+  for (auto& var_node : node->inlinks) {
+    if (var_node->inlinks.empty()) continue;
+    auto* op_node = var_node->inlinks.front();
+    if (nodes_all.count(op_node) && !visited_nodes->count(op_node)) {
+      SortHelper(op_node, nodes_all, visited_nodes, ret);
+    }
+  }
+  ret->push_back(node);
+  visited_nodes->insert(node);
+}
+
+std::vector<Node*> SubgraphProgramPass::GetTopologicalOrder(
+    const std::unordered_set<Node*>& nodes) {
+  std::unordered_set<const Node*> visited;
+  std::vector<Node*> ret;
+  for (auto& node : nodes) {
+    if (!node->IsStmt()) continue;
+    if (visited.count(node)) continue;
+    SortHelper(node, nodes, &visited, &ret);
+  }
+  return ret;
+}
+
 void SubgraphProgramPass::InferOnce(const std::unique_ptr<SSAGraph>& graph) {
   for (auto& item : graph->StmtTopologicalOrder()) {
     if (!item->IsStmt()) continue;
@@ -127,13 +155,10 @@ int SubgraphProgramPass::FuseSubgraphID(
         for (auto& j : i->outlinks) {
           if (j->IsStmt()) {
             auto& jstmt = j->AsStmt();
-            // LOG(INFO) << "initial: "<<jstmt.op_type()<<"
-            // ："<<jstmt.subgraph_id();
             if (jstmt.subgraph_id() == 0) inputvar = 1;
           }
         }
       }
-      // LOG(INFO) << "initial: "<<stmt.op_type()<<" ："<<stmt.subgraph_id();
       if (inputvar == 1) {
         for (auto& i : item->outlinks) i_nodes_[sub_id].insert(i);
       }

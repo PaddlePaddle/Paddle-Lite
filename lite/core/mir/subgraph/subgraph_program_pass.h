@@ -54,7 +54,16 @@ class SubgraphProgramPass : public ProgramPass {
   // std::unique_ptr<SSAGraph>& graph, int sub_num);
   void ChangeAllOutConnectedID(Node* node, int to_id, int from_id = 0);
 
+  // Sort and return the topology order of nodes set
+  std::vector<Node*> GetTopologicalOrder(
+      const std::unordered_set<Node*>& nodes);
+
  private:
+  // sort nodes to operational sequence
+  void SortHelper(Node* node,
+                  const std::unordered_set<Node*>& nodes_all,
+                  std::unordered_set<const Node*>* visited_nodes,
+                  std::vector<Node*>* ret);
   // {1: {nodes2rm_in_subgraph1, ...},
   //  2: {nodes2rm_in_subgraph2, ...}}
   // delete nodes

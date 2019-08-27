@@ -38,17 +38,14 @@ class GenerateNPUProgramPass : public SubgraphProgramPass {
   std::unique_ptr<RuntimeProgram> GenProgram();
 
  protected:
-  // sort nodes to operational sequence
-  void SubgraphSortHelper(Node* node,
-                          const std::unordered_set<Node*>& nodes_all,
-                          std::unordered_set<const Node*>* visited_nodes,
-                          std::vector<Node*>* ret);
-
   // nodes2cvt: op nodes to convert
   // cvted_vars: converted var nodes
   // nodes2rm: op nodes and var nodes that need to be removed
   void CvtOpNodes(const std::vector<Node*>& nodes2cvt,
                   lite::npu::bridge::node_map_type* cvted_vars);
+
+  std::shared_ptr<ge::Operator> CvtVarNode(lite::mir::Node* var_node,
+                                           const Scope* scope);
 
   // achieve input and output vars/cvted_vars;
   // achieve all nodes to remove
