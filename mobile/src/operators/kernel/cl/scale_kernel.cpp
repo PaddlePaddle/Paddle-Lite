@@ -35,7 +35,7 @@ void ScaleKernel<GPU_CL, float>::Compute(const ScaleParam<GPU_CL>& param) {
   auto default_work_size = this->cl_helper_.DefaultWorkSize(*output);
   auto inputImage = input->GetCLImage();
   auto outputImage = output->GetCLImage();
-  int out_width = output->dims()[3];
+  int out_width = (output->dims().size() == 4) ? output->dims()[3] : 1;
   clSetKernelArg(kernel, 0, sizeof(cl_mem), &inputImage);
   clSetKernelArg(kernel, 1, sizeof(cl_mem), &outputImage);
   clSetKernelArg(kernel, 2, sizeof(float), &scale);
