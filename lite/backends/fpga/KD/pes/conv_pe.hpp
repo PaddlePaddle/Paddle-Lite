@@ -49,6 +49,16 @@ class ConvPE : public PE {
       concatPE_.init();
       concatPE_.apply();
     }
+
+    // if (DLEngine::get_instance().isZU3() &&
+    //     param_.input->shape().dimSize() == 4 &&
+    //     param_.input->shape().width() == 1 &&
+    //     param_.input->shape().channel() >= 2048) {
+    //   use_cpu_ = true;
+    // }
+    if (!use_cpu_) {
+      // param_.filter->releaseData();
+    }
   }
   void cpu_compute() {
     Tensor* input = param_.input;
@@ -59,6 +69,7 @@ class ConvPE : public PE {
     Tensor float_output;
     float* image_addr = float_input.mutableData<float>(FP32, input->shape());
     float_input.copyFrom(input);
+    // float16* data_out = output->data<float16>();
     float* out = float_output.mutableData<float>(FP32, output->shape());
 
     int out_channel = output->shape().channel();
@@ -66,13 +77,21 @@ class ConvPE : public PE {
 
     float* filter_data = param_.filter->data<float>();
     float* mi = new float[in_channel];
-
     for (int i = 0; i < out_channel; i++) {
       float* image = image_addr;
       float* filter_ptr = filter_data + i * in_channel;
       float* out_ptr = mi;
-#pragma omp parallel for
+      #pragma omp parallel for
       for (int j = 0; j < in_channel; j++) {
+        // float32x4_t x0 = vld1q_f32(image);
+        // float32x4_t x1 = vld1q_f32(filter_ptr);
+
+        // float32x4_t r = vmulq_f32(x0, x1);
+
+        // vst1q_f32(out_ptr, r);
+        // image += 4;
+        // filter_ptr += 4;
+        // out_ptr += 4;
         float value = image_addr[j] * filter_ptr[j];
         mi[j] = value;
       }
@@ -89,37 +108,69 @@ class ConvPE : public PE {
   }
 
   bool dispatch() {
-    inplace_.relu_enable = param_.relu.enabled;
+    if (use_cpu_) {
+      cpu_compute();
+      return true;
+    }
+
+    inplace_.leaky_relu_enable =
+        (param_.relu.leaky_relu_factor != 0) ? true : false;
+    inplace_.relu_enable =
+        inplace_.leaky_relu_enable ? false : param_.relu.enabled;
     inplace_.power_enable = false;
     inplace_.normalize_enable = false;
-
-    if (param_.relu.enabled) {
-      inplace_.relu_enable = param_.relu.enabled;
+    if (inplace_.relu_enable || inplace_.leaky_relu_enable) {
       config_inplace(inplace_);
+      if (inplace_.leaky_relu_enable) {
+        activeParamterArgs.type = TYPE_LEAK_RELU;
+        activeParamterArgs.leaky_relu_factor =
+            fp32_2_fp16(param_.relu.leaky_relu_factor);
+        config_activation(activeParamterArgs);
+      }
     }
 
     std::vector<BasicConvParam*>& params = param_.splitParams();
     int ret = 0;
     for (auto conv_param : params) {
+      // conv_param->input.printScale();
       ret |= compute_fpga_conv_basic(conv_param->args);
     }
 
-    if (param_.relu.enabled) {
+    if (inplace_.relu_enable || inplace_.leaky_relu_enable) {
       inplace_.relu_enable = false;
+      inplace_.leaky_relu_enable = false;
       config_inplace(inplace_);
+
+      if (inplace_.leaky_relu_enable) {
+        activeParamterArgs.type = TYPE_LEAK_RELU;
+        activeParamterArgs.leaky_relu_factor = fp32_2_fp16(0);
+        config_activation(activeParamterArgs);
+      }
     }
 
     size_t size = params.size();
     if (split_axis == 0 && ret == 0 && size > 1) {
+      // std::cout << "concat size:" << size << std::endl;
       concatPE_.dispatch();
     }
     if (split_axis == 1 && ret == 0 && size > 1) {
+      // for (int n = 0; n < size - 1; n++) {
       ElementwiseAddParam& add_param = addPE_.param();
       add_param.inputs = {&params[0]->output, &params[1]->output};
       add_param.output = param_.output;
       addPE_.init();
       addPE_.apply();
       addPE_.dispatch();
+
+      // param_.output->printScale();
+
+      // params[0]->input.saveToFile("conv_1.txt");
+      // params[1]->input.saveToFile("conv_2.txt");
+
+      // params[0]->output.saveToFile("ew_o1.txt");
+      // params[1]->output.saveToFile("ew_o2.txt");
+      // std::cout << "\n ================== EW ================== \n";
+      // }
     }
     return ret == 0;
   }
@@ -127,12 +178,14 @@ class ConvPE : public PE {
   ConvParam& param() { return param_; }
 
  private:
+  bool use_cpu_ = false;
   ConvParam param_;
   ConcatPE concatPE_;
   ElementwiseAddPE addPE_;
   int split_axis = 0;
   InplaceArgs inplace_ = {0};
+  ActiveParamterArgs activeParamterArgs;
 };
 
 }  // namespace zynqmp
-}  // namespace paddle
+}  // namespace paddle_mobile

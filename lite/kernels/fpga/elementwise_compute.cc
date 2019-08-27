@@ -39,6 +39,8 @@ void ElementwiseAddCompute::PrepareForRun() {
 }
 void ElementwiseAddCompute::Run() { 
   pe_.dispatch();
+  zynqmp::ElementwiseAddParam& ew_param = pe_.param();
+  ew_param.output->saveToFile("ew", true);
 }
 
 void ElementwiseAddActivationCompute::PrepareForRun() {

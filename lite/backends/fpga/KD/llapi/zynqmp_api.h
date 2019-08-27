@@ -14,6 +14,9 @@ limitations under the License. */
 
 #pragma once
 
+#ifndef PADDLE_MOBILE_SRC_FPGA_KD_ZYNQMP_API_H
+#define PADDLE_MOBILE_SRC_FPGA_KD_ZYNQMP_API_H
+
 #include <stdint.h>
 #include <cstddef>
 #include <iostream>
@@ -38,6 +41,13 @@ enum DDataType {
 enum DLayoutType {
   LAYOUT_CHW = 1,
   LAYOUT_HWC = 0,
+};
+
+enum ActiveType {
+  TYPE_RELU = 0,
+  TYPE_RELU6 = 1,
+  TYPE_LEAK_RELU = 2,
+  TYPE_SIGMOID = 3,
 };
 
 struct VersionArgs {
@@ -199,6 +209,11 @@ struct NormalizeParameterArgs {
   uint32_t hight_width;
 };
 
+struct ActiveParamterArgs {
+  ActiveType type;
+  uint16_t leaky_relu_factor;
+};
+
 struct InplaceArgs {
   bool leaky_relu_enable;
   bool relu_enable;
@@ -216,7 +231,9 @@ struct FpgaRegReadArgs {
   uint64_t value;
 };
 
-struct FpgaResetArgs {};
+struct FpgaResetArgs {
+  uint32_t val;
+};
 
 #define IOCTL_FPGA_MAGIC (('F' + 'P' + 'G' + 'A') / 4)
 
@@ -248,6 +265,8 @@ struct FpgaResetArgs {};
   _IOW(IOCTL_FPGA_MAGIC, 41, struct PowerParameterArgs)
 #define IOCTL_CONFIG_NORMALIZE_PARAMETER \
   _IOW(IOCTL_FPGA_MAGIC, 42, struct NormalizeParameterArgs)
+#define IOCTL_CONFIG_ACTIVATION_PARAMETER \
+  _IOW(IOCTL_FPGA_MAGIC, 43, struct ActiveParamterArgs)
 #define IOCTL_FPGA_REG_READ _IOW(IOCTL_FPGA_MAGIC, 50, struct FpgaRegReadArgs)
 #define IOCTL_FPGA_REG_WRITE _IOW(IOCTL_FPGA_MAGIC, 51, struct FpgaRegWriteArgs)
 #define IOCTL_FPGA_RESET _IOW(IOCTL_FPGA_MAGIC, 52, struct FpgaResetArgs)
@@ -331,6 +350,7 @@ int compute_fpga_scale(const struct ScaleArgs& args);
 int compute_fpga_concat(const struct ConcatArgs& args);
 int compute_fpga_resize(const struct ResizeArgs& args);
 
+int config_activation(const struct ActiveParamterArgs& args);
 int config_power(const struct PowerArgs& args);
 int compute_fpga_dwconv(const struct DWconvArgs& args);
 int config_norm_param(const struct NormalizeParameterArgs& args);
@@ -341,7 +361,11 @@ int config_inplace(const struct InplaceArgs& args);
 int flush_cache(void* addr, int size);
 int invalidate_cache(void* addr, int size);
 
+int fpga_reset();
+
 int16_t fp32_2_fp16(float fp32_num);
 float fp16_2_fp32(int16_t fp16_num);
 }  // namespace zynqmp
-}  // namespace paddle
+}  // namespace paddle_mobile
+
+#endif  // PADDLE_MOBILE_SRC_FPGA_KD_ZYNQMP_API_H

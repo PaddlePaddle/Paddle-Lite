@@ -26,6 +26,7 @@ namespace fpga {
 using float16 = zynqmp::float16;
 
 void PoolCompute::PrepareForRun() {
+  
   zynqmp::PoolingParam& pool_param = pe_.param();
   auto& param = Param<operators::PoolParam>();
 
@@ -47,6 +48,8 @@ void PoolCompute::PrepareForRun() {
 
 void PoolCompute::Run() { 
   pe_.dispatch(); 
+  zynqmp::PoolingParam& pool_param = pe_.param();
+  // pool_param.output->saveToFile("pool", true);
 }
 
 }  // namespace fpga

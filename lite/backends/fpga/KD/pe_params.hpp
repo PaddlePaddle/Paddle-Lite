@@ -26,6 +26,7 @@ namespace zynqmp {
 struct ReLUParam {
  public:
   bool enabled = false;
+  float leaky_relu_factor = 0.0f;
 };
 
 struct PEParam {

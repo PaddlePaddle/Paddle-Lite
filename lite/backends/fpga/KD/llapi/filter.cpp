@@ -24,7 +24,9 @@ namespace filter {
 
 static int FILTER_SIZE = 2048;
 
-void set_filter_capacity(uint32_t cap) { FILTER_SIZE = cap; }
+void set_filter_capacity(uint32_t cap) {
+  // FILTER_SIZE = cap;
+}
 
 int calc_division_capacity(int chw) {
   int n = FILTER_SIZE / ((chw + 15) / 16) * 32;
@@ -52,28 +54,24 @@ int calc_num_per_div(int num, int group_num, int division_capacity) {
   }
 }
 
-void convert_to_hwc(
-    char **data_in, int num, int channel, int height, int width) {
-  char *tmp = *data_in;
+void convert_to_hwc(int8_t* chw_data, int8_t* hwc_data, int num, int channel,
+                    int height, int width) {
   int chw = channel * height * width;
-  char *data_tmp = (char *)fpga_malloc(chw * num * sizeof(char));  // NOLINT
+  int wc = width * channel;
+  int index = 0;
   for (int n = 0; n < num; n++) {
-    int64_t amount_per_row = width * channel;
     for (int c = 0; c < channel; c++) {
       for (int h = 0; h < height; h++) {
-        int64_t offset_height = h * amount_per_row;
         for (int w = 0; w < width; w++) {
-          *(data_tmp + n * chw + offset_height + w * channel + c) =
-              *((*data_in)++);
+          hwc_data[n * chw + h * wc + w * channel + c] = chw_data[index];
+          index++;
         }
       }
     }
   }
-  *data_in = data_tmp;
-  fpga_free(tmp);
 }
 
-float find_max(float *data_in, int data_size) {
+float find_max(float* data_in, int data_size) {
   float max = 0.0;
   for (int i = 0; i < data_size; ++i) {
     float value = data_in[i];
@@ -83,132 +81,99 @@ float find_max(float *data_in, int data_size) {
   return max;
 }
 
-signed char float_to_int8(float fdata) {
+int8_t float_to_int8(float fdata) {
   if (fdata < 0.0) {
     fdata -= 0.5;
   } else {
     fdata += 0.5;
   }
-  return (signed char)fdata;
+  return (int8_t)fdata;
 }
 
-void quantize(float **data_in, int data_size, float max) {
-  float *tmp = *data_in;
+void quantize(float* src, int8_t* dst, int len, float max) {
   float fix_range = 127;
   float scale = fix_range / max;
-
-  signed char *tmp_data = (signed char *)fpga_malloc(data_size * sizeof(char));
-  for (int i = 0; i < data_size; i++) {
-    tmp_data[i] = float_to_int8(
-        (*data_in)[i] * scale);  // (signed char)((*data_in)[i] * scale);
-  }
-  *data_in = (float *)tmp_data;  // NOLINT
-  fpga_free(tmp);
-}
-
-void align_element(char **data_in, int num, int chw) {
-  int j = 0;
-  int align_chw = align_to_x(chw, FILTER_ELEMENT_ALIGNMENT);
-  if (align_chw != chw) {
-    char *tmp = *data_in;
-    char *data_tmp =
-        (char *)fpga_malloc(num * align_chw * sizeof(char));  // NOLINT
-
-    memset(data_tmp, 0, num * align_chw);
-    for (j = 0; j < num; j++) {
-      memcpy(data_tmp + j * align_chw, (*data_in) + j * chw, chw);
-    }
-    *data_in = data_tmp;
-    fpga_free(tmp);
+  for (size_t i = 0; i < len; i++) {
+    dst[i] = float_to_int8(src[i] * scale);
   }
 }
 
-void align_num(char **data_in,
-               int num_per_div_before_alignment,
-               int num,
-               int chw) {
-  int i = 0;
+bool should_align_chw(int chw) {
   int align_chw = align_to_x(chw, FILTER_ELEMENT_ALIGNMENT);
+  return align_chw != chw;
+}
+
+void align_chw(int8_t* src, int8_t* dst, int num, int chw) {
+  int aligned_chw = align_to_x(chw, FILTER_ELEMENT_ALIGNMENT);
+  memset(dst, 0, num * aligned_chw);
+  for (int j = 0; j < num; j++) {
+    memcpy((dst + j * aligned_chw), (src + j * chw), chw);
+  }
+}
+
+void align_num(int8_t* src, int8_t* dst, int num_per_div_before_alignment,
+               int num, int align_chw) {
   int num_per_div_after_alignment =
       align_to_x(num_per_div_before_alignment, FILTER_NUM_ALIGNMENT);
 
-  char *tmp = *data_in;
   int div_num =
       (num + num_per_div_before_alignment - 1) / num_per_div_before_alignment;
   int num_element = div_num * num_per_div_after_alignment * align_chw;
-  char *data_tmp = (char *)fpga_malloc(num_element * sizeof(char));  // NOLINT
 
-  memset(data_tmp, 0, num_element * sizeof(char));
-
+  memset(dst, 0, num_element * sizeof(int8_t));
+  int i = 0;
   for (i = 0; i < div_num - 1; i++) {
-    memcpy(data_tmp + num_per_div_after_alignment * align_chw * i,
-           *data_in + num_per_div_before_alignment * align_chw * i,
+    memcpy(dst + num_per_div_after_alignment * align_chw * i,
+           src + num_per_div_before_alignment * align_chw * i,
            num_per_div_before_alignment * align_chw);
   }
 
-  memcpy(data_tmp + num_per_div_after_alignment * align_chw * i,
-         *data_in + num_per_div_before_alignment * align_chw * i,
+  memcpy(dst + num_per_div_after_alignment * align_chw * i,
+         src + num_per_div_before_alignment * align_chw * i,
          (num - (div_num - 1) * num_per_div_before_alignment) * align_chw);
-
-  *data_in = data_tmp;
-  fpga_free(tmp);
 }
 
-void reorder(char **data_in, int num_after_alignment, int chw) {
+void reorder(int8_t* src, int8_t* dst, int num_after_alignment, int chw) {
   int index = 0;
   int new_index = 0;
-
   int chw_align = align_to_x(chw, FILTER_ELEMENT_ALIGNMENT);
-
-  char *data_tmp =
-      (char *)fpga_malloc(chw_align * num_after_alignment *  // NOLINT
-                          sizeof(char));
-  char *tmp = *data_in;
   for (index = 0; index < num_after_alignment; index++) {
     new_index = index / 32 * 32 + (index % 16 / 4 * 8) + (index % 16 % 4) +
                 (index / 16 % 2 * 4);
-    memcpy(data_tmp + index * chw_align,
-           *data_in + new_index * chw_align,
-           chw_align);
+    memcpy((dst + index * chw_align), (src + new_index * chw_align), chw_align);
   }
-  *data_in = data_tmp;
-  fpga_free(tmp);
 }
 
-size_t interleave(char **data_in, int num_after_alignment, int chw) {
-  int i = 0;
-  int j = 0;
-  int k = 0;
+void interleave(int8_t* src, int8_t* dst, int num_after_alignment, int chw) {
   int interleave_per_num = 16;
-
   int chw_align = align_to_x(chw, FILTER_ELEMENT_ALIGNMENT);
-  char *data_tmp =
-      (char *)fpga_malloc(chw_align * num_after_alignment *  // NOLINT
-                          sizeof(char));
-  char *tmp = *data_in;
   int interleave_num = chw_align * 2 / interleave_per_num;
-  for (i = 0; i < num_after_alignment; i += 2) {
-    for (j = 0, k = 0; j < interleave_num; j += 2, k++) {
-      memcpy(data_tmp + i * chw_align + interleave_per_num * j,
-             *data_in + i * chw_align + interleave_per_num * k,
-             interleave_per_num);
-      memcpy(data_tmp + i * chw_align + interleave_per_num * (j + 1),
-             *data_in + (i + 1) * chw_align + interleave_per_num * k,
+  for (int i = 0; i < num_after_alignment; i += 2) {
+    for (int j = 0, k = 0; j < interleave_num; j += 2, k++) {
+      memcpy(dst + i * chw_align + interleave_per_num * j,
+             src + i * chw_align + interleave_per_num * k, interleave_per_num);
+      memcpy(dst + i * chw_align + interleave_per_num * (j + 1),
+             src + (i + 1) * chw_align + interleave_per_num * k,
              interleave_per_num);
     }
   }
-  *data_in = data_tmp;
-  fpga_free(tmp);
-  return chw_align * num_after_alignment;
 }
 
-size_t format_filter(float **data_in,
-                     int num,
-                     int channel,
-                     int height,
-                     int width,
-                     int group_num,
-                     float max) {
+void saveToFile(std::string name,void* data_in, int size) {
+  // std::ofstream ofs;
+  // ofs.open(name);
+
+  // int8_t* data = (int8_t*)data_in;
+  // for (int i = 0; i < size; i++) {
+  //   float value = data[i];
+  //   ofs << value << std::endl;
+  // }
+  // ofs.close();
+}
+
+int8_t* format_filter(float* data_in, int& mem_size_a, int num, int channel,
+                      int height, int width, int group_num, float max,
+                      std::vector<float>& filter_max) {
   int data_size = channel * height * width * num;
   int chw = channel * height * width;
 
@@ -219,30 +184,70 @@ size_t format_filter(float **data_in,
       align_to_x(num_per_div_before_alignment, FILTER_NUM_ALIGNMENT);
   int div_num =
       (num + num_per_div_before_alignment - 1) / num_per_div_before_alignment;
-  int residual = num % num_per_div_before_alignment;
-  int num_after_alignment = num_per_div_after_alignment *
-                                ((residual == 0) ? div_num : (div_num - 1)) +
-                            align_to_x(residual, FILTER_NUM_ALIGNMENT);
-  quantize(data_in, data_size, max);
-  char **quantize_data = (char **)data_in;  // NOLINT
-  convert_to_hwc(quantize_data, num, channel, height, width);
-  align_element(quantize_data, num, chw);
-  if (num_after_alignment != num) {
-    align_num(quantize_data, num_per_div_before_alignment, num, chw);
+  int num_after_alignment = num_per_div_after_alignment * div_num;
+
+  int8_t* quantized_data =
+      reinterpret_cast<int8_t*>(fpga_malloc(data_size * sizeof(int8_t)));
+
+  for (int n = 0; n < num; n++) {
+    float* filter_start = data_in + n * chw;
+    float f_max = find_max(filter_start, chw);
+    int8_t* quantized_start = quantized_data + n * chw;
+    quantize(filter_start, quantized_start, chw, f_max);
+    // quantize(filter_start, quantized_start, chw, max);
+    filter_max.push_back(f_max);
+    // filter_max.push_back(1);
   }
 
-  reorder(quantize_data, num_after_alignment, chw);
-  size_t mem_size = interleave(quantize_data, num_after_alignment, chw);
-  fpga_flush(*quantize_data,
-             align_to_x(chw, FILTER_ELEMENT_ALIGNMENT) * num_after_alignment *
-                 sizeof(char));
-  return mem_size;
+  int8_t* hwc_data =
+      reinterpret_cast<int8_t*>(fpga_malloc(data_size * sizeof(int8_t)));
+  convert_to_hwc(quantized_data, hwc_data, num, channel, height, width);
+  fpga_free(quantized_data);
+  // saveToFile("hwc.txt", hwc_data, data_size);
+  int8_t* temp_data = hwc_data;  // NOLINT
+  int chw_aligned = align_to_x(chw, FILTER_ELEMENT_ALIGNMENT);
+  if (should_align_chw(chw)) {
+    int8_t* hwc_aligned_data = reinterpret_cast<int8_t*>(
+        fpga_malloc(num * chw_aligned * sizeof(int8_t)));
+    align_chw(hwc_data, hwc_aligned_data, num, chw);
+
+    // saveToFile("align_el.txt", hwc_aligned_data, data_size * 2);
+    temp_data = hwc_aligned_data;
+    fpga_free(hwc_data);
+  }
+  if (num_after_alignment != num) {
+    int num_per_div_after_alignment =
+        align_to_x(num_per_div_before_alignment, FILTER_NUM_ALIGNMENT);
+    // int div_num =
+    //     (num + num_per_div_before_alignment - 1) / num_per_div_before_alignment;
+    int num_element = div_num * num_per_div_after_alignment * chw_aligned;
+    int8_t* num_aligned_data =
+        reinterpret_cast<int8_t*>(fpga_malloc(num_element * sizeof(int8_t)));
+    align_num(temp_data, num_aligned_data, num_per_div_before_alignment, num,
+              chw_aligned);
+    // saveToFile("align_num.txt", num_aligned_data, data_size * 8);
+    fpga_free(temp_data);
+    temp_data = num_aligned_data;
+  }
+  int8_t* aligned_data =
+      reinterpret_cast<int8_t*>(fpga_malloc(num_after_alignment * chw_aligned));
+  reorder(temp_data, aligned_data, num_after_alignment, chw);
+  // saveToFile("reorder.txt", aligned_data, data_size * 8);
+  fpga_free(temp_data);  // TODO change name of qdata;
+  int8_t* interleaved_data =
+      reinterpret_cast<int8_t*>(fpga_malloc(num_after_alignment * chw_aligned));
+  interleave(aligned_data, interleaved_data, num_after_alignment, chw);
+  fpga_free(aligned_data);
+  fpga_flush(interleaved_data, align_to_x(chw, FILTER_ELEMENT_ALIGNMENT) *
+                                   num_after_alignment * sizeof(char));
+  mem_size_a = num_after_alignment * chw_aligned;
+  return interleaved_data;
 }
 
-void convert_to_hwn(int16_t **data_in, int num, int height, int width) {
-  int16_t *tmp = *data_in;
-  int16_t *data_tmp =
-      (int16_t *)fpga_malloc(height * width * num * sizeof(int16_t));  // NOLINT
+void convert_to_hwn(int16_t** data_in, int num, int height, int width) {
+  int16_t* tmp = *data_in;
+  int16_t* data_tmp =
+      (int16_t*)fpga_malloc(height * width * num * sizeof(int16_t));  // NOLINT
   for (int n = 0; n < num; n++) {
     for (int h = 0; h < height; h++) {
       for (int w = 0; w < width; w++) {
@@ -254,16 +259,16 @@ void convert_to_hwn(int16_t **data_in, int num, int height, int width) {
   fpga_free(tmp);
 }
 
-size_t align_element_n(int16_t **data_in, int num, int height, int width) {
+size_t align_element_n(int16_t** data_in, int num, int height, int width) {
   int unalign_n = num;
   int align_n = align_to_x(num, FILTER_ELEMENT_ALIGNMENT);
   int num_element = height * width * align_n;
   if (unalign_n != align_n) {
-    int16_t *tmp = *data_in;
+    int16_t* tmp = *data_in;
 
     int num_element = height * width * align_n;
-    int16_t *data_tmp =
-        (int16_t *)fpga_malloc(num_element * sizeof(int16_t));  // NOLINT
+    int16_t* data_tmp =
+        (int16_t*)fpga_malloc(num_element * sizeof(int16_t));  // NOLINT
 
     memset(data_tmp, 0, num_element * sizeof(int16_t));
     for (int h = 0; h < height; h++) {
@@ -281,12 +286,28 @@ size_t align_element_n(int16_t **data_in, int num, int height, int width) {
   return num_element * sizeof(int16_t);
 }
 
-void quantize_to_fp16(
-    float **data_in, int num, int height, int width, float *scale_ptr) {
-  float *tmp = *data_in;
+void to_fp16(float* src, float16* dst, int num, int height, int width,
+             float* scale_ptr) {
+  int size = num * height * width;
+  for (int n = 0; n < num; n++) {
+    float scale_val = scale_ptr[n];
+    for (int h = 0; h < height; h++) {
+      for (int w = 0; w < width; w++) {
+        int index = n * height * width + h * width + w;
+        float value = src[index] * scale_val;
+        dst[index] = float_to_half(value);
+      }
+    }
+  }
+  fpga_flush(dst, size * sizeof(int16_t));
+}
+
+void quantize_to_fp16(float** data_in, int num, int height, int width,
+                      float* scale_ptr) {
+  float* tmp = *data_in;
   int size = num * height * width;
 
-  float16 *tmp_data = (float16 *)fpga_malloc(size * sizeof(float16));  // NOLINT
+  float16* tmp_data = (float16*)fpga_malloc(size * sizeof(float16));  // NOLINT
   for (int n = 0; n < num; n++) {
     float scale_val = scale_ptr[n];
     for (int h = 0; h < height; h++) {
@@ -298,20 +319,25 @@ void quantize_to_fp16(
     }
   }
   fpga_flush(tmp_data, size * sizeof(int16_t));
-  *data_in = (float *)tmp_data;  // NOLINT
+  *data_in = (float*)tmp_data;  // NOLINT
   fpga_free(tmp);
 }
-size_t format_dwconv_filter(
-    float **data_in, int num, int height, int width, float *scale_ptr) {
+size_t format_dwconv_filter(float** data_in, int num, int height, int width,
+                            float* scale_ptr) {
+  float16* fp16_data = reinterpret_cast<float16*>(
+      fpga_malloc(num * height * width * sizeof(float16)));
+  // to_fp16(*data_in, fp16_data, num, height, width, scale_ptr);
+  // int16_t** quantize_data = (int16_t**)&fp16_data;  // NOLINT
+
   quantize_to_fp16(data_in, num, height, width, scale_ptr);
-  int16_t **quantize_data = (int16_t **)data_in;  // NOLINT
+  int16_t **quantize_data = (int16_t **)data_in;
+
   convert_to_hwn(quantize_data, num, height, width);
   size_t size = align_element_n(quantize_data, num, height, width);
-  fpga_flush(*quantize_data,
-             align_to_x(num, FILTER_ELEMENT_ALIGNMENT) * height * width *
-                 sizeof(int16_t));
+  fpga_flush(*quantize_data, align_to_x(num, FILTER_ELEMENT_ALIGNMENT) *
+                                 height * width * sizeof(int16_t));
   return size;
 }
 }  // namespace filter
 }  // namespace zynqmp
-}  // namespace paddle
+}  // namespace paddle_mobile

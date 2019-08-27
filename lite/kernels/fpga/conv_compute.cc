@@ -30,7 +30,6 @@ void ConvCompute::PrepareForRun() {
   zynqmp::ConvParam& conv_param = pe_.param();
   param.output->mutable_data<float16>();
 
-  // filter_.setDataType(zynqmp::FP32);
   conv_param.input = param.x->ZynqTensor();
   conv_param.output = param.output->ZynqTensor();
   conv_param.filter = param.filter->ZynqTensor();
@@ -48,6 +47,7 @@ void ConvCompute::PrepareForRun() {
 void ConvCompute::Run() {
   auto& param = this->Param<param_t>();
   zynqmp::ConvParam& conv_param = pe_.param();
+  conv_param.output->saveToFile("conv", true);
   pe_.dispatch();
 }
 

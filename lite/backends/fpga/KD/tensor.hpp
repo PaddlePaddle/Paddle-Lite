@@ -117,7 +117,7 @@ class Tensor {
 
   template <typename Dtype>
   Dtype* mutableData() {
-    size_t memorySize = shape_->memorySize(CellSize(dataType_));
+    size_t memorySize = shape_->memorySize(CellSize(dataType_)) * mem_scale_factor_;
     if (placeHolder_ != nullptr) {
       if (memorySize > placeHolder_->memorySize()) {
         placeHolder_.reset(new PlaceHolder(memorySize));
@@ -239,6 +239,10 @@ class Tensor {
         // TODO(chonwhite) share data.
       }
     }
+  }
+
+  void setMemScale(float scale_factor) {
+    this->mem_scale_factor_ = scale_factor;
   }
 
   void shareDataWith(Tensor* src) { shareDataWith(src, src->shape()); }
@@ -389,6 +393,7 @@ class Tensor {
 
   void saveToFile(std::string path) {
     syncToCPU();
+    invalidate();
     std::ofstream ofs;
     static int counter = 0;
     std::string npath = std::to_string(counter) + "_" + path;
@@ -444,6 +449,7 @@ class Tensor {
 
  private:
   int offset = 0;
+  float mem_scale_factor_ = 1.0f;
   std::shared_ptr<PlaceHolder> placeHolder_;
   Shape* shape_ = nullptr;
   DataType dataType_ = FP32;
