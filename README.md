@@ -69,3 +69,9 @@ Paddle Lite has referenced the following open-source projects:
 - Questions, reports, and suggestions are welcome through Github Issues!
 - Forum: Opinions and questions are welcome at our [PaddlePaddle Forum](https://ai.baidu.com/forum/topic/list/168)！
 - QQ group chat: 696965088
+
+<p align="center"><img width="200" height="200" src="https://user-images.githubusercontent.com/45189361/63563791-e471b680-c594-11e9-8a52-72a5a95350a2.png"/></p>
+
+- WeChat Official Account:
+
+<p align="center"><img width="200" height="200" src="https://user-images.githubusercontent.com/45189361/63563799-ee93b500-c594-11e9-8e9a-38a9144e210c.jpg"/></p>
