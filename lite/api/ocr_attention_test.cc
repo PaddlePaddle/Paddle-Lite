@@ -32,7 +32,7 @@ void TestModel(const std::vector<Place>& valid_places,
   DeviceInfo::Global().SetRunMode(lite_api::LITE_POWER_HIGH, FLAGS_threads);
   lite::Predictor predictor;
 
-  predictor.Build(FLAGS_model_dir, preferred_place, valid_places);
+  predictor.Build(FLAGS_model_dir, "", "", preferred_place, valid_places);
 
   auto* input_tensor = predictor.GetInput(0);
   input_tensor->Resize(DDim(std::vector<DDim::value_type>({1, 1, 48, 512})));

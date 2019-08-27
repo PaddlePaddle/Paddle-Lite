@@ -55,8 +55,12 @@ TEST(InceptionV4, test_inceptionv4_lite_x86) {
                                    "io_copy_kernel_pick_pass",
                                    "variable_place_inference_pass",
                                    "runtime_context_assign_pass"});
-  predictor.Build(
-      model_dir, Place{TARGET(kX86), PRECISION(kFloat)}, valid_places, passes);
+  predictor.Build(model_dir,
+                  "",
+                  "",
+                  Place{TARGET(kX86), PRECISION(kFloat)},
+                  valid_places,
+                  passes);
 
   auto* input_tensor = predictor.GetInput(0);
   input_tensor->Resize(DDim(std::vector<DDim::value_type>({1, 3, 224, 224})));
