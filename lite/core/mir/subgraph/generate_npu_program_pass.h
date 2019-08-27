@@ -39,23 +39,19 @@ class GenerateNPUProgramPass : public SubgraphProgramPass {
 
  protected:
   // nodes2cvt: op nodes to convert
-  // cvted_vars: converted var nodes
-  // nodes2rm: op nodes and var nodes that need to be removed
-  void CvtOpNodes(const std::vector<Node*>& nodes2cvt,
-                  lite::npu::bridge::node_map_type* cvted_vars);
+  // return cvted_vars: converted var nodes
+  void CvtAllOpNodes(const std::vector<Node*>& nodes2cvt,
+                     lite::npu::bridge::node_map_type* cvted_vars);
 
   std::shared_ptr<ge::Operator> CvtVarNode(lite::mir::Node* var_node,
                                            const Scope* scope);
 
-  // achieve input and output vars/cvted_vars;
-  // achieve all nodes to remove
-  void GetIOVars(const std::vector<Node*>& nodes2cvt,
-                 const lite::npu::bridge::node_map_type& cvted_vars,
-                 std::unordered_set<const Node*>* nodes2rm,
-                 std::vector<Node*>* in_vars,
-                 std::vector<Node*>* out_vars,
-                 lite::npu::bridge::node_map_type* in_cvted_vars,
-                 lite::npu::bridge::node_map_type* out_cvted_vars);
+  // find all input and output vars from the nodes;
+
+  void FindInputOutputVars(const std::vector<Node*>& nodes2cvt,
+                           std::unordered_set<const Node*>* nodes2rm,
+                           std::vector<Node*>* in_vars,
+                           std::vector<Node*>* out_vars);
 
   void GenNPUGraphOpNode(const std::unique_ptr<SSAGraph>& graph,
                          int sub_id,
