@@ -15,7 +15,9 @@ limitations under the License. */
 #ifdef SLICE_OP
 
 #include "operators/slice_op.h"
+#include <algorithm>
 #include <vector>
+
 namespace paddle_mobile {
 namespace operators {
 
@@ -49,18 +51,12 @@ void SliceOp<Dtype, T>::InferShape() const {
   PADDLE_MOBILE_ENFORCE(axes.size() == 1, "axes size should equals 1");
   PADDLE_MOBILE_ENFORCE(input->dims().size() == output->dims().size(),
                         "input dim size should equals output dim size");
-#ifdef PADDLE_MOBILE_CL
   PADDLE_MOBILE_ENFORCE(
-      input->dims().size() -
+      output->dims().size() -
               (axes[0] - (this->param_.original_output_dims_size_ -
                           this->param_.output_->dims().size())) ==
           3,
       "op only support slice channel now");
-#endif
-  if (input->dims().size() >= 4) {
-    PADDLE_MOBILE_ENFORCE(input->dims().size() - axes[0] == 3,
-                          "op only support slice channel now");
-  }
   auto starts = this->param_.starts_;
   auto ends = this->param_.ends_;
   framework::DDim out_dims(input->dims());
@@ -70,7 +66,9 @@ void SliceOp<Dtype, T>::InferShape() const {
                         "axes.size should equal starts.size");
   int dim_value, start, end;
   for (size_t i = 0; i < axes.size(); ++i) {
-    dim_value = out_dims[axes[i]];
+    int axis = axes[i] - (this->param_.original_output_dims_size_ -
+                          this->param_.output_->dims().size());
+    dim_value = out_dims[axis];
     if (dim_value > 0) {
       start = starts[i] < 0 ? (starts[i] + dim_value) : starts[i];
       end = ends[i] < 0 ? (ends[i] + dim_value) : ends[i];
@@ -80,7 +78,7 @@ void SliceOp<Dtype, T>::InferShape() const {
       end = std::min(end, dim_value);
       // start = std::min(start, end);
       PADDLE_MOBILE_ENFORCE(end > start, "end should greater than start");
-      out_dims[axes[i]] = end - start;
+      out_dims[axis] = end - start;
     }
   }
   output->Resize(out_dims);
