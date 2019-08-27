@@ -122,12 +122,6 @@ void Predictor::GenRuntimeProgram() {
   program_generated_ = true;
 }
 
-void Predictor::GenNPURuntimeProgram() {
-  program_ = optimizer_.GenNPURuntimeProgram();
-  CHECK_EQ(exec_scope_, program_->exec_scope());
-  program_generated_ = true;
-}
-
 const lite::Tensor *Predictor::GetTensor(const std::string &name) const {
   auto *var = exec_scope_->FindVar(name);
   return &var->Get<lite::Tensor>();

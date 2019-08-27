@@ -53,8 +53,6 @@ class LITE_API Predictor {
 
   void GenRuntimeProgram();
 
-  void GenNPURuntimeProgram();
-
   // Run the predictor for a single batch of data.
   void Run() {
     if (!program_generated_) {

@@ -51,13 +51,6 @@ void TestModel(lite::Predictor* predictor,
     data[i] = 1;
   }
 
-  if (std::find(valid_places.begin(),
-                valid_places.end(),
-                Place{TARGET(kNPU), PRECISION(kFloat)}) != valid_places.end()) {
-    // TODO(TJ): change if valid npu so try use it, add rollback and move to api
-    predictor->GenNPURuntimeProgram();
-  }
-
   predictor->Run();
   if (model_dir != FLAGS_optimized_model &&
       std::find(valid_places.begin(),
