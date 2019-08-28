@@ -41,6 +41,8 @@ class LITE_API Predictor {
   // Build from a model, with places set for hardware config.
   void Build(
       const std::string& model_path,
+      const std::string model_file_path,
+      const std::string param_file_path,
       const Place& prefer_place,
       const std::vector<Place>& valid_places,
       const std::vector<std::string>& passes = {},

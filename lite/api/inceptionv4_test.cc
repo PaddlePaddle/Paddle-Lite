@@ -33,8 +33,11 @@ TEST(InceptionV4, test) {
   std::vector<Place> valid_places({Place{TARGET(kHost), PRECISION(kFloat)},
                                    Place{TARGET(kARM), PRECISION(kFloat)}});
 
-  predictor.Build(
-      FLAGS_model_dir, Place{TARGET(kARM), PRECISION(kFloat)}, valid_places);
+  predictor.Build(FLAGS_model_dir,
+                  "",
+                  "",
+                  Place{TARGET(kARM), PRECISION(kFloat)},
+                  valid_places);
 
   auto* input_tensor = predictor.GetInput(0);
   input_tensor->Resize(DDim(std::vector<DDim::value_type>({1, 3, 224, 224})));

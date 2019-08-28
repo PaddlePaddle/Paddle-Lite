@@ -145,6 +145,7 @@ USE_LITE_KERNEL(io_copy, kCUDA, kAny, kAny, host_to_device);
 USE_LITE_KERNEL(io_copy, kCUDA, kAny, kAny, device_to_host);
 USE_LITE_KERNEL(io_copy_once, kCUDA, kAny, kAny, host_to_device);
 USE_LITE_KERNEL(io_copy_once, kCUDA, kAny, kAny, device_to_host);
+USE_LITE_KERNEL(leaky_relu, kCUDA, kFloat, kNCHW, def);
 #endif
 
 #ifdef LITE_WITH_OPENCL

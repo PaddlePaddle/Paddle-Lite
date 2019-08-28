@@ -13,28 +13,22 @@
 // limitations under the License.
 
 #pragma once
-#include <cmath>
-#include "lite/core/device_info.h"
+#include "lite/core/kernel.h"
 
 namespace paddle {
 namespace lite {
-namespace arm {
-namespace math {
+namespace kernels {
+namespace cuda {
 
-// fixme now only support transA = false
-template <typename dtype>
-bool gemv_int8(const int8_t* A,
-               const int8_t* x,
-               dtype* y,
-               bool transA,
-               int M,
-               int N,
-               const float* scale,
-               bool is_bias = false,
-               const int* bias = nullptr,
-               bool is_relu = false);
+class LeakyReluCompute : public KernelLite<TARGET(kCUDA), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::ActivationParam;
 
-}  // namespace math
-}  // namespace arm
+  void Run() override;
+  virtual ~LeakyReluCompute() = default;
+};
+
+}  // namespace cuda
+}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
