@@ -14,9 +14,9 @@ limitations under the License. */
 
 #pragma once
 
+#include <memory>
 #include <string>
 #include <vector>
-#include <memory>
 #include "common/log.h"
 #include "common/type_define.h"
 #include "common/types.h"

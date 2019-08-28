@@ -30,3 +30,8 @@ USE_NPU_BRIDGE(split);
 USE_NPU_BRIDGE(transpose);
 USE_NPU_BRIDGE(transpose2);
 USE_NPU_BRIDGE(shuffle_channel);
+USE_NPU_BRIDGE(batch_norm);
+USE_NPU_BRIDGE(bilinear_interp);
+USE_NPU_BRIDGE(conv2d_transpose);
+USE_NPU_BRIDGE(reshape);
+USE_NPU_BRIDGE(reshape2);

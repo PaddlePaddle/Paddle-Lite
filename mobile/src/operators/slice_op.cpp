@@ -26,37 +26,39 @@ void SliceOp<Dtype, T>::InferShape() const {
   auto axes = this->param_.axes_;
   auto input = this->param_.input_;
   auto output = this->param_.output_;
-#ifdef PADDLE_MOBILE_CL
-  auto output_dims = output->dims();
-  auto output_dims_size = output_dims.size();
-  bool should_resize = true;
-  if (output_dims_size > 4) {
-    for (int i = 0; i < output_dims_size - 4; ++i) {
-      if (output_dims[i] != 0 && output_dims[i] != 1) {
-        should_resize = false;
-        break;
+  if (std::is_same<DeviceType<kGPU_CL>, Dtype>::value) {
+    auto output_dims = output->dims();
+    auto output_dims_size = output_dims.size();
+    bool should_resize = true;
+    if (output_dims_size > 4) {
+      for (int i = 0; i < output_dims_size - 4; ++i) {
+        if (output_dims[i] != 0 && output_dims[i] != 1) {
+          should_resize = false;
+          break;
+        }
       }
-    }
-    if (should_resize) {
-      std::vector<int64_t> temp_output_dims;
-      temp_output_dims.reserve(static_cast<size_t>(4));
-      for (int i = output_dims_size - 4; i < output_dims_size; ++i) {
-        temp_output_dims.push_back(output_dims[i]);
+      if (should_resize) {
+        std::vector<int64_t> temp_output_dims;
+        temp_output_dims.reserve(static_cast<size_t>(4));
+        for (int i = output_dims_size - 4; i < output_dims_size; ++i) {
+          temp_output_dims.push_back(output_dims[i]);
+        }
+        framework::DDim temp_ddim = framework::make_ddim(temp_output_dims);
+        this->param_.output_->Resize(temp_ddim);
       }
-      framework::DDim temp_ddim = framework::make_ddim(temp_output_dims);
-      this->param_.output_->Resize(temp_ddim);
     }
   }
-#endif
   PADDLE_MOBILE_ENFORCE(axes.size() == 1, "axes size should equals 1");
   PADDLE_MOBILE_ENFORCE(input->dims().size() == output->dims().size(),
                         "input dim size should equals output dim size");
-  PADDLE_MOBILE_ENFORCE(
-      output->dims().size() -
-              (axes[0] - (this->param_.original_output_dims_size_ -
-                          this->param_.output_->dims().size())) ==
-          3,
-      "op only support slice channel now");
+  if (std::is_same<DeviceType<kGPU_CL>, Dtype>::value) {
+    PADDLE_MOBILE_ENFORCE(
+        output->dims().size() -
+                (axes[0] - (this->param_.original_output_dims_size_ -
+                            this->param_.output_->dims().size())) ==
+            3,
+        "op only support slice channel now");
+  }
   auto starts = this->param_.starts_;
   auto ends = this->param_.ends_;
   framework::DDim out_dims(input->dims());
@@ -82,11 +84,13 @@ void SliceOp<Dtype, T>::InferShape() const {
     }
   }
   output->Resize(out_dims);
-#if !defined(PADDLE_MOBILE_CL) && defined(PADDLE_MOBILE_CPU)
-  if (axes[0] != 0) {
-    output->set_lod(input->lod());
+  if (std::is_same<DeviceType<kCPU>, Dtype>::value) {
+    LoDTensor *output_lod = reinterpret_cast<LoDTensor *>(output);
+    LoDTensor *input_lod = reinterpret_cast<LoDTensor *>(input);
+    if (axes[0] != 0) {
+      output_lod->set_lod(input_lod->lod());
+    }
   }
-#endif
 }
 
 }  // namespace operators
