@@ -66,13 +66,12 @@ void SubgraphProgramPass::FindInputOutputVars(
         in_wgt_vars->insert(in_var);
         continue;
       }
-      // any input in these op_nodes so skip this var
-      // for () {
-
-      // }
-      auto* pre_op_node = in_var->inlinks.front();
-      if (op_nodes.count(pre_op_node)) {
-        continue;
+      if (!in_var->inlinks.empty()) {
+        // var can only come from one op node, so use front
+        auto* pre_op_node = in_var->inlinks.front();
+        if (op_nodes.count(pre_op_node)) {
+          continue;
+        }
       }
       in_data_vars->insert(in_var);
     }
@@ -82,10 +81,18 @@ void SubgraphProgramPass::FindInputOutputVars(
         out_unused_vars->insert(out_var);
         continue;
       }
-      auto* next_op_node = out_var->outlinks.front();
-      if (op_nodes.count(next_op_node)) {
+      // var can have more than one next op node
+      // so, if any one in the op_nodes then continue
+      bool next_op_in_nodes = false;
+      for (auto& next_op_node : out_var->outlinks) {
+        if (op_nodes.count(next_op_node)) {
+          next_op_in_nodes = true;
+        }
+      }
+      if (next_op_in_nodes) {
         continue;
       }
+
       out_data_vars->insert(out_var);
     }
   }

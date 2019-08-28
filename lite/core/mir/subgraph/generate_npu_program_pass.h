@@ -46,9 +46,27 @@ class GenerateNPUProgramPass : public SubgraphProgramPass {
   std::shared_ptr<ge::Operator> CvtVarNode(lite::mir::Node* var_node,
                                            const Scope* scope);
 
+  std::string BuildNPUGraph(const std::unordered_set<Node*>& op_nodes,
+                            const std::unordered_set<Node*>& in_data_vars,
+                            const std::unordered_set<Node*>& out_data_vars,
+                            int sub_id);
+
+  cpp::OpDesc GenGraphOpDesc(const std::string& model_name,
+                             const std::vector<std::string>& in_var_names,
+                             const std::vector<std::string>& out_var_names);
+
+  void InsertNewNode(const std::unique_ptr<SSAGraph>& graph,
+                     const std::string& model_name,
+                     Scope* scope,
+                     const std::vector<Place>& valid_places,
+                     std::unordered_set<Node*> in_data_vars,
+                     std::unordered_set<Node*> in_wgt_vars,
+                     std::unordered_set<Node*> out_data_vars,
+                     std::unordered_set<Node*> out_unused_vars);
+
   void GenNPUGraphOpNode(const std::unique_ptr<SSAGraph>& graph,
-                         int sub_id,
-                         const std::unordered_set<Node*>& nodes_all);
+                         const std::unordered_set<Node*>& nodes_all,
+                         int sub_id);
 
   void ConvertSubgraph(const std::unique_ptr<SSAGraph>& graph, int sub_num);
 

@@ -101,26 +101,15 @@ void GenerateNPUProgramPass::CvtAllOpNodes(
   }
 }
 
-void GenerateNPUProgramPass::GenNPUGraphOpNode(
-    const std::unique_ptr<SSAGraph>& graph,
-    int sub_id,
-    const std::unordered_set<Node*>& op_nodes) {
+std::string GenerateNPUProgramPass::BuildNPUGraph(
+    const std::unordered_set<Node*>& op_nodes,
+    const std::unordered_set<Node*>& in_data_vars,
+    const std::unordered_set<Node*>& out_data_vars,
+    int sub_id) {
   auto ordered_nodes = GetTopologicalOrder(op_nodes);
   lite::npu::bridge::node_map_type converted_vars;
   CvtAllOpNodes(ordered_nodes, &converted_vars);
 
-  std::unordered_set<Node*> in_data_vars;
-  std::unordered_set<Node*> in_wgt_vars;
-  std::unordered_set<Node*> out_data_vars;
-  std::unordered_set<Node*> out_unused_vars;
-  FindInputOutputVars(
-      op_nodes, &in_data_vars, &in_wgt_vars, &out_data_vars, &out_unused_vars);
-
-  auto nodes2rm = GetNode2rm(
-      op_nodes, {in_data_vars, in_wgt_vars, out_data_vars, out_unused_vars});
-
-  // build graph
-  // inputs in_data_vars, out_var, converted_vars
   std::vector<std::string> in_var_names;
   std::vector<std::string> out_var_names;
   std::vector<ge::Operator> inputs;
@@ -141,19 +130,43 @@ void GenerateNPUProgramPass::GenNPUGraphOpNode(
     LOG(FATAL) << "Build NPU failed subgraph " << sub_id;
   }
   LOG(INFO) << "[NPU] Build NPU Client success subgraph " << sub_id;
+  return model_name;
+}
 
+cpp::OpDesc GenerateNPUProgramPass::GenGraphOpDesc(
+    const std::string& model_name,
+    const std::vector<std::string>& in_var_names,
+    const std::vector<std::string>& out_var_names) {
   cpp::OpDesc op_desc;
   op_desc.SetType("graph_op");
   op_desc.SetInput("Inputs", in_var_names);
   op_desc.SetOutput("Outputs", out_var_names);
   op_desc.SetAttr("model_name", model_name);
+  return op_desc;
+}
+
+void GenerateNPUProgramPass::InsertNewNode(
+    const std::unique_ptr<SSAGraph>& graph,
+    const std::string& model_name,
+    Scope* scope,
+    const std::vector<Place>& valid_places,
+    std::unordered_set<Node*> in_data_vars,
+    std::unordered_set<Node*> in_wgt_vars,
+    std::unordered_set<Node*> out_data_vars,
+    std::unordered_set<Node*> out_unused_vars) {
+  std::vector<std::string> in_var_names;
+  std::vector<std::string> out_var_names;
+  for (auto i : in_data_vars) {
+    in_var_names.push_back(i->AsArg().name);
+  }
+  for (auto i : out_data_vars) {
+    out_var_names.push_back(i->AsArg().name);
+  }
+
+  auto op_desc = GenGraphOpDesc(model_name, in_var_names, out_var_names);
+
   auto graph_op = LiteOpRegistry::Global().Create("graph_op");
-
-  auto any_op = (*op_nodes.begin())->AsStmt().op();
-  auto* scope = any_op->scope();
   graph_op->Attach(op_desc, scope);
-
-  auto valid_places = any_op->valid_places();
   auto* new_op_node = graph->GraphCreateInstructNode(graph_op, valid_places);
 
   for (auto& in_var : in_data_vars) {
@@ -173,6 +186,34 @@ void GenerateNPUProgramPass::GenNPUGraphOpNode(
   auto& inst = new_op_node->AsStmt();
   inst.picked_kernel().SetContext(
       ContextScheduler::Global().NewContext(inst.picked_kernel().target()));
+}
+
+void GenerateNPUProgramPass::GenNPUGraphOpNode(
+    const std::unique_ptr<SSAGraph>& graph,
+    const std::unordered_set<Node*>& op_nodes,
+    int sub_id) {
+  std::unordered_set<Node*> in_data_vars;
+  std::unordered_set<Node*> in_wgt_vars;
+  std::unordered_set<Node*> out_data_vars;
+  std::unordered_set<Node*> out_unused_vars;
+  FindInputOutputVars(
+      op_nodes, &in_data_vars, &in_wgt_vars, &out_data_vars, &out_unused_vars);
+
+  auto nodes2rm = GetNode2rm(
+      op_nodes, {in_data_vars, in_wgt_vars, out_data_vars, out_unused_vars});
+
+  auto model_name =
+      BuildNPUGraph(op_nodes, in_data_vars, out_data_vars, sub_id);
+
+  auto any_op = (*op_nodes.begin())->AsStmt().op();
+  InsertNewNode(graph,
+                model_name,
+                any_op->scope(),
+                any_op->valid_places(),
+                in_data_vars,
+                in_wgt_vars,
+                out_data_vars,
+                out_unused_vars);
 
   GraphSafeRemoveNodes(graph.get(), nodes2rm);
 }
@@ -195,7 +236,7 @@ void GenerateNPUProgramPass::ConvertSubgraph(
 
   for (int id = 1; id <= sub_num; ++id) {
     LOG(INFO) << "Converting subgraph_id:" << id;
-    GenNPUGraphOpNode(graph, id, nodes_all.at(id));
+    GenNPUGraphOpNode(graph, nodes_all.at(id), id);
   }
 }
 

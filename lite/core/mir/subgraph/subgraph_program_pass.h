@@ -79,6 +79,7 @@ class SubgraphProgramPass : public ProgramPass {
                   const std::unordered_set<Node*>& nodes_all,
                   std::unordered_set<const Node*>* visited_nodes,
                   std::vector<Node*>* ret);
+
   // {1: {nodes2rm_in_subgraph1, ...},
   //  2: {nodes2rm_in_subgraph2, ...}}
   // delete nodes
