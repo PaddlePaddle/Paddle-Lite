@@ -666,6 +666,17 @@ void act_exp(const float* din, float* dout, int size, int threads) {
   }
 }
 
+template <>
+void act_floor<float>(const float* din, float* dout, int size, int threads) {
+  const float* ptr_in = din;
+  float* ptr_out = dout;
+  for (int i = 0; i < size; ++i) {
+    ptr_out[0] = floorf(ptr_in[0]);
+    ptr_in++;
+    ptr_out++;
+  }
+}
+
 }  // namespace math
 }  // namespace arm
 }  // namespace lite
