@@ -36,9 +36,6 @@ class ElementwiseAddCompute
 
  private:
   zynqmp::ElementwiseAddPE pe_;
-  zynqmp::Tensor input_x_;
-  zynqmp::Tensor input_y_;
-  zynqmp::Tensor output_;
 };
 
 class ElementwiseAddActivationCompute
@@ -51,9 +48,6 @@ class ElementwiseAddActivationCompute
 
  private:
   zynqmp::ElementwiseAddPE pe_;
-  zynqmp::Tensor input_x_;
-  zynqmp::Tensor input_y_;
-  zynqmp::Tensor output_;
 };
 
 }  // namespace fpga

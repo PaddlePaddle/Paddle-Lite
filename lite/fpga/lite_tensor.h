@@ -57,7 +57,7 @@ class DDimLite {
 
   DDimLite Slice(int start, int end) const;
 
-  DDimLite Flattern2D(int col) const {
+  DDimLite Flatten2D(int col) const {
     return DDimLite(std::vector<value_type>(
         {Slice(0, col).production(), Slice(col, size()).production()}));
   }
@@ -117,6 +117,8 @@ class TensorLite {
 
   const LoD &lod() const { return lod_; }
   LoD *mutable_lod() { return &lod_; }
+
+  void set_lod(const LoD &lod) { lod_ = lod; }
 
   // T is the data type and R is the return type
   // For OpenCL, the return type can be cl::Buffer

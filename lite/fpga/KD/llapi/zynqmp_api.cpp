@@ -39,10 +39,14 @@ static size_t memory_size_max = 0;
 static size_t memory_size = 0;
 
 static inline int do_ioctl(uint64_t req, const void *arg) {
+  int ret = -1;
 #ifdef PADDLE_LITE_OS_LINUX
-  return ioctl(fd, req, arg);
+  ret = ioctl(fd, req, arg);
+  if (ret != 0) {
+    throw - 1;
+  }
 #else
-  return -1;
+  return ret;
 #endif
 }
 
