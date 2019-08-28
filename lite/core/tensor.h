@@ -212,7 +212,6 @@ TensorLite TensorLite::Slice(int64_t begin, int64_t end) const {
   dst_dims[0] = end - begin;
   dst.Resize(dst_dims);
   dst.offset_ = offset_ + static_cast<size_t>(begin * base) * sizeof(T);
-  LOG(INFO) << "slice";
   return dst;
 }
 
