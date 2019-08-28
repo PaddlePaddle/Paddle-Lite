@@ -59,7 +59,8 @@ class RoiAlignComputeTester : public arena::TestCase {
     for (int i = 0; i < out->numel(); i++) {
       reader >> out_data[i];
     }
-    LOG(INFO) << "Read out data. " << out_data[0];
+    LOG(INFO) << "Read out data. " << out_data[0] << " "
+              << out_data[out->numel() - 1];
     reader.close();
   }
 

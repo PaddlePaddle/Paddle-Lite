@@ -102,7 +102,6 @@ void PreCalcForBilinearInterpolate(const int height,
 }
 
 void RoiAlignCompute::Run() {
-  LOG(INFO) << "run";
   auto& param = Param<operators::RoiAlignParam>();
   auto* in = param.X;
   auto* rois = param.ROIs;
@@ -133,13 +132,11 @@ void RoiAlignCompute::Run() {
                    static_cast<int>(out_dims[2] * out_dims[3]),
                    static_cast<int>(out_dims[3]),
                    1});
-  LOG(INFO) << "1";
 
   auto* input_data = in->data<float>();
   Tensor roi_batch_id_list;
   roi_batch_id_list.Resize({rois_num});
   int* roi_batch_id_data = roi_batch_id_list.mutable_data<int>();
-  LOG(INFO) << "2";
 
   auto rois_lod = rois->lod().back();
   int rois_batch_size = rois_lod.size() - 1;
@@ -151,9 +148,8 @@ void RoiAlignCompute::Run() {
       roi_batch_id_data[i] = n;
     }
   }
-  LOG(INFO) << rois_batch_size << " " << rois_lod[0] << " " << rois_lod[1]
-            << " " << rois_lod[2];
-  LOG(INFO) << "3";
+  // LOG(INFO) << rois_batch_size << " " << rois_lod[0] << " " << rois_lod[1]
+  //          << " " << rois_lod[2];
   auto* output_data = out->mutable_data<float>();
   auto* rois_data = rois->data<float>();
   for (int n = 0; n < rois_num; ++n) {
@@ -180,7 +176,7 @@ void RoiAlignCompute::Run() {
     int pre_size = count * out_stride[1];
     pre_pos.Resize({pre_size, kROISize});
     pre_w.Resize({pre_size, kROISize});
-    LOG(INFO) << "start PreCalcForBilinearInterpolate";
+    // LOG(INFO) << "start PreCalcForBilinearInterpolate";
     PreCalcForBilinearInterpolate<float>(height,
                                          width,
                                          pooled_height,
@@ -195,7 +191,7 @@ void RoiAlignCompute::Run() {
                                          roi_bin_grid_w,
                                          &pre_pos,
                                          &pre_w);
-    LOG(INFO) << "PreCalcForBilinearInterpolate ok";
+    // LOG(INFO) << "PreCalcForBilinearInterpolate ok";
     const int* pre_pos_data = pre_pos.data<int>();
     const float* pre_w_data = pre_w.data<float>();
     for (int c = 0; c < channels; c++) {
