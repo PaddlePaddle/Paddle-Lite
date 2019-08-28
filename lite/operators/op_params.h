@@ -345,6 +345,17 @@ struct FillConstantParam {
   bool force_cpu{false};
   lite::Tensor* Out{};
 };
+struct FillConstantBatchLikeParam {
+  int dtype{static_cast<int>(VarDescAPI::VarDataType::FP32)};
+  std::vector<int64_t> shape{};
+  float value{0.0f};
+  // useless for x86, keep it for compatibility
+  bool force_cpu{false};
+  lite::Tensor* out{};
+  const lite::Tensor* input{};
+  int input_dim_idx{0};
+  int output_dim_idx{0};
+};
 
 //
 struct FakeQuantizeMovingAvgMaxAbsParam {

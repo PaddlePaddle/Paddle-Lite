@@ -52,8 +52,62 @@ class FillConstantOp : public OpLite {
   mutable operators::FillConstantParam param_;
 };
 
+class FillConstantBatchLikeOp : public OpLite {
+ public:
+  explicit FillConstantBatchLikeOp(const std::string& type) : OpLite(type) {}
+
+  bool CheckShape() const override {
+    CHECK_OR_FALSE(param_.out);
+    CHECK_OR_FALSE(param_.input);
+    CHECK_GT_OR_FALSE(param_.shape.size(), 0);
+    CHECK_GE_OR_FALSE(param_.input_dim_idx, 0);
+    CHECK_GE_OR_FALSE(param_.output_dim_idx, 0);
+    return true;
+  }
+
+  bool InferShape() const override {
+    auto output_dim = param_.shape;
+    output_dim[param_.output_dim_idx] =
+        param_.input->dims()[param_.input_dim_idx];
+    param_.out->Resize(output_dim);
+    return true;
+  }
+
+  bool AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) override {
+    auto Out_name = opdesc.Output("Out").front();
+    auto In_name = opdesc.Input("Input").front();
+
+    param_.out = GetMutableVar<lite::Tensor>(scope, Out_name);
+    param_.input = GetMutableVar<lite::Tensor>(scope, In_name);
+    param_.dtype = opdesc.GetAttr<int>("dtype");
+    param_.shape = opdesc.GetAttr<std::vector<int64_t>>("shape");
+    if (opdesc.HasAttr("value")) {
+      param_.value = opdesc.GetAttr<float>("value");
+    }
+    if (opdesc.HasAttr("input_dim_idx")) {
+      param_.input_dim_idx = opdesc.GetAttr<int>("input_dim_idx");
+    }
+    if (opdesc.HasAttr("output_dim_idx")) {
+      param_.output_dim_idx = opdesc.GetAttr<int>("output_dim_idx");
+    }
+
+    return true;
+  }
+
+  void AttachKernel(KernelBase* kernel) override { kernel->SetParam(param_); }
+
+  std::string DebugString() const override {
+    return "fill_constant_batch_size_like";
+  }
+
+ private:
+  mutable operators::FillConstantBatchLikeParam param_;
+};
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle
 
 REGISTER_LITE_OP(fill_constant, paddle::lite::operators::FillConstantOp);
+REGISTER_LITE_OP(fill_constant_batch_size_like,
+                 paddle::lite::operators::FillConstantBatchLikeOp);

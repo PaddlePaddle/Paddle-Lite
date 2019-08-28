@@ -38,6 +38,31 @@ class FillConstantCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
   virtual ~FillConstantCompute() = default;
 };
 
+template <typename T>
+class FillConstantBatchLikeCompute
+    : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::FillConstantBatchLikeParam;
+
+  void Run() override {
+    auto& param = *param_.get_mutable<param_t>();
+    auto& context = ctx_->As<ARMContext>();
+
+    if (param.input->lod().size() && param.input_dim_idx == 0) {
+      auto odims = param.out->dims();
+      odims[param.output_dim_idx] = param.input->lod().back().size() - 1;
+      param.out->Resize(odims);
+    }
+
+    auto data = param.out->template mutable_data<T>();
+    for (int i = 0; i < param.out->numel(); i++) {
+      data[i] = param.value;
+    }
+  }
+
+  virtual ~FillConstantBatchLikeCompute() = default;
+};
+
 }  // namespace arm
 }  // namespace kernels
 }  // namespace lite
@@ -50,5 +75,15 @@ REGISTER_LITE_KERNEL(fill_constant,
                      kNCHW,
                      paddle::lite::kernels::arm::FillConstantCompute<float>,
                      def)
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .Finalize();
+REGISTER_LITE_KERNEL(
+    fill_constant_batch_size_like,
+    kARM,
+    kFloat,
+    kNCHW,
+    paddle::lite::kernels::arm::FillConstantBatchLikeCompute<float>,
+    def)
+    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
