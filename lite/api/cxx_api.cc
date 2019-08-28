@@ -90,7 +90,7 @@ void Predictor::Build(const std::string &model_path,
                       const std::vector<Place> &valid_places,
                       const std::vector<std::string> &passes,
                       lite_api::LiteModelType model_type) {
-  LOG(INFO) << "Load model from " << model_path;
+  LOG(INFO) << "Load model ...";
   switch (model_type) {
     case lite_api::LiteModelType::kProtobuf: {
       bool combined_param = false;
