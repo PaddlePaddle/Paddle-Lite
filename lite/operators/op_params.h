@@ -719,6 +719,12 @@ struct MatMulParam {
   bool transpose_Y{false};
   float alpha{1.0f};
 };
+
+/// ----------------------- assign operators -----------------------
+struct AssignParam {
+  const lite::Tensor* X{};
+  lite::Tensor* Out{};
+};
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle
