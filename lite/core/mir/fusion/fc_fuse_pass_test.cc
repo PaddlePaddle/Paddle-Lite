@@ -44,6 +44,8 @@ TEST(fc_fuse_pass, fuse_test) {
 #endif
 
   predictor.Build(FLAGS_model_dir,
+                  "",
+                  "",
                   Place{TARGET(kX86), PRECISION(kFloat)},  // origin cuda
                   valid_places);
 
@@ -72,8 +74,11 @@ TEST(fc_fuse_pass, save_model_test) {
   lite::Predictor predictor;
   std::vector<Place> valid_places({Place{TARGET(kHost), PRECISION(kFloat)},
                                    Place{TARGET(kX86), PRECISION(kFloat)}});
-  predictor.Build(
-      FLAGS_model_dir, Place{TARGET(kX86), PRECISION(kFloat)}, valid_places);
+  predictor.Build(FLAGS_model_dir,
+                  "",
+                  "",
+                  Place{TARGET(kX86), PRECISION(kFloat)},
+                  valid_places);
 
   LOG(INFO) << "Save optimized model to " << FLAGS_optimized_model;
   predictor.SaveModel(FLAGS_optimized_model);

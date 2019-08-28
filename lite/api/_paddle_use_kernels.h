@@ -46,6 +46,8 @@ USE_LITE_KERNEL(depthwise_conv2d, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(elementwise_add, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(elementwise_mul, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(elementwise_max, kARM, kFloat, kNCHW, def);
+USE_LITE_KERNEL(elementwise_div, kARM, kFloat, kNCHW, def);
+USE_LITE_KERNEL(fusion_elementwise_div_activation, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(fusion_elementwise_add_activation, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(fusion_elementwise_mul_activation, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(fusion_elementwise_max_activation, kARM, kFloat, kNCHW, def);
@@ -118,6 +120,7 @@ USE_LITE_KERNEL(while, kARM, kFloat, kNCHW, def)
 USE_LITE_KERNEL(lod_reset, kARM, kFloat, kNCHW, def)
 USE_LITE_KERNEL(lookup_table, kARM, kFloat, kNCHW, def)
 USE_LITE_KERNEL(is_empty, kARM, kFloat, kNCHW, def)
+USE_LITE_KERNEL(assign, kARM, kFloat, kNCHW, def);
 #endif
 
 #ifdef LITE_WITH_X86

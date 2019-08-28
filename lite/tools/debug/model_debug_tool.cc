@@ -61,6 +61,8 @@ void Run(DebugConfig* conf) {
   }};
 
   predictor.Build(conf->model_dir,
+                  "",
+                  "",
 #ifdef LITE_WITH_ARM
                   Place{TARGET(kARM), PRECISION(kFloat)},
 #endif

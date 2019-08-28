@@ -70,6 +70,22 @@ class ElementwiseMaxActivationCompute
   virtual ~ElementwiseMaxActivationCompute() = default;
 };
 
+class ElementwiseDivCompute
+    : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+ public:
+  void Run() override;
+
+  virtual ~ElementwiseDivCompute() = default;
+};
+
+class ElementwiseDivActivationCompute
+    : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+ public:
+  void Run() override;
+
+  virtual ~ElementwiseDivActivationCompute() = default;
+};
+
 }  // namespace arm
 }  // namespace kernels
 }  // namespace lite
