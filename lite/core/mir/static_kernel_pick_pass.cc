@@ -114,6 +114,9 @@ void StaticKernelPickPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
             all_output_type_match = false;
           }
         }
+        #ifdef LITE_WITH_FPGA
+            all_output_type_match = true;
+        #endif
 
         if (all_output_type_match) {
           instruct.kernels().emplace_back(std::move(candidate.second));

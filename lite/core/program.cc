@@ -113,7 +113,7 @@ void RuntimeProgram::UpdateVarsOfProgram(cpp::ProgramDesc* desc) {
 
 void RuntimeProgram::Run() {
   for (auto& inst : instructions_) {
-    VLOG(4) << ">> Running kernel: " << inst.op()->op_info()->Repr()
+    LOG(INFO) << ">> Running kernel: " << inst.op()->op_info()->Repr()
             << " on Target " << TargetToStr(inst.kernel()->target());
 
     inst.Run();

@@ -23,3 +23,5 @@ namespace operators {}  // namespace operators
 
 REGISTER_LITE_OP(fake_quantize_range_abs_max,
                  paddle::lite::operators::FakeQuantizeRangeMaxAbsOpLite);
+REGISTER_LITE_OP(fake_quantize_abs_max,
+                 paddle::lite::operators::FakeQuantizeRangeMaxAbsOpLite);

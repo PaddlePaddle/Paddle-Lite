@@ -25,7 +25,7 @@ namespace mir {
 
 void QuantDequantFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   std::unordered_set<std::string> quant_types = {
-      "fake_quantize_range_abs_max", "fake_quantize_moving_average_abs_max"};
+      "fake_quantize_abs_max","fake_quantize_range_abs_max", "fake_quantize_moving_average_abs_max"};
   std::unordered_set<std::string> quantized_op_types = {
       "conv2d", "mul", "depthwise_conv2d"};
   for (auto& quant_type : quant_types) {
