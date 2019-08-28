@@ -13,26 +13,24 @@
 // limitations under the License.
 
 #pragma once
-#include <vector>
+#include <algorithm>
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace host {
 
 class MulticlassNmsCompute
-    : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+    : public KernelLite<TARGET(kHost), PRECISION(kFloat)> {
  public:
-  using param_t = operators::MulticlassNmsParam;
-
   void Run() override;
 
   virtual ~MulticlassNmsCompute() = default;
 };
 
-}  // namespace arm
+}  // namespace host
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

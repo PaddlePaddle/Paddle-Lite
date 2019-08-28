@@ -31,6 +31,7 @@ USE_LITE_KERNEL(fetch, kFPGA, kFP16, kNHWC, def);
 // host kernels
 USE_LITE_KERNEL(reshape, kHost, kAny, kAny, def);
 USE_LITE_KERNEL(reshape2, kHost, kAny, kAny, def);
+USE_LITE_KERNEL(multiclass_nms, kHost, kFloat, kNCHW, def);
 
 #ifdef LITE_WITH_ARM
 USE_LITE_KERNEL(fc, kARM, kFloat, kNCHW, def);
@@ -92,7 +93,6 @@ USE_LITE_KERNEL(top_k, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(increment, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(write_to_array, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(read_from_array, kARM, kFloat, kNCHW, def);
-USE_LITE_KERNEL(multiclass_nms, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(reduce_max, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(sequence_expand, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(sequence_pool, kARM, kFloat, kNCHW, def);
