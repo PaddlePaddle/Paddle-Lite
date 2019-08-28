@@ -143,7 +143,7 @@ class Optimizer {
     program->set_exec_scope(exec_scope_);
     return program;
 #else
-    LOG(WARNING) << "Not compiled with NPU but use it!";
+    LOG(WARNING) << "N1ot compiled with NPU but use it!";
     return GenRuntimeProgram();
 #endif
   }
