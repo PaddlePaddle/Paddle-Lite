@@ -285,8 +285,9 @@ def save_all_op_output(feed_kv=None):
     for fetch in fetches:
         fetch_names.append(fetch.name)
     feed_names = feeds
-    for fetch_name in fetch_names:
-        output_var_filter.append(fetch_name)
+    if len(output_var_filter) > 0:
+        for fetch_name in fetch_names:
+            output_var_filter.append(fetch_name)
     for i in range(len(ops)):
         op = ops[i]
         var_name = None

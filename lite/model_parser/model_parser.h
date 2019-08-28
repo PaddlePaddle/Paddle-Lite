@@ -41,15 +41,27 @@ void LoadParams(const std::string& path);
 // Load a single parameter to an output tensor.
 void LoadParam(const std::string& path, Variable* out);
 
+void LoadCombinedParamsPb(const std::string& path,
+                          lite::Scope* scope,
+                          const cpp::ProgramDesc& prog);
+
 // Read a model and files of parameters in pb format.
 void LoadModelPb(const std::string& model_dir,
+                 const std::string& model_file,
+                 const std::string& param_file,
                  Scope* scope,
-                 cpp::ProgramDesc* prog);
+                 cpp::ProgramDesc* prog,
+                 bool combined = false);
 
 // Save a model and files of parameters in pb format.
 void SaveModelPb(const std::string& model_dir,
                  const Scope& scope,
-                 const cpp::ProgramDesc& prog);
+                 const cpp::ProgramDesc& prog,
+                 bool combined = false);
+
+void SaveCombinedParamsPb(const std::string& path,
+                          const lite::Scope& exec_scope,
+                          const cpp::ProgramDesc& prog);
 
 // Serialize tensors to ostream.
 void SerializeTensor(std::ostream& os,

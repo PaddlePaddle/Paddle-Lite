@@ -27,7 +27,9 @@ namespace gencode {
 void GenCode(const std::string& model_dir, const std::string& out_file) {
   lite::Scope scope;
   cpp::ProgramDesc cpp_desc;
-  LoadModelPb(model_dir, &scope, &cpp_desc);
+  std::string model_file = model_dir + "/model";
+  std::string param_file = model_dir + "/params";
+  LoadModelPb(model_dir, model_file, param_file, &scope, &cpp_desc, true);
 
   framework::proto::ProgramDesc pb_proto_desc;
   lite::pb::ProgramDesc pb_desc(&pb_proto_desc);
