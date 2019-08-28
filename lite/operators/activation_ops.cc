@@ -110,6 +110,7 @@ REGISTER_LITE_OP(swish, paddle::lite::operators::ActivationOp);
 REGISTER_LITE_OP(relu6, paddle::lite::operators::ActivationOp);
 REGISTER_LITE_OP(log, paddle::lite::operators::ActivationOp);
 REGISTER_LITE_OP(exp, paddle::lite::operators::ActivationOp);
+REGISTER_LITE_OP(floor, paddle::lite::operators::ActivationOp);
 
 #ifdef LITE_WITH_TRAIN
 REGISTER_LITE_OP(square_grad, paddle::lite::operators::ActivationGradOp);

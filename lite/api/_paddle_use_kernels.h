@@ -35,7 +35,7 @@ USE_LITE_KERNEL(reshape2, kHost, kAny, kAny, def);
 #ifdef LITE_WITH_ARM
 USE_LITE_KERNEL(fc, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(mul, kARM, kFloat, kNCHW, def);
-USE_LITE_KERNEL(matmul, kARM, kFloat, kNCHW, def);  // for x2paddle
+USE_LITE_KERNEL(matmul, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(scale, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(softmax, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(lrn, kARM, kFloat, kNCHW, def);
@@ -46,6 +46,8 @@ USE_LITE_KERNEL(depthwise_conv2d, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(elementwise_add, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(elementwise_mul, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(elementwise_max, kARM, kFloat, kNCHW, def);
+USE_LITE_KERNEL(elementwise_div, kARM, kFloat, kNCHW, def);
+USE_LITE_KERNEL(fusion_elementwise_div_activation, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(fusion_elementwise_add_activation, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(fusion_elementwise_mul_activation, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(fusion_elementwise_max_activation, kARM, kFloat, kNCHW, def);
@@ -118,6 +120,7 @@ USE_LITE_KERNEL(while, kARM, kFloat, kNCHW, def)
 USE_LITE_KERNEL(lod_reset, kARM, kFloat, kNCHW, def)
 USE_LITE_KERNEL(lookup_table, kARM, kFloat, kNCHW, def)
 USE_LITE_KERNEL(is_empty, kARM, kFloat, kNCHW, def)
+USE_LITE_KERNEL(assign, kARM, kFloat, kNCHW, def);
 #endif
 
 #ifdef LITE_WITH_X86
@@ -145,6 +148,7 @@ USE_LITE_KERNEL(io_copy, kCUDA, kAny, kAny, host_to_device);
 USE_LITE_KERNEL(io_copy, kCUDA, kAny, kAny, device_to_host);
 USE_LITE_KERNEL(io_copy_once, kCUDA, kAny, kAny, host_to_device);
 USE_LITE_KERNEL(io_copy_once, kCUDA, kAny, kAny, device_to_host);
+USE_LITE_KERNEL(leaky_relu, kCUDA, kFloat, kNCHW, def);
 #endif
 
 #ifdef LITE_WITH_OPENCL

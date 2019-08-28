@@ -41,10 +41,11 @@ bool PaddleMobilePredictor<Device, T>::Init(const PaddleMobileConfig &config) {
 #endif
   if (config.memory_pack.from_memory) {
     DLOG << "load from memory!";
-    paddle_mobile_->LoadCombinedMemory(config.memory_pack.model_size,
-                                       config.memory_pack.model_buf,
-                                       config.memory_pack.combined_params_size,
-                                       config.memory_pack.combined_params_buf);
+    paddle_mobile_->LoadCombinedMemory(
+        config.memory_pack.model_size, config.memory_pack.model_buf,
+        config.memory_pack.combined_params_size,
+        config.memory_pack.combined_params_buf, config.optimize,
+        config.quantification, config.batch_size, config.lod_mode);
   } else if (!config.model_dir.empty()) {
     paddle_mobile_->Load(config.model_dir, config.optimize,
                          config.quantification, config.batch_size,

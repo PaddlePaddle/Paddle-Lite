@@ -9,6 +9,12 @@ readonly CMAKE_COMMON_OPTIONS="-DWITH_GPU=OFF \
                                -DLITE_WITH_ARM=ON \
                                -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON"
 
+readonly NUM_PROC=${LITE_BUILD_THREADS:-4}
+
+
+# global variables
+BUILD_EXTRA=OFF
+
 readonly THIRDPARTY_TAR=https://paddle-inference-dist.bj.bcebos.com/PaddleLite/third-party-05b862.tar.gz
 
 readonly workspace=$PWD
@@ -63,9 +69,10 @@ function make_tiny_publish_so {
       -DLITE_SHUTDOWN_LOG=ON \
       -DLITE_ON_TINY_PUBLISH=ON \
       -DANDROID_STL_TYPE=$android_stl \
+      -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
       -DARM_TARGET_OS=${os} -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
 
-  make publish_inference -j4
+  make publish_inference -j$NUM_PROC
   cd - > /dev/null
 }
 
@@ -94,6 +101,7 @@ function make_full_publish_so {
       -DLITE_WITH_JAVA=ON \
       -DLITE_SHUTDOWN_LOG=ON \
       -DANDROID_STL_TYPE=$android_stl \
+      -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
       -DARM_TARGET_OS=${os} -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
 
   make publish_inference -j4
@@ -120,6 +128,7 @@ function make_all_tests {
   cmake .. \
       ${CMAKE_COMMON_OPTIONS} \
       -DWITH_TESTING=ON \
+      -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
       -DARM_TARGET_OS=${os} -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
 
   make lite_compile_deps -j4
@@ -141,8 +150,10 @@ function print_usage {
     echo -e "compile all arm tests:"
     echo -e "   ./build.sh --arm_os=<os> --arm_abi=<abi> --arm_lang=<lang> test"
     echo
-    echo -e "argument choices:"
+    echo -e "optional argument:"
+    echo -e "--build_extra: (OFF|ON); controls whether to publish extra operators and kernels for (sequence-related model such as OCR or NLP)"
     echo
+    echo -e "argument choices:"
     echo -e "--arm_os:\t android"
     echo -e "--arm_abi:\t armv8|armv7"
     echo -e "--arm_lang:\t gcc|clang"
@@ -180,6 +191,10 @@ function main {
                 ;;
             --android_stl=*)
                 ANDROID_STL="${i#*=}"
+                shift
+                ;;
+            --build_extra=*)
+                BUILD_EXTRA="${i#*=}"
                 shift
                 ;;
             tiny_publish)

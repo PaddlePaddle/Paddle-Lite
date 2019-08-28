@@ -122,5 +122,88 @@ class DeviceInfo {
 
 #endif  // LITE_WITH_ARM
 
+template <TargetType Type>
+class Device;
+
+template <TargetType Type>
+class Env {
+ public:
+  typedef TargetWrapper<Type> API;
+  typedef std::vector<Device<Type>> Devs;
+  static Devs& Global() {
+    static Devs* devs = new Devs();
+    return *devs;
+  }
+  static void Init(int max_stream = 4) {
+    Devs& devs = Global();
+    if (devs.size() > 0) {
+      return;
+    }
+    int count = 0;
+    // Get device count
+    count = API::num_devices();
+    if (count == 0) {
+      CHECK(false) << "No device found!";
+    } else {
+      LOG(INFO) << "Found " << count << " device(s)";
+    }
+    // create all device
+    for (int i = 0; i < count; i++) {
+      auto dev = Device<Type>(i, max_stream);
+      dev.Init();
+      devs.push_back(dev);
+    }
+    LOG(INFO) << "dev size = " << devs.size();
+  }
+};
+
+#ifdef LITE_WITH_CUDA
+template <>
+class Device<TARGET(kCUDA)> {
+ public:
+  Device(int dev_id, int max_stream = 1)
+      : idx_(dev_id), max_stream_(max_stream) {}
+  void Init();
+
+  int id() { return idx_; }
+  int max_stream() { return max_stream_; }
+  int SetId(int idx) { idx_ = idx; }
+  std::string name() { return device_prop_.name; }
+  int core_num() { return device_prop_.multiProcessorCount; }
+  float max_memory() { return device_prop_.totalGlobalMem / 1048576.; }
+  std::vector<cudaStream_t> exec_streams() { return exec_stream_; }
+  std::vector<cudaStream_t> io_streams() { return io_stream_; }
+
+  int sm_version() { return sm_version_; }
+  bool has_fp16() { return has_fp16_; }
+  bool has_int8() { return has_fp16_; }
+  bool has_hmma() { return has_fp16_; }
+  bool has_imma() { return has_fp16_; }
+  int runtime_version() { return runtime_version_; }
+
+ private:
+  void CreateStream();
+  void GetInfo();
+
+ private:
+  int max_stream_;
+  int idx_{0};
+  cudaDeviceProp device_prop_;
+  std::string device_name_;
+  float max_memory_;
+
+  int sm_version_;
+  bool has_fp16_;
+  bool has_int8_;
+  bool has_hmma_;
+  bool has_imma_;
+  int runtime_version_;
+  std::vector<cudaStream_t> exec_stream_;
+  std::vector<cudaStream_t> io_stream_;
+};
+
+template class Env<TARGET(kCUDA)>;
+#endif
+
 }  // namespace lite
 }  // namespace paddle

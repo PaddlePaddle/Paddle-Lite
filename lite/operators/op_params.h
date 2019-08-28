@@ -695,7 +695,7 @@ struct SliceParam {
   std::vector<int> decrease_axis{};
 };
 
-/// ----------------------- shape operators ----------------------
+/// ----------------------- squeeze operators ----------------------
 struct SqueezeParam {
   const lite::Tensor* X{};
   lite::Tensor* Out{};
@@ -720,6 +720,11 @@ struct MatMulParam {
   float alpha{1.0f};
 };
 
+/// ----------------------- assign operators -----------------------
+struct AssignParam {
+  const lite::Tensor* X{};
+  lite::Tensor* Out{};
+};
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle

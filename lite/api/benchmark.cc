@@ -22,7 +22,7 @@
 #include "lite/api/paddle_use_ops.h"
 #include "lite/api/paddle_use_passes.h"
 #include "lite/api/test_helper.h"
-#include "lite/core/cpu_info.h"
+#include "lite/core/device_info.h"
 #include "lite/utils/cp_logging.h"
 #include "lite/utils/string.h"
 
@@ -49,7 +49,6 @@ void OutputOptModel(const std::string& load_model_dir,
   });
   auto predictor = lite_api::CreatePaddlePredictor(config);
 
-  // delete old optimized model
   int ret = system(
       paddle::lite::string_format("rm -rf %s", save_optimized_model_dir.c_str())
           .c_str());
@@ -69,17 +68,13 @@ void Run(const std::vector<std::vector<int64_t>>& input_shapes,
          const int thread_num,
          const int warmup_times,
          const std::string model_name) {
-#ifdef LITE_WITH_ARM
-  lite::DeviceInfo::Init();
-  if (thread_num == 1) {
-    lite::DeviceInfo::Global().SetRunMode(LITE_POWER_HIGH, thread_num);
-    LOG(INFO) << "LITE_POWER_HIGH";
-  } else {
-    lite::DeviceInfo::Global().SetRunMode(LITE_POWER_NO_BIND, thread_num);
-    LOG(INFO) << "LITE_POWER_NO_BIND";
-  }
-#endif
   lite_api::MobileConfig config;
+  config.set_threads(thread_num);
+  if (thread_num == 1) {
+    config.set_power_mode(LITE_POWER_HIGH);
+  } else {
+    config.set_power_mode(LITE_POWER_NO_BIND);
+  }
   config.set_model_dir(model_dir);
 
   auto predictor = lite_api::CreatePaddlePredictor(config);

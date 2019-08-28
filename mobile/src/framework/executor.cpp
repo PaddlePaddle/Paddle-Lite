@@ -480,44 +480,52 @@ const CLImage *Executor<Device, T>::GetOutputImage(
 
 template <typename Device, typename T>
 PMStatus Executor<Device, T>::Predict() {
+  try {
 #if _OPENMP
-  omp_set_num_threads(CPUContext::Context()->get_thread_num());
+    omp_set_num_threads(CPUContext::Context()->get_thread_num());
 #endif
-  // clear all no persistable tensor array since write_to_array
-  // is always push back a new tensor in the array
-  ClearNoPersistableTensorArray(program_desc_.get(), program_.scope.get());
+    // clear all no persistable tensor array since write_to_array
+    // is always push back a new tensor in the array
+    ClearNoPersistableTensorArray(program_desc_.get(), program_.scope.get());
 
 #ifdef PADDLE_MOBILE_PROFILE
-  std::vector<ProfInfo> profile(ops_of_block0_.size());
-  struct timespec ts;
-  int op_index = 0;
+    std::vector<ProfInfo> profile(ops_of_block0_.size());
+    struct timespec ts;
+    int op_index = 0;
 #endif
-  for (int i = 0; i < ops_of_block0_.size(); ++i) {
-    auto &op_handler = ops_of_block0_[i];
+    for (int i = 0; i < ops_of_block0_.size(); ++i) {
+      auto &op_handler = ops_of_block0_[i];
 #ifdef PADDLE_MOBILE_PROFILE
-    clock_gettime(CLOCK_MONOTONIC, &ts);
-    profile[op_index].runBegin = (uint64_t)ts.tv_sec * 1e9 + ts.tv_nsec;
+      clock_gettime(CLOCK_MONOTONIC, &ts);
+      profile[op_index].runBegin = (uint64_t)ts.tv_sec * 1e9 + ts.tv_nsec;
 #endif
-    DLOG << i << "th, "
-         << "run op: " << op_handler->Type();
-    if (lod_mode_ && input_dim_has_changed_) {
-      op_handler->InferShape();
+      DLOG << i << "th, "
+           << "run op: " << op_handler->Type();
+      if (lod_mode_ && input_dim_has_changed_) {
+        op_handler->InferShape();
+      }
+      op_handler->Run();
+#ifdef PADDLE_MOBILE_PROFILE
+      clock_gettime(CLOCK_MONOTONIC, &ts);
+      profile[op_index].runEnd = (uint64_t)ts.tv_sec * 1e9 + ts.tv_nsec;
+      ++op_index;
+#endif
     }
-    op_handler->Run();
-#ifdef PADDLE_MOBILE_PROFILE
-    clock_gettime(CLOCK_MONOTONIC, &ts);
-    profile[op_index].runEnd = (uint64_t)ts.tv_sec * 1e9 + ts.tv_nsec;
-    ++op_index;
-#endif
-  }
-  if (feed_indices_.size() == 1) {
-    input_dim_has_changed_ = false;
-  }
+    if (feed_indices_.size() == 1) {
+      input_dim_has_changed_ = false;
+    }
 
 #ifdef PADDLE_MOBILE_PROFILE
-  PrintProfile(profile);
+    PrintProfile(profile);
 #endif
-  return PMSuccess;
+    return PMSuccess;
+  } catch (PaddleMobileException &e) {
+    exception_msg_ = e.what();
+    return PMException;
+  } catch (std::exception &e) {
+    exception_msg_ = e.what();
+    return PMException;
+  }
 }
 
 #ifdef PADDLE_MOBILE_PROFILE
@@ -586,6 +594,11 @@ void Executor<Device, T>::GetTensorResults(
         fetch_var->template GetMutable<framework::LoDTensorArray>()->at(i);
     v->push_back(&target);
   }
+}
+
+template <typename Device, typename T>
+std::string Executor<Device, T>::GetExceptionMsg() {
+  return exception_msg_;
 }
 
 #ifdef PADDLE_MOBILE_FPGA

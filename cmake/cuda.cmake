@@ -1,4 +1,4 @@
-if(NOT WITH_GPU)
+if(NOT LITE_WITH_CUDA)
     return()
 endif()
 

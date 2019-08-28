@@ -19,7 +19,7 @@
 #include "paddle_lite_factory_helper.h"  // NOLINT
 
 USE_LITE_OP(mul);
-USE_LITE_OP(matmul);  // for x2paddle
+USE_LITE_OP(matmul);
 USE_LITE_OP(fc);
 USE_LITE_OP(relu);
 USE_LITE_OP(relu6);
@@ -35,9 +35,11 @@ USE_LITE_OP(elementwise_add)
 USE_LITE_OP(elementwise_sub)
 USE_LITE_OP(elementwise_mul)
 USE_LITE_OP(elementwise_max)
+USE_LITE_OP(elementwise_div)
 USE_LITE_OP(fusion_elementwise_add_activation)
 USE_LITE_OP(fusion_elementwise_mul_activation)
 USE_LITE_OP(fusion_elementwise_max_activation)
+USE_LITE_OP(fusion_elementwise_div_activation)
 USE_LITE_OP(square)
 USE_LITE_OP(softmax)
 USE_LITE_OP(dropout)
@@ -68,6 +70,7 @@ USE_LITE_OP(yolo_box)
 USE_LITE_OP(bilinear_interp)
 USE_LITE_OP(nearest_interp)
 
+USE_LITE_OP(assign);
 USE_LITE_OP(crop)
 USE_LITE_OP(prior_box)
 USE_LITE_OP(density_prior_box)
