@@ -9,6 +9,8 @@ readonly CMAKE_COMMON_OPTIONS="-DWITH_GPU=OFF \
                                -DLITE_WITH_ARM=ON \
                                -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON"
 
+readonly NUM_PROC=${LITE_BUILD_THREADS:-4}
+
 
 # global variables
 BUILD_EXTRA=OFF
@@ -70,7 +72,7 @@ function make_tiny_publish_so {
       -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
       -DARM_TARGET_OS=${os} -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
 
-  make publish_inference -j4
+  make publish_inference -j$NUM_PROC
   cd - > /dev/null
 }
 
