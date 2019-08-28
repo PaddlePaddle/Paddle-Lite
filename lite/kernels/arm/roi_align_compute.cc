@@ -119,15 +119,15 @@ void RoiAlignCompute::Run() {
   auto rois_dims = rois->dims();
   int rois_num = rois_dims[0];
   auto out_dims = out->dims();
+  if (rois_num == 0) {
+    return;
+  }
 
   DDim in_stride({static_cast<int>(in_dims[1] * in_dims[2] * in_dims[3]),
                   static_cast<int>(in_dims[2] * in_dims[3]),
                   static_cast<int>(in_dims[3]),
                   1});
-  DDim roi_stride({static_cast<int>(rois_dims[1] * rois_dims[2] * rois_dims[3]),
-                   static_cast<int>(rois_dims[2] * rois_dims[3]),
-                   static_cast<int>(rois_dims[3]),
-                   1});
+  DDim roi_stride({static_cast<int>(rois_dims[1]), 1});
   DDim out_stride({static_cast<int>(out_dims[1] * out_dims[2] * out_dims[3]),
                    static_cast<int>(out_dims[2] * out_dims[3]),
                    static_cast<int>(out_dims[3]),
@@ -148,8 +148,7 @@ void RoiAlignCompute::Run() {
       roi_batch_id_data[i] = n;
     }
   }
-  // LOG(INFO) << rois_batch_size << " " << rois_lod[0] << " " << rois_lod[1]
-  //          << " " << rois_lod[2];
+
   auto* output_data = out->mutable_data<float>();
   auto* rois_data = rois->data<float>();
   for (int n = 0; n < rois_num; ++n) {
@@ -176,7 +175,6 @@ void RoiAlignCompute::Run() {
     int pre_size = count * out_stride[1];
     pre_pos.Resize({pre_size, kROISize});
     pre_w.Resize({pre_size, kROISize});
-    // LOG(INFO) << "start PreCalcForBilinearInterpolate";
     PreCalcForBilinearInterpolate<float>(height,
                                          width,
                                          pooled_height,
@@ -191,7 +189,7 @@ void RoiAlignCompute::Run() {
                                          roi_bin_grid_w,
                                          &pre_pos,
                                          &pre_w);
-    // LOG(INFO) << "PreCalcForBilinearInterpolate ok";
+
     const int* pre_pos_data = pre_pos.data<int>();
     const float* pre_w_data = pre_w.data<float>();
     for (int c = 0; c < channels; c++) {
