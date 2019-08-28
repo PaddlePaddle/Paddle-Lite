@@ -176,7 +176,7 @@ else()
     lite_cc_library(paddle_api_light SRCS light_api_impl.cc DEPS light_api paddle_api)
 endif()
 if (NOT LITE_ON_TINY_PUBLISH)
-    lite_cc_library(paddle_api_full SRCS cxx_api_impl.cc DEPS cxx_api paddle_api_light
+    lite_cc_library(paddle_api_full SRCS cxx_api_impl.cc DEPS cxx_api paddle_api light_api
       ${ops}
       ARM_DEPS ${arm_kernels}
       NPU_DEPS ${npu_kernels}
