@@ -14,24 +14,19 @@
 
 #pragma once
 
-#include "lite/npu/bridge/registry.h"
+#include <memory>
+#include <string>
+#include "lite/core/mir/pass.h"
 
-USE_NPU_BRIDGE(mul);
-USE_NPU_BRIDGE(fc);
-USE_NPU_BRIDGE(conv2d);
-USE_NPU_BRIDGE(depthwise_conv2d);
-USE_NPU_BRIDGE(pool2d);
-USE_NPU_BRIDGE(relu);
-USE_NPU_BRIDGE(elementwise_add);
-USE_NPU_BRIDGE(scale);
-USE_NPU_BRIDGE(softmax);
-USE_NPU_BRIDGE(concat);
-USE_NPU_BRIDGE(split);
-USE_NPU_BRIDGE(transpose);
-USE_NPU_BRIDGE(transpose2);
-USE_NPU_BRIDGE(shuffle_channel);
-USE_NPU_BRIDGE(batch_norm);
-USE_NPU_BRIDGE(bilinear_interp);
-USE_NPU_BRIDGE(conv2d_transpose);
-USE_NPU_BRIDGE(reshape);
-USE_NPU_BRIDGE(reshape2);
+namespace paddle {
+namespace lite {
+namespace mir {
+
+class TransposeSoftmaxTransposeFusePass : public ProgramPass {
+ public:
+  void Apply(const std::unique_ptr<SSAGraph>& graph) override;
+};
+
+}  // namespace mir
+}  // namespace lite
+}  // namespace paddle
