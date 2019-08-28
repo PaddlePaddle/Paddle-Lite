@@ -39,8 +39,11 @@ namespace lite {
 void TestModel(lite::Predictor* predictor,
                const std::vector<Place>& valid_places,
                const std::string& model_dir) {
-  predictor->Build(
-      model_dir, "", "", Place{TARGET(kARM), PRECISION(kFloat)}, valid_places);
+  predictor->Build(model_dir,
+                   model_dir + "/model",
+                   model_dir + "/params",
+                   Place{TARGET(kARM), PRECISION(kFloat)},
+                   valid_places);
 
   auto* input_tensor = predictor->GetInput(0);
   input_tensor->Resize(DDim(std::vector<DDim::value_type>(
