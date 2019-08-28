@@ -38,7 +38,6 @@ void RunModel() {
   config.set_model_dir(FLAGS_model_dir);
   std::vector<Place> valid_places{Place{TARGET(kARM), PRECISION(kFloat)}};
   if (FLAGS_prefer_int8_kernel) {
-    printf("Int8 mode is only support by ARM target");
     valid_places.push_back(Place{TARGET(kARM), PRECISION(kInt8)});
     config.set_preferred_place(Place{TARGET(kARM), PRECISION(kInt8)});
   } else {
