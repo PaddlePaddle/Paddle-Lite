@@ -38,6 +38,8 @@ const lite::Tensor* RunHvyModel() {
 #endif
 
   predictor.Build(FLAGS_model_dir,
+                  "",
+                  "",
                   Place{TARGET(kX86), PRECISION(kFloat)},  // origin cuda
                   valid_places);
 
