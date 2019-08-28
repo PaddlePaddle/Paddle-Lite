@@ -24,6 +24,7 @@ using namespace paddle::lite_api;  // NOLINT
 
 DEFINE_string(model_dir, "", "Model dir path.");
 DEFINE_string(optimized_model_dir, "", "Optimized model dir.");
+DEFINE_bool(prefer_int8_kernel, false, "Prefer to run model with int8 kernels");
 
 int64_t ShapeProduction(const shape_t& shape) {
   int64_t res = 1;
@@ -35,8 +36,15 @@ void RunModel() {
   // 1. Set CxxConfig
   CxxConfig config;
   config.set_model_dir(FLAGS_model_dir);
-  config.set_preferred_place(Place{TARGET(kARM), PRECISION(kFloat)});
-  config.set_valid_places({Place{TARGET(kARM), PRECISION(kFloat)}});
+  std::vector<Place> valid_places{Place{TARGET(kARM), PRECISION(kFloat)}};
+  if (FLAGS_prefer_int8_kernel) {
+    printf("Int8 mode is only support by ARM target");
+    valid_places.push_back(Place{TARGET(kARM), PRECISION(kInt8)});
+    config.set_preferred_place(Place{TARGET(kARM), PRECISION(kInt8)});
+  } else {
+    config.set_preferred_place(Place{TARGET(kARM), PRECISION(kFloat)});
+  }
+  config.set_valid_places(valid_places);
 
   // 2. Create PaddlePredictor by CxxConfig
   std::shared_ptr<PaddlePredictor> predictor =

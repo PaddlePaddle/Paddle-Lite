@@ -85,20 +85,23 @@ void TensorFromStream(std::istream &is, lite::Tensor *tensor) {
   size_t size = tensor->dims().production() * SizeOfType(desc.data_type());
   // alllocate memory
   switch (static_cast<int>(desc.data_type())) {
-#define DO(desc, type)                  \
-  case Type::VarType_Type_##desc:       \
-    buf = tensor->mutable_data<type>(); \
-    break;
-    // DO(BOOL, bool);
-    DO(FP32, float);
-    DO(INT8, int8_t);
-    DO(INT16, int16_t);
-    DO(INT32, int32_t);
-    DO(INT64, int64_t);
-#undef DO
+#define SET_TENSOR(desc, type, precision) \
+  case Type::VarType_Type_##desc:         \
+    buf = tensor->mutable_data<type>();   \
+    tensor->set_precision(precision);     \
+    break
+
+    // SET_TENSOR(BOOL, bool, PRECISION(kBool));
+    SET_TENSOR(FP32, float, PRECISION(kFloat));
+    SET_TENSOR(INT8, int8_t, PRECISION(kInt8));
+    SET_TENSOR(INT16, int16_t, PRECISION(kInt16));
+    SET_TENSOR(INT32, int32_t, PRECISION(kInt32));
+    SET_TENSOR(INT64, int64_t, PRECISION(kInt64));
+#undef SET_TENSOR
     default:
       LOG(FATAL) << "unknown type " << desc.data_type();
   }
+  tensor->set_persistable(true);
 
   is.read(static_cast<char *>(buf), size);
 }
@@ -382,7 +385,22 @@ void TensorToStream(std::ostream &os, const lite::Tensor &tensor) {
     // void*    protobuf message
     framework::proto::VarType::TensorDesc desc;
     // TODO(Superjomn) support other data types.
-    desc.set_data_type(framework::proto::VarType_Type_FP32);
+    switch (tensor.precision()) {
+#define SET_DATA_TYPE(precision, type_desc) \
+  case precision:                           \
+    desc.set_data_type(type_desc);          \
+    break
+
+      SET_DATA_TYPE(PRECISION(kFloat), framework::proto::VarType_Type_FP32);
+      SET_DATA_TYPE(PRECISION(kInt8), framework::proto::VarType_Type_INT8);
+      SET_DATA_TYPE(PRECISION(kInt16), framework::proto::VarType_Type_INT16);
+      SET_DATA_TYPE(PRECISION(kInt32), framework::proto::VarType_Type_INT32);
+      SET_DATA_TYPE(PRECISION(kInt64), framework::proto::VarType_Type_INT64);
+#undef SET_DATA_TYPE
+      default:
+        LOG(FATAL) << "unknown precision type: "
+                   << PrecisionToStr(tensor.precision());
+    }
     auto dims = tensor.dims();
     auto *pb_dims = desc.mutable_dims();
     pb_dims->Resize(static_cast<int>(dims.size()), 0);
@@ -447,7 +465,22 @@ void SetParamInfoNaive(naive_buffer::ParamDesc *param_desc,
   desc.SetLoD(tensor.lod());
 
   // TODO(sangoly): support other data types.
-  desc.SetDataType(VarDescAPI::VarDataType::FP32);
+  switch (tensor.precision()) {
+#define SET_DATA_TYPE(precision, type_desc) \
+  case precision:                           \
+    desc.SetDataType(type_desc);            \
+    break
+
+    SET_DATA_TYPE(PRECISION(kFloat), VarDescAPI::VarDataType::FP32);
+    SET_DATA_TYPE(PRECISION(kInt8), VarDescAPI::VarDataType::INT8);
+    SET_DATA_TYPE(PRECISION(kInt16), VarDescAPI::VarDataType::INT16);
+    SET_DATA_TYPE(PRECISION(kInt32), VarDescAPI::VarDataType::INT32);
+    SET_DATA_TYPE(PRECISION(kInt64), VarDescAPI::VarDataType::INT64);
+#undef SET_DATA_TYPE
+    default:
+      LOG(FATAL) << "unknown precision type: "
+                 << PrecisionToStr(tensor.precision());
+  }
   desc.SetDim(tensor.dims().Vectorize());
   uint64_t size = tensor.memory_size();
   CHECK_LT(size, std::numeric_limits<std::streamsize>::max())
@@ -455,16 +488,44 @@ void SetParamInfoNaive(naive_buffer::ParamDesc *param_desc,
 
 #ifdef LITE_WITH_CUDA
   if (tensor.target() == TARGET(kCUDA)) {
-    std::unique_ptr<float> tmp_buffer(new float[tensor.data_size()]);
-    TargetWrapperCuda::MemcpySync(tmp_buffer.get(),
-                                  tensor.data<float>(),
-                                  tensor.data_size(),
-                                  IoDirection::DtoH);
-    desc.SetData<float>(tmp_buffer.get(), tensor.data_size());
+    switch (tensor.precision()) {
+#define DO(precision, type)                                         \
+  case precision:                                                   \
+    std::unique_ptr<type> tmp_buffer(new type[tensor.data_size()]); \
+    TargetWrapperCuda::MemcpySync(tmp_buffer.get(),                 \
+                                  tensor.data<type>(),              \
+                                  tensor.data_size(),               \
+                                  IoDirection::DtoH);               \
+    desc.SetData<type>(tmp_buffer.get(), tensor.data_size());       \
+    break
+      DO(PRECISION(kFloat), float);
+      DO(PRECISION(kInt8), int8_t);
+      DO(PRECISION(kInt16), int16_t);
+      DO(PRECISION(kInt32), int32_t);
+      DO(PRECISION(kInt64), int64_t);
+#undef DO
+      default:
+        LOG(FATAL) << "unknown precision type: "
+                   << PrecisionToStr(tensor.precision());
+    }
   } else  // NOLINT
 #endif    // LITE_WITH_CUDA
   {
-    desc.SetData<float>(tensor.data<float>(), tensor.data_size());
+    switch (tensor.precision()) {
+#define DO(precision, type)                                      \
+  case precision:                                                \
+    desc.SetData<type>(tensor.data<type>(), tensor.data_size()); \
+    break
+      DO(PRECISION(kFloat), float);
+      DO(PRECISION(kInt8), int8_t);
+      DO(PRECISION(kInt16), int16_t);
+      DO(PRECISION(kInt32), int32_t);
+      DO(PRECISION(kInt64), int64_t);
+#undef DO
+      default:
+        LOG(FATAL) << "unknown precision type: "
+                   << PrecisionToStr(tensor.precision());
+    }
   }
 }
 
@@ -569,22 +630,24 @@ void GetParamInfoNaive(const naive_buffer::ParamDesc &desc,
 
   // Load data
   switch (desc.GetDataType()) {
-#define DO(data_type__, T)                                               \
+#define SET_TENSOR(data_type__, T, precision)                            \
   case VarDescAPI::VarDataType::data_type__:                             \
     SetTensorDataNaive<T>(                                               \
         tensor->mutable_data<T>(), tensor->data_size(), desc.Data<T>()); \
+    tensor->set_precision(precision);                                    \
     break
 
-    // DO(BOOL, bool);
-    DO(FP32, float);
-    DO(INT8, int8_t);
-    DO(INT16, int16_t);
-    DO(INT32, int32_t);
-    DO(INT64, int64_t);
-#undef DO
+    // SET_TENSOR(BOOL, bool, PRECISION(kBool));
+    SET_TENSOR(FP32, float, PRECISION(kFloat));
+    SET_TENSOR(INT8, int8_t, PRECISION(kInt8));
+    SET_TENSOR(INT16, int16_t, PRECISION(kInt16));
+    SET_TENSOR(INT32, int32_t, PRECISION(kInt32));
+    SET_TENSOR(INT64, int64_t, PRECISION(kInt64));
+#undef SET_TENSOR
     default:
       LOG(FATAL) << "unknown type";
   }
+  tensor->set_persistable(true);
 }
 
 void LoadParamNaive(const std::string &path,

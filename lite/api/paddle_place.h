@@ -59,6 +59,8 @@ enum class PrecisionType : int {
   kInt8 = 2,
   kFP16 = 5,
   kInt32 = 3,
+  kInt16 = 8,
+  kInt64 = 9,
   kAny = 4,  // any precision
   kBool = 6,
   NUM = 7,  // number of fields.

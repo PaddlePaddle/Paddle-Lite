@@ -139,6 +139,8 @@ class LITE_API RuntimeProgram {
 
   void SaveOpInfosToProgram(cpp::ProgramDesc* desc);
 
+  void UpdateVarsOfProgram(cpp::ProgramDesc* desc);
+
  private:
   RuntimeProgram(const RuntimeProgram&) = delete;
   std::vector<Instruction> instructions_;
