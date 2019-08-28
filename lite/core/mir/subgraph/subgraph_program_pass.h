@@ -54,9 +54,24 @@ class SubgraphProgramPass : public ProgramPass {
   // std::unique_ptr<SSAGraph>& graph, int sub_num);
   void ChangeAllOutConnectedID(Node* node, int to_id, int from_id = 0);
 
+  // Below function cloud be useful in child classes //
+
   // Sort and return the topology order of nodes set
   std::vector<Node*> GetTopologicalOrder(
       const std::unordered_set<Node*>& nodes);
+
+  // find all input data vars, input weight vars,
+  // output data vars and output vars from the nodes
+  void FindInputOutputVars(const std::unordered_set<Node*>& op_nodes,
+                           std::unordered_set<Node*>* in_data_vars,
+                           std::unordered_set<Node*>* in_wgt_vars,
+                           std::unordered_set<Node*>* out_data_vars,
+                           std::unordered_set<Node*>* out_unused_vars);
+
+  // return the node to remove in the subgraph
+  std::unordered_set<const Node*> GetNode2rm(
+      const std::unordered_set<Node*>& op_nodes,
+      const std::vector<std::unordered_set<Node*>>& excluded_nodes);
 
  private:
   // sort nodes to operational sequence

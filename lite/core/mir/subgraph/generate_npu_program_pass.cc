@@ -75,11 +75,11 @@ std::shared_ptr<ge::Operator> GenerateNPUProgramPass::CvtVarNode(
 
 void GenerateNPUProgramPass::CvtAllOpNodes(
     const std::vector<Node*>& nodes2cvt,
-    lite::npu::bridge::node_map_type* cvted_vars) {
+    lite::npu::bridge::node_map_type* converted_vars) {
   const auto& bridges = lite::npu::bridge::Factory::Instance();
   const auto& cvtfunc_map = bridges.AllFunctions();
   // return record all converted vars
-  // op node's inputs must be found in cvted_vars
+  // op node's inputs must be found in converted_vars
   for (auto& node : nodes2cvt) {
     lite::npu::bridge::node_map_type node_inputs;
     auto& stmt = node->AsStmt();
@@ -90,83 +90,50 @@ void GenerateNPUProgramPass::CvtAllOpNodes(
         continue;
       }
       auto var_name = arg.name;
-      if (!cvted_vars->count(var_name)) {
-        cvted_vars->insert(
+      if (!converted_vars->count(var_name)) {
+        converted_vars->insert(
             std::make_pair(var_name, CvtVarNode(var_node, stmt.op()->scope())));
       }
-      node_inputs.insert(*cvted_vars->find(var_name));
+      node_inputs.insert(*converted_vars->find(var_name));
     }
     auto node_outputs = cvtfunc_map.at(stmt.op_type())(stmt.op(), node_inputs);
-    cvted_vars->insert(node_outputs.begin(), node_outputs.end());
+    converted_vars->insert(node_outputs.begin(), node_outputs.end());
   }
-}
-
-void GenerateNPUProgramPass::FindInputOutputVars(
-    const std::vector<Node*>& nodes2cvt,
-    std::unordered_set<const Node*>* nodes2rm,
-    std::vector<Node*>* in_vars,
-    std::vector<Node*>* out_vars) {
-  auto exsited = [&](Node* node) {
-    return std::find(nodes2cvt.begin(), nodes2cvt.end(), node) !=
-           nodes2cvt.end();
-  };
-  for (auto& op_node : nodes2cvt) {
-    for (auto& in_var : op_node->inlinks) {
-      if (in_var->AsArg().is_weight) {
-        continue;
-      }
-      auto* pre_op_node = in_var->inlinks.front();
-      if (exsited(pre_op_node)) {
-        nodes2rm->insert(in_var);
-        continue;
-      }
-      in_vars->push_back(in_var);
-    }
-    for (auto& out_var : op_node->outlinks) {
-      if (out_var->outlinks.empty()) {
-        nodes2rm->insert(out_var);
-        continue;
-      }
-      auto* next_op_node = out_var->outlinks.front();
-      if (exsited(next_op_node)) {
-        nodes2rm->insert(out_var);
-        continue;
-      }
-      out_vars->push_back(out_var);
-    }
-  }
-  nodes2rm->insert(nodes2cvt.begin(), nodes2cvt.end());
 }
 
 void GenerateNPUProgramPass::GenNPUGraphOpNode(
     const std::unique_ptr<SSAGraph>& graph,
     int sub_id,
-    const std::unordered_set<Node*>& nodes) {
-  auto ret = GetTopologicalOrder(nodes);
+    const std::unordered_set<Node*>& op_nodes) {
+  auto ordered_nodes = GetTopologicalOrder(op_nodes);
+  lite::npu::bridge::node_map_type converted_vars;
+  CvtAllOpNodes(ordered_nodes, &converted_vars);
 
-  lite::npu::bridge::node_map_type cvted_vars;
-  CvtAllOpNodes(ret, &cvted_vars);
+  std::unordered_set<Node*> in_data_vars;
+  std::unordered_set<Node*> in_wgt_vars;
+  std::unordered_set<Node*> out_data_vars;
+  std::unordered_set<Node*> out_unused_vars;
+  FindInputOutputVars(
+      op_nodes, &in_data_vars, &in_wgt_vars, &out_data_vars, &out_unused_vars);
 
-  std::unordered_set<const Node*> nodes2rm;
-  std::vector<Node*> in_vars;
-  std::vector<Node*> out_vars;
-  FindInputOutputVars(ret, &nodes2rm, &in_vars, &out_vars);
+  auto nodes2rm = GetNode2rm(
+      op_nodes, {in_data_vars, in_wgt_vars, out_data_vars, out_unused_vars});
 
   // build graph
-  // inputs in_vars, out_var, cvted_vars
+  // inputs in_data_vars, out_var, converted_vars
   std::vector<std::string> in_var_names;
   std::vector<std::string> out_var_names;
   std::vector<ge::Operator> inputs;
   std::vector<ge::Operator> outputs;
-  for (auto i : in_vars) {
+  for (auto i : in_data_vars) {
     auto argname = i->AsArg().name;
     in_var_names.push_back(argname);
-    inputs.push_back(*cvted_vars.at(argname));
+    inputs.push_back(*converted_vars.at(argname));
   }
-  for (auto i : out_vars) {
+  for (auto i : out_data_vars) {
     auto argname = i->AsArg().name;
     out_var_names.push_back(argname);
-    outputs.push_back(*cvted_vars.at(argname));
+    outputs.push_back(*converted_vars.at(argname));
   }
 
   std::string model_name("hiai_npu_client_" + std::to_string(sub_id) + ".om");
@@ -182,17 +149,23 @@ void GenerateNPUProgramPass::GenNPUGraphOpNode(
   op_desc.SetAttr("model_name", model_name);
   auto graph_op = LiteOpRegistry::Global().Create("graph_op");
 
-  auto any_op = ret.front()->AsStmt().op();
+  auto any_op = (*op_nodes.begin())->AsStmt().op();
   auto* scope = any_op->scope();
   graph_op->Attach(op_desc, scope);
 
   auto valid_places = any_op->valid_places();
   auto* new_op_node = graph->GraphCreateInstructNode(graph_op, valid_places);
 
-  for (auto& in_var : in_vars) {
+  for (auto& in_var : in_data_vars) {
     IR_NODE_LINK_TO(in_var, new_op_node);
   }
-  for (auto& out_var : out_vars) {
+  for (auto& in_var : in_wgt_vars) {
+    IR_NODE_LINK_TO(in_var, new_op_node);
+  }
+  for (auto& out_var : out_data_vars) {
+    IR_OP_VAR_LINK(new_op_node, out_var);
+  }
+  for (auto& out_var : out_unused_vars) {
     IR_OP_VAR_LINK(new_op_node, out_var);
   }
 
@@ -233,7 +206,7 @@ void GenerateNPUProgramPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   const auto& op_map = bridges.AllFunctions();
   std::vector<std::string> supported_op_types;
   for (auto& i : op_map) {
-    LOG(INFO) << i.first;
+    LOG(INFO) << "Supported type: " << i.first;
     supported_op_types.push_back(i.first);
   }
 

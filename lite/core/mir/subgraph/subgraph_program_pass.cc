@@ -54,6 +54,70 @@ std::vector<Node*> SubgraphProgramPass::GetTopologicalOrder(
   return ret;
 }
 
+void SubgraphProgramPass::FindInputOutputVars(
+    const std::unordered_set<Node*>& op_nodes,
+    std::unordered_set<Node*>* in_data_vars,
+    std::unordered_set<Node*>* in_wgt_vars,
+    std::unordered_set<Node*>* out_data_vars,
+    std::unordered_set<Node*>* out_unused_vars) {
+  for (auto& op_node : op_nodes) {
+    for (auto& in_var : op_node->inlinks) {
+      if (in_var->AsArg().is_weight) {
+        in_wgt_vars->insert(in_var);
+        continue;
+      }
+      // any input in these op_nodes so skip this var
+      // for () {
+
+      // }
+      auto* pre_op_node = in_var->inlinks.front();
+      if (op_nodes.count(pre_op_node)) {
+        continue;
+      }
+      in_data_vars->insert(in_var);
+    }
+    for (auto& out_var : op_node->outlinks) {
+      if (out_var->outlinks.empty()) {
+        // the next op is empty so this var is actually unused
+        out_unused_vars->insert(out_var);
+        continue;
+      }
+      auto* next_op_node = out_var->outlinks.front();
+      if (op_nodes.count(next_op_node)) {
+        continue;
+      }
+      out_data_vars->insert(out_var);
+    }
+  }
+}
+
+std::unordered_set<const Node*> SubgraphProgramPass::GetNode2rm(
+    const std::unordered_set<Node*>& op_nodes,
+    const std::vector<std::unordered_set<Node*>>& excluded_nodes) {
+  std::unordered_set<const Node*> nodes2rm(op_nodes.begin(), op_nodes.end());
+  for (auto& op_node : op_nodes) {
+    for (auto& in_var : op_node->inlinks) {
+      if (!nodes2rm.count(in_var)) {
+        nodes2rm.insert(in_var);
+      }
+    }
+    for (auto& out_var : op_node->outlinks) {
+      if (!nodes2rm.count(out_var)) {
+        nodes2rm.insert(out_var);
+      }
+    }
+  }
+  // some nodes should not be removed
+  for (auto& e : excluded_nodes) {
+    for (auto& i : e) {
+      if (nodes2rm.count(i)) {
+        nodes2rm.erase(i);
+      }
+    }
+  }
+  return nodes2rm;
+}
+
 void SubgraphProgramPass::InferOnce(const std::unique_ptr<SSAGraph>& graph) {
   for (auto& item : graph->StmtTopologicalOrder()) {
     if (!item->IsStmt()) continue;

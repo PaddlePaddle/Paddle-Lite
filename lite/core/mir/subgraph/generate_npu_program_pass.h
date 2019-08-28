@@ -46,13 +46,6 @@ class GenerateNPUProgramPass : public SubgraphProgramPass {
   std::shared_ptr<ge::Operator> CvtVarNode(lite::mir::Node* var_node,
                                            const Scope* scope);
 
-  // find all input and output vars from the nodes;
-
-  void FindInputOutputVars(const std::vector<Node*>& nodes2cvt,
-                           std::unordered_set<const Node*>* nodes2rm,
-                           std::vector<Node*>* in_vars,
-                           std::vector<Node*>* out_vars);
-
   void GenNPUGraphOpNode(const std::unique_ptr<SSAGraph>& graph,
                          int sub_id,
                          const std::unordered_set<Node*>& nodes_all);
