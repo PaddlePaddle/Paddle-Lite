@@ -19,6 +19,8 @@
 #include <cmath>
 
 #include "lite/arm/math/activation.h"
+#include "lite/arm/math/affine_channel.h"
+#include "lite/arm/math/anchor_generator.h"
 #include "lite/arm/math/argmax.h"
 #include "lite/arm/math/axpy.h"
 #include "lite/arm/math/beam_search.h"

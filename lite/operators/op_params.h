@@ -695,6 +695,46 @@ struct SliceParam {
   std::vector<int> decrease_axis{};
 };
 
+struct AffineChannelParam {
+  const lite::Tensor* X{};  // X is 4D tensor
+  const lite::Tensor* Scale{};
+  const lite::Tensor* Bias{};
+  std::string data_layout{"NCHW"};  // optional string from: NHWC, NCHW.
+  lite::Tensor* Out{};
+};
+
+struct AnchorGeneratorParam {
+  const lite::Tensor* Input{};
+  std::vector<float> anchor_sizes{};
+  std::vector<float> aspect_ratios{};
+  std::vector<float> stride{};
+  std::vector<float> variances{{0.1, 0.1, 0.2, 0.2}};
+  float offset{0.5};
+
+  lite::Tensor* Anchors{};
+  lite::Tensor* Variances{};
+};
+
+struct GenerateProposalsParam {
+  // inputs
+  const lite::Tensor* Scores{};
+  const lite::Tensor* BboxDeltas{};
+  const lite::Tensor* ImInfo{};
+  lite::Tensor* Anchors{};
+  lite::Tensor* Variances{};
+
+  // attrs
+  int pre_nms_topN{6000};
+  int post_nms_topN{1000};
+  float nms_thresh{0.5};
+  float min_size{0.1};
+  float eta{1.0};
+
+  // outputs
+  lite::Tensor* RpnRois{};
+  lite::Tensor* RpnRoiProbs{};
+};
+/// ----------------------- shape operators ----------------------
 /// ----------------------- squeeze operators ----------------------
 struct SqueezeParam {
   const lite::Tensor* X{};
@@ -725,6 +765,16 @@ struct AssignParam {
   const lite::Tensor* X{};
   lite::Tensor* Out{};
 };
+struct RoiAlignParam {
+  lite::Tensor* X{};
+  lite::Tensor* ROIs{};
+  lite::Tensor* Out{};
+  float spatial_scale{1.0};
+  int pooled_height{1};
+  int pooled_width{1};
+  int sampling_ratio{-1};
+};
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle
