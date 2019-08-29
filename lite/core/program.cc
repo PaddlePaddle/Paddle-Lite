@@ -39,6 +39,9 @@ void RuntimeProgram::SaveOpInfosToProgram(cpp::ProgramDesc* desc) {
   }
 }
 
+// `UpdateVarsOfProgram` will remove unused var_descs and add new created
+// vars' descs in the block 0. Now, the type of a new created var can only
+// be LOD_TENSOR.
 void RuntimeProgram::UpdateVarsOfProgram(cpp::ProgramDesc* desc) {
   CHECK(desc);
   CHECK(desc->BlocksSize());
@@ -66,7 +69,7 @@ void RuntimeProgram::UpdateVarsOfProgram(cpp::ProgramDesc* desc) {
         v->SetType((it->second).GetType());
         v->SetPersistable((it->second).Persistable());
       } else {
-        // New created vas must be LOD_TENSOR
+        // New created vars must be LOD_TENSOR
         auto* v = main_block.AddVar<cpp::VarDesc>();
         v->SetName(in_name);
         v->SetType(cpp::VarDesc::Type::LOD_TENSOR);
@@ -90,7 +93,7 @@ void RuntimeProgram::UpdateVarsOfProgram(cpp::ProgramDesc* desc) {
         v->SetType((it->second).GetType());
         v->SetPersistable((it->second).Persistable());
       } else {
-        // New created vas must be LOD_TENSOR
+        // New created vars must be LOD_TENSOR
         auto* v = main_block.AddVar<cpp::VarDesc>();
         v->SetName(out_name);
         v->SetType(cpp::VarDesc::Type::LOD_TENSOR);
