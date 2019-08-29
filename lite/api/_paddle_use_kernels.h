@@ -45,6 +45,7 @@ USE_LITE_KERNEL(box_coder, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(conv2d, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(depthwise_conv2d, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(elementwise_add, kARM, kFloat, kNCHW, def);
+USE_LITE_KERNEL(elementwise_sub, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(elementwise_mul, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(elementwise_max, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(elementwise_div, kARM, kFloat, kNCHW, def);
