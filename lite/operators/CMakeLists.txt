@@ -94,10 +94,6 @@ add_operator(write_to_array_op extra SRCS write_to_array_op.cc DEPS ${op_DEPS})
 add_operator(topk_op extra SRCS topk_op.cc DEPS ${op_DEPS})
 add_operator(increment_op extra SRCS increment_op.cc DEPS ${op_DEPS})
 add_operator(sequence_softmax_op extra SRCS sequence_softmax_op.cc DEPS ${op_DEPS})
-add_operator(affine_channel_op extra SRCS affine_channel_op.cc DEPS ${op_DEPS})
-add_operator(anchor_generator_op extra SRCS anchor_generator_op.cc DEPS ${op_DEPS})
-add_operator(generate_proposals_op extra SRCS generate_proposals_op.cc DEPS ${op_DEPS})
-add_operator(roi_align_op extra SRCS roi_align_op.cc DEPS ${op_DEPS})
 
 
 if (NOT LITE_WITH_X86)
