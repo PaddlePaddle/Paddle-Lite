@@ -584,7 +584,7 @@ void LoadCombinedParamsNaive(const std::string &path,
                              bool params_from_memory) {
   naive_buffer::BinaryTable table;
   if (params_from_memory) {
-    table.LoadFromBuffer(path.c_str(), path.length());
+    table.LoadFromMemory(path.c_str(), path.length());
   } else {
     table.LoadFromFile(path);
   }
@@ -612,12 +612,75 @@ void LoadCombinedParamsNaive(const std::string &path,
 }
 
 void LoadModelNaive(const std::string &model_dir,
-                    const std::string &model_file,
-                    const std::string &param_file,
                     Scope *scope,
                     cpp::ProgramDesc *cpp_prog,
-                    bool combined,
-                    bool model_from_memory) {
+                    bool combined) {
+  CHECK(cpp_prog);
+  CHECK(scope);
+  cpp_prog->ClearBlocks();
+
+  // Load model
+  const std::string prog_path = model_dir + "/__model__.nb";
+  naive_buffer::BinaryTable table;
+  table.LoadFromFile(prog_path);
+  naive_buffer::proto::ProgramDesc nb_proto_prog(&table);
+  nb_proto_prog.Load();
+  naive_buffer::ProgramDesc nb_prog(&nb_proto_prog);
+
+  // Transform to cpp::ProgramDesc
+  TransformProgramDescAnyToCpp(nb_prog, cpp_prog);
+
+  // Load Params
+  // NOTE: Only main block be used now.
+  if (combined) {
+    const std::string combined_params_path = model_dir + "/param.nb";
+    LoadCombinedParamsNaive(combined_params_path, scope, *cpp_prog);
+  } else {
+    auto &prog = *cpp_prog;
+    auto &main_block_desc = *prog.GetBlock<cpp::BlockDesc>(0);
+    for (size_t i = 0; i < main_block_desc.VarsSize(); ++i) {
+      auto &var = *main_block_desc.GetVar<cpp::VarDesc>(i);
+      if (var.Name() == "feed" || var.Name() == "fetch" || !var.Persistable())
+        continue;
+
+      std::string file_path = model_dir + "/" + var.Name() + ".nb";
+      VLOG(4) << "reading weight " << var.Name();
+
+      switch (var.GetType()) {
+        case VarDescAPI::Type::LOD_TENSOR:
+          LoadParamNaive(file_path, scope, var.Name());
+          break;
+        default:
+          CHECK(false) << "unknown weight type";
+      }
+    }
+  }
+
+#ifdef LITE_WITH_NPU
+  auto &prog = *cpp_prog;
+  auto &main_block_desc = *prog.GetBlock<cpp::BlockDesc>(0);
+  for (size_t i = 0; i < main_block_desc.OpsSize(); ++i) {
+    auto &op = *main_block_desc.GetOp<cpp::OpDesc>(i);
+    if (op.Type() != "graph_op") {
+      continue;
+    }
+    auto model_name = op.GetAttr<std::string>("model_name");
+    std::string file_path = model_dir + "/" + model_name;
+    CHECK(npu::BuildNPUClient(file_path, model_name))
+        << "NPU model load failed!";
+  }
+#endif
+
+  VLOG(4) << "Load naive buffer model in '" << model_dir << "' successfully";
+}
+
+void LoadModelNaiveFromMemory(const std::string &model_dir,
+                              const std::string &model_file,
+                              const std::string &param_file,
+                              Scope *scope,
+                              cpp::ProgramDesc *cpp_prog,
+                              bool combined,
+                              bool model_from_memory) {
   CHECK(cpp_prog);
   CHECK(scope);
   cpp_prog->ClearBlocks();
@@ -629,7 +692,7 @@ void LoadModelNaive(const std::string &model_dir,
   }
   naive_buffer::BinaryTable table;
   if (model_from_memory) {
-    table.LoadFromBuffer(prog_path.c_str(), prog_path.length());
+    table.LoadFromMemory(prog_path.c_str(), prog_path.length());
   } else {
     table.LoadFromFile(prog_path);
   }

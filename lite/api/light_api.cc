@@ -23,7 +23,6 @@ void LightPredictor::Build(const lite_api::MobileConfig& config,
   const std::string& model_file = config.model_file();
   const std::string& param_file = config.param_file();
   const bool model_from_memory = config.model_from_memory();
-  LOG(INFO) << "load from memory " << model_from_memory;
 
   Build(model_path, model_file, param_file, model_type, model_from_memory);
 }
@@ -34,7 +33,6 @@ void LightPredictor::Build(const std::string& model_dir,
                            lite_api::LiteModelType model_type,
                            bool model_from_memory) {
   cpp::ProgramDesc desc;
-  LOG(INFO) << "Load model from " << model_dir;
   switch (model_type) {
 #ifndef LITE_ON_TINY_PUBLISH
     case lite_api::LiteModelType::kProtobuf:
@@ -43,23 +41,13 @@ void LightPredictor::Build(const std::string& model_dir,
 #endif
     case lite_api::LiteModelType::kNaiveBuffer: {
       bool combined_param = true;
-      /*      	if (!model_file_path.empty() && !param_file_path.empty()) {
-                combined_param = true;
-              }	*/
-      if (combined_param) {
-        LOG(INFO) << "combined param!";
-      } else {
-        LOG(INFO) << "seperated param!";
-        LOG(INFO) << "model file path:" << model_file_path;
-        LOG(INFO) << "param file path:" << param_file_path;
-      }
-      LoadModelNaive(model_dir,
-                     model_file_path,
-                     param_file_path,
-                     scope_.get(),
-                     &desc,
-                     combined_param,
-                     model_from_memory);
+      LoadModelNaiveFromMemory(model_dir,
+                               model_file_path,
+                               param_file_path,
+                               scope_.get(),
+                               &desc,
+                               combined_param,
+                               model_from_memory);
       break;
     }
     default:

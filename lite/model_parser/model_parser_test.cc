@@ -137,30 +137,13 @@ TEST(ModelParser, SaveModelNaive) {
   SaveModelNaive(save_pb_model_path, scope, prog);
 }
 
-TEST(ModelParser, LoadModelNaive) {
+TEST(ModelParser, LoadModelNaiveFromMemory) {
   CHECK(!FLAGS_model_dir.empty());
   cpp::ProgramDesc prog;
   Scope scope;
   const std::string model_path = FLAGS_model_dir + ".saved.naive";
-  LoadModelNaive(model_path, "", "", &scope, &prog);
+  LoadModelNaiveFromMemory(model_path, "", "", &scope, &prog);
 }
-
-/*TEST(ModelParser, LoadModelNaiveFromMemory) {
-  CHECK(!FLAGS_model_dir.empty());
-  cpp::ProgramDesc prog;
-  Scope scope;
-  auto model_path = std::string(FLAGS_model_dir) + ".saved.naive"+
-"/__model__.nb";
-  auto params_path = std::string(FLAGS_model_dir) + ".saved.naive" +
-"/param.nb";
-  char *bufModel = nullptr;
-  size_t sizeBuf = ReadBuffer(model_path.c_str(), &bufModel);
-  char *bufParams = nullptr;
-  std::cout << "sizeBuf: " << sizeBuf << std::endl;
-  size_t sizeParams = ReadBuffer(params_path.c_str(), &bufParams);
-  std::cout << "sizeParams: " << sizeParams << std::endl;
-  LoadModelNaive(model_path, bufModel, bufParams, &scope, &prog,true,true);
-}*/
 
 }  // namespace lite
 }  // namespace paddle

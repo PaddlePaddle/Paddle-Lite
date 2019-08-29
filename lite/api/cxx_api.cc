@@ -107,13 +107,13 @@ void Predictor::Build(const std::string &model_path,
     case lite_api::LiteModelType::kNaiveBuffer:
       CHECK(!model_path.empty())
           << "NaiveBuffer backend only supported combined param";
-      LoadModelNaive(model_path,
-                     model_file,
-                     param_file,
-                     scope_.get(),
-                     &program_desc_,
-                     true,
-                     false);
+      LoadModelNaiveFromMemory(model_path,
+                               model_file,
+                               param_file,
+                               scope_.get(),
+                               &program_desc_,
+                               true,
+                               false);
       break;
     default:
       LOG(FATAL) << "Unknown model type";
