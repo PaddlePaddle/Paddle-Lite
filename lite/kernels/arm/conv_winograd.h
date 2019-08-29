@@ -13,29 +13,37 @@
 // limitations under the License.
 
 #pragma once
+
 #include <cmath>
+#include "lite/arm/math/conv_impl.h"
 #include "lite/core/context.h"
+#include "lite/core/kernel.h"
+#include "lite/core/target_wrapper.h"
 
 namespace paddle {
 namespace lite {
+namespace kernels {
 namespace arm {
-namespace math {
 
-// fixme now only support transA = false
-template <typename dtype>
-bool gemv_int8(const int8_t* A,
-               const int8_t* x,
-               dtype* y,
-               bool transA,
-               int M,
-               int N,
-               const float* scale,
-               bool is_bias,
-               const float* bias,
-               bool is_relu,
-               const ARMContext* ctx);
+/// only support 3x3s1 and 3x3s2
+template <PrecisionType Ptype, PrecisionType OutType>
+class WinogradConv : public KernelLite<TARGET(kARM), Ptype> {
+ public:
+  WinogradConv() = default;
+  ~WinogradConv() {}
+  virtual void PrepareForRun() {
+    LOG(FATAL) << "WinogradConv PrepareForRun not implemented";
+  }
+  virtual void Init() { LOG(FATAL) << "WinogradConv Init not implemented"; }
+  virtual void Run() { LOG(FATAL) << "WinogradConv Run not implemented"; }
 
-}  // namespace math
+ protected:
+  using param_t = operators::ConvParam;
+  Tensor weights_;
+  DDim last_shape_;
+};
+
 }  // namespace arm
+}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

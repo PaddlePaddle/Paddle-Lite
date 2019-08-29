@@ -50,6 +50,7 @@ if (NOT HAS_ARM_MATH_LIB_DIR)
       funcs.cc 
       packed_sgemm.cc
       sgemm.cc
+      gemm_s8.cc
       softmax.cc 
       scale.cc
       pooling.cc
@@ -62,19 +63,15 @@ if (NOT HAS_ARM_MATH_LIB_DIR)
       type_trans.cc
       box_coder.cc
       conv_impl.cc
-      conv_direct_3x3s1.cc
-      conv_direct_3x3s2.cc
-      conv_direct.cc
+      conv3x3s1_direct_fp32.cc
+      conv3x3s2_direct_fp32.cc
       conv_depthwise_3x3_int8.cc
       conv_depthwise_5x5s1_int8.cc
       conv_depthwise_3x3p0.cc
       conv_depthwise_3x3p1.cc
       conv_depthwise_5x5s1.cc
       conv_depthwise_5x5s2.cc
-      conv_depthwise.cc
-      conv_gemmlike.cc
       conv_winograd_3x3.cc
-      conv_winograd.cc
       split.cc
       shuffle_channel.cc
       activation.cc

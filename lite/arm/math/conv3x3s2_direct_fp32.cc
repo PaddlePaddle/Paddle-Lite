@@ -51,12 +51,7 @@ void conv_3x3s2_direct_fp32(const float* i_data,
   const int win_round = wout_round * 2 /*stride_w*/ + 1;
   bool flag_relu = param.fuse_relu;
   bool flag_bias = param.bias != nullptr;
-  // if (param.activation_param.has_active) {
-  //   if (param.activation_param.active == Active_relu &&
-  //       fabs(param.activation_param.negative_slope) < 1e-6f) {
-  //     flag_relu = true;
-  //   }
-  // }
+
   //! get h block
   //! win_round * ic * hin_r_block + wout_round * hout_c_block * hout_r_block
   //! * threads = l2_size

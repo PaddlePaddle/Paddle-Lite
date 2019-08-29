@@ -28,14 +28,14 @@ namespace math {
 constexpr int MBLOCK = 8;
 constexpr int NBLOCK = 12;
 constexpr int KBLOCK = 4;
-inline int get_hblock(ARMArch arch) { return MBLOCK; }
+inline int get_hblock(ARMContext* ctx) { return MBLOCK; }
 #else
 constexpr int MBLOCK_A73 = 4;
 constexpr int MBLOCK_OTH = 6;
 constexpr int NBLOCK = 8;
 constexpr int KBLOCK = 4;
-inline int get_hblock(ARMArch arch) {
-  if (arch == kA73) {
+inline int get_hblock(ARMContext* ctx) {
+  if (ctx->arch() == kA73) {
     return MBLOCK_A73;
   } else {
     return MBLOCK_OTH;

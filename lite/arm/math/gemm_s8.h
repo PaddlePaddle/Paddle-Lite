@@ -13,27 +13,31 @@
 // limitations under the License.
 
 #pragma once
+
 #include <cmath>
+#include "lite/arm/math/gemm_prepacked_int8.h"
 #include "lite/core/context.h"
+#include "lite/core/cpu_info.h"
 
 namespace paddle {
 namespace lite {
 namespace arm {
 namespace math {
 
-// fixme now only support transA = false
-template <typename dtype>
-bool gemv_int8(const int8_t* A,
-               const int8_t* x,
-               dtype* y,
-               bool transA,
-               int M,
-               int N,
-               const float* scale,
-               bool is_bias,
-               const float* bias,
-               bool is_relu,
-               const ARMContext* ctx);
+template <typename Dtype>
+void gemm_s8(bool is_transA,
+             bool is_transB,
+             int M,
+             int N,
+             int K,
+             const int8_t* A,
+             const int8_t* B,
+             Dtype* C,
+             const float* bias,
+             bool is_bias,
+             bool is_relu,
+             const float* scale,
+             ARMContext* ctx);
 
 }  // namespace math
 }  // namespace arm

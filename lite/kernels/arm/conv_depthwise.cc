@@ -12,50 +12,128 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/arm/math/conv_depthwise.h"
+#include "lite/kernels/arm/conv_depthwise.h"
 #include "lite/arm/math/conv_block_utils.h"
 #include "lite/arm/math/conv_impl.h"
 
 namespace paddle {
 namespace lite {
+namespace kernels {
 namespace arm {
-namespace math {
 
 template <>
-bool DepthwiseConv<PRECISION(kFloat)>::create(const operators::ConvParam& param,
-                                              ARMContext* ctx) {
-  this->ctx_ = ctx;
-  auto x_dims = param.x->dims();
+void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
+  auto& param = this->template Param<param_t>();
+  CHECK(this->ctx_);
+  auto& ctx = this->ctx_->template As<ARMContext>();
   auto w_dims = param.filter->dims();
-  auto o_dims = param.output->dims();
-
-  int iw = x_dims[3];  // nchw
-  int ic = x_dims[1];
-  int ow = o_dims[3];
-  int oc = o_dims[1];
   int kw = w_dims[3];
-  int sw = param.strides[1];
   // select dw conv kernel
   if (kw == 3) {
-    VLOG(5) << "invoke 3x3 dw conv";
-    impl_ = conv_depthwise_3x3;
+    VLOG(5) << "invoke 3x3 dw conv fp32";
+    impl_ = lite::arm::math::conv_depthwise_3x3_fp32;
   } else if (kw == 5) {
-    VLOG(5) << "invoke 5x5 dw conv";
-    this->ctx_->ExtendWorkspace((iw + ow) * sizeof(float));
-    impl_ = conv_depthwise_5x5;
+    VLOG(5) << "invoke 5x5 dw conv fp32";
+    ctx.ExtendWorkspace((iw + ow) * sizeof(float));
+    impl_ = lite::arm::math::conv_depthwise_5x5_fp32;
   } else {
-    LOG(ERROR) << "this type dw conv not impl";
-    return false;
+    LOG(FATAL) << "this type dw conv not impl";
   }
-  return true;
 }
 
 template <>
-bool DepthwiseConv<PRECISION(kFloat)>::init(const operators::ConvParam& param,
-                                            Context<TARGET(kARM)>* ctx) {
-  this->ctx_ = ctx;
-  return create(param, ctx);
+void DepthwiseConv<PRECISION(kInt8), PRECISION(kFloat)>::PrepareForRun() {
+  auto& param = this->template Param<param_t>();
+  CHECK(this->ctx_);
+  auto& ctx = this->ctx_->template As<ARMContext>();
+  auto w_dims = param.filter->dims();
+  int kw = w_dims[3];
+  int oc = w_dims[0];
+  /// update scale
+  float in_scale = param.input_scale;
+  auto& scale = param.weight_scale;
+  CHECK(scale.size() == 1 || scale.size() == oc)
+      << "weights scale size must = filter size or = 1";
+  w_scale_.resize(oc);
+  for (int i = 0; i < oc; ++i) {
+    if (scale.size() == 1) {
+      w_scale_[i] = scale[0] * in_scale;
+    } else {
+      w_scale_[i] = scale[i] * in_scale;
+    }
+  }
+  /// select dw conv kernel
+  if (kw == 3) {
+    VLOG(5) << "invoke 3x3 dw conv int8 kernel fp32 out";
+    impl_ = lite::arm::math::conv_depthwise_3x3_int8_fp32;
+    int cround = ROUNDUP(w_dims[0], 8);
+    weights_.Resize({cround / 8, _param->_kh * _param->_kw, 8});
+    auto wptr = param.filter->data<int8_t>();
+    auto wptr_new = weights_.mutable_data<int8_t>();
+    lite::arm::math::conv_trans_weights_numc(wptr, wptr_new, chout, 1, 8, 9);
+    flag_trans_weights_ = true;
+  } else if (kw == 5) {
+    VLOG(5) << "invoke 5x5 dw conv int8 kernel fp32 out";
+    ctx.ExtendWorkspace((iw + ow) * sizeof(float));
+    impl_ = lite::arm::math::conv_depthwise_5x5_fp32;
+  } else {
+    LOG(FATAL) << "this type dw conv not impl";
+  }
 }
+
+template <>
+void DepthwiseConv<PRECISION(kInt8), PRECISION(kInt8)>::PrepareForRun() {
+  auto& param = this->template Param<param_t>();
+  CHECK(this->ctx_);
+  auto& ctx = this->ctx_->template As<ARMContext>();
+  auto w_dims = param.filter->dims();
+  int kw = w_dims[3];
+  int oc = w_dims[0];
+  /// update scale
+  float in_scale = param.input_scale;
+  float out_scale = param.output_scale;
+  auto& scale = param.weight_scale;
+  CHECK(scale.size() == 1 || scale.size() == oc)
+      << "weights scale size must = filter size or = 1";
+  w_scale_.resize(oc);
+  for (int i = 0; i < oc; ++i) {
+    if (scale.size() == 1) {
+      w_scale_[i] = scale[0] * in_scale / out_scale;
+    } else {
+      w_scale_[i] = scale[i] * in_scale / out_scale;
+    }
+  }
+  /// update bias
+  if (param.bias) {
+    bias_.Resize(param.bias->dims());
+    auto ptr = bias_.mutable_data<float>();
+    auto ptr_in = param.bias->data<float>();
+    for (int i = 0; i < bias_->numel(); ++i) {
+      ptr[i] = ptr_in[i] / out_scale;
+    }
+    flag_trans_bias_ = true;
+  }
+  /// select dw conv kernel
+  if (kw == 3) {
+    VLOG(5) << "invoke 3x3 dw conv int8 kernel int8 out";
+    impl_ = lite::arm::math::conv_depthwise_3x3_int8_int8;
+    int cround = ROUNDUP(w_dims[0], 8);
+    weights_.Resize({cround / 8, _param->_kh * _param->_kw, 8});
+    auto wptr = param.filter->data<int8_t>();
+    auto wptr_new = weights_.mutable_data<int8_t>();
+    lite::arm::math::conv_trans_weights_numc(wptr, wptr_new, chout, 1, 8, 9);
+    flag_trans_weights_ = true;
+  } else if (kw == 5) {
+    VLOG(5) << "invoke 5x5 dw conv int8 kernel int8 out";
+    ctx.ExtendWorkspace((iw + ow) * sizeof(float));
+    impl_ = lite::arm::math::conv_depthwise_5x5_int8_int8;
+  } else {
+    LOG(FATAL) << "this type dw conv not impl";
+  }
+}
+
+template <>
+void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {}
 
 template <>
 bool DepthwiseConv<PRECISION(kFloat)>::run(const operators::ConvParam& param) {
@@ -229,11 +307,7 @@ bool DepthwiseConvInt8<Ptype_out>::run(const operators::ConvParam& param) {
   return true;
 }
 
-template class DepthwiseConvInt8<PRECISION(kInt8)>;
-template class DepthwiseConvInt8<PRECISION(kFloat)>;
-template class DepthwiseConvInt8<PRECISION(kInt32)>;
-
-}  // namespace math
 }  // namespace arm
+}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
