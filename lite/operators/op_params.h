@@ -653,13 +653,19 @@ struct BeamSearchParam {
   const lite::Tensor* pre_scores{};
   const lite::Tensor* ids{};
   const lite::Tensor* scores{};
+  const lite::Tensor* src_length;
+  const lite::Tensor* cur_length;
   lite::Tensor* selected_ids{};
   lite::Tensor* selected_scores{};
   lite::Tensor* parent_idx{};
+  lite::Tensor* finish_ids{};
+  lite::Tensor* finish_scores{};
   int level;
   int beam_size;
   int end_id;
   bool is_accumulated;
+  int decode_length;
+  float alpha;
 };
 
 struct SequencePoolParam {
