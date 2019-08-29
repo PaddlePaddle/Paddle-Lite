@@ -126,8 +126,6 @@ void LoadLoDTensor(std::istream &is, Variable *var) {
   TensorFromStream(is, tensor);
 }
 
-// TODO(Superjomn) support SelectedRows.
-
 void ReadBinaryFile(const std::string &filename, std::string *contents) {
   std::ifstream fin(filename, std::ios::in | std::ios::binary);
   CHECK(fin.is_open()) << "Cannot open file: " << filename;
@@ -163,7 +161,6 @@ void LoadParam(const std::string &path, Variable *out) {
   LoadLoDTensor(fin, out);
 }
 
-//
 bool IsPersistable(const cpp::VarDesc &var) {
   if (var.Persistable() && var.GetType() != VarDescAPI::Type::FEED_MINIBATCH &&
       var.GetType() != VarDescAPI::Type::FETCH_LIST &&
