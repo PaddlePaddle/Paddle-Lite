@@ -113,6 +113,10 @@ USE_LITE_OP(is_empty)
 USE_LITE_OP(shape)
 USE_LITE_OP(slice)
 USE_LITE_OP(cast)
+USE_LITE_OP(affine_channel)
+USE_LITE_OP(anchor_generator)
+USE_LITE_OP(generate_proposals)
 USE_LITE_OP(squeeze)   // for x2paddle
 USE_LITE_OP(squeeze2)  // for x2paddle
 USE_LITE_OP(expand)    // for x2paddle
+USE_LITE_OP(roi_align)
