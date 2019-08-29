@@ -247,6 +247,7 @@ void LoadModelPb(const std::string &model_dir,
   }
 
 #ifdef LITE_WITH_NPU
+  auto main_block = pb_proto_prog.blocks(0);
   for (auto &op : main_block.ops()) {
     LOG(INFO) << "op type:" << op.type();
     if (op.type() != "graph_op") {

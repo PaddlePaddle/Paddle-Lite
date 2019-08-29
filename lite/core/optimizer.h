@@ -109,6 +109,28 @@ class Optimizer {
 
   // Generate a new program based on the mir graph.
   std::unique_ptr<RuntimeProgram> GenRuntimeProgram() {
+#ifdef LITE_WITH_NPU
+    if (std::find(valid_places_.begin(),
+                  valid_places_.end(),
+                  Place{TARGET(kNPU), PRECISION(kFloat)}) !=
+        valid_places_.end()) {
+      CheckInputDimsNotEmpty(exec_scope_);
+      auto pass = mir::PassManager::Global()
+                      .LookUp<mir::subgraph::GenerateNPUProgramPass>(
+                          "generate_npu_program_pass");
+      pass->Apply(graph_);
+
+      auto program = pass->GenProgram();
+      if (program) {
+        CHECK(exec_scope_);
+        program->set_exec_scope(exec_scope_);
+        return program;
+      } else {
+        LOG(WARNING) << "Build NPU graph failed.";
+      }
+    }
+
+#endif
     auto pass = mir::PassManager::Global().LookUp<mir::GenerateProgramPass>(
         "generate_program_pass");
     pass->Apply(graph_);
@@ -129,24 +151,6 @@ class Optimizer {
       CHECK(!feed_tensor_list->at(i).dims().empty())
           << "Input " << i << " dims can not be empty.";
     }
-  }
-
-  std::unique_ptr<RuntimeProgram> GenNPURuntimeProgram() {
-#ifdef LITE_WITH_NPU
-    CheckInputDimsNotEmpty(exec_scope_);
-    auto pass = mir::PassManager::Global()
-                    .LookUp<mir::subgraph::GenerateNPUProgramPass>(
-                        "generate_npu_program_pass");
-    pass->Apply(graph_);
-
-    auto program = pass->GenProgram();
-    CHECK(exec_scope_);
-    program->set_exec_scope(exec_scope_);
-    return program;
-#else
-    LOG(WARNING) << "Not compiled with NPU but use it!";
-    return GenRuntimeProgram();
-#endif
   }
 
   void InitTargetTypeTransformPass() {
