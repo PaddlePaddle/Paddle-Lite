@@ -95,7 +95,7 @@ const std::string& PrecisionRepr(PrecisionType precision) {
                                                  "kFloat",
                                                  "kInt8",
                                                  "kInt32",
-                                                 "kAny"
+                                                 "kAny",
                                                  "kFP16",
                                                  "kBool",
                                                  "kInt64",
