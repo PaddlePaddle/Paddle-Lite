@@ -103,6 +103,8 @@ if (NOT HAS_ARM_MATH_LIB_DIR)
       sequence_pool.cc
       sequence_expand.cc
       slice.cc
+      reduce_mean.cc
+      stack.cc
 			affine_channel.cc
 			anchor_generator.cc
       DEPS ${lite_kernel_deps})
