@@ -26,6 +26,9 @@ class YoloBoxCompute : public KernelLite<TARGET(kCUDA), PRECISION(kFloat)> {
 
   void Run() override;
   virtual ~YoloBoxCompute() = default;
+
+ private:
+  lite::Tensor anchors_;
 };
 
 }  // namespace cuda

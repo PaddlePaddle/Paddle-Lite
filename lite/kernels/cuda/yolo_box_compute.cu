@@ -179,12 +179,12 @@ void YoloBoxCompute::Run() {
   const int an_num = anchors.size() / 2;
   int input_size = downsample_ratio * h;
 
-  int* d_anchors;
-  cudaMalloc(&d_anchors, sizeof(int) * anchors.size());
-  cudaMemcpy(d_anchors,
-             anchors.data(),
-             sizeof(int) * anchors.size(),
-             cudaMemcpyHostToDevice);
+  anchors_.Resize(static_cast<int>({anchors.size()}));
+  int* d_anchors = anchors_.mutable_data<int>(TARGET(kCUDA));
+  CopySync<TARGET(kCUDA)>(d_anchors,
+                          anchors.data(),
+                          sizeof(int) * anchors.size(),
+                          IoDirection::HtoD);
 
   int threads = 512;
   int blocks = (n * box_num + threads - 1) / threads;
@@ -203,7 +203,6 @@ void YoloBoxCompute::Run() {
                                                      class_num,
                                                      box_num,
                                                      input_size);
-  cudaFree(d_anchors);
   cudaError_t error = cudaGetLastError();
   if (error != cudaSuccess) LOG(INFO) << cudaGetErrorString(error);
 }
