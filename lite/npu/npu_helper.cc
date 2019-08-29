@@ -56,6 +56,7 @@ bool BuildNPUClient(const void* om_model_data,
   if (ret != hiai::AI_SUCCESS) {
     LOG(WARNING) << "[NPU] Failed building NPU client " << name
                  << ", ret: " << ret;
+    throw std::runtime_error("");
     return false;
   }
 
@@ -71,6 +72,7 @@ bool BuildNPUClient(const void* om_model_data,
   model_desc.push_back(desc);
   if (client->Load(model_desc) != hiai::AI_SUCCESS) {
     LOG(WARNING) << "[NPU] Model Load Failed: " << desc->GetName();
+    throw std::runtime_error("");
     return false;
   }
 
