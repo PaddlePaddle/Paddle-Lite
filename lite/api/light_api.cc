@@ -17,8 +17,22 @@
 namespace paddle {
 namespace lite {
 
-void LightPredictor::Build(const std::string& model_dir,
+void LightPredictor::Build(const lite_api::MobileConfig& config,
                            lite_api::LiteModelType model_type) {
+  const std::string& model_path = config.model_dir();
+  const std::string& model_file = config.model_file();
+  const std::string& param_file = config.param_file();
+  const bool model_from_memory = config.model_from_memory();
+  LOG(INFO) << "load from memory " << model_from_memory;
+
+  Build(model_path, model_file, param_file, model_type, model_from_memory);
+}
+
+void LightPredictor::Build(const std::string& model_dir,
+                           const std::string& model_file_path,
+                           const std::string& param_file_path,
+                           lite_api::LiteModelType model_type,
+                           bool model_from_memory) {
   cpp::ProgramDesc desc;
   LOG(INFO) << "Load model from " << model_dir;
   switch (model_type) {
@@ -27,9 +41,27 @@ void LightPredictor::Build(const std::string& model_dir,
       LoadModelPb(model_dir, "", "", scope_.get(), &desc);
       break;
 #endif
-    case lite_api::LiteModelType::kNaiveBuffer:
-      LoadModelNaive(model_dir, scope_.get(), &desc);
+    case lite_api::LiteModelType::kNaiveBuffer: {
+      bool combined_param = true;
+      /*      	if (!model_file_path.empty() && !param_file_path.empty()) {
+                combined_param = true;
+              }	*/
+      if (combined_param) {
+        LOG(INFO) << "combined param!";
+      } else {
+        LOG(INFO) << "seperated param!";
+        LOG(INFO) << "model file path:" << model_file_path;
+        LOG(INFO) << "param file path:" << param_file_path;
+      }
+      LoadModelNaive(model_dir,
+                     model_file_path,
+                     param_file_path,
+                     scope_.get(),
+                     &desc,
+                     combined_param,
+                     model_from_memory);
       break;
+    }
     default:
       LOG(FATAL) << "Unknown model type";
   }
@@ -83,10 +115,10 @@ void LightPredictor::BuildRuntimeProgram(const cpp::ProgramDesc& prog) {
   program_->set_exec_scope(program.exec_scope());
 }
 
-LightPredictor::LightPredictor(const std::string& model_dir,
+LightPredictor::LightPredictor(const lite_api::MobileConfig& config,
                                lite_api::LiteModelType model_type) {
   scope_ = std::make_shared<Scope>();
-  Build(model_dir, model_type);
+  Build(config, model_type);
 }
 
 }  // namespace lite

@@ -22,6 +22,24 @@ DEFINE_string(model_dir, "", "");
 namespace paddle {
 namespace lite {
 
+static size_t ReadBuffer(const char* file_name, char** out) {
+  FILE* fp;
+  fp = fopen(file_name, "rb");
+  CHECK(fp != nullptr) << " %s open failed !";
+  fseek(fp, 0, SEEK_END);
+  auto size = static_cast<size_t>(ftell(fp));
+  rewind(fp);
+  LOG(INFO) << "model size: " << size;
+  *out = reinterpret_cast<char*>(malloc(size));
+  size_t cur_len = 0;
+  size_t nread;
+  while ((nread = fread(*out + cur_len, 1, size - cur_len, fp)) != 0) {
+    cur_len += nread;
+  }
+  fclose(fp);
+  return cur_len;
+}
+
 TEST(ModelParser, LoadProgram) {
   CHECK(!FLAGS_model_dir.empty());
   auto program = LoadProgram(FLAGS_model_dir + "/__model__");
@@ -124,8 +142,25 @@ TEST(ModelParser, LoadModelNaive) {
   cpp::ProgramDesc prog;
   Scope scope;
   const std::string model_path = FLAGS_model_dir + ".saved.naive";
-  LoadModelNaive(model_path, &scope, &prog);
+  LoadModelNaive(model_path, "", "", &scope, &prog);
 }
+
+/*TEST(ModelParser, LoadModelNaiveFromMemory) {
+  CHECK(!FLAGS_model_dir.empty());
+  cpp::ProgramDesc prog;
+  Scope scope;
+  auto model_path = std::string(FLAGS_model_dir) + ".saved.naive"+
+"/__model__.nb";
+  auto params_path = std::string(FLAGS_model_dir) + ".saved.naive" +
+"/param.nb";
+  char *bufModel = nullptr;
+  size_t sizeBuf = ReadBuffer(model_path.c_str(), &bufModel);
+  char *bufParams = nullptr;
+  std::cout << "sizeBuf: " << sizeBuf << std::endl;
+  size_t sizeParams = ReadBuffer(params_path.c_str(), &bufParams);
+  std::cout << "sizeParams: " << sizeParams << std::endl;
+  LoadModelNaive(model_path, bufModel, bufParams, &scope, &prog,true,true);
+}*/
 
 }  // namespace lite
 }  // namespace paddle

@@ -7,14 +7,14 @@ add_subdirectory(naive_buffer)
 #lite_cc_library(runtime_lite SRCS runtime.cc)
 
 #TODO(Superjomn) enable it again.
-if(NOT LITE_ON_MOBILE AND NOT LITE_ON_TINY_PUBLISH)
+#if(NOT LITE_ON_MOBILE AND NOT LITE_ON_TINY_PUBLISH)
     lite_cc_test(test_model_parser SRCS model_parser_test.cc
       DEPS model_parser framework_proto
       ARGS --model_dir=${LITE_MODEL_DIR}/lite_naive_model)
     if(WITH_TESTING)
         add_dependencies(test_model_parser extern_lite_download_lite_naive_model_tar_gz)
     endif(WITH_TESTING)
-endif()
+#endif()
 
 if (NOT LITE_ON_TINY_PUBLISH)
     lite_cc_library(compatible_pb SRCS compatible_pb.cc

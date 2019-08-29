@@ -580,9 +580,14 @@ void LoadParamNaive(const std::string &path,
 
 void LoadCombinedParamsNaive(const std::string &path,
                              lite::Scope *scope,
-                             const cpp::ProgramDesc &cpp_prog) {
+                             const cpp::ProgramDesc &cpp_prog,
+                             bool params_from_memory) {
   naive_buffer::BinaryTable table;
-  table.LoadFromFile(path);
+  if (params_from_memory) {
+    table.LoadFromBuffer(path.c_str(), path.length());
+  } else {
+    table.LoadFromFile(path);
+  }
   naive_buffer::proto::CombinedParamsDesc pt_desc(&table);
   pt_desc.Load();
   naive_buffer::CombinedParamsDesc desc(&pt_desc);
@@ -607,17 +612,27 @@ void LoadCombinedParamsNaive(const std::string &path,
 }
 
 void LoadModelNaive(const std::string &model_dir,
+                    const std::string &model_file,
+                    const std::string &param_file,
                     Scope *scope,
                     cpp::ProgramDesc *cpp_prog,
-                    bool combined) {
+                    bool combined,
+                    bool model_from_memory) {
   CHECK(cpp_prog);
   CHECK(scope);
   cpp_prog->ClearBlocks();
 
   // Load model
-  const std::string prog_path = model_dir + "/__model__.nb";
+  std::string prog_path = model_dir + "/__model__.nb";
+  if (model_from_memory) {
+    prog_path = model_file;
+  }
   naive_buffer::BinaryTable table;
-  table.LoadFromFile(prog_path);
+  if (model_from_memory) {
+    table.LoadFromBuffer(prog_path.c_str(), prog_path.length());
+  } else {
+    table.LoadFromFile(prog_path);
+  }
   naive_buffer::proto::ProgramDesc nb_proto_prog(&table);
   nb_proto_prog.Load();
   naive_buffer::ProgramDesc nb_prog(&nb_proto_prog);
@@ -627,9 +642,13 @@ void LoadModelNaive(const std::string &model_dir,
 
   // Load Params
   // NOTE: Only main block be used now.
+  std::string combined_params_path = model_dir + "/param.nb";
   if (combined) {
-    const std::string combined_params_path = model_dir + "/param.nb";
-    LoadCombinedParamsNaive(combined_params_path, scope, *cpp_prog);
+    if (model_from_memory) {
+      combined_params_path = param_file;
+    }
+    LoadCombinedParamsNaive(
+        combined_params_path, scope, *cpp_prog, model_from_memory);
   } else {
     auto &prog = *cpp_prog;
     auto &main_block_desc = *prog.GetBlock<cpp::BlockDesc>(0);

@@ -39,7 +39,7 @@ namespace lite {
 class LITE_API LightPredictor {
  public:
   explicit LightPredictor(
-      const std::string& model_dir,
+      const lite_api::MobileConfig& config,
       lite_api::LiteModelType model_type = lite_api::LiteModelType::kProtobuf);
 
   void Run() { program_->Run(); }
@@ -58,7 +58,14 @@ class LITE_API LightPredictor {
  private:
   void Build(
       const std::string& model_dir,
+      const std::string& model_file_path,
+      const std::string& param_file_path,
+      lite_api::LiteModelType model_type = lite_api::LiteModelType::kProtobuf,
+      bool model_from_memory = false);
+  void Build(
+      const lite_api::MobileConfig& config,
       lite_api::LiteModelType model_type = lite_api::LiteModelType::kProtobuf);
+
   void BuildRuntimeProgram(const cpp::ProgramDesc& prog);
 
  private:
