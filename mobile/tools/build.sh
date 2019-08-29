@@ -43,7 +43,7 @@ build_for_mac() {
 }
 
 build_for_android() {
-    #rm -rf "../build"
+    # rm -rf "../build"
     if [ -z "${NDK_ROOT}" ]; then
         echo "NDK_ROOT not found!"
         exit -1
@@ -51,7 +51,7 @@ build_for_android() {
 
     if [ -z "$PLATFORM" ]; then
         PLATFORM="arm-v7a"  # Users could choose "arm-v8a" platform.
-#        PLATFORM="arm-v8a"
+        PLATFORM="arm-v8a"
     fi
 
     if [ "${PLATFORM}" = "arm-v7a" ]; then
