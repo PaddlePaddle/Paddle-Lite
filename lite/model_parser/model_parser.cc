@@ -159,15 +159,63 @@ void LoadParam(const std::string &path, Variable *out) {
   LoadLoDTensor(fin, out);
 }
 
+//
+bool IsPersistable(const cpp::VarDesc &var) {
+  if (var.Persistable() && var.GetType() != VarDescAPI::Type::FEED_MINIBATCH &&
+      var.GetType() != VarDescAPI::Type::FETCH_LIST &&
+      var.GetType() != VarDescAPI::Type::RAW) {
+    return true;
+  }
+  return false;
+}
+
+void LoadCombinedParamsPb(const std::string &path,
+                          lite::Scope *scope,
+                          const cpp::ProgramDesc &cpp_prog) {
+  CHECK(scope);
+  auto prog = cpp_prog;
+  auto &main_block_desc = *prog.GetBlock<cpp::BlockDesc>(0);
+
+  // Get vars
+  std::vector<std::string> paramlist;
+  for (size_t i = 0; i < main_block_desc.VarsSize(); ++i) {
+    auto &var = *main_block_desc.GetVar<cpp::VarDesc>(i);
+    if (!IsPersistable(var)) continue;
+    paramlist.push_back(var.Name());
+  }
+  std::sort(paramlist.begin(), paramlist.end());
+
+  // Load vars
+  std::ifstream file(path);
+  CHECK(file.is_open());
+  for (size_t i = 0; i < paramlist.size(); ++i) {
+    auto *var = scope->Var(paramlist[i]);
+    // Error checking
+    CHECK(static_cast<bool>(file))
+        << "There is a problem with loading model parameters";
+    LoadLoDTensor(file, var);
+  }
+  file.peek();
+  CHECK(file.eof()) << "You are not allowed to load partial data via"
+                    << " LoadCombinedParamsPb, use LoadParam instead.";
+  file.close();
+}
+
 void LoadModelPb(const std::string &model_dir,
+                 const std::string &model_file,
+                 const std::string &param_file,
                  Scope *scope,
-                 cpp::ProgramDesc *cpp_prog) {
+                 cpp::ProgramDesc *cpp_prog,
+                 bool combined) {
   CHECK(cpp_prog);
   CHECK(scope);
   cpp_prog->ClearBlocks();
 
   // Load model
-  const std::string prog_path = model_dir + "/__model__";
+  std::string prog_path = model_dir + "/__model__";
+  if (combined) {
+    prog_path = model_file;
+  }
   framework::proto::ProgramDesc pb_proto_prog = *LoadProgram(prog_path);
   pb::ProgramDesc pb_prog(&pb_proto_prog);
 
@@ -176,24 +224,30 @@ void LoadModelPb(const std::string &model_dir,
 
   // Load Params
   // NOTE: Only main block be used now.
-  auto main_block = pb_proto_prog.blocks(0);
-  for (auto &var : main_block.vars()) {
-    if (var.name() == "feed" || var.name() == "fetch" || !var.persistable())
-      continue;
+  if (combined) {
+    LoadCombinedParamsPb(param_file, scope, *cpp_prog);
+  } else {
+    auto main_block = pb_proto_prog.blocks(0);
+    for (auto &var : main_block.vars()) {
+      if (var.name() == "feed" || var.name() == "fetch" || !var.persistable())
+        continue;
 
-    std::string file_path = model_dir + "/" + var.name();
-    VLOG(4) << "reading weight " << var.name();
+      std::string file_path = model_dir + "/" + var.name();
+      VLOG(4) << "reading weight " << var.name();
 
-    std::ifstream file(file_path);
-    switch (var.type().type()) {
-      case framework::proto::VarType_Type_LOD_TENSOR:
-        LoadLoDTensor(file, scope->Var(var.name()));
-        break;
-      default:
-        CHECK(false) << "unknown weight type";
+      std::ifstream file(file_path);
+      switch (var.type().type()) {
+        case framework::proto::VarType_Type_LOD_TENSOR:
+          LoadLoDTensor(file, scope->Var(var.name()));
+          break;
+        default:
+          CHECK(false) << "unknown weight type";
+      }
     }
   }
+
 #ifdef LITE_WITH_NPU
+  auto main_block = pb_proto_prog.blocks(0);
   for (auto &op : main_block.ops()) {
     LOG(INFO) << "op type:" << op.type();
     if (op.type() != "graph_op") {
@@ -216,14 +270,18 @@ void LoadModelPb(const std::string &model_dir,
 
 void SaveModelPb(const std::string &model_dir,
                  const Scope &exec_scope,
-                 const cpp::ProgramDesc &cpp_prog) {
+                 const cpp::ProgramDesc &cpp_prog,
+                 bool combined) {
   MkDirRecur(model_dir);
   // Save program
   framework::proto::ProgramDesc pb_proto_prog;
   pb::ProgramDesc pb_prog(&pb_proto_prog);
   TransformProgramDescCppToAny(cpp_prog, &pb_prog);
 
-  const std::string prog_path = model_dir + "/__model__";
+  std::string prog_path = model_dir + "/__model__";
+  if (combined) {
+    prog_path = model_dir + "/model";
+  }
   std::ofstream model_ostream(prog_path, std::ios_base::binary);
   CHECK(model_ostream.is_open());
   const std::string pb_str = pb_proto_prog.SerializeAsString();
@@ -232,16 +290,46 @@ void SaveModelPb(const std::string &model_dir,
 
   // Save Params
   // NOTE: Only main block be used now.
-  for (auto &item : pb_proto_prog.blocks(0).vars()) {
-    if (item.name() == "feed" || item.name() == "fetch" || !item.persistable())
-      continue;
-    const std::string path = model_dir + "/" + item.name();
-    std::ofstream var_ostream(path, std::ios::binary);
-    CHECK(var_ostream.is_open());
-    SerializeTensor(var_ostream, exec_scope, item.name());
-    var_ostream.close();
+  if (combined) {
+    const std::string combined_params_path = model_dir + "/params";
+    SaveCombinedParamsPb(combined_params_path, exec_scope, cpp_prog);
+  } else {
+    for (auto &item : pb_proto_prog.blocks(0).vars()) {
+      if (item.name() == "feed" || item.name() == "fetch" ||
+          !item.persistable())
+        continue;
+      const std::string path = model_dir + "/" + item.name();
+      std::ofstream var_ostream(path, std::ios::binary);
+      CHECK(var_ostream.is_open());
+      SerializeTensor(var_ostream, exec_scope, item.name());
+      var_ostream.close();
+    }
   }
   VLOG(4) << "Save protobuf model in '" << model_dir << "'' successfully";
+}
+
+void SaveCombinedParamsPb(const std::string &path,
+                          const lite::Scope &exec_scope,
+                          const cpp::ProgramDesc &cpp_prog) {
+  auto prog = cpp_prog;
+  auto &main_block_desc = *prog.GetBlock<cpp::BlockDesc>(0);
+
+  // Get vars
+  std::vector<std::string> paramlist;
+  for (size_t i = 0; i < main_block_desc.VarsSize(); ++i) {
+    auto &var = *main_block_desc.GetVar<cpp::VarDesc>(i);
+    if (!IsPersistable(var)) continue;
+    paramlist.push_back(var.Name());
+  }
+  std::sort(paramlist.begin(), paramlist.end());
+
+  // Load vars
+  std::ofstream file(path);
+  CHECK(file.is_open());
+  for (size_t i = 0; i < paramlist.size(); ++i) {
+    SerializeTensor(file, exec_scope, paramlist[i]);
+  }
+  file.close();
 }
 
 void TensorToStream(std::ostream &os, const lite::Tensor &tensor) {

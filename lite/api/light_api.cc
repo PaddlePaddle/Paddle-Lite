@@ -24,7 +24,7 @@ void LightPredictor::Build(const std::string& model_dir,
   switch (model_type) {
 #ifndef LITE_ON_TINY_PUBLISH
     case lite_api::LiteModelType::kProtobuf:
-      LoadModelPb(model_dir, scope_.get(), &desc);
+      LoadModelPb(model_dir, "", "", scope_.get(), &desc);
       break;
 #endif
     case lite_api::LiteModelType::kNaiveBuffer:

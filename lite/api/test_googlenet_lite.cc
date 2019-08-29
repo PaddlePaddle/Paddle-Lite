@@ -51,7 +51,7 @@ TEST(CXXApi, test_lite_googlenet) {
   //  LOG(INFO)<<"FLAGS_eval_googlenet_dir:"<<FLAGS_test_lite_googlenet_dir;
   std::string model_dir = FLAGS_model_dir;
   predictor.Build(
-      model_dir, Place{TARGET(kX86), PRECISION(kFloat)}, valid_places);
+      model_dir, "", "", Place{TARGET(kX86), PRECISION(kFloat)}, valid_places);
 
   auto* input_tensor = predictor.GetInput(0);
   input_tensor->Resize(DDim(std::vector<DDim::value_type>({1, 3, 224, 224})));

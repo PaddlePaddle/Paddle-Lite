@@ -33,7 +33,7 @@ void Predictor::SaveModel(const std::string &dir,
   program_->SaveOpInfosToProgram(&program_desc_);
   switch (model_type) {
     case lite_api::LiteModelType::kProtobuf:
-      SaveModelPb(dir, *program_->exec_scope(), program_desc_);
+      SaveModelPb(dir, *program_->exec_scope(), program_desc_, true);
       break;
     case lite_api::LiteModelType::kNaiveBuffer:
       SaveModelNaive(dir, *program_->exec_scope(), program_desc_);
@@ -84,16 +84,29 @@ const cpp::ProgramDesc &Predictor::program_desc() const {
 const RuntimeProgram &Predictor::runtime_program() const { return *program_; }
 
 void Predictor::Build(const std::string &model_path,
+                      const std::string model_file,
+                      const std::string param_file,
                       const Place &prefer_place,
                       const std::vector<Place> &valid_places,
                       const std::vector<std::string> &passes,
                       lite_api::LiteModelType model_type) {
   LOG(INFO) << "Load model from " << model_path;
   switch (model_type) {
-    case lite_api::LiteModelType::kProtobuf:
-      LoadModelPb(model_path, scope_.get(), &program_desc_);
-      break;
+    case lite_api::LiteModelType::kProtobuf: {
+      bool combined_param = false;
+      if (!model_file.empty() && !param_file.empty()) {
+        combined_param = true;
+      }
+      LoadModelPb(model_path,
+                  model_file,
+                  param_file,
+                  scope_.get(),
+                  &program_desc_,
+                  combined_param);
+    } break;
     case lite_api::LiteModelType::kNaiveBuffer:
+      CHECK(!model_path.empty())
+          << "NaiveBuffer backend only supported combined param";
       LoadModelNaive(model_path, scope_.get(), &program_desc_);
       break;
     default:
@@ -118,12 +131,6 @@ void Predictor::Build(const cpp::ProgramDesc &desc,
 
 void Predictor::GenRuntimeProgram() {
   program_ = optimizer_.GenRuntimeProgram();
-  CHECK_EQ(exec_scope_, program_->exec_scope());
-  program_generated_ = true;
-}
-
-void Predictor::GenNPURuntimeProgram() {
-  program_ = optimizer_.GenNPURuntimeProgram();
   CHECK_EQ(exec_scope_, program_->exec_scope());
   program_generated_ = true;
 }
