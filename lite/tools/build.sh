@@ -163,6 +163,7 @@ function make_ios {
             -DWITH_ARM_DOTPROD=OFF \
             -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
             -DARM_TARGET_ARCH_ABI=$abi \
+            -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
             -DARM_TARGET_OS=$os
 
     make -j4 publish_inference
