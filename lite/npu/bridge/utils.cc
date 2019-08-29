@@ -113,48 +113,6 @@ ge::TensorPtr CvtFromLiteTensor(lite::Tensor* in_tensor,
   return out_tensor;
 }
 
-std::shared_ptr<ge::Operator> CvtNode(lite::mir::Node* var_node,
-                                      const Scope* scope) {
-  CHECK(var_node->IsArg());
-  const auto& arg = var_node->AsArg();
-  VLOG(4) << "Convert var node " << arg.name;
-
-  auto* var = scope->FindVar(arg.name);
-  CHECK(var);
-  auto* tensor = var->GetMutable<lite::Tensor>();
-  CHECK(tensor);
-  auto dims = tensor->dims();
-  if (arg.is_weight) {
-    auto wgt = std::make_shared<ge::op::Const>(arg.name);
-    LOG(INFO) << "in convert const:" << arg.name;
-    LOG(INFO) << dims;
-    wgt->set_attr_value(CvtFromLiteTensor(tensor));
-
-    auto odesc = wgt->GetOutputDesc(0);
-    LOG(INFO) << "const ----";
-    for (auto i : odesc.GetShape().GetDims()) {
-      LOG(INFO) << ";;;;;;;;;------: " << i;
-    }
-    return wgt;
-  } else {
-    CHECK_EQ(dims.size(), 4);
-    LOG(INFO) << "in convert data:" << arg.name;
-    LOG(INFO) << dims;
-    // TODO(TJ): support more types and dims size
-    ge::TensorDesc desc(ge::Shape(dims.Vectorize()),
-                        ge::Format::FORMAT_NCHW,
-                        ge::DataType::DT_FLOAT);
-
-    //   auto size = desc.GetShape().GetShapeSize();
-    //  ge::TensorUtils::SetSize(desc, size*sizeof(float));
-    //  ge::TensorUtils::SetRealDimCnt(desc, 4);
-    auto data = std::make_shared<ge::op::Data>(arg.name);
-    data->update_input_desc_x(desc);
-    return data;
-  }
-  return nullptr;
-}
-
 bool HasInputArg(const OpInfo* op_info,
                  const Scope* scope,
                  const std::string& argname) {

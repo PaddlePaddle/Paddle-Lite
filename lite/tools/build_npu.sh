@@ -62,6 +62,7 @@ function cmake_npu {
         -DWITH_LITE=ON \
         -DLITE_WITH_CUDA=OFF \
         -DLITE_WITH_X86=OFF \
+        -DLITE_BUILD_EXTRA=ON \
         -DLITE_WITH_ARM=ON \
         -DWITH_ARM_DOTPROD=ON   \
         -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
