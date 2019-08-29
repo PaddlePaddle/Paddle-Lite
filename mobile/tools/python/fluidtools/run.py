@@ -23,7 +23,7 @@ output_var_filter = []
 output_key_filter = {}
 check_shape = False
 architecture = "arm-v7a"
-architecture = "arm-v8a"
+# architecture = "arm-v8a"
 
 np.set_printoptions(linewidth=150)
 
