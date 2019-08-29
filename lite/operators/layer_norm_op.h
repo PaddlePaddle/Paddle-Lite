@@ -13,32 +13,35 @@
 // limitations under the License.
 
 #pragma once
-
-#include <cmath>
-#include "lite/core/context.h"
+#include <string>
+#include <vector>
+#include "lite/core/op_lite.h"
+#include "lite/core/scope.h"
+#include "lite/utils/all.h"
 
 namespace paddle {
 namespace lite {
-namespace arm {
-namespace math {
-void norm(const float* input,
-          const int pre_n,
-          const int n,
-          const int post_n,
-          const float epsilon,
-          float* out,
-          Context<TARGET(kARM)>* ctx);
+namespace operators {
 
-void matrix_norm_row(const float* x_data,
-                     const float* scale_data,
-                     const float* bias_data,
-                     float* out_data,
-                     float* mean_out,
-                     float* var_out,
-                     float epsilon,
-                     int batch_size,
-                     int feature_size);
-}  // namespace math
-}  // namespace arm
+class LayerNormOp : public OpLite {
+ public:
+  LayerNormOp() {}
+  explicit LayerNormOp(const std::string &op_type) : OpLite(op_type) {}
+
+  bool CheckShape() const override;
+
+  bool InferShape() const override;
+
+  bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
+
+  void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
+
+  std::string DebugString() const override { return "layer_norm"; }
+
+ private:
+  mutable LayerNormParam param_;
+};
+
+}  // namespace operators
 }  // namespace lite
 }  // namespace paddle

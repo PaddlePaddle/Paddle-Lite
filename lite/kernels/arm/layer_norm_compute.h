@@ -13,32 +13,28 @@
 // limitations under the License.
 
 #pragma once
-
-#include <cmath>
-#include "lite/core/context.h"
+#include <stdint.h>
+#include "lite/arm/math/type_trans.h"
+#include "lite/core/kernel.h"
+#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
+namespace kernels {
 namespace arm {
-namespace math {
-void norm(const float* input,
-          const int pre_n,
-          const int n,
-          const int post_n,
-          const float epsilon,
-          float* out,
-          Context<TARGET(kARM)>* ctx);
 
-void matrix_norm_row(const float* x_data,
-                     const float* scale_data,
-                     const float* bias_data,
-                     float* out_data,
-                     float* mean_out,
-                     float* var_out,
-                     float epsilon,
-                     int batch_size,
-                     int feature_size);
-}  // namespace math
+class LayerNormCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::LayerNormParam;
+
+  void PrepareForRun() override;
+
+  void Run() override;
+
+  ~LayerNormCompute() {}
+};
+
 }  // namespace arm
+}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

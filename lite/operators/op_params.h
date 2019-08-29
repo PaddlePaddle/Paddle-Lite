@@ -590,6 +590,16 @@ struct NormParam {
   int axis{1};
   float epsilon{1e-10};
 };
+struct LayerNormParam {
+  const lite::Tensor* X{};
+  const lite::Tensor* Scale{};
+  const lite::Tensor* Bias{};
+  lite::Tensor* Y{};
+  lite::Tensor* Mean{};
+  lite::Tensor* Variance{};
+  int begin_norm_axis{1};
+  float epsilon{1e-5};
+};
 
 struct LogicalParam {
   const lite::Tensor* X{};

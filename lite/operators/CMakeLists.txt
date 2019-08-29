@@ -85,6 +85,7 @@ add_operator(slice_op_lite extra SRCS slice_op.cc DEPS ${op_DEPS})
 add_operator(write_to_array_op extra SRCS write_to_array_op.cc DEPS ${op_DEPS})
 add_operator(topk_op extra SRCS topk_op.cc DEPS ${op_DEPS})
 add_operator(increment_op extra SRCS increment_op.cc DEPS ${op_DEPS})
+add_operator(layer_norm_op extra SRCS layer_norm_op.cc DEPS ${op_DEPS})
 add_operator(sequence_softmax_op extra SRCS sequence_softmax_op.cc DEPS ${op_DEPS})
 
 
