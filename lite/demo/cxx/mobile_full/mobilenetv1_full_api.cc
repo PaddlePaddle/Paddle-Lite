@@ -24,6 +24,7 @@ using namespace paddle::lite_api;  // NOLINT
 
 DEFINE_string(model_dir, "", "Model dir path.");
 DEFINE_string(optimized_model_dir, "", "Optimized model dir.");
+DEFINE_bool(prefer_int8_kernel, false, "Prefer to run model with int8 kernels");
 
 int64_t ShapeProduction(const shape_t& shape) {
   int64_t res = 1;
@@ -35,14 +36,27 @@ void RunModel() {
   // 1. Set CxxConfig
   CxxConfig config;
   config.set_model_dir(FLAGS_model_dir);
-  config.set_preferred_place(Place{TARGET(kARM), PRECISION(kFloat)});
-  config.set_valid_places({Place{TARGET(kARM), PRECISION(kFloat)}});
+  std::vector<Place> valid_places{Place{TARGET(kARM), PRECISION(kFloat)}};
+  if (FLAGS_prefer_int8_kernel) {
+    valid_places.push_back(Place{TARGET(kARM), PRECISION(kInt8)});
+    config.set_preferred_place(Place{TARGET(kARM), PRECISION(kInt8)});
+  } else {
+    config.set_preferred_place(Place{TARGET(kARM), PRECISION(kFloat)});
+  }
+  config.set_valid_places(valid_places);
 
   // 2. Create PaddlePredictor by CxxConfig
   std::shared_ptr<PaddlePredictor> predictor =
       CreatePaddlePredictor<CxxConfig>(config);
 
-  // 3. Prepare input data
+  // 3. Save the optimized model
+  // WARN: The `predictor->SaveOptimizedModel` method must be executed
+  // before the `predictor->Run` method. Because some kernels' `PrepareForRun`
+  // method maybe change some parameters' values.
+  predictor->SaveOptimizedModel(FLAGS_optimized_model_dir,
+                                LiteModelType::kNaiveBuffer);
+
+  // 4. Prepare input data
   std::unique_ptr<Tensor> input_tensor(std::move(predictor->GetInput(0)));
   input_tensor->Resize(shape_t({1, 3, 224, 224}));
   auto* data = input_tensor->mutable_data<float>();
@@ -50,20 +64,16 @@ void RunModel() {
     data[i] = 1;
   }
 
-  // 4. Run predictor
+  // 5. Run predictor
   predictor->Run();
 
-  // 5. Get output
+  // 6. Get output
   std::unique_ptr<const Tensor> output_tensor(
       std::move(predictor->GetOutput(0)));
   printf("Output dim: %d\n", output_tensor->shape()[1]);
   for (int i = 0; i < ShapeProduction(output_tensor->shape()); i += 100) {
     printf("Output[%d]: %f\n", i, output_tensor->data<float>()[i]);
   }
-
-  // 6. Save optimition model
-  predictor->SaveOptimizedModel(FLAGS_optimized_model_dir,
-                                LiteModelType::kNaiveBuffer);
 }
 
 int main(int argc, char** argv) {
