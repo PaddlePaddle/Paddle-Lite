@@ -49,7 +49,14 @@ void RunModel() {
   std::shared_ptr<PaddlePredictor> predictor =
       CreatePaddlePredictor<CxxConfig>(config);
 
-  // 3. Prepare input data
+  // 3. Save the optimized model
+  // WARN: The `predictor->SaveOptimizedModel` method must be executed
+  // before the `predictor->Run` method. Because some kernels' `PrepareForRun`
+  // method maybe change some parameters' values.
+  predictor->SaveOptimizedModel(FLAGS_optimized_model_dir,
+                                LiteModelType::kNaiveBuffer);
+
+  // 4. Prepare input data
   std::unique_ptr<Tensor> input_tensor(std::move(predictor->GetInput(0)));
   input_tensor->Resize(shape_t({1, 3, 224, 224}));
   auto* data = input_tensor->mutable_data<float>();
@@ -57,20 +64,16 @@ void RunModel() {
     data[i] = 1;
   }
 
-  // 4. Run predictor
+  // 5. Run predictor
   predictor->Run();
 
-  // 5. Get output
+  // 6. Get output
   std::unique_ptr<const Tensor> output_tensor(
       std::move(predictor->GetOutput(0)));
   printf("Output dim: %d\n", output_tensor->shape()[1]);
   for (int i = 0; i < ShapeProduction(output_tensor->shape()); i += 100) {
     printf("Output[%d]: %f\n", i, output_tensor->data<float>()[i]);
   }
-
-  // 6. Save optimition model
-  predictor->SaveOptimizedModel(FLAGS_optimized_model_dir,
-                                LiteModelType::kNaiveBuffer);
 }
 
 int main(int argc, char** argv) {
