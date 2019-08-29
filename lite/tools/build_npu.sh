@@ -67,6 +67,7 @@ function cmake_npu {
         -DWITH_ARM_DOTPROD=ON   \
         -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
         -DWITH_TESTING=ON \
+        -DLITE_WITH_JAVA=ON \
         -DLITE_WITH_NPU=ON \
         -DANDROID_API_LEVEL=24 \
         -DARM_TARGET_OS=$1 \
@@ -107,12 +108,21 @@ function build_npu {
         test_name=$6
     fi
 
-    build_dir=$cur_dir/build.lite.npu.${os}.${abi}.${lang}.${stl}
+    # the c++ symbol is not recognized by the bundled script
+    if [[ "${stl}" == "c++_shared" ]]; then
+        stl_dir="cxx_shared"
+    fi
+    if [[ "${stl}" == "c++_static" ]]; then
+        stl_dir="cxx_static"
+    fi
+    build_dir=$cur_dir/build.lite.npu.${os}.${abi}.${lang}.${stl_dir}
     mkdir -p $build_dir
     cd $build_dir
 
     cmake_npu ${os} ${abi} ${lang} ${stl} ${ddk_root}
     make $test_name -j8
+
+    make publish_inference -j8
 
     cd -
     echo "Done"
