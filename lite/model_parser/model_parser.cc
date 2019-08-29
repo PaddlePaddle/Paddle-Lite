@@ -126,8 +126,6 @@ void LoadLoDTensor(std::istream &is, Variable *var) {
   TensorFromStream(is, tensor);
 }
 
-// TODO(Superjomn) support SelectedRows.
-
 void ReadBinaryFile(const std::string &filename, std::string *contents) {
   std::ifstream fin(filename, std::ios::in | std::ios::binary);
   CHECK(fin.is_open()) << "Cannot open file: " << filename;
@@ -141,12 +139,16 @@ void ReadBinaryFile(const std::string &filename, std::string *contents) {
 }
 
 std::unique_ptr<framework::proto::ProgramDesc> LoadProgram(
-    const std::string &path) {
-  std::string desc_str;
-  ReadBinaryFile(path, &desc_str);
+    const std::string &path, bool program_from_memory) {
   std::unique_ptr<framework::proto::ProgramDesc> main_program(
       new framework::proto::ProgramDesc);
-  main_program->ParseFromString(desc_str);
+  if (!program_from_memory) {
+    std::string desc_str;
+    ReadBinaryFile(path, &desc_str);
+    main_program->ParseFromString(desc_str);
+  } else {
+    main_program->ParseFromString(path);
+  }
   return main_program;
 }
 
@@ -159,7 +161,6 @@ void LoadParam(const std::string &path, Variable *out) {
   LoadLoDTensor(fin, out);
 }
 
-//
 bool IsPersistable(const cpp::VarDesc &var) {
   if (var.Persistable() && var.GetType() != VarDescAPI::Type::FEED_MINIBATCH &&
       var.GetType() != VarDescAPI::Type::FETCH_LIST &&
@@ -171,7 +172,8 @@ bool IsPersistable(const cpp::VarDesc &var) {
 
 void LoadCombinedParamsPb(const std::string &path,
                           lite::Scope *scope,
-                          const cpp::ProgramDesc &cpp_prog) {
+                          const cpp::ProgramDesc &cpp_prog,
+                          bool params_from_memory) {
   CHECK(scope);
   auto prog = cpp_prog;
   auto &main_block_desc = *prog.GetBlock<cpp::BlockDesc>(0);
@@ -186,19 +188,27 @@ void LoadCombinedParamsPb(const std::string &path,
   std::sort(paramlist.begin(), paramlist.end());
 
   // Load vars
-  std::ifstream file(path);
-  CHECK(file.is_open());
-  for (size_t i = 0; i < paramlist.size(); ++i) {
-    auto *var = scope->Var(paramlist[i]);
-    // Error checking
-    CHECK(static_cast<bool>(file))
-        << "There is a problem with loading model parameters";
-    LoadLoDTensor(file, var);
-  }
-  file.peek();
-  CHECK(file.eof()) << "You are not allowed to load partial data via"
+  auto load_var_func = [&](std::istream &is) {
+    for (size_t i = 0; i < paramlist.size(); ++i) {
+      auto *var = scope->Var(paramlist[i]);
+      // Error checking
+      CHECK(static_cast<bool>(is))
+          << "There is a problem with loading model parameters";
+      LoadLoDTensor(is, var);
+    }
+    is.peek();
+    CHECK(is.eof()) << "You are not allowed to load partial data via"
                     << " LoadCombinedParamsPb, use LoadParam instead.";
-  file.close();
+  };
+
+  if (params_from_memory) {
+    std::stringstream fin(path, std::ios::in | std::ios::binary);
+    load_var_func(fin);
+  } else {
+    std::ifstream fin(path, std::ios::binary);
+    CHECK(fin.is_open());
+    load_var_func(fin);
+  }
 }
 
 void LoadModelPb(const std::string &model_dir,
@@ -206,26 +216,33 @@ void LoadModelPb(const std::string &model_dir,
                  const std::string &param_file,
                  Scope *scope,
                  cpp::ProgramDesc *cpp_prog,
-                 bool combined) {
+                 bool combined,
+                 bool model_from_memory) {
   CHECK(cpp_prog);
   CHECK(scope);
   cpp_prog->ClearBlocks();
 
   // Load model
+  VLOG(4) << "Start load model program...";
   std::string prog_path = model_dir + "/__model__";
   if (combined) {
     prog_path = model_file;
   }
-  framework::proto::ProgramDesc pb_proto_prog = *LoadProgram(prog_path);
+  framework::proto::ProgramDesc pb_proto_prog =
+      *LoadProgram(prog_path, model_from_memory);
   pb::ProgramDesc pb_prog(&pb_proto_prog);
-
   // Transform to cpp::ProgramDesc
   TransformProgramDescAnyToCpp(pb_prog, cpp_prog);
 
   // Load Params
   // NOTE: Only main block be used now.
+  VLOG(4) << "Start load model params...";
+  CHECK(!(!combined && model_from_memory))
+      << "If you want use the model_from_memory,"
+      << " you should load the combined model using cfg.set_model_buffer "
+         "interface.";
   if (combined) {
-    LoadCombinedParamsPb(param_file, scope, *cpp_prog);
+    LoadCombinedParamsPb(param_file, scope, *cpp_prog, model_from_memory);
   } else {
     auto main_block = pb_proto_prog.blocks(0);
     for (auto &var : main_block.vars()) {

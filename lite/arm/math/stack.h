@@ -11,35 +11,20 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 #pragma once
 
-#include <algorithm>
-#include <map>
-#include <string>
-#include <utility>
+#include <cstddef>
 #include <vector>
+#include "lite/core/tensor.h"
 
 namespace paddle {
 namespace lite {
 namespace arm {
 namespace math {
 
-template <typename dtype>
-void multiclass_nms(const dtype* bbox_cpu_data,
-                    const dtype* conf_cpu_data,
-                    std::vector<dtype>* result,
-                    const std::vector<int>& priors,
-                    int class_num,
-                    int background_id,
-                    int keep_topk,
-                    int nms_topk,
-                    float conf_thresh,
-                    float nms_thresh,
-                    float nms_eta,
-                    bool share_location);
+void stack(std::vector<lite::Tensor*> x, lite::Tensor* out, int axis);
 
-}  // namespace math
-}  // namespace arm
-}  // namespace lite
-}  // namespace paddle
+} /* namespace math */
+} /* namespace arm */
+} /* namespace lite */
+} /* namespace paddle */

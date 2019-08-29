@@ -12,30 +12,32 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/mir/fusion/conv_elementwise_fuse_pass.h"
-#include <memory>
+#pragma once
+#include <string>
 #include <vector>
-#include "lite/core/mir/fusion/conv_elementwise_fuser.h"
-#include "lite/core/mir/pass_registry.h"
+#include "lite/core/op_lite.h"
+#include "lite/core/scope.h"
+#include "lite/utils/all.h"
 
 namespace paddle {
 namespace lite {
-namespace mir {
+namespace operators {
 
-void ConvElementwiseFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
-  fusion::ConvElementwiseFuser fuser("conv2d");
-  fuser(graph.get());
+class ReduceMeanOp : public OpLite {
+ public:
+  ReduceMeanOp() {}
+  explicit ReduceMeanOp(const std::string &op_type) : OpLite(op_type) {}
+  bool CheckShape() const override;
+  bool InferShape() const override;
+  bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
 
-  fusion::ConvElementwiseFuser depthwise_fuser("depthwise_conv2d");
-  depthwise_fuser(graph.get());
+  void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
+  std::string DebugString() const override { return "reduce_mean"; }
 
-  fusion::ConvElementwiseFuser conv2d_transpose_fuser("conv2d_transpose");
-  conv2d_transpose_fuser(graph.get());
-}
+ private:
+  mutable ReduceMeanParam param_;
+};
 
-}  // namespace mir
+}  // namespace operators
 }  // namespace lite
 }  // namespace paddle
-
-REGISTER_MIR_PASS(lite_conv_elementwise_fuse_pass,
-                  paddle::lite::mir::ConvElementwiseFusePass);

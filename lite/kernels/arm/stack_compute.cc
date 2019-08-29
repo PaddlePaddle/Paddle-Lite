@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/arm/scale_compute.h"
+#include "lite/kernels/arm/stack_compute.h"
+#include <vector>
 #include "lite/arm/math/funcs.h"
 
 namespace paddle {
@@ -20,30 +21,22 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
-void ScaleCompute::Run() {
-  auto& param = Param<operators::ScaleParam>();
-  const float* x_data = param.x->data<float>();
-  float* output_data = param.output->mutable_data<float>();
-  DDim x_dims = param.x->dims();
-  bool bias_after_scale = param.bias_after_scale;
-  float scale = param.scale;
-  float bias = param.bias;
-  if (!bias_after_scale) {
-    bias *= scale;
-  }
-  lite::arm::math::scale(x_data, output_data, x_dims.production(), scale, bias);
-  if (!param.x->lod().empty()) {
-    param.output->set_lod(param.x->lod());
-  }
+void StackCompute::Run() {
+  auto& param = Param<operators::StackParam>();
+  std::vector<lite::Tensor*> x = param.X;
+  lite::Tensor* out = param.Out;
+  int axis = param.axis;
+
+  lite::arm::math::stack(x, out, axis);
 }
 
-}  // namespace arm
-}  // namespace kernels
-}  // namespace lite
-}  // namespace paddle
+} /* namespace arm */
+} /* namespace kernels */
+} /* namespace lite */
+} /* namespace paddle */
 
 REGISTER_LITE_KERNEL(
-    scale, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::ScaleCompute, def)
+    stack, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::StackCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
