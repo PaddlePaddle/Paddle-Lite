@@ -5,7 +5,7 @@ function print_usage {
     set +x
     echo -e "\nUSAGE:"
     echo "----------------------------------------"
-    echo -e "compile ios tiny publish so lib:"
+    echo -e "compile ios tiny publish lib:"
     echo -e "   ./build_ios.sh --arm_os=<os> --arm_abi=<abi>"
     echo -e "argument choices:"
     echo -e "--arm_os:\t ios|ios64, default is ios64"
