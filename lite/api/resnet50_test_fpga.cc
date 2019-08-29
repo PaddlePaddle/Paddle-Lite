@@ -46,12 +46,12 @@ TEST(ResNet50, test) {
     data[i] = 1;
   }
 
-  for (int i = 0; i < FLAGS_warmup; ++i) {
+  for (int i = 0; i < 1; ++i) {
     predictor.Run();
   }
 
   auto start = GetCurrentUS();
-  for (int i = 0; i < FLAGS_repeats; ++i) {
+  for (int i = 0; i < 10; ++i) {
     predictor.Run();
   }
 

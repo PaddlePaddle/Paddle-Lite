@@ -47,7 +47,7 @@ void ConvCompute::PrepareForRun() {
 void ConvCompute::Run() {
   auto& param = this->Param<param_t>();
   zynqmp::ConvParam& conv_param = pe_.param();
-  conv_param.output->saveToFile("conv", true);
+  // conv_param.output->saveToFile("conv", true);
   pe_.dispatch();
 }
 
