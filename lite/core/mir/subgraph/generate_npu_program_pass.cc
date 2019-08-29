@@ -127,7 +127,8 @@ std::string GenerateNPUProgramPass::BuildNPUGraph(
 
   std::string model_name("hiai_npu_client_" + std::to_string(sub_id) + ".om");
   if (!npu::BuildNPUClient(inputs, outputs, model_name)) {
-    LOG(FATAL) << "Build NPU failed subgraph " << sub_id;
+    LOG(WARNING) << "Build NPU failed subgraph " << sub_id;
+    throw std::runtime_error("Build NPU failed subgraph.");
   }
   LOG(INFO) << "[NPU] Build NPU Client success subgraph " << sub_id;
   return model_name;
@@ -188,7 +189,7 @@ void GenerateNPUProgramPass::InsertNewNode(
       ContextScheduler::Global().NewContext(inst.picked_kernel().target()));
 }
 
-void GenerateNPUProgramPass::GenNPUGraphOpNode(
+void GenerateNPUProgramPass::GenNPUSubgraph(
     const std::unique_ptr<SSAGraph>& graph,
     const std::unordered_set<Node*>& op_nodes,
     int sub_id) {
@@ -198,9 +199,6 @@ void GenerateNPUProgramPass::GenNPUGraphOpNode(
   std::unordered_set<Node*> out_unused_vars;
   FindInputOutputVars(
       op_nodes, &in_data_vars, &in_wgt_vars, &out_data_vars, &out_unused_vars);
-
-  auto nodes2rm = GetNode2rm(
-      op_nodes, {in_data_vars, in_wgt_vars, out_data_vars, out_unused_vars});
 
   auto model_name =
       BuildNPUGraph(op_nodes, in_data_vars, out_data_vars, sub_id);
@@ -215,33 +213,34 @@ void GenerateNPUProgramPass::GenNPUGraphOpNode(
                 out_data_vars,
                 out_unused_vars);
 
+  auto nodes2rm = GetNode2rm(
+      op_nodes, {in_data_vars, in_wgt_vars, out_data_vars, out_unused_vars});
+
   GraphSafeRemoveNodes(graph.get(), nodes2rm);
 }
 
-void GenerateNPUProgramPass::ConvertSubgraph(
+void GenerateNPUProgramPass::GenAllNPUSubgraph(
     const std::unique_ptr<SSAGraph>& graph, int sub_num) {
-  std::unordered_map<int, std::unordered_set<Node*>> nodes_all;
-  int ops_num = 0;
+  std::unordered_map<int, std::unordered_set<Node*>> all_op_nodes;
   for (auto& item : graph->StmtTopologicalOrder()) {
     if (!item->IsStmt()) continue;
-    ops_num++;
     auto& stmt = item->AsStmt();
     int sub_id = stmt.subgraph_id();
     if (sub_id < 1) continue;
-    if (nodes_all.count(sub_id) == 0) {
-      nodes_all[sub_id] = std::unordered_set<Node*>();
+    if (all_op_nodes.count(sub_id) == 0) {
+      all_op_nodes[sub_id] = std::unordered_set<Node*>();
     }
-    nodes_all.at(sub_id).insert(item);
+    all_op_nodes.at(sub_id).insert(item);
   }
 
   for (int id = 1; id <= sub_num; ++id) {
     LOG(INFO) << "Converting subgraph_id:" << id;
-    GenNPUGraphOpNode(graph, nodes_all.at(id), id);
+    GenNPUSubgraph(graph, all_op_nodes.at(id), id);
   }
 }
 
 void GenerateNPUProgramPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
-  LOG(INFO) << "Before NPU Pass \n" << Visualize(graph.get());
+  VLOG(3) << "Before NPU Pass \n" << Visualize(graph.get());
 
   const auto& bridges = lite::npu::bridge::Factory::Instance();
   const auto& op_map = bridges.AllFunctions();
@@ -254,16 +253,14 @@ void GenerateNPUProgramPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   try {
     int num_subgraph = FuseSubgraph(graph, supported_op_types);
     LOG(INFO) << "detected " << num_subgraph << " NPU subgraph";
-
     InferOnce(graph);
-    ConvertSubgraph(graph, num_subgraph);
+    GenAllNPUSubgraph(graph, num_subgraph);
   } catch (...) {
-    // exception = true;
     LOG(WARNING) << "Build NPU graph failed";
+    throw std::runtime_error("Build NPU graph failed");
   }
 
-  LOG(INFO) << "After NPU Pass \n" << Visualize(graph.get());
-
+  VLOG(3) << "After NPU Pass \n" << Visualize(graph.get());
   for (auto& item : graph->StmtTopologicalOrder()) {
     if (item->IsStmt()) {
       auto& stmt = item->AsStmt();
