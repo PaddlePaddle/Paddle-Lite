@@ -765,6 +765,7 @@ struct AssignParam {
   const lite::Tensor* X{};
   lite::Tensor* Out{};
 };
+
 struct RoiAlignParam {
   lite::Tensor* X{};
   lite::Tensor* ROIs{};
@@ -773,6 +774,12 @@ struct RoiAlignParam {
   int pooled_height{1};
   int pooled_width{1};
   int sampling_ratio{-1};
+};
+
+struct BoxClipParam {
+  const lite::Tensor* Input{};
+  const lite::Tensor* ImInfo{};
+  lite::Tensor* Output{};
 };
 
 }  // namespace operators
