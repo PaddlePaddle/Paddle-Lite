@@ -121,6 +121,23 @@ struct MulGradParam {
   int y_num_col_dims{1};
 };
 
+// For ReduceMean Op
+struct ReduceMeanParam {
+  lite::Tensor* X{};
+  lite::Tensor* Out{};
+
+  std::vector<int> dim;
+  bool keep_dim{false};
+};
+
+// For Stack Op
+struct StackParam {
+  std::vector<lite::Tensor*> X;
+  lite::Tensor* Out{};
+
+  int axis{0};
+};
+
 // For Power Op
 struct PowerParam {
   const lite::Tensor* X{};

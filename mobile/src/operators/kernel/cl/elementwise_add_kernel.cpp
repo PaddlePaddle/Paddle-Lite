@@ -25,17 +25,27 @@ bool ElementwiseAddKernel<GPU_CL, float>::Init(
   DLOG << "-----init add-----";
   CLImage *bias =
       reinterpret_cast<CLImage *>(const_cast<CLImage *>(param->InputY()));
-  if (!bias->isInit()) {
-    bias->InitNormalCLImage(cl_helper_.CLContext(),
-                            this->cl_helper_.CLCommandQueue());
-  }
-  DLOG << " bias: " << *bias;
   if (bias->dims().size() == 4) {
+    if (!bias->isInit()) {
+      bias->InitNormalCLImage(cl_helper_.CLContext(),
+                              this->cl_helper_.CLCommandQueue());
+    }
+    DLOG << " bias: " << *bias;
     this->cl_helper_.AddKernel("elementwise_add", "elementwise_add_kernel.cl");
   } else if (param->InputY()->dims().size() == 1) {
     if (param->Axis() == param->InputX()->dims().size() - 1) {
+      if (!bias->isInit()) {
+        bias->InitNormalCLImage(cl_helper_.CLContext(),
+                                this->cl_helper_.CLCommandQueue());
+      }
+      DLOG << " bias: " << *bias;
       this->cl_helper_.AddKernel("width_add", "channel_add_kernel.cl");
     } else if (param->Axis() == param->InputX()->dims().size() - 3) {
+      if (!bias->isInit()) {
+        bias->InitCLImage(cl_helper_.CLContext(),
+                          this->cl_helper_.CLCommandQueue());
+      }
+      DLOG << " bias: " << *bias;
       this->cl_helper_.AddKernel("channel_add", "channel_add_kernel.cl");
     } else {
       DLOG << "error:bias dims is error";

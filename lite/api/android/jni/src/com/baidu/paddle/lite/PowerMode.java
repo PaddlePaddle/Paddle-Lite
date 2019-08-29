@@ -1,5 +1,4 @@
-/* Copyright (c) 2018 PaddlePaddle Authors. All Rights Reserved.
-
+/* Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -12,16 +11,26 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#pragma once
-#ifdef PADDLE_MOBILE_CL
-#include "CL/cl.h"
+package com.baidu.paddle.lite;
 
-namespace paddle_mobile {
+/**
+ * PowerMode is the cpu running power mode for the light weight predictor.
+ */
+public enum PowerMode {
+    LITE_POWER_HIGH(0),
+    LITE_POWER_LOW(1),
+    LITE_POWER_FULL(2),
+    LITE_POWER_NO_BIND(3),
+    LITE_POWER_RAND_HIGH(4),
+    LITE_POWER_RAND_LOW(5);
 
-cl_context getContext();
-cl_command_queue getClCommandQueue();
-bool isInitSuccess();
+    private PowerMode(int value) {
+        this.value = value;
+    }
+    
+    public int value() {
+        return this.value;
+    }
 
-}  // namespace paddle_mobile
-
-#endif
+    private final int value;
+}

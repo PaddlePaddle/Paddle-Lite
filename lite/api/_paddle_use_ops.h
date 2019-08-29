@@ -69,6 +69,8 @@ USE_LITE_OP(shuffle_channel)
 USE_LITE_OP(yolo_box)
 USE_LITE_OP(bilinear_interp)
 USE_LITE_OP(nearest_interp)
+USE_LITE_OP(reduce_mean)
+USE_LITE_OP(stack)
 
 USE_LITE_OP(assign);
 USE_LITE_OP(crop)
