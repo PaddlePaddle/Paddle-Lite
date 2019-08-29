@@ -33,7 +33,7 @@ namespace lite {
 #ifndef LITE_ON_TINY_PUBLISH
 // Read a __model__ file.
 std::unique_ptr<framework::proto::ProgramDesc> LoadProgram(
-    const std::string& path);
+    const std::string& path, bool program_from_memory = false);
 
 // Read a single file containing all the parameters.
 void LoadParams(const std::string& path);

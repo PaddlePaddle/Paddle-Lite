@@ -231,19 +231,23 @@ void LoadModelPb(const std::string &model_dir,
   if (combined) {
     prog_path = model_file;
   }
-  std::unique_ptr<framework::proto::ProgramDesc> pb_proto_prog =
-      LoadProgram(prog_path, model_from_memory);
-  pb::ProgramDesc pb_prog(pb_proto_prog.get());
+  framework::proto::ProgramDesc pb_proto_prog =
+      *LoadProgram(prog_path, model_from_memory);
+  pb::ProgramDesc pb_prog(&pb_proto_prog);
   // Transform to cpp::ProgramDesc
   TransformProgramDescAnyToCpp(pb_prog, cpp_prog);
 
   // Load Params
   // NOTE: Only main block be used now.
   VLOG(4) << "Start load model params...";
+  CHECK(!(!combined && model_from_memory))
+      << "If you want use the model_from_memory,"
+      << " you should load the combined model using cfg.set_model_buffer "
+         "interface.";
   if (combined) {
     LoadCombinedParamsPb(param_file, scope, *cpp_prog, model_from_memory);
   } else {
-    auto main_block = pb_proto_prog->blocks(0);
+    auto main_block = pb_proto_prog.blocks(0);
     for (auto &var : main_block.vars()) {
       if (var.name() == "feed" || var.name() == "fetch" || !var.persistable())
         continue;
