@@ -14,7 +14,7 @@ limitations under the License. */
 package com.baidu.paddle.lite;
 
 /**
- * PowerMode is the cpu runing mode for the light weight predictor.
+ * PowerMode is the cpu running power mode for the light weight predictor.
  */
 public enum PowerMode {
     LITE_POWER_HIGH(0),
@@ -24,8 +24,6 @@ public enum PowerMode {
     LITE_POWER_RAND_HIGH(4),
     LITE_POWER_RAND_LOW(5);
 
-    public final int value;
-
     private PowerMode(int value) {
         this.value = value;
     }
@@ -33,4 +31,6 @@ public enum PowerMode {
     public int value() {
         return this.value;
     }
+
+    private final int value;
 }
