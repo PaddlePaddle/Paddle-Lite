@@ -91,6 +91,8 @@ public class MainActivity extends AppCompatActivity {
 
         MobileConfig config = new MobileConfig();
         config.setModelDir(modelPath);
+        config.setPowerMode(PowerMode.LITE_POWER_HIGH);
+        config.setThreads(1);
         PaddlePredictor predictor = PaddlePredictor.createPaddlePredictor(config);
 
         Tensor input = predictor.getInput(0);
