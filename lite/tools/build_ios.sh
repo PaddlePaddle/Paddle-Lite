@@ -4,10 +4,12 @@ set -e
 function print_usage {
     set +x
     echo -e "\nUSAGE:"
-    echo
     echo "----------------------------------------"
     echo -e "compile ios tiny publish so lib:"
     echo -e "   ./build_ios.sh --arm_os=<os> --arm_abi=<abi>"
+    echo -e "argument choices:"
+    echo -e "--arm_os:\t ios|ios64, default is ios64"
+    echo -e "--arm_abi:\t armv7|armv8, default is armv8"
     echo "----------------------------------------"
     echo
 }
@@ -42,7 +44,7 @@ function build_ios {
             -DARM_TARGET_ARCH_ABI=$abi \
             -DARM_TARGET_OS=$os
 
-    make -j4
+    make -j4 publish_inference
     cd -
 }
 
