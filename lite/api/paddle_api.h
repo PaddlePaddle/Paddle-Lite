@@ -132,8 +132,6 @@ class LITE_API MobileConfig : public ConfigBase {
       : mode_(mode), threads_(threads) {}
   void set_power_mode(PowerMode mode) { mode_ = mode; }
   void set_threads(int threads) { threads_ = threads; }
-  void set_model_file(const std::string& path) { model_file_ = path; }
-  void set_param_file(const std::string& path) { param_file_ = path; }
   void set_model_buffer(const char* model_buffer,
                         size_t model_buffer_size,
                         const char* param_buffer,
