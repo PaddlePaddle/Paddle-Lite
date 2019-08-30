@@ -67,9 +67,7 @@ TEST(CXXApi_LightApi, optim_model) {
 
 TEST(CXXApi_LightApi, save_and_load_model) {
   lite::Predictor cxx_api;
-  lite_api::MobileConfig light_config;
-  light_config.set_model_dir(FLAGS_optimized_model);
-  lite::LightPredictor light_api(light_config);
+  lite::LightPredictor light_api(FLAGS_optimized_model, "", "");
 
   // CXXAPi
   {

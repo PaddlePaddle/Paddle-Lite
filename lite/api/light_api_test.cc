@@ -48,7 +48,11 @@ TEST(LightAPI, load) {
   }
   lite_api::MobileConfig config;
   config.set_model_dir(FLAGS_optimized_model);
-  LightPredictor predictor(config, lite_api::LiteModelType::kNaiveBuffer);
+  LightPredictor predictor(config.model_dir(),
+                           config.model_buff(),
+                           config.param_buff(),
+                           config.model_from_memory(),
+                           lite_api::LiteModelType::kNaiveBuffer);
 
   auto* input_tensor = predictor.GetInput(0);
   input_tensor->Resize(DDim(std::vector<int64_t>({100, 100})));
@@ -83,7 +87,11 @@ TEST(LightAPI, loadNaiveBuffer) {
 
   lite_api::MobileConfig config;
   config.set_model_buffer(bufModel, sizeBuf, bufParams, sizeParams);
-  LightPredictor predictor(config, lite_api::LiteModelType::kNaiveBuffer);
+  LightPredictor predictor(config.model_dir(),
+                           config.model_buff(),
+                           config.param_buff(),
+                           config.model_from_memory(),
+                           lite_api::LiteModelType::kNaiveBuffer);
 
   auto* input_tensor = predictor.GetInput(0);
   input_tensor->Resize(DDim(std::vector<int64_t>({100, 100})));

@@ -90,16 +90,12 @@ void LightPredictor::BuildRuntimeProgram(const cpp::ProgramDesc& prog) {
   program_->set_exec_scope(program.exec_scope());
 }
 
-LightPredictor::LightPredictor(const lite_api::MobileConfig& config,
+LightPredictor::LightPredictor(const std::string& model_dir,
+                               const std::string& model_buff,
+                               const std::string& param_buff,
+                               bool model_from_memory,
                                lite_api::LiteModelType model_type) {
-  scope_ = std::make_shared<Scope>();
-  //  Build(config, model_type);
-  const std::string& model_path = config.model_dir();
-  const std::string& model_buff = config.model_buff();
-  const std::string& param_buff = config.param_buff();
-  const bool model_from_memory = config.model_from_memory();
-
-  Build(model_path, model_buff, param_buff, model_type, model_from_memory);
+  Build(model_dir, model_buff, param_buff, model_type, model_from_memory);
 }
 
 }  // namespace lite
