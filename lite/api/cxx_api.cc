@@ -31,6 +31,7 @@ void Predictor::SaveModel(const std::string &dir,
     GenRuntimeProgram();
   }
   program_->SaveOpInfosToProgram(&program_desc_);
+  program_->UpdateVarsOfProgram(&program_desc_);
   switch (model_type) {
     case lite_api::LiteModelType::kProtobuf:
       SaveModelPb(dir, *program_->exec_scope(), program_desc_, true);
@@ -152,12 +153,6 @@ void Predictor::Build(const cpp::ProgramDesc &desc,
 
 void Predictor::GenRuntimeProgram() {
   program_ = optimizer_.GenRuntimeProgram();
-  CHECK_EQ(exec_scope_, program_->exec_scope());
-  program_generated_ = true;
-}
-
-void Predictor::GenNPURuntimeProgram() {
-  program_ = optimizer_.GenNPURuntimeProgram();
   CHECK_EQ(exec_scope_, program_->exec_scope());
   program_generated_ = true;
 }

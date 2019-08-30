@@ -12,19 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/arm/multiclass_nms_compute.h"
+#include "lite/kernels/host/multiclass_nms_compute.h"
 #include <gtest/gtest.h>
-#include <algorithm>
 #include <map>
-#include <string>
 #include <utility>
 #include <vector>
-#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace host {
 
 template <typename dtype>
 static bool sort_score_pair_descend(const std::pair<float, dtype>& pair1,
@@ -279,21 +276,21 @@ void multiclass_nms_compute_ref(const operators::MulticlassNmsParam& param,
   }
 }
 
-TEST(multiclass_nms_arm, retrive_op) {
+TEST(multiclass_nms_host, init) {
+  MulticlassNmsCompute multiclass_nms;
+  ASSERT_EQ(multiclass_nms.precision(), PRECISION(kFloat));
+  ASSERT_EQ(multiclass_nms.target(), TARGET(kHost));
+}
+
+TEST(multiclass_nms_host, retrive_op) {
   auto multiclass_nms =
-      KernelRegistry::Global().Create<TARGET(kARM), PRECISION(kFloat)>(
+      KernelRegistry::Global().Create<TARGET(kHost), PRECISION(kFloat)>(
           "multiclass_nms");
   ASSERT_FALSE(multiclass_nms.empty());
   ASSERT_TRUE(multiclass_nms.front());
 }
 
-TEST(multiclass_nms_arm, init) {
-  MulticlassNmsCompute multiclass_nms;
-  ASSERT_EQ(multiclass_nms.precision(), PRECISION(kFloat));
-  ASSERT_EQ(multiclass_nms.target(), TARGET(kARM));
-}
-
-TEST(multiclass_nms_arm, compute) {
+TEST(multiclass_nms_host, compute) {
   MulticlassNmsCompute multiclass_nms;
   operators::MulticlassNmsParam param;
   lite::Tensor bbox, conf, out;
@@ -306,9 +303,6 @@ TEST(multiclass_nms_arm, compute) {
         DDim* bbox_dim;
         DDim* conf_dim;
         int M = priors[0];
-        // for (int i = 0; i < priors.size(); ++i) {
-        //  M += priors[i];
-        //}
         if (share_location) {
           bbox_dim = new DDim({N, M, 4});
         } else {
@@ -368,9 +362,9 @@ TEST(multiclass_nms_arm, compute) {
   }
 }
 
-}  // namespace arm
+}  // namespace host
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
 
-USE_LITE_KERNEL(multiclass_nms, kARM, kFloat, kNCHW, def);
+USE_LITE_KERNEL(multiclass_nms, kHost, kFloat, kNCHW, def);

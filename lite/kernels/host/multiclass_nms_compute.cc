@@ -12,13 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/arm/math/multiclass_nms.h"
-#include "lite/arm/math/funcs.h"
+#include "lite/kernels/host/multiclass_nms_compute.h"
+#include <map>
+#include <utility>
+#include <vector>
 
 namespace paddle {
 namespace lite {
-namespace arm {
-namespace math {
+namespace kernels {
+namespace host {
 
 template <typename dtype>
 static bool sort_score_pair_descend(const std::pair<float, dtype>& pair1,
@@ -269,31 +271,92 @@ void multiclass_nms(const dtype* bbox_cpu_data,
   }
 }
 
-template float jaccard_overlap(const float* bbox1, const float* bbox2);
+void MulticlassNmsCompute::Run() {
+  auto& param = Param<operators::MulticlassNmsParam>();
+  // bbox shape : N, M, 4
+  // scores shape : N, C, M
+  const float* bbox_data = param.bbox_data->data<float>();
+  const float* conf_data = param.conf_data->data<float>();
 
-template void apply_nms_fast(const float* bboxes,
-                             const float* scores,
-                             int num,
-                             float score_threshold,
-                             float nms_threshold,
-                             float eta,
-                             int top_k,
-                             std::vector<int>* indices);
+  CHECK_EQ(param.bbox_data->dims().production() % 4, 0);
 
-template void multiclass_nms(const float* bbox_cpu_data,
-                             const float* conf_cpu_data,
-                             std::vector<float>* result,
-                             const std::vector<int>& priors,
-                             int class_num,
-                             int background_id,
-                             int keep_topk,
-                             int nms_topk,
-                             float conf_thresh,
-                             float nms_thresh,
-                             float nms_eta,
-                             bool share_location);
+  std::vector<float> result;
+  int N = param.bbox_data->dims()[0];
+  int M = param.bbox_data->dims()[1];
+  std::vector<int> priors(N, M);
+  int class_num = param.conf_data->dims()[1];
+  int background_label = param.background_label;
+  int keep_top_k = param.keep_top_k;
+  int nms_top_k = param.nms_top_k;
+  float score_threshold = param.score_threshold;
+  float nms_threshold = param.nms_threshold;
+  float nms_eta = param.nms_eta;
+  bool share_location = param.share_location;
 
-}  // namespace math
-}  // namespace arm
+  multiclass_nms(bbox_data,
+                 conf_data,
+                 &result,
+                 priors,
+                 class_num,
+                 background_label,
+                 keep_top_k,
+                 nms_top_k,
+                 score_threshold,
+                 nms_threshold,
+                 nms_eta,
+                 share_location);
+
+  lite::LoD lod;
+  std::vector<uint64_t> lod_info;
+  lod_info.push_back(0);
+  std::vector<float> result_corrected;
+  int tmp_batch_id;
+  uint64_t num = 0;
+  for (int i = 0; i < result.size(); ++i) {
+    if (i == 0) {
+      tmp_batch_id = result[i];
+    }
+    if (i % 7 == 0) {
+      if (result[i] == tmp_batch_id) {
+        ++num;
+      } else {
+        lod_info.push_back(num);
+        ++num;
+        tmp_batch_id = result[i];
+      }
+    } else {
+      result_corrected.push_back(result[i]);
+    }
+  }
+  lod_info.push_back(num);
+  lod.push_back(lod_info);
+  if (result_corrected.empty()) {
+    lod.clear();
+    lod.push_back(std::vector<uint64_t>({0, 1}));
+    param.out->Resize({static_cast<int64_t>(1)});
+    param.out->mutable_data<float>()[0] = -1.;
+    param.out->set_lod(lod);
+  } else {
+    param.out->Resize({static_cast<int64_t>(result_corrected.size() / 6), 6});
+    float* out = param.out->mutable_data<float>();
+    std::memcpy(
+        out, result_corrected.data(), sizeof(float) * result_corrected.size());
+    param.out->set_lod(lod);
+  }
+}
+
+}  // namespace host
+}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
+
+REGISTER_LITE_KERNEL(multiclass_nms,
+                     kHost,
+                     kFloat,
+                     kNCHW,
+                     paddle::lite::kernels::host::MulticlassNmsCompute,
+                     def)
+    .BindInput("BBoxes", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindInput("Scores", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
+    .Finalize();

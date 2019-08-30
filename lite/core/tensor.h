@@ -126,6 +126,12 @@ class TensorLite {
   LoD *mutable_lod() { return &lod_; }
   void set_lod(const LoD &lod) { lod_ = lod; }
 
+  PrecisionType precision() const { return precision_; }
+  void set_precision(PrecisionType precision) { precision_ = precision; }
+
+  bool persistable() const { return persistable_; }
+  void set_persistable(bool persistable) { persistable_ = persistable; }
+
   // T is the data type and R is the return type
   // For OpenCL, the return type can be cl::Buffer
   // and the data type can be float/int8_t.
@@ -177,6 +183,14 @@ class TensorLite {
 
  private:
   TargetType target_{TargetType::kHost};
+  // precision_ and persistable_ are only used for persistable vars.
+  // If your tensor wants to be saved and loaded correctly, you must
+  // set values of precision_ and persistable_ after updating it.
+  // If your tensor is just a temp tensor, such as activations,
+  // you can ignore these two attributes.
+  PrecisionType precision_{PrecisionType::kUnk};
+  bool persistable_{false};
+
   DDimLite dims_;
   std::shared_ptr<Buffer> buffer_;
   LoD lod_;
@@ -212,6 +226,7 @@ TensorLite TensorLite::Slice(int64_t begin, int64_t end) const {
   dst_dims[0] = end - begin;
   dst.Resize(dst_dims);
   dst.offset_ = offset_ + static_cast<size_t>(begin * base) * sizeof(T);
+  return dst;
 }
 
 template <typename TensorT>
