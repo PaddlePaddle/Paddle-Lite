@@ -894,6 +894,35 @@ class BatchNormParam : public OpParam {
 };
 #endif
 
+#ifdef INSTANCENORM_OP
+template <typename Dtype>
+class InstanceNormParam : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
+ public:
+  InstanceNormParam(const VariableNameMap &inputs,
+                    const VariableNameMap &outputs, const AttributeMap &attrs,
+                    Scope *scope)
+      : OpParam(inputs, outputs, attrs, scope) {
+    input_x_ = InputXFrom<GType>(inputs, *scope);
+    out_ = OutFrom<GType>(outputs, *scope);
+    epsilon_ = GetAttr<float>("epsilon", attrs);
+  }
+
+  const GType *InputX() const { return input_x_; }
+
+  GType *Out() const { return out_; }
+
+  const float &Epsilon() const { return epsilon_; }
+
+ private:
+  GType *input_x_;
+  GType *out_;
+  float epsilon_;
+};
+#endif
+
 #ifdef POOL_OP
 template <typename Dtype>
 class PoolParam : public OpParam {
@@ -2472,12 +2501,16 @@ class ConvTransposeParam : public OpParam {
     strides_ = GetAttr<vector<int>>("strides", attrs);
     paddings_ = GetAttr<vector<int>>("paddings", attrs);
     dilations_ = GetAttr<vector<int>>("dilations", attrs);
+    if (HasAttr("output_size", attrs)) {
+      output_size_ = GetAttr<vector<int>>("output_size", attrs);
+      DLOG << "conv transpose output size: " << output_size_;
+    }
     groups = GetAttr<int>("groups", attrs);
   }
 
   const GType *Input() const { return input_; }
 
-  const GType *Filter() const { return filter_; }
+  GType *Filter() const { return filter_; }
 
   GType *Output() const { return output_; }
 
@@ -2486,6 +2519,8 @@ class ConvTransposeParam : public OpParam {
   const vector<int> &Paddings() const { return paddings_; }
 
   const vector<int> &Dilations() const { return dilations_; }
+
+  const vector<int> &OutputSize() const { return output_size_; }
 
   const int &Groups() const { return groups; }
 
@@ -2505,6 +2540,7 @@ class ConvTransposeParam : public OpParam {
   vector<int> strides_;
   vector<int> paddings_;
   vector<int> dilations_;
+  vector<int> output_size_;
   int groups;
   mutable enum ExecMode exec_mode_;
 
@@ -3471,23 +3507,31 @@ class IncrementParam : public OpParam {
 #endif  // INCREMENT_OP
 #ifdef PAD2D_OP
 template <typename Dtype>
-class Pad2dParam : public OpParam {
+class Pad2DParam : public OpParam {
   typedef typename DtypeTensorTrait<Dtype>::gtype GType;
   typedef typename DtypeTensorTrait<Dtype>::rtype RType;
 
  public:
-  Pad2dParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
+  Pad2DParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
              const AttributeMap &attrs, Scope *scope)
       : OpParam(inputs, outputs, attrs, scope) {
     input_x_ = InputXFrom<GType>(inputs, *scope);
     out_ = OutFrom<GType>(outputs, *scope);
+    paddings_ = OpParam::GetAttr<std::vector<int>>("paddings", attrs);
+    pad_value_ = OpParam::GetAttr<float>("pad_value", attrs);
+    mode_ = OpParam::GetStringAttr("mode", attrs);
+    DLOG << "mode" << mode_;
   }
-  const RType *InputX() const { return input_x_; }
-  RType *Out() const { return out_; }
+  const GType *InputX() const { return input_x_; }
+  GType *Out() const { return out_; }
+
+  std::vector<int> paddings_;
+  float pad_value_;
+  std::string mode_;
 
  private:
-  RType *input_x_;
-  RType *out_;
+  GType *input_x_;
+  GType *out_;
 };
 #endif
 #ifdef EXP_OP

@@ -188,6 +188,15 @@ class CLImage {
     DLOG << " end init cl image";
   }
 
+  void InitConv2dTransposeFilterCLImage(cl_context context,
+                                        cl_command_queue command_queue) {
+    PADDLE_MOBILE_ENFORCE(tensor_data_ != nullptr,
+                          " need call SetTensorData first");
+    CLImageConverterConv2dTransposeTransWeight *converter =
+        new CLImageConverterConv2dTransposeTransWeight();
+    InitCLImage(context, command_queue, converter);
+  }
+
   /*! The internal of two tensors share the same memory block. */
   inline CLImage &ShareHolderWith(const CLImage &src) {
     PADDLE_MOBILE_ENFORCE(

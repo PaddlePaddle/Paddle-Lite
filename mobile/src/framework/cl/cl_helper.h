@@ -49,6 +49,10 @@ class CLHelper {
 
   cl_context CLContext() { return scope_->Context(); }
 
+  CLLocalWorkSizeInfo LocalWorkSizeInfo() {
+    return scope_->LocalWorkSizeInfo();
+  }
+
   std::vector<size_t> DefaultWorkSize(const CLImage &image) {
     // n c h w
     auto image_dim = image.dims();

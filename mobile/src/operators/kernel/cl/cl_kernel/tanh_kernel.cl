@@ -12,25 +12,20 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef CONV_TRANSPOSE_OP
+#pragma OPENCL EXTENSION cl_khr_fp16 : enable
 
-#include "operators/conv_transpose_op.h"
+__kernel void tanh_kernel(__read_only image2d_t input,
+                   __write_only image2d_t output){
 
-namespace paddle_mobile {
-namespace operators {}
-}  // namespace paddle_mobile
+  const int x = get_global_id(0);
+  const int y = get_global_id(1);
 
-namespace ops = paddle_mobile::operators;
-#ifdef PADDLE_MOBILE_CPU
-REGISTER_OPERATOR_CPU(conv2d_transpose, ops::ConvOpTranspose);
-#endif
+  const sampler_t sampler = CLK_NORMALIZED_COORDS_TRUE |
+                            CLK_ADDRESS_CLAMP |
+                            CLK_FILTER_NEAREST;
 
-#ifdef PADDLE_MOBILE_FPGA
-REGISTER_OPERATOR_FPGA(conv2d_transpose, ops::ConvOpTranspose);
-#endif
+  half4 in = read_imageh(input, sampler, (int2)(x, y));
+  write_imageh(output, (int2)(x, y), tanh(in));
+}
 
-#ifdef PADDLE_MOBILE_CL
-REGISTER_OPERATOR_CL(conv2d_transpose, ops::ConvOpTranspose);
-#endif
 
-#endif
