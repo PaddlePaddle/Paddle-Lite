@@ -30,6 +30,12 @@ bool LayerNormOp::CheckShape() const {
 bool LayerNormOp::InferShape() const {
   auto out_dims = param_.X->dims();
   param_.Y->Resize(out_dims);
+  auto inner_size = out_dims.Flatten2D(param_.begin_norm_axis)[1];
+  param_.Mean->Resize(std::vector<int64_t>({inner_size}));
+  param_.Variance->Resize(std::vector<int64_t>({inner_size}));
+
+  auto out_lod = param_.Y->mutable_lod();
+  *out_lod = param_.X->lod();
   return true;
 }
 
@@ -47,11 +53,11 @@ bool LayerNormOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   CHECK(param_.Mean);
   CHECK(param_.Variance);
   if (opdesc.HasInput("Scale")) {
-    param_.Scale = scope->FindVar(opdesc.Output("Scale").front())
+    param_.Scale = scope->FindVar(opdesc.Input("Scale").front())
                        ->GetMutable<lite::Tensor>();
   }
   if (opdesc.HasInput("Bias")) {
-    param_.Bias = scope->FindVar(opdesc.Output("Bias").front())
+    param_.Bias = scope->FindVar(opdesc.Input("Bias").front())
                       ->GetMutable<lite::Tensor>();
   }
   param_.begin_norm_axis = opdesc.GetAttr<int>("begin_norm_axis");

@@ -25,38 +25,38 @@ void BeamSearchCompute::PrepareForRun() {}
 void BeamSearchCompute::Run() {
   auto& ctx = this->ctx_->template As<ARMContext>();
   auto& param = this->Param<operators::BeamSearchParam>();
-  if (param.finish_ids){
+  if (!param.finish_ids) {
     lite::arm::math::beam_search(param.pre_ids,
-                               param.pre_scores,
-                               param.ids,
-                               param.scores,
-                               param.selected_ids,
-                               param.selected_scores,
-                               param.parent_idx,
-                               param.level,
-                               param.beam_size,
-                               param.end_id,
-                               param.is_accumulated,
-                               &ctx);
+                                 param.pre_scores,
+                                 param.ids,
+                                 param.scores,
+                                 param.selected_ids,
+                                 param.selected_scores,
+                                 param.parent_idx,
+                                 param.level,
+                                 param.beam_size,
+                                 param.end_id,
+                                 param.is_accumulated,
+                                 &ctx);
   } else {
     lite::arm::math::beam_search_special(param.pre_ids,
-                               param.pre_scores,
-                               param.ids,
-                               param.scores,
-                               param.selected_ids,
-                               param.selected_scores,
-                               param.parent_idx,
-                               param.src_length,
-                               param.cur_length,
-                               param.finish_scores,
-                               param.finish_ids,
-                               param.level,
-                               param.beam_size,
-                               param.end_id,
-                               param.is_accumulated,
-                               param.decode_length,
-                               param.alpha,
-                               &ctx);
+                                         param.pre_scores,
+                                         param.ids,
+                                         param.scores,
+                                         param.selected_ids,
+                                         param.selected_scores,
+                                         param.parent_idx,
+                                         param.src_length,
+                                         param.cur_length,
+                                         param.finish_scores,
+                                         param.finish_ids,
+                                         param.level,
+                                         param.beam_size,
+                                         param.end_id,
+                                         param.is_accumulated,
+                                         param.decode_length,
+                                         param.alpha,
+                                         &ctx);
   }
 }
 

@@ -23,6 +23,7 @@ bool MulOpLite::CheckShape() const {
   CHECK_OR_FALSE(param_.x);
   CHECK_OR_FALSE(param_.y);
   CHECK_OR_FALSE(param_.output);
+
   // bias is optional.
 
   const auto x_dims = param_.x->dims();
@@ -54,17 +55,15 @@ bool MulOpLite::InferShape() const {
   const auto y_dims = param_.y->dims();
 
   // Set output dims
-  std::vector<int64_t> out_dims(
-      param_.x_num_col_dims + y_dims.size() - param_.y_num_col_dims, 0);
+  std::vector<int64_t> out_dims;
   for (int i = 0; i < param_.x_num_col_dims; ++i) {
-    out_dims[i] = x_dims[i];
+    out_dims.push_back(x_dims[i]);
   }
 
   for (auto i = static_cast<size_t>(param_.y_num_col_dims); i < y_dims.size();
        ++i) {
-    out_dims[i] = y_dims[i];
+    out_dims.push_back(y_dims[i]);
   }
-
   param_.output->Resize(lite::DDim(out_dims));
   auto out_lod = param_.output->mutable_lod();
   *out_lod = param_.x->lod();

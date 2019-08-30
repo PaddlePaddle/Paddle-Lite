@@ -80,7 +80,12 @@ class FillConstantBatchLikeOp : public OpLite {
     param_.out = GetMutableVar<lite::Tensor>(scope, Out_name);
     param_.input = GetMutableVar<lite::Tensor>(scope, In_name);
     param_.dtype = opdesc.GetAttr<int>("dtype");
-    param_.shape = opdesc.GetAttr<std::vector<int64_t>>("shape");
+    auto shape = opdesc.GetAttr<std::vector<int>>("shape");
+    std::vector<int64_t> outshape;
+    for (auto i : shape) {
+      outshape.push_back(i);
+    }
+    param_.shape = outshape;
     if (opdesc.HasAttr("value")) {
       param_.value = opdesc.GetAttr<float>("value");
     }
