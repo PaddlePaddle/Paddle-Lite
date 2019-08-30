@@ -77,7 +77,7 @@ class StackComputeTester : public arena::TestCase {
   void PrepareOpDesc(cpp::OpDesc* op_desc) {
     op_desc->SetType("stack");
     op_desc->SetInput("X", {input1_, input2_});
-    op_desc->SetOutput("Out", {output_});
+    op_desc->SetOutput("Y", {output_});
     op_desc->SetAttr("axis", axis_);
   }
 

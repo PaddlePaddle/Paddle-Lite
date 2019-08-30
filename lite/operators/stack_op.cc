@@ -46,7 +46,7 @@ bool StackOp::InferShape() const {
 
 bool StackOp::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
   auto X = op_desc.Input("X");
-  auto Out = op_desc.Output("Out").front();
+  auto Out = op_desc.Output("Y").front();
   for (auto var : X) {
     param_.X.emplace_back(scope->FindVar(var)->GetMutable<lite::Tensor>());
   }
