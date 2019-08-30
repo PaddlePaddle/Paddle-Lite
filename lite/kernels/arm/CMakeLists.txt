@@ -47,6 +47,7 @@ add_kernel(sequence_expand_compute_arm ARM basic SRCS sequence_expand_compute.cc
 add_kernel(im2sequence_compute_arm ARM basic SRCS im2sequence_compute.cc DEPS ${lite_kernel_deps} math_arm)
 add_kernel(sequence_pool_compute_arm ARM basic SRCS sequence_pool_compute.cc DEPS ${lite_kernel_deps} math_arm)
 add_kernel(layer_norm_compute_arm ARM basic SRCS layer_norm_compute.cc DEPS ${lite_kernel_deps} math_arm)
+add_kernel(gather_compute_arm ARM basic SRCS gather_compute.cc DEPS ${lite_kernel_deps} math_arm)
 
 # for OCR specific
 add_kernel(gru_unit_compute_arm ARM extra SRCS gru_unit_compute.cc DEPS ${lite_kernel_deps} math_arm)

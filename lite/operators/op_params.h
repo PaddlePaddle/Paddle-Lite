@@ -746,6 +746,13 @@ struct MatMulParam {
   bool transpose_Y{false};
   float alpha{1.0f};
 };
+
+struct GatherParam {
+  const lite::Tensor* X{};
+  const lite::Tensor* Index{};
+  lite::Tensor* Out{};
+};
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle
