@@ -25,7 +25,7 @@ class ArgmaxComputeTester : public arena::TestCase {
   // common attributes for this op.
   std::string input_ = "x";
   std::string output_ = "out";
-  int axis_ = 0.;
+  int64_t axis_ = 0.;
   DDim dims_{{2, 5, 20, 30}};
 
  public:
@@ -85,7 +85,7 @@ class ArgmaxComputeTester : public arena::TestCase {
     op_desc->SetType("arg_max");
     op_desc->SetInput("X", {input_});
     op_desc->SetOutput("Out", {output_});
-    op_desc->SetAttr("Axis", axis_);
+    op_desc->SetAttr("axis", axis_);
   }
 
   void PrepareData() override {
