@@ -56,7 +56,6 @@ if (NOT HAS_ARM_MATH_LIB_DIR)
       elementwise.cc
       lrn.cc
       decode_bboxes.cc
-      multiclass_nms.cc
       concat.cc
       sgemv.cc
       type_trans.cc
