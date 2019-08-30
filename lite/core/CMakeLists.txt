@@ -40,21 +40,19 @@ endif()
 
 #----------------------------------------------- NOT CHANGE -----------------------------------------------
 # A trick to generate the paddle_use_kernels.h
-add_custom_command(
+add_custom_target(generate_use_kernels_header
   COMMAND python ${CMAKE_SOURCE_DIR}/lite/tools/cmake_tools/parse_kernel_registry.py
   ${kernels_src_list}
   ${CMAKE_SOURCE_DIR}/lite/api/paddle_use_kernels.h
-  OUTPUT ${CMAKE_SOURCE_DIR}/lite/api/paddle_use_kernels.h
   )
 # A trick to generate the paddle_use_ops.h
-add_custom_command(
+add_custom_target(generate_use_ops_header
   COMMAND python ${CMAKE_SOURCE_DIR}/lite/tools/cmake_tools/parse_op_registry.py
   ${ops_src_list}
   ${CMAKE_SOURCE_DIR}/lite/api/paddle_use_ops.h
-  OUTPUT ${CMAKE_SOURCE_DIR}/lite/api/paddle_use_ops.h
   )
-add_custom_target(op_list_h DEPENDS ${CMAKE_SOURCE_DIR}/lite/api/paddle_use_ops.h)
-add_custom_target(kernel_list_h DEPENDS ${CMAKE_SOURCE_DIR}/lite/api/paddle_use_kernels.h)
+add_custom_target(op_list_h DEPENDS generate_use_ops_header)
+add_custom_target(kernel_list_h DEPENDS generate_use_kernels_header)
 
 #----------------------------------------------- NOT CHANGE -----------------------------------------------
 lite_cc_library(kernel SRCS kernel.cc DEPS context type_system target_wrapper any op_params tensor
