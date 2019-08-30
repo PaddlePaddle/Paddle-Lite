@@ -13,33 +13,25 @@
 // limitations under the License.
 
 #pragma once
-
-#include <algorithm>
-#include <map>
-#include <string>
-#include <utility>
-#include <vector>
+#include "lite/core/kernel.h"
 
 namespace paddle {
 namespace lite {
-namespace arm {
-namespace math {
+namespace kernels {
+namespace cuda {
 
-template <typename dtype>
-void multiclass_nms(const dtype* bbox_cpu_data,
-                    const dtype* conf_cpu_data,
-                    std::vector<dtype>* result,
-                    const std::vector<int>& priors,
-                    int class_num,
-                    int background_id,
-                    int keep_topk,
-                    int nms_topk,
-                    float conf_thresh,
-                    float nms_thresh,
-                    float nms_eta,
-                    bool share_location);
+class YoloBoxCompute : public KernelLite<TARGET(kCUDA), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::YoloBoxParam;
 
-}  // namespace math
-}  // namespace arm
+  void Run() override;
+  virtual ~YoloBoxCompute() = default;
+
+ private:
+  lite::Tensor anchors_;
+};
+
+}  // namespace cuda
+}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

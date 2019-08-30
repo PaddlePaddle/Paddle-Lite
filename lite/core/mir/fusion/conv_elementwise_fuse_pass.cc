@@ -28,6 +28,9 @@ void ConvElementwiseFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 
   fusion::ConvElementwiseFuser depthwise_fuser("depthwise_conv2d");
   depthwise_fuser(graph.get());
+
+  fusion::ConvElementwiseFuser conv2d_transpose_fuser("conv2d_transpose");
+  conv2d_transpose_fuser(graph.get());
 }
 
 }  // namespace mir

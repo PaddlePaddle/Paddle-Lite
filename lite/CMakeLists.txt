@@ -59,6 +59,9 @@ if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM)
     if (LITE_WITH_OPENCL)
         set(INFER_LITE_PUBLISH_ROOT "${INFER_LITE_PUBLISH_ROOT}.opencl")
     endif(LITE_WITH_OPENCL)
+    if (LITE_WITH_NPU)
+        set(INFER_LITE_PUBLISH_ROOT "${INFER_LITE_PUBLISH_ROOT}.npu")
+    endif(LITE_WITH_NPU)
     message(STATUS "publish inference lib to ${INFER_LITE_PUBLISH_ROOT}")
 
     # The final target for publish lite lib
@@ -86,6 +89,17 @@ if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM)
                 add_custom_command(TARGET publish_inference_cxx_lib POST_BUILD
                         COMMAND ${CMAKE_STRIP} "--strip-debug" ${INFER_LITE_PUBLISH_ROOT}/cxx/lib/*.a)
             endif()
+    else()
+        if (IOS)
+            add_custom_target(tiny_publish_lib ${TARGET}
+                    COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/lib"
+                    COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/include"
+                    COMMAND cp "${CMAKE_SOURCE_DIR}/lite/api/paddle_*.h" "${INFER_LITE_PUBLISH_ROOT}/include"
+                    COMMAND cp "${CMAKE_BINARY_DIR}/libpaddle_api_light_bundled.a" "${INFER_LITE_PUBLISH_ROOT}/lib"
+                    )
+            add_dependencies(tiny_publish_lib bundle_light_api)
+            add_dependencies(publish_inference tiny_publish_lib)
+        endif()
     endif()
 
 
