@@ -674,8 +674,8 @@ void LoadModelNaive(const std::string &model_dir,
   VLOG(4) << "Load naive buffer model in '" << model_dir << "' successfully";
 }
 
-void LoadModelNaiveFromMemory(const std::string &model_file,
-                              const std::string &param_file,
+void LoadModelNaiveFromMemory(const std::string &model_buffer,
+                              const std::string &param_buffer,
                               Scope *scope,
                               cpp::ProgramDesc *cpp_prog) {
   CHECK(cpp_prog);
@@ -684,7 +684,7 @@ void LoadModelNaiveFromMemory(const std::string &model_file,
 
   // Load model
 
-  std::string prog_path = model_file;
+  std::string prog_path = model_buffer;
 
   naive_buffer::BinaryTable table;
   table.LoadFromMemory(prog_path.c_str(), prog_path.length());
@@ -699,7 +699,7 @@ void LoadModelNaiveFromMemory(const std::string &model_file,
   // Load Params
   // NOTE: Only main block be used now.
   // only combined Params are supported in Loading Model from memory
-  std::string combined_params_path = param_file;
+  std::string combined_params_path = param_buffer;
   LoadCombinedParamsNaive(combined_params_path, scope, *cpp_prog, true);
 
 #ifdef LITE_WITH_NPU

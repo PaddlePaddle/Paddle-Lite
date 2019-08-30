@@ -17,24 +17,23 @@
 namespace paddle {
 namespace lite {
 
-void LightPredictor::Build(const lite_api::MobileConfig& config,
-                           lite_api::LiteModelType model_type) {
-  const std::string& model_path = config.model_dir();
-  const std::string& model_file = config.model_file();
-  const std::string& param_file = config.param_file();
-  const bool model_from_memory = config.model_from_memory();
+void LightPredictor::Build(const std::string& model_dir,
+                           const std::string& model_buff,
+                           const std::string& param_buff,
+                           lite_api::LiteModelType model_type,
+                           bool model_from_memory) {
   cpp::ProgramDesc desc;
   switch (model_type) {
 #ifndef LITE_ON_TINY_PUBLISH
     case lite_api::LiteModelType::kProtobuf:
-      LoadModelPb(model_path, "", "", scope_.get(), &desc);
+      LoadModelPb(model_dir, "", "", scope_.get(), &desc);
       break;
 #endif
     case lite_api::LiteModelType::kNaiveBuffer: {
       if (model_from_memory) {
-        LoadModelNaiveFromMemory(model_file, param_file, scope_.get(), &desc);
+        LoadModelNaiveFromMemory(model_buff, param_buff, scope_.get(), &desc);
       } else {
-        LoadModelNaive(model_path, scope_.get(), &desc);
+        LoadModelNaive(model_dir, scope_.get(), &desc);
       }
       break;
     }
@@ -94,7 +93,13 @@ void LightPredictor::BuildRuntimeProgram(const cpp::ProgramDesc& prog) {
 LightPredictor::LightPredictor(const lite_api::MobileConfig& config,
                                lite_api::LiteModelType model_type) {
   scope_ = std::make_shared<Scope>();
-  Build(config, model_type);
+  //  Build(config, model_type);
+  const std::string& model_path = config.model_dir();
+  const std::string& model_buff = config.model_buff();
+  const std::string& param_buff = config.param_buff();
+  const bool model_from_memory = config.model_from_memory();
+
+  Build(model_path, model_buff, param_buff, model_type, model_from_memory);
 }
 
 }  // namespace lite

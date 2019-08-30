@@ -119,8 +119,8 @@ class LITE_API CxxConfig : public ConfigBase {
 class LITE_API MobileConfig : public ConfigBase {
   PowerMode mode_{LITE_POWER_HIGH};
   int threads_{1};
-  std::string model_file_;
-  std::string param_file_;
+  std::string model_buff_;
+  std::string param_buff_;
   bool model_from_memory_{false};
 
  public:
@@ -136,16 +136,16 @@ class LITE_API MobileConfig : public ConfigBase {
                         size_t model_buffer_size,
                         const char* param_buffer,
                         size_t param_buffer_size) {
-    model_file_ = std::string(model_buffer, model_buffer + model_buffer_size);
-    param_file_ = std::string(param_buffer, param_buffer + param_buffer_size);
+    model_buff_ = std::string(model_buffer, model_buffer + model_buffer_size);
+    param_buff_ = std::string(param_buffer, param_buffer + param_buffer_size);
     model_from_memory_ = true;
   }
 
   PowerMode power_mode() const { return mode_; }
   int threads() const { return threads_; }
   bool model_from_memory() const { return model_from_memory_; }
-  std::string model_file() const { return model_file_; }
-  std::string param_file() const { return param_file_; }
+  std::string model_buff() const { return model_buff_; }
+  std::string param_buff() const { return param_buff_; }
 };
 
 template <typename ConfigT>

@@ -57,8 +57,11 @@ class LITE_API LightPredictor {
 
  private:
   void Build(
-      const lite_api::MobileConfig& config,
-      lite_api::LiteModelType model_type = lite_api::LiteModelType::kProtobuf);
+      const std::string& model_dir,
+      const std::string& model_buff,
+      const std::string& param_buff,
+      lite_api::LiteModelType model_type = lite_api::LiteModelType::kProtobuf,
+      bool model_from_memory = false);
 
   void BuildRuntimeProgram(const cpp::ProgramDesc& prog);
 
