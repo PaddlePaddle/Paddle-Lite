@@ -119,7 +119,7 @@ TEST(ModelParser, SaveModelNaive) {
   SaveModelNaive(save_pb_model_path, scope, prog);
 }
 
-TEST(ModelParser, LoadModelNaiveFromMemory) {
+TEST(ModelParser, LoadNaiveModelFromMemory) {
   CHECK(!FLAGS_model_dir.empty());
   cpp::ProgramDesc prog;
   Scope scope;
