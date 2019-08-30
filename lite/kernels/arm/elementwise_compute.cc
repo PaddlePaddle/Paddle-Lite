@@ -35,7 +35,7 @@ inline DDim trim_trailing_singular_dims(const DDim& dims) {
     trim_dims[i] = dims[i];
   }
   if (trim_dims.size() == 0) {
-    return DDim({});
+    return DDim();
   }
   return DDim(trim_dims);
 }
