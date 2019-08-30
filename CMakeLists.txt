@@ -78,7 +78,7 @@ option(LITE_WITH_OPENCL   "Enable OpenCL support in lite" OFF)
 option(LITE_WITH_FPGA   "Enable FPGA support in lite" OFF)
 option(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK  "Enable light-weight framework" OFF)
 option(LITE_WITH_PROFILE  "Enable profile mode in lite framework"  OFF)
-option(LITE_WITH_PRECISION_PROFILE "Enable precision profile in profile mode in lite" OFF)
+option(LITE_WITH_PRECISION_PROFILE "Enable precision profile in profile mode ON in lite" OFF)
 option(LITE_SHUTDOWN_LOG "Shutdown log system or not." OFF)
 option(LITE_ON_TINY_PUBLISH "Publish tiny predictor lib." OFF)
 # publish options
