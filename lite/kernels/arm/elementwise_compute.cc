@@ -35,7 +35,7 @@ inline DDim trim_trailing_singular_dims(const DDim& dims) {
     trim_dims[i] = dims[i];
   }
   if (trim_dims.size() == 0) {
-    return DDim({1});
+    return DDim({});
   }
   return DDim(trim_dims);
 }
@@ -50,6 +50,7 @@ inline bool is_broadcast(const DDim& x_dims,
     axis = x_dims.size() - y_dims.size();
   }
   DDim y_dim_trim = trim_trailing_singular_dims(y_dims);
+  axis = (y_dim_trim.size() == 0) ? x_dims.size() : axis;
   if (x_dims.size() == y_dim_trim.size()) {
     return false;
   }
