@@ -18,8 +18,8 @@ namespace paddle {
 namespace lite {
 
 void LightPredictor::Build(const std::string& model_dir,
-                           const std::string& model_buff,
-                           const std::string& param_buff,
+                           const std::string& model_buffer,
+                           const std::string& param_buffer,
                            lite_api::LiteModelType model_type,
                            bool model_from_memory) {
   cpp::ProgramDesc desc;
@@ -31,7 +31,8 @@ void LightPredictor::Build(const std::string& model_dir,
 #endif
     case lite_api::LiteModelType::kNaiveBuffer: {
       if (model_from_memory) {
-        LoadModelNaiveFromMemory(model_buff, param_buff, scope_.get(), &desc);
+        LoadModelNaiveFromMemory(
+            model_buffer, param_buffer, scope_.get(), &desc);
       } else {
         LoadModelNaive(model_dir, scope_.get(), &desc);
       }
@@ -91,11 +92,11 @@ void LightPredictor::BuildRuntimeProgram(const cpp::ProgramDesc& prog) {
 }
 
 LightPredictor::LightPredictor(const std::string& model_dir,
-                               const std::string& model_buff,
-                               const std::string& param_buff,
+                               const std::string& model_buffer,
+                               const std::string& param_buffer,
                                bool model_from_memory,
                                lite_api::LiteModelType model_type) {
-  Build(model_dir, model_buff, param_buff, model_type, model_from_memory);
+  Build(model_dir, model_buffer, param_buffer, model_type, model_from_memory);
 }
 
 }  // namespace lite

@@ -23,24 +23,6 @@ DEFINE_string(optimized_model, "", "");
 
 namespace paddle {
 namespace lite {
-// SubFunction of read buffer from file
-static size_t ReadBuffer(const char* file_name, char** out) {
-  FILE* fp;
-  fp = fopen(file_name, "rb");
-  CHECK(fp != nullptr) << " %s open failed !";
-  fseek(fp, 0, SEEK_END);
-  auto size = static_cast<size_t>(ftell(fp));
-  rewind(fp);
-  LOG(INFO) << "model size: " << size;
-  *out = reinterpret_cast<char*>(malloc(size));
-  size_t cur_len = 0;
-  size_t nread;
-  while ((nread = fread(*out + cur_len, 1, size - cur_len, fp)) != 0) {
-    cur_len += nread;
-  }
-  fclose(fp);
-  return cur_len;
-}
 
 TEST(LightAPI, load) {
   if (FLAGS_optimized_model.empty()) {
@@ -49,8 +31,8 @@ TEST(LightAPI, load) {
   lite_api::MobileConfig config;
   config.set_model_dir(FLAGS_optimized_model);
   LightPredictor predictor(config.model_dir(),
-                           config.model_buff(),
-                           config.param_buff(),
+                           config.model_buffer(),
+                           config.param_buffer(),
                            config.model_from_memory(),
                            lite_api::LiteModelType::kNaiveBuffer);
 
@@ -78,18 +60,19 @@ TEST(LightAPI, loadNaiveBuffer) {
 
   auto model_path = std::string(FLAGS_optimized_model) + "/__model__.nb";
   auto params_path = std::string(FLAGS_optimized_model) + "/param.nb";
-  char* bufModel = nullptr;
-  size_t sizeBuf = ReadBuffer(model_path.c_str(), &bufModel);
-  char* bufParams = nullptr;
-  std::cout << "sizeBuf: " << sizeBuf << std::endl;
-  size_t sizeParams = ReadBuffer(params_path.c_str(), &bufParams);
+  std::string Model_buffer = lite::ReadFile(model_path);
+  size_t sizeModel = Model_buffer.length();
+  std::string Params_buffer = lite::ReadFile(params_path);
+  size_t sizeParams = Params_buffer.length();
+  std::cout << "sizeModel: " << sizeModel << std::endl;
   std::cout << "sizeParams: " << sizeParams << std::endl;
 
   lite_api::MobileConfig config;
-  config.set_model_buffer(bufModel, sizeBuf, bufParams, sizeParams);
+  config.set_model_buffer(
+      Model_buffer.c_str(), sizeModel, Params_buffer.c_str(), sizeParams);
   LightPredictor predictor(config.model_dir(),
-                           config.model_buff(),
-                           config.param_buff(),
+                           config.model_buffer(),
+                           config.param_buffer(),
                            config.model_from_memory(),
                            lite_api::LiteModelType::kNaiveBuffer);
 

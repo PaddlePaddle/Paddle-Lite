@@ -21,24 +21,6 @@ DEFINE_string(model_dir, "", "");
 
 namespace paddle {
 namespace lite {
-// SubFunction to read buffer from file for testing
-static size_t ReadBuffer(const char* file_name, char** out) {
-  FILE* fp;
-  fp = fopen(file_name, "rb");
-  CHECK(fp != nullptr) << " %s open failed !";
-  fseek(fp, 0, SEEK_END);
-  auto size = static_cast<size_t>(ftell(fp));
-  rewind(fp);
-  LOG(INFO) << "model size: " << size;
-  *out = reinterpret_cast<char*>(malloc(size));
-  size_t cur_len = 0;
-  size_t nread;
-  while ((nread = fread(*out + cur_len, 1, size - cur_len, fp)) != 0) {
-    cur_len += nread;
-  }
-  fclose(fp);
-  return cur_len;
-}
 
 TEST(ModelParser, LoadProgram) {
   CHECK(!FLAGS_model_dir.empty());
@@ -144,14 +126,10 @@ TEST(ModelParser, LoadModelNaiveFromMemory) {
 
   auto model_path = std::string(FLAGS_model_dir) + ".saved.naive/__model__.nb";
   auto params_path = std::string(FLAGS_model_dir) + ".saved.naive/param.nb";
-  char* bufModel = nullptr;
-  size_t sizeBuf = ReadBuffer(model_path.c_str(), &bufModel);
-  char* bufParams = nullptr;
-  std::cout << "sizeBuf: " << sizeBuf << std::endl;
-  size_t sizeParams = ReadBuffer(params_path.c_str(), &bufParams);
-  std::cout << "sizeParams: " << sizeParams << std::endl;
+  std::string Model_buffer = lite::ReadFile(model_path);
+  std::string Params_buffer = lite::ReadFile(params_path);
 
-  LoadModelNaiveFromMemory(bufModel, bufParams, &scope, &prog);
+  LoadModelNaiveFromMemory(Model_buffer, Params_buffer, &scope, &prog);
 }
 
 }  // namespace lite

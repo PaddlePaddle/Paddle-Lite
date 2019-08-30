@@ -19,29 +19,11 @@
 #include "lite/api/paddle_use_ops.h"
 #include "lite/api/paddle_use_passes.h"
 #include "lite/utils/cp_logging.h"
-
+#include "lite/utils/io.h"
 DEFINE_string(model_dir, "", "");
 
 namespace paddle {
 namespace lite_api {
-// subFunction to read buffer from file for testing
-static size_t ReadBuffer(const char* file_name, char** out) {
-  FILE* fp;
-  fp = fopen(file_name, "rb");
-  CHECK(fp != nullptr) << " %s open failed !";
-  fseek(fp, 0, SEEK_END);
-  auto size = static_cast<size_t>(ftell(fp));
-  rewind(fp);
-  LOG(INFO) << "model size: " << size;
-  *out = reinterpret_cast<char*>(malloc(size));
-  size_t cur_len = 0;
-  size_t nread;
-  while ((nread = fread(*out + cur_len, 1, size - cur_len, fp)) != 0) {
-    cur_len += nread;
-  }
-  fclose(fp);
-  return cur_len;
-}
 
 // Demo1 for Mobile Devices :Load model from file and run
 #ifdef LITE_WITH_LIGHT_WEIGHT_FRAMEWORK
@@ -74,14 +56,14 @@ TEST(MobileConfig, LoadfromMemory) {
   // Get naive buffer
   auto model_path = std::string(FLAGS_model_dir) + ".opt2.naive/__model__.nb";
   auto params_path = std::string(FLAGS_model_dir) + ".opt2.naive/param.nb";
-  char* bufModel = nullptr;
-  size_t sizeBuf = ReadBuffer(model_path.c_str(), &bufModel);
-  char* bufParams = nullptr;
-  size_t sizeParams = ReadBuffer(params_path.c_str(), &bufParams);
-
+  std::string Model_buffer = lite::ReadFile(model_path);
+  size_t sizeModel = Model_buffer.length();
+  std::string Params_buffer = lite::ReadFile(params_path);
+  size_t sizeParams = Params_buffer.length();
   // set model buffer and run model
   lite_api::MobileConfig config;
-  config.set_model_buffer(bufModel, sizeBuf, bufParams, sizeParams);
+  config.set_model_buffer(
+      Model_buffer.c_str(), sizeModel, Params_buffer.c_str(), sizeParams);
 
   auto predictor = lite_api::CreatePaddlePredictor(config);
   auto input_tensor = predictor->GetInput(0);
