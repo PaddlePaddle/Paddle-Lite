@@ -61,6 +61,8 @@ add_operator(squeeze_op_lite basic SRCS squeeze_op.cc DEPS ${op_DEPS})
 add_operator(im2sequence_op basic SRCS im2sequence_op.cc DEPS ${op_DEPS})
 add_operator(cast_op_lite basic SRCS cast_op.cc DEPS ${op_DEPS})
 add_operator(assign_op basic SRCS assign_op.cc DEPS ${op_DEPS})
+add_operator(flatten_op basic SRCS flatten_op.cc DEPS ${op_DEPS})
+add_operator(fake_quantize_range_abs_max_op basic SRCS fake_quantize_range_abs_max.cc DEPS ${op_DEPS})
 
 # for OCR specific
 add_operator(while_op extra SRCS while_op.cc DEPS ${op_DEPS})
