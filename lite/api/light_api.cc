@@ -40,14 +40,12 @@ void LightPredictor::Build(const std::string& model_dir,
       break;
 #endif
     case lite_api::LiteModelType::kNaiveBuffer: {
-      bool combined_param = true;
-      LoadModelNaiveFromMemory(model_dir,
-                               model_file_path,
-                               param_file_path,
-                               scope_.get(),
-                               &desc,
-                               combined_param,
-                               model_from_memory);
+      if (model_from_memory) {
+        LoadModelNaiveFromMemory(
+            model_file_path, param_file_path, scope_.get(), &desc);
+      } else {
+        LoadModelNaive(model_dir, scope_.get(), &desc);
+      }
       break;
     }
     default:

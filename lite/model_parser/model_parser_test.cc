@@ -141,8 +141,17 @@ TEST(ModelParser, LoadModelNaiveFromMemory) {
   CHECK(!FLAGS_model_dir.empty());
   cpp::ProgramDesc prog;
   Scope scope;
-  const std::string model_path = FLAGS_model_dir + ".saved.naive";
-  LoadModelNaiveFromMemory(model_path, "", "", &scope, &prog);
+
+  auto model_path = std::string(FLAGS_model_dir) + ".saved.naive/__model__.nb";
+  auto params_path = std::string(FLAGS_model_dir) + ".saved.naive/param.nb";
+  char* bufModel = nullptr;
+  size_t sizeBuf = ReadBuffer(model_path.c_str(), &bufModel);
+  char* bufParams = nullptr;
+  std::cout << "sizeBuf: " << sizeBuf << std::endl;
+  size_t sizeParams = ReadBuffer(params_path.c_str(), &bufParams);
+  std::cout << "sizeParams: " << sizeParams << std::endl;
+
+  LoadModelNaiveFromMemory(bufModel, bufParams, &scope, &prog);
 }
 
 }  // namespace lite

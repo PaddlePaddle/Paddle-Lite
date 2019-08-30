@@ -97,18 +97,15 @@ void LoadModelNaive(const std::string& model_dir,
                     cpp::ProgramDesc* prog,
                     bool combined = true);
 
-void LoadCombinedParamsNaive(const std::string& path,
+/*void LoadCombinedParamsNaive(const std::string& path,
                              lite::Scope* scope,
                              const cpp::ProgramDesc& cpp_prog,
-                             bool params_from_memory = false);
+                             bool params_from_memory = false);*/
 
-void LoadModelNaiveFromMemory(const std::string& model_dir,
-                              const std::string& model_file,
+void LoadModelNaiveFromMemory(const std::string& model_file,
                               const std::string& param_file,
                               Scope* scope,
-                              cpp::ProgramDesc* cpp_prog,
-                              bool combined = true,
-                              bool model_from_memory = false);
+                              cpp::ProgramDesc* cpp_prog);
 
 }  // namespace lite
 }  // namespace paddle
