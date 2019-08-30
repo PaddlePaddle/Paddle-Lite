@@ -7,7 +7,7 @@ function print_usage {
     echo "----------------------------------------"
     echo -e "--arm_os=<os> android only yet."
     echo -e "--arm_abi=<abi> armv8, armv7 yet."
-    echo -e "--arm_stl=<shared> shared or static"
+    echo -e "--android_stl=<shared> shared or static"
     echo -e "--arm_lang=<gcc> "
     echo -e "--ddk_root=<hiai_ddk_root> "
     echo -e "--test_name=<test_name>"
@@ -89,23 +89,23 @@ function build_npu {
     local test_name=test_npu_pass
     prepare_thirdparty
 
-    if [[ $# -ge 1 ]]; then
-        os=$1
+    if [ x$ARM_OS != x ]; then
+        os=$ARM_OS
     fi
-    if [[ $# -ge 2 ]]; then
-        abi=$2
+    if [[ x$ARM_ABI != x ]]; then
+        abi=$ARM_ABI
     fi
-    if [[ $# -ge 3 ]]; then
-        lang=$3
+    if [[ x$ARM_LANG != x ]]; then
+        lang=$ARM_LANG
     fi
-    if [[ $# -ge 4 ]]; then
-        stl=$4
+    if [[ x$ANDROID_STL != x ]]; then
+        stl=$ANDROID_STL
     fi
-    if [[ $# -ge 5 ]]; then
-        ddk_root=$5
+    if [[ x$DDK_ROOT != x ]]; then
+        ddk_root=$DDK_ROOT
     fi
-    if [[ $# -ge 6 ]]; then
-        test_name=$6
+    if [[ x$1 != x ]]; then
+        test_name=$1
     fi
 
     # the c++ symbol is not recognized by the bundled script
@@ -121,8 +121,6 @@ function build_npu {
 
     cmake_npu ${os} ${abi} ${lang} ${stl} ${ddk_root}
     make $test_name -j8
-
-    make publish_inference -j8
 
     cd -
     echo "Done"
@@ -152,8 +150,20 @@ function main {
                 ARM_LANG="${i#*=}"
                 shift
                 ;;
+            --android_stl=*)
+                ANDROID_STL="${i#*=}"
+                shift
+                ;;
+            --ddk_root=*)
+                DDK_ROOT="${i#*=}"
+                shift
+                ;;
             build)
-                build_npu ${os} ${abi} ${lang} ${stl} ${ddk_root} ${test_name}
+                build_npu $TEST_NAME
+                shift
+                ;;
+            full_publish)
+                build_npu publish_inference
                 shift
                 ;;
             *)
