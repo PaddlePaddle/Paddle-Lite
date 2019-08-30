@@ -62,6 +62,7 @@ function cmake_npu {
         -DWITH_LITE=ON \
         -DLITE_WITH_CUDA=OFF \
         -DLITE_WITH_X86=OFF \
+        -DLITE_BUILD_EXTRA=ON \
         -DLITE_WITH_ARM=ON \
         -DWITH_ARM_DOTPROD=ON   \
         -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
@@ -106,7 +107,14 @@ function build_npu {
         test_name=$6
     fi
 
-    build_dir=$cur_dir/build.lite.npu.${os}.${abi}.${lang}.${stl}
+    # the c++ symbol is not recognized by the bundled script
+    if [[ "${stl}" == "c++_shared" ]]; then
+        stl_dir="cxx_shared"
+    fi
+    if [[ "${stl}" == "c++_static" ]]; then
+        stl_dir="cxx_static"
+    fi
+    build_dir=$cur_dir/build.lite.npu.${os}.${abi}.${lang}.${stl_dir}
     mkdir -p $build_dir
     cd $build_dir
 

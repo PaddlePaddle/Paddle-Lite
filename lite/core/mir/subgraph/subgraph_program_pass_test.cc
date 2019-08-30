@@ -32,7 +32,7 @@ namespace lite {
 TEST(SubgraphTest, mobilenetv2) {
   cpp::ProgramDesc program_desc;
   auto scope = std::make_shared<Scope>();
-  LoadModelPb(FLAGS_model_dir, scope.get(), &program_desc);
+  LoadModelPb(FLAGS_model_dir, "", "", scope.get(), &program_desc);
   std::vector<Place> valid_places({
       Place{TARGET(kHost), PRECISION(kFloat)},
 #ifdef LITE_WITH_ARM

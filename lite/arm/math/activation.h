@@ -55,6 +55,9 @@ void act_log(const T* din, T* dout, int size, int threads);
 template <typename T>
 void act_exp(const T* din, T* dout, int size, int threads);
 
+template <typename T>
+void act_floor(const T* din, T* dout, int size, int threads);
+
 }  // namespace math
 }  // namespace arm
 }  // namespace lite

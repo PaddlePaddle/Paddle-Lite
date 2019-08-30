@@ -41,16 +41,6 @@ void conv_ref(const std::shared_ptr<operators::ConvOpLite> op) {
   std::vector<int32_t> dilations =
       op_info->GetAttr<std::vector<int32_t>>("dilations");
   bool fuse_relu = op_info->GetAttr<bool>("fuse_relu");
-  Tensor* bias = nullptr;
-  float* bias_data = nullptr;
-  if (op_info->HasInput("Bias")) {
-    auto bias_var_names = op_info->Input("Bias");
-    if (bias_var_names.size() > 0) {
-      auto bias_var_name = bias_var_names.front();
-      bias = scope->FindVar(bias_var_name)->GetMutable<lite::Tensor>();
-      bias_data = bias->mutable_data<float>();
-    }
-  }
   auto input_dims = input->dims();
   auto filter_dims = filter->dims();
   auto output_dims = output->dims();
@@ -74,6 +64,19 @@ void conv_ref(const std::shared_ptr<operators::ConvOpLite> op) {
   int out_w = output_dims[3];
   int out_c_group = out_ch_size / groups;
   int in_c_group = in_ch_size / groups;
+  Tensor* bias = nullptr;
+  float* bias_data = nullptr;
+  bool is_channel_bias = false;
+  if (op_info->HasInput("Bias")) {
+    auto bias_var_names = op_info->Input("Bias");
+    if (bias_var_names.size() > 0) {
+      auto bias_var_name = bias_var_names.front();
+      bias = scope->FindVar(bias_var_name)->GetMutable<lite::Tensor>();
+      auto bias_dims = bias->dims();
+      is_channel_bias = bias_dims.production() == out_ch_size;
+      bias_data = bias->mutable_data<float>();
+    }
+  }
   for (int n = 0; n < batch_size; ++n) {
     for (int g = 0; g < groups; ++g) {
       for (int oc = 0; oc < out_c_group; ++oc) {
@@ -83,7 +86,10 @@ void conv_ref(const std::shared_ptr<operators::ConvOpLite> op) {
                           g * out_c_group * out_h * out_w + oc * out_h * out_w +
                           oh * out_w + ow;
             float out_value =
-                bias_data != nullptr ? (bias_data[g * out_c_group + oc]) : 0;
+                bias_data != nullptr
+                    ? (is_channel_bias ? bias_data[g * out_c_group + oc]
+                                       : bias_data[out_idx])
+                    : 0;
             // + out_value *= beta;
             for (int ic = 0; ic < in_c_group; ++ic) {
               for (int kh = 0; kh < kernel_h; ++kh) {
@@ -120,6 +126,7 @@ void test_conv(int bs,
                int ih,
                int iw,
                bool has_bias,
+               bool is_channel_bias,
                bool fuse_relu,
                bool depthwise,
                int dilation,
@@ -146,6 +153,12 @@ void test_conv(int bs,
   }
   std::vector<int64_t> input_shape = {bs, ic, ih, iw};
   std::vector<int64_t> filter_shape = {oc, ic / groups, kernel, kernel};
+  std::vector<int64_t> output_shape({bs, oc});
+  for (size_t i = 0; i < 2; i++) {
+    const int dkernel = dilation * (kernel - 1) + 1;
+    int output_size = (input_shape[i + 2] + 2 * padding - dkernel) / stride + 1;
+    output_shape.push_back(output_size);
+  }
   input->Resize(input_shape);
   filter->Resize(filter_shape);
 
@@ -165,7 +178,11 @@ void test_conv(int bs,
   opdesc.SetAttr("groups", groups);
   opdesc.SetAttr("fuse_relu", static_cast<bool>(fuse_relu));
   if (has_bias) {
-    bias->Resize({1, oc, 1, 1});
+    if (is_channel_bias) {
+      bias->Resize({1, oc, 1, 1});
+    } else {
+      bias->Resize({output_shape});
+    }
     FillTensor<float, int>(bias);
     opdesc.SetInput("Bias", {bias_var_name});
   }
@@ -195,37 +212,42 @@ TEST(NPUBridges, conv) {
         for (auto ih : {14, 28}) {
           for (auto iw : {14, 28}) {
             for (auto has_bias : {false, true}) {
-              for (auto fuse_relu : {false, true}) {
-                for (auto depthwise : {false, true}) {
-                  for (auto dilation : {1, 2}) {
-                    for (auto stride : {1, 2}) {
-                      for (auto kernel : {1, 3, 5}) {
-                        std::vector<int> paddings = {kernel / 2};
-                        if (kernel / 2 != 0) {
-                          paddings.push_back(0);
-                        }
-                        for (auto padding : paddings) {
-                          VLOG(3) << "bs: " << bs << " ic: " << ic
-                                  << " oc: " << oc << " ih: " << ih
-                                  << " iw: " << iw << " has_bias: " << has_bias
-                                  << " fuse_relu: " << fuse_relu
-                                  << " depthwise: " << depthwise
-                                  << " dilation: " << dilation
-                                  << " stride: " << stride
-                                  << " padding: " << padding
-                                  << " kernel: " << kernel;
-                          test_conv(bs,
-                                    ic,
-                                    oc,
-                                    ih,
-                                    iw,
-                                    has_bias,
-                                    fuse_relu,
-                                    depthwise,
-                                    dilation,
-                                    stride,
-                                    padding,
-                                    kernel);
+              for (auto is_channel_bias : {false, true}) {
+                for (auto fuse_relu : {false, true}) {
+                  for (auto depthwise : {false, true}) {
+                    for (auto dilation : {1, 2}) {
+                      for (auto stride : {1, 2}) {
+                        for (auto kernel : {1, 3, 5}) {
+                          std::vector<int> paddings = {kernel / 2};
+                          if (kernel / 2 != 0) {
+                            paddings.push_back(0);
+                          }
+                          for (auto padding : paddings) {
+                            VLOG(3) << "bs: " << bs << " ic: " << ic
+                                    << " oc: " << oc << " ih: " << ih
+                                    << " iw: " << iw
+                                    << " has_bias: " << has_bias
+                                    << " is_channel_bias: " << is_channel_bias
+                                    << " fuse_relu: " << fuse_relu
+                                    << " depthwise: " << depthwise
+                                    << " dilation: " << dilation
+                                    << " stride: " << stride
+                                    << " padding: " << padding
+                                    << " kernel: " << kernel;
+                            test_conv(bs,
+                                      ic,
+                                      oc,
+                                      ih,
+                                      iw,
+                                      has_bias,
+                                      is_channel_bias,
+                                      fuse_relu,
+                                      depthwise,
+                                      dilation,
+                                      stride,
+                                      padding,
+                                      kernel);
+                          }
                         }
                       }
                     }
@@ -239,7 +261,10 @@ TEST(NPUBridges, conv) {
     }
   }
 #else
-  test_conv(2, 3, 3, 8, 8, true, true, true, 1, 1, 1, 3);
+  test_conv(1, 3, 6, 14, 14, false, false, false, true, 2, 1, 1, 3);
+  test_conv(1, 3, 6, 14, 14, false, false, false, true, 2, 1, 0, 3);
+  test_conv(1, 3, 6, 14, 14, false, false, false, true, 2, 1, 2, 5);
+  test_conv(1, 3, 6, 14, 14, false, false, false, true, 2, 1, 0, 5);
 #endif
 }
 

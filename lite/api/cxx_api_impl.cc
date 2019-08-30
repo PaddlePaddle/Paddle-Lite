@@ -47,7 +47,7 @@ CxxPaddleApiImpl::CxxPaddleApiImpl() {}
 void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
   auto places = config.valid_places();
   places.emplace_back(TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny));
-  raw_predictor_.Build(config.model_dir(), config.preferred_place(), places);
+  raw_predictor_.Build(config, places);
 }
 
 std::unique_ptr<lite_api::Tensor> CxxPaddleApiImpl::GetInput(int i) {

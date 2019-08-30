@@ -33,6 +33,8 @@ TEST(ResNet50, test) {
        Place{TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNHWC)}});
 
   predictor.Build(FLAGS_model_dir,
+                  "",
+                  "",
                   Place{TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)},
                   valid_places);
 
