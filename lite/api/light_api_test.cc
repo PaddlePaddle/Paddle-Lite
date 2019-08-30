@@ -28,14 +28,7 @@ TEST(LightAPI, load) {
   if (FLAGS_optimized_model.empty()) {
     FLAGS_optimized_model = "lite_naive_model";
   }
-  lite_api::MobileConfig config;
-  config.set_model_dir(FLAGS_optimized_model);
-  LightPredictor predictor(config.model_dir(),
-                           config.model_buffer(),
-                           config.param_buffer(),
-                           config.model_from_memory(),
-                           lite_api::LiteModelType::kNaiveBuffer);
-
+  LightPredictor predictor(FLAGS_optimized_model, "", "");
   auto* input_tensor = predictor.GetInput(0);
   input_tensor->Resize(DDim(std::vector<int64_t>({100, 100})));
   auto* data = input_tensor->mutable_data<float>();
