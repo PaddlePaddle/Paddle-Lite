@@ -68,7 +68,7 @@ void argmax_compute_ref(const operators::ArgmaxParam& param) {
 TEST(argmax_arm, retrive_op) {
   auto argmax =
       KernelRegistry::Global().Create<TARGET(kARM), PRECISION(kFloat)>(
-          "argmax");
+          "arg_max");
   ASSERT_FALSE(argmax.empty());
   ASSERT_TRUE(argmax.front());
 }
