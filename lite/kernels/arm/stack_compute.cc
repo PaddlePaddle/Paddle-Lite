@@ -38,5 +38,5 @@ void StackCompute::Run() {
 REGISTER_LITE_KERNEL(
     stack, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::StackCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Y", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
