@@ -45,8 +45,11 @@ TEST(CXXApi, save_model) {
   lite::Predictor predictor;
   std::vector<Place> valid_places({Place{TARGET(kHost), PRECISION(kFloat)},
                                    Place{TARGET(kX86), PRECISION(kFloat)}});
-  predictor.Build(
-      FLAGS_model_dir, Place{TARGET(kCUDA), PRECISION(kFloat)}, valid_places);
+  predictor.Build(FLAGS_model_dir,
+                  "",
+                  "",
+                  Place{TARGET(kCUDA), PRECISION(kFloat)},
+                  valid_places);
 
   LOG(INFO) << "Save optimized model to " << FLAGS_optimized_model;
   predictor.SaveModel(FLAGS_optimized_model,
@@ -93,8 +96,11 @@ TEST(CXXApi, save_model) {
   lite::Predictor predictor;
   std::vector<Place> valid_places({Place{TARGET(kHost), PRECISION(kFloat)},
                                    Place{TARGET(kARM), PRECISION(kFloat)}});
-  predictor.Build(
-      FLAGS_model_dir, Place{TARGET(kARM), PRECISION(kFloat)}, valid_places);
+  predictor.Build(FLAGS_model_dir,
+                  "",
+                  "",
+                  Place{TARGET(kARM), PRECISION(kFloat)},
+                  valid_places);
 
   LOG(INFO) << "Save optimized model to " << FLAGS_optimized_model;
   predictor.SaveModel(FLAGS_optimized_model);
@@ -107,6 +113,8 @@ TEST(CXXApi, load_model_naive) {
   std::vector<Place> valid_places({Place{TARGET(kHost), PRECISION(kFloat)},
                                    Place{TARGET(kARM), PRECISION(kFloat)}});
   predictor.Build(FLAGS_optimized_model + ".naive",
+                  "",
+                  "",
                   Place{TARGET(kARM), PRECISION(kFloat)},
                   valid_places,
                   {},

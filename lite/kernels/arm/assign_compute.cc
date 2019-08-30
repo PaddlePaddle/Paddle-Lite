@@ -12,34 +12,36 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
-
-#include <algorithm>
-#include <map>
-#include <string>
-#include <utility>
+#include "lite/kernels/arm/assign_compute.h"
 #include <vector>
+#include "lite/arm/math/funcs.h"
+#include "lite/core/op_registry.h"
+#include "lite/core/type_system.h"
 
 namespace paddle {
 namespace lite {
+namespace kernels {
 namespace arm {
-namespace math {
 
-template <typename dtype>
-void multiclass_nms(const dtype* bbox_cpu_data,
-                    const dtype* conf_cpu_data,
-                    std::vector<dtype>* result,
-                    const std::vector<int>& priors,
-                    int class_num,
-                    int background_id,
-                    int keep_topk,
-                    int nms_topk,
-                    float conf_thresh,
-                    float nms_thresh,
-                    float nms_eta,
-                    bool share_location);
+void AssignCompute::PrepareForRun() {
+  //  CHECK_OR_FALSE(param_t.Out);
+}
 
-}  // namespace math
+void AssignCompute::Run() {
+  // LOG(INFO) << "into kernel compute run";
+  auto& param = Param<param_t>();
+  const lite::Tensor* input = param.X;
+  lite::Tensor* output = param.Out;
+  output->CopyDataFrom(*input);
+}
+
 }  // namespace arm
+}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
+
+REGISTER_LITE_KERNEL(
+    assign, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::AssignCompute, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .Finalize();

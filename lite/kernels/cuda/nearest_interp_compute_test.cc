@@ -79,12 +79,9 @@ static void NearestInterpRef(operators::InterpolateParam param,
   }
 
   float* input_data = input->mutable_data<float>();
-  LOG(INFO) << *(input_data + 2);
   float* output_data = output->mutable_data<float>();
-  LOG(INFO) << *(output_data + 2);
   if (in_h == out_h && in_w == out_w) {
     std::memcpy(output_data, input_data, sizeof(float) * n * c * in_h * in_w);
-    LOG(INFO) << *(output_data + 2);
     return;
   }
   float ratio_h = 0.f;

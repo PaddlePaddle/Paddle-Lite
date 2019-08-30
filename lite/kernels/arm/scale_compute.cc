@@ -32,6 +32,9 @@ void ScaleCompute::Run() {
     bias *= scale;
   }
   lite::arm::math::scale(x_data, output_data, x_dims.production(), scale, bias);
+  if (!param.x->lod().empty()) {
+    param.output->set_lod(param.x->lod());
+  }
 }
 
 }  // namespace arm

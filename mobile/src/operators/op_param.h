@@ -14,9 +14,9 @@ limitations under the License. */
 
 #pragma once
 
+#include <memory>
 #include <string>
 #include <vector>
-#include <memory>
 #include "common/log.h"
 #include "common/type_define.h"
 #include "common/types.h"
@@ -687,7 +687,7 @@ class ConcatParam : public OpParam {
     inputs_ = InputMultiFrom<GType>(inputs, *scope);
     out_ = OutFrom<GType>(outputs, *scope);
     axis_ = GetAttr<int>("axis", attrs);
-    original_output_dims_size_ = inputs_[0]->dims().size();
+    original_output_dims_size_ = out_->dims().size();
   }
 
   vector<GType *> Inputs() const { return inputs_; }

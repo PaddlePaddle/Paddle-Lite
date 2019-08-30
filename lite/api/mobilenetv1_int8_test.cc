@@ -26,13 +26,12 @@ namespace paddle {
 namespace lite {
 
 void TestModel(const std::vector<Place>& valid_places,
-               const Place& preferred_place,
-               bool use_npu = false) {
+               const Place& preferred_place) {
   DeviceInfo::Init();
   DeviceInfo::Global().SetRunMode(lite_api::LITE_POWER_HIGH, FLAGS_threads);
   lite::Predictor predictor;
 
-  predictor.Build(FLAGS_model_dir, preferred_place, valid_places);
+  predictor.Build(FLAGS_model_dir, "", "", preferred_place, valid_places);
 
   auto* input_tensor = predictor.GetInput(0);
   input_tensor->Resize(DDim(std::vector<DDim::value_type>({1, 3, 224, 224})));
@@ -40,10 +39,6 @@ void TestModel(const std::vector<Place>& valid_places,
   auto item_size = input_tensor->dims().production();
   for (int i = 0; i < item_size; i++) {
     data[i] = 1;
-  }
-
-  if (use_npu) {
-    predictor.GenNPURuntimeProgram();
   }
 
   for (int i = 0; i < FLAGS_warmup; ++i) {

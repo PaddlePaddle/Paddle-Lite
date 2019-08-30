@@ -191,7 +191,8 @@ void PaddleMobile__Framework__protobuf_c_buffer_simple_append(
 
     if (allocator == NULL) allocator = &protobuf_c__allocator;
     while (new_alloced < new_len) new_alloced += new_alloced;
-    new_data = PaddleMobile__Framework__do_alloc(allocator, new_alloced);
+    new_data =
+        (uint8_t *)PaddleMobile__Framework__do_alloc(allocator, new_alloced);
     if (!new_data) return;
     memcpy(new_data, simp->data, simp->len);
     if (simp->must_free_data)
@@ -905,7 +906,7 @@ static size_t PaddleMobile__Framework__parse_tag_and_wiretype(
   unsigned shift = 4;
   unsigned rv;
 
-  *wiretype_out = data[0] & 7;
+  *wiretype_out = (PaddleMobile__Framework__ProtobufCWireType)(data[0] & 7);
   if ((data[0] & 0x80) == 0) {
     *tag_out = tag;
     return 1;
@@ -1013,7 +1014,7 @@ static protobuf_c_boolean PaddleMobile__Framework__merge_messages(
                   fields[i].type);
           uint8_t *new_field;
 
-          new_field = PaddleMobile__Framework__do_alloc(
+          new_field = (uint8_t *)PaddleMobile__Framework__do_alloc(
               allocator, (*n_earlier + *n_latter) * el_size);
           if (!new_field) return FALSE;
 
@@ -1102,7 +1103,7 @@ static protobuf_c_boolean PaddleMobile__Framework__merge_messages(
         case PROTOBUF_C_TYPE_STRING: {
           char *e_str = *(char **)earlier_elem;
           char *l_str = *(char **)latter_elem;
-          const char *d_str = def_val;
+          const char *d_str = (const char *)def_val;
 
           need_to_merge = e_str != d_str && l_str == d_str;
           break;
@@ -1286,7 +1287,7 @@ static protobuf_c_boolean PaddleMobile__Framework__parse_required_member(
   unsigned len = scanned_member->len;
   const uint8_t *data = scanned_member->data;
   PaddleMobile__Framework__ProtobufCWireType wire_type =
-      scanned_member->wire_type;
+      (PaddleMobile__Framework__ProtobufCWireType)scanned_member->wire_type;
 
   switch (scanned_member->field->type) {
     case PROTOBUF_C_TYPE_ENUM:
@@ -1330,36 +1331,40 @@ static protobuf_c_boolean PaddleMobile__Framework__parse_required_member(
           PaddleMobile__Framework__parse_boolean(len, data);
       return TRUE;
     case PROTOBUF_C_TYPE_STRING: {
-      char **pstr = member;
+      char **pstr = (char **)member;
       unsigned pref_len = scanned_member->length_prefix_len;
 
       if (wire_type != PROTOBUF_C_WIRE_TYPE_LENGTH_PREFIXED) return FALSE;
 
       if (maybe_clear && *pstr != NULL) {
-        const char *def = scanned_member->field->default_value;
+        const char *def = (const char *)scanned_member->field->default_value;
         if (*pstr != NULL && *pstr != def)
           PaddleMobile__Framework__do_free(allocator, *pstr);
       }
-      *pstr = PaddleMobile__Framework__do_alloc(allocator, len - pref_len + 1);
+      *pstr = (char *)PaddleMobile__Framework__do_alloc(allocator,
+                                                        len - pref_len + 1);
       if (*pstr == NULL) return FALSE;
       memcpy(*pstr, data + pref_len, len - pref_len);
       (*pstr)[len - pref_len] = 0;
       return TRUE;
     }
     case PROTOBUF_C_TYPE_BYTES: {
-      PaddleMobile__Framework__ProtobufCBinaryData *bd = member;
+      PaddleMobile__Framework__ProtobufCBinaryData *bd =
+          (PaddleMobile__Framework__ProtobufCBinaryData *)member;
       const PaddleMobile__Framework__ProtobufCBinaryData *def_bd;
       unsigned pref_len = scanned_member->length_prefix_len;
 
       if (wire_type != PROTOBUF_C_WIRE_TYPE_LENGTH_PREFIXED) return FALSE;
 
-      def_bd = scanned_member->field->default_value;
+      def_bd = (const PaddleMobile__Framework__ProtobufCBinaryData *)
+                   scanned_member->field->default_value;
       if (maybe_clear && bd->data != NULL &&
           (def_bd == NULL || bd->data != def_bd->data)) {
         PaddleMobile__Framework__do_free(allocator, bd->data);
       }
       if (len - pref_len > 0) {
-        bd->data = PaddleMobile__Framework__do_alloc(allocator, len - pref_len);
+        bd->data = (uint8_t *)PaddleMobile__Framework__do_alloc(allocator,
+                                                                len - pref_len);
         if (bd->data == NULL) return FALSE;
         memcpy(bd->data, data + pref_len, len - pref_len);
       } else {
@@ -1369,7 +1374,8 @@ static protobuf_c_boolean PaddleMobile__Framework__parse_required_member(
       return TRUE;
     }
     case PROTOBUF_C_TYPE_MESSAGE: {
-      PaddleMobile__Framework__ProtobufCMessage **pmessage = member;
+      PaddleMobile__Framework__ProtobufCMessage **pmessage =
+          (PaddleMobile__Framework__ProtobufCMessage **)member;
       PaddleMobile__Framework__ProtobufCMessage *subm;
       const PaddleMobile__Framework__ProtobufCMessage *def_mess;
       protobuf_c_boolean merge_successful = TRUE;
@@ -1377,10 +1383,12 @@ static protobuf_c_boolean PaddleMobile__Framework__parse_required_member(
 
       if (wire_type != PROTOBUF_C_WIRE_TYPE_LENGTH_PREFIXED) return FALSE;
 
-      def_mess = scanned_member->field->default_value;
+      def_mess = (const PaddleMobile__Framework__ProtobufCMessage *)
+                     scanned_member->field->default_value;
       subm = PaddleMobile__Framework__protobuf_c_message_unpack(
-          scanned_member->field->descriptor, allocator, len - pref_len,
-          data + pref_len);
+          (const PaddleMobile__Framework__ProtobufCMessageDescriptor *)
+              scanned_member->field->descriptor,
+          allocator, len - pref_len, data + pref_len);
 
       if (maybe_clear && *pmessage != NULL && *pmessage != def_mess) {
         if (subm != NULL)
@@ -1418,25 +1426,29 @@ static protobuf_c_boolean PaddleMobile__Framework__parse_oneof_member(
 
     switch (old_field->type) {
       case PROTOBUF_C_TYPE_STRING: {
-        char **pstr = member;
-        const char *def = old_field->default_value;
+        char **pstr = (char **)member;
+        const char *def = (const char *)old_field->default_value;
         if (*pstr != NULL && *pstr != def)
           PaddleMobile__Framework__do_free(allocator, *pstr);
         break;
       }
       case PROTOBUF_C_TYPE_BYTES: {
-        PaddleMobile__Framework__ProtobufCBinaryData *bd = member;
+        PaddleMobile__Framework__ProtobufCBinaryData *bd =
+            (PaddleMobile__Framework__ProtobufCBinaryData *)member;
         const PaddleMobile__Framework__ProtobufCBinaryData *def_bd =
-            old_field->default_value;
+            (const PaddleMobile__Framework__ProtobufCBinaryData *)
+                old_field->default_value;
         if (bd->data != NULL && (def_bd == NULL || bd->data != def_bd->data)) {
           PaddleMobile__Framework__do_free(allocator, bd->data);
         }
         break;
       }
       case PROTOBUF_C_TYPE_MESSAGE: {
-        PaddleMobile__Framework__ProtobufCMessage **pmessage = member;
+        PaddleMobile__Framework__ProtobufCMessage **pmessage =
+            (PaddleMobile__Framework__ProtobufCMessage **)member;
         const PaddleMobile__Framework__ProtobufCMessage *def_mess =
-            old_field->default_value;
+            (const PaddleMobile__Framework__ProtobufCMessage *)
+                old_field->default_value;
         if (*pmessage != NULL && *pmessage != def_mess)
           PaddleMobile__Framework__protobuf_c_message_free_unpacked(*pmessage,
                                                                     allocator);
@@ -1651,10 +1663,11 @@ static protobuf_c_boolean PaddleMobile__Framework__parse_member(
     PaddleMobile__Framework__ProtobufCMessageUnknownField *ufield =
         message->unknown_fields + (message->n_unknown_fields++);
     ufield->tag = scanned_member->tag;
-    ufield->wire_type = scanned_member->wire_type;
+    ufield->wire_type =
+        (PaddleMobile__Framework__ProtobufCWireType)scanned_member->wire_type;
     ufield->len = scanned_member->len;
-    ufield->data =
-        PaddleMobile__Framework__do_alloc(allocator, scanned_member->len);
+    ufield->data = (uint8_t *)PaddleMobile__Framework__do_alloc(
+        allocator, scanned_member->len);
     if (ufield->data == NULL) return FALSE;
     memcpy(ufield->data, scanned_member->data, ufield->len);
     return TRUE;
@@ -1810,13 +1823,14 @@ PaddleMobile__Framework__protobuf_c_message_unpack(
 
   if (allocator == NULL) allocator = &protobuf_c__allocator;
 
-  rv = PaddleMobile__Framework__do_alloc(allocator, desc->sizeof_message);
+  rv = (PaddleMobile__Framework__ProtobufCMessage *)
+      PaddleMobile__Framework__do_alloc(allocator, desc->sizeof_message);
   if (!rv) return (NULL);
   scanned_member_slabs[0] = first_member_slab;
 
   required_fields_bitmap_len = (desc->n_fields + 7) / 8;
   if (required_fields_bitmap_len > sizeof(required_fields_bitmap_stack)) {
-    required_fields_bitmap = PaddleMobile__Framework__do_alloc(
+    required_fields_bitmap = (unsigned char *)PaddleMobile__Framework__do_alloc(
         allocator, required_fields_bitmap_len);
     if (!required_fields_bitmap) {
       PaddleMobile__Framework__do_free(allocator, rv);
@@ -1944,7 +1958,7 @@ PaddleMobile__Framework__protobuf_c_message_unpack(
       size = sizeof(ScannedMember)
              << (which_slab + FIRST_SCANNED_MEMBER_SLAB_SIZE_LOG2);
       scanned_member_slabs[which_slab] =
-          PaddleMobile__Framework__do_alloc(allocator, size);
+          (ScannedMember *)PaddleMobile__Framework__do_alloc(allocator, size);
       if (scanned_member_slabs[which_slab] == NULL)
         goto error_cleanup_during_scan;
     }
@@ -2012,10 +2026,13 @@ PaddleMobile__Framework__protobuf_c_message_unpack(
 
   /* allocate space for unknown fields */
   if (n_unknown) {
-    rv->unknown_fields = PaddleMobile__Framework__do_alloc(
-        allocator,
-        n_unknown *
-            sizeof(PaddleMobile__Framework__ProtobufCMessageUnknownField));
+    rv->unknown_fields =
+        (PaddleMobile__Framework__ProtobufCMessageUnknownField *)
+            PaddleMobile__Framework__do_alloc(
+                allocator,
+                n_unknown *
+                    sizeof(
+                        PaddleMobile__Framework__ProtobufCMessageUnknownField));
     if (rv->unknown_fields == NULL) goto error_cleanup;
   }
 
@@ -2118,7 +2135,9 @@ void PaddleMobile__Framework__protobuf_c_message_free_unpacked(
                        .data;
       const PaddleMobile__Framework__ProtobufCBinaryData *default_bd;
 
-      default_bd = desc->fields[f].default_value;
+      default_bd =
+          (const PaddleMobile__Framework__ProtobufCBinaryData *)desc->fields[f]
+              .default_value;
       if (data != NULL && (default_bd == NULL || default_bd->data != data)) {
         PaddleMobile__Framework__do_free(allocator, data);
       }
@@ -2166,7 +2185,8 @@ protobuf_c_boolean PaddleMobile__Framework__protobuf_c_message_check(
     void *field = STRUCT_MEMBER_P(message, f->offset);
 
     if (label == PROTOBUF_C_LABEL_REPEATED) {
-      size_t *quantity = STRUCT_MEMBER_P(message, f->quantifier_offset);
+      size_t *quantity =
+          (size_t *)STRUCT_MEMBER_P(message, f->quantifier_offset);
 
       if (*quantity > 0 && *(void **)field == NULL) {
         return FALSE;
@@ -2208,9 +2228,10 @@ protobuf_c_boolean PaddleMobile__Framework__protobuf_c_message_check(
         char *string = *(char **)field;
         if (label == PROTOBUF_C_LABEL_REQUIRED && string == NULL) return FALSE;
       } else if (type == PROTOBUF_C_TYPE_BYTES) {
-        protobuf_c_boolean *has =
-            STRUCT_MEMBER_P(message, f->quantifier_offset);
-        PaddleMobile__Framework__ProtobufCBinaryData *bd = field;
+        protobuf_c_boolean *has = (protobuf_c_boolean *)STRUCT_MEMBER_P(
+            message, f->quantifier_offset);
+        PaddleMobile__Framework__ProtobufCBinaryData *bd =
+            (PaddleMobile__Framework__ProtobufCBinaryData *)field;
         if (label == PROTOBUF_C_LABEL_REQUIRED || *has == TRUE) {
           if (bd->len > 0 && bd->data == NULL) return FALSE;
         }

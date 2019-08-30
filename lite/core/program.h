@@ -137,7 +137,14 @@ class LITE_API RuntimeProgram {
 
   const std::vector<Instruction>& instructions() const { return instructions_; }
 
+  // `SaveOpInfosToProgram` will update the op list(ops_) of the block 0
+  // in ProgramDesc.
   void SaveOpInfosToProgram(cpp::ProgramDesc* desc);
+
+  // `UpdateVarsOfProgram` will update the var list(vars_) of the block 0 in
+  // ProgramDesc. Namely, if a new var created in some passes, its var_desc will
+  // be added in vars_.
+  void UpdateVarsOfProgram(cpp::ProgramDesc* desc);
 
  private:
   RuntimeProgram(const RuntimeProgram&) = delete;
