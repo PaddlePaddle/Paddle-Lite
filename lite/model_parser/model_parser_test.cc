@@ -21,7 +21,7 @@ DEFINE_string(model_dir, "", "");
 
 namespace paddle {
 namespace lite {
-
+// SubFunction to read buffer from file for testing
 static size_t ReadBuffer(const char* file_name, char** out) {
   FILE* fp;
   fp = fopen(file_name, "rb");
