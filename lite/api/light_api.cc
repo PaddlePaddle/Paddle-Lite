@@ -23,28 +23,18 @@ void LightPredictor::Build(const lite_api::MobileConfig& config,
   const std::string& model_file = config.model_file();
   const std::string& param_file = config.param_file();
   const bool model_from_memory = config.model_from_memory();
-
-  Build(model_path, model_file, param_file, model_type, model_from_memory);
-}
-
-void LightPredictor::Build(const std::string& model_dir,
-                           const std::string& model_file_path,
-                           const std::string& param_file_path,
-                           lite_api::LiteModelType model_type,
-                           bool model_from_memory) {
   cpp::ProgramDesc desc;
   switch (model_type) {
 #ifndef LITE_ON_TINY_PUBLISH
     case lite_api::LiteModelType::kProtobuf:
-      LoadModelPb(model_dir, "", "", scope_.get(), &desc);
+      LoadModelPb(model_path, "", "", scope_.get(), &desc);
       break;
 #endif
     case lite_api::LiteModelType::kNaiveBuffer: {
       if (model_from_memory) {
-        LoadModelNaiveFromMemory(
-            model_file_path, param_file_path, scope_.get(), &desc);
+        LoadModelNaiveFromMemory(model_file, param_file, scope_.get(), &desc);
       } else {
-        LoadModelNaive(model_dir, scope_.get(), &desc);
+        LoadModelNaive(model_path, scope_.get(), &desc);
       }
       break;
     }
