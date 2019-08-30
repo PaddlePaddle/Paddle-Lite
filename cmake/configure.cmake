@@ -164,6 +164,9 @@ endif()
 
 if (LITE_WITH_PROFILE)
     add_definitions("-DLITE_WITH_PROFILE")
+    if (LITE_WITH_PRECISION_PROFILE)
+        add_definitions("-DLITE_WITH_PRECISION_PROFILE")
+    endif()
 endif()
 
 if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
