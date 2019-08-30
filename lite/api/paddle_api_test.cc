@@ -21,7 +21,6 @@
 #include "lite/utils/cp_logging.h"
 
 DEFINE_string(model_dir, "", "");
-DEFINE_string(optimized_model, "", "");
 
 namespace paddle {
 namespace lite_api {
@@ -73,8 +72,8 @@ TEST(LightApi, run) {
 // Demo2 for Load model from memory
 TEST(MobileConfig, LoadfromMemory) {
   // Get naive buffer
-  auto model_path = std::string(FLAGS_optimized_model) + "/__model__.nb";
-  auto params_path = std::string(FLAGS_optimized_model) + "/param.nb";
+  auto model_path = std::string(FLAGS_model_dir) + ".opt2.naive/__model__.nb";
+  auto params_path = std::string(FLAGS_model_dir) + ".opt2.naive/param.nb";
   char* bufModel = nullptr;
   size_t sizeBuf = ReadBuffer(model_path.c_str(), &bufModel);
   char* bufParams = nullptr;
