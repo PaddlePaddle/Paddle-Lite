@@ -118,18 +118,16 @@ class Optimizer {
       auto pass = mir::PassManager::Global()
                       .LookUp<mir::subgraph::GenerateNPUProgramPass>(
                           "generate_npu_program_pass");
-      pass->Apply(graph_);
-
-      auto program = pass->GenProgram();
-      if (program) {
+      try {
+        pass->Apply(graph_);
+        auto program = pass->GenProgram();
         CHECK(exec_scope_);
         program->set_exec_scope(exec_scope_);
         return program;
-      } else {
-        LOG(WARNING) << "Build NPU graph failed.";
+      } catch (...) {
+        LOG(WARNING) << "Build NPU graph failed";
       }
     }
-
 #endif
     auto pass = mir::PassManager::Global().LookUp<mir::GenerateProgramPass>(
         "generate_program_pass");

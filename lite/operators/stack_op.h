@@ -13,26 +13,35 @@
 // limitations under the License.
 
 #pragma once
+#include <string>
 #include <vector>
-#include "lite/core/kernel.h"
-#include "lite/core/op_registry.h"
+#include "lite/core/op_lite.h"
+#include "lite/core/scope.h"
+#include "lite/utils/all.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
-namespace arm {
+namespace operators {
 
-class MulticlassNmsCompute
-    : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+class StackOp : public OpLite {
  public:
-  using param_t = operators::MulticlassNmsParam;
+  StackOp() {}
 
-  void Run() override;
+  explicit StackOp(const std::string &op_type) : OpLite(op_type) {}
 
-  virtual ~MulticlassNmsCompute() = default;
+  bool CheckShape() const override;
+
+  bool InferShape() const override;
+
+  bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
+
+  void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
+  std::string DebugString() const override { return "stack"; }
+
+ private:
+  mutable StackParam param_;
 };
 
-}  // namespace arm
-}  // namespace kernels
-}  // namespace lite
-}  // namespace paddle
+} /* namespace operators */
+} /* namespace lite */
+} /* namespace paddle */
