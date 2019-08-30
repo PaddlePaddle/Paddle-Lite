@@ -34,7 +34,7 @@ void reduce_mean_n(const float* src,
       for (int w = 0; w < width_in; ++w) {
         data_index = c * hw_size + h * width_in + w;
         dst[data_index] = 0.0;
-        for (int n = 1; n < num_in; ++n) {
+        for (int n = 0; n < num_in; ++n) {
           src_index = n * chw_size + data_index;
           dst[data_index] += static_cast<float>(src[src_index]) / num_in;
         }
@@ -58,7 +58,7 @@ void reduce_mean_c(const float* src,
         data_index = n * hw_size + h * width_in + w;
         src_index0 = n * chw_size + h * width_in + w;
         dst[data_index] = 0.0;
-        for (int c = 1; c < channel_in; ++c) {
+        for (int c = 0; c < channel_in; ++c) {
           src_index = src_index0 + c * hw_size;
           dst[data_index] += static_cast<float>(src[src_index]) / channel_in;
         }
@@ -83,7 +83,7 @@ void reduce_mean_h(const float* src,
         data_index = n * cw_size + c * width_in + w;
         src_index0 = n * chw_size + c * hw_size + w;
         dst[data_index] = 0.0;
-        for (int h = 1; h < height_in; ++h) {
+        for (int h = 0; h < height_in; ++h) {
           src_index = src_index0 + h * width_in;
           dst[data_index] += static_cast<float>(src[src_index]) / height_in;
         }
@@ -110,7 +110,7 @@ void reduce_mean_w(const float* src,
         data_index = n * ch_size + c * height_in + h;
         src_index0 = n * chw_size + c * hw_size + h * width_in;
         dst[data_index] = 0.0;
-        for (int w = 1; w < width_in; ++w) {
+        for (int w = 0; w < width_in; ++w) {
           src_index = src_index0 + w;
           dst[data_index] += static_cast<float>(src[src_index]) / width_in;
         }
