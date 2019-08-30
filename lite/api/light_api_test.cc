@@ -23,7 +23,7 @@ DEFINE_string(optimized_model, "", "");
 
 namespace paddle {
 namespace lite {
-
+// SubFunction of read buffer from file
 static size_t ReadBuffer(const char* file_name, char** out) {
   FILE* fp;
   fp = fopen(file_name, "rb");
