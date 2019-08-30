@@ -89,22 +89,22 @@ function build_npu {
     local test_name=test_npu_pass
     prepare_thirdparty
 
-    if [ x$ARM_OS != x ]; then
+    if [ "x${ARM_OS}" != "x" ]; then
         os=$ARM_OS
     fi
-    if [[ x$ARM_ABI != x ]]; then
+    if [[ "x${ARM_ABI}" != "x" ]]; then
         abi=$ARM_ABI
     fi
-    if [[ x$ARM_LANG != x ]]; then
+    if [[ "x${ARM_LANG}" != "x" ]]; then
         lang=$ARM_LANG
     fi
-    if [[ x$ANDROID_STL != x ]]; then
+    if [[ "x${ANDROID_STL}" != "x" ]]; then
         stl=$ANDROID_STL
     fi
-    if [[ x$DDK_ROOT != x ]]; then
+    if [[ "x${DDK_ROOT}" != "x" ]]; then
         ddk_root=$DDK_ROOT
     fi
-    if [[ x$1 != x ]]; then
+    if [[ $# -ge 1 ]]; then
         test_name=$1
     fi
 
