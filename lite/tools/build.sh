@@ -135,6 +135,41 @@ function make_all_tests {
   cd - > /dev/null
 }
 
+function make_ios {
+    local os=$1
+    local abi=$2
+    build_dir=build.ios.${os}.${abi}
+    echo "building ios target into $build_dir"
+    echo "target os: $os"
+    echo "target abi: $abi"
+    mkdir -p ${build_dir}
+    cd ${build_dir}
+    GEN_CODE_PATH_PREFIX=lite/gen_code
+    mkdir -p ./${GEN_CODE_PATH_PREFIX}
+    touch ./${GEN_CODE_PATH_PREFIX}/__generated_code__.cc
+
+    cmake .. \
+            -DWITH_GPU=OFF \
+            -DWITH_MKL=OFF \
+            -DWITH_LITE=ON \
+            -DLITE_WITH_CUDA=OFF \
+            -DLITE_WITH_X86=OFF \
+            -DLITE_WITH_ARM=ON \
+            -DWITH_TESTING=OFF \
+            -DLITE_WITH_JAVA=OFF \
+            -DLITE_SHUTDOWN_LOG=ON \
+            -DLITE_ON_TINY_PUBLISH=ON \
+            -DLITE_WITH_OPENMP=OFF \
+            -DWITH_ARM_DOTPROD=OFF \
+            -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
+            -DARM_TARGET_ARCH_ABI=$abi \
+            -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
+            -DARM_TARGET_OS=$os
+
+    make -j4 publish_inference
+    cd -
+}
+
 
 function print_usage {
     set +x
@@ -142,22 +177,25 @@ function print_usage {
     echo
     echo "----------------------------------------"
     echo -e "compile tiny publish so lib:"
+    echo -e "for android:"
     echo -e "   ./build.sh --arm_os=<os> --arm_abi=<abi> --arm_lang=<lang> --android_stl=<stl> tiny_publish"
+    echo -e "for ios:"
+    echo -e "   ./build.sh --arm_os=<os> --arm_abi=<abi> ios"
     echo
-    echo -e "compile full publish so lib:"
+    echo -e "compile full publish so lib (ios not support):"
     echo -e "   ./build.sh --arm_os=<os> --arm_abi=<abi> --arm_lang=<lang> --android_stl=<stl> full_publish"
     echo
-    echo -e "compile all arm tests:"
+    echo -e "compile all arm tests (ios not support):"
     echo -e "   ./build.sh --arm_os=<os> --arm_abi=<abi> --arm_lang=<lang> test"
     echo
     echo -e "optional argument:"
     echo -e "--build_extra: (OFF|ON); controls whether to publish extra operators and kernels for (sequence-related model such as OCR or NLP)"
     echo
     echo -e "argument choices:"
-    echo -e "--arm_os:\t android"
+    echo -e "--arm_os:\t android|ios|ios64"
     echo -e "--arm_abi:\t armv8|armv7"
-    echo -e "--arm_lang:\t gcc|clang"
-    echo -e "--android_stl:\t c++_static|c++_shared"
+    echo -e "--arm_lang:\t gcc|clang (for android)"
+    echo -e "--android_stl:\t c++_static|c++_shared (for android)"
     echo
     echo -e "tasks:"
     echo
@@ -207,6 +245,10 @@ function main {
                 ;;
             test)
                 make_all_tests $ARM_OS $ARM_ABI $ARM_LANG
+                shift
+                ;;
+            ios)
+                make_ios $ARM_OS $ARM_ABI
                 shift
                 ;;
             *)

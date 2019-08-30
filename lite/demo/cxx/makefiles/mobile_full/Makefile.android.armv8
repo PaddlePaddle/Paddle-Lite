@@ -18,5 +18,5 @@ mobilenetv1_full_api.o: mobilenetv1_full_api.cc
 
 .PHONY: clean
 clean:
-	rm mobilenetv1_full_api.o
-	rm mobilenetv1_full_api
+	rm -f mobilenetv1_full_api.o
+	rm -f mobilenetv1_full_api
