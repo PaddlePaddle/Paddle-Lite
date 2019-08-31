@@ -40,8 +40,8 @@ class LITE_API LightPredictor {
  public:
   explicit LightPredictor(
       const std::string& model_dir,
-      const std::string& model_buffer,
-      const std::string& param_buffer,
+      const std::string& model_buffer = "",
+      const std::string& param_buffer = "",
       bool model_from_memory = false,
       lite_api::LiteModelType model_type = lite_api::LiteModelType::kProtobuf);
 

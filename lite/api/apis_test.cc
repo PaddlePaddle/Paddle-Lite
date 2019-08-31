@@ -67,7 +67,7 @@ TEST(CXXApi_LightApi, optim_model) {
 
 TEST(CXXApi_LightApi, save_and_load_model) {
   lite::Predictor cxx_api;
-  lite::LightPredictor light_api(FLAGS_optimized_model, "", "");
+  lite::LightPredictor light_api(FLAGS_optimized_model);
 
   // CXXAPi
   {
