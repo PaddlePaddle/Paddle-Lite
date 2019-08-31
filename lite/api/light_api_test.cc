@@ -57,8 +57,8 @@ TEST(LightAPI, loadNaiveBuffer) {
   size_t size_model = model_buffer.length();
   std::string params_buffer = lite::ReadFile(params_path);
   size_t size_params = params_buffer.length();
-  std::cout << "sizeModel: " << size_model << std::endl;
-  std::cout << "sizeParams: " << size_params << std::endl;
+  LOG(INFO) << "sizeModel: " << size_model;
+  LOG(INFO) << "sizeParams: " << size_params;
 
   lite_api::MobileConfig config;
   config.set_model_buffer(
