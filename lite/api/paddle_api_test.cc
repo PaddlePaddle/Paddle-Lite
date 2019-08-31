@@ -56,14 +56,14 @@ TEST(MobileConfig, LoadfromMemory) {
   // Get naive buffer
   auto model_path = std::string(FLAGS_model_dir) + ".opt2.naive/__model__.nb";
   auto params_path = std::string(FLAGS_model_dir) + ".opt2.naive/param.nb";
-  std::string Model_buffer = lite::ReadFile(model_path);
-  size_t sizeModel = Model_buffer.length();
-  std::string Params_buffer = lite::ReadFile(params_path);
-  size_t sizeParams = Params_buffer.length();
+  std::string model_buffer = lite::ReadFile(model_path);
+  size_t size_model = model_buffer.length();
+  std::string params_buffer = lite::ReadFile(params_path);
+  size_t size_params = params_buffer.length();
   // set model buffer and run model
   lite_api::MobileConfig config;
   config.set_model_buffer(
-      Model_buffer.c_str(), sizeModel, Params_buffer.c_str(), sizeParams);
+      model_buffer.c_str(), size_model, params_buffer.c_str(), size_params);
 
   auto predictor = lite_api::CreatePaddlePredictor(config);
   auto input_tensor = predictor->GetInput(0);
