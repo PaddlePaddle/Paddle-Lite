@@ -703,10 +703,10 @@ void LoadModelNaiveFromMemory(const std::string &model_buffer,
   LoadCombinedParamsNaive(combined_params_path, scope, *cpp_prog, true);
 
 #ifdef LITE_WITH_NPU
-  LOG(FATAL) << "load from memory is not supported by NPU"
+  LOG(FATAL) << "load from memory is not supported by NPU";
 #endif
 
-      VLOG(4) << "Load model from naive buffer memory successfully";
+  VLOG(4) << "Load model from naive buffer memory successfully";
 }
 
 }  // namespace lite
