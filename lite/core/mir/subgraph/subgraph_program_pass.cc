@@ -26,6 +26,105 @@ namespace lite {
 namespace mir {
 namespace subgraph {
 
+void SubgraphProgramPass::SortHelper(
+    Node* node,
+    const std::unordered_set<Node*>& nodes_all,
+    std::unordered_set<const Node*>* visited_nodes,
+    std::vector<Node*>* ret) {
+  for (auto& var_node : node->inlinks) {
+    if (var_node->inlinks.empty()) continue;
+    auto* op_node = var_node->inlinks.front();
+    if (nodes_all.count(op_node) && !visited_nodes->count(op_node)) {
+      SortHelper(op_node, nodes_all, visited_nodes, ret);
+    }
+  }
+  ret->push_back(node);
+  visited_nodes->insert(node);
+}
+
+std::vector<Node*> SubgraphProgramPass::GetTopologicalOrder(
+    const std::unordered_set<Node*>& nodes) {
+  std::unordered_set<const Node*> visited;
+  std::vector<Node*> ret;
+  for (auto& node : nodes) {
+    if (!node->IsStmt()) continue;
+    if (visited.count(node)) continue;
+    SortHelper(node, nodes, &visited, &ret);
+  }
+  return ret;
+}
+
+void SubgraphProgramPass::FindInputOutputVars(
+    const std::unordered_set<Node*>& op_nodes,
+    std::unordered_set<Node*>* in_data_vars,
+    std::unordered_set<Node*>* in_wgt_vars,
+    std::unordered_set<Node*>* out_data_vars,
+    std::unordered_set<Node*>* out_unused_vars) {
+  for (auto& op_node : op_nodes) {
+    for (auto& in_var : op_node->inlinks) {
+      if (in_var->AsArg().is_weight) {
+        in_wgt_vars->insert(in_var);
+        continue;
+      }
+      if (!in_var->inlinks.empty()) {
+        // var can only come from one op node, so use front
+        auto* pre_op_node = in_var->inlinks.front();
+        if (op_nodes.count(pre_op_node)) {
+          continue;
+        }
+      }
+      in_data_vars->insert(in_var);
+    }
+    for (auto& out_var : op_node->outlinks) {
+      if (out_var->outlinks.empty()) {
+        // the next op is empty so this var is actually unused
+        out_unused_vars->insert(out_var);
+        continue;
+      }
+      // var can have more than one next op node
+      // so, if any one in the op_nodes then continue
+      bool next_op_in_nodes = false;
+      for (auto& next_op_node : out_var->outlinks) {
+        if (op_nodes.count(next_op_node)) {
+          next_op_in_nodes = true;
+        }
+      }
+      if (next_op_in_nodes) {
+        continue;
+      }
+
+      out_data_vars->insert(out_var);
+    }
+  }
+}
+
+std::unordered_set<const Node*> SubgraphProgramPass::GetNode2rm(
+    const std::unordered_set<Node*>& op_nodes,
+    const std::vector<std::unordered_set<Node*>>& excluded_nodes) {
+  std::unordered_set<const Node*> nodes2rm(op_nodes.begin(), op_nodes.end());
+  for (auto& op_node : op_nodes) {
+    for (auto& in_var : op_node->inlinks) {
+      if (!nodes2rm.count(in_var)) {
+        nodes2rm.insert(in_var);
+      }
+    }
+    for (auto& out_var : op_node->outlinks) {
+      if (!nodes2rm.count(out_var)) {
+        nodes2rm.insert(out_var);
+      }
+    }
+  }
+  // some nodes should not be removed
+  for (auto& e : excluded_nodes) {
+    for (auto& i : e) {
+      if (nodes2rm.count(i)) {
+        nodes2rm.erase(i);
+      }
+    }
+  }
+  return nodes2rm;
+}
+
 void SubgraphProgramPass::InferOnce(const std::unique_ptr<SSAGraph>& graph) {
   for (auto& item : graph->StmtTopologicalOrder()) {
     if (!item->IsStmt()) continue;
@@ -127,13 +226,10 @@ int SubgraphProgramPass::FuseSubgraphID(
         for (auto& j : i->outlinks) {
           if (j->IsStmt()) {
             auto& jstmt = j->AsStmt();
-            // LOG(INFO) << "initial: "<<jstmt.op_type()<<"
-            // ："<<jstmt.subgraph_id();
             if (jstmt.subgraph_id() == 0) inputvar = 1;
           }
         }
       }
-      // LOG(INFO) << "initial: "<<stmt.op_type()<<" ："<<stmt.subgraph_id();
       if (inputvar == 1) {
         for (auto& i : item->outlinks) i_nodes_[sub_id].insert(i);
       }

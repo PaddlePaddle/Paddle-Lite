@@ -38,33 +38,37 @@ class GenerateNPUProgramPass : public SubgraphProgramPass {
   std::unique_ptr<RuntimeProgram> GenProgram();
 
  protected:
-  // sort nodes to operational sequence
-  void SubgraphSortHelper(Node* node,
-                          const std::unordered_set<Node*>& nodes_all,
-                          std::unordered_set<const Node*>* visited_nodes,
-                          std::vector<Node*>* ret);
-
   // nodes2cvt: op nodes to convert
-  // cvted_vars: converted var nodes
-  // nodes2rm: op nodes and var nodes that need to be removed
-  void CvtOpNodes(const std::vector<Node*>& nodes2cvt,
-                  lite::npu::bridge::node_map_type* cvted_vars);
+  // return cvted_vars: converted var nodes
+  void CvtAllOpNodes(const std::vector<Node*>& nodes2cvt,
+                     lite::npu::bridge::node_map_type* cvted_vars);
 
-  // achieve input and output vars/cvted_vars;
-  // achieve all nodes to remove
-  void GetIOVars(const std::vector<Node*>& nodes2cvt,
-                 const lite::npu::bridge::node_map_type& cvted_vars,
-                 std::unordered_set<const Node*>* nodes2rm,
-                 std::vector<Node*>* in_vars,
-                 std::vector<Node*>* out_vars,
-                 lite::npu::bridge::node_map_type* in_cvted_vars,
-                 lite::npu::bridge::node_map_type* out_cvted_vars);
+  std::shared_ptr<ge::Operator> CvtVarNode(lite::mir::Node* var_node,
+                                           const Scope* scope);
 
-  void GenNPUGraphOpNode(const std::unique_ptr<SSAGraph>& graph,
-                         int sub_id,
-                         const std::unordered_set<Node*>& nodes_all);
+  std::string BuildNPUGraph(const std::unordered_set<Node*>& op_nodes,
+                            const std::unordered_set<Node*>& in_data_vars,
+                            const std::unordered_set<Node*>& out_data_vars,
+                            int sub_id);
 
-  void ConvertSubgraph(const std::unique_ptr<SSAGraph>& graph, int sub_num);
+  cpp::OpDesc GenGraphOpDesc(const std::string& model_name,
+                             const std::vector<std::string>& in_var_names,
+                             const std::vector<std::string>& out_var_names);
+
+  void InsertNewNode(const std::unique_ptr<SSAGraph>& graph,
+                     const std::string& model_name,
+                     Scope* scope,
+                     const std::vector<Place>& valid_places,
+                     std::unordered_set<Node*> in_data_vars,
+                     std::unordered_set<Node*> in_wgt_vars,
+                     std::unordered_set<Node*> out_data_vars,
+                     std::unordered_set<Node*> out_unused_vars);
+
+  void GenNPUSubgraph(const std::unique_ptr<SSAGraph>& graph,
+                      const std::unordered_set<Node*>& nodes_all,
+                      int sub_id);
+
+  void GenAllNPUSubgraph(const std::unique_ptr<SSAGraph>& graph, int sub_num);
 
  private:
   std::vector<Instruction> insts_;

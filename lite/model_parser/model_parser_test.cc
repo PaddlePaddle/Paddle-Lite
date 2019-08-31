@@ -75,6 +75,8 @@ TEST(ModelParser, LoadModelCombinedPb) {
 TEST(ModelParser, SaveParamNaive) {
   Scope scope;
   auto* tensor = scope.Var("xxx")->GetMutable<lite::Tensor>();
+  tensor->set_precision(PRECISION(kFloat));
+  tensor->set_persistable(true);
   auto& lod = *tensor->mutable_lod();
   lod.resize(2);
   lod[0] = {1, 2, 3};
