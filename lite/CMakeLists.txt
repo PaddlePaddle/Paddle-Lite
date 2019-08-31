@@ -90,7 +90,7 @@ if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM)
                         COMMAND ${CMAKE_STRIP} "--strip-debug" ${INFER_LITE_PUBLISH_ROOT}/cxx/lib/*.a)
             endif()
     else()
-        if (IOS)
+        if (IOS OR (ARM_TARGET_OS STREQUAL "armlinux"))
             add_custom_target(tiny_publish_lib ${TARGET}
                     COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/lib"
                     COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/include"
