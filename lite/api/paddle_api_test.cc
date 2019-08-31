@@ -25,66 +25,6 @@ DEFINE_string(model_dir, "", "");
 namespace paddle {
 namespace lite_api {
 
-// Demo1 for Mobile Devices :Load model from file and run
-#ifdef LITE_WITH_LIGHT_WEIGHT_FRAMEWORK
-TEST(LightApi, run) {
-  lite_api::MobileConfig config;
-  config.set_model_dir(FLAGS_model_dir + ".opt2.naive");
-
-  auto predictor = lite_api::CreatePaddlePredictor(config);
-
-  auto input_tensor = predictor->GetInput(0);
-  input_tensor->Resize(std::vector<int64_t>({100, 100}));
-  auto* data = input_tensor->mutable_data<float>();
-  for (int i = 0; i < 100 * 100; i++) {
-    data[i] = i;
-  }
-
-  predictor->Run();
-
-  auto output = predictor->GetOutput(0);
-  auto* out = output->data<float>();
-  LOG(INFO) << out[0];
-  LOG(INFO) << out[1];
-
-  EXPECT_NEAR(out[0], 50.2132, 1e-3);
-  EXPECT_NEAR(out[1], -28.8729, 1e-3);
-}
-
-// Demo2 for Load model from memory
-TEST(MobileConfig, LoadfromMemory) {
-  // Get naive buffer
-  auto model_path = std::string(FLAGS_model_dir) + ".opt2.naive/__model__.nb";
-  auto params_path = std::string(FLAGS_model_dir) + ".opt2.naive/param.nb";
-  std::string model_buffer = lite::ReadFile(model_path);
-  size_t size_model = model_buffer.length();
-  std::string params_buffer = lite::ReadFile(params_path);
-  size_t size_params = params_buffer.length();
-  // set model buffer and run model
-  lite_api::MobileConfig config;
-  config.set_model_buffer(
-      model_buffer.c_str(), size_model, params_buffer.c_str(), size_params);
-
-  auto predictor = lite_api::CreatePaddlePredictor(config);
-  auto input_tensor = predictor->GetInput(0);
-  input_tensor->Resize(std::vector<int64_t>({100, 100}));
-  auto* data = input_tensor->mutable_data<float>();
-  for (int i = 0; i < 100 * 100; i++) {
-    data[i] = i;
-  }
-
-  predictor->Run();
-
-  const auto output = predictor->GetOutput(0);
-  const float* raw_output = output->data<float>();
-
-  for (int i = 0; i < 10; i++) {
-    LOG(INFO) << "out " << raw_output[i];
-  }
-}
-
-#endif
-
 TEST(CxxApi, run) {
   lite_api::CxxConfig config;
   config.set_model_dir(FLAGS_model_dir);
@@ -117,6 +57,66 @@ TEST(CxxApi, run) {
   predictor->SaveOptimizedModel(FLAGS_model_dir + ".opt2.naive",
                                 LiteModelType::kNaiveBuffer);
 }
+
+// Demo1 for Mobile Devices :Load model from file and run
+#ifdef LITE_WITH_LIGHT_WEIGHT_FRAMEWORK
+TEST(LightApi, run) {
+  lite_api::MobileConfig config;
+  config.set_model_dir(FLAGS_model_dir + ".opt2.naive");
+
+  auto predictor = lite_api::CreatePaddlePredictor(config);
+
+  auto input_tensor = predictor->GetInput(0);
+  input_tensor->Resize(std::vector<int64_t>({100, 100}));
+  auto* data = input_tensor->mutable_data<float>();
+  for (int i = 0; i < 100 * 100; i++) {
+    data[i] = i;
+  }
+
+  predictor->Run();
+
+  auto output = predictor->GetOutput(0);
+  auto* out = output->data<float>();
+  LOG(INFO) << out[0];
+  LOG(INFO) << out[1];
+
+  EXPECT_NEAR(out[0], 50.2132, 1e-3);
+  EXPECT_NEAR(out[1], -28.8729, 1e-3);
+}
+
+// Demo2 for Loading model from memory
+TEST(MobileConfig, LoadfromMemory) {
+  // Get naive buffer
+  auto model_path = std::string(FLAGS_model_dir) + ".opt2.naive/__model__.nb";
+  auto params_path = std::string(FLAGS_model_dir) + ".opt2.naive/param.nb";
+  std::string model_buffer = lite::ReadFile(model_path);
+  size_t size_model = model_buffer.length();
+  std::string params_buffer = lite::ReadFile(params_path);
+  size_t size_params = params_buffer.length();
+  // set model buffer and run model
+  lite_api::MobileConfig config;
+  config.set_model_buffer(
+      model_buffer.c_str(), size_model, params_buffer.c_str(), size_params);
+
+  auto predictor = lite_api::CreatePaddlePredictor(config);
+  auto input_tensor = predictor->GetInput(0);
+  input_tensor->Resize(std::vector<int64_t>({100, 100}));
+  auto* data = input_tensor->mutable_data<float>();
+  for (int i = 0; i < 100 * 100; i++) {
+    data[i] = i;
+  }
+
+  predictor->Run();
+
+  const auto output = predictor->GetOutput(0);
+  const float* raw_output = output->data<float>();
+
+  for (int i = 0; i < 10; i++) {
+    LOG(INFO) << "out " << raw_output[i];
+  }
+}
+
+#endif
 
 }  // namespace lite_api
 }  // namespace paddle
