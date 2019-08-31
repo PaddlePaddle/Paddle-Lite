@@ -44,7 +44,7 @@ static void MkDirRecur(const std::string& path) {
 }
 
 // read buffer from file
-static std::string ReadFile(std::string filename) {
+static std::string ReadFile(const std::string& filename) {
   std::ifstream ifile(filename.c_str());
   std::ostringstream buf;
   char ch;

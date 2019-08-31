@@ -126,10 +126,10 @@ TEST(ModelParser, LoadModelNaiveFromMemory) {
 
   auto model_path = std::string(FLAGS_model_dir) + ".saved.naive/__model__.nb";
   auto params_path = std::string(FLAGS_model_dir) + ".saved.naive/param.nb";
-  std::string Model_buffer = lite::ReadFile(model_path);
-  std::string Params_buffer = lite::ReadFile(params_path);
+  std::string model_buffer = lite::ReadFile(model_path);
+  std::string params_buffer = lite::ReadFile(params_path);
 
-  LoadModelNaiveFromMemory(Model_buffer, Params_buffer, &scope, &prog);
+  LoadModelNaiveFromMemory(model_buffer, params_buffer, &scope, &prog);
 }
 
 }  // namespace lite

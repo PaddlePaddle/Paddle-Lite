@@ -53,16 +53,16 @@ TEST(LightAPI, loadNaiveBuffer) {
 
   auto model_path = std::string(FLAGS_optimized_model) + "/__model__.nb";
   auto params_path = std::string(FLAGS_optimized_model) + "/param.nb";
-  std::string Model_buffer = lite::ReadFile(model_path);
-  size_t sizeModel = Model_buffer.length();
-  std::string Params_buffer = lite::ReadFile(params_path);
-  size_t sizeParams = Params_buffer.length();
-  std::cout << "sizeModel: " << sizeModel << std::endl;
-  std::cout << "sizeParams: " << sizeParams << std::endl;
+  std::string model_buffer = lite::ReadFile(model_path);
+  size_t size_model = model_buffer.length();
+  std::string params_buffer = lite::ReadFile(params_path);
+  size_t size_params = params_buffer.length();
+  std::cout << "sizeModel: " << size_model << std::endl;
+  std::cout << "sizeParams: " << size_params << std::endl;
 
   lite_api::MobileConfig config;
   config.set_model_buffer(
-      Model_buffer.c_str(), sizeModel, Params_buffer.c_str(), sizeParams);
+      model_buffer.c_str(), size_model, params_buffer.c_str(), size_params);
   LightPredictor predictor(config.model_dir(),
                            config.model_buffer(),
                            config.param_buffer(),
