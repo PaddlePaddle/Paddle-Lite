@@ -14,6 +14,7 @@ readonly NUM_PROC=${LITE_BUILD_THREADS:-4}
 
 # global variables
 BUILD_EXTRA=OFF
+BUILD_JAVA=ON
 
 readonly THIRDPARTY_TAR=https://paddle-inference-dist.bj.bcebos.com/PaddleLite/third-party-05b862.tar.gz
 
@@ -61,11 +62,15 @@ function make_tiny_publish_so {
   fi
   mkdir -p $build_dir
   cd $build_dir
-
+  
+  if [ ${os} == "armlinux" ]; then
+    BUILD_JAVA=OFF
+  fi
+  
   cmake .. \
       ${CMAKE_COMMON_OPTIONS} \
+      -DLITE_WITH_JAVA=$BUILD_JAVA \
       -DWITH_TESTING=OFF \
-      -DLITE_WITH_JAVA=ON \
       -DLITE_SHUTDOWN_LOG=ON \
       -DLITE_ON_TINY_PUBLISH=ON \
       -DANDROID_STL_TYPE=$android_stl \
@@ -95,10 +100,14 @@ function make_full_publish_so {
   cd $build_dir
 
   prepare_workspace
+  
+  if [ ${os} == "armlinux" ]; then
+    BUILD_JAVA=OFF
+  fi
   cmake .. \
       ${CMAKE_COMMON_OPTIONS} \
+      -DLITE_WITH_JAVA=$BUILD_JAVA \
       -DWITH_TESTING=OFF \
-      -DLITE_WITH_JAVA=ON \
       -DLITE_SHUTDOWN_LOG=ON \
       -DANDROID_STL_TYPE=$android_stl \
       -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
