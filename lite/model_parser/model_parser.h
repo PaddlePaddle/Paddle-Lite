@@ -101,7 +101,7 @@ void LoadModelNaive(const std::string& model_dir,
 
 void LoadModelNaiveFromMemory(const std::string& model_buffer,
                               const std::string& param_buffer,
-                              Scope* scope,
+                              lite::Scope* scope,
                               cpp::ProgramDesc* cpp_prog);
 
 }  // namespace lite
