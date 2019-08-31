@@ -34,7 +34,13 @@ download_files_with_url_prefix ${DOWNLOAD_SCRIPT_PREFIX} "${DOWNLOAD_SCRIPT_LIST
 
 # 3.Run benchmark
 echo "[INFO] Run benchmark for android armv7 cpu"
-sh benchmark.sh ./benchmark_bin_android_armv7_cpu ./benchmark_models result_armv7.txt
+bash benchmark.sh \
+  ./benchmark_bin_android_armv7_cpu \
+  ./benchmark_models \
+  result_android_armv7_cpu.txt
 
 echo "[INFO] Run benchmark for android armv8 cpu"
-sh benchmark.sh ./benchmark_bin_android_armv8_cpu ./benchmark_models result_armv8.txt
+bash benchmark.sh \
+  ./benchmark_bin_android_armv8_cpu \
+  ./benchmark_models \
+  result_android_armv8_cpu.txt
