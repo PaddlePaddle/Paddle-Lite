@@ -96,6 +96,7 @@ LightPredictor::LightPredictor(const std::string& model_dir,
                                const std::string& param_buffer,
                                bool model_from_memory,
                                lite_api::LiteModelType model_type) {
+  scope_ = std::make_shared<Scope>();
   Build(model_dir, model_buffer, param_buffer, model_type, model_from_memory);
 }
 
