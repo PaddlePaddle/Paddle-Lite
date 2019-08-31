@@ -21,6 +21,7 @@ WARMUP=10
 REPEATS=30
 IS_RUN_MODEL_OPTIMIZE=false
 NUM_THREADS_LIST=(1 2 4)
+MODELS_LIST=$(ls $MODELS_DIR)
 
 # Check input
 if [ $# -gt  3 ];
@@ -35,11 +36,9 @@ adb push $MODELS_DIR $ANDROID_DIR
 
 # Run benchmark
 adb shell "echo 'PaddleLite Benchmark' > $ANDROID_DIR/$RESULT_FILENAME"
-for threads in ${NUM_THREADS_LIST[@]}
-do
+for threads in ${NUM_THREADS_LIST[@]}; do
     adb shell "echo Threads=$threads Warmup=$WARMUP Repeats=$REPEATS >> $ANDROID_DIR/$RESULT_FILENAME"
-    for model_name in `ls $MODELS_DIR`
-    do
+    for model_name in ${MODELS_LIST[@]}; do
       echo "Model=$model_name Threads=$threads"
       adb shell "$ANDROID_DIR/benchmark_bin \
                    --model_dir=$ANDROID_DIR/${MODELS_DIR##*/}/$model_name \
