@@ -45,6 +45,9 @@ void LightPredictorImpl::Init(const MobileConfig& config) {
   lite::DeviceInfo::Global().SetRunMode(config.power_mode(), config.threads());
 #endif
   raw_predictor_.reset(new lite::LightPredictor(config.model_dir(),
+                                                config.model_buffer(),
+                                                config.param_buffer(),
+                                                config.model_from_memory(),
                                                 LiteModelType::kNaiveBuffer));
 }
 
