@@ -17,7 +17,7 @@ namespace paddle_mobile {
 namespace operators {
 template <>
 bool Pad2DKernel<FPGA, float>::Init(Pad2DParam<FPGA> *param) {
-  Tensor *output = param->output_;
+  Tensor *output = param->Out();
   fpga::format_fp16_ofm(output);
   return true;
 }
@@ -40,8 +40,8 @@ void pad2dFunc(const framework::Tensor *input, framework::Tensor *output) {
 }
 template <>
 void Pad2DKernel<FPGA, float>::Compute(const Pad2DParam<FPGA> &param) {
-  auto in_x = param.input_;
-  auto out = param.output_;
+  auto in_x = param.InputX();
+  auto out = param.Out();
   fpga::fpga_invalidate((void *)in_x->data<half>(),  // NOLINT
                         in_x->numel() * sizeof(half));
   pad2dFunc(in_x, out);

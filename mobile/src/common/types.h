@@ -159,6 +159,7 @@ enum ARMArch {
 
 extern const char *G_OP_TYPE_CONV;
 extern const char *G_OP_TYPE_BATCHNORM;
+extern const char *G_OP_TYPE_INSTANCENORM;
 extern const char *G_OP_TYPE_BOX_CODER;
 extern const char *G_OP_TYPE_CONCAT;
 extern const char *G_OP_TYPE_ELEMENTWISE_ADD;
