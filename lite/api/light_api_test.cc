@@ -28,7 +28,46 @@ TEST(LightAPI, load) {
   if (FLAGS_optimized_model.empty()) {
     FLAGS_optimized_model = "lite_naive_model";
   }
-  LightPredictor predictor(FLAGS_optimized_model);
+  LightPredictor predictor(FLAGS_optimized_model, "", "");
+  auto* input_tensor = predictor.GetInput(0);
+  input_tensor->Resize(DDim(std::vector<int64_t>({100, 100})));
+  auto* data = input_tensor->mutable_data<float>();
+  for (int i = 0; i < 100 * 100; i++) {
+    data[i] = i;
+  }
+
+  predictor.Run();
+
+  const auto* output = predictor.GetOutput(0);
+  const float* raw_output = output->data<float>();
+
+  for (int i = 0; i < 10; i++) {
+    LOG(INFO) << "out " << raw_output[i];
+  }
+}
+
+TEST(LightAPI, loadNaiveBuffer) {
+  if (FLAGS_optimized_model.empty()) {
+    FLAGS_optimized_model = "lite_naive_model";
+  }
+
+  auto model_path = std::string(FLAGS_optimized_model) + "/__model__.nb";
+  auto params_path = std::string(FLAGS_optimized_model) + "/param.nb";
+  std::string model_buffer = lite::ReadFile(model_path);
+  size_t size_model = model_buffer.length();
+  std::string params_buffer = lite::ReadFile(params_path);
+  size_t size_params = params_buffer.length();
+  LOG(INFO) << "sizeModel: " << size_model;
+  LOG(INFO) << "sizeParams: " << size_params;
+
+  lite_api::MobileConfig config;
+  config.set_model_buffer(
+      model_buffer.c_str(), size_model, params_buffer.c_str(), size_params);
+  LightPredictor predictor(config.model_dir(),
+                           config.model_buffer(),
+                           config.param_buffer(),
+                           config.model_from_memory(),
+                           lite_api::LiteModelType::kNaiveBuffer);
 
   auto* input_tensor = predictor.GetInput(0);
   input_tensor->Resize(DDim(std::vector<int64_t>({100, 100})));
