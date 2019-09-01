@@ -66,6 +66,14 @@ void BinaryTable::LoadFromFile(const std::string &filename) {
   is_mutable_mode_ = false;
 }
 
+void BinaryTable::LoadFromMemory(const char *buffer, size_t buffer_size) {
+  // get buffer
+  bytes_.resize(buffer_size);
+  memcpy(reinterpret_cast<char *>(&bytes_[0]), buffer, buffer_size);
+  // Set readonly.
+  is_mutable_mode_ = false;
+}
+
 void StringBuilder::Save() {
   // memory format: [size][string data]
   uint64_t mem_size = sizeof(uint64_t) + data_.size();
