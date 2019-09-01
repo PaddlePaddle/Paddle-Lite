@@ -47,6 +47,7 @@ class ConvOpTranspose : public framework::OperatorWithKernel<
     std::vector<int> strides = this->param_.Strides();
     std::vector<int> paddings = this->param_.Paddings();
     std::vector<int> dilations = this->param_.Dilations();
+    std::vector<int> output_size = this->param_.OutputSize();
 
     int groups = this->param_.Groups();
 
@@ -73,11 +74,17 @@ class ConvOpTranspose : public framework::OperatorWithKernel<
         "be equal to the number of filter's channels.");
 
     std::vector<int64_t> output_shape({in_dims[0], filter_dims[1] * groups});
-    for (size_t i = 0; i < strides.size(); ++i) {
-      auto filter_extent = dilations[i] * (filter_dims[i + 2] - 1) + 1;
-      output_shape.push_back((in_dims[i + 2] - 1) * strides[i] -
-                             2 * paddings[i] + filter_extent);
+    if (output_size.size() == 2) {
+      output_shape.push_back(output_size[0]);
+      output_shape.push_back(output_size[1]);
+    } else {
+      for (size_t i = 0; i < strides.size(); ++i) {
+        auto filter_extent = dilations[i] * (filter_dims[i + 2] - 1) + 1;
+        output_shape.push_back((in_dims[i + 2] - 1) * strides[i] -
+                               2 * paddings[i] + filter_extent);
+      }
     }
+
     this->param_.Output()->Resize(framework::make_ddim(output_shape));
   }
 

@@ -12,25 +12,26 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef CONV_TRANSPOSE_OP
+#ifdef INSTANCENORM_OP
 
-#include "operators/conv_transpose_op.h"
+#pragma once
+
+#include "framework/operator.h"
+#include "operators/op_param.h"
 
 namespace paddle_mobile {
-namespace operators {}
+namespace operators {
+
+template <typename DeviceType, typename T>
+class InstanceNormKernel
+    : public framework::OpKernelBase<DeviceType,
+                                     InstanceNormParam<DeviceType>> {
+ public:
+  void Compute(const InstanceNormParam<DeviceType> &param);
+  bool Init(InstanceNormParam<DeviceType> *param);
+};
+
+}  // namespace operators
 }  // namespace paddle_mobile
-
-namespace ops = paddle_mobile::operators;
-#ifdef PADDLE_MOBILE_CPU
-REGISTER_OPERATOR_CPU(conv2d_transpose, ops::ConvOpTranspose);
-#endif
-
-#ifdef PADDLE_MOBILE_FPGA
-REGISTER_OPERATOR_FPGA(conv2d_transpose, ops::ConvOpTranspose);
-#endif
-
-#ifdef PADDLE_MOBILE_CL
-REGISTER_OPERATOR_CL(conv2d_transpose, ops::ConvOpTranspose);
-#endif
 
 #endif

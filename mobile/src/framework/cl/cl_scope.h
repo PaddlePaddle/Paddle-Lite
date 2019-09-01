@@ -18,6 +18,7 @@ limitations under the License. */
 #include <memory>
 #include <string>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 #include "CL/cl.h"
@@ -38,6 +39,7 @@ class CLScope {
     CLEngine *engine = CLEngine::Instance();
     context_ = engine->getContext();
     command_queue_ = engine->getClCommandQueue();
+    localWorkSizeInfo_ = engine->getLocalWorkSizeInfo();
   }
 
   cl_command_queue CommandQueue() { return command_queue_; }
@@ -101,6 +103,8 @@ class CLScope {
     return programs_[program_key].get();
   }
 
+  CLLocalWorkSizeInfo LocalWorkSizeInfo() { return localWorkSizeInfo_; }
+
  private:
   cl_int status_;
   cl_context context_;
@@ -108,6 +112,7 @@ class CLScope {
   std::unordered_map<std::string,
                      std::unique_ptr<_cl_program, CLProgramDeleter>>
       programs_;
+  CLLocalWorkSizeInfo localWorkSizeInfo_;
 };
 
 }  // namespace framework
