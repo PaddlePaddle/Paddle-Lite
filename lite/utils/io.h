@@ -43,5 +43,14 @@ static void MkDirRecur(const std::string& path) {
 #endif
 }
 
+// read buffer from file
+static std::string ReadFile(const std::string& filename) {
+  std::ifstream ifile(filename.c_str());
+  std::ostringstream buf;
+  char ch;
+  while (buf && ifile.get(ch)) buf.put(ch);
+  return buf.str();
+}
+
 }  // namespace lite
 }  // namespace paddle

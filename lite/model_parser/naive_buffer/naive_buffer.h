@@ -63,6 +63,7 @@ struct BinaryTable {
   void SaveToFile(const std::string& filename) const;
 
   void LoadFromFile(const std::string& filename);
+  void LoadFromMemory(const char* buffer, size_t buffer_size);
 };
 
 /*
