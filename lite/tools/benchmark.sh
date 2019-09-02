@@ -41,7 +41,7 @@ for threads in ${NUM_THREADS_LIST[@]}; do
     for model_name in ${MODELS_LIST[@]}; do
       echo "Model=$model_name Threads=$threads"
       adb shell "$ANDROID_DIR/benchmark_bin \
-                   --model_dir=$ANDROID_DIR/${MODELS_DIR##*/}/$model_name \
+                   --model_dir=$ANDROID_DIR/${MODELS_DIR}/$model_name \
                    --warmup=$WARMUP \
                    --repeats=$REPEATS \
                    --threads=$threads \
