@@ -540,6 +540,28 @@ struct GRUParam {
   bool origin_mode{false};
 };
 
+struct GRUGradParam {
+  const lite::Tensor* input{nullptr};
+  const lite::Tensor* h0{nullptr};
+  const lite::Tensor* weight{nullptr};
+  const lite::Tensor* bias{nullptr};
+  const lite::Tensor* batch_gate{nullptr};
+  const lite::Tensor* batch_reset_hidden_prev{nullptr};
+  const lite::Tensor* batch_hidden{nullptr};
+  const lite::Tensor* hidden{nullptr};
+  const lite::Tensor* hidden_grad{nullptr};
+
+  lite::Tensor* input_grad{nullptr};
+  lite::Tensor* h0_grad{nullptr};
+  lite::Tensor* weight_grad{nullptr};
+  lite::Tensor* bias_grad{nullptr};
+
+  std::string gate_activation{"sigmoid"};
+  std::string activation{"tanh"};
+  bool is_reverse{false};
+  bool origin_mode{false};
+};
+
 /// ----------------------- BeamSearchDecode operators ----------------------f
 struct BeamSearchDecodeParam {
   std::vector<lite::Tensor>* ids{nullptr};
