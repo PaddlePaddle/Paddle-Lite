@@ -17,7 +17,6 @@
 #include <cmath>
 #include "lite/arm/math/gemm_prepacked_int8.h"
 #include "lite/core/context.h"
-#include "lite/core/cpu_info.h"
 
 namespace paddle {
 namespace lite {
