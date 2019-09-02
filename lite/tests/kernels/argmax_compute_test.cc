@@ -43,7 +43,7 @@ class ArgmaxComputeTester : public arena::TestCase {
   void RunBaseline(Scope* scope) override {
     auto* out = scope->NewTensor(output_);
     CHECK(out);
-    int nchw[] = {dims_[0], dims_[1], dims_[2], dims_[3]};
+    int64_t nchw[] = {dims_[0], dims_[1], dims_[2], dims_[3]};
     std::vector<int64_t> output_shape(nchw, nchw + 4);
     output_shape.erase(output_shape.begin() + axis_);
     DDim output_dims(output_shape);

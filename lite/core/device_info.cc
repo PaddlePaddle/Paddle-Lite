@@ -958,7 +958,6 @@ void DeviceInfo::RequestPowerRandLowMode(int shift_num, int thread_num) {
 
 int DeviceInfo::Setup() {
   core_num_ = get_cpu_num();
-  printf("core number: %d\n", core_num_);
   mem_size_ = get_mem_size();
   get_cpu_arch(&archs_, core_num_);
   // set defalut CPU info
