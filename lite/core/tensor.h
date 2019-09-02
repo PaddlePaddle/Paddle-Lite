@@ -113,7 +113,8 @@ class TensorLite {
   // For other devices, T and R may be the same type.
   template <typename T, typename R = T>
   const R *data() const {
-    return static_cast<const R *>(buffer_->data());
+    return reinterpret_cast<const R *>(static_cast<char *>(buffer_->data()) +
+                                       offset_);
   }
 
   void Resize(const DDimLite &ddim) { dims_ = ddim; }
@@ -204,7 +205,7 @@ template <typename T, typename R>
 R *TensorLite::mutable_data() {
   memory_size_ = dims_.production() * sizeof(T);
   buffer_->ResetLazy(target_, memory_size_);
-  return static_cast<R *>(buffer_->data());
+  return reinterpret_cast<R *>(static_cast<char *>(buffer_->data()) + offset_);
 }
 
 template <typename T, typename R>
@@ -212,7 +213,7 @@ R *TensorLite::mutable_data(TargetType target) {
   target_ = target;
   memory_size_ = dims_.production() * sizeof(T);
   buffer_->ResetLazy(target, memory_size());
-  return static_cast<R *>(buffer_->data());
+  return reinterpret_cast<R *>(static_cast<char *>(buffer_->data()) + offset_);
 }
 
 template <typename T>
