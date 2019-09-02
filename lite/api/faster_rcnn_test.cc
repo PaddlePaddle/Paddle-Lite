@@ -78,19 +78,13 @@ void TestModel(const std::vector<Place>& valid_places,
   auto* out = predictor.GetOutput(0);
   auto* out_data = out->data<float>();
   LOG(INFO) << "==========output data===============";
+  LOG(INFO) << out->dims();
   for (int i = 0; i < out->numel(); i++) {
-    // LOG(INFO) << out_data[i];
+    LOG(INFO) << out_data[i];
   }
-  /*
-  ASSERT_EQ(out->dims()[1], 6);
-  ASSERT_EQ(out->lod().size(), 1);
-  ASSERT_EQ(out->lod()[0].size(), 2);
-  ASSERT_EQ(out->lod()[0][0], 0);
-  ASSERT_EQ(out->lod()[0][1], 100);
-  */
 }
 
-TEST(MobileNetV1_YoloV3, test_arm) {
+TEST(Faster_RCNN, test_arm) {
   std::vector<Place> valid_places({
       Place{TARGET(kHost), PRECISION(kFloat)},
       Place{TARGET(kARM), PRECISION(kFloat)},
