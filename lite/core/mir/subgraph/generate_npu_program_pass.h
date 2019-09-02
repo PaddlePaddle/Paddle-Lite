@@ -65,10 +65,8 @@ class GenerateNPUProgramPass : public SubgraphProgramPass {
                      std::unordered_set<Node*> out_unused_vars);
 
   void GenNPUSubgraph(const std::unique_ptr<SSAGraph>& graph,
-                      const std::unordered_set<Node*>& nodes_all,
+                      const std::unordered_set<Node*>& op_nodes,
                       int sub_id);
-
-  void GenAllNPUSubgraph(const std::unique_ptr<SSAGraph>& graph, int sub_num);
 
  private:
   std::vector<Instruction> insts_;

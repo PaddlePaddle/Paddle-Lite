@@ -56,6 +56,10 @@ class SubgraphProgramPass : public ProgramPass {
 
   // Below function cloud be useful in child classes //
 
+  // classify node by subgraph id
+  std::unordered_map<int, std::unordered_set<Node*>> ClassifySubgraph(
+      const std::unique_ptr<SSAGraph>& graph);
+
   // Sort and return the topology order of nodes set
   std::vector<Node*> GetTopologicalOrder(
       const std::unordered_set<Node*>& nodes);
@@ -79,18 +83,6 @@ class SubgraphProgramPass : public ProgramPass {
                   const std::unordered_set<Node*>& nodes_all,
                   std::unordered_set<const Node*>* visited_nodes,
                   std::vector<Node*>* ret);
-
-  // {1: {nodes2rm_in_subgraph1, ...},
-  //  2: {nodes2rm_in_subgraph2, ...}}
-  // delete nodes
-  std::unordered_map<int, std::unordered_set<Node*>> nodes2rm_;
-  // std::unordered_map<int, std::unordered_set<const Node*>> nodes2rm_;
-  // inputs nodes
-  std::unordered_map<int, std::unordered_set<Node*>> i_nodes_;
-  // std::unordered_map<int, std::unordered_set<const Node*>> i_nodes_;
-  // outputs nodes
-  std::unordered_map<int, std::unordered_set<Node*>> o_nodes_;
-  // std::unordered_map<int, std::unordered_set<const Node*>> o_nodes_;
 };
 
 }  // namespace subgraph

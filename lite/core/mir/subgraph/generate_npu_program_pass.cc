@@ -219,29 +219,8 @@ void GenerateNPUProgramPass::GenNPUSubgraph(
   GraphSafeRemoveNodes(graph.get(), nodes2rm);
 }
 
-void GenerateNPUProgramPass::GenAllNPUSubgraph(
-    const std::unique_ptr<SSAGraph>& graph, int sub_num) {
-  std::unordered_map<int, std::unordered_set<Node*>> all_op_nodes;
-  for (auto& item : graph->StmtTopologicalOrder()) {
-    if (!item->IsStmt()) continue;
-    auto& stmt = item->AsStmt();
-    int sub_id = stmt.subgraph_id();
-    if (sub_id < 1) continue;
-    if (all_op_nodes.count(sub_id) == 0) {
-      all_op_nodes[sub_id] = std::unordered_set<Node*>();
-    }
-    all_op_nodes.at(sub_id).insert(item);
-  }
-
-  for (int id = 1; id <= sub_num; ++id) {
-    LOG(INFO) << "Converting subgraph_id:" << id;
-    GenNPUSubgraph(graph, all_op_nodes.at(id), id);
-  }
-}
-
 void GenerateNPUProgramPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
-  VLOG(3) << "Before NPU Pass \n" << Visualize(graph.get());
-
+  LOG(INFO) << "Before NPU Pass \n" << Visualize(graph.get());
   const auto& bridges = lite::npu::bridge::Factory::Instance();
   const auto& op_map = bridges.AllFunctions();
   std::vector<std::string> supported_op_types;
@@ -252,15 +231,21 @@ void GenerateNPUProgramPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 
   try {
     int num_subgraph = FuseSubgraph(graph, supported_op_types);
-    LOG(INFO) << "detected " << num_subgraph << " NPU subgraph";
     InferOnce(graph);
-    GenAllNPUSubgraph(graph, num_subgraph);
+    auto op_nodes_all = ClassifySubgraph(graph);
+    CHECK_EQ(op_nodes_all.size(), num_subgraph);
+    int id = 1;
+    for (auto& op_nodes : op_nodes_all) {
+      LOG(INFO) << "Converting subgraph_id:" << id;
+      GenNPUSubgraph(graph, op_nodes.second, id);
+      id++;
+    }
   } catch (...) {
     LOG(WARNING) << "Build NPU graph failed";
     throw std::runtime_error("Build NPU graph failed");
   }
 
-  VLOG(3) << "After NPU Pass \n" << Visualize(graph.get());
+  LOG(INFO) << "After NPU Pass \n" << Visualize(graph.get());
   for (auto& item : graph->StmtTopologicalOrder()) {
     if (item->IsStmt()) {
       auto& stmt = item->AsStmt();
