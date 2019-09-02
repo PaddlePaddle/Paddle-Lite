@@ -14,7 +14,7 @@ option(WITH_TEST        "build with unit tests"          ON)
 
 # select platform: CPU, GPU_CL, FPGA
 option(CPU              "build with arm CPU support"     ON)
-option(GPU_CL           "build with OpenCL support"      OFF)
+option(GPU_CL           "build with OpenCL support"      ON)
 option(FPGA             "build with FPGA support"        OFF)
 if(FPGA)
   option(FPGAV1     "build with fpga v1 support"   ON)
@@ -91,7 +91,12 @@ if (GPU_CL)
     # opencl version
     add_definitions(-DCL_TARGET_OPENCL_VERSION=220)
 
-    link_libraries(${CMAKE_CURRENT_LIST_DIR}/third_party/opencl/libOpenCL.so)
+    if (ANDROID_ABI STREQUAL "arm64-v8a")    
+        link_libraries(${CMAKE_CURRENT_LIST_DIR}/third_party/opencl/libOpenCL-64.so)
+    else ()
+        link_libraries(${CMAKE_CURRENT_LIST_DIR}/third_party/opencl/libOpenCL.so)
+    endif ()
+
     include_directories(third_party/opencl/OpenCL-Headers)
 else()
     file(GLOB_RECURSE _tmp_list src/framework/cl/*.cpp src/operators/kernel/cl/*.cpp)

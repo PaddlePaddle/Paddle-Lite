@@ -83,7 +83,8 @@ enum PMStatus {
   PMOutOfAuthority = 0x05, /*!< Try to modified data not your own*/
   PMOutOfMem = 0x06,       /*!< OOM error*/
   PMUnImplError = 0x07,    /*!< Unimplement error. */
-  PMWrongDevice = 0x08     /*!< un-correct device. */
+  PMWrongDevice = 0x08,    /*!< un-correct device. */
+  PMException = 0x09       /*!< throw exception. */
 };
 
 enum RoundType {
@@ -158,6 +159,7 @@ enum ARMArch {
 
 extern const char *G_OP_TYPE_CONV;
 extern const char *G_OP_TYPE_BATCHNORM;
+extern const char *G_OP_TYPE_INSTANCENORM;
 extern const char *G_OP_TYPE_BOX_CODER;
 extern const char *G_OP_TYPE_CONCAT;
 extern const char *G_OP_TYPE_ELEMENTWISE_ADD;

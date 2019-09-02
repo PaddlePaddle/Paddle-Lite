@@ -39,7 +39,7 @@ TEST(model, test) {
     precision = PRECISION(kInt8);
   }
   predictor.Build(
-      FLAGS_model_dir, Place{TARGET(kARM), precision}, valid_places);
+      FLAGS_model_dir, "", "", Place{TARGET(kARM), precision}, valid_places);
   int im_width = FLAGS_im_width;
   int im_height = FLAGS_im_height;
   auto* input_tensor = predictor.GetInput(0);

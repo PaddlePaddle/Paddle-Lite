@@ -19,6 +19,7 @@ namespace paddle_mobile {
 
 const char *G_OP_TYPE_CONV = "conv2d";
 const char *G_OP_TYPE_BATCHNORM = "batch_norm";
+const char *G_OP_TYPE_INSTANCENORM = "instance_norm";
 const char *G_OP_TYPE_BOX_CODER = "box_coder";
 const char *G_OP_TYPE_CONCAT = "concat";
 const char *G_OP_TYPE_ELEMENTWISE_ADD = "elementwise_add";
@@ -153,6 +154,7 @@ std::unordered_map<
         {G_OP_TYPE_ELEMENTWISE_MUL, {{"X", "Y"}, {"Out"}}},
         {G_OP_TYPE_POOL2D, {{"X"}, {"Out"}}},
         {G_OP_TYPE_BATCHNORM, {{"X"}, {"Y"}}},
+        {G_OP_TYPE_INSTANCENORM, {{"X"}, {"Out"}}},
         {G_OP_TYPE_LRN, {{"X"}, {"Out"}}},
         {G_OP_TYPE_CONCAT, {{"X"}, {"Out"}}},
         {G_OP_TYPE_SPLIT, {{"X"}, {"Out"}}},

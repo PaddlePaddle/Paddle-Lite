@@ -57,11 +57,13 @@ enum class PrecisionType : int {
   kUnk = 0,
   kFloat = 1,
   kInt8 = 2,
-  kFP16 = 5,
   kInt32 = 3,
   kAny = 4,  // any precision
+  kFP16 = 5,
   kBool = 6,
-  NUM = 7,  // number of fields.
+  kInt64 = 7,
+  kInt16 = 8,
+  NUM = 9,  // number of fields.
 };
 enum class DataLayoutType : int {
   kUnk = 0,

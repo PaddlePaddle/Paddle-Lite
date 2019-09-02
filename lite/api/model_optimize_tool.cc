@@ -23,7 +23,12 @@
 #include "lite/utils/cp_logging.h"
 #include "lite/utils/string.h"
 
-DEFINE_string(model_dir, "", "path of the model");
+DEFINE_string(model_dir,
+              "",
+              "path of the model. This option will be ignored if model_file "
+              "and param_file are exist");
+DEFINE_string(model_file, "", "model file path of the combined-param model");
+DEFINE_string(param_file, "", "param file path of the combined-param model");
 DEFINE_string(
     optimize_out_type,
     "protobuf",
@@ -39,8 +44,15 @@ namespace paddle {
 namespace lite_api {
 
 void Main() {
+  if (!FLAGS_model_file.empty() && !FLAGS_param_file.empty()) {
+    LOG(WARNING)
+        << "Load combined-param model. Option model_dir will be ignored";
+  }
+
   lite_api::CxxConfig config;
   config.set_model_dir(FLAGS_model_dir);
+  config.set_model_file(FLAGS_model_file);
+  config.set_param_file(FLAGS_param_file);
 
   std::vector<Place> valid_places;
   auto target_reprs = lite::Split(FLAGS_valid_targets, " ");
