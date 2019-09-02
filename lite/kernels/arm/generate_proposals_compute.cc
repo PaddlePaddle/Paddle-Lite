@@ -405,19 +405,6 @@ void GenerateProposalsCompute::Run() {
   int64_t h_bbox = bbox_dim[2];
   int64_t w_bbox = bbox_dim[3];
 
-  /*
-  LOG(INFO) << "scores dims:" << scores->dims() << " "
-            << (scores->data<float>())[scores->numel() - 1];
-  LOG(INFO) << "bbox_deltas dims:" << bbox_deltas->dims() << " "
-            << (bbox_deltas->data<float>())[bbox_deltas->numel() - 1];
-  LOG(INFO) << "im_info dims:" << im_info->dims() << " "
-            << (im_info->data<float>())[im_info->numel() - 1];
-  LOG(INFO) << "anchors dims:" << anchors->dims() << " "
-            << (anchors->data<float>())[anchors->numel() - 1];
-  LOG(INFO) << "variances dims:" << variances->dims() << " "
-            << (variances->data<float>())[variances->numel() - 1];
-  */
-
   rpn_rois->Resize({scores->numel(), 4});
   rpn_roi_probs->Resize(std::vector<int64_t>({scores->numel(), 1}));
 
@@ -469,6 +456,21 @@ void GenerateProposalsCompute::Run() {
   rpn_roi_probs->set_lod(lod);
   rpn_rois->Resize({num_proposals, 4});
   rpn_roi_probs->Resize({num_proposals, 1});
+
+  /*
+  auto* rpn_roi_probs_data = rpn_roi_probs->data<float>();
+  LOG(INFO) << "rpn_roi_probs:" << rpn_roi_probs->dims();
+  for (int i = 0; i < rpn_roi_probs->numel() - 4; i = i + 4) {
+    LOG(INFO) << rpn_roi_probs_data[i] << " " << rpn_roi_probs_data[i+1]
+      << " " << rpn_roi_probs_data[i+2] << " " << rpn_roi_probs_data[i+3];
+  }
+  auto* rpn_roi_data = rpn_rois->data<float>();
+  LOG(INFO) << "rpn_roi:" << rpn_rois->dims();
+  for (int i = 0; i < rpn_rois->numel() - 4; i = i + 4) {
+    LOG(INFO) << rpn_roi_data[i] << " " << rpn_roi_data[i+1]
+      << " " << rpn_roi_data[i+2] << " " << rpn_roi_data[i+3];
+  }
+  */
 }
 
 }  // namespace arm

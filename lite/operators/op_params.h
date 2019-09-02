@@ -490,10 +490,11 @@ struct BoxCoderParam {
   const lite::Tensor* prior_box_var{};
   const lite::Tensor* target_box{};
   lite::Tensor* proposals{};
-  int axis{0};
-  bool box_normalized{true};
   // code_type: encode_center_size and decode_center_size
-  std::string code_type;
+  std::string code_type{"encode_center_size"};
+  bool box_normalized{true};
+  int axis{0};
+  std::vector<float> variance{};
 };
 
 /// ----------------------- multiclass_nms operators ----------------------

@@ -39,8 +39,7 @@ bool BoxClipOpLite::InferShape() const {
   auto* input = param_.Input;
   auto* output = param_.Output;
   output->Resize(input->dims());
-  auto* output_lod = output->mutable_lod();
-  *output_lod = input->lod();
+  output->set_lod(input->lod());
   return true;
 }
 
