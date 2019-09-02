@@ -62,8 +62,8 @@ void slice(const Dtype* input,
   }
   int out_num = out_dims[in_dims.size() - 1];
   for (int i = in_dims.size() - 2; i >= 0; i--) {
-    dst_step[i] = out_dims[i] * dst_step[i + 1];
-    src_step[i] = in_dims[i] * src_step[i + 1];
+    dst_step[i] = out_dims[i + 1] * dst_step[i + 1];
+    src_step[i] = in_dims[i + 1] * src_step[i + 1];
     out_num *= out_dims[i];
   }
 
