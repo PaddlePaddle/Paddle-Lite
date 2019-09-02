@@ -34,6 +34,10 @@ void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
     impl_ = lite::arm::math::conv_depthwise_3x3_fp32;
   } else if (kw == 5) {
     VLOG(5) << "invoke 5x5 dw conv fp32";
+    auto x_dims = param.x->dims();
+    int iw = x_dims[3];
+    auto o_dims = param.output->dims();
+    int ow = o_dims[3];
     ctx.ExtendWorkspace((iw + ow) * sizeof(float));
     impl_ = lite::arm::math::conv_depthwise_5x5_fp32;
   } else {
@@ -47,6 +51,7 @@ void DepthwiseConv<PRECISION(kInt8), PRECISION(kFloat)>::PrepareForRun() {
   CHECK(this->ctx_);
   auto& ctx = this->ctx_->template As<ARMContext>();
   auto w_dims = param.filter->dims();
+  int kh = w_dims[2];
   int kw = w_dims[3];
   int oc = w_dims[0];
   /// update scale
@@ -67,15 +72,11 @@ void DepthwiseConv<PRECISION(kInt8), PRECISION(kFloat)>::PrepareForRun() {
     VLOG(5) << "invoke 3x3 dw conv int8 kernel fp32 out";
     impl_ = lite::arm::math::conv_depthwise_3x3_int8_fp32;
     int cround = ROUNDUP(w_dims[0], 8);
-    weights_.Resize({cround / 8, _param->_kh * _param->_kw, 8});
+    weights_.Resize({cround / 8, kh * kw, 8});
     auto wptr = param.filter->data<int8_t>();
     auto wptr_new = weights_.mutable_data<int8_t>();
-    lite::arm::math::conv_trans_weights_numc(wptr, wptr_new, chout, 1, 8, 9);
+    lite::arm::math::conv_trans_weights_numc(wptr, wptr_new, oc, 1, 8, 9);
     flag_trans_weights_ = true;
-  } else if (kw == 5) {
-    VLOG(5) << "invoke 5x5 dw conv int8 kernel fp32 out";
-    ctx.ExtendWorkspace((iw + ow) * sizeof(float));
-    impl_ = lite::arm::math::conv_depthwise_5x5_fp32;
   } else {
     LOG(FATAL) << "this type dw conv not impl";
   }
@@ -88,6 +89,7 @@ void DepthwiseConv<PRECISION(kInt8), PRECISION(kInt8)>::PrepareForRun() {
   auto& ctx = this->ctx_->template As<ARMContext>();
   auto w_dims = param.filter->dims();
   int kw = w_dims[3];
+  int kh = w_dims[2];
   int oc = w_dims[0];
   /// update scale
   float in_scale = param.input_scale;
@@ -108,7 +110,7 @@ void DepthwiseConv<PRECISION(kInt8), PRECISION(kInt8)>::PrepareForRun() {
     bias_.Resize(param.bias->dims());
     auto ptr = bias_.mutable_data<float>();
     auto ptr_in = param.bias->data<float>();
-    for (int i = 0; i < bias_->numel(); ++i) {
+    for (int i = 0; i < bias_.numel(); ++i) {
       ptr[i] = ptr_in[i] / out_scale;
     }
     flag_trans_bias_ = true;
@@ -118,29 +120,28 @@ void DepthwiseConv<PRECISION(kInt8), PRECISION(kInt8)>::PrepareForRun() {
     VLOG(5) << "invoke 3x3 dw conv int8 kernel int8 out";
     impl_ = lite::arm::math::conv_depthwise_3x3_int8_int8;
     int cround = ROUNDUP(w_dims[0], 8);
-    weights_.Resize({cround / 8, _param->_kh * _param->_kw, 8});
+    weights_.Resize({cround / 8, kh * kw, 8});
     auto wptr = param.filter->data<int8_t>();
     auto wptr_new = weights_.mutable_data<int8_t>();
-    lite::arm::math::conv_trans_weights_numc(wptr, wptr_new, chout, 1, 8, 9);
+    lite::arm::math::conv_trans_weights_numc(wptr, wptr_new, oc, 1, 8, 9);
     flag_trans_weights_ = true;
-  } else if (kw == 5) {
-    VLOG(5) << "invoke 5x5 dw conv int8 kernel int8 out";
-    ctx.ExtendWorkspace((iw + ow) * sizeof(float));
-    impl_ = lite::arm::math::conv_depthwise_5x5_int8_int8;
   } else {
     LOG(FATAL) << "this type dw conv not impl";
   }
 }
 
 template <>
-void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {}
-
-template <>
-bool DepthwiseConv<PRECISION(kFloat)>::run(const operators::ConvParam& param) {
-  // start timer
+void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
+  auto& param = this->template Param<param_t>();
+  CHECK(this->ctx_);
+  auto& ctx = this->ctx_->template As<ARMContext>();
   const auto* i_data = param.x->data<float>();
-  const auto* w_data = param.filter->data<float>();
+  const auto* w_data = flag_trans_weights_ ? weights_.data<float>()
+                                           : param.filter->data<float>();
   const auto* b_data = param.bias ? param.bias->data<float>() : nullptr;
+  if (flag_trans_bias_) {
+    b_data = bias_.data<float>();
+  }
   auto* o_data = param.output->mutable_data<float>();
 
   auto x_dims = param.x->dims();
@@ -167,111 +168,35 @@ bool DepthwiseConv<PRECISION(kFloat)>::run(const operators::ConvParam& param) {
         w_data,
         b_data,
         param,
-        this->ctx_);
-
-  // timer end
-  return true;
+        &ctx,
+        w_scale_.data());
 }
 
-template <PrecisionType Ptype_out>
-bool DepthwiseConvInt8<Ptype_out>::create(const operators::ConvParam& param,
-                                          ARMContext* ctx) {
-  this->ctx_ = ctx;
-  auto x_dims = param.x->dims();
-  auto w_dims = param.filter->dims();
-  auto o_dims = param.output->dims();
-
-  int ic = x_dims[1];
-  int ih = x_dims[2];
-  int iw = x_dims[3];  // nchw
-  int oc = o_dims[1];
-  int oh = o_dims[2];
-  int ow = o_dims[3];
-  int kw = w_dims[3];
-  int sw = param.strides[1];
-  w_scale_ = param.weight_scale;
-
-  //! select dw conv kernel
-  if (kw == 3) {
-    tmp_int32_out_.Resize(o_dims);
-    VLOG(5) << "invoke 3x3 depthwise int8 conv";
-    impl_ = conv_depthwise_3x3_int8;
-  } else if (kw == 5) {
-    // update w_data scale
-    if (Ptype_out == PRECISION(kFloat) || Ptype_out == PRECISION(kInt8)) {
-      CHECK_EQ(w_scale_.size(), oc) << "w_data scale size must be oc";
-      float input_scale = param.input_scale;
-      float output_scale = param.output_scale;
-      for (auto& ws : w_scale_) {
-        ws *= input_scale;
-        if (Ptype_out == PRECISION(kInt8)) {
-          ws /= output_scale;
-        }
-      }
-    }
-
-    const int wout_round = ((ow + 7) / 8) * 8;
-    const int win_round = wout_round * sw + 5 - 1;
-    const int hout_round = ((oh + 2) / 3) * 3;
-    const int hin_round = hout_round * sw + 5 - 1;
-    const int tmp_size_out = wout_round * hout_round;
-    const int tmp_size_in = win_round * hin_round;
-    const int tmp_size_io_bytes = tmp_size_in + tmp_size_out * sizeof(int);
-    const int tmp_row_io_bytes = win_round + wout_round * sizeof(int);
-    const int tmp_size_io_float =
-        (tmp_size_io_bytes + sizeof(float) - 1) / sizeof(float);
-    const int tmp_row_io_float =
-        (tmp_row_io_bytes + sizeof(float) - 1) / sizeof(float);
-    ctx_->ExtendWorkspace(
-        (ctx_->threads() * tmp_size_io_float + tmp_row_io_float) *
-        sizeof(float));
-    impl_ = conv_depthwise_5x5_int8;
-    VLOG(5) << "invoke conv_depthwise_5x5 int8 conv";
-  } else {
-    LOG(ERROR) << "this type depthwise int8 conv not impl";
-    return false;
+template <>
+void DepthwiseConv<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
+  auto& param = this->template Param<param_t>();
+  CHECK(this->ctx_);
+  auto& ctx = this->ctx_->template As<ARMContext>();
+  const auto* i_data = param.x->data<int8_t>();
+  const auto* w_data = flag_trans_weights_ ? weights_.data<int8_t>()
+                                           : param.filter->data<int8_t>();
+  const auto* b_data = param.bias ? param.bias->data<float>() : nullptr;
+  if (flag_trans_bias_) {
+    b_data = bias_.data<float>();
   }
-  return true;
-}
-
-template <PrecisionType Ptype_out>
-bool DepthwiseConvInt8<Ptype_out>::init(const operators::ConvParam& param,
-                                        Context<TARGET(kARM)>* ctx) {
-  this->ctx_ = ctx;
-  return create(param, ctx);
-}
-
-template <PrecisionType Ptype_out>
-bool DepthwiseConvInt8<Ptype_out>::run(const operators::ConvParam& param) {
-  const int8_t* i_data = param.x->data<int8_t>();
-  int32_t* o_data = nullptr;
-  const int8_t* w_data = param.filter->data<int8_t>();
-  const int32_t* b_data = param.bias ? param.bias->data<int32_t>() : nullptr;
-
-  //  LOG(INFO) << "input size: " << param.x->memory_size() << " "
-  //            << param.input_scale << " " << w_scale_.size();
+  auto* o_data = param.output->mutable_data<float>();
 
   auto x_dims = param.x->dims();
   auto w_dims = param.filter->dims();
   auto o_dims = param.output->dims();
+
+  int iw = x_dims[3];  // nchw
+  int ih = x_dims[2];
+  int ic = x_dims[1];
   int bs = x_dims[0];
-  int ic = x_dims[1];
-  int ih = x_dims[2];
-  int iw = x_dims[3];  // nchw
-  int oc = o_dims[1];
   int oh = o_dims[2];
   int ow = o_dims[3];
-  int kw = w_dims[3];
-  int sw = param.strides[1];
-
-  if (kw == 3 && Ptype_out != PRECISION(kInt32)) {
-    o_data = tmp_int32_out_.mutable_data<int32_t>();
-  } else if (kw == 5 || (kw == 3 && Ptype_out == PRECISION(kInt32))) {
-    o_data = param.output->mutable_data<int32_t>();
-  } else {
-    LOG(ERROR) << "this type dw int8 conv not impl";
-    return false;
-  }
+  int oc = o_dims[1];
 
   impl_(i_data,
         o_data,
@@ -285,26 +210,50 @@ bool DepthwiseConvInt8<Ptype_out>::run(const operators::ConvParam& param) {
         w_data,
         b_data,
         param,
-        this->ctx_,
-        Ptype_out,
+        &ctx,
         w_scale_.data());
+}
 
-  auto i_scale = param.input_scale;
-  auto o_scale = param.output_scale;
-  if (kw == 3) {
-    if (Ptype_out == PRECISION(kInt8)) {
-      trans_tensor_dtype<PRECISION(kInt32), PRECISION(kInt8)>(
-          &tmp_int32_out_, param.output, i_scale, o_scale, w_scale_);
-    } else if (Ptype_out == PRECISION(kFloat)) {
-      trans_tensor_dtype<PRECISION(kInt32), PRECISION(kFloat)>(
-          &tmp_int32_out_, param.output, i_scale, 1.f, w_scale_);
-    } else if (Ptype_out != PRECISION(kInt32)) {
-      LOG(ERROR) << "unsupported precision type!!";
-      return false;
-    }
+template <>
+void DepthwiseConv<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
+  auto& param = this->template Param<param_t>();
+  CHECK(this->ctx_);
+  auto& ctx = this->ctx_->template As<ARMContext>();
+  const auto* i_data = param.x->data<int8_t>();
+  const auto* w_data = flag_trans_weights_ ? weights_.data<int8_t>()
+                                           : param.filter->data<int8_t>();
+  const auto* b_data = param.bias ? param.bias->data<float>() : nullptr;
+  if (flag_trans_bias_) {
+    b_data = bias_.data<float>();
   }
+  auto* o_data = param.output->mutable_data<int8_t>();
 
-  return true;
+  auto x_dims = param.x->dims();
+  auto w_dims = param.filter->dims();
+  auto o_dims = param.output->dims();
+
+  int iw = x_dims[3];  // nchw
+  int ih = x_dims[2];
+  int ic = x_dims[1];
+  int bs = x_dims[0];
+  int oh = o_dims[2];
+  int ow = o_dims[3];
+  int oc = o_dims[1];
+
+  impl_(i_data,
+        o_data,
+        bs,
+        oc,
+        oh,
+        ow,
+        ic,
+        ih,
+        iw,
+        w_data,
+        b_data,
+        param,
+        &ctx,
+        w_scale_.data());
 }
 
 }  // namespace arm

@@ -418,16 +418,16 @@ inline float active_f32<lite_api::ActivationType::kTanh>(const float& x) {
 }
 
 template <PrecisionType Ptype>
-void trans_gemm_weights(const Tensor& tin,
-                        Tensor& tout,  // NOLINT
-                        int group,
-                        ARMContext* ctx);
+inline void trans_gemm_weights(const Tensor& tin,
+                               Tensor& tout,  // NOLINT
+                               int group,
+                               ARMContext* ctx);
 
 template <>
-void trans_gemm_weights<PRECISION(kFloat)>(const Tensor& tin,
-                                           Tensor& tout,  // NOLINT
-                                           int group,
-                                           ARMContext* ctx) {
+inline void trans_gemm_weights<PRECISION(kFloat)>(const Tensor& tin,
+                                                  Tensor& tout,  // NOLINT
+                                                  int group,
+                                                  ARMContext* ctx) {
   CHECK_EQ(tin.dims().size(), 4) << "conv weights dims size must = 4";
   int m = tin.dims()[0] / group;
   int k = tin.dims().count(1, 4) / group;
@@ -447,10 +447,10 @@ void trans_gemm_weights<PRECISION(kFloat)>(const Tensor& tin,
 }
 
 template <>
-void trans_gemm_weights<PRECISION(kInt8)>(const Tensor& tin,
-                                          Tensor& tout,  // NOLINT
-                                          int group,
-                                          ARMContext* ctx) {
+inline void trans_gemm_weights<PRECISION(kInt8)>(const Tensor& tin,
+                                                 Tensor& tout,  // NOLINT
+                                                 int group,
+                                                 ARMContext* ctx) {
   CHECK_EQ(tin.dims().size(), 4) << "conv weights dims size must = 4";
   int m = tin.dims()[0] / group;
   int k = tin.dims().count(1, 4) / group;

@@ -15,20 +15,28 @@
 #pragma once
 #include "lite/arm/math/funcs.h"
 #include "lite/core/kernel.h"
-#include "lite/operators/conv_op.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace arm {
 
-class ConvCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+template <PrecisionType Ptype, PrecisionType OutType>
+class ConvCompute : public KernelLite<TARGET(kARM), Ptype> {
  public:
-  using param_t = operators::ConvParam;
+  virtual void PrepareForRun() {
+    LOG(FATAL) << "ConvCompute PrepareForRun not implemented";
+  }
 
-  void PrepareForRun() override;
+  virtual void Init() {
+    CHECK(impl_);
+    impl_->Init();
+  }
 
-  void Run() override;
+  virtual void Run() {
+    CHECK(impl_);
+    impl_->Run();
+  }
 
   ~ConvCompute() {
     if (impl_ != nullptr) {
@@ -37,28 +45,8 @@ class ConvCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
   }
 
  private:
-  lite::arm::math::ImplBase<TARGET(kARM), PRECISION(kFloat), param_t>* impl_{
-      nullptr};
-};
-
-template <PrecisionType Ptype_out>
-class ConvComputeInt8 : public KernelLite<TARGET(kARM), PRECISION(kInt8)> {
- public:
   using param_t = operators::ConvParam;
-
-  void PrepareForRun() override;
-
-  void Run() override;
-
-  ~ConvComputeInt8() {
-    if (impl_ != nullptr) {
-      delete impl_;
-    }
-  }
-
- private:
-  lite::arm::math::ImplBase<TARGET(kARM), PRECISION(kInt8), param_t>* impl_{
-      nullptr};
+  KernelLite<TARGET(kARM), Ptype>* impl_{nullptr};
 };
 
 }  // namespace arm

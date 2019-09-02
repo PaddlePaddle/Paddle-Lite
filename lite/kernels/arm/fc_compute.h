@@ -94,7 +94,7 @@ class FcCompute : public KernelLite<TARGET(kARM), PType> {
     flag_gemm_ = check_fc_use_gemm<PType, OutType>(m_, param.bias != nullptr);
     if (!flag_trans_weights_ && !flag_gemm_) {
       flag_trans_weights_ = true;
-      fc_trans_weights<PType>(*param.w, weights_);
+      fc_trans_weights<PType>(*param.w, &weights_);
     }
   }
 

@@ -43,7 +43,6 @@ class KernelBase {
       const std::map<std::string, const Type*>& input_types,
       const std::string& out_arg)>;
 
- protected:
   /// Run some initialization before `Run`, it will invoke after `SetParam` and
   /// `SetContext`, that is both the param_ and context_ are valid.
   virtual void PrepareForRun() {}
@@ -54,7 +53,6 @@ class KernelBase {
   /// Run the kernel. Before Run, both the param_ and context_ should be valid.
   virtual void Run() = 0;
 
- public:
   void Launch() {
     /// First run, init kernel, do weights transform once
     if (is_first_epoch_) {
