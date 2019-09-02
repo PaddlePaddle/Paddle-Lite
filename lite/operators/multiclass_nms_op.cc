@@ -67,7 +67,9 @@ bool MulticlassNmsOpLite::AttachImpl(const cpp::OpDesc& opdesc,
   param_.score_threshold = opdesc.GetAttr<float>("score_threshold");
   param_.nms_threshold = opdesc.GetAttr<float>("nms_threshold");
   param_.nms_eta = opdesc.GetAttr<float>("nms_eta");
-  param_.normalized = opdesc.GetAttr<bool>("normalized");
+  if (opdesc.HasAttr("normalized")) {
+    param_.normalized = opdesc.GetAttr<bool>("normalized");
+  }
   return true;
 }
 
