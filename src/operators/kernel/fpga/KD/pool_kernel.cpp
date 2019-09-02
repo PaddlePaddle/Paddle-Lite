@@ -48,12 +48,13 @@ void PoolKernel<FPGA, float>::Compute(const PoolParam<FPGA>& param) {
   zynqmp::PoolingPE& pe = context.pe<zynqmp::PoolingPE>();
   pe.dispatch();
 
-   param.Output()->zynqmpTensor()->printScale();
+  param.Output()->zynqmpTensor()->printScale();
    // param.Output()->zynqmpTensor()->saveToFile("pooling.txt");
 #ifdef PADDLE_MOBILE_DEBUG
   zynqmp::Debugger::get_instance().registerOutput(
       "pool", param.Output()->zynqmpTensor());
 #endif
+
 }
 }  // namespace operators
 }  // namespace paddle_mobile

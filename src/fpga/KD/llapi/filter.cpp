@@ -290,7 +290,7 @@ size_t align_element_n(int16_t** data_in, int num, int height, int width) {
       }
     }
     *data_in = data_tmp;
-    free(tmp);
+    fpga_free(tmp);
   }
   return num_element * sizeof(int16_t);
 }

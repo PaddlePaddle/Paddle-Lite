@@ -369,6 +369,7 @@ inline void split_channel(const ConvParam& c_param) {
 
   int num = ceil(input->shape().channel() * 1.0f / 2047);
   int channel = input->shape().channel() / num;
+
   Shape bs_shape(N, {channel});
 
   for (int i = 0; i < num; i++) {
@@ -411,7 +412,7 @@ inline void split_channel(const ConvParam& c_param) {
     format_scale_bias(&scale, &bias, &conv_param->filter,
                       &conv_param->scaleBias, param.groups);
     conv_param->scaleBias.flush();
-    conv_param->scaleBias.saveToFile("sb.txt");
+    // conv_param->scaleBias.saveToFile("sb.txt");
 
     ConvArgs& args = conv_param->args;
     args.group_num = param.groups;

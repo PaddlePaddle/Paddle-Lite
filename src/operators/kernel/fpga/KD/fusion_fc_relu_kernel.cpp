@@ -43,6 +43,7 @@ void FusionFcReluKernel<FPGA, float>::Compute(
   zynqmp::Context& context = const_cast<zynqmp::Context&>(param.context_);
   FullyConnectedPE& pe = context.pe<FullyConnectedPE>();
   pe.dispatch();
+  // param.Out()->zynqmpTensor()->saveToFile("fc_relu", true);
 
 #ifdef PADDLE_MOBILE_DEBUG
   zynqmp::Debugger::get_instance().registerOutput("fusion_fc_relu",

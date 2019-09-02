@@ -16,6 +16,9 @@ limitations under the License. */
 
 #include "../pe.hpp"
 #include "../pe_params.hpp"
+#include "../float16.hpp"
+#include "../llapi/zynqmp_api.h"
+
 namespace paddle_mobile {
 namespace zynqmp {
 
@@ -29,6 +32,7 @@ class InputPE : public PE {
   }
 
   bool dispatch() {
+    fpga_reset();
     // std::cout << "InputPE dispatch \n";
     Tensor* input = param_.input;
     Tensor* output = param_.output;

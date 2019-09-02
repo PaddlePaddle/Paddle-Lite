@@ -135,7 +135,7 @@ class PoolingPE : public PE {
     output->flush();
   }
 
-  void cpu_compute() {
+  void cpu_compute1() {
     Tensor* input = param_.input;
     Tensor* output = param_.output;
     input->syncToCPU();
@@ -154,6 +154,35 @@ class PoolingPE : public PE {
       for (int j = 0; j < kernel_hw; j++) {
         float value = half_to_float(input->data<float16>()[i * kernel_hw + j]);
         sum += value;
+      }
+      float value = sum / kernel_hw;
+      data_out[i] = float_to_half(value);
+      scale_max = std::max(scale_max, std::abs(value));
+    }
+    output->scale()[0] = scale_max / 127.0f;
+    output->scale()[1] = 127.0f / scale_max;
+    output->flush();
+    // exit(-1);
+  }
+
+  void cpu_compute() {
+    Tensor* input = param_.input;
+    Tensor* output = param_.output;
+    input->syncToCPU();
+
+    Tensor float_input;
+    float* float_input_data = float_input.mutableData<float>(FP32, input->shape());
+    float_input.copyFrom(input);
+
+    float16* data_out = output->data<float16>();
+
+    int kernel_hw = param_.kernelSize[0] * param_.kernelSize[1];
+
+    float scale_max = 0;
+    for (int i = 0; i < output->shape().channel(); i++) {
+      float sum = 0;
+      for (int j = 0; j < kernel_hw; j++) {
+        sum += float_input_data[i * kernel_hw + j];
       }
       float value = sum / kernel_hw;
       data_out[i] = float_to_half(value);

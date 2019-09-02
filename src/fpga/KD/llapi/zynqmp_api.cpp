@@ -265,6 +265,7 @@ int get_device_info(const struct DeviceInfo &args) {
 }
 
 int perform_bypass(const struct BypassArgs &args) {
+  int ret = -1;
   int size = args.image.channels * args.image.width * args.image.height;
   int max_size = 1 << 21;
 
@@ -285,7 +286,6 @@ int perform_bypass(const struct BypassArgs &args) {
   bypassArgs.image.height = 1;
   bypassArgs.output.scale_address = scales;
 
-  // std::cout << "times:" << times << " count:" << count << std::endl;
 
   float scale = 0;
   for (int i = 0; i < count; ++i) {
@@ -294,25 +294,27 @@ int perform_bypass(const struct BypassArgs &args) {
         reinterpret_cast<char *>(input_address + i * max_size * type_size);
     bypassArgs.output.address =
         reinterpret_cast<char *>(output_address + i * max_size * out_type_size);
-    int ret = do_ioctl(IOCTL_CONFIG_BYPASS, &bypassArgs);
+    ret = do_ioctl(IOCTL_CONFIG_BYPASS, &bypassArgs);
     scale = std::max(scale, scales[0]);
 
     if (ret != 0) {
       return ret;
     }
-    // std::cout << "@:" << i << " ret:" << ret << std::endl;
   }
 
   int remainder = size - max_size * count;
   // std::cout << "remainder:" << remainder << std::endl;
-  bypassArgs.image.channels = remainder;
-  bypassArgs.image.address =
-      reinterpret_cast<char *>(input_address + count * max_size * type_size);
-  bypassArgs.output.address = reinterpret_cast<char *>(
-      output_address + count * max_size * out_type_size);
-  int ret = do_ioctl(IOCTL_CONFIG_BYPASS, &bypassArgs);
-  scale = std::max(scale, scales[0]);
-  // std::cout << "scale2:" << scale << std::endl;
+  if (remainder > 0) {
+    bypassArgs.image.channels = remainder;
+    bypassArgs.image.address =
+        reinterpret_cast<char *>(input_address + count * max_size * type_size);
+    bypassArgs.output.address = reinterpret_cast<char *>(
+        output_address + count * max_size * out_type_size);
+    ret = do_ioctl(IOCTL_CONFIG_BYPASS, &bypassArgs);
+    scale = std::max(scale, scales[0]);
+
+  }
+ 
   args.output.scale_address[0] = scale;
   args.output.scale_address[1] = 1.0f / scale;
   return ret;

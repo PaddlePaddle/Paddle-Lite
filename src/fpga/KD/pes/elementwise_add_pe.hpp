@@ -56,6 +56,7 @@ class ElementwiseAddPE : public PE {
   }
 
   bool dispatch() {
+
     param_.inputs[0]->syncToDevice();
     param_.inputs[1]->syncToDevice();
     InplaceArgs inplace_args = {0};

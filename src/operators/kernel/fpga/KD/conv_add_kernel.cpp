@@ -88,10 +88,14 @@ void ConvAddKernel<FPGA, float>::Compute(
     zynqmp::ConvPE& pe = context.pe<zynqmp::ConvPE>();
     pe.dispatch();
   }
+
 #ifdef PADDLE_MOBILE_DEBUG
   zynqmp::Debugger::get_instance().registerOutput(
       "conv_add", param.Output()->zynqmpTensor());
 #endif
+  // param.Output()->zynqmpTensor()->printScale();
+  // param.Output()->zynqmpTensor()->saveToFile("convadd", true);
+
 }
 
 }  // namespace operators

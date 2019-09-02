@@ -1724,6 +1724,11 @@ class NearestInterpParam : public OpParam {
 
     out_h_ = GetAttr<int>("out_h", attrs);
     out_w_ = GetAttr<int>("out_w", attrs);
+    if (HasAttr("scale", attrs)) {
+      scale_ = GetAttr<float>("scale", attrs);
+    } else {
+      scale_ = 0;
+    }
   }
 
   const GType *InputX() const { return input_x_; }
@@ -1733,6 +1738,7 @@ class NearestInterpParam : public OpParam {
   const int &OutHeight() const { return out_h_; }
 
   const int &OutWidth() const { return out_w_; }
+  const float &Scale() const { return scale_; }
 
  private:
   GType *input_x_;
@@ -1740,6 +1746,7 @@ class NearestInterpParam : public OpParam {
 
   int out_h_;
   int out_w_;
+  float scale_;
   // float out_height_scale_;
   // float out_width_scale_;
 };
