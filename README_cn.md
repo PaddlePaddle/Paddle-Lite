@@ -53,7 +53,6 @@ Paddle Lite 借鉴了以下开源项目：
 
 ##  交流与反馈
 * 欢迎您通过Github Issues来提交问题、报告与建议
-* 欢迎您通过Github Issues来提交问题、报告与建议
 * 微信公众号：飞桨PaddlePaddle
 * QQ群: 696965088 
 
