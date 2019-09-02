@@ -20,7 +20,7 @@ function download_files_with_url_prefix {
 }
 
 
-# 1.Download tar package: models, benchmark_bin
+# 1.Download tar packages: models, benchmark_bin
 readonly DOWNLOAD_TAR_PREFIX="https://paddle-inference-dist.bj.bcebos.com/PaddleLite/"
 readonly DOWNLOAD_TAR_LIST=("benchmark_bin_android_armv8_cpu.tar.gz" \
                             "benchmark_bin_android_armv7_cpu.tar.gz" \
