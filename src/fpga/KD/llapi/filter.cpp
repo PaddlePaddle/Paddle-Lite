@@ -333,13 +333,13 @@ void quantize_to_fp16(float** data_in, int num, int height, int width,
 }
 size_t format_dwconv_filter(float** data_in, int num, int height, int width,
                             float* scale_ptr) {
-  float16* fp16_data = reinterpret_cast<float16*>(
-      fpga_malloc(num * height * width * sizeof(float16)));
-  to_fp16(*data_in, fp16_data, num, height, width, scale_ptr);
-  int16_t** quantize_data = (int16_t**)&fp16_data;  // NOLINT
+  // float16* fp16_data = reinterpret_cast<float16*>(
+  //     fpga_malloc(num * height * width * sizeof(float16)));
+  // to_fp16(*data_in, fp16_data, num, height, width, scale_ptr);
+  // int16_t** quantize_data = (int16_t**)&fp16_data;  // NOLINT
 
-  // quantize_to_fp16(data_in, num, height, width, scale_ptr);
-  // int16_t **quantize_data = (int16_t **)data_in;
+  quantize_to_fp16(data_in, num, height, width, scale_ptr);
+  int16_t **quantize_data = (int16_t **)data_in;
 
   convert_to_hwn(quantize_data, num, height, width);
   size_t size = align_element_n(quantize_data, num, height, width);

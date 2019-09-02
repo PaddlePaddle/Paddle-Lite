@@ -56,6 +56,7 @@ class DepthwiseConvPE : public PE {
       Tensor* quantized_filter = param.quantizedFilter();
       quantized_filter->mutableData<float16>(FP16, param.filter->shape());
       format_dw_filter(param.filter, param.quantizedFilter(), new_scale_data);
+      
     } else {
       //TODO filter 全为1时，且channal为对齐时
       float16* scale_data = param_.scale()->data<float16>();
@@ -63,6 +64,7 @@ class DepthwiseConvPE : public PE {
       memcpy(filter_data, scale_data, channel * sizeof(float16));
       param.quantizedFilter()->flush();
     }
+   
 
     DWconvArgs args = {0};
     args.bias_address = b_data;
