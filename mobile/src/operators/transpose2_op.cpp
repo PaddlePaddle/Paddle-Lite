@@ -29,54 +29,54 @@ void Transpose2Op<Dtype, T>::InferShape() const {
   size_t x_dims_size = input_x_dims.size();
   size_t axis_size = axis.size();
 
-#ifdef PADDLE_MOBILE_CL
-  bool shouldResize = true;
-  int diff_dim = 0;
-  if (axis_size > 4) {
-    for (int i = 0; i < axis_size - 4; ++i) {
-      if (axis[i] != i) {
-        shouldResize = false;
-        break;
-      } else {
-        diff_dim++;
+  if (std::is_same<DeviceType<kGPU_CL>, Dtype>::value) {
+    bool shouldResize = true;
+    int diff_dim = 0;
+    if (axis_size > 4) {
+      for (int i = 0; i < axis_size - 4; ++i) {
+        if (axis[i] != i) {
+          shouldResize = false;
+          break;
+        } else {
+          diff_dim++;
+        }
+      }
+      if (shouldResize) {
+        std::vector<int> temp_axis_dims;
+        temp_axis_dims.reserve(static_cast<size_t>(4));
+        for (int i = axis_size - 4; i < axis_size; ++i) {
+          temp_axis_dims.push_back(axis[i] - diff_dim);
+        }
+        axis.resize(4);
+        axis.clear();
+        axis.insert(axis.begin(), temp_axis_dims.begin(), temp_axis_dims.end());
       }
     }
-    if (shouldResize) {
-      std::vector<int> temp_axis_dims;
-      temp_axis_dims.reserve(static_cast<size_t>(4));
-      for (int i = axis_size - 4; i < axis_size; ++i) {
-        temp_axis_dims.push_back(axis[i] - diff_dim);
-      }
-      axis.resize(4);
-      axis.clear();
-      axis.insert(axis.begin(), temp_axis_dims.begin(), temp_axis_dims.end());
-    }
-  }
 
-  auto input_dim_size = input_x_dims.size();
-  shouldResize = true;
-  if (input_dim_size > 4) {
-    for (int i = 0; i < input_dim_size - 4; ++i) {
-      if (input_x_dims[i] != 0 && input_x_dims[i] != 1) {
-        shouldResize = false;
-        break;
+    auto input_dim_size = input_x_dims.size();
+    shouldResize = true;
+    if (input_dim_size > 4) {
+      for (int i = 0; i < input_dim_size - 4; ++i) {
+        if (input_x_dims[i] != 0 && input_x_dims[i] != 1) {
+          shouldResize = false;
+          break;
+        }
+      }
+      if (shouldResize) {
+        std::vector<int64_t> temp_intput_dims;
+        temp_intput_dims.reserve(static_cast<size_t>(4));
+        for (int i = input_dim_size - 4; i < input_dim_size; ++i) {
+          temp_intput_dims.push_back(input_x_dims[i]);
+        }
+        framework::DDim temp_ddim = framework::make_ddim(temp_intput_dims);
+        this->param_.InputX()->Resize(temp_ddim);
       }
     }
-    if (shouldResize) {
-      std::vector<int64_t> temp_intput_dims;
-      temp_intput_dims.reserve(static_cast<size_t>(4));
-      for (int i = input_dim_size - 4; i < input_dim_size; ++i) {
-        temp_intput_dims.push_back(input_x_dims[i]);
-      }
-      framework::DDim temp_ddim = framework::make_ddim(temp_intput_dims);
-      this->param_.InputX()->Resize(temp_ddim);
-    }
-  }
 
-  axis_size = axis.size();
-  input_x_dims = this->param_.InputX()->dims();
-  x_dims_size = input_x_dims.size();
-#endif
+    axis_size = axis.size();
+    input_x_dims = this->param_.InputX()->dims();
+    x_dims_size = input_x_dims.size();
+  }
 
   PADDLE_MOBILE_ENFORCE((x_dims_size == axis_size),
                         "input_dims must "
@@ -100,9 +100,9 @@ void Transpose2Op<Dtype, T>::InferShape() const {
     xshape_dims[i + 1] = input_x_dims[i];
   }
   this->param_.OutputXShape()->Resize(framework::make_ddim(xshape_dims));
-#ifdef PADDLE_MOBILE_CL
-  this->param_.OutputXShape()->Resize(input_x_dims);
-#endif
+  if (std::is_same<DeviceType<kGPU_CL>, Dtype>::value) {
+    this->param_.OutputXShape()->Resize(input_x_dims);
+  }
 }
 
 }  // namespace operators

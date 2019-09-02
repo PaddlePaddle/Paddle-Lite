@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #pragma once
+#include "lite/core/context.h"
 #include "lite/core/kernel.h"
 #include "lite/core/types.h"
 #include "lite/cuda/blas.h"
@@ -53,7 +54,7 @@ class MulCompute : public KernelLite<TARGET(kCUDA), PRECISION(kFloat)> {
 
   void Run() override {
     CHECK(ctx_) << "running context should be set first";
-    auto& context = ctx_->As<CUDAContext>();
+    auto& context = this->ctx_->template As<CUDAContext>();
     CHECK(context.cublas_fp32()) << "blas should init first";
     /*
     auto& blas = *context.cublas_fp32();

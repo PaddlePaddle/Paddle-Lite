@@ -30,12 +30,12 @@ lite_cc_library(types SRCS types.cc)
 endif()
 lite_cc_library(op_registry SRCS op_registry.cc DEPS kernel)
 lite_cc_library(scope SRCS scope.cc DEPS tensor)
-lite_cc_library(cpu_info SRCS cpu_info.cc DEPS tensor)
+lite_cc_library(device_info SRCS device_info.cc DEPS tensor)
 
 if (LITE_WITH_ARM)
-lite_cc_library(context SRCS context.cc DEPS tensor any cpu_info CL_DEPS cl_context gflags NPU_DEPS ${npu_ddk_libs})
+lite_cc_library(context SRCS context.cc DEPS tensor any device_info CL_DEPS cl_context gflags NPU_DEPS ${npu_ddk_libs})
 else()
-lite_cc_library(context SRCS context.cc DEPS tensor any cpu_info eigen3 CL_DEPS cl_context gflags)
+lite_cc_library(context SRCS context.cc DEPS tensor any device_info eigen3 CL_DEPS cl_context gflags)
 endif()
 
 #----------------------------------------------- NOT CHANGE -----------------------------------------------

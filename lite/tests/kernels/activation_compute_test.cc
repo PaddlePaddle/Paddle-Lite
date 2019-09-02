@@ -32,7 +32,8 @@ enum activation_type_test {
   SWISH,
   RELU6,
   LOG,
-  EXP
+  EXP,
+  FLOOR
 };
 
 class ActivationComputeTester : public arena::TestCase {
@@ -167,6 +168,12 @@ class ActivationComputeTester : public arena::TestCase {
       case EXP: {
         for (int i = 0; i < dims_.production(); i++) {
           output_data[i] = std::exp(x_data[i]);
+        }
+        break;
+      }
+      case FLOOR: {
+        for (int i = 0; i < dims_.production(); i++) {
+          output_data[i] = std::floor(x_data[i]);
         }
         break;
       }
@@ -510,6 +517,33 @@ TEST(Activation_exp, precision) {
               DDim(std::vector<int64_t>({n, c, h, w})),
               "exp",
               EXP));
+          arena::Arena arena(std::move(tester), place, 2e-5);
+          arena.TestPrecision();
+        }
+      }
+    }
+  }
+#endif
+}
+
+TEST(Activation_floor, precision) {
+  LOG(INFO) << "test floor op";
+#ifdef LITE_WITH_ARM
+  Place place(TARGET(kARM));
+  for (auto n : {1, 3}) {
+    for (auto c : {3, 6}) {
+      for (auto h : {9, 18}) {
+        for (auto w : {9, 18}) {
+          std::unique_ptr<arena::TestCase> tester(new ActivationComputeTester(
+              place,
+              "def",
+              0.01,
+              6.,
+              "all",
+              0.,
+              DDim(std::vector<int64_t>({n, c, h, w})),
+              "floor",
+              FLOOR));
           arena::Arena arena(std::move(tester), place, 2e-5);
           arena.TestPrecision();
         }

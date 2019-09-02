@@ -85,7 +85,15 @@ bool ConvKernel<GPU_CL, float>::Init(ConvParam<GPU_CL> *param) {
     this->cl_helper_.AddKernel("conv_3x3", conv_kernel_file);
     //    }
     DLOG << "conv 3x3";
+  } else if (param->Filter()->dims()[2] == 7 &&
+             param->Filter()->dims()[3] == 7) {
+    param->ExecMode() = ConvParam<GPU_CL>::EXEC_SLIDINGWINDOW7x7_FLOAT;
+    param->Filter()->InitCLImage(cl_helper_.CLContext(),
+                                 cl_helper_.CLCommandQueue());
 
+    this->cl_helper_.AddKernel("conv_7x7", conv_kernel_file);
+    //    }
+    DLOG << "conv 7x7";
   } else {
     PADDLE_MOBILE_THROW_EXCEPTION(" not support ");
   }
@@ -102,6 +110,7 @@ void ConvKernel<GPU_CL, float>::Compute(const ConvParam<GPU_CL> &param) {
     case ConvParam<GPU_CL>::EXEC_SLIDINGWINDOW1x1_FLOAT:
     case ConvParam<GPU_CL>::EXEC_SLIDINGWINDOW3x3_FLOAT:
     case ConvParam<GPU_CL>::EXEC_DEPTHWISE3x3_FLOAT:
+    case ConvParam<GPU_CL>::EXEC_SLIDINGWINDOW7x7_FLOAT:
       ConvAddBnRelu(&this->cl_helper_, param);
       break;
     case ConvParam<GPU_CL>::EXEC_DEPTHWISE3x3S1_FLOAT:

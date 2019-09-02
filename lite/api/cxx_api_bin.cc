@@ -41,7 +41,7 @@ void Run(const char* model_dir, int repeat) {
   });
 
   predictor.Build(
-      model_dir, Place{TARGET(kARM), PRECISION(kInt8)}, valid_places);
+      model_dir, "", "", Place{TARGET(kARM), PRECISION(kInt8)}, valid_places);
 
   auto* input_tensor = predictor.GetInput(0);
   input_tensor->Resize(DDim(std::vector<DDim::value_type>({1, 3, 224, 224})));
