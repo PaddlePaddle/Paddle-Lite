@@ -68,10 +68,9 @@ Paddle Lite has referenced the following open-source projects:
 
 - Questions, reports, and suggestions are welcome through Github Issues!
 - Forum: Opinions and questions are welcome at our [PaddlePaddle Forum](https://ai.baidu.com/forum/topic/list/168)！
+- WeChat Official Account: PaddlePaddle
 - QQ group chat: 696965088
 
-<p align="center"><img width="200" height="200" src="https://user-images.githubusercontent.com/45189361/63563791-e471b680-c594-11e9-8a52-72a5a95350a2.png"/></p>
+<p align="center"><img width="200" height="200"  src="https://user-images.githubusercontent.com/45189361/64117959-1969de80-cdc9-11e9-84f7-e1c2849a004c.jpeg"/>&#8194;&#8194;&#8194;&#8194;&#8194;<img width="200" height="200" margin="500" src="https://user-images.githubusercontent.com/45189361/64117844-cb54db00-cdc8-11e9-8c08-24bbe594608e.jpeg"/></p>
+<p align="left"> &#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;WeChat Official Account&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;QQ group chat</p>
 
-- WeChat Official Account:
-
-<p align="center"><img width="200" height="200" src="https://user-images.githubusercontent.com/45189361/63563799-ee93b500-c594-11e9-8e9a-38a9144e210c.jpg"/></p>
