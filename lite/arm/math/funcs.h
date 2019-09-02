@@ -36,7 +36,6 @@
 #include "lite/arm/math/increment.h"
 #include "lite/arm/math/interpolate.h"
 #include "lite/arm/math/lrn.h"
-#include "lite/arm/math/multiclass_nms.h"
 #include "lite/arm/math/negative.h"
 #include "lite/arm/math/norm.h"
 #include "lite/arm/math/packed_sgemm.h"
