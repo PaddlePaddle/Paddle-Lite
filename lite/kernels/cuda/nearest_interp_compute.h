@@ -12,31 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/arm/stack_compute.h"
-#include <vector>
-#include "lite/arm/math/funcs.h"
+#pragma once
+#include "lite/core/kernel.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace cuda {
 
-void StackCompute::Run() {
-  auto& param = Param<operators::StackParam>();
-  std::vector<lite::Tensor*> x = param.X;
-  lite::Tensor* out = param.Out;
-  int axis = param.axis;
+class NearestInterpCompute
+    : public KernelLite<TARGET(kCUDA), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::InterpolateParam;
 
-  lite::arm::math::stack(x, out, axis);
-}
+  void Run() override;
+  virtual ~NearestInterpCompute() = default;
+};
 
-} /* namespace arm */
-} /* namespace kernels */
-} /* namespace lite */
-} /* namespace paddle */
-
-REGISTER_LITE_KERNEL(
-    stack, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::StackCompute, def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Y", {LiteType::GetTensorTy(TARGET(kARM))})
-    .Finalize();
+}  // namespace cuda
+}  // namespace kernels
+}  // namespace lite
+}  // namespace paddle

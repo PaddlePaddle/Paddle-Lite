@@ -68,6 +68,8 @@ add_operator(anchor_generator_op basic SRCS anchor_generator_op.cc DEPS ${op_DEP
 add_operator(generate_proposals_op basic SRCS generate_proposals_op.cc DEPS ${op_DEPS})
 add_operator(roi_align_op basic SRCS roi_align_op.cc DEPS ${op_DEPS})
 add_operator(box_clip_op basic SRCS box_clip_op.cc DEPS ${op_DEPS})
+add_operator(flatten_op basic SRCS flatten_op.cc DEPS ${op_DEPS})
+add_operator(fake_quantize_range_abs_max_op basic SRCS fake_quantize_range_abs_max.cc DEPS ${op_DEPS})
 
 # for OCR specific
 add_operator(while_op extra SRCS while_op.cc DEPS ${op_DEPS})
