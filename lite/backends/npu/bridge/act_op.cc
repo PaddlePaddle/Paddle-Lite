@@ -18,8 +18,8 @@
 #include "ai_ddk_lib/include/graph/op/all_ops.h"
 #include "ai_ddk_lib/include/graph/operator.h"
 #include "ai_ddk_lib/include/graph/operator_reg.h"
-#include "lite/npu/bridge/registry.h"
-#include "lite/npu/bridge/utils.h"
+#include "lite/backends/npu/bridge/registry.h"
+#include "lite/backends/npu/bridge/utils.h"
 #include "lite/operators/relu_op.h"
 
 namespace paddle {

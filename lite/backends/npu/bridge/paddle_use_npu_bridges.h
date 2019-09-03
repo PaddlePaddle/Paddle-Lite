@@ -14,7 +14,7 @@
 
 #pragma once
 
-#include "lite/npu/bridge/registry.h"
+#include "lite/backends/npu/bridge/registry.h"
 
 USE_NPU_BRIDGE(mul);
 USE_NPU_BRIDGE(fc);

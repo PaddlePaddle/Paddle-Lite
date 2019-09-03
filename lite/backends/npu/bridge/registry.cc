@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/npu/bridge/registry.h"
+#include "lite/backends/npu/bridge/registry.h"
 #include <utility>
 
 namespace paddle {

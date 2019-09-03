@@ -15,8 +15,8 @@
 #include "lite/operators/shuffle_channel_op.h"
 #include <gtest/gtest.h>
 #include "lite/core/op_registry.h"
-#include "lite/npu/bridge/registry.h"
-#include "lite/npu/bridge/test_helper.h"
+#include "lite/backends/npu/bridge/registry.h"
+#include "lite/backends/npu/bridge/test_helper.h"
 
 namespace paddle {
 namespace lite {

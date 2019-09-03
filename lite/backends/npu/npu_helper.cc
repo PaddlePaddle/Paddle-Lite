@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/npu/npu_helper.h"
+#include "lite/backends/npu/npu_helper.h"
 #include <fstream>
 #include <memory>
 #include <string>

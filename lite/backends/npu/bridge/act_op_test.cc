@@ -15,8 +15,8 @@
 #include <gtest/gtest.h>
 #include <random>
 #include "lite/core/op_registry.h"
-#include "lite/npu/bridge/registry.h"
-#include "lite/npu/bridge/test_helper.h"
+#include "lite/backends/npu/bridge/registry.h"
+#include "lite/backends/npu/bridge/test_helper.h"
 #include "lite/operators/relu_op.h"
 
 namespace paddle {

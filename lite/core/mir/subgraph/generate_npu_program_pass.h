@@ -22,8 +22,8 @@
 #include <vector>
 #include "lite/core/mir/pass.h"
 #include "lite/core/mir/subgraph/subgraph_program_pass.h"
-#include "lite/npu/bridge/registry.h"
-#include "lite/npu/npu_helper.h"
+#include "lite/backends/npu/bridge/registry.h"
+#include "lite/backends/npu/npu_helper.h"
 
 namespace paddle {
 namespace lite {

@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/npu/bridge/test_helper.h"
+#include "lite/backends/npu/bridge/test_helper.h"
 #include <utility>
 #include "ai_ddk_lib/include/graph/op/all_ops.h"
 #include "lite/core/op_registry.h"
-#include "lite/npu/bridge/registry.h"
-#include "lite/npu/bridge/utils.h"
+#include "lite/backends/npu/bridge/registry.h"
+#include "lite/backends/npu/bridge/utils.h"
 #include "lite/operators/graph_op.h"
 
 namespace paddle {

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/npu/bridge/utils.h"
+#include "lite/backends/npu/bridge/utils.h"
 #include <memory>
 #include <mutex>  // NOLINT
 #include <string>
