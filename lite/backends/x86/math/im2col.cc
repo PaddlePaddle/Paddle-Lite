@@ -14,8 +14,8 @@ limitations under the License. */
 
 #include "lite/backends/x86/math/im2col.h"
 #include <vector>
-#include "lite/utils/paddle_enforce.h"
 #include "lite/backends/x86/math/im2col_cfo_cpu.h"
+#include "lite/utils/paddle_enforce.h"
 
 namespace paddle {
 namespace lite {

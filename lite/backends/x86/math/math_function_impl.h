@@ -14,9 +14,9 @@ limitations under the License. */
 
 #pragma once
 #include <vector>
+#include "lite/backends/x86/math/math_function.h"
 #include "lite/fluid/data_type.h"
 #include "lite/fluid/eigen.h"
-#include "lite/backends/x86/math/math_function.h"
 
 namespace paddle {
 namespace lite {

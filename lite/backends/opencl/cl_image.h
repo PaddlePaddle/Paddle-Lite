@@ -17,9 +17,9 @@ limitations under the License. */
 #include <iostream>
 #include <memory>
 #include <vector>
-#include "lite/core/tensor.h"
 #include "lite/backends/opencl/cl_image_converter.h"
 #include "lite/backends/opencl/cl_include.h"
+#include "lite/core/tensor.h"
 
 namespace paddle {
 namespace lite {

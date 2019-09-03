@@ -14,8 +14,8 @@
 
 #include "lite/core/target_wrapper.h"
 #include <algorithm>
-#include "lite/utils/all.h"
 #include "lite/backends/x86/target_wrapper.h"
+#include "lite/utils/all.h"
 
 namespace paddle {
 namespace lite {

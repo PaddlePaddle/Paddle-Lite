@@ -23,9 +23,9 @@ limitations under the License. */
 #endif
 
 #include <vector>
+#include "lite/backends/x86/math/math_function_impl.h"
 #include "lite/fluid/data_type.h"
 #include "lite/fluid/float16.h"
-#include "lite/backends/x86/math/math_function_impl.h"
 
 namespace paddle {
 namespace lite {

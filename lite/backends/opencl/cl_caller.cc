@@ -14,11 +14,11 @@ limitations under the License. */
 
 #include "lite/backends/opencl/cl_caller.h"
 #include <string>
-#include "lite/core/tensor.h"
 #include "lite/backends/opencl/cl_context.h"
 #include "lite/backends/opencl/cl_image.h"
 #include "lite/backends/opencl/cl_runtime.h"
 #include "lite/backends/opencl/cl_utility.h"
+#include "lite/core/tensor.h"
 #include "lite/utils/string.h"
 
 namespace paddle {

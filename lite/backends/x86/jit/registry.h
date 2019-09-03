@@ -18,11 +18,11 @@
 #include <tuple>
 #include <type_traits>
 #include <utility>  // for std::move
-#include "lite/utils/macros.h"
 #include "lite/backends/x86/cpu_info.h"
 #include "lite/backends/x86/jit/kernel_base.h"
 #include "lite/backends/x86/jit/kernel_pool.h"
 #include "lite/backends/x86/legacy_place.h"
+#include "lite/utils/macros.h"
 
 namespace paddle {
 namespace lite {

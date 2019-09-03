@@ -15,8 +15,8 @@
 #pragma once
 
 #include <array>
-#include "lite/core/target_wrapper.h"
 #include "lite/backends/opencl/cl_include.h"
+#include "lite/core/target_wrapper.h"
 
 namespace paddle {
 namespace lite {

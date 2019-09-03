@@ -19,11 +19,11 @@
 #include <unordered_map>
 #include <utility>  // for std::move
 #include <vector>
-#include "lite/utils/paddle_enforce.h"
 #include "lite/backends/x86/jit/gen_base.h"
 #include "lite/backends/x86/jit/kernel_base.h"
 #include "lite/backends/x86/jit/kernel_key.h"
 #include "lite/backends/x86/jit/kernel_pool.h"
+#include "lite/utils/paddle_enforce.h"
 
 namespace paddle {
 namespace lite {
