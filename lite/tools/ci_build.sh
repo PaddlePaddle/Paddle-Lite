@@ -243,7 +243,7 @@ function build_test_train {
     make -j$NUM_CORES_FOR_COMPILE
 
     find -name "*.whl" | xargs pip2 install
-    python ../lite/python/lite_test.py
+    python ../lite/tools/python/lite_test.py
 
 }
 
