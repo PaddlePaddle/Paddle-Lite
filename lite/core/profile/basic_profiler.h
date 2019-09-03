@@ -61,7 +61,7 @@ class BasicTimer : TimerBase<BasicTimer> {
   uint32_t min_{std::numeric_limits<uint32_t>::max()};
   int id_{-1};
   std::string key_;
-  std::chrono::time_point<std::chrono::high_resolution_clock> timer_{};
+  uint64_t timer_{};
 
   // TODO(Superjomn) make static
   static const int name_w;
@@ -73,11 +73,20 @@ class BasicTimer : TimerBase<BasicTimer> {
 
   void SetId(int id) { id_ = id; }
   void SetKey(const std::string &key) { key_ = key; }
-  void Start() { timer_ = std::chrono::high_resolution_clock::now(); }
+  void Start() {
+    timer_ = static_cast<uint64_t>(
+        std::chrono::duration_cast<std::chrono::microseconds>(
+            std::chrono::system_clock::now().time_since_epoch())
+            .count());
+  }
   void Stop() {
-    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(
-        std::chrono::high_resolution_clock::now() - timer_);
-    Log(duration.count());
+    auto duration = static_cast<
+        uint64_t>(  // timer unit: microsecond, 1second = 1e6 microsecond
+        std::chrono::duration_cast<std::chrono::microseconds>(
+            std::chrono::system_clock::now().time_since_epoch())
+            .count() -
+        timer_);
+    Log(duration);
   }
 
   int count() const { return count_; }

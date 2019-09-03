@@ -21,7 +21,7 @@ public class Place {
 
     /** Place hardware target type. */
     public enum TargetType {
-        UNKNOWN(0), HOST(1), X86(2), CUDA(3), ARM(4), OPEN_CL(5), ANY(6);
+        UNKNOWN(0), HOST(1), X86(2), CUDA(3), ARM(4), OPEN_CL(5), FPGA(7), NPU(8), ANY(6);
 
         public final int value;
 
@@ -32,7 +32,7 @@ public class Place {
 
     /** Place precision type */
     public enum PrecisionType {
-        UNKNOWN(0), FLOAT(1), INT8(2), INT32(3), ANY(4);
+        UNKNOWN(0), FLOAT(1), INT8(2), FP16(5), INT32(3), ANY(4), BOOL(6);
 
         public final int value;
 
@@ -43,7 +43,7 @@ public class Place {
 
     /** Place data layout type */
     public enum DataLayoutType {
-        UNKNOWN(0), NCHW(1), ANY(2);
+        UNKNOWN(0), NCHW(1), NHWC(3), ANY(2);
 
         public final int value;
 

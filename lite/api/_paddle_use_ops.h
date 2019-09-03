@@ -69,6 +69,8 @@ USE_LITE_OP(shuffle_channel)
 USE_LITE_OP(yolo_box)
 USE_LITE_OP(bilinear_interp)
 USE_LITE_OP(nearest_interp)
+USE_LITE_OP(reduce_mean)
+USE_LITE_OP(stack)
 
 USE_LITE_OP(assign);
 USE_LITE_OP(crop)
@@ -113,6 +115,11 @@ USE_LITE_OP(is_empty)
 USE_LITE_OP(shape)
 USE_LITE_OP(slice)
 USE_LITE_OP(cast)
+USE_LITE_OP(affine_channel)
+USE_LITE_OP(anchor_generator)
+USE_LITE_OP(generate_proposals)
 USE_LITE_OP(squeeze)   // for x2paddle
 USE_LITE_OP(squeeze2)  // for x2paddle
 USE_LITE_OP(expand)    // for x2paddle
+USE_LITE_OP(roi_align)
+USE_LITE_OP(box_clip)

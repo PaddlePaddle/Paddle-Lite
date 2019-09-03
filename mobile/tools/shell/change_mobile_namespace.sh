@@ -31,9 +31,9 @@ else
         echo "converting ${file}"
         convert $extension $file
     done
-    # for file in $(find test -name "*\.*")
-    # do
-    #     echo "converting ${file}"
-    #     convert $extension $file
-    # done
+    for file in $(find test -name "*\.*")
+    do
+        echo "converting ${file}"
+        convert $extension $file
+    done
 fi
