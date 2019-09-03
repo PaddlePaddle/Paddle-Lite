@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/arm/math/conv_gemmlike.h"
+#include "lite/backends/arm/math/conv_gemmlike.h"
 #include <vector>
-#include "lite/arm/math/gemm_prepacked_int8.h"
-#include "lite/arm/math/packed_sgemm.h"
+#include "lite/backends/arm/math/gemm_prepacked_int8.h"
+#include "lite/backends/arm/math/packed_sgemm.h"
 
 namespace paddle {
 namespace lite {

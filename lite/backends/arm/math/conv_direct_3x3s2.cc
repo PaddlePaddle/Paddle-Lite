@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/arm/math/conv_block_utils.h"
-#include "lite/arm/math/conv_impl.h"
+#include "lite/backends/arm/math/conv_block_utils.h"
+#include "lite/backends/arm/math/conv_impl.h"
 #include "lite/core/context.h"
 #ifdef ARM_WITH_OMP
 #include <omp.h>

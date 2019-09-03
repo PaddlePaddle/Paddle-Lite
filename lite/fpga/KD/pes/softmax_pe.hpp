@@ -20,7 +20,7 @@ limitations under the License. */
 
 #if defined(__ARM_NEON) || defined(__ARM_NEON__)
 #include <arm_neon.h>
-#include "lite/arm/math/funcs.h"
+#include "lite/backends/arm/math/funcs.h"
 #endif
 
 #include "lite/fpga/KD/pe.hpp"

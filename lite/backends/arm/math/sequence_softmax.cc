@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/arm/math/sequence_softmax.h"
+#include "lite/backends/arm/math/sequence_softmax.h"
 #include <arm_neon.h>
 #include <algorithm>
 #include <cmath>

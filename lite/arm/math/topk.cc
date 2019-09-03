@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/arm/math/topk.h"
+#include "lite/backends/arm/math/topk.h"
 #include <utility>
 #include <vector>
-#include "lite/arm/math/funcs.h"
+#include "lite/backends/arm/math/funcs.h"
 namespace paddle {
 namespace lite {
 namespace arm {

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/arm/math/packed_sgemm.h"
+#include "lite/backends/arm/math/packed_sgemm.h"
 #include <arm_neon.h>
 
 namespace paddle {

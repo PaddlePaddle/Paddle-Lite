@@ -18,12 +18,12 @@
 // #include "saber/funcs/impl/arm/neon/impl/gemv_arm_int8.h"
 // #include "saber/funcs/impl/arm/neon/impl/sgemv_arm.h"
 
-#include "lite/arm/math/conv_impl.h"
+#include "lite/backends/arm/math/conv_impl.h"
 #include <arm_neon.h>
-#include "lite/arm/math/gemm_prepacked_int8.h"
-#include "lite/arm/math/gemv_arm_int8.h"
-#include "lite/arm/math/packed_sgemm.h"
-#include "lite/arm/math/sgemv.h"
+#include "lite/backends/arm/math/gemm_prepacked_int8.h"
+#include "lite/backends/arm/math/gemv_arm_int8.h"
+#include "lite/backends/arm/math/packed_sgemm.h"
+#include "lite/backends/arm/math/sgemv.h"
 #include "lite/core/context.h"
 #include "lite/core/target_wrapper.h"
 #include "lite/operators/op_params.h"

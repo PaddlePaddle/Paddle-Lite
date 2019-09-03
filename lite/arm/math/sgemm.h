@@ -15,7 +15,7 @@
 #pragma once
 
 #include <cmath>
-#include "lite/arm/math/packed_sgemm.h"
+#include "lite/backends/arm/math/packed_sgemm.h"
 #include "lite/core/context.h"
 #include "lite/core/device_info.h"
 

@@ -14,7 +14,7 @@
 
 #include "lite/kernels/arm/yolo_box_compute.h"
 #include <vector>
-#include "lite/arm/math/funcs.h"
+#include "lite/backends/arm/math/funcs.h"
 #include "lite/core/tensor.h"
 
 namespace paddle {

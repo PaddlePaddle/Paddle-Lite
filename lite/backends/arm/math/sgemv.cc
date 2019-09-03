@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/arm/math/sgemv.h"
+#include "lite/backends/arm/math/sgemv.h"
 #include <arm_neon.h>
 #include "lite/utils/cp_logging.h"
 

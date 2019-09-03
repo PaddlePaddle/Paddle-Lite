@@ -12,8 +12,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#include "lite/arm/math/reduce_max.h"
-#include "lite/arm/math/funcs.h"
+#include "lite/backends/arm/math/reduce_max.h"
+#include "lite/backends/arm/math/funcs.h"
 #include "lite/core/tensor.h"
 
 namespace paddle {

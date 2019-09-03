@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/arm/math/argmax.h"
+#include "lite/backends/arm/math/argmax.h"
 #include <algorithm>
 #include <functional>
 #include <limits>
 #include <memory>
 #include <utility>
 #include <vector>
-#include "lite/arm/math/funcs.h"
+#include "lite/backends/arm/math/funcs.h"
 
 namespace paddle {
 namespace lite {
