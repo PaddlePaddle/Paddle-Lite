@@ -18,6 +18,7 @@ limitations under the License. */
 #include <cstring>
 #include <memory>
 #include <string>
+#include <utility>
 #include "common/enforce.h"
 #include "common/log.h"
 #include "common/type_define.h"
@@ -54,7 +55,7 @@ struct VariantHelper<F> {
 template <typename... Ts>
 struct VariantDeleter {
   kTypeId_t type_ = type_id<void>().hash_code();
-  VariantDeleter(kTypeId_t type) { type_ = type; }
+  explicit VariantDeleter(kTypeId_t type) { type_ = type; }
   void operator()(void *raw_ptr) {
     // DLOG << "variant delete: " << type_ << " " << raw_ptr;
     VariantHelper<Ts...>::Destroy(type_, raw_ptr);
