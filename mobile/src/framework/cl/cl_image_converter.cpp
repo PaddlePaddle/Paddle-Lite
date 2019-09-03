@@ -17,8 +17,7 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace framework {
 
-const DDim &CLImageConverterDefault::InitImageDimInfoWith(
-    const DDim &tensor_dim) {
+DDim CLImageConverterDefault::InitImageDimInfoWith(const DDim &tensor_dim) {
   size_t new_dims[] = {1, 1, 1, 1};
   for (int j = 0; j < tensor_dim.size(); ++j) {
     new_dims[4 - tensor_dim.size() + j] = tensor_dim[j];
@@ -119,8 +118,7 @@ void CLImageConverterDefault::ImageToNCHW(half_t *image, float *tensor,
   }
 }
 
-const DDim &CLImageConverterFolder::InitImageDimInfoWith(
-    const DDim &tensor_dim) {
+DDim CLImageConverterFolder::InitImageDimInfoWith(const DDim &tensor_dim) {
   if (tensor_dim.size() <= 2) {
     int tdim[2] = {1, 1};
     if (tensor_dim.size() == 1) {
@@ -218,8 +216,7 @@ void CLImageConverterFolder::ImageToNCHW(half_t *image, float *tensor,
   }
 }
 
-const DDim &CLImageConverterNWBlock::InitImageDimInfoWith(
-    const DDim &tensor_dim) {
+DDim CLImageConverterNWBlock::InitImageDimInfoWith(const DDim &tensor_dim) {
   PADDLE_MOBILE_ENFORCE(tensor_dim.size() == 4, " tensor dim is not 4");
   size_t N, C, H, W;
   N = tensor_dim[0];
@@ -297,8 +294,7 @@ void CLImageConverterNWBlock::ImageToNCHW(half_t *image, float *tensor,
   DLOG << " init done";
 }
 
-const DDim &CLImageConverterDWBlock::InitImageDimInfoWith(
-    const DDim &tensor_dim) {
+DDim CLImageConverterDWBlock::InitImageDimInfoWith(const DDim &tensor_dim) {
   PADDLE_MOBILE_ENFORCE(tensor_dim.size() == 4, " tensor dim is not 4");
   size_t N, C, H, W;
   N = tensor_dim[0];
@@ -389,8 +385,7 @@ void CLImageConverterDWBlock::ImageToNCHW(half_t *image, float *tensor,
   }
 }
 
-const DDim &CLImageConverterNormal::InitImageDimInfoWith(
-    const DDim &tensor_dim) {
+DDim CLImageConverterNormal::InitImageDimInfoWith(const DDim &tensor_dim) {
   PADDLE_MOBILE_ENFORCE(tensor_dim.size() <= 4 && tensor_dim.size() > 0,
                         "tensor dim is not support ");
   size_t new_dims[] = {1, 1, 1, 1};
@@ -428,7 +423,7 @@ void CLImageConverterNormal::ImageToNCHW(half_t *image, float *tensor,
   default_converter.ImageToNCHW(image, tensor, image_dim, tensor_dim);
 }
 
-const DDim &CLImageConverterWinoTransWeight::InitImageDimInfoWith(
+DDim CLImageConverterWinoTransWeight::InitImageDimInfoWith(
     const DDim &tensor_dim) {
   PADDLE_MOBILE_ENFORCE(tensor_dim.size() == 4, " tensor dim is not 4");
   size_t N, C, H, W;
@@ -447,6 +442,69 @@ void CLImageConverterWinoTransWeight::NCHWToImage(float *tensor, half_t *image,
 void CLImageConverterWinoTransWeight::ImageToNCHW(half_t *image, float *tensor,
                                                   const DDim &image_dim,
                                                   const DDim &tensor_dim) {}
+
+DDim CLImageConverterConv2dTransposeTransWeight::InitImageDimInfoWith(
+    const DDim &tensor_dim) {
+  size_t new_dims[] = {1, 1, 1, 1};
+  for (int j = 0; j < tensor_dim.size(); ++j) {
+    new_dims[4 - tensor_dim.size() + j] = tensor_dim[j];
+  }
+  size_t N, C, H, W;
+  C = new_dims[0];
+  N = new_dims[1];
+  H = new_dims[2];
+  W = new_dims[3];
+  size_t width = W * ((C + 3) / 4);
+  size_t height = H * N;
+  return make_ddim({width, height});
+}
+
+// it is actually CNHW to Image, because conv2d_transpose's filter is CNHW
+void CLImageConverterConv2dTransposeTransWeight::NCHWToImage(
+    float *nchw, half_t *image, const DDim &tensor_dim) {
+  size_t new_dims[] = {1, 1, 1, 1};
+  for (int j = 0; j < tensor_dim.size(); ++j) {
+    new_dims[4 - tensor_dim.size() + j] = tensor_dim[j];
+  }
+
+  size_t N, C, H, W;
+  C = new_dims[0];
+  N = new_dims[1];
+  H = new_dims[2];
+  W = new_dims[3];
+
+  DDim in_image_dim = InitImageDimInfoWith(tensor_dim);
+
+  DLOG << " tensor dim " << tensor_dim;
+  DLOG << " image dim " << in_image_dim;
+
+  size_t width = in_image_dim[0];
+  size_t height = in_image_dim[1];
+
+  int w_block = width / W;
+
+  float *p = nchw;
+  int realC = w_block * 4;
+  for (int c = 0; c < realC; c++) {
+    for (int n = 0; n < N; n++) {
+      for (int h = 0; h < H; h++) {
+        for (int w = 0; w < W; w++) {
+          int index = (n * H + h) * width * 4 + (c / 4) * 4 * W + w * 4 + c % 4;
+          if (c < C) {
+            image[index] = Float2Half(*p);
+            p++;
+          } else {
+            image[index] = 0;
+          }
+        }
+      }
+    }
+  }
+}
+
+void CLImageConverterConv2dTransposeTransWeight::ImageToNCHW(
+    half_t *image, float *tensor, const DDim &image_dim,
+    const DDim &tensor_dim) {}
 
 }  // namespace framework
 }  // namespace paddle_mobile
