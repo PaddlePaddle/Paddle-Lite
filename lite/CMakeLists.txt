@@ -26,6 +26,7 @@ add_subdirectory(fpga)
 add_subdirectory(model_parser)
 add_subdirectory(api)
 add_subdirectory(fluid)
+add_subdirectory(backends)
 
 if (NOT LITE_ON_TINY_PUBLISH)
     add_subdirectory(tests)
