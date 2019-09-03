@@ -32,7 +32,7 @@
 #include "lite/utils/io.h"
 
 #ifdef LITE_WITH_NPU
-#include "lite/npu/npu_helper.h"
+#include "lite/backends/npu/npu_helper.h"
 #endif
 
 namespace paddle {
