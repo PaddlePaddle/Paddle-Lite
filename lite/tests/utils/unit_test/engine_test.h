@@ -18,7 +18,7 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include "lite/tests/utils/test_base.h"
+#include "lite/tests/utils/unit_test/test_base.h"
 namespace lite {
 namespace test {
 

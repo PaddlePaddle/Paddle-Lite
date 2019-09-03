@@ -14,8 +14,8 @@
 
 #pragma once
 
-#include "lite/tests/utils/engine_test.h"
-#include "lite/tests/utils/test_base.h"
+#include "lite/tests/utils/unit_test/engine_test.h"
+#include "lite/tests/utils/unit_test/test_base.h"
 
 /**
  * \brief declare the Test Function
