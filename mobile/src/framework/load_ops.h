@@ -151,7 +151,7 @@ LOAD_OP1(shape, CPU);
 LOAD_OP2(depthwise_conv2d, CPU, GPU_CL);
 #endif
 #ifdef CONV_TRANSPOSE_OP
-LOAD_OP1(conv2d_transpose, CPU);
+LOAD_OP2(conv2d_transpose, CPU, GPU_CL);
 #endif
 #ifdef SCALE_OP
 LOAD_OP2(scale, CPU, GPU_CL);

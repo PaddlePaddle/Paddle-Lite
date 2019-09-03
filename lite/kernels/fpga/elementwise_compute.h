@@ -14,10 +14,10 @@
 
 #pragma once
 #include <algorithm>
+#include "lite/backends/fpga/KD/float16.hpp"
+#include "lite/backends/fpga/KD/pes/elementwise_add_pe.hpp"
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
-#include "lite/fpga/KD/float16.hpp"
-#include "lite/fpga/KD/pes/elementwise_add_pe.hpp"
 
 namespace paddle {
 namespace lite {

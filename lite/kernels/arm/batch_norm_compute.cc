@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include "lite/kernels/arm/batch_norm_compute.h"
-#include "lite/arm/math/funcs.h"
+#include "lite/backends/arm/math/funcs.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/type_system.h"
 
