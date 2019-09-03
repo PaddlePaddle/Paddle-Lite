@@ -139,18 +139,18 @@ void apply_nms_fast(const dtype* bboxes,
 
 template <typename dtype>
 void multiclass_nms_compute_ref(const operators::MulticlassNmsParam& param,
+                                int class_num,
+                                const std::vector<int>& priors,
+                                bool share_location,
                                 std::vector<float>* result) {
-  const std::vector<int>& priors = param.priors;
-  int class_num = param.class_num;
   int background_id = param.background_label;
   int keep_topk = param.keep_top_k;
   int nms_topk = param.nms_top_k;
   float conf_thresh = param.score_threshold;
   float nms_thresh = param.nms_threshold;
   float nms_eta = param.nms_eta;
-  bool share_location = param.share_location;
-  const dtype* bbox_data = param.bbox_data->data<const dtype>();
-  const dtype* conf_data = param.conf_data->data<const dtype>();
+  const dtype* bbox_data = param.bboxes->data<const dtype>();
+  const dtype* conf_data = param.scores->data<const dtype>();
   dtype* out = param.out->mutable_data<dtype>();
   (*result).clear();
 
@@ -325,23 +325,21 @@ TEST(multiclass_nms_host, compute) {
                     for (int i = 0; i < conf_dim->production(); ++i) {
                       conf_data[i] = i * 1. / conf_dim->production();
                     }
-                    param.bbox_data = &bbox;
-                    param.conf_data = &conf;
+                    param.bboxes = &bbox;
+                    param.scores = &conf;
                     param.out = &out;
-                    param.priors = priors;
-                    param.class_num = class_num;
                     param.background_label = background_id;
                     param.keep_top_k = keep_topk;
                     param.nms_top_k = nms_topk;
                     param.score_threshold = conf_thresh;
                     param.nms_threshold = nms_thresh;
                     param.nms_eta = nms_eta;
-                    param.share_location = share_location;
                     multiclass_nms.SetParam(param);
                     multiclass_nms.Run();
                     auto* out_data = out.mutable_data<float>();
                     out_ref.clear();
-                    multiclass_nms_compute_ref<float>(param, &out_ref);
+                    multiclass_nms_compute_ref<float>(
+                        param, class_num, priors, share_location, &out_ref);
                     EXPECT_EQ(out.dims().production(), out_ref.size());
                     if (out.dims().production() == out_ref.size()) {
                       auto* out_ref_data = out_ref.data();
