@@ -67,8 +67,8 @@ int TestGruOp(int in_channels, int out_channels, std::string opname) {
   auto hidden_var = scope.get()->Var("output_hidden");
 
   framework::AttributeMap attrs;
-  attrs["activation"].SetString(std::string("relu"));
-  attrs["gate_activation"].SetString(std::string("sigmoid"));
+  attrs["activation"].Set<std::string>(std::string("relu"));
+  attrs["gate_activation"].Set<std::string>(std::string("sigmoid"));
   attrs["is_reverse"].Set<bool>(false);
 
   auto *op = new operators::GruOp<CPU, float>("gru", inputs, outputs, attrs,

@@ -1,0 +1,6 @@
+add_subdirectory(x86)
+add_subdirectory(cuda)
+add_subdirectory(fpga)
+add_subdirectory(host)
+add_subdirectory(arm)
+add_subdirectory(opencl)
