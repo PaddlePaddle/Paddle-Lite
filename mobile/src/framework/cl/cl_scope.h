@@ -60,8 +60,11 @@ class CLScope {
 
   cl_context Context() { return context_; }
 
-  cl_program Program(const std::string &file_name, const std::string &kernel_name, const std::string &options) {
-    if (opencl_kernels.find(kernel_name) != opencl_kernels.end() && opencl_headers.find(file_name) != opencl_headers.end()) {
+  cl_program Program(const std::string &file_name,
+                     const std::string &kernel_name,
+                     const std::string &options) {
+    if (opencl_kernels.find(kernel_name) != opencl_kernels.end() &&
+        opencl_headers.find(file_name) != opencl_headers.end()) {
       std::string program_key = file_name + kernel_name;
       if (!options.empty()) {
         program_key += options;
