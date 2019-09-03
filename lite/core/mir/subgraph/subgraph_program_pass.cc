@@ -42,6 +42,61 @@ SubgraphProgramPass::ClassifySubgraph(const std::unique_ptr<SSAGraph>& graph) {
   return op_nodes;
 }
 
+cpp::OpDesc SubgraphProgramPass::GenGraphOpDesc(
+    const std::string& model_name,
+    const std::vector<std::string>& in_var_names,
+    const std::vector<std::string>& out_var_names) {
+  cpp::OpDesc op_desc;
+  op_desc.SetType("graph_op");
+  op_desc.SetInput("Inputs", in_var_names);
+  op_desc.SetOutput("Outputs", out_var_names);
+  op_desc.SetAttr("model_name", model_name);
+  return op_desc;
+}
+
+void SubgraphProgramPass::InsertNewNode(
+    const std::unique_ptr<SSAGraph>& graph,
+    const std::string& model_name,
+    Scope* scope,
+    const std::vector<Place>& valid_places,
+    std::unordered_set<Node*> in_data_vars,
+    std::unordered_set<Node*> in_wgt_vars,
+    std::unordered_set<Node*> out_data_vars,
+    std::unordered_set<Node*> out_unused_vars) {
+  std::vector<std::string> in_var_names;
+  std::vector<std::string> out_var_names;
+  for (auto i : in_data_vars) {
+    in_var_names.push_back(i->AsArg().name);
+  }
+  for (auto i : out_data_vars) {
+    out_var_names.push_back(i->AsArg().name);
+  }
+
+  auto op_desc = GenGraphOpDesc(model_name, in_var_names, out_var_names);
+
+  auto graph_op = LiteOpRegistry::Global().Create("graph_op");
+  graph_op->Attach(op_desc, scope);
+  auto* new_op_node = graph->GraphCreateInstructNode(graph_op, valid_places);
+
+  for (auto& in_var : in_data_vars) {
+    IR_NODE_LINK_TO(in_var, new_op_node);
+  }
+  for (auto& in_var : in_wgt_vars) {
+    IR_NODE_LINK_TO(in_var, new_op_node);
+  }
+  for (auto& out_var : out_data_vars) {
+    IR_OP_VAR_LINK(new_op_node, out_var);
+  }
+  for (auto& out_var : out_unused_vars) {
+    IR_OP_VAR_LINK(new_op_node, out_var);
+  }
+
+  // assign context
+  auto& inst = new_op_node->AsStmt();
+  inst.picked_kernel().SetContext(
+      ContextScheduler::Global().NewContext(inst.picked_kernel().target()));
+}
+
 void SubgraphProgramPass::SortHelper(
     Node* node,
     const std::unordered_set<Node*>& nodes_all,
