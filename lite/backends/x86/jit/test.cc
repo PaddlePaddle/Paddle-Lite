@@ -20,9 +20,9 @@ limitations under the License. */
 #include <random>
 #include <string>
 #include <vector>
-#include "lite/x86/cpu_info.h"
-#include "lite/x86/jit/kernels.h"
-#include "lite/x86/legacy_place.h"
+#include "lite/backends/x86/cpu_info.h"
+#include "lite/backends/x86/jit/kernels.h"
+#include "lite/backends/x86/legacy_place.h"
 
 DEFINE_double(acc, 1e-5, "Test accuracy threshold.");
 

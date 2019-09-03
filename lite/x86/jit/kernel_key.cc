@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License. */
 
-#include "lite/x86/jit/kernel_key.h"
+#include "lite/backends/x86/jit/kernel_key.h"
 #include <xxhash.h>  // XXH64: 13.8 GB/s
 #include "lite/utils/paddle_enforce.h"
 

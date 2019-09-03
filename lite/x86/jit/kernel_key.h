@@ -15,8 +15,8 @@
 #pragma once
 #include <cstddef>
 #include <functional>
-#include "lite/x86/jit/kernel_base.h"
-#include "lite/x86/legacy_place.h"
+#include "lite/backends/x86/jit/kernel_base.h"
+#include "lite/backends/x86/legacy_place.h"
 
 namespace paddle {
 namespace lite {

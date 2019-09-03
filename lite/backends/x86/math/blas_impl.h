@@ -15,7 +15,7 @@
 #include <cmath>
 #include <limits>
 #include <vector>
-#include "lite/x86/math/math_function.h"
+#include "lite/backends/x86/math/math_function.h"
 
 namespace paddle {
 namespace lite {

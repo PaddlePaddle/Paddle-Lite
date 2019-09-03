@@ -12,10 +12,10 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#include "lite/x86/math/math_function.h"
+#include "lite/backends/x86/math/math_function.h"
 
 #ifdef PADDLE_WITH_MKLML
-#include "lite/x86/mklml.h"
+#include "lite/backends/x86/mklml.h"
 #endif
 
 #ifdef PADDLE_USE_OPENBLAS
@@ -25,7 +25,7 @@ limitations under the License. */
 #include <vector>
 #include "lite/fluid/data_type.h"
 #include "lite/fluid/float16.h"
-#include "lite/x86/math/math_function_impl.h"
+#include "lite/backends/x86/math/math_function_impl.h"
 
 namespace paddle {
 namespace lite {

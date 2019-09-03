@@ -18,7 +18,7 @@
 #include <type_traits>
 #include <vector>
 #include "lite/utils/paddle_enforce.h"
-#include "lite/x86/jit/kernel_base.h"
+#include "lite/backends/x86/jit/kernel_base.h"
 
 namespace paddle {
 namespace lite {

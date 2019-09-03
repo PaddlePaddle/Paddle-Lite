@@ -46,7 +46,7 @@ PaddlePaddle/Paddle/paddle/fluid/
 
 ### 例子
 
-所有kernel的调用只需要在头文件中包含`"lite/x86/jit/kernels.h"`， 该文件是编译时自动生成的。
+所有kernel的调用只需要在头文件中包含`"lite/backends/x86/jit/kernels.h"`， 该文件是编译时自动生成的。
 
 直接从缓存中获取默认最优的函数。
 

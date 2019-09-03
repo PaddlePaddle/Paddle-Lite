@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License. */
 
-#include "lite/x86/jit/gen_base.h"
+#include "lite/backends/x86/jit/gen_base.h"
 #include <fstream>
 #include <iostream>
 #include <sstream>
@@ -20,8 +20,8 @@
 // #include "paddle/fluid/memory/allocation/cpu_allocator.h"  // for
 // posix_memalign
 #include "lite/utils/paddle_enforce.h"
-#include "lite/x86/cpu_info.h"
-#include "lite/x86/jit/macro.h"
+#include "lite/backends/x86/cpu_info.h"
+#include "lite/backends/x86/jit/macro.h"
 
 #ifndef _WIN32
 #define posix_memalign_free free

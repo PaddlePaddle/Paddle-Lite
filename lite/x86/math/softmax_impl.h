@@ -16,10 +16,10 @@ limitations under the License. */
 #include <vector>
 #include "lite/core/tensor.h"
 #include "lite/fluid/eigen.h"
-#include "lite/x86/cpu_info.h"
-#include "lite/x86/jit/helper.h"
-#include "lite/x86/jit/kernel_base.h"
-#include "lite/x86/math/cpu_vec.h"
+#include "lite/backends/x86/cpu_info.h"
+#include "lite/backends/x86/jit/helper.h"
+#include "lite/backends/x86/jit/kernel_base.h"
+#include "lite/backends/x86/math/cpu_vec.h"
 
 namespace paddle {
 namespace lite {

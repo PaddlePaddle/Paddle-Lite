@@ -12,7 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#include "lite/x86/math/sample_prob.h"
+#include "lite/backends/x86/math/sample_prob.h"
 
 namespace paddle {
 namespace lite {

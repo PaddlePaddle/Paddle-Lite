@@ -42,7 +42,7 @@
   (this is the zlib license)
 */
 
-#include "lite/x86/cpu_info.h"
+#include "lite/backends/x86/cpu_info.h"
 
 /* __m128 is ugly to write */
 typedef __m256 v8sf;   // vector of 8 float (avx)

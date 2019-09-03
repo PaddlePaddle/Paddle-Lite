@@ -16,7 +16,7 @@ limitations under the License. */
 #include <math.h>
 #include <string>
 #include "lite/utils/paddle_enforce.h"
-#include "lite/x86/cpu_info.h"
+#include "lite/backends/x86/cpu_info.h"
 
 namespace paddle {
 namespace lite {

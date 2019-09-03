@@ -18,7 +18,7 @@
 #include <memory>  // for unique_ptr
 #include <string>
 #include <vector>
-#include "lite/x86/jit/kernel_base.h"
+#include "lite/backends/x86/jit/kernel_base.h"
 
 DECLARE_bool(dump_jitcode);
 

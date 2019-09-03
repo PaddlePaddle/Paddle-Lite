@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/x86/math/blas.h"
+#include "lite/backends/x86/math/blas.h"
 
 #include <utility>
 

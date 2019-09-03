@@ -19,7 +19,7 @@
 #include <vector>
 #include "lite/core/context.h"
 #include "lite/core/tensor.h"
-#include "lite/x86/math/math_function.h"
+#include "lite/backends/x86/math/math_function.h"
 
 namespace paddle {
 namespace lite {

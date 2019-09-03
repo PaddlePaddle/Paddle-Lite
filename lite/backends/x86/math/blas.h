@@ -18,7 +18,7 @@
 #include "lite/core/tensor.h"
 
 #ifdef PADDLE_WITH_MKLML
-#include "lite/x86/mklml.h"
+#include "lite/backends/x86/mklml.h"
 #endif
 
 #ifdef PADDLE_WITH_LIBXSMM
@@ -405,4 +405,4 @@ inline BlasT<Target, T> GetBlas(const lite::Context<Target>& dev_ctx) {
 }  // namespace lite
 }  // namespace paddle
 
-#include "lite/x86/math/blas_impl.h"
+#include "lite/backends/x86/math/blas_impl.h"

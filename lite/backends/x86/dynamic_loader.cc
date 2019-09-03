@@ -11,7 +11,7 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
-#include "lite/x86/dynamic_loader.h"
+#include "lite/backends/x86/dynamic_loader.h"
 
 #include <memory>
 #include <mutex>  // NOLINT
@@ -20,9 +20,9 @@ limitations under the License. */
 #include "gflags/gflags.h"
 #include "glog/logging.h"
 #include "lite/utils/paddle_enforce.h"
-#include "lite/x86/cupti_lib_path.h"
-#include "lite/x86/port.h"
-#include "lite/x86/warpctc_lib_path.h"
+#include "lite/backends/x86/cupti_lib_path.h"
+#include "lite/backends/x86/port.h"
+#include "lite/backends/x86/warpctc_lib_path.h"
 
 DEFINE_string(cudnn_dir,
               "",

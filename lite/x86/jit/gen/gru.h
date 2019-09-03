@@ -16,8 +16,8 @@
 
 #include <string>
 #include "glog/logging.h"
-#include "lite/x86/jit/gen/act.h"
-#include "lite/x86/jit/gen/jitcode.h"
+#include "lite/backends/x86/jit/gen/act.h"
+#include "lite/backends/x86/jit/gen/jitcode.h"
 
 namespace paddle {
 namespace lite {

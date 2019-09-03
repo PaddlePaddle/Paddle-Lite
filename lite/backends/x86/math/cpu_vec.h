@@ -17,10 +17,10 @@ limitations under the License. */
 #include <functional>
 #include <string>
 #include "lite/utils/paddle_enforce.h"
-#include "lite/x86/cpu_info.h"
+#include "lite/backends/x86/cpu_info.h"
 
 #ifdef PADDLE_WITH_MKLML
-#include "lite/x86/mklml.h"
+#include "lite/backends/x86/mklml.h"
 #endif
 
 namespace paddle {
