@@ -101,10 +101,28 @@ Executor<Device, T>::Executor(const Program<Device> &program,
     InitMemory();
   }
   int count = 0;
+#ifdef PADDLE_MOBILE_PROFILE
+    std::vector<ProfInfo> profile(ops_of_block0_.size());
+    struct timespec ts;
+    int op_index = 0;
+#endif
   for (auto &op_handler : ops_of_block0_) {
+#ifdef PADDLE_MOBILE_PROFILE
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    profile[op_index].runBegin = (uint64_t)ts.tv_sec * 1e9 + ts.tv_nsec;
+#endif
     DLOG << "Initialize op[" << count++ << "]: " << op_handler->Type();
     op_handler->Init();
+#ifdef PADDLE_MOBILE_PROFILE
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+      profile[op_index].runEnd = (uint64_t)ts.tv_sec * 1e9 + ts.tv_nsec;
+      ++op_index;
+#endif
   }
+#ifdef PADDLE_MOBILE_PROFILE
+  printf("================[ op init profile ]==================\n");
+  PrintProfile(profile);
+#endif
 }
 
 template <typename Device, typename T>
