@@ -12,12 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//
-// Created by Li,Xiaoyang(SYS) on 2019-07-25.
-//
-
-#include "lite/tests/kernels/fill_data.h"
-#include "lite/tests/kernels/test_funcs.h"
+#include "lite/tests/utils/fill_data.h"
+#include "lite/tests/utils/test_funcs.h"
 #ifdef LITE_WITH_ARM
 #include "lite/arm/math/funcs.h"
 #endif
