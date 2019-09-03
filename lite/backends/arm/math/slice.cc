@@ -51,7 +51,7 @@ void slice(const Dtype* input,
       real_ends[axes[i]] = end;
     }
   }
-  const int LEN = in_dims.size() - 1;
+  const int LEN = in_dims.size();
   int dst_step[LEN];
   for (int i = 0; i < in_dims.size(); ++i) {
     dst_step[i] = 1;
@@ -69,8 +69,10 @@ void slice(const Dtype* input,
 
   for (int dst_id = 0; dst_id < out_num; dst_id++) {
     int src_id = 0;
+    int index_id = dst_id;
     for (int j = 0; j < out_dims.size(); j++) {
-      int cur_id = dst_id / dst_step[j];
+      int cur_id = index_id / dst_step[j];
+      index_id = index_id % dst_step[j];
       src_id += (cur_id + real_starts[j]) * src_step[j];
     }
     out[dst_id] = input[src_id];
