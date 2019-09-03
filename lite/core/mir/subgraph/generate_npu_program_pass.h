@@ -20,10 +20,10 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
-#include "lite/core/mir/pass.h"
-#include "lite/core/mir/subgraph/subgraph_program_pass.h"
 #include "lite/backends/npu/bridge/registry.h"
 #include "lite/backends/npu/npu_helper.h"
+#include "lite/core/mir/pass.h"
+#include "lite/core/mir/subgraph/subgraph_program_pass.h"
 
 namespace paddle {
 namespace lite {
