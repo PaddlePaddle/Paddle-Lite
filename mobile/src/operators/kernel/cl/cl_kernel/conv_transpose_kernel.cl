@@ -210,7 +210,6 @@ __read_only image2d_t new_scale,
 #else
     half4 output = 0.0f;
 #endif
-
     half4 filter = 0.0f;
     half4 input = 0.0f;
     for (int h = filter_h_id; h >= 0; h -= stride) {
