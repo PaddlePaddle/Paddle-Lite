@@ -2492,8 +2492,8 @@ class ConvTransposeParam : public OpParam {
                      const VariableNameMap &outputs, const AttributeMap &attrs,
                      Scope *scope)
       : OpParam(inputs, outputs, attrs, scope) {
-    filter_ = FilterFrom<GType>(inputs, *scope);
-    input_ = InputFrom<GType>(inputs, *scope);
+    filter_ = OpParam::FilterFrom<GType>(inputs, *scope);
+    input_ = OpParam::InputFrom<GType>(inputs, *scope);
     // output_ = OutputFrom<GType>(outputs, scope);
     if (outputs.count("Output")) {
       output_ = OpParam::OutputFrom<GType>(outputs, *scope);
@@ -2518,6 +2518,10 @@ class ConvTransposeParam : public OpParam {
 
   const vector<int> &Paddings() const { return paddings_; }
 
+  const vector<int> &Filters() const { return filter_; }
+
+  const vector<int> &TransFilters() const { return transformed_filter_; }
+
   const vector<int> &Dilations() const { return dilations_; }
 
   const vector<int> &OutputSize() const { return output_size_; }
@@ -2529,6 +2533,8 @@ class ConvTransposeParam : public OpParam {
     EXEC_GEMM_FLOAT,
     EXEC_DECONV3X3_FLOAT,
     EXEC_DECONV4X4_FLOAT,
+    EXEC_DEPTHWISETRANS_FLOAT,
+    EXEC_CONVTRANS3x3s2_FLOAT,
   };
 
   ExecMode &ExecMode() const { return exec_mode_; }
@@ -2537,6 +2543,7 @@ class ConvTransposeParam : public OpParam {
   GType *input_;
   GType *output_;
   GType *filter_;
+  GType *transformed_filter_;
   vector<int> strides_;
   vector<int> paddings_;
   vector<int> dilations_;

@@ -76,24 +76,26 @@ void InstanceNormKernel<GPU_CL, float>::Compute(
        << " " << local_work_size[2];
 
   cl_int status;
-  clSetKernelArg(kernel, 0, sizeof(cl_int), &w);
+  status = clSetKernelArg(kernel, 0, sizeof(cl_int), &w);
   CL_CHECK_ERRORS(status);
-  clSetKernelArg(kernel, 1, sizeof(cl_int), &h);
+  status = clSetKernelArg(kernel, 1, sizeof(cl_int), &h);
   CL_CHECK_ERRORS(status);
-  clSetKernelArg(kernel, 2, sizeof(cl_int), &c_group);
+  status = clSetKernelArg(kernel, 2, sizeof(cl_int), &c_group);
   CL_CHECK_ERRORS(status);
-  clSetKernelArg(kernel, 3, sizeof(cl_int), &local_work_size1);
+  status = clSetKernelArg(kernel, 3, sizeof(cl_int), &local_work_size1);
   CL_CHECK_ERRORS(status);
-  clSetKernelArg(kernel, 4, sizeof(cl_int), &local_work_size2);
+  status = clSetKernelArg(kernel, 4, sizeof(cl_int), &local_work_size2);
   CL_CHECK_ERRORS(status);
-  clSetKernelArg(kernel, 5, sizeof(cl_float), &epsilon);
+  status = clSetKernelArg(kernel, 5, sizeof(cl_float), &epsilon);
   CL_CHECK_ERRORS(status);
-  clSetKernelArg(kernel, 6, sizeof(cl_mem), &input);
+  status = clSetKernelArg(kernel, 6, sizeof(cl_mem), &input);
   CL_CHECK_ERRORS(status);
-  clSetKernelArg(kernel, 7, sizeof(cl_mem), &out);
+  status = clSetKernelArg(kernel, 7, sizeof(cl_mem), &out);
   CL_CHECK_ERRORS(status);
-  clEnqueueNDRangeKernel(this->cl_helper_.CLCommandQueue(), kernel, 3, NULL,
-                         work_size, local_work_size, 0, NULL, NULL);
+  status =
+      clEnqueueNDRangeKernel(this->cl_helper_.CLCommandQueue(), kernel, 3, NULL,
+                             work_size, local_work_size, 0, NULL, NULL);
+  CL_CHECK_ERRORS(status);
 }
 
 template class InstanceNormKernel<GPU_CL, float>;
