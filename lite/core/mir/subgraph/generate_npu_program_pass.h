@@ -51,24 +51,9 @@ class GenerateNPUProgramPass : public SubgraphProgramPass {
                             const std::unordered_set<Node*>& out_data_vars,
                             int sub_id);
 
-  cpp::OpDesc GenGraphOpDesc(const std::string& model_name,
-                             const std::vector<std::string>& in_var_names,
-                             const std::vector<std::string>& out_var_names);
-
-  void InsertNewNode(const std::unique_ptr<SSAGraph>& graph,
-                     const std::string& model_name,
-                     Scope* scope,
-                     const std::vector<Place>& valid_places,
-                     std::unordered_set<Node*> in_data_vars,
-                     std::unordered_set<Node*> in_wgt_vars,
-                     std::unordered_set<Node*> out_data_vars,
-                     std::unordered_set<Node*> out_unused_vars);
-
   void GenNPUSubgraph(const std::unique_ptr<SSAGraph>& graph,
-                      const std::unordered_set<Node*>& nodes_all,
+                      const std::unordered_set<Node*>& op_nodes,
                       int sub_id);
-
-  void GenAllNPUSubgraph(const std::unique_ptr<SSAGraph>& graph, int sub_num);
 
  private:
   std::vector<Instruction> insts_;
