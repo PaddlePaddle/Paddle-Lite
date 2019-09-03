@@ -19,7 +19,7 @@
 #include "lite/tests/kernels/fill_data.h"
 #include "lite/tests/kernels/test_funcs.h"
 #ifdef LITE_WITH_ARM
-#include "lite/arm/math/funcs.h"
+#include "lite/backends/arm/math/funcs.h"
 #endif
 #include "lite/core/context.h"
 #include "lite/core/tensor.h"
