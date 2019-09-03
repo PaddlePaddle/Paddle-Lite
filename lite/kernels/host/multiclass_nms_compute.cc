@@ -322,7 +322,7 @@ void MulticlassNmsCompute::Run() {
   auto score_size = score_dims.size();
 
   std::vector<std::map<int, std::vector<int>>> all_indices;
-  std::vector<size_t> batch_starts = {0};
+  std::vector<uint64_t> batch_starts = {0};
   int64_t batch_size = score_dims[0];
   int64_t box_dim = boxes->dims()[2];
   int64_t out_dim = box_dim + 2;
@@ -347,14 +347,14 @@ void MulticlassNmsCompute::Run() {
     batch_starts.push_back(batch_starts.back() + num_nmsed_out);
   }
 
-  int num_kept = batch_starts.back();
+  uint64_t num_kept = batch_starts.back();
   if (num_kept == 0) {
     outs->Resize({1, 1});
     float* od = outs->mutable_data<float>();
     od[0] = -1;
     batch_starts = {0, 1};
   } else {
-    outs->Resize({num_kept, out_dim});
+    outs->Resize({static_cast<int64_t>(num_kept), out_dim});
     for (int i = 0; i < n; ++i) {
       if (score_size == 3) {
         scores_slice = scores->Slice<float>(i, i + 1);
@@ -366,8 +366,8 @@ void MulticlassNmsCompute::Run() {
         scores_slice = scores->Slice<float>(boxes_lod[i], boxes_lod[i + 1]);
         boxes_slice = boxes->Slice<float>(boxes_lod[i], boxes_lod[i + 1]);
       }
-      int64_t s = batch_starts[i];
-      int64_t e = batch_starts[i + 1];
+      int64_t s = static_cast<int64_t>(batch_starts[i]);
+      int64_t e = static_cast<int64_t>(batch_starts[i + 1]);
       if (e > s) {
         Tensor out = outs->Slice<float>(s, e);
         MultiClassOutput<float>(
