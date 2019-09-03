@@ -21,8 +21,8 @@
 #include <string>
 #include <vector>
 
-#include "lite/core/memory.h"
 #include "lite/backends/fpga/KD/tensor.hpp"
+#include "lite/core/memory.h"
 
 namespace paddle {
 namespace lite {

@@ -23,9 +23,9 @@ limitations under the License. */
 #endif
 
 #include <vector>
+#include "lite/backends/x86/math/math_function_impl.h"
 #include "lite/fluid/data_type.h"
 #include "lite/fluid/float16.h"
-#include "lite/backends/x86/math/math_function_impl.h"
 
 namespace paddle {
 namespace lite {
@@ -110,11 +110,11 @@ void set_constant(const lite::Context<Target>& context,
                   lite::Tensor* tensor,
                   float value) {
   TensorSetConstantWithTarget<Target> func(context, tensor, value);
-  //#ifdef PADDLE_WITH_CUDA
+  // #ifdef PADDLE_WITH_CUDA
   // tensor->target().apply_visitor(func);
-  //#else
+  // #else
   func();
-  //#endif
+  // #endif
 }
 
 template <typename T>

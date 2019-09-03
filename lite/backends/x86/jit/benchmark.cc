@@ -18,9 +18,9 @@
 #include <vector>
 #include "gflags/gflags.h"
 #include "glog/logging.h"
-#include "lite/core/tensor.h"
 #include "lite/backends/x86/jit/kernels.h"
 #include "lite/backends/x86/legacy_place.h"
+#include "lite/core/tensor.h"
 
 DEFINE_int32(burning, 10, "Burning times.");
 DEFINE_int32(repeat, 3000, "Repeat times.");

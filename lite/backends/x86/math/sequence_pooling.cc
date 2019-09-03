@@ -14,12 +14,12 @@ limitations under the License. */
 
 #include <string>
 
-#include "lite/fluid/eigen.h"
 #include "lite/backends/x86/jit/kernels.h"
 #include "lite/backends/x86/legacy_place.h"
 #include "lite/backends/x86/math/blas.h"
 #include "lite/backends/x86/math/math_function.h"
 #include "lite/backends/x86/math/sequence_pooling.h"
+#include "lite/fluid/eigen.h"
 
 namespace paddle {
 namespace lite {

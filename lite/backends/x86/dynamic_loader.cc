@@ -19,10 +19,10 @@ limitations under the License. */
 
 #include "gflags/gflags.h"
 #include "glog/logging.h"
-#include "lite/utils/paddle_enforce.h"
 #include "lite/backends/x86/cupti_lib_path.h"
 #include "lite/backends/x86/port.h"
 #include "lite/backends/x86/warpctc_lib_path.h"
+#include "lite/utils/paddle_enforce.h"
 
 DEFINE_string(cudnn_dir,
               "",

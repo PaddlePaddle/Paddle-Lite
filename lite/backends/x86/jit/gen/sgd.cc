@@ -16,8 +16,8 @@
 #include <stddef.h>  // offsetof
 #include <memory>
 #include <vector>
-#include "lite/utils/paddle_enforce.h"
 #include "lite/backends/x86/jit/registry.h"
+#include "lite/utils/paddle_enforce.h"
 
 namespace paddle {
 namespace lite {

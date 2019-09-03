@@ -16,10 +16,10 @@ limitations under the License. */
 
 #include <algorithm>
 #include <vector>
-#include "lite/core/context.h"
-#include "lite/core/tensor.h"
 #include "lite/backends/x86/math/blas.h"
 #include "lite/backends/x86/math/im2col.h"
+#include "lite/core/context.h"
+#include "lite/core/tensor.h"
 
 namespace paddle {
 namespace lite {
