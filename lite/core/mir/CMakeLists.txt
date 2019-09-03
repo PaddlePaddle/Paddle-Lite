@@ -13,6 +13,7 @@ lite_cc_library(mir_passes
       fusion/fc_fuse_pass.cc
       fusion/shuffle_channel_fuse_pass.cc
       fusion/transpose_softmax_transpose_fuse_pass.cc
+      fusion/interpolate_fuse_pass.cc
       fusion/conv_elementwise_fuse_pass.cc
       fusion/conv_activation_fuse_pass.cc
       fusion/conv_bn_fuse_pass.cc
