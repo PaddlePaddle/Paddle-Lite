@@ -12,7 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef CONV_OP
+#if defined(CONV_OP) || defined(CONV_TRANSPOSE_OP)
 
 #pragma once
 
@@ -52,6 +52,18 @@ void SWConvAddBnRelu(framework::CLHelper *cl_helper,
                      const framework::CLImage *biase = nullptr,
                      const framework::CLImage *new_scale = nullptr,
                      const framework::CLImage *new_bias = nullptr);
+void DWConvTransposeAddBnRelu(framework::CLHelper *cl_helper,
+                              const ConvTransposeParam<GPU_CL> &param,
+                              bool ifRelu = false,
+                              const framework::CLImage *biase = nullptr,
+                              const framework::CLImage *new_scale = nullptr,
+                              const framework::CLImage *new_bias = nullptr);
+void ConvTransposeAddBnRelu(framework::CLHelper *cl_helper,
+                            const ConvTransposeParam<GPU_CL> &param,
+                            bool ifRelu = false,
+                            const framework::CLImage *biase = nullptr,
+                            const framework::CLImage *new_scale = nullptr,
+                            const framework::CLImage *new_bias = nullptr);
 
 }  // namespace operators
 }  // namespace paddle_mobile
