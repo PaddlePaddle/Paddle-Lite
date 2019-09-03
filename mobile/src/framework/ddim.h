@@ -72,9 +72,7 @@ struct DDim {
     var.Set<Dim<D>>(in);
   }
 
-  DDim(const DDim &in) {
-    setNewDim(in);
-  }
+  DDim(const DDim &in) { setNewDim(in); }
 
   /*implicit*/ DDim(std::initializer_list<int64_t> init_list);
 

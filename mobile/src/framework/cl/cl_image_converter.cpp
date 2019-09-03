@@ -17,8 +17,7 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace framework {
 
-DDim CLImageConverterDefault::InitImageDimInfoWith(
-    const DDim &tensor_dim) {
+DDim CLImageConverterDefault::InitImageDimInfoWith(const DDim &tensor_dim) {
   size_t new_dims[] = {1, 1, 1, 1};
   for (int j = 0; j < tensor_dim.size(); ++j) {
     new_dims[4 - tensor_dim.size() + j] = tensor_dim[j];
@@ -119,8 +118,7 @@ void CLImageConverterDefault::ImageToNCHW(half_t *image, float *tensor,
   }
 }
 
-DDim CLImageConverterFolder::InitImageDimInfoWith(
-    const DDim &tensor_dim) {
+DDim CLImageConverterFolder::InitImageDimInfoWith(const DDim &tensor_dim) {
   if (tensor_dim.size() <= 2) {
     int tdim[2] = {1, 1};
     if (tensor_dim.size() == 1) {
@@ -218,8 +216,7 @@ void CLImageConverterFolder::ImageToNCHW(half_t *image, float *tensor,
   }
 }
 
-DDim CLImageConverterNWBlock::InitImageDimInfoWith(
-    const DDim &tensor_dim) {
+DDim CLImageConverterNWBlock::InitImageDimInfoWith(const DDim &tensor_dim) {
   PADDLE_MOBILE_ENFORCE(tensor_dim.size() == 4, " tensor dim is not 4");
   size_t N, C, H, W;
   N = tensor_dim[0];
@@ -297,8 +294,7 @@ void CLImageConverterNWBlock::ImageToNCHW(half_t *image, float *tensor,
   DLOG << " init done";
 }
 
-DDim CLImageConverterDWBlock::InitImageDimInfoWith(
-    const DDim &tensor_dim) {
+DDim CLImageConverterDWBlock::InitImageDimInfoWith(const DDim &tensor_dim) {
   PADDLE_MOBILE_ENFORCE(tensor_dim.size() == 4, " tensor dim is not 4");
   size_t N, C, H, W;
   N = tensor_dim[0];
@@ -389,8 +385,7 @@ void CLImageConverterDWBlock::ImageToNCHW(half_t *image, float *tensor,
   }
 }
 
-DDim CLImageConverterNormal::InitImageDimInfoWith(
-    const DDim &tensor_dim) {
+DDim CLImageConverterNormal::InitImageDimInfoWith(const DDim &tensor_dim) {
   PADDLE_MOBILE_ENFORCE(tensor_dim.size() <= 4 && tensor_dim.size() > 0,
                         "tensor dim is not support ");
   size_t new_dims[] = {1, 1, 1, 1};
