@@ -47,7 +47,7 @@ bool ReshapeOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   if (opdesc.HasAttr("inplace")) {
     param_.inplace = opdesc.GetAttr<bool>("inplace");
   }
-  CHECK(param_.x) << "Input(X) of ReshapeOp should not be null.";
+  CHECK(param_.x) << "Input(X) of ReshapeOp should not be null .";
   CHECK(param_.output) << "Output(Out) of ReshapeOp should not be null.";
 
   if (opdesc.HasInput("ShapeTensor") &&
