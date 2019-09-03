@@ -32,12 +32,13 @@ namespace lite {
 TEST(SubgraphTest, models) {
   cpp::ProgramDesc program_desc;
   auto scope = std::make_shared<Scope>();
-  LoadModelPb(FLAGS_model_dir,
-              FLAGS_model_dir + "/model",
-              FLAGS_model_dir + "/params",
-              scope.get(),
-              &program_desc,
-              true);
+  // LoadModelPb(FLAGS_model_dir,
+  //             FLAGS_model_dir + "/model",
+  //             FLAGS_model_dir + "/params",
+  //             scope.get(),
+  //             &program_desc,
+  //             true);
+  LoadModelPb(FLAGS_model_dir, "", "", scope.get(), &program_desc);
   std::vector<Place> valid_places({
       Place{TARGET(kHost), PRECISION(kFloat)},
 #ifdef LITE_WITH_ARM
