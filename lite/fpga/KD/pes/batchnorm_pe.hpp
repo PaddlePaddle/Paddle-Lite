@@ -17,9 +17,9 @@ limitations under the License. */
 #include <fstream>
 #include <iostream>
 
-#include "lite/fpga/KD/pe.hpp"
-#include "lite/fpga/KD/pe_params.hpp"
-#include "lite/fpga/KD/pes/scale_pe.hpp"
+#include "lite/backends/fpga/KD/pe.hpp"
+#include "lite/backends/fpga/KD/pe_params.hpp"
+#include "lite/backends/fpga/KD/pes/scale_pe.hpp"
 
 namespace paddle {
 namespace zynqmp {

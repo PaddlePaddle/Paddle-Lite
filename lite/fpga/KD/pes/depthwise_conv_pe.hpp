@@ -14,10 +14,10 @@ limitations under the License. */
 
 #pragma once
 
-#include "lite/fpga/KD/float16.hpp"
-#include "lite/fpga/KD/pe.hpp"
-#include "lite/fpga/KD/pe_params.hpp"
-#include "lite/fpga/KD/pes/conv_process.hpp"
+#include "lite/backends/fpga/KD/float16.hpp"
+#include "lite/backends/fpga/KD/pe.hpp"
+#include "lite/backends/fpga/KD/pe_params.hpp"
+#include "lite/backends/fpga/KD/pes/conv_process.hpp"
 
 namespace paddle {
 namespace zynqmp {

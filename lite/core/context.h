@@ -16,8 +16,8 @@
 
 #include "lite/utils/any.h"
 #ifdef LITE_WITH_CUDA
-#include "lite/cuda/blas.h"
-#include "lite/cuda/cuda_utils.h"
+#include "lite/backends/cuda/blas.h"
+#include "lite/backends/cuda/cuda_utils.h"
 #endif
 #ifdef LITE_WITH_OPENCL
 #include <gflags/gflags.h>

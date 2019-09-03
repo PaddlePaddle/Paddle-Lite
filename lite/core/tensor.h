@@ -15,7 +15,7 @@
 #pragma once
 
 #ifdef LITE_WITH_FPGA
-#include "lite/fpga/lite_tensor.h"
+#include "lite/backends/fpga/lite_tensor.h"
 #endif
 
 #ifndef LITE_WITH_FPGA

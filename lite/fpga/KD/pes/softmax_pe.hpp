@@ -23,8 +23,8 @@ limitations under the License. */
 #include "lite/backends/arm/math/funcs.h"
 #endif
 
-#include "lite/fpga/KD/pe.hpp"
-#include "lite/fpga/KD/pe_params.hpp"
+#include "lite/backends/fpga/KD/pe.hpp"
+#include "lite/backends/fpga/KD/pe_params.hpp"
 
 namespace paddle {
 namespace zynqmp {

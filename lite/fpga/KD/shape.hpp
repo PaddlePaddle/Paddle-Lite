@@ -17,8 +17,8 @@ limitations under the License. */
 #include <stdio.h>
 #include <vector>
 
-#include "lite/fpga/KD/alignment.h"
-#include "lite/fpga/KD/layout.hpp"
+#include "lite/backends/fpga/KD/alignment.h"
+#include "lite/backends/fpga/KD/layout.hpp"
 
 namespace paddle {
 namespace zynqmp {

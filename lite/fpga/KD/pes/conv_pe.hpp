@@ -17,13 +17,13 @@ limitations under the License. */
 #include <arm_neon.h>
 #include <vector>
 
-#include "lite/fpga/KD/pe.hpp"
-#include "lite/fpga/KD/pe_params.hpp"
-#include "lite/fpga/KD/pes/concat_pe.hpp"
-#include "lite/fpga/KD/pes/conv_pe.hpp"
-#include "lite/fpga/KD/pes/conv_process.hpp"
-#include "lite/fpga/KD/pes/elementwise_add_pe.hpp"
-#include "lite/fpga/KD/pes/scale_pe.hpp"
+#include "lite/backends/fpga/KD/pe.hpp"
+#include "lite/backends/fpga/KD/pe_params.hpp"
+#include "lite/backends/fpga/KD/pes/concat_pe.hpp"
+#include "lite/backends/fpga/KD/pes/conv_pe.hpp"
+#include "lite/backends/fpga/KD/pes/conv_process.hpp"
+#include "lite/backends/fpga/KD/pes/elementwise_add_pe.hpp"
+#include "lite/backends/fpga/KD/pes/scale_pe.hpp"
 
 namespace paddle {
 namespace zynqmp {

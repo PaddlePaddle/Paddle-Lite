@@ -16,7 +16,7 @@
 #include <vector>
 #include "lite/core/op_registry.h"
 #include "lite/core/type_system.h"
-#include "lite/fpga/KD/float16.hpp"
+#include "lite/backends/fpga/KD/float16.hpp"
 
 namespace paddle {
 namespace lite {
