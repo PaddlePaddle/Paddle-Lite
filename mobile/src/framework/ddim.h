@@ -62,7 +62,6 @@ struct DDim {
       return vistor(d.var.Get<Dim<9>>());
     } else {
       PADDLE_MOBILE_ENFORCE(false, " dim not support");
-      exit(0);
     }
   }
 
@@ -73,6 +72,8 @@ struct DDim {
     var.Set<Dim<D>>(in);
   }
 
+  DDim(const DDim &in) { setNewDim(in); }
+
   /*implicit*/ DDim(std::initializer_list<int64_t> init_list);
 
   template <int D>
@@ -81,11 +82,42 @@ struct DDim {
     return *this;
   }
 
+  DDim &operator=(const DDim &in) {
+    setNewDim(in);
+    return *this;
+  }
+
+  void setNewDim(const DDim &d) {
+    if (d.var.TypeId() == type_id<Dim<0>>()) {
+      return var.Set<Dim<0>>(d.var.Get<Dim<0>>());
+    } else if (d.var.TypeId() == type_id<Dim<1>>()) {
+      return var.Set<Dim<1>>(d.var.Get<Dim<1>>());
+    } else if (d.var.TypeId() == type_id<Dim<2>>()) {
+      return var.Set<Dim<2>>(d.var.Get<Dim<2>>());
+    } else if (d.var.TypeId() == type_id<Dim<3>>()) {
+      return var.Set<Dim<3>>(d.var.Get<Dim<3>>());
+    } else if (d.var.TypeId() == type_id<Dim<4>>()) {
+      return var.Set<Dim<4>>(d.var.Get<Dim<4>>());
+    } else if (d.var.TypeId() == type_id<Dim<5>>()) {
+      return var.Set<Dim<5>>(d.var.Get<Dim<5>>());
+    } else if (d.var.TypeId() == type_id<Dim<6>>()) {
+      return var.Set<Dim<6>>(d.var.Get<Dim<6>>());
+    } else if (d.var.TypeId() == type_id<Dim<7>>()) {
+      return var.Set<Dim<7>>(d.var.Get<Dim<7>>());
+    } else if (d.var.TypeId() == type_id<Dim<8>>()) {
+      return var.Set<Dim<8>>(d.var.Get<Dim<8>>());
+    } else if (d.var.TypeId() == type_id<Dim<9>>()) {
+      return var.Set<Dim<9>>(d.var.Get<Dim<9>>());
+    } else {
+      PADDLE_MOBILE_ENFORCE(false, " dim not support");
+    }
+  }
+
   int64_t &operator[](int idx);
 
   int64_t operator[](int idx) const;
 
-  DDimVar getVar() { return var; }
+  DDimVar getVar() const { return var; }
 
   bool operator==(DDim d) const;
 
