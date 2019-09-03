@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License. */
 
-#include "lite/x86/jit/helper.h"
+#include "lite/backends/x86/jit/helper.h"
 #include <algorithm>  // tolower
 #include <numeric>
 #include <string>

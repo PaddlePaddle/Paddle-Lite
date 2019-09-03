@@ -26,11 +26,11 @@ limitations under the License. */
 
 // #include "lite/core/tensor.h"
 
-#include "lite/fpga/KD/dl_engine.hpp"
-#include "lite/fpga/KD/float16.hpp"
-#include "lite/fpga/KD/llapi/zynqmp_api.h"
-#include "lite/fpga/KD/shape.hpp"
-// #include "lite/fpga/KD/types.hpp"
+#include "lite/backends/fpga/KD/dl_engine.hpp"
+#include "lite/backends/fpga/KD/float16.hpp"
+#include "lite/backends/fpga/KD/llapi/zynqmp_api.h"
+#include "lite/backends/fpga/KD/shape.hpp"
+// #include "lite/backends/fpga/KD/types.hpp"
 
 namespace paddle {
 namespace zynqmp {

@@ -14,7 +14,7 @@
 
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
-#include "lite/opencl/target_wrapper.h"
+#include "lite/backends/opencl/target_wrapper.h"
 
 namespace paddle {
 namespace lite {

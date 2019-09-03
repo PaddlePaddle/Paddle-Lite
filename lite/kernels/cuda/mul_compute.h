@@ -16,7 +16,7 @@
 #include "lite/core/context.h"
 #include "lite/core/kernel.h"
 #include "lite/core/types.h"
-#include "lite/cuda/blas.h"
+#include "lite/backends/cuda/blas.h"
 #include "lite/operators/op_params.h"
 
 namespace paddle {

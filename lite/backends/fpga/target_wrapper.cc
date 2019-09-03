@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include "lite/core/target_wrapper.h"
-#include "lite/fpga/KD/llapi/zynqmp_api.h"
+#include "lite/backends/fpga/KD/llapi/zynqmp_api.h"
 #include "lite/utils/all.h"
 #ifdef LITE_WITH_FPGA
 namespace paddle {

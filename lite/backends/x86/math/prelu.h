@@ -14,7 +14,7 @@ limitations under the License. */
 
 #pragma once
 #include <vector>
-#include "lite/x86/math/math_function.h"
+#include "lite/backends/x86/math/math_function.h"
 // #include "paddle/fluid/platform/cudnn_helper.h"
 
 namespace paddle {

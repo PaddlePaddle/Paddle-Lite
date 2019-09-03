@@ -20,9 +20,9 @@
 #include <limits>
 #include <string>
 #include "lite/utils/paddle_enforce.h"
-#include "lite/x86/jit/helper.h"
-#include "lite/x86/jit/kernel_base.h"
-#include "lite/x86/jit/macro.h"
+#include "lite/backends/x86/jit/helper.h"
+#include "lite/backends/x86/jit/kernel_base.h"
+#include "lite/backends/x86/jit/macro.h"
 
 namespace paddle {
 namespace lite {

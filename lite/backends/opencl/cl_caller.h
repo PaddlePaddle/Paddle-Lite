@@ -16,7 +16,7 @@ limitations under the License. */
 
 #include <string>
 #include "lite/core/tensor.h"
-#include "lite/opencl/cl_context.h"
+#include "lite/backends/opencl/cl_context.h"
 
 namespace paddle {
 namespace lite {

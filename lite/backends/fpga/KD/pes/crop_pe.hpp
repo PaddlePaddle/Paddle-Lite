@@ -17,9 +17,9 @@ limitations under the License. */
 #include <cstring>
 #include <vector>
 
-#include "lite/fpga/KD/float16.hpp"
-#include "lite/fpga/KD/pe.hpp"
-#include "lite/fpga/KD/pe_params.hpp"
+#include "lite/backends/fpga/KD/float16.hpp"
+#include "lite/backends/fpga/KD/pe.hpp"
+#include "lite/backends/fpga/KD/pe_params.hpp"
 
 namespace paddle {
 namespace zynqmp {

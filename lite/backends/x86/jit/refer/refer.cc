@@ -12,8 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License. */
 
-#include "lite/x86/jit/refer/refer.h"
-#include "lite/x86/jit/registry.h"
+#include "lite/backends/x86/jit/refer/refer.h"
+#include "lite/backends/x86/jit/registry.h"
 
 namespace refer = paddle::lite::jit::refer;
 

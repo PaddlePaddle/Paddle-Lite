@@ -18,7 +18,7 @@ limitations under the License. */
 #include <algorithm>
 #include <vector>
 
-#include "lite/fpga/KD/pes/prior_box_pe.hpp"
+#include "lite/backends/fpga/KD/pes/prior_box_pe.hpp"
 
 namespace paddle {
 namespace zynqmp {

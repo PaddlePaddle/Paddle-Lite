@@ -12,11 +12,11 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#include "lite/fpga/KD/llapi/filter.h"
+#include "lite/backends/fpga/KD/llapi/filter.h"
 #include <memory.h>
 #include <algorithm>
-#include "lite/fpga/KD/float16.hpp"
-#include "lite/fpga/KD/llapi/zynqmp_api.h"
+#include "lite/backends/fpga/KD/float16.hpp"
+#include "lite/backends/fpga/KD/llapi/zynqmp_api.h"
 
 namespace paddle {
 namespace zynqmp {

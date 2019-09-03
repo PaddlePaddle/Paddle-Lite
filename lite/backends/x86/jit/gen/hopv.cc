@@ -12,9 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License. */
 
-#include "lite/x86/jit/gen/hopv.h"
+#include "lite/backends/x86/jit/gen/hopv.h"
 #include <memory>
-#include "lite/x86/jit/registry.h"
+#include "lite/backends/x86/jit/registry.h"
 
 namespace paddle {
 namespace lite {

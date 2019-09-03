@@ -14,7 +14,7 @@ limitations under the License. */
 
 #include <algorithm>
 
-#include "lite/fpga/KD/tensor_util.hpp"
+#include "lite/backends/fpga/KD/tensor_util.hpp"
 
 namespace paddle {
 namespace zynqmp {

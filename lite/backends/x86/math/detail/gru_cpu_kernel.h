@@ -14,8 +14,8 @@ limitations under the License. */
 
 #pragma once
 #include <type_traits>
-#include "lite/x86/math/detail/activation_functions.h"
-#include "lite/x86/math/gru_compute.h"
+#include "lite/backends/x86/math/detail/activation_functions.h"
+#include "lite/backends/x86/math/gru_compute.h"
 
 namespace paddle {
 namespace lite {

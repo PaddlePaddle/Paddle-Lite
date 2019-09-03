@@ -12,11 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License. */
 
-#include "lite/x86/jit/more/mkl/mkl.h"
-#include "lite/x86/cpu_info.h"
-#include "lite/x86/jit/refer/refer.h"
-#include "lite/x86/jit/registry.h"
-#include "lite/x86/mklml.h"
+#include "lite/backends/x86/jit/more/mkl/mkl.h"
+#include "lite/backends/x86/cpu_info.h"
+#include "lite/backends/x86/jit/refer/refer.h"
+#include "lite/backends/x86/jit/registry.h"
+#include "lite/backends/x86/mklml.h"
 
 namespace paddle {
 namespace lite {

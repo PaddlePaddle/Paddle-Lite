@@ -15,8 +15,8 @@
 #pragma once
 #include <arm_neon.h>
 #include <cmath>
-#include "lite/arm/math/saturate.h"
-#include "lite/arm/math/type_trans.h"
+#include "lite/backends/arm/math/saturate.h"
+#include "lite/backends/arm/math/type_trans.h"
 #include "lite/core/target_wrapper.h"
 #include "lite/utils/cp_logging.h"
 

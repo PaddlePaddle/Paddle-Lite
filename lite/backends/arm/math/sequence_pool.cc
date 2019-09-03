@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/arm/math/sequence_pool.h"
+#include "lite/backends/arm/math/sequence_pool.h"
 #include <algorithm>
 #include <cmath>
 #include <limits>
 #include <vector>
-#include "lite/arm/math/funcs.h"
+#include "lite/backends/arm/math/funcs.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/tensor.h"
 #include "lite/core/type_system.h"

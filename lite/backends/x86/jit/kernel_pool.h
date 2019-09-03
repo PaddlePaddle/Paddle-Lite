@@ -19,9 +19,9 @@
 #include <unordered_map>
 #include <utility>  // for move
 #include <vector>
-#include "lite/x86/jit/gen_base.h"
-#include "lite/x86/jit/kernel_base.h"
-#include "lite/x86/jit/kernel_key.h"
+#include "lite/backends/x86/jit/gen_base.h"
+#include "lite/backends/x86/jit/kernel_base.h"
+#include "lite/backends/x86/jit/kernel_key.h"
 
 namespace paddle {
 namespace lite {

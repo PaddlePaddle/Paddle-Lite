@@ -16,7 +16,7 @@
 
 #include <array>
 #include "lite/core/target_wrapper.h"
-#include "lite/opencl/cl_include.h"
+#include "lite/backends/opencl/cl_include.h"
 
 namespace paddle {
 namespace lite {

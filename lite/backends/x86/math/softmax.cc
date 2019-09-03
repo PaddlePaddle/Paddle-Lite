@@ -12,8 +12,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#include "lite/x86/math/softmax.h"
-#include "lite/x86/math/softmax_impl.h"
+#include "lite/backends/x86/math/softmax.h"
+#include "lite/backends/x86/math/softmax_impl.h"
 
 namespace paddle {
 namespace lite {

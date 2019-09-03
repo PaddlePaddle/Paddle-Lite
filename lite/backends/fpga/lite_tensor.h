@@ -22,7 +22,7 @@
 #include <vector>
 
 #include "lite/core/memory.h"
-#include "lite/fpga/KD/tensor.hpp"
+#include "lite/backends/fpga/KD/tensor.hpp"
 
 namespace paddle {
 namespace lite {

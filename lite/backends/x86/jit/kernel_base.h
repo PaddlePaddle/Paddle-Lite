@@ -14,7 +14,7 @@
 
 #pragma once
 #include <cstdint>
-#include "lite/x86/jit/macro.h"
+#include "lite/backends/x86/jit/macro.h"
 
 namespace paddle {
 namespace lite {

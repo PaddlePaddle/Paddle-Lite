@@ -18,8 +18,8 @@ limitations under the License. */
 #include <memory>
 #include <string>
 #include <vector>
-#include "lite/opencl/cl_include.h"
-#include "lite/opencl/cl_utility.h"
+#include "lite/backends/opencl/cl_include.h"
+#include "lite/backends/opencl/cl_utility.h"
 
 namespace paddle {
 namespace lite {

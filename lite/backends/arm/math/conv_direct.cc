@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/arm/math/conv_direct.h"
-#include "lite/arm/math/conv_block_utils.h"
-#include "lite/arm/math/conv_impl.h"
+#include "lite/backends/arm/math/conv_direct.h"
+#include "lite/backends/arm/math/conv_block_utils.h"
+#include "lite/backends/arm/math/conv_impl.h"
 
 namespace paddle {
 namespace lite {

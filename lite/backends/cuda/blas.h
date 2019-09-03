@@ -17,7 +17,7 @@
 #include <cublas_api.h>
 #include <cublas_v2.h>
 #include <library_types.h>
-#include "lite/cuda/cuda_utils.h"
+#include "lite/backends/cuda/cuda_utils.h"
 #include "lite/utils/all.h"
 
 namespace paddle {

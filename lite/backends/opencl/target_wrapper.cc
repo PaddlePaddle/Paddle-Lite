@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/opencl/target_wrapper.h"
+#include "lite/backends/opencl/target_wrapper.h"
 #include <algorithm>
 #include <array>
-#include "lite/opencl/cl_include.h"
-#include "lite/opencl/cl_runtime.h"
-#include "lite/opencl/cl_utility.h"
+#include "lite/backends/opencl/cl_include.h"
+#include "lite/backends/opencl/cl_runtime.h"
+#include "lite/backends/opencl/cl_utility.h"
 
 namespace paddle {
 namespace lite {

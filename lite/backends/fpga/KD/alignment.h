@@ -15,7 +15,7 @@ limitations under the License. */
 #pragma once
 #include <stdio.h>
 
-#include "lite/fpga/KD/llapi/zynqmp_api.h"
+#include "lite/backends/fpga/KD/llapi/zynqmp_api.h"
 
 namespace paddle {
 namespace zynqmp {

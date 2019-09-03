@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/cuda/blas.h"
+#include "lite/backends/cuda/blas.h"
 
 namespace paddle {
 namespace lite {

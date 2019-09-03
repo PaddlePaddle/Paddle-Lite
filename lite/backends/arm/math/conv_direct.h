@@ -16,7 +16,7 @@
 
 #include <cmath>
 #include <vector>
-#include "lite/arm/math/conv_impl.h"
+#include "lite/backends/arm/math/conv_impl.h"
 #include "lite/core/context.h"
 #include "lite/core/target_wrapper.h"
 

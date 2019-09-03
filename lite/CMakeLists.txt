@@ -153,7 +153,7 @@ if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM)
     if (LITE_WITH_OPENCL)
         add_custom_target(publish_inference_opencl ${TARGET}
             COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/opencl"
-            COMMAND cp -r "${CMAKE_SOURCE_DIR}/lite/opencl/cl_kernel" "${INFER_LITE_PUBLISH_ROOT}/opencl"
+            COMMAND cp -r "${CMAKE_SOURCE_DIR}/lite/backends/opencl/cl_kernel" "${INFER_LITE_PUBLISH_ROOT}/opencl"
         )
         add_dependencies(publish_inference_cxx_lib publish_inference_opencl)
     endif()

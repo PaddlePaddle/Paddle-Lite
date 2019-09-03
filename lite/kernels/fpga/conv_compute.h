@@ -15,8 +15,8 @@
 #pragma once
 
 #include "lite/core/kernel.h"
-#include "lite/fpga/KD/float16.hpp"
-#include "lite/fpga/KD/pes/conv_pe.hpp"
+#include "lite/backends/fpga/KD/float16.hpp"
+#include "lite/backends/fpga/KD/pes/conv_pe.hpp"
 #include "lite/operators/conv_op.h"
 
 namespace paddle {

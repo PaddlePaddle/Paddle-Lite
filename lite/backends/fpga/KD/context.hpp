@@ -15,14 +15,14 @@ limitations under the License. */
 #pragma once
 
 #include <stdio.h>
-#include "lite/fpga/KD/pe.hpp"
-#include "lite/fpga/KD/pes/conv_pe.hpp"
-#include "lite/fpga/KD/pes/depthwise_conv_pe.hpp"
-#include "lite/fpga/KD/pes/fully_connected_pe.hpp"
-#include "lite/fpga/KD/pes/input_pe.hpp"
-#include "lite/fpga/KD/pes/output_pe.hpp"
-#include "lite/fpga/KD/pes/pooling_pe.hpp"
-#include "lite/fpga/KD/pes/softmax_pe.hpp"
+#include "lite/backends/fpga/KD/pe.hpp"
+#include "lite/backends/fpga/KD/pes/conv_pe.hpp"
+#include "lite/backends/fpga/KD/pes/depthwise_conv_pe.hpp"
+#include "lite/backends/fpga/KD/pes/fully_connected_pe.hpp"
+#include "lite/backends/fpga/KD/pes/input_pe.hpp"
+#include "lite/backends/fpga/KD/pes/output_pe.hpp"
+#include "lite/backends/fpga/KD/pes/pooling_pe.hpp"
+#include "lite/backends/fpga/KD/pes/softmax_pe.hpp"
 
 namespace paddle {
 namespace zynqmp {

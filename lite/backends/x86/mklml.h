@@ -16,8 +16,8 @@ limitations under the License. */
 
 #include <mkl.h>
 #include <mutex>  // NOLINT
-#include "lite/x86/dynamic_loader.h"
-#include "lite/x86/port.h"
+#include "lite/backends/x86/dynamic_loader.h"
+#include "lite/backends/x86/port.h"
 
 namespace paddle {
 namespace lite {

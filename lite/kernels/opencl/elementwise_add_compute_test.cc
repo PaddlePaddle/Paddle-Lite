@@ -17,7 +17,7 @@
 #include <random>
 #include "lite/core/op_registry.h"
 #include "lite/core/tensor.h"
-#include "lite/opencl/target_wrapper.h"
+#include "lite/backends/opencl/target_wrapper.h"
 
 namespace paddle {
 namespace lite {

@@ -14,7 +14,7 @@
 
 #pragma once
 
-#include "lite/arm/math/sgemm.h"
+#include "lite/backends/arm/math/sgemm.h"
 
 namespace paddle {
 namespace lite {

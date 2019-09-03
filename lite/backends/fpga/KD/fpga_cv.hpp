@@ -15,9 +15,9 @@ limitations under the License. */
 #pragma once
 
 #include <stdlib.h>
-#include "lite/fpga/KD/float16.hpp"
-#include "lite/fpga/KD/llapi/zynqmp_api.h"
-#include "lite/fpga/KD/pe.hpp"
+#include "lite/backends/fpga/KD/float16.hpp"
+#include "lite/backends/fpga/KD/llapi/zynqmp_api.h"
+#include "lite/backends/fpga/KD/pe.hpp"
 
 void fpga_resize(float* input,
                  int input_width,

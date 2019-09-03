@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/arm/math/activation.h"
+#include "lite/backends/arm/math/activation.h"
 #include <string>
-#include "lite/arm/math/funcs.h"
+#include "lite/backends/arm/math/funcs.h"
 
 namespace paddle {
 namespace lite {

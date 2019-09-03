@@ -14,8 +14,8 @@ limitations under the License. */
 
 #include <memory.h>
 
-#include "lite/fpga/KD/llapi/bias_scale.h"
-#include "lite/fpga/KD/llapi/zynqmp_api.h"
+#include "lite/backends/fpga/KD/llapi/bias_scale.h"
+#include "lite/backends/fpga/KD/llapi/zynqmp_api.h"
 
 namespace paddle {
 namespace zynqmp {

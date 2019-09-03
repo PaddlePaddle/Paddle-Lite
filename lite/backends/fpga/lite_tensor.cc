@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/fpga/lite_tensor.h"
+#include "lite/backends/fpga/lite_tensor.h"
 #include <string>
 
 namespace paddle {

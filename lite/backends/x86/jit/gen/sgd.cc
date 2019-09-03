@@ -12,12 +12,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License. */
 
-#include "lite/x86/jit/gen/sgd.h"
+#include "lite/backends/x86/jit/gen/sgd.h"
 #include <stddef.h>  // offsetof
 #include <memory>
 #include <vector>
 #include "lite/utils/paddle_enforce.h"
-#include "lite/x86/jit/registry.h"
+#include "lite/backends/x86/jit/registry.h"
 
 namespace paddle {
 namespace lite {

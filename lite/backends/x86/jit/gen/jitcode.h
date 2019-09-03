@@ -16,8 +16,8 @@
 
 #include <string>
 #include <type_traits>
-#include "lite/x86/cpu_info.h"
-#include "lite/x86/jit/gen_base.h"
+#include "lite/backends/x86/cpu_info.h"
+#include "lite/backends/x86/jit/gen_base.h"
 
 #define XBYAK_USE_MMAP_ALLOCATOR
 #include "xbyak/xbyak.h"

@@ -15,7 +15,7 @@
 #pragma once
 
 #include <type_traits>
-#include "lite/x86/jit/kernel_base.h"
+#include "lite/backends/x86/jit/kernel_base.h"
 
 namespace paddle {
 namespace lite {

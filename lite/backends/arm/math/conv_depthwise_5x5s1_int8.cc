@@ -13,8 +13,8 @@
 // limitations under the License.
 
 #include <arm_neon.h>
-#include "lite/arm/math/conv_block_utils.h"
-#include "lite/arm/math/conv_impl.h"
+#include "lite/backends/arm/math/conv_block_utils.h"
+#include "lite/backends/arm/math/conv_impl.h"
 #include "lite/core/context.h"
 #include "lite/operators/op_params.h"
 #ifdef ARM_WITH_OMP

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/cuda/target_wrapper.h"
+#include "lite/backends/cuda/target_wrapper.h"
 
 namespace paddle {
 namespace lite {

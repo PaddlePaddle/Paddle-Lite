@@ -12,13 +12,13 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#include "lite/opencl/cl_caller.h"
+#include "lite/backends/opencl/cl_caller.h"
 #include <string>
 #include "lite/core/tensor.h"
-#include "lite/opencl/cl_context.h"
-#include "lite/opencl/cl_image.h"
-#include "lite/opencl/cl_runtime.h"
-#include "lite/opencl/cl_utility.h"
+#include "lite/backends/opencl/cl_context.h"
+#include "lite/backends/opencl/cl_image.h"
+#include "lite/backends/opencl/cl_runtime.h"
+#include "lite/backends/opencl/cl_utility.h"
 #include "lite/utils/string.h"
 
 namespace paddle {

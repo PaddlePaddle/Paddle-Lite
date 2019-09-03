@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/arm/math/gemm_prepacked_int8.h"
+#include "lite/backends/arm/math/gemm_prepacked_int8.h"
 #include <arm_neon.h>
-#include "lite/arm/math/dot_toolchain_support.h"
+#include "lite/backends/arm/math/dot_toolchain_support.h"
 
 namespace paddle {
 namespace lite {

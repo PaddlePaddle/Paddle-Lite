@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/x86/math/tree2col.h"
+#include "lite/backends/x86/math/tree2col.h"
 #include <deque>
 #include <stack>
 

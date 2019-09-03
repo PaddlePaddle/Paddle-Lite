@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/arm/math/sequence_expand.h"
+#include "lite/backends/arm/math/sequence_expand.h"
 #include <string.h>
 #include <vector>
 #include "lite/core/tensor.h"

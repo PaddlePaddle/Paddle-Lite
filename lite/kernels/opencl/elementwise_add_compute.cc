@@ -15,7 +15,7 @@
 #include "lite/kernels/opencl/elementwise_add_compute.h"
 #include <memory>
 #include "lite/core/op_registry.h"
-#include "lite/opencl/cl_include.h"
+#include "lite/backends/opencl/cl_include.h"
 #include "lite/utils/replace_stl/stream.h"
 
 namespace paddle {
