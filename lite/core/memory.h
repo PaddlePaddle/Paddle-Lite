@@ -15,6 +15,7 @@
 #pragma once
 #include "lite/api/paddle_place.h"
 #include "lite/core/target_wrapper.h"
+#include "lite/core/tensor.h"
 #include "lite/utils/macros.h"
 
 #ifdef LITE_WITH_OPENCL
@@ -76,6 +77,7 @@ class Buffer {
   TargetType target() const { return target_; }
   size_t space() const { return space_; }
 
+#if 0
   void ResetLazy(TargetType target, size_t size) {
     if (target != target_ || space_ < size) {
       Free();
@@ -86,6 +88,13 @@ class Buffer {
   }
 
   void ResizeLazy(size_t size) { ResetLazy(target_, size); }
+#endif
+
+  // for opencl image2d type
+  template <typename T, typename R = T>
+  void ResetLazy(TargetType target,
+                 const DDimLite& dims,
+                 const PrecisionType data_type);
 
   void Free() {
     if (space_ > 0) {
@@ -110,6 +119,40 @@ class Buffer {
   void* data_{nullptr};
   TargetType target_{TargetType::kHost};
 };
+
+template <typename T, typename R = T>
+void Buffer::ResetLazy(TargetType target,
+                       DDimLite& dims,
+                       const PrecisionType data_type) {
+  size_t size = dims.productions() * sizeof(T);
+  if (target != target_ || space_ < size) {
+    Free();
+    VLOG(4) << "TargetMalloc";
+    data_ = TargetMalloc(target, size);
+    target_ = target;
+    space_ = size;
+  }
+}
+
+template <typename T>
+void Buffer::ResetLazy<T, cl::Image2D>(TargetType target,
+                                       const DDimLite& dims,
+                                       const PrecisionType data_type) {
+  size_t size = dims.productions() * sizeof(T);
+  if (target != target_ || space_ < size) {
+    Free();
+    VLOG(4) << "TargetWrapperCL::MallocImage";
+    // TODO(yuanshuai)
+    //  1. convert `dims`(type:DDimLite) to 2D `image_shape`(const
+    //  std::array<size_t, 2>)
+    //  2. Uncomment codes below
+    // data_ = TargetWrapperCL::MallocImage(const std::array<size_t, 2>&
+    // image_shape,
+    //                                      PrecisionType data_type);
+    target_ = target;
+    space_ = size;
+  }
+}
 
 }  // namespace lite
 }  // namespace paddle

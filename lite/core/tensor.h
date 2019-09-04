@@ -203,16 +203,22 @@ class TensorLite {
 
 template <typename T, typename R>
 R *TensorLite::mutable_data() {
+#if 0
   memory_size_ = dims_.production() * sizeof(T);
   buffer_->ResetLazy(target_, memory_size_);
   return reinterpret_cast<R *>(static_cast<char *>(buffer_->data()) + offset_);
+#endif
+  return static_cast<R *>(mutable_data(target_));
 }
 
 template <typename T, typename R>
 R *TensorLite::mutable_data(TargetType target) {
   target_ = target;
   memory_size_ = dims_.production() * sizeof(T);
+#if 0
   buffer_->ResetLazy(target, memory_size());
+#endif
+  buffer_->ResetLazy<T, R>(target_, dims_, precision_);
   return reinterpret_cast<R *>(static_cast<char *>(buffer_->data()) + offset_);
 }
 

@@ -28,6 +28,12 @@ TEST(memory, test) {
   ASSERT_TRUE(buf_cuda);
   TargetFree(TARGET(kCUDA), buf_cuda);
 #endif
+
+#ifdef LITE_WITH_OPENCL
+  auto* buf_ocl = TargetMalloc(TARGET(kOpenCL), 10);
+  ASSERT_TRUE(buf_ocl);
+  TargetFree(TARGET(kOpenCL), buf_ocl);
+#endif
 }
 
 }  // namespace lite
