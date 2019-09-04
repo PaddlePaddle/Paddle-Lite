@@ -46,7 +46,7 @@ static void slice_ref(const float* input,
       real_ends[axes[i]] = end;
     }
   }
-  const int LEN = in_dims.size() - 1;
+  const int LEN = in_dims.size();
   int dst_step[LEN];
   for (int i = 0; i < in_dims.size(); ++i) {
     dst_step[i] = 1;
@@ -64,8 +64,10 @@ static void slice_ref(const float* input,
 
   for (int dst_id = 0; dst_id < out_num; dst_id++) {
     int src_id = 0;
+    int index_id = dst_id;
     for (int j = 0; j < out_dims.size(); j++) {
-      int cur_id = dst_id / dst_step[j];
+      int cur_id = index_id / dst_step[j];
+      index_id = index_id % dst_step[j];
       src_id += (cur_id + real_starts[j]) * src_step[j];
     }
     out[dst_id] = input[src_id];
@@ -164,10 +166,10 @@ class SliceComputeTester : public arena::TestCase {
 
 void test_slice(Place place) {
   std::vector<int> axes({0, 1, 2});
-  std::vector<int> starts({1, 0, 2});
-  std::vector<int> ends({3, 3, 4});
+  std::vector<int> starts({2, 2, 2});
+  std::vector<int> ends({5, 6, 7});
   std::vector<int> decrease_axis({});
-  DDim dims({3, 4, 5, 6});
+  DDim dims({10, 10, 10});
   std::unique_ptr<arena::TestCase> tester(new SliceComputeTester(
       place, "def", axes, starts, ends, decrease_axis, dims));
   arena::Arena arena(std::move(tester), place, 2e-4);

@@ -26,6 +26,77 @@ namespace lite {
 namespace mir {
 namespace subgraph {
 
+std::unordered_map<int, std::unordered_set<Node*>>
+SubgraphProgramPass::ClassifySubgraph(const std::unique_ptr<SSAGraph>& graph) {
+  std::unordered_map<int, std::unordered_set<Node*>> op_nodes;
+  for (auto& item : graph->StmtTopologicalOrder()) {
+    if (!item->IsStmt()) continue;
+    auto& stmt = item->AsStmt();
+    int sub_id = stmt.subgraph_id();
+    if (sub_id < 1) continue;
+    if (!op_nodes.count(sub_id)) {
+      op_nodes[sub_id] = std::unordered_set<Node*>();
+    }
+    op_nodes.at(sub_id).insert(item);
+  }
+  return op_nodes;
+}
+
+cpp::OpDesc SubgraphProgramPass::GenGraphOpDesc(
+    const std::string& model_name,
+    const std::vector<std::string>& in_var_names,
+    const std::vector<std::string>& out_var_names) {
+  cpp::OpDesc op_desc;
+  op_desc.SetType("graph_op");
+  op_desc.SetInput("Inputs", in_var_names);
+  op_desc.SetOutput("Outputs", out_var_names);
+  op_desc.SetAttr("model_name", model_name);
+  return op_desc;
+}
+
+void SubgraphProgramPass::InsertNewNode(
+    const std::unique_ptr<SSAGraph>& graph,
+    const std::string& model_name,
+    Scope* scope,
+    const std::vector<Place>& valid_places,
+    std::unordered_set<Node*> in_data_vars,
+    std::unordered_set<Node*> in_wgt_vars,
+    std::unordered_set<Node*> out_data_vars,
+    std::unordered_set<Node*> out_unused_vars) {
+  std::vector<std::string> in_var_names;
+  std::vector<std::string> out_var_names;
+  for (auto i : in_data_vars) {
+    in_var_names.push_back(i->AsArg().name);
+  }
+  for (auto i : out_data_vars) {
+    out_var_names.push_back(i->AsArg().name);
+  }
+
+  auto op_desc = GenGraphOpDesc(model_name, in_var_names, out_var_names);
+
+  auto graph_op = LiteOpRegistry::Global().Create("graph_op");
+  graph_op->Attach(op_desc, scope);
+  auto* new_op_node = graph->GraphCreateInstructNode(graph_op, valid_places);
+
+  for (auto& in_var : in_data_vars) {
+    IR_NODE_LINK_TO(in_var, new_op_node);
+  }
+  for (auto& in_var : in_wgt_vars) {
+    IR_NODE_LINK_TO(in_var, new_op_node);
+  }
+  for (auto& out_var : out_data_vars) {
+    IR_OP_VAR_LINK(new_op_node, out_var);
+  }
+  for (auto& out_var : out_unused_vars) {
+    IR_OP_VAR_LINK(new_op_node, out_var);
+  }
+
+  // assign context
+  auto& inst = new_op_node->AsStmt();
+  inst.picked_kernel().SetContext(
+      ContextScheduler::Global().NewContext(inst.picked_kernel().target()));
+}
+
 void SubgraphProgramPass::SortHelper(
     Node* node,
     const std::unordered_set<Node*>& nodes_all,
@@ -170,7 +241,6 @@ void SubgraphProgramPass::ChangeAllOutConnectedID(Node* node,
     auto& stmt = node->AsStmt();
     if (stmt.subgraph_id() == from_id) {
       stmt.SetSubgraphID(to_id);
-      nodes2rm_[to_id].insert(node);
       for (auto& i : node->outlinks) {
         ChangeAllOutConnectedID(i, to_id, from_id);
       }
@@ -191,22 +261,12 @@ void SubgraphProgramPass::ChangeAllOutConnectedID(Node* node,
     if (!all_out_op_supported) {
       return;
     }
-    nodes2rm_[to_id].insert(node);
     for (auto& i : node->outlinks) {
       CHECK(i->IsStmt());
       auto& stmt = i->AsStmt();
       if (stmt.subgraph_id() == from_id) {
         stmt.SetSubgraphID(to_id);
-        nodes2rm_[to_id].insert(i);
         for (auto& o : i->outlinks) {
-          for (auto& j : o->outlinks) {
-            if (j->IsStmt()) {
-              auto& Nstmt = j->AsStmt();
-              if (Nstmt.subgraph_id() < from_id) {
-                o_nodes_[to_id].insert(o);
-              }
-            }
-          }
           ChangeAllOutConnectedID(o, to_id, from_id);
         }
       }
@@ -230,46 +290,10 @@ int SubgraphProgramPass::FuseSubgraphID(
           }
         }
       }
-      if (inputvar == 1) {
-        for (auto& i : item->outlinks) i_nodes_[sub_id].insert(i);
-      }
     }
     if (stmt.subgraph_id() != 0) continue;
     ChangeAllOutConnectedID(item, sub_id);
     sub_id++;
-  }
-  for (auto& i : nodes2rm_) {
-    for (auto& item : i.second) {
-      if (item->IsStmt()) {
-        auto& stmt = item->AsStmt();
-        LOG(INFO) << "nodes2rm_:" << stmt.op_type();
-      } else if (item->IsArg()) {
-        auto& arg = item->AsArg();
-        LOG(INFO) << "nodes2rm_:" << arg.name;
-      }
-    }
-  }
-  for (auto& i : i_nodes_) {
-    for (auto& item : i.second) {
-      if (item->IsStmt()) {
-        auto& stmt = item->AsStmt();
-        LOG(INFO) << "i_nodes_: " << i.first << " " << stmt.op_type();
-      } else if (item->IsArg()) {
-        auto& arg = item->AsArg();
-        LOG(INFO) << "i_nodes_: " << i.first << " " << arg.name;
-      }
-    }
-  }
-  for (auto& i : o_nodes_) {
-    for (auto& item : i.second) {
-      if (item->IsStmt()) {
-        auto& stmt = item->AsStmt();
-        LOG(INFO) << "o_nodes_:" << i.first << " " << stmt.op_type();
-      } else if (item->IsArg()) {
-        auto& arg = item->AsArg();
-        LOG(INFO) << "o_nodes_: " << i.first << " " << arg.name;
-      }
-    }
   }
   return sub_id - 1;
 }
@@ -278,12 +302,7 @@ int SubgraphProgramPass::FuseSubgraph(
     const std::unique_ptr<SSAGraph>& graph,
     const std::vector<std::string>& supported_op_types) {
   InitSubgraphID(graph, supported_op_types);
-  nodes2rm_.clear();
-  i_nodes_.clear();
-  o_nodes_.clear();
-  int num_subgraph = FuseSubgraphID(graph);
-  LOG(INFO) << "detected " << num_subgraph << " subgraph";
-  return num_subgraph;
+  return FuseSubgraphID(graph);
 }
 }  // namespace subgraph
 }  // namespace mir
