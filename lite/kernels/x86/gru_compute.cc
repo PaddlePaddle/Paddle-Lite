@@ -14,11 +14,13 @@
 
 #include "lite/kernels/x86/gru_compute.h"
 
-REGISTER_LITE_KERNEL(mul,
+DEFINE_int32(paddle_num_threads, 1, "Number of threads for each paddle instance.");
+
+REGISTER_LITE_KERNEL(gru,
                      kX86,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::x86::MulCompute<float>,
+                     paddle::lite::kernels::x86::GRUCompute<float>,
                      def)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindInput("H0", {LiteType::GetTensorTy(TARGET(kX86))})
@@ -30,11 +32,11 @@ REGISTER_LITE_KERNEL(mul,
     .BindOutput("Hidden", {LiteType::GetTensorTy(TARGET(kX86))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(mul_grad,
+REGISTER_LITE_KERNEL(gru_grad,
                      kX86,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::x86::MulGradCompute<float>,
+                     paddle::lite::kernels::x86::GRUGradCompute<float>,
                      def)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindInput("H0", {LiteType::GetTensorTy(TARGET(kX86))})
@@ -44,15 +46,15 @@ REGISTER_LITE_KERNEL(mul_grad,
     .BindInput("Batch_reset_hidden_prev", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindInput("Batch_hidden", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindInput("Hidden", {LiteType::GetTensorTy(TARGET(kX86))})
-    .BindInput(paddle::framework::GradVarName("Hidden"),
+    .BindInput(paddle::lite::GradVarName("Hidden"),
                {LiteType::GetTensorTy(TARGET(kX86))})
 
-    .BindOutput(paddle::framework::GradVarName("Input"),
+    .BindOutput(paddle::lite::GradVarName("Input"),
                 {LiteType::GetTensorTy(TARGET(kX86))})
-    .BindOutput(paddle::framework::GradVarName("H0"),
+    .BindOutput(paddle::lite::GradVarName("H0"),
                 {LiteType::GetTensorTy(TARGET(kX86))})
-    .BindOutput(paddle::framework::GradVarName("Weight"),
+    .BindOutput(paddle::lite::GradVarName("Weight"),
                 {LiteType::GetTensorTy(TARGET(kX86))})
-    .BindOutput(paddle::framework::GradVarName("Bias"),
+    .BindOutput(paddle::lite::GradVarName("Bias"),
                 {LiteType::GetTensorTy(TARGET(kX86))})
     .Finalize();

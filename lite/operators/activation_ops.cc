@@ -114,4 +114,5 @@ REGISTER_LITE_OP(floor, paddle::lite::operators::ActivationOp);
 
 #ifdef LITE_WITH_TRAIN
 REGISTER_LITE_OP(square_grad, paddle::lite::operators::ActivationGradOp);
+REGISTER_LITE_OP(relu_grad, paddle::lite::operators::ActivationGradOp);
 #endif

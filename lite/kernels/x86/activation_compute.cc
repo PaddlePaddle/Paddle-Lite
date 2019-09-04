@@ -14,46 +14,99 @@
 
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
-#include "paddle/fluid/framework/eigen.h"
-#include "paddle/fluid/framework/operator.h"
-#include "paddle/fluid/operators/activation_op.h"
+#include "lite/fluid/eigen.h"
+#include "lite/core/op_lite.h"
+#include "lite/operators/activation_ops.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace x86 {
 
+enum ActBwdOpFwdDeps {
+  kNoDeps = 0x00,  // Do not need any forward input/output
+  kDepX = 0x01,    // Only need forward input X
+  kDepOut = 0x02,  // Only need forward output Out
+
+  // Never add kDepXOut, because Out can be always calculated
+  // by forward input X in backward part.
+  // FIXME(zjl): but in MKLDNN abs, X and Out are all needed...
+  // Developers should not rely on this enum value!
+  kDepXOut = 0x03
+};
+
+template <typename T>
+struct BaseActivationFunctor {
+  using ELEMENT_TYPE = T;
+
+  using AttrPair = std::vector<std::pair<const char*, float*>>;
+
+  AttrPair GetAttrs() { return AttrPair(); }
+
+  /* NOTE(*): Output reuse X memory if X is not dependented by its Gradient.
+     For example, sigmoid op's gradient didn't involve x, so its output can
+     reuse
+     input memory. But abs op's gradient use x, it can not be inplaced.
+     gradient did use x.
+   */
+  bool Inplace() const { return false; }
+};
+
 template <typename Functor>
-void Activate(const platform::CPUDeviceContext& context,
-              const framework::LoDTensor* X,
-              framework::LoDTensor* Out) {
+bool Activate(const lite::Tensor* X,
+              lite::Tensor* Out) {
   using T = typename Functor::ELEMENT_TYPE;
-  auto* place = context.eigen_device();
+  auto place = lite::fluid::EigenDeviceType<TARGET(kX86)>();
+  CHECK_OR_FALSE(X)
+  CHECK_OR_FALSE(Out)
   auto x =
-      framework::EigenVector<T>::Flatten(paddle::operators::detail::Ref(X));
+      lite::fluid::EigenVector<T>::Flatten(*X);
   auto out =
-      framework::EigenVector<T>::Flatten(paddle::operators::detail::Ref(Out));
-  Functor()(*place, x, out);
+      lite::fluid::EigenVector<T>::Flatten(*Out);
+  Functor()(place, x, out);
 }
 
 template <typename Functor>
-void ActivateGrad(const platform::CPUDeviceContext& context,
-                  const framework::LoDTensor* X,
-                  const framework::LoDTensor* Out,
-                  const framework::LoDTensor* Out_grad,
-                  framework::LoDTensor* X_grad) {
+bool ActivateGrad(const lite::Tensor* X,
+                  const lite::Tensor* Out,
+                  const lite::Tensor* Out_grad,
+                  lite::Tensor* X_grad) {
   using T = typename Functor::ELEMENT_TYPE;
-  auto* place = context.eigen_device();
+  auto place = lite::fluid::EigenDeviceType<TARGET(kX86)>();
+  CHECK_OR_FALSE(X)
+  CHECK_OR_FALSE(Out)
+  CHECK_OR_FALSE(Out_grad)
+  CHECK_OR_FALSE(X_grad)
   auto x =
-      framework::EigenVector<T>::Flatten(paddle::operators::detail::Ref(X));
+      lite::fluid::EigenVector<T>::Flatten(*X);
   auto out =
-      framework::EigenVector<T>::Flatten(paddle::operators::detail::Ref(Out));
-  auto x_grad = framework::EigenVector<T>::Flatten(
-      paddle::operators::detail::Ref(X_grad));
-  auto out_grad = framework::EigenVector<T>::Flatten(
-      paddle::operators::detail::Ref(Out_grad));
-  Functor()(*place, x, out, out_grad, x_grad);
+      lite::fluid::EigenVector<T>::Flatten(*Out);
+  auto x_grad = 
+      lite::fluid::EigenVector<T>::Flatten(*X_grad);
+  auto out_grad = 
+      lite::fluid::EigenVector<T>::Flatten(*Out_grad);
+  Functor()(place, x, out, out_grad, x_grad);
 }
+
+// square(x) = x^2
+template <typename T>
+struct SquareFunctor : public BaseActivationFunctor<T> {
+  template <typename Device, typename X, typename Out>
+  void operator()(Device d, X x, Out out) const {
+    out.device(d) = x.square();
+  }
+};
+
+template <typename T>
+struct SquareGradFunctor : public BaseActivationFunctor<T> {
+  template <typename Device, typename X, typename Out, typename dOut,
+            typename dX>
+  void operator()(Device d, X x, Out out, dOut dout, dX dx) const {
+    dx.device(d) = dout * static_cast<T>(2) * x;
+  }
+
+  static constexpr ActBwdOpFwdDeps FwdDeps() { return kDepX; }
+};
 
 template <typename T>
 class SquareCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
@@ -61,14 +114,10 @@ class SquareCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
   using param_t = operators::ActivationParam;
 
   void Run() override {
-    auto& context = ctx_->As<X86Context>();
     auto& param = *param_.get_mutable<operators::ActivationParam>();
-    CHECK(context.x86_device_context());
 
     param.Out->template mutable_data<T>();
-    Activate<paddle::operators::SquareFunctor<T>>(*context.x86_device_context(),
-                                                  &param.X->raw_tensor(),
-                                                  &param.Out->raw_tensor());
+    Activate<SquareFunctor<T>>(param.X, param.Out);
   }
 
   virtual ~SquareCompute() = default;
@@ -80,20 +129,67 @@ class SquareGradCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
   using param_t = operators::ActivationGradParam;
 
   void Run() override {
-    auto& context = ctx_->As<X86Context>();
     auto& param = *param_.get_mutable<operators::ActivationGradParam>();
-    CHECK(context.x86_device_context());
     param.X_grad->template mutable_data<T>();
 
-    ActivateGrad<paddle::operators::SquareGradFunctor<T>>(
-        *context.x86_device_context(),
-        &param.X->raw_tensor(),
-        &param.Out->raw_tensor(),
-        &param.Out_grad->raw_tensor(),
-        &param.X_grad->raw_tensor());
+    ActivateGrad<SquareGradFunctor<T>>(
+        param.X, param.Out,
+        param.Out_grad, param.X_grad);
   }
 
   virtual ~SquareGradCompute() = default;
+};
+
+// relu(x) = max(x, 0)
+template <typename T>
+struct ReluFunctor : public BaseActivationFunctor<T> {
+  template <typename Device, typename X, typename Out>
+  void operator()(Device d, X x, Out out) const {
+    out.device(d) = x.cwiseMax(static_cast<T>(0));
+  }
+};
+
+template <typename T>
+struct ReluGradFunctor : public BaseActivationFunctor<T> {
+  template <typename Device, typename X, typename Out, typename dOut,
+            typename dX>
+  void operator()(Device d, X x, Out out, dOut dout, dX dx) const {
+    dx.device(d) = dout * (out > static_cast<T>(0)).template cast<T>();
+  }
+
+  static constexpr ActBwdOpFwdDeps FwdDeps() { return kDepOut; }
+};
+
+template <typename T>
+class ReluCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::ActivationParam;
+
+  void Run() override {
+    auto& param = *param_.get_mutable<operators::ActivationParam>();
+
+    param.Out->template mutable_data<T>();
+    Activate<ReluFunctor<T>>(param.X, param.Out);
+  }
+
+  virtual ~ReluCompute() = default;
+};
+
+template <typename T>
+class ReluGradCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::ActivationGradParam;
+
+  void Run() override {
+    auto& param = *param_.get_mutable<operators::ActivationGradParam>();
+    param.X_grad->template mutable_data<T>();
+
+    ActivateGrad<ReluGradFunctor<T>>(
+        param.X, param.Out,
+        param.Out_grad, param.X_grad);
+  }
+
+  virtual ~ReluGradCompute() = default;
 };
 
 }  // namespace x86
@@ -120,8 +216,33 @@ REGISTER_LITE_KERNEL(square_grad,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindInput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
-    .BindInput(paddle::framework::GradVarName("Out"),
+    .BindInput(paddle::lite::GradVarName("Out"),
                {LiteType::GetTensorTy(TARGET(kX86))})
-    .BindOutput(paddle::framework::GradVarName("X"),
+    .BindOutput(paddle::lite::GradVarName("X"),
+                {LiteType::GetTensorTy(TARGET(kX86))})
+    .Finalize();
+
+    // float
+REGISTER_LITE_KERNEL(relu,
+                     kX86,
+                     kFloat,
+                     kNCHW,
+                     paddle::lite::kernels::x86::ReluCompute<float>,
+                     def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(relu_grad,
+                     kX86,
+                     kFloat,
+                     kNCHW,
+                     paddle::lite::kernels::x86::ReluGradCompute<float>,
+                     def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindInput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindInput(paddle::lite::GradVarName("Out"),
+               {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindOutput(paddle::lite::GradVarName("X"),
                 {LiteType::GetTensorTy(TARGET(kX86))})
     .Finalize();
