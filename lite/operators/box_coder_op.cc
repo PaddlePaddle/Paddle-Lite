@@ -89,7 +89,9 @@ bool BoxCoderOpLite::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
 
   param_.code_type = opdesc.GetAttr<std::string>("code_type");
   param_.box_normalized = opdesc.GetAttr<bool>("box_normalized");
-  param_.axis = opdesc.GetAttr<int>("axis");
+  if (opdesc.HasAttr("axis")) {
+    param_.axis = opdesc.GetAttr<int>("axis");
+  }
 
   if (opdesc.HasAttr("variance")) {
     param_.variance = opdesc.GetAttr<std::vector<float>>("variance");

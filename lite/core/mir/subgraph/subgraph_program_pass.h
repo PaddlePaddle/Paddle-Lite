@@ -55,6 +55,24 @@ class SubgraphProgramPass : public ProgramPass {
   void ChangeAllOutConnectedID(Node* node, int to_id, int from_id = 0);
 
   // Below function cloud be useful in child classes //
+  // classify node by subgraph id
+  std::unordered_map<int, std::unordered_set<Node*>> ClassifySubgraph(
+      const std::unique_ptr<SSAGraph>& graph);
+
+  // generate the graph op desc
+  cpp::OpDesc GenGraphOpDesc(const std::string& model_name,
+                             const std::vector<std::string>& in_var_names,
+                             const std::vector<std::string>& out_var_names);
+
+  // insert a new graph op node
+  void InsertNewNode(const std::unique_ptr<SSAGraph>& graph,
+                     const std::string& model_name,
+                     Scope* scope,
+                     const std::vector<Place>& valid_places,
+                     std::unordered_set<Node*> in_data_vars,
+                     std::unordered_set<Node*> in_wgt_vars,
+                     std::unordered_set<Node*> out_data_vars,
+                     std::unordered_set<Node*> out_unused_vars);
 
   // Sort and return the topology order of nodes set
   std::vector<Node*> GetTopologicalOrder(
@@ -79,18 +97,6 @@ class SubgraphProgramPass : public ProgramPass {
                   const std::unordered_set<Node*>& nodes_all,
                   std::unordered_set<const Node*>* visited_nodes,
                   std::vector<Node*>* ret);
-
-  // {1: {nodes2rm_in_subgraph1, ...},
-  //  2: {nodes2rm_in_subgraph2, ...}}
-  // delete nodes
-  std::unordered_map<int, std::unordered_set<Node*>> nodes2rm_;
-  // std::unordered_map<int, std::unordered_set<const Node*>> nodes2rm_;
-  // inputs nodes
-  std::unordered_map<int, std::unordered_set<Node*>> i_nodes_;
-  // std::unordered_map<int, std::unordered_set<const Node*>> i_nodes_;
-  // outputs nodes
-  std::unordered_map<int, std::unordered_set<Node*>> o_nodes_;
-  // std::unordered_map<int, std::unordered_set<const Node*>> o_nodes_;
 };
 
 }  // namespace subgraph

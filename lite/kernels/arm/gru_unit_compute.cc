@@ -14,9 +14,9 @@
 
 #include "lite/kernels/arm/gru_unit_compute.h"
 #include "lite/api/paddle_place.h"
-#include "lite/arm/math/funcs.h"
-#include "lite/arm/math/gru_utils.h"
-#include "lite/arm/math/sgemm.h"
+#include "lite/backends/arm/math/funcs.h"
+#include "lite/backends/arm/math/gru_utils.h"
+#include "lite/backends/arm/math/sgemm.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/tensor.h"
 #include "lite/core/type_system.h"

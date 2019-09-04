@@ -499,18 +499,16 @@ struct BoxCoderParam {
 
 /// ----------------------- multiclass_nms operators ----------------------
 struct MulticlassNmsParam {
-  const lite::Tensor* bbox_data{};
-  const lite::Tensor* conf_data{};
-  lite::Tensor* out;
-  std::vector<int> priors;
-  int class_num;
-  int background_label;
+  const lite::Tensor* bboxes{};
+  const lite::Tensor* scores{};
+  lite::Tensor* out{};
+  int background_label{0};
+  float score_threshold{};
+  int nms_top_k{};
+  float nms_threshold{0.3};
+  float nms_eta{1.0};
   int keep_top_k;
-  int nms_top_k;
-  float score_threshold;
-  float nms_threshold;
-  float nms_eta;
-  bool share_location{true};
+  bool normalized{true};
 };
 
 /// ----------------------- priorbox operators ----------------------
