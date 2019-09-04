@@ -16,17 +16,17 @@
 
 #include "lite/utils/any.h"
 #ifdef LITE_WITH_CUDA
-#include "lite/cuda/blas.h"
-#include "lite/cuda/cuda_utils.h"
+#include "lite/backends/cuda/blas.h"
+#include "lite/backends/cuda/cuda_utils.h"
 #endif
 #ifdef LITE_WITH_OPENCL
 #include <gflags/gflags.h>
 #include <unordered_map>
-#include "lite/opencl/cl_context.h"
-#include "lite/opencl/cl_runtime.h"
+#include "lite/backends/opencl/cl_context.h"
+#include "lite/backends/opencl/cl_runtime.h"
 #endif
 #ifdef LITE_WITH_NPU
-#include "lite/npu/npu_helper.h"
+#include "lite/backends/npu/npu_helper.h"
 #endif
 
 #include <map>

@@ -23,10 +23,10 @@ namespace paddle {
 namespace lite {
 namespace operators {
 
-class AssignOp : public OpLite {
+class AssignOpLite : public OpLite {
  public:
-  AssignOp() {}
-  explicit AssignOp(const std::string &op_type) : OpLite(op_type) {}
+  AssignOpLite() {}
+  explicit AssignOpLite(const std::string &op_type) : OpLite(op_type) {}
 
   bool CheckShape() const override;
 
@@ -35,11 +35,10 @@ class AssignOp : public OpLite {
   bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
-
   std::string DebugString() const override { return "assign"; }
 
  private:
-  mutable IoCopyParam param_;
+  mutable AssignParam param_;
 };
 
 }  // namespace operators

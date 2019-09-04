@@ -13,34 +13,35 @@
 // limitations under the License.
 
 #include "lite/operators/assign_op.h"
+#include "lite/core/op_lite.h"
 #include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
 namespace operators {
 
-bool AssignOp::CheckShape() const {
-  CHECK_OR_FALSE(param_.x);
-  CHECK_OR_FALSE(param_.y);
+bool AssignOpLite::CheckShape() const {
+  CHECK_OR_FALSE(param_.X);
+  CHECK_OR_FALSE(param_.Out);
   return true;
 }
 
-bool AssignOp::InferShape() const {
-  CHECK_OR_FALSE(param_.y);
-  auto out_dims = param_.x->dims();
-  param_.y->Resize(out_dims);
-  auto lod = param_.y->mutable_lod();
-  *lod = param_.x->lod();
+bool AssignOpLite::InferShape() const {
+  lite::DDim input_dims;
+  input_dims = param_.X->dims();
+  param_.Out->Resize(lite::DDim(input_dims));
   return true;
 }
 
-bool AssignOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
-  param_.x =
-      scope->FindVar(opdesc.Input("X").front())->GetMutable<lite::Tensor>();
-  param_.y =
-      scope->FindVar(opdesc.Output("Out").front())->GetMutable<lite::Tensor>();
-  CHECK(param_.x);
-  CHECK(param_.y);
+// TODO(Superjomn) replace framework::OpDesc with a lite one.
+bool AssignOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
+  auto input = op_desc.Input("X").front();
+  auto out = op_desc.Output("Out").front();
+
+  param_.X = scope->FindVar(input)->GetMutable<lite::Tensor>();
+  CHECK(scope->FindVar(out));
+  param_.Out = scope->FindVar(out)->GetMutable<lite::Tensor>();
+
   return true;
 }
 
@@ -48,4 +49,4 @@ bool AssignOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(assign, paddle::lite::operators::AssignOp);
+REGISTER_LITE_OP(assign, paddle::lite::operators::AssignOpLite);

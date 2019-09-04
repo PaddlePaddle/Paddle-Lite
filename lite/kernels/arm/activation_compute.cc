@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include "lite/kernels/arm/activation_compute.h"
-#include "lite/arm/math/funcs.h"
+#include "lite/backends/arm/math/funcs.h"
 
 namespace paddle {
 namespace lite {
@@ -137,6 +137,16 @@ void ExpCompute::Run() {
       x_data, output_data, x_dims.production(), ctx.threads());
 }
 
+void FloorCompute::Run() {
+  auto& param = this->Param<param_t>();
+  auto& ctx = this->ctx_->template As<ARMContext>();
+  auto x_dims = param.X->dims();
+  auto x_data = param.X->data<float>();
+  auto output_data = param.Out->mutable_data<float>();
+  lite::arm::math::act_floor<float>(
+      x_data, output_data, x_dims.production(), ctx.threads());
+}
+
 }  // namespace arm
 }  // namespace kernels
 }  // namespace lite
@@ -206,6 +216,11 @@ REGISTER_LITE_KERNEL(
     .Finalize();
 REGISTER_LITE_KERNEL(
     exp, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::ExpCompute, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .Finalize();
+REGISTER_LITE_KERNEL(
+    floor, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::FloorCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();

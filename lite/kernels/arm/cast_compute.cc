@@ -13,12 +13,18 @@
 // limitations under the License.
 
 #include "lite/kernels/arm/cast_compute.h"
-#include "lite/arm/math/funcs.h"
+#include <algorithm>
+#include "lite/backends/arm/math/funcs.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace arm {
+
+template <class in_type, class out_type>
+out_type TransOp(in_type in) {
+  return static_cast<in_type>(in);
+}
 
 void CastCompute::PrepareForRun() {}
 
@@ -28,11 +34,17 @@ void CastCompute::Run() {
 
   auto input_dims = param.X->dims();
 
-  if (param.in_dtype == param.out_dtype && param.in_dtype == 2 ||
-      param.in_dtype == 0) {
+  // BOOL = 0;INT16 = 1;INT32 = 2;INT64 = 3;FP16 = 4;FP32 = 5;FP64 = 6;
+  // SIZE_T = 19;UINT8 = 20;INT8 = 21;
+  if (param.in_dtype == param.out_dtype && param.in_dtype == 2) {
     const auto* x_data = param.X->data<float>();
     auto* o_data = param.Out->mutable_data<float>();
     memcpy(o_data, x_data, sizeof(float) * param.X->numel());
+  } else if (param.in_dtype == 21 && param.out_dtype == 5) {  // int8->float32
+    const char* x_data_begin = param.X->data<char>();
+    const char* x_data_end = x_data_begin + param.X->numel();
+    float* out_data = param.Out->mutable_data<float>();
+    std::transform(x_data_begin, x_data_end, out_data, TransOp<char, float>);
   } else {
     LOG(FATAL) << "other has not been implemented";
   }

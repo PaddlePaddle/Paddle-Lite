@@ -15,7 +15,7 @@
 #pragma once
 
 #ifdef LITE_WITH_FPGA
-#include "lite/fpga/lite_tensor.h"
+#include "lite/backends/fpga/lite_tensor.h"
 #endif
 
 #ifndef LITE_WITH_FPGA
@@ -113,7 +113,8 @@ class TensorLite {
   // For other devices, T and R may be the same type.
   template <typename T, typename R = T>
   const R *data() const {
-    return static_cast<const R *>(buffer_->data());
+    return reinterpret_cast<const R *>(static_cast<char *>(buffer_->data()) +
+                                       offset_);
   }
 
   void Resize(const DDimLite &ddim) { dims_ = ddim; }
@@ -125,6 +126,12 @@ class TensorLite {
   const LoD &lod() const { return lod_; }
   LoD *mutable_lod() { return &lod_; }
   void set_lod(const LoD &lod) { lod_ = lod; }
+
+  PrecisionType precision() const { return precision_; }
+  void set_precision(PrecisionType precision) { precision_ = precision; }
+
+  bool persistable() const { return persistable_; }
+  void set_persistable(bool persistable) { persistable_ = persistable; }
 
   // T is the data type and R is the return type
   // For OpenCL, the return type can be cl::Buffer
@@ -177,6 +184,14 @@ class TensorLite {
 
  private:
   TargetType target_{TargetType::kHost};
+  // precision_ and persistable_ are only used for persistable vars.
+  // If your tensor wants to be saved and loaded correctly, you must
+  // set values of precision_ and persistable_ after updating it.
+  // If your tensor is just a temp tensor, such as activations,
+  // you can ignore these two attributes.
+  PrecisionType precision_{PrecisionType::kUnk};
+  bool persistable_{false};
+
   DDimLite dims_;
   std::shared_ptr<Buffer> buffer_;
   LoD lod_;
@@ -190,7 +205,7 @@ template <typename T, typename R>
 R *TensorLite::mutable_data() {
   memory_size_ = dims_.production() * sizeof(T);
   buffer_->ResetLazy(target_, memory_size_);
-  return static_cast<R *>(buffer_->data());
+  return reinterpret_cast<R *>(static_cast<char *>(buffer_->data()) + offset_);
 }
 
 template <typename T, typename R>
@@ -198,7 +213,7 @@ R *TensorLite::mutable_data(TargetType target) {
   target_ = target;
   memory_size_ = dims_.production() * sizeof(T);
   buffer_->ResetLazy(target, memory_size());
-  return static_cast<R *>(buffer_->data());
+  return reinterpret_cast<R *>(static_cast<char *>(buffer_->data()) + offset_);
 }
 
 template <typename T>
@@ -212,6 +227,7 @@ TensorLite TensorLite::Slice(int64_t begin, int64_t end) const {
   dst_dims[0] = end - begin;
   dst.Resize(dst_dims);
   dst.offset_ = offset_ + static_cast<size_t>(begin * base) * sizeof(T);
+  return dst;
 }
 
 template <typename TensorT>

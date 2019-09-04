@@ -20,34 +20,55 @@ namespace lite {
 namespace operators {
 
 bool MulticlassNmsOpLite::CheckShape() const {
-  CHECK_OR_FALSE(param_.bbox_data);
-  CHECK_OR_FALSE(param_.conf_data);
+  CHECK_OR_FALSE(param_.bboxes);
+  CHECK_OR_FALSE(param_.scores);
   CHECK_OR_FALSE(param_.out);
 
+  auto box_dims = param_.bboxes->dims();
+  auto score_dims = param_.scores->dims();
+  auto score_size = score_dims.size();
+
+  CHECK_OR_FALSE(score_size == 2 || score_size == 3);
+  CHECK_OR_FALSE(box_dims.size() == 3);
+  if (score_size == 3) {
+    CHECK_OR_FALSE(box_dims[2] == 4 || box_dims[2] == 8 || box_dims[2] == 16 ||
+                   box_dims[2] == 24 || box_dims[2] == 32);
+    CHECK_OR_FALSE(box_dims[1] == score_dims[2]);
+  } else {
+    CHECK_OR_FALSE(box_dims[2] == 4);
+    CHECK_OR_FALSE(box_dims[1] == score_dims[1]);
+  }
   return true;
 }
 
 bool MulticlassNmsOpLite::InferShape() const {
-  // param_.out->Resize(param_.loc_data->dims());
+  auto box_dims = param_.bboxes->dims();
+  auto score_dims = param_.scores->dims();
+  auto score_size = score_dims.size();
+  if (score_size == 3) {
+    param_.out->Resize({box_dims[1], box_dims[2], 3});
+  } else {
+    param_.out->Resize({-1, box_dims[2] + 2});
+  }
   return true;
 }
 
 bool MulticlassNmsOpLite::AttachImpl(const cpp::OpDesc& opdesc,
                                      lite::Scope* scope) {
-  auto Bbox_name = opdesc.Input("BBoxes").front();
-  auto Conf_name = opdesc.Input("Scores").front();
-  auto Out_name = opdesc.Output("Out").front();
-  param_.bbox_data = GetVar<lite::Tensor>(scope, Bbox_name);
-  param_.conf_data = GetVar<lite::Tensor>(scope, Conf_name);
-  param_.out = GetMutableVar<lite::Tensor>(scope, Out_name);
+  auto bboxes_name = opdesc.Input("BBoxes").front();
+  auto scores_name = opdesc.Input("Scores").front();
+  auto out_name = opdesc.Output("Out").front();
+  param_.bboxes = GetVar<lite::Tensor>(scope, bboxes_name);
+  param_.scores = GetVar<lite::Tensor>(scope, scores_name);
+  param_.out = GetMutableVar<lite::Tensor>(scope, out_name);
   param_.background_label = opdesc.GetAttr<int>("background_label");
   param_.keep_top_k = opdesc.GetAttr<int>("keep_top_k");
   param_.nms_top_k = opdesc.GetAttr<int>("nms_top_k");
   param_.score_threshold = opdesc.GetAttr<float>("score_threshold");
   param_.nms_threshold = opdesc.GetAttr<float>("nms_threshold");
   param_.nms_eta = opdesc.GetAttr<float>("nms_eta");
-  if (opdesc.HasAttr("share_location")) {
-    param_.share_location = opdesc.GetAttr<bool>("share_location");
+  if (opdesc.HasAttr("normalized")) {
+    param_.normalized = opdesc.GetAttr<bool>("normalized");
   }
   return true;
 }

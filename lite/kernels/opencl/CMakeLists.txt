@@ -18,32 +18,32 @@ add_kernel(conv_opencl OPENCL basic SRCS conv_compute.cc DEPS ${cl_kernel_deps})
 
 lite_cc_test(test_elementwise_add_opencl SRCS elementwise_add_compute_test.cc
         DEPS elementwise_add_opencl fusion_elementwise_add_activation_opencl op_registry program context
-        ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/opencl)
+        ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)
 
 lite_cc_test(test_pool_opencl SRCS pool_compute_test.cc
         DEPS pool_opencl op_registry program context
-        ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/opencl)
+        ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)
 
 lite_cc_test(test_fc_opencl SRCS fc_compute_test.cc
         DEPS fc_opencl op_registry program context
-        ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/opencl)
+        ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)
 
 lite_cc_test(test_mul_opencl SRCS mul_compute_test.cc
         DEPS mul_opencl op_registry program context
-        ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/opencl)
+        ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)
 
 lite_cc_test(test_io_copy_compute_opencl SRCS io_copy_compute_test.cc
         DEPS io_copy_compute_opencl op_registry program context
-        ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/opencl)
+        ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)
 
 lite_cc_test(test_relu_opencl SRCS relu_compute_test.cc
         DEPS relu_opencl op_registry program context
-        ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/opencl)
+        ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)
 
 lite_cc_test(test_depthwise_conv2d_opencl SRCS depthwise_conv2d_compute_test.cc
         DEPS depthwise_conv2d_opencl op_registry program context
-        ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/opencl)
+        ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)
 
 lite_cc_test(test_conv_opencl SRCS conv_compute_test.cc
         DEPS conv_opencl op_registry program context
-        ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/opencl)
+        ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)

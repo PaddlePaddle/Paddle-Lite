@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/core/program.h"
+#include <unordered_map>
 #include "lite/model_parser/cpp/block_desc.h"
 #include "lite/model_parser/cpp/op_desc.h"
 #include "lite/model_parser/cpp/var_desc.h"
@@ -38,6 +39,78 @@ void RuntimeProgram::SaveOpInfosToProgram(cpp::ProgramDesc* desc) {
   }
 }
 
+// `UpdateVarsOfProgram` will remove unused var_descs and add new created
+// vars' descs in the block 0. Now, the type of a new created var can only
+// be LOD_TENSOR.
+void RuntimeProgram::UpdateVarsOfProgram(cpp::ProgramDesc* desc) {
+  CHECK(desc);
+  CHECK(desc->BlocksSize());
+  std::unordered_map<std::string, cpp::VarDesc> origin_var_maps;
+  auto& main_block = *desc->GetBlock<cpp::BlockDesc>(0);
+  auto var_size = main_block.VarsSize();
+  for (int i = 0; i < var_size; i++) {
+    auto v = main_block.GetVar<cpp::VarDesc>(i);
+    auto name = v->Name();
+    origin_var_maps.emplace(name, *v);
+  }
+
+  main_block.ClearVars();
+  for (auto& node : instructions_) {
+    auto* op = const_cast<lite::OpLite*>(node.op());
+    auto* kernel = node.kernel();
+    auto* scope = op->scope();
+    auto in_names = op->op_info()->input_names();
+    auto out_names = op->op_info()->output_names();
+    for (auto& in_name : in_names) {
+      auto it = origin_var_maps.find(in_name);
+      if (it != origin_var_maps.end()) {
+        auto* v = main_block.AddVar<cpp::VarDesc>();
+        v->SetName((it->second).Name());
+        v->SetType((it->second).GetType());
+        v->SetPersistable((it->second).Persistable());
+      } else {
+        // New created vars must be LOD_TENSOR
+        auto* v = main_block.AddVar<cpp::VarDesc>();
+        v->SetName(in_name);
+        v->SetType(cpp::VarDesc::Type::LOD_TENSOR);
+        std::string in_arg_name;
+        op->op_info()->GetInputArgname(in_name, &in_arg_name);
+        auto type = kernel->GetInputDeclType(in_arg_name);
+        if (type->IsTensor()) {
+          auto tensor = scope->FindVar(in_name)->GetMutable<Tensor>();
+          v->SetPersistable(tensor->persistable());
+        } else {
+          CHECK(false) << "unsupported var type";
+        }
+      }
+    }
+
+    for (auto& out_name : out_names) {
+      auto it = origin_var_maps.find(out_name);
+      if (it != origin_var_maps.end()) {
+        auto* v = main_block.AddVar<cpp::VarDesc>();
+        v->SetName((it->second).Name());
+        v->SetType((it->second).GetType());
+        v->SetPersistable((it->second).Persistable());
+      } else {
+        // New created vars must be LOD_TENSOR
+        auto* v = main_block.AddVar<cpp::VarDesc>();
+        v->SetName(out_name);
+        v->SetType(cpp::VarDesc::Type::LOD_TENSOR);
+        std::string out_arg_name;
+        op->op_info()->GetOutputArgname(out_name, &out_arg_name);
+        auto type = kernel->GetOutputDeclType(out_arg_name);
+        if (type->IsTensor()) {
+          auto tensor = scope->FindVar(out_name)->GetMutable<Tensor>();
+          v->SetPersistable(tensor->persistable());
+        } else {
+          CHECK(false) << "unsupported var type";
+        }
+      }
+    }
+  }
+}
+
 void RuntimeProgram::Run() {
   for (auto& inst : instructions_) {
     VLOG(4) << ">> Running kernel: " << inst.op()->op_info()->Repr()
@@ -45,8 +118,10 @@ void RuntimeProgram::Run() {
 
     inst.Run();
 #ifdef LITE_WITH_PROFILE
+#ifdef LITE_WITH_PRECISION_PROFILE
     LITE_PRECISION_PROFILE(inst)
-#endif
+#endif  // LITE_WITH_PRECISION_PROFILE
+#endif  // LITE_WITH_PROFILE
   }
 }
 

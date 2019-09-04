@@ -70,6 +70,9 @@ LOAD_OP2(fill_constant, CPU, FPGA)
 #ifdef BATCHNORM_OP
 LOAD_OP2(batch_norm, CPU, GPU_CL);
 #endif
+#ifdef INSTANCENORM_OP
+LOAD_OP1(instance_norm, GPU_CL);
+#endif
 #ifdef BILINEAR_INTERP_OP
 LOAD_OP1(bilinear_interp, CPU);
 #endif
@@ -148,7 +151,7 @@ LOAD_OP1(shape, CPU);
 LOAD_OP2(depthwise_conv2d, CPU, GPU_CL);
 #endif
 #ifdef CONV_TRANSPOSE_OP
-LOAD_OP1(conv2d_transpose, CPU);
+LOAD_OP2(conv2d_transpose, CPU, GPU_CL);
 #endif
 #ifdef SCALE_OP
 LOAD_OP2(scale, CPU, GPU_CL);
@@ -158,6 +161,9 @@ LOAD_OP2(elementwise_add, CPU, GPU_CL);
 #endif
 #ifdef PRELU_OP
 LOAD_OP1(prelu, CPU);
+#endif
+#ifdef TANH_OP
+LOAD_OP2(tanh, CPU, GPU_CL);
 #endif
 #ifdef FLATTEN_OP
 LOAD_OP1(flatten, CPU);

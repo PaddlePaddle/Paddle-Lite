@@ -3,10 +3,13 @@ NETS=""
 declare -a supportedNets=("googlenet" "mobilenet" "yolo" "squeezenet" "resnet" "mobilenetssd" "nlp" "mobilenetfssd" "genet" "super" "op")
 
 # merge cl to so
-merge_cl_to_so=0
-rm ../src/operators/kernel/cl/opencl_kernels.cpp
+merge_cl_to_so=1
+opencl_kernels="opencl_kernels.cpp"
 cd ../src/operators/kernel/cl
-python gen_code.py $merge_cl_to_so > opencl_kernels.cpp
+if [[ -f "${opencl_kernels}" ]]; then
+    rm "${opencl_kernels}"
+fi
+python gen_code.py "${merge_cl_to_so}" > "${opencl_kernels}"
 cd -
 
 build_for_mac() {
@@ -40,7 +43,7 @@ build_for_mac() {
 }
 
 build_for_android() {
-    #rm -rf "../build"
+    # rm -rf "../build"
     if [ -z "${NDK_ROOT}" ]; then
         echo "NDK_ROOT not found!"
         exit -1
@@ -48,7 +51,7 @@ build_for_android() {
 
     if [ -z "$PLATFORM" ]; then
         PLATFORM="arm-v7a"  # Users could choose "arm-v8a" platform.
-#        PLATFORM="arm-v8a"
+        # PLATFORM="arm-v8a"
     fi
 
     if [ "${PLATFORM}" = "arm-v7a" ]; then

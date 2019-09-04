@@ -15,7 +15,7 @@
 #include "lite/kernels/arm/elementwise_compute.h"
 #include <string>
 #include <vector>
-#include "lite/arm/math/funcs.h"
+#include "lite/backends/arm/math/funcs.h"
 
 namespace paddle {
 namespace lite {
@@ -50,6 +50,7 @@ inline bool is_broadcast(const DDim& x_dims,
     axis = x_dims.size() - y_dims.size();
   }
   DDim y_dim_trim = trim_trailing_singular_dims(y_dims);
+  axis = (y_dim_trim.size() == 0) ? x_dims.size() : axis;
   if (x_dims.size() == y_dim_trim.size()) {
     return false;
   }
@@ -205,6 +206,55 @@ void ElementwiseMaxActivationCompute::Run() {
   }
 }
 
+void ElementwiseDivCompute::Run() {
+  auto& param = Param<operators::ElementwiseParam>();
+  const float* x_data = param.X->data<float>();
+  const float* y_data = param.Y->data<float>();
+  float* out_data = param.Out->mutable_data<float>();
+  int axis = param.axis;
+  auto x_dims = param.X->dims();
+  auto y_dims = param.Y->dims();
+  int pre, n, post;
+  if (is_broadcast(x_dims, y_dims, axis, &pre, &n, &post)) {
+    lite::arm::math::elementwise_div_broadcast(
+        x_data, y_data, out_data, pre, n, post);
+  } else {
+    lite::arm::math::elementwise_div(
+        x_data, y_data, out_data, x_dims.production());
+  }
+}
+
+void ElementwiseDivActivationCompute::Run() {
+  auto& param = Param<operators::FusionElementwiseActivationParam>();
+  const float* x_data = param.X->data<float>();
+  const float* y_data = param.Y->data<float>();
+  float* out_data = param.Out->mutable_data<float>();
+  int axis = param.axis;
+  std::string act_type = param.act_type;
+  auto x_dims = param.X->dims();
+  auto y_dims = param.Y->dims();
+  int pre, n, post;
+  if (is_broadcast(x_dims, y_dims, axis, &pre, &n, &post)) {
+    if (act_type == "relu") {
+      lite::arm::math::elementwise_div_relu_broadcast(
+          x_data, y_data, out_data, pre, n, post);
+    } else {
+      LOG(FATAL) << "unsupported Activation type: " << act_type;
+    }
+  } else {
+    if (act_type == "relu") {
+      lite::arm::math::elementwise_div_relu(
+          x_data, y_data, out_data, x_dims.production());
+    } else {
+      LOG(FATAL) << "unsupported Activation type: " << act_type;
+    }
+  }
+  for (int i = 0; i < x_dims.production(); i++) {
+    LOG(INFO) << "x:" << x_data[i] << "  y:" << y_data[i]
+              << "  out:" << out_data[i];
+  }
+}
+
 }  // namespace arm
 }  // namespace kernels
 }  // namespace lite
@@ -273,6 +323,29 @@ REGISTER_LITE_KERNEL(
     kFloat,
     kNCHW,
     paddle::lite::kernels::arm::ElementwiseMaxActivationCompute,
+    def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(elementwise_div,
+                     kARM,
+                     kFloat,
+                     kNCHW,
+                     paddle::lite::kernels::arm::ElementwiseDivCompute,
+                     def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    fusion_elementwise_div_activation,
+    kARM,
+    kFloat,
+    kNCHW,
+    paddle::lite::kernels::arm::ElementwiseDivActivationCompute,
     def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM))})

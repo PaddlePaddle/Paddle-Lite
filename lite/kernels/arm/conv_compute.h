@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #pragma once
-#include "lite/arm/math/funcs.h"
+#include "lite/backends/arm/math/funcs.h"
 #include "lite/core/kernel.h"
 #include "lite/operators/conv_op.h"
 
