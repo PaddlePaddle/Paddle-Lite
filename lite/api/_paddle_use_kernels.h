@@ -154,6 +154,7 @@ USE_LITE_KERNEL(io_copy, kCUDA, kAny, kAny, host_to_device);
 USE_LITE_KERNEL(io_copy, kCUDA, kAny, kAny, device_to_host);
 USE_LITE_KERNEL(io_copy_once, kCUDA, kAny, kAny, host_to_device);
 USE_LITE_KERNEL(io_copy_once, kCUDA, kAny, kAny, device_to_host);
+USE_LITE_KERNEL(conv2d, kCUDA, kFloat, kNCHW, def);
 USE_LITE_KERNEL(leaky_relu, kCUDA, kFloat, kNCHW, def);
 USE_LITE_KERNEL(nearest_interp, kCUDA, kFloat, kNCHW, def);
 USE_LITE_KERNEL(yolo_box, kCUDA, kFloat, kNCHW, def);

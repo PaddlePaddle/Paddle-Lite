@@ -15,8 +15,10 @@
 #pragma once
 #include <string>
 #include <vector>
+#include "lite/api/paddle_place.h"
 #include "lite/core/scope.h"
 #include "lite/core/tensor.h"
+#include "lite/core/types.h"
 #include "lite/model_parser/cpp/block_desc.h"
 #include "lite/model_parser/desc_apis.h"
 #include "lite/utils/all.h"
@@ -203,6 +205,28 @@ struct ConcatParam {
   int axis{0};
 };
 
+/// ----------------------- activation operators ----------------------
+struct ActivationParam {
+  const lite::Tensor* X{};
+  float Leaky_relu_alpha{0};   // leaky_relu param
+  float Relu_clipped_coef{6};  // relu_clipped param
+  std::string Prelu_mode{
+      "channel"};  // prelu param, can be "all", "channel" or "element"
+  lite::Tensor* Prelu_alpha{};  // prelu param
+  float Swish_beta;             // swish param
+  lite::Tensor* Out{};
+  bool has_active{false};
+  lite_api::ActivationType active_type;
+};
+
+struct ActivationGradParam {
+  const lite::Tensor* X{};
+  const lite::Tensor* Out{};
+  // for backward
+  lite::Tensor* X_grad{};
+  const lite::Tensor* Out_grad{};
+};
+
 // For Convolution op
 struct ConvParam {
   lite::Tensor* x{};
@@ -226,6 +250,8 @@ struct ConvParam {
   float scale_weights{1.0f};      // only used with mkl-dnn int8
   bool force_fp32_output{false};  // only used in mkl-dnn int8
   std::string data_format{"Anylayout"};
+  // for activation
+  ActivationParam activation_param;
   // for int8
   WITH_INT8_CONFIG
 };
@@ -318,26 +344,6 @@ struct FusionElementwiseActivationParam : public ElementwiseParam {
 
 struct FusionElementwiseActivationGradParam : public ElementwiseGradParam {
   std::string act_type;
-};
-
-/// ----------------------- activation operators ----------------------
-struct ActivationParam {
-  const lite::Tensor* X{};
-  float Leaky_relu_alpha{0};   // leaky_relu param
-  float Relu_clipped_coef{6};  // relu_clipped param
-  std::string Prelu_mode{
-      "channel"};  // prelu param, can be "all", "channel" or "element"
-  lite::Tensor* Prelu_alpha{};  // prelu param
-  float Swish_beta;             // swish param
-  lite::Tensor* Out{};
-};
-
-struct ActivationGradParam {
-  const lite::Tensor* X{};
-  const lite::Tensor* Out{};
-  // for backward
-  lite::Tensor* X_grad{};
-  const lite::Tensor* Out_grad{};
 };
 
 /// ----------------------- mean operators ----------------------
