@@ -13,29 +13,21 @@
 // limitations under the License.
 
 #pragma once
-#include <cmath>
-#include "lite/core/context.h"
 
-namespace paddle {
+#include "lite/tests/utils/timer.h"
+#include "lite/tests/utils/unit_test/lite_test.h"
+#include "lite/utils/logging.h"
+
 namespace lite {
-namespace arm {
-namespace math {
+namespace test {
+class TestLite : public Test {
+ public:
+  TestLite() {}
+  ~TestLite() {}
 
-// fixme now only support transA = false
-template <typename dtype>
-bool gemv_int8(const int8_t* A,
-               const int8_t* x,
-               dtype* y,
-               bool transA,
-               int M,
-               int N,
-               const float* scale,
-               bool is_bias,
-               const float* bias,
-               bool is_relu,
-               const ARMContext* ctx);
-
-}  // namespace math
-}  // namespace arm
+ protected:
+  virtual void setup() {}
+  virtual void teardown() {}
+};
+}  // namespace test
 }  // namespace lite
-}  // namespace paddle

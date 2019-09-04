@@ -27,14 +27,15 @@
 #include "lite/backends/arm/math/box_coder.h"
 #include "lite/backends/arm/math/col_im_transform.h"
 #include "lite/backends/arm/math/concat.h"
-#include "lite/backends/arm/math/conv_depthwise.h"
-#include "lite/backends/arm/math/conv_direct.h"
-#include "lite/backends/arm/math/conv_gemmlike.h"
-#include "lite/backends/arm/math/conv_winograd.h"
+#include "lite/backends/arm/math/conv_block_utils.h"
+#include "lite/backends/arm/math/conv_impl.h"
 #include "lite/backends/arm/math/decode_bboxes.h"
 #include "lite/backends/arm/math/dropout.h"
 #include "lite/backends/arm/math/elementwise.h"
 #include "lite/backends/arm/math/fill_bias_relu.h"
+#include "lite/backends/arm/math/gemm_prepacked_int8.h"
+#include "lite/backends/arm/math/gemm_s8.h"
+#include "lite/backends/arm/math/gemv_arm_int8.h"
 #include "lite/backends/arm/math/im2sequence.h"
 #include "lite/backends/arm/math/increment.h"
 #include "lite/backends/arm/math/interpolate.h"
@@ -61,6 +62,7 @@
 #include "lite/backends/arm/math/stack.h"
 #include "lite/backends/arm/math/topk.h"
 #include "lite/backends/arm/math/yolo_box.h"
+
 namespace paddle {
 namespace lite {
 namespace arm {
@@ -261,7 +263,7 @@ inline float32x4_t exp_ps(float32x4_t x) {
 // almost no extra price so both sin_ps and cos_ps make use of
 // sincos_ps..
 //
-inline void sincos_ps(float32x4_t x, float32x4_t *ysin, float32x4_t *ycos) {
+inline void sincos_ps(float32x4_t x, float32x4_t* ysin, float32x4_t* ycos) {
   // any x
   float32x4_t xmm1, xmm2, xmm3, y;
 
@@ -350,23 +352,23 @@ inline float32x4_t pow_ps(float32x4_t a, float32x4_t b) {
 }
 
 template <typename T>
-void fill_bias_fc(T *tensor, const T *bias, int num, int channel);
+void fill_bias_fc(T* tensor, const T* bias, int num, int channel);
 
 template <lite_api::ActivationType Act = lite_api::ActivationType::kIndentity>
-inline float32x4_t vactive_f32(const float32x4_t &x) {
+inline float32x4_t vactive_f32(const float32x4_t& x) {
   return x;
 }
 
 template <>
 inline float32x4_t vactive_f32<lite_api::ActivationType::kRelu>(
-    const float32x4_t &x) {
+    const float32x4_t& x) {
   float32x4_t __zero = vdupq_n_f32(0.f);
   return vmaxq_f32(x, __zero);
 }
 
 template <>
 inline float32x4_t vactive_f32<lite_api::ActivationType::kRelu6>(
-    const float32x4_t &x) {
+    const float32x4_t& x) {
   float32x4_t __zero = vdupq_n_f32(0.f);
   float32x4_t __six = vdupq_n_f32(6.f);
   return vminq_f32(vmaxq_f32(x, __zero), __six);
@@ -374,7 +376,7 @@ inline float32x4_t vactive_f32<lite_api::ActivationType::kRelu6>(
 
 template <>
 inline float32x4_t vactive_f32<lite_api::ActivationType::kSigmoid>(
-    const float32x4_t &x) {
+    const float32x4_t& x) {
   float32x4_t __one = vdupq_n_f32(1.f);
   float32x4_t __x = vnegq_f32(x);
   __x = exp_ps(__x);
@@ -385,7 +387,7 @@ inline float32x4_t vactive_f32<lite_api::ActivationType::kSigmoid>(
 
 template <>
 inline float32x4_t vactive_f32<lite_api::ActivationType::kTanh>(
-    const float32x4_t &x) {
+    const float32x4_t& x) {
   float32x4_t __one = vdupq_n_f32(1.f);
   float32x4_t __x = vmulq_n_f32(x, -2.f);
   __x = exp_ps(__x);
@@ -397,28 +399,80 @@ inline float32x4_t vactive_f32<lite_api::ActivationType::kTanh>(
 }
 
 template <lite_api::ActivationType Act = lite_api::ActivationType::kIndentity>
-inline float active_f32(const float &x) {
+inline float active_f32(const float& x) {
   return x;
 }
 
 template <>
-inline float active_f32<lite_api::ActivationType::kRelu>(const float &x) {
+inline float active_f32<lite_api::ActivationType::kRelu>(const float& x) {
   return std::max(x, 0.f);
 }
 
 template <>
-inline float active_f32<lite_api::ActivationType::kRelu6>(const float &x) {
+inline float active_f32<lite_api::ActivationType::kRelu6>(const float& x) {
   return std::min(std::max(x, 0.f), 6.f);
 }
 
 template <>
-inline float active_f32<lite_api::ActivationType::kSigmoid>(const float &x) {
+inline float active_f32<lite_api::ActivationType::kSigmoid>(const float& x) {
   return 1.f / (1.f + exp(-x));
 }
 
 template <>
-inline float active_f32<lite_api::ActivationType::kTanh>(const float &x) {
+inline float active_f32<lite_api::ActivationType::kTanh>(const float& x) {
   return 2.f / (1.f + exp(-2.f * x)) - 1.f;
+}
+
+template <PrecisionType Ptype>
+inline void trans_gemm_weights(const Tensor& tin,
+                               Tensor& tout,  // NOLINT
+                               int group,
+                               ARMContext* ctx);
+
+template <>
+inline void trans_gemm_weights<PRECISION(kFloat)>(const Tensor& tin,
+                                                  Tensor& tout,  // NOLINT
+                                                  int group,
+                                                  ARMContext* ctx) {
+  CHECK_EQ(tin.dims().size(), 4) << "conv weights dims size must = 4";
+  int m = tin.dims()[0] / group;
+  int k = tin.dims().count(1, 4) / group;
+  int hblock = lite::arm::math::get_hblock(ctx);
+  int m_roundup = hblock * ((m + hblock - 1) / hblock);
+  int group_size_round_up = ((m_roundup * k + 15) / 16) * 16;
+  float* w_trans_ptr = nullptr;
+  tout.Resize({group_size_round_up * group});
+  w_trans_ptr = tout.mutable_data<float>();
+  const auto* w_data = tin.data<float>();
+  for (int g = 0; g < group; ++g) {
+    const float* weights_group = w_data + g * m * k;
+    float* weights_trans_ptr = w_trans_ptr + g * group_size_round_up;
+    lite::arm::math::prepackA(
+        weights_trans_ptr, weights_group, 1.f, k, 0, m, 0, k, false, ctx);
+  }
+}
+
+template <>
+inline void trans_gemm_weights<PRECISION(kInt8)>(const Tensor& tin,
+                                                 Tensor& tout,  // NOLINT
+                                                 int group,
+                                                 ARMContext* ctx) {
+  CHECK_EQ(tin.dims().size(), 4) << "conv weights dims size must = 4";
+  int m = tin.dims()[0] / group;
+  int k = tin.dims().count(1, 4) / group;
+  int hblock = lite::arm::math::get_hblock_int8(ctx);
+  int m_roundup = hblock * ((m + hblock - 1) / hblock);
+  int group_size_round_up = ((m_roundup * k + 15) / 16) * 16;
+  float* w_trans_ptr = nullptr;
+  tout.Resize({group_size_round_up * group});
+  w_trans_ptr = tout.mutable_data<float>();
+  const auto* w_data = tin.data<float>();
+  for (int g = 0; g < group; ++g) {
+    const float* weights_group = w_data + g * m * k;
+    float* weights_trans_ptr = w_trans_ptr + g * group_size_round_up;
+    lite::arm::math::prepackA_int8(
+        weights_trans_ptr, weights_group, k, 0, m, 0, k, false, ctx);
+  }
 }
 
 }  // namespace math

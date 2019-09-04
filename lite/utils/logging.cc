@@ -18,6 +18,7 @@
  */
 
 #include "lite/utils/logging.h"
+#include <iomanip>
 
 #ifdef LITE_WITH_LIGHT_WEIGHT_FRAMEWORK
 #ifndef LITE_SHUTDOWN_LOG

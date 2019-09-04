@@ -13,40 +13,34 @@
 // limitations under the License.
 
 #pragma once
-#include "lite/backends/arm/math/funcs.h"
+
+#include <cmath>
+#include "lite/backends/arm/math/conv_impl.h"
+#include "lite/core/context.h"
 #include "lite/core/kernel.h"
+#include "lite/core/target_wrapper.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace arm {
 
+/// only support 3x3s1 and 3x3s2
 template <PrecisionType Ptype, PrecisionType OutType>
-class ConvCompute : public KernelLite<TARGET(kARM), Ptype> {
+class WinogradConv : public KernelLite<TARGET(kARM), Ptype> {
  public:
+  WinogradConv() = default;
+  ~WinogradConv() {}
   virtual void PrepareForRun() {
-    LOG(FATAL) << "ConvCompute PrepareForRun not implemented";
+    LOG(FATAL) << "WinogradConv PrepareForRun not implemented";
   }
+  virtual void Init() { LOG(FATAL) << "WinogradConv Init not implemented"; }
+  virtual void Run() { LOG(FATAL) << "WinogradConv Run not implemented"; }
 
-  virtual void Init() {
-    CHECK(impl_);
-    impl_->Init();
-  }
-
-  virtual void Run() {
-    CHECK(impl_);
-    impl_->Run();
-  }
-
-  ~ConvCompute() {
-    if (impl_ != nullptr) {
-      delete impl_;
-    }
-  }
-
- private:
+ protected:
   using param_t = operators::ConvParam;
-  KernelLite<TARGET(kARM), Ptype>* impl_{nullptr};
+  Tensor weights_;
+  DDim last_shape_;
 };
 
 }  // namespace arm

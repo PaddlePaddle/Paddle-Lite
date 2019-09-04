@@ -13,43 +13,32 @@
 // limitations under the License.
 
 #pragma once
-#include "lite/backends/arm/math/funcs.h"
-#include "lite/core/kernel.h"
+
+#include <cmath>
+#include "lite/backends/arm/math/gemm_prepacked_int8.h"
+#include "lite/core/context.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
 namespace arm {
+namespace math {
 
-template <PrecisionType Ptype, PrecisionType OutType>
-class ConvCompute : public KernelLite<TARGET(kARM), Ptype> {
- public:
-  virtual void PrepareForRun() {
-    LOG(FATAL) << "ConvCompute PrepareForRun not implemented";
-  }
+template <typename Dtype>
+void gemm_s8(bool is_transA,
+             bool is_transB,
+             int M,
+             int N,
+             int K,
+             const int8_t* A,
+             const int8_t* B,
+             Dtype* C,
+             const float* bias,
+             bool is_bias,
+             bool is_relu,
+             const float* scale,
+             ARMContext* ctx);
 
-  virtual void Init() {
-    CHECK(impl_);
-    impl_->Init();
-  }
-
-  virtual void Run() {
-    CHECK(impl_);
-    impl_->Run();
-  }
-
-  ~ConvCompute() {
-    if (impl_ != nullptr) {
-      delete impl_;
-    }
-  }
-
- private:
-  using param_t = operators::ConvParam;
-  KernelLite<TARGET(kARM), Ptype>* impl_{nullptr};
-};
-
+}  // namespace math
 }  // namespace arm
-}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
