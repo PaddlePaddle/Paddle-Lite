@@ -93,21 +93,22 @@ function make_full_publish_so {
   #git submodule update --init --recursive
   prepare_thirdparty
 
-  cur_dir=$(pwd)
-  build_dir=$cur_dir/build.lite.${os}.${abi}.${lang}
-  if [ -d $build_dir ]
+  root_dir=$(pwd)
+  build_directory=$BUILD_DIR/build.lite.${os}.${abi}.${lang}
+
+  if [ -d $build_directory ]
   then
-    rm -rf $build_dir
+    rm -rf $build_directory
   fi
-  mkdir -p $build_dir
-  cd $build_dir
+  mkdir -p $build_directory
+  cd $build_directory
   
   if [ ${os} == "armlinux" ]; then
     BUILD_JAVA=OFF
   fi
 
-  prepare_workspace
-  cmake .. \
+  prepare_workspace $root_dir $build_directory
+  cmake $root_dir \
       ${CMAKE_COMMON_OPTIONS} \
       -DWITH_TESTING=OFF \
       -DLITE_WITH_JAVA=$BUILD_JAVA \
@@ -129,10 +130,10 @@ function make_all_tests {
   prepare_thirdparty
   root_dir=$(pwd)
   build_directory=$BUILD_DIR/build.lite.${os}.${abi}.${lang}
-#  if [ -d $build_dir ]
-#  then
-#    rm -rf $build_dir
-#  fi
+  if [ -d $build_dir ]
+  then
+    rm -rf $build_dir
+  fi
   mkdir -p $build_directory
   cd $build_directory
 
