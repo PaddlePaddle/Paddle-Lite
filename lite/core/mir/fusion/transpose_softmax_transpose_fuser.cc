@@ -28,10 +28,14 @@ void TransposeSoftmaxTransposeFuser::BuildPattern() {
   auto* y2 = VarNode("y2")->assert_is_op_output(softmax_type_, "Out");
   auto* out = VarNode("out")->assert_is_op_output(transpose_type_, "Out");
 
-  auto* xshape1 =
-      VarNode("xshape1")->assert_is_op_output(transpose_type_, "XShape");
-  auto* xshape2 =
-      VarNode("xshape2")->assert_is_op_output(transpose_type_, "XShape");
+  PMNode* xshape1 = nullptr;
+  PMNode* xshape2 = nullptr;
+  if (transpose_type_ == "transpose2") {
+    xshape1 =
+        VarNode("xshape1")->assert_is_op_output(transpose_type_, "XShape");
+    xshape2 =
+        VarNode("xshape2")->assert_is_op_output(transpose_type_, "XShape");
+  }
 
   auto* transpose1 =
       OpNode("transpose1", transpose_type_)->assert_is_op(transpose_type_);
@@ -45,14 +49,14 @@ void TransposeSoftmaxTransposeFuser::BuildPattern() {
 
   // create topology.
   *x1 >> *transpose1 >> *y1 >> *softmax >> *y2 >> *transpose2 >> *out;
-  *transpose1 >> *xshape1;
-  *transpose2 >> *xshape2;
+  if (xshape1) *transpose1 >> *xshape1;
+  if (xshape2) *transpose2 >> *xshape2;
 
   // nodes to remove
   y1->AsIntermediate();
   y2->AsIntermediate();
-  xshape1->AsIntermediate();
-  xshape2->AsIntermediate();
+  if (xshape1) xshape1->AsIntermediate();
+  if (xshape2) xshape2->AsIntermediate();
   transpose1->AsIntermediate();
   softmax->AsIntermediate();
   transpose2->AsIntermediate();

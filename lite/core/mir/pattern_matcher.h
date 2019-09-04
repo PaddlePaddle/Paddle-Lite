@@ -158,7 +158,7 @@ struct PMNode {
   template <typename T>
   PMNode* assert_op_attr(const std::string& attr_name, const T& attr) {
     return assert_op_attr_satisfied<T>(
-        attr_name, [&](const T& src) { return src == attr; });
+        attr_name, [=](const T& src) { return src == attr; });
   }
 
  private:

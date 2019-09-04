@@ -14,8 +14,10 @@ limitations under the License. */
 
 #pragma once
 
+#include <memory>
 #include <string>
 #include <type_traits>
+#include <utility>
 #include <vector>
 
 #include "common/log.h"
@@ -48,6 +50,10 @@ class CLHelper {
   cl_command_queue CLCommandQueue() { return scope_->CommandQueue(); }
 
   cl_context CLContext() { return scope_->Context(); }
+
+  CLLocalWorkSizeInfo LocalWorkSizeInfo() {
+    return scope_->LocalWorkSizeInfo();
+  }
 
   std::vector<size_t> DefaultWorkSize(const CLImage &image) {
     // n c h w

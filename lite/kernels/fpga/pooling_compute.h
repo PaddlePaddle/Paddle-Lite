@@ -14,9 +14,9 @@
 
 #pragma once
 #include <algorithm>
+#include "lite/backends/fpga/KD/float16.hpp"
+#include "lite/backends/fpga/KD/pes/pooling_pe.hpp"
 #include "lite/core/kernel.h"
-#include "lite/fpga/KD/float16.hpp"
-#include "lite/fpga/KD/pes/pooling_pe.hpp"
 #include "lite/operators/pool_op.h"
 
 namespace paddle {

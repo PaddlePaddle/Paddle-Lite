@@ -14,7 +14,7 @@
 
 #include "lite/kernels/arm/split_compute.h"
 #include <vector>
-#include "lite/arm/math/funcs.h"
+#include "lite/backends/arm/math/funcs.h"
 
 namespace paddle {
 namespace lite {

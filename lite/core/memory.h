@@ -18,11 +18,11 @@
 #include "lite/utils/macros.h"
 
 #ifdef LITE_WITH_OPENCL
-#include "lite/opencl/target_wrapper.h"
+#include "lite/backends/opencl/target_wrapper.h"
 #endif  // LITE_WITH_OPENCL
 
 #ifdef LITE_WITH_CUDA
-#include "lite/cuda/target_wrapper.h"
+#include "lite/backends/cuda/target_wrapper.h"
 #endif  // LITE_WITH_CUDA
 
 namespace paddle {

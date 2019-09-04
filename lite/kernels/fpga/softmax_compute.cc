@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include "lite/kernels/fpga/softmax_compute.h"
-#include "lite/arm/math/funcs.h"
+#include "lite/backends/arm/math/funcs.h"
 
 namespace paddle {
 namespace lite {

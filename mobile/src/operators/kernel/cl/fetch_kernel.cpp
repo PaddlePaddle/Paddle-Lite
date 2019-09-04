@@ -59,23 +59,31 @@ void FetchKernel<GPU_CL, float>::Compute(const FetchParam<GPU_CL> &param) {
   out_cl_tensor.Resize(out->dims());
   cl_mem outBuffer = out_cl_tensor.mutable_data<float>();
 
-  clSetKernelArg(kernel, 0, sizeof(int), &in_height);
-  clSetKernelArg(kernel, 1, sizeof(int), &in_width);
-  clSetKernelArg(kernel, 2, sizeof(cl_mem), &input);
-  clSetKernelArg(kernel, 3, sizeof(cl_mem), &outBuffer);
-  clSetKernelArg(kernel, 4, sizeof(int), &size_ch);
-  clSetKernelArg(kernel, 5, sizeof(int), &size_block);
-  clSetKernelArg(kernel, 6, sizeof(int), &size_batch);
-  clSetKernelArg(kernel, 7, sizeof(int), &in_ch);
+  cl_int status;
+  status = clSetKernelArg(kernel, 0, sizeof(int), &in_height);
+  CL_CHECK_ERRORS(status);
+  status = clSetKernelArg(kernel, 1, sizeof(int), &in_width);
+  CL_CHECK_ERRORS(status);
+  status = clSetKernelArg(kernel, 2, sizeof(cl_mem), &input);
+  CL_CHECK_ERRORS(status);
+  status = clSetKernelArg(kernel, 3, sizeof(cl_mem), &outBuffer);
+  CL_CHECK_ERRORS(status);
+  status = clSetKernelArg(kernel, 4, sizeof(int), &size_ch);
+  CL_CHECK_ERRORS(status);
+  status = clSetKernelArg(kernel, 5, sizeof(int), &size_block);
+  CL_CHECK_ERRORS(status);
+  status = clSetKernelArg(kernel, 6, sizeof(int), &size_batch);
+  CL_CHECK_ERRORS(status);
+  status = clSetKernelArg(kernel, 7, sizeof(int), &in_ch);
+  CL_CHECK_ERRORS(status);
 
   //  cl_event wait_event = param.InpdutX()->GetClEvent();
-  clEnqueueNDRangeKernel(this->cl_helper_.CLCommandQueue(), kernel, 3, NULL,
-                         default_work_size.data(), NULL, 0, NULL, NULL);
+  status =
+      clEnqueueNDRangeKernel(this->cl_helper_.CLCommandQueue(), kernel, 3, NULL,
+                             default_work_size.data(), NULL, 0, NULL, NULL);
+  CL_CHECK_ERRORS(status);
 
-  //  printf(" before finish \n");
-  //  clFlsh(this->cl_helper_.CLCommandQueue());
   clFinish(this->cl_helper_.CLCommandQueue());
-  //  printf(" after finish \n");
 
   DLOG << "fetch kernel out dims = " << out->dims();
   DLOG << "fetch kernel out memory size = " << out->memory_size();
