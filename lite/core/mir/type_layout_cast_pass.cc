@@ -34,7 +34,7 @@ void TypeLayoutTransformPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   }
 
   for (auto& node : nodes) {
-    if (!node->IsStmt()) continue;
+    if (!node->IsStmt() || node->AsStmt().op_type() == "while") continue;
     auto inlinks = node->inlinks;
     for (auto* in : inlinks) {
       ComplementInputs(graph.get(), node, in);

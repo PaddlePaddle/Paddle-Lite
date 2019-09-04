@@ -38,13 +38,14 @@ void LookupTableCompute::Run() {
   auto table_dim = w->dims();
   int64_t ids_numel = ids->numel();
   auto ids_data = ids->data<float>();
-  int ids_int = ids_data[0];
+
   int64_t row_number = table_dim[0];
   int64_t row_width = table_dim[1];
   auto table_data = w->data<float>();
   auto dout = out->mutable_data<float>();
 
   for (int64_t i = 0; i < ids_numel; ++i) {
+    int ids_int = ids_data[i];
     if (param.padding_idx != -1 && ids_data[i] == param.padding_idx) {
       memset(dout + i * row_width, 0, row_width * sizeof(float));
     } else {

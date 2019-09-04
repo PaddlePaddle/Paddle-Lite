@@ -25,11 +25,11 @@ void GatherCompute::PrepareForRun() {}
 void GatherCompute::Run() {
   auto& param = this->Param<operators::GatherParam>();
 
-  auto* p_output = param.Out->mutable_data<int>();
+  auto* p_output = param.Out->mutable_data<float>();
   auto index_size = param.Index->dims()[0];
   auto src_dims = param.X->dims();
   const float* p_src = param.X->data<float>();
-  const int* p_index = param.Index->data<int>();
+  const float* p_index = param.Index->data<float>();
 
   int slice_size = 1;
   for (int i = 1; i < src_dims.size(); ++i) {

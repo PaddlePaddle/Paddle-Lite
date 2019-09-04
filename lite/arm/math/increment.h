@@ -21,10 +21,10 @@ namespace paddle {
 namespace lite {
 namespace arm {
 namespace math {
-void increment(const int* input,
+void increment(const float* input,
                const int n,
                const float step,
-               int* out,
+               float* out,
                Context<TARGET(kARM)>* ctx);
 
 }  // namespace math

@@ -28,8 +28,8 @@ void IncrementCompute::Run() {
 
   int total_num = param.X->dims().production();
 
-  const auto* x_data = param.X->data<int>();
-  auto* o_data = param.Out->mutable_data<int>();
+  const auto* x_data = param.X->data<float>();
+  auto* o_data = param.Out->mutable_data<float>();
   lite::arm::math::increment(x_data, total_num, param.step, o_data, &ctx);
 }
 

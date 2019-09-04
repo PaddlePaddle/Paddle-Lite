@@ -143,6 +143,8 @@ if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND WITH_TESTING)
     add_dependencies(test_inceptionv4 extern_lite_download_inception_v4_simple_tar_gz)
    # lite_cc_test(test_ocr_attention SRCS ocr_attention_test.cc
    #    DEPS ${lite_model_test_DEPS})
+   # lite_cc_test(test_transform SRCS transform_test.cc
+   #    DEPS ${lite_model_test_DEPS})
 
    # lite_cc_test(model_run_test_image SRCS model_run_test_image.cc
    #    DEPS ${lite_model_test_DEPS}
