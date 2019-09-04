@@ -120,6 +120,11 @@ class TensorLite {
 
   void set_lod(const LoD &lod) { lod_ = lod; }
 
+  PrecisionType precision() const { return precision_; }
+  void set_precision(PrecisionType precision) { precision_ = precision; }
+
+  bool persistable() const { return persistable_; }
+  void set_persistable(bool persistable) { persistable_ = persistable; }
   // T is the data type and R is the return type
   // For OpenCL, the return type can be cl::Buffer
   // and the data type can be float/int8_t.
@@ -149,6 +154,9 @@ class TensorLite {
 
   void CopyDataFrom(const TensorLite &other);
 
+  template <typename T>
+  TensorLite Slice(int64_t begin, int64_t end) const;
+
   TargetType target() const { return target_; }
 
   zynqmp::Tensor *ZynqTensor() const { return zynq_tensor_; }
@@ -169,6 +177,11 @@ class TensorLite {
   std::shared_ptr<Buffer> buffer_;
   LoD lod_;
   size_t memory_size_{};
+
+  size_t offset_{0};
+
+  PrecisionType precision_{PrecisionType::kUnk};
+  bool persistable_{false};
 
   zynqmp::Tensor *zynq_tensor_ = new zynqmp::Tensor();
 
@@ -221,6 +234,18 @@ bool TensorCompareWith(const TensorT &a, const TensorT &b) {
   if (memcmp(a.raw_data(), b.raw_data(), a.data_size()) != 0) return false;
   return true;
 }
+template <typename T>
+TensorLite TensorLite::Slice(int64_t begin, int64_t end) const {
+  int64_t base = numel() / dims_[0];
 
+  TensorLite dst;
+  dst.buffer_ = buffer_;
+  dst.target_ = target_;
+  auto dst_dims = dims_;
+  dst_dims[0] = end - begin;
+  dst.Resize(dst_dims);
+  dst.offset_ = offset_ + static_cast<size_t>(begin * base) * sizeof(T);
+  return dst;
+}
 }  // namespace lite
 }  // namespace paddle
