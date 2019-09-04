@@ -12,9 +12,11 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#include "lite/backends/fpga/KD/llapi/filter.h"
 #include <memory.h>
 #include <algorithm>
+#include <fstream>
+#include <string>
+#include "lite/backends/fpga/KD/llapi/filter.h"
 #include "lite/backends/fpga/KD/float16.hpp"
 #include "lite/backends/fpga/KD/llapi/zynqmp_api.h"
 
@@ -22,11 +24,9 @@ namespace paddle {
 namespace zynqmp {
 namespace filter {
 
-static int FILTER_SIZE = 2048;
+static int FILTER_SIZE = 512;
 
-void set_filter_capacity(uint32_t cap) {
-  // FILTER_SIZE = cap;
-}
+void set_filter_capacity(uint32_t cap) { FILTER_SIZE = cap; }
 
 int calc_division_capacity(int chw) {
   int n = FILTER_SIZE / ((chw + 15) / 16) * 32;
@@ -54,8 +54,12 @@ int calc_num_per_div(int num, int group_num, int division_capacity) {
   }
 }
 
-void convert_to_hwc(int8_t* chw_data, int8_t* hwc_data, int num, int channel,
-                    int height, int width) {
+void convert_to_hwc(int8_t* chw_data,
+                    int8_t* hwc_data,
+                    int num,
+                    int channel,
+                    int height,
+                    int width) {
   int chw = channel * height * width;
   int wc = width * channel;
   int index = 0;
@@ -111,8 +115,11 @@ void align_chw(int8_t* src, int8_t* dst, int num, int chw) {
   }
 }
 
-void align_num(int8_t* src, int8_t* dst, int num_per_div_before_alignment,
-               int num, int align_chw) {
+void align_num(int8_t* src,
+               int8_t* dst,
+               int num_per_div_before_alignment,
+               int num,
+               int align_chw) {
   int num_per_div_after_alignment =
       align_to_x(num_per_div_before_alignment, FILTER_NUM_ALIGNMENT);
 
@@ -151,7 +158,8 @@ void interleave(int8_t* src, int8_t* dst, int num_after_alignment, int chw) {
   for (int i = 0; i < num_after_alignment; i += 2) {
     for (int j = 0, k = 0; j < interleave_num; j += 2, k++) {
       memcpy(dst + i * chw_align + interleave_per_num * j,
-             src + i * chw_align + interleave_per_num * k, interleave_per_num);
+             src + i * chw_align + interleave_per_num * k,
+             interleave_per_num);
       memcpy(dst + i * chw_align + interleave_per_num * (j + 1),
              src + (i + 1) * chw_align + interleave_per_num * k,
              interleave_per_num);
@@ -159,7 +167,7 @@ void interleave(int8_t* src, int8_t* dst, int num_after_alignment, int chw) {
   }
 }
 
-void saveToFile(std::string name,void* data_in, int size) {
+void saveToFile(std::string name, void* data_in, int size) {
   // std::ofstream ofs;
   // ofs.open(name);
 
@@ -171,9 +179,15 @@ void saveToFile(std::string name,void* data_in, int size) {
   // ofs.close();
 }
 
-int8_t* format_filter(float* data_in, int& mem_size_a, int num, int channel,
-                      int height, int width, int group_num, float max,
-                      std::vector<float>& filter_max) {
+int8_t* format_filter(float* data_in,
+                      int* mem_size_a,
+                      int num,
+                      int channel,
+                      int height,
+                      int width,
+                      int group_num,
+                      float max,
+                      std::vector<float>* filter_max) {
   int data_size = channel * height * width * num;
   int chw = channel * height * width;
 
@@ -195,7 +209,7 @@ int8_t* format_filter(float* data_in, int& mem_size_a, int num, int channel,
     int8_t* quantized_start = quantized_data + n * chw;
     quantize(filter_start, quantized_start, chw, f_max);
     // quantize(filter_start, quantized_start, chw, max);
-    filter_max.push_back(f_max);
+    filter_max->push_back(f_max);
     // filter_max.push_back(1);
   }
 
@@ -219,11 +233,15 @@ int8_t* format_filter(float* data_in, int& mem_size_a, int num, int channel,
     int num_per_div_after_alignment =
         align_to_x(num_per_div_before_alignment, FILTER_NUM_ALIGNMENT);
     // int div_num =
-    //     (num + num_per_div_before_alignment - 1) / num_per_div_before_alignment;
+    //     (num + num_per_div_before_alignment - 1) /
+    //     num_per_div_before_alignment;
     int num_element = div_num * num_per_div_after_alignment * chw_aligned;
     int8_t* num_aligned_data =
         reinterpret_cast<int8_t*>(fpga_malloc(num_element * sizeof(int8_t)));
-    align_num(temp_data, num_aligned_data, num_per_div_before_alignment, num,
+    align_num(temp_data,
+              num_aligned_data,
+              num_per_div_before_alignment,
+              num,
               chw_aligned);
     // saveToFile("align_num.txt", num_aligned_data, data_size * 8);
     fpga_free(temp_data);
@@ -233,14 +251,15 @@ int8_t* format_filter(float* data_in, int& mem_size_a, int num, int channel,
       reinterpret_cast<int8_t*>(fpga_malloc(num_after_alignment * chw_aligned));
   reorder(temp_data, aligned_data, num_after_alignment, chw);
   // saveToFile("reorder.txt", aligned_data, data_size * 8);
-  fpga_free(temp_data);  // TODO change name of qdata;
+  fpga_free(temp_data);
   int8_t* interleaved_data =
       reinterpret_cast<int8_t*>(fpga_malloc(num_after_alignment * chw_aligned));
   interleave(aligned_data, interleaved_data, num_after_alignment, chw);
   fpga_free(aligned_data);
-  fpga_flush(interleaved_data, align_to_x(chw, FILTER_ELEMENT_ALIGNMENT) *
-                                   num_after_alignment * sizeof(char));
-  mem_size_a = num_after_alignment * chw_aligned;
+  fpga_flush(interleaved_data,
+             align_to_x(chw, FILTER_ELEMENT_ALIGNMENT) * num_after_alignment *
+                 sizeof(char));
+  *mem_size_a = num_after_alignment * chw_aligned;
   return interleaved_data;
 }
 
@@ -286,7 +305,11 @@ size_t align_element_n(int16_t** data_in, int num, int height, int width) {
   return num_element * sizeof(int16_t);
 }
 
-void to_fp16(float* src, float16* dst, int num, int height, int width,
+void to_fp16(float* src,
+             float16* dst,
+             int num,
+             int height,
+             int width,
              float* scale_ptr) {
   int size = num * height * width;
   for (int n = 0; n < num; n++) {
@@ -302,8 +325,8 @@ void to_fp16(float* src, float16* dst, int num, int height, int width,
   fpga_flush(dst, size * sizeof(int16_t));
 }
 
-void quantize_to_fp16(float** data_in, int num, int height, int width,
-                      float* scale_ptr) {
+void quantize_to_fp16(
+    float** data_in, int num, int height, int width, float* scale_ptr) {
   float* tmp = *data_in;
   int size = num * height * width;
 
@@ -322,22 +345,23 @@ void quantize_to_fp16(float** data_in, int num, int height, int width,
   *data_in = (float*)tmp_data;  // NOLINT
   fpga_free(tmp);
 }
-size_t format_dwconv_filter(float** data_in, int num, int height, int width,
-                            float* scale_ptr) {
+size_t format_dwconv_filter(
+    float** data_in, int num, int height, int width, float* scale_ptr) {
   float16* fp16_data = reinterpret_cast<float16*>(
       fpga_malloc(num * height * width * sizeof(float16)));
   // to_fp16(*data_in, fp16_data, num, height, width, scale_ptr);
   // int16_t** quantize_data = (int16_t**)&fp16_data;  // NOLINT
 
   quantize_to_fp16(data_in, num, height, width, scale_ptr);
-  int16_t **quantize_data = (int16_t **)data_in;
+  int16_t** quantize_data = reinterpret_cast<int16_t**>(data_in);
 
   convert_to_hwn(quantize_data, num, height, width);
   size_t size = align_element_n(quantize_data, num, height, width);
-  fpga_flush(*quantize_data, align_to_x(num, FILTER_ELEMENT_ALIGNMENT) *
-                                 height * width * sizeof(int16_t));
+  fpga_flush(*quantize_data,
+             align_to_x(num, FILTER_ELEMENT_ALIGNMENT) * height * width *
+                 sizeof(int16_t));
   return size;
 }
 }  // namespace filter
 }  // namespace zynqmp
-}  // namespace paddle_mobile
+}  // namespace paddle

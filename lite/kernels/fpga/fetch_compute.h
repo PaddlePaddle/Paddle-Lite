@@ -31,8 +31,6 @@ class FetchCompute
 
  private:
   zynqmp::OutputPE pe_;
-  zynqmp::Tensor input_;
-  zynqmp::Tensor output_;
 };
 
 }  // namespace fpga

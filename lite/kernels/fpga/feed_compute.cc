@@ -25,20 +25,19 @@ using float16 = zynqmp::float16;
 
 void FeedCompute::PrepareForRun() {
   auto& param = this->Param<param_t>();
-  // ====================================================
-  zynqmp::InputParam& conv_param = pe_.param();
   Tensor& x = param.feed_list->at(param.col);
-
   param.out->Resize(x.dims());
   param.out->mutable_data<float16>();
-  conv_param.input = x.ZynqTensor();
-  conv_param.output = param.out->ZynqTensor();
+  // ====================================================
+  zynqmp::InputParam& feed_param = pe_.param();
+  feed_param.input = x.ZynqTensor();
+  feed_param.output = param.out->ZynqTensor();
   pe_.init();
   pe_.apply();
 }
 
 void FeedCompute::Run() {
-  auto& param = this->Param<param_t>();
+  zynqmp::InputParam& feed_param = pe_.param();
   pe_.dispatch();
 }
 

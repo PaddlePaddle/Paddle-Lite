@@ -31,16 +31,22 @@ int calc_division_number(int num, int group_num, int division_capacity);
 int calc_num_per_div(int num, int group_num, int division_capacity);
 
 float find_max(float* data_in, int data_size);
-int8_t* format_filter(float* data_in, int& mem_size, int num, int channel,
-                      int height, int width, int group_num, float max,
-                      std::vector<float>& filter_max);
+int8_t* format_filter(float* data_in,
+                      int* mem_size,
+                      int num,
+                      int channel,
+                      int height,
+                      int width,
+                      int group_num,
+                      float max,
+                      std::vector<float>* filter_max);
 
 void convert_to_hwn(int16_t** data_in, int num, int height, int width);
 size_t align_element_n(int16_t** data_in, int num, int height, int width);
 // void quantize_to_fp16(float** data_in, int num, int height, int width,
 //                       float* scale_ptr);
-size_t format_dwconv_filter(float** data_in, int num, int height, int width,
-                            float* scale_ptr);
+size_t format_dwconv_filter(
+    float** data_in, int num, int height, int width, float* scale_ptr);
 
 }  // namespace filter
 }  // namespace zynqmp

@@ -95,10 +95,9 @@ void TensorLite::CopyDataFrom(const TensorLite &other) {
   dims_ = other.dims_;
   target_ = other.target_;
   lod_ = other.lod_;
-  // memory_size_ = other.memory_size_;
-  // buffer_->CopyDataFrom(*other.buffer_, memory_size_);
   zynq_tensor_->mutableData<void>(other.zynq_tensor_->dataType(),
                                   other.zynq_tensor_->shape());
+  this->ZynqTensor()->copyFrom(other.ZynqTensor());
 }
 
 // template <typename T>

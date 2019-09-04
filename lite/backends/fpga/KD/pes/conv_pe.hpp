@@ -81,7 +81,7 @@ class ConvPE : public PE {
       float* image = image_addr;
       float* filter_ptr = filter_data + i * in_channel;
       float* out_ptr = mi;
-      #pragma omp parallel for
+#pragma omp parallel for
       for (int j = 0; j < in_channel; j++) {
         // float32x4_t x0 = vld1q_f32(image);
         // float32x4_t x1 = vld1q_f32(filter_ptr);
@@ -124,7 +124,7 @@ class ConvPE : public PE {
       if (inplace_.leaky_relu_enable) {
         activeParamterArgs.type = TYPE_LEAK_RELU;
         activeParamterArgs.leaky_relu_factor =
-            fp32_2_fp16(param_.relu.leaky_relu_factor);
+            float_to_half(param_.relu.leaky_relu_factor);
         config_activation(activeParamterArgs);
       }
     }
@@ -143,14 +143,13 @@ class ConvPE : public PE {
 
       if (inplace_.leaky_relu_enable) {
         activeParamterArgs.type = TYPE_LEAK_RELU;
-        activeParamterArgs.leaky_relu_factor = fp32_2_fp16(0);
+        activeParamterArgs.leaky_relu_factor = float_to_half(0);
         config_activation(activeParamterArgs);
       }
     }
 
     size_t size = params.size();
     if (split_axis == 0 && ret == 0 && size > 1) {
-      // std::cout << "concat size:" << size << std::endl;
       concatPE_.dispatch();
     }
     if (split_axis == 1 && ret == 0 && size > 1) {
@@ -161,16 +160,6 @@ class ConvPE : public PE {
       addPE_.init();
       addPE_.apply();
       addPE_.dispatch();
-
-      // param_.output->printScale();
-
-      // params[0]->input.saveToFile("conv_1.txt");
-      // params[1]->input.saveToFile("conv_2.txt");
-
-      // params[0]->output.saveToFile("ew_o1.txt");
-      // params[1]->output.saveToFile("ew_o2.txt");
-      // std::cout << "\n ================== EW ================== \n";
-      // }
     }
     return ret == 0;
   }
@@ -188,4 +177,4 @@ class ConvPE : public PE {
 };
 
 }  // namespace zynqmp
-}  // namespace paddle_mobile
+}  // namespace paddle

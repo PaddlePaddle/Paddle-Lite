@@ -39,9 +39,9 @@ void QuantDequantOpFuser::BuildPattern() {
   auto* quant_op_input = VarNode("quant_op_input")
                              ->assert_is_op_input(quant_type_, "X")
                              ->AsInput();
-//  auto* quant_op_in_scale = VarNode("quant_op_in_scale")
-//                                ->assert_is_op_input(quant_type_, "InScale")
-//                                ->AsIntermediate();
+  //  auto* quant_op_in_scale = VarNode("quant_op_in_scale")
+  //                                ->assert_is_op_input(quant_type_, "InScale")
+  //                                ->AsIntermediate();
   auto* quant_op = OpNode("quant_op", quant_type_)
                        ->assert_is_op(quant_type_)
                        ->AsIntermediate();
@@ -80,7 +80,7 @@ void QuantDequantOpFuser::BuildPattern() {
                         ->AsOutput());
   }
 
-  //quant_op->LinksFrom({quant_op_input, quant_op_in_scale});
+  // quant_op->LinksFrom({quant_op_input, quant_op_in_scale});
   quant_op->LinksFrom({quant_op_input});
   quant_op_out->LinksFrom({quant_op});
   quant_op_out_scale->LinksFrom({quant_op});
@@ -105,7 +105,7 @@ void QuantDequantOpFuser::InsertNewNode(SSAGraph* graph,
   const int kDequantOpOutOffset = 4;
 
   auto* quant_op_input = matched.at("quant_op_input");
-  //auto* quant_op_in_scale = matched.at("quant_op_in_scale");
+  // auto* quant_op_in_scale = matched.at("quant_op_in_scale");
   auto* quant_op = matched.at("quant_op");
 
   std::vector<Node*> nodes;
@@ -120,11 +120,11 @@ void QuantDequantOpFuser::InsertNewNode(SSAGraph* graph,
   auto* scope = quant_op->stmt()->op()->scope();
   auto& valid_places = quant_op->stmt()->op()->valid_places();
   int range = ((1 << (bit_length - 1)) - 1);
-  //auto input_scale_t = scope->FindVar(quant_op_in_scale->arg()->name)
+  // auto input_scale_t = scope->FindVar(quant_op_in_scale->arg()->name)
   //                         ->GetMutable<lite::Tensor>();
-  //float input_scale = input_scale_t->data<float>()[0] / range;
+  // float input_scale = input_scale_t->data<float>()[0] / range;
 
-  //VLOG(4) << "range: " << range << " input_scale: " << input_scale;
+  // VLOG(4) << "range: " << range << " input_scale: " << input_scale;
   for (int i = 0; i < times_; i++) {
     float max_range = nodes[i * kNumFields + kDequantOpOffset]
                           ->stmt()
@@ -161,25 +161,29 @@ void QuantDequantOpFuser::InsertNewNode(SSAGraph* graph,
     for (int i = 0; i < weight_scale_size; i++) {
       weight_scale.push_back(whole_weight_scale);
     }
-    //op_desc.SetAttr("enable_int8", true);
-    //op_desc.SetAttr("input_scale", input_scale);
+    // op_desc.SetAttr("enable_int8", true);
+    // op_desc.SetAttr("input_scale", input_scale);
     op_desc.SetAttr("weight_scale", weight_scale);
 
     Tensor temp_tensor;
     temp_tensor.CopyDataFrom(*quantized_weight_t);
     float* temp_data = temp_tensor.mutable_data<float>();
-
     size_t weight_num = quantized_weight_t->data_size();
-    int8_t* quantized_weight_data = quantized_weight_t->mutable_data<int8_t>();
 
-    // change the weight from the float type to int8 type.
+#ifdef LITE_WITH_FPGA
+    float* quantized_weight_data = quantized_weight_t->mutable_data<float>();
+    for (size_t i = 0; i < weight_num; i++) {
+      quantized_weight_data[i] = temp_data[i] * whole_weight_scale;
+    }
+#else
+    int8_t* quantized_weight_data = quantized_weight_t->mutable_data<int8_t>();
     for (size_t i = 0; i < weight_num; i++) {
       quantized_weight_data[i] = static_cast<int8_t>(temp_data[i]);
     }
     quantized_weight_t->set_persistable(true);
     quantized_weight_t->set_precision(PRECISION(kInt8));
+#endif
     auto quantized_op = LiteOpRegistry::Global().Create(op_type_);
-
     quantized_op->Attach(op_desc, scope);
     auto* new_op_node =
         graph->GraphCreateInstructNode(quantized_op, valid_places);

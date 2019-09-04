@@ -32,7 +32,7 @@ void FetchCompute::PrepareForRun() {
   }
   Tensor& out = param.fetch_list->at(param.col);
   out.Resize(param.input->dims());
-  out.mutable_data<float16>();
+  out.mutable_data<float>();
 
   conv_param.input = param.input->ZynqTensor();
   conv_param.output = out.ZynqTensor();
@@ -41,7 +41,11 @@ void FetchCompute::PrepareForRun() {
   pe_.apply();
 }
 
-void FetchCompute::Run() { pe_.dispatch(); }
+void FetchCompute::Run() {
+  pe_.dispatch();
+  auto& param = this->Param<param_t>();
+  zynqmp::OutputParam& conv_param = pe_.param();
+}
 
 }  // namespace fpga
 }  // namespace kernels

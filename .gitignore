@@ -78,6 +78,10 @@ cmake-build-release
 # ios
 tools/libomp.a
 
+# api
+lite/api/paddle_use_kernels.h
+lite/api/paddle_use_ops.h
+
 # ios demo
 demo/ios/PaddleMobileDemo/PaddleMobileDemo/googlenet_combine/
 demo/ios/PaddleMobileDemo/PaddleMobileDemo/*.jpg

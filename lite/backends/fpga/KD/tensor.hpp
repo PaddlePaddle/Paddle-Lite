@@ -117,7 +117,8 @@ class Tensor {
 
   template <typename Dtype>
   Dtype* mutableData() {
-    size_t memorySize = shape_->memorySize(CellSize(dataType_)) * mem_scale_factor_;
+    size_t memorySize =
+        shape_->memorySize(CellSize(dataType_)) * mem_scale_factor_;
     if (placeHolder_ != nullptr) {
       if (memorySize > placeHolder_->memorySize()) {
         placeHolder_.reset(new PlaceHolder(memorySize));
@@ -344,9 +345,11 @@ class Tensor {
   }
 
   void printScale(std::string type) {
-    std::cout << type << " : " << std::to_string(shape_->num()) + "_" +
-           std::to_string(shape_->channel()) + "_" +
-           std::to_string(shape_->height()) << std::endl;
+    std::cout << type << " : "
+              << std::to_string(shape_->num()) + "_" +
+                     std::to_string(shape_->channel()) + "_" +
+                     std::to_string(shape_->height())
+              << std::endl;
     std::cout << type << " \n";
     printScale();
   }
@@ -411,8 +414,10 @@ class Tensor {
       float value = 0;
       if (dataType_ == FP32) {
         value = data<float>()[i];
-      } else {
+      } else if (dataType_ == FP16) {
         value = half_to_float(data<float16>()[i]);
+      } else {
+        value = data<int8_t>()[i];
       }
       ofs << value << std::endl;
     }
@@ -428,12 +433,22 @@ class Tensor {
     int num = shape_->numel();
     invalidate();
     float max = 0.0f;
-    float16* data = mutableData<float16>();
-    for (int i = 0; i < num; ++i) {
-      float value = 0;
-      file_stream >> value;
-      max = std::max(std::abs(value), max);
-      data[i] = float_to_half(value);
+    if (dataType_ == FP16) {
+      float16* data = mutableData<float16>();
+      for (int i = 0; i < num; ++i) {
+        float value = 0;
+        file_stream >> value;
+        max = std::max(std::abs(value), max);
+        data[i] = float_to_half(value);
+      }
+    } else {
+      float* data = mutableData<float>();
+      for (int i = 0; i < num; ++i) {
+        float value = 0;
+        file_stream >> value;
+        max = std::max(std::abs(value), max);
+        data[i] = value;
+      }
     }
     flush();
     placeHolder_->scale_[0] = max / 127.0f;

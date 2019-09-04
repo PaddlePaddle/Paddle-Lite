@@ -16,9 +16,6 @@ limitations under the License. */
 
 #include <stdio.h>
 
-#include "lite/backends/fpga/KD/llapi/filter.h"
-#include "lite/backends/fpga/KD/llapi/zynqmp_api.h"
-
 namespace paddle {
 namespace zynqmp {
 
@@ -28,6 +25,8 @@ class DLEngine {
     static DLEngine s_instance;
     return s_instance;
   }
+
+  float* out_data = nullptr;
 
  private:
   DLEngine();

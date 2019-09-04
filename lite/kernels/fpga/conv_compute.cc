@@ -33,6 +33,7 @@ void ConvCompute::PrepareForRun() {
   conv_param.input = param.x->ZynqTensor();
   conv_param.output = param.output->ZynqTensor();
   conv_param.filter = param.filter->ZynqTensor();
+  conv_param.filter->setDataType(zynqmp::FP32);
   conv_param.groups = param.groups;
   conv_param.strides = param.strides;
   conv_param.paddings = param.paddings;
@@ -40,14 +41,13 @@ void ConvCompute::PrepareForRun() {
   fill_scale_bias_const(&conv_param);
   conv_param.bias()->copyFrom(param.bias->ZynqTensor());
   conv_param.relu.enabled = param.fuse_relu;
+
   pe_.init();
   pe_.apply();
 }
 
 void ConvCompute::Run() {
-  auto& param = this->Param<param_t>();
   zynqmp::ConvParam& conv_param = pe_.param();
-  // conv_param.output->saveToFile("conv", true);
   pe_.dispatch();
 }
 

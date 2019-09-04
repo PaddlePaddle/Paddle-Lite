@@ -38,10 +38,8 @@ void SoftmaxCompute::Run() { pe_.dispatch(); }
 =======
 void SoftmaxCompute::Run() {
   zynqmp::SoftmaxParam& softmax_param = pe_.param();
-  softmax_param.input->saveToFile("s_in", true);
   pe_.dispatch();
-  
-  softmax_param.output->saveToFile("softmax",true);
+  // softmax_param.output->saveToFile("softmax",true);
 }
 >>>>>>> fixed compilation error
 
