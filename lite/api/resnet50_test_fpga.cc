@@ -71,7 +71,7 @@ TEST(ResNet50, test) {
                   valid_places);
 
   auto* input_tensor = predictor.GetInput(0);
-  input_tensor->Resize(DDim(std::vector<DDim::value_type>({1, 3, 224, 224})));
+  input_tensor->Resize(DDim(std::vector<DDim::value_type>({1, 3, 299, 299})));
   auto* data = input_tensor->mutable_data<float>();
   auto item_size = input_tensor->dims().production();
 
@@ -82,39 +82,39 @@ TEST(ResNet50, test) {
     predictor.Run();
   }
 
-  std::string path = "inputs";
-  auto files = GetDirectoryFiles(path);
-  for (auto p : files) {
-    std::string pp = path + "/" + p;
-    std::cout << "\n path::::========== " << pp << std::endl;
-    std::size_t found = pp.find(".txt");
-    if (found == std::string::npos) {
-      continue;
-    }
-    readFromFile(item_size, pp, data);
-    predictor.Run();
+  // std::string path = "inputs";
+  // auto files = GetDirectoryFiles(path);
+  // for (auto p : files) {
+  //   std::string pp = path + "/" + p;
+  //   std::cout << "\n path::::========== " << pp << std::endl;
+  //   std::size_t found = pp.find(".txt");
+  //   if (found == std::string::npos) {
+  //     continue;
+  //   }
+  //   // readFromFile(item_size, pp, data);
+  //   predictor.Run();
 
-    auto* output_tensor = predictor.GetOutput(0);
-    lite::Tensor* out = const_cast<lite::Tensor*>(output_tensor);
-    auto* out_data = out->data<float>();
-    item_size = out->dims().production();
+  //   auto* output_tensor = predictor.GetOutput(0);
+  //   lite::Tensor* out = const_cast<lite::Tensor*>(output_tensor);
+  //   auto* out_data = out->data<float>();
+  //   item_size = out->dims().production();
 
-    float max = 0;
-    int index = 0;
-    for (int i = 0; i < item_size; i++) {
-      float value = data[i];
-      if (value > max) {
-        max = value;
-        index = i;
-      }
-      std::cout << i << " : " << value << std::endl;
-    }
-    std::cout << "max:" << max << " @ :" << index << std::endl;
-    std::cout << "size:" << predictor.GetOutputs()->size() << std::endl;
+  //   float max = 0;
+  //   int index = 0;
+  //   for (int i = 0; i < item_size; i++) {
+  //     float value = data[i];
+  //     if (value > max) {
+  //       max = value;
+  //       index = i;
+  //     }
+  //     std::cout << i << " : " << value << std::endl;
+  //   }
+  //   std::cout << "max:" << max << " @ :" << index << std::endl;
+  //   std::cout << "size:" << predictor.GetOutputs()->size() << std::endl;
 
-    std::cout << "output_tensor:::" << out << std::endl;
-    std::cout << "out_data:::" << out_data << std::endl;
-  }
+  //   std::cout << "output_tensor:::" << out << std::endl;
+  //   std::cout << "out_data:::" << out_data << std::endl;
+  // }
 
   LOG(INFO) << "================== Speed Report ===================";
 }

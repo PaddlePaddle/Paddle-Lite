@@ -12,8 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/fpga/softmax_compute.h"
-#include "lite/backends/arm/math/funcs.h"
+#include "lite/kernels/fpga/concat_compute.h"
+#include <string>
+#include <vector>
+#include "lite/core/op_registry.h"
+#include "lite/core/tensor.h"
+#include "lite/core/type_system.h"
 
 namespace paddle {
 namespace lite {
@@ -22,37 +26,37 @@ namespace fpga {
 
 using float16 = zynqmp::float16;
 
-void SoftmaxCompute::PrepareForRun() {
-  zynqmp::SoftmaxParam& softmax_param = pe_.param();
-  auto& param = Param<operators::SoftmaxParam>();
-
+void ConcatCompute::PrepareForRun() {
+  auto& param = this->Param<param_t>();
   param.output->mutable_data<float16>();
-  softmax_param.input = param.x->ZynqTensor();
-  softmax_param.output = param.output->ZynqTensor();
+
+  // ====================================================
+  zynqmp::ConcatParam& concat_param = pe_.param();
+  for (auto t : param.x) {
+    concat_param.inputs.push_back(t->ZynqTensor());
+  }
+  concat_param.output = param.output->ZynqTensor();
+  concat_param.axis = param.axis;
   pe_.init();
   pe_.apply();
 }
 
-<<<<<<< HEAD
-void SoftmaxCompute::Run() { pe_.dispatch(); }
-=======
-void SoftmaxCompute::Run() {
-  zynqmp::SoftmaxParam& softmax_param = pe_.param();
+void ConcatCompute::Run() {
   pe_.dispatch();
-  softmax_param.output->saveToFile("softmax", true);
+  zynqmp::ConcatParam& concat_param = pe_.param();
+  concat_param.output->saveToFile("concat", true);
 }
->>>>>>> fixed compilation error
 
 }  // namespace fpga
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(softmax,
+REGISTER_LITE_KERNEL(concat,
                      kFPGA,
                      kFP16,
                      kNHWC,
-                     paddle::lite::kernels::fpga::SoftmaxCompute,
+                     paddle::lite::kernels::fpga::ConcatCompute,
                      def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kFPGA),

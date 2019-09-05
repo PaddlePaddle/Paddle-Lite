@@ -13,35 +13,30 @@
 // limitations under the License.
 
 #pragma once
-
-#include "lite/backends/fpga/KD/float16.hpp"
-#include "lite/backends/fpga/KD/pes/conv_pe.hpp"
+#include <algorithm>
 #include "lite/core/kernel.h"
+#include "lite/operators/concat_op.h"
 
 #include "lite/fpga/KD/float16.hpp"
-#include "lite/fpga/KD/pes/conv_pe.hpp"
-#include "lite/fpga/KD/pes/depthwise_conv_pe.hpp"
-#include "lite/operators/conv_op.h"
+#include "lite/fpga/KD/pes/concat_pe.hpp"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace fpga {
-using float16 = zynqmp::float16;
-class ConvCompute
+
+class ConcatCompute
     : public KernelLite<TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)> {
  public:
-  using param_t = operators::ConvParam;
+  using param_t = operators::ConcatParam;
 
   void PrepareForRun() override;
-
   void Run() override;
 
-  ~ConvCompute() {}
+  virtual ~ConcatCompute() = default;
 
  private:
-  zynqmp::ConvPE conv_pe_;
-  zynqmp::DepthwiseConvPE dw_conv_pe_;
+  zynqmp::ConcatPE pe_;
 };
 
 }  // namespace fpga

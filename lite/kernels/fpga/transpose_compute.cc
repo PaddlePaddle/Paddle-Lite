@@ -12,53 +12,62 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/fpga/softmax_compute.h"
-#include "lite/backends/arm/math/funcs.h"
+#include "lite/kernels/fpga/transpose_compute.h"
+#include <string>
+#include <vector>
+#include "lite/core/op_registry.h"
+#include "lite/core/tensor.h"
+#include "lite/core/type_system.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace fpga {
 
-using float16 = zynqmp::float16;
+// Transpose
+void TransposeCompute::Run() {}
 
-void SoftmaxCompute::PrepareForRun() {
-  zynqmp::SoftmaxParam& softmax_param = pe_.param();
-  auto& param = Param<operators::SoftmaxParam>();
-
-  param.output->mutable_data<float16>();
-  softmax_param.input = param.x->ZynqTensor();
-  softmax_param.output = param.output->ZynqTensor();
-  pe_.init();
-  pe_.apply();
-}
-
-<<<<<<< HEAD
-void SoftmaxCompute::Run() { pe_.dispatch(); }
-=======
-void SoftmaxCompute::Run() {
-  zynqmp::SoftmaxParam& softmax_param = pe_.param();
-  pe_.dispatch();
-  softmax_param.output->saveToFile("softmax", true);
-}
->>>>>>> fixed compilation error
+// Transpose2
+void Transpose2Compute::Run() {}
 
 }  // namespace fpga
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(softmax,
+// Transpose
+REGISTER_LITE_KERNEL(transpose,
                      kFPGA,
                      kFP16,
                      kNHWC,
-                     paddle::lite::kernels::fpga::SoftmaxCompute,
+                     paddle::lite::kernels::fpga::TransposeCompute,
                      def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kFPGA),
                                       PRECISION(kFP16),
                                       DATALAYOUT(kNHWC))})
     .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kFPGA),
+                                       PRECISION(kFP16),
+                                       DATALAYOUT(kNHWC))})
+    .Finalize();
+
+// Transpose2
+REGISTER_LITE_KERNEL(transpose2,
+                     kFPGA,
+                     kFP16,
+                     kNHWC,
+                     paddle::lite::kernels::fpga::Transpose2Compute,
+                     def)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kFPGA),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kNHWC))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kFPGA),
+                                       PRECISION(kFP16),
+                                       DATALAYOUT(kNHWC))})
+    .BindOutput("XShape",
                 {LiteType::GetTensorTy(TARGET(kFPGA),
                                        PRECISION(kFP16),
                                        DATALAYOUT(kNHWC))})

@@ -13,35 +13,33 @@
 // limitations under the License.
 
 #pragma once
-
-#include "lite/backends/fpga/KD/float16.hpp"
-#include "lite/backends/fpga/KD/pes/conv_pe.hpp"
+#include <algorithm>
 #include "lite/core/kernel.h"
-
-#include "lite/fpga/KD/float16.hpp"
-#include "lite/fpga/KD/pes/conv_pe.hpp"
-#include "lite/fpga/KD/pes/depthwise_conv_pe.hpp"
-#include "lite/operators/conv_op.h"
+#include "lite/operators/transpose_op.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace fpga {
-using float16 = zynqmp::float16;
-class ConvCompute
-    : public KernelLite<TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)> {
- public:
-  using param_t = operators::ConvParam;
 
-  void PrepareForRun() override;
+// Transpose
+class TransposeCompute : public KernelLite<TARGET(kFPGA), PRECISION(kFP16)> {
+ public:
+  using param_t = operators::TransposeParam;
 
   void Run() override;
 
-  ~ConvCompute() {}
+  virtual ~TransposeCompute() = default;
+};
 
- private:
-  zynqmp::ConvPE conv_pe_;
-  zynqmp::DepthwiseConvPE dw_conv_pe_;
+// Transpose2
+class Transpose2Compute : public KernelLite<TARGET(kFPGA), PRECISION(kFP16)> {
+ public:
+  using param_t = operators::TransposeParam;
+
+  void Run() override;
+
+  virtual ~Transpose2Compute() = default;
 };
 
 }  // namespace fpga

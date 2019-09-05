@@ -180,3 +180,5 @@ DDim ValidateShape(const std::vector<int> &shape, const DDim &input_dims) {
 
 REGISTER_LITE_OP(reshape, paddle::lite::operators::ReshapeOp);
 REGISTER_LITE_OP(reshape2, paddle::lite::operators::Reshape2Op);
+// REGISTER_LITE_OP(flatten, paddle::lite::operators::ReshapeOp);
+// REGISTER_LITE_OP(flatten2, paddle::lite::operators::Reshape2Op);
