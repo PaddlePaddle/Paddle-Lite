@@ -759,6 +759,13 @@ struct SqueezeParam {
   std::vector<int> axes{};
 };
 
+struct UnsqueezeParam {
+  const lite::Tensor* X{};
+  lite::Tensor* Out{};
+  lite::Tensor* XShape{};
+  std::vector<int> axes{};
+};
+
 /// ----------------------- expand operators ----------------------
 struct ExpandParam {
   const lite::Tensor* X{};

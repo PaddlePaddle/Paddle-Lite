@@ -52,7 +52,7 @@ add_kernel(anchor_generator_compute_arm ARM basic SRCS anchor_generator_compute.
 add_kernel(generate_proposals_compute_arm ARM basic SRCS generate_proposals_compute.cc DEPS ${lite_kernel_deps} math_arm)
 add_kernel(roi_align_compute_arm ARM basic SRCS roi_align_compute.cc DEPS ${lite_kernel_deps} math_arm)
 add_kernel(box_clip_compute_arm ARM basic SRCS box_clip_compute.cc DEPS ${lite_kernel_deps} math_arm)
-
+add_kernel(unsqueeze_compute_arm ARM basic SRCS unsqueeze_compute.cc DEPS ${lite_kernel_deps} math_arm)
 # for OCR specific
 add_kernel(gru_unit_compute_arm ARM extra SRCS gru_unit_compute.cc DEPS ${lite_kernel_deps} math_arm)
 add_kernel(gru_compute_arm ARM extra SRCS gru_compute.cc DEPS ${lite_kernel_deps} math_arm)
