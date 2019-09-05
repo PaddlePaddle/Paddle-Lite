@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
 #include "lite/core/op_registry.h"
 #include "lite/kernels/cuda/leaky_relu_compute.h"
 
