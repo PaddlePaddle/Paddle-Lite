@@ -60,8 +60,6 @@ void pad_constant(const float* din,
     int width_in = std::min(w_in, w);
     int med_loop = width_in >> 3;
     int med_loop_remain = width_in & 7;
-    //    int med_loop = w_in >> 3;
-    //    int med_loop_remain = w_in & 7;
     for (int i = 0; i < left_loop; ++i) {
       vst1q_f32(dout_s, vpad_value);
       dout_s += 4;
