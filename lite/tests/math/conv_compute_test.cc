@@ -340,9 +340,9 @@ TEST(TestLite, test_conv_1x1s1) {
 TEST(TestLite, test_conv_3x3s1) {
   if (g_basic_test) {
     for (auto& batch : {1, 2}) {
-      for (auto& cin : {1, 3, 8, 11, 32, 128}) {
-        for (auto& cout : {1, 5, 8, 37, 64, 128}) {
-          for (auto& h : {1, 3, 31, 56, 75, 100, 150}) {
+      for (auto& cin : {1, 3, 8, 11, 32}) {
+        for (auto& cout : {1, 5, 8, 37, 64}) {
+          for (auto& h : {1, 3, 31, 56, 75, 100}) {
             for (auto& pad : {1, 2}) {
               for (auto& flag_bias : {false, true}) {
                 for (auto& flag_relu : {false, true}) {
