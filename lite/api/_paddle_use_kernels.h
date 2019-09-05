@@ -128,6 +128,8 @@ USE_LITE_KERNEL(lod_reset, kARM, kFloat, kNCHW, def)
 USE_LITE_KERNEL(lookup_table, kARM, kFloat, kNCHW, def)
 USE_LITE_KERNEL(is_empty, kARM, kFloat, kNCHW, def)
 USE_LITE_KERNEL(assign, kARM, kFloat, kNCHW, def);
+USE_LITE_KERNEL(unsqueeze, kARM, kFloat, kNCHW, def)
+USE_LITE_KERNEL(unsqueeze2, kARM, kFloat, kNCHW, def);
 #endif
 
 #ifdef LITE_WITH_X86
