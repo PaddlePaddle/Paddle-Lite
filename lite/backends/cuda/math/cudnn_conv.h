@@ -17,9 +17,9 @@
 #include <string>
 #include <vector>
 #include "lite/api/paddle_place.h"
+#include "lite/backends/cuda/cuda_utils.h"
 #include "lite/core/context.h"
 #include "lite/core/target_wrapper.h"
-#include "lite/cuda/cuda_utils.h"
 #include "lite/operators/op_params.h"
 
 namespace paddle {

@@ -14,8 +14,8 @@
 
 #pragma once
 #include <memory>
+#include "lite/backends/cuda/math/cudnn_conv.h"
 #include "lite/core/kernel.h"
-#include "lite/cuda/math/cudnn_conv.h"
 
 namespace paddle {
 namespace lite {

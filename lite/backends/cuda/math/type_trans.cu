@@ -12,9 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "iostream"
-#include "lite/cuda/math/scale.h"
-#include "lite/cuda/math/utils.h"
+#include "lite/backends/cuda/math/type_trans.h"
+#include "lite/backends/cuda/math/utils.h"
 
 namespace paddle {
 namespace lite {
@@ -23,7 +22,7 @@ namespace math {
 
 __global__ void fp32_scale_nhwc4_kernel(int num,
                                         const float4* in,
-                                        float4* out,
+                                        char4* out,
                                         const float4* scale,
                                         int N,
                                         int K,
@@ -34,38 +33,36 @@ __global__ void fp32_scale_nhwc4_kernel(int num,
     int scale_idx = tid % K;
     const float4 scale_ptr = scale[scale_idx];
     const float4 in_ptr = in[tid];
-    float4 packed_val;
+    char4 result_val;
 
-    packed_val.x = in_ptr.x * scale_ptr.x;
-    packed_val.y = in_ptr.y * scale_ptr.y;
-    packed_val.z = in_ptr.z * scale_ptr.z;
-    packed_val.w = in_ptr.w * scale_ptr.w;
-    out[tid] = packed_val;
+    result_val.x = from_float<int8_t>(in_ptr.x * scale_ptr.x);
+    result_val.y = from_float<int8_t>(in_ptr.y * scale_ptr.y);
+    result_val.z = from_float<int8_t>(in_ptr.z * scale_ptr.z);
+    result_val.w = from_float<int8_t>(in_ptr.w * scale_ptr.w);
+    out[tid] = result_val;
   }
 }
 
-void fp32_scale_nhwc4(int num,
-                      const void* in,
-                      void* out,
-                      const void* scale,
-                      int N,
-                      int K,
-                      int H,
-                      int W,
-                      cudaStream_t stream) {
+void fp32_to_int8_nhwc4(int num,
+                        const void* in,
+                        void* out,
+                        const void* scale,
+                        int N,
+                        int K,
+                        int H,
+                        int W,
+                        cudaStream_t stream) {
   int thread = 256;
   int block = (num + thread - 1) / thread;
   fp32_scale_nhwc4_kernel<<<block, thread, 0, stream>>>(
       num,
       static_cast<const float4*>(in),
-      static_cast<float4*>(out),
+      static_cast<char4*>(out),
       static_cast<const float4*>(scale),
       N,
       K,
       H,
       W);
-  cudaError_t error = cudaGetLastError();
-  if (error != cudaSuccess) std::cout << cudaGetErrorString(error);
 }
 
 }  // namespace math

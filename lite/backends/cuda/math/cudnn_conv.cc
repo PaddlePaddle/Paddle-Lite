@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/cuda/math/cudnn_conv.h"
-#include "lite/cuda/math/activation.h"
-#include "lite/cuda/math/scale.h"
-#include "lite/cuda/math/type_trans.h"
+#include "lite/backends/cuda/math/cudnn_conv.h"
+#include "lite/backends/cuda/math/activation.h"
+#include "lite/backends/cuda/math/scale.h"
+#include "lite/backends/cuda/math/type_trans.h"
 
 namespace paddle {
 namespace lite {

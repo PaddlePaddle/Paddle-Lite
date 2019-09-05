@@ -13,8 +13,8 @@
 // limitations under the License.
 
 #include <iostream>
-#include "lite/cuda/math/activation.h"
-#include "lite/cuda/math/utils.h"
+#include "lite/backends/cuda/math/activation.h"
+#include "lite/backends/cuda/math/utils.h"
 
 namespace paddle {
 namespace lite {
