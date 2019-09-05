@@ -496,26 +496,25 @@ struct BoxCoderParam {
   const lite::Tensor* prior_box_var{};
   const lite::Tensor* target_box{};
   lite::Tensor* proposals{};
-  int axis{0};
-  bool box_normalized{true};
   // code_type: encode_center_size and decode_center_size
-  std::string code_type;
+  std::string code_type{"encode_center_size"};
+  bool box_normalized{true};
+  int axis{0};
+  std::vector<float> variance{};
 };
 
 /// ----------------------- multiclass_nms operators ----------------------
 struct MulticlassNmsParam {
-  const lite::Tensor* bbox_data{};
-  const lite::Tensor* conf_data{};
-  lite::Tensor* out;
-  std::vector<int> priors;
-  int class_num;
-  int background_label;
+  const lite::Tensor* bboxes{};
+  const lite::Tensor* scores{};
+  lite::Tensor* out{};
+  int background_label{0};
+  float score_threshold{};
+  int nms_top_k{};
+  float nms_threshold{0.3};
+  float nms_eta{1.0};
   int keep_top_k;
-  int nms_top_k;
-  float score_threshold;
-  float nms_threshold;
-  float nms_eta;
-  bool share_location{true};
+  bool normalized{true};
 };
 
 /// ----------------------- priorbox operators ----------------------
@@ -788,6 +787,7 @@ struct AssignParam {
   const lite::Tensor* X{};
   lite::Tensor* Out{};
 };
+
 struct RoiAlignParam {
   lite::Tensor* X{};
   lite::Tensor* ROIs{};
@@ -796,6 +796,12 @@ struct RoiAlignParam {
   int pooled_height{1};
   int pooled_width{1};
   int sampling_ratio{-1};
+};
+
+struct BoxClipParam {
+  const lite::Tensor* Input{};
+  const lite::Tensor* ImInfo{};
+  lite::Tensor* Output{};
 };
 
 }  // namespace operators

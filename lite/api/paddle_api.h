@@ -129,6 +129,9 @@ class LITE_API CxxConfig : public ConfigBase {
 class LITE_API MobileConfig : public ConfigBase {
   PowerMode mode_{LITE_POWER_HIGH};
   int threads_{1};
+  std::string model_buffer_;
+  std::string param_buffer_;
+  bool model_from_memory_{false};
 
  public:
   MobileConfig(Place preferred_place = Place(TARGET(kARM),
@@ -139,9 +142,20 @@ class LITE_API MobileConfig : public ConfigBase {
       : mode_(mode), threads_(threads) {}
   void set_power_mode(PowerMode mode) { mode_ = mode; }
   void set_threads(int threads) { threads_ = threads; }
+  void set_model_buffer(const char* model_buffer,
+                        size_t model_buffer_size,
+                        const char* param_buffer,
+                        size_t param_buffer_size) {
+    model_buffer_ = std::string(model_buffer, model_buffer + model_buffer_size);
+    param_buffer_ = std::string(param_buffer, param_buffer + param_buffer_size);
+    model_from_memory_ = true;
+  }
 
   PowerMode power_mode() const { return mode_; }
   int threads() const { return threads_; }
+  bool model_from_memory() const { return model_from_memory_; }
+  const std::string& model_buffer() const { return model_buffer_; }
+  const std::string& param_buffer() const { return param_buffer_; }
 };
 
 template <typename ConfigT>

@@ -15,17 +15,11 @@ set(LITE_ON_MOBILE ${LITE_WITH_LIGHT_WEIGHT_FRAMEWORK})
 add_subdirectory(utils)
 add_subdirectory(operators)
 add_subdirectory(kernels)
-add_subdirectory(npu)
 add_subdirectory(core)
-add_subdirectory(x86)
-add_subdirectory(arm)
-add_subdirectory(host)
-add_subdirectory(cuda)
-add_subdirectory(opencl)
-add_subdirectory(fpga)
 add_subdirectory(model_parser)
 add_subdirectory(api)
 add_subdirectory(fluid)
+add_subdirectory(backends)
 
 if (NOT LITE_ON_TINY_PUBLISH)
     add_subdirectory(tests)
@@ -90,7 +84,7 @@ if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM)
                         COMMAND ${CMAKE_STRIP} "--strip-debug" ${INFER_LITE_PUBLISH_ROOT}/cxx/lib/*.a)
             endif()
     else()
-        if (IOS)
+        if (IOS OR (ARM_TARGET_OS STREQUAL "armlinux"))
             add_custom_target(tiny_publish_lib ${TARGET}
                     COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/lib"
                     COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/include"
@@ -158,7 +152,7 @@ if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM)
     if (LITE_WITH_OPENCL)
         add_custom_target(publish_inference_opencl ${TARGET}
             COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/opencl"
-            COMMAND cp -r "${CMAKE_SOURCE_DIR}/lite/opencl/cl_kernel" "${INFER_LITE_PUBLISH_ROOT}/opencl"
+            COMMAND cp -r "${CMAKE_SOURCE_DIR}/lite/backends/opencl/cl_kernel" "${INFER_LITE_PUBLISH_ROOT}/opencl"
         )
         add_dependencies(publish_inference_cxx_lib publish_inference_opencl)
     endif()

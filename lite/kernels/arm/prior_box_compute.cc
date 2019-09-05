@@ -15,7 +15,7 @@
 #include "lite/kernels/arm/prior_box_compute.h"
 #include <string>
 #include <vector>
-#include "lite/arm/math/funcs.h"
+#include "lite/backends/arm/math/funcs.h"
 
 namespace paddle {
 namespace lite {

@@ -106,9 +106,10 @@ USE_LITE_KERNEL(generate_proposals, kARM, kFloat, kNCHW, def)
 USE_LITE_KERNEL(squeeze, kARM, kFloat, kNCHW, def)   // for x2paddle
 USE_LITE_KERNEL(squeeze2, kARM, kFloat, kNCHW, def)  // for x2paddle
 USE_LITE_KERNEL(expand, kARM, kFloat, kNCHW, def)    // for x2paddle
+USE_LITE_KERNEL(roi_align, kARM, kFloat, kNCHW, def)
+USE_LITE_KERNEL(box_clip, kARM, kFloat, kNCHW, def)
 USE_LITE_KERNEL(reduce_mean, kARM, kFloat, kNCHW, def)
 USE_LITE_KERNEL(stack, kARM, kFloat, kNCHW, def)
-USE_LITE_KERNEL(roi_align, kARM, kFloat, kNCHW, def)
 
 USE_LITE_KERNEL(calib, kARM, kInt8, kNCHW, fp32_to_int8);
 USE_LITE_KERNEL(calib, kARM, kInt8, kNCHW, int8_to_fp32);

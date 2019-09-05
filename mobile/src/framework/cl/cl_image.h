@@ -14,6 +14,7 @@ limitations under the License. */
 
 #pragma once
 
+#include <memory>
 #include <vector>
 
 #include "CL/cl.h"
@@ -168,7 +169,7 @@ class CLImage {
   }
 
   void InitWithExitedMem(cl_context context, cl_command_queue command_queue,
-                         DDim need_dims, CLImage &src) {
+                         DDim need_dims, const CLImage &src) {
     CLImageConverterNormal *normal_converter = new CLImageConverterNormal();
 
     real_image_dims = normal_converter->InitImageDimInfoWith(src.dims());
@@ -186,6 +187,15 @@ class CLImage {
     cl_event_ = CLEngine::Instance()->CreateEvent(context);
     initialized_ = true;
     DLOG << " end init cl image";
+  }
+
+  void InitConv2dTransposeFilterCLImage(cl_context context,
+                                        cl_command_queue command_queue) {
+    PADDLE_MOBILE_ENFORCE(tensor_data_ != nullptr,
+                          " need call SetTensorData first");
+    CLImageConverterConv2dTransposeTransWeight *converter =
+        new CLImageConverterConv2dTransposeTransWeight();
+    InitCLImage(context, command_queue, converter);
   }
 
   /*! The internal of two tensors share the same memory block. */
