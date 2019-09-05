@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "lite/backends/opencl/cl_include.h"
 #include "lite/core/op_registry.h"
 #include "lite/kernels/opencl/elementwise_add_compute.h"
-#include "lite/opencl/cl_include.h"
 
 namespace paddle {
 namespace lite {

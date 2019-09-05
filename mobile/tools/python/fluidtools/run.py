@@ -482,73 +482,74 @@ def check_mobile_results(args, fuse, mem_opt):
         pp_red(str(error_values1).replace("\n", "\n" + "\t" * 1), 1)
         pp_yellow("paddle mobile results are : ", 1)
         pp_red(str(error_values2).replace("\n", "\n" + "\t" * 1), 1)
-    if not fuse and not mem_opt:
-        error_index = None
-        error_values1 = None
-        error_values2 = None
-        checked_names = []
-        fetch_names = []
-        for fetch in fetches:
-            fetch_names.append(fetch.name)
-        for index in op_cache:
-            op_output_var_name, op = op_cache[index]
-            if mem_opt:
-                found_in_fetch = False
-                for fetch in fetches:
-                    if op_output_var_name == fetch.name:
-                        found_in_fetch = True
-                        break
-                if not found_in_fetch:
+        if not fuse and not mem_opt:
+            pp_yellow("checking individual ops : ", 1)
+            error_index = None
+            error_values1 = None
+            error_values2 = None
+            checked_names = []
+            fetch_names = []
+            for fetch in fetches:
+                fetch_names.append(fetch.name)
+            for index in op_cache:
+                op_output_var_name, op = op_cache[index]
+                if mem_opt:
+                    found_in_fetch = False
+                    for fetch in fetches:
+                        if op_output_var_name == fetch.name:
+                            found_in_fetch = True
+                            break
+                    if not found_in_fetch:
+                        continue
+                if not op_output_var_name in output_var_cache:
                     continue
-            if not op_output_var_name in output_var_cache:
-                continue
-            if not op_output_var_name in mobile_var_cache:
-                continue
-            if fuse or mem_opt:
-                if op_output_var_name not in fetch_names:
+                if not op_output_var_name in mobile_var_cache:
                     continue
-            values1 = output_var_cache[op_output_var_name]
-            values2 = mobile_var_cache[op_output_var_name]
-            shape = get_var_shape(op_output_var_name) if check_shape else []
-            if len(values1) + len(shape) != len(values2):
-                error_index = index
-            for i in range(len(shape)):
-                v1 = shape[i]
-                v2 = values2[i]
-                if v1 != v2:
+                if fuse or mem_opt:
+                    if op_output_var_name not in fetch_names:
+                        continue
+                values1 = output_var_cache[op_output_var_name]
+                values2 = mobile_var_cache[op_output_var_name]
+                shape = get_var_shape(op_output_var_name) if check_shape else []
+                if len(values1) + len(shape) != len(values2):
                     error_index = index
-                    break
-            if error_index == None:
-                for i in range(len(values1)):
-                    v1 = values1[i]
-                    v2 = values2[len(shape) + i]
-                    if abs(v1 - v2) > diff_threshold:
+                for i in range(len(shape)):
+                    v1 = shape[i]
+                    v2 = values2[i]
+                    if v1 != v2:
                         error_index = index
                         break
-            checked_names.append(op_output_var_name)
-            if error_index != None:
-                error_values1 = values1
-                error_values2 = values2
-                break
-        if error_index == None:
-            for name in fetch_names:
-                if name not in checked_names:
-                    error_index = -1
+                if error_index == None:
+                    for i in range(len(values1)):
+                        v1 = values1[i]
+                        v2 = values2[len(shape) + i]
+                        if abs(v1 - v2) > diff_threshold:
+                            error_index = index
+                            break
+                checked_names.append(op_output_var_name)
+                if error_index != None:
+                    error_values1 = values1
+                    error_values2 = values2
                     break
-        if error_index == None:
-            pp_green("outputs are all correct", 1)
-        elif error_index == -1:
-            pp_red("outputs are missing")
-        else:
-            error_values1 = np.array(error_values1)
-            error_values2 = np.array(error_values2)
-            # pp_red("mobile op is not correct, error occurs at {}th op, op's type is {}")
-            pp_red("corresponding fluid op is {}th op, op's type is {}, wrong var name is {}".format(
-                error_index,op_cache[error_index][1].type,op_output_var_name), 1)
-            pp_red("fluid results are : ", 1)
-            pp_red(str(error_values1).replace("\n", "\n" + "\t" * 1), 1)
-            pp_yellow("paddle mobile results are : ", 1)
-            pp_red(str(error_values2).replace("\n", "\n" + "\t" * 1), 1)
+            if error_index == None:
+                for name in fetch_names:
+                    if name not in checked_names:
+                        error_index = -1
+                        break
+            if error_index == None:
+                pp_green("outputs are all correct", 1)
+            elif error_index == -1:
+                pp_red("outputs are missing")
+            else:
+                error_values1 = np.array(error_values1)
+                error_values2 = np.array(error_values2)
+                # pp_red("mobile op is not correct, error occurs at {}th op, op's type is {}")
+                pp_red("corresponding fluid op is {}th op, op's type is {}, wrong var name is {}".format(
+                    error_index,op_cache[error_index][1].type,op_output_var_name), 1)
+                pp_red("fluid results are : ", 1)
+                pp_red(str(error_values1).replace("\n", "\n" + "\t" * 1), 1)
+                pp_yellow("paddle mobile results are : ", 1)
+                pp_red(str(error_values2).replace("\n", "\n" + "\t" * 1), 1)
     # print(output_var_cache)
     # print(mobile_var_cache)
 

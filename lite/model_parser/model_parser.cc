@@ -32,7 +32,7 @@
 #include "lite/utils/io.h"
 
 #ifdef LITE_WITH_NPU
-#include "lite/npu/npu_helper.h"
+#include "lite/backends/npu/npu_helper.h"
 #endif
 
 namespace paddle {
@@ -661,9 +661,14 @@ void LoadParamNaive(const std::string &path,
 
 void LoadCombinedParamsNaive(const std::string &path,
                              lite::Scope *scope,
-                             const cpp::ProgramDesc &cpp_prog) {
+                             const cpp::ProgramDesc &cpp_prog,
+                             bool params_from_memory) {
   naive_buffer::BinaryTable table;
-  table.LoadFromFile(path);
+  if (params_from_memory) {
+    table.LoadFromMemory(path.c_str(), path.length());
+  } else {
+    table.LoadFromFile(path);
+  }
   naive_buffer::proto::CombinedParamsDesc pt_desc(&table);
   pt_desc.Load();
   naive_buffer::CombinedParamsDesc desc(&pt_desc);
@@ -710,7 +715,7 @@ void LoadModelNaive(const std::string &model_dir,
   // NOTE: Only main block be used now.
   if (combined) {
     const std::string combined_params_path = model_dir + "/param.nb";
-    LoadCombinedParamsNaive(combined_params_path, scope, *cpp_prog);
+    LoadCombinedParamsNaive(combined_params_path, scope, *cpp_prog, false);
   } else {
     auto &prog = *cpp_prog;
     auto &main_block_desc = *prog.GetBlock<cpp::BlockDesc>(0);
@@ -748,6 +753,41 @@ void LoadModelNaive(const std::string &model_dir,
 #endif
 
   VLOG(4) << "Load naive buffer model in '" << model_dir << "' successfully";
+}
+
+void LoadModelNaiveFromMemory(const std::string &model_buffer,
+                              const std::string &param_buffer,
+                              Scope *scope,
+                              cpp::ProgramDesc *cpp_prog) {
+  CHECK(cpp_prog);
+  CHECK(scope);
+  cpp_prog->ClearBlocks();
+
+  // Load model
+
+  std::string prog_path = model_buffer;
+
+  naive_buffer::BinaryTable table;
+  table.LoadFromMemory(prog_path.c_str(), prog_path.length());
+
+  naive_buffer::proto::ProgramDesc nb_proto_prog(&table);
+  nb_proto_prog.Load();
+  naive_buffer::ProgramDesc nb_prog(&nb_proto_prog);
+
+  // Transform to cpp::ProgramDesc
+  TransformProgramDescAnyToCpp(nb_prog, cpp_prog);
+
+  // Load Params
+  // NOTE: Only main block be used now.
+  // only combined Params are supported in Loading Model from memory
+  std::string combined_params_path = param_buffer;
+  LoadCombinedParamsNaive(combined_params_path, scope, *cpp_prog, true);
+
+#ifdef LITE_WITH_NPU
+  LOG(FATAL) << "load from memory is not supported by NPU";
+#endif
+
+  VLOG(4) << "Load model from naive buffer memory successfully";
 }
 
 }  // namespace lite

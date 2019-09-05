@@ -55,7 +55,7 @@ int TestPoolOp(int in_channels, int in_height, int in_width) {
 
   auto output_var = scope.get()->Var("output");
   framework::AttributeMap attrs;
-  attrs["pooling_type"].SetString(pooling_type);
+  attrs["pooling_type"].Set<std::string>(pooling_type);
   attrs["ksize"].Set<vector<int>>(std::vector<int>({kernel_h, kernel_w}));
   attrs["strides"].Set<vector<int>>(std::vector<int>({stride_h, stride_w}));
   attrs["paddings"].Set<vector<int>>(std::vector<int>({pad_h, pad_w}));

@@ -2026,10 +2026,10 @@ __kernel void conv_7x7(__private const int global_size_dim0,
         out_nh >= global_size_dim2) {
         return;
     }
-    const filter_n0 = 4 * out_c + 0;
-    const filter_n1 = 4 * out_c + 1;
-    const filter_n2 = 4 * out_c + 2;
-    const filter_n3 = 4 * out_c + 3;
+    const int filter_n0 = 4 * out_c + 0;
+    const int filter_n1 = 4 * out_c + 1;
+    const int filter_n2 = 4 * out_c + 2;
+    const int filter_n3 = 4 * out_c + 3;
 
     int2 stride_xy;
     stride_xy.x = stride;
