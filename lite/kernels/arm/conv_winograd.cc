@@ -14,8 +14,8 @@
 
 #include "lite/kernels/arm/conv_winograd.h"
 #include <vector>
-#include "lite/arm/math/conv_impl.h"
-#include "lite/arm/math/packed_sgemm.h"
+#include "lite/backends/arm/math/conv_impl.h"
+#include "lite/backends/arm/math/packed_sgemm.h"
 
 namespace paddle {
 namespace lite {
@@ -24,7 +24,7 @@ namespace arm {
 
 template <>
 void WinogradConv<PRECISION(kFloat), PRECISION(kFloat)>::Init() {
-  auto& param = this->template Param<param_t>();
+  auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->template As<ARMContext>();
 
   auto x_dims = param.x->dims();
@@ -53,7 +53,7 @@ void WinogradConv<PRECISION(kFloat), PRECISION(kFloat)>::Init() {
 
 template <>
 void WinogradConv<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
-  auto& param = this->template Param<param_t>();
+  auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->template As<ARMContext>();
 
   auto x_dims = param.x->dims();
@@ -104,7 +104,7 @@ void WinogradConv<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
 
 template <>
 void WinogradConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
-  auto& param = this->template Param<param_t>();
+  auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->template As<ARMContext>();
   const auto* i_data = param.x->data<float>();
   const auto* w_data = weights_.data<float>();

@@ -12,7 +12,7 @@ if((WITH_TESTING OR WITH_MATH_TESTING) AND LITE_WITH_ARM AND ANDROID)
         string(REPLACE "." ";" FILE_LIST ${TEST_CASE_NAME})
         list(GET FILE_LIST 0 TEST_CASE_NAME)
         add_executable(${TEST_CASE_NAME}  ${SRC_NAME})
-        target_link_libraries(${TEST_CASE_NAME} math_arm)
+        target_link_libraries(${TEST_CASE_NAME} paddle_api_light)
 #        set_target_properties(${TEST_CASE_NAME} PROPERTIES
 #                RUNTIME_OUTPUT_DIRECTORY
 #                ${CMAKE_INSTALL_PREFIX}/unit_test)

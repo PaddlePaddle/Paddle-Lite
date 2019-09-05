@@ -45,11 +45,8 @@ class DepthwiseConv : public KernelLite<TARGET(kARM), Ptype> {
                                const float* scale);
   DepthwiseConv() = default;
   ~DepthwiseConv() {}
-  virtual void PrepareForRun() {
-    LOG(FATAL) << "DepthwiseConv PrepareForRun not implemented";
-  }
-
-  virtual void Run() { LOG(FATAL) << "DepthwiseConv Run not implemented"; }
+  virtual void PrepareForRun();
+  virtual void Run();
 
  private:
   using param_t = operators::ConvParam;

@@ -13,8 +13,8 @@
 // limitations under the License.
 
 #include "lite/kernels/arm/conv_depthwise.h"
-#include "lite/arm/math/conv_block_utils.h"
-#include "lite/arm/math/conv_impl.h"
+#include "lite/backends/arm/math/conv_block_utils.h"
+#include "lite/backends/arm/math/conv_impl.h"
 
 namespace paddle {
 namespace lite {
@@ -23,7 +23,7 @@ namespace arm {
 
 template <>
 void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
-  auto& param = this->template Param<param_t>();
+  auto& param = this->Param<param_t>();
   CHECK(this->ctx_);
   auto& ctx = this->ctx_->template As<ARMContext>();
   auto w_dims = param.filter->dims();
@@ -47,7 +47,7 @@ void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
 
 template <>
 void DepthwiseConv<PRECISION(kInt8), PRECISION(kFloat)>::PrepareForRun() {
-  auto& param = this->template Param<param_t>();
+  auto& param = this->Param<param_t>();
   CHECK(this->ctx_);
   auto& ctx = this->ctx_->template As<ARMContext>();
   auto w_dims = param.filter->dims();
@@ -84,7 +84,7 @@ void DepthwiseConv<PRECISION(kInt8), PRECISION(kFloat)>::PrepareForRun() {
 
 template <>
 void DepthwiseConv<PRECISION(kInt8), PRECISION(kInt8)>::PrepareForRun() {
-  auto& param = this->template Param<param_t>();
+  auto& param = this->Param<param_t>();
   CHECK(this->ctx_);
   auto& ctx = this->ctx_->template As<ARMContext>();
   auto w_dims = param.filter->dims();
@@ -132,7 +132,7 @@ void DepthwiseConv<PRECISION(kInt8), PRECISION(kInt8)>::PrepareForRun() {
 
 template <>
 void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
-  auto& param = this->template Param<param_t>();
+  auto& param = this->Param<param_t>();
   CHECK(this->ctx_);
   auto& ctx = this->ctx_->template As<ARMContext>();
   const auto* i_data = param.x->data<float>();
@@ -174,7 +174,7 @@ void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
 
 template <>
 void DepthwiseConv<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
-  auto& param = this->template Param<param_t>();
+  auto& param = this->Param<param_t>();
   CHECK(this->ctx_);
   auto& ctx = this->ctx_->template As<ARMContext>();
   const auto* i_data = param.x->data<int8_t>();
@@ -216,7 +216,7 @@ void DepthwiseConv<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
 
 template <>
 void DepthwiseConv<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
-  auto& param = this->template Param<param_t>();
+  auto& param = this->Param<param_t>();
   CHECK(this->ctx_);
   auto& ctx = this->ctx_->template As<ARMContext>();
   const auto* i_data = param.x->data<int8_t>();

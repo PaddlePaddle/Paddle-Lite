@@ -21,7 +21,7 @@ namespace arm {
 
 template <>
 void DirectConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
-  auto& param = this->template Param<param_t>();
+  auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->template As<ARMContext>();
   const auto* i_data = param.x->data<float>();
   const auto* w_data = weights_.data<float>();
@@ -72,7 +72,7 @@ void DirectConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
 
 template <>
 void DirectConv<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
-  auto& param = this->template Param<param_t>();
+  auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->template As<ARMContext>();
   const auto* i_data = param.x->data<int8_t>();
   const auto* w_data = weights_.data<int8_t>();
@@ -125,7 +125,7 @@ void DirectConv<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
 
 template <>
 void DirectConv<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
-  auto& param = this->template Param<param_t>();
+  auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->template As<ARMContext>();
   const auto* i_data = param.x->data<int8_t>();
   const auto* w_data = weights_.data<int8_t>();

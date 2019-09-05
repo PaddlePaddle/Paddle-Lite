@@ -14,8 +14,8 @@
 
 #include "lite/kernels/arm/conv_gemmlike.h"
 #include <vector>
-#include "lite/arm/math/gemm_prepacked_int8.h"
-#include "lite/arm/math/packed_sgemm.h"
+#include "lite/backends/arm/math/gemm_prepacked_int8.h"
+#include "lite/backends/arm/math/packed_sgemm.h"
 
 namespace paddle {
 namespace lite {
@@ -30,7 +30,7 @@ void GemmLikeConv<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
 template <>
 void GemmLikeConv<PRECISION(kInt8), PRECISION(kFloat)>::PrepareForRun() {
   Init();
-  auto& param = this->template Param<param_t>();
+  auto& param = this->Param<param_t>();
   /// update scale
   w_scale_ = param.weight_scale;
   if (w_scale_.size() != 1 && w_scale_.size() != param.filter->dims()[0]) {
@@ -51,7 +51,7 @@ void GemmLikeConv<PRECISION(kInt8), PRECISION(kFloat)>::PrepareForRun() {
 template <>
 void GemmLikeConv<PRECISION(kInt8), PRECISION(kInt8)>::PrepareForRun() {
   Init();
-  auto& param = this->template Param<param_t>();
+  auto& param = this->Param<param_t>();
   /// update scale
   /// update scale
   w_scale_ = param.weight_scale;
@@ -83,7 +83,7 @@ void GemmLikeConv<PRECISION(kInt8), PRECISION(kInt8)>::PrepareForRun() {
 
 template <>
 void GemmLikeConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
-  auto& param = this->template Param<param_t>();
+  auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->template As<ARMContext>();
   auto weights = param.filter->data<float>();
   if (flag_trans_weights_) {
@@ -118,7 +118,7 @@ void GemmLikeConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
 
 template <>
 void GemmLikeConv<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
-  auto& param = this->template Param<param_t>();
+  auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->template As<ARMContext>();
   auto weights = param.filter->data<int8_t>();
   if (flag_trans_weights_) {
@@ -174,7 +174,7 @@ void GemmLikeConv<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
 
 template <>
 void GemmLikeConv<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
-  auto& param = this->template Param<param_t>();
+  auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->template As<ARMContext>();
   auto weights = param.filter->data<int8_t>();
   if (flag_trans_weights_) {

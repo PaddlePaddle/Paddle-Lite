@@ -14,6 +14,10 @@
 
 #pragma once
 
+#include <unistd.h>
+#include <cmath>
+#include <cstdlib>
+#include <random>
 #include "lite/core/tensor.h"
 
 namespace paddle {

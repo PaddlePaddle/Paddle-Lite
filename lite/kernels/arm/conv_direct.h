@@ -29,15 +29,16 @@ namespace arm {
 #define ROUNDUP(a, b) ((((a) + (b)-1) / (b)) * (b))
 
 template <PrecisionType Ptype, PrecisionType OutType>
-bool direct_conv_trans_weights(const Tensor* win,
-                               Tensor* wout,
-                               const Tensor* bin,
-                               Tensor* bout,
-                               int stride,
-                               const std::vector<float>& w_scale,
-                               float in_scale,
-                               float out_scale,
-                               std::vector<float>& merge_scale) {  // NOLINT
+inline bool direct_conv_trans_weights(
+    const Tensor* win,
+    Tensor* wout,
+    const Tensor* bin,
+    Tensor* bout,
+    int stride,
+    const std::vector<float>& w_scale,
+    float in_scale,
+    float out_scale,
+    std::vector<float>& merge_scale) {  // NOLINT
   constexpr int cblock = 4;
   int oc = win->dims()[0];
   int ic = win->dims()[1];
@@ -53,7 +54,7 @@ bool direct_conv_trans_weights(const Tensor* win,
 }
 
 template <>
-bool direct_conv_trans_weights<PRECISION(kInt8), PRECISION(kFloat)>(
+inline bool direct_conv_trans_weights<PRECISION(kInt8), PRECISION(kFloat)>(
     const Tensor* win,
     Tensor* wout,
     const Tensor* bin,
@@ -92,7 +93,7 @@ bool direct_conv_trans_weights<PRECISION(kInt8), PRECISION(kFloat)>(
 }
 
 template <>
-bool direct_conv_trans_weights<PRECISION(kInt8), PRECISION(kInt8)>(
+inline bool direct_conv_trans_weights<PRECISION(kInt8), PRECISION(kInt8)>(
     const Tensor* win,
     Tensor* wout,
     const Tensor* bin,
@@ -177,7 +178,7 @@ class DirectConv : public KernelLite<TARGET(kARM), Ptype> {
                                                   w_scale_);
   }
 
-  virtual void Run() { LOG(FATAL) << "DirectConv Run not implemented"; }
+  virtual void Run();
 
   /// todo, support inplace weights transform
  protected:

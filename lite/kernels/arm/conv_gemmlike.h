@@ -82,11 +82,8 @@ class GemmLikeConv : public KernelLite<TARGET(kARM), Ptype> {
     last_shape_ = x_dims;
   }
 
-  virtual void PrepareForRun() {
-    LOG(FATAL) << "GemmLikeConv PrepareForRun not implemented";
-  }
-
-  virtual void Run() { LOG(FATAL) << "GemmLikeConv Run not implemented"; }
+  virtual void PrepareForRun();
+  virtual void Run();
 
   /// todo, support inplace weights transform
  protected:

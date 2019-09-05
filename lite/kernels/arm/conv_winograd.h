@@ -31,11 +31,9 @@ class WinogradConv : public KernelLite<TARGET(kARM), Ptype> {
  public:
   WinogradConv() = default;
   ~WinogradConv() {}
-  virtual void PrepareForRun() {
-    LOG(FATAL) << "WinogradConv PrepareForRun not implemented";
-  }
-  virtual void Init() { LOG(FATAL) << "WinogradConv Init not implemented"; }
-  virtual void Run() { LOG(FATAL) << "WinogradConv Run not implemented"; }
+  virtual void PrepareForRun();
+  virtual void Init();
+  virtual void Run();
 
  protected:
   using param_t = operators::ConvParam;

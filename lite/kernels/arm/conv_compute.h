@@ -24,9 +24,7 @@ namespace arm {
 template <PrecisionType Ptype, PrecisionType OutType>
 class ConvCompute : public KernelLite<TARGET(kARM), Ptype> {
  public:
-  virtual void PrepareForRun() {
-    LOG(FATAL) << "ConvCompute PrepareForRun not implemented";
-  }
+  virtual void PrepareForRun();
 
   virtual void Init() {
     CHECK(impl_);
