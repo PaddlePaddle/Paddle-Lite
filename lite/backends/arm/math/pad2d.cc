@@ -42,8 +42,8 @@ void pad_constant(const float* din,
   for (int s = 0; s < n * c; ++s) {
     const float* din_s = din + s * spatial_size_in;
     float* dout_s = dout + s * spatial_size_out;
-    int top_loop = (w * std::max(pad_top,0)) >> 3;
-    int top_loop_remain = (w * std::max(pad_top,0)) & 7;
+    int top_loop = (w * std::max(pad_top, 0)) >> 3;
+    int top_loop_remain = (w * std::max(pad_top, 0)) & 7;
     float32x4_t vpad_value = vdupq_n_f32(pad_value);
     // process top
     for (int i = 0; i < top_loop; ++i) {
@@ -55,13 +55,13 @@ void pad_constant(const float* din,
       *dout_s++ = pad_value;
     }
     // process med
-    int left_loop = std::max(pad_left,0) >> 2;
-    int left_loop_remain = std::max(pad_left,0) & 3;
-    int width_in= std::min(w_in,w);
+    int left_loop = std::max(pad_left, 0) >> 2;
+    int left_loop_remain = std::max(pad_left, 0) & 3;
+    int width_in = std::min(w_in, w);
     int med_loop = width_in >> 3;
     int med_loop_remain = width_in & 7;
-//    int med_loop = w_in >> 3;
-//    int med_loop_remain = w_in & 7;
+    //    int med_loop = w_in >> 3;
+    //    int med_loop_remain = w_in & 7;
     for (int i = 0; i < left_loop; ++i) {
       vst1q_f32(dout_s, vpad_value);
       dout_s += 4;
@@ -84,13 +84,13 @@ void pad_constant(const float* din,
       *dout_s++ = val;
     }
 
-    for (int i = 0; i < w_in-w; ++i) {
+    for (int i = 0; i < w_in - w; ++i) {
       din_s++;
     }
 
-    int loop =std::max((pad_right + pad_left),0) >> 2;
-    int loop_remain = std::max((pad_right + pad_left),0) & 3;
-    for (int j = 0; j < std::min(h_in,h) - 1; ++j) {
+    int loop = std::max((pad_right + pad_left), 0) >> 2;
+    int loop_remain = std::max((pad_right + pad_left), 0) & 3;
+    for (int j = 0; j < std::min(h_in, h) - 1; ++j) {
       for (int i = 0; i < loop; ++i) {
         vst1q_f32(dout_s, vpad_value);
         dout_s += 4;
@@ -112,11 +112,12 @@ void pad_constant(const float* din,
       for (int i = 0; i < med_loop_remain; ++i) {
         *dout_s++ = *din_s++;
       }
-      for (int i = 0; i < w_in-w; ++i) {
-        din_s++;} 
-   }
-    int right_loop = std::max(pad_right,0) >> 2;
-    int right_loop_remain = std::max(pad_right,0) & 3;
+      for (int i = 0; i < w_in - w; ++i) {
+        din_s++;
+      }
+    }
+    int right_loop = std::max(pad_right, 0) >> 2;
+    int right_loop_remain = std::max(pad_right, 0) & 3;
 
     for (int i = 0; i < right_loop; ++i) {
       vst1q_f32(dout_s, vpad_value);
@@ -127,8 +128,8 @@ void pad_constant(const float* din,
       *dout_s++ = pad_value;
     }
     // process bottom
-    int bottom_loop = (std::max(pad_bottom,0) * w) >> 3;
-    int bottom_loop_remain = (std::max(pad_bottom,0) * w) & 7;
+    int bottom_loop = (std::max(pad_bottom, 0) * w) >> 3;
+    int bottom_loop_remain = (std::max(pad_bottom, 0) * w) & 7;
     for (int i = 0; i < bottom_loop; ++i) {
       vst1q_f32(dout_s, vpad_value);
       vst1q_f32(dout_s + 4, vpad_value);
@@ -160,7 +161,7 @@ void pad_edge(const float* din,
     const float* din_s = din + s * spatial_size_in;
     float* dout_s = dout + s * spatial_size_out;
 
-// process med
+    // process med
     int left_loop = pad_left >> 2;
     int right_loop = pad_right >> 2;
     int med_loop = w_in >> 3;
@@ -215,7 +216,6 @@ void pad_edge(const float* din,
     }
   }
 }
-
 
 void pad_reflect(const float* din,
                  float* dout,
