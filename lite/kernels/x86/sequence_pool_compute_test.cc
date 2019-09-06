@@ -14,9 +14,10 @@
 
 #include "lite/kernels/x86/sequence_pool_compute.h"
 #include <gtest/gtest.h>
+#include <memory>
+#include <utility>
 #include <vector>
 #include "lite/core/op_registry.h"
-
 namespace paddle {
 namespace lite {
 namespace kernels {

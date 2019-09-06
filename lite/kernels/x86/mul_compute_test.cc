@@ -19,7 +19,6 @@
 #include <utility>
 #include <vector>
 #include "lite/core/op_registry.h"
-#include "lite/x86/dynamic_loader.h"
 namespace paddle {
 namespace lite {
 namespace kernels {

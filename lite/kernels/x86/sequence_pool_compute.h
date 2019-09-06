@@ -14,10 +14,10 @@
 #pragma once
 
 #include <vector>
+#include "lite/backends/x86/math/math_function.h"
+#include "lite/backends/x86/math/sequence_pooling.h"
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
-#include "lite/x86/math/math_function.h"
-#include "lite/x86/math/sequence_pooling.h"
 
 namespace paddle {
 namespace lite {

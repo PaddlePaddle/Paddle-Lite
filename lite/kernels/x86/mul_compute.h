@@ -13,11 +13,10 @@
 // limitations under the License.
 #pragma once
 
+#include "lite/backends/x86/math/blas.h"
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/types.h"
-#include "lite/x86/dynamic_loader.h"
-#include "lite/x86/math/blas.h"
 namespace paddle {
 namespace lite {
 namespace kernels {
