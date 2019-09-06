@@ -14,14 +14,9 @@ limitations under the License. */
 
 #include <memory.h>
 
-<<<<<<< HEAD:lite/backends/fpga/KD/llapi/bias_scale.cpp
+#include "lite/backends/fpga/KD/float16.hpp"
 #include "lite/backends/fpga/KD/llapi/bias_scale.h"
 #include "lite/backends/fpga/KD/llapi/zynqmp_api.h"
-=======
-#include "lite/fpga/KD/float16.hpp"
-#include "lite/fpga/KD/llapi/bias_scale.h"
-#include "lite/fpga/KD/llapi/zynqmp_api.h"
->>>>>>> resnet50 quant works:lite/fpga/KD/llapi/bias_scale.cpp
 
 namespace paddle {
 namespace zynqmp {

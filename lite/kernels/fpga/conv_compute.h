@@ -14,14 +14,12 @@
 
 #pragma once
 
+#include "lite/core/kernel.h"
+#include "lite/operators/conv_op.h"
+
 #include "lite/backends/fpga/KD/float16.hpp"
 #include "lite/backends/fpga/KD/pes/conv_pe.hpp"
-#include "lite/core/kernel.h"
-
-#include "lite/fpga/KD/float16.hpp"
-#include "lite/fpga/KD/pes/conv_pe.hpp"
-#include "lite/fpga/KD/pes/depthwise_conv_pe.hpp"
-#include "lite/operators/conv_op.h"
+#include "lite/backends/fpga/KD/pes/depthwise_conv_pe.hpp"
 
 namespace paddle {
 namespace lite {

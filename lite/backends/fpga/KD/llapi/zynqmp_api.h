@@ -366,6 +366,6 @@ int fpga_reset();
 int16_t fp32_2_fp16(float fp32_num);
 float fp16_2_fp32(int16_t fp16_num);
 }  // namespace zynqmp
-}  // namespace paddle_mobile
+}  // namespace paddle
 
 #endif  // PADDLE_MOBILE_SRC_FPGA_KD_ZYNQMP_API_H

@@ -17,8 +17,8 @@
 #include "lite/core/kernel.h"
 #include "lite/operators/concat_op.h"
 
-#include "lite/fpga/KD/float16.hpp"
-#include "lite/fpga/KD/pes/concat_pe.hpp"
+#include "lite/backends/fpga/KD/float16.hpp"
+#include "lite/backends/fpga/KD/pes/concat_pe.hpp"
 
 namespace paddle {
 namespace lite {

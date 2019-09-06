@@ -23,14 +23,12 @@ limitations under the License. */
 #include <map>
 #include <utility>
 
-#include "lite/backends/fpga/KD/llapi/config.h"
 #include "lite/backends/fpga/KD/llapi/zynqmp_api.h"
 
 namespace paddle {
 namespace zynqmp {
 
 #define PADDLE_LITE_OS_LINUX
-
 
 static int fd = -1;
 static const char *device_path = "/dev/fpgadrv0";
@@ -162,7 +160,7 @@ void fpga_copy(void *dest, const void *src, size_t num) {
 
 int fpga_reset() {
   struct FpgaResetArgs args;
-  return  do_ioctl(IOCTL_FPGA_RESET, &args);
+  return do_ioctl(IOCTL_FPGA_RESET, &args);
 }
 
 int ioctl_conv(const struct ConvArgs &args) {
@@ -364,15 +362,15 @@ int compute_fpga_dwconv(const struct DWconvArgs &args) {
   std::cout << "   out_address:" << args.output.address
             << "   out_scale_address:" << args.output.scale_address;
 
-  // float *in_scale = (float *)args.image.scale_address;
-  // std::cout << "inv_scale:" << in_scale[0] << "," << in_scale[1] <<
-  // std::endl;
+// float *in_scale = (float *)args.image.scale_address;
+// std::cout << "inv_scale:" << in_scale[0] << "," << in_scale[1] <<
+// std::endl;
 #endif
   return do_ioctl(IOCTL_CONFIG_DWCONV, &args);
 }
 
-int config_activation(const struct ActiveParamterArgs& args) {
-    return do_ioctl(IOCTL_CONFIG_ACTIVATION_PARAMETER, &args);
+int config_activation(const struct ActiveParamterArgs &args) {
+  return do_ioctl(IOCTL_CONFIG_ACTIVATION_PARAMETER, &args);
 }
 
 // int config_power(const struct PowerArgs& args) {
@@ -420,4 +418,4 @@ float fp16_2_fp32(int16_t fp16_num) {
 }
 
 }  // namespace zynqmp
-}  // namespace paddle_mobile
+}  // namespace paddle
