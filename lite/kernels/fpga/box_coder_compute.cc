@@ -12,13 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "lite/kernels/fpga/box_coder_compute.h"
 #include <string>
 #include <vector>
-
-#include "lite/core/op_registry.h"
-#include "lite/core/tensor.h"
-#include "lite/core/type_system.h"
-#include "lite/kernels/fpga/transpose_compute.h"
+#include "lite/backends/arm/math/funcs.h"
+#include "lite/backends/fpga/KD/float16.hpp"
 
 namespace paddle {
 namespace lite {
@@ -27,15 +25,8 @@ namespace fpga {
 
 using float16 = zynqmp::float16;
 
-// Transpose
-void TransposeCompute::Run() {
-  auto& param = this->Param<param_t>();
-  param.output->mutable_data<float16>();
-}
-
-// Transpose2
-void Transpose2Compute::Run() {
-  auto& param = this->Param<param_t>();
+void BoxCoderCompute::Run() {
+  auto& param = Param<operators::ReshapeParam>();
   param.output->mutable_data<float16>();
 }
 
@@ -44,39 +35,25 @@ void Transpose2Compute::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-// Transpose
-REGISTER_LITE_KERNEL(transpose,
+REGISTER_LITE_KERNEL(box_coder,
                      kFPGA,
                      kFP16,
                      kNHWC,
-                     paddle::lite::kernels::fpga::TransposeCompute,
+                     paddle::lite::kernels::fpga::BoxCoderCompute,
                      def)
-    .BindInput("X",
+    .BindInput("PriorBox",
                {LiteType::GetTensorTy(TARGET(kFPGA),
                                       PRECISION(kFP16),
                                       DATALAYOUT(kNHWC))})
-    .BindOutput("Out",
-                {LiteType::GetTensorTy(TARGET(kFPGA),
-                                       PRECISION(kFP16),
-                                       DATALAYOUT(kNHWC))})
-    .Finalize();
-
-// Transpose2
-REGISTER_LITE_KERNEL(transpose2,
-                     kFPGA,
-                     kFP16,
-                     kNHWC,
-                     paddle::lite::kernels::fpga::Transpose2Compute,
-                     def)
-    .BindInput("X",
+    .BindInput("PriorBoxVar",
                {LiteType::GetTensorTy(TARGET(kFPGA),
                                       PRECISION(kFP16),
                                       DATALAYOUT(kNHWC))})
-    .BindOutput("Out",
-                {LiteType::GetTensorTy(TARGET(kFPGA),
-                                       PRECISION(kFP16),
-                                       DATALAYOUT(kNHWC))})
-    .BindOutput("XShape",
+    .BindInput("TargetBox",
+               {LiteType::GetTensorTy(TARGET(kFPGA),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kNHWC))})
+    .BindOutput("OutputBox",
                 {LiteType::GetTensorTy(TARGET(kFPGA),
                                        PRECISION(kFP16),
                                        DATALAYOUT(kNHWC))})

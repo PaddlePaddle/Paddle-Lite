@@ -97,11 +97,11 @@ class VariablePlaceInferencePass : public DebugPass {
         std::string arg_name = get_argname(node_name, inst.op_info()->inputs());
         CHECK(arg_name.size() > 0) << "can not found op arguments for node "
                                    << node_name;
-        VLOG(4) << "-- input arg_name " << arg_name
-                << "-- node name :" << node_name;
+        LOG(INFO) << "-- input arg_name " << arg_name
+                  << "-- node name :" << node_name;
         auto type = inst.picked_kernel().GetInputDeclType(arg_name);
         if (!x_in->AsArg().type) {
-          VLOG(4) << "set type " << *type << " " << x_in->AsArg().name;
+          LOG(INFO) << "set type " << *type << " " << x_in->AsArg().name;
           if (x_in->AsArg().is_weight) {
             SetWeightType(x_in, *type);
           } else {

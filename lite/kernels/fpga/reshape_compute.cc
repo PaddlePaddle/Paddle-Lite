@@ -21,8 +21,11 @@ namespace lite {
 namespace kernels {
 namespace fpga {
 
+using float16 = zynqmp::float16;
+
 void ReshapeCompute::Run() {
   auto& param = Param<operators::ReshapeParam>();
+  param.output->mutable_data<float16>();
   auto x = param.x;
   auto actual_shape = param.actual_shape;
   auto output = param.output;
@@ -32,13 +35,6 @@ void ReshapeCompute::Run() {
   if (actual_shape) {
     auto actual_shape_dims = actual_shape->dims();
     auto* actual_shape_data = actual_shape->data<int>();
-#ifdef LITE_WITH_CUDA
-    lite::Tensor cpu_actual_shape;
-    if (actual_shape->target() == TARGET(kCUDA)) {
-      cpu_actual_shape.CopyDataFrom(*actual_shape);
-      actual_shape_data = cpu_actual_shape.data<int>();
-    }
-#endif
     auto shape = std::vector<int>(
         actual_shape_data, actual_shape_data + actual_shape_dims.production());
     output_dims = lite::operators::ValidateShape(shape, x_dims);
@@ -56,43 +52,6 @@ void ReshapeCompute::Run() {
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
-
-// REGISTER_LITE_KERNEL(reshape,
-//                      kFPGA,
-//                      kAny,
-//                      kAny,
-//                      paddle::lite::kernels::fpga::ReshapeCompute,
-//                      def)
-//     .BindInput("X",
-//                {LiteType::GetTensorTy(
-//                    TARGET(kFPGA), PRECISION(kAny), DATALAYOUT(kAny), -1)})
-//     .BindInput("Shape",
-//                {LiteType::GetTensorTy(
-//                    TARGET(kFPGA), PRECISION(kAny), DATALAYOUT(kAny), -1)})
-//     .BindOutput("Out",
-//                 {LiteType::GetTensorTy(
-//                     TARGET(kFPGA), PRECISION(kAny), DATALAYOUT(kAny), -1)})
-//     .Finalize();
-
-// REGISTER_LITE_KERNEL(reshape2,
-//                      kFPGA,
-//                      kAny,
-//                      kAny,
-//                      paddle::lite::kernels::fpga::ReshapeCompute,
-//                      def)
-//     .BindInput("X",
-//                {LiteType::GetTensorTy(
-//                    TARGET(kFPGA), PRECISION(kAny), DATALAYOUT(kAny), -1)})
-//     .BindInput("Shape",
-//                {LiteType::GetTensorTy(
-//                    TARGET(kFPGA), PRECISION(kAny), DATALAYOUT(kAny), -1)})
-//     .BindOutput("Out",
-//                 {LiteType::GetTensorTy(
-//                     TARGET(kFPGA), PRECISION(kAny), DATALAYOUT(kAny), -1)})
-//     .BindOutput("XShape",
-//                 {LiteType::GetTensorTy(
-//                     TARGET(kFPGA), PRECISION(kAny), DATALAYOUT(kAny), -1)})
-//     .Finalize();
 
 REGISTER_LITE_KERNEL(reshape,
                      kFPGA,

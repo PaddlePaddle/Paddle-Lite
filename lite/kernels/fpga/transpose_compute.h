@@ -14,6 +14,7 @@
 
 #pragma once
 #include <algorithm>
+#include "lite/backends/fpga/KD/float16.hpp"
 #include "lite/core/kernel.h"
 #include "lite/operators/transpose_op.h"
 
@@ -23,7 +24,8 @@ namespace kernels {
 namespace fpga {
 
 // Transpose
-class TransposeCompute : public KernelLite<TARGET(kFPGA), PRECISION(kFP16)> {
+class TransposeCompute
+    : public KernelLite<TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)> {
  public:
   using param_t = operators::TransposeParam;
 
@@ -33,7 +35,8 @@ class TransposeCompute : public KernelLite<TARGET(kFPGA), PRECISION(kFP16)> {
 };
 
 // Transpose2
-class Transpose2Compute : public KernelLite<TARGET(kFPGA), PRECISION(kFP16)> {
+class Transpose2Compute
+    : public KernelLite<TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)> {
  public:
   using param_t = operators::TransposeParam;
 

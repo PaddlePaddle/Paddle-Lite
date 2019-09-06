@@ -26,16 +26,13 @@ namespace fpga {
 using float16 = zynqmp::float16;
 
 void PoolCompute::PrepareForRun() {
-  
-  zynqmp::PoolingParam& pool_param = pe_.param();
   auto& param = Param<operators::PoolParam>();
-
   param.output->mutable_data<float16>();
 
+  zynqmp::PoolingParam& pool_param = pe_.param();
   pool_param.input = param.x->ZynqTensor();
   pool_param.output = param.output->ZynqTensor();
   pool_param.relu.enabled = false;
-
   pool_param.type = param.pooling_type == "max" ? zynqmp::PoolingType::MAX
                                                 : zynqmp::PoolingType::AVERAGE;
   pool_param.globalPooling = param.global_pooling;
@@ -46,8 +43,8 @@ void PoolCompute::PrepareForRun() {
   pe_.apply();
 }
 
-void PoolCompute::Run() { 
-  pe_.dispatch(); 
+void PoolCompute::Run() {
+  pe_.dispatch();
   zynqmp::PoolingParam& pool_param = pe_.param();
   // pool_param.output->saveToFile("pool", true);
 }

@@ -25,13 +25,13 @@ using float16 = zynqmp::float16;
 
 void ConvCompute::PrepareForRun() {
   auto& param = this->Param<param_t>();
+  param.output->mutable_data<float16>();
 
   // ====================================================
   if (param.groups == param.x->ZynqTensor()->shape().channel()) {
     std::cout << "dw_conv \n";
     // exit(-1);
     zynqmp::DepthwiseConvParam& conv_param = dw_conv_pe_.param();
-    param.output->mutable_data<float16>();
 
     conv_param.input = param.x->ZynqTensor();
     conv_param.output = param.output->ZynqTensor();
@@ -49,7 +49,6 @@ void ConvCompute::PrepareForRun() {
     dw_conv_pe_.apply();
   } else {
     zynqmp::ConvParam& conv_param = conv_pe_.param();
-    param.output->mutable_data<float16>();
 
     conv_param.input = param.x->ZynqTensor();
     conv_param.output = param.output->ZynqTensor();
@@ -63,6 +62,9 @@ void ConvCompute::PrepareForRun() {
     conv_param.bias()->copyFrom(param.bias->ZynqTensor());
     conv_param.relu.enabled = param.fuse_relu;
 
+    conv_param.filter->saveToFile("filter", true);
+    conv_param.bias()->saveToFile("bias", true);
+    conv_param.scale()->saveToFile("scale", true);
     conv_pe_.init();
     conv_pe_.apply();
   }

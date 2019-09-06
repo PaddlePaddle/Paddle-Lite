@@ -60,9 +60,11 @@ void readFromFile(int num, std::string path, float* data) {
 #ifdef LITE_WITH_FPGA
 TEST(ResNet50, test) {
   lite::Predictor predictor;
-  std::vector<Place> valid_places(
-      {Place{TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)},
-       Place{TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNHWC)}});
+  std::vector<Place> valid_places({
+      Place{TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)},
+      Place{TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNHWC)},
+      // Place{TARGET(kARM), PRECISION(kFloat), DATALAYOUT(kNHWC)},
+  });
 
   predictor.Build(FLAGS_model_dir,
                   "",
@@ -71,7 +73,7 @@ TEST(ResNet50, test) {
                   valid_places);
 
   auto* input_tensor = predictor.GetInput(0);
-  input_tensor->Resize(DDim(std::vector<DDim::value_type>({1, 3, 299, 299})));
+  input_tensor->Resize(DDim(std::vector<DDim::value_type>({1, 3, 1000, 1000})));
   auto* data = input_tensor->mutable_data<float>();
   auto item_size = input_tensor->dims().production();
 
