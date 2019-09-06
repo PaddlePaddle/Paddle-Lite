@@ -25,6 +25,20 @@ namespace lite {
 namespace arm {
 namespace math {
 
+void conv_3x3s1_depthwise_fp32(const float* i_data,
+                               float* o_data,
+                               int bs,
+                               int oc,
+                               int oh,
+                               int ow,
+                               int ic,
+                               int ih,
+                               int win,
+                               const float* weights,
+                               const float* bias,
+                               const operators::ConvParam& param,
+                               ARMContext* ctx);
+
 void conv_depthwise_3x3p0_fp32(const float* din,
                                float* dout,
                                int num,

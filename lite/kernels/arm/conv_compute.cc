@@ -49,8 +49,7 @@ void ConvCompute<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
   bool kps_equal = (param.paddings[0] == param.paddings[1]) &&
                    (param.strides[0] == param.strides[1]) && (kw == kh);
   bool no_dilation = (param.dilations[0] == 1) && (param.dilations[1] == 1);
-  bool flag_dw_3x3 =
-      (kw == 3 && (pad == 0 || pad == 1) && (stride == 1 || stride == 2));
+  bool flag_dw_3x3 = (kw == 3 && kh == 3 && (stride == 1 || stride == 2));
   bool flag_dw_5x5 =
       (kw == 5 && stride == 1) || (kw == 5 && stride == 2 && pad == 2);
   bool flag_dw = flag_dw_3x3 || flag_dw_5x5;

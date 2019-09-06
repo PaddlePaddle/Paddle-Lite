@@ -562,10 +562,25 @@ void conv_depthwise_3x3_fp32(const void* din,
                              const operators::ConvParam& param,
                              ARMContext* ctx,
                              const float* scale) {
-  int pad = param.paddings[1];
   int stride = param.strides[1];
-  bool flag_relu = param.fuse_relu;
-  bool flag_bias = param.bias != nullptr;
+  if (stride == 1) {
+    conv_3x3s1_depthwise_fp32(reinterpret_cast<const float*>(din),
+                              reinterpret_cast<float*>(dout),
+                              num,
+                              ch_out,
+                              h_out,
+                              w_out,
+                              ch_in,
+                              h_in,
+                              w_in,
+                              reinterpret_cast<const float*>(weights),
+                              bias,
+                              param,
+                              ctx);
+  } else if (stride == 2) {
+  } else {
+  }
+#if 0
   if (pad == 1) {
     conv_depthwise_3x3p1_fp32(reinterpret_cast<const float*>(din),
                               reinterpret_cast<float*>(dout),
@@ -601,6 +616,7 @@ void conv_depthwise_3x3_fp32(const void* din,
   } else {
     LOG(FATAL) << "unsupport this type 3x3 dw conv";
   }
+#endif
 }
 
 void conv_depthwise_5x5_fp32(const void* din,
