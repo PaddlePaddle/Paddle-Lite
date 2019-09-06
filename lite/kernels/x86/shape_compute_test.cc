@@ -45,7 +45,7 @@ TEST(shape_x86, run_test) {
   out.Resize(lite::DDim(out_shape));
 
   auto x_data = x.mutable_data<float>();
-  auto out_data = out.mutable_data<float>();
+  auto out_data = out.mutable_data<int32_t>();
 
   for (int64_t i = 0; i < x.dims().production(); i++) {
     x_data[i] = 1;
@@ -53,8 +53,8 @@ TEST(shape_x86, run_test) {
 
   ShapeCompute<float> shape;
   operators::ShapeParam param;
-  param.x = x;
-  param.output = &out;
+  param.X = &x;
+  param.Out = &out;
 
   shape.SetParam(param);
   shape.Run();
