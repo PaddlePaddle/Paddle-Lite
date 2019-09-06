@@ -67,6 +67,7 @@ class Optimizer {
            "lite_fc_fuse_pass",                           //
            "lite_shuffle_channel_fuse_pass",              //
            "lite_transpose_softmax_transpose_fuse_pass",  //
+           "lite_interpolate_fuse_pass",                  //
            "identity_scale_eliminate_pass",               //
 #ifdef LITE_WITH_LIGHT_WEIGHT_FRAMEWORK
            "lite_elementwise_add_activation_fuse_pass",  //
