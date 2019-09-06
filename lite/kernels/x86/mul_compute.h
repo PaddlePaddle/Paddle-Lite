@@ -16,14 +16,24 @@
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/types.h"
-#include "paddle/fluid/operators/math/blas.h"
-
+#include "lite/x86/dynamic_loader.h"
+#include "lite/x86/math/blas.h"
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace x86 {
 
-using Tensor = framework::Tensor;
+// using Tensor = framework::Tensor;
+inline lite::Tensor ReshapeToMatrix(const lite::Tensor& src, int num_col_dims) {
+  int rank = src.dims().size();
+  if (rank == 2) {
+    return src;
+  }
+  lite::Tensor res;
+  res.ShareDataWith(src);
+  res.Resize(src.dims().Flatten2D(num_col_dims));
+  return res;
+}
 
 template <typename T>
 class MulCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
@@ -33,36 +43,35 @@ class MulCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
   void Run() override {
     auto& context = ctx_->As<X86Context>();
     auto& param = *param_.get_mutable<operators::MulParam>();
-    CHECK(context.x86_device_context());
+    // CHECK(context.x86_device_context());
 
-    param.output->template mutable_data<T>();
+    auto* z = param.output;
 
-    auto* x = &param.x->raw_tensor();
-    auto* y = &param.y->raw_tensor();
+    auto* x = param.x;
+    auto* y = param.y;
 
     Tensor x_matrix, y_matrix;
 
     if (x->dims().size() > 2) {
-      x_matrix = framework::ReshapeToMatrix(*x, param.x_num_col_dims);
+      x_matrix = ReshapeToMatrix(*x, param.x_num_col_dims);
     } else {
       x_matrix = *x;
     }
 
     if (y->dims().size() > 2) {
-      y_matrix = framework::ReshapeToMatrix(*y, param.y_num_col_dims);
+      y_matrix = ReshapeToMatrix(*y, param.y_num_col_dims);
 
     } else {
       y_matrix = *y;
     }
 
-    auto* z = &param.output->raw_tensor();
+    z->mutable_data<T>();
     auto z_dim = z->dims();
     if (z_dim.size() != 2) {
       z->Resize({x_matrix.dims()[0], y_matrix.dims()[1]});
     }
 
-    auto blas = paddle::operators::math::GetBlas<platform::CPUDeviceContext, T>(
-        *context.x86_device_context());
+    auto blas = lite::x86::math::GetBlas<lite::TargetType::kX86, T>(context);
 
     blas.MatMul(x_matrix, y_matrix, z);
     if (z_dim.size() != 2) {
@@ -73,6 +82,7 @@ class MulCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
   virtual ~MulCompute() = default;
 };
 
+#ifdef LITE_WITH_TRAIN
 template <typename T>
 class MulGradCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
  public:
@@ -142,6 +152,7 @@ class MulGradCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
 
   virtual ~MulGradCompute() = default;
 };
+#endif
 
 }  // namespace x86
 }  // namespace kernels
