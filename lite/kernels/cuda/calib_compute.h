@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #pragma once
+#include <string>
 #include "lite/core/kernel.h"
 #include "lite/operators/calib_op.h"
 
@@ -29,6 +30,8 @@ class CalibComputeFp32ToInt8
   void Run() override;
 
   virtual ~CalibComputeFp32ToInt8() = default;
+
+  std::string doc() const override { return "Fp32 --> Int8"; }
 };
 
 class CalibComputeInt8ToFp32
@@ -39,6 +42,8 @@ class CalibComputeInt8ToFp32
   void Run() override;
 
   virtual ~CalibComputeInt8ToFp32() = default;
+
+  std::string doc() const override { return "Int8 --> Fp32"; }
 };
 
 }  // namespace cuda

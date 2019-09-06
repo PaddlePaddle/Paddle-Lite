@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/cuda/calib_compute.h"
 #include <gtest/gtest.h>
 #include <algorithm>
 #include <memory>
+#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
@@ -58,6 +58,12 @@ void calib_ref(const operators::CalibParam& param, bool to_float = true) {
 }
 
 TEST(calib_cuda, int8_to_fp32) {
+  LOG(INFO) << "to get kernel ...";
+  auto kernels = KernelRegistry::Global().Create(
+      "calib", TARGET(kCUDA), PRECISION(kInt8), DATALAYOUT(kNCHW));
+  ASSERT_FALSE(kernels.empty());
+  auto calib = std::move(*std::next(kernels.begin(), 1));
+  LOG(INFO) << "get kernel: " << calib->doc();
   const int n = 64, c = 32, h = 18, w = 18;
   Tensor x;
   Tensor x_cpu;
@@ -73,24 +79,23 @@ TEST(calib_cuda, int8_to_fp32) {
   auto* x_cpu_data = x_cpu.mutable_data<int8_t>();
   for (int i = 0; i < x.dims().production(); i++) {
     float sign = i % 3 == 0 ? -1.0f : 1.0f;
-    x_cpu_data[i] = static_cast<int8_t>(sign * static_cast<float>(i % 127));
+    x_cpu_data[i] = static_cast<int8_t>(sign * (i % 127));
   }
   x.Assign<int8_t, lite::DDim, TARGET(kCUDA)>(x_cpu_data, x_cpu.dims());
   // prepare kernel params and run
-  CalibComputeInt8ToFp32 calib;
   std::unique_ptr<KernelContext> ctx(new KernelContext);
   auto& context = ctx->As<CUDAContext>();
   cudaStream_t stream;
   cudaStreamCreate(&stream);
   context.SetExecStream(stream);
-  calib.SetContext(std::move(ctx));
+  calib->SetContext(std::move(ctx));
 
   operators::CalibParam param;
   param.scale = 0.013f;
   param.input = &x;
   param.output = &output;
-  calib.SetParam(param);
-  calib.Launch();
+  calib->SetParam(param);
+  calib->Launch();
   cudaDeviceSynchronize();
   // invoking ref implementation and compare results
   param.input = &x_cpu;
@@ -108,7 +113,66 @@ TEST(calib_cuda, int8_to_fp32) {
   }
 }
 
+TEST(calib_cuda, fp32_to_int8) {
+  LOG(INFO) << "to get kernel ...";
+  auto kernels = KernelRegistry::Global().Create(
+      "calib", TARGET(kCUDA), PRECISION(kInt8), DATALAYOUT(kNCHW));
+  ASSERT_FALSE(kernels.empty());
+  auto calib = std::move(kernels.front());
+  LOG(INFO) << "get kernel: " << calib->doc();
+  const int n = 64, c = 32, h = 18, w = 18;
+  Tensor x;
+  Tensor x_cpu;
+  Tensor output;
+  Tensor output_cpu;
+  // set the dims of input, output tensors
+  x.Resize({n, c, h, w});
+  x_cpu.Resize({n, c, h, w});
+  output.Resize({n, c, h, w});
+  output_cpu.Resize({n, c, h, w});
+  // initialize the data of input tensors
+  auto* x_data = x.mutable_data<float>(TARGET(kCUDA));
+  auto* x_cpu_data = x_cpu.mutable_data<float>();
+  for (int i = 0; i < x.dims().production(); i++) {
+    float sign = i % 3 == 0 ? -1.0f : 1.0f;
+    x_cpu_data[i] = sign * (i % 127) * 0.013f;
+  }
+  x.Assign<float, lite::DDim, TARGET(kCUDA)>(x_cpu_data, x_cpu.dims());
+  // prepare kernel params and run
+  std::unique_ptr<KernelContext> ctx(new KernelContext);
+  auto& context = ctx->As<CUDAContext>();
+  cudaStream_t stream;
+  cudaStreamCreate(&stream);
+  context.SetExecStream(stream);
+  calib->SetContext(std::move(ctx));
+
+  operators::CalibParam param;
+  param.scale = 0.013f;
+  param.input = &x;
+  param.output = &output;
+  calib->SetParam(param);
+  calib->Launch();
+  cudaDeviceSynchronize();
+  // invoking ref implementation and compare results
+  param.input = &x_cpu;
+  param.output = &output_cpu;
+  calib_ref(param, false);
+  auto* output_data = output.mutable_data<int8_t>();
+  std::unique_ptr<int8_t[]> output_gpu_copy(new int8_t[output.numel()]);
+  CopySync<TARGET(kCUDA)>(output_gpu_copy.get(),
+                          output_data,
+                          sizeof(int8_t) * output.numel(),
+                          IoDirection::DtoH);
+  const auto* output_cpu_data = output_cpu.data<int8_t>();
+  for (int i = 0; i < output.dims().production(); i++) {
+    EXPECT_EQ(output_gpu_copy[i], output_cpu_data[i]);
+  }
+}
+
 }  // namespace cuda
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
+
+USE_LITE_KERNEL(calib, kCUDA, kInt8, kNCHW, int8_to_fp32);
+USE_LITE_KERNEL(calib, kCUDA, kInt8, kNCHW, fp32_to_int8);
