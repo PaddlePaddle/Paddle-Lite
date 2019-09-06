@@ -5,7 +5,6 @@ endif()
 message(STATUS "compile with lite ARM kernels")
 
 add_kernel(fc_compute_arm ARM basic SRCS fc_compute.cc DEPS ${lite_kernel_deps} math_arm)
-add_kernel(copy_compute_arm ARM basic SRCS copy_compute.cc DEPS ${lite_kernel_deps} math_arm)
 add_kernel(activation_compute_arm ARM basic SRCS activation_compute.cc DEPS ${lite_kernel_deps} math_arm)
 add_kernel(mul_compute_arm ARM basic SRCS mul_compute.cc DEPS ${lite_kernel_deps} math_arm)
 add_kernel(matmul_compute_arm ARM basic SRCS matmul_compute.cc DEPS ${lite_kernel_deps} math_arm)

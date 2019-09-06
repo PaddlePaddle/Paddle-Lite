@@ -14,6 +14,7 @@
 
 #include <gflags/gflags.h>
 #include <gtest/gtest.h>
+#include <string>
 #include <vector>
 #include "lite/api/cxx_api.h"
 #include "lite/api/paddle_use_kernels.h"
@@ -25,6 +26,147 @@
 namespace paddle {
 namespace lite {
 
+namespace test_transformer {
+std::vector<std::string> inputed_lines;
+void load_input_lines(const char* filename) {
+  static const int max_line_buf_size = 100 * 1024 * 1024;
+  char* line_buffer = (char*)calloc(max_line_buf_size, sizeof(char));  // NOLINT
+  FILE* input_file = fopen(filename, "r");
+
+  while (fgets(line_buffer, max_line_buf_size, input_file)) {
+    // trim newline at end
+    char* pos = NULL;
+    if ((pos = strchr(line_buffer, '\n')) != NULL) {
+      *pos = 0;
+    }
+    inputed_lines.push_back(line_buffer);
+  }
+  free(line_buffer);
+  line_buffer = NULL;
+  fclose(input_file);
+}
+void split2(const std::string& main_str,
+            std::vector<std::string>& str_list,  // NOLINT
+            const std::string& delimiter) {
+  size_t pre_pos = 0;
+  size_t position = 0;
+  std::string tmp_str;
+
+  str_list.clear();
+  if (main_str.empty()) {
+    return;
+  }
+
+  while ((position = main_str.find(delimiter, pre_pos)) != std::string::npos) {
+    tmp_str.assign(main_str, pre_pos, position - pre_pos);
+    str_list.push_back(tmp_str);
+    pre_pos = position + 1;
+  }
+
+  tmp_str.assign(main_str, pre_pos, main_str.length() - pre_pos);
+
+  if (!tmp_str.empty()) {
+    str_list.push_back(tmp_str);
+  }
+}
+}  // NOLINT
+
+void pad_batch_input(std::vector<std::string>& input_lines,  // NOLINT
+                     int pad_idx,
+                     int n_head,
+                     Tensor* src_word,
+                     Tensor* src_pos,
+                     Tensor* src_attn_bias,
+                     Tensor* trg_word,
+                     Tensor* init_scores,
+                     Tensor* init_idx,
+                     Tensor* trg_bias,
+                     int line_start,
+                     int batch_size,
+                     int bos_idx) {
+  int max_len = 0;
+  int max_line = input_lines.size();
+
+  std::vector<std::vector<std::string>> batch_lines;
+  for (int i = line_start; i < line_start + batch_size; ++i) {
+    std::string cur_line = input_lines[i];
+
+    std::vector<std::string> split_str;
+
+    test_transformer::split2(cur_line, split_str, " ");
+
+    batch_lines.push_back(split_str);
+    max_len = max_len >= split_str.size() ? max_len : split_str.size();
+  }
+
+  src_word->Resize(std::vector<DDim::value_type>({batch_size, max_len, 1}));
+  src_pos->Resize(std::vector<DDim::value_type>({batch_size, max_len, 1}));
+  src_attn_bias->Resize(
+      std::vector<DDim::value_type>({batch_size, n_head, max_len, max_len}));
+  trg_bias->Resize(
+      std::vector<DDim::value_type>({batch_size, n_head, 1, max_len}));
+  float* src_word_data = src_word->mutable_data<float>();
+  float* src_pos_data = src_pos->mutable_data<float>();
+  float* src_bias_data = src_attn_bias->mutable_data<float>();
+  float* trg_bias_data = trg_bias->mutable_data<float>();
+  for (int i = 0; i < batch_size; ++i) {
+    std::vector<std::string> cur_words = batch_lines[i];
+    int fill_len = cur_words.size();
+    int src_bias_start = i * n_head * max_len * max_len;
+    int trg_bias_start = i * n_head * max_len;
+    for (int j = 0; j < fill_len; ++j) {
+      src_word_data[i * max_len + j] = (atoi(cur_words[j].c_str()));
+      src_pos_data[i * max_len + j] = j;
+      src_bias_data[src_bias_start + j] = 0;
+      trg_bias_data[trg_bias_start + j] = 0;
+    }
+    for (int j = fill_len; j < max_len; ++j) {
+      src_word_data[i * max_len + j] = pad_idx;
+      src_pos_data[i * max_len + j] = 0;
+      src_bias_data[src_bias_start + j] = -1000000000;
+      trg_bias_data[trg_bias_start + j] = -1000000000;
+    }
+    for (int j = src_bias_start;
+         j < src_bias_start + n_head * max_len * max_len;
+         ++j) {
+      int value_ind = j % max_len + src_bias_start;
+      src_bias_data[j] = src_bias_data[value_ind];
+    }
+    for (int j = trg_bias_start; j < trg_bias_start + n_head * max_len; ++j) {
+      int value_ind = j % max_len + trg_bias_start;
+      trg_bias_data[j] = trg_bias_data[value_ind];
+    }
+  }
+
+  trg_word->Resize(std::vector<DDim::value_type>({batch_size, 1, 1}));
+  auto* trg_word_data = trg_word->mutable_data<float>();
+  for (int i = 0; i < batch_size; ++i) {
+    trg_word_data[i] = bos_idx;
+  }
+
+  init_scores->Resize(std::vector<DDim::value_type>({batch_size, 1}));
+  init_idx->Resize(std::vector<DDim::value_type>({batch_size}));
+  float* score_data = init_scores->mutable_data<float>();
+  float* idx_data = init_idx->mutable_data<float>();
+  for (int i = 0; i < init_scores->numel(); ++i) {
+    score_data[i] = 0;
+  }
+  std::vector<std::vector<uint64_t>> lod_s;
+  lod_s.resize(2);
+  for (int i = 0; i < batch_size; ++i) {
+    lod_s[0].push_back(i);
+    lod_s[1].push_back(i);
+    idx_data[i] = i;
+  }
+  lod_s[0].push_back(batch_size);
+  lod_s[1].push_back(batch_size);
+  auto score_lod = init_scores->mutable_lod();
+  *score_lod = lod_s;
+
+  auto trg_word_lod = trg_word->mutable_lod();
+  *trg_word_lod = lod_s;
+}
+
 void TestModel(const std::vector<Place>& valid_places,
                const Place& preferred_place,
                bool use_npu = false) {
@@ -32,79 +174,52 @@ void TestModel(const std::vector<Place>& valid_places,
   DeviceInfo::Global().SetRunMode(lite_api::LITE_POWER_HIGH, FLAGS_threads);
   lite::Predictor predictor;
 
-  predictor.Build(FLAGS_model_dir, preferred_place, valid_places);
+  predictor.Build(FLAGS_model_dir, "", "", preferred_place, valid_places);
 
-  auto* input_tensor = predictor.GetInput(0);
-  input_tensor->Resize(DDim(std::vector<DDim::value_type>({1, 256, 1})));
-  auto* data = input_tensor->mutable_data<float>();
-  auto item_size = input_tensor->dims().production();
-  for (int i = 0; i < item_size; i++) {
-    data[i] = 0;
-  }
-  auto lod_input = input_tensor->mutable_lod();
-  std::vector<std::vector<uint64_t>> lod_s{{0, 1}, {0, 1}};
-  *lod_input = lod_s;
+  std::string test_data_path = "chn_eng_all_testset.id.constraint_length";
+  int n_head = 8;
+  int batch_size = 2;
+  int bos_idx = 0;
+  int eos_idx = 1;
+  LOG(INFO) << "reading";
 
-  auto* src_pos = predictor.GetInput(1);
-  src_pos->Resize(DDim(std::vector<DDim::value_type>({1, 256, 1})));
-  auto* src_data = src_pos->mutable_data<float>();
-  item_size = src_pos->dims().production();
-  for (int i = 0; i < item_size; i++) {
-    src_data[i] = 0;
-  }
-  auto lod_src_pos = src_pos->mutable_lod();
-  *lod_src_pos = lod_s;
-
-  auto* attn_bias = predictor.GetInput(2);
-  attn_bias->Resize(DDim(std::vector<DDim::value_type>({1, 8, 256, 256})));
-  auto* attn_bias_data = attn_bias->mutable_data<float>();
-  item_size = attn_bias->dims().production();
-  for (int i = 0; i < item_size; i++) {
-    attn_bias_data[i] = 0;
-  }
-  auto lod_attn_bias = attn_bias->mutable_lod();
-  *lod_attn_bias = lod_s;
-
-  auto* trg_word = predictor.GetInput(3);
-  trg_word->Resize(DDim(std::vector<DDim::value_type>({1, 1, 1})));
-  auto* trg_word_data = trg_word->mutable_data<float>();
-  item_size = trg_word->dims().production();
-  for (int i = 0; i < item_size; i++) {
-    trg_word_data[i] = 0;
-  }
-  auto lod_trg = trg_word->mutable_lod();
-  *lod_trg = lod_s;
-
-  auto* init_scores = predictor.GetInput(4);
-  init_scores->Resize(DDim(std::vector<DDim::value_type>({1, 1})));
-  auto* data_scores = init_scores->mutable_data<float>();
-  auto scores_size = input_tensor->dims().production();
-  for (int i = 0; i < scores_size; i++) {
-    data_scores[i] = 0;
-  }
-  auto lod_scores = init_scores->mutable_lod();
-  *lod_scores = lod_s;
-
-  auto* init_ids = predictor.GetInput(5);
-  init_ids->Resize(DDim(std::vector<DDim::value_type>({1})));
-  auto* data_ids = init_ids->mutable_data<float>();
-  auto ids_size = init_ids->dims().production();
-  for (int i = 0; i < ids_size; i++) {
-    data_ids[i] = 0;
-  }
-  auto lod_ids = init_ids->mutable_lod();
-  *lod_ids = lod_s;
+  test_transformer::load_input_lines(test_data_path.c_str());
+  LOG(INFO) << "reading finished";
 
   auto* trg_bias = predictor.GetInput(6);
-  trg_bias->Resize(DDim(std::vector<DDim::value_type>({1, 8, 1, 256})));
-  auto* trg_bias_data = trg_bias->mutable_data<float>();
-  item_size = trg_bias->dims().production();
-  for (int i = 0; i < item_size; i++) {
-    trg_bias_data[i] = 0;
-  }
-  auto lod_trg_bias = trg_bias->mutable_lod();
-  *lod_trg_bias = lod_s;
+  auto* src_word = predictor.GetInput(0);
+  auto* src_pos = predictor.GetInput(1);
+  auto* src_bias = predictor.GetInput(2);
+  auto* trg_word = predictor.GetInput(3);
+  auto* init_score = predictor.GetInput(4);
+  auto* init_idx = predictor.GetInput(5);
 
+  pad_batch_input(test_transformer::inputed_lines,
+                  eos_idx,
+                  n_head,
+                  src_word,    // src_word
+                  src_pos,     // src_pos
+                  src_bias,    // src_bias
+                  trg_word,    // trg_word
+                  init_score,  // init_score
+                  init_idx,    // init_idx
+                  trg_bias,    // trg_bias
+                  0,
+                  batch_size,
+                  bos_idx);
+  LOG(INFO) << "******==trg_bias:" << trg_bias->dims();
+  LOG(INFO) << "src_word:" << src_word->dims();
+  LOG(INFO) << "src_pos:" << src_pos->dims();
+  LOG(INFO) << "src_bias:" << src_bias->dims();
+  LOG(INFO) << "trg_word:" << trg_word->dims();
+  LOG(INFO) << "init_score:" << init_score->dims();
+  LOG(INFO) << "init_idx:" << init_idx->dims();
+  LOG(INFO) << *trg_bias;
+  LOG(INFO) << *src_word;
+  LOG(INFO) << *src_pos;
+  LOG(INFO) << *init_score;
+  LOG(INFO) << *init_idx;
+  LOG(INFO) << *src_bias;
   for (int i = 0; i < FLAGS_warmup; ++i) {
     predictor.Run();
   }
@@ -122,8 +237,12 @@ void TestModel(const std::vector<Place>& valid_places,
 
   auto* outs = predictor.GetOutputs();
   for (auto out : *outs) {
+    LOG(INFO) << "======"
+              << "here";
     LOG(INFO) << out;
   }
+  LOG(INFO) << "======"
+            << "hereggg";
 }
 
 TEST(OcrAttention, test_arm) {
