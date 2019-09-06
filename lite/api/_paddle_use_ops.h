@@ -118,8 +118,10 @@ USE_LITE_OP(cast)
 USE_LITE_OP(affine_channel)
 USE_LITE_OP(anchor_generator)
 USE_LITE_OP(generate_proposals)
-USE_LITE_OP(squeeze)   // for x2paddle
-USE_LITE_OP(squeeze2)  // for x2paddle
-USE_LITE_OP(expand)    // for x2paddle
+USE_LITE_OP(squeeze)     // for x2paddle
+USE_LITE_OP(squeeze2)    // for x2paddle
+USE_LITE_OP(unsqueeze)   // for x2paddle
+USE_LITE_OP(unsqueeze2)  // for x2paddle
+USE_LITE_OP(expand)      // for x2paddle
 USE_LITE_OP(roi_align)
 USE_LITE_OP(box_clip)
