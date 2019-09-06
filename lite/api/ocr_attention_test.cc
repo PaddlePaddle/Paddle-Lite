@@ -45,7 +45,7 @@ void TestModel(const std::vector<Place>& valid_places,
   auto* init_scores = predictor.GetInput(2);
   init_scores->Resize(DDim(std::vector<DDim::value_type>({1, 1})));
   auto* data_scores = init_scores->mutable_data<float>();
-  auto scores_size = input_tensor->dims().production();
+  auto scores_size = init_scores->dims().production();
   for (int i = 0; i < scores_size; i++) {
     data_scores[i] = 0;
   }

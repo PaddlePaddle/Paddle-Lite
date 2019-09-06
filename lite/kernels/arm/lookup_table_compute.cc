@@ -53,7 +53,7 @@ void LookupTableCompute::Run() {
       CHECK_GE(ids_data[i], 0) << "lookuptable ids[i] >= 0 check failed";
 
       memcpy(dout + i * row_width,
-             table_data + ids_int * row_width,
+             table_data + ids_data[i] * row_width,
              row_width * sizeof(float));
     }
   }
