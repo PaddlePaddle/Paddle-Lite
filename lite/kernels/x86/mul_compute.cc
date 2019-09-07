@@ -25,6 +25,7 @@ REGISTER_LITE_KERNEL(mul,
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
     .Finalize();
 
+#ifdef LITE_WITH_TRAIN
 REGISTER_LITE_KERNEL(mul_grad,
                      kX86,
                      kFloat,
@@ -40,3 +41,4 @@ REGISTER_LITE_KERNEL(mul_grad,
     .BindOutput(paddle::framework::GradVarName("Y"),
                 {LiteType::GetTensorTy(TARGET(kX86))})
     .Finalize();
+#endif

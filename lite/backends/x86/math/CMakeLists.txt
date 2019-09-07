@@ -16,7 +16,7 @@ function(math_library TARGET)
     endif()
 
     list(LENGTH cc_srcs cc_srcs_len)
-    lite_cc_library(${TARGET} SRCS ${cc_srcs} DEPS ${math_library_DEPS} ${math_common_deps} eigen3)
+    lite_cc_library(${TARGET} SRCS ${cc_srcs} DEPS ${math_library_DEPS} ${math_common_deps} eigen3 dynload_mklml)
 endfunction()
 
 # please add new math_library in alphabetical order
