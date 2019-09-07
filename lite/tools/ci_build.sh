@@ -219,7 +219,7 @@ function test_server {
 function build_test_server {
     mkdir -p ./build
     cd ./build
-    export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/paddle/build/third_party/install/mklml/lib"
+    export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$PWD/third_party/install/mklml/lib"
     cmake_x86_for_CI
     build
 
