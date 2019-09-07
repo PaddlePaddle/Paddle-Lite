@@ -468,112 +468,118 @@ void conv_3x3s1_depthwise_fp32(const float* i_data,
           "vld1.32    {d10-d13}, [%[wc0]]!      @ load w0, w1, to q5, q6\n"
           "vld1.32    {d14-d15}, [%[wc0]]!      @ load w2, to q7\n"
           /* load r0, r1 */
-          "vld1.32    {d0-d1}, [%[r0]]!         @ load r0, 4 float\n"
-          "vld1.32    {d2}, [%[r0]]             @ load r0, 2 float\n"
+          "vld1.32    {d0-d3}, [%[r0]]!         @ load r0, q0, q1\n"
+          "vld1.32    {d4-d7}, [%[r0]]!         @ load r0, q2, q3\n"
           /* main loop */
           "0:                                   @ main loop\n"
           /* mul r0 with w0, w1, w2, get out r0 */
-          "vmla.f32   q8, q5, d0[0]             @ w0 * inr00\n"
-          "vmla.f32   q9, q5, d0[1]             @ w0 * inr01\n"
-          "vmla.f32   q10, q5, d1[0]            @ w0 * inr02\n"
-          "vmla.f32   q11, q5, d1[1]            @ w0 * inr03\n"
-          "vld1.32    {d3-d4}, [%[r1]]!         @ load r1, 4 float\n"
-          "vmla.f32   q8, q6, d0[1]             @ w1 * inr01\n"
-          "vmla.f32   q9, q6, d1[0]             @ w1 * inr02\n"
-          "vmla.f32   q10, q6, d1[1]            @ w1 * inr03\n"
-          "vmla.f32   q11, q6, d2[0]            @ w1 * inr04\n"
-          "vld1.32    {d5}, [%[r1]]             @ load r0, 2 float\n"
-          "vmla.f32   q8, q7, d1[0]             @ w2 * inr02\n"
-          "vmla.f32   q9, q7, d1[1]             @ w2 * inr03\n"
-          "vmla.f32   q10, q7, d2[0]            @ w2 * inr04\n"
-          "vmla.f32   q11, q7, d2[1]            @ w2 * inr05\n"
-          /* mul r1 with w0, w1, w2, get out r1 */
-          "vmla.f32   q12, q5, d3[0]            @ w0 * inr10\n"
-          "vmla.f32   q13, q5, d3[1]            @ w0 * inr11\n"
-          "vmla.f32   q14, q5, d4[0]            @ w0 * inr12\n"
-          "vmla.f32   q15, q5, d4[1]            @ w0 * inr13\n"
-          "vmla.f32   q12, q6, d3[1]            @ w1 * inr11\n"
-          "vmla.f32   q13, q6, d4[0]            @ w1 * inr12\n"
-          "vmla.f32   q14, q6, d4[1]            @ w1 * inr13\n"
-          "vmla.f32   q15, q6, d5[0]            @ w1 * inr14\n"
-          "vld1.32    {d10-d13}, [%[wc0]]!      @ load w3, w4, to q5, q6\n"
-          "vmla.f32   q12, q7, d4[0]            @ w2 * inr12\n"
-          "vmla.f32   q13, q7, d4[1]            @ w2 * inr13\n"
-          "vmla.f32   q14, q7, d5[0]            @ w2 * inr14\n"
-          "vmla.f32   q15, q7, d5[1]            @ w2 * inr15\n"
-          "vld1.32    {d14-d15}, [%[wc0]]!      @ load w5, to q7\n"
-          /* mul r1 with w3, w4, w5, get out r0 */
-          "vmla.f32   q8, q5, d3[0]             @ w3 * inr10\n"
-          "vmla.f32   q9, q5, d3[1]             @ w3 * inr11\n"
-          "vmla.f32   q10, q5, d4[0]            @ w3 * inr12\n"
-          "vmla.f32   q11, q5, d4[1]            @ w3 * inr13\n"
-          "vld1.32    {d0-d1}, [%[r2]]!         @ load r2, 4 float\n"
-          "vmla.f32   q8, q6, d3[1]             @ w4 * inr11\n"
-          "vmla.f32   q9, q6, d4[0]             @ w4 * inr12\n"
-          "vmla.f32   q10, q6, d4[1]            @ w4 * inr13\n"
-          "vmla.f32   q11, q6, d5[0]            @ w4 * inr14\n"
-          "vld1.32    {d2}, [%[r2]]             @ load r2, 2 float\n"
-          "vmla.f32   q8, q7, d4[0]             @ w5 * inr12\n"
-          "vmla.f32   q9, q7, d4[1]             @ w5 * inr13\n"
-          "vmla.f32   q10, q7, d5[0]            @ w5 * inr14\n"
-          "vmla.f32   q11, q7, d5[1]            @ w5 * inr15\n"
-          /* mul r2 with w3, w4, w5, get out r1 */
-          "vmla.f32   q12, q5, d0[0]            @ w3 * inr20\n"
-          "vmla.f32   q13, q5, d0[1]            @ w3 * inr21\n"
-          "vmla.f32   q14, q5, d1[0]            @ w3 * inr22\n"
-          "vmla.f32   q15, q5, d1[1]            @ w3 * inr23\n"
-          "vmla.f32   q12, q6, d0[1]            @ w4 * inr21\n"
-          "vmla.f32   q13, q6, d1[0]            @ w4 * inr22\n"
-          "vmla.f32   q14, q6, d1[1]            @ w4 * inr23\n"
-          "vmla.f32   q15, q6, d2[0]            @ w4 * inr24\n"
-          "vld1.32    {d10-d13}, [%[wc0]]!      @ load w6, w7, to q5, q6\n"
-          "vmla.f32   q12, q7, d1[0]            @ w5 * inr22\n"
-          "vmla.f32   q13, q7, d1[1]            @ w5 * inr23\n"
-          "vmla.f32   q14, q7, d2[0]            @ w5 * inr24\n"
-          "vmla.f32   q15, q7, d2[1]            @ w5 * inr25\n"
-          "vld1.32    {d14-d15}, [%[wc0]]!      @ load w8, to q7\n"
+          "vmul.f32   q8, q5, q0                @ w0 * inr00\n"
+          "vmul.f32   q9, q5, q1                @ w0 * inr01\n"
+          "vmul.f32   q10, q5, q2               @ w0 * inr02\n"
+          "vmul.f32   q11, q5, q3               @ w0 * inr03\n"
+          "vmla.f32   q8, q6, q1                @ w1 * inr01\n"
+          "vld1.32    {d0-d3}, [%[r0]]          @ load r0, q0, q1\n"
+          "vmla.f32   q9, q6, q2                @ w1 * inr02\n"
+          "vmla.f32   q10, q6, q3               @ w1 * inr03\n"
+          "vmla.f32   q11, q6, q0               @ w1 * inr04\n"
+          "vmla.f32   q8, q7, q2                @ w2 * inr02\n"
+          "vmla.f32   q9, q7, q3                @ w2 * inr03\n"
+          "vld1.32    {d4-d7}, [%[r1]]!         @ load r0, q2, q3\n"
+          "vmla.f32   q10, q7, q0               @ w2 * inr04\n"
+          "vmla.f32   q11, q7, q1               @ w2 * inr05\n"
+          "vld1.32    {d0-d3}, [%[r1]]!         @ load r0, q0, q1\n"
+          "vld1.32    {d8-d9}, [%[wc0]]!        @ load w3 to q4\n"
+          /* mul r1 with w0-w5, get out r0, r1 */
+          "vmul.f32   q12, q5, q2               @ w0 * inr10\n"
+          "vmul.f32   q13, q5, q3               @ w0 * inr11\n"
+          "vmul.f32   q14, q5, q0               @ w0 * inr12\n"
+          "vmul.f32   q15, q5, q1               @ w0 * inr13\n"
+          "vld1.32    {d10-d11}, [%[wc0]]!      @ load w4 to q5\n"
+          "vmla.f32   q8, q4, q2                @ w3 * inr10\n"
+          "vmla.f32   q9, q4, q3                @ w3 * inr11\n"
+          "vmla.f32   q10, q4, q0               @ w3 * inr12\n"
+          "vmla.f32   q11, q4, q1               @ w3 * inr13\n"
+          /* mul r1 with w1, w4, get out r1, r0 */
+          "vmla.f32   q8, q5, q3                @ w4 * inr11\n"
+          "vmla.f32   q12, q6, q3               @ w1 * inr11\n"
+          "vld1.32    {d4-d7}, [%[r1]]          @ load r1, q2, q3\n"
+          "vmla.f32   q9, q5, q0                @ w4 * inr12\n"
+          "vmla.f32   q13, q6, q0               @ w1 * inr12\n"
+          "vmla.f32   q10, q5, q1               @ w4 * inr13\n"
+          "vmla.f32   q14, q6, q1               @ w1 * inr13\n"
+          "vmla.f32   q11, q5, q2               @ w4 * inr14\n"
+          "vmla.f32   q15, q6, q2               @ w1 * inr14\n"
+          "vld1.32    {d12-d13}, [%[wc0]]!      @ load w5 to q6\n"
+          /* mul r1 with w2, w5, get out r1, r0 */
+          "vmla.f32   q12, q7, q0               @ w2 * inr12\n"
+          "vmla.f32   q13, q7, q1               @ w2 * inr13\n"
+          "vmla.f32   q8, q6, q0                @ w5 * inr12\n"
+          "vmla.f32   q9, q6, q1                @ w5 * inr13\n"
+          "vld1.32    {d0-d3}, [%[r2]]!         @ load r2, q0, q1\n"
+          "vmla.f32   q14, q7, q2               @ w2 * inr14\n"
+          "vmla.f32   q15, q7, q3               @ w2 * inr15\n"
+          "vmla.f32   q10, q6, q2               @ w5 * inr14\n"
+          "vmla.f32   q11, q6, q3               @ w5 * inr15\n"
+          "vld1.32    {d4-d7}, [%[r2]]!         @ load r2, q0, q1\n"
+          "vld1.32    {d14-d15}, [%[wc0]]!      @ load w6, to q7\n"
+          /* mul r2 with w3-w8, get out r0, r1 */
+          "vmla.f32   q12, q4, q0               @ w3 * inr20\n"
+          "vmla.f32   q13, q4, q1               @ w3 * inr21\n"
+          "vmla.f32   q14, q4, q2               @ w3 * inr22\n"
+          "vmla.f32   q15, q4, q3               @ w3 * inr23\n"
+          "vld1.32    {d8-d9}, [%[wc0]]!        @ load w7, to q4\n"
+          "vmla.f32   q8,  q7, q0               @ w6 * inr20\n"
+          "vmla.f32   q9,  q7, q1               @ w6 * inr21\n"
+          "vmla.f32   q10, q7, q2               @ w6 * inr22\n"
+          "vmla.f32   q11, q7, q3               @ w6 * inr23\n"
+          /* mul r2 with w4, w7, get out r1, r0 */
+          "vmla.f32   q8,  q4, q1               @ w7 * inr21\n"
+          "vmla.f32   q12, q5, q1               @ w4 * inr21\n"
+          "vld1.32    {d0-d3}, [%[r2]]          @ load r2, q0, q1\n"
+          "vmla.f32   q9,  q4, q2               @ w7 * inr22\n"
+          "vmla.f32   q13, q5, q2               @ w4 * inr22\n"
+          "vmla.f32   q10, q4, q3               @ w7 * inr23\n"
+          "vmla.f32   q14, q5, q3               @ w4 * inr23\n"
+          "vmla.f32   q11, q4, q0               @ w7 * inr24\n"
+          "vmla.f32   q15, q5, q0               @ w4 * inr24\n"
+          "vld1.32    {d10-d11}, [%[wc0]]!      @ load w8 to q5\n"
+          /* mul r1 with w5, w8, get out r1, r0 */
+          "vmla.f32   q12, q6, q2               @ w5 * inr22\n"
+          "vmla.f32   q13, q6, q3               @ w5 * inr23\n"
+          "vmla.f32   q8,  q5, q2               @ w8 * inr22\n"
+          "vmla.f32   q9,  q5, q3               @ w8 * inr23\n"
+          "vld1.32    {d4-d7}, [%[r3]]!         @ load r3, q2, q3\n"
+          "vmla.f32   q14, q6, q0               @ w5 * inr24\n"
+          "vmla.f32   q15, q6, q1               @ w5 * inr25\n"
+          "vmla.f32   q10, q5, q0               @ w8 * inr24\n"
+          "vmla.f32   q11, q5, q1               @ w8 * inr25\n"
+          "vld1.32    {d0-d3}, [%[r3]]!         @ load r3, q0, q1\n"
           "sub    %[wc0], %[wc0], #144          @ wc0 - 144 to start address\n"
-          /* mul r2 with w6, w7, w8, get out r0 */
-          "vmla.f32   q8, q5, d0[0]             @ w6 * inr20\n"
-          "vmla.f32   q9, q5, d0[1]             @ w6 * inr21\n"
-          "vld1.32    {d3-d4}, [%[r3]]!         @ load r3, 4 float\n"
-          "vmla.f32   q10, q5, d1[0]            @ w6 * inr22\n"
-          "vmla.f32   q11, q5, d1[1]            @ w6 * inr23\n"
-          "vmla.f32   q8, q6, d0[1]             @ w7 * inr21\n"
-          "vmla.f32   q9, q6, d1[0]             @ w7 * inr22\n"
-          "vld1.32    {d5}, [%[r3]]             @ load r3, 2 float\n"
-          "vmla.f32   q10, q6, d1[1]            @ w7 * inr23\n"
-          "vmla.f32   q11, q6, d2[0]            @ w7 * inr24\n"
-          "vmla.f32   q8, q7, d1[0]             @ w8 * inr22\n"
-          "vmla.f32   q9, q7, d1[1]             @ w8 * inr23\n"
-          "vmla.f32   q10, q7, d2[0]            @ w8 * inr24\n"
-          "vmla.f32   q11, q7, d2[1]            @ w8 * inr25\n"
           /* mul r3 with w6, w7, w8, get out r1 */
-          "vmla.f32   q12, q5, d3[0]            @ w6 * inr20\n"
-          "vmla.f32   q13, q5, d3[1]            @ w6 * inr21\n"
-          "vst1.32    {d16-d19}, [%[ptr_out0]]! @ save r00, r01, c0~c3\n"
-          "vmla.f32   q14, q5, d4[0]            @ w6 * inr22\n"
-          "vmla.f32   q15, q5, d4[1]            @ w6 * inr23\n"
-          "vst1.32    {d20-d23}, [%[ptr_out0]]! @ save r02, r03, c0~c3\n"
-          "vmla.f32   q12, q6, d3[1]            @ w7 * inr21\n"
-          "vmla.f32   q13, q6, d4[0]            @ w7 * inr22\n"
-          "vmla.f32   q14, q6, d4[1]            @ w7 * inr23\n"
-          "vmla.f32   q15, q6, d5[0]            @ w7 * inr24\n"
-          "vmla.f32   q12, q7, d4[0]            @ w8 * inr22\n"
-          "vmla.f32   q13, q7, d4[1]            @ w8 * inr23\n"
-          "vmla.f32   q14, q7, d5[0]            @ w8 * inr24\n"
-          "vmla.f32   q15, q7, d5[1]            @ w8 * inr25\n"
-          "vst1.32    {d24-d27}, [%[ptr_out1]]! @ save r10, r11, c0~c3\n"
-          "vst1.32    {d28-d31}, [%[ptr_out1]]! @ save r12, r13, c0~c3\n"
-          "subs   %[cnt], #1                    @ loop count--\n"
-          "bne    0b                            @ jump to main loop\n"
-          : [inr0] "+r"(inr0), [inr1] "+r"(inr1),
-            [inr2] "+r"(inr2), [inr3] "+r"(inr3),
-            [out0] "+r"(out0), [wc0] "+r"(weight_c)
+          "vmla.f32   q12, q7, q2               @ w6 * inr30\n"
+          "vmla.f32   q13, q7, q3               @ w6 * inr31\n"
+          "vst1.32    {d16-d19}, [%[out0]]!     @ save r00, r01, c0~c3\n"
+          "vmla.f32   q14, q7, q0               @ w6 * inr32\n"
+          "vmla.f32   q15, q7, q1               @ w6 * inr33\n"
+          "vst1.32    {d20-d23}, [%[out0]]!     @ save r02, r03, c0~c3\n"
+          "vmla.f32   q12, q4, q3               @ w7 * inr31\n"
+          "vld1.32    {d4-d7}, [%[r3]]          @ load r3, q2, q3\n"
+          "vmla.f32   q13, q4, q0               @ w7 * inr32\n"
+          "vmla.f32   q14, q4, q1               @ w7 * inr33\n"
+          "vmla.f32   q15, q4, q2               @ w7 * inr34\n"
+          "vmla.f32   q12, q5, q0               @ w8 * inr32\n"
+          "vmla.f32   q13, q5, q1               @ w8 * inr33\n"
+          "vmla.f32   q14, q5, q2               @ w8 * inr34\n"
+          "vmla.f32   q15, q5, q3               @ w8 * inr35\n"
+          "vst1.32    {d24-d27}, [%[out0]]!     @ save r10, r11, c0~c3\n"
+          "vst1.32    {d28-d31}, [%[out0]]!     @ save r12, r13, c0~c3\n"
+          : [r0] "+r"(inr0), [r1] "+r"(inr1),
+          [r2] "+r"(inr2), [r3] "+r"(inr3),
+          [out0] "+r"(out0), [wc0] "+r"(weight_c)
           :
           : "cc", "memory",
-            "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8", "q9",
-            "q10", "q11", "q12", "q13","q14", "q15"
+                  "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8", "q9",
+                  "q10", "q11", "q12", "q13","q14", "q15"
           );
 #endif  //  __arch64__
           float* out1 = pre_out;
@@ -661,6 +667,58 @@ void conv_3x3s1_depthwise_fp32(const float* i_data,
           : "cc", "memory",
             "v0","v1","v2","v3","v4","v5","v6","v7",
             "v15", "v16","v17","v18","v19","v20","v21","v22"
+          );
+#else
+          asm volatile(
+          "vld1.32 {d0-d3}, [%[din]]!\n"      /* load input*/
+          "vld1.32 {d4-d7}, [%[din]]!\n"      /* load input*/
+          "vadd.f32  q0,  q0, %q[vbias]\n"    /* add bias */
+          "vadd.f32  q1,  q1, %q[vbias]\n"    /* add bias */
+          "vld1.32 {d8-d11}, [%[din]]!\n"     /* load input*/
+          "vadd.f32  q2,  q2, %q[vbias]\n"    /* add bias */
+          "vadd.f32  q3,  q3, %q[vbias]\n"    /* add bias */
+          "vld1.32 {d12-d15}, [%[din]]!\n"    /* load input*/
+          "vadd.f32  q4,  q4, %q[vbias]\n"    /* add bias */
+          "vadd.f32  q5,  q5, %q[vbias]\n"    /* add bias */
+          "vadd.f32  q6,  q6, %q[vbias]\n"    /* add bias */
+          "vadd.f32  q7,  q7, %q[vbias]\n"    /* add bias */
+          /* transpose */
+          "vtrn.32 q0, q1\n"      /* r0: q0: a0a1c0c1, q1: b0b1d0d1*/
+          "vtrn.32 q2, q3\n"      /* r0: q2: a2a3c2c3, q3: b2b3d2d3*/
+          "vtrn.32 q4, q5\n"      /* r1: q4: a0a1c0c1, q5: b0b1d0d1*/
+          "vtrn.32 q6, q7\n"      /* r1: q6: a2a3c2c3, q7: b2b3d2d3*/
+          "vswp   d1, d4\n"       /* r0: q0: a0a1a2a3, q2: c0c1c2c3*/
+          "vswp   d3, d6\n"       /* r0: q1: b0b1b2b3, q3: d0d1d2d3*/
+          "vswp   d9, d12\n"      /* r1: q4: a0a1a2a3, q6: c0c1c2c3*/
+          "vswp   d11, d14\n"     /* r1: q5: b0b1b2b3, q7: d0d1d2d3*/
+          "cmp  %[flag_relu], #0\n"
+          "beq  0f\n"             /* skip relu*/
+          "vmov.u32 q15, #0\n"
+          "vmax.f32 q0, q0, q15\n"
+          "vmax.f32 q1, q1, q15\n"
+          "vmax.f32 q2, q2, q15\n"
+          "vmax.f32 q3, q3, q15\n"
+          "vmax.f32 q4, q4, q15\n"
+          "vmax.f32 q5, q5, q15\n"
+          "vmax.f32 q6, q6, q15\n"
+          "vmax.f32 q7, q7, q15\n"
+          "0:\n"
+          "vst1.32 {d0-d1}, [%[outc00]]!\n" /* save outc00*/
+          "vst1.32 {d2-d3}, [%[outc10]]!\n" /* save outc10*/
+          "vst1.32 {d4-d5}, [%[outc20]]!\n" /* save outc20*/
+          "vst1.32 {d6-d7}, [%[outc30]]!\n" /* save outc30*/
+          "vst1.32 {d8-d9}, [%[outc01]]!\n" /* save outc01*/
+          "vst1.32 {d10-d11}, [%[outc11]]!\n" /* save outc11*/
+          "vst1.32 {d12-d13}, [%[outc21]]!\n" /* save outc21*/
+          "vst1.32 {d14-d15}, [%[outc31]]!\n" /* save outc31*/
+          :[outc00] "+r"(outc00), [outc01] "+r"(outc01),
+          [outc10] "+r"(outc10), [outc11] "+r"(outc11),
+          [outc20] "+r"(outc20), [outc21] "+r"(outc21),
+          [outc30] "+r"(outc30), [outc31] "+r"(outc31),
+          [din] "+r"(out1)
+          :[vbias]"w" (vbias), [flag_relu] "r"(flag_relu)
+          : "cc", "memory",
+                  "q0","q1","q2","q3","q4","q5","q6","q7", "q15"
           );
 #endif  //  __aarch64__
           if (flag_mask) {

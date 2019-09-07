@@ -37,11 +37,11 @@ void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
     auto ic = w_dims[1];
     auto kh = w_dims[2];
     auto cround = ROUNDUP(oc, cblock);
-    weights_.Resize({cround, ic, kh, kw});
+    weights_.Resize({cround, 1, kh, kw});
     auto w_data = weights_.mutable_data<float>();
     auto w_data_in = param.filter->data<float>();
     lite::arm::math::conv_trans_weights_numc(
-        w_data_in, w_data, oc, ic, cblock, kh * kw);
+        w_data_in, w_data, oc, 1, cblock, kh * kw);
     impl_ = lite::arm::math::conv_depthwise_3x3_fp32;
     flag_trans_weights_ = true;
     //    ctx.ExtendWorkspace(sizeof(float) * )
