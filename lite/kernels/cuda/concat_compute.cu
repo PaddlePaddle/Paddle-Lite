@@ -185,26 +185,15 @@ void ConcatCompute::Run() {
   dim3 block_dims;
   dim3 grid_dims;
   GetBlockDims(ctx, out_row, out_col, &block_dims, &grid_dims);
-
-  LOG(INFO) << "has_same_shape:" << has_same_shape << ", in_num:" << in_num;
-  // memory::allocation::AllocationPtr tmp_dev_ins_data;
   const float** dev_ins_data = nullptr;
   if (!has_same_shape || in_num < 2 || in_num > 4) {
     float* tmp_dev_ins_data = nullptr;
-    // tmp_dev_ins_data =
-    //     platform::DeviceTemporaryAllocator::Instance().Get(context).Allocate(
-    //         inputs_data.size() * sizeof(T*));
-    // memory::Copy(boost::get<platform::CUDAPlace>(context.GetPlace()),
-    //              tmp_dev_ins_data->ptr(), platform::CPUPlace(),
-    //              static_cast<void*>(inputs_data.data()),
-    //              inputs_data.size() * sizeof(T*), stream);
     CHECK(cudaSuccess ==
           cudaMalloc(&tmp_dev_ins_data, inputs_data.size() * sizeof(float*)));
     CHECK(cudaSuccess == cudaMemcpy(tmp_dev_ins_data,
                                     static_cast<void*>(inputs_data.data()),
                                     inputs_data.size() * sizeof(float*),
                                     cudaMemcpyHostToDevice));
-    // dev_ins_data = reinterpret_cast<const T**>(tmp_dev_ins_data->ptr());
     dev_ins_data = reinterpret_cast<const float**>(tmp_dev_ins_data);
   }
   if (has_same_shape) {
@@ -243,7 +232,7 @@ void ConcatCompute::Run() {
           out_row,
           out_col,
           output->mutable_data<float>());
-      // cudaFree(dev_ins_data);
+      cudaFree(dev_ins_data);
     }
   } else {
     int* tmp_dev_ins_col_data = nullptr;
@@ -255,14 +244,6 @@ void ConcatCompute::Run() {
                                     inputs_col.size() * sizeof(int),
                                     cudaMemcpyHostToDevice));
     int* dev_ins_col_data = static_cast<int*>(tmp_dev_ins_col_data);
-    // auto tmp_dev_ins_col_data =
-    //     platform::DeviceTemporaryAllocator::Instance().Get(context).Allocate(
-    //         inputs_col.size() * sizeof(int));
-    // memory::Copy(boost::get<platform::CUDAPlace>(context.GetPlace()),
-    //              tmp_dev_ins_col_data->ptr(), platform::CPUPlace(),
-    //              static_cast<void*>(inputs_col.data()),
-    //              inputs_col.size() * sizeof(int), stream);
-    // int* dev_ins_col_data = static_cast<int*>(tmp_dev_ins_col_data->ptr());
     ConcatKernel<float><<<grid_dims, block_dims, 0, stream>>>(
         dev_ins_data,
         dev_ins_col_data,
@@ -270,13 +251,11 @@ void ConcatCompute::Run() {
         out_row,
         out_col,
         output->mutable_data<float>());
-    // cudaFree(dev_ins_data);
-    // cudaFree(dev_ins_col_data);
+    cudaFree(dev_ins_data);
+    cudaFree(dev_ins_col_data);
   }
-  // cudaDeviceReset();
 
   cudaError_t error = cudaGetLastError();
-  // LOG(INFO) << cudaGetErrorString(error);
   if (error != cudaSuccess) LOG(INFO) << cudaGetErrorString(error);
 }
 

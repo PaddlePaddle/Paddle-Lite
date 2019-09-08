@@ -50,13 +50,13 @@ void ElementwiseAddCompute::Run() {
   auto* y_data = y->data<float>();
   auto out_data = out->mutable_data<float>(TARGET(kCUDA));
 
-  int pixelNum = n * c * h * w;
+  int pixel_num = x->numel();
   int threads = 512;
-  int blocks = (pixelNum + threads - 1) / threads;
+  int blocks = (pixel_num + threads - 1) / threads;
   blocks = blocks > 8 ? 8 : blocks;
 
   KeElementwiseAdd<<<blocks, threads, 0, stream>>>(
-      x_data, y_data, out_data, pixelNum);
+      x_data, y_data, out_data, pixel_num);
 
   cudaError_t error = cudaGetLastError();
   if (error != cudaSuccess) LOG(INFO) << cudaGetErrorString(error);
