@@ -49,7 +49,7 @@ lite_cc_library(light_api SRCS light_api.cc
         CUDA_DEPS ${cuda_kernels}
         X86_DEPS ${x86_kernels}
         ARM_DEPS ${arm_kernels}
-        NPU_DEPS ${npu_kernels} ${npu_bridges} npu_pass
+        NPU_DEPS ${npu_kernels}
         CL_DEPS ${opencl_kenrels}
         FPGA_DEPS ${fpga_kenrels})
 

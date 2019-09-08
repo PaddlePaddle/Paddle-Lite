@@ -14,12 +14,12 @@ set(LITE_ON_MOBILE ${LITE_WITH_LIGHT_WEIGHT_FRAMEWORK})
 
 add_subdirectory(utils)
 add_subdirectory(operators)
+add_subdirectory(backends)
 add_subdirectory(kernels)
 add_subdirectory(core)
 add_subdirectory(model_parser)
 add_subdirectory(api)
 add_subdirectory(fluid)
-add_subdirectory(backends)
 
 if (NOT LITE_ON_TINY_PUBLISH)
     add_subdirectory(tests)
@@ -84,16 +84,14 @@ if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM)
                         COMMAND ${CMAKE_STRIP} "--strip-debug" ${INFER_LITE_PUBLISH_ROOT}/cxx/lib/*.a)
             endif()
     else()
-        if (IOS OR (ARM_TARGET_OS STREQUAL "armlinux"))
-            add_custom_target(tiny_publish_lib ${TARGET}
-                    COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/lib"
-                    COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/include"
-                    COMMAND cp "${CMAKE_SOURCE_DIR}/lite/api/paddle_*.h" "${INFER_LITE_PUBLISH_ROOT}/include"
-                    COMMAND cp "${CMAKE_BINARY_DIR}/libpaddle_api_light_bundled.a" "${INFER_LITE_PUBLISH_ROOT}/lib"
-                    )
-            add_dependencies(tiny_publish_lib bundle_light_api)
-            add_dependencies(publish_inference tiny_publish_lib)
-        endif()
+        add_custom_target(tiny_publish_lib ${TARGET}
+                COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/lib"
+                COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/include"
+                COMMAND cp "${CMAKE_SOURCE_DIR}/lite/api/paddle_*.h" "${INFER_LITE_PUBLISH_ROOT}/include"
+                COMMAND cp "${CMAKE_BINARY_DIR}/libpaddle_api_light_bundled.a" "${INFER_LITE_PUBLISH_ROOT}/lib"
+                )
+        add_dependencies(tiny_publish_lib bundle_light_api)
+        add_dependencies(publish_inference tiny_publish_lib)
     endif()
 
 

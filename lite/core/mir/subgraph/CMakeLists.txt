@@ -16,7 +16,7 @@ set(subgraph_passes subgraph_pass)
 
 if(LITE_WITH_NPU)
   lite_cc_library(npu_pass SRCS generate_npu_program_pass.cc
-      DEPS mir_pass types context ${mir_fusers} ${npu_bridges} npu_helper ${npu_ddk_libs} graph_op subgraph_pass)
+      DEPS mir_pass types context ${mir_fusers} ${npu_bridges} ${npu_ddk_libs} graph_op subgraph_pass)
   list(APPEND subgraph_passes npu_pass)
   lite_cc_test(test_npu_pass SRCS generate_npu_program_pass_test.cc
     DEPS npu_pass cxx_api mir_passes gflags

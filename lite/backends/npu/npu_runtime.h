@@ -19,8 +19,6 @@
 #include <utility>
 #include <vector>
 #include "ai_ddk_lib/include/HiAiModelManagerService.h"
-#include "ai_ddk_lib/include/graph/graph.h"
-#include "ai_ddk_lib/include/graph/operator_reg.h"
 #include "lite/utils/cp_logging.h"
 
 namespace paddle {
@@ -75,27 +73,9 @@ class DeviceInfo {
       clients_;
 };
 
-class OpList {
- public:
-  static OpList& Global() {
-    static thread_local OpList x;
-    return x;
-  }
-  void clear() { lists_.clear(); }
-  void add(std::shared_ptr<ge::Operator> p) { lists_.push_back(p); }
-
- private:
-  std::vector<std::shared_ptr<ge::Operator>> lists_;
-};
-
 bool SaveNPUModel(const void* om_model_data,
                   const size_t om_model_size,
                   const std::string& om_file_path);
-
-// If build from inputs and outputs will save the npu offline model
-bool BuildNPUClient(std::vector<ge::Operator>& inputs,   // NOLINT
-                    std::vector<ge::Operator>& outputs,  // NOLINT
-                    const std::string& name);
 
 // If build from path will not save the npu offline model
 bool BuildNPUClient(const std::string& om_model_file_path,

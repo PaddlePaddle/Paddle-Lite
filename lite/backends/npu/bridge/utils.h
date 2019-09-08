@@ -19,7 +19,6 @@
 #include <unordered_map>
 #include <vector>
 #include "ai_ddk_lib/include/graph/operator_reg.h"
-#include "lite/core/mir/node.h"
 #include "lite/core/op_lite.h"
 #include "lite/core/target_wrapper.h"
 #include "lite/core/tensor.h"
@@ -28,6 +27,24 @@ namespace paddle {
 namespace lite {
 namespace npu {
 namespace bridge {
+
+class OpList {
+ public:
+  static OpList& Global() {
+    static thread_local OpList x;
+    return x;
+  }
+  void clear() { lists_.clear(); }
+  void add(std::shared_ptr<ge::Operator> p) { lists_.push_back(p); }
+
+ private:
+  std::vector<std::shared_ptr<ge::Operator>> lists_;
+};
+
+// If build from inputs and outputs will save the npu offline model
+bool BuildNPUClient(std::vector<ge::Operator>& inputs,   // NOLINT
+                    std::vector<ge::Operator>& outputs,  // NOLINT
+                    const std::string& name);
 
 std::string UniqueName(const std::string& prefix);
 

@@ -18,6 +18,7 @@
  */
 
 #include "lite/utils/logging.h"
+#include <iomanip>
 
 #ifdef LITE_WITH_LIGHT_WEIGHT_FRAMEWORK
 #ifndef LITE_SHUTDOWN_LOG
@@ -41,10 +42,16 @@ void gen_log(STL::ostream& log_stream_,
   gettimeofday(&tv, NULL);
 
   // print date / time
+  /*
   log_stream_ << '[' << level << ' ' << std::setw(2) << 1 + tm_time.tm_mon
               << '/' << std::setw(2) << tm_time.tm_mday << ' ' << std::setw(2)
               << tm_time.tm_hour << ':' << std::setw(2) << tm_time.tm_min << ':'
               << std::setw(2) << tm_time.tm_sec << '.' << std::setw(3)
+              << tv.tv_usec / 1000 << " ";
+  */
+  log_stream_ << '[' << level << ' ' << 1 + tm_time.tm_mon << '/'
+              << tm_time.tm_mday << ' ' << tm_time.tm_hour << ':'
+              << tm_time.tm_min << ':' << tm_time.tm_sec << '.'
               << tv.tv_usec / 1000 << " ";
 
   if (len > kMaxLen) {

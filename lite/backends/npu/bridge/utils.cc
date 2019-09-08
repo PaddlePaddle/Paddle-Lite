@@ -13,18 +13,54 @@
 // limitations under the License.
 
 #include "lite/backends/npu/bridge/utils.h"
-#include <memory>
 #include <mutex>  // NOLINT
-#include <string>
-#include <unordered_map>
+#include <utility>
+#include "ai_ddk_lib/include/graph/buffer.h"
+#include "ai_ddk_lib/include/graph/model.h"
 #include "ai_ddk_lib/include/graph/op/all_ops.h"  // for ge::op::Data
 #include "ai_ddk_lib/include/graph/tensor.h"      // for ge::TensorUtils
-#include "lite/core/op_lite.h"
+#include "ai_ddk_lib/include/hiai_ir_build.h"
+#include "lite/backends/npu/npu_runtime.h"
 
 namespace paddle {
 namespace lite {
 namespace npu {
 namespace bridge {
+
+// If build from inputs and outputs will save the npu offline model
+bool BuildNPUClient(std::vector<ge::Operator>& inputs,   // NOLINT
+                    std::vector<ge::Operator>& outputs,  // NOLINT
+                    const std::string& name) {
+  LOG(INFO) << "[NPU] Building Client";
+  ge::Graph npu_subgraph("npu_subgraph" + name);
+  npu_subgraph.SetInputs(inputs).SetOutputs(outputs);
+
+  ge::Model npu_model("model", "npu_model" + name);
+  npu_model.SetGraph(npu_subgraph);
+
+  // compile IR graph and output om model to memory
+  domi::HiaiIrBuild ir_build;
+  domi::ModelBufferData om_model_buffer;
+  if (!ir_build.CreateModelBuff(npu_model, om_model_buffer)) {
+    LOG(WARNING) << "[NPU] Failed CreateModelBuff: " << npu_model.GetName();
+    return false;
+  }
+  if (!ir_build.BuildIRModel(npu_model, om_model_buffer)) {
+    LOG(WARNING) << "[NPU] Failed BuildIRModel: " << npu_model.GetName();
+    return false;
+  }
+
+  if (npu::BuildNPUClient(om_model_buffer.data, om_model_buffer.length, name)) {
+    // save npu offline model
+    if (!npu::SaveNPUModel(
+            om_model_buffer.data, om_model_buffer.length, name)) {
+      LOG(WARNING) << "[NPU] Save model " << name << " failed.";
+    }
+    ir_build.ReleaseModelBuff(om_model_buffer);
+    return true;
+  }
+  return false;
+}
 
 std::string UniqueName(const std::string& prefix) {
   static std::mutex counter_mtx;

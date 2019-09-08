@@ -30,7 +30,6 @@
 #include "lite/backends/npu/bridge/paddle_use_npu_bridges.h"
 #include "lite/backends/npu/bridge/registry.h"
 #include "lite/backends/npu/bridge/utils.h"
-#include "lite/backends/npu/npu_helper.h"
 
 namespace paddle {
 namespace lite {
@@ -126,7 +125,7 @@ std::string GenerateNPUProgramPass::BuildNPUGraph(
   }
 
   std::string model_name("hiai_npu_client_" + std::to_string(sub_id) + ".om");
-  if (!npu::BuildNPUClient(inputs, outputs, model_name)) {
+  if (!lite::npu::bridge::BuildNPUClient(inputs, outputs, model_name)) {
     LOG(WARNING) << "Build NPU failed subgraph " << sub_id;
     throw std::runtime_error("Build NPU failed subgraph.");
   }

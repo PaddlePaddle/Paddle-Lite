@@ -54,6 +54,14 @@ function cmake_npu {
     # $3: ARM_TARGET_LANG in "gcc" "clang"
     # $4: ANDROID_STL_TYPE in "c++_shared" "c++_static"
     # $5: DDK_ROOT path
+    # $6: BUILD_EXTRA
+    # $7: TINY_PUBLISH
+
+    local build_tests=ON
+    local tiny_publish=$7
+    if [[ "x${tiny_publish}" == "xON" ]]; then
+        build_tests=OFF
+    fi
 
     # NPU libs need API LEVEL 24 above
     cmake .. \
@@ -62,13 +70,14 @@ function cmake_npu {
         -DWITH_LITE=ON \
         -DLITE_WITH_CUDA=OFF \
         -DLITE_WITH_X86=OFF \
-        -DLITE_BUILD_EXTRA=ON \
+        -DLITE_BUILD_EXTRA=$6 \
         -DLITE_WITH_ARM=ON \
         -DWITH_ARM_DOTPROD=ON   \
         -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
-        -DWITH_TESTING=ON \
-        -DLITE_WITH_JAVA=ON \
+        -DWITH_TESTING=${build_tests} \
+        -DLITE_WITH_JAVA=OFF \
         -DLITE_WITH_NPU=ON \
+        -DLITE_ON_TINY_PUBLISH=${tiny_publish} \
         -DANDROID_API_LEVEL=24 \
         -DARM_TARGET_OS=$1 \
         -DARM_TARGET_ARCH_ABI=$2 \
@@ -85,7 +94,9 @@ function build_npu {
     local abi=armv8
     local lang=gcc
     local stl="c++_shared"
-    local ddk_root="${cur_dir}/ai_ddk_lib/" 
+    local ddk_root="${cur_dir}/ai_ddk_lib/"
+    local build_extra=OFF
+    local tiny_publish=OFF
     local test_name=test_npu_pass
     prepare_thirdparty
 
@@ -104,6 +115,12 @@ function build_npu {
     if [[ "x${DDK_ROOT}" != "x" ]]; then
         ddk_root=$DDK_ROOT
     fi
+    if [[ "x${BUILD_EXTRA}" != "x" ]]; then
+        build_extra=$BUILD_EXTRA
+    fi
+    if [[ "x${TINY_PUBLISH}" != "x" ]]; then
+        tiny_publish=$TINY_PUBLISH
+    fi
     if [[ $# -ge 1 ]]; then
         test_name=$1
     fi
@@ -115,12 +132,17 @@ function build_npu {
     if [[ "${stl}" == "c++_static" ]]; then
         stl_dir="cxx_static"
     fi
-    build_dir=$cur_dir/build.lite.npu.${os}.${abi}.${lang}.${stl_dir}
+    if [[ "${tiny_publish}" == "ON" ]]; then
+        publish_dir="tiny"
+    else
+        publish_dir="full"
+    fi
+    build_dir=$cur_dir/build.lite.npu.${os}.${abi}.${lang}.${stl_dir}.${publish_dir}
     mkdir -p $build_dir
     cd $build_dir
 
-    cmake_npu ${os} ${abi} ${lang} ${stl} ${ddk_root}
-    make $test_name -j8
+    cmake_npu ${os} ${abi} ${lang} ${stl} ${ddk_root} ${build_extra} ${tiny_publish}
+    make $test_name -j2
 
     cd -
     echo "Done"
@@ -154,6 +176,10 @@ function main {
                 ANDROID_STL="${i#*=}"
                 shift
                 ;;
+            --build_extra=*)
+                BUILD_EXTRA="${i#*=}"
+                shift
+                ;;
             --ddk_root=*)
                 DDK_ROOT="${i#*=}"
                 shift
@@ -163,6 +189,11 @@ function main {
                 shift
                 ;;
             full_publish)
+                build_npu publish_inference
+                shift
+                ;;
+            tiny_publish)
+                TINY_PUBLISH=ON
                 build_npu publish_inference
                 shift
                 ;;
