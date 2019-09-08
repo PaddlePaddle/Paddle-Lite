@@ -788,6 +788,7 @@ struct AssignParam {
   lite::Tensor* Out{};
 };
 
+/// ----------------------- roi_align operators -----------------------
 struct RoiAlignParam {
   lite::Tensor* X{};
   lite::Tensor* ROIs{};
@@ -798,10 +799,20 @@ struct RoiAlignParam {
   int sampling_ratio{-1};
 };
 
+/// ----------------------- box_clip operators -----------------------
 struct BoxClipParam {
   const lite::Tensor* Input{};
   const lite::Tensor* ImInfo{};
   lite::Tensor* Output{};
+};
+
+/// ----------------------- assign_value operators -----------------------
+struct AssignValueParam {
+  std::vector<int> shape{};
+  int dtype{};
+  std::vector<float> fp32_values{};
+  std::vector<int> int32_values{};
+  lite::Tensor* Out{};
 };
 
 }  // namespace operators
