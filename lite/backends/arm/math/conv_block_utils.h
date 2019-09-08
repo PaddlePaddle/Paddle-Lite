@@ -160,6 +160,191 @@ static bool prepack_input_nxw(const dtype* din,
   return true;
 }
 
+inline void transpose_4x4(float32x4_t v0,
+                          float32x4_t v1,
+                          float32x4_t v2,
+                          float32x4_t v3,
+                          float* dout) {
+#ifdef __aarch64__
+  asm volatile(
+      "trn1   v0.4s, %[v0].4s, %[v1].4s\n" /* trans q0, q1, a0b0a2b2*/
+      "trn2   v1.4s, %[v0].4s, %[v1].4s\n" /* trans q0, q1, a1b1a3b3*/
+      "trn1   v2.4s, %[v2].4s, %[v3].4s\n" /* trans q2, q3, c0d0c2d2*/
+      "trn2   v3.4s, %[v2].4s, %[v3].4s\n" /* trans q2, q3, c1d1c3d3*/
+      "trn1   v4.2d, v0.2d, v2.2d\n"       /* trans q0, q2, a0b0c0d0*/
+      "trn2   v6.2d, v0.2d, v2.2d\n"       /* trans q0, q2, a2b2c2d2*/
+      "trn1   v5.2d, v1.2d, v3.2d\n"       /* trans q1, q3, a1b1c1d1*/
+      "trn2   v7.2d, v1.2d, v3.2d\n"       /* trans q1, q3, a3b3c3d3*/
+      "stp  q4, q5, [%[dout]], #32\n"
+      "stp  q6, q7, [%[dout]]\n"
+      : [dout] "+r"(dout)
+      : [v0] "w"(v0), [v1] "w"(v1), [v2] "w"(v2), [v3] "w"(v3)
+      : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7");
+#else
+  asm volatile(
+      "vtrn.32 %q[v0], %q[v1]\n" /* trans q0, q1, a0b0a2b2, a1b1a3b3*/
+      "vtrn.32 %q[v2], %q[v3]\n" /* trans q2, q3, c0d0c2d2, c1d1c3d3*/
+      "vswp   %f[v0], %e[v2]\n"  /* trans q0, q2, a0b0c0d0, a2b2c2d2*/
+      "vswp   %f[v1], %e[v3]\n"  /* trans q1, q3, a1b1c1d1, a3b3c3d3*/
+      "vst1.32  {%q[v0], %q[v1]}, [%[dout]]!\n"
+      "vst1.32  {%q[v2], %q[v3]}, [%[dout]]\n"
+      : [dout] "+r"(dout)
+      : [v0] "w"(v0), [v1] "w"(v1), [v2] "w"(v2), [v3] "w"(v3)
+      :);
+#endif
+}
+
+inline void prepack_input_nxwc4_dw(const float* din,
+                                   float* dout,
+                                   int cs,
+                                   int hs,
+                                   int he,
+                                   int ws,
+                                   int we,
+                                   int channel,
+                                   int width,
+                                   int height,
+                                   float* zero_ptr) {
+  int n = he - hs;
+  if (n <= 0) {
+    LOG(FATAL) << "prepack_dw_input, valid height must > zero";
+  }
+  float32x4_t vzero = vdupq_n_f32(0.f);
+
+  int size_w = we - ws;
+  int w0 = ws < 0 ? 0 : ws;
+  int w1 = we > width ? width : we;
+  int valid_w = w1 - w0;
+
+  int mask[4] = {0, 1, 2, 3};
+
+  int pad_l = ws < 0 ? -ws : 0;
+  int pad_r = we > width ? we - width : 0;
+  int cnt_l = pad_l / 4;
+  int left_remain = pad_l - cnt_l * 4;
+
+  bool flag_ext_l = left_remain > 0;
+  int left_sl = 4 - left_remain;
+  uint32x4_t vmask_padl;
+  bool flag_mask_l = false;
+  if (flag_ext_l) {
+    if (valid_w < 3) {
+      flag_mask_l = true;
+      vmask_padl = vcltq_s32(vld1q_s32(mask), vdupq_n_s32(valid_w));
+    }
+    valid_w -= left_sl;
+    valid_w = valid_w > 0 ? valid_w : 0;
+  }
+  int cnt_valid = valid_w / 4;
+  int valid_sl = valid_w - cnt_valid * 4;
+  bool flag_mask_valid = valid_sl > 0;
+  uint32x4_t vmask_valid;
+  if (flag_mask_valid) {
+    vmask_valid = vcltq_s32(vld1q_s32(mask), vdupq_n_s32(valid_sl));
+    pad_r -= 4 - valid_sl;
+    pad_r = pad_r > 0 ? pad_r : 0;
+  }
+  int size_c = width * height;
+  for (int h = hs; h < he; ++h) {
+    auto ptr_c0 = din + cs * size_c + h * width;
+    auto ptr_c1 = ptr_c0 + size_c;
+    auto ptr_c2 = ptr_c1 + size_c;
+    auto ptr_c3 = ptr_c2 + size_c;
+    if (h < 0 || h >= height) {
+      memset(dout, 0, sizeof(float) * size_w * 4);
+      dout += size_w * 4;
+      continue;
+    } else if (cs + 4 > channel) {
+      switch (cs + 4 - channel) {
+        case 3:
+          ptr_c1 = zero_ptr;
+        case 2:
+          ptr_c2 = zero_ptr;
+        case 1:
+          ptr_c3 = zero_ptr;
+        default:
+          break;
+      }
+    }
+    /// left padding
+    if (cnt_l > 0) {
+      memset(dout, 0, sizeof(float) * 16 * cnt_l);
+      dout += 16 * cnt_l;
+    }
+    /// left mask
+    if (flag_ext_l) {
+      float32x4_t vc0 = vld1q_f32(ptr_c0);
+      float32x4_t vc1 = vld1q_f32(ptr_c1);
+      float32x4_t vc2 = vld1q_f32(ptr_c2);
+      float32x4_t vc3 = vld1q_f32(ptr_c3);
+      if (flag_mask_l) {
+        vc0 = vbslq_f32(vmask_padl, vc0, vzero);
+        vc1 = vbslq_f32(vmask_padl, vc1, vzero);
+        vc2 = vbslq_f32(vmask_padl, vc2, vzero);
+        vc3 = vbslq_f32(vmask_padl, vc3, vzero);
+      }
+      switch (left_sl) {
+        case 1:
+          vc0 = vextq_f32(vzero, vc0, 1);
+          vc1 = vextq_f32(vzero, vc1, 1);
+          vc2 = vextq_f32(vzero, vc2, 1);
+          vc3 = vextq_f32(vzero, vc3, 1);
+          break;
+        case 2:
+          vc0 = vextq_f32(vzero, vc0, 2);
+          vc1 = vextq_f32(vzero, vc1, 2);
+          vc2 = vextq_f32(vzero, vc2, 2);
+          vc3 = vextq_f32(vzero, vc3, 2);
+          break;
+        case 3:
+          vc0 = vextq_f32(vzero, vc0, 3);
+          vc1 = vextq_f32(vzero, vc1, 3);
+          vc2 = vextq_f32(vzero, vc2, 3);
+          vc3 = vextq_f32(vzero, vc3, 3);
+          break;
+        default:
+          break;
+      }
+      transpose_4x4(vc0, vc1, vc2, vc3, dout);
+      dout += 16;
+      ptr_c0 += left_sl;
+      ptr_c1 += left_sl;
+      ptr_c2 += left_sl;
+      ptr_c3 += left_sl;
+    }
+    /// valid
+    for (int i = 0; i < cnt_valid; ++i) {
+      float32x4_t vc0 = vld1q_f32(ptr_c0);
+      float32x4_t vc1 = vld1q_f32(ptr_c1);
+      float32x4_t vc2 = vld1q_f32(ptr_c2);
+      float32x4_t vc3 = vld1q_f32(ptr_c3);
+      transpose_4x4(vc0, vc1, vc2, vc3, dout);
+      dout += 16;
+      ptr_c0 += 4;
+      ptr_c1 += 4;
+      ptr_c2 += 4;
+      ptr_c3 += 4;
+    }
+    if (flag_mask_valid) {
+      float32x4_t vc0 = vld1q_f32(ptr_c0);
+      float32x4_t vc1 = vld1q_f32(ptr_c1);
+      float32x4_t vc2 = vld1q_f32(ptr_c2);
+      float32x4_t vc3 = vld1q_f32(ptr_c3);
+      vc0 = vbslq_f32(vmask_valid, vc0, vzero);
+      vc1 = vbslq_f32(vmask_valid, vc1, vzero);
+      vc2 = vbslq_f32(vmask_valid, vc2, vzero);
+      vc3 = vbslq_f32(vmask_valid, vc3, vzero);
+      transpose_4x4(vc0, vc1, vc2, vc3, dout);
+      dout += 16;
+    }
+    /// right padding
+    if (pad_r > 0) {
+      memset(dout, 0, sizeof(float) * 4 * pad_r);
+      dout += 4 * pad_r;
+    }
+  }
+}
+
 /*wirte result in outputs
 * input din: [n, c, h, w], output dout: [n, c, h, w]
 */

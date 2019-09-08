@@ -57,6 +57,7 @@ if (NOT HAS_ARM_MATH_LIB_DIR)
       conv3x3s1_direct_fp32.cc
       conv3x3s2_direct_fp32.cc
       conv3x3s1_depthwise_fp32.cc
+      conv3x3s2_depthwise_fp32.cc
       conv3x3s1_direct_int8.cc
       conv3x3s2_direct_int8.cc
       conv_depthwise_3x3_int8.cc

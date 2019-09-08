@@ -578,7 +578,21 @@ void conv_depthwise_3x3_fp32(const void* din,
                               param,
                               ctx);
   } else if (stride == 2) {
+    conv_3x3s2_depthwise_fp32(reinterpret_cast<const float*>(din),
+                              reinterpret_cast<float*>(dout),
+                              num,
+                              ch_out,
+                              h_out,
+                              w_out,
+                              ch_in,
+                              h_in,
+                              w_in,
+                              reinterpret_cast<const float*>(weights),
+                              bias,
+                              param,
+                              ctx);
   } else {
+    LOG(FATAL) << "fp32 depthwise conv3x3 stride: " << stride << " unsupported";
   }
 #if 0
   if (pad == 1) {

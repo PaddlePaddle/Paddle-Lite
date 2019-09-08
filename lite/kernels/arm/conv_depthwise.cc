@@ -44,7 +44,6 @@ void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
         w_data_in, w_data, oc, 1, cblock, kh * kw);
     impl_ = lite::arm::math::conv_depthwise_3x3_fp32;
     flag_trans_weights_ = true;
-    //    ctx.ExtendWorkspace(sizeof(float) * )
   } else if (kw == 5) {
     VLOG(5) << "invoke 5x5 dw conv fp32";
     auto x_dims = param.x->dims();
