@@ -99,6 +99,7 @@ void conv_3x3s1_depthwise_fp32(const float* i_data,
         bias_local[2] = bias[c + 2];
         bias_local[3] = bias[c + 3];
       }
+      float32x4_t vbias = vld1q_f32(bias_local);
 #ifdef __aarch64__
       float32x4_t w0 = vld1q_f32(weight_c);       // w0, v23
       float32x4_t w1 = vld1q_f32(weight_c + 4);   // w1, v24
@@ -109,7 +110,6 @@ void conv_3x3s1_depthwise_fp32(const float* i_data,
       float32x4_t w6 = vld1q_f32(weight_c + 24);  // w6, v29
       float32x4_t w7 = vld1q_f32(weight_c + 28);  // w7, v30
       float32x4_t w8 = vld1q_f32(weight_c + 32);  // w8, v31
-      float32x4_t vbias = vld1q_f32(bias_local);
 #endif
       for (int h = 0; h < oh; h += out_h_kernel) {
         float* outc00 = dout_c00 + h * ow;
@@ -155,9 +155,9 @@ void conv_3x3s1_depthwise_fp32(const float* i_data,
         auto c31 = outc31;
         for (int w = 0; w < w_loop; ++w) {
           bool flag_mask = (w == w_loop - 1) && flag_remain;
+          float* out0 = pre_out;
 // clang-format off
 #ifdef __aarch64__
-          float* out0 = pre_out;
           asm volatile(
           "ldp    q0, q1,   [%[inr0]], #32\n" /* load input r0*/
           "ldp    q6, q7,   [%[inr1]], #32\n" /* load input r1*/

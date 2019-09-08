@@ -26,7 +26,7 @@ namespace lite {
 namespace arm {
 namespace math {
 
-void conv_3x3s1_depthwise_fp32(const float* i_data,
+void conv_3x3s2_depthwise_fp32(const float* i_data,
                                float* o_data,
                                int bs,
                                int oc,
@@ -81,7 +81,7 @@ void conv_3x3s1_depthwise_fp32(const float* i_data,
     float* dout_batch = o_data + n * oc * size_out_channel;
 #pragma omp parallel for num_threads(threads)
     for (int c = 0; c < oc; c += out_c_block) {
-#ifdef USE_OPENMP
+#ifdef ARM_WITH_OMP
       float* pre_din = ptr_write + ow_round + omp_get_thread_num() * prein_size;
 #else
       float* pre_din = ptr_write + ow_round;
