@@ -27,7 +27,8 @@ out_lines = [
 
 
 with open(ops_list_path) as f:
-    for path in f:
+    paths = set([path for path in f])
+    for path in paths:
         with open(path.strip()) as g:
             print 'path: ', path
             c = g.read()

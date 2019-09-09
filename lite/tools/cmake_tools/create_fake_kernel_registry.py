@@ -49,7 +49,8 @@ class %s : public KernelLite<TARGET(%s), PRECISION(%s), DATALAYOUT(%s)> {
 
 
 with open(ops_list_path) as f:
-    for path in f:
+    paths = set([path for path in f])
+    for path in paths:
         print 'path', path
         with open(path.strip()) as g:
             c = g.read()
