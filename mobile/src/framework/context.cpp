@@ -255,9 +255,9 @@ int set_sched_affinity(const std::vector<int> &cpu_ids) {
 // cpu_set_t definition
 // ref http://stackoverflow.com/questions/16319725/android-set-thread-affinity
 #define CPU_SETSIZE 1024
-#define __NCPUBITS (8 * sizeof(unsigned long))
+#define __NCPUBITS (8 * sizeof(unsigned long))  // NOLINT
   typedef struct {
-    unsigned long __bits[CPU_SETSIZE / __NCPUBITS];
+    unsigned long __bits[CPU_SETSIZE / __NCPUBITS];  // NOLINT
   } cpu_set_t;
 
 #define CPU_SET(cpu, cpusetp) \
