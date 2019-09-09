@@ -223,8 +223,9 @@ class KernelRegistry final {
         ss << "\n";
       }
     }
-#endif  // LITE_ON_MODEL_OPTIMIZE_TOOL
+
     return ss.str();
+#endif  // LITE_ON_MODEL_OPTIMIZE_TOOL
   }
 
  private:
