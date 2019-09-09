@@ -169,8 +169,8 @@ void TransposeCUDAImpl(const std::vector<int64_t>& X_dims,
   const int M = (size + CUDA_NUM_THREADS - 1) / CUDA_NUM_THREADS;
   TransposeCUDAKernel<<<M, CUDA_NUM_THREADS, 0, ctx->exec_stream()>>>(
       size, ndim, d_strides, d_y_dims, X, Y);
-  cudaError_t error = cudaGetLastError();
-  if (error != cudaSuccess) LOG(INFO) << cudaGetErrorString(error);
+  // cudaError_t error = cudaGetLastError();
+  // if (error != cudaSuccess) LOG(INFO) << cudaGetErrorString(error);
 }
 
 #define TYPE_SPECIALIZED_CUDA_TRANSPOSE(T)              \
