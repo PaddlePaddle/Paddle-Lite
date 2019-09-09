@@ -5,6 +5,7 @@ endif()
 nv_library(cuda_activation SRCS activation.cu)
 nv_library(cuda_scale SRCS scale.cu)
 nv_library(cuda_type_trans SRCS type_trans.cu)
+nv_library(cuda_transpose SRCS transpose.cu)
 nv_library(cudnn_conv SRCS cudnn_conv.cc DEPS cuda_activation cuda_scale
 cuda_type_trans)
 
@@ -14,6 +15,7 @@ set (
  cuda_activation
  cuda_scale
  cuda_type_trans
+ cuda_transpose
 )
 
 set(math_cuda "${math_cuda}" CACHE GLOBAL "math cuda")
