@@ -15,7 +15,7 @@
 #pragma once
 
 #ifdef LITE_WITH_FPGA
-#include "lite/fpga/lite_tensor.h"
+#include "lite/backends/fpga/lite_tensor.h"
 #endif
 
 #ifndef LITE_WITH_FPGA
@@ -218,16 +218,22 @@ R *TensorLite::mutable_data(TargetType target) {
 
 template <typename T>
 TensorLite TensorLite::Slice(int64_t begin, int64_t end) const {
-  int64_t base = numel() / dims_[0];
-
-  TensorLite dst;
-  dst.buffer_ = buffer_;
-  dst.target_ = target_;
-  auto dst_dims = dims_;
-  dst_dims[0] = end - begin;
-  dst.Resize(dst_dims);
-  dst.offset_ = offset_ + static_cast<size_t>(begin * base) * sizeof(T);
-  return dst;
+  CHECK_GE(begin, 0);
+  CHECK_LE(end, dims_[0]);
+  CHECK_LT(begin, end);
+  if (dims_[0] == 1) {
+    return *this;
+  } else {
+    int64_t base = numel() / dims_[0];
+    TensorLite dst;
+    dst.buffer_ = buffer_;
+    dst.target_ = target_;
+    auto dst_dims = dims_;
+    dst_dims[0] = end - begin;
+    dst.Resize(dst_dims);
+    dst.offset_ = offset_ + static_cast<size_t>(begin * base) * sizeof(T);
+    return dst;
+  }
 }
 
 template <typename TensorT>

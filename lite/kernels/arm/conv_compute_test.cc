@@ -18,7 +18,7 @@
 #include <memory>
 #include <utility>
 #include <vector>
-#include "lite/arm/math/type_trans.h"
+#include "lite/backends/arm/math/type_trans.h"
 #include "lite/core/op_registry.h"
 
 namespace paddle {

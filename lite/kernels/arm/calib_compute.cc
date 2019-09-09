@@ -14,7 +14,7 @@
 
 #include "lite/kernels/arm/calib_compute.h"
 #include <vector>
-#include "lite/arm/math/type_trans.h"
+#include "lite/backends/arm/math/type_trans.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/type_system.h"
 

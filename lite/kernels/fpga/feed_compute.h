@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 #pragma once
+#include "lite/backends/fpga/KD/pes/input_pe.hpp"
 #include "lite/core/op_registry.h"
 #include "lite/core/type_system.h"
-#include "lite/fpga/KD/pes/input_pe.hpp"
 
 namespace paddle {
 namespace lite {

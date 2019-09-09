@@ -16,7 +16,9 @@ limitations under the License. */
 
 #include <cstdlib>
 #include <cstring>
+#include <memory>
 #include <string>
+#include <utility>
 #include "common/enforce.h"
 #include "common/log.h"
 #include "common/type_define.h"
@@ -30,41 +32,33 @@ struct IDToType {
 
 template <typename F, typename... Ts>
 struct VariantHelper {
-  static const size_t size = sizeof(F) > VariantHelper<Ts...>::size
-                                 ? sizeof(F)
-                                 : VariantHelper<Ts...>::size;
-
-  inline static void Destroy(kTypeId_t type, void *data) {
+  inline static void Destroy(kTypeId_t type, void *raw_ptr) {
     if (type == type_id<F>()) {
-      reinterpret_cast<F *>(data)->~F();
+      auto ptr = reinterpret_cast<F *>(raw_ptr);
+      delete ptr;
     } else {
-      VariantHelper<Ts...>::Destroy(type, data);
+      VariantHelper<Ts...>::Destroy(type, raw_ptr);
     }
   }
 };
 
 template <typename F>
 struct VariantHelper<F> {
-  static const size_t size = sizeof(F);
-  inline static void Destroy(kTypeId_t type, void *data) {
+  inline static void Destroy(kTypeId_t type, void *raw_ptr) {
     if (type == type_id<F>()) {
-      // reinterpret_cast<F*>(data)->~F();
-    } else {
-      // std::cout << "未匹配到 " << std::endl;
+      auto ptr = reinterpret_cast<F *>(raw_ptr);
+      delete ptr;
     }
   }
 };
 
-template <size_t size>
-class RawData {
- public:
-  char data[size];  // NOLINT
-  RawData() {}
-  RawData(const RawData &raw_data) { memcpy(data, raw_data.data, size); }
-
-  RawData &operator=(const RawData &raw_data) {
-    memcpy(data, raw_data.data, size);
-    return *this;
+template <typename... Ts>
+struct VariantDeleter {
+  kTypeId_t type_ = type_id<void>().hash_code();
+  explicit VariantDeleter(kTypeId_t type) { type_ = type; }
+  void operator()(void *raw_ptr) {
+    // DLOG << "variant delete: " << type_ << " " << raw_ptr;
+    VariantHelper<Ts...>::Destroy(type_, raw_ptr);
   }
 };
 
@@ -78,43 +72,21 @@ struct Variant {
   }
 
   virtual ~Variant() {
-    // helper::Destroy(type_id, &data);
+    // DLOG << "variant deinit: " << type_ << " " << (void *)data_.get();
+    data_.reset();
   }
 
   template <typename T, typename... Args>
   void Set(Args &&... args) {
-    helper::Destroy(type_, data_.data);
-    new (data_.data) T(std::forward<Args>(args)...);
+    auto raw_ptr = new T(std::forward<Args>(args)...);
     type_ = type_id<T>().hash_code();
-  }
-
-  void SetString(const std::string &string) {
-    helper::Destroy(type_, data_.data);
-    type_ = type_id<std::string>().hash_code();
-    strcpy(data_.data, string.c_str());  // NOLINT
-  }
-
-  std::string GetString() const {
-    if (type_ == type_id<std::string>()) {
-      return std::string(data_.data);
-    } else {
-      PADDLE_MOBILE_THROW_EXCEPTION(
-          " bad cast in variant data type not a string ");
-      exit(0);
-    }
+    // DLOG << "variant new: " << type_ << " " << (void *)raw_ptr;
+    data_.reset(raw_ptr, VariantDeleter<Ts...>(type_));
   }
 
   template <typename T>
   T &Get() const {
-    if (type_ == type_id<std::string>()) {
-      PADDLE_MOBILE_THROW_EXCEPTION(
-          "Please use getString to get an string (to avoid of an issue with "
-          "gcc "
-          "stl lib with string copy)");
-      exit(0);
-    } else {
-      return *const_cast<T *>(reinterpret_cast<const T *>(data_.data));
-    }
+    return *const_cast<T *>(reinterpret_cast<const T *>(data_.get()));
   }
 
   kTypeId_t TypeId() const { return type_; }
@@ -123,8 +95,7 @@ struct Variant {
   static inline kTypeId_t invalid_type() { return type_id<void>().hash_code(); }
   typedef VariantHelper<Ts...> helper;
   kTypeId_t type_ = type_id<void>().hash_code();
-  // todo use an anto size to suite this.
-  RawData<64> data_;
+  std::shared_ptr<void> data_;
 };
 
 template <typename T>

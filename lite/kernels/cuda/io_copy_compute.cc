@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "lite/backends/cuda/target_wrapper.h"
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
-#include "lite/cuda/target_wrapper.h"
 
 namespace paddle {
 namespace lite {
@@ -89,6 +89,7 @@ class IoCopyCudaToHostCompute
     auto& param = Param<operators::IoCopyParam>();
     CHECK(param.x->target() == TARGET(kCUDA));
     auto mem_size = param.x->memory_size();
+    LOG(INFO) << "io copy cuda to host " << mem_size;
     auto* data = param.y->mutable_data(TARGET(kHost), mem_size);
     CopyToHostSync(data, param.x->raw_data(), mem_size);
   }
