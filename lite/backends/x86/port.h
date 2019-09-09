@@ -17,7 +17,7 @@
 #include <cstdio>
 #include <stdexcept>
 
-#include <time.h>
+#include <time.h>  // NOLINT
 #include <memory>
 #include <string>
 
