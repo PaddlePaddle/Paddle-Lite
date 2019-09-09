@@ -150,9 +150,9 @@ class KernelRegistry final {
       const std::string &name,
       typename KernelRegistryForTarget<Target, Precision, Layout>::creator_t
           &&creator) {
-    VLOG(3) << "register for " << TargetToStr(Target) << ":"
+    /*VLOG(3) << "register for " << TargetToStr(Target) << ":"
             << PrecisionToStr(Precision) << "//"
-            << GetKernelOffset<Target, Precision, Layout>();
+            << GetKernelOffset<Target, Precision, Layout>();*/
     using kernel_registor_t =
         KernelRegistryForTarget<Target, Precision, Layout>;
     auto &varient = registries_[GetKernelOffset<Target, Precision, Layout>()];
@@ -216,9 +216,9 @@ class KernelRegistor : public lite::Registor<KernelType> {
  public:
   KernelRegistor(const std::string &op_type, const std::string &alias)
       : Registor<KernelType>([=] {
-          VLOG(3) << "Register kernel " << op_type << " for "
-                  << TargetToStr(target) << " " << PrecisionToStr(precision)
-                  << " " << DataLayoutToStr(layout) << " alias " << alias;
+          //VLOG(3) << "Register kernel " << " for "
+          //        << TargetToStr(target) << " " << PrecisionToStr(precision)
+          //        << " " << DataLayoutToStr(layout) << " alias " << alias;
           KernelRegistry::Global().Register<target, precision, layout>(
               op_type, [=]() -> std::unique_ptr<KernelType> {
                 std::unique_ptr<KernelType> x(new KernelType);

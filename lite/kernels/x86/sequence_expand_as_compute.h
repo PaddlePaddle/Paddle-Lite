@@ -18,10 +18,6 @@
 #include "lite/core/op_registry.h"
 #include "lite/core/types.h"
 #include "lite/fluid/eigen.h"
-#include "lite/x86/math/blas.h"
-#include "lite/x86/math/gru_compute.h"
-#include "lite/x86/math/math_function.h"
-#include "lite/x86/math/sequence2batch.h"
 
 namespace paddle {
 namespace lite {

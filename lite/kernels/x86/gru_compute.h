@@ -18,12 +18,12 @@
 #include "lite/core/op_registry.h"
 #include "lite/core/types.h"
 #include "lite/fluid/eigen.h"
-#include "lite/x86/math/blas.h"
-#include "lite/x86/math/gru_compute.h"
-#include "lite/x86/math/math_function.h"
-#include "lite/x86/math/sequence2batch.h"
-#include "lite/x86/math/detail/gru_kernel.h"
-#include "lite/x86/math/detail/gru_cpu_kernel.h"
+#include "lite/backends/x86/math/blas.h"
+#include "lite/backends/x86/math/gru_compute.h"
+#include "lite/backends/x86/math/math_function.h"
+#include "lite/backends/x86/math/sequence2batch.h"
+#include "lite/backends/x86/math/detail/gru_kernel.h"
+#include "lite/backends/x86/math/detail/gru_cpu_kernel.h"
 
 DECLARE_int32(paddle_num_threads);
 
@@ -95,7 +95,7 @@ class GRUCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
       // to reorder.
       ReorderInitState<T>(
           context, *h0, order, &ordered_h0, true);
-      gru_value.prev_out_value = ordered_h0.mutable_data<T, T>();
+      gru_value.prev_out_value = ordered_h0.mutable_data<T>();
     } else {
       gru_value.prev_out_value = nullptr;
     }
@@ -131,9 +131,9 @@ class GRUCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
         Tensor reset_hidden_prev_t =
             batch_reset_hidden_prev->Slice<T>(bstart, bend);
         Tensor hidden_t = batch_hidden->Slice<T>(bstart, bend);
-        gru_value.output_value = hidden_t.mutable_data<T, T>();
-        gru_value.gate_value = gate_t.mutable_data<T, T>();
-        gru_value.reset_output_value = reset_hidden_prev_t.mutable_data<T, T>();
+        gru_value.output_value = hidden_t.mutable_data<T>();
+        gru_value.gate_value = gate_t.mutable_data<T>();
+        gru_value.reset_output_value = reset_hidden_prev_t.mutable_data<T>();
 
         if (gru_value.prev_out_value) {
           blas.GEMM_COMPUTE(
@@ -162,9 +162,9 @@ class GRUCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
         Tensor reset_hidden_prev_t =
             batch_reset_hidden_prev->Slice<T>(bstart, bend);
         Tensor hidden_t = batch_hidden->Slice<T>(bstart, bend);
-        gru_value.output_value = hidden_t.mutable_data<T, T>();
-        gru_value.gate_value = gate_t.mutable_data<T, T>();
-        gru_value.reset_output_value = reset_hidden_prev_t.mutable_data<T, T>();
+        gru_value.output_value = hidden_t.mutable_data<T>();
+        gru_value.gate_value = gate_t.mutable_data<T>();
+        gru_value.reset_output_value = reset_hidden_prev_t.mutable_data<T>();
 
         lite::x86::math::GRUUnitFunctor<TARGET(kX86), T>::compute(
             context, gru_value, frame_size, cur_batch_size, active_node,
@@ -250,7 +250,7 @@ class GRUGradCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
           weight_grad->mutable_data<T>();
       zero(context, weight_grad, static_cast<T>(0.0));
       gru_grad.state_weight_grad =
-          weight_grad->mutable_data<T, T>() + 2 * frame_size * frame_size;
+          weight_grad->mutable_data<T>() + 2 * frame_size * frame_size;
     } else {
       gru_grad.gate_weight_grad = nullptr;
       gru_grad.state_weight_grad = nullptr;
@@ -266,27 +266,27 @@ class GRUGradCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
       int64_t cur_batch_size = bend - bstart;
 
       Tensor gate_t = batch_gate->Slice<T>(bstart, bend);
-      gru_value.gate_value = gate_t.mutable_data<T, T>();
+      gru_value.gate_value = gate_t.mutable_data<T>();
       Tensor reset_hidden_prev_t = batch_reset_hidden_prev->Slice<T>(bstart, bend);
-      gru_value.reset_output_value = reset_hidden_prev_t.mutable_data<T, T>();
+      gru_value.reset_output_value = reset_hidden_prev_t.mutable_data<T>();
 
       Tensor hidden_grad_t = batch_hidden_grad.Slice<T>(bstart, bend);
-      gru_grad.output_grad = hidden_grad_t.mutable_data<T, T>();
+      gru_grad.output_grad = hidden_grad_t.mutable_data<T>();
       Tensor gate_grad_t = batch_gate_grad.Slice<T>(bstart, bend);
-      gru_grad.gate_grad = gate_grad_t.mutable_data<T, T>();
+      gru_grad.gate_grad = gate_grad_t.mutable_data<T>();
       Tensor reset_hidden_prev_grad_t =
           batch_reset_hidden_prev_grad.Slice<T>(bstart, bend);
-      gru_grad.reset_output_grad = reset_hidden_prev_grad_t.mutable_data<T, T>();
+      gru_grad.reset_output_grad = reset_hidden_prev_grad_t.mutable_data<T>();
       if (n == 0) {
-        gru_value.prev_out_value = h0 ? ordered_h0.mutable_data<T, T>() : nullptr;
+        gru_value.prev_out_value = h0 ? ordered_h0.mutable_data<T>() : nullptr;
         gru_grad.prev_out_grad =
-            h0 && h0_grad ? ordered_h0_grad.mutable_data<T, T>() : nullptr;
+            h0 && h0_grad ? ordered_h0_grad.mutable_data<T>() : nullptr;
       } else {
         int64_t bstart_pre = static_cast<int64_t>(batch_starts[n - 1]);
         Tensor hidden_prev_t = batch_hidden->Slice<T>(bstart_pre, bstart);
-        gru_value.prev_out_value = hidden_prev_t.mutable_data<T, T>();
+        gru_value.prev_out_value = hidden_prev_t.mutable_data<T>();
         Tensor hidden_prev_grad_t = batch_hidden_grad.Slice<T>(bstart_pre, bstart);
-        gru_grad.prev_out_grad = hidden_prev_grad_t.mutable_data<T, T>();
+        gru_grad.prev_out_grad = hidden_prev_grad_t.mutable_data<T>();
       }
       gru_value.output_value = nullptr;
       lite::x86::math::GRUUnitGradFunctor<TARGET(kX86), T>::compute(
