@@ -22,6 +22,9 @@ lite_cc_library(fuse_quant_dequant
 lite_cc_library(fuse_transpose_softmax_transpose
         SRCS transpose_softmax_transpose_fuser.cc
         DEPS pattern_matcher_high_api)
+lite_cc_library(fuse_interpolate
+        SRCS interpolate_fuser.cc
+        DEPS pattern_matcher_high_api)       
 
 set(mir_fusers
     fuse_fc
@@ -32,6 +35,7 @@ set(mir_fusers
     fuse_quant_dequant
     fuse_elementwise_add_activation
     fuse_transpose_softmax_transpose
+    fuse_interpolate
     CACHE INTERNAL "fusers")
 
 if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)

@@ -140,6 +140,18 @@
 - (PaddleMobileCPUResult *)predict:(CGImageRef)image dim:(NSArray<NSNumber *> *)dim means:(NSArray<NSNumber *> *)means scale:(float)scale;
 
 /**
+ @b 进行预测, means stds和 scale 为训练模型时的预处理参数, 如训练时没有做这些预处理则直接使用 predict, 每一个像素经过这样的预处理 (x + means) * scale, 其中 x 为像素值
+
+ @param image 输入图像
+ @param dim 输入维度
+ @param means 预处理中 means
+ @param stds 预处理中 stds
+ @param scale 预处理中 scale
+ @return 预测结果
+ */
+- (PaddleMobileCPUResult *)predict:(CGImageRef)image dim:(NSArray<NSNumber *> *)dim means:(NSArray<NSNumber *> *)means stds:(NSArray<NSNumber *> *)stds scale:(float)scale;
+
+/**
  @b 进行预测, 预处理 means 值为 0, scale 值为 1
 
  @param image 输入图像

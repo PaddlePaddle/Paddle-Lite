@@ -15,8 +15,10 @@
 #pragma once
 #include <string>
 #include <vector>
+#include "lite/api/paddle_place.h"
 #include "lite/core/scope.h"
 #include "lite/core/tensor.h"
+#include "lite/core/types.h"
 #include "lite/model_parser/cpp/block_desc.h"
 #include "lite/model_parser/desc_apis.h"
 #include "lite/utils/all.h"
@@ -203,6 +205,30 @@ struct ConcatParam {
   int axis{0};
 };
 
+/// ----------------------- activation operators ----------------------
+struct ActivationParam {
+  const lite::Tensor* X{};
+  float Leaky_relu_alpha{0};   // leaky_relu param
+  float Relu_clipped_coef{6};  // relu_clipped param
+  std::string Prelu_mode{
+      "channel"};  // prelu param, can be "all", "channel" or "element"
+  lite::Tensor* Prelu_alpha{};  // prelu param
+  float Swish_beta;             // swish param
+  float hard_sigmoid_slope{0.2};
+  float hard_sigmoid_offset{0.5};
+  lite::Tensor* Out{};
+  bool has_active{false};
+  lite_api::ActivationType active_type;
+};
+
+struct ActivationGradParam {
+  const lite::Tensor* X{};
+  const lite::Tensor* Out{};
+  // for backward
+  lite::Tensor* X_grad{};
+  const lite::Tensor* Out_grad{};
+};
+
 // For Convolution op
 struct ConvParam {
   lite::Tensor* x{};
@@ -226,6 +252,8 @@ struct ConvParam {
   float scale_weights{1.0f};      // only used with mkl-dnn int8
   bool force_fp32_output{false};  // only used in mkl-dnn int8
   std::string data_format{"Anylayout"};
+  // for activation
+  ActivationParam activation_param;
   // for int8
   WITH_INT8_CONFIG
 };
@@ -318,26 +346,6 @@ struct FusionElementwiseActivationParam : public ElementwiseParam {
 
 struct FusionElementwiseActivationGradParam : public ElementwiseGradParam {
   std::string act_type;
-};
-
-/// ----------------------- activation operators ----------------------
-struct ActivationParam {
-  const lite::Tensor* X{};
-  float Leaky_relu_alpha{0};   // leaky_relu param
-  float Relu_clipped_coef{6};  // relu_clipped param
-  std::string Prelu_mode{
-      "channel"};  // prelu param, can be "all", "channel" or "element"
-  lite::Tensor* Prelu_alpha{};  // prelu param
-  float Swish_beta;             // swish param
-  lite::Tensor* Out{};
-};
-
-struct ActivationGradParam {
-  const lite::Tensor* X{};
-  const lite::Tensor* Out{};
-  // for backward
-  lite::Tensor* X_grad{};
-  const lite::Tensor* Out_grad{};
 };
 
 /// ----------------------- mean operators ----------------------
@@ -660,7 +668,10 @@ struct BeamSearchParam {
 struct SequencePoolParam {
   const lite::Tensor* X{};
   lite::Tensor* Out{};
-  std::string pool_type;
+  std::string pool_type{"AVERAGE"};
+#ifdef LITE_WITH_X86
+  float pad_value{0.0};
+#endif
 };
 
 struct SequenceExpandParam {
@@ -782,6 +793,7 @@ struct AssignParam {
   lite::Tensor* Out{};
 };
 
+/// ----------------------- roi_align operators -----------------------
 struct RoiAlignParam {
   lite::Tensor* X{};
   lite::Tensor* ROIs{};
@@ -792,10 +804,20 @@ struct RoiAlignParam {
   int sampling_ratio{-1};
 };
 
+/// ----------------------- box_clip operators -----------------------
 struct BoxClipParam {
   const lite::Tensor* Input{};
   const lite::Tensor* ImInfo{};
   lite::Tensor* Output{};
+};
+
+/// ----------------------- assign_value operators -----------------------
+struct AssignValueParam {
+  std::vector<int> shape{};
+  int dtype{};
+  std::vector<float> fp32_values{};
+  std::vector<int> int32_values{};
+  lite::Tensor* Out{};
 };
 
 }  // namespace operators
