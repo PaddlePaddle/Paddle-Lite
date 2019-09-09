@@ -124,3 +124,4 @@ USE_LITE_OP(expand)    // for x2paddle
 USE_LITE_OP(roi_align)
 USE_LITE_OP(box_clip)
 USE_LITE_OP(assign_value)
+USE_LITE_OP(hard_sigmoid)

@@ -214,6 +214,8 @@ struct ActivationParam {
       "channel"};  // prelu param, can be "all", "channel" or "element"
   lite::Tensor* Prelu_alpha{};  // prelu param
   float Swish_beta;             // swish param
+  float hard_sigmoid_slope{0.2};
+  float hard_sigmoid_offset{0.5};
   lite::Tensor* Out{};
   bool has_active{false};
   lite_api::ActivationType active_type;
