@@ -424,8 +424,8 @@ __kernel void conv_3x3(__private const int global_size_dim0,
     write_imageh(output_image, output_pos, output);
 }
 
-   // dilation == 1 && stride == 1 && ou_nh == ou_h
-__kernel void conv_3x3s1(__private const int item_ch,
+   // dilation == 1
+__kernel void conv_3x3spl(__private const int item_ch,
                                __private const int item_w,
                                __private const int item_h,
                                __read_only image2d_t input_image,
@@ -456,20 +456,22 @@ __read_only image2d_t new_scale,
     const int item_w_id = get_global_id(1);
     const int item_h_id = get_global_id(2);
 
-    // in_width_id_per_blk
-    int in_w_id0 = item_w_id - pad;
-    int in_w_id1 = in_w_id0 + item_w;
-    int in_w_id2 = in_w_id1 + item_w;
-    int in_w_id3 = in_w_id2 + item_w;
-    int in_w_id4 = in_w_id3 + item_w;
-
-    // out_width_id_per_blk
+    // out_width_id_per_blk and out_batch_id
+    int out_batch_id = item_h_id / in_h;
     int out_w_base_id = item_ch_id * out_w;
     int out_w_id0 = item_w_id;
     int out_w_id1 = out_w_id0 + item_w;
     int out_w_id2 = out_w_id1 + item_w;
     int out_w_id3 = out_w_id2 + item_w;
     int out_w_id4 = out_w_id3 + item_w;
+
+    // in_width_id_per_blk and in_height_id_per_batch
+    int in_h_id = (item_h_id % out_h) * stride - pad;
+    int in_w_id0 = item_w_id * stride - pad;
+    int in_w_id1 = in_w_id0 + item_w * stride;
+    int in_w_id2 = in_w_id1 + item_w * stride;
+    int in_w_id3 = in_w_id2 + item_w * stride;
+    int in_w_id4 = in_w_id3 + item_w * stride;
 
 #ifdef BIASE_CH
 
@@ -518,8 +520,8 @@ __read_only image2d_t new_scale,
 
         for (int h = 0; h < 3; h++) {
 
-            int in_h_val = select(item_h_id + h - pad, -1,
-                                   (item_h_id + h - pad < 0 || item_h_id + h - pad >= in_h));
+            int in_h_val = select(out_batch_id * in_h + in_h_id + h, -1,
+                                 (out_batch_id * in_h + in_h_id + h < 0 || out_batch_id * in_h + in_h_id + h >= in_h));
 
             for (int w = 0; w < 3; w++) {
 
