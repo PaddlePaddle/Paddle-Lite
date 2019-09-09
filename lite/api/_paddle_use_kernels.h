@@ -112,6 +112,8 @@ USE_LITE_KERNEL(roi_align, kARM, kFloat, kNCHW, def)
 USE_LITE_KERNEL(box_clip, kARM, kFloat, kNCHW, def)
 USE_LITE_KERNEL(reduce_mean, kARM, kFloat, kNCHW, def)
 USE_LITE_KERNEL(stack, kARM, kFloat, kNCHW, def)
+USE_LITE_KERNEL(assign_value, kARM, kFloat, kNCHW, def)
+USE_LITE_KERNEL(hard_sigmoid, kARM, kFloat, kNCHW, def)
 
 USE_LITE_KERNEL(calib, kARM, kInt8, kNCHW, fp32_to_int8);
 USE_LITE_KERNEL(calib, kARM, kInt8, kNCHW, int8_to_fp32);
@@ -161,6 +163,7 @@ USE_LITE_KERNEL(conv2d, kCUDA, kFloat, kNCHW, def);
 USE_LITE_KERNEL(leaky_relu, kCUDA, kFloat, kNCHW, def);
 USE_LITE_KERNEL(nearest_interp, kCUDA, kFloat, kNCHW, def);
 USE_LITE_KERNEL(yolo_box, kCUDA, kFloat, kNCHW, def);
+USE_LITE_KERNEL(concat, kCUDA, kFloat, kNCHW, def);
 #endif
 
 #ifdef LITE_WITH_OPENCL

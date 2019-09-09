@@ -113,10 +113,10 @@ TEST(Cast, precision) {
   arena::Arena arena(std::move(tester), place, 2e-5);
   arena.TestPrecision();
 
-  std::unique_ptr<arena::TestCase> tester1(
-      new CastComputeTester(place, "def", 2, 5));
-  arena::Arena arena1(std::move(tester1), place, 2e-5);
-  arena1.TestPrecision();
+// std::unique_ptr<arena::TestCase> tester1(
+//    new CastComputeTester(place, "def", 2, 5));
+// arena::Arena arena1(std::move(tester1), place, 2e-5);
+// arena1.TestPrecision();
 #endif
 }
 
