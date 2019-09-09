@@ -17,12 +17,12 @@
 #include <cstdio>
 #include <stdexcept>
 
-#include <time.h>  // NOLINT
+#include <time.h>
 #include <memory>
 #include <string>
 
 #define GLOG_NO_ABBREVIATED_SEVERITIES  // msvc conflict logging with windows.h
-#include <glog/logging.h>
+#include "glog/logging.h"
 
 #if !defined(_WIN32)
 #include <dlfcn.h>     //  dladdr
