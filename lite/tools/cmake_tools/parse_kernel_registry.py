@@ -71,6 +71,7 @@ for line in lines:
             alias = fields[-1]
             key = "USE_LITE_KERNEL(%s, %s, %s, %s, %s);" % (
                 op, target, precision, layout, alias)
+            if "_grad" in key: continue
             out_lines.append(key)
 
 

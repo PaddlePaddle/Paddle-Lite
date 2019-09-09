@@ -12,7 +12,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#pragma once
 #include <vector>
 #include "lite/core/op_registry.h"
 #include "lite/kernels/cuda/yolo_box_compute.h"
@@ -179,7 +178,7 @@ void YoloBoxCompute::Run() {
   const int an_num = anchors.size() / 2;
   int input_size = downsample_ratio * h;
 
-  anchors_.Resize(static_cast<int>({anchors.size()}));
+  anchors_.Resize({static_cast<int64_t>(anchors.size())});
   int* d_anchors = anchors_.mutable_data<int>(TARGET(kCUDA));
   CopySync<TARGET(kCUDA)>(d_anchors,
                           anchors.data(),
