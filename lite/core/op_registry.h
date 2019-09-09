@@ -26,6 +26,7 @@
 #include "lite/core/op_lite.h"
 #include "lite/core/target_wrapper.h"
 #include "lite/utils/all.h"
+#include "lite/utils/macros.h"
 
 using LiteType = paddle::lite::Type;
 
@@ -159,6 +160,10 @@ class KernelRegistry final {
     auto *reg = varient.template get<kernel_registor_t *>();
     CHECK(reg) << "Can not be empty of " << name;
     reg->Register(name, std::move(creator));
+#ifdef LITE_ON_MODEL_OPTIMIZE_TOOL
+    kernel_info_map_[name].push_back(
+        std::make_tuple(Target, Precision, Layout));
+#endif  // LITE_ON_MODEL_OPTIMIZE_TOOL
   }
 
   template <TargetType Target,
@@ -190,22 +195,41 @@ class KernelRegistry final {
   }
 
   std::string DebugString() const {
+#ifndef LITE_ON_MODEL_OPTIMIZE_TOOL
+    return "No more debug info";
+#else   // LITE_ON_MODEL_OPTIMIZE_TOOL
     STL::stringstream ss;
-    ss << "KernelCreator<host, float>:\n";
-    constexpr TargetType tgt = TARGET(kHost);
-    constexpr PrecisionType dt = PRECISION(kFloat);
-    constexpr DataLayoutType lt = DATALAYOUT(kNCHW);
-    constexpr DataLayoutType kany = DATALAYOUT(kAny);
-    using kernel_registor_t = KernelRegistryForTarget<tgt, dt, lt>;
-    auto *reg = registries_[GetKernelOffset<tgt, dt, kany>()]
-                    .template get<kernel_registor_t *>();
-    ss << reg->DebugString() << "\n";
+    ss << "\n";
+    ss << "Count of kernel kinds: ";
+    int count = 0;
+    for (auto &item : kernel_info_map_) {
+      for (auto &kernel : item.second) ++count;
+    }
+    ss << count << "\n";
+
+    ss << "Count of registered kernels: " << kernel_info_map_.size() << "\n";
+    for (auto &item : kernel_info_map_) {
+      ss << "op: " << item.first << "\n";
+      for (auto &kernel : item.second) {
+        ss << "   - (" << TargetToStr(std::get<0>(kernel)) << ",";
+        ss << PrecisionToStr(std::get<1>(kernel)) << ",";
+        ss << DataLayoutToStr(std::get<2>(kernel));
+        ss << ")";
+        ss << "\n";
+      }
+    }
+#endif  // LITE_ON_MODEL_OPTIMIZE_TOOL
     return ss.str();
-    return "";
   }
 
  private:
   mutable std::vector<any_kernel_registor_t> registries_;
+#ifndef LITE_ON_TINY_PUBLISH
+  mutable std::map<
+      std::string,
+      std::vector<std::tuple<TargetType, PrecisionType, DataLayoutType>>>
+      kernel_info_map_;
+#endif
 };
 
 template <TargetType target,
@@ -216,9 +240,6 @@ class KernelRegistor : public lite::Registor<KernelType> {
  public:
   KernelRegistor(const std::string &op_type, const std::string &alias)
       : Registor<KernelType>([=] {
-          VLOG(3) << "Register kernel " << op_type << " for "
-                  << TargetToStr(target) << " " << PrecisionToStr(precision)
-                  << " " << DataLayoutToStr(layout) << " alias " << alias;
           KernelRegistry::Global().Register<target, precision, layout>(
               op_type, [=]() -> std::unique_ptr<KernelType> {
                 std::unique_ptr<KernelType> x(new KernelType);
