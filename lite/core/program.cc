@@ -141,7 +141,6 @@ void Program::Build(const cpp::ProgramDesc& prog) {
     CHECK(op) << "no Op found for " << op_type;
     if (op_type == "while") {
       auto sub_block_idx = op_desc.GetAttr<int32_t>("sub_block");
-      LOG(INFO) << "sub_block:" << sub_block_idx;
       auto sub_block =
           const_cast<cpp::ProgramDesc&>(prog).GetBlock<cpp::BlockDesc>(
               sub_block_idx);
