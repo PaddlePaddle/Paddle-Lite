@@ -541,7 +541,6 @@ __read_only image2d_t new_scale,
                 filter[2] = read_imageh(filter_image, sampler,(int2)(filter_w_val + w,filter_h_val2 + h)); // in_ch:0-3,out_ch:2
                 filter[3] = read_imageh(filter_image, sampler,(int2)(filter_w_val + w,filter_h_val3 + h)); // in_ch:0-3,out_ch:3
 
-
                 filter_trans[0] = (half4)(filter[0].x, filter[1].x, filter[2].x, filter[3].x);    // in_ch:0,out_ch:0-3
                 filter_trans[1] = (half4)(filter[0].y, filter[1].y, filter[2].y, filter[3].y);    // in_ch:1,out_ch:0-3
                 filter_trans[2] = (half4)(filter[0].z, filter[1].z, filter[2].z, filter[3].z);    // in_ch:2,out_ch:0-3
