@@ -176,16 +176,15 @@ void TestPad2dNegative(const Place& place) {
       for (int pad_left : {-5, -4, -3, -2, -1, 0, 1}) {
         for (int pad_right : {-5, -4, -3, -2, -1, 0, 1}) {
           std::vector<int> paddings{pad_top, pad_bottom, pad_left, pad_right};
-          for (std::string pad_mode : {"constant", "edge", "reflect"})
-            for (float pad_value : {0.f, 1.0f}) {
-              LOG(INFO) << "pad param: " << pad_mode << " " << pad_value << " "
-                        << paddings[0] << " " << paddings[1] << " "
-                        << paddings[2] << " " << paddings[3];
-              std::unique_ptr<arena::TestCase> tester(new Pad2dComputeTester(
-                  place, "def", pad_mode, paddings, pad_value, data_format));
-              arena::Arena arena(std::move(tester), place, 2e-5);
-              arena.TestPrecision();
-            }
+          for (float pad_value : {0.f, 1.0f}) {
+            LOG(INFO) << "pad param: " << pad_mode << " " << pad_value << " "
+                      << paddings[0] << " " << paddings[1] << " " << paddings[2]
+                      << " " << paddings[3];
+            std::unique_ptr<arena::TestCase> tester(new Pad2dComputeTester(
+                place, "def", pad_mode, paddings, pad_value, data_format));
+            arena::Arena arena(std::move(tester), place, 2e-5);
+            arena.TestPrecision();
+          }
         }
       }
     }
