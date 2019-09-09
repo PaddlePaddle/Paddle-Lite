@@ -746,8 +746,14 @@ void LoadModelNaive(const std::string &model_dir,
       continue;
     }
     auto model_name = op.GetAttr<std::string>("model_name");
+    static int model_idx = 0;
+    model_idx++;
     std::string file_path = model_dir + "/" + model_name;
-    CHECK(npu::BuildNPUClient(file_path, model_name))
+    std::string unique_model_name =
+        "nb_" + std::to_string(model_idx) + "_" + model_name;
+    prog.model_names_.push_back(unique_model_name);
+    op.SetAttr<std::string>("model_name", unique_model_name);
+    CHECK(npu::BuildNPUClient(file_path, unique_model_name))
         << "NPU model load failed!";
   }
 #endif

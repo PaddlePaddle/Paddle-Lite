@@ -124,7 +124,10 @@ std::string GenerateNPUProgramPass::BuildNPUGraph(
     outputs.push_back(*converted_vars.at(argname));
   }
 
-  std::string model_name("hiai_npu_client_" + std::to_string(sub_id) + ".om");
+  static int model_idx = 0;
+  model_idx++;
+  std::string model_name("hiai_npu_client_" + std::to_string(model_idx) + "_" +
+                         std::to_string(sub_id) + ".om");
   if (!lite::npu::bridge::BuildNPUClient(inputs, outputs, model_name)) {
     LOG(WARNING) << "Build NPU failed subgraph " << sub_id;
     throw std::runtime_error("Build NPU failed subgraph.");
@@ -146,6 +149,7 @@ void GenerateNPUProgramPass::GenNPUSubgraph(
 
   auto model_name =
       BuildNPUGraph(op_nodes, in_data_vars, out_data_vars, sub_id);
+  model_names_.push_back(model_name);
 
   auto any_op = (*op_nodes.begin())->AsStmt().op();
   InsertNewNode(graph,
@@ -204,6 +208,7 @@ std::unique_ptr<RuntimeProgram> GenerateNPUProgramPass::GenProgram() {
   LOG(INFO) << "insts.size " << insts_.size();
   std::unique_ptr<RuntimeProgram> program(
       new RuntimeProgram(std::move(insts_)));
+  program->model_names_ = model_names_;
   return program;
 }
 

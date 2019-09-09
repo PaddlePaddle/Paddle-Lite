@@ -125,6 +125,14 @@ void RuntimeProgram::Run() {
   }
 }
 
+#ifdef LITE_WITH_NPU
+RuntimeProgram::~RuntimeProgram() {
+  for (auto& model_name : model_names_) {
+    npu::DeviceInfo::Global().Delete(model_name);
+  }
+}
+#endif
+
 void Program::Build(const cpp::ProgramDesc& prog) {
   CHECK(ops_.empty()) << "Executor duplicate Build found";
 

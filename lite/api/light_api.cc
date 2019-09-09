@@ -89,6 +89,7 @@ void LightPredictor::BuildRuntimeProgram(const cpp::ProgramDesc& prog) {
   program_.reset(new RuntimeProgram(std::move(insts)));
   CHECK(program.exec_scope());
   program_->set_exec_scope(program.exec_scope());
+  program_->model_names_ = prog.model_names_;
 }
 
 }  // namespace lite

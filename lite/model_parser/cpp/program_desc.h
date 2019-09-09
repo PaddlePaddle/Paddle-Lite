@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #pragma once
+#include <string>
 #include <vector>
 #include "lite/model_parser/cpp/block_desc.h"
 #include "lite/model_parser/desc_apis.h"
@@ -46,6 +47,10 @@ class ProgramDesc : public ProgramDescAPI {
   int64_t Version() const override { return version_; }
 
   void SetVersion(int64_t version) override { version_ = version; }
+
+#ifdef LITE_WITH_NPU
+  std::vector<std::string> model_names_;
+#endif
 
  private:
   int64_t version_;
