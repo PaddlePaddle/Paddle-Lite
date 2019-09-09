@@ -39,7 +39,7 @@ class SyntaxParser(object):
             assert self.cur_pos < self.N
         assert self.cur == '"'
         self.cur_pos += 1
-        logging.warning('get: %s' % self.token)
+        #logging.warning('get: %s' % self.token)
 
     def eat_word(self):
         self.token = ''
@@ -48,7 +48,7 @@ class SyntaxParser(object):
             self.token += self.cur
             self.forward()
 
-        logging.warning('get: %s' % self.token)
+        #logging.warning('get: %s' % self.token)
 
     def eat_left_parentheses(self):
         '''
@@ -57,7 +57,7 @@ class SyntaxParser(object):
         self.assert_is('(')
         self.token = '('
         self.forward()
-        logging.warning('get: %s' % self.token)
+        #logging.warning('get: %s' % self.token)
 
     def eat_right_parentheses(self):
         '''
@@ -66,7 +66,7 @@ class SyntaxParser(object):
         self.assert_is(')')
         self.token = ')'
         self.forward()
-        logging.warning('get: %s' % self.token)
+        #logging.warning('get: %s' % self.token)
 
     def eat_left_brace(self):
         '''
@@ -75,7 +75,7 @@ class SyntaxParser(object):
         self.assert_is('{')
         self.token = '{'
         self.forward()
-        logging.warning('get: %s' % self.token)
+        #logging.warning('get: %s' % self.token)
 
     def eat_right_brace(self):
         '''
@@ -84,7 +84,7 @@ class SyntaxParser(object):
         self.assert_is('}')
         self.token = '}'
         self.forward()
-        logging.warning('get: %s' % self.token)
+        #logging.warning('get: %s' % self.token)
 
     def eat_comma(self):
         '''
@@ -93,7 +93,7 @@ class SyntaxParser(object):
         self.assert_is(',')
         self.token = ','
         self.forward()
-        logging.warning('get: %s' % self.token)
+        #logging.warning('get: %s' % self.token)
 
     def eat_spaces(self):
         '''
@@ -112,7 +112,7 @@ class SyntaxParser(object):
         self.assert_is('.')
         self.token = '.'
         self.forward()
-        logging.warning('get: %s' % self.token)
+        #logging.warning('get: %s' % self.token)
 
     def eat_any_but_brace(self):
         '''
@@ -123,7 +123,7 @@ class SyntaxParser(object):
             self.cur_pos += 1
 
         self.token = self.str[start:self.cur_pos]
-        logging.warning('get: %s' % self.token)
+        #logging.warning('get: %s' % self.token)
 
     def eat_semicolon(self):
         '''
@@ -132,7 +132,7 @@ class SyntaxParser(object):
         self.assert_is(';')
         self.token = ';'
         self.forward()
-        logging.warning('get: %s' % self.token)
+        #logging.warning('get: %s' % self.token)
 
     def assert_is(self, w):
         assert self.cur == w, "token should be %s, but get %s" % (w, self.cur)
@@ -141,7 +141,7 @@ class SyntaxParser(object):
     def cur(self):
         assert self.cur_pos < self.N
         return self.str[self.cur_pos]
-        logging.warning('get: %s' % self.token)
+        #logging.warning('get: %s' % self.token)
 
     def forward(self):
         self.cur_pos += 1
@@ -197,7 +197,7 @@ class RegisterLiteKernelParser(SyntaxParser):
         while self.cur_pos < len(self.str):
             start = self.str.find(self.KEYWORD, self.cur_pos)
             if start != -1:
-                print 'str ', start, self.str[start-2: start]
+                #print 'str ', start, self.str[start-2: start]
                 if start != 0 and '/' in self.str[start-2: start]:
                     '''
                     skip commented code

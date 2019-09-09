@@ -29,6 +29,7 @@ out_lines = [
 with open(ops_list_path) as f:
     for path in f:
         with open(path.strip()) as g:
+            print 'path: ', path
             c = g.read()
             kernel_parser = RegisterLiteKernelParser(c)
             kernel_parser.parse()
