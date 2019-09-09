@@ -214,6 +214,8 @@ struct ActivationParam {
       "channel"};  // prelu param, can be "all", "channel" or "element"
   lite::Tensor* Prelu_alpha{};  // prelu param
   float Swish_beta;             // swish param
+  float hard_sigmoid_slope{0.2};
+  float hard_sigmoid_offset{0.5};
   lite::Tensor* Out{};
   bool has_active{false};
   lite_api::ActivationType active_type;
@@ -791,6 +793,7 @@ struct AssignParam {
   lite::Tensor* Out{};
 };
 
+/// ----------------------- roi_align operators -----------------------
 struct RoiAlignParam {
   lite::Tensor* X{};
   lite::Tensor* ROIs{};
@@ -801,10 +804,20 @@ struct RoiAlignParam {
   int sampling_ratio{-1};
 };
 
+/// ----------------------- box_clip operators -----------------------
 struct BoxClipParam {
   const lite::Tensor* Input{};
   const lite::Tensor* ImInfo{};
   lite::Tensor* Output{};
+};
+
+/// ----------------------- assign_value operators -----------------------
+struct AssignValueParam {
+  std::vector<int> shape{};
+  int dtype{};
+  std::vector<float> fp32_values{};
+  std::vector<int> int32_values{};
+  lite::Tensor* Out{};
 };
 
 }  // namespace operators

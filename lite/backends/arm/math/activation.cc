@@ -471,7 +471,7 @@ void act_prelu<float>(const float* din,
 }
 
 template <>
-void act_sigmoid(const float* din, float* dout, int size, int threads) {
+void act_sigmoid<float>(const float* din, float* dout, int size, int threads) {
   int nums_per_thread = size / threads;
   int remain = size - threads * nums_per_thread;
   int neon_loop_cnt_dim4 = nums_per_thread >> 2;
@@ -595,7 +595,7 @@ void act_swish<float>(
 }
 
 template <>
-void act_log(const float* din, float* dout, int size, int threads) {
+void act_log<float>(const float* din, float* dout, int size, int threads) {
   int nums_per_thread = size / threads;
   int remain = size - threads * nums_per_thread;
   int neon_loop_cnt_dim4 = nums_per_thread >> 2;
@@ -633,7 +633,7 @@ void act_log(const float* din, float* dout, int size, int threads) {
 }
 
 template <>
-void act_exp(const float* din, float* dout, int size, int threads) {
+void act_exp<float>(const float* din, float* dout, int size, int threads) {
   int nums_per_thread = size / threads;
   int remain = size - threads * nums_per_thread;
   int neon_loop_cnt_dim4 = nums_per_thread >> 2;
@@ -677,6 +677,21 @@ void act_floor<float>(const float* din, float* dout, int size, int threads) {
   }
 }
 
+template <>
+void act_hard_sigmoid<float>(const float* din,
+                             float* dout,
+                             const int64_t size,
+                             const float slope,
+                             const float offset,
+                             int threads) {
+  for (int64_t i = 0; i < size; ++i) {
+    dout[0] = din[0] * slope + offset;
+    dout[0] = dout[0] < 1.0f ? dout[0] : 1.0f;
+    dout[0] = dout[0] > 0.0f ? dout[0] : 0.0f;
+    ++din;
+    ++dout;
+  }
+}
 }  // namespace math
 }  // namespace arm
 }  // namespace lite
