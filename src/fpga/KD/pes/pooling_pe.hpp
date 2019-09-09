@@ -66,9 +66,10 @@ class PoolingPE : public PE {
     args.out_width = output->shape().width();
     param_.poolingArgs = args;
 
+    // use_cpu_ = output->shape().width() == 1 && output->shape().height() == 1 &&
+    //            (k_width > 7 || k_height > 7);
     use_cpu_ = output->shape().width() == 1 && output->shape().height() == 1 &&
-               (k_width > 7 || k_height > 7);
-
+               (k_width > 255 || k_height > 255);           
     // use_cpu_ = param_.type == AVERAGE;
   }
 

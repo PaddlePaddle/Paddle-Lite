@@ -47,9 +47,9 @@ class FullyConnectedPE : public PE {
 
     int num = param_.filter->shape().channel();
     int chw = param_.filter->shape().num();
-    if (num == 2) {
-      return;
-    }
+    // if (num == 2) {
+    //   return;
+    // }
 
     int height = param_.input->shape().height();
     int width = param_.input->shape().width();
@@ -111,20 +111,21 @@ class FullyConnectedPE : public PE {
         max = output_data[i];
       }
     }
-    
+
     output->flush();
     output->scale()[0] = max / 127.0f;
     output->scale()[1] = 127.0f / max;
   }
 
   bool dispatch() { 
-    int num = param_.filter->shape().channel();
-    if (num == 2) {
-      cpu_compute();
-      return 1; 
-    } else {
-      return convPE_.dispatch(); }
-    }
+    // int num = param_.filter->shape().channel();
+    // if (num == 2) {
+    //   cpu_compute();
+    //   return 1; 
+    // } else {
+    return convPE_.dispatch(); 
+    // }
+  }
     
 
   FullyConnectedParam& param() { return param_; }

@@ -174,16 +174,19 @@ inline void format_filter(Tensor* filter, Tensor* quantized_filter, int group,
                           std::vector<float>& scales) {
   float max_value = find_max(*filter);
   Shape& filter_shape = filter->shape();
-  quantized_filter->setAligned(true);
-  quantized_filter->mutableData<int8_t>(INT8, filter->shape());
-  quantized_filter->scale()[0] = max_value / 127.0f;
-  quantized_filter->scale()[1] = 127.0f / max_value;
 
-  int8_t* src = quantized_filter->mutableData<int8_t>(INT8, filter->shape());
   int mem_size;
   std::vector<float> max_values;
   int8_t* quantized_data = filter::format_filter(filter->data<float>(), mem_size ,filter_shape.num(),
     filter_shape.channel(), filter_shape.height(), filter_shape.width(), group, max_value, max_values);
+
+  float mem_factor = mem_size  * 1.0f / filter->shape().numel();
+  quantized_filter->setMemScale(mem_factor);
+
+  quantized_filter->setAligned(true);
+  int8_t* src = quantized_filter->mutableData<int8_t>(INT8, filter->shape());
+  quantized_filter->scale()[0] = max_value / 127.0f;
+  quantized_filter->scale()[1] = 127.0f / max_value;
 
   memcpy(src, quantized_data, mem_size);
   quantized_filter->flush();
