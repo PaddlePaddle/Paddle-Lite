@@ -78,7 +78,7 @@ SET_ATTR_IMPL(int64_t, LONG, Int64, l);
 SET_ATTRS_IMPL(int, INTS, Int32, ints);
 SET_ATTRS_IMPL(float, FLOATS, Float32, floats);
 SET_ATTRS_IMPL(std::string, STRINGS, String, strings);
-SET_ATTRS_IMPL(int64_t, LONGS, Int64, longs); 
+SET_ATTRS_IMPL(int64_t, LONGS, Int64, longs);
 #undef SET_ATTRS_IMPL
 
 const proto::OpDesc::Attr& GetFindAttr(const proto::OpDesc& desc,
