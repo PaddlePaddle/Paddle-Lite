@@ -66,7 +66,7 @@ inline bool direct_conv_trans_weights<PRECISION(kInt8), PRECISION(kFloat)>(
     std::vector<float>& merge_scale) {  // NOLINT
   int cblock = 4;
   if (stride == 2) {
-    lite::arm::math::conv_3x3s2_direct_int8_c_num();
+    cblock = lite::arm::math::conv_3x3s2_direct_int8_c_num();
   }
   int oc = win->dims()[0];
   int ic = win->dims()[1];
@@ -105,7 +105,7 @@ inline bool direct_conv_trans_weights<PRECISION(kInt8), PRECISION(kInt8)>(
     std::vector<float>& merge_scale) {  // NOLINT
   int cblock = 4;
   if (stride == 2) {
-    lite::arm::math::conv_3x3s2_direct_int8_c_num();
+    cblock = lite::arm::math::conv_3x3s2_direct_int8_c_num();
   }
   int oc = win->dims()[0];
   int ic = win->dims()[1];

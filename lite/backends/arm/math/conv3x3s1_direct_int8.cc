@@ -413,24 +413,10 @@ void conv_3x3s1_direct_int8(const int8_t* din,
                   [ptr_out1] "+r"(ptr_out1),
                   [wc0] "+r"(ptr_wc0)
                 :
-                : "cc",
-                  "memory",
-                  "q0",
-                  "q1",
-                  "q2",
-                  "q3",
-                  "q4",
-                  "q5",
-                  "q6",
-                  "q7",
-                  "q8",
-                  "q9",
-                  "q10",
-                  "q11",
-                  "q12",
-                  "q13",
-                  "q14",
-                  "q15");
+                : "cc", "memory", "q0", "q1", "q2", "q3",
+                  "q4", "q5", "q6", "q7", "q8", "q9", "q10",
+                  "q11", "q12", "q13", "q14", "q15"
+                );
 #endif  // __aarch64__
             // clang-format on
             wc0 += 9 * hout_c_block;
