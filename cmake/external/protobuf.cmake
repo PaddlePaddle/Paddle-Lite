@@ -186,11 +186,8 @@ FUNCTION(build_protobuf TARGET_NAME BUILD_FOR_HOST)
 
     IF(BUILD_FOR_HOST)
         # set for server compile.
-        if (NOT "${HOST_C_COMPILER}")
+        if (NOT LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
           set(HOST_C_COMPILER "${CMAKE_C_COMPILER}")
-          message(WARNING "HOST_C_COMPILER: ${HOST_C_COMPILER}")
-        endif()
-        if (NOT "${HOST_CXX_COMPILER}")
           set(HOST_CXX_COMPILER "${CMAKE_CXX_COMPILER}")
         endif()
 
@@ -285,7 +282,11 @@ IF(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
 ENDIF()
 
 IF(NOT PROTOBUF_FOUND)
-    build_protobuf(extern_protobuf TRUE)
+    if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
+      build_protobuf(extern_protobuf FALSE)
+    else()
+      build_protobuf(extern_protobuf TRUE)
+    endif()
 
     SET(PROTOBUF_INCLUDE_DIR ${extern_protobuf_INCLUDE_DIR}
         CACHE PATH "protobuf include directory." FORCE)
