@@ -19,7 +19,7 @@ limitations under the License. */
 #include "lite/core/context.h"
 #include "lite/core/tensor.h"
 #include "lite/fluid/eigen.h"
-//#include "lite/fluid/lod.h"
+// #include "lite/fluid/lod.h"
 #include "lite/utils/paddle_enforce.h"
 
 namespace paddle {
