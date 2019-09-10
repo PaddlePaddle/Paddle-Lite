@@ -72,9 +72,9 @@ void Run(const std::string& model_dir,
 
   // set input
   auto input_image = predictor->GetInput(0);
-  input_image->Resize({1, 3, 300, 300});
+  input_image->Resize({1, 3, 608, 608});
   auto input_image_data = input_image->mutable_data<float>();
-  std::ifstream read_file("/data/local/tmp/pjc/ssd_img.txt");
+  std::ifstream read_file("/data/local/tmp/pjc/img_yolov3_quant.txt");
   if (!read_file.is_open()) {
     LOG(INFO) << "read image file fail";
     return;
@@ -84,9 +84,19 @@ void Run(const std::string& model_dir,
   for (auto t : input_shape) {
     input_image_size *= t;
   }
+  auto dest_ptr = input_image_data;
   for (int i = 0; i < input_image_size; i++) {
-    read_file >> input_image_data[i];
+    read_file >> *dest_ptr;
+    dest_ptr++;
   }
+  LOG(INFO) << "load data succeed. " << input_image_data[0] << " "
+            << *(--dest_ptr);
+
+  auto img_shape = predictor->GetInput(1);
+  img_shape->Resize({1, 2});
+  auto img_shape_data = img_shape->mutable_data<int>();
+  img_shape_data[0] = 608;
+  img_shape_data[1] = 608;
 
   // warmup and run
   for (int i = 0; i < warmup_times; ++i) {
