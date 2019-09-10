@@ -102,9 +102,9 @@ Executor<Device, T>::Executor(const Program<Device> &program,
   }
   int count = 0;
 #ifdef PADDLE_MOBILE_PROFILE
-    std::vector<ProfInfo> profile(ops_of_block0_.size());
-    struct timespec ts;
-    int op_index = 0;
+  std::vector<ProfInfo> profile(ops_of_block0_.size());
+  struct timespec ts;
+  int op_index = 0;
 #endif
   for (auto &op_handler : ops_of_block0_) {
 #ifdef PADDLE_MOBILE_PROFILE
@@ -115,8 +115,8 @@ Executor<Device, T>::Executor(const Program<Device> &program,
     op_handler->Init();
 #ifdef PADDLE_MOBILE_PROFILE
     clock_gettime(CLOCK_MONOTONIC, &ts);
-      profile[op_index].runEnd = (uint64_t)ts.tv_sec * 1e9 + ts.tv_nsec;
-      ++op_index;
+    profile[op_index].runEnd = (uint64_t)ts.tv_sec * 1e9 + ts.tv_nsec;
+    ++op_index;
 #endif
   }
 #ifdef PADDLE_MOBILE_PROFILE
