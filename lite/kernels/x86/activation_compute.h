@@ -11,11 +11,14 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+#pragma once
 
+#include <vector>
+#include <utility>
 #include "lite/core/kernel.h"
+#include "lite/core/op_lite.h"
 #include "lite/core/op_registry.h"
 #include "lite/fluid/eigen.h"
-#include "lite/core/op_lite.h"
 #include "lite/operators/activation_ops.h"
 
 namespace paddle {
@@ -53,16 +56,13 @@ struct BaseActivationFunctor {
 };
 
 template <typename Functor>
-bool Activate(const lite::Tensor* X,
-              lite::Tensor* Out) {
+bool Activate(const lite::Tensor* X, lite::Tensor* Out) {
   using T = typename Functor::ELEMENT_TYPE;
   auto place = lite::fluid::EigenDeviceType<TARGET(kX86)>();
   CHECK_OR_FALSE(X)
   CHECK_OR_FALSE(Out)
-  auto x =
-      lite::fluid::EigenVector<T>::Flatten(*X);
-  auto out =
-      lite::fluid::EigenVector<T>::Flatten(*Out);
+  auto x = lite::fluid::EigenVector<T>::Flatten(*X);
+  auto out = lite::fluid::EigenVector<T>::Flatten(*Out);
   Functor()(place, x, out);
 }
 
@@ -77,14 +77,10 @@ bool ActivateGrad(const lite::Tensor* X,
   CHECK_OR_FALSE(Out)
   CHECK_OR_FALSE(Out_grad)
   CHECK_OR_FALSE(X_grad)
-  auto x =
-      lite::fluid::EigenVector<T>::Flatten(*X);
-  auto out =
-      lite::fluid::EigenVector<T>::Flatten(*Out);
-  auto x_grad = 
-      lite::fluid::EigenVector<T>::Flatten(*X_grad);
-  auto out_grad = 
-      lite::fluid::EigenVector<T>::Flatten(*Out_grad);
+  auto x = lite::fluid::EigenVector<T>::Flatten(*X);
+  auto out = lite::fluid::EigenVector<T>::Flatten(*Out);
+  auto x_grad = lite::fluid::EigenVector<T>::Flatten(*X_grad);
+  auto out_grad = lite::fluid::EigenVector<T>::Flatten(*Out_grad);
   Functor()(place, x, out, out_grad, x_grad);
 }
 
@@ -99,7 +95,10 @@ struct SquareFunctor : public BaseActivationFunctor<T> {
 
 template <typename T>
 struct SquareGradFunctor : public BaseActivationFunctor<T> {
-  template <typename Device, typename X, typename Out, typename dOut,
+  template <typename Device,
+            typename X,
+            typename Out,
+            typename dOut,
             typename dX>
   void operator()(Device d, X x, Out out, dOut dout, dX dx) const {
     dx.device(d) = dout * static_cast<T>(2) * x;
@@ -133,8 +132,7 @@ class SquareGradCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
     param.X_grad->template mutable_data<T>();
 
     ActivateGrad<SquareGradFunctor<T>>(
-        param.X, param.Out,
-        param.Out_grad, param.X_grad);
+        param.X, param.Out, param.Out_grad, param.X_grad);
   }
 
   virtual ~SquareGradCompute() = default;

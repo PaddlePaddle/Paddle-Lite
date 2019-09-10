@@ -26,7 +26,8 @@ namespace operators {
 class SequenceExpandAsOpLite : public OpLite {
  public:
   SequenceExpandAsOpLite() {}
-  explicit SequenceExpandAsOpLite(const std::string &op_type) : OpLite(op_type) {}
+  explicit SequenceExpandAsOpLite(const std::string &op_type)
+      : OpLite(op_type) {}
 
   bool CheckShape() const override;
 

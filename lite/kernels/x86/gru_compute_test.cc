@@ -12,11 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/x86/gru_compute.h"
 #include <gtest/gtest.h>
 #include <iostream>
 #include <vector>
+#include <memory>
+#include <utility>
 #include "lite/core/op_registry.h"
+#include "lite/kernels/x86/gru_compute.h"
 
 namespace paddle {
 namespace lite {
@@ -57,7 +59,7 @@ TEST(gru_x86, run_test) {
   std::vector<int64_t> hidden_shape{batch_size, 5};
   hidden.Resize(lite::DDim(hidden_shape));
 
-  std::vector<std::vector<uint64_t> > lod{{0, 2, 6, 9}};
+  std::vector<std::vector<uint64_t>> lod{{0, 2, 6, 9}};
   input.set_lod(lod);
 
   auto input_data = input.mutable_data<float>();
@@ -101,7 +103,8 @@ TEST(gru_x86, run_test) {
   gru.Run();
 
   auto batch_gate_data = batch_gate.mutable_data<float>();
-  auto batch_reset_hidden_prev_data = batch_reset_hidden_prev.mutable_data<float>();
+  auto batch_reset_hidden_prev_data =
+      batch_reset_hidden_prev.mutable_data<float>();
   auto batch_hidden_data = batch_hidden.mutable_data<float>();
   auto hidden_data = hidden.mutable_data<float>();
   LOG(INFO) << "output: ";

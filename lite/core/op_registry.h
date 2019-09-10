@@ -219,7 +219,7 @@ class KernelRegistor : public lite::Registor<KernelType> {
  public:
   KernelRegistor(const std::string &op_type, const std::string &alias)
       : Registor<KernelType>([=] {
-          //VLOG(3) << "Register kernel " << " for "
+          // VLOG(3) << "Register kernel " << " for "
           //        << TargetToStr(target) << " " << PrecisionToStr(precision)
           //        << " " << DataLayoutToStr(layout) << " alias " << alias;
           KernelRegistry::Global().Register<target, precision, layout>(

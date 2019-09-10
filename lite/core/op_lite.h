@@ -35,7 +35,7 @@ constexpr char kGradVarSuffix[] = "@GRAD";
 
 constexpr size_t kGradVarSuffixSize = 5U;
 
-inline std::string GradVarName(const std::string& var_name) {
+inline std::string GradVarName(const std::string &var_name) {
   std::string result;
   result.reserve(var_name.size() + kGradVarSuffixSize);
   result += var_name;

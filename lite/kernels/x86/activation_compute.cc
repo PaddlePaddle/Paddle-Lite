@@ -39,7 +39,7 @@ REGISTER_LITE_KERNEL(square_grad,
                 {LiteType::GetTensorTy(TARGET(kX86))})
     .Finalize();
 
-    // float
+// float
 REGISTER_LITE_KERNEL(relu,
                      kX86,
                      kFloat,

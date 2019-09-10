@@ -14,6 +14,7 @@
 #pragma once
 
 #include <string>
+#include <vector>
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/types.h"
@@ -28,10 +29,9 @@ using Tensor = lite::Tensor;
 
 template <typename T>
 struct SequenceExpandFunctor {
-  void operator()(
-      const Tensor &x, 
-      const std::vector<size_t> &ref_lod, /*expand referenced lod*/
-      Tensor *out) {
+  void operator()(const Tensor &x,
+                  const std::vector<size_t> &ref_lod, /*expand referenced lod*/
+                  Tensor *out) {
     int64_t hight = x.dims()[0];
     int64_t width = x.data_size() / hight;
 
@@ -54,14 +54,15 @@ struct SequenceExpandFunctor {
 };
 
 template <typename T>
-class SequenceExpandAsCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
+class SequenceExpandAsCompute
+    : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
  public:
   void Run() override {
-    auto& param = *param_.get_mutable<operators::SequenceExpandAsParam>();
+    auto &param = *param_.get_mutable<operators::SequenceExpandAsParam>();
 
-    auto* x = param.x;
-    auto* y = param.y;
-    auto* out = param.out;
+    auto *x = param.x;
+    auto *y = param.y;
+    auto *out = param.out;
 
     auto &y_lod = y->lod();
     CHECK_EQ_OR_RETURN(y_lod.size(), 1)
@@ -74,7 +75,7 @@ class SequenceExpandAsCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat
   }
 };
 
-}  // x86
-}  // kernels
-}  // lite
-}  // paddle
+}  // namespace x86
+}  // namespace kernels
+}  // namespace lite
+}  // namespace paddle

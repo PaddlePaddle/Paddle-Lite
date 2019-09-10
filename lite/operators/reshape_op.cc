@@ -83,11 +83,7 @@ bool ReshapeOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
         << "The shape information must be set by Attr(shape).";
     const std::vector<int> shape_vector = param_.shape;
     lite::Tensor *shape_tensor = new lite::Tensor;
-<<<<<<< HEAD
-    shape_tensor->Resize(DDim({shape_vector.size()}));
-=======
     shape_tensor->Resize({static_cast<int64_t>(shape_vector.size())});
->>>>>>> f25a4571c3637b017a572ddfdf92afa9a0317055
     int *data_shape = shape_tensor->mutable_data<int>();
     for (int i = 0; i < shape_vector.size(); i++) {
       data_shape[i] = shape_vector[i];

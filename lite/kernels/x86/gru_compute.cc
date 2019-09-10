@@ -14,7 +14,9 @@
 
 #include "lite/kernels/x86/gru_compute.h"
 
-DEFINE_int32(paddle_num_threads, 1, "Number of threads for each paddle instance.");
+DEFINE_int32(paddle_num_threads,
+             1,
+             "Number of threads for each paddle instance.");
 
 REGISTER_LITE_KERNEL(gru,
                      kX86,
@@ -27,7 +29,8 @@ REGISTER_LITE_KERNEL(gru,
     .BindInput("Weight", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindOutput("Batch_gate", {LiteType::GetTensorTy(TARGET(kX86))})
-    .BindOutput("Batch_reset_hidden_prev", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindOutput("Batch_reset_hidden_prev",
+                {LiteType::GetTensorTy(TARGET(kX86))})
     .BindOutput("Batch_hidden", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindOutput("Hidden", {LiteType::GetTensorTy(TARGET(kX86))})
     .Finalize();

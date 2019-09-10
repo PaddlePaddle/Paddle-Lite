@@ -27,7 +27,8 @@ namespace x86 {
 
 TEST(sequence_expand_as_x86, retrive_op) {
   auto sequence_expand_as =
-      KernelRegistry::Global().Create<TARGET(kX86), PRECISION(kFloat)>("sequence_expand_as");
+      KernelRegistry::Global().Create<TARGET(kX86), PRECISION(kFloat)>(
+          "sequence_expand_as");
   ASSERT_FALSE(sequence_expand_as.empty());
   ASSERT_TRUE(sequence_expand_as.front());
 }
@@ -49,7 +50,6 @@ TEST(sequence_expand_as_x86, run_test) {
 
   auto x_data = x.mutable_data<float>();
   auto y_data = y.mutable_data<float>();
-  //auto out_data = out.mutable_data<float>();
 
   for (int64_t i = 0; i < x.dims().production(); i++) {
     x_data[i] = static_cast<float>(i);
@@ -58,7 +58,7 @@ TEST(sequence_expand_as_x86, run_test) {
     y_data[i] = static_cast<float>(i);
   }
 
-  std::vector<std::vector<uint64_t> > lod{{0, 3, 6, 7, 8}};
+  std::vector<std::vector<uint64_t>> lod{{0, 3, 6, 7, 8}};
   y.set_lod(lod);
   // MulCompute mul;
   SequenceExpandAsCompute<float> sequence_expand_as;
@@ -81,8 +81,8 @@ TEST(sequence_expand_as_x86, run_test) {
   for (int i = 0; i < out.dims().production(); i++) {
     LOG(INFO) << out_data[i];
     if (i >= lod_sum) {
-        index++;
-        lod_sum = lod[0][index];
+      index++;
+      lod_sum = lod[0][index];
     }
     ASSERT_EQ(out_data[i], x_data[index - 1]);
   }

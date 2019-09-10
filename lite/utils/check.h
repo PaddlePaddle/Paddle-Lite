@@ -40,28 +40,28 @@
     return false;                                             \
   }
 
-#define CHECK_OR_RETURN(cond)               \
+#define CHECK_OR_RETURN(cond)              \
   if (!(cond)) {                           \
     LOG(ERROR) << #cond << " test error!"; \
-    return;                          \
+    return;                                \
   }
-#define CHECK_EQ_OR_RETURN(a__, b__)                           \
+#define CHECK_EQ_OR_RETURN(a__, b__)                          \
   if ((a__) != (b__)) {                                       \
     LOG(ERROR) << #a__ << " == " << #b__ << " check failed!"; \
     LOG(ERROR) << a__ << " != " << b__;                       \
-    return;                                             \
+    return;                                                   \
   }
 
-#define CHECK_GT_OR_RETURN(a__, b__)                          \
+#define CHECK_GT_OR_RETURN(a__, b__)                         \
   if (!((a__) > (b__))) {                                    \
     LOG(ERROR) << #a__ << " > " << #b__ << " check failed!"; \
     LOG(ERROR) << a__ << " <= " << b__;                      \
-    return;                                            \
+    return;                                                  \
   }
 
-#define CHECK_GE_OR_RETURN(a__, b__)                           \
+#define CHECK_GE_OR_RETURN(a__, b__)                          \
   if (!((a__) >= (b__))) {                                    \
     LOG(ERROR) << #a__ << " >= " << #b__ << " check failed!"; \
     LOG(ERROR) << a__ << " < " << b__;                        \
-    return;                                             \
+    return;                                                   \
   }

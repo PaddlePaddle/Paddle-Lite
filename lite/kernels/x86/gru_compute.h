@@ -14,16 +14,17 @@
 #pragma once
 
 #include <string>
+#include <vector>
+#include "lite/backends/x86/math/blas.h"
+#include "lite/backends/x86/math/detail/gru_kernel.h"
+#include "lite/backends/x86/math/detail/gru_cpu_kernel.h"
+#include "lite/backends/x86/math/gru_compute.h"
+#include "lite/backends/x86/math/math_function.h"
+#include "lite/backends/x86/math/sequence2batch.h"
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/types.h"
 #include "lite/fluid/eigen.h"
-#include "lite/backends/x86/math/blas.h"
-#include "lite/backends/x86/math/gru_compute.h"
-#include "lite/backends/x86/math/math_function.h"
-#include "lite/backends/x86/math/sequence2batch.h"
-#include "lite/backends/x86/math/detail/gru_kernel.h"
-#include "lite/backends/x86/math/detail/gru_cpu_kernel.h"
 
 DECLARE_int32(paddle_num_threads);
 
@@ -84,7 +85,8 @@ class GRUCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
     int frame_size = hidden_dims[1];
     lite::x86::math::GRUMetaValue<T> gru_value;
     gru_value.gate_weight = const_cast<T*>(weight_data);
-    gru_value.state_weight = const_cast<T*>(weight_data + 2 * frame_size * frame_size);
+    gru_value.state_weight =
+        const_cast<T*>(weight_data + 2 * frame_size * frame_size);
     Tensor ordered_h0;
 
     std::vector<size_t> order(batch_gate->lod()[2]);
@@ -93,34 +95,49 @@ class GRUCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
       // Since the batch computing for GRU reorders the input sequences
       // according to their length. The initialized cell state also needs
       // to reorder.
-      ReorderInitState<T>(
-          context, *h0, order, &ordered_h0, true);
+      ReorderInitState<T>(context, *h0, order, &ordered_h0, true);
       gru_value.prev_out_value = ordered_h0.mutable_data<T>();
     } else {
       gru_value.prev_out_value = nullptr;
     }
     auto batch_starts = batch_gate->lod()[0];
     size_t seq_len = batch_starts.size() - 1;
-    auto active_node = lite::x86::math::detail::GetActivationType(param.activation);
-    auto active_gate = lite::x86::math::detail::GetActivationType(param.gate_activation);
+    auto active_node =
+        lite::x86::math::detail::GetActivationType(param.activation);
+    auto active_gate =
+        lite::x86::math::detail::GetActivationType(param.gate_activation);
 
 #ifdef PADDLE_WITH_MKLML
     // use MKL packed to speedup GEMM
     if (FLAGS_paddle_num_threads >= 4) {
       auto blas = lite::x86::math::GetBlas<TARGET(kX86), T>(context);
-      T* packed_gate = blas.GEMM_ALLOC(CblasBMatrix, 1 /*height of C*/,
+      T* packed_gate = blas.GEMM_ALLOC(CblasBMatrix,
+                                       1 /*height of C*/,
                                        frame_size * 2 /*width of weight*/,
                                        frame_size /*height of height*/);
       CHECK_OR_RETURN(packed_gate);
-      blas.GEMM_PACK(CblasBMatrix, CblasNoTrans, 1 /*cur bs?*/, frame_size * 2,
-                     frame_size, T(1.0), gru_value.gate_weight, frame_size * 2,
+      blas.GEMM_PACK(CblasBMatrix,
+                     CblasNoTrans,
+                     1 /*cur bs?*/,
+                     frame_size * 2,
+                     frame_size,
+                     T(1.0),
+                     gru_value.gate_weight,
+                     frame_size * 2,
                      packed_gate);
-      T* packed_state = blas.GEMM_ALLOC(CblasBMatrix, 1 /*height of C*/,
+      T* packed_state = blas.GEMM_ALLOC(CblasBMatrix,
+                                        1 /*height of C*/,
                                         frame_size /*width of weight*/,
                                         frame_size /*height of height*/);
       CHECK_OR_RETURN(packed_state);
-      blas.GEMM_PACK(CblasBMatrix, CblasNoTrans, 1 /*cur bs?*/, frame_size,
-                     frame_size, T(1.0), gru_value.state_weight, frame_size,
+      blas.GEMM_PACK(CblasBMatrix,
+                     CblasNoTrans,
+                     1 /*cur bs?*/,
+                     frame_size,
+                     frame_size,
+                     T(1.0),
+                     gru_value.state_weight,
+                     frame_size,
                      packed_state);
       for (size_t n = 0; n < seq_len; n++) {
         int64_t bstart = static_cast<int64_t>(batch_starts[n]);
@@ -136,15 +153,27 @@ class GRUCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
         gru_value.reset_output_value = reset_hidden_prev_t.mutable_data<T>();
 
         if (gru_value.prev_out_value) {
-          blas.GEMM_COMPUTE(
-              CblasNoTrans, CblasPacked, cur_batch_size, frame_size * 2,
-              frame_size, gru_value.prev_out_value, frame_size, packed_gate,
-              frame_size * 2, T(1), gru_value.gate_value, frame_size * 3);
+          blas.GEMM_COMPUTE(CblasNoTrans,
+                            CblasPacked,
+                            cur_batch_size,
+                            frame_size * 2,
+                            frame_size,
+                            gru_value.prev_out_value,
+                            frame_size,
+                            packed_gate,
+                            frame_size * 2,
+                            T(1),
+                            gru_value.gate_value,
+                            frame_size * 3);
         }
 
         lite::x86::math::detail::forward_final_output(
-            lite::x86::math::detail::forward::gru_finalOutput<T>(), gru_value, frame_size,
-            cur_batch_size, active_node, origin_mode);
+            lite::x86::math::detail::forward::gru_finalOutput<T>(),
+            gru_value,
+            frame_size,
+            cur_batch_size,
+            active_node,
+            origin_mode);
 
         gru_value.prev_out_value = gru_value.output_value;
       }
@@ -167,8 +196,13 @@ class GRUCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
         gru_value.reset_output_value = reset_hidden_prev_t.mutable_data<T>();
 
         lite::x86::math::GRUUnitFunctor<TARGET(kX86), T>::compute(
-            context, gru_value, frame_size, cur_batch_size, active_node,
-            active_gate, origin_mode);
+            context,
+            gru_value,
+            frame_size,
+            cur_batch_size,
+            active_node,
+            active_gate,
+            origin_mode);
 
         gru_value.prev_out_value = gru_value.output_value;
       }
@@ -178,11 +212,10 @@ class GRUCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
     lite::x86::math::Batch2LoDTensorFunctor<TARGET(kX86), T> to_seq;
     batch_hidden->set_lod(batch_gate->lod());
     to_seq(context, *batch_hidden, hidden);
-
   }
 };
 
-}  // x86
-}  // kernels
-}  // lite
-}  // paddle
+}  // namespace x86
+}  // namespace kernels
+}  // namespace lite
+}  // namespace paddle

@@ -55,7 +55,8 @@ bool SequenceExpandAsOpLite::InferShape() const {
   return true;
 }
 
-bool SequenceExpandAsOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
+bool SequenceExpandAsOpLite::AttachImpl(const cpp::OpDesc &op_desc,
+                                        lite::Scope *scope) {
   auto x = op_desc.Input("X").front();
   auto y = op_desc.Input("Y").front();
   auto out = op_desc.Output("Out").front();
@@ -71,4 +72,5 @@ bool SequenceExpandAsOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope 
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(sequence_expand_as, paddle::lite::operators::SequenceExpandAsOpLite)
+REGISTER_LITE_OP(sequence_expand_as,
+                 paddle::lite::operators::SequenceExpandAsOpLite)
