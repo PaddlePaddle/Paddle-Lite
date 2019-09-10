@@ -120,7 +120,7 @@ void conv_3x3s1_direct_int8(const int8_t* din,
 
 #pragma omp parallel for num_threads(threads)
       for (int c = 0; c < chout; c += hout_c_block) {
-#ifdef USE_OPENMP
+#ifdef ARM_WITH_OMP
         int32_t* pre_out = reinterpret_cast<int*>(pre_din + pre_in_size) +
                            omp_get_thread_num() * pre_out_size;
 #else
@@ -162,6 +162,7 @@ void conv_3x3s1_direct_int8(const int8_t* din,
 
             int cnt = w_loop;
             const int8_t* ptr_wc0 = wc0;
+// clang-format off
 #ifdef __aarch64__
             asm volatile(
                 "ldp   q4, q5, [%[wc0]]\n"
@@ -281,28 +282,9 @@ void conv_3x3s1_direct_int8(const int8_t* din,
                   [ptr_out0] "+r"(ptr_out0),
                   [ptr_out1] "+r"(ptr_out1)
                 :
-                : "cc",
-                  "memory",
-                  "v0",
-                  "v1",
-                  "v2",
-                  "v3",
-                  "v4",
-                  "v5",
-                  "v6",
-                  "v11",
-                  "v12",
-                  "v13",
-                  "v14",
-                  "v15",
-                  "v16",
-                  "v17",
-                  "v18",
-                  "v19",
-                  "v24",
-                  "v25",
-                  "v26",
-                  "v27"
+                : "cc", "memory", "v0", "v1", "v2", "v3", "v4",
+                  "v5", "v6", "v11", "v12", "v13", "v14", "v15",
+                  "v16", "v17", "v18", "v19", "v20","v21", "v22", "v23"
 
                 );
 
@@ -449,7 +431,8 @@ void conv_3x3s1_direct_int8(const int8_t* din,
                   "q13",
                   "q14",
                   "q15");
-#endif
+#endif  // __aarch64__
+            // clang-format on
             wc0 += 9 * hout_c_block;
             inr0 += win_round;
             inr1 += win_round;

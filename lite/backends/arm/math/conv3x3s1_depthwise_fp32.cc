@@ -520,7 +520,7 @@ void conv_3x3s1_depthwise_fp32(const float* i_data,
                   "q0","q1","q2","q3","q4","q5","q6","q7", "q15"
           );
 #endif  //  __aarch64__
-          // clang-format off
+          // clang-format on
           if (flag_mask) {
             for (int i = 0; i < remain; ++i) {
               c00[i] = pre_out[i];

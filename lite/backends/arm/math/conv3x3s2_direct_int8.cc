@@ -128,7 +128,7 @@ void conv_3x3s2_direct_int8(const int8_t* din,
 
 #pragma omp parallel for num_threads(threads)
       for (int c = 0; c < chout; c += hout_c_block) {
-#ifdef USE_OPENMP
+#ifdef ARM_WITH_OMP
         auto pre_out = reinterpret_cast<int*>(pre_din + pre_in_size) +
                        omp_get_thread_num() * pre_out_size;
 #else
