@@ -240,10 +240,13 @@ function(add_kernel TARGET device level)
         return()
     endif()
 
-    # the source list will collect for both op registry and fake kernel generation.
-    foreach(src ${args_SRCS})
-        file(APPEND ${kernels_src_list} "${CMAKE_CURRENT_SOURCE_DIR}/${src}\n")
-    endforeach()
+    if (LITE_ON_MODEL_OPTIMIZE_TOOL)
+      # the source list will collect for model_optimize_tool to fake kernel generation.
+      foreach(src ${args_SRCS})
+          file(APPEND ${kernels_src_list} "${CMAKE_CURRENT_SOURCE_DIR}/${src}\n")
+      endforeach()
+      return()
+    endif()
 
     # when compiling the model_optimize_tool, a source file with all the fake kernel definitions will be generated,
     # no need to continue the compilation of the true kernel source.
@@ -285,6 +288,11 @@ function(add_kernel TARGET device level)
         endif()
         set(opencl_kernels "${opencl_kernels};${TARGET}" CACHE INTERNAL "")
     endif()
+
+    # the source list will collect for paddle_use_kernel.h code generation.
+    foreach(src ${args_SRCS})
+        file(APPEND ${kernels_src_list} "${CMAKE_CURRENT_SOURCE_DIR}/${src}\n")
+    endforeach()
 
     lite_cc_library(${TARGET} SRCS ${args_SRCS}
               DEPS ${args_DEPS}

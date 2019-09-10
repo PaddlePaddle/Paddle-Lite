@@ -9,7 +9,7 @@ if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK OR LITE_ON_MODEL_OPTIMIZE_TOOL)
   lite_cc_test(test_logging SRCS logging_test.cc DEPS ${utils_DEPS})
 else()
    set(utils_DEPS glog)
-endif(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
+endif()
 
 lite_cc_test(test_varient SRCS varient_test.cc DEPS utils)
 lite_cc_library(any SRCS any.cc)
