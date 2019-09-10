@@ -28,6 +28,7 @@ void norm(const float* input,
           const int post_n,
           const float epsilon,
           float* out,
+          float* norm_out,
           Context<TARGET(kARM)>* ctx) {
   for (int i = 0; i < pre_n; i++) {
     for (int k = 0; k < post_n; k++) {
@@ -37,6 +38,8 @@ void norm(const float* input,
         sum += in_tmp[j * post_n] * in_tmp[j * post_n];
       }
       sum = std::sqrt(sum);
+      float* norm_out_tmp = norm_out + i * post_n + k;
+      *norm_out_tmp = sum;
       float* out_tmp = out + i * n * post_n + k;
       for (int j = 0; j < n; j++) {
         out_tmp[j * post_n] = in_tmp[j * post_n] / sum;

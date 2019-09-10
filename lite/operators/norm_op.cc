@@ -22,6 +22,7 @@ namespace operators {
 bool NormOp::CheckShape() const {
   CHECK_OR_FALSE(param_.X);
   CHECK_OR_FALSE(param_.Out);
+  CHECK_OR_FALSE(param_.Norm);
   return true;
 }
 
@@ -30,6 +31,11 @@ bool NormOp::InferShape() const {
   // TODO(Superjomn) Enable data sharing.
   auto out_dims = param_.X->dims();
   param_.Out->Resize(out_dims);
+  DDim norm_dim(out_dims);
+  int axis =
+      param_.axis < 0 ? param_.axis + param_.X->dims().size() : param_.axis;
+  norm_dim[axis] = 1;
+  param_.Norm->Resize(norm_dim);
   return true;
 }
 
@@ -38,6 +44,8 @@ bool NormOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
       scope->FindVar(opdesc.Input("X").front())->GetMutable<lite::Tensor>();
   param_.Out =
       scope->FindVar(opdesc.Output("Out").front())->GetMutable<lite::Tensor>();
+  param_.Norm =
+      scope->FindVar(opdesc.Output("Norm").front())->GetMutable<lite::Tensor>();
   CHECK(param_.X);
   CHECK(param_.Out);
   param_.axis = opdesc.GetAttr<int>("axis");
