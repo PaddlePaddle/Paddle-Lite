@@ -50,7 +50,6 @@ class RangeComputeTester : public arena::TestCase {
     // size = (std::abs(ed_val - st_val) + std::abs(sp_val) - 1) /
     // std::abs(sp_val);
     size = std::ceil(std::abs((ed_val - st_val) / sp_val));
-    LOG(INFO) << "size is " << size;
     output->Resize(DDim(std::vector<int64_t>({static_cast<int>(size)})));
     auto* out_data = output->mutable_data<float>();
 
@@ -77,9 +76,6 @@ class RangeComputeTester : public arena::TestCase {
     st[0] = st_;
     ed[0] = ed_;
     sp[0] = sp_;
-    LOG(INFO) << st_;
-    LOG(INFO) << ed_;
-    LOG(INFO) << sp_;
     DDim dim(std::vector<int64_t>({1}));
 
     SetCommonTensor(start, dim, st.data());
@@ -88,12 +84,7 @@ class RangeComputeTester : public arena::TestCase {
   }
 };
 
-TEST(Range, precision) {
-#ifdef LITE_WITH_X86
-  Place place(TARGET(kX86));
-#endif
-#ifdef LITE_WITH_ARM
-  Place place(TARGET(kARM));
+void test_range(Place place) {
   std::unique_ptr<arena::TestCase> tester1(
       new RangeComputeTester(place, "def", 1, 10, 1));
   arena::Arena arena(std::move(tester1), place, 2e-5);
@@ -103,6 +94,15 @@ TEST(Range, precision) {
       new RangeComputeTester(place, "def", 10, 1, -2));
   arena::Arena arena2(std::move(tester2), place, 2e-5);
   arena2.TestPrecision();
+}
+
+TEST(Range, precision) {
+#ifdef LITE_WITH_X86
+  Place place(TARGET(kX86));
+#endif
+#ifdef LITE_WITH_ARM
+  Place place(TARGET(kARM));
+  test_range(place);
 #endif
 }
 
