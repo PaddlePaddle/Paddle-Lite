@@ -189,19 +189,28 @@ class TensorLite {
     convertDimsToImage2DShape(image2d_shape, image2d_pitch);
   }
 
-  void convertDimsToImage2DShape(std::array<size_t, 2> *image2d_shape,
-                                 std::array<size_t, 2> *image2d_pitch) {
-    size_t &img2d_w = *(image2d_shape)[0];
-    size_t &img2d_h = *(image2d_shape)[1];
-    size_t &pitch_row = *(image2d_pitch)[0];
-    size_t &pitch_slice = *(image2d_pitch)[1];
-    // TODO(yuanshuai): convert dims_ to image2d_h, image2d_w
-    // compute memory size
-    // memory_size_ =
-    img2d_h = 1;
-    img2d_w = 1;
-    pitch_row = 0;
-    pitch_slice = 0;
+  // ref: CLImageConverterDefault::InitImageDimInfoWith
+  void convertDimsToImage2DShape(std::array<size_t, 2> *image_shape,
+                                 std::array<size_t, 2> *image_pitch) {
+    size_t *row_pitch = image_pitch->data();
+    size_t *slice_pitch = image_pitch->data() + 1;
+    size_t *img_w = image_pitch->data();
+    size_t *img_h = image_pitch->data() + 1;
+
+    size_t new_dims[] = {1, 1, 1, 1};
+    for (size_t j = 0; j < dims_.size(); ++j) {
+      new_dims[4 - dims_.size() + j] = dims_[j];
+    }
+    size_t N, C, H, W;
+    N = new_dims[0];
+    C = new_dims[1];
+    H = new_dims[2];
+    W = new_dims[3];
+
+    *(img_w) = W * ((C + 3) / 4);
+    *(img_h) = H * N;
+    *(row_pitch) = *(img_w);
+    *(slice_pitch) = 0;
   }
 
   template <typename T>
@@ -212,7 +221,7 @@ class TensorLite {
     memory_size_ = other.memory_size_;
     std::array<size_t, 2> image2d_shape{1, 1};
     std::array<size_t, 2> image2d_pitch{1, 1};
-    convertDimsToImage2DShape(image2d_shape, image2d_pitch);
+    convertDimsToImage2DShape(&image2d_shape, &image2d_pitch);
     buffer_->CopyImage2DFrom<T>(*other.buffer_, image2d_shape, image2d_pitch);
   }
 #endif  // LITE_WITH_OPENCL

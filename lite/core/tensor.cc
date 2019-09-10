@@ -105,8 +105,9 @@ cl::Image2D *TensorLite::mutable_data<int8_t, cl::Image2D>() {
   memory_size_ = dims_.production() * sizeof(int8_t);
   std::array<size_t, 2> image2d_shape{1, 1};
   std::array<size_t, 2> image2d_pitch{1, 1};
-  convertDimsToImage2DShape(image2d_shape, image2d_pitch);
+  convertDimsToImage2DShape(&image2d_shape, &image2d_pitch);
   buffer_->ResetLazyImage2D<int8_t>(target_, image2d_shape, image2d_pitch);
+  memory_size_ = image2d_shape[0] * image2d_shape[1] * sizeof(int8_t);
   return reinterpret_cast<cl::Image2D *>(static_cast<char *>(buffer_->data()) +
                                          offset_);
 }
@@ -116,8 +117,9 @@ cl::Image2D *TensorLite::mutable_data<int32_t, cl::Image2D>() {
   memory_size_ = dims_.production() * sizeof(int32_t);
   std::array<size_t, 2> image2d_shape{1, 1};
   std::array<size_t, 2> image2d_pitch{1, 1};
-  convertDimsToImage2DShape(image2d_shape, image2d_pitch);
-  buffer_->ResetLazyImage2D<int8_t>(target_, image2d_shape, image2d_pitch);
+  convertDimsToImage2DShape(&image2d_shape, &image2d_pitch);
+  buffer_->ResetLazyImage2D<int32_t>(target_, image2d_shape, image2d_pitch);
+  memory_size_ = image2d_shape[0] * image2d_shape[1] * sizeof(int32_t);
   return reinterpret_cast<cl::Image2D *>(static_cast<char *>(buffer_->data()) +
                                          offset_);
 }
@@ -127,8 +129,9 @@ cl::Image2D *TensorLite::mutable_data<float, cl::Image2D>() {
   memory_size_ = dims_.production() * sizeof(float);
   std::array<size_t, 2> image2d_shape{1, 1};
   std::array<size_t, 2> image2d_pitch{1, 1};
-  convertDimsToImage2DShape(image2d_shape, image2d_pitch);
-  buffer_->ResetLazyImage2D<int8_t>(target_, image2d_shape, image2d_pitch);
+  convertDimsToImage2DShape(&image2d_shape, &image2d_pitch);
+  buffer_->ResetLazyImage2D<float>(target_, image2d_shape, image2d_pitch);
+  memory_size_ = image2d_shape[0] * image2d_shape[1] * sizeof(float);
   return reinterpret_cast<cl::Image2D *>(static_cast<char *>(buffer_->data()) +
                                          offset_);
 }
