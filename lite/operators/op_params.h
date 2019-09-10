@@ -80,7 +80,6 @@ struct FcParam {
   lite::Tensor* output{nullptr};
   lite::DDim in_mat_dims;
   int in_num_col_dims{1};
-  bool weight_transposed{false};
   // for int8
   WITH_INT8_CONFIG
 };

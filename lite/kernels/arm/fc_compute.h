@@ -60,14 +60,22 @@ void fc_trans_weights<PRECISION(kInt8)>(const Tensor& tin, Tensor* tout) {
 }
 
 template <PrecisionType PType, PrecisionType OutType>
-bool check_fc_use_gemm(int m, bool has_bias) {
+bool check_fc_use_gemm(int m, const std::vector<float>& scale, bool has_bias) {
   return m > 1;
 }
 
 template <>
-bool check_fc_use_gemm<PRECISION(kInt8), PRECISION(kInt8)>(int m,
-                                                           bool has_bias) {
-  return m > 1 && !has_bias;
+bool check_fc_use_gemm<PRECISION(kInt8), PRECISION(kFloat)>(
+    int m, const std::vector<float>& scale, bool has_bias) {
+  CHECK(scale.size() > 0) << "Int8 FC param must has weight_scale";
+  return m > 1 && scale.size() == 1;
+}
+
+template <>
+bool check_fc_use_gemm<PRECISION(kInt8), PRECISION(kInt8)>(
+    int m, const std::vector<float>& scale, bool has_bias) {
+  CHECK(scale.size() > 0) << "Int8 FC param must has weight_scale";
+  return m > 1 && scale.size() == 1 && !has_bias;
 }
 
 template <PrecisionType PType, PrecisionType OutType>
@@ -91,18 +99,16 @@ class FcCompute : public KernelLite<TARGET(kARM), PType> {
     n_ = w_dims[1];
     CHECK_EQ(k_, static_cast<int>(w_dims[0]));
 
-    flag_gemm_ = check_fc_use_gemm<PType, OutType>(m_, param.bias != nullptr);
+    flag_gemm_ = check_fc_use_gemm<PType, OutType>(
+        m_, param.weight_scale, param.bias != nullptr);
     if (!flag_trans_weights_ && !flag_gemm_) {
       flag_trans_weights_ = true;
       fc_trans_weights<PType>(*param.w, &weights_);
     }
   }
 
-  virtual void PrepareForRun() {
-    LOG(FATAL) << "FcCompute PrepareForRun not implemented";
-  }
-
-  virtual void Run() { LOG(FATAL) << "FcCompute Run not implemented"; }
+  virtual void PrepareForRun();
+  virtual void Run();
 
   ~FcCompute() = default;
 

@@ -38,13 +38,15 @@ void FcCompute<PRECISION(kInt8), PRECISION(kFloat)>::PrepareForRun() {
   Init();
   auto& param = this->template Param<operators::FcParam>();
   /// update scale
-  scale_ = param.weight_scale;
   float input_scale = param.input_scale;
-  CHECK_EQ(scale_.size(), 1) << "FC weights scale size must = 1";
-  scale_[0] *= input_scale;
-  int extend_size = flag_gemm_ ? m_ - 1 : n_ - 1;
+  int extend_size = flag_gemm_ ? m_ : n_;
+  scale_.resize(extend_size);
   for (int i = 0; i < extend_size; ++i) {
-    scale_.push_back(scale_[0]);
+    if (flag_gemm_) {
+      scale_[i] = param.weight_scale[0] * input_scale;
+    } else {
+      scale_[i] = param.weight_scale[i] * input_scale;
+    }
   }
 }
 
@@ -57,11 +59,14 @@ void FcCompute<PRECISION(kInt8), PRECISION(kInt8)>::PrepareForRun() {
   scale_ = param.weight_scale;
   float input_scale = param.input_scale;
   float output_scale = param.output_scale;
-  CHECK_EQ(scale_.size(), 1) << "FC weights scale size must = 1";
-  scale_[0] = scale_[0] * input_scale / output_scale;
-  int extend_size = flag_gemm_ ? m_ - 1 : n_ - 1;
+  int extend_size = flag_gemm_ ? m_ : n_;
+  scale_.resize(extend_size);
   for (int i = 0; i < extend_size; ++i) {
-    scale_.push_back(scale_[0]);
+    if (flag_gemm_) {
+      scale_[i] = param.weight_scale[0] * input_scale / output_scale;
+    } else {
+      scale_[i] = param.weight_scale[i] * input_scale / output_scale;
+    }
   }
   /// update bias
   if (param.bias) {
