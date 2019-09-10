@@ -37,9 +37,6 @@ class ConvCompute
 
  private:
   zynqmp::ConvPE pe_;
-  zynqmp::Tensor input_;
-  zynqmp::Tensor output_;
-  zynqmp::Tensor filter_;
 };
 
 }  // namespace fpga

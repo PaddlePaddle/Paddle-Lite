@@ -12,7 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#pragma OPENCL EXTENSION cl_khr_fp16 : enable
+#include "cl_common.h"
 
 __kernel void instancenorm(__private const int in_width,
                         __private const int in_height,
@@ -109,7 +109,11 @@ __kernel void instancenorm(__private const int in_width,
     for (int yIndex = h; yIndex < in_height; yIndex += local_work_size_y) {
       int2 intout_pos = (int2)(mad24(c, in_width, xIndex), mad24(n, in_height, yIndex));
       float4 in_val = read_imagef(input, sampler, intout_pos);
-      write_imageh(output, intout_pos, convert_half4((in_val - mean_val) * s));
+      half4 out_val = convert_half4((in_val - mean_val) * s);
+#ifdef RELU
+      out_val = activation(out_val);
+#endif
+      write_imageh(output, intout_pos, out_val);
     }
   }
 }
