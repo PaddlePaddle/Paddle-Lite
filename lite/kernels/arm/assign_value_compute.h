@@ -14,33 +14,24 @@
 
 #pragma once
 #include <algorithm>
-#include "lite/backends/fpga/KD/float16.hpp"
-#include "lite/backends/fpga/KD/pes/softmax_pe.hpp"
 #include "lite/core/kernel.h"
-#include "lite/core/op_registry.h"
+#include "lite/operators/assign_value_op.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace fpga {
+namespace arm {
 
-using float16 = zynqmp::float16;
-
-class SoftmaxCompute
-    : public KernelLite<TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)> {
+class AssignValueCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
  public:
-  void PrepareForRun() override;
+  using param_t = operators::AssignValueParam;
+
   void Run() override;
 
-  virtual ~SoftmaxCompute() = default;
-
- private:
-  zynqmp::SoftmaxPE pe_;
-  zynqmp::Tensor input_x_;
-  zynqmp::Tensor output_;
+  virtual ~AssignValueCompute() = default;
 };
 
-}  // namespace fpga
+}  // namespace arm
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

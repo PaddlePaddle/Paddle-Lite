@@ -60,7 +60,8 @@ bool ReshapeOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
     }
     const std::vector<int> shape_vector = param_.shape;
     lite::Tensor *shape_tensor = new lite::Tensor;
-    shape_tensor->Resize(DDim({shape_vector.size()}));
+
+    shape_tensor->Resize({static_cast<int64_t>(shape_vector.size())});
     int *data_shape = shape_tensor->mutable_data<int>();
     for (int i = 0; i < shape_vector.size(); i++) {
       data_shape[i] = shape_vector[i];
@@ -83,7 +84,8 @@ bool ReshapeOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
         << "The shape information must be set by Attr(shape).";
     const std::vector<int> shape_vector = param_.shape;
     lite::Tensor *shape_tensor = new lite::Tensor;
-    shape_tensor->Resize(DDim({shape_vector.size()}));
+
+    shape_tensor->Resize({static_cast<int64_t>(shape_vector.size())});
     int *data_shape = shape_tensor->mutable_data<int>();
     for (int i = 0; i < shape_vector.size(); i++) {
       data_shape[i] = shape_vector[i];
@@ -106,7 +108,7 @@ bool Reshape2Op::InferShape() const {
   for (size_t i = 0; i < x_dims.size(); i++) {
     xshape_dims[i + 1] = x_dims[i];
   }
-  param_.xshape->Resize(DDim(xshape_dims));
+  param_.xshape->Resize(xshape_dims);
   return true;
 }
 

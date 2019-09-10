@@ -34,6 +34,7 @@
 .DS_Store
 
 build/
+build_fpga/
 
 .idea/
 

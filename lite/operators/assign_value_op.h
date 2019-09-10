@@ -13,34 +13,36 @@
 // limitations under the License.
 
 #pragma once
-#include <algorithm>
-#include "lite/backends/fpga/KD/float16.hpp"
-#include "lite/backends/fpga/KD/pes/softmax_pe.hpp"
-#include "lite/core/kernel.h"
-#include "lite/core/op_registry.h"
+#include <string>
+#include "lite/core/op_lite.h"
+#include "lite/core/scope.h"
+#include "lite/operators/op_params.h"
+#include "lite/utils/all.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
-namespace fpga {
+namespace operators {
 
-using float16 = zynqmp::float16;
-
-class SoftmaxCompute
-    : public KernelLite<TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)> {
+class AssignValueOpLite : public OpLite {
  public:
-  void PrepareForRun() override;
-  void Run() override;
+  AssignValueOpLite() {}
 
-  virtual ~SoftmaxCompute() = default;
+  explicit AssignValueOpLite(const std::string &op_type) : OpLite(op_type) {}
+
+  bool CheckShape() const override;
+
+  bool InferShape() const override;
+
+  bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
+
+  void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
+
+  std::string DebugString() const override { return "assign value"; }
 
  private:
-  zynqmp::SoftmaxPE pe_;
-  zynqmp::Tensor input_x_;
-  zynqmp::Tensor output_;
+  mutable AssignValueParam param_;
 };
 
-}  // namespace fpga
-}  // namespace kernels
+}  // namespace operators
 }  // namespace lite
 }  // namespace paddle

@@ -16,89 +16,56 @@
 #include <gtest/gtest.h>
 #include <memory>
 #include <utility>
-#include "lite/fluid/eigen.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace cuda {
 
-template <typename T,
-          size_t D,
-          int MajorType = Eigen::RowMajor,
-          typename IndexType = Eigen::DenseIndex>
-using EigenTensor = lite::fluid::EigenTensor<T, D, MajorType, IndexType>;
 using Tensor = lite::Tensor;
 
-static void NearestNeighborInterpolate(const Tensor& input,
-                                       Tensor* output,
-                                       const float ratio_h,
-                                       const float ratio_w,
-                                       const int n,
-                                       const int c,
-                                       const int out_h,
-                                       const int out_w,
-                                       const bool align_corners) {
-  auto input_t = EigenTensor<float, 4>::From(input);
-  auto output_t = EigenTensor<float, 4>::From(*output);
-  for (int k = 0; k < out_h; k++) {  // loop for images
-    int in_k = (align_corners) ? static_cast<int>(ratio_h * k + 0.5)
-                               : static_cast<int>(ratio_h * k);
-    for (int l = 0; l < out_w; l++) {
-      int in_l = (align_corners) ? static_cast<int>(ratio_w * l + 0.5)
-                                 : static_cast<int>(ratio_w * l);
-      for (int i = 0; i < n; i++) {    // loop for batches
-        for (int j = 0; j < c; j++) {  // loop for channels
-          output_t(i, j, k, l) = input_t(i, j, in_k, in_l);
+void NearestInterpRef(Tensor* input, Tensor* output, bool with_align) {
+  int hin = input->dims()[2];
+  int win = input->dims()[3];
+  int channels = input->dims()[1];
+  int num = input->dims()[0];
+  int hout = output->dims()[2];
+  int wout = output->dims()[3];
+  float scale_w = (with_align) ? (static_cast<float>(win - 1) / (wout - 1))
+                               : (static_cast<float>(win) / (wout));
+  float scale_h = (with_align) ? (static_cast<float>(hin - 1) / (hout - 1))
+                               : (static_cast<float>(hin) / (hout));
+  const float* src = input->data<float>();
+  float* dst = output->mutable_data<float>();
+  int dst_stride_w = 1;
+  int dst_stride_h = wout;
+  int dst_stride_c = wout * hout;
+  int dst_stride_batch = wout * hout * channels;
+  int src_stride_w = 1;
+  int src_stride_h = win;
+  int src_stride_c = win * hin;
+  int src_stride_batch = win * hin * channels;
+  for (int n = 0; n < num; ++n) {
+    for (int c = 0; c < channels; ++c) {
+      int src_index = n * src_stride_batch + c * src_stride_c;
+      for (int h = 0; h < hout; ++h) {
+        for (int w = 0; w < wout; ++w) {
+          int fw = (with_align) ? static_cast<int>(scale_w * w + 0.5)
+                                : static_cast<int>(scale_w * w);
+          fw = (fw < 0) ? 0 : fw;
+          int fh = (with_align) ? static_cast<int>(scale_h * h + 0.5)
+                                : static_cast<int>(scale_h * h);
+          fh = (fh < 0) ? 0 : fh;
+          int w_start = static_cast<int>(fw);
+          int h_start = static_cast<int>(fh);
+          int dst_index = n * dst_stride_batch + c * dst_stride_c +
+                          h * dst_stride_h + w * dst_stride_w;
+          dst[dst_index] =
+              src[src_index + w_start * src_stride_w + h_start * src_stride_h];
         }
       }
     }
   }
-}
-
-static void NearestInterpRef(operators::InterpolateParam param,
-                             Tensor* input,
-                             const size_t scale,
-                             const size_t n,
-                             const size_t c,
-                             const size_t in_h,
-                             const size_t in_w,
-                             Tensor* output_size,
-                             Tensor* output,
-                             size_t out_h,
-                             size_t out_w) {
-  if (scale > 0) {
-    out_h = static_cast<int>(in_h * scale);
-    out_w = static_cast<int>(in_w * scale);
-  }
-  bool align_corners = param.align_corners;
-  if (output_size != nullptr) {
-    auto out_size_data = output_size->mutable_data<float>();
-    out_h = static_cast<int>(out_size_data[0]);
-    out_w = static_cast<int>(out_size_data[1]);
-  }
-
-  float* input_data = input->mutable_data<float>();
-  LOG(INFO) << *(input_data + 2);
-  float* output_data = output->mutable_data<float>();
-  LOG(INFO) << *(output_data + 2);
-  if (in_h == out_h && in_w == out_w) {
-    std::memcpy(output_data, input_data, sizeof(float) * n * c * in_h * in_w);
-    LOG(INFO) << *(output_data + 2);
-    return;
-  }
-  float ratio_h = 0.f;
-  float ratio_w = 0.f;
-  if (out_h > 1) {
-    ratio_h = (align_corners) ? static_cast<float>(in_h - 1) / (out_h - 1)
-                              : static_cast<float>(in_h) / out_h;
-  }
-  if (out_w > 1) {
-    ratio_w = (align_corners) ? static_cast<float>(in_w - 1) / (out_w - 1)
-                              : static_cast<float>(in_w) / out_w;
-  }
-  NearestNeighborInterpolate(
-      *input, output, ratio_h, ratio_w, n, c, out_h, out_w, align_corners);
 }
 
 TEST(nearest_interp, normal) {
@@ -112,9 +79,9 @@ TEST(nearest_interp, normal) {
   Tensor x_cpu, osz_cpu, out_cpu;
   Tensor x_ref, osz_ref, out_ref;
 
-  int n = 1, c = 3, in_h = 4, in_w = 4;
+  int n = 1, c = 3, in_h = 40, in_w = 40;
   int in_chw = c * in_h * in_w;
-  int out_h = 4, out_w = 4;
+  int out_h = 80, out_w = 80;
   float scale = 2.0;
 
   param.out_h = out_h;
@@ -173,8 +140,7 @@ TEST(nearest_interp, normal) {
 
   CopySync<TARGET(kCUDA)>(
       out_cpu_data, out_data, sizeof(float) * out.numel(), IoDirection::DtoH);
-  NearestInterpRef(
-      param, &x_ref, scale, n, c, in_h, in_w, &osz_ref, &out_ref, out_h, out_w);
+  NearestInterpRef(&x_ref, &out_ref, false);
   for (int i = 0; i < out.numel(); i++) {
     EXPECT_NEAR(out_cpu_data[i], out_ref_data[i], 1e-5);
   }

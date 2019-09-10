@@ -12,22 +12,25 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef INSTANCENORM_OP
+#ifdef FUSION_INSTANCENORM_RELU_OP
 
-#include "operators/kernel/instancenorm_kernel.h"
+#include "operators/kernel/instancenorm_relu_kernel.h"
 #include <cmath>
 
 namespace paddle_mobile {
 namespace operators {
 
 template <>
-bool InstanceNormKernel<GPU_CL, float>::Init(InstanceNormParam<GPU_CL> *param) {
-  this->cl_helper_.AddKernel("instancenorm", "instancenorm_kernel.cl");
+bool InstanceNormReluKernel<GPU_CL, float>::Init(
+    InstanceNormParam<GPU_CL> *param) {
+  const std::string build_options = "-DRELU";
+  this->cl_helper_.AddKernel("instancenorm", "instancenorm_kernel.cl",
+                             build_options);
   return true;
 }
 
 template <>
-void InstanceNormKernel<GPU_CL, float>::Compute(
+void InstanceNormReluKernel<GPU_CL, float>::Compute(
     const InstanceNormParam<GPU_CL> &param) {
   auto kernel = this->cl_helper_.KernelAt(0);
   auto &dims = param.Out()->dims();
@@ -64,29 +67,27 @@ void InstanceNormKernel<GPU_CL, float>::Compute(
        << " " << local_work_size[2];
 
   cl_int status;
-  status = clSetKernelArg(kernel, 0, sizeof(cl_int), &w);
+  clSetKernelArg(kernel, 0, sizeof(cl_int), &w);
   CL_CHECK_ERRORS(status);
-  status = clSetKernelArg(kernel, 1, sizeof(cl_int), &h);
+  clSetKernelArg(kernel, 1, sizeof(cl_int), &h);
   CL_CHECK_ERRORS(status);
-  status = clSetKernelArg(kernel, 2, sizeof(cl_int), &c_group);
+  clSetKernelArg(kernel, 2, sizeof(cl_int), &c_group);
   CL_CHECK_ERRORS(status);
-  status = clSetKernelArg(kernel, 3, sizeof(cl_int), &local_work_size1);
+  clSetKernelArg(kernel, 3, sizeof(cl_int), &local_work_size1);
   CL_CHECK_ERRORS(status);
-  status = clSetKernelArg(kernel, 4, sizeof(cl_int), &local_work_size2);
+  clSetKernelArg(kernel, 4, sizeof(cl_int), &local_work_size2);
   CL_CHECK_ERRORS(status);
-  status = clSetKernelArg(kernel, 5, sizeof(cl_float), &epsilon);
+  clSetKernelArg(kernel, 5, sizeof(cl_float), &epsilon);
   CL_CHECK_ERRORS(status);
-  status = clSetKernelArg(kernel, 6, sizeof(cl_mem), &input);
+  clSetKernelArg(kernel, 6, sizeof(cl_mem), &input);
   CL_CHECK_ERRORS(status);
-  status = clSetKernelArg(kernel, 7, sizeof(cl_mem), &out);
+  clSetKernelArg(kernel, 7, sizeof(cl_mem), &out);
   CL_CHECK_ERRORS(status);
-  status =
-      clEnqueueNDRangeKernel(this->cl_helper_.CLCommandQueue(), kernel, 3, NULL,
-                             work_size, local_work_size, 0, NULL, NULL);
-  CL_CHECK_ERRORS(status);
+  clEnqueueNDRangeKernel(this->cl_helper_.CLCommandQueue(), kernel, 3, NULL,
+                         work_size, local_work_size, 0, NULL, NULL);
 }
 
-template class InstanceNormKernel<GPU_CL, float>;
+template class InstanceNormReluKernel<GPU_CL, float>;
 
 }  // namespace operators
 }  // namespace paddle_mobile

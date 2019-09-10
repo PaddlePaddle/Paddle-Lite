@@ -34,6 +34,20 @@ void elementwise_add_relu_broadcast(
     const T* dinx, const T* diny, T* dout, int batch, int channels, int num);
 
 template <typename T>
+void elementwise_sub(const T* dinx, const T* diny, T* dout, int num);
+
+template <typename T>
+void elementwise_sub_relu(const T* dinx, const T* diny, T* dout, int num);
+
+template <typename T>
+void elementwise_sub_broadcast(
+    const T* dinx, const T* diny, T* dout, int batch, int channels, int num);
+
+template <typename T>
+void elementwise_sub_relu_broadcast(
+    const T* dinx, const T* diny, T* dout, int batch, int channels, int num);
+
+template <typename T>
 void elementwise_mul(const T* dinx, const T* diny, T* dout, int num);
 
 template <typename T>

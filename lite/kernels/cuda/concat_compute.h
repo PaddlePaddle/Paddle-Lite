@@ -13,34 +13,22 @@
 // limitations under the License.
 
 #pragma once
-#include <algorithm>
-#include "lite/backends/fpga/KD/float16.hpp"
-#include "lite/backends/fpga/KD/pes/softmax_pe.hpp"
 #include "lite/core/kernel.h"
-#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace fpga {
+namespace cuda {
 
-using float16 = zynqmp::float16;
-
-class SoftmaxCompute
-    : public KernelLite<TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)> {
+class ConcatCompute : public KernelLite<TARGET(kCUDA), PRECISION(kFloat)> {
  public:
-  void PrepareForRun() override;
+  using param_t = operators::ConcatParam;
+
   void Run() override;
-
-  virtual ~SoftmaxCompute() = default;
-
- private:
-  zynqmp::SoftmaxPE pe_;
-  zynqmp::Tensor input_x_;
-  zynqmp::Tensor output_;
+  virtual ~ConcatCompute() = default;
 };
 
-}  // namespace fpga
+}  // namespace cuda
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

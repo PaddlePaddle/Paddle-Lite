@@ -12,26 +12,42 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/arm/argmax_compute.h"
+#include "lite/kernels/arm/assign_value_compute.h"
 #include <string>
 #include <vector>
 #include "lite/backends/arm/math/funcs.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/tensor.h"
 #include "lite/core/type_system.h"
+#include "lite/core/types.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace arm {
 
-void ArgmaxCompute::Run() {
-  auto& param = Param<operators::ArgmaxParam>();
-  lite::Tensor* input = param.X;
-  lite::Tensor* output = param.Out;
-  int axis = param.Axis;
+template <class T>
+void TensorFromVector(const std::vector<T>& src, lite::Tensor* dst) {
+  auto* src_ptr = static_cast<const void*>(src.data());
+  auto* dst_ptr = static_cast<void*>(dst->mutable_data<T>());
+  auto size = src.size() * sizeof(T);
+  std::memcpy(dst_ptr, src_ptr, size);
+}
 
-  lite::arm::math::argmax_func(input, axis, output);
+void AssignValueCompute::Run() {
+  auto& param = Param<operators::AssignValueParam>();
+  int dtype = param.dtype;
+  std::vector<float> fp32_values = param.fp32_values;
+  std::vector<int> int32_values = param.int32_values;
+  auto* out = param.Out;
+
+  if (dtype == static_cast<int>(lite::core::FluidType::INT32)) {
+    TensorFromVector(int32_values, out);
+  } else if (dtype == static_cast<int>(lite::core::FluidType::FP32)) {
+    TensorFromVector(fp32_values, out);
+  } else {
+    LOG(FATAL) << "Unsupported dtype for assign_value_op:" << dtype;
+  }
   return;
 }
 
@@ -40,12 +56,11 @@ void ArgmaxCompute::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(arg_max,
+REGISTER_LITE_KERNEL(assign_value,
                      kARM,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::arm::ArgmaxCompute,
+                     paddle::lite::kernels::arm::AssignValueCompute,
                      def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();

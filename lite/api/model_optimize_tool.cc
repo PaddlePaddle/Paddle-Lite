@@ -70,6 +70,7 @@ void Main() {
           target_repr.c_str());
     }
   }
+  valid_places.emplace_back(TARGET(kHost));
 
   CHECK(!valid_places.empty())
       << "At least one target should be set, should set the "

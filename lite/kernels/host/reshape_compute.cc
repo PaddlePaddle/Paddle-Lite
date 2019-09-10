@@ -66,6 +66,9 @@ REGISTER_LITE_KERNEL(reshape,
     .BindInput("X",
                {LiteType::GetTensorTy(
                    TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny), -1)})
+    .BindInput("ShapeTensor",
+               {LiteType::GetTensorTy(
+                   TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny), -1)})
     .BindInput("Shape",
                {LiteType::GetTensorTy(
                    TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny), -1)})
@@ -84,6 +87,9 @@ REGISTER_LITE_KERNEL(reshape2,
                {LiteType::GetTensorTy(
                    TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny), -1)})
     .BindInput("Shape",
+               {LiteType::GetTensorTy(
+                   TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny), -1)})
+    .BindInput("ShapeTensor",
                {LiteType::GetTensorTy(
                    TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny), -1)})
     .BindOutput("Out",
