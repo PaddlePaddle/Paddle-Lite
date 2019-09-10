@@ -668,7 +668,10 @@ struct BeamSearchParam {
 struct SequencePoolParam {
   const lite::Tensor* X{};
   lite::Tensor* Out{};
-  std::string pool_type;
+  std::string pool_type{"AVERAGE"};
+#ifdef LITE_WITH_X86
+  float pad_value{0.0};
+#endif
 };
 
 struct SequenceExpandParam {
@@ -758,7 +761,6 @@ struct GenerateProposalsParam {
   lite::Tensor* RpnRois{};
   lite::Tensor* RpnRoiProbs{};
 };
-/// ----------------------- shape operators ----------------------
 /// ----------------------- squeeze operators ----------------------
 struct SqueezeParam {
   const lite::Tensor* X{};

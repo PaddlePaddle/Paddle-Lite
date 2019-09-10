@@ -45,6 +45,7 @@ USE_LITE_KERNEL(box_coder, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(conv2d, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(depthwise_conv2d, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(elementwise_add, kARM, kFloat, kNCHW, def);
+USE_LITE_KERNEL(elementwise_sub, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(elementwise_mul, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(elementwise_max, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(elementwise_div, kARM, kFloat, kNCHW, def);
@@ -161,6 +162,7 @@ USE_LITE_KERNEL(conv2d, kCUDA, kFloat, kNCHW, def);
 USE_LITE_KERNEL(leaky_relu, kCUDA, kFloat, kNCHW, def);
 USE_LITE_KERNEL(nearest_interp, kCUDA, kFloat, kNCHW, def);
 USE_LITE_KERNEL(yolo_box, kCUDA, kFloat, kNCHW, def);
+USE_LITE_KERNEL(concat, kCUDA, kFloat, kNCHW, def);
 #endif
 
 #ifdef LITE_WITH_OPENCL

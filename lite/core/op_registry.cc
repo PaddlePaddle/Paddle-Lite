@@ -105,6 +105,7 @@ KernelRegistry::KernelRegistry()
                                    DATALAYOUT(layout__)>::Global());
   // Currently, just register 2 kernel targets.
   INIT_FOR(kCUDA, kFloat, kNCHW);
+  INIT_FOR(kCUDA, kInt8, kNCHW);
   INIT_FOR(kCUDA, kAny, kNCHW);
   INIT_FOR(kCUDA, kAny, kAny);
   INIT_FOR(kCUDA, kInt8, kNHWC);
