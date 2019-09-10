@@ -393,21 +393,21 @@ function test_arm_model {
     adb -s emulator-${port} shell "${adb_work_dir}/${test_name} --model_dir=$adb_model_path"
 }
 
-function _test_model_optimize_tool {
-    local port=$1
-    local remote_model_path=$ADB_WORK_DIR/lite_naive_model
-    local remote_test=$ADB_WORK_DIR/model_optimize_tool
-    local adb="adb -s emulator-${port}"
+# function _test_model_optimize_tool {
+#     local port=$1
+#     local remote_model_path=$ADB_WORK_DIR/lite_naive_model
+#     local remote_test=$ADB_WORK_DIR/model_optimize_tool
+#     local adb="adb -s emulator-${port}"
 
-    make model_optimize_tool -j$NUM_CORES_FOR_COMPILE
-    local test_path=$(find . -name model_optimize_tool | head -n1)
-    local model_path=$(find . -name lite_naive_model | head -n1)
-    $adb push ${test_path} ${ADB_WORK_DIR}
-    $adb shell mkdir -p $remote_model_path
-    $adb push $model_path/* $remote_model_path
-    $adb shell $remote_test --model_dir $remote_model_path --optimize_out ${remote_model_path}.opt \
-         --valid_targets "arm"
-}
+#     make model_optimize_tool -j$NUM_CORES_FOR_COMPILE
+#     local test_path=$(find . -name model_optimize_tool | head -n1)
+#     local model_path=$(find . -name lite_naive_model | head -n1)
+#     $adb push ${test_path} ${ADB_WORK_DIR}
+#     $adb shell mkdir -p $remote_model_path
+#     $adb push $model_path/* $remote_model_path
+#     $adb shell $remote_test --model_dir $remote_model_path --optimize_out ${remote_model_path}.opt \
+#          --valid_targets "arm"
+# }
 
 function _test_paddle_code_generator {
     local port=$1
@@ -558,7 +558,7 @@ function test_arm {
     # test finally
     test_arm_api $port
 
-    _test_model_optimize_tool $port
+    # _test_model_optimize_tool $port
     _test_paddle_code_generator $port
 }
 
