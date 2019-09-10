@@ -1,5 +1,6 @@
 if((WITH_TESTING OR WITH_MATH_TESTING) AND LITE_WITH_ARM AND ANDROID)
     FILE(GLOB TEST_MATH_SRC_FILES "${CMAKE_CURRENT_SOURCE_DIR}/*.cc")
+    MESSAGE(STATUS "math test files: ${TEST_MATH_SRC_FILES}")
     add_compile_options(-fexceptions)
     # build test cases
     add_custom_target(math_test)

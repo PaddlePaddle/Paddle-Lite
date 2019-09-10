@@ -116,24 +116,28 @@ void ConvCompute<PRECISION(kInt8), PRECISION(kFloat)>::PrepareForRun() {
   bool with_bias = param.bias;
   bool kps_equal = (pw == ph) && (sh == sw) && (kw == kh);
   bool no_dilation = (param.dilations[0] == 1) && (param.dilations[1] == 1);
-  bool flag_dw_3x3 = (kw == 3) && (ph == 1) && (sw == 1 || sw == 2);
+  bool flag_dw_3x3 = (kw == 3 && kh == 3) && (sw == 1 || sw == 2);
   bool flag_dw_5x5 = (kw == 5 && sw == 1 && ph == 2);
   bool flag_dw = flag_dw_3x3 || flag_dw_5x5;
 
   if (param.groups == ic && ic == oc && kps_equal && no_dilation && flag_dw) {
     impl_ = new DepthwiseConv<PRECISION(kInt8), PRECISION(kFloat)>;
     VLOG(3) << "Run DepthwiseConv Int8";
+    LOG(INFO) << "Run DepthwiseConv Int8_Fp32";
   } else if (param.groups == 1 && kw == 3 && (sw == 1 || sw == 2) &&
              kps_equal && no_dilation) {
-    VLOG(3) << "Run DirectConv Int8";
     impl_ = new DirectConv<PRECISION(kInt8), PRECISION(kFloat)>;
+    VLOG(3) << "Run DirectConv Int8";
+    LOG(INFO) << "Run DirectConv Int8_Fp32";
   } else {
-    VLOG(3) << "Run GemmLikeConvInt8";
     impl_ = new GemmLikeConv<PRECISION(kInt8), PRECISION(kFloat)>;
+    VLOG(3) << "Run GemmLikeConvInt8";
+    LOG(INFO) << "Run GemmLikeConvInt8_Fp32";
   }
   impl_->SetContext(std::move(this->ctx_));
-  impl_->SetParam(param_);
+  impl_->SetParam(param);
   impl_->PrepareForRun();
+  is_first_epoch_ = false;
 }
 
 template <>
@@ -161,24 +165,28 @@ void ConvCompute<PRECISION(kInt8), PRECISION(kInt8)>::PrepareForRun() {
 
   bool kps_equal = (pw == ph) && (sh == sw) && (kw == kh);
   bool no_dilation = (param.dilations[0] == 1) && (param.dilations[1] == 1);
-  bool flag_dw_3x3 = (kw == 3) && (ph == 1) && (sw == 1 || sw == 2);
+  bool flag_dw_3x3 = (kw == 3 && kh == 3) && (sw == 1 || sw == 2);
   bool flag_dw_5x5 = (kw == 5 && sw == 1 && ph == 2);
   bool flag_dw = flag_dw_3x3 || flag_dw_5x5;
 
   if (param.groups == ic && ic == oc && kps_equal && no_dilation && flag_dw) {
     impl_ = new DepthwiseConv<PRECISION(kInt8), PRECISION(kInt8)>;
     VLOG(3) << "Run DepthwiseConv Int8";
+    LOG(INFO) << "Run DepthwiseConv Int8_Int8";
   } else if (param.groups == 1 && kw == 3 && (sw == 1 || sw == 2) &&
              kps_equal && no_dilation) {
-    VLOG(3) << "Run DirectConv Int8";
     impl_ = new DirectConv<PRECISION(kInt8), PRECISION(kInt8)>;
+    VLOG(3) << "Run DirectConv Int8";
+    LOG(INFO) << "Run DirectConv Int8_Int8";
   } else {
-    VLOG(3) << "Run GemmLikeConvInt8";
     impl_ = new GemmLikeConv<PRECISION(kInt8), PRECISION(kInt8)>;
+    VLOG(3) << "Run GemmLikeConvInt8";
+    LOG(INFO) << "Run GemmLikeConvInt8_Int8";
   }
   impl_->SetContext(std::move(this->ctx_));
-  impl_->SetParam(param_);
+  impl_->SetParam(param);
   impl_->PrepareForRun();
+  is_first_epoch_ = false;
 }
 
 }  // namespace arm

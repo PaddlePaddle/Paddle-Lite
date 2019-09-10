@@ -84,7 +84,7 @@ void DepthwiseConv<PRECISION(kInt8), PRECISION(kFloat)>::PrepareForRun() {
     VLOG(5) << "invoke 3x3 dw conv int8 kernel fp32 out";
     impl_ = lite::arm::math::conv_depthwise_3x3_int8_fp32;
     int cround = ROUNDUP(w_dims[0], 8);
-    weights_.Resize({cround / 8, kh * kw, 8});
+    weights_.Resize({cround / 8, 1, kh * kw, 8});
     auto wptr = param.filter->data<int8_t>();
     auto wptr_new = weights_.mutable_data<int8_t>();
     lite::arm::math::conv_trans_weights_numc(wptr, wptr_new, oc, 1, 8, 9);
@@ -132,7 +132,7 @@ void DepthwiseConv<PRECISION(kInt8), PRECISION(kInt8)>::PrepareForRun() {
     VLOG(5) << "invoke 3x3 dw conv int8 kernel int8 out";
     impl_ = lite::arm::math::conv_depthwise_3x3_int8_int8;
     int cround = ROUNDUP(w_dims[0], 8);
-    weights_.Resize({cround / 8, kh * kw, 8});
+    weights_.Resize({cround / 8, 1, kh * kw, 8});
     auto wptr = param.filter->data<int8_t>();
     auto wptr_new = weights_.mutable_data<int8_t>();
     lite::arm::math::conv_trans_weights_numc(wptr, wptr_new, oc, 1, 8, 9);

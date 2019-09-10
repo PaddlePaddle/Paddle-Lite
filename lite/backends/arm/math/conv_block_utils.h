@@ -345,6 +345,239 @@ inline void prepack_input_nxwc4_dw(const float* din,
   }
 }
 
+inline void prepack_input_nxw_c8_int8(const int8_t* din,
+                                      int8_t* dout,
+                                      int cs,
+                                      int ce,
+                                      int hs,
+                                      int he,
+                                      int ws,
+                                      int we,
+                                      int channel,
+                                      int width,
+                                      int height) {
+  int n = he - hs;
+  if (n <= 0) {
+    LOG(FATAL) << "prepack_input_nxw_c8 input height must > 0";
+    return;
+  }
+  int w0 = ws < 0 ? 0 : ws;
+  int w1 = we > width ? width : we;
+
+  int size_w = we - ws;
+  int size_channel_in = width * height;
+  int size_out_row = size_w * 8;
+
+  int valid_w = w1 - w0;
+  size_t valid_w_byte = valid_w * sizeof(int8_t);
+
+  auto ptr_c = static_cast<int8_t*>(TargetMalloc(TARGET(kARM), 8 * size_w));
+  int8_t* ptr_r[8];
+  int8_t* ptr_c_ori[8] = {ptr_c,
+                          ptr_c + size_w,
+                          ptr_c + 2 * size_w,
+                          ptr_c + 3 * size_w,
+                          ptr_c + 4 * size_w,
+                          ptr_c + 5 * size_w,
+                          ptr_c + 6 * size_w,
+                          ptr_c + 7 * size_w};
+
+  int8_t zero_ptr[size_w * 2];  // NOLINT
+  memset(zero_ptr, 0, size_w * 2);
+
+  int loop = size_w / 8;
+  int remain = size_w - loop * 8;
+
+  for (int c = cs; c < ce; c += 8) {
+    auto din_c = din + c * size_channel_in;
+    for (int j = 0; j < 8; ++j) {
+      ptr_r[j] = ptr_c_ori[j];
+    }
+    //!  valid channel
+    if (c + 8 > channel) {
+      switch (c + 8 - channel) {
+        case 7:
+          ptr_r[1] = zero_ptr;
+        case 6:
+          ptr_r[2] = zero_ptr;
+        case 5:
+          ptr_r[3] = zero_ptr;
+        case 4:
+          ptr_r[4] = zero_ptr;
+        case 3:
+          ptr_r[5] = zero_ptr;
+        case 2:
+          ptr_r[6] = zero_ptr;
+        case 1:
+          ptr_r[7] = zero_ptr;
+        default:
+          break;
+      }
+    }
+    //!  valid height
+    int j = 0;
+    for (int i = hs; i < he; i++) {
+      auto din_r = din_c + i * width;
+      for (int k = 0; k < 8; ++k) {
+        if (ptr_r[k] != zero_ptr) {
+          if (i < 0 || i >= height) {
+            ptr_r[k] = zero_ptr + size_w;
+          } else {
+            ptr_r[k] = ptr_c_ori[k];
+            auto ptr = ptr_r[k];
+            for (int w = ws; w < w0; ++w) {
+              *(ptr++) = 0;
+            }
+            memcpy(ptr, din_r + k * size_channel_in, valid_w_byte);
+            ptr += valid_w;
+            for (int w = w1; w < we; ++w) {
+              *(ptr++) = 0;
+            }
+          }
+        }
+      }
+      int cnt = loop;
+      int8_t* inr0 = ptr_r[0];
+      int8_t* inr1 = ptr_r[1];
+      int8_t* inr2 = ptr_r[2];
+      int8_t* inr3 = ptr_r[3];
+      int8_t* inr4 = ptr_r[4];
+      int8_t* inr5 = ptr_r[5];
+      int8_t* inr6 = ptr_r[6];
+      int8_t* inr7 = ptr_r[7];
+      auto ptr_out = dout + j * size_out_row;
+      if (cnt > 0) {
+#ifdef __aarch64__
+        asm volatile(
+            /* main loop */
+            "1:\n"
+            "ldr d0,    [%[r0]], #8\n"
+            "ldr d1,    [%[r1]], #8\n"
+            "ldr d2,    [%[r2]], #8\n"
+            "ldr d3,    [%[r3]], #8\n"
+            "ldr d4,    [%[r4]], #8\n"
+            "ldr d5,    [%[r5]], #8\n"
+            "ldr d6,    [%[r6]], #8\n"
+            "ldr d7,    [%[r7]], #8\n"
+            "trn1 v8.8b,  v0.8b, v1.8b\n"
+            "trn2 v9.8b,  v0.8b, v1.8b\n"
+            "trn1 v10.8b, v2.8b, v3.8b\n"
+            "trn2 v11.8b, v2.8b, v3.8b\n"
+            "trn1 v12.8b, v4.8b, v5.8b\n"
+            "trn2 v13.8b, v4.8b, v5.8b\n"
+            "trn1 v14.8b, v6.8b, v7.8b\n"
+            "trn2 v15.8b, v6.8b, v7.8b\n"
+            "trn1 v0.4h,  v8.4h, v10.4h\n"
+            "trn2 v1.4h,  v8.4h, v10.4h\n"
+            "trn1 v2.4h,  v9.4h, v11.4h\n"
+            "trn2 v3.4h,  v9.4h, v11.4h\n"
+            "trn1 v4.4h,  v12.4h, v14.4h\n"
+            "trn2 v5.4h,  v12.4h, v14.4h\n"
+            "trn1 v6.4h,  v13.4h, v15.4h\n"
+            "trn2 v7.4h,  v13.4h, v15.4h\n"
+            "trn1 v8.2s,  v0.2s, v4.2s\n"
+            "trn1 v9.2s,  v2.2s, v6.2s\n"
+            "trn1 v10.2s, v1.2s, v5.2s\n"
+            "trn1 v11.2s, v3.2s, v7.2s\n"
+            "stp d8, d9, [%[ptr_out]], #16\n"
+            "trn2 v12.2s, v0.2s, v4.2s\n"
+            "trn2 v13.2s, v2.2s, v6.2s\n"
+            "stp d10, d11, [%[ptr_out]], #16\n"
+            "trn2 v14.2s, v1.2s, v5.2s\n"
+            "trn2 v15.2s, v3.2s, v7.2s\n"
+            "subs %w[cnt], %w[cnt], #1\n"
+            "stp d12, d13, [%[ptr_out]], #16\n"
+            "stp d14, d15, [%[ptr_out]], #16\n"
+            "bne    1b\n"
+            : [cnt] "+r"(cnt),
+              [r0] "+r"(inr0),
+              [r1] "+r"(inr1),
+              [r2] "+r"(inr2),
+              [r3] "+r"(inr3),
+              [r4] "+r"(inr4),
+              [r5] "+r"(inr5),
+              [r6] "+r"(inr6),
+              [r7] "+r"(inr7),
+              [ptr_out] "+r"(ptr_out)
+            :
+            : "cc",
+              "memory",
+              "v0",
+              "v1",
+              "v2",
+              "v3",
+              "v4",
+              "v5",
+              "v6",
+              "v7",
+              "v8",
+              "v9",
+              "v10",
+              "v11",
+              "v12",
+              "v13",
+              "v14",
+              "v15");
+#else
+        asm volatile(
+            /* main loop */
+            "1:\n"
+            "vld1.32 {d0},  [%[r0]]!\n"
+            "vld1.32 {d1},  [%[r1]]!\n"
+            "vld1.32 {d2},  [%[r2]]!\n"
+            "vld1.32 {d3},  [%[r3]]!\n"
+            "vld1.32 {d4},  [%[r4]]!\n"
+            "vld1.32 {d5},  [%[r5]]!\n"
+            "vld1.32 {d6},  [%[r6]]!\n"
+            "vld1.32 {d7},  [%[r7]]!\n"
+            "vtrn.8   d0, d1\n"
+            "vtrn.8   d2, d3\n"
+            "vtrn.8   d4, d5\n"
+            "vtrn.8   d6, d7\n"
+            "vtrn.16  d0, d2\n"
+            "vtrn.16  d1, d3\n"
+            "vtrn.16  d4, d6\n"
+            "vtrn.16  d5, d7\n"
+            "vtrn.32  d0, d4\n"
+            "vtrn.32  d2, d6\n"
+            "vtrn.32  d1, d5\n"
+            "vtrn.32  d3, d7\n"
+            "subs %[cnt], #1\n"
+            "vst1.32 {d0-d3}, [%[ptr_out]]!\n"
+            "vst1.32 {d4-d7}, [%[ptr_out]]!\n"
+            "bne    1b\n"
+            : [cnt] "+r"(cnt),
+              [r0] "+r"(inr0),
+              [r1] "+r"(inr1),
+              [r2] "+r"(inr2),
+              [r3] "+r"(inr3),
+              [r4] "+r"(inr4),
+              [r5] "+r"(inr5),
+              [r6] "+r"(inr6),
+              [r7] "+r"(inr7),
+              [ptr_out] "+r"(ptr_out)
+            :
+            : "cc", "memory", "q0", "q1", "q2", "q3");
+
+#endif  //  aarch64
+      }
+      for (int k = 0; k < remain; ++k) {
+        ptr_out[0] = *(inr0++);
+        ptr_out[1] = *(inr1++);
+        ptr_out[2] = *(inr2++);
+        ptr_out[3] = *(inr3++);
+        ptr_out[4] = *(inr4++);
+        ptr_out[5] = *(inr5++);
+        ptr_out[6] = *(inr6++);
+        ptr_out[7] = *(inr7++);
+        ptr_out += 8;
+      }
+      j++;
+    }
+  }
+  TargetFree(TARGET(kARM), ptr_c);
+}
+
 /*wirte result in outputs
 * input din: [n, c, h, w], output dout: [n, c, h, w]
 */
