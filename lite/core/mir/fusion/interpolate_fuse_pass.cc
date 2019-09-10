@@ -35,4 +35,5 @@ void InterpolateFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 }  // namespace paddle
 
 REGISTER_MIR_PASS(lite_interpolate_fuse_pass,
-                  paddle::lite::mir::InterpolateFusePass);
+                  paddle::lite::mir::InterpolateFusePass)
+    .SetTargets({TARGET(kAny)});

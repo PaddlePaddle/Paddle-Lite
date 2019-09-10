@@ -35,4 +35,5 @@ void ConvActivationFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 }  // namespace paddle
 
 REGISTER_MIR_PASS(lite_conv_activation_fuse_pass,
-                  paddle::lite::mir::ConvActivationFusePass);
+                  paddle::lite::mir::ConvActivationFusePass)
+    .SetTargets({TARGET(kAny)});
