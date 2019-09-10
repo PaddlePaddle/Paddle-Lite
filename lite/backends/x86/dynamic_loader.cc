@@ -54,8 +54,8 @@ DEFINE_string(
 DEFINE_string(mklml_dir, "", "Specify path for loading libmklml_intel.so.");
 
 namespace paddle {
-namespace platform {
-namespace dynload {
+namespace lite {
+namespace x86 {
 static constexpr char cupti_lib_path[] = CUPTI_LIB_PATH;
 static constexpr char warpctc_lib_path[] = WARPCTC_LIB_PATH;
 
@@ -258,6 +258,6 @@ void* GetMKLMLDsoHandle() {
 #endif
 }
 
-}  // namespace dynload
-}  // namespace platform
+}  // namespace x86
+}  // namespace lite
 }  // namespace paddle
