@@ -14,7 +14,8 @@
 
 #include "lite/kernels/x86/softmax_compute.h"
 #include <gtest/gtest.h>
-#include <iostream>
+#include <memory>
+#include <utility>
 #include <vector>
 #include "lite/core/op_registry.h"
 
@@ -54,15 +55,24 @@ TEST(softmax_x86, run_test) {
   SoftmaxCompute<float> softmax;
   operators::SoftmaxParam param;
 
+  std::unique_ptr<KernelContext> ctx(new KernelContext);
+  ctx->As<X86Context>();
+  softmax.SetContext(std::move(ctx));
+
   param.x = &x;
   param.output = &out;
 
   softmax.SetParam(param);
   softmax.Run();
 
-  LOG(INFO) << "output: ";
+  std::vector<float> ref_results = {
+      0.0900306, 0.244728, 0.665241, 0.0900306, 0.244728, 0.665241,
+      0.0900306, 0.244728, 0.665241, 0.0900306, 0.244728, 0.665241,
+      0.0900306, 0.244728, 0.665241, 0.0900306, 0.244728, 0.665241,
+      0.0900306, 0.244728, 0.665241, 0.0900306, 0.244728, 0.665241,
+      0.0900306, 0.244728, 0.665241};
   for (int i = 0; i < out.dims().production(); i++) {
-    LOG(INFO) << out_data[i];
+    EXPECT_NEAR(out_data[i], ref_results[i], 1e-3);
   }
 }
 
