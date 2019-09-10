@@ -228,12 +228,12 @@ bool test_conv_fp32(int n,
   return res;
 }
 
-#if 0   /// 3x3dw
-TEST(TestLite, test_conv_depthwise) {
+#if 1  /// 3x3dw
+TEST(TestLite, test_conv3x3_depthwise) {
   if (g_basic_test) {
     for (auto& batch : {1, 2}) {
       for (auto& c : {1, 3, 5, 8, 16, 32}) {
-        for (auto& h : {1, 3, 8, 15, 19, 32, 38, 56, 75}) {
+        for (auto& h : {1, 3, 15, 19, 28, 32, 75}) {
           for (auto& stride : {1, 2}) {
             for (auto& flag_bias : {false, true}) {
               for (auto& flag_relu : {false, true}) {
@@ -285,69 +285,73 @@ TEST(TestLite, test_conv_depthwise) {
 }
 #endif  /// 3x3dw
 
-#if 0   /// 5x5dw
-TEST(TestLite, test_conv_depthwise) {
+#if 1  /// 5x5dw
+TEST(TestLite, test_conv5x5_depthwise) {
   if (g_basic_test) {
     for (auto& batch : {1, 2}) {
-    for (auto& c : {1, 3, 5, 8, 16, 32}) {
-    for (auto& h : {1, 3, 8, 15, 19, 32, 38, 56, 75}) {
-    for (auto& stride : {1, 2}) {
-    for (auto& flag_bias : {false, true}) {
-    for (auto& flag_relu : {false, true}) {
-    for (auto& pad : {0, 1, 2}) {
-    for (auto& th : {1, 2, 4}) {
-      int w = h;
-      if (h == 1 && stride == 2) {
-        continue;
+      for (auto& c : {1, 3, 5, 8, 16, 32}) {
+        for (auto& h : {1, 3, 8, 19, 28, 32, 75}) {
+          for (auto& stride : {1, 2}) {
+            for (auto& flag_bias : {false, true}) {
+              for (auto& flag_relu : {false, true}) {
+                for (auto& pad : {0, 1, 2}) {
+                  for (auto& th : {1, 2, 4}) {
+                    int w = h;
+                    if (h == 1 && stride == 2) {
+                      continue;
+                    }
+                    if (!test_conv_fp32(batch,
+                                        c,
+                                        h,
+                                        w,
+                                        c,
+                                        c,
+                                        {5, 5},
+                                        {stride, stride},
+                                        {pad, pad},
+                                        {1, 1},
+                                        flag_bias,
+                                        flag_relu,
+                                        th,
+                                        g_cluster)) {
+                      LOG(FATAL)
+                          << "test fp32 5x5 depthwise conv: batchsize: "
+                          << batch << ", channel: " << c << ", h & w: " << h
+                          << ", stride: " << stride << ", pad: " << pad
+                          << ", bias: " << (flag_bias ? "true" : "false")
+                          << ", relu: " << (flag_relu ? "true" : "false")
+                          << ", threads: " << th << ", cluster: " << g_cluster
+                          << " failed!!\n";
+                      return;
+                    }
+                    LOG(INFO)
+                        << "test fp32 5x5 depthwise conv: batchsize: " << batch
+                        << ", channel: " << c << ", h & w: " << h
+                        << ", stride: " << stride << ", pad: " << pad
+                        << ", bias: " << (flag_bias ? "true" : "false")
+                        << ", relu: " << (flag_relu ? "true" : "false")
+                        << ", threads: " << th << ", cluster: " << g_cluster
+                        << " passed!!\n";
+                  }
+                }
+              }
+            }
+          }
+        }
       }
-      if (!test_conv_fp32(batch,
-                          c,
-                          h,
-                          w,
-                          c,
-                          c,
-                          {5, 5},
-                          {stride, stride},
-                          {pad, pad},
-                          {1, 1},
-                          flag_bias,
-                          flag_relu,
-                          th,
-                          g_cluster)) {
-        LOG(FATAL) << "test fp32 5x5 depthwise conv: batchsize: "
-                   << batch << ", channel: " << c << ", h & w: " << h
-                   << ", stride: " << stride << ", pad: " << pad << ", bias: "
-                   << (flag_bias? "true" : "false") << ", relu: "
-                   << (flag_relu? "true" : "false") << ", threads: "
-                   << th << ", cluster: " << g_cluster << " failed!!\n";
-        return;
-      }
-      LOG(INFO) << "test fp32 5x5 depthwise conv: batchsize: "
-                << batch << ", channel: " << c << ", h & w: " << h
-                << ", stride: " << stride << ", pad: " << pad << ", bias: "
-                << (flag_bias? "true" : "false") << ", relu: "
-                << (flag_relu? "true" : "false") << ", threads: "
-                << th << ", cluster: " << g_cluster << " passed!!\n";
-    }
-    }
-    }
-    }
-    }
-    }
-    }
     }
   }
 }
 #endif  /// 5x5dw
 
-#if 0   /// conv1x1s1
+#if 1  /// conv1x1s1
 TEST(TestLite, test_conv_1x1s1) {
   if (g_basic_test) {
     for (auto& batch : {1, 2}) {
-      for (auto& c : {1, 3, 8, 11, 32, 128}) {
-        for (auto& cout : {1, 5, 16, 37, 128}) {
+      for (auto& c : {1, 3, 8, 11, 32}) {
+        for (auto& cout : {1, 5, 16, 37}) {
           for (auto& g_div : {1, 2}) {
-            for (auto& h : {1, 7, 31, 56, 75, 100, 240}) {
+            for (auto& h : {1, 7, 19, 28, 32, 56}) {
               for (auto& flag_bias : {false, true}) {
                 for (auto& flag_relu : {false, true}) {
                   for (auto& th : {1, 2, 4}) {
@@ -396,109 +400,109 @@ TEST(TestLite, test_conv_1x1s1) {
 }
 #endif  /// conv1x1s1
 
-#if 0   /// conv3x3s1
+#if 1  /// conv3x3s1
 TEST(TestLite, test_conv_3x3s1) {
   if (g_basic_test) {
     for (auto& batch : {1, 2}) {
-    for (auto& cin : {1, 3, 8, 11, 32}) {
-    for (auto& cout : {1, 5, 8, 37, 64}) {
-    for (auto& h : {1, 3, 31, 56, 75, 100}) {
-    for (auto& pad : {1, 2}) {
-    for (auto& flag_bias : {false, true}) {
-    for (auto& flag_relu : {false, true}) {
-    for (auto& th : {1, 2, 4}) {
-      int w = h;
-      if (!test_conv_fp32(batch,
-                          cin,
-                          h,
-                          w,
-                          cout,
-                          1,
-                          {3, 3},
-                          {1, 1},
-                          {pad, pad},
-                          {1, 1},
-                          flag_bias,
-                          flag_relu,
-                          th,
-                          g_cluster)) {
-        LOG(FATAL) << "test fp32 3x3s1 conv: batchsize: " << batch
-                   << ", channel: " << cin << ", h & w: " << h
-                   << ", num_out: " << cout << ", pad: " << pad
-                   << ", bias: " << (flag_bias ? "true" : "false")
-                   << ", relu: " << (flag_relu ? "true" : "false")
-                   << ", threads: " << th
-                   << ", cluster: " << g_cluster << " failed!!\n";
-        return;
+      for (auto& cin : {1, 3, 8, 12, 32}) {
+        for (auto& cout : {1, 5, 8, 32}) {
+          for (auto& h : {1, 3, 8, 19, 28, 75}) {
+            for (auto& pad : {1, 2}) {
+              for (auto& flag_bias : {false, true}) {
+                for (auto& flag_relu : {false, true}) {
+                  for (auto& th : {1, 2, 4}) {
+                    int w = h;
+                    if (!test_conv_fp32(batch,
+                                        cin,
+                                        h,
+                                        w,
+                                        cout,
+                                        1,
+                                        {3, 3},
+                                        {1, 1},
+                                        {pad, pad},
+                                        {1, 1},
+                                        flag_bias,
+                                        flag_relu,
+                                        th,
+                                        g_cluster)) {
+                      LOG(FATAL) << "test fp32 3x3s1 conv: batchsize: " << batch
+                                 << ", channel: " << cin << ", h & w: " << h
+                                 << ", num_out: " << cout << ", pad: " << pad
+                                 << ", bias: " << (flag_bias ? "true" : "false")
+                                 << ", relu: " << (flag_relu ? "true" : "false")
+                                 << ", threads: " << th
+                                 << ", cluster: " << g_cluster << " failed!!\n";
+                      return;
+                    }
+                    LOG(INFO) << "test fp32 3x3s1 conv: batchsize: " << batch
+                              << ", channel: " << cin << ", h & w: " << h
+                              << ", num_out: " << cout << ", pad: " << pad
+                              << ", bias: " << (flag_bias ? "true" : "false")
+                              << ", relu: " << (flag_relu ? "true" : "false")
+                              << ", threads: " << th
+                              << ", cluster: " << g_cluster << " passed!!\n";
+                  }
+                }
+              }
+            }
+          }
+        }
       }
-      LOG(INFO) << "test fp32 3x3s1 conv: batchsize: " << batch
-                << ", channel: " << cin << ", h & w: " << h
-                << ", num_out: " << cout << ", pad: " << pad
-                << ", bias: " << (flag_bias ? "true" : "false")
-                << ", relu: " << (flag_relu ? "true" : "false")
-                << ", threads: " << th
-                << ", cluster: " << g_cluster << " passed!!\n";
-    }
-    }
-    }
-    }
-    }
-    }
-    }
     }
   }
 }
 #endif  /// conv3x3s1
 
-#if 0   /// conv3x3s2
+#if 1  /// conv3x3s2
 TEST(TestLite, test_conv_3x3s2) {
   if (g_basic_test) {
     for (auto& batch : {1, 2}) {
-    for (auto &cin : {1, 3, 8, 11, 32}) {
-    for (auto& cout : {1, 8, 15, 32, 64}) {
-    for (auto &h : {3, 19, 32, 56, 75, 100}) {
-    for (auto &pad : {1, 2}) {
-    for (auto &flag_bias : {false, true}) {
-    for (auto &flag_relu : {false, true}) {
-    for (auto &th : {1, 2, 4}) {
-      int w = h;
-      if (!test_conv_fp32(batch,
-                          cin,
-                          h,
-                          w,
-                          cout,
-                          1,
-                          {3, 3},
-                          {2, 2},
-                          {pad, pad},
-                          {1, 1},
-                          flag_bias,
-                          flag_relu,
-                          th,
-                          g_cluster)) {
-        LOG(FATAL) << "test fp32 3x3s2 conv: batchsize: "
-                   << batch << ", channel: " << cin
-                   << ", h & w: " << h << ", num_out: " << cout
-                   << ", bias: " << (flag_bias ? "true" : "false")
-                   << ", relu: " << (flag_relu ? "true" : "false")
-                   << ", threads: " <<  th
-                   << ", cluster: " << g_cluster << " failed!!\n";
-        return;
+      for (auto& cin : {1, 3, 8, 12, 32}) {
+        for (auto& cout : {1, 8, 15, 32}) {
+          for (auto& h : {3, 19, 28, 32, 56, 75}) {
+            for (auto& pad : {1, 2}) {
+              for (auto& flag_bias : {false, true}) {
+                for (auto& flag_relu : {false, true}) {
+                  for (auto& th : {1, 2, 4}) {
+                    int w = h;
+                    if (!test_conv_fp32(batch,
+                                        cin,
+                                        h,
+                                        w,
+                                        cout,
+                                        1,
+                                        {3, 3},
+                                        {2, 2},
+                                        {pad, pad},
+                                        {1, 1},
+                                        flag_bias,
+                                        flag_relu,
+                                        th,
+                                        g_cluster)) {
+                      LOG(FATAL) << "test fp32 3x3s2 conv: batchsize: " << batch
+                                 << ", channel: " << cin << ", h & w: " << h
+                                 << ", num_out: " << cout
+                                 << ", bias: " << (flag_bias ? "true" : "false")
+                                 << ", relu: " << (flag_relu ? "true" : "false")
+                                 << ", threads: " << th
+                                 << ", cluster: " << g_cluster << " failed!!\n";
+                      return;
+                    }
+                    LOG(INFO) << "test fp32 3x3s2 conv: batchsize: " << batch
+                              << ", channel: " << cin << ", h & w: " << h
+                              << ", num_out: " << cout
+                              << ", bias: " << (flag_bias ? "true" : "false")
+                              << ", relu: " << (flag_relu ? "true" : "false")
+                              << ", threads: " << th
+                              << ", cluster: " << g_cluster << " passed!!\n";
+                  }
+                }
+              }
+            }
+          }
+        }
       }
-      LOG(INFO) << "test fp32 3x3s2 conv: batchsize: "
-                << batch << ", channel: " << cin
-                << ", h & w: " << h << ", num_out: " << cout
-                << ", bias: " << (flag_bias ? "true" : "false")
-                << ", relu: " << (flag_relu ? "true" : "false")
-                << ", threads: " << th
-                << ", cluster: " << g_cluster << " passed!!\n";
-    }
-    }
-    }
-    }
-    }
-    }
-    }
     }
   }
 }
@@ -508,10 +512,10 @@ TEST(TestLite, test_conv_3x3s2) {
 TEST(TestLite, test_conv_rand) {
   if (g_basic_test) {
     for (auto& batch : {1, 2}) {
-      for (auto& cin : {1, 3, 8, 16, 24, 32}) {
-        for (auto& cout : {1, 5, 8, 16, 24, 32}) {
+      for (auto& cin : {1, 3, 8, 16}) {
+        for (auto& cout : {1, 5, 8, 16}) {
           for (auto& g_div : {1, 2}) {
-            for (auto& h : {1, 3, 19, 28, 32, 41, 56, 75}) {
+            for (auto& h : {1, 3, 19, 28, 32}) {
               for (auto& kw : {1, 2, 3}) {
                 for (auto& kh : {1, 2, 3}) {
                   for (auto& stride : {1, 2}) {
