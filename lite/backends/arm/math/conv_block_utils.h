@@ -15,7 +15,9 @@
 #pragma once
 #include <arm_neon.h>
 #include <cmath>
+#include "lite/backends/arm/math/gemm_s8.h"
 #include "lite/backends/arm/math/saturate.h"
+#include "lite/backends/arm/math/sgemm.h"
 #include "lite/backends/arm/math/type_trans.h"
 #include "lite/core/target_wrapper.h"
 #include "lite/utils/cp_logging.h"
@@ -27,6 +29,46 @@ namespace math {
 
 #define LITEMAX(a, b) ((a) > (b) ? (a) : (b))
 #define ROUNDUP(a, b) ((((a) + (b)-1) / (b)) * (b))
+
+template <PrecisionType Ptype>
+inline void trans_gemm_weights(const Tensor& tin,
+                               Tensor& tout,  // NOLINT
+                               int group,
+                               ARMContext* ctx);
+
+template <>
+inline void trans_gemm_weights<PRECISION(kFloat)>(const Tensor& tin,
+                                                  Tensor& tout,  // NOLINT
+                                                  int group,
+                                                  ARMContext* ctx) {
+  CHECK_EQ(tin.dims().size(), 4) << "conv weights dims size must = 4";
+  int m = tin.dims()[0] / group;
+  int k = tin.dims().count(1, 4);
+  int hblock = lite::arm::math::get_hblock(ctx);
+  int m_roundup = hblock * ((m + hblock - 1) / hblock);
+  int group_size_round_up = ((m_roundup * k + 15) / 16) * 16;
+  float* w_trans_ptr = nullptr;
+  tout.Resize({group_size_round_up * group});
+  w_trans_ptr = tout.mutable_data<float>();
+  const auto* w_data = tin.data<float>();
+  for (int g = 0; g < group; ++g) {
+    const float* weights_group = w_data + g * m * k;
+    float* weights_trans_ptr = w_trans_ptr + g * group_size_round_up;
+    lite::arm::math::prepackA(
+        weights_trans_ptr, weights_group, 1.f, k, 0, m, 0, k, false, ctx);
+  }
+}
+
+template <>
+inline void trans_gemm_weights<PRECISION(kInt8)>(const Tensor& tin,
+                                                 Tensor& tout,  // NOLINT
+                                                 int group,
+                                                 ARMContext* ctx) {
+  CHECK_EQ(tin.dims().size(), 4) << "conv weights dims size must = 4";
+  int m = tin.dims()[0] / group;
+  int k = tin.dims().count(1, 4);
+  prepackA_int8(&tout, tin, m, k, group, false, ctx);
+}
 
 inline void fill_packed_biasc4(float* dout, const float* bias, int size) {
   float32x4_t vb = vld1q_f32(bias);

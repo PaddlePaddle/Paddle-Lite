@@ -77,6 +77,9 @@ void DirectConv<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
   const auto* i_data = param.x->data<int8_t>();
   const auto* w_data = weights_.data<int8_t>();
   const auto* b_data = param.bias ? param.bias->data<float>() : nullptr;
+  if (flag_trans_bias_) {
+    b_data = bias_.data<float>();
+  }
   auto* o_data = param.output->mutable_data<float>();
 
   auto x_dims = param.x->dims();
@@ -130,6 +133,9 @@ void DirectConv<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
   const auto* i_data = param.x->data<int8_t>();
   const auto* w_data = weights_.data<int8_t>();
   const auto* b_data = param.bias ? param.bias->data<float>() : nullptr;
+  if (flag_trans_bias_) {
+    b_data = bias_.data<float>();
+  }
   auto* o_data = param.output->mutable_data<int8_t>();
 
   auto x_dims = param.x->dims();

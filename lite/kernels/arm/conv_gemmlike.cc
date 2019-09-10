@@ -125,6 +125,9 @@ void GemmLikeConv<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
     weights = weights_.data<int8_t>();
   }
   auto bias = param.bias ? param.bias->data<float>() : nullptr;
+  if (flag_trans_bias_) {
+    bias = bias_.data<float>();
+  }
   auto din = param.x->data<int8_t>();
   auto dout = param.output->mutable_data<float>();
 
@@ -181,6 +184,9 @@ void GemmLikeConv<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
     weights = weights_.data<int8_t>();
   }
   auto bias = param.bias ? param.bias->data<float>() : nullptr;
+  if (flag_trans_bias_) {
+    bias = bias_.data<float>();
+  }
   auto din = param.x->data<int8_t>();
   auto dout = param.output->mutable_data<int8_t>();
 

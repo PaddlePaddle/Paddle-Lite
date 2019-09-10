@@ -423,58 +423,6 @@ inline float active_f32<lite_api::ActivationType::kTanh>(const float& x) {
   return 2.f / (1.f + exp(-2.f * x)) - 1.f;
 }
 
-template <PrecisionType Ptype>
-inline void trans_gemm_weights(const Tensor& tin,
-                               Tensor& tout,  // NOLINT
-                               int group,
-                               ARMContext* ctx);
-
-template <>
-inline void trans_gemm_weights<PRECISION(kFloat)>(const Tensor& tin,
-                                                  Tensor& tout,  // NOLINT
-                                                  int group,
-                                                  ARMContext* ctx) {
-  CHECK_EQ(tin.dims().size(), 4) << "conv weights dims size must = 4";
-  int m = tin.dims()[0] / group;
-  int k = tin.dims().count(1, 4);
-  int hblock = lite::arm::math::get_hblock(ctx);
-  int m_roundup = hblock * ((m + hblock - 1) / hblock);
-  int group_size_round_up = ((m_roundup * k + 15) / 16) * 16;
-  float* w_trans_ptr = nullptr;
-  tout.Resize({group_size_round_up * group});
-  w_trans_ptr = tout.mutable_data<float>();
-  const auto* w_data = tin.data<float>();
-  for (int g = 0; g < group; ++g) {
-    const float* weights_group = w_data + g * m * k;
-    float* weights_trans_ptr = w_trans_ptr + g * group_size_round_up;
-    lite::arm::math::prepackA(
-        weights_trans_ptr, weights_group, 1.f, k, 0, m, 0, k, false, ctx);
-  }
-}
-
-template <>
-inline void trans_gemm_weights<PRECISION(kInt8)>(const Tensor& tin,
-                                                 Tensor& tout,  // NOLINT
-                                                 int group,
-                                                 ARMContext* ctx) {
-  CHECK_EQ(tin.dims().size(), 4) << "conv weights dims size must = 4";
-  int m = tin.dims()[0] / group;
-  int k = tin.dims().count(1, 4);
-  int hblock = lite::arm::math::get_hblock_int8(ctx);
-  int m_roundup = hblock * ((m + hblock - 1) / hblock);
-  int group_size_round_up = ((m_roundup * k + 15) / 16) * 16;
-  float* w_trans_ptr = nullptr;
-  tout.Resize({group_size_round_up * group});
-  w_trans_ptr = tout.mutable_data<float>();
-  const auto* w_data = tin.data<float>();
-  for (int g = 0; g < group; ++g) {
-    const float* weights_group = w_data + g * m * k;
-    float* weights_trans_ptr = w_trans_ptr + g * group_size_round_up;
-    lite::arm::math::prepackA_int8(
-        weights_trans_ptr, weights_group, k, 0, m, 0, k, false, ctx);
-  }
-}
-
 }  // namespace math
 }  // namespace arm
 }  // namespace lite
