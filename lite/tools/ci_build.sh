@@ -559,7 +559,7 @@ function test_arm {
     test_arm_api $port
 
     # _test_model_optimize_tool $port
-    _test_paddle_code_generator $port
+    # _test_paddle_code_generator $port
 }
 
 function prepare_emulator {
