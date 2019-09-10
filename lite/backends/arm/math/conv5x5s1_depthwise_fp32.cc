@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/backends/arm/math/conv_depthwise.h"
 #include <arm_neon.h>
+#include "lite/backends/arm/math/conv_depthwise.h"
 
 namespace paddle {
 namespace lite {
