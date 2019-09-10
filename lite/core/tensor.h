@@ -138,14 +138,25 @@ class TensorLite {
   // and the data type can be float/int8_t.
   // For other devices, T and R may be the same type.
   template <typename T, typename R = T>
-  R *mutable_data();
+  R *mutable_data() {
+    memory_size_ = dims_.production() * sizeof(T);
+    buffer_->ResetLazy(target_, memory_size_);
+    return reinterpret_cast<R *>(static_cast<char *>(buffer_->data()) +
+                                 offset_);
+  }
 
   // T is the data type and R is the return type
   // For OpenCL, the return type can be cl::Buffer
   // and the data type can be float/int8_t.
   // For other devices, T and R may be the same type.
   template <typename T, typename R = T>
-  R *mutable_data(TargetType target);
+  R *mutable_data(TargetType target) {
+    target_ = target;
+    memory_size_ = dims_.production() * sizeof(T);
+    buffer_->ResetLazy(target, memory_size());
+    return reinterpret_cast<R *>(static_cast<char *>(buffer_->data()) +
+                                 offset_);
+  }
   void *mutable_data(size_t memory_size);
   void *mutable_data(TargetType target, size_t memory_size);
 
@@ -171,6 +182,40 @@ class TensorLite {
 
   template <typename T>
   TensorLite Slice(int64_t begin, int64_t end) const;
+
+#ifdef LITE_WITH_OPENCL
+  void image2d_shape(std::array<size_t, 2> *image2d_shape,
+                     std::array<size_t, 2> *image2d_pitch) {
+    convertDimsToImage2DShape(image2d_shape, image2d_pitch);
+  }
+
+  void convertDimsToImage2DShape(std::array<size_t, 2> *image2d_shape,
+                                 std::array<size_t, 2> *image2d_pitch) {
+    size_t &img2d_w = *(image2d_shape)[0];
+    size_t &img2d_h = *(image2d_shape)[1];
+    size_t &pitch_row = *(image2d_pitch)[0];
+    size_t &pitch_slice = *(image2d_pitch)[1];
+    // TODO(yuanshuai): convert dims_ to image2d_h, image2d_w
+    // compute memory size
+    // memory_size_ =
+    img2d_h = 1;
+    img2d_w = 1;
+    pitch_row = 0;
+    pitch_slice = 0;
+  }
+
+  template <typename T>
+  void CopyImage2DFrom(const TensorLite &other) {
+    dims_ = other.dims_;
+    target_ = other.target_;
+    lod_ = other.lod_;
+    memory_size_ = other.memory_size_;
+    std::array<size_t, 2> image2d_shape{1, 1};
+    std::array<size_t, 2> image2d_pitch{1, 1};
+    convertDimsToImage2DShape(image2d_shape, image2d_pitch);
+    buffer_->CopyImage2DFrom<T>(*other.buffer_, image2d_shape, image2d_pitch);
+  }
+#endif  // LITE_WITH_OPENCL
 
   friend STL::ostream &operator<<(STL::ostream &os, const TensorLite &tensor) {
     os << "Tensor:" << '\n';
@@ -200,21 +245,6 @@ class TensorLite {
   /// @brief Buffer may be shared with other tensors
   size_t offset_{0};
 };
-
-template <typename T, typename R>
-R *TensorLite::mutable_data() {
-  memory_size_ = dims_.production() * sizeof(T);
-  buffer_->ResetLazy(target_, memory_size_);
-  return reinterpret_cast<R *>(static_cast<char *>(buffer_->data()) + offset_);
-}
-
-template <typename T, typename R>
-R *TensorLite::mutable_data(TargetType target) {
-  target_ = target;
-  memory_size_ = dims_.production() * sizeof(T);
-  buffer_->ResetLazy(target, memory_size());
-  return reinterpret_cast<R *>(static_cast<char *>(buffer_->data()) + offset_);
-}
 
 template <typename T>
 TensorLite TensorLite::Slice(int64_t begin, int64_t end) const {
@@ -246,4 +276,4 @@ bool TensorCompareWith(const TensorT &a, const TensorT &b) {
 }  // namespace lite
 }  // namespace paddle
 
-#endif
+#endif  // #ifndef LITE_WITH_FPGA

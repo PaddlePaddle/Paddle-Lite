@@ -30,5 +30,18 @@ TEST(memory, test) {
 #endif
 }
 
+#ifdef LITE_WITH_OPENCL
+TEST(memory, test_opencl_buffer) {
+  auto* buf_opencl = TargetMalloc(TARGET(kOpenCL), 10);
+  ASSERT_TRUE(buf_opencl);
+  TargetFree(TARGET(kOpenCL), buf_opencl);
+}
+
+TEST(memory, test_opencl_image2d) {
+  auto* buf_opencl = TargetMalloc(TARGET(kOpenCL), 10);
+  ASSERT_TRUE(buf_opencl);
+  TargetFree(TARGET(kOpenCL), buf_opencl);
+}
+#endif
 }  // namespace lite
 }  // namespace paddle

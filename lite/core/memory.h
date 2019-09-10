@@ -38,6 +38,13 @@ void LITE_API TargetFree(TargetType target, void* data);
 
 // Copy a buffer from host to another target.
 void TargetCopy(TargetType target, void* dst, const void* src, size_t size);
+#ifdef LITE_WITH_OPENCL
+void TargetCopyImage2D(TargetType target,
+                       void* dst,
+                       const void* src,
+                       const std::array<size_t, 2>& image_shape,
+                       const std::array<size_t, 2>& image_pitch);
+#endif  // LITE_WITH_OPENCL
 
 template <TargetType Target>
 void CopySync(void* dst, const void* src, size_t size, IoDirection dir) {
@@ -86,6 +93,37 @@ class Buffer {
   }
 
   void ResizeLazy(size_t size) { ResetLazy(target_, size); }
+
+#ifdef LITE_WITH_OPENCL
+  template <typename T>
+  void ResetLazyImage2D(TargetType target,
+                        const std::array<size_t, 2>& image2d_shape,
+                        const std::array<size_t, 2>& image2d_pitch) {
+    size_t size = sizeof(T) * image2d_shape[0] * image2d_shape[1];
+    if (target != target_ || space_ < size) {
+      Free();
+      data_ = TargetWrapperCL::MallocImage<T>(image2d_shape, image2d_shape);
+      target_ = target;
+      space_ = size;
+    }
+  }
+
+  template <typename T>
+  void ResizeLazyImage2D(const std::array<size_t, 2>& image2d_shape,
+                         const std::array<size_t, 2>& image2d_pitch) {
+    ResetLazyImage2D<T>(target_, image2d_shape, image2d_shape);
+  }
+
+  template <typename T>
+  void CopyImage2DFrom(const Buffer& other,
+                       const std::array<size_t, 2>& image2d_shape,
+                       const std::array<size_t, 2>& image2d_pitch) {
+    target_ = other.target_;
+    ResizeLazyImage2D<T>(image2d_shape, image2d_pitch);
+    TargetCopyImage2D(
+        target_, data_, other.data_, image2d_shape, image2d_pitch);
+  }
+#endif
 
   void Free() {
     if (space_ > 0) {
