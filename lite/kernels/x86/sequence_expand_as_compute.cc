@@ -24,18 +24,3 @@ REGISTER_LITE_KERNEL(sequence_expand_as,
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
     .Finalize();
-
-REGISTER_LITE_KERNEL(sequence_expand_as_grad,
-                     kX86,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::x86::SequenceExpandAsGradCompute<float>,
-                     def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
-    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86))})
-    .BindInput(paddle::lite::GradVarName("Out"),
-               {LiteType::GetTensorTy(TARGET(kX86))})
-
-    .BindOutput(paddle::lite::GradVarName("X"),
-                {LiteType::GetTensorTy(TARGET(kX86))})
-    .Finalize();

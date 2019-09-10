@@ -150,17 +150,6 @@ struct ReluFunctor : public BaseActivationFunctor<T> {
 };
 
 template <typename T>
-struct ReluGradFunctor : public BaseActivationFunctor<T> {
-  template <typename Device, typename X, typename Out, typename dOut,
-            typename dX>
-  void operator()(Device d, X x, Out out, dOut dout, dX dx) const {
-    dx.device(d) = dout * (out > static_cast<T>(0)).template cast<T>();
-  }
-
-  static constexpr ActBwdOpFwdDeps FwdDeps() { return kDepOut; }
-};
-
-template <typename T>
 class ReluCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
  public:
   using param_t = operators::ActivationParam;
@@ -173,23 +162,6 @@ class ReluCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
   }
 
   virtual ~ReluCompute() = default;
-};
-
-template <typename T>
-class ReluGradCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
- public:
-  using param_t = operators::ActivationGradParam;
-
-  void Run() override {
-    auto& param = *param_.get_mutable<operators::ActivationGradParam>();
-    param.X_grad->template mutable_data<T>();
-
-    ActivateGrad<ReluGradFunctor<T>>(
-        param.X, param.Out,
-        param.Out_grad, param.X_grad);
-  }
-
-  virtual ~ReluGradCompute() = default;
 };
 
 }  // namespace x86

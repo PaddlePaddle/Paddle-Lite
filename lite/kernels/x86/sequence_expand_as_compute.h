@@ -74,60 +74,6 @@ class SequenceExpandAsCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat
   }
 };
 
-/*
- *Given Grad(Out)
- *
- *    Grad(Out).lod = [[0,              3,            6]]
- *    Grad(Out).data = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6]
- * Then
- *    Grad(X).data = [(0.1 + 0.2 + 0.3), (0.4 + 0.5 + 0.6)]
- *                 = [0.6, 1.5]
- *    Grad(X).lod = Input(X).lod
- *
- * */
-template <typename T>
-struct SequenceExpandAsGradFunctor {
-  void operator()(
-      const Tensor &dout,
-      const std::vector<size_t> &ref_lod, /*expand referenced lod*/
-      Tensor *dx) {
-    int64_t hight = dx->dims()[0];
-    int64_t width = dx->data_size() / hight;
-
-    const T *dout_data = dout.data<T>();
-    T *dx_data = dx->mutable_data<T, T>();
-
-    for (int64_t h_id = 0; h_id < hight; ++h_id) {
-      T *dst = dx_data + h_id * width;
-      size_t span = ref_lod[h_id + 1] - ref_lod[h_id];
-      for (int64_t w_id = 0; w_id < width; ++w_id) {
-        T result = 0;
-        for (size_t k = 0; k < span; ++k) {
-          size_t offset = (ref_lod[h_id] + k) * width;
-          result += dout_data[offset + w_id];
-        }
-        dst[w_id] = result;
-      }
-    }
-  }
-};
-
-template <typename T>
-class SequenceExpandAsGradCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
- public:
-  void Run() override {
-    auto& param = *param_.get_mutable<operators::SequenceExpandAsGradParam>();
-
-    auto* y = param.y;
-    auto* out_grad = param.out_grad;
-    auto* x_grad = param.x_grad;
-    x_grad->mutable_data<T, T>();
-
-    SequenceExpandAsGradFunctor<T> functor;
-    functor(*out_grad, y->lod()[0], x_grad);
-  }
-};
-
 }  // x86
 }  // kernels
 }  // lite

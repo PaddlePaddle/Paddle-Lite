@@ -58,6 +58,13 @@ void act_exp(const T* din, T* dout, int size, int threads);
 template <typename T>
 void act_floor(const T* din, T* dout, int size, int threads);
 
+template <typename T>
+void act_hard_sigmoid(const T* din,
+                      T* dout,
+                      const int64_t size,
+                      const float slope,
+                      const float offset,
+                      int threads);
 }  // namespace math
 }  // namespace arm
 }  // namespace lite

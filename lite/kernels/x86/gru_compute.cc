@@ -31,30 +31,3 @@ REGISTER_LITE_KERNEL(gru,
     .BindOutput("Batch_hidden", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindOutput("Hidden", {LiteType::GetTensorTy(TARGET(kX86))})
     .Finalize();
-
-REGISTER_LITE_KERNEL(gru_grad,
-                     kX86,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::x86::GRUGradCompute<float>,
-                     def)
-    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kX86))})
-    .BindInput("H0", {LiteType::GetTensorTy(TARGET(kX86))})
-    .BindInput("Weight", {LiteType::GetTensorTy(TARGET(kX86))})
-    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kX86))})
-    .BindInput("Batch_gate", {LiteType::GetTensorTy(TARGET(kX86))})
-    .BindInput("Batch_reset_hidden_prev", {LiteType::GetTensorTy(TARGET(kX86))})
-    .BindInput("Batch_hidden", {LiteType::GetTensorTy(TARGET(kX86))})
-    .BindInput("Hidden", {LiteType::GetTensorTy(TARGET(kX86))})
-    .BindInput(paddle::lite::GradVarName("Hidden"),
-               {LiteType::GetTensorTy(TARGET(kX86))})
-
-    .BindOutput(paddle::lite::GradVarName("Input"),
-                {LiteType::GetTensorTy(TARGET(kX86))})
-    .BindOutput(paddle::lite::GradVarName("H0"),
-                {LiteType::GetTensorTy(TARGET(kX86))})
-    .BindOutput(paddle::lite::GradVarName("Weight"),
-                {LiteType::GetTensorTy(TARGET(kX86))})
-    .BindOutput(paddle::lite::GradVarName("Bias"),
-                {LiteType::GetTensorTy(TARGET(kX86))})
-    .Finalize();

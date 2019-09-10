@@ -41,28 +41,6 @@ class GRUOpLite : public OpLite {
   mutable GRUParam param_;
 };
 
-#ifdef LITE_WITH_TRAIN
-class GRUGradOpLite : public OpLite {
- public:
-  GRUGradOpLite() {}
-
-  explicit GRUGradOpLite(const std::string &type) : OpLite(type) {}
-
-  bool CheckShape() const override;
-
-  bool InferShape() const override;
-
-  void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
-
-  bool AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) override;
-
-  std::string DebugString() const override { return "GRU_grad"; }
-
- private:
-  mutable GRUGradParam param_;
-};
-#endif
-
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle

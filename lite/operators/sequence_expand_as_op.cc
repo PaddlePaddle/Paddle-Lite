@@ -67,45 +67,8 @@ bool SequenceExpandAsOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope 
   return true;
 }
 
-#ifdef LITE_WITH_TRAIN
-bool SequenceExpandAsGradOpLite::CheckShape() const {
-  CHECK_OR_FALSE(param_.x);
-  CHECK_OR_FALSE(param_.out_grad);
-
-  return true;
-}
-
-bool SequenceExpandAsGradOpLite::InferShape() const {
-  if (param_.x_grad) {
-    param_.x_grad->Resize(param_.x->dims());
-    param_.x_grad->set_lod(param_.x->lod());
-  }
-  return true;
-}
-
-bool SequenceExpandAsGradOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
-  auto x = op_desc.Input("X").front();
-  auto y = op_desc.Input("Y").front();
-  auto out_grad = op_desc.Iutput(framework::GradVarName("Out")).front();
-
-  param_.x = scope->FindVar(x)->GetMutable<lite::Tensor>();
-  param_.y = scope->FindVar(y)->GetMutable<lite::Tensor>();
-  param_.hidden_grad = scope->FindVar(out_grad)->GetMutable<lite::Tensor>();
-
-  if (op_desc.Output(framework::GradVarName("Out")).size()) {
-    auto out_grad = op_desc.Output(framework::GradVarName("Out")).front();
-    param_.out_grad = scope->FindVar(out_grad)->GetMutable<lite::Tensor>();
-  }
-
-  return true;
-}
-#endif
-
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle
 
 REGISTER_LITE_OP(sequence_expand_as, paddle::lite::operators::SequenceExpandAsOpLite)
-#ifdef LITE_WITH_TRAIN
-REGISTER_LITE_OP(sequence_expand_as_grad, paddle::lite::operators::SequenceExpandAsGradOpLite)
-#endif

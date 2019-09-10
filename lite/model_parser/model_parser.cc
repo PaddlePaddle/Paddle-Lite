@@ -466,7 +466,7 @@ void SetParamInfoNaive(naive_buffer::ParamDesc *param_desc,
 #define SET_DATA_TYPE(precision, type_desc) \
   case precision:                           \
     desc.SetDataType(type_desc);            \
-    break
+    break;
 
     SET_DATA_TYPE(PRECISION(kFloat), VarDescAPI::VarDataType::FP32);
     SET_DATA_TYPE(PRECISION(kInt8), VarDescAPI::VarDataType::INT8);
@@ -487,14 +487,14 @@ void SetParamInfoNaive(naive_buffer::ParamDesc *param_desc,
   if (tensor.target() == TARGET(kCUDA)) {
     switch (tensor.precision()) {
 #define DO(precision, type)                                         \
-  case precision:                                                   \
+  case precision: {                                                 \
     std::unique_ptr<type> tmp_buffer(new type[tensor.data_size()]); \
     TargetWrapperCuda::MemcpySync(tmp_buffer.get(),                 \
                                   tensor.data<type>(),              \
                                   tensor.data_size(),               \
                                   IoDirection::DtoH);               \
     desc.SetData<type>(tmp_buffer.get(), tensor.data_size());       \
-    break
+  } break;
       DO(PRECISION(kFloat), float);
       DO(PRECISION(kInt8), int8_t);
       DO(PRECISION(kInt16), int16_t);
@@ -512,7 +512,7 @@ void SetParamInfoNaive(naive_buffer::ParamDesc *param_desc,
 #define DO(precision, type)                                      \
   case precision:                                                \
     desc.SetData<type>(tensor.data<type>(), tensor.data_size()); \
-    break
+    break;
       DO(PRECISION(kFloat), float);
       DO(PRECISION(kInt8), int8_t);
       DO(PRECISION(kInt16), int16_t);
