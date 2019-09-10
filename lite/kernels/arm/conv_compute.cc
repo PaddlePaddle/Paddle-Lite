@@ -59,30 +59,25 @@ void ConvCompute<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
     /// dw conv impl
     impl_ = new DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>;
     VLOG(3) << "invoking dw conv";
-    LOG(INFO) << "invoking dw conv";
   } else if (param.groups == 1 && kw == 3 && stride == 1 && kps_equal &&
              no_dilation) {
     if (ic >= 32 && oc >= 32 && oh > 16 && ow > 16) {
       /// winograd conv impl
       impl_ = new WinogradConv<PRECISION(kFloat), PRECISION(kFloat)>;
       VLOG(3) << "invoking winograd conv";
-      LOG(INFO) << "invoking winograd conv";
     } else {
       /// direct conv impl
       impl_ = new DirectConv<PRECISION(kFloat), PRECISION(kFloat)>;
       VLOG(3) << "invoking direct conv";
-      LOG(INFO) << "invoking direct conv";
     }
   } else if (param.groups == 1 && kw == 3 && stride == 2 && kps_equal &&
              no_dilation) {
     /// direct conv impl
     impl_ = new DirectConv<PRECISION(kFloat), PRECISION(kFloat)>;
     VLOG(3) << "invoking direct conv";
-    LOG(INFO) << "invoking direct conv";
   } else {
     impl_ = new GemmLikeConv<PRECISION(kFloat), PRECISION(kFloat)>;
     VLOG(3) << "invoking gemm like conv";
-    LOG(INFO) << "invoking gemm conv";
   }
   impl_->SetContext(std::move(this->ctx_));
   impl_->SetParam(param);
@@ -123,16 +118,13 @@ void ConvCompute<PRECISION(kInt8), PRECISION(kFloat)>::PrepareForRun() {
   if (param.groups == ic && ic == oc && kps_equal && no_dilation && flag_dw) {
     impl_ = new DepthwiseConv<PRECISION(kInt8), PRECISION(kFloat)>;
     VLOG(3) << "Run DepthwiseConv Int8";
-    LOG(INFO) << "Run DepthwiseConv Int8_Fp32";
   } else if (param.groups == 1 && kw == 3 && (sw == 1 || sw == 2) &&
              kps_equal && no_dilation) {
     impl_ = new DirectConv<PRECISION(kInt8), PRECISION(kFloat)>;
     VLOG(3) << "Run DirectConv Int8";
-    LOG(INFO) << "Run DirectConv Int8_Fp32";
   } else {
     impl_ = new GemmLikeConv<PRECISION(kInt8), PRECISION(kFloat)>;
     VLOG(3) << "Run GemmLikeConvInt8";
-    LOG(INFO) << "Run GemmLikeConvInt8_Fp32";
   }
   impl_->SetContext(std::move(this->ctx_));
   impl_->SetParam(param);
@@ -172,16 +164,13 @@ void ConvCompute<PRECISION(kInt8), PRECISION(kInt8)>::PrepareForRun() {
   if (param.groups == ic && ic == oc && kps_equal && no_dilation && flag_dw) {
     impl_ = new DepthwiseConv<PRECISION(kInt8), PRECISION(kInt8)>;
     VLOG(3) << "Run DepthwiseConv Int8";
-    LOG(INFO) << "Run DepthwiseConv Int8_Int8";
   } else if (param.groups == 1 && kw == 3 && (sw == 1 || sw == 2) &&
              kps_equal && no_dilation) {
     impl_ = new DirectConv<PRECISION(kInt8), PRECISION(kInt8)>;
     VLOG(3) << "Run DirectConv Int8";
-    LOG(INFO) << "Run DirectConv Int8_Int8";
   } else {
     impl_ = new GemmLikeConv<PRECISION(kInt8), PRECISION(kInt8)>;
     VLOG(3) << "Run GemmLikeConvInt8";
-    LOG(INFO) << "Run GemmLikeConvInt8_Int8";
   }
   impl_->SetContext(std::move(this->ctx_));
   impl_->SetParam(param);
