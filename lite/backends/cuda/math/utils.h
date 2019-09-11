@@ -17,6 +17,7 @@
 #include <cuda_fp16.h>
 #include <cuda_runtime.h>
 #include <cudnn.h>
+#include <limits>
 #include <string>
 
 namespace paddle {
@@ -39,8 +40,8 @@ __device__ __forceinline__ half from_float<half>(float x) {
 
 template <>
 __device__ __forceinline__ int8_t from_float<int8_t>(float x) {
-  x = fmaxf(x, INT8_MIN);
-  x = fminf(x, INT8_MAX);
+  x = fmaxf(x, std::numeric_limits<char>::min());
+  x = fminf(x, std::numeric_limits<char>::max());
   return __float2int_rn(x);
 }
 

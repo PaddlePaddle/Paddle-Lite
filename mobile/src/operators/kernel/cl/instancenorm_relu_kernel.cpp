@@ -52,22 +52,10 @@ void InstanceNormReluKernel<GPU_CL, float>::Compute(
   DLOG << local_work_size_info.max_work_item_size1;
   DLOG << local_work_size_info.max_work_item_size2;
 
-  const int max_work_group_size =
-      std::min(256, static_cast<int>(local_work_size_info.max_work_group_size));
-  int local_work_size1 = 1;
+  int local_work_size1 =
+      std::min(static_cast<int>(local_work_size_info.max_work_item_size1),
+               std::min(256, w));
   int local_work_size2 = 1;
-  for (int i = 1; i <= local_work_size_info.max_work_item_size1 && i <= w;
-       i++) {
-    for (int j = 1; j <= local_work_size_info.max_work_item_size2 && j <= h;
-         j++) {
-      if (i * j <= max_work_group_size) {
-        if (i * j > local_work_size1 * local_work_size2) {
-          local_work_size1 = i;
-          local_work_size2 = j;
-        }
-      }
-    }
-  }
   const size_t work_size[3] = {(size_t)(n * c_group), (size_t)local_work_size1,
                                (size_t)local_work_size2};
   const size_t local_work_size[3] = {(size_t)1, (size_t)local_work_size1,

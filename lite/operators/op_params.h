@@ -761,7 +761,6 @@ struct GenerateProposalsParam {
   lite::Tensor* RpnRois{};
   lite::Tensor* RpnRoiProbs{};
 };
-/// ----------------------- shape operators ----------------------
 /// ----------------------- squeeze operators ----------------------
 struct SqueezeParam {
   const lite::Tensor* X{};
