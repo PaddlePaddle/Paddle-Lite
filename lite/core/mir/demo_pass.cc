@@ -34,4 +34,4 @@ bool RegisterDemoPass() {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_MIR_PASS(demo, paddle::lite::mir::DemoPass);
+REGISTER_MIR_PASS(demo, paddle::lite::mir::DemoPass).SetTargets({TARGET(kAny)});
