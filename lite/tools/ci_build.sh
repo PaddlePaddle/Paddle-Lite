@@ -224,6 +224,7 @@ function build_test_server {
     build
 
     test_server
+    test_model_optimize_tool_compile
 }
 
 function build_test_train {
@@ -408,6 +409,13 @@ function test_arm_model {
 #     $adb shell $remote_test --model_dir $remote_model_path --optimize_out ${remote_model_path}.opt \
 #          --valid_targets "arm"
 # }
+
+function test_model_optimize_tool_compile {
+    cd $workspace
+    cd build
+    cmake .. -DWITH_LITE=ON -DLITE_ON_MODEL_OPTIMIZE_TOOL=ON -DWITH_TESTING=OFF -DLITE_BUILD_EXTRA=ON
+    make model_optimize_tool -j$NUM_CORES_FOR_COMPILE
+}
 
 function _test_paddle_code_generator {
     local port=$1
