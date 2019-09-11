@@ -193,7 +193,8 @@ class Optimizer {
         }
       }
       if (!supported) {
-        LOG(WARNING) << x << " didn't run because it is unsupported.";
+        LOG(WARNING) << "Skip " << x
+                     << " pass because the target does not match.";
       } else {
         pass->Apply(graph_);
         LOG(INFO) << "== Finished running: " << x;
