@@ -14,6 +14,7 @@
 
 #include "lite/kernels/arm/decode_bboxes_compute.h"
 #include <string>
+#include <cmath>
 #include "lite/backends/arm/math/funcs.h"
 
 namespace paddle {

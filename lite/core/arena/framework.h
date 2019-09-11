@@ -22,6 +22,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <cmath>
 #include "lite/core/op_registry.h"
 #include "lite/core/program.h"
 #include "lite/core/scope.h"

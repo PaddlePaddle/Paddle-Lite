@@ -17,6 +17,7 @@
 #include <memory>
 #include <utility>
 #include <vector>
+#include <cmath>
 #include "lite/core/op_registry.h"
 
 namespace paddle {

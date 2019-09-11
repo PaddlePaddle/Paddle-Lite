@@ -16,6 +16,7 @@
 #include <gtest/gtest.h>
 #include <string>
 #include <vector>
+#include <cmath>
 #include "lite/core/op_registry.h"
 
 namespace paddle {

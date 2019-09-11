@@ -16,6 +16,7 @@
 
 #include <memory>
 #include <string>
+#include <cmath>
 #include "lite/core/mir/pattern_matcher_high_api.h"
 #include "lite/utils/paddle_enforce.h"
 
