@@ -102,7 +102,7 @@ class Buffer {
     size_t size = sizeof(T) * image2d_shape[0] * image2d_shape[1];
     if (target != target_ || space_ < size) {
       Free();
-      data_ = TargetWrapperCL::MallocImage<T>(image2d_shape, image2d_shape);
+      data_ = TargetWrapperCL::MallocImage<T>(image2d_shape, image2d_pitch);
       target_ = target;
       space_ = size;
     }
@@ -111,7 +111,7 @@ class Buffer {
   template <typename T>
   void ResizeLazyImage2D(const std::array<size_t, 2>& image2d_shape,
                          const std::array<size_t, 2>& image2d_pitch) {
-    ResetLazyImage2D<T>(target_, image2d_shape, image2d_shape);
+    ResetLazyImage2D<T>(target_, image2d_shape, image2d_pitch);
   }
 
   template <typename T>
