@@ -23,7 +23,7 @@ namespace kernels {
 namespace arm {
 
 template <>
-void WinogradConv<PRECISION(kFloat), PRECISION(kFloat)>::Init() {
+void WinogradConv<PRECISION(kFloat), PRECISION(kFloat)>::ReInitWhenNeeded() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->template As<ARMContext>();
 

@@ -33,7 +33,7 @@ class GemmLikeConv : public KernelLite<TARGET(kARM), Ptype> {
   GemmLikeConv() = default;
   ~GemmLikeConv() {}
 
-  virtual void Init() {
+  virtual void ReInitWhenNeeded() {
     auto& param = this->template Param<param_t>();
     CHECK(this->ctx_);
     auto& ctx = this->ctx_->template As<ARMContext>();

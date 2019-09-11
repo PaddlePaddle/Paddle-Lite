@@ -47,8 +47,8 @@ class KernelBase {
   /// `SetContext`, that is both the param_ and context_ are valid.
   virtual void PrepareForRun() {}
 
-  /// Run initialization if shape changed
-  virtual void Init() {}
+  /// Run kernel initialization if needed at every run (eg. input shape changed)
+  virtual void ReInitWhenNeeded() {}
 
   /// Run the kernel. Before Run, both the param_ and context_ should be valid.
   virtual void Run() = 0;
@@ -59,8 +59,9 @@ class KernelBase {
       PrepareForRun();
       is_first_epoch_ = false;
     }
-    /// check input shape, re-init the kernel if needed
-    Init();
+    /// re-init the kernel if needed (input shape should be checked in conv
+    /// kernel)
+    ReInitWhenNeeded();
 
     // Reset the workspace to make every kernel in the same thread to share the
     // temporary memory.

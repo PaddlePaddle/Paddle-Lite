@@ -32,7 +32,7 @@ class WinogradConv : public KernelLite<TARGET(kARM), Ptype> {
   WinogradConv() = default;
   ~WinogradConv() {}
   virtual void PrepareForRun();
-  virtual void Init();
+  virtual void ReInitWhenNeeded();
   virtual void Run();
 
  protected:

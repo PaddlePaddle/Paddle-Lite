@@ -83,9 +83,13 @@ class FcCompute : public KernelLite<TARGET(kARM), PType> {
  public:
   using param_t = operators::FcParam;
 
-  virtual void Init() {
+  virtual void ReInitWhenNeeded() {
     auto& param = this->template Param<operators::FcParam>();
     auto x_dims = param.input->dims();
+    if (last_shape_ == x_dims) {
+      return;
+    }
+    last_shape_ = x_dims;
     auto w_dims = param.w->dims();
     auto& ctx = this->ctx_->template As<ARMContext>();
 
@@ -98,7 +102,6 @@ class FcCompute : public KernelLite<TARGET(kARM), PType> {
     CHECK_EQ(k_, w_dims[0]);
     n_ = w_dims[1];
     CHECK_EQ(k_, static_cast<int>(w_dims[0]));
-
     flag_gemm_ = check_fc_use_gemm<PType, OutType>(
         m_, param.weight_scale, param.bias != nullptr);
     if (!flag_trans_weights_ && !flag_gemm_) {
@@ -113,6 +116,7 @@ class FcCompute : public KernelLite<TARGET(kARM), PType> {
   ~FcCompute() = default;
 
  private:
+  DDim last_shape_;
   Tensor weights_;
   Tensor bias_;
   bool flag_trans_weights_{false};

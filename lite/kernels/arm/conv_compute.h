@@ -26,9 +26,9 @@ class ConvCompute : public KernelLite<TARGET(kARM), Ptype> {
  public:
   virtual void PrepareForRun();
 
-  virtual void Init() {
+  virtual void ReInitWhenNeeded() {
     CHECK(impl_);
-    impl_->Init();
+    impl_->ReInitWhenNeeded();
   }
 
   virtual void Run() {

@@ -29,13 +29,13 @@ namespace arm {
 ///  for fp32 kernel
 template <>
 void FcCompute<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
-  Init();
+  ReInitWhenNeeded();
 }
 
 /// for int8 kernel with fp32 output
 template <>
 void FcCompute<PRECISION(kInt8), PRECISION(kFloat)>::PrepareForRun() {
-  Init();
+  ReInitWhenNeeded();
   auto& param = this->template Param<operators::FcParam>();
   /// update scale
   float input_scale = param.input_scale;
@@ -53,7 +53,7 @@ void FcCompute<PRECISION(kInt8), PRECISION(kFloat)>::PrepareForRun() {
 /// for int8 kernel with int8 output
 template <>
 void FcCompute<PRECISION(kInt8), PRECISION(kInt8)>::PrepareForRun() {
-  Init();
+  ReInitWhenNeeded();
   auto& param = this->template Param<operators::FcParam>();
   /// update scale
   scale_ = param.weight_scale;
