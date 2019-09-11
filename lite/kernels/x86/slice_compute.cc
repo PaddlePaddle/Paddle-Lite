@@ -12,24 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/mir/variable_place_inference_pass.h"
-#include <memory>
-#include "lite/core/mir/pass_registry.h"
+#include "lite/kernels/x86/slice_compute.h"
 
-namespace paddle {
-namespace lite {
-namespace mir {
-
-void VariablePlaceInferencePass::Apply(const std::unique_ptr<SSAGraph> &graph) {
-  MarkInputPlace(graph.get());
-  InferenceArgumentPlace(graph.get());
-  CheckAllArgumentTypeDetermined(graph.get());
-}
-
-}  // namespace mir
-}  // namespace lite
-}  // namespace paddle
-
-REGISTER_MIR_PASS(variable_place_inference_pass,
-                  paddle::lite::mir::VariablePlaceInferencePass)
-    .SetTargets({TARGET(kAny)});
+REGISTER_LITE_KERNEL(slice,
+                     kX86,
+                     kFloat,
+                     kNCHW,
+                     paddle::lite::kernels::x86::SliceCompute<float>,
+                     def)
+    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
+    .Finalize();
