@@ -14,7 +14,9 @@
 
 #pragma once
 #include <memory>
+#include <set>
 #include <string>
+
 #include "lite/core/mir/node.h"
 #include "lite/core/mir/ssa_graph.h"
 
@@ -44,6 +46,13 @@ class Pass {
   void set_doc(const std::string& doc) { doc_ = doc; }
   const std::string& doc() const { return doc_; }
 
+  void set_targets(const std::set<TargetType>& targets) { targets_ = targets; }
+  const std::set<TargetType>& targets() const { return targets_; }
+  bool is_supported_target(TargetType target) const {
+    if (targets_.find(TARGET(kAny)) != targets_.end()) return true;
+    return (targets_.find(target) != targets_.end());
+  }
+
   Kind kind() const { return kind_; }
   bool is_debug_pass() const { return kind_ == Kind::kDebug; }
   bool is_program_pass() const { return kind_ == Kind::kProgramWise; }
@@ -55,6 +64,7 @@ class Pass {
   const Kind kind_;
   std::string name_;
   std::string doc_;
+  std::set<TargetType> targets_;
 };
 
 // Different kinds.
