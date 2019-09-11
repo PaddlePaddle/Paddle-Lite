@@ -93,7 +93,13 @@ class Optimizer {
            "argument_type_display_pass",     //
 
            "runtime_context_assign_pass",
-           "graph_visualze"}});
+           "graph_visualze",
+#ifdef LITE_WITH_ARM
+#ifndef LITE_WITH_NPU
+           "memory_optimize_pass"
+#endif
+#endif
+          }});
     } else {
       RunPasses(passes);
     }
