@@ -13,8 +13,8 @@
 // limitations under the License.
 #pragma once
 
-#include <vector>
 #include <utility>
+#include <vector>
 #include "lite/core/kernel.h"
 #include "lite/core/op_lite.h"
 #include "lite/core/op_registry.h"
