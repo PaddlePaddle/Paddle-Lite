@@ -113,8 +113,8 @@ void RuntimeProgram::UpdateVarsOfProgram(cpp::ProgramDesc* desc) {
 
 void RuntimeProgram::Run() {
   for (auto& inst : instructions_) {
-    LOG(INFO) << ">> Running kernel: " << inst.op()->op_info()->Repr()
-            << " on Target " << TargetToStr(inst.kernel()->target());
+    // LOG(INFO) << ">> Running kernel: " << inst.op()->op_info()->Repr()
+    //         << " on Target " << TargetToStr(inst.kernel()->target());
 
     inst.Run();
 #ifdef LITE_WITH_PROFILE

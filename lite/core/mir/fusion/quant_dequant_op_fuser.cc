@@ -22,6 +22,8 @@ namespace lite {
 namespace mir {
 namespace fusion {
 
+// #define DYNAMIC_RANGE
+
 void QuantDequantOpFuser::BuildPattern() {
   const int kNumFields = 5;
   const int kQuantizedWeightOffset = 0;
@@ -39,9 +41,11 @@ void QuantDequantOpFuser::BuildPattern() {
   auto* quant_op_input = VarNode("quant_op_input")
                              ->assert_is_op_input(quant_type_, "X")
                              ->AsInput();
+#ifdef DYNAMIC_RANGE
   auto* quant_op_in_scale = VarNode("quant_op_in_scale")
                                 ->assert_is_op_input(quant_type_, "InScale")
                                 ->AsIntermediate();
+#endif
   auto* quant_op = OpNode("quant_op", quant_type_)
                        ->assert_is_op(quant_type_)
                        ->AsIntermediate();
@@ -80,7 +84,9 @@ void QuantDequantOpFuser::BuildPattern() {
                         ->AsOutput());
   }
 
+#ifdef DYNAMIC_RANGE
   quant_op->LinksFrom({quant_op_input, quant_op_in_scale});
+#endif
   quant_op->LinksFrom({quant_op_input});
   quant_op_out->LinksFrom({quant_op});
   quant_op_out_scale->LinksFrom({quant_op});
@@ -105,7 +111,9 @@ void QuantDequantOpFuser::InsertNewNode(SSAGraph* graph,
   const int kDequantOpOutOffset = 4;
 
   auto* quant_op_input = matched.at("quant_op_input");
+#ifdef DYNAMIC_RANGE
   auto* quant_op_in_scale = matched.at("quant_op_in_scale");
+#endif
   auto* quant_op = matched.at("quant_op");
 
   std::vector<Node*> nodes;
@@ -120,11 +128,13 @@ void QuantDequantOpFuser::InsertNewNode(SSAGraph* graph,
   auto* scope = quant_op->stmt()->op()->scope();
   auto& valid_places = quant_op->stmt()->op()->valid_places();
   int range = ((1 << (bit_length - 1)) - 1);
+
+#ifdef DYNAMIC_RANGE
   auto input_scale_t = scope->FindVar(quant_op_in_scale->arg()->name)
                            ->GetMutable<lite::Tensor>();
   float input_scale = input_scale_t->data<float>()[0] / range;
-
   VLOG(4) << "range: " << range << " input_scale: " << input_scale;
+#endif
   for (int i = 0; i < times_; i++) {
     float max_range = nodes[i * kNumFields + kDequantOpOffset]
                           ->stmt()

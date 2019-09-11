@@ -71,30 +71,31 @@ class Optimizer {
            "lite_interpolate_fuse_pass",                  //
            "identity_scale_eliminate_pass",               //
 #ifdef LITE_WITH_LIGHT_WEIGHT_FRAMEWORK
-           "lite_elementwise_add_activation_fuse_pass",  //
+          "lite_elementwise_add_activation_fuse_pass",  //
 #endif
-           "static_kernel_pick_pass",        //
-           "variable_place_inference_pass",  //
-           "argument_type_display_pass",     //
+          "static_kernel_pick_pass",        //
+          "variable_place_inference_pass",  //
+          "argument_type_display_pass",     //
 
-           "type_target_cast_pass",          //
-           "variable_place_inference_pass",  //
-           "argument_type_display_pass",     //
+          "type_target_cast_pass",          //
+          "variable_place_inference_pass",  //
+          "argument_type_display_pass",     //
 
-           "io_copy_kernel_pick_pass",       //
-           "variable_place_inference_pass",  //
-           "argument_type_display_pass",     //
+          "io_copy_kernel_pick_pass",       //
+          "variable_place_inference_pass",  //
+          "argument_type_display_pass",     //
 
-           "type_precision_cast_pass",       //
-           "variable_place_inference_pass",  //
-           "argument_type_display_pass",     //
+          "type_precision_cast_pass",       //
+          "variable_place_inference_pass",  //
+          "argument_type_display_pass",     //
 
-           "type_layout_cast_pass",          //
-           "variable_place_inference_pass",  //
-           "argument_type_display_pass",     //
+          "type_layout_cast_pass",          //
+          "variable_place_inference_pass",  //
+          "argument_type_display_pass",     //
 
-           "runtime_context_assign_pass",
-           "memory_optimize_pass"}});
+          "runtime_context_assign_pass",
+          "memory_optimize_pass"}});
+          // "graph_visualze"
     } else {
       RunPasses(passes);
     }

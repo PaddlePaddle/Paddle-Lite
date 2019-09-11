@@ -77,6 +77,8 @@ endif()
 
 message(STATUS "compile with lite ARM kernels")
 
+add_kernel(multiclass_nms_compute_arm ARM basic SRCS multiclass_nms_compute.cc DEPS ${lite_kernel_deps} math_arm)
+
 
 lite_cc_test(test_fc_compute_arm SRCS fc_compute_test.cc DEPS fc_compute_arm math_arm)
 lite_cc_test(test_scale_compute_arm SRCS scale_compute_test.cc DEPS scale_compute_arm)

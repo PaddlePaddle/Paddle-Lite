@@ -405,7 +405,7 @@ class Tensor {
   }
 
   void save_file_with_name(std::string path) {
-    // return;
+    return;
     invalidate();
     std::ofstream ofs;
 
