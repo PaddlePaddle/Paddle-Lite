@@ -68,16 +68,16 @@ TEST(gru_x86, run_test) {
   auto bias_data = bias.mutable_data<float>();
 
   for (int64_t i = 0; i < input.dims().production(); i++) {
-    input_data[i] = static_cast<float>(i);
+    input_data[i] = static_cast<float>(0);
   }
   for (int64_t i = 0; i < weight.dims().production(); i++) {
-    weight_data[i] = static_cast<float>(i);
+    weight_data[i] = static_cast<float>(0);
   }
   for (int64_t i = 0; i < h0.dims().production(); i++) {
-    h0_data[i] = static_cast<float>(i);
+    h0_data[i] = static_cast<float>(0);
   }
   for (int64_t i = 0; i < bias.dims().production(); i++) {
-    bias_data[i] = static_cast<float>(i);
+    bias_data[i] = static_cast<float>(0);
   }
   // ReluCompute relu;
   GRUCompute<float> gru;
@@ -107,18 +107,43 @@ TEST(gru_x86, run_test) {
       batch_reset_hidden_prev.mutable_data<float>();
   auto batch_hidden_data = batch_hidden.mutable_data<float>();
   auto hidden_data = hidden.mutable_data<float>();
+  std::vector<float> batch_gate_out{
+      0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0, 0, 0, 0, 0,
+      0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0, 0, 0, 0, 0,
+      0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0, 0, 0, 0, 0,
+      0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0, 0, 0, 0, 0,
+      0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0, 0, 0, 0, 0,
+      0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0, 0, 0, 0, 0,
+      0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0, 0, 0, 0, 0,
+      0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0, 0, 0, 0, 0,
+      0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0, 0, 0, 0, 0};
+  std::vector<float> batch_reset_hidden_prev_out{
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+  std::vector<float> batch_hidden_out{
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+  std::vector<float> hidden_out{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+
   LOG(INFO) << "output: ";
   for (int i = 0; i < batch_gate.dims().production(); i++) {
     LOG(INFO) << batch_gate_data[i];
+    EXPECT_NEAR(batch_gate_data[i], batch_gate_out[i], 1e-3);
   }
   for (int i = 0; i < batch_reset_hidden_prev.dims().production(); i++) {
     LOG(INFO) << batch_reset_hidden_prev_data[i];
+    EXPECT_NEAR(
+        batch_reset_hidden_prev_data[i], batch_reset_hidden_prev_out[i], 1e-3);
   }
   for (int i = 0; i < batch_hidden.dims().production(); i++) {
     LOG(INFO) << batch_hidden_data[i];
+    EXPECT_NEAR(batch_hidden_data[i], batch_hidden_out[i], 1e-3);
   }
   for (int i = 0; i < hidden.dims().production(); i++) {
     LOG(INFO) << hidden_data[i];
+    EXPECT_NEAR(hidden_data[i], hidden_out[i], 1e-3);
   }
 }
 
