@@ -25,7 +25,6 @@ class NormComputeTester : public arena::TestCase {
   // common attributes for this op.
   std::string input_ = "x";
   std::string output_ = "out";
-  std::string norm_output_ = "norm";
   int axis_ = 1;
   float epsilon_ = 1e-9;
   DDim dims_{{3, 5, 4, 4}};
@@ -44,16 +43,10 @@ class NormComputeTester : public arena::TestCase {
     CHECK(out);
     out->Resize(dims_);
     auto* out_data = out->mutable_data<float>();
-    auto* norm_out = scope->NewTensor(norm_output_);
-    CHECK(norm_out);
 
     auto* x = scope->FindTensor(input_);
     const auto* x_data = x->data<float>();
     int axis = axis_ < 0 ? axis_ + dims_.size() : axis_;
-    DDim norm_dims(dims_);
-    norm_dims[axis] = 1;
-    norm_out->Resize(norm_dims);
-    auto* norm_data = norm_out->mutable_data<float>();
     int pre_n = dims_.count(0, axis);
     int n = dims_[axis];
     int post_n = dims_.count(axis + 1, dims_.size());
@@ -65,8 +58,6 @@ class NormComputeTester : public arena::TestCase {
           sum += in_tmp[j * post_n] * in_tmp[j * post_n];
         }
         sum = std::sqrt(sum);
-        float* norm_tmp = norm_data + i * post_n + k;
-        *norm_tmp = sum;
         float* out_tmp = out_data + i * n * post_n + k;
         for (int j = 0; j < n; j++) {
           out_tmp[j * post_n] = in_tmp[j * post_n] / sum;
@@ -79,7 +70,6 @@ class NormComputeTester : public arena::TestCase {
     op_desc->SetType("norm");
     op_desc->SetInput("X", {input_});
     op_desc->SetOutput("Out", {output_});
-    op_desc->SetOutput("Norm", {norm_output_});
     op_desc->SetAttr("axis", axis_);
     op_desc->SetAttr("epsilon", epsilon_);
   }

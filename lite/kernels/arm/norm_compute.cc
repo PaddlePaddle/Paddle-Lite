@@ -32,12 +32,10 @@ void NormCompute::Run() {
 
   const auto* x_data = param.X->data<float>();
   auto* o_data = param.Out->mutable_data<float>();
-  auto* norm_data = param.Norm->mutable_data<float>();
   int pre_n = input_dims.count(0, axis);
   int post_n = input_dims.count(axis + 1, dim_size);
   int n = input_dims[axis];
-  lite::arm::math::norm(
-      x_data, pre_n, n, post_n, param.epsilon, o_data, norm_data, &ctx);
+  lite::arm::math::norm(x_data, pre_n, n, post_n, param.epsilon, o_data, &ctx);
 }
 
 }  // namespace arm
