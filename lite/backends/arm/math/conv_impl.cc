@@ -651,6 +651,7 @@ void conv_depthwise_5x5_fp32(const void* din,
   int stride = param.strides[1];
   bool flag_relu = param.fuse_relu;
   bool flag_bias = param.bias != nullptr;
+  ctx->ExtendWorkspace((w_in + w_out) * sizeof(float));
   if (pad == 2 && stride == 2) {
     conv_depthwise_5x5s2_fp32(reinterpret_cast<const float*>(din),
                               reinterpret_cast<float*>(dout),

@@ -78,6 +78,8 @@ class GemmLikeConv : public KernelLite<TARGET(kARM), Ptype> {
       lite::arm::math::trans_gemm_weights<Ptype>(
           *(param.filter), weights_, param.groups, &ctx);
       flag_trans_weights_ = true;
+    } else if (n == 1) {
+      flag_trans_weights_ = false;
     }
     last_shape_ = x_dims;
   }

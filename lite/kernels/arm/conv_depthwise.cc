@@ -34,7 +34,6 @@ void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
     /// trans weights
     constexpr int cblock = 4;
     auto oc = w_dims[0];
-    auto ic = w_dims[1];
     auto kh = w_dims[2];
     auto cround = ROUNDUP(oc, cblock);
     weights_.Resize({cround, 1, kh, kw});
@@ -46,11 +45,6 @@ void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
     flag_trans_weights_ = true;
   } else if (kw == 5) {
     VLOG(5) << "invoke 5x5 dw conv fp32";
-    auto x_dims = param.x->dims();
-    int iw = x_dims[3];
-    auto o_dims = param.output->dims();
-    int ow = o_dims[3];
-    ctx.ExtendWorkspace((iw + ow) * sizeof(float));
     impl_ = lite::arm::math::conv_depthwise_5x5_fp32;
   } else {
     LOG(FATAL) << "this type dw conv not impl";

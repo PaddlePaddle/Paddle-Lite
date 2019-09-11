@@ -29,18 +29,11 @@ namespace arm {
 template <>
 void ConvCompute<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
   auto& param = this->Param<param_t>();
-  auto x_dims = param.x->dims();
   auto w_dims = param.filter->dims();
-  auto o_dims = param.output->dims();
   auto& ctx = this->ctx_->template As<ARMContext>();
 
-  int win = x_dims[3];  // nchw
-  int hin = x_dims[2];
-  int ic = x_dims[1];
-  int bs = x_dims[0];
-  int ow = o_dims[3];
-  int oh = o_dims[2];
-  int oc = o_dims[1];
+  int ic = w_dims[1] * param.groups;
+  int oc = w_dims[0];
   int kh = w_dims[2];  // oihw
   int kw = w_dims[3];
   int pad = param.paddings[0];
@@ -61,7 +54,7 @@ void ConvCompute<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
     VLOG(3) << "invoking dw conv";
   } else if (param.groups == 1 && kw == 3 && stride == 1 && kps_equal &&
              no_dilation) {
-    if (ic >= 32 && oc >= 32 && oh > 16 && ow > 16) {
+    if (ic >= 32 && oc >= 32) {
       /// winograd conv impl
       impl_ = new WinogradConv<PRECISION(kFloat), PRECISION(kFloat)>;
       VLOG(3) << "invoking winograd conv";
@@ -88,19 +81,12 @@ void ConvCompute<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
 template <>
 void ConvCompute<PRECISION(kInt8), PRECISION(kFloat)>::PrepareForRun() {
   auto& param = this->Param<param_t>();
-  auto x_dims = param.x->dims();
   auto w_dims = param.filter->dims();
-  auto o_dims = param.output->dims();
 
   auto& ctx = this->ctx_->template As<ARMContext>();
 
-  int win = x_dims[3];  // nchw
-  int hin = x_dims[2];
-  int ic = x_dims[1];
-  int bs = x_dims[0];
-  int ow = o_dims[3];
-  int oh = o_dims[2];
-  int oc = o_dims[1];
+  int ic = param.groups * w_dims[1];
+  int oc = w_dims[0];
   int kh = w_dims[2];  // oihw
   int kw = w_dims[3];
   int ph = param.paddings[1];
@@ -108,7 +94,6 @@ void ConvCompute<PRECISION(kInt8), PRECISION(kFloat)>::PrepareForRun() {
   int sh = param.strides[1];
   int sw = param.strides[0];
 
-  bool with_bias = param.bias;
   bool kps_equal = (pw == ph) && (sh == sw) && (kw == kh);
   bool no_dilation = (param.dilations[0] == 1) && (param.dilations[1] == 1);
   bool flag_dw_3x3 = (kw == 3 && kh == 3) && (sw == 1 || sw == 2);
@@ -135,19 +120,12 @@ void ConvCompute<PRECISION(kInt8), PRECISION(kFloat)>::PrepareForRun() {
 template <>
 void ConvCompute<PRECISION(kInt8), PRECISION(kInt8)>::PrepareForRun() {
   auto& param = this->Param<param_t>();
-  auto x_dims = param.x->dims();
   auto w_dims = param.filter->dims();
-  auto o_dims = param.output->dims();
 
   auto& ctx = this->ctx_->template As<ARMContext>();
 
-  int win = x_dims[3];  // nchw
-  int hin = x_dims[2];
-  int ic = x_dims[1];
-  int bs = x_dims[0];
-  int ow = o_dims[3];
-  int oh = o_dims[2];
-  int oc = o_dims[1];
+  int ic = w_dims[1] * param.groups;
+  int oc = w_dims[0];
   int kh = w_dims[2];  // oihw
   int kw = w_dims[3];
   int ph = param.paddings[1];
