@@ -25,6 +25,7 @@ add_operator(multiclass_nms_op_lite basic SRCS multiclass_nms_op.cc DEPS ${op_DE
 add_operator(fusion_elementwise_activation_ops basic SRCS fusion_elementwise_activation_ops.cc DEPS elementwise_ops ${op_DEPS})
 add_operator(mean_op basic SRCS mean_op.cc DEPS ${op_DEPS})
 add_operator(fill_constant_op basic SRCS fill_constant_op.cc DEPS ${op_DEPS})
+add_operator(fill_constant_batch_size_like basic SRCS fill_constant_batch_size_like_op.cc DEPS ${op_DEPS} math_function)
 #add_operator(sgd_op basic SRCS sgd_op.cc DEPS ${op_DEPS})
 add_operator(uniform_random_op basic SRCS uniform_random_op.cc DEPS ${op_DEPS})
 add_operator(power_op basic SRCS power_op.cc DEPS ${op_DEPS})
