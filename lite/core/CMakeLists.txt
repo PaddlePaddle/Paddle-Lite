@@ -53,8 +53,16 @@ add_custom_command(
   ${CMAKE_SOURCE_DIR}/lite/api/paddle_use_ops.h
   OUTPUT ${CMAKE_SOURCE_DIR}/lite/api/paddle_use_ops.h
   )
+# generate fake kernels for memory_optimize_tool
+add_custom_command(
+  COMMAND python ${CMAKE_SOURCE_DIR}/lite/tools/cmake_tools/create_fake_kernel_registry.py
+  ${kernels_src_list}
+  ${CMAKE_BINARY_DIR}/all_kernel_faked.cc
+  OUTPUT ${CMAKE_BINARY_DIR}/all_kernel_faked.cc
+  )
 add_custom_target(op_list_h DEPENDS ${CMAKE_SOURCE_DIR}/lite/api/paddle_use_ops.h)
 add_custom_target(kernel_list_h DEPENDS ${CMAKE_SOURCE_DIR}/lite/api/paddle_use_kernels.h)
+add_custom_target(all_kernel_faked_cc DEPENDS ${CMAKE_BINARY_DIR}/all_kernel_faked.cc)
 
 #----------------------------------------------- NOT CHANGE -----------------------------------------------
 lite_cc_library(kernel SRCS kernel.cc DEPS context type_system target_wrapper any op_params tensor

@@ -4,9 +4,9 @@ function(USE_JITKERNEL_MORE TARGET TYPE)
 endfunction()
 
 # enable it latter
-# if(WITH_MKLML)
-#     add_subdirectory(mkl)
-# endif()
+ if(WITH_MKLML)
+     add_subdirectory(mkl)
+ endif()
 
 if(WITH_AVX)
     add_subdirectory(intrinsic)

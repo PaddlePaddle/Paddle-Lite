@@ -183,11 +183,22 @@ class Optimizer {
   // Specify the passes and run them.
   void RunPasses(const std::vector<std::string>& passes) {
     for (auto& x : passes) {
-      LOG(INFO) << "== Running pass " << x;
-      auto* pass = mir::PassManager::Global().LookUp(x);
+      LOG(INFO) << "== Running pass: " << x;
+      mir::Pass* pass = mir::PassManager::Global().LookUp(x);
       CHECK(pass) << "Can not find pass: " << x;
-      pass->Apply(graph_);
-      LOG(INFO) << "== Running pass Done." << x;
+      bool supported = false;
+      for (const auto& place : valid_places_) {
+        if (pass->is_supported_target(place.target)) {
+          supported = true;
+        }
+      }
+      if (!supported) {
+        LOG(WARNING) << "Skip " << x
+                     << " pass because the target does not match.";
+      } else {
+        pass->Apply(graph_);
+        LOG(INFO) << "== Finished running: " << x;
+      }
     }
   }
 

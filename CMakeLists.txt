@@ -82,6 +82,7 @@ lite_option(LITE_WITH_PROFILE  "Enable profile mode in lite framework"  OFF)
 lite_option(LITE_WITH_PRECISION_PROFILE "Enable precision profile in profile mode ON in lite" OFF IF LITE_WITH_PROFILE)
 lite_option(LITE_SHUTDOWN_LOG "Shutdown log system or not." OFF)
 lite_option(LITE_ON_TINY_PUBLISH "Publish tiny predictor lib." OFF)
+lite_option(LITE_ON_MODEL_OPTIMIZE_TOOL "Build the model optimize tool" OFF)
 # publish options
 lite_option(LITE_BUILD_EXTRA "Enable extra algorithm support in Lite, both kernels and operators" OFF)
 
@@ -104,6 +105,9 @@ if (LITE_ON_TINY_PUBLISH)
 endif()
 
 include_directories("${PADDLE_SOURCE_DIR}")
+# the generated header files.
+set(LITE_GENERATED_INCLUDE_DIR "${CMAKE_BINARY_DIR}")
+include_directories("${LITE_GENERATED_INCLUDE_DIR}")
 
 # for mobile
 if (WITH_LITE AND LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
