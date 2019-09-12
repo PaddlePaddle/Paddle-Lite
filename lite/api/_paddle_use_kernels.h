@@ -104,9 +104,11 @@ USE_LITE_KERNEL(slice, kARM, kFloat, kNCHW, def)
 USE_LITE_KERNEL(affine_channel, kARM, kFloat, kNCHW, def)
 USE_LITE_KERNEL(anchor_generator, kARM, kFloat, kNCHW, def)
 USE_LITE_KERNEL(generate_proposals, kARM, kFloat, kNCHW, def)
-USE_LITE_KERNEL(squeeze, kARM, kFloat, kNCHW, def)   // for x2paddle
-USE_LITE_KERNEL(squeeze2, kARM, kFloat, kNCHW, def)  // for x2paddle
-USE_LITE_KERNEL(expand, kARM, kFloat, kNCHW, def)    // for x2paddle
+USE_LITE_KERNEL(squeeze, kARM, kFloat, kNCHW, def)     // for x2paddle
+USE_LITE_KERNEL(squeeze2, kARM, kFloat, kNCHW, def)    // for x2paddle
+USE_LITE_KERNEL(unsqueeze, kARM, kFloat, kNCHW, def)   // for x2paddle
+USE_LITE_KERNEL(unsqueeze2, kARM, kFloat, kNCHW, def)  // for x2paddle
+USE_LITE_KERNEL(expand, kARM, kFloat, kNCHW, def)      // for x2paddle
 USE_LITE_KERNEL(roi_align, kARM, kFloat, kNCHW, def)
 USE_LITE_KERNEL(box_clip, kARM, kFloat, kNCHW, def)
 USE_LITE_KERNEL(reduce_mean, kARM, kFloat, kNCHW, def)
@@ -139,6 +141,7 @@ USE_LITE_KERNEL(assign, kARM, kFloat, kNCHW, def);
 // USE_LITE_KERNEL(mul, kX86, kFloat, kNCHW, def);
 // USE_LITE_KERNEL(fc, kX86, kFloat, kNCHW, def);
 USE_LITE_KERNEL(scale, kX86, kFloat, kNCHW, def);
+USE_LITE_KERNEL(slice, kX86, kFloat, kNCHW, def);
 // USE_LITE_KERNEL(fill_constant, kX86, kFloat, kNCHW, def);
 // USE_LITE_KERNEL(square, kX86, kFloat, kNCHW, def);
 // USE_LITE_KERNEL(elementwise_sub, kX86, kFloat, kNCHW, def);

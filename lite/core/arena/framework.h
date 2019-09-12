@@ -17,6 +17,7 @@
 #include <time.h>
 #include <algorithm>
 #include <chrono>  // NOLINT
+#include <cmath>
 #include <iomanip>
 #include <memory>
 #include <string>

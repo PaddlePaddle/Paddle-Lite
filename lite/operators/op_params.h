@@ -540,6 +540,7 @@ struct PriorBoxParam {
   int prior_num{0};
   // priortype: prior_min, prior_max, prior_com
   std::vector<std::string> order;
+  bool min_max_aspect_ratios_order{false};
 };
 
 struct DensityPriorBoxParam : public PriorBoxParam {
@@ -770,6 +771,13 @@ struct SqueezeParam {
   std::vector<int> axes{};
 };
 
+struct UnsqueezeParam {
+  const lite::Tensor* X{};
+  lite::Tensor* Out{};
+  lite::Tensor* XShape{};
+  std::vector<int> axes{};
+};
+
 /// ----------------------- expand operators ----------------------
 struct ExpandParam {
   const lite::Tensor* X{};
@@ -809,6 +817,13 @@ struct BoxClipParam {
   const lite::Tensor* Input{};
   const lite::Tensor* ImInfo{};
   lite::Tensor* Output{};
+};
+
+struct RangeParam {
+  const lite::Tensor* Start;
+  const lite::Tensor* End;
+  const lite::Tensor* Step;
+  lite::Tensor* Out;
 };
 
 /// ----------------------- assign_value operators -----------------------
