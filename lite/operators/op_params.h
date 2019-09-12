@@ -69,8 +69,8 @@ struct CalibParam {
 
 struct GraphParam {
   std::vector<const lite::Tensor*> inputs{};
+  lite::Tensor* weight{};
   std::vector<lite::Tensor*> outputs{};
-  std::string model_name{"model"};
 };
 
 /// -------------------------- NN operators ------------------------------------

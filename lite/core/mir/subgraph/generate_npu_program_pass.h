@@ -57,7 +57,6 @@ class GenerateNPUProgramPass : public SubgraphProgramPass {
 
  private:
   std::vector<Instruction> insts_;
-  std::vector<std::string> model_names_;
 };
 
 }  // namespace subgraph

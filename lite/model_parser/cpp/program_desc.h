@@ -48,10 +48,6 @@ class ProgramDesc : public ProgramDescAPI {
 
   void SetVersion(int64_t version) override { version_ = version; }
 
-#ifdef LITE_WITH_NPU
-  std::vector<std::string> model_names_;
-#endif
-
  private:
   int64_t version_;
   std::vector<BlockDesc> blocks_;

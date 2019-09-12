@@ -43,20 +43,20 @@ SubgraphProgramPass::ClassifySubgraph(const std::unique_ptr<SSAGraph>& graph) {
 }
 
 cpp::OpDesc SubgraphProgramPass::GenGraphOpDesc(
-    const std::string& model_name,
+    const std::string& weight_var_name,
     const std::vector<std::string>& in_var_names,
     const std::vector<std::string>& out_var_names) {
   cpp::OpDesc op_desc;
   op_desc.SetType("graph_op");
   op_desc.SetInput("Inputs", in_var_names);
+  op_desc.SetInput("Weight", {weight_var_name});
   op_desc.SetOutput("Outputs", out_var_names);
-  op_desc.SetAttr("model_name", model_name);
   return op_desc;
 }
 
 void SubgraphProgramPass::InsertNewNode(
     const std::unique_ptr<SSAGraph>& graph,
-    const std::string& model_name,
+    const std::string& weight_var_name,
     Scope* scope,
     const std::vector<Place>& valid_places,
     std::unordered_set<Node*> in_data_vars,
@@ -72,7 +72,7 @@ void SubgraphProgramPass::InsertNewNode(
     out_var_names.push_back(i->AsArg().name);
   }
 
-  auto op_desc = GenGraphOpDesc(model_name, in_var_names, out_var_names);
+  auto op_desc = GenGraphOpDesc(weight_var_name, in_var_names, out_var_names);
 
   auto graph_op = LiteOpRegistry::Global().Create("graph_op");
   graph_op->Attach(op_desc, scope);
@@ -90,6 +90,12 @@ void SubgraphProgramPass::InsertNewNode(
   for (auto& out_var : out_unused_vars) {
     IR_OP_VAR_LINK(new_op_node, out_var);
   }
+
+  // add weight node to store pre-compilied NPU model
+  auto new_weight_node = graph->NewArgumentNode(weight_var_name);
+  new_weight_node->AsArg().is_weight = true;
+  new_weight_node->AsArg().is_persist = true;
+  DirectedLink(new_weight_node, new_op_node);
 
   // assign context
   auto& inst = new_op_node->AsStmt();

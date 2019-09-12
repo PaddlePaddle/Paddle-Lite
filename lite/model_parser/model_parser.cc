@@ -31,10 +31,6 @@
 #endif
 #include "lite/utils/io.h"
 
-#ifdef LITE_WITH_NPU
-#include "lite/backends/npu/npu_runtime.h"
-#endif
-
 namespace paddle {
 namespace lite {
 
@@ -266,25 +262,6 @@ void LoadModelPb(const std::string &model_dir,
     }
   }
 
-#ifdef LITE_WITH_NPU
-  auto main_block = pb_proto_prog.blocks(0);
-  for (auto &op : main_block.ops()) {
-    LOG(INFO) << "op type:" << op.type();
-    if (op.type() != "graph_op") {
-      continue;
-    }
-    auto xs = op.attrs();
-    auto it = std::find_if(
-        xs.begin(), xs.end(), [&](const framework::proto::OpDesc_Attr &x) {
-          return x.name() == "model_name";
-        });
-    CHECK(it != xs.end());
-    auto model_name = it->s();
-    std::string file_path = model_dir + "/" + model_name;
-    CHECK(npu::BuildNPUClient(file_path, model_name))
-        << "NPU model load failed!";
-  }
-#endif
   VLOG(4) << "Load protobuf model in '" << model_dir << "'' successfully";
 }
 
@@ -737,27 +714,6 @@ void LoadModelNaive(const std::string &model_dir,
     }
   }
 
-#ifdef LITE_WITH_NPU
-  auto &prog = *cpp_prog;
-  auto &main_block_desc = *prog.GetBlock<cpp::BlockDesc>(0);
-  for (size_t i = 0; i < main_block_desc.OpsSize(); ++i) {
-    auto &op = *main_block_desc.GetOp<cpp::OpDesc>(i);
-    if (op.Type() != "graph_op") {
-      continue;
-    }
-    auto model_name = op.GetAttr<std::string>("model_name");
-    static int model_idx = 0;
-    model_idx++;
-    std::string file_path = model_dir + "/" + model_name;
-    std::string unique_model_name =
-        "nb_" + std::to_string(model_idx) + "_" + model_name;
-    prog.model_names_.push_back(unique_model_name);
-    op.SetAttr<std::string>("model_name", unique_model_name);
-    CHECK(npu::BuildNPUClient(file_path, unique_model_name))
-        << "NPU model load failed!";
-  }
-#endif
-
   VLOG(4) << "Load naive buffer model in '" << model_dir << "' successfully";
 }
 
@@ -788,10 +744,6 @@ void LoadModelNaiveFromMemory(const std::string &model_buffer,
   // only combined Params are supported in Loading Model from memory
   std::string combined_params_path = param_buffer;
   LoadCombinedParamsNaive(combined_params_path, scope, *cpp_prog, true);
-
-#ifdef LITE_WITH_NPU
-  LOG(FATAL) << "load from memory is not supported by NPU";
-#endif
 
   VLOG(4) << "Load model from naive buffer memory successfully";
 }

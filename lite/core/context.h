@@ -26,7 +26,7 @@
 #include "lite/backends/opencl/cl_runtime.h"
 #endif
 #ifdef LITE_WITH_NPU
-#include "lite/backends/npu/npu_runtime.h"
+#include "lite/backends/npu/runtime.h"
 #endif
 
 #include <map>
@@ -81,9 +81,6 @@ class Context<TargetType::kNPU> {
 
   NPUContext& operator=(const NPUContext& ctx) {}
   std::string name() const { return "NPUContext"; }
-  hiai::AiModelMngerClient* client(const std::string& model_name) const {
-    return npu::DeviceInfo::Global().client(model_name);
-  }
 };
 #endif
 

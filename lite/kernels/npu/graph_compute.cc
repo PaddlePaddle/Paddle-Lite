@@ -30,10 +30,14 @@ void GraphCompute::PrepareForRun() {
   auto& ctx = this->ctx_->template As<NPUContext>();
   auto& param = this->Param<param_t>();
 
-  exec_ = ctx.client(param.model_name);
-  CHECK(exec_);
+  CHECK(param.weight);
+  CHECK(lite::npu::LoadModel(*param.weight, &model_client_, &model_name_));
+  // TODO(hong19860320): find an good way to free the model data.
+  param.weight->Resize({1});
+  param.weight->mutable_data(TargetType::kARM, 1);
+  CHECK(model_client_);
   int ret =
-      exec_->GetModelIOTensorDim(param.model_name, npu_idims_, npu_odims_);
+      model_client_->GetModelIOTensorDim(model_name_, npu_idims_, npu_odims_);
   CHECK_EQ(ret, hiai::AI_SUCCESS) << "[NPU] Get dims failed.";
 
   npu_itensors_.resize(npu_idims_.size());
@@ -108,7 +112,7 @@ void GraphCompute::Run() {
         sizeof(float) * static_cast<size_t>(itensor->dims().production()));
   }
   std::string key = "model_name";  // Note: key seems must be model_name
-  npu_context_.AddPara(key, param.model_name);
+  model_context_.AddPara(key, model_name_);
 
   auto GetCurrentUS = []() -> double {
     struct timeval time;
@@ -117,9 +121,9 @@ void GraphCompute::Run() {
   };
   int istamp;
   auto start_time = GetCurrentUS();
-  CHECK_EQ(
-      hiai::AI_SUCCESS,
-      exec_->Process(npu_context_, npu_itensors_, npu_otensors_, 1000, istamp));
+  CHECK_EQ(hiai::AI_SUCCESS,
+           model_client_->Process(
+               model_context_, npu_itensors_, npu_otensors_, 1000, istamp));
   LOG(INFO) << "[NPU] Process cost " << GetCurrentUS() - start_time << " us";
 
   for (size_t i = 0; i < param.outputs.size(); ++i) {
@@ -147,5 +151,6 @@ REGISTER_LITE_KERNEL(graph_op,
                      paddle::lite::kernels::npu::GraphCompute,
                      def)
     .BindInput("Inputs", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindInput("Weight", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindOutput("Outputs", {LiteType::GetTensorTy(TARGET(kHost))})
     .Finalize();

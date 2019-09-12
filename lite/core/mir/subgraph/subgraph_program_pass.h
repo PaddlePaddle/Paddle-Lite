@@ -60,13 +60,13 @@ class SubgraphProgramPass : public ProgramPass {
       const std::unique_ptr<SSAGraph>& graph);
 
   // generate the graph op desc
-  cpp::OpDesc GenGraphOpDesc(const std::string& model_name,
+  cpp::OpDesc GenGraphOpDesc(const std::string& weight_var_name,
                              const std::vector<std::string>& in_var_names,
                              const std::vector<std::string>& out_var_names);
 
   // insert a new graph op node
   void InsertNewNode(const std::unique_ptr<SSAGraph>& graph,
-                     const std::string& model_name,
+                     const std::string& weight_var_name,
                      Scope* scope,
                      const std::vector<Place>& valid_places,
                      std::unordered_set<Node*> in_data_vars,

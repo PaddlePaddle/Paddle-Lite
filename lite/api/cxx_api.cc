@@ -18,9 +18,6 @@
 #include <utility>
 #include <vector>
 #include "lite/utils/io.h"
-#ifdef LITE_WITH_NPU
-#include "lite/backends/npu/npu_runtime.h"
-#endif
 
 namespace paddle {
 namespace lite {
@@ -42,16 +39,6 @@ void Predictor::SaveModel(const std::string &dir,
     default:
       LOG(FATAL) << "Unknown model type";
   }
-#ifdef LITE_WITH_NPU
-  for (auto name : npu::DeviceInfo::Global().AllClientNames()) {
-    // the npu offline model is saved in current dir
-    // so just copy to dst dir
-    CHECK_EQ(
-        system(string_format("cp -r %s %s", name.c_str(), dir.c_str()).c_str()),
-        0)
-        << "Failed copy NPU model to " << dir;
-  }
-#endif
 }
 
 lite::Tensor *Predictor::GetInput(size_t offset) {

@@ -41,10 +41,10 @@ class OpList {
   std::vector<std::shared_ptr<ge::Operator>> lists_;
 };
 
-// If build from inputs and outputs will save the npu offline model
-bool BuildNPUClient(std::vector<ge::Operator>& inputs,   // NOLINT
-                    std::vector<ge::Operator>& outputs,  // NOLINT
-                    const std::string& name);
+// Build HIAI IR graph to om model, and store om model data into lite tensor
+bool BuildModel(std::vector<ge::Operator>& inputs,   // NOLINT
+                std::vector<ge::Operator>& outputs,  // NOLINT
+                lite::Tensor* model_data);
 
 std::string UniqueName(const std::string& prefix);
 
