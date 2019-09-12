@@ -181,6 +181,7 @@ Output[900]: 0.000586
   - 也可以从[Paddle/model项目](https://github.com/PaddlePaddle/models/tree/develop/PaddleCV/ocr_recognition)中训练出模型
 
 2. 示例代码：
+
 ```c++
 #include <gflags/gflags.h>
 #include <stdio.h>
@@ -257,15 +258,18 @@ int main(int argc, char** argv) {
   return 0;
 }
 ```
+
 3. 运行方法：
 参考以上代码编译出可执行文件`OCR_DEMO`，模型文件夹为`ocr_attention`。手机以USB调试、文件传输模式连接电脑
 在终端中输入以下命令执行OCR model测试：
+
 ```
 #OCR_DEMO为编译出的可执行文件名称，ocr_attention为ocr_attention模型的文件夹名称
 adb push OCR_DEMO data/local/tmp
 adb push ocr_attention data/local/tmp
 adb shell 'cd data/local/tmp && ./OCR_DEMO --model_dir=./OCR_DEMO'
 ```
+
 4. 运行结果
 
 <img src='https://user-images.githubusercontent.com/45189361/64398400-46531580-d097-11e9-9f1c-5aba1dfbc24f.png' align='left' width="150" height="200"/>
