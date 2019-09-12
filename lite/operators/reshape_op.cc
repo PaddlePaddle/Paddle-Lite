@@ -60,6 +60,7 @@ bool ReshapeOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
     }
     const std::vector<int> shape_vector = param_.shape;
     lite::Tensor *shape_tensor = new lite::Tensor;
+
     shape_tensor->Resize({static_cast<int64_t>(shape_vector.size())});
     int *data_shape = shape_tensor->mutable_data<int>();
     for (int i = 0; i < shape_vector.size(); i++) {
@@ -83,6 +84,7 @@ bool ReshapeOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
         << "The shape information must be set by Attr(shape).";
     const std::vector<int> shape_vector = param_.shape;
     lite::Tensor *shape_tensor = new lite::Tensor;
+
     shape_tensor->Resize({static_cast<int64_t>(shape_vector.size())});
     int *data_shape = shape_tensor->mutable_data<int>();
     for (int i = 0; i < shape_vector.size(); i++) {
@@ -120,18 +122,19 @@ bool Reshape2Op::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
 }
 
 DDim ValidateShape(const std::vector<int> &shape, const DDim &input_dims) {
-  const DDim::value_type input_size = input_dims.production();
+  const lite::DDim::value_type input_size = input_dims.production();
   auto input_shape = input_dims.Vectorize();
-  bool all_positive = std::all_of(input_shape.cbegin(),
-                                  input_shape.cend(),
-                                  [](DDim::value_type i) { return i > 0; });
+  bool all_positive = std::all_of(
+      input_shape.cbegin(), input_shape.cend(), [](lite::DDim::value_type i) {
+        return i > 0;
+      });
   // only one dimension can be set to -1, whose size will be automatically
   // infered.
   const int unk_dim_val = -1;
   const int copy_dim_val = 0;
 
-  std::vector<DDim::value_type> output_shape(shape.size(), 0);
-  DDim::value_type capacity = 1;
+  std::vector<lite::DDim::value_type> output_shape(shape.size(), 0);
+  lite::DDim::value_type capacity = 1;
   int unk_dim_idx = -1;
   for (size_t i = 0; i < shape.size(); ++i) {
     if (shape[i] == unk_dim_val) {
@@ -147,10 +150,10 @@ DDim ValidateShape(const std::vector<int> &shape, const DDim &input_dims) {
                                "be negtive except one unknown dimension.";
     }
 
-    capacity *=
-        (shape[i] ? static_cast<DDim::value_type>(shape[i]) : input_shape[i]);
-    output_shape[i] =
-        (shape[i] ? static_cast<DDim::value_type>(shape[i]) : input_shape[i]);
+    capacity *= (shape[i] ? static_cast<lite::DDim::value_type>(shape[i])
+                          : input_shape[i]);
+    output_shape[i] = (shape[i] ? static_cast<lite::DDim::value_type>(shape[i])
+                                : input_shape[i]);
   }
 
   if (unk_dim_idx != -1) {
@@ -168,7 +171,7 @@ DDim ValidateShape(const std::vector<int> &shape, const DDim &input_dims) {
   } else {
     CHECK_EQ(capacity, input_size) << "Invalid shape is given.";
   }
-  return DDim(output_shape);
+  return lite::DDim(output_shape);
 }
 
 }  // namespace operators
