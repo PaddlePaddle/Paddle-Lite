@@ -169,7 +169,7 @@ void prepackA(TensorLite *tout,
               int group,
               bool is_trans,
               ARMContext *ctx) {
-  int hblock = get_hblock(ctx->arch());
+  int hblock = get_hblock(ctx);
   int m_roundup = hblock * ((m + hblock - 1) / hblock);
   int group_size_round_up = ((m_roundup * k + 15) / 16) * 16;
   if (tout->numel() < group_size_round_up * group) {

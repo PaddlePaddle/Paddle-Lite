@@ -50,6 +50,25 @@ if (NOT HAS_ARM_MATH_LIB_DIR)
       funcs.cc 
       packed_sgemm.cc
       sgemm.cc
+      gemm_prepacked_int8.cc
+      gemm_s8.cc
+      sgemv.cc
+      gemv_arm_int8.cc
+      conv3x3s1_direct_fp32.cc
+      conv3x3s2_direct_fp32.cc
+      conv3x3s1_depthwise_fp32.cc
+      conv3x3s2_depthwise_fp32.cc
+      conv3x3s1_direct_int8.cc
+      conv3x3s2_direct_int8.cc
+      conv3x3s1_depthwise_int8.cc
+      conv3x3s2_depthwise_int8.cc
+      conv5x5s1_depthwise_int8.cc
+      conv5x5s1_depthwise_fp32.cc
+      conv5x5s2_depthwise_fp32.cc
+      conv_depthwise_3x3p0.cc
+      conv_depthwise_3x3p1.cc
+      conv_winograd_3x3.cc
+      conv_impl.cc
       softmax.cc 
       scale.cc
       pooling.cc
@@ -57,32 +76,13 @@ if (NOT HAS_ARM_MATH_LIB_DIR)
       lrn.cc
       decode_bboxes.cc
       concat.cc
-      sgemv.cc
       type_trans.cc
       box_coder.cc
-      conv_impl.cc
-      conv_direct_3x3s1.cc
-      conv_direct_3x3s2.cc
-      conv_direct.cc
-      conv_depthwise_3x3_int8.cc
-      conv_depthwise_5x5s1_int8.cc
-      conv_depthwise_3x3p0.cc
-      conv_depthwise_3x3p1.cc
-      conv_depthwise_5x5s1.cc
-      conv_depthwise_5x5s2.cc
-      conv_depthwise.cc
-      conv_gemmlike.cc
-      conv_winograd_3x3.cc
-      conv_winograd.cc
       split.cc
       shuffle_channel.cc
       activation.cc
       yolo_box.cc
       dropout.cc
-      gemm_prepacked_int8.cc
-      gemv_arm_int8.cc
-      conv3x3s1_direct_int8.cc
-      conv3x3s2_direct_int8.cc
       power.cc
       interpolate.cc
       argmax.cc
@@ -104,8 +104,8 @@ if (NOT HAS_ARM_MATH_LIB_DIR)
       slice.cc
       reduce_mean.cc
       stack.cc
-			affine_channel.cc
-			anchor_generator.cc
+      affine_channel.cc
+      anchor_generator.cc
       DEPS ${lite_kernel_deps})
 endif()
  
