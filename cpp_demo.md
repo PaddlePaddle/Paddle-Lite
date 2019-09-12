@@ -233,7 +233,10 @@ void RunModel() {
   for (int i = 0; i < ShapeProduction(init_ids->shape()); ++i) {
     data_ids[i] = 0;
   }
-  lod_t lod_i({{0, 1}, {0, 1}});
+
+  lod_t lod_i;
+  lod_i.push_back({0, 1});
+  lod_i.push_back({0, 1});
   init_ids->SetLoD(lod_i);
   // input2
   std::unique_ptr<Tensor> init_scores(std::move(predictor->GetInput(2)));
