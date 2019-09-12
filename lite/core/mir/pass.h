@@ -14,7 +14,10 @@
 
 #pragma once
 #include <memory>
+#include <set>
 #include <string>
+#include <unordered_map>
+
 #include "lite/core/mir/node.h"
 #include "lite/core/mir/ssa_graph.h"
 
@@ -44,6 +47,26 @@ class Pass {
   void set_doc(const std::string& doc) { doc_ = doc; }
   const std::string& doc() const { return doc_; }
 
+  void set_targets(const std::set<TargetType>& targets) { targets_ = targets; }
+  const std::set<TargetType>& targets() const { return targets_; }
+
+  void set_kernels(
+      const std::unordered_map<std::string, std::set<lite_api::Place>>&
+          kernels) {
+    kernels_ = kernels;
+  }
+  const std::unordered_map<std::string, std::set<lite_api::Place>>& kernels()
+      const {
+    return kernels_;
+  }
+  void add_kernel(const std::string& name, const lite_api::Place& place) {
+    if (!kernels_.count(name)) {
+      kernels_.insert({name, {place}});
+    } else {
+      kernels_.at(name).insert(place);
+    }
+  }
+
   Kind kind() const { return kind_; }
   bool is_debug_pass() const { return kind_ == Kind::kDebug; }
   bool is_program_pass() const { return kind_ == Kind::kProgramWise; }
@@ -55,6 +78,8 @@ class Pass {
   const Kind kind_;
   std::string name_;
   std::string doc_;
+  std::set<TargetType> targets_;
+  std::unordered_map<std::string, std::set<lite_api::Place>> kernels_;
 };
 
 // Different kinds.
