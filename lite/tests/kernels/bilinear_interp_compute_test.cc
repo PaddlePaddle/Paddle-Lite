@@ -156,26 +156,30 @@ class BilinearInterpComputeTester : public arena::TestCase {
   float width_scale_ = 0.f;
   int out_height_ = -1;
   int out_width_ = -1;
+  int outsize_height_ = -1;
+  int outsize_width_ = -1;
   bool align_corners_ = true;
   std::string interp_method_ = "Bilinear";
-  DDim dims_{{1, 1}};
   DDim _dims0_{{1, 1, 16, 16}};
   DDim _dims1_{{2}};
 
  public:
   BilinearInterpComputeTester(const Place& place,
                               const std::string& alias,
-                              float height_scale,
-                              float width_scale,
+                              float scale,
                               int out_height,
                               int out_width,
+                              int outsize_height,
+                              int outsize_width,
                               bool align_corners,
                               std::string interp_method)
       : TestCase(place, alias),
-        height_scale_(height_scale),
-        width_scale_(width_scale),
+        height_scale_(scale),
+        width_scale_(scale),
         out_height_(out_height),
         out_width_(out_width),
+        outsize_height_(outsize_height),
+        outsize_width_(outsize_width),
         align_corners_(align_corners),
         interp_method_(interp_method) {}
 
@@ -183,8 +187,9 @@ class BilinearInterpComputeTester : public arena::TestCase {
     width_scale_ = height_scale_;
     std::vector<const lite::Tensor*> inputs;
     inputs.emplace_back(scope->FindTensor(input0_));
-    inputs.emplace_back(scope->FindTensor(input1_));
-    auto outsize_data = inputs[1]->data<int>();
+    if (outsize_height_ > 0 && outsize_width_ > 0) {
+      inputs.emplace_back(scope->FindTensor(input1_));
+    }
     if (out_width_ != -1 && out_height_ != -1) {
       height_scale_ = static_cast<float>(out_height_ / inputs[0]->dims()[2]);
       width_scale_ = static_cast<float>(out_width_ / inputs[0]->dims()[3]);
@@ -192,6 +197,7 @@ class BilinearInterpComputeTester : public arena::TestCase {
     auto* outputs = scope->NewTensor(output_);
     CHECK(outputs);
     if (inputs.size() > 1) {
+      auto outsize_data = inputs[1]->data<int>();
       int h_out = outsize_data[0];  // HW
       int w_out = outsize_data[1];  // HW
       int num_cout = inputs[0]->dims()[0];
@@ -221,7 +227,9 @@ class BilinearInterpComputeTester : public arena::TestCase {
   void PrepareOpDesc(cpp::OpDesc* op_desc) {
     op_desc->SetType("bilinear_interp");
     op_desc->SetInput("X", {input0_});
-    op_desc->SetInput("OutSize", {input1_});
+    if (outsize_height_ > 0 && outsize_width_ > 0) {
+      op_desc->SetInput("OutSize", {input1_});
+    }
     op_desc->SetOutput("Out", {output_});
     op_desc->SetAttr("scale", height_scale_);
     op_desc->SetAttr("out_h", out_height_);
@@ -237,32 +245,58 @@ class BilinearInterpComputeTester : public arena::TestCase {
     }
     SetCommonTensor(input0_, _dims0_, data0.data());
 
-    std::vector<int> data1(_dims1_.production());
-    for (int i = 0; i < _dims1_.production(); i++) {
-      data1[i] = 16;
+    if (outsize_height_ > 0 && outsize_width_ > 0) {
+      std::vector<int> data1(2);
+      data1[0] = outsize_height_;
+      data1[1] = outsize_width_;
+      SetCommonTensor(input1_, _dims1_, data1.data());
     }
-    SetCommonTensor(input1_, _dims1_, data1.data());
   }
 };
 
 void test_bilinear_interp(Place place) {
   std::string interp_method = "Bilinear";
-  for (float scale : {1., 0.5, 0.3}) {
-    for (int out_height : {8, 16}) {
-      for (int out_width : {8, 16}) {
-        for (bool align_corners : {true, false}) {
-          std::unique_ptr<arena::TestCase> tester(
-              new BilinearInterpComputeTester(place,
-                                              "def",
-                                              scale,
-                                              scale,
-                                              out_height,
-                                              out_width,
-                                              align_corners,
-                                              interp_method));
-          arena::Arena arena(std::move(tester), place, 2e-5);
-          arena.TestPrecision();
-        }
+  for (float scale : {2., 1., 0.3}) {
+    for (bool align_corners : {true, false}) {
+      std::unique_ptr<arena::TestCase> tester(new BilinearInterpComputeTester(
+          place, "def", scale, -1, -1, -1, -1, align_corners, interp_method));
+      arena::Arena arena(std::move(tester), place, 5e-5);
+      arena.TestPrecision();
+    }
+  }
+  for (int out_height : {8, 16, 24}) {
+    for (int out_width : {8, 16, 24}) {
+      for (bool align_corners : {true, false}) {
+        std::unique_ptr<arena::TestCase> tester(
+            new BilinearInterpComputeTester(place,
+                                            "def",
+                                            0,
+                                            out_height,
+                                            out_width,
+                                            -1,
+                                            -1,
+                                            align_corners,
+                                            interp_method));
+        arena::Arena arena(std::move(tester), place, 5e-5);
+        arena.TestPrecision();
+      }
+    }
+  }
+  for (int outsize_height : {8, 16, 24}) {
+    for (int outsize_width : {8, 16, 24}) {
+      for (bool align_corners : {true, false}) {
+        std::unique_ptr<arena::TestCase> tester(
+            new BilinearInterpComputeTester(place,
+                                            "def",
+                                            0,
+                                            -1,
+                                            -1,
+                                            outsize_height,
+                                            outsize_width,
+                                            align_corners,
+                                            interp_method));
+        arena::Arena arena(std::move(tester), place, 5e-5);
+        arena.TestPrecision();
       }
     }
   }

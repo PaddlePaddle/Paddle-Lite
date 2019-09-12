@@ -74,9 +74,9 @@ TEST(elementwise_add_x86, run_test) {
   elementwise_add.SetContext(std::move(ctx));
   elementwise_add.Run();
 
-  LOG(INFO) << "output: ";
+  std::vector<float> ref_results = {3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3};
   for (int i = 0; i < out.dims().production(); i++) {
-    LOG(INFO) << out_data[i];
+    EXPECT_NEAR(out_data[i], ref_results[i], 1e-3);
   }
 }
 

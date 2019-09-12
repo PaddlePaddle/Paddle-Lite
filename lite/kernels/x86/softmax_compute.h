@@ -14,12 +14,9 @@
 #pragma once
 
 #include <vector>
+#include "lite/backends/x86/math/softmax.h"
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
-#include "paddle/fluid/framework/eigen.h"
-#include "paddle/fluid/framework/lod_tensor.h"
-#include "paddle/fluid/framework/operator.h"
-#include "paddle/fluid/operators/math/softmax.h"
 namespace paddle {
 namespace lite {
 namespace kernels {
@@ -55,7 +52,7 @@ class SoftmaxCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
 
   void Run() override {
     auto& param = *param_.get_mutable<operators::SoftmaxParam>();
-    // auto& context = context_->As<X86Context>();
+    auto& context = ctx_->As<X86Context>();
     CHECK(param.output);
     CHECK(param.x);
     param.output->mutable_data<T>();
@@ -72,13 +69,8 @@ class SoftmaxCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
     out_2d.ShareDataWith(*param.output);
     out_2d.Resize(lite::DDim(shape));
 
-    paddle::operators::math::SoftmaxFunctor<platform::CPUDeviceContext,
-                                            T,
-                                            true>()(
-        platform::CPUDeviceContext(),
-        axis_dim,
-        &input_2d.raw_tensor(),
-        &out_2d.raw_tensor());
+    lite::x86::math::SoftmaxFunctor<lite::TargetType::kX86, T, true>()(
+        context, axis_dim, &input_2d, &out_2d);
   }
 
   virtual ~SoftmaxCompute() = default;
