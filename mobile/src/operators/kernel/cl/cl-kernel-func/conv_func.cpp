@@ -32,6 +32,135 @@ void WinogradConv3x3<4, 3>(framework::CLHelper *cl_helper,
                            const framework::CLImage *new_scale,
                            const framework::CLImage *new_bias) {}
 
+void ConvAddBnReluPt1x2(framework::CLHelper *cl_helper,
+                        const ConvParam<GPU_CL> &param, bool ifRelu,
+                        const framework::CLImage *biase,
+                        const framework::CLImage *new_scale,
+                        const framework::CLImage *new_bias) {
+  auto kernel = cl_helper->KernelAt(0);
+  auto default_work_size = cl_helper->DefaultWorkSize(*param.Output());
+  default_work_size[1] = (default_work_size[1] + 1) / 2;
+  int c_block = default_work_size[0];
+  int w = default_work_size[1];
+  int nh = default_work_size[2];
+  auto input = param.Input()->GetCLImage();
+  auto filter = param.Filter()->GetCLImage();
+
+  auto output = param.Output()->GetCLImage();
+  int stride = param.Strides()[0];
+  int offset = param.Offset();
+  int input_c = reinterpret_cast<framework::CLImageConverterFolder *>(
+                    param.Input()->Converter())
+                    ->GetCBlock();
+  int dilation = param.Dilations()[0];
+  int input_width = param.Input()->dims()[3];
+  int input_height = param.Input()->dims()[2];
+  int output_width = param.Output()->dims()[3];
+  int output_height = param.Output()->dims()[2];
+  int filter_channel = param.Filter()->dims()[1];
+  int input_channel = param.Input()->dims()[1];
+  //
+  //    DLOG << " c block " << c_block;
+  //    DLOG << " w " << w;
+  //    DLOG << " nh " << nh;
+  //    DLOG << " stride " << stride;
+  //    DLOG << " offset " << offset;
+  //    DLOG << " input_c " << input_c;
+  //    DLOG << " dilation " << dilation;
+  //    DLOG << " input width " << input_width;
+  //    DLOG << " input height " << input_height;
+  //    DLOG << " output width " << output_width;
+  //    DLOG << " output height " << output_height;
+  //    DLOG << " input dim " << param.Input()->dims();
+  //    DLOG << " output dim " << param.Output()->dims();
+  //    DLOG << " filter dim " << param.Filter()->dims();
+
+  cl_int status;
+  int index = 0;
+
+  status = clSetKernelArg(kernel, index++, sizeof(int), &c_block);
+  CL_CHECK_ERRORS(status);
+
+  status = clSetKernelArg(kernel, index++, sizeof(int), &w);
+  CL_CHECK_ERRORS(status);
+
+  status = clSetKernelArg(kernel, index++, sizeof(int), &nh);
+  CL_CHECK_ERRORS(status);
+
+  status = clSetKernelArg(kernel, index++, sizeof(cl_mem), &input);
+  CL_CHECK_ERRORS(status);
+
+  status = clSetKernelArg(kernel, index++, sizeof(cl_mem), &filter);
+  CL_CHECK_ERRORS(status);
+
+  if (biase) {
+    auto bias_mem = biase->GetCLImage();
+    status = clSetKernelArg(kernel, index++, sizeof(cl_mem), &bias_mem);
+    CL_CHECK_ERRORS(status);
+  }
+
+  if (new_scale && new_bias) {
+    auto new_scale_mem = new_scale->GetCLImage();
+    status = clSetKernelArg(kernel, index++, sizeof(cl_mem), &new_scale_mem);
+    CL_CHECK_ERRORS(status);
+
+    auto new_bias_mem = new_bias->GetCLImage();
+    status = clSetKernelArg(kernel, index++, sizeof(cl_mem), &new_bias_mem);
+    CL_CHECK_ERRORS(status);
+  }
+
+  status = clSetKernelArg(kernel, index++, sizeof(cl_mem), &output);
+  CL_CHECK_ERRORS(status);
+
+  status = clSetKernelArg(kernel, index++, sizeof(int), &stride);
+  CL_CHECK_ERRORS(status);
+
+  status = clSetKernelArg(kernel, index++, sizeof(int), &offset);
+  CL_CHECK_ERRORS(status);
+
+  status = clSetKernelArg(kernel, index++, sizeof(int), &input_c);
+  CL_CHECK_ERRORS(status);
+
+  status = clSetKernelArg(kernel, index++, sizeof(int), &dilation);
+  CL_CHECK_ERRORS(status);
+
+  status = clSetKernelArg(kernel, index++, sizeof(int), &input_width);
+  CL_CHECK_ERRORS(status);
+
+  status = clSetKernelArg(kernel, index++, sizeof(int), &input_height);
+  CL_CHECK_ERRORS(status);
+
+  status = clSetKernelArg(kernel, index++, sizeof(int), &output_width);
+  CL_CHECK_ERRORS(status);
+
+  status = clSetKernelArg(kernel, index++, sizeof(int), &output_height);
+  CL_CHECK_ERRORS(status);
+
+  if (param.Filter()->dims()[2] == 3 && param.Filter()->dims()[3] == 3) {
+    if (filter_channel != input_channel) {
+      if (filter_channel != 1) {
+        status = clSetKernelArg(kernel, index++, sizeof(int), &filter_channel);
+        CL_CHECK_ERRORS(status);
+        int has_group = 1;
+        status = clSetKernelArg(kernel, index++, sizeof(int), &has_group);
+        CL_CHECK_ERRORS(status);
+      }
+    } else {
+      status = clSetKernelArg(kernel, index++, sizeof(int), &filter_channel);
+      CL_CHECK_ERRORS(status);
+      int has_group = 0;
+      status = clSetKernelArg(kernel, index++, sizeof(int), &has_group);
+      CL_CHECK_ERRORS(status);
+    }
+  }
+  //  DLOG<<"default_work_size"<<default_work_size[0]<<"
+  //  "<<default_work_size[1]<<" "<<default_work_size[2];
+  status = clEnqueueNDRangeKernel(
+      cl_helper->CLCommandQueue(), kernel, default_work_size.size(), NULL,
+      default_work_size.data(), NULL, 0, NULL, NULL);
+  CL_CHECK_ERRORS(status);
+}
+
 void ConvAddBnRelu(framework::CLHelper *cl_helper,
                    const ConvParam<GPU_CL> &param, bool ifRelu,
                    const framework::CLImage *biase,
