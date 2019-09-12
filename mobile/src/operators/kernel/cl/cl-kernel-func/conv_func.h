@@ -41,6 +41,12 @@ void ConvAddBnRelu(framework::CLHelper *cl_helper,
                    const framework::CLImage *new_scale = nullptr,
                    const framework::CLImage *new_bias = nullptr);
 
+void ConvAddBnReluPt1x2(framework::CLHelper *cl_helper,
+                        const ConvParam<GPU_CL> &param, bool ifRelu = false,
+                        const framework::CLImage *biase = nullptr,
+                        const framework::CLImage *new_scale = nullptr,
+                        const framework::CLImage *new_bias = nullptr);
+
 void DWConvAddBnRelu(framework::CLHelper *cl_helper,
                      const ConvParam<GPU_CL> &param, bool ifRelu = false,
                      const framework::CLImage *biase = nullptr,
@@ -64,6 +70,12 @@ void ConvTransposeAddBnRelu(framework::CLHelper *cl_helper,
                             const framework::CLImage *biase = nullptr,
                             const framework::CLImage *new_scale = nullptr,
                             const framework::CLImage *new_bias = nullptr);
+void ConvTransposeAddBnRelu_b(framework::CLHelper *cl_helper,
+                              const ConvTransposeParam<GPU_CL> &param,
+                              bool ifRelu = false,
+                              const framework::CLImage *biase = nullptr,
+                              const framework::CLImage *new_scale = nullptr,
+                              const framework::CLImage *new_bias = nullptr);
 void ConvTranspose3x3s2AddBnRelu(framework::CLHelper *cl_helper,
                                  const ConvTransposeParam<GPU_CL> &param,
                                  bool ifRelu = false,
