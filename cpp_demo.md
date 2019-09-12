@@ -21,7 +21,7 @@
 
 进入 Paddle-Lite 目录，运行以下命令编译代码（**需加编译选项`--build_extra=ON`确保完整编译**）：
 
-```shell
+{% highlight shell %}
 ./lite/tools/build.sh        \
     --arm_os=android         \
     --arm_abi=armv8          \
@@ -29,17 +29,17 @@
     --android_stl=c++_static \
     --build_extra=ON         \
     full_publish
-```
+{% highlight %}
 
 编译完成后 `./build.lite.android.armv8.gcc/inference_lite_lib.android.armv8/` 文件夹下包含：
 
-```bash
+{% highlight shell %}
 cxx/include/
 cxx/lib/libpaddle_api_full_bundled.a
 cxx/lib/libpaddle_api_light_bundled.a
 demo/cxx/  #其中包括{include  Makefile.def  mobile_light}
 third_party/gflags/
-```
+{% highlight %}
 
 ## 准备执行环境
 
@@ -120,20 +120,20 @@ Output[900]: 0.000586
 
 - 加入头文件引用
 
-```cpp
+{% highlight cpp %}
   #include <iostream>
   #include <vector>        
   #include "paddle_api.h"          
   #include "paddle_use_kernels.h"  
   #include "paddle_use_ops.h"      
   #include "paddle_use_passes.h"   
-```
+{% highlight %}
 
 - 通过MobileConfig设置：模型文件位置（model_dir）、线程数（thread）和能耗模式( power mode )。输入数据（input），从 MobileConfig 创建 PaddlePredictor 并执行预测。  （注：Lite还支持从memory直接加载模型，可以通过MobileConfig::set_model_buffer方法实现）
 
 代码示例：
 
-```cpp
+{% highlight cpp %}
 // 1. Create MobileConfig
 MobileConfig config;
 
@@ -176,7 +176,7 @@ predictor->Run();
 
 // 7. Get output
 std::unique_ptr<const Tensor> output_tensor(std::move(predictor->GetOutput(0)));
-```
+{% highlight %}
 
 ## CxxConfig案例: OCR_model的运行
 
@@ -185,7 +185,8 @@ std::unique_ptr<const Tensor> output_tensor(std::move(predictor->GetOutput(0)));
    - 也可以从[Paddle/model项目](https://github.com/PaddlePaddle/models/tree/develop/PaddleCV/ocr_recognition)中训练出模型
 2. 示例代码：
 
-```c++
+
+{% highlight cpp %}
 #include "paddle_api.h"         // NOLINT
 #include "paddle_use_kernels.h" // NOLINT
 #include "paddle_use_ops.h"     // NOLINT
@@ -264,18 +265,18 @@ int main(int argc, char **argv) {
   RunModel();
   return 0;
 }
-```
+{% highlight %}
 
 3. 运行方法：
    参考以上代码编译出可执行文件`OCR_DEMO`，模型文件夹为`ocr_attention`。手机以USB调试、文件传输模式连接电脑
    在终端中输入以下命令执行OCR model测试：
 
-```
+{% highlight shell %}
 #OCR_DEMO为编译出的可执行文件名称，ocr_attention为ocr_attention模型的文件夹名称
 adb push OCR_DEMO data/local/tmp
 adb push ocr_attention data/local/tmp
 adb shell 'cd data/local/tmp && ./OCR_DEMO --model_dir=./OCR_DEMO'
-```
+{% highlight %}
 
 4. 运行结果
 
