@@ -121,7 +121,7 @@ bool Squeeze2Op::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   auto xshape_var = scope->FindVar(opdesc.Output("XShape").front());
   CHECK(xshape_var);
   param_.XShape = xshape_var->GetMutable<lite::Tensor>();
-  CHECK(param_.XShape) << "Output(XShape) of ReshapeOp should not be null.";
+  CHECK(param_.XShape) << "Output(XShape) of SqueezeOp should not be null.";
   return true;
 }
 
