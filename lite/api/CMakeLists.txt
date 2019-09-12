@@ -276,4 +276,4 @@ endif()
 #lite_cc_binary(cxx_api_bin SRCS cxx_api_bin.cc
     #X86_DEPS operator
     #DEPS light_api model_parser target_wrapper_host mir_passes
-    #ARM_DEPS ${arm_kernels}) NPU_DEPS ${npu_kernels}
+    #ARM_DEPS ${arm_kernels}) NPU_DEPS ${npu_kernels})
