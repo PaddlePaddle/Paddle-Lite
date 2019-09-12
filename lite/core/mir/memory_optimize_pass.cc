@@ -39,6 +39,7 @@ void MemoryOptimizePass::CollectLifeCycleByDevice(
   auto is_host = [](TargetType x) -> bool {
     return x == TARGET(kHost) || x == TARGET(kX86) || x == TARGET(kARM);
   };
+  // The vars which inputs or outputs are invalid op will not be reused.
   auto valid_var = [&](Node* node) -> bool {
     std::set<std::string> invalid_op = {"while",
                                         "conditional_block",
@@ -75,6 +76,7 @@ void MemoryOptimizePass::CollectLifeCycleByDevice(
       std::vector<Node*> requires(inputs.begin(), inputs.end());
       requires.insert(requires.end(), outputs.begin(), outputs.end());
       auto& stmt = op_node->AsStmt();
+      // The feed and fetch op's inputs and outputs will not be reused.
       if (stmt.op_info()->Type() == "feed" ||
           stmt.op_info()->Type() == "fetch") {
         for (auto* node : op_node->outlinks) {
@@ -138,6 +140,7 @@ void MemoryOptimizePass::MakeReusePlan(
   }
 
   // Generating Memory Reuse Strategy Based on Greedy Way
+  // The vars can be reused if there is no overlap between them.
   for (size_t i = 0; i < mem_nodes.size(); i++) {
     if (mem_nodes[i].cluster >= 0) continue;
     int cluster_index = cluster.size();
@@ -169,6 +172,7 @@ void MemoryOptimizePass::PerformReusePlan(
     auto& stmt = op_node->AsStmt();
     auto* op_info = stmt.mutable_op_info();
     std::unordered_map<std::string, std::vector<std::string>> in_args, out_args;
+    // replace the op's input according the reuse table.
     for (auto argument : op_info->inputs()) {
       for (const auto& x : argument.second) {
         auto name = x;
@@ -190,6 +194,7 @@ void MemoryOptimizePass::PerformReusePlan(
       }
     }
 
+    // replace the op's output according the reuse table.
     for (auto argument : op_info->outputs()) {
       for (const auto& x : argument.second) {
         auto name = x;
@@ -232,7 +237,16 @@ void MemoryOptimizePass::PerformReusePlan(
 }
 
 void MemoryOptimizePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
-  // create an graph with node.
+  // Memory optimization.
+  // We will perform the following operation:
+  // 1. Collect all var's lifetime, then classify them according to the device.
+  // Only the vars on the same device can be reused.
+  // 2. Make reuse plan: the vars can be reused if there is no overlap between
+  // them.
+  // The final plan is a mapping table in which the key represents the original
+  // name of var and the value in the table represents the current name of var.
+  // 3. Perform reuse plan: Replace all var's name in the model according to the
+  // mapping table.
   std::unordered_map<std::string, lifecycle_map_t> lifecycles;
   CollectLifeCycleByDevice(&lifecycles, graph.get());
   for (auto& ele : lifecycles) {
@@ -246,4 +260,5 @@ void MemoryOptimizePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_MIR_PASS(memory_optimize_pass, paddle::lite::mir::MemoryOptimizePass);
+REGISTER_MIR_PASS(memory_optimize_pass, paddle::lite::mir::MemoryOptimizePass)
+    .SetTargets({TARGET(kARM)});

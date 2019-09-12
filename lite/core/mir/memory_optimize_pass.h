@@ -40,6 +40,8 @@ class MemoryOptimizePass : public ProgramPass {
   using lifecycle_t = std::pair<int, int>;
   using lifecycle_map_t = std::unordered_map<std::string, lifecycle_t>;
   void Apply(const std::unique_ptr<SSAGraph>& graph) override;
+
+ private:
   void CollectLifeCycleByDevice(
       std::unordered_map<std::string, lifecycle_map_t>* lifecycles, SSAGraph*);
   void MakeReusePlan(
