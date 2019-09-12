@@ -28,21 +28,6 @@
 namespace paddle {
 namespace lite {
 
-/// If a variable's name has a certain suffix, it means that the
-/// variable is the gradient of another varibale.
-/// e.g. Variable "x@GRAD" is the gradient of varibale "x".
-constexpr char kGradVarSuffix[] = "@GRAD";
-
-constexpr size_t kGradVarSuffixSize = 5U;
-
-inline std::string GradVarName(const std::string &var_name) {
-  std::string result;
-  result.reserve(var_name.size() + kGradVarSuffixSize);
-  result += var_name;
-  result += kGradVarSuffix;
-  return result;
-}
-
 // For registry factory.
 struct Registry {
   void Touch() {}

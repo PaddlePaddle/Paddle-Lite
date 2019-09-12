@@ -115,7 +115,7 @@ class GRUCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
                                        1 /*height of C*/,
                                        frame_size * 2 /*width of weight*/,
                                        frame_size /*height of height*/);
-      CHECK_OR_RETURN(packed_gate);
+      CHECK(packed_gate);
       blas.GEMM_PACK(CblasBMatrix,
                      CblasNoTrans,
                      1 /*cur bs?*/,
@@ -129,7 +129,7 @@ class GRUCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
                                         1 /*height of C*/,
                                         frame_size /*width of weight*/,
                                         frame_size /*height of height*/);
-      CHECK_OR_RETURN(packed_state);
+      CHECK(packed_state);
       blas.GEMM_PACK(CblasBMatrix,
                      CblasNoTrans,
                      1 /*cur bs?*/,

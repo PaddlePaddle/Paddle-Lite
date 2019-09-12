@@ -25,20 +25,6 @@ REGISTER_LITE_KERNEL(square,
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(square_grad,
-                     kX86,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::x86::SquareGradCompute<float>,
-                     def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
-    .BindInput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
-    .BindInput(paddle::lite::GradVarName("Out"),
-               {LiteType::GetTensorTy(TARGET(kX86))})
-    .BindOutput(paddle::lite::GradVarName("X"),
-                {LiteType::GetTensorTy(TARGET(kX86))})
-    .Finalize();
-
 // float
 REGISTER_LITE_KERNEL(relu,
                      kX86,

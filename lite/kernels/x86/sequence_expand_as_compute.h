@@ -65,8 +65,8 @@ class SequenceExpandAsCompute
     auto *out = param.out;
 
     auto &y_lod = y->lod();
-    CHECK_EQ_OR_RETURN(y_lod.size(), 1)
-    CHECK_GT_OR_RETURN(y_lod[0].size(), 1)
+    CHECK_EQ(y_lod.size(), 1);
+    CHECK_GT(y_lod[0].size(), 1);
 
     out->mutable_data<T, T>();
 

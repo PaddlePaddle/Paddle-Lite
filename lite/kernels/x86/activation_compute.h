@@ -66,24 +66,6 @@ bool Activate(const lite::Tensor* X, lite::Tensor* Out) {
   Functor()(place, x, out);
 }
 
-template <typename Functor>
-bool ActivateGrad(const lite::Tensor* X,
-                  const lite::Tensor* Out,
-                  const lite::Tensor* Out_grad,
-                  lite::Tensor* X_grad) {
-  using T = typename Functor::ELEMENT_TYPE;
-  auto place = lite::fluid::EigenDeviceType<TARGET(kX86)>();
-  CHECK_OR_FALSE(X)
-  CHECK_OR_FALSE(Out)
-  CHECK_OR_FALSE(Out_grad)
-  CHECK_OR_FALSE(X_grad)
-  auto x = lite::fluid::EigenVector<T>::Flatten(*X);
-  auto out = lite::fluid::EigenVector<T>::Flatten(*Out);
-  auto x_grad = lite::fluid::EigenVector<T>::Flatten(*X_grad);
-  auto out_grad = lite::fluid::EigenVector<T>::Flatten(*Out_grad);
-  Functor()(place, x, out, out_grad, x_grad);
-}
-
 // square(x) = x^2
 template <typename T>
 struct SquareFunctor : public BaseActivationFunctor<T> {
@@ -91,20 +73,6 @@ struct SquareFunctor : public BaseActivationFunctor<T> {
   void operator()(Device d, X x, Out out) const {
     out.device(d) = x.square();
   }
-};
-
-template <typename T>
-struct SquareGradFunctor : public BaseActivationFunctor<T> {
-  template <typename Device,
-            typename X,
-            typename Out,
-            typename dOut,
-            typename dX>
-  void operator()(Device d, X x, Out out, dOut dout, dX dx) const {
-    dx.device(d) = dout * static_cast<T>(2) * x;
-  }
-
-  static constexpr ActBwdOpFwdDeps FwdDeps() { return kDepX; }
 };
 
 template <typename T>
@@ -120,22 +88,6 @@ class SquareCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
   }
 
   virtual ~SquareCompute() = default;
-};
-
-template <typename T>
-class SquareGradCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
- public:
-  using param_t = operators::ActivationGradParam;
-
-  void Run() override {
-    auto& param = *param_.get_mutable<operators::ActivationGradParam>();
-    param.X_grad->template mutable_data<T>();
-
-    ActivateGrad<SquareGradFunctor<T>>(
-        param.X, param.Out, param.Out_grad, param.X_grad);
-  }
-
-  virtual ~SquareGradCompute() = default;
 };
 
 // relu(x) = max(x, 0)

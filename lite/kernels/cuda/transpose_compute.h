@@ -13,9 +13,26 @@
 // limitations under the License.
 
 #pragma once
-#if defined(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK) || \
-    defined(LITE_ON_MODEL_OPTIMIZE_TOOL)
-#include "lite/utils/logging.h"
-#else  // LITE_WITH_LIGHT_WEIGHT_FRAMEWORK
-#include <glog/logging.h>
-#endif  // LITE_WITH_LIGHT_WEIGHT_FRAMEWORK
+#include "lite/backends/cuda/math/transpose.h"
+#include "lite/core/kernel.h"
+
+namespace paddle {
+namespace lite {
+namespace kernels {
+namespace cuda {
+
+class TransposeCompute : public KernelLite<TARGET(kCUDA), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::TransposeParam;
+
+  void Run() override;
+  virtual ~TransposeCompute() = default;
+
+ private:
+  lite::Tensor axes_, dims_;
+};
+
+}  // namespace cuda
+}  // namespace kernels
+}  // namespace lite
+}  // namespace paddle
