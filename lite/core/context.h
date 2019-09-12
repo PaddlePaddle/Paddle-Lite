@@ -356,7 +356,10 @@ class ContextScheduler {
         break;
 #endif
       default:
+#ifndef LITE_ON_MODEL_OPTIMIZE_TOOL
         LOG(FATAL) << "unsupported target " << TargetToStr(target);
+#endif
+        break;
     }
     return ctx;
   }
