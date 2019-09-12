@@ -1,12 +1,13 @@
 <!--ts-->
-* [C++ Demo](#c-demo)
-  * [编译](#编译-1)
-  * [准备执行环境](#准备执行环境)
-     * [使用安卓手机](#使用安卓手机)
-     * [使用安卓模拟器](#使用安卓模拟器)
-  * [下载模型并运行示例](#下载模型并运行示例)
-  * [Demo 程序运行结果](#demo-程序运行结果)
-  * [如何在代码中使用 API](#如何在代码中使用-api)
+
+- [C++ Demo](#c-demo)
+  - [编译](#编译-1)
+  - [准备执行环境](#准备执行环境)
+    - [使用安卓手机](#使用安卓手机)
+    - [使用安卓模拟器](#使用安卓模拟器)
+  - [下载模型并运行示例](#下载模型并运行示例)
+  - [Demo 程序运行结果](#demo-程序运行结果)
+  - [如何在代码中使用 API](#如何在代码中使用-api)
 
 <!-- Added by: yanchunwei, at: Mon Aug 26 22:23:07 CST 2019 -->
 
@@ -84,6 +85,7 @@ adb -s emulator-5554 push mobilenetv1_full_api /data/local/tmp/
 adb -s emulator-5554 shell chmod +x /data/local/tmp/mobilenetv1_full_api
 adb -s emulator-5554 shell "/data/local/tmp/mobilenetv1_full_api --model_dir=/data/local/tmp/mobilenet_v1 --optimized_model_dir=/data/local/tmp/mobilenet_v1.opt"
 ```
+
 注：我们也提供了轻量级 API 的 demo，可以执行以下代码运行轻量级 API 示例。
 
 ```bash
@@ -93,7 +95,9 @@ adb -s emulator-5554 push mobilenetv1_light_api /data/local/tmp/
 adb -s emulator-5554 shell chmod +x /data/local/tmp/mobilenetv1_light_api
 adb -s emulator-5554 shell "/data/local/tmp/mobilenetv1_light_api --model_dir=/data/local/tmp/mobilenet_v1.opt --threads=1 "
 ```
+
 ## Demo 程序运行结果
+
 Demo 运行成功后 ，将在控制台输出预测结果的前10个类别的预测概率：
 
 ```bash
@@ -128,76 +132,76 @@ Output[900]: 0.000586
 - 通过MobileConfig设置：模型文件位置（model_dir）、线程数（thread）和能耗模式( power mode )。输入数据（input），从 MobileConfig 创建 PaddlePredictor 并执行预测。  （注：Lite还支持从memory直接加载模型，可以通过MobileConfig::set_model_buffer方法实现）
 
 代码示例：
+
 ```cpp
-  // 1. Create MobileConfig
-  MobileConfig config;
+// 1. Create MobileConfig
+MobileConfig config;
 
-  // 2. Load model
-  config.set_model_dir("path to your model directory");    //model dir
-    /*load model: Lite supports loading model from file or from memory (naive buffer from optimized model)
-    //Method One: Load model from memory:
-    void set_model_buffer(const char* model_buffer,
-                        size_t model_buffer_size,
-                        const char* param_buffer,
-                        size_t param_buffer_size)
-    //Method Two: Load model from file:
-    void set_model_dir(const std::string& model_dir)  */
+// 2. Load model
+config.set_model_dir("path to your model directory"); // model dir
+//load model: Lite supports loading model from file or from memory (naive buffer from optimized model)
+//Method One: Load model from memory:
+void set_model_buffer(const char* model_buffer,
+                    size_t model_buffer_size,
+                    const char* param_buffer,
+                    size_t param_buffer_size)
+//Method Two: Load model from file:
+void set_model_dir(const std::string& model_dir)  */
 
-  // 3. Set MobileConfig (or you can skip this step to use default value):
-  config.set_power_mode(LITE_POWER_HIGH);   //power mode
-    /*power modes: Lite supports the following power modes
-        LITE_POWER_HIGH
-        LITE_POWER_LOW 
- 	LITE_POWER_FULL
-  	LITE_POWER_NO_BIND
-  	LITE_POWER_RAND_HIGH
-  	LITE_POWER_RAND_LOW */
-  config.set_threads("num of threads");        //threads
+// 3. Set MobileConfig (or you can skip this step to use default value):
+config.set_power_mode(LITE_POWER_HIGH); // power mode
+/*power modes: Lite supports the following power modes
+    LITE_POWER_HIGH
+    LITE_POWER_LOW
+    LITE_POWER_FULL
+    LITE_POWER_NO_BIND
+    LITE_POWER_RAND_HIGH
+    LITE_POWER_RAND_LOW */
+config.set_threads("num of threads"); // threads
 
-  // 4. Create PaddlePredictor by MobileConfig
-  std::shared_ptr<PaddlePredictor> predictor =
-  CreatePaddlePredictor<MobileConfig>(config);
+// 4. Create PaddlePredictor by MobileConfig
+std::shared_ptr<PaddlePredictor> predictor =
+    CreatePaddlePredictor<MobileConfig>(config);
 
-  // 5. Prepare input data
-  std::unique_ptr<Tensor> input_tensor(std::move(predictor->GetInput(0)));
-  input_tensor->Resize({1, 3, 224, 224});
-  auto* data = input_tensor->mutable_data<float>();
-  for (int i = 0; i < ShapeProduction(input_tensor->shape()); ++i) {
-    data[i] = 1;
-  }
+// 5. Prepare input data
+std::unique_ptr<Tensor> input_tensor(std::move(predictor->GetInput(0)));
+input_tensor->Resize({1, 3, 224, 224});
+auto *data = input_tensor -> mutable_data<float>();
+for (int i = 0; i < ShapeProduction(input_tensor->shape()); ++i) {
+  data[i] = 1;
+}
 
-  // 6. Run predictor
-  predictor->Run();
+// 6. Run predictor
+predictor->Run();
 
-  // 7. Get output
-  std::unique_ptr<const Tensor> output_tensor(
-  std::move(predictor->GetOutput(0)));
+// 7. Get output
+std::unique_ptr<const Tensor> output_tensor(std::move(predictor->GetOutput(0)));
 ```
 
 ## CxxConfig案例: OCR_model的运行
 
 1. OCR 模型文件：
-  - 我们提供Pb格式的[ocr_attention_mode](https://paddle-inference-dist.cdn.bcebos.com/ocr_attention.tar.gz)l下载
-  - 也可以从[Paddle/model项目](https://github.com/PaddlePaddle/models/tree/develop/PaddleCV/ocr_recognition)中训练出模型
-
+   - 我们提供Pb格式的[ocr_attention_mode](https://paddle-inference-dist.cdn.bcebos.com/ocr_attention.tar.gz)l下载
+   - 也可以从[Paddle/model项目](https://github.com/PaddlePaddle/models/tree/develop/PaddleCV/ocr_recognition)中训练出模型
 2. 示例代码：
 
 ```c++
+#include "paddle_api.h"         // NOLINT
+#include "paddle_use_kernels.h" // NOLINT
+#include "paddle_use_ops.h"     // NOLINT
+#include "paddle_use_passes.h"  // NOLINT
 #include <gflags/gflags.h>
 #include <stdio.h>
 #include <vector>
-#include "paddle_api.h"          // NOLINT
-#include "paddle_use_kernels.h"  // NOLINT
-#include "paddle_use_ops.h"      // NOLINT
-#include "paddle_use_passes.h"   // NOLINT
-using namespace paddle::lite_api;  // NOLINT
+using namespace paddle::lite_api; // NOLINT
 
 DEFINE_string(model_dir, "", "Model dir path.");
 DEFINE_bool(prefer_int8_kernel, false, "Prefer to run model with int8 kernels");
 
-int64_t ShapeProduction(const shape_t& shape) {
+int64_t ShapeProduction(const shape_t &shape) {
   int64_t res = 1;
-  for (auto i : shape) res *= i;
+  for (auto i : shape)
+    res *= i;
   return res;
 }
 
@@ -205,7 +209,8 @@ void RunModel() {
   // 1. Set CxxConfig
   CxxConfig config;
   config.set_model_dir(FLAGS_model_dir);
-  std::vector<Place> valid_places{Place{TARGET(kARM), PRECISION(kFloat)},Place{TARGET(kHost), PRECISION(kFloat)}};
+  std::vector<Place> valid_places{Place{TARGET(kARM), PRECISION(kFloat)},
+                                  Place{TARGET(kHost), PRECISION(kFloat)}};
   config.set_preferred_place(Place{TARGET(kARM), PRECISION(kFloat)});
   config.set_valid_places(valid_places);
 
@@ -214,45 +219,44 @@ void RunModel() {
       CreatePaddlePredictor<CxxConfig>(config);
 
   // 3. Prepare input data
-  //input 0
+  // input 0
   std::unique_ptr<Tensor> input_tensor(std::move(predictor->GetInput(0)));
-  input_tensor->Resize(shape_t({1,1,48,512}));
-  auto* data = input_tensor->mutable_data<float>();
-  for(int i = 0; i < ShapeProduction(input_tensor->shape()); ++i){
-      data[i] = 1;
+  input_tensor->Resize(shape_t({1, 1, 48, 512}));
+  auto *data = input_tensor->mutable_data<float>();
+  for (int i = 0; i < ShapeProduction(input_tensor->shape()); ++i) {
+    data[i] = 1;
   }
-  //input1
+  // input1
   std::unique_ptr<Tensor> init_ids(std::move(predictor->GetInput(1)));
-  init_ids->Resize(shape_t({1,1}));
-  auto* data_ids = init_ids->mutable_data<float>();
-  for(int i = 0; i < ShapeProduction(init_ids->shape()); ++i){
-      data_ids[i] = 0;
+  init_ids->Resize(shape_t({1, 1}));
+  auto *data_ids = init_ids->mutable_data<float>();
+  for (int i = 0; i < ShapeProduction(init_ids->shape()); ++i) {
+    data_ids[i] = 0;
   }
-  lod_t lod_i{{0,1},{0,1}};
+  lod_t lod_i({{0, 1}, {0, 1}});
   init_ids->SetLoD(lod_i);
-  //input2
+  // input2
   std::unique_ptr<Tensor> init_scores(std::move(predictor->GetInput(2)));
-  init_scores->Resize(shape_t({1,1}));
-  auto* data_scores = init_scores->mutable_data<float>();
-  for(int i = 0; i < ShapeProduction(init_scores->shape()); ++i){
-      data_scores[i] = 0;
+  init_scores->Resize(shape_t({1, 1}));
+  auto *data_scores = init_scores->mutable_data<float>();
+  for (int i = 0; i < ShapeProduction(init_scores->shape()); ++i) {
+    data_scores[i] = 0;
   }
-  lod_t lod_s{{0,1},{0,1}};
+  lod_t lod_s{{0, 1}, {0, 1}};
   init_scores->SetLoD(lod_s);
-
 
   // 4. Run predictor
   predictor->Run();
 
-  // 5. Get output 
+  // 5. Get output
   std::unique_ptr<const Tensor> output_tensor(
       std::move(predictor->GetOutput(0)));
-  for (int i = 0; i < ShapeProduction(output_tensor->shape()); i ++) {
+  for (int i = 0; i < ShapeProduction(output_tensor->shape()); i++) {
     printf("Output[%d]: %f\n", i, output_tensor->data<float>()[i]);
   }
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   google::ParseCommandLineFlags(&argc, &argv, true);
   RunModel();
   return 0;
@@ -260,8 +264,8 @@ int main(int argc, char** argv) {
 ```
 
 3. 运行方法：
-参考以上代码编译出可执行文件`OCR_DEMO`，模型文件夹为`ocr_attention`。手机以USB调试、文件传输模式连接电脑
-在终端中输入以下命令执行OCR model测试：
+   参考以上代码编译出可执行文件`OCR_DEMO`，模型文件夹为`ocr_attention`。手机以USB调试、文件传输模式连接电脑
+   在终端中输入以下命令执行OCR model测试：
 
 ```
 #OCR_DEMO为编译出的可执行文件名称，ocr_attention为ocr_attention模型的文件夹名称
