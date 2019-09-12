@@ -193,9 +193,9 @@ class Optimizer {
           matched = true;
         }
       }
-      matched |= PassMatchesKernels(*pass);
+      matched = matched || PassMatchesKernels(*pass);
       if (!matched) {
-        LOG(WARNING) << x << " didn't run because it is unsupported.";
+        LOG(INFO) << "Skip " << x << " pass because the target does not match.";
       } else {
         pass->Apply(graph_);
         LOG(INFO) << "== Finished running: " << x;

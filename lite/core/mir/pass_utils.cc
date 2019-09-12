@@ -21,14 +21,13 @@ namespace paddle {
 namespace lite {
 
 bool PassMatchesTarget(const mir::Pass& pass, TargetType target) {
-  const std::set<TargetType>& targets = pass.targets();
+  const auto& targets = pass.Targets();
   if (targets.find(TARGET(kAny)) != targets.end()) return true;
   return (targets.find(target) != targets.end());
 }
 
 bool PassMatchesKernels(const mir::Pass& pass) {
-  const std::unordered_map<std::string, std::set<lite_api::Place>>& kernels =
-      pass.kernels();
+  const auto& kernels = pass.GetBondedKernels();
   for (const auto& kernel : kernels) {
     for (const auto& place : kernel.second) {
       if (KernelRegistry::Global()

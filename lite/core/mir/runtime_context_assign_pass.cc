@@ -39,4 +39,4 @@ class RuntimeContextAssignPass : public StmtPass {
 
 REGISTER_MIR_PASS(runtime_context_assign_pass,
                   paddle::lite::mir::RuntimeContextAssignPass)
-    .SetTargets({TARGET(kAny)});
+    .BindTargets({TARGET(kAny)});

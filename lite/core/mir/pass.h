@@ -47,23 +47,35 @@ class Pass {
   void set_doc(const std::string& doc) { doc_ = doc; }
   const std::string& doc() const { return doc_; }
 
-  void set_targets(const std::set<TargetType>& targets) { targets_ = targets; }
-  const std::set<TargetType>& targets() const { return targets_; }
+  // Some passes only apply to qualified targets, which need to be explicitly
+  // declared.
+  // Bind the target. At runtime, there must be one device in the bound targets.
+  void BindTargets(const std::set<TargetType>& targets) {
+    bonded_targets_ = targets;
+  }
+  // Get all bound targets.
+  const std::set<TargetType>& Targets() const { return bonded_targets_; }
 
-  void set_kernels(
+  // Some passes are only available on qualified kernels and need to be
+  // explicitly declared.
+  // Bind kernels. All kernels bound at runtime must be registered.
+  void BindKernels(
       const std::unordered_map<std::string, std::set<lite_api::Place>>&
           kernels) {
-    kernels_ = kernels;
+    bonded_kernels_ = kernels;
   }
-  const std::unordered_map<std::string, std::set<lite_api::Place>>& kernels()
-      const {
-    return kernels_;
+  // Get all bonded kernels.
+  const std::unordered_map<std::string, std::set<lite_api::Place>>&
+  GetBondedKernels() const {
+    return bonded_kernels_;
   }
-  void add_kernel(const std::string& name, const lite_api::Place& place) {
-    if (!kernels_.count(name)) {
-      kernels_.insert({name, {place}});
+  // Add one kernel to the bonded kernels.
+  void BindKernel(const std::string& kernel_name,
+                  const lite_api::Place& place) {
+    if (!bonded_kernels_.count(kernel_name)) {
+      bonded_kernels_.insert({kernel_name, {place}});
     } else {
-      kernels_.at(name).insert(place);
+      bonded_kernels_.at(kernel_name).insert(place);
     }
   }
 
@@ -78,8 +90,8 @@ class Pass {
   const Kind kind_;
   std::string name_;
   std::string doc_;
-  std::set<TargetType> targets_;
-  std::unordered_map<std::string, std::set<lite_api::Place>> kernels_;
+  std::set<TargetType> bonded_targets_;
+  std::unordered_map<std::string, std::set<lite_api::Place>> bonded_kernels_;
 };
 
 // Different kinds.

@@ -30,13 +30,13 @@ class PassRegistry {
       : name_(name), pass_(pass) {
     PassManager::Global().AddNewPass(name_, pass_);
   }
-  PassRegistry& SetTargets(const std::set<TargetType>& targets) {
-    pass_->set_targets(targets);
+  PassRegistry& BindTargets(const std::set<TargetType>& targets) {
+    pass_->BindTargets(targets);
     return *this;
   }
-  PassRegistry& AddKernel(const std::string& name,
-                          const lite_api::Place& place) {
-    pass_->add_kernel(name, place);
+  PassRegistry& BindKernel(const std::string& name,
+                           const lite_api::Place& place) {
+    pass_->BindKernel(name, place);
     return *this;
   }
   bool Touch() const { return true; }
