@@ -4,6 +4,39 @@ else()
   lite_cc_library(place SRCS paddle_place.cc DEPS glog)
 endif(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
 
+if (LITE_ON_TINY_PUBLISH)
+    set(CMAKE_CXX_FLAGS_RELEASE "-Os -DNDEBUG")
+    set(CMAKE_C_FLAGS_RELEASE "-Os -DNDEBUG")
+    set(lib_DEPS light_api paddle_api paddle_api_light)
+else()
+    message(WARNING "full publish_hzq")
+    set(lib_DEPS light_api cxx_api paddle_api_full paddle_api paddle_api_light)
+endif()
+
+if (NOT LITE_ON_TINY_PUBLISH)
+    lite_cc_library(paddle_cxx_api_shared MODULE
+    SRCS paddle_api_shared.cc
+    DEPS ${lib_DEPS}
+    ARM_DEPS ${arm_kernels} NPU_DEPS ${npu_kernels})
+    # Unlike static library, module library has to link target to be able to work
+    # as a single .so lib.
+    target_link_libraries(paddle_cxx_api_shared ${lib_DEPS} ${arm_kernels} ${npu_kernels})
+else()
+    add_library(paddle_cxx_api_shared SHARED "")
+    target_sources(paddle_cxx_api_shared PUBLIC paddle_api_shared.cc)
+    add_dependencies(paddle_cxx_api_shared op_list_h kernel_list_h ${lib_DEPS})
+endif()
+
+if (APPLE)
+    # MacOS only accepts lib ends with .jnilib or .dylib
+    set_target_properties(paddle_cxx_api_shared PROPERTIES SUFFIX ".jnilib")
+elseif (WIN32)
+    # Windows only accepts lib ends with .dll
+    set_target_properties(paddle_cxx_api_shared PROPERTIES SUFFIX ".dll")
+endif (APPLE)
+
+
+
 if (WITH_TESTING)
     lite_cc_library(lite_api_test_helper SRCS lite_api_test_helper.cc
       DEPS scope optimizer target_wrapper_host model_parser program
@@ -174,9 +207,16 @@ if (LITE_ON_TINY_PUBLISH)
     lite_cc_library(paddle_api_light SRCS light_api_impl.cc DEPS light_api paddle_api stream)
 else()
     lite_cc_library(paddle_api_light SRCS light_api_impl.cc DEPS light_api paddle_api)
+    lite_cc_library(paddle_api_light_shared MODULE SRCS light_api_impl.cc DEPS light_api paddle_api)
 endif()
 if (NOT LITE_ON_TINY_PUBLISH)
     lite_cc_library(paddle_api_full SRCS cxx_api_impl.cc DEPS cxx_api paddle_api_light
+      ${ops}
+      ARM_DEPS ${arm_kernels}
+      NPU_DEPS ${npu_kernels}
+      CL_DEPS ${opencl_kernels}
+      FPGA_DEPS ${fpga_kernels})
+    lite_cc_library(paddle_api_full_shared MODULE SRCS cxx_api_impl.cc DEPS cxx_api paddle_api_light
       ${ops}
       ARM_DEPS ${arm_kernels}
       NPU_DEPS ${npu_kernels}
@@ -236,4 +276,40 @@ endif()
 #lite_cc_binary(cxx_api_bin SRCS cxx_api_bin.cc
     #X86_DEPS operator
     #DEPS light_api model_parser target_wrapper_host mir_passes
-    #ARM_DEPS ${arm_kernels}) NPU_DEPS ${npu_kernels})
+    #ARM_DEPS ${arm_kernels}) NPU_DEPS ${npu_kernels}
+
+#######added for shared C++ library file
+#tiny_publish
+#if (LITE_ON_TINY_PUBLISH)
+#    message(WARNING "Tiny_publish_hzq")
+#    set(CMAKE_CXX_FLAGS_RELEASE "-Os -DNDEBUG")
+#    set(CMAKE_C_FLAGS_RELEASE "-Os -DNDEBUG")
+#    set(lib_DEPS light_api paddle_api paddle_api_light)
+#else()
+#    message(WARNING "full publish_hzq")
+#    set(lib_DEPS light_api cxx_api paddle_api_full paddle_api paddle_api_light)
+#endif()
+
+#if (NOT LITE_ON_TINY_PUBLISH)
+#    message(WARNING "full publish so hzq")
+#lite_cc_library(paddle_cxx_api_shared MODULE
+#    SRCS paddle_api_shared.cc
+#    DEPS ${lib_DEPS}
+#    ARM_DEPS ${arm_kernels} NPU_DEPS ${npu_kernels})
+    # Unlike static library, module library has to link target to be able to work
+    # as a single .so lib.
+#target_link_libraries(paddle_cxx_api_shared ${lib_DEPS} ${arm_kernels} ${npu_kernels})
+#else()
+#    message(WARNING "tiny publish so hzq")
+#    add_library(paddle_cxx_api_shared SHARED "")
+#    target_sources(paddle_cxx_api_shared PUBLIC paddle_api_shared.cc)
+#    add_dependencies(paddle_cxx_api_shared op_list_h kernel_list_h)
+#endif()
+
+#if (APPLE)
+    # MacOS only accepts JNI lib ends with .jnilib or .dylib
+#    set_target_properties(paddle_cxx_api_shared PROPERTIES SUFFIX ".jnilib")
+#elseif (WIN32)
+    # Windows only accepts JNI lib ends with .dll
+ #   set_target_properties(paddle_cxx_api_shared PROPERTIES SUFFIX ".dll")
+#endif (APPLE)

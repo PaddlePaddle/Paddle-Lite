@@ -69,6 +69,9 @@ if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM)
                 COMMAND cp "${CMAKE_SOURCE_DIR}/lite/api/paddle_*.h" "${INFER_LITE_PUBLISH_ROOT}/cxx/include"
                 COMMAND cp "${CMAKE_BINARY_DIR}/libpaddle_api_full_bundled.a" "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
                 COMMAND cp "${CMAKE_BINARY_DIR}/libpaddle_api_light_bundled.a" "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
+                COMMAND cp "${CMAKE_BINARY_DIR}/lite/api/libpaddle_cxx_api_shared.so" "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
+                COMMAND cp "${CMAKE_BINARY_DIR}/lite/api/libpaddle_api_light_shared.so" "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
+                COMMAND cp "${CMAKE_BINARY_DIR}/lite/api/libpaddle_api_full_shared.so" "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
                 #COMMAND cp "${CMAKE_BINARY_DIR}/lite/api/model_optimize_tool" "${INFER_LITE_PUBLISH_ROOT}/bin"
                 COMMAND cp "${CMAKE_BINARY_DIR}/lite/gen_code/paddle_code_generator" "${INFER_LITE_PUBLISH_ROOT}/bin"
                 COMMAND cp "${CMAKE_BINARY_DIR}/lite/api/test_model_bin" "${INFER_LITE_PUBLISH_ROOT}/bin"
@@ -79,6 +82,9 @@ if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM)
                 add_dependencies(publish_inference_cxx_lib bundle_full_api)
                 add_dependencies(publish_inference_cxx_lib bundle_light_api)
                 add_dependencies(publish_inference_cxx_lib test_model_bin)
+                add_dependencies(publish_inference_cxx_lib paddle_api_full_shared)
+                add_dependencies(publish_inference_cxx_lib paddle_api_light_shared)
+                add_dependencies(publish_inference_cxx_lib paddle_cxx_api_shared)
                 add_dependencies(publish_inference publish_inference_cxx_lib)
                 add_custom_command(TARGET publish_inference_cxx_lib POST_BUILD
                         COMMAND ${CMAKE_STRIP} "--strip-debug" ${INFER_LITE_PUBLISH_ROOT}/cxx/lib/*.a)
@@ -93,6 +99,16 @@ if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM)
                     )
             add_dependencies(tiny_publish_lib bundle_light_api)
             add_dependencies(publish_inference tiny_publish_lib)
+        else()
+            add_custom_target(tiny_publish_cxx_lib ${TARGET}
+                    COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/cxx"
+                    COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/cxx/include"
+                    COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
+                    COMMAND cp "${CMAKE_SOURCE_DIR}/lite/api/paddle_*.h" "${INFER_LITE_PUBLISH_ROOT}/cxx/include"
+                    COMMAND cp "${CMAKE_BINARY_DIR}/lite/api/libpaddle_cxx_api_shared.so" "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
+                    )
+            add_dependencies(tiny_publish_cxx_lib paddle_cxx_api_shared)
+            add_dependencies(publish_inference tiny_publish_cxx_lib)  
         endif()
     endif()
 
