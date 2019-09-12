@@ -218,7 +218,7 @@ bool test_sgemm(bool tra,
   return true;
 }
 
-TEST(TestLite, test_func_sgemm_prepacked) {
+TEST_ENGINE(TestLite, test_func_sgemm_prepacked) {
   if (g_basic_test) {
     LOG(INFO) << "run basic sgemm test";
     for (auto& m : {1, 3, 8, 32, 397}) {
@@ -288,7 +288,7 @@ TEST(TestLite, test_func_sgemm_prepacked) {
   }
 }
 
-TEST(TestLite, test_func_sgemm_prepacked_custom) {
+TEST_ENGINE(TestLite, test_func_sgemm_prepacked_custom) {
   int lda = g_K + g_offset_a;
   if (g_traA) {
     lda = g_M + g_offset_a;

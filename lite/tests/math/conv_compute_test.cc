@@ -265,7 +265,7 @@ void test_conv_fp32(const std::vector<DDim>& input_dims,
 #endif  // LITE_WITH_ARM
 
 #if 1  /// 3x3dw
-TEST(TestLite, test_conv3x3_depthwise) {
+TEST_ENGINE(TestLite, test_conv3x3_depthwise) {
   if (g_basic_test) {
     for (auto& stride : {1, 2}) {
       for (auto& pad : {0, 1}) {
@@ -299,7 +299,7 @@ TEST(TestLite, test_conv3x3_depthwise) {
 #endif  /// 3x3dw
 
 #if 1  /// 5x5dw
-TEST(TestLite, test_conv5x5_depthwise) {
+TEST_ENGINE(TestLite, test_conv5x5_depthwise) {
   if (g_basic_test) {
     for (auto& stride : {1, 2}) {
       for (auto& pad : {0, 1, 2}) {
@@ -333,7 +333,7 @@ TEST(TestLite, test_conv5x5_depthwise) {
 #endif  /// 5x5dw
 
 #if 1  /// conv1x1s1
-TEST(TestLite, test_conv1x1s1) {
+TEST_ENGINE(TestLite, test_conv1x1s1) {
   if (g_basic_test) {
     for (auto& cin : {1, 3, 8, 11, 32}) {
       for (auto& cout : {1, 5, 16, 37}) {
@@ -370,7 +370,7 @@ TEST(TestLite, test_conv1x1s1) {
 #endif  /// conv1x1s1
 
 #if 1  /// conv3x3s1
-TEST(TestLite, test_conv_3x3s1) {
+TEST_ENGINE(TestLite, test_conv_3x3s1) {
   if (g_basic_test) {
     for (auto& cin : {1, 3, 8, 32, 48}) {
       for (auto& cout : {1, 5, 8, 32, 48}) {
@@ -404,7 +404,7 @@ TEST(TestLite, test_conv_3x3s1) {
 #endif  /// conv3x3s1
 
 #if 1  /// conv3x3s2
-TEST(TestLite, test_conv_3x3s2) {
+TEST_ENGINE(TestLite, test_conv_3x3s2) {
   if (g_basic_test) {
     for (auto& cin : {1, 3, 8, 32}) {
       for (auto& cout : {1, 5, 8, 32}) {
@@ -438,7 +438,7 @@ TEST(TestLite, test_conv_3x3s2) {
 #endif  /// conv3x3s2
 
 #if 1  /// random param conv
-TEST(TestLite, test_conv_rand) {
+TEST_ENGINE(TestLite, test_conv_rand) {
   if (g_basic_test) {
     for (auto& cin : {1, 3, 8, 16}) {
       for (auto& cout : {1, 5, 8, 16}) {
@@ -485,7 +485,7 @@ TEST(TestLite, test_conv_rand) {
 #endif  /// random param conv
 
 #if 1  /// custom
-TEST(TestLite, test_conv_fp32_custom_size) {
+TEST_ENGINE(TestLite, test_conv_fp32_custom_size) {
   CHECK_EQ(g_ch_in % g_group, 0) << "input channel must be divided by group";
   CHECK_EQ(g_ch_out % g_group, 0) << "num_output must be divided by group";
   test_conv_fp32({DDim({g_num, g_ch_in, g_h_in, g_w_in})},

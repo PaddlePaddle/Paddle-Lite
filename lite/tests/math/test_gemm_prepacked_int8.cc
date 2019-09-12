@@ -299,7 +299,7 @@ bool test_gemm_int8(bool tra,
   return true;
 }
 
-TEST(TestLite, gemm_prepacked_int8) {
+TEST_ENGINE(TestLite, gemm_prepacked_int8) {
   if (g_basic_test) {
     LOG(INFO) << "run basic sgemm test";
     for (auto& m : {1, 3, 8, 32, 397}) {
@@ -340,7 +340,7 @@ TEST(TestLite, gemm_prepacked_int8) {
   }
 }
 
-TEST(TestLite, gemm_prepacked_int8_custom) {
+TEST_ENGINE(TestLite, gemm_prepacked_int8_custom) {
   auto flag = test_gemm_int8(g_traA,
                              g_traB,
                              g_M,

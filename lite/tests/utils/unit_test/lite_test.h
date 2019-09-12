@@ -20,21 +20,7 @@
 /**
  * \brief declare the Test Function
  */
-/*#define TEST(test_class, test_function)	\
-  class test_class##_##test_function:public test_class{\
-  public:\
-    friend class ::lite::test::EnginResOp;\
-    void test_function();\
-  };\
-  const test_class##_##test_function _##test_class##_##test_function;\
-  {\
-    ::lite::test::EnginResOp::GetInstance(#test_class,#test_function)>>test_class::GetInstance()&
-  \
-    std::bind(&test_class##_##test_function::test_function,&_test_class##_##test_function);\
-  } \
-  void test_class##_##test_function::test_function()
-*/
-#define TEST(test_class, test_function)                               \
+#define TEST_ENGINE(test_class, test_function)                        \
   class test_class##_##test_function : public test_class {            \
    public:                                                            \
     friend class ::lite::test::EnginResOp;                            \

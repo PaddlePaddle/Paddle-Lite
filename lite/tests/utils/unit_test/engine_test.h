@@ -39,15 +39,15 @@ class EnginRes {
   * \brief store the test class  and it's  callback function.
   */
   std::unordered_map<Test*, std::vector<std::function<void(void)>>>
-      _class2func_map;
+      class2func_map_;
   /**
   * \brief store the test class  and it's  callback name.
   */
-  std::unordered_map<std::string, std::vector<std::string>> _class2funcname_map;
+  std::unordered_map<std::string, std::vector<std::string>> class2funcname_map_;
   /**
   * \brief store the test class  and it's  class name.
   */
-  std::unordered_map<std::string, Test*> _name2class_map;
+  std::unordered_map<std::string, Test*> name2class_map_;
 };
 
 class EnginResOp {
@@ -57,8 +57,8 @@ class EnginResOp {
     _test_class_name = class_name;
     _test_func_name = func_name;
     EnginRes& ngtest_res = EnginRes::get_instance();
-    ngtest_res._class2funcname_map[class_name].push_back(func_name);
-    _func_num = ngtest_res._class2funcname_map[class_name].size();
+    ngtest_res.class2funcname_map_[class_name].push_back(func_name);
+    _func_num = ngtest_res.class2funcname_map_[class_name].size();
   }
 
   /*inline static EnginResOp& GetInstance(const char* className, const char*
@@ -70,14 +70,14 @@ class EnginResOp {
   EnginResOp& operator>>(Test* test_class) {
     EnginRes& ngtest_res = EnginRes::get_instance();
     _test_class = test_class;
-    ngtest_res._class2func_map[test_class].resize(_func_num + 1);
-    ngtest_res._name2class_map[_test_class_name] = test_class;
+    ngtest_res.class2func_map_[test_class].resize(_func_num + 1);
+    ngtest_res.name2class_map_[_test_class_name] = test_class;
     return *this;
   }
 
   EnginResOp& operator&(const std::function<void(void)>& test_func) {
     EnginRes& ngtest_res = EnginRes::get_instance();
-    ngtest_res._class2func_map[_test_class][_func_num - 1] = test_func;
+    ngtest_res.class2func_map_[_test_class][_func_num - 1] = test_func;
     return *this;
   }
 
@@ -118,7 +118,7 @@ class EngineTest {
             reset());
     EnginRes& ngtest_res = EnginRes::get_instance();
     int test_case_num = 0, test_func_num = 0;
-    for (auto& i : ngtest_res._class2funcname_map) {
+    for (auto& i : ngtest_res.class2funcname_map_) {
       ++test_case_num;
       test_func_num += i.second.size();
     }
@@ -144,7 +144,7 @@ class EngineTest {
     if (test_case_num == 0 || test_func_num == 0) {
       return false;
     }
-    for (auto pair : ngtest_res._class2funcname_map) {
+    for (auto pair : ngtest_res.class2funcname_map_) {
       std::string test_class_name = pair.first;
       std::vector<std::string> testFuncNameVec = pair.second;
       fprintf(stderr,
@@ -169,7 +169,7 @@ class EngineTest {
         // invoke the test function
         std::function<void(void)> test_func =
             ngtest_res
-                ._class2func_map[ngtest_res._name2class_map[test_class_name]]
+                .class2func_map_[ngtest_res.name2class_map_[test_class_name]]
                                 [i];
         test_func();
         elapsedT.end();
