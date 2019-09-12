@@ -850,6 +850,15 @@ class BatchNormParam : public OpParam {
     //    is_test_ = GetAttr<bool>("is_test", attrs);
   }
 
+  ~BatchNormParam() {
+    if (new_bias_) {
+      delete new_bias_;
+    }
+    if (new_scale_) {
+      delete new_scale_;
+    }
+  }
+
   const GType *InputX() const { return input_x_; }
 
   GType *OutputY() const { return output_y_; }
@@ -2076,6 +2085,16 @@ class FusionConvAddBNReluParam : public ConvParam<Dtype> {
     momentum_ = OpParam::GetAttr<float>("momentum", attrs);
     this->output_ = OpParam::OutFrom<GType>(outputs, *scope);
   }
+
+  ~FusionConvAddBNReluParam() {
+    if (new_bias_) {
+      delete new_bias_;
+    }
+    if (new_scale_) {
+      delete new_scale_;
+    }
+  }
+
   GType *Bias() const { return bias_; }
 
   const int &Axis() const { return axis_; }
@@ -2142,6 +2161,15 @@ class FusionConvBNAddReluParam : public ConvParam<Dtype> {
       bias_ = OpParam::InputXFrom<GType>(inputs, *scope);
     }
     this->output_ = OpParam::OutFrom<GType>(outputs, *scope);
+  }
+
+  ~FusionConvBNAddReluParam() {
+    if (new_bias_) {
+      delete new_bias_;
+    }
+    if (new_scale_) {
+      delete new_scale_;
+    }
   }
   GType *Bias() const { return bias_; }
 
@@ -2315,6 +2343,15 @@ class FusionDWConvBNReluParam : public ConvParam<Dtype> {
     this->output_ = OpParam::OutFrom<GType>(outputs, *scope);
   }
 
+  ~FusionDWConvBNReluParam() {
+    if (new_bias_) {
+      delete new_bias_;
+    }
+    if (new_scale_) {
+      delete new_scale_;
+    }
+  }
+
   const GType *InputBias() const { return input_bias_; }
 
   const GType *InputMean() const { return input_mean_; }
@@ -2382,6 +2419,15 @@ class FusionConvBNReluParam : public ConvParam<Dtype> {
     epsilon_ = OpParam::GetAttr<float>("epsilon", attrs);
     momentum_ = OpParam::GetAttr<float>("momentum", attrs);
     this->output_ = OpParam::OutFrom<GType>(outputs, *scope);
+  }
+
+  ~FusionConvBNReluParam() {
+    if (new_bias_) {
+      delete new_bias_;
+    }
+    if (new_scale_) {
+      delete new_scale_;
+    }
   }
 
   const GType *InputBias() const { return input_bias_; }
