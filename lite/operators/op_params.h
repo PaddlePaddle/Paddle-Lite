@@ -540,6 +540,7 @@ struct PriorBoxParam {
   int prior_num{0};
   // priortype: prior_min, prior_max, prior_com
   std::vector<std::string> order;
+  bool min_max_aspect_ratios_order{false};
 };
 
 struct DensityPriorBoxParam : public PriorBoxParam {
