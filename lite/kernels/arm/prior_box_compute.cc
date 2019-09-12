@@ -65,6 +65,7 @@ void PriorBoxCompute::Run() {
   size_t prior_num = aspect_ratios_vec.size() * min_size.size();
   prior_num += max_size.size();
   std::vector<std::string> order = param.order;
+  bool min_max_aspect_ratios_order = param.min_max_aspect_ratios_order;
 
   lite::arm::math::prior_box(param.input,
                              param.image,
@@ -82,7 +83,8 @@ void PriorBoxCompute::Run() {
                              prior_num,
                              is_flip,
                              is_clip,
-                             order);
+                             order,
+                             min_max_aspect_ratios_order);
 }
 
 }  // namespace arm

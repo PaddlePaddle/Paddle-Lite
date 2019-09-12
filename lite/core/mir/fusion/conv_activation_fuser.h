@@ -26,10 +26,12 @@ namespace fusion {
 class ConvActivationFuser : public FuseBase {
  public:
   explicit ConvActivationFuser(const std::string& conv_type,
-                               const std::string& act_type) {
+                               const std::string& act_type,
+                               bool has_bias) {
     CHECK(act_type == "relu") << "Only relu activation be supported now";
     conv_type_ = conv_type;
     act_type_ = act_type;
+    has_bias_ = has_bias;
   }
 
   void BuildPattern() override;
@@ -39,6 +41,7 @@ class ConvActivationFuser : public FuseBase {
   cpp::OpDesc GenOpDesc(const key2nodes_t& matched) override;
   std::string conv_type_;
   std::string act_type_;
+  bool has_bias_;
 };
 
 }  // namespace fusion
