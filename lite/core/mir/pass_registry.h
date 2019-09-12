@@ -33,6 +33,7 @@ class PassRegistry {
   PassRegistry& SetTargets(const std::set<TargetType>& targets) {
     pass_->set_targets(targets);
     return *this;
+  }
   PassRegistry& AddKernel(const std::string& name,
                           const lite_api::Place& place) {
     pass_->add_kernel(name, place);
