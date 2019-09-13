@@ -20,7 +20,6 @@
 #include "ai_ddk_lib/include/graph/operator_reg.h"
 #include "lite/backends/npu/bridge/registry.h"
 #include "lite/backends/npu/bridge/utils.h"
-#include "lite/operators/relu_op.h"
 
 namespace paddle {
 namespace lite {

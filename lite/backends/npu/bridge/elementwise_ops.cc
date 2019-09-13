@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/operators/elementwise_ops.h"
 #include "ai_ddk_lib/include/graph/buffer.h"
 #include "ai_ddk_lib/include/graph/graph.h"
 #include "ai_ddk_lib/include/graph/model.h"
