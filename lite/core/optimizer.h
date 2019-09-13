@@ -93,7 +93,7 @@ class Optimizer {
            "argument_type_display_pass",     //
 
            "runtime_context_assign_pass",
-           "graph_visualze"}});
+           "memory_optimize_pass"}});
     } else {
       RunPasses(passes);
     }
