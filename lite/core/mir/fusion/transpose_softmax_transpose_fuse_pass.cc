@@ -37,4 +37,4 @@ void TransposeSoftmaxTransposeFusePass::Apply(
 
 REGISTER_MIR_PASS(lite_transpose_softmax_transpose_fuse_pass,
                   paddle::lite::mir::TransposeSoftmaxTransposeFusePass)
-    .SetTargets({TARGET(kAny)});
+    .BindTargets({TARGET(kAny)});

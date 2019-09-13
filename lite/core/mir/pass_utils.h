@@ -12,28 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/mir/fusion/shuffle_channel_fuse_pass.h"
-#include <memory>
-#include <vector>
-#include "lite/core/mir/fusion/shuffle_channel_fuser.h"
-#include "lite/core/mir/pass_registry.h"
+#pragma once
+
+#include "lite/core/mir/pass.h"
 
 namespace paddle {
 namespace lite {
-namespace mir {
 
-void ShuffleChannelFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
-  fusion::ShuffleChannelFuser fuser("reshape", "transpose");
-  fuser(graph.get());
+// Check if the pass hits the hardware target.
+bool PassMatchesTarget(const mir::Pass& pass, TargetType target);
 
-  fusion::ShuffleChannelFuser fuser2("reshape2", "transpose2");
-  fuser2(graph.get());
-}
+// Check if the pass hits all necessary operators.
+bool PassMatchesKernels(const mir::Pass& pass);
 
-}  // namespace mir
 }  // namespace lite
 }  // namespace paddle
-
-REGISTER_MIR_PASS(lite_shuffle_channel_fuse_pass,
-                  paddle::lite::mir::ShuffleChannelFusePass)
-    .BindTargets({TARGET(kAny)});
