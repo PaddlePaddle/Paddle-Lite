@@ -67,7 +67,7 @@ void fc_ref(const std::shared_ptr<operators::FcOpLite> op) {
   }
 }
 
-void test_fc(const std::vector<int64_t>& x_shape,
+void test_fc(const std::vector<int64_t>& input_shape,
              const std::vector<int64_t>& w_shape,
              int in_num_col_dims,
              bool has_bias) {
@@ -78,30 +78,25 @@ void test_fc(const std::vector<int64_t>& x_shape,
   CHECK(bridges.HasType("fc"));
 
   Scope scope;
-  std::string x_var_name("Input");
+  std::string input_var_name("Input");
   std::string w_var_name("W");
   std::string bias_var_name("Bias");
   std::string out_var_name("Out");
   std::string out_ref_var_name("out_ref");
-  auto* x = scope.Var(x_var_name)->GetMutable<Tensor>();
+  auto* input = scope.Var(input_var_name)->GetMutable<Tensor>();
   auto* w = scope.Var(w_var_name)->GetMutable<Tensor>();
   auto* out = scope.Var(out_var_name)->GetMutable<Tensor>();
   auto* out_ref = scope.Var(out_ref_var_name)->GetMutable<Tensor>();
-  x->Resize(x_shape);
-  input->Resize({bs, ic, ih, iw});
-
-  // get w shape
-  auto in_mat_dims = input->dims().Flatten2D(in_num_col_dims);
-  std::vector<int64_t> w_shape = {in_mat_dims[1], out_num_classes};
+  input->Resize(input_shape);
   w->Resize(w_shape);
 
-  FillTensor<float, int>(x);
+  FillTensor<float, int>(input);
   FillTensor<float, int>(w);
 
   // create fc op
   cpp::OpDesc fc_op_desc;
   fc_op_desc.SetType("fc");
-  fc_op_desc.SetInput("Input", {x_var_name});
+  fc_op_desc.SetInput("Input", {input_var_name});
   fc_op_desc.SetInput("W", {w_var_name});
   fc_op_desc.SetOutput("Out", {out_var_name});
   fc_op_desc.SetAttr("in_num_col_dims", static_cast<int>(in_num_col_dims));
@@ -113,7 +108,7 @@ void test_fc(const std::vector<int64_t>& x_shape,
   }
 
   auto fc_op = CreateOp<operators::FcOpLite>(fc_op_desc, &scope);
-  LauchOp(fc_op, {x_var_name}, {out_var_name});
+  LauchOp(fc_op, {input_var_name}, {out_var_name});
   out_ref->CopyDataFrom(*out);
 
   // compare results
@@ -123,10 +118,6 @@ void test_fc(const std::vector<int64_t>& x_shape,
   for (int i = 0; i < out->dims().production(); i++) {
     EXPECT_NEAR(out_data[i], out_ref_data[i], 1e-5);
   }
-
-  // model release
-  npu::OpList::Global().clear();
-  npu::DeviceInfo::Global().Clear();
 }
 
 TEST(NPUBridges, fc) {

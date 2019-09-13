@@ -133,9 +133,9 @@ function build_npu {
         stl_dir="cxx_static"
     fi
     if [[ "${tiny_publish}" == "ON" ]]; then
-        publish_dir="tiny"
+        publish_dir="tiny_publish"
     else
-        publish_dir="full"
+        publish_dir="full_publish"
     fi
     build_dir=$cur_dir/build.lite.npu.${os}.${abi}.${lang}.${stl_dir}.${publish_dir}
     mkdir -p $build_dir

@@ -69,15 +69,6 @@ void test_mul(const std::vector<int64_t>& x_shape,
   auto* out = scope.Var(out_var_name)->GetMutable<Tensor>();
   auto* out_ref = scope.Var(out_ref_var_name)->GetMutable<Tensor>();
   x->Resize(x_shape);
-
-  // get y shape
-  auto x_mat_dims = x->dims().Flatten2D(x_num_col_dims);
-  std::vector<int64_t> y_shape;
-  for (int i = 0; i < y_num_col_dims - 1; i++) {
-    y_shape.push_back(1);
-  }
-  y_shape.push_back(x_mat_dims[1]);
-  y_shape.push_back(o);
   y->Resize(y_shape);
 
   FillTensor<float, int>(x);
@@ -104,10 +95,6 @@ void test_mul(const std::vector<int64_t>& x_shape,
   for (int i = 0; i < out->dims().production(); i++) {
     EXPECT_NEAR(out_data[i], out_ref_data[i], 1e-5);
   }
-
-  // model release
-  npu::OpList::Global().clear();
-  npu::DeviceInfo::Global().Clear();
 }
 
 TEST(NPUBridges, mul) {
