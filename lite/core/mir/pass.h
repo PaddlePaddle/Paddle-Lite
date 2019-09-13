@@ -51,10 +51,10 @@ class Pass {
   // declared.
   // Bind the target. At runtime, there must be one device in the bound targets.
   void BindTargets(const std::set<TargetType>& targets) {
-    bonded_targets_ = targets;
+    bound_targets_ = targets;
   }
   // Get all bound targets.
-  const std::set<TargetType>& Targets() const { return bonded_targets_; }
+  const std::set<TargetType>& Targets() const { return bound_targets_; }
 
   // Some passes are only available on qualified kernels and need to be
   // explicitly declared.
@@ -62,20 +62,20 @@ class Pass {
   void BindKernels(
       const std::unordered_map<std::string, std::set<lite_api::Place>>&
           kernels) {
-    bonded_kernels_ = kernels;
+    bound_kernels_ = kernels;
   }
-  // Get all bonded kernels.
+  // Get all bound kernels.
   const std::unordered_map<std::string, std::set<lite_api::Place>>&
-  GetBondedKernels() const {
-    return bonded_kernels_;
+  GetBoundKernels() const {
+    return bound_kernels_;
   }
-  // Add one kernel to the bonded kernels.
+  // Add one kernel to the bound kernels.
   void BindKernel(const std::string& kernel_name,
                   const lite_api::Place& place) {
-    if (!bonded_kernels_.count(kernel_name)) {
-      bonded_kernels_.insert({kernel_name, {place}});
+    if (!bound_kernels_.count(kernel_name)) {
+      bound_kernels_.insert({kernel_name, {place}});
     } else {
-      bonded_kernels_.at(kernel_name).insert(place);
+      bound_kernels_.at(kernel_name).insert(place);
     }
   }
 
@@ -90,8 +90,8 @@ class Pass {
   const Kind kind_;
   std::string name_;
   std::string doc_;
-  std::set<TargetType> bonded_targets_;
-  std::unordered_map<std::string, std::set<lite_api::Place>> bonded_kernels_;
+  std::set<TargetType> bound_targets_;
+  std::unordered_map<std::string, std::set<lite_api::Place>> bound_kernels_;
 };
 
 // Different kinds.

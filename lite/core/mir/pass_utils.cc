@@ -27,7 +27,7 @@ bool PassMatchesTarget(const mir::Pass& pass, TargetType target) {
 }
 
 bool PassMatchesKernels(const mir::Pass& pass) {
-  const auto& kernels = pass.GetBondedKernels();
+  const auto& kernels = pass.GetBoundKernels();
   for (const auto& kernel : kernels) {
     for (const auto& place : kernel.second) {
       if (KernelRegistry::Global()
