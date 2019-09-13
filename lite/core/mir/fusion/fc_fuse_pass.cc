@@ -32,4 +32,4 @@ void FcFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 }  // namespace paddle
 
 REGISTER_MIR_PASS(lite_fc_fuse_pass, paddle::lite::mir::FcFusePass)
-    .SetTargets({TARGET(kAny)});
+    .BindTargets({TARGET(kAny)});

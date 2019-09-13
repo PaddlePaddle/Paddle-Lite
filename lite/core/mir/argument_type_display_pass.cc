@@ -43,4 +43,4 @@ class ArgumentTypeDisplayPass : public DebugPass {
 
 REGISTER_MIR_PASS(argument_type_display_pass,
                   paddle::lite::mir::ArgumentTypeDisplayPass)
-    .SetTargets({TARGET(kAny)});
+    .BindTargets({TARGET(kAny)});

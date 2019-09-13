@@ -180,4 +180,4 @@ void TypeTargetTransformPass::SetValidPlaces(
 
 REGISTER_MIR_PASS(type_target_cast_pass,
                   paddle::lite::mir::TypeTargetTransformPass)
-    .SetTargets({TARGET(kAny)});
+    .BindTargets({TARGET(kAny)});
