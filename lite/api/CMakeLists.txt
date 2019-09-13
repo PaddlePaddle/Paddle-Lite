@@ -12,7 +12,7 @@ else()
     set(lib_DEPS light_api cxx_api paddle_api_full paddle_api paddle_api_light)
 endif()
 
-if (NOT LITE_ON_TINY_PUBLISH)
+if ((NOT LITE_ON_TINY_PUBLISH) AND (ARM_TARGET_OS STREQUAL "android"))
     lite_cc_library(paddle_cxx_api_shared MODULE
     SRCS paddle_api_shared.cc
     DEPS ${lib_DEPS}
@@ -21,20 +21,12 @@ if (NOT LITE_ON_TINY_PUBLISH)
     # as a single .so lib.
     target_link_libraries(paddle_cxx_api_shared ${lib_DEPS} ${arm_kernels} ${npu_kernels})
 else()
-    add_library(paddle_cxx_api_shared SHARED "")
-    target_sources(paddle_cxx_api_shared PUBLIC paddle_api_shared.cc)
-    add_dependencies(paddle_cxx_api_shared op_list_h kernel_list_h ${lib_DEPS})
+    if (ARM_TARGET_OS STREQUAL "android")
+    	add_library(paddle_cxx_api_shared SHARED "")
+    	target_sources(paddle_cxx_api_shared PUBLIC paddle_api_shared.cc)
+    	add_dependencies(paddle_cxx_api_shared op_list_h kernel_list_h ${lib_DEPS})
+    endif()
 endif()
-
-if (APPLE)
-    # MacOS only accepts lib ends with .jnilib or .dylib
-    set_target_properties(paddle_cxx_api_shared PROPERTIES SUFFIX ".jnilib")
-elseif (WIN32)
-    # Windows only accepts lib ends with .dll
-    set_target_properties(paddle_cxx_api_shared PROPERTIES SUFFIX ".dll")
-endif (APPLE)
-
-
 
 if (WITH_TESTING)
     lite_cc_library(lite_api_test_helper SRCS lite_api_test_helper.cc
