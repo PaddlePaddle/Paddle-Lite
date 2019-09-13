@@ -9,7 +9,6 @@ if (LITE_ON_TINY_PUBLISH)
     set(CMAKE_C_FLAGS_RELEASE "-Os -DNDEBUG")
     set(lib_DEPS light_api paddle_api paddle_api_light)
 else()
-    message(WARNING "full publish_hzq")
     set(lib_DEPS light_api cxx_api paddle_api_full paddle_api paddle_api_light)
 endif()
 
