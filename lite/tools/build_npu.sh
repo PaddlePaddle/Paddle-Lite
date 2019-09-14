@@ -75,7 +75,7 @@ function cmake_npu {
         -DWITH_ARM_DOTPROD=ON   \
         -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
         -DWITH_TESTING=${build_tests} \
-        -DLITE_WITH_JAVA=OFF \
+        -DLITE_WITH_JAVA=ON \
         -DLITE_WITH_NPU=ON \
         -DLITE_ON_TINY_PUBLISH=${tiny_publish} \
         -DANDROID_API_LEVEL=24 \
