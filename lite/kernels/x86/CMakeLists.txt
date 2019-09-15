@@ -40,6 +40,7 @@ add_kernel(elementwise_compute_x86 X86 basic SRCS elementwise_compute.cc DEPS ${
 if(NOT LITE_WITH_X86)
     return()
 endif()
+add_kernel(matmul_compute_x86 X86 basic SRCS matmul_compute.cc DEPS ${lite_kernel_deps} blas)
 
 lite_cc_test(test_mul_compute_x86 SRCS mul_compute_test.cc DEPS mul_compute_x86)
 lite_cc_test(test_slice_compute_x86 SRCS slice_compute_test.cc DEPS slice_compute_x86)
@@ -53,3 +54,4 @@ lite_cc_test(test_elementwise_compute_x86 SRCS elementwise_compute_test.cc DEPS 
 lite_cc_test(test_relu_compute_x86 SRCS relu_compute_test.cc DEPS activation_compute_x86)
 lite_cc_test(test_sequence_expand_as_compute_x86 SRCS sequence_expand_as_compute_test.cc DEPS sequence_expand_as_compute_x86)
 lite_cc_test(test_gru_compute_x86 SRCS gru_compute_test.cc DEPS gru_compute_x86)
+lite_cc_test(test_matmul_compute_x86 SRCS matmul_compute_test.cc DEPS matmul_compute_x86)

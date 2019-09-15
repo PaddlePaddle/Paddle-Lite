@@ -39,4 +39,4 @@ void GenerateProgramPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 }  // namespace paddle
 
 REGISTER_MIR_PASS(generate_program_pass, paddle::lite::mir::GenerateProgramPass)
-    .SetTargets({TARGET(kAny)});
+    .BindTargets({TARGET(kAny)});
