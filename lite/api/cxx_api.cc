@@ -40,7 +40,7 @@ void Predictor::SaveModel(const std::string &dir,
       SaveModelNaive(dir, *program_->exec_scope(), program_desc_);
       break;
     default:
-      LOG(FATAL) << "Unknown model type";
+      LOG(FATAL) << "Unknown model type test 1";
   }
 #ifdef LITE_WITH_NPU
   for (auto name : npu::DeviceInfo::Global().AllClientNames()) {
