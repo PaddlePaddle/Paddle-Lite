@@ -17,7 +17,7 @@ title: Paddle-Lite
 email: 
 description: Multi-platform high performance deep learning inference engine (『飞桨』多平台高性能深度学习预测引擎） # this means to ignore newlines until "baseurl:"
 baseurl: "" # the subpath of your site, e.g. /blog
-url: "" # the base hostname & protocol for your site, e.g. http://example.com
+url: https://juncaipeng.github.io/Paddle-Lite/.  # the base hostname & protocol for your site, e.g. http://example.com
 twitter_username: 
 github_username: PaddlePaddle
 
