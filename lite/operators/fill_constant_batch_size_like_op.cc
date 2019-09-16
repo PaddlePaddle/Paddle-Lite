@@ -25,7 +25,6 @@ namespace operators {
 bool FillConstantBatchSizeLikeOp::CheckShape() const {
   CHECK_OR_FALSE(param_.Input);
   CHECK_OR_FALSE(param_.Out);
-
   return true;
 }
 
