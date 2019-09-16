@@ -145,7 +145,6 @@ function make_all_tests {
       -DARM_TARGET_OS=${os} -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
 
   make lite_compile_deps -j$NUM_PROC
-  make math_test -j$NUM_PROC
   cd - > /dev/null
 }
 

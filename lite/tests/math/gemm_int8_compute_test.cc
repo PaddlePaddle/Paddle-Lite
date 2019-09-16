@@ -12,34 +12,36 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <gflags/gflags.h>
+#include <gtest/gtest.h>
 #include "lite/tests/utils/fill_data.h"
-#include "lite/tests/utils/test_funcs.h"
+#include "lite/tests/utils/naive_math_impl.h"
 #ifdef LITE_WITH_ARM
 #include "lite/backends/arm/math/funcs.h"
 #endif
 #include "lite/core/context.h"
 #include "lite/core/tensor.h"
 #include "lite/tests/utils/tensor_utils.h"
-#include "lite/tests/utils/test_lite.h"
+#include "lite/tests/utils/timer.h"
 
 typedef paddle::lite::Tensor Tensor;
-typedef lite::test::TestLite TestLite;
 
-int g_cluster = 0;
-int g_threads = 1;
+DEFINE_int32(cluster, 0, "cluster id");
+DEFINE_int32(threads, 1, "threads num");
+DEFINE_int32(warmup, 0, "warmup times");
+DEFINE_int32(repeats, 1, "repeats times");
+DEFINE_bool(basic_test, true, "do all tests");
+DEFINE_bool(check_result, true, "check the result");
 
-bool g_basic_test = false;
+DEFINE_int32(M, 512, "gemm: M");
+DEFINE_int32(N, 512, "gemm: N");
+DEFINE_int32(K, 512, "gemm: K");
 
-int g_M = 512;
-int g_N = 512;
-int g_K = 512;
-bool g_traA = false;
-bool g_traB = false;
-bool g_flag_relu = false;
-bool g_flag_bias = false;
-int g_test_iter = 1;
-int g_warmup_iter = 0;
-bool g_compare_result = true;
+DEFINE_bool(traA, false, "gemm: A transpose");
+DEFINE_bool(traB, false, "gemm: B transpose");
+
+DEFINE_bool(flag_relu, false, "do relu");
+DEFINE_bool(flag_bias, false, "with bias");
 
 bool test_gemm_int8(bool tra,
                     bool trb,
@@ -105,7 +107,7 @@ bool test_gemm_int8(bool tra,
             << ", transB: " << (trb ? "true" : "false")
             << ", relu: " << (has_relu ? "true" : "false")
             << ", bias: " << (has_bias ? "true" : "false");
-  if (g_compare_result) {
+  if (FLAGS_check_result) {
     Tensor ta_fp32;
     Tensor tb_fp32;
     ta_fp32.Resize({m, k});
@@ -159,7 +161,7 @@ bool test_gemm_int8(bool tra,
   paddle::lite::arm::math::prepackA_int8(
       tpackedA.mutable_data<int8_t>(), da, lda, 0, m, 0, k, tra, &ctx);
   /// warmup
-  for (int j = 0; j < g_warmup_iter; ++j) {
+  for (int j = 0; j < FLAGS_warmup; ++j) {
     paddle::lite::arm::math::gemm_prepack_int8(tpackedA.data<int8_t>(),
                                                db,
                                                dbias,
@@ -182,7 +184,7 @@ bool test_gemm_int8(bool tra,
   for (int l = 0; l < tbias_int8.numel(); ++l) {
     dbias_int8[l] = dbias[l] / scale_c[0];
   }
-  for (int i = 0; i < g_test_iter; ++i) {
+  for (int i = 0; i < FLAGS_repeats; ++i) {
     t0.start();
     paddle::lite::arm::math::gemm_prepack_int8(tpackedA.data<int8_t>(),
                                                db,
@@ -209,7 +211,7 @@ bool test_gemm_int8(bool tra,
 
   /// fp32 output compute
   t0.clear();
-  for (int i = 0; i < g_test_iter; ++i) {
+  for (int i = 0; i < FLAGS_repeats; ++i) {
     t0.start();
     paddle::lite::arm::math::gemm_prepack_int8(tpackedA.data<int8_t>(),
                                                db,
@@ -234,7 +236,7 @@ bool test_gemm_int8(bool tra,
             << " GOPs, max GOPs: " << ops * 1e-6f / t0.get_min_time()
             << " GOPs";
 
-  if (g_compare_result) {
+  if (FLAGS_check_result) {
     double max_ratio = 0;
     double max_diff = 0;
     /// fp32 result
@@ -299,8 +301,11 @@ bool test_gemm_int8(bool tra,
   return true;
 }
 
-TEST_ENGINE(TestLite, gemm_prepacked_int8) {
-  if (g_basic_test) {
+TEST(TestLiteGemmInt8, gemm_prepacked_int8) {
+  if (FLAGS_basic_test) {
+#ifdef LITE_WITH_ARM
+    paddle::lite::DeviceInfo::Init();
+#endif
     LOG(INFO) << "run basic sgemm test";
     for (auto& m : {1, 3, 8, 32, 397}) {
       for (auto& n : {1, 3, 13, 141, 512, 789, 1234}) {
@@ -310,8 +315,15 @@ TEST_ENGINE(TestLite, gemm_prepacked_int8) {
               for (auto& has_bias : {false, true}) {
                 for (auto& has_relu : {false, true}) {
                   for (auto& th : {1, 2, 4}) {
-                    auto flag = test_gemm_int8(
-                        tra, trb, m, n, k, has_bias, has_relu, g_cluster, th);
+                    auto flag = test_gemm_int8(tra,
+                                               trb,
+                                               m,
+                                               n,
+                                               k,
+                                               has_bias,
+                                               has_relu,
+                                               FLAGS_cluster,
+                                               th);
                     if (flag) {
                       LOG(INFO) << "test m = " << m << ", n=" << n
                                 << ", k=" << k
@@ -340,72 +352,27 @@ TEST_ENGINE(TestLite, gemm_prepacked_int8) {
   }
 }
 
-TEST_ENGINE(TestLite, gemm_prepacked_int8_custom) {
-  auto flag = test_gemm_int8(g_traA,
-                             g_traB,
-                             g_M,
-                             g_N,
-                             g_K,
-                             g_flag_bias,
-                             g_flag_relu,
-                             g_cluster,
-                             g_threads);
-  if (!flag) {
-    LOG(FATAL) << "test m = " << g_M << ", n=" << g_N << ", k=" << g_K
-               << ", trans A: " << g_traA << ", trans B: " << g_traB
-               << ", bias: " << g_flag_bias << ", relu: " << g_flag_relu
-               << " failed!!";
-  }
-  LOG(INFO) << "test m = " << g_M << ", n=" << g_N << ", k=" << g_K
-            << ", trans A: " << g_traA << ", trans B: " << g_traB
-            << ", bias: " << g_flag_bias << ", relu: " << g_flag_relu
-            << " passed!!";
-}
-
-int main(int argc, const char** argv) {
+TEST(TestGemmInt8Custom, gemm_prepacked_int8_custom) {
 #ifdef LITE_WITH_ARM
   paddle::lite::DeviceInfo::Init();
 #endif
-  LOG(ERROR)
-      << "usage: ./" << argv[0]
-      << " [do_basic_test] [cluster]  [threads]  [m] [n]  [k] [transA] "
-         "[transB] [relu] [bias] [test iter] [compare result] [warm_up iter]";
-  if (argc > 1) {
-    g_basic_test = atoi(argv[1]) > 0;
+  auto flag = test_gemm_int8(FLAGS_traA,
+                             FLAGS_traB,
+                             FLAGS_M,
+                             FLAGS_N,
+                             FLAGS_K,
+                             FLAGS_flag_bias,
+                             FLAGS_flag_relu,
+                             FLAGS_cluster,
+                             FLAGS_threads);
+  if (!flag) {
+    LOG(FATAL) << "test m = " << FLAGS_M << ", n=" << FLAGS_N
+               << ", k=" << FLAGS_K << ", trans A: " << FLAGS_traA
+               << ", trans B: " << FLAGS_traB << ", bias: " << FLAGS_flag_bias
+               << ", relu: " << FLAGS_flag_relu << " failed!!";
   }
-  if (argc > 2) {
-    g_cluster = atoi(argv[2]);
-  }
-  if (argc > 3) {
-    g_threads = atoi(argv[3]);
-  }
-  if (argc > 4) {
-    if (argc < 10) {
-      LOG(ERROR) << "usage: ./" << argv[0]
-                 << " [do_basic_test] [cluster]  "
-                    "[threads]  [m] [n]  [k] "
-                    "[transA] [transB] [bias] [relu] "
-                    "[test iter] [compare result] [warm_up iter]";
-      return 0;
-    }
-    g_M = atoi(argv[4]);
-    g_N = atoi(argv[5]);
-    g_K = atoi(argv[6]);
-    g_traA = atoi(argv[7]) > 0;
-    g_traB = atoi(argv[8]) > 0;
-    g_flag_bias = atoi(argv[9]) > 0;
-    g_flag_relu = atoi(argv[10]) > 0;
-  }
-  if (argc > 11) {
-    g_test_iter = atoi(argv[11]);
-  }
-  if (argc > 12) {
-    g_compare_result = atoi(argv[12]) > 0;
-  }
-  if (argc > 13) {
-    g_warmup_iter = atoi(argv[13]);
-  }
-  InitTest();
-  RUN_ALL_TESTS(argv[0]);
-  return 0;
+  LOG(INFO) << "test m = " << FLAGS_M << ", n=" << FLAGS_N << ", k=" << FLAGS_K
+            << ", trans A: " << FLAGS_traA << ", trans B: " << FLAGS_traB
+            << ", bias: " << FLAGS_flag_bias << ", relu: " << FLAGS_flag_relu
+            << " passed!!";
 }

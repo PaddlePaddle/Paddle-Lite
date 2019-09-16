@@ -12,41 +12,40 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <gflags/gflags.h>
+#include <gtest/gtest.h>
 #include "lite/backends/arm/math/conv_depthwise.h"
 #include "lite/core/context.h"
 #include "lite/kernels/arm/conv_compute.h"
+#include "lite/tests/utils/naive_math_impl.h"
 #include "lite/tests/utils/tensor_utils.h"
-#include "lite/tests/utils/test_funcs.h"
-#include "lite/tests/utils/test_lite.h"
 #include "lite/tests/utils/timer.h"
 
-typedef lite::test::TestLite TestLite;
+DEFINE_int32(cluster, 0, "cluster id");
+DEFINE_int32(threads, 1, "threads num");
+DEFINE_int32(warmup, 0, "warmup times");
+DEFINE_int32(repeats, 1, "repeats times");
+DEFINE_bool(basic_test, true, "do all tests");
+DEFINE_bool(check_result, true, "check the result");
 
-int g_cluster = 0;
-int g_threads = 1;
-int g_warmup_iter = 0;
-int g_test_iter = 1;
-bool g_basic_test = true;
-bool g_compare_result = true;
+DEFINE_int32(batch, 1, "batch size");
+DEFINE_int32(in_channel, 32, "input channel");
+DEFINE_int32(in_height, 112, "input height");
+DEFINE_int32(in_width, 112, "input width");
 
-int g_num = 1;
-int g_ch_in = 32;
-int g_h_in = 112;
-int g_w_in = 112;
+DEFINE_int32(out_channel, 32, "output channel");
+DEFINE_int32(group, 1, "group");
+DEFINE_int32(kernel_h, 3, "kernel height");
+DEFINE_int32(kernel_w, 3, "kernel width");
+DEFINE_int32(pad_h, 1, "pad height");
+DEFINE_int32(pad_w, 1, "pad width");
+DEFINE_int32(stride_h, 1, "stride height");
+DEFINE_int32(stride_w, 1, "stride width");
+DEFINE_int32(dila_h, 1, "dilation height");
+DEFINE_int32(dila_w, 1, "dilation width");
 
-int g_ch_out = 32;
-int g_group = 32;
-int g_kw = 3;
-int g_pad_w = 1;
-int g_stride_w = 1;
-int g_dila_w = 1;
-int g_kh = 3;
-int g_pad_h = 1;
-int g_stride_h = 1;
-int g_dila_h = 1;
-
-bool g_flag_relu = true;
-bool g_flag_bias = true;
+DEFINE_bool(flag_relu, true, "do relu");
+DEFINE_bool(flag_bias, true, "with bias");
 
 typedef paddle::lite::DDim DDim;
 typedef paddle::lite::Tensor Tensor;
@@ -54,6 +53,9 @@ typedef paddle::lite::operators::ConvParam ConvParam;
 
 DDim compute_out_dim(const DDim& dim_in,
                      const paddle::lite::operators::ConvParam& param) {
+#ifdef LITE_WITH_ARM
+  paddle::lite::DeviceInfo::Init();
+#endif
   DDim dim_out = dim_in;
   dim_out[1] = param.filter->dims()[0];
   auto kernel_h = param.filter->dims()[2];
@@ -252,7 +254,7 @@ void test_conv_int8(const std::vector<DDim>& input_dims,
                                               1,
                                               dim_in.production());
 
-        if (g_compare_result) {
+        if (FLAGS_check_result) {
           tout_basic_fp32.set_precision(PRECISION(kFloat));
           tout_basic_fp32.Resize(dim_out);
           tout_basic_int8.set_precision(PRECISION(kInt8));
@@ -293,12 +295,12 @@ void test_conv_int8(const std::vector<DDim>& input_dims,
         double gops = 2.0 * dim_out.production() * dim_in[1] * weight_dim[2] *
                       weight_dim[3] / group;
         /// warm up
-        for (int i = 0; i < g_warmup_iter; ++i) {
+        for (int i = 0; i < FLAGS_warmup; ++i) {
           conv_int8_int8.Launch();
         }
         /// compute fp32 output
         lite::test::Timer t0;
-        for (int i = 0; i < g_test_iter; ++i) {
+        for (int i = 0; i < FLAGS_repeats; ++i) {
           t0.start();
           conv_int8_fp32.Launch();
           t0.end();
@@ -312,7 +314,7 @@ void test_conv_int8(const std::vector<DDim>& input_dims,
 
         /// compute int8 output
         t0.clear();
-        for (int i = 0; i < g_test_iter; ++i) {
+        for (int i = 0; i < FLAGS_repeats; ++i) {
           t0.start();
           conv_int8_int8.Launch();
           t0.end();
@@ -325,7 +327,7 @@ void test_conv_int8(const std::vector<DDim>& input_dims,
                   << " GOPs, max GOPs: " << 1e-6 * gops / t0.get_min_time();
 
         /// compare result fp32 output
-        if (g_compare_result) {
+        if (FLAGS_check_result) {
           double max_ratio = 0;
           double max_diff = 0;
           tensor_cmp_host(
@@ -359,7 +361,7 @@ void test_conv_int8(const std::vector<DDim>& input_dims,
           }
         }
         /// compare result int8 output
-        if (g_compare_result) {
+        if (FLAGS_check_result) {
           double max_ratio = 0;
           double max_diff = 0;
           // ! int8
@@ -449,8 +451,8 @@ void test_conv_int8(int n,
 #endif  // LITE_WITH_ARM
 
 #if 1  /// 3x3dw
-TEST_ENGINE(TestLite, test_conv3x3_depthwise) {
-  if (g_basic_test) {
+TEST(TestConv3x3DWInt8, test_conv3x3_depthwise) {
+  if (FLAGS_basic_test) {
     for (auto& stride : {1, 2}) {
       for (auto& pad : {0, 1}) {
         for (auto& flag_bias : {false, true}) {
@@ -472,7 +474,7 @@ TEST_ENGINE(TestLite, test_conv3x3_depthwise) {
                              flag_bias,
                              flag_relu,
                              {1, 2, 4},
-                             {g_cluster});
+                             {FLAGS_cluster});
             }
           }
         }
@@ -483,8 +485,8 @@ TEST_ENGINE(TestLite, test_conv3x3_depthwise) {
 #endif  /// 3x3dw
 
 #if 0   /// 5x5dw
-TEST_ENGINE(TestLite, test_conv5x5_depthwise) {
-  if (g_basic_test) {
+TEST(TestConv5x5DWInt8, test_conv5x5_depthwise) {
+  if (FLAGS_basic_test) {
     for (auto& stride : {1, 2}) {
       for (auto& pad : {0, 1, 2}) {
         for (auto& flag_bias : {false, true}) {
@@ -506,7 +508,7 @@ TEST_ENGINE(TestLite, test_conv5x5_depthwise) {
                              flag_bias,
                              flag_relu,
                              {1, 2, 4},
-                             {g_cluster});
+                             {FLAGS_cluster});
             }
           }
         }
@@ -517,8 +519,8 @@ TEST_ENGINE(TestLite, test_conv5x5_depthwise) {
 #endif  /// 5x5dw
 
 #if 1  /// conv1x1s1
-TEST_ENGINE(TestLite, test_conv1x1s1) {
-  if (g_basic_test) {
+TEST(TestConv1x1s1Int8, test_conv1x1s1) {
+  if (FLAGS_basic_test) {
     for (auto& cin : {1, 3, 8, 11, 32}) {
       for (auto& cout : {1, 5, 16, 37}) {
         for (auto& g : {1, 2}) {
@@ -543,7 +545,7 @@ TEST_ENGINE(TestLite, test_conv1x1s1) {
                              flag_bias,
                              flag_relu,
                              {1, 2, 4},
-                             {g_cluster});
+                             {FLAGS_cluster});
             }
           }
         }
@@ -554,8 +556,8 @@ TEST_ENGINE(TestLite, test_conv1x1s1) {
 #endif  /// conv1x1s1
 
 #if 1  /// conv3x3s1
-TEST_ENGINE(TestLite, test_conv_3x3s1) {
-  if (g_basic_test) {
+TEST(TestConv3x3s1Int8, test_conv_3x3s1) {
+  if (FLAGS_basic_test) {
     for (auto& cin : {1, 3, 8, 32, 48}) {
       for (auto& cout : {1, 5, 8, 32, 48}) {
         for (auto& pad : {1, 2}) {
@@ -577,7 +579,7 @@ TEST_ENGINE(TestLite, test_conv_3x3s1) {
                              flag_bias,
                              flag_relu,
                              {1, 2, 4},
-                             {g_cluster});
+                             {FLAGS_cluster});
             }
           }
         }
@@ -588,8 +590,8 @@ TEST_ENGINE(TestLite, test_conv_3x3s1) {
 #endif  /// conv3x3s1
 
 #if 1  /// conv3x3s2
-TEST_ENGINE(TestLite, test_conv_3x3s2) {
-  if (g_basic_test) {
+TEST(TestConv3x3s2Int8, test_conv_3x3s2) {
+  if (FLAGS_basic_test) {
     for (auto& cin : {1, 3, 8, 32}) {
       for (auto& cout : {1, 5, 8, 32}) {
         for (auto& pad : {1, 2}) {
@@ -611,7 +613,7 @@ TEST_ENGINE(TestLite, test_conv_3x3s2) {
                              flag_bias,
                              flag_relu,
                              {1, 2, 4},
-                             {g_cluster});
+                             {FLAGS_cluster});
             }
           }
         }
@@ -622,8 +624,8 @@ TEST_ENGINE(TestLite, test_conv_3x3s2) {
 #endif  /// conv3x3s2
 
 #if 1  /// random param conv
-TEST_ENGINE(TestLite, test_conv_rand) {
-  if (g_basic_test) {
+TEST(TestConvRandInt8, test_conv_rand) {
+  if (FLAGS_basic_test) {
     for (auto& cin : {1, 3, 8, 16}) {
       for (auto& cout : {1, 5, 8, 16}) {
         for (auto& g : {1, 2}) {
@@ -653,7 +655,7 @@ TEST_ENGINE(TestLite, test_conv_rand) {
                                        flag_bias,
                                        flag_relu,
                                        {1, 2, 4},
-                                       {g_cluster});
+                                       {FLAGS_cluster});
                       }
                     }
                   }
@@ -669,98 +671,24 @@ TEST_ENGINE(TestLite, test_conv_rand) {
 #endif  /// random param conv
 
 #if 1  /// custom
-TEST_ENGINE(TestLite, test_conv_custom_size) {
-  CHECK_EQ(g_ch_in % g_group, 0) << "input channel must be divided by group";
-  CHECK_EQ(g_ch_out % g_group, 0) << "num_output must be divided by group";
-  test_conv_int8({DDim({g_num, g_ch_in, g_h_in, g_w_in})},
-                 DDim({g_ch_out, g_ch_in / g_group, g_kh, g_kw}),
-                 g_group,
-                 {g_stride_h, g_stride_w},
-                 {g_pad_h, g_pad_w},
-                 {g_dila_h, g_dila_w},
-                 g_flag_bias,
-                 g_flag_relu,
-                 {g_threads},
-                 {g_cluster});
+TEST(TestConvCustomInt8, test_conv_custom_size) {
+  CHECK_EQ(FLAGS_in_channel % FLAGS_group, 0)
+      << "input channel must be divided by group";
+  CHECK_EQ(FLAGS_out_channel % FLAGS_group, 0)
+      << "num_output must be divided by group";
+  test_conv_int8(
+      {DDim({FLAGS_batch, FLAGS_in_channel, FLAGS_in_height, FLAGS_in_width})},
+      DDim({FLAGS_out_channel,
+            FLAGS_in_channel / FLAGS_group,
+            FLAGS_kernel_h,
+            FLAGS_kernel_w}),
+      FLAGS_group,
+      {FLAGS_stride_h, FLAGS_stride_w},
+      {FLAGS_pad_h, FLAGS_pad_w},
+      {FLAGS_dila_h, FLAGS_dila_w},
+      FLAGS_flag_bias,
+      FLAGS_flag_relu,
+      {FLAGS_threads},
+      {FLAGS_cluster});
 }
 #endif  // custom
-
-int main(int argc, const char** argv) {
-#ifdef LITE_WITH_ARM
-  paddle::lite::DeviceInfo::Init();
-#endif
-  LOG(INFO)
-      << "usage: ./" << argv[0]
-      << " basic_test cluster  threads  warmup test_iter "
-      << " compare_result flag_bias flag_relu num ch_in h_in w_in ch_out group"
-      << " kernel pad stride dila [kernel_h] [pad_h] [stride_h] [dila_h]";
-
-  if (argc >= 2) {
-    g_basic_test = atoi(argv[1]) > 0;
-  }
-
-  if (argc >= 3) {
-    g_cluster = atoi(argv[2]);
-  }
-  if (argc >= 4) {
-    g_threads = atoi(argv[3]);
-  }
-  if (argc >= 5) {
-    g_test_iter = atoi(argv[4]);
-  }
-  if (argc >= 6) {
-    g_test_iter = atoi(argv[5]);
-  }
-  if (argc >= 7) {
-    g_compare_result = atoi(argv[6]) > 0;
-  }
-  if (argc >= 8) {
-    g_flag_bias = atoi(argv[7]) > 0;
-  }
-  if (argc >= 9) {
-    g_flag_relu = atoi(argv[8]) > 0;
-  }
-  if (argc >= 10) {
-    if (argc < 19) {
-      LOG(FATAL)
-          << "usage: ./" << argv[0]
-          << " basic_test cluster  threads warmup test_iter "
-          << " compare_result flag_bias flag_relu num ch_in h_in w_in ch_out "
-             "group"
-          << " kernel pad stride dila [kernel_h] [pad_h] [stride_h] [dila_h]";
-      return -1;
-    }
-    g_num = atoi(argv[9]);
-    g_ch_in = atoi(argv[10]);
-    g_h_in = atoi(argv[11]);
-    g_w_in = atoi(argv[12]);
-    g_ch_out = atoi(argv[13]);
-    g_group = atoi(argv[14]);
-    g_kw = atoi(argv[15]);
-    g_kh = g_kw;
-    g_pad_w = atoi(argv[16]);
-    g_pad_h = g_pad_w;
-    g_stride_w = atoi(argv[17]);
-    g_stride_h = g_stride_w;
-    g_dila_w = atoi(argv[18]);
-    g_dila_h = g_dila_w;
-  }
-  if (argc > 19) {
-    g_kh = atoi(argv[19]);
-  }
-  if (argc > 20) {
-    g_pad_h = atoi(argv[20]);
-  }
-  if (argc > 21) {
-    g_stride_h = atoi(argv[21]);
-  }
-  if (argc > 22) {
-    g_dila_h = atoi(argv[22]);
-  }
-
-  // initial logger
-  // logger::init(argv[0]);
-  InitTest();
-  RUN_ALL_TESTS(argv[0]);
-  return 0;
-}
