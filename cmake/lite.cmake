@@ -289,6 +289,18 @@ function(add_kernel TARGET device level)
         set(opencl_kernels "${opencl_kernels};${TARGET}" CACHE INTERNAL "")
     endif()
 
+    if ("${device}" STREQUAL "CUDA")
+        if (NOT LITE_WITH_CUDA)
+            return()
+        endif()
+        set(cuda_kernels "${cuda_kernels};${TARGET}" CACHE INTERNAL "")
+        foreach(src ${args_SRCS})
+          file(APPEND ${kernels_src_list} "${CMAKE_CURRENT_SOURCE_DIR}/${src}\n")
+        endforeach()
+        nv_library(${TARGET} SRCS ${args_SRCS} DEPS ${args_DEPS})
+        return() 
+    endif()
+
     # the source list will collect for paddle_use_kernel.h code generation.
     foreach(src ${args_SRCS})
         file(APPEND ${kernels_src_list} "${CMAKE_CURRENT_SOURCE_DIR}/${src}\n")

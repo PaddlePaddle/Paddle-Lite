@@ -73,7 +73,16 @@ void ConvActivationFuser::InsertNewNode(SSAGraph* graph,
 cpp::OpDesc ConvActivationFuser::GenOpDesc(const key2nodes_t& matched) {
   cpp::OpDesc op_desc = *matched.at("conv2d")->stmt()->op_info();
   op_desc.SetOutput("Output", {matched.at("output")->arg()->name});
-  op_desc.SetAttr("fuse_relu", true);
+  cpp::OpDesc act_op_desc = *matched.at("act")->stmt()->op_info();
+
+  op_desc.SetAttr("with_act", true);
+  op_desc.SetAttr("act_type", act_type_);
+  if (act_type_ == "relu") {
+    op_desc.SetAttr("fuse_relu", true);
+  } else if (act_type_ == "leaky_relu") {
+    float alpha = act_op_desc.GetAttr<float>("alpha");
+    op_desc.SetAttr("leaky_relu_alpha", alpha);
+  }
   return op_desc;
 }
 

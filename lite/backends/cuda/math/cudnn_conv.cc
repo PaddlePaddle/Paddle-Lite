@@ -280,6 +280,11 @@ bool CudnnConv2DInt8<Ptype_out>::create(const operators::ConvParam& param,
     for (int i = 0; i < weight_scale.size(); i++) {
       weight_scale[i] = (weight_scale[i] * input_scale) / output_scale;
     }
+
+    auto* b_data = param.bias ? param.bias->mutable_data<float>() : nullptr;
+    if (b_data) {
+      scale(param.bias->numel(), b_data, b_data, 1.f / output_scale);
+    }
   } else {
     for (int i = 0; i < weight_scale.size(); i++) {
       weight_scale[i] = (weight_scale[i] * input_scale);
@@ -323,8 +328,11 @@ bool CudnnConv2DInt8<Ptype_out>::create(const operators::ConvParam& param,
                                          oc,
                                          oh,
                                          ow));
-
-  this->fwd_algo_ = CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_PRECOMP_GEMM;
+  if (ic % 4 == 0 && oc % 4 == 0) {
+    this->fwd_algo_ = CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_GEMM;
+  } else {
+    this->fwd_algo_ = CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_PRECOMP_GEMM;
+  }
   CUDNN_CHECK(
       cudnnGetConvolutionForwardWorkspaceSize(this->handle_,
                                               this->input_desc_,
@@ -332,7 +340,7 @@ bool CudnnConv2DInt8<Ptype_out>::create(const operators::ConvParam& param,
                                               this->conv_desc_,
                                               this->output_desc_,
                                               this->fwd_algo_,
-                                              &(this->workspace_fwd_sizes_)));
+                                              &this->workspace_fwd_sizes_));
 
   if (this->workspace_fwd_sizes_ > this->workspace_size_inbytes_) {
     this->workspace_size_inbytes_ = this->workspace_fwd_sizes_;

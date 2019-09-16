@@ -21,6 +21,18 @@ namespace lite {
 namespace cuda {
 namespace math {
 
+template <typename T>
+__global__ void scale_kernel(int num, const T* in, T* out, const float scale) {
+  int tid = blockIdx.x * blockDim.x + threadIdx.x;
+  if (tid < num) {
+#if __CUDA_ARCH__ >= 350
+    out[tid] = __ldg(in + tid) * scale;
+#else
+    out[tid] = in[tid] * scale;
+#endif
+  }
+}
+
 __global__ void fp32_scale_nhwc4_kernel(int num,
                                         const float4* in,
                                         float4* out,
@@ -67,6 +79,23 @@ void fp32_scale_nhwc4(int num,
   cudaError_t error = cudaGetLastError();
   if (error != cudaSuccess) std::cout << cudaGetErrorString(error);
 }
+
+template <typename T>
+void scale(int num, const T* in, T* out, float scale, cudaStream_t stream) {
+  int thread = 256;
+  int block = (num + thread - 1) / thread;
+  scale_kernel<<<block, thread, 0, stream>>>(num, in, out, scale);
+}
+
+template <typename T>
+void scale(int num, const T* in, T* out, float scale) {
+  int thread = 256;
+  int block = (num + thread - 1) / thread;
+  scale_kernel<<<block, thread>>>(num, in, out, scale);
+}
+
+template void scale(int num, const float*, float*, float, cudaStream_t);
+template void scale(int num, const float*, float*, float);
 
 }  // namespace math
 }  // namespace cuda
