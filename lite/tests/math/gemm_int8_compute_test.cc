@@ -308,7 +308,7 @@ TEST(TestLiteGemmInt8, gemm_prepacked_int8) {
 #endif
     LOG(INFO) << "run basic sgemm test";
     for (auto& m : {1, 3, 8, 32, 397}) {
-      for (auto& n : {1, 3, 13, 141, 512, 789, 1234}) {
+      for (auto& n : {1, 3, 13, 141, 512, 789}) {
         for (auto& k : {1, 3, 8, 59, 234}) {
           for (auto& tra : {false, true}) {
             for (auto& trb : {false, true}) {
