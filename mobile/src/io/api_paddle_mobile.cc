@@ -18,6 +18,7 @@
 #include <utility>
 #include <vector>
 #include "common/enforce.h"
+#include "common/type_define.h"
 #include "framework/tensor.h"
 #ifdef PADDLE_MOBILE_FPGA
 #include <fpga/common/fpga_common.h>
@@ -35,7 +36,9 @@ PaddleMobilePredictor<Device, T>::PaddleMobilePredictor(
 
 template <typename Device, typename T>
 bool PaddleMobilePredictor<Device, T>::Init(const PaddleMobileConfig &config) {
-  paddle_mobile_.reset(new PaddleMobile<Device, T>());
+  PaddleMobileConfigInternal configInternal;
+  configInternal.load_when_predict = config.load_when_predict;
+  paddle_mobile_.reset(new PaddleMobile<Device, T>(configInternal));
 #ifdef PADDLE_MOBILE_CL
   paddle_mobile_->SetCLPath(config.cl_path);
 #endif
@@ -134,14 +137,14 @@ bool PaddleMobilePredictor<Device, T>::Run(
 void ConvertPaddleTensors(const PaddleTensor &src, framework::Tensor *des) {
   des->Resize(framework::make_ddim(src.shape));
   des->external_data = src.data.data();
-  des->set_type(src.dtypeid);
+  des->set_type(static_cast<kTypeId_t>(static_cast<int>(src.dtypeid)));
   des->layout =
       src.layout == LAYOUT_HWC ? framework::LAYOUT_HWC : framework::LAYOUT_CHW;
 }
 
 void ConvertTensors(const framework::Tensor &src, PaddleTensor *des) {
   des->shape = framework::vectorize2int(src.dims());
-  des->dtypeid = src.type();
+  des->dtypeid = static_cast<PaddlekTypeId_t>(static_cast<int>(src.type()));
   des->layout = src.layout == framework::LAYOUT_HWC ? LAYOUT_HWC : LAYOUT_CHW;
 
   auto num = src.numel();
@@ -163,7 +166,8 @@ void PaddleMobilePredictor<Device, T>::FeedPaddleTensors(
   auto num = inputs.size();
   std::vector<framework::Tensor> tensors(num, framework::Tensor());
   for (int i = 0; i < num; i++) {
-    if (inputs[i].dtypeid == type_id<int8_t>().hash_code()) {
+    if (static_cast<kTypeId_t>(static_cast<int>(inputs[i].dtypeid)) ==
+        type_id<int8_t>().hash_code()) {
       tensors[i].init(type_id<int8_t>().hash_code());
     } else {
       tensors[i].init(type_id<float>().hash_code());
