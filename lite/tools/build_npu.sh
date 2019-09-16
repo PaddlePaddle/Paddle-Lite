@@ -1,16 +1,28 @@
 #!/bin/bash
 set -ex
 
+# global variables with default value
+ARM_OS="android"                    # android only yet
+ARM_ABI="armv8"                     # armv8, armv7
+ARM_LANG="gcc"                      # gcc only yet
+ANDROID_STL="c++_shared"            # c++_shared, c++_static
+DDK_ROOT="$(pwd)/ai_ddk_lib/"       # HIAI SDK from https://developer.huawei.com/consumer/cn/hiai/
+TARGET_NAME="test_npu_pass"         # default target
+BUILD_EXTRA=OFF                     # ON(with sequence ops)/OFF
+WITH_JAVA=ON                        # ON(build jar and jni so)/OFF
+WITH_TESTING=ON                     # ON/OFF
+ON_TINY_PUBLISH=OFF                 # ON(tiny publish)/OFF(full publish)
+
 function print_usage {
     echo -e "\nUSAGE:"
     echo
     echo "----------------------------------------"
     echo -e "--arm_os=<os> android only yet."
     echo -e "--arm_abi=<abi> armv8, armv7 yet."
-    echo -e "--android_stl=<shared> shared or static"
-    echo -e "--arm_lang=<gcc> "
-    echo -e "--ddk_root=<hiai_ddk_root> "
-    echo -e "--test_name=<test_name>"
+    echo -e "--android_stl=<shared> c++_shared or c++_static"
+    echo -e "--arm_lang=<gcc>"
+    echo -e "--ddk_root=<hiai_ddk_root>"
+    echo -e "--target_name=<target_name>"
     echo "----------------------------------------"
     echo
 }
@@ -47,102 +59,54 @@ function prepare_thirdparty {
     fi
 }
 
-function cmake_npu {
-    prepare_workspace
-    # $1: ARM_TARGET_OS in "android" , "armlinux"
-    # $2: ARM_TARGET_ARCH_ABI in "armv8", "armv7" ,"armv7hf"
-    # $3: ARM_TARGET_LANG in "gcc" "clang"
-    # $4: ANDROID_STL_TYPE in "c++_shared" "c++_static"
-    # $5: DDK_ROOT path
-    # $6: BUILD_EXTRA
-    # $7: TINY_PUBLISH
+function build_npu {
+    cur_dir=$(pwd)
 
-    local build_tests=ON
-    local tiny_publish=$7
-    if [[ "x${tiny_publish}" == "xON" ]]; then
-        build_tests=OFF
+    prepare_thirdparty
+
+    local stl_dir
+    local publish_dir
+    # the c++ symbol is not recognized by the bundled script
+    if [[ "${ANDROID_STL}" == "c++_shared" ]]; then
+        stl_dir="cxx_shared"
     fi
+    if [[ "${ANDROID_STL}" == "c++_static" ]]; then
+        stl_dir="cxx_static"
+    fi
+    if [[ "${ON_TINY_PUBLISH}" == "ON" ]]; then
+        WITH_TESTING=OFF
+        publish_dir="tiny_publish"
+    else
+        publish_dir="full_publish"
+    fi
+    build_dir=$cur_dir/build.lite.npu.${ARM_OS}.${ARM_ABI}.${ARM_LANG}.${stl_dir}.${publish_dir}
+    mkdir -p $build_dir
+    cd $build_dir
 
     # NPU libs need API LEVEL 24 above
+    prepare_workspace
     cmake .. \
         -DWITH_GPU=OFF \
         -DWITH_MKL=OFF \
         -DWITH_LITE=ON \
         -DLITE_WITH_CUDA=OFF \
         -DLITE_WITH_X86=OFF \
-        -DLITE_BUILD_EXTRA=$6 \
+        -DLITE_BUILD_EXTRA=${BUILD_EXTRA} \
         -DLITE_WITH_ARM=ON \
         -DWITH_ARM_DOTPROD=ON   \
         -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
-        -DWITH_TESTING=${build_tests} \
-        -DLITE_WITH_JAVA=ON \
+        -DWITH_TESTING=${WITH_TESTING} \
+        -DLITE_WITH_JAVA=${WITH_JAVA} \
         -DLITE_WITH_NPU=ON \
-        -DLITE_ON_TINY_PUBLISH=${tiny_publish} \
+        -DLITE_ON_TINY_PUBLISH=${ON_TINY_PUBLISH} \
         -DANDROID_API_LEVEL=24 \
-        -DARM_TARGET_OS=$1 \
-        -DARM_TARGET_ARCH_ABI=$2 \
-        -DARM_TARGET_LANG=$3 \
-        -DANDROID_STL_TYPE=$4 \
-        -DNPU_DDK_ROOT=$5
-}
+        -DARM_TARGET_OS=${ARM_OS} \
+        -DARM_TARGET_ARCH_ABI=${ARM_ABI} \
+        -DARM_TARGET_LANG=${ARM_LANG} \
+        -DANDROID_STL_TYPE=${ANDROID_STL} \
+        -DNPU_DDK_ROOT=${DDK_ROOT}
 
-function build_npu {
-    # os, abi, lang, stl, ddk_root, test_name
-    cur_dir=$(pwd)
-
-    local os=android
-    local abi=armv8
-    local lang=gcc
-    local stl="c++_shared"
-    local ddk_root="${cur_dir}/ai_ddk_lib/"
-    local build_extra=OFF
-    local tiny_publish=OFF
-    local test_name=test_npu_pass
-    prepare_thirdparty
-
-    if [ "x${ARM_OS}" != "x" ]; then
-        os=$ARM_OS
-    fi
-    if [[ "x${ARM_ABI}" != "x" ]]; then
-        abi=$ARM_ABI
-    fi
-    if [[ "x${ARM_LANG}" != "x" ]]; then
-        lang=$ARM_LANG
-    fi
-    if [[ "x${ANDROID_STL}" != "x" ]]; then
-        stl=$ANDROID_STL
-    fi
-    if [[ "x${DDK_ROOT}" != "x" ]]; then
-        ddk_root=$DDK_ROOT
-    fi
-    if [[ "x${BUILD_EXTRA}" != "x" ]]; then
-        build_extra=$BUILD_EXTRA
-    fi
-    if [[ "x${TINY_PUBLISH}" != "x" ]]; then
-        tiny_publish=$TINY_PUBLISH
-    fi
-    if [[ $# -ge 1 ]]; then
-        test_name=$1
-    fi
-
-    # the c++ symbol is not recognized by the bundled script
-    if [[ "${stl}" == "c++_shared" ]]; then
-        stl_dir="cxx_shared"
-    fi
-    if [[ "${stl}" == "c++_static" ]]; then
-        stl_dir="cxx_static"
-    fi
-    if [[ "${tiny_publish}" == "ON" ]]; then
-        publish_dir="tiny_publish"
-    else
-        publish_dir="full_publish"
-    fi
-    build_dir=$cur_dir/build.lite.npu.${os}.${abi}.${lang}.${stl_dir}.${publish_dir}
-    mkdir -p $build_dir
-    cd $build_dir
-
-    cmake_npu ${os} ${abi} ${lang} ${stl} ${ddk_root} ${build_extra} ${tiny_publish}
-    make $test_name -j2
+    make $TARGET_NAME -j2
 
     cd -
     echo "Done"
@@ -152,12 +116,8 @@ function main {
     # Parse command line.
     for i in "$@"; do
         case $i in
-            --tests=*)
-                TESTS_FILE="${i#*=}"
-                shift
-                ;;
-            --test_name=*)
-                TEST_NAME="${i#*=}"
+            --target_name=*)
+                TARGET_NAME="${i#*=}"
                 shift
                 ;;
             --arm_os=*)
@@ -185,16 +145,18 @@ function main {
                 shift
                 ;;
             build)
-                build_npu $TEST_NAME
+                build_npu
                 shift
                 ;;
             full_publish)
-                build_npu publish_inference
+                TARGET_NAME=publish_inference
+                build_npu
                 shift
                 ;;
             tiny_publish)
-                TINY_PUBLISH=ON
-                build_npu publish_inference
+                ON_TINY_PUBLISH=ON
+                TARGET_NAME=publish_inference
+                build_npu
                 shift
                 ;;
             *)

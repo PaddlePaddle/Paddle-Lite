@@ -33,8 +33,10 @@ void GraphCompute::PrepareForRun() {
   CHECK(param.weight);
   CHECK(lite::npu::LoadModel(*param.weight, &model_client_, &model_name_));
   // TODO(hong19860320): find an good way to free the model data.
+  // No interface exists to free the data of tensor, so I resize the dim to 1
+  // and change target to force it to realloc a small size memory.
   param.weight->Resize({1});
-  param.weight->mutable_data(TargetType::kARM, 1);
+  param.weight->mutable_data<int8_t>(TargetType::kARM);
   CHECK(model_client_);
   int ret =
       model_client_->GetModelIOTensorDim(model_name_, npu_idims_, npu_odims_);
