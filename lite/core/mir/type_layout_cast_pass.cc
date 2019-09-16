@@ -174,4 +174,4 @@ void TypeLayoutTransformPass::SetValidPlaces(
 
 REGISTER_MIR_PASS(type_layout_cast_pass,
                   paddle::lite::mir::TypeLayoutTransformPass)
-    .SetTargets({TARGET(kAny)});
+    .BindTargets({TARGET(kAny)});

@@ -12,27 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/mir/pass.h"
-#include "lite/core/mir/pass_registry.h"
+#include "lite/kernels/x86/matmul_compute.h"
 
-namespace paddle {
-namespace lite {
-namespace mir {
-
-class DemoPass : public mir::DebugPass {
- public:
-  void Apply(const std::unique_ptr<SSAGraph> &graph) override {}
-};
-
-/*
-bool RegisterDemoPass() {
-  return PassManager::Global().AddNewPass("demo", new DemoPass);
-}
- */
-
-}  // namespace mir
-}  // namespace lite
-}  // namespace paddle
-
-REGISTER_MIR_PASS(demo, paddle::lite::mir::DemoPass)
-    .BindTargets({TARGET(kAny)});
+REGISTER_LITE_KERNEL(matmul,
+                     kX86,
+                     kFloat,
+                     kNCHW,
+                     paddle::lite::kernels::x86::MatMulCompute<float>,
+                     def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
+    .Finalize();

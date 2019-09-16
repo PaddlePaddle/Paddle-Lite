@@ -72,7 +72,7 @@ void SerializeTensor(std::ostream& os,
 
 // LoDTensor to ostream
 void TensorToStream(std::ostream& os, const lite::Tensor& tensor);
-
+void TensorFromStream(std::istream& is, lite::Tensor* tensor);
 void ReadBinaryFile(const std::string& filename, std::string* contents);
 
 // For naive buffer
