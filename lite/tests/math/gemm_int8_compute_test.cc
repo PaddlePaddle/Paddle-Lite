@@ -157,7 +157,8 @@ bool test_gemm_int8(bool tra,
   Tensor tpackedA;
   int hblock = paddle::lite::arm::math::get_hblock_int8(&ctx);
   int round_up_a = ((hblock + m - 1) / hblock) * hblock;
-  tpackedA.Resize({round_up_a * k});
+  int round_up_k = 4 * ((k + 3) / 4);
+  tpackedA.Resize({round_up_a * round_up_k});
   paddle::lite::arm::math::prepackA_int8(
       tpackedA.mutable_data<int8_t>(), da, lda, 0, m, 0, k, tra, &ctx);
   /// warmup

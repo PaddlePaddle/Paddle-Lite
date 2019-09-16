@@ -228,8 +228,10 @@ inline void transpose_4x4(float32x4_t v0,
       "vtrn.32 %q[v2], %q[v3]\n" /* trans q2, q3, c0d0c2d2, c1d1c3d3*/
       "vswp   %f[v0], %e[v2]\n"  /* trans q0, q2, a0b0c0d0, a2b2c2d2*/
       "vswp   %f[v1], %e[v3]\n"  /* trans q1, q3, a1b1c1d1, a3b3c3d3*/
-      "vst1.32  {%q[v0], %q[v1]}, [%[dout]]!\n"
-      "vst1.32  {%q[v2], %q[v3]}, [%[dout]]\n"
+      "vst1.32  {%e[v0], %f[v0]}, [%[dout]]!\n"
+      "vst1.32  {%e[v1], %f[v1]}, [%[dout]]!\n"
+      "vst1.32  {%e[v2], %f[v2]}, [%[dout]]!\n"
+      "vst1.32  {%e[v3], %f[v3]}, [%[dout]]\n"
       : [dout] "+r"(dout)
       : [v0] "w"(v0), [v1] "w"(v1), [v2] "w"(v2), [v3] "w"(v3)
       :);
