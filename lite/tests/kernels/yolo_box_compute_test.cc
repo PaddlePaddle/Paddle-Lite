@@ -101,7 +101,7 @@ class YoloBoxComputeTester : public arena::TestCase {
   float conf_thresh_ = 0.f;
   int downsample_ratio_ = 0;
 
-  DDim _dims0_{{1, 2, 2, 1}};
+  DDim _dims0_{{1, 255, 13, 13}};
   DDim _dims1_{{1, 2}};
 
  public:
@@ -115,7 +115,10 @@ class YoloBoxComputeTester : public arena::TestCase {
         anchors_(anchors),
         class_num_(class_num),
         conf_thresh_(conf_thresh),
-        downsample_ratio_(downsample_ratio) {}
+        downsample_ratio_(downsample_ratio) {
+    int anchor_num = anchors_.size() / 2;
+    _dims0_[1] = anchor_num * (5 + class_num);
+  }
 
   void RunBaseline(Scope* scope) override {
     const lite::Tensor* X = scope->FindTensor(input0_);
@@ -218,7 +221,7 @@ class YoloBoxComputeTester : public arena::TestCase {
     }
     std::vector<int> data1(_dims1_.production());
     for (int i = 0; i < _dims1_.production(); i++) {
-      data1[i] = i + 8;
+      data1[i] = 608;
     }
     SetCommonTensor(input0_, _dims0_, data0.data());
     SetCommonTensor(input1_, _dims1_, data1.data());
@@ -227,10 +230,9 @@ class YoloBoxComputeTester : public arena::TestCase {
 
 void test_yolobox(Place place) {
   for (int class_num : {1, 2, 3, 4}) {
-    for (float conf_thresh : {0.5, 0.2, 0.7}) {
-      for (int downsample_ratio : {1, 2, 3}) {
-        std::vector<int> anchor({1, 2, 3, 4});
-
+    for (float conf_thresh : {0.01, 0.2, 0.7}) {
+      for (int downsample_ratio : {16, 32}) {
+        std::vector<int> anchor({10, 13, 16, 30});
         std::unique_ptr<arena::TestCase> tester(new YoloBoxComputeTester(
             place, "def", anchor, class_num, conf_thresh, downsample_ratio));
         arena::Arena arena(std::move(tester), place, 2e-5);
