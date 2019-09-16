@@ -18,6 +18,7 @@
 #include <vector>
 #include "lite/core/mir/generate_program_pass.h"
 #include "lite/core/mir/pass_manager.h"
+#include "lite/core/mir/pass_utils.h"
 #include "lite/core/mir/ssa_graph.h"
 #include "lite/core/mir/static_kernel_pick_pass.h"
 #include "lite/core/mir/type_target_cast_pass.h"
@@ -93,7 +94,7 @@ class Optimizer {
            "argument_type_display_pass",     //
 
            "runtime_context_assign_pass",
-           "graph_visualze"}});
+           "memory_optimize_pass"}});
     } else {
       RunPasses(passes);
     }
@@ -183,11 +184,22 @@ class Optimizer {
   // Specify the passes and run them.
   void RunPasses(const std::vector<std::string>& passes) {
     for (auto& x : passes) {
-      LOG(INFO) << "== Running pass " << x;
-      auto* pass = mir::PassManager::Global().LookUp(x);
+      LOG(INFO) << "== Running pass: " << x;
+      mir::Pass* pass = mir::PassManager::Global().LookUp(x);
       CHECK(pass) << "Can not find pass: " << x;
-      pass->Apply(graph_);
-      LOG(INFO) << "== Running pass Done." << x;
+      bool matched = false;
+      for (const auto& place : valid_places_) {
+        if (PassMatchesTarget(*pass, place.target)) {
+          matched = true;
+        }
+      }
+      matched = matched || PassMatchesKernels(*pass);
+      if (!matched) {
+        LOG(INFO) << "Skip " << x << " pass because the target does not match.";
+      } else {
+        pass->Apply(graph_);
+        LOG(INFO) << "== Finished running: " << x;
+      }
     }
   }
 

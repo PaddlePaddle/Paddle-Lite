@@ -15,6 +15,7 @@
 #include "lite/core/mir/fusion/quant_dequant_fuse_pass.h"
 #include <memory>
 #include <vector>
+#include "lite/api/paddle_place.h"
 #include "lite/core/mir/fusion/quant_dequant_op_fuser.h"
 #include "lite/core/mir/pass_registry.h"
 
@@ -42,4 +43,5 @@ void QuantDequantFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 }  // namespace paddle
 
 REGISTER_MIR_PASS(lite_quant_dequant_fuse_pass,
-                  paddle::lite::mir::QuantDequantFusePass);
+                  paddle::lite::mir::QuantDequantFusePass)
+    .BindTargets({TARGET(kAny)});

@@ -1,6 +1,6 @@
 lite_cc_library(mir_node SRCS node.cc DEPS kernel)
 lite_cc_library(mir_ssa_graph SRCS ssa_graph.cc DEPS mir_node program)
-lite_cc_library(mir_pass SRCS pass.cc DEPS mir_ssa_graph)
+lite_cc_library(mir_pass SRCS pass.cc pass_utils.cc DEPS mir_ssa_graph)
 lite_cc_library(mir_pass_manager SRCS pass_manager.cc DEPS mir_pass mir_ssa_graph mir_passes)
 lite_cc_library(mir_pass_registry SRCS pass_registry.cc DEPS mir_pass_manager)
 
@@ -31,6 +31,7 @@ lite_cc_library(mir_passes
       argument_type_display_pass.cc
       demo_pass.cc
       runtime_context_assign_pass.cc
+      memory_optimize_pass.cc
   DEPS mir_pass types context ${mir_fusers} ${subgraph_passes})
 
 # lite_cc_test(test_ssa_graph SRCS ssa_graph_test.cc DEPS

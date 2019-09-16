@@ -15,11 +15,8 @@
 
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
-#include "paddle/fluid/framework/eigen.h"
-#include "paddle/fluid/framework/operator.h"
-#include "paddle/fluid/operators/activation_op.h"
-#include "paddle/fluid/operators/elementwise/elementwise_op.h"
-#include "paddle/fluid/operators/elementwise/elementwise_op_function.h"
+#include "lite/fluid/eigen.h"
+#include "lite/kernels/x86/elementwise_op_function.h"
 
 namespace paddle {
 namespace lite {
@@ -45,73 +42,16 @@ class ElementwiseSubCompute
   void Run() override {
     auto& param = *param_.get_mutable<param_t>();
     auto& context = ctx_->As<X86Context>();
-    CHECK(context.x86_device_context());
 
     param.Out->template mutable_data<T>();
-    paddle::operators::ElementwiseComputeEx<SubFunctor<T>,
-                                            platform::CPUDeviceContext,
-                                            T>(*context.x86_execution_context(),
-                                               &param.X->raw_tensor(),
-                                               &param.Y->raw_tensor(),
-                                               param.axis,
-                                               SubFunctor<T>(),
-                                               &param.Out->raw_tensor());
+    paddle::lite::kernels::x86::ElementwiseComputeEx<SubFunctor<T>,
+                                                     lite::TargetType::kX86,
+                                                     T>(
+        context, param.X, param.Y, param.axis, SubFunctor<T>(), param.Out);
   }
 
   virtual ~ElementwiseSubCompute() = default;
 };
-
-template <typename T>
-struct SubGradDX {
-  T operator()(T x, T y, T out, T dout) const { return dout; }
-};
-
-template <typename T>
-struct SubGradDY {
-  T operator()(T x, T y, T out, T dout) const { return -dout; }
-};
-
-#ifdef LITE_WITH_X86
-template <typename T>
-class ElementwiseSubGradCompute
-    : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
- public:
-  using param_t = operators::ElementwiseGradParam;
-  void Run() override {
-    auto& param = *param_.get_mutable<param_t>();
-    auto& context = ctx_->As<X86Context>();
-    CHECK(context.x86_device_context());
-
-    param.X_grad->template mutable_data<T>();
-    // skip out, x, y
-    auto dout = param.Out_grad->raw_tensor();
-    auto dx = param.X_grad->raw_tensor();
-
-    framework::Tensor* dy = nullptr;
-    if (param.Y_grad) {
-      param.Y_grad->template mutable_data<T>();
-      dy = &param.Y_grad->raw_tensor();
-    }
-    auto& skip = dout;
-    paddle::operators::ElemwiseExplicitGradCompute<platform::CPUDeviceContext,
-                                                   T,
-                                                   SubGradDX<T>,
-                                                   SubGradDY<T>>(
-        *context.x86_execution_context(),
-        skip,
-        skip,
-        skip,
-        dout,
-        param.axis,
-        &dx,
-        dy,
-        SubGradDX<T>(),
-        SubGradDY<T>());
-  }
-
-  virtual ~ElementwiseSubGradCompute() = default;
-};
-#endif
 
 template <typename T>
 class ElementwiseAddCompute
@@ -121,16 +61,11 @@ class ElementwiseAddCompute
   void Run() override {
     auto& param = *param_.get_mutable<param_t>();
     auto& context = ctx_->As<X86Context>();
-    CHECK(context.x86_device_context());
     param.Out->template mutable_data<T>();
-    paddle::operators::ElementwiseComputeEx<AddFunctor<T>,
-                                            platform::CPUDeviceContext,
-                                            T>(*context.x86_execution_context(),
-                                               &param.X->raw_tensor(),
-                                               &param.Y->raw_tensor(),
-                                               param.axis,
-                                               AddFunctor<T>(),
-                                               &param.Out->raw_tensor());
+    paddle::lite::kernels::x86::ElementwiseComputeEx<AddFunctor<T>,
+                                                     lite::TargetType::kX86,
+                                                     T>(
+        context, param.X, param.Y, param.axis, AddFunctor<T>(), param.Out);
   }
 
   virtual ~ElementwiseAddCompute() = default;
