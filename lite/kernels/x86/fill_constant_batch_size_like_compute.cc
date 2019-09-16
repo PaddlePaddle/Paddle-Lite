@@ -14,12 +14,13 @@
 
 #include "lite/kernels/x86/fill_constant_batch_size_like_compute.h"
 
-REGISTER_LITE_KERNEL(fill_constant_batch_size_like,
-                     kX86,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::x86::FillConstantBatchSizeLikeCompute<float>,
-                     def)
+REGISTER_LITE_KERNEL(
+    fill_constant_batch_size_like,
+    kX86,
+    kFloat,
+    kNCHW,
+    paddle::lite::kernels::x86::FillConstantBatchSizeLikeCompute<float>,
+    def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
     .Finalize();

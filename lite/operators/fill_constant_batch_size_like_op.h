@@ -27,7 +27,8 @@ class FillConstantBatchSizeLikeOp : public OpLite {
  public:
   FillConstantBatchSizeLikeOp() {}
 
-  explicit FillConstantBatchSizeLikeOp(const std::string &op_type) : OpLite(op_type) {}
+  explicit FillConstantBatchSizeLikeOp(const std::string &op_type)
+      : OpLite(op_type) {}
 
   bool CheckShape() const override;
 
@@ -36,7 +37,9 @@ class FillConstantBatchSizeLikeOp : public OpLite {
   bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
-  std::string DebugString() const override { return "fill_constant_batch_size_like"; }
+  std::string DebugString() const override {
+    return "fill_constant_batch_size_like";
+  }
 
  private:
   mutable FillConstantBatchSizeLikeParam param_;
