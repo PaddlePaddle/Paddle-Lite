@@ -1924,6 +1924,7 @@ void gemm_prepack_oth_int8(const int8_t* A_packed,
   auto* zerobuf = static_cast<int8_t *>(malloc(x_block * \
                   (sizeof(int8_t) + sizeof(Dtype))));
   memset(zerobuf, 0, x_block * sizeof(int8_t));
+
   auto* trash_ptr = reinterpret_cast<Dtype*>(zerobuf + \
                   x_block * sizeof(int8_t));
 
