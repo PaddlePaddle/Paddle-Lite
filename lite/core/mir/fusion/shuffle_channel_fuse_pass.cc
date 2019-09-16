@@ -36,4 +36,4 @@ void ShuffleChannelFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 
 REGISTER_MIR_PASS(lite_shuffle_channel_fuse_pass,
                   paddle::lite::mir::ShuffleChannelFusePass)
-    .SetTargets({TARGET(kAny)});
+    .BindTargets({TARGET(kAny)});

@@ -184,6 +184,8 @@ void Transpose2Compute(const Transpose2Param<GPU_CL> &param, cl_context context,
   output->InitEmptyImage(context, commandQueue, output_tensor->dims());
   framework::TensorToCLImage(output_tensor, output, context, commandQueue,
                              kernel1);
+  delete (input_tensor);
+  delete (output_tensor);
 }
 
 template <>

@@ -14,6 +14,7 @@
 
 #include "lite/kernels/arm/lrn_compute.h"
 #include <gtest/gtest.h>
+#include <cmath>
 #include <string>
 #include <vector>
 #include "lite/core/op_registry.h"

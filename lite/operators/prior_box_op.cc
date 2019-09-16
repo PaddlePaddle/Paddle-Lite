@@ -67,6 +67,10 @@ bool PriorBoxOpLite::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
   if (opdesc.HasAttr("order")) {
     param_.order = opdesc.GetAttr<std::vector<std::string>>("order");
   }
+  if (opdesc.HasAttr("min_max_aspect_ratios_order")) {
+    param_.min_max_aspect_ratios_order =
+        opdesc.GetAttr<bool>("min_max_aspect_ratios_order");
+  }
   return true;
 }
 

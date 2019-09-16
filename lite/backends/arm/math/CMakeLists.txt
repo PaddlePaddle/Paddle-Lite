@@ -106,6 +106,6 @@ if (NOT HAS_ARM_MATH_LIB_DIR)
       stack.cc
       affine_channel.cc
       anchor_generator.cc
-      DEPS ${lite_kernel_deps})
+      DEPS ${lite_kernel_deps} context tensor)
 endif()
  

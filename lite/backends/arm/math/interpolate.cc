@@ -83,8 +83,8 @@ void bilinear_interp(const float* src,
       beta[dy * 2 + 1] = fy;
     }
   } else {
-    scale_x = static_cast<float>(w_in / w_out);
-    scale_y = static_cast<float>(h_in / h_out);
+    scale_x = static_cast<float>(w_in) / w_out;
+    scale_y = static_cast<float>(h_in) / h_out;
     // calculate x axis coordinate
     for (int dx = 0; dx < w_out; dx++) {
       fx = scale_x * (dx + 0.5f) - 0.5f;

@@ -99,4 +99,4 @@ std::string Visualize(mir::SSAGraph* graph) {
 }  // namespace paddle
 
 REGISTER_MIR_PASS(graph_visualze, paddle::lite::mir::GraphVisualizePass)
-    .SetTargets({TARGET(kAny)});
+    .BindTargets({TARGET(kAny)});
