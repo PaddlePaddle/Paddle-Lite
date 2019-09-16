@@ -14,7 +14,7 @@
 
 #include "lite/backends/arm/math/gemm_prepacked_int8.h"
 #include <arm_neon.h>
-#include "lite/backends/arm/math/dot_toolchain_support.h"
+#include "lite/backends/arm/math/dotprod/gemm_sdot.h"
 
 namespace paddle {
 namespace lite {
@@ -631,6 +631,7 @@ inline void gemm_int8_kernel(const int8_t* a_ptr,
                              bool is_relu,
                              int k,
                              int rem) {
+  // clang-format off
   asm volatile(GEMM_INT8_KERNEL GEMM_INT8_FP32_OUT
                : [a_ptr] "+r"(a_ptr),
                  [b_ptr] "+r"(b_ptr),
@@ -643,39 +644,12 @@ inline void gemm_int8_kernel(const int8_t* a_ptr,
                  [bias] "r"(bias),
                  [rem] "r"(rem),
                  [scale] "r"(scale)
-               : "v0",
-                 "v1",
-                 "v2",
-                 "v3",
-                 "v4",
-                 "v5",
-                 "v6",
-                 "v7",
-                 "v8",
-                 "v9",
-                 "v10",
-                 "v11",
-                 "v12",
-                 "v13",
-                 "v14",
-                 "v15",
-                 "v16",
-                 "v17",
-                 "v18",
-                 "v19",
-                 "v20",
-                 "v21",
-                 "v22",
-                 "v23",
-                 "v24",
-                 "v25",
-                 "v26",
-                 "v27",
-                 "v28",
-                 "v29",
-                 "v30",
-                 "v31",
-                 "cc");
+               : "v0","v1","v2","v3","v4","v5","v6","v7","v8",
+                 "v9","v10","v11","v12","v13","v14",
+                 "v15","v16","v17","v18","v19","v20",
+                 "v21","v22","v23","v24","v25","v26",
+                 "v27","v28","v29","v30","v31","cc");
+  // clang-format on
 }
 
 template <>
@@ -690,6 +664,7 @@ inline void gemm_int8_kernel(const int8_t* a_ptr,
                              bool is_relu,
                              int k,
                              int rem) {
+  // clang-format off
   asm volatile(GEMM_INT8_KERNEL GEMM_INT8_INT8_OUT
                : [a_ptr] "+r"(a_ptr),
                  [b_ptr] "+r"(b_ptr),
@@ -702,39 +677,13 @@ inline void gemm_int8_kernel(const int8_t* a_ptr,
                  [bias] "r"(bias),
                  [rem] "r"(rem),
                  [scale] "r"(scale)
-               : "v0",
-                 "v1",
-                 "v2",
-                 "v3",
-                 "v4",
-                 "v5",
-                 "v6",
-                 "v7",
-                 "v8",
-                 "v9",
-                 "v10",
-                 "v11",
-                 "v12",
-                 "v13",
-                 "v14",
-                 "v15",
-                 "v16",
-                 "v17",
-                 "v18",
-                 "v19",
-                 "v20",
-                 "v21",
-                 "v22",
-                 "v23",
-                 "v24",
-                 "v25",
-                 "v26",
-                 "v27",
-                 "v28",
-                 "v29",
-                 "v30",
-                 "v31",
-                 "cc");
+               : "v0","v1","v2","v3","v4","v5","v6","v7",
+                 "v8","v9","v10","v11","v12",
+                 "v13","v14","v15","v16","v17",
+                 "v18","v19","v20","v21","v22",
+                 "v23","v24","v25","v26","v27",
+                 "v28","v29","v30","v31","cc");
+  // clang-format on
 }
 
 #ifdef WITH_ARM_DOTPROD
@@ -754,6 +703,7 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
                                   bool is_relu,
                                   int k,
                                   int rem);
+#if 0
 // clang-format off
 #define GEMM_SDOT_INT8_KERNEL                                              \
   "ldp    q0, q1, [%[a_ptr]], #32\n"     /* load a00,a01 to q0, q1*/       \
@@ -1107,6 +1057,7 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
   "sdot   v28.4s,  v4.16b,  v1.4b[2]\n"  /* out22 = b2 * a10[0], b2 = q7*/ \
   "sdot   v31.4s,  v4.16b,  v1.4b[3]\n"  /* out23 = b2 * a10[0], b2 = q7*/ \
   "11: \n"                               /* end */
+#endif
 
 #define GEMM_SDOT_RELU                             \
   "cbz    %w[relu],   12f\n"       /* skip relu */ \
@@ -1327,7 +1278,9 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
                                   bool is_relu,
                                   int k,
                                   int tail) {
-  asm volatile(_DECLARE_SDOT_ELEMENT GEMM_SDOT_INT8_KERNEL GEMM_SDOT_FP32_OUT
+  // clang-format off
+  asm volatile(GEMM_SDOT_INT8_KERNEL
+               GEMM_SDOT_FP32_OUT
                : [a_ptr] "+r"(a_ptr),
                  [b_ptr] "+r"(b_ptr),
                  [k] "+r"(k),
@@ -1341,40 +1294,12 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
                  [c_ptr6] "+r"(c_ptr6),
                  [c_ptr7] "+r"(c_ptr7)
                : [bias_ptr] "r"(bias), [scale] "r"(scale), [relu] "r"(is_relu)
-               : "cc",
-                 "memory",
-                 "v0",
-                 "v1",
-                 "v2",
-                 "v3",
-                 "v4",
-                 "v5",
-                 "v6",
-                 "v7",
-                 "v8",
-                 "v9",
-                 "v10",
-                 "v11",
-                 "v12",
-                 "v13",
-                 "v14",
-                 "v15",
-                 "v16",
-                 "v17",
-                 "v18",
-                 "v19",
-                 "v20",
-                 "v21",
-                 "v22",
-                 "v23",
-                 "v24",
-                 "v25",
-                 "v26",
-                 "v27",
-                 "v28",
-                 "v29",
-                 "v30",
-                 "v31");
+               : "cc","memory","v0","v1","v2",
+                 "v3","v4","v5","v6","v7","v8","v9","v10",
+                 "v11","v12","v13","v14","v15","v16","v17",
+                 "v18","v19","v20","v21","v22","v23","v24",
+                 "v25","v26","v27","v28","v29","v30","v31");
+  // clang-format on
 }
 template <>
 inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
@@ -1392,6 +1317,7 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
                                   bool is_relu,
                                   int k,
                                   int tail) {
+  // clang-format off
   asm volatile(GEMM_SDOT_INT8_KERNEL GEMM_SDOT_INT8_OUT
                : [a_ptr] "+r"(a_ptr),
                  [b_ptr] "+r"(b_ptr),
@@ -1406,40 +1332,12 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
                  [c_ptr6] "+r"(c_ptr6),
                  [c_ptr7] "+r"(c_ptr7)
                : [bias_ptr] "r"(bias), [scale] "r"(scale), [relu] "r"(is_relu)
-               : "cc",
-                 "memory",
-                 "v0",
-                 "v1",
-                 "v2",
-                 "v3",
-                 "v4",
-                 "v5",
-                 "v6",
-                 "v7",
-                 "v8",
-                 "v9",
-                 "v10",
-                 "v11",
-                 "v12",
-                 "v13",
-                 "v14",
-                 "v15",
-                 "v16",
-                 "v17",
-                 "v18",
-                 "v19",
-                 "v20",
-                 "v21",
-                 "v22",
-                 "v23",
-                 "v24",
-                 "v25",
-                 "v26",
-                 "v27",
-                 "v28",
-                 "v29",
-                 "v30",
-                 "v31");
+               : "cc","memory","v0","v1","v2","v3",
+                 "v4","v5","v6","v7","v8","v9","v10",
+                 "v11","v12","v13","v14","v15","v16","v17",
+                 "v18","v19","v20","v21","v22","v23","v24",
+                 "v25","v26","v27","v28","v29","v30","v31");
+  // clang-format on
 }
 #endif
 

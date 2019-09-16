@@ -6,6 +6,17 @@ if(NOT (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM))
   return()
 endif()
 
+set(script_dir ${CMAKE_CURRENT_SOURCE_DIR}/../../../tools/)
+message(STATUS "generating arm dotprod code")
+find_package(PythonInterp REQUIRED)
+execute_process(COMMAND ${PYTHON_EXECUTABLE} ${script_dir}/convert_arm_sdot_to_machine_code.py
+        "--input_file=${CMAKE_CURRENT_SOURCE_DIR}/dotprod/__gemm_sdot_meta__.h"
+        "--output_file=${CMAKE_CURRENT_SOURCE_DIR}/dotprod/gemm_sdot.h"
+        RESULT_VARIABLE gen_code_ret)
+if (NOT ${gen_code_ret} STREQUAL "0")
+  message(FATAL_ERROR "generating dotprod code quit with error: ${gen_code_ret}")
+endif ()
+
 set(HAS_ARM_MATH_LIB_DIR OFF)
 # will search name as "libmath_arm.${os}.${abi}.${lang}.a"
 if(ARM_MATH_LIB_DIR AND EXISTS "${ARM_MATH_LIB_DIR}")
