@@ -12,14 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/arm/conv_compute.h"
 #include <gflags/gflags.h>
 #include <gtest/gtest.h>
-#include "lite/backends/arm/math/conv_depthwise.h"
 #include "lite/core/context.h"
+#include "lite/operators/op_params.h"
 #include "lite/tests/utils/naive_math_impl.h"
 #include "lite/tests/utils/tensor_utils.h"
 #include "lite/tests/utils/timer.h"
+
+#ifdef LITE_WITH_ARM
+#include "lite/kernels/arm/conv_compute.h"
+#endif  // LITE_WITH_ARM
 
 DEFINE_int32(cluster, 0, "cluster id");
 DEFINE_int32(threads, 1, "threads num");

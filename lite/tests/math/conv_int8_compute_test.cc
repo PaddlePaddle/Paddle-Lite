@@ -14,12 +14,15 @@
 
 #include <gflags/gflags.h>
 #include <gtest/gtest.h>
-#include "lite/backends/arm/math/conv_depthwise.h"
 #include "lite/core/context.h"
-#include "lite/kernels/arm/conv_compute.h"
+#include "lite/operators/op_params.h"
 #include "lite/tests/utils/naive_math_impl.h"
 #include "lite/tests/utils/tensor_utils.h"
 #include "lite/tests/utils/timer.h"
+
+#ifdef LITE_WITH_ARM
+#include "lite/kernels/arm/conv_compute.h"
+#endif  // LITE_WITH_ARM
 
 DEFINE_int32(cluster, 0, "cluster id");
 DEFINE_int32(threads, 1, "threads num");
@@ -434,20 +437,16 @@ void test_conv_int8(const std::vector<DDim>& input_dims,
   release_param(&param_fp32_out);
 }
 #else
-void test_conv_int8(int n,
-                    int c,
-                    int h,
-                    int w,
-                    int num_out,
+void test_conv_int8(const std::vector<DDim>& input_dims,
+                    const DDim& weight_dim,
                     int group,
-                    const std::vector<int>& kernels,
                     const std::vector<int>& strides,
                     const std::vector<int>& pads,
                     const std::vector<int>& dilas,
                     bool flag_bias,
                     bool flag_relu,
-                    int thread_num,
-                    int cluster_id) {}
+                    const std::vector<int>& thread_num,
+                    const std::vector<int>& cluster_id) {}
 #endif  // LITE_WITH_ARM
 
 #if 1  /// 3x3dw

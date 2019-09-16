@@ -18,7 +18,7 @@
 #include "lite/tests/utils/naive_math_impl.h"
 #ifdef LITE_WITH_ARM
 #include "lite/backends/arm/math/funcs.h"
-#endif
+#endif  // LITE_WITH_ARM
 #include "lite/core/context.h"
 #include "lite/core/tensor.h"
 #include "lite/tests/utils/tensor_utils.h"

@@ -18,7 +18,7 @@
 #include "lite/tests/utils/naive_math_impl.h"
 #ifdef LITE_WITH_ARM
 #include "lite/backends/arm/math/funcs.h"
-#endif
+#endif  // LITE_WITH_ARM
 #include "lite/core/context.h"
 #include "lite/core/tensor.h"
 #include "lite/tests/utils/tensor_utils.h"
@@ -107,6 +107,7 @@ bool test_gemm_int8(bool tra,
             << ", transB: " << (trb ? "true" : "false")
             << ", relu: " << (has_relu ? "true" : "false")
             << ", bias: " << (has_bias ? "true" : "false");
+#ifdef LITE_WITH_ARM
   if (FLAGS_check_result) {
     Tensor ta_fp32;
     Tensor tb_fp32;
@@ -146,7 +147,6 @@ bool test_gemm_int8(bool tra,
                                           tc_basic_fp32.numel());
   }
   lite::test::Timer t0;
-#ifdef LITE_WITH_ARM
   //! compute
   double ops = 2.0 * m * n * k;
   std::unique_ptr<paddle::lite::KernelContext> ctx1(
