@@ -34,4 +34,8 @@ namespace ops = paddle_mobile::operators;
 REGISTER_OPERATOR_CPU(assign_value, ops::AssignValueOp);
 #endif
 
+#ifdef PADDLE_MOBILE_CL
+REGISTER_OPERATOR_CL(assign_value, ops::AssignValueOp);
+#endif
+
 #endif  // ASSIGN_VALUE_OP
