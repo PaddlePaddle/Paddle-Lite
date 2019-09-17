@@ -1,9 +1,7 @@
 ---
 layout: post
-title: Paddle-Lite 文档
+title: Paddle-Lite文档
 ---
-
-## 总体概述
 
 Paddle-Lite 框架是 PaddleMobile 新一代架构，重点支持移动端推理预测，特点**高性能、多硬件、轻量级** 。支持PaddleFluid/TensorFlow/Caffe/ONNX模型的推理部署，目前已经支持 ARM CPU, Mali GPU, Adreno GPU, Huawei NPU 等>多种硬件，正在逐步增加 X86 CPU, Nvidia GPU 等多款硬件，相关硬件性能业内领先。
 
