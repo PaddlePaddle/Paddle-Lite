@@ -28,10 +28,10 @@ void RunModel() {
   // 2. Create PaddlePredictor by CxxConfig
   std::shared_ptr<PaddlePredictor> predictor =
       CreatePaddlePredictor<CxxConfig>(config);
-  // 1. Set CxxConfig
+  // 3. Set MobileConfig
   MobileConfig mobile_config;
 
-  // 2. Create PaddlePredictor by CxxConfig
+  // 4. Create PaddlePredictor by MobileConfig
   std::shared_ptr<PaddlePredictor> mobile_predictor =
       CreatePaddlePredictor<MobileConfig>(mobile_config);
 }
