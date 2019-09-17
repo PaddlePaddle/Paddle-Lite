@@ -22,9 +22,9 @@ if ((NOT LITE_ON_TINY_PUBLISH) AND (ARM_TARGET_OS STREQUAL "android"))
     target_link_libraries(paddle_cxx_api_shared ${lib_DEPS} ${arm_kernels} ${npu_kernels})
 else()
     if (ARM_TARGET_OS STREQUAL "android")
-    	add_library(paddle_cxx_api_shared SHARED "")
-    	target_sources(paddle_cxx_api_shared PUBLIC paddle_api_shared.cc)
-    	add_dependencies(paddle_cxx_api_shared op_list_h kernel_list_h ${lib_DEPS})
+        add_library(paddle_cxx_api_shared SHARED "")
+        target_sources(paddle_cxx_api_shared PUBLIC ${__lite_cc_files})
+        add_dependencies(paddle_cxx_api_shared op_list_h kernel_list_h)
     endif()
 endif()
 
@@ -198,16 +198,9 @@ if (LITE_ON_TINY_PUBLISH)
     lite_cc_library(paddle_api_light SRCS light_api_impl.cc DEPS light_api paddle_api stream)
 else()
     lite_cc_library(paddle_api_light SRCS light_api_impl.cc DEPS light_api paddle_api)
-    lite_cc_library(paddle_api_light_shared MODULE SRCS light_api_impl.cc DEPS light_api paddle_api)
 endif()
 if (NOT LITE_ON_TINY_PUBLISH)
     lite_cc_library(paddle_api_full SRCS cxx_api_impl.cc DEPS cxx_api paddle_api_light
-      ${ops}
-      ARM_DEPS ${arm_kernels}
-      NPU_DEPS ${npu_kernels}
-      CL_DEPS ${opencl_kernels}
-      FPGA_DEPS ${fpga_kernels})
-    lite_cc_library(paddle_api_full_shared MODULE SRCS cxx_api_impl.cc DEPS cxx_api paddle_api_light
       ${ops}
       ARM_DEPS ${arm_kernels}
       NPU_DEPS ${npu_kernels}

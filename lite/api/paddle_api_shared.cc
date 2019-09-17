@@ -28,6 +28,12 @@ void RunModel() {
   // 2. Create PaddlePredictor by CxxConfig
   std::shared_ptr<PaddlePredictor> predictor =
       CreatePaddlePredictor<CxxConfig>(config);
+  // 1. Set CxxConfig
+  MobileConfig mobile_config;
+
+  // 2. Create PaddlePredictor by CxxConfig
+  std::shared_ptr<PaddlePredictor> mobile_predictor =
+      CreatePaddlePredictor<MobileConfig>(mobile_config);
 }
 
 }  // namespace lite_api
