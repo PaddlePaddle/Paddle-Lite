@@ -70,4 +70,5 @@ class IdentityScaleEliminatePass : public ProgramPass {
 
 REGISTER_MIR_PASS(identity_scale_eliminate_pass,
                   paddle::lite::mir::IdentityScaleEliminatePass)
-    .BindTargets({TARGET(kAny)});
+    .BindTargets({TARGET(kAny)})
+    .BindKernel("scale");

@@ -14,10 +14,14 @@
 
 #pragma once
 
+#include <string>
 #include "lite/core/mir/pass.h"
 
 namespace paddle {
 namespace lite {
+
+// Query if the specified kernel has been registered.
+bool KernelRegistered(const std::string name, const Place& place);
 
 // Check if the pass hits the hardware target.
 bool PassMatchesTarget(const mir::Pass& pass, TargetType target);
