@@ -120,7 +120,7 @@ tar zxvf benchmark_models.tar.gz
 
 > 注：若要使用测试脚本，**对单个模型测试**，请把单个模型放入 `benchmark_models` 文件夹，并确保测试脚本、`benchmark_models`文件夹在同一级的目录。
 
-注：上述模型都已经使用`model_optimize_tool`进行转化，而且Lite移动端只支持加载转化后的模型。如果需要测试其他模型，请先参考[模型转化方法](./model_optimize_tool)。
+注：上述模型都已经使用`model_optimize_tool`进行转化，而且Lite移动端只支持加载转化后的模型。如果需要测试其他模型，请先参考[模型转化方法](model_optimize_tool.html)。
 
 
 ### 3. benchmark.sh脚本
