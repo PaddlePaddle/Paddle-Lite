@@ -57,6 +57,21 @@ using std::vector;
 
 using framework::DtypeTensorTrait;
 
+template <typename Dtype>
+class CLImageDeleter {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+
+ public:
+  void operator()(GType *ptr) {
+#ifdef PADDLE_MOBILE_CL
+    framework::CLImage *image = dynamic_cast<framework::CLImage *>(ptr);
+    if (image) {
+      delete image;
+    }
+#endif
+  }
+};
+
 class OpParam {
  public:
   OpParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
@@ -850,14 +865,7 @@ class BatchNormParam : public OpParam {
     //    is_test_ = GetAttr<bool>("is_test", attrs);
   }
 
-  ~BatchNormParam() {
-    if (new_bias_) {
-      delete new_bias_;
-    }
-    if (new_scale_) {
-      delete new_scale_;
-    }
-  }
+  ~BatchNormParam() {}
 
   const GType *InputX() const { return input_x_; }
 
@@ -879,13 +887,17 @@ class BatchNormParam : public OpParam {
 
   const string &DataFormat() const { return data_format_; }
 
-  void SetNewScale(GType *new_scale) { new_scale_ = new_scale; }
+  void SetNewScale(GType *new_scale) {
+    new_scale_.reset(new_scale, CLImageDeleter<Dtype>());
+  }
 
-  void SetNewBias(GType *new_bias) { new_bias_ = new_bias; }
+  void SetNewBias(GType *new_bias) {
+    new_bias_.reset(new_bias, CLImageDeleter<Dtype>());
+  }
 
-  const GType *NewScale() const { return new_scale_; }
+  const GType *NewScale() const { return new_scale_.get(); }
 
-  const GType *NewBias() const { return new_bias_; }
+  const GType *NewBias() const { return new_bias_.get(); }
 
  private:
   GType *input_x_;
@@ -898,8 +910,8 @@ class BatchNormParam : public OpParam {
   float momentum_;
   bool is_test_;
   string data_format_;
-  GType *new_bias_;
-  GType *new_scale_;
+  std::shared_ptr<GType> new_bias_;
+  std::shared_ptr<GType> new_scale_;
 };
 #endif
 
@@ -2086,14 +2098,7 @@ class FusionConvAddBNReluParam : public ConvParam<Dtype> {
     this->output_ = OpParam::OutFrom<GType>(outputs, *scope);
   }
 
-  ~FusionConvAddBNReluParam() {
-    if (new_bias_) {
-      delete new_bias_;
-    }
-    if (new_scale_) {
-      delete new_scale_;
-    }
-  }
+  ~FusionConvAddBNReluParam() {}
 
   GType *Bias() const { return bias_; }
 
@@ -2111,13 +2116,17 @@ class FusionConvAddBNReluParam : public ConvParam<Dtype> {
 
   const float &Momentum() const { return momentum_; }
 
-  void SetNewScale(GType *new_scale) { new_scale_ = new_scale; }
+  void SetNewScale(GType *new_scale) {
+    new_scale_.reset(new_scale, CLImageDeleter<Dtype>());
+  }
 
-  void SetNewBias(GType *new_bias) { new_bias_ = new_bias; }
+  void SetNewBias(GType *new_bias) {
+    new_bias_.reset(new_bias, CLImageDeleter<Dtype>());
+  }
 
-  const GType *NewScale() const { return new_scale_; }
+  const GType *NewScale() const { return new_scale_.get(); }
 
-  const GType *NewBias() const { return new_bias_; }
+  const GType *NewBias() const { return new_bias_.get(); }
 
  protected:
   GType *bias_;
@@ -2128,8 +2137,8 @@ class FusionConvAddBNReluParam : public ConvParam<Dtype> {
   GType *input_variance_;
   float epsilon_;
   float momentum_;
-  GType *new_bias_;
-  GType *new_scale_;
+  std::shared_ptr<GType> new_bias_;
+  std::shared_ptr<GType> new_scale_;
 };
 #endif
 
@@ -2163,14 +2172,7 @@ class FusionConvBNAddReluParam : public ConvParam<Dtype> {
     this->output_ = OpParam::OutFrom<GType>(outputs, *scope);
   }
 
-  ~FusionConvBNAddReluParam() {
-    if (new_bias_) {
-      delete new_bias_;
-    }
-    if (new_scale_) {
-      delete new_scale_;
-    }
-  }
+  ~FusionConvBNAddReluParam() {}
   GType *Bias() const { return bias_; }
 
   const int &Axis() const { return axis_; }
@@ -2187,13 +2189,17 @@ class FusionConvBNAddReluParam : public ConvParam<Dtype> {
 
   const float &Momentum() const { return momentum_; }
 
-  void SetNewScale(GType *new_scale) { new_scale_ = new_scale; }
+  void SetNewScale(GType *new_scale) {
+    new_scale_.reset(new_scale, CLImageDeleter<Dtype>());
+  }
 
-  void SetNewBias(GType *new_bias) { new_bias_ = new_bias; }
+  void SetNewBias(GType *new_bias) {
+    new_bias_.reset(new_bias, CLImageDeleter<Dtype>());
+  }
 
-  const GType *NewScale() const { return new_scale_; }
+  const GType *NewScale() const { return new_scale_.get(); }
 
-  const GType *NewBias() const { return new_bias_; }
+  const GType *NewBias() const { return new_bias_.get(); }
 
  protected:
   GType *bias_;
@@ -2204,8 +2210,8 @@ class FusionConvBNAddReluParam : public ConvParam<Dtype> {
   GType *input_variance_;
   float epsilon_;
   float momentum_;
-  GType *new_bias_;
-  GType *new_scale_;
+  std::shared_ptr<GType> new_bias_;
+  std::shared_ptr<GType> new_scale_;
   std::string keyBNY_;
   std::string keyX_;
   std::string keyY_;
@@ -2244,13 +2250,17 @@ class FusionConvBNParam : public ConvParam<Dtype> {
 
   const float &Momentum() const { return momentum_; }
 
-  void SetNewScale(GType *new_scale) { new_scale_ = new_scale; }
+  void SetNewScale(GType *new_scale) {
+    new_scale_.reset(new_scale, CLImageDeleter<Dtype>());
+  }
 
-  void SetNewBias(GType *new_bias) { new_bias_ = new_bias; }
+  void SetNewBias(GType *new_bias) {
+    new_bias_.reset(new_bias, CLImageDeleter<Dtype>());
+  }
 
-  const GType *NewScale() const { return new_scale_; }
+  const GType *NewScale() const { return new_scale_.get(); }
 
-  const GType *NewBias() const { return new_bias_; }
+  const GType *NewBias() const { return new_bias_.get(); }
 
  protected:
   GType *input_bias_;
@@ -2259,8 +2269,8 @@ class FusionConvBNParam : public ConvParam<Dtype> {
   GType *input_variance_;
   float epsilon_;
   float momentum_;
-  GType *new_bias_;
-  GType *new_scale_;
+  std::shared_ptr<GType> new_bias_;
+  std::shared_ptr<GType> new_scale_;
 };
 #endif
 
@@ -2301,13 +2311,17 @@ class FusionConvAddBNParam : public ConvParam<Dtype> {
 
   const float &Momentum() const { return momentum_; }
 
-  void SetNewScale(GType *new_scale) { new_scale_ = new_scale; }
+  void SetNewScale(GType *new_scale) {
+    new_scale_.reset(new_scale, CLImageDeleter<Dtype>());
+  }
 
-  void SetNewBias(GType *new_bias) { new_bias_ = new_bias; }
+  void SetNewBias(GType *new_bias) {
+    new_bias_.reset(new_bias, CLImageDeleter<Dtype>());
+  }
 
-  const GType *NewScale() const { return new_scale_; }
+  const GType *NewScale() const { return new_scale_.get(); }
 
-  const GType *NewBias() const { return new_bias_; }
+  const GType *NewBias() const { return new_bias_.get(); }
 
  protected:
   GType *bias_;
@@ -2318,8 +2332,8 @@ class FusionConvAddBNParam : public ConvParam<Dtype> {
   GType *input_variance_;
   float epsilon_;
   float momentum_;
-  GType *new_bias_;
-  GType *new_scale_;
+  std::shared_ptr<GType> new_bias_;
+  std::shared_ptr<GType> new_scale_;
 };
 #endif
 
@@ -2343,14 +2357,7 @@ class FusionDWConvBNReluParam : public ConvParam<Dtype> {
     this->output_ = OpParam::OutFrom<GType>(outputs, *scope);
   }
 
-  ~FusionDWConvBNReluParam() {
-    if (new_bias_) {
-      delete new_bias_;
-    }
-    if (new_scale_) {
-      delete new_scale_;
-    }
-  }
+  ~FusionDWConvBNReluParam() {}
 
   const GType *InputBias() const { return input_bias_; }
 
@@ -2364,13 +2371,17 @@ class FusionDWConvBNReluParam : public ConvParam<Dtype> {
 
   const float &Momentum() const { return momentum_; }
 
-  void SetNewScale(GType *new_scale) { new_scale_ = new_scale; }
+  void SetNewScale(GType *new_scale) {
+    new_scale_.reset(new_scale, CLImageDeleter<Dtype>());
+  }
 
-  void SetNewBias(GType *new_bias) { new_bias_ = new_bias; }
+  void SetNewBias(GType *new_bias) {
+    new_bias_.reset(new_bias, CLImageDeleter<Dtype>());
+  }
 
-  const GType *NewScale() const { return new_scale_; }
+  const GType *NewScale() const { return new_scale_.get(); }
 
-  const GType *NewBias() const { return new_bias_; }
+  const GType *NewBias() const { return new_bias_.get(); }
 
  protected:
   GType *input_bias_;
@@ -2379,8 +2390,8 @@ class FusionDWConvBNReluParam : public ConvParam<Dtype> {
   GType *input_variance_;
   float epsilon_;
   float momentum_;
-  GType *new_bias_;
-  GType *new_scale_;
+  std::shared_ptr<GType> new_bias_;
+  std::shared_ptr<GType> new_scale_;
 };
 
 #endif
@@ -2421,14 +2432,7 @@ class FusionConvBNReluParam : public ConvParam<Dtype> {
     this->output_ = OpParam::OutFrom<GType>(outputs, *scope);
   }
 
-  ~FusionConvBNReluParam() {
-    if (new_bias_) {
-      delete new_bias_;
-    }
-    if (new_scale_) {
-      delete new_scale_;
-    }
-  }
+  ~FusionConvBNReluParam() {}
 
   const GType *InputBias() const { return input_bias_; }
 
@@ -2442,13 +2446,17 @@ class FusionConvBNReluParam : public ConvParam<Dtype> {
 
   const float &Momentum() const { return momentum_; }
 
-  void SetNewScale(GType *new_scale) { new_scale_ = new_scale; }
+  void SetNewScale(GType *new_scale) {
+    new_scale_.reset(new_scale, CLImageDeleter<Dtype>());
+  }
 
-  void SetNewBias(GType *new_bias) { new_bias_ = new_bias; }
+  void SetNewBias(GType *new_bias) {
+    new_bias_.reset(new_bias, CLImageDeleter<Dtype>());
+  }
 
-  const GType *NewScale() const { return new_scale_; }
+  const GType *NewScale() const { return new_scale_.get(); }
 
-  const GType *NewBias() const { return new_bias_; }
+  const GType *NewBias() const { return new_bias_.get(); }
 
  protected:
   GType *input_bias_;
@@ -2457,8 +2465,8 @@ class FusionConvBNReluParam : public ConvParam<Dtype> {
   GType *input_variance_;
   float epsilon_;
   float momentum_;
-  GType *new_bias_;
-  GType *new_scale_;
+  std::shared_ptr<GType> new_bias_;
+  std::shared_ptr<GType> new_scale_;
 };
 #endif
 
@@ -2683,13 +2691,17 @@ class FusionDeconvAddBNParam : public ConvTransposeParam<Dtype> {
 
   const bool &IsTest() const { return is_test_; }
 
-  void SetNewScale(RType *new_scale) { new_scale_ = new_scale; }
+  void SetNewScale(RType *new_scale) {
+    new_scale_.reset(new_scale, CLImageDeleter<Dtype>());
+  }
 
-  void SetNewBias(RType *new_bias) { new_bias_ = new_bias; }
+  void SetNewBias(RType *new_bias) {
+    new_bias_.reset(new_bias, CLImageDeleter<Dtype>());
+  }
 
-  const RType *NewScale() const { return new_scale_; }
+  const RType *NewScale() const { return new_scale_.get(); }
 
-  const RType *NewBias() const { return new_bias_; }
+  const RType *NewBias() const { return new_bias_.get(); }
 
  protected:
   RType *output_;
@@ -2700,8 +2712,8 @@ class FusionDeconvAddBNParam : public ConvTransposeParam<Dtype> {
   float epsilon_;
   float momentum_;
   bool is_test_;
-  RType *new_bias_;
-  RType *new_scale_;
+  std::shared_ptr<RType> new_bias_;
+  std::shared_ptr<RType> new_scale_;
 };
 #endif
 #ifdef FUSION_DECONVBNRELU_OP
@@ -2739,13 +2751,17 @@ class FusionDeconvBNReluParam : public ConvTransposeParam<Dtype> {
 
   const bool &IsTest() const { return is_test_; }
 
-  void SetNewScale(RType *new_scale) { new_scale_ = new_scale; }
+  void SetNewScale(RType *new_scale) {
+    new_scale_.reset(new_scale, CLImageDeleter<Dtype>());
+  }
 
-  void SetNewBias(RType *new_bias) { new_bias_ = new_bias; }
+  void SetNewBias(RType *new_bias) {
+    new_bias_.reset(new_bias, CLImageDeleter<Dtype>());
+  }
 
-  const RType *NewScale() const { return new_scale_; }
+  const RType *NewScale() const { return new_scale_.get(); }
 
-  const RType *NewBias() const { return new_bias_; }
+  const RType *NewBias() const { return new_bias_.get(); }
 
  protected:
   RType *output_;
@@ -2756,8 +2772,8 @@ class FusionDeconvBNReluParam : public ConvTransposeParam<Dtype> {
   float epsilon_;
   float momentum_;
   bool is_test_;
-  RType *new_bias_;
-  RType *new_scale_;
+  std::shared_ptr<RType> new_bias_;
+  std::shared_ptr<RType> new_scale_;
 };
 #endif
 #ifdef FUSION_DECONVADDBNRELU_OP
@@ -2796,13 +2812,17 @@ class FusionDeconvAddBNReluParam : public ConvTransposeParam<Dtype> {
 
   const bool &IsTest() const { return is_test_; }
 
-  void SetNewScale(RType *new_scale) { new_scale_ = new_scale; }
+  void SetNewScale(RType *new_scale) {
+    new_scale_.reset(new_scale, CLImageDeleter<Dtype>());
+  }
 
-  void SetNewBias(RType *new_bias) { new_bias_ = new_bias; }
+  void SetNewBias(RType *new_bias) {
+    new_bias_.reset(new_bias, CLImageDeleter<Dtype>());
+  }
 
-  const RType *NewScale() const { return new_scale_; }
+  const RType *NewScale() const { return new_scale_.get(); }
 
-  const RType *NewBias() const { return new_bias_; }
+  const RType *NewBias() const { return new_bias_.get(); }
 
  protected:
   RType *output_;
@@ -2813,8 +2833,8 @@ class FusionDeconvAddBNReluParam : public ConvTransposeParam<Dtype> {
   float epsilon_;
   float momentum_;
   bool is_test_;
-  RType *new_bias_;
-  RType *new_scale_;
+  std::shared_ptr<RType> new_bias_;
+  std::shared_ptr<RType> new_scale_;
 };
 #endif
 
