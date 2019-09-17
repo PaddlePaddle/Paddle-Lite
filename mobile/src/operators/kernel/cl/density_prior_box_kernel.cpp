@@ -68,7 +68,7 @@ void DensityPriorBoxKernel<GPU_CL, float>::Compute(
 
   auto output_boxes = param.OutputBoxes()->GetCLImage();
   auto output_var = param.OutputVariances()->GetCLImage();
-  auto new_deensity = param.getNewDensity()->GetCLImage();
+  auto new_density = param.getNewDensity()->GetCLImage();
 
   float step_w = param.StepW();
   float step_h = param.StepH();
@@ -113,7 +113,7 @@ void DensityPriorBoxKernel<GPU_CL, float>::Compute(
   CL_CHECK_ERRORS(status);
   status = clSetKernelArg(kernel, 1, sizeof(cl_mem), &output_var);
   CL_CHECK_ERRORS(status);
-  status = clSetKernelArg(kernel, 2, sizeof(cl_mem), &new_deensity);
+  status = clSetKernelArg(kernel, 2, sizeof(cl_mem), &new_density);
   CL_CHECK_ERRORS(status);
   status = clSetKernelArg(kernel, 3, sizeof(float), &step_h);
   CL_CHECK_ERRORS(status);
