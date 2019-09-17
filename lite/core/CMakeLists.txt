@@ -38,6 +38,33 @@ else()
 lite_cc_library(context SRCS context.cc DEPS tensor any device_info eigen3 CL_DEPS cl_context gflags)
 endif()
 
+#-------------------------------------------- GET CODE META INFO ------------------------------------------
+execute_process(
+  COMMAND git describe --tags --exact-match
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+  OUTPUT_VARIABLE PADDLE_LITE_TAG
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
+execute_process(
+  COMMAND git rev-parse --abbrev-ref HEAD
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+  OUTPUT_VARIABLE PADDLE_LITE_BRANCH
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
+execute_process(
+  COMMAND git log -1 --format=%h
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+  OUTPUT_VARIABLE PADDLE_LITE_COMMIT
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
+message(STATUS "tag: ${PADDLE_LITE_TAG}")
+message(STATUS "branch: ${PADDLE_LITE_BRANCH}")
+message(STATUS "commit: ${PADDLE_LITE_COMMIT}")
+
+configure_file(version.h.in version.h)
 #----------------------------------------------- NOT CHANGE -----------------------------------------------
 # A trick to generate the paddle_use_kernels.h
 add_custom_command(
