@@ -55,27 +55,20 @@ class Optimizer {
 
     if (passes.empty()) {
       RunPasses(std::vector<std::string>{
-          {"lite_quant_dequant_fuse_pass",     //
-           "lite_conv_elementwise_fuse_pass",  // conv-elemwise-bn
-           "lite_conv_bn_fuse_pass",           //
-           "lite_conv_elementwise_fuse_pass",  // conv-bn-elemwise
-           // This pass is disabled to force some opencl kernels selected for
-           // final running, otherwise, they will be fused to ARM fusion
-           // kernels, and the OpenCL devices will be discarded.
-           // TODO(Superjomn) Refine the fusion related design to select fusion
-           // kernels for devices automatically.
+          {"lite_quant_dequant_fuse_pass",                //
+           "lite_conv_elementwise_fuse_pass",             // conv-elemwise-bn
+           "lite_conv_bn_fuse_pass",                      //
+           "lite_conv_elementwise_fuse_pass",             // conv-bn-elemwise
            "lite_conv_activation_fuse_pass",              //
            "lite_fc_fuse_pass",                           //
            "lite_shuffle_channel_fuse_pass",              //
            "lite_transpose_softmax_transpose_fuse_pass",  //
            "lite_interpolate_fuse_pass",                  //
            "identity_scale_eliminate_pass",               //
-#ifdef LITE_WITH_LIGHT_WEIGHT_FRAMEWORK
-           "lite_elementwise_add_activation_fuse_pass",  //
-#endif
-           "static_kernel_pick_pass",        //
-           "variable_place_inference_pass",  //
-           "argument_type_display_pass",     //
+           "lite_elementwise_add_activation_fuse_pass",   //
+           "static_kernel_pick_pass",                     //
+           "variable_place_inference_pass",               //
+           "argument_type_display_pass",                  //
 
            "type_target_cast_pass",          //
            "variable_place_inference_pass",  //
