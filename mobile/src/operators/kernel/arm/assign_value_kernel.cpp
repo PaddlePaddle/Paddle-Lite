@@ -67,6 +67,20 @@ void AssignValueKernel<CPU, float>::Compute(
                            param.int32_values_));
 }
 
+template <>
+bool AssignValueKernel<GPU_CL, float>::Init(AssignValueParam<GPU_CL>* param) {
+  return true;
+}
+
+template <>
+void AssignValueKernel<GPU_CL, float>::Compute(
+    const AssignValueParam<GPU_CL>& param) {
+  framework::VisitDataType(
+      framework::ToDataType(param.dtype_),
+      AssignValueOpFunctor(param.output_, param.shape_, param.fp32_values_,
+                           param.int32_values_));
+}
+
 }  // namespace operators
 }  // namespace paddle_mobile
 

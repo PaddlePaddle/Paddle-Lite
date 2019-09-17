@@ -12,11 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "lite/kernels/x86/activation_compute.cc"
 #include <gtest/gtest.h>
 #include <iostream>
+#include <memory>
+#include <utility>
 #include <vector>
 #include "lite/core/op_registry.h"
-#include "lite/kernels/x86/activation_compute.h"
 
 namespace paddle {
 namespace lite {
@@ -31,7 +33,7 @@ TEST(relu_x86, retrive_op) {
 }
 
 TEST(relu_x86, init) {
-  ReluCompute<float> relu;
+  ReluComputeCompute<float> relu;
   ASSERT_EQ(relu.precision(), PRECISION(kFloat));
   ASSERT_EQ(relu.target(), TARGET(kX86));
 }
@@ -51,21 +53,25 @@ TEST(relu_x86, run_test) {
     int sign = i % 2 == 0 ? 1 : -1;
     x_data[i] = static_cast<float>(i * sign);
   }
+
   // ReluCompute relu;
   ReluCompute<float> relu;
-  operators::ActivationParam param;
+  operators::Param param;
 
-  param.X = &x;
-  param.Out = &out;
+  param.x = &x;
+  param.y = &y;
+  param.out = &out;
 
-  relu.SetParam(param);
-  relu.Run();
+  std::unique_ptr<KernelContext> ctx(new KernelContext);
+  ctx->As<X86Context>();
+  sequence_expand_as.SetContext(std::move(ctx));
+  sequence_expand_as.SetParam(param);
+  sequence_expand_as.Run();
+  auto out_data = out.mutable_data<float>();
 
   LOG(INFO) << "output: ";
   for (int i = 0; i < out.dims().production(); i++) {
     LOG(INFO) << out_data[i];
-    int sign = i % 2 == 0 ? 1 : 0;
-    ASSERT_EQ(out_data[i], i * sign);
   }
 }
 
@@ -74,4 +80,4 @@ TEST(relu_x86, run_test) {
 }  // namespace lite
 }  // namespace paddle
 
-USE_LITE_KERNEL(relu, kX86, kFloat, kNCHW, def);
+USE_LITE_KERNEL(sequence_expand_as, kX86, kFloat, kNCHW, def);

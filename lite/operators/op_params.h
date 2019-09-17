@@ -371,6 +371,17 @@ struct FillConstantParam {
   lite::Tensor* Out{};
 };
 
+struct FillConstantBatchSizeLikeParam {
+  lite::Tensor* Input;
+  lite::Tensor* Out;
+
+  std::vector<int> shape;
+  int input_dim_idx{0};
+  int output_dim_idx{0};
+  int dtype{static_cast<int>(VarDescAPI::VarDataType::FP32)};
+  float value{0.0f};
+};
+
 //
 struct FakeQuantizeMovingAvgMaxAbsParam {
   const lite::Tensor* x{};
@@ -680,6 +691,12 @@ struct SequenceExpandParam {
   const lite::Tensor* Y{};
   lite::Tensor* Out{};
   int ref_level{-1};
+};
+
+struct SequenceExpandAsParam {
+  const lite::Tensor* x{nullptr};
+  const lite::Tensor* y{nullptr};
+  lite::Tensor* out{nullptr};
 };
 
 struct ReduceMaxParam {
