@@ -18,7 +18,7 @@ chmod 777 model_optimize_tool
 
 ### 编译model_optimize_tool
 
-1、参照 [编译安装](./source_compile) 进行环境配置和编译
+1、参照 [编译安装](/source_compile) 进行环境配置和编译
 
 2、进入docker中PaddleLite根目录，```git checkout develop```切换到develop分支
 

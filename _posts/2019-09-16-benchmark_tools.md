@@ -71,7 +71,7 @@ wget -c https://paddle-inference-dist.bj.bcebos.com/PaddleLite/benchmark_bin_v8
 
 #### 方式二：由源码编译benchmark_bin文件
 
-根据[源码编译](source_compile.html)准备编译环境，拉取PaddleLite最新release发布版代码，并在仓库根目录下，执行：
+根据[源码编译](/source_compile)准备编译环境，拉取PaddleLite最新release发布版代码，并在仓库根目录下，执行：
 
 ```shell
 ###########################################
@@ -120,7 +120,7 @@ tar zxvf benchmark_models.tar.gz
 
 > 注：若要使用测试脚本，**对单个模型测试**，请把单个模型放入 `benchmark_models` 文件夹，并确保测试脚本、`benchmark_models`文件夹在同一级的目录。
 
-注：上述模型都已经使用`model_optimize_tool`进行转化，而且Lite移动端只支持加载转化后的模型。如果需要测试其他模型，请先参考[模型转化方法](model_optimize_tool.html)。
+注：上述模型都已经使用`model_optimize_tool`进行转化，而且Lite移动端只支持加载转化后的模型。如果需要测试其他模型，请先参考[模型转化方法](/model_optimize_tool)。
 
 
 ### 3. benchmark.sh脚本
