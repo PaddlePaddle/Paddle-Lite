@@ -3,7 +3,7 @@ layout: post
 title: Benchmark 数据
 ---
 
-可以参考[benchmark_tools](benchmark_tools.md)，推荐**一键benchmark**。
+可以参考[benchmark_tools]({{ site.baseurl }}/benchmark_tools)，推荐**一键benchmark**。
 
 ## 测试环境
 
