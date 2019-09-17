@@ -682,6 +682,12 @@ struct SequenceExpandParam {
   int ref_level{-1};
 };
 
+struct SequenceExpandAsParam {
+  const lite::Tensor* x{nullptr};
+  const lite::Tensor* y{nullptr};
+  lite::Tensor* out{nullptr};
+};
+
 struct ReduceMaxParam {
   const lite::Tensor* X{};
   lite::Tensor* Out{};

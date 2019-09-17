@@ -71,6 +71,7 @@ add_operator(roi_align_op basic SRCS roi_align_op.cc DEPS ${op_DEPS})
 add_operator(box_clip_op basic SRCS box_clip_op.cc DEPS ${op_DEPS})
 add_operator(flatten_op basic SRCS flatten_op.cc DEPS ${op_DEPS})
 add_operator(fake_quantize_range_abs_max_op basic SRCS fake_quantize_range_abs_max.cc DEPS ${op_DEPS})
+add_operator(sequence_expand_as_op_lite basic SRCS sequence_expand_as_op.cc DEPS ${op_DEPS})
 add_operator(range_op basic SRCS range_op.cc DEPS ${op_DEPS})
 add_operator(assign_value_op basic SRCS assign_value_op.cc DEPS ${op_DEPS})
 
