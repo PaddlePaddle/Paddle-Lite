@@ -1,5 +1,8 @@
 ---
 layout: page
 title: About
-permalink: /about/
 ---
+
+Multi-platform high performance deep learning inference engine
+
+『飞桨』多平台高性能深度学习预测引擎
