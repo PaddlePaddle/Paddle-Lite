@@ -46,18 +46,6 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace operators {
 
-class CLImageDeleter {
- public:
-  void operator()(void *ptr) {
-#ifdef PADDLE_MOBILE_CL
-    framework::CLImage *image = dynamic_cast<framework::CLImage *>(ptr);
-    if (image) {
-      delete image;
-    }
-#endif
-  }
-};
-
 using framework::Attribute;
 using framework::AttributeMap;
 using framework::LoDTensor;
@@ -68,6 +56,21 @@ using std::string;
 using std::vector;
 
 using framework::DtypeTensorTrait;
+
+template <typename Dtype>
+class CLImageDeleter {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+
+ public:
+  void operator()(GType *ptr) {
+#ifdef PADDLE_MOBILE_CL
+    framework::CLImage *image = dynamic_cast<framework::CLImage *>(ptr);
+    if (image) {
+      delete image;
+    }
+#endif
+  }
+};
 
 class OpParam {
  public:
@@ -885,11 +888,11 @@ class BatchNormParam : public OpParam {
   const string &DataFormat() const { return data_format_; }
 
   void SetNewScale(GType *new_scale) {
-    new_scale_.reset(new_scale, CLImageDeleter());
+    new_scale_.reset(new_scale, CLImageDeleter<Dtype>());
   }
 
   void SetNewBias(GType *new_bias) {
-    new_bias_.reset(new_bias, CLImageDeleter());
+    new_bias_.reset(new_bias, CLImageDeleter<Dtype>());
   }
 
   const GType *NewScale() const { return new_scale_.get(); }
@@ -2114,11 +2117,11 @@ class FusionConvAddBNReluParam : public ConvParam<Dtype> {
   const float &Momentum() const { return momentum_; }
 
   void SetNewScale(GType *new_scale) {
-    new_scale_.reset(new_scale, CLImageDeleter());
+    new_scale_.reset(new_scale, CLImageDeleter<Dtype>());
   }
 
   void SetNewBias(GType *new_bias) {
-    new_bias_.reset(new_bias, CLImageDeleter());
+    new_bias_.reset(new_bias, CLImageDeleter<Dtype>());
   }
 
   const GType *NewScale() const { return new_scale_.get(); }
@@ -2187,11 +2190,11 @@ class FusionConvBNAddReluParam : public ConvParam<Dtype> {
   const float &Momentum() const { return momentum_; }
 
   void SetNewScale(GType *new_scale) {
-    new_scale_.reset(new_scale, CLImageDeleter());
+    new_scale_.reset(new_scale, CLImageDeleter<Dtype>());
   }
 
   void SetNewBias(GType *new_bias) {
-    new_bias_.reset(new_bias, CLImageDeleter());
+    new_bias_.reset(new_bias, CLImageDeleter<Dtype>());
   }
 
   const GType *NewScale() const { return new_scale_.get(); }
@@ -2248,11 +2251,11 @@ class FusionConvBNParam : public ConvParam<Dtype> {
   const float &Momentum() const { return momentum_; }
 
   void SetNewScale(GType *new_scale) {
-    new_scale_.reset(new_scale, CLImageDeleter());
+    new_scale_.reset(new_scale, CLImageDeleter<Dtype>());
   }
 
   void SetNewBias(GType *new_bias) {
-    new_bias_.reset(new_bias, CLImageDeleter());
+    new_bias_.reset(new_bias, CLImageDeleter<Dtype>());
   }
 
   const GType *NewScale() const { return new_scale_.get(); }
@@ -2309,11 +2312,11 @@ class FusionConvAddBNParam : public ConvParam<Dtype> {
   const float &Momentum() const { return momentum_; }
 
   void SetNewScale(GType *new_scale) {
-    new_scale_.reset(new_scale, CLImageDeleter());
+    new_scale_.reset(new_scale, CLImageDeleter<Dtype>());
   }
 
   void SetNewBias(GType *new_bias) {
-    new_bias_.reset(new_bias, CLImageDeleter());
+    new_bias_.reset(new_bias, CLImageDeleter<Dtype>());
   }
 
   const GType *NewScale() const { return new_scale_.get(); }
@@ -2369,11 +2372,11 @@ class FusionDWConvBNReluParam : public ConvParam<Dtype> {
   const float &Momentum() const { return momentum_; }
 
   void SetNewScale(GType *new_scale) {
-    new_scale_.reset(new_scale, CLImageDeleter());
+    new_scale_.reset(new_scale, CLImageDeleter<Dtype>());
   }
 
   void SetNewBias(GType *new_bias) {
-    new_bias_.reset(new_bias, CLImageDeleter());
+    new_bias_.reset(new_bias, CLImageDeleter<Dtype>());
   }
 
   const GType *NewScale() const { return new_scale_.get(); }
@@ -2444,11 +2447,11 @@ class FusionConvBNReluParam : public ConvParam<Dtype> {
   const float &Momentum() const { return momentum_; }
 
   void SetNewScale(GType *new_scale) {
-    new_scale_.reset(new_scale, CLImageDeleter());
+    new_scale_.reset(new_scale, CLImageDeleter<Dtype>());
   }
 
   void SetNewBias(GType *new_bias) {
-    new_bias_.reset(new_bias, CLImageDeleter());
+    new_bias_.reset(new_bias, CLImageDeleter<Dtype>());
   }
 
   const GType *NewScale() const { return new_scale_.get(); }
@@ -2689,11 +2692,11 @@ class FusionDeconvAddBNParam : public ConvTransposeParam<Dtype> {
   const bool &IsTest() const { return is_test_; }
 
   void SetNewScale(RType *new_scale) {
-    new_scale_.reset(new_scale, CLImageDeleter());
+    new_scale_.reset(new_scale, CLImageDeleter<Dtype>());
   }
 
   void SetNewBias(RType *new_bias) {
-    new_bias_.reset(new_bias, CLImageDeleter());
+    new_bias_.reset(new_bias, CLImageDeleter<Dtype>());
   }
 
   const RType *NewScale() const { return new_scale_.get(); }
@@ -2749,11 +2752,11 @@ class FusionDeconvBNReluParam : public ConvTransposeParam<Dtype> {
   const bool &IsTest() const { return is_test_; }
 
   void SetNewScale(RType *new_scale) {
-    new_scale_.reset(new_scale, CLImageDeleter());
+    new_scale_.reset(new_scale, CLImageDeleter<Dtype>());
   }
 
   void SetNewBias(RType *new_bias) {
-    new_bias_.reset(new_bias, CLImageDeleter());
+    new_bias_.reset(new_bias, CLImageDeleter<Dtype>());
   }
 
   const RType *NewScale() const { return new_scale_.get(); }
@@ -2810,11 +2813,11 @@ class FusionDeconvAddBNReluParam : public ConvTransposeParam<Dtype> {
   const bool &IsTest() const { return is_test_; }
 
   void SetNewScale(RType *new_scale) {
-    new_scale_.reset(new_scale, CLImageDeleter());
+    new_scale_.reset(new_scale, CLImageDeleter<Dtype>());
   }
 
   void SetNewBias(RType *new_bias) {
-    new_bias_.reset(new_bias, CLImageDeleter());
+    new_bias_.reset(new_bias, CLImageDeleter<Dtype>());
   }
 
   const RType *NewScale() const { return new_scale_.get(); }
