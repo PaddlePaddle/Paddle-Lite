@@ -85,7 +85,7 @@ if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM)
                 if (ARM_TARGET_OS STREQUAL "android") 
                     add_dependencies(publish_inference_cxx_lib paddle_full_api_shared)
                     add_dependencies(publish_inference paddle_light_api_shared)
-                    add_custom_command(TARGET publish_inference_cxx_lib POST_BUILD
+                    add_custom_command(TARGET publish_inference_cxx_lib 
                           COMMAND cp ${CMAKE_BINARY_DIR}/lite/api/*.so ${INFER_LITE_PUBLISH_ROOT}/cxx/lib)
                 endif()
                 add_dependencies(publish_inference publish_inference_cxx_lib)
@@ -160,7 +160,6 @@ if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM)
                 COMMAND cp -r "${CMAKE_SOURCE_DIR}/lite/demo/cxx/mobile_light" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx"
                 COMMAND cp "${CMAKE_SOURCE_DIR}/lite/demo/cxx/makefiles/mobile_light/Makefile.${ARM_TARGET_OS}.${ARM_TARGET_ARCH_ABI}" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/mobile_light/Makefile"
             )
-            add_dependencies(publish_inference_android_cxx_demos logging)
             add_dependencies(tiny_publish_cxx_lib publish_inference_android_cxx_demos)
         endif()
 

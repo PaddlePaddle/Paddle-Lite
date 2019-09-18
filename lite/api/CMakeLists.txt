@@ -4,10 +4,12 @@ else()
   lite_cc_library(place SRCS paddle_place.cc DEPS glog)
 endif(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
 
-
+if (LITE_ON_TINY_PUBLISH)
+    set(CMAKE_CXX_FLAGS_RELEASE "-Os -DNDEBUG")
+    set(CMAKE_C_FLAGS_RELEASE "-Os -DNDEBUG")
+endif()
 set(light_lib_DEPS light_api paddle_api paddle_api_light optimizer)
 if ((NOT LITE_ON_TINY_PUBLISH) AND (ARM_TARGET_OS STREQUAL "android"))
-
     #full api dynamic library
     add_library(paddle_full_api_shared SHARED "")
     target_sources(paddle_full_api_shared PUBLIC ${__lite_cc_files} paddle_api.cc light_api.cc cxx_api.cc cxx_api_impl.cc light_api_impl.cc)
@@ -20,7 +22,6 @@ if ((NOT LITE_ON_TINY_PUBLISH) AND (ARM_TARGET_OS STREQUAL "android"))
     DEPS ${light_lib_DEPS}
     ARM_DEPS ${arm_kernels} NPU_DEPS ${npu_kernels})
     target_link_libraries(paddle_light_api_shared ${light_lib_DEPS} ${arm_kernels} ${npu_kernels})
-    
 else()
     if (ARM_TARGET_OS STREQUAL "android")
         add_library(paddle_light_api_shared SHARED "")
