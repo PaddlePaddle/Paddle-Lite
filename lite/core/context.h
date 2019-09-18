@@ -192,10 +192,10 @@ class Context<TargetType::kCUDA> {
     ctx->cublas_fp32_ = cublas_fp32_;
   }
 
-  const cudaStream_t exec_stream() { return exec_stream_; }
+  const cudaStream_t& exec_stream() const { return exec_stream_; }
   void SetExecStream(cudaStream_t stream) { exec_stream_ = stream; }
 
-  const cudaStream_t io_stream() { return io_stream_; }
+  const cudaStream_t& io_stream() const { return io_stream_; }
   void SetIoStream(cudaStream_t stream) { io_stream_ = stream; }
 
   std::shared_ptr<cuda::Blas<float>> cublas_fp32() { return cublas_fp32_; }
