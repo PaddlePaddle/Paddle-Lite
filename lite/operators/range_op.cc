@@ -32,7 +32,7 @@ template <typename T>
 void GetSize(T start, T end, T step, int64_t* size) {
   CHECK(!std::equal_to<T>()(step, 0))
       << "The step of range op should not be 0.";
-  CHECK(((start < end) && (step > 0)) || (start > end) && (step < 0))
+  CHECK(((start < end) && (step > 0)) || ((start > end) && (step < 0)))
       << "The step should be greater than 0 while start < end. And the "
          "step should be less than 0 while start > end.";
   *size = std::is_integral<T>::value

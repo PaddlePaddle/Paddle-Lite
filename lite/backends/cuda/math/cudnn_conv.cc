@@ -286,7 +286,6 @@ bool CudnnConv2DInt8<Ptype_out>::create(const operators::ConvParam& param,
     }
   }
   this->scale_.Resize({oc});
-  auto* scale_data = this->scale_.template mutable_data<float>(TARGET(kCUDA));
   this->scale_.template Assign<float, lite::DDim, TARGET(kCUDA)>(
       weight_scale.data(), this->scale_.dims());
 

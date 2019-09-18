@@ -17,6 +17,8 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include "lite/api/paddle_use_ops.h"
+#include "lite/api/paddle_use_passes.h"
 #include "lite/utils/io.h"
 #ifdef LITE_WITH_NPU
 #include "lite/backends/npu/npu_helper.h"

@@ -215,6 +215,8 @@ if (NOT LITE_ON_TINY_PUBLISH)
       FPGA_DEPS ${fpga_kernels})
     # The final inference library for just MobileConfig.
     bundle_static_library(paddle_api_full paddle_api_full_bundled bundle_full_api)
+    get_property(fluid_modules GLOBAL PROPERTY FLUID_MODULES)
+    cc_library(api_full_static SRCS DEPS paddle_api_full cxx_api paddle_api light_api  ${cxx_api_deps} ${ops} ${host_kernels} ${cuda_kernels} program tensor memory naive_buffer types ${fluid_modules} protobuf)
 endif()
 bundle_static_library(paddle_api_light paddle_api_light_bundled bundle_light_api)
 #-----------------------------------------------------------------------------------------------------
