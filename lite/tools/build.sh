@@ -53,6 +53,7 @@ function prepare_thirdparty {
 
 function build_model_optimize_tool {
     cd $workspace
+    prepare_thirdparty
     mkdir -p build.model_optimize_tool
     cd build.model_optimize_tool
     cmake .. -DWITH_LITE=ON -DLITE_ON_MODEL_OPTIMIZE_TOOL=ON -DWITH_TESTING=OFF -DLITE_BUILD_EXTRA=ON
