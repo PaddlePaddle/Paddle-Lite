@@ -37,6 +37,7 @@ Variable *Scope::Var(const std::string &name) {
 
   // create a new variable.
   vars_.emplace(name, std::unique_ptr<Variable>(new Variable));
+  LOG(INFO) << "==";
   return vars_[name].get();
 }
 

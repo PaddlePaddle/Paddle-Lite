@@ -117,8 +117,16 @@ class FcCompute
 }  // namespace lite
 }  // namespace paddle
 
+// REGISTER_LITE_KERNEL(
+//    fc, kOpenCL, kFloat, kNCHW, paddle::lite::kernels::opencl::FcCompute, def)
+//    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kOpenCL))})
+//    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kOpenCL))})
+//    .BindInput("W", {LiteType::GetTensorTy(TARGET(kOpenCL))})
+//    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kOpenCL))})
+//    .Finalize();
+
 REGISTER_LITE_KERNEL(
-    fc, kOpenCL, kFloat, kNCHW, paddle::lite::kernels::opencl::FcCompute, def)
+    fc, kOpenCL, kFloat, kNHWC, paddle::lite::kernels::opencl::FcCompute, def)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kOpenCL))})
     .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kOpenCL))})
     .BindInput("W", {LiteType::GetTensorTy(TARGET(kOpenCL))})

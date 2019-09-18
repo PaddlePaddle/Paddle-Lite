@@ -82,25 +82,35 @@ struct variant {
   data_t data;
 
  public:
-  variant() : type_id(invalid_type()) {}
+  variant() : type_id(invalid_type()) { LOG(INFO) << ""; }
+
   variant(const variant<Ts...>& old) : type_id(old.type_id) {
+    LOG(INFO) << "";
     helper_t::copy(old.type_id, &old.data, &data);
   }
+
   variant(variant<Ts...>&& old) : type_id(old.type_id) {
+    LOG(INFO) << "";
     helper_t::move(old.type_id, &old.data, &data);
   }
+
   // Serves as both the move and the copy asignment operator.
   variant<Ts...>& operator=(variant<Ts...> old) {
     std::swap(type_id, old.type_id);
     std::swap(data, old.data);
+    LOG(INFO) << "";
     return *this;
   }
+
   template <typename T>
   bool is() {
     return (type_id == typeid(T).hash_code());
   }
 
-  size_t type() { return type_id; }
+  size_t type() {
+    LOG(INFO) << "";
+    return type_id;
+  }
 
   bool valid() { return (type_id != invalid_type()); }
 
@@ -110,9 +120,16 @@ struct variant {
     helper_t::destroy(type_id, &data);
     new (&data) T(std::forward<Args>(args)...);
     type_id = typeid(T).hash_code();
+    LOG(INFO) << "";
   }
+
   template <typename T>
   const T& get() const {
+    LOG(INFO) << "----------------------";
+    LOG(INFO) << "\ntypeid(void).hash_code():" << typeid(void).hash_code()
+              << "\ntype_id:" << type_id
+              << "\ntypeid(T).hash_code():" << typeid(T).hash_code()
+              << "\ntypeid(T).name():" << typeid(T).name();
     // It is a dynamic_cast-like behaviour
     if (type_id == typeid(T).hash_code()) {
       return *reinterpret_cast<const T*>(&data);
@@ -144,6 +161,7 @@ struct variant {
 #endif
     }
   }
+
   ~variant() { helper_t::destroy(type_id, &data); }
 };
 

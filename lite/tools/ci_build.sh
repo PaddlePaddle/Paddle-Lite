@@ -11,7 +11,7 @@ readonly common_flags="-DWITH_LITE=ON -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF -DW
 readonly THIRDPARTY_TAR=https://paddle-inference-dist.bj.bcebos.com/PaddleLite/third-party-05b862.tar.gz
 readonly workspace=$PWD
 
-NUM_CORES_FOR_COMPILE=${LITE_BUILD_THREADS:-8}
+NUM_CORES_FOR_COMPILE=1 #${LITE_BUILD_THREADS:-8}
 
 function prepare_thirdparty {
     if [ ! -d $workspace/third-party -o -f $workspace/third-party-05b862.tar.gz ]; then
@@ -72,6 +72,7 @@ function cmake_opencl {
         -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
         -DWITH_TESTING=ON \
         -DLITE_BUILD_EXTRA=ON \
+        -DLITE_SHUTDOWN_LOG=OFF \
         -DARM_TARGET_OS=$1 -DARM_TARGET_ARCH_ABI=$2 -DARM_TARGET_LANG=$3
 }
 
@@ -145,7 +146,8 @@ function build_opencl {
     build $TESTS_FILE
 
     # test publish inference lib
-    make publish_inference
+    #make publish_inference
+    make test_mobilenetv1
 }
 
 # This method is only called in CI.
@@ -604,8 +606,8 @@ function build_test_arm_opencl {
     cd $cur
 
     # job 2
-    build_opencl "android" "armv7" "gcc"
-    cd $cur
+    #build_opencl "android" "armv7" "gcc"
+    #cd $cur
 
     echo "Done"
 }

@@ -28,18 +28,29 @@ namespace mir {
 
 void TypeLayoutTransformPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   // Start from inputs of the graph, those should have place set.
+  LOG(INFO) << "--------------------- before layouttrans-------------:"
+            << "\n"
+            << Visualize(graph.get());
   std::list<Node*> nodes;
   for (auto& node : graph->mutable_nodes()) {
     nodes.push_back(&node);
   }
 
+  LOG(INFO) << "nodes.size():" << nodes.size();
+
   for (auto& node : nodes) {
+    LOG(INFO) << "!node->IsStmt():" << !node->IsStmt();
     if (!node->IsStmt()) continue;
     auto inlinks = node->inlinks;
+    LOG(INFO) << "inlinks.size():" << inlinks.size();
     for (auto* in : inlinks) {
       ComplementInputs(graph.get(), node, in);
     }
   }
+  LOG(INFO) << "--------------------- after layouttrans-------------:"
+            << "\n"
+            << Visualize(graph.get());
+
   VLOG(3) << "\n" << Visualize(graph.get());
 }
 
@@ -53,6 +64,7 @@ void TypeLayoutTransformPass::ComplementInputs(SSAGraph* graph,
 
   CHECK(inst_node->IsStmt());
   auto& inst = inst_node->AsStmt();
+  LOG(INFO) << "found Target tensor: " << in->AsArg().name;
   CHECK(in->IsRoleSet());
   CHECK(in->IsArg());
   auto in_arg_name = in->AsArg().name;
@@ -60,10 +72,16 @@ void TypeLayoutTransformPass::ComplementInputs(SSAGraph* graph,
   CHECK(inst.op_info()->GetInputArgname(in_arg_name, &tmp));
   auto decl_arg_type = inst.picked_kernel().GetInputDeclType(tmp);
   CHECK(in->AsArg().type);
+  LOG(INFO) << "tmp:" << tmp;
+  LOG(INFO) << "\n in->AsArg().name:" << in->AsArg().name
+            << "\n inst.op()->DebugString():" << inst.op()->DebugString()
+            << "\n *in->AsArg().type:" << *in->AsArg().type
+            << "\n *decl_arg_type:" << *decl_arg_type;
+
   if (!DataLayoutCompatible(*in->AsArg().type, *decl_arg_type)) {
-    VLOG(4) << "found Layout unmatched tensor: " << in->AsArg().name
-            << " for kernel " << inst.op()->DebugString() << " "
-            << *in->AsArg().type << " -> " << *decl_arg_type;
+    LOG(INFO) << "found Layout unmatched tensor: " << in->AsArg().name
+              << " for kernel " << inst.op()->DebugString() << " "
+              << *in->AsArg().type << " -> " << *decl_arg_type;
     AddLayoutInst(*in->AsArg().type,
                   *decl_arg_type,
                   in,
@@ -156,6 +174,7 @@ void TypeLayoutTransformPass::AddLayoutInst(
   }
 
   for (auto& kernel : inst_node->AsStmt().kernels()) {
+    LOG(INFO) << "kernel info:" << kernel->name();
     inst_node->AsStmt().op()->AttachKernel(kernel.get());
   }
 

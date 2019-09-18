@@ -11,44 +11,42 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 #pragma once
-#include <set>
+
+#include <memory>
 #include <string>
-#include <vector>
-#include "lite/core/tensor.h"
-#include "lite/utils/all.h"
+#include "lite/core/kernel.h"
+#include "lite/operators/op_params.h"
+#include "lite/utils/cp_logging.h"
 
 namespace paddle {
 namespace lite {
+namespace kernels {
+namespace opencl {
 
-using FeedFetchList = std::vector<lite::Tensor>;
-
-class Variable {
+class LayoutCompute
+    : public KernelLite<TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW)> {
  public:
-  template <typename T>
-  const T& Get() const {
-    LOG(INFO) << "Variable::Get";
-    return blob_.get<T>();
-  }
+  using param_t = operators::ElementwiseParam;
 
-  template <typename T>
-  T* GetMutable() {
-    if (!blob_.is<T>()) blob_.set<T>();
-    return blob_.get_mutable<T>();
-  }
+  void PrepareForRun() override;
 
-  template <typename T>
-  bool IsType() {
-    LOG(INFO) << "Variable::IsType";
-    return blob_.type() == typeid(T).hash_code();
-  }
+  void Run() override;
 
- private:
-  // variant<int, float, std::string, lite::Tensor> blob_;
-  variant<int, float, std::string, lite::Tensor, std::vector<lite::Tensor>>
-      blob_;
+ protected:
+  void UpdateParams();
+
+  size_t batch_{1};
+  size_t channels_{1};
+  size_t num_{1};
+  std::string layout_in{};
+  std::string layout_out{};
+  std::string kernel_func_name_{"layout_trans"};
+  std::string build_options_{"-DCL_DTYPE=float"};
+  std::shared_ptr<cl::Event> event_{new cl::Event};
 };
 
+}  // namespace opencl
+}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

@@ -43,7 +43,7 @@ struct Program {
           const std::vector<Place>& valid_places)
       : scope_(root), valid_places_(valid_places), desc_(desc) {
     CHECK(scope_) << "scope should be init first";
-    VLOG(4) << "prepare work";
+    LOG(INFO) << "prepare work";
     PrepareWorkspace(desc);
     VLOG(4) << "build desc";
     Build(desc);

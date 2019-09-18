@@ -31,23 +31,29 @@ void TestModel(const std::vector<Place>& valid_places,
                const Place& preferred_place,
                const std::string& model_dir = FLAGS_model_dir,
                bool save_model = false) {
+  LOG(INFO) << "debug herer";
   DeviceInfo::Init();
+  LOG(INFO) << "debug herer";
   DeviceInfo::Global().SetRunMode(lite_api::LITE_POWER_HIGH, FLAGS_threads);
+  LOG(INFO) << "debug herer";
   lite::Predictor predictor;
 
+  LOG(INFO) << "debug herer";
   predictor.Build(model_dir, "", "", preferred_place, valid_places);
-
+  LOG(INFO) << "debug herer";
   auto* input_tensor = predictor.GetInput(0);
-  input_tensor->Resize(DDim(std::vector<DDim::value_type>({1, 3, 224, 224})));
+  input_tensor->Resize(DDim(std::vector<DDim::value_type>({1, 1, 1, 100})));
   auto* data = input_tensor->mutable_data<float>();
   auto item_size = input_tensor->dims().production();
   for (int i = 0; i < item_size; i++) {
-    data[i] = 1;
+    data[i] = i;
   }
+  LOG(INFO) << "debug herer";
 
   for (int i = 0; i < FLAGS_warmup; ++i) {
     predictor.Run();
   }
+  LOG(INFO) << "debug herer";
 
   auto start = GetCurrentUS();
   for (int i = 0; i < FLAGS_repeats; ++i) {
@@ -89,14 +95,16 @@ void TestModel(const std::vector<Place>& valid_places,
 #else
   ASSERT_EQ(out->dims().size(), 2);
   ASSERT_EQ(out->dims()[0], 1);
-  ASSERT_EQ(out->dims()[1], 1000);
+  ASSERT_EQ(out->dims()[1], 500);
   double eps = 1e-6;
+#if 0
   for (int i = 0; i < ref.size(); ++i) {
     for (int j = 0; j < ref[i].size(); ++j) {
       auto result = pdata[j * step + (out->dims()[1] * i)];
       EXPECT_NEAR(result, ref[i][j], eps);
     }
   }
+#endif
 #endif
 }
 
@@ -120,24 +128,41 @@ TEST(MobileNetV1, test_npu) {
 }
 #endif  // LITE_WITH_NPU
 
+#if 1
 TEST(MobileNetV1, test_arm) {
+  LOG(INFO) << "2019年09月18日09:31:53";
+  LOG(INFO) << "debug herer";
   std::vector<Place> valid_places({
-      Place{TARGET(kHost), PRECISION(kFloat)},
-      Place{TARGET(kARM), PRECISION(kFloat)},
+      Place{TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW)},
+      Place{TARGET(kARM), PRECISION(kFloat), DATALAYOUT(kNCHW)},
+      Place{TARGET(kARM), PRECISION(kFloat), DATALAYOUT(kAny)},
+
+      Place{TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNHWC)},
+      Place{TARGET(kARM), PRECISION(kFloat), DATALAYOUT(kNHWC)},
+      Place{TARGET(kARM), PRECISION(kFloat), DATALAYOUT(kAny)},
   });
 
-  TestModel(valid_places, Place({TARGET(kARM), PRECISION(kFloat)}));
+  LOG(INFO) << "debug herer";
+  TestModel(valid_places,
+            Place({TARGET(kARM), PRECISION(kFloat), DATALAYOUT(kNCHW)}));
+  // TestModel(valid_places, Place({TARGET(kARM), PRECISION(kFloat),
+  // DATALAYOUT(kNHWC)}));
 }
+#endif
 
 #ifdef LITE_WITH_OPENCL
 TEST(MobileNetV1, test_opencl) {
   std::vector<Place> valid_places({
-      Place{TARGET(kHost), PRECISION(kFloat)},
-      Place{TARGET(kARM), PRECISION(kFloat)},
-      Place{TARGET(kOpenCL), PRECISION(kFloat)},
+      Place{TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW)},
+      Place{TARGET(kARM), PRECISION(kFloat), DATALAYOUT(kNCHW)},
+      Place{TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW)},
+      Place{TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNHWC)},
+      Place{TARGET(kARM), PRECISION(kFloat), DATALAYOUT(kNHWC)},
+      Place{TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNHWC)},
   });
 
-  TestModel(valid_places, Place({TARGET(kOpenCL), PRECISION(kFloat)}));
+  TestModel(valid_places,
+            Place({TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNHWC)}));
 }
 #endif  // LITE_WITH_OPENCL
 

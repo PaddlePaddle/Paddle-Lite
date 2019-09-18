@@ -127,7 +127,7 @@ void RuntimeProgram::Run() {
 
 void Program::Build(const cpp::ProgramDesc& prog) {
   CHECK(ops_.empty()) << "Executor duplicate Build found";
-
+  LOG(INFO) << "debug panda";
   // Create operators.
   auto program = prog;
   CHECK(program.BlocksSize());

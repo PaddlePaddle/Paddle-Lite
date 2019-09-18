@@ -60,6 +60,7 @@ void TypeTargetTransformPass::ComplementInputs(SSAGraph* graph,
   auto in_arg_name = in->AsArg().name;
   std::string tmp;
   CHECK(inst.op_info()->GetInputArgname(in_arg_name, &tmp));
+  LOG(INFO) << "tmp:" << tmp;
   auto decl_arg_type = inst.picked_kernel().GetInputDeclType(tmp);
   CHECK(in->AsArg().type);
   if (!TargetCompatibleTo(*in->AsArg().type, *decl_arg_type)) {
