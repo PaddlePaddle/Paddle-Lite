@@ -56,9 +56,6 @@ typedef paddle::lite::operators::ConvParam ConvParam;
 
 DDim compute_out_dim(const DDim& dim_in,
                      const paddle::lite::operators::ConvParam& param) {
-#ifdef LITE_WITH_ARM
-  paddle::lite::DeviceInfo::Init();
-#endif
   DDim dim_out = dim_in;
   dim_out[1] = param.filter->dims()[0];
   auto kernel_h = param.filter->dims()[2];
@@ -128,6 +125,7 @@ void test_conv_int8(const std::vector<DDim>& input_dims,
                     bool flag_relu,
                     const std::vector<int>& thread_num,
                     const std::vector<int>& cluster_id) {
+  paddle::lite::DeviceInfo::Init();
   ConvParam param_int8_out;
   ConvParam param_fp32_out;
 
