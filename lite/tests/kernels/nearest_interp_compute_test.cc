@@ -51,9 +51,11 @@ void resize_nearest_align(std::vector<const lite::Tensor*> inputs,
       int src_index = n * src_stride_batch + c * src_stride_c;
       for (int h = 0; h < hout; ++h) {
         for (int w = 0; w < wout; ++w) {
-          dtype fw = scale_w * w + 0.5;
+          int fw = (with_align) ? static_cast<int>(scale_w * w + 0.5)
+                                : static_cast<int>(scale_w * w);
           fw = (fw < 0) ? 0 : fw;
-          dtype fh = scale_h * h + 0.5;
+          int fh = (with_align) ? static_cast<int>(scale_h * h + 0.5)
+                                : static_cast<int>(scale_h * h);
           fh = (fh < 0) ? 0 : fh;
           int w_start = static_cast<int>(fw);
           int h_start = static_cast<int>(fh);

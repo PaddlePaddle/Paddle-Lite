@@ -16,20 +16,16 @@
 
 #include <cmath>
 #include <vector>
-#include "lite/backends/arm/math/conv_impl.h"
 #include "lite/core/context.h"
 #include "lite/core/target_wrapper.h"
+#include "lite/operators/op_params.h"
 
 namespace paddle {
 namespace lite {
 namespace arm {
 namespace math {
 
-template <PrecisionType Ptype>
-class DepthwiseConv
-    : public ImplBase<TARGET(kARM), Ptype, operators::ConvParam> {
- public:
-  typedef void (*conv_dw_impl)(const float* i_data,
+void conv_3x3s1_depthwise_fp32(const float* i_data,
                                float* o_data,
                                int bs,
                                int oc,
@@ -37,62 +33,125 @@ class DepthwiseConv
                                int ow,
                                int ic,
                                int ih,
-                               int kw,
-                               const float* w_data,
-                               const float* b_data,
+                               int win,
+                               const float* weights,
+                               const float* bias,
                                const operators::ConvParam& param,
-                               Context<TARGET(kARM)>* ctx);
-  DepthwiseConv() = default;
-  ~DepthwiseConv() {}
+                               ARMContext* ctx);
 
-  virtual bool init(const operators::ConvParam& param,
-                    Context<TARGET(kARM)>* ctx);
+void conv_3x3s2_depthwise_fp32(const float* i_data,
+                               float* o_data,
+                               int bs,
+                               int oc,
+                               int oh,
+                               int ow,
+                               int ic,
+                               int ih,
+                               int win,
+                               const float* weights,
+                               const float* bias,
+                               const operators::ConvParam& param,
+                               ARMContext* ctx);
 
-  virtual bool create(const operators::ConvParam& param,
-                      Context<TARGET(kARM)>* ctx);
+void conv_depthwise_3x3p0_fp32(const float* din,
+                               float* dout,
+                               int num,
+                               int ch_out,
+                               int h_out,
+                               int w_out,
+                               int ch_in,
+                               int h_in,
+                               int w_in,
+                               const float* weights,
+                               const float* bias,
+                               int stride,
+                               bool flag_bias,
+                               bool flag_relu,
+                               ARMContext* ctx);
 
-  virtual bool run(const operators::ConvParam& param);
+void conv_depthwise_3x3p1_fp32(const float* din,
+                               float* dout,
+                               int num,
+                               int ch_out,
+                               int h_out,
+                               int w_out,
+                               int ch_in,
+                               int h_in,
+                               int w_in,
+                               const float* weights,
+                               const float* bias,
+                               int stride,
+                               bool flag_bias,
+                               bool flag_relu,
+                               ARMContext* ctx);
 
- private:
-  conv_dw_impl impl_{nullptr};
-};
+template <typename Dtype>
+void conv_depthwise_3x3s1_int8(Dtype* dout,
+                               const int8_t* din,
+                               const int8_t* weights,
+                               const float* scale,
+                               const float* bias,
+                               bool flag_bias,
+                               bool flag_relu,
+                               int num,
+                               int chin,
+                               int hin,
+                               int win,
+                               int hout,
+                               int wout,
+                               int padw,
+                               int padh,
+                               ARMContext* ctx);
 
-template <PrecisionType Ptype_out>
-class DepthwiseConvInt8
-    : public ImplBase<TARGET(kARM), PRECISION(kInt8), operators::ConvParam> {
- public:
-  typedef void (*conv_dw_int8_impl)(const int8_t* i_data,
-                                    int32_t* o_data,
-                                    int bs,
-                                    int oc,
-                                    int oh,
-                                    int ow,
-                                    int ic,
-                                    int ih,
-                                    int kw,
-                                    const int8_t* w_data,
-                                    const int32_t* b_data,
-                                    const operators::ConvParam& param,
-                                    Context<TARGET(kARM)>* ctx,
-                                    PrecisionType out_type,
-                                    const float* scale);
+template <typename Dtype>
+void conv_depthwise_3x3s2_int8(Dtype* dout,
+                               const int8_t* din,
+                               const int8_t* weights,
+                               const float* scale,
+                               const float* bias,
+                               bool flag_bias,
+                               bool flag_relu,
+                               int num,
+                               int chin,
+                               int hin,
+                               int win,
+                               int hout,
+                               int wout,
+                               int padw,
+                               int padh,
+                               ARMContext* ctx);
 
-  DepthwiseConvInt8() = default;
-  ~DepthwiseConvInt8() {}
+void conv_depthwise_5x5s1_fp32(const float* din,
+                               float* dout,
+                               int num,
+                               int chout,
+                               int hout,
+                               int wout,
+                               int chin,
+                               int hin,
+                               int win,
+                               const float* weights,
+                               const float* bias,
+                               int pad,
+                               bool flag_bias,
+                               bool flag_relu,
+                               ARMContext* ctx);
 
-  virtual bool init(const operators::ConvParam& param,
-                    Context<TARGET(kARM)>* ctx);
-
-  virtual bool create(const operators::ConvParam& param,
-                      Context<TARGET(kARM)>* ctx);
-
-  virtual bool run(const operators::ConvParam& param);
-
- private:
-  conv_dw_int8_impl impl_{nullptr};
-  std::vector<float> w_scale_;
-  Tensor tmp_int32_out_;
-};
+void conv_depthwise_5x5s2_fp32(const float* din,
+                               float* dout,
+                               int num,
+                               int chout,
+                               int hout,
+                               int wout,
+                               int chin,
+                               int hin,
+                               int win,
+                               const float* weights,
+                               const float* bias,
+                               int pad,
+                               bool flag_bias,
+                               bool flag_relu,
+                               ARMContext* ctx);
 
 }  // namespace math
 }  // namespace arm

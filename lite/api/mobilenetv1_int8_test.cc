@@ -58,8 +58,9 @@ void TestModel(const std::vector<Place>& valid_places,
 
   std::vector<std::vector<float>> results;
   // i = 1
+  // ground truth result from fluid
   results.emplace_back(std::vector<float>(
-      {0.000227548, 0.000262385, 0.000260347, 0.000293865, 0.00025008}));
+      {0.0002451055, 0.0002585023, 0.0002659616, 0.0002823}));
   auto* out = predictor.GetOutput(0);
   ASSERT_EQ(out->dims().size(), 2);
   ASSERT_EQ(out->dims()[0], 1);

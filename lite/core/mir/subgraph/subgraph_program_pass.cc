@@ -310,4 +310,5 @@ int SubgraphProgramPass::FuseSubgraph(
 }  // namespace paddle
 
 REGISTER_MIR_PASS(subgraph_program_pass,
-                  paddle::lite::mir::subgraph::SubgraphProgramPass);
+                  paddle::lite::mir::subgraph::SubgraphProgramPass)
+    .BindTargets({TARGET(kAny)});

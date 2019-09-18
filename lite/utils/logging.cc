@@ -18,8 +18,10 @@
  */
 
 #include "lite/utils/logging.h"
+#include <iomanip>
 
-#ifdef LITE_WITH_LIGHT_WEIGHT_FRAMEWORK
+#if defined(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK) || \
+    defined(LITE_ON_MODEL_OPTIMIZE_TOOL)
 #ifndef LITE_SHUTDOWN_LOG
 
 namespace paddle {
@@ -48,7 +50,7 @@ void gen_log(STL::ostream& log_stream_,
               << tv.tv_usec / 1000 << " ";
 
   if (len > kMaxLen) {
-    log_stream_ << "..." << file + len - kMaxLen << " " << func << ":" << lineno
+    log_stream_ << "..." << file + len - kMaxLen << ":" << lineno << " " << func
                 << "] ";
   } else {
     log_stream_ << file << " " << func << ":" << lineno << "] ";

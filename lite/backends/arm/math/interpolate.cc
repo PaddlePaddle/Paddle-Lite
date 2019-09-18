@@ -83,8 +83,8 @@ void bilinear_interp(const float* src,
       beta[dy * 2 + 1] = fy;
     }
   } else {
-    scale_x = static_cast<float>(w_in / w_out);
-    scale_y = static_cast<float>(h_in / h_out);
+    scale_x = static_cast<float>(w_in) / w_out;
+    scale_y = static_cast<float>(h_in) / h_out;
     // calculate x axis coordinate
     for (int dx = 0; dx < w_out; dx++) {
       fx = scale_x * (dx + 0.5f) - 0.5f;
@@ -459,8 +459,10 @@ void nearest_interp(const float* src,
 #pragma omp parallel for collapse(2) schedule(static)
   for (int h = 0; h < h_out; ++h) {
     for (int w = 0; w < w_out; ++w) {
-      int near_x = static_cast<int>(scale_w_new * w + 0.5);
-      int near_y = static_cast<int>(scale_h_new * h + 0.5);
+      int near_x = (with_align) ? static_cast<int>(scale_w_new * w + 0.5)
+                                : static_cast<int>(scale_w_new * w);
+      int near_y = (with_align) ? static_cast<int>(scale_h_new * h + 0.5)
+                                : static_cast<int>(scale_h_new * h);
       near_x = near_x < 0 ? 0 : near_x;
       near_y = near_y < 0 ? 0 : near_y;
       dst[h * w_out + w] = src[near_y * w_in + near_x];

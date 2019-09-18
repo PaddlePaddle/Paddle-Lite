@@ -16,10 +16,11 @@
 #ifdef PADDLE_WITH_TESTING
 #include <gtest/gtest.h>
 #endif
+#include "all_kernel_faked.cc"  // NOLINT
 #include "lite/api/paddle_api.h"
-#include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
 #include "lite/api/paddle_use_passes.h"
+#include "lite/core/op_registry.h"
 #include "lite/utils/cp_logging.h"
 #include "lite/utils/string.h"
 
@@ -33,6 +34,7 @@ DEFINE_string(
     optimize_out_type,
     "protobuf",
     "store type of the output optimized model. protobuf/naive_buffer");
+DEFINE_bool(display_kernels, false, "Display kernel information");
 DEFINE_string(optimize_out, "", "path of the output optimized model");
 DEFINE_string(valid_targets,
               "arm",
@@ -43,10 +45,20 @@ DEFINE_bool(prefer_int8_kernel, false, "Prefer to run model with int8 kernels");
 namespace paddle {
 namespace lite_api {
 
+//! Display the kernel information.
+void DisplayKernels() {
+  LOG(INFO) << ::paddle::lite::KernelRegistry::Global().DebugString();
+}
+
 void Main() {
   if (!FLAGS_model_file.empty() && !FLAGS_param_file.empty()) {
     LOG(WARNING)
         << "Load combined-param model. Option model_dir will be ignored";
+  }
+
+  if (FLAGS_display_kernels) {
+    DisplayKernels();
+    exit(0);
   }
 
   lite_api::CxxConfig config;
@@ -70,10 +82,12 @@ void Main() {
           target_repr.c_str());
     }
   }
+  valid_places.emplace_back(TARGET(kHost));
 
   CHECK(!valid_places.empty())
       << "At least one target should be set, should set the "
          "command argument 'valid_targets'";
+
   if (FLAGS_prefer_int8_kernel) {
     LOG(WARNING) << "Int8 mode is only support by ARM target";
     valid_places.push_back(Place{TARGET(kARM), PRECISION(kInt8)});

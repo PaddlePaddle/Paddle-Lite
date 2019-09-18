@@ -16,6 +16,7 @@ limitations under the License. */
 
 #include <algorithm>
 #include <cmath>
+#include <memory>
 #include <vector>
 #include "framework/operator.h"
 #include "operators/math/transform.h"
@@ -77,6 +78,8 @@ class DensityPriorBoxParam : public OpParam {
     densities_ = GetAttr<vector<int>>("densities", attrs);
   }
 
+  ~DensityPriorBoxParam() {}
+
   const GType *Input() const { return input_; }
   const GType *InputImage() const { return input_image_; }
   GType *OutputBoxes() const { return output_boxes_; }
@@ -90,6 +93,8 @@ class DensityPriorBoxParam : public OpParam {
   const vector<float> &FixedRatios() const { return fixed_ratios_; }
   const vector<int> &Densities() const { return densities_; }
   const vector<float> &Variances() const { return variances_; }
+  GType *getNewDensity() const { return new_density.get(); }
+  void setNewDensity(GType *newDensity) { new_density.reset(newDensity); }
 
  public:
   GType *input_;
@@ -105,6 +110,7 @@ class DensityPriorBoxParam : public OpParam {
   vector<float> fixed_ratios_;
   vector<int> densities_;
   vector<float> variances_;
+  std::shared_ptr<GType> new_density;
 };
 
 DECLARE_KERNEL(DensityPriorBox, DensityPriorBoxParam);

@@ -424,8 +424,8 @@ __kernel void conv_3x3(__private const int global_size_dim0,
     write_imageh(output_image, output_pos, output);
 }
 
-   // dilation == 1 && stride == 1 && ou_nh == ou_h
-__kernel void conv_3x3s1(__private const int item_ch,
+   // dilation == 1
+__kernel void conv_3x3spl(__private const int item_ch,
                                __private const int item_w,
                                __private const int item_h,
                                __read_only image2d_t input_image,
@@ -456,20 +456,22 @@ __read_only image2d_t new_scale,
     const int item_w_id = get_global_id(1);
     const int item_h_id = get_global_id(2);
 
-    // in_width_id_per_blk
-    int in_w_id0 = item_w_id - pad;
-    int in_w_id1 = in_w_id0 + item_w;
-    int in_w_id2 = in_w_id1 + item_w;
-    int in_w_id3 = in_w_id2 + item_w;
-    int in_w_id4 = in_w_id3 + item_w;
-
-    // out_width_id_per_blk
+    // out_width_id_per_blk and out_batch_id
+    int out_batch_id = item_h_id / in_h;
     int out_w_base_id = item_ch_id * out_w;
     int out_w_id0 = item_w_id;
     int out_w_id1 = out_w_id0 + item_w;
     int out_w_id2 = out_w_id1 + item_w;
     int out_w_id3 = out_w_id2 + item_w;
     int out_w_id4 = out_w_id3 + item_w;
+
+    // in_width_id_per_blk and in_height_id_per_batch
+    int in_h_id = (item_h_id % out_h) * stride - pad;
+    int in_w_id0 = item_w_id * stride - pad;
+    int in_w_id1 = in_w_id0 + item_w * stride;
+    int in_w_id2 = in_w_id1 + item_w * stride;
+    int in_w_id3 = in_w_id2 + item_w * stride;
+    int in_w_id4 = in_w_id3 + item_w * stride;
 
 #ifdef BIASE_CH
 
@@ -518,8 +520,8 @@ __read_only image2d_t new_scale,
 
         for (int h = 0; h < 3; h++) {
 
-            int in_h_val = select(item_h_id + h - pad, -1,
-                                   (item_h_id + h - pad < 0 || item_h_id + h - pad >= in_h));
+            int in_h_val = select(out_batch_id * in_h + in_h_id + h, -1,
+                                 (out_batch_id * in_h + in_h_id + h < 0 || out_batch_id * in_h + in_h_id + h >= in_h));
 
             for (int w = 0; w < 3; w++) {
 
@@ -538,7 +540,6 @@ __read_only image2d_t new_scale,
                 filter[1] = read_imageh(filter_image, sampler,(int2)(filter_w_val + w,filter_h_val1 + h)); // in_ch:0-3,out_ch:1
                 filter[2] = read_imageh(filter_image, sampler,(int2)(filter_w_val + w,filter_h_val2 + h)); // in_ch:0-3,out_ch:2
                 filter[3] = read_imageh(filter_image, sampler,(int2)(filter_w_val + w,filter_h_val3 + h)); // in_ch:0-3,out_ch:3
-
 
                 filter_trans[0] = (half4)(filter[0].x, filter[1].x, filter[2].x, filter[3].x);    // in_ch:0,out_ch:0-3
                 filter_trans[1] = (half4)(filter[0].y, filter[1].y, filter[2].y, filter[3].y);    // in_ch:1,out_ch:0-3
@@ -2108,6 +2109,157 @@ __kernel void conv_7x7(__private const int global_size_dim0,
 #endif
 
     write_imageh(output_image, output_pos, output);
+}
+
+__kernel void conv_7x7Pt1x2(__private const int global_size_dim0,
+                                              __private const int global_size_dim1,
+                                              __private const int global_size_dim2,
+                                              __read_only image2d_t input_image,
+                                              __read_only image2d_t filter_image,
+
+#if defined(BIASE_CH) || defined(BIASE_ELE)
+                                              __read_only image2d_t bias,
+#endif
+
+#ifdef BATCH_NORM
+                                              __read_only image2d_t new_scale,
+                                              __read_only image2d_t new_biase,
+#endif
+
+                                              __write_only image2d_t output_image,
+                                              __private const int stride,
+                                              __private const int offset,
+                                              __private const int input_c,
+                                              __private const int dilation,
+                                              __private const int input_width,/* of one block */
+                                              __private const int input_height,/* of one block */
+                                              __private const int output_width,
+                                              __private const int output_height) {
+
+    const int out_c = get_global_id(0);
+    const int out_w1 = get_global_id(1);
+    const int out_nh = get_global_id(2);
+
+    if (out_c >= global_size_dim0 ||
+        out_w1 >= global_size_dim1 ||
+        out_nh >= global_size_dim2) {
+        return;
+    }
+    const int out_w = out_w1 * 2;
+
+    int2 output_pos = (int2)(out_c * output_width + out_w, out_nh);
+
+    const int filter_n0 = 4 * out_c + 0;
+    const int filter_n1 = 4 * out_c + 1;
+    const int filter_n2 = 4 * out_c + 2;
+    const int filter_n3 = 4 * out_c + 3;
+
+    int2 stride_xy;
+    stride_xy.x = stride;
+    stride_xy.y = stride;
+
+    int2 ouput_pos_in_one_block;
+    ouput_pos_in_one_block.x = out_w;
+    ouput_pos_in_one_block.y = out_nh;
+
+
+    const sampler_t sampler = CLK_NORMALIZED_COORDS_TRUE |
+                              CLK_ADDRESS_CLAMP          |
+                              CLK_FILTER_NEAREST;
+
+    int2 in_pos_in_one_block;
+    in_pos_in_one_block.x = ouput_pos_in_one_block.x * stride + offset;
+    in_pos_in_one_block.y = ouput_pos_in_one_block.y * stride + offset;
+
+    half4 output0 = 0.0f;
+    half4 output1 = 0.0f;
+#ifdef BIASE_CH
+    output0 = read_imageh(bias, sampler, (int2)(out_c, 0));
+    output1 = output0;
+#elif defined(BIASE_ELE)
+    output0 = read_imageh(bias, sampler, output_pos);
+    output1 = read_imageh(bias, sampler, (int2)(output_pos.x + 1, output_pos.y));
+#else
+    output0 = 0.0f;
+    output1 = 0.0f;
+#endif
+
+   half4 input[8];
+   half4 filter0[4];
+   half4 filter1[4];
+   half4 filter2[4];
+   half4 filter3[4];
+   int2 filter_pos0;
+   int2 filter_pos1;
+   int2 filter_pos2;
+   int2 filter_pos3;
+   for (int i = 0; i < input_c; ++i) {
+        int2 pos_in = (int2)(i * input_width + in_pos_in_one_block.x, in_pos_in_one_block.y);
+        for(int k = 0; k < 7; k++){
+         for (int j = 0; j < 8; j++) {
+             input[j]  =  select(read_imageh(input_image, sampler,
+                                                                  (int2)(pos_in.x + (j - 3) * dilation, pos_in.y +  (k - 3) * dilation)),
+                                                                  (half4)(0.0f),
+                                                                  (ushort4)((in_pos_in_one_block.x + (j - 3) * dilation < 0 || in_pos_in_one_block.y + (k - 3) * dilation < 0 || in_pos_in_one_block.x + (j - 3) * dilation >= input_width || in_pos_in_one_block.y + (k - 3) * dilation >= input_height) << 15));
+
+             int filter_h = k;
+             int filter_w = j;
+             int filter_c = i;
+
+             if (j < 7) {
+                filter_pos0.x = filter_c * 7 + filter_w;
+                filter_pos0.y = filter_n0 * 7 + filter_h;
+
+                filter_pos1.x = filter_c * 7 + filter_w;
+                filter_pos1.y = filter_n1 * 7 + filter_h;
+
+                filter_pos2.x = filter_c * 7 + filter_w;
+                filter_pos2.y = filter_n2 * 7 + filter_h;
+
+                filter_pos3.x = filter_c * 7 + filter_w;
+                filter_pos3.y = filter_n3 * 7 + filter_h;
+
+                filter0[0] =  read_imageh(filter_image, sampler, filter_pos0);
+                filter0[1] =  read_imageh(filter_image, sampler, filter_pos1);
+                filter0[2] =  read_imageh(filter_image, sampler, filter_pos2);
+                filter0[3] =  read_imageh(filter_image, sampler, filter_pos3);
+
+                output0.x += dot(input[j], filter0[0]);
+                output0.y += dot(input[j], filter0[1]);
+                output0.z += dot(input[j], filter0[2]);
+                output0.w += dot(input[j], filter0[3]);
+             }
+
+             if (j > 0) {
+               output1.x += dot(input[j], filter1[0]);
+               output1.y += dot(input[j], filter1[1]);
+               output1.z += dot(input[j], filter1[2]);
+               output1.w += dot(input[j], filter1[3]);
+             }
+
+             filter1[0] = filter0[0];
+             filter1[1] = filter0[1];
+             filter1[2] = filter0[2];
+             filter1[3] = filter0[3];
+         }
+        }
+   }
+
+#ifdef BATCH_NORM
+    half s = read_imageh(new_scale, sampler, (int2)(out_c, 0));
+    half b = read_imageh(new_biase, sampler, (int2)(out_c, 0));
+    output0 = output0 * s + b;
+    output1 = output1 * s + b;
+#endif
+
+#ifdef RELU
+    output0 = activation(output0);
+    output1 = activation(output1);
+#endif
+    write_imageh(output_image, output_pos, output0);
+    if ((output_pos.x + 1) % output_width != 0) {
+      write_imageh(output_image, (int2)(output_pos.x + 1, output_pos.y), output1);
+    }
 }
 
 __kernel void conv_5x5(__private const int global_size_dim0,

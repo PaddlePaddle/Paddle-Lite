@@ -179,4 +179,5 @@ void PrecisionCastPass::SetValidPlaces(const std::vector<Place>& valid_places) {
 }  // namespace paddle
 
 REGISTER_MIR_PASS(type_precision_cast_pass,
-                  paddle::lite::mir::PrecisionCastPass);
+                  paddle::lite::mir::PrecisionCastPass)
+    .BindTargets({TARGET(kAny)});

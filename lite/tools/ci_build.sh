@@ -151,7 +151,7 @@ function build_opencl {
 # This method is only called in CI.
 function cmake_x86_for_CI {
     prepare_workspace # fake an empty __generated_code__.cc to pass cmake.
-    cmake ..  -DWITH_GPU=OFF -DWITH_MKLDNN=OFF -DLITE_WITH_X86=ON ${common_flags} -DLITE_WITH_PROFILE=ON -DWITH_MKL=OFF \
+    cmake ..  -DWITH_GPU=OFF -DWITH_MKLDNN=OFF -DLITE_WITH_X86=ON ${common_flags} -DLITE_WITH_PROFILE=ON -DWITH_MKL=ON \
         -DLITE_BUILD_EXTRA=ON \
 
     # Compile and execute the gen_code related test, so it will generate some code, and make the compilation reasonable.
@@ -219,11 +219,12 @@ function test_server {
 function build_test_server {
     mkdir -p ./build
     cd ./build
-    export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/paddle/build/third_party/install/mklml/lib"
+    export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$PWD/third_party/install/mklml/lib"
     cmake_x86_for_CI
     build
 
     test_server
+    test_model_optimize_tool_compile
 }
 
 function build_test_train {
@@ -393,20 +394,27 @@ function test_arm_model {
     adb -s emulator-${port} shell "${adb_work_dir}/${test_name} --model_dir=$adb_model_path"
 }
 
-function _test_model_optimize_tool {
-    local port=$1
-    local remote_model_path=$ADB_WORK_DIR/lite_naive_model
-    local remote_test=$ADB_WORK_DIR/model_optimize_tool
-    local adb="adb -s emulator-${port}"
+# function _test_model_optimize_tool {
+#     local port=$1
+#     local remote_model_path=$ADB_WORK_DIR/lite_naive_model
+#     local remote_test=$ADB_WORK_DIR/model_optimize_tool
+#     local adb="adb -s emulator-${port}"
 
+#     make model_optimize_tool -j$NUM_CORES_FOR_COMPILE
+#     local test_path=$(find . -name model_optimize_tool | head -n1)
+#     local model_path=$(find . -name lite_naive_model | head -n1)
+#     $adb push ${test_path} ${ADB_WORK_DIR}
+#     $adb shell mkdir -p $remote_model_path
+#     $adb push $model_path/* $remote_model_path
+#     $adb shell $remote_test --model_dir $remote_model_path --optimize_out ${remote_model_path}.opt \
+#          --valid_targets "arm"
+# }
+
+function test_model_optimize_tool_compile {
+    cd $workspace
+    cd build
+    cmake .. -DWITH_LITE=ON -DLITE_ON_MODEL_OPTIMIZE_TOOL=ON -DWITH_TESTING=OFF -DLITE_BUILD_EXTRA=ON
     make model_optimize_tool -j$NUM_CORES_FOR_COMPILE
-    local test_path=$(find . -name model_optimize_tool | head -n1)
-    local model_path=$(find . -name lite_naive_model | head -n1)
-    $adb push ${test_path} ${ADB_WORK_DIR}
-    $adb shell mkdir -p $remote_model_path
-    $adb push $model_path/* $remote_model_path
-    $adb shell $remote_test --model_dir $remote_model_path --optimize_out ${remote_model_path}.opt \
-         --valid_targets "arm"
 }
 
 function _test_paddle_code_generator {
@@ -558,8 +566,8 @@ function test_arm {
     # test finally
     test_arm_api $port
 
-    _test_model_optimize_tool $port
-    _test_paddle_code_generator $port
+    # _test_model_optimize_tool $port
+    # _test_paddle_code_generator $port
 }
 
 function prepare_emulator {
