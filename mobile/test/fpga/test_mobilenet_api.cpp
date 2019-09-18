@@ -17,6 +17,7 @@ limitations under the License. */
 #endif
 #include <fstream>
 #include <iostream>
+#include "../../src/common/type_define.h"
 #include "../../src/io/paddle_inference_api.h"
 
 using namespace paddle_mobile;        // NOLINT
@@ -96,7 +97,8 @@ void dump_stride_float(std::string filename, PaddleTensor input_tensor) {
 }
 
 void dump_stride(std::string filename, PaddleTensor input_tensor) {
-  if (input_tensor.dtypeid == type_id<float>().hash_code()) {
+  if (input_tensor.dtypeid ==
+static_cast<PaddlekTypeId_t>(type_id<float>().hash_code())) {
     dump_stride_float(filename, input_tensor);
   } else {
     std::cout << "only support dumping float data" << std::endl;
@@ -131,7 +133,7 @@ int main() {
   std::cout << "Finishing initializing data" << std::endl;
   struct PaddleTensor t_img;
   t_img.dtype = FLOAT32;
-  t_img.dtypeid = type_id<float>().hash_code();
+  t_img.dtypeid = static_cast<PaddlekTypeId_t>(type_id<float>().hash_code());
   // quantize(&img, img_length);
   // t_img.dtype = INT8;
   // t_img.dtypeid = typeid(int8_t);

@@ -18,6 +18,7 @@ limitations under the License. */
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include "../../src/common/type_define.h"
 #include "../../src/io/paddle_inference_api.h"
 
 using namespace paddle_mobile;        // NOLINT
@@ -86,7 +87,7 @@ int main() {
 
   struct PaddleTensor t_img1;
 
-  t_img1.dtypeid = type_id<float>().hash_code();
+  t_img1.dtypeid = static_cast<PaddlekTypeId_t>(type_id<float>().hash_code());
   t_img1.layout = LAYOUT_HWC;
   t_img1.shape = std::vector<int>({1, 224, 224, 3});
   t_img1.name = "Image information";
@@ -117,13 +118,13 @@ int main() {
 
   std::cout << "Finishing initializing data" << std::endl;
   struct PaddleTensor t_img_info, t_img;
-  t_img.dtypeid = type_id<float>().hash_code();
+  t_img.dtypeid = static_cast<PaddlekTypeId_t>(type_id<float>().hash_code());
   t_img_info.layout = LAYOUT_HWC;
   t_img_info.shape = std::vector<int>({1, 3});
   t_img_info.name = "Image information";
   t_img_info.data.Reset(img_info, 3 * sizeof(float));
 
-  t_img.dtypeid = type_id<float>().hash_code();
+  t_img.dtypeid = static_cast<PaddlekTypeId_t>(type_id<float>().hash_code());
   t_img.layout = LAYOUT_HWC;
   t_img.shape = std::vector<int>({1, 432, 1280, 3});
   t_img.name = "Image information";
