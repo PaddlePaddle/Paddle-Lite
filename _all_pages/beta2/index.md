@@ -8,8 +8,8 @@ Paddle-Lite 框架是 PaddleMobile 新一代架构，重点支持移动端推理
 
 ## 简介
 
-- [技术特点](./tech_highlights)
-- [架构设计](./architecture)
+- [技术特点](tech_highlights)
+- [架构设计](../architecture)
 - [Road Map](./roadmap)
 
 ## Benchmark

@@ -25,26 +25,26 @@ Paddle-Lite 框架是 PaddleMobile 新一代架构，重点支持移动端推理
 
 - [使用流程]({{ site.baseurl }}/beta1/tutorial)
 - [C++实例]({{ site.baseurl }}/beta1/cpp_demo)
-- [Java实例]({{ site.baseurl }}/java_demo)
+- [Java实例]({{ site.baseurl }}/beta1/java_demo)
 - [Android/IOS APP demo](https://github.com/PaddlePaddle/Paddle-Lite-Demo)
-- [模型转化方法]({{ site.baseurl }}/model_optimize_tool)
+- [模型转化方法]({{ site.baseurl }}/beta1/model_optimize_tool)
 
 ## 进阶
 
 - [通过 X2Paddle 支持 Caffe, TensorFlow 模型]({{ site.baseurl }}/x2paddle)
-- [模型量化]({{ site.baseurl }}/model_quantization)
-- [支持Op列表]({{ site.baseurl }}/support_operation_list)
-- [新增Op方法]({{ site.baseurl }}/add_new_operation)
-- [测试工具]({{ site.baseurl }}/debug_tools)
-- [调试方法]({{ site.baseurl }}/debug_tools)
-- [使用华为NPU]({{ site.baseurl }}/npu)
-- [使用Android GPU]({{ site.baseurl }}/opencl)
-- [使用FPGA]({{ site.baseurl }}/fpga)
+- [模型量化]({{ site.baseurl }}/beta1/model_quantization)
+- [支持Op列表]({{ site.baseurl }}/beta1/support_operation_list)
+- [新增Op方法]({{ site.baseurl }}/beta1/add_new_operation)
+- [测试工具]({{ site.baseurl }}/beta1/debug_tools)
+- [调试方法]({{ site.baseurl }}/beta1/debug_tools)
+- [使用华为NPU]({{ site.baseurl }}/beta1/npu)
+- [使用Android GPU]({{ site.baseurl }}/beta1/opencl)
+- [使用FPGA]({{ site.baseurl }}/beta1/fpga)
 
 ## 开发者文档
 
-- [开发基础须知]({{ site.baseurl }}/for-developer)
-- [架构详解]({{ site.baseurl }}/architecture-intro)
+- [开发基础须知]({{ site.baseurl }}/beta1/for-developer)
+- [架构详解]({{ site.baseurl }}/beta1/architecture-intro)
 
 ## FAQ
 
@@ -53,4 +53,4 @@ Paddle-Lite 框架是 PaddleMobile 新一代架构，重点支持移动端推理
 
 ## paddle-mobile
 
-- [paddle-mobile 编译]({{ site.baseurl }}/mobile)
+- [paddle-mobile 编译]({{ site.baseurl }}/beta1/mobile)
