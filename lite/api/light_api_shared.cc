@@ -22,16 +22,10 @@ namespace paddle {
 namespace lite_api {
 
 void RunModel() {
-  // 1. Set CxxConfig
-  CxxConfig config;
-
-  // 2. Create PaddlePredictor by CxxConfig
-  std::shared_ptr<PaddlePredictor> predictor =
-      CreatePaddlePredictor<CxxConfig>(config);
-  // 3. Set MobileConfig
+  // 1. Set MobileConfig
   MobileConfig mobile_config;
 
-  // 4. Create PaddlePredictor by MobileConfig
+  // 2. Create PaddlePredictor by MobileConfig
   std::shared_ptr<PaddlePredictor> mobile_predictor =
       CreatePaddlePredictor<MobileConfig>(mobile_config);
 }
