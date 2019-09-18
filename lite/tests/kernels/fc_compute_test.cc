@@ -16,8 +16,8 @@
 #include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
 #include "lite/core/arena/framework.h"
-#include "lite/tests/kernels/fill_data.h"
-#include "lite/tests/kernels/test_funcs.h"
+#include "lite/tests/utils/fill_data.h"
+#include "lite/tests/utils/naive_math_impl.h"
 
 namespace paddle {
 namespace lite {

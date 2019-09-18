@@ -18,6 +18,7 @@
  */
 
 #include "lite/utils/logging.h"
+#include <iomanip>
 
 #if defined(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK) || \
     defined(LITE_ON_MODEL_OPTIMIZE_TOOL)

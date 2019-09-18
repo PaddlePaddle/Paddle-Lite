@@ -39,6 +39,11 @@ class PassRegistry {
     pass_->BindKernel(name, place);
     return *this;
   }
+  PassRegistry& BindKernel(const std::string& name) {
+    pass_->BindKernel(name,
+                      Place(TARGET(kAny), PRECISION(kAny), DATALAYOUT(kAny)));
+    return *this;
+  }
   bool Touch() const { return true; }
 
  private:
