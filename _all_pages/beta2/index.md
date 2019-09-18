@@ -8,43 +8,43 @@ Paddle-Lite 框架是 PaddleMobile 新一代架构，重点支持移动端推理
 
 ## 简介
 
-- [技术特点](tech_highlights)
+- [技术特点](../tech_highlights)
 - [架构设计](../architecture)
-- [Road Map](./roadmap)
+- [Road Map](../roadmap)
 
 ## Benchmark
 
-- [最新性能](./benchmark)
-- [测试方法](./benchmark_tools)
+- [最新性能](../benchmark)
+- [测试方法](../benchmark_tools)
 
 ## 安装
 
-- [源码编译](./source_compile)
+- [源码编译](../source_compile)
 
 ## 使用
 
-- [使用流程](./tutorial)
-- [C++实例](./cpp_demo)
-- [Java实例](./java_demo)
+- [使用流程](../tutorial)
+- [C++实例](../cpp_demo)
+- [Java实例](../java_demo)
 - [Android/IOS APP demo](https://github.com/PaddlePaddle/Paddle-Lite-Demo)
-- [模型转化方法](./model_optimize_tool)
+- [模型转化方法](../model_optimize_tool)
 
 ## 进阶
 
-- [通过 X2Paddle 支持 Caffe, TensorFlow 模型](./x2paddle)
-- [模型量化](./model_quantization)
-- [支持Op列表](./support_operation_list)
-- [新增Op方法](./add_new_operation)
-- [测试工具](./debug_tools)
-- [调试方法](./debug_tools)
-- [使用华为NPU](./npu)
-- [使用Android GPU](./opencl)
-- [使用FPGA](./fpga)
+- [通过 X2Paddle 支持 Caffe, TensorFlow 模型](../x2paddle)
+- [模型量化](../model_quantization)
+- [支持Op列表](../support_operation_list)
+- [新增Op方法](../add_new_operation)
+- [测试工具](../debug_tools)
+- [调试方法](../debug_tools)
+- [使用华为NPU](../npu)
+- [使用Android GPU](../opencl)
+- [使用FPGA](../fpga)
 
 ## 开发者文档
 
-- [开发基础须知](./for-developer)
-- [架构详解](./architecture-intro)
+- [开发基础须知](../for-developer)
+- [架构详解](../architecture-intro)
 
 ## FAQ
 
@@ -53,4 +53,4 @@ Paddle-Lite 框架是 PaddleMobile 新一代架构，重点支持移动端推理
 
 ## paddle-mobile
 
-- [paddle-mobile 编译](./mobile)
+- [paddle-mobile 编译](../mobile)
