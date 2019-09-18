@@ -48,6 +48,9 @@ void Run(DebugConfig* conf) {
 #ifdef LITE_WITH_FPGA
       Place{TARGET(kFPGA), PRECISION(kFloat)},
 #endif
+#ifdef LITE_WITH_CUDA
+      Place{TARGET(kCUDA), PRECISION(kFloat)},
+#endif
   });
 
   std::vector<std::string> passes{{
@@ -68,6 +71,12 @@ void Run(DebugConfig* conf) {
 #endif
 #ifdef LITE_WITH_X86
                   Place{TARGET(kX86), PRECISION(kFloat)},
+#endif
+#ifdef LITE_WITH_FPGA
+                  Place{TARGET(kFPGA), PRECISION(kFloat)},
+#endif
+#ifdef LITE_WITH_CUDA
+                  Place{TARGET(kCUDA), PRECISION(kFloat)},
 #endif
                   valid_places,
                   passes);

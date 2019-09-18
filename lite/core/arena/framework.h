@@ -202,6 +202,7 @@ class Arena {
 
       default:
         LOG(FATAL) << "not support type " << PrecisionToStr(type->precision());
+        return false;
     }
   }
 

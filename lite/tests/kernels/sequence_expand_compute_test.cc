@@ -25,10 +25,10 @@ class SequenceExpandComputeTester : public arena::TestCase {
   const std::string input_x_ = "x";
   const std::string input_y_ = "y";
   const std::string output_ = "out";
-  int ref_level_ = -1;
-  DDim dims_{{4, 1}};
   LoD lod_x_{{0, 2, 4}};
   LoD lod_y_{{0, 1, 4}};
+  int ref_level_ = -1;
+  DDim dims_{{4, 1}};
 
  public:
   SequenceExpandComputeTester(const Place& place,
@@ -50,7 +50,6 @@ class SequenceExpandComputeTester : public arena::TestCase {
     const auto* x_data = x->data<float>();
     (x->mutable_lod())->clear();
     (x->mutable_lod())->push_back(lod_x_[0]);
-    int x_rank = dims_.size();
     auto width = x->numel() / dims_[0];
     auto lod_x = x->lod();
 
@@ -59,7 +58,6 @@ class SequenceExpandComputeTester : public arena::TestCase {
     for (int i = 0; i < lod_y_.size(); i++) {
       (y->mutable_lod())->push_back(lod_y_[i]);
     }
-    const auto* y_data = y->data<float>();
     if (ref_level_ == -1) {
       ref_level_ = lod_y_.size() - 1;
     }

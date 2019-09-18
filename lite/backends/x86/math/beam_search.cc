@@ -69,7 +69,8 @@ class BeamSearchFunctor<TARGET(kX86), T> {
     // the output tensor shape should be [num_instances, 1]
     // auto dims = framework::make_ddim(
     //     std::vector<int64_t>({static_cast<int>(num_instances), 1}));
-    lite::DDim dims(std::vector<int64_t>({num_instances, 1L}));
+    lite::DDim dims(
+        std::vector<int64_t>({static_cast<int>(num_instances), 1L}));
 
     selected_ids->Resize(dims);
     auto *selected_ids_data = selected_ids->mutable_data<int64_t>(TARGET(kX86));

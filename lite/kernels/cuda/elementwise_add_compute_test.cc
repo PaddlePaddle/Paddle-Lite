@@ -56,8 +56,6 @@ TEST(elementwise_add, normal) {
   y_ref.Resize({n, c, h, w});
   out_ref.Resize({n, c, h, w});
 
-  auto* x_data = x.mutable_data<float>(TARGET(kCUDA));
-  auto* y_data = y.mutable_data<float>(TARGET(kCUDA));
   auto* out_data = out.mutable_data<float>(TARGET(kCUDA));
 
   auto* x_cpu_data = x_cpu.mutable_data<float>();
