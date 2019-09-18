@@ -1,10 +1,17 @@
+# for conv op
+add_kernel(conv_depthwise ARM basic SRCS conv_depthwise.cc DEPS ${lite_kernel_deps} math_arm)
+add_kernel(conv_direct ARM basic SRCS conv_direct.cc DEPS ${lite_kernel_deps} math_arm)
+add_kernel(conv_gemmlike ARM basic SRCS conv_gemmlike.cc DEPS ${lite_kernel_deps} math_arm)
+add_kernel(conv_winograd ARM basic SRCS conv_winograd.cc DEPS ${lite_kernel_deps} math_arm)
+add_kernel(conv_compute_arm ARM basic SRCS conv_compute.cc DEPS ${lite_kernel_deps}
+        conv_depthwise conv_direct conv_gemmlike conv_winograd)
+
 add_kernel(fc_compute_arm ARM basic SRCS fc_compute.cc DEPS ${lite_kernel_deps} math_arm)
 add_kernel(activation_compute_arm ARM basic SRCS activation_compute.cc DEPS ${lite_kernel_deps} math_arm)
 add_kernel(mul_compute_arm ARM basic SRCS mul_compute.cc DEPS ${lite_kernel_deps} math_arm)
 add_kernel(matmul_compute_arm ARM basic SRCS matmul_compute.cc DEPS ${lite_kernel_deps} math_arm)
 add_kernel(scale_compute_arm ARM basic SRCS scale_compute.cc DEPS ${lite_kernel_deps} math_arm)
 add_kernel(softmax_compute_arm ARM basic SRCS softmax_compute.cc DEPS ${lite_kernel_deps} math_arm)
-add_kernel(conv_compute_arm ARM basic SRCS conv_compute.cc DEPS ${lite_kernel_deps} math_arm)
 add_kernel(batch_norm_compute_arm ARM basic SRCS batch_norm_compute.cc DEPS ${lite_kernel_deps} math_arm)
 add_kernel(elementwise_compute_arm ARM basic SRCS elementwise_compute.cc DEPS ${lite_kernel_deps} math_arm)
 add_kernel(lrn_compute_arm ARM basic SRCS lrn_compute.cc DEPS ${lite_kernel_deps} math_arm)
@@ -77,11 +84,8 @@ endif()
 
 message(STATUS "compile with lite ARM kernels")
 
-
-lite_cc_test(test_fc_compute_arm SRCS fc_compute_test.cc DEPS fc_compute_arm math_arm)
 lite_cc_test(test_scale_compute_arm SRCS scale_compute_test.cc DEPS scale_compute_arm)
 lite_cc_test(test_softmax_compute_arm SRCS softmax_compute_test.cc DEPS softmax_compute_arm)
-lite_cc_test(test_conv_compute_arm SRCS conv_compute_test.cc DEPS conv_compute_arm)
 lite_cc_test(test_batch_norm_compute_arm SRCS batch_norm_compute_test.cc DEPS batch_norm_compute_arm)
 lite_cc_test(test_elementwise_compute_arm SRCS elementwise_compute_test.cc DEPS elementwise_compute_arm)
 lite_cc_test(test_lrn_compute_arm SRCS lrn_compute_test.cc DEPS lrn_compute_arm)

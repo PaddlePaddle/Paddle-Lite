@@ -165,6 +165,11 @@ function(lite_cc_binary TARGET)
             )
     cc_binary(${TARGET} SRCS ${args_SRCS} DEPS ${deps} ${args_DEPS})
     target_compile_options(${TARGET} BEFORE PRIVATE -Wno-ignored-qualifiers)
+    # strip binary target to reduce size
+    add_custom_command(TARGET ${TARGET} POST_BUILD
+            COMMAND "${CMAKE_STRIP}" -s
+            "${TARGET}"
+            COMMENT "Strip debug symbols done on final executable file.")
     # collect targets need to compile for lite
     if (NOT args_EXCLUDE_COMPILE_DEPS)
         add_dependencies(lite_compile_deps ${TARGET})
@@ -207,6 +212,11 @@ function(lite_cc_test TARGET)
               HVY_DEPS ${args_HVY_DEPS}
               )
     _lite_cc_test(${TARGET} SRCS ${args_SRCS} DEPS ${deps} ARGS ${args_ARGS})
+    # strip binary target to reduce size
+    add_custom_command(TARGET ${TARGET} POST_BUILD
+            COMMAND "${CMAKE_STRIP}" -s
+            "${TARGET}"
+            COMMENT "Strip debug symbols done on final executable file.")
     target_compile_options(${TARGET} BEFORE PRIVATE -Wno-ignored-qualifiers)
     file(APPEND ${offline_test_registry_file} "${TARGET}\n")
 
