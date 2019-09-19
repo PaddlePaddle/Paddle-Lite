@@ -140,7 +140,7 @@ void Program::Build(const cpp::ProgramDesc& prog) {
     auto op = LiteOpRegistry::Global().Create(op_type);
     CHECK(op) << "no Op found for " << op_type;
     if (op_type == "while") {
-      auto sub_block_idx = op_desc.GetAttr<int16_t>("sub_block");
+      auto sub_block_idx = op_desc.GetAttr<int32_t>("sub_block");
       auto sub_block =
           const_cast<cpp::ProgramDesc&>(prog).GetBlock<cpp::BlockDesc>(
               sub_block_idx);
