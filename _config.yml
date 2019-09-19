@@ -23,7 +23,7 @@ github_username:  PaddlePaddle
 
 # Build settings
 markdown: kramdown
-theme: minima
+theme: jekyll-theme-cayman
 plugins:
   - jekyll-feed
 
