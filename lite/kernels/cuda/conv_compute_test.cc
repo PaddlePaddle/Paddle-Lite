@@ -53,7 +53,6 @@ TEST(conv_compute, fp32) {
   y_cpu.Resize({n, c_o, h_o, w_o});
   bias_cpu.Resize({c_o});
 
-  auto* x_data = x.mutable_data<float>(TARGET(kCUDA));
   auto* y_data = y.mutable_data<float>(TARGET(kCUDA));
   float* x_cpu_data = x_cpu.mutable_data<float>();
   float* filter_cpu_data = filter_cpu.mutable_data<float>();
@@ -127,7 +126,6 @@ TEST(conv_compute, int8) {
   y_cpu.Resize({1, 1, 1, c});
   bias_cpu.Resize({c});
 
-  auto* x_data = x.mutable_data<int8_t>(TARGET(kCUDA));
   auto* y_data = y.mutable_data<float>(TARGET(kCUDA));
   auto* x_cpu_data = x_cpu.mutable_data<int8_t>();
   auto* filter_cpu_data = filter_cpu.mutable_data<int8_t>();
@@ -194,7 +192,6 @@ TEST(conv_compute, int8_int8_out) {
   y_cpu.Resize({1, 1, 1, c});
   bias_cpu.Resize({c});
 
-  auto* x_data = x.mutable_data<int8_t>(TARGET(kCUDA));
   auto* y_data = y.mutable_data<int8_t>(TARGET(kCUDA));
   auto* x_cpu_data = x_cpu.mutable_data<int8_t>();
   auto* filter_cpu_data = filter_cpu.mutable_data<int8_t>();

@@ -18,6 +18,9 @@
  */
 #pragma once
 
+#ifndef _LOGGING_H_
+#define _LOGGING_H_
+
 #include <assert.h>
 #include <sys/time.h>
 #include <sys/types.h>
@@ -183,3 +186,4 @@ class VoidifyFatal : public Voidify {
 
 }  // namespace lite
 }  // namespace paddle
+#endif

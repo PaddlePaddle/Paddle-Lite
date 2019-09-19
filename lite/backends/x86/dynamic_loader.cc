@@ -153,16 +153,18 @@ static inline void* GetDsoHandleFromSearchPath(const std::string& search_root,
       dso_handle = GetDsoHandleFromDefaultPath(dlPath, dynload_flags);
     }
   }
-  auto error_msg =
-      "Failed to find dynamic library: %s ( %s ) \n Please specify "
-      "its path correctly using following ways: \n Method. set "
-      "environment variable LD_LIBRARY_PATH on Linux or "
-      "DYLD_LIBRARY_PATH on Mac OS. \n For instance, issue command: "
-      "export LD_LIBRARY_PATH=... \n Note: After Mac OS 10.11, "
-      "using the DYLD_LIBRARY_PATH is impossible unless System "
-      "Integrity Protection (SIP) is disabled.";
+/*
+auto error_msg =
+    "Failed to find dynamic library: %s ( %s ) \n Please specify "
+    "its path correctly using following ways: \n Method. set "
+    "environment variable LD_LIBRARY_PATH on Linux or "
+    "DYLD_LIBRARY_PATH on Mac OS. \n For instance, issue command: "
+    "export LD_LIBRARY_PATH=... \n Note: After Mac OS 10.11, "
+    "using the DYLD_LIBRARY_PATH is impossible unless System "
+    "Integrity Protection (SIP) is disabled.";
+*/
 #if !defined(_WIN32)
-  auto errorno = dlerror();
+// auto errorno = dlerror();
 #else
   auto errorno = GetLastError();
 #endif  // !_WIN32

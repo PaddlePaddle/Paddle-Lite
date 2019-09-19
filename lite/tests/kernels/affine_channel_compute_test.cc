@@ -64,8 +64,6 @@ class AffineChannelComputeTester : public arena::TestCase {
 
     if (data_layout_ == "NCHW") {
       int channel = x_dims_[1];
-      int height = x_dims_[2];
-      int width = x_dims_[3];
       int size = x_dims_[2] * x_dims_[3];
       int in_channel = channel * size;
       for (int n = 0; n < num; n++) {

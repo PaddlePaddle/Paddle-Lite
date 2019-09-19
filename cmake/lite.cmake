@@ -126,12 +126,12 @@ function(lite_cc_library TARGET)
             )
 
     if (args_SHARED OR ARGS_shared)
-        cc_library(${TARGET} SRCS ${args_SRCS} DEPS ${deps} ${args_DEPS} SHARED)
+        cc_library(${TARGET} SRCS ${args_SRCS} DEPS ${deps} SHARED)
     elseif (args_MODULE OR ARGS_module)
         add_library(${TARGET} MODULE ${args_SRCS})
         add_dependencies(${TARGET} ${deps} ${args_DEPS})
     else()
-        cc_library(${TARGET} SRCS ${args_SRCS} DEPS ${deps} ${args_DEPS})
+        cc_library(${TARGET} SRCS ${args_SRCS} DEPS ${deps})
     endif()
     target_compile_options(${TARGET} BEFORE PRIVATE -Wno-ignored-qualifiers)
 
@@ -163,7 +163,7 @@ function(lite_cc_binary TARGET)
             LIGHT_DEPS ${args_LIGHT_DEPS}
             HVY_DEPS ${args_HVY_DEPS}
             )
-    cc_binary(${TARGET} SRCS ${args_SRCS} DEPS ${deps} ${args_DEPS})
+    cc_binary(${TARGET} SRCS ${args_SRCS} DEPS ${deps})
     target_compile_options(${TARGET} BEFORE PRIVATE -Wno-ignored-qualifiers)
     if (NOT APPLE)
         # strip binary target to reduce size

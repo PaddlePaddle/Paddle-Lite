@@ -64,6 +64,7 @@ bool Activate(const lite::Tensor* X, lite::Tensor* Out) {
   auto x = lite::fluid::EigenVector<T>::Flatten(*X);
   auto out = lite::fluid::EigenVector<T>::Flatten(*Out);
   Functor()(place, x, out);
+  return true;
 }
 
 // square(x) = x^2
