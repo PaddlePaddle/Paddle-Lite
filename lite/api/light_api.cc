@@ -22,26 +22,25 @@ void LightPredictor::Build(const std::string& model_dir,
                            const std::string& param_buffer,
                            lite_api::LiteModelType model_type,
                            bool model_from_memory) {
-  cpp::ProgramDesc desc;
   switch (model_type) {
 #ifndef LITE_ON_TINY_PUBLISH
     case lite_api::LiteModelType::kProtobuf:
-      LoadModelPb(model_dir, "", "", scope_.get(), &desc);
+      LoadModelPb(model_dir, "", "", scope_.get(), &cpp_program_desc_);
       break;
 #endif
     case lite_api::LiteModelType::kNaiveBuffer: {
       if (model_from_memory) {
         LoadModelNaiveFromMemory(
-            model_buffer, param_buffer, scope_.get(), &desc);
+            model_buffer, param_buffer, scope_.get(), &cpp_program_desc_);
       } else {
-        LoadModelNaive(model_dir, scope_.get(), &desc);
+        LoadModelNaive(model_dir, scope_.get(), &cpp_program_desc_);
       }
       break;
     }
     default:
       LOG(FATAL) << "Unknown model type";
   }
-  BuildRuntimeProgram(desc);
+  BuildRuntimeProgram(cpp_program_desc_);
 }
 
 Tensor* LightPredictor::GetInput(size_t offset) {
@@ -84,9 +83,11 @@ void LightPredictor::BuildRuntimeProgram(const cpp::ProgramDesc& prog) {
         });
     CHECK(it != kernels.end());
     (*it)->SetContext(ContextScheduler::Global().NewContext((*it)->target()));
+
     insts.emplace_back(op, std::move(*it));
   }
   program_.reset(new RuntimeProgram(std::move(insts)));
+
   CHECK(program.exec_scope());
   program_->set_exec_scope(program.exec_scope());
 }
