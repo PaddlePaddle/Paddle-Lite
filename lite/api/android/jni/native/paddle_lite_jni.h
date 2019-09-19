@@ -39,6 +39,14 @@ Java_com_baidu_paddle_lite_PaddlePredictor_run(JNIEnv *, jobject);
 
 /*
  * Class:     com_baidu_paddle_lite_PaddlePredictor
+ * Method:    getVersion
+ * Signature: ()Z
+ */
+JNIEXPORT jstring JNICALL
+Java_com_baidu_paddle_lite_PaddlePredictor_getVersion(JNIEnv *, jobject);
+
+/*
+ * Class:     com_baidu_paddle_lite_PaddlePredictor
  * Method:    saveOptimizedModel
  * Signature: (Ljava/lang/String;)Z
  */
