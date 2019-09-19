@@ -56,8 +56,12 @@ function build_model_optimize_tool {
     prepare_thirdparty
     mkdir -p build.model_optimize_tool
     cd build.model_optimize_tool
-    cmake .. -DWITH_LITE=ON -DLITE_ON_MODEL_OPTIMIZE_TOOL=ON -DWITH_TESTING=OFF -DLITE_BUILD_EXTRA=ON
-    make model_optimize_tool -j$NUM_CORES_FOR_COMPILE
+    cmake .. -DWITH_LITE=ON \
+      -DLITE_ON_MODEL_OPTIMIZE_TOOL=ON \
+      -DWITH_TESTING=OFF \
+      -DLITE_BUILD_EXTRA=ON \
+      -DWITH_MKL=OFF
+    make model_optimize_tool -j$NUM_PROC
 }
 
 function make_tiny_publish_so {
