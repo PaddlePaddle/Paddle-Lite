@@ -1,6 +1,7 @@
 lite_cc_library(debug_utils SRCS debug_utils.cc DEPS op_params model_parser)
 
-lite_cc_binary(lite_model_debug_tool SRCS model_debug_tool.cc
+if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK OR LITE_ON_MODEL_OPTIMIZE_TOOL)
+  lite_cc_binary(lite_model_debug_tool SRCS model_debug_tool.cc
     DEPS
     cxx_api
     debug_utils
@@ -14,3 +15,4 @@ lite_cc_binary(lite_model_debug_tool SRCS model_debug_tool.cc
     NPU_DEPS ${npu_kernels}
     FPGA_DEPS ${fpga_kernels}
     CL_DEPS ${opencl_kernels})
+endif()
