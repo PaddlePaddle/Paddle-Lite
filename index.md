@@ -8,43 +8,43 @@ Paddle-Lite 框架是 PaddleMobile 新一代架构，重点支持移动端推理
 
 ## 简介
 
-- [技术特点]({{ site.baseurl }}/tech_highlights)
-- [架构设计]({{ site.baseurl }}/architecture)
-- [Road Map]({{ site.baseurl }}/roadmap)
+- [技术特点]({{ site.baseurl }}/develop/tech_highlights)
+- [架构设计]({{ site.baseurl }}/develop/architecture)
+- [Road Map]({{ site.baseurl }}/develop/roadmap)
 
 ## Benchmark
 
-- [最新性能]({{ site.baseurl }}/benchmark)
-- [测试方法]({{ site.baseurl }}/benchmark_tools)
+- [最新性能]({{ site.baseurl }}/develop/benchmark)
+- [测试方法]({{ site.baseurl }}/develop/benchmark_tools)
 
 ## 安装
 
-- [源码编译]({{ site.baseurl }}/source_compile)
+- [源码编译]({{ site.baseurl }}/develop/source_compile)
 
 ## 使用
 
-- [使用流程]({{ site.baseurl }}/tutorial)
-- [C++实例]({{ site.baseurl }}/cpp_demo)
-- [Java实例]({{ site.baseurl }}/java_demo)
+- [使用流程]({{ site.baseurl }}/develop/tutorial)
+- [C++实例]({{ site.baseurl }}/develop/cpp_demo)
+- [Java实例]({{ site.baseurl }}/develop/java_demo)
 - [Android/IOS APP demo](https://github.com/PaddlePaddle/Paddle-Lite-Demo)
-- [模型转化方法]({{ site.baseurl }}/model_optimize_tool)
+- [模型转化方法]({{ site.baseurl }}/develop/model_optimize_tool)
 
 ## 进阶
 
 - [通过 X2Paddle 支持 Caffe, TensorFlow 模型]({{ site.baseurl }}/x2paddle)
-- [模型量化]({{ site.baseurl }}/model_quantization)
-- [支持Op列表]({{ site.baseurl }}/support_operation_list)
-- [新增Op方法]({{ site.baseurl }}/add_new_operation)
-- [测试工具]({{ site.baseurl }}/debug_tools)
-- [调试方法]({{ site.baseurl }}/debug_tools)
-- [使用华为NPU]({{ site.baseurl }}/npu)
-- [使用Android GPU]({{ site.baseurl }}/opencl)
-- [使用FPGA]({{ site.baseurl }}/fpga)
+- [模型量化]({{ site.baseurl }}/develop/model_quantization)
+- [支持Op列表]({{ site.baseurl }}/develop/support_operation_list)
+- [新增Op方法]({{ site.baseurl }}/develop/add_new_operation)
+- [测试工具]({{ site.baseurl }}/develop/debug_tools)
+- [调试方法]({{ site.baseurl }}/develop/debug_tools)
+- [使用华为NPU]({{ site.baseurl }}/develop/npu)
+- [使用Android GPU]({{ site.baseurl }}/develop/opencl)
+- [使用FPGA]({{ site.baseurl }}/develop/fpga)
 
 ## 开发者文档
 
-- [开发基础须知]({{ site.baseurl }}/for-developer)
-- [架构详解]({{ site.baseurl }}/architecture-intro)
+- [开发基础须知]({{ site.baseurl }}/develop/for-developer)
+- [架构详解]({{ site.baseurl }}/develop/architecture-intro)
 
 ## FAQ
 
@@ -53,4 +53,7 @@ Paddle-Lite 框架是 PaddleMobile 新一代架构，重点支持移动端推理
 
 ## paddle-mobile
 
-- [paddle-mobile 编译]({{ site.baseurl }}/mobile)
+- [paddle-mobile 编译]({{ site.baseurl }}/develop/mobile)
+
+## 以前文档
+- [v2.0.0-beta1]({{ site.baseurl }}/v2.0.0-beta1/index)

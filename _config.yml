@@ -38,4 +38,9 @@ plugins:
 #   - vendor/cache/
 #   - vendor/gems/
 #   - vendor/ruby/
-permalink: /:title/
+#permalink: /:title/
+
+collections:
+  all_pages:
+    output: true
+    permalink: /:path/
