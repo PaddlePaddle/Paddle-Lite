@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/backends/arm/math/conv_depthwise.h"
 #include <arm_neon.h>
+#include "lite/backends/arm/math/conv_depthwise.h"
 
 namespace paddle {
 namespace lite {
@@ -5073,7 +5073,7 @@ void conv_depthwise_5x5s1_small_impl(const float* din,
   int w_in_new = w_in + 2 * pad_new;
   int h_out_new = h_out - 2 * pad_0;
   int w_out_new = w_out - 2 * pad_0;
-  float zero_ptr[w_in_new + w_out];
+  float zero_ptr[w_in_new + w_out];  // NOLINT
   memset(zero_ptr, 0, w_in_new * sizeof(float));
   float* write_ptr = zero_ptr + w_in_new;
   int pad_cnt = pad_0 >> 2;
@@ -5320,7 +5320,7 @@ void conv_depthwise_5x5s1_small_relu_impl(const float* din,
   int pad_0 = pad - pad_new;
   int h_in_new = h_in + 2 * pad_new;
   int w_in_new = w_in + 2 * pad_new;
-  float zero_ptr[w_in_new + w_out];
+  float zero_ptr[w_in_new + w_out];  // NOLINT
   memset(zero_ptr, 0, w_in_new * sizeof(float));
   float* write_ptr = zero_ptr + w_in_new;
   int h_out_new = h_out - 2 * pad_0;
@@ -9177,7 +9177,7 @@ void conv_depthwise_5x5s1_small_impl(const float* din,
   int w_in_new = w_in + 2 * pad_new;
   int h_out_new = h_out - 2 * pad_0;
   int w_out_new = w_out - 2 * pad_0;
-  float zero_ptr[w_in_new + w_out];
+  float zero_ptr[w_in_new + w_out];  // NOLINT
   memset(zero_ptr, 0, w_in_new * sizeof(float));
   float* write_ptr = zero_ptr + w_in_new;
   int pad_cnt = pad_0 >> 2;
@@ -9359,7 +9359,7 @@ void conv_depthwise_5x5s1_small_relu_impl(const float* din,
   int w_in_new = w_in + 2 * pad_new;
   int h_out_new = h_out - 2 * pad_0;
   int w_out_new = w_out - 2 * pad_0;
-  float zero_ptr[w_in_new + w_out];
+  float zero_ptr[w_in_new + w_out];  // NOLINT
   memset(zero_ptr, 0, w_in_new * sizeof(float));
   float* write_ptr = zero_ptr + w_in_new;
   int pad_cnt = pad_0 >> 2;
@@ -9523,21 +9523,21 @@ void conv_depthwise_5x5s1_small_relu_impl(const float* din,
 }
 #endif  // __aarch64__
 
-void conv_depthwise_5x5s1(const float* din,
-                          float* dout,
-                          int num,
-                          int chout,
-                          int hout,
-                          int wout,
-                          int chin,
-                          int hin,
-                          int win,
-                          const float* weights,
-                          const float* bias,
-                          int pad,
-                          bool flag_bias,
-                          bool flag_relu,
-                          ARMContext* ctx) {
+void conv_depthwise_5x5s1_fp32(const float* din,
+                               float* dout,
+                               int num,
+                               int chout,
+                               int hout,
+                               int wout,
+                               int chin,
+                               int hin,
+                               int win,
+                               const float* weights,
+                               const float* bias,
+                               int pad,
+                               bool flag_bias,
+                               bool flag_relu,
+                               ARMContext* ctx) {
   if (win < 4) {
     if (flag_relu) {
       conv_depthwise_5x5s1_small_relu_impl(din,
