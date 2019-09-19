@@ -74,6 +74,7 @@ class LITE_API LightPredictor {
  private:
   std::shared_ptr<Scope> scope_;
   std::unique_ptr<RuntimeProgram> program_;
+  cpp::ProgramDesc cpp_program_desc_;
 };
 
 }  // namespace lite
