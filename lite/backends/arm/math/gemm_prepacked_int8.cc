@@ -198,6 +198,7 @@ inline void gemm_int8_kernel(const int8_t* a_ptr,
                              bool is_relu,
                              int k,
                              int rem);
+
 // clang-format off
 #ifdef __aarch64__
 #define GEMM_INT8_KERNEL                                                    \
