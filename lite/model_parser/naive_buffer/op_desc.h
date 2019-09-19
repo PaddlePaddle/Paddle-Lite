@@ -130,6 +130,7 @@ class OpDesc : public OpDescAPI {
       DEF_ONE(LONGS);
       default:
         LOG(FATAL) << "Unknown attribute type";
+        return static_cast<AttrType>(-1);
     }
 #undef DEF_ONE
   }

@@ -60,10 +60,6 @@ bool test_gemm_int8(bool tra,
   Tensor tc_basic_fp32;
   Tensor tbias;
 
-  int lda = tra ? m : k;
-  int ldb = trb ? k : n;
-  int ldc = n;
-
   ta.Resize({m, k});
   tb.Resize({k, n});
   tc_int8.Resize({m, n});
@@ -94,6 +90,16 @@ bool test_gemm_int8(bool tra,
     scale_merge_int8[j] = scale_merge_fp32[j] / scale_c[0];
   }
 
+  LOG(INFO) << "gemm_int8 M: " << m << ", N: " << n << ", K: " << k
+            << ", transA: " << (tra ? "true" : "false")
+            << ", transB: " << (trb ? "true" : "false")
+            << ", relu: " << (has_relu ? "true" : "false")
+            << ", bias: " << (has_bias ? "true" : "false");
+#ifdef LITE_WITH_ARM
+  int lda = tra ? m : k;
+  int ldb = trb ? k : n;
+  int ldc = n;
+
   auto da = ta.mutable_data<int8_t>();
   auto db = tb.mutable_data<int8_t>();
   auto dc_int8 = tc_int8.mutable_data<int8_t>();
@@ -102,12 +108,6 @@ bool test_gemm_int8(bool tra,
   auto dc_basic_fp32 = tc_basic_fp32.mutable_data<float>();
   auto dbias = tbias.mutable_data<float>();
 
-  LOG(INFO) << "gemm_int8 M: " << m << ", N: " << n << ", K: " << k
-            << ", transA: " << (tra ? "true" : "false")
-            << ", transB: " << (trb ? "true" : "false")
-            << ", relu: " << (has_relu ? "true" : "false")
-            << ", bias: " << (has_bias ? "true" : "false");
-#ifdef LITE_WITH_ARM
   if (FLAGS_check_result) {
     Tensor ta_fp32;
     Tensor tb_fp32;

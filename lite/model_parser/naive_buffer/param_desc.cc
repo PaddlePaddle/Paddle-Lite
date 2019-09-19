@@ -97,6 +97,7 @@ VarDescAPI::VarDataType ParamDesc::GetDataType() const {
     default:
       LOG(FATAL) << "Unknown var data type";
   }
+  return VarDescAPI::VarDataType();
 #undef GET_DATA_TYPE_CASE_ITEM
 }
 

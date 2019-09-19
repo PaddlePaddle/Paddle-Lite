@@ -243,11 +243,11 @@ class GRUUnitTester : public arena::TestCase {
   std::string reset_hidden_prev_ = "reset_hidden_prev";
   std::string hidden_ = "hidden";
 
-  DDim dims_{{16, 256 * 3}};
   // 0: indentity; 1: sigmoid; 2: tanh; 3: relu
   int gate_activation_{1};
   int activation_{2};
   bool origin_mode_{false};
+  DDim dims_{{16, 256 * 3}};
 
  public:
   GRUUnitTester(const Place& place,

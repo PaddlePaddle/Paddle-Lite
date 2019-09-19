@@ -209,7 +209,7 @@ class KernelRegistry final {
     ss << "Count of kernel kinds: ";
     int count = 0;
     for (auto &item : kernel_info_map_) {
-      for (auto &kernel : item.second) ++count;
+      count += item.second.size();
     }
     ss << count << "\n";
 
