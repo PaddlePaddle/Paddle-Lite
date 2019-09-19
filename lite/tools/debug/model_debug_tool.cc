@@ -16,9 +16,6 @@
 #include <string>
 #include <vector>
 #include "lite/api/cxx_api.h"
-#include "lite/api/paddle_use_kernels.h"
-#include "lite/api/paddle_use_ops.h"
-#include "lite/api/paddle_use_passes.h"
 #include "lite/core/op_registry.h"
 #include "lite/model_parser/model_parser.h"
 #include "lite/model_parser/pb/program_desc.h"
