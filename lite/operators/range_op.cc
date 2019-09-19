@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/operators/range_op.h"
+#include <cmath>
 #include <functional>
 #include "lite/core/op_registry.h"
 
