@@ -165,11 +165,13 @@ function(lite_cc_binary TARGET)
             )
     cc_binary(${TARGET} SRCS ${args_SRCS} DEPS ${deps} ${args_DEPS})
     target_compile_options(${TARGET} BEFORE PRIVATE -Wno-ignored-qualifiers)
-    # strip binary target to reduce size
-    add_custom_command(TARGET ${TARGET} POST_BUILD
-            COMMAND "${CMAKE_STRIP}" -s
-            "${TARGET}"
-            COMMENT "Strip debug symbols done on final executable file.")
+    if (NOT APPLE)
+        # strip binary target to reduce size
+        add_custom_command(TARGET ${TARGET} POST_BUILD
+                COMMAND "${CMAKE_STRIP}" -s
+                "${TARGET}"
+                COMMENT "Strip debug symbols done on final executable file.")
+    endif()
     # collect targets need to compile for lite
     if (NOT args_EXCLUDE_COMPILE_DEPS)
         add_dependencies(lite_compile_deps ${TARGET})
