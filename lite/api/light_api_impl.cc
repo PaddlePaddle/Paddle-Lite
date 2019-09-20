@@ -81,5 +81,12 @@ std::shared_ptr<PaddlePredictor> CreatePaddlePredictor(
   return x;
 }
 
+void MobileConfig::verify_mode_and_threads() {
+#ifdef LITE_WITH_ARM
+  mode_ = lite::DeviceInfo::Global().mode();
+  threads_ = lite::DeviceInfo::Global().threads();
+#endif
+}
+
 }  // namespace lite_api
 }  // namespace paddle

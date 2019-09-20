@@ -153,11 +153,20 @@ class LITE_API MobileConfig : public ConfigBase {
     model_from_memory_ = true;
   }
 
-  PowerMode power_mode() const { return mode_; }
-  int threads() const { return threads_; }
+  PowerMode power_mode() {
+    verify_mode_and_threads();
+    return mode_;
+  }
+  int threads() {
+    verify_mode_and_threads();
+    return threads_;
+  }
   bool model_from_memory() const { return model_from_memory_; }
   const std::string& model_buffer() const { return model_buffer_; }
   const std::string& param_buffer() const { return param_buffer_; }
+
+ private:
+  void verify_mode_and_threads();
 };
 
 template <typename ConfigT>
