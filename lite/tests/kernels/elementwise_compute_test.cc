@@ -43,7 +43,6 @@ class ElementwiseComputeTester : public arena::TestCase {
 
     auto* x = scope->FindTensor(inputx_);
     const auto* x_data = x->data<float>();
-    auto* y = scope->FindTensor(inputy_);
     const auto* y_data = x->data<float>();
 
     for (int i = 0; i < dims_.production(); i++) {
@@ -94,7 +93,6 @@ class ElementwiseSubComputeTester : public arena::TestCase {
 
     auto* x = scope->FindTensor(inputx_);
     const auto* x_data = x->data<float>();
-    auto* y = scope->FindTensor(inputy_);
     const auto* y_data = x->data<float>();
 
     for (int i = 0; i < dims_.production(); i++) {
@@ -145,7 +143,6 @@ class ElementwiseMulComputeTester : public arena::TestCase {
 
     auto* x = scope->FindTensor(inputx_);
     const auto* x_data = x->data<float>();
-    auto* y = scope->FindTensor(inputy_);
     const auto* y_data = x->data<float>();
 
     for (int i = 0; i < dims_.production(); i++) {
@@ -196,7 +193,6 @@ class ElementwiseMaxComputeTester : public arena::TestCase {
 
     auto* x = scope->FindTensor(inputx_);
     const auto* x_data = x->data<float>();
-    auto* y = scope->FindTensor(inputy_);
     const auto* y_data = x->data<float>();
 
     for (int i = 0; i < dims_.production(); i++) {
@@ -249,7 +245,6 @@ class FusionElementwiseAddActivationComputeTester : public arena::TestCase {
 
     auto* x = scope->FindTensor(inputx_);
     const auto* x_data = x->data<float>();
-    auto* y = scope->FindTensor(inputy_);
     const auto* y_data = x->data<float>();
 
     for (int i = 0; i < dims_.production(); i++) {
@@ -308,7 +303,6 @@ class FusionElementwiseSubActivationComputeTester : public arena::TestCase {
 
     auto* x = scope->FindTensor(inputx_);
     const auto* x_data = x->data<float>();
-    auto* y = scope->FindTensor(inputy_);
     const auto* y_data = x->data<float>();
 
     for (int i = 0; i < dims_.production(); i++) {
@@ -367,7 +361,6 @@ class FusionElementwiseMulActivationComputeTester : public arena::TestCase {
 
     auto* x = scope->FindTensor(inputx_);
     const auto* x_data = x->data<float>();
-    auto* y = scope->FindTensor(inputy_);
     const auto* y_data = x->data<float>();
 
     for (int i = 0; i < dims_.production(); i++) {
@@ -426,7 +419,6 @@ class FusionElementwiseMaxActivationComputeTester : public arena::TestCase {
 
     auto* x = scope->FindTensor(inputx_);
     const auto* x_data = x->data<float>();
-    auto* y = scope->FindTensor(inputy_);
     const auto* y_data = x->data<float>();
 
     for (int i = 0; i < dims_.production(); i++) {

@@ -43,20 +43,25 @@ class KernelBase {
       const std::map<std::string, const Type*>& input_types,
       const std::string& out_arg)>;
 
- protected:
   /// Run some initialization before `Run`, it will invoke after `SetParam` and
   /// `SetContext`, that is both the param_ and context_ are valid.
   virtual void PrepareForRun() {}
 
+  /// Run kernel initialization if needed at every run (eg. input shape changed)
+  virtual void ReInitWhenNeeded() {}
+
   /// Run the kernel. Before Run, both the param_ and context_ should be valid.
   virtual void Run() = 0;
 
- public:
   void Launch() {
+    /// First run, init kernel, do weights transform once
     if (is_first_epoch_) {
       PrepareForRun();
       is_first_epoch_ = false;
     }
+    /// re-init the kernel if needed (input shape should be checked in conv
+    /// kernel)
+    ReInitWhenNeeded();
 
     // Reset the workspace to make every kernel in the same thread to share the
     // temporary memory.

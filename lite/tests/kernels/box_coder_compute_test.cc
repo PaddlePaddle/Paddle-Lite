@@ -121,16 +121,10 @@ class BoxCoderComputeTester : public arena::TestCase {
     auto* output_box = scope->NewTensor(output_box_);
     CHECK(output_box);
     output_box->Resize(target_box_dims_);
-    auto* output_box_data = output_box->mutable_data<float>();
 
     auto* prior_box = scope->FindTensor(prior_box_);
-    const auto* prior_box_data = prior_box->data<float>();
-
     auto* prior_box_var = scope->FindTensor(prior_box_var_);
-    const auto* prior_box_var_data = prior_box_var->data<float>();
-
     auto* target_box = scope->FindTensor(target_box_);
-    const auto* target_box_data = target_box->data<float>();
 
     box_coder_ref(output_box,
                   prior_box,

@@ -63,10 +63,6 @@ class CastComputeTester : public arena::TestCase {
       auto* output_data = out->mutable_data<float>();
       auto* x = scope->FindTensor(input_);
       auto* x_data = x->data<int32_t>();
-      int num = x_dims_[0];
-      int channel = x_dims_[1];
-      int size = x_dims_[2] * x_dims_[3];
-      int in_channel = channel * size;
       auto* output_data_tmp = output_data;
       auto* x_data_tmp = x_data;
       for (int i = 0; i < x_dims_.production(); i++) {

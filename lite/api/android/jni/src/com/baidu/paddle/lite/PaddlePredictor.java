@@ -83,6 +83,13 @@ public class PaddlePredictor {
     public native boolean run();
 
     /**
+     * Get c++ lib's version information.
+     *
+     * @return C++ lib's version information.
+     */
+    public native String getVersion();
+
+    /**
      * Saves the optimized model. It is available only for {@link CxxConfig}
      *
      * @param modelDir the path to save the optimized model

@@ -80,7 +80,7 @@ void Conv2DTransposeCompute::Run() {
   int group_size_out = wout * hout * chout / group;
   int group_size_coldata = m * n;
   auto& ctx = this->ctx_->template As<ARMContext>();
-  int hblock = lite::arm::math::get_hblock(ctx.arch());
+  int hblock = lite::arm::math::get_hblock(&ctx);
   int m_roundup = hblock * ((m + hblock - 1) / hblock);
   int group_size_weights = ((m_roundup * k + 15) / 16) * 16;
   bool flag_1x1s1p1 = (kw == 1) && (kh == 1) && (param.strides[0] == 1) &&

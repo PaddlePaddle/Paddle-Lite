@@ -15,6 +15,7 @@ readonly NUM_PROC=${LITE_BUILD_THREADS:-4}
 # global variables
 BUILD_EXTRA=OFF
 BUILD_JAVA=ON
+BUILD_DIR=$(pwd)
 
 readonly THIRDPARTY_TAR=https://paddle-inference-dist.bj.bcebos.com/PaddleLite/third-party-05b862.tar.gz
 
@@ -23,16 +24,18 @@ readonly workspace=$PWD
 # for code gen, a source file is generated after a test, but is dependended by some targets in cmake.
 # here we fake an empty file to make cmake works.
 function prepare_workspace {
+    local root_dir=$1
+    local build_dir=$2
     # in build directory
     # 1. Prepare gen_code file
-    GEN_CODE_PATH_PREFIX=lite/gen_code
-    mkdir -p ./${GEN_CODE_PATH_PREFIX}
-    touch ./${GEN_CODE_PATH_PREFIX}/__generated_code__.cc
+    GEN_CODE_PATH_PREFIX=$build_dir/lite/gen_code
+    mkdir -p ${GEN_CODE_PATH_PREFIX}
+    touch ${GEN_CODE_PATH_PREFIX}/__generated_code__.cc
 
     # 2.Prepare debug tool
-    DEBUG_TOOL_PATH_PREFIX=lite/tools/debug
-    mkdir -p ./${DEBUG_TOOL_PATH_PREFIX}
-    cp ../${DEBUG_TOOL_PATH_PREFIX}/analysis_tool.py ./${DEBUG_TOOL_PATH_PREFIX}/
+    DEBUG_TOOL_PATH_PREFIX=$build_dir/lite/tools/debug
+    mkdir -p ${DEBUG_TOOL_PATH_PREFIX}
+    cp $root_dir/lite/tools/debug/analysis_tool.py ${DEBUG_TOOL_PATH_PREFIX}/
 }
 
 function prepare_thirdparty {
@@ -50,10 +53,15 @@ function prepare_thirdparty {
 
 function build_model_optimize_tool {
     cd $workspace
+    prepare_thirdparty
     mkdir -p build.model_optimize_tool
     cd build.model_optimize_tool
-    cmake .. -DWITH_LITE=ON -DLITE_ON_MODEL_OPTIMIZE_TOOL=ON -DWITH_TESTING=OFF -DLITE_BUILD_EXTRA=ON
-    make model_optimize_tool -j$NUM_CORES_FOR_COMPILE
+    cmake .. -DWITH_LITE=ON \
+      -DLITE_ON_MODEL_OPTIMIZE_TOOL=ON \
+      -DWITH_TESTING=OFF \
+      -DLITE_BUILD_EXTRA=ON \
+      -DWITH_MKL=OFF
+    make model_optimize_tool -j$NUM_PROC
 }
 
 function make_tiny_publish_so {
@@ -98,21 +106,22 @@ function make_full_publish_so {
   #git submodule update --init --recursive
   prepare_thirdparty
 
-  cur_dir=$(pwd)
-  build_dir=$cur_dir/build.lite.${os}.${abi}.${lang}
-  if [ -d $build_dir ]
+  root_dir=$(pwd)
+  build_directory=$BUILD_DIR/build.lite.${os}.${abi}.${lang}
+
+  if [ -d $build_directory ]
   then
-    rm -rf $build_dir
+    rm -rf $build_directory
   fi
-  mkdir -p $build_dir
-  cd $build_dir
+  mkdir -p $build_directory
+  cd $build_directory
   
   if [ ${os} == "armlinux" ]; then
     BUILD_JAVA=OFF
   fi
 
-  prepare_workspace
-  cmake .. \
+  prepare_workspace $root_dir $build_directory
+  cmake $root_dir \
       ${CMAKE_COMMON_OPTIONS} \
       -DWITH_TESTING=OFF \
       -DLITE_WITH_JAVA=$BUILD_JAVA \
@@ -132,23 +141,23 @@ function make_all_tests {
 
   #git submodule update --init --recursive
   prepare_thirdparty
-  cur_dir=$(pwd)
-  build_dir=$cur_dir/build.lite.${os}.${abi}.${lang}
+  root_dir=$(pwd)
+  build_directory=$BUILD_DIR/build.lite.${os}.${abi}.${lang}
   if [ -d $build_dir ]
   then
     rm -rf $build_dir
   fi
-  mkdir -p $build_dir
-  cd $build_dir
+  mkdir -p $build_directory
+  cd $build_directory
 
-  prepare_workspace
-  cmake .. \
+  prepare_workspace $root_dir $build_directory
+  cmake $root_dir \
       ${CMAKE_COMMON_OPTIONS} \
       -DWITH_TESTING=ON \
       -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
       -DARM_TARGET_OS=${os} -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
 
-  make lite_compile_deps -j4
+  make lite_compile_deps -j$NUM_PROC
   cd - > /dev/null
 }
 
@@ -207,6 +216,7 @@ function print_usage {
     echo
     echo -e "optional argument:"
     echo -e "--build_extra: (OFF|ON); controls whether to publish extra operators and kernels for (sequence-related model such as OCR or NLP)"
+    echo -e "--build_dir: directory for building"
     echo
     echo -e "argument choices:"
     echo -e "--arm_os:\t android|ios|ios64"
@@ -252,6 +262,10 @@ function main {
                 BUILD_EXTRA="${i#*=}"
                 shift
                 ;;
+            --build_dir=*)
+                BUILD_DIR="${i#*=}"
+                shift
+		            ;;
             tiny_publish)
                 make_tiny_publish_so $ARM_OS $ARM_ABI $ARM_LANG $ANDROID_STL
                 shift

@@ -75,7 +75,6 @@ TEST(calib_cuda, int8_to_fp32) {
   output.Resize({n, c, h, w});
   output_cpu.Resize({n, c, h, w});
   // initialize the data of input tensors
-  auto* x_data = x.mutable_data<int8_t>(TARGET(kCUDA));
   auto* x_cpu_data = x_cpu.mutable_data<int8_t>();
   for (int i = 0; i < x.dims().production(); i++) {
     float sign = i % 3 == 0 ? -1.0f : 1.0f;
@@ -131,7 +130,6 @@ TEST(calib_cuda, fp32_to_int8) {
   output.Resize({n, c, h, w});
   output_cpu.Resize({n, c, h, w});
   // initialize the data of input tensors
-  auto* x_data = x.mutable_data<float>(TARGET(kCUDA));
   auto* x_cpu_data = x_cpu.mutable_data<float>();
   for (int i = 0; i < x.dims().production(); i++) {
     float sign = i % 3 == 0 ? -1.0f : 1.0f;

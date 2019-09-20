@@ -32,17 +32,17 @@ class CudnnConv2DBase {
  public:
   CudnnConv2DBase()
       : handle_(NULL),
-        workspace_data_(NULL),
-        workspace_(NULL),
-        conv_desc_(NULL),
+        fwd_algo_((cudnnConvolutionFwdAlgo_t)0),
         input_desc_(NULL),
         output_desc_(NULL),
-        filter_desc_(NULL),
-        act_desc_(NULL),
         bias_desc_(NULL),
+        filter_desc_(NULL),
+        conv_desc_(NULL),
+        act_desc_(NULL),
+        workspace_data_(NULL),
+        workspace_(NULL),
         workspace_fwd_sizes_(0),
-        workspace_size_inbytes_(0),
-        fwd_algo_((cudnnConvolutionFwdAlgo_t)0) {}
+        workspace_size_inbytes_(0) {}
 
   ~CudnnConv2DBase() {
     if (conv_desc_) {
@@ -85,10 +85,10 @@ class CudnnConv2DBase {
   cudnnActivationDescriptor_t act_desc_;
   bool with_relu_act_{true};
 
+  void* workspace_data_;  // underlying storage
+  void* workspace_;       // aliases into _workspaceData
   size_t workspace_fwd_sizes_;
   size_t workspace_size_inbytes_;  // size of underlying storage
-  void* workspace_data_;           // underlying storage
-  void* workspace_;                // aliases into _workspaceData
 
   const bool use_tensor_core_ = true;
   const size_t workspace_limit_bytes_ = 4 * 1024 * 1024;
@@ -104,6 +104,7 @@ template <PrecisionType Ptype_out>
 class CudnnConv2D : public CudnnConv2DBase<Ptype_out> {
  public:
   CudnnConv2D() : CudnnConv2DBase<Ptype_out>() {}
+  virtual ~CudnnConv2D() = default;
   virtual bool init(const operators::ConvParam& param,
                     Context<TARGET(kCUDA)>* ctx);
 
@@ -117,6 +118,7 @@ template <PrecisionType Ptype_out>
 class CudnnConv2DInt8 : CudnnConv2DBase<Ptype_out> {
  public:
   CudnnConv2DInt8() : CudnnConv2DBase<Ptype_out>() {}
+  virtual ~CudnnConv2DInt8() = default;
   virtual bool init(const operators::ConvParam& param,
                     Context<TARGET(kCUDA)>* ctx);
 
