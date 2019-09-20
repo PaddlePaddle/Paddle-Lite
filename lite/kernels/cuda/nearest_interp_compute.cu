@@ -120,9 +120,9 @@ void NearestInterpCompute::Run() {
   int in_chw = c * in_hw;
   int out_chw = c * out_hw;
 
-  int pixelNum = n * out_chw;
+  int pixel_num = n * out_chw;
   int threads = 512;
-  int blocks = (pixelNum + threads - 1) / threads;
+  int blocks = (pixel_num + threads - 1) / threads;
   blocks = blocks > 8 ? 8 : blocks;
 
   KeNearestNeighborInterp<<<blocks, threads, 0, stream>>>(input_data,

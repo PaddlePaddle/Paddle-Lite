@@ -126,10 +126,10 @@ TEST(concat, compute_input_multi) {
   lite::Tensor tensorC_ref;
   lite::Tensor tensorD_ref;
 
-  DDimLite ddimA({1, 3, 1, 2});
-  DDimLite ddimB({1, 4, 1, 2});
-  DDimLite ddimC({1, 5, 1, 2});
-  DDimLite ddimD({1, 6, 1, 2});
+  DDimLite ddimA({1, 3, 38, 38});
+  DDimLite ddimB({1, 4, 38, 38});
+  DDimLite ddimC({1, 5, 38, 38});
+  DDimLite ddimD({1, 6, 38, 38});
 
   tensorA.Resize(ddimA);
   tensorB.Resize(ddimB);
@@ -144,9 +144,9 @@ TEST(concat, compute_input_multi) {
   tensorC_ref.Resize(ddimC);
   tensorD_ref.Resize(ddimD);
 
-  out.Resize({1, 18, 1, 2});
-  out_cpu.Resize({1, 18, 1, 2});
-  out_ref.Resize({1, 18, 1, 2});
+  out.Resize({1, 18, 38, 38});
+  out_cpu.Resize({1, 18, 38, 38});
+  out_ref.Resize({1, 18, 38, 38});
   auto* out_data = out.mutable_data<float>(TARGET(kCUDA));
   auto* out_cpu_data = out_cpu.mutable_data<float>();
   auto* out_ref_data = out_ref.mutable_data<float>();
@@ -218,103 +218,7 @@ TEST(concat, compute_input_multi) {
     concat_compute_ref(param_ref);
     LOG(INFO) << "concat_compute_ref end";
 
-    for (int i = 0; i < out.numel(); i++) {
-      EXPECT_NEAR(out_cpu_data[i], out_ref_data[i], 1e-5);
-    }
-  }
-}
-
-TEST(concat, compute_input_2) {
-  ConcatCompute concat_kernel;
-  std::unique_ptr<KernelContext> ctx(new KernelContext);
-  auto& context = ctx->As<CUDAContext>();
-
-  operators::ConcatParam param;
-  operators::ConcatParam param_ref;
-
-  LOG(INFO) << "test concat start";
-  // init param
-  std::vector<lite::Tensor*> x;
-  std::vector<lite::Tensor*> x_cpu;
-  std::vector<lite::Tensor*> x_ref;
-  lite::Tensor out;
-  lite::Tensor out_cpu;
-  lite::Tensor out_ref;
-  lite::Tensor tensorA;
-  lite::Tensor tensorB;
-  lite::Tensor tensorA_cpu;
-  lite::Tensor tensorB_cpu;
-  lite::Tensor tensorA_ref;
-  lite::Tensor tensorB_ref;
-
-  DDimLite ddimA({1, 256, 38, 38});
-  DDimLite ddimB({1, 512, 38, 38});
-
-  tensorA.Resize(ddimA);
-  tensorB.Resize(ddimB);
-  tensorA_cpu.Resize(ddimA);
-  tensorB_cpu.Resize(ddimB);
-  tensorA_ref.Resize(ddimA);
-  tensorB_ref.Resize(ddimB);
-
-  out.Resize({1, 768, 38, 38});
-  out_cpu.Resize({1, 768, 38, 38});
-  out_ref.Resize({1, 768, 38, 38});
-  auto* out_data = out.mutable_data<float>(TARGET(kCUDA));
-  auto* out_cpu_data = out_cpu.mutable_data<float>();
-  auto* out_ref_data = out_ref.mutable_data<float>();
-  for (int i = 0; i < tensorA_cpu.numel(); i++) {
-    tensorA_cpu.mutable_data<float>()[i] = i;
-    tensorA_ref.mutable_data<float>()[i] = i;
-  }
-  for (int i = 0; i < tensorB_cpu.numel(); i++) {
-    tensorB_cpu.mutable_data<float>()[i] = i + 3;
-    tensorB_ref.mutable_data<float>()[i] = i + 3;
-  }
-
-  tensorA.Assign<float, lite::DDim, TARGET(kCUDA)>(
-      tensorA_cpu.mutable_data<float>(), tensorA_cpu.dims());
-  tensorB.Assign<float, lite::DDim, TARGET(kCUDA)>(
-      tensorB_cpu.mutable_data<float>(), tensorB_cpu.dims());
-
-  x.push_back(&tensorA);
-  x.push_back(&tensorB);
-  x_cpu.push_back(&tensorA_cpu);
-  x_cpu.push_back(&tensorB_cpu);
-  x_ref.push_back(&tensorA_ref);
-  x_ref.push_back(&tensorB_ref);
-
-  for (int cur_axis : {1}) {
-    param.x = x;
-    param.axis = cur_axis;
-    param.output = &out;
-
-    concat_kernel.SetParam(param);
-    LOG(INFO) << "test concat start cur_axis:" << cur_axis;
-
-    cudaStream_t stream;
-    cudaStreamCreate(&stream);
-    context.SetExecStream(stream);
-
-    concat_kernel.SetContext(std::move(ctx));
-    concat_kernel.Launch();
-    cudaDeviceSynchronize();
-    LOG(INFO) << "sync end";
-    CHECK(cudaSuccess == cudaMemcpy(out_cpu_data,
-                                    out_data,
-                                    sizeof(float) * out.numel(),
-                                    cudaMemcpyDeviceToHost));
-    LOG(INFO) << "concat.Run end";
-
-    param_ref.x = x_ref;
-    param_ref.axis = cur_axis;
-    param_ref.output = &out_ref;
-
-    LOG(INFO) << "concat_compute_ref start";
-    concat_compute_ref(param_ref);
-    LOG(INFO) << "concat_compute_ref end";
-
-    for (int i = 0; i < out.numel(); i++) {
+    for (int i = 0; i < out_ref.numel(); i++) {
       EXPECT_NEAR(out_cpu_data[i], out_ref_data[i], 1e-5);
     }
   }
