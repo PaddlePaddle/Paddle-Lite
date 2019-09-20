@@ -9,10 +9,26 @@ if (LITE_ON_TINY_PUBLISH)
     set(CMAKE_C_FLAGS_RELEASE "-Os -DNDEBUG")
 endif()
 set(light_lib_DEPS light_api paddle_api paddle_api_light optimizer)
+
+#pick out the unsed sourcefile in full_api dynamic library
+set(full_source_file "")
+set(exclude_file "lite_api_test_helper.cc" "__generated_code__.cc" "paddle_infer.cc" "debug_utils.cc" "gen_code.cc")
+foreach(source_file ${__lite_cc_files})
+  set(flag true)
+  foreach(ex_file ${exclude_file})
+     if(${source_file} MATCHES ${ex_file})
+        set(flag false)
+     endif() 
+  endforeach()
+  if(flag)
+    list(APPEND ${full_source_file} ${source_file})
+  endif()
+endforeach()
+
 if ((NOT LITE_ON_TINY_PUBLISH) AND (ARM_TARGET_OS STREQUAL "android"))
     #full api dynamic library
     add_library(paddle_full_api_shared SHARED "")
-    target_sources(paddle_full_api_shared PUBLIC ${__lite_cc_files} paddle_api.cc light_api.cc cxx_api.cc cxx_api_impl.cc light_api_impl.cc)
+    target_sources(paddle_full_api_shared PUBLIC ${full_source_file} paddle_api.cc light_api.cc cxx_api.cc cxx_api_impl.cc light_api_impl.cc)
     add_dependencies(paddle_full_api_shared op_list_h kernel_list_h framework_proto)
     target_link_libraries(paddle_full_api_shared framework_proto)
     
