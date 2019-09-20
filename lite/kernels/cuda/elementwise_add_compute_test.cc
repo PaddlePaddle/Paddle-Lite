@@ -27,7 +27,6 @@ using Tensor = lite::Tensor;
 static void ElementwiseAddRef(float* x, float* y, float* out, int num) {
   for (int i = 0; i < num; ++i) {
     out[i] = x[i] + y[i];
-    // LOG(INFO) << x[i] << " + " << y[i] << " = " << out[i];
   }
 }
 
