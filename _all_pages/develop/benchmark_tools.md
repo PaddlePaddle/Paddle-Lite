@@ -3,16 +3,8 @@ layout: post
 title: Benchmark
 ---
 
-<!--ts-->
-  * [Benchmark](#Benchmark)
-      * [环境准备](#环境准备)
-      * [1. 一键Benchmark](#一-一键benchmark)
-      * [2. 逐步Benchmark](#二-逐步Benchmark)
-         * [1. 获取benchmark可执行文件](#1-获取benchmark可执行文件)
-         * [2. 下载模型](#2-下载模型)
-         * [3. benchmark.sh脚本](#3-benchmark-sh脚本)
-         * [4. 测试](#4-测试)
-<!--te-->
+* TOC
+{:toc}
 
 本文将会介绍，在**Ubuntu:16.04交叉编译环境**下，用安卓手机在终端测试Paddle-Lite的性能，并介绍两种Benchmark方法：
 
