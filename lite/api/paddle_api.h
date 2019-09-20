@@ -136,14 +136,9 @@ class LITE_API MobileConfig : public ConfigBase {
   bool model_from_memory_{false};
 
  public:
-  MobileConfig(Place preferred_place = Place(TARGET(kARM),
-                                             PRECISION(kFloat),
-                                             DATALAYOUT(kNCHW)),
-               PowerMode mode = LITE_POWER_HIGH,
-               int threads = 1)
-      : mode_(mode), threads_(threads) {}
-  void set_power_mode(PowerMode mode) { mode_ = mode; }
-  void set_threads(int threads) { threads_ = threads; }
+  explicit MobileConfig(PowerMode mode = LITE_POWER_NO_BIND, int threads = 1);
+  void set_power_mode(PowerMode mode);
+  void set_threads(int threads);
   void set_model_buffer(const char* model_buffer,
                         size_t model_buffer_size,
                         const char* param_buffer,
@@ -153,20 +148,11 @@ class LITE_API MobileConfig : public ConfigBase {
     model_from_memory_ = true;
   }
 
-  PowerMode power_mode() {
-    verify_mode_and_threads();
-    return mode_;
-  }
-  int threads() {
-    verify_mode_and_threads();
-    return threads_;
-  }
+  PowerMode power_mode() const { return mode_; }
+  int threads() const { return threads_; }
   bool model_from_memory() const { return model_from_memory_; }
   const std::string& model_buffer() const { return model_buffer_; }
   const std::string& param_buffer() const { return param_buffer_; }
-
- private:
-  void verify_mode_and_threads();
 };
 
 template <typename ConfigT>
