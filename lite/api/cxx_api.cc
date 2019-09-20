@@ -93,7 +93,7 @@ void Predictor::Build(const lite_api::CxxConfig &config,
   const std::string &param_file = config.param_file();
   const Place prefer_place = config.preferred_place();
   const bool model_from_memory = config.model_from_memory();
-  LOG(INFO) << "load from memory " << model_from_memory;
+  // LOG(INFO) << "load from memory " << model_from_memory;
 
   Build(model_path,
         model_file,

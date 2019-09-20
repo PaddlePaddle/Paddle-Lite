@@ -29,8 +29,6 @@ void ConvCompute::PrepareForRun() {
 
   // ====================================================
   if (param.groups == param.x->ZynqTensor()->shape().channel()) {
-    std::cout << "dw_conv \n";
-    // exit(-1);
     zynqmp::DepthwiseConvParam& conv_param = dw_conv_pe_.param();
 
     conv_param.input = param.x->ZynqTensor();
@@ -62,25 +60,25 @@ void ConvCompute::PrepareForRun() {
     conv_param.bias()->copyFrom(param.bias->ZynqTensor());
     conv_param.relu.enabled = param.fuse_relu;
 
-    conv_param.filter->saveToFile("filter", true);
-    conv_param.bias()->saveToFile("bias", true);
-    conv_param.scale()->saveToFile("scale", true);
+    // conv_param.filter->saveToFile("filter", true);
+    // conv_param.bias()->saveToFile("bias", true);
+    // conv_param.scale()->saveToFile("scale", true);
     conv_pe_.init();
     conv_pe_.apply();
   }
 }
 
 void ConvCompute::Run() {
-  zynqmp::ConvParam& conv_param = pe_.param();
-  pe_.dispatch();
   auto& param = this->Param<param_t>();
+  // std::cout << "in:" << param.x->ZynqTensor()->data<void>() << std::endl;
   if (param.groups == param.x->ZynqTensor()->shape().channel()) {
     dw_conv_pe_.dispatch();
-    param.output->ZynqTensor()->saveToFile("dw", true);
+    // param.output->ZynqTensor()->saveToFile("dw", true);
   } else {
     zynqmp::ConvParam& conv_param = conv_pe_.param();
     conv_pe_.dispatch();
-    param.output->ZynqTensor()->saveToFile("conv", true);
+
+    // param.output->ZynqTensor()->saveToFile("conv.txt");
   }
 }
 
@@ -95,8 +93,8 @@ REGISTER_LITE_KERNEL(
                {LiteType::GetTensorTy(TARGET(kFPGA),
                                       PRECISION(kFP16),
                                       DATALAYOUT(kNHWC))})
-    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kFPGA))})
-    .BindInput("Filter", {LiteType::GetTensorTy(TARGET(kFPGA))})
+    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Filter", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Output",
                 {LiteType::GetTensorTy(TARGET(kFPGA),
                                        PRECISION(kFP16),

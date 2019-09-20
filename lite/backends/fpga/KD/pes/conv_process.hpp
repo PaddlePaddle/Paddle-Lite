@@ -427,7 +427,7 @@ inline void split_channel(const ConvParam& c_param) {
                       &conv_param->scaleBias,
                       param.groups);
     conv_param->scaleBias.flush();
-    conv_param->scaleBias.saveToFile("sb.txt");
+    // conv_param->scaleBias.saveToFile("sb.txt");
 
     ConvArgs& args = conv_param->args;
     args.group_num = param.groups;

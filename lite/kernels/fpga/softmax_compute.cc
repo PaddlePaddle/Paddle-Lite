@@ -33,15 +33,11 @@ void SoftmaxCompute::PrepareForRun() {
   pe_.apply();
 }
 
-<<<<<<< HEAD
-void SoftmaxCompute::Run() { pe_.dispatch(); }
-=======
 void SoftmaxCompute::Run() {
   zynqmp::SoftmaxParam& softmax_param = pe_.param();
   pe_.dispatch();
-  softmax_param.output->saveToFile("softmax", true);
+  // softmax_param.output->saveToFile("softmax.txt");
 }
->>>>>>> fixed compilation error
 
 }  // namespace fpga
 }  // namespace kernels

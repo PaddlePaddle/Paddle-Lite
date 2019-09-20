@@ -373,27 +373,6 @@ class Tensor {
     saveToFile(path);
   }
 
-  friend std::ostream& operator<<(std::ostream& os, Tensor& tensor) {
-    os << "tensor:"
-       << "\n";
-    os << "dims: {";
-    for (int i = 0; i < tensor.shape().dimSize(); ++i) {
-      os << tensor.shape()[i] << " ";
-    }
-    os << "}\n";
-    for (int i = 0; i < tensor.shape().numel(); i++) {
-      float value = 0;
-      if (tensor.dataType() == FP32) {
-        value = tensor.data<float>()[i];
-      } else {
-        value = half_to_float(tensor.data<float16>()[i]);
-      }
-      os << value << " ";
-    }
-    os << "\n";
-    return os;
-  }
-
   void saveToFile(std::string path) {
     syncToCPU();
     invalidate();
@@ -405,7 +384,7 @@ class Tensor {
   }
 
   void save_file_with_name(std::string path) {
-    return;
+    // return;
     invalidate();
     std::ofstream ofs;
 
@@ -453,6 +432,27 @@ class Tensor {
     flush();
     placeHolder_->scale_[0] = max / 127.0f;
     placeHolder_->scale_[1] = 127.0f / max;
+  }
+
+  friend std::ostream& operator<<(std::ostream& os, Tensor& tensor) {
+    os << "tensor:"
+       << "\n";
+    os << "dims: {";
+    for (int i = 0; i < tensor.shape().dimSize(); ++i) {
+      os << tensor.shape()[i] << " ";
+    }
+    os << "}\n";
+    for (int i = 0; i < tensor.shape().numel(); i++) {
+      float value = 0;
+      if (tensor.dataType() == FP32) {
+        value = tensor.data<float>()[i];
+      } else {
+        value = half_to_float(tensor.data<float16>()[i]);
+      }
+      os << value << " ";
+    }
+    os << "\n";
+    return os;
   }
 
   ~Tensor() {

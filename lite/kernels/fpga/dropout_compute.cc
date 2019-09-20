@@ -12,39 +12,54 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/fpga/concat_compute.h"
+#include "lite/kernels/fpga/dropout_compute.h"
 #include <string>
-#include <vector>
-#include "lite/core/op_registry.h"
-#include "lite/core/tensor.h"
-#include "lite/core/type_system.h"
+
+#include "lite/backends/fpga/KD/float16.hpp"
+// #include "lite/backends/arm/math/funcs.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace fpga {
 
-using float16 = zynqmp::float16;
-
-void ConcatCompute::PrepareForRun() {
-  auto& param = this->Param<param_t>();
+void DropoutCompute::PrepareForRun() {
+  auto& param = Param<operators::DropoutParam>();
   param.output->mutable_data<float16>();
 
-  // ====================================================
-  zynqmp::ConcatParam& concat_param = pe_.param();
-  for (auto t : param.x) {
-    concat_param.inputs.push_back(t->ZynqTensor());
+  zynqmp::ScaleParam& scale_param = pe_.param();
+  scale_param.input = param.x->ZynqTensor();
+  scale_param.output = param.output->ZynqTensor();
+
+  int channel = scale_param.input->shape().channel();
+  zynqmp::Tensor* scale = new zynqmp::Tensor();
+  zynqmp::Tensor* bias = new zynqmp::Tensor();
+  zynqmp::Shape shape(zynqmp::N, {channel});
+  float* scale_data = scale->mutableData<float>(zynqmp::FP32, shape);
+  float* bias_data = bias->mutableData<float>(zynqmp::FP32, shape);
+
+  float scale_value = 1 - param.dropout_prob;
+  for (int i = 0; i < channel; ++i) {
+    scale_data[i] = scale_value;
+    bias_data[i] = 0.0f;
   }
-  concat_param.output = param.output->ZynqTensor();
-  concat_param.axis = param.axis;
+  scale->flush();
+  bias->flush();
+
+  scale_param.bias = bias;
+  scale_param.scale = scale;
+
   pe_.init();
   pe_.apply();
 }
 
-void ConcatCompute::Run() {
+void DropoutCompute::Run() {
+  auto& param = Param<operators::DropoutParam>();
+  zynqmp::ScaleParam& scale_param = pe_.param();
+  // scale_param.input->saveToFile("drop_in.txt");
   pe_.dispatch();
-  zynqmp::ConcatParam& concat_param = pe_.param();
-  // concat_param.output->saveToFile("concat", true);
+  // scale_param.output->saveToFile("drop_out.txt");
+  // std::cout << "prob:" << param.dropout_prob << std::endl;
 }
 
 }  // namespace fpga
@@ -52,11 +67,11 @@ void ConcatCompute::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(concat,
+REGISTER_LITE_KERNEL(dropout,
                      kFPGA,
                      kFP16,
                      kNHWC,
-                     paddle::lite::kernels::fpga::ConcatCompute,
+                     paddle::lite::kernels::fpga::DropoutCompute,
                      def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kFPGA),
@@ -66,4 +81,5 @@ REGISTER_LITE_KERNEL(concat,
                 {LiteType::GetTensorTy(TARGET(kFPGA),
                                        PRECISION(kFP16),
                                        DATALAYOUT(kNHWC))})
+    .BindOutput("Mask", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();

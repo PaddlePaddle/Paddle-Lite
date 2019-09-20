@@ -106,9 +106,52 @@ class ScalePE : public PE {
     args.output.scale_address = output->scale();
   }
 
+  void cpu_compute() {
+    Tensor* input = param_.input;
+    Tensor* output = param_.output;
+    Tensor float_input;
+    float* image_addr = float_input.mutableData<float>(FP32, input->shape());
+    input->syncToCPU();
+    float_input.copyFrom(input);
+
+    Tensor float_output;
+    float* float_out = float_output.mutableData<float>(FP32, input->shape());
+
+    float16* data_out = output->data<float16>();
+
+    float* scale_data = param_.scale->data<float>();
+
+    int wh = input->shape().width() * input->shape().height();
+    float max = 0;
+
+    for (int i = 0; i < wh; i++) {
+      for (int c = 0; c < input->shape().channel(); c++) {
+        int index = i * input->shape().channel() + c;
+        float value = image_addr[index] * scale_data[c];
+        // data_out[index] = float_to_half(value);
+        float_out[index] = value;
+
+        if (value < 0) {
+          value = -value;
+        }
+        if (value > max) {
+          max = value;
+        }
+      }
+    }
+
+    float_output.flush();
+    output->copyFrom(&float_output);
+    // std::cout << "max:" << max << std::endl;
+    output->scale()[0] = max / 127.0f;
+    output->scale()[1] = 127.0f / max;
+  }
+
   bool dispatch() {
     param_.input->syncToDevice();
     return compute_fpga_scale(param_.args) == 0;
+    // cpu_compute();
+    // return true;
   }
 
   ScaleParam& param() { return param_; }
