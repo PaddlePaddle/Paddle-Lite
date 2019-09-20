@@ -68,7 +68,7 @@ framework::proto::VarType::Type ToDataType(std::type_index type) {
     return it->second;
   }
   PADDLE_THROW("Not support %s as tensor type", type.name());
-  return static_cast<framework::proto::VarType::Type>(-1);
+  // return static_cast<framework::proto::VarType::Type>(-1);
 }
 
 std::type_index ToTypeIndex(framework::proto::VarType::Type type) {
