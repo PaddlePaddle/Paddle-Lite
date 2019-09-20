@@ -46,7 +46,7 @@ std::set<T> Types<T>::ValidSet(const T& element) const {
   return std::set<T>({element});
 }
 
-bool ExpandPlaces(std::set<Place>* places, const Place& place) {
+void ExpandPlaces(std::set<Place>* places, const Place& place) {
   static const Types<TargetType> target_set({TARGET(kHost),
                                              TARGET(kX86),
                                              TARGET(kCUDA),

@@ -80,7 +80,6 @@ TEST(nearest_interp, normal) {
   Tensor x_ref, osz_ref, out_ref;
 
   int n = 1, c = 3, in_h = 40, in_w = 40;
-  int in_chw = c * in_h * in_w;
   int out_h = 80, out_w = 80;
   float scale = 2.0;
 
@@ -101,8 +100,6 @@ TEST(nearest_interp, normal) {
   osz_ref.Resize({2});
   out_ref.Resize({n, c, out_h, out_w});
 
-  auto* x_data = x.mutable_data<float>(TARGET(kCUDA));
-  auto* osz_data = osz.mutable_data<float>(TARGET(kCUDA));
   auto* out_data = out.mutable_data<float>(TARGET(kCUDA));
 
   float* x_cpu_data = x_cpu.mutable_data<float>();

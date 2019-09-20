@@ -68,6 +68,7 @@ framework::proto::VarType::Type ToDataType(std::type_index type) {
     return it->second;
   }
   PADDLE_THROW("Not support %s as tensor type", type.name());
+  return static_cast<framework::proto::VarType::Type>(-1);
 }
 
 std::type_index ToTypeIndex(framework::proto::VarType::Type type) {
@@ -77,6 +78,7 @@ std::type_index ToTypeIndex(framework::proto::VarType::Type type) {
   }
   PADDLE_THROW("Not support framework::proto::VarType::Type(%d) as tensor type",
                static_cast<int>(type));
+  return std::type_index(typeid(void));
 }
 
 std::string DataTypeToString(const framework::proto::VarType::Type type) {
@@ -86,6 +88,7 @@ std::string DataTypeToString(const framework::proto::VarType::Type type) {
   }
   PADDLE_THROW("Not support framework::proto::VarType::Type(%d) as tensor type",
                static_cast<int>(type));
+  return std::string();
 }
 
 size_t SizeOfType(framework::proto::VarType::Type type) {
@@ -93,7 +96,8 @@ size_t SizeOfType(framework::proto::VarType::Type type) {
   if (it != gDataTypeMap().proto_to_size_.end()) {
     return it->second;
   }
-  PADDLE_THROW("Not support %s as tensor type", DataTypeToString(type));
+  PADDLE_THROW("Not support %s as tensor type", DataTypeToString(type).c_str());
+  return 0;
 }
 
 }  // namespace fluid

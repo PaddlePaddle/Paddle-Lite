@@ -49,6 +49,7 @@ class BeamSearchFunctor<TARGET(kX86), T> {
                                         end_id,
                                         is_accumulated);
     auto selected_items = ToMap(items, high_level.back());
+    /*
     if (FLAGS_v == 3) {
       VLOG(3) << "selected_items:";
       for (size_t i = 0; i < selected_items.size(); ++i) {
@@ -58,6 +59,7 @@ class BeamSearchFunctor<TARGET(kX86), T> {
         }
       }
     }
+    */
 
     PruneEndBeams(pre_ids, abs_lod, &selected_items, level, end_id);
     // calculate the output tensor's height
@@ -69,7 +71,8 @@ class BeamSearchFunctor<TARGET(kX86), T> {
     // the output tensor shape should be [num_instances, 1]
     // auto dims = framework::make_ddim(
     //     std::vector<int64_t>({static_cast<int>(num_instances), 1}));
-    lite::DDim dims(std::vector<int64_t>({num_instances, 1L}));
+    lite::DDim dims(
+        std::vector<int64_t>({static_cast<int>(num_instances), 1L}));
 
     selected_ids->Resize(dims);
     auto *selected_ids_data = selected_ids->mutable_data<int64_t>(TARGET(kX86));
@@ -296,7 +299,7 @@ class BeamSearchFunctor<TARGET(kX86), T> {
 
       result.emplace_back(top_beam);
     }
-
+    /*
     if (FLAGS_v == 3) {
       VLOG(3) << "SelectTopBeamSizeItems result size " << result.size();
       for (auto &items : result) {
@@ -306,7 +309,7 @@ class BeamSearchFunctor<TARGET(kX86), T> {
         }
       }
     }
-
+    */
     return result;
   }
 };

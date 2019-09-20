@@ -48,6 +48,7 @@ inline ActivationType GetActivationType(const std::string &type) {
   LOG(ERROR) << "Not support type " << type;
   // PADDLE_ENFORCE(false, "Not support type %s", type);
   // PADDLE_THROW("Not support type %s.", type);
+  return ActivationType();
 }
 
 namespace forward {

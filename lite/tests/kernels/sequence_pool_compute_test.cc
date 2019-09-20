@@ -25,9 +25,9 @@ class SequencePoolComputeTester : public arena::TestCase {
   // common attributes for this op.
   std::string input_ = "x";
   std::string output_ = "out";
-  DDim dims_{{5, 1}};
   LoD lod_{{0, 2, 5}};
   std::string pool_type_ = "SUM";
+  DDim dims_{{5, 1}};
 
  public:
   SequencePoolComputeTester(const Place& place,
