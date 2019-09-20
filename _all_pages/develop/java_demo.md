@@ -3,19 +3,8 @@ layout: post
 title: Java Android Demo
 ---
 
-<!--ts-->
-* [Java Android Demo](#java-android-demo)
-  * [编译](#编译)
-  * [准备 demo 需要的其他文件](#准备-demo-需要的其他文件)
-     * [脚本方法](#脚本方法)
-     * [手动拷贝方法](#手动拷贝方法)
-     * [把 .so 动态库和 .jar 拷贝进安卓demo程序：](#把-so-动态库和-jar-拷贝进安卓demo程序)
-     * [把demo使用到的模型文件拷贝进安卓程序：](#把demo使用到的模型文件拷贝进安卓程序)
-  * [运行 Android 程序结果](#运行-android-程序结果)
-
-<!-- Added by: yanchunwei, at: Mon Aug 26 22:23:07 CST 2019 -->
-
-<!--te-->
+* TOC
+{:toc}
 
 本节中，Java demo 完整代码位于 [demo/java](https://github.com/PaddlePaddle/Paddle-Lite/tree/develop/lite/demo/java) 。
 

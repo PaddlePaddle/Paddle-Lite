@@ -2,24 +2,8 @@
 layout: post
 title: 模型量化
 ---
-
-<!--ts-->
-* [模型量化](#模型量化)
-  * [一、使用PaddleSlim模型压缩工具获取量化模型](#一使用PaddleSlim模型压缩工具获取量化模型)
-     * [1. 安装PaddlePaddle版本](#1-安装PaddlePaddle版本)
-     * [2. 克隆量化训练所需的代码库](#2-克隆量化训练所需的代码库)
-     * [3. 数据准备](#3-数据准备)
-     * [4. 压缩脚本介绍](#4-压缩脚本介绍)
-     * [5. 执行int8量化训练](#5-执行int8量化训练)
-  * [二、使用Paddle-Lite运行量化模型推理](#二使用Paddle-Lite运行量化模型推理)
-     * [1. 在手机端准备量化模型文件](#1-在手机端准备量化模型文件)
-     * [2. 使用模型优化工具对量化模型进行优化](#2-使用模型优化工具对量化模型进行优化)
-     * [3. 使用mobilenetv1_light_api运行优化后的量化模型](#3-使用mobilenetv1_light_api运行优化后的量化模型)
-  * [三、FAQ](#三FAQ)
-
-<!-- Added by: , at: Thu Aug 29 16:00:45 CST 2019 -->
-
-<!--te-->
+* TOC
+{:toc}
 
 Paddle-Lite支持加载运行[PaddlePaddle框架](https://github.com/PaddlePaddle/Paddle)量化训练产出的模型。本文主要介绍如何基于PaddlePaddle和Paddle-Lite对模型进行端到端的量化训练和推理执行。PaddlePaddle框架中所使用的量化训练原理请猛戳[此处](https://github.com/PaddlePaddle/models/blob/develop/PaddleSlim/docs/tutorial.md#1-quantization-aware-training%E9%87%8F%E5%8C%96%E4%BB%8B%E7%BB%8D)。如果您是初次接触PaddlePaddle框架，建议首先学习[新人入门](https://www.paddlepaddle.org.cn/documentation/docs/zh/1.5/beginners_guide/index_cn.html)和[使用指南](https://www.paddlepaddle.org.cn/documentation/docs/zh/1.5/user_guides/index_cn.html)。
 > 备注：本文中所使用的模型量化示例均为MobileNetV1。
