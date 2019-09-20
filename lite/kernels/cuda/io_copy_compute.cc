@@ -51,7 +51,7 @@ class IoCopyHostToCudaCompute
     CHECK(param.x->target() == TARGET(kHost) ||
           param.x->target() == TARGET(kX86));
     auto mem_size = param.x->memory_size();
-    LOG(INFO) << "copy size " << mem_size;
+    VLOG(4) << "copy size " << mem_size;
     auto* data = param.y->mutable_data(TARGET(kCUDA), mem_size);
     CopyFromHostSync(data, param.x->raw_data(), mem_size);
   }
@@ -89,7 +89,7 @@ class IoCopyCudaToHostCompute
     auto& param = Param<operators::IoCopyParam>();
     CHECK(param.x->target() == TARGET(kCUDA));
     auto mem_size = param.x->memory_size();
-    LOG(INFO) << "io copy cuda to host " << mem_size;
+    VLOG(4) << "io copy cuda to host " << mem_size;
     auto* data = param.y->mutable_data(TARGET(kHost), mem_size);
     CopyToHostSync(data, param.x->raw_data(), mem_size);
   }

@@ -58,8 +58,8 @@ class VariablePlaceInferencePass : public DebugPass {
   void SetWeightType(Node* w, const LiteType& type) {
 // TODO(xg) to optimize this
 #ifndef LITE_WITH_FPGA
-    w->AsArg().type =
-        LiteType::GetTensorTy(TARGET(kHost), type.precision(), type.layout());
+    w->AsArg().type = LiteType::GetTensorTy(
+        TARGET(kHost), type.precision(), DATALAYOUT(kNCHW));
 #else
     w->AsArg().type = LiteType::GetTensorTy(
         TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));

@@ -89,6 +89,7 @@ void BatchTranspose2DCUDAImpl(const int N,
     BatchTranspose2DCUDAImpl<T>(N, C, HxW, X, Y, ctx); \
   }
 TYPE_SPECIALIZED_CUDA_NCHW2NHWC(float)
+TYPE_SPECIALIZED_CUDA_NCHW2NHWC(int8_t)
 #undef TYPE_SPECIALIZED_CUDA_NCHW2NHWC
 
 #define TYPE_SPECIALIZED_CUDA_NHWC2NCHW(T)             \
@@ -102,6 +103,7 @@ TYPE_SPECIALIZED_CUDA_NCHW2NHWC(float)
     BatchTranspose2DCUDAImpl<T>(N, HxW, C, X, Y, ctx); \
   }
 TYPE_SPECIALIZED_CUDA_NHWC2NCHW(float)
+TYPE_SPECIALIZED_CUDA_NHWC2NCHW(int8_t)
 #undef TYPE_SPECIALIZED_CUDA_NHWC2NCHW
 
 template <typename T>

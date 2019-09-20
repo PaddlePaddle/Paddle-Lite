@@ -329,9 +329,9 @@ bool CudnnConv2DInt8<Ptype_out>::create(const operators::ConvParam& param,
                                          oh,
                                          ow));
   if (ic % 4 == 0 && oc % 4 == 0) {
-    this->fwd_algo_ = CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_GEMM;
-  } else {
     this->fwd_algo_ = CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_PRECOMP_GEMM;
+  } else {
+    this->fwd_algo_ = CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_GEMM;
   }
   CUDNN_CHECK(
       cudnnGetConvolutionForwardWorkspaceSize(this->handle_,

@@ -87,8 +87,12 @@ void TypeTargetTransformPass::AddIoCopyInst(
   auto node_id = [&] { return graph->nodes().size(); };
   auto io_copy_output_name =
       string_format("%s/trans/%d", in->AsArg().name.c_str(), node_id());
-  // TODO(MyPandaShaoxiang) should set same place with input?
   auto* io_copy_output_arg = graph->NewArgumentNode(io_copy_output_name);
+  // Set the place for io_copy_output_arg node, the target should be equal to
+  // to.target()
+  // The precision and layout should be equal to from.precision(), from.layout()
+  io_copy_output_arg->AsArg().type =
+      LiteType::GetTensorTy(to.target(), from.precision(), from.layout());
   auto* io_copy_inst = graph->NewInstructNode();
 
   bool in_persist = in->AsArg().is_weight || in->AsArg().is_persist;
@@ -115,7 +119,8 @@ void TypeTargetTransformPass::AddIoCopyInst(
   for (auto& kernel : kernels) {
     const Type* in_arg_ty = kernel->GetInputDeclType("Input");
     const Type* out_arg_ty = kernel->GetOutputDeclType("Out");
-    if (TypeCompatible(*in_arg_ty, from)) {
+    if (TypeCompatible(*in_arg_ty, from) &&
+        out_arg_ty->target() == to.target()) {
       is_found = true;
       selected_kernels.emplace_back(std::move(kernel));
       // we pick the kernel

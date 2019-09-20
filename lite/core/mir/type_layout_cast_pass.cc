@@ -87,6 +87,9 @@ void TypeLayoutTransformPass::AddLayoutInst(
   auto layout_output_name =
       string_format("%s/trans/%d", in->AsArg().name.c_str(), node_id());
   auto* layout_output_arg = graph->NewArgumentNode(layout_output_name);
+  layout_output_arg->AsArg().type =
+      LiteType::GetTensorTy(from.target(), from.precision(), to.layout());
+
   auto* layout_inst = graph->NewInstructNode();
 
   bool in_persist = in->AsArg().is_weight || in->AsArg().is_persist;
@@ -111,7 +114,8 @@ void TypeLayoutTransformPass::AddLayoutInst(
   for (auto& kernel : kernels) {
     const Type* in_arg_ty = kernel->GetInputDeclType("Input");
     const Type* out_arg_ty = kernel->GetOutputDeclType("Out");
-    if (TypeCompatible(*in_arg_ty, from)) {
+    if (TypeCompatible(*in_arg_ty, from) &&
+        out_arg_ty->layout() == to.layout()) {
       is_found = true;
       selected_kernels.emplace_back(std::move(kernel));
       // we pick the kernel
