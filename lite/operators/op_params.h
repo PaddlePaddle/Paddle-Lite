@@ -82,7 +82,6 @@ struct FcParam {
   lite::Tensor* output{nullptr};
   lite::DDim in_mat_dims;
   int in_num_col_dims{1};
-  bool weight_transposed{false};
   // for int8
   WITH_INT8_CONFIG
 };
@@ -371,6 +370,17 @@ struct FillConstantParam {
   lite::Tensor* Out{};
 };
 
+struct FillConstantBatchSizeLikeParam {
+  lite::Tensor* Input;
+  lite::Tensor* Out;
+
+  std::vector<int> shape;
+  int input_dim_idx{0};
+  int output_dim_idx{0};
+  int dtype{static_cast<int>(VarDescAPI::VarDataType::FP32)};
+  float value{0.0f};
+};
+
 //
 struct FakeQuantizeMovingAvgMaxAbsParam {
   const lite::Tensor* x{};
@@ -601,6 +611,7 @@ struct SequenceSoftmaxParam {
 struct NormParam {
   const lite::Tensor* X{};
   lite::Tensor* Out{};
+  lite::Tensor* Norm{};
   int axis{1};
   float epsilon{1e-10};
 };
@@ -680,6 +691,12 @@ struct SequenceExpandParam {
   const lite::Tensor* Y{};
   lite::Tensor* Out{};
   int ref_level{-1};
+};
+
+struct SequenceExpandAsParam {
+  const lite::Tensor* x{nullptr};
+  const lite::Tensor* y{nullptr};
+  lite::Tensor* out{nullptr};
 };
 
 struct ReduceMaxParam {

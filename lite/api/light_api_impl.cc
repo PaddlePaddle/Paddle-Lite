@@ -13,7 +13,9 @@
 // limitations under the License.
 
 #include "lite/api/light_api.h"
+#include <string>
 #include "lite/api/paddle_api.h"
+#include "lite/core/version.h"
 #include "lite/model_parser/model_parser.h"
 
 namespace paddle {
@@ -28,6 +30,8 @@ class LightPredictorImpl : public PaddlePredictor {
   std::unique_ptr<const Tensor> GetOutput(int i) const override;
 
   void Run() override;
+
+  std::string GetVersion() const override;
 
   std::unique_ptr<const Tensor> GetTensor(
       const std::string& name) const override;
@@ -60,6 +64,8 @@ std::unique_ptr<const Tensor> LightPredictorImpl::GetOutput(int i) const {
 }
 
 void LightPredictorImpl::Run() { raw_predictor_->Run(); }
+
+std::string LightPredictorImpl::GetVersion() const { return lite::version(); }
 
 std::unique_ptr<const Tensor> LightPredictorImpl::GetTensor(
     const std::string& name) const {

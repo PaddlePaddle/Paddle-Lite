@@ -35,5 +35,5 @@
   CHECK_GT((a), (b)) << paddle::lite::string_format("" __VA_ARGS__);
 
 #ifndef PADDLE_THROW
-#define PADDLE_THROW
+#define PADDLE_THROW(...) printf("" __VA_ARGS__);
 #endif

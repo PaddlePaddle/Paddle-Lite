@@ -46,7 +46,7 @@ class NormComputeTester : public arena::TestCase {
 
     auto* x = scope->FindTensor(input_);
     const auto* x_data = x->data<float>();
-    int axis = axis_ < 0 ? axis + dims_.size() : axis_;
+    int axis = axis_ < 0 ? axis_ + dims_.size() : axis_;
     int pre_n = dims_.count(0, axis);
     int n = dims_[axis];
     int post_n = dims_.count(axis + 1, dims_.size());

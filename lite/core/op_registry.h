@@ -177,9 +177,13 @@ class KernelRegistry final {
   std::list<std::unique_ptr<KernelBase>> Create(const std::string &op_type) {
     using kernel_registor_t =
         KernelRegistryForTarget<Target, Precision, Layout>;
-    return registries_[GetKernelOffset<Target, Precision, Layout>()]
-        .template get<kernel_registor_t *>()
-        ->Creates(op_type);
+    std::list<std::unique_ptr<KernelBase>> kernel_list;
+    if (registries_[GetKernelOffset<Target, Precision, Layout>()].valid()) {
+      kernel_list = registries_[GetKernelOffset<Target, Precision, Layout>()]
+                        .template get<kernel_registor_t *>()
+                        ->Creates(op_type);
+    }
+    return kernel_list;
   }
 
   std::list<std::unique_ptr<KernelBase>> Create(const std::string &op_type,
@@ -208,7 +212,7 @@ class KernelRegistry final {
     ss << "Count of kernel kinds: ";
     int count = 0;
     for (auto &item : kernel_info_map_) {
-      for (auto &kernel : item.second) ++count;
+      count += item.second.size();
     }
     ss << count << "\n";
 

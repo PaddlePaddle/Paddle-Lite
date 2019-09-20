@@ -7,24 +7,26 @@ endif(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
 if (LITE_ON_TINY_PUBLISH)
     set(CMAKE_CXX_FLAGS_RELEASE "-Os -DNDEBUG")
     set(CMAKE_C_FLAGS_RELEASE "-Os -DNDEBUG")
-    set(lib_DEPS light_api paddle_api paddle_api_light)
-else()
-    set(lib_DEPS light_api cxx_api paddle_api_full paddle_api paddle_api_light)
 endif()
-
+set(light_lib_DEPS light_api paddle_api paddle_api_light optimizer)
 if ((NOT LITE_ON_TINY_PUBLISH) AND (ARM_TARGET_OS STREQUAL "android"))
-    lite_cc_library(paddle_cxx_api_shared MODULE
-    SRCS paddle_api_shared.cc
-    DEPS ${lib_DEPS}
+    #full api dynamic library
+    add_library(paddle_full_api_shared SHARED "")
+    target_sources(paddle_full_api_shared PUBLIC ${__lite_cc_files} paddle_api.cc light_api.cc cxx_api.cc cxx_api_impl.cc light_api_impl.cc)
+    add_dependencies(paddle_full_api_shared op_list_h kernel_list_h framework_proto)
+    target_link_libraries(paddle_full_api_shared framework_proto)
+    
+    #light api dynamic library
+    lite_cc_library(paddle_light_api_shared MODULE
+    SRCS light_api_shared.cc
+    DEPS ${light_lib_DEPS}
     ARM_DEPS ${arm_kernels} NPU_DEPS ${npu_kernels})
-    # Unlike static library, module library has to link target to be able to work
-    # as a single .so lib.
-    target_link_libraries(paddle_cxx_api_shared ${lib_DEPS} ${arm_kernels} ${npu_kernels})
+    target_link_libraries(paddle_light_api_shared ${light_lib_DEPS} ${arm_kernels} ${npu_kernels})
 else()
     if (ARM_TARGET_OS STREQUAL "android")
-    	add_library(paddle_cxx_api_shared SHARED "")
-    	target_sources(paddle_cxx_api_shared PUBLIC paddle_api_shared.cc)
-    	add_dependencies(paddle_cxx_api_shared op_list_h kernel_list_h ${lib_DEPS})
+        add_library(paddle_light_api_shared SHARED "")
+        target_sources(paddle_light_api_shared PUBLIC ${__lite_cc_files} paddle_api.cc light_api.cc light_api_impl.cc)
+        add_dependencies(paddle_light_api_shared op_list_h kernel_list_h)
     endif()
 endif()
 
@@ -201,7 +203,6 @@ if (LITE_ON_TINY_PUBLISH)
     lite_cc_library(paddle_api_light SRCS light_api_impl.cc DEPS light_api paddle_api stream)
 else()
     lite_cc_library(paddle_api_light SRCS light_api_impl.cc DEPS light_api paddle_api)
-    lite_cc_library(paddle_api_light_shared MODULE SRCS light_api_impl.cc DEPS light_api paddle_api)
 endif()
 if (NOT LITE_ON_TINY_PUBLISH)
     lite_cc_library(paddle_api_full SRCS cxx_api_impl.cc DEPS cxx_api paddle_api_light
@@ -210,14 +211,10 @@ if (NOT LITE_ON_TINY_PUBLISH)
       NPU_DEPS ${npu_kernels}
       CL_DEPS ${opencl_kernels}
       FPGA_DEPS ${fpga_kernels})
-    lite_cc_library(paddle_api_full_shared MODULE SRCS cxx_api_impl.cc DEPS cxx_api paddle_api_light
-      ${ops}
-      ARM_DEPS ${arm_kernels}
-      NPU_DEPS ${npu_kernels}
-      CL_DEPS ${opencl_kernels}
-      FPGA_DEPS ${fpga_kernels})
     # The final inference library for just MobileConfig.
     bundle_static_library(paddle_api_full paddle_api_full_bundled bundle_full_api)
+    get_property(fluid_modules GLOBAL PROPERTY FLUID_MODULES)
+    cc_library(api_full_static SRCS DEPS paddle_api_full cxx_api paddle_api light_api  ${cxx_api_deps} ${ops} ${host_kernels} ${cuda_kernels} program tensor memory naive_buffer types ${fluid_modules} protobuf)
 endif()
 bundle_static_library(paddle_api_light paddle_api_light_bundled bundle_light_api)
 #-----------------------------------------------------------------------------------------------------

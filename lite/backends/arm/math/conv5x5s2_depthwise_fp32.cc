@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/backends/arm/math/conv_depthwise.h"
 #include <arm_neon.h>
+#include "lite/backends/arm/math/conv_depthwise.h"
 
 namespace paddle {
 namespace lite {
@@ -80,21 +80,21 @@ void conv_depthwise_5x5s2p2_relu_s(const float* din,
                                    bool flag_relu,
                                    ARMContext* ctx);
 
-void conv_depthwise_5x5s2(const float* din,
-                          float* dout,
-                          int num,
-                          int chout,
-                          int hout,
-                          int wout,
-                          int chin,
-                          int hin,
-                          int win,
-                          const float* weights,
-                          const float* bias,
-                          int pad,
-                          bool flag_bias,
-                          bool flag_relu,
-                          ARMContext* ctx) {
+void conv_depthwise_5x5s2_fp32(const float* din,
+                               float* dout,
+                               int num,
+                               int chout,
+                               int hout,
+                               int wout,
+                               int chin,
+                               int hin,
+                               int win,
+                               const float* weights,
+                               const float* bias,
+                               int pad,
+                               bool flag_bias,
+                               bool flag_relu,
+                               ARMContext* ctx) {
   if (pad == 2) {
     if (win >= 9) {
       if (flag_relu) {

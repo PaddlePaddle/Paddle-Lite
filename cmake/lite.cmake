@@ -126,12 +126,12 @@ function(lite_cc_library TARGET)
             )
 
     if (args_SHARED OR ARGS_shared)
-        cc_library(${TARGET} SRCS ${args_SRCS} DEPS ${deps} ${args_DEPS} SHARED)
+        cc_library(${TARGET} SRCS ${args_SRCS} DEPS ${deps} SHARED)
     elseif (args_MODULE OR ARGS_module)
         add_library(${TARGET} MODULE ${args_SRCS})
         add_dependencies(${TARGET} ${deps} ${args_DEPS})
     else()
-        cc_library(${TARGET} SRCS ${args_SRCS} DEPS ${deps} ${args_DEPS})
+        cc_library(${TARGET} SRCS ${args_SRCS} DEPS ${deps})
     endif()
     target_compile_options(${TARGET} BEFORE PRIVATE -Wno-ignored-qualifiers)
 
@@ -163,8 +163,15 @@ function(lite_cc_binary TARGET)
             LIGHT_DEPS ${args_LIGHT_DEPS}
             HVY_DEPS ${args_HVY_DEPS}
             )
-    cc_binary(${TARGET} SRCS ${args_SRCS} DEPS ${deps} ${args_DEPS})
+    cc_binary(${TARGET} SRCS ${args_SRCS} DEPS ${deps})
     target_compile_options(${TARGET} BEFORE PRIVATE -Wno-ignored-qualifiers)
+    if (NOT APPLE)
+        # strip binary target to reduce size
+        add_custom_command(TARGET ${TARGET} POST_BUILD
+                COMMAND "${CMAKE_STRIP}" -s
+                "${TARGET}"
+                COMMENT "Strip debug symbols done on final executable file.")
+    endif()
     # collect targets need to compile for lite
     if (NOT args_EXCLUDE_COMPILE_DEPS)
         add_dependencies(lite_compile_deps ${TARGET})
@@ -207,6 +214,11 @@ function(lite_cc_test TARGET)
               HVY_DEPS ${args_HVY_DEPS}
               )
     _lite_cc_test(${TARGET} SRCS ${args_SRCS} DEPS ${deps} ARGS ${args_ARGS})
+    # strip binary target to reduce size
+    add_custom_command(TARGET ${TARGET} POST_BUILD
+            COMMAND "${CMAKE_STRIP}" -s
+            "${TARGET}"
+            COMMENT "Strip debug symbols done on final executable file.")
     target_compile_options(${TARGET} BEFORE PRIVATE -Wno-ignored-qualifiers)
     file(APPEND ${offline_test_registry_file} "${TARGET}\n")
 

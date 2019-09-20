@@ -14,7 +14,7 @@
 
 #pragma once
 #include <cmath>
-#include "lite/core/device_info.h"
+#include "lite/core/context.h"
 
 namespace paddle {
 namespace lite {
@@ -30,9 +30,10 @@ bool gemv_int8(const int8_t* A,
                int M,
                int N,
                const float* scale,
-               bool is_bias = false,
-               const int* bias = nullptr,
-               bool is_relu = false);
+               bool is_bias,
+               const float* bias,
+               bool is_relu,
+               const ARMContext* ctx);
 
 }  // namespace math
 }  // namespace arm
