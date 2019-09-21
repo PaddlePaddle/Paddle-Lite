@@ -47,4 +47,5 @@ REGISTER_LITE_KERNEL(
     norm, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::NormCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Norm", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
