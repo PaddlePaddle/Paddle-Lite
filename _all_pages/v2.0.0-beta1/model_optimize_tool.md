@@ -7,7 +7,7 @@ Lite架构在预测过程中表现出来的高性能得益于其丰富的优化�
 
 ## 准备model_optimize_tool
 
-可以选择下载或者手动编译model_optimize_tool可执行文件。
+可以选择下载或者手动编译model_optimize_tool模型优化工具。
 
 ### 下载model_optimize_tool
 
@@ -18,15 +18,16 @@ chmod 777 model_optimize_tool
 
 ### 编译model_optimize_tool
 
-1、参照 [编译安装](../source_compile) 进行环境配置和编译
+1、参照 [编译安装](./source_compile) 进行环境配置和编译
 
-2、进入docker中PaddleLite根目录，```git checkout develop```切换到develop分支
+2、进入docker中PaddleLite根目录，```git checkout [release tag]```切换到release分支
 
-3、使用cmake构建目标，执行如下命令编译model_optimize_tool
+3、执行如下命令编译model_optimize_tool
+
 ```bash
-./lite/tools/build.sh --arm_os=android --arm_abi=armv8 --arm_lang=gcc --android_stl=c++_static full_publish
+./lite/tools/build.sh build_optimize_tool 
 ```
-4、编译完成，优化工具在```Paddle-Lite/build.lite.android.armv8.gcc/lite/api/model_optimize_tool```
+4、编译完成，优化工具在```Paddle-Lite/build.model_optimize_tool/lite/api/model_optimize_tool```
 
 ## 使用方法
 
@@ -34,9 +35,7 @@ chmod 777 model_optimize_tool
 
 fluid模型有两种形式，combined形式（权重保存为一个param文件）和非combined形式（权重保存为一个一个单独的文件），model_optimize_tool支持对这两种形式的fluid模型进行直接优化。
 
-2、将model_optimize_tool和需要优化的模型文件push到手机端
-
-3、使用model_optimize_tool对模型进行优化
+2、使用model_optimize_tool对模型进行优化(在电脑端执行)
 
 ```shell
 ./model_optimize_tool \
