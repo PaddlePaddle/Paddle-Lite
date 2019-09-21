@@ -89,7 +89,8 @@ void pad_batch_input(std::vector<std::string>& input_lines,  // NOLINT
 
   std::vector<std::vector<std::string>> batch_lines;
   for (int i = line_start; i < line_start + batch_size; ++i) {
-    std::string cur_line = input_lines[i];
+    int i_index = i % max_line;
+    std::string cur_line = input_lines[i_index];
 
     std::vector<std::string> split_str;
 
@@ -178,7 +179,7 @@ void TestModel(const std::vector<Place>& valid_places,
 
   std::string test_data_path = "chn_eng_all_testset.id.constraint_length";
   int n_head = 8;
-  int batch_size = 2;
+  int batch_size = 1;
   int bos_idx = 0;
   int eos_idx = 1;
   LOG(INFO) << "reading";
@@ -194,39 +195,34 @@ void TestModel(const std::vector<Place>& valid_places,
   auto* init_score = predictor.GetInput(4);
   auto* init_idx = predictor.GetInput(5);
 
-  pad_batch_input(test_transformer::inputed_lines,
-                  eos_idx,
-                  n_head,
-                  src_word,    // src_word
-                  src_pos,     // src_pos
-                  src_bias,    // src_bias
-                  trg_word,    // trg_word
-                  init_score,  // init_score
-                  init_idx,    // init_idx
-                  trg_bias,    // trg_bias
-                  0,
-                  batch_size,
-                  bos_idx);
-  LOG(INFO) << "******==trg_bias:" << trg_bias->dims();
-  LOG(INFO) << "src_word:" << src_word->dims();
-  LOG(INFO) << "src_pos:" << src_pos->dims();
-  LOG(INFO) << "src_bias:" << src_bias->dims();
-  LOG(INFO) << "trg_word:" << trg_word->dims();
-  LOG(INFO) << "init_score:" << init_score->dims();
-  LOG(INFO) << "init_idx:" << init_idx->dims();
-  LOG(INFO) << *trg_bias;
-  LOG(INFO) << *src_word;
-  LOG(INFO) << *src_pos;
-  LOG(INFO) << *init_score;
-  LOG(INFO) << *init_idx;
-  LOG(INFO) << *src_bias;
   for (int i = 0; i < FLAGS_warmup; ++i) {
     predictor.Run();
   }
 
   auto start = GetCurrentUS();
   for (int i = 0; i < FLAGS_repeats; ++i) {
+    auto start_i = GetCurrentUS();
+    pad_batch_input(test_transformer::inputed_lines,
+                    eos_idx,
+                    n_head,
+                    src_word,    // src_word
+                    src_pos,     // src_pos
+                    src_bias,    // src_bias
+                    trg_word,    // trg_word
+                    init_score,  // init_score
+                    init_idx,    // init_idx
+                    trg_bias,    // trg_bias
+                    1,
+                    batch_size,
+                    bos_idx);
+    LOG(INFO) << "src_word:" << src_word->dims();
+    auto start_ii = GetCurrentUS();
+    LOG(INFO) << i << "->ii:" << (start_ii - start_i) / 1000.0;
     predictor.Run();
+    auto start_iii = GetCurrentUS();
+    LOG(INFO) << i << "->iii:" << (start_iii - start_ii) / 1000.0;
+    auto* outs = predictor.GetOutputs();
+    LOG(INFO) << "out:" << (*outs)[0].dims();
   }
 
   LOG(INFO) << "================== Speed Report ===================";

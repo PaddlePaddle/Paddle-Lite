@@ -64,6 +64,3 @@ bool FillConstantBatchSizeLikeOp::AttachImpl(const cpp::OpDesc &op_desc,
 } /* namespace operators */
 } /* namespace lite */
 } /* namespace paddle */
-
-REGISTER_LITE_OP(fill_constant_batch_size_like,
-                 paddle::lite::operators::FillConstantBatchSizeLikeOp);
