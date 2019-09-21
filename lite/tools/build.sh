@@ -221,7 +221,7 @@ function print_usage {
     echo -e "argument choices:"
     echo -e "--arm_os:\t android|ios|ios64"
     echo -e "--arm_abi:\t armv8|armv7"
-    echo -e "--arm_lang:\t gcc|clang (for android)"
+    echo -e "--arm_lang:\t only support gcc now, clang will be supported in future.(for android)"
     echo -e "--android_stl:\t c++_static|c++_shared (for android)"
     echo
     echo -e "tasks:"
@@ -252,6 +252,13 @@ function main {
                 ;;
             --arm_lang=*)
                 ARM_LANG="${i#*=}"
+                if [ ${ARM_LANG} == "clang" ]; then
+                     set +x
+                     echo
+                     echo -e "error: only support gcc now, clang will be supported in future."
+                     echo
+                     exit 1
+                fi
                 shift
                 ;;
             --android_stl=*)
