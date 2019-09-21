@@ -232,9 +232,9 @@ class PaddlePredictor
 
 ```c++
 int64_t ShapeProduction(const shape_t& shape) {
-      int64_t res = 1;
-        for (auto i : shape) res *= i;
-          return res;
+  int64_t res = 1;
+  for (auto i : shape) res *= i;
+  return res;
 }
 
 // 设置MobileConfig
@@ -365,9 +365,9 @@ Tensor是Paddle-Lite的数据组织形式，用于对底层数据进行封装并
 
 ```c++
 int64_t ShapeProduction(const shape_t& shape) {
-      int64_t res = 1;
-        for (auto i : shape) res *= i;
-          return res;
+  int64_t res = 1;
+  for (auto i : shape) res *= i;
+  return res;
 }
 
 // 设置MobileConfig
