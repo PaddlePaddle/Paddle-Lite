@@ -49,6 +49,7 @@ void MemoryOptimizePass::CollectLifeCycleByDevice(
                                         "equal",
                                         "lod_reset",
                                         "concat",
+                                        "yolo_box",
                                         "graph_op",
                                         "feed",
                                         "fetch"};
@@ -77,7 +78,6 @@ void MemoryOptimizePass::CollectLifeCycleByDevice(
       auto outputs = op_node->outlinks;
       std::vector<Node*> requires(inputs.begin(), inputs.end());
       requires.insert(requires.end(), outputs.begin(), outputs.end());
-      auto& stmt = op_node->AsStmt();
       for (Node* node : requires) {
         CHECK(node->IsArg());
         auto& arg = node->AsArg();
