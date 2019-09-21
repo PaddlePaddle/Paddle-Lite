@@ -101,7 +101,7 @@ std::string params_buffer = lite::ReadFile(FLAGS_params_path);
 // 设置MobileConfig
 lite_api::MobileConfig config;
 config.set_model_buffer(model_buffer.c_str(), model_buffer.size(), 
-                                params_buffer.c_str(), params_buffer.size());
+                        params_buffer.c_str(), params_buffer.size());
 
 // 根据MobileConfig创建PaddlePredictor
 std::shared_ptr<PaddlePredictor> predictor = CreatePaddlePredictor<MobileConfig>(config);
@@ -249,7 +249,7 @@ std::unique_ptr<Tensor> input_tensor(std::move(predictor->GetInput(0)));
 input_tensor->Resize({1, 3, 224, 224});
 auto* data = input_tensor->mutable_data<float>();
 for (int i = 0; i < ShapeProduction(input_tensor->shape()); ++i) {
-      data[i] = 1;
+  data[i] = 1;
 }
 
 // 执行预测
@@ -259,7 +259,7 @@ predictor->Run();
 std::unique_ptr<const Tensor> output_tensor(std::move(predictor->GetOutput(0)));
 printf("Output dim: %d\n", output_tensor->shape()[1]);
 for (int i = 0; i < ShapeProduction(output_tensor->shape()); i += 100) {
-      printf("Output[%d]: %f\n", i, output_tensor->data<float>()[i]);
+  printf("Output[%d]: %f\n", i, output_tensor->data<float>()[i]);
 }
 ```
 
@@ -384,7 +384,7 @@ input_tensor->Resize({1, 3, 224, 224});
 // 设置输入数据
 auto* data = input_tensor->mutable_data<float>();
 for (int i = 0; i < ShapeProduction(input_tensor->shape()); ++i) {
-      data[i] = 1;
+  data[i] = 1;
 }
 
 // 执行预测
@@ -396,7 +396,7 @@ std::unique_ptr<const Tensor> output_tensor(std::move(predictor->GetOutput(0)));
 printf("Output dim: %d\n", output_tensor->shape()[1]);
 // 获取输出Tensor数据
 for (int i = 0; i < ShapeProduction(output_tensor->shape()); i += 100) {
-      printf("Output[%d]: %f\n", i, output_tensor->data<float>()[i]);
+  printf("Output[%d]: %f\n", i, output_tensor->data<float>()[i]);
 }
 ```
 
@@ -472,7 +472,7 @@ output_tensor->data<float>()
     auto* data = input_tensor->mutable_data<float>();
     // 设置Tensor数据
     for (int i = 0; i < ShapeProduction(input_tensor->shape()); ++i) {
-          data[i] = 1;
+      data[i] = 1;
     }
 ```
 
