@@ -57,7 +57,7 @@ fluid模型有两种形式，combined形式（权重保存为一个param文件�
 | --optimize_out_type | 输出模型类型，目前支持两种类型：protobuf和naive_buffer，其中naive_buffer是一种更轻量级的序列化/反序列化实现。若您需要在mobile端执行模型预测，请将此选项设置为naive_buffer。默认为protobuf。 |
 | --optimize_out      | 优化模型的输出路径。                                         |
 | --valid_targets     | 指定模型可执行的backend，目前可支持x86、arm、opencl，您可以同时指定多个backend(以空格分隔)，Model Optimize Tool将会自动选择最佳方式。默认为arm。 |
-| --prefer_int8_kernel | 是否启用int8量化模型，默认为false。                          |
+| --prefer_int8_kernel | 若待优化模型为int8量化模型（如量化训练得到的量化模型），则设置该选项为true以使用int8内核函数进行推理加速，默认为false。                          |
 
 * 如果待优化的fluid模型是非combined形式，请设置`--model_dir`，忽略`--model_file`和`--param_file`。
 * 如果待优化的fluid模型是combined形式，请设置`--model_file`和`--param_file`，忽略`--model_dir`。
