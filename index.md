@@ -48,8 +48,8 @@ Paddle-Lite 框架是 PaddleMobile 新一代架构，重点支持移动端推理
 
 ## API文档
 
-- [C++ API文档](../cxx_api_doc)
-- [Java API文档](../java_api_doc)
+- [C++ API文档]({{ site.baseurl }}/develop/cxx_api_doc)
+- [Java API文档]({{ site.baseurl }}/develop/java_api_doc)
 
 ## FAQ
 
