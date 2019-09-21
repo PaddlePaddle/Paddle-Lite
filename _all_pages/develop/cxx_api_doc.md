@@ -428,7 +428,7 @@ for (int i = 0; i < ShapeProduction(output_tensor->shape()); i += 100) {
 
 
 
-> **data<T>()**
+> **data\<T\>()**
 
 ```c++
 template <typename T>
@@ -443,37 +443,37 @@ const T* data() const;
 std::unique_ptr<const Tensor> output_tensor(std::move(predictor->GetOutput(0)));
 // 如果模型中输出为float类型
 output_tensor->data<float>()
-    ```
+```
 
-    参数：
+参数：
 
-    - `None`
+- `None`
 
-    返回：`Tensor`底层数据常量指针
+返回：`Tensor`底层数据常量指针
 
-    返回类型：`const T*`
+返回类型：`const T*`
 
 
 
-    > **mutable_data<T>()**
+> **mutable_data\<T\>()**
 
-    ```c++
-    template <typename T>
-    T* mutable_data() const;
-    ```
+```c++
+template <typename T>
+T* mutable_data() const;
+```
 
-    获取Tensor的底层数据的指针，根据传入的不同模型类型获取相应数据。用于设置Tensor数据。
+获取Tensor的底层数据的指针，根据传入的不同模型类型获取相应数据。用于设置Tensor数据。
 
-    示例：
+示例：
 
-    ```c++
-    std::unique_ptr<Tensor> input_tensor(std::move(predictor->GetInput(0)));
-    // 如果模型中输出为float类型
-    auto* data = input_tensor->mutable_data<float>();
-    // 设置Tensor数据
-    for (int i = 0; i < ShapeProduction(input_tensor->shape()); ++i) {
-      data[i] = 1;
-    }
+```c++
+std::unique_ptr<Tensor> input_tensor(std::move(predictor->GetInput(0)));
+// 如果模型中输出为float类型
+auto* data = input_tensor->mutable_data<float>();
+// 设置Tensor数据
+for (int i = 0; i < ShapeProduction(input_tensor->shape()); ++i) {
+  data[i] = 1;
+}
 ```
 
 参数：
