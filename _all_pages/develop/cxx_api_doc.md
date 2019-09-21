@@ -428,7 +428,7 @@ for (int i = 0; i < ShapeProduction(output_tensor->shape()); i += 100) {
 
 
 
-> **data<T>()**
+> **data\<T\>()**
 
 ```c++
 template <typename T>
@@ -455,7 +455,7 @@ output_tensor->data<float>()
 
 
 
-> **mutable_data<T>()**
+> **mutable_data\<T\>()**
 
 ```c++
 template <typename T>

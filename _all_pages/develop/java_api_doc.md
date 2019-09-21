@@ -137,7 +137,7 @@ PaddlePredictor predictor = PaddlePredictor.createPaddlePredictor(config);
 long[] dims = {100, 100};
 float[] inputBuffer = new float[10000];
 for (int i = 0; i < 10000; ++i) {
-        inputBuffer[i] = i;
+    inputBuffer[i] = i;
 }
 Tensor input = predictor.getInput(0);
 input.resize(dims);
@@ -150,7 +150,7 @@ predictor.run();
 Tensor output = predictor.getOutput(0);
 float[] output = result.getFloatData();
 for (int i = 0; i < 1000; ++i) {
-        System.out.println(output[i]);
+    System.out.println(output[i]);
 }
 ```
 
@@ -286,7 +286,7 @@ PaddlePredictor predictor = PaddlePredictor.createPaddlePredictor(config);
 long[] dims = {100, 100};
 float[] inputBuffer = new float[10000];
 for (int i = 0; i < 10000; ++i) {
-        inputBuffer[i] = i;
+    inputBuffer[i] = i;
 }
 // 获取输入Tensor
 Tensor input = predictor.getInput(0);
@@ -303,7 +303,7 @@ Tensor output = predictor.getOutput(0);
 // 获取输出数据
 float[] output = result.getFloatData();
 for (int i = 0; i < 1000; ++i) {
-        System.out.println(output[i]);
+    System.out.println(output[i]);
 }
 ```
 
