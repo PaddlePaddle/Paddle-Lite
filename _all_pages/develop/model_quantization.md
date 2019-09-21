@@ -246,7 +246,7 @@ adb shell /data/local/tmp/model_optimize_tool                 \
 ```
 model\_optimize\_tool的详细使用方法请猛戳[此处](https://github.com/PaddlePaddle/Paddle-Lite/wiki/model_optimize_tool#%E4%BD%BF%E7%94%A8%E6%96%B9%E6%B3%95)。
 
-> 备注：如前所述，Paddle-Lite所使用的float目录下量化模型参数范围为int8范围但参数数据类型仍为float32类型，仅这样确实没有起到模型参数压缩的效果。但是，经过model\_optimize\_tool工具优化后对应的量化参数均会以int8类型重新存储达到参数压缩的效果，且模型结构也被优化（如进行了各种operator fuse操作）。
+> 备注：如前所述，量化训练后，float目录下的模型参数范围为int8，但参数数据类型仍为float32类型，仅这样确实没有起到模型参数压缩的效果。但是，经过model\_optimize\_tool工具优化后对应的量化参数均会以int8类型重新存储达到参数压缩的效果，且模型结构也被优化（如进行了各种operator fuse操作）。
 
 #### 3. 使用mobilenetv1\_light\_api运行优化后的量化模型
 

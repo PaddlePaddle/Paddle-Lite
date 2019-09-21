@@ -31,7 +31,7 @@ Paddle-Lite 框架是 PaddleMobile 新一代架构，重点支持移动端推理
 
 ## 进阶
 
-- [通过 X2Paddle 支持 Caffe, TensorFlow , ONNX 模型]({{ site.baseurl }}/x2paddle)
+- [通过 X2Paddle 支持 Caffe, TensorFlow , ONNX 模型]({{ site.baseurl }}/developx/2paddle)
 - [X2Paddle 支持模型列表]({{ site.baseurl }}/develop/x2paddle_models_doc)
 - [模型量化]({{ site.baseurl }}/develop/model_quantization)
 - [支持Op列表]({{ site.baseurl }}/develop/support_operation_list)

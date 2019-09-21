@@ -4,7 +4,8 @@ title: C++ API文档
 
 ---
 
-
+* TOC
+{:toc}
 
 # CreatePaddlePredictor
 
