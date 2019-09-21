@@ -1,7 +1,10 @@
 ---
 layout: post
 title: C++ API文档
+
 ---
+
+
 
 # CreatePaddlePredictor
 
@@ -34,12 +37,12 @@ std::shared_ptr<PaddlePredictor> predictor = CreatePaddlePredictor<MobileConfig>
 # MobileConfig
 
 ```c++
-class MobileConfig
+class MobileConfig;
 ```
 
 `MobileConfig`用来配置构建轻量级PaddlePredictor的配置信息，如NaiveBuffer格式的模型地址、模型的内存地址(从内存加载模型时使用)、能耗模式、工作线程数等等。
 
-*注意：输入的模型需要使用Model Optimize Tool转化为NaiveBuffer格式的优化模型。*
+*注意：输入的模型需要使用[Model Optimize Tool](../model_optimize_tool)转化为NaiveBuffer格式的优化模型。*
 
 示例：
 
@@ -161,13 +164,13 @@ std::shared_ptr<PaddlePredictor> predictor = CreatePaddlePredictor<MobileConfig>
 
 > **set_power_mode(mode)**
 
-设置CPU能耗模式。
+设置CPU能耗模式。若不设置，则默认使用`LITE_POWER_HIGH`。
 
 *注意：只在开启`OpenMP`时生效，否则系统自动调度。*
 
 参数：
 
-- `mode(PowerMode)` - CPU能耗模式。默认为`LITE_POWER_HIGH`。
+- `mode(PowerMode)` - CPU能耗模式
 
 返回：`None`
 
@@ -191,13 +194,13 @@ std::shared_ptr<PaddlePredictor> predictor = CreatePaddlePredictor<MobileConfig>
 
 > **set_threads(threads)**
 
-设置工作线程数。
+设置工作线程数。若不设置，则默认使用单线程。
 
 *注意：只在开启`OpenMP`的模式下生效，否则只使用单线程。*
 
 参数：
 
-- `threads(int)` - 工作线程数。默认为1。
+- `threads(int)` - 工作线程数
 
 返回：`None`
 
@@ -507,4 +510,4 @@ output_tensor->data<float>()
 
 返回：`Tensor`的LoD信息
 
-返回类型：`std::vector<std::vector<uint64_t>>
+返回类型：`std::vector<std::vector<uint64_t>>`
