@@ -20,7 +20,7 @@ chmod 777 model_optimize_tool
 
 1、参照 [编译安装](./source_compile) 进行环境配置和编译
 
-2、进入docker中PaddleLite根目录，```git checkout [release tag]```切换到release分支
+2、进入docker中PaddleLite根目录，```git checkout [release-version-tag]```切换到release分支
 
 3、执行如下命令编译model_optimize_tool
 ```bash
