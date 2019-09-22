@@ -16,33 +16,12 @@ Lite框架拥有强大的加速、优化策略及实现，其中包含诸如量�
 
 Model Optimize Tool的详细介绍，请您参考 [模型优化方法](../model_optimize_tool) 。
 
-使用Model Optimize Tool，您只需执行以下代码：
-## 1. Android
-- 将Android设备通过USB连接到PC机，在PC机的shell中执行如下命令（不是在docker里面）：
-```shell
+使用Model Optimize Tool，您只需编译后在开发机上执行以下代码：
+
+``` shell
 $ cd <PaddleLite_base_path>
-$ adb push ./build.lite.android.armv8.gcc/lite/api/model_optimize_tool /data/local/tmp
-$ adb shell
-```
-注意：如果系统不能识别adb命令，请参考https://developer.android.google.cn/studio/releases/platform-tools 安装适合PC机的Android SDK
-- 进入手机shell后，执行如下命令：
-
-```shell
-./model_optimize_tool \
-    --model_dir=<model_param_dir> \
-    --model_file=<model_path> \
-    --param_file=<param_path> \
-    --optimize_out_type=(protobuf|naive_buffer) \
-    --optimize_out=<output_optimize_model_dir> \
-    --valid_targets=(arm|opencl|x86) \
-    --prefer_int8_kernel=(ture|false)
-```
-
-## 2. ARM Linux
-- 将build.lite.android.armv8.gcc/lite/api目录下的model_optimize_tool拷贝至ARM Linux设备的/home/[user]/目录下(例如采用scp方式)，然后在ARM Linux设备的/home/[user]/目录下直接执行如下命令：
-
-```shell
-./model_optimize_tool \
+$ cd build.model_optimize_tool/lite/api/
+$ ./model_optimize_tool \
     --model_dir=<model_param_dir> \
     --model_file=<model_path> \
     --param_file=<param_path> \
