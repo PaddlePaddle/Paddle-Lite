@@ -275,9 +275,9 @@ sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
 
 **具体内容**说明：
 
-1. `bin`文件夹：可执行工具文件 `paddle_code_generator`、`test_model_bin`
+1、 `bin`文件夹：可执行工具文件 `paddle_code_generator`、`test_model_bin`
 
-2. `cxx`文件夹：包含c++的库文件与相应的头文件
+2、`cxx`文件夹：包含c++的库文件与相应的头文件
 
 - `include`  : 头文件
 - `lib` : 库文件
@@ -288,7 +288,7 @@ sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
     - `libpaddle_full_api_shared.so` ：包含 full_api 和 light_api 功能的动态库
     - `libpaddle_light_api_shared.so`：只包含 light_api 功能的动态库
 
-3. `demo`文件夹：示例 demo ，包含 C++ demo 和  Java demo。
+3、 `demo`文件夹：示例 demo ，包含 C++ demo 和  Java demo。
 
 - `cxx`   ： C++示例 demo
   - `mobile_full` :  full_api 的使用示例
@@ -296,22 +296,22 @@ sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
 - `java`  ：Java 示例 demo
   - `android`  : Java的 Android 示例
 
-4.  `java` 文件夹：包含 Jni 的动态库文件与相应的 Jar 包
+4、  `java` 文件夹：包含 Jni 的动态库文件与相应的 Jar 包
 
 - `jar` :  `PaddlePredictor.jar`
 - `so`  : Jni动态链接库  `libpaddle_lite_jni.so`
 
-5. `third_party` 文件夹：第三方库文件`gflags`
+5、 `third_party` 文件夹：第三方库文件`gflags`
 
 **注意：**
 
-1. 只有当`--arm_os=android` 时才会编译出：
+1、 只有当`--arm_os=android` 时才会编译出：
 
 - Java库文件与示例：`Java`和`demo/java`
 
 - 动态库文件:`libpaddle_full_api_shared.so`,`libpaddle_light_api_shared.so`
 
-2. `tiny_publish`编译结果不包括 C++ demo和 C++ 静态库，但提供 C++ 的 light_api 动态库、 Jni 动态库和Java demo
+2、 `tiny_publish`编译结果不包括 C++ demo和 C++ 静态库，但提供 C++ 的 light_api 动态库、 Jni 动态库和Java demo
 
 ### 加速第三方依赖库的下载
 
