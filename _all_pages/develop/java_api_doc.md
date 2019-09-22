@@ -32,7 +32,7 @@ config.setThreads(1);
 PaddlePredictor predictor = PaddlePredictor.createPaddlePredictor(config);
 ```
 
-> **setModelDir(model_dir)**
+## ``setModelDir(model_dir)``
 
 设置模型文件夹路径。
 
@@ -46,7 +46,7 @@ PaddlePredictor predictor = PaddlePredictor.createPaddlePredictor(config);
 
 
 
-> **getModelDir()**
+## `getModelDir()`
 
 返回设置的模型文件夹路径。
 
@@ -60,7 +60,7 @@ PaddlePredictor predictor = PaddlePredictor.createPaddlePredictor(config);
 
 
 
-> **setPowerMode(mode)**
+## `setPowerMode(mode)`
 
 设置CPU能耗模式。若不设置，则默认使用`LITE_POWER_HIGH`。
 
@@ -76,7 +76,7 @@ PaddlePredictor predictor = PaddlePredictor.createPaddlePredictor(config);
 
 
 
-> **getPowerMode()**
+## `getPowerMode()`
 
 获取设置的CPU能耗模式。
 
@@ -90,7 +90,7 @@ PaddlePredictor predictor = PaddlePredictor.createPaddlePredictor(config);
 
 
 
-> **setThreads(threads)**
+## `setThreads(threads)`
 
 设置工作线程数。若不设置，则默认使用单线程。
 
@@ -106,7 +106,7 @@ PaddlePredictor predictor = PaddlePredictor.createPaddlePredictor(config);
 
 
 
-> **getThreads()**
+## `getThreads()`
 
 获取设置的工作线程数。
 
@@ -159,7 +159,7 @@ for (int i = 0; i < 1000; ++i) {
 
 
 
-> **CreatePaddlePredictor(config)**
+## `CreatePaddlePredictor(config)`
 
 ```java
 public static PaddlePredictor createPaddlePredictor(ConfigBase config);
@@ -177,7 +177,7 @@ public static PaddlePredictor createPaddlePredictor(ConfigBase config);
 
 
 
-> **getInput(index)**
+## `getInput(index)`
 
 获取输入Tensor，用来设置模型的输入数据。
 
@@ -191,7 +191,7 @@ public static PaddlePredictor createPaddlePredictor(ConfigBase config);
 
 
 
-> **getOutput(index)**
+## `getOutput(index)`
 
 获取输出Tensor，用来获取模型的输出结果。
 
@@ -205,7 +205,7 @@ public static PaddlePredictor createPaddlePredictor(ConfigBase config);
 
 
 
-> **run()**
+## `run()`
 
 执行模型预测，需要在***设置输入数据后***调用。
 
@@ -219,7 +219,7 @@ public static PaddlePredictor createPaddlePredictor(ConfigBase config);
 
 
 
-> **getVersion()**
+## `getVersion()`
 
 用于获取当前lib使用的代码版本。若代码有相应tag则返回tag信息，如`v2.0-beta`；否则返回代码的`branch(commitid)`，如`develop(7e44619)`。
 
@@ -310,7 +310,7 @@ for (int i = 0; i < 1000; ++i) {
 }
 ```
 
-> **resize(dims)**
+## `resize(dims)`
 
 设置Tensor的维度信息。
 
@@ -324,7 +324,7 @@ for (int i = 0; i < 1000; ++i) {
 
 
 
-> **shape()**
+## `shape()`
 
 获取Tensor的维度信息。
 
@@ -338,7 +338,7 @@ for (int i = 0; i < 1000; ++i) {
 
 
 
-> **setData(data)**
+## `setData(data)`
 
 设置Tensor数据。
 
@@ -352,7 +352,7 @@ for (int i = 0; i < 1000; ++i) {
 
 
 
-> **getFloatData()**
+## `getFloatData()`
 
 获取Tensor的底层float型数据。
 
