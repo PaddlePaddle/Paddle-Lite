@@ -60,7 +60,7 @@ config.set_power_mode(LITE_POWER_HIGH);
 std::shared_ptr<PaddlePredictor> predictor = CreatePaddlePredictor<MobileConfig>(config);
 ```
 
-> **set_model_dir(model_dir)**
+## `set_model_dir(model_dir)`
 
 设置模型文件夹路径，当需要从磁盘加载模型时使用。
 
@@ -74,7 +74,7 @@ std::shared_ptr<PaddlePredictor> predictor = CreatePaddlePredictor<MobileConfig>
 
 
 
-> **model_dir()**
+## `model_dir()`
 
 返回设置的模型文件夹路径。
 
@@ -88,7 +88,7 @@ std::shared_ptr<PaddlePredictor> predictor = CreatePaddlePredictor<MobileConfig>
 
 
 
-> **set_model_buffer(model_buffer, model_buffer_size, param_buffer, param_buffer_size)**
+## `set_model_buffer(model_buffer, model_buffer_size, param_buffer, param_buffer_size)`
 
 设置模型、参数的内存地址，当需要从内存加载模型时使用。
 
@@ -121,7 +121,7 @@ std::shared_ptr<PaddlePredictor> predictor = CreatePaddlePredictor<MobileConfig>
 
 
 
-> **model_from_memory()**
+## `model_from_memory()`
 
 是否从内存中加载模型，当使用`set_model_buffer`接口时返回`true`
 
@@ -135,7 +135,7 @@ std::shared_ptr<PaddlePredictor> predictor = CreatePaddlePredictor<MobileConfig>
 
 
 
-> **model_buffer()**
+## `model_buffer()`
 
 获取内存中模型结构数据。
 
@@ -149,7 +149,7 @@ std::shared_ptr<PaddlePredictor> predictor = CreatePaddlePredictor<MobileConfig>
 
 
 
-> **param_buffer()**
+## `param_buffer()`
 
 获取内存中模型参数数据。
 
@@ -163,7 +163,7 @@ std::shared_ptr<PaddlePredictor> predictor = CreatePaddlePredictor<MobileConfig>
 
 
 
-> **set_power_mode(mode)**
+## `set_power_mode(mode)`
 
 设置CPU能耗模式。若不设置，则默认使用`LITE_POWER_HIGH`。
 
@@ -179,7 +179,7 @@ std::shared_ptr<PaddlePredictor> predictor = CreatePaddlePredictor<MobileConfig>
 
 
 
-> **power_mode()**
+## `power_mode()`
 
 获取设置的CPU能耗模式。
 
@@ -193,7 +193,7 @@ std::shared_ptr<PaddlePredictor> predictor = CreatePaddlePredictor<MobileConfig>
 
 
 
-> **set_threads(threads)**
+## `set_threads(threads)`
 
 设置工作线程数。若不设置，则默认使用单线程。
 
@@ -209,7 +209,7 @@ std::shared_ptr<PaddlePredictor> predictor = CreatePaddlePredictor<MobileConfig>
 
 
 
-> **threads()**
+## `threads()`
 
 获取设置的工作线程数。
 
@@ -264,7 +264,7 @@ for (int i = 0; i < ShapeProduction(output_tensor->shape()); i += 100) {
 }
 ```
 
-> **GetInput(index)**
+## `GetInput(index)`
 
 获取输入Tensor指针，用来设置模型的输入数据。
 
@@ -278,7 +278,7 @@ for (int i = 0; i < ShapeProduction(output_tensor->shape()); i += 100) {
 
 
 
-> **GetOutput(index)**
+## `GetOutput(index)`
 
 获取输出Tensor的指针，用来获取模型的输出结果。
 
@@ -292,7 +292,7 @@ for (int i = 0; i < ShapeProduction(output_tensor->shape()); i += 100) {
 
 
 
-> **Run()**
+## `Run()`
 
 执行模型预测，需要在***设置输入数据后***调用。
 
@@ -306,7 +306,7 @@ for (int i = 0; i < ShapeProduction(output_tensor->shape()); i += 100) {
 
 
 
-> **GetVersion()**
+## `GetVersion()`
 
 用于获取当前lib使用的代码版本。若代码有相应tag则返回tag信息，如`v2.0-beta`；否则返回代码的`branch(commitid)`，如`develop(7e44619)`。
 
@@ -401,7 +401,7 @@ for (int i = 0; i < ShapeProduction(output_tensor->shape()); i += 100) {
 }
 ```
 
-> **Resize(shape)**
+## `Resize(shape)`
 
 设置Tensor的维度信息。
 
@@ -415,7 +415,7 @@ for (int i = 0; i < ShapeProduction(output_tensor->shape()); i += 100) {
 
 
 
-> **shape()**
+## `shape()`
 
 获取Tensor的维度信息。
 
@@ -429,7 +429,7 @@ for (int i = 0; i < ShapeProduction(output_tensor->shape()); i += 100) {
 
 
 
-> **data\<T\>()**
+## `data<T>()`
 
 ```c++
 template <typename T>
@@ -456,7 +456,7 @@ output_tensor->data<float>()
 
 
 
-> **mutable_data\<T\>()**
+## `mutable_data<T>()`
 
 ```c++
 template <typename T>
@@ -487,7 +487,7 @@ for (int i = 0; i < ShapeProduction(input_tensor->shape()); ++i) {
 
 
 
-> **SetLoD(lod)**
+## `SetLoD(lod)`
 
 设置Tensor的LoD信息。
 
@@ -501,7 +501,7 @@ for (int i = 0; i < ShapeProduction(input_tensor->shape()); ++i) {
 
 
 
-> **lod()**
+## `lod()`
 
 获取Tensor的LoD信息
 
