@@ -23,7 +23,7 @@ Paddle-Lite 提供了移动端的一键源码编译脚本 `lite/tools/build.sh`�
 
 #### 准备Docker镜像
 
-有两种方式准备Docker镜像，推荐方式一：从Dockerhub直接拉取Docker镜像
+有两种方式准备Docker镜像，推荐从Dockerhub直接拉取Docker镜像
 
 ```shell
 # 方式一：从Dockerhub直接拉取Docker镜像
@@ -36,12 +36,13 @@ mkdir mobile_image
 cp Dockerfile.mobile mobile_image/Dockerfile
 cd mobile_image
 docker build -t paddlepaddle/paddle-lite .
+
 # 镜像编译成功后，可用`docker images`命令，看到`paddlepaddle/paddle-lite`镜像。
 ```
 
 #### 进入Docker容器
 
-在拉取PaddleLite仓库代码的上层目录，执行如下代码，进入Docker容器：
+在拉取Paddle-Lite仓库代码的上层目录，执行如下代码，进入Docker容器：
 
 ```shell
 docker run -it \
@@ -91,7 +92,7 @@ docker rm <container-name>
 # 1. Install basic software
 apt update
 apt-get install -y --no-install-recommends \
-  gcc g++ git make wget python unzip adb
+  gcc g++ git make wget python unzip adb curl
 
 # 2. Prepare Java env.
 apt-get install -y default-jdk
@@ -223,8 +224,6 @@ sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
 
 #### 编译`full publish`动态库（**Mac OS下不支持**）
 
-注意：编译前请删除lite/api目录下的paddle_use_ops.h和paddle_use_kernels.h
-
 ##### Android
 ```shell
 ./lite/tools/build.sh \
@@ -245,12 +244,25 @@ sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
 
 ### 编译结果说明
 
-**编译最终产物位置**在 `build.lite.xxx.xxx.xxx` 下的 `inference_lite_lib.xxx.xxx` ，如 Android 下 ARMv7 的产物位于：
-![](https://user-images.githubusercontent.com/328693/63631174-5c53e580-c656-11e9-8726-d8cf7500a7f2.png)
+**编译最终产物位置**在 `build.lite.xxx.xxx.xxx` 下的 `inference_lite_lib.xxx.xxx` ，如 Android 下 ARMv8 的产物位于`inference_lite_lib.android.armv8`：
+
+![](https://user-images.githubusercontent.com/45189361/65375706-204e8780-dccb-11e9-9816-ab4563ce0963.png)
 
 **目录内容**（可能）如下：
 
-![](https://user-images.githubusercontent.com/328693/63631178-65dd4d80-c656-11e9-804e-c091963f6dc0.png)
+**Full_publish编译结果:**
+
+![](https://user-images.githubusercontent.com/45189361/65375704-19c01000-dccb-11e9-9650-6856c7a5bf82.png)
+
+**Tiny_publish结果:**
+
+![](https://user-images.githubusercontent.com/45189361/65375726-3bb99280-dccb-11e9-9903-8ce255371905.png)
+
+**IOS编译结果:**
+
+![](https://user-images.githubusercontent.com/45189361/65375726-3bb99280-dccb-11e9-9903-8ce255371905.png)
+
+
 
 **具体内容**说明：
 
@@ -275,7 +287,7 @@ sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
 - `java`  ：Java 示例 demo
   - `android`  : Java的 Android 示例
 
-4、  `java` 文件夹：包含 Jni 的动态库文件与相应的 Jar 包
+4、 `java` 文件夹：包含 Jni 的动态库文件与相应的 Jar 包
 
 - `jar` :  `PaddlePredictor.jar`
 - `so`  : Jni动态链接库  `libpaddle_lite_jni.so`
