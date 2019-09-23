@@ -10,7 +10,7 @@
 
 Paddle Lite is an updated version of Paddle-Mobile, an open-open source deep learning framework designed to make it easy to perform inference on mobile, embeded, and IoT devices. It is compatible with PaddlePaddle and pre-trained models from other sources.
 
-For tutorials, please see [PaddleLite Wiki](https://github.com/PaddlePaddle/Paddle-Lite/wiki).
+For tutorials, please see [PaddleLite Wiki](https://paddlepaddle.github.io/Paddle-Lite/).
 
 ## Key Features
 
