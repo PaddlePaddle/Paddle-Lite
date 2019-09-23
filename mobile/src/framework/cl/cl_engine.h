@@ -133,6 +133,18 @@ class CLEngine {
     free(max_work_item_sizes);
     return localWorkSizeInfo_;
   }
+  size_t GetKernelWorkSize(cl_kernel kernel) {
+    cl_int status;
+    size_t kernel_work_size = 0;
+    status =
+        clGetKernelWorkGroupInfo(kernel, devices_[0], CL_KERNEL_WORK_GROUP_SIZE,
+                                 sizeof(size_t), &kernel_work_size, NULL);
+    if (status != CL_SUCCESS) {
+      return 0;
+    }
+    DLOG << "kernel_work_size: " << kernel_work_size;
+    return kernel_work_size;
+  }
 
   std::unique_ptr<_cl_program, CLProgramDeleter> CreateProgramWith(
       cl_context context, std::string file_name) {
