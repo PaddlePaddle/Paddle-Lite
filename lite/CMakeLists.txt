@@ -58,7 +58,7 @@ if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM)
     endif(LITE_WITH_NPU)
     if (LITE_WITH_FPGA)
         set(INFER_LITE_PUBLISH_ROOT "${INFER_LITE_PUBLISH_ROOT}.fpga")
-    endif(LITE_WITH_NPU)
+    endif(LITE_WITH_FPGA)
     message(STATUS "publish inference lib to ${INFER_LITE_PUBLISH_ROOT}")
 
     # The final target for publish lite lib

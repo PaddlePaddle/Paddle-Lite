@@ -276,6 +276,10 @@ void BeamSearchDecodeCompute::Run() {
                                param.end_id);
 
   func.apply<float>();
+
+  // when decode finish, we clear ids and scores
+  param.ids->clear();
+  param.scores->clear();
 }
 
 }  // namespace arm

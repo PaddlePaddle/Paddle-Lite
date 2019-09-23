@@ -212,7 +212,7 @@ void TestModel(const std::vector<Place>& valid_places,
                     init_score,  // init_score
                     init_idx,    // init_idx
                     trg_bias,    // trg_bias
-                    1,
+                    i * batch_size,
                     batch_size,
                     bos_idx);
     LOG(INFO) << "src_word:" << src_word->dims();
