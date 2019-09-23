@@ -36,13 +36,22 @@ title: C++ Demo
 
 编译完成后 `./build.lite.android.armv8.gcc/inference_lite_lib.android.armv8/` 文件夹下包含：
 
-{% highlight shell %}
-cxx/include/
-cxx/lib/libpaddle_api_full_bundled.a
-cxx/lib/libpaddle_api_light_bundled.a
-demo/cxx/  #其中包括{include  Makefile.def  mobile_light}
-third_party/gflags/
-{% endhighlight %}
+- cxx
+	- include (头文件文件夹)
+	- lib          (库文件文件夹)
+		- libpaddle_api_full_bundled.a
+		- libpaddle_api_light_bundled.a
+		- libpaddle_light_api_shared.so
+		- libpaddle_full_api_shared.so
+- demo 
+	- cxx  （C++ demo）
+		- mobile_light  (light api demo)
+		- mobile_full    (full api demo)
+		- Makefile.def
+		- include
+- third_party  （第三方库文件夹）
+	- gflags
+
 
 ## 准备执行环境
 
@@ -142,7 +151,7 @@ MobileConfig config;
 
 // 2. Load model
 config.set_model_dir("path to your model directory"); // model dir
-//load model: Lite supports loading model from file or from memory (naive buffer from optimized model)
+/*load model: Lite supports loading model from file or from memory (naive buffer from optimized model)
 //Method One: Load model from memory:
 void set_model_buffer(const char* model_buffer,
                     size_t model_buffer_size,
