@@ -44,4 +44,4 @@ x2paddle --framework tensorflow \
 
 ## 问题反馈
 
-X2Paddle使用时存在问题时，欢迎您将问题或Bug报告以[Github Issues](https://github.com/PaddlePaddle/X2Paddle/issues)的形式提交给我们，我们会实时跟进。
+X2Paddle使用存在问题时，欢迎您将问题或Bug报告以[Github Issues](https://github.com/PaddlePaddle/X2Paddle/issues)的形式提交给我们，我们会实时跟进。
