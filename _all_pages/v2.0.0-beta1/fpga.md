@@ -16,7 +16,6 @@ Lite支持fpga作为后端硬件进行模型推理，其主要特性如下：
 - 对于fpga暂不支持的kernel，均会切回arm端运行，实现arm+fpga混合布署运行
 
 - 目前fpga成本功耗都较低，Lite基于fpga的模型性能远远好于arm端，可作为边缘设备首选硬件
-# 编译
 
 需要提前准备带有fpgadrv.ko的fpga开发板（如edgeboard开发板）和Lite代码
 
@@ -88,23 +87,40 @@ chmod +x test_resnet50_fpga
 
 代码示例：
 ```cpp
-lite::Predictor predictor;
-std::vector<Place> valid_places(
-      {Place{TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)},
-       Place{TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNHWC)}});
-Place preferred_place = Place{TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)};
+#include "paddle_api.h"         
+#include "paddle_use_kernels.h"  
+#include "paddle_use_ops.h"      
+#include "paddle_use_passes.h"
+using namespace paddle::lite_api;
 
-predictor.Build(model_dir, preferred_place, valid_places);
+std::vector<Place> valid_places({Place{TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)},
+Place{TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW)}});
+std::string model_dir = "my_model";
+std::string model_file = model_dir + "/model"; 
+std::string params_file = model_dir + "/params";
 
-auto* input_tensor = predictor.GetInput(0);
-input_tensor->Resize(DDim(std::vector<DDim::value_type>({1, 3, 224, 224})));
-auto* data = input_tensor->mutable_data<float>();
-auto item_size = input_tensor->dims().production();
-//假设设置输入数据全为1
-for (int i = 0; i < item_size; i++) {
-  data[i] = 1;
+// 1. Set CxxConfig
+CxxConfig config;
+config.set_model_dir(model_dir);
+config.set_model_file(model_file);
+config.set_param_file(params_file);
+config.set_preferred_place(Place{TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)});
+config.set_valid_places(valid_places);
+
+// 2. Create PaddlePredictor by CxxConfig
+predictor = CreatePaddlePredictor<CxxConfig>(config);
+
+// 3. Set input data
+std::unique_ptr<Tensor> input_tensor(std::move(predictor->GetInput(0)));
+input_tensor->Resize(shape_t({1, 3, 224, 224}));
+auto* input = input_tensor->mutable_data<float>();
+read_image(value, input);
+
+// 4. Run predictor
+for (int i = 0;i < 2; i++) {
+   predictor->Run();
 }
-
-predictor.Run();
-auto* out = predictor.GetOutput(0);
+// 5. Get output
+std::unique_ptr<const Tensor> output_tensor；
+std::move(predictor->GetOutput(0)));
 ```
