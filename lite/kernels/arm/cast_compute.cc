@@ -53,6 +53,12 @@ void CastCompute::Run() {
     // float>);
     // todo: the input type actually is float.
     memcpy(out_data, x_data_begin, sizeof(float) * param.X->numel());
+  } else if (param.in_dtype == 20 && param.out_dtype == 5) {  // uint8->float32
+    const unsigned char* x_data_begin = param.X->data<unsigned char>();
+    const unsigned char* x_data_end = x_data_begin + param.X->numel();
+    float* out_data = param.Out->mutable_data<float>();
+    std::transform(
+        x_data_begin, x_data_end, out_data, TransOp<unsigned char, float>);
   } else {
     LOG(FATAL) << "other has not been implemented";
   }
