@@ -44,7 +44,7 @@ Paddle-Lite 提供了移动端的一键源码编译脚本 `lite/tools/build.sh`�
 
 #### 准备Docker镜像
 
-有两种方式准备Docker镜像，推荐方式一：从Dockerhub直接拉取Docker镜像
+有两种方式准备Docker镜像，推荐从Dockerhub直接拉取Docker镜像
 
 ```shell
 # 方式一：从Dockerhub直接拉取Docker镜像
@@ -57,12 +57,13 @@ mkdir mobile_image
 cp Dockerfile.mobile mobile_image/Dockerfile
 cd mobile_image
 docker build -t paddlepaddle/paddle-lite .
+
 # 镜像编译成功后，可用`docker images`命令，看到`paddlepaddle/paddle-lite`镜像。
 ```
 
 #### 进入Docker容器
 
-在拉取PaddleLite仓库代码的上层目录，执行如下代码，进入Docker容器：
+在拉取Paddle-Lite仓库代码的上层目录，执行如下代码，进入Docker容器：
 
 ```shell
 docker run -it \
@@ -112,7 +113,7 @@ docker rm <container-name>
 # 1. Install basic software
 apt update
 apt-get install -y --no-install-recommends \
-  gcc g++ git make wget python unzip adb
+  gcc g++ git make wget python unzip adb curl
 
 # 2. Prepare Java env.
 apt-get install -y default-jdk
@@ -201,8 +202,8 @@ git checkout <release-version-tag>
 | --arm_abi  |必选，选择编译的arm版本，其中`armv7hf`为ARMLinux编译时选用| `armv8`、`armv7`、`armv7hf`|
 | --arm_lang |arm_os=android时必选，选择编译器 | `gcc`、`clang`|
 | --android_stl |arm_os=android时必选，选择静态链接STL或动态链接STL | `c++_static`、`c++_shared`|
-| --build_extra | 可选，是否编译控制流相关op、kernel。（**编译demo时必须选择为ON**）      | `ON`、`OFF` |                               
-| target |必选，选择编译模式，`tiny_publish`为编译移动端部署库、`full_publish`为带依赖的移动端部署库、`test`为移动端单元测试、`ios`为编译ios端`tiny_publish` | `tiny_publish`、`full_publish`、`test`、 `ios` | 
+| --build_extra | 可选，是否编译控制流相关op、kernel。（**编译demo时必须选择为ON**）      | `ON`、`OFF` |
+| target |必选，选择编译模式，`tiny_publish`为编译移动端部署库、`full_publish`为带依赖的移动端部署库、`test`为移动端单元测试、`ios`为编译ios端`tiny_publish` | `tiny_publish`、`full_publish`、`test`、 `ios` |
 
 ### 编译代码
 
@@ -244,8 +245,6 @@ sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
 
 #### 编译`full publish`动态库（**Mac OS下不支持**）
 
-注意：编译前请删除lite/api目录下的paddle_use_ops.h和paddle_use_kernels.h
-
 ##### Android
 ```shell
 ./lite/tools/build.sh \
@@ -264,12 +263,67 @@ sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
   full_publish
 ```
 
-编译最终产物位于 `build.lite.xxx.xxx.xxx` 下的 `inference_lite_lib.xxx.xxx` ，如 Android 下 ARMv7 的产物位于
-![](https://user-images.githubusercontent.com/328693/63631174-5c53e580-c656-11e9-8726-d8cf7500a7f2.png)
+### 编译结果说明
 
-相应的内容（可能）如下
+**编译最终产物位置**在 `build.lite.xxx.xxx.xxx` 下的 `inference_lite_lib.xxx.xxx` ，如 Android 下 ARMv8 的产物位于`inference_lite_lib.android.armv8`：
 
-![](https://user-images.githubusercontent.com/328693/63631178-65dd4d80-c656-11e9-804e-c091963f6dc0.png)
+![](https://user-images.githubusercontent.com/45189361/65375706-204e8780-dccb-11e9-9816-ab4563ce0963.png)
+
+**目录内容**（可能）如下：
+
+**Full_publish编译结果:**
+
+![](https://user-images.githubusercontent.com/45189361/65375704-19c01000-dccb-11e9-9650-6856c7a5bf82.png)
+
+**Tiny_publish结果:**
+
+![](https://user-images.githubusercontent.com/45189361/65375726-3bb99280-dccb-11e9-9903-8ce255371905.png)
+
+**IOS编译结果:**
+
+![](https://user-images.githubusercontent.com/45189361/65375726-3bb99280-dccb-11e9-9903-8ce255371905.png)
+
+
+
+**具体内容**说明：
+
+1、 `bin`文件夹：可执行工具文件 `paddle_code_generator`、`test_model_bin`
+
+2、 `cxx`文件夹：包含c++的库文件与相应的头文件
+
+- `include`  : 头文件
+- `lib` : 库文件
+  - 打包的静态库文件：
+    - `libpaddle_api_full_bundled.a`  ：包含 full_api 和 light_api 功能的静态库
+    - `libpaddle_api_light_bundled.a` ：只包含 light_api 功能的静态库
+  - 打包的动态态库文件：
+    - `libpaddle_full_api_shared.so` ：包含 full_api 和 light_api 功能的动态库
+    - `libpaddle_light_api_shared.so`：只包含 light_api 功能的动态库
+
+3、 `demo`文件夹：示例 demo ，包含 C++ demo 和  Java demo。
+
+- `cxx`   ： C++示例 demo
+  - `mobile_full` :  full_api 的使用示例
+  - `mobile_light` : light_api的使用示例
+- `java`  ：Java 示例 demo
+  - `android`  : Java的 Android 示例
+
+4、 `java` 文件夹：包含 Jni 的动态库文件与相应的 Jar 包
+
+- `jar` :  `PaddlePredictor.jar`
+- `so`  : Jni动态链接库  `libpaddle_lite_jni.so`
+
+5、 `third_party` 文件夹：第三方库文件`gflags`
+
+**注意：**
+
+1、 只有当`--arm_os=android` 时才会编译出：
+
+- Java库文件与示例：`Java`和`demo/java`
+
+- 动态库文件:`libpaddle_full_api_shared.so`,`libpaddle_light_api_shared.so`
+
+2、 `tiny_publish`编译结果不包括 C++ demo和 C++ 静态库，但提供 C++ 的 light_api 动态库、 Jni 动态库和Java demo
 
 ### 加速第三方依赖库的下载
 

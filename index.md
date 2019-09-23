@@ -3,7 +3,7 @@ layout: post
 title: Paddle-Lite文档
 ---
 
-Paddle-Lite 框架是 PaddleMobile 新一代架构，重点支持移动端推理预测，特点**高性能、多硬件、轻量级** 。支持PaddleFluid/TensorFlow/Caffe/ONNX模型的推理部署，目前已经支持 ARM CPU, Mali GPU, Adreno GPU, Huawei NPU 等>多种硬件，正在逐步增加 X86 CPU, Nvidia GPU 等多款硬件，相关硬件性能业内领先。
+Paddle-Lite 框架是 PaddleMobile 新一代架构，重点支持移动端推理预测，特点**高性能、多硬件、轻量级** 。支持PaddleFluid/TensorFlow/Caffe/ONNX模型的推理部署，目前已经支持 ARM CPU, Mali GPU, Adreno GPU, Huawei NPU 等多种硬件，正在逐步增加 X86 CPU, Nvidia GPU 等多款硬件，相关硬件性能业内领先。
 
 
 ## 简介
@@ -31,7 +31,8 @@ Paddle-Lite 框架是 PaddleMobile 新一代架构，重点支持移动端推理
 
 ## 进阶
 
-- [通过 X2Paddle 支持 Caffe, TensorFlow 模型]({{ site.baseurl }}/x2paddle)
+- [通过 X2Paddle 支持 Caffe, TensorFlow , ONNX 模型]({{ site.baseurl }}/develop/x2paddle)
+- [X2Paddle 支持模型列表]({{ site.baseurl }}/develop/x2paddle_models_doc)
 - [模型量化]({{ site.baseurl }}/develop/model_quantization)
 - [支持Op列表]({{ site.baseurl }}/develop/support_operation_list)
 - [新增Op方法]({{ site.baseurl }}/develop/add_new_operation)
@@ -45,6 +46,11 @@ Paddle-Lite 框架是 PaddleMobile 新一代架构，重点支持移动端推理
 
 - [开发基础须知]({{ site.baseurl }}/develop/for-developer)
 - [架构详解]({{ site.baseurl }}/develop/architecture-intro)
+
+## API文档
+
+- [C++ API文档]({{ site.baseurl }}/develop/cxx_api_doc)
+- [Java API文档]({{ site.baseurl }}/develop/java_api_doc)
 
 ## FAQ
 
