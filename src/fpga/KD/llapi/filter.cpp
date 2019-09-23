@@ -25,13 +25,25 @@ namespace zynqmp {
 namespace filter {
 
 static int FILTER_SIZE = 2048;
+static int COLUMN = 4;
 
 void set_filter_capacity(uint32_t cap) {
-  // FILTER_SIZE = cap;
+  FILTER_SIZE = cap;
+}
+
+void set_colunm(uint32_t column) {
+  // COLUMN = column;
+}
+
+// replace zynqmp_api.h  #define FILTER_NUM_ALIGNMENT
+int get_filter_num_alignment() {
+  return COLUMN * 4;
 }
 
 int calc_division_capacity(int chw) {
-  int n = FILTER_SIZE / ((chw + 15) / 16) * 32;
+  // int n = FILTER_SIZE / ((chw + 15) / 16) * 32;
+  int filter_num_alignment =  get_filter_num_alignment();
+  int n = FILTER_SIZE / ((chw + 15) / 16) * filter_num_alignment;
   return n < FILTER_SIZE ? n : FILTER_SIZE;
 }
 
@@ -115,8 +127,9 @@ void align_chw(int8_t* src, int8_t* dst, int num, int chw) {
 
 void align_num(int8_t* src, int8_t* dst, int num_per_div_before_alignment,
                int num, int align_chw) {
+  int filter_num_alignment =  get_filter_num_alignment();
   int num_per_div_after_alignment =
-      align_to_x(num_per_div_before_alignment, FILTER_NUM_ALIGNMENT);
+      align_to_x(num_per_div_before_alignment, filter_num_alignment);
 
   int div_num =
       (num + num_per_div_before_alignment - 1) / num_per_div_before_alignment;
@@ -180,10 +193,11 @@ int8_t* format_filter(float* data_in, int& mem_size_a, int num, int channel,
   int chw = channel * height * width;
 
   int division_capacity = calc_division_capacity(chw);
+  int filter_num_alignment =  get_filter_num_alignment();
   int num_per_div_before_alignment =
       calc_num_per_div(num, group_num, division_capacity);
   int num_per_div_after_alignment =
-      align_to_x(num_per_div_before_alignment, FILTER_NUM_ALIGNMENT);
+      align_to_x(num_per_div_before_alignment, filter_num_alignment);
   int div_num =
       (num + num_per_div_before_alignment - 1) / num_per_div_before_alignment;
   int num_after_alignment = num_per_div_after_alignment * div_num;
@@ -201,7 +215,7 @@ int8_t* format_filter(float* data_in, int& mem_size_a, int num, int channel,
     filter_max.push_back(1);
   }
 
-  saveToFile("q.txt", quantized_data, data_size);
+  // saveToFile("q.txt", quantized_data, data_size);
 
   int8_t* hwc_data =
       reinterpret_cast<int8_t*>(fpga_malloc(data_size * sizeof(int8_t)));
@@ -223,8 +237,9 @@ int8_t* format_filter(float* data_in, int& mem_size_a, int num, int channel,
     fpga_free(hwc_data);
   }
   if (num_after_alignment != num) {
+    int filter_num_alignment =  get_filter_num_alignment();
     int num_per_div_after_alignment =
-        align_to_x(num_per_div_before_alignment, FILTER_NUM_ALIGNMENT);
+        align_to_x(num_per_div_before_alignment, filter_num_alignment);
     // int div_num =
     //     (num + num_per_div_before_alignment - 1) / num_per_div_before_alignment;
     int num_element = div_num * num_per_div_after_alignment * chw_aligned;

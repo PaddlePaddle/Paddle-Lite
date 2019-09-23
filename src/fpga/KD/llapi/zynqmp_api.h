@@ -28,7 +28,7 @@ namespace zynqmp {
 typedef int16_t half;
 
 #define IMAGE_ALIGNMENT 16           // Aligned to 16
-#define FILTER_NUM_ALIGNMENT 32      // Filter number aligned to 32
+// #define FILTER_NUM_ALIGNMENT 32   // Filter number aligned to 32  replace by filter.hpp "get_filter_num_alignment()"
 #define FILTER_ELEMENT_ALIGNMENT 16  // Filter element number aligned to 16
 #define BS_NUM_ALIGNMENT 8
 #define BIAS_NUM_ALIGNMENT 16
@@ -58,7 +58,7 @@ struct DeviceInfo {
   uint32_t filter_cap;
   uint32_t version;
   uint16_t device_type;
-  uint32_t reserved0;
+  uint32_t colunm;
   uint32_t reserved1;
   uint32_t reserved2;
   uint32_t reserved3;

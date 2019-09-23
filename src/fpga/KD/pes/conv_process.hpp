@@ -46,7 +46,9 @@ inline int get_split_num(Tensor* filter) {
              filter->shape().width();
   auto num = filter->shape().num();
   int div_capacity = filter::calc_division_capacity(chw);
-  int aligned_num = align_to_x(num ,FILTER_NUM_ALIGNMENT);
+  // int aligned_num = align_to_x(num ,FILTER_NUM_ALIGNMENT);
+  int filter_num_alignment = filter::get_filter_num_alignment();
+  int aligned_num = align_to_x(num, filter_num_alignment);
   return filter::calc_split_num(aligned_num, div_capacity);
 }
 
@@ -258,8 +260,9 @@ inline void split_filter_num(const ConvParam& c_param) {
            filter->shape().width();
   auto num = filter->shape().num();
   int div_capacity = filter::calc_division_capacity(chw);
-
-  int aligned_num = align_to_x(num / param.groups ,FILTER_NUM_ALIGNMENT) * param.groups;
+  int filter_num_alignment = filter::get_filter_num_alignment();
+  int aligned_num = align_to_x(num / param.groups, filter_num_alignment) * param.groups;
+  // int aligned_num = align_to_x(num / param.groups ,FILTER_NUM_ALIGNMENT) * param.groups;
   split_num = filter::calc_split_num(aligned_num, div_capacity);
 
   Shape& out_shape = out->shape();

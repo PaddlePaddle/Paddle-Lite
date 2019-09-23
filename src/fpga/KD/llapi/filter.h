@@ -25,6 +25,8 @@ namespace zynqmp {
 namespace filter {
 
 void set_filter_capacity(uint32_t cap);
+void set_colunm(uint32_t column);
+int get_filter_num_alignment();
 int calc_division_capacity(int chw);
 int calc_split_num(int num, int division_capacity);
 int calc_division_number(int num, int group_num, int division_capacity);

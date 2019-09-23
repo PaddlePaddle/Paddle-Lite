@@ -22,7 +22,7 @@ limitations under the License. */
 #include "llapi/zynqmp_api.h"
 #include "tensor.hpp"
 
-// #define PADDLE_MOBILE_DEBUG
+#define PADDLE_MOBILE_DEBUG
 
 namespace paddle_mobile {
 namespace zynqmp {
@@ -35,7 +35,7 @@ class Debugger {
   }
 
   void registerOutput(std::string op_type, Tensor* tensor) {
-    // tensor->printScale();
+    tensor->printScale();
     // tensor->saveToFile(op_type, true);
   }
 
