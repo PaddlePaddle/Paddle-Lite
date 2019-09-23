@@ -13,6 +13,10 @@ Lite支持fpga作为后端硬件进行模型推理，其主要特性如下：
 
 - Lite中fpga的kernel（feed、fetch除外）均以FP16、NHWC的格式作为输入输出格式，所有的weights和bias仍为FP32、NCHW的格式，feed的输入和fetch的输出均为FP32、NCHW格式的数据，在提升计算速度的同时能做到用户对数据格式无感知
 
+- 对于fpga暂不支持的kernel，均会切回arm端运行，实现arm+fpga混合布署运行
+
+- 目前fpga成本功耗都较低，Lite基于fpga的模型性能远远好于arm端，可作为边缘设备首选硬件
+
 
 # 编译
 
