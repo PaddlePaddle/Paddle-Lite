@@ -17,6 +17,8 @@ Lite支持fpga作为后端硬件进行模型推理，其主要特性如下：
 
 - 目前fpga成本功耗都较低，Lite基于fpga的模型性能远远好于arm端，可作为边缘设备首选硬件
 
+# 编译
+
 需要提前准备带有fpgadrv.ko的fpga开发板（如edgeboard开发板）和Lite代码
 
 CMAKE编译选项：
