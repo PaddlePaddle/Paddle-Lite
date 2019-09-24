@@ -390,15 +390,15 @@ inline void prepack_input_nxwc4_dw(const float* din,
 }
 
 inline void prepack_input_nxwc8_int8_dw(const int8_t* din,
-                                   int8_t* dout,
-                                   int cs,
-                                   int hs,
-                                   int he,
-                                   int ws,
-                                   int we,
-                                   int channel,
-                                   int width,
-                                   int height) {
+                                        int8_t* dout,
+                                        int cs,
+                                        int hs,
+                                        int he,
+                                        int ws,
+                                        int we,
+                                        int channel,
+                                        int width,
+                                        int height) {
   int n = he - hs;
   if (n <= 0) {
     LOG(FATAL) << "prepack_dw_input_int8, valid height must > zero";
@@ -410,27 +410,28 @@ inline void prepack_input_nxwc8_int8_dw(const int8_t* din,
   int pad_l = ws < 0 ? -ws : 0;
   int pad_r = we > width ? we - width : 0;
   int size_c = width * height;
+
   int valid_cnt = valid_w >> 3;
   int remain = valid_w & 7;
 
   int8_t zero_ptr[size_w * 2];  // NOLINT
   memset(zero_ptr, 0, size_w * 2);
 
-  for (int h = hs; h < he; ++h){
-    const int8_t *ptr_c0 = din + h * width + cs * size_c;
-    const int8_t *ptr_c1 = ptr_c0 + size_c;
-    const int8_t *ptr_c2 = ptr_c1 + size_c;
-    const int8_t *ptr_c3 = ptr_c2 + size_c;
-    const int8_t *ptr_c4 = ptr_c3 + size_c;
-    const int8_t *ptr_c5 = ptr_c4 + size_c;
-    const int8_t *ptr_c6 = ptr_c5 + size_c;
-    const int8_t *ptr_c7 = ptr_c6 + size_c;
-    if (h < 0 || h >= height){
+  for (int h = hs; h < he; ++h) {
+    const int8_t* ptr_c0 = din + h * width + cs * size_c;
+    const int8_t* ptr_c1 = ptr_c0 + size_c;
+    const int8_t* ptr_c2 = ptr_c1 + size_c;
+    const int8_t* ptr_c3 = ptr_c2 + size_c;
+    const int8_t* ptr_c4 = ptr_c3 + size_c;
+    const int8_t* ptr_c5 = ptr_c4 + size_c;
+    const int8_t* ptr_c6 = ptr_c5 + size_c;
+    const int8_t* ptr_c7 = ptr_c6 + size_c;
+    if (h < 0 || h >= height) {
       memset(dout, 0, 8 * size_w * sizeof(int8_t));
       dout += size_w * 8;
       continue;
-    } else if (cs + 8 > channel){
-      switch (cs + 8 - channel){
+    } else if (cs + 8 > channel) {
+      switch (cs + 8 - channel) {
         case 7:
           ptr_c1 = zero_ptr;
         case 6:
@@ -449,84 +450,83 @@ inline void prepack_input_nxwc8_int8_dw(const int8_t* din,
           break;
       }
     }
-    if (pad_l){
+    if (pad_l) {
       memset(dout, 0, pad_l * 8 * sizeof(int8_t));
       dout += pad_l * 8;
     }
-    if (valid_cnt){
+    if (valid_cnt) {
       int cnt = valid_cnt;
 #ifdef __aarch64__
       asm volatile(
-        /* main loop */
-        "1:\n"
-        "ldr d0,    [%[r0]], #8\n"
-        "ldr d1,    [%[r1]], #8\n"
-        "ldr d2,    [%[r2]], #8\n"
-        "ldr d3,    [%[r3]], #8\n"
-        "ldr d4,    [%[r4]], #8\n"
-        "ldr d5,    [%[r5]], #8\n"
-        "ldr d6,    [%[r6]], #8\n"
-        "ldr d7,    [%[r7]], #8\n"
-        "trn1 v8.8b,  v0.8b, v1.8b\n"
-        "trn2 v9.8b,  v0.8b, v1.8b\n"
-        "trn1 v10.8b, v2.8b, v3.8b\n"
-        "trn2 v11.8b, v2.8b, v3.8b\n"
-        "trn1 v12.8b, v4.8b, v5.8b\n"
-        "trn2 v13.8b, v4.8b, v5.8b\n"
-        "trn1 v14.8b, v6.8b, v7.8b\n"
-        "trn2 v15.8b, v6.8b, v7.8b\n"
-        "trn1 v0.4h,  v8.4h, v10.4h\n"
-        "trn2 v1.4h,  v8.4h, v10.4h\n"
-        "trn1 v2.4h,  v9.4h, v11.4h\n"
-        "trn2 v3.4h,  v9.4h, v11.4h\n"
-        "trn1 v4.4h,  v12.4h, v14.4h\n"
-        "trn2 v5.4h,  v12.4h, v14.4h\n"
-        "trn1 v6.4h,  v13.4h, v15.4h\n"
-        "trn2 v7.4h,  v13.4h, v15.4h\n"
-        "trn1 v8.2s,  v0.2s, v4.2s\n"
-        "trn1 v9.2s,  v2.2s, v6.2s\n"
-        "trn1 v10.2s, v1.2s, v5.2s\n"
-        "trn1 v11.2s, v3.2s, v7.2s\n"
-        "stp d8, d9, [%[ptr_out]], #16\n"
-        "trn2 v12.2s, v0.2s, v4.2s\n"
-        "trn2 v13.2s, v2.2s, v6.2s\n"
-        "stp d10, d11, [%[ptr_out]], #16\n"
-        "trn2 v14.2s, v1.2s, v5.2s\n"
-        "trn2 v15.2s, v3.2s, v7.2s\n"
-        "subs %w[cnt], %w[cnt], #1\n"
-        "stp d12, d13, [%[ptr_out]], #16\n"
-        "stp d14, d15, [%[ptr_out]], #16\n"
-        "bne    1b\n"
-        : [cnt] "+r" (cnt),
-          [r0] "+r" (ptr_c0),
-          [r1] "+r" (ptr_c1),
-          [r2] "+r" (ptr_c2),
-          [r3] "+r" (ptr_c3),
-          [r4] "+r" (ptr_c4),
-          [r5] "+r" (ptr_c5),
-          [r6] "+r" (ptr_c6),
-          [r7] "+r" (ptr_c7),
-          [ptr_out] "+r" (dout)
-        :
-        : "cc",
-          "memory",
-          "v0",
-          "v1",
-          "v2",
-          "v3",
-          "v4",
-          "v5",
-          "v6",
-          "v7",
-          "v8",
-          "v9",
-          "v10",
-          "v11",
-          "v12",
-          "v13",
-          "v14",
-          "v15"
-      );
+          /* main loop */
+          "1:\n"
+          "ldr d0,    [%[r0]], #8\n"
+          "ldr d1,    [%[r1]], #8\n"
+          "ldr d2,    [%[r2]], #8\n"
+          "ldr d3,    [%[r3]], #8\n"
+          "ldr d4,    [%[r4]], #8\n"
+          "ldr d5,    [%[r5]], #8\n"
+          "ldr d6,    [%[r6]], #8\n"
+          "ldr d7,    [%[r7]], #8\n"
+          "trn1 v8.8b,  v0.8b, v1.8b\n"
+          "trn2 v9.8b,  v0.8b, v1.8b\n"
+          "trn1 v10.8b, v2.8b, v3.8b\n"
+          "trn2 v11.8b, v2.8b, v3.8b\n"
+          "trn1 v12.8b, v4.8b, v5.8b\n"
+          "trn2 v13.8b, v4.8b, v5.8b\n"
+          "trn1 v14.8b, v6.8b, v7.8b\n"
+          "trn2 v15.8b, v6.8b, v7.8b\n"
+          "trn1 v0.4h,  v8.4h, v10.4h\n"
+          "trn2 v1.4h,  v8.4h, v10.4h\n"
+          "trn1 v2.4h,  v9.4h, v11.4h\n"
+          "trn2 v3.4h,  v9.4h, v11.4h\n"
+          "trn1 v4.4h,  v12.4h, v14.4h\n"
+          "trn2 v5.4h,  v12.4h, v14.4h\n"
+          "trn1 v6.4h,  v13.4h, v15.4h\n"
+          "trn2 v7.4h,  v13.4h, v15.4h\n"
+          "trn1 v8.2s,  v0.2s, v4.2s\n"
+          "trn1 v9.2s,  v2.2s, v6.2s\n"
+          "trn1 v10.2s, v1.2s, v5.2s\n"
+          "trn1 v11.2s, v3.2s, v7.2s\n"
+          "stp d8, d9, [%[ptr_out]], #16\n"
+          "trn2 v12.2s, v0.2s, v4.2s\n"
+          "trn2 v13.2s, v2.2s, v6.2s\n"
+          "stp d10, d11, [%[ptr_out]], #16\n"
+          "trn2 v14.2s, v1.2s, v5.2s\n"
+          "trn2 v15.2s, v3.2s, v7.2s\n"
+          "subs %w[cnt], %w[cnt], #1\n"
+          "stp d12, d13, [%[ptr_out]], #16\n"
+          "stp d14, d15, [%[ptr_out]], #16\n"
+          "bne    1b\n"
+          : [cnt] "+r"(cnt),
+            [r0] "+r"(ptr_c0),
+            [r1] "+r"(ptr_c1),
+            [r2] "+r"(ptr_c2),
+            [r3] "+r"(ptr_c3),
+            [r4] "+r"(ptr_c4),
+            [r5] "+r"(ptr_c5),
+            [r6] "+r"(ptr_c6),
+            [r7] "+r"(ptr_c7),
+            [ptr_out] "+r"(dout)
+          :
+          : "cc",
+            "memory",
+            "v0",
+            "v1",
+            "v2",
+            "v3",
+            "v4",
+            "v5",
+            "v6",
+            "v7",
+            "v8",
+            "v9",
+            "v10",
+            "v11",
+            "v12",
+            "v13",
+            "v14",
+            "v15");
 #else
       asm volatile(
           /* main loop */
@@ -566,11 +566,10 @@ inline void prepack_input_nxwc8_int8_dw(const int8_t* din,
             [r7] "+r"(ptr_c7),
             [ptr_out] "+r"(dout)
           :
-          : "cc", "memory", "q0", "q1", "q2", "q3"
-        );
-#endif // __aarch64__
+          : "cc", "memory", "q0", "q1", "q2", "q3");
+#endif  // __aarch64__
     }
-    for (int i = 0; i < remain; ++i){
+    for (int i = 0; i < remain; ++i) {
       dout[0] = *(ptr_c0++);
       dout[1] = *(ptr_c1++);
       dout[2] = *(ptr_c2++);
@@ -581,7 +580,7 @@ inline void prepack_input_nxwc8_int8_dw(const int8_t* din,
       dout[7] = *(ptr_c7++);
       dout += 8;
     }
-    if (pad_r){
+    if (pad_r) {
       memset(dout, 0, pad_r * 8 * sizeof(int8_t));
       dout += pad_r * 8;
     }
