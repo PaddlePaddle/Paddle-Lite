@@ -115,10 +115,9 @@ void conv_depthwise_3x3s1_int8(Dtype* dout,
         int32_t* pre_out = reinterpret_cast<int32_t*>(tmp_din + pre_in_size);
         auto pre_din = tmp_din;
 #endif
-        prepack_input_nxw_c8_int8(din_batch,
+        prepack_input_nxwc8_int8_dw(din_batch,
                                   pre_din,
                                   c,
-                                  c + hout_c_block,
                                   hs,
                                   he,
                                   ws,
