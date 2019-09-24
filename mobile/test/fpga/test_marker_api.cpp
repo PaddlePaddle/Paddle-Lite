@@ -104,7 +104,7 @@ void dump_stride_float(std::string filename,
 
 void dump_stride(std::string filename,
                  paddle_mobile::PaddleTensor input_tensor) {
-  if (input_tensor.dtypeid == type_id<float>().hash_code()) {
+  if (input_tensor.dtypeid == PaddlekTypeId_t::paddle_float) {
     dump_stride_float(filename, input_tensor);
   } else {
     std::cout << "only support dumping float data" << std::endl;
