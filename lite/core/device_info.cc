@@ -1102,13 +1102,13 @@ void DeviceInfo::SetCache(int l1size, int l2size, int l3size) {
   SetCacheInfo(0, 1, l1size);
   SetCacheInfo(1, 1, l2size);
   SetCacheInfo(2, 1, l3size);
-  workspace_.Resize({2 * (l1size + l2size)});
+  workspace_.Resize({llc_size()});
+  workspace_.mutable_data<int8_t>();
 }
 
-bool DeviceInfo::ExtendWorkspace(int size) {
+bool DeviceInfo::ExtendWorkspace(size_t size) {
   workspace_.Resize({size + llc_size()});
-  workspace_.mutable_data<int8_t>();
-  return true;
+  return workspace_.mutable_data<int8_t>() != nullptr;
 }
 
 #endif  // LITE_WITH_ARM

@@ -20,6 +20,25 @@ namespace kernels {
 namespace arm {
 
 template <>
+void DirectConv<PRECISION(kFloat), PRECISION(kFloat)>::ReInitWhenNeeded() {
+  auto& param = this->template Param<param_t>();
+  auto x_dims = param.x->dims();
+  auto w_dims = param.filter->dims();
+  auto o_dims = param.output->dims();
+  if (last_shape_ == x_dims) {
+    return;
+  }
+  auto& ctx = this->ctx_->template As<ARMContext>();
+  if (param.strides[0] == 2) {
+    ctx.ExtendWorkspace(
+        lite::arm::math::conv3x3s2_direct_workspace_size(param, &ctx));
+  } else {
+    ctx.ExtendWorkspace(
+        lite::arm::math::conv3x3s1_direct_workspace_size(param, &ctx));
+  }
+}
+
+template <>
 void DirectConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->template As<ARMContext>();
@@ -69,6 +88,9 @@ void DirectConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
                                             &ctx);
   }
 }
+
+template <>
+void DirectConv<PRECISION(kInt8), PRECISION(kFloat)>::ReInitWhenNeeded() {}
 
 template <>
 void DirectConv<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
@@ -125,6 +147,9 @@ void DirectConv<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
                                             w_scale_.data());
   }
 }
+
+template <>
+void DirectConv<PRECISION(kInt8), PRECISION(kInt8)>::ReInitWhenNeeded() {}
 
 template <>
 void DirectConv<PRECISION(kInt8), PRECISION(kInt8)>::Run() {

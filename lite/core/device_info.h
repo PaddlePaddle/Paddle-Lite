@@ -73,7 +73,7 @@ class DeviceInfo {
   T* workspace_data() {
     return reinterpret_cast<T*>(workspace_.mutable_data<int8_t>());
   }
-  bool ExtendWorkspace(int size);
+  bool ExtendWorkspace(size_t size);
 
  private:
   int core_num_;
