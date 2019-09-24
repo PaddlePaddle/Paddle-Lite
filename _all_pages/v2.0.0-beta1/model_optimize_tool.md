@@ -11,9 +11,15 @@ Lite架构在预测过程中表现出来的高性能得益于其丰富的优化�
 
 ### 下载model_optimize_tool
 
-```sh
-wget https://paddle-inference-dist.bj.bcebos.com/PaddleLite/model_optimize_tool
-chmod 777 model_optimize_tool
+从 [Paddle-Lite Release](https://github.com/PaddlePaddle/Paddle-Lite/releases/)官网下载最新版本的`model_optimize_tool`
+
+![mode_optimize_tool](https://user-images.githubusercontent.com/45189361/65481346-8d2e7100-dec7-11e9-848b-b237a2f4a3ff.png)
+
+注意：运行前需解压model_optimize_tool并添加可执行权限 
+
+```
+gunzip ./model_optimize_tool.gz
+chmod +x model_optimize_tool
 ```
 
 ### 编译model_optimize_tool
@@ -35,7 +41,7 @@ chmod 777 model_optimize_tool
 
 fluid模型有两种形式，combined形式（权重保存为一个param文件）和非combined形式（权重保存为一个一个单独的文件），model_optimize_tool支持对这两种形式的fluid模型进行直接优化。
 
-2、使用model_optimize_tool对模型进行优化(在电脑端执行)
+2、使用model_optimize_tool对模型进行优化(**需要在 x86 PC 端执行**)
 
 ```shell
 ./model_optimize_tool \
