@@ -176,22 +176,6 @@ if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND WITH_TESTING)
    #    FPGA_DEPS ${fpga_kernels})
 endif()
 
-# These tests needs CLI arguments, and is not supported in ARM CI.
-# TODO(Superjomn) support latter.
-lite_cc_test(test_light_api SRCS light_api_test.cc
-    DEPS light_api program mir_passes
-    CL_DEPS ${opencl_kernels}
-    FPGA_DEPS ${fpga_kernels}
-    ARGS --optimized_model=${LITE_MODEL_DIR}/lite_naive_model_opt SERIAL)
-
-lite_cc_test(test_apis SRCS apis_test.cc
-  DEPS cxx_api light_api ${ops}
-  CL_DEPS ${opencl_kernels}
-  X86_DEPS ${x86_kernels}
-    FPGA_DEPS ${fpga_kernels}
-  ARGS --model_dir=${LITE_MODEL_DIR}/lite_naive_model
-       --optimized_model=${LITE_MODEL_DIR}/lite_naive_model_opt SERIAL)
-
 lite_cc_library(paddle_api SRCS paddle_api.cc DEPS op_params tensor)
 
 #-----------------------------------------------------------------------------------------------------
@@ -215,6 +199,22 @@ if (NOT LITE_ON_TINY_PUBLISH)
 endif()
 bundle_static_library(paddle_api_light paddle_api_light_bundled bundle_light_api)
 #-----------------------------------------------------------------------------------------------------
+
+# These tests needs CLI arguments, and is not supported in ARM CI.
+# TODO(Superjomn) support latter.
+lite_cc_test(test_light_api SRCS light_api_test.cc
+        DEPS light_api program mir_passes paddle_api_light
+        CL_DEPS ${opencl_kernels}
+        FPGA_DEPS ${fpga_kernels}
+        ARGS --optimized_model=${LITE_MODEL_DIR}/lite_naive_model_opt SERIAL)
+
+lite_cc_test(test_apis SRCS apis_test.cc
+        DEPS cxx_api light_api ${ops} paddle_api_light
+        CL_DEPS ${opencl_kernels}
+        X86_DEPS ${x86_kernels}
+        FPGA_DEPS ${fpga_kernels}
+        ARGS --model_dir=${LITE_MODEL_DIR}/lite_naive_model
+        --optimized_model=${LITE_MODEL_DIR}/lite_naive_model_opt SERIAL)
 
 if (LITE_WITH_JAVA AND LITE_WITH_ARM)
     add_subdirectory(android)
