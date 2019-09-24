@@ -18,6 +18,7 @@ limitations under the License. */
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include "../../src/common/type_define.h"
 #include "../../src/io/paddle_inference_api.h"
 
 using namespace paddle_mobile;        // NOLINT
