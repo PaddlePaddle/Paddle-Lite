@@ -229,7 +229,7 @@ git checkout <release-version-tag>
 ```
 ios tiny publish支持的编译选项：
 * `--arm_os`: 可选ios或者ios64
-* `--arm_abi`: 可选armv7和armv8
+* `--arm_abi`: 可选armv7和armv8 (**注意**：当`arm_os=ios`时，只能选择`arm_abi=armv7`)
 * 如果mac编译过程中报错："Invalid CMAKE_DEVELOPER_ROOT: does not exist", 运行：
 ```shell
 sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
