@@ -36,10 +36,10 @@ CMAKE编译选项：
         -DLITE_WITH_ARM=ON \
         -DLITE_WITH_OPENMP=ON   \
         -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
-        -DWITH_TESTING=ON \
+        -DWITH_TESTING=OFF \
         -DLITE_WITH_FPGA=ON \
         -DARM_TARGET_OS=armlinux 
-    make -j2
+    make publish_inference -j2
 ```
 Lite提供fpga编译脚本，位于lite/tools/build_fpga.sh，在Lite根目录执行该脚本即可编译
 
