@@ -11,7 +11,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#pragma once
 
 #include <memory>
 #include <string>
@@ -19,34 +18,121 @@
 #include "lite/operators/op_params.h"
 #include "lite/utils/cp_logging.h"
 
+#include "lite/api/paddle_place.h"
+#include "lite/core/op_registry.h"
+#include "lite/core/target_wrapper.h"
+#include "lite/core/type_system.h"
+
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace opencl {
 
-class LayoutCompute
+// TODO(ysh329): add layout trans kernel
+void TransHwcToChw(Tensor* dest, const Tensor* src) {}
+void TransChwToHwc(Tensor* dest, const Tensor* src) {}
+
+class LayoutComputeBufferChwToImage2DHwc
+    : public KernelLite<TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNHWC)> {
+ public:
+  void Run() override {
+    auto& param = Param<operators::LayoutParam>();
+    param.y->mutable_data<float, cl::Image>(TARGET(kOpenCL));
+    // TODO(ysh329): add layout trans kernel
+    // TransChwToHwc(param.y, param.x);
+  }
+
+  std::string doc() const override { return "Trans Layout from NCHW to NHWC"; }
+};
+
+class LayoutComputeImage2DHwcToBufferChw
     : public KernelLite<TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW)> {
  public:
-  using param_t = operators::ElementwiseParam;
+  void Run() override {
+    auto& param = Param<operators::LayoutParam>();
+    param.y->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
+    // TODO(ysh329): add layout trans kernel
+    // TransChwToHwc(param.y, param.x);
+  }
 
-  void PrepareForRun() override;
-
-  void Run() override;
-
- protected:
-  void UpdateParams();
-
-  size_t batch_{1};
-  size_t channels_{1};
-  size_t num_{1};
-  std::string layout_in{};
-  std::string layout_out{};
-  std::string kernel_func_name_{"layout_trans"};
-  std::string build_options_{"-DCL_DTYPE=float"};
-  std::shared_ptr<cl::Event> event_{new cl::Event};
+  std::string doc() const override { return "Trans Layout from NHWC to NCHW"; }
 };
 
 }  // namespace opencl
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
+
+// BufferChwToImage2DHwc
+// [chw] -> [hwc]
+REGISTER_LITE_KERNEL(
+    layout,
+    kOpenCL,
+    kFloat,
+    kNHWC,
+    paddle::lite::kernels::opencl::LayoutComputeBufferChwToImage2DHwc,
+    buffer_chw_to_image2d_hwc_opencl_fp32)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kNCHW))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                       PRECISION(kFloat),
+                                       DATALAYOUT(kNHWC))})
+    .Finalize();
+
+// [chw] -> [hwc]
+REGISTER_LITE_KERNEL(
+    layout_once,
+    kOpenCL,
+    kFloat,
+    kNHWC,
+    paddle::lite::kernels::opencl::LayoutComputeBufferChwToImage2DHwc,
+    buffer_chw_to_image2d_hwc_opencl_fp32)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kNCHW))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                       PRECISION(kFloat),
+                                       DATALAYOUT(kNHWC))})
+    .Finalize();
+
+// Image2DHwcBufferChw
+// [hwc] -> [chw]
+REGISTER_LITE_KERNEL(
+    layout,
+    kOpenCL,
+    kFloat,
+    kNCHW,
+    paddle::lite::kernels::opencl::LayoutComputeImage2DHwcToBufferChw,
+    image2d_hwc_to_buffer_chw_opencl_fp32)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kNHWC))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                       PRECISION(kFloat),
+                                       DATALAYOUT(kNCHW))})
+    .Finalize();
+
+// [hwc] -> [chw]
+REGISTER_LITE_KERNEL(
+    layout_once,
+    kOpenCL,
+    kFloat,
+    kNCHW,
+    paddle::lite::kernels::opencl::LayoutComputeImage2DHwcToBufferChw,
+    image2d_hwc_to_buffer_chw_opencl_fp32)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kNHWC))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                       PRECISION(kFloat),
+                                       DATALAYOUT(kNCHW))})
+    .Finalize();

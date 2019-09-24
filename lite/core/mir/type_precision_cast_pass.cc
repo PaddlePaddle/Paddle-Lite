@@ -88,7 +88,7 @@ void PrecisionCastPass::AddCastInst(const Type& from,
   CHECK(in->IsArg());
   auto node_id = [&] { return graph->nodes().size(); };
   auto cast_op_output_name =
-      in->AsArg().name + "/trans/" + std::to_string(node_id());
+      in->AsArg().name + "/precision_trans/" + std::to_string(node_id());
   auto* cast_op_output_arg = graph->NewArgumentNode(cast_op_output_name);
   auto* cast_inst = graph->NewInstructNode();
 

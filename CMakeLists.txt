@@ -90,7 +90,6 @@ set(THIRD_PARTY_PATH "${CMAKE_BINARY_DIR}/third_party" CACHE STRING
         "A path setting third party libraries download & build directories.")
 
 # CMAKE_BUILD_TYPE
-set(CMAKE_BUILD_TYPE Debug CACHE STRING "set build type to debug")
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "RelWithDebInfo" CACHE STRING
             "Choose the type of build, options are: Debug Release RelWithDebInfo MinSizeRel"

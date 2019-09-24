@@ -34,10 +34,14 @@ std::vector<std::unique_ptr<KernelBase>> OpLite::CreateKernels(
             << place.DebugString() << " get " << ks.size() << " kernels";
     for (auto &&it : ks) {
       AttachKernel(it.get());
+      VLOG(5) << "it->summary():" << it->summary();
       kernels.emplace_back(std::move(it));
     }
   };
 
+  VLOG(5) << "kernel_type:" << kernel_type;
+  VLOG(5) << "kernels.size():" << kernels.size();
+  VLOG(5) << "kernel_type.empty():" << kernel_type.empty();
   if (!kernel_type.empty()) {
     Place place;
     std::string op_type, alias;
@@ -46,6 +50,7 @@ std::vector<std::unique_ptr<KernelBase>> OpLite::CreateKernels(
     CHECK(!kernels.empty()) << "no kernel for kernel type " << kernel_type;
     return kernels;
   }
+  VLOG(5) << "kernels.size():" << kernels.size();
 
   std::set<Place> place_set;
   for (auto place : places) {
@@ -64,6 +69,9 @@ std::vector<std::unique_ptr<KernelBase>> OpLite::CreateKernels(
   }
 
   VLOG(4) << "op " << op_type_ << " get " << kernels.size() << " kernels";
+  for (auto &k : kernels) {
+    VLOG(5) << "k->summary():" << k->summary();
+  }
   return kernels;
 }
 

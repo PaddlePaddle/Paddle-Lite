@@ -34,10 +34,34 @@ class FeedCompute
   }
 };
 
+class FeedComputeFloatNCHW
+    : public KernelLite<TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW)> {
+ public:
+  using param_t = operators::FeedParam;
+
+  void Run() override {
+    auto &param = Param<operators::FeedParam>();
+    VLOG(4) << "feed_list.size: " << param.feed_list->size();
+    VLOG(4) << "col " << param.col;
+    const lite::Tensor &feed_item = (*param.feed_list)[param.col];
+    param.out->ShareDataWith(feed_item);
+  }
+};
+
 }  // namespace host
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
+
+REGISTER_LITE_KERNEL(feed,
+                     kHost,
+                     kFloat,
+                     kNCHW,
+                     paddle::lite::kernels::host::FeedComputeFloatNCHW,
+                     def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
+    .Finalize();
 
 REGISTER_LITE_KERNEL(
     feed, kHost, kAny, kAny, paddle::lite::kernels::host::FeedCompute, def)

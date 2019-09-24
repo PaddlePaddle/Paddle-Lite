@@ -106,12 +106,29 @@ class KernelRegistry final {
               KernelRegistryForTarget<TARGET(kARM),
                                       PRECISION(kInt8),
                                       DATALAYOUT(kNCHW)> *,  //
+
               KernelRegistryForTarget<TARGET(kOpenCL),
                                       PRECISION(kFloat),
                                       DATALAYOUT(kNCHW)> *,  //
               KernelRegistryForTarget<TARGET(kOpenCL),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kNHWC)> *,  //
+              KernelRegistryForTarget<TARGET(kOpenCL),
+                                      PRECISION(kAny),
+                                      DATALAYOUT(kNHWC)> *,  //
+              KernelRegistryForTarget<TARGET(kOpenCL),
+                                      PRECISION(kAny),
+                                      DATALAYOUT(kNCHW)> *,  //
+              KernelRegistryForTarget<TARGET(kOpenCL),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kAny)> *,  //
+              KernelRegistryForTarget<TARGET(kOpenCL),
                                       PRECISION(kInt8),
                                       DATALAYOUT(kNCHW)> *,  //
+              KernelRegistryForTarget<TARGET(kOpenCL),
+                                      PRECISION(kAny),
+                                      DATALAYOUT(kAny)> *,  //
+
               KernelRegistryForTarget<TARGET(kNPU),
                                       PRECISION(kAny),
                                       DATALAYOUT(kAny)> *,  //
@@ -121,6 +138,7 @@ class KernelRegistry final {
               KernelRegistryForTarget<TARGET(kNPU),
                                       PRECISION(kInt8),
                                       DATALAYOUT(kNCHW)> *,  //
+
               KernelRegistryForTarget<TARGET(kFPGA),
                                       PRECISION(kFloat),
                                       DATALAYOUT(kNCHW)> *,  //
@@ -270,7 +288,8 @@ class KernelRegistor : public lite::Registor<KernelType> {
   op_type__##__##target__##__##precision__##__registor__
 #define LITE_KERNEL_REGISTER_INSTANCE(                   \
     op_type__, target__, precision__, layout__, alias__) \
-  op_type__##__##target__##__##precision__##__registor__instance__##alias__
+  op_type__##__##target__##__##precision__##__##layout__##registor__instance__##alias__  \\ NOLINT
+
 #define LITE_KERNEL_REGISTER_FAKE(op_type__, target__, precision__, alias__) \
   LITE_KERNEL_REGISTER_INSTANCE(op_type__, target__, precision__, alias__)
 

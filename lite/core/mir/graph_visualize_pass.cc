@@ -47,10 +47,33 @@ std::string Visualize(mir::SSAGraph* graph) {
                     {8, "darkorchid"}});
   for (auto& node : graph->mutable_nodes()) {
     std::string key;
+    // TODO(ysh329): print [target/precision/layout/device] but failed
     if (node.IsArg()) {
-      key = node.AsArg().name;
+      auto* t = node.AsArg().type;
+      std::string target = (nullptr != t) ? TargetToStr(t->target()) : "0";
+      std::string precision =
+          (nullptr != t) ? PrecisionToStr(t->precision()) : "0";
+      std::string layout = (nullptr != t) ? DataLayoutToStr(t->layout()) : "0";
+      int device = (nullptr != t) ? static_cast<int>(t->device()) : 0;
+      key = string_format("%s/%s/%s/%s/%d",
+                          node.AsArg().name.c_str(),
+                          target.c_str(),
+                          precision.c_str(),
+                          layout.c_str(),
+                          device);
+    } else if (node.IsStmt()) {
+      key = string_format("%s%d/%s",
+                          node.AsStmt().op_type().c_str(),
+                          id++,
+                          nullptr == node.AsStmt().op()->DebugString().c_str()
+                              ? "unknown"
+                              : node.AsStmt().op()->DebugString().c_str());
     } else {
-      key = string_format("%s%d", node.AsStmt().op_type().c_str(), id++);
+      key = string_format("%s%d",
+                          nullptr == node.AsStmt().op_type().c_str()
+                              ? "unknown"
+                              : node.AsStmt().op_type().c_str(),
+                          id++);
     }
 
     if (node.IsStmt()) {

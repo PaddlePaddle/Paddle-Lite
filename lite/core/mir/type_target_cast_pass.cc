@@ -87,7 +87,7 @@ void TypeTargetTransformPass::AddIoCopyInst(
   CHECK(in->IsArg());
   auto node_id = [&] { return graph->nodes().size(); };
   auto io_copy_output_name =
-      string_format("%s/trans/%d", in->AsArg().name.c_str(), node_id());
+      string_format("%s/target_trans/%d", in->AsArg().name.c_str(), node_id());
   // TODO(MyPandaShaoxiang) should set same place with input?
   auto* io_copy_output_arg = graph->NewArgumentNode(io_copy_output_name);
   auto* io_copy_inst = graph->NewInstructNode();
@@ -116,7 +116,14 @@ void TypeTargetTransformPass::AddIoCopyInst(
   for (auto& kernel : kernels) {
     const Type* in_arg_ty = kernel->GetInputDeclType("Input");
     const Type* out_arg_ty = kernel->GetOutputDeclType("Out");
+#ifdef LITE_WITH_OPENCL
+    // ignore [layout check] for layout trans from buffer to image2d
+    if (TargetCompatibleTo(*in_arg_ty, from) &&
+        PrecisionCompatibleTo(*in_arg_ty, from) &&
+        DeviceCompatibleTo(*in_arg_ty, from)) {
+#else
     if (TypeCompatible(*in_arg_ty, from)) {
+#endif
       is_found = true;
       selected_kernels.emplace_back(std::move(kernel));
       // we pick the kernel
@@ -126,9 +133,8 @@ void TypeTargetTransformPass::AddIoCopyInst(
     }
   }
   CHECK(is_found) << "Can't find a io_copy  kernel for io_copy op: " << from
-                  << ":" << in->AsArg().name << "->" << to << ":"
+                  << ":" << in->AsArg().name << " -> " << to << ":"
                   << inst_node->AsStmt().op_info()->Type();
-
   // Remove the old link
   RemoveDirectedLink(in, inst_node);
 

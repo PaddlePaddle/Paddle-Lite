@@ -73,15 +73,24 @@ class Optimizer {
 #ifdef LITE_WITH_LIGHT_WEIGHT_FRAMEWORK
            "lite_elementwise_add_activation_fuse_pass",  //
 #endif
-           "static_kernel_pick_pass",        //
+           "static_kernel_pick_pass",  // pick [only] kernels from original
+                                       // graph
+           "variable_place_inference_pass",  // inference arg/var's
+           // info(target/precision/layout/device)
+           // using kernel info
+           "argument_type_display_pass",  // debug pass: show arg-type-node's
+                                          // info
+                                          // (target/precision/layout/device)
+
+           "type_target_cast_pass",  // add io_copy/io_copy_once if meet
+                                     // different targets when last and next
+                                     // node
            "variable_place_inference_pass",  //
            "argument_type_display_pass",     //
 
-           "type_target_cast_pass",          //
-           "variable_place_inference_pass",  //
-           "argument_type_display_pass",     //
+           "io_copy_kernel_pick_pass",    //
+           "argument_type_display_pass",  //
 
-           "io_copy_kernel_pick_pass",       //
            "variable_place_inference_pass",  //
            "argument_type_display_pass",     //
 
@@ -89,12 +98,20 @@ class Optimizer {
            "variable_place_inference_pass",  //
            "argument_type_display_pass",     //
 
-           "type_layout_cast_pass",          //
+           "type_layout_cast_pass",  // add layout/layout_once op if meet
+                                     // different layout when last and next node
+           "argument_type_display_pass",  //
+
            "variable_place_inference_pass",  //
            "argument_type_display_pass",     //
 
            "runtime_context_assign_pass",
-           "memory_optimize_pass"}});
+           "argument_type_display_pass",  //
+#ifndef LITE_WITH_OPENCL
+           // TODO(ysh329): cause bug in graph
+           "memory_optimize_pass",
+#endif
+           "argument_type_display_pass"}});
     } else {
       RunPasses(passes);
     }

@@ -28,30 +28,24 @@ namespace mir {
 
 void TypeLayoutTransformPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   // Start from inputs of the graph, those should have place set.
-  LOG(INFO) << "--------------------- before layouttrans-------------:"
-            << "\n"
-            << Visualize(graph.get());
+  VLOG(4) << "\n" << Visualize(graph.get());
   std::list<Node*> nodes;
   for (auto& node : graph->mutable_nodes()) {
     nodes.push_back(&node);
   }
 
   LOG(INFO) << "nodes.size():" << nodes.size();
-
   for (auto& node : nodes) {
     LOG(INFO) << "!node->IsStmt():" << !node->IsStmt();
     if (!node->IsStmt()) continue;
     auto inlinks = node->inlinks;
-    LOG(INFO) << "inlinks.size():" << inlinks.size();
+    LOG(INFO) << "node->AsStmt().desc:" << node->AsStmt().desc
+              << " inlinks.size():" << inlinks.size();
     for (auto* in : inlinks) {
       ComplementInputs(graph.get(), node, in);
     }
   }
-  LOG(INFO) << "--------------------- after layouttrans-------------:"
-            << "\n"
-            << Visualize(graph.get());
-
-  VLOG(3) << "\n" << Visualize(graph.get());
+  VLOG(4) << "\n" << Visualize(graph.get());
 }
 
 void TypeLayoutTransformPass::ComplementInputs(SSAGraph* graph,
@@ -72,11 +66,10 @@ void TypeLayoutTransformPass::ComplementInputs(SSAGraph* graph,
   CHECK(inst.op_info()->GetInputArgname(in_arg_name, &tmp));
   auto decl_arg_type = inst.picked_kernel().GetInputDeclType(tmp);
   CHECK(in->AsArg().type);
-  LOG(INFO) << "tmp:" << tmp;
-  LOG(INFO) << "\n in->AsArg().name:" << in->AsArg().name
-            << "\n inst.op()->DebugString():" << inst.op()->DebugString()
+  LOG(INFO) << "\n tmp:" << tmp << "\n in->AsArg().name:" << in->AsArg().name
             << "\n *in->AsArg().type:" << *in->AsArg().type
-            << "\n *decl_arg_type:" << *decl_arg_type;
+            << "\n *decl_arg_type:" << *decl_arg_type
+            << "\n inst.op()->DebugString():" << inst.op()->DebugString();
 
   if (!DataLayoutCompatible(*in->AsArg().type, *decl_arg_type)) {
     LOG(INFO) << "found Layout unmatched tensor: " << in->AsArg().name
@@ -103,7 +96,7 @@ void TypeLayoutTransformPass::AddLayoutInst(
   CHECK(in->IsArg());
   auto node_id = [&] { return graph->nodes().size(); };
   auto layout_output_name =
-      string_format("%s/trans/%d", in->AsArg().name.c_str(), node_id());
+      string_format("%s/layout_trans/%d", in->AsArg().name.c_str(), node_id());
   auto* layout_output_arg = graph->NewArgumentNode(layout_output_name);
   auto* layout_inst = graph->NewInstructNode();
 
@@ -129,11 +122,18 @@ void TypeLayoutTransformPass::AddLayoutInst(
   for (auto& kernel : kernels) {
     const Type* in_arg_ty = kernel->GetInputDeclType("Input");
     const Type* out_arg_ty = kernel->GetOutputDeclType("Out");
+#ifdef LITE_WITH_OPENCL
+    // ignore [layout check] for layout trans from image2d to buffer
+    if (/*DataLayoutCompatibleTo(*in_arg_ty, from) &&*/
+        PrecisionCompatibleTo(*in_arg_ty, from) &&
+        DeviceCompatibleTo(*in_arg_ty, from)) {
+#else
     if (TypeCompatible(*in_arg_ty, from)) {
+#endif
       is_found = true;
       selected_kernels.emplace_back(std::move(kernel));
       // we pick the kernel
-      layout_inst->AsStmt(layout_type, std::move(kernels), layout_op);
+      layout_inst->AsStmt(layout_type, std::move(selected_kernels), layout_op);
       break;
     }
   }

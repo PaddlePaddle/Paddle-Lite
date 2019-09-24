@@ -37,6 +37,24 @@ class FetchCompute
   }
 };
 
+// for opencl
+class FetchComputeFloatNCHW
+    : public KernelLite<TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW)> {
+ public:
+  using param_t = operators::FeedParam;
+
+  void Run() override {
+    auto& param = Param<operators::FetchParam>();
+    auto* fetch_list = param.fetch_list;
+    if (fetch_list->size() <= static_cast<size_t>(param.col)) {
+      fetch_list->resize(param.col + 1);
+    }
+
+    auto& dst = fetch_list->at(param.col);
+    dst.ShareDataWith(*param.input);
+  }
+};
+
 }  // namespace host
 }  // namespace kernels
 }  // namespace lite
@@ -50,4 +68,18 @@ REGISTER_LITE_KERNEL(
     .BindOutput("Out",
                 {LiteType::GetTensorTy(
                     TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny), -1)})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(fetch,
+                     kHost,
+                     kFloat,
+                     kNCHW,
+                     paddle::lite::kernels::host::FetchComputeFloatNCHW,
+                     def)
+    .BindInput("X",
+               {LiteType::GetTensorTy(
+                   TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW), -1)})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(
+                    TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW), -1)})
     .Finalize();
