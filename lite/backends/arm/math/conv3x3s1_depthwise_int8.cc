@@ -115,16 +115,9 @@ void conv_depthwise_3x3s1_int8(Dtype* dout,
         int32_t* pre_out = reinterpret_cast<int32_t*>(tmp_din + pre_in_size);
         auto pre_din = tmp_din;
 #endif
-        prepack_input_nxwc8_int8_dw(din_batch,
-                                  pre_din,
-                                  c,
-                                  hs,
-                                  he,
-                                  ws,
-                                  we,
-                                  chin,
-                                  win,
-                                  hin);
+        prepack_input_nxwc8_int8_dw(
+            din_batch, pre_din, c, hs, he, ws, we, chin, win, hin);
+
         const int8_t* block_inr0 = pre_din;
         const int8_t* block_inr1 = block_inr0 + in_len;
         const int8_t* block_inr2 = block_inr1 + in_len;
