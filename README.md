@@ -3,14 +3,14 @@
 # Paddle Lite
 
 <!--[![Build Status](https://travis-ci.org/PaddlePaddle/Paddle-Lite.svg?branch=develop&longCache=true&style=flat-square)](https://travis-ci.org/PaddlePaddle/Paddle-Lite)-->
-[![Documentation Status](https://img.shields.io/badge/中文文档-最新-brightgreen.svg)](https://github.com/PaddlePaddle/Paddle-Lite/wiki)
+[![Documentation Status](https://img.shields.io/badge/中文文档-最新-brightgreen.svg)](https://paddlepaddle.github.io/Paddle-Lite/)
 [![License](https://img.shields.io/badge/license-Apache%202-blue.svg)](LICENSE)
 <!-- [![Release](https://img.shields.io/github/release/PaddlePaddle/Paddle-Mobile.svg)](https://github.com/PaddlePaddle/Paddle-Mobile/releases) -->
 
 
 Paddle Lite is an updated version of Paddle-Mobile, an open-open source deep learning framework designed to make it easy to perform inference on mobile, embeded, and IoT devices. It is compatible with PaddlePaddle and pre-trained models from other sources.
 
-For tutorials, please see [PaddleLite Wiki](https://paddlepaddle.github.io/Paddle-Lite/).
+For tutorials, please see [PaddleLite Document](https://paddlepaddle.github.io/Paddle-Lite/).
 
 ## Key Features
 
@@ -30,7 +30,7 @@ It also supports INT8 quantizations with [PaddleSlim model compression tools](ht
 
 On Huawei NPU and FPGA, the performance is also boosted.
 
-The latest benchmark is located at [benchmark](https://github.com/PaddlePaddle/Paddle-Lite/wiki/benchmark)
+The latest benchmark is located at [benchmark](https://paddlepaddle.github.io/Paddle-Lite/develop/benchmark/)
 
 ### High Compatibility
 
