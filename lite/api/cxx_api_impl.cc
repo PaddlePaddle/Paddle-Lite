@@ -15,6 +15,7 @@
 #include "lite/api/cxx_api.h"
 #include <string>
 #include "lite/api/paddle_api.h"
+#include "lite/core/device_info.h"
 #include "lite/core/version.h"
 
 namespace paddle {
@@ -49,6 +50,9 @@ class CxxPaddleApiImpl : public lite_api::PaddlePredictor {
 CxxPaddleApiImpl::CxxPaddleApiImpl() {}
 
 void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
+#ifdef LITE_WITH_CUDA
+  Env<TARGET(kCUDA)>::Init();
+#endif
   auto places = config.valid_places();
   places.emplace_back(TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny));
   raw_predictor_.Build(config, places);

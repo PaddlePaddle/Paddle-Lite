@@ -32,7 +32,6 @@ bool GRUUnitOpLite::CheckShape() const {
   auto hidden_prev_dims = param_.hidden_prev->dims();
   auto weight_dims = param_.weight->dims();
 
-  int batch_size = input_dims[0];
   int input_size = input_dims[1];
   int frame_size = hidden_prev_dims[1];
   int weight_height = weight_dims[0];

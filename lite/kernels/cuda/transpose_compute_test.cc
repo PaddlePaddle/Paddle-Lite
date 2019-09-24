@@ -41,7 +41,6 @@ void nchw2nhwc_ref(lite::Tensor* input,
   int input_c = input->dims()[1];
   int input_h = input->dims()[2];
   int input_w = input->dims()[3];
-  int output_n = output->dims()[0];
   int output_c = output->dims()[1];
   int output_h = output->dims()[2];
   int output_w = output->dims()[3];
@@ -75,7 +74,6 @@ void nhwc2nchw_ref(lite::Tensor* input,
   int input_h = input->dims()[1];
   int input_w = input->dims()[2];
   int input_c = input->dims()[3];
-  int output_n = output->dims()[0];
   int output_h = output->dims()[1];
   int output_w = output->dims()[2];
   int output_c = output->dims()[3];
@@ -145,7 +143,6 @@ TEST(transpose_nchw, normal) {
   x_ref.Resize({N, C, H, W});
   out_ref.Resize({N, H, W, C});
 
-  auto* x_data = x.mutable_data<float>(TARGET(kCUDA));
   auto* x_cpu_data = x_cpu.mutable_data<float>();
   auto* out_cpu_data = out_cpu.mutable_data<float>();
   auto* x_ref_data = x_ref.mutable_data<float>();
@@ -200,7 +197,6 @@ TEST(transpose_nhwc, normal) {
   x_ref.Resize({N, H, W, C});
   out_ref.Resize({N, C, H, W});
 
-  auto* x_data = x.mutable_data<float>(TARGET(kCUDA));
   auto* x_cpu_data = x_cpu.mutable_data<float>();
   auto* out_cpu_data = out_cpu.mutable_data<float>();
   auto* x_ref_data = x_ref.mutable_data<float>();
@@ -253,7 +249,6 @@ TEST(transpose, normal) {
   x_ref.Resize({C, H, W});
   out_ref.Resize({W, C, H});
 
-  auto* x_data = x.mutable_data<float>(TARGET(kCUDA));
   auto* x_cpu_data = x_cpu.mutable_data<float>();
   auto* out_cpu_data = out_cpu.mutable_data<float>();
   auto* x_ref_data = x_ref.mutable_data<float>();

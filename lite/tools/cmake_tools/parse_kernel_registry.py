@@ -30,7 +30,6 @@ with open(ops_list_path) as f:
     paths = set([path for path in f])
     for path in paths:
         with open(path.strip()) as g:
-            print 'path: ', path
             c = g.read()
             kernel_parser = RegisterLiteKernelParser(c)
             kernel_parser.parse()

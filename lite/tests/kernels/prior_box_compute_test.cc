@@ -125,7 +125,6 @@ void prior_box_compute_ref(const lite::Tensor* input,
       if (fixed_size_.size() > 0) {
         for (int s = 0; s < fixed_size_.size(); ++s) {
           int fixed_size = fixed_size_[s];
-          int com_idx = 0;
           box_width = fixed_size;
           box_height = fixed_size;
 

@@ -126,10 +126,10 @@ TEST(concat, compute_input_multi) {
   lite::Tensor tensorC_ref;
   lite::Tensor tensorD_ref;
 
-  DDimLite ddimA({1, 3, 1, 2});
-  DDimLite ddimB({1, 4, 1, 2});
-  DDimLite ddimC({1, 5, 1, 2});
-  DDimLite ddimD({1, 6, 1, 2});
+  DDimLite ddimA({1, 3, 38, 38});
+  DDimLite ddimB({1, 4, 38, 38});
+  DDimLite ddimC({1, 5, 38, 38});
+  DDimLite ddimD({1, 6, 38, 38});
 
   tensorA.Resize(ddimA);
   tensorB.Resize(ddimB);
@@ -144,6 +144,9 @@ TEST(concat, compute_input_multi) {
   tensorC_ref.Resize(ddimC);
   tensorD_ref.Resize(ddimD);
 
+  out.Resize({1, 18, 38, 38});
+  out_cpu.Resize({1, 18, 38, 38});
+  out_ref.Resize({1, 18, 38, 38});
   auto* out_data = out.mutable_data<float>(TARGET(kCUDA));
   auto* out_cpu_data = out_cpu.mutable_data<float>();
   auto* out_ref_data = out_ref.mutable_data<float>();
@@ -215,7 +218,7 @@ TEST(concat, compute_input_multi) {
     concat_compute_ref(param_ref);
     LOG(INFO) << "concat_compute_ref end";
 
-    for (int i = 0; i < out.numel(); i++) {
+    for (int i = 0; i < out_ref.numel(); i++) {
       EXPECT_NEAR(out_cpu_data[i], out_ref_data[i], 1e-5);
     }
   }

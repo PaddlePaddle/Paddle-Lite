@@ -48,7 +48,6 @@ bool YoloBoxOp::CheckShape() const {
 
 bool YoloBoxOp::InferShape() const {
   auto* X = param_.X;
-  auto* ImgSize = param_.ImgSize;
   auto anchors = param_.anchors;
   int anchor_num = anchors.size() / 2;
   auto class_num = param_.class_num;

@@ -215,4 +215,4 @@ std::unique_ptr<RuntimeProgram> GenerateNPUProgramPass::GenProgram() {
 
 REGISTER_MIR_PASS(generate_npu_program_pass,
                   paddle::lite::mir::subgraph::GenerateNPUProgramPass)
-    .BindTargets({TARGET(kAny)});
+    .BindTargets({TARGET(kNPU)});

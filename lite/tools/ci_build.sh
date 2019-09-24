@@ -42,7 +42,7 @@ function prepare_workspace {
     cp ../${DEBUG_TOOL_PATH_PREFIX}/analysis_tool.py ./${DEBUG_TOOL_PATH_PREFIX}/
 
     # clone submodule
-    #git submodule update --init --recursive
+    # git submodule update --init --recursive
     prepare_thirdparty
 }
 
