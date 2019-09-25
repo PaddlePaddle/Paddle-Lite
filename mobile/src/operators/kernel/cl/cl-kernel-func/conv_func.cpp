@@ -163,7 +163,7 @@ void ConvAddBnReluPt1x2(framework::CLHelper *cl_helper,
   auto tmp2 = default_work_size.data()[2];
   int max_work_size = static_cast<const uint32_t>(kernel_work_size);
   if (preferred_lws_divisor > 1) {
-      max_work_size /= preferred_lws_divisor;
+    max_work_size /= preferred_lws_divisor;
   }
   if (preferred_lws > 0 && preferred_lws <= max_work_size) {
     max_work_size = preferred_lws;
@@ -310,9 +310,9 @@ void ConvAddBnRelu(framework::CLHelper *cl_helper,
     auto tmp1 = work_size[1];
     auto tmp2 = work_size[2];
     int max_work_size = static_cast<const uint32_t>(kernel_work_size);
-      if (preferred_lws_divisor > 1) {
-          max_work_size /= preferred_lws_divisor;
-      }
+    if (preferred_lws_divisor > 1) {
+      max_work_size /= preferred_lws_divisor;
+    }
     if (preferred_lws > 0 && preferred_lws <= max_work_size) {
       max_work_size = preferred_lws;
     }
@@ -530,9 +530,9 @@ void DWConvAddBnRelu(framework::CLHelper *cl_helper,
   auto tmp1 = default_work_size.data()[1];
   auto tmp2 = default_work_size.data()[2];
   int max_work_size = static_cast<const uint32_t>(kernel_work_size);
-    if (preferred_lws_divisor > 1) {
-        max_work_size /= preferred_lws_divisor;
-    }
+  if (preferred_lws_divisor > 1) {
+    max_work_size /= preferred_lws_divisor;
+  }
   if (preferred_lws > 0 && preferred_lws <= max_work_size) {
     max_work_size = preferred_lws;
   }
@@ -659,9 +659,9 @@ void SWConvAddBnRelu(framework::CLHelper *cl_helper,
   auto tmp1 = default_work_size.data()[1];
   auto tmp2 = default_work_size.data()[2];
   int max_work_size = static_cast<const uint32_t>(kernel_work_size);
-    if (preferred_lws_divisor > 1) {
-        max_work_size /= preferred_lws_divisor;
-    }
+  if (preferred_lws_divisor > 1) {
+    max_work_size /= preferred_lws_divisor;
+  }
   if (preferred_lws > 0 && preferred_lws <= max_work_size) {
     max_work_size = preferred_lws;
   }
@@ -1083,9 +1083,9 @@ void ConvTranspose3x3s2AddBnRelu(framework::CLHelper *cl_helper,
   auto tmp1 = default_work_size.data()[1];
   auto tmp2 = default_work_size.data()[2];
   int max_work_size = static_cast<const uint32_t>(kernel_work_size);
-    if (preferred_lws_divisor > 1) {
-        max_work_size /= preferred_lws_divisor;
-    }
+  if (preferred_lws_divisor > 1) {
+    max_work_size /= preferred_lws_divisor;
+  }
   if (preferred_lws > 0 && preferred_lws <= max_work_size) {
     max_work_size = preferred_lws;
   }
