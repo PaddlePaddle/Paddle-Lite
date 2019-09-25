@@ -591,7 +591,6 @@ void SWConvAddBnRelu(framework::CLHelper *cl_helper,
   int input_channel = param.Input()->dims()[1];
   int input_height = param.Input()->dims()[2];
   int input_width = param.Input()->dims()[3];
-
   int output_height = param.Output()->dims()[2];
   int output_width = param.Output()->dims()[3];
 
