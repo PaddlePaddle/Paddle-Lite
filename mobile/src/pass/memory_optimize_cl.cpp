@@ -121,8 +121,7 @@ void MemoryOptPassCl::operator()(
         }
       }
     }
-    DLOG << "fetch_var_nodes : " << fetch_var_nodes << "    "
-         << fetch_var_nodes[0]->name;
+
     // apply optimize
     while (!analysis_nodes_.empty()) {
       auto *node = analysis_nodes_.top();
@@ -180,12 +179,22 @@ void MemoryOptPassCl::ShareData(
       auto *var = scope->Var(node->name);
       auto *tensor = var->template GetMutable<framework::CLImage>();
       const int64_t numl = tensor->numel();
+      auto origin_tensor_dims = tensor->dims();
+
+      PADDLE_MOBILE_ENFORCE(origin_tensor_dims.size() == 4,
+                            "tensor dims must larger than 4");
+      // for super ,hack origin dims
+      if (target_dims.size() == 4) {
+        origin_tensor_dims = {origin_tensor_dims[0], origin_tensor_dims[1],
+                              target_dims[2], target_dims[3]};
+        tensor->Resize(origin_tensor_dims);
+      }
 
       const framework::DDim &image_dims =
-          normal_converter->InitImageDimInfoWith(tensor->dims());
+          normal_converter->InitImageDimInfoWith(origin_tensor_dims);
       int64_t image_dims_x = image_dims[0];
       int64_t image_dims_y = image_dims[1];
-      // classfy memorys into two parts
+      // classify memory into two parts
       if (image_dims_x > image_dims_y) {
         // choose a biggest tensor for reuse
         if (x_based_max_numl < numl) {
@@ -203,9 +212,6 @@ void MemoryOptPassCl::ShareData(
         y_based_max_x = std::max(y_based_max_x, image_dims_x);
         y_based_max_y = std::max(y_based_max_y, image_dims_y);
       }
-
-      PADDLE_MOBILE_ENFORCE(tensor->dims().size() == 4,
-                            "tensor dims must larger than 4");
     }
 
     PADDLE_MOBILE_ENFORCE(
@@ -230,7 +236,14 @@ void MemoryOptPassCl::ShareData(
     for (const auto &node : list) {
       auto *var = scope->Var(node->name);
       auto *tensor = var->template GetMutable<framework::CLImage>();
-      const framework::DDim &need_dims = tensor->dims();
+      auto need_dims = tensor->dims();
+
+      // for super ,hack origin dims
+      if (target_dims.size() == 4) {
+        need_dims = {need_dims[0], need_dims[1], target_dims[2],
+                     target_dims[3]};
+      }
+
       const framework::DDim &need_image_dims =
           normal_converter->InitImageDimInfoWith(need_dims);
       int64_t image_dims_x = need_image_dims[0];

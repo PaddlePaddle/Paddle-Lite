@@ -33,7 +33,7 @@ limitations under the License. */
 #include "pass/model_obfuscate.h"
 #ifdef PADDLE_MOBILE_CL
 #include "framework/cl/cl_image.h"
-#include "pass/memory_optimize_super.h"
+#include "pass/memory_optimize_cl.h"
 #endif
 
 namespace paddle_mobile {
@@ -122,6 +122,13 @@ Executor<Device, T>::Executor(const Program<Device> &program,
 #ifdef PADDLE_MOBILE_PROFILE
   printf("================[ op init profile ]==================\n");
   PrintProfile(profile);
+#endif
+
+#ifdef PADDLE_MOBILE_CL
+  if (!config.load_when_predict && !lod_mode) {
+    pass::MemoryOptPassCl()(program_desc_.get(), program_.scope.get(),
+                            config_.memory_optimization_level);
+  }
 #endif
 }
 
@@ -850,8 +857,8 @@ void Executor<GPU_CL, float>::SetInput(const Tensor &input,
       DLOG << "SetInput ---- > resize1";
       input_tensor->Resize(input.dims());
       input_tensor->mutable_data<float>();
-      //     InitNoPersistableMemory(*input_tensor);
-      pass::MemoryOptPassSuper()(program_desc_.get(), program_.scope.get(),
+      //          InitNoPersistableMemory(*input_tensor);
+      pass::MemoryOptPassCl()(program_desc_.get(), program_.scope.get(),
                                  config_.memory_optimization_level,
                                  input.dims());
     }
