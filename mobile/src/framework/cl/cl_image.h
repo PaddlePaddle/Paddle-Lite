@@ -146,20 +146,26 @@ class CLImage {
     initialized_ = true;
     DLOG << " end init cl image";
   }
-  // create fake size cl_mem for mem share
+  /**
+   *  create fake size cl_mem for mem share
+   */
   void InitFakeSizeImage(cl_context context, cl_command_queue command_queue,
-                         const DDim &need_dims, const DDim &real_dims) {
+                         const DDim &need_dims, const DDim &real_image_dims) {
     PADDLE_MOBILE_ENFORCE(tensor_data_ == nullptr,
                           " empty image tensor data shouldn't have value");
 
     CLImageConverterNormal *normal_converter = new CLImageConverterNormal();
-
-    real_image_dims = normal_converter->InitImageDimInfoWith(real_dims);
-    real_tensor_dims = real_dims;
-
+    // use real image dims to create mem
+    real_image_dims_ = real_image_dims;
+    InitCLImage(context, real_image_dims_[0], real_image_dims_[1], nullptr);
+    // cheat cl_image they got what they wanted
     image_dims_ = normal_converter->InitImageDimInfoWith(need_dims);
-    InitCLImage(context, image_dims_[0], image_dims_[1], nullptr);
-
+    DLOG << "InitFakeSizeImage ... ";
+    DLOG << "real_image_dims:  " << real_image_dims_;
+    DLOG << "image_dims_:  " << image_dims_;
+    PADDLE_MOBILE_ENFORCE(real_image_dims_[0] >= image_dims_[0] &&
+        real_image_dims_[1] >= image_dims_[1],
+                          "real image is not enough");
     tensor_dims_ = need_dims;
     command_queue_ = command_queue;
     image_converter_ = normal_converter;
@@ -167,16 +173,28 @@ class CLImage {
     initialized_ = true;
     DLOG << " end init cl image";
   }
-
-  void InitWithExitedMem(cl_context context, cl_command_queue command_queue,
-                         DDim need_dims, const CLImage &src) {
+  /**
+   * init cl mem with a exist cl mem
+   */
+  void InitWithExistMem(cl_context context, cl_command_queue command_queue,
+                        DDim need_dims, CLImage &src) {
     CLImageConverterNormal *normal_converter = new CLImageConverterNormal();
 
-    real_image_dims = normal_converter->InitImageDimInfoWith(src.dims());
-    real_tensor_dims = src.dims();
-
+    real_image_dims_ = src.real_image_dims_;
     image_dims_ = normal_converter->InitImageDimInfoWith(need_dims);
-    // InitCLImage(context, image_dims_[0], image_dims_[1], nullptr);
+
+    DLOG << "InitWithExistMem ... ";
+    DLOG << "real_image_dims:  " << real_image_dims_;
+    DLOG << "image_dims_:  " << image_dims_;
+    //    PADDLE_MOBILE_ENFORCE(real_image_dims[0] >= image_dims_[0] &&
+    //                              real_image_dims[1] >= image_dims_[1],
+    //                          "real image is not enough!");
+    if (real_image_dims_[0] < image_dims_[0] ||
+        real_image_dims_[1] < image_dims_[1]) {
+      DLOG << "real image is not enough!";
+      DLOG << "real_image_dims:  " << real_image_dims_;
+      DLOG << "image_dims_:  " << image_dims_;
+    }
     if (cl_image_ != src.cl_image_) {
       cl_image_.reset(src.cl_image_.get());
     }
@@ -289,9 +307,7 @@ class CLImage {
   DDim tensor_dims_;
   DDim image_dims_;
   // real image dims usually it is same as image_dims
-  DDim real_image_dims;
-  // real tensor dims usually it is same as tensor dims
-  DDim real_tensor_dims;
+  DDim real_image_dims_;
   float *tensor_data_ = nullptr;
   cl_context context_;
   cl_command_queue command_queue_;
