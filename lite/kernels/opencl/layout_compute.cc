@@ -29,17 +29,39 @@ namespace kernels {
 namespace opencl {
 
 // TODO(ysh329): add layout trans kernel
-void TransHwcToChw(Tensor* dest, const Tensor* src) {}
-void TransChwToHwc(Tensor* dest, const Tensor* src) {}
+void TransHwcToChw(Tensor* chw, const Tensor* hwc) {}
+void TransChwToHwc(Tensor* hwc, const Tensor* chw) {}
 
 class LayoutComputeBufferChwToImage2DHwc
     : public KernelLite<TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNHWC)> {
  public:
   void Run() override {
     auto& param = Param<operators::LayoutParam>();
-    param.y->mutable_data<float, cl::Image>(TARGET(kOpenCL));
-    // TODO(ysh329): add layout trans kernel
-    // TransChwToHwc(param.y, param.x);
+    CHECK(param.x->layout() == DATALAYOUT(kNCHW));
+    auto out_data = param.y->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
+    TransChwToHwc(param.y, param.x);
+  }
+
+  std::unique_ptr<type_infer_handler_t> GetTypeInferHandler() override {
+    std::unique_ptr<type_infer_handler_t> res(new type_infer_handler_t);
+
+    *res = [](const std::map<std::string, const Type*>& inputs,
+              const std::string& out) -> const Type* {
+      CHECK(!inputs.empty());
+      auto* type = inputs.at("Input");
+      CHECK(type->layout() == TARGET(kNCHW));
+
+      auto out_place = type->place();
+      out_place.layout = DATALAYOUT(kNHWC);
+      auto* out_type = Type::Get(type->id(),
+                                 out_place.target,
+                                 out_place.precision,
+                                 out_place.layout,
+                                 out_place.device);
+      return out_type;
+    };
+
+    return res;
   }
 
   std::string doc() const override { return "Trans Layout from NCHW to NHWC"; }
@@ -50,9 +72,31 @@ class LayoutComputeImage2DHwcToBufferChw
  public:
   void Run() override {
     auto& param = Param<operators::LayoutParam>();
-    param.y->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
-    // TODO(ysh329): add layout trans kernel
-    // TransChwToHwc(param.y, param.x);
+    CHECK(param.x->layout() == DATALAYOUT(kNHWC));
+    auto out_data = param.y->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
+    TransHwcToChw(param.y, param.x);
+  }
+
+  std::unique_ptr<type_infer_handler_t> GetTypeInferHandler() override {
+    std::unique_ptr<type_infer_handler_t> res(new type_infer_handler_t);
+
+    *res = [](const std::map<std::string, const Type*>& inputs,
+              const std::string& out) -> const Type* {
+      CHECK(!inputs.empty());
+      auto* type = inputs.at("Input");
+      CHECK(type->layout() == TARGET(kNHWC));
+
+      auto out_place = type->place();
+      out_place.layout = DATALAYOUT(kNCHW);
+      auto* out_type = Type::Get(type->id(),
+                                 out_place.target,
+                                 out_place.precision,
+                                 out_place.layout,
+                                 out_place.device);
+      return out_type;
+    };
+
+    return res;
   }
 
   std::string doc() const override { return "Trans Layout from NHWC to NCHW"; }
