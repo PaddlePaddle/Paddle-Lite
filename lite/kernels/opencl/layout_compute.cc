@@ -37,7 +37,6 @@ class LayoutComputeBufferChwToImage2DHwc
  public:
   void Run() override {
     auto& param = Param<operators::LayoutParam>();
-    CHECK(param.x->layout() == DATALAYOUT(kNCHW));
     auto out_data = param.y->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
     TransChwToHwc(param.y, param.x);
   }
@@ -49,7 +48,7 @@ class LayoutComputeBufferChwToImage2DHwc
               const std::string& out) -> const Type* {
       CHECK(!inputs.empty());
       auto* type = inputs.at("Input");
-      CHECK(type->layout() == TARGET(kNCHW));
+      CHECK(type->layout() == DATALAYOUT(kNCHW));
 
       auto out_place = type->place();
       out_place.layout = DATALAYOUT(kNHWC);
@@ -72,7 +71,6 @@ class LayoutComputeImage2DHwcToBufferChw
  public:
   void Run() override {
     auto& param = Param<operators::LayoutParam>();
-    CHECK(param.x->layout() == DATALAYOUT(kNHWC));
     auto out_data = param.y->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
     TransHwcToChw(param.y, param.x);
   }
@@ -84,7 +82,7 @@ class LayoutComputeImage2DHwcToBufferChw
               const std::string& out) -> const Type* {
       CHECK(!inputs.empty());
       auto* type = inputs.at("Input");
-      CHECK(type->layout() == TARGET(kNHWC));
+      CHECK(type->layout() == DATALAYOUT(kNHWC));
 
       auto out_place = type->place();
       out_place.layout = DATALAYOUT(kNCHW);

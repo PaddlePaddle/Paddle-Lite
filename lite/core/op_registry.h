@@ -288,11 +288,11 @@ class KernelRegistor : public lite::Registor<KernelType> {
   }
 
 // Kernel registry
-#define LITE_KERNEL_REGISTER(op_type__, target__, precision__) \
+#define LITE_KER3NEL_REGISTER(op_type__, target__, precision__) \
   op_type__##__##target__##__##precision__##__registor__
 #define LITE_KERNEL_REGISTER_INSTANCE(                   \
     op_type__, target__, precision__, layout__, alias__) \
-  op_type__##__##target__##__##precision__##__##layout__##registor__instance__##alias__  \\ NOLINT
+  op_type__##__##target__##__##precision__##__##layout__##registor__instance__##alias__  // NOLINT
 
 #define LITE_KERNEL_REGISTER_FAKE(op_type__, target__, precision__, alias__) \
   LITE_KERNEL_REGISTER_INSTANCE(op_type__, target__, precision__, alias__)
