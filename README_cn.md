@@ -1,13 +1,13 @@
 #  Paddle Lite
 
 <!--[![Build Status](https://travis-ci.org/PaddlePaddle/Paddle-Lite.svg?branch=develop&longCache=true&style=flat-square)](https://travis-ci.org/PaddlePaddle/Paddle-Lite)-->
-[![Documentation Status](https://img.shields.io/badge/中文文档-最新-brightgreen.svg)](https://github.com/PaddlePaddle/Paddle-Lite/wiki)
+[![Documentation Status](https://img.shields.io/badge/中文文档-最新-brightgreen.svg)](https://paddlepaddle.github.io/Paddle-Lite/)
 [![License](https://img.shields.io/badge/license-Apache%202-blue.svg)](LICENSE)
 <!-- [![Release](https://img.shields.io/github/release/PaddlePaddle/Paddle-Mobile.svg)](https://github.com/PaddlePaddle/Paddle-Mobile/releases) -->
 
 Paddle Lite为Paddle-Mobile的升级版，定位支持包括手机移动端在内更多场景的轻量化高效预测，支持更广泛的硬件和平台，是一个高性能、轻量级的深度学习预测引擎。在保持和PaddlePaddle无缝对接外，也兼容支持其他训练框架产出的模型。
 
-完整使用文档位于 [PaddleLite Wiki](https://paddlepaddle.github.io/Paddle-Lite/) 。
+完整使用文档位于 [PaddleLite 文档](https://paddlepaddle.github.io/Paddle-Lite/) 。
 
 ## 特性
 
@@ -21,7 +21,7 @@ Paddle Lite为Paddle-Mobile的升级版，定位支持包括手机移动端在�
 支持INT8量化计算，结合 [PaddleSlim 模型压缩工具](https://github.com/PaddlePaddle/models/tree/v1.5/PaddleSlim) 中 INT8量化训练功能，可以提供高精度高性能的预测能力。
 在Huawei NPU， FPGA上也具有有很好的性能表现。
 
-最新 Benchmark 位于 [benchmark](https://github.com/PaddlePaddle/Paddle-Lite/wiki/benchmark)。
+最新 Benchmark 位于 [benchmark](https://paddlepaddle.github.io/Paddle-Lite/develop/benchmark/)。
 
 ### 通用性
 硬件方面，Paddle Lite 的架构设计为多硬件兼容支持做了良好设计。除了支持ARM CPU、Mali GPU、Adreno GPU，还特别支持了华为 NPU，以及 FPGA 等边缘设备广泛使用的硬件。即将支持支持包括寒武纪、比特大陆等AI芯片，未来会增加对更多硬件的支持。
