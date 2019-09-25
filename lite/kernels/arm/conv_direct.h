@@ -178,10 +178,12 @@ class DirectConv : public KernelLite<TARGET(kARM), Ptype> {
                                                   w_scale_);
   }
 
+  virtual void ReInitWhenNeeded();
   virtual void Run();
 
   /// todo, support inplace weights transform
  protected:
+  DDim last_shape_;
   Tensor weights_;
   Tensor bias_;
   bool flag_trans_weights_{false};
