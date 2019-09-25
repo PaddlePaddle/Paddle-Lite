@@ -28,7 +28,6 @@ class Variable {
  public:
   template <typename T>
   const T& Get() const {
-    LOG(INFO) << "Variable::Get";
     return blob_.get<T>();
   }
 
@@ -40,7 +39,6 @@ class Variable {
 
   template <typename T>
   bool IsType() {
-    LOG(INFO) << "Variable::IsType";
     return blob_.type() == typeid(T).hash_code();
   }
 
