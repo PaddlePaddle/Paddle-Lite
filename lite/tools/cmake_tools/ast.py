@@ -317,5 +317,5 @@ if __name__ == '__main__':
 
         kernel_parser.parse()
 
-        for k in kernel_parser.kernels:
-            print k
+#        for k in kernel_parser.kernels:
+#            print k
