@@ -43,11 +43,7 @@ class LightPredictorImpl : public PaddlePredictor {
 };
 
 void LightPredictorImpl::Init(const MobileConfig& config) {
-// LightPredictor Only support NaiveBuffer backend in publish lib
-#ifdef LITE_WITH_ARM
-  lite::DeviceInfo::Init();
-  lite::DeviceInfo::Global().SetRunMode(config.power_mode(), config.threads());
-#endif
+  // LightPredictor Only support NaiveBuffer backend in publish lib
   raw_predictor_.reset(new lite::LightPredictor(config.model_dir(),
                                                 config.model_buffer(),
                                                 config.param_buffer(),
@@ -79,6 +75,30 @@ std::shared_ptr<PaddlePredictor> CreatePaddlePredictor(
   auto x = std::make_shared<LightPredictorImpl>();
   x->Init(config);
   return x;
+}
+
+MobileConfig::MobileConfig(PowerMode mode, int threads) {
+#ifdef LITE_WITH_ARM
+  lite::DeviceInfo::Global().SetRunMode(mode, threads);
+  mode_ = lite::DeviceInfo::Global().mode();
+  threads_ = lite::DeviceInfo::Global().threads();
+#endif
+}
+
+void MobileConfig::set_power_mode(paddle::lite_api::PowerMode mode) {
+#ifdef LITE_WITH_ARM
+  lite::DeviceInfo::Global().SetRunMode(mode, threads_);
+  mode_ = lite::DeviceInfo::Global().mode();
+  threads_ = lite::DeviceInfo::Global().threads();
+#endif
+}
+
+void MobileConfig::set_threads(int threads) {
+#ifdef LITE_WITH_ARM
+  lite::DeviceInfo::Global().SetRunMode(mode_, threads);
+  mode_ = lite::DeviceInfo::Global().mode();
+  threads_ = lite::DeviceInfo::Global().threads();
+#endif
 }
 
 }  // namespace lite_api
