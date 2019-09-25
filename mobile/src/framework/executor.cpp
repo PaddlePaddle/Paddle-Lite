@@ -125,7 +125,8 @@ Executor<Device, T>::Executor(const Program<Device> &program,
 #endif
 
 #ifdef PADDLE_MOBILE_CL
-  if (!config.load_when_predict && !lod_mode) {
+  if (!config.load_when_predict && !lod_mode &&
+      config_.memory_optimization_level != NoMemoryOptimization) {
     pass::MemoryOptPassCl()(program_desc_.get(), program_.scope.get(),
                             config_.memory_optimization_level);
   }
@@ -859,8 +860,7 @@ void Executor<GPU_CL, float>::SetInput(const Tensor &input,
       input_tensor->mutable_data<float>();
       //          InitNoPersistableMemory(*input_tensor);
       pass::MemoryOptPassCl()(program_desc_.get(), program_.scope.get(),
-                                 config_.memory_optimization_level,
-                                 input.dims());
+                              config_.memory_optimization_level, input.dims());
     }
   } else {
     DLOG << "SetInput ---- > resize2";
