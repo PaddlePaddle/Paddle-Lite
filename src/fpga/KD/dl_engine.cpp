@@ -25,10 +25,10 @@ DLEngine::DLEngine() {
   filter::set_filter_capacity(info_.filter_cap);
   filter::set_colunm(info_.colunm);
 
-  std::cout << " version:" << info_.version;
-  std::cout << " device_type:" << info_.device_type;
-  std::cout << " filter_cap:" << info_.filter_cap;
-  std::cout << " colunm:" << info_.colunm << std::endl;
+  // std::cout << " version:" << info_.version;
+  // std::cout << " device_type:" << info_.device_type;
+  // std::cout << " filter_cap:" << info_.filter_cap;
+  // std::cout << " colunm:" << info_.colunm << std::endl;
 }
 
 }  // namespace zynqmp
