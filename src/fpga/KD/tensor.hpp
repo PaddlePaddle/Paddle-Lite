@@ -115,7 +115,7 @@ class Tensor {
 
   template <typename Dtype>
   Dtype* mutableData() {
-    size_t memorySize = shape_->memorySize(CellSize(dataType_));
+    size_t memorySize = shape_->memorySize(CellSize(dataType_)) * mem_factor_;
     if (placeHolder_ != nullptr) {
       if (memorySize > placeHolder_->memorySize()) {
         placeHolder_.reset(new PlaceHolder(memorySize));
@@ -133,6 +133,10 @@ class Tensor {
     }
     return placeHolder_->memorySize();
     // return shape_->memorySize(CellSize(dataType_));
+  }
+
+  void setMemScale(int mem_factor) {
+    mem_factor_ = mem_factor;
   }
 
   void setDataType(DataType dataType) { this->dataType_ = dataType; }
@@ -381,7 +385,7 @@ class Tensor {
   }
 
   void save_file_with_name(std::string path) {
-    return;
+    // return;
     invalidate();
 
     Tensor* t;
@@ -394,7 +398,7 @@ class Tensor {
       unaligned.copyFrom(this);
       unaligned.unalignImage();
       unaligned.syncToCPU();
-      
+
       std::ofstream ofs;
       ofs.open(path);
       for (int i = 0; i < shape_->numel(); i++) {
@@ -409,7 +413,7 @@ class Tensor {
       ofs.close();
       return;
     }
-    
+
     std::ofstream ofs;
 
     ofs.open(path);
@@ -425,9 +429,7 @@ class Tensor {
     ofs.close();
   }
 
-  void releaseData() {
-    placeHolder_.reset();
-  }
+  void releaseData() { placeHolder_.reset(); }
 
   void readFromFile(std::string path) {
     std::ifstream file_stream;
@@ -461,6 +463,7 @@ class Tensor {
 
  private:
   int offset = 0;
+  int mem_factor_ = 1;
   std::shared_ptr<PlaceHolder> placeHolder_;
   Shape* shape_ = nullptr;
   DataType dataType_ = FP32;

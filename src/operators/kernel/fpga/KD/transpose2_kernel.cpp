@@ -116,6 +116,11 @@ void Transpose2Kernel<FPGA, float>::Compute(
   }
   auto xShape = param.OutputXShape();
   xShape->Resize({0, 0});  // TODO(chonwhite) fix it;
+
+#ifdef PADDLE_MOBILE_DEBUG
+  zynqmp::Debugger::get_instance().registerOutput("transpose2",
+                                                  param.Out()->zynqmpTensor());
+#endif
 }
 
 template class Transpose2Kernel<FPGA, float>;

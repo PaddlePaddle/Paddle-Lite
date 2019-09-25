@@ -19,6 +19,7 @@ limitations under the License. */
 
 #include <stdio.h>
 #include <iostream>
+#include "debugger.hpp"
 #include "pe_params.hpp"
 #include "tensor_util.hpp"
 

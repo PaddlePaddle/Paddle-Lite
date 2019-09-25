@@ -53,6 +53,13 @@ void PriorBoxKernel<FPGA, float>::Compute(const PriorBoxParam<FPGA>& param) {
   zynqmp::Context& context = const_cast<zynqmp::Context&>(param.context_);
   zynqmp::PriorBoxPE& pe = context.pe<zynqmp::PriorBoxPE>();
   pe.dispatch();
+
+#ifdef PADDLE_MOBILE_DEBUG
+  zynqmp::Debugger::get_instance().registerOutput(
+      "priobox_boxes", param.OutputBoxes()->zynqmpTensor());
+  zynqmp::Debugger::get_instance().registerOutput(
+      "priobox_variances", param.OutputBoxes()->zynqmpTensor());
+#endif
 }
 
 template class PriorBoxKernel<FPGA, float>;

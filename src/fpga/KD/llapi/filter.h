@@ -18,35 +18,29 @@ limitations under the License. */
 #include <cstdlib>
 #include <cwchar>
 
+#include <vector>
+
 namespace paddle_mobile {
 namespace zynqmp {
 namespace filter {
 
 void set_filter_capacity(uint32_t cap);
+void set_colunm(uint32_t column);
+int get_filter_num_alignment();
 int calc_division_capacity(int chw);
 int calc_split_num(int num, int division_capacity);
 int calc_division_number(int num, int group_num, int division_capacity);
 int calc_num_per_div(int num, int group_num, int division_capacity);
-void convert_to_hwc(char** data_in, int num, int channel, int height,
-                    int width);
-float find_max(float* data_in, int data_size);
-void quantize(float** data_in, int data_size, float max);
-void align_element(char** data_in, int num, int chw);
-void align_num(char** data_in, int num_per_div_before_alignment, int num,
-               int chw);
-void reorder(char** data_in, int num_after_alignment, int chw);
-size_t interleave(char** data_in, int num_after_alignment, int chw);
-size_t format_filter(float** data_in, int num, int channel, int height,
-                     int width, int group_num, float max);
 
-// void convert_fc_filter(char** data_in, int num, int chw);
-// void format_fc_filter(float** data_in, int num, int channel, int height,
-//                       int width, int group_num, float max);
+float find_max(float* data_in, int data_size);
+int8_t* format_filter(float* data_in, int& mem_size, int num, int channel,
+                      int height, int width, int group_num, float max,
+                      std::vector<float>& filter_max);
 
 void convert_to_hwn(int16_t** data_in, int num, int height, int width);
 size_t align_element_n(int16_t** data_in, int num, int height, int width);
-void quantize_to_fp16(float** data_in, int num, int height, int width,
-                      float* scale_ptr);
+// void quantize_to_fp16(float** data_in, int num, int height, int width,
+//                       float* scale_ptr);
 size_t format_dwconv_filter(float** data_in, int num, int height, int width,
                             float* scale_ptr);
 

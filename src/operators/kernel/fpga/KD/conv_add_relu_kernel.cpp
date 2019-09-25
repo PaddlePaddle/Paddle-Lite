@@ -89,7 +89,10 @@ void ConvAddReluKernel<FPGA, float>::Compute(
   }
 
   param.Output()->zynqmpTensor()->printScale();
-  // param.Output()->zynqmpTensor()->saveToFile("convaddrelu.txt");
+#ifdef PADDLE_MOBILE_DEBUG
+  zynqmp::Debugger::get_instance().registerOutput(
+      "conv_add_relu", param.Output()->zynqmpTensor());
+#endif
 }
 }  // namespace operators
 }  // namespace paddle_mobile

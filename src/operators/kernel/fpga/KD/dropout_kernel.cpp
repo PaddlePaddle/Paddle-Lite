@@ -53,15 +53,49 @@ bool DropoutKernel<FPGA, float>::Init(DropoutParam<FPGA>* param) {
   return true;
 }
 
+void cpu_compute(const DropoutParam<FPGA>& param) {
+    zynqmp::Tensor* input = param.InputX()->zynqmpTensor();
+    zynqmp::Tensor* output = param.Out()->zynqmpTensor();
+    zynqmp::Tensor float_input;
+    float* input_data = float_input.mutableData<float>(zynqmp::FP32, input->shape());
+    input->syncToCPU();
+    float_input.copyFrom(input);
+
+    zynqmp::float16* data_out = param.Out()->zynqmpTensor()->data<zynqmp::float16>();
+    float max = 0;
+    float scale_value = 1 - param.DropoutProb();
+    for (int i = 0; i < input->shape().numel(); ++i) {
+      float value = input_data[i] * scale_value;
+      data_out[i] = zynqmp::float_to_half(value);
+
+      if (value < 0) {
+        value = -value;
+      }
+      if (value > max) {
+        max = value;
+      }
+    }
+
+    output->scale()[0] = max / 127.0f;
+    output->scale()[1] = 127.0f / max;
+    output->flush();
+}
+
 template <>
 void DropoutKernel<FPGA, float>::Compute(const DropoutParam<FPGA>& param) {
   zynqmp::Context& context = const_cast<zynqmp::Context&>(param.context_);
-  zynqmp::ScalePE& pe = context.pe<zynqmp::ScalePE>();
-  pe.dispatch();
+  if (param.InputX()->numel() >= 2048) {
+    cpu_compute(param);
+  } else {
+    zynqmp::ScalePE& pe = context.pe<zynqmp::ScalePE>();
+    pe.dispatch();
+  }
 
-  param.Out()->zynqmpTensor()->printScale();
-  // param.InputX()->zynqmpTensor()->saveToFile("dropout_in.txt");
-  // param.Out()->zynqmpTensor()->saveToFile("dropout_out.txt");
+#ifdef PADDLE_MOBILE_DEBUG
+  zynqmp::Debugger::get_instance().registerOutput("dropout",
+                                                  param.Out()->zynqmpTensor());
+#endif
+
 }
 
 }  // namespace operators

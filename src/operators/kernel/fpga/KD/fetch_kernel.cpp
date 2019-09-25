@@ -48,6 +48,11 @@ void FetchKernel<FPGA, float>::Compute(const FetchParam<FPGA>& param) {
   zynqmp::Context& context = const_cast<zynqmp::Context&>(param.context_);
   OutputPE& pe = context.pe<OutputPE>();
   pe.dispatch();
+
+#ifdef PADDLE_MOBILE_DEBUG
+  zynqmp::Debugger::get_instance().registerOutput("fetch",
+                                                  output->zynqmpTensor());
+#endif
 }
 template class FetchKernel<FPGA, float>;
 

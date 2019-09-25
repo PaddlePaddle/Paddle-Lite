@@ -76,7 +76,7 @@ class ConcatPE : public PE {
       for (int j = 0; j < num; ++j) {
         int col_len = input_cols[j];
         const float16* src_prt = input[j]->data<float16>() + k * col_len;
-        memory::Copy(dst_ptr + col_idx, src_prt, sizeof(float16) * col_len);
+        memcpy(dst_ptr + col_idx, src_prt, sizeof(float16) * col_len);
         col_idx += col_len;
       }
     }

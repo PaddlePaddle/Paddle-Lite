@@ -42,8 +42,11 @@ void SoftmaxKernel<FPGA, float>::Compute(const SoftmaxParam<FPGA>& param) {
   softmax_param.input = param.InputX()->zynqmpTensor();
   softmax_param.output = param.Out()->zynqmpTensor();
   pe.dispatch();
-  // param.InputX()->zynqmpTensor()->saveToFile("softmax_in.txt");
-  // param.Out()->zynqmpTensor()->saveToFile("softmax.txt");
+
+#ifdef PADDLE_MOBILE_DEBUG
+  zynqmp::Debugger::get_instance().registerOutput("softmax",
+                                                  param.Out()->zynqmpTensor());
+#endif
 }
 
 }  // namespace operators

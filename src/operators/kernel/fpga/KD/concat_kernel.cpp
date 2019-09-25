@@ -48,8 +48,10 @@ void ConcatKernel<FPGA, float>::Compute(const ConcatParam<FPGA>& param) {
   zynqmp::ConcatPE& pe = context.pe<zynqmp::ConcatPE>();
   pe.dispatch();
 
-  //  param.Out()->zynqmpTensor()->printScale();
-  //  param.Out()->zynqmpTensor()->saveToFile("concat_", true);
+#ifdef PADDLE_MOBILE_DEBUG
+  zynqmp::Debugger::get_instance().registerOutput("concat",
+                                                  param.Out()->zynqmpTensor());
+#endif
 }
 template class ConcatKernel<FPGA, float>;
 

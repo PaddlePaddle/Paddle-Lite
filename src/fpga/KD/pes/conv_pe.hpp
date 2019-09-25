@@ -59,6 +59,8 @@ class ConvPE : public PE {
     if (!use_cpu_) {
       param_.filter->releaseData();
     }
+
+    // exit(-1);
   }
   void cpu_compute() {
     Tensor* input = param_.input;
@@ -172,6 +174,7 @@ class ConvPE : public PE {
       // std::cout << "\n ================== EW ================== \n";
       // }
     }
+
     return ret == 0;
   }
 

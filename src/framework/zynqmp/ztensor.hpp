@@ -265,24 +265,24 @@ class Tensor : public TensorBase {
     }
 
     void resize(DDim ddim, const kTypeId_t type) {
-      std::vector<int> v = framework::vectorize2int(ddim);
-      zynqmp::LayoutType layout_type = zynqmp::NCHW;
-      switch (v.size()) {
-        case 1:
-          layout_type = zynqmp::N;
-          break;
-        case 2:
-          layout_type = zynqmp::NC;
-          break;
-        case 3:
-          layout_type = zynqmp::NHW;
-          break;
-        case 4:
-          layout_type = zynqmp::NCHW;
-          break;
-      }
-      zynqmp::Shape input_shape(layout_type, v);
-      tensor_->mutableData<float>(convert_type(type), input_shape);
+      // std::vector<int> v = framework::vectorize2int(ddim);
+      // zynqmp::LayoutType layout_type = zynqmp::NCHW;
+      // switch (v.size()) {
+      //   case 1:
+      //     layout_type = zynqmp::N;
+      //     break;
+      //   case 2:
+      //     layout_type = zynqmp::NC;
+      //     break;
+      //   case 3:
+      //     layout_type = zynqmp::NHW;
+      //     break;
+      //   case 4:
+      //     layout_type = zynqmp::NCHW;
+      //     break;
+      // }
+      // zynqmp::Shape input_shape(layout_type, v);
+      // tensor_->mutableData<float>(convert_type(type), input_shape);
     }
 
     /*! the size of memory block. */

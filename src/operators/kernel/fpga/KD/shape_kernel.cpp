@@ -40,6 +40,11 @@ bool ShapeKernel<FPGA, float>::Init(ShapeParam<FPGA>* param) {
 template <>
 void ShapeKernel<FPGA, float>::Compute(const ShapeParam<FPGA>& param) {
   ShapeCompute<float>(param);
+
+#ifdef PADDLE_MOBILE_DEBUG
+  zynqmp::Debugger::get_instance().registerOutput("shape",
+                                                  param.Out()->zynqmpTensor());
+#endif
 }
 
 template class ShapeKernel<FPGA, float>;

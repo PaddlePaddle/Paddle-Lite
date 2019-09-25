@@ -39,15 +39,14 @@ bool NormKernel<FPGA, float>::Init(NormParam<FPGA>* param) {
 template <>
 void NormKernel<FPGA, float>::Compute(const NormParam<FPGA>& param) {
   // param.InputX()->zynqmpTensor()->saveToFile("norm_in.txt");
-
   zynqmp::Context& context = const_cast<zynqmp::Context&>(param.context_);
   zynqmp::NormPE& pe = context.pe<zynqmp::NormPE>();
   pe.dispatch();
-
-  // param.Out()->zynqmpTensor()->saveToFile("norm_out.txt");
   param.Out()->zynqmpTensor()->printScale();
-
-  // exit(-1);
+#ifdef PADDLE_MOBILE_DEBUG
+  zynqmp::Debugger::get_instance().registerOutput("norm",
+                                                  param.Out()->zynqmpTensor());
+#endif
 }
 template class NormKernel<FPGA, float>;
 

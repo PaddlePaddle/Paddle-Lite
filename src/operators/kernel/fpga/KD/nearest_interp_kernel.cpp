@@ -41,6 +41,11 @@ void NearestInterpKernel<FPGA, float>::Compute(
   zynqmp::Context& context = const_cast<zynqmp::Context&>(param.context_);
   zynqmp::ResizePE& pe = context.pe<zynqmp::ResizePE>();
   pe.dispatch();
+
+#ifdef PADDLE_MOBILE_DEBUG
+  zynqmp::Debugger::get_instance().registerOutput("nearest_interp",
+                                                  param.Out()->zynqmpTensor());
+#endif
 }
 
 template class NearestInterpKernel<FPGA, float>;

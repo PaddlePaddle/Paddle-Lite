@@ -137,6 +137,15 @@ struct ElementwiseAddParam : PEParam {
   EWAddArgs ewargs;
 };
 
+struct ElementwiseMulParam : PEParam {
+ public:
+  Tensor* input_x;
+  Tensor* input_y = nullptr;
+  Tensor* output = nullptr;
+  
+
+};
+
 struct FullyConnectedParam : PEParam {
  public:
   Tensor* input = nullptr;

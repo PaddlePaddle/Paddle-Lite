@@ -18,6 +18,7 @@ limitations under the License. */
 
 #include "../pe.hpp"
 #include "../pe_params.hpp"
+#include "conv_pe.hpp"
 #include "conv_process.hpp"
 
 namespace paddle_mobile {
@@ -46,6 +47,9 @@ class FullyConnectedPE : public PE {
 
     int num = param_.filter->shape().channel();
     int chw = param_.filter->shape().num();
+    // if (num == 2) {
+    //   return;
+    // }
 
     int height = param_.input->shape().height();
     int width = param_.input->shape().width();
@@ -82,13 +86,52 @@ class FullyConnectedPE : public PE {
     convPE_.apply();
   }
 
-  bool dispatch() { return convPE_.dispatch(); }
+  void cpu_compute() {
+
+    int num = param_.filter->shape().channel();
+    int chw = param_.filter->shape().num();
+  
+    float* filter_data = param_.filter->data<float>();
+    float max = 0.0f;
+    Tensor* input = param_.input;
+    Tensor* output = param_.output;
+    float16* input_data = input->data<float16>();
+    float16* output_data = output->data<float16>();
+
+    for (int i = 0; i < num; i++) {
+      float sum = 0;
+      float bias = param_.bias->data<float>()[i];
+      for (int j = 0; j < chw; j++) {
+        float scale = filter_data[j * num + i];
+        float data = half_to_float(input_data[j]);
+        sum += scale * data;
+      }
+      output_data[i] = float_to_half(sum + bias);
+      if (max < output_data[i]) {
+        max = output_data[i];
+      }
+    }
+
+    output->flush();
+    output->scale()[0] = max / 127.0f;
+    output->scale()[1] = 127.0f / max;
+  }
+
+  bool dispatch() { 
+    // int num = param_.filter->shape().channel();
+    // if (num == 2) {
+    //   cpu_compute();
+    //   return 1; 
+    // } else {
+    return convPE_.dispatch(); 
+    // }
+  }
+    
 
   FullyConnectedParam& param() { return param_; }
 
  private:
   FullyConnectedParam param_;
-  // ConvParam convParam_;
   ConvPE convPE_;
 };
 }  // namespace zynqmp

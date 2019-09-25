@@ -55,24 +55,24 @@ void FeedKernel<FPGA, float>::Compute(const FeedParam<FPGA>& param) {
     auto out = param.Out()->zynqmpTensor();
     InputParam& input_param = pe.param();
     input_param.output = out;
-    // std::cout << "FeedKernel Compute dim not equal 4" << input->dims().size() << std::endl;
+    // std::cout << "FeedKernel Compute dim not equal 4" << input->dims().size()
+    // << std::endl;
     return;
   }
   InputParam& input_param = pe.param();
   input->mutable_data<float>();
   zynqmp::Tensor* input_tensor = input->zynqmpTensor();
   input_param.input = input_tensor;
-//  param.Out()->Resize(input->dims());
+  //  param.Out()->Resize(input->dims());
   param.Out()->mutable_data<half>();
   auto out = param.Out()->zynqmpTensor();
   input_param.output = out;
   pe.dispatch();
 
-  //  std::cout << "Out scale:" << param.Out()->zynqmpTensor()->scale()[0]
-  //            << std::endl;
-  //  param.Out()->zynqmpTensor()->saveToFile("feed_out.txt");
-
-  // exit(-1);
+#ifdef PADDLE_MOBILE_DEBUG
+  zynqmp::Debugger::get_instance().registerOutput("feed",
+                                                  param.Out()->zynqmpTensor());
+#endif
 }
 template class FeedKernel<FPGA, float>;
 

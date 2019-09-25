@@ -36,21 +36,35 @@ class DepthwiseConvPE : public PE {
     Tensor* input = param.input;
     Tensor* output = param.output;
     int channel = output->shape().channel();
-
-    float* new_scale_data = param_.scale()->data<float>();
-    float* new_bias_data = param_.bias()->data<float>();
-
-    // bias从float转换成float16
+    
     float16* b_data = bias_.mutableData<float16>(FP16, param_.bias()->shape());
-    // bias->copyFrom(param_.bias());
-    for (int i = 0; i < channel; i++) {
-      b_data[i] = float_to_half(new_bias_data[i]);
+    if (param_.bias()->dataType() == FP32) {
+      float* new_bias_data = param_.bias()->data<float>();
+      // bias从float转换成float16   
+      for (int i = 0; i < channel; i++) {
+        b_data[i] = float_to_half(new_bias_data[i]);
+      }
+      bias_.flush();
+    } else {
+      float16* new_bias_data = param_.bias()->data<float16>();
+      memcpy(b_data, new_bias_data, channel * sizeof(float16));
+      bias_.flush();
     }
-    bias_.flush();
 
-    Tensor* quantized_filter = param.quantizedFilter();
-    quantized_filter->mutableData<float16>(FP16, param.filter->shape());
-    format_dw_filter(param.filter, param.quantizedFilter(), new_scale_data);
+    if (param_.scale()->dataType() == FP32) {
+      float* new_scale_data = param_.scale()->data<float>();
+      Tensor* quantized_filter = param.quantizedFilter();
+      quantized_filter->mutableData<float16>(FP16, param.filter->shape());
+      format_dw_filter(param.filter, param.quantizedFilter(), new_scale_data);
+      
+    } else {
+      //TODO filter 全为1时，且channal为对齐时
+      float16* scale_data = param_.scale()->data<float16>();
+      float16* filter_data = param.quantizedFilter()->mutableData<float16>(FP16, param.filter->shape());
+      memcpy(filter_data, scale_data, channel * sizeof(float16));
+      param.quantizedFilter()->flush();
+    }
+   
 
     DWconvArgs args = {0};
     args.bias_address = b_data;

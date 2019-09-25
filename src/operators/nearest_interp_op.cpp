@@ -23,9 +23,20 @@ template <typename Dtype, typename T>
 void NearestInterpOp<Dtype, T>::InferShape() const {
   auto x_dims = this->param_.InputX()->dims();
   framework::DDim out_dims(x_dims);
-  out_dims[2] = this->param_.OutHeight();
-  out_dims[3] = this->param_.OutWidth();
+ 
+  int outHeight = this->param_.OutHeight();
+  int outWidth = this->param_.OutWidth();
+
+  if (outHeight != 0 && outWidth != 0) {
+  	out_dims[2] = this->param_.OutHeight();
+  	out_dims[3] = this->param_.OutWidth();
+  } else {
+  	int scale = static_cast<int>(this->param_.Scale());
+  	out_dims[2] = x_dims[2] * scale;
+  	out_dims[3] = x_dims[3] * scale;
+  }
   this->param_.Out()->Resize(out_dims);
+
 }
 
 }  // namespace operators
