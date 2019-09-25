@@ -54,6 +54,9 @@ class CLHelper {
   CLLocalWorkSizeInfo LocalWorkSizeInfo() {
     return scope_->LocalWorkSizeInfo();
   }
+  size_t KernelWorkSize(cl_kernel kernel) {
+    return scope_->KernelWorkSize(kernel);
+  }
 
   std::vector<size_t> DefaultWorkSize(const CLImage &image) {
     // n c h w
