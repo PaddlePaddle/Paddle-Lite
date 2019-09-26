@@ -32,14 +32,6 @@ void Compute(const lite::Tensor* in,
              lite::Tensor* out) {
   auto out_dims = out->dims();
   auto in_dims = in->dims();
-  if (actual_shape) {
-    auto shape_dims = actual_shape->dims();
-    const int* shape_data = actual_shape->data<int>();
-    std::vector<int> shape =
-        std::vector<int>(shape_data, shape_data + shape_dims.production());
-    out_dims = lite::operators::ValidateShape(shape, in_dims);
-    out->Resize(out_dims);
-  }
   out->CopyDataFrom(*in);
   out->Resize(out_dims);
 }
