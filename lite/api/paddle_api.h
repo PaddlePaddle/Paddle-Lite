@@ -136,14 +136,9 @@ class LITE_API MobileConfig : public ConfigBase {
   bool model_from_memory_{false};
 
  public:
-  MobileConfig(Place preferred_place = Place(TARGET(kARM),
-                                             PRECISION(kFloat),
-                                             DATALAYOUT(kNCHW)),
-               PowerMode mode = LITE_POWER_HIGH,
-               int threads = 1)
-      : mode_(mode), threads_(threads) {}
-  void set_power_mode(PowerMode mode) { mode_ = mode; }
-  void set_threads(int threads) { threads_ = threads; }
+  explicit MobileConfig(PowerMode mode = LITE_POWER_NO_BIND, int threads = 1);
+  void set_power_mode(PowerMode mode);
+  void set_threads(int threads);
   void set_model_buffer(const char* model_buffer,
                         size_t model_buffer_size,
                         const char* param_buffer,

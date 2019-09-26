@@ -117,13 +117,13 @@ int main() {
 
   std::cout << "Finishing initializing data" << std::endl;
   struct PaddleTensor t_img_info, t_img;
-  t_img.dtypeid = type_id<float>().hash_code();
+  t_img.dtypeid = PaddlekTypeId_t::paddle_float;
   t_img_info.layout = LAYOUT_HWC;
   t_img_info.shape = std::vector<int>({1, 3});
   t_img_info.name = "Image information";
   t_img_info.data.Reset(img_info, 3 * sizeof(float));
 
-  t_img.dtypeid = type_id<float>().hash_code();
+  t_img.dtypeid = PaddlekTypeId_t::paddle_float;
   t_img.layout = LAYOUT_HWC;
   t_img.shape = std::vector<int>({1, 432, 1280, 3});
   t_img.name = "Image information";
