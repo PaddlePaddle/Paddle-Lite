@@ -145,14 +145,17 @@ void conv_3x3s1_depthwise_fp32(const float* i_data,
           outc21 = ptr_write;
           outc31 = ptr_write;
         }
-        auto c00 = outc00;
-        auto c01 = outc01;
-        auto c10 = outc10;
-        auto c11 = outc11;
-        auto c20 = outc20;
-        auto c21 = outc21;
-        auto c30 = outc30;
-        auto c31 = outc31;
+        float* outl[] = {outc00,
+                         outc10,
+                         outc20,
+                         outc30,
+                         outc01,
+                         outc11,
+                         outc21,
+                         outc31,
+                         reinterpret_cast<float*>(bias_local),
+                         reinterpret_cast<float*>(flag_relu)};
+        void* outl_ptr = reinterpret_cast<void*>(outl);
         for (int w = 0; w < w_loop; ++w) {
           bool flag_mask = (w == w_loop - 1) && flag_remain;
           float* out0 = pre_out;
@@ -210,6 +213,7 @@ void conv_3x3s1_depthwise_fp32(const float* i_data,
           "fmla   v16.4s ,  %[w4].4s,  v8.4s\n" /* outr01 = w4 * r1[2]*/
           "fmla   v17.4s ,  %[w4].4s,  v9.4s\n" /* outr02 = w4 * r1[3]*/
           "fmla   v18.4s ,  %[w4].4s,  v10.4s\n"/* outr03 = w4 * r1[4]*/
+          "ldp    x0, x1, [%[outl]]  \n"
           "fmla   v19.4s ,  %[w4].4s,  v1.4s\n" /* outr10 = w4 * r2[1]*/
           "fmla   v20.4s ,  %[w4].4s,  v2.4s\n" /* outr11 = w4 * r2[2]*/
           "fmla   v21.4s ,  %[w4].4s,  v3.4s\n" /* outr12 = w4 * r2[3]*/
@@ -230,6 +234,7 @@ void conv_3x3s1_depthwise_fp32(const float* i_data,
           "fmla   v16.4s ,  %[w6].4s,  v1.4s\n" /* outr01 = w6 * r2[1]*/
           "fmla   v17.4s ,  %[w6].4s,  v2.4s\n" /* outr02 = w6 * r2[2]*/
           "fmla   v18.4s ,  %[w6].4s,  v3.4s\n" /* outr03 = w6 * r2[3]*/
+          "ldp    x2, x3, [%[outl], #16]  \n"
           "fmla   v19.4s ,  %[w6].4s,  v6.4s\n" /* outr10 = w6 * r3[0]*/
           "fmla   v20.4s ,  %[w6].4s,  v7.4s\n" /* outr11 = w6 * r3[1]*/
           "fmla   v21.4s ,  %[w6].4s,  v8.4s\n" /* outr12 = w6 * r3[2]*/
@@ -239,6 +244,7 @@ void conv_3x3s1_depthwise_fp32(const float* i_data,
           "fmla   v16.4s ,  %[w7].4s,  v2.4s\n" /* outr01 = w7 * r2[2]*/
           "fmla   v17.4s ,  %[w7].4s,  v3.4s\n" /* outr02 = w7 * r2[3]*/
           "fmla   v18.4s ,  %[w7].4s,  v4.4s\n" /* outr03 = w7 * r2[4]*/
+          "ldp    x4, x5, [%[outl], #32]  \n"
           "fmla   v19.4s ,  %[w7].4s,  v7.4s\n" /* outr10 = w7 * r3[1]*/
           "fmla   v20.4s ,  %[w7].4s,  v8.4s\n" /* outr11 = w7 * r3[2]*/
           "fmla   v21.4s ,  %[w7].4s,  v9.4s\n" /* outr12 = w7 * r3[3]*/
@@ -248,25 +254,83 @@ void conv_3x3s1_depthwise_fp32(const float* i_data,
           "fmla   v16.4s ,  %[w8].4s,  v3.4s\n" /* outr01 = w8 * r2[3]*/
           "fmla   v17.4s ,  %[w8].4s,  v4.4s\n" /* outr02 = w8 * r2[0]*/
           "fmla   v18.4s ,  %[w8].4s,  v5.4s\n" /* outr03 = w8 * r2[1]*/
+          "ldp    x6, x7, [%[outl], #48]  \n"
           "fmla   v19.4s ,  %[w8].4s,  v8.4s\n" /* outr10 = w8 * r3[2]*/
           "fmla   v20.4s ,  %[w8].4s,  v9.4s\n" /* outr11 = w8 * r3[3]*/
           "fmla   v21.4s ,  %[w8].4s,  v10.4s\n"/* outr12 = w8 * r3[0]*/
           "fmla   v22.4s ,  %[w8].4s,  v11.4s\n"/* outr13 = w8 * r3[1]*/
-          /* save result */
-          "stp q15, q16, [%[out]], #32\n"
-          "stp q17, q18, [%[out]], #32\n"
-          "stp q19, q20, [%[out]], #32\n"
-          "stp q21, q22, [%[out]]\n"
+
+          "fadd   v15.4s, v15.4s, %[vbias].4s\n"/* add bias */
+          "fadd   v16.4s, v16.4s, %[vbias].4s\n"/* add bias */
+          "fadd   v17.4s, v17.4s, %[vbias].4s\n"/* add bias */
+          "fadd   v18.4s, v18.4s, %[vbias].4s\n"/* add bias */
+          "fadd   v19.4s, v19.4s, %[vbias].4s\n"/* add bias */
+          "fadd   v20.4s, v20.4s, %[vbias].4s\n"/* add bias */
+          "fadd   v21.4s, v21.4s, %[vbias].4s\n"/* add bias */
+          "fadd   v22.4s, v22.4s, %[vbias].4s\n"/* add bias */
+
+          /* transpose */
+          "trn1   v0.4s, v15.4s, v16.4s\n" /* r0: a0a1c0c1*/
+          "trn2   v1.4s, v15.4s, v16.4s\n" /* r0: b0b1d0d1*/
+          "trn1   v2.4s, v17.4s, v18.4s\n" /* r0: a2a3c2c3*/
+          "trn2   v3.4s, v17.4s, v18.4s\n" /* r0: b2b3d2d3*/
+          "trn1   v4.4s, v19.4s, v20.4s\n" /* r1: a0a1c0c1*/
+          "trn2   v5.4s, v19.4s, v20.4s\n" /* r1: b0b1d0d1*/
+          "trn1   v6.4s, v21.4s, v22.4s\n" /* r1: a2a3c2c3*/
+          "trn2   v7.4s, v21.4s, v22.4s\n" /* r1: b2b3d2d3*/
+          "trn1   v15.2d, v0.2d, v2.2d\n"  /* r0: a0a1a2a3*/
+          "trn2   v19.2d, v0.2d, v2.2d\n"  /* r0: c0c1c2c3*/
+          "trn1   v17.2d, v1.2d, v3.2d\n"  /* r0: b0b1b2b3*/
+          "trn2   v21.2d, v1.2d, v3.2d\n"  /* r0: d0d1d2d3*/
+          "trn1   v16.2d, v4.2d, v6.2d\n"  /* r1: a0a1a2a3*/
+          "trn2   v20.2d, v4.2d, v6.2d\n"  /* r1: c0c1c2c3*/
+          "trn1   v18.2d, v5.2d, v7.2d\n"  /* r1: b0b1b2b3*/
+          "trn2   v22.2d, v5.2d, v7.2d\n"  /* r1: d0d1d2d3*/
+
+          "cbz    %w[flag_relu],  0f\n"    /* skip relu*/
+          "movi   v0.4s, #0\n"             /* for relu */
+          "fmax   v15.4s, v15.4s, v0.4s\n"
+          "fmax   v16.4s, v16.4s, v0.4s\n"
+          "fmax   v17.4s, v17.4s, v0.4s\n"
+          "fmax   v18.4s, v18.4s, v0.4s\n"
+          "fmax   v19.4s, v19.4s, v0.4s\n"
+          "fmax   v20.4s, v20.4s, v0.4s\n"
+          "fmax   v21.4s, v21.4s, v0.4s\n"
+          "fmax   v22.4s, v22.4s, v0.4s\n"
+          "0:\n"
+          "cbnz   %w[flag_mask], 1f\n"
+          "str    q15, [x0]\n" /* save outc00 */
+          "str    q16, [x4]\n" /* save outc01 */
+          "str    q17, [x1]\n" /* save outc10 */
+          "str    q18, [x5]\n" /* save outc11 */
+          "str    q19, [x2]\n" /* save outc20 */
+          "str    q20, [x6]\n" /* save outc21 */
+          "str    q21, [x3]\n" /* save outc30 */
+          "str    q22, [x7]\n" /* save outc31 */
+          "b 2f\n"
+          "1:\n"
+          "str  q15, [%[out]], #16 \n" /* save remain to pre_out */
+          "str  q17, [%[out]], #16 \n" /* save remain to pre_out */
+          "str  q19, [%[out]], #16 \n" /* save remain to pre_out */
+          "str  q21, [%[out]], #16 \n" /* save remain to pre_out */
+          "str  q16, [%[out]], #16 \n" /* save remain to pre_out */
+          "str  q18, [%[out]], #16 \n" /* save remain to pre_out */
+          "str  q20, [%[out]], #16 \n" /* save remain to pre_out */
+          "str  q22, [%[out]], #16 \n" /* save remain to pre_out */
+          "2:\n"
           :[inr0] "+r"(inr0), [inr1] "+r"(inr1),
            [inr2] "+r"(inr2), [inr3] "+r"(inr3),
            [out]"+r"(out0)
           :[w0] "w"(w0), [w1] "w"(w1), [w2] "w"(w2),
            [w3] "w"(w3), [w4] "w"(w4), [w5] "w"(w5),
-           [w6] "w"(w6), [w7] "w"(w7), [w8] "w"(w8)
+           [w6] "w"(w6), [w7] "w"(w7), [w8] "w"(w8),
+           [vbias]"w" (vbias), [outl] "r" (outl_ptr),
+           [flag_mask] "r" (flag_mask), [flag_relu] "r" (flag_relu)
           : "cc", "memory",
             "v0","v1","v2","v3","v4","v5","v6","v7",
             "v8", "v9", "v10", "v11", "v15",
-            "v16","v17","v18","v19","v20","v21","v22"
+            "v16","v17","v18","v19","v20","v21","v22",
+            "x0", "x1", "x2", "x3", "x4", "x5", "x6", "x7"
           );
 #else
           asm volatile(
@@ -355,183 +419,113 @@ void conv_3x3s1_depthwise_fp32(const float* i_data,
           "vmla.f32   q8,  q5, q2               @ w8 * inr22\n"
           "vmla.f32   q9,  q5, q3               @ w8 * inr23\n"
           "vld1.32    {d4-d7}, [%[r3]]!         @ load r3, q2, q3\n"
+          "ldr r4,    [%[outl], #32]            @ load bias addr to r4\n"
           "vmla.f32   q14, q6, q0               @ w5 * inr24\n"
           "vmla.f32   q15, q6, q1               @ w5 * inr25\n"
           "vmla.f32   q10, q5, q0               @ w8 * inr24\n"
           "vmla.f32   q11, q5, q1               @ w8 * inr25\n"
           "vld1.32    {d0-d3}, [%[r3]]!         @ load r3, q0, q1\n"
-          "sub    %[wc0], %[wc0], #144          @ wc0 - 144 to start address\n"
+          "sub %[wc0], %[wc0], #144      @ wc0 - 144 to start address\n"
           /* mul r3 with w6, w7, w8, get out r1 */
           "vmla.f32   q12, q7, q2               @ w6 * inr30\n"
           "vmla.f32   q13, q7, q3               @ w6 * inr31\n"
-          "vst1.32    {d16-d19}, [%[out0]]!     @ save r00, r01, c0~c3\n"
           "vmla.f32   q14, q7, q0               @ w6 * inr32\n"
           "vmla.f32   q15, q7, q1               @ w6 * inr33\n"
-          "vst1.32    {d20-d23}, [%[out0]]!     @ save r02, r03, c0~c3\n"
           "vmla.f32   q12, q4, q3               @ w7 * inr31\n"
           "vld1.32    {d4-d7}, [%[r3]]          @ load r3, q2, q3\n"
+          "vld1.32    {d12-d13}, [r4]           @ load bias\n"
           "vmla.f32   q13, q4, q0               @ w7 * inr32\n"
           "vmla.f32   q14, q4, q1               @ w7 * inr33\n"
           "vmla.f32   q15, q4, q2               @ w7 * inr34\n"
+          "ldr r0,    [%[outl]]                 @ load outc00 to r0\n"
           "vmla.f32   q12, q5, q0               @ w8 * inr32\n"
           "vmla.f32   q13, q5, q1               @ w8 * inr33\n"
+          "ldr r5,    [%[outl], #36]            @ load flag_relu to r5\n"
           "vmla.f32   q14, q5, q2               @ w8 * inr34\n"
           "vmla.f32   q15, q5, q3               @ w8 * inr35\n"
-          "vst1.32    {d24-d27}, [%[out0]]!     @ save r10, r11, c0~c3\n"
-          "vst1.32    {d28-d31}, [%[out0]]!     @ save r12, r13, c0~c3\n"
+          "ldr r1,    [%[outl], #4]             @ load outc10 to r1\n"
+          "vadd.f32   q8, q8, q6                @ r00 add bias\n"
+          "vadd.f32   q9, q9, q6                @ r01 add bias\n"
+          "vadd.f32   q10, q10, q6              @ r02 add bias\n"
+          "vadd.f32   q11, q11, q6              @ r03 add bias\n"
+          "ldr r2,    [%[outl], #8]             @ load outc20 to r2\n"
+          "vadd.f32   q12, q12, q6              @ r10 add bias\n"
+          "vadd.f32   q13, q13, q6              @ r11 add bias\n"
+          "vadd.f32   q14, q14, q6              @ r12 add bias\n"
+          "vadd.f32   q15, q15, q6              @ r13 add bias\n"
+          "ldr r3,    [%[outl], #12]            @ load outc30 to r3\n"
+          "vmov.u32   q7, #0                    @ mov zero to q7\n"
+          "cmp  r5, #0                          @ cmp flag relu\n"
+          "beq  1f                              @ skip relu\n"
+          "vmax.f32  q8, q8, q7                 @ r00 relu\n"
+          "vmax.f32  q9, q9, q7                 @ r01 relu\n"
+          "vmax.f32  q10, q10, q7               @ r02 relu\n"
+          "vmax.f32  q11, q11, q7               @ r03 relu\n"
+          "vmax.f32  q12, q12, q7               @ r10 relu\n"
+          "vmax.f32  q13, q13, q7               @ r11 relu\n"
+          "vmax.f32  q14, q14, q7               @ r12 relu\n"
+          "vmax.f32  q15, q15, q7               @ r13 relu\n"
+          "1:\n"
+          "ldr r4,   [%[outl], #16]   @ load outc01 to r4\n"
+          "vtrn.32   q8, q9           @ r0: q8 : a0a1c0c1, q9 : b0b1d0d1\n"
+          "vtrn.32   q10, q11         @ r0: q10: a2a3c2c3, q11: b2b3d2d3\n"
+          "vtrn.32   q12, q13         @ r1: q12: a0a1c0c1, q13: b0b1d0d1\n"
+          "vtrn.32   q14, q15         @ r1: q14: a2a3c2c3, q15: b2b3d2d3\n"
+          "ldr r5,   [%[outl], #20]   @ load outc11 to r5\n"
+          "vswp      d17, d20         @ r0: q8 : a0a1a2a3, q10: c0c1c2c3 \n"
+          "vswp      d19, d22         @ r0: q9 : b0b1b2b3, q11: d0d1d2d3 \n"
+          "vswp      d25, d28         @ r1: q12: a0a1a2a3, q14: c0c1c2c3 \n"
+          "vswp      d27, d30         @ r1: q13: b0b1b2b3, q15: d0d1d2d3 \n"
+          "cmp %[flag_mask], #0       @ cmp flag mask\n"
+          "bne 2f\n"
+          "vst1.32   {d16-d17}, [r0]  @ save outc00\n"
+          "vst1.32   {d18-d19}, [r1]  @ save outc10\n"
+          "vst1.32   {d20-d21}, [r2]  @ save outc20\n"
+          "vst1.32   {d22-d23}, [r3]  @ save outc30\n"
+          "vst1.32   {d24-d25}, [r4]  @ save outc01\n"
+          "vst1.32   {d26-d27}, [r5]  @ save outc11\n"
+          "ldr r0,   [%[outl], #24]   @ load outc21 to r0\n"
+          "ldr r1,   [%[outl], #28]   @ load outc31 to r1\n"
+          "vst1.32   {d28-d29}, [r0]  @ save outc21\n"
+          "vst1.32   {d30-d31}, [r1]  @ save outc31\n"
+          "b 3f                       @ branch end\n"
+          "2: \n"
+          "vst1.32 {d16-d17}, [%[out0]]!  @ save remain to pre_out\n"
+          "vst1.32 {d18-d19}, [%[out0]]!  @ save remain to pre_out\n"
+          "vst1.32 {d20-d21}, [%[out0]]!  @ save remain to pre_out\n"
+          "vst1.32 {d22-d23}, [%[out0]]!  @ save remain to pre_out\n"
+          "vst1.32 {d24-d25}, [%[out0]]!  @ save remain to pre_out\n"
+          "vst1.32 {d26-d27}, [%[out0]]!  @ save remain to pre_out\n"
+          "vst1.32 {d28-d29}, [%[out0]]!  @ save remain to pre_out\n"
+          "vst1.32 {d30-d31}, [%[out0]]!  @ save remain to pre_out\n"
+          "3: \n"
           : [r0] "+r"(inr0), [r1] "+r"(inr1),
-          [r2] "+r"(inr2), [r3] "+r"(inr3),
-          [out0] "+r"(out0), [wc0] "+r"(weight_c)
-          :
+            [r2] "+r"(inr2), [r3] "+r"(inr3),
+            [out0] "+r"(out0), [wc0] "+r"(weight_c)
+          : [flag_mask] "r" (flag_mask), [outl] "r" (outl_ptr)
           : "cc", "memory",
-                  "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8", "q9",
-                  "q10", "q11", "q12", "q13","q14", "q15"
+            "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8", "q9",
+            "q10", "q11", "q12", "q13","q14", "q15", "r0", "r1", "r2", "r3", "r4", "r5"
           );
 #endif  //  __arch64__
-          float* out1 = pre_out;
-          if (flag_mask) {
-            c00 = outc00;
-            c01 = outc01;
-            c10 = outc10;
-            c11 = outc11;
-            c20 = outc20;
-            c21 = outc21;
-            c30 = outc30;
-            c31 = outc31;
-            outc00 = pre_out;
-            outc01 = pre_out + 4;
-            outc10 = pre_out + 8;
-            outc11 = pre_out + 12;
-            outc20 = pre_out + 16;
-            outc21 = pre_out + 20;
-            outc30 = pre_out + 24;
-            outc31 = pre_out + 28;
-          }
-#ifdef __aarch64__
-          asm volatile(
-          "ldp    q0, q1,   [%[din]], #32\n"      /* load input*/
-          "ldp    q2, q3,   [%[din]], #32\n"      /* load input*/
-          "fadd  v15.4s,  v0.4s, %[vbias].4s\n"   /* add bias */
-          "fadd  v16.4s,  v1.4s, %[vbias].4s\n"   /* add bias */
-          "ldp    q4, q5,   [%[din]], #32\n"      /* load input*/
-          "fadd  v17.4s,  v2.4s, %[vbias].4s\n"   /* add bias */
-          "fadd  v18.4s,  v3.4s, %[vbias].4s\n"   /* add bias */
-          "ldp    q6, q7,   [%[din]]\n"           /* load input*/
-          "fadd  v19.4s,  v4.4s, %[vbias].4s\n"   /* add bias */
-          "fadd  v20.4s,  v5.4s, %[vbias].4s\n"   /* add bias */
-          "fadd  v21.4s,  v6.4s, %[vbias].4s\n"   /* add bias */
-          "fadd  v22.4s,  v7.4s, %[vbias].4s\n"   /* add bias */
-          /* transpose */
-          "trn1 v0.4s, v15.4s, v16.4s\n" /* r0: a0a1c0c1*/
-          "trn2 v1.4s, v15.4s, v16.4s\n" /* r0: b0b1d0d1*/
-          "trn1 v2.4s, v17.4s, v18.4s\n" /* r0: a2a3c2c3*/
-          "trn2 v3.4s, v17.4s, v18.4s\n" /* r0: b2b3d2d3*/
-          "trn1 v4.4s, v19.4s, v20.4s\n" /* r1: a0a1c0c1*/
-          "trn2 v5.4s, v19.4s, v20.4s\n" /* r1: b0b1d0d1*/
-          "trn1 v6.4s, v21.4s, v22.4s\n" /* r1: a2a3c2c3*/
-          "trn2 v7.4s, v21.4s, v22.4s\n" /* r1: b2b3d2d3*/
-          "trn1 v15.2d, v0.2d, v2.2d\n"  /* r0: a0a1a2a3*/
-          "trn2 v19.2d, v0.2d, v2.2d\n"  /* r0: c0c1c2c3*/
-          "trn1 v17.2d, v1.2d, v3.2d\n"  /* r0: b0b1b2b3*/
-          "trn2 v21.2d, v1.2d, v3.2d\n"  /* r0: d0d1d2d3*/
-          "trn1 v16.2d, v4.2d, v6.2d\n"  /* r1: a0a1a2a3*/
-          "trn2 v20.2d, v4.2d, v6.2d\n"  /* r1: c0c1c2c3*/
-          "trn1 v18.2d, v5.2d, v7.2d\n"  /* r1: b0b1b2b3*/
-          "trn2 v22.2d, v5.2d, v7.2d\n"  /* r1: d0d1d2d3*/
-          "cbz  %w[flag_relu],  0f\n"    /* skip relu*/
-          "movi v0.4s, #0\n"             /* for relu */
-          "fmax v15.4s, v15.4s, v0.4s\n"
-          "fmax v16.4s, v16.4s, v0.4s\n"
-          "fmax v17.4s, v17.4s, v0.4s\n"
-          "fmax v18.4s, v18.4s, v0.4s\n"
-          "fmax v19.4s, v19.4s, v0.4s\n"
-          "fmax v20.4s, v20.4s, v0.4s\n"
-          "fmax v21.4s, v21.4s, v0.4s\n"
-          "fmax v22.4s, v22.4s, v0.4s\n"
-          "0:\n"
-          "str    q15, [%[outc00]], #16\n" /* save outc00*/
-          "str    q16, [%[outc01]], #16\n" /* save outc01*/
-          "str    q17, [%[outc10]], #16\n" /* save outc10*/
-          "str    q18, [%[outc11]], #16\n" /* save outc11*/
-          "str    q19, [%[outc20]], #16\n" /* save outc20*/
-          "str    q20, [%[outc21]], #16\n" /* save outc21*/
-          "str    q21, [%[outc30]], #16\n" /* save outc30*/
-          "str    q22, [%[outc31]], #16\n" /* save outc31*/
-          :[outc00] "+r"(outc00), [outc01] "+r"(outc01),
-           [outc10] "+r"(outc10), [outc11] "+r"(outc11),
-           [outc20] "+r"(outc20), [outc21] "+r"(outc21),
-           [outc30] "+r"(outc30), [outc31] "+r"(outc31),
-           [din] "+r"(out1)
-          :[vbias]"w" (vbias), [flag_relu] "r"(flag_relu)
-          : "cc", "memory",
-            "v0","v1","v2","v3","v4","v5","v6","v7",
-            "v15", "v16","v17","v18","v19","v20","v21","v22"
-          );
-#else
-          asm volatile(
-          "vld1.32 {d0-d3}, [%[din]]!\n"      /* load input*/
-          "vld1.32 {d4-d7}, [%[din]]!\n"      /* load input*/
-          "vadd.f32  q0,  q0, %q[vbias]\n"    /* add bias */
-          "vadd.f32  q1,  q1, %q[vbias]\n"    /* add bias */
-          "vld1.32 {d8-d11}, [%[din]]!\n"     /* load input*/
-          "vadd.f32  q2,  q2, %q[vbias]\n"    /* add bias */
-          "vadd.f32  q3,  q3, %q[vbias]\n"    /* add bias */
-          "vld1.32 {d12-d15}, [%[din]]!\n"    /* load input*/
-          "vadd.f32  q4,  q4, %q[vbias]\n"    /* add bias */
-          "vadd.f32  q5,  q5, %q[vbias]\n"    /* add bias */
-          "vadd.f32  q6,  q6, %q[vbias]\n"    /* add bias */
-          "vadd.f32  q7,  q7, %q[vbias]\n"    /* add bias */
-          /* transpose */
-          "vtrn.32 q0, q1\n"      /* r0: q0: a0a1c0c1, q1: b0b1d0d1*/
-          "vtrn.32 q2, q3\n"      /* r0: q2: a2a3c2c3, q3: b2b3d2d3*/
-          "vtrn.32 q4, q5\n"      /* r1: q4: a0a1c0c1, q5: b0b1d0d1*/
-          "vtrn.32 q6, q7\n"      /* r1: q6: a2a3c2c3, q7: b2b3d2d3*/
-          "vswp   d1, d4\n"       /* r0: q0: a0a1a2a3, q2: c0c1c2c3*/
-          "vswp   d3, d6\n"       /* r0: q1: b0b1b2b3, q3: d0d1d2d3*/
-          "vswp   d9, d12\n"      /* r1: q4: a0a1a2a3, q6: c0c1c2c3*/
-          "vswp   d11, d14\n"     /* r1: q5: b0b1b2b3, q7: d0d1d2d3*/
-          "cmp  %[flag_relu], #0\n"
-          "beq  0f\n"             /* skip relu*/
-          "vmov.u32 q15, #0\n"
-          "vmax.f32 q0, q0, q15\n"
-          "vmax.f32 q1, q1, q15\n"
-          "vmax.f32 q2, q2, q15\n"
-          "vmax.f32 q3, q3, q15\n"
-          "vmax.f32 q4, q4, q15\n"
-          "vmax.f32 q5, q5, q15\n"
-          "vmax.f32 q6, q6, q15\n"
-          "vmax.f32 q7, q7, q15\n"
-          "0:\n"
-          "vst1.32 {d0-d1}, [%[outc00]]!\n" /* save outc00*/
-          "vst1.32 {d2-d3}, [%[outc10]]!\n" /* save outc10*/
-          "vst1.32 {d4-d5}, [%[outc20]]!\n" /* save outc20*/
-          "vst1.32 {d6-d7}, [%[outc30]]!\n" /* save outc30*/
-          "vst1.32 {d8-d9}, [%[outc01]]!\n" /* save outc01*/
-          "vst1.32 {d10-d11}, [%[outc11]]!\n" /* save outc11*/
-          "vst1.32 {d12-d13}, [%[outc21]]!\n" /* save outc21*/
-          "vst1.32 {d14-d15}, [%[outc31]]!\n" /* save outc31*/
-          :[outc00] "+r"(outc00), [outc01] "+r"(outc01),
-          [outc10] "+r"(outc10), [outc11] "+r"(outc11),
-          [outc20] "+r"(outc20), [outc21] "+r"(outc21),
-          [outc30] "+r"(outc30), [outc31] "+r"(outc31),
-          [din] "+r"(out1)
-          :[vbias]"w" (vbias), [flag_relu] "r"(flag_relu)
-          : "cc", "memory",
-                  "q0","q1","q2","q3","q4","q5","q6","q7", "q15"
-          );
-#endif  //  __aarch64__
           // clang-format on
+          outl[0] += 4;
+          outl[1] += 4;
+          outl[2] += 4;
+          outl[3] += 4;
+          outl[4] += 4;
+          outl[5] += 4;
+          outl[6] += 4;
+          outl[7] += 4;
           if (flag_mask) {
-            for (int i = 0; i < remain; ++i) {
-              c00[i] = pre_out[i];
-              c01[i] = pre_out[i + 4];
-              c10[i] = pre_out[i + 8];
-              c11[i] = pre_out[i + 12];
-              c20[i] = pre_out[i + 16];
-              c21[i] = pre_out[i + 20];
-              c30[i] = pre_out[i + 24];
-              c31[i] = pre_out[i + 28];
-            }
+            memcpy(outl[0] - 4, pre_out, remain * sizeof(float));
+            memcpy(outl[1] - 4, pre_out + 4, remain * sizeof(float));
+            memcpy(outl[2] - 4, pre_out + 8, remain * sizeof(float));
+            memcpy(outl[3] - 4, pre_out + 12, remain * sizeof(float));
+            memcpy(outl[4] - 4, pre_out + 16, remain * sizeof(float));
+            memcpy(outl[5] - 4, pre_out + 20, remain * sizeof(float));
+            memcpy(outl[6] - 4, pre_out + 24, remain * sizeof(float));
+            memcpy(outl[7] - 4, pre_out + 28, remain * sizeof(float));
           }
         }
       }
