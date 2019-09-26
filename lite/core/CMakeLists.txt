@@ -92,7 +92,9 @@ add_custom_target(kernel_list_h DEPENDS kernels.h)
 add_custom_target(all_kernel_faked_cc DEPENDS all_kernel_faked.cc)
 
 #----------------------------------------------- NOT CHANGE -----------------------------------------------
-lite_cc_library(kernel SRCS kernel.cc DEPS context type_system target_wrapper any op_params tensor
+lite_cc_library(kernel SRCS kernel.cc
+        DEPS context type_system target_wrapper any op_params tensor
+        PROFILE_DEPS basic_profiler
   )
 lite_cc_library(op SRCS op_lite.cc DEPS scope op_registry target_wrapper kernel
   cpp_op_desc tensor
