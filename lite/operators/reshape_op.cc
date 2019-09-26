@@ -23,13 +23,32 @@ namespace operators {
 bool ReshapeOp::CheckShape() const {
   CHECK_OR_FALSE(param_.x);
   CHECK_OR_FALSE(param_.output);
-  CHECK_OR_FALSE(!param_.shape.empty());
   return true;
 }
 
 bool ReshapeOp::InferShape() const {
+  auto shape_tensor_vct = param_.shape_tensor_vct;
+  auto *shape_tensor = param_.shape_tensor;
+  auto shape_vct = param_.shape_vct;
+  std::vector<int> final_shape;
+
+  if (shape_tensor_vct.size() > 0) {
+    for (int i = 0; i < shape_tensor_vct.size(); i++) {
+      final_shape.push_back(shape_tensor_vct[i]->data<int>()[0]);
+    }
+  } else if (shape_tensor != nullptr) {
+    auto *shape_tensor_data = shape_tensor->data<int>();
+    final_shape = std::vector<int>(shape_tensor_data,
+                                   shape_tensor_data + shape_tensor->numel());
+  } else if (!shape_vct.empty()) {
+    final_shape = shape_vct;
+  } else {
+    LOG(FATAL) << "input shape error";
+  }
+
   auto x_dims = param_.x->dims();
-  auto output_dims = ValidateShape(param_.shape, x_dims);
+  auto output_dims = ValidateShape(final_shape, x_dims);
+  LOG(INFO) << "output_dims:" << output_dims;
   param_.output->Resize(output_dims);
   auto out_lod = param_.output->mutable_lod();
   *out_lod = param_.x->lod();
@@ -37,60 +56,32 @@ bool ReshapeOp::InferShape() const {
 }
 
 bool ReshapeOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
-  auto x_var = scope->FindVar(opdesc.Input("X").front());
-  auto output_var = scope->FindVar(opdesc.Output("Out").front());
-  CHECK(x_var);
-  CHECK(output_var);
-  param_.x = const_cast<lite::Tensor *>(&(x_var->Get<lite::Tensor>()));
-  param_.output = output_var->GetMutable<lite::Tensor>();
-  std::vector<std::string> input_arg_names = opdesc.InputArgumentNames();
-  if (opdesc.HasAttr("inplace")) {
-    param_.inplace = opdesc.GetAttr<bool>("inplace");
-  }
-  CHECK(param_.x) << "Input(X) of ReshapeOp should not be null.";
-  CHECK(param_.output) << "Output(Out) of ReshapeOp should not be null.";
+  param_.x =
+      scope->FindVar(opdesc.Input("X").front())->GetMutable<lite::Tensor>();
+  param_.output =
+      scope->FindVar(opdesc.Output("Out").front())->GetMutable<lite::Tensor>();
 
   if (opdesc.HasInput("ShapeTensor") &&
       opdesc.Input("ShapeTensor").size() > 0) {
-    auto inputs = opdesc.Input("ShapeTensor");
-    for (auto var : inputs) {
-      lite::Tensor *datatensor =
-          scope->FindVar(var)->GetMutable<lite::Tensor>();
-      param_.shape.push_back(datatensor->mutable_data<int>()[0]);
+    auto args = opdesc.Input("ShapeTensor");
+    for (auto arg : args) {
+      auto *var = scope->FindVar(arg);
+      if (var != nullptr) {
+        param_.shape_tensor_vct.push_back(var->GetMutable<lite::Tensor>());
+      }
     }
-    const std::vector<int> shape_vector = param_.shape;
-    lite::Tensor *shape_tensor = new lite::Tensor;
-
-    shape_tensor->Resize({static_cast<int64_t>(shape_vector.size())});
-    int *data_shape = shape_tensor->mutable_data<int>();
-    for (int i = 0; i < shape_vector.size(); i++) {
-      data_shape[i] = shape_vector[i];
+  }
+  if (opdesc.HasInput("Shape") && opdesc.Input("Shape").size() > 0) {
+    auto var = scope->FindVar(opdesc.Input("Shape").front());
+    if (var != nullptr) {
+      param_.shape_tensor = var->GetMutable<lite::Tensor>();
     }
-    param_.actual_shape = shape_tensor;
-    return true;
-  } else if (opdesc.HasInput("Shape") && opdesc.Input("Shape").size() > 0) {
-    auto actual_shape_var = scope->FindVar(opdesc.Input("Shape").front());
-    if (actual_shape_var != nullptr) {
-      param_.actual_shape =
-          const_cast<lite::Tensor *>(&(actual_shape_var->Get<lite::Tensor>()));
-      int length = param_.actual_shape->dims().production();
-      int *shape_list = actual_shape_var->GetMutable<int>();
-      param_.shape.assign(shape_list, shape_list + length);
-    }
-    return true;
-  } else {
-    param_.shape = opdesc.GetAttr<std::vector<int>>("shape");
-    CHECK(!param_.shape.empty())
-        << "The shape information must be set by Attr(shape).";
-    const std::vector<int> shape_vector = param_.shape;
-    lite::Tensor *shape_tensor = new lite::Tensor;
-
-    shape_tensor->Resize({static_cast<int64_t>(shape_vector.size())});
-    int *data_shape = shape_tensor->mutable_data<int>();
-    for (int i = 0; i < shape_vector.size(); i++) {
-      data_shape[i] = shape_vector[i];
-    }
-    param_.actual_shape = shape_tensor;
+  }
+  if (opdesc.HasAttr("shape")) {
+    param_.shape_vct = opdesc.GetAttr<std::vector<int>>("shape");
+  }
+  if (opdesc.HasAttr("inplace")) {
+    param_.inplace = opdesc.GetAttr<bool>("inplace");
   }
   return true;
 }
@@ -104,20 +95,20 @@ bool Reshape2Op::CheckShape() const {
 bool Reshape2Op::InferShape() const {
   ReshapeOp::InferShape();
   auto x_dims = param_.x->dims();
-  std::vector<DDim::value_type> xshape_dims(x_dims.size() + 1, 1);
+  std::vector<DDim::value_type> xshape_dims(x_dims.size() + 1, 0);
   for (size_t i = 0; i < x_dims.size(); i++) {
     xshape_dims[i + 1] = x_dims[i];
   }
   param_.xshape->Resize(xshape_dims);
+  auto xshape_lod = param_.xshape->mutable_lod();
+  *xshape_lod = param_.x->lod();
   return true;
 }
 
 bool Reshape2Op::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   ReshapeOp::AttachImpl(opdesc, scope);
   auto xshape_var = scope->FindVar(opdesc.Output("XShape").front());
-  CHECK(xshape_var);
   param_.xshape = xshape_var->GetMutable<lite::Tensor>();
-  CHECK(param_.xshape) << "Output(XShape) of ReshapeOp should not be null.";
   return true;
 }
 

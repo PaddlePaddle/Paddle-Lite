@@ -24,27 +24,9 @@ namespace host {
 void ReshapeCompute::Run() {
   auto& param = Param<operators::ReshapeParam>();
   auto x = param.x;
-  auto actual_shape = param.actual_shape;
   auto output = param.output;
-  bool inplace = param.inplace;
-  auto x_dims = x->dims();
   auto output_dims = output->dims();
-  if (actual_shape) {
-    auto actual_shape_dims = actual_shape->dims();
-    auto* actual_shape_data = actual_shape->data<int>();
-#ifdef LITE_WITH_CUDA
-    lite::Tensor cpu_actual_shape;
-    if (actual_shape->target() == TARGET(kCUDA)) {
-      cpu_actual_shape.CopyDataFrom(*actual_shape);
-      actual_shape_data = cpu_actual_shape.data<int>();
-    }
-#endif
-    auto shape = std::vector<int>(
-        actual_shape_data, actual_shape_data + actual_shape_dims.production());
-    output_dims = lite::operators::ValidateShape(shape, x_dims);
-    output->Resize(output_dims);
-  }
-  if (inplace) {
+  if (param.inplace) {
     output->ShareDataWith(*x);
   } else {
     output->CopyDataFrom(*x);
