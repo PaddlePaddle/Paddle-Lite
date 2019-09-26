@@ -28,7 +28,7 @@ namespace lite {
 TEST(model, test) {
 #ifdef LITE_WITH_ARM
   DeviceInfo::Init();
-  DeviceInfo::Global().SetRunMode(lite_api::LITE_POWER_HIGH, FLAGS_threads);
+  DeviceInfo::Global().SetRunMode(lite_api::LITE_POWER_NO_BIND, FLAGS_threads);
   lite::Predictor predictor;
   std::vector<Place> valid_places({Place{TARGET(kHost), PRECISION(kFloat)},
                                    Place{TARGET(kARM), PRECISION(kFloat)},

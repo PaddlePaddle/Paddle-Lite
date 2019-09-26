@@ -23,6 +23,9 @@
 #include "lite/api/test_helper.h"
 #include "lite/core/op_registry.h"
 
+DEFINE_string(input, "", "input_data");
+DEFINE_int32(batch, 1, "batch");
+
 namespace paddle {
 namespace lite {
 
@@ -174,12 +177,12 @@ void TestModel(const std::vector<Place>& valid_places,
   DeviceInfo::Init();
   DeviceInfo::Global().SetRunMode(lite_api::LITE_POWER_HIGH, FLAGS_threads);
   lite::Predictor predictor;
+  std::string test_data_path = FLAGS_input;
 
   predictor.Build(FLAGS_model_dir, "", "", preferred_place, valid_places);
 
-  std::string test_data_path = "chn_eng_all_testset.id.constraint_length";
   int n_head = 8;
-  int batch_size = 1;
+  int batch_size = FLAGS_batch;
   int bos_idx = 0;
   int eos_idx = 1;
   LOG(INFO) << "reading";

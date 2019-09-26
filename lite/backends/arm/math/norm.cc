@@ -56,9 +56,9 @@ void matrix_norm_row(const float* x_data,
                      float epsilon,
                      int batch_size,
                      int feature_size) {
-#pragma omp parallel for
   int cnt = feature_size >> 4;
   int remain = feature_size & 0xf;
+#pragma omp parallel for
 
   for (int bi = 0; bi < batch_size; ++bi) {
     int offset = bi * feature_size;

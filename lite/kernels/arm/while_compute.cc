@@ -34,9 +34,12 @@ void WhileCompute::PrepareForRun() {
 }
 void WhileCompute::Run() {
   auto &param = Param<operators::WhileParam>();
+  int i = 0;
   while (param.cond->data<bool>()[0]) {
     executor_->Run();
+    i++;
   }
+  LOG(ERROR) << "while nums:" << i;
 }
 
 }  // namespace arm
