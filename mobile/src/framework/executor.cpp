@@ -858,9 +858,13 @@ void Executor<GPU_CL, float>::SetInput(const Tensor &input,
       DLOG << "SetInput ---- > resize1";
       input_tensor->Resize(input.dims());
       input_tensor->mutable_data<float>();
-      //          InitNoPersistableMemory(*input_tensor);
-      pass::MemoryOptPassCl()(program_desc_.get(), program_.scope.get(),
-                              config_.memory_optimization_level, input.dims());
+      if (config_.memory_optimization_level == NoMemoryOptimization) {
+        InitNoPersistableMemory(*input_tensor);
+      } else {
+        pass::MemoryOptPassCl()(program_desc_.get(), program_.scope.get(),
+                                config_.memory_optimization_level,
+                                input.dims());
+      }
     }
   } else {
     DLOG << "SetInput ---- > resize2";
