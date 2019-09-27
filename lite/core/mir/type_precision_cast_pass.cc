@@ -90,6 +90,8 @@ void PrecisionCastPass::AddCastInst(const Type& from,
   auto cast_op_output_name =
       in->AsArg().name + "/trans/" + std::to_string(node_id());
   auto* cast_op_output_arg = graph->NewArgumentNode(cast_op_output_name);
+  cast_op_output_arg->AsArg().type =
+      LiteType::GetTensorTy(from.target(), to.precision(), from.layout());
   auto* cast_inst = graph->NewInstructNode();
 
   // create Op and kernels.
@@ -118,13 +120,8 @@ void PrecisionCastPass::AddCastInst(const Type& from,
   for (auto& kernel : kernels) {
     const Type* in_arg_ty = kernel->GetInputDeclType("Input");
     const Type* out_arg_ty = kernel->GetOutputDeclType("Out");
-// TODO(xg): to optimize this
-#ifndef LITE_WITH_FPGA
-    if (in_arg_ty->precision() == from.precision() &&
+    if (TypeCompatible(*in_arg_ty, from) &&
         out_arg_ty->precision() == to.precision()) {
-#else
-    if (TypeCompatible(*in_arg_ty, from)) {
-#endif
       is_found = true;
       selected_kernels.emplace_back(std::move(kernel));
       // we pick the kernel
