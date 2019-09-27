@@ -26,7 +26,11 @@ __global__ void KeElementwiseAdd(const float* x_data,
   int tid = blockIdx.x * blockDim.x + threadIdx.x;
   int stride = blockDim.x * gridDim.x;
   for (; tid < total; tid += stride) {
+#if __CUDA_ARCH__ >= 350
+    out_data[tid] = __ldg(x_data + tid) + __ldg(y_data + tid);
+#else
     out_data[tid] = x_data[tid] + y_data[tid];
+#endif
   }
 }
 
@@ -51,7 +55,7 @@ void ElementwiseAddCompute::Run() {
   auto out_data = out->mutable_data<float>(TARGET(kCUDA));
 
   int pixel_num = x->numel();
-  int threads = 512;
+  int threads = 1024;
   int blocks = (pixel_num + threads - 1) / threads;
   blocks = blocks > 8 ? 8 : blocks;
 

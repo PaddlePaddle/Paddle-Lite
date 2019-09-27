@@ -37,6 +37,22 @@ __global__ void relu_kernel(const int num,
   }
 }
 
+template <typename T>
+__global__ void bias_relu_kernel(const int num,
+                                 const T alpha,
+                                 const T* input,
+                                 T* output) {
+  int index = blockIdx.x * blockDim.x + threadIdx.x;
+  if (index < num) {
+#if __CUDA_ARCH__ >= 350
+    output[index] = __ldg(input + index) >= 0 ? __ldg(input + index)
+                                              : __ldg(input + index) * alpha;
+#else
+    output[index] = input[index] >= 0 ? input[index] : input[index] * alpha;
+#endif
+  }
+}
+
 __global__ void bias_relu_int8_nhwc4_kernel(int num,
                                             const float4* in,
                                             const float4* bias,
@@ -277,7 +293,23 @@ void relu(int num, const T* din, T* dout, float alpha, cudaStream_t stream) {
   cudaError_t error = cudaGetLastError();
   if (error != cudaSuccess) std::cout << cudaGetErrorString(error);
 }
+
+template <typename T>
+void bias_relu(int num,
+               const T* din,
+               const float* bias,
+               T* dout,
+               float alpha,
+               cudaStream_t stream) {
+  int thread = 256;
+  int block = (num + thread - 1) / thread;
+  relu_kernel<<<block, thread, 0, stream>>>(num, alpha, din, dout);
+  cudaError_t error = cudaGetLastError();
+  if (error != cudaSuccess) std::cout << cudaGetErrorString(error);
+}
 template void relu(int, const float*, float*, float, cudaStream_t);
+template void bias_relu(
+    int, const float*, const float* bias, float*, float, cudaStream_t);
 
 }  // namespace math
 }  // namespace cuda

@@ -14,6 +14,7 @@
 
 #include "lite/backends/cuda/math/cudnn_conv.h"
 #include "lite/backends/cuda/math/activation.h"
+#include "lite/backends/cuda/math/conv_op_cache_cudnn.h"
 #include "lite/backends/cuda/math/scale.h"
 #include "lite/backends/cuda/math/type_trans.h"
 
@@ -87,6 +88,56 @@ bool CudnnConv2D<PRECISION(kFloat)>::create(const operators::ConvParam& param,
 
   if (ic == param.groups && ic == oc && ic != 1) {
     this->fwd_algo_ = CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_GEMM;
+  } else if (1) {
+    const auto* i_data = param.x->data<float>();
+    const auto* w_data = param.filter->data<float>();
+    auto* o_data = param.output->mutable_data<float>(TARGET(kCUDA));
+    int workspace_size_limit = 256 * 1024 * 1024;
+
+    auto search_func = [&]() {
+      int returned_algo_count;
+      std::array<cudnnConvolutionFwdAlgoPerf_t,
+                 CUDNN_CONVOLUTION_FWD_ALGO_COUNT>
+          fwd_perf_stat;
+      auto cudnn_find_func = [&](void* cudnn_workspace) {
+        CUDNN_CHECK(cudnnFindConvolutionForwardAlgorithmEx(
+            this->handle_,
+            this->input_desc_,
+            i_data,
+            this->filter_desc_,
+            w_data,
+            this->conv_desc_,
+            this->output_desc_,
+            o_data,
+            CUDNN_CONVOLUTION_FWD_ALGO_COUNT,
+            &returned_algo_count,
+            fwd_perf_stat.data(),
+            cudnn_workspace,
+            workspace_size_limit));
+      };
+
+      ResetWorkSpace();
+      CUDA_CALL(cudaMalloc(&this->workspace_data_, workspace_size_limit));
+      cudnn_find_func(this->workspace_data_);
+      ResetWorkSpace();
+
+      VLOG(2) << "Perf result: (algo: stat, time, memory)";
+      for (int i = 0; i < returned_algo_count; ++i) {
+        const auto& stat = fwd_perf_stat[i];
+        VLOG(2) << stat.algo << ": " << stat.status << " " << stat.time << " "
+                << stat.memory;
+      }
+      return fwd_perf_stat[0].algo;
+    };
+    AlgorithmsCache<cudnnConvolutionFwdAlgo_t> algo_cache;
+    this->fwd_algo_ = algo_cache.GetAlgorithm(x_dims.Vectorize(),
+                                              w_dims.Vectorize(),
+                                              param.strides,
+                                              param.paddings,
+                                              param.dilations,
+                                              0,
+                                              search_func);
+
   } else {
     CUDNN_CHECK(
         cudnnGetConvolutionForwardAlgorithm(this->handle_,
@@ -108,9 +159,7 @@ bool CudnnConv2D<PRECISION(kFloat)>::create(const operators::ConvParam& param,
                                               &this->workspace_fwd_sizes_));
   if (this->workspace_fwd_sizes_ > this->workspace_size_inbytes_) {
     this->workspace_size_inbytes_ = this->workspace_fwd_sizes_;
-    if (this->workspace_data_ != NULL) {
-      cudaFree(this->workspace_data_);
-    }
+    ResetWorkSpace();
     cudaMalloc(&this->workspace_data_, this->workspace_size_inbytes_);
     this->workspace_ = reinterpret_cast<char*>(this->workspace_data_);
   }
@@ -272,12 +321,12 @@ bool CudnnConv2DInt8<Ptype_out>::create(const operators::ConvParam& param,
   std::vector<float> weight_scale = param.weight_scale;
   float input_scale = param.input_scale;
   float output_scale = param.output_scale;
-  CHECK(weight_scale.size() == oc)
+  CHECK(weight_scale.size() == static_cast<size_t>(oc))
       << "the num of the weight_scale should be equals to the output channel.";
   if (Ptype_out == PRECISION(kInt8)) {
     this->temp_tensor_.Resize(o_dims);
     this->temp_tensor_.template mutable_data<float>(TARGET(kCUDA));
-    for (int i = 0; i < weight_scale.size(); i++) {
+    for (size_t i = 0; i < weight_scale.size(); i++) {
       weight_scale[i] = (weight_scale[i] * input_scale) / output_scale;
     }
 
@@ -286,7 +335,7 @@ bool CudnnConv2DInt8<Ptype_out>::create(const operators::ConvParam& param,
       scale(param.bias->numel(), b_data, b_data, 1.f / output_scale);
     }
   } else {
-    for (int i = 0; i < weight_scale.size(); i++) {
+    for (size_t i = 0; i < weight_scale.size(); i++) {
       weight_scale[i] = (weight_scale[i] * input_scale);
     }
   }
@@ -344,9 +393,10 @@ bool CudnnConv2DInt8<Ptype_out>::create(const operators::ConvParam& param,
   if (this->workspace_fwd_sizes_ > this->workspace_size_inbytes_) {
     this->workspace_size_inbytes_ = this->workspace_fwd_sizes_;
     if (this->workspace_data_ != NULL) {
-      cudaFree(this->workspace_data_);
+      CUDA_CALL(cudaFree(this->workspace_data_));
     }
-    cudaMalloc(&this->workspace_data_, this->workspace_size_inbytes_);
+    CUDA_CALL(
+        cudaMalloc(&this->workspace_data_, this->workspace_size_inbytes_));
     this->workspace_ = reinterpret_cast<char*>(this->workspace_data_);
   }
 

@@ -105,6 +105,7 @@ TEST(conv_compute, fp32) {
     LOG(INFO) << y_cpu_data[i];
   }
 }
+/*
 
 TEST(conv_compute, int8) {
   ConvComputeInt8<PRECISION(kFloat)> int8_conv_fp32out;
@@ -186,7 +187,7 @@ TEST(conv_compute, int8_int8_out) {
 
   Tensor x, filter, bias, y, x_cpu, filter_cpu, bias_cpu, y_cpu;
   int c_i = 3, h_i = 3, w_i = 3;
-  int n = 1, c = 4, h = 3, w = 3;
+  int n = 1, c = 4;
   y.Resize({1, 1, 1, c});
   x_cpu.Resize({n, h_i, w_i, c_i});
   filter_cpu.Resize({c, 3, 3, c_i / param.groups});
@@ -245,6 +246,7 @@ TEST(conv_compute, int8_int8_out) {
     LOG(INFO) << float(y_cpu_data[i]);
   }
 }
+*/
 
 }  // namespace cuda
 }  // namespace kernels
