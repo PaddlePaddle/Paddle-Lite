@@ -30,6 +30,10 @@
 #include "lite/utils/all.h"
 #include "lite/utils/replace_stl/stream.h"
 
+#ifdef LITE_WITH_PROFILE
+#include "lite/core/profile/basic_profiler.h"
+#endif  // LITE_WITH_PROFILE
+
 namespace paddle {
 namespace lite {
 
@@ -53,6 +57,10 @@ class KernelBase {
   /// Run the kernel. Before Run, both the param_ and context_ should be valid.
   virtual void Run() = 0;
 
+#ifdef LITE_WITH_PROFILE
+  void SetProfileID(uint32_t id) { profile_id_ = id; }
+#endif
+
   void Launch() {
     /// First run, init kernel, do weights transform once
     if (is_first_epoch_) {
@@ -71,6 +79,11 @@ class KernelBase {
 #endif
 #if defined(LITE_WITH_CUDA)
     WorkSpace::Global_CUDA().AllocReset();
+#endif
+
+#ifdef LITE_WITH_PROFILE
+    CHECK_GE(profile_id_, 0) << "Must set profile id first";
+    profile::ProfileBlock x(profile_id_, "kernel");
 #endif
     Run();
   }
@@ -157,6 +170,10 @@ class KernelBase {
   // is the unique ID for the kernel.
   std::string alias_{};
   bool is_first_epoch_{true};
+
+#ifdef LITE_WITH_PROFILE
+  int profile_id_{-1};
+#endif
 };
 
 // Light-weight kernel implementation.

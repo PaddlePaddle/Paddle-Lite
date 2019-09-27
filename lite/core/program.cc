@@ -182,11 +182,11 @@ void Program::PrepareWorkspace(const cpp::ProgramDesc& prog) {
 }
 
 void Instruction::Run() {
-#ifdef LITE_WITH_PROFILE
-  profile::ProfileBlock x(profile_id_);
-#endif  // LITE_WITH_PROFILE
   CHECK(op_) << "op null";
   CHECK(kernel_) << "kernel null";
+#ifdef LITE_WITH_PROFILE
+  profile::ProfileBlock x(profile_id_, "instruction");
+#endif  // LITE_WITH_PROFILE
   if (first_epoch_) {
     first_epoch_ = false;
     CHECK(op_->CheckShape());
