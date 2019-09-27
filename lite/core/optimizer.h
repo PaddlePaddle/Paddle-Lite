@@ -73,8 +73,7 @@ class Optimizer {
 #ifdef LITE_WITH_LIGHT_WEIGHT_FRAMEWORK
            "lite_elementwise_add_activation_fuse_pass",  //
 #endif
-           "static_kernel_pick_pass",  // pick [only] kernels from original
-                                       // graph
+           "static_kernel_pick_pass",        // pick original kernel from graph
            "variable_place_inference_pass",  // inference arg/var's
            // info(target/precision/layout/device)
            // using kernel info

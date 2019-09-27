@@ -43,6 +43,14 @@ class IoCopyHostToOpenCLCompute
           param.x->target() == TARGET(kARM));
     auto mem_size = param.x->memory_size();
     VLOG(4) << "copy size " << mem_size;
+    VLOG(4) << "param.x->dims().size():" << param.x->dims().size();
+    VLOG(4) << "param.x->dims():" << param.x->dims()[0] << " "
+            << param.x->dims()[1] << " " << param.x->dims()[2] << " "
+            << param.x->dims()[3];
+    VLOG(4) << "param.y->dims().size():" << param.y->dims().size();
+    VLOG(4) << "param.y->dims():" << param.y->dims()[0] << " "
+            << param.y->dims()[1] << " " << param.y->dims()[2] << " "
+            << param.y->dims()[3];
     auto* data = param.y->mutable_data(TARGET(kOpenCL), mem_size);
     CopyFromHostSync(data, param.x->raw_data(), mem_size);
   }
@@ -81,6 +89,14 @@ class IoCopykOpenCLToHostCompute
     CHECK(param.x->target() == TARGET(kOpenCL));
     auto mem_size = param.x->memory_size();
     VLOG(4) << "copy size " << mem_size;
+    VLOG(4) << "param.x->dims().size():" << param.x->dims().size();
+    VLOG(4) << "param.x->dims():" << param.x->dims()[0] << " "
+            << param.x->dims()[1] << " " << param.x->dims()[2] << " "
+            << param.x->dims()[3];
+    VLOG(4) << "param.y->dims().size():" << param.y->dims().size();
+    VLOG(4) << "param.y->dims():" << param.y->dims()[0] << " "
+            << param.y->dims()[1] << " " << param.y->dims()[2] << " "
+            << param.y->dims()[3];
     auto* data = param.y->mutable_data(TARGET(kHost), mem_size);
     auto& context = ctx_->As<OpenCLContext>();
     auto* wait_list = context.cl_wait_list();

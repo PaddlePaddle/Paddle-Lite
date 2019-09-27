@@ -124,7 +124,7 @@ void TypeLayoutTransformPass::AddLayoutInst(
     const Type* out_arg_ty = kernel->GetOutputDeclType("Out");
 #ifdef LITE_WITH_OPENCL
     // ignore [layout check] for layout trans from image2d to buffer
-    if (/*DataLayoutCompatibleTo(*in_arg_ty, from) &&*/
+    if (DataLayoutCompatibleTo(*in_arg_ty, from) &&
         PrecisionCompatibleTo(*in_arg_ty, from) &&
         DeviceCompatibleTo(*in_arg_ty, from)) {
 #else
@@ -140,6 +140,10 @@ void TypeLayoutTransformPass::AddLayoutInst(
   CHECK(is_found) << "Can't find a layout  kernel for layout op: " << from
                   << ":" << in->AsArg().name << "->" << to << ":"
                   << inst_node->AsStmt().op_info()->Type();
+  LOG(INFO) << "========= final picked kernel [info]:"
+            << layout_inst->AsStmt().picked_kernel().name()
+            << " [summary]:" << layout_inst->AsStmt().picked_kernel().summary()
+            << "\n";
 
   // Remove the old link
   RemoveDirectedLink(in, inst_node);
@@ -174,7 +178,6 @@ void TypeLayoutTransformPass::AddLayoutInst(
   }
 
   for (auto& kernel : inst_node->AsStmt().kernels()) {
-    LOG(INFO) << "kernel info:" << kernel->name();
     inst_node->AsStmt().op()->AttachKernel(kernel.get());
   }
 

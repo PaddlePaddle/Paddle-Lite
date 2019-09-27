@@ -288,7 +288,7 @@ class KernelRegistor : public lite::Registor<KernelType> {
   }
 
 // Kernel registry
-#define LITE_KER3NEL_REGISTER(op_type__, target__, precision__) \
+#define LITE_KERNEL_REGISTER(op_type__, target__, precision__) \
   op_type__##__##target__##__##precision__##__registor__
 #define LITE_KERNEL_REGISTER_INSTANCE(                   \
     op_type__, target__, precision__, layout__, alias__) \

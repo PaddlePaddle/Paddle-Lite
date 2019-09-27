@@ -99,7 +99,16 @@ void *TensorLite::mutable_data(TargetType target, size_t memory_size) {
 }
 
 #ifdef LITE_WITH_OPENCL
+
+// specialization of TensorLite::data() for opencl Image2D
+template <>
+const cl::Image2D *TensorLite::data<float, cl::Image2D>() const {
+  CHECK(buffer_->data()) << "nullptr, do not have image";
+  return static_cast<const cl::Image2D *>(buffer_->data());
+}
+
 // full specialization of TensorLite::mutable_data() for opencl Image2D
+#if 0
 template <>
 cl::Image2D *TensorLite::mutable_data<int8_t, cl::Image2D>() {
   memory_size_ = dims_.production() * sizeof(int8_t);
@@ -129,7 +138,11 @@ cl::Image2D *TensorLite::mutable_data<float, cl::Image2D>() {
   memory_size_ = dims_.production() * sizeof(float);
   std::array<size_t, 2> image2d_shape{1, 1};
   std::array<size_t, 2> image2d_pitch{1, 1};
+  VLOG(4) << "image2d_shape:" << image2d_shape[0] << ", " << image2d_shape[1];
+  VLOG(4) << "image2d_pitch:" << image2d_pitch[0] << ", " << image2d_pitch[1];
   convertDimsToImage2DShape(&image2d_shape, &image2d_pitch);
+  VLOG(4) << "image2d_shape:" << image2d_shape[0] << ", " << image2d_shape[1];
+  VLOG(4) << "image2d_pitch:" << image2d_pitch[0] << ", " << image2d_pitch[1];
   buffer_->ResetLazyImage2D<float>(target_, image2d_shape, image2d_pitch);
   memory_size_ = image2d_shape[0] * image2d_shape[1] * sizeof(float);
   return reinterpret_cast<cl::Image2D *>(static_cast<char *>(buffer_->data()) +
@@ -155,6 +168,7 @@ cl::Image2D *TensorLite::mutable_data<float, cl::Image2D>(TargetType target) {
   target_ = target;
   return TensorLite::mutable_data<float, cl::Image2D>();
 }
+#endif  // 0
 #endif  // LITE_WITH_OPENCL
 
 // static LoD TensorLite::ToAbsOffset(const LoD &lod) {

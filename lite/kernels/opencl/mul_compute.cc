@@ -116,7 +116,7 @@ class MulComputeImage2DNHWC
     context.cl_context()->AddKernel(
         kernel_func_name_, "buffer/mat_mul_kernel.cl", build_options_);
     const auto& param = *param_.get_mutable<param_t>();
-    const auto* x_data = param.x->data<float>();
+    const auto* x_data = param.x->data<cl::Image2D>();
     const auto* y_data = param.y->data<float>();
     auto* o_data = param.output->mutable_data<float>();
 

@@ -20,3 +20,18 @@ __kernel void relu(__global const CL_DTYPE* x_data, const int count, __global CL
     out_data[index] = activation(x_data[index]);
   }
 }
+
+__kernel void relu_image(__read_only image2d_t input,
+                        __write_only image2d_t output){
+
+  const int x = get_global_id(0); // w
+  const int y = get_global_id(1); // h
+
+  const sampler_t sampler = CLK_NORMALIZED_COORDS_TRUE |
+                            CLK_ADDRESS_CLAMP |
+                            CLK_FILTER_NEAREST;
+
+  CL_DTYPE4 in = read_imagef(input, sampler, (int2)(x, y));
+  in = max((CL_DTYPE4)(0.0f, 0.0f, 0.0f, 0.0f), in);
+  write_imagef(output, (int2)(x, y), in);
+}

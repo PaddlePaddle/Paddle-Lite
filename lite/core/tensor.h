@@ -117,6 +117,14 @@ class TensorLite {
                                        offset_);
   }
 
+#if 0  // LITE_WITH_OPENCL
+  const cl::Image2D *image_data() const {
+    CHECK(buffer_->data()) << "nullptr, do not have image";
+    return  static_cast<const cl::Image2D *>(buffer_->data());
+  }
+
+#endif
+
   void Resize(const DDimLite &ddim) { dims_ = ddim; }
   void Resize(const std::vector<int64_t> &x) { dims_ = DDimLite(x); }
 
@@ -144,6 +152,17 @@ class TensorLite {
     return reinterpret_cast<R *>(static_cast<char *>(buffer_->data()) +
                                  offset_);
   }
+
+#ifdef LITE_WITH_OPENCL
+  template <typename T, typename R>
+  R *mutable_data(TargetType target, const size_t img_h, const size_t img_w) {
+    target_ = target;
+    std::array<size_t, 2> image2d_shape{img_w, img_h};
+    std::array<size_t, 2> image2d_pitch{1, 1};
+    buffer_->ResetLazyImage2D<T>(target_, image2d_shape, image2d_pitch);
+    return static_cast<R *>(buffer_->data());
+  }
+#endif
 
   // T is the data type and R is the return type
   // For OpenCL, the return type can be cl::Buffer
@@ -183,7 +202,8 @@ class TensorLite {
   template <typename T>
   TensorLite Slice(int64_t begin, int64_t end) const;
 
-#ifdef LITE_WITH_OPENCL
+// #ifdef LITE_WITH_OPENCL
+#if 0
   void image2d_shape(std::array<size_t, 2> *image2d_shape,
                      std::array<size_t, 2> *image2d_pitch) {
     convertDimsToImage2DShape(image2d_shape, image2d_pitch);

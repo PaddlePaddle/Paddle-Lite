@@ -28,17 +28,112 @@ namespace lite {
 namespace kernels {
 namespace opencl {
 
-// TODO(ysh329): add layout trans kernel
-void TransHwcToChw(Tensor* chw, const Tensor* hwc) {}
-void TransChwToHwc(Tensor* hwc, const Tensor* chw) {}
-
 class LayoutComputeBufferChwToImage2DHwc
     : public KernelLite<TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNHWC)> {
  public:
+  using param_t = operators::LayoutParam;
+
+  void PrepareForRun() override {
+    auto& context = ctx_->As<OpenCLContext>();
+    context.cl_context()->AddKernel(
+        kernel_func_name_, "buffer/layout_kernel.cl", build_options_);
+  }
+
+  DDim InitImageDimInfoWith(const DDim& tensor_dim) {
+    size_t new_dims[] = {1, 1, 1, 1};
+    for (size_t j = 0; j < tensor_dim.size(); ++j) {
+      new_dims[4 - tensor_dim.size() + j] = tensor_dim[j];
+    }
+    size_t N, C, H, W;
+    N = new_dims[0];
+    C = new_dims[1];
+    H = new_dims[2];
+    W = new_dims[3];
+    size_t width = W * ((C + 3) / 4);
+    size_t height = H * N;
+    return DDim(
+        std::vector<DDim::value_type>({static_cast<DDim::value_type>(width),
+                                       static_cast<DDim::value_type>(height)}));
+  }
+
   void Run() override {
-    auto& param = Param<operators::LayoutParam>();
-    auto out_data = param.y->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
-    TransChwToHwc(param.y, param.x);
+    auto& param = Param<param_t>();
+    auto* x_data = param.x->data<float, cl::Buffer>();
+    auto x_dims = param.x->dims();
+    // auto* y_data = param.y->mutable_data<float,
+    // cl::Image2D>(TARGET(kOpenCL));
+    // TODO(ysh329): image shape compute
+    auto image_shape = InitImageDimInfoWith(x_dims);
+    auto* y_data = param.y->mutable_data<float, cl::Image2D>(
+        TARGET(kOpenCL), image_shape[0], image_shape[1]);
+    auto y_dims = param.y->dims();
+
+    VLOG(4) << "image_shape[0]:" << image_shape[0]
+            << " image_shape[1]:" << image_shape[1]
+            << " image_shape.size():" << image_shape.size();
+    VLOG(4) << "param.x->dims().size():" << param.x->dims().size();
+    VLOG(4) << "param.x->dims():" << param.x->dims()[0] << " "
+            << param.x->dims()[1] << " " << param.x->dims()[2] << " "
+            << param.x->dims()[3];
+    VLOG(4) << "param.y->dims().size():" << param.y->dims().size();
+    VLOG(4) << "param.y->dims():" << param.y->dims()[0] << " "
+            << param.y->dims()[1] << " " << param.y->dims()[2] << " "
+            << param.y->dims()[3];
+    // param.x->image2d_shape()
+    VLOG(4) << "TargetToStr(param.x->target()):"
+            << TargetToStr(param.x->target());
+    VLOG(4) << "TargetToStr(param.y->target()):"
+            << TargetToStr(param.y->target());
+
+    auto& context = ctx_->As<OpenCLContext>();
+    CHECK(context.cl_context() != nullptr);
+
+    STL::stringstream kernel_key;
+    kernel_key << kernel_func_name_ << build_options_;
+    auto kernel = context.cl_context()->GetKernel(kernel_key.str());
+
+    // TODO(ysh329): impl kernel and checck args
+
+    int arg_idx = 0;
+    cl_int status = kernel.setArg(arg_idx, *x_data);
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(++arg_idx, static_cast<const int>(x_dims[0]));
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(++arg_idx, static_cast<const int>(x_dims[1]));
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(++arg_idx, static_cast<const int>(x_dims[2]));
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(++arg_idx, static_cast<const int>(x_dims[3]));
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(++arg_idx, *y_data);
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(++arg_idx, static_cast<const int>(image_shape[1]));
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(++arg_idx, static_cast<const int>(image_shape[0]));
+    CL_CHECK_FATAL(status);
+    // TODO(ysh329): global work size setting
+    size_t gws_dims[] = {1, 1, 1, 1};
+    for (size_t j = 0; j < x_dims.size(); ++j) {
+      gws_dims[4 - x_dims.size() + j] = x_dims[j];
+    }
+
+    VLOG(4) << "gws_dims[0]" << gws_dims[0] << " "
+            << "gws_dims[1]" << gws_dims[1] << " "
+            << "gws_dims[2]" << gws_dims[2] << " "
+            << "gws_dims[3]" << gws_dims[3] << " ";
+    auto global_work_size =
+        cl::NDRange{static_cast<cl::size_type>(gws_dims[1]),
+                    static_cast<cl::size_type>(gws_dims[2]),
+                    static_cast<cl::size_type>(gws_dims[3])};
+    status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
+        kernel,
+        cl::NullRange,
+        global_work_size,
+        cl::NullRange,
+        nullptr,
+        event_.get());
+    CL_CHECK_FATAL(status);
+    context.cl_wait_list()->emplace(y_data, event_);
   }
 
   std::unique_ptr<type_infer_handler_t> GetTypeInferHandler() override {
@@ -64,15 +159,85 @@ class LayoutComputeBufferChwToImage2DHwc
   }
 
   std::string doc() const override { return "Trans Layout from NCHW to NHWC"; }
+
+ private:
+  std::string kernel_func_name_{"BufferChwToImgHwc"};
+  std::string build_options_{"-DCL_DTYPE=float"};
+  std::shared_ptr<cl::Event> event_{new cl::Event};
 };
 
 class LayoutComputeImage2DHwcToBufferChw
     : public KernelLite<TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW)> {
  public:
+  using param_t = operators::LayoutParam;
+
+  void PrepareForRun() override {
+    auto& context = ctx_->As<OpenCLContext>();
+    context.cl_context()->AddKernel(
+        kernel_func_name_, "buffer/layout_kernel.cl", build_options_);
+  }
+
   void Run() override {
-    auto& param = Param<operators::LayoutParam>();
-    auto out_data = param.y->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
-    TransHwcToChw(param.y, param.x);
+    auto& param = Param<param_t>();
+    auto* x_data = param.x->data<float, cl::Image2D>();
+    // const cl::Image2D* x_data = param.x->image_data();
+    auto x_dims = param.x->dims();
+    auto* y_data = param.y->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
+    auto y_dims = param.y->dims();
+    VLOG(4) << "TargetToStr(param.x->target()):"
+            << TargetToStr(param.x->target());
+    VLOG(4) << "TargetToStr(param.y->target()):"
+            << TargetToStr(param.y->target());
+    VLOG(4) << "param.x->dims().size():" << param.x->dims().size();
+    VLOG(4) << "param.x->dims():" << param.x->dims()[0] << " "
+            << param.x->dims()[1] << " " << param.x->dims()[2] << " "
+            << param.x->dims()[3];
+    VLOG(4) << "param.y->dims().size():" << param.y->dims().size();
+    VLOG(4) << "param.y->dims():" << param.y->dims()[0] << " "
+            << param.y->dims()[1] << " " << param.y->dims()[2] << " "
+            << param.y->dims()[3];
+
+    auto& context = ctx_->As<OpenCLContext>();
+    CHECK(context.cl_context() != nullptr);
+
+    STL::stringstream kernel_key;
+    kernel_key << kernel_func_name_ << build_options_;
+    auto kernel = context.cl_context()->GetKernel(kernel_key.str());
+
+    // TODO(ysh329): impl kernel and checck args
+    int arg_idx = 0;
+    cl_int status = kernel.setArg(arg_idx, *x_data);
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(++arg_idx, static_cast<const int>(x_dims[0]));
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(++arg_idx, static_cast<const int>(x_dims[1]));
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(++arg_idx, *y_data);
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(++arg_idx, static_cast<const int>(y_dims[0]));
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(++arg_idx, static_cast<const int>(y_dims[1]));
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(++arg_idx, static_cast<const int>(y_dims[2]));
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(++arg_idx, static_cast<const int>(y_dims[3]));
+    CL_CHECK_FATAL(status);
+    // TODO(ysh329): global work size setting
+    for (int y_idx = y_dims.size() - 1; y_idx < y_dims.size(); ++y_idx) {
+      y_dims[y_idx] = 1;
+    }
+    auto global_work_size = cl::NDRange{static_cast<cl::size_type>(y_dims[1]),
+                                        static_cast<cl::size_type>(y_dims[2]),
+                                        static_cast<cl::size_type>(y_dims[3])};
+    status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
+        kernel,
+        cl::NullRange,
+        global_work_size,
+        cl::NullRange,
+        nullptr,
+        event_.get());
+    CL_CHECK_FATAL(status);
+    context.cl_wait_list()->emplace(y_data, event_);
   }
 
   std::unique_ptr<type_infer_handler_t> GetTypeInferHandler() override {
@@ -98,6 +263,11 @@ class LayoutComputeImage2DHwcToBufferChw
   }
 
   std::string doc() const override { return "Trans Layout from NHWC to NCHW"; }
+
+ private:
+  std::string kernel_func_name_{"ImgHwcToBufferChw"};
+  std::string build_options_{"-DCL_DTYPE=float"};
+  std::shared_ptr<cl::Event> event_{new cl::Event};
 };
 
 }  // namespace opencl
