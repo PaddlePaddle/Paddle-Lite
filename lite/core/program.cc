@@ -113,9 +113,6 @@ void RuntimeProgram::UpdateVarsOfProgram(cpp::ProgramDesc* desc) {
 
 void RuntimeProgram::Run() {
   for (auto& inst : instructions_) {
-    VLOG(4) << ">> Running kernel: " << inst.op()->op_info()->Repr()
-            << " on Target " << TargetToStr(inst.kernel()->target());
-
     inst.Run();
 #ifdef LITE_WITH_PROFILE
 #ifdef LITE_WITH_PRECISION_PROFILE
@@ -192,9 +189,14 @@ void Instruction::Run() {
     CHECK(op_->CheckShape());
   }
 
-  if (op_->run_once() && has_run_) return;
+  if (op_->run_once() && has_run_) {
+    return;
+  }
+
   VLOG(4) << "kernel launch";
   op_->InferShape();
+  VLOG(4) << ">> Running kernel: " << op_->op_info()->Repr() << " on Target "
+          << TargetToStr(kernel_->target());
   kernel_->Launch();
   has_run_ = true;
 }

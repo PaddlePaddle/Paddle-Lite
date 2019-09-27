@@ -24,7 +24,7 @@ namespace mir {
 
 void ConvActivationFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   for (auto conv_type : {"conv2d", "depthwise_conv2d"}) {
-    for (auto act_type : {"relu"}) {
+    for (auto act_type : {"relu", "leaky_relu"}) {
       for (auto has_bias : {true, false}) {
         fusion::ConvActivationFuser fuser(conv_type, act_type, has_bias);
         fuser(graph.get());

@@ -147,6 +147,7 @@ void Predictor::Build(const cpp::ProgramDesc &desc,
   core::KernelPickFactor factor;
   factor.ConsiderTarget();
   factor.ConsiderPrecision();
+  factor.ConsiderDataLayout();
   optimizer_.Run(std::move(program), valid_places, factor, passes);
   exec_scope_ = optimizer_.exec_scope();
 }
