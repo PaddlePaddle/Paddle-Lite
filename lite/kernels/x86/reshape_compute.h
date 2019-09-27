@@ -27,9 +27,7 @@ namespace kernels {
 namespace x86 {
 
 template <typename T>
-void Compute(const lite::Tensor* in,
-             const lite::Tensor* actual_shape,
-             lite::Tensor* out) {
+void Compute(const lite::Tensor* in, lite::Tensor* out) {
   auto out_dims = out->dims();
   auto in_dims = in->dims();
   out->CopyDataFrom(*in);
@@ -43,7 +41,7 @@ class ReshapeCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
 
   void Run() override {
     auto& param = *param_.get_mutable<param_t>();
-    Compute<T>(param.x, param.actual_shape, param.output);
+    Compute<T>(param.x, param.output);
   }
 
   virtual ~ReshapeCompute() = default;
@@ -59,7 +57,7 @@ class Reshape2Compute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
 
   void Run() override {
     auto& param = *param_.get_mutable<param_t>();
-    Compute<T>(param.x, param.actual_shape, param.output);
+    Compute<T>(param.x, param.output);
   }
 
   virtual ~Reshape2Compute() = default;
