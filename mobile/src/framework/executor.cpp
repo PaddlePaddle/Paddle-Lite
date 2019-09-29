@@ -112,6 +112,9 @@ Executor<Device, T>::Executor(const Program<Device> &program,
     profile[op_index].runBegin = (uint64_t)ts.tv_sec * 1e9 + ts.tv_nsec;
 #endif
     DLOG << "Initialize op[" << count++ << "]: " << op_handler->Type();
+    if (op_handler->Type() == "feed" || op_handler->Type() == "fetch") {
+      op_handler->setPrePostType(config_.pre_post_type);
+    }
     op_handler->Init();
 #ifdef PADDLE_MOBILE_PROFILE
     clock_gettime(CLOCK_MONOTONIC, &ts);
