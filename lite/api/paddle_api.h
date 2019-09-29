@@ -95,13 +95,13 @@ class LITE_API ConfigBase {
 
  public:
   explicit ConfigBase(PowerMode mode = LITE_POWER_NO_BIND, int threads = 1);
-  //set Model_dir
+  // set Model_dir
   void set_model_dir(const std::string& x) { model_dir_ = x; }
   const std::string& model_dir() const { return model_dir_; }
-  //set Power_mode
+  // set Power_mode
   void set_power_mode(PowerMode mode);
   PowerMode power_mode() const { return mode_; }
-  //set Thread
+  // set Thread
   void set_threads(int threads);
   int threads() const { return threads_; }
 };

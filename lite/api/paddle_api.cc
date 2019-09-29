@@ -13,8 +13,8 @@
 // limitations under the License.
 
 #include "lite/api/paddle_api.h"
-#include "lite/core/tensor.h"
 #include "lite/core/device_info.h"
+#include "lite/core/tensor.h"
 
 namespace paddle {
 namespace lite_api {
@@ -90,7 +90,7 @@ void ConfigBase::set_power_mode(paddle::lite_api::PowerMode mode) {
 #endif
 }
 
- void ConfigBase::set_threads(int threads) {
+void ConfigBase::set_threads(int threads) {
 #ifdef LITE_WITH_ARM
   lite::DeviceInfo::Global().SetRunMode(mode_, threads);
   mode_ = lite::DeviceInfo::Global().mode();
