@@ -18,9 +18,9 @@ function prepare_thirdparty {
         rm -rf $workspace/third-party
 
         if [ ! -f $workspace/third-party-05b862.tar.gz ]; then
-            wget $THIRDPARTY_TAR
+            wget -P $workspace $THIRDPARTY_TAR
         fi
-        tar xzf third-party-05b862.tar.gz
+        tar xzf $workspace/third-party-05b862.tar.gz -C $workspace
     else
         git submodule update --init --recursive
     fi
