@@ -15,6 +15,7 @@ limitations under the License. */
 #include <vector>
 #include "lite/core/op_registry.h"
 #include "lite/kernels/cuda/yolo_box_compute.h"
+// #include "lite/core/target_wrapper.h"
 
 namespace paddle {
 namespace lite {
@@ -94,7 +95,7 @@ __host__ __device__ inline void CalcLabelScore(T* scores,
 
 template <typename T>
 __global__ void KeYoloBoxFw(const T* input,
-                            const T* imgsize,
+                            const int* imgsize,
                             T* boxes,
                             T* scores,
                             const float conf_thresh,
@@ -117,8 +118,8 @@ __global__ void KeYoloBoxFw(const T* input,
     int l = tid % w;
 
     int an_stride = (5 + class_num) * grid_num;
-    int img_height = static_cast<int>(imgsize[2 * i]);
-    int img_width = static_cast<int>(imgsize[2 * i + 1]);
+    int img_height = imgsize[2 * i];
+    int img_width = imgsize[2 * i + 1];
 
     int obj_idx =
         GetEntryIndex(i, j, k * w + l, an_num, an_stride, grid_num, 4);
@@ -167,7 +168,7 @@ void YoloBoxCompute::Run() {
   int downsample_ratio = param.downsample_ratio;
 
   const float* input = X->data<float>();
-  const float* imgsize = ImgSize->data<float>();
+  const int* imgsize = ImgSize->data<int>();
   float* boxes = Boxes->mutable_data<float>(TARGET(kCUDA));
   float* scores = Scores->mutable_data<float>(TARGET(kCUDA));
 
@@ -180,6 +181,11 @@ void YoloBoxCompute::Run() {
 
   anchors_.Resize({static_cast<int64_t>(anchors.size())});
   int* d_anchors = anchors_.mutable_data<int>(TARGET(kCUDA));
+  //TargetWrapperCuda::MemcpyAsync(d_anchors,
+  //                               anchors.data(),
+  //                               sizeof(int) * anchors.size(),
+  //                               IoDirection::HtoD,
+  //                               stream);
   CopySync<TARGET(kCUDA)>(d_anchors,
                           anchors.data(),
                           sizeof(int) * anchors.size(),
