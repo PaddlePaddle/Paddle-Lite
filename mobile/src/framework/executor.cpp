@@ -103,6 +103,9 @@ Executor<Device, T>::Executor(const Program<Device> &program,
   int count = 0;
   for (auto &op_handler : ops_of_block0_) {
     DLOG << "Initialize op[" << count++ << "]: " << op_handler->Type();
+    if (op_handler->Type() == "feed" || op_handler->Type() == "fetch") {
+      op_handler->setPrePostType(config_.pre_post_type);
+    }
     op_handler->Init();
   }
 }
