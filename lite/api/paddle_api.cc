@@ -14,6 +14,7 @@
 
 #include "lite/api/paddle_api.h"
 #include "lite/core/tensor.h"
+#include "lite/core/device_info.h"
 
 namespace paddle {
 namespace lite_api {
@@ -71,6 +72,30 @@ void PaddlePredictor::SaveOptimizedModel(const std::string &model_dir,
 template <typename ConfigT>
 std::shared_ptr<PaddlePredictor> CreatePaddlePredictor(const ConfigT &) {
   return std::shared_ptr<PaddlePredictor>();
+}
+
+ConfigBase::ConfigBase(PowerMode mode, int threads) {
+#ifdef LITE_WITH_ARM
+  lite::DeviceInfo::Global().SetRunMode(mode, threads);
+  mode_ = lite::DeviceInfo::Global().mode();
+  threads_ = lite::DeviceInfo::Global().threads();
+#endif
+}
+
+void ConfigBase::set_power_mode(paddle::lite_api::PowerMode mode) {
+#ifdef LITE_WITH_ARM
+  lite::DeviceInfo::Global().SetRunMode(mode, threads_);
+  mode_ = lite::DeviceInfo::Global().mode();
+  threads_ = lite::DeviceInfo::Global().threads();
+#endif
+}
+
+ void ConfigBase::set_threads(int threads) {
+#ifdef LITE_WITH_ARM
+  lite::DeviceInfo::Global().SetRunMode(mode_, threads);
+  mode_ = lite::DeviceInfo::Global().mode();
+  threads_ = lite::DeviceInfo::Global().threads();
+#endif
 }
 
 }  // namespace lite_api
