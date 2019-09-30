@@ -53,7 +53,7 @@ Tensor* LightPredictor::GetInput(size_t offset) {
   return &feed_list->at(offset);
 }
 
-// get input tensor by name
+// get tensor by name
 Tensor* LightPredictor::GetTensor(const std::string& name) {
   auto* var = program_->exec_scope()->FindVar(name);
   return var->GetMutable<lite::Tensor>();
