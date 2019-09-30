@@ -19,7 +19,6 @@
 #include <utility>
 #include <vector>
 #include "lite/core/op_registry.h"
-
 namespace paddle {
 namespace lite {
 namespace kernels {
@@ -33,7 +32,7 @@ TEST(mul_x86, retrive_op) {
 }
 
 TEST(mul_x86, init) {
-  MulCompute<float> mul;
+  lite::kernels::x86::MulCompute<float> mul;
   ASSERT_EQ(mul.precision(), PRECISION(kFloat));
   ASSERT_EQ(mul.target(), TARGET(kX86));
 }
@@ -72,9 +71,10 @@ TEST(mul_x86, run_test) {
   mul.SetParam(param);
   mul.Run();
 
-  LOG(INFO) << "output: ";
+  std::vector<float> ref_result = {20, 23, 26, 29};
+
   for (int i = 0; i < out.dims().production(); i++) {
-    LOG(INFO) << out_data[i];
+    EXPECT_NEAR(out_data[i], ref_result[i], 1e-3);
   }
 }
 

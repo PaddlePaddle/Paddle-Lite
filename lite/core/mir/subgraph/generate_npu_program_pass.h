@@ -20,10 +20,10 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
+#include "lite/backends/npu/bridge/registry.h"
+#include "lite/backends/npu/npu_helper.h"
 #include "lite/core/mir/pass.h"
 #include "lite/core/mir/subgraph/subgraph_program_pass.h"
-#include "lite/npu/bridge/registry.h"
-#include "lite/npu/npu_helper.h"
 
 namespace paddle {
 namespace lite {
@@ -38,33 +38,22 @@ class GenerateNPUProgramPass : public SubgraphProgramPass {
   std::unique_ptr<RuntimeProgram> GenProgram();
 
  protected:
-  // sort nodes to operational sequence
-  void SubgraphSortHelper(Node* node,
-                          const std::unordered_set<Node*>& nodes_all,
-                          std::unordered_set<const Node*>* visited_nodes,
-                          std::vector<Node*>* ret);
-
   // nodes2cvt: op nodes to convert
-  // cvted_vars: converted var nodes
-  // nodes2rm: op nodes and var nodes that need to be removed
-  void CvtOpNodes(const std::vector<Node*>& nodes2cvt,
-                  lite::npu::bridge::node_map_type* cvted_vars);
+  // return cvted_vars: converted var nodes
+  void CvtAllOpNodes(const std::vector<Node*>& nodes2cvt,
+                     lite::npu::bridge::node_map_type* cvted_vars);
 
-  // achieve input and output vars/cvted_vars;
-  // achieve all nodes to remove
-  void GetIOVars(const std::vector<Node*>& nodes2cvt,
-                 const lite::npu::bridge::node_map_type& cvted_vars,
-                 std::unordered_set<const Node*>* nodes2rm,
-                 std::vector<Node*>* in_vars,
-                 std::vector<Node*>* out_vars,
-                 lite::npu::bridge::node_map_type* in_cvted_vars,
-                 lite::npu::bridge::node_map_type* out_cvted_vars);
+  std::shared_ptr<ge::Operator> CvtVarNode(lite::mir::Node* var_node,
+                                           const Scope* scope);
 
-  void GenNPUGraphOpNode(const std::unique_ptr<SSAGraph>& graph,
-                         int sub_id,
-                         const std::unordered_set<Node*>& nodes_all);
+  std::string BuildNPUGraph(const std::unordered_set<Node*>& op_nodes,
+                            const std::unordered_set<Node*>& in_data_vars,
+                            const std::unordered_set<Node*>& out_data_vars,
+                            int sub_id);
 
-  void ConvertSubgraph(const std::unique_ptr<SSAGraph>& graph, int sub_num);
+  void GenNPUSubgraph(const std::unique_ptr<SSAGraph>& graph,
+                      const std::unordered_set<Node*>& op_nodes,
+                      int sub_id);
 
  private:
   std::vector<Instruction> insts_;

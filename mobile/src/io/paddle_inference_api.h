@@ -25,7 +25,6 @@ limitations under the License. */
 #include <memory>
 #include <string>
 #include <vector>
-#include "common/type_define.h"
 
 namespace paddle_mobile {
 
@@ -86,6 +85,56 @@ class PaddleBuf {
   bool memory_owned_{true};
 };
 
+typedef enum {
+  paddle_void = 0,
+  paddle_float,
+  paddle_int,
+  paddle_uint16_t,
+  paddle_double,
+  paddle_int64_t,
+  paddle_size_t,
+  paddle_int16_t,
+  paddle_int8_t,
+  paddle_uint8_t,
+  paddle_bool,
+  paddle_string,
+  paddle_floats = 100,
+  paddle_ints,
+  paddle_int64_ts,
+  paddle_size_ts,
+  paddle_bools,
+  paddle_strings,
+  paddle_const_float = 200,
+  paddle_const_int,
+  paddle_block = 300,
+  paddle_tensor,
+  paddle_lod_tensor,
+  paddle_blocks,
+  paddle_tensors,
+  paddle_lod_tensors,
+  paddle_p_block = 400,
+  paddle_p_tensor,
+  paddle_p_lod_tensor,
+  paddle_p_blocks,
+  paddle_p_tensors,
+  paddle_p_lod_tensors,
+  paddle_scopes = 500,
+  paddle_selected_rows,
+  paddle_dim0 = 600,
+  paddle_dim1,
+  paddle_dim2,
+  paddle_dim3,
+  paddle_dim4,
+  paddle_dim5,
+  paddle_dim6,
+  paddle_dim7,
+  paddle_dim8,
+  paddle_dim9,
+#ifdef PADDLE_MOBILE_CL
+  paddle_cl_image,
+#endif
+} PaddlekTypeId_t;
+
 struct PaddleTensor {
   PaddleTensor() = default;
   std::string name;  // variable name.
@@ -93,7 +142,7 @@ struct PaddleTensor {
   std::vector<int> lod;
   PaddleBuf data;  // blob of data.
   PaddleDType dtype;
-  kTypeId_t dtypeid;
+  PaddlekTypeId_t dtypeid;
   LayoutType layout;
 };
 
@@ -166,6 +215,7 @@ struct PaddleMobileConfig : public PaddlePredictor::Config {
   bool quantification = false;
   bool lod_mode = false;
   int thread_num = 1;
+  bool load_when_predict = false;
   std::string cl_path;
   struct PaddleModelMemoryPack memory_pack;
 };

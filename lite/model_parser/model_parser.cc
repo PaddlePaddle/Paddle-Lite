@@ -32,7 +32,7 @@
 #include "lite/utils/io.h"
 
 #ifdef LITE_WITH_NPU
-#include "lite/npu/npu_helper.h"
+#include "lite/backends/npu/npu_helper.h"
 #endif
 
 namespace paddle {
@@ -85,20 +85,23 @@ void TensorFromStream(std::istream &is, lite::Tensor *tensor) {
   size_t size = tensor->dims().production() * SizeOfType(desc.data_type());
   // alllocate memory
   switch (static_cast<int>(desc.data_type())) {
-#define DO(desc, type)                  \
-  case Type::VarType_Type_##desc:       \
-    buf = tensor->mutable_data<type>(); \
-    break;
-    // DO(BOOL, bool);
-    DO(FP32, float);
-    DO(INT8, int8_t);
-    DO(INT16, int16_t);
-    DO(INT32, int32_t);
-    DO(INT64, int64_t);
-#undef DO
+#define SET_TENSOR(desc, type, precision) \
+  case Type::VarType_Type_##desc:         \
+    buf = tensor->mutable_data<type>();   \
+    tensor->set_precision(precision);     \
+    break
+
+    // SET_TENSOR(BOOL, bool, PRECISION(kBool));
+    SET_TENSOR(FP32, float, PRECISION(kFloat));
+    SET_TENSOR(INT8, int8_t, PRECISION(kInt8));
+    SET_TENSOR(INT16, int16_t, PRECISION(kInt16));
+    SET_TENSOR(INT32, int32_t, PRECISION(kInt32));
+    SET_TENSOR(INT64, int64_t, PRECISION(kInt64));
+#undef SET_TENSOR
     default:
       LOG(FATAL) << "unknown type " << desc.data_type();
   }
+  tensor->set_persistable(true);
 
   is.read(static_cast<char *>(buf), size);
 }
@@ -126,8 +129,6 @@ void LoadLoDTensor(std::istream &is, Variable *var) {
   TensorFromStream(is, tensor);
 }
 
-// TODO(Superjomn) support SelectedRows.
-
 void ReadBinaryFile(const std::string &filename, std::string *contents) {
   std::ifstream fin(filename, std::ios::in | std::ios::binary);
   CHECK(fin.is_open()) << "Cannot open file: " << filename;
@@ -141,12 +142,16 @@ void ReadBinaryFile(const std::string &filename, std::string *contents) {
 }
 
 std::unique_ptr<framework::proto::ProgramDesc> LoadProgram(
-    const std::string &path) {
-  std::string desc_str;
-  ReadBinaryFile(path, &desc_str);
+    const std::string &path, bool program_from_memory) {
   std::unique_ptr<framework::proto::ProgramDesc> main_program(
       new framework::proto::ProgramDesc);
-  main_program->ParseFromString(desc_str);
+  if (!program_from_memory) {
+    std::string desc_str;
+    ReadBinaryFile(path, &desc_str);
+    main_program->ParseFromString(desc_str);
+  } else {
+    main_program->ParseFromString(path);
+  }
   return main_program;
 }
 
@@ -159,7 +164,6 @@ void LoadParam(const std::string &path, Variable *out) {
   LoadLoDTensor(fin, out);
 }
 
-//
 bool IsPersistable(const cpp::VarDesc &var) {
   if (var.Persistable() && var.GetType() != VarDescAPI::Type::FEED_MINIBATCH &&
       var.GetType() != VarDescAPI::Type::FETCH_LIST &&
@@ -171,7 +175,8 @@ bool IsPersistable(const cpp::VarDesc &var) {
 
 void LoadCombinedParamsPb(const std::string &path,
                           lite::Scope *scope,
-                          const cpp::ProgramDesc &cpp_prog) {
+                          const cpp::ProgramDesc &cpp_prog,
+                          bool params_from_memory) {
   CHECK(scope);
   auto prog = cpp_prog;
   auto &main_block_desc = *prog.GetBlock<cpp::BlockDesc>(0);
@@ -186,19 +191,27 @@ void LoadCombinedParamsPb(const std::string &path,
   std::sort(paramlist.begin(), paramlist.end());
 
   // Load vars
-  std::ifstream file(path);
-  CHECK(file.is_open());
-  for (size_t i = 0; i < paramlist.size(); ++i) {
-    auto *var = scope->Var(paramlist[i]);
-    // Error checking
-    CHECK(static_cast<bool>(file))
-        << "There is a problem with loading model parameters";
-    LoadLoDTensor(file, var);
-  }
-  file.peek();
-  CHECK(file.eof()) << "You are not allowed to load partial data via"
+  auto load_var_func = [&](std::istream &is) {
+    for (size_t i = 0; i < paramlist.size(); ++i) {
+      auto *var = scope->Var(paramlist[i]);
+      // Error checking
+      CHECK(static_cast<bool>(is))
+          << "There is a problem with loading model parameters";
+      LoadLoDTensor(is, var);
+    }
+    is.peek();
+    CHECK(is.eof()) << "You are not allowed to load partial data via"
                     << " LoadCombinedParamsPb, use LoadParam instead.";
-  file.close();
+  };
+
+  if (params_from_memory) {
+    std::stringstream fin(path, std::ios::in | std::ios::binary);
+    load_var_func(fin);
+  } else {
+    std::ifstream fin(path, std::ios::binary);
+    CHECK(fin.is_open());
+    load_var_func(fin);
+  }
 }
 
 void LoadModelPb(const std::string &model_dir,
@@ -206,26 +219,33 @@ void LoadModelPb(const std::string &model_dir,
                  const std::string &param_file,
                  Scope *scope,
                  cpp::ProgramDesc *cpp_prog,
-                 bool combined) {
+                 bool combined,
+                 bool model_from_memory) {
   CHECK(cpp_prog);
   CHECK(scope);
   cpp_prog->ClearBlocks();
 
   // Load model
+  VLOG(4) << "Start load model program...";
   std::string prog_path = model_dir + "/__model__";
   if (combined) {
     prog_path = model_file;
   }
-  framework::proto::ProgramDesc pb_proto_prog = *LoadProgram(prog_path);
+  framework::proto::ProgramDesc pb_proto_prog =
+      *LoadProgram(prog_path, model_from_memory);
   pb::ProgramDesc pb_prog(&pb_proto_prog);
-
   // Transform to cpp::ProgramDesc
   TransformProgramDescAnyToCpp(pb_prog, cpp_prog);
 
   // Load Params
   // NOTE: Only main block be used now.
+  VLOG(4) << "Start load model params...";
+  CHECK(!(!combined && model_from_memory))
+      << "If you want use the model_from_memory,"
+      << " you should load the combined model using cfg.set_model_buffer "
+         "interface.";
   if (combined) {
-    LoadCombinedParamsPb(param_file, scope, *cpp_prog);
+    LoadCombinedParamsPb(param_file, scope, *cpp_prog, model_from_memory);
   } else {
     auto main_block = pb_proto_prog.blocks(0);
     for (auto &var : main_block.vars()) {
@@ -247,6 +267,7 @@ void LoadModelPb(const std::string &model_dir,
   }
 
 #ifdef LITE_WITH_NPU
+  auto main_block = pb_proto_prog.blocks(0);
   for (auto &op : main_block.ops()) {
     LOG(INFO) << "op type:" << op.type();
     if (op.type() != "graph_op") {
@@ -361,7 +382,22 @@ void TensorToStream(std::ostream &os, const lite::Tensor &tensor) {
     // void*    protobuf message
     framework::proto::VarType::TensorDesc desc;
     // TODO(Superjomn) support other data types.
-    desc.set_data_type(framework::proto::VarType_Type_FP32);
+    switch (tensor.precision()) {
+#define SET_DATA_TYPE(precision, type_desc) \
+  case precision:                           \
+    desc.set_data_type(type_desc);          \
+    break
+
+      SET_DATA_TYPE(PRECISION(kFloat), framework::proto::VarType_Type_FP32);
+      SET_DATA_TYPE(PRECISION(kInt8), framework::proto::VarType_Type_INT8);
+      SET_DATA_TYPE(PRECISION(kInt16), framework::proto::VarType_Type_INT16);
+      SET_DATA_TYPE(PRECISION(kInt32), framework::proto::VarType_Type_INT32);
+      SET_DATA_TYPE(PRECISION(kInt64), framework::proto::VarType_Type_INT64);
+#undef SET_DATA_TYPE
+      default:
+        LOG(FATAL) << "unknown precision type: "
+                   << PrecisionToStr(tensor.precision());
+    }
     auto dims = tensor.dims();
     auto *pb_dims = desc.mutable_dims();
     pb_dims->Resize(static_cast<int>(dims.size()), 0);
@@ -426,7 +462,22 @@ void SetParamInfoNaive(naive_buffer::ParamDesc *param_desc,
   desc.SetLoD(tensor.lod());
 
   // TODO(sangoly): support other data types.
-  desc.SetDataType(VarDescAPI::VarDataType::FP32);
+  switch (tensor.precision()) {
+#define SET_DATA_TYPE(precision, type_desc) \
+  case precision:                           \
+    desc.SetDataType(type_desc);            \
+    break;
+
+    SET_DATA_TYPE(PRECISION(kFloat), VarDescAPI::VarDataType::FP32);
+    SET_DATA_TYPE(PRECISION(kInt8), VarDescAPI::VarDataType::INT8);
+    SET_DATA_TYPE(PRECISION(kInt16), VarDescAPI::VarDataType::INT16);
+    SET_DATA_TYPE(PRECISION(kInt32), VarDescAPI::VarDataType::INT32);
+    SET_DATA_TYPE(PRECISION(kInt64), VarDescAPI::VarDataType::INT64);
+#undef SET_DATA_TYPE
+    default:
+      LOG(FATAL) << "unknown precision type: "
+                 << PrecisionToStr(tensor.precision());
+  }
   desc.SetDim(tensor.dims().Vectorize());
   uint64_t size = tensor.memory_size();
   CHECK_LT(size, std::numeric_limits<std::streamsize>::max())
@@ -434,16 +485,44 @@ void SetParamInfoNaive(naive_buffer::ParamDesc *param_desc,
 
 #ifdef LITE_WITH_CUDA
   if (tensor.target() == TARGET(kCUDA)) {
-    std::unique_ptr<float> tmp_buffer(new float[tensor.data_size()]);
-    TargetWrapperCuda::MemcpySync(tmp_buffer.get(),
-                                  tensor.data<float>(),
-                                  tensor.data_size(),
-                                  IoDirection::DtoH);
-    desc.SetData<float>(tmp_buffer.get(), tensor.data_size());
+    switch (tensor.precision()) {
+#define DO(precision, type)                                         \
+  case precision: {                                                 \
+    std::unique_ptr<type> tmp_buffer(new type[tensor.data_size()]); \
+    TargetWrapperCuda::MemcpySync(tmp_buffer.get(),                 \
+                                  tensor.data<type>(),              \
+                                  tensor.data_size(),               \
+                                  IoDirection::DtoH);               \
+    desc.SetData<type>(tmp_buffer.get(), tensor.data_size());       \
+  } break;
+      DO(PRECISION(kFloat), float);
+      DO(PRECISION(kInt8), int8_t);
+      DO(PRECISION(kInt16), int16_t);
+      DO(PRECISION(kInt32), int32_t);
+      DO(PRECISION(kInt64), int64_t);
+#undef DO
+      default:
+        LOG(FATAL) << "unknown precision type: "
+                   << PrecisionToStr(tensor.precision());
+    }
   } else  // NOLINT
 #endif    // LITE_WITH_CUDA
   {
-    desc.SetData<float>(tensor.data<float>(), tensor.data_size());
+    switch (tensor.precision()) {
+#define DO(precision, type)                                      \
+  case precision:                                                \
+    desc.SetData<type>(tensor.data<type>(), tensor.data_size()); \
+    break;
+      DO(PRECISION(kFloat), float);
+      DO(PRECISION(kInt8), int8_t);
+      DO(PRECISION(kInt16), int16_t);
+      DO(PRECISION(kInt32), int32_t);
+      DO(PRECISION(kInt64), int64_t);
+#undef DO
+      default:
+        LOG(FATAL) << "unknown precision type: "
+                   << PrecisionToStr(tensor.precision());
+    }
   }
 }
 
@@ -548,22 +627,24 @@ void GetParamInfoNaive(const naive_buffer::ParamDesc &desc,
 
   // Load data
   switch (desc.GetDataType()) {
-#define DO(data_type__, T)                                               \
+#define SET_TENSOR(data_type__, T, precision)                            \
   case VarDescAPI::VarDataType::data_type__:                             \
     SetTensorDataNaive<T>(                                               \
         tensor->mutable_data<T>(), tensor->data_size(), desc.Data<T>()); \
+    tensor->set_precision(precision);                                    \
     break
 
-    // DO(BOOL, bool);
-    DO(FP32, float);
-    DO(INT8, int8_t);
-    DO(INT16, int16_t);
-    DO(INT32, int32_t);
-    DO(INT64, int64_t);
-#undef DO
+    // SET_TENSOR(BOOL, bool, PRECISION(kBool));
+    SET_TENSOR(FP32, float, PRECISION(kFloat));
+    SET_TENSOR(INT8, int8_t, PRECISION(kInt8));
+    SET_TENSOR(INT16, int16_t, PRECISION(kInt16));
+    SET_TENSOR(INT32, int32_t, PRECISION(kInt32));
+    SET_TENSOR(INT64, int64_t, PRECISION(kInt64));
+#undef SET_TENSOR
     default:
       LOG(FATAL) << "unknown type";
   }
+  tensor->set_persistable(true);
 }
 
 void LoadParamNaive(const std::string &path,
@@ -580,9 +661,14 @@ void LoadParamNaive(const std::string &path,
 
 void LoadCombinedParamsNaive(const std::string &path,
                              lite::Scope *scope,
-                             const cpp::ProgramDesc &cpp_prog) {
+                             const cpp::ProgramDesc &cpp_prog,
+                             bool params_from_memory) {
   naive_buffer::BinaryTable table;
-  table.LoadFromFile(path);
+  if (params_from_memory) {
+    table.LoadFromMemory(path.c_str(), path.length());
+  } else {
+    table.LoadFromFile(path);
+  }
   naive_buffer::proto::CombinedParamsDesc pt_desc(&table);
   pt_desc.Load();
   naive_buffer::CombinedParamsDesc desc(&pt_desc);
@@ -629,7 +715,7 @@ void LoadModelNaive(const std::string &model_dir,
   // NOTE: Only main block be used now.
   if (combined) {
     const std::string combined_params_path = model_dir + "/param.nb";
-    LoadCombinedParamsNaive(combined_params_path, scope, *cpp_prog);
+    LoadCombinedParamsNaive(combined_params_path, scope, *cpp_prog, false);
   } else {
     auto &prog = *cpp_prog;
     auto &main_block_desc = *prog.GetBlock<cpp::BlockDesc>(0);
@@ -667,6 +753,41 @@ void LoadModelNaive(const std::string &model_dir,
 #endif
 
   VLOG(4) << "Load naive buffer model in '" << model_dir << "' successfully";
+}
+
+void LoadModelNaiveFromMemory(const std::string &model_buffer,
+                              const std::string &param_buffer,
+                              Scope *scope,
+                              cpp::ProgramDesc *cpp_prog) {
+  CHECK(cpp_prog);
+  CHECK(scope);
+  cpp_prog->ClearBlocks();
+
+  // Load model
+
+  std::string prog_path = model_buffer;
+
+  naive_buffer::BinaryTable table;
+  table.LoadFromMemory(prog_path.c_str(), prog_path.length());
+
+  naive_buffer::proto::ProgramDesc nb_proto_prog(&table);
+  nb_proto_prog.Load();
+  naive_buffer::ProgramDesc nb_prog(&nb_proto_prog);
+
+  // Transform to cpp::ProgramDesc
+  TransformProgramDescAnyToCpp(nb_prog, cpp_prog);
+
+  // Load Params
+  // NOTE: Only main block be used now.
+  // only combined Params are supported in Loading Model from memory
+  std::string combined_params_path = param_buffer;
+  LoadCombinedParamsNaive(combined_params_path, scope, *cpp_prog, true);
+
+#ifdef LITE_WITH_NPU
+  LOG(FATAL) << "load from memory is not supported by NPU";
+#endif
+
+  VLOG(4) << "Load model from naive buffer memory successfully";
 }
 
 }  // namespace lite

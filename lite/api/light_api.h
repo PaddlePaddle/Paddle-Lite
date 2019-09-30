@@ -38,9 +38,15 @@ namespace lite {
  */
 class LITE_API LightPredictor {
  public:
-  explicit LightPredictor(
+  LightPredictor(
       const std::string& model_dir,
-      lite_api::LiteModelType model_type = lite_api::LiteModelType::kProtobuf);
+      const std::string& model_buffer = "",
+      const std::string& param_buffer = "",
+      bool model_from_memory = false,
+      lite_api::LiteModelType model_type = lite_api::LiteModelType::kProtobuf) {
+    scope_ = std::make_shared<Scope>();
+    Build(model_dir, model_buffer, param_buffer, model_type, model_from_memory);
+  }
 
   void Run() { program_->Run(); }
 
@@ -58,12 +64,17 @@ class LITE_API LightPredictor {
  private:
   void Build(
       const std::string& model_dir,
-      lite_api::LiteModelType model_type = lite_api::LiteModelType::kProtobuf);
+      const std::string& model_buffer,
+      const std::string& param_buffer,
+      lite_api::LiteModelType model_type = lite_api::LiteModelType::kProtobuf,
+      bool model_from_memory = false);
+
   void BuildRuntimeProgram(const cpp::ProgramDesc& prog);
 
  private:
   std::shared_ptr<Scope> scope_;
   std::unique_ptr<RuntimeProgram> program_;
+  cpp::ProgramDesc cpp_program_desc_;
 };
 
 }  // namespace lite

@@ -39,8 +39,11 @@ namespace lite {
 void TestModel(lite::Predictor* predictor,
                const std::vector<Place>& valid_places,
                const std::string& model_dir) {
-  predictor->Build(
-      model_dir, "", "", Place{TARGET(kARM), PRECISION(kFloat)}, valid_places);
+  predictor->Build(model_dir,
+                   model_dir + "/model",
+                   model_dir + "/params",
+                   Place{TARGET(kARM), PRECISION(kFloat)},
+                   valid_places);
 
   auto* input_tensor = predictor->GetInput(0);
   input_tensor->Resize(DDim(std::vector<DDim::value_type>(
@@ -49,13 +52,6 @@ void TestModel(lite::Predictor* predictor,
   auto item_size = input_tensor->dims().production();
   for (int i = 0; i < item_size; i++) {
     data[i] = 1;
-  }
-
-  if (std::find(valid_places.begin(),
-                valid_places.end(),
-                Place{TARGET(kNPU), PRECISION(kFloat)}) != valid_places.end()) {
-    // TODO(TJ): change if valid npu so try use it, add rollback and move to api
-    predictor->GenNPURuntimeProgram();
   }
 
   predictor->Run();
@@ -74,7 +70,8 @@ void CompareOutData(const lite::Predictor& tgt, const lite::Predictor& ref) {
   const auto* ref_pdata = ref_otensor->data<float>();
   EXPECT_EQ(tgt_otensor->dims().production(), ref_otensor->dims().production());
   for (size_t i = 0; i < tgt_otensor->dims().production(); ++i) {
-    auto diff = std::fabs((tgt_pdata[i] - ref_pdata[i]) / ref_pdata[i]);
+    auto diff = std::fabs(tgt_pdata[i] - ref_pdata[i]) /
+                (std::fabs(ref_pdata[i]) + 1e-6);
     VLOG(3) << diff;
     EXPECT_LT(diff, 0.1);
   }

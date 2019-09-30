@@ -31,10 +31,9 @@ namespace lite {
 void TestModel(const std::vector<Place>& valid_places,
                const Place& preferred_place,
                const std::string& model_dir = FLAGS_model_dir,
-               bool gen_npu = false,
                bool save_model = false) {
   DeviceInfo::Init();
-  DeviceInfo::Global().SetRunMode(lite_api::LITE_POWER_HIGH, FLAGS_threads);
+  DeviceInfo::Global().SetRunMode(lite_api::LITE_POWER_NO_BIND, FLAGS_threads);
   lite::Predictor predictor;
 
   predictor.Build(model_dir, "", "", preferred_place, valid_places);
@@ -45,10 +44,6 @@ void TestModel(const std::vector<Place>& valid_places,
   auto item_size = input_tensor->dims().production();
   for (int i = 0; i < item_size; i++) {
     data[i] = 1;
-  }
-
-  if (gen_npu) {
-    predictor.GenNPURuntimeProgram();
   }
 
   for (int i = 0; i < FLAGS_warmup; ++i) {
@@ -116,13 +111,11 @@ TEST(MobileNetV2, test_npu) {
   TestModel(valid_places,
             Place({TARGET(kARM), PRECISION(kFloat)}),
             FLAGS_model_dir,
-            true /* gen_npu */,
             true /* save_model*/);
 
   TestModel(valid_places,
             Place({TARGET(kARM), PRECISION(kFloat)}),
             FLAGS_optimized_model,
-            false /* gen_npu */,
             false /* save model */);
 }
 #endif  // LITE_WITH_NPU

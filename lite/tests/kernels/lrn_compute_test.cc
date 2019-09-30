@@ -123,7 +123,6 @@ class LrnComputeTester : public arena::TestCase {
     int H = dims_[2];
     int W = dims_[3];
 
-    int pre_pad = (local_size_ - 1) / 2;
     int offset_num = 0;
     int offset_within_channel = 0;
     int dst_id;

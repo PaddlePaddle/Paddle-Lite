@@ -14,6 +14,7 @@
 
 #include "lite/kernels/arm/softmax_compute.h"
 #include <gtest/gtest.h>
+#include <cmath>
 #include <limits>
 #include <vector>
 #include "lite/core/op_registry.h"

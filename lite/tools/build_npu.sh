@@ -7,7 +7,7 @@ function print_usage {
     echo "----------------------------------------"
     echo -e "--arm_os=<os> android only yet."
     echo -e "--arm_abi=<abi> armv8, armv7 yet."
-    echo -e "--arm_stl=<shared> shared or static"
+    echo -e "--android_stl=<shared> shared or static"
     echo -e "--arm_lang=<gcc> "
     echo -e "--ddk_root=<hiai_ddk_root> "
     echo -e "--test_name=<test_name>"
@@ -62,10 +62,12 @@ function cmake_npu {
         -DWITH_LITE=ON \
         -DLITE_WITH_CUDA=OFF \
         -DLITE_WITH_X86=OFF \
+        -DLITE_BUILD_EXTRA=ON \
         -DLITE_WITH_ARM=ON \
         -DWITH_ARM_DOTPROD=ON   \
         -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
         -DWITH_TESTING=ON \
+        -DLITE_WITH_JAVA=ON \
         -DLITE_WITH_NPU=ON \
         -DANDROID_API_LEVEL=24 \
         -DARM_TARGET_OS=$1 \
@@ -87,26 +89,33 @@ function build_npu {
     local test_name=test_npu_pass
     prepare_thirdparty
 
+    if [ "x${ARM_OS}" != "x" ]; then
+        os=$ARM_OS
+    fi
+    if [[ "x${ARM_ABI}" != "x" ]]; then
+        abi=$ARM_ABI
+    fi
+    if [[ "x${ARM_LANG}" != "x" ]]; then
+        lang=$ARM_LANG
+    fi
+    if [[ "x${ANDROID_STL}" != "x" ]]; then
+        stl=$ANDROID_STL
+    fi
+    if [[ "x${DDK_ROOT}" != "x" ]]; then
+        ddk_root=$DDK_ROOT
+    fi
     if [[ $# -ge 1 ]]; then
-        os=$1
-    fi
-    if [[ $# -ge 2 ]]; then
-        abi=$2
-    fi
-    if [[ $# -ge 3 ]]; then
-        lang=$3
-    fi
-    if [[ $# -ge 4 ]]; then
-        stl=$4
-    fi
-    if [[ $# -ge 5 ]]; then
-        ddk_root=$5
-    fi
-    if [[ $# -ge 6 ]]; then
-        test_name=$6
+        test_name=$1
     fi
 
-    build_dir=$cur_dir/build.lite.npu.${os}.${abi}.${lang}.${stl}
+    # the c++ symbol is not recognized by the bundled script
+    if [[ "${stl}" == "c++_shared" ]]; then
+        stl_dir="cxx_shared"
+    fi
+    if [[ "${stl}" == "c++_static" ]]; then
+        stl_dir="cxx_static"
+    fi
+    build_dir=$cur_dir/build.lite.npu.${os}.${abi}.${lang}.${stl_dir}
     mkdir -p $build_dir
     cd $build_dir
 
@@ -141,8 +150,20 @@ function main {
                 ARM_LANG="${i#*=}"
                 shift
                 ;;
+            --android_stl=*)
+                ANDROID_STL="${i#*=}"
+                shift
+                ;;
+            --ddk_root=*)
+                DDK_ROOT="${i#*=}"
+                shift
+                ;;
             build)
-                build_npu ${os} ${abi} ${lang} ${stl} ${ddk_root} ${test_name}
+                build_npu $TEST_NAME
+                shift
+                ;;
+            full_publish)
+                build_npu publish_inference
                 shift
                 ;;
             *)

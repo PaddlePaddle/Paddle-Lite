@@ -15,7 +15,7 @@
 #include "lite/kernels/arm/density_prior_box_compute.h"
 #include <string>
 #include <vector>
-#include "lite/arm/math/funcs.h"
+#include "lite/backends/arm/math/funcs.h"
 
 namespace paddle {
 namespace lite {
@@ -100,7 +100,8 @@ void DensityPriorBoxCompute::Run() {
                                      prior_num,
                                      is_flip,
                                      is_clip,
-                                     order);
+                                     order,
+                                     false);
 }
 
 }  // namespace arm

@@ -43,8 +43,11 @@ void ReluKernel<GPU_CL, float>::Compute(const ReluParam<GPU_CL>& param) {
   auto outputImage = output->GetCLImage();
   //  auto tImage =
   //      const_cast<ReluParam<GPU_CL>&>(param).getMidImage().GetCLImage();
-  clSetKernelArg(kernel, 0, sizeof(cl_mem), &inputImage);
-  clSetKernelArg(kernel, 1, sizeof(cl_mem), &outputImage);
+  cl_int status;
+  status = clSetKernelArg(kernel, 0, sizeof(cl_mem), &inputImage);
+  CL_CHECK_ERRORS(status);
+  status = clSetKernelArg(kernel, 1, sizeof(cl_mem), &outputImage);
+  CL_CHECK_ERRORS(status);
   //  clSetKernelArg(kernel_p0, 0, sizeof(cl_mem), &inputImage);
   //  clSetKernelArg(kernel_p0, 0, sizeof(cl_mem), &tImage);
   //  clSetKernelArg(kernel_p1, 0, sizeof(cl_mem), &tImage);
@@ -54,8 +57,9 @@ void ReluKernel<GPU_CL, float>::Compute(const ReluParam<GPU_CL>& param) {
   //  cl_event out_event = param.Out()->GetClEvent();
   //  cl_event wait_event = param.InputX()->GetClEvent();
 
-  clEnqueueNDRangeKernel(this->cl_helper_.CLCommandQueue(), kernel, 2, NULL,
-                         work_size, NULL, 0, NULL, NULL);
+  status = clEnqueueNDRangeKernel(this->cl_helper_.CLCommandQueue(), kernel, 2,
+                                  NULL, work_size, NULL, 0, NULL, NULL);
+  CL_CHECK_ERRORS(status);
   //  clEnqueueNDRangeKernel(this->cl_helper_.CLCommandQueue(), kernel_p1, 3,
   //  NULL,
   //                         work_size, NULL, 0, NULL, NULL);

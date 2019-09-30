@@ -50,7 +50,7 @@ bool ArgmaxOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
 
   param_.X = scope->FindVar(x)->GetMutable<lite::Tensor>();
   param_.Out = scope->FindVar(out)->GetMutable<lite::Tensor>();
-  param_.Axis = op_desc.GetAttr<int>("Axis");
+  param_.Axis = op_desc.GetAttr<int64_t>("axis");
 
   return true;
 }
@@ -59,4 +59,4 @@ bool ArgmaxOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(argmax, paddle::lite::operators::ArgmaxOpLite);
+REGISTER_LITE_OP(arg_max, paddle::lite::operators::ArgmaxOpLite);

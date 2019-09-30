@@ -15,9 +15,9 @@
 #include "lite/kernels/arm/fc_compute.h"
 #include <vector>
 #include "lite/api/paddle_place.h"
-#include "lite/arm/math/funcs.h"
-#include "lite/arm/math/gemm_prepacked_int8.h"
-#include "lite/arm/math/gemv_arm_int8.h"
+#include "lite/backends/arm/math/funcs.h"
+#include "lite/backends/arm/math/gemm_prepacked_int8.h"
+#include "lite/backends/arm/math/gemv_arm_int8.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/type_system.h"
 
@@ -26,50 +26,75 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
-void FcCompute::PrepareForRun() {
-  auto& param = this->Param<operators::FcParam>();
-  auto x_dims = param.input->dims();
-  auto w_dims = param.w->dims();
+///  for fp32 kernel
+template <>
+void FcCompute<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
+  ReInitWhenNeeded();
+}
 
-  auto& ctx = this->ctx_->template As<ARMContext>();
-
-  CHECK_GE(x_dims.size(), 2UL);
-  CHECK_EQ(w_dims.size(), 2UL);
-  CHECK_EQ(param.output->dims().size(), 2UL);
-
-  m_ = x_dims.Slice(0, param.in_num_col_dims).production();
-  k_ = x_dims.Slice(param.in_num_col_dims, x_dims.size()).production();
-  CHECK_EQ(k_, w_dims[0]);
-  n_ = w_dims[1];
-  CHECK_EQ(k_, static_cast<int>(w_dims[0]));
-
-  if (m_ == 1) {
-    if (!transed_weight_) {
-      transed_weight_ = new Tensor;
-    }
-    transed_weight_->Resize({n_, k_});
-    const auto* w_data = param.w->data<float>();
-    auto* t_data = transed_weight_->mutable_data<float>();
-    int i = 0;
-
-    for (int nn = 0; nn < n_; ++nn) {
-      for (int kk = 0; kk < k_; ++kk) {
-        t_data[i++] = w_data[kk * n_ + nn];
-      }
+/// for int8 kernel with fp32 output
+template <>
+void FcCompute<PRECISION(kInt8), PRECISION(kFloat)>::PrepareForRun() {
+  ReInitWhenNeeded();
+  auto& param = this->template Param<operators::FcParam>();
+  /// update scale
+  float input_scale = param.input_scale;
+  int extend_size = flag_gemm_ ? m_ : n_;
+  scale_.resize(extend_size);
+  for (int i = 0; i < extend_size; ++i) {
+    if (flag_gemm_) {
+      scale_[i] = param.weight_scale[0] * input_scale;
+    } else {
+      scale_[i] = param.weight_scale[i] * input_scale;
     }
   }
 }
 
-void FcCompute::Run() {
+/// for int8 kernel with int8 output
+template <>
+void FcCompute<PRECISION(kInt8), PRECISION(kInt8)>::PrepareForRun() {
+  ReInitWhenNeeded();
+  auto& param = this->template Param<operators::FcParam>();
+  /// update scale
+  scale_ = param.weight_scale;
+  float input_scale = param.input_scale;
+  float output_scale = param.output_scale;
+  int extend_size = flag_gemm_ ? m_ : n_;
+  scale_.resize(extend_size);
+  for (int i = 0; i < extend_size; ++i) {
+    if (flag_gemm_) {
+      scale_[i] = param.weight_scale[0] * input_scale / output_scale;
+    } else {
+      scale_[i] = param.weight_scale[i] * input_scale / output_scale;
+    }
+  }
+  /// update bias
+  if (param.bias) {
+    bias_.Resize(param.bias->dims());
+    auto ptr = bias_.mutable_data<float>();
+    auto ptr_in = bias_.data<float>();
+    float out_scale = param.output_scale;
+    for (int i = 0; i < bias_.numel(); ++i) {
+      ptr[i] = ptr_in[i] / out_scale;
+    }
+    flag_trans_bias_ = true;
+  }
+}
+
+template <>
+void FcCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   auto& param = this->Param<operators::FcParam>();
-
-  const auto* i_data = param.input->data<float>();
-  const auto* w_data = param.w->data<float>();
-  const auto* b_data = param.bias ? param.bias->data<float>() : nullptr;
-  auto* o_data = param.output->mutable_data<float>();
-
   auto& ctx = this->ctx_->template As<ARMContext>();
-  if (m_ > 1) {
+
+  auto i_data = param.input->data<float>();
+  auto o_data = param.output->mutable_data<float>();
+  auto w_data =
+      flag_trans_weights_ ? weights_.data<float>() : param.w->data<float>();
+  const float* b_data = param.bias ? param.bias->data<float>() : nullptr;
+  if (flag_trans_bias_) {
+    b_data = bias_.data<float>();
+  }
+  if (flag_gemm_) {
     lite::arm::math::sgemm(false,
                            false,
                            m_,
@@ -83,7 +108,7 @@ void FcCompute::Run() {
                            0.f,
                            o_data,
                            n_,
-                           b_data,
+                           nullptr,
                            false,
                            false,
                            &ctx);
@@ -92,134 +117,117 @@ void FcCompute::Run() {
       lite::arm::math::fill_bias_fc(o_data, b_data, m_, n_);
     }
   } else {
-    CHECK(transed_weight_);
-    const auto* t_data = transed_weight_->data<float>();
-
-    lite::arm::math::sgemv(t_data,
-                           i_data,
-                           o_data,
-                           false,
-                           n_,
-                           k_,
-                           b_data != nullptr,
-                           b_data,
-                           false);
+    for (int i = 0; i < m_; ++i) {
+      auto i_data_batch = i_data + i * k_;
+      auto o_data_batch = o_data + i * n_;
+      lite::arm::math::sgemv(w_data,
+                             i_data_batch,
+                             o_data_batch,
+                             false,
+                             n_,
+                             k_,
+                             param.bias != nullptr,
+                             b_data,
+                             false);
+    }
   }
 }
 
-template <PrecisionType Ptype_out>
-void FcComputeInt8<Ptype_out>::PrepareForRun() {
+template <>
+void FcCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
   auto& param = this->Param<operators::FcParam>();
-  auto x_dims = param.input->dims();
-  auto w_dims = param.w->dims();
-
-  auto& ctx = this->ctx_->template As<ARMContext>();
-  if (!tmp_int32_out_) {
-    tmp_int32_out_ = new Tensor;
-    tmp_int32_out_->Resize(param.output->dims());
-  }
-
-  CHECK_GE(x_dims.size(), 2UL);
-  CHECK_EQ(w_dims.size(), 2UL);
-  CHECK_EQ(param.output->dims().size(), 2UL);
-
-  this->m_ = x_dims.Slice(0, param.in_num_col_dims).production();
-  this->k_ = x_dims.Slice(param.in_num_col_dims, x_dims.size()).production();
-  this->n_ = w_dims[1];
-  CHECK_EQ(k_, static_cast<int>(w_dims[0]));
-
-  if (this->m_ == 1) {
-    if (!this->transed_weight_) {
-      this->transed_weight_ = new Tensor;
-    }
-    this->transed_weight_->Resize({this->n_, this->k_});
-    const auto* w_data = param.w->template data<int8_t>();
-    auto* t_data = this->transed_weight_->template mutable_data<int8_t>();
-    int i = 0;
-
-    for (int nn = 0; nn < this->n_; ++nn) {
-      for (int kk = 0; kk < this->k_; ++kk) {
-        t_data[i++] = w_data[kk * this->n_ + nn];
-      }
-    }
-  }
-
-  if (this->m_ > 1) {
-    int hblock = lite::arm::math::get_hblock(ctx.arch());
-    int m_round = hblock * ((this->m_ + hblock - 1) / hblock);
-    ctx.ExtendWorkspace(m_round * this->k_);
-  }
-  bool with_bias = param.bias;
-  if (with_bias) {
-    Tensor temp_tensor;
-    temp_tensor.CopyDataFrom(*param.bias);
-    lite::arm::math::trans_fp32_bias_to_int32_basic(
-        &temp_tensor, param.bias, param.input_scale, param.weight_scale);
-  }
-}
-
-template <PrecisionType Ptype_out>
-void FcComputeInt8<Ptype_out>::Run() {
-  auto& param = this->Param<operators::FcParam>();
-
-  const auto* i_data = param.input->template data<int8_t>();
-  const auto* w_data = param.w->template data<int8_t>();
-  const auto* b_data = param.bias ? param.bias->template data<int>() : nullptr;
-  int* o_data = nullptr;
-
   auto& ctx = this->ctx_->template As<ARMContext>();
 
-  o_data = this->tmp_int32_out_->template mutable_data<int>();
-  if (m_ > 1) {
-    int8_t* packed_in =
-        static_cast<int8_t*>(ctx.template workspace_data<int8_t>()) +
-        ctx.llc_size() / sizeof(int8_t);
-    lite::arm::math::prepackA_int8(
-        packed_in, i_data, k_, 0, m_, 0, k_, false, &ctx);
-    lite::arm::math::gemm_prepack_int8(packed_in,
-                                       w_data,
-                                       b_data,
-                                       o_data,
-                                       m_,
-                                       n_,
-                                       k_,
-                                       false,
-                                       false,
-                                       false,
-                                       nullptr,
-                                       &ctx);
+  auto i_data = param.input->data<int8_t>();
+  auto o_data = param.output->mutable_data<float>();
+  auto w_data =
+      flag_trans_weights_ ? weights_.data<int8_t>() : param.w->data<int8_t>();
+  const float* b_data = param.bias ? param.bias->data<float>() : nullptr;
+  if (flag_trans_bias_) {
+    b_data = bias_.data<float>();
+  }
+  if (flag_gemm_) {
+    lite::arm::math::gemm_s8(false,
+                             false,
+                             m_,
+                             n_,
+                             k_,
+                             i_data,
+                             w_data,
+                             o_data,
+                             nullptr,
+                             false,
+                             false,
+                             scale_.data(),
+                             &ctx);
     if (param.bias) {
       CHECK_EQ(param.bias->numel(), n_);
       lite::arm::math::fill_bias_fc(o_data, b_data, m_, n_);
     }
   } else {
-    CHECK(transed_weight_);
-    const auto* t_data = transed_weight_->template data<int8_t>();
-    lite::arm::math::gemv_int8(t_data,
-                               i_data,
-                               o_data,
-                               false,
-                               n_,
-                               k_,
-                               nullptr,
-                               b_data != nullptr,
-                               b_data,
-                               false);
+    for (int i = 0; i < m_; ++i) {
+      auto i_data_batch = i_data + i * k_;
+      auto o_data_batch = o_data + i * n_;
+      lite::arm::math::gemv_int8(w_data,
+                                 i_data_batch,
+                                 o_data_batch,
+                                 false,
+                                 n_,
+                                 k_,
+                                 scale_.data(),
+                                 param.bias != nullptr,
+                                 b_data,
+                                 false,
+                                 &ctx);
+    }
   }
+}
 
-  float i_scale = param.input_scale;
-  std::vector<float> weight_scale = param.weight_scale;
-  if (Ptype_out == PRECISION(kInt8)) {
-    float o_scale = param.output_scale;
-    param.output->template mutable_data<int8_t>();
-    lite::arm::math::trans_tensor_dtype<PRECISION(kInt32), PRECISION(kInt8)>(
-        tmp_int32_out_, param.output, i_scale, o_scale, weight_scale);
-  } else if (Ptype_out == PRECISION(kFloat)) {
-    param.output->template mutable_data<float>();
-    lite::arm::math::trans_tensor_dtype<PRECISION(kInt32), PRECISION(kFloat)>(
-        tmp_int32_out_, param.output, i_scale, 1.f, weight_scale);
+template <>
+void FcCompute<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
+  auto& param = this->Param<operators::FcParam>();
+  auto& ctx = this->ctx_->template As<ARMContext>();
+
+  auto i_data = param.input->data<int8_t>();
+  auto o_data = param.output->mutable_data<int8_t>();
+  auto w_data =
+      flag_trans_weights_ ? weights_.data<int8_t>() : param.w->data<int8_t>();
+  const float* b_data = param.bias ? param.bias->data<float>() : nullptr;
+  if (flag_trans_bias_) {
+    b_data = bias_.data<float>();
+  }
+  if (flag_gemm_) {
+    CHECK(!param.bias) << "fc int8 kernel with int8 output using gemm kernel "
+                          "must not have bias";
+    lite::arm::math::gemm_s8(false,
+                             false,
+                             m_,
+                             n_,
+                             k_,
+                             i_data,
+                             w_data,
+                             o_data,
+                             nullptr,
+                             false,
+                             false,
+                             scale_.data(),
+                             &ctx);
   } else {
-    LOG(ERROR) << "unsupported precision type!!";
+    for (int i = 0; i < m_; ++i) {
+      auto i_data_batch = i_data + i * k_;
+      auto o_data_batch = o_data + i * n_;
+      lite::arm::math::gemv_int8(w_data,
+                                 i_data_batch,
+                                 o_data_batch,
+                                 false,
+                                 n_,
+                                 k_,
+                                 scale_.data(),
+                                 param.bias != nullptr,
+                                 b_data,
+                                 false,
+                                 &ctx);
+    }
   }
 }
 
@@ -228,36 +236,33 @@ void FcComputeInt8<Ptype_out>::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(
-    fc, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::FcCompute, def)
+typedef paddle::lite::kernels::arm::FcCompute<PRECISION(kFloat),
+                                              PRECISION(kFloat)>
+    FcCompute_FP32;
+typedef paddle::lite::kernels::arm::FcCompute<PRECISION(kInt8),
+                                              PRECISION(kFloat)>
+    FcCompute_int8_fp32;
+typedef paddle::lite::kernels::arm::FcCompute<PRECISION(kInt8),
+                                              PRECISION(kInt8)>
+    FcCompute_int8_int8;
+
+REGISTER_LITE_KERNEL(fc, kARM, kFloat, kNCHW, FcCompute_FP32, def)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("W", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(
-    fc,
-    kARM,
-    kInt8,
-    kNCHW,
-    paddle::lite::kernels::arm::FcComputeInt8<PRECISION(kInt8)>,
-    int8out)
+REGISTER_LITE_KERNEL(fc, kARM, kInt8, kNCHW, FcCompute_int8_int8, int8out)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt8))})
-    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
     .BindInput("W", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt8))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt8))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(
-    fc,
-    kARM,
-    kInt8,
-    kNCHW,
-    paddle::lite::kernels::arm::FcComputeInt8<PRECISION(kFloat)>,
-    fp32out)
+REGISTER_LITE_KERNEL(fc, kARM, kInt8, kNCHW, FcCompute_int8_fp32, fp32out)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt8))})
-    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
     .BindInput("W", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt8))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
     .Finalize();

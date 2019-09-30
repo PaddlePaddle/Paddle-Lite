@@ -38,26 +38,63 @@ else()
 lite_cc_library(context SRCS context.cc DEPS tensor any device_info eigen3 CL_DEPS cl_context gflags)
 endif()
 
+#-------------------------------------------- GET CODE META INFO ------------------------------------------
+execute_process(
+  COMMAND git describe --tags --exact-match
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+  OUTPUT_VARIABLE PADDLE_LITE_TAG
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
+execute_process(
+  COMMAND git rev-parse --abbrev-ref HEAD
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+  OUTPUT_VARIABLE PADDLE_LITE_BRANCH
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
+execute_process(
+  COMMAND git log -1 --format=%h
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+  OUTPUT_VARIABLE PADDLE_LITE_COMMIT
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
+message(STATUS "tag: ${PADDLE_LITE_TAG}")
+message(STATUS "branch: ${PADDLE_LITE_BRANCH}")
+message(STATUS "commit: ${PADDLE_LITE_COMMIT}")
+
+configure_file(version.h.in version.h)
 #----------------------------------------------- NOT CHANGE -----------------------------------------------
 # A trick to generate the paddle_use_kernels.h
 add_custom_command(
   COMMAND python ${CMAKE_SOURCE_DIR}/lite/tools/cmake_tools/parse_kernel_registry.py
   ${kernels_src_list}
   ${CMAKE_SOURCE_DIR}/lite/api/paddle_use_kernels.h
-  OUTPUT ${CMAKE_SOURCE_DIR}/lite/api/paddle_use_kernels.h
+  OUTPUT kernels.h # not a real path to the output to force it execute every time.
   )
 # A trick to generate the paddle_use_ops.h
 add_custom_command(
   COMMAND python ${CMAKE_SOURCE_DIR}/lite/tools/cmake_tools/parse_op_registry.py
   ${ops_src_list}
   ${CMAKE_SOURCE_DIR}/lite/api/paddle_use_ops.h
-  OUTPUT ${CMAKE_SOURCE_DIR}/lite/api/paddle_use_ops.h
+  OUTPUT ops.h # not a real path to the output to force it execute every time.
   )
-add_custom_target(op_list_h DEPENDS ${CMAKE_SOURCE_DIR}/lite/api/paddle_use_ops.h)
-add_custom_target(kernel_list_h DEPENDS ${CMAKE_SOURCE_DIR}/lite/api/paddle_use_kernels.h)
+# generate fake kernels for memory_optimize_tool
+add_custom_command(
+  COMMAND python ${CMAKE_SOURCE_DIR}/lite/tools/cmake_tools/create_fake_kernel_registry.py
+  ${kernels_src_list}
+  ${CMAKE_BINARY_DIR}/all_kernel_faked.cc
+  OUTPUT all_kernel_faked.cc # not a real path to the output to force it execute every time.
+  )
+add_custom_target(op_list_h DEPENDS ops.h)
+add_custom_target(kernel_list_h DEPENDS kernels.h)
+add_custom_target(all_kernel_faked_cc DEPENDS all_kernel_faked.cc)
 
 #----------------------------------------------- NOT CHANGE -----------------------------------------------
-lite_cc_library(kernel SRCS kernel.cc DEPS context type_system target_wrapper any op_params tensor
+lite_cc_library(kernel SRCS kernel.cc
+        DEPS context type_system target_wrapper any op_params tensor
+        PROFILE_DEPS basic_profiler
   )
 lite_cc_library(op SRCS op_lite.cc DEPS scope op_registry target_wrapper kernel
   cpp_op_desc tensor

@@ -54,8 +54,15 @@ const std::string& TargetToStr(TargetType target) {
 }
 
 const std::string& PrecisionToStr(PrecisionType precision) {
-  static const std::string precision2string[] = {
-      "unk", "float", "int8_t", "int32_t", "any", "float16", "bool"};
+  static const std::string precision2string[] = {"unk",
+                                                 "float",
+                                                 "int8_t",
+                                                 "int32_t",
+                                                 "any",
+                                                 "float16",
+                                                 "bool",
+                                                 "int64_t",
+                                                 "int16_t"};
   auto x = static_cast<int>(precision);
   CHECK_LT(x, static_cast<int>(PRECISION(NUM)));
   return precision2string[x];
@@ -84,8 +91,15 @@ const std::string& TargetRepr(TargetType target) {
 }
 
 const std::string& PrecisionRepr(PrecisionType precision) {
-  static const std::string precision2string[] = {
-      "kUnk", "kFloat", "kInt8", "kInt32", "kAny", "kFP16", "kBool"};
+  static const std::string precision2string[] = {"kUnk",
+                                                 "kFloat",
+                                                 "kInt8",
+                                                 "kInt32",
+                                                 "kAny",
+                                                 "kFP16",
+                                                 "kBool",
+                                                 "kInt64",
+                                                 "kInt16"};
   auto x = static_cast<int>(precision);
   CHECK_LT(x, static_cast<int>(PRECISION(NUM)));
   return precision2string[x];

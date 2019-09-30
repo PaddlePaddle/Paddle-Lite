@@ -75,6 +75,8 @@ TEST(ModelParser, LoadModelCombinedPb) {
 TEST(ModelParser, SaveParamNaive) {
   Scope scope;
   auto* tensor = scope.Var("xxx")->GetMutable<lite::Tensor>();
+  tensor->set_precision(PRECISION(kFloat));
+  tensor->set_persistable(true);
   auto& lod = *tensor->mutable_lod();
   lod.resize(2);
   lod[0] = {1, 2, 3};
@@ -119,12 +121,17 @@ TEST(ModelParser, SaveModelNaive) {
   SaveModelNaive(save_pb_model_path, scope, prog);
 }
 
-TEST(ModelParser, LoadModelNaive) {
+TEST(ModelParser, LoadModelNaiveFromMemory) {
   CHECK(!FLAGS_model_dir.empty());
   cpp::ProgramDesc prog;
   Scope scope;
-  const std::string model_path = FLAGS_model_dir + ".saved.naive";
-  LoadModelNaive(model_path, &scope, &prog);
+
+  auto model_path = std::string(FLAGS_model_dir) + ".saved.naive/__model__.nb";
+  auto params_path = std::string(FLAGS_model_dir) + ".saved.naive/param.nb";
+  std::string model_buffer = lite::ReadFile(model_path);
+  std::string params_buffer = lite::ReadFile(params_path);
+
+  LoadModelNaiveFromMemory(model_buffer, params_buffer, &scope, &prog);
 }
 
 }  // namespace lite

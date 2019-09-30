@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <cmath>
 #include <memory>
 #include <string>
 #include "lite/core/mir/pattern_matcher_high_api.h"

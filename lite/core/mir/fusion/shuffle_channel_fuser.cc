@@ -28,12 +28,17 @@ void ShuffleChannelFuser::BuildPattern() {
   auto* y2 = VarNode("y2")->assert_is_op_output(transpose_type_, "Out");
   auto* out = VarNode("out")->assert_is_op_output(reshape_type_, "Out");
 
-  auto* xshape1 =
-      VarNode("xshape1")->assert_is_op_output(reshape_type_, "XShape");
-  auto* xshape2 =
-      VarNode("xshape2")->assert_is_op_output(transpose_type_, "XShape");
-  auto* xshape3 =
-      VarNode("xshape3")->assert_is_op_output(reshape_type_, "XShape");
+  PMNode* xshape1 = nullptr;
+  PMNode* xshape2 = nullptr;
+  PMNode* xshape3 = nullptr;
+  if (reshape_type_ == "reshape2") {
+    xshape1 = VarNode("xshape1")->assert_is_op_output(reshape_type_, "XShape");
+    xshape3 = VarNode("xshape3")->assert_is_op_output(reshape_type_, "XShape");
+  }
+  if (transpose_type_ == "transpose2") {
+    xshape2 =
+        VarNode("xshape2")->assert_is_op_output(transpose_type_, "XShape");
+  }
 
   auto* reshape1 = OpNode("reshape1", reshape_type_)
                        ->assert_op_attr_satisfied<std::vector<int>>(
@@ -54,16 +59,16 @@ void ShuffleChannelFuser::BuildPattern() {
 
   // create topology.
   *x1 >> *reshape1 >> *y1 >> *transpose >> *y2 >> *reshape2 >> *out;
-  *reshape1 >> *xshape1;
-  *transpose >> *xshape2;
-  *reshape2 >> *xshape3;
+  if (xshape1) *reshape1 >> *xshape1;
+  if (xshape2) *transpose >> *xshape2;
+  if (xshape3) *reshape2 >> *xshape3;
 
   // Some op specialities.
   y1->AsIntermediate();
   y2->AsIntermediate();
-  xshape1->AsIntermediate();
-  xshape2->AsIntermediate();
-  xshape3->AsIntermediate();
+  if (xshape1) xshape1->AsIntermediate();
+  if (xshape2) xshape2->AsIntermediate();
+  if (xshape3) xshape3->AsIntermediate();
   reshape1->AsIntermediate();
   transpose->AsIntermediate();
   reshape2->AsIntermediate();

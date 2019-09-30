@@ -54,18 +54,49 @@ class SubgraphProgramPass : public ProgramPass {
   // std::unique_ptr<SSAGraph>& graph, int sub_num);
   void ChangeAllOutConnectedID(Node* node, int to_id, int from_id = 0);
 
+  // Below function cloud be useful in child classes //
+  // classify node by subgraph id
+  std::unordered_map<int, std::unordered_set<Node*>> ClassifySubgraph(
+      const std::unique_ptr<SSAGraph>& graph);
+
+  // generate the graph op desc
+  cpp::OpDesc GenGraphOpDesc(const std::string& model_name,
+                             const std::vector<std::string>& in_var_names,
+                             const std::vector<std::string>& out_var_names);
+
+  // insert a new graph op node
+  void InsertNewNode(const std::unique_ptr<SSAGraph>& graph,
+                     const std::string& model_name,
+                     Scope* scope,
+                     const std::vector<Place>& valid_places,
+                     std::unordered_set<Node*> in_data_vars,
+                     std::unordered_set<Node*> in_wgt_vars,
+                     std::unordered_set<Node*> out_data_vars,
+                     std::unordered_set<Node*> out_unused_vars);
+
+  // Sort and return the topology order of nodes set
+  std::vector<Node*> GetTopologicalOrder(
+      const std::unordered_set<Node*>& nodes);
+
+  // find all input data vars, input weight vars,
+  // output data vars and output vars from the nodes
+  void FindInputOutputVars(const std::unordered_set<Node*>& op_nodes,
+                           std::unordered_set<Node*>* in_data_vars,
+                           std::unordered_set<Node*>* in_wgt_vars,
+                           std::unordered_set<Node*>* out_data_vars,
+                           std::unordered_set<Node*>* out_unused_vars);
+
+  // return the node to remove in the subgraph
+  std::unordered_set<const Node*> GetNode2rm(
+      const std::unordered_set<Node*>& op_nodes,
+      const std::vector<std::unordered_set<Node*>>& excluded_nodes);
+
  private:
-  // {1: {nodes2rm_in_subgraph1, ...},
-  //  2: {nodes2rm_in_subgraph2, ...}}
-  // delete nodes
-  std::unordered_map<int, std::unordered_set<Node*>> nodes2rm_;
-  // std::unordered_map<int, std::unordered_set<const Node*>> nodes2rm_;
-  // inputs nodes
-  std::unordered_map<int, std::unordered_set<Node*>> i_nodes_;
-  // std::unordered_map<int, std::unordered_set<const Node*>> i_nodes_;
-  // outputs nodes
-  std::unordered_map<int, std::unordered_set<Node*>> o_nodes_;
-  // std::unordered_map<int, std::unordered_set<const Node*>> o_nodes_;
+  // sort nodes to operational sequence
+  void SortHelper(Node* node,
+                  const std::unordered_set<Node*>& nodes_all,
+                  std::unordered_set<const Node*>* visited_nodes,
+                  std::vector<Node*>* ret);
 };
 
 }  // namespace subgraph

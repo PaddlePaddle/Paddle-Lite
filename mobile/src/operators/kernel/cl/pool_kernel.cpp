@@ -57,23 +57,38 @@ void PoolKernel<GPU_CL, float>::Compute(const PoolParam<GPU_CL> &param) {
   const int ksize_h = ksize[0];
   const int ksize_w = ksize[1];
 
-  clSetKernelArg(kernel, 0, sizeof(cl_int), &in_height);
-  clSetKernelArg(kernel, 1, sizeof(cl_int), &in_width);
-  clSetKernelArg(kernel, 2, sizeof(cl_int), &out_height);
-  clSetKernelArg(kernel, 3, sizeof(cl_int), &out_width);
-  clSetKernelArg(kernel, 4, sizeof(cl_int), &pad_top);
-  clSetKernelArg(kernel, 5, sizeof(cl_int), &pad_left);
-  clSetKernelArg(kernel, 6, sizeof(cl_int), &stride_h);
-  clSetKernelArg(kernel, 7, sizeof(cl_int), &stride_w);
-  clSetKernelArg(kernel, 8, sizeof(cl_int), &ksize_h);
-  clSetKernelArg(kernel, 9, sizeof(cl_int), &ksize_w);
-  clSetKernelArg(kernel, 10, sizeof(cl_mem), &input);
-  clSetKernelArg(kernel, 11, sizeof(cl_mem), &out);
+  cl_int status;
+  status = clSetKernelArg(kernel, 0, sizeof(cl_int), &in_height);
+  CL_CHECK_ERRORS(status);
+  status = clSetKernelArg(kernel, 1, sizeof(cl_int), &in_width);
+  CL_CHECK_ERRORS(status);
+  status = clSetKernelArg(kernel, 2, sizeof(cl_int), &out_height);
+  CL_CHECK_ERRORS(status);
+  status = clSetKernelArg(kernel, 3, sizeof(cl_int), &out_width);
+  CL_CHECK_ERRORS(status);
+  status = clSetKernelArg(kernel, 4, sizeof(cl_int), &pad_top);
+  CL_CHECK_ERRORS(status);
+  status = clSetKernelArg(kernel, 5, sizeof(cl_int), &pad_left);
+  CL_CHECK_ERRORS(status);
+  status = clSetKernelArg(kernel, 6, sizeof(cl_int), &stride_h);
+  CL_CHECK_ERRORS(status);
+  status = clSetKernelArg(kernel, 7, sizeof(cl_int), &stride_w);
+  CL_CHECK_ERRORS(status);
+  status = clSetKernelArg(kernel, 8, sizeof(cl_int), &ksize_h);
+  CL_CHECK_ERRORS(status);
+  status = clSetKernelArg(kernel, 9, sizeof(cl_int), &ksize_w);
+  CL_CHECK_ERRORS(status);
+  status = clSetKernelArg(kernel, 10, sizeof(cl_mem), &input);
+  CL_CHECK_ERRORS(status);
+  status = clSetKernelArg(kernel, 11, sizeof(cl_mem), &out);
+  CL_CHECK_ERRORS(status);
 
   //  cl_event out_event = param.Output()->GetClEvent();
   //  cl_event wait_event = param.Input()->GetClEvent();
-  clEnqueueNDRangeKernel(this->cl_helper_.CLCommandQueue(), kernel, 3, NULL,
-                         default_work_size.data(), NULL, 0, NULL, NULL);
+  status =
+      clEnqueueNDRangeKernel(this->cl_helper_.CLCommandQueue(), kernel, 3, NULL,
+                             default_work_size.data(), NULL, 0, NULL, NULL);
+  CL_CHECK_ERRORS(status);
 }
 
 template class PoolKernel<GPU_CL, float>;

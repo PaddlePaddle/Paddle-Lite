@@ -16,17 +16,17 @@
 
 #include "lite/utils/any.h"
 #ifdef LITE_WITH_CUDA
-#include "lite/cuda/blas.h"
-#include "lite/cuda/cuda_utils.h"
+#include "lite/backends/cuda/blas.h"
+#include "lite/backends/cuda/cuda_utils.h"
 #endif
 #ifdef LITE_WITH_OPENCL
 #include <gflags/gflags.h>
 #include <unordered_map>
-#include "lite/opencl/cl_context.h"
-#include "lite/opencl/cl_runtime.h"
+#include "lite/backends/opencl/cl_context.h"
+#include "lite/backends/opencl/cl_runtime.h"
 #endif
 #ifdef LITE_WITH_NPU
-#include "lite/npu/npu_helper.h"
+#include "lite/backends/npu/npu_helper.h"
 #endif
 
 #include <map>
@@ -160,9 +160,9 @@ class Context<TargetType::kCUDA> {
     cublas_fp32_ = std::make_shared<lite::cuda::Blas<float>>();
   }
   void Init(int dev_id, int exec_stream_id = 0, int io_stream_id = 0) {
-    CHECK_GT(devs.size(), 0)
+    CHECK_GT(devs.size(), 0UL)
         << "Env is not initialized or current target is not exit!";
-    if (dev_id >= devs.size()) {
+    if (dev_id >= static_cast<int>(devs.size())) {
       LOG(WARNING) << "device index exceeds the number of devices, set to "
                       "default device(0)!";
       device_id_ = 0;
@@ -192,10 +192,10 @@ class Context<TargetType::kCUDA> {
     ctx->cublas_fp32_ = cublas_fp32_;
   }
 
-  const cudaStream_t exec_stream() { return exec_stream_; }
+  const cudaStream_t& exec_stream() const { return exec_stream_; }
   void SetExecStream(cudaStream_t stream) { exec_stream_ = stream; }
 
-  const cudaStream_t io_stream() { return io_stream_; }
+  const cudaStream_t& io_stream() const { return io_stream_; }
   void SetIoStream(cudaStream_t stream) { io_stream_ = stream; }
 
   std::shared_ptr<cuda::Blas<float>> cublas_fp32() { return cublas_fp32_; }
@@ -356,7 +356,10 @@ class ContextScheduler {
         break;
 #endif
       default:
+#ifndef LITE_ON_MODEL_OPTIMIZE_TOOL
         LOG(FATAL) << "unsupported target " << TargetToStr(target);
+#endif
+        break;
     }
     return ctx;
   }

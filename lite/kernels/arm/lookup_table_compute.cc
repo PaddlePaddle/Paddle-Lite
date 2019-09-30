@@ -16,7 +16,7 @@
 #include <string>
 #include <vector>
 #include "lite/api/paddle_place.h"
-#include "lite/arm/math/funcs.h"
+#include "lite/backends/arm/math/funcs.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/tensor.h"
 #include "lite/core/type_system.h"

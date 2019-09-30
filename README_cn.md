@@ -1,13 +1,13 @@
 #  Paddle Lite
 
 <!--[![Build Status](https://travis-ci.org/PaddlePaddle/Paddle-Lite.svg?branch=develop&longCache=true&style=flat-square)](https://travis-ci.org/PaddlePaddle/Paddle-Lite)-->
-[![Documentation Status](https://img.shields.io/badge/中文文档-最新-brightgreen.svg)](https://github.com/PaddlePaddle/Paddle-Lite/wiki)
+[![Documentation Status](https://img.shields.io/badge/中文文档-最新-brightgreen.svg)](https://paddlepaddle.github.io/Paddle-Lite/)
 [![License](https://img.shields.io/badge/license-Apache%202-blue.svg)](LICENSE)
 <!-- [![Release](https://img.shields.io/github/release/PaddlePaddle/Paddle-Mobile.svg)](https://github.com/PaddlePaddle/Paddle-Mobile/releases) -->
 
 Paddle Lite为Paddle-Mobile的升级版，定位支持包括手机移动端在内更多场景的轻量化高效预测，支持更广泛的硬件和平台，是一个高性能、轻量级的深度学习预测引擎。在保持和PaddlePaddle无缝对接外，也兼容支持其他训练框架产出的模型。
 
-完整使用文档位于 [PaddleLite Wiki](https://github.com/PaddlePaddle/Paddle-Lite/wiki) 。
+完整使用文档位于 [PaddleLite 文档](https://paddlepaddle.github.io/Paddle-Lite/) 。
 
 ## 特性
 
@@ -21,7 +21,7 @@ Paddle Lite为Paddle-Mobile的升级版，定位支持包括手机移动端在�
 支持INT8量化计算，结合 [PaddleSlim 模型压缩工具](https://github.com/PaddlePaddle/models/tree/v1.5/PaddleSlim) 中 INT8量化训练功能，可以提供高精度高性能的预测能力。
 在Huawei NPU， FPGA上也具有有很好的性能表现。
 
-最新 Benchmark 位于 [benchmark](https://github.com/PaddlePaddle/Paddle-Lite/wiki/benchmark)。
+最新 Benchmark 位于 [benchmark](https://paddlepaddle.github.io/Paddle-Lite/develop/benchmark/)。
 
 ### 通用性
 硬件方面，Paddle Lite 的架构设计为多硬件兼容支持做了良好设计。除了支持ARM CPU、Mali GPU、Adreno GPU，还特别支持了华为 NPU，以及 FPGA 等边缘设备广泛使用的硬件。即将支持支持包括寒武纪、比特大陆等AI芯片，未来会增加对更多硬件的支持。
@@ -53,5 +53,10 @@ Paddle Lite 借鉴了以下开源项目：
 
 ##  交流与反馈
 * 欢迎您通过Github Issues来提交问题、报告与建议
+* 微信公众号：飞桨PaddlePaddle
 * QQ群: 696965088 
+
+<p align="center"><img width="200" height="200"  src="https://user-images.githubusercontent.com/45189361/64117959-1969de80-cdc9-11e9-84f7-e1c2849a004c.jpeg"/>&#8194;&#8194;&#8194;&#8194;&#8194;<img width="200" height="200" margin="500" src="https://user-images.githubusercontent.com/45189361/64117844-cb54db00-cdc8-11e9-8c08-24bbe594608e.jpeg"/></p>
+<p align="center">  &#8194;&#8194;&#8194;微信公众号&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;官方技术交流QQ群</p>
+
 * 论坛: 欢迎大家在[PaddlePaddle论坛](https://ai.baidu.com/forum/topic/list/168)分享在使用PaddlePaddle中遇到的问题和经验, 营造良好的论坛氛围

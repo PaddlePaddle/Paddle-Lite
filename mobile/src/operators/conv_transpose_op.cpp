@@ -29,4 +29,8 @@ REGISTER_OPERATOR_CPU(conv2d_transpose, ops::ConvOpTranspose);
 REGISTER_OPERATOR_FPGA(conv2d_transpose, ops::ConvOpTranspose);
 #endif
 
+#ifdef PADDLE_MOBILE_CL
+REGISTER_OPERATOR_CL(conv2d_transpose, ops::ConvOpTranspose);
+#endif
+
 #endif

@@ -20,7 +20,7 @@
 #include <string>
 #include <utility>
 #include <vector>
-#include "lite/arm/math/type_trans.h"
+#include "lite/backends/arm/math/type_trans.h"
 #include "lite/core/context.h"
 #include "lite/core/target_wrapper.h"
 #include "lite/core/type_system.h"
@@ -29,6 +29,10 @@
 #include "lite/operators/op_params.h"
 #include "lite/utils/all.h"
 #include "lite/utils/replace_stl/stream.h"
+
+#ifdef LITE_WITH_PROFILE
+#include "lite/core/profile/basic_profiler.h"
+#endif  // LITE_WITH_PROFILE
 
 namespace paddle {
 namespace lite {
@@ -43,20 +47,29 @@ class KernelBase {
       const std::map<std::string, const Type*>& input_types,
       const std::string& out_arg)>;
 
- protected:
   /// Run some initialization before `Run`, it will invoke after `SetParam` and
   /// `SetContext`, that is both the param_ and context_ are valid.
   virtual void PrepareForRun() {}
 
+  /// Run kernel initialization if needed at every run (eg. input shape changed)
+  virtual void ReInitWhenNeeded() {}
+
   /// Run the kernel. Before Run, both the param_ and context_ should be valid.
   virtual void Run() = 0;
 
- public:
+#ifdef LITE_WITH_PROFILE
+  void SetProfileID(uint32_t id) { profile_id_ = id; }
+#endif
+
   void Launch() {
+    /// First run, init kernel, do weights transform once
     if (is_first_epoch_) {
       PrepareForRun();
       is_first_epoch_ = false;
     }
+    /// re-init the kernel if needed (input shape should be checked in conv
+    /// kernel)
+    ReInitWhenNeeded();
 
     // Reset the workspace to make every kernel in the same thread to share the
     // temporary memory.
@@ -66,6 +79,11 @@ class KernelBase {
 #endif
 #if defined(LITE_WITH_CUDA)
     WorkSpace::Global_CUDA().AllocReset();
+#endif
+
+#ifdef LITE_WITH_PROFILE
+    CHECK_GE(profile_id_, 0) << "Must set profile id first";
+    profile::ProfileBlock x(profile_id_, "kernel");
 #endif
     Run();
   }
@@ -152,6 +170,10 @@ class KernelBase {
   // is the unique ID for the kernel.
   std::string alias_{};
   bool is_first_epoch_{true};
+
+#ifdef LITE_WITH_PROFILE
+  int profile_id_{-1};
+#endif
 };
 
 // Light-weight kernel implementation.

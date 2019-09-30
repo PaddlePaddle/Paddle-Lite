@@ -25,34 +25,49 @@ class CastComputeTester : public arena::TestCase {
   // common attributes for this op.
   std::string input_ = "x";
   std::string output_ = "out";
-  int in_dtype_ = 21;
-  int out_dtype_ = 5;
-  DDim x_dims_{{2, 2, 2, 2}};
+  int in_dtype_;
+  int out_dtype_;
+  DDim x_dims_{{2, 2}};
 
  public:
-  CastComputeTester(const Place& place, const std::string& alias)
-      : TestCase(place, alias) {}
+  CastComputeTester(const Place& place,
+                    const std::string& alias,
+                    int in_dtype,
+                    int out_dtype)
+      : TestCase(place, alias), in_dtype_(in_dtype), out_dtype_(out_dtype) {}
 
   void RunBaseline(Scope* scope) override {
     auto* out = scope->NewTensor(output_);
     CHECK(out);
     out->Resize(x_dims_);
-    auto* output_data = out->mutable_data<float>();
 
-    auto* x = scope->FindTensor(input_);
-    const auto* x_data = x->data<char>();
-
-    int num = x_dims_[0];
-    int channel = x_dims_[1];
-    int size = x_dims_[2] * x_dims_[3];
-    int in_channel = channel * size;
-
-    auto* output_data_tmp = output_data;
-    auto* x_data_tmp = x_data;
-    for (int i = 0; i < x_dims_.production(); i++) {
-      *output_data_tmp = static_cast<float>(*x_data_tmp);
-      output_data_tmp++;
-      x_data_tmp++;
+    if (out_dtype_ == 5 && in_dtype_ == 20) {
+      auto* x = scope->FindTensor(input_);
+      auto* x_data = x->data<unsigned char>();
+      auto* output_data = out->mutable_data<float>();
+      for (int i = 0; i < x_dims_.production(); i++) {
+        *output_data = static_cast<float>(*x_data);
+        output_data++;
+        x_data++;
+      }
+    } else if (out_dtype_ == 5 && in_dtype_ == 21) {
+      auto* output_data = out->mutable_data<float>();
+      auto* x = scope->FindTensor(input_);
+      auto* x_data = x->data<char>();
+      for (int i = 0; i < x_dims_.production(); i++) {
+        *output_data = static_cast<float>(*x_data);
+        output_data++;
+        x_data++;
+      }
+    } else if (out_dtype_ == 5 && in_dtype_ == 2) {
+      auto* output_data = out->mutable_data<float>();
+      auto* x = scope->FindTensor(input_);
+      auto* x_data = x->data<int32_t>();
+      for (int i = 0; i < x_dims_.production(); i++) {
+        *output_data = static_cast<float>(*x_data);
+        output_data++;
+        x_data++;
+      }
     }
   }
 
@@ -65,12 +80,29 @@ class CastComputeTester : public arena::TestCase {
   }
 
   void PrepareData() override {
-    std::vector<char> x_data(x_dims_.production());
-    for (int i = 0; i < x_dims_.production(); i++) {
-      float sign = i % 3 == 0 ? -1.0f : 1.0f;
-      x_data[i] = sign * static_cast<char>(i % 128);
+    if (in_dtype_ == 20) {
+      std::vector<unsigned char> x_data(x_dims_.production());
+      for (int i = 0; i < x_dims_.production(); i++) {
+        x_data[i] = static_cast<unsigned char>(i % 128);
+      }
+      SetCommonTensor(input_, x_dims_, x_data.data());
+    } else if (in_dtype_ == 21) {
+      std::vector<char> x_data(x_dims_.production());
+      for (int i = 0; i < x_dims_.production(); i++) {
+        float sign = i % 3 == 0 ? -1.0f : 1.0f;
+        x_data[i] = sign * static_cast<char>(i % 128);
+      }
+      SetCommonTensor(input_, x_dims_, x_data.data());
+    } else if (in_dtype_ == 2) {
+      std::vector<int32_t> x_data(x_dims_.production());
+      for (int i = 0; i < x_dims_.production(); i++) {
+        int sign = i % 3 == 0 ? -1 : 1;
+        x_data[i] = sign * static_cast<int32_t>(i % 128);
+      }
+      SetCommonTensor(input_, x_dims_, x_data.data());
+    } else {
+      LOG(FATAL) << "not implemented!";
     }
-    SetCommonTensor(input_, x_dims_, x_data.data());
   }
 };
 
@@ -79,9 +111,15 @@ TEST(Cast, precision) {
 #ifdef LITE_WITH_ARM
   Place place(TARGET(kARM));
 
-  std::unique_ptr<arena::TestCase> tester(new CastComputeTester(place, "def"));
+  std::unique_ptr<arena::TestCase> tester(
+      new CastComputeTester(place, "def", 20, 5));
   arena::Arena arena(std::move(tester), place, 2e-5);
   arena.TestPrecision();
+
+// std::unique_ptr<arena::TestCase> tester1(
+//    new CastComputeTester(place, "def", 2, 5));
+// arena::Arena arena1(std::move(tester1), place, 2e-5);
+// arena1.TestPrecision();
 #endif
 }
 

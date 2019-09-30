@@ -175,6 +175,8 @@ void QuantDequantOpFuser::InsertNewNode(SSAGraph* graph,
     for (size_t i = 0; i < weight_num; i++) {
       quantized_weight_data[i] = static_cast<int8_t>(temp_data[i]);
     }
+    quantized_weight_t->set_persistable(true);
+    quantized_weight_t->set_precision(PRECISION(kInt8));
     auto quantized_op = LiteOpRegistry::Global().Create(op_type_);
 
     quantized_op->Attach(op_desc, scope);

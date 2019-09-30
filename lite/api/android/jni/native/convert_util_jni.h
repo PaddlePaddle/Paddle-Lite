@@ -11,6 +11,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#pragma once
+
 #include <jni.h>
 #include <string>
 #include <vector>
@@ -18,9 +20,6 @@ limitations under the License. */
 #include "lite/api/light_api.h"
 #include "lite/api/paddle_api.h"
 #include "lite/api/paddle_place.h"
-
-#ifndef PADDLE_FLUID_LITE_API_ANDROID_JNI_NATIVE_CONVERT_UTIL_JNI_H_
-#define PADDLE_FLUID_LITE_API_ANDROID_JNI_NATIVE_CONVERT_UTIL_JNI_H_
 
 namespace paddle {
 namespace lite_api {
@@ -48,6 +47,27 @@ inline std::string jstring_to_cpp_string(JNIEnv *env, jstring jstr) {
   env->DeleteLocalRef(stringJbytes);
   env->DeleteLocalRef(stringClass);
   return ret;
+}
+
+inline jstring cpp_string_to_jstring(JNIEnv *env, std::string str) {
+  auto *data = str.c_str();
+  jclass strClass = env->FindClass("java/lang/String");
+  jmethodID strClassInitMethodID =
+      env->GetMethodID(strClass, "<init>", "([BLjava/lang/String;)V");
+
+  jbyteArray bytes = env->NewByteArray(strlen(data));
+  env->SetByteArrayRegion(
+      bytes, 0, strlen(data), reinterpret_cast<const jbyte *>(data));
+
+  jstring encoding = env->NewStringUTF("UTF-8");
+  jstring res = (jstring)(
+      env->NewObject(strClass, strClassInitMethodID, bytes, encoding));
+
+  env->DeleteLocalRef(strClass);
+  env->DeleteLocalRef(encoding);
+  env->DeleteLocalRef(bytes);
+
+  return res;
 }
 
 inline jfloatArray cpp_array_to_jfloatarray(JNIEnv *env,
@@ -167,20 +187,32 @@ inline MobileConfig jmobileconfig_to_cpp_mobileconfig(JNIEnv *env,
                                                       jobject jmobileconfig) {
   jclass mobileconfig_jclazz = env->GetObjectClass(jmobileconfig);
 
-  jmethodID model_dir_method = env->GetMethodID(
-      mobileconfig_jclazz, "getModelDir", "()Ljava/lang/String;");
   MobileConfig config;
 
+  // set model dir
+  jmethodID model_dir_method = env->GetMethodID(
+      mobileconfig_jclazz, "getModelDir", "()Ljava/lang/String;");
   jstring java_model_dir =
       (jstring)env->CallObjectMethod(jmobileconfig, model_dir_method);
   if (java_model_dir != nullptr) {
     std::string cpp_model_dir = jstring_to_cpp_string(env, java_model_dir);
     config.set_model_dir(cpp_model_dir);
   }
+
+  // set threads
+  jmethodID threads_method =
+      env->GetMethodID(mobileconfig_jclazz, "getThreads", "()I");
+  int threads = env->CallIntMethod(jmobileconfig, threads_method);
+  config.set_threads(threads);
+
+  // set power mode
+  jmethodID power_mode_method =
+      env->GetMethodID(mobileconfig_jclazz, "getPowerModeInt", "()I");
+  int power_mode = env->CallIntMethod(jmobileconfig, power_mode_method);
+  config.set_power_mode(static_cast<paddle::lite_api::PowerMode>(power_mode));
+
   return config;
 }
 
 }  // namespace lite_api
 }  // namespace paddle
-
-#endif  //  PADDLE_FLUID_LITE_API_ANDROID_JNI_NATIVE_CONVERT_UTIL_JNI_H_

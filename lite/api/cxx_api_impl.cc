@@ -13,7 +13,10 @@
 // limitations under the License.
 
 #include "lite/api/cxx_api.h"
+#include <string>
 #include "lite/api/paddle_api.h"
+#include "lite/core/device_info.h"
+#include "lite/core/version.h"
 
 namespace paddle {
 namespace lite {
@@ -31,6 +34,8 @@ class CxxPaddleApiImpl : public lite_api::PaddlePredictor {
 
   void Run() override;
 
+  std::string GetVersion() const override;
+
   std::unique_ptr<const lite_api::Tensor> GetTensor(
       const std::string &name) const override;
 
@@ -45,13 +50,12 @@ class CxxPaddleApiImpl : public lite_api::PaddlePredictor {
 CxxPaddleApiImpl::CxxPaddleApiImpl() {}
 
 void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
+#ifdef LITE_WITH_CUDA
+  Env<TARGET(kCUDA)>::Init();
+#endif
   auto places = config.valid_places();
   places.emplace_back(TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny));
-  raw_predictor_.Build(config.model_dir(),
-                       config.model_file(),
-                       config.param_file(),
-                       config.preferred_place(),
-                       places);
+  raw_predictor_.Build(config, places);
 }
 
 std::unique_ptr<lite_api::Tensor> CxxPaddleApiImpl::GetInput(int i) {
@@ -66,6 +70,8 @@ std::unique_ptr<const lite_api::Tensor> CxxPaddleApiImpl::GetOutput(
 }
 
 void CxxPaddleApiImpl::Run() { raw_predictor_.Run(); }
+
+std::string CxxPaddleApiImpl::GetVersion() const { return version(); }
 
 std::unique_ptr<const lite_api::Tensor> CxxPaddleApiImpl::GetTensor(
     const std::string &name) const {

@@ -54,6 +54,7 @@ SET_ATTR_IMPL(int, INT, Int32, i);
 SET_ATTR_IMPL(float, FLOAT, Float32, f);
 SET_ATTR_IMPL(bool, BOOLEAN, Bool, b);
 SET_ATTR_IMPL(std::string, STRING, String, s);
+SET_ATTR_IMPL(int64_t, LONG, Int64, l);
 #undef SET_ATTR_IMPL
 
 #define SET_ATTRS_IMPL(T, ty__, bd__, pb_f__)                              \
@@ -77,6 +78,7 @@ SET_ATTR_IMPL(std::string, STRING, String, s);
 SET_ATTRS_IMPL(int, INTS, Int32, ints);
 SET_ATTRS_IMPL(float, FLOATS, Float32, floats);
 SET_ATTRS_IMPL(std::string, STRINGS, String, strings);
+SET_ATTRS_IMPL(int64_t, LONGS, Int64, longs);
 #undef SET_ATTRS_IMPL
 
 const proto::OpDesc::Attr& GetFindAttr(const proto::OpDesc& desc,

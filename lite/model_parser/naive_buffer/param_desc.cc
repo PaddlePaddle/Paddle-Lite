@@ -97,6 +97,7 @@ VarDescAPI::VarDataType ParamDesc::GetDataType() const {
     default:
       LOG(FATAL) << "Unknown var data type";
   }
+  return VarDescAPI::VarDataType();
 #undef GET_DATA_TYPE_CASE_ITEM
 }
 
@@ -169,7 +170,7 @@ GET_DATA_IMPL(double, FP64);
 // NOTE: Must set data type first
 #define SET_DATA_COMMON_IMPL(T, type__, size__, data_ptr__)     \
   CHECK(GetDataType() == VarDescAPI::VarDataType::type__)       \
-      << "Data Type mismatch, Call SetDataType first";          \
+      << "Data Type mismatch, call SetDataType first.";         \
   auto* data_builder =                                          \
       desc_->GetMutableField<ListBuilder<CharBuilder>>("data"); \
   CHECK(data_builder);                                          \

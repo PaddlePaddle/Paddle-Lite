@@ -237,65 +237,74 @@ std::string get_cpu_name() {
   return "";
 }
 
-void get_cpu_max_min_freq(int cpu_id, int* max_freq, int* min_freq) {
-  *max_freq = 0;
-  *min_freq = 0;
+int get_min_freq_khz(int cpuid) {
+  // first try, for all possible cpu
+  char path[256];
+  snprintf(path,
+           sizeof(path),
+           "/sys/devices/system/cpu/cpu%d/cpufreq/cpuinfo_max_freq",
+           cpuid);
+  FILE* fp = fopen(path, "rb");
+  if (!fp) {
+    return -1;
+  }
+
+  int min_freq_khz = -1;
+  fscanf(fp, "%d", &min_freq_khz);
+  fclose(fp);
+  return min_freq_khz;
+}
+
+int get_max_freq_khz(int cpuid) {
   // first try, for all possible cpu
   char path[256];
   snprintf(path,
            sizeof(path),
            "/sys/devices/system/cpu/cpufreq/stats/cpu%d/time_in_state",
-           cpu_id);
+           cpuid);
+
   FILE* fp = fopen(path, "rb");
   if (!fp) {
     // second try, for online cpu
     snprintf(path,
              sizeof(path),
              "/sys/devices/system/cpu/cpu%d/cpufreq/stats/time_in_state",
-             cpu_id);
+             cpuid);
+    fp = fopen(path, "rb");
+  }
+
+  int max_freq_khz = 0;
+  if (fp) {
+    while (!feof(fp)) {
+      int freq_khz = 0;
+      int nscan = fscanf(fp, "%d %*d", &freq_khz);
+      if (nscan != 1) {
+        break;
+      }
+
+      if (freq_khz > max_freq_khz) {
+        max_freq_khz = freq_khz;
+      }
+    }
+  }
+  if (max_freq_khz == 0 || !fp) {
+    // third try, for online cpu
+    snprintf(path,
+             sizeof(path),
+             "/sys/devices/system/cpu/cpu%d/cpufreq/cpuinfo_max_freq",
+             cpuid);
     fp = fopen(path, "rb");
     if (!fp) {
-      // third try, for online cpu
-      // get max_freq
-      snprintf(path,
-               sizeof(path),
-               "/sys/devices/system/cpu/cpu%d/cpufreq/cpuinfo_max_freq",
-               cpu_id);
-      fp = fopen(path, "rb");
-      if (!fp) {
-        return;
-      }
-      fscanf(fp, "%d", max_freq);
-      fclose(fp);
-      // get min_freq
-      snprintf(path,
-               sizeof(path),
-               "/sys/devices/system/cpu/cpu%d/cpufreq/cpuinfo_min_freq",
-               cpu_id);
-      fp = fopen(path, "rb");
-      if (!fp) {
-        return;
-      }
-      fscanf(fp, "%d", min_freq);
-      fclose(fp);
-      return;
+      return -1;
     }
+    int max_freq_khz = -1;
+    fscanf(fp, "%d", &max_freq_khz);
+    fclose(fp);
+    return max_freq_khz;
   }
-  *min_freq = std::numeric_limits<int>::max();
-  while (!feof(fp)) {
-    int freq = 0;
-    int nscan = fscanf(fp, "%d %*d", &freq);
-    if (nscan != 1) {
-      break;
-    }
-    if (freq > *max_freq) {
-      *max_freq = freq;
-    }
-    if (freq < *min_freq) {
-      *min_freq = freq;
-    }
-  }
+
   fclose(fp);
+  return max_freq_khz;
 }
 
 void sort_cpuid_by_max_freq(const std::vector<int>& max_freqs,
@@ -835,7 +844,7 @@ void DeviceInfo::RequestPowerHighMode(int thread_num) {
       active_ids_ = big_core_ids_;
     } else {
       for (int i = 0; i < thread_num; ++i) {
-        active_ids_.push_back(big_core_ids_[i]);
+        active_ids_.push_back(big_core_ids_[big_core_size - 1 - i]);
       }
     }
   } else {
@@ -958,7 +967,6 @@ void DeviceInfo::RequestPowerRandLowMode(int shift_num, int thread_num) {
 
 int DeviceInfo::Setup() {
   core_num_ = get_cpu_num();
-  printf("core number: %d\n", core_num_);
   mem_size_ = get_mem_size();
   get_cpu_arch(&archs_, core_num_);
   // set defalut CPU info
@@ -973,8 +981,8 @@ int DeviceInfo::Setup() {
 #ifdef LITE_WITH_LINUX
   // get max&min freq
   for (int i = 0; i < core_num_; ++i) {
-    int max_freq, min_freq;
-    get_cpu_max_min_freq(i, &max_freq, &min_freq);
+    int max_freq = get_max_freq_khz(i);
+    int min_freq = get_min_freq_khz(i);
     max_freqs_[i] = max_freq / 1000;
     min_freqs_[i] = min_freq / 1000;
   }
@@ -982,13 +990,6 @@ int DeviceInfo::Setup() {
   dev_name_ = get_cpu_name();
   if (!SetCPUInfoByName()) {
     SetCPUInfoByProb();
-  }
-  core_ids_.resize(core_num_);
-  cluster_ids_.resize(core_num_);
-  for (int i = 0; i < core_num_; ++i) {
-    max_freqs_[i] = 1000000;
-    min_freqs_[i] = 1000000;
-    cluster_ids_[i] = 0;
   }
 #else
 #ifdef TARGET_IOS
@@ -1103,13 +1104,13 @@ void DeviceInfo::SetCache(int l1size, int l2size, int l3size) {
   SetCacheInfo(0, 1, l1size);
   SetCacheInfo(1, 1, l2size);
   SetCacheInfo(2, 1, l3size);
-  workspace_.Resize({2 * (l1size + l2size)});
+  workspace_.Resize({llc_size()});
+  workspace_.mutable_data<int8_t>();
 }
 
-bool DeviceInfo::ExtendWorkspace(int size) {
+bool DeviceInfo::ExtendWorkspace(size_t size) {
   workspace_.Resize({size + llc_size()});
-  workspace_.mutable_data<int8_t>();
-  return true;
+  return workspace_.mutable_data<int8_t>() != nullptr;
 }
 
 #endif  // LITE_WITH_ARM

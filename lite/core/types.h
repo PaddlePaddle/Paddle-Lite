@@ -45,6 +45,37 @@ enum class Type {
   __num__,
 };
 
+enum class FluidType {
+  // Pod Types
+  BOOL = 0,
+  INT16 = 1,
+  INT32 = 2,
+  INT64 = 3,
+  FP16 = 4,
+  FP32 = 5,
+  FP64 = 6,
+  // Tensor<size_t> is used in C++.
+  SIZE_T = 19,
+  UINT8 = 20,
+  INT8 = 21,
+
+  // Other types that may need additional descriptions
+  LOD_TENSOR = 7,
+  SELECTED_ROWS = 8,
+  FEED_MINIBATCH = 9,
+  FETCH_LIST = 10,
+  STEP_SCOPES = 11,
+  LOD_RANK_TABLE = 12,
+  LOD_TENSOR_ARRAY = 13,
+  PLACE_LIST = 14,
+  READER = 15,
+  // Any runtime decided variable type is raw
+  // raw variables should manage their own allocations
+  // in operators like nccl_op
+  RAW = 17,
+  TUPLE = 18,
+};
+
 template <typename T>
 Type StdTypeToRepr() {
   return Type::_unk;

@@ -20,9 +20,13 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         String textOutput = "";
+
+        String version = getVersionInfo("lite_naive_model_opt.nb", this);
+        textOutput += "Version: " + version + "\n";
+
         Tensor output;
         output = setInputAndRunNaiveModel("lite_naive_model_opt.nb", this);
-        textOutput += "lite_naive_model output: " + output.getFloatData()[0] + ", "
+        textOutput += "\nlite_naive_model output: " + output.getFloatData()[0] + ", "
                 + output.getFloatData()[1] + "\n";
         textOutput += "expected: 50.2132, -28.8729\n";
 
@@ -52,6 +56,14 @@ public class MainActivity extends AppCompatActivity {
 
         TextView textView = findViewById(R.id.text_view);
         textView.setText(textOutput);
+    }
+
+    public static String getVersionInfo(String modelName, Context context) {
+        String modelPath = copyFromAssetsToCache(modelName, context);
+        MobileConfig config = new MobileConfig();
+        config.setModelDir(modelPath);
+        PaddlePredictor predictor = PaddlePredictor.createPaddlePredictor(config);
+        return predictor.getVersion();
     }
 
     public static String copyFromAssetsToCache(String modelPath, Context context) {
@@ -91,6 +103,8 @@ public class MainActivity extends AppCompatActivity {
 
         MobileConfig config = new MobileConfig();
         config.setModelDir(modelPath);
+        config.setPowerMode(PowerMode.LITE_POWER_HIGH);
+        config.setThreads(1);
         PaddlePredictor predictor = PaddlePredictor.createPaddlePredictor(config);
 
         Tensor input = predictor.getInput(0);

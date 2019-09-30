@@ -3,6 +3,11 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${dir}/build")
 set(FOUND_MATCH OFF)
 set(ENABLE_ALL_TEST ON)
 
+if (ANDROID_ABI STREQUAL "arm64-v8a")
+    message("using google's linker to link armv8 binary")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fuse-ld=gold")
+endif ()
+
 set(CON -1)
 
 message(STATUS "nets :${NET}")

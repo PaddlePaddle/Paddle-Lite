@@ -451,6 +451,8 @@ double PaddleMobile<GPU_CL, float>::GetPredictTime() {
   int input_height = 224;
   int output_width = 224;
   int output_height = 224;
+  int has_group = 0;
+  int filter_channel = 3;
   status = clSetKernelArg(kernel, 0, sizeof(int), &c_block);
   CL_CHECK_ERRORS(status);
   status = clSetKernelArg(kernel, 1, sizeof(int), &w);
@@ -478,6 +480,10 @@ double PaddleMobile<GPU_CL, float>::GetPredictTime() {
   status = clSetKernelArg(kernel, 12, sizeof(int), &output_width);
   CL_CHECK_ERRORS(status);
   status = clSetKernelArg(kernel, 13, sizeof(int), &output_height);
+  CL_CHECK_ERRORS(status);
+  status = clSetKernelArg(kernel, 14, sizeof(int), &filter_channel);
+  CL_CHECK_ERRORS(status);
+  status = clSetKernelArg(kernel, 15, sizeof(int), &has_group);
   CL_CHECK_ERRORS(status);
 
   //  cl_event out_event = param.Output()->GetClEvent();

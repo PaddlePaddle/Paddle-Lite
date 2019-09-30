@@ -26,10 +26,9 @@ namespace paddle {
 namespace lite {
 
 void TestModel(const std::vector<Place>& valid_places,
-               const Place& preferred_place,
-               bool use_npu = false) {
+               const Place& preferred_place) {
   DeviceInfo::Init();
-  DeviceInfo::Global().SetRunMode(lite_api::LITE_POWER_HIGH, FLAGS_threads);
+  DeviceInfo::Global().SetRunMode(lite_api::LITE_POWER_NO_BIND, FLAGS_threads);
   lite::Predictor predictor;
 
   predictor.Build(FLAGS_model_dir, "", "", preferred_place, valid_places);
@@ -40,10 +39,6 @@ void TestModel(const std::vector<Place>& valid_places,
   auto item_size = input_tensor->dims().production();
   for (int i = 0; i < item_size; i++) {
     data[i] = 1;
-  }
-
-  if (use_npu) {
-    predictor.GenNPURuntimeProgram();
   }
 
   for (int i = 0; i < FLAGS_warmup; ++i) {
@@ -63,8 +58,9 @@ void TestModel(const std::vector<Place>& valid_places,
 
   std::vector<std::vector<float>> results;
   // i = 1
+  // ground truth result from fluid
   results.emplace_back(std::vector<float>(
-      {0.000227548, 0.000262385, 0.000260347, 0.000293865, 0.00025008}));
+      {0.0002451055, 0.0002585023, 0.0002659616, 0.0002823}));
   auto* out = predictor.GetOutput(0);
   ASSERT_EQ(out->dims().size(), 2);
   ASSERT_EQ(out->dims()[0], 1);

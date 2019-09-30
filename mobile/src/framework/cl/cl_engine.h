@@ -17,6 +17,7 @@ limitations under the License. */
 #include <cstring>
 #include <memory>
 #include <string>
+#include <utility>
 
 #include "CL/cl.h"
 #include "common/enforce.h"
@@ -26,6 +27,36 @@ limitations under the License. */
 
 namespace paddle_mobile {
 namespace framework {
+
+class CLLocalWorkSizeInfo {
+ public:
+  CLLocalWorkSizeInfo() {
+    max_work_group_size = 0;
+    max_work_item_size0 = 0;
+    max_work_item_size1 = 0;
+    max_work_item_size2 = 0;
+  }
+  CLLocalWorkSizeInfo(size_t total_size, size_t size0, size_t size1,
+                      size_t size2) {
+    max_work_group_size = total_size;
+    max_work_item_size0 = size0;
+    max_work_item_size1 = size1;
+    max_work_item_size2 = size2;
+  }
+  bool isEmpty() {
+    return max_work_group_size == 0 && max_work_item_size0 == 0 &&
+           max_work_item_size1 == 0 && max_work_item_size2 == 0;
+  }
+
+  // max total number of work-items in the work-group
+  size_t max_work_group_size;
+  // max number of work-items in local_work_size in dim 0
+  size_t max_work_item_size0;
+  // max number of work-items in local_work_size in dim 1
+  size_t max_work_item_size1;
+  // max number of work-items in local_work_size in dim 2
+  size_t max_work_item_size2;
+};
 
 class CLEngine {
  public:
@@ -64,6 +95,55 @@ class CLEngine {
       command_queue_ = CreateClCommandQueue(getContext());
     }
     return command_queue_.get();
+  }
+
+  CLLocalWorkSizeInfo getLocalWorkSizeInfo() {
+    if (!localWorkSizeInfo_.isEmpty()) {
+      return localWorkSizeInfo_;
+    }
+    cl_int status;
+    size_t max_work_group_size = 0;
+    status = clGetDeviceInfo(devices_[0], CL_DEVICE_MAX_WORK_GROUP_SIZE,
+                             sizeof(size_t), &max_work_group_size, NULL);
+    if (status != CL_SUCCESS) {
+      return CLLocalWorkSizeInfo(0, 0, 0, 0);
+    }
+    cl_uint max_dims_num = 0;
+    status = clGetDeviceInfo(devices_[0], CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS,
+                             sizeof(cl_uint), &max_dims_num, NULL);
+    if (status != CL_SUCCESS) {
+      return CLLocalWorkSizeInfo(0, 0, 0, 0);
+    }
+    DLOG << "max_work_item_sizes max_dims_num: " << max_dims_num;
+    size_t *max_work_item_sizes =
+        reinterpret_cast<size_t *>(calloc(max_dims_num, sizeof(size_t)));
+    size_t ret_size = 0;
+    status = clGetDeviceInfo(devices_[0], CL_DEVICE_MAX_WORK_ITEM_SIZES,
+                             max_dims_num * sizeof(size_t), max_work_item_sizes,
+                             &ret_size);
+    if (status != CL_SUCCESS || ret_size / sizeof(size_t) < 3) {
+      return CLLocalWorkSizeInfo(0, 0, 0, 0);
+    }
+    DLOG << max_work_item_sizes[0];
+    DLOG << max_work_item_sizes[1];
+    DLOG << max_work_item_sizes[2];
+    localWorkSizeInfo_ =
+        CLLocalWorkSizeInfo(max_work_group_size, max_work_item_sizes[0],
+                            max_work_item_sizes[1], max_work_item_sizes[2]);
+    free(max_work_item_sizes);
+    return localWorkSizeInfo_;
+  }
+  size_t GetKernelWorkSize(cl_kernel kernel) {
+    cl_int status;
+    size_t kernel_work_size = 0;
+    status =
+        clGetKernelWorkGroupInfo(kernel, devices_[0], CL_KERNEL_WORK_GROUP_SIZE,
+                                 sizeof(size_t), &kernel_work_size, NULL);
+    if (status != CL_SUCCESS) {
+      return 0;
+    }
+    DLOG << "kernel_work_size: " << kernel_work_size;
+    return kernel_work_size;
   }
 
   std::unique_ptr<_cl_program, CLProgramDeleter> CreateProgramWith(
@@ -127,7 +207,7 @@ class CLEngine {
 
     CL_CHECK_ERRORS(status);
 
-    if (status_ == CL_BUILD_PROGRAM_FAILURE) {
+    if (status == CL_BUILD_PROGRAM_FAILURE) {
       size_t log_size;
       clGetProgramBuildInfo(program, CLEngine::Instance()->DeviceID(),
                             CL_PROGRAM_BUILD_LOG, 0, NULL, &log_size);
@@ -157,6 +237,8 @@ class CLEngine {
   bool SetClDeviceId();
 
   bool initialized_;
+
+  CLLocalWorkSizeInfo localWorkSizeInfo_;
 
   cl_platform_id platform_;
 

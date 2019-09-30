@@ -14,7 +14,7 @@
 
 #include "lite/kernels/arm/cast_compute.h"
 #include <algorithm>
-#include "lite/arm/math/funcs.h"
+#include "lite/backends/arm/math/funcs.h"
 
 namespace paddle {
 namespace lite {
@@ -23,7 +23,7 @@ namespace arm {
 
 template <class in_type, class out_type>
 out_type TransOp(in_type in) {
-  return static_cast<in_type>(in);
+  return static_cast<out_type>(in);
 }
 
 void CastCompute::PrepareForRun() {}
@@ -45,6 +45,20 @@ void CastCompute::Run() {
     const char* x_data_end = x_data_begin + param.X->numel();
     float* out_data = param.Out->mutable_data<float>();
     std::transform(x_data_begin, x_data_end, out_data, TransOp<char, float>);
+  } else if (param.in_dtype == 2 && param.out_dtype == 5) {  // int32 -> float32
+    const int32_t* x_data_begin = param.X->data<int32_t>();
+    const int32_t* x_data_end = x_data_begin + param.X->numel();
+    float* out_data = param.Out->mutable_data<float>();
+    // std::transform(x_data_begin, x_data_end, out_data, TransOp<int32_t,
+    // float>);
+    // todo: the input type actually is float.
+    memcpy(out_data, x_data_begin, sizeof(float) * param.X->numel());
+  } else if (param.in_dtype == 20 && param.out_dtype == 5) {  // uint8->float32
+    const unsigned char* x_data_begin = param.X->data<unsigned char>();
+    const unsigned char* x_data_end = x_data_begin + param.X->numel();
+    float* out_data = param.Out->mutable_data<float>();
+    std::transform(
+        x_data_begin, x_data_end, out_data, TransOp<unsigned char, float>);
   } else {
     LOG(FATAL) << "other has not been implemented";
   }

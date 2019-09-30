@@ -190,7 +190,6 @@ bool deconv_basic(const Dtype1* din,
   auto* workspace_ptr = workspace_tensor.mutable_data<Dtype2>();
 
   int group_size_in = win * hin * chin / group;
-  int group_size_out = wout * hout * chout / group;
   int group_size_coldata = m * n;
   int group_size_weights = chin * chout * kernel_w * kernel_h / (group * group);
   bool flag_1x1s1p1 = (kernel_w == 1) && (kernel_h == 1) && (stride_h == 1) &&

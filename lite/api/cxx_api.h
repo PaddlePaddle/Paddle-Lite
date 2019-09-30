@@ -40,13 +40,20 @@ class LITE_API Predictor {
 
   // Build from a model, with places set for hardware config.
   void Build(
-      const std::string& model_path,
-      const std::string model_file_path,
-      const std::string param_file_path,
-      const Place& prefer_place,
+      const lite_api::CxxConfig& config,
       const std::vector<Place>& valid_places,
       const std::vector<std::string>& passes = {},
       lite_api::LiteModelType model_type = lite_api::LiteModelType::kProtobuf);
+
+  void Build(
+      const std::string& model_path,
+      const std::string& model_file_path,
+      const std::string& param_file_path,
+      const Place& prefer_place,
+      const std::vector<Place>& valid_places,
+      const std::vector<std::string>& passes = {},
+      lite_api::LiteModelType model_type = lite_api::LiteModelType::kProtobuf,
+      bool memory_from_memory = false);
 
   void Build(const cpp::ProgramDesc& desc,
              const Place& prefer_place,
@@ -55,15 +62,12 @@ class LITE_API Predictor {
 
   void GenRuntimeProgram();
 
-  void GenNPURuntimeProgram();
-
   // Run the predictor for a single batch of data.
   void Run() {
     if (!program_generated_) {
       GenRuntimeProgram();
     }
     program_->Run();
-    LOG(INFO) << "running";
   }
 
   // Get offset-th col of feed inputs.

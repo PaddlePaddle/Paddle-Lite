@@ -18,6 +18,7 @@ limitations under the License. */
 #include <memory>
 #include <string>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 #include "CL/cl.h"
@@ -28,7 +29,7 @@ limitations under the License. */
 namespace paddle_mobile {
 
 extern const std::map<std::string, std::vector<unsigned char>> opencl_kernels;
-extern const std::vector<std::string> need_conv_header_kernels;
+extern const std::map<std::string, std::vector<unsigned char>> opencl_headers;
 
 namespace framework {
 
@@ -38,6 +39,7 @@ class CLScope {
     CLEngine *engine = CLEngine::Instance();
     context_ = engine->getContext();
     command_queue_ = engine->getClCommandQueue();
+    localWorkSizeInfo_ = engine->getLocalWorkSizeInfo();
   }
 
   cl_command_queue CommandQueue() { return command_queue_; }
@@ -46,7 +48,7 @@ class CLScope {
       const std::string &kernel_name, const std::string &file_name,
       const std::string &options) {
     DLOG << " to get program " << file_name;
-    auto program = Program(file_name, options);
+    auto program = Program(file_name, kernel_name, options);
     DLOG << " end get program ~ ";
     DLOG << " to create kernel: " << kernel_name;
     std::unique_ptr<_cl_kernel, CLKernelDeleter> kernel(
@@ -58,26 +60,24 @@ class CLScope {
 
   cl_context Context() { return context_; }
 
-  cl_program Program(const std::string &file_name, const std::string &options) {
-    std::string program_key = file_name;
-    if (!options.empty()) {
-      program_key += options;
-    }
-    auto it = programs_.find(program_key);
-    if (it != programs_.end()) {
-      return it->second.get();
-    }
-
-    if (opencl_kernels.find(file_name) != opencl_kernels.end()) {
-      auto it = opencl_kernels.find(file_name);
-      std::string source(it->second.begin(), it->second.end());
-      if (std::find(need_conv_header_kernels.begin(),
-                    need_conv_header_kernels.end(),
-                    file_name) != need_conv_header_kernels.end()) {
-        auto it = opencl_kernels.find("conv_kernel.inc.cl");
-        std::string header(it->second.begin(), it->second.end());
-        source = header + source;
+  cl_program Program(const std::string &file_name,
+                     const std::string &kernel_name,
+                     const std::string &options) {
+    if (opencl_kernels.find(kernel_name) != opencl_kernels.end() &&
+        opencl_headers.find(file_name) != opencl_headers.end()) {
+      std::string program_key = file_name + kernel_name;
+      if (!options.empty()) {
+        program_key += options;
       }
+      auto it = programs_.find(program_key);
+      if (it != programs_.end()) {
+        return it->second.get();
+      }
+      auto src_it = opencl_kernels.find(kernel_name);
+      std::string source(src_it->second.begin(), src_it->second.end());
+      auto header_it = opencl_headers.find(file_name);
+      std::string header(header_it->second.begin(), header_it->second.end());
+      source = header + "\n" + source;
       auto program = CLEngine::Instance()->CreateProgramWithSource(
           context_, source.c_str());
 
@@ -86,7 +86,16 @@ class CLScope {
       DLOG << " --- end build program -> " << program_key << " --- ";
 
       programs_[program_key] = std::move(program);
+      return programs_[program_key].get();
     } else {
+      std::string program_key = file_name;
+      if (!options.empty()) {
+        program_key += options;
+      }
+      auto it = programs_.find(program_key);
+      if (it != programs_.end()) {
+        return it->second.get();
+      }
       auto program = CLEngine::Instance()->CreateProgramWith(
           context_,
           CLEngine::Instance()->GetCLPath() + "/cl_kernel/" + file_name);
@@ -96,9 +105,14 @@ class CLScope {
       DLOG << " --- end build program -> " << program_key << " --- ";
 
       programs_[program_key] = std::move(program);
+      return programs_[program_key].get();
     }
+  }
 
-    return programs_[program_key].get();
+  CLLocalWorkSizeInfo LocalWorkSizeInfo() { return localWorkSizeInfo_; }
+  size_t KernelWorkSize(cl_kernel kernel) {
+    size_t kernel_work_size = CLEngine::Instance()->GetKernelWorkSize(kernel);
+    return kernel_work_size;
   }
 
  private:
@@ -108,6 +122,7 @@ class CLScope {
   std::unordered_map<std::string,
                      std::unique_ptr<_cl_program, CLProgramDeleter>>
       programs_;
+  CLLocalWorkSizeInfo localWorkSizeInfo_;
 };
 
 }  // namespace framework

@@ -38,21 +38,31 @@ void CLImageToTensor(CLImage *cl_image, Tensor *tensor, cl_context context,
 
   auto input_image = cl_image->GetCLImage();
 
-  clSetKernelArg(kernel, 0, sizeof(int), &in_height);
-  clSetKernelArg(kernel, 1, sizeof(int), &in_width);
-  clSetKernelArg(kernel, 2, sizeof(cl_mem), &input_image);
-  clSetKernelArg(kernel, 3, sizeof(cl_mem), &outBuffer);
+  cl_int status;
+  status = clSetKernelArg(kernel, 0, sizeof(int), &in_height);
+  CL_CHECK_ERRORS(status);
+  status = clSetKernelArg(kernel, 1, sizeof(int), &in_width);
+  CL_CHECK_ERRORS(status);
+  status = clSetKernelArg(kernel, 2, sizeof(cl_mem), &input_image);
+  CL_CHECK_ERRORS(status);
+  status = clSetKernelArg(kernel, 3, sizeof(cl_mem), &outBuffer);
+  CL_CHECK_ERRORS(status);
   int size_ch = in_height * in_width;
   int size_block = size_ch * 4;
   int size_batch = size_ch * C;
-  clSetKernelArg(kernel, 4, sizeof(int), &size_ch);
-  clSetKernelArg(kernel, 5, sizeof(int), &size_block);
-  clSetKernelArg(kernel, 6, sizeof(int), &size_batch);
-  clSetKernelArg(kernel, 7, sizeof(int), &C);
+  status = clSetKernelArg(kernel, 4, sizeof(int), &size_ch);
+  CL_CHECK_ERRORS(status);
+  status = clSetKernelArg(kernel, 5, sizeof(int), &size_block);
+  CL_CHECK_ERRORS(status);
+  status = clSetKernelArg(kernel, 6, sizeof(int), &size_batch);
+  CL_CHECK_ERRORS(status);
+  status = clSetKernelArg(kernel, 7, sizeof(int), &C);
+  CL_CHECK_ERRORS(status);
   size_t global_work_size[3] = {(new_dims[1] + 3) / 4, new_dims[3],
                                 new_dims[0] * new_dims[2]};
-  clEnqueueNDRangeKernel(commandQueue, kernel, 3, NULL, global_work_size, NULL,
-                         0, NULL, NULL);
+  status = clEnqueueNDRangeKernel(commandQueue, kernel, 3, NULL,
+                                  global_work_size, NULL, 0, NULL, NULL);
+  CL_CHECK_ERRORS(status);
   memcpy(tensor->data<float>(), out_cl_tensor.Data<float>(),
          tensor->memory_size());
 }

@@ -28,7 +28,7 @@ void reduce_n(const float* src,
               int width_in) {
   int hw_size = height_in * width_in;
   int chw_size = channel_in * hw_size;
-  int data_index, src_index, src_index0;
+  int data_index, src_index;
   for (int c = 0; c < channel_in; ++c) {
     for (int h = 0; h < height_in; ++h) {
       for (int w = 0; w < width_in; ++w) {
@@ -196,9 +196,9 @@ class ReduceMaxComputeTester : public arena::TestCase {
   std::string input_ = "x";
   std::string output_ = "out";
   std::vector<int> dim_{0};
-  DDim x_dims_{{3, 2, 3, 4}};
   bool keep_dim_ = false;
   bool reduce_all_ = false;
+  DDim x_dims_{{3, 2, 3, 4}};
 
  public:
   ReduceMaxComputeTester(const Place& place,

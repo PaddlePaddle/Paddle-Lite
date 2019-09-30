@@ -42,6 +42,10 @@ const int8_t *Tensor::data() const {
 }
 
 template <>
+int *Tensor::mutable_data() const {
+  return tensor(raw_tensor_)->mutable_data<int>();
+}
+template <>
 float *Tensor::mutable_data() const {
   return tensor(raw_tensor_)->mutable_data<float>();
 }
