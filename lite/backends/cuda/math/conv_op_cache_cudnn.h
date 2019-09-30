@@ -31,13 +31,17 @@ class AlgorithmsCache {
   // Caches the best algorithm for a given
   // combination of tensor dimensions & compute data type.
   TAlgorithm GetAlgorithm(
-      const std::vector<int64_t>& dims1, const std::vector<int64_t>& dims2,
-      const std::vector<int>& strides, const std::vector<int>& paddings,
+      const std::vector<int64_t>& dims1,
+      const std::vector<int64_t>& dims2,
+      const std::vector<int>& strides,
+      const std::vector<int>& paddings,
       const std::vector<int>& dilations,
       int algorithmFlags,  // can set for different data type
       std::function<TAlgorithm()> gen_func);
 
-  TAlgorithm GetAlgorithm(int64_t area, int search_times, int algorithmFlags,
+  TAlgorithm GetAlgorithm(int64_t area,
+                          int search_times,
+                          int algorithmFlags,
                           std::function<TAlgorithm()> gen_func);
 
  private:
@@ -47,9 +51,12 @@ class AlgorithmsCache {
 
 template <typename TAlgorithm>
 TAlgorithm AlgorithmsCache<TAlgorithm>::GetAlgorithm(
-    const std::vector<int64_t>& dims1, const std::vector<int64_t>& dims2,
-    const std::vector<int>& strides, const std::vector<int>& paddings,
-    const std::vector<int>& dilations, int algorithmFlags,
+    const std::vector<int64_t>& dims1,
+    const std::vector<int64_t>& dims2,
+    const std::vector<int>& strides,
+    const std::vector<int>& paddings,
+    const std::vector<int>& dilations,
+    int algorithmFlags,
     std::function<TAlgorithm()> gen_func) {
   int64_t seed = 0;
   // Hash all of the inputs, use to try and look up a previously
@@ -96,7 +103,9 @@ TAlgorithm AlgorithmsCache<TAlgorithm>::GetAlgorithm(
 
 template <typename TAlgorithm>
 TAlgorithm AlgorithmsCache<TAlgorithm>::GetAlgorithm(
-    int64_t area, int search_times, int algorithmFlags,
+    int64_t area,
+    int search_times,
+    int algorithmFlags,
     std::function<TAlgorithm()> gen_func) {
   if (hash_.find(area) != hash_.end()) {
     return hash_[area];

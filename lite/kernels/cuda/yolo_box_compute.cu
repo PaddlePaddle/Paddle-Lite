@@ -181,7 +181,7 @@ void YoloBoxCompute::Run() {
 
   anchors_.Resize({static_cast<int64_t>(anchors.size())});
   int* d_anchors = anchors_.mutable_data<int>(TARGET(kCUDA));
-  //TargetWrapperCuda::MemcpyAsync(d_anchors,
+  // TargetWrapperCuda::MemcpyAsync(d_anchors,
   //                               anchors.data(),
   //                               sizeof(int) * anchors.size(),
   //                               IoDirection::HtoD,
