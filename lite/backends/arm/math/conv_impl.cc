@@ -805,6 +805,88 @@ void conv_depthwise_3x3_int8_int8(const void* din,
   }
 }
 
+void conv_depthwise_5x5_int8_fp32(const void* din,
+                                  void* dout,
+                                  int num,
+                                  int ch_out,
+                                  int h_out,
+                                  int w_out,
+                                  int ch_in,
+                                  int h_in,
+                                  int w_in,
+                                  const void* weights,
+                                  const float* bias,
+                                  const operators::ConvParam& param,
+                                  ARMContext* ctx,
+                                  const float* scale) {
+  int pad_h = param.paddings[0];
+  int pad_w = param.paddings[1];
+  int stride = param.strides[1];
+  bool flag_relu = param.fuse_relu;
+  bool flag_bias = param.bias != nullptr;
+  if (stride == 1) {
+    conv_depthwise_5x5s1_int8(reinterpret_cast<float*>(dout),
+                              reinterpret_cast<const int8_t*>(din),
+                              reinterpret_cast<const int8_t*>(weights),
+                              scale,
+                              bias,
+                              flag_bias,
+                              flag_relu,
+                              num,
+                              ch_in,
+                              h_in,
+                              w_in,
+                              h_out,
+                              w_out,
+                              pad_w,
+                              pad_h,
+                              ctx);
+  } else {
+    LOG(FATAL) << "unsupport this type 5x5 dw conv int8";
+  }
+}
+
+void conv_depthwise_5x5_int8_int8(const void* din,
+                                  void* dout,
+                                  int num,
+                                  int ch_out,
+                                  int h_out,
+                                  int w_out,
+                                  int ch_in,
+                                  int h_in,
+                                  int w_in,
+                                  const void* weights,
+                                  const float* bias,
+                                  const operators::ConvParam& param,
+                                  ARMContext* ctx,
+                                  const float* scale) {
+  int pad_h = param.paddings[0];
+  int pad_w = param.paddings[1];
+  int stride = param.strides[1];
+  bool flag_relu = param.fuse_relu;
+  bool flag_bias = param.bias != nullptr;
+  if (stride == 1) {
+    conv_depthwise_5x5s1_int8(reinterpret_cast<int8_t*>(dout),
+                              reinterpret_cast<const int8_t*>(din),
+                              reinterpret_cast<const int8_t*>(weights),
+                              scale,
+                              bias,
+                              flag_bias,
+                              flag_relu,
+                              num,
+                              ch_in,
+                              h_in,
+                              w_in,
+                              h_out,
+                              w_out,
+                              pad_w,
+                              pad_h,
+                              ctx);
+  } else {
+    LOG(FATAL) << "unsupport this type 5x5 dw conv int8";
+  }
+}
+
 }  // namespace math
 }  // namespace arm
 }  // namespace lite

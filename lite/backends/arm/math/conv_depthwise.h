@@ -153,6 +153,24 @@ void conv_depthwise_5x5s2_fp32(const float* din,
                                bool flag_relu,
                                ARMContext* ctx);
 
+template <typename Dtype>
+void conv_depthwise_5x5s1_int8(Dtype* dout,
+                               const int8_t* din,
+                               const int8_t* weights,
+                               const float* scale,
+                               const float* bias,
+                               bool flag_bias,
+                               bool flag_relu,
+                               int num,
+                               int chin,
+                               int hin,
+                               int win,
+                               int hout,
+                               int wout,
+                               int padw,
+                               int padh,
+                               ARMContext* ctx);
+
 }  // namespace math
 }  // namespace arm
 }  // namespace lite
