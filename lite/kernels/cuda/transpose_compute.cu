@@ -74,6 +74,17 @@ REGISTER_LITE_KERNEL(transpose,
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kCUDA))})
     .Finalize();
 
+REGISTER_LITE_KERNEL(transpose2,
+                     kCUDA,
+                     kFloat,
+                     kNCHW,
+                     paddle::lite::kernels::cuda::TransposeCompute,
+                     def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kCUDA))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kCUDA))})
+    .BindOutput("XShape", {LiteType::GetTensorTy(TARGET(kCUDA))})
+    .Finalize();
+
 // REGISTER_LITE_KERNEL(transpose2,
 //                      kCUDA,
 //                      kFloat,
