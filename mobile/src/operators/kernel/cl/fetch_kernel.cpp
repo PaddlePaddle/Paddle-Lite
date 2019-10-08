@@ -20,7 +20,11 @@ namespace operators {
 
 template <>
 bool FetchKernel<GPU_CL, float>::Init(FetchParam<GPU_CL> *param) {
-  this->cl_helper_.AddKernel("fetch", "fetch_kernel.cl");
+  if (this->pre_post_type_ == UINT8_255) {
+    this->cl_helper_.AddKernel("fetch_with_post", "fetch_kernel.cl");
+  } else {
+    this->cl_helper_.AddKernel("fetch", "fetch_kernel.cl");
+  }
   return true;
 }
 
@@ -33,7 +37,6 @@ void FetchKernel<GPU_CL, float>::Compute(const FetchParam<GPU_CL> &param) {
   auto input = param.InputX()->GetCLImage();
   auto *out = &param.Out()->at(col);
   out->Resize(param.InputX()->dims());
-  out->mutable_data<float>();
 
   DLOG << "fetch kernel out dims = " << out->dims();
   DLOG << "fetch kernel out memory size = " << out->memory_size();
@@ -57,7 +60,14 @@ void FetchKernel<GPU_CL, float>::Compute(const FetchParam<GPU_CL> &param) {
   framework::CLTensor out_cl_tensor(this->cl_helper_.CLContext(),
                                     this->cl_helper_.CLCommandQueue());
   out_cl_tensor.Resize(out->dims());
-  cl_mem outBuffer = out_cl_tensor.mutable_data<float>();
+  cl_mem outBuffer;
+  if (this->pre_post_type_ == UINT8_255) {
+    out->mutable_data<uint8_t>();
+    outBuffer = out_cl_tensor.mutable_data<uint8_t>();
+  } else {
+    out->mutable_data<float>();
+    outBuffer = out_cl_tensor.mutable_data<float>();
+  }
 
   clSetKernelArg(kernel, 0, sizeof(int), &in_height);
   clSetKernelArg(kernel, 1, sizeof(int), &in_width);
@@ -83,8 +93,13 @@ void FetchKernel<GPU_CL, float>::Compute(const FetchParam<GPU_CL> &param) {
   DLOG << "fetch kernel out_cl_tensor dims = " << out_cl_tensor.dims();
   DLOG << "fetch kernel out_cl_tensor memery size = "
        << out_cl_tensor.memory_size();
-  memcpy(out->data<float>(), out_cl_tensor.Data<float>(),
-         sizeof(float) * out->numel());
+  if (this->pre_post_type_ == UINT8_255) {
+    memcpy(out->data<uint8_t>(), out_cl_tensor.Data<uint8_t>(),
+           sizeof(uint8_t) * out->numel());
+  } else {
+    memcpy(out->data<float>(), out_cl_tensor.Data<float>(),
+           sizeof(float) * out->numel());
+  }
 }
 
 template class FetchKernel<GPU_CL, float>;
