@@ -184,7 +184,7 @@ void MemoryOptPassCl::ShareData(
       // for super ,hack origin dims
       if (target_dims.size() == 4) {
         PADDLE_MOBILE_ENFORCE(origin_tensor_dims.size() == 4,
-                              "tensor dims must larger than 4");
+                              "tensor dims must be equal to 4");
         origin_tensor_dims = {origin_tensor_dims[0], origin_tensor_dims[1],
                               target_dims[2], target_dims[3]};
         tensor->Resize(origin_tensor_dims);
