@@ -262,7 +262,7 @@ void test_conv_transpose_fp32(const std::vector<DDim>& input_dims,
                               const std::vector<int>& cluster_id) {}
 #endif  // LITE_WITH_ARM
 
-#if 0   /// random param conv
+#if 1  /// random param conv
 TEST(TestConvRand, test_conv_transpose_rand) {
   if (FLAGS_basic_test) {
     for (auto& cin : {1, 3, 8, 16}) {
@@ -279,22 +279,22 @@ TEST(TestConvRand, test_conv_transpose_rand) {
                           continue;
                         }
                         std::vector<DDim> dims;
-                        DDim weights_dim({cout, cin / g, kh, kw});
+                        DDim weights_dim({cin, cout / g, kh, kw});
                         for (auto& batch : {1, 2}) {
                           for (auto& h : {1, 3, 19, 32, 28}) {
                             dims.push_back(DDim({batch, cin, h, h}));
                           }
                         }
-                        test_conv_fp32(dims,
-                                       weights_dim,
-                                       g,
-                                       {stride, stride},
-                                       {pad, pad},
-                                       {dila, dila},
-                                       flag_bias,
-                                       flag_relu,
-                                       {1, 2, 4},
-                                       {FLAGS_cluster});
+                        test_conv_transpose_fp32(dims,
+                                                 weights_dim,
+                                                 g,
+                                                 {stride, stride},
+                                                 {pad, pad},
+                                                 {dila, dila},
+                                                 flag_bias,
+                                                 flag_relu,
+                                                 {1, 2, 4},
+                                                 {FLAGS_cluster});
                       }
                     }
                   }
