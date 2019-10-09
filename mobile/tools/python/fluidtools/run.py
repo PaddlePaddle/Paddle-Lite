@@ -22,6 +22,8 @@ checked_encrypt_model_path = "checked_encrypt_model"
 output_var_filter = []
 output_key_filter = {}
 check_shape = False
+quantification = True
+quantification_fold = 1
 architecture = "arm-v7a"
 # architecture = "arm-v8a"
 
@@ -107,7 +109,8 @@ def resave_model(feed_kv):
     for name in p_names:
         v = fluid.framework._get_var(name, prog)
         v.persistable = False
-    fluid.io.save_inference_model(dirname=checked_model_path, feeded_var_names=feeds, target_vars=fetches, executor=exe, main_program=prog, model_filename="model", params_filename="params")
+    if not quantification:
+        fluid.io.save_inference_model(dirname=checked_model_path, feeded_var_names=feeds, target_vars=fetches, executor=exe, main_program=prog, model_filename="model", params_filename="params")
     if has_found_wrong_shape:
         pp_red("has found wrong shape", 1)
     else:
@@ -392,7 +395,7 @@ for op in ops:
 pp_tab("op types : {}".format(op_types), 1)
 
 def check_mobile_results(args, fuse, mem_opt):
-    args = "{} {} {}".format("1" if fuse else "0", "1" if mem_opt else "0", args)
+    args = "{} {} {} {} {}".format("1" if fuse else "0", "1" if mem_opt else "0", "1" if quantification else "0", quantification_fold, args)
     res = sh("adb shell \"cd {} && export LD_LIBRARY_PATH=. && ./test-net {}\"".format(mobile_exec_root, args))
     lines = res.split("\n")
     # for line in lines:
@@ -425,6 +428,26 @@ def check_mobile_results(args, fuse, mem_opt):
     fetch_names = []
     for fetch in fetches:
         fetch_names.append(fetch.name)
+    fetch_diff = 0.0
+    fetch_count = 0
+    for index in op_cache:
+        op_output_var_name, op = op_cache[index]
+        if not op_output_var_name in output_var_cache:
+            continue
+        if not op_output_var_name in mobile_var_cache:
+            continue
+        if op_output_var_name not in fetch_names:
+            continue
+        values1 = output_var_cache[op_output_var_name]
+        values2 = mobile_var_cache[op_output_var_name]
+        shape = get_var_shape(op_output_var_name) if check_shape else []
+        for i in range(len(values1)):
+            v1 = values1[i]
+            v2 = values2[len(shape) + i]
+            fetch_diff += abs(v1 - v2)
+            fetch_count += 1
+    if fetch_count != 0:
+        pp_yellow("output avg diff : {}".format(fetch_diff / fetch_count), 1)
     for index in op_cache:
         op_output_var_name, op = op_cache[index]
         if mem_opt:

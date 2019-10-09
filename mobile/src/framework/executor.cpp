@@ -173,11 +173,10 @@ void Executor<Device, T>::InitFeedFetchList() {
 }
 
 template <typename T>
-static void LoadMemInternal(void **data, LoDTensor *tensor,
-                            bool quant_uint8 = false) {
-  char **data_buf = reinterpret_cast<char **>(data);
-  int64_t size = tensor->numel();
-  T *tensor_data = tensor->mutable_data<T>();
+static void LoadMemInternal(void **in_data, void *out_data, int64_t size, 
+                            bool quant_uint8 = false, int quant_fold = 1) {
+  char **data_buf = reinterpret_cast<char **>(in_data);
+  T *tensor_data = reinterpret_cast<T *>(out_data);
   if (quant_uint8) {
     // should be moved into operator init function
     float min_value;
@@ -235,14 +234,14 @@ void Executor<Device, T>::LoadMemory(void **data,
   // parse tensor from stream
   switch (tensor_desc.DataType()) {
     case VARTYPE_TYPE_FP32:
-      LoadMemInternal<float>(reinterpret_cast<void **>(data_buf), tensor,
-                             program_.quantification);
+      LoadMemInternal<float>(reinterpret_cast<void **>(data_buf), reinterpret_cast<void *>(tensor->mutable_data<T>()), tensor->numel(),
+                             program_.quantification, program_.quantification_fold);
       break;
     case VARTYPE_TYPE_INT8:
-      LoadMemInternal<int8_t>(reinterpret_cast<void **>(data_buf), tensor);
+      LoadMemInternal<int8_t>(reinterpret_cast<void **>(data_buf), reinterpret_cast<void *>(tensor->mutable_data<T>()), tensor->numel());
       break;
     case VARTYPE_TYPE_INT32:
-      LoadMemInternal<int>(reinterpret_cast<void **>(data_buf), tensor);
+      LoadMemInternal<int>(reinterpret_cast<void **>(data_buf), reinterpret_cast<void *>(tensor->mutable_data<T>()), tensor->numel());
       break;
     default:
       LOG(kLOG_ERROR) << "data type is not supported";
@@ -944,31 +943,9 @@ void Executor<GPU_CL, float>::LoadMemory(const VarDesc var_desc,
   void *memory = nullptr;
   int type_size = 4;
   memory = tensorInput;
-  if (program_.quantification) {
-    float min_value;
-    float max_value;
 
-    memcpy(&min_value, *data, sizeof(float));
-    memcpy(&max_value, *data + sizeof(float), sizeof(float));
-    *data += 2 * sizeof(float);
-    const float factor = (max_value - min_value) / 255.0;
-    uint8_t *uint8_data = reinterpret_cast<uint8_t *>(*data);
-    for (int k = 0; k < memory_size; ++k) {
-      static_cast<float *>(memory)[k] = uint8_data[k] * factor + min_value;
-    }
-    *data += (memory_size * sizeof(uint8_t));
-  } else {
-    for (int n = 0; n < memory_size; n++) {
-      float value;
-      memcpy(&value, *data + n * type_size, type_size);
-      if (value < 1e-30 && value > -1e-30) {
-        static_cast<float *>(memory)[n] = 0.0;
-      } else {
-        static_cast<float *>(memory)[n] = value;
-      }
-    }
-    (*data) += (sizeof(char) * memory_size * type_size);
-  }
+
+  LoadMemInternal<float>(reinterpret_cast<void **>(data), reinterpret_cast<void *>(memory), memory_size, program_.quantification, program_.quantification_fold);
 }
 
 template <>
