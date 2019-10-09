@@ -76,6 +76,7 @@ std::shared_ptr<PaddlePredictor> CreatePaddlePredictor(const ConfigT &) {
 
 ConfigBase::ConfigBase(PowerMode mode, int threads) {
 #ifdef LITE_WITH_ARM
+  lite::DeviceInfo::Init();
   lite::DeviceInfo::Global().SetRunMode(mode, threads);
   mode_ = lite::DeviceInfo::Global().mode();
   threads_ = lite::DeviceInfo::Global().threads();
