@@ -48,6 +48,7 @@ enum PaddleDType {
   FLOAT16,
   INT64,
   INT8,
+  UINT8,
 };
 
 enum LayoutType {
@@ -206,9 +207,11 @@ struct PaddleModelMemoryPack {
 struct PaddleMobileConfig : public PaddlePredictor::Config {
   enum Precision { FP32 = 0 };
   enum Device { kCPU = 0, kFPGA = 1, kGPU_MALI = 2, kGPU_CL = 3 };
+  enum PrePostType { NONE_PRE_POST = 0, UINT8_255 = 1 };
 
   enum Precision precision;
   enum Device device;
+  enum PrePostType pre_post_type;
 
   int batch_size = 1;
   bool optimize = true;

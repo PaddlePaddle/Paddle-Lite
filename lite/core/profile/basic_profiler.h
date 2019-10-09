@@ -88,103 +88,27 @@ class BasicTimer : TimerBase<BasicTimer> {
   BasicTimer(int id, const std::string& key) : id_(id), key_(key) {}
 
   void SetId(int id) { id_ = id; }
-  void SetKey(const std::string& key) { key_ = key; }
-  void Start(const std::string& timer_key) {
-    TimerInfo& timer_info = timer_infos_[timer_key];
-    timer_info.timer_ = static_cast<uint64_t>(
-        std::chrono::duration_cast<std::chrono::microseconds>(
-            std::chrono::system_clock::now().time_since_epoch())
-            .count());
-  }
-  void Stop(const std::string& timer_key) {
-    if (timer_infos_.find(timer_key) == timer_infos_.end()) {
-      LOG(FATAL) << "Error: Can't found timer key [" << timer_key << "] for "
-                 << key_;
-    }
-    TimerInfo& timer_info = timer_infos_[timer_key];
-    auto duration = static_cast<
-        uint64_t>(  // timer unit: microsecond, 1second = 1e6 microsecond
-        std::chrono::duration_cast<std::chrono::microseconds>(
-            std::chrono::system_clock::now().time_since_epoch())
-            .count() -
-        timer_info.timer_);
-    Log(&timer_info, duration);
-  }
-
-  void SetCustomInfo(const std::string& key, const std::string& value) {
-    if (custom_infos_.find(key) != custom_infos_.end()) {
-      LOG(FATAL) << "Error: Custom Info for key [" << key
-                 << "] can't be overwritten";
-    }
-    custom_infos_[key] = value;
-  }
-
-  std::string GetCustomInfo(const std::string& key) const {
-    auto iter = custom_infos_.find(key);
-    if (iter == custom_infos_.end()) {
-      LOG(FATAL) << "Error: Custom Info for key [" << key << "] can't be found";
-    }
-    return iter->second;
-  }
-
-  const TimerInfo& GetTimerInfo(const std::string& key) const {
-    auto iter = timer_infos_.find(key);
-    if (iter == timer_infos_.end()) {
-      LOG(FATAL) << "Error: Timer Info for key [" << key << "] can't be found";
-    }
-    return iter->second;
-  }
-
-  void Log(TimerInfo* timer_info, uint32_t timespan) {
-    CHECK(timer_info);
-    timer_info->total_ += timespan;
-    timer_info->max_ = std::max(timer_info->max_, timespan);
-    timer_info->min_ = std::min(timer_info->min_, timespan);
-    timer_info->count_++;
-  }
-
-  static std::string basic_repr_header() {
-    STL::stringstream ss;
-    // clang-format off
-    ss << "op"        << "\t"
-       << "kernel"    << "\t"
-       << "k_average" << "\t"
-       << "k_min"     << "\t"
-       << "k_max"     << "\t"
-       << "i_average" << "\t"
-       << "i_min"     << "\t"
-       << "i_max"     << "\t"
-       << "count"     << "\t"
-       << "op_info";
-    // clang-format on
-    return ss.str();
-  }
-
-  std::string basic_repr() const {
-    auto& kernel_timer_info = GetTimerInfo("kernel");
-    auto& inst_timer_info = GetTimerInfo("instruction");
-    STL::stringstream ss;
-    // clang-format off
-    ss << GetCustomInfo("op_type") << "\t"
-       << key()                    << "\t"
-       << kernel_timer_info.ave()  << "\t"
-       << kernel_timer_info.min()  << "\t"
-       << kernel_timer_info.max()  << "\t"
-       << inst_timer_info.ave()    << "\t"
-       << inst_timer_info.min()    << "\t"
-       << inst_timer_info.max()    << "\t"
-       << inst_timer_info.count()  << "\t"
-       << GetCustomInfo("op_info");
-    // clang-format on
-    return ss.str();
-  }
-
-  const std::string& key() const { return key_; }
 
   int id() const {
     CHECK_GE(id_, 0) << "id is not inited";
     return id_;
   }
+
+  void SetKey(const std::string& key) { key_ = key; }
+  const std::string& key() const { return key_; }
+
+  void Start(const std::string& timer_key);
+  void Stop(const std::string& timer_key);
+
+  void Log(TimerInfo* timer_info, uint32_t timespan);
+
+  void SetCustomInfo(const std::string& key, const std::string& value);
+  std::string GetCustomInfo(const std::string& key) const;
+
+  const TimerInfo& GetTimerInfo(const std::string& key) const;
+
+  static std::string basic_repr_header();
+  std::string basic_repr() const;
 
   // BasicRecord(const BasicRecord &) = delete;
   void operator=(const BasicTimer&) = delete;
@@ -231,55 +155,8 @@ class BasicProfiler {
     return ss.str();
   }
 
-  std::string summary_repr_header() const {
-    STL::stringstream ss;
-    // clang-format off
-    ss << "op"         << "\t"
-       << "average"    << "\t"
-       << "min"        << "\t"
-       << "max"        << "\t"
-       << "op_time"    << "\t"
-       << "total_time" << "\t"
-       << "precent"    << "\t"
-       << "count";
-    // clang-format on
-    return ss.str();
-  }
-
-  std::string summary_repr() const {
-    std::map<std::string, TimerInfo> op_summary;
-    uint64_t total{0};
-
-    for (const auto& rcd : records_) {
-      // We use kernel run time here
-      auto kernel_timer = rcd.GetTimerInfo("kernel");
-      auto op_type = rcd.GetCustomInfo("op_type");
-      auto& op_timer = op_summary[op_type];
-
-      total += kernel_timer.total_;
-      op_timer.total_ += kernel_timer.total_;
-      op_timer.max_ = std::max(kernel_timer.max_, op_timer.max_);
-      op_timer.min_ = std::min(kernel_timer.min_, op_timer.min_);
-      op_timer.count_ += kernel_timer.count_;
-    }
-
-    STL::stringstream ss;
-    for (auto& iter : op_summary) {
-      auto& op_timer = iter.second;
-      // clang-format off
-      ss << iter.first                             << "\t"
-         << op_timer.ave()                         << "\t"
-         << op_timer.min()                         << "\t"
-         << op_timer.max()                         << "\t"
-         << op_timer.total()                       << "\t"
-         << total                                  << "\t"
-         << (op_timer.total() * 1. / total * 100)  << "%\t"
-         << op_timer.count()                       << "\t"
-         << "\n";
-      // clang-format on
-    }
-    return ss.str();
-  }
+  std::string summary_repr_header() const;
+  std::string summary_repr() const;
 
   ~BasicProfiler();
 
