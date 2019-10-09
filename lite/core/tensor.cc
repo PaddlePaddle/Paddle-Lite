@@ -98,6 +98,14 @@ void *TensorLite::mutable_data(TargetType target, size_t memory_size) {
   return mutable_data(memory_size);
 }
 
+#ifdef LITE_WITH_OPENCL
+template <>
+const cl::Image2D *TensorLite::data<float, cl::Image2D>() const {
+  if (nullptr == buffer_->data()) return nullptr;
+  return static_cast<const cl::Image2D *>(buffer_->data());
+}
+#endif
+
 }  // namespace lite
 }  // namespace paddle
 

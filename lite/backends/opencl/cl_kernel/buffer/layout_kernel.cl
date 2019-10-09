@@ -14,37 +14,6 @@ limitations under the License. */
 
 #include <cl_common.h>
 
-__kernel void ImgHwcToBufferChw(__read_only image2d_t img_data, const int img_h, const int img_w,
-                                __global CL_DTYPE* nchw_data, const int n, const int c, const int h, const int w) {
-  const int w_idx = get_global_id(0);
-  const int h_idx = get_global_id(1);
-
-  if ((w_idx >= img_w) || h_idx >= img_h) {
-    return;
-  }
-  const sampler_t sampler = CLK_NORMALIZED_COORDS_TRUE |
-                            CLK_ADDRESS_CLAMP |
-                            CLK_FILTER_NEAREST;
-  CL_DTYPE4 in = read_imagef(img_data, sampler, (int2)(w_idx, h_idx));
-
-}
-
-
-__kernel void BufferChwToImgHwc(__global const CL_DTYPE* nchw_data, const int n, const int c, const int h, const int w,
-                                __write_only image2d_t img_data, const int img_h, const int img_w) {
-  const int w_idx = get_global_id(0);
-  const int h_idx = get_global_id(1);
-
-  if ((w_idx >= img_w) || h_idx >= img_h) {
-    return;
-  }
-  const sampler_t sampler = CLK_NORMALIZED_COORDS_TRUE |
-                            CLK_ADDRESS_CLAMP |
-                            CLK_FILTER_NEAREST;
-  write_imagef(img_data, (int2)(w_idx, h_idx), (CL_DTYPE4)(1));
-}
-
-
 // buffer -> image2d
 __kernel void buffer_to_image2d(__global CL_DTYPE *in,
                                 __write_only image2d_t output_image,
@@ -90,26 +59,6 @@ __kernel void buffer_to_image2d(__global CL_DTYPE *in,
     output.w = convert_float(in[input_pos3]);
   }
   write_imagef(output_image, output_pos, output);
-
-#if 0
-  // print output_image with another image pointer `output_image_` with __read_only def
-  const sampler_t sampler =
-    CLK_NORMALIZED_COORDS_TRUE | CLK_ADDRESS_CLAMP | CLK_FILTER_NEAREST;
-  CL_DTYPE4 out_read = read_imagef(output_image_, sampler, output_pos);
-  CL_DTYPE4 out_read_v = read_imagef(output_image_, sampler, (int2)(output_pos.y, output_pos.x));
-  if (output_pos.x < 10) {
-    printf("b->img | out_c:%d,out_w:%d,out_nc:%d | in_pos:(%d,%d,%d,%d) | in:%.1f %.1f %.1f %.1f | out_pos:(%d,%d) | write_out: %.1f %.1f %.1f %.1f | read_out_image %.1f %.1f %.1f %.1f | out_pos_rev:(%d,%d) | read_out_image_rev: %.1f %.1f %.1f %.1f\n",
-           out_c, out_w, out_nh,
-           input_pos0, input_pos1, input_pos2, input_pos3,
-           in[input_pos0], in[input_pos1], in[input_pos2], in[input_pos3],
-           output_pos.x, output_pos.y,
-           output.x, output.y, output.z, output.w,
-           out_read.x, out_read.y, out_read.z, out_read.w,
-
-           output_pos.y, output_pos.x,
-           out_read_v.x, out_read_v.y, out_read_v.z, out_read_v.w);
-           }
-           #endif
 }
 
 // image2d -> buffer

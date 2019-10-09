@@ -117,13 +117,6 @@ class TensorLite {
                                        offset_);
   }
 
-#ifdef LITE_WITH_OPENCL
-  const cl::Image2D *image_data() const {
-    CHECK(buffer_->data()) << "nullptr, do not have image";
-    return static_cast<const cl::Image2D *>(buffer_->data());
-  }
-#endif
-
   void Resize(const DDimLite &ddim) { dims_ = ddim; }
   void Resize(const std::vector<int64_t> &x) { dims_ = DDimLite(x); }
 
@@ -153,8 +146,8 @@ class TensorLite {
   }
 
 #ifdef LITE_WITH_OPENCL
-  template <typename T>
-  cl::Image2D *mutable_image_data(const size_t img_w, const size_t img_h) {
+  template <typename T, typename R = T>
+  R *mutable_data(const size_t img_w, const size_t img_h) {
     target_ = TARGET(kOpenCL);
     std::array<size_t, 2> image2d_shape{img_w, img_h};
     buffer_->ResetLazyImage2D<T>(target_, image2d_shape);
@@ -255,6 +248,11 @@ bool TensorCompareWith(const TensorT &a, const TensorT &b) {
   if (memcmp(a.raw_data(), b.raw_data(), a.data_size()) != 0) return false;
   return true;
 }
+
+#ifdef LITE_WITH_OPENCL
+template <>
+const cl::Image2D *TensorLite::data<float, cl::Image2D>() const;
+#endif
 
 }  // namespace lite
 }  // namespace paddle

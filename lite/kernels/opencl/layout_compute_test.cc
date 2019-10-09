@@ -76,7 +76,7 @@ TEST(layout, compute) {
           auto* y_data = y.mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
           auto image_shape =
               paddle::lite::kernels::opencl::InitImageDimInfoWith(x_dim);
-          auto* y_image_data = y_image.mutable_image_data<float>(
+          auto* y_image_data = y_image.mutable_data<float, cl::Image2D>(
               image_shape["width"], image_shape["height"]);
           auto* mapped_x = static_cast<float*>(TargetWrapperCL::Map(
               x_data, 0, sizeof(float) * x_dim.production()));

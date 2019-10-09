@@ -44,8 +44,8 @@ class LayoutComputeBufferChwToImage2DHwc
     auto* x_data = param.x->data<float, cl::Buffer>();
     auto x_dims = param.x->dims();
     auto image_shape = InitImageDimInfoWith(x_dims);
-    auto* y_data = param.y->mutable_image_data<float>(image_shape["width"],
-                                                      image_shape["height"]);
+    auto* y_data = param.y->mutable_data<float, cl::Image2D>(
+        image_shape["width"], image_shape["height"]);
     auto y_dims = param.y->dims();
 
     // out info
@@ -141,7 +141,7 @@ class LayoutComputeImage2DHwcToBufferChw
     auto& param = Param<param_t>();
     auto* y_data = param.y->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
     auto y_dims = param.y->dims();
-    auto* x_data = param.x->image_data();
+    auto* x_data = param.x->data<float, cl::Image2D>();
     auto x_dims = param.x->dims();
 
     std::vector<size_t> new_dims = {1, 1, 1, 1};
