@@ -126,15 +126,24 @@ Executor<Device, T>::Executor(const Program<Device> &program,
   printf("================[ op init profile ]==================\n");
   PrintProfile(profile);
 #endif
+  ApplyMemoryOptimise(config, lod_mode);
+}
+
+template <typename Device, typename T>
+void Executor<Device, T>::ApplyMemoryOptimise(
+    const PaddleMobileConfigInternal &config, const bool lod_mode) const {}
 
 #ifdef PADDLE_MOBILE_CL
+template <>
+void Executor<GPU_CL, float>::ApplyMemoryOptimise(
+    const PaddleMobileConfigInternal &config, const bool lod_mode) const {
   if (!config.load_when_predict && !lod_mode &&
       config_.memory_optimization_level != NoMemoryOptimization) {
     pass::MemoryOptPassCl()(program_desc_.get(), program_.scope.get(),
                             config_.memory_optimization_level);
   }
-#endif
 }
+#endif
 
 template <typename Device, typename T>
 void Executor<Device, T>::InitFeedFetchList() {
