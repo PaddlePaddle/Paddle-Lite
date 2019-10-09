@@ -173,23 +173,33 @@ void Executor<Device, T>::InitFeedFetchList() {
 }
 
 template <typename T>
-static void LoadMemInternal(void **in_data, void *out_data, int64_t size, 
+static void LoadMemInternal(void **in_data, void *out_data, int64_t size,
                             bool quant_uint8 = false, int quant_fold = 1) {
   char **data_buf = reinterpret_cast<char **>(in_data);
   T *tensor_data = reinterpret_cast<T *>(out_data);
   if (quant_uint8) {
-    // should be moved into operator init function
-    float min_value;
-    float max_value;
-    memory::Copy(&min_value, *data_buf, sizeof(float));
-    memory::Copy(&max_value, *data_buf + sizeof(float), sizeof(float));
-    *data_buf += 2 * sizeof(float);
-    const float factor = (max_value - min_value) / 255.0;
-    const uint8_t *uint8_data = reinterpret_cast<uint8_t *>(*data_buf);
-    for (int k = 0; k < size; ++k) {
-      tensor_data[k] = uint8_data[k] * factor + min_value;
+    int step = fmax(size / quant_fold, 1);
+    int visited_fold = 0;
+    while (visited_fold * step < size) {
+      // should be moved into operator init function
+      float min_value;
+      float max_value;
+      memory::Copy(&min_value, *data_buf, sizeof(float));
+      memory::Copy(&max_value, *data_buf + sizeof(float), sizeof(float));
+      *data_buf += 2 * sizeof(float);
+      const float factor = (max_value - min_value) / 255.0;
+      const uint8_t *uint8_data = reinterpret_cast<uint8_t *>(*data_buf);
+      int k = 0;
+      for (; k < step; ++k) {
+        int tensor_data_idx = visited_fold * step + k;
+        if (tensor_data_idx >= size) {
+          break;
+        }
+        tensor_data[tensor_data_idx] = uint8_data[k] * factor + min_value;
+      }
+      *data_buf += k * sizeof(uint8_t);
+      visited_fold++;
     }
-    *data_buf += size * sizeof(uint8_t);
   } else {
     memory::Copy(tensor_data, *data_buf, size * sizeof(T));
     *data_buf += size * sizeof(T);
@@ -234,14 +244,20 @@ void Executor<Device, T>::LoadMemory(void **data,
   // parse tensor from stream
   switch (tensor_desc.DataType()) {
     case VARTYPE_TYPE_FP32:
-      LoadMemInternal<float>(reinterpret_cast<void **>(data_buf), reinterpret_cast<void *>(tensor->mutable_data<T>()), tensor->numel(),
-                             program_.quantification, program_.quantification_fold);
+      LoadMemInternal<float>(
+          reinterpret_cast<void **>(data_buf),
+          reinterpret_cast<void *>(tensor->mutable_data<T>()), tensor->numel(),
+          program_.quantification, program_.quantification_fold);
       break;
     case VARTYPE_TYPE_INT8:
-      LoadMemInternal<int8_t>(reinterpret_cast<void **>(data_buf), reinterpret_cast<void *>(tensor->mutable_data<T>()), tensor->numel());
+      LoadMemInternal<int8_t>(
+          reinterpret_cast<void **>(data_buf),
+          reinterpret_cast<void *>(tensor->mutable_data<T>()), tensor->numel());
       break;
     case VARTYPE_TYPE_INT32:
-      LoadMemInternal<int>(reinterpret_cast<void **>(data_buf), reinterpret_cast<void *>(tensor->mutable_data<T>()), tensor->numel());
+      LoadMemInternal<int>(reinterpret_cast<void **>(data_buf),
+                           reinterpret_cast<void *>(tensor->mutable_data<T>()),
+                           tensor->numel());
       break;
     default:
       LOG(kLOG_ERROR) << "data type is not supported";
@@ -944,8 +960,9 @@ void Executor<GPU_CL, float>::LoadMemory(const VarDesc var_desc,
   int type_size = 4;
   memory = tensorInput;
 
-
-  LoadMemInternal<float>(reinterpret_cast<void **>(data), reinterpret_cast<void *>(memory), memory_size, program_.quantification, program_.quantification_fold);
+  LoadMemInternal<float>(reinterpret_cast<void **>(data),
+                         reinterpret_cast<void *>(memory), memory_size,
+                         program_.quantification, program_.quantification_fold);
 }
 
 template <>

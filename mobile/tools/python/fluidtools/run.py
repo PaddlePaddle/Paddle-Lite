@@ -22,8 +22,8 @@ checked_encrypt_model_path = "checked_encrypt_model"
 output_var_filter = []
 output_key_filter = {}
 check_shape = False
-quantification = True
-quantification_fold = 1
+quantification = False
+quantification_fold = 1000
 architecture = "arm-v7a"
 # architecture = "arm-v8a"
 

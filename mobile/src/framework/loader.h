@@ -45,13 +45,10 @@ class Loader {
                                 bool quantification = false,
                                 int quantification_fold = 1);
 
-  const Program<Device, T> LoadCombinedMemory(size_t model_len,
-                                              const uint8_t *model_buf,
-                                              size_t combined_params_len,
-                                              uint8_t *combined_params_buf,
-                                              bool optimize = false,
-                                              bool quantification = false,
-                                              int quantification_fold = 1);
+  const Program<Device, T> LoadCombinedMemory(
+      size_t model_len, const uint8_t *model_buf, size_t combined_params_len,
+      uint8_t *combined_params_buf, bool optimize = false,
+      bool quantification = false, int quantification_fold = 1);
 
  private:
   const Program<Device, T> LoadProgram(const std::string &model_path,

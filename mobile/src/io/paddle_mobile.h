@@ -53,7 +53,8 @@ class PaddleMobile {
                 const bool lod_mode = false, const int quantification_fold = 1);
   PMStatus Load(const std::string &model_path, const std::string &para_path,
                 const bool optimize = false, const bool quantification = false,
-                const int batch_size = 1, const bool lod_mode = false, const int quantification_fold = 1);
+                const int batch_size = 1, const bool lod_mode = false,
+                const int quantification_fold = 1);
 
   PMStatus Load(const PaddleMobileConfig &config);
 

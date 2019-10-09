@@ -87,7 +87,8 @@ void Loader<GPU_CL, float>::InitMemoryFromProgram(
 template <>
 const Program<GPU_CL, float> Loader<GPU_CL, float>::LoadCombinedMemory(
     size_t read_size, const uint8_t *buf, size_t combined_params_len,
-    uint8_t *combined_params_buf, bool optimize, bool quantification, int quantification_fold) {
+    uint8_t *combined_params_buf, bool optimize, bool quantification,
+    int quantification_fold) {
   bool can_add_split = false;
 
   PaddleMobile__Framework__Proto__ProgramDesc *c_program;
@@ -190,8 +191,9 @@ const Program<Device, T> Loader<Device, T>::Load(const std::string &dirname,
                                                  bool quantification,
                                                  bool can_add_split,
                                                  int quantification_fold) {
-  auto program = this->LoadProgram(dirname + "/__model__", optimize,
-                                   quantification, can_add_split, quantification_fold);
+  auto program =
+      this->LoadProgram(dirname + "/__model__", optimize, quantification,
+                        can_add_split, quantification_fold);
   program.model_path = dirname;
   return program;
 }
@@ -202,7 +204,8 @@ const Program<Device, T> Loader<Device, T>::Load(const std::string &model_path,
                                                  bool optimize,
                                                  bool quantification,
                                                  int quantification_fold) {
-  auto program = this->LoadProgram(model_path, optimize, quantification, false, quantification_fold);
+  auto program = this->LoadProgram(model_path, optimize, quantification, false,
+                                   quantification_fold);
 
   program.para_path = para_path;
   program.combined = true;
@@ -252,7 +255,8 @@ const Program<Device, T> Loader<Device, T>::LoadProgram(
 template <typename Device, typename T>
 const Program<Device, T> Loader<Device, T>::LoadCombinedMemory(
     size_t read_size, const uint8_t *buf, size_t combined_params_len,
-    uint8_t *combined_params_buf, bool optimize, bool quantification, int quantification_fold) {
+    uint8_t *combined_params_buf, bool optimize, bool quantification,
+    int quantification_fold) {
   bool can_add_split = false;
 
   PaddleMobile__Framework__Proto__ProgramDesc *c_program;
