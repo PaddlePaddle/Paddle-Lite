@@ -120,7 +120,6 @@ void TypeTargetTransformPass::AddIoCopyInst(
   std::vector<std::unique_ptr<KernelBase>> selected_kernels;
   for (auto& kernel : kernels) {
     const Type* in_arg_ty = kernel->GetInputDeclType("Input");
-    const Type* out_arg_ty = kernel->GetOutputDeclType("Out");
 #ifdef LITE_WITH_OPENCL
     // ignore [layout check] for layout trans from buffer to image2d
     if (TargetCompatibleTo(*in_arg_ty, from) &&
