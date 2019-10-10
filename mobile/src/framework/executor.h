@@ -118,6 +118,8 @@ class Executor {
 
   void PrintProfile(const vector<Executor<Device, T>::ProfInfo> &profile) const;
 #endif
+  void ApplyMemoryOptimise(const PaddleMobileConfigInternal &config,
+                           const bool lod_mode) const;
 };
 
 }  // namespace framework
