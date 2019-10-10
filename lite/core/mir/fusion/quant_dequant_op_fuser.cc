@@ -62,7 +62,6 @@ void QuantDequantOpFuser::InsertNewNode(SSAGraph* graph,
   auto* quant_op_input = matched.at("quantized_op_input");
   auto* quantized_op_weight = matched.at("quantized_op_weight");
   auto* quantized_op = matched.at("quantized_op");
-  auto* quantized_op_out = matched.at("quantized_op_out");
   auto* dequant_op = matched.at("dequant_op");
   auto* dequant_op_out = matched.at("dequant_op_out");
 
