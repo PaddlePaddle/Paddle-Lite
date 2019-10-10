@@ -167,10 +167,12 @@ function(lite_cc_binary TARGET)
     target_compile_options(${TARGET} BEFORE PRIVATE -Wno-ignored-qualifiers)
     if (NOT APPLE)
         # strip binary target to reduce size
-        add_custom_command(TARGET ${TARGET} POST_BUILD
-                COMMAND "${CMAKE_STRIP}" -s
-                "${TARGET}"
-                COMMENT "Strip debug symbols done on final executable file.")
+        if(NOT "${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
+            add_custom_command(TARGET ${TARGET} POST_BUILD
+                    COMMAND "${CMAKE_STRIP}" -s
+                    "${TARGET}"
+                    COMMENT "Strip debug symbols done on final executable file.")
+        endif()
     endif()
     # collect targets need to compile for lite
     if (NOT args_EXCLUDE_COMPILE_DEPS)
@@ -215,10 +217,12 @@ function(lite_cc_test TARGET)
               )
     _lite_cc_test(${TARGET} SRCS ${args_SRCS} DEPS ${deps} ARGS ${args_ARGS})
     # strip binary target to reduce size
-    add_custom_command(TARGET ${TARGET} POST_BUILD
-            COMMAND "${CMAKE_STRIP}" -s
-            "${TARGET}"
-            COMMENT "Strip debug symbols done on final executable file.")
+    if(NOT "${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
+        add_custom_command(TARGET ${TARGET} POST_BUILD
+                COMMAND "${CMAKE_STRIP}" -s
+                "${TARGET}"
+                COMMENT "Strip debug symbols done on final executable file.")
+    endif()
     target_compile_options(${TARGET} BEFORE PRIVATE -Wno-ignored-qualifiers)
     file(APPEND ${offline_test_registry_file} "${TARGET}\n")
 
