@@ -31,7 +31,7 @@ void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
   // select dw conv kernel
   if (kw == 3) {
     VLOG(5) << "invoke 3x3 dw conv fp32";
-    /// trans weights
+    // trans weights
     constexpr int cblock = 4;
     auto oc = w_dims[0];
     auto kh = w_dims[2];
@@ -75,6 +75,7 @@ void DepthwiseConv<PRECISION(kInt8), PRECISION(kFloat)>::PrepareForRun() {
   }
   /// select dw conv kernel
   if (kw == 3) {
+    // trans weights
     VLOG(5) << "invoke 3x3 dw conv int8 kernel fp32 out";
     impl_ = lite::arm::math::conv_depthwise_3x3_int8_fp32;
     int cround = ROUNDUP(w_dims[0], 8);
@@ -82,6 +83,16 @@ void DepthwiseConv<PRECISION(kInt8), PRECISION(kFloat)>::PrepareForRun() {
     auto wptr = param.filter->data<int8_t>();
     auto wptr_new = weights_.mutable_data<int8_t>();
     lite::arm::math::conv_trans_weights_numc(wptr, wptr_new, oc, 1, 8, 9);
+    flag_trans_weights_ = true;
+  } else if (kw == 5) {
+    // trans weights
+    VLOG(5) << "invoke 5x5 dw conv int8 kernel fp32 out";
+    impl_ = lite::arm::math::conv_depthwise_5x5_int8_fp32;
+    int cround = ROUNDUP(w_dims[0], 8);
+    weights_.Resize({cround / 8, 1, kh * kw, 8});
+    auto wptr = param.filter->data<int8_t>();
+    auto wptr_new = weights_.mutable_data<int8_t>();
+    lite::arm::math::conv_trans_weights_numc(wptr, wptr_new, oc, 1, 8, 25);
     flag_trans_weights_ = true;
   } else {
     LOG(FATAL) << "this type dw conv not impl";
@@ -123,6 +134,7 @@ void DepthwiseConv<PRECISION(kInt8), PRECISION(kInt8)>::PrepareForRun() {
   }
   /// select dw conv kernel
   if (kw == 3) {
+    // trans weights
     VLOG(5) << "invoke 3x3 dw conv int8 kernel int8 out";
     impl_ = lite::arm::math::conv_depthwise_3x3_int8_int8;
     int cround = ROUNDUP(w_dims[0], 8);
@@ -130,6 +142,16 @@ void DepthwiseConv<PRECISION(kInt8), PRECISION(kInt8)>::PrepareForRun() {
     auto wptr = param.filter->data<int8_t>();
     auto wptr_new = weights_.mutable_data<int8_t>();
     lite::arm::math::conv_trans_weights_numc(wptr, wptr_new, oc, 1, 8, 9);
+    flag_trans_weights_ = true;
+  } else if (kw == 5) {
+    // trans weights
+    VLOG(5) << "invoke 5x5 dw conv int8 kernel int8 out";
+    impl_ = lite::arm::math::conv_depthwise_5x5_int8_int8;
+    int cround = ROUNDUP(w_dims[0], 8);
+    weights_.Resize({cround / 8, 1, kh * kw, 8});
+    auto wptr = param.filter->data<int8_t>();
+    auto wptr_new = weights_.mutable_data<int8_t>();
+    lite::arm::math::conv_trans_weights_numc(wptr, wptr_new, oc, 1, 8, 25);
     flag_trans_weights_ = true;
   } else {
     LOG(FATAL) << "this type dw conv not impl";
