@@ -84,12 +84,12 @@ void cpu_compute(const DropoutParam<FPGA>& param) {
 template <>
 void DropoutKernel<FPGA, float>::Compute(const DropoutParam<FPGA>& param) {
   zynqmp::Context& context = const_cast<zynqmp::Context&>(param.context_);
-  if (param.InputX()->numel() >= 2048) {
-    cpu_compute(param);
-  } else {
+  // if (param.InputX()->numel() >= 2048) {
+  //   cpu_compute(param);
+  // } else {
     zynqmp::ScalePE& pe = context.pe<zynqmp::ScalePE>();
     pe.dispatch();
-  }
+  // }
 
 #ifdef PADDLE_MOBILE_DEBUG
   zynqmp::Debugger::get_instance().registerOutput("dropout",

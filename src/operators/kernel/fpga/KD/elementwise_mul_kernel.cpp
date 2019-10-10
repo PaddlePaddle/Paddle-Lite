@@ -123,11 +123,11 @@ void ElementwiseMulKernel<FPGA, float>::Compute(
   zynqmp::Context& context = const_cast<zynqmp::Context&>(param.context_);
   zynqmp::ScalePE& pe = context.pe<zynqmp::ScalePE>();
 
-  if (param.InputY()->numel() > 4096) {
-    cpu_compute(param);
-  } else {
+  // if (param.InputY()->numel() > 4096) {
+  //   cpu_compute(param);
+  // } else {
     pe.dispatch();
-  }
+  // }
 
   // param.InputX()->zynqmpTensor()->saveToFile("in.txt");
   // param.InputY()->zynqmpTensor()->saveToFile("in_y.txt");
