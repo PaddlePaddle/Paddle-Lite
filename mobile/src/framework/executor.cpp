@@ -178,6 +178,8 @@ static void LoadMemInternal(void **in_data, void *out_data, int64_t size,
   char **data_buf = reinterpret_cast<char **>(in_data);
   T *tensor_data = reinterpret_cast<T *>(out_data);
   if (quant_uint8) {
+    const int minimal_fold_size = 2;
+    quant_fold = fmin(fmax(1, size / minimal_fold_size), quant_fold);
     int step = fmax(size / quant_fold, 1);
     int visited_fold = 0;
     while (visited_fold * step < size) {
