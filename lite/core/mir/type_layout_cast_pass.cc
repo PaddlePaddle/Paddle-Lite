@@ -124,10 +124,10 @@ void TypeLayoutTransformPass::AddLayoutInst(
   bool is_found = false;
   for (auto& kernel : kernels) {
     const Type* in_arg_ty = kernel->GetInputDeclType("Input");
-    const Type* out_arg_ty = kernel->GetOutputDeclType("Out");
+// const Type* out_arg_ty = kernel->GetOutputDeclType("Out"); // unused variable
 #ifdef LITE_WITH_OPENCL
     // ignore [layout check] for layout trans from image2d to buffer
-    if (DataLayoutCompatibleTo(*in_arg_ty, from) &&
+    if (TargetCompatibleTo(*in_arg_ty, from) &&
         PrecisionCompatibleTo(*in_arg_ty, from) &&
         DeviceCompatibleTo(*in_arg_ty, from)) {
 #else
