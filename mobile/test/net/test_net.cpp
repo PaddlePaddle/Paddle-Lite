@@ -31,6 +31,10 @@ void test(int argc, char *argv[]) {
   arg_index++;
   bool enable_memory_optimization = std::stoi(argv[arg_index]) == 1;
   arg_index++;
+  bool quantification = std::stoi(argv[arg_index]) == 1;
+  arg_index++;
+  int quantification_fold = std::stoi(argv[arg_index]);
+  arg_index++;
   paddle_mobile::PaddleMobileConfigInternal config;
   config.memory_optimization_level = enable_memory_optimization
                                          ? MemoryOptimizationWithoutFeeds
@@ -98,7 +102,7 @@ void test(int argc, char *argv[]) {
 
   auto time1 = time();
   if (paddle_mobile.Load("./checked_model/model", "./checked_model/params",
-                         fuse, false, 1, true)) {
+                         fuse, quantification, 1, true, quantification_fold)) {
     auto time2 = time();
     std::cout << "auto-test"
               << " load-time-cost :" << time_diff(time1, time2) << "ms"

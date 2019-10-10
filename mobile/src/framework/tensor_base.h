@@ -14,6 +14,7 @@ limitations under the License. */
 
 #pragma once
 
+#include <memory>
 #include "common/enforce.h"
 #include "common/type_define.h"
 #include "common/types.h"
@@ -55,8 +56,8 @@ struct SizeOfTypeFunctor<HEAD, TAIL...> {
 };
 
 static inline size_t SizeOfType(const kTypeId_t type) {
-  SizeOfTypeFunctor<int8_t, int, half, float, double, int16_t, int64_t, bool,
-                    size_t>
+  SizeOfTypeFunctor<int8_t, uint8_t, int, half, float, double, int16_t, int64_t,
+                    bool, size_t>
       functor;
   size_t size = functor(type);
 
