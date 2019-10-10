@@ -79,6 +79,7 @@ if (NOT HAS_ARM_MATH_LIB_DIR)
       conv_depthwise_3x3p0.cc
       conv_depthwise_3x3p1.cc
       conv_winograd_3x3.cc
+      conv3x3_winograd_fp32.cc
       conv_impl.cc
       softmax.cc 
       scale.cc
