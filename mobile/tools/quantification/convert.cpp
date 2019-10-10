@@ -17,6 +17,22 @@
 
 const size_t kSize64 = sizeof(uint64_t);
 const size_t kSize32 = sizeof(uint32_t);
+const int minimal_fold_size = 2;
+float max_entropy = 0.0;
+
+float entropy(std::vector<uint8_t> &factors) {
+    int n = factors.size();
+    std::vector<int> counts(256);
+    for (uint8_t &factor : factors) {
+        counts[factor]++;
+    }
+    float res = 1.0;
+    float shift = 100000.0;
+    for (int i = 0; i < 256; i++) {
+        res *= (counts[i] + shift) / (n + shift);
+    }
+    return 1.0 / res;
+}
 
 char *Get_binary_data(const std::string &filename) {
 
@@ -162,6 +178,7 @@ void LoadWithDumpForInt8(const paddle_mobile::framework::VarDesc &var_desc, char
     }
     *dataP += tensorSize;
 
+    quantification_fold = std::min(std::max(1, memory_size / minimal_fold_size), quantification_fold);
     int step = std::max(memory_size / quantification_fold, 1);
 
     int visited_fold = 0;
@@ -178,11 +195,14 @@ void LoadWithDumpForInt8(const paddle_mobile::framework::VarDesc &var_desc, char
         fwrite(&min_value, sizeof(float), 1, out_file);
         fwrite(&max_value, sizeof(float), 1, out_file);
 
+        std::vector<uint8_t> factors;
         for (int g = visited_fold * step; g < std::min((visited_fold + 1) * step, memory_size); ++g) {
             float value = static_cast<float *> (memory)[g];
             auto factor = (uint8_t) round((value - min_value) / (max_value - min_value) * 255);
+            factors.push_back(factor);
             fwrite(&factor, sizeof(uint8_t), 1, out_file);
         }
+        max_entropy = fmax(max_entropy, entropy(factors));
         visited_fold++;
     }
 }
@@ -325,6 +345,7 @@ void LoadWithDumpForFloat32(const paddle_mobile::framework::VarDesc &var_desc, c
     }
     *dataP += tensorSize;
 
+    quantification_fold = std::min(std::max(1, memory_size / minimal_fold_size), quantification_fold);
     int step = std::max(memory_size / quantification_fold, 1);
 
     int visited_fold = 0;
@@ -339,13 +360,16 @@ void LoadWithDumpForFloat32(const paddle_mobile::framework::VarDesc &var_desc, c
         }
 
         float diff = 0.0;
+        std::vector<uint8_t> factors;
         for (int g = visited_fold * step; g < std::min((visited_fold + 1) * step, memory_size); ++g) {
             float value = static_cast<float *> (memory)[g];
             auto factor = (uint8_t) round((value - min_value) / (max_value - min_value) * 255);
+            factors.push_back(factor);
             float value_quantized = min_value + (factor / 255.0) * (max_value - min_value);
             diff += fabs(value - value_quantized);
             fwrite(&value_quantized, sizeof(float), 1, out_file);
         }
+        max_entropy = fmax(max_entropy, entropy(factors));
         if (memory_size > 0) {
             std::cout << "avg diff caused by quantization for var " << var_desc.Name() << " is: " << (diff / memory_size) << std::endl;
         }
@@ -432,6 +456,7 @@ int main(int argc, char **argv) {
         std::string model_path = base_path + "/model";
         std::string param_path = base_path + "/params";
         quantificate_combined_int8(model_path, param_path, combined_min_dir, quantification_fold);
+        std::cout << "max entropy : " << max_entropy << std::endl;
         return 0;
     }
 
