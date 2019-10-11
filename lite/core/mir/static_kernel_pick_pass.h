@@ -53,7 +53,7 @@ class StaticKernelPickPass : public mir::StmtPass {
     size_t score{};
     const int kMax =
         std::numeric_limits<core::KernelPickFactor::value_type>::max();
-
+    VLOG(4) << "[score s1]:" << score;
     // The more important factor comes first
     if (kernel_pick_factors_.IsTargetConsidered() &&
         (place().target == kernel.target() || kernel.target() == TARGET(kAny) ||
@@ -61,6 +61,7 @@ class StaticKernelPickPass : public mir::StmtPass {
       score +=
           kMax / static_cast<int>(core::KernelPickFactor::Factor::TargetFirst);
     }
+    VLOG(4) << "[score s2]:" << score;
     if (kernel_pick_factors_.IsPrecisionConsidered() &&
         (place().precision == kernel.precision() ||
          kernel.precision() == PRECISION(kAny) ||
@@ -68,6 +69,7 @@ class StaticKernelPickPass : public mir::StmtPass {
       score += kMax /
                static_cast<int>(core::KernelPickFactor::Factor::PrecisionFirst);
     }
+    VLOG(4) << "[score s3]:" << score;
     if (kernel_pick_factors_.IsDataLayoutConsidered() &&
         (place().layout == kernel.layout() ||
          kernel.layout() == DATALAYOUT(kAny) ||
@@ -75,10 +77,21 @@ class StaticKernelPickPass : public mir::StmtPass {
       score += kMax / static_cast<int>(
                           core::KernelPickFactor::Factor::DataLayoutFirst);
     }
+    VLOG(4) << "[score s4(final)]:" << score;
+    VLOG(4) << "-------- pick summary --------";
+    VLOG(4) << " ===> place():" << PrecisionToStr(place().precision) << " "
+            << DataLayoutToStr(place().layout) << " "
+            << TargetToStr(place().target);
+    VLOG(4) << " ===> kernel.place():"
+            << PrecisionToStr(kernel.place().precision) << " "
+            << DataLayoutToStr(kernel.place().layout) << " "
+            << TargetToStr(kernel.place().target);
+    VLOG(4) << "kernel.op_type():" << kernel.op_type();
     VLOG(4) << "picker tactic " << kernel_pick_factors_;
     VLOG(4) << "kernel place " << kernel.place().DebugString();
     VLOG(4) << "picker place " << place().DebugString();
     VLOG(4) << "score " << score;
+    VLOG(4) << "------------------------------";
 
     // The data layout is not considered, for the input and output arguments
     // might have different data layout.

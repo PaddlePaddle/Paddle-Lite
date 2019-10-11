@@ -2246,8 +2246,8 @@ __kernel void conv_7x7Pt1x2(__private const int global_size_dim0,
    }
 
 #ifdef BATCH_NORM
-    half s = read_imageh(new_scale, sampler, (int2)(out_c, 0));
-    half b = read_imageh(new_biase, sampler, (int2)(out_c, 0));
+    half4 s = read_imageh(new_scale, sampler, (int2)(out_c, 0));
+    half4 b = read_imageh(new_biase, sampler, (int2)(out_c, 0));
     output0 = output0 * s + b;
     output1 = output1 * s + b;
 #endif
