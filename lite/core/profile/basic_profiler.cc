@@ -103,8 +103,7 @@ std::string BasicTimer::basic_repr_header() {
   auto time_unit = GetTimeUnit();
   STL::stringstream ss;
   // clang-format off
-  ss << "op"         << "\t"
-     << "kernel"     << "\t"
+  ss << "kernel"     << "\t"
      << "k_average(" << time_unit << ")\t"
      << "k_min("     << time_unit << ")\t"
      << "k_max("     << time_unit << ")\t"
@@ -126,8 +125,7 @@ std::string BasicTimer::basic_repr() const {
   }
   STL::stringstream ss;
   // clang-format off
-  ss << GetCustomInfo("op_type")                    << "\t"
-     << key()                                       << "\t"
+  ss << key()                                       << "\t"
      << kernel_timer_info.ave() / time_unit_factor  << "\t"
      << kernel_timer_info.min() / time_unit_factor  << "\t"
      << kernel_timer_info.max() / time_unit_factor  << "\t"
