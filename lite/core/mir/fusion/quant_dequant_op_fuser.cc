@@ -73,8 +73,11 @@ void QuantDequantOpFuser::InsertNewNode(SSAGraph* graph,
   float input_scale =
       quantized_op->stmt()->op_info()->GetAttr<float>("input_scale");
   float max_range = dequant_op->stmt()->op_info()->GetAttr<float>("max_range");
-  float whole_weight_scale = static_cast<float>(range * range) / max_range /
-                             range;  // weight_scale = max(abs(weight))
+  float whole_weight_scale =
+      static_cast<float>(range * range) / max_range / range;
+  // max_range = range * range / max(abs(weight))
+  // weight_scale = range * range / (range * range / max(abs(weight))) / range
+  //              = max(abs(weight)) / range
 
   // set op desc
   cpp::OpDesc op_desc = *quantized_op->stmt()->op_info();

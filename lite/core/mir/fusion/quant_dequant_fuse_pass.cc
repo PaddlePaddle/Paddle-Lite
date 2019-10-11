@@ -15,6 +15,7 @@
 #include "lite/core/mir/fusion/quant_dequant_fuse_pass.h"
 #include <list>
 #include <memory>
+#include <unordered_set>
 #include <vector>
 #include "lite/api/paddle_place.h"
 #include "lite/core/mir/fusion/quant_dequant_op_fuser.h"
@@ -25,39 +26,30 @@ namespace lite {
 namespace mir {
 
 void QuantDequantFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
-  // remove quant op and related ops
+  // obtain useful values and save to quantized_node, remove quant_nodes and
+  // releated nodes
   std::unordered_set<std::string> quant_types = {
       "fake_quantize_range_abs_max", "fake_quantize_moving_average_abs_max"};
   for (auto& cur_node : graph->mutable_nodes()) {
     if (cur_node.IsStmt() && quant_types.count(cur_node.stmt()->op_type())) {
-      // determine input nodes and output nodes
+      // find input nodes and output nodes
       std::list<Node*> input_nodes = cur_node.inlinks;
       std::list<Node*> output_nodes = cur_node.outlinks;
       CHECK_EQ(input_nodes.size(), 2);
       CHECK_EQ(output_nodes.size(), 2);
 
-      Node* input_scale_node = nullptr;
-      Node* input_act_node = nullptr;
-      Node* output_scale_node = nullptr;
-      Node* output_act_node = nullptr;
-      std::string tmp_name = input_nodes.front()->arg()->name;
-      if (tmp_name.find("scale") != std::string::npos) {
-        input_scale_node = input_nodes.front();
-        input_act_node = input_nodes.back();
-      } else {
-        input_scale_node = input_nodes.back();
-        input_act_node = input_nodes.front();
-      }
-      tmp_name = output_nodes.front()->arg()->name;
-      if (tmp_name.find("scale") != std::string::npos) {
-        output_scale_node = output_nodes.front();
-        output_act_node = output_nodes.back();
-      } else {
-        output_scale_node = output_nodes.back();
-        output_act_node = output_nodes.front();
-      }
+      bool front_is_scale = input_nodes.front()->arg()->is_weight;
+      Node* input_scale_node =
+          front_is_scale ? input_nodes.front() : input_nodes.back();
+      Node* input_act_node =
+          front_is_scale ? input_nodes.back() : input_nodes.front();
+      front_is_scale = output_nodes.front()->arg()->is_weight;
+      Node* output_scale_node =
+          front_is_scale ? output_nodes.front() : output_nodes.back();
+      Node* output_act_node =
+          front_is_scale ? output_nodes.back() : output_nodes.front();
 
-      // relink and save value
+      // relink nodes and save value to quantized_node
       int bit_length = cur_node.stmt()->op_info()->GetAttr<int>("bit_length");
       int range = ((1 << (bit_length - 1)) - 1);
       auto* scope = cur_node.stmt()->op()->scope();
@@ -81,7 +73,7 @@ void QuantDequantFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
     }
   }
 
-  // fuse quantized op and dequant op
+  // fuse quantized node and dequant node
   std::unordered_set<std::string> quantized_op_types = {
       "conv2d", "mul", "depthwise_conv2d"};
   for (auto& op_type : quantized_op_types) {
