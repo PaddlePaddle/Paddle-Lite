@@ -105,7 +105,6 @@ TEST(conv_compute, fp32) {
     LOG(INFO) << y_cpu_data[i];
   }
 }
-/*
 
 TEST(conv_compute, int8) {
   ConvComputeInt8<PRECISION(kFloat)> int8_conv_fp32out;
@@ -246,7 +245,6 @@ TEST(conv_compute, int8_int8_out) {
     LOG(INFO) << float(y_cpu_data[i]);
   }
 }
-*/
 
 }  // namespace cuda
 }  // namespace kernels

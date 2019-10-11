@@ -69,8 +69,8 @@ class VariablePlaceInferencePass : public DebugPass {
 
 #ifndef LITE_WITH_FPGA
 #ifndef LITE_WITH_OPENCL
-    w->AsArg().type =
-        LiteType::GetTensorTy(TARGET(kHost), type.precision(), type.layout());
+    w->AsArg().type = LiteType::GetTensorTy(
+        TARGET(kHost), type.precision(), DATALAYOUT(kNCHW));
 #endif
 #endif
   }
