@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #pragma once
+#include <map>
 #include <memory>
 #include <string>
 #include <utility>
@@ -72,6 +73,12 @@ class LITE_API Predictor {
 
   // Get offset-th col of feed inputs.
   lite::Tensor* GetInput(size_t offset);
+  // get tensor by name.
+  //  Tensor* GetTensor(const std::string& name);
+  // get inputnames and get outputnames.
+  std::vector<std::string> GetInputNames();
+  std::vector<std::string> GetOutputNames();
+  void PrepareFeedFetch();
 
   // Get offset-th col of fetch results.
   const lite::Tensor* GetOutput(size_t offset) const;
@@ -102,6 +109,8 @@ class LITE_API Predictor {
   const Scope* exec_scope_;
   std::unique_ptr<RuntimeProgram> program_;
   bool program_generated_{false};
+  std::map<size_t, std::string> feed_names_;
+  std::map<size_t, std::string> fetch_names_;
 };
 
 /*

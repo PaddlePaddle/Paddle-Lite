@@ -74,9 +74,16 @@ class LITE_API PaddlePredictor {
 
   virtual std::string GetVersion() const = 0;
 
+  // Get input names
+  virtual std::vector<std::string> GetInputNames() = 0;
+  // Get output names
+  virtual std::vector<std::string> GetOutputNames() = 0;
+
   /// Get a readonly tensor, return null if no one called `name` exists.
   virtual std::unique_ptr<const Tensor> GetTensor(
       const std::string& name) const = 0;
+  //  virtual std::unique_ptr<Tensor> GetTensor(
+  //      const std::string& name) = 0;
 
   /// Persist the optimized model to disk. This API is only supported by
   /// CxxConfig, and the persisted model can be reused for MobileConfig.
