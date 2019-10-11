@@ -18,7 +18,6 @@
 #include "lite/backends/opencl/cl_include.h"
 #include "lite/backends/opencl/cl_runtime.h"
 #include "lite/backends/opencl/cl_utility.h"
-
 namespace paddle {
 namespace lite {
 
@@ -58,9 +57,58 @@ void TargetWrapperCL::Free(void *ptr) {
   }
 }
 
-void *TargetWrapperCL::MallocImage(const std::array<size_t, 2> &image_shape,
-                                   PrecisionType data_type) {
-  cl::ImageFormat img_format(CL_RGBA, GetCLChannelType(data_type));
+template <>
+void *TargetWrapperCL::MallocImage<float>(
+    const std::array<size_t, 2> &image_shape) {
+  cl::ImageFormat img_format(CL_RGBA, GetCLChannelType(PRECISION(kFloat)));
+  cl_int status;
+  size_t width = image_shape[0];
+  size_t height = image_shape[1];
+  cl::Image2D *cl_image =
+      new cl::Image2D(CLRuntime::Global()->context(),
+                      CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR,
+                      img_format,
+                      width,
+                      height,
+                      0,
+                      nullptr,
+                      &status);
+  if (status != CL_SUCCESS) {
+    delete cl_image;
+    cl_image = nullptr;
+  }
+  CL_CHECK_FATAL(status);
+  return cl_image;
+}
+
+template <>
+void *TargetWrapperCL::MallocImage<int8_t>(
+    const std::array<size_t, 2> &image_shape) {
+  cl::ImageFormat img_format(CL_RGBA, GetCLChannelType(PRECISION(kInt8)));
+  cl_int status;
+  size_t width = image_shape[0];
+  size_t height = image_shape[1];
+  cl::Image2D *cl_image =
+      new cl::Image2D(CLRuntime::Global()->context(),
+                      CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR,
+                      img_format,
+                      width,
+                      height,
+                      0,
+                      nullptr,
+                      &status);
+  if (status != CL_SUCCESS) {
+    delete cl_image;
+    cl_image = nullptr;
+  }
+  CL_CHECK_FATAL(status);
+  return cl_image;
+}
+
+template <>
+void *TargetWrapperCL::MallocImage<int32_t>(
+    const std::array<size_t, 2> &image_shape) {
+  cl::ImageFormat img_format(CL_RGBA, GetCLChannelType(PRECISION(kInt32)));
   cl_int status;
   size_t width = image_shape[0];
   size_t height = image_shape[1];
