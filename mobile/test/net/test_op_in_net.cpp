@@ -58,7 +58,7 @@ void test(int argc, char *argv[]) {
 
   auto time1 = time();
   if (paddle_mobile.Load("./checked_model/model", "./checked_model/params",
-                         fuse, false, 1, true)) {
+                         fuse, false, 1, true, 1)) {
     auto time2 = time();
     std::cout << "auto-test"
               << " load-time-cost :" << time_diff(time1, time2) << "ms"

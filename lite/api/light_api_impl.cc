@@ -88,29 +88,5 @@ std::shared_ptr<PaddlePredictor> CreatePaddlePredictor(
   return x;
 }
 
-MobileConfig::MobileConfig(PowerMode mode, int threads) {
-#ifdef LITE_WITH_ARM
-  lite::DeviceInfo::Global().SetRunMode(mode, threads);
-  mode_ = lite::DeviceInfo::Global().mode();
-  threads_ = lite::DeviceInfo::Global().threads();
-#endif
-}
-
-void MobileConfig::set_power_mode(paddle::lite_api::PowerMode mode) {
-#ifdef LITE_WITH_ARM
-  lite::DeviceInfo::Global().SetRunMode(mode, threads_);
-  mode_ = lite::DeviceInfo::Global().mode();
-  threads_ = lite::DeviceInfo::Global().threads();
-#endif
-}
-
-void MobileConfig::set_threads(int threads) {
-#ifdef LITE_WITH_ARM
-  lite::DeviceInfo::Global().SetRunMode(mode_, threads);
-  mode_ = lite::DeviceInfo::Global().mode();
-  threads_ = lite::DeviceInfo::Global().threads();
-#endif
-}
-
 }  // namespace lite_api
 }  // namespace paddle

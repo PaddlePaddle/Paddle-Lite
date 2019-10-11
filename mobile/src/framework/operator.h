@@ -16,6 +16,7 @@ limitations under the License. */
 
 #include <functional>
 #include <map>
+#include <memory>
 #include <string>
 #include <utility>
 #include <vector>
@@ -73,6 +74,7 @@ class OperatorBase {
   const VariableNameMap &Outputs() const { return outputs_; }
   const std::string &Type() const { return type_; }
   const AttributeMap &Attrs() const { return attrs_; }
+  void setPrePostType(int prePostType) { pre_post_type_ = prePostType; }
 
   void ClearVariables(const std::vector<std::string> &var_names) const {
     if (this->scope_) {
@@ -89,6 +91,7 @@ class OperatorBase {
   VariableNameMap inputs_;
   VariableNameMap outputs_;
   AttributeMap attrs_;
+  int pre_post_type_ = 0;
 
  private:
   void CheckAllInputOutputSet() const;
@@ -111,6 +114,9 @@ class OperatorWithKernel : public OperatorBase<Dtype> {
   virtual void InferShape() const = 0;
 
   void Init() {
+    if (this->pre_post_type_ != NONE_PRE_POST) {
+      kernel_.setPrePostType(this->pre_post_type_);
+    }
     PADDLE_MOBILE_ENFORCE(kernel_.Init(&param_), "  %s kernel init failed",
                           this->type_.c_str());
   }
@@ -134,11 +140,13 @@ class OpKernelBase {
   virtual void Compute(const P &para) = 0;
   virtual bool Init(P *para) { return true; }
   virtual ~OpKernelBase() = default;
+  virtual void setPrePostType(int prePostType) { pre_post_type_ = prePostType; }
 
  protected:
 #ifdef PADDLE_MOBILE_CL
   CLHelper cl_helper_;
 #endif
+  int pre_post_type_ = 0;
 
  private:
 };
