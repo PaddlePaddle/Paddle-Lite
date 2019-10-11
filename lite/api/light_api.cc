@@ -53,15 +53,20 @@ Tensor* LightPredictor::GetInput(size_t offset) {
   return &feed_list->at(offset);
 }
 
-const Tensor* LightPredictor::GetTensor(const std::string& name) {
-  auto* var = program_->exec_scope()->FindVar(name);
-  return var->Get<const lite::Tensor>();
+// get input by name
+Tensor* LightPredictor::GetInputByName(const std::string& name) {
+  if (idx2feeds_.find(name) == idx2feeds_.end()) {
+     LOG(ERROR) << "Model do not have input named with: [" << name<<"], model's inputs include:";
+     for (int i=0;i<feed_names_.size();i++) {
+       LOG(ERROR)<<"["<<feed_names_[i]<<"]";
+     }
+     return NULL;
+  }
+  else{
+     int idx = idx2feeds_[name];
+     return GetInput(idx);
+  }
 }
-// get tensor by name
-/*Tensor* LightPredictor::GetTensor(const std::string& name) {
-  auto* var = program_->exec_scope()->FindVar(name);
-  return var->GetMutable<lite::Tensor>();
-}*/
 
 const Tensor* LightPredictor::GetOutput(size_t offset) {
   auto* _fetch_list = program_->exec_scope()->FindVar("fetch");
@@ -94,6 +99,7 @@ void LightPredictor::PrepareFeedFetch() {
     if (op->Type() == "feed") {
       int idx = op->GetAttr<int>("col");
       feed_names_[idx] = op->Output("Out").front();
+      idx2feeds_[op->Output("Out").front()] = idx;
     } else if (op->Type() == "fetch") {
       int idx = op->GetAttr<int>("col");
       fetch_names_[idx] = op->Input("X").front();

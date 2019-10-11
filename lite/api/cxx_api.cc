@@ -88,6 +88,7 @@ void Predictor::PrepareFeedFetch() {
     if (op->Type() == "feed") {
       int idx = op->GetAttr<int>("col");
       feed_names_[idx] = op->Output("Out").front();
+      idx2feeds_[op->Output("Out").front()] = idx;
     } else if (op->Type() == "fetch") {
       int idx = op->GetAttr<int>("col");
       fetch_names_[idx] = op->Input("X").front();
@@ -193,11 +194,20 @@ const lite::Tensor *Predictor::GetTensor(const std::string &name) const {
   auto *var = exec_scope_->FindVar(name);
   return &var->Get<lite::Tensor>();
 }
-// get tensor by name
-/*lite::Tensor* Predictor::GetTensor(const std::string& name) {
-  auto* var = exec_scope_->FindVar(name);
-  return var->GetMutable<lite::Tensor>();
-}*/
+// get input by name
+lite::Tensor* Predictor::GetInputByName(const std::string& name) {
+  if (idx2feeds_.find(name) == idx2feeds_.end()) {
+     LOG(ERROR) << "Model do not have input named with: [" << name<<"], model's inputs include:";
+     for (int i=0;i<feed_names_.size();i++) {
+       LOG(ERROR)<<"["<<feed_names_[i]<<"]";
+     }
+     return NULL;
+  }
+  else{
+     int idx = idx2feeds_[name];
+     return GetInput(idx);
+  }
+}
 
 #ifdef LITE_WITH_TRAIN
 void Predictor::FeedVars(const std::vector<framework::Tensor> &tensors) {

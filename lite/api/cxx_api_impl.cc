@@ -42,8 +42,10 @@ class CxxPaddleApiImpl : public lite_api::PaddlePredictor {
 
   std::unique_ptr<const lite_api::Tensor> GetTensor(
       const std::string &name) const override;
-  /*  std::unique_ptr<lite_api::Tensor> GetTensor(
-        const std::string &name) override;*/
+
+  // Get InputTebsor by name
+  std::unique_ptr<lite_api::Tensor> GetInputByName(
+      const std::string& name) override;
 
   void SaveOptimizedModel(const std::string &model_dir,
                           lite_api::LiteModelType model_type =
@@ -93,11 +95,12 @@ std::unique_ptr<const lite_api::Tensor> CxxPaddleApiImpl::GetTensor(
   auto *x = raw_predictor_.GetTensor(name);
   return std::unique_ptr<const lite_api::Tensor>(new lite_api::Tensor(x));
 }
-/*std::unique_ptr<lite_api::Tensor> CxxPaddleApiImpl::GetTensor(
-    const std::string &name)  {
-  auto *x = raw_predictor_.GetTensor(name);
-  return std::unique_ptr<lite_api::Tensor>(new lite_api::Tensor(x));
-}*/
+
+std::unique_ptr<lite_api::Tensor> CxxPaddleApiImpl::GetInputByName(
+     const std::string& name) {
+   return std::unique_ptr<lite_api::Tensor>(
+      new lite_api::Tensor(raw_predictor_.GetInputByName(name)));
+}
 
 void CxxPaddleApiImpl::SaveOptimizedModel(const std::string &model_dir,
                                           lite_api::LiteModelType model_type) {

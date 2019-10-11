@@ -37,8 +37,9 @@ class LightPredictorImpl : public PaddlePredictor {
 
   std::unique_ptr<const Tensor> GetTensor(
       const std::string& name) const override;
-  //  std::unique_ptr<Tensor> GetTensor(
-  //      const std::string& name) override;
+  // Get InputTebsor by name
+  std::unique_ptr<Tensor> GetInputByName(
+      const std::string& name) override;
 
   void Init(const MobileConfig& config);
 
@@ -73,11 +74,11 @@ std::unique_ptr<const Tensor> LightPredictorImpl::GetTensor(
   return std::unique_ptr<const Tensor>(
       new Tensor(raw_predictor_->GetTensor(name)));
 }
-/*std::unique_ptr<Tensor> LightPredictorImpl::GetTensor(
+std::unique_ptr<Tensor> LightPredictorImpl::GetInputByName(
     const std::string& name) {
   return std::unique_ptr<Tensor>(
-      new Tensor(raw_predictor_->GetTensor(name)));
-}*/
+      new Tensor(raw_predictor_->GetInputByName(name)));
+}
 
 std::vector<std::string> LightPredictorImpl::GetInputNames() {
   return raw_predictor_->GetInputNames();

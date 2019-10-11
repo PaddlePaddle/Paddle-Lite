@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+sh: 1: wq: not found
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -42,13 +42,12 @@ TEST(CxxApi, run) {
   LOG(INFO) << "input size: " << inputs.size();
   for (int i = 0; i < inputs.size(); i++) {
     LOG(INFO) << "inputnames: " << inputs[i];
-    auto input_tensor = predictor->GetTensor(inputs[i]);
   }
   std::vector<std::string> outputs = predictor->GetOutputNames();
   for (int i = 0; i < outputs.size(); i++) {
     LOG(INFO) << "outputnames: " << outputs[i];
   }
-  auto input_tensor = predictor->GetInput(0);
+  auto input_tensor = predictor->GetInputByName(inputs[0]);
   input_tensor->Resize(std::vector<int64_t>({100, 100}));
   auto* data = input_tensor->mutable_data<float>();
   for (int i = 0; i < 100 * 100; i++) {
@@ -57,7 +56,7 @@ TEST(CxxApi, run) {
 
   predictor->Run();
 
-  auto output = predictor->GetOutput(0);
+  auto output = predictor->GetTensor(outputs[0]);
   auto* out = output->data<float>();
   LOG(INFO) << out[0];
   LOG(INFO) << out[1];
