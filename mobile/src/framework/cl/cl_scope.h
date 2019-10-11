@@ -110,6 +110,10 @@ class CLScope {
   }
 
   CLLocalWorkSizeInfo LocalWorkSizeInfo() { return localWorkSizeInfo_; }
+  size_t KernelWorkSize(cl_kernel kernel) {
+    size_t kernel_work_size = CLEngine::Instance()->GetKernelWorkSize(kernel);
+    return kernel_work_size;
+  }
 
  private:
   cl_int status_;

@@ -3,7 +3,7 @@ NETS=""
 declare -a supportedNets=("googlenet" "mobilenet" "yolo" "squeezenet" "resnet" "mobilenetssd" "nlp" "mobilenetfssd" "genet" "super" "op")
 
 # merge cl to so
-merge_cl_to_so=1
+merge_cl_to_so=0
 opencl_kernels="opencl_kernels.cpp"
 cd ../src/operators/kernel/cl
 if [[ -f "${opencl_kernels}" ]]; then

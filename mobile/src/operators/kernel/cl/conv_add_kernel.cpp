@@ -95,8 +95,7 @@ bool ConvAddKernel<GPU_CL, float>::Init(FusionConvAddParam<GPU_CL> *param) {
     param->Filter()->InitCLImage(cl_helper_.CLContext(),
                                  cl_helper_.CLCommandQueue());
 
-    this->cl_helper_.AddKernel("conv_7x7Pt1x2", conv_kernel_file,
-                               build_options);
+    this->cl_helper_.AddKernel("conv_7x7spl", conv_kernel_file, build_options);
 
   } else if (param->Filter()->dims()[2] == 5 &&
              param->Filter()->dims()[3] == 5) {
@@ -123,7 +122,7 @@ void ConvAddKernel<GPU_CL, float>::Compute(
       ConvAddBnRelu(&this->cl_helper_, param, false, param.Bias());
       break;
     case ConvParam<GPU_CL>::EXEC_SLIDINGWINDOW7x7_FLOAT:
-      ConvAddBnReluPt1x2(&this->cl_helper_, param, false, param.Bias());
+      SWConvAddBnRelu(&this->cl_helper_, param, false, param.Bias());
       break;
     case ConvParam<GPU_CL>::EXEC_DEPTHWISE3x3S1_FLOAT:
       DWConvAddBnRelu(&this->cl_helper_, param, false, param.Bias());

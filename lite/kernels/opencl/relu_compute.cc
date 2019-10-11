@@ -15,6 +15,7 @@
 #include "lite/backends/opencl/cl_include.h"
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
+#include "lite/kernels/opencl/image_helper.h"
 #include "lite/operators/op_params.h"
 #include "lite/utils/replace_stl/stream.h"
 
@@ -75,17 +76,96 @@ class ReluCompute
   std::shared_ptr<cl::Event> event_{new cl::Event};
 };
 
+class ReluComputeFloatImage
+    : public KernelLite<TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNHWC)> {
+ public:
+  using param_t = operators::ActivationParam;
+
+  void PrepareForRun() override {
+    auto& context = ctx_->As<OpenCLContext>();
+    context.cl_context()->AddKernel(
+        kernel_func_name_, "image/relu_kernel.cl", build_options_);
+  }
+
+  void Run() override {
+    auto& param = *param_.get_mutable<param_t>();
+    const auto& x_dims = param.X->dims();
+    auto* x_buf = param.X->data<float, cl::Image2D>();
+    auto image_shape = InitImageDimInfoWith(x_dims);
+    auto* out_buf = param.Out->mutable_data<float, cl::Image2D>(
+        image_shape["width"], image_shape["height"]);
+    const auto& y_dims = param.Out->dims();  // useless: check dim only
+
+    auto& context = ctx_->As<OpenCLContext>();
+    CHECK(context.cl_context() != nullptr);
+    STL::stringstream kernel_key;
+    kernel_key << kernel_func_name_ << build_options_;
+    auto kernel = context.cl_context()->GetKernel(kernel_key.str());
+
+    int arg_idx = 0;
+    cl_int status = kernel.setArg(arg_idx, *x_buf);
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(++arg_idx, *out_buf);
+    CL_CHECK_FATAL(status);
+
+    VLOG(4) << TargetToStr(param.X->target());
+    VLOG(4) << TargetToStr(param.Out->target());
+    VLOG(4) << "image_shape(w,h):" << image_shape["width"] << " "
+            << image_shape["height"];
+    VLOG(4) << "x_dims[" << x_dims.size() << "D]:" << x_dims[0] << " "
+            << x_dims[1] << " " << x_dims[2] << " " << x_dims[3];
+    VLOG(4) << "y_dims[" << y_dims.size() << "D]:" << y_dims[0] << " "
+            << y_dims[1] << " " << y_dims[2] << " " << y_dims[3];
+
+    auto global_work_size =
+        cl::NDRange{static_cast<cl::size_type>(image_shape["width"]),
+                    static_cast<cl::size_type>(image_shape["height"])};
+    status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
+        kernel,
+        cl::NullRange,
+        global_work_size,
+        cl::NullRange,
+        nullptr,
+        event_.get());
+    CL_CHECK_FATAL(status);
+    // TODO(ysh329): io_copy(device->host) jammed if emplace to `cl_wait_list`
+    // context.cl_wait_list()->emplace(out_buf, event_);
+    context.cl_context()->GetCommandQueue().finish();
+  }
+
+ private:
+  std::string kernel_func_name_{"relu"};
+  std::string build_options_{"-DCL_DTYPE=float -DRELU"};
+  std::shared_ptr<cl::Event> event_{new cl::Event};
+};
+
 }  // namespace opencl
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
 
+// REGISTER_LITE_KERNEL(relu,
+//                     kOpenCL,
+//                     kFloat,
+//                     kNCHW,
+//                     paddle::lite::kernels::opencl::ReluCompute,
+//                     def)
+//    .BindInput("X", {LiteType::GetTensorTy(TARGET(kOpenCL))})
+//    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kOpenCL))})
+//    .Finalize();
+
 REGISTER_LITE_KERNEL(relu,
                      kOpenCL,
                      kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::opencl::ReluCompute,
-                     def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kOpenCL))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kOpenCL))})
+                     kNHWC,
+                     paddle::lite::kernels::opencl::ReluComputeFloatImage,
+                     image2d)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kNHWC))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                       PRECISION(kFloat),
+                                       DATALAYOUT(kNHWC))})
     .Finalize();

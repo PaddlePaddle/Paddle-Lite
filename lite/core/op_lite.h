@@ -80,6 +80,8 @@ class OpLite : public Registry {
   // Human-readable information.
   virtual std::string DebugString() const = 0;
 
+  virtual std::string SerializedOpInfo() const { return "N/A"; }
+
   const Place &kernel_place() const { return kernel_place_; }
 
   // Create all the kernels for the valid targets.

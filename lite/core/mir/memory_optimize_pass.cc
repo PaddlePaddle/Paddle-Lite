@@ -49,6 +49,7 @@ void MemoryOptimizePass::CollectLifeCycleByDevice(
                                         "equal",
                                         "lod_reset",
                                         "concat",
+                                        "yolo_box",
                                         "graph_op",
                                         "feed",
                                         "fetch"};

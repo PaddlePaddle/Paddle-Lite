@@ -23,6 +23,9 @@ namespace lite {
 namespace arm {
 namespace math {
 
+/// conv 3x3s1
+size_t conv3x3s1_direct_workspace_size(const operators::ConvParam& param,
+                                       ARMContext* ctx);
 void conv_3x3s1_direct_fp32(const float* din,
                             float* dout,
                             int num,
@@ -53,6 +56,9 @@ void conv_3x3s1_direct_int8(const int8_t* din,
                             ARMContext* ctx,
                             const float* scale);
 
+/// conv3x3s2
+size_t conv3x3s2_direct_workspace_size(const operators::ConvParam& param,
+                                       ARMContext* ctx);
 void conv_3x3s2_direct_fp32(const float* din,
                             float* dout,
                             int num,

@@ -20,6 +20,8 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace operators {
 bool use_lws = true;
+int preferred_lws = 0;
+int preferred_lws_divisor = 2;
 
 template <>
 void winograd_transform_weight<4, 3>(framework::CLHelper *cl_helper,
@@ -155,9 +157,38 @@ void ConvAddBnReluPt1x2(framework::CLHelper *cl_helper,
   }
   //  DLOG<<"default_work_size"<<default_work_size[0]<<"
   //  "<<default_work_size[1]<<" "<<default_work_size[2];
-  status = clEnqueueNDRangeKernel(
-      cl_helper->CLCommandQueue(), kernel, default_work_size.size(), NULL,
-      default_work_size.data(), NULL, 0, NULL, NULL);
+  auto kernel_work_size = cl_helper->KernelWorkSize(kernel);
+  auto tmp0 = default_work_size.data()[0];
+  auto tmp1 = default_work_size.data()[1];
+  auto tmp2 = default_work_size.data()[2];
+  int max_work_size = static_cast<const uint32_t>(kernel_work_size);
+  if (preferred_lws_divisor > 1) {
+    max_work_size /= preferred_lws_divisor;
+  }
+  if (preferred_lws > 0 && preferred_lws <= max_work_size) {
+    max_work_size = preferred_lws;
+  }
+  while (tmp1 > max_work_size && max_work_size > 0) {
+    tmp1 = tmp1 % 2 == 0 ? tmp1 / 2 : 1;
+  }
+  while (tmp2 * tmp1 > max_work_size && max_work_size > 0) {
+    tmp2 = tmp2 % 2 == 0 ? tmp2 / 2 : 1;
+  }
+  while (tmp0 * tmp1 * tmp2 > max_work_size && max_work_size > 0) {
+    tmp0 = tmp0 % 2 == 0 ? tmp0 / 2 : 1;
+  }
+  const size_t local_work_size[3] = {static_cast<const uint32_t>(tmp0),
+                                     static_cast<const uint32_t>(tmp1),
+                                     static_cast<const uint32_t>(tmp2)};
+  if (max_work_size > 0 && use_lws) {
+    status = clEnqueueNDRangeKernel(
+        cl_helper->CLCommandQueue(), kernel, default_work_size.size(), NULL,
+        default_work_size.data(), local_work_size, 0, NULL, NULL);
+  } else {
+    status = clEnqueueNDRangeKernel(
+        cl_helper->CLCommandQueue(), kernel, default_work_size.size(), NULL,
+        default_work_size.data(), NULL, 0, NULL, NULL);
+  }
   CL_CHECK_ERRORS(status);
 }
 
@@ -274,10 +305,30 @@ void ConvAddBnRelu(framework::CLHelper *cl_helper,
         static_cast<const uint32_t>(maped_w),
         static_cast<const uint32_t>(default_work_size.data()[2])};
 
-    if (work_size[1] % 60 == 0 && use_lws) {
-      const size_t local_work_size[3] = {static_cast<const uint32_t>(1),
-                                         static_cast<const uint32_t>(60),
-                                         static_cast<const uint32_t>(1)};
+    auto kernel_work_size = cl_helper->KernelWorkSize(kernel);
+    auto tmp0 = work_size[0];
+    auto tmp1 = work_size[1];
+    auto tmp2 = work_size[2];
+    int max_work_size = static_cast<const uint32_t>(kernel_work_size);
+    if (preferred_lws_divisor > 1) {
+      max_work_size /= preferred_lws_divisor;
+    }
+    if (preferred_lws > 0 && preferred_lws <= max_work_size) {
+      max_work_size = preferred_lws;
+    }
+    while (tmp1 > max_work_size && max_work_size > 0) {
+      tmp1 = tmp1 % 2 == 0 ? tmp1 / 2 : 1;
+    }
+    while (tmp2 * tmp1 > max_work_size && max_work_size > 0) {
+      tmp2 = tmp2 % 2 == 0 ? tmp2 / 2 : 1;
+    }
+    while (tmp0 * tmp1 * tmp2 > max_work_size && max_work_size > 0) {
+      tmp0 = tmp0 % 2 == 0 ? tmp0 / 2 : 1;
+    }
+    const size_t local_work_size[3] = {static_cast<const uint32_t>(tmp0),
+                                       static_cast<const uint32_t>(tmp1),
+                                       static_cast<const uint32_t>(tmp2)};
+    if (max_work_size > 0 && use_lws) {
       status = clEnqueueNDRangeKernel(cl_helper->CLCommandQueue(), kernel,
                                       default_work_size.size(), NULL, work_size,
                                       local_work_size, 0, NULL, NULL);
@@ -474,10 +525,30 @@ void DWConvAddBnRelu(framework::CLHelper *cl_helper,
   status = clSetKernelArg(kernel, index++, sizeof(int), &output_height);
   CL_CHECK_ERRORS(status);
 
-  if (default_work_size.data()[1] % 60 == 0 && use_lws) {
-    const size_t local_work_size[3] = {static_cast<const uint32_t>(1),
-                                       static_cast<const uint32_t>(60),
-                                       static_cast<const uint32_t>(1)};
+  auto kernel_work_size = cl_helper->KernelWorkSize(kernel);
+  auto tmp0 = default_work_size.data()[0];
+  auto tmp1 = default_work_size.data()[1];
+  auto tmp2 = default_work_size.data()[2];
+  int max_work_size = static_cast<const uint32_t>(kernel_work_size);
+  if (preferred_lws_divisor > 1) {
+    max_work_size /= preferred_lws_divisor;
+  }
+  if (preferred_lws > 0 && preferred_lws <= max_work_size) {
+    max_work_size = preferred_lws;
+  }
+  while (tmp1 > max_work_size && max_work_size > 0) {
+    tmp1 = tmp1 % 2 == 0 ? tmp1 / 2 : 1;
+  }
+  while (tmp2 * tmp1 > max_work_size && max_work_size > 0) {
+    tmp2 = tmp2 % 2 == 0 ? tmp2 / 2 : 1;
+  }
+  while (tmp0 * tmp1 * tmp2 > max_work_size && max_work_size > 0) {
+    tmp0 = tmp0 % 2 == 0 ? tmp0 / 2 : 1;
+  }
+  const size_t local_work_size[3] = {static_cast<const uint32_t>(tmp0),
+                                     static_cast<const uint32_t>(tmp1),
+                                     static_cast<const uint32_t>(tmp2)};
+  if (max_work_size > 0 && use_lws) {
     status = clEnqueueNDRangeKernel(
         cl_helper->CLCommandQueue(), kernel, default_work_size.size(), NULL,
         default_work_size.data(), local_work_size, 0, NULL, NULL);
@@ -520,7 +591,6 @@ void SWConvAddBnRelu(framework::CLHelper *cl_helper,
   int input_channel = param.Input()->dims()[1];
   int input_height = param.Input()->dims()[2];
   int input_width = param.Input()->dims()[3];
-
   int output_height = param.Output()->dims()[2];
   int output_width = param.Output()->dims()[3];
 
@@ -583,10 +653,30 @@ void SWConvAddBnRelu(framework::CLHelper *cl_helper,
   status = clSetKernelArg(kernel, index++, sizeof(int), &output_height);
   CL_CHECK_ERRORS(status);
 
-  if (default_work_size.data()[1] % 60 == 0 && use_lws) {
-    const size_t local_work_size[3] = {static_cast<const uint32_t>(1),
-                                       static_cast<const uint32_t>(60),
-                                       static_cast<const uint32_t>(1)};
+  auto kernel_work_size = cl_helper->KernelWorkSize(kernel);
+  auto tmp0 = default_work_size.data()[0];
+  auto tmp1 = default_work_size.data()[1];
+  auto tmp2 = default_work_size.data()[2];
+  int max_work_size = static_cast<const uint32_t>(kernel_work_size);
+  if (preferred_lws_divisor > 1) {
+    max_work_size /= preferred_lws_divisor;
+  }
+  if (preferred_lws > 0 && preferred_lws <= max_work_size) {
+    max_work_size = preferred_lws;
+  }
+  while (tmp1 > max_work_size && max_work_size > 0) {
+    tmp1 = tmp1 % 2 == 0 ? tmp1 / 2 : 1;
+  }
+  while (tmp2 * tmp1 > max_work_size && max_work_size > 0) {
+    tmp2 = tmp2 % 2 == 0 ? tmp2 / 2 : 1;
+  }
+  while (tmp0 * tmp1 * tmp2 > max_work_size && max_work_size > 0) {
+    tmp0 = tmp0 % 2 == 0 ? tmp0 / 2 : 1;
+  }
+  const size_t local_work_size[3] = {static_cast<const uint32_t>(tmp0),
+                                     static_cast<const uint32_t>(tmp1),
+                                     static_cast<const uint32_t>(tmp2)};
+  if (max_work_size > 0 && use_lws) {
     status = clEnqueueNDRangeKernel(
         cl_helper->CLCommandQueue(), kernel, default_work_size.size(), NULL,
         default_work_size.data(), local_work_size, 0, NULL, NULL);
@@ -987,10 +1077,30 @@ void ConvTranspose3x3s2AddBnRelu(framework::CLHelper *cl_helper,
   status = clSetKernelArg(kernel, index++, sizeof(int), &filter_height);
   CL_CHECK_ERRORS(status);
 
-  if (default_work_size.data()[1] % 60 == 0 && use_lws) {
-    const size_t local_work_size[3] = {static_cast<const uint32_t>(1),
-                                       static_cast<const uint32_t>(60),
-                                       static_cast<const uint32_t>(1)};
+  auto kernel_work_size = cl_helper->KernelWorkSize(kernel);
+  auto tmp0 = default_work_size.data()[0];
+  auto tmp1 = default_work_size.data()[1];
+  auto tmp2 = default_work_size.data()[2];
+  int max_work_size = static_cast<const uint32_t>(kernel_work_size);
+  if (preferred_lws_divisor > 1) {
+    max_work_size /= preferred_lws_divisor;
+  }
+  if (preferred_lws > 0 && preferred_lws <= max_work_size) {
+    max_work_size = preferred_lws;
+  }
+  while (tmp1 > max_work_size && max_work_size > 0) {
+    tmp1 = tmp1 % 2 == 0 ? tmp1 / 2 : 1;
+  }
+  while (tmp2 * tmp1 > max_work_size && max_work_size > 0) {
+    tmp2 = tmp2 % 2 == 0 ? tmp2 / 2 : 1;
+  }
+  while (tmp0 * tmp1 * tmp2 > max_work_size && max_work_size > 0) {
+    tmp0 = tmp0 % 2 == 0 ? tmp0 / 2 : 1;
+  }
+  const size_t local_work_size[3] = {static_cast<const uint32_t>(tmp0),
+                                     static_cast<const uint32_t>(tmp1),
+                                     static_cast<const uint32_t>(tmp2)};
+  if (max_work_size > 0 && use_lws) {
     status = clEnqueueNDRangeKernel(
         cl_helper->CLCommandQueue(), kernel, default_work_size.size(), NULL,
         default_work_size.data(), local_work_size, 0, NULL, NULL);

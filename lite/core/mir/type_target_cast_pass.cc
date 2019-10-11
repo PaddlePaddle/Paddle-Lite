@@ -60,6 +60,7 @@ void TypeTargetTransformPass::ComplementInputs(SSAGraph* graph,
   auto in_arg_name = in->AsArg().name;
   std::string tmp;
   CHECK(inst.op_info()->GetInputArgname(in_arg_name, &tmp));
+  LOG(INFO) << "tmp:" << tmp;
   auto decl_arg_type = inst.picked_kernel().GetInputDeclType(tmp);
   CHECK(in->AsArg().type);
   if (!TargetCompatibleTo(*in->AsArg().type, *decl_arg_type)) {
@@ -86,7 +87,8 @@ void TypeTargetTransformPass::AddIoCopyInst(
   CHECK(in->IsArg());
   auto node_id = [&] { return graph->nodes().size(); };
   auto io_copy_output_name =
-      string_format("%s/trans/%d", in->AsArg().name.c_str(), node_id());
+      string_format("%s/target_trans/%d", in->AsArg().name.c_str(), node_id());
+  // TODO(MyPandaShaoxiang) should set same place with input?
   auto* io_copy_output_arg = graph->NewArgumentNode(io_copy_output_name);
   // Set the place for io_copy_output_arg node, the target should be equal to
   // to.target()
@@ -118,9 +120,16 @@ void TypeTargetTransformPass::AddIoCopyInst(
   std::vector<std::unique_ptr<KernelBase>> selected_kernels;
   for (auto& kernel : kernels) {
     const Type* in_arg_ty = kernel->GetInputDeclType("Input");
+#ifdef LITE_WITH_OPENCL
+    // ignore [layout check] for layout trans from buffer to image2d
+    if (TargetCompatibleTo(*in_arg_ty, from) &&
+        PrecisionCompatibleTo(*in_arg_ty, from) &&
+        DeviceCompatibleTo(*in_arg_ty, from)) {
+#else
     const Type* out_arg_ty = kernel->GetOutputDeclType("Out");
     if (TypeCompatible(*in_arg_ty, from) &&
         out_arg_ty->target() == to.target()) {
+#endif
       is_found = true;
       selected_kernels.emplace_back(std::move(kernel));
       // we pick the kernel
@@ -130,9 +139,8 @@ void TypeTargetTransformPass::AddIoCopyInst(
     }
   }
   CHECK(is_found) << "Can't find a io_copy  kernel for io_copy op: " << from
-                  << ":" << in->AsArg().name << "->" << to << ":"
+                  << ":" << in->AsArg().name << " -> " << to << ":"
                   << inst_node->AsStmt().op_info()->Type();
-
   // Remove the old link
   RemoveDirectedLink(in, inst_node);
 

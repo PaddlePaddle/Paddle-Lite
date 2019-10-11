@@ -35,14 +35,23 @@ void CopyToHostSync(void* target, const void* source, size_t size) {
  * This kernel copies a tensor from host to OpenCL space.
  */
 class IoCopyHostToOpenCLCompute
-    : public KernelLite<TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kAny)> {
+    : public KernelLite<TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW)> {
  public:
   void Run() override {
     auto& param = Param<operators::IoCopyParam>();
     CHECK(param.x->target() == TARGET(kHost) ||
           param.x->target() == TARGET(kARM));
     auto mem_size = param.x->memory_size();
+
     VLOG(4) << "copy size " << mem_size;
+    VLOG(4) << "param.x->dims().size():" << param.x->dims().size();
+    VLOG(4) << "param.x->dims():" << param.x->dims()[0] << " "
+            << param.x->dims()[1] << " " << param.x->dims()[2] << " "
+            << param.x->dims()[3];
+    VLOG(4) << "param.y->dims().size():" << param.y->dims().size();
+    VLOG(4) << "param.y->dims():" << param.y->dims()[0] << " "
+            << param.y->dims()[1] << " " << param.y->dims()[2] << " "
+            << param.y->dims()[3];
     auto* data = param.y->mutable_data(TARGET(kOpenCL), mem_size);
     CopyFromHostSync(data, param.x->raw_data(), mem_size);
   }
@@ -74,17 +83,28 @@ class IoCopyHostToOpenCLCompute
  * This kernel copies a tensor from OpenCL to host space.
  */
 class IoCopykOpenCLToHostCompute
-    : public KernelLite<TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kAny)> {
+    : public KernelLite<TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW)> {
  public:
   void Run() override {
     auto& param = Param<operators::IoCopyParam>();
     CHECK(param.x->target() == TARGET(kOpenCL));
     auto mem_size = param.x->memory_size();
     VLOG(4) << "copy size " << mem_size;
+    VLOG(4) << "param.x->dims().size():" << param.x->dims().size();
+    VLOG(4) << "param.x->dims():" << param.x->dims()[0] << " "
+            << param.x->dims()[1] << " " << param.x->dims()[2] << " "
+            << param.x->dims()[3];
+    VLOG(4) << "param.y->dims().size():" << param.y->dims().size();
+    VLOG(4) << "param.y->dims():" << param.y->dims()[0] << " "
+            << param.y->dims()[1] << " " << param.y->dims()[2] << " "
+            << param.y->dims()[3];
     auto* data = param.y->mutable_data(TARGET(kHost), mem_size);
     auto& context = ctx_->As<OpenCLContext>();
     auto* wait_list = context.cl_wait_list();
     auto* x_ptr = param.x->data<float, cl::Buffer>();
+
+    /* TODO(ysh329): io_copy(device->host) jammed if emplace to `cl_wait_list`
+    in kernel and enable wait_list
     auto it = wait_list->find(x_ptr);
     if (it != wait_list->end()) {
       VLOG(4) << "--- Find the sync event for the target cl tensor. ---";
@@ -93,6 +113,8 @@ class IoCopykOpenCLToHostCompute
     } else {
       LOG(FATAL) << "Could not find the sync event for the target cl tensor.";
     }
+    */
+
     CopyToHostSync(data, param.x->raw_data(), mem_size);
   }
 
@@ -106,40 +128,64 @@ class IoCopykOpenCLToHostCompute
 
 REGISTER_LITE_KERNEL(io_copy,
                      kOpenCL,
-                     kAny,
-                     kAny,
+                     kFloat,
+                     kNCHW,
                      paddle::lite::kernels::opencl::IoCopyHostToOpenCLCompute,
                      host_to_device)
-    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kHost))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kOpenCL))})
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kNCHW))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                       PRECISION(kFloat),
+                                       DATALAYOUT(kNCHW))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(io_copy,
                      kOpenCL,
-                     kAny,
-                     kAny,
+                     kFloat,
+                     kNCHW,
                      paddle::lite::kernels::opencl::IoCopykOpenCLToHostCompute,
                      device_to_host)
-    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kOpenCL))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kNCHW))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kHost),
+                                       PRECISION(kFloat),
+                                       DATALAYOUT(kNCHW))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(io_copy_once,
                      kOpenCL,
-                     kAny,
-                     kAny,
+                     kFloat,
+                     kNCHW,
                      paddle::lite::kernels::opencl::IoCopyHostToOpenCLCompute,
                      host_to_device)
-    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kHost))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kOpenCL))})
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kNCHW))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                       PRECISION(kFloat),
+                                       DATALAYOUT(kNCHW))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(io_copy_once,
                      kOpenCL,
-                     kAny,
-                     kAny,
+                     kFloat,
+                     kNCHW,
                      paddle::lite::kernels::opencl::IoCopykOpenCLToHostCompute,
                      device_to_host)
-    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kOpenCL))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kNCHW))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kHost),
+                                       PRECISION(kFloat),
+                                       DATALAYOUT(kNCHW))})
     .Finalize();

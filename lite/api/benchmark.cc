@@ -68,7 +68,7 @@ void Run(const std::vector<std::vector<int64_t>>& input_shapes,
   lite_api::MobileConfig config;
   config.set_threads(thread_num);
   if (thread_num == 1) {
-    config.set_power_mode(LITE_POWER_HIGH);
+    config.set_power_mode(LITE_POWER_NO_BIND);
   } else {
     config.set_power_mode(LITE_POWER_NO_BIND);
   }

@@ -79,6 +79,14 @@ void TensorLite::ShareDataWith(const TensorLite &other) {
   memory_size_ = other.memory_size_;
 }
 
+void TensorLite::CopyDataFrom(const TensorLite &other) {
+  dims_ = other.dims_;
+  target_ = other.target_;
+  lod_ = other.lod_;
+  memory_size_ = other.memory_size_;
+  buffer_->CopyDataFrom(*other.buffer_, memory_size_);
+}
+
 void *TensorLite::mutable_data(size_t memory_size) {
   memory_size_ = memory_size;
   buffer_->ResetLazy(target_, memory_size_);
@@ -90,26 +98,15 @@ void *TensorLite::mutable_data(TargetType target, size_t memory_size) {
   return mutable_data(memory_size);
 }
 
-void TensorLite::CopyDataFrom(const TensorLite &other) {
-  dims_ = other.dims_;
-  target_ = other.target_;
-  lod_ = other.lod_;
-  memory_size_ = other.memory_size_;
-  buffer_->CopyDataFrom(*other.buffer_, memory_size_);
+#ifdef LITE_WITH_OPENCL
+template <>
+const cl::Image2D *TensorLite::data<float, cl::Image2D>() const {
+  if (nullptr == buffer_->data()) return nullptr;
+  return static_cast<const cl::Image2D *>(buffer_->data());
 }
-
-// static LoD TensorLite::ToAbsOffset(const LoD &lod) {
-//  if (lod.empty() || lod.size() == 1) return lod;
-//  LoD ret = lod;
-//  for (int level = static_cast<int>(lod.size()) - 2; level >= 0; --level) {
-//    for (size_t i = 0; i < lod[level].size(); ++i) {
-//      size_t index = lod[level][i];
-//      result[level][i] = result[level + 1][index];
-//    }
-//  }
-//}
+#endif
 
 }  // namespace lite
 }  // namespace paddle
 
-#endif
+#endif  // #ifndef LITE_WITH_FPGA
