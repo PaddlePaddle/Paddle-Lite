@@ -90,7 +90,7 @@ struct Instruction {
       : op_(op), kernel_(std::move(kernel)) {
 #ifdef LITE_WITH_PROFILE
     profile_id_ = profile::BasicProfiler<profile::BasicTimer>::Global()
-                      .NewRcd(kernel_->SerializedKernelType())
+                      .NewRcd(kernel_->summary())
                       .id();
     kernel_->SetProfileID(profile_id_);
     // Set profile custom info
