@@ -58,8 +58,8 @@ Tensor* LightPredictor::GetInputByName(const std::string& name) {
   if (idx2feeds_.find(name) == idx2feeds_.end()) {
     LOG(ERROR) << "Model do not have input named with: [" << name
                << "], model's inputs include:";
-    for (int i = 0; i < feed_names_.size(); i++) {
-      LOG(ERROR) << "[" << feed_names_[i] << "]";
+    for (int i = 0; i < input_names_.size(); i++) {
+      LOG(ERROR) << "[" << input_names_[i] << "]";
     }
     return NULL;
   } else {
@@ -78,7 +78,7 @@ const Tensor* LightPredictor::GetOutput(size_t offset) {
 // get inputs names
 std::vector<std::string> LightPredictor::GetInputNames() {
   std::vector<std::string> input_names;
-  for (auto& item : feed_names_) {
+  for (auto& item : input_names_) {
     input_names.push_back(item.second);
   }
   return input_names;
@@ -86,23 +86,23 @@ std::vector<std::string> LightPredictor::GetInputNames() {
 // get outputnames
 std::vector<std::string> LightPredictor::GetOutputNames() {
   std::vector<std::string> output_names;
-  for (auto& item : fetch_names_) {
+  for (auto& item : output_names_) {
     output_names.push_back(item.second);
   }
   return output_names;
 }
-// append the names of inputs and outputs into feed_names_ and fetch_names_
+// append the names of inputs and outputs into input_names_ and output_names_
 void LightPredictor::PrepareFeedFetch() {
   auto current_block = cpp_program_desc_.GetBlock<cpp::BlockDesc>(0);
   for (int i = 0; i < current_block->OpsSize(); i++) {
     auto op = current_block->GetOp<cpp::OpDesc>(i);
     if (op->Type() == "feed") {
       int idx = op->GetAttr<int>("col");
-      feed_names_[idx] = op->Output("Out").front();
+      input_names_[idx] = op->Output("Out").front();
       idx2feeds_[op->Output("Out").front()] = idx;
     } else if (op->Type() == "fetch") {
       int idx = op->GetAttr<int>("col");
-      fetch_names_[idx] = op->Input("X").front();
+      output_names_[idx] = op->Input("X").front();
     }
   }
 }
