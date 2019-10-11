@@ -54,7 +54,8 @@ class LITE_API LightPredictor {
   // Get offset-th col of feed inputs.
   Tensor* GetInput(size_t offset);
   // get tensor by name.
-  Tensor* GetTensor(const std::string& name);
+//  Tensor* GetTensor(const std::string& name);
+  const Tensor* GetTensor(const std::string& name);
   // Get offset-th col of fetch outputs.
   const Tensor* GetOutput(size_t offset);
   // get inputnames and get outputnames.

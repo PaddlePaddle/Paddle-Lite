@@ -53,11 +53,15 @@ Tensor* LightPredictor::GetInput(size_t offset) {
   return &feed_list->at(offset);
 }
 
+const Tensor* LightPredictor::GetTensor(const std::string& name) {
+  auto* var = program_->exec_scope()->FindVar(name);
+  return var->Get<const lite::Tensor>();
+}
 // get tensor by name
-Tensor* LightPredictor::GetTensor(const std::string& name) {
+/*Tensor* LightPredictor::GetTensor(const std::string& name) {
   auto* var = program_->exec_scope()->FindVar(name);
   return var->GetMutable<lite::Tensor>();
-}
+}*/
 
 const Tensor* LightPredictor::GetOutput(size_t offset) {
   auto* _fetch_list = program_->exec_scope()->FindVar("fetch");
