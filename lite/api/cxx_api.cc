@@ -195,17 +195,17 @@ const lite::Tensor *Predictor::GetTensor(const std::string &name) const {
   return &var->Get<lite::Tensor>();
 }
 // get input by name
-lite::Tensor* Predictor::GetInputByName(const std::string& name) {
+lite::Tensor *Predictor::GetInputByName(const std::string &name) {
   if (idx2feeds_.find(name) == idx2feeds_.end()) {
-     LOG(ERROR) << "Model do not have input named with: [" << name<<"], model's inputs include:";
-     for (int i=0;i<feed_names_.size();i++) {
-       LOG(ERROR)<<"["<<feed_names_[i]<<"]";
-     }
-     return NULL;
-  }
-  else{
-     int idx = idx2feeds_[name];
-     return GetInput(idx);
+    LOG(ERROR) << "Model do not have input named with: [" << name
+               << "], model's inputs include:";
+    for (int i = 0; i < feed_names_.size(); i++) {
+      LOG(ERROR) << "[" << feed_names_[i] << "]";
+    }
+    return NULL;
+  } else {
+    int idx = idx2feeds_[name];
+    return GetInput(idx);
   }
 }
 

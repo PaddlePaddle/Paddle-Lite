@@ -80,8 +80,7 @@ class LITE_API PaddlePredictor {
   virtual std::vector<std::string> GetOutputNames() = 0;
 
   // Get Input by name
-  virtual std::unique_ptr<Tensor> GetInputByName(
-      const std::string& name) = 0;
+  virtual std::unique_ptr<Tensor> GetInputByName(const std::string& name) = 0;
 
   /// Get a readonly tensor, return null if no one called `name` exists.
   virtual std::unique_ptr<const Tensor> GetTensor(

@@ -38,8 +38,7 @@ class LightPredictorImpl : public PaddlePredictor {
   std::unique_ptr<const Tensor> GetTensor(
       const std::string& name) const override;
   // Get InputTebsor by name
-  std::unique_ptr<Tensor> GetInputByName(
-      const std::string& name) override;
+  std::unique_ptr<Tensor> GetInputByName(const std::string& name) override;
 
   void Init(const MobileConfig& config);
 
