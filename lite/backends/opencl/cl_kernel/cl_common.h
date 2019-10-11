@@ -16,6 +16,17 @@ limitations under the License. */
 
 #pragma OPENCL EXTENSION cl_khr_fp16 : enable
 
+// Data type: pass one of macros on host: [CL_DTYPE_float, CL_DYPE_half]
+#ifdef CL_DTYPE_float
+#define CL_DTYPE float
+#define CL_DTYPE_CHAR f
+#endif
+
+#ifdef CL_DTYPE_half
+#define CL_DTYPE half
+#define CL_DTYPE_CHAR h
+#endif
+
 // Note: macro name replacement need twice parser
 #define GET_VEC_TYPE(type__, size__) type__##size__
 #define VECTORIZED_TYPE(type__, size__) GET_VEC_TYPE(type__, size__)
