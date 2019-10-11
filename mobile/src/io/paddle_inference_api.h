@@ -216,6 +216,7 @@ struct PaddleMobileConfig : public PaddlePredictor::Config {
   int batch_size = 1;
   bool optimize = true;
   bool quantification = false;
+  int quantification_fold = 1;
   bool lod_mode = false;
   int thread_num = 1;
   bool load_when_predict = false;

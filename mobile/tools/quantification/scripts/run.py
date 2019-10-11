@@ -7,7 +7,7 @@ import numpy as np
 import paddle.fluid as fluid
 
 model_path = "model"
-checked_model_path = "checked_model"
+checked_model_path = "quantification_model"
 feed_path = "feeds"
 output_path = "outputs"
 diff_threshold = 0.1
@@ -22,8 +22,8 @@ checked_encrypt_model_path = "checked_encrypt_model"
 output_var_filter = []
 output_key_filter = {}
 check_shape = False
-quantification = False
-quantification_fold = 1000
+quantification = True
+quantification_fold = int(sys.argv[1])
 architecture = "arm-v7a"
 # architecture = "arm-v8a"
 
@@ -45,7 +45,7 @@ def pp_tab(x, level=0):
     header = ""
     for i in range(0, level):
         header += "\t"
-    print(header + str(x))
+    # print(header + str(x))
 def pp_black(x, level=0):
     pp_tab(black(x) + reset(""), level)
 def pp_red(x, level=0):
@@ -130,9 +130,8 @@ def encrypt_model():
     for line in lines:
         if line.startswith("key:"):
             line = line.replace('key:','')
-            sh("model-encrypt-tool/enc_model_gen -k '{}' -c 2 -i checked_model/model -o "
-               "checked_model/model.ml".format(line))
-            sh("model-encrypt-tool/enc_model_gen -k '{}' -c 2 -i checked_model/params  -o checked_model/params.ml".format(line))
+            sh("model-encrypt-tool/enc_model_gen -k '{}' -c 2 -i {}/model -o {}/model.ml".format(line, checked_model_path, checked_model_path))
+            sh("model-encrypt-tool/enc_model_gen -k '{}' -c 2 -i {}/params -o {}/params.ml".format(line, checked_model_path, checked_model_path))
             pp_green("model has been encrypted, key is : {}".format(line), 1)
             sh("mv {} {}".format(checked_model_path + "/*.ml", checked_encrypt_model_path))
             return
@@ -448,6 +447,7 @@ def check_mobile_results(args, fuse, mem_opt):
             fetch_count += 1
     if fetch_count != 0:
         pp_yellow("output avg diff : {}".format(fetch_diff / fetch_count), 1)
+        print(fetch_diff / fetch_count)
     for index in op_cache:
         op_output_var_name, op = op_cache[index]
         if mem_opt:
@@ -623,11 +623,10 @@ def main():
                 pass
     info_file.close()
     # 开始检查mobile的正确性
-    print("")
-    print("==================================================")
-    print("")
     pp_yellow(dot + " start inspecting paddle mobile correctness & performance")
-    push(checked_model_path)
+    sh("rm -rf checked_model")
+    sh("cp -r {} checked_model".format(checked_model_path))
+    push("checked_model")
     push(feed_path + "/" + last_feed_file_name, "input.txt")
     push(mobile_src_root + "/build/release/{}/build/libpaddle-mobile.so".format(architecture))
     push(mobile_src_root + "/build/release/{}/build/cl_kernel".format(architecture))
@@ -652,10 +651,10 @@ def main():
     for var_name in output_var_cache.keys():
         args += " " + var_name
     args += " " + str(1 if check_shape else 0)
-    if not fast_check:
-        check_mobile_results(args, False, False)
-        check_mobile_results(args, False, True)
-    check_mobile_results(args, True, False)
+    # if not fast_check:
+    #     check_mobile_results(args, False, False)
+    #     check_mobile_results(args, False, True)
+    # check_mobile_results(args, True, False)
     check_mobile_results(args, True, True)
 
 if __name__ == "__main__":

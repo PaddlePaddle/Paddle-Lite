@@ -56,13 +56,14 @@ void conv_depthwise_3x3s2_int8(Dtype* dout,
   const int win_round = wout_round * 2 /*stride*/ + 1;
 
   //! get h block
-  //! llc_size = threads * win_round * hin_r_block * sizeof(int8_t) + wout_round
-  //! * hout_c_block * hout_r_block * threads * sizeof(int32_t)
+  //! llc_size = threads * win_round * hin_r_block * hout_c_block *
+  //! sizeof(int8_t)
+  //!  + wout_round * hout_c_block * hout_r_block * threads * sizeof(int32_t)
   //! win_round = wout_round + 2
   //! hin_r_block = hout_r_block + 2
-  int hout_r_block =
-      (llc_size - 2 * win_round * threads) /
-      (2 * win_round * threads + hout_c_block * wout_round * threads * 4);
+  int hout_r_block = (llc_size - 2 * win_round * threads * hout_c_block) /
+                     (2 * win_round * threads * hout_c_block +
+                      hout_c_block * wout_round * threads * 4);
   hout_r_block = hout_r_block > hout ? hout : hout_r_block;
   hout_r_block =
       ((hout_r_block + hout_r_kernel - 1) / hout_r_kernel) * hout_r_kernel;
@@ -115,17 +116,8 @@ void conv_depthwise_3x3s2_int8(Dtype* dout,
         int32_t* pre_out = reinterpret_cast<int32_t*>(tmp_din + pre_in_size);
         auto pre_din = tmp_din;
 #endif
-        prepack_input_nxw_c8_int8(din_batch,
-                                  pre_din,
-                                  c,
-                                  c + hout_c_block,
-                                  hs,
-                                  he,
-                                  ws,
-                                  we,
-                                  chin,
-                                  win,
-                                  hin);
+        prepack_input_nxwc8_int8_dw(
+            din_batch, pre_din, c, hs, he, ws, we, chin, win, hin);
         const int8_t* block_inr0 = pre_din;
         const int8_t* block_inr1 = block_inr0 + in_len;
         const int8_t* block_inr2 = block_inr1 + in_len;

@@ -138,14 +138,35 @@ class TensorLite {
   // and the data type can be float/int8_t.
   // For other devices, T and R may be the same type.
   template <typename T, typename R = T>
-  R *mutable_data();
+  R *mutable_data() {
+    memory_size_ = dims_.production() * sizeof(T);
+    buffer_->ResetLazy(target_, memory_size_);
+    return reinterpret_cast<R *>(static_cast<char *>(buffer_->data()) +
+                                 offset_);
+  }
+
+#ifdef LITE_WITH_OPENCL
+  template <typename T, typename R = T>
+  R *mutable_data(const size_t img_w, const size_t img_h) {
+    target_ = TARGET(kOpenCL);
+    std::array<size_t, 2> image2d_shape{img_w, img_h};
+    buffer_->ResetLazyImage2D<T>(target_, image2d_shape);
+    return static_cast<cl::Image2D *>(buffer_->data());
+  }
+#endif
 
   // T is the data type and R is the return type
   // For OpenCL, the return type can be cl::Buffer
   // and the data type can be float/int8_t.
   // For other devices, T and R may be the same type.
   template <typename T, typename R = T>
-  R *mutable_data(TargetType target);
+  R *mutable_data(TargetType target) {
+    target_ = target;
+    memory_size_ = dims_.production() * sizeof(T);
+    buffer_->ResetLazy(target, memory_size());
+    return reinterpret_cast<R *>(static_cast<char *>(buffer_->data()) +
+                                 offset_);
+  }
   void *mutable_data(size_t memory_size);
   void *mutable_data(TargetType target, size_t memory_size);
 
@@ -201,21 +222,6 @@ class TensorLite {
   size_t offset_{0};
 };
 
-template <typename T, typename R>
-R *TensorLite::mutable_data() {
-  memory_size_ = dims_.production() * sizeof(T);
-  buffer_->ResetLazy(target_, memory_size_);
-  return reinterpret_cast<R *>(static_cast<char *>(buffer_->data()) + offset_);
-}
-
-template <typename T, typename R>
-R *TensorLite::mutable_data(TargetType target) {
-  target_ = target;
-  memory_size_ = dims_.production() * sizeof(T);
-  buffer_->ResetLazy(target, memory_size());
-  return reinterpret_cast<R *>(static_cast<char *>(buffer_->data()) + offset_);
-}
-
 template <typename T>
 TensorLite TensorLite::Slice(int64_t begin, int64_t end) const {
   CHECK_GE(begin, 0);
@@ -243,7 +249,12 @@ bool TensorCompareWith(const TensorT &a, const TensorT &b) {
   return true;
 }
 
+#ifdef LITE_WITH_OPENCL
+template <>
+const cl::Image2D *TensorLite::data<float, cl::Image2D>() const;
+#endif
+
 }  // namespace lite
 }  // namespace paddle
 
-#endif
+#endif  // #ifndef LITE_WITH_FPGA
