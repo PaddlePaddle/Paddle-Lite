@@ -119,7 +119,7 @@ void TypeLayoutTransformPass::AddLayoutInst(
       is_found = true;
       selected_kernels.emplace_back(std::move(kernel));
       // we pick the kernel
-      layout_inst->AsStmt(layout_type, std::move(kernels), layout_op);
+      layout_inst->AsStmt(layout_type, std::move(selected_kernels), layout_op);
       break;
     }
   }

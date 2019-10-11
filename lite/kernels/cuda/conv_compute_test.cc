@@ -105,7 +105,6 @@ TEST(conv_compute, fp32) {
     LOG(INFO) << y_cpu_data[i];
   }
 }
-/*
 
 TEST(conv_compute, int8) {
   ConvComputeInt8<PRECISION(kFloat)> int8_conv_fp32out;
@@ -177,8 +176,8 @@ TEST(conv_compute, int8_int8_out) {
   auto& context = ctx->As<CUDAContext>();
 
   operators::ActivationParam act_param;
-  act_param.has_active = true;
-  act_param.active_type = lite_api::ActivationType::kRelu;
+  // act_param.has_active = true;
+  // act_param.active_type = lite_api::ActivationType::kRelu;
   // act_param.active_type = lite_api::ActivationType::kLeakyRelu;
   act_param.Leaky_relu_alpha = 0.1;
   operators::ConvParam param;
@@ -246,7 +245,82 @@ TEST(conv_compute, int8_int8_out) {
     LOG(INFO) << float(y_cpu_data[i]);
   }
 }
-*/
+
+TEST(conv_compute, int8_int8_out_nhwc) {
+  ConvComputeInt8<PRECISION(kInt8)> int8_conv_fp32out;
+  std::unique_ptr<KernelContext> ctx(new KernelContext);
+  auto& context = ctx->As<CUDAContext>();
+
+  operators::ActivationParam act_param;
+  // act_param.has_active = true;
+  // act_param.active_type = lite_api::ActivationType::kRelu;
+  // act_param.active_type = lite_api::ActivationType::kLeakyRelu;
+  act_param.Leaky_relu_alpha = 0.1;
+  operators::ConvParam param;
+  param.activation_param = act_param;
+  param.groups = 1;
+
+  Tensor x, filter, bias, y, x_cpu, filter_cpu, bias_cpu, y_cpu;
+  int c_i = 3, h_i = 3, w_i = 3;
+  int n = 1, c = 3;
+  y.Resize({1, 1, 1, c});
+  x_cpu.Resize({n, h_i, w_i, c_i});
+  filter_cpu.Resize({c, 3, 3, c_i / param.groups});
+  y_cpu.Resize({1, 1, 1, c});
+  bias_cpu.Resize({c});
+
+  auto* y_data = y.mutable_data<int8_t>(TARGET(kCUDA));
+  auto* x_cpu_data = x_cpu.mutable_data<int8_t>();
+  auto* filter_cpu_data = filter_cpu.mutable_data<int8_t>();
+  auto* y_cpu_data = x_cpu.mutable_data<int8_t>();
+  auto* bias_cpu_data = bias_cpu.mutable_data<float>();
+
+  std::cout << "input" << std::endl;
+  for (int i = 0; i < x_cpu.numel(); i++) {
+    x_cpu_data[i] = static_cast<int8_t>(random(-36, 36));
+    std::cout << float(x_cpu_data[i]) << std::endl;
+  }
+  std::cout << "filter" << std::endl;
+  for (int i = 0; i < filter_cpu.numel(); i++) {
+    filter_cpu_data[i] = static_cast<int8_t>(random(-10, 10));
+    std::cout << float(filter_cpu_data[i]) << std::endl;
+  }
+  for (int i = 0; i < bias_cpu.numel(); i++) {
+    bias_cpu_data[i] = i + 1.0;
+    //  bias_cpu_data[i] = 0;
+  }
+
+  x.Assign<int8_t, lite::DDim, TARGET(kCUDA)>(x_cpu_data, x_cpu.dims());
+  filter.Assign<int8_t, lite::DDim, TARGET(kCUDA)>(filter_cpu_data,
+                                                   filter_cpu.dims());
+  bias.Assign<float, lite::DDim, TARGET(kCUDA)>(bias_cpu_data,
+                                                filter_cpu.dims());
+
+  param.x = &x;
+  param.filter = &filter;
+  param.output = &y;
+  param.weight_scale = {0.01, 0.02, 0.03};
+  param.output_scale = 2;
+  param.bias = &bias;
+
+  int8_conv_fp32out.SetParam(param);
+  cudaStream_t stream;
+  cudaStreamCreate(&stream);
+  context.SetExecStream(stream);
+
+  int8_conv_fp32out.SetContext(std::move(ctx));
+  int8_conv_fp32out.Launch();
+  cudaDeviceSynchronize();
+
+  CopySync<TARGET(kCUDA)>(
+      y_cpu_data, y_data, sizeof(int8_t) * y.numel(), IoDirection::DtoH);
+
+  // std::vector<float> real_results = {0, 7, 8, 1};
+  for (int i = 0; i < y.numel(); i++) {
+    // EXPECT_NEAR(y_cpu_data[i], real_results[i], 1e-5);
+    LOG(INFO) << float(y_cpu_data[i]);
+  }
+}
 
 }  // namespace cuda
 }  // namespace kernels

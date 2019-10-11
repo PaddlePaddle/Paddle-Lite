@@ -217,8 +217,20 @@ REGISTER_LITE_KERNEL(yolo_box,
                      kNCHW,
                      paddle::lite::kernels::cuda::YoloBoxCompute,
                      def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kCUDA))})
-    .BindInput("ImgSize", {LiteType::GetTensorTy(TARGET(kCUDA))})
-    .BindOutput("Boxes", {LiteType::GetTensorTy(TARGET(kCUDA))})
-    .BindOutput("Scores", {LiteType::GetTensorTy(TARGET(kCUDA))})
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kCUDA),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kNCHW))})
+    .BindInput("ImgSize",
+               {LiteType::GetTensorTy(TARGET(kCUDA),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kNCHW))})
+    .BindOutput("Boxes",
+                {LiteType::GetTensorTy(TARGET(kCUDA),
+                                       PRECISION(kFloat),
+                                       DATALAYOUT(kNCHW))})
+    .BindOutput("Scores",
+                {LiteType::GetTensorTy(TARGET(kCUDA),
+                                       PRECISION(kFloat),
+                                       DATALAYOUT(kNCHW))})
     .Finalize();

@@ -16,6 +16,7 @@
 #include <gtest/gtest.h>
 #include <memory>
 #include <utility>
+#include "lite/api/test_helper.h"
 
 namespace paddle {
 namespace lite {
@@ -95,6 +96,67 @@ TEST(elementwise_add, normal) {
   ElementwiseAddRef(x_ref_data, y_ref_data, out_ref_data, out.numel());
   for (int i = 0; i < out.numel(); i++) {
     EXPECT_NEAR(out_cpu_data[i], out_ref_data[i], 1e-5);
+  }
+}
+
+TEST(elementwise_add, int8_out) {
+  ElementwiseAddComputeInt8 elementwise_add_kernel;
+  std::unique_ptr<KernelContext> ctx(new KernelContext);
+  auto& context = ctx->As<CUDAContext>();
+
+  operators::ElementwiseParam param;
+  Tensor x, y, out;
+  Tensor x_cpu, y_cpu, out_cpu;
+
+  const int n = 1;
+  const int h = 36;
+  const int w = 36;
+  const int c = 125;
+
+  x.Resize({n, h, w, c});
+  y.Resize({n, h, w, c});
+  out.Resize({n, h, w, c});
+  x_cpu.Resize({n, h, w, c});
+  y_cpu.Resize({n, h, w, c});
+  out_cpu.Resize({n, h, w, c});
+
+  auto* out_data = out.mutable_data<int8_t>(TARGET(kCUDA));
+
+  auto* x_cpu_data = x_cpu.mutable_data<float>();
+  auto* y_cpu_data = y_cpu.mutable_data<float>();
+  auto* out_cpu_data = out_cpu.mutable_data<int8_t>();
+
+  for (int i = 0; i < x_cpu.numel(); ++i) {
+    x_cpu_data[i] = i + 5.0;
+  }
+  for (int i = 0; i < y_cpu.numel(); ++i) {
+    y_cpu_data[i] = i;
+  }
+
+  x.Assign<float, lite::DDim, TARGET(kCUDA)>(x_cpu_data, x_cpu.dims());
+  y.Assign<float, lite::DDim, TARGET(kCUDA)>(y_cpu_data, y_cpu.dims());
+
+  param.X = &x;
+  param.Y = &y;
+  param.Out = &out;
+  param.output_scale = 50 / 127.;
+  elementwise_add_kernel.SetParam(param);
+
+  cudaStream_t stream;
+  cudaStreamCreate(&stream);
+  context.SetExecStream(stream);
+
+  elementwise_add_kernel.SetContext(std::move(ctx));
+  auto start = GetCurrentUS();
+  for (int i = 0; i < 1000000; i++) {
+    elementwise_add_kernel.Launch();
+  }
+  LOG(INFO) << "time: " << (GetCurrentUS() - start) / 1000000.;
+
+  CopySync<TARGET(kCUDA)>(
+      out_cpu_data, out_data, sizeof(int8_t) * out.numel(), IoDirection::DtoH);
+  for (int i = 0; i < out.numel(); i++) {
+    //    LOG(INFO) << float(out_cpu_data[i]);
   }
 }
 

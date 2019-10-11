@@ -54,7 +54,7 @@ void TypeTargetTransformPass::ComplementInputs(SSAGraph* graph,
 
   CHECK(inst_node->IsStmt());
   auto& inst = inst_node->AsStmt();
-  LOG(INFO) << "found Target tensor: " << in->AsArg().name;
+  VLOG(3) << "found Target tensor: " << in->AsArg().name;
   CHECK(in->IsRoleSet());
   CHECK(in->IsArg());
   auto in_arg_name = in->AsArg().name;
@@ -63,9 +63,9 @@ void TypeTargetTransformPass::ComplementInputs(SSAGraph* graph,
   auto decl_arg_type = inst.picked_kernel().GetInputDeclType(tmp);
   CHECK(in->AsArg().type);
   if (!TargetCompatibleTo(*in->AsArg().type, *decl_arg_type)) {
-    LOG(INFO) << "found Target unmatched tensor: " << in->AsArg().name
-              << " for kernel " << inst.op()->DebugString() << " "
-              << *in->AsArg().type << " -> " << *decl_arg_type;
+    VLOG(3) << "found Target unmatched tensor: " << in->AsArg().name
+            << " for kernel " << inst.op()->DebugString() << " "
+            << *in->AsArg().type << " -> " << *decl_arg_type;
     // Add an IoCopy instruction to make the input compatible with other dist.
     AddIoCopyInst(
         *in->AsArg().type, *decl_arg_type, in, graph, inst_node, valid_places_);

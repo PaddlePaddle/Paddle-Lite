@@ -21,21 +21,27 @@ namespace lite {
 namespace cuda {
 namespace math {
 
-void fp32_scale_nhwc(int num,
-                     const void* din,
-                     void* dout,
-                     const void* scale,
-                     int N,
-                     int K,
-                     int H,
-                     int W,
+template <typename Dtype>
+void elementwise_add(int num,
+                     const Dtype* x_data,
+                     const Dtype* y_data,
+                     Dtype* out_data,
                      cudaStream_t stream);
 
-template <typename T>
-void scale(int num, const T* in, T* out, float scale, cudaStream_t stream);
-
-template <typename T>
-void scale(int num, const T* in, T* out, float scale);
+void elementwise_add_int8(int num,
+                          const float* x_data,
+                          const float* y_data,
+                          const float alpha,
+                          int8_t* out_data,
+                          cudaStream_t stream);
+// input type is float32
+// output type is int8
+void elementwise_add_nhwc4_int8(int num,
+                                const void* x_data,
+                                const void* y_data,
+                                const float alpha,
+                                void* out_data,
+                                cudaStream_t stream);
 
 }  // namespace math
 }  // namespace cuda
