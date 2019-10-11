@@ -46,7 +46,8 @@ void PoolCompute::PrepareForRun() {
 void PoolCompute::Run() {
   pe_.dispatch();
   zynqmp::PoolingParam& pool_param = pe_.param();
-  // pool_param.output->saveToFile("pool", true);
+  pool_param.output->saveToFile("pool", true);
+  pool_param.output->printScale("pooling");
 }
 
 }  // namespace fpga

@@ -342,6 +342,7 @@ class Tensor {
     if (placeHolder_ == nullptr) {
       return;
     }
+    std::cout << scale()[0] << " , " << scale()[1] << std::endl;
   }
 
   void printScale(std::string type) {
@@ -389,6 +390,10 @@ class Tensor {
     std::ofstream ofs;
 
     ofs.open(path);
+
+    ofs << "dataType: " << dataType_ << std::endl;
+
+
     for (int i = 0; i < shape_->numel(); i++) {
       float value = 0;
       if (dataType_ == FP32) {

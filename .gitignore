@@ -35,6 +35,7 @@
 
 build/
 build_fpga/
+build_arm/
 
 .idea/
 

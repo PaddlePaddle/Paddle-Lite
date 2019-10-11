@@ -26,16 +26,82 @@ namespace fpga {
 
 using float16 = zynqmp::float16;
 
-void TransHwcToChw(Tensor* dest, const Tensor* src) {}
-void TransChwToHwc(Tensor* dest, const Tensor* src) {}
+template<typename T>
+void convert_to_hwc(T* chw_data,
+                    T* hwc_data,
+                    int num,
+                    int channel,
+                    int height,
+                    int width) {
+  int chw = channel * height * width;
+  int wc = width * channel;
+  int index = 0;
+  for (int n = 0; n < num; n++) {
+    for (int c = 0; c < channel; c++) {
+      for (int h = 0; h < height; h++) {
+        for (int w = 0; w < width; w++) {
+          hwc_data[n * chw + h * wc + w * channel + c] = chw_data[index];
+          index++;
+        }
+      }
+    }
+  }
+}
+
+template<typename T>
+void hwc_to_chw(T* chw_data,
+                T* hwc_data,
+                int num,
+                int channel,
+                int height,
+                int width) {
+  int chw = channel * height * width;
+  int wc = width * channel;
+  int wh = width * height;
+  int index = 0;
+  for (int n = 0; n < num; n++) {
+    for (int h = 0; h < height; h++) {
+      for (int w = 0; w < width; w++) {
+        for (int c = 0; c < channel; c++) {
+          chw_data[n * chw + c * wh + h * width + w] = hwc_data[index];
+          index++;
+        }
+      }
+    }
+  }
+}
+
+void TransHwcToChw(Tensor* dest, const Tensor* src) {
+  {
+    float* chw = const_cast<float*>(dest->data<float>());
+    float* hwc = const_cast<float*>(src->data<float>());
+    int num = dest->dims()[0];
+    int channel = dest->dims()[1];
+    int height = 1;
+    if (dest->dims().size() > 2) {
+      height = dest->dims()[2];
+    }
+    int width = 1;
+    if (dest->dims().size() > 3) {
+      width = dest->dims()[3];
+    }
+    
+    hwc_to_chw<float>(chw, hwc, num, channel, height, width);
+  }
+}
+void TransChwToHwc(Tensor* dest, const Tensor* src) {
+
+}
 
 class TransHwcToChwCompute
     : public KernelLite<TARGET(kFPGA), PRECISION(kAny), DATALAYOUT(kNHWC)> {
  public:
   void Run() override {
     auto& param = Param<operators::LayoutParam>();
-    auto out_data = param.y->mutable_data<float16>(TARGET(kFPGA));
+    param.y->mutable_data<float>();
     TransHwcToChw(param.y, param.x);
+    auto out_lod = param.y->mutable_lod();
+    *out_lod = param.x->lod();
   }
 
   std::unique_ptr<type_infer_handler_t> GetTypeInferHandler() override {
@@ -94,6 +160,22 @@ REGISTER_LITE_KERNEL(layout,
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kFPGA),
                                        PRECISION(kFP16),
+                                       DATALAYOUT(kNCHW))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(layout,
+                     kFPGA,
+                     kAny,
+                     kNHWC,
+                     paddle::lite::kernels::fpga::TransHwcToChwCompute,
+                     hwc_to_chw_arm_float)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kARM),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kNHWC))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kARM),
+                                       PRECISION(kFloat),
                                        DATALAYOUT(kNCHW))})
     .Finalize();
 

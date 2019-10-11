@@ -176,6 +176,11 @@ endif()
 
 # These tests needs CLI arguments, and is not supported in ARM CI.
 # TODO(Superjomn) support latter.
+
+   lite_cc_test(test_ocr_attention SRCS ocr_attention_test.cc
+      DEPS ${lite_model_test_DEPS})
+
+
 lite_cc_test(test_light_api SRCS light_api_test.cc
     DEPS light_api program mir_passes
     CL_DEPS ${opencl_kernels}

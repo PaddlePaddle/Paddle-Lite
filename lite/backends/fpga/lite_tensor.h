@@ -208,6 +208,9 @@ R *TensorLite::mutable_data() {
   }
   zynqmp::LayoutType layout_type = zynqmp::NCHW;
   switch (v.size()) {
+    case 0:
+      layout_type = zynqmp::None;
+      break;
     case 1:
       layout_type = zynqmp::N;
       break;

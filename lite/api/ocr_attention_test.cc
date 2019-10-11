@@ -104,11 +104,14 @@ void TestModel(const std::vector<Place>& valid_places,
 
 TEST(OcrAttention, test_arm) {
   std::vector<Place> valid_places({
+      Place{TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)},
       Place{TARGET(kHost), PRECISION(kFloat)},
       Place{TARGET(kARM), PRECISION(kFloat)},
   });
 
-  TestModel(valid_places, Place({TARGET(kARM), PRECISION(kFloat)}));
+  // Place{TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)},
+
+  TestModel(valid_places, Place{TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)});
 }
 
 }  // namespace lite

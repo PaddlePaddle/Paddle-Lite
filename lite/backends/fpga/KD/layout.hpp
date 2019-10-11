@@ -22,6 +22,7 @@ namespace paddle {
 namespace zynqmp {
 
 enum LayoutType {
+  None,
   N,
   NC,
   NCHW,
@@ -37,6 +38,19 @@ class Layout {
   virtual int widthIndex() { return -1; }
   virtual int alignedElementCount(const std::vector<int>& dims) = 0;
   virtual int elementCount(const std::vector<int>& dims) = 0;
+};
+
+struct None : Layout {
+  int numIndex() { return -1; }
+  int channelIndex() { return -1; }
+  int heightIndex() { return -1; }
+  int widthIndex() { return -1; }
+  int alignedElementCount(const std::vector<int>& dims) {
+    return 16;
+  }
+  virtual int elementCount(const std::vector<int>& dims) {
+    return 1;
+  }
 };
 
 struct NCHW : Layout {

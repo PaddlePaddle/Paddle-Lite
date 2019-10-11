@@ -92,12 +92,28 @@ void *TensorLite::mutable_data(TargetType target, size_t memory_size) {
 }
 
 void TensorLite::CopyDataFrom(const TensorLite &other) {
+  // std::cout << "1\n";
   dims_ = other.dims_;
+  // std::cout << "2\n";
   target_ = other.target_;
+  // std::cout << "3\n";
   lod_ = other.lod_;
-  zynq_tensor_->mutableData<void>(other.zynq_tensor_->dataType(),
-                                  other.zynq_tensor_->shape());
+  auto dt = zynq_tensor_->dataType();
+
+  // std::cout << "4\n";
+  // std::cout << "dt:" << dt << std::endl;
+  auto shape = other.zynq_tensor_->shape();
+
+  Resize(other.dims());
+  // mutable_data<float>();
+
+
+
+  zynq_tensor_->mutableData<void>(zynq_tensor_->dataType(), shape);
+  // std::cout << "copy Data From: \n";
+  // std::cout << "ss" << (void*)(other.ZynqTensor()) << "\n";
   this->ZynqTensor()->copyFrom(other.ZynqTensor());
+  // set_lod(other.lod());
 }
 
 // template <typename T>

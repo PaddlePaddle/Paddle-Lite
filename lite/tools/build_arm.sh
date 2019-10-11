@@ -1,6 +1,6 @@
 #!/bin/bash
 
-build_dir=build_fpga
+build_dir=build_arm
 mkdir -p ${build_dir}
 cd ${build_dir}
 
@@ -15,7 +15,7 @@ cmake .. \
         -DLITE_WITH_CUDA=OFF \
         -DLITE_WITH_X86=OFF \
         -DLITE_WITH_ARM=ON \
-        -DLITE_WITH_FPGA=ON \
+        -DLITE_WITH_FPGA=OFF \
         -DLITE_WITH_OPENMP=ON \
         -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
         -DWITH_TESTING=ON \

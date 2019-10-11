@@ -37,8 +37,15 @@ void FeedCompute::PrepareForRun() {
 }
 
 void FeedCompute::Run() {
+
+
   zynqmp::InputParam& feed_param = pe_.param();
   pe_.dispatch();
+
+  auto& param = this->Param<param_t>();
+  Tensor& x = param.feed_list->at(param.col);
+  auto out_lod = param.out->mutable_lod();
+  *out_lod = x.lod();
 }
 
 }  // namespace fpga

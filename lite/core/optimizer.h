@@ -58,6 +58,7 @@ class Optimizer {
           "lite_quant_dequant_fuse_pass",  //
           // "lite_conv_elementwise_fuse_pass",  // conv-elemwise-bn
           "lite_conv_bn_fuse_pass",           //
+          "graph_visualze",
           "lite_conv_elementwise_fuse_pass",  // conv-bn-elemwise
           // This pass is disabled to force some opencl kernels selected for
           // final running, otherwise, they will be fused to ARM fusion
