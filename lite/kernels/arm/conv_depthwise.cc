@@ -37,12 +37,13 @@ void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
     auto kh = w_dims[2];
     auto cround = ROUNDUP(oc, cblock);
     weights_.Resize({cround, 1, kh, kw});
-    auto w_data = weights_.mutable_data<float>();
-    auto w_data_in = param.filter->data<float>();
-    lite::arm::math::conv_trans_weights_numc(
-        w_data_in, w_data, oc, 1, cblock, kh * kw);
+    //auto w_data = weights_.mutable_data<float>();
+    //auto w_data_in = param.filter->data<float>();
+    //lite::arm::math::conv_trans_weights_numc(
+    //    w_data_in, w_data, oc, 1, cblock, kh * kw);
     impl_ = lite::arm::math::conv_depthwise_3x3_fp32;
-    flag_trans_weights_ = true;
+    //flag_trans_weights_ = true;
+    flag_trans_weights_ = false;
   } else if (kw == 5) {
     VLOG(5) << "invoke 5x5 dw conv fp32";
     impl_ = lite::arm::math::conv_depthwise_5x5_fp32;
