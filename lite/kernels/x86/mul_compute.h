@@ -48,8 +48,6 @@ class MulCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
 
     auto* x = param.x;
     auto* y = param.y;
-    auto raw_x_target = x->target();
-    auto raw_y_target = y->target();
 
     Tensor x_matrix, y_matrix;
 
@@ -73,9 +71,6 @@ class MulCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
     }
 
     auto blas = lite::x86::math::GetBlas<lite::TargetType::kX86, T>(context);
-    auto x_target = x_matrix.target();
-    auto y_target = y_matrix.target();
-    auto z_target = z->target();
 
     blas.MatMul(x_matrix, y_matrix, z);
     if (z_dim.size() != 2) {
