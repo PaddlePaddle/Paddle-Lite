@@ -3,56 +3,56 @@ layout: post
 title: Paddle-Lite文档
 ---
 
-> 版本：v2.0.0-beta2
+> 版本：v2.0.0-rc
 
 Paddle-Lite 框架是 PaddleMobile 新一代架构，重点支持移动端推理预测，特点**高性能、多硬件、轻量级** 。支持PaddleFluid/TensorFlow/Caffe/ONNX模型的推理部署，目前已经支持 ARM CPU, Mali GPU, Adreno GPU, Huawei NPU 等多种硬件，正在逐步增加 X86 CPU, Nvidia GPU 等多款硬件，相关硬件性能业内领先。
 
 
 ## 简介
 
-- [技术特点]({{site.baseurl}}/v2.0.0-beta2/tech_highlights)
-- [架构设计]({{site.baseurl}}/v2.0.0-beta2/architecture)
-- [Road Map]({{site.baseurl}}/v2.0.0-beta2/roadmap)
+- [技术特点]({{site.baseurl}}/v2.0.0-rc/tech_highlights)
+- [架构设计]({{site.baseurl}}/v2.0.0-rc/architecture)
+- [Road Map]({{site.baseurl}}/v2.0.0-rc/roadmap)
 
 ## Benchmark
 
-- [最新性能]({{site.baseurl}}/v2.0.0-beta2/benchmark)
-- [测试方法]({{site.baseurl}}/v2.0.0-beta2/benchmark_tools)
+- [最新性能]({{site.baseurl}}/v2.0.0-rc/benchmark)
+- [测试方法]({{site.baseurl}}/v2.0.0-rc/benchmark_tools)
 
 ## 安装
 
-- [源码编译]({{site.baseurl}}/v2.0.0-beta2/source_compile)
+- [源码编译]({{site.baseurl}}/v2.0.0-rc/source_compile)
 
 ## 使用
 
-- [使用流程]({{site.baseurl}}/v2.0.0-beta2/tutorial)
-- [C++实例]({{site.baseurl}}/v2.0.0-beta2/cpp_demo)
-- [Java实例]({{site.baseurl}}/v2.0.0-beta2/java_demo)
+- [使用流程]({{site.baseurl}}/v2.0.0-rc/tutorial)
+- [C++实例]({{site.baseurl}}/v2.0.0-rc/cpp_demo)
+- [Java实例]({{site.baseurl}}/v2.0.0-rc/java_demo)
 - [Android/IOS APP demo](https://github.com/PaddlePaddle/Paddle-Lite-Demo)
-- [模型转化方法]({{site.baseurl}}/v2.0.0-beta2/model_optimize_tool)
+- [模型转化方法]({{site.baseurl}}/v2.0.0-rc/model_optimize_tool)
 
 ## 进阶
 
-- [通过 X2Paddle 支持 Caffe, TensorFlow , ONNX 模型]({{site.baseurl}}/v2.0.0-beta2/x2paddle)
-- [X2Paddle 支持模型列表]({{site.baseurl}}/v2.0.0-beta2/x2paddle_models_doc)
-- [模型量化]({{site.baseurl}}/v2.0.0-beta2/model_quantization)
-- [支持Op列表]({{site.baseurl}}/v2.0.0-beta2/support_operation_list)
-- [新增Op方法]({{site.baseurl}}/v2.0.0-beta2/add_new_operation)
-- [测试工具]({{site.baseurl}}/v2.0.0-beta2/debug_tools)
-- [调试方法]({{site.baseurl}}/v2.0.0-beta2/debug_tools)
-- [使用华为NPU]({{site.baseurl}}/v2.0.0-beta2/npu)
-- [使用Android GPU]({{site.baseurl}}/v2.0.0-beta2/opencl)
-- [使用FPGA]({{site.baseurl}}/v2.0.0-beta2/fpga)
+- [通过 X2Paddle 支持 Caffe, TensorFlow , ONNX 模型]({{site.baseurl}}/v2.0.0-rc/x2paddle)
+- [X2Paddle 支持模型列表]({{site.baseurl}}/v2.0.0-rc/x2paddle_models_doc)
+- [模型量化]({{site.baseurl}}/v2.0.0-rc/model_quantization)
+- [支持Op列表]({{site.baseurl}}/v2.0.0-rc/support_operation_list)
+- [新增Op方法]({{site.baseurl}}/v2.0.0-rc/add_new_operation)
+- [测试工具]({{site.baseurl}}/v2.0.0-rc/debug_tools)
+- [调试方法]({{site.baseurl}}/v2.0.0-rc/debug_tools)
+- [使用华为NPU]({{site.baseurl}}/v2.0.0-rc/npu)
+- [使用Android GPU]({{site.baseurl}}/v2.0.0-rc/opencl)
+- [使用FPGA]({{site.baseurl}}/v2.0.0-rc/fpga)
 
 ## 开发者文档
 
-- [开发基础须知]({{site.baseurl}}/v2.0.0-beta2/for-v2.0.0-beta2er)
-- [架构详解]({{site.baseurl}}/v2.0.0-beta2/architecture-intro)
+- [开发基础须知]({{site.baseurl}}/v2.0.0-rc/for-v2.0.0-rcer)
+- [架构详解]({{site.baseurl}}/v2.0.0-rc/architecture-intro)
 
 ## API文档
 
-- [C++ API文档]({{site.baseurl}}/v2.0.0-beta2/cxx_api_doc)
-- [Java API文档]({{site.baseurl}}/v2.0.0-beta2/java_api_doc)
+- [C++ API文档]({{site.baseurl}}/v2.0.0-rc/cxx_api_doc)
+- [Java API文档]({{site.baseurl}}/v2.0.0-rc/java_api_doc)
 
 ## FAQ
 
@@ -61,7 +61,7 @@ Paddle-Lite 框架是 PaddleMobile 新一代架构，重点支持移动端推理
 
 ## paddle-mobile
 
-- [paddle-mobile 编译]({{site.baseurl}}/v2.0.0-beta2/mobile)
+- [paddle-mobile 编译]({{site.baseurl}}/v2.0.0-rc/mobile)
 
 ## 以前文档
 
