@@ -53,6 +53,32 @@ __global__ void bias_relu_kernel(const int num,
   }
 }
 
+template <typename Dtype>
+__global__ void bias_relu_int8_nhwc_kernel(int num,
+                                           const float* in,
+                                           const float* bias,
+                                           Dtype* out,
+                                           int N,
+                                           int C,
+                                           int H,
+                                           int W,
+                                           const float* scale,
+                                           float alpha) {
+  int tid = blockIdx.x * blockDim.x + threadIdx.x;
+  if (tid < num) {
+    int idx = tid % C;
+#if __CUDA_ARCH__ >= 350
+    float temp = __ldg(in + tid) * __ldg(scale + idx) + __ldg(bias + idx);
+    out[tid] =
+        temp > 0 ? from_float<Dtype>(temp) : from_float<Dtype>(temp * alpha);
+#else
+    float temp = in[tid] * scale[idx] + bias[idx];
+    out[tid] =
+        temp > 0 ? from_float<Dtype>(temp) : from_float<Dtype>(temp * alpha);
+#endif
+  }
+}
+
 __global__ void bias_relu_int8_nhwc4_kernel(int num,
                                             const float4* in,
                                             const float4* bias,
@@ -119,6 +145,29 @@ __global__ void bias_relu_int8_nhwc4_kernel(int num,
   }
 }
 
+template <typename Dtype>
+__global__ void bias_int8_nhwc_kernel(int num,
+                                      const float* in,
+                                      const float* bias,
+                                      Dtype* out,
+                                      int N,
+                                      int C,
+                                      int H,
+                                      int W,
+                                      const float* scale) {
+  int tid = blockIdx.x * blockDim.x + threadIdx.x;
+  if (tid < num) {
+    int idx = tid % C;
+#if __CUDA_ARCH__ >= 350
+    float temp = __ldg(in + tid) * __ldg(scale + idx) + __ldg(bias + idx);
+    out[tid] = from_float<Dtype>(temp);
+#else
+    float temp = in[tid] * scale[idx] + bias[idx];
+    out[tid] = from_float<Dtype>(temp);
+#endif
+  }
+}
+
 __global__ void relu_int8_nhwc4_kernel(int num,
                                        const float4* in,
                                        float4* out,
@@ -182,58 +231,134 @@ __global__ void relu_int8_nhwc4_kernel(int num,
 }
 
 template <>
-void bias_relu_int8_nhwc4<float>(int num,
+void bias_relu_int8_nhwc<float>(int num,
+                                const void* in,
+                                const void* bias,
+                                void* out,
+                                int N,
+                                int C,
+                                int H,
+                                int W,
+                                const void* scale,
+                                float alpha,
+                                cudaStream_t stream) {
+  int thread = 256;
+  if (C % 4 == 0) {
+    int block = (num / 4 + thread - 1) / thread;
+    bias_relu_int8_nhwc4_kernel<<<block, thread, 0, stream>>>(
+        num / 4,
+        static_cast<const float4*>(in),
+        static_cast<const float4*>(bias),
+        static_cast<float4*>(out),
+        N,
+        C / 4,
+        H,
+        W,
+        static_cast<const float4*>(scale),
+        alpha);
+  } else {
+    int block = (num + thread - 1) / thread;
+    bias_relu_int8_nhwc_kernel<<<block, thread, 0, stream>>>(
+        num,
+        static_cast<const float*>(in),
+        static_cast<const float*>(bias),
+        static_cast<float*>(out),
+        N,
+        C,
+        H,
+        W,
+        static_cast<const float*>(scale),
+        alpha);
+  }
+}
+
+template <>
+void bias_relu_int8_nhwc<int8_t>(int num,
                                  const void* in,
                                  const void* bias,
                                  void* out,
                                  int N,
-                                 int K,
+                                 int C,
                                  int H,
                                  int W,
                                  const void* scale,
                                  float alpha,
                                  cudaStream_t stream) {
   int thread = 256;
-  int block = (num + thread - 1) / thread;
-  bias_relu_int8_nhwc4_kernel<<<block, thread, 0, stream>>>(
-      num,
-      static_cast<const float4*>(in),
-      static_cast<const float4*>(bias),
-      static_cast<float4*>(out),
-      N,
-      K,
-      H,
-      W,
-      static_cast<const float4*>(scale),
-      alpha);
+  if (C % 4 == 0) {
+    int block = (num / 4 + thread - 1) / thread;
+    bias_relu_int8_nhwc4_kernel<<<block, thread, 0, stream>>>(
+        num / 4,
+        static_cast<const float4*>(in),
+        static_cast<const float4*>(bias),
+        static_cast<char4*>(out),
+        N,
+        C / 4,
+        H,
+        W,
+        static_cast<const float4*>(scale),
+        alpha);
+  } else {
+    int block = (num + thread - 1) / thread;
+    bias_relu_int8_nhwc_kernel<<<block, thread, 0, stream>>>(
+        num,
+        static_cast<const float*>(in),
+        static_cast<const float*>(bias),
+        static_cast<int8_t*>(out),
+        N,
+        C,
+        H,
+        W,
+        static_cast<const float*>(scale),
+        alpha);
+  }
 }
 
-template <>
-void bias_relu_int8_nhwc4<int8_t>(int num,
-                                  const void* in,
-                                  const void* bias,
-                                  void* out,
-                                  int N,
-                                  int K,
-                                  int H,
-                                  int W,
-                                  const void* scale,
-                                  float alpha,
-                                  cudaStream_t stream) {
+template <typename out_type>
+void bias_int8_nhwc(int num,
+                    const void* in,
+                    const void* bias,
+                    void* out,
+                    int N,
+                    int C,
+                    int H,
+                    int W,
+                    const void* scale,
+                    cudaStream_t stream) {
   int thread = 256;
   int block = (num + thread - 1) / thread;
-  bias_relu_int8_nhwc4_kernel<<<block, thread, 0, stream>>>(
+  bias_int8_nhwc_kernel<<<block, thread, 0, stream>>>(
       num,
-      static_cast<const float4*>(in),
-      static_cast<const float4*>(bias),
-      static_cast<char4*>(out),
+      static_cast<const float*>(in),
+      static_cast<const float*>(bias),
+      static_cast<out_type*>(out),
       N,
-      K,
+      C,
       H,
       W,
-      static_cast<const float4*>(scale),
-      alpha);
+      static_cast<const float*>(scale));
 }
+
+template void bias_int8_nhwc<float>(int,
+                                    const void*,
+                                    const void* bias,
+                                    void*,
+                                    int,
+                                    int,
+                                    int,
+                                    int,
+                                    const void*,
+                                    cudaStream_t);
+template void bias_int8_nhwc<int8_t>(int,
+                                     const void*,
+                                     const void* bias,
+                                     void*,
+                                     int,
+                                     int,
+                                     int,
+                                     int,
+                                     const void*,
+                                     cudaStream_t);
 
 template <>
 void relu_int8_nhwc4<float>(int num,

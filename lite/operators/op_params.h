@@ -329,6 +329,7 @@ struct ElementwiseParam {
   const lite::Tensor* Y{};
   lite::Tensor* Out{};
   int axis{-1};  // for broadcasting.
+  WITH_INT8_CONFIG
 };
 
 struct ElementwiseGradParam {

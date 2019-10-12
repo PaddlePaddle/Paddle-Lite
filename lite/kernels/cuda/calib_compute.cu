@@ -87,45 +87,63 @@ void CalibComputeInt8ToFp32::Run() {
 
 REGISTER_LITE_KERNEL(calib,
                      kCUDA,
-                     kInt8,
+                     kFloat,
                      kNCHW,
                      paddle::lite::kernels::cuda::CalibComputeFp32ToInt8,
                      fp32_to_int8)
     .BindInput("Input",
-               {LiteType::GetTensorTy(TARGET(kCUDA), PRECISION(kFloat))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kCUDA), PRECISION(kInt8))})
+               {LiteType::GetTensorTy(TARGET(kCUDA),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kAny))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kCUDA),
+                                       PRECISION(kInt8),
+                                       DATALAYOUT(kAny))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(calib,
                      kCUDA,
-                     kInt8,
+                     kFloat,
                      kNCHW,
                      paddle::lite::kernels::cuda::CalibComputeInt8ToFp32,
                      int8_to_fp32)
     .BindInput("Input",
-               {LiteType::GetTensorTy(TARGET(kCUDA), PRECISION(kInt8))})
+               {LiteType::GetTensorTy(TARGET(kCUDA),
+                                      PRECISION(kInt8),
+                                      DATALAYOUT(kAny))})
     .BindOutput("Out",
-                {LiteType::GetTensorTy(TARGET(kCUDA), PRECISION(kFloat))})
+                {LiteType::GetTensorTy(TARGET(kCUDA),
+                                       PRECISION(kFloat),
+                                       DATALAYOUT(kAny))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(calib_once,
                      kCUDA,
-                     kInt8,
+                     kFloat,
                      kNCHW,
                      paddle::lite::kernels::cuda::CalibComputeFp32ToInt8,
                      fp32_to_int8)
     .BindInput("Input",
-               {LiteType::GetTensorTy(TARGET(kCUDA), PRECISION(kFloat))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kCUDA), PRECISION(kInt8))})
+               {LiteType::GetTensorTy(TARGET(kCUDA),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kAny))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kCUDA),
+                                       PRECISION(kInt8),
+                                       DATALAYOUT(kAny))})
     .Finalize();
 REGISTER_LITE_KERNEL(calib_once,
                      kCUDA,
-                     kInt8,
+                     kFloat,
                      kNCHW,
                      paddle::lite::kernels::cuda::CalibComputeInt8ToFp32,
                      int8_to_fp32)
     .BindInput("Input",
-               {LiteType::GetTensorTy(TARGET(kCUDA), PRECISION(kInt8))})
+               {LiteType::GetTensorTy(TARGET(kCUDA),
+                                      PRECISION(kInt8),
+                                      DATALAYOUT(kAny))})
     .BindOutput("Out",
-                {LiteType::GetTensorTy(TARGET(kCUDA), PRECISION(kFloat))})
+                {LiteType::GetTensorTy(TARGET(kCUDA),
+                                       PRECISION(kFloat),
+                                       DATALAYOUT(kAny))})
     .Finalize();

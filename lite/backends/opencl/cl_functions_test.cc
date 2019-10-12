@@ -396,9 +396,9 @@ TEST(cl_test, target_wrapper_buffer_test) {
 
 TEST(cl_test, target_wrapper_image_test) {
   const std::array<size_t, 2> image_shape{28, 32};
-  auto *d_image = static_cast<cl::Image2D *>(
-      TargetWrapperCL::MallocImage(image_shape, PRECISION(kFloat)));
   std::array<size_t, 2> image_pitch;
+  auto *d_image = static_cast<cl::Image2D *>(
+      TargetWrapperCL::MallocImage<float>(image_shape));
   // Map/Unmap test
   auto *h_image = static_cast<float *>(
       TargetWrapperCL::MapImage(d_image, image_shape, &image_pitch));
@@ -430,7 +430,7 @@ TEST(cl_test, target_wrapper_image_test) {
   TargetWrapperCL::ImgcpySync(
       d_image, h_image_cpy.data(), image_shape, image_pitch, IoDirection::HtoD);
   auto *d_image_cpy = static_cast<cl::Image2D *>(
-      TargetWrapperCL::MallocImage(image_shape, PRECISION(kFloat)));
+      TargetWrapperCL::MallocImage<float>(image_shape));
   TargetWrapperCL::ImgcpySync(
       d_image_cpy, d_image, image_shape, image_pitch, IoDirection::DtoD);
   std::fill(h_image_cpy.begin(), h_image_cpy.end(), 0);

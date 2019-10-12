@@ -105,5 +105,16 @@ void TargetCopy(TargetType target, void* dst, const void* src, size_t size) {
   }
 }
 
+#ifdef LITE_WITH_OPENCL
+void TargetCopyImage2D(TargetType target,
+                       void* dst,
+                       const void* src,
+                       const std::array<size_t, 2>& image_shape,
+                       const std::array<size_t, 2>& image_pitch) {
+  TargetWrapperCL::ImgcpySync(
+      dst, src, image_shape, image_pitch, IoDirection::DtoD);
+}
+#endif
+
 }  // namespace lite
 }  // namespace paddle
