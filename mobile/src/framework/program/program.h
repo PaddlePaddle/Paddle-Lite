@@ -34,6 +34,7 @@ class Program {
   bool quantification = false;
   size_t combined_params_len;
   uint8_t *combined_params_buf;
+  int quantification_fold = 1;
 };
 
 }  // namespace framework

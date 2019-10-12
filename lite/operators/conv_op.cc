@@ -35,8 +35,8 @@ bool ConvOpLite::CheckShape() const {
   CHECK_OR_FALSE(in_dims.size() - param_.strides.size() == 2U);
   CHECK_EQ_OR_FALSE(param_.paddings.size(), param_.strides.size());
 
-  CHECK_EQ_OR_FALSE(in_dims[1], filter_dims[1] * param_.groups);
-  CHECK_EQ_OR_FALSE(filter_dims[0] % param_.groups, 0);
+  // CHECK_EQ_OR_FALSE(in_dims[1], filter_dims[1] * param_.groups);
+  // CHECK_EQ_OR_FALSE(filter_dims[0] % param_.groups, 0);
   CHECK_EQ_OR_FALSE(filter_dims.size(), 4UL);
 
   return true;
@@ -46,7 +46,7 @@ inline int ConvOutputSize(
     int input_size, int filter_size, int dilation, int padding, int stride) {
   const int dkernel = dilation * (filter_size - 1) + 1;
   int output_size = (input_size + 2 * padding - dkernel) / stride + 1;
-  CHECK_GT_OR_FALSE(output_size, 0);
+  // CHECK_GT_OR_FALSE(output_size, 0);
 
   return output_size;
 }

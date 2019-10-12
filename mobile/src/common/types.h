@@ -87,6 +87,11 @@ enum PMStatus {
   PMException = 0x09       /*!< throw exception. */
 };
 
+enum PrePostType {
+  NONE_PRE_POST = 0,
+  UINT8_255 = 1,
+};
+
 enum RoundType {
   ROUND_NEAREST_AWAY_ZERO = 0,
   ROUND_NEAREST_TOWARDS_ZERO = 1,
@@ -143,6 +148,7 @@ struct PaddleMobileConfigInternal {
   MemoryOptimizationLevel memory_optimization_level =
       MemoryOptimizationWithoutFeeds;
   std::string model_obfuscate_key = "";
+  PrePostType pre_post_type = NONE_PRE_POST;
 };
 
 enum ARMArch {
@@ -258,6 +264,7 @@ extern const char *G_OP_TYPE_FUSION_DECONV_ADD_BN_RELU;
 extern const char *G_OP_TYPE_FUSION_DECONV_ADD_BN;
 extern const char *G_OP_TYPE_FUSION_DECONV_BN_RELU;
 extern const char *G_OP_TYPE_FUSION_INSTANCENORM_RELU;
+extern const char *G_OP_TYPE_PIXEL_SHUFFLE;
 
 extern std::unordered_map<
     std::string, std::pair<std::vector<std::string>, std::vector<std::string>>>

@@ -65,6 +65,10 @@ void act_hard_sigmoid(const T* din,
                       const float slope,
                       const float offset,
                       int threads);
+
+template <typename T>
+void act_rsqrt(const T* din, T* dout, int size, int threads);
+
 }  // namespace math
 }  // namespace arm
 }  // namespace lite

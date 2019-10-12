@@ -171,6 +171,3 @@ TEST(calib_cuda, fp32_to_int8) {
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
-
-USE_LITE_KERNEL(calib, kCUDA, kInt8, kNCHW, int8_to_fp32);
-USE_LITE_KERNEL(calib, kCUDA, kInt8, kNCHW, fp32_to_int8);

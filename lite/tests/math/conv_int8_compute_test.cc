@@ -481,10 +481,10 @@ TEST(TestConv3x3DWInt8, test_conv3x3_depthwise) {
 }
 #endif  /// 3x3dw
 
-#if 0   /// 5x5dw
+#if 1  /// 5x5dw
 TEST(TestConv5x5DWInt8, test_conv5x5_depthwise) {
   if (FLAGS_basic_test) {
-    for (auto& stride : {1, 2}) {
+    for (auto& stride : {1}) {
       for (auto& pad : {0, 1, 2}) {
         for (auto& flag_bias : {false, true}) {
           for (auto& flag_relu : {false, true}) {
@@ -492,7 +492,7 @@ TEST(TestConv5x5DWInt8, test_conv5x5_depthwise) {
               std::vector<DDim> dims;
               DDim weights_dim({c, 1, 5, 5});
               for (auto& batch : {1, 2}) {
-                for (auto &h : {1, 3, 15, 19, 28, 32, 75}) {
+                for (auto& h : {1, 3, 15, 19, 28, 32, 75}) {
                   dims.push_back(DDim({batch, c, h, h}));
                 }
               }

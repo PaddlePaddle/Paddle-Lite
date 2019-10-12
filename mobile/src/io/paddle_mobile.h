@@ -50,10 +50,11 @@ class PaddleMobile {
 
   PMStatus Load(const std::string &dirname, const bool optimize = false,
                 const bool quantification = false, const int batch_size = 1,
-                const bool lod_mode = false);
+                const bool lod_mode = false, const int quantification_fold = 1);
   PMStatus Load(const std::string &model_path, const std::string &para_path,
                 const bool optimize = false, const bool quantification = false,
-                const int batch_size = 1, const bool lod_mode = false);
+                const int batch_size = 1, const bool lod_mode = false,
+                const int quantification_fold = 1);
 
   PMStatus Load(const PaddleMobileConfig &config);
 
@@ -84,7 +85,7 @@ class PaddleMobile {
                           size_t combined_params_len,
                           uint8_t *combined_params_buf, bool optimize = false,
                           bool quantification = false, int batch_size = 1,
-                          bool lod_mode = false);
+                          bool lod_mode = false, int quantification_fold = 1);
 
   void SetThreadNum(int thread_num,
                     PowerMode power_mode = PERFORMANCE_PRIORITY);

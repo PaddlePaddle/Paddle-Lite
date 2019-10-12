@@ -17,6 +17,22 @@
 
 const size_t kSize64 = sizeof(uint64_t);
 const size_t kSize32 = sizeof(uint32_t);
+const int minimal_fold_size = 2;
+float max_entropy = 0.0;
+
+float entropy(std::vector<uint8_t> &factors) {
+    int n = factors.size();
+    std::vector<int> counts(256);
+    for (uint8_t &factor : factors) {
+        counts[factor]++;
+    }
+    float res = 1.0;
+    float shift = 100000.0;
+    for (int i = 0; i < 256; i++) {
+        res *= (counts[i] + shift) / (n + shift);
+    }
+    return 1.0 / res;
+}
 
 char *Get_binary_data(const std::string &filename) {
 
@@ -68,7 +84,7 @@ std::shared_ptr<ProgramDesc> loadParams(const std::string &model_path) {
 
 }
 
-void LoadWithDumpForInt8(const paddle_mobile::framework::VarDesc &var_desc, char **dataP, FILE *out_file) {
+void LoadWithDumpForInt8(const paddle_mobile::framework::VarDesc &var_desc, char **dataP, FILE *out_file, int quantification_fold) {
     // 1. version
     uint32_t version = *reinterpret_cast<uint32_t *>(*dataP);
 
@@ -162,27 +178,37 @@ void LoadWithDumpForInt8(const paddle_mobile::framework::VarDesc &var_desc, char
     }
     *dataP += tensorSize;
 
-    // for float 32
-    float min_value = std::numeric_limits<float>::max();
-    float max_value = std::numeric_limits<float>::min();
+    quantification_fold = std::min(std::max(1, memory_size / minimal_fold_size), quantification_fold);
+    int step = std::max(memory_size / quantification_fold, 1);
 
-    for (int k = 0; k < memory_size; ++k) {
-        min_value = std::min(min_value, static_cast<float *> (memory)[k]);
-        max_value = std::max(max_value, static_cast<float *> (memory)[k]);
-    }
+    int visited_fold = 0;
+    while (visited_fold * step < memory_size) {
+        // for float 32
+        float min_value = std::numeric_limits<float>::max();
+        float max_value = std::numeric_limits<float>::min();
 
-    fwrite(&min_value, sizeof(float), 1, out_file);
-    fwrite(&max_value, sizeof(float), 1, out_file);
+        for (int k = visited_fold * step; k < std::min((visited_fold + 1) * step, memory_size); ++k) {
+            min_value = std::min(min_value, static_cast<float *> (memory)[k]);
+            max_value = std::max(max_value, static_cast<float *> (memory)[k]);
+        }
 
-    for (int g = 0; g < memory_size; ++g) {
-        float value = static_cast<float *> (memory)[g];
-        auto factor = (uint8_t) round((value - min_value) / (max_value - min_value) * 255);
-        fwrite(&factor, sizeof(uint8_t), 1, out_file);
+        fwrite(&min_value, sizeof(float), 1, out_file);
+        fwrite(&max_value, sizeof(float), 1, out_file);
+
+        std::vector<uint8_t> factors;
+        for (int g = visited_fold * step; g < std::min((visited_fold + 1) * step, memory_size); ++g) {
+            float value = static_cast<float *> (memory)[g];
+            auto factor = (uint8_t) round((value - min_value) / (max_value - min_value) * 255);
+            factors.push_back(factor);
+            fwrite(&factor, sizeof(uint8_t), 1, out_file);
+        }
+        max_entropy = fmax(max_entropy, entropy(factors));
+        visited_fold++;
     }
 }
 
 void
-quantificate_combined_int8(const std::string &model_path, const std::string &param_path, const std::string &param_min_path) {
+quantificate_combined_int8(const std::string &model_path, const std::string &param_path, const std::string &param_min_path, int quantification_fold) {
     auto program = loadParams(model_path);
     char *origin_data = Get_binary_data(param_path);
     char *data = origin_data;
@@ -193,7 +219,7 @@ quantificate_combined_int8(const std::string &model_path, const std::string &par
                 if (var_desc->Name() == "feed" || var_desc->Name() == "fetch") {
                     continue;
                 }
-                LoadWithDumpForInt8(*var_desc, &data, out_file);
+                LoadWithDumpForInt8(*var_desc, &data, out_file, quantification_fold);
             }
         }
     }
@@ -201,7 +227,7 @@ quantificate_combined_int8(const std::string &model_path, const std::string &par
     delete origin_data;
 }
 
-void quantificate_seperated_int8(const std::string model_dir, const std::string param_min_path) {
+void quantificate_seperated_int8(const std::string model_dir, const std::string param_min_path, int quantification_fold) {
     auto program = loadParams(model_dir + "/__model__");
 
     std::string shell_command = "mkdir " + param_min_path;
@@ -217,7 +243,7 @@ void quantificate_seperated_int8(const std::string model_dir, const std::string 
                 FILE *out_file = fopen(file_name.c_str(), "wb");
                 char *origin_data = Get_binary_data(model_dir + "/" + var_desc->Name());
                 char *data = origin_data;
-                LoadWithDumpForInt8(*var_desc, &data, out_file);
+                LoadWithDumpForInt8(*var_desc, &data, out_file, quantification_fold);
                 delete origin_data;
                 fclose(out_file);
             }
@@ -225,7 +251,7 @@ void quantificate_seperated_int8(const std::string model_dir, const std::string 
     }
 }
 
-void LoadWithDumpForFloat32(const paddle_mobile::framework::VarDesc &var_desc, char **dataP, FILE *out_file) {
+void LoadWithDumpForFloat32(const paddle_mobile::framework::VarDesc &var_desc, char **dataP, FILE *out_file, int quantification_fold) {
     // 1. version
     uint32_t version = *reinterpret_cast<uint32_t *>(*dataP);
 
@@ -319,30 +345,40 @@ void LoadWithDumpForFloat32(const paddle_mobile::framework::VarDesc &var_desc, c
     }
     *dataP += tensorSize;
 
-    // for float 32
-    float min_value = std::numeric_limits<float>::max();
-    float max_value = std::numeric_limits<float>::min();
+    quantification_fold = std::min(std::max(1, memory_size / minimal_fold_size), quantification_fold);
+    int step = std::max(memory_size / quantification_fold, 1);
 
-    for (int k = 0; k < memory_size; ++k) {
-        min_value = std::min(min_value, static_cast<float *> (memory)[k]);
-        max_value = std::max(max_value, static_cast<float *> (memory)[k]);
-    }
+    int visited_fold = 0;
+    while (visited_fold * step < memory_size) {
+        // for float 32
+        float min_value = std::numeric_limits<float>::max();
+        float max_value = std::numeric_limits<float>::min();
 
-    float diff = 0.0;
-    for (int g = 0; g < memory_size; ++g) {
-        float value = static_cast<float *> (memory)[g];
-        auto factor = (uint8_t) round((value - min_value) / (max_value - min_value) * 255);
-        float value_quantized = min_value + (factor / 255.0) * (max_value - min_value);
-        diff += fabs(value - value_quantized);
-        fwrite(&value_quantized, sizeof(float), 1, out_file);
-    }
-    if (memory_size > 0) {
-        std::cout << "avg diff caused by quantization for var " << var_desc.Name() << " is: " << (diff / memory_size) << std::endl;
+        for (int k = visited_fold * step; k < std::min((visited_fold + 1) * step, memory_size); ++k) {
+            min_value = std::min(min_value, static_cast<float *> (memory)[k]);
+            max_value = std::max(max_value, static_cast<float *> (memory)[k]);
+        }
+
+        float diff = 0.0;
+        std::vector<uint8_t> factors;
+        for (int g = visited_fold * step; g < std::min((visited_fold + 1) * step, memory_size); ++g) {
+            float value = static_cast<float *> (memory)[g];
+            auto factor = (uint8_t) round((value - min_value) / (max_value - min_value) * 255);
+            factors.push_back(factor);
+            float value_quantized = min_value + (factor / 255.0) * (max_value - min_value);
+            diff += fabs(value - value_quantized);
+            fwrite(&value_quantized, sizeof(float), 1, out_file);
+        }
+        max_entropy = fmax(max_entropy, entropy(factors));
+        if (memory_size > 0) {
+            std::cout << "avg diff caused by quantization for var " << var_desc.Name() << " is: " << (diff / memory_size) << std::endl;
+        }
+        visited_fold++;
     }
 }
 
 void
-quantificate_combined_float32(const std::string &model_path, const std::string &param_path, const std::string &param_min_path) {
+quantificate_combined_float32(const std::string &model_path, const std::string &param_path, const std::string &param_min_path, int quantification_fold) {
     auto program = loadParams(model_path);
     char *origin_data = Get_binary_data(param_path);
     char *data = origin_data;
@@ -353,7 +389,7 @@ quantificate_combined_float32(const std::string &model_path, const std::string &
                 if (var_desc->Name() == "feed" || var_desc->Name() == "fetch") {
                     continue;
                 }
-                LoadWithDumpForFloat32(*var_desc, &data, out_file);
+                LoadWithDumpForFloat32(*var_desc, &data, out_file, quantification_fold);
             }
         }
     }
@@ -361,7 +397,7 @@ quantificate_combined_float32(const std::string &model_path, const std::string &
     delete origin_data;
 }
 
-void quantificate_seperated_float32(const std::string model_dir, const std::string param_min_path) {
+void quantificate_seperated_float32(const std::string model_dir, const std::string param_min_path, int quantification_fold) {
     auto program = loadParams(model_dir + "/__model__");
 
     std::string shell_command = "mkdir " + param_min_path;
@@ -377,7 +413,7 @@ void quantificate_seperated_float32(const std::string model_dir, const std::stri
                 FILE *out_file = fopen(file_name.c_str(), "wb");
                 char *origin_data = Get_binary_data(model_dir + "/" + var_desc->Name());
                 char *data = origin_data;
-                LoadWithDumpForFloat32(*var_desc, &data, out_file);
+                LoadWithDumpForFloat32(*var_desc, &data, out_file, quantification_fold);
                 delete origin_data;
                 fclose(out_file);
             }
@@ -402,10 +438,15 @@ int main(int argc, char **argv) {
     PADDLE_MOBILE_ENFORCE(argc > 3, "we need your output path. %s ", kNoteEg.c_str());
     std::string output_path = argv[3];
 
+    int quantification_fold = 1;
+    if (argc > 4) {
+        quantification_fold = std::stoi(argv[4]);
+    }
+
     if (action_type == "0") {
         // for seperated
         const std::string &seperated_min_dir = output_path;
-        quantificate_seperated_int8(base_path, seperated_min_dir);
+        quantificate_seperated_int8(base_path, seperated_min_dir, quantification_fold);
         return 0;
     }
 
@@ -414,14 +455,15 @@ int main(int argc, char **argv) {
         const std::string &combined_min_dir = output_path;
         std::string model_path = base_path + "/model";
         std::string param_path = base_path + "/params";
-        quantificate_combined_int8(model_path, param_path, combined_min_dir);
+        quantificate_combined_int8(model_path, param_path, combined_min_dir, quantification_fold);
+        std::cout << "max entropy : " << max_entropy << std::endl;
         return 0;
     }
 
     if (action_type == "2") {
         // for seperated
         const std::string &seperated_min_dir = output_path;
-        quantificate_seperated_float32(base_path, seperated_min_dir);
+        quantificate_seperated_float32(base_path, seperated_min_dir, quantification_fold);
         return 0;
     }
 
@@ -430,7 +472,7 @@ int main(int argc, char **argv) {
         const std::string &combined_min_dir = output_path;
         std::string model_path = base_path + "/model";
         std::string param_path = base_path + "/params";
-        quantificate_combined_float32(model_path, param_path, combined_min_dir);
+        quantificate_combined_float32(model_path, param_path, combined_min_dir, quantification_fold);
         return 0;
     }
 
