@@ -49,6 +49,11 @@ void LightPredictorImpl::Init(const MobileConfig& config) {
                                                 config.param_buffer(),
                                                 config.model_from_memory(),
                                                 LiteModelType::kNaiveBuffer));
+  // clear memory buffer after loading model
+  config.model_buffer().clear();
+  config.model_buffer().shrink_to_fit();
+  config.param_buffer().clear();
+  config.param_buffer().shrink_to_fit();
 }
 
 std::unique_ptr<Tensor> LightPredictorImpl::GetInput(int i) {
