@@ -537,16 +537,16 @@ bool CudnnConv2DInt8<Ptype_out>::run(const operators::ConvParam& param) {
                                static_cast<const void*>(scale),
                                this->stream_);
       } else {
-        bias_int8_nhwc<int8_t>(num,
-                               static_cast<const void*>(temp_out),
-                               static_cast<const void*>(b_data),
-                               static_cast<void*>(temp_out),
-                               n,
-                               c,
-                               h,
-                               w,
-                               static_cast<const void*>(scale),
-                               this->stream_);
+        bias_int8_nhwc<float>(num,
+                              static_cast<const void*>(temp_out),
+                              static_cast<const void*>(b_data),
+                              static_cast<void*>(temp_out),
+                              n,
+                              c,
+                              h,
+                              w,
+                              static_cast<const void*>(scale),
+                              this->stream_);
       }
       return true;
     }

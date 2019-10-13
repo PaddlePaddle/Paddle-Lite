@@ -30,17 +30,17 @@ void TypeLayoutTransformPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   // Start from inputs of the graph, those should have place set.
   VLOG(4) << "\n" << Visualize(graph.get());
   std::list<Node*> nodes;
-  for (auto& node : graph->mutable_nodes()) {
-    nodes.push_back(&node);
+  for (auto& node : graph->StmtTopologicalOrder()) {
+    nodes.push_back(node);
   }
 
-  LOG(INFO) << "nodes.size():" << nodes.size();
+  VLOG(4) << "nodes.size():" << nodes.size();
   for (auto& node : nodes) {
-    LOG(INFO) << "!node->IsStmt():" << !node->IsStmt();
+    VLOG(4) << "!node->IsStmt():" << !node->IsStmt();
     if (!node->IsStmt()) continue;
     auto inlinks = node->inlinks;
-    LOG(INFO) << "node->AsStmt().desc:" << node->AsStmt().desc
-              << " inlinks.size():" << inlinks.size();
+    VLOG(4) << "node->AsStmt().desc:" << node->AsStmt().desc
+            << " inlinks.size():" << inlinks.size();
     for (auto* in : inlinks) {
       ComplementInputs(graph.get(), node, in);
     }
@@ -58,7 +58,7 @@ void TypeLayoutTransformPass::ComplementInputs(SSAGraph* graph,
 
   CHECK(inst_node->IsStmt());
   auto& inst = inst_node->AsStmt();
-  LOG(INFO) << "found Target tensor: " << in->AsArg().name;
+  VLOG(4) << "found Target tensor: " << in->AsArg().name;
   CHECK(in->IsRoleSet());
   CHECK(in->IsArg());
   auto in_arg_name = in->AsArg().name;
@@ -66,15 +66,15 @@ void TypeLayoutTransformPass::ComplementInputs(SSAGraph* graph,
   CHECK(inst.op_info()->GetInputArgname(in_arg_name, &tmp));
   auto decl_arg_type = inst.picked_kernel().GetInputDeclType(tmp);
   CHECK(in->AsArg().type);
-  LOG(INFO) << "\n tmp:" << tmp << "\n in->AsArg().name:" << in->AsArg().name
-            << "\n *in->AsArg().type:" << *in->AsArg().type
-            << "\n *decl_arg_type:" << *decl_arg_type
-            << "\n inst.op()->DebugString():" << inst.op()->DebugString();
+  VLOG(4) << "\n tmp:" << tmp << "\n in->AsArg().name:" << in->AsArg().name
+          << "\n *in->AsArg().type:" << *in->AsArg().type
+          << "\n *decl_arg_type:" << *decl_arg_type
+          << "\n inst.op()->DebugString():" << inst.op()->DebugString();
 
   if (!DataLayoutCompatible(*in->AsArg().type, *decl_arg_type)) {
-    LOG(INFO) << "found Layout unmatched tensor: " << in->AsArg().name
-              << " for kernel " << inst.op()->DebugString() << " "
-              << *in->AsArg().type << " -> " << *decl_arg_type;
+    VLOG(4) << "found Layout unmatched tensor: " << in->AsArg().name
+            << " for kernel " << inst.op()->DebugString() << " "
+            << *in->AsArg().type << " -> " << *decl_arg_type;
     AddLayoutInst(*in->AsArg().type,
                   *decl_arg_type,
                   in,
@@ -94,9 +94,9 @@ void TypeLayoutTransformPass::AddLayoutInst(
   CHECK(!valid_places.empty()) << "valid_place should be set";
 
   CHECK(in->IsArg());
-  auto node_id = [&] { return graph->nodes().size(); };
+  // auto node_id = [&] { return graph->nodes().size(); };
   auto layout_output_name =
-      string_format("%s/layout_trans/%d", in->AsArg().name.c_str(), node_id());
+      string_format("%s/layout_trans", in->AsArg().name.c_str());
   auto* layout_output_arg = graph->NewArgumentNode(layout_output_name);
   layout_output_arg->AsArg().type =
       LiteType::GetTensorTy(from.target(), from.precision(), to.layout());
@@ -145,10 +145,10 @@ void TypeLayoutTransformPass::AddLayoutInst(
   CHECK(is_found) << "Can't find a layout  kernel for layout op: " << from
                   << ":" << in->AsArg().name << "->" << to << ":"
                   << inst_node->AsStmt().op_info()->Type();
-  LOG(INFO) << "========= final picked kernel [info]:"
-            << layout_inst->AsStmt().picked_kernel().name()
-            << " [summary]:" << layout_inst->AsStmt().picked_kernel().summary()
-            << "\n";
+  VLOG(4) << "========= final picked kernel [info]:"
+          << layout_inst->AsStmt().picked_kernel().name()
+          << " [summary]:" << layout_inst->AsStmt().picked_kernel().summary()
+          << "\n";
 
   // Remove the old link
   RemoveDirectedLink(in, inst_node);
