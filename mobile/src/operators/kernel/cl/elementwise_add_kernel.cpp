@@ -77,8 +77,8 @@ void ElementwiseAddKernel<GPU_CL, float>::Compute(
     status = clSetKernelArg(kernel, 2, sizeof(cl_mem),
                             reinterpret_cast<void *>(&output_image));
     CL_CHECK_ERRORS(status);
-    int width = input->ImageWidth();
-    int height = input->ImageHeight();
+    auto width = input->ImageWidth();
+    auto height = input->ImageHeight();
     size_t global_work_size[2] = {width, height};
     status =
         clEnqueueNDRangeKernel(this->cl_helper_.CLCommandQueue(), kernel, 2,
@@ -103,8 +103,8 @@ void ElementwiseAddKernel<GPU_CL, float>::Compute(
       status = clSetKernelArg(kernel, 3, sizeof(cl_int),
                               reinterpret_cast<void *>(&tensor_w));
       CL_CHECK_ERRORS(status);
-      int width = input->ImageWidth();
-      int height = input->ImageHeight();
+      auto width = input->ImageWidth();
+      auto height = input->ImageHeight();
       DLOG << "dede:" << width << "," << height;
       size_t global_work_size[2] = {width, height};
       cl_event out_event = param.Out()->GetClEvent();
