@@ -25,7 +25,7 @@ namespace lite {
 TEST(io_copy, compute) {
   LOG(INFO) << "to get kernel ...";
   auto h2d_kernels = KernelRegistry::Global().Create(
-      "io_copy", TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kNCHW));
+      "io_copy", TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kAny));
   ASSERT_FALSE(h2d_kernels.empty());
 
   auto h2d_kernel = std::move(h2d_kernels.front());
@@ -79,5 +79,5 @@ TEST(io_copy, compute) {
 }  // namespace lite
 }  // namespace paddle
 
-USE_LITE_KERNEL(io_copy, kOpenCL, kAny, kNCHW, host_to_device);
-USE_LITE_KERNEL(io_copy, kOpenCL, kAny, kNCHW, device_to_host);
+USE_LITE_KERNEL(io_copy, kOpenCL, kAny, kAny, host_to_device);
+USE_LITE_KERNEL(io_copy, kOpenCL, kAny, kAny, device_to_host);
