@@ -35,6 +35,7 @@ void mul_compute(const lite::cuda::Blas<float>& blas,
                  T* out) {
   float alpha = 1.0;
   float beta = 0.0;
+  /*
   blas.sgemm(CUBLAS_OP_N,
              CUBLAS_OP_N,
              x_h,
@@ -48,6 +49,20 @@ void mul_compute(const lite::cuda::Blas<float>& blas,
              &beta,
              out,
              x_h);
+  */
+  blas.sgemm(CUBLAS_OP_N,
+             CUBLAS_OP_N,
+             y_w,
+             x_h,
+             y_h,
+             &alpha,
+             y,
+             y_w,
+             x,
+             x_w,
+             &beta,
+             out,
+             y_w);
 }
 
 class MulCompute : public KernelLite<TARGET(kCUDA), PRECISION(kFloat)> {
@@ -79,6 +94,7 @@ class MulCompute : public KernelLite<TARGET(kCUDA), PRECISION(kFloat)> {
             .Slice(param.y_num_col_dims, param.y->dims().size())
             .production());
     CHECK_EQ(x_w, y_h) << "x_w must be equal with y_h";
+    LOG(INFO) << x_h << " " << x_w << " " << y_h << " " << y_w;
 
     mul_compute<float>(blas, x_data, x_h, x_w, y_data, y_h, y_w, out_data);
   }

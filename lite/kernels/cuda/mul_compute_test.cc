@@ -28,11 +28,11 @@ TEST(mul_compute, normal) {
   auto& context = ctx->As<CUDAContext>();
 
   Tensor x, y, out, x_cpu, y_cpu, out_cpu;
-  int h = 2, w = 2;
-  out.Resize({h, w});
-  x_cpu.Resize({h, w});
-  y_cpu.Resize({h, w});
-  out_cpu.Resize({h, w});
+  int x_h = 2, x_w_y_h = 3, y_w = 4;
+  out.Resize({x_h, y_w});
+  x_cpu.Resize({x_h, x_w_y_h});
+  y_cpu.Resize({x_w_y_h, y_w});
+  out_cpu.Resize({x_h, y_w});
 
   auto* out_data = out.mutable_data<float>(TARGET(kCUDA));
   float* x_cpu_data = x_cpu.mutable_data<float>();
