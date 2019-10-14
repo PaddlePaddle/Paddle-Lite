@@ -64,6 +64,38 @@ lite::Tensor *Predictor::GetInput(size_t offset) {
   return &feed_list->at(offset);
 }
 
+// get inputs names
+std::vector<std::string> Predictor::GetInputNames() {
+  std::vector<std::string> input_names;
+  for (auto &item : input_names_) {
+    input_names.push_back(item.second);
+  }
+  return input_names;
+}
+// get outputnames
+std::vector<std::string> Predictor::GetOutputNames() {
+  std::vector<std::string> output_names;
+  for (auto &item : output_names_) {
+    output_names.push_back(item.second);
+  }
+  return output_names;
+}
+// append the names of inputs and outputs into input_names_ and output_names_
+void Predictor::PrepareFeedFetch() {
+  auto current_block = program_desc_.GetBlock<cpp::BlockDesc>(0);
+  for (int i = 0; i < current_block->OpsSize(); i++) {
+    auto op = current_block->GetOp<cpp::OpDesc>(i);
+    if (op->Type() == "feed") {
+      int idx = op->GetAttr<int>("col");
+      input_names_[idx] = op->Output("Out").front();
+      idx2feeds_[op->Output("Out").front()] = idx;
+    } else if (op->Type() == "fetch") {
+      int idx = op->GetAttr<int>("col");
+      output_names_[idx] = op->Input("X").front();
+    }
+  }
+}
+
 const lite::Tensor *Predictor::GetOutput(size_t offset) const {
   auto *_fetch_list = exec_scope_->FindVar("fetch");
   CHECK(_fetch_list) << "no fatch variable in exec_scope";
@@ -161,6 +193,20 @@ void Predictor::GenRuntimeProgram() {
 const lite::Tensor *Predictor::GetTensor(const std::string &name) const {
   auto *var = exec_scope_->FindVar(name);
   return &var->Get<lite::Tensor>();
+}
+// get input by name
+lite::Tensor *Predictor::GetInputByName(const std::string &name) {
+  if (idx2feeds_.find(name) == idx2feeds_.end()) {
+    LOG(ERROR) << "Model do not have input named with: [" << name
+               << "], model's inputs include:";
+    for (int i = 0; i < input_names_.size(); i++) {
+      LOG(ERROR) << "[" << input_names_[i] << "]";
+    }
+    return NULL;
+  } else {
+    int idx = idx2feeds_[name];
+    return GetInput(idx);
+  }
 }
 
 #ifdef LITE_WITH_TRAIN
