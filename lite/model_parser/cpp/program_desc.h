@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #pragma once
-#include <string>
 #include <vector>
 #include "lite/model_parser/cpp/block_desc.h"
 #include "lite/model_parser/desc_apis.h"

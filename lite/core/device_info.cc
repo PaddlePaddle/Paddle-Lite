@@ -1016,7 +1016,7 @@ int DeviceInfo::Setup() {
               << ", max freq: " << max_freqs_[i]
               << ", min freq: " << min_freqs_[i]
               << ", cluster ID: " << cluster_ids_[core_ids_[i]]
-              << ", CPU ARCH: A" << static_cast<int>(archs_[i]);
+              << ", CPU ARCH: A" << archs_[i];
   }
   LOG(INFO) << "L1 DataCache size is: ";
   for (int i = 0; i < core_num_; ++i) {
@@ -1070,7 +1070,7 @@ void DeviceInfo::SetRunMode(lite_api::PowerMode mode, int thread_num) {
       RequestPowerRandLowMode(shift_num, thread_num);
       break;
     default:
-      LOG(FATAL) << "Unsupported power mode: " << static_cast<int>(mode);
+      LOG(FATAL) << "Unsupported power mode: " << mode;
       break;
   }
   if (active_ids_.empty()) {
