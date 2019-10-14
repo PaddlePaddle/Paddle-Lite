@@ -685,6 +685,7 @@ struct SequencePoolParam {
   std::string pool_type{"AVERAGE"};
 #ifdef LITE_WITH_X86
   float pad_value{0.0};
+  lite::Tensor* MaxIndex{};
 #endif
 };
 
