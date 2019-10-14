@@ -32,13 +32,19 @@ __kernel void instancenorm(__private const int in_width,
 
   const sampler_t sampler =
       CLK_NORMALIZED_COORDS_TRUE | CLK_ADDRESS_CLAMP | CLK_FILTER_NEAREST;
-
+#ifdef LOCAL_MEM_128
+  __local float4 shared_mem[128];
+#elif defined(LOCAL_MEM_64)
+  __local float4 shared_mem[64];
+#else
   __local float4 shared_mem[256];
-
+#endif
+  int xOffset = c * in_width;
+  int yOffset = n * in_height;
   float4 sum = 0.0f;
   for (int xIndex = w; xIndex < in_width; xIndex += local_work_size_x) {
     for (int yIndex = h; yIndex < in_height; yIndex += local_work_size_y) {
-      sum += read_imagef(input, sampler, (int2)(mad24(c, in_width, xIndex), mad24(n, in_height, yIndex)));
+      sum += read_imagef(input, sampler, (int2)(xOffset + xIndex, yOffset + yIndex));
     }
   }
   shared_mem[local_id] = sum;
@@ -73,7 +79,8 @@ __kernel void instancenorm(__private const int in_width,
   sum = 0.0f;
   for (int xIndex = w; xIndex < in_width; xIndex += local_work_size_x) {
     for (int yIndex = h; yIndex < in_height; yIndex += local_work_size_y) {
-      sum += pow(read_imagef(input, sampler, (int2)(mad24(c, in_width, xIndex), mad24(n, in_height, yIndex))) - mean_val, 2);
+      float4 temp = read_imagef(input, sampler, (int2)(xOffset + xIndex, yOffset + yIndex)) - mean_val;
+      sum += temp * temp;
     }
   }
   shared_mem[local_id] = sum;
@@ -107,7 +114,7 @@ __kernel void instancenorm(__private const int in_width,
 
   for (int xIndex = w; xIndex < in_width; xIndex += local_work_size_x) {
     for (int yIndex = h; yIndex < in_height; yIndex += local_work_size_y) {
-      int2 intout_pos = (int2)(mad24(c, in_width, xIndex), mad24(n, in_height, yIndex));
+      int2 intout_pos = (int2)(xOffset + xIndex, yOffset + yIndex);
       float4 in_val = read_imagef(input, sampler, intout_pos);
       half4 out_val = convert_half4((in_val - mean_val) * s);
 #ifdef RELU

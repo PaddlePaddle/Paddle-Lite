@@ -113,9 +113,6 @@ void RuntimeProgram::UpdateVarsOfProgram(cpp::ProgramDesc* desc) {
 
 void RuntimeProgram::Run() {
   for (auto& inst : instructions_) {
-    VLOG(4) << ">> Running kernel: " << inst.op()->op_info()->Repr()
-            << " on Target " << TargetToStr(inst.kernel()->target());
-
     inst.Run();
 #ifdef LITE_WITH_PROFILE
 #ifdef LITE_WITH_PRECISION_PROFILE
@@ -182,19 +179,24 @@ void Program::PrepareWorkspace(const cpp::ProgramDesc& prog) {
 }
 
 void Instruction::Run() {
-#ifdef LITE_WITH_PROFILE
-  profile::ProfileBlock x(profile_id_);
-#endif  // LITE_WITH_PROFILE
   CHECK(op_) << "op null";
   CHECK(kernel_) << "kernel null";
+#ifdef LITE_WITH_PROFILE
+  profile::ProfileBlock x(profile_id_, "instruction");
+#endif  // LITE_WITH_PROFILE
   if (first_epoch_) {
     first_epoch_ = false;
     CHECK(op_->CheckShape());
   }
 
-  if (op_->run_once() && has_run_) return;
+  if (op_->run_once() && has_run_) {
+    return;
+  }
+
   VLOG(4) << "kernel launch";
   op_->InferShape();
+  VLOG(4) << ">> Running kernel: " << op_->op_info()->Repr() << " on Target "
+          << TargetToStr(kernel_->target());
   kernel_->Launch();
   has_run_ = true;
 }

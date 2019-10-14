@@ -463,9 +463,9 @@ void Blas<Target>::MatMul(const lite::Tensor &mat_a,
   auto dim_out = mat_out->dims();
   PADDLE_ENFORCE(dim_a.size() == 2 && dim_b.size() == 2 && dim_out.size() == 2,
                  "The input and output of matmul be matrix");
-  PADDLE_ENFORCE(
-      mat_a.target() == mat_b.target() && mat_a.target() == mat_out->target(),
-      "The targets of matrices must be same");
+  // PADDLE_ENFORCE(
+  //    mat_a.target() == mat_b.target() && mat_a.target() == mat_out->target(),
+  //    "The targets of matrices must be same");
 
   int M = dim_out[0];
   int N = dim_out[1];

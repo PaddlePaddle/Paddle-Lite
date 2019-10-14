@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "lite/backends/cuda/cuda_utils.h"
 #include "lite/backends/cuda/math/transpose.h"
 #include "lite/backends/cuda/math/utils.h"
 
@@ -89,6 +90,7 @@ void BatchTranspose2DCUDAImpl(const int N,
     BatchTranspose2DCUDAImpl<T>(N, C, HxW, X, Y, ctx); \
   }
 TYPE_SPECIALIZED_CUDA_NCHW2NHWC(float)
+TYPE_SPECIALIZED_CUDA_NCHW2NHWC(int8_t)
 #undef TYPE_SPECIALIZED_CUDA_NCHW2NHWC
 
 #define TYPE_SPECIALIZED_CUDA_NHWC2NCHW(T)             \
@@ -102,6 +104,7 @@ TYPE_SPECIALIZED_CUDA_NCHW2NHWC(float)
     BatchTranspose2DCUDAImpl<T>(N, HxW, C, X, Y, ctx); \
   }
 TYPE_SPECIALIZED_CUDA_NHWC2NCHW(float)
+TYPE_SPECIALIZED_CUDA_NHWC2NCHW(int8_t)
 #undef TYPE_SPECIALIZED_CUDA_NHWC2NCHW
 
 template <typename T>
@@ -169,8 +172,8 @@ void TransposeCUDAImpl(const std::vector<int64_t>& X_dims,
   const int M = (size + CUDA_NUM_THREADS - 1) / CUDA_NUM_THREADS;
   TransposeCUDAKernel<<<M, CUDA_NUM_THREADS, 0, ctx->exec_stream()>>>(
       size, ndim, d_strides, d_y_dims, X, Y);
-  // cudaError_t error = cudaGetLastError();
-  // if (error != cudaSuccess) LOG(INFO) << cudaGetErrorString(error);
+  auto e = cudaGetLastError();
+  CHECK_EQ(e, cudaSuccess) << " CUDA: " << cudaGetErrorString(e);
 }
 
 #define TYPE_SPECIALIZED_CUDA_TRANSPOSE(T)              \

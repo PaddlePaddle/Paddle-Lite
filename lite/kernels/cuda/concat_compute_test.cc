@@ -92,13 +92,13 @@ void concat_compute_ref(const operators::ConcatParam& param) {
 }
 
 TEST(concat, init) {
-  ConcatCompute concat;
+  ConcatCompute<float> concat;
   ASSERT_EQ(concat.precision(), PRECISION(kFloat));
   ASSERT_EQ(concat.target(), TARGET(kCUDA));
 }
 
 TEST(concat, compute_input_multi) {
-  ConcatCompute concat_kernel;
+  ConcatCompute<float> concat_kernel;
   std::unique_ptr<KernelContext> ctx(new KernelContext);
   auto& context = ctx->As<CUDAContext>();
 

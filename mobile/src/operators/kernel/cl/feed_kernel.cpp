@@ -21,7 +21,11 @@ namespace operators {
 template <>
 bool FeedKernel<GPU_CL, float>::Init(FeedParam<GPU_CL> *param) {
   DLOG << "Init feed";
-  this->cl_helper_.AddKernel("feed", "feed_kernel.cl");
+  if (this->pre_post_type_ == UINT8_255) {
+    this->cl_helper_.AddKernel("feed_with_pre", "feed_kernel.cl");
+  } else {
+    this->cl_helper_.AddKernel("feed", "feed_kernel.cl");
+  }
   return true;
 }
 
@@ -34,7 +38,7 @@ void FeedKernel<GPU_CL, float>::Compute(const FeedParam<GPU_CL> &param) {
   auto output = param.Out();
   const Tensor *input = &param.InputX()->at(col);
   //  DLOG << *input;
-  const float *input_data = input->data<float>();
+
   int numel = input->numel();
   cl_mem output_image = output->GetCLImage();
   const int out_C = output->dims()[1];
@@ -46,7 +50,14 @@ void FeedKernel<GPU_CL, float>::Compute(const FeedParam<GPU_CL> &param) {
   framework::CLTensor input_cl_tensor(this->cl_helper_.CLContext(),
                                       this->cl_helper_.CLCommandQueue());
   input_cl_tensor.Resize(input->dims());
-  cl_mem inputBuffer = input_cl_tensor.mutable_with_data<float>(input_data);
+  cl_mem inputBuffer;
+  if (this->pre_post_type_ == UINT8_255) {
+    inputBuffer =
+        input_cl_tensor.mutable_with_data<uint8_t>(input->data<uint8_t>());
+  } else {
+    inputBuffer =
+        input_cl_tensor.mutable_with_data<float>(input->data<float>());
+  }
 
   status = clSetKernelArg(kernel, 0, sizeof(cl_mem), &inputBuffer);
   CL_CHECK_ERRORS(status);

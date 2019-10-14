@@ -57,6 +57,8 @@ void TransposeCompute::Run() {
   }
 
   lite::cuda::math::Transpose(dims, axes, in, out, &ctx);
+  cudaError_t error = cudaGetLastError();
+  if (error != cudaSuccess) LOG(INFO) << cudaGetErrorString(error);
 }
 
 }  // namespace cuda
@@ -72,6 +74,17 @@ REGISTER_LITE_KERNEL(transpose,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kCUDA))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kCUDA))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(transpose2,
+                     kCUDA,
+                     kFloat,
+                     kNCHW,
+                     paddle::lite::kernels::cuda::TransposeCompute,
+                     def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kCUDA))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kCUDA))})
+    .BindOutput("XShape", {LiteType::GetTensorTy(TARGET(kCUDA))})
     .Finalize();
 
 // REGISTER_LITE_KERNEL(transpose2,

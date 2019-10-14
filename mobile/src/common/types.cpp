@@ -133,6 +133,7 @@ const char *G_OP_TYPE_BEAM_SEARCH_DECODE = "beam_search_decode";
 const char *G_OP_TYPE_FILL_CONSTAN_BATCH_SIZE_LIKE =
     "fill_constant_batch_size_like";
 const char *G_OP_TYPE_FUSION_INSTANCENORM_RELU = "fusion_instancenorm_relu";
+const char *G_OP_TYPE_PIXEL_SHUFFLE = "pixel_shuffle";
 
 std::unordered_map<
     std::string, std::pair<std::vector<std::string>, std::vector<std::string>>>
@@ -256,5 +257,6 @@ std::unordered_map<
         {G_OP_TYPE_BEAM_SEARCH_DECODE,
          {{"Ids", "Scores"}, {"SentenceIds", "SentenceScores"}}},
         {G_OP_TYPE_FILL_CONSTAN_BATCH_SIZE_LIKE, {{"Input"}, {"Out"}}},
-        {G_OP_TYPE_PAD2D, {{"X"}, {"Out"}}}};
+        {G_OP_TYPE_PAD2D, {{"X"}, {"Out"}}},
+        {G_OP_TYPE_PIXEL_SHUFFLE, {{"X"}, {"Out"}}}};
 }  // namespace paddle_mobile

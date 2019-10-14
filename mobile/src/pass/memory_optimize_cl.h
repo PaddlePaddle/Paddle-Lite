@@ -19,10 +19,12 @@ limitations under the License. */
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include "framework/cl/cl_image_converter.h"
 #include "framework/lod_tensor.h"
 #include "framework/program/program.h"
 #include "pass/pass_base.h"
-// use for super resulotion  to be extend for all opencl
+
+// use for opencl
 namespace paddle_mobile {
 namespace pass {
 
@@ -34,19 +36,20 @@ typedef struct {
 
 // MemoryOptPass will analyze the program, and reuse memory between
 // variables as much as possible
-class MemoryOptPassSuper : public PassBase {
+class MemoryOptPassCl : public PassBase {
  public:
-  MemoryOptPassSuper() {}
-  virtual ~MemoryOptPassSuper() {
+  MemoryOptPassCl() {}
+  virtual ~MemoryOptPassCl() {
     for (auto &it : created_nodes_) {
       delete it.second;
     }
+    delete normal_converter;
   }
 
   void operator()(const framework::ProgramDesc *program,
                   framework::Scope *scope,
                   MemoryOptimizationLevel memory_optimization_level,
-                  framework::DDim dims);
+                  framework::DDim dims = {});
 
   void AppendBlockVars(const framework::BlockDesc *block);
 
@@ -63,6 +66,8 @@ class MemoryOptPassSuper : public PassBase {
   std::vector<std::vector<ClVarNode *>> reused_nodes_;
   std::unordered_map<std::string, ClVarNode *> created_nodes_;
   std::unordered_map<std::string, framework::VarDesc *> block_vars_;
+  paddle_mobile::framework::CLImageConverterNormal *normal_converter =
+      new paddle_mobile::framework::CLImageConverterNormal();
 };
 
 }  // namespace pass

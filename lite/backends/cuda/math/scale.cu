@@ -21,6 +21,18 @@ namespace lite {
 namespace cuda {
 namespace math {
 
+template <typename T>
+__global__ void scale_kernel(int num, const T* in, T* out, const float scale) {
+  int tid = blockIdx.x * blockDim.x + threadIdx.x;
+  if (tid < num) {
+#if __CUDA_ARCH__ >= 350
+    out[tid] = __ldg(in + tid) * scale;
+#else
+    out[tid] = in[tid] * scale;
+#endif
+  }
+}
+
 __global__ void fp32_scale_nhwc4_kernel(int num,
                                         const float4* in,
                                         float4* out,
@@ -44,29 +56,79 @@ __global__ void fp32_scale_nhwc4_kernel(int num,
   }
 }
 
-void fp32_scale_nhwc4(int num,
-                      const void* in,
-                      void* out,
-                      const void* scale,
-                      int N,
-                      int K,
-                      int H,
-                      int W,
-                      cudaStream_t stream) {
+__global__ void fp32_scale_nhwc_kernel(int num,
+                                       const float* in,
+                                       float* out,
+                                       const float* scale,
+                                       int N,
+                                       int C,
+                                       int H,
+                                       int W) {
+  int tid = blockIdx.x * blockDim.x + threadIdx.x;
+  if (tid < num) {
+    int idx = tid % C;
+#if __CUDA_ARCH__ >= 350
+    out[tid] = __ldg(in + tid) * __ldg(scale + idx);
+#else
+    out[tid] = in[tid] * scale[idx];
+#endif
+  }
+}
+
+void fp32_scale_nhwc(int num,
+                     const void* in,
+                     void* out,
+                     const void* scale,
+                     int N,
+                     int C,
+                     int H,
+                     int W,
+                     cudaStream_t stream) {
   int thread = 256;
-  int block = (num + thread - 1) / thread;
-  fp32_scale_nhwc4_kernel<<<block, thread, 0, stream>>>(
-      num,
-      static_cast<const float4*>(in),
-      static_cast<float4*>(out),
-      static_cast<const float4*>(scale),
-      N,
-      K,
-      H,
-      W);
+  if (C % 4 == 0) {
+    int block = (num / 4 + thread - 1) / thread;
+    fp32_scale_nhwc4_kernel<<<block, thread, 0, stream>>>(
+        num / 4,
+        static_cast<const float4*>(in),
+        static_cast<float4*>(out),
+        static_cast<const float4*>(scale),
+        N,
+        C / 4,
+        H,
+        W);
+  } else {
+    int block = (num + thread - 1) / thread;
+    fp32_scale_nhwc_kernel<<<block, thread, 0, stream>>>(
+        num,
+        static_cast<const float*>(in),
+        static_cast<float*>(out),
+        static_cast<const float*>(scale),
+        N,
+        C,
+        H,
+        W);
+  }
+
   cudaError_t error = cudaGetLastError();
   if (error != cudaSuccess) std::cout << cudaGetErrorString(error);
 }
+
+template <typename T>
+void scale(int num, const T* in, T* out, float scale, cudaStream_t stream) {
+  int thread = 256;
+  int block = (num + thread - 1) / thread;
+  scale_kernel<<<block, thread, 0, stream>>>(num, in, out, scale);
+}
+
+template <typename T>
+void scale(int num, const T* in, T* out, float scale) {
+  int thread = 256;
+  int block = (num + thread - 1) / thread;
+  scale_kernel<<<block, thread>>>(num, in, out, scale);
+}
+
+template void scale(int num, const float*, float*, float, cudaStream_t);
+template void scale(int num, const float*, float*, float);
 
 }  // namespace math
 }  // namespace cuda

@@ -160,9 +160,9 @@ class Context<TargetType::kCUDA> {
     cublas_fp32_ = std::make_shared<lite::cuda::Blas<float>>();
   }
   void Init(int dev_id, int exec_stream_id = 0, int io_stream_id = 0) {
-    CHECK_GT(devs.size(), 0)
+    CHECK_GT(devs.size(), 0UL)
         << "Env is not initialized or current target is not exit!";
-    if (dev_id >= devs.size()) {
+    if (dev_id >= static_cast<int>(devs.size())) {
       LOG(WARNING) << "device index exceeds the number of devices, set to "
                       "default device(0)!";
       device_id_ = 0;
@@ -261,7 +261,7 @@ template <>
 class Context<TargetType::kOpenCL> {
   std::shared_ptr<CLContext> cl_context_;
   using WaitListType =
-      std::unordered_map<decltype(static_cast<const cl::Buffer*>(nullptr)),
+      std::unordered_map<decltype(static_cast<const void*>(nullptr)),
                          std::shared_ptr<cl::Event>>;
   std::shared_ptr<WaitListType> cl_wait_list_;
 

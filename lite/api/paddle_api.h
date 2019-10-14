@@ -74,6 +74,14 @@ class LITE_API PaddlePredictor {
 
   virtual std::string GetVersion() const = 0;
 
+  // Get input names
+  virtual std::vector<std::string> GetInputNames() = 0;
+  // Get output names
+  virtual std::vector<std::string> GetOutputNames() = 0;
+
+  // Get Input by name
+  virtual std::unique_ptr<Tensor> GetInputByName(const std::string& name) = 0;
+
   /// Get a readonly tensor, return null if no one called `name` exists.
   virtual std::unique_ptr<const Tensor> GetTensor(
       const std::string& name) const = 0;
@@ -90,11 +98,20 @@ class LITE_API PaddlePredictor {
 /// Base class for all the configs.
 class LITE_API ConfigBase {
   std::string model_dir_;
+  int threads_{1};
+  PowerMode mode_{LITE_POWER_NO_BIND};
 
  public:
+  explicit ConfigBase(PowerMode mode = LITE_POWER_NO_BIND, int threads = 1);
+  // set Model_dir
   void set_model_dir(const std::string& x) { model_dir_ = x; }
-
   const std::string& model_dir() const { return model_dir_; }
+  // set Power_mode
+  void set_power_mode(PowerMode mode);
+  PowerMode power_mode() const { return mode_; }
+  // set Thread
+  void set_threads(int threads);
+  int threads() const { return threads_; }
 };
 
 /// CxxConfig is the config for the Full feature predictor.
@@ -129,16 +146,11 @@ class LITE_API CxxConfig : public ConfigBase {
 /// MobileConfig is the config for the light weight predictor, it will skip
 /// IR optimization or other unnecessary stages.
 class LITE_API MobileConfig : public ConfigBase {
-  PowerMode mode_{LITE_POWER_HIGH};
-  int threads_{1};
   std::string model_buffer_;
   std::string param_buffer_;
   bool model_from_memory_{false};
 
  public:
-  explicit MobileConfig(PowerMode mode = LITE_POWER_NO_BIND, int threads = 1);
-  void set_power_mode(PowerMode mode);
-  void set_threads(int threads);
   void set_model_buffer(const char* model_buffer,
                         size_t model_buffer_size,
                         const char* param_buffer,
@@ -148,8 +160,6 @@ class LITE_API MobileConfig : public ConfigBase {
     model_from_memory_ = true;
   }
 
-  PowerMode power_mode() const { return mode_; }
-  int threads() const { return threads_; }
   bool model_from_memory() const { return model_from_memory_; }
   const std::string& model_buffer() const { return model_buffer_; }
   const std::string& param_buffer() const { return param_buffer_; }

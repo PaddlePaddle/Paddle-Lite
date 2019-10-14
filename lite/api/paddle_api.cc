@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/api/paddle_api.h"
+#include "lite/core/device_info.h"
 #include "lite/core/tensor.h"
 
 namespace paddle {
@@ -42,6 +43,10 @@ const int8_t *Tensor::data() const {
 }
 
 template <>
+int *Tensor::mutable_data() const {
+  return tensor(raw_tensor_)->mutable_data<int>();
+}
+template <>
 float *Tensor::mutable_data() const {
   return tensor(raw_tensor_)->mutable_data<float>();
 }
@@ -67,6 +72,31 @@ void PaddlePredictor::SaveOptimizedModel(const std::string &model_dir,
 template <typename ConfigT>
 std::shared_ptr<PaddlePredictor> CreatePaddlePredictor(const ConfigT &) {
   return std::shared_ptr<PaddlePredictor>();
+}
+
+ConfigBase::ConfigBase(PowerMode mode, int threads) {
+#ifdef LITE_WITH_ARM
+  lite::DeviceInfo::Init();
+  lite::DeviceInfo::Global().SetRunMode(mode, threads);
+  mode_ = lite::DeviceInfo::Global().mode();
+  threads_ = lite::DeviceInfo::Global().threads();
+#endif
+}
+
+void ConfigBase::set_power_mode(paddle::lite_api::PowerMode mode) {
+#ifdef LITE_WITH_ARM
+  lite::DeviceInfo::Global().SetRunMode(mode, threads_);
+  mode_ = lite::DeviceInfo::Global().mode();
+  threads_ = lite::DeviceInfo::Global().threads();
+#endif
+}
+
+void ConfigBase::set_threads(int threads) {
+#ifdef LITE_WITH_ARM
+  lite::DeviceInfo::Global().SetRunMode(mode_, threads);
+  mode_ = lite::DeviceInfo::Global().mode();
+  threads_ = lite::DeviceInfo::Global().threads();
+#endif
 }
 
 }  // namespace lite_api
