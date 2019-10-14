@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <vector>
+#include "lite/backends/cuda/math/utils.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/type_system.h"
 #include "lite/kernels/cuda/calib_compute.h"
@@ -22,19 +23,13 @@ namespace lite {
 namespace kernels {
 namespace cuda {
 
-__device__ __forceinline__ int8_t float2int8(float x) {
-  x = fmaxf(x, INT8_MIN);
-  x = fminf(x, INT8_MAX);
-  return __float2int_rn(x);
-}
-
 __global__ void Fp32ToInt8Kernel(const int num,
                                  const float scale,
                                  const float* input,
                                  int8_t* output) {
   int index = blockIdx.x * blockDim.x + threadIdx.x;
   if (index < num) {
-    output[index] = float2int8(input[index] / scale);
+    output[index] = lite::cuda::math::from_float<int8_t>(input[index] / scale);
   }
 }
 
