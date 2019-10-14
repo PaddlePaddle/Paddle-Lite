@@ -62,19 +62,21 @@ void TypeLayoutTransformPass::ComplementInputs(SSAGraph* graph,
   CHECK(in->IsRoleSet());
   CHECK(in->IsArg());
   auto in_arg_name = in->AsArg().name;
-  std::string tmp;
-  CHECK(inst.op_info()->GetInputArgname(in_arg_name, &tmp));
-  auto decl_arg_type = inst.picked_kernel().GetInputDeclType(tmp);
+  std::string inst_in_tensor_name;
+  CHECK(inst.op_info()->GetInputArgname(in_arg_name, &inst_in_tensor_name));
+  auto decl_arg_type =
+      inst.picked_kernel().GetInputDeclType(inst_in_tensor_name);
   CHECK(in->AsArg().type);
-  LOG(INFO) << "\n tmp:" << tmp << "\n in->AsArg().name:" << in->AsArg().name
-            << "\n *in->AsArg().type:" << *in->AsArg().type
-            << "\n *decl_arg_type:" << *decl_arg_type
-            << "\n inst.op()->DebugString():" << inst.op()->DebugString();
+  VLOG(5) << "\n inst_in_tensor_name:" << inst_in_tensor_name
+          << "\n in->AsArg().name:" << in->AsArg().name
+          << "\n *in->AsArg().type:" << *in->AsArg().type
+          << "\n *decl_arg_type:" << *decl_arg_type
+          << "\n inst.op()->DebugString():" << inst.op()->DebugString();
 
   if (!DataLayoutCompatible(*in->AsArg().type, *decl_arg_type)) {
-    LOG(INFO) << "found Layout unmatched tensor: " << in->AsArg().name
-              << " for kernel " << inst.op()->DebugString() << " "
-              << *in->AsArg().type << " -> " << *decl_arg_type;
+    VLOG(4) << "found Layout unmatched tensor: " << in->AsArg().name
+            << " for kernel " << inst.op()->DebugString() << " "
+            << *in->AsArg().type << " -> " << *decl_arg_type;
     AddLayoutInst(*in->AsArg().type,
                   *decl_arg_type,
                   in,
@@ -125,12 +127,13 @@ void TypeLayoutTransformPass::AddLayoutInst(
   for (auto& kernel : kernels) {
     const Type* in_arg_ty = kernel->GetInputDeclType("Input");
     const Type* out_arg_ty = kernel->GetOutputDeclType("Out");
-// const Type* out_arg_ty = kernel->GetOutputDeclType("Out"); // unused variable
 #ifdef LITE_WITH_OPENCL
-    // ignore [layout check] for layout trans from image2d to buffer
+    // layout kernel choose
+    //   must ignore [layout check] for layout of kernels's input and output
     if (TargetCompatibleTo(*in_arg_ty, from) &&
         PrecisionCompatibleTo(*in_arg_ty, from) &&
-        DeviceCompatibleTo(*in_arg_ty, from)) {
+        DeviceCompatibleTo(*in_arg_ty, from) &&
+        out_arg_ty->layout() == to.layout()) {
 #else
     if (TypeCompatible(*in_arg_ty, from) &&
         out_arg_ty->layout() == to.layout()) {
@@ -142,12 +145,12 @@ void TypeLayoutTransformPass::AddLayoutInst(
       break;
     }
   }
-  CHECK(is_found) << "Can't find a layout  kernel for layout op: " << from
-                  << ":" << in->AsArg().name << "->" << to << ":"
+  CHECK(is_found) << "Can't find a layout kernel for layout op: " << from << ":"
+                  << in->AsArg().name << "->" << to << ":"
                   << inst_node->AsStmt().op_info()->Type();
-  LOG(INFO) << "========= final picked kernel [info]:"
-            << layout_inst->AsStmt().picked_kernel().name()
-            << " [summary]:" << layout_inst->AsStmt().picked_kernel().summary()
+  LOG(INFO) << "========= final picked layout kernel ========= ";
+  LOG(INFO) << "[info]:" << layout_inst->AsStmt().picked_kernel().name();
+  LOG(INFO) << "[summary]:" << layout_inst->AsStmt().picked_kernel().summary()
             << "\n";
 
   // Remove the old link
