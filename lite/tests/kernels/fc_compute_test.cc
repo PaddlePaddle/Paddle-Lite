@@ -16,8 +16,8 @@
 #include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
 #include "lite/core/arena/framework.h"
-#include "lite/tests/kernels/fill_data.h"
-#include "lite/tests/kernels/test_funcs.h"
+#include "lite/tests/utils/fill_data.h"
+#include "lite/tests/utils/naive_math_impl.h"
 
 namespace paddle {
 namespace lite {
@@ -51,10 +51,10 @@ class FcOPTest : public arena::TestCase {
   std::string weight_ = "w";
   std::string bias_ = "b";
   std::string out_ = "out";
-  int in_num_col_dims_{1};
   DDim dims_{{1, 128}};
   DDim wdims_{{128, 4}};
   DDim bdims_{{4}};
+  int in_num_col_dims_{1};
 
  public:
   FcOPTest(const Place& place,

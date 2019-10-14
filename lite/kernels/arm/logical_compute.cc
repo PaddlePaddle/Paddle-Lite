@@ -82,28 +82,25 @@ void UnaryLogicalCompute<Functor>::Run() {
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
-REGISTER_LITE_KERNEL(
-    logical_xor,
-    kARM,
-    kFloat,
-    kNCHW,
-    paddle::lite::kernels::arm::BinaryLogicalCompute<
-        paddle::lite::kernels::arm::_LogicalXorFunctor>,
-    //  paddle::lite::kernels::arm::BinaryLogicalCompute<paddle::lite::kernels::arm::_LogicalXorFunctor<bool>>,
-    def)
+
+REGISTER_LITE_KERNEL(logical_xor,
+                     kARM,
+                     kFloat,
+                     kNCHW,
+                     paddle::lite::kernels::arm::BinaryLogicalCompute<
+                         paddle::lite::kernels::arm::_LogicalXorFunctor>,
+                     def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kBool))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kBool))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kBool))})
     .Finalize();
-REGISTER_LITE_KERNEL(
-    logical_and,
-    kARM,
-    kFloat,
-    kNCHW,
-    // paddle::lite::kernels::arm::BinaryLogicalCompute<paddle::lite::kernels::arm::_LogicalAndFunctor<bool>>,
-    paddle::lite::kernels::arm::BinaryLogicalCompute<
-        paddle::lite::kernels::arm::_LogicalAndFunctor>,
-    def)
+REGISTER_LITE_KERNEL(logical_and,
+                     kARM,
+                     kFloat,
+                     kNCHW,
+                     paddle::lite::kernels::arm::BinaryLogicalCompute<
+                         paddle::lite::kernels::arm::_LogicalAndFunctor>,
+                     def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kBool))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kBool))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kBool))})

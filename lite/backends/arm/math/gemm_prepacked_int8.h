@@ -15,7 +15,6 @@
 #pragma once
 #include <cmath>
 #include "lite/core/context.h"
-#include "lite/core/device_info.h"
 #include "lite/core/tensor.h"
 
 namespace paddle {
@@ -34,7 +33,7 @@ const int NBLOCK_INT8_OTH = 16;
 const int MBLOCK_INT8_DOT = 8;
 const int NBLOCK_INT8_DOT = 12;
 
-inline int get_hblock_int8(const ARMContext* ctx) {
+inline int get_hblock_int8(ARMContext* ctx) {
 #ifdef WITH_ARM_DOTPROD
   if (ctx->has_dot()) {
     return MBLOCK_INT8_DOT;
@@ -51,7 +50,7 @@ inline int get_hblock_int8(const ARMContext* ctx) {
 const int MBLOCK_INT8_OTH = 4;
 const int NBLOCK_INT8_OTH = 8;
 
-inline int get_hblock_int8(const ARMContext* ctx) { return 4; }
+inline int get_hblock_int8(ARMContext* ctx) { return 4; }
 #endif  // __aarch64__
 
 void prepackA_int8(void* out,
@@ -75,7 +74,7 @@ void prepackA_int8(TensorLite* tout,
 template <typename dtype>
 void gemm_prepack_int8(const int8_t* A_packed,
                        const int8_t* B,
-                       const int* bias,
+                       const float* bias,
                        dtype* C,
                        int M,
                        int N,
@@ -87,7 +86,6 @@ void gemm_prepack_int8(const int8_t* A_packed,
                        ARMContext* ctx);
 
 #define ROUNDUP(a, b) ((((a) + (b)-1) / (b)) * (b))
-
 }  // namespace math
 }  // namespace arm
 }  // namespace lite

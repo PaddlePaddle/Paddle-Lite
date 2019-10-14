@@ -18,9 +18,6 @@
 #include <string>
 #include <vector>
 #include "lite/api/paddle_api.h"
-#include "lite/api/paddle_use_kernels.h"
-#include "lite/api/paddle_use_ops.h"
-#include "lite/api/paddle_use_passes.h"
 #include "lite/api/test_helper.h"
 #include "lite/core/device_info.h"
 #include "lite/utils/cp_logging.h"
@@ -71,7 +68,7 @@ void Run(const std::vector<std::vector<int64_t>>& input_shapes,
   lite_api::MobileConfig config;
   config.set_threads(thread_num);
   if (thread_num == 1) {
-    config.set_power_mode(LITE_POWER_HIGH);
+    config.set_power_mode(LITE_POWER_NO_BIND);
   } else {
     config.set_power_mode(LITE_POWER_NO_BIND);
   }

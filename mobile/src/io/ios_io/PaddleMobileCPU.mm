@@ -181,24 +181,21 @@ static std::mutex shared_mutex;
       for (int x = 0; x < wanted_input_width; ++x) {
         int in_row = (y * imageHeight) / wanted_input_height;
         int in_col = (x * imageWidth) / wanted_input_width;
-        const UInt8 *in_pixel = input + (in_row * imageWidth * imageChannels) + (in_col * imageChannels);
+        const UInt8 *in_pixel = input + (in_row * sourceRowBytes) + (in_col * imageChannels);
         float *out_pos = out_row + x;
-        if (c == 0) {
-          *out_pos = (in_pixel[c] - means[c].floatValue) * scale;
-        }else if (c == 1){
-          *out_pos = (in_pixel[c] - means[c].floatValue) * scale;
-        }else if (c == 2){
-          *out_pos = (in_pixel[c] - means[c].floatValue) * scale;
-        }
+        *out_pos = (in_pixel[2 - c] - means[c].floatValue) * scale;
       }
     }
   }
 
 }
 
--(void)preprocess:(const UInt8 *)input output:(float *)output imageWidth:(int)imageWidth imageHeight:(int)imageHeight imageChannels:(int)imageChannels means:(NSArray<NSNumber *> *)means scale:(float)scale dim:(std::vector<int64_t>)dim{
+-(void)preprocess:(const UInt8 *)input output:(float *)output bytesPerRow:(int)bytesPerRow imageWidth:(int)imageWidth imageHeight:(int)imageHeight imageChannels:(int)imageChannels means:(NSArray<NSNumber *> *)means stds:(NSArray<NSNumber *> *)stds scale:(float)scale dim:(std::vector<int64_t>)dim {
   if (means == nil) {
     means = @[@0, @0, @0];
+  }
+  if (stds == nil) {
+    stds = @[@1, @1, @1];
   }
 
   int wanted_input_width = dim[3];
@@ -212,15 +209,9 @@ static std::mutex shared_mutex;
       for (int x = 0; x < wanted_input_width; ++x) {
         int in_row = (y * imageHeight) / wanted_input_height;
         int in_col = (x * imageWidth) / wanted_input_width;
-        const UInt8 *in_pixel = input + (in_row * imageWidth * imageChannels) + (in_col * imageChannels);
+        const UInt8 *in_pixel = input + (in_row * bytesPerRow) + (in_col * imageChannels);
         float *out_pos = out_row + x;
-        if (c == 0) {
-          *out_pos = (in_pixel[c] - means[c].floatValue) * scale;
-        }else if (c == 1){
-          *out_pos = (in_pixel[c] - means[c].floatValue) * scale;
-        }else if (c == 2){
-          *out_pos = (in_pixel[c] - means[c].floatValue) * scale;
-        }
+        *out_pos = (in_pixel[2 - c] - means[c].floatValue) / stds[c].floatValue * scale;
       }
     }
   }
@@ -278,8 +269,7 @@ static std::mutex shared_mutex;
   return cpuResult;
 }
 
-- (PaddleMobileCPUResult *)predict:(CGImageRef)image dim:(NSArray<NSNumber *> *)dim means:(NSArray<NSNumber *> *)means scale:(float)scale{
-//  printf(" predict one ");
+- (PaddleMobileCPUResult *)predict:(CGImageRef)image dim:(NSArray<NSNumber *> *)dim means:(NSArray<NSNumber *> *)means stds:(NSArray<NSNumber *> *)stds scale:(float)scale {
   std::lock_guard<std::mutex> lock(shared_mutex);
   if (!loaded_) {
     printf("PaddleMobile doesn't be loaded yet");
@@ -310,7 +300,7 @@ static std::mutex shared_mutex;
 
   // sample image
   float *output = (float *)malloc(numel*sizeof(float));
-  [self preprocess:input output:output imageWidth:image_width imageHeight:image_height imageChannels:image_channels means:means scale:scale dim:dim_vec];
+  [self preprocess:input output:output bytesPerRow:sourceRowBytes imageWidth:image_width imageHeight:image_height imageChannels:image_channels means:means stds:stds scale:scale dim:dim_vec];
   float *dataPointer = nullptr;
   if (nullptr != output) {
     dataPointer = output;
@@ -351,7 +341,11 @@ static std::mutex shared_mutex;
 }
 
 - (PaddleMobileCPUResult *)predict:(CGImageRef)image dim:(NSArray<NSNumber *> *)dim {
-  return [self predict:image dim:dim means:nil scale:1];
+  return [self predict:image dim:dim means:nil stds:nil scale:1];
+}
+
+- (PaddleMobileCPUResult *)predict:(CGImageRef)image dim:(NSArray<NSNumber *> *)dim means:(NSArray<NSNumber *> *)means scale:(float)scale {
+  return [self predict:image dim:dim means:means stds:nil scale:scale];
 }
 
 - (PaddleMobileCPUResult *)fetchOutput{

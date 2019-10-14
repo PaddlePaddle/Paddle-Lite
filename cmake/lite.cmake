@@ -126,12 +126,12 @@ function(lite_cc_library TARGET)
             )
 
     if (args_SHARED OR ARGS_shared)
-        cc_library(${TARGET} SRCS ${args_SRCS} DEPS ${deps} ${args_DEPS} SHARED)
+        cc_library(${TARGET} SRCS ${args_SRCS} DEPS ${deps} SHARED)
     elseif (args_MODULE OR ARGS_module)
         add_library(${TARGET} MODULE ${args_SRCS})
         add_dependencies(${TARGET} ${deps} ${args_DEPS})
     else()
-        cc_library(${TARGET} SRCS ${args_SRCS} DEPS ${deps} ${args_DEPS})
+        cc_library(${TARGET} SRCS ${args_SRCS} DEPS ${deps})
     endif()
     target_compile_options(${TARGET} BEFORE PRIVATE -Wno-ignored-qualifiers)
 
@@ -163,8 +163,17 @@ function(lite_cc_binary TARGET)
             LIGHT_DEPS ${args_LIGHT_DEPS}
             HVY_DEPS ${args_HVY_DEPS}
             )
-    cc_binary(${TARGET} SRCS ${args_SRCS} DEPS ${deps} ${args_DEPS})
+    cc_binary(${TARGET} SRCS ${args_SRCS} DEPS ${deps})
     target_compile_options(${TARGET} BEFORE PRIVATE -Wno-ignored-qualifiers)
+    if (NOT APPLE)
+        # strip binary target to reduce size
+        if(NOT "${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
+            add_custom_command(TARGET ${TARGET} POST_BUILD
+                    COMMAND "${CMAKE_STRIP}" -s
+                    "${TARGET}"
+                    COMMENT "Strip debug symbols done on final executable file.")
+        endif()
+    endif()
     # collect targets need to compile for lite
     if (NOT args_EXCLUDE_COMPILE_DEPS)
         add_dependencies(lite_compile_deps ${TARGET})
@@ -207,6 +216,13 @@ function(lite_cc_test TARGET)
               HVY_DEPS ${args_HVY_DEPS}
               )
     _lite_cc_test(${TARGET} SRCS ${args_SRCS} DEPS ${deps} ARGS ${args_ARGS})
+    # strip binary target to reduce size
+    if(NOT "${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
+        add_custom_command(TARGET ${TARGET} POST_BUILD
+                COMMAND "${CMAKE_STRIP}" -s
+                "${TARGET}"
+                COMMENT "Strip debug symbols done on final executable file.")
+    endif()
     target_compile_options(${TARGET} BEFORE PRIVATE -Wno-ignored-qualifiers)
     file(APPEND ${offline_test_registry_file} "${TARGET}\n")
 
@@ -239,6 +255,21 @@ function(add_kernel TARGET device level)
     if ("${level}" STREQUAL "extra" AND (NOT LITE_BUILD_EXTRA))
         return()
     endif()
+
+    if (LITE_ON_MODEL_OPTIMIZE_TOOL)
+      # the source list will collect for model_optimize_tool to fake kernel generation.
+      foreach(src ${args_SRCS})
+          file(APPEND ${kernels_src_list} "${CMAKE_CURRENT_SOURCE_DIR}/${src}\n")
+      endforeach()
+      return()
+    endif()
+
+    # when compiling the model_optimize_tool, a source file with all the fake kernel definitions will be generated,
+    # no need to continue the compilation of the true kernel source.
+    if (LITE_ON_MODEL_OPTIMIZE_TOOL)
+      return()
+    endif(LITE_ON_MODEL_OPTIMIZE_TOOL)
+
 
     if ("${device}" STREQUAL "Host")
         set(host_kernels "${host_kernels};${TARGET}" CACHE INTERNAL "")
@@ -274,6 +305,19 @@ function(add_kernel TARGET device level)
         set(opencl_kernels "${opencl_kernels};${TARGET}" CACHE INTERNAL "")
     endif()
 
+    if ("${device}" STREQUAL "CUDA")
+        if (NOT LITE_WITH_CUDA)
+            return()
+        endif()
+        set(cuda_kernels "${cuda_kernels};${TARGET}" CACHE INTERNAL "")
+        foreach(src ${args_SRCS})
+          file(APPEND ${kernels_src_list} "${CMAKE_CURRENT_SOURCE_DIR}/${src}\n")
+        endforeach()
+        nv_library(${TARGET} SRCS ${args_SRCS} DEPS ${args_DEPS})
+        return() 
+    endif()
+
+    # the source list will collect for paddle_use_kernel.h code generation.
     foreach(src ${args_SRCS})
         file(APPEND ${kernels_src_list} "${CMAKE_CURRENT_SOURCE_DIR}/${src}\n")
     endforeach()

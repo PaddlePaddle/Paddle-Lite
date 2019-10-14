@@ -36,6 +36,8 @@ TEST(CxxApi, run) {
 
   auto predictor = lite_api::CreatePaddlePredictor(config);
 
+  LOG(INFO) << "Version: " << predictor->GetVersion();
+
   auto input_tensor = predictor->GetInput(0);
   input_tensor->Resize(std::vector<int64_t>({100, 100}));
   auto* data = input_tensor->mutable_data<float>();
@@ -65,6 +67,8 @@ TEST(LightApi, run) {
   config.set_model_dir(FLAGS_model_dir + ".opt2.naive");
 
   auto predictor = lite_api::CreatePaddlePredictor(config);
+
+  LOG(INFO) << "Version: " << predictor->GetVersion();
 
   auto input_tensor = predictor->GetInput(0);
   input_tensor->Resize(std::vector<int64_t>({100, 100}));

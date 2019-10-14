@@ -108,7 +108,7 @@ void yolobox(lite::Tensor* X,
   auto anchors_data = anchors.data();
 
   const float* X_data = X->data<float>();
-  float* ImgSize_data = ImgSize->mutable_data<float>();
+  int* ImgSize_data = ImgSize->mutable_data<int>();
 
   float* Boxes_data = Boxes->mutable_data<float>();
 
@@ -116,8 +116,8 @@ void yolobox(lite::Tensor* X,
 
   float box[4];
   for (int i = 0; i < n; i++) {
-    int img_height = static_cast<int>(ImgSize_data[2 * i]);
-    int img_width = static_cast<int>(ImgSize_data[2 * i + 1]);
+    int img_height = ImgSize_data[2 * i];
+    int img_width = ImgSize_data[2 * i + 1];
 
     for (int j = 0; j < an_num; j++) {
       for (int k = 0; k < h; k++) {

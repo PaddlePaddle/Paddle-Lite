@@ -27,8 +27,10 @@ void ConvElementwiseFuser::BuildPattern() {
       VarNode("input")->assert_is_op_input(conv_type_, "Input")->AsInput();
   auto* filter =
       VarNode("filter")->assert_is_op_input(conv_type_, "Filter")->AsInput();
-  auto* bias =
-      VarNode("bias")->assert_is_op_input("elementwise_add", "Y")->AsInput();
+  auto* bias = VarNode("bias")
+                   ->assert_is_op_input("elementwise_add", "Y")
+                   ->AsInput()
+                   ->assert_is_persistable_var();
 
   // create op nodes
   auto* conv2d =

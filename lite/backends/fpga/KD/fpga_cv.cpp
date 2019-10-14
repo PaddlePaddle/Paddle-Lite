@@ -23,9 +23,7 @@ void fpga_resize(float* input,
                  uint8_t* output,
                  int output_width,
                  int output_height) {
-  paddle::zynqmp::InplaceArgs inplace_args = {
-      .relu_enable = 0, .power_enable = 0,
-  };
+  paddle::zynqmp::InplaceArgs inplace_args = {0, 0, 0};
   paddle::zynqmp::config_inplace(inplace_args);
 
   paddle::zynqmp::ImageInputArgs input_args = {nullptr};

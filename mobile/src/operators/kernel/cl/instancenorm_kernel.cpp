@@ -16,86 +16,32 @@ limitations under the License. */
 
 #include "operators/kernel/instancenorm_kernel.h"
 #include <cmath>
+#include "operators/kernel/cl/cl-kernel-func/instancenorm_func.h"
 
 namespace paddle_mobile {
 namespace operators {
 
 template <>
 bool InstanceNormKernel<GPU_CL, float>::Init(InstanceNormParam<GPU_CL> *param) {
-  this->cl_helper_.AddKernel("instancenorm", "instancenorm_kernel.cl");
+  auto &dims = param->Out()->dims();
+  const int h = dims[2];
+  std::string build_options = "";
+  if (h == 128) {
+    build_options = "-DLOCAL_MEM_128";
+  } else if (h == 64) {
+    build_options = "-DLOCAL_MEM_64";
+  } else if (h > 256) {
+    PADDLE_MOBILE_THROW_EXCEPTION("instance norm unsupported input height");
+  }
+  this->cl_helper_.AddKernel("instancenorm", "instancenorm_kernel.cl",
+                             build_options);
   return true;
 }
 
 template <>
 void InstanceNormKernel<GPU_CL, float>::Compute(
     const InstanceNormParam<GPU_CL> &param) {
-  auto kernel = this->cl_helper_.KernelAt(0);
-  auto &dims = param.Out()->dims();
-
-  const int n = dims[0];
-  const int c_group = (dims[1] + 3) / 4;
-  const int h = dims[2];
-  const int w = dims[3];
-  auto epsilon = param.Epsilon();
-  auto input = param.InputX()->GetCLImage();
-  auto out = param.Out()->GetCLImage();
-
-  DLOG << "Epsilon: " << epsilon;
-
-  auto local_work_size_info = this->cl_helper_.LocalWorkSizeInfo();
-
-  DLOG << local_work_size_info.max_work_group_size;
-  DLOG << local_work_size_info.max_work_item_size0;
-  DLOG << local_work_size_info.max_work_item_size1;
-  DLOG << local_work_size_info.max_work_item_size2;
-
-  const int max_work_group_size =
-      std::min(256, static_cast<int>(local_work_size_info.max_work_group_size));
-  int local_work_size1 = 1;
-  int local_work_size2 = 1;
-  for (int i = 1; i <= local_work_size_info.max_work_item_size1 && i <= w;
-       i++) {
-    for (int j = 1; j <= local_work_size_info.max_work_item_size2 && j <= h;
-         j++) {
-      if (i * j <= max_work_group_size) {
-        if (i * j > local_work_size1 * local_work_size2) {
-          local_work_size1 = i;
-          local_work_size2 = j;
-        }
-      }
-    }
-  }
-  const size_t work_size[3] = {(size_t)(n * c_group), (size_t)local_work_size1,
-                               (size_t)local_work_size2};
-  const size_t local_work_size[3] = {(size_t)1, (size_t)local_work_size1,
-                                     (size_t)local_work_size2};
-
-  DLOG << "work_size" << work_size[0] << " " << work_size[1] << " "
-       << work_size[2];
-  DLOG << "local_work_size" << local_work_size[0] << " " << local_work_size[1]
-       << " " << local_work_size[2];
-
-  cl_int status;
-  status = clSetKernelArg(kernel, 0, sizeof(cl_int), &w);
-  CL_CHECK_ERRORS(status);
-  status = clSetKernelArg(kernel, 1, sizeof(cl_int), &h);
-  CL_CHECK_ERRORS(status);
-  status = clSetKernelArg(kernel, 2, sizeof(cl_int), &c_group);
-  CL_CHECK_ERRORS(status);
-  status = clSetKernelArg(kernel, 3, sizeof(cl_int), &local_work_size1);
-  CL_CHECK_ERRORS(status);
-  status = clSetKernelArg(kernel, 4, sizeof(cl_int), &local_work_size2);
-  CL_CHECK_ERRORS(status);
-  status = clSetKernelArg(kernel, 5, sizeof(cl_float), &epsilon);
-  CL_CHECK_ERRORS(status);
-  status = clSetKernelArg(kernel, 6, sizeof(cl_mem), &input);
-  CL_CHECK_ERRORS(status);
-  status = clSetKernelArg(kernel, 7, sizeof(cl_mem), &out);
-  CL_CHECK_ERRORS(status);
-  status =
-      clEnqueueNDRangeKernel(this->cl_helper_.CLCommandQueue(), kernel, 3, NULL,
-                             work_size, local_work_size, 0, NULL, NULL);
-  CL_CHECK_ERRORS(status);
+  InstanceNorm(&this->cl_helper_, param);
 }
 
 template class InstanceNormKernel<GPU_CL, float>;

@@ -23,11 +23,14 @@ namespace lite {
 namespace mir {
 
 void ConvActivationFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
-  fusion::ConvActivationFuser fuser("conv2d", "relu");
-  fuser(graph.get());
-
-  fusion::ConvActivationFuser depthwise_fuser("depthwise_conv2d", "relu");
-  depthwise_fuser(graph.get());
+  for (auto conv_type : {"conv2d", "depthwise_conv2d"}) {
+    for (auto act_type : {"relu", "leaky_relu"}) {
+      for (auto has_bias : {true, false}) {
+        fusion::ConvActivationFuser fuser(conv_type, act_type, has_bias);
+        fuser(graph.get());
+      }
+    }
+  }
 }
 
 }  // namespace mir
@@ -35,4 +38,6 @@ void ConvActivationFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 }  // namespace paddle
 
 REGISTER_MIR_PASS(lite_conv_activation_fuse_pass,
-                  paddle::lite::mir::ConvActivationFusePass);
+                  paddle::lite::mir::ConvActivationFusePass)
+    .BindTargets({TARGET(kAny)})
+    .BindKernel("conv2d");

@@ -14,8 +14,10 @@
 
 #pragma once
 
+#include <set>
 #include <string>
 #include "lite/api/paddle_lite_factory_helper.h"
+#include "lite/api/paddle_place.h"
 #include "lite/core/mir/pass_manager.h"
 
 namespace paddle {
@@ -24,12 +26,29 @@ namespace mir {
 
 class PassRegistry {
  public:
-  PassRegistry(const std::string& name, mir::Pass* pass) {
-    VLOG(2) << "Registry add MIR pass " << name;
-    PassManager::Global().AddNewPass(name, pass);
+  PassRegistry(const std::string& name, mir::Pass* pass)
+      : name_(name), pass_(pass) {
+    PassManager::Global().AddNewPass(name_, pass_);
   }
-
+  PassRegistry& BindTargets(const std::set<TargetType>& targets) {
+    pass_->BindTargets(targets);
+    return *this;
+  }
+  PassRegistry& BindKernel(const std::string& name,
+                           const lite_api::Place& place) {
+    pass_->BindKernel(name, place);
+    return *this;
+  }
+  PassRegistry& BindKernel(const std::string& name) {
+    pass_->BindKernel(name,
+                      Place(TARGET(kAny), PRECISION(kAny), DATALAYOUT(kAny)));
+    return *this;
+  }
   bool Touch() const { return true; }
+
+ private:
+  std::string name_;
+  mir::Pass* pass_;
 };
 
 }  // namespace mir
@@ -41,4 +60,6 @@ class PassRegistry {
                                                             new class__); \
   bool mir_pass_registry##name__##_fake() {                               \
     return mir_pass_registry##name__.Touch();                             \
-  }
+  }                                                                       \
+  static paddle::lite::mir::PassRegistry mir_pass_registry_func_##name__  \
+      __attribute__((unused)) = mir_pass_registry##name__

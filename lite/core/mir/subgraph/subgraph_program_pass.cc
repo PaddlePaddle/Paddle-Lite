@@ -284,19 +284,21 @@ int SubgraphProgramPass::FuseSubgraphID(
     const std::unique_ptr<SSAGraph>& graph) {
   int sub_id = 1;  // id start from 1 not 0
   for (auto& item : graph->StmtTopologicalOrder()) {
-    bool inputvar = 0;
+    // bool inputvar = false;
     if (!item->IsStmt()) continue;
     auto& stmt = item->AsStmt();
+    /*
     if (stmt.subgraph_id() == -1) {
       for (auto& i : item->outlinks) {
         for (auto& j : i->outlinks) {
           if (j->IsStmt()) {
             auto& jstmt = j->AsStmt();
-            if (jstmt.subgraph_id() == 0) inputvar = 1;
+            if (jstmt.subgraph_id() == 0) inputvar = true;
           }
         }
       }
     }
+    */
     if (stmt.subgraph_id() != 0) continue;
     ChangeAllOutConnectedID(item, sub_id);
     sub_id++;
@@ -316,4 +318,5 @@ int SubgraphProgramPass::FuseSubgraph(
 }  // namespace paddle
 
 REGISTER_MIR_PASS(subgraph_program_pass,
-                  paddle::lite::mir::subgraph::SubgraphProgramPass);
+                  paddle::lite::mir::subgraph::SubgraphProgramPass)
+    .BindTargets({TARGET(kAny)});

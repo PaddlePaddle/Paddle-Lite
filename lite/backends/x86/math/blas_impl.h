@@ -483,7 +483,7 @@ void Blas<Target>::MatMul(const lite::Tensor &mat_a,
              mat_a.data<T>(),
              mat_b.data<T>(),
              beta,
-             mat_out->data<T>());
+             mat_out->mutable_data<T>());
 }
 
 template <>
@@ -759,7 +759,7 @@ void Blas<Target>::MatMul(const lite::Tensor &mat_a,
                            mat_a.data<T>(),
                            mat_b.data<T>(),
                            beta,
-                           mat_out->data<T>());
+                           mat_out->mutable_data<T>());
   } else {
     PADDLE_ENFORCE(dim_a.batch_size_ == dim_b.batch_size_ ||
                    dim_a.batch_size_ == 0 || dim_b.batch_size_ == 0);
@@ -773,7 +773,7 @@ void Blas<Target>::MatMul(const lite::Tensor &mat_a,
         mat_a.data<T>(),
         mat_b.data<T>(),
         beta,
-        mat_out->data<T>(),
+        mat_out->mutable_data<T>(),
         dim_a.batch_size_ == 0 ? dim_b.batch_size_ : dim_a.batch_size_,
         dim_a.stride_,
         dim_b.stride_);

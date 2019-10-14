@@ -16,7 +16,7 @@ function(math_library TARGET)
     endif()
 
     list(LENGTH cc_srcs cc_srcs_len)
-    lite_cc_library(${TARGET} SRCS ${cc_srcs} DEPS ${math_library_DEPS} ${math_common_deps} eigen3)
+    lite_cc_library(${TARGET} SRCS ${cc_srcs} DEPS ${math_library_DEPS} ${math_common_deps} eigen3 dynload_mklml)
 endfunction()
 
 # please add new math_library in alphabetical order
@@ -30,13 +30,13 @@ math_library(sample_prob)
 math_library(sampler)
 
 math_library(gru_compute DEPS activation_functions math_function)
-## math_library(lstm_compute DEPS activation_functions)
+math_library(lstm_compute DEPS activation_functions)
 
 lite_cc_library(blas SRCS blas.cc DEPS cblas framework_proto eigen3)
 math_library(math_function DEPS blas)
 math_library(maxouting)
 math_library(pooling)
-# math_library(selected_rows_functor DEPS selected_rows math_function blas)
+math_library(selected_rows_functor DEPS selected_rows math_function blas)
 math_library(sequence2batch)
 math_library(sequence_padding)
 math_library(sequence_pooling DEPS math_function jit_kernel_helper)

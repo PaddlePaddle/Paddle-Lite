@@ -214,7 +214,6 @@ TEST(SubGraphTest, SimpleNet) {
   auto* pass = new mir::subgraph::SubgraphProgramPass;
   ASSERT_EQ(pass->FuseSubgraph(graph, supported_op_types), 1);
 
-  const int num_nodes = graph->nodes().size();
   ASSERT_EQ(graph->nodes().size(), 9);
   // LOG(INFO) << "After NPU Pass \n" << Visualize(graph.get());
 }

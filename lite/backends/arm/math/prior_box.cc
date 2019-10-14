@@ -63,7 +63,8 @@ void density_prior_box(const lite::Tensor* input,
                        int prior_num_,
                        bool is_flip_,
                        bool is_clip_,
-                       const std::vector<std::string>& order_) {
+                       const std::vector<std::string>& order_,
+                       bool min_max_aspect_ratios_order) {
   // compute output shape
   int win1 = input->dims()[3];
   int hin1 = input->dims()[2];
@@ -284,12 +285,21 @@ void density_prior_box(const lite::Tensor* input,
             //! ymax
             com_buf[com_idx++] = (center_y + box_height / 2.f) / img_height;
           }
-          memcpy(_cpu_data + idx, min_buf, sizeof(float) * min_idx);
-          idx += min_idx;
-          memcpy(_cpu_data + idx, com_buf, sizeof(float) * com_idx);
-          idx += com_idx;
-          memcpy(_cpu_data + idx, max_buf, sizeof(float) * max_idx);
-          idx += max_idx;
+          if (min_max_aspect_ratios_order) {
+            memcpy(_cpu_data + idx, min_buf, sizeof(float) * min_idx);
+            idx += min_idx;
+            memcpy(_cpu_data + idx, max_buf, sizeof(float) * max_idx);
+            idx += max_idx;
+            memcpy(_cpu_data + idx, com_buf, sizeof(float) * com_idx);
+            idx += com_idx;
+          } else {
+            memcpy(_cpu_data + idx, min_buf, sizeof(float) * min_idx);
+            idx += min_idx;
+            memcpy(_cpu_data + idx, com_buf, sizeof(float) * com_idx);
+            idx += com_idx;
+            memcpy(_cpu_data + idx, max_buf, sizeof(float) * max_idx);
+            idx += max_idx;
+          }
         }
         fast_free(min_buf);
         fast_free(max_buf);
@@ -333,7 +343,8 @@ void prior_box(const lite::Tensor* input,
                int prior_num,
                bool is_flip,
                bool is_clip,
-               const std::vector<std::string>& order) {
+               const std::vector<std::string>& order,
+               bool min_max_aspect_ratios_order) {
   density_prior_box(input,
                     image,
                     boxes,
@@ -353,7 +364,8 @@ void prior_box(const lite::Tensor* input,
                     prior_num,
                     is_flip,
                     is_clip,
-                    order);
+                    order,
+                    min_max_aspect_ratios_order);
 }
 
 }  // namespace math

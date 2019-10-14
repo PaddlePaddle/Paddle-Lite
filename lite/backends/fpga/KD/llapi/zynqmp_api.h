@@ -46,6 +46,15 @@ struct VersionArgs {
 
 struct DeviceInfo {
   uint32_t filter_cap;
+  uint32_t version;
+  uint16_t device_type;
+  uint32_t reserved0;
+  uint32_t reserved1;
+  uint32_t reserved2;
+  uint32_t reserved3;
+  uint32_t reserved4;
+  uint32_t reserved5;
+  uint32_t reserved6;
 };
 
 struct MemoryCopyArgs {
@@ -191,6 +200,7 @@ struct NormalizeParameterArgs {
 };
 
 struct InplaceArgs {
+  bool leaky_relu_enable;
   bool relu_enable;
   bool power_enable;
   bool normalize_enable;

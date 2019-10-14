@@ -76,8 +76,22 @@ class ConvOpLite : public OpLite {
         }
       }
     }
-    if (op_desc.HasAttr("fuse_relu")) {
-      param_.fuse_relu = op_desc.GetAttr<bool>("fuse_relu");
+
+    if (op_desc.HasAttr("with_act") && op_desc.GetAttr<bool>("with_act")) {
+      param_.activation_param.has_active = true;
+      auto act_type = op_desc.GetAttr<std::string>("act_type");
+      if (act_type == "relu") {
+        param_.activation_param.active_type = lite_api::ActivationType::kRelu;
+        param_.fuse_relu = true;
+      } else if (act_type == "leaky_relu") {
+        param_.activation_param.active_type =
+            lite_api::ActivationType::kLeakyRelu;
+        param_.activation_param.Leaky_relu_alpha =
+            op_desc.GetAttr<float>("leaky_relu_alpha");
+      } else {
+        CHECK(false)
+            << "The fused conv only supports fuse with relu and leaky relu";
+      }
     }
     // For Int8
     if (op_desc.HasAttr("enable_int8")) {

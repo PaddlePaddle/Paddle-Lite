@@ -51,6 +51,11 @@ bool ActivationOp::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
   if (opdesc.Type() == "swish") {
     param_.Swish_beta = opdesc.GetAttr<float>("beta");
   }
+
+  if (opdesc.Type() == "hard_sigmoid") {
+    param_.hard_sigmoid_slope = opdesc.GetAttr<float>("slope");
+    param_.hard_sigmoid_offset = opdesc.GetAttr<float>("offset");
+  }
   param_.Out = scope->FindVar(out_name)->GetMutable<lite::Tensor>();
   return true;
 }
@@ -111,6 +116,8 @@ REGISTER_LITE_OP(relu6, paddle::lite::operators::ActivationOp);
 REGISTER_LITE_OP(log, paddle::lite::operators::ActivationOp);
 REGISTER_LITE_OP(exp, paddle::lite::operators::ActivationOp);
 REGISTER_LITE_OP(floor, paddle::lite::operators::ActivationOp);
+REGISTER_LITE_OP(hard_sigmoid, paddle::lite::operators::ActivationOp);
+REGISTER_LITE_OP(rsqrt, paddle::lite::operators::ActivationOp);
 
 #ifdef LITE_WITH_TRAIN
 REGISTER_LITE_OP(square_grad, paddle::lite::operators::ActivationGradOp);

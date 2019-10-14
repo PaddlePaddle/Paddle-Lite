@@ -180,8 +180,6 @@ TEST(yolo_box, normal) {
   boxes_ref.Resize({n, m, 4});
   scores_ref.Resize({n, cls, m});
 
-  auto* x_data = x.mutable_data<float>(TARGET(kCUDA));
-  auto* sz_data = sz.mutable_data<float>(TARGET(kCUDA));
   auto* boxes_data = boxes.mutable_data<float>(TARGET(kCUDA));
   auto* scores_data = scores.mutable_data<float>(TARGET(kCUDA));
 

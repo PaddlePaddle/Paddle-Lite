@@ -57,12 +57,21 @@ class VariablePlaceInferencePass : public DebugPass {
   // Set the tye of the weight
   void SetWeightType(Node* w, const LiteType& type) {
 // TODO(xg) to optimize this
-#ifndef LITE_WITH_FPGA
-    w->AsArg().type =
-        LiteType::GetTensorTy(TARGET(kHost), type.precision(), type.layout());
-#else
+#ifdef LITE_WITH_FPGA
     w->AsArg().type = LiteType::GetTensorTy(
         TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
+#endif
+
+#ifdef LITE_WITH_OPENCL
+    w->AsArg().type = LiteType::GetTensorTy(
+        TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
+#endif
+
+#ifndef LITE_WITH_FPGA
+#ifndef LITE_WITH_OPENCL
+    w->AsArg().type = LiteType::GetTensorTy(
+        TARGET(kHost), type.precision(), DATALAYOUT(kNCHW));
+#endif
 #endif
   }
 
@@ -74,7 +83,10 @@ class VariablePlaceInferencePass : public DebugPass {
 // in fpga, we has io_copy+cali+layout tool ops, so we need type inference for
 // tool operator
 #ifndef LITE_WITH_FPGA
+#ifndef LITE_WITH_OPENCL
+      VLOG(3) << "inst.op_type() == 'io_copy', continue";
       if (inst.op_type() == "io_copy") continue;
+#endif
 #endif
       // deal with inputs
       VLOG(4) << "Infering op " << inst.op_info()->Repr();
@@ -97,8 +109,8 @@ class VariablePlaceInferencePass : public DebugPass {
         std::string arg_name = get_argname(node_name, inst.op_info()->inputs());
         CHECK(arg_name.size() > 0) << "can not found op arguments for node "
                                    << node_name;
-        VLOG(4) << "-- input arg_name " << arg_name
-                << "-- node name :" << node_name;
+        VLOG(4) << "-- input arg_name:" << arg_name << " "
+                << "-- node name:" << node_name;
         auto type = inst.picked_kernel().GetInputDeclType(arg_name);
         if (!x_in->AsArg().type) {
           VLOG(4) << "set type " << *type << " " << x_in->AsArg().name;

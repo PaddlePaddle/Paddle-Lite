@@ -6,6 +6,17 @@ if(NOT (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM))
   return()
 endif()
 
+set(script_dir ${CMAKE_CURRENT_SOURCE_DIR}/../../../tools/)
+message(STATUS "generating arm dotprod code")
+find_package(PythonInterp REQUIRED)
+execute_process(COMMAND ${PYTHON_EXECUTABLE} ${script_dir}/convert_arm_sdot_to_machine_code.py
+        "--input_file=${CMAKE_CURRENT_SOURCE_DIR}/dotprod/__gemm_sdot_meta__.h"
+        "--output_file=${CMAKE_CURRENT_SOURCE_DIR}/dotprod/gemm_sdot.h"
+        RESULT_VARIABLE gen_code_ret)
+if (NOT ${gen_code_ret} STREQUAL "0")
+  message(FATAL_ERROR "generating dotprod code quit with error: ${gen_code_ret}")
+endif ()
+
 set(HAS_ARM_MATH_LIB_DIR OFF)
 # will search name as "libmath_arm.${os}.${abi}.${lang}.a"
 if(ARM_MATH_LIB_DIR AND EXISTS "${ARM_MATH_LIB_DIR}")
@@ -50,6 +61,25 @@ if (NOT HAS_ARM_MATH_LIB_DIR)
       funcs.cc 
       packed_sgemm.cc
       sgemm.cc
+      gemm_prepacked_int8.cc
+      gemm_s8.cc
+      sgemv.cc
+      gemv_arm_int8.cc
+      conv3x3s1_direct_fp32.cc
+      conv3x3s2_direct_fp32.cc
+      conv3x3s1_depthwise_fp32.cc
+      conv3x3s2_depthwise_fp32.cc
+      conv3x3s1_direct_int8.cc
+      conv3x3s2_direct_int8.cc
+      conv3x3s1_depthwise_int8.cc
+      conv3x3s2_depthwise_int8.cc
+      conv5x5s1_depthwise_int8.cc
+      conv5x5s1_depthwise_fp32.cc
+      conv5x5s2_depthwise_fp32.cc
+      conv_depthwise_3x3p0.cc
+      conv_depthwise_3x3p1.cc
+      conv_winograd_3x3.cc
+      conv_impl.cc
       softmax.cc 
       scale.cc
       pooling.cc
@@ -57,32 +87,13 @@ if (NOT HAS_ARM_MATH_LIB_DIR)
       lrn.cc
       decode_bboxes.cc
       concat.cc
-      sgemv.cc
       type_trans.cc
       box_coder.cc
-      conv_impl.cc
-      conv_direct_3x3s1.cc
-      conv_direct_3x3s2.cc
-      conv_direct.cc
-      conv_depthwise_3x3_int8.cc
-      conv_depthwise_5x5s1_int8.cc
-      conv_depthwise_3x3p0.cc
-      conv_depthwise_3x3p1.cc
-      conv_depthwise_5x5s1.cc
-      conv_depthwise_5x5s2.cc
-      conv_depthwise.cc
-      conv_gemmlike.cc
-      conv_winograd_3x3.cc
-      conv_winograd.cc
       split.cc
       shuffle_channel.cc
       activation.cc
       yolo_box.cc
       dropout.cc
-      gemm_prepacked_int8.cc
-      gemv_arm_int8.cc
-      conv3x3s1_direct_int8.cc
-      conv3x3s2_direct_int8.cc
       power.cc
       interpolate.cc
       argmax.cc
@@ -104,8 +115,8 @@ if (NOT HAS_ARM_MATH_LIB_DIR)
       slice.cc
       reduce_mean.cc
       stack.cc
-			affine_channel.cc
-			anchor_generator.cc
-      DEPS ${lite_kernel_deps})
+      affine_channel.cc
+      anchor_generator.cc
+      DEPS ${lite_kernel_deps} context tensor)
 endif()
  

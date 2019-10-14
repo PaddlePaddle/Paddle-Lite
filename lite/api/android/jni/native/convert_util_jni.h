@@ -49,6 +49,27 @@ inline std::string jstring_to_cpp_string(JNIEnv *env, jstring jstr) {
   return ret;
 }
 
+inline jstring cpp_string_to_jstring(JNIEnv *env, std::string str) {
+  auto *data = str.c_str();
+  jclass strClass = env->FindClass("java/lang/String");
+  jmethodID strClassInitMethodID =
+      env->GetMethodID(strClass, "<init>", "([BLjava/lang/String;)V");
+
+  jbyteArray bytes = env->NewByteArray(strlen(data));
+  env->SetByteArrayRegion(
+      bytes, 0, strlen(data), reinterpret_cast<const jbyte *>(data));
+
+  jstring encoding = env->NewStringUTF("UTF-8");
+  jstring res = (jstring)(
+      env->NewObject(strClass, strClassInitMethodID, bytes, encoding));
+
+  env->DeleteLocalRef(strClass);
+  env->DeleteLocalRef(encoding);
+  env->DeleteLocalRef(bytes);
+
+  return res;
+}
+
 inline jfloatArray cpp_array_to_jfloatarray(JNIEnv *env,
                                             const float *buf,
                                             int64_t len) {

@@ -26,8 +26,8 @@ namespace mir {
 bool SSAGraph::CheckBidirectionalConnection() {
   VLOG(4) << "node count " << node_storage_.size();
   for (auto &node : node_storage_) {
-    if (node.IsStmt()) VLOG(4) << node.AsStmt().op_info()->Type();
-    if (node.IsArg()) VLOG(4) << node.AsArg().name << " " << node.AsArg().id;
+    if (node.IsStmt()) VLOG(6) << node.AsStmt().op_info()->Type();
+    if (node.IsArg()) VLOG(6) << node.AsArg().name << " " << node.AsArg().id;
     for (auto *in : node.inlinks) {
       CHECK(in->outlinks.end() !=
             std::find(in->outlinks.begin(), in->outlinks.end(), &node));

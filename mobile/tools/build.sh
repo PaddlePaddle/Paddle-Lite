@@ -3,7 +3,7 @@ NETS=""
 declare -a supportedNets=("googlenet" "mobilenet" "yolo" "squeezenet" "resnet" "mobilenetssd" "nlp" "mobilenetfssd" "genet" "super" "op")
 
 # merge cl to so
-merge_cl_to_so=1
+merge_cl_to_so=0
 opencl_kernels="opencl_kernels.cpp"
 cd ../src/operators/kernel/cl
 if [[ -f "${opencl_kernels}" ]]; then
@@ -61,7 +61,7 @@ build_for_android() {
     elif [ "${PLATFORM}" = "arm-v8a" ]; then
         ABI="arm64-v8a"
         ARM_PLATFORM="V8"
-        CXX_FLAGS="-march=armv8-a  -pie -fPIE -w -Wno-error=format-security -llog"
+        CXX_FLAGS="-march=armv8-a  -pie -fPIE -w -Wno-error=format-security -llog -fuse-ld=gold"
     else
         echo "unknown platform!"
         exit -1

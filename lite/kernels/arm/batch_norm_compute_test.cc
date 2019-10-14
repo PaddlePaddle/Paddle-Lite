@@ -14,6 +14,7 @@
 
 #include "lite/kernels/arm/batch_norm_compute.h"
 #include <gtest/gtest.h>
+#include <cmath>
 #include <memory>
 #include <utility>
 #include <vector>

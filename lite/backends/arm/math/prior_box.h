@@ -42,7 +42,8 @@ void density_prior_box(const lite::Tensor* input,
                        int prior_num_,
                        bool is_flip_,
                        bool is_clip_,
-                       const std::vector<std::string>& order_);
+                       const std::vector<std::string>& order_,
+                       bool min_max_aspect_ratios_order);
 
 void prior_box(const lite::Tensor* input,
                const lite::Tensor* image,
@@ -60,7 +61,8 @@ void prior_box(const lite::Tensor* input,
                int prior_num,
                bool is_flip,
                bool is_clip,
-               const std::vector<std::string>& order);
+               const std::vector<std::string>& order,
+               bool min_max_aspect_ratios_order);
 
 }  // namespace math
 }  // namespace arm

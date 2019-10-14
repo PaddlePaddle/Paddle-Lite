@@ -70,7 +70,8 @@ void CompareOutData(const lite::Predictor& tgt, const lite::Predictor& ref) {
   const auto* ref_pdata = ref_otensor->data<float>();
   EXPECT_EQ(tgt_otensor->dims().production(), ref_otensor->dims().production());
   for (size_t i = 0; i < tgt_otensor->dims().production(); ++i) {
-    auto diff = std::fabs((tgt_pdata[i] - ref_pdata[i]) / ref_pdata[i]);
+    auto diff = std::fabs(tgt_pdata[i] - ref_pdata[i]) /
+                (std::fabs(ref_pdata[i]) + 1e-6);
     VLOG(3) << diff;
     EXPECT_LT(diff, 0.1);
   }

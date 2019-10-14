@@ -29,7 +29,6 @@ bool Im2SequenceOp::CheckShape() const { return true; }
 bool Im2SequenceOp::InferShape() const {
   CHECK_OR_FALSE(param_.Out);
   // TODO(Superjomn) Enable data sharing.
-  auto inputs = param_.X;
   auto input_dims = param_.X->dims();
   int img_num = input_dims[0];
   int img_channels = input_dims[1];

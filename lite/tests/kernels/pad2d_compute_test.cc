@@ -26,8 +26,8 @@ class Pad2dComputeTester : public arena::TestCase {
   std::string input_ = "X";
   std::string output_ = "Out";
   DDim dims_{{1, 1, 14, 14}};
-  std::vector<int> paddings_;
   std::string mode_{"constant"};
+  std::vector<int> paddings_;
   float pad_value_ = 0.f;
   std::string data_format_{"NCHW"};
 

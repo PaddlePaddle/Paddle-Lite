@@ -54,18 +54,19 @@ void TypeTargetTransformPass::ComplementInputs(SSAGraph* graph,
 
   CHECK(inst_node->IsStmt());
   auto& inst = inst_node->AsStmt();
-  LOG(INFO) << "found Target tensor: " << in->AsArg().name;
+  VLOG(3) << "found Target tensor: " << in->AsArg().name;
   CHECK(in->IsRoleSet());
   CHECK(in->IsArg());
   auto in_arg_name = in->AsArg().name;
   std::string tmp;
   CHECK(inst.op_info()->GetInputArgname(in_arg_name, &tmp));
+  LOG(INFO) << "tmp:" << tmp;
   auto decl_arg_type = inst.picked_kernel().GetInputDeclType(tmp);
   CHECK(in->AsArg().type);
   if (!TargetCompatibleTo(*in->AsArg().type, *decl_arg_type)) {
-    LOG(INFO) << "found Target unmatched tensor: " << in->AsArg().name
-              << " for kernel " << inst.op()->DebugString() << " "
-              << *in->AsArg().type << " -> " << *decl_arg_type;
+    VLOG(3) << "found Target unmatched tensor: " << in->AsArg().name
+            << " for kernel " << inst.op()->DebugString() << " "
+            << *in->AsArg().type << " -> " << *decl_arg_type;
     // Add an IoCopy instruction to make the input compatible with other dist.
     AddIoCopyInst(
         *in->AsArg().type, *decl_arg_type, in, graph, inst_node, valid_places_);
@@ -86,9 +87,14 @@ void TypeTargetTransformPass::AddIoCopyInst(
   CHECK(in->IsArg());
   auto node_id = [&] { return graph->nodes().size(); };
   auto io_copy_output_name =
-      string_format("%s/trans/%d", in->AsArg().name.c_str(), node_id());
+      string_format("%s/target_trans/%d", in->AsArg().name.c_str(), node_id());
   // TODO(MyPandaShaoxiang) should set same place with input?
   auto* io_copy_output_arg = graph->NewArgumentNode(io_copy_output_name);
+  // Set the place for io_copy_output_arg node, the target should be equal to
+  // to.target()
+  // The precision and layout should be equal to from.precision(), from.layout()
+  io_copy_output_arg->AsArg().type =
+      LiteType::GetTensorTy(to.target(), from.precision(), from.layout());
   auto* io_copy_inst = graph->NewInstructNode();
 
   bool in_persist = in->AsArg().is_weight || in->AsArg().is_persist;
@@ -114,8 +120,16 @@ void TypeTargetTransformPass::AddIoCopyInst(
   std::vector<std::unique_ptr<KernelBase>> selected_kernels;
   for (auto& kernel : kernels) {
     const Type* in_arg_ty = kernel->GetInputDeclType("Input");
+#ifdef LITE_WITH_OPENCL
+    // ignore [layout check] for layout trans from buffer to image2d
+    if (TargetCompatibleTo(*in_arg_ty, from) &&
+        PrecisionCompatibleTo(*in_arg_ty, from) &&
+        DeviceCompatibleTo(*in_arg_ty, from)) {
+#else
     const Type* out_arg_ty = kernel->GetOutputDeclType("Out");
-    if (TypeCompatible(*in_arg_ty, from)) {
+    if (TypeCompatible(*in_arg_ty, from) &&
+        out_arg_ty->target() == to.target()) {
+#endif
       is_found = true;
       selected_kernels.emplace_back(std::move(kernel));
       // we pick the kernel
@@ -125,9 +139,8 @@ void TypeTargetTransformPass::AddIoCopyInst(
     }
   }
   CHECK(is_found) << "Can't find a io_copy  kernel for io_copy op: " << from
-                  << ":" << in->AsArg().name << "->" << to << ":"
+                  << ":" << in->AsArg().name << " -> " << to << ":"
                   << inst_node->AsStmt().op_info()->Type();
-
   // Remove the old link
   RemoveDirectedLink(in, inst_node);
 
@@ -179,4 +192,7 @@ void TypeTargetTransformPass::SetValidPlaces(
 }  // namespace paddle
 
 REGISTER_MIR_PASS(type_target_cast_pass,
-                  paddle::lite::mir::TypeTargetTransformPass);
+                  paddle::lite::mir::TypeTargetTransformPass)
+    .BindTargets({TARGET(kAny)})
+    .BindKernel("io_copy_once")
+    .BindKernel("io_copy");

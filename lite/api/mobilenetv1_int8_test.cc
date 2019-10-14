@@ -28,7 +28,7 @@ namespace lite {
 void TestModel(const std::vector<Place>& valid_places,
                const Place& preferred_place) {
   DeviceInfo::Init();
-  DeviceInfo::Global().SetRunMode(lite_api::LITE_POWER_HIGH, FLAGS_threads);
+  DeviceInfo::Global().SetRunMode(lite_api::LITE_POWER_NO_BIND, FLAGS_threads);
   lite::Predictor predictor;
 
   predictor.Build(FLAGS_model_dir, "", "", preferred_place, valid_places);
@@ -58,8 +58,9 @@ void TestModel(const std::vector<Place>& valid_places,
 
   std::vector<std::vector<float>> results;
   // i = 1
+  // ground truth result from fluid
   results.emplace_back(std::vector<float>(
-      {0.000227548, 0.000262385, 0.000260347, 0.000293865, 0.00025008}));
+      {0.0002451055, 0.0002585023, 0.0002659616, 0.0002823}));
   auto* out = predictor.GetOutput(0);
   ASSERT_EQ(out->dims().size(), 2);
   ASSERT_EQ(out->dims()[0], 1);
@@ -73,6 +74,21 @@ void TestModel(const std::vector<Place>& valid_places,
                   1e-6);
     }
   }
+
+  auto* out_data = out->data<float>();
+  LOG(INFO) << "output data:";
+  for (int i = 0; i < out->numel(); i += step) {
+    LOG(INFO) << out_data[i];
+  }
+  float max_val = out_data[0];
+  int max_val_arg = 0;
+  for (int i = 1; i < out->numel(); i++) {
+    if (max_val < out_data[i]) {
+      max_val = out_data[i];
+      max_val_arg = i;
+    }
+  }
+  LOG(INFO) << "max val:" << max_val << ", max_val_arg:" << max_val_arg;
 }
 
 TEST(MobileNetV1, test_arm) {
