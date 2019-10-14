@@ -13,6 +13,8 @@
 // limitations under the License.
 
 #pragma once
+#include <map>
+#include <string>
 #include "lite/api/paddle_place.h"
 #include "lite/core/target_wrapper.h"
 #include "lite/utils/macros.h"
@@ -98,31 +100,37 @@ class Buffer {
   template <typename T>
   void ResetLazyImage2D(TargetType target,
                         const std::array<size_t, 2>& image2d_shape) {
-    size_t size =
-        sizeof(T) * image2d_shape[0] * image2d_shape[1] * 4;  // 4 for RGBA
-    VLOG(4) << "image2d_shape:" << image2d_shape[0] << " " << image2d_shape[1];
-    if (target != target_ || space_ < size) {
+    size_t size = sizeof(T) * image2d_shape[0] * image2d_shape[1] *
+                  4;  // 4 for RGBA, un-used for opencl Image2D
+    VLOG(4) << "cl_image2d_shape_[width, height]:" << cl_image2d_shape_["width"]
+            << " " << cl_image2d_shape_["height"];
+    if (target != target_ || cl_image2d_shape_["width"] < image2d_shape[0] ||
+        cl_image2d_shape_["height"] < image2d_shape[1]) {
       Free();
       data_ = TargetWrapperCL::MallocImage<T>(image2d_shape);
       target_ = target;
-      space_ = size;
+      space_ = size;  // un-used for opencl Image2D
+      cl_image2d_shape_ = {{"width", image2d_shape[0]},
+                           {"height", image2d_shape[1]}};
     }
   }
 
-  template <typename T>
-  void ResizeLazyImage2D(const std::array<size_t, 2>& image2d_shape) {
-    ResetLazyImage2D<T>(target_, image2d_shape);
-  }
+// TODO(ysh329): not used ResizeLazyImage2D for opencl Image2D
+//  template <typename T>
+//  void ResizeLazyImage2D(const std::map<std::string, size_t>& image2d_shape) {
+//    ResetLazyImage2D<T>(target_, image2d_shape);
+//  }
 
-  template <typename T>
-  void CopyImage2DFrom(const Buffer& other,
-                       const std::array<size_t, 2>& image2d_shape,
-                       const std::array<size_t, 2>& image2d_pitch) {
-    target_ = other.target_;
-    ResizeLazyImage2D<T>(image2d_shape, image2d_pitch);
-    TargetCopyImage2D(
-        target_, data_, other.data_, image2d_shape, image2d_pitch);
-  }
+// TODO(ysh329): not used CopyImage2DFrom for opencl Image2D
+//  template <typename T>
+//  void CopyImage2DFrom(const Buffer& other,
+//                       const std::map<std::string, size_t>& image2d_shape,
+//                       const std::array<size_t, 2>& image2d_pitch) {
+//    target_ = other.target_;
+//    ResizeLazyImage2D<T>(image2d_shape, image2d_pitch);
+//    TargetCopyImage2D(
+//        target_, data_, other.data_, image2d_shape, image2d_pitch);
+//  }
 #endif
 
   void Free() {
@@ -145,6 +153,8 @@ class Buffer {
  private:
   // memory it actually malloced.
   size_t space_{0};
+  std::map<std::string, size_t>
+      cl_image2d_shape_{};  // used for opencl cl::Image2D
   void* data_{nullptr};
   TargetType target_{TargetType::kHost};
 };
