@@ -21,42 +21,43 @@ namespace lite {
 namespace kernels {
 namespace cuda {
 
-template <typename Dtype>
-void NCHWToNHWCCompute<Dtype>::Run() {
-  auto& param = this->template Param<param_t>();
-  auto& ctx = this->ctx_->template As<CUDAContext>();
-  auto input = param.x->template data<Dtype>();
-  auto input_dim = param.x->dims();
-  CHECK(input_dim.size() == 4)
-      << "NCHW to NHWC should guarantee that the input dims should be 4";
-  auto output = param.y->template mutable_data<Dtype>(TARGET(kCUDA));
+#define NCHWTONHWC(type)                                                  \
+  auto& param = this->template Param<param_t>();                          \
+  auto& ctx = this->ctx_->template As<CUDAContext>();                     \
+  auto input = param.x->template data<type>();                            \
+  auto input_dim = param.x->dims();                                       \
+  CHECK(input_dim.size() == 4)                                            \
+      << "NCHW to NHWC should guarantee that the input dims should be 4"; \
+  int n = input_dim[0];                                                   \
+  int c = input_dim[1];                                                   \
+  int h = input_dim[2];                                                   \
+  int w = input_dim[3];                                                   \
+  param.y->Resize({n, h, w, c});                                          \
+  auto output = param.y->template mutable_data<type>(TARGET(kCUDA));      \
+  lite::cuda::math::NCHW2NHWC<type>(n, c, h * w, input, output, &ctx);
 
-  int n = input_dim[0];
-  int c = input_dim[1];
-  int h = input_dim[2];
-  int w = input_dim[3];
+#define NHWCTONCHW(type)                                                  \
+  auto& param = this->template Param<param_t>();                          \
+  auto& ctx = this->ctx_->template As<CUDAContext>();                     \
+  auto input = param.x->template data<type>();                            \
+  auto input_dim = param.x->dims();                                       \
+  CHECK(input_dim.size() == 4)                                            \
+      << "NHWC to NCHW should guarantee that the input dims should be 4"; \
+  int n = input_dim[0];                                                   \
+  int h = input_dim[1];                                                   \
+  int w = input_dim[2];                                                   \
+  int c = input_dim[3];                                                   \
+  param.y->Resize({n, c, h, w});                                          \
+  auto output = param.y->template mutable_data<type>(TARGET(kCUDA));      \
+  lite::cuda::math::NHWC2NCHW<type>(n, c, h * w, input, output, &ctx);
 
-  lite::cuda::math::NCHW2NHWC<Dtype>(n, c, h * w, input, output, &ctx);
-}
+void NCHWToNHWCCompute::Run() { NCHWTONHWC(float) }
 
-template <typename Dtype>
-void NHWCToNCHWCompute<Dtype>::Run() {
-  auto& param = this->template Param<param_t>();
-  auto& ctx = this->ctx_->template As<CUDAContext>();
+void NCHWToNHWCComputeInt8::Run() { NCHWTONHWC(int8_t) }
 
-  auto input = param.x->template data<Dtype>();
-  auto output = param.y->template mutable_data<Dtype>(TARGET(kCUDA));
+void NHWCToNCHWCompute::Run() { NHWCTONCHW(float) }
 
-  auto input_dim = param.x->dims();
-  CHECK(input_dim.size() == 4)
-      << "NHWC to NCHW should guarantee that the input dims should be 4";
-
-  int n = input_dim[0];
-  int h = input_dim[1];
-  int w = input_dim[2];
-  int c = input_dim[3];
-  lite::cuda::math::NHWC2NCHW<Dtype>(n, c, h * w, input, output, &ctx);
-}
+void NHWCToNCHWComputeInt8::Run() { NHWCTONCHW(int8_t) }
 
 }  // namespace cuda
 }  // namespace kernels
@@ -67,9 +68,9 @@ REGISTER_LITE_KERNEL(layout,
                      kCUDA,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::cuda::NCHWToNHWCCompute<float>,
+                     paddle::lite::kernels::cuda::NCHWToNHWCCompute,
                      nchw2nhwc)
-    .BindInput("X",
+    .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kCUDA),
                                       PRECISION(kFloat),
                                       DATALAYOUT(kNCHW))})
@@ -82,10 +83,10 @@ REGISTER_LITE_KERNEL(layout,
 REGISTER_LITE_KERNEL(layout,
                      kCUDA,
                      kFloat,
-                     kNHWC,
-                     paddle::lite::kernels::cuda::NHWCToNCHWCompute<float>,
+                     kNCHW,
+                     paddle::lite::kernels::cuda::NHWCToNCHWCompute,
                      nhwc2nchw)
-    .BindInput("X",
+    .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kCUDA),
                                       PRECISION(kFloat),
                                       DATALAYOUT(kNHWC))})
@@ -99,9 +100,9 @@ REGISTER_LITE_KERNEL(layout,
                      kCUDA,
                      kInt8,
                      kNCHW,
-                     paddle::lite::kernels::cuda::NCHWToNHWCCompute<int8_t>,
-                     nchw2nhwc)
-    .BindInput("X",
+                     paddle::lite::kernels::cuda::NCHWToNHWCComputeInt8,
+                     int8_nchw2nhwc)
+    .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kCUDA),
                                       PRECISION(kInt8),
                                       DATALAYOUT(kNCHW))})
@@ -114,10 +115,74 @@ REGISTER_LITE_KERNEL(layout,
 REGISTER_LITE_KERNEL(layout,
                      kCUDA,
                      kInt8,
-                     kNHWC,
-                     paddle::lite::kernels::cuda::NHWCToNCHWCompute<int8_t>,
+                     kNCHW,
+                     paddle::lite::kernels::cuda::NHWCToNCHWComputeInt8,
+                     int8_nhwc2nchw)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kCUDA),
+                                      PRECISION(kInt8),
+                                      DATALAYOUT(kNHWC))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kCUDA),
+                                       PRECISION(kInt8),
+                                       DATALAYOUT(kNCHW))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(layout_once,
+                     kCUDA,
+                     kFloat,
+                     kNCHW,
+                     paddle::lite::kernels::cuda::NCHWToNHWCCompute,
+                     nchw2nhwc)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kCUDA),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kNCHW))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kCUDA),
+                                       PRECISION(kFloat),
+                                       DATALAYOUT(kNHWC))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(layout_once,
+                     kCUDA,
+                     kFloat,
+                     kNCHW,
+                     paddle::lite::kernels::cuda::NHWCToNCHWCompute,
                      nhwc2nchw)
-    .BindInput("X",
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kCUDA),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kNHWC))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kCUDA),
+                                       PRECISION(kFloat),
+                                       DATALAYOUT(kNCHW))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(layout_once,
+                     kCUDA,
+                     kInt8,
+                     kNCHW,
+                     paddle::lite::kernels::cuda::NCHWToNHWCComputeInt8,
+                     int8_nchw2nhwc)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kCUDA),
+                                      PRECISION(kInt8),
+                                      DATALAYOUT(kNCHW))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kCUDA),
+                                       PRECISION(kInt8),
+                                       DATALAYOUT(kNHWC))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(layout_once,
+                     kCUDA,
+                     kInt8,
+                     kNCHW,
+                     paddle::lite::kernels::cuda::NHWCToNCHWComputeInt8,
+                     int8_nhwc2nchw)
+    .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kCUDA),
                                       PRECISION(kInt8),
                                       DATALAYOUT(kNHWC))})

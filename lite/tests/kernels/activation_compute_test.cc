@@ -33,7 +33,8 @@ enum activation_type_test {
   RELU6,
   LOG,
   EXP,
-  FLOOR
+  FLOOR,
+  RSQRT
 };
 
 class ActivationComputeTester : public arena::TestCase {
@@ -177,6 +178,12 @@ class ActivationComputeTester : public arena::TestCase {
         }
         break;
       }
+      case RSQRT: {
+        for (int i = 0; i < dims_.production(); i++) {
+          output_data[i] = 1.0 / std::sqrt(x_data[i]);
+        }
+        break;
+      }
       default:
         LOG(INFO) << "the type of activation is unknow.";
     }
@@ -205,7 +212,7 @@ class ActivationComputeTester : public arena::TestCase {
     std::vector<float> data(dims_.production());
     for (int i = 0; i < dims_.production(); i++) {
       float sign = i % 3 == 0 ? -1.0f : 1.0f;
-      sign = type_ == "log" ? 1 : sign;
+      sign = (type_ == "log" || type_ == "rsqrt") ? 1 : sign;
       data[i] = sign * static_cast<float>(i % 128) * 0.013f + 0.001;
     }
     SetCommonTensor(input_, dims_, data.data());
@@ -553,5 +560,31 @@ TEST(Activation_floor, precision) {
 #endif
 }
 
+TEST(Activation_rsqrt, precision) {
+  LOG(INFO) << "test rsqrt op";
+#ifdef LITE_WITH_ARM
+  Place place(TARGET(kARM));
+  for (auto n : {2}) {
+    for (auto c : {2}) {
+      for (auto h : {2}) {
+        for (auto w : {2}) {
+          std::unique_ptr<arena::TestCase> tester(new ActivationComputeTester(
+              place,
+              "def",
+              0.01,
+              6.,
+              "all",
+              0.,
+              DDim(std::vector<int64_t>({n, c, h, w})),
+              "rsqrt",
+              RSQRT));
+          arena::Arena arena(std::move(tester), place, 2e-5);
+          arena.TestPrecision();
+        }
+      }
+    }
+  }
+#endif
+}
 }  // namespace lite
 }  // namespace paddle
