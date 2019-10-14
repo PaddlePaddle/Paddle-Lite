@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/api/cxx_api.h"
+#include <algorithm>
 #include <memory>
 #include <string>
 #include <utility>
@@ -65,30 +66,26 @@ lite::Tensor *Predictor::GetInput(size_t offset) {
 }
 
 // get inputs names
-std::vector<std::string> Predictor::GetInputNames() {
-  std::vector<std::string> input_names;
-  for (auto &item : input_names_) {
-    input_names.push_back(item.second);
-  }
-  return input_names;
-}
+std::vector<std::string> Predictor::GetInputNames() { return input_names_; }
 // get outputnames
-std::vector<std::string> Predictor::GetOutputNames() {
-  std::vector<std::string> output_names;
-  for (auto &item : output_names_) {
-    output_names.push_back(item.second);
-  }
-  return output_names;
-}
+std::vector<std::string> Predictor::GetOutputNames() { return output_names_; }
 // append the names of inputs and outputs into input_names_ and output_names_
 void Predictor::PrepareFeedFetch() {
+  auto *_feed_list = exec_scope_->FindVar("feed");
+  int input_size = _feed_list->GetMutable<std::vector<lite::Tensor>>()->size();
+  input_names_.resize(input_size);
+
+  auto *_fetch_list = exec_scope_->FindVar("fetch");
+  int output_size =
+      _fetch_list->GetMutable<std::vector<lite::Tensor>>()->size();
+  output_names_.resize(output_size);
+
   auto current_block = program_desc_.GetBlock<cpp::BlockDesc>(0);
   for (int i = 0; i < current_block->OpsSize(); i++) {
     auto op = current_block->GetOp<cpp::OpDesc>(i);
     if (op->Type() == "feed") {
       int idx = op->GetAttr<int>("col");
       input_names_[idx] = op->Output("Out").front();
-      idx2feeds_[op->Output("Out").front()] = idx;
     } else if (op->Type() == "fetch") {
       int idx = op->GetAttr<int>("col");
       output_names_[idx] = op->Input("X").front();
@@ -196,16 +193,18 @@ const lite::Tensor *Predictor::GetTensor(const std::string &name) const {
 }
 // get input by name
 lite::Tensor *Predictor::GetInputByName(const std::string &name) {
-  if (idx2feeds_.find(name) == idx2feeds_.end()) {
+  std::vector<std::string>::iterator iElement =
+      std::find(input_names_.begin(), input_names_.end(), name);
+  if (iElement == input_names_.end()) {
     LOG(ERROR) << "Model do not have input named with: [" << name
                << "], model's inputs include:";
     for (int i = 0; i < input_names_.size(); i++) {
       LOG(ERROR) << "[" << input_names_[i] << "]";
     }
-    return NULL;
+    return nullptr;
   } else {
-    int idx = idx2feeds_[name];
-    return GetInput(idx);
+    int nPosition = std::distance(input_names_.begin(), iElement);
+    return GetInput(nPosition);
   }
 }
 
