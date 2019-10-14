@@ -55,13 +55,13 @@ void Predictor::SaveModel(const std::string &dir,
 }
 
 lite::Tensor *Predictor::GetInput(size_t offset) {
-  auto *_feed_list = exec_scope_->FindVar("feed");
-  CHECK(_feed_list) << "no feed variable in exec_scope";
-  auto *feed_list = _feed_list->GetMutable<std::vector<lite::Tensor>>();
-  if (offset >= feed_list->size()) {
-    feed_list->resize(offset + 1);
-  }
-  return &feed_list->at(offset);
+  CHECK(input_names_.size() > offset)
+      << "The network has " << input_names_.size() << " inputs"
+      << ", the offset should be less than this.";
+  auto *in_var = exec_scope_->FindVar(input_names_[offset]);
+  CHECK(in_var) << "no fatch variable " << input_names_[offset]
+                << " in exec_scope";
+  return in_var->GetMutable<lite::Tensor>();
 }
 
 // get inputs names
@@ -97,18 +97,23 @@ void Predictor::PrepareFeedFetch() {
 }
 
 const lite::Tensor *Predictor::GetOutput(size_t offset) const {
-  auto *_fetch_list = exec_scope_->FindVar("fetch");
-  CHECK(_fetch_list) << "no fatch variable in exec_scope";
-  auto &fetch_list = *_fetch_list->GetMutable<std::vector<lite::Tensor>>();
-  CHECK_LT(offset, fetch_list.size()) << "offset " << offset << " overflow";
-  return &fetch_list.at(offset);
+  CHECK(output_names_.size() > offset)
+      << "The network has " << output_names_.size() << " outputs"
+      << ", the offset should be less than this.";
+  const std::string name = output_names_.at(offset);
+  auto *out_var = exec_scope_->FindVar(name);
+  CHECK(out_var) << "no fatch variable " << name << " in exec_scope";
+  return out_var->GetMutable<lite::Tensor>();
 }
 
-const std::vector<lite::Tensor> *Predictor::GetOutputs() const {
-  auto *_fetch_list = exec_scope_->FindVar("fetch");
-  CHECK(_fetch_list) << "no fatch variable in exec_scope";
-  auto &fetch_list = *_fetch_list->GetMutable<std::vector<lite::Tensor>>();
-  return &fetch_list;
+std::vector<const lite::Tensor *> Predictor::GetOutputs() const {
+  std::vector<const lite::Tensor *> outputs;
+  size_t out_size = output_names_.size();
+  for (size_t i = 0; i < out_size; i++) {
+    const std::string name = output_names_.at(i);
+    outputs.push_back(GetTensor(name));
+  }
+  return outputs;
 }
 
 const cpp::ProgramDesc &Predictor::program_desc() const {
