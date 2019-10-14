@@ -32,9 +32,13 @@ class LightPredictorImpl : public PaddlePredictor {
   void Run() override;
 
   std::string GetVersion() const override;
+  std::vector<std::string> GetInputNames() override;
+  std::vector<std::string> GetOutputNames() override;
 
   std::unique_ptr<const Tensor> GetTensor(
       const std::string& name) const override;
+  // Get InputTebsor by name
+  std::unique_ptr<Tensor> GetInputByName(const std::string& name) override;
 
   void Init(const MobileConfig& config);
 
@@ -49,6 +53,7 @@ void LightPredictorImpl::Init(const MobileConfig& config) {
                                                 config.param_buffer(),
                                                 config.model_from_memory(),
                                                 LiteModelType::kNaiveBuffer));
+  raw_predictor_->PrepareFeedFetch();
 }
 
 std::unique_ptr<Tensor> LightPredictorImpl::GetInput(int i) {
@@ -67,6 +72,19 @@ std::unique_ptr<const Tensor> LightPredictorImpl::GetTensor(
     const std::string& name) const {
   return std::unique_ptr<const Tensor>(
       new Tensor(raw_predictor_->GetTensor(name)));
+}
+std::unique_ptr<Tensor> LightPredictorImpl::GetInputByName(
+    const std::string& name) {
+  return std::unique_ptr<Tensor>(
+      new Tensor(raw_predictor_->GetInputByName(name)));
+}
+
+std::vector<std::string> LightPredictorImpl::GetInputNames() {
+  return raw_predictor_->GetInputNames();
+}
+
+std::vector<std::string> LightPredictorImpl::GetOutputNames() {
+  return raw_predictor_->GetOutputNames();
 }
 
 template <>

@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "lite/backends/cuda/cuda_utils.h"
 #include "lite/backends/cuda/math/transpose.h"
 #include "lite/backends/cuda/math/utils.h"
 
@@ -171,6 +172,8 @@ void TransposeCUDAImpl(const std::vector<int64_t>& X_dims,
   const int M = (size + CUDA_NUM_THREADS - 1) / CUDA_NUM_THREADS;
   TransposeCUDAKernel<<<M, CUDA_NUM_THREADS, 0, ctx->exec_stream()>>>(
       size, ndim, d_strides, d_y_dims, X, Y);
+  auto e = cudaGetLastError();
+  CHECK_EQ(e, cudaSuccess) << " CUDA: " << cudaGetErrorString(e);
 }
 
 #define TYPE_SPECIALIZED_CUDA_TRANSPOSE(T)              \
