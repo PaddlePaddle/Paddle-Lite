@@ -35,8 +35,7 @@ using param_t = Any;
   bool enable_int8{false};           \
   float input_scale{1.0};            \
   std::vector<float> weight_scale{}; \
-  float output_scale{1.0};           \
-  int bit_length{8};
+  float output_scale{1.0};
 
 /// ----------------------- Functional operators ------------------------------
 struct FeedParam {
