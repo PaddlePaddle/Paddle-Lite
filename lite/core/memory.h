@@ -101,7 +101,7 @@ class Buffer {
     size_t size =
         sizeof(T) * image2d_shape[0] * image2d_shape[1] * 4;  // 4 for RGBA
     VLOG(4) << "image2d_shape:" << image2d_shape[0] << " " << image2d_shape[1];
-    if (target != target_) {
+    if (target != target_ || space_ < size) {
       Free();
       data_ = TargetWrapperCL::MallocImage<T>(image2d_shape);
       target_ = target;
