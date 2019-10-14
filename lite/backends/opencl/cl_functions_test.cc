@@ -15,7 +15,6 @@ limitations under the License. */
 #include <gflags/gflags.h>
 #include <gtest/gtest.h>
 #include <algorithm>
-#include <array>
 #include <memory>
 #include <random>
 #include <vector>
