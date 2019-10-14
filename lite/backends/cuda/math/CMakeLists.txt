@@ -8,6 +8,7 @@ nv_library(cuda_type_trans SRCS type_trans.cu)
 nv_library(cuda_transpose SRCS transpose.cu )
 nv_library(cudnn_conv SRCS cudnn_conv.cc DEPS cuda_activation cuda_scale
 cuda_type_trans)
+nv_library(cuda_elementwise SRCS elementwise.cu )
 
 set (
  math_cuda
@@ -16,6 +17,7 @@ set (
  cuda_scale
  cuda_type_trans
  cuda_transpose
+ cuda_elementwise
 )
 
 set(math_cuda "${math_cuda}" CACHE GLOBAL "math cuda")

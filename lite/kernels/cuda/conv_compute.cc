@@ -13,12 +13,22 @@
 // limitations under the License.
 
 #include "lite/kernels/cuda/conv_compute.h"
+#include <vector>
 #include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace cuda {
+
+inline int ConvOutputSize(
+    int input_size, int filter_size, int dilation, int padding, int stride) {
+  const int dkernel = dilation * (filter_size - 1) + 1;
+  int output_size = (input_size + 2 * padding - dkernel) / stride + 1;
+  CHECK_GT_OR_FALSE(output_size, 0);
+
+  return output_size;
+}
 
 void ConvCompute::PrepareForRun() {
   auto& param = this->Param<param_t>();
@@ -35,6 +45,21 @@ void ConvCompute::Run() {
 template <PrecisionType Ptype_out>
 void ConvComputeInt8<Ptype_out>::PrepareForRun() {
   auto& param = this->Param<param_t>();
+
+  const auto in_dims = param.x->dims();
+  const auto filter_dims = param.filter->dims();
+  std::vector<int64_t> output_shape({in_dims[0]});
+
+  for (size_t i = 0; i < param.strides.size(); ++i) {
+    output_shape.push_back(ConvOutputSize(in_dims[i + 1],
+                                          filter_dims[i + 1],
+                                          param.dilations[i],
+                                          param.paddings[i],
+                                          param.strides[i]));
+  }
+  output_shape.push_back(filter_dims[0]);
+  param.output->Resize(lite::DDim(output_shape));
+
   auto& ctx = this->ctx_->template As<CUDAContext>();
   conv_impl_.reset(new lite::cuda::math::CudnnConv2DInt8<Ptype_out>);
   conv_impl_->init(param, &ctx);
@@ -43,6 +68,20 @@ void ConvComputeInt8<Ptype_out>::PrepareForRun() {
 template <PrecisionType Ptype_out>
 void ConvComputeInt8<Ptype_out>::Run() {
   auto& param = this->Param<param_t>();
+  const auto in_dims = param.x->dims();
+  const auto filter_dims = param.filter->dims();
+  std::vector<int64_t> output_shape({in_dims[0]});
+
+  for (size_t i = 0; i < param.strides.size(); ++i) {
+    output_shape.push_back(ConvOutputSize(in_dims[i + 1],
+                                          filter_dims[i + 1],
+                                          param.dilations[i],
+                                          param.paddings[i],
+                                          param.strides[i]));
+  }
+  output_shape.push_back(filter_dims[0]);
+  param.output->Resize(lite::DDim(output_shape));
+
   conv_impl_->run(param);
 }
 

@@ -185,8 +185,8 @@ void test(int argc, char *argv[]) {
       if (len == 0) {
         continue;
       }
-      int width = cl_image->ImageDims()[0];
-      int height = cl_image->ImageDims()[1];
+      size_t width = cl_image->ImageDims()[0];
+      size_t height = cl_image->ImageDims()[1];
       paddle_mobile::framework::half_t *image_data =
           new paddle_mobile::framework::half_t[height * width * 4];
       cl_int err;

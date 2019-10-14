@@ -119,8 +119,8 @@ void TensorToCLImage(Tensor *tensor, CLImage *cl_image, cl_context context,
 
 #ifdef PADDLE_MOBILE_DEBUG
 Print &operator<<(Print &printer, const CLImage &cl_image) {
-  int width = cl_image.ImageDims()[0];
-  int height = cl_image.ImageDims()[1];
+  size_t width = cl_image.ImageDims()[0];
+  size_t height = cl_image.ImageDims()[1];
 
   half_t *image_data = new half_t[height * width * 4];
   cl_int err;

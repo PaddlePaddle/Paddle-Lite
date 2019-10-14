@@ -48,17 +48,29 @@ void bias_relu(int num,
 
 // For int8
 template <typename out_type>
-void bias_relu_int8_nhwc4(int num,
-                          const void* in,
-                          const void* bias,
-                          void* out,
-                          int N,
-                          int K,
-                          int H,
-                          int W,
-                          const void* scale,
-                          float alpha,
-                          cudaStream_t stream);
+void bias_relu_int8_nhwc(int num,
+                         const void* in,
+                         const void* bias,
+                         void* out,
+                         int N,
+                         int C,
+                         int H,
+                         int W,
+                         const void* scale,
+                         float alpha,
+                         cudaStream_t stream);
+
+template <typename out_type>
+void bias_int8_nhwc(int num,
+                    const void* in,
+                    const void* bias,
+                    void* out,
+                    int N,
+                    int C,
+                    int H,
+                    int W,
+                    const void* scale,
+                    cudaStream_t stream);
 
 }  // namespace math
 }  // namespace cuda
