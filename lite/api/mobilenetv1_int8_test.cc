@@ -74,6 +74,21 @@ void TestModel(const std::vector<Place>& valid_places,
                   1e-6);
     }
   }
+
+  auto* out_data = out->data<float>();
+  LOG(INFO) << "output data:";
+  for (int i = 0; i < out->numel(); i += step) {
+    LOG(INFO) << out_data[i];
+  }
+  float max_val = out_data[0];
+  int max_val_arg = 0;
+  for (int i = 1; i < out->numel(); i++) {
+    if (max_val < out_data[i]) {
+      max_val = out_data[i];
+      max_val_arg = i;
+    }
+  }
+  LOG(INFO) << "max val:" << max_val << ", max_val_arg:" << max_val_arg;
 }
 
 TEST(MobileNetV1, test_arm) {
