@@ -29,8 +29,8 @@ namespace mir {
 void TypeTargetTransformPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   // Start from inputs of the graph, those should have place set.
   std::list<Node*> nodes;
-  for (auto& node : graph->mutable_nodes()) {
-    nodes.push_back(&node);
+  for (auto& node : graph->StmtTopologicalOrder()) {
+    nodes.push_back(node);
   }
 
   CHECK(!valid_places_.empty());
@@ -60,7 +60,6 @@ void TypeTargetTransformPass::ComplementInputs(SSAGraph* graph,
   auto in_arg_name = in->AsArg().name;
   std::string tmp;
   CHECK(inst.op_info()->GetInputArgname(in_arg_name, &tmp));
-  LOG(INFO) << "tmp:" << tmp;
   auto decl_arg_type = inst.picked_kernel().GetInputDeclType(tmp);
   CHECK(in->AsArg().type);
   if (!TargetCompatibleTo(*in->AsArg().type, *decl_arg_type)) {
@@ -85,9 +84,10 @@ void TypeTargetTransformPass::AddIoCopyInst(
   // So there will be a new Argument node and a new IoCopy Statement Node.
 
   CHECK(in->IsArg());
-  auto node_id = [&] { return graph->nodes().size(); };
+  // auto node_id = [&] { return graph->nodes().size(); };
   auto io_copy_output_name =
-      string_format("%s/target_trans/%d", in->AsArg().name.c_str(), node_id());
+      string_format("%s/target_trans", in->AsArg().name.c_str());
+  // string_format("%s/target_trans/%d", in->AsArg().name.c_str(), node_id());
   // TODO(MyPandaShaoxiang) should set same place with input?
   auto* io_copy_output_arg = graph->NewArgumentNode(io_copy_output_name);
   // Set the place for io_copy_output_arg node, the target should be equal to
