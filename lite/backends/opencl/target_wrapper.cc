@@ -154,8 +154,8 @@ void *TargetWrapperCL::MapImage(void *image,
                                 size_t cl_image2d_row_pitch,
                                 size_t cl_image2d_slice_pitch) {
   cl::Image2D *cl_image = static_cast<cl::Image2D *>(image);
-  std::array<size_t, 3> origin{{0, 0, 0}};
-  std::array<size_t, 3> region{{cl_image2d_width, cl_image2d_height, 1}};
+  const size_t origin[3] = {0, 0, 0};
+  const size_t region[3] = {cl_image2d_width, cl_image2d_height, 1};
   cl_int status;
   void *mapped_ptr = CLRuntime::Global()->command_queue().enqueueMapImage(
       *cl_image,
@@ -275,8 +275,8 @@ void TargetWrapperCL::ImgcpySync(void *dst,
                                  const size_t cl_image2d_row_pitch,
                                  const size_t cl_image2d_slice_pitch,
                                  IoDirection dir) {
-  std::array<size_t, 3> origin{{0, 0, 0}};
-  std::array<size_t, 3> region{{cl_image2d_width, cl_image2d_height, 1}};
+  const size_t origin[3] = {0, 0, 0};
+  const size_t region[3] = {cl_image2d_width, cl_image2d_height, 1};
   cl_int status;
   cl::Event event;
   auto stream = CLRuntime::Global()->command_queue();
@@ -329,8 +329,8 @@ void TargetWrapperCL::ImgcpyAsync(void *dst,
                                   const size_t cl_image2d_slice_pitch,
                                   IoDirection dir,
                                   const stream_t &stream) {
-  std::array<size_t, 3> origin{{0, 0, 0}};
-  std::array<size_t, 3> region{{cl_image2d_width, cl_image2d_height, 1}};
+  const size_t origin[3] = {0, 0, 0};
+  const size_t region[3] = {cl_image2d_width, cl_image2d_height, 1};
   cl_int status;
   switch (dir) {
     case IoDirection::DtoD:
