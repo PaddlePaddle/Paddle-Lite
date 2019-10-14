@@ -106,7 +106,7 @@ class Optimizer {
 
            "runtime_context_assign_pass",
            "argument_type_display_pass",  //
-#ifndef LITE_WITH_OPENCL
+#if !defined(LITE_WITH_OPENCL) && !defined(LITE_WITH_NPU)
            // TODO(ysh329): cause CL_INVALID_MEM_OBJECT when setArg in kernel
            "memory_optimize_pass",
 #endif
