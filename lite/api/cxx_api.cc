@@ -75,24 +75,15 @@ const std::vector<std::string> *Predictor::GetOutputNames() {
 }
 // append the names of inputs and outputs into input_names_ and output_names_
 void Predictor::PrepareFeedFetch() {
-  auto *_feed_list = exec_scope_->FindVar("feed");
-  int input_size = _feed_list->GetMutable<std::vector<lite::Tensor>>()->size();
-  input_names_.resize(input_size);
-
-  auto *_fetch_list = exec_scope_->FindVar("fetch");
-  int output_size =
-      _fetch_list->GetMutable<std::vector<lite::Tensor>>()->size();
-  output_names_.resize(output_size);
-
   auto current_block = program_desc_.GetBlock<cpp::BlockDesc>(0);
   for (int i = 0; i < current_block->OpsSize(); i++) {
     auto op = current_block->GetOp<cpp::OpDesc>(i);
     if (op->Type() == "feed") {
       int idx = op->GetAttr<int>("col");
-      input_names_[idx] = op->Output("Out").front();
+      input_names_.push_back(op->Output("Out").front());
     } else if (op->Type() == "fetch") {
       int idx = op->GetAttr<int>("col");
-      output_names_[idx] = op->Input("X").front();
+      output_names_.push_back(op->Input("X").front());
     }
   }
 }
