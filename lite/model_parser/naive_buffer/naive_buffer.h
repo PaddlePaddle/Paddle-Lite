@@ -142,6 +142,35 @@ class PrimaryListBuilder : public FieldBuilder {
 
   std::vector<Primary> data() const { return data_; }
 
+  // Create a new element.
+  Primary* New() {
+    data_.emplace_back(table());
+    return &data_.back();
+  }
+
+  // Get i-th element.
+  const Primary& Get(int i) const {
+    CHECK_LT(i, data_.size());
+    return data_[i];
+  }
+
+  Primary* GetMutable(int i) {
+    CHECK_LT(i, data_.size());
+    return &data_[i];
+  }
+
+  typename std::vector<Primary>::iterator begin() { return data_.begin(); }
+
+  typename std::vector<Primary>::iterator end() { return data_.end(); }
+
+  typename std::vector<Primary>::const_iterator begin() const {
+    return data_.begin();
+  }
+
+  typename std::vector<Primary>::const_iterator end() const {
+    return data_.end();
+  }
+
   /// Save information to the corresponding BinaryTable.
   void Save() override;
 
@@ -152,6 +181,9 @@ class PrimaryListBuilder : public FieldBuilder {
   size_t size() const { return data_.size(); }
 
   Type type() const override { return core::StdTypeToRepr<Primary>(); }
+
+  /// clear builder
+  void Clear() { data_.clear(); }
 
   ~PrimaryListBuilder() = default;
 };
@@ -381,10 +413,12 @@ void PrimaryListBuilder<Primary>::Load() {
   uint64_t num_elems{};
   memcpy(&num_elems, table()->cursor(), sizeof(uint64_t));
   table()->Consume(sizeof(uint64_t));
-  data_.reserve(num_elems);
+
   data_.resize(num_elems);
-  memcpy(&data_, table()->cursor(), num_elems * sizeof(value_type));
-  table()->Consume(num_elems * sizeof(value_type));
+  for (uint64_t i = 0; i < num_elems; i++) {
+    memcpy(&data_[i], table()->cursor(), sizeof(value_type));
+    table()->Consume(sizeof(value_type));
+  }
 }
 
 template <typename Primary>

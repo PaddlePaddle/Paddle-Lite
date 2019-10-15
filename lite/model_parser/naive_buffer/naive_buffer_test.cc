@@ -54,8 +54,6 @@ TEST(NaiveBuffer, primaryListSize) {
   PrimaryListBuilder<float> P(&table);
   P.set(P_data);
   P.Save();
-  while (1) {
-  }
 }
 
 /*TEST(NaiveBuffer, primary) {

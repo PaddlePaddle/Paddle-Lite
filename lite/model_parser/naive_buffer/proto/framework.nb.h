@@ -191,7 +191,8 @@ class ParamDesc : public StructBuilder {
     New<lod_type>("lod");
     NewUInt32("tensor_version");
     New<TensorDesc>("tensor_desc");
-    New<ListBuilder<CharBuilder>>("data");
+    //    New<ListBuilder<CharBuilder>>("data");
+    New<PrimaryListBuilder<char>>("data");
   }
 };
 
