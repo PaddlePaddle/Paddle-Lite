@@ -57,6 +57,8 @@ void TransposeCompute::Run() {
   }
 
   lite::cuda::math::Transpose(dims, axes, in, out, &ctx);
+  cudaError_t error = cudaGetLastError();
+  if (error != cudaSuccess) LOG(INFO) << cudaGetErrorString(error);
 }
 
 }  // namespace cuda

@@ -28,9 +28,8 @@ REGISTER_LITE_KERNEL(gru,
     .BindInput("H0", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindInput("Weight", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kX86))})
-    .BindOutput("Batch_gate", {LiteType::GetTensorTy(TARGET(kX86))})
-    .BindOutput("Batch_reset_hidden_prev",
-                {LiteType::GetTensorTy(TARGET(kX86))})
-    .BindOutput("Batch_hidden", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindOutput("BatchGate", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindOutput("BatchResetHiddenPrev", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindOutput("BatchHidden", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindOutput("Hidden", {LiteType::GetTensorTy(TARGET(kX86))})
     .Finalize();

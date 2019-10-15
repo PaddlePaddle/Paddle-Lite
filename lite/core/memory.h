@@ -42,8 +42,10 @@ void TargetCopy(TargetType target, void* dst, const void* src, size_t size);
 void TargetCopyImage2D(TargetType target,
                        void* dst,
                        const void* src,
-                       const std::array<size_t, 2>& image_shape,
-                       const std::array<size_t, 2>& image_pitch);
+                       const size_t cl_image2d_width,
+                       const size_t cl_image2d_height,
+                       const size_t cl_image2d_row_pitch,
+                       const size_t cl_image2d_slice_pitch);
 #endif  // LITE_WITH_OPENCL
 
 template <TargetType Target>
@@ -97,31 +99,19 @@ class Buffer {
 #ifdef LITE_WITH_OPENCL
   template <typename T>
   void ResetLazyImage2D(TargetType target,
-                        const std::array<size_t, 2>& image2d_shape) {
-    size_t size =
-        sizeof(T) * image2d_shape[0] * image2d_shape[1] * 4;  // 4 for RGBA
-    VLOG(4) << "image2d_shape:" << image2d_shape[0] << " " << image2d_shape[1];
-    if (target != target_) {
+                        const size_t img_w,
+                        const size_t img_h) {
+    size_t size = sizeof(T) * img_w * img_h *
+                  4;  // 4 for RGBA, un-used for opencl Image2D
+    if (target != target_ || cl_image2d_width_ < img_w ||
+        cl_image2d_height_ < img_h) {
       Free();
-      data_ = TargetWrapperCL::MallocImage<T>(image2d_shape);
+      data_ = TargetWrapperCL::MallocImage<T>(img_w, img_h);
       target_ = target;
-      space_ = size;
+      space_ = size;  // un-used for opencl Image2D
+      cl_image2d_width_ = img_w;
+      cl_image2d_height_ = img_h;
     }
-  }
-
-  template <typename T>
-  void ResizeLazyImage2D(const std::array<size_t, 2>& image2d_shape) {
-    ResetLazyImage2D<T>(target_, image2d_shape);
-  }
-
-  template <typename T>
-  void CopyImage2DFrom(const Buffer& other,
-                       const std::array<size_t, 2>& image2d_shape,
-                       const std::array<size_t, 2>& image2d_pitch) {
-    target_ = other.target_;
-    ResizeLazyImage2D<T>(image2d_shape, image2d_pitch);
-    TargetCopyImage2D(
-        target_, data_, other.data_, image2d_shape, image2d_pitch);
   }
 #endif
 
@@ -145,6 +135,8 @@ class Buffer {
  private:
   // memory it actually malloced.
   size_t space_{0};
+  size_t cl_image2d_width_{0};   // only used for OpenCL Image2D
+  size_t cl_image2d_height_{0};  // only used for OpenCL Image2D
   void* data_{nullptr};
   TargetType target_{TargetType::kHost};
 };

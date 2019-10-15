@@ -33,6 +33,7 @@ class FillConstantBatchSizeLikeCompute
 
   void Run() override {
     auto& param = *param_.get_mutable<param_t>();
+    auto& ctx = ctx_->As<X86Context>();
     auto* out = param.Out;
     auto* in = param.Input;
     if (in->lod().size() && param.input_dim_idx == 0) {
@@ -40,11 +41,13 @@ class FillConstantBatchSizeLikeCompute
       auto odims = out->dims();
       int output_dim_idx = param.output_dim_idx;
       odims[output_dim_idx] = static_cast<int>(in->lod().back().size()) - 1;
+      out->Resize(odims);
+      // out->mutable_data<T>();
     }
+    out->mutable_data<T>();
     auto value = param.value;
 
-    paddle::lite::x86::math::SetConstant<TargetType::kX86, T> setter;
-    Context<TargetType::kX86> ctx;
+    paddle::lite::x86::math::SetConstant<lite::TargetType::kX86, T> setter;
     setter(ctx, out, static_cast<T>(value));
   }
 

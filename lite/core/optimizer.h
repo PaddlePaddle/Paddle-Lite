@@ -106,7 +106,7 @@ class Optimizer {
 
            "runtime_context_assign_pass",
            "argument_type_display_pass",  //
-#ifndef LITE_WITH_OPENCL
+#if !defined(LITE_WITH_OPENCL) && !defined(LITE_WITH_NPU)
            // TODO(ysh329): cause CL_INVALID_MEM_OBJECT when setArg in kernel
            "memory_optimize_pass",
 #endif
@@ -211,7 +211,8 @@ class Optimizer {
       }
       matched = matched && PassMatchesKernels(*pass);
       if (!matched) {
-        LOG(INFO) << "   - Skip " << x << " because the target does not match.";
+        LOG(INFO) << "   - Skip " << x
+                  << " because the target or kernel does not match.";
       } else {
         pass->Apply(graph_);
         LOG(INFO) << "== Finished running: " << x;

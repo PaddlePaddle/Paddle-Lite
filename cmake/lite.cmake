@@ -375,6 +375,8 @@ endfunction()
 # Bundle several static libraries into one.
 function(bundle_static_library tgt_name bundled_tgt_name fake_target)
   list(APPEND static_libs ${tgt_name})
+# for x86
+  add_dependencies(lite_compile_deps ${fake_target})
 
   function(_recursively_collect_dependencies input_target)
     set(_input_link_libraries LINK_LIBRARIES)
