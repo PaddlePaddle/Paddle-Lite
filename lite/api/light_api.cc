@@ -106,7 +106,7 @@ void LightPredictor::PrepareFeedFetch() {
   }
   for (int i = 0; i < fetchs.size(); i++) {
     output_names_[fetchs[i]->GetAttr<int>("col")] =
-        fetchs[i]->Output("Out").front();
+        fetchs[i]->Input("X").front();
   }
 }
 
