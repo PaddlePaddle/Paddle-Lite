@@ -149,8 +149,7 @@ class TensorLite {
   template <typename T, typename R = T>
   R *mutable_data(const size_t img_w, const size_t img_h) {
     target_ = TARGET(kOpenCL);
-    std::array<size_t, 2> image2d_shape{img_w, img_h};
-    buffer_->ResetLazyImage2D<T>(target_, image2d_shape);
+    buffer_->ResetLazyImage2D<T>(target_, img_w, img_h);
     return static_cast<cl::Image2D *>(buffer_->data());
   }
 #endif
