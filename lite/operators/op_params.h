@@ -35,7 +35,8 @@ using param_t = Any;
   bool enable_int8{false};           \
   float input_scale{1.0};            \
   std::vector<float> weight_scale{}; \
-  float output_scale{1.0};
+  float output_scale{1.0};           \
+  int bit_length{8};
 
 /// ----------------------- Functional operators ------------------------------
 struct FeedParam {
@@ -684,6 +685,7 @@ struct SequencePoolParam {
   std::string pool_type{"AVERAGE"};
 #ifdef LITE_WITH_X86
   float pad_value{0.0};
+  lite::Tensor* MaxIndex{};
 #endif
 };
 

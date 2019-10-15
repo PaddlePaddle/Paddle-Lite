@@ -46,7 +46,7 @@ bool FillConstantBatchSizeLikeOp::InferShape() const {
 
 bool FillConstantBatchSizeLikeOp::AttachImpl(const cpp::OpDesc &op_desc,
                                              lite::Scope *scope) {
-  auto Input = op_desc.Input("X").front();
+  auto Input = op_desc.Input("Input").front();
   auto Out = op_desc.Output("Out").front();
   param_.Input = scope->FindVar(Input)->GetMutable<lite::Tensor>();
   param_.Out = scope->FindVar(Out)->GetMutable<lite::Tensor>();
