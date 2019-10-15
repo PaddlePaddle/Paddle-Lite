@@ -66,9 +66,13 @@ lite::Tensor *Predictor::GetInput(size_t offset) {
 }
 
 // get inputs names
-std::vector<std::string> Predictor::GetInputNames() { return input_names_; }
+const std::vector<std::string> *Predictor::GetInputNames() {
+  return &input_names_;
+}
 // get outputnames
-std::vector<std::string> Predictor::GetOutputNames() { return output_names_; }
+const std::vector<std::string> *Predictor::GetOutputNames() {
+  return &output_names_;
+}
 // append the names of inputs and outputs into input_names_ and output_names_
 void Predictor::PrepareFeedFetch() {
   auto *_feed_list = exec_scope_->FindVar("feed");
@@ -193,8 +197,7 @@ const lite::Tensor *Predictor::GetTensor(const std::string &name) const {
 }
 // get input by name
 lite::Tensor *Predictor::GetInputByName(const std::string &name) {
-  std::vector<std::string>::iterator iElement =
-      std::find(input_names_.begin(), input_names_.end(), name);
+  auto iElement = std::find(input_names_.begin(), input_names_.end(), name);
   if (iElement == input_names_.end()) {
     LOG(ERROR) << "Model do not have input named with: [" << name
                << "], model's inputs include:";

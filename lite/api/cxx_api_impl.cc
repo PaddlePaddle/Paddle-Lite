@@ -37,8 +37,8 @@ class CxxPaddleApiImpl : public lite_api::PaddlePredictor {
   std::string GetVersion() const override;
 
   // get inputs names and get outputs names
-  std::vector<std::string> GetInputNames() override;
-  std::vector<std::string> GetOutputNames() override;
+  const std::vector<std::string> *GetInputNames() override;
+  const std::vector<std::string> *GetOutputNames() override;
 
   std::unique_ptr<const lite_api::Tensor> GetTensor(
       const std::string &name) const override;
@@ -78,11 +78,11 @@ std::unique_ptr<const lite_api::Tensor> CxxPaddleApiImpl::GetOutput(
   return std::unique_ptr<lite_api::Tensor>(new lite_api::Tensor(x));
 }
 
-std::vector<std::string> CxxPaddleApiImpl::GetInputNames() {
+const std::vector<std::string> *CxxPaddleApiImpl::GetInputNames() {
   return raw_predictor_.GetInputNames();
 }
 
-std::vector<std::string> CxxPaddleApiImpl::GetOutputNames() {
+const std::vector<std::string> *CxxPaddleApiImpl::GetOutputNames() {
   return raw_predictor_.GetOutputNames();
 }
 

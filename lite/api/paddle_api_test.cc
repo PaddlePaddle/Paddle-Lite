@@ -38,16 +38,16 @@ TEST(CxxApi, run) {
 
   LOG(INFO) << "Version: " << predictor->GetVersion();
 
-  std::vector<std::string> inputs = predictor->GetInputNames();
-  LOG(INFO) << "input size: " << inputs.size();
-  for (int i = 0; i < inputs.size(); i++) {
-    LOG(INFO) << "inputnames: " << inputs[i];
+  const std::vector<std::string>* inputs = predictor->GetInputNames();
+  LOG(INFO) << "input size: " << inputs->size();
+  for (int i = 0; i < inputs->size(); i++) {
+    LOG(INFO) << "inputnames: " << inputs->at(i);
   }
-  std::vector<std::string> outputs = predictor->GetOutputNames();
-  for (int i = 0; i < outputs.size(); i++) {
-    LOG(INFO) << "outputnames: " << outputs[i];
+  const std::vector<std::string>* outputs = predictor->GetOutputNames();
+  for (int i = 0; i < outputs->size(); i++) {
+    LOG(INFO) << "outputnames: " << outputs->at(i);
   }
-  auto input_tensor = predictor->GetInputByName(inputs[0]);
+  auto input_tensor = predictor->GetInputByName(inputs->at(0));
   input_tensor->Resize(std::vector<int64_t>({100, 100}));
   auto* data = input_tensor->mutable_data<float>();
   for (int i = 0; i < 100 * 100; i++) {
@@ -56,7 +56,7 @@ TEST(CxxApi, run) {
 
   predictor->Run();
 
-  auto output = predictor->GetTensor(outputs[0]);
+  auto output = predictor->GetTensor(outputs->at(0));
   auto* out = output->data<float>();
   LOG(INFO) << out[0];
   LOG(INFO) << out[1];
@@ -77,14 +77,14 @@ TEST(LightApi, run) {
 
   auto predictor = lite_api::CreatePaddlePredictor(config);
 
-  std::vector<std::string> inputs = predictor->GetInputNames();
-  LOG(INFO) << "input size: " << inputs.size();
-  for (int i = 0; i < inputs.size(); i++) {
-    LOG(INFO) << "inputnames: " << inputs[i];
+  const std::vector<std::string>* inputs = predictor->GetInputNames();
+  LOG(INFO) << "input size: " << inputs->size();
+  for (int i = 0; i < inputs->size(); i++) {
+    LOG(INFO) << "inputnames: " << inputs->at(i);
   }
-  std::vector<std::string> outputs = predictor->GetOutputNames();
-  for (int i = 0; i < outputs.size(); i++) {
-    LOG(INFO) << "outputnames: " << outputs[i];
+  const std::vector<std::string>* outputs = predictor->GetOutputNames();
+  for (int i = 0; i < outputs->size(); i++) {
+    LOG(INFO) << "outputnames: " << outputs->at(i);
   }
 
   LOG(INFO) << "Version: " << predictor->GetVersion();

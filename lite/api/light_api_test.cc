@@ -37,14 +37,14 @@ TEST(LightAPI, load) {
   }
 
   predictor.PrepareFeedFetch();
-  std::vector<std::string> inputs = predictor.GetInputNames();
-  LOG(INFO) << "input size: " << inputs.size();
-  for (int i = 0; i < inputs.size(); i++) {
-    LOG(INFO) << "inputnames: " << inputs[i];
+  const std::vector<std::string>* inputs = predictor.GetInputNames();
+  LOG(INFO) << "input size: " << inputs->size();
+  for (int i = 0; i < inputs->size(); i++) {
+    LOG(INFO) << "inputnames: " << inputs->at(i);
   }
-  std::vector<std::string> outputs = predictor.GetOutputNames();
-  for (int i = 0; i < outputs.size(); i++) {
-    LOG(INFO) << "outputnames: " << outputs[i];
+  const std::vector<std::string>* outputs = predictor.GetOutputNames();
+  for (int i = 0; i < outputs->size(); i++) {
+    LOG(INFO) << "outputnames: " << outputs->at(i);
   }
 
   predictor.Run();
