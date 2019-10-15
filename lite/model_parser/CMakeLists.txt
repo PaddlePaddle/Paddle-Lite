@@ -28,7 +28,6 @@ lite_cc_library(model_parser SRCS model_parser.cc DEPS
     target_wrapper_host
     compatible_pb
     memory
-    CUDA_DEPS target_wrapper_cuda
-    NPU_DEPS npu_runtime)
+    CUDA_DEPS target_wrapper_cuda)
 
 lite_cc_test(test_compatible_pb SRCS compatible_pb_test.cc DEPS compatible_pb)
