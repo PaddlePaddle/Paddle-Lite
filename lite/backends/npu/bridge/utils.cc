@@ -13,18 +13,51 @@
 // limitations under the License.
 
 #include "lite/backends/npu/bridge/utils.h"
-#include <memory>
 #include <mutex>  // NOLINT
-#include <string>
-#include <unordered_map>
+#include <utility>
+#include "ai_ddk_lib/include/graph/buffer.h"
+#include "ai_ddk_lib/include/graph/model.h"
 #include "ai_ddk_lib/include/graph/op/all_ops.h"  // for ge::op::Data
 #include "ai_ddk_lib/include/graph/tensor.h"      // for ge::TensorUtils
-#include "lite/core/op_lite.h"
+#include "ai_ddk_lib/include/hiai_ir_build.h"
+#include "lite/backends/npu/runtime.h"
 
 namespace paddle {
 namespace lite {
 namespace npu {
 namespace bridge {
+
+// Build HIAI IR graph to om model, and store om model data into lite tensor
+bool BuildModel(std::vector<ge::Operator>& inputs,   // NOLINT
+                std::vector<ge::Operator>& outputs,  // NOLINT
+                lite::Tensor* model_data) {
+  LOG(INFO) << "[NPU] Build model.";
+  CHECK_GT(inputs.size(), 0);
+  CHECK_GT(outputs.size(), 0);
+  CHECK_NE(model_data, 0);
+  // build IR graph to om model
+  ge::Graph ir_graph("graph");
+  ir_graph.SetInputs(inputs).SetOutputs(outputs);
+  ge::Model om_model("model", "model");
+  om_model.SetGraph(ir_graph);
+  domi::HiaiIrBuild ir_build;
+  domi::ModelBufferData om_model_buf;
+  if (!ir_build.CreateModelBuff(om_model, om_model_buf)) {
+    LOG(WARNING) << "[NPU] CreateModelBuff failed!";
+    return false;
+  }
+  if (!ir_build.BuildIRModel(om_model, om_model_buf)) {
+    LOG(WARNING) << "[NPU] BuildIRModel failed!";
+    return false;
+  }
+  // store om model into tensor
+  model_data->Resize({om_model_buf.length});
+  memcpy(model_data->mutable_data<int8_t>(),
+         om_model_buf.data,
+         om_model_buf.length);
+  ir_build.ReleaseModelBuff(om_model_buf);
+  return true;
+}
 
 std::string UniqueName(const std::string& prefix) {
   static std::mutex counter_mtx;

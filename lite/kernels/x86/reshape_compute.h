@@ -27,19 +27,9 @@ namespace kernels {
 namespace x86 {
 
 template <typename T>
-void Compute(const lite::Tensor* in,
-             const lite::Tensor* actual_shape,
-             lite::Tensor* out) {
+void Compute(const lite::Tensor* in, lite::Tensor* out) {
   auto out_dims = out->dims();
   auto in_dims = in->dims();
-  if (actual_shape) {
-    auto shape_dims = actual_shape->dims();
-    const int* shape_data = actual_shape->data<int>();
-    std::vector<int> shape =
-        std::vector<int>(shape_data, shape_data + shape_dims.production());
-    out_dims = lite::operators::ValidateShape(shape, in_dims);
-    out->Resize(out_dims);
-  }
   out->CopyDataFrom(*in);
   out->Resize(out_dims);
 }
@@ -51,7 +41,7 @@ class ReshapeCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
 
   void Run() override {
     auto& param = *param_.get_mutable<param_t>();
-    Compute<T>(param.x, param.actual_shape, param.output);
+    Compute<T>(param.x, param.output);
   }
 
   virtual ~ReshapeCompute() = default;
@@ -67,7 +57,7 @@ class Reshape2Compute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
 
   void Run() override {
     auto& param = *param_.get_mutable<param_t>();
-    Compute<T>(param.x, param.actual_shape, param.output);
+    Compute<T>(param.x, param.output);
   }
 
   virtual ~Reshape2Compute() = default;
