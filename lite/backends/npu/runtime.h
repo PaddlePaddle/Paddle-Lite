@@ -13,45 +13,38 @@
 // limitations under the License.
 
 #pragma once
-
 #include <memory>
 #include <string>
-#include <vector>
 #include "ai_ddk_lib/include/HiAiModelManagerService.h"
-#include "lite/core/kernel.h"
-#include "lite/core/op_registry.h"
-#include "lite/core/types.h"
+#include "lite/core/tensor.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
 namespace npu {
 
-class GraphCompute : public KernelLite<TARGET(kNPU), PRECISION(kFloat)> {
+class DeviceInfo {
  public:
-  using param_t = operators::GraphParam;
+  static DeviceInfo &Global() {
+    static DeviceInfo x;
+    return x;
+  }
+  DeviceInfo() {}
 
-  void PrepareForRun() override;
-
-  void Run() override;
-
-  virtual ~GraphCompute() = default;
-
-  bool input_dims_changed() const;
+  int freq_level() { return freq_level_; }
+  int framework_type() { return framework_type_; }
+  int model_type() { return model_type_; }
+  int device_type() { return device_type_; }
 
  private:
-  std::shared_ptr<hiai::AiModelMngerClient> model_client_;
-  std::string model_name_;
-  hiai::AiContext model_context_;
-
-  std::vector<hiai::TensorDimension> npu_idims_;
-  std::vector<hiai::TensorDimension> npu_odims_;
-
-  std::vector<std::shared_ptr<hiai::AiTensor>> npu_itensors_;
-  std::vector<std::shared_ptr<hiai::AiTensor>> npu_otensors_;
+  int freq_level_{3};
+  int framework_type_{0};
+  int model_type_{0};
+  int device_type_{0};
 };
 
+bool LoadModel(const lite::Tensor &model_data,
+               std::shared_ptr<hiai::AiModelMngerClient> *model_client,
+               std::string *model_name);
 }  // namespace npu
-}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

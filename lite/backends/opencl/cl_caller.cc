@@ -31,8 +31,8 @@ static void CopyImageData(CLContext* context,
 
   float* image_data = new float[height * width * 4];
   cl::Image* image = cl_image.cl_image();
-  const std::array<size_t, 3> origin{0, 0, 0};
-  const std::array<size_t, 3> region{
+  cl::array<size_t, 3> origin = {0, 0, 0};
+  cl::array<size_t, 3> region = {
       static_cast<size_t>(width), static_cast<size_t>(height), 1};
   cl_int err = context->GetCommandQueue().enqueueReadImage(
       *image, CL_TRUE, origin, region, 0, 0, image_data, nullptr, nullptr);

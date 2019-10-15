@@ -33,8 +33,20 @@ ostream& ostream::operator<<(const char* obj) {
 }
 
 template <>
+ostream& ostream::operator<<(const char& obj) {
+  _data = _data + obj;
+  return *this;
+}
+
+template <>
 ostream& ostream::operator<<(const std::string& obj) {
   _data = _data + obj;
+  return *this;
+}
+
+template <>
+ostream& ostream::operator<<(const int16_t& obj) {
+  ADD_DATA_AS_STRING(_data, obj);
   return *this;
 }
 

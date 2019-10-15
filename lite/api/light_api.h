@@ -18,6 +18,7 @@
  */
 #pragma once
 
+#include <map>
 #include <memory>
 #include <string>
 #include <utility>
@@ -52,7 +53,8 @@ class LITE_API LightPredictor {
 
   // Get offset-th col of feed inputs.
   Tensor* GetInput(size_t offset);
-
+  // get input by name.
+  Tensor* GetInputByName(const std::string& name);
   // Get offset-th col of fetch outputs.
   const Tensor* GetOutput(size_t offset);
 
@@ -60,6 +62,11 @@ class LITE_API LightPredictor {
     auto* var = program_->exec_scope()->FindVar(name);
     return &var->Get<lite::Tensor>();
   }
+
+  // get inputnames and get outputnames.
+  std::vector<std::string> GetInputNames();
+  std::vector<std::string> GetOutputNames();
+  void PrepareFeedFetch();
 
  private:
   void Build(
@@ -75,6 +82,9 @@ class LITE_API LightPredictor {
   std::shared_ptr<Scope> scope_;
   std::unique_ptr<RuntimeProgram> program_;
   cpp::ProgramDesc cpp_program_desc_;
+  std::map<size_t, std::string> input_names_;
+  std::map<std::string, size_t> idx2feeds_;
+  std::map<size_t, std::string> output_names_;
 };
 
 }  // namespace lite
