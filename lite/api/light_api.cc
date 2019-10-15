@@ -41,6 +41,7 @@ void LightPredictor::Build(const std::string& model_dir,
       LOG(FATAL) << "Unknown model type";
   }
   BuildRuntimeProgram(cpp_program_desc_);
+  PrepareFeedFetch();
 }
 
 Tensor* LightPredictor::GetInput(size_t offset) {

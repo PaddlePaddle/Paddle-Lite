@@ -97,18 +97,6 @@ if(WITH_TESTING)
             --optimized_model=${LITE_MODEL_DIR}/lite_naive_model_opt SERIAL)
     add_dependencies(test_cxx_api extern_lite_download_lite_naive_model_tar_gz)
     if(NOT LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
-        nv_test(test_yolo_int81 SRCS test_yolo_int81.cc
-           DEPS cxx_api mir_passes lite_api_test_helper paddle_api_full
-           ${ops} ${host_kernels} ${x86_kernels} ${cuda_kernels})
-        nv_test(test_yolo_int8 SRCS test_yolo_int8.cc
-           DEPS cxx_api mir_passes lite_api_test_helper paddle_api_full
-           ${ops} ${host_kernels} ${x86_kernels} ${cuda_kernels})
-        nv_test(test_yolo_int82 SRCS test_yolo_int82.cc
-           DEPS cxx_api mir_passes lite_api_test_helper paddle_api_full
-           ${ops} ${host_kernels} ${x86_kernels} ${cuda_kernels})
-        nv_test(test_yolo_int83 SRCS test_yolo_int83.cc
-           DEPS cxx_api mir_passes lite_api_test_helper paddle_api_full
-           ${ops} ${host_kernels} ${x86_kernels} ${cuda_kernels})
         lite_cc_test(test_googlenet SRCS test_googlenet_lite.cc
            DEPS cxx_api mir_passes lite_api_test_helper
            ${ops} ${host_kernels} ${x86_kernels}
