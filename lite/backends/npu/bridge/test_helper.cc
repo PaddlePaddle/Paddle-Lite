@@ -43,7 +43,7 @@ void LauchOp(const std::shared_ptr<lite::OpLite> op,
         ge::Shape(input->dims().Vectorize()), ge::FORMAT_NCHW, ge::DT_FLOAT);
     auto input_node = std::make_shared<ge::op::Data>(input_var_name);
     input_node->update_input_desc_x(input_desc);
-    npu::OpList::Global().add(input_node);
+    OpList::Global().add(input_node);
     inputs_map[input_var_name] = input_node;
   }
   auto outputs_map = supported_lists.at(op_type)(op, inputs_map);
@@ -58,15 +58,20 @@ void LauchOp(const std::shared_ptr<lite::OpLite> op,
   for (auto output_var_name : output_var_names) {
     graph_outputs.push_back(*outputs_map[output_var_name]);
   }
-  std::string model_name(UniqueName("test_" + op_type) + ".om");
-  CHECK(npu::BuildNPUClient(graph_inputs, graph_outputs, model_name));
+  std::string weight_var_name = "weight";
+  auto weight = scope->Var(weight_var_name)->GetMutable<Tensor>();
+  weight->set_persistable(true);
+  weight->set_precision(PRECISION(kInt8));
+  CHECK(BuildModel(graph_inputs, graph_outputs, weight));
+  CHECK_GT(weight->numel(), 0);
+  CHECK_NE(weight->data<uint8_t>(), 0);
 
   // create graph op and set inputs and outputs
   cpp::OpDesc graph_op_desc;
   graph_op_desc.SetType("graph_op");
   graph_op_desc.SetInput("Inputs", input_var_names);
+  graph_op_desc.SetInput("Weight", {weight_var_name});
   graph_op_desc.SetOutput("Outputs", output_var_names);
-  graph_op_desc.SetAttr("model_name", model_name);
 
   auto graph_op =
       std::make_shared<operators::GraphOpLite>(graph_op_desc.Type());
@@ -88,8 +93,7 @@ void LauchOp(const std::shared_ptr<lite::OpLite> op,
   graph_kernel->Launch();
 
   // release all of resources of generated model
-  npu::OpList::Global().clear();
-  npu::DeviceInfo::Global().Clear();
+  OpList::Global().clear();
 }
 
 }  // namespace bridge

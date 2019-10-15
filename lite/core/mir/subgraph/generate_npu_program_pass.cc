@@ -30,7 +30,6 @@
 #include "lite/backends/npu/bridge/paddle_use_npu_bridges.h"
 #include "lite/backends/npu/bridge/registry.h"
 #include "lite/backends/npu/bridge/utils.h"
-#include "lite/backends/npu/npu_helper.h"
 
 namespace paddle {
 namespace lite {
@@ -125,13 +124,20 @@ std::string GenerateNPUProgramPass::BuildNPUGraph(
     outputs.push_back(*converted_vars.at(argname));
   }
 
-  std::string model_name("hiai_npu_client_" + std::to_string(sub_id) + ".om");
-  if (!npu::BuildNPUClient(inputs, outputs, model_name)) {
+  std::string weight_var_name = "graph" + std::to_string(sub_id) + "_weights";
+  auto any_op = (*op_nodes.begin())->AsStmt().op();
+  auto weight = any_op->scope()->Var(weight_var_name)->GetMutable<Tensor>();
+  weight->set_persistable(true);
+  weight->set_precision(PRECISION(kInt8));
+  // Compiling IR graph to NPU model and store mode data into weight tensor with
+  // persistable=true, Sothat the model parser can recognize it and save it to
+  // param files
+  if (!lite::npu::bridge::BuildModel(inputs, outputs, weight)) {
     LOG(WARNING) << "Build NPU failed subgraph " << sub_id;
     throw std::runtime_error("Build NPU failed subgraph.");
   }
   LOG(INFO) << "[NPU] Build NPU Client success subgraph " << sub_id;
-  return model_name;
+  return weight_var_name;
 }
 
 void GenerateNPUProgramPass::GenNPUSubgraph(
@@ -145,12 +151,12 @@ void GenerateNPUProgramPass::GenNPUSubgraph(
   FindInputOutputVars(
       op_nodes, &in_data_vars, &in_wgt_vars, &out_data_vars, &out_unused_vars);
 
-  auto model_name =
+  auto weight_var_name =
       BuildNPUGraph(op_nodes, in_data_vars, out_data_vars, sub_id);
 
   auto any_op = (*op_nodes.begin())->AsStmt().op();
   InsertNewNode(graph,
-                model_name,
+                weight_var_name,
                 any_op->scope(),
                 any_op->valid_places(),
                 in_data_vars,
