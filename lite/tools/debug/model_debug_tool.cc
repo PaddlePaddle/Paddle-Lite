@@ -35,7 +35,6 @@ void Run(DebugConfig* conf) {
 #endif
   lite::Predictor predictor;
   std::vector<Place> valid_places({
-      Place{TARGET(kHost), PRECISION(kFloat)},
 #ifdef LITE_WITH_ARM
       Place{TARGET(kARM), PRECISION(kFloat)},
 #endif
@@ -48,6 +47,7 @@ void Run(DebugConfig* conf) {
 #ifdef LITE_WITH_CUDA
       Place{TARGET(kCUDA), PRECISION(kFloat)},
 #endif
+      Place{TARGET(kHost), PRECISION(kFloat)},
   });
 
   std::vector<std::string> passes{{
@@ -60,23 +60,7 @@ void Run(DebugConfig* conf) {
       "runtime_context_assign_pass",
   }};
 
-  predictor.Build(conf->model_dir,
-                  "",
-                  "",
-#ifdef LITE_WITH_ARM
-                  Place{TARGET(kARM), PRECISION(kFloat)},
-#endif
-#ifdef LITE_WITH_X86
-                  Place{TARGET(kX86), PRECISION(kFloat)},
-#endif
-#ifdef LITE_WITH_FPGA
-                  Place{TARGET(kFPGA), PRECISION(kFloat)},
-#endif
-#ifdef LITE_WITH_CUDA
-                  Place{TARGET(kCUDA), PRECISION(kFloat)},
-#endif
-                  valid_places,
-                  passes);
+  predictor.Build(conf->model_dir, "", "", valid_places, passes);
 
   predictor.GenRuntimeProgram();
   auto& instructions = predictor.runtime_program().instructions();

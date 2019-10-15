@@ -30,14 +30,10 @@ TEST(InceptionV4, test) {
   DeviceInfo::Init();
   DeviceInfo::Global().SetRunMode(lite_api::LITE_POWER_HIGH, FLAGS_threads);
   lite::Predictor predictor;
-  std::vector<Place> valid_places({Place{TARGET(kHost), PRECISION(kFloat)},
-                                   Place{TARGET(kARM), PRECISION(kFloat)}});
+  std::vector<Place> valid_places({Place{TARGET(kARM), PRECISION(kFloat)},
+                                   Place{TARGET(kHost), PRECISION(kFloat)}});
 
-  predictor.Build(FLAGS_model_dir,
-                  "",
-                  "",
-                  Place{TARGET(kARM), PRECISION(kFloat)},
-                  valid_places);
+  predictor.Build(FLAGS_model_dir, "", "", valid_places);
 
   auto* input_tensor = predictor.GetInput(0);
   input_tensor->Resize(DDim(std::vector<DDim::value_type>({1, 3, 224, 224})));

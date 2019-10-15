@@ -90,8 +90,8 @@ void Main() {
 
   if (FLAGS_prefer_int8_kernel) {
     LOG(WARNING) << "Int8 mode is only support by ARM target";
-    valid_places.push_back(Place{TARGET(kARM), PRECISION(kInt8)});
-    config.set_preferred_place(Place{TARGET(kARM), PRECISION(kInt8)});
+    valid_places.insert(valid_places.begin(),
+                        Place{TARGET(kARM), PRECISION(kInt8)});
   }
   config.set_valid_places(valid_places);
 
