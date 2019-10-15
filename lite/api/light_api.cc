@@ -88,15 +88,25 @@ const std::vector<std::string>* LightPredictor::GetOutputNames() {
 // append the names of inputs and outputs into input_names_ and output_names_
 void LightPredictor::PrepareFeedFetch() {
   auto current_block = cpp_program_desc_.GetBlock<cpp::BlockDesc>(0);
+  std::vector<cpp::OpDesc*> feeds;
+  std::vector<cpp::OpDesc*> fetchs;
   for (int i = 0; i < current_block->OpsSize(); i++) {
     auto op = current_block->GetOp<cpp::OpDesc>(i);
     if (op->Type() == "feed") {
-      int idx = op->GetAttr<int>("col");
-      input_names_.push_back(op->Output("Out").front());
+      feeds.push_back(op);
     } else if (op->Type() == "fetch") {
-      int idx = op->GetAttr<int>("col");
-      output_names_.push_back(op->Input("X").front());
+      fetchs.push_back(op);
     }
+  }
+  input_names_.resize(feeds.size());
+  output_names_.resize(fetchs.size());
+  for (int i = 0; i < feeds.size(); i++) {
+    input_names_[feeds[i]->GetAttr<int>("col")] =
+        feeds[i]->Output("Out").front();
+  }
+  for (int i = 0; i < fetchs.size(); i++) {
+    output_names_[fetchs[i]->GetAttr<int>("col")] =
+        fetchs[i]->Output("Out").front();
   }
 }
 
