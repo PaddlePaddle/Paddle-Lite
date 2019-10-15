@@ -211,7 +211,8 @@ class Optimizer {
       }
       matched = matched && PassMatchesKernels(*pass);
       if (!matched) {
-        LOG(INFO) << "   - Skip " << x << " because the target does not match.";
+        LOG(INFO) << "   - Skip " << x
+                  << " because the target or kernel does not match.";
       } else {
         pass->Apply(graph_);
         LOG(INFO) << "== Finished running: " << x;
