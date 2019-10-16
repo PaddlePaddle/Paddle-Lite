@@ -589,7 +589,7 @@ void conv_depthwise_3x3_fp32(const void* din,
                               flag_bias,
                               flag_relu,
                               ctx);
-  } else if (stride == 2 && pad < 2) {
+  } else if (stride == 2 && pad < 2) {  // support pad = [0, 1]
     conv_depthwise_3x3s2_fp32(reinterpret_cast<const float*>(din),
                               reinterpret_cast<float*>(dout),
                               num,

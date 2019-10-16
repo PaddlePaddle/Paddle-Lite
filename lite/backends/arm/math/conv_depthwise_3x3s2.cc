@@ -1722,7 +1722,6 @@ void conv_depthwise_3x3s2p0_bias_s(float* dout,
       const float* dr1 = dr0 + w_in;
       const float* dr2 = dr1 + w_in;
       for (int j = 0; j < h_out; j++) {
-        // float *doutr0 = dout_channel + j * w_out;
         const float* din0_ptr = dr0;
         const float* din1_ptr = dr1;
         const float* din2_ptr = dr2;
@@ -1851,7 +1850,6 @@ void conv_depthwise_3x3s2p0_bias_s(float* dout,
         }
 #endif
         for (int w = 0; w < w_out; ++w) {
-          // *doutr0++ = out_buf[w];
           *dout_channel++ = out_buf[w];
         }
       }
