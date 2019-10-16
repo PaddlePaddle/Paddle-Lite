@@ -78,12 +78,12 @@ const Tensor* LightPredictor::GetOutput(size_t offset) {
   return &fetch_list.at(offset);
 }
 // get inputs names
-const std::vector<std::string>* LightPredictor::GetInputNames() {
-  return &input_names_;
+const std::vector<std::string>& LightPredictor::GetInputNames() {
+  return input_names_;
 }
 // get outputnames
-const std::vector<std::string>* LightPredictor::GetOutputNames() {
-  return &output_names_;
+const std::vector<std::string>& LightPredictor::GetOutputNames() {
+  return output_names_;
 }
 // append the names of inputs and outputs into input_names_ and output_names_
 void LightPredictor::PrepareFeedFetch() {

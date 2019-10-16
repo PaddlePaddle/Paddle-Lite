@@ -64,8 +64,8 @@ class LITE_API LightPredictor {
   }
 
   // get inputnames and get outputnames.
-  const std::vector<std::string>* GetInputNames();
-  const std::vector<std::string>* GetOutputNames();
+  const std::vector<std::string>& GetInputNames();
+  const std::vector<std::string>& GetOutputNames();
   void PrepareFeedFetch();
 
  private:
