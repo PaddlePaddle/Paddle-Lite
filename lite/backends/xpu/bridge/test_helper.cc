@@ -37,7 +37,7 @@ void LauchOp(const std::shared_ptr<lite::OpLite> op,
 
   node_map_type inputs_map;
   for (auto input_var_name : input_var_names) {
-    auto input = scope->FindVar(input_var_name)->GetMutable<lite::Tensor>();
+    // auto input = scope->FindVar(input_var_name)->GetMutable<lite::Tensor>();
     // TODO(hong19860320)
     auto input_node = std::make_shared<std::string>(input_var_name);
     inputs_map[input_var_name] = input_node;
@@ -60,7 +60,7 @@ void LauchOp(const std::shared_ptr<lite::OpLite> op,
   weight->set_precision(PRECISION(kInt8));
   // TODO(hong19860320) CHECK(BuildModel(graph_inputs, graph_outputs, weight));
   CHECK_GT(weight->numel(), 0);
-  CHECK_NE(weight->data<uint8_t>(), 0);
+  CHECK(weight->data<uint8_t>() != nullptr);
 
   // create graph op and set inputs and outputs
   cpp::OpDesc graph_op_desc;

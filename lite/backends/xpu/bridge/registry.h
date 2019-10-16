@@ -27,7 +27,7 @@ namespace lite {
 namespace xpu {
 namespace bridge {
 
-// var_name, npu node point
+// var_name, xpu node point
 using node_map_type =
     std::unordered_map<std::string, std::shared_ptr<std::string>>;
 
@@ -71,7 +71,7 @@ class Factory {
   STATIC_ASSERT_JITKERNEL_GLOBAL_NAMESPACE(                                 \
       __reg_xpu_bridge_##op_type##__,                                       \
       "REGISTER_XPU_BRIDGE must be called in global namespace only once!"); \
-  int __reg_npu_bridge_##op_type##_Insert() {                               \
+  int __reg_xpu_bridge_##op_type##_Insert() {                               \
     paddle::lite::xpu::bridge::Factory::Instance().Insert(#op_type,         \
                                                           cvt_func_name);   \
     return 0;                                                               \

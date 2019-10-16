@@ -26,27 +26,26 @@ namespace kernels {
 namespace xpu {
 
 void GraphCompute::PrepareForRun() {
-  auto& ctx = this->ctx_->template As<XPUContext>();
+  // auto& ctx = this->ctx_->template As<XPUContext>();
   auto& param = this->Param<param_t>();
 
   CHECK(param.weight);
 
-  for (size_t i = 0; i < param.inputs[i].size(); i++) {
-    VLOG(3) << "lite_idims[" << i << "]: " << param.inputs[i]->dims();
+  for (size_t i = 0; i < param.inputs.size(); i++) {
+    VLOG(3) << "input dims[" << i << "]: " << param.inputs[i]->dims();
   }
-  for (size_t i = 0; i < param.outputs[i].size(); i++) {
+  for (size_t i = 0; i < param.outputs.size(); i++) {
     VLOG(3) << "output dims[" << i << "]: " << param.outputs[i]->dims();
   }
 }
 
 void GraphCompute::Run() {
-  auto& param = this->Param<param_t>();
+  // auto& param = this->Param<param_t>();
   auto GetCurrentUS = []() -> double {
     struct timeval time;
     gettimeofday(&time, NULL);
     return 1e+6 * time.tv_sec + time.tv_usec;
   };
-  int istamp;
   auto start_time = GetCurrentUS();
   // TODO(hong19860320)
   LOG(INFO) << "[XPU] Process cost " << GetCurrentUS() - start_time << " us";
