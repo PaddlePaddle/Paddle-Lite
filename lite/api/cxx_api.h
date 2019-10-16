@@ -50,14 +50,12 @@ class LITE_API Predictor {
       const std::string& model_path,
       const std::string& model_file_path,
       const std::string& param_file_path,
-      const Place& prefer_place,
       const std::vector<Place>& valid_places,
       const std::vector<std::string>& passes = {},
       lite_api::LiteModelType model_type = lite_api::LiteModelType::kProtobuf,
       bool memory_from_memory = false);
 
   void Build(const cpp::ProgramDesc& desc,
-             const Place& prefer_place,
              const std::vector<Place>& valid_places,
              const std::vector<std::string>& passes = {});
 
@@ -132,10 +130,8 @@ class LITE_API Predictor {
 class LITE_API CXXTrainer {
  public:
   CXXTrainer(const std::shared_ptr<lite::Scope>& root_scope,
-             const Place& preferred_place,
              const std::vector<Place>& valid_places)
       : scope_(root_scope),
-        preferred_place_(preferred_place),
         valid_places_(valid_places),
         main_program_executor_(Predictor(scope_)) {}
 
@@ -144,7 +140,7 @@ class LITE_API CXXTrainer {
   // NOTE Just support to execute the 0-th block currently.
   Predictor& BuildMainProgramExecutor(const framework::proto::ProgramDesc& desc,
                                       int block_id = 0) {
-    main_program_executor_.Build(desc, preferred_place_, valid_places_);
+    main_program_executor_.Build(desc, valid_places_);
     return main_program_executor_;
   }
 
@@ -162,14 +158,12 @@ class LITE_API CXXTrainer {
   void RunStartupProgram(const framework::proto::ProgramDesc& desc,
                          int block_id = 0) {
     Predictor exe(scope_);
-    exe.Build(desc, preferred_place_, valid_places_);
+    exe.Build(desc,  valid_places_);
     exe.Run();
   }
 
  private:
   std::shared_ptr<lite::Scope> scope_;
-
-  Place preferred_place_;
   std::vector<Place> valid_places_;
 
   // The training program.
