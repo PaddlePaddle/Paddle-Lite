@@ -3,7 +3,7 @@ NETS=""
 declare -a supportedNets=("googlenet" "mobilenet" "yolo" "squeezenet" "resnet" "mobilenetssd" "nlp" "mobilenetfssd" "genet" "super" "op")
 
 # merge cl to so
-merge_cl_to_so=0
+merge_cl_to_so=1
 rm ../src/operators/kernel/cl/opencl_kernels.cpp
 cd ../src/operators/kernel/cl
 python gen_code.py $merge_cl_to_so > opencl_kernels.cpp
