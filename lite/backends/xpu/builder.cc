@@ -36,8 +36,8 @@ std::string UniqueName(const std::string& prefix) {
 }
 
 // Build IR graph to model, and store model data into lite tensor
-bool BuildModel(std::vector<xtcl::network::xExpr>& inputs,   // NOLINT
-                std::vector<xtcl::network::xExpr>& outputs,  // NOLINT
+bool BuildModel(std::vector<xtcl::xExpr>& inputs,   // NOLINT
+                std::vector<xtcl::xExpr>& outputs,  // NOLINT
                 lite::Tensor* model_data) {
   LOG(INFO) << "[XPU] Build model.";
   CHECK_GT(inputs.size(), 0);

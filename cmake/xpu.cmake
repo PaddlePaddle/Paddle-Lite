@@ -30,7 +30,7 @@ if(NOT XPU_SDK_INC)
   message(FATAL_ERROR "Can not find xtcl.h in ${XPU_SDK_ROOT}/include")
 endif()
 
-include_directories("${XPU_SDK_ROOT}")
+include_directories("${XPU_SDK_ROOT}/include")
 
 find_library(XPU_SDK_XPU_RT_FILE NAMES xpurt
   PATHS ${XPU_SDK_ROOT}/shlib)
