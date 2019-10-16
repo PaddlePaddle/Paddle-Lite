@@ -58,11 +58,11 @@ TEST(model, test) {
   for (int i = 0; i < FLAGS_repeats; ++i) {
     predictor.Run();
   }
-  auto* output_tensors = predictor.GetOutputs();
+  auto output_tensors = predictor.GetOutputs();
 
   LOG(INFO) << "======output:========";
-  for (auto t : *output_tensors) {
-    LOG(INFO) << t;
+  for (auto* t : output_tensors) {
+    LOG(INFO) << *t;
   }
   LOG(INFO)
       << "=====RUN_finished!!============= Speed Report ===================";
