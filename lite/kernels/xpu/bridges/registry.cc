@@ -12,13 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/xpu/bridge/registry.h"
+#include "lite/kernels/xpu/bridges/registry.h"
 #include <utility>
 
 namespace paddle {
 namespace lite {
+namespace kernels {
 namespace xpu {
-namespace bridge {
+namespace bridges {
 
 Factory& Factory::Instance() {
   static Factory g_xpu_bridge;
@@ -33,7 +34,8 @@ void Factory::Insert(const std::string& op_type, const func_type& func_name) {
   map_.insert(std::make_pair(op_type, func_name));
 }
 
-}  // namespace bridge
+}  // namespace bridges
 }  // namespace xpu
+}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

@@ -12,17 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/xpu/bridge/test_helper.h"
+#include "lite/kernels/xpu/bridges/test_helper.h"
 #include <utility>
 #include "lite/backends/xpu/builder.h"
 #include "lite/core/op_registry.h"
-#include "lite/kernels/xpu/bridge/registry.h"
+#include "lite/kernels/xpu/bridges/registry.h"
 #include "lite/operators/graph_op.h"
 
 namespace paddle {
 namespace lite {
+namespace kernels {
 namespace xpu {
-namespace bridge {
+namespace bridges {
 
 void LauchOp(const std::shared_ptr<lite::OpLite> op,
              const std::vector<std::string>& input_var_names,
@@ -31,7 +32,7 @@ void LauchOp(const std::shared_ptr<lite::OpLite> op,
   auto op_type = op->op_info()->Type();
 
   // convert op to IR graph
-  const auto& bridges = lite::xpu::bridge::Factory::Instance();
+  const auto& bridges = lite::kernels::xpu::bridges::Factory::Instance();
   const auto& supported_lists = bridges.AllFunctions();
   CHECK(bridges.HasType(op_type));
 
@@ -89,8 +90,9 @@ void LauchOp(const std::shared_ptr<lite::OpLite> op,
   graph_kernel->Launch();
 }
 
-}  // namespace bridge
+}  // namespace bridges
 }  // namespace xpu
+}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
 

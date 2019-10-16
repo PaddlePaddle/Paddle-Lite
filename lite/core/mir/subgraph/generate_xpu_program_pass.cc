@@ -23,8 +23,8 @@
 #include "lite/core/mir/pattern_matcher.h"
 
 #include "lite/backends/xpu/builder.h"
-#include "lite/kernels/xpu/bridge/paddle_use_xpu_bridges.h"
-#include "lite/kernels/xpu/bridge/registry.h"
+#include "lite/kernels/xpu/bridges/paddle_use_xpu_bridges.h"
+#include "lite/kernels/xpu/bridges/registry.h"
 
 namespace paddle {
 namespace lite {
@@ -61,13 +61,13 @@ std::shared_ptr<std::string> GenerateXPUProgramPass::CvtVarNode(
 
 void GenerateXPUProgramPass::CvtAllOpNodes(
     const std::vector<Node*>& nodes2cvt,
-    lite::xpu::bridge::node_map_type* converted_vars) {
-  const auto& bridges = lite::xpu::bridge::Factory::Instance();
+    lite::kernels::xpu::bridges::node_map_type* converted_vars) {
+  const auto& bridges = lite::kernels::xpu::bridges::Factory::Instance();
   const auto& cvtfunc_map = bridges.AllFunctions();
   // return record all converted vars
   // op node's inputs must be found in converted_vars
   for (auto& node : nodes2cvt) {
-    lite::xpu::bridge::node_map_type node_inputs;
+    lite::kernels::xpu::bridges::node_map_type node_inputs;
     auto& stmt = node->AsStmt();
     for (auto& var_node : node->inlinks) {
       auto& arg = var_node->AsArg();
@@ -93,7 +93,7 @@ std::string GenerateXPUProgramPass::BuildXPUGraph(
     const std::unordered_set<Node*>& out_data_vars,
     int sub_id) {
   auto ordered_nodes = GetTopologicalOrder(op_nodes);
-  lite::xpu::bridge::node_map_type converted_vars;
+  lite::kernels::xpu::bridges::node_map_type converted_vars;
   CvtAllOpNodes(ordered_nodes, &converted_vars);
 
   std::vector<std::string> in_var_names;
@@ -161,7 +161,7 @@ void GenerateXPUProgramPass::GenXPUSubgraph(
 
 void GenerateXPUProgramPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   LOG(INFO) << "Before NPU Pass \n" << Visualize(graph.get());
-  const auto& bridges = lite::xpu::bridge::Factory::Instance();
+  const auto& bridges = lite::kernels::xpu::bridges::Factory::Instance();
   const auto& op_map = bridges.AllFunctions();
   std::vector<std::string> supported_op_types;
   for (auto& i : op_map) {

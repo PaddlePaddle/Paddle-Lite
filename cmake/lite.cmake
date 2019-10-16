@@ -243,6 +243,7 @@ set(arm_kernels CACHE INTERNAL "arm kernels")
 set(x86_kernels CACHE INTERNAL "x86 kernels")
 set(fpga_kernels CACHE INTERNAL "fpga kernels")
 set(npu_kernels CACHE INTERNAL "npu kernels")
+set(xpu_kernels CACHE INTERNAL "xpu kernels")
 set(opencl_kernels CACHE INTERNAL "opencl kernels")
 set(host_kernels CACHE INTERNAL "host kernels")
 

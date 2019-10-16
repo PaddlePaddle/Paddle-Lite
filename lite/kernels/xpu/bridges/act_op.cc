@@ -13,19 +13,20 @@
 // limitations under the License.
 
 #include "lite/backends/xpu/builder.h"
-#include "lite/kernels/xpu/bridge/registry.h"
+#include "lite/kernels/xpu/bridges/registry.h"
 
 namespace paddle {
 namespace lite {
+namespace kernels {
 namespace xpu {
-namespace bridge {
+namespace bridges {
 
 node_map_type ActConverter(const std::shared_ptr<lite::OpLite> act_op,
                            const node_map_type& inputs_map) {
   // auto scope = act_op->scope();
   auto op_info = act_op->op_info();
   auto op_type = op_info->Type();
-  auto unique_op_type = UniqueName(op_type);
+  auto unique_op_type = lite::xpu::UniqueName(op_type);
   LOG(INFO) << "Converting " + op_type + "...";
 
   // create act node and set input node from inputs_map
@@ -36,9 +37,10 @@ node_map_type ActConverter(const std::shared_ptr<lite::OpLite> act_op,
   return outputs_map;
 }
 
-}  // namespace bridge
+}  // namespace bridges
 }  // namespace xpu
+}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_XPU_BRIDGE(relu, paddle::lite::xpu::bridge::ActConverter);
+REGISTER_XPU_BRIDGE(relu, paddle::lite::kernels::xpu::bridges::ActConverter);

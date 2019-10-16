@@ -23,7 +23,7 @@
 #include "lite/backends/xpu/builder.h"
 #include "lite/core/mir/pass.h"
 #include "lite/core/mir/subgraph/subgraph_program_pass.h"
-#include "lite/kernels/xpu/bridge/registry.h"
+#include "lite/kernels/xpu/bridges/registry.h"
 
 namespace paddle {
 namespace lite {
@@ -41,7 +41,7 @@ class GenerateXPUProgramPass : public SubgraphProgramPass {
   // nodes2cvt: op nodes to convert
   // return cvted_vars: converted var nodes
   void CvtAllOpNodes(const std::vector<Node*>& nodes2cvt,
-                     lite::xpu::bridge::node_map_type* cvted_vars);
+                     lite::kernels::xpu::bridges::node_map_type* cvted_vars);
 
   std::shared_ptr<std::string> CvtVarNode(lite::mir::Node* var_node,
                                           const Scope* scope);

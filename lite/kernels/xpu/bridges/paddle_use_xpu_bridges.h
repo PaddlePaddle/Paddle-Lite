@@ -14,6 +14,6 @@
 
 #pragma once
 
-#include "lite/kernels/xpu/bridge/registry.h"
+#include "lite/kernels/xpu/bridges/registry.h"
 
 USE_XPU_BRIDGE(relu);

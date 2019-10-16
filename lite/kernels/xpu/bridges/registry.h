@@ -24,8 +24,9 @@
 
 namespace paddle {
 namespace lite {
+namespace kernels {
 namespace xpu {
-namespace bridge {
+namespace bridges {
 
 // var_name, xpu node point
 using node_map_type =
@@ -48,8 +49,9 @@ class Factory {
   DISALLOW_COPY_AND_ASSIGN(Factory);
 };
 
-}  // namespace bridge
+}  // namespace bridges
 }  // namespace xpu
+}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
 
@@ -72,8 +74,8 @@ class Factory {
       __reg_xpu_bridge_##op_type##__,                                       \
       "REGISTER_XPU_BRIDGE must be called in global namespace only once!"); \
   int __reg_xpu_bridge_##op_type##_Insert() {                               \
-    paddle::lite::xpu::bridge::Factory::Instance().Insert(#op_type,         \
-                                                          cvt_func_name);   \
+    paddle::lite::kernels::xpu::bridges::Factory::Instance().Insert(        \
+        #op_type, cvt_func_name);                                           \
     return 0;                                                               \
   }
 

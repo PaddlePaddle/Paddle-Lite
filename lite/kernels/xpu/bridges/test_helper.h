@@ -22,8 +22,9 @@
 
 namespace paddle {
 namespace lite {
+namespace kernels {
 namespace xpu {
-namespace bridge {
+namespace bridges {
 
 template <typename T>
 std::shared_ptr<T> CreateOp(const cpp::OpDesc& opdesc, lite::Scope* scope) {
@@ -58,7 +59,8 @@ void LauchOp(const std::shared_ptr<lite::OpLite> op,
              const std::vector<std::string>& input_var_names,
              const std::vector<std::string>& output_var_names);
 
-}  // namespace bridge
+}  // namespace bridges
 }  // namespace xpu
+}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

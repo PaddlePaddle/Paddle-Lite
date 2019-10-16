@@ -15,14 +15,15 @@
 #include <gtest/gtest.h>
 #include <random>
 #include "lite/core/op_registry.h"
-#include "lite/kernels/xpu/bridge/registry.h"
-#include "lite/kernels/xpu/bridge/test_helper.h"
+#include "lite/kernels/xpu/bridges/registry.h"
+#include "lite/kernels/xpu/bridges/test_helper.h"
 #include "lite/operators/activation_ops.h"
 
 namespace paddle {
 namespace lite {
+namespace kernels {
 namespace xpu {
-namespace bridge {
+namespace bridges {
 
 void relu_ref(const std::shared_ptr<operators::ActivationOp> op) {
   Scope* scope = op->scope();
@@ -91,8 +92,9 @@ TEST(NPUBridges, relu) {
   }
 }
 
-}  // namespace bridge
+}  // namespace bridges
 }  // namespace xpu
+}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
 
