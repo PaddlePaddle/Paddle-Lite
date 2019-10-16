@@ -83,18 +83,16 @@ chmod +x test_resnet50_fpga
 
 在Lite中使用fpga与ARM相似，具体的区别如下：
 
-- 由于fpga运行模式为fp16精度、nhwc布局，所以需要修改相应的`valid_place`和`preferred_place`
+- 由于fpga运行模式为fp16精度、nhwc布局，所以需要修改相应的`valid_place`
 - fpga不需要device的初始化和运行模式设置
 
 代码示例：
 ```cpp
 lite::Predictor predictor;
 std::vector<Place> valid_places(
-      {Place{TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)},
-       Place{TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNHWC)}});
-Place preferred_place = Place{TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)};
+      {Place{TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)}});
 
-predictor.Build(model_dir, preferred_place, valid_places);
+predictor.Build(model_dir, "", "", valid_places);
 
 auto* input_tensor = predictor.GetInput(0);
 input_tensor->Resize(DDim(std::vector<DDim::value_type>({1, 3, 224, 224})));

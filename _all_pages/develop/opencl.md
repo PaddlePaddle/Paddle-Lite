@@ -86,16 +86,14 @@ Lite支持对ARM CPU和ARM GPU的混调执行，具体描述如下：
 DeviceInfo::Init();
 DeviceInfo::Global().SetRunMode(LITE_POWER_HIGH, FLAGS_threads);
 lite::Predictor predictor;
-// 设置Lite推断执行的有效Places为{kHost, kARM, kOpenCL}
+// 设置Lite推断执行的有效Places为{kOpenCL, kARM}
 std::vector<Place> valid_places({
-      Place{TARGET(kHost), PRECISION(kFloat)},
-      Place{TARGET(kARM), PRECISION(kFloat)},
-      Place{TARGET(kOpenCL), PRECISION(kFloat)},
+      Place({TARGET(kOpenCL), PRECISION(kFloat)}),
+      Place({TARGET(kARM), PRECISION(kFloat)})
   });
-// 设置Lite推断执行的偏好Place为kOpenCL
-auto preferred_place = Place({TARGET(kOpenCL), PRECISION(kFloat)});
+
 // 根据有效Places和偏好Place构建模型
-predictor.Build(model_dir, preferred_place, valid_places);
+predictor.Build(model_dir, "", "", valid_places);
 // 设置模型的输入
 auto* input_tensor = predictor.GetInput(0);
 input_tensor->Resize(DDim(std::vector<DDim::value_type>({1, 3, 224, 224})));

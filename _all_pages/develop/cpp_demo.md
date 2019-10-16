@@ -209,9 +209,11 @@ void RunModel() {
   // 1. Set CxxConfig
   CxxConfig config;
   config.set_model_dir(FLAGS_model_dir);
-  std::vector<Place> valid_places{Place{TARGET(kARM), PRECISION(kFloat)},
-                                  Place{TARGET(kHost), PRECISION(kFloat)}};
-  config.set_preferred_place(Place{TARGET(kARM), PRECISION(kFloat)});
+  std::vector<Place> valid_places({Place{TARGET(kARM), PRECISION(kFloat)}});
+  if (FLAGS_prefer_int8_kernel) {
+    valid_places.insert(valid_places.begin(),
+                        Place{TARGET(kARM), PRECISION(kInt8)});
+  }
   config.set_valid_places(valid_places);
 
   // 2. Create PaddlePredictor by CxxConfig
