@@ -12,28 +12,33 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/backends/xpu/bridge/registry.h"
-#include <utility>
+#include "lite/backends/xpu/builder.h"
+#include "lite/kernels/xpu/bridge/registry.h"
 
 namespace paddle {
 namespace lite {
 namespace xpu {
 namespace bridge {
 
-Factory& Factory::Instance() {
-  static Factory g_xpu_bridge;
-  return g_xpu_bridge;
-}
+node_map_type ActConverter(const std::shared_ptr<lite::OpLite> act_op,
+                           const node_map_type& inputs_map) {
+  // auto scope = act_op->scope();
+  auto op_info = act_op->op_info();
+  auto op_type = op_info->Type();
+  auto unique_op_type = UniqueName(op_type);
+  LOG(INFO) << "Converting " + op_type + "...";
 
-bool Factory::HasType(const std::string& op_type) const {
-  return map_.count(op_type);
-}
-
-void Factory::Insert(const std::string& op_type, const func_type& func_name) {
-  map_.insert(std::make_pair(op_type, func_name));
+  // create act node and set input node from inputs_map
+  auto x_var_name = op_info->Input("X").front();
+  auto act_node = std::make_shared<std::string>(unique_op_type);
+  node_map_type outputs_map;
+  outputs_map[op_info->Output("Out").front()] = act_node;
+  return outputs_map;
 }
 
 }  // namespace bridge
 }  // namespace xpu
 }  // namespace lite
 }  // namespace paddle
+
+REGISTER_XPU_BRIDGE(relu, paddle::lite::xpu::bridge::ActConverter);

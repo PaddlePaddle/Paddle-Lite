@@ -14,17 +14,17 @@
 
 #include <gtest/gtest.h>
 #include <random>
-#include "lite/backends/xpu/bridge/registry.h"
-#include "lite/backends/xpu/bridge/test_helper.h"
 #include "lite/core/op_registry.h"
-#include "lite/operators/relu_op.h"
+#include "lite/kernels/xpu/bridge/registry.h"
+#include "lite/kernels/xpu/bridge/test_helper.h"
+#include "lite/operators/activation_ops.h"
 
 namespace paddle {
 namespace lite {
 namespace xpu {
 namespace bridge {
 
-void relu_ref(const std::shared_ptr<operators::ReluOp> op) {
+void relu_ref(const std::shared_ptr<operators::ActivationOp> op) {
   Scope* scope = op->scope();
   const OpInfo* op_info = op->op_info();
   auto x = scope->FindVar(op_info->Input("X").front())->GetMutable<Tensor>();
@@ -61,7 +61,7 @@ void test_relu(int bs, int ic, int ih, int iw) {
   opdesc.SetOutput("Out", {out_var_name});
 
   // create and convert op to XPU model, and run it on XPU
-  auto op = CreateOp<operators::ReluOp>(opdesc, &scope);
+  auto op = CreateOp<operators::ActivationOp>(opdesc, &scope);
   LauchOp(op, {x_var_name}, {out_var_name});
   out_ref->CopyDataFrom(*out);
 

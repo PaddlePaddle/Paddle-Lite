@@ -12,8 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
+#include "lite/kernels/xpu/bridge/registry.h"
+#include <utility>
 
-#include "lite/backends/xpu/bridge/registry.h"
+namespace paddle {
+namespace lite {
+namespace xpu {
+namespace bridge {
 
-USE_XPU_BRIDGE(relu);
+Factory& Factory::Instance() {
+  static Factory g_xpu_bridge;
+  return g_xpu_bridge;
+}
+
+bool Factory::HasType(const std::string& op_type) const {
+  return map_.count(op_type);
+}
+
+void Factory::Insert(const std::string& op_type, const func_type& func_name) {
+  map_.insert(std::make_pair(op_type, func_name));
+}
+
+}  // namespace bridge
+}  // namespace xpu
+}  // namespace lite
+}  // namespace paddle

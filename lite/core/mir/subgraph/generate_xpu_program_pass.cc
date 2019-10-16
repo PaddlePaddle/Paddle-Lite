@@ -22,9 +22,9 @@
 #include "lite/core/mir/pass_registry.h"
 #include "lite/core/mir/pattern_matcher.h"
 
-#include "lite/backends/xpu/bridge/paddle_use_xpu_bridges.h"
-#include "lite/backends/xpu/bridge/registry.h"
 #include "lite/backends/xpu/builder.h"
+#include "lite/kernels/xpu/bridge/paddle_use_xpu_bridges.h"
+#include "lite/kernels/xpu/bridge/registry.h"
 
 namespace paddle {
 namespace lite {

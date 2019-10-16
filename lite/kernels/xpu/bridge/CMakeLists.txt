@@ -9,6 +9,6 @@ set(xpu_bridges
         xpu_bridge_act_op
         CACHE INTERNAL "xpu_bridges")
 
-set(xpu_bridge_test_deps ${xpu_bridges} graph_op graph_compute_xpu)
+set(xpu_bridge_test_deps ${xpu_bridges} ${xpu_kernels} ${ops})
 
-lite_cc_test(test_xpu_bridge_act_op SRCS act_op_test.cc test_helper.cc DEPS ${xpu_bridge_test_deps} relu_op)
+lite_cc_test(test_xpu_bridge_act_op SRCS act_op_test.cc test_helper.cc DEPS ${xpu_bridge_test_deps})
