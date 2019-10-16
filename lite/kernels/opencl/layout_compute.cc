@@ -29,7 +29,7 @@ namespace kernels {
 namespace opencl {
 
 class LayoutComputeBufferChwToImage2DHwc
-    : public KernelLite<TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNHWC)> {
+    : public KernelLite<TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kNHWC)> {
  public:
   using param_t = operators::LayoutParam;
 
@@ -122,12 +122,12 @@ class LayoutComputeBufferChwToImage2DHwc
 
  private:
   std::string kernel_func_name_{"buffer_to_image2d"};
-  std::string build_options_{"-DCL_DTYPE=float"};
+  std::string build_options_{"-DCL_DTYPE_float "};
   std::shared_ptr<cl::Event> event_{new cl::Event};
 };
 
 class LayoutComputeImage2DHwcToBufferChw
-    : public KernelLite<TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW)> {
+    : public KernelLite<TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kNCHW)> {
  public:
   using param_t = operators::LayoutParam;
 
@@ -211,7 +211,7 @@ class LayoutComputeImage2DHwcToBufferChw
 
  private:
   std::string kernel_func_name_{"image2d_to_buffer"};
-  std::string build_options_{"-DCL_DTYPE=float"};
+  std::string build_options_{"-DCL_DTYPE_float"};
   std::shared_ptr<cl::Event> event_{new cl::Event};
 };
 
@@ -225,17 +225,17 @@ class LayoutComputeImage2DHwcToBufferChw
 REGISTER_LITE_KERNEL(
     layout,
     kOpenCL,
-    kFloat,
+    kAny,
     kNHWC,
     paddle::lite::kernels::opencl::LayoutComputeBufferChwToImage2DHwc,
     buffer_chw_to_image2d_hwc_opencl_fp32)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
-                                      PRECISION(kFloat),
+                                      PRECISION(kAny),
                                       DATALAYOUT(kNCHW))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kOpenCL),
-                                       PRECISION(kFloat),
+                                       PRECISION(kAny),
                                        DATALAYOUT(kNHWC))})
     .Finalize();
 
@@ -243,17 +243,17 @@ REGISTER_LITE_KERNEL(
 REGISTER_LITE_KERNEL(
     layout_once,
     kOpenCL,
-    kFloat,
+    kAny,
     kNHWC,
     paddle::lite::kernels::opencl::LayoutComputeBufferChwToImage2DHwc,
     buffer_chw_to_image2d_hwc_opencl_fp32)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
-                                      PRECISION(kFloat),
+                                      PRECISION(kAny),
                                       DATALAYOUT(kNCHW))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kOpenCL),
-                                       PRECISION(kFloat),
+                                       PRECISION(kAny),
                                        DATALAYOUT(kNHWC))})
     .Finalize();
 
@@ -262,17 +262,17 @@ REGISTER_LITE_KERNEL(
 REGISTER_LITE_KERNEL(
     layout,
     kOpenCL,
-    kFloat,
+    kAny,
     kNCHW,
     paddle::lite::kernels::opencl::LayoutComputeImage2DHwcToBufferChw,
     image2d_hwc_to_buffer_chw_opencl_fp32)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
-                                      PRECISION(kFloat),
+                                      PRECISION(kAny),
                                       DATALAYOUT(kNHWC))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kOpenCL),
-                                       PRECISION(kFloat),
+                                       PRECISION(kAny),
                                        DATALAYOUT(kNCHW))})
     .Finalize();
 
@@ -280,16 +280,16 @@ REGISTER_LITE_KERNEL(
 REGISTER_LITE_KERNEL(
     layout_once,
     kOpenCL,
-    kFloat,
+    kAny,
     kNCHW,
     paddle::lite::kernels::opencl::LayoutComputeImage2DHwcToBufferChw,
     image2d_hwc_to_buffer_chw_opencl_fp32)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
-                                      PRECISION(kFloat),
+                                      PRECISION(kAny),
                                       DATALAYOUT(kNHWC))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kOpenCL),
-                                       PRECISION(kFloat),
+                                       PRECISION(kAny),
                                        DATALAYOUT(kNCHW))})
     .Finalize();

@@ -70,8 +70,8 @@ struct CalibParam {
 
 struct GraphParam {
   std::vector<const lite::Tensor*> inputs{};
+  lite::Tensor* weight{};
   std::vector<lite::Tensor*> outputs{};
-  std::string model_name{"model"};
 };
 
 /// -------------------------- NN operators ------------------------------------
@@ -190,11 +190,12 @@ struct SoftmaxParam {
 // For Reshape and Reshape2 Op
 struct ReshapeParam {
   const lite::Tensor* x{};
-  const lite::Tensor* actual_shape{nullptr};
+  std::vector<const lite::Tensor*> shape_tensor_vct{};
+  const lite::Tensor* shape_tensor{};
+  std::vector<int> shape_vct{};
   lite::Tensor* output{};
-  lite::Tensor* xshape{};
 
-  std::vector<int> shape{};
+  lite::Tensor* xshape{};
   bool inplace{false};
 };
 
