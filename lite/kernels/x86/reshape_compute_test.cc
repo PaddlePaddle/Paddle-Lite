@@ -44,7 +44,7 @@ TEST(reshape_x86, run_test) {
   lite::Tensor out;
   std::vector<int64_t> x_shape({1, 2, 4, 1});
   x.Resize(lite::DDim(x_shape));
-  actual_shape.Resize(lite::DDim(std::vector<int64_t>({3})));
+  actual_shape.Resize(lite::DDim(std::vector<int64_t>({4})));
   std::vector<int64_t> out_shape({1, 8, 1, 1});
   out.Resize(lite::DDim(out_shape));
 
@@ -56,8 +56,9 @@ TEST(reshape_x86, run_test) {
     x_data[i] = static_cast<float>(i);
   }
   actual_data[0] = 1;
-  actual_data[1] = 4;
-  actual_data[2] = 2;
+  actual_data[1] = 8;
+  actual_data[2] = 1;
+  actual_data[1] = 1;
 
   std::vector<int> shape({1, 8, 1, 1});
 
@@ -67,12 +68,12 @@ TEST(reshape_x86, run_test) {
 
   param.x = &x;
   param.output = &out;
-  param.shape = shape;
-  param.actual_shape = &actual_shape;
+  param.shape_vct = shape;
+  param.shape_tensor = &actual_shape;
   std::unique_ptr<KernelContext> ctx(new KernelContext);
   ctx->As<X86Context>();
   for (int i = 0; i < 2; ++i) {
-    if (1 == i) param.actual_shape = nullptr;
+    if (1 == i) param.shape_tensor = nullptr;
     reshape.SetContext(std::move(ctx));
     reshape.SetParam(param);
     reshape.Run();
@@ -106,7 +107,7 @@ TEST(reshape2_x86, run_test) {
   actual_shape.Resize(lite::DDim(std::vector<int64_t>({3})));
   std::vector<int64_t> out_shape({1, 4, 2});
   out.Resize(lite::DDim(out_shape));
-  std::vector<int64_t> xshape_shape({1, 2, 4});
+  std::vector<int64_t> xshape_shape({1, 4, 2});
   xshape.Resize(lite::DDim(xshape_shape));
 
   auto x_data = x.mutable_data<float>();
@@ -122,7 +123,7 @@ TEST(reshape2_x86, run_test) {
   actual_data[1] = 4;
   actual_data[2] = 2;
 
-  std::vector<int> shape({0, -1, 2});
+  std::vector<int> shape({1, 4, 2});
 
   // Reshape2Compute reshape2;
   Reshape2Compute<float> reshape2;
@@ -131,12 +132,12 @@ TEST(reshape2_x86, run_test) {
   param.x = &x;
   param.output = &out;
   param.xshape = &xshape;
-  param.shape = shape;
-  param.actual_shape = &actual_shape;
+  param.shape_vct = shape;
+  param.shape_tensor = &actual_shape;
   std::unique_ptr<KernelContext> ctx(new KernelContext);
   ctx->As<X86Context>();
   for (int i = 0; i < 2; ++i) {
-    if (1 == i) param.actual_shape = nullptr;
+    if (1 == i) param.shape_tensor = nullptr;
     reshape2.SetContext(std::move(ctx));
     reshape2.SetParam(param);
     reshape2.Run();

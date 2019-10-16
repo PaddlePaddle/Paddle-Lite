@@ -21,7 +21,7 @@ namespace kernels {
 namespace cuda {
 
 class NearestInterpCompute
-    : public KernelLite<TARGET(kCUDA), PRECISION(kFloat)> {
+    : public KernelLite<TARGET(kCUDA), PRECISION(kFloat), DATALAYOUT(kNCHW)> {
  public:
   using param_t = operators::InterpolateParam;
 

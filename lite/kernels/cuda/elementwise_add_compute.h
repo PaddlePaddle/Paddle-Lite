@@ -29,6 +29,24 @@ class ElementwiseAddCompute
   virtual ~ElementwiseAddCompute() = default;
 };
 
+class ElementwiseAddComputeNHWC
+    : public KernelLite<TARGET(kCUDA), PRECISION(kFloat), DATALAYOUT(kNHWC)> {
+ public:
+  using param_t = operators::ElementwiseParam;
+
+  void Run() override;
+  virtual ~ElementwiseAddComputeNHWC() = default;
+};
+
+class ElementwiseAddComputeInt8
+    : public KernelLite<TARGET(kCUDA), PRECISION(kFloat), DATALAYOUT(kNHWC)> {
+ public:
+  using param_t = operators::ElementwiseParam;
+
+  void Run() override;
+  virtual ~ElementwiseAddComputeInt8() = default;
+};
+
 }  // namespace cuda
 }  // namespace kernels
 }  // namespace lite

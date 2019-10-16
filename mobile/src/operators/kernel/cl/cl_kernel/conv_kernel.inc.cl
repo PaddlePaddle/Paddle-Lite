@@ -48,8 +48,9 @@ __kernel void conv_3x3(__private const int global_size_dim0,
                                               __private const int input_height,/* of one block */
                                               __private const int output_width,
                                               __private const int output_height,
+                                              __private const int output_c,
                                               __private const int filter_channel,
-                                              __private const int has_group) {
+                                              __private const int group) {
 
     const int out_c = get_global_id(0);
     const int out_w = get_global_id(1);
@@ -90,7 +91,7 @@ __kernel void conv_3x3(__private const int global_size_dim0,
 #endif
 
     half4 input[9];
-    if (has_group == 0) {
+    if (group == 1) {
         for (int i = 0; i < input_c; ++i) {
             int2 pos_in = (int2)(i * input_width + in_pos_in_one_block.x, in_pos_in_one_block.y);
             input[0] = select(read_imageh(input_image, sampler,
@@ -326,7 +327,7 @@ __kernel void conv_3x3(__private const int global_size_dim0,
         }
     } else {
         for (int i = 0; i < 4; i++) {
-            int used_input_channel_num = (out_c * 4 + i) * filter_channel;
+            int used_input_channel_num = (out_c * 4 + i) / (output_c / group) * filter_channel;
             for (int f_c = 0; f_c < filter_channel; ++f_c) {
                 int input_c = used_input_channel_num + f_c;
                 int input_block = input_c / 4;
