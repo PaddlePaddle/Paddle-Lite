@@ -43,7 +43,7 @@ struct LITE_API Tensor {
   const T* data() const;
 
   template <typename T>
-  T* mutable_data() const;
+  T* mutable_data(TargetType type = TargetType::kHost) const;
 
   /// Shape of the tensor.
   shape_t shape() const;

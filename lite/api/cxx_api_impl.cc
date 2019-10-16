@@ -63,7 +63,6 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
 #endif
   auto places = config.valid_places();
   raw_predictor_.Build(config, places);
-  raw_predictor_.PrepareFeedFetch();
 }
 
 std::unique_ptr<lite_api::Tensor> CxxPaddleApiImpl::GetInput(int i) {

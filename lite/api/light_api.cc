@@ -41,16 +41,17 @@ void LightPredictor::Build(const std::string& model_dir,
       LOG(FATAL) << "Unknown model type";
   }
   BuildRuntimeProgram(cpp_program_desc_);
+  PrepareFeedFetch();
 }
 
 Tensor* LightPredictor::GetInput(size_t offset) {
-  auto* _feed_list = program_->exec_scope()->FindVar("feed");
-  CHECK(_feed_list) << "no feed variable in exec_scope";
-  auto* feed_list = _feed_list->GetMutable<std::vector<Tensor>>();
-  if (offset >= feed_list->size()) {
-    feed_list->resize(offset + 1);
-  }
-  return &feed_list->at(offset);
+  CHECK(input_names_.size() > offset)
+      << "The network has " << input_names_.size() << " inputs"
+      << ", the offset should be less than this.";
+  auto* in_var = program_->exec_scope()->FindVar(input_names_[offset]);
+  CHECK(in_var) << "no fatch variable " << input_names_[offset]
+                << " in exec_scope";
+  return in_var->GetMutable<lite::Tensor>();
 }
 
 // get input by name
@@ -69,11 +70,13 @@ Tensor* LightPredictor::GetInputByName(const std::string& name) {
 }
 
 const Tensor* LightPredictor::GetOutput(size_t offset) {
-  auto* _fetch_list = program_->exec_scope()->FindVar("fetch");
-  CHECK(_fetch_list) << "no fatch variable in exec_scope";
-  auto& fetch_list = *_fetch_list->GetMutable<std::vector<lite::Tensor>>();
-  CHECK_LT(offset, fetch_list.size()) << "offset " << offset << " overflow";
-  return &fetch_list.at(offset);
+  CHECK(output_names_.size() > offset)
+      << "The network has " << output_names_.size() << " outputs"
+      << ", the offset should be less than this.";
+  auto* out_var = program_->exec_scope()->FindVar(output_names_.at(offset));
+  CHECK(out_var) << "no fatch variable " << output_names_.at(offset)
+                 << " in exec_scope";
+  return out_var->GetMutable<lite::Tensor>();
 }
 // get inputs names
 std::vector<std::string> LightPredictor::GetInputNames() {
