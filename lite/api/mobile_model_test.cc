@@ -33,8 +33,8 @@ DEFINE_int32(cluster,
              "arm power mode: 0 for big cluster, 1 for little cluster, 2 for "
              "all cores, 3 for no bind");
 
-void paddle_infer(const std::string& model_dir,
-                  const std::vector<std::vector<int64_t>>& input_shapes) {
+void MobileInferTest(const std::string& model_dir,
+                     const std::vector<std::vector<int64_t>>& input_shapes) {
   paddle::lite_api::MobileConfig cfg;
   cfg.set_model_dir(model_dir);
   cfg.set_power_mode(static_cast<paddle::lite_api::PowerMode>(FLAGS_cluster));
@@ -124,7 +124,7 @@ int main(int argc, char** argv) {
     input_shapes.push_back(get_shape(str_input_shapes[i]));
   }
 
-  paddle_infer(model_dir, input_shapes);
+  MobileInferTest(model_dir, input_shapes);
 
   return 0;
 }
