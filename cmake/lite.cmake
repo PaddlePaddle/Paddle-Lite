@@ -22,7 +22,7 @@ endfunction()
 function (lite_deps TARGET)
   set(options "")
   set(oneValueArgs "")
-  set(multiValueArgs DEPS X86_DEPS CUDA_DEPS ARM_DEPS PROFILE_DEPS LIGHT_DEPS HVY_DEPS CL_DEPS FPGA_DEPS NPU_DEPS ARGS)
+  set(multiValueArgs DEPS X86_DEPS CUDA_DEPS ARM_DEPS PROFILE_DEPS LIGHT_DEPS HVY_DEPS CL_DEPS FPGA_DEPS NPU_DEPS XPU_DEPS ARGS)
   cmake_parse_arguments(lite_deps "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
   set(deps ${lite_deps_DEPS})
@@ -83,6 +83,12 @@ function (lite_deps TARGET)
     endforeach(var)
   endif()
 
+  if (LITE_WITH_XPU)
+    foreach(var ${lite_deps_XPU_DEPS})
+      set(deps ${deps} ${var})
+    endforeach(var)
+  endif()
+
   set(${TARGET} ${deps} PARENT_SCOPE)
 endfunction()
 
@@ -107,7 +113,7 @@ file(WRITE ${offline_lib_registry_file} "") # clean
 function(lite_cc_library TARGET)
     set(options SHARED shared STATIC static MODULE module)
     set(oneValueArgs "")
-    set(multiValueArgs SRCS DEPS X86_DEPS CUDA_DEPS CL_DEPS NPU_DEPS ARM_DEPS FPGA_DEPS PROFILE_DEPS LIGHT_DEPS
+    set(multiValueArgs SRCS DEPS X86_DEPS CUDA_DEPS CL_DEPS NPU_DEPS XPU_DEPS ARM_DEPS FPGA_DEPS PROFILE_DEPS LIGHT_DEPS
       HVY_DEPS EXCLUDE_COMPILE_DEPS ARGS)
     cmake_parse_arguments(args "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
@@ -118,6 +124,7 @@ function(lite_cc_library TARGET)
             CUDA_DEPS ${args_CUDA_DEPS}
             CL_DEPS ${args_CL_DEPS}
             NPU_DEPS ${args_NPU_DEPS}
+            XPU_DEPS ${args_XPU_DEPS}
             ARM_DEPS ${args_ARM_DEPS}
             FPGA_DEPS ${args_FPGA_DEPS}
             PROFILE_DEPS ${args_PROFILE_DEPS}
@@ -292,6 +299,12 @@ function(add_kernel TARGET device level)
         endif()
         set(npu_kernels "${npu_kernels};${TARGET}" CACHE INTERNAL "")
     endif()
+    if ("${device}" STREQUAL "XPU")
+        if (NOT LITE_WITH_XPU)
+            return()
+        endif()
+        set(xpu_kernels "${xpu_kernels};${TARGET}" CACHE INTERNAL "")
+    endif()
     if ("${device}" STREQUAL "FPGA")
         if (NOT LITE_WITH_FPGA)
             return()
@@ -325,6 +338,7 @@ function(add_kernel TARGET device level)
     lite_cc_library(${TARGET} SRCS ${args_SRCS}
               DEPS ${args_DEPS}
               X86_DEPS ${args_X86_DEPS}
+              XPU_DEPS ${args_XPU_DEPS}
               CUDA_DEPS ${args_CUDA_DEPS}
               CL_DEPS ${args_CL_DEPS}
               ARM_DEPS ${args_ARM_DEPS}
@@ -361,6 +375,7 @@ function(add_operator TARGET level)
     lite_cc_library(${TARGET} SRCS ${args_SRCS}
               DEPS ${args_DEPS}
               X86_DEPS ${args_X86_DEPS}
+              XPU_DEPS ${args_XPU_DEPS}
               CUDA_DEPS ${args_CUDA_DEPS}
               CL_DEPS ${args_CL_DEPS}
               ARM_DEPS ${args_ARM_DEPS}

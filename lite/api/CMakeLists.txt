@@ -35,7 +35,8 @@ if (WITH_TESTING)
       DEPS scope optimizer target_wrapper_host model_parser program
            ${ops} ${host_kernels}
       CUDA_DEPS ${cuda_kernels}
-      X86_DEPS ${x86_kernels})
+      X86_DEPS ${x86_kernels}
+      XPU_DEPS ${xpu_kernels})
 endif()
 if(LITE_WITH_FPGA)
     set(light_api_deps ${light_api_deps} ${fpga_deps})
@@ -47,6 +48,7 @@ message(STATUS "get X86 kernels ${x86_kernels}")
 message(STATUS "get Host kernels ${host_kernels}")
 message(STATUS "get ARM kernels ${arm_kernels}")
 message(STATUS "get NPU kernels ${npu_kernels}")
+message(STATUS "get XPU kernels ${xpu_kernels}")
 message(STATUS "get FPGA kernels ${fpga_kernels}")
 
 # for full api
@@ -59,6 +61,7 @@ if (NOT LITE_ON_TINY_PUBLISH)
                     X86_DEPS ${x86_kernels}
                     ARM_DEPS ${arm_kernels}
                     NPU_DEPS ${npu_kernels} ${npu_bridges} npu_pass
+                    XPU_DEPS ${xpu_kernels} ${xpu_bridges} xpu_pass
                     CL_DEPS ${opencl_kenrels}
                     FPGA_DEPS ${fpga_kenrels})
 endif()
@@ -76,6 +79,7 @@ lite_cc_library(light_api SRCS light_api.cc
         X86_DEPS ${x86_kernels}
         ARM_DEPS ${arm_kernels}
         NPU_DEPS ${npu_kernels}
+        XPU_DEPS ${xpu_kernels}
         CL_DEPS ${opencl_kenrels}
         FPGA_DEPS ${fpga_kenrels})
 
@@ -90,6 +94,7 @@ if(WITH_TESTING)
        X86_DEPS ${x86_kernels}
        ARM_DEPS ${arm_kernels}
        NPU_DEPS ${npu_kernels}
+       XPU_DEPS ${xpu_kernels}
        CL_DEPS ${opencl_kernels}
        FPGA_DEPS ${fpga_kernels}
        EXCLUDE_COMPILE_DEPS "ON"
@@ -212,6 +217,7 @@ lite_cc_test(test_apis SRCS apis_test.cc
         DEPS cxx_api light_api ${ops} paddle_api_light
         CL_DEPS ${opencl_kernels}
         X86_DEPS ${x86_kernels}
+        XPU_DEPS ${xpu_kernels}
         FPGA_DEPS ${fpga_kernels}
         ARGS --model_dir=${LITE_MODEL_DIR}/lite_naive_model
         --optimized_model=${LITE_MODEL_DIR}/lite_naive_model_opt SERIAL)
@@ -235,6 +241,7 @@ lite_cc_test(test_paddle_api SRCS paddle_api_test.cc DEPS paddle_api_full paddle
   ${ops}
   ARM_DEPS ${arm_kernels}
   NPU_DEPS ${npu_kernels}
+  XPU_DEPS ${xpu_kernels}
   CL_DEPS ${opencl_kernels}
   X86_DEPS ${x86_kernels}
   FPGA_DEPS ${fpga_kernels}
@@ -249,6 +256,7 @@ if(NOT IOS)
     ${ops}
     ARM_DEPS ${arm_kernels}
     NPU_DEPS ${npu_kernels}
+    XPU_DEPS ${xpu_kernels}
     CL_DEPS ${opencl_kernels}
     FPGA_DEPS ${fpga_kernels}
     X86_DEPS ${x86_kernels})
@@ -256,6 +264,7 @@ if(NOT IOS)
     ${ops}
     ARM_DEPS ${arm_kernels}
     NPU_DEPS ${npu_kernels}
+    XPU_DEPS ${xpu_kernels}
     CL_DEPS ${opencl_kernels}
     FPGA_DEPS ${fpga_kernels}
     X86_DEPS ${x86_kernels})

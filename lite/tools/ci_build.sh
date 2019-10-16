@@ -55,6 +55,12 @@ function cmake_x86 {
     cmake ..  -DWITH_GPU=OFF -DWITH_MKLDNN=OFF -DLITE_WITH_X86=ON ${common_flags}
 }
 
+function cmake_xpu {
+    prepare_workspace
+    build_dir=`pwd`
+    cmake ..  -DWITH_GPU=OFF -DWITH_MKLDNN=OFF -DLITE_WITH_X86=ON -DLITE_WITH_XPU=ON -DXPU_SDK_ROOT="${build_dir}/../../baidu/personal-code/xmir-output" ${common_flags}
+}
+
 function cmake_opencl {
     prepare_workspace
     # $1: ARM_TARGET_OS in "android" , "armlinux"
@@ -162,6 +168,20 @@ function cmake_x86_for_CI {
     # make test_generated_code -j$NUM_CORES_FOR_COMPILE
 }
 
+function cmake_xpu_for_CI {
+    prepare_workspace # fake an empty __generated_code__.cc to pass cmake.
+    build_dir=`pwd`
+    cmake ..  -DWITH_GPU=OFF -DWITH_MKLDNN=OFF -DLITE_WITH_X86=ON -DLITE_WITH_XPU=ON -DXPU_SDK_ROOT="${build_dir}/../../baidu/personal-code/xmir-output" ${common_flags} -DLITE_WITH_PROFILE=ON -DWITH_MKL=ON \
+        -DLITE_BUILD_EXTRA=ON \
+
+    # Compile and execute the gen_code related test, so it will generate some code, and make the compilation reasonable.
+    # make test_gen_code -j$NUM_CORES_FOR_COMPILE
+    # make test_cxx_api -j$NUM_CORES_FOR_COMPILE
+    # ctest -R test_cxx_api
+    # ctest -R test_gen_code
+    # make test_generated_code -j$NUM_CORES_FOR_COMPILE
+}
+
 function cmake_gpu {
     prepare_workspace
     cmake .. " -DWITH_GPU=ON {common_flags} -DLITE_WITH_GPU=ON"
@@ -225,6 +245,42 @@ function build_test_server {
 
     test_server
     test_model_optimize_tool_compile
+}
+
+# It will eagerly test all lite related unittests.
+function test_xpu {
+    # Due to the missing of xpu kernels, we skip the following tests temporarily.
+    # TODO(xxx) clear the skip list latter
+    local skip_list=("test_paddle_api" "test_cxx_api" "test_googlenet"
+                     "test_mobilenetv1_lite_x86" "test_mobilenetv2_lite_x86"
+                     "test_inceptionv4_lite_x86" "test_light_api"
+                     "test_apis" "test_model_bin"
+                    )
+    local to_skip=0
+    for _test in $(cat $TESTS_FILE); do
+        to_skip=0
+        for skip_name in ${skip_list[@]}; do
+            if [ $skip_name = $_test ]; then
+                echo "to skip " $skip_name
+                to_skip=1
+            fi
+        done
+
+        if [ $to_skip -eq 0 ]; then
+            ctest -R $_test -V
+        fi
+    done
+}
+
+# Build the code and run lite server tests. This is executed in the CI system.
+function build_test_xpu {
+    mkdir -p ./build
+    cd ./build
+    export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$PWD/third_party/install/mklml/lib"
+    cmake_xpu_for_CI
+    build
+
+    test_xpu
 }
 
 function build_test_train {
@@ -850,6 +906,10 @@ function main {
                 cmake_x86
                 shift
                 ;;
+            cmake_xpu)
+                cmake_xpu
+                shift
+                ;;
             cmake_opencl)
                 cmake_opencl $ARM_OS $ARM_ABI $ARM_LANG
                 shift
@@ -874,6 +934,10 @@ function main {
                 test_server
                 shift
                 ;;
+            test_xpu)
+                test_xpu
+                shift
+                ;;
             test_arm)
                 test_arm $ARM_OS $ARM_ABI $ARM_LANG $ARM_PORT
                 shift
@@ -888,6 +952,10 @@ function main {
                 ;;
             build_test_server)
                 build_test_server
+                shift
+                ;;
+            build_test_xpu)
+                build_test_xpu
                 shift
                 ;;
             build_test_train)

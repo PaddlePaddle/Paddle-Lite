@@ -28,6 +28,9 @@
 #ifdef LITE_WITH_NPU
 #include "lite/core/mir/subgraph/generate_npu_program_pass.h"
 #endif
+#ifdef LITE_WITH_XPU
+#include "lite/core/mir/subgraph/generate_xpu_program_pass.h"
+#endif
 
 namespace paddle {
 namespace lite {
@@ -106,7 +109,8 @@ class Optimizer {
 
            "runtime_context_assign_pass",
            "argument_type_display_pass",  //
-#if !defined(LITE_WITH_OPENCL) && !defined(LITE_WITH_NPU)
+#if !defined(LITE_WITH_OPENCL) && !defined(LITE_WITH_NPU) && \
+    !defined(LITE_WITH_XPU)
            // TODO(ysh329): cause CL_INVALID_MEM_OBJECT when setArg in kernel
            "memory_optimize_pass",
 #endif
@@ -145,6 +149,26 @@ class Optimizer {
         return program;
       } catch (...) {
         LOG(WARNING) << "Build NPU graph failed";
+      }
+    }
+#endif
+#ifdef LITE_WITH_XPU
+    if (std::find(valid_places_.begin(),
+                  valid_places_.end(),
+                  Place{TARGET(kXPU), PRECISION(kFloat)}) !=
+        valid_places_.end()) {
+      CheckInputDimsNotEmpty(exec_scope_);
+      auto pass = mir::PassManager::Global()
+                      .LookUp<mir::subgraph::GenerateXPUProgramPass>(
+                          "generate_xpu_program_pass");
+      try {
+        pass->Apply(graph_);
+        auto program = pass->GenProgram();
+        CHECK(exec_scope_);
+        program->set_exec_scope(exec_scope_);
+        return program;
+      } catch (...) {
+        LOG(WARNING) << "Build XPU graph failed";
       }
     }
 #endif

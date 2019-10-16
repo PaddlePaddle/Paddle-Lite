@@ -35,7 +35,7 @@ lite_cc_library(device_info SRCS device_info.cc DEPS tensor)
 if (LITE_WITH_ARM)
 lite_cc_library(context SRCS context.cc DEPS tensor any device_info CL_DEPS cl_context gflags NPU_DEPS npu_runtime)
 else()
-lite_cc_library(context SRCS context.cc DEPS tensor any device_info eigen3 CL_DEPS cl_context gflags)
+lite_cc_library(context SRCS context.cc DEPS tensor any device_info eigen3 CL_DEPS cl_context gflags XPU_DEPS xpu_runtime)
 endif()
 
 #-------------------------------------------- GET CODE META INFO ------------------------------------------
