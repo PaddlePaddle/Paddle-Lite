@@ -564,16 +564,17 @@ void conv_depthwise_3x3_fp32(const void* din,
                              const float* scale) {
   const int pad_h = param.paddings[0];
   const int pad_w = param.paddings[1];
-  if (pad_w != pad_h){
-    LOG(FATAL) << "fp32 depthwise conv3x3 pad_w: " << pad_w << ", pad_h: " << pad_h << " must be equal";
+  if (pad_w != pad_h) {
+    LOG(FATAL) << "fp32 depthwise conv3x3 pad_w: " << pad_w
+               << ", pad_h: " << pad_h << " must be equal";
     return;
   }
   int stride = param.strides[1];
   int pad = pad_w;
   bool flag_relu = param.fuse_relu;
   bool flag_bias = param.bias != nullptr;
-  if (stride == 1  && pad < 2) {
-      conv_depthwise_3x3s1_fp32(reinterpret_cast<const float*>(din),
+  if (stride == 1 && pad < 2) {  // support pad = [0, 1]
+    conv_depthwise_3x3s1_fp32(reinterpret_cast<const float*>(din),
                               reinterpret_cast<float*>(dout),
                               num,
                               ch_out,
@@ -588,8 +589,8 @@ void conv_depthwise_3x3_fp32(const void* din,
                               flag_bias,
                               flag_relu,
                               ctx);
-  } else if (stride == 2  && pad < 2) {
-      conv_depthwise_3x3s2_fp32(reinterpret_cast<const float*>(din),
+  } else if (stride == 2 && pad < 2) {
+    conv_depthwise_3x3s2_fp32(reinterpret_cast<const float*>(din),
                               reinterpret_cast<float*>(dout),
                               num,
                               ch_out,
@@ -605,7 +606,8 @@ void conv_depthwise_3x3_fp32(const void* din,
                               flag_relu,
                               ctx);
   } else {
-      LOG(FATAL) << "fp32 depthwise conv3x3 stride: " << stride << " or pad(<2): " << pad << " unsupported";
+    LOG(FATAL) << "fp32 depthwise conv3x3 stride: " << stride
+               << " or pad(<2): " << pad << " unsupported";
   }
 #if 0
   if (pad == 1) {
