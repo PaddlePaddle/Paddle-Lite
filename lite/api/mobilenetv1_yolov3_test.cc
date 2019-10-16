@@ -105,11 +105,10 @@ void TestModel(const std::vector<Place>& valid_places) {
 
 TEST(MobileNetV1_YoloV3, test_arm) {
   std::vector<Place> valid_places({
-      Place{TARGET(kHost), PRECISION(kFloat)},
       Place{TARGET(kARM), PRECISION(kFloat)},
   });
 
-  TestModel(valid_places, Place({TARGET(kARM), PRECISION(kFloat)}));
+  TestModel(valid_places);
 }
 
 #endif  // LITE_WITH_ARM

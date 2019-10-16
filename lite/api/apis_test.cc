@@ -52,7 +52,6 @@ TEST(CXXApi_LightApi, optim_model) {
   lite::Predictor cxx_api;
   std::vector<Place> valid_places({
       Place{TARGET(kX86), PRECISION(kFloat)},
-      Place{TARGET(kHost), PRECISION(kFloat)},
       Place{TARGET(kARM), PRECISION(kFloat)},  // Both works on X86 and ARM
   });
   // On ARM devices, the preferred X86 target not works, but it can still
@@ -69,7 +68,6 @@ TEST(CXXApi_LightApi, save_and_load_model) {
   {
     std::vector<Place> valid_places({
         Place{TARGET(kX86), PRECISION(kFloat)},
-        Place{TARGET(kHost), PRECISION(kFloat)},
         Place{TARGET(kARM), PRECISION(kFloat)},  // Both works on X86 and ARM
     });
     // On ARM devices, the preferred X86 target not works, but it can still

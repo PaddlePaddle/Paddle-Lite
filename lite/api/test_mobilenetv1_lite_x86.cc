@@ -43,8 +43,7 @@ namespace lite {
 
 TEST(Mobilenet_v1, test_mobilenetv1_lite_x86) {
   lite::Predictor predictor;
-  std::vector<Place> valid_places({Place{TARGET(kX86), PRECISION(kFloat)},
-                                   Place{TARGET(kHost), PRECISION(kFloat)}});
+  std::vector<Place> valid_places({Place{TARGET(kX86), PRECISION(kFloat)}});
 
   std::string model_dir = FLAGS_model_dir;
   std::vector<std::string> passes({"static_kernel_pick_pass",

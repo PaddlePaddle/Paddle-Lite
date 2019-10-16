@@ -43,8 +43,7 @@ TEST(CXXApi, test) {
 
 TEST(CXXApi, save_model) {
   lite::Predictor predictor;
-  std::vector<Place> valid_places({Place{TARGET(kHost), PRECISION(kFloat)},
-                                   Place{TARGET(kX86), PRECISION(kFloat)}});
+  std::vector<Place> valid_places({Place{TARGET(kX86), PRECISION(kFloat)}});
   predictor.Build(FLAGS_model_dir, "", "", valid_places);
 
   LOG(INFO) << "Save optimized model to " << FLAGS_optimized_model;
@@ -90,8 +89,7 @@ TEST(CXXApi, save_model) {
 #ifdef LITE_WITH_ARM
 TEST(CXXApi, save_model) {
   lite::Predictor predictor;
-  std::vector<Place> valid_places({Place{TARGET(kARM), PRECISION(kFloat)},
-                                   Place{TARGET(kHost), PRECISION(kFloat)}});
+  std::vector<Place> valid_places({Place{TARGET(kARM), PRECISION(kFloat)}});
   predictor.Build(FLAGS_model_dir, "", "", valid_places);
 
   LOG(INFO) << "Save optimized model to " << FLAGS_optimized_model;
@@ -102,8 +100,7 @@ TEST(CXXApi, save_model) {
 
 TEST(CXXApi, load_model_naive) {
   lite::Predictor predictor;
-  std::vector<Place> valid_places({Place{TARGET(kARM), PRECISION(kFloat)},
-                                   Place{TARGET(kHost), PRECISION(kFloat)}});
+  std::vector<Place> valid_places({Place{TARGET(kARM), PRECISION(kFloat)}});
   predictor.Build(FLAGS_optimized_model + ".naive",
                   "",
                   "",

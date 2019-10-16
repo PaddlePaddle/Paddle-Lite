@@ -47,7 +47,6 @@ void Run(DebugConfig* conf) {
 #ifdef LITE_WITH_CUDA
       Place{TARGET(kCUDA), PRECISION(kFloat)},
 #endif
-      Place{TARGET(kHost), PRECISION(kFloat)},
   });
 
   std::vector<std::string> passes{{

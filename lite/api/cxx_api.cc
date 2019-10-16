@@ -157,13 +157,17 @@ void Predictor::Build(const cpp::ProgramDesc &desc,
                       const std::vector<Place> &valid_places,
                       const std::vector<std::string> &passes) {
   program_desc_ = desc;
-  Program program(desc, scope_, valid_places);
+  std::vector<Place> inner_places = valid_places;
+  inner_places.emplace_back(TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny));
+  inner_places.emplace_back(
+      TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
+  Program program(desc, scope_, inner_places);
   /// The first place in valid_places is
   core::KernelPickFactor factor;
   factor.ConsiderTarget();
   factor.ConsiderPrecision();
   factor.ConsiderDataLayout();
-  optimizer_.Run(std::move(program), valid_places, factor, passes);
+  optimizer_.Run(std::move(program), inner_places, factor, passes);
   exec_scope_ = optimizer_.exec_scope();
 }
 

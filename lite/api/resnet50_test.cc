@@ -82,7 +82,6 @@ void TestModel(const std::vector<Place>& valid_places) {
 TEST(ResNet50, test_arm) {
   std::vector<Place> valid_places({
       Place{TARGET(kARM), PRECISION(kFloat)},
-      Place{TARGET(kHost), PRECISION(kFloat)},
   });
 
   TestModel(valid_places);
@@ -92,7 +91,6 @@ TEST(ResNet50, test_arm) {
 TEST(ResNet50, test_opencl) {
   std::vector<Place> valid_places({
       Place{TARGET(kOpenCL), PRECISION(kFloat)},
-      Place{TARGET(kHost), PRECISION(kFloat)},
       Place{TARGET(kARM), PRECISION(kFloat)},
   });
 

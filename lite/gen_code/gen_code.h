@@ -102,7 +102,7 @@ class Module {
 
   void AddValidPlaceDecl() {
     // clang-format off
-    Line("std::vector<lite::Place> valid_places({lite::Place({TARGET(kX86), PRECISION(kFloat), DATALAYOUT(kNCHW)}), lite::Place({TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny)})});");  // NOLINT
+    Line("std::vector<lite::Place> valid_places({lite::Place({TARGET(kX86), PRECISION(kFloat), DATALAYOUT(kNCHW)})});");  // NOLINT
     // clang-format on
   }
 

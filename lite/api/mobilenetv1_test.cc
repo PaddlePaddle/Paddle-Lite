@@ -103,7 +103,6 @@ void TestModel(const std::vector<Place>& valid_places,
 TEST(MobileNetV1, test_npu) {
   std::vector<Place> valid_places({
       Place{TARGET(kARM), PRECISION(kFloat)},
-      Place{TARGET(kHost), PRECISION(kFloat)},
       Place{TARGET(kNPU), PRECISION(kFloat)},
   });
 
@@ -116,7 +115,6 @@ TEST(MobileNetV1, test_npu) {
 TEST(MobileNetV1, test_arm) {
   std::vector<Place> valid_places({
       Place{TARGET(kARM), PRECISION(kFloat)},
-      Place{TARGET(kHost), PRECISION(kFloat)},
   });
 
   TestModel(valid_places);
@@ -126,7 +124,6 @@ TEST(MobileNetV1, test_arm) {
 TEST(MobileNetV1, test_opencl) {
   std::vector<Place> valid_places({
       Place{TARGET(kOpenCL), PRECISION(kFloat)},
-      Place{TARGET(kHost), PRECISION(kFloat)},
       Place{TARGET(kARM), PRECISION(kFloat)},
   });
 

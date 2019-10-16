@@ -43,8 +43,7 @@ namespace lite {
 
 TEST(InceptionV4, test_inceptionv4_lite_x86) {
   lite::Predictor predictor;
-  std::vector<Place> valid_places({Place{TARGET(kX86), PRECISION(kFloat)},
-                                   Place{TARGET(kHost), PRECISION(kFloat)}});
+  std::vector<Place> valid_places({Place{TARGET(kX86), PRECISION(kFloat)}});
 
   //  LOG(INFO)<<"FLAGS_eval_googlenet_dir:"<<FLAGS_test_lite_googlenet_dir;
   std::string model_dir = FLAGS_model_dir;

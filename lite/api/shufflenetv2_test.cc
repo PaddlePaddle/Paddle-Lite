@@ -80,7 +80,6 @@ void TestModel(const std::vector<Place>& valid_places) {
 TEST(ShuffleNetV2, test_arm) {
   std::vector<Place> valid_places({
       Place{TARGET(kARM), PRECISION(kFloat)},
-      Place{TARGET(kHost), PRECISION(kFloat)},
       // Place{TARGET(kOpenCL), PRECISION(kFloat)},
   });
 

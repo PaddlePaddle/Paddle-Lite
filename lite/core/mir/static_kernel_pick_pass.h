@@ -56,6 +56,16 @@ class StaticKernelPickPass : public mir::StmtPass {
     const int kMax =
         std::numeric_limits<core::KernelPickFactor::value_type>::max();
     size_t place_size = places.size();
+
+    // NOTE: We compare kernel's place with place in valid_places to select the
+    // best match place
+    //       The place's order in valid_places array decide the user's
+    //       preference
+    // final_score = weight * socre
+    // weight: The weight is compute with (valid_places.size() - i) /
+    // valid_places.size() as default.
+    //         where i is the place's index in valid_places array.
+    // score:  score is the weighted sum of target、percision and layout
     for (int i = 0; i < place_size; ++i) {
       const auto& place = places[i];
       float weight = static_cast<float>(place_size - i) / place_size;

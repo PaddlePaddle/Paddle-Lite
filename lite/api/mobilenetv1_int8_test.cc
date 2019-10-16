@@ -94,7 +94,6 @@ TEST(MobileNetV1, test_arm) {
   std::vector<Place> valid_places({
       Place{TARGET(kARM), PRECISION(kInt8)},
       Place{TARGET(kARM), PRECISION(kFloat)},
-      Place{TARGET(kHost), PRECISION(kFloat)},
   });
 
   TestModel(valid_places);

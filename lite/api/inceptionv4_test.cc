@@ -30,8 +30,7 @@ TEST(InceptionV4, test) {
   DeviceInfo::Init();
   DeviceInfo::Global().SetRunMode(lite_api::LITE_POWER_HIGH, FLAGS_threads);
   lite::Predictor predictor;
-  std::vector<Place> valid_places({Place{TARGET(kARM), PRECISION(kFloat)},
-                                   Place{TARGET(kHost), PRECISION(kFloat)}});
+  std::vector<Place> valid_places({Place{TARGET(kARM), PRECISION(kFloat)}});
 
   predictor.Build(FLAGS_model_dir, "", "", valid_places);
 

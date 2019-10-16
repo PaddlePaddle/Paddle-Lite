@@ -103,7 +103,6 @@ void TestModel(const std::vector<Place>& valid_places, bool use_npu = false) {
 TEST(OcrAttention, test_arm) {
   std::vector<Place> valid_places({
       Place{TARGET(kARM), PRECISION(kFloat)},
-      Place{TARGET(kHost), PRECISION(kFloat)},
   });
 
   TestModel(valid_places);

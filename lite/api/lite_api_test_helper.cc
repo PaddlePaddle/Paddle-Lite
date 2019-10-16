@@ -24,16 +24,12 @@ namespace lite {
 const lite::Tensor* RunHvyModel() {
   lite::Predictor predictor;
 #ifndef LITE_WITH_CUDA
-  std::vector<Place> valid_places({Place{TARGET(kX86), PRECISION(kFloat)},
-                                   Place{TARGET(kHost), PRECISION(kFloat)}});
+  std::vector<Place> valid_places({Place{TARGET(kX86), PRECISION(kFloat)}});
 #else
   std::vector<Place> valid_places({
-      Place{TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW)},
       Place{TARGET(kCUDA), PRECISION(kFloat), DATALAYOUT(kNCHW)},
       Place{TARGET(kCUDA), PRECISION(kAny), DATALAYOUT(kNCHW)},
-      Place{TARGET(kHost), PRECISION(kAny), DATALAYOUT(kNCHW)},
       Place{TARGET(kCUDA), PRECISION(kAny), DATALAYOUT(kAny)},
-      Place{TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny)},
   });
 #endif
 
