@@ -174,6 +174,16 @@ if(NOT WITH_DSO)
     endif(WIN32)
 endif(NOT WITH_DSO)
 
+get_filename_component(CUDA_LIB_PATH ${CUDA_curand_LIBRARY} DIRECTORY)
+function(import_static_library alias path)
+    add_library(${alias} STATIC IMPORTED GLOBAL)
+    set_property(TARGET ${alias} PROPERTY IMPORTED_LOCATION ${path})
+endfunction()
+import_static_library(cudart_static ${CUDA_LIB_PATH}/libcudart_static.a)
+import_static_library(cublas_static ${CUDA_LIB_PATH}/libcublas_static.a)
+import_static_library(curand_static ${CUDA_LIB_PATH}/libcurand_static.a)
+import_static_library(culibos_static ${CUDA_LIB_PATH}/libculibos.a)
+
 # setting nvcc arch flags
 select_nvcc_arch_flags(NVCC_FLAGS_EXTRA)
 list(APPEND CUDA_NVCC_FLAGS ${NVCC_FLAGS_EXTRA})

@@ -45,11 +45,10 @@ if(APPLE)
 set(CUDNN_LIB_NAME "libcudnn.dylib" "libcudnn.so")
 endif(APPLE)
 
-find_library(CUDNN_LIBRARY NAMES ${CUDNN_LIB_NAME} # libcudnn_static.a
+find_library(CUDNN_LIBRARY NAMES ${CUDNN_LIB_NAME}
     PATHS ${CUDNN_CHECK_LIBRARY_DIRS} ${CUDNN_INCLUDE_DIR} ${__libpath_hist}
           NO_DEFAULT_PATH
-    DOC "Path to cuDNN library.")
-
+    DOC "Path to cuDNN dynamic library.")
 
 if(CUDNN_INCLUDE_DIR AND CUDNN_LIBRARY)
     set(CUDNN_FOUND ON)
@@ -61,6 +60,9 @@ if(CUDNN_FOUND)
     file(READ ${CUDNN_INCLUDE_DIR}/cudnn.h CUDNN_VERSION_FILE_CONTENTS)
 
     get_filename_component(CUDNN_LIB_PATH ${CUDNN_LIBRARY} DIRECTORY)
+    add_library(cudnn_static STATIC IMPORTED GLOBAL)
+    set_property(TARGET cudnn_static PROPERTY IMPORTED_LOCATION
+               "${CUDNN_LIB_PATH}/libcudnn_static.a")
 
     string(REGEX MATCH "define CUDNN_VERSION +([0-9]+)"
         CUDNN_VERSION "${CUDNN_VERSION_FILE_CONTENTS}")
