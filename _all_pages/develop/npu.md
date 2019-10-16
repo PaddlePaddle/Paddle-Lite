@@ -92,15 +92,14 @@ Note：
 
 代码示例：
 ```cpp
-std::vector<Place> valid_places({Place{TARGET(kHost), PRECISION(kFloat)},
-                                   Place{TARGET(kARM), PRECISION(kFloat)}});
 // if want to use NPU
-valid_places.push_back(Place{TARGET(kNPU), PRECISION(kFloat)});
+std::vector<Place> valid_places({Place{TARGET(kNPU), PRECISION(kFloat)},
+                                 Place{TARGET(kARM), PRECISION(kFloat)}});
 
 DeviceInfo::Init();
 DeviceInfo::Global().SetRunMode(LITE_POWER_HIGH, FLAGS_threads);
 lite::Predictor predictor;
-predictor.Build(model_dir, preferred_place, valid_places);
+predictor.Build(model_dir, "", "", valid_places);
 
 auto* input_tensor = predictor.GetInput(0);
 input_tensor->Resize(DDim(std::vector<DDim::value_type>({1, 3, 224, 224})));
