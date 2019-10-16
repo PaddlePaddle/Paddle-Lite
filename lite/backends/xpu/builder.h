@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <xtcl/xtcl.h>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -27,6 +28,11 @@ namespace lite {
 namespace xpu {
 
 std::string UniqueName(const std::string& prefix);
+
+// Build IR graph to model, and store model data into lite tensor
+bool BuildModel(std::vector<xtcl::network::xExpr>& inputs,   // NOLINT
+                std::vector<xtcl::network::xExpr>& outputs,  // NOLINT
+                lite::Tensor* model_data);
 
 }  // namespace xpu
 }  // namespace lite

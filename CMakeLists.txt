@@ -174,6 +174,10 @@ if(LITE_WITH_CUDA)
   include(cuda)
 endif()
 
+if(LITE_WITH_XPU)
+  include(xpu)
+endif()
+
 include(generic)            # simplify cmake module
 include(ccache)             # set ccache for compilation
 include(util)               # set unittest and link libs

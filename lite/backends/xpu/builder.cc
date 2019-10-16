@@ -35,6 +35,17 @@ std::string UniqueName(const std::string& prefix) {
   return prefix + "_" + std::to_string(counter);
 }
 
+// Build IR graph to model, and store model data into lite tensor
+bool BuildModel(std::vector<xtcl::network::xExpr>& inputs,   // NOLINT
+                std::vector<xtcl::network::xExpr>& outputs,  // NOLINT
+                lite::Tensor* model_data) {
+  LOG(INFO) << "[XPU] Build model.";
+  CHECK_GT(inputs.size(), 0);
+  CHECK_GT(outputs.size(), 0);
+  CHECK_NE(model_data, 0);
+  return true;
+}
+
 }  // namespace xpu
 }  // namespace lite
 }  // namespace paddle
