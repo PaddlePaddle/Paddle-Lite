@@ -135,7 +135,7 @@ class ReluComputeFloatImage
 
  private:
   std::string kernel_func_name_{"relu"};
-  std::string build_options_{"-DCL_DTYPE=float -DRELU"};
+  std::string build_options_{"-DCL_DTYPE_float -DRELU"};
   std::shared_ptr<cl::Event> event_{new cl::Event};
 };
 

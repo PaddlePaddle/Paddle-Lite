@@ -62,7 +62,6 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
   Env<TARGET(kCUDA)>::Init();
 #endif
   auto places = config.valid_places();
-  places.emplace_back(TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny));
   raw_predictor_.Build(config, places);
   raw_predictor_.PrepareFeedFetch();
 }

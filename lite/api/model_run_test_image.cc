@@ -30,16 +30,14 @@ TEST(model, test) {
   DeviceInfo::Init();
   DeviceInfo::Global().SetRunMode(lite_api::LITE_POWER_HIGH, FLAGS_threads);
   lite::Predictor predictor;
-  std::vector<Place> valid_places({Place{TARGET(kHost), PRECISION(kFloat)},
-                                   Place{TARGET(kARM), PRECISION(kFloat)},
+  std::vector<Place> valid_places({Place{TARGET(kARM), PRECISION(kFloat)},
                                    Place{TARGET(kARM), PRECISION(kInt8)}});
 
   auto precision = PRECISION(kFloat);
   if (FLAGS_int8) {
     precision = PRECISION(kInt8);
   }
-  predictor.Build(
-      FLAGS_model_dir, "", "", Place{TARGET(kARM), precision}, valid_places);
+  predictor.Build(FLAGS_model_dir, "", "", valid_places);
   int im_width = FLAGS_im_width;
   int im_height = FLAGS_im_height;
   auto* input_tensor = predictor.GetInput(0);

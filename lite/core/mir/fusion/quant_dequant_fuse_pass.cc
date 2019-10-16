@@ -62,7 +62,8 @@ void QuantDequantFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
                             ->GetMutable<lite::Tensor>();
     float scale_value = scale_tensor->data<float>()[0] / range;
 
-    for (auto* quantized_node_ptr : output_act_node->outlinks) {
+    auto outlinks = output_act_node->outlinks;
+    for (auto* quantized_node_ptr : outlinks) {
       quantized_node_ptr->stmt()->mutable_op_info()->SetAttr<int>("bit_length",
                                                                   bit_length);
       quantized_node_ptr->stmt()->mutable_op_info()->SetAttr<float>(

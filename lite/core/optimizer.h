@@ -117,13 +117,6 @@ class Optimizer {
     exec_scope_ = program.exec_scope();
   }
 
-  void KernelPickPreferPlace(const Place& place) {
-    auto* pass = mir::PassManager::Global().LookUp<mir::StaticKernelPickPass>(
-        "static_kernel_pick_pass");
-    CHECK(pass);
-    pass->SetPreferPlace(place);
-  }
-
   const lite::Scope* exec_scope() const { return exec_scope_; }
 
   // Generate a new program based on the mir graph.
@@ -211,7 +204,8 @@ class Optimizer {
       }
       matched = matched && PassMatchesKernels(*pass);
       if (!matched) {
-        LOG(INFO) << "   - Skip " << x << " because the target does not match.";
+        LOG(INFO) << "   - Skip " << x
+                  << " because the target or kernel does not match.";
       } else {
         pass->Apply(graph_);
         LOG(INFO) << "== Finished running: " << x;

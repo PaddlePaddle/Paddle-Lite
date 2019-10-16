@@ -44,8 +44,8 @@ namespace lite {
 
 TEST(Mobilenet_v2, test_mobilenetv2_lite_x86) {
   lite::Predictor predictor;
-  std::vector<Place> valid_places({Place{TARGET(kHost), PRECISION(kFloat)},
-                                   Place{TARGET(kX86), PRECISION(kFloat)}});
+  std::vector<Place> valid_places({Place{TARGET(kX86), PRECISION(kFloat)},
+                                   Place{TARGET(kHost), PRECISION(kFloat)}});
 
   //  LOG(INFO)<<"FLAGS_eval_googlenet_dir:"<<FLAGS_test_lite_googlenet_dir;
   std::string model_dir = FLAGS_model_dir;
@@ -56,12 +56,7 @@ TEST(Mobilenet_v2, test_mobilenetv2_lite_x86) {
                                    "io_copy_kernel_pick_pass",
                                    "variable_place_inference_pass",
                                    "runtime_context_assign_pass"});
-  predictor.Build(model_dir,
-                  "",
-                  "",
-                  Place{TARGET(kX86), PRECISION(kFloat)},
-                  valid_places,
-                  passes);
+  predictor.Build(model_dir, "", "", valid_places, passes);
 
   auto* input_tensor = predictor.GetInput(0);
   input_tensor->Resize(DDim(std::vector<DDim::value_type>({1, 3, 224, 224})));
