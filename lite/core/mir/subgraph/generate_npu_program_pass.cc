@@ -27,9 +27,9 @@
 #include "ai_ddk_lib/include/graph/model.h"
 #include "ai_ddk_lib/include/graph/op/all_ops.h"  // for ge::op::Data
 #include "ai_ddk_lib/include/graph/operator_reg.h"
-#include "lite/backends/npu/bridge/paddle_use_npu_bridges.h"
-#include "lite/backends/npu/bridge/registry.h"
-#include "lite/backends/npu/bridge/utils.h"
+#include "lite/kernels/npu/bridges/paddle_use_npu_bridges.h"
+#include "lite/kernels/npu/bridges/registry.h"
+#include "lite/kernels/npu/bridges/utils.h"
 
 namespace paddle {
 namespace lite {
