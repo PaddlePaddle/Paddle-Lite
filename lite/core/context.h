@@ -26,7 +26,7 @@
 #include "lite/backends/opencl/cl_runtime.h"
 #endif
 #ifdef LITE_WITH_NPU
-#include "lite/kernels/npu/runtime.h"
+#include "lite/backends/npu/runtime.h"
 #endif
 
 #include <map>

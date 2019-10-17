@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/npu/runtime.h"
+#include "lite/backends/npu/runtime.h"
 #include <string>
 #include <vector>
 #include "lite/utils/cp_logging.h"

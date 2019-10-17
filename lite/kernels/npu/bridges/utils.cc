@@ -20,7 +20,7 @@
 #include "ai_ddk_lib/include/graph/op/all_ops.h"  // for ge::op::Data
 #include "ai_ddk_lib/include/graph/tensor.h"      // for ge::TensorUtils
 #include "ai_ddk_lib/include/hiai_ir_build.h"
-#include "lite/kernels/npu/runtime.h"
+#include "lite/backends/npu/runtime.h"
 
 namespace paddle {
 namespace lite {
