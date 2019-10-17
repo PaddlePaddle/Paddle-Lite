@@ -53,6 +53,7 @@ DEFINE_bool(flag_bias, false, "with bias");
 typedef paddle::lite::DDim DDim;
 typedef paddle::lite::Tensor Tensor;
 typedef paddle::lite::operators::ConvParam ConvParam;
+using paddle::lite::Timer;
 
 DDim compute_out_dim(const DDim& dim_in,
                      const paddle::lite::operators::ConvParam& param) {
@@ -185,7 +186,7 @@ void test_conv_transpose_fp32(const std::vector<DDim>& input_dims,
           conv_t.Launch();
         }
         /// compute
-        lite::test::Timer t0;
+        Timer t0;
         for (int i = 0; i < FLAGS_repeats; ++i) {
           t0.start();
           conv_t.Launch();

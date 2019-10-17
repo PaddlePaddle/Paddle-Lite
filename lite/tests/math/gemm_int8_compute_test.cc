@@ -25,6 +25,7 @@
 #include "lite/tests/utils/timer.h"
 
 typedef paddle::lite::Tensor Tensor;
+using paddle::lite::Timer;
 
 DEFINE_int32(cluster, 3, "cluster id");
 DEFINE_int32(threads, 1, "threads num");
@@ -146,7 +147,7 @@ bool test_gemm_int8(bool tra,
                                           1,
                                           tc_basic_fp32.numel());
   }
-  lite::test::Timer t0;
+  Timer t0;
   //! compute
   double ops = 2.0 * m * n * k;
   std::unique_ptr<paddle::lite::KernelContext> ctx1(

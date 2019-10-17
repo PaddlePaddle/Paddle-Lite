@@ -25,6 +25,7 @@
 #include "lite/tests/utils/timer.h"
 
 typedef paddle::lite::Tensor Tensor;
+using paddle::lite::Timer;
 
 DEFINE_int32(cluster, 3, "cluster id");
 DEFINE_int32(threads, 1, "threads num");
@@ -128,7 +129,7 @@ bool test_sgemm(bool tra,
                has_bias,
                has_relu);
   }
-  lite::test::Timer t0;
+  Timer t0;
 #ifdef LITE_WITH_ARM
   //! compute
   double ops = 2.0 * m * n * k;
