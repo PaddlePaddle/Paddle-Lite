@@ -94,4 +94,5 @@ node_map_type BatchNormConverter(
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_NPU_BRIDGE(batch_norm, paddle::lite::npu::bridge::BatchNormConverter);
+REGISTER_NPU_BRIDGE(batch_norm,
+                    paddle::lite::kernels::npu::bridges::BatchNormConverter);

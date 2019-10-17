@@ -77,4 +77,4 @@ node_map_type ElementwiseConverter(
 }  // namespace paddle
 
 REGISTER_NPU_BRIDGE(elementwise_add,
-                    paddle::lite::npu::bridge::ElementwiseConverter);
+                    paddle::lite::kernels::npu::bridges::ElementwiseConverter);

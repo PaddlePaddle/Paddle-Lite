@@ -57,5 +57,6 @@ node_map_type ShuffleChannelConverter(
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_NPU_BRIDGE(shuffle_channel,
-                    paddle::lite::npu::bridge::ShuffleChannelConverter);
+REGISTER_NPU_BRIDGE(
+    shuffle_channel,
+    paddle::lite::kernels::npu::bridges::ShuffleChannelConverter);

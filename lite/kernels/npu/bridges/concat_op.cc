@@ -71,4 +71,5 @@ node_map_type ConcatConverter(const std::shared_ptr<lite::OpLite> concat_op,
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_NPU_BRIDGE(concat, paddle::lite::npu::bridge::ConcatConverter);
+REGISTER_NPU_BRIDGE(concat,
+                    paddle::lite::kernels::npu::bridges::ConcatConverter);

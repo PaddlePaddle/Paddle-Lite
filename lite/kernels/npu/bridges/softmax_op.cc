@@ -65,4 +65,5 @@ node_map_type SoftmaxConverter(const std::shared_ptr<lite::OpLite> softmax_op,
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_NPU_BRIDGE(softmax, paddle::lite::npu::bridge::SoftmaxConverter);
+REGISTER_NPU_BRIDGE(softmax,
+                    paddle::lite::kernels::npu::bridges::SoftmaxConverter);

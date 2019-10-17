@@ -213,5 +213,6 @@ node_map_type ConvConverter(const std::shared_ptr<lite::OpLite> conv_op,
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_NPU_BRIDGE(conv2d, paddle::lite::npu::bridge::ConvConverter);
-REGISTER_NPU_BRIDGE(depthwise_conv2d, paddle::lite::npu::bridge::ConvConverter);
+REGISTER_NPU_BRIDGE(conv2d, paddle::lite::kernels::npu::bridges::ConvConverter);
+REGISTER_NPU_BRIDGE(depthwise_conv2d,
+                    paddle::lite::kernels::npu::bridges::ConvConverter);

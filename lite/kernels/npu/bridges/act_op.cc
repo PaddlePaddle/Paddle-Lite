@@ -79,11 +79,14 @@ node_map_type ActConverter(const std::shared_ptr<lite::OpLite> act_op,
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_NPU_BRIDGE(sigmod, paddle::lite::npu::bridge::ActConverter);
-REGISTER_NPU_BRIDGE(relu, paddle::lite::npu::bridge::ActConverter);
-REGISTER_NPU_BRIDGE(tanh, paddle::lite::npu::bridge::ActConverter);
-REGISTER_NPU_BRIDGE(elu, paddle::lite::npu::bridge::ActConverter);
-REGISTER_NPU_BRIDGE(abs, paddle::lite::npu::bridge::ActConverter);
-REGISTER_NPU_BRIDGE(softsign, paddle::lite::npu::bridge::ActConverter);
-REGISTER_NPU_BRIDGE(softplus, paddle::lite::npu::bridge::ActConverter);
-REGISTER_NPU_BRIDGE(hardsigmoid, paddle::lite::npu::bridge::ActConverter);
+REGISTER_NPU_BRIDGE(sigmod, paddle::lite::kernels::npu::bridges::ActConverter);
+REGISTER_NPU_BRIDGE(relu, paddle::lite::kernels::npu::bridges::ActConverter);
+REGISTER_NPU_BRIDGE(tanh, paddle::lite::kernels::npu::bridges::ActConverter);
+REGISTER_NPU_BRIDGE(elu, paddle::lite::kernels::npu::bridges::ActConverter);
+REGISTER_NPU_BRIDGE(abs, paddle::lite::kernels::npu::bridges::ActConverter);
+REGISTER_NPU_BRIDGE(softsign,
+                    paddle::lite::kernels::npu::bridges::ActConverter);
+REGISTER_NPU_BRIDGE(softplus,
+                    paddle::lite::kernels::npu::bridges::ActConverter);
+REGISTER_NPU_BRIDGE(hardsigmoid,
+                    paddle::lite::kernels::npu::bridges::ActConverter);

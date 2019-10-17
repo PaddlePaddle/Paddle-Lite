@@ -75,5 +75,7 @@ node_map_type TransposeConverter(
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_NPU_BRIDGE(transpose, paddle::lite::npu::bridge::TransposeConverter);
-REGISTER_NPU_BRIDGE(transpose2, paddle::lite::npu::bridge::TransposeConverter);
+REGISTER_NPU_BRIDGE(transpose,
+                    paddle::lite::kernels::npu::bridges::TransposeConverter);
+REGISTER_NPU_BRIDGE(transpose2,
+                    paddle::lite::kernels::npu::bridges::TransposeConverter);

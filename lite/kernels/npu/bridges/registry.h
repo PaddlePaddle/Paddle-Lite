@@ -75,8 +75,8 @@ class Factory {
       __reg_npu_bridge_##op_type##__,                                       \
       "REGISTER_NPU_BRIDGE must be called in global namespace only once!"); \
   int __reg_npu_bridge_##op_type##_Insert() {                               \
-    paddle::lite::npu::bridge::Factory::Instance().Insert(#op_type,         \
-                                                          cvt_func_name);   \
+    paddle::lite::kernels::npu::bridges::Factory::Instance().Insert(        \
+        #op_type, cvt_func_name);                                           \
     return 0;                                                               \
   }
 

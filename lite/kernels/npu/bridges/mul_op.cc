@@ -119,4 +119,4 @@ node_map_type MulConverter(const std::shared_ptr<lite::OpLite> mul_op,
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_NPU_BRIDGE(mul, paddle::lite::npu::bridge::MulConverter);
+REGISTER_NPU_BRIDGE(mul, paddle::lite::kernels::npu::bridges::MulConverter);

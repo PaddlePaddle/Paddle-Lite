@@ -84,4 +84,4 @@ node_map_type SplitConverter(const std::shared_ptr<lite::OpLite> split_op,
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_NPU_BRIDGE(split, paddle::lite::npu::bridge::SplitConverter);
+REGISTER_NPU_BRIDGE(split, paddle::lite::kernels::npu::bridges::SplitConverter);

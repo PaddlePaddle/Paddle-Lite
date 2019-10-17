@@ -117,4 +117,4 @@ node_map_type FCConverter(const std::shared_ptr<lite::OpLite> fc_op,
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_NPU_BRIDGE(fc, paddle::lite::npu::bridge::FCConverter);
+REGISTER_NPU_BRIDGE(fc, paddle::lite::kernels::npu::bridges::FCConverter);

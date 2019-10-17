@@ -56,7 +56,7 @@ void test_mul(const std::vector<int64_t>& x_shape,
               const std::vector<int64_t>& y_shape,
               int x_num_col_dims,
               int y_num_col_dims) {
-  const auto& bridges = lite::npu::bridge::Factory::Instance();
+  const auto& bridges = lite::kernels::npu::bridges::Factory::Instance();
   const auto& supported_lists = bridges.AllFunctions();
   CHECK(bridges.HasType("mul"));
 

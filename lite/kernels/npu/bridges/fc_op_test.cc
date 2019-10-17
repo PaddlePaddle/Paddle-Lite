@@ -74,7 +74,7 @@ void test_fc(const std::vector<int64_t>& input_shape,
              bool has_bias) {
   CHECK_EQ(w_shape.size(), 2UL);
 
-  const auto& bridges = lite::npu::bridge::Factory::Instance();
+  const auto& bridges = lite::kernels::npu::bridges::Factory::Instance();
   const auto& supported_lists = bridges.AllFunctions();
   CHECK(bridges.HasType("fc"));
 

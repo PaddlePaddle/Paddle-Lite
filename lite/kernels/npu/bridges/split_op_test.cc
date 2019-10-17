@@ -100,7 +100,7 @@ void test_split(int bs,
                 int axis,
                 int num,
                 std::vector<int> sections) {
-  const auto& bridges = lite::npu::bridge::Factory::Instance();
+  const auto& bridges = lite::kernels::npu::bridges::Factory::Instance();
   const auto& supported_lists = bridges.AllFunctions();
   CHECK(bridges.HasType("split"));
   // prepare input&output variables

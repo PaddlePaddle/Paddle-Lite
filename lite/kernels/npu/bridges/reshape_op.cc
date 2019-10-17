@@ -119,5 +119,7 @@ node_map_type ReshapeConverter(const std::shared_ptr<lite::OpLite> reshape_op,
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_NPU_BRIDGE(reshape, paddle::lite::npu::bridge::ReshapeConverter);
-REGISTER_NPU_BRIDGE(reshape2, paddle::lite::npu::bridge::ReshapeConverter);
+REGISTER_NPU_BRIDGE(reshape,
+                    paddle::lite::kernels::npu::bridges::ReshapeConverter);
+REGISTER_NPU_BRIDGE(reshape2,
+                    paddle::lite::kernels::npu::bridges::ReshapeConverter);

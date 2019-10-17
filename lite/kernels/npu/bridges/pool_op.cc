@@ -87,4 +87,4 @@ node_map_type PoolConverter(const std::shared_ptr<lite::OpLite> pool_op,
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_NPU_BRIDGE(pool2d, paddle::lite::npu::bridge::PoolConverter);
+REGISTER_NPU_BRIDGE(pool2d, paddle::lite::kernels::npu::bridges::PoolConverter);

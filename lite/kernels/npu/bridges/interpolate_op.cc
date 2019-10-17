@@ -140,6 +140,6 @@ node_map_type InterpolateConverter(
 }  // namespace paddle
 
 REGISTER_NPU_BRIDGE(bilinear_interp,
-                    paddle::lite::npu::bridge::InterpolateConverter);
+                    paddle::lite::kernels::npu::bridges::InterpolateConverter);
 REGISTER_NPU_BRIDGE(nearest_interp,
-                    paddle::lite::npu::bridge::InterpolateConverter);
+                    paddle::lite::kernels::npu::bridges::InterpolateConverter);

@@ -143,5 +143,6 @@ node_map_type ConvTransposeConverter(
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_NPU_BRIDGE(conv2d_transpose,
-                    paddle::lite::npu::bridge::ConvTransposeConverter);
+REGISTER_NPU_BRIDGE(
+    conv2d_transpose,
+    paddle::lite::kernels::npu::bridges::ConvTransposeConverter);

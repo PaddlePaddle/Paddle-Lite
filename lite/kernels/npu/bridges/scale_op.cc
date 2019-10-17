@@ -87,4 +87,4 @@ node_map_type ScaleConverter(const std::shared_ptr<lite::OpLite> scale_op,
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_NPU_BRIDGE(scale, paddle::lite::npu::bridge::ScaleConverter);
+REGISTER_NPU_BRIDGE(scale, paddle::lite::kernels::npu::bridges::ScaleConverter);

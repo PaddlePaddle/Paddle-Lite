@@ -33,7 +33,7 @@ void LauchOp(const std::shared_ptr<lite::OpLite> op,
   auto op_type = op->op_info()->Type();
 
   // convert op to IR graph
-  const auto& bridges = lite::npu::bridge::Factory::Instance();
+  const auto& bridges = lite::kernels::npu::bridges::Factory::Instance();
   const auto& supported_lists = bridges.AllFunctions();
   CHECK(bridges.HasType(op_type));
 
