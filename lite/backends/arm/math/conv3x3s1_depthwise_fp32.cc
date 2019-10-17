@@ -25,7 +25,6 @@ namespace paddle {
 namespace lite {
 namespace arm {
 namespace math {
-
 void conv_3x3s1_depthwise_fp32(const float* i_data,
                                float* o_data,
                                int bs,
