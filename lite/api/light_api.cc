@@ -65,8 +65,8 @@ Tensor* LightPredictor::GetInputByName(const std::string& name) {
     }
     return nullptr;
   } else {
-    int nPosition = std::distance(input_names_.begin(), iElement);
-    return GetInput(nPosition);
+    int position = std::distance(input_names_.begin(), iElement);
+    return GetInput(position);
   }
 }
 
