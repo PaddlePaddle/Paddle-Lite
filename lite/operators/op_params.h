@@ -293,6 +293,8 @@ struct PoolParam {
   bool ceil_mode{false};
   bool use_quantizer{false};
   std::string data_format{"AnyLayout"};
+  // for int8
+  WITH_INT8_CONFIG
 };
 
 // For Dropout op
@@ -331,7 +333,10 @@ struct ElementwiseParam {
   const lite::Tensor* Y{};
   lite::Tensor* Out{};
   int axis{-1};  // for broadcasting.
+  // for int8
   WITH_INT8_CONFIG
+  float x_input_scale{1.0};
+  float y_input_scale{1.0};
 };
 
 struct ElementwiseGradParam {
