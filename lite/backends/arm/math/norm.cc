@@ -44,7 +44,6 @@ void norm(const float* input,
       }
     }
   }
-  LOG(INFO) << "norm math finished";
 }
 
 void matrix_norm_row(const float* x_data,

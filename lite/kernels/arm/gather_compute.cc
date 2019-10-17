@@ -53,11 +53,3 @@ REGISTER_LITE_KERNEL(
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
-
-// REGISTER_LITE_KERNEL(
-//    gather, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::GatherCompute,
-//    def)
-//    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), Precision(kINT32))})
-//    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM),
-//    Precision(kINT32))})
-//    .Finalize();
