@@ -34,9 +34,12 @@ void WhileCompute::PrepareForRun() {
 }
 void WhileCompute::Run() {
   auto &param = Param<operators::WhileParam>();
+  int i = 0;
   while (param.cond->data<bool>()[0]) {
     executor_->Run();
+    i++;
   }
+  LOG(ERROR) << "while nums:" << i;
 }
 
 }  // namespace arm
@@ -46,7 +49,7 @@ void WhileCompute::Run() {
 
 REGISTER_LITE_KERNEL(
     while, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::WhileCompute, def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("X", {LiteType::GetTensorListTy(TARGET(kARM))})
     .BindInput("Condition",
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kBool))})
     .BindOutput("Out", {LiteType::GetTensorListTy(TARGET(kARM))})
