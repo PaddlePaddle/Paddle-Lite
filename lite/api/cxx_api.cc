@@ -198,8 +198,8 @@ const lite::Tensor *Predictor::GetTensor(const std::string &name) const {
 }
 // get input by name
 lite::Tensor *Predictor::GetInputByName(const std::string &name) {
-  auto iElement = std::find(input_names_.begin(), input_names_.end(), name);
-  if (iElement == input_names_.end()) {
+  auto element = std::find(input_names_.begin(), input_names_.end(), name);
+  if (element == input_names_.end()) {
     LOG(ERROR) << "Model do not have input named with: [" << name
                << "], model's inputs include:";
     for (int i = 0; i < input_names_.size(); i++) {
@@ -207,7 +207,7 @@ lite::Tensor *Predictor::GetInputByName(const std::string &name) {
     }
     return nullptr;
   } else {
-    int position = std::distance(input_names_.begin(), iElement);
+    int position = std::distance(input_names_.begin(), element);
     return GetInput(position);
   }
 }
