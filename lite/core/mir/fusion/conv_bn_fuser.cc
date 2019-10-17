@@ -76,26 +76,11 @@ void ConvBNFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
   auto* scope = conv->scope();
   auto& valid_places = conv->valid_places();
 
-  // conv
-  auto conv_weight_t = scope->FindVar(matched.at("conv_weight")->arg()->name)
-                           ->GetMutable<lite::Tensor>();
-  auto conv_weight_dims = conv_weight_t->dims();
-  size_t weight_num = conv_weight_t->data_size();
-
-  auto conv_bias_t = scope->FindVar(matched.at("conv_bias")->arg()->name)
-                         ->GetMutable<lite::Tensor>();
-  auto conv_bias_d = conv_bias_t->mutable_data<float>();
-  auto conv_bias_dims = conv_bias_t->dims();
-
   // bn
   auto bn_scale_t = scope->FindVar(matched.at("bn_scale")->arg()->name)
                         ->GetMutable<lite::Tensor>();
   size_t bias_size = bn_scale_t->data_size();
   auto bn_scale_d = bn_scale_t->mutable_data<float>();
-  CHECK_EQ(bias_size, static_cast<size_t>(conv_weight_dims[0]))
-      << "The BN bias's size should be equal to the size of the first "
-      << "dim size of the conv weights";
-
   auto bn_mean_t = scope->FindVar(matched.at("bn_mean")->arg()->name)
                        ->GetMutable<lite::Tensor>();
   auto bn_mean_d = bn_mean_t->mutable_data<float>();
@@ -109,8 +94,21 @@ void ConvBNFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
   auto bn_bias_d = bn_bias_t->mutable_data<float>();
   auto eps = matched.at("bn")->stmt()->op_info()->GetAttr<float>("epsilon");
 
-  auto conv_op_desc = conv_instruct->mutable_op_info();
+  // conv
+  auto conv_weight_t = scope->FindVar(matched.at("conv_weight")->arg()->name)
+                           ->GetMutable<lite::Tensor>();
+  auto conv_weight_dims = conv_weight_t->dims();
+  CHECK_EQ(bias_size, static_cast<size_t>(conv_weight_dims[0]))
+      << "The BN bias's size should be equal to the size of the first "
+      << "dim size of the conv weights";
+  size_t weight_num = conv_weight_t->data_size();
 
+  Tensor conv_bias_t;
+  conv_bias_t.CopyDataFrom(*bn_bias_t);
+  auto conv_bias_d = conv_bias_t.mutable_data<float>();
+  auto conv_bias_dims = conv_bias_t.dims();
+
+  auto conv_op_desc = conv_instruct->mutable_op_info();
   bool enable_int8 = conv_op_desc->HasAttr("enable_int8") ? true : false;
 
   ///////////////////////////////////////////////////////////////////////////////
@@ -127,6 +125,8 @@ void ConvBNFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
   int h = bias_size;  // h == bias_size == out channel num of conv weight
   int w = weight_num / bias_size;  // w = `conv_weight_num` / bias_size = in
                                    // channel num of conv weight
+
+  // comupte BN alpha and beta
   ComputeAlphaAndBeta(
       bn_scale_d, bn_mean_d, bn_var_d, alpha_data, beta_data, eps, h, w);
 
@@ -158,18 +158,26 @@ void ConvBNFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
     conv_bias_d[i] =
         alpha_data[i] * conv_bias_d[i] + (bn_bias_d[i] + beta_data[i]);
   }
+  // set conv_bias_d to `bn_bias` arg node
+  bn_bias_t->CopyDataFrom(conv_bias_t);
+  op_desc.SetInput("Bias",
+                   {matched.at("bn_bias")->arg()->name});  // add Bias flag
+  VLOG(4) << "2019-10-17 20:05:07";
+
   new_conv_op->Attach(op_desc, scope);
   auto* new_op_node = graph->GraphCreateInstructNode(new_conv_op, valid_places);
 
   IR_NODE_LINK_TO(matched.at("conv_input"), new_op_node);
   IR_NODE_LINK_TO(matched.at("conv_weight"), new_op_node);
-  IR_NODE_LINK_TO(matched.at("conv_bias"), new_op_node);
+  IR_NODE_LINK_TO(matched.at("bn_bias"), new_op_node);
   IR_NODE_LINK_TO(new_op_node, matched.at("bn_out"));
 }
 
 cpp::OpDesc ConvBNFuser::GenOpDesc(const key2nodes_t& matched) {
   auto* desc = matched.at("conv2d")->stmt()->op_info();
   cpp::OpDesc op_desc = *desc;
+  op_desc.mutable_inputs()->clear();
+  op_desc.mutable_outputs()->clear();
   op_desc.SetType(conv_type_);
   op_desc.SetInput("Input", {matched.at("conv_input")->arg()->name});
   op_desc.SetInput("Filter", {matched.at("conv_weight")->arg()->name});
@@ -223,8 +231,6 @@ cpp::OpDesc ConvBNFuser::GenOpDesc(const key2nodes_t& matched) {
       }
     }
   }
-  op_desc.SetInput("Bias",
-                   {matched.at("conv_bias")->arg()->name});  // add Bias flag
 
   // other params
   std::vector<std::string> input_arg_names = op_desc.InputArgumentNames();
