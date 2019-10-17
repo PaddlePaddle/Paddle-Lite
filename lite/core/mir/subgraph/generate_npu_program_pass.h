@@ -20,10 +20,10 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
-#include "lite/backends/npu/bridge/registry.h"
-#include "lite/backends/npu/bridge/utils.h"
 #include "lite/core/mir/pass.h"
 #include "lite/core/mir/subgraph/subgraph_program_pass.h"
+#include "lite/kernels/npu/bridges/registry.h"
+#include "lite/kernels/npu/bridges/utils.h"
 
 namespace paddle {
 namespace lite {
@@ -41,7 +41,7 @@ class GenerateNPUProgramPass : public SubgraphProgramPass {
   // nodes2cvt: op nodes to convert
   // return cvted_vars: converted var nodes
   void CvtAllOpNodes(const std::vector<Node*>& nodes2cvt,
-                     lite::npu::bridge::node_map_type* cvted_vars);
+                     lite::kernels::npu::bridges::node_map_type* cvted_vars);
 
   std::shared_ptr<ge::Operator> CvtVarNode(lite::mir::Node* var_node,
                                            const Scope* scope);

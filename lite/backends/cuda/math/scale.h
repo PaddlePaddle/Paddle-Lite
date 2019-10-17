@@ -37,12 +37,6 @@ void scale(int num, const T* in, T* out, float scale, cudaStream_t stream);
 template <typename T>
 void scale(int num, const T* in, T* out, float scale);
 
-template <typename T>
-void scale(int num, const T* in, T* out, float scale, cudaStream_t stream);
-
-template <typename T>
-void scale(int num, const T* in, T* out, float scale);
-
 }  // namespace math
 }  // namespace cuda
 }  // namespace lite
