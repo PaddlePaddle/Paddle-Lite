@@ -88,6 +88,9 @@ bool InterpolateOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
   if (op_desc.HasAttr("out_h")) {
     param_.out_h = op_desc.GetAttr<int>("out_h");
   }
+  if (op_desc.HasAttr("align_mode")) {
+    param_.align_mode = op_desc.GetAttr<int>("align_mode");
+  }
   param_.align_corners = op_desc.GetAttr<bool>("align_corners");
   param_.interp_method = op_desc.GetAttr<std::string>("interp_method");
   return true;
