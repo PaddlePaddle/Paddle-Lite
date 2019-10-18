@@ -284,7 +284,8 @@ sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
   --arm_lang=gcc \
   tiny_publish
 ```
-
+* `--arm_abi`: 树莓派3b使用armv7hf，RK3399使用armv8
+  
 #### 编译`full publish`动态库（**Mac OS下不支持**）
 
 ##### Android
@@ -304,6 +305,7 @@ sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
   --arm_lang=gcc \
   full_publish
 ```
+* `--arm_abi`: 树莓派3b使用armv7hf，RK3399使用armv8
 
 ### 编译结果说明
 
