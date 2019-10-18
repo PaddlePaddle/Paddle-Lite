@@ -53,7 +53,6 @@ void LightPredictorImpl::Init(const MobileConfig& config) {
                                                 config.param_buffer(),
                                                 config.model_from_memory(),
                                                 LiteModelType::kNaiveBuffer));
-  raw_predictor_->PrepareFeedFetch();
 }
 
 std::unique_ptr<Tensor> LightPredictorImpl::GetInput(int i) {

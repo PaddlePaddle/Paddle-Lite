@@ -106,7 +106,7 @@ class Optimizer {
 
            "runtime_context_assign_pass",
            "argument_type_display_pass",  //
-#ifndef LITE_WITH_OPENCL
+#if !defined(LITE_WITH_OPENCL) && !defined(LITE_WITH_NPU)
            // TODO(ysh329): cause CL_INVALID_MEM_OBJECT when setArg in kernel
            "memory_optimize_pass",
 #endif
@@ -115,13 +115,6 @@ class Optimizer {
       RunPasses(passes);
     }
     exec_scope_ = program.exec_scope();
-  }
-
-  void KernelPickPreferPlace(const Place& place) {
-    auto* pass = mir::PassManager::Global().LookUp<mir::StaticKernelPickPass>(
-        "static_kernel_pick_pass");
-    CHECK(pass);
-    pass->SetPreferPlace(place);
   }
 
   const lite::Scope* exec_scope() const { return exec_scope_; }
@@ -211,7 +204,8 @@ class Optimizer {
       }
       matched = matched && PassMatchesKernels(*pass);
       if (!matched) {
-        LOG(INFO) << "   - Skip " << x << " because the target does not match.";
+        LOG(INFO) << "   - Skip " << x
+                  << " because the target or kernel does not match.";
       } else {
         pass->Apply(graph_);
         LOG(INFO) << "== Finished running: " << x;
