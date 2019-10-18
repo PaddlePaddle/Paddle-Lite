@@ -22,7 +22,7 @@ DEFINE_string(model_dir, "", "");
 namespace paddle {
 namespace lite {
 
-/*TEST(ModelParser, LoadProgram) {
+TEST(ModelParser, LoadProgram) {
   CHECK(!FLAGS_model_dir.empty());
   auto program = LoadProgram(FLAGS_model_dir + "/__model__");
 }
@@ -34,7 +34,7 @@ TEST(ModelParser, LoadParam) {
   const auto& t = v->Get<Tensor>();
   LOG(INFO) << "loaded\n";
   LOG(INFO) << t;
-}*/
+}
 
 TEST(ModelParser, LoadModelPb) {
   CHECK(!FLAGS_model_dir.empty());
@@ -42,7 +42,7 @@ TEST(ModelParser, LoadModelPb) {
   Scope scope;
   LoadModelPb(FLAGS_model_dir, "", "", &scope, &prog);
 }
-/*
+
 TEST(ModelParser, SaveModelPb) {
   CHECK(!FLAGS_model_dir.empty());
   cpp::ProgramDesc prog;
@@ -134,13 +134,13 @@ TEST(ModelParser, LoadModelNaiveFromMemory) {
   LoadModelNaiveFromMemory(model_buffer, params_buffer, &scope, &prog);
 }
 
-TEST(ModelParser, LoadModelCombinedNaive) {
+TEST(ModelParser, LoadModelNaive) {
   CHECK(!FLAGS_model_dir.empty());
   const std::string model_path = FLAGS_model_dir + ".saved.naive";
   cpp::ProgramDesc prog;
   Scope scope;
   LoadModelNaive(model_path, &scope, &prog, true);
-}*/
+}
 
 }  // namespace lite
 }  // namespace paddle

@@ -19,44 +19,7 @@ namespace paddle {
 namespace lite {
 namespace naive_buffer {
 
-// memory of float, float 4M
-/*TEST(NaiveBuffer, primarySize) {
-  BinaryTable table;
-  float data[1048576];
-  for(int i=0;i<1048576;i++)
-  {
-    data[i]=1;
-  }
-  while(1);
-}*/
-
-// memory of builder, float 4M
-/*TEST(NaiveBuffer, primarySize) {
-  BinaryTable table;
-  std::vector<PrimaryBuilder<float>> P;
-  for(int i=0;i<1048576;i++)
-  {
-    PrimaryBuilder<float> build(&table);
-    build.set(1);
-    P.push_back(build);
-  }
-  while(1);
-}*/
-
-TEST(NaiveBuffer, primaryListSize) {
-  BinaryTable table;
-  std::vector<float> P_data;
-  P_data.reserve(1048576);
-  P_data.resize(1048576);
-  for (int i = 0; i < 1048576; i++) {
-    P_data[i] = 1;
-  }
-  PrimaryListBuilder<float> P(&table);
-  P.set(P_data);
-  P.Save();
-}
-
-/*TEST(NaiveBuffer, primary) {
+TEST(NaiveBuffer, primary) {
   BinaryTable table;
   PrimaryBuilder<int32_t> p0(&table);
   PrimaryBuilder<float> p1(&table);
@@ -208,7 +171,7 @@ TEST(ListBuilder, basic) {
   for (int i = 0; i < num_elems; i++) {
     ASSERT_EQ(li1.Get(i).data(), "elem-" + std::to_string(i));
   }
-}*/
+}
 
 }  // namespace naive_buffer
 }  // namespace lite

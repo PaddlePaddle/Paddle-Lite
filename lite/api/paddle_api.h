@@ -159,12 +159,6 @@ class LITE_API MobileConfig : public ConfigBase {
     param_buffer_ = std::string(param_buffer, param_buffer + param_buffer_size);
     model_from_memory_ = true;
   }
-  void free_model_buffer() {
-    model_buffer_.clear();
-    model_buffer_.shrink_to_fit();
-    param_buffer_.clear();
-    param_buffer_.shrink_to_fit();
-  }
 
   bool model_from_memory() const { return model_from_memory_; }
   const std::string& model_buffer() const { return model_buffer_; }
