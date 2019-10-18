@@ -16,6 +16,7 @@
 #include <memory>
 #include <vector>
 #include "lite/core/mir/fusion/conv_bn_fuser.h"
+#include "lite/core/mir/graph_visualize_pass.h"
 #include "lite/core/mir/pass_registry.h"
 
 namespace paddle {
@@ -23,11 +24,23 @@ namespace lite {
 namespace mir {
 
 void ConvBNFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
-  fusion::ConvBNFuser fuser("conv2d");
-  fuser(graph.get());
+  LOG(INFO) << "start ConvBNFusePass::Apply";
+  Visualize(graph.get());
 
-  fusion::ConvBNFuser fuser2("depthwise_conv2d");
-  fuser2(graph.get());
+  std::vector<bool> conv_has_bias_cases{true, false};
+  std::vector<std::string> conv_type_cases{"conv2d", "depthwise_conv2d"};
+
+  for (auto conv_has_bias : conv_has_bias_cases) {
+    for (auto conv_type : conv_type_cases) {
+      VLOG(4) << "conv_has_bias:" << conv_has_bias
+              << " conv_type:" << conv_type;
+      fusion::ConvBNFuser fuser(conv_type, conv_has_bias);
+      fuser(graph.get());
+    }
+  }
+
+  LOG(INFO) << "finished ConvBNFusePass::Apply";
+  Visualize(graph.get());
 }
 
 }  // namespace mir
@@ -35,5 +48,4 @@ void ConvBNFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 }  // namespace paddle
 
 REGISTER_MIR_PASS(lite_conv_bn_fuse_pass, paddle::lite::mir::ConvBNFusePass)
-    .BindTargets({TARGET(kAny)})
-    .BindKernel("elementwise_add");
+    .BindTargets({TARGET(kAny)});

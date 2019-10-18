@@ -22,32 +22,22 @@ namespace mir {
 namespace fusion {
 
 void ConvBNFuser::BuildPattern() {
+  // Create op
+  auto* conv =
+      OpNode("conv2d", conv_type_)->assert_is_op(conv_type_)->AsIntermediate();
+  auto* bn =
+      OpNode("bn", "batch_norm")->assert_is_op("batch_norm")->AsIntermediate();
+
+  // Create input
   auto* conv_input =
       VarNode("conv_input")->assert_is_op_input(conv_type_, "Input")->AsInput();
   auto* conv_weight = VarNode("conv_weight")
                           ->assert_is_op_input(conv_type_, "Filter")
                           ->AsInput();
-  auto* conv = OpNode("conv2d", conv_type_)->assert_is_op(conv_type_);
-  auto* conv_out = VarNode("conv_out")
-                       ->assert_is_op_output(conv_type_, "Output")
-                       ->assert_is_op_input("batch_norm", "X");
-
-  auto* bn_scale = VarNode("bn_scale")
-                       ->assert_is_op_input("batch_norm", "Scale")
-                       ->AsIntermediate();
   auto* bn_bias =
       VarNode("bn_bias")->assert_is_op_input("batch_norm", "Bias")->AsInput();
-  auto* bn_mean = VarNode("bn_mean")
-                      ->assert_is_op_input("batch_norm", "Mean")
-                      ->AsIntermediate();
-  auto* bn_var = VarNode("bn_variance")
-                     ->assert_is_op_input("batch_norm", "Variance")
-                     ->AsIntermediate();
-  auto* bn =
-      OpNode("bn", "batch_norm")->assert_is_op("batch_norm")->AsIntermediate();
 
-  auto* bn_out =
-      VarNode("bn_out")->assert_is_op_output("batch_norm", "Y")->AsOutput();
+  // Create intermediate
   auto* bn_mean_out = VarNode("bn_mean_out")
                           ->assert_is_op_output("batch_norm", "MeanOut")
                           ->AsIntermediate();
@@ -60,11 +50,40 @@ void ConvBNFuser::BuildPattern() {
   auto* bn_saved_var = VarNode("bn_saved_var")
                            ->assert_is_op_output("batch_norm", "SavedVariance")
                            ->AsIntermediate();
+  auto* bn_scale = VarNode("bn_scale")
+                       ->assert_is_op_input("batch_norm", "Scale")
+                       ->AsIntermediate();
+  auto* bn_mean = VarNode("bn_mean")
+                      ->assert_is_op_input("batch_norm", "Mean")
+                      ->AsIntermediate();
+  auto* bn_var = VarNode("bn_variance")
+                     ->assert_is_op_input("batch_norm", "Variance")
+                     ->AsIntermediate();
 
-  conv->LinksFrom({conv_input, conv_weight}).LinksTo({conv_out});
+  auto* conv_out = VarNode("conv_out")
+                       ->assert_is_op_output(conv_type_, "Output")
+                       ->assert_is_op_input("batch_norm", "X")
+                       ->AsIntermediate();
+  // Create output
+  auto* bn_out =
+      VarNode("bn_out")->assert_is_op_output("batch_norm", "Y")->AsOutput();
 
-  bn->LinksFrom({conv_out, bn_scale, bn_bias, bn_mean, bn_var})
-      .LinksTo({bn_out, bn_mean_out, bn_saved_mean, bn_saved_var, bn_var_out});
+  if (false == conv_has_bias_) {
+    conv->LinksFrom({conv_input, conv_weight}).LinksTo({conv_out});
+    bn->LinksFrom({conv_out, bn_scale, bn_bias, bn_mean, bn_var})
+        .LinksTo(
+            {bn_out, bn_mean_out, bn_saved_mean, bn_saved_var, bn_var_out});
+  } else if (true == conv_has_bias_) {
+    auto* conv_bias = VarNode("conv_bias")
+                          ->assert_is_op_input(conv_type_, "Bias")
+                          ->AsIntermediate();
+    conv->LinksFrom({conv_input, conv_weight, conv_bias}).LinksTo({conv_out});
+    bn->LinksFrom({conv_out, bn_scale, bn_bias, bn_mean, bn_var})
+        .LinksTo(
+            {bn_out, bn_mean_out, bn_saved_mean, bn_saved_var, bn_var_out});
+  } else {  // conv_has_bias(bool) unsupported value
+    LOG(FATAL) << "conv_has_bias_(bool) is invalid value";
+  }
 }
 
 void ConvBNFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
@@ -162,7 +181,6 @@ void ConvBNFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
   bn_bias_t->CopyDataFrom(conv_bias_t);
   op_desc.SetInput("Bias",
                    {matched.at("bn_bias")->arg()->name});  // add Bias flag
-  VLOG(4) << "2019-10-17 20:05:07";
 
   new_conv_op->Attach(op_desc, scope);
   auto* new_op_node = graph->GraphCreateInstructNode(new_conv_op, valid_places);
@@ -170,14 +188,19 @@ void ConvBNFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
   IR_NODE_LINK_TO(matched.at("conv_input"), new_op_node);
   IR_NODE_LINK_TO(matched.at("conv_weight"), new_op_node);
   IR_NODE_LINK_TO(matched.at("bn_bias"), new_op_node);
+  // IR_NODE_LINK_TO(matched.at("conv_bias"), new_op_node);
   IR_NODE_LINK_TO(new_op_node, matched.at("bn_out"));
+
+  // Delete
+  // std::unordered_set<const Node*> nodes2rm = {matched.at("conv2d"),
+  // matched.at("conv_out")};
+  // GraphSafeRemoveNodes(graph, nodes2rm);
 }
 
 cpp::OpDesc ConvBNFuser::GenOpDesc(const key2nodes_t& matched) {
-  auto* desc = matched.at("conv2d")->stmt()->op_info();
-  cpp::OpDesc op_desc = *desc;
-  op_desc.mutable_inputs()->clear();
-  op_desc.mutable_outputs()->clear();
+  cpp::OpDesc op_desc = *matched.at("conv2d")->stmt()->op_info();
+  // op_desc.mutable_inputs()->clear();
+  // op_desc.mutable_outputs()->clear();
   op_desc.SetType(conv_type_);
   op_desc.SetInput("Input", {matched.at("conv_input")->arg()->name});
   op_desc.SetInput("Filter", {matched.at("conv_weight")->arg()->name});
@@ -185,10 +208,10 @@ cpp::OpDesc ConvBNFuser::GenOpDesc(const key2nodes_t& matched) {
   op_desc.SetOutput("Output", {matched.at("bn_out")->arg()->name});
 
   // Only consider strides, padding, groups, dilations for now
-  op_desc.SetAttr("strides", desc->GetAttr<std::vector<int>>("strides"));
-  op_desc.SetAttr("paddings", desc->GetAttr<std::vector<int>>("paddings"));
-  op_desc.SetAttr("groups", desc->GetAttr<int>("groups"));
-  op_desc.SetAttr("dilations", desc->GetAttr<std::vector<int>>("dilations"));
+  op_desc.SetAttr("strides", op_desc.GetAttr<std::vector<int>>("strides"));
+  op_desc.SetAttr("paddings", op_desc.GetAttr<std::vector<int>>("paddings"));
+  op_desc.SetAttr("groups", op_desc.GetAttr<int>("groups"));
+  op_desc.SetAttr("dilations", op_desc.GetAttr<std::vector<int>>("dilations"));
 
   // conv dims
   auto conv_instruct = matched.at("conv2d")->stmt();
@@ -237,7 +260,7 @@ cpp::OpDesc ConvBNFuser::GenOpDesc(const key2nodes_t& matched) {
   if (std::find(input_arg_names.begin(),
                 input_arg_names.end(),
                 "ResidualData") != input_arg_names.end()) {
-    op_desc.SetInput("ResidualData", desc->Input("ResidualData"));
+    op_desc.SetInput("ResidualData", op_desc.Input("ResidualData"));
   }
 
   // For Int8
