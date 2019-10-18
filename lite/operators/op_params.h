@@ -320,6 +320,8 @@ struct SplitParam {
 struct TransposeParam {
   const lite::Tensor* x{};
   lite::Tensor* output{};
+  lite::Tensor* xshape{};
+
   std::vector<int> axis;
   bool use_mkldnn{false};
   std::string data_format{"AnyLayout"};

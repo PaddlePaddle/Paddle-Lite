@@ -43,10 +43,10 @@ class TransposeOp : public OpLite {
 };
 
 // Transpose2
-class Transpose2Op : public OpLite {
+class Transpose2Op : public TransposeOp {
  public:
   Transpose2Op() {}
-  explicit Transpose2Op(const std::string &op_type) : OpLite(op_type) {}
+  explicit Transpose2Op(const std::string &op_type) : TransposeOp(op_type) {}
 
   bool CheckShape() const override;
 
