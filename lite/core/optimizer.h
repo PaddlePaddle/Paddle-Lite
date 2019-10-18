@@ -117,13 +117,6 @@ class Optimizer {
     exec_scope_ = program.exec_scope();
   }
 
-  void KernelPickPreferPlace(const Place& place) {
-    auto* pass = mir::PassManager::Global().LookUp<mir::StaticKernelPickPass>(
-        "static_kernel_pick_pass");
-    CHECK(pass);
-    pass->SetPreferPlace(place);
-  }
-
   const lite::Scope* exec_scope() const { return exec_scope_; }
 
   // Generate a new program based on the mir graph.

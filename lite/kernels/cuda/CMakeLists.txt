@@ -18,6 +18,7 @@ add_kernel(layout_compute_cuda CUDA basic SRCS layout_compute.cc DEPS ${lite_ker
 add_kernel(feed_compute_cuda CUDA basic SRCS feed_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(softmax_compute_cuda CUDA basic SRCS softmax_compute.cu DEPS ${lite_kernel_deps})
 add_kernel(pool_compute_cuda CUDA basic SRCS pool_compute.cu DEPS ${lite_kernel_deps})
+add_kernel(bilinear_interp_compute_cuda CUDA basic SRCS bilinear_interp_compute.cu DEPS ${lite_kernel_deps})
 
 lite_cc_test(calib_compute_cuda_test SRCS calib_compute_cuda_test.cc DEPS calib_compute_cuda)
 nv_test(conv2d_cuda_test SRCS conv_compute_test.cc DEPS conv2d_cuda)
@@ -30,3 +31,4 @@ nv_test(elementwise_add_compute_cuda_test SRCS elementwise_add_compute_test.cc D
 nv_test(softmax_compute_cuda_test SRCS softmax_compute_test.cc DEPS softmax_compute_cuda)
 nv_test(pool_compute_cuda_test SRCS pool_compute_test.cc DEPS pool_compute_cuda)
 #nv_test(layout_cuda_test SRCS layout_compute_test.cc DEPS layout_compute_cuda)
+nv_test(bilinear_interp_compute_cuda_test SRCS bilinear_interp_compute_test.cc DEPS bilinear_interp_compute_cuda)

@@ -47,9 +47,7 @@ void OutputOptModel(const std::string& load_model_dir,
       Place{TARGET(kARM), PRECISION(kInt8)},
       Place{TARGET(kX86), PRECISION(kFloat)},
       Place{TARGET(kOpenCL), PRECISION(kFloat)},
-      Place{TARGET(kHost), PRECISION(kFloat)},
   });
-  config.set_preferred_place(Place{TARGET(kARM), PRECISION(kFloat)});
   auto predictor = lite_api::CreatePaddlePredictor(config);
 
   int ret = system(

@@ -34,7 +34,6 @@ void OutputOptModel(const std::string& load_model_dir,
                     const std::string& save_optimized_model_dir) {
   lite_api::CxxConfig config;
   config.set_model_dir(load_model_dir);
-  config.set_preferred_place(Place{TARGET(kX86), PRECISION(kFloat)});
   config.set_valid_places({
       Place{TARGET(kX86), PRECISION(kFloat)},
       Place{TARGET(kARM), PRECISION(kFloat)},
