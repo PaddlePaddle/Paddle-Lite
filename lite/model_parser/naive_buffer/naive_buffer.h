@@ -142,35 +142,6 @@ class PrimaryListBuilder : public FieldBuilder {
 
   std::vector<Primary> data() const { return data_; }
 
-  // Create a new element.
-  /*  Primary* New() {
-      data_.emplace_back(table());
-      return &data_.back();
-    }
-
-    // Get i-th element.
-    const Primary& Get(int i) const {
-      CHECK_LT(i, data_.size());
-      return data_[i];
-    }
-
-    Primary* GetMutable(int i) {
-      CHECK_LT(i, data_.size());
-      return &data_[i];
-    }
-
-    typename std::vector<Primary>::iterator begin() { return data_.begin(); }
-
-    typename std::vector<Primary>::iterator end() { return data_.end(); }
-
-    typename std::vector<Primary>::const_iterator begin() const {
-      return data_.begin();
-    }
-
-    typename std::vector<Primary>::const_iterator end() const {
-      return data_.end();
-    }
-  */
   /// Save information to the corresponding BinaryTable.
   void Save() override;
 

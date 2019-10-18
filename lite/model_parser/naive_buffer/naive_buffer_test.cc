@@ -14,7 +14,7 @@
 
 #include "lite/model_parser/naive_buffer/naive_buffer.h"
 #include <gtest/gtest.h>
-#include <vector>
+
 namespace paddle {
 namespace lite {
 namespace naive_buffer {
