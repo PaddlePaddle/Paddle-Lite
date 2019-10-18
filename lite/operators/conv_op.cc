@@ -71,7 +71,7 @@ inline void UpdatePaddingAndDilation(std::vector<int>* paddings,
       *(dilations->begin() + i) = 1;
     }
   } else if (padding_algorithm == "VALID") {
-    for (auto& it : paddings) {
+    for (auto& it : *paddings) {
       it = 0;
     }
   }
