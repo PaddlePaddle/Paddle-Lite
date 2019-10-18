@@ -428,10 +428,9 @@ void PrimaryListBuilder<Primary>::Save() {
   table()->Require(sizeof(uint64_t));
   memcpy(table()->cursor(), &num_elems, sizeof(uint64_t));
   table()->Consume(sizeof(uint64_t));
-
   table()->Require(num_elems * sizeof(value_type));
   memcpy(table()->cursor(),
-         reinterpret_cast<byte_t*>(&data_),
+         reinterpret_cast<byte_t*>(&data_[0]),
          num_elems * sizeof(value_type));
   table()->Consume(num_elems * sizeof(value_type));
 }
