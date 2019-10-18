@@ -1109,7 +1109,8 @@ void DeviceInfo::SetCache(int l1size, int l2size, int l3size) {
 }
 
 bool DeviceInfo::ExtendWorkspace(size_t size) {
-  workspace_.Resize({size + llc_size()});
+  workspace_.Resize(
+      {static_cast<int64_t>(size + static_cast<size_t>(llc_size()))});
   return workspace_.mutable_data<int8_t>() != nullptr;
 }
 
