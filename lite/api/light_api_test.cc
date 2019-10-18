@@ -36,7 +36,6 @@ TEST(LightAPI, load) {
     data[i] = i;
   }
 
-
   predictor.PrepareFeedFetch();
   const std::vector<std::string>& inputs = predictor.GetInputNames();
 
