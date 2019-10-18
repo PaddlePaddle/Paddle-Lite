@@ -74,8 +74,8 @@ class LITE_API Predictor {
   // get input by name.
   lite::Tensor* GetInputByName(const std::string& name);
   // get inputnames and get outputnames.
-  std::vector<std::string> GetInputNames();
-  std::vector<std::string> GetOutputNames();
+  const std::vector<std::string>& GetInputNames();
+  const std::vector<std::string>& GetOutputNames();
   void PrepareFeedFetch();
 
   // Get offset-th col of fetch results.
@@ -107,9 +107,8 @@ class LITE_API Predictor {
   const Scope* exec_scope_;
   std::unique_ptr<RuntimeProgram> program_;
   bool program_generated_{false};
-  std::map<size_t, std::string> input_names_;
-  std::map<std::string, size_t> idx2feeds_;
-  std::map<size_t, std::string> output_names_;
+  std::vector<std::string> input_names_;
+  std::vector<std::string> output_names_;
 };
 
 /*
