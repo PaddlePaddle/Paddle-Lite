@@ -150,9 +150,9 @@ void ParamDesc::SetDim(const std::vector<int64_t>& dim) {
         << "Data Type mismatch";                                            \
     std::vector<T> res;                                                     \
     auto& data_builder = desc_->GetField<PrimaryListBuilder<char>>("data"); \
-    auto data = data_builder.data();                                        \
+    auto& data = data_builder.data();                                       \
     size_t size = data.size() / sizeof(T);                                  \
-    auto* data_ptr = reinterpret_cast<T*>(&data[0]);                        \
+    auto* data_ptr = reinterpret_cast<const T*>(&data[0]);                  \
     for (size_t i = 0; i < size; ++i) {                                     \
       res.push_back(data_ptr[i]);                                           \
     }                                                                       \

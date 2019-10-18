@@ -134,13 +134,5 @@ TEST(ModelParser, LoadModelNaiveFromMemory) {
   LoadModelNaiveFromMemory(model_buffer, params_buffer, &scope, &prog);
 }
 
-TEST(ModelParser, LoadModelNaive) {
-  CHECK(!FLAGS_model_dir.empty());
-  const std::string model_path = FLAGS_model_dir + ".saved.naive";
-  cpp::ProgramDesc prog;
-  Scope scope;
-  LoadModelNaive(model_path, &scope, &prog, true);
-}
-
 }  // namespace lite
 }  // namespace paddle

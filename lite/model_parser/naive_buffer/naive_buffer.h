@@ -138,9 +138,9 @@ class PrimaryListBuilder : public FieldBuilder {
       : FieldBuilder(table), data_(val) {}
 
   /// Set data.
-  void set(std::vector<Primary> x) { data_ = x; }
+  void set(const std::vector<Primary>& x) { data_ = x; }
 
-  std::vector<Primary> data() const { return data_; }
+  const std::vector<Primary>& data() const { return data_; }
 
   /// Save information to the corresponding BinaryTable.
   void Save() override;
