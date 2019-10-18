@@ -130,7 +130,7 @@ function make_full_publish_so {
       -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
       -DARM_TARGET_OS=${os} -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
 
-  make publish_inference -j4
+  make publish_inference -j #4
   cd - > /dev/null
 }
 
@@ -157,7 +157,7 @@ function make_all_tests {
       -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
       -DARM_TARGET_OS=${os} -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
 
-  make lite_compile_deps -j$NUM_PROC
+  make lite_compile_deps -j #$NUM_PROC
   cd - > /dev/null
 }
 

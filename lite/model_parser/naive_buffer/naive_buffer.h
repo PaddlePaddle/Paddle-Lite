@@ -151,7 +151,9 @@ class PrimaryListBuilder : public FieldBuilder {
   /// Number of elements.
   size_t size() const { return data_.size(); }
 
-  Type type() const override { return core::StdTypeToRepr<Primary>(); }
+  Type type() const override {
+    return core::StdTypeToRepr<std::vector<Primary>>();
+  }
 
   /// clear builder
   void Clear() { data_.clear(); }
