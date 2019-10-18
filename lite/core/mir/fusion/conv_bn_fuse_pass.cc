@@ -24,9 +24,7 @@ namespace lite {
 namespace mir {
 
 void ConvBNFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
-  LOG(INFO) << "start ConvBNFusePass::Apply";
-  Visualize(graph.get());
-
+  VLOG(4) << "start ConvBNFusePass::Apply";
   std::vector<bool> conv_has_bias_cases{true, false};
   std::vector<std::string> conv_type_cases{"conv2d", "depthwise_conv2d"};
 
@@ -38,9 +36,7 @@ void ConvBNFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
       fuser(graph.get());
     }
   }
-
-  LOG(INFO) << "finished ConvBNFusePass::Apply";
-  Visualize(graph.get());
+  VLOG(4) << "finished ConvBNFusePass::Apply";
 }
 
 }  // namespace mir

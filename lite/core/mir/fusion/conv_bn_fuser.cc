@@ -87,7 +87,6 @@ void ConvBNFuser::BuildPattern() {
 void ConvBNFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
   auto op_desc = GenOpDesc(matched);
   auto new_conv_op = LiteOpRegistry::Global().Create("conv2d");
-
   auto conv_instruct = matched.at("conv2d")->stmt();
   auto conv = conv_instruct->op();
   auto* scope = conv->scope();
@@ -96,7 +95,6 @@ void ConvBNFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
   // bn
   auto bn_scale_t = scope->FindVar(matched.at("bn_scale")->arg()->name)
                         ->GetMutable<lite::Tensor>();
-  size_t bias_size = bn_scale_t->data_size();
   auto bn_scale_d = bn_scale_t->mutable_data<float>();
   auto bn_mean_t = scope->FindVar(matched.at("bn_mean")->arg()->name)
                        ->GetMutable<lite::Tensor>();
@@ -114,8 +112,8 @@ void ConvBNFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
   // conv
   auto conv_weight_t = scope->FindVar(matched.at("conv_weight")->arg()->name)
                            ->GetMutable<lite::Tensor>();
-  auto conv_weight_dims = conv_weight_t->dims();
-  CHECK_EQ(bias_size, static_cast<size_t>(conv_weight_dims[0]))
+  CHECK_EQ(static_cast<size_t>(bn_scale_t->data_size()),
+           static_cast<size_t>(conv_weight_t->dims()[0]))
       << "The BN bias's size should be equal to the size of the first "
       << "dim size of the conv weights";
   size_t weight_num = conv_weight_t->data_size();
@@ -129,7 +127,15 @@ void ConvBNFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
   bool enable_int8 = conv_op_desc->HasAttr("enable_int8") ? true : false;
 
   ///////////////////////////////////////////////////////////////////////////////
-  // Compute ConvBNFuser result
+  // Compute ConvBNFuser
+  //
+  //   conv(x) = conv(x) = kx + z = y
+  //   bn(y) = ay + b
+  //
+  // After fusion:
+  //
+  //   bn(conv(x)) = a(kx + z) + b = akx + az + b
+  //
   // Note: h == bias_size == out channel num of conv weight
   //       w = `conv_weight_num` / bias_size = in channel num of conv weight
   ///////////////////////////////////////////////////////////////////////////////
@@ -139,13 +145,27 @@ void ConvBNFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
   auto alpha_data = alpha_tensor.mutable_data<float>();
   auto beta_data = beta_tensor.mutable_data<float>();
 
-  int h = bias_size;  // h == bias_size == out channel num of conv weight
-  int w = weight_num / bias_size;  // w = `conv_weight_num` / bias_size = in
-                                   // channel num of conv weight
+  int h =
+      bn_scale_t
+          ->data_size();  // h == bias_size == out channel num of conv weight
+  int w = weight_num /
+          (bn_scale_t->data_size());  // w = `conv_weight_num` / bias_size = in
+                                      // channel num of conv weight
 
   // comupte BN alpha and beta
   ComputeAlphaAndBeta(
       bn_scale_d, bn_mean_d, bn_var_d, alpha_data, beta_data, eps, h, w);
+
+  // initialize conv bias value
+  Tensor new_conv_bias_tensor;
+  new_conv_bias_tensor.Resize(bn_bias_t->dims());
+  if (op_desc.HasInput("Bias") && op_desc.Input("Bias").size() > 0) {
+    auto bias_var = scope->FindVar(op_desc.Input("Bias").front());
+    if (bias_var != nullptr) {
+      auto old_conv_bias_t = &(bias_var->Get<lite::Tensor>());
+      new_conv_bias_tensor.CopyDataFrom(*old_conv_bias_t);
+    }
+  }
 
   VLOG(4) << "enable_int8:" << enable_int8;
   if (enable_int8) {
@@ -154,7 +174,7 @@ void ConvBNFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
                    "INT8 mode: Conv should has weight_scale attr");
     auto weight_scale =
         conv_op_desc->GetAttr<std::vector<float>>("weight_scale");
-    for (int i = 0; i < h; i++) {
+    for (unsigned int i = 0; i < h; i++) {
       weight_scale[i] *= alpha_data[i];
     }
     // Interface like this should be abandoned.
@@ -163,19 +183,23 @@ void ConvBNFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
     conv_instruct->ResetOp(update_conv_desc, graph->valid_places());
   } else {
     VLOG(4) << "enable_int8 branch: enable_int8 is false";
+    // compute new conv_weight
     auto conv_weight_d = conv_weight_t->mutable_data<float>();
-    for (int i = 0; i < h; i++) {    // n: conv2d output channels
-      for (int j = 0; j < w; j++) {  // w: conv2d input channels
+    for (unsigned int i = 0; i < h; i++) {    // n: conv2d output channels
+      for (unsigned int j = 0; j < w; j++) {  // w: conv2d input channels
         conv_weight_d[i * w + j] *= alpha_data[i];
       }
     }
   }
-  for (unsigned int i = 0; i < bias_size;
+
+  // compute new conv_bias
+  for (unsigned int i = 0; i < bn_scale_t->data_size();
        i++) {  // bias_size == h == conv2d output channls
     conv_bias_d[i] =
         alpha_data[i] * conv_bias_d[i] + (bn_bias_d[i] + beta_data[i]);
   }
-  // set conv_bias_d to `bn_bias` arg node
+
+  // store conv_bias_d to `bn_bias` arg node
   bn_bias_t->CopyDataFrom(conv_bias_t);
   op_desc.SetInput("Bias",
                    {matched.at("bn_bias")->arg()->name});  // add Bias flag
@@ -195,7 +219,8 @@ cpp::OpDesc ConvBNFuser::GenOpDesc(const key2nodes_t& matched) {
   op_desc.SetType(conv_type_);
   op_desc.SetInput("Input", {matched.at("conv_input")->arg()->name});
   op_desc.SetInput("Filter", {matched.at("conv_weight")->arg()->name});
-  // ConvBNFuser must add `conv_bias` term. see code below in this function
+  // must `SetInput` `conv_bias` term. see code below in `InsertNewNode`
+  // function
   op_desc.SetOutput("Output", {matched.at("bn_out")->arg()->name});
 
   // Only consider strides, padding, groups, dilations for now
@@ -204,66 +229,12 @@ cpp::OpDesc ConvBNFuser::GenOpDesc(const key2nodes_t& matched) {
   op_desc.SetAttr("groups", op_desc.GetAttr<int>("groups"));
   op_desc.SetAttr("dilations", op_desc.GetAttr<std::vector<int>>("dilations"));
 
-  // conv dims
-  auto conv_instruct = matched.at("conv2d")->stmt();
-  auto conv = conv_instruct->op();
-  auto* scope = conv->scope();
-
-  auto conv_weight_t = scope->FindVar(matched.at("conv_weight")->arg()->name)
-                           ->GetMutable<lite::Tensor>();
-  auto conv_weight_dims = conv_weight_t->dims();
-
-  // bn scale dims
-  auto bn_scale_t = scope->FindVar(matched.at("bn_scale")->arg()->name)
-                        ->GetMutable<lite::Tensor>();
-  auto bn_scale_dims = bn_scale_t->dims();
-  size_t bias_size = bn_scale_t->data_size();
-  CHECK_EQ(bias_size, static_cast<size_t>(conv_weight_dims[0]))
-      << "The BN bias's size should be equal to the size of the first "
-      << "dim size of the conv weights";
-
-  // create new conv_bias with out channel dims of conv2d == conv_weight_dims[0]
-  // == bias_size of batch_norm
-  auto conv_bias_t = scope->Var("conv_bias")->GetMutable<lite::Tensor>();
-  conv_bias_t->Resize(lite::DDim(bn_scale_dims));
-  auto conv_bias_d = conv_bias_t->mutable_data<float>();
-
-  // initialize conv bias value
-  for (int conv_bias_idx = 0; conv_bias_idx < conv_weight_dims[0];
-       ++conv_bias_idx) {
-    conv_bias_d[conv_bias_idx] = 0;
-  }
-  if (op_desc.HasInput("Bias") && op_desc.Input("Bias").size() > 0) {
-    auto bias_var = scope->FindVar(op_desc.Input("Bias").front());
-    if (bias_var != nullptr) {
-      auto old_conv_bias_t = &(bias_var->Get<lite::Tensor>());
-      auto old_conv_bias_d = old_conv_bias_t->data<float>();
-      for (int conv_bias_idx = 0; conv_bias_idx < conv_weight_dims[0];
-           ++conv_bias_idx) {
-        conv_bias_d[conv_bias_idx] = old_conv_bias_d[conv_bias_idx];
-      }
-    }
-  }
-
   // other params
   std::vector<std::string> input_arg_names = op_desc.InputArgumentNames();
   if (std::find(input_arg_names.begin(),
                 input_arg_names.end(),
                 "ResidualData") != input_arg_names.end()) {
     op_desc.SetInput("ResidualData", op_desc.Input("ResidualData"));
-  }
-
-  // For Int8
-  if (op_desc.HasAttr("enable_int8")) {
-    op_desc.SetAttr("enable_int8", op_desc.GetAttr<bool>("enable_int8"));
-    if (op_desc.HasAttr("input_scale"))
-      op_desc.SetAttr("input_scale", op_desc.GetAttr<float>("input_scale"));
-    if (op_desc.HasAttr("weight_scale"))
-      op_desc.SetAttr("weight_scale",
-                      op_desc.GetAttr<std::vector<float>>("weight_scale"));
-    if (op_desc.HasAttr("output_scale")) {
-      op_desc.SetAttr("output_scale", op_desc.GetAttr<float>("output_scale"));
-    }
   }
 
   // For with_act: ignored, because conv-act fuser pass is behind this pass
