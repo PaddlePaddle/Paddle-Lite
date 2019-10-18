@@ -189,7 +189,7 @@ int main(int argc, char** argv) {
   // Run inference using optimized model
   paddle::lite_api::Run(input_shapes,
                         save_optimized_model_dir,
-                        FLAGS_cluster,
+                        FLAGS_power_mode,
                         FLAGS_threads,
                         FLAGS_repeats,
                         FLAGS_warmup);
