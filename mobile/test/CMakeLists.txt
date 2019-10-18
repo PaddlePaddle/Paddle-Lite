@@ -534,4 +534,7 @@ else()
     # gen test
     ADD_EXECUTABLE(test-net net/test_net.cpp test_helper.h test_include.h executor_for_test.h)
     target_link_libraries(test-net paddle-mobile)
+
+    ADD_EXECUTABLE(test-inference-pre-post net/test_inference_pre_post.cpp)
+    target_link_libraries(test-inference-pre-post paddle-mobile)
 endif()
