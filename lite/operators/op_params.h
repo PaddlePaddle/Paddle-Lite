@@ -254,7 +254,6 @@ struct ConvParam {
   float scale_weights{1.0f};      // only used with mkl-dnn int8
   bool force_fp32_output{false};  // only used in mkl-dnn int8
   std::string data_format{"Anylayout"};
-  std::string padding_algorithm{""};
   // for activation
   ActivationParam activation_param;
   // for int8
