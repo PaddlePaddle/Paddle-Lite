@@ -219,8 +219,7 @@ cpp::OpDesc ConvBNFuser::GenOpDesc(const key2nodes_t& matched) {
   op_desc.SetType(conv_type_);
   op_desc.SetInput("Input", {matched.at("conv_input")->arg()->name});
   op_desc.SetInput("Filter", {matched.at("conv_weight")->arg()->name});
-  // must `SetInput` `conv_bias` term. see code below in `InsertNewNode`
-  // function
+  // `SetInput` `conv_bias` term added in `InsertNewNode` function
   op_desc.SetOutput("Output", {matched.at("bn_out")->arg()->name});
 
   // Only consider strides, padding, groups, dilations for now
