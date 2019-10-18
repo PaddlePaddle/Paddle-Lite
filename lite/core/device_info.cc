@@ -33,8 +33,10 @@
 
 #ifdef LITE_WITH_LINUX
 #include <sys/syscall.h>
-#include <sys/system_properties.h>
 #include <unistd.h>
+#endif
+#ifdef LITE_WITH_ANDROID
+#include <sys/system_properties.h>
 #endif
 #if __APPLE__
 #include "TargetConditionals.h"
@@ -234,6 +236,7 @@ std::string get_cpu_name() {
       cpu_name = std::string(line);
     }
   }
+#ifdef LITE_WITH_ANDROID
   // cpu name concat board name, platform name and chip name
   char board_name[128];
   char platform_name[128];
@@ -243,6 +246,7 @@ std::string get_cpu_name() {
   __system_property_get("ro.chipname", chip_name);
   cpu_name =
       cpu_name + "_" + board_name + "_" + platform_name + "_" + chip_name;
+#endif
   std::transform(cpu_name.begin(), cpu_name.end(), cpu_name.begin(), ::toupper);
   fclose(fp);
   return cpu_name;
