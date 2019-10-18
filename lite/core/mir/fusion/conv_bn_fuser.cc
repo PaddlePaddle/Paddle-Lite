@@ -34,8 +34,10 @@ void ConvBNFuser::BuildPattern() {
   auto* conv_weight = VarNode("conv_weight")
                           ->assert_is_op_input(conv_type_, "Filter")
                           ->AsInput();
-  auto* bn_bias =
-      VarNode("bn_bias")->assert_is_op_input("batch_norm", "Bias")->AsInput();
+  auto* bn_bias = VarNode("bn_bias")
+                      ->assert_is_op_input("batch_norm", "Bias")
+                      ->AsInput()
+                      ->assert_is_persistable_var();
 
   // Create intermediate
   auto* bn_mean_out = VarNode("bn_mean_out")
@@ -188,19 +190,12 @@ void ConvBNFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
   IR_NODE_LINK_TO(matched.at("conv_input"), new_op_node);
   IR_NODE_LINK_TO(matched.at("conv_weight"), new_op_node);
   IR_NODE_LINK_TO(matched.at("bn_bias"), new_op_node);
-  // IR_NODE_LINK_TO(matched.at("conv_bias"), new_op_node);
   IR_NODE_LINK_TO(new_op_node, matched.at("bn_out"));
-
-  // Delete
-  // std::unordered_set<const Node*> nodes2rm = {matched.at("conv2d"),
-  // matched.at("conv_out")};
-  // GraphSafeRemoveNodes(graph, nodes2rm);
 }
 
 cpp::OpDesc ConvBNFuser::GenOpDesc(const key2nodes_t& matched) {
   cpp::OpDesc op_desc = *matched.at("conv2d")->stmt()->op_info();
-  // op_desc.mutable_inputs()->clear();
-  // op_desc.mutable_outputs()->clear();
+
   op_desc.SetType(conv_type_);
   op_desc.SetInput("Input", {matched.at("conv_input")->arg()->name});
   op_desc.SetInput("Filter", {matched.at("conv_weight")->arg()->name});
@@ -221,7 +216,6 @@ cpp::OpDesc ConvBNFuser::GenOpDesc(const key2nodes_t& matched) {
   auto conv_weight_t = scope->FindVar(matched.at("conv_weight")->arg()->name)
                            ->GetMutable<lite::Tensor>();
   auto conv_weight_dims = conv_weight_t->dims();
-  // size_t weight_num = conv_weight_t->data_size();
 
   // bn scale dims
   auto bn_scale_t = scope->FindVar(matched.at("bn_scale")->arg()->name)
