@@ -109,10 +109,17 @@ void TargetCopy(TargetType target, void* dst, const void* src, size_t size) {
 void TargetCopyImage2D(TargetType target,
                        void* dst,
                        const void* src,
-                       const std::array<size_t, 2>& image_shape,
-                       const std::array<size_t, 2>& image_pitch) {
-  TargetWrapperCL::ImgcpySync(
-      dst, src, image_shape, image_pitch, IoDirection::DtoD);
+                       const size_t cl_image2d_width,
+                       const size_t cl_image2d_height,
+                       const size_t cl_image2d_row_pitch,
+                       const size_t cl_image2d_slice_pitch) {
+  TargetWrapperCL::ImgcpySync(dst,
+                              src,
+                              cl_image2d_width,
+                              cl_image2d_height,
+                              cl_image2d_row_pitch,
+                              cl_image2d_slice_pitch,
+                              IoDirection::DtoD);
 }
 #endif
 
