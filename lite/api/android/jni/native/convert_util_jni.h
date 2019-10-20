@@ -145,8 +145,6 @@ inline CxxConfig jcxxconfig_to_cpp_cxxconfig(JNIEnv *env, jobject jcxxconfig) {
 
   jmethodID model_dir_method =
       env->GetMethodID(cxxconfig_jclazz, "getModelDir", "()Ljava/lang/String;");
-  jmethodID preferred_place_method = env->GetMethodID(
-      cxxconfig_jclazz, "getPreferredPlace", "()Lcom/baidu/paddle/lite/Place;");
   jmethodID valid_places_method = env->GetMethodID(
       cxxconfig_jclazz, "getValidPlaces", "()[Lcom/baidu/paddle/lite/Place;");
 
@@ -157,13 +155,6 @@ inline CxxConfig jcxxconfig_to_cpp_cxxconfig(JNIEnv *env, jobject jcxxconfig) {
   if (java_model_dir != nullptr) {
     std::string cpp_model_dir = jstring_to_cpp_string(env, java_model_dir);
     config.set_model_dir(cpp_model_dir);
-  }
-
-  jobject java_preferred_place =
-      env->CallObjectMethod(jcxxconfig, preferred_place_method);
-  if (java_preferred_place != nullptr) {
-    Place cpp_preferred_place = jplace_to_cpp_place(env, java_preferred_place);
-    config.set_preferred_place(cpp_preferred_place);
   }
 
   jobject object_valid_places =

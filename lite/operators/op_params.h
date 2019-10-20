@@ -98,6 +98,7 @@ struct InterpolateParam {
   int out_h{-1};
   int out_w{-1};
   bool align_corners{true};
+  int align_mode{1};
   std::string interp_method{"Nearest"};
 };
 

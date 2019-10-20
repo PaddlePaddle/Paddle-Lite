@@ -253,7 +253,7 @@ endif()
 # Some bins
 if(NOT IOS)
   lite_cc_binary(test_model_bin SRCS model_test.cc DEPS paddle_api_full paddle_api_light gflags utils
-    ${ops}
+    ${ops} ${host_kernels}
     ARM_DEPS ${arm_kernels}
     NPU_DEPS ${npu_kernels}
     XPU_DEPS ${xpu_kernels}
@@ -261,7 +261,7 @@ if(NOT IOS)
     FPGA_DEPS ${fpga_kernels}
     X86_DEPS ${x86_kernels})
   lite_cc_binary(benchmark_bin SRCS benchmark.cc DEPS paddle_api_full paddle_api_light gflags utils
-    ${ops}
+    ${ops} ${host_kernels}
     ARM_DEPS ${arm_kernels}
     NPU_DEPS ${npu_kernels}
     XPU_DEPS ${xpu_kernels}

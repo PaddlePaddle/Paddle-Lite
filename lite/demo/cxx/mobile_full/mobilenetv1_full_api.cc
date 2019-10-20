@@ -38,10 +38,8 @@ void RunModel() {
   config.set_model_dir(FLAGS_model_dir);
   std::vector<Place> valid_places{Place{TARGET(kARM), PRECISION(kFloat)}};
   if (FLAGS_prefer_int8_kernel) {
-    valid_places.push_back(Place{TARGET(kARM), PRECISION(kInt8)});
-    config.set_preferred_place(Place{TARGET(kARM), PRECISION(kInt8)});
-  } else {
-    config.set_preferred_place(Place{TARGET(kARM), PRECISION(kFloat)});
+    valid_places.insert(valid_places.begin(),
+                        Place{TARGET(kARM), PRECISION(kInt8)});
   }
   config.set_valid_places(valid_places);
 
