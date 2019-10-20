@@ -27,11 +27,33 @@ namespace paddle {
 namespace lite {
 namespace xpu {
 
+bool HasInputArg(const OpInfo* op_info,
+                 const Scope* scope,
+                 const std::string& argname);
+
 std::string UniqueName(const std::string& prefix);
 
-// Build IR graph to model, and store model data into lite tensor
-bool BuildModel(std::vector<xtcl::xExpr>& inputs,   // NOLINT
-                std::vector<xtcl::xExpr>& outputs,  // NOLINT
+xtcl::DataType CvtPrecisionType(PrecisionType in_type);
+
+DLDataType CvtDataType(PrecisionType in_type);
+
+xtcl::Array<xtcl::xIndexExpr> CvtShape(const std::vector<int>& in_shape);
+
+xtcl::Array<xtcl::xIndexExpr> CvtShape(const std::vector<int64_t>& in_shape);
+
+xtcl::Array<xtcl::xIndexExpr> CvtShape(const DDim& in_dims);
+
+std::shared_ptr<xtcl::xNDArray> CvtTensor(
+    Tensor* in_tensor,
+    std::vector<int64_t> out_shape = {},
+    PrecisionType in_ptype = PRECISION(kFloat),
+    DataLayoutType in_ltype = DATALAYOUT(kNCHW));
+
+// Build network graph to model data, and store model data into lite tensor
+bool BuildModel(std::shared_ptr<xtcl::network::xNetworkBuilder> network_builder,
+                std::shared_ptr<xtcl::network::xTensorCompiler::ParamNDArrayMap>
+                    const_tensors,
+                std::vector<std::shared_ptr<xtcl::xExpr>>* output_nodes,
                 lite::Tensor* model_data);
 
 }  // namespace xpu

@@ -55,12 +55,6 @@ function cmake_x86 {
     cmake ..  -DWITH_GPU=OFF -DWITH_MKLDNN=OFF -DLITE_WITH_X86=ON ${common_flags}
 }
 
-function cmake_xpu {
-    prepare_workspace
-    build_dir=`pwd`
-    cmake ..  -DWITH_GPU=OFF -DWITH_MKLDNN=OFF -DLITE_WITH_X86=ON -DLITE_WITH_XPU=ON -DXPU_SDK_ROOT="${build_dir}/../../baidu/personal-code/xmir-output" ${common_flags}
-}
-
 function cmake_opencl {
     prepare_workspace
     # $1: ARM_TARGET_OS in "android" , "armlinux"
@@ -168,20 +162,6 @@ function cmake_x86_for_CI {
     # make test_generated_code -j$NUM_CORES_FOR_COMPILE
 }
 
-function cmake_xpu_for_CI {
-    prepare_workspace # fake an empty __generated_code__.cc to pass cmake.
-    build_dir=`pwd`
-    cmake ..  -DWITH_GPU=OFF -DWITH_MKLDNN=OFF -DLITE_WITH_X86=ON -DLITE_WITH_XPU=ON -DXPU_SDK_ROOT="${build_dir}/../../baidu/personal-code/xmir-output" ${common_flags} -DLITE_WITH_PROFILE=ON -DWITH_MKL=ON \
-        -DLITE_BUILD_EXTRA=ON \
-
-    # Compile and execute the gen_code related test, so it will generate some code, and make the compilation reasonable.
-    # make test_gen_code -j$NUM_CORES_FOR_COMPILE
-    # make test_cxx_api -j$NUM_CORES_FOR_COMPILE
-    # ctest -R test_cxx_api
-    # ctest -R test_gen_code
-    # make test_generated_code -j$NUM_CORES_FOR_COMPILE
-}
-
 function cmake_gpu {
     prepare_workspace
     cmake .. " -DWITH_GPU=ON {common_flags} -DLITE_WITH_GPU=ON"
@@ -247,6 +227,45 @@ function build_test_server {
     test_model_optimize_tool_compile
 }
 
+function build_test_train {
+    mkdir -p ./build
+    cd ./build
+    export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/paddle/build/third_party/install/mklml/lib"
+    prepare_workspace # fake an empty __generated_code__.cc to pass cmake.
+    cmake .. -DWITH_LITE=ON -DWITH_GPU=OFF -DWITH_PYTHON=ON -DLITE_WITH_X86=ON -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF -DWITH_TESTING=ON -DWITH_MKL=OFF \
+        -DLITE_BUILD_EXTRA=ON \
+
+    make test_gen_code -j$NUM_CORES_FOR_COMPILE
+    make test_cxx_api -j$NUM_CORES_FOR_COMPILE
+    ctest -R test_cxx_api
+    ctest -R test_gen_code
+    make test_generated_code -j$NUM_CORES_FOR_COMPILE
+
+    make -j$NUM_CORES_FOR_COMPILE
+
+    find -name "*.whl" | xargs pip2 install
+    python ../lite/tools/python/lite_test.py
+
+}
+
+function cmake_xpu {
+    prepare_workspace
+    build_dir=`pwd`
+    cmake .. \
+        ${common_flags} \
+        -DWITH_GPU=OFF \
+        -DWITH_MKLDNN=OFF \
+        -DLITE_WITH_X86=ON \
+        -DWITH_MKL=ON \
+        -DLITE_BUILD_EXTRA=ON \
+        -DLITE_WITH_XPU=ON \
+        -DXPU_SDK_ROOT="${build_dir}/../../XPU_SDK"
+}
+
+function build_xpu {
+    make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
+}
+
 # It will eagerly test all lite related unittests.
 function test_xpu {
     # Due to the missing of xpu kernels, we skip the following tests temporarily.
@@ -277,31 +296,10 @@ function build_test_xpu {
     mkdir -p ./build
     cd ./build
     export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$PWD/third_party/install/mklml/lib"
-    cmake_xpu_for_CI
-    build
+    cmake_xpu
+    build_xpu
 
     test_xpu
-}
-
-function build_test_train {
-    mkdir -p ./build
-    cd ./build
-    export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/paddle/build/third_party/install/mklml/lib"
-    prepare_workspace # fake an empty __generated_code__.cc to pass cmake.
-    cmake .. -DWITH_LITE=ON -DWITH_GPU=OFF -DWITH_PYTHON=ON -DLITE_WITH_X86=ON -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF -DWITH_TESTING=ON -DWITH_MKL=OFF \
-        -DLITE_BUILD_EXTRA=ON \
-
-    make test_gen_code -j$NUM_CORES_FOR_COMPILE
-    make test_cxx_api -j$NUM_CORES_FOR_COMPILE
-    ctest -R test_cxx_api
-    ctest -R test_gen_code
-    make test_generated_code -j$NUM_CORES_FOR_COMPILE
-
-    make -j$NUM_CORES_FOR_COMPILE
-
-    find -name "*.whl" | xargs pip2 install
-    python ../lite/tools/python/lite_test.py
-
 }
 
 # test_arm_android <some_test_name> <adb_port_number>

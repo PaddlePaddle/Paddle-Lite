@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <xtcl/xtcl.h>
 #include <functional>
 #include <memory>
 #include <string>
@@ -29,8 +30,13 @@ namespace xpu {
 namespace bridges {
 
 // var_name, xpu node point
-using node_map_type =
-    std::unordered_map<std::string, std::shared_ptr<std::string>>;
+class node_map_type {
+ public:
+  std::shared_ptr<xtcl::network::xNetworkBuilder> network_builder;
+  std::shared_ptr<xtcl::network::xTensorCompiler::ParamNDArrayMap>
+      const_tensors;
+  std::unordered_map<std::string, std::shared_ptr<xtcl::xExpr>> output_nodes;
+};
 
 using func_type = std::function<node_map_type(const std::shared_ptr<OpLite>,
                                               const node_map_type&)>;

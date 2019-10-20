@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <xtcl/xtcl.h>
 #include <memory>
 #include <string>
 #include <vector>
@@ -37,7 +38,7 @@ class GraphCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
   virtual ~GraphCompute() = default;
 
  private:
-  // TODO(hong19860320)
+  std::shared_ptr<xtcl::network::xRuntimeInstance> model_runtime_{nullptr};
 };
 
 }  // namespace xpu

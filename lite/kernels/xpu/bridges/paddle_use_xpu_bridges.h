@@ -17,3 +17,5 @@
 #include "lite/kernels/xpu/bridges/registry.h"
 
 USE_XPU_BRIDGE(relu);
+USE_XPU_BRIDGE(conv2d);
+USE_XPU_BRIDGE(depthwise_conv2d);

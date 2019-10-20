@@ -31,35 +31,40 @@ void LauchOp(const std::shared_ptr<lite::OpLite> op,
   auto scope = op->scope();
   auto op_type = op->op_info()->Type();
 
-  // convert op to IR graph
+  // convert lite op to XPU op
   const auto& bridges = lite::kernels::xpu::bridges::Factory::Instance();
   const auto& supported_lists = bridges.AllFunctions();
   CHECK(bridges.HasType(op_type));
-
   node_map_type inputs_map;
+  inputs_map.network_builder =
+      std::make_shared<xtcl::network::xNetworkBuilder>();
+  inputs_map.const_tensors =
+      std::make_shared<xtcl::network::xTensorCompiler::ParamNDArrayMap>();
   for (auto input_var_name : input_var_names) {
-    // auto input = scope->FindVar(input_var_name)->GetMutable<lite::Tensor>();
-    // TODO(hong19860320)
-    auto input_node = std::make_shared<std::string>(input_var_name);
-    inputs_map[input_var_name] = input_node;
+    auto input = scope->FindVar(input_var_name)->GetMutable<lite::Tensor>();
+    auto input_node =
+        std::make_shared<xtcl::xExpr>(inputs_map.network_builder->CreateTensor(
+            input_var_name,
+            lite::xpu::CvtShape(input->dims()),
+            ::xtcl::Float(32)));
+    inputs_map.output_nodes[input_var_name] = input_node;
   }
   auto outputs_map = supported_lists.at(op_type)(op, inputs_map);
-  CHECK_GT(outputs_map.size(), 0);
+  CHECK_GT(outputs_map.output_nodes.size(), 0);
 
-  // compile IR graph to model
-  std::vector<std::string> graph_inputs;
-  for (auto input_var_name : input_var_names) {
-    graph_inputs.push_back(*inputs_map[input_var_name]);
-  }
-  std::vector<std::string> graph_outputs;
+  // build network graph and output model data
+  std::vector<std::shared_ptr<xtcl::xExpr>> output_nodes;
   for (auto output_var_name : output_var_names) {
-    graph_outputs.push_back(*outputs_map[output_var_name]);
+    output_nodes.push_back(outputs_map.output_nodes[output_var_name]);
   }
   std::string weight_var_name = "weight";
   auto weight = scope->Var(weight_var_name)->GetMutable<Tensor>();
   weight->set_persistable(true);
   weight->set_precision(PRECISION(kInt8));
-  // TODO(hong19860320) CHECK(BuildModel(graph_inputs, graph_outputs, weight));
+  CHECK(lite::xpu::BuildModel(outputs_map.network_builder,
+                              outputs_map.const_tensors,
+                              &output_nodes,
+                              weight));
   CHECK_GT(weight->numel(), 0);
   CHECK(weight->data<uint8_t>() != nullptr);
 
@@ -88,6 +93,8 @@ void LauchOp(const std::shared_ptr<lite::OpLite> op,
 
   // perform graph op kernel and store to output variables
   graph_kernel->Launch();
+
+  lite::xpu::DeviceInfo::Global().Clear();
 }
 
 }  // namespace bridges

@@ -23,17 +23,26 @@ namespace bridges {
 
 node_map_type ActConverter(const std::shared_ptr<lite::OpLite> act_op,
                            const node_map_type& inputs_map) {
-  // auto scope = act_op->scope();
   auto op_info = act_op->op_info();
   auto op_type = op_info->Type();
   auto unique_op_type = lite::xpu::UniqueName(op_type);
   LOG(INFO) << "Converting " + op_type + "...";
 
-  // create act node and set input node from inputs_map
+  // check network context
+  CHECK(inputs_map.network_builder != nullptr);
+  CHECK(inputs_map.const_tensors != nullptr);
+
+  // create activation node and set input nodes from inputs_map
   auto x_var_name = op_info->Input("X").front();
-  auto act_node = std::make_shared<std::string>(unique_op_type);
+  CHECK(inputs_map.output_nodes.count(x_var_name));
+  auto act_node =
+      std::make_shared<xtcl::xExpr>(inputs_map.network_builder->CreateRelu(
+          *inputs_map.output_nodes.at(x_var_name)));
+  inputs_map.network_builder->SetLayer(unique_op_type);
   node_map_type outputs_map;
-  outputs_map[op_info->Output("Out").front()] = act_node;
+  outputs_map.network_builder = inputs_map.network_builder;
+  outputs_map.const_tensors = inputs_map.const_tensors;
+  outputs_map.output_nodes[op_info->Output("Out").front()] = act_node;
   return outputs_map;
 }
 
