@@ -47,10 +47,10 @@ TEST(CxxApi, run) {
     LOG(INFO) << "outputnames: " << outputs[i];
   }
   auto input_tensor = predictor->GetInputByName(inputs[0]);
-  input_tensor->Resize(std::vector<int64_t>({1, 10}));
+  input_tensor->Resize(std::vector<int64_t>({100, 100}));
   auto* data = input_tensor->mutable_data<float>();
-  for (int i = 0; i < 10; i++) {
-    data[i] = -(i + 1);
+  for (int i = 0; i < 100 * 100; i++) {
+    data[i] = i;
   }
 
   predictor->Run();
@@ -60,8 +60,8 @@ TEST(CxxApi, run) {
   LOG(INFO) << out[0];
   LOG(INFO) << out[1];
 
-  EXPECT_NEAR(out[0], 0, 1e-3);
-  EXPECT_NEAR(out[1], 0, 1e-3);
+  EXPECT_NEAR(out[0], 50.2132, 1e-3);
+  EXPECT_NEAR(out[1], -28.8729, 1e-3);
 
   predictor->SaveOptimizedModel(FLAGS_model_dir + ".opt2");
   predictor->SaveOptimizedModel(FLAGS_model_dir + ".opt2.naive",
