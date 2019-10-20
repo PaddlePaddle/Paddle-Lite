@@ -14,6 +14,7 @@
 
 #include "lite/core/mir/fusion/conv_bn_fuser.h"
 #include <memory>
+#include <unordered_set>
 #include <vector>
 
 namespace paddle {
@@ -95,9 +96,9 @@ void ConvBNFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
   auto op_desc = GenOpDesc(matched);
   auto new_conv_op = LiteOpRegistry::Global().Create("conv2d");
   auto conv_instruct = matched.at("conv2d")->stmt();
-  auto conv_op_desc = conv_instruct->op();
-  auto* scope = conv_op_desc->scope();
-  auto& valid_places = conv_op_desc->valid_places();
+  auto conv = conv_instruct->op();
+  auto* scope = conv->scope();
+  auto& valid_places = conv->valid_places();
 
   // bn
   auto bn_scale_t = scope->FindVar(matched.at("bn_scale")->arg()->name)
@@ -143,6 +144,7 @@ void ConvBNFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
       bn_scale_d, bn_mean_d, bn_var_d, alpha_data, beta_data, eps, h, w);
 
   // compute new new weight and bias
+  auto conv_op_desc = conv_instruct->mutable_op_info();
   if (conv_op_desc->HasAttr("enable_int8") == true) {
     VLOG(4) << "enable_int8 branch: enable_int8 is true";
     PADDLE_ENFORCE(conv_op_desc->HasAttr("weight_scale"),
@@ -158,7 +160,7 @@ void ConvBNFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
       auto bias_var = scope->FindVar(op_desc.Input("Bias").front());
       if (bias_var != nullptr) {
         auto old_conv_bias_t = &(bias_var->Get<lite::Tensor>());
-        bn_bias_t.CopyDataFrom(*old_conv_bias_t);
+        bn_bias_t->CopyDataFrom(*old_conv_bias_t);
       }
       op_desc.SetInput("Bias",
                        {matched.at("bn_bias")->arg()->name});  // add Bias flag
@@ -223,11 +225,17 @@ void ConvBNFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
   // consider special case: enable_int8 == true, without conv_bias
   // 4 cases for conv bn fuse pass
   // enable_int8=true, with conv_bias: input need bn_bias
-  // enable_int8=true, without conv_bias: input don't need bn_bias
+  // enable_int8=true, without conv_bias: input doesn't need bn_bias
   // enable_int8=false, with conv_bias: input need bn_bias
   // enable_int8=false, without conv_bias: input need bn_bias
-  if (enable_int8 == true && (op_desc.HasInput("Bias") == false)) {
-    // enable_int8=true, without conv_bias: input don't need bn_bias
+  if (conv_op_desc->HasAttr("enable_int8") == true &&
+      op_desc.HasInput("Bias") == false) {
+    // enable_int8=true, without conv_bias: input doesn't need bn_bias
+    // this case can't match pattern with `conv_has_bias_ == true`,
+    // only match the case, whose pattern is with `conv_has_bias_ == false`.
+    // delete `bn_bias` nodes and relative edges
+    std::unordered_set<const Node*> nodes2rm = {matched.at("bn_bias")};
+    GraphSafeRemoveNodes(graph, nodes2rm);
   } else {
     IR_NODE_LINK_TO(matched.at("bn_bias"), new_op_node);
   }
@@ -243,36 +251,7 @@ cpp::OpDesc ConvBNFuser::GenOpDesc(const key2nodes_t& matched) {
   // `SetInput` `conv_bias` term added in `InsertNewNode` function
   op_desc.SetOutput("Output", {matched.at("bn_out")->arg()->name});
 
-  // Only consider strides, padding, groups, dilations for now
-  op_desc.SetAttr("strides", op_desc.GetAttr<std::vector<int>>("strides"));
-  op_desc.SetAttr("paddings", op_desc.GetAttr<std::vector<int>>("paddings"));
-  op_desc.SetAttr("groups", op_desc.GetAttr<int>("groups"));
-  op_desc.SetAttr("dilations", op_desc.GetAttr<std::vector<int>>("dilations"));
-
-  // other params
-  std::vector<std::string> input_arg_names = op_desc.InputArgumentNames();
-  if (std::find(input_arg_names.begin(),
-                input_arg_names.end(),
-                "ResidualData") != input_arg_names.end()) {
-    op_desc.SetInput("ResidualData", op_desc.Input("ResidualData"));
-  }
-
-  // For Int8
-  if (op_desc.HasAttr("enable_int8")) {
-    op_desc.SetAttr("enable_int8", op_desc.GetAttr<bool>("enable_int8"));
-    if (op_desc.HasAttr("input_scale"))
-      op_desc.SetAttr("input_scale", op_desc.GetAttr<float>("input_scale"));
-    if (op_desc.HasAttr("weight_scale"))
-      op_desc.SetAttr("weight_scale",
-                      op_desc.GetAttr<std::vector<float>>("weight_scale"));
-    if (op_desc.HasAttr("output_scale")) {
-      op_desc.SetAttr("output_scale", op_desc.GetAttr<float>("output_scale"));
-    }
-  }
-
-  // For with_act: ignored, because conv-act fuser pass is behind this pass
   // Other inputs. See operators/conv_op.h
-
   return op_desc;
 }
 
