@@ -17,7 +17,6 @@
 #include <random>
 #include "lite/core/context.h"
 #include "lite/tests/cv/cv_basic.h"
-#include "lite/tests/utils/tensor_utils.h"
 #include "lite/tests/utils/timer.h"
 
 // #include "lite/utils/cv/image_convert.h"
@@ -49,11 +48,12 @@ int FLAGS_dstFormat = 1;
 
 typedef paddle::lite::utils::cv::ImageFormat ImageFormat;
 
-// void fill_host_rand(uint8_t* dio, int64_t size) {
-//   for (int64_t i = 0; i < size; ++i) {
-//     dio[i] = rand() % 256;  // -128;
-//   }
-// }
+void fill_host_rand(uint8_t* dio, int64_t size) {
+  int seed = 256;
+  for (int64_t i = 0; i < size; ++i) {
+    dio[i] = rand_r(&seed) % 256;
+  }
+}
 
 void data_diff_kernel(const uint8_t* src1_truth,
                       const uint8_t* src2,
@@ -110,8 +110,7 @@ void test_image_convert(const std::vector<int>& thread_num,
         size = srch * srcw;
       }
       uint8_t* src = new uint8_t[size];
-      // fill_host_rand(src, size);
-      fill_tensor_host_rand_impl(src, size);
+      fill_host_rand(src, size);
 
       int out_size = size;
       if (dstFormat == ImageFormat::NV12 || dstFormat == ImageFormat::NV21) {
