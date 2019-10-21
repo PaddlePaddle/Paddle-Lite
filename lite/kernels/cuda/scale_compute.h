@@ -13,32 +13,22 @@
 // limitations under the License.
 
 #pragma once
-#include <cuda.h>
-#include <cuda_runtime.h>
+#include "lite/backends/cuda/math/scale.h"
+#include "lite/core/kernel.h"
 
 namespace paddle {
 namespace lite {
+namespace kernels {
 namespace cuda {
-namespace math {
 
-void fp32_scale_nhwc(int num,
-                     const void* din,
-                     void* dout,
-                     const void* scale,
-                     int N,
-                     int K,
-                     int H,
-                     int W,
-                     cudaStream_t stream);
+class ScaleCompute : public KernelLite<TARGET(kCUDA), PRECISION(kFloat)> {
+ public:
+  void Run() override;
 
-template <typename T>
-void scale(
-    int num, const T* in, T* out, T scale, cudaStream_t stream, T bias = 0);
+  virtual ~ScaleCompute() = default;
+};
 
-template <typename T>
-void scale(int num, const T* in, T* out, T scale, T bias = 0);
-
-}  // namespace math
 }  // namespace cuda
+}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

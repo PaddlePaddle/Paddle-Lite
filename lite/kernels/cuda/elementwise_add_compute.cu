@@ -29,12 +29,7 @@ void ElementwiseAddCompute::Run() {
   const lite::Tensor* y = param.Y;
   lite::Tensor* out = param.Out;
 
-  CHECK(x->dims() == y->dims());
-
-  const int n = x->dims()[0];
-  const int c = x->dims()[1];
-  const int h = x->dims()[2];
-  const int w = x->dims()[3];
+  CHECK(x->dims().production() == y->dims().production());
 
   auto* x_data = x->data<float>();
   auto* y_data = y->data<float>();
@@ -57,12 +52,7 @@ void ElementwiseAddComputeNHWC::Run() {
   const lite::Tensor* y = param.Y;
   lite::Tensor* out = param.Out;
 
-  CHECK(x->dims() == y->dims());
-
-  const int n = x->dims()[0];
-  const int c = x->dims()[1];
-  const int h = x->dims()[2];
-  const int w = x->dims()[3];
+  CHECK(x->dims().production() == y->dims().production());
 
   auto* x_data = x->data<float>();
   auto* y_data = y->data<float>();
@@ -85,7 +75,7 @@ void ElementwiseAddComputeInt8::Run() {
   const lite::Tensor* y = param.Y;
   lite::Tensor* out = param.Out;
 
-  CHECK(x->dims() == y->dims());
+  CHECK(x->dims().production() == y->dims().production());
 
   const int c = x->dims()[3];
 
