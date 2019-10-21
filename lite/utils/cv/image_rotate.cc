@@ -1599,8 +1599,6 @@ void rotate_hwc3_270(const uint8_t* src,
                      int h_in,
                      int w_out,
                      int h_out) {
-  int w_out = h_in;
-  int h_out = w_in;
   int win = w_in * 3;
   int wout = w_out * 3;
   int64_t stride_h = 4 * win;
@@ -2128,8 +2126,6 @@ void rotate_hwc4_90(const uint8_t* src,
                     int h_in,
                     int w_out,
                     int h_out) {
-  int w_out = h_in;
-  int h_out = w_in;
   int win = w_in * 4;
   int wout = w_out * 4;
   int hremain = h_in % 8;
@@ -2212,21 +2208,21 @@ void rotate_hwc4_180(const uint8_t* src,
                      int h_in,
                      int w_out,
                      int h_out) {
-  int w_in = w * 4;
+  int win = w_in * 4;
   uint8_t zerobuff[40000];
-  memset(zerobuff, 0, w_in * sizeof(uint8_t));
+  memset(zerobuff, 0, win * sizeof(uint8_t));
   int stride_w = 4;
   // 4*8
   for (int i = 0; i < h_in; i += 4) {
-    const uint8_t* inptr0 = src + i * w_in;
-    const uint8_t* inptr1 = inptr0 + w_in;
-    const uint8_t* inptr2 = inptr1 + w_in;
-    const uint8_t* inptr3 = inptr2 + w_in;
+    const uint8_t* inptr0 = src + i * win;
+    const uint8_t* inptr1 = inptr0 + win;
+    const uint8_t* inptr2 = inptr1 + win;
+    const uint8_t* inptr3 = inptr2 + win;
 
-    uint8_t* outptr0 = dst + (h_in - i) * w_in - stride_w;  // last
-    uint8_t* outptr1 = outptr0 - w_in;
-    uint8_t* outptr2 = outptr1 - w_in;
-    uint8_t* outptr3 = outptr2 - w_in;
+    uint8_t* outptr0 = dst + (h_in - i) * win - stride_w;  // last
+    uint8_t* outptr1 = outptr0 - win;
+    uint8_t* outptr2 = outptr1 - win;
+    uint8_t* outptr3 = outptr2 - win;
 
     if (i + 3 >= h_in) {
       switch ((i + 3) - h_in) {
@@ -2243,7 +2239,7 @@ void rotate_hwc4_180(const uint8_t* src,
       }
     }
     int j = 0;
-    for (; j < w; j++) {
+    for (; j < w_in; j++) {
       if (i + 3 >= h_in) {
         switch ((i + 3) - h_in) {
           case 0:
@@ -2304,8 +2300,6 @@ void rotate_hwc4_270(const uint8_t* src,
                      int h_in,
                      int w_out,
                      int h_out) {
-  int w_out = h_in;
-  int h_out = w_in;
   int win = w_in * 4;
   int wout = w_out * 4;
   int hremain = h_in % 8;
