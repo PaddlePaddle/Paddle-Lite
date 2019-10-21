@@ -31,7 +31,9 @@ DEFINE_string(input_shape,
               "1,3,224,224",
               "input shapes, separated by colon and comma");
 
-DEFINE_bool(opt_nb, false, "optimized & naive buffer model for mobile devices");
+DEFINE_bool(use_optimize_nb,
+            false,
+            "optimized & naive buffer model for mobile devices");
 
 namespace paddle {
 namespace lite_api {
@@ -134,7 +136,7 @@ int main(int argc, char** argv) {
     exit(0);
   }
   std::string save_optimized_model_dir = "";
-  if (FLAGS_opt_nb) {
+  if (FLAGS_use_optimize_nb) {
     save_optimized_model_dir = FLAGS_model_dir;
   } else {
     save_optimized_model_dir = FLAGS_model_dir + "opt2";
@@ -180,7 +182,7 @@ int main(int argc, char** argv) {
     input_shapes.push_back(get_shape(str_input_shapes[i]));
   }
 
-  if (!FLAGS_opt_nb) {
+  if (!FLAGS_use_optimize_nb) {
     // Output optimized model
     paddle::lite_api::OutputOptModel(
         FLAGS_model_dir, save_optimized_model_dir, input_shapes);
