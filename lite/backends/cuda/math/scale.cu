@@ -13,24 +13,58 @@
 // limitations under the License.
 
 #include "iostream"
+#include "lite/backends/cuda/cuda_utils.h"
 #include "lite/backends/cuda/math/scale.h"
 #include "lite/backends/cuda/math/utils.h"
-
 namespace paddle {
 namespace lite {
 namespace cuda {
 namespace math {
-
+/*
 template <typename T>
-__global__ void scale_kernel(int num, const T* in, T* out, const float scale) {
+__global__ void scale_kernel(int num, const T* in, T* out, const float scale,
+const float bias) {
   int tid = blockIdx.x * blockDim.x + threadIdx.x;
   if (tid < num) {
 #if __CUDA_ARCH__ >= 350
-    out[tid] = __ldg(in + tid) * scale;
+    out[tid] = __ldg(in + tid) * scale + bias;
 #else
     out[tid] = in[tid] * scale;
 #endif
   }
+}
+*/
+#define CUDA_KERNEL_LOOP(i, n)                                 \
+  for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < (n); \
+       i += blockDim.x * gridDim.x)
+
+template <typename T>
+__global__ void scale_kernel(int count,
+                             const T* in_data,
+                             T* out_data,
+                             const T* scale_data,
+                             const T* bias_data,
+                             const int scale_dim,
+                             const int inner_dim) {
+  CUDA_KERNEL_LOOP(tid, count) {
+    int scale_id = (tid / inner_dim) % scale_dim;
+    T scale = scale_data[scale_id];
+    if (bias_data == nullptr) {
+      out_data[tid] = scale * in_data[tid];
+    } else {
+      out_data[tid] = scale * in_data[tid] + bias_data[scale_id];
+    }
+  }
+}
+
+template <typename T>
+__global__ void scale_kernel(
+    int count, const T* in_data, T* out_data, const T scale, const T bias) {
+  int tid = blockIdx.x * blockDim.x + threadIdx.x;
+  // if (tid < count){
+  // out_data[tid] = scale * in_data[tid] + bias;
+  //}
+  CUDA_KERNEL_LOOP(tid, count) { out_data[tid] = scale * in_data[tid] + bias; }
 }
 
 __global__ void fp32_scale_nhwc4_kernel(int num,
@@ -114,21 +148,25 @@ void fp32_scale_nhwc(int num,
 }
 
 template <typename T>
-void scale(int num, const T* in, T* out, float scale, cudaStream_t stream) {
+void scale(int num, const T* in, T* out, T scale, cudaStream_t stream, T bias) {
   int thread = 256;
   int block = (num + thread - 1) / thread;
-  scale_kernel<<<block, thread, 0, stream>>>(num, in, out, scale);
+  scale_kernel<<<block, thread, 0, stream>>>(num, in, out, scale, bias);
+  cudaError_t error = cudaGetLastError();
+  if (error != cudaSuccess) std::cout << cudaGetErrorString(error);
 }
 
 template <typename T>
-void scale(int num, const T* in, T* out, float scale) {
+void scale(int num, const T* in, T* out, T scale, T bias) {
   int thread = 256;
   int block = (num + thread - 1) / thread;
-  scale_kernel<<<block, thread>>>(num, in, out, scale);
+  scale_kernel<<<block, thread>>>(num, in, out, scale, bias);
+  cudaError_t error = cudaGetLastError();
+  if (error != cudaSuccess) std::cout << cudaGetErrorString(error);
 }
 
-template void scale(int num, const float*, float*, float, cudaStream_t);
-template void scale(int num, const float*, float*, float);
+template void scale(int num, const float*, float*, float, cudaStream_t, float);
+template void scale(int num, const float*, float*, float, float);
 
 }  // namespace math
 }  // namespace cuda
