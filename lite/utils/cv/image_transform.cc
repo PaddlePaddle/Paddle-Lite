@@ -23,26 +23,49 @@ namespace lite {
 namespace utils {
 namespace cv {
 
-void resize_hwc(
-    const uint8_t* src, uint8_t* dst, int srcw, int srch, int dstw, int dsth) {
+// compute xofs, yofs, alpha, beta
+void compute_xy(int wout,
+                int srch,
+                double scale_x,
+                double scale_y,
+                int dstw,
+                int dsth,
+                int* xofs,
+                int* yofs,
+                int16_t* ialpha,
+                int16_t* ibeta) {
+  float fy = 0.f;
+  float fx = 0.f;
+  int sy = 0;
+  int sx = 0;
   const int resize_coef_bits = 11;
   const int resize_coef_scale = 1 << resize_coef_bits;
-
-  double scale_x = static_cast<double>(srcw / dstw);
-  double scale_y = static_cast<double>(srch / dsth);
-
-  int* buf = new int[dsth * 2];
-
-  int* yofs = buf;
-  int16_t* ibeta = reinterpret_cast<int16_t*>(buf + dsth);
-
-  float fy = 0.f;
-  int sx = 0;
-  int sy = 0;
 #define SATURATE_CAST_SHORT(X)                                               \
   (int16_t)::std::min(                                                       \
       ::std::max(static_cast<int>(X + (X >= 0.f ? 0.5f : -0.5f)), SHRT_MIN), \
       SHRT_MAX);
+  for (int dx = 0; dx < wout; dx++) {
+    fx = static_cast<float>((dx + 0.5) * scale_x - 0.5);
+    sx = floor(fx);
+    fx -= sx;
+
+    if (sx < 0) {
+      sx = 0;
+      fx = 0.f;
+    }
+    if (sx >= wout - 1) {
+      sx = wout - 2;
+      fx = 1.f;
+    }
+
+    xofs[dx] = sx;
+
+    float a0 = (1.f - fx) * resize_coef_scale;
+    float a1 = fx * resize_coef_scale;
+
+    ialpha[dx * 2] = SATURATE_CAST_SHORT(a0);
+    ialpha[dx * 2 + 1] = SATURATE_CAST_SHORT(a1);
+  }
   for (int dy = 0; dy < dsth; dy++) {
     fy = static_cast<float>((dy + 0.5) * scale_y - 0.5);
     sy = floor(fy);
@@ -52,8 +75,8 @@ void resize_hwc(
       sy = 0;
       fy = 0.f;
     }
-    if (sy >= h_in - 1) {
-      sy = h_in - 2;
+    if (sy >= srch - 1) {
+      sy = srch - 2;
       fy = 1.f;
     }
 
@@ -66,14 +89,352 @@ void resize_hwc(
     ibeta[dy * 2 + 1] = SATURATE_CAST_SHORT(b1);
   }
 #undef SATURATE_CAST_SHORT
+}
+
+// gray
+void resize_hwc1(const uint8_t* src,
+                 const int16_t* ialpha,
+                 const int* yofs,
+                 int16_t* rowsbuf0,
+                 int16_t* rowsbuf1,
+                 int srcw,
+                 int srch,
+                 int dstw,
+                 int dsth) {
+  int prev_sy1 = -1;
+  int wout = dstw + 1;
+  for (int dy = 0; dy < dsth; dy++) {
+    int16_t* rows0 = rowsbuf0 + static_cast<int16_t>(dy * wout);
+    int16_t* rows1 = rowsbuf1 + static_cast<int16_t>(dy * wout);
+
+    int sy = yofs[dy];
+    if (sy == prev_sy1) {
+      // hresize one row
+      int16_t* rows0_old = rows0;
+      rows0 = rows1;
+      rows1 = rows0_old;
+      const uint8_t* S1 = src + srcw * (sy + 1);
+      const int16_t* ialphap = ialpha;
+      int16_t* rows1p = rows1;
+      for (int dx = 0; dx < dstw; dx++) {
+        int sx = xofs[dx];
+        int16_t a0 = ialphap[0];
+        int16_t a1 = ialphap[1];
+
+        const uint8_t* S1p = S1 + sx;
+        rows1p[dx] = (S1p[0] * a0 + S1p[1] * a1) >> 4;
+
+        ialphap += 2;
+      }
+    } else {
+      // hresize two rows
+      const uint8_t* S0 = src + srcw * (sy);
+      const uint8_t* S1 = src + srcw * (sy + 1);
+      const int16_t* ialphap = ialpha;
+      int16_t* rows0p = rows0;
+      int16_t* rows1p = rows1;
+      for (int dx = 0; dx < dstw; dx++) {
+        int sx = xofs[dx];
+        int16_t a0 = ialphap[0];
+        int16_t a1 = ialphap[1];
+
+        const uint8_t* S0p = S0 + sx;
+        const uint8_t* S1p = S1 + sx;
+        rows0p[dx] = (S0p[0] * a0 + S0p[1] * a1) >> 4;
+        rows1p[dx] = (S1p[0] * a0 + S1p[1] * a1) >> 4;
+
+        ialphap += 2;
+      }
+    }
+    prev_sy1 = sy + 1;
+  }
+}
+
+// uv
+void resize_hwc2(const uint8_t* src,
+                 const int16_t* ialpha,
+                 const int* yofs,
+                 int16_t* rowsbuf0,
+                 int16_t* rowsbuf1,
+                 int srcw,
+                 int srch,
+                 int dstw,
+                 int dsth) {
+  int prev_sy1 = -1;
+  int wout = dstw + 1;
+  for (int dy = 0; dy < dsth; dy++) {
+    int16_t* rows0 = rowsbuf0 + static_cast<int16_t>(dy * wout);
+    int16_t* rows1 = rowsbuf1 + static_cast<int16_t>(dy * wout);
+
+    int sy = yofs[dy];
+    if (sy == prev_sy1) {
+      // hresize one row
+      int16_t* rows0_old = rows0;
+      rows0 = rows1;
+      rows1 = rows0_old;
+      const uint8_t* S1 = src + srcw * (sy + 1);
+      const int16_t* ialphap = ialpha;
+      int16_t* rows1p = rows1;
+      for (int dx = 0; dx < dstw / 2; dx++) {
+        int sx = xofs[dx] * 2;
+        int16_t a0 = ialphap[0];
+        int16_t a1 = ialphap[1];
+
+        const uint8_t* S1p = S1 + sx;
+        int tmp = dx * 2;
+        rows1p[tmp] = (S1p[0] * a0 + S1p[2] * a1) >> 4;
+        rows1p[tmp + 1] = (S1p[1] * a0 + S1p[3] * a1) >> 4;
+
+        ialphap += 2;
+      }
+    } else {
+      // hresize two rows
+      const uint8_t* S0 = src + srcw * (sy);
+      const uint8_t* S1 = src + srcw * (sy + 1);
+      const int16_t* ialphap = ialpha;
+      int16_t* rows0p = rows0;
+      int16_t* rows1p = rows1;
+      for (int dx = 0; dx < dstw / 2; dx++) {
+        int sx = xofs[dx] * 2;
+        int16_t a0 = ialphap[0];
+        int16_t a1 = ialphap[1];
+
+        const uint8_t* S0p = S0 + sx;
+        const uint8_t* S1p = S1 + sx;
+        int tmp = dx * 2;
+        rows0p[tmp] = (S0p[0] * a0 + S0p[2] * a1) >> 4;
+        rows1p[tmp] = (S1p[0] * a0 + S1p[2] * a1) >> 4;
+
+        rows0p[tmp + 1] = (S0p[1] * a0 + S0p[3] * a1) >> 4;
+        rows1p[tmp + 1] = (S1p[1] * a0 + S1p[3] * a1) >> 4;
+
+        ialphap += 2;
+      }
+    }
+    prev_sy1 = sy + 1;
+  }
+}
+
+// bgr rgb
+void resize_hwc3(const uint8_t* src,
+                 const int16_t* ialpha,
+                 const int* yofs,
+                 int16_t* rowsbuf0,
+                 int16_t* rowsbuf1,
+                 int srcw,
+                 int srch,
+                 int dstw,
+                 int dsth) {
+  int prev_sy1 = -1;
+  int wout = dstw + 1;
+  for (int dy = 0; dy < dsth; dy++) {
+    int16_t* rows0 = rowsbuf0 + static_cast<int16_t>(dy * wout);
+    int16_t* rows1 = rowsbuf1 + static_cast<int16_t>(dy * wout);
+
+    int sy = yofs[dy];
+    if (sy == prev_sy1) {
+      // hresize one row
+      int16_t* rows0_old = rows0;
+      rows0 = rows1;
+      rows1 = rows0_old;
+      const uint8_t* S1 = src + srcw * (sy + 1);
+      const int16_t* ialphap = ialpha;
+      int16_t* rows1p = rows1;
+      for (int dx = 0; dx < dstw / 3; dx++) {
+        int sx = xofs[dx] * 3;
+        int16_t a0 = ialphap[0];
+        int16_t a1 = ialphap[1];
+
+        const uint8_t* S1p = S1 + sx;
+        int tmp = dx * 3;
+        rows1p[tmp] = (S1p[0] * a0 + S1p[3] * a1) >> 4;
+        rows1p[tmp + 1] = (S1p[1] * a0 + S1p[4] * a1) >> 4;
+        rows1p[tmp + 2] = (S1p[2] * a0 + S1p[5] * a1) >> 4;
+
+        ialphap += 2;
+      }
+    } else {
+      // hresize two rows
+      const uint8_t* S0 = src + srcw * (sy);
+      const uint8_t* S1 = src + srcw * (sy + 1);
+      const int16_t* ialphap = ialpha;
+      int16_t* rows0p = rows0;
+      int16_t* rows1p = rows1;
+      for (int dx = 0; dx < dstw / 3; dx++) {
+        int sx = xofs[dx] * 3;
+        int16_t a0 = ialphap[0];
+        int16_t a1 = ialphap[1];
+
+        const uint8_t* S0p = S0 + sx;
+        const uint8_t* S1p = S1 + sx;
+        int tmp = dx * 3;
+        rows0p[tmp] = (S0p[0] * a0 + S0p[3] * a1) >> 4;
+        rows1p[tmp] = (S1p[0] * a0 + S1p[3] * a1) >> 4;
+
+        rows0p[tmp + 1] = (S0p[1] * a0 + S0p[4] * a1) >> 4;
+        rows1p[tmp + 1] = (S1p[1] * a0 + S1p[4] * a1) >> 4;
+
+        rows0p[tmp + 2] = (S0p[2] * a0 + S0p[5] * a1) >> 4;
+        rows1p[tmp + 2] = (S1p[2] * a0 + S1p[5] * a1) >> 4;
+
+        ialphap += 2;
+      }
+    }
+    prev_sy1 = sy + 1;
+  }
+}
+// bgra rgba
+void resize_hwc4(const uint8_t* src,
+                 const int16_t* ialpha,
+                 const int* yofs,
+                 int16_t* rowsbuf0,
+                 int16_t* rowsbuf1,
+                 int srcw,
+                 int srch,
+                 int dstw,
+                 int dsth) {
+  int prev_sy1 = -1;
+  int wout = dstw + 1;
+  for (int dy = 0; dy < dsth; dy++) {
+    int16_t* rows0 = rowsbuf0 + static_cast<int16_t>(dy * wout);
+    int16_t* rows1 = rowsbuf1 + static_cast<int16_t>(dy * wout);
+
+    int sy = yofs[dy];
+    if (sy == prev_sy1) {
+      // hresize one row
+      int16_t* rows0_old = rows0;
+      rows0 = rows1;
+      rows1 = rows0_old;
+      const uint8_t* S1 = src + srcw * (sy + 1);
+      const int16_t* ialphap = ialpha;
+      int16_t* rows1p = rows1;
+      for (int dx = 0; dx < dstw / 4; dx++) {
+        int sx = xofs[dx] * 4;
+        int16_t a0 = ialphap[0];
+        int16_t a1 = ialphap[1];
+
+        const uint8_t* S1p = S1 + sx;
+        int tmp = dx * 4;
+        rows1p[tmp] = (S1p[0] * a0 + S1p[4] * a1) >> 4;
+        rows1p[tmp + 1] = (S1p[1] * a0 + S1p[5] * a1) >> 4;
+        rows1p[tmp + 2] = (S1p[2] * a0 + S1p[6] * a1) >> 4;
+        rows1p[tmp + 3] = (S1p[3] * a0 + S1p[7] * a1) >> 4;
+
+        ialphap += 2;
+      }
+    } else {
+      // hresize two rows
+      const uint8_t* S0 = src + srcw * (sy);
+      const uint8_t* S1 = src + srcw * (sy + 1);
+      const int16_t* ialphap = ialpha;
+      int16_t* rows0p = rows0;
+      int16_t* rows1p = rows1;
+      for (int dx = 0; dx < dstw / 4; dx++) {
+        int sx = xofs[dx] * 4;
+        int16_t a0 = ialphap[0];
+        int16_t a1 = ialphap[1];
+
+        const uint8_t* S0p = S0 + sx;
+        const uint8_t* S1p = S1 + sx;
+        int tmp = dx * 4;
+        rows0p[tmp] = (S0p[0] * a0 + S0p[4] * a1) >> 4;
+        rows1p[tmp] = (S1p[0] * a0 + S1p[4] * a1) >> 4;
+
+        rows0p[tmp + 1] = (S0p[1] * a0 + S0p[5] * a1) >> 4;
+        rows1p[tmp + 1] = (S1p[1] * a0 + S1p[5] * a1) >> 4;
+
+        rows0p[tmp + 2] = (S0p[2] * a0 + S0p[6] * a1) >> 4;
+        rows1p[tmp + 2] = (S1p[2] * a0 + S1p[6] * a1) >> 4;
+
+        rows0p[tmp + 3] = (S0p[3] * a0 + S0p[7] * a1) >> 4;
+        rows1p[tmp + 3] = (S1p[3] * a0 + S1p[7] * a1) >> 4;
+
+        ialphap += 2;
+      }
+    }
+    prev_sy1 = sy + 1;
+  }
+}
+
+void ImageTransform::resize(const uint8_t* src,
+                            uint8_t* dst,
+                            ImageFormat srcFormat,
+                            int srcw,
+                            int srch,
+                            int dstw,
+                            int dsth) {
+  if (srcw == dstw && srch == dsth) {
+    int size = srcw * srch;
+    if (srcFormat == NV12 || srcFormat == NV21) {
+      size = w_in * (static_cast<double>)(1.5 * h_in);
+    } else if (srcFormat == BGR || srcFormat == RGB) {
+      size = 3 * size;
+    } else if (srcFormat == BGRA || srcFormat == RGBA) {
+      size = 4 * size;
+    }
+    memcpy(dst, src, sizeof(uint8_t) * size);
+    return;
+  }
+  double scale_x = static_cast<double>(srcw / dstw);
+  double scale_y = static_cast<double>(srch / dsth);
+
+  int* buf = new int[dstw * 2 + dsth * 2];
+
+  int* xofs = buf;
+  int* yofs = buf + dstw;
+  int16_t* ialpha = reinterpret_cast<int16_t*>(buf + dstw + dsth);
+  int16_t* ibeta = reinterpret_cast<int16_t*>(buf + 2 * dstw + dsth);
+
   // template varible
   int size = dsth * (dstw + 1);
   int16_t* rowsbuf0 = new int16_t[size];
   int16_t* rowsbuf1 = new int16_t[size];
-  // hwc1
-  resize_hwc1(src, yofs, rowsbuf0, rowsbuf1, scale_x, srcw, srch, dstw, dsth);
+
+  if (srcFormat == NV12 || srcFormat == NV21) {
+    int hout = static_cast<int>(0.5 * dsth);
+    int size2 = size + hout * (dstw + 1);
+    int16_t* new_rowsbuf0 = new int16_t[size2];
+    int16_t* new_rowsbuf1 = new int16_t[size2];
+    rowsbuf0 = new_rowsbuf0;
+    rowsbuf1 = new_rowsbuf1;
+    int wout = srcw;  // y
+    compute_xy(
+        wout, srch, scale_x, scale_y, dstw, dsth, xofs, yofs, ialpha, ibeta);
+    // hwc1
+    resize_hwc1(src, rowsbuf0, rowsbuf1, srcw, srch, dstw, dsth);
+    // uv todo
+    wout = wout / 2;
+    compute_xy(
+        wout, srch, scale_x, scale_y, dstw, dsth, xofs, yofs, ialpha, ibeta);
+    // hwc2
+    resize_hwc2(src, rowsbuf0 + size, rowsbuf1 + size, srcw, srch, dstw, dsth);
+    dsth += hout;
+  } else if (srcFormat == BGR || srcFormat == RGB) {
+    int wout = srcw / 3;
+    compute_xy(
+        wout, srch, scale_x, scale_y, dstw, dsth, xofs, yofs, ialpha, ibeta);
+    // hwc1
+    resize_hwc3(src, rowsbuf0, rowsbuf1, srcw, srch, dstw, dsth);
+
+  } else if (srcFormat == BGRA || srcFormat == RGBA) {
+    int wout = srcw / 4;
+    compute_xy(
+        wout, srch, scale_x, scale_y, dstw, dsth, xofs, yofs, ialpha, ibeta);
+    // hwc1
+    resize_hwc4(src, rowsbuf0, rowsbuf1, srcw, srch, dstw, dsth);
+  }
+  unsigned char* dp_ptr = dst + w_out * (dy);
+
+  int cnt = dstw >> 3;
+  int remain = dstw % 8;
+  int32x4_t _v2 = vdupq_n_s32(2);
 #pragma omp parallel for
   for (int dy = 0; dy < dsth; dy++) {
+    int16_t b0 = ibeta[0];
+    int16_t b1 = ibeta[0];
+    int16x4_t _b0 = vdup_n_s16(b0);
+    int16x4_t _b1 = vdup_n_s16(b1);
+    uint8_t* dp_ptr = dst + dy * dstw;
     int16_t* rows0p = rowsbuf0 + dy * (dstw + 1);
     int16_t* rows1p = rowsbuf1 + dy * (dstw + 1);
 #ifdef __aarch64__
@@ -192,7 +553,7 @@ void resize_hwc(
             "q12");
     }
 #endif  // __aarch64__
-    for (; remain; --remain) {
+    for (int i = 0; i < remain; i++) {
       //             D[x] = (rows0[x]*b0 + rows1[x]*b1) >>
       //             INTER_RESIZE_COEF_BITS;
       *dp_ptr++ =
@@ -202,165 +563,10 @@ void resize_hwc(
     }
     ibeta += 2;
   }
+  delete[] buf;
+  delete[] rowsbuf0;
+  delete[] rowsbuf1;
 }
-// gray
-void resize_hwc1(const uint8_t* src,
-                 const int* yofs,
-                 int16_t* rowsbuf0,
-                 int16_t* rowsbuf1,
-                 double scale_x,
-                 int srcw,
-                 int srch,
-                 int dstw,
-                 int dsth) {
-  int* buf = new int[dstw * 2];
-  int* xofs = buf;
-  int16_t* ialpha = reinterpret_cast<int16_t*>(buf + dstw);
-  float fx = 0.f;
-  int sx = 0;
-#define SATURATE_CAST_SHORT(X)                                         \
-  (int16_t)::std::min(                                                 \
-      ::std::max(reinterpret_cast<int>(X + (X >= 0.f ? 0.5f : -0.5f)), \
-                 SHRT_MIN),                                            \
-      SHRT_MAX);
-  for (int dx = 0; dx < dstw; dx++) {
-    fx = static_cast<float>((dx + 0.5) * scale_x - 0.5);
-    sx = floor(fx);
-    fx -= sx;
-
-    if (sx < 0) {
-      sx = 0;
-      fx = 0.f;
-    }
-    if (sx >= w_in - 1) {
-      sx = w_in - 2;
-      fx = 1.f;
-    }
-
-    xofs[dx] = sx;
-
-    float a0 = (1.f - fx) * resize_coef_scale;
-    float a1 = fx * resize_coef_scale;
-
-    ialpha[dx * 2] = SATURATE_CAST_SHORT(a0);
-    ialpha[dx * 2 + 1] = SATURATE_CAST_SHORT(a1);
-  }
-#undef SATURATE_CAST_SHORT
-  int prev_sy1 = -1;
-  int wout = dstw + 1;
-  for (int dy = 0; dy < dsth; dy++) {
-    int16_t* rows0 = rowsbuf0 + static_cast<int16_t>(dy * wout);
-    int16_t* rows1 = rowsbuf1 + static_cast<int16_t>(dy * wout);
-
-    int sy = yofs[dy];
-    if (sy == prev_sy1) {
-      // hresize one row
-      int16_t* rows0_old = rows0;
-      rows0 = rows1;
-      rows1 = rows0_old;
-      const uint8_t* S1 = src + srcw * (sy + 1);
-      const int16_t* ialphap = ialpha;
-      int16_t* rows1p = rows1;
-      for (int dx = 0; dx < dstw; dx++) {
-        int sx = xofs[dx];
-        int16_t a0 = ialphap[0];
-        int16_t a1 = ialphap[1];
-
-        const uint8_t* S1p = S1 + sx;
-        rows1p[dx] = (S1p[0] * a0 + S1p[1] * a1) >> 4;
-
-        ialphap += 2;
-      }
-    } else {
-      // hresize two rows
-      const uint8_t* S0 = src + srcw * (sy);
-      const uint8_t* S1 = src + srcw * (sy + 1);
-      const int16_t* ialphap = ialpha;
-      int16_t* rows0p = rows0;
-      int16_t* rows1p = rows1;
-      for (int dx = 0; dx < dstw; dx++) {
-        int sx = xofs[dx];
-        int16_t a0 = ialphap[0];
-        int16_t a1 = ialphap[1];
-
-        const uint8_t* S0p = S0 + sx;
-        const uint8_t* S1p = S1 + sx;
-        rows0p[dx] = (S0p[0] * a0 + S0p[1] * a1) >> 4;
-        rows1p[dx] = (S1p[0] * a0 + S1p[1] * a1) >> 4;
-
-        ialphap += 2;
-      }
-    }
-    prev_sy1 = sy + 1;
-  }
-}
-
-// gray
-void resize_hwc2(const uint8_t* src,
-                 const int* xofs,
-                 const int* yofs,
-                 int16_t* rowsbuf0,
-                 int16_t* rowsbuf1,
-                 int srcw,
-                 int srch,
-                 int dstw,
-                 int dsth) {
-  int prev_sy1 = -1;
-  int wout = dstw + 1;
-  for (int dy = 0; dy < dsth; dy++) {
-    int16_t* rows0 = rowsbuf0 + static_cast<int16_t>(dy * wout);
-    int16_t* rows1 = rowsbuf1 + dy * wout;
-
-    int sy = yofs[dy];
-    if (sy == prev_sy1) {
-      // hresize one row
-      int16_t* rows0_old = rows0;
-      rows0 = rows1;
-      rows1 = rows0_old;
-      const uint8_t* S1 = src + srcw * (sy + 1);
-      const int16_t* ialphap = ialpha;
-      int16_t* rows1p = rows1;
-      for (int dx = 0; dx < dstw / 2; dx++) {
-        int sx = xofs[dx];
-        int16_t a0 = ialphap[0];
-        int16_t a1 = ialphap[1];
-
-        const uint8_t* S1p = S1 + sx;
-        rows1p[dx] = (S1p[0] * a0 + S1p[1] * a1) >> 4;
-
-        ialphap += 2;
-      }
-    } else {
-      // hresize two rows
-      const uint8_t* S0 = src + srcw * (sy);
-      const uint8_t* S1 = src + srcw * (sy + 1);
-      const int16_t* ialphap = ialpha;
-      int16_t* rows0p = rows0;
-      int16_t* rows1p = rows1;
-      for (int dx = 0; dx < dstw; dx++) {
-        int sx = xofs[dx];
-        int16_t a0 = ialphap[0];
-        int16_t a1 = ialphap[1];
-
-        const uint8_t* S0p = S0 + sx;
-        const uint8_t* S1p = S1 + sx;
-        rows0p[dx] = (S0p[0] * a0 + S0p[1] * a1) >> 4;
-        rows1p[dx] = (S1p[0] * a0 + S1p[1] * a1) >> 4;
-
-        ialphap += 2;
-      }
-    }
-    prev_sy1 = sy + 1;
-  }
-}
-
-void ImageTransform::resize(const uint8_t* src,
-                            uint8_t* dst,
-                            ImageFormat srcFormat,
-                            int srcw,
-                            int srch,
-                            int dstw,
-                            int dsth) {}
 void ImageTransform::rotate(const uint8_t* src,
                             uint8_t* dst,
                             ImageFormat srcFormat,
