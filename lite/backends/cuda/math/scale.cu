@@ -20,20 +20,7 @@ namespace paddle {
 namespace lite {
 namespace cuda {
 namespace math {
-/*
-template <typename T>
-__global__ void scale_kernel(int num, const T* in, T* out, const float scale,
-const float bias) {
-  int tid = blockIdx.x * blockDim.x + threadIdx.x;
-  if (tid < num) {
-#if __CUDA_ARCH__ >= 350
-    out[tid] = __ldg(in + tid) * scale + bias;
-#else
-    out[tid] = in[tid] * scale;
-#endif
-  }
-}
-*/
+
 #define CUDA_KERNEL_LOOP(i, n)                                 \
   for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < (n); \
        i += blockDim.x * gridDim.x)
@@ -61,9 +48,6 @@ template <typename T>
 __global__ void scale_kernel(
     int count, const T* in_data, T* out_data, const T scale, const T bias) {
   int tid = blockIdx.x * blockDim.x + threadIdx.x;
-  // if (tid < count){
-  // out_data[tid] = scale * in_data[tid] + bias;
-  //}
   CUDA_KERNEL_LOOP(tid, count) { out_data[tid] = scale * in_data[tid] + bias; }
 }
 
