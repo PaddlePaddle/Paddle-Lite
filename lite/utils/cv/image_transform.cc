@@ -94,6 +94,7 @@ void compute_xy(int wout,
 // gray
 void resize_hwc1(const uint8_t* src,
                  const int16_t* ialpha,
+                 const int* xofs,
                  const int* yofs,
                  int16_t* rowsbuf0,
                  int16_t* rowsbuf1,
@@ -153,6 +154,7 @@ void resize_hwc1(const uint8_t* src,
 // uv
 void resize_hwc2(const uint8_t* src,
                  const int16_t* ialpha,
+                 const int* xofs,
                  const int* yofs,
                  int16_t* rowsbuf0,
                  int16_t* rowsbuf1,
@@ -218,6 +220,7 @@ void resize_hwc2(const uint8_t* src,
 // bgr rgb
 void resize_hwc3(const uint8_t* src,
                  const int16_t* ialpha,
+                 const int* xofs,
                  const int* yofs,
                  int16_t* rowsbuf0,
                  int16_t* rowsbuf1,
@@ -286,6 +289,7 @@ void resize_hwc3(const uint8_t* src,
 // bgra rgba
 void resize_hwc4(const uint8_t* src,
                  const int16_t* ialpha,
+                 const int* xofs,
                  const int* yofs,
                  int16_t* rowsbuf0,
                  int16_t* rowsbuf1,
@@ -366,7 +370,7 @@ void ImageTransform::resize(const uint8_t* src,
   if (srcw == dstw && srch == dsth) {
     int size = srcw * srch;
     if (srcFormat == NV12 || srcFormat == NV21) {
-      size = w_in * (static_cast<double>)(1.5 * h_in);
+      size = srcw * (static_cast<double>(1.5 * srch));
     } else if (srcFormat == BGR || srcFormat == RGB) {
       size = 3 * size;
     } else if (srcFormat == BGRA || srcFormat == RGBA) {
@@ -401,29 +405,41 @@ void ImageTransform::resize(const uint8_t* src,
     compute_xy(
         wout, srch, scale_x, scale_y, dstw, dsth, xofs, yofs, ialpha, ibeta);
     // hwc1
-    resize_hwc1(src, rowsbuf0, rowsbuf1, srcw, srch, dstw, dsth);
+    resize_hwc1(
+        src, ialpha, xofs, yofs, rowsbuf0, rowsbuf1, srcw, srch, dstw, dsth);
     // uv todo
     wout = wout / 2;
     compute_xy(
         wout, srch, scale_x, scale_y, dstw, dsth, xofs, yofs, ialpha, ibeta);
     // hwc2
-    resize_hwc2(src, rowsbuf0 + size, rowsbuf1 + size, srcw, srch, dstw, dsth);
+    resize_hwc2(src,
+                ialpha,
+                xofs,
+                yofs,
+                rowsbuf0 + size,
+                rowsbuf1 + size,
+                srcw,
+                srch,
+                dstw,
+                dsth);
     dsth += hout;
   } else if (srcFormat == BGR || srcFormat == RGB) {
     int wout = srcw / 3;
     compute_xy(
         wout, srch, scale_x, scale_y, dstw, dsth, xofs, yofs, ialpha, ibeta);
     // hwc1
-    resize_hwc3(src, rowsbuf0, rowsbuf1, srcw, srch, dstw, dsth);
+    resize_hwc3(
+        src, ialpha, xofs, yofs, rowsbuf0, rowsbuf1, srcw, srch, dstw, dsth);
 
   } else if (srcFormat == BGRA || srcFormat == RGBA) {
     int wout = srcw / 4;
     compute_xy(
         wout, srch, scale_x, scale_y, dstw, dsth, xofs, yofs, ialpha, ibeta);
     // hwc1
-    resize_hwc4(src, rowsbuf0, rowsbuf1, srcw, srch, dstw, dsth);
+    resize_hwc4(
+        src, ialpha, xofs, yofs, rowsbuf0, rowsbuf1, srcw, srch, dstw, dsth);
   }
-  unsigned char* dp_ptr = dst + w_out * (dy);
+  unsigned char* dp_ptr = dst + dstw * (dy);
 
   int cnt = dstw >> 3;
   int remain = dstw % 8;
