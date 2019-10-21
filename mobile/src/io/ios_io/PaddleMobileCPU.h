@@ -22,17 +22,17 @@
 /**
  @b 输出指针
  */
-@property (assign, nonatomic, readonly) float *output;//NOLINT
+@property (assign, nonatomic, readonly) float *output;
 
 /**
  @b 输出的 float 数
  * */
-@property (assign, nonatomic, readonly) int outputSize;//NOLINT
+@property (assign, nonatomic, readonly) int outputSize;
 
 /**
  @b 维度信息, longlongValue
  */
-@property (strong, nonatomic, readonly) NSArray <NSNumber *> *dim;//NOLINT
+@property (strong, nonatomic, readonly) NSArray <NSNumber *> *dim;
 
 -(void)releaseOutput;
 
@@ -43,22 +43,22 @@
 /**
  @b 默认为 1, 多线程时, 建议设置为 2
  */
-@property (assign, nonatomic) int threadNum;//NOLINT
+@property (assign, nonatomic) int threadNum;
 
 /**
  @b 是否开启运行时 infershape
  */
-@property  (assign, nonatomic) BOOL loddable;//NOLINT
+@property  (assign, nonatomic) BOOL loddable;
 
 /**
  @b 是否开启模型 op 融合优化
  */
-@property  (assign, nonatomic) BOOL optimize;//NOLINT
+@property  (assign, nonatomic) BOOL optimize;
 
 /**
  @b 是否预测时初始化内存，用于处理可变输入
  */
-@property  (assign, nonatomic) BOOL loadWhenPredict;//NOLINT
+@property  (assign, nonatomic) BOOL loadWhenPredict;
 
 @end
 
@@ -70,7 +70,7 @@
  @param config 配置
  @return paddlemobile CPU 对象
  */
-- (instancetype)initWithConfig:(PaddleMobileCPUConfig *)config;//NOLINT
+- (instancetype)initWithConfig:(PaddleMobileCPUConfig *)config;
 
 /**
  @b 加载模型
@@ -79,7 +79,7 @@
  @param weighsPath 权重路径
  @return 是否加载成功
  */
-- (BOOL)loadModel:(NSString *)modelPath andWeightsPath:(NSString *)weighsPath;//NOLINT
+- (BOOL)loadModel:(NSString *)modelPath andWeightsPath:(NSString *)weighsPath;
 
 /**
  @b 加载散开形式的模型, 需传入模型的目录
@@ -87,7 +87,7 @@
  @param modelAndWeightPath 模型和权重的路径
  @return 是否加载成功
  */
-- (BOOL)load:(NSString *)modelAndWeightPath;//NOLINT
+- (BOOL)load:(NSString *)modelAndWeightPath;
 
 /**
  @b 从内存中加载模型
@@ -113,9 +113,9 @@
  @param dim 预处理后的维度
  */
 -(void)preprocess:(CGImageRef)image
-           output:(float *)output//NOLINT
+           output:(float *)output
             means:(NSArray<NSNumber *> *)means
-        scale:(float)scale//NOLINT
+        scale:(float)scale
         dim:(NSArray<NSNumber *> *)dim;
 
 /**
@@ -125,7 +125,7 @@
  @param dim 输入维度
  @return 输出结果
  */
-- (PaddleMobileCPUResult *)predictInput:(float *)input//NOLINT
+- (PaddleMobileCPUResult *)predictInput:(float *)input
                                     dim:(NSArray<NSNumber *> *)dim;
 
 /**
@@ -137,7 +137,7 @@
  @param scale 预处理中 scale
  @return 预测结果
  */
-- (PaddleMobileCPUResult *)predict:(CGImageRef)image dim:(NSArray<NSNumber *> *)dim means:(NSArray<NSNumber *> *)means scale:(float)scale;//NOLINT
+- (PaddleMobileCPUResult *)predict:(CGImageRef)image dim:(NSArray<NSNumber *> *)dim means:(NSArray<NSNumber *> *)means scale:(float)scale;
 
 /**
  @b 进行预测, means stds和 scale 为训练模型时的预处理参数, 如训练时没有做这些预处理则直接使用 predict, 每一个像素经过这样的预处理 (x + means) * scale, 其中 x 为像素值
@@ -149,7 +149,7 @@
  @param scale 预处理中 scale
  @return 预测结果
  */
-- (PaddleMobileCPUResult *)predict:(CGImageRef)image dim:(NSArray<NSNumber *> *)dim means:(NSArray<NSNumber *> *)means stds:(NSArray<NSNumber *> *)stds scale:(float)scale;//NOLINT
+- (PaddleMobileCPUResult *)predict:(CGImageRef)image dim:(NSArray<NSNumber *> *)dim means:(NSArray<NSNumber *> *)means stds:(NSArray<NSNumber *> *)stds scale:(float)scale;
 
 /**
  @b 进行预测, 预处理 means 值为 0, scale 值为 1
@@ -158,7 +158,7 @@
  @param dim 输入维度
  @return 预测结果
  */
-- (PaddleMobileCPUResult *)predict:(CGImageRef)image dim:(NSArray<NSNumber *> *)dim;//NOLINT
+- (PaddleMobileCPUResult *)predict:(CGImageRef)image dim:(NSArray<NSNumber *> *)dim;
 
 
 /**
@@ -166,7 +166,7 @@
 
  @return 预测结果
  */
-- (PaddleMobileCPUResult *)fetchOutput;//NOLINT
+- (PaddleMobileCPUResult *)fetchOutput;
 
 /**
  @b 当输出为多个时, 可用此函数取出对应的输出
@@ -174,7 +174,7 @@
  @param key 模型中输出的key
  @return 预测结果
  */
-- (PaddleMobileCPUResult *)fetchOutputWithKey:(NSString *)key;//NOLINT
+- (PaddleMobileCPUResult *)fetchOutputWithKey:(NSString *)key;
 
 /**
  @b 清理内存
