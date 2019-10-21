@@ -111,7 +111,7 @@ bool Transpose2Op::InferShape() const {
 
 bool Transpose2Op::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
   TransposeOp::AttachImpl(op_desc, scope);
-  if (op_desc.HasOutput("Out")) {
+  if (op_desc.HasOutput("XShape")) {
     auto xshape_var = scope->FindVar(op_desc.Output("XShape").front());
     param_.xshape = xshape_var->GetMutable<lite::Tensor>();
   }
