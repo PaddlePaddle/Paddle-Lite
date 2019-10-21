@@ -49,7 +49,7 @@ int FLAGS_dstFormat = 1;
 typedef paddle::lite::utils::cv::ImageFormat ImageFormat;
 
 void fill_host_rand(uint8_t* dio, int64_t size) {
-  int seed = 256;
+  uint seed = 256;
   for (int64_t i = 0; i < size; ++i) {
     dio[i] = rand_r(&seed) % 256;
   }

@@ -25,10 +25,8 @@ typedef void (*rotate_func)(const uint8_t* src,
                             int srcw,
                             int srch);
 typedef void (*flip_func)(const uint8_t* src, uint8_t* dst, int srcw, int srch);
-typedef void (*resize_func)(const uint8_t* src,
-                            uint8_t* dst,
-                            int srcw,
-                            int srch);
+typedef void (*resize_func)(
+    const uint8_t* src, uint8_t* dst, int srcw, int srch, int dstw, int dsth);
 class ImageTransform {
  public:
   void rotate(const uint8_t* src,

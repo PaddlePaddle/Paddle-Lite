@@ -1007,6 +1007,10 @@ void hwc3_to_hwc1(const uint8_t* src, uint8_t* dst, int srcw, int srch) {
       uint16x4_t v3_sum1_16 = vmovn_u32(v3_sum1);
 
       // 16x8
+      uint16x8_t v0_sum = vcombine_u16(v0_sum0_16, v0_sum1_16);
+      uint16x8_t v1_sum = vcombine_u16(v1_sum0_16, v1_sum1_16);
+      uint16x8_t v2_sum = vcombine_u16(v2_sum0_16, v2_sum1_16);
+      uint16x8_t v3_sum = vcombine_u16(v3_sum0_16, v3_sum1_16);
       uint16_t sum0[8] = {
         v0_sum0_16[0],
         v0_sum0_16[1],
