@@ -72,8 +72,9 @@ void ConvBNFuser::BuildPattern() {
       VarNode("bn_out")->assert_is_op_output("batch_norm", "Y")->AsOutput();
 
   // Because `conv_has_bias_` term is not sure existed or not,
-  //   the process of old `conv_bias` term deletion is difficult,
-  //   define two patterns, to avoid seek and delete old conv_bias term.
+  //   the process of old `conv_bias` term deletion is difficult.
+  //   Thus, use `conv_has_bias_` to define two pattern.
+  //   Using two patterns, avoid to seek and delete old conv_bias term.
   //
   // Store new `conv_bias` term in `bn_bias` term,
   //   because `bn_bias` term is sure existed.
@@ -142,60 +143,58 @@ void ConvBNFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
 
   ComputeAlphaAndBeta(
       bn_scale_d, bn_mean_d, bn_var_d, alpha_data, beta_data, eps, h, w);
-
+  ///////////////////////////////////////////////////////////////////////////////
+  // Compute ConvBNFuser
+  // Before fusion
+  //
+  //   conv(x) = conv(x) = kx + z = y
+  //   bn(y) = ay + b
+  //
+  // Note: `alpha_data` is a, `beta_data` is b from `ComputeAlphaAndBeta`
+  //
+  // After fusion:
+  //
+  //   bn(conv(x)) = a(kx + z) + b = akx + az + b
+  //
+  // Note: h == bias_size == out channel num of conv weight
+  //       w = `conv_weight_num` / bias_size = in channel num of conv weight
+  //       little difference for int8
+  ///////////////////////////////////////////////////////////////////////////////
   // compute new new weight and bias
+  // initialize new `conv bias` with old `conv_bias` (if existed) or zero
+  Tensor new_conv_bias_tensor;
+  new_conv_bias_tensor.Resize(bn_bias_t->dims());
+  auto new_conv_bias_d = new_conv_bias_tensor.mutable_data<float>();
+  if (op_desc.HasInput("Bias") && op_desc.Input("Bias").size() > 0) {
+    auto bias_var = scope->FindVar(op_desc.Input("Bias").front());
+    if (bias_var != nullptr) {
+      auto old_conv_bias_t = &(bias_var->Get<lite::Tensor>());
+      new_conv_bias_tensor.CopyDataFrom(*old_conv_bias_t);
+    }
+  } else {
+    for (unsigned int i = 0; i < new_conv_bias_tensor.data_size(); ++i) {
+      new_conv_bias_d[i] = 0;
+    }
+  }
+
   auto conv_op_desc = conv_instruct->mutable_op_info();
   if (conv_op_desc->HasAttr("enable_int8") == true) {
     VLOG(4) << "enable_int8 branch: enable_int8 is true";
     PADDLE_ENFORCE(conv_op_desc->HasAttr("weight_scale"),
                    "INT8 mode: Conv should has weight_scale attr");
+    // compute new conv_weight for int8
     auto weight_scale =
         conv_op_desc->GetAttr<std::vector<float>>("weight_scale");
     for (unsigned int i = 0; i < h; i++) {
       weight_scale[i] *= alpha_data[i];
     }
 
-    // if conv_bias existed, keep value and store in bn_bias
-    if (op_desc.HasInput("Bias") && op_desc.Input("Bias").size() > 0) {
-      auto bias_var = scope->FindVar(op_desc.Input("Bias").front());
-      if (bias_var != nullptr) {
-        auto old_conv_bias_t = &(bias_var->Get<lite::Tensor>());
-        bn_bias_t->CopyDataFrom(*old_conv_bias_t);
-      }
-      op_desc.SetInput("Bias",
-                       {matched.at("bn_bias")->arg()->name});  // add Bias flag
-    }
     // Interface like this should be abandoned.
     conv_op_desc->SetAttr("weight_scale", weight_scale);
     auto update_conv_desc = *conv_instruct->mutable_op_info();
     conv_instruct->ResetOp(update_conv_desc, graph->valid_places());
   } else {
-    ///////////////////////////////////////////////////////////////////////////////
-    // Compute ConvBNFuser
-    //
-    //   conv(x) = conv(x) = kx + z = y
-    //   bn(y) = ay + b
-    //
-    // After fusion:
-    //
-    //   bn(conv(x)) = a(kx + z) + b = akx + az + b
-    //
-    // Note: h == bias_size == out channel num of conv weight
-    //       w = `conv_weight_num` / bias_size = in channel num of conv weight
-    ///////////////////////////////////////////////////////////////////////////////
     VLOG(4) << "enable_int8 branch: enable_int8 is false";
-    // initialize conv bias value
-    Tensor new_conv_bias_tensor;
-    new_conv_bias_tensor.Resize(bn_bias_t->dims());
-    auto new_conv_bias_d = new_conv_bias_tensor.mutable_data<float>();
-    if (op_desc.HasInput("Bias") && op_desc.Input("Bias").size() > 0) {
-      auto bias_var = scope->FindVar(op_desc.Input("Bias").front());
-      if (bias_var != nullptr) {
-        auto old_conv_bias_t = &(bias_var->Get<lite::Tensor>());
-        new_conv_bias_tensor.CopyDataFrom(*old_conv_bias_t);
-      }
-    }
-
     // compute new conv_weight
     auto conv_weight_d = conv_weight_t->mutable_data<float>();
     for (unsigned int i = 0; i < h; i++) {    // n: conv2d output channels
@@ -203,42 +202,26 @@ void ConvBNFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
         conv_weight_d[i * w + j] *= alpha_data[i];
       }
     }
-
-    // compute new conv_bias
-    for (unsigned int i = 0; i < bn_scale_t->data_size();
-         i++) {  // bias_size == h == conv2d output channls
-      new_conv_bias_d[i] =
-          alpha_data[i] * new_conv_bias_d[i] + (bn_bias_d[i] + beta_data[i]);
-    }
-
-    // store conv_bias_d to `bn_bias` arg node
-    bn_bias_t->CopyDataFrom(new_conv_bias_tensor);
-    op_desc.SetInput("Bias",
-                     {matched.at("bn_bias")->arg()->name});  // add Bias flag
   }
+
+  // compute new conv_bias
+  for (unsigned int i = 0; i < bn_scale_t->data_size();
+       i++) {  // bias_size == h == conv2d output channls
+    new_conv_bias_d[i] =
+        alpha_data[i] * new_conv_bias_d[i] + (bn_bias_d[i] + beta_data[i]);
+  }
+
+  // store new `conv_bias_d` to `bn_bias` arg node
+  bn_bias_t->CopyDataFrom(new_conv_bias_tensor);
+  op_desc.SetInput("Bias",
+                   {matched.at("bn_bias")->arg()->name});  // add Bias flag
 
   new_conv_op->Attach(op_desc, scope);
   auto* new_op_node = graph->GraphCreateInstructNode(new_conv_op, valid_places);
 
   IR_NODE_LINK_TO(matched.at("conv_input"), new_op_node);
   IR_NODE_LINK_TO(matched.at("conv_weight"), new_op_node);
-  // consider special case: enable_int8 == true, without conv_bias
-  // 4 cases for conv bn fuse pass
-  // enable_int8=true, with conv_bias: input need bn_bias
-  // enable_int8=true, without conv_bias: input doesn't need bn_bias
-  // enable_int8=false, with conv_bias: input need bn_bias
-  // enable_int8=false, without conv_bias: input need bn_bias
-  if (conv_op_desc->HasAttr("enable_int8") == true &&
-      op_desc.HasInput("Bias") == false) {
-    // enable_int8=true, without conv_bias: input doesn't need bn_bias
-    // this case can't match pattern with `conv_has_bias_ == true`,
-    // only match the case, whose pattern is with `conv_has_bias_ == false`.
-    // delete `bn_bias` nodes and relative edges
-    std::unordered_set<const Node*> nodes2rm = {matched.at("bn_bias")};
-    GraphSafeRemoveNodes(graph, nodes2rm);
-  } else {
-    IR_NODE_LINK_TO(matched.at("bn_bias"), new_op_node);
-  }
+  IR_NODE_LINK_TO(matched.at("bn_bias"), new_op_node);
   IR_NODE_LINK_TO(new_op_node, matched.at("bn_out"));
 }
 
