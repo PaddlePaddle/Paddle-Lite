@@ -39,6 +39,13 @@ void ConvCompute<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
   int pad = param.paddings[0];
   int stride = param.strides[0];
 
+  int chin = param.x->dims()[1];
+  int hin = param.x->dims()[2];
+  int win = param.x->dims()[3];
+  int chout = param.output->dims()[1];
+  int hout = param.output->dims()[2];
+  int wout = param.output->dims()[3];
+
   bool kps_equal = (param.paddings[0] == param.paddings[1]) &&
                    (param.strides[0] == param.strides[1]) && (kw == kh);
   bool no_dilation = (param.dilations[0] == 1) && (param.dilations[1] == 1);
@@ -54,7 +61,7 @@ void ConvCompute<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
     VLOG(3) << "invoking dw conv";
   } else if (param.groups == 1 && kw == 3 && stride == 1 && kps_equal &&
              no_dilation) {
-    if (ic >= 32 && oc >= 32) {
+    if (ic >= 32 && oc >= 32 && hout > 16 && wout > 16) {
       /// winograd conv impl
       impl_ = new WinogradConv<PRECISION(kFloat), PRECISION(kFloat)>;
       VLOG(3) << "invoking winograd conv";
@@ -63,8 +70,8 @@ void ConvCompute<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
       impl_ = new DirectConv<PRECISION(kFloat), PRECISION(kFloat)>;
       VLOG(3) << "invoking direct conv";
     }
-  } else if (param.groups == 1 && kw == 3 && stride == 2 && kps_equal &&
-             no_dilation) {
+  } else if (param.groups == 1 && kw == 3 && stride == 2 &&
+             chin * chout < 4 * hin * win && kps_equal && no_dilation) {
     /// direct conv impl
     impl_ = new DirectConv<PRECISION(kFloat), PRECISION(kFloat)>;
     VLOG(3) << "invoking direct conv";

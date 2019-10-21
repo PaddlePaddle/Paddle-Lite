@@ -93,6 +93,10 @@ class ConvOpLite : public OpLite {
             << "The fused conv only supports fuse with relu and leaky relu";
       }
     }
+
+    if (op_desc.HasAttr("padding_algorithm")) {
+      padding_algorithm_ = op_desc.GetAttr<std::string>("padding_algorithm");
+    }
     // For Int8
     if (op_desc.HasAttr("enable_int8")) {
       param_.enable_int8 = op_desc.GetAttr<bool>("enable_int8");
@@ -114,6 +118,7 @@ class ConvOpLite : public OpLite {
 
  private:
   mutable ConvParam param_;
+  std::string padding_algorithm_{""};
 };
 
 }  // namespace operators
