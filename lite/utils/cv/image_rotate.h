@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #pragma once
+#include <vector>
 namespace paddle {
 namespace lite {
 namespace utils {

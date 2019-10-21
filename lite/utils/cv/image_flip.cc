@@ -653,22 +653,22 @@ void flip_hwc3_x(const uint8_t* src, uint8_t* dst, int w_in, int h_in) {
 }
 
 void flip_hwc3_y(const uint8_t* src, uint8_t* dst, int w_in, int h_in) {
-  int w_in = w * 3;
+  int win = w_in * 3;
   uint8_t zerobuff[30000];
-  memset(zerobuff, 0, w_in * sizeof(uint8_t));
+  memset(zerobuff, 0, win * sizeof(uint8_t));
   uint8_t zerobuff2[30000];
-  memset(zerobuff2, 0, w_in * sizeof(uint8_t));
+  memset(zerobuff2, 0, win * sizeof(uint8_t));
   int64_t stride_w = 24;
   for (int i = 0; i < h_in; i += 4) {
-    const uint8_t* inptr0 = src + i * w_in;
-    const uint8_t* inptr1 = inptr0 + w_in;
-    const uint8_t* inptr2 = inptr1 + w_in;
-    const uint8_t* inptr3 = inptr2 + w_in;
+    const uint8_t* inptr0 = src + i * win;
+    const uint8_t* inptr1 = inptr0 + win;
+    const uint8_t* inptr2 = inptr1 + win;
+    const uint8_t* inptr3 = inptr2 + win;
 
-    uint8_t* outptr0 = dst + (i + 1) * w_in - stride_w;  // last col
-    uint8_t* outptr1 = outptr0 + w_in;
-    uint8_t* outptr2 = outptr1 + w_in;
-    uint8_t* outptr3 = outptr2 + w_in;
+    uint8_t* outptr0 = dst + (i + 1) * win - stride_w;  // last col
+    uint8_t* outptr1 = outptr0 + win;
+    uint8_t* outptr2 = outptr1 + win;
+    uint8_t* outptr3 = outptr2 + win;
     int j = 0;
     if (i + 3 >= h_in) {
       switch ((i + 3) - h_in) {
@@ -688,7 +688,7 @@ void flip_hwc3_y(const uint8_t* src, uint8_t* dst, int w_in, int h_in) {
           break;
       }
     }
-    for (; j < w - 7; j += 8) {
+    for (; j < w_in - 7; j += 8) {
 #ifdef __aarch64__
       asm volatile(
           "ld3  {v0.8b, v1.8b, v2.8b}, [%[inptr0]], #24    \n"  // v0={00,01,02,
@@ -864,7 +864,7 @@ void flip_hwc3_y(const uint8_t* src, uint8_t* dst, int w_in, int h_in) {
     outptr2 += stride_w - 3;
     outptr1 += stride_w - 3;
     outptr0 += stride_w - 3;
-    for (; j < w; j++) {
+    for (; j < w_in; j++) {
       if (i + 3 >= h_in) {
         switch ((i + 3) - h_in) {
           case 0:
@@ -914,21 +914,21 @@ void flip_hwc3_y(const uint8_t* src, uint8_t* dst, int w_in, int h_in) {
 
 void flip_hwc3_xy(const uint8_t* src, uint8_t* dst, int w_in, int h_in) {
   int64_t stride_w = 24;
-  int w_in = w * 3;
+  int win = w_in * 3;
   uint8_t zerobuff[30000];
-  memset(zerobuff, 0, w_in * sizeof(uint8_t));
+  memset(zerobuff, 0, win * sizeof(uint8_t));
   uint8_t zerobuff2[30000];
-  memset(zerobuff2, 0, w_in * sizeof(uint8_t));
+  memset(zerobuff2, 0, win * sizeof(uint8_t));
   for (int i = 0; i < h_in; i += 4) {
-    const uint8_t* inptr0 = src + i * w_in;
-    const uint8_t* inptr1 = inptr0 + w_in;
-    const uint8_t* inptr2 = inptr1 + w_in;
-    const uint8_t* inptr3 = inptr2 + w_in;
+    const uint8_t* inptr0 = src + i * win;
+    const uint8_t* inptr1 = inptr0 + win;
+    const uint8_t* inptr2 = inptr1 + win;
+    const uint8_t* inptr3 = inptr2 + win;
 
-    uint8_t* outptr0 = dst + (h_in - i) * w_in - stride_w;  // last col
-    uint8_t* outptr1 = outptr0 - w_in;
-    uint8_t* outptr2 = outptr1 - w_in;
-    uint8_t* outptr3 = outptr2 - w_in;
+    uint8_t* outptr0 = dst + (h_in - i) * win - stride_w;  // last col
+    uint8_t* outptr1 = outptr0 - win;
+    uint8_t* outptr2 = outptr1 - win;
+    uint8_t* outptr3 = outptr2 - win;
     if (i + 3 >= h_in) {
       switch ((i + 3) - h_in) {
         case 3:
@@ -948,7 +948,7 @@ void flip_hwc3_xy(const uint8_t* src, uint8_t* dst, int w_in, int h_in) {
       }
     }
     int j = 0;
-    for (; j < w - 7; j += 8) {
+    for (; j < w_in - 7; j += 8) {
 #ifdef __aarch64__
       asm volatile(
           "ld3  {v0.8b, v1.8b, v2.8b}, [%[inptr0]], #24    \n"  // v0={00,01,02,
@@ -1124,7 +1124,7 @@ void flip_hwc3_xy(const uint8_t* src, uint8_t* dst, int w_in, int h_in) {
     outptr2 += stride_w - 3;
     outptr1 += stride_w - 3;
     outptr0 += stride_w - 3;
-    for (; j < w; j++) {
+    for (; j < w_in; j++) {
       if (i + 3 >= h_in) {
         switch ((i + 3) - h_in) {
           case 0:
@@ -1360,22 +1360,22 @@ void flip_hwc4_x(const uint8_t* src, uint8_t* dst, int w_in, int h_in) {
 }
 
 void flip_hwc4_y(const uint8_t* src, uint8_t* dst, int w_in, int h_in) {
-  int w_in = w * 4;
+  int win = w_in * 4;
   uint8_t zerobuff[40000];
-  memset(zerobuff, 0, w_in * sizeof(uint8_t));
+  memset(zerobuff, 0, win * sizeof(uint8_t));
   uint8_t zerobuff2[40000];
-  memset(zerobuff2, 0, w_in * sizeof(uint8_t));
+  memset(zerobuff2, 0, win * sizeof(uint8_t));
   int64_t stride_w = 32;
   for (int i = 0; i < h_in; i += 4) {
-    const uint8_t* inptr0 = src + i * w_in;
-    const uint8_t* inptr1 = inptr0 + w_in;
-    const uint8_t* inptr2 = inptr1 + w_in;
-    const uint8_t* inptr3 = inptr2 + w_in;
+    const uint8_t* inptr0 = src + i * win;
+    const uint8_t* inptr1 = inptr0 + win;
+    const uint8_t* inptr2 = inptr1 + win;
+    const uint8_t* inptr3 = inptr2 + win;
 
-    uint8_t* outptr0 = dst + (i + 1) * w_in - stride_w;  // last col
-    uint8_t* outptr1 = outptr0 + w_in;
-    uint8_t* outptr2 = outptr1 + w_in;
-    uint8_t* outptr3 = outptr2 + w_in;
+    uint8_t* outptr0 = dst + (i + 1) * win - stride_w;  // last col
+    uint8_t* outptr1 = outptr0 + win;
+    uint8_t* outptr2 = outptr1 + win;
+    uint8_t* outptr3 = outptr2 + win;
     if (i + 3 >= h_in) {
       switch ((i + 3) - h_in) {
         case 3:
@@ -1395,7 +1395,7 @@ void flip_hwc4_y(const uint8_t* src, uint8_t* dst, int w_in, int h_in) {
       }
     }
     int j = 0;
-    for (; j < w - 7; j += 8) {
+    for (; j < w_in - 7; j += 8) {
 #ifdef __aarch64__
       asm volatile(
           "ld4  {v0.8b, v1.8b, v2.8b, v3.8b}, [%[inptr0]], #32    \n"  // v0={00,01,02,
@@ -1607,7 +1607,7 @@ void flip_hwc4_y(const uint8_t* src, uint8_t* dst, int w_in, int h_in) {
     outptr2 += stride_w - 4;
     outptr1 += stride_w - 4;
     outptr0 += stride_w - 4;
-    for (; j < w; j++) {
+    for (; j < w_in; j++) {
       if (i + 3 >= h_in) {
         switch ((i + 3) - h_in) {
           case 0:
@@ -1664,284 +1664,305 @@ void flip_hwc4_y(const uint8_t* src, uint8_t* dst, int w_in, int h_in) {
 
 void flip_hwc4_xy(const uint8_t* src, uint8_t* dst, int w_in, int h_in) {
   int64_t stride_w = 32;
-  int w_in = w * 4;
+  int win = w_in * 4;
   uint8_t zerobuff[40000];
-  memset(zerobuff, 0, w_in * sizeof(uint8_t));
+  memset(zerobuff, 0, win * sizeof(uint8_t));
   uint8_t zerobuff2[40000];
-  memset(zerobuff2, 0, w_in * sizeof(uint8_t));
+  memset(zerobuff2, 0, win * sizeof(uint8_t));
   for (int i = 0; i < h_in; i += 4) {
-    const uint8_t* inptr0 = src + i * w_in;
-    const uint8_t* inptr1 = inptr0 + w_in;
-    const uint8_t* inptr2 = inptr1 + w_in;
-    const uint8_t* inptr3 = inptr2 + w_in;
+    const uint8_t* inptr0 = src + i * win;
+    const uint8_t* inptr1 = inptr0 + win;
+    const uint8_t* inptr2 = inptr1 + win;
+    const uint8_t* inptr3 = inptr2 + win;
 
-    uint8_t* outptr0 = dst + (h_in - i) * w_in - stride_w;  // last col
-    uint8_t* outptr1 = outptr0 - w_in;
-    uint8_t* outptr2 = outptr1 - w_in;
-    uint8_t* outptr3 = outptr2 - w_in;
-#ifdef __aarch64__
-    asm volatile(
-        "ld4  {v0.8b, v1.8b, v2.8b, v3.8b}, [%[inptr0]], #32    \n"  // v0={00,01,02,
-                                                                     // 03,
-                                                                     // 04,
-                                                                     // 05,
-                                                                     // 06,
-                                                                     // 07}"
-        "ld4  {v4.8b, v5.8b, v6.8b, v7.8b}, [%[inptr1]], #32     \n"  // v0={10,11,12,
-                                                                      // 13,
-                                                                      // 14,
-                                                                      // 15,
-                                                                      // 16,
-        // 17}"
-        "ld4  {v8.8b, v9.8b, v10.8b, v11.8b}, [%[inptr2]], #32    \n"  // v0={20,21,22,
-        // 23,
-        // 24,
-        // 25,
-        // 26,
-        // 27}"
-        "ld4  {v12.8b, v13.8b, v14.8b, v15.8b}, [%[inptr3]], #32    \n"  // v0={30,31,32,
-                                                                         // 33,
-                                                                         // 34,
-                                                                         // 35,
-                                                                         // 36,
-                                                                         // 37}"
-
-        "rev64  v16.8b, v0.8b                \n"  //@ reverse 07 06 05 04 03
-                                                  // 02 01 00 b
-        "rev64  v17.8b, v1.8b                \n"  //@ reverse 07 06 05 04 03
-                                                  // 02 01 00 g
-        "rev64  v18.8b, v2.8b                \n"  //@ reverse 07 06 05 04 03
-                                                  // 02 01 00 r
-        "rev64  v19.8b, v3.8b                \n"  //@ reverse 07 06 05 04 03
-                                                  // 02 01 00
-
-        "rev64  v20.8b, v4.8b                \n"  //@ reverse 07 06 05 04 03
-                                                  // 02 01 00
-        "rev64  v21.8b, v5.8b                \n"  //@ reverse 07 06 05 04 03
-                                                  // 02 01 00
-        "rev64  v22.8b, v6.8b                \n"  //@ reverse 07 06 05 04 03
-                                                  // 02 01 00
-        "rev64  v23.8b, v7.8b                \n"  //@ reverse 07 06 05 04 03
-                                                  // 02 01 00
-
-        "rev64  v0.8b, v8.8b                \n"   //@ reverse 07 06 05 04 03
-                                                  // 02 01 00
-        "rev64  v1.8b, v9.8b                \n"   //@ reverse 07 06 05 04 03
-                                                  // 02 01 00
-        "rev64  v2.8b, v10.8b                \n"  //@ reverse 07 06 05 04 03
-                                                  // 02 01 00
-        "rev64  v3.8b, v11.8b                \n"  //@ reverse 07 06 05 04 03
-                                                  // 02 01 00
-
-        "rev64  v4.8b, v12.8b                \n"  //@ reverse 07 06 05 04 03
-                                                  // 02 01 00
-        "rev64  v5.8b, v13.8b                \n"  //@ reverse 07 06 05 04 03
-                                                  // 02 01 00
-        "rev64  v6.8b, v14.8b                \n"  //@ reverse 07 06 05 04 03
-                                                  // 02 01 00
-        "rev64  v7.8b, v15.8b                \n"  //@ reverse 07 06 05 04 03
-                                                  // 02 01 00
-
-        "prfm   pldl1keep, [%[inptr0]]        \n"
-        "prfm   pldl1keep, [%[inptr1]]        \n"
-        "prfm   pldl1keep, [%[inptr2]]        \n"
-        "prfm   pldl1keep, [%[inptr3]]        \n"
-
-        "st4 {v16.8b, v17.8b, v18.8b, v19.8b}, [%[outptr0]]             \n"  // 00 10 20 30 04 14 24 34
-        "st4 {v20.8b, v21.8b, v22.8b, v23.8b}, [%[outptr1]]              \n"  // 02 12 22 32
-        "st4 {v0.8b, v1.8b, v2.8b, v3.8b}, [%[outptr2]]             \n"   // 01
-                                                                          // 11
-                                                                          // 21
-                                                                          // 31
-        "st4 {v4.8b, v5.8b, v6.8b, v7.8b}, [%[outptr3]]              \n"  // 03
-                                                                          // 13
-                                                                          // 23
-                                                                          // 33
-
-        "sub %[outptr0], %[outptr0], %[stride_w]       \n"  //@ ptr -
-                                                            // stride_w
-        "sub %[outptr1], %[outptr1], %[stride_w]       \n"
-        "sub %[outptr2], %[outptr2], %[stride_w]       \n"
-        "sub %[outptr3], %[outptr3], %[stride_w]       \n"
-        : [inptr0] "+r"(inptr0),
-          [inptr1] "+r"(inptr1),
-          [inptr2] "+r"(inptr2),
-          [inptr3] "+r"(inptr3),
-          [outptr0] "+r"(outptr0),
-          [outptr1] "+r"(outptr1),
-          [outptr2] "+r"(outptr2),
-          [outptr3] "+r"(outptr3),
-          [stride_w] "+r"(stride_w)
-        :
-        : "v0",
-          "v1",
-          "v2",
-          "v3",
-          "v4",
-          "v5",
-          "v6",
-          "v7",
-          "v8",
-          "v9",
-          "v10",
-          "v11",
-          "v12",
-          "v13",
-          "v14",
-          "v15",
-          "v16",
-          "v17",
-          "v18",
-          "v19",
-          "v20",
-          "v21",
-          "v22",
-          "v23");
-#else
-    asm volatile(
-        "vld4.8  {d0, d1, d2, d3}, [%[inptr0]]!   @ zip load r0, d0 =00 01 "
-        "02 03 04 05 06 07\n"
-        "vld4.8  {d4, d5, d6, d7}, [%[inptr1]]!   @ zip load r1, d2 =10 11 "
-        "12 13 14 15 16 17\n"
-        "vld4.8  {d8, d9, d10, d11}, [%[inptr2]]!   @ zip load r1, d4 =20 "
-        "21 22 23 24 25 26 27\n"
-        "vld4.8  {d12, d13, d14, d15}, [%[inptr3]]!   @ zip load r1, d6 = "
-        "30 31 32 33 34 35 36 37\n"
-
-        "vrev64.8  d16, d0               @ reverse 07 06 05 04 03 02 01 00 "
-        "\n"
-        "vrev64.8  d17, d1               @ reverse 07 06 05 04 03 02 01 00 "
-        "\n"
-        "vrev64.8  d18, d2               @ reverse 07 06 05 04 03 02 01 00 "
-        "\n"
-        "vrev64.8  d19, d3               @ reverse 07 06 05 04 03 02 01 00 "
-        "\n"
-
-        "vrev64.8  d20, d4               @ reverse 07 06 05 04 03 02 01 00 "
-        "\n"
-        "vrev64.8  d21, d5               @ reverse 07 06 05 04 03 02 01 00 "
-        "\n"
-        "vrev64.8  d22, d6               @ reverse 07 06 05 04 03 02 01 00 "
-        "\n"
-        "vrev64.8  d23, d7               @ reverse 07 06 05 04 03 02 01 00 "
-        "\n"
-
-        "vrev64.8  d0, d8               @ reverse 07 06 05 04 03 02 01 00 "
-        "\n"
-        "vrev64.8  d1, d9               @ reverse 07 06 05 04 03 02 01 00 "
-        "\n"
-        "vrev64.8  d2, d10               @ reverse 07 06 05 04 03 02 01 00 "
-        "\n"
-        "vrev64.8  d3, d11               @ reverse 07 06 05 04 03 02 01 00 "
-        "\n"
-
-        "vrev64.8  d4, d12               @ reverse 07 06 05 04 03 02 01 00 "
-        "\n"
-        "vrev64.8  d5, d13               @ reverse 07 06 05 04 03 02 01 00 "
-        "\n"
-        "vrev64.8  d6, d14               @ reverse 07 06 05 04 03 02 01 00 "
-        "\n"
-        "vrev64.8  d7, d15               @ reverse 07 06 05 04 03 02 01 00 "
-        "\n"
-
-        "pld [%[inptr0]]                         @ preload a, 64byte\n"
-        "pld [%[inptr1]]                         @ preload a, 64byte\n"
-        "pld [%[inptr2]]                         @ preload a, 64byte\n"
-        "pld [%[inptr3]]                         @ preload a, 64byte\n"
-
-        "vst4.8  {d16, d17, d18, d19},    [%[outptr0]]   @ write "
-        "d0(q0,low),r00,r10 20 30\n"
-        "vst4.8  {d20, d21, d22, d23},    [%[outptr1]]   @ write "
-        "d4(q0,low),r01,r11 21 31\n"
-        "vst4.8  {d0, d1, d2, d3},    [%[outptr2]]   @ write "
-        "d4(q0,low),r01,r11 21 31\n"
-        "vst4.8  {d4, d5, d6, d7},    [%[outptr3]]   @ write "
-        "d4(q0,low),r01,r11 21 31\n"
-
-        "sub %[outptr0], %[stride_w]       @ ptr - stride_w \n"
-        "sub %[outptr1], %[stride_w]       @ ptr - stride_w \n"
-        "sub %[outptr2], %[stride_w]       @ ptr - stride_w \n"
-        "sub %[outptr3], %[stride_w]       @ ptr - stride_w \n"
-
-        : [inptr0] "+r"(inptr0),
-          [inptr1] "+r"(inptr1),
-          [inptr2] "+r"(inptr2),
-          [inptr3] "+r"(inptr3),
-          [outptr0] "+r"(outptr0),
-          [outptr1] "+r"(outptr1),
-          [outptr2] "+r"(outptr2),
-          [outptr3] "+r"(outptr3),
-          [stride_w] "+r"(stride_w)
-        :
-        : "q0",
-          "q1",
-          "q2",
-          "q3",
-          "q4",
-          "q5",
-          "q6",
-          "q7",
-          "q8",
-          "q9",
-          "q10",
-          "q11",
-          "q12");
-#endif
-  }
-  outptr3 += stride_w - 4;
-  outptr2 += stride_w - 4;
-  outptr1 += stride_w - 4;
-  outptr0 += stride_w - 4;
-  for (; j < w; j++) {
+    uint8_t* outptr0 = dst + (h_in - i) * win - stride_w;  // last col
+    uint8_t* outptr1 = outptr0 - win;
+    uint8_t* outptr2 = outptr1 - win;
+    uint8_t* outptr3 = outptr2 - win;
     if (i + 3 >= h_in) {
       switch ((i + 3) - h_in) {
-        case 0:
-          *outptr2++ = *inptr2++;
-          *outptr2++ = *inptr2++;
-          *outptr2++ = *inptr2++;
-          *outptr2++ = *inptr2++;
-          outptr2 -= 8;
-        case 1:
-          *outptr1++ = *inptr1++;
-          *outptr1++ = *inptr1++;
-          *outptr1++ = *inptr1++;
-          *outptr1++ = *inptr1++;
-          outptr1 -= 8;
-        case 2:
-          *outptr0++ = *inptr0++;
-          *outptr0++ = *inptr0++;
-          *outptr0++ = *inptr0++;
-          *outptr0++ = *inptr0++;
-          outptr0 -= 8;
         case 3:
-        // inptr3 = zerobuff;
+          inptr0 = zerobuff;
+          outptr0 = zerobuff2;
+        case 2:
+          inptr1 = zerobuff;
+          outptr1 = zerobuff2;
+        case 1:
+          inptr2 = zerobuff;
+          outptr2 = zerobuff2;
+        case 0:
+          inptr3 = zerobuff;
+          outptr3 = zerobuff2;
         default:
           break;
       }
-    } else {
-      *outptr3++ = *inptr3++;
-      *outptr3++ = *inptr3++;
-      *outptr3++ = *inptr3++;
-      *outptr3++ = *inptr3++;
-      outptr3 -= 8;
+    }
+    int j = 0;
+    for (; j < w_in - 7; j += 8) {
+#ifdef __aarch64__
+      asm volatile(
+          "ld4  {v0.8b, v1.8b, v2.8b, v3.8b}, [%[inptr0]], #32    \n"  // v0={00,01,02,
+                                                                       // 03,
+                                                                       // 04,
+                                                                       // 05,
+                                                                       // 06,
+                                                                       // 07}"
+          "ld4  {v4.8b, v5.8b, v6.8b, v7.8b}, [%[inptr1]], #32     \n"  // v0={10,11,12,
+                                                                        // 13,
+                                                                        // 14,
+                                                                        // 15,
+                                                                        // 16,
+          // 17}"
+          "ld4  {v8.8b, v9.8b, v10.8b, v11.8b}, [%[inptr2]], #32    \n"  // v0={20,21,22,
+          // 23,
+          // 24,
+          // 25,
+          // 26,
+          // 27}"
+          "ld4  {v12.8b, v13.8b, v14.8b, v15.8b}, [%[inptr3]], #32    \n"  // v0={30,31,32,
+          // 33,
+          // 34,
+          // 35,
+          // 36,
+          // 37}"
 
-      *outptr2++ = *inptr2++;
-      *outptr2++ = *inptr2++;
-      *outptr2++ = *inptr2++;
-      *outptr2++ = *inptr2++;
-      outptr2 -= 8;
+          "rev64  v16.8b, v0.8b                \n"  //@ reverse 07 06 05 04 03
+                                                    // 02 01 00 b
+          "rev64  v17.8b, v1.8b                \n"  //@ reverse 07 06 05 04 03
+                                                    // 02 01 00 g
+          "rev64  v18.8b, v2.8b                \n"  //@ reverse 07 06 05 04 03
+                                                    // 02 01 00 r
+          "rev64  v19.8b, v3.8b                \n"  //@ reverse 07 06 05 04 03
+                                                    // 02 01 00
 
-      *outptr1++ = *inptr1++;
-      *outptr1++ = *inptr1++;
-      *outptr1++ = *inptr1++;
-      *outptr1++ = *inptr1++;
-      outptr1 -= 8;
+          "rev64  v20.8b, v4.8b                \n"  //@ reverse 07 06 05 04 03
+                                                    // 02 01 00
+          "rev64  v21.8b, v5.8b                \n"  //@ reverse 07 06 05 04 03
+                                                    // 02 01 00
+          "rev64  v22.8b, v6.8b                \n"  //@ reverse 07 06 05 04 03
+                                                    // 02 01 00
+          "rev64  v23.8b, v7.8b                \n"  //@ reverse 07 06 05 04 03
+                                                    // 02 01 00
 
-      *outptr0++ = *inptr0++;
-      *outptr0++ = *inptr0++;
-      *outptr0++ = *inptr0++;
-      *outptr0++ = *inptr0++;
-      outptr0 -= 8;
+          "rev64  v0.8b, v8.8b                \n"   //@ reverse 07 06 05 04 03
+                                                    // 02 01 00
+          "rev64  v1.8b, v9.8b                \n"   //@ reverse 07 06 05 04 03
+                                                    // 02 01 00
+          "rev64  v2.8b, v10.8b                \n"  //@ reverse 07 06 05 04 03
+                                                    // 02 01 00
+          "rev64  v3.8b, v11.8b                \n"  //@ reverse 07 06 05 04 03
+                                                    // 02 01 00
+
+          "rev64  v4.8b, v12.8b                \n"  //@ reverse 07 06 05 04 03
+                                                    // 02 01 00
+          "rev64  v5.8b, v13.8b                \n"  //@ reverse 07 06 05 04 03
+                                                    // 02 01 00
+          "rev64  v6.8b, v14.8b                \n"  //@ reverse 07 06 05 04 03
+                                                    // 02 01 00
+          "rev64  v7.8b, v15.8b                \n"  //@ reverse 07 06 05 04 03
+                                                    // 02 01 00
+
+          "prfm   pldl1keep, [%[inptr0]]        \n"
+          "prfm   pldl1keep, [%[inptr1]]        \n"
+          "prfm   pldl1keep, [%[inptr2]]        \n"
+          "prfm   pldl1keep, [%[inptr3]]        \n"
+
+          "st4 {v16.8b, v17.8b, v18.8b, v19.8b}, [%[outptr0]]             \n"  // 00 10 20 30 04 14 24 34
+          "st4 {v20.8b, v21.8b, v22.8b, v23.8b}, [%[outptr1]]              \n"  // 02 12 22 32
+          "st4 {v0.8b, v1.8b, v2.8b, v3.8b}, [%[outptr2]]             \n"  // 01
+                                                                           // 11
+                                                                           // 21
+                                                                           // 31
+          "st4 {v4.8b, v5.8b, v6.8b, v7.8b}, [%[outptr3]]              \n"  // 03
+          // 13
+          // 23
+          // 33
+
+          "sub %[outptr0], %[outptr0], %[stride_w]       \n"  //@ ptr -
+                                                              // stride_w
+          "sub %[outptr1], %[outptr1], %[stride_w]       \n"
+          "sub %[outptr2], %[outptr2], %[stride_w]       \n"
+          "sub %[outptr3], %[outptr3], %[stride_w]       \n"
+          : [inptr0] "+r"(inptr0),
+            [inptr1] "+r"(inptr1),
+            [inptr2] "+r"(inptr2),
+            [inptr3] "+r"(inptr3),
+            [outptr0] "+r"(outptr0),
+            [outptr1] "+r"(outptr1),
+            [outptr2] "+r"(outptr2),
+            [outptr3] "+r"(outptr3),
+            [stride_w] "+r"(stride_w)
+          :
+          : "v0",
+            "v1",
+            "v2",
+            "v3",
+            "v4",
+            "v5",
+            "v6",
+            "v7",
+            "v8",
+            "v9",
+            "v10",
+            "v11",
+            "v12",
+            "v13",
+            "v14",
+            "v15",
+            "v16",
+            "v17",
+            "v18",
+            "v19",
+            "v20",
+            "v21",
+            "v22",
+            "v23");
+#else
+      asm volatile(
+          "vld4.8  {d0, d1, d2, d3}, [%[inptr0]]!   @ zip load r0, d0 =00 01 "
+          "02 03 04 05 06 07\n"
+          "vld4.8  {d4, d5, d6, d7}, [%[inptr1]]!   @ zip load r1, d2 =10 11 "
+          "12 13 14 15 16 17\n"
+          "vld4.8  {d8, d9, d10, d11}, [%[inptr2]]!   @ zip load r1, d4 =20 "
+          "21 22 23 24 25 26 27\n"
+          "vld4.8  {d12, d13, d14, d15}, [%[inptr3]]!   @ zip load r1, d6 = "
+          "30 31 32 33 34 35 36 37\n"
+
+          "vrev64.8  d16, d0               @ reverse 07 06 05 04 03 02 01 00 "
+          "\n"
+          "vrev64.8  d17, d1               @ reverse 07 06 05 04 03 02 01 00 "
+          "\n"
+          "vrev64.8  d18, d2               @ reverse 07 06 05 04 03 02 01 00 "
+          "\n"
+          "vrev64.8  d19, d3               @ reverse 07 06 05 04 03 02 01 00 "
+          "\n"
+
+          "vrev64.8  d20, d4               @ reverse 07 06 05 04 03 02 01 00 "
+          "\n"
+          "vrev64.8  d21, d5               @ reverse 07 06 05 04 03 02 01 00 "
+          "\n"
+          "vrev64.8  d22, d6               @ reverse 07 06 05 04 03 02 01 00 "
+          "\n"
+          "vrev64.8  d23, d7               @ reverse 07 06 05 04 03 02 01 00 "
+          "\n"
+
+          "vrev64.8  d0, d8               @ reverse 07 06 05 04 03 02 01 00 "
+          "\n"
+          "vrev64.8  d1, d9               @ reverse 07 06 05 04 03 02 01 00 "
+          "\n"
+          "vrev64.8  d2, d10               @ reverse 07 06 05 04 03 02 01 00 "
+          "\n"
+          "vrev64.8  d3, d11               @ reverse 07 06 05 04 03 02 01 00 "
+          "\n"
+
+          "vrev64.8  d4, d12               @ reverse 07 06 05 04 03 02 01 00 "
+          "\n"
+          "vrev64.8  d5, d13               @ reverse 07 06 05 04 03 02 01 00 "
+          "\n"
+          "vrev64.8  d6, d14               @ reverse 07 06 05 04 03 02 01 00 "
+          "\n"
+          "vrev64.8  d7, d15               @ reverse 07 06 05 04 03 02 01 00 "
+          "\n"
+
+          "pld [%[inptr0]]                         @ preload a, 64byte\n"
+          "pld [%[inptr1]]                         @ preload a, 64byte\n"
+          "pld [%[inptr2]]                         @ preload a, 64byte\n"
+          "pld [%[inptr3]]                         @ preload a, 64byte\n"
+
+          "vst4.8  {d16, d17, d18, d19},    [%[outptr0]]   @ write "
+          "d0(q0,low),r00,r10 20 30\n"
+          "vst4.8  {d20, d21, d22, d23},    [%[outptr1]]   @ write "
+          "d4(q0,low),r01,r11 21 31\n"
+          "vst4.8  {d0, d1, d2, d3},    [%[outptr2]]   @ write "
+          "d4(q0,low),r01,r11 21 31\n"
+          "vst4.8  {d4, d5, d6, d7},    [%[outptr3]]   @ write "
+          "d4(q0,low),r01,r11 21 31\n"
+
+          "sub %[outptr0], %[stride_w]       @ ptr - stride_w \n"
+          "sub %[outptr1], %[stride_w]       @ ptr - stride_w \n"
+          "sub %[outptr2], %[stride_w]       @ ptr - stride_w \n"
+          "sub %[outptr3], %[stride_w]       @ ptr - stride_w \n"
+
+          : [inptr0] "+r"(inptr0),
+            [inptr1] "+r"(inptr1),
+            [inptr2] "+r"(inptr2),
+            [inptr3] "+r"(inptr3),
+            [outptr0] "+r"(outptr0),
+            [outptr1] "+r"(outptr1),
+            [outptr2] "+r"(outptr2),
+            [outptr3] "+r"(outptr3),
+            [stride_w] "+r"(stride_w)
+          :
+          : "q0",
+            "q1",
+            "q2",
+            "q3",
+            "q4",
+            "q5",
+            "q6",
+            "q7",
+            "q8",
+            "q9",
+            "q10",
+            "q11",
+            "q12");
+#endif
+    }
+    outptr3 += stride_w - 4;
+    outptr2 += stride_w - 4;
+    outptr1 += stride_w - 4;
+    outptr0 += stride_w - 4;
+    for (; j < w_in; j++) {
+      if (i + 3 >= h_in) {
+        switch ((i + 3) - h_in) {
+          case 0:
+            *outptr2++ = *inptr2++;
+            *outptr2++ = *inptr2++;
+            *outptr2++ = *inptr2++;
+            *outptr2++ = *inptr2++;
+            outptr2 -= 8;
+          case 1:
+            *outptr1++ = *inptr1++;
+            *outptr1++ = *inptr1++;
+            *outptr1++ = *inptr1++;
+            *outptr1++ = *inptr1++;
+            outptr1 -= 8;
+          case 2:
+            *outptr0++ = *inptr0++;
+            *outptr0++ = *inptr0++;
+            *outptr0++ = *inptr0++;
+            *outptr0++ = *inptr0++;
+            outptr0 -= 8;
+          case 3:
+          // inptr3 = zerobuff;
+          default:
+            break;
+        }
+      } else {
+        *outptr3++ = *inptr3++;
+        *outptr3++ = *inptr3++;
+        *outptr3++ = *inptr3++;
+        *outptr3++ = *inptr3++;
+        outptr3 -= 8;
+
+        *outptr2++ = *inptr2++;
+        *outptr2++ = *inptr2++;
+        *outptr2++ = *inptr2++;
+        *outptr2++ = *inptr2++;
+        outptr2 -= 8;
+
+        *outptr1++ = *inptr1++;
+        *outptr1++ = *inptr1++;
+        *outptr1++ = *inptr1++;
+        *outptr1++ = *inptr1++;
+        outptr1 -= 8;
+
+        *outptr0++ = *inptr0++;
+        *outptr0++ = *inptr0++;
+        *outptr0++ = *inptr0++;
+        *outptr0++ = *inptr0++;
+        outptr0 -= 8;
+      }
     }
   }
 }

@@ -749,9 +749,6 @@ void rotate_hwc3_90(const uint8_t* src,
   uint8_t zerobuff[8] = {0, 0, 0, 0, 0, 0, 0, 0};
   // block 4*8. -- 8*4
   int i = 0;
-  int64_t stride_h = 4 * w_in;
-  int64_t stride_h_w = 4 * w_in - 8;
-  int i = 0;
   for (i = 0; i < h_in - 7; i += 8) {
     const uint8_t* inptr0 = src + i * win;
     const uint8_t* inptr1 = inptr0 + win;
