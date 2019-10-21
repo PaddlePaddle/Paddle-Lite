@@ -28,10 +28,11 @@ DEFINE_int32(batch, 1, "batch");
 
 namespace paddle {
 namespace lite {
-
 namespace test_transformer {
+
 std::vector<std::string> inputed_lines;
-void load_input_lines(const char* filename) {
+
+void LoadInputLines(const char* filename) {
   static const int max_line_buf_size = 100 * 1024 * 1024;
   char* line_buffer = (char*)calloc(max_line_buf_size, sizeof(char));  // NOLINT
   FILE* input_file = fopen(filename, "r");
@@ -48,7 +49,7 @@ void load_input_lines(const char* filename) {
   line_buffer = NULL;
   fclose(input_file);
 }
-void split2(const std::string& main_str,
+void Split2(const std::string& main_str,
             std::vector<std::string>& str_list,  // NOLINT
             const std::string& delimiter) {
   size_t pre_pos = 0;
@@ -74,19 +75,19 @@ void split2(const std::string& main_str,
 }
 }  // NOLINT
 
-void pad_batch_input(std::vector<std::string>& input_lines,  // NOLINT
-                     int pad_idx,
-                     int n_head,
-                     Tensor* src_word,
-                     Tensor* src_pos,
-                     Tensor* src_attn_bias,
-                     Tensor* trg_word,
-                     Tensor* init_scores,
-                     Tensor* init_idx,
-                     Tensor* trg_bias,
-                     int line_start,
-                     int batch_size,
-                     int bos_idx) {
+void PadBatchInput(std::vector<std::string>& input_lines,  // NOLINT
+                   int pad_idx,
+                   int n_head,
+                   Tensor* src_word,
+                   Tensor* src_pos,
+                   Tensor* src_attn_bias,
+                   Tensor* trg_word,
+                   Tensor* init_scores,
+                   Tensor* init_idx,
+                   Tensor* trg_bias,
+                   int line_start,
+                   int batch_size,
+                   int bos_idx) {
   int max_len = 0;
   int max_line = input_lines.size();
 
@@ -97,7 +98,7 @@ void pad_batch_input(std::vector<std::string>& input_lines,  // NOLINT
 
     std::vector<std::string> split_str;
 
-    test_transformer::split2(cur_line, split_str, " ");
+    test_transformer::Split2(cur_line, split_str, " ");
 
     batch_lines.push_back(split_str);
     max_len = max_len >= split_str.size() ? max_len : split_str.size();
@@ -187,7 +188,7 @@ void TestModel(const std::vector<Place>& valid_places,
   int eos_idx = 1;
   LOG(INFO) << "reading";
 
-  test_transformer::load_input_lines(test_data_path.c_str());
+  test_transformer::LoadInputLines(test_data_path.c_str());
   LOG(INFO) << "reading finished";
 
   auto* trg_bias = predictor.GetInput(6);
@@ -205,19 +206,19 @@ void TestModel(const std::vector<Place>& valid_places,
   auto start = GetCurrentUS();
   for (int i = 0; i < FLAGS_repeats; ++i) {
     auto start_i = GetCurrentUS();
-    pad_batch_input(test_transformer::inputed_lines,
-                    eos_idx,
-                    n_head,
-                    src_word,    // src_word
-                    src_pos,     // src_pos
-                    src_bias,    // src_bias
-                    trg_word,    // trg_word
-                    init_score,  // init_score
-                    init_idx,    // init_idx
-                    trg_bias,    // trg_bias
-                    i * batch_size,
-                    batch_size,
-                    bos_idx);
+    PadBatchInput(test_transformer::inputed_lines,
+                  eos_idx,
+                  n_head,
+                  src_word,    // src_word
+                  src_pos,     // src_pos
+                  src_bias,    // src_bias
+                  trg_word,    // trg_word
+                  init_score,  // init_score
+                  init_idx,    // init_idx
+                  trg_bias,    // trg_bias
+                  i * batch_size,
+                  batch_size,
+                  bos_idx);
     LOG(INFO) << "src_word:" << src_word->dims();
     auto start_ii = GetCurrentUS();
     LOG(INFO) << i << "->ii:" << (start_ii - start_i) / 1000.0;

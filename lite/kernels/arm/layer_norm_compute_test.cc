@@ -23,7 +23,7 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
-void layer_norm_compute_ref(const operators::LayerNormParam& param) {
+void LayerNormComputeRef(const operators::LayerNormParam& param) {
   auto* x = param.X;
   auto* y = param.Y;
   auto* scale_tensor = param.Scale;
@@ -161,7 +161,7 @@ TEST(layer_norm_arm, compute) {
                 param.Y = &output_ref;
                 param.Mean = &output_mean_ref;
                 param.Variance = &output_var_ref;
-                layer_norm_compute_ref(param);
+                LayerNormComputeRef(param);
                 for (int i = 0; i < output.dims().production(); i++) {
                   EXPECT_NEAR(output_data[i], output_data_ref[i], 1e-4);
                 }
