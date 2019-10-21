@@ -13,6 +13,8 @@
 // limitations under the License.
 #include "lite/kernels/x86/fc_compute.h"
 #include <gtest/gtest.h>
+#include <memory>
+#include <utility>
 #include <vector>
 #include "lite/core/op_registry.h"
 
@@ -61,9 +63,12 @@ TEST(fc_x86, run_test) {
     b_data[i] = static_cast<float>(i);
   }
 
-  /* lite::x86::math::fc_compute_eigen(x_data, batch_size, 3,  //
-                                     w_data, 3, 4,           //
-                                     b_data, ref_data); */
+  /*lite::Tensor ref;
+  std::vector<int64_t> ref_shape({1, 4});
+  ref.Resize(ref_shape);
+  auto ref_data = ref.mutable_data<float>();
+  lite::kernels::x86::fc_compute_eigen(
+      x_data, batch_size, 3, w_data, 3, 4, b_data, ref_data);*/
 
   // FcCompute fc;
   FcCompute<float> fc;
@@ -76,20 +81,15 @@ TEST(fc_x86, run_test) {
   param.output = &out;
   param.in_mat_dims = x.dims();
 
-  // std::unique_ptr<KernelContext> ctx(new KernelContext);
-  // ctx->As<X86Context>();
+  std::unique_ptr<KernelContext> ctx(new KernelContext);
+  ctx->As<X86Context>();
   fc.SetParam(param);
-  // fc.SetContext(std::move(ctx));
+  fc.SetContext(std::move(ctx));
   fc.Run();
 
-  VLOG(3) << "output vs ref";
   for (int i = 0; i < out.dims().production(); i++) {
-    VLOG(3) << out_data[i];
+    LOG(INFO) << out_data[i];
   }
-
-  /* for (int i = 0; i < out.dims().production(); ++i) {
-     EXPECT_NEAR(out_data[i], ref_data[i], 1e-5);
-   }*/
 }
 
 }  // namespace x86
