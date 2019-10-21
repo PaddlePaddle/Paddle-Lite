@@ -727,10 +727,8 @@ void LoadModelNaiveFromMemory(const std::string &model_buffer,
 
   // Load model
 
-  std::string prog_path = model_buffer;
-
   naive_buffer::BinaryTable table;
-  table.LoadFromMemory(prog_path.c_str(), prog_path.length());
+  table.LoadFromMemory(model_buffer.c_str(), model_buffer.length());
 
   naive_buffer::proto::ProgramDesc nb_proto_prog(&table);
   nb_proto_prog.Load();
@@ -742,8 +740,7 @@ void LoadModelNaiveFromMemory(const std::string &model_buffer,
   // Load Params
   // NOTE: Only main block be used now.
   // only combined Params are supported in Loading Model from memory
-  std::string combined_params_path = param_buffer;
-  LoadCombinedParamsNaive(combined_params_path, scope, *cpp_prog, true);
+  LoadCombinedParamsNaive(param_buffer, scope, *cpp_prog, true);
 
   VLOG(4) << "Load model from naive buffer memory successfully";
 }

@@ -149,15 +149,16 @@ void ParamDesc::SetDim(const std::vector<int64_t>& dim) {
     CHECK(GetDataType() == VarDescAPI::VarDataType::type__)                 \
         << "Data Type mismatch";                                            \
     std::vector<T> res;                                                     \
-    auto& data_builder = desc_->GetField<ListBuilder<CharBuilder>>("data"); \
-    auto data = RepeatedToVector<char, CharBuilder>(data_builder);          \
+    auto& data_builder = desc_->GetField<PrimaryListBuilder<char>>("data"); \
+    auto& data = data_builder.data();                                       \
     size_t size = data.size() / sizeof(T);                                  \
-    auto* data_ptr = reinterpret_cast<T*>(&data[0]);                        \
+    auto* data_ptr = reinterpret_cast<const T*>(&data[0]);                  \
     for (size_t i = 0; i < size; ++i) {                                     \
       res.push_back(data_ptr[i]);                                           \
     }                                                                       \
     return res;                                                             \
   }
+
 GET_DATA_IMPL(uint8_t, UINT8);
 GET_DATA_IMPL(int8_t, INT8);
 GET_DATA_IMPL(int16_t, INT16);
@@ -172,14 +173,13 @@ GET_DATA_IMPL(double, FP64);
   CHECK(GetDataType() == VarDescAPI::VarDataType::type__)       \
       << "Data Type mismatch, call SetDataType first.";         \
   auto* data_builder =                                          \
-      desc_->GetMutableField<ListBuilder<CharBuilder>>("data"); \
+      desc_->GetMutableField<PrimaryListBuilder<char>>("data"); \
   CHECK(data_builder);                                          \
   data_builder->Clear();                                        \
   size_t size = size__ * sizeof(T);                             \
   auto* data_ptr = reinterpret_cast<const char*>(data_ptr__);   \
-  for (size_t i = 0; i < size; ++i) {                           \
-    data_builder->New()->set(data_ptr[i]);                      \
-  }
+  std::vector<char> data_vec(data_ptr, data_ptr + size);        \
+  data_builder->set(data_vec);
 
 #define SET_DATA_IMPL(T, type__)                                \
   template <>                                                   \
