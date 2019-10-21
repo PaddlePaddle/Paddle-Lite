@@ -439,7 +439,6 @@ void ImageTransform::resize(const uint8_t* src,
     resize_hwc4(
         src, ialpha, xofs, yofs, rowsbuf0, rowsbuf1, srcw, srch, dstw, dsth);
   }
-  unsigned char* dp_ptr = dst + dstw * (dy);
 
   int cnt = dstw >> 3;
   int remain = dstw % 8;
