@@ -35,6 +35,9 @@
 #include <sys/syscall.h>
 #include <unistd.h>
 #endif
+#ifdef LITE_WITH_ANDROID
+#include <sys/system_properties.h>
+#endif
 #if __APPLE__
 #include "TargetConditionals.h"
 #if LITE_WITH_IPHONE
@@ -218,6 +221,7 @@ void get_cpu_arch(std::vector<ARMArch>* archs, const int cpu_num) {
 #ifdef LITE_WITH_LINUX
 
 std::string get_cpu_name() {
+  std::string cpu_name;
   FILE* fp = fopen("/proc/cpuinfo", "rb");
   if (!fp) {
     return "";
@@ -229,12 +233,23 @@ std::string get_cpu_name() {
       break;
     }
     if (strstr(line, "Hardware") != NULL) {
-      fclose(fp);
-      return std::string(line);
+      cpu_name = std::string(line);
     }
   }
+#ifdef LITE_WITH_ANDROID
+  // cpu name concat board name, platform name and chip name
+  char board_name[128];
+  char platform_name[128];
+  char chip_name[128];
+  __system_property_get("ro.product.board", board_name);
+  __system_property_get("ro.board.platform", platform_name);
+  __system_property_get("ro.chipname", chip_name);
+  cpu_name =
+      cpu_name + "_" + board_name + "_" + platform_name + "_" + chip_name;
+#endif
+  std::transform(cpu_name.begin(), cpu_name.end(), cpu_name.begin(), ::toupper);
   fclose(fp);
-  return "";
+  return cpu_name;
 }
 
 int get_min_freq_khz(int cpuid) {
@@ -780,7 +795,9 @@ bool DeviceInfo::SetCPUInfoByName() {
     cluster_ids_ = {0, 0, 0, 0};
     SetArchInfo(1, kA53);
     return true;
-  } else if (dev_name_.find("KIRIN980") != std::string::npos) {  // Kirin 980
+  } else if (dev_name_.find("KIRIN980") != std::string::npos ||
+             dev_name_.find("KIRIN990") !=
+                 std::string::npos) {  // Kirin 980, Kirin 990
     core_num_ = 8;
     core_ids_ = {0, 1, 2, 3, 4, 5, 6, 7};
     big_core_ids_ = {4, 5, 6, 7};
