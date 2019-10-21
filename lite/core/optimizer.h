@@ -126,7 +126,6 @@ class Optimizer {
                   valid_places_.end(),
                   Place{TARGET(kNPU), PRECISION(kFloat)}) !=
         valid_places_.end()) {
-      CheckInputDimsNotEmpty(exec_scope_);
       auto pass = mir::PassManager::Global()
                       .LookUp<mir::subgraph::GenerateNPUProgramPass>(
                           "generate_npu_program_pass");
@@ -148,19 +147,6 @@ class Optimizer {
     CHECK(exec_scope_);
     program->set_exec_scope(exec_scope_);
     return program;
-  }
-
-  // check the input dims in the scope, must not be empty
-  void CheckInputDimsNotEmpty(const lite::Scope* scope) {
-    CHECK(scope);
-    auto* feed_var = scope->FindVar("feed");
-    CHECK(feed_var) << "no feed variable in exec_scope: " << scope;
-    auto* feed_tensor_list = feed_var->GetMutable<std::vector<lite::Tensor>>();
-    CHECK_GE(feed_tensor_list->size(), 1);
-    for (size_t i = 0; i < feed_tensor_list->size(); ++i) {
-      CHECK(!feed_tensor_list->at(i).dims().empty())
-          << "Input " << i << " dims can not be empty.";
-    }
   }
 
   void InitTargetTypeTransformPass() {

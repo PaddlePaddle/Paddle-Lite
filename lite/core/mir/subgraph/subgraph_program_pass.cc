@@ -207,6 +207,8 @@ void SubgraphProgramPass::InferOnce(const std::unique_ptr<SSAGraph>& graph) {
     if (!item->IsStmt()) continue;
     auto& stmt = item->AsStmt();
     auto& op = stmt.op();
+    std::string op_type = op->op_info()->Type();
+    if (op_type == "feed" || op_type == "fetch") continue;
     op->CheckShape();
     op->InferShape();
     // TOOD(xxx): remove Launch() at last
