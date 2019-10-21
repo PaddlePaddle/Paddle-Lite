@@ -90,27 +90,70 @@ bool TransposeOp::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
 
 // Transpose2
 bool Transpose2Op::CheckShape() const {
-  TransposeOp::CheckShape();
-  CHECK_OR_FALSE(param_.xshape);
+  CHECK_OR_FALSE(param_.x);
+  CHECK_OR_FALSE(param_.output);
+  auto x_dims = param_.x->dims();
+  auto x_rank = x_dims.size();
+  std::vector<int> axis = param_.axis;
+  size_t axis_size = axis.size();
+  // "The input tensor's rank(%d) should be equal to the axis's size(%d)",
+  // x_rank, axis_size
+  CHECK_OR_FALSE(x_rank == axis_size);
+
+  std::vector<int> count(axis_size, 0);
+  for (size_t i = 0; i < axis_size; i++) {
+    // Each element of Attribute axis should be a unique value
+    // range from 0 to (dims - 1),
+    // where the dims is the axis's size
+    CHECK_OR_FALSE(axis[i] < static_cast<int>(axis_size) &&
+                   ++count[axis[i]] == 1);
+  }
   return true;
 }
 
 bool Transpose2Op::InferShape() const {
-  TransposeOp::InferShape();
-  auto in_dims = param_.x->dims();
-  std::vector<int64_t> x_shape_dim(in_dims.size() + 1);
-  x_shape_dim[0] = 0;
-  for (int i = 0; i < in_dims.size(); ++i) {
-    x_shape_dim[i + 1] = in_dims[i];
+  CHECK_OR_FALSE(param_.x);
+  CHECK_OR_FALSE(param_.output);
+  auto x_dims = param_.x->dims();
+  auto x_rank = x_dims.size();
+  std::vector<int> axis = param_.axis;
+  size_t axis_size = axis.size();
+  // "The input tensor's rank(%d) should be equal to the axis's size(%d)",
+  // x_rank, axis_size
+  CHECK_OR_FALSE(x_rank == axis_size);
+
+  std::vector<int> count(axis_size, 0);
+  for (size_t i = 0; i < axis_size; i++) {
+    // Each element of Attribute axis should be a unique value
+    // range from 0 to (dims - 1),
+    // where the dims is the axis's size
+    CHECK_OR_FALSE(axis[i] < static_cast<int>(axis_size) &&
+                   ++count[axis[i]] == 1);
   }
-  param_.xshape->Resize(x_shape_dim);
-  auto xshape_lod = param_.xshape->mutable_lod();
-  *xshape_lod = param_.x->lod();
+  lite::DDim out_dims(x_dims);
+  for (size_t i = 0; i < axis_size; i++) {
+    out_dims[i] = x_dims[axis[i]];
+  }
+  param_.output->Resize(out_dims);
   return true;
 }
 
 bool Transpose2Op::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
-  TransposeOp::AttachImpl(op_desc, scope);
+  auto x = op_desc.Input("X").front();
+  auto out = op_desc.Output("Out").front();
+
+  CHECK(scope->FindVar(x));
+  CHECK(scope->FindVar(out));
+  param_.x = GetVar<lite::Tensor>(scope, x);
+  param_.output = GetMutableVar<lite::Tensor>(scope, out);
+
+  param_.axis = op_desc.GetAttr<std::vector<int>>("axis");
+  if (op_desc.HasAttr("use_mkldnn")) {
+    param_.use_mkldnn = op_desc.GetAttr<bool>("use_mkldnn");
+  }
+  if (op_desc.HasAttr("data_format")) {
+    param_.data_format = op_desc.GetAttr<std::string>("data_format");
+  }
   if (op_desc.HasOutput("XShape")) {
     auto xshape_var = scope->FindVar(op_desc.Output("XShape").front());
     param_.xshape = xshape_var->GetMutable<lite::Tensor>();

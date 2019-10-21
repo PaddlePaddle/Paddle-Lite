@@ -60,19 +60,10 @@ TEST(transpose2_op_lite, test) {
   Scope scope;
   auto* x = scope.Var("x")->GetMutable<Tensor>();
   auto* output = scope.Var("output")->GetMutable<Tensor>();
-  auto* xshape = scope.Var("xshape")->GetMutable<Tensor>();
   const int h = 10;
   const int w = 20;
   x->Resize(DDim(std::vector<int64_t>({h, w})));
   output->Resize(DDim(std::vector<int64_t>{w, h}));
-
-  auto in_dims = x->dims();
-  std::vector<int64_t> x_shape_dim(in_dims.size() + 1);
-  x_shape_dim[0] = 0;
-  for (int i = 0; i < in_dims.size(); ++i) {
-    x_shape_dim[i + 1] = in_dims[i];
-  }
-  param_.xshape->Resize(x_shape_dim);
 
   // set data
   for (int i = 0; i < h * w; i++) {
@@ -86,7 +77,6 @@ TEST(transpose2_op_lite, test) {
   cpp::OpDesc desc;
   desc.SetType("transpose2");
   desc.SetInput("X", {"x"});
-  desc.SetOutput("XShape", {"xshape"});
   desc.SetOutput("Out", {"output"});
   // axis change for shape in mobilenetssd: [1, 24, 2, 2] => [1, 2, 2, 24]
   std::vector<int> axis{0, 2, 3, 1};
