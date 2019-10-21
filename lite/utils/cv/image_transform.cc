@@ -12,12 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
 #include "lite/utils/cv/image_transform.h"
 #include <arm_neon.h>
 #include <limits.h>
 #include <math.h>
 #include <algorithm>
+#include "lite/utils/cv/image_flip.h"
+#include "lite/utils/cv/image_rotate.h"
 namespace paddle {
 namespace lite {
 namespace utils {
@@ -394,7 +395,13 @@ void ImageTransform::resize(const uint8_t* src,
   int16_t* rowsbuf0 = new int16_t[size];
   int16_t* rowsbuf1 = new int16_t[size];
 
-  if (srcFormat == NV12 || srcFormat == NV21) {
+  if (srcFormat == GRAY) {
+    compute_xy(
+        srcw, srch, scale_x, scale_y, dstw, dsth, xofs, yofs, ialpha, ibeta);
+    // hwc1
+    resize_hwc1(
+        src, ialpha, xofs, yofs, rowsbuf0, rowsbuf1, srcw, srch, dstw, dsth);
+  } else if (srcFormat == NV12 || srcFormat == NV21) {
     int hout = static_cast<int>(0.5 * dsth);
     int size2 = size + hout * (dstw + 1);
     int16_t* new_rowsbuf0 = new int16_t[size2];
@@ -587,13 +594,33 @@ void ImageTransform::rotate(const uint8_t* src,
                             ImageFormat srcFormat,
                             int srcw,
                             int srch,
-                            float degree) {}
+                            float degree) {
+  if (srcFormat == GRAY) {
+    rotate_hwc1(src, dst, srcw, srch, degree);
+  } else if (srcFormat == NV12 || srcFormat == NV21) {
+    rotate_hwc2(src, dst, srcw, srch, degree);
+  } else if (srcFormat == BGR || srcFormat == RGB) {
+    rotate_hwc3(src, dst, srcw, srch, degree);
+  } else if (srcFormat == BGRA || srcFormat == RGBA) {
+    rotate_hwc4(src, dst, srcw, srch, degree);
+  }
+}
 void ImageTransform::flip(const uint8_t* src,
                           uint8_t* dst,
                           ImageFormat srcFormat,
                           int srcw,
                           int srch,
-                          FlipParm flip_param) {}
+                          FlipParm flip_param) {
+  if (srcFormat == GRAY) {
+    flip_hwc1(src, dst, srcw, srch, flip_param);
+  } else if (srcFormat == NV12 || srcFormat == NV21) {
+    flip_hwc2(src, dst, srcw, srch, flip_param);
+  } else if (srcFormat == BGR || srcFormat == RGB) {
+    flip_hwc3(src, dst, srcw, srch, flip_param);
+  } else if (srcFormat == BGRA || srcFormat == RGBA) {
+    flip_hwc4(src, dst, srcw, srch, flip_param);
+  }
+}
 }  // namespace cv
 }  // namespace utils
 }  // namespace lite
