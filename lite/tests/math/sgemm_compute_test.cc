@@ -27,7 +27,13 @@
 typedef paddle::lite::Tensor Tensor;
 using paddle::lite::Timer;
 
-DEFINE_int32(cluster, 3, "cluster id");
+DEFINE_int32(power_mode,
+             3,
+             "power mode: "
+             "0 for POWER_HIGH;"
+             "1 for POWER_LOW;"
+             "2 for POWER_FULL;"
+             "3 for NO_BIND");
 DEFINE_int32(threads, 1, "threads num");
 DEFINE_int32(warmup, 0, "warmup times");
 DEFINE_int32(repeats, 1, "repeats times");
@@ -183,7 +189,7 @@ bool test_sgemm(bool tra,
     t0.end();
   }
   LOG(INFO) << "M: " << m << ", N: " << n << ", K: " << k
-            << ", cluster: " << cls << ", threads: " << ths
+            << ", power_mode: " << cls << ", threads: " << ths
             << ", GOPS: " << ops * 1e-9f
             << " GOPS, avg time: " << t0.get_average_ms()
             << " ms, min time: " << t0.get_min_time()
@@ -259,7 +265,7 @@ TEST(TestSgemm, test_func_sgemm_prepacked) {
                                                  beta,
                                                  has_bias,
                                                  has_relu,
-                                                 FLAGS_cluster,
+                                                 FLAGS_power_mode,
                                                  th);
                           if (flag) {
                             LOG(INFO)
@@ -319,7 +325,7 @@ TEST(TestSgemmCustom, test_func_sgemm_prepacked_custom) {
                          FLAGS_beta,
                          FLAGS_flag_bias,
                          FLAGS_flag_relu,
-                         FLAGS_cluster,
+                         FLAGS_power_mode,
                          FLAGS_threads);
   if (!flag) {
     LOG(FATAL) << "test m = " << FLAGS_M << ", n=" << FLAGS_N

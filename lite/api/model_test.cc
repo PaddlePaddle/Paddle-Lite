@@ -65,13 +65,13 @@ void OutputOptModel(const std::string& load_model_dir,
 #ifdef LITE_WITH_LIGHT_WEIGHT_FRAMEWORK
 void Run(const std::vector<std::vector<int64_t>>& input_shapes,
          const std::string& model_dir,
-         const int cluster,
+         const PowerMode power_mode,
          const int thread_num,
          const int repeat,
          const int warmup_times = 0) {
   lite_api::MobileConfig config;
   config.set_model_dir(model_dir);
-  config.set_power_mode(static_cast<PowerMode>(cluster));
+  config.set_power_mode(power_mode);
   config.set_threads(thread_num);
 
   auto predictor = lite_api::CreatePaddlePredictor(config);
@@ -102,7 +102,8 @@ void Run(const std::vector<std::vector<int64_t>>& input_shapes,
   }
 
   LOG(INFO) << "================== Speed Report ===================";
-  LOG(INFO) << "Model: " << model_dir << ", cluster: " << cluster
+  LOG(INFO) << "Model: " << model_dir
+            << ", power_mode: " << static_cast<int>(power_mode)
             << ", threads num " << thread_num << ", warmup: " << warmup_times
             << ", repeats: " << repeat << ", avg time: " << ti.get_average_ms()
             << " ms"
@@ -187,12 +188,13 @@ int main(int argc, char** argv) {
 
 #ifdef LITE_WITH_LIGHT_WEIGHT_FRAMEWORK
   // Run inference using optimized model
-  paddle::lite_api::Run(input_shapes,
-                        save_optimized_model_dir,
-                        FLAGS_power_mode,
-                        FLAGS_threads,
-                        FLAGS_repeats,
-                        FLAGS_warmup);
+  paddle::lite_api::Run(
+      input_shapes,
+      save_optimized_model_dir,
+      static_cast<paddle::lite_api::PowerMode>(FLAGS_power_mode),
+      FLAGS_threads,
+      FLAGS_repeats,
+      FLAGS_warmup);
 #endif
   return 0;
 }
