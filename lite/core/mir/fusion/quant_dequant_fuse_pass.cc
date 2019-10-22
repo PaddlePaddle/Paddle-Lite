@@ -86,8 +86,6 @@ void QuantDequantFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   for (auto& op_type : quantized_op_types) {
     fusion::QuantDequantOpFuser fuser(op_type);
     fuser(graph.get());
-    fusion::DynamicQuantDequantOpFuser dynamic_fuser(op_type, quant_type, i);
-    dynamic_fuser(graph.get());
   }
 }
 
