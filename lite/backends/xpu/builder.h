@@ -50,11 +50,11 @@ std::shared_ptr<xtcl::xNDArray> CvtTensor(
     DataLayoutType in_ltype = DATALAYOUT(kNCHW));
 
 // Build network graph to model data, and store model data into lite tensor
-bool BuildModel(std::shared_ptr<xtcl::network::xNetworkBuilder> network_builder,
-                std::shared_ptr<xtcl::network::xTensorCompiler::ParamNDArrayMap>
-                    const_tensors,
-                std::vector<std::shared_ptr<xtcl::xExpr>>* output_nodes,
-                lite::Tensor* model_data);
+bool BuildModel(
+    std::shared_ptr<xtcl::network::xNetworkBuilder> builder,
+    std::shared_ptr<xtcl::network::xTensorCompiler::ParamNDArrayMap> params,
+    std::vector<std::shared_ptr<xtcl::xExpr>>* outputs,
+    lite::Tensor* model);
 
 }  // namespace xpu
 }  // namespace lite

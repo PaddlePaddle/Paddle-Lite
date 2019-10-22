@@ -75,7 +75,7 @@ void FillInputTensor(
     auto input_tensor_data = input_tensor->mutable_data<float>();
     auto input_tensor_size = ShapeProduction(input_tensor->shape());
     for (int j = 0; j < input_tensor_size; j++) {
-      input_tensor_data[i] = value;
+      input_tensor_data[j] = value;
     }
   }
 }
@@ -106,7 +106,6 @@ std::shared_ptr<lite_api::PaddlePredictor> TestModel(
     const std::string& model_dir,
     const std::string& model_file,
     const std::string& params_file,
-    const lite_api::Place& preferred_place,
     const std::vector<lite_api::Place>& valid_places,
     const std::vector<std::vector<int64_t>>& input_tensor_shape,
     const std::string& optimized_model_dir) {
@@ -115,10 +114,9 @@ std::shared_ptr<lite_api::PaddlePredictor> TestModel(
   cxx_config.set_model_dir(model_dir);
   cxx_config.set_model_file(model_file);
   cxx_config.set_param_file(params_file);
-  cxx_config.set_preferred_place(preferred_place);
   cxx_config.set_valid_places(valid_places);
   auto predictor = lite_api::CreatePaddlePredictor(cxx_config);
-  FillInputTensor(predictor, input_tensor_shape, 1);
+  FillInputTensor(predictor, input_tensor_shape, -1);
   predictor->SaveOptimizedModel(optimized_model_dir,
                                 lite_api::LiteModelType::kNaiveBuffer);
 #if 0  // TODO(hong19860320) supports light api for XPU
@@ -153,21 +151,17 @@ TEST(XPUSubgraph, compare) {
       TestModel(FLAGS_model_dir,
                 FLAGS_model_file,
                 FLAGS_params_file,
-                lite_api::Place{TARGET(kARM), PRECISION(kFloat)},
-                {lite_api::Place{TARGET(kHost), PRECISION(kFloat)},
-                 lite_api::Place{TARGET(kARM), PRECISION(kFloat)}},
+                {lite_api::Place{TARGET(kX86), PRECISION(kFloat)}},
                 input_tensor_shape,
                 FLAGS_optimized_model_dir + "/CPU");
-  // generate and run optimized NPU model
-  LOG(INFO) << " ================ NPU ================== ";
+  // generate and run optimized XPU model
+  LOG(INFO) << " ================ XPU ================== ";
   auto xpu_predictor =
       TestModel(FLAGS_model_dir,
                 FLAGS_model_file,
                 FLAGS_params_file,
-                lite_api::Place{TARGET(kARM), PRECISION(kFloat)},
-                {lite_api::Place{TARGET(kHost), PRECISION(kFloat)},
-                 lite_api::Place{TARGET(kARM), PRECISION(kFloat)},
-                 lite_api::Place{TARGET(kXPU), PRECISION(kFloat)}},
+                {lite_api::Place{TARGET(kXPU), PRECISION(kFloat)},
+                 lite_api::Place{TARGET(kX86), PRECISION(kFloat)}},
                 input_tensor_shape,
                 FLAGS_optimized_model_dir + "/XPU");
   // verify results

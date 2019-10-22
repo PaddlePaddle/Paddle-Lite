@@ -31,43 +31,40 @@ namespace lite {
 namespace mir {
 namespace subgraph {
 
-std::shared_ptr<std::string> GenerateXPUProgramPass::CvtVarNode(
-    lite::mir::Node* var_node, const Scope* scope) {
+std::shared_ptr<xtcl::xExpr> GenerateXPUProgramPass::CvtVarNode(
+    lite::kernels::xpu::bridges::graph_ctx_type* graph_ctx,
+    lite::mir::Node* var_node,
+    const Scope* scope) {
   CHECK(var_node->IsArg());
   const auto& arg = var_node->AsArg();
-  VLOG(4) << "Convert var node " << arg.name;
+  auto var_name = arg.name;
+  VLOG(4) << "[XPU] Convert var node " << var_name;
 
-  auto* var = scope->FindVar(arg.name);
+  auto* var = scope->FindVar(var_name);
   CHECK(var);
   auto* tensor = var->GetMutable<lite::Tensor>();
   CHECK(tensor);
   auto dims = tensor->dims();
+  auto cvted_var_node =
+      std::make_shared<xtcl::xExpr>(graph_ctx->builder->CreateTensor(
+          var_name, lite::xpu::CvtShape(dims), ::xtcl::Float(32)));
   if (arg.is_weight) {
-    auto wgt = std::make_shared<std::string>(arg.name);
-    LOG(INFO) << "in convert const:" << arg.name;
-    VLOG(4) << dims;
-    // TODO(hong19860320)
-    return wgt;
-  } else {
-    CHECK_EQ(dims.size(), 4);
-    LOG(INFO) << "in convert data:" << arg.name;
-    LOG(INFO) << dims;
-    // TODO(hong19860320)
-    auto data = std::make_shared<std::string>(arg.name);
-    return data;
+    auto cvted_var_tensor = lite::xpu::CvtTensor(tensor);
+    graph_ctx->params->emplace(std::make_pair(var_name, *cvted_var_tensor));
   }
-  return nullptr;
+  return cvted_var_node;
 }
 
 void GenerateXPUProgramPass::CvtAllOpNodes(
-    const std::vector<Node*>& nodes2cvt,
-    lite::kernels::xpu::bridges::node_map_type* converted_vars) {
+    const std::vector<Node*>& op_nodes,
+    lite::kernels::xpu::bridges::graph_ctx_type* graph_ctx,
+    lite::kernels::xpu::bridges::node_map_type* cvted_var_nodes) {
   const auto& bridges = lite::kernels::xpu::bridges::Factory::Instance();
-  const auto& cvtfunc_map = bridges.AllFunctions();
+  const auto& supported_lists = bridges.AllFunctions();
   // return record all converted vars
   // op node's inputs must be found in converted_vars
-  for (auto& node : nodes2cvt) {
-    lite::kernels::xpu::bridges::node_map_type node_inputs;
+  for (auto& node : op_nodes) {
+    lite::kernels::xpu::bridges::node_map_type input_nodes;
     auto& stmt = node->AsStmt();
     for (auto& var_node : node->inlinks) {
       auto& arg = var_node->AsArg();
@@ -76,14 +73,15 @@ void GenerateXPUProgramPass::CvtAllOpNodes(
         continue;
       }
       auto var_name = arg.name;
-      if (!converted_vars->count(var_name)) {
-        converted_vars->insert(
-            std::make_pair(var_name, CvtVarNode(var_node, stmt.op()->scope())));
+      if (!cvted_var_nodes->count(var_name)) {
+        cvted_var_nodes->insert(std::make_pair(
+            var_name, CvtVarNode(graph_ctx, var_node, stmt.op()->scope())));
       }
-      node_inputs.insert(*converted_vars->find(var_name));
+      input_nodes.insert(*cvted_var_nodes->find(var_name));
     }
-    auto node_outputs = cvtfunc_map.at(stmt.op_type())(stmt.op(), node_inputs);
-    converted_vars->insert(node_outputs.begin(), node_outputs.end());
+    auto output_nodes =
+        supported_lists.at(stmt.op_type())(stmt.op(), graph_ctx, input_nodes);
+    cvted_var_nodes->insert(output_nodes.begin(), output_nodes.end());
   }
 }
 
@@ -92,40 +90,35 @@ std::string GenerateXPUProgramPass::BuildXPUGraph(
     const std::unordered_set<Node*>& in_data_vars,
     const std::unordered_set<Node*>& out_data_vars,
     int sub_id) {
-  auto ordered_nodes = GetTopologicalOrder(op_nodes);
-  lite::kernels::xpu::bridges::node_map_type converted_vars;
-  CvtAllOpNodes(ordered_nodes, &converted_vars);
-
-  std::vector<std::string> in_var_names;
-  std::vector<std::string> out_var_names;
-  std::vector<std::string> inputs;
-  std::vector<std::string> outputs;
-  for (auto i : in_data_vars) {
-    auto argname = i->AsArg().name;
-    in_var_names.push_back(argname);
-    inputs.push_back(*converted_vars.at(argname));
-  }
-  for (auto i : out_data_vars) {
-    auto argname = i->AsArg().name;
-    out_var_names.push_back(argname);
-    outputs.push_back(*converted_vars.at(argname));
-  }
+  auto ordered_op_nodes = GetTopologicalOrder(op_nodes);
+  lite::kernels::xpu::bridges::graph_ctx_type graph_ctx;
+  graph_ctx.builder = std::make_shared<xtcl::network::xNetworkBuilder>();
+  graph_ctx.params =
+      std::make_shared<xtcl::network::xTensorCompiler::ParamNDArrayMap>();
+  lite::kernels::xpu::bridges::node_map_type cvted_var_nodes;
+  CvtAllOpNodes(ordered_op_nodes, &graph_ctx, &cvted_var_nodes);
 
   std::string weight_var_name = "graph" + std::to_string(sub_id) + "_weights";
   auto any_op = (*op_nodes.begin())->AsStmt().op();
   auto weight = any_op->scope()->Var(weight_var_name)->GetMutable<Tensor>();
   weight->set_persistable(true);
   weight->set_precision(PRECISION(kInt8));
-  // Compiling IR graph to XPU model and store mode data into weight tensor with
+  // Compiling graph to XPU model and store mode data into weight tensor with
   // persistable=true, Sothat the model parser can recognize it and save it to
   // param files
-  /*
-  if (!lite::xpu::bridge::BuildModel(inputs, outputs, weight)) {
-    LOG(WARNING) << "Build XPU failed subgraph " << sub_id;
-    throw std::runtime_error("Build XPU failed subgraph.");
+  std::vector<std::shared_ptr<xtcl::xExpr>> ordered_cvted_var_nodes;
+  for (auto out_data_var : out_data_vars) {
+    auto var_name = out_data_var->AsArg().name;
+    ordered_cvted_var_nodes.push_back(cvted_var_nodes[var_name]);
   }
-  */
-  LOG(INFO) << "[XPU] Build XPU Client success subgraph " << sub_id;
+  if (!lite::xpu::BuildModel(graph_ctx.builder,
+                             graph_ctx.params,
+                             &ordered_cvted_var_nodes,
+                             weight)) {
+    LOG(WARNING) << "[XPU] Build XPU graph failed (subgraph=" << sub_id << ")";
+    throw std::runtime_error("[XPU] Build XPU graph failed.");
+  }
+  LOG(INFO) << "[XPU] Build XPU graph success (subgraph=" << sub_id << ")";
   return weight_var_name;
 }
 
@@ -160,12 +153,12 @@ void GenerateXPUProgramPass::GenXPUSubgraph(
 }
 
 void GenerateXPUProgramPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
-  LOG(INFO) << "Before NPU Pass \n" << Visualize(graph.get());
+  LOG(INFO) << "[XPU] Before XPU Pass \n" << Visualize(graph.get());
   const auto& bridges = lite::kernels::xpu::bridges::Factory::Instance();
   const auto& op_map = bridges.AllFunctions();
   std::vector<std::string> supported_op_types;
   for (auto& i : op_map) {
-    LOG(INFO) << "Supported type: " << i.first;
+    LOG(INFO) << "[XPU] Supported type: " << i.first;
     supported_op_types.push_back(i.first);
   }
 
@@ -176,15 +169,15 @@ void GenerateXPUProgramPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
     CHECK_EQ(op_nodes_all.size(), num_subgraph);
     int id = 1;
     for (auto& op_nodes : op_nodes_all) {
-      LOG(INFO) << "Converting subgraph_id:" << id;
+      LOG(INFO) << "[XPU] Converting Subgraph " << id;
       GenXPUSubgraph(graph, op_nodes.second, id);
-      LOG(INFO) << "After XPU Pass Subgraph " << id << "\n"
+      LOG(INFO) << "[XPU] After XPU Pass Subgraph " << id << "\n"
                 << Visualize(graph.get());
       id++;
     }
   } catch (...) {
-    LOG(WARNING) << "Build XPU graph failed";
-    throw std::runtime_error("Build XPU graph failed");
+    LOG(WARNING) << "[XPU] Build XPU graph failed.";
+    throw std::runtime_error("[XPU] Build XPU graph failed.");
   }
 
   for (auto& item : graph->StmtTopologicalOrder()) {
@@ -197,7 +190,7 @@ void GenerateXPUProgramPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 }
 
 std::unique_ptr<RuntimeProgram> GenerateXPUProgramPass::GenProgram() {
-  LOG(INFO) << "insts.size " << insts_.size();
+  LOG(INFO) << "[XPU] program insts.size=" << insts_.size();
   std::unique_ptr<RuntimeProgram> program(
       new RuntimeProgram(std::move(insts_)));
   return program;

@@ -35,36 +35,33 @@ void LauchOp(const std::shared_ptr<lite::OpLite> op,
   const auto& bridges = lite::kernels::xpu::bridges::Factory::Instance();
   const auto& supported_lists = bridges.AllFunctions();
   CHECK(bridges.HasType(op_type));
-  node_map_type inputs_map;
-  inputs_map.network_builder =
-      std::make_shared<xtcl::network::xNetworkBuilder>();
-  inputs_map.const_tensors =
+  graph_ctx_type graph_ctx;
+  graph_ctx.builder = std::make_shared<xtcl::network::xNetworkBuilder>();
+  graph_ctx.params =
       std::make_shared<xtcl::network::xTensorCompiler::ParamNDArrayMap>();
+  node_map_type input_nodes;
   for (auto input_var_name : input_var_names) {
     auto input = scope->FindVar(input_var_name)->GetMutable<lite::Tensor>();
-    auto input_node =
-        std::make_shared<xtcl::xExpr>(inputs_map.network_builder->CreateTensor(
-            input_var_name,
-            lite::xpu::CvtShape(input->dims()),
-            ::xtcl::Float(32)));
-    inputs_map.output_nodes[input_var_name] = input_node;
+    auto input_node = std::make_shared<xtcl::xExpr>(
+        graph_ctx.builder->CreateTensor(input_var_name,
+                                        lite::xpu::CvtShape(input->dims()),
+                                        ::xtcl::Float(32)));
+    input_nodes[input_var_name] = input_node;
   }
-  auto outputs_map = supported_lists.at(op_type)(op, inputs_map);
-  CHECK_GT(outputs_map.output_nodes.size(), 0);
+  auto output_nodes = supported_lists.at(op_type)(op, &graph_ctx, input_nodes);
+  CHECK_GT(output_nodes.size(), 0);
 
   // build network graph and output model data
-  std::vector<std::shared_ptr<xtcl::xExpr>> output_nodes;
+  std::vector<std::shared_ptr<xtcl::xExpr>> ordered_output_nodes;
   for (auto output_var_name : output_var_names) {
-    output_nodes.push_back(outputs_map.output_nodes[output_var_name]);
+    ordered_output_nodes.push_back(output_nodes.at(output_var_name));
   }
   std::string weight_var_name = "weight";
   auto weight = scope->Var(weight_var_name)->GetMutable<Tensor>();
   weight->set_persistable(true);
   weight->set_precision(PRECISION(kInt8));
-  CHECK(lite::xpu::BuildModel(outputs_map.network_builder,
-                              outputs_map.const_tensors,
-                              &output_nodes,
-                              weight));
+  CHECK(lite::xpu::BuildModel(
+      graph_ctx.builder, graph_ctx.params, &ordered_output_nodes, weight));
   CHECK_GT(weight->numel(), 0);
   CHECK(weight->data<uint8_t>() != nullptr);
 
@@ -88,8 +85,8 @@ void LauchOp(const std::shared_ptr<lite::OpLite> op,
   CHECK(!graph_kernels.empty());
   auto graph_kernel =
       std::move(graph_kernels.front());  // use the first kernel by default
-  auto graph_ctx = ContextScheduler::Global().NewContext(TARGET(kXPU));
-  graph_kernel->SetContext(std::move(graph_ctx));
+  auto graph_device = ContextScheduler::Global().NewContext(TARGET(kXPU));
+  graph_kernel->SetContext(std::move(graph_device));
 
   // perform graph op kernel and store to output variables
   graph_kernel->Launch();

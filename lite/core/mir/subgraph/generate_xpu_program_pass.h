@@ -40,11 +40,15 @@ class GenerateXPUProgramPass : public SubgraphProgramPass {
  protected:
   // nodes2cvt: op nodes to convert
   // return cvted_vars: converted var nodes
-  void CvtAllOpNodes(const std::vector<Node*>& nodes2cvt,
-                     lite::kernels::xpu::bridges::node_map_type* cvted_vars);
+  void CvtAllOpNodes(
+      const std::vector<Node*>& op_nodes,
+      lite::kernels::xpu::bridges::graph_ctx_type* graph_ctx,
+      lite::kernels::xpu::bridges::node_map_type* cvted_var_nodes);
 
-  std::shared_ptr<std::string> CvtVarNode(lite::mir::Node* var_node,
-                                          const Scope* scope);
+  std::shared_ptr<xtcl::xExpr> CvtVarNode(
+      lite::kernels::xpu::bridges::graph_ctx_type* graph_ctx,
+      lite::mir::Node* var_node,
+      const Scope* scope);
 
   std::string BuildXPUGraph(const std::unordered_set<Node*>& op_nodes,
                             const std::unordered_set<Node*>& in_data_vars,

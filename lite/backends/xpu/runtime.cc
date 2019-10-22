@@ -21,20 +21,15 @@ namespace lite {
 namespace xpu {
 
 // Extract model data and restore model runtime
-bool LoadModel(
-    const lite::Tensor &model_data,
-    std::shared_ptr<xtcl::network::xRuntimeInstance> *model_runtime) {
+bool LoadModel(const lite::Tensor &model,
+               std::shared_ptr<xtcl::network::xRuntimeInstance> *runtime) {
   LOG(INFO) << "[XPU] Load Model.";
-  auto model_data_ptr = model_data.data<int8_t>();
-  auto model_data_size = model_data.numel() * sizeof(int8_t);
-  if (model_data_ptr == nullptr || model_data_size == 0) {
-    return false;
-  }
-  std::string model_name(reinterpret_cast<const char *>(model_data_ptr));
-  LOG(INFO) << "[XPU] Model Name: " << model_name;
-  CHECK(model_runtime != nullptr);
-  *model_runtime = DeviceInfo::Global().Find(model_name);
-  if (*model_runtime == nullptr) {
+  CHECK_GT(model.dims().production(), 0);
+  std::string name(reinterpret_cast<const char *>(model.data<int8_t>()));
+  LOG(INFO) << "[XPU] Model Name: " << name;
+  CHECK(runtime != nullptr);
+  *runtime = DeviceInfo::Global().Find(name);
+  if (*runtime == nullptr) {
     LOG(WARNING) << "[XPU] Load Model failed!";
     return false;
   }

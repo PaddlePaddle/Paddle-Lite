@@ -30,8 +30,8 @@ void GraphCompute::PrepareForRun() {
   // auto& ctx = this->ctx_->template As<XPUContext>();
   auto& param = this->Param<param_t>();
   CHECK(param.weight);
-  CHECK(lite::xpu::LoadModel(*param.weight, &model_runtime_));
-  CHECK(model_runtime_ != nullptr);
+  CHECK(lite::xpu::LoadModel(*param.weight, &runtime_));
+  CHECK(runtime_ != nullptr);
 }
 
 void GraphCompute::Run() {
@@ -45,7 +45,7 @@ void GraphCompute::Run() {
   for (int i = 0; i < param.inputs.size(); i++) {
     auto input_var_name = param.inputs[i].first;
     auto input_tensor = param.inputs[i].second;
-    LOG(INFO) << "input dims[" << i << " " << input_var_name
+    LOG(INFO) << "input dims[" << i << ":" << input_var_name
               << "]: " << input_tensor->dims();
     auto input_tensor_data = input_tensor->data<float>();
     for (int j = 0; j < input_tensor->dims().production(); j++) {
@@ -58,16 +58,16 @@ void GraphCompute::Run() {
     std::memcpy(input_ndarray_data,
                 input_tensor_data,
                 sizeof(float) * input_tensor->dims().production());
-    model_runtime_->SetInputZeroCopy(input_var_name,
-                                     &input_ndarray.ToDLPack()->dl_tensor);
+    runtime_->SetInputZeroCopy(input_var_name,
+                               &input_ndarray.ToDLPack()->dl_tensor);
   }
-  model_runtime_->Run();
+  runtime_->Run();
   for (int i = 0; i < param.outputs.size(); i++) {
-    auto output_ndarray = model_runtime_->GetOutput(i);
+    auto output_ndarray = runtime_->GetOutput(i);
     auto output_var_name = param.outputs[i].first;
     auto output_tensor = param.outputs[i].second;
     output_tensor->Resize(output_ndarray.Shape());
-    LOG(INFO) << "output dims[" << i << " " << output_var_name
+    LOG(INFO) << "output dims[" << i << ":" << output_var_name
               << "]: " << output_tensor->dims();
     auto output_ndarray_data =
         static_cast<float*>(output_ndarray.ToDLPack()->dl_tensor.data);

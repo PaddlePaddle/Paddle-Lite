@@ -29,17 +29,19 @@ namespace kernels {
 namespace xpu {
 namespace bridges {
 
-// var_name, xpu node point
-class node_map_type {
+// xpu network builder and constant tensors
+class graph_ctx_type {
  public:
-  std::shared_ptr<xtcl::network::xNetworkBuilder> network_builder;
-  std::shared_ptr<xtcl::network::xTensorCompiler::ParamNDArrayMap>
-      const_tensors;
-  std::unordered_map<std::string, std::shared_ptr<xtcl::xExpr>> output_nodes;
+  std::shared_ptr<xtcl::network::xNetworkBuilder> builder;
+  std::shared_ptr<xtcl::network::xTensorCompiler::ParamNDArrayMap> params;
 };
 
-using func_type = std::function<node_map_type(const std::shared_ptr<OpLite>,
-                                              const node_map_type&)>;
+// var_name, xpu node pointer
+using node_map_type =
+    std::unordered_map<std::string, std::shared_ptr<xtcl::xExpr>>;
+
+using func_type = std::function<node_map_type(
+    const std::shared_ptr<OpLite>, graph_ctx_type*, const node_map_type&)>;
 using cvt_map_type = std::unordered_map<std::string, func_type>;
 class Factory {
  public:

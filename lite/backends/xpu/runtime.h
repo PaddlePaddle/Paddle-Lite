@@ -33,21 +33,21 @@ class DeviceInfo {
   }
   DeviceInfo() {}
 
-  void Insert(const std::string& model_name,
-              std::shared_ptr<xtcl::network::xRuntimeInstance> model_runtime) {
-    if (model_runtimes_.find(model_name) != model_runtimes_.end()) {
-      LOG(WARNING) << "[XPU] Model " << model_name << " already exists.";
+  void Insert(const std::string& name,
+              std::shared_ptr<xtcl::network::xRuntimeInstance> runtime) {
+    if (runtimes_.find(name) != runtimes_.end()) {
+      LOG(WARNING) << "[XPU] Model " << name << " already exists.";
       return;
     }
-    model_runtimes_.emplace(std::make_pair(model_name, model_runtime));
+    runtimes_.emplace(std::make_pair(name, runtime));
   }
 
-  void Clear() { model_runtimes_.clear(); }
+  void Clear() { runtimes_.clear(); }
 
   std::shared_ptr<xtcl::network::xRuntimeInstance> Find(
-      const std::string& model_name) const {
-    if (model_runtimes_.find(model_name) != model_runtimes_.end()) {
-      return model_runtimes_.at(model_name);
+      const std::string& name) const {
+    if (runtimes_.find(name) != runtimes_.end()) {
+      return runtimes_.at(name);
     } else {
       return nullptr;
     }
@@ -58,11 +58,11 @@ class DeviceInfo {
   std::string device_name_{"default"};
   std::unordered_map<std::string,
                      std::shared_ptr<xtcl::network::xRuntimeInstance>>
-      model_runtimes_;
+      runtimes_;
 };
 
-bool LoadModel(const lite::Tensor& model_data,
-               std::shared_ptr<xtcl::network::xRuntimeInstance>* model_runtime);
+bool LoadModel(const lite::Tensor& model,
+               std::shared_ptr<xtcl::network::xRuntimeInstance>* runtime);
 
 }  // namespace xpu
 }  // namespace lite

@@ -38,7 +38,7 @@ class GraphCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
   virtual ~GraphCompute() = default;
 
  private:
-  std::shared_ptr<xtcl::network::xRuntimeInstance> model_runtime_{nullptr};
+  std::shared_ptr<xtcl::network::xRuntimeInstance> runtime_{nullptr};
 };
 
 }  // namespace xpu

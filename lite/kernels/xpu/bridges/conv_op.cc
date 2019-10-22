@@ -21,13 +21,14 @@ namespace kernels {
 namespace xpu {
 namespace bridges {
 
-node_map_type ConvConverter(const std::shared_ptr<lite::OpLite> conv_op,
-                            const node_map_type& inputs_map) {
-  auto scope = conv_op->scope();
-  auto op_info = conv_op->op_info();
+node_map_type ConvConverter(const std::shared_ptr<lite::OpLite> op,
+                            graph_ctx_type* graph_ctx,
+                            const node_map_type& input_nodes) {
+  auto scope = op->scope();
+  auto op_info = op->op_info();
   auto op_type = op_info->Type();
   auto unique_op_type = lite::xpu::UniqueName(op_type);
-  LOG(INFO) << "Converting " << op_type << "... ";
+  LOG(INFO) << "[XPU] Converting " << op_type << "... ";
 
   // get input, filter and op attributes
   auto input_var_name = op_info->Input("Input").front();
@@ -56,18 +57,19 @@ node_map_type ConvConverter(const std::shared_ptr<lite::OpLite> conv_op,
   }
   DDim output_dims(output_shape);
 
-  // check network context
-  CHECK(inputs_map.network_builder != nullptr);
-  CHECK(inputs_map.const_tensors != nullptr);
+  // check context
+  CHECK(graph_ctx != nullptr);
+  CHECK(graph_ctx->builder != nullptr);
+  CHECK(graph_ctx->params != nullptr);
 
   // create filter node
-  CHECK(!inputs_map.output_nodes.count(filter_var_name));
+  CHECK(!input_nodes.count(filter_var_name));
   auto filter_const_node = std::make_shared<xtcl::xExpr>(
-      inputs_map.network_builder->CreateTensor(filter_var_name,
-                                               lite::xpu::CvtShape(filter_dims),
-                                               ::xtcl::Float(32)));
+      graph_ctx->builder->CreateTensor(filter_var_name,
+                                       lite::xpu::CvtShape(filter_dims),
+                                       ::xtcl::Float(32)));
   auto filter_const_tensor = lite::xpu::CvtTensor(filter);
-  inputs_map.const_tensors->emplace(
+  graph_ctx->params->emplace(
       std::make_pair(filter_var_name, *filter_const_tensor));
 
   // create conv node and set input, filter, bias nodes and attributes
@@ -82,13 +84,11 @@ node_map_type ConvConverter(const std::shared_ptr<lite::OpLite> conv_op,
   conv_attrs->kernel_layout = "OIHW";
   conv_attrs->out_layout = "";
   // conv_attrs->out_dtype = "";
-  CHECK(inputs_map.output_nodes.count(input_var_name));
+  CHECK(input_nodes.count(input_var_name));
   auto conv_node =
-      std::make_shared<xtcl::xExpr>(inputs_map.network_builder->CreateConv2D(
-          *inputs_map.output_nodes.at(input_var_name),
-          *filter_const_node,
-          conv_attrs));
-  inputs_map.network_builder->SetLayer(unique_op_type);
+      std::make_shared<xtcl::xExpr>(graph_ctx->builder->CreateConv2D(
+          *input_nodes.at(input_var_name), *filter_const_node, conv_attrs));
+  graph_ctx->builder->SetLayer(unique_op_type);
 
   // create bias node if has bias
   // supports the bias nodes with the following dimensions
@@ -119,47 +119,44 @@ node_map_type ConvConverter(const std::shared_ptr<lite::OpLite> conv_op,
                  << output_dims;
     }
     std::shared_ptr<xtcl::xExpr> bias_node = nullptr;
-    if (inputs_map.output_nodes.count(bias_var_name)) {
-      // bias node from input map
-      bias_node = inputs_map.output_nodes.at(bias_var_name);
+    if (input_nodes.count(bias_var_name)) {
+      // bias node from input node
+      bias_node = input_nodes.at(bias_var_name);
     } else {
-      // bias node with const data
+      // bias node with const tensor
       auto bias_const_node = std::make_shared<xtcl::xExpr>(
-          inputs_map.network_builder->CreateTensor(
-              bias_var_name,
-              lite::xpu::CvtShape(bias_shape),
-              ::xtcl::Float(32)));
+          graph_ctx->builder->CreateTensor(bias_var_name,
+                                           lite::xpu::CvtShape(bias_shape),
+                                           ::xtcl::Float(32)));
       auto bias_const_tensor = lite::xpu::CvtTensor(bias, bias_shape);
-      inputs_map.const_tensors->emplace(
+      graph_ctx->params->emplace(
           std::make_pair(bias_var_name, *bias_const_tensor));
       bias_node = bias_const_node;
     }
     std::shared_ptr<xtcl::xExpr> add_node = nullptr;
     if (is_channel_bias) {
       add_node = std::make_shared<xtcl::xExpr>(
-          inputs_map.network_builder->CreateBiasAdd(*conv_node, *bias_node, 1));
+          graph_ctx->builder->CreateBiasAdd(*conv_node, *bias_node, 1));
     } else {
       add_node = std::make_shared<xtcl::xExpr>(
-          inputs_map.network_builder->CreateBinaryOp(
-              "add", *conv_node, *bias_node));
+          graph_ctx->builder->CreateBinaryOp("add", *conv_node, *bias_node));
     }
-    inputs_map.network_builder->SetLayer(unique_op_type + "/add");
+    graph_ctx->builder->SetLayer(unique_op_type + "/add");
     conv_node = add_node;
   }
 
-  node_map_type outputs_map;
-  outputs_map.network_builder = inputs_map.network_builder;
-  outputs_map.const_tensors = inputs_map.const_tensors;
+  // output converted nodes
+  node_map_type output_nodes;
   if (fuse_relu) {
     // append relu node if fuse_relu is true
     auto relu_node = std::make_shared<xtcl::xExpr>(
-        inputs_map.network_builder->CreateRelu(*conv_node));
-    inputs_map.network_builder->SetLayer(unique_op_type + "/relu");
-    outputs_map.output_nodes[op_info->Output("Output").front()] = relu_node;
+        graph_ctx->builder->CreateRelu(*conv_node));
+    graph_ctx->builder->SetLayer(unique_op_type + "/relu");
+    output_nodes[op_info->Output("Output").front()] = relu_node;
   } else {
-    outputs_map.output_nodes[op_info->Output("Output").front()] = conv_node;
+    output_nodes[op_info->Output("Output").front()] = conv_node;
   }
-  return outputs_map;
+  return output_nodes;
 }
 
 }  // namespace bridges

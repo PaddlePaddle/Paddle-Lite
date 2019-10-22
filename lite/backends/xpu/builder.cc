@@ -140,37 +140,39 @@ std::shared_ptr<xtcl::xNDArray> CvtTensor(lite::Tensor* in_tensor,
   return out_tensor;
 }
 
-// Build IR graph to model, and store model data into lite tensor
-bool BuildModel(std::shared_ptr<xtcl::network::xNetworkBuilder> network_builder,
-                std::shared_ptr<xtcl::network::xTensorCompiler::ParamNDArrayMap>
-                    const_tensors,
-                std::vector<std::shared_ptr<xtcl::xExpr>>* output_layers,
-                lite::Tensor* model_data) {
+// Build graph to model, and output model data into lite tensor
+bool BuildModel(
+    std::shared_ptr<xtcl::network::xNetworkBuilder> builder,
+    std::shared_ptr<xtcl::network::xTensorCompiler::ParamNDArrayMap> params,
+    std::vector<std::shared_ptr<xtcl::xExpr>>* outputs,
+    lite::Tensor* model) {
   LOG(INFO) << "[XPU] Build Model.";
-  CHECK(network_builder != nullptr);
-  CHECK_GT(output_layers->size(), 0);
-  CHECK(model_data != nullptr);
-  // build network and fill all of constant params
-  xtcl::xNetwork network_data =
-      network_builder->FinalizeNetwork(*((*output_layers)[0]));
-  auto device_target = xtcl::Target::Create("llvm");
-  auto model_compiler =
-      xtcl::network::xTensorCompiler(network_data, device_target);
-  model_compiler.SetParams(*const_tensors);
-  model_compiler.Build();
-  // register model runtime
-  auto model_runtime = std::make_shared<xtcl::network::xRuntimeInstance>(
-      model_compiler.CreateRuntimeInstance());
-  if (model_runtime == nullptr) {
+  CHECK(builder != nullptr);
+  CHECK(outputs != nullptr);
+  CHECK_GT(outputs->size(), 0);
+  CHECK(model != nullptr);
+
+  // build graph and fill all of constant params
+  xtcl::xNetwork network = builder->FinalizeNetwork(*((*outputs)[0]));
+  auto target = xtcl::Target::Create("llvm");
+  auto compiler = xtcl::network::xTensorCompiler(network, target);
+  compiler.SetParams(*params);  // set the data of constant tensors
+  compiler.Build();
+
+  // create and register runtime
+  auto runtime = std::make_shared<xtcl::network::xRuntimeInstance>(
+      compiler.CreateRuntimeInstance());
+  if (runtime == nullptr) {
     LOG(WARNING) << "[XPU] Build Model failed!";
     return false;
   }
-  std::string model_name = UniqueName("xpu_model_name");
-  DeviceInfo::Global().Insert(model_name, model_runtime);
-  model_data->Resize({static_cast<int64_t>(model_name.length() + 1)});
-  memcpy(model_data->mutable_data<int8_t>(),
-         reinterpret_cast<const int8_t*>(model_name.c_str()),
-         model_name.length() + 1);
+  std::string name = UniqueName("xpu");
+  LOG(INFO) << "[XPU] Model Name: " << name;
+  DeviceInfo::Global().Insert(name, runtime);
+  model->Resize({static_cast<int64_t>(name.length() + 1)});
+  memcpy(model->mutable_data<int8_t>(),
+         reinterpret_cast<const int8_t*>(name.c_str()),
+         name.length() + 1);
   return true;
 }
 

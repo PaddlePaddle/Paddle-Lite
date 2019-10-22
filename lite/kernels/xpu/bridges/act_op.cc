@@ -21,29 +21,36 @@ namespace kernels {
 namespace xpu {
 namespace bridges {
 
-node_map_type ActConverter(const std::shared_ptr<lite::OpLite> act_op,
-                           const node_map_type& inputs_map) {
-  auto op_info = act_op->op_info();
+node_map_type ActConverter(const std::shared_ptr<lite::OpLite> op,
+                           graph_ctx_type* graph_ctx,
+                           const node_map_type& input_nodes) {
+  auto op_info = op->op_info();
   auto op_type = op_info->Type();
   auto unique_op_type = lite::xpu::UniqueName(op_type);
-  LOG(INFO) << "Converting " + op_type + "...";
+  LOG(INFO) << "[XPU] Converting " + op_type + "...";
 
-  // check network context
-  CHECK(inputs_map.network_builder != nullptr);
-  CHECK(inputs_map.const_tensors != nullptr);
+  // check context
+  CHECK(graph_ctx != nullptr);
+  CHECK(graph_ctx->builder != nullptr);
+  CHECK(graph_ctx->params != nullptr);
 
-  // create activation node and set input nodes from inputs_map
+  // create act node and set params from op
   auto x_var_name = op_info->Input("X").front();
-  CHECK(inputs_map.output_nodes.count(x_var_name));
-  auto act_node =
-      std::make_shared<xtcl::xExpr>(inputs_map.network_builder->CreateRelu(
-          *inputs_map.output_nodes.at(x_var_name)));
-  inputs_map.network_builder->SetLayer(unique_op_type);
-  node_map_type outputs_map;
-  outputs_map.network_builder = inputs_map.network_builder;
-  outputs_map.const_tensors = inputs_map.const_tensors;
-  outputs_map.output_nodes[op_info->Output("Out").front()] = act_node;
-  return outputs_map;
+  CHECK(input_nodes.count(x_var_name));
+  std::shared_ptr<xtcl::xExpr> act_node = nullptr;
+  if (op_type == "relu") {
+    act_node = std::make_shared<xtcl::xExpr>(
+        graph_ctx->builder->CreateRelu(*input_nodes.at(x_var_name)));
+  } else {
+    // TODO(hong19860320) supports more activation ops
+    LOG(FATAL) << "[XPU] Unsupported activation type " << op_type;
+  }
+  graph_ctx->builder->SetLayer(unique_op_type);
+
+  // output converted nodes
+  node_map_type output_nodes;
+  output_nodes[op_info->Output("Out").front()] = act_node;
+  return output_nodes;
 }
 
 }  // namespace bridges
