@@ -75,6 +75,7 @@ add_operator(fake_quantize_range_abs_max_op basic SRCS fake_quantize_range_abs_m
 add_operator(sequence_expand_as_op_lite basic SRCS sequence_expand_as_op.cc DEPS ${op_DEPS})
 add_operator(range_op basic SRCS range_op.cc DEPS ${op_DEPS})
 add_operator(assign_value_op basic SRCS assign_value_op.cc DEPS ${op_DEPS})
+add_operator(fake_quantize_dequantize_moving_avg_abs_max_op basic SRCS fake_quantize_dequantize_moving_avg_max_abs.cc DEPS ${op_DEPS})
 
 # for OCR specific
 add_operator(while_op extra SRCS while_op.cc DEPS ${op_DEPS})

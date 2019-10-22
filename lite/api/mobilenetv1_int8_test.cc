@@ -14,6 +14,7 @@
 
 #include <gflags/gflags.h>
 #include <gtest/gtest.h>
+#include <fstream>
 #include <vector>
 #include "lite/api/cxx_api.h"
 #include "lite/api/paddle_use_kernels.h"
@@ -21,6 +22,10 @@
 #include "lite/api/paddle_use_passes.h"
 #include "lite/api/test_helper.h"
 #include "lite/core/op_registry.h"
+
+DEFINE_string(input_img_txt_path,
+              "",
+              "if set input_img_txt_path, read the img filename as input.");
 
 namespace paddle {
 namespace lite {
@@ -36,8 +41,18 @@ void TestModel(const std::vector<Place>& valid_places) {
   input_tensor->Resize(DDim(std::vector<DDim::value_type>({1, 3, 224, 224})));
   auto* data = input_tensor->mutable_data<float>();
   auto item_size = input_tensor->dims().production();
-  for (int i = 0; i < item_size; i++) {
-    data[i] = 1;
+  if (FLAGS_input_img_txt_path.empty()) {
+    for (int i = 0; i < item_size; i++) {
+      data[i] = 1;
+    }
+  } else {
+    std::fstream fs(FLAGS_input_img_txt_path, std::ios::in);
+    if (!fs.is_open()) {
+      LOG(FATAL) << "open input_img_txt error.";
+    }
+    for (int i = 0; i < item_size; i++) {
+      fs >> data[i];
+    }
   }
 
   for (int i = 0; i < FLAGS_warmup; ++i) {
