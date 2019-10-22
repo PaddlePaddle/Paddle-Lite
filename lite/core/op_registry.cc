@@ -54,6 +54,8 @@ std::list<std::unique_ptr<KernelBase>> KernelRegistry::Create(
       CREATE_KERNEL1(target__, kFP16);                  \
     case PRECISION(kAny):                               \
       CREATE_KERNEL1(target__, kAny);                   \
+    case PRECISION(kInt64):                             \
+      CREATE_KERNEL1(target__, kInt64);                 \
     default:                                            \
       CHECK(false) << "not supported kernel precision " \
                    << PrecisionToStr(precision);        \
@@ -123,6 +125,7 @@ KernelRegistry::KernelRegistry()
   INIT_FOR(kX86, kFloat, kNCHW);
   INIT_FOR(kX86, kAny, kNCHW);
   INIT_FOR(kX86, kAny, kAny);
+  INIT_FOR(kX86, kInt64, kNCHW);
 
   INIT_FOR(kARM, kFloat, kNCHW);
   INIT_FOR(kARM, kInt8, kNCHW);

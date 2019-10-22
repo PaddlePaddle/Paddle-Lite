@@ -32,7 +32,7 @@ struct EigenDim {
   static Type From(const lite::DDim& dims) {
     PADDLE_ENFORCE(dims.size() == D, "D must match DDim::size");
     Type ret;
-    for (int64_t d = 0; d < dims.size(); d++) {
+    for (size_t d = 0; d < dims.size(); d++) {
       ret[d] = dims[d];
     }
     return ret;
@@ -118,7 +118,9 @@ struct EigenScalar {
   using ConstType = Eigen::TensorMap<
       Eigen::TensorFixedSize<const T, Eigen::Sizes<>, MajorType, IndexType>>;
 
-  static Type From(Tensor& tensor) { return Type(tensor.data<T>()); }  // NOLINT
+  static Type From(const Tensor& tensor) {
+    return Type(const_cast<T*>(tensor.data<T>()));
+  }  // NOLINT
 
   static ConstType From(const Tensor& tensor) {
     return ConstType(tensor.data<T>());

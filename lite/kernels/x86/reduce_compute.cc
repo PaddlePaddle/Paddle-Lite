@@ -12,35 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/x86/activation_compute.h"
+#include "lite/kernels/x86/reduce_compute.h"
 
-// float
-REGISTER_LITE_KERNEL(square,
+REGISTER_LITE_KERNEL(reduce_sum,
                      kX86,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::x86::SquareCompute<float>,
-                     def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
-    .Finalize();
-
-// float
-REGISTER_LITE_KERNEL(relu,
-                     kX86,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::x86::ReluCompute<float>,
-                     def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
-    .Finalize();
-
-REGISTER_LITE_KERNEL(softsign,
-                     kX86,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::x86::SoftsignCompute<float>,
+                     paddle::lite::kernels::x86::ReduceSumCompute<float>,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})

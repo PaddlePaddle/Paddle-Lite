@@ -115,6 +115,31 @@ class ReluCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
   virtual ~ReluCompute() = default;
 };
 
+// softsign(x) = x / (1 + |x|)
+template <typename T>
+struct SoftsignFunctor : public BaseActivationFunctor<T> {
+  template <typename Device, typename X, typename Out>
+  void operator()(Device d, X x, Out out) {
+    out.device(d) = x / (static_cast<T>(1) + x.abs());
+  }
+};
+
+template <typename T>
+class SoftsignCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::ActivationParam;
+
+  void Run() override {
+    // auto& context = ctx_->As<X86Context>();
+    auto& param = *param_.get_mutable<operators::ActivationParam>();
+    param.Out->template mutable_data<T>();
+
+    Activate<SoftsignFunctor<T>>(param.X, param.Out);
+  }
+
+  virtual ~SoftsignCompute() = default;
+};
+
 }  // namespace x86
 }  // namespace kernels
 }  // namespace lite
