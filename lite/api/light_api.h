@@ -64,8 +64,8 @@ class LITE_API LightPredictor {
   }
 
   // get inputnames and get outputnames.
-  std::vector<std::string> GetInputNames();
-  std::vector<std::string> GetOutputNames();
+  const std::vector<std::string>& GetInputNames();
+  const std::vector<std::string>& GetOutputNames();
   void PrepareFeedFetch();
 
  private:
@@ -82,9 +82,8 @@ class LITE_API LightPredictor {
   std::shared_ptr<Scope> scope_;
   std::unique_ptr<RuntimeProgram> program_;
   cpp::ProgramDesc cpp_program_desc_;
-  std::map<size_t, std::string> input_names_;
-  std::map<std::string, size_t> idx2feeds_;
-  std::map<size_t, std::string> output_names_;
+  std::vector<std::string> input_names_;
+  std::vector<std::string> output_names_;
 };
 
 }  // namespace lite
