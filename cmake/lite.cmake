@@ -234,6 +234,7 @@ endfunction()
 
 set(arm_kernels CACHE INTERNAL "arm kernels")
 set(x86_kernels CACHE INTERNAL "x86 kernels")
+set(cuda_kernels CACHE INTERNAL "cuda kernels")
 set(fpga_kernels CACHE INTERNAL "fpga kernels")
 set(npu_kernels CACHE INTERNAL "npu kernels")
 set(opencl_kernels CACHE INTERNAL "opencl kernels")

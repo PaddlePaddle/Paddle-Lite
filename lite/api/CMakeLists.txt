@@ -9,13 +9,15 @@ if (LITE_ON_TINY_PUBLISH)
     set(CMAKE_C_FLAGS_RELEASE "-Os -DNDEBUG")
 endif()
 set(light_lib_DEPS light_api paddle_api paddle_api_light optimizer)
-if ((NOT LITE_ON_TINY_PUBLISH) AND (ARM_TARGET_OS STREQUAL "android"))
+#if ((NOT LITE_ON_TINY_PUBLISH) AND (ARM_TARGET_OS STREQUAL "android"))
+if (NOT LITE_ON_TINY_PUBLISH) 
     #full api dynamic library
     add_library(paddle_full_api_shared SHARED "")
     target_sources(paddle_full_api_shared PUBLIC ${__lite_cc_files} paddle_api.cc light_api.cc cxx_api.cc cxx_api_impl.cc light_api_impl.cc)
-    add_dependencies(paddle_full_api_shared op_list_h kernel_list_h framework_proto)
-    target_link_libraries(paddle_full_api_shared framework_proto)
-    
+    add_dependencies(paddle_full_api_shared op_list_h kernel_list_h framework_proto xxhash )
+    target_link_libraries(paddle_full_api_shared framework_proto xxhash ${math_cuda})# ${cuda_kernels})
+    target_link_libraries(paddle_full_api_shared "-Wl,--whole-archive"  ${cuda_kernels} "-Wl,--no-whole-archive")
+    add_dependencies(lite_compile_deps paddle_full_api_shared)
     #light api dynamic library
     lite_cc_library(paddle_light_api_shared MODULE
     SRCS light_api_shared.cc
@@ -23,11 +25,11 @@ if ((NOT LITE_ON_TINY_PUBLISH) AND (ARM_TARGET_OS STREQUAL "android"))
     ARM_DEPS ${arm_kernels} NPU_DEPS ${npu_kernels})
     target_link_libraries(paddle_light_api_shared ${light_lib_DEPS} ${arm_kernels} ${npu_kernels})
 else()
-    if (ARM_TARGET_OS STREQUAL "android")
+#    if (ARM_TARGET_OS STREQUAL "android")
         add_library(paddle_light_api_shared SHARED "")
         target_sources(paddle_light_api_shared PUBLIC ${__lite_cc_files} paddle_api.cc light_api.cc light_api_impl.cc)
         add_dependencies(paddle_light_api_shared op_list_h kernel_list_h)
-    endif()
+#    endif()
 endif()
 
 if (WITH_TESTING)
@@ -44,6 +46,7 @@ endif()
 
 message(STATUS "get ops ${ops}")
 message(STATUS "get X86 kernels ${x86_kernels}")
+message(STATUS "get CUDA kernels ${cuda_kernels}")
 message(STATUS "get Host kernels ${host_kernels}")
 message(STATUS "get ARM kernels ${arm_kernels}")
 message(STATUS "get NPU kernels ${npu_kernels}")
@@ -245,20 +248,28 @@ endif()
 
 # Some bins
 if(NOT IOS)
-  lite_cc_binary(test_model_bin SRCS model_test.cc DEPS paddle_api_full paddle_api_light gflags utils
-    ${ops} ${host_kernels}
-    ARM_DEPS ${arm_kernels}
-    NPU_DEPS ${npu_kernels}
-    CL_DEPS ${opencl_kernels}
-    FPGA_DEPS ${fpga_kernels}
-    X86_DEPS ${x86_kernels})
-  lite_cc_binary(benchmark_bin SRCS benchmark.cc DEPS paddle_api_full paddle_api_light gflags utils
-    ${ops} ${host_kernels}
-    ARM_DEPS ${arm_kernels}
-    NPU_DEPS ${npu_kernels}
-    CL_DEPS ${opencl_kernels}
-    FPGA_DEPS ${fpga_kernels}
-    X86_DEPS ${x86_kernels})
+  if(LITE_WITH_CUDA)
+
+    nv_binary(test_model_bin SRCS model_test.cc DEPS paddle_api_full paddle_api_light gflags utils
+        ${ops} ${host_kernels} ${cuda_kernels})
+    nv_binary(benchmark_bin SRCS benchmark.cc DEPS paddle_api_full paddle_api_light gflags utils
+         ${ops} ${host_kernels} ${cuda_kernels})
+  else()  
+     lite_cc_binary(test_model_bin SRCS model_test.cc DEPS paddle_api_full paddle_api_light gflags utils
+        ${ops} ${host_kernels}
+        ARM_DEPS ${arm_kernels}
+        NPU_DEPS ${npu_kernels}
+        CL_DEPS ${opencl_kernels}
+        FPGA_DEPS ${fpga_kernels}
+        X86_DEPS ${x86_kernels})
+      lite_cc_binary(benchmark_bin SRCS benchmark.cc DEPS paddle_api_full paddle_api_light gflags utils
+        ${ops} ${host_kernels}
+        ARM_DEPS ${arm_kernels}
+        NPU_DEPS ${npu_kernels}
+        CL_DEPS ${opencl_kernels}
+        FPGA_DEPS ${fpga_kernels}
+        X86_DEPS ${x86_kernels})
+  endif(LITE_WITH_CUDA)
 endif()
 
 #lite_cc_binary(cxx_api_bin SRCS cxx_api_bin.cc

@@ -162,6 +162,20 @@ function cmake_x86_for_CI {
     # make test_generated_code -j$NUM_CORES_FOR_COMPILE
 }
 
+# This method is only called in CI.
+function cmake_nv_for_CI {
+    prepare_workspace # fake an empty __generated_code__.cc to pass cmake.
+    cmake ..  -DCMAKE_BUILD_TYPE=RelWithDebInfo -DWITH_MKL=OFF -DLITE_WITH_CUDA=ON -DWITH_MKLDNN=OFF -DLITE_WITH_X86=OFF \
+          -DWITH_LITE=ON  -DWITH_PYTHON=OFF -DWITH_TESTING=OFF -DLITE_WITH_ARM=OFF
+
+    # Compile and execute the gen_code related test, so it will generate some code, and make the compilation reasonable.
+    # make test_gen_code -j$NUM_CORES_FOR_COMPILE
+    # make test_cxx_api -j$NUM_CORES_FOR_COMPILE
+    # ctest -R test_cxx_api
+    # ctest -R test_gen_code
+    # make test_generated_code -j$NUM_CORES_FOR_COMPILE
+}
+
 function cmake_gpu {
     prepare_workspace
     cmake .. " -DWITH_GPU=ON {common_flags} -DLITE_WITH_GPU=ON"
@@ -225,6 +239,18 @@ function build_test_server {
 
     test_server
     test_model_optimize_tool_compile
+}
+
+# Build the code and run lite server tests. This is executed in the CI system.
+function build_test_server_nv {
+    mkdir -p ./build_nv
+    cd ./build_nv
+    export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$PWD/third_party/install/mklml/lib"
+    cmake_nv_for_CI
+    build
+
+    #test_server
+    #test_model_optimize_tool_compile
 }
 
 function build_test_train {
@@ -888,6 +914,10 @@ function main {
                 ;;
             build_test_server)
                 build_test_server
+                shift
+                ;;
+            build_test_server_nv)
+                build_test_server_nv
                 shift
                 ;;
             build_test_train)
