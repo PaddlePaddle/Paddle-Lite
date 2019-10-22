@@ -70,7 +70,7 @@ void ReduceFunctor(const lite::Tensor& input,
   Functor functor;
 
   if (D == 1) {
-    auto out = EigenScalar<T>::From(*output);
+    auto out = EigenScalar<T>::From(output);
     functor(&x, &out, reduce_dim);
   } else {
     auto out = EigenTensor<T, (D - R_D)>::From(*output, out_dims);

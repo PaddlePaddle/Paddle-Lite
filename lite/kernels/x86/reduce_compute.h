@@ -56,7 +56,7 @@ class ReduceSumCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
     if (reduce_all) {
       // Flatten and reduce 1-D tensor
       auto x = lite::fluid::EigenVector<T>::Flatten(*input);
-      auto out = lite::fluid::EigenScalar<T>::From(*output);
+      auto out = lite::fluid::EigenScalar<T>::From(output);
       // auto& place = *platform::CPUDeviceContext().eigen_device();
       auto reduce_dim = Eigen::array<int, 1>({{0}});
       SumFunctor functor;

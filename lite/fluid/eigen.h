@@ -118,8 +118,8 @@ struct EigenScalar {
   using ConstType = Eigen::TensorMap<
       Eigen::TensorFixedSize<const T, Eigen::Sizes<>, MajorType, IndexType>>;
 
-  static Type From(const Tensor& tensor) {
-    return Type(const_cast<T*>(tensor.data<T>()));
+  static Type From(Tensor* tensor) {
+    return Type(const_cast<T*>(tensor->data<T>()));
   }  // NOLINT
 
   static ConstType From(const Tensor& tensor) {
