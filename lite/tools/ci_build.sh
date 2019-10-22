@@ -249,8 +249,8 @@ function build_test_train {
 }
 
 function cmake_xpu {
+    export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$PWD/third_party/install/mklml/lib"
     prepare_workspace
-    build_dir=`pwd`
     cmake .. \
         ${common_flags} \
         -DWITH_GPU=OFF \
@@ -259,7 +259,7 @@ function cmake_xpu {
         -DWITH_MKL=ON \
         -DLITE_BUILD_EXTRA=ON \
         -DLITE_WITH_XPU=ON \
-        -DXPU_SDK_ROOT="${build_dir}/../../XPU_SDK"
+        -DXPU_SDK_ROOT="$(pwd)/../../XPU_SDK"
 }
 
 function build_xpu {
@@ -293,9 +293,12 @@ function test_xpu {
 
 # Build the code and run lite server tests. This is executed in the CI system.
 function build_test_xpu {
-    mkdir -p ./build
-    cd ./build
-    export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$PWD/third_party/install/mklml/lib"
+    cur_dir=$(pwd)
+
+    build_dir=$cur_dir/build.lite.xpu
+    mkdir -p $build_dir
+    cd $build_dir
+
     cmake_xpu
     build_xpu
 
