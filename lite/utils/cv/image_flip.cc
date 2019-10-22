@@ -358,7 +358,7 @@ void flip_hwc1_xy(const uint8_t* src, uint8_t* dst, int w_in, int h_in) {
     }
     int j = 0;
     for (; j < w_in - 7; j += 8) {
-#ifdef __aarch64
+#ifdef __aarch64__
       asm volatile(
           "ld1  {v0.8b}, [%[inptr0]], #8    \n"   // v0={00,01,02, 03, 04, 05,
                                                   // 06, 07}"
