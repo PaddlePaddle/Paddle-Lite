@@ -13,6 +13,9 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "lite/backends/fpga/KD/dl_engine.hpp"
+#include "lite/backends/fpga/KD/llapi/filter.h"
+#include "lite/backends/fpga/KD/llapi/zynqmp_api.h"
+
 namespace paddle {
 namespace zynqmp {
 

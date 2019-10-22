@@ -55,9 +55,12 @@ class Optimizer {
 
     if (passes.empty()) {
       RunPasses(std::vector<std::string>{
-          {"lite_quant_dequant_fuse_pass",     //
+          {"lite_quant_dequant_fuse_pass",  //
+#ifndef BUILD_WITH_FPGA
            "lite_conv_elementwise_fuse_pass",  // conv-elemwise-bn
-           "lite_conv_bn_fuse_pass",           //
+#endif
+           "lite_conv_bn_fuse_pass",  //
+           "graph_visualze",
            "lite_conv_elementwise_fuse_pass",  // conv-bn-elemwise
            // This pass is disabled to force some opencl kernels selected for
            // final running, otherwise, they will be fused to ARM fusion
@@ -106,7 +109,8 @@ class Optimizer {
 
            "runtime_context_assign_pass",
            "argument_type_display_pass",  //
-#if !defined(LITE_WITH_OPENCL) && !defined(LITE_WITH_NPU)
+#if !defined(LITE_WITH_OPENCL) && !defined(LITE_WITH_NPU) && \
+    !defined(LITE_WITH_FPGA)
            // TODO(ysh329): cause CL_INVALID_MEM_OBJECT when setArg in kernel
            "memory_optimize_pass",
 #endif

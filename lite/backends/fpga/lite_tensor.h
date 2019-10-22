@@ -125,6 +125,7 @@ class TensorLite {
 
   bool persistable() const { return persistable_; }
   void set_persistable(bool persistable) { persistable_ = persistable; }
+
   // T is the data type and R is the return type
   // For OpenCL, the return type can be cl::Buffer
   // and the data type can be float/int8_t.
@@ -146,6 +147,8 @@ class TensorLite {
   size_t data_size() const { return this->dims().production(); }
 
   size_t memory_size() const { return zynq_tensor_->memorySize(); }
+
+  size_t offset() const { return offset_; }
 
   bool IsInitialized() const { return buffer_->data(); }
 
@@ -173,15 +176,20 @@ class TensorLite {
 
  private:
   TargetType target_{TargetType::kHost};
+
+  // precision_ and persistable_ are only used for persistable vars.
+  // If your tensor wants to be saved and loaded correctly, you must
+  // set values of precision_ and persistable_ after updating it.
+  // If your tensor is just a temp tensor, such as activations,
+  // you can ignore these two attributes.
+  PrecisionType precision_{PrecisionType::kUnk};
+  bool persistable_{false};
+
   DDimLite dims_;
   std::shared_ptr<Buffer> buffer_;
   LoD lod_;
   size_t memory_size_{};
-
   size_t offset_{0};
-
-  PrecisionType precision_{PrecisionType::kUnk};
-  bool persistable_{false};
 
   zynqmp::Tensor *zynq_tensor_ = new zynqmp::Tensor();
 
@@ -197,6 +205,9 @@ R *TensorLite::mutable_data() {
   }
   zynqmp::LayoutType layout_type = zynqmp::NCHW;
   switch (v.size()) {
+    case 0:
+      layout_type = zynqmp::None;
+      break;
     case 1:
       layout_type = zynqmp::N;
       break;
@@ -228,12 +239,6 @@ R *TensorLite::mutable_data(TargetType target) {
   return mutable_data<T>();
 }
 
-template <typename TensorT>
-bool TensorCompareWith(const TensorT &a, const TensorT &b) {
-  if (a.dims() != b.dims()) return false;
-  if (memcmp(a.raw_data(), b.raw_data(), a.data_size()) != 0) return false;
-  return true;
-}
 template <typename T>
 TensorLite TensorLite::Slice(int64_t begin, int64_t end) const {
   int64_t base = numel() / dims_[0];
@@ -247,5 +252,13 @@ TensorLite TensorLite::Slice(int64_t begin, int64_t end) const {
   dst.offset_ = offset_ + static_cast<size_t>(begin * base) * sizeof(T);
   return dst;
 }
+
+template <typename TensorT>
+bool TensorCompareWith(const TensorT &a, const TensorT &b) {
+  if (a.dims() != b.dims()) return false;
+  if (memcmp(a.raw_data(), b.raw_data(), a.data_size()) != 0) return false;
+  return true;
+}
+
 }  // namespace lite
 }  // namespace paddle
