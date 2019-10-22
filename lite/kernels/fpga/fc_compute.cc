@@ -43,7 +43,6 @@ void FcCompute::PrepareForRun() {
 void FcCompute::Run() {
   pe_.dispatch();
   zynqmp::FullyConnectedParam& fc_param = pe_.param();
-  // fc_param.output->saveToFile("fc", true);
 }
 
 }  // namespace fpga

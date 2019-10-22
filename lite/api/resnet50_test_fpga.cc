@@ -83,41 +83,6 @@ TEST(ResNet50, test) {
   for (int i = 0; i < 1; ++i) {
     predictor.Run();
   }
-
-  // std::string path = "inputs";
-  // auto files = GetDirectoryFiles(path);
-  // for (auto p : files) {
-  //   std::string pp = path + "/" + p;
-  //   std::cout << "\n path::::========== " << pp << std::endl;
-  //   std::size_t found = pp.find(".txt");
-  //   if (found == std::string::npos) {
-  //     continue;
-  //   }
-  //   // readFromFile(item_size, pp, data);
-  //   predictor.Run();
-
-  //   auto* output_tensor = predictor.GetOutput(0);
-  //   lite::Tensor* out = const_cast<lite::Tensor*>(output_tensor);
-  //   auto* out_data = out->data<float>();
-  //   item_size = out->dims().production();
-
-  //   float max = 0;
-  //   int index = 0;
-  //   for (int i = 0; i < item_size; i++) {
-  //     float value = data[i];
-  //     if (value > max) {
-  //       max = value;
-  //       index = i;
-  //     }
-  //     std::cout << i << " : " << value << std::endl;
-  //   }
-  //   std::cout << "max:" << max << " @ :" << index << std::endl;
-  //   std::cout << "size:" << predictor.GetOutputs()->size() << std::endl;
-
-  //   std::cout << "output_tensor:::" << out << std::endl;
-  //   std::cout << "out_data:::" << out_data << std::endl;
-  // }
-
   LOG(INFO) << "================== Speed Report ===================";
 }
 #endif

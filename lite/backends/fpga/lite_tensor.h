@@ -162,9 +162,6 @@ class TensorLite {
 
   TargetType target() const { return target_; }
 
-  // template <typename T>
-  // TensorLite Slice(int64_t begin, int64_t end) const;
-
   zynqmp::Tensor *ZynqTensor() const { return zynq_tensor_; }
 
   friend std::ostream &operator<<(std::ostream &os, const TensorLite &tensor) {

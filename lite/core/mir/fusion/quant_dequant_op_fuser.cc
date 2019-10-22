@@ -22,8 +22,6 @@ namespace lite {
 namespace mir {
 namespace fusion {
 
-// #define DYNAMIC_RANGE
-
 void QuantDequantOpFuser::BuildPattern() {
   std::string weight_name = "";
   if (op_type_ == "conv2d" || op_type_ == "depthwise_conv2d") {

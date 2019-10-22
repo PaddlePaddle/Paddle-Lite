@@ -49,16 +49,6 @@ class ConvPE : public PE {
       concatPE_.init();
       concatPE_.apply();
     }
-
-    // if (DLEngine::get_instance().isZU3() &&
-    //     param_.input->shape().dimSize() == 4 &&
-    //     param_.input->shape().width() == 1 &&
-    //     param_.input->shape().channel() >= 2048) {
-    //   use_cpu_ = true;
-    // }
-    if (!use_cpu_) {
-      // param_.filter->releaseData();
-    }
   }
   void cpu_compute() {
     Tensor* input = param_.input;
@@ -83,15 +73,6 @@ class ConvPE : public PE {
       float* out_ptr = mi;
 #pragma omp parallel for
       for (int j = 0; j < in_channel; j++) {
-        // float32x4_t x0 = vld1q_f32(image);
-        // float32x4_t x1 = vld1q_f32(filter_ptr);
-
-        // float32x4_t r = vmulq_f32(x0, x1);
-
-        // vst1q_f32(out_ptr, r);
-        // image += 4;
-        // filter_ptr += 4;
-        // out_ptr += 4;
         float value = image_addr[j] * filter_ptr[j];
         mi[j] = value;
       }

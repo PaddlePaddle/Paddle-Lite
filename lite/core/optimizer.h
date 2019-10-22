@@ -56,7 +56,9 @@ class Optimizer {
     if (passes.empty()) {
       RunPasses(std::vector<std::string>{
           {"lite_quant_dequant_fuse_pass",  //
-           // "lite_conv_elementwise_fuse_pass",  // conv-elemwise-bn
+#ifndef BUILD_WITH_FPGA
+           "lite_conv_elementwise_fuse_pass",  // conv-elemwise-bn
+#endif
            "lite_conv_bn_fuse_pass",  //
            "graph_visualze",
            "lite_conv_elementwise_fuse_pass",  // conv-bn-elemwise
@@ -195,7 +197,7 @@ class Optimizer {
   // Specify the passes and run them.
   void RunPasses(const std::vector<std::string>& passes) {
     for (auto& x : passes) {
-      // LOG(INFO) << "== Running pass: " << x;
+      LOG(INFO) << "== Running pass: " << x;
       mir::Pass* pass = mir::PassManager::Global().LookUp(x);
       CHECK(pass) << "Can not find pass: " << x;
       bool matched = false;
@@ -210,7 +212,7 @@ class Optimizer {
                   << " because the target or kernel does not match.";
       } else {
         pass->Apply(graph_);
-        // LOG(INFO) << "== Finished running: " << x;
+        LOG(INFO) << "== Finished running: " << x;
       }
     }
   }
