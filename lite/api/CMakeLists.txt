@@ -68,6 +68,8 @@ set(light_api_deps
     scope target_wrapper_host model_parser program)
 if(LITE_WITH_CUDA)
     set(light_api_deps ${light_api_deps} target_wrapper_cuda)
+    set(cuda_static_deps cudart_static cublas_static curand_static
+        cudnn_static culibos_static)
 endif()
 lite_cc_library(light_api SRCS light_api.cc
         DEPS scope target_wrapper_host model_parser
@@ -195,7 +197,7 @@ if (NOT LITE_ON_TINY_PUBLISH)
     # The final inference library for just MobileConfig.
     bundle_static_library(paddle_api_full paddle_api_full_bundled bundle_full_api)
     get_property(fluid_modules GLOBAL PROPERTY FLUID_MODULES)
-    cc_library(api_full_static SRCS DEPS paddle_api_full cxx_api paddle_api light_api  ${cxx_api_deps} ${ops} ${host_kernels} ${cuda_kernels} program tensor memory naive_buffer types ${fluid_modules} protobuf)
+    cc_library(api_full_static SRCS DEPS paddle_api_full cxx_api paddle_api light_api  ${cxx_api_deps} ${ops} ${host_kernels} ${cuda_kernels} program tensor memory naive_buffer types ${fluid_modules} protobuf ${cuda_static_deps})
 endif()
 bundle_static_library(paddle_api_light paddle_api_light_bundled bundle_light_api)
 #-----------------------------------------------------------------------------------------------------
