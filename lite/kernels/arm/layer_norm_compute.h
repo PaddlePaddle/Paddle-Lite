@@ -13,21 +13,28 @@
 // limitations under the License.
 
 #pragma once
-
-#include <cmath>
-#include "lite/core/context.h"
+#include <stdint.h>
+#include "lite/backends/arm/math/type_trans.h"
+#include "lite/core/kernel.h"
+#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
+namespace kernels {
 namespace arm {
-namespace math {
-void increment(const float* input,
-               const int n,
-               const float step,
-               float* out,
-               Context<TARGET(kARM)>* ctx);
 
-}  // namespace math
+class LayerNormCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::LayerNormParam;
+
+  void PrepareForRun() override;
+
+  void Run() override;
+
+  ~LayerNormCompute() {}
+};
+
 }  // namespace arm
+}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
