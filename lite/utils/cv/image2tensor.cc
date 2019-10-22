@@ -25,6 +25,50 @@ void bgr_to_tensor_chw(const uint8_t* src,
                        int width,
                        int height,
                        float* means,
+                       float* scales);
+void bgra_to_tensor_chw(const uint8_t* src,
+                        float* output,
+                        int width,
+                        int height,
+                        float* means,
+                        float* scales);
+void bgr_to_tensor_hwc(const uint8_t* src,
+                       float* output,
+                       int width,
+                       int height,
+                       float* means,
+                       float* scales);
+void bgra_to_tensor_hwc(const uint8_t* src,
+                        float* output,
+                        int width,
+                        int height,
+                        float* means,
+                        float* scales);
+void Image2Tensor::choose(const uint8_t* src,
+                          Tensor* dst,
+                          ImageFormat srcFormat,
+                          LayOut layout,
+                          int srcw,
+                          int srch,
+                          float* means,
+                          float* scales) {
+  float* output = dst->mutable_data<float>();
+  if (layout == CHW && (srcFormat == BGR || srcFormat == RGB)) {
+    impl_ = bgr_to_tensor_chw;
+  } else if (layout == HWC && (srcFormat == BGR || srcFormat == RGB)) {
+    impl_ = bgr_to_tensor_hwc;
+  } else if (layout == CHW && (srcFormat == BGRA || srcFormat == RGBA)) {
+    impl_ = bgra_to_tensor_chw;
+  } else if (layout == HWC && (srcFormat == BGRA || srcFormat == RGBA)) {
+    impl_ = bgra_to_tensor_hwc;
+  }
+  impl_(src, output, srcw, srch, means, scales);
+}
+void bgr_to_tensor_chw(const uint8_t* src,
+                       float* output,
+                       int width,
+                       int height,
+                       float* means,
                        float* scales) {
   int size = width * height;
   float b_means = means[0];

@@ -18,6 +18,71 @@ namespace paddle {
 namespace lite {
 namespace utils {
 namespace cv {
+// gray
+void rotate_hwc1_90(
+    const uint8_t* src, uint8_t* dst, int w_in, int h_in, int w_out, int h_out);
+void rotate_hwc1_180(
+    const uint8_t* src, uint8_t* dst, int w_in, int h_in, int w_out, int h_out);
+void rotate_hwc1_270(
+    const uint8_t* src, uint8_t* dst, int w_in, int h_in, int w_out, int h_out);
+
+// bgr rgb
+void rotate_hwc3_90(
+    const uint8_t* src, uint8_t* dst, int w_in, int h_in, int w_out, int h_out);
+void rotate_hwc3_180(
+    const uint8_t* src, uint8_t* dst, int w_in, int h_in, int w_out, int h_out);
+void rotate_hwc3_270(
+    const uint8_t* src, uint8_t* dst, int w_in, int h_in, int w_out, int h_out);
+// rgba bgra
+void rotate_hwc4_90(
+    const uint8_t* src, uint8_t* dst, int w_in, int h_in, int w_out, int h_out);
+void rotate_hwc4_180(
+    const uint8_t* src, uint8_t* dst, int w_in, int h_in, int w_out, int h_out);
+void rotate_hwc4_270(
+    const uint8_t* src, uint8_t* dst, int w_in, int h_in, int w_out, int h_out);
+
+void rotate_hwc1(
+    const uint8_t* src, uint8_t* dst, int srcw, int srch, float degree) {
+  if (degree == 90) {
+    rotate_hwc1_90(src, dst, srcw, srch, srch, srcw);
+  } else if (degree == 180) {
+    rotate_hwc1_180(src, dst, srcw, srch, srcw, srch);
+  } else if (degree == 270) {
+    rotate_hwc1_270(src, dst, srcw, srch, srch, srcw);
+  }
+}
+void rotate_hwc2(
+    const uint8_t* src, uint8_t* dst, int srcw, int srch, float degree) {
+  // if (degree == 90){
+  //     rotate_hwc2_90(src, dst, srcw, srch, srch, srcw);
+  // }else if (degree == 180){
+  //     rotate_hwc2_180(src, dst, srcw, srch, srcw, srch);
+  // }else if (degree == 270){
+  //     rotate_hwc2_270(src, dst, srcw, srch, srch, srcw);
+  // }
+}
+
+void rotate_hwc3(
+    const uint8_t* src, uint8_t* dst, int srcw, int srch, float degree) {
+  if (degree == 90) {
+    rotate_hwc3_90(src, dst, srcw, srch, srch, srcw);
+  } else if (degree == 180) {
+    rotate_hwc3_180(src, dst, srcw, srch, srcw, srch);
+  } else if (degree == 270) {
+    rotate_hwc3_270(src, dst, srcw, srch, srch, srcw);
+  }
+}
+
+void rotate_hwc4(
+    const uint8_t* src, uint8_t* dst, int srcw, int srch, float degree) {
+  if (degree == 90) {
+    rotate_hwc4_90(src, dst, srcw, srch, srch, srcw);
+  } else if (degree == 180) {
+    rotate_hwc4_180(src, dst, srcw, srch, srcw, srch);
+  } else if (degree == 270) {
+    rotate_hwc4_270(src, dst, srcw, srch, srch, srcw);
+  }
+}
 /*
 1 2 3
 4 5 6

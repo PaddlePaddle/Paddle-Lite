@@ -20,6 +20,81 @@ namespace paddle {
 namespace lite {
 namespace utils {
 namespace cv {
+void nv_to_bgr(
+    const uint8_t* src, uint8_t* dst, int srcw, int srch, int x_num, int y_num);
+
+void nv_to_bgra(
+    const uint8_t* src, uint8_t* dst, int srcw, int srch, int x_num, int y_num);
+
+void nv21_to_bgr(const uint8_t* src, uint8_t* dst, int srcw, int srch);
+void nv21_to_bgra(const uint8_t* src, uint8_t* dst, int srcw, int srch);
+void nv12_to_bgr(const uint8_t* src, uint8_t* dst, int srcw, int srch);
+void nv12_to_bgra(const uint8_t* src, uint8_t* dst, int srcw, int srch);
+// bgr rgb to gray
+void hwc3_to_hwc1(const uint8_t* src, uint8_t* dst, int srcw, int srch);
+// gray to bgr rgb
+void hwc1_to_hwc3(const uint8_t* src, uint8_t* dst, int srcw, int srch);
+// bgr to bgra or rgb to rgba
+void hwc3_to_hwc4(const uint8_t* src, uint8_t* dst, int srcw, int srch);
+// bgr to rgb or rgb to bgr
+void hwc3_trans(const uint8_t* src, uint8_t* dst, int srcw, int srch);
+// bgra to rgba or rgba to bgra
+void hwc4_trans(const uint8_t* src, uint8_t* dst, int srcw, int srch);
+// bgra to rgb or rgba to bgr
+void hwc4_trans_hwc3(const uint8_t* src, uint8_t* dst, int srcw, int srch);
+// bgr to rgba or rgb to bgra
+void hwc3_trans_hwc4(const uint8_t* src, uint8_t* dst, int srcw, int srch);
+
+void ImageConvert::choose(const uint8_t* src,
+                          uint8_t* dst,
+                          ImageFormat srcFormat,
+                          ImageFormat dstFormat,
+                          int srcw,
+                          int srch) {
+  if (srcFormat == dstFormat) {
+    // copy
+    memcpy(dst, src, sizeof(uint8_t) * srch * srcw);
+  } else {
+    if (srcFormat == NV12 && dstFormat == BGR) {
+      impl_ = nv12_to_bgr;
+    } else if (srcFormat == NV21 && dstFormat == BGR) {
+      impl_ = nv21_to_bgr;
+    } else if (srcFormat == NV12 && dstFormat == BGRA) {
+      impl_ = nv12_to_bgra;
+    } else if (srcFormat == NV21 && dstFormat == BGRA) {
+      impl_ = nv21_to_bgra;
+    } else if ((srcFormat == RGBA && dstFormat == RGB) ||
+               (srcFormat == BGRA && dstFormat == BGR)) {
+      impl_ = hwc4_to_hwc3;
+    } else if ((srcFormat == RGB && dstFormat == RGBA) ||
+               (srcFormat == BGR && dstFormat == BGRA)) {
+      impl_ = hwc4_to_hwc3;
+    } else if ((srcFormat == RGB && dstFormat == BGR) ||
+               (srcFormat == BGR && dstFormat == RGB)) {
+      impl_ = hwc3_trans;
+    } else if ((srcFormat == RGBA && dstFormat == BGRA) ||
+               (srcFormat == BGRA && dstFormat == RGBA)) {
+      impl_ = hwc4_trans;
+    } else if ((srcFormat == RGB && dstFormat == GRAY) ||
+               (srcFormat == BGR && dstFormat == GRAY)) {
+      impl_ = hwc3_to_hwc1;
+    } else if ((srcFormat == GRAY && dstFormat == RGB) ||
+               (srcFormat == GRAY && dstFormat == BGR)) {
+      impl_ = hwc1_to_hwc3;
+    } else if ((srcFormat == RGBA && dstFormat == BGR) ||
+               (srcFormat == BGRA && dstFormat == RGB)) {
+      impl_ = hwc4_trans_hwc3;
+    } else if ((srcFormat == RGB && dstFormat == BGRA) ||
+               (srcFormat == BGR && dstFormat == RGBA)) {
+      impl_ = hwc3_trans_hwc4;
+    } else {
+      printf("srcFormat: %d, dstFormat: %d does not support! \n",
+             srcFormat,
+             dstFormat);
+    }
+  }
+  impl_(src, dst, srcw, srch);
+}
 /*
 nv21(yvu)  to BGR: stroe hwc dsth * dstw = srch * (srcw)
 y_w = srcw, y_h = srch uv_w = srcw uv_h = 1/2 * srch
@@ -714,7 +789,6 @@ void nv_to_bgra(const uint8_t* src,
 void nv21_to_bgr(const uint8_t* src, uint8_t* dst, int srcw, int srch) {
   nv_to_bgra(src, dst, srcw, srch, 0, 1);
 }
-
 // nv12(yuv)  to BGR:store hwc dsth * dstw = srch * srcw y_w = srcw, y_h = srch
 // uv_w = srcw uv_h = 1/2 * srch
 void nv12_to_bgr(const uint8_t* src, uint8_t* dst, int srcw, int srch) {
@@ -1218,56 +1292,6 @@ void hwc3_trans_hwc4(const uint8_t* src, uint8_t* dst, int srcw, int srch) {
   }
 }
 
-void ImageConvert::choose(const uint8_t* src,
-                          uint8_t* dst,
-                          ImageFormat srcFormat,
-                          ImageFormat dstFormat,
-                          int srcw,
-                          int srch) {
-  if (srcFormat == dstFormat) {
-    // copy
-    memcpy(dst, src, sizeof(uint8_t) * srch * srcw);
-  } else {
-    if (srcFormat == NV12 && dstFormat == BGR) {
-      impl_ = nv12_to_bgr;
-    } else if (srcFormat == NV21 && dstFormat == BGR) {
-      impl_ = nv21_to_bgr;
-    } else if (srcFormat == NV12 && dstFormat == BGRA) {
-      impl_ = nv12_to_bgra;
-    } else if (srcFormat == NV21 && dstFormat == BGRA) {
-      impl_ = nv21_to_bgra;
-    } else if ((srcFormat == RGBA && dstFormat == RGB) ||
-               (srcFormat == BGRA && dstFormat == BGR)) {
-      impl_ = hwc4_to_hwc3;
-    } else if ((srcFormat == RGB && dstFormat == RGBA) ||
-               (srcFormat == BGR && dstFormat == BGRA)) {
-      impl_ = hwc4_to_hwc3;
-    } else if ((srcFormat == RGB && dstFormat == BGR) ||
-               (srcFormat == BGR && dstFormat == RGB)) {
-      impl_ = hwc3_trans;
-    } else if ((srcFormat == RGBA && dstFormat == BGRA) ||
-               (srcFormat == BGRA && dstFormat == RGBA)) {
-      impl_ = hwc4_trans;
-    } else if ((srcFormat == RGB && dstFormat == GRAY) ||
-               (srcFormat == BGR && dstFormat == GRAY)) {
-      impl_ = hwc3_to_hwc1;
-    } else if ((srcFormat == GRAY && dstFormat == RGB) ||
-               (srcFormat == GRAY && dstFormat == BGR)) {
-      impl_ = hwc1_to_hwc3;
-    } else if ((srcFormat == RGBA && dstFormat == BGR) ||
-               (srcFormat == BGRA && dstFormat == RGB)) {
-      impl_ = hwc4_trans_hwc3;
-    } else if ((srcFormat == RGB && dstFormat == BGRA) ||
-               (srcFormat == BGR && dstFormat == RGBA)) {
-      impl_ = hwc3_trans_hwc4;
-    } else {
-      printf("srcFormat: %d, dstFormat: %d does not support! \n",
-             srcFormat,
-             dstFormat);
-    }
-  }
-  impl_(src, dst, srcw, srch);
-}
 }  // namespace cv
 }  // namespace utils
 }  // namespace lite

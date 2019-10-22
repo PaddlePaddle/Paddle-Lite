@@ -18,6 +18,62 @@ namespace paddle {
 namespace lite {
 namespace utils {
 namespace cv {
+// gray
+void flip_hwc1_x(const uint8_t* src, uint8_t* dst, int w_in, int h_in);
+void flip_hwc1_y(const uint8_t* src, uint8_t* dst, int w_in, int h_in);
+void flip_hwc1_xy(const uint8_t* src, uint8_t* dst, int w_in, int h_in);
+// rgb bgr
+void flip_hwc3_x(const uint8_t* src, uint8_t* dst, int w_in, int h_in);
+void flip_hwc3_y(const uint8_t* src, uint8_t* dst, int w_in, int h_in);
+void flip_hwc3_xy(const uint8_t* src, uint8_t* dst, int w_in, int h_in);
+// rgba bgra
+void flip_hwc4_x(const uint8_t* src, uint8_t* dst, int w_in, int h_in);
+void flip_hwc4_y(const uint8_t* src, uint8_t* dst, int w_in, int h_in);
+void flip_hwc4_xy(const uint8_t* src, uint8_t* dst, int w_in, int h_in);
+
+void flip_hwc1(
+    const uint8_t* src, uint8_t* dst, int srcw, int srch, FlipParm flip_param) {
+  if (flip_param == X) {
+    flip_hwc1_x(src, dst, srcw, srch);
+  } else if (flip_param == Y) {
+    flip_hwc1_y(src, dst, srcw, srch);
+  } else if (flip_param == XY) {
+    flip_hwc1_xy(src, dst, srcw, srch);
+  }
+}
+
+void flip_hwc2(
+    const uint8_t* src, uint8_t* dst, int srcw, int srch, FlipParm flip_param) {
+  // if (flip_param == X){
+  //     flip_hwc2_x(src, dst, srcw, srch);
+  // }else if (flip_param == Y){
+  //     flip_hwc2_y(src, dst, srcw, srch);
+  // }else if (flip_param == XY){
+  //     flip_hwc2_xy(src, dst, srcw, srch);
+  // }
+}
+
+void flip_hwc3(
+    const uint8_t* src, uint8_t* dst, int srcw, int srch, FlipParm flip_param) {
+  if (flip_param == X) {
+    flip_hwc3_x(src, dst, srcw, srch);
+  } else if (flip_param == Y) {
+    flip_hwc3_y(src, dst, srcw, srch);
+  } else if (flip_param == XY) {
+    flip_hwc3_xy(src, dst, srcw, srch);
+  }
+}
+
+void flip_hwc4(
+    const uint8_t* src, uint8_t* dst, int srcw, int srch, FlipParm flip_param) {
+  if (flip_param == X) {
+    flip_hwc4_x(src, dst, srcw, srch);
+  } else if (flip_param == Y) {
+    flip_hwc4_y(src, dst, srcw, srch);
+  } else if (flip_param == XY) {
+    flip_hwc4_xy(src, dst, srcw, srch);
+  }
+}
 /*
 1 2 3
 4 5 6
@@ -1964,50 +2020,6 @@ void flip_hwc4_xy(const uint8_t* src, uint8_t* dst, int w_in, int h_in) {
         outptr0 -= 8;
       }
     }
-  }
-}
-
-void flip_hwc1(
-    const uint8_t* src, uint8_t* dst, int srcw, int srch, FlipParm flip_param) {
-  if (flip_param == X) {
-    flip_hwc1_x(src, dst, srcw, srch);
-  } else if (flip_param == Y) {
-    flip_hwc1_y(src, dst, srcw, srch);
-  } else if (flip_param == XY) {
-    flip_hwc1_xy(src, dst, srcw, srch);
-  }
-}
-
-void flip_hwc2(
-    const uint8_t* src, uint8_t* dst, int srcw, int srch, FlipParm flip_param) {
-  // if (flip_param == X){
-  //     flip_hwc2_x(src, dst, srcw, srch);
-  // }else if (flip_param == Y){
-  //     flip_hwc2_y(src, dst, srcw, srch);
-  // }else if (flip_param == XY){
-  //     flip_hwc2_xy(src, dst, srcw, srch);
-  // }
-}
-
-void flip_hwc3(
-    const uint8_t* src, uint8_t* dst, int srcw, int srch, FlipParm flip_param) {
-  if (flip_param == X) {
-    flip_hwc3_x(src, dst, srcw, srch);
-  } else if (flip_param == Y) {
-    flip_hwc3_y(src, dst, srcw, srch);
-  } else if (flip_param == XY) {
-    flip_hwc3_xy(src, dst, srcw, srch);
-  }
-}
-
-void flip_hwc4(
-    const uint8_t* src, uint8_t* dst, int srcw, int srch, FlipParm flip_param) {
-  if (flip_param == X) {
-    flip_hwc4_x(src, dst, srcw, srch);
-  } else if (flip_param == Y) {
-    flip_hwc4_y(src, dst, srcw, srch);
-  } else if (flip_param == XY) {
-    flip_hwc4_xy(src, dst, srcw, srch);
   }
 }
 }  // namespace cv
