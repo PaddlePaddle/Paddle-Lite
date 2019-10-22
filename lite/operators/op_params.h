@@ -373,6 +373,17 @@ struct FillConstantParam {
   bool force_cpu{false};
   lite::Tensor* Out{};
 };
+struct FillConstantBatchLikeParam {
+  int dtype{static_cast<int>(VarDescAPI::VarDataType::FP32)};
+  std::vector<int64_t> shape{};
+  float value{0.0f};
+  // useless for x86, keep it for compatibility
+  bool force_cpu{false};
+  lite::Tensor* out{};
+  const lite::Tensor* input{};
+  int input_dim_idx{0};
+  int output_dim_idx{0};
+};
 
 struct FillConstantBatchSizeLikeParam {
   lite::Tensor* Input;
@@ -619,6 +630,16 @@ struct NormParam {
   int axis{1};
   float epsilon{1e-10};
 };
+struct LayerNormParam {
+  const lite::Tensor* X{};
+  const lite::Tensor* Scale{};
+  const lite::Tensor* Bias{};
+  lite::Tensor* Y{};
+  lite::Tensor* Mean{};
+  lite::Tensor* Variance{};
+  int begin_norm_axis{1};
+  float epsilon{1e-5};
+};
 
 struct LogicalParam {
   const lite::Tensor* X{};
@@ -814,6 +835,12 @@ struct MatMulParam {
   bool transpose_X{false};
   bool transpose_Y{false};
   float alpha{1.0f};
+};
+
+struct GatherParam {
+  const lite::Tensor* X{};
+  const lite::Tensor* Index{};
+  lite::Tensor* Out{};
 };
 
 /// ----------------------- assign operators -----------------------

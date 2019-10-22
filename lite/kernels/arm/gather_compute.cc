@@ -11,8 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
-#include "lite/kernels/arm/increment_compute.h"
+#include "lite/kernels/arm/gather_compute.h"
+#include <vector>
 #include "lite/backends/arm/math/funcs.h"
 
 namespace paddle {
@@ -20,17 +20,27 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
-void IncrementCompute::PrepareForRun() {}
+void GatherCompute::PrepareForRun() {}
 
-void IncrementCompute::Run() {
-  auto& ctx = this->ctx_->template As<ARMContext>();
-  auto& param = this->Param<operators::IncrementParam>();
+void GatherCompute::Run() {
+  auto& param = this->Param<operators::GatherParam>();
 
-  int total_num = param.X->dims().production();
+  auto* p_output = param.Out->mutable_data<float>();
+  auto index_size = param.Index->dims()[0];
+  auto src_dims = param.X->dims();
+  const float* p_src = param.X->data<float>();
+  const float* p_index = param.Index->data<float>();
 
-  const auto* x_data = param.X->data<float>();
-  auto* o_data = param.Out->mutable_data<float>();
-  lite::arm::math::increment(x_data, total_num, param.step, o_data, &ctx);
+  int slice_size = 1;
+  for (int i = 1; i < src_dims.size(); ++i) {
+    slice_size *= src_dims[i];
+  }
+  for (int i = 0; i < index_size; ++i) {
+    int index_ = p_index[i];
+    memcpy(p_output + i * slice_size,
+           p_src + index_ * slice_size,
+           slice_size * sizeof(float));
+  }
 }
 
 }  // namespace arm
@@ -38,12 +48,8 @@ void IncrementCompute::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(increment,
-                     kARM,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::arm::IncrementCompute,
-                     def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
+REGISTER_LITE_KERNEL(
+    gather, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::GatherCompute, def)
+    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
