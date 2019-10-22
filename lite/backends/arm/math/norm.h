@@ -29,6 +29,15 @@ void norm(const float* input,
           float* out,
           Context<TARGET(kARM)>* ctx);
 
+void matrix_norm_row(const float* x_data,
+                     const float* scale_data,
+                     const float* bias_data,
+                     float* out_data,
+                     float* mean_out,
+                     float* var_out,
+                     float epsilon,
+                     int batch_size,
+                     int feature_size);
 }  // namespace math
 }  // namespace arm
 }  // namespace lite
