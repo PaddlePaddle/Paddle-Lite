@@ -21,15 +21,15 @@ namespace lite {
 namespace cuda {
 namespace math {
 
-void fp32_to_int8_nhwc4(int num,
-                        const void* din,
-                        void* dout,
-                        const void* scale,
-                        int N,
-                        int K,
-                        int H,
-                        int W,
-                        cudaStream_t stream);
+void fp32_to_int8_nhwc(int num,
+                       const void* din,
+                       void* dout,
+                       const void* scale,
+                       int N,
+                       int C,
+                       int H,
+                       int W,
+                       cudaStream_t stream);
 
 }  // namespace math
 }  // namespace cuda

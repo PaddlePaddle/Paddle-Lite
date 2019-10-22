@@ -14,7 +14,6 @@
 
 #pragma once
 
-#include <array>
 #include "lite/backends/opencl/cl_include.h"
 #include "lite/core/target_wrapper.h"
 
@@ -47,14 +46,17 @@ class TargetWrapper<TARGET(kOpenCL), cl::CommandQueue, cl::Event> {
   static void* Malloc(size_t size);
   static void Free(void* ptr);
 
-  static void* MallocImage(const std::array<size_t, 2>& image_shape,
-                           PrecisionType data_type);
+  template <typename R>
+  static void* MallocImage(const size_t cl_image2d_width,
+                           const size_t cl_image2d_height);
   static void FreeImage(void* image);
 
   static void* Map(void* buffer, size_t offset, size_t size);
   static void* MapImage(void* image,
-                        const std::array<size_t, 2>& image_shape,
-                        std::array<size_t, 2>* image_pitch);
+                        const size_t cl_image2d_width,
+                        const size_t cl_image2d_height,
+                        const size_t cl_image2d_row_pitch,
+                        const size_t cl_image2d_slice_pitch);
   static void Unmap(void* cl_obj, void* mapped_ptr);
 
   static void MemcpySync(void* dst,
@@ -68,13 +70,17 @@ class TargetWrapper<TARGET(kOpenCL), cl::CommandQueue, cl::Event> {
                           const stream_t& stream);
   static void ImgcpySync(void* dst,
                          const void* src,
-                         const std::array<size_t, 2>& image_shape,
-                         const std::array<size_t, 2>& image_pitch,
+                         const size_t cl_image2d_width,
+                         const size_t cl_image2d_height,
+                         const size_t cl_image2d_row_pitch,
+                         const size_t cl_image2d_slice_pitch,
                          IoDirection dir);
   static void ImgcpyAsync(void* dst,
                           const void* src,
-                          const std::array<size_t, 2>& image_shape,
-                          const std::array<size_t, 2>& image_pitch,
+                          const size_t cl_image2d_width,
+                          const size_t cl_image2d_height,
+                          const size_t cl_image2d_row_pitch,
+                          const size_t cl_image2d_slice_pitch,
                           IoDirection dir,
                           const stream_t& stream);
 };

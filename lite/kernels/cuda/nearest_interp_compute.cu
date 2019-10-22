@@ -154,7 +154,16 @@ REGISTER_LITE_KERNEL(nearest_interp,
                      kNCHW,
                      paddle::lite::kernels::cuda::NearestInterpCompute,
                      def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kCUDA))})
-    .BindInput("OutSize", {LiteType::GetTensorTy(TARGET(kCUDA))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kCUDA))})
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kCUDA),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kNCHW))})
+    .BindInput("OutSize",
+               {LiteType::GetTensorTy(TARGET(kCUDA),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kNCHW))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kCUDA),
+                                       PRECISION(kFloat),
+                                       DATALAYOUT(kNCHW))})
     .Finalize();

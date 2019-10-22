@@ -32,9 +32,13 @@ class LightPredictorImpl : public PaddlePredictor {
   void Run() override;
 
   std::string GetVersion() const override;
+  const std::vector<std::string>& GetInputNames() override;
+  const std::vector<std::string>& GetOutputNames() override;
 
   std::unique_ptr<const Tensor> GetTensor(
       const std::string& name) const override;
+  // Get InputTebsor by name
+  std::unique_ptr<Tensor> GetInputByName(const std::string& name) override;
 
   void Init(const MobileConfig& config);
 
@@ -68,6 +72,19 @@ std::unique_ptr<const Tensor> LightPredictorImpl::GetTensor(
   return std::unique_ptr<const Tensor>(
       new Tensor(raw_predictor_->GetTensor(name)));
 }
+std::unique_ptr<Tensor> LightPredictorImpl::GetInputByName(
+    const std::string& name) {
+  return std::unique_ptr<Tensor>(
+      new Tensor(raw_predictor_->GetInputByName(name)));
+}
+
+const std::vector<std::string>& LightPredictorImpl::GetInputNames() {
+  return raw_predictor_->GetInputNames();
+}
+
+const std::vector<std::string>& LightPredictorImpl::GetOutputNames() {
+  return raw_predictor_->GetOutputNames();
+}
 
 template <>
 std::shared_ptr<PaddlePredictor> CreatePaddlePredictor(
@@ -75,30 +92,6 @@ std::shared_ptr<PaddlePredictor> CreatePaddlePredictor(
   auto x = std::make_shared<LightPredictorImpl>();
   x->Init(config);
   return x;
-}
-
-MobileConfig::MobileConfig(PowerMode mode, int threads) {
-#ifdef LITE_WITH_ARM
-  lite::DeviceInfo::Global().SetRunMode(mode, threads);
-  mode_ = lite::DeviceInfo::Global().mode();
-  threads_ = lite::DeviceInfo::Global().threads();
-#endif
-}
-
-void MobileConfig::set_power_mode(paddle::lite_api::PowerMode mode) {
-#ifdef LITE_WITH_ARM
-  lite::DeviceInfo::Global().SetRunMode(mode, threads_);
-  mode_ = lite::DeviceInfo::Global().mode();
-  threads_ = lite::DeviceInfo::Global().threads();
-#endif
-}
-
-void MobileConfig::set_threads(int threads) {
-#ifdef LITE_WITH_ARM
-  lite::DeviceInfo::Global().SetRunMode(mode_, threads);
-  mode_ = lite::DeviceInfo::Global().mode();
-  threads_ = lite::DeviceInfo::Global().threads();
-#endif
 }
 
 }  // namespace lite_api

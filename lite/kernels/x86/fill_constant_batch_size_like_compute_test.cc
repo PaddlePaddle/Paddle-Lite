@@ -45,6 +45,7 @@ TEST(fill_constant_batch_size_like_x86, run_test) {
   std::vector<int64_t> input_shape{219, 232};
   input.Resize(input_shape);
   std::vector<int64_t> out_shape{219, 132, 7};
+  out.Resize(out_shape);
 
   auto input_data = input.mutable_data<float>();
   auto out_data = out.mutable_data<float>();
@@ -64,11 +65,14 @@ TEST(fill_constant_batch_size_like_x86, run_test) {
 
   std::unique_ptr<KernelContext> ctx(new KernelContext);
   ctx->As<X86Context>();
+  fill_constant_batch_size_like.SetContext(std::move(ctx));
   fill_constant_batch_size_like.SetParam(param);
   fill_constant_batch_size_like.Run();
 
-  for (int i = 0; i < out.dims().production(); i++) {
-    LOG(INFO) << out_data[i];
+  std::vector<float> ref_results{
+      3.5, 3.5, 3.5, 3.5, 3.5, 3.5, 3.5, 3.5, 3.5, 3.5};
+  for (int i = 0; i < ref_results.size(); i++) {
+    EXPECT_NEAR(out_data[i], ref_results[i], 1e-3);
   }
 }
 

@@ -25,13 +25,12 @@
 namespace paddle {
 namespace lite {
 
-void TestModel(const std::vector<Place>& valid_places,
-               const Place& preferred_place) {
+void TestModel(const std::vector<Place>& valid_places) {
   DeviceInfo::Init();
   DeviceInfo::Global().SetRunMode(lite_api::LITE_POWER_NO_BIND, FLAGS_threads);
   lite::Predictor predictor;
 
-  predictor.Build(FLAGS_model_dir, "", "", preferred_place, valid_places);
+  predictor.Build(FLAGS_model_dir, "", "", valid_places);
 
   auto* input_tensor = predictor.GetInput(0);
   input_tensor->Resize(DDim(std::vector<DDim::value_type>({1, 3, 224, 224})));
@@ -74,16 +73,30 @@ void TestModel(const std::vector<Place>& valid_places,
                   1e-6);
     }
   }
+
+  auto* out_data = out->data<float>();
+  LOG(INFO) << "output data:";
+  for (int i = 0; i < out->numel(); i += step) {
+    LOG(INFO) << out_data[i];
+  }
+  float max_val = out_data[0];
+  int max_val_arg = 0;
+  for (int i = 1; i < out->numel(); i++) {
+    if (max_val < out_data[i]) {
+      max_val = out_data[i];
+      max_val_arg = i;
+    }
+  }
+  LOG(INFO) << "max val:" << max_val << ", max_val_arg:" << max_val_arg;
 }
 
 TEST(MobileNetV1, test_arm) {
   std::vector<Place> valid_places({
-      Place{TARGET(kHost), PRECISION(kFloat)},
-      Place{TARGET(kARM), PRECISION(kFloat)},
       Place{TARGET(kARM), PRECISION(kInt8)},
+      Place{TARGET(kARM), PRECISION(kFloat)},
   });
 
-  TestModel(valid_places, Place({TARGET(kARM), PRECISION(kInt8)}));
+  TestModel(valid_places);
 }
 
 }  // namespace lite

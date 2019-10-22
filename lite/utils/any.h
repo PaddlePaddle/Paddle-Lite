@@ -52,7 +52,7 @@ class Any {
     return static_cast<T*>(data_);
   }
 
-  bool valid() const { return data_; }
+  bool valid() const { return (data_ != nullptr); }
 
   // ~Any() {
   //    if (valid()) {

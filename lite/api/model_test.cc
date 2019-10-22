@@ -16,6 +16,9 @@
 #include <string>
 #include <vector>
 #include "lite/api/paddle_api.h"
+#include "lite/api/paddle_use_kernels.h"
+#include "lite/api/paddle_use_ops.h"
+#include "lite/api/paddle_use_passes.h"
 #include "lite/api/test_helper.h"
 #include "lite/core/device_info.h"
 #include "lite/utils/cp_logging.h"
@@ -33,11 +36,9 @@ void OutputOptModel(const std::string& load_model_dir,
                     const std::vector<std::vector<int64_t>>& input_shapes) {
   lite_api::CxxConfig config;
   config.set_model_dir(load_model_dir);
-  config.set_preferred_place(Place{TARGET(kX86), PRECISION(kFloat)});
   config.set_valid_places({
       Place{TARGET(kX86), PRECISION(kFloat)},
       Place{TARGET(kARM), PRECISION(kFloat)},
-      Place{TARGET(kHost), PRECISION(kFloat)},
   });
   auto predictor = lite_api::CreatePaddlePredictor(config);
 

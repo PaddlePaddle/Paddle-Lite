@@ -16,6 +16,7 @@
 
 #include <stack>
 #include <string>
+#include <vector>
 #include "lite/api/paddle_place.h"
 #include "lite/utils/all.h"
 
@@ -36,7 +37,9 @@ enum class Type {
   _float64,
   _bool,
   _string,
-  // primary list types
+  // primary list type
+  _char_list,
+  // list types
   _list,
   // enum type
   _enum,
@@ -88,6 +91,8 @@ template <>
 Type StdTypeToRepr<float>();
 template <>
 Type StdTypeToRepr<bool>();
+template <>
+Type StdTypeToRepr<std::vector<char>>();
 template <>
 Type StdTypeToRepr<std::string>();
 

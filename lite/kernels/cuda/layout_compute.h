@@ -20,28 +20,34 @@ namespace lite {
 namespace kernels {
 namespace cuda {
 
-template <typename Dtype>
-class LayOutCompute : public KernelLite<TARGET(kCUDA), PRECISION(kFloat)> {
- public:
-  using param_t = operators::LayoutParam;
-  void Run() override;
-  virtual ~LayOutCompute() = default;
-};
-
-template <typename Dtype>
-class NCHWToNHWCCompute : public LayOutCompute<Dtype> {
+class NCHWToNHWCCompute : public KernelLite<TARGET(kCUDA), PRECISION(kFloat)> {
  public:
   using param_t = operators::LayoutParam;
   void Run() override;
   virtual ~NCHWToNHWCCompute() = default;
 };
 
-template <typename Dtype>
-class NHWCToNCHWCompute : public LayOutCompute<Dtype> {
+class NCHWToNHWCComputeInt8
+    : public KernelLite<TARGET(kCUDA), PRECISION(kInt8)> {
+ public:
+  using param_t = operators::LayoutParam;
+  void Run() override;
+  virtual ~NCHWToNHWCComputeInt8() = default;
+};
+
+class NHWCToNCHWCompute : public KernelLite<TARGET(kCUDA), PRECISION(kFloat)> {
  public:
   using param_t = operators::LayoutParam;
   void Run() override;
   virtual ~NHWCToNCHWCompute() = default;
+};
+
+class NHWCToNCHWComputeInt8
+    : public KernelLite<TARGET(kCUDA), PRECISION(kInt8)> {
+ public:
+  using param_t = operators::LayoutParam;
+  void Run() override;
+  virtual ~NHWCToNCHWComputeInt8() = default;
 };
 
 }  // namespace cuda
