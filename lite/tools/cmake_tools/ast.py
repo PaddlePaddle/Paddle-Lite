@@ -310,6 +310,43 @@ class RegisterLiteKernelParser(SyntaxParser):
                 break
 
 
+class RegisterLiteOpParser(SyntaxParser):
+
+    KEYWORD = 'REGISTER_LITE_OP'
+
+    def __init__(self, str):
+        super(RegisterLiteOpParser, self).__init__(str)
+        self.ops = []
+
+    def parse(self):
+        while self.cur_pos < len(self.str):
+            start = self.str.find(self.KEYWORD, self.cur_pos)
+            if start != -1:
+                #print 'str ', start, self.str[start-2: start]
+                if start != 0 and '/' in self.str[start-2: start]:
+                    '''
+                    skip commented code
+                    '''
+                    self.cur_pos = start + 1
+                    continue
+                self.cur_pos = start
+                self.ops.append(self.__parse_register())
+            else:
+                break
+        return self.ops
+
+    def __parse_register(self):
+        self.eat_word()
+        assert self.token == self.KEYWORD
+        self.eat_spaces()
+
+        self.eat_left_parentheses()
+        self.eat_spaces()
+        
+        self.eat_word()
+        return self.token
+
+
 if __name__ == '__main__':
     with open('/home/chunwei/project2/Paddle-Lite/lite/kernels/arm/activation_compute.cc') as f:
         c = f.read()
