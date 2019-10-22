@@ -16,6 +16,7 @@
 #include "paddle_lite_factory_helper.h"  // NOLINT
 
 USE_MIR_PASS(demo);
+USE_MIR_PASS(graph_visualze);
 USE_MIR_PASS(static_kernel_pick_pass);
 USE_MIR_PASS(variable_place_inference_pass);
 USE_MIR_PASS(type_target_cast_pass);
@@ -25,7 +26,6 @@ USE_MIR_PASS(subgraph_program_pass);
 USE_MIR_PASS(io_copy_kernel_pick_pass);
 USE_MIR_PASS(argument_type_display_pass);
 USE_MIR_PASS(runtime_context_assign_pass);
-USE_MIR_PASS(graph_visualze);
 
 USE_MIR_PASS(lite_conv_bn_fuse_pass);
 USE_MIR_PASS(lite_fc_fuse_pass);

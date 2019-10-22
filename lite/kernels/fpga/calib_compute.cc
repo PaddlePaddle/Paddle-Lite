@@ -31,6 +31,8 @@ void CalibComputeFp32ToFP16::Run() {
   for (int i = 0; i < param.input->numel(); ++i) {
     dout[i] = zynqmp::float_to_half(din[i]);
   }
+  auto out_lod = param.output->mutable_lod();
+  *out_lod = param.input->lod();
   return;
 }
 
@@ -41,6 +43,8 @@ void CalibComputeFP16ToFp32::Run() {
   for (int i = 0; i < param.input->numel(); ++i) {
     dout[i] = zynqmp::half_to_float(din[i]);
   }
+  auto out_lod = param.output->mutable_lod();
+  *out_lod = param.input->lod();
   return;
 }
 

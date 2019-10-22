@@ -113,7 +113,7 @@ class VariablePlaceInferencePass : public DebugPass {
                 << "-- node name:" << node_name;
         auto type = inst.picked_kernel().GetInputDeclType(arg_name);
         if (!x_in->AsArg().type) {
-          VLOG(4) << "set type " << *type << " " << x_in->AsArg().name;
+          LOG(INFO) << "set type " << *type << " " << x_in->AsArg().name;
           if (x_in->AsArg().is_weight) {
             SetWeightType(x_in, *type);
           } else {

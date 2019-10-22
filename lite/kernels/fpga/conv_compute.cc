@@ -25,30 +25,59 @@ using float16 = zynqmp::float16;
 
 void ConvCompute::PrepareForRun() {
   auto& param = this->Param<param_t>();
-
-  // ====================================================
-  zynqmp::ConvParam& conv_param = pe_.param();
   param.output->mutable_data<float16>();
+  // ====================================================
+  if (param.x->ZynqTensor()->shape().channel() != 1 &&
+      param.groups == param.x->ZynqTensor()->shape().channel()) {
+    zynqmp::DepthwiseConvParam& conv_param = dw_conv_pe_.param();
 
-  // filter_.setDataType(zynqmp::FP32);
-  conv_param.input = param.x->ZynqTensor();
-  conv_param.output = param.output->ZynqTensor();
-  conv_param.filter = param.filter->ZynqTensor();
-  conv_param.groups = param.groups;
-  conv_param.strides = param.strides;
-  conv_param.paddings = param.paddings;
-  conv_param.dilations = param.dilations;
-  fill_scale_bias_const(&conv_param);
-  conv_param.bias()->copyFrom(param.bias->ZynqTensor());
-  conv_param.relu.enabled = param.fuse_relu;
-  pe_.init();
-  pe_.apply();
+    conv_param.input = param.x->ZynqTensor();
+    conv_param.output = param.output->ZynqTensor();
+    conv_param.filter = param.filter->ZynqTensor();
+    conv_param.filter->setDataType(zynqmp::FP32);
+    conv_param.groups = param.groups;
+    conv_param.strides = param.strides;
+    conv_param.paddings = param.paddings;
+    conv_param.dilations = param.dilations;
+    fill_scale_bias_const(&conv_param);
+    conv_param.bias()->copyFrom(param.bias->ZynqTensor());
+    conv_param.relu.enabled = param.fuse_relu;
+
+    dw_conv_pe_.init();
+    dw_conv_pe_.apply();
+  } else {
+    zynqmp::ConvParam& conv_param = conv_pe_.param();
+    conv_param.input = param.x->ZynqTensor();
+    conv_param.output = param.output->ZynqTensor();
+    conv_param.filter = param.filter->ZynqTensor();
+    conv_param.filter->setDataType(zynqmp::FP32);
+    conv_param.groups = param.groups;
+    conv_param.strides = param.strides;
+    conv_param.paddings = param.paddings;
+    conv_param.dilations = param.dilations;
+    fill_scale_bias_const(&conv_param);
+    if (param.bias != nullptr) {
+      conv_param.bias()->copyFrom(param.bias->ZynqTensor());
+      std::cout << "no bias \n";
+    }
+    conv_param.relu.enabled = param.fuse_relu;
+
+    conv_pe_.init();
+    conv_pe_.apply();
+  }
 }
 
 void ConvCompute::Run() {
   auto& param = this->Param<param_t>();
-  zynqmp::ConvParam& conv_param = pe_.param();
-  pe_.dispatch();
+  if (param.x->ZynqTensor()->shape().channel() != 1 &&
+      param.groups == param.x->ZynqTensor()->shape().channel()) {
+    dw_conv_pe_.dispatch();
+  } else {
+    zynqmp::ConvParam& conv_param = conv_pe_.param();
+    conv_pe_.dispatch();
+
+    param.output->ZynqTensor()->saveToFile("conv.txt");
+  }
 }
 
 }  // namespace fpga
