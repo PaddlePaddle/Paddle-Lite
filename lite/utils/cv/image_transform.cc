@@ -16,6 +16,7 @@
 #include <arm_neon.h>
 #include <limits.h>
 #include <math.h>
+#include <string.h>
 #include <algorithm>
 #include "lite/utils/cv/image_flip.h"
 #include "lite/utils/cv/image_rotate.h"

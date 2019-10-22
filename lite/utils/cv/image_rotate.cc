@@ -14,6 +14,7 @@
 
 #include "lite/utils/cv/image_rotate.h"
 #include <math.h>
+#include <string.h>
 namespace paddle {
 namespace lite {
 namespace utils {
@@ -2437,49 +2438,6 @@ void rotate_hwc4_270(const uint8_t* src,
       *outptr0++ = *inptr0++;
       *outptr0++ = *inptr0++;
     }
-  }
-}
-
-void rotate_hwc1(
-    const uint8_t* src, uint8_t* dst, int srcw, int srch, float degree) {
-  if (degree == 90) {
-    rotate_hwc1_90(src, dst, srcw, srch, srch, srcw);
-  } else if (degree == 180) {
-    rotate_hwc1_180(src, dst, srcw, srch, srcw, srch);
-  } else if (degree == 270) {
-    rotate_hwc1_270(src, dst, srcw, srch, srch, srcw);
-  }
-}
-void rotate_hwc2(
-    const uint8_t* src, uint8_t* dst, int srcw, int srch, float degree) {
-  // if (degree == 90){
-  //     rotate_hwc2_90(src, dst, srcw, srch, srch, srcw);
-  // }else if (degree == 180){
-  //     rotate_hwc2_180(src, dst, srcw, srch, srcw, srch);
-  // }else if (degree == 270){
-  //     rotate_hwc2_270(src, dst, srcw, srch, srch, srcw);
-  // }
-}
-
-void rotate_hwc3(
-    const uint8_t* src, uint8_t* dst, int srcw, int srch, float degree) {
-  if (degree == 90) {
-    rotate_hwc3_90(src, dst, srcw, srch, srch, srcw);
-  } else if (degree == 180) {
-    rotate_hwc3_180(src, dst, srcw, srch, srcw, srch);
-  } else if (degree == 270) {
-    rotate_hwc3_270(src, dst, srcw, srch, srch, srcw);
-  }
-}
-
-void rotate_hwc4(
-    const uint8_t* src, uint8_t* dst, int srcw, int srch, float degree) {
-  if (degree == 90) {
-    rotate_hwc4_90(src, dst, srcw, srch, srch, srcw);
-  } else if (degree == 180) {
-    rotate_hwc4_180(src, dst, srcw, srch, srcw, srch);
-  } else if (degree == 270) {
-    rotate_hwc4_270(src, dst, srcw, srch, srch, srcw);
   }
 }
 }  // namespace cv

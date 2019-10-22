@@ -29,7 +29,7 @@ void ImagePreprocess::imageCovert(const uint8_t* src,
                                   uint8_t* dst,
                                   ImageFormat srcFormat,
                                   ImageFormat dstFormat) {
-  paddle::lite::utils::cv::ImageConvert img_convert;
+  ImageConvert img_convert;
   img_convert.choose(src,
                      dst,
                      srcFormat,
@@ -42,7 +42,7 @@ void ImagePreprocess::image2Tensor(const uint8_t* src,
                                    LayOut layout,
                                    float* means,
                                    float* scales) {
-  paddle::lite::utils::cv::Image2Tensor img2tensor;
+  Image2Tensor img2tensor;
   img2tensor.choose(src,
                     dstTensor,
                     this->srcFormat_,
@@ -54,7 +54,7 @@ void ImagePreprocess::image2Tensor(const uint8_t* src,
 }
 void ImagePreprocess::imageTransform(const uint8_t* src, uint8_t* dst) {
   std::vector<Transform> v_trans = this->transParam_.v_trans;
-  paddle::lite::utils::cv::ImageTransform img_trans;
+  ImageTransform img_trans;
   for (auto val : v_trans) {
     if (val == Resize) {
       img_trans.resize(src,

@@ -16,6 +16,7 @@
 #include "lite/utils/cv/image_convert.h"
 #include <arm_neon.h>
 #include <math.h>
+#include <string.h>
 namespace paddle {
 namespace lite {
 namespace utils {
@@ -36,6 +37,8 @@ void hwc3_to_hwc1(const uint8_t* src, uint8_t* dst, int srcw, int srch);
 void hwc1_to_hwc3(const uint8_t* src, uint8_t* dst, int srcw, int srch);
 // bgr to bgra or rgb to rgba
 void hwc3_to_hwc4(const uint8_t* src, uint8_t* dst, int srcw, int srch);
+// bgra to bgr or rgba to rgb
+void hwc4_to_hwc3(const uint8_t* src, uint8_t* dst, int srcw, int srch);
 // bgr to rgb or rgb to bgr
 void hwc3_trans(const uint8_t* src, uint8_t* dst, int srcw, int srch);
 // bgra to rgba or rgba to bgra
