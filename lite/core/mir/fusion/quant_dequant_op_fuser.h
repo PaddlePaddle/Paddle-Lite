@@ -49,6 +49,24 @@ class QuantDequantOpFuser : public FuseBase {
   std::string op_type_{};
 };
 
+class DynamicQuantDequantOpFuser : public FuseBase {
+ public:
+  explicit DynamicQuantDequantOpFuser(const std::string& op_type,
+                                      const std::string& quant_type,
+                                      int times)
+      : op_type_(op_type), quant_type_(quant_type), times_(times) {}
+  void BuildPattern() override;
+  void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override;
+
+ private:
+  cpp::OpDesc GenOpDesc(const key2nodes_t& matched) override;
+
+ private:
+  std::string op_type_{"conv2d"};
+  std::string quant_type_;
+  int times_;
+};
+
 }  // namespace fusion
 }  // namespace mir
 }  // namespace lite

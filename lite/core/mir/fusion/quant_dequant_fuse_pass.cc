@@ -29,7 +29,9 @@ void QuantDequantFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   // obtain useful values and save to quantized_node, remove quant_nodes and
   // releated nodes
   std::unordered_set<std::string> quant_types = {
-      "fake_quantize_range_abs_max", "fake_quantize_moving_average_abs_max"};
+      "fake_quantize_abs_max",
+      "fake_quantize_range_abs_max",
+      "fake_quantize_moving_average_abs_max"};
   std::vector<Node*> quant_nodes;
   for (auto& cur_node : graph->mutable_nodes()) {
     if (cur_node.IsStmt() && quant_types.count(cur_node.stmt()->op_type())) {
@@ -84,6 +86,8 @@ void QuantDequantFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   for (auto& op_type : quantized_op_types) {
     fusion::QuantDequantOpFuser fuser(op_type);
     fuser(graph.get());
+    fusion::DynamicQuantDequantOpFuser dynamic_fuser(op_type, quant_type, i);
+    dynamic_fuser(graph.get());
   }
 }
 

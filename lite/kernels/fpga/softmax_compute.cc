@@ -33,7 +33,10 @@ void SoftmaxCompute::PrepareForRun() {
   pe_.apply();
 }
 
-void SoftmaxCompute::Run() { pe_.dispatch(); }
+void SoftmaxCompute::Run() {
+  zynqmp::SoftmaxParam& softmax_param = pe_.param();
+  pe_.dispatch();
+}
 
 }  // namespace fpga
 }  // namespace kernels

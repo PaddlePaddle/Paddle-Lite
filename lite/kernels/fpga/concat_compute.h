@@ -13,35 +13,33 @@
 // limitations under the License.
 
 #pragma once
-
-#include <cmath>
-#include "lite/backends/arm/math/conv_impl.h"
-#include "lite/core/context.h"
+#include <algorithm>
 #include "lite/core/kernel.h"
-#include "lite/core/target_wrapper.h"
+#include "lite/operators/concat_op.h"
+
+#include "lite/backends/fpga/KD/float16.hpp"
+#include "lite/backends/fpga/KD/pes/concat_pe.hpp"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace fpga {
 
-/// only support 3x3s1 and 3x3s2
-template <PrecisionType Ptype, PrecisionType OutType>
-class WinogradConv : public KernelLite<TARGET(kARM), Ptype> {
+class ConcatCompute
+    : public KernelLite<TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)> {
  public:
-  WinogradConv() = default;
-  ~WinogradConv() {}
-  virtual void PrepareForRun();
-  virtual void ReInitWhenNeeded();
-  virtual void Run();
+  using param_t = operators::ConcatParam;
 
- protected:
-  using param_t = operators::ConvParam;
-  Tensor weights_;
-  DDim last_shape_;
+  void PrepareForRun() override;
+  void Run() override;
+
+  virtual ~ConcatCompute() = default;
+
+ private:
+  zynqmp::ConcatPE pe_;
 };
 
-}  // namespace arm
+}  // namespace fpga
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
