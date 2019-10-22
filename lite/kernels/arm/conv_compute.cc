@@ -19,7 +19,7 @@
 #include "lite/kernels/arm/conv_depthwise.h"
 #include "lite/kernels/arm/conv_direct.h"
 #include "lite/kernels/arm/conv_gemmlike.h"
-#include "lite/kernels/arm/conv_winograd_new.h"
+#include "lite/kernels/arm/conv_winograd.h"
 
 namespace paddle {
 namespace lite {
