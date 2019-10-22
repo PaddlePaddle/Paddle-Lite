@@ -34,11 +34,25 @@ namespace fusion {
  * the quantized_op.
  * In addition, the fuser delete fake_quant and fake_dequant op in the graph at
  * the last.
- */
-class QuantDequantOpFuser : public FuseBase {
+*/
+
+class DeleteQuantOpFuser : public FuseBase {
  public:
-  explicit QuantDequantOpFuser(const std::string& op_type)
-      : op_type_(op_type) {}
+  explicit DeleteQuantOpFuser(const std::string& quant_op_type)
+      : quant_op_type_(quant_op_type) {}
+  void BuildPattern() override;
+  void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override;
+
+ private:
+  cpp::OpDesc GenOpDesc(const key2nodes_t& matched) override;
+
+ private:
+  std::string quant_op_type_{};
+};
+
+class DequantOpFuser : public FuseBase {
+ public:
+  explicit DequantOpFuser(const std::string& op_type) : op_type_(op_type) {}
   void BuildPattern() override;
   void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override;
 
@@ -49,12 +63,17 @@ class QuantDequantOpFuser : public FuseBase {
   std::string op_type_{};
 };
 
-class DynamicQuantDequantOpFuser : public FuseBase {
+/* The pattern like "fake_quantize_dequantize_moving_average_abs_max +
+ * pooled/elementwise_add" can be deteted by this fuser. The fuser
+ * extract the input_scale form fake_quant_dequant_op and save into
+ * the quantized_op. Besides, the fuser delete fake_quant_dequant_op in
+ * the graph.
+*/
+
+class DeleteQuantDequantOpFuser : public FuseBase {
  public:
-  explicit DynamicQuantDequantOpFuser(const std::string& op_type,
-                                      const std::string& quant_type,
-                                      int times)
-      : op_type_(op_type), quant_type_(quant_type), times_(times) {}
+  explicit DeleteQuantDequantOpFuser(const std::string& quantized_op_type)
+      : quantized_op_type_(quantized_op_type) {}
   void BuildPattern() override;
   void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override;
 
@@ -62,9 +81,7 @@ class DynamicQuantDequantOpFuser : public FuseBase {
   cpp::OpDesc GenOpDesc(const key2nodes_t& matched) override;
 
  private:
-  std::string op_type_{"conv2d"};
-  std::string quant_type_;
-  int times_;
+  std::string quantized_op_type_{};
 };
 
 }  // namespace fusion
