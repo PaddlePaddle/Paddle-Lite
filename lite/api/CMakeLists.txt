@@ -222,6 +222,10 @@ if (LITE_WITH_JAVA AND LITE_WITH_ARM)
     add_subdirectory(android)
 endif()
 
+if (LITE_WITH_PYTHON) 
+    add_subdirectory(python)
+endif()
+
 if (LITE_ON_TINY_PUBLISH)
     return()
 endif()
