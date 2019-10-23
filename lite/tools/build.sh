@@ -201,6 +201,35 @@ function make_ios {
     cd -
 }
 
+function make_cuda {
+  prepare_thirdparty
+
+  root_dir=$(pwd)
+  build_directory=$BUILD_DIR/build_cuda
+
+  if [ -d $build_directory ]
+  then
+    rm -rf $build_directory
+  fi
+  mkdir -p $build_directory
+  cd $build_directory
+
+  prepare_workspace $root_dir $build_directory
+
+  cmake ..  -DWITH_MKL=OFF       \
+            -DLITE_WITH_CUDA=ON  \
+            -DWITH_MKLDNN=OFF    \
+            -DLITE_WITH_X86=OFF  \
+            -DLITE_WITH_PROFILE=OFF \
+            -DWITH_LITE=ON \
+            -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF \
+            -DWITH_TESTING=OFF \
+            -DLITE_WITH_ARM=OFF \
+            -DLITE_WITH_PYTHON=ON 
+
+  make publish_inference_python_lib -j8
+  cd -
+}
 
 function print_usage {
     set +x
@@ -306,6 +335,10 @@ function main {
                 ;;
             build_optimize_tool)
                 build_model_optimize_tool
+                shift
+                ;;
+            cuda)
+                make_cuda 
                 shift
                 ;;
             *)
