@@ -15,10 +15,16 @@
 #pragma once
 
 #include <string>
+#include <assert.h>
 #include "lite/utils/replace_stl/stream.h"
+#include "lite/utils/string.h"
 
 namespace paddle {
 namespace lite {
+
+static constexpr int MAJOR_COEFF = 1000000;
+static constexpr int MINOR_COEFF = 1000;
+static constexpr int PATCH_COEFF = 1;
 
 static std::string paddlelite_commit() {
   return "@PADDLE_LITE_COMMIT@";
@@ -43,6 +49,16 @@ static std::string version() {
   }
 
   return ss.str();
+}
+
+static int64_t int_version(const std::string& version) {
+  const std::vector<std::string> vec = Split(version, ".");
+  if (vec.size() == 3) {
+    return std::stoi(vec[0]) * MAJOR_COEFF +
+           std::stoi(vec[1]) * MINOR_COEFF +
+           std::stoi(vec[2]) * PATCH_COEFF;
+  }
+  return -1;
 }
 
 }  // namespace lite

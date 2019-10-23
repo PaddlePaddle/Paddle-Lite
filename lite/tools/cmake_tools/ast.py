@@ -292,7 +292,7 @@ class RegisterLiteKernelParser(SyntaxParser):
             self.eat_point()
             self.eat_spaces()
             self.eat_word()
-            assert self.token in ('BindInput', 'BindOutput', 'Finalize')
+            assert self.token in ('BindInput', 'BindOutput', 'SetVersion', 'Finalize')
             io = IO()
 
             if self.token == 'BindInput':
@@ -301,6 +301,12 @@ class RegisterLiteKernelParser(SyntaxParser):
             elif self.token == 'BindOutput':
                 eat_io(False, io)
                 k.outputs.append(io)
+            elif self.token == 'SetVersion':
+                self.eat_left_parentheses()
+                self.eat_str()
+                self.version = self.token
+                self.eat_right_parentheses()
+                self.eat_spaces()
             else:
                 self.eat_left_parentheses()
                 self.eat_right_parentheses()
