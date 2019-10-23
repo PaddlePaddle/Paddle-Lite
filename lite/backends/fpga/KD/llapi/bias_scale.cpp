@@ -92,10 +92,8 @@ void format_bias_array(float **bias_array, int num) {
       (int16_t *)fpga_malloc(num_after_align * sizeof(int16_t));  // NOLINT
 
   memset(ptr_aligned, 0, num_after_align * sizeof(int16_t));
-  std::cout << "bias::" << std::endl;
   for (int i = 0; i < num_before_align; i++) {
     float value = ptr_aligned[i];
-    std::cout << "@:" << i << " = " << value << std::endl;
     ptr_aligned[i] = float_to_half(ptr_unaligned[i]);
   }
   *bias_array = (float *)ptr_aligned;  // NOLINT

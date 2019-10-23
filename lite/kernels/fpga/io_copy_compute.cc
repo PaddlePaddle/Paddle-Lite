@@ -78,18 +78,14 @@ class IoCopyFpgaToHostCompute
     : public KernelLite<TARGET(kFPGA), PRECISION(kAny), DATALAYOUT(kAny)> {
  public:
   void Run() override {
-    std::cout << "IoCopyFpgaToHostCompute \n";
     auto& param = Param<operators::IoCopyParam>();
     CHECK(param.x->target() == TARGET(kHost) ||
           param.x->target() == TARGET(kFPGA));
-    std::cout << "before CopyDataFrom \n";
 
     param.y->mutable_data<float>();
     param.y->ZynqTensor()->setDataType(zynqmp::FP32);
     param.y->CopyDataFrom(*param.x);
 
-    // param.x->ZynqTensor()->saveToFile("x.txt");
-    // param.y->ZynqTensor()->saveToFile("y.txt");
     auto out_lod = param.y->mutable_lod();
     *out_lod = param.x->lod();
   }

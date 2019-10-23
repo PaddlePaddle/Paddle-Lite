@@ -28,7 +28,6 @@ void PriorBoxCompute::PrepareForRun() {
 
   param.boxes->mutable_data<float16>();
   param.variances->mutable_data<float16>();
-  // ====================================================
   zynqmp::PriorBoxParam& priobox_param = pe_.param();
   priobox_param.input = param.input->ZynqTensor();
   priobox_param.image = param.image->ZynqTensor();
@@ -38,7 +37,6 @@ void PriorBoxCompute::PrepareForRun() {
   priobox_param.maxSizes = param.max_sizes;
   priobox_param.aspectRatios = param.aspect_ratios;
   priobox_param.variances = param.variances_;
-  // priobox_param.minMaxAspectRatiosOrder = param->MinMaxAspectRatiosOrder();
   priobox_param.flip = param.flip;
   priobox_param.clip = param.clip;
   priobox_param.stepW = param.step_w;

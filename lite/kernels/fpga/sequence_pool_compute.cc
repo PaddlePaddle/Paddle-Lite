@@ -37,23 +37,6 @@ void SequencePoolCompute::Run() {
 
   int64_t width = param.X->numel() / param.X->dims()[0];
 
-  // if (pool_type == "SUM") {
-  //   lite::arm::math::seq_pool_sum(din, dout, lod, width);
-  // } else if (pool_type == "AVERAGE") {
-  //   lite::arm::math::seq_pool_average(din, dout, lod, width);
-  // } else if (pool_type == "SQRT") {
-  //   lite::arm::math::seq_pool_sqrt(din, dout, lod, width);
-  // } else if (pool_type == "MAX") {
-  //   lite::arm::math::seq_pool_max(din, dout, lod, width);
-  // } else if (pool_type == "MIN") {
-  //   lite::arm::math::seq_pool_min(din, dout, lod, width);
-  // } else if (pool_type == "FIRST") {
-  //   lite::arm::math::seq_pool_first(din, dout, lod, width);
-  // } else if (pool_type == "LAST") {
-  //   lite::arm::math::seq_pool_last(din, dout, lod, width);
-  // } else {
-  //   LOG(ERROR) << " UNKNOWN sequence pool type";
-  // }
   int batch_size = lod.size() - 1;
   std::vector<uint64_t> offset_new(static_cast<uint64_t>(batch_size + 1));
   for (int i = 0; i <= batch_size; i++) {

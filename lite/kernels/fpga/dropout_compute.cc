@@ -16,7 +16,6 @@
 #include <string>
 
 #include "lite/backends/fpga/KD/float16.hpp"
-// #include "lite/backends/arm/math/funcs.h"
 
 namespace paddle {
 namespace lite {
@@ -56,10 +55,7 @@ void DropoutCompute::PrepareForRun() {
 void DropoutCompute::Run() {
   auto& param = Param<operators::DropoutParam>();
   zynqmp::ScaleParam& scale_param = pe_.param();
-  // scale_param.input->saveToFile("drop_in.txt");
   pe_.dispatch();
-  // scale_param.output->saveToFile("drop_out.txt");
-  // std::cout << "prob:" << param.dropout_prob << std::endl;
 }
 
 }  // namespace fpga

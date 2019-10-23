@@ -24,13 +24,10 @@ limitations under the License. */
 #include <string>
 #include <vector>
 
-// #include "lite/core/tensor.h"
-
 #include "lite/backends/fpga/KD/dl_engine.hpp"
 #include "lite/backends/fpga/KD/float16.hpp"
 #include "lite/backends/fpga/KD/llapi/zynqmp_api.h"
 #include "lite/backends/fpga/KD/shape.hpp"
-// #include "lite/backends/fpga/KD/types.hpp"
 
 namespace paddle {
 namespace zynqmp {
@@ -342,18 +339,9 @@ class Tensor {
     if (placeHolder_ == nullptr) {
       return;
     }
-    std::cout << scale()[0] << " , " << scale()[1] << std::endl;
   }
 
-  void printScale(std::string type) {
-    std::cout << type << " : "
-              << std::to_string(shape_->num()) + "_" +
-                     std::to_string(shape_->channel()) + "_" +
-                     std::to_string(shape_->height())
-              << std::endl;
-    std::cout << type << " \n";
-    printScale();
-  }
+  void printScale(std::string type) { printScale(); }
 
   std::string dimsFileName() {
     return std::to_string(shape_->num()) + "_" +
@@ -385,7 +373,6 @@ class Tensor {
   }
 
   void save_file_with_name(std::string path) {
-    // return;
     invalidate();
     std::ofstream ofs;
 

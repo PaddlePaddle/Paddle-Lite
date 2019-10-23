@@ -14,7 +14,6 @@
 
 #include "lite/kernels/fpga/mul_compute.h"
 #include <vector>
-// #include "lite/backends/arm/math/funcs.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/type_system.h"
 
@@ -28,20 +27,12 @@ using float16 = zynqmp::float16;
 void MulCompute::PrepareForRun() {
   auto& param = Param<param_t>();
 
-  // Tensor* output = const_cast<Tensor*>(param.output);
-
-  // const auto* x_data = param.x->data<float>();
-  // param.y->mutable_data<float16>();
   param.output->mutable_data<float16>();
 }
 
 void MulCompute::Run() {
   auto& param = Param<param_t>();
 
-  // Tensor* output = const_cast<Tensor*>(param.output);
-
-  // const auto* x_data = param.x->data<float>();
-  // param.y->mutable_data<float16>();
   param.output->mutable_data<float16>();
 }
 

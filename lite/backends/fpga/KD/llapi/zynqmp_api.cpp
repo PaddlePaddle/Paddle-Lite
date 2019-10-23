@@ -46,11 +46,9 @@ static inline int do_ioctl(uint64_t req, const void *arg) {
 }
 
 int open_device() {
-  // std::cout << "open_device" << std::endl;
   if (fd == -1) {
     fd = open(device_path, O_RDWR);
   }
-  // std::cout << "open_device fd:" << fd << std::endl;
   return fd;
 }
 
@@ -63,19 +61,14 @@ void reset_device() {
 
 // memory management;
 void *fpga_malloc(size_t size) {
-// std::cout << "fpga malloc: 0x" << std::hex << size  << std::dec << "  (" <<
-// size << ") - ";
 #ifdef ENABLE_DEBUG
-// std::cout << "fpga_malloc:" << size << std::endl;
 #endif
 #ifdef PADDLE_LITE_OS_LINUX
   void *ptr = reinterpret_cast<void *>(
       mmap64(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0));
   if (ptr == NULL) {
-    std::cout << "not enough memory !";
     exit(-1);
   }
-  // std::cout << std::hex << ptr << std::dec << std::endl;
   memory_map.insert(std::make_pair(ptr, size));
   memory_size += size;
   if (memory_size > memory_size_max) {
@@ -131,9 +124,6 @@ int fpga_flush(void *address, size_t size) {
 }
 
 int fpga_invalidate(void *address, size_t size) {
-  // std::cout <<
-  // "=================================================================================="
-  // << std::endl;
   struct MemoryCacheArgs args;
   args.address = address;
   args.size = size;
@@ -165,68 +155,6 @@ int fpga_reset() {
 
 int ioctl_conv(const struct ConvArgs &args) {
 #ifdef ENABLE_DEBUG
-//        std::cout << "======Compute Basic Conv======";
-//        std::cout << "   relu_enabled:" << args.relu_enabled
-//       << "   sb_address:" << args.sb_address
-//       << "   filter_address:" << args.filter_address
-//       << "   filter_num:" << args.filter_num
-//       << "   group_num:" << args.group_num;
-//  std::cout << "   image_address:" << args.image.address
-//       << "   image_scale_address:" << args.image.scale_address
-//       << "   image_channels:" << args.image.channels
-//       << "   image_height:" << args.image.height
-//       << "   image_width:" << args.image.width
-//       << "   pad_height:" << args.image.pad_height
-//       << "   pad_width:" << args.image.pad_width;
-//  std::cout << "   kernel_height:" << args.kernel.height
-//       << "   kernel_width:" << args.kernel.width
-//       << "   stride_h:" << args.kernel.stride_h
-//       << "   stride_w:" << args.kernel.stride_w;
-//  std::cout << "   out_address:" << args.output.address
-//       << "   out_scale_address:" << args.output.scale_address;
-//
-//       float* in_scale = (float*)args.image.scale_address;
-//       std::cout << "inv_scale:" << in_scale[0] << "," << in_scale[1] <<
-//       std::endl;
-
-#endif
-
-  return do_ioctl(IOCTL_CONFIG_CONV, &args);
-
-  // return 0;
-}
-
-int compute_fpga_conv_basic(const struct ConvArgs &args) {
-#ifdef ENABLE_DEBUG
-
-//        std::cout << "======Compute Basic Conv======";
-//        std::cout << "   relu_enabled:" << args.relu_enabled
-//       << "   sb_address:" << args.sb_address
-//       << "   filter_address:" << args.filter_address
-//       << "   filter_num:" << args.filter_num
-//       << "   group_num:" << args.group_num;
-//  std::cout << "   image_address:" << args.image.address
-//       << "   image_scale_address:" << args.image.scale_address
-//       << "   image_channels:" << args.image.channels
-//       << "   image_height:" << args.image.height
-//       << "   image_width:" << args.image.width
-//       << "   pad_height:" << args.image.pad_height
-//       << "   pad_width:" << args.image.pad_width;
-//  std::cout << "   kernel_height:" << args.kernel.height
-//       << "   kernel_width:" << args.kernel.width
-//       << "   stride_h:" << args.kernel.stride_h
-//       << "   stride_w:" << args.kernel.stride_w;
-//  std::cout << "   out_address:" << args.output.address
-//       << "   out_scale_address:" << args.output.scale_address;
-
-// float *in_scale = (float *)args.image.scale_address;
-//        std::cout << " scale:" << in_scale[0] << "," << in_scale[1] <<
-//        std::endl;
-
-// float *filter_scale = (float *)args.filter_scale_address;
-//        std::cout << " filter scale:" << filter_scale[0] << "," <<
-//        filter_scale[1] << std::endl;
-
 #endif
   return do_ioctl(IOCTL_CONFIG_CONV, &args);
 }
@@ -241,7 +169,6 @@ int compute_fpga_conv(const struct SplitConvArgs &args) {
   }
 
   if (split_num > 1) {
-    std::cout << "Split num > 1 !!!!!!!!!!!!!!!!!!" << std::endl;
     exit(-1);
   }
   return ret;
@@ -259,7 +186,6 @@ int get_device_info(const struct DeviceInfo &args) {
   // DeviceInfo info;
   // struct DeviceInfo* a = &info;
   int ret = do_ioctl(IOCTL_DEVICE_INFO, &args);
-  // std::cout << "a." << a->filter_cap << std::endl;
   return ret;
 }
 
@@ -284,8 +210,6 @@ int perform_bypass(const struct BypassArgs &args) {
   bypassArgs.image.height = 1;
   bypassArgs.output.scale_address = scales;
 
-  // std::cout << "times:" << times << " count:" << count << std::endl;
-
   float scale = 0;
   for (int i = 0; i < count; ++i) {
     bypassArgs.image.channels = max_size;
@@ -299,11 +223,9 @@ int perform_bypass(const struct BypassArgs &args) {
     if (ret != 0) {
       return ret;
     }
-    // std::cout << "@:" << i << " ret:" << ret << std::endl;
   }
 
   int remainder = size - max_size * count;
-  // std::cout << "remainder:" << remainder << std::endl;
   bypassArgs.image.channels = remainder;
   bypassArgs.image.address =
       reinterpret_cast<char *>(input_address + count * max_size * type_size);
@@ -311,7 +233,6 @@ int perform_bypass(const struct BypassArgs &args) {
       output_address + count * max_size * out_type_size);
   int ret = do_ioctl(IOCTL_CONFIG_BYPASS, &bypassArgs);
   scale = std::max(scale, scales[0]);
-  // std::cout << "scale2:" << scale << std::endl;
   args.output.scale_address[0] = scale;
   args.output.scale_address[1] = 1.0f / scale;
   return ret;
@@ -321,50 +242,12 @@ int compute_fpga_concat(const struct ConcatArgs &args) { return -1; }
 
 int compute_fpga_scale(const struct ScaleArgs &args) {
 #ifdef ENABLE_DEBUG
-  std::cout << "======Compute Scale======";
-  std::cout << "scale_address:" << args.scale_address << std::endl;
-  std::cout << "bias_address:" << args.bias_address << std::endl;
-
-  std::cout << "wc_alignment:" << args.wc_alignment << std::endl;
-  std::cout << "channel_alignment:" << args.channel_alignment << std::endl;
-
-  std::cout << "   image_address:" << args.image.address
-            << "   image_scale_address:" << args.image.scale_address
-            << "   image_channels:" << args.image.channels
-            << "   image_height:" << args.image.height
-            << "   image_width:" << args.image.width
-            << "   pad_height:" << args.image.pad_height
-            << "   pad_width:" << args.image.pad_width;
-
-  std::cout << "   out_address:" << args.output.address
-            << "   out_scale_address:" << args.output.scale_address;
-
 #endif
   return do_ioctl(IOCTL_CONFIG_SCALE, &args);
 }
 
 int compute_fpga_dwconv(const struct DWconvArgs &args) {
 #ifdef ENABLE_DEBUG
-  std::cout << "======Compute Basic Conv======";
-  std::cout << "   relu_enabled:" << args.relu_enabled
-            << "   filter_address:" << args.filter_address;
-  std::cout << "   image_address:" << args.image.address
-            << "   image_scale_address:" << args.image.scale_address
-            << "   image_channels:" << args.image.channels
-            << "   image_height:" << args.image.height
-            << "   image_width:" << args.image.width
-            << "   pad_height:" << args.image.pad_height
-            << "   pad_width:" << args.image.pad_width;
-  std::cout << "   kernel_height:" << args.kernel.height
-            << "   kernel_width:" << args.kernel.width
-            << "   stride_h:" << args.kernel.stride_h
-            << "   stride_w:" << args.kernel.stride_w;
-  std::cout << "   out_address:" << args.output.address
-            << "   out_scale_address:" << args.output.scale_address;
-
-// float *in_scale = (float *)args.image.scale_address;
-// std::cout << "inv_scale:" << in_scale[0] << "," << in_scale[1] <<
-// std::endl;
 #endif
   return do_ioctl(IOCTL_CONFIG_DWCONV, &args);
 }

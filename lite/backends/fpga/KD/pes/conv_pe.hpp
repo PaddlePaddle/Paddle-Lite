@@ -59,7 +59,6 @@ class ConvPE : public PE {
     Tensor float_output;
     float* image_addr = float_input.mutableData<float>(FP32, input->shape());
     float_input.copyFrom(input);
-    // float16* data_out = output->data<float16>();
     float* out = float_output.mutableData<float>(FP32, output->shape());
 
     int out_channel = output->shape().channel();
@@ -113,7 +112,6 @@ class ConvPE : public PE {
     std::vector<BasicConvParam*>& params = param_.splitParams();
     int ret = 0;
     for (auto conv_param : params) {
-      // conv_param->input.printScale();
       ret |= compute_fpga_conv_basic(conv_param->args);
     }
 
@@ -134,7 +132,6 @@ class ConvPE : public PE {
       concatPE_.dispatch();
     }
     if (split_axis == 1 && ret == 0 && size > 1) {
-      // for (int n = 0; n < size - 1; n++) {
       ElementwiseAddParam& add_param = addPE_.param();
       add_param.inputs = {&params[0]->output, &params[1]->output};
       add_param.output = param_.output;

@@ -43,7 +43,6 @@ class OutputPE : public PE {
     } else {
       output->copyFrom(input);
     }
-    //
     output->syncToCPU();
     if (DLEngine::get_instance().out_data == nullptr) {
       DLEngine::get_instance().out_data = reinterpret_cast<float*>(

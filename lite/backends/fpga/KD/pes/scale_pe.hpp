@@ -128,7 +128,6 @@ class ScalePE : public PE {
       for (int c = 0; c < input->shape().channel(); c++) {
         int index = i * input->shape().channel() + c;
         float value = image_addr[index] * scale_data[c];
-        // data_out[index] = float_to_half(value);
         float_out[index] = value;
 
         if (value < 0) {
@@ -142,7 +141,6 @@ class ScalePE : public PE {
 
     float_output.flush();
     output->copyFrom(&float_output);
-    // std::cout << "max:" << max << std::endl;
     output->scale()[0] = max / 127.0f;
     output->scale()[1] = 127.0f / max;
   }
@@ -150,8 +148,6 @@ class ScalePE : public PE {
   bool dispatch() {
     param_.input->syncToDevice();
     return compute_fpga_scale(param_.args) == 0;
-    // cpu_compute();
-    // return true;
   }
 
   ScaleParam& param() { return param_; }

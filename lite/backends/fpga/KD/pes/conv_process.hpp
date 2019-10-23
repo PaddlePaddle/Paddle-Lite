@@ -171,8 +171,6 @@ inline void format_scale_bias(Tensor* scale,
     }
   }
 
-  // int element_num_per_div = get_filter_num_per_div(filter, group);
-  // int scale_bias_len = align_to_x(channel / group, 8) * group;
   bias_scale::format_bias_scale_array(
       &temp_data, scale_bias_len / group, scale_bias_len);
   memcpy(bs_data, temp_data, 2 * scale_bias_len * sizeof(float));
@@ -328,7 +326,6 @@ inline void split_filter_num(const ConvParam& c_param) {
     float* bias_data = bias.mutableData<float>(FP32, s_shape);
     for (int n = 0; n < filter_num; n++) {
       scale_data[n] = param.scale()->data<float>()[n + chnnnel_start] * v[n];
-      // scale_data[n] = param.scale()->data<float>()[n + chnnnel_start];
     }
     for (int n = 0; n < filter_num; n++) {
       bias_data[n] = param.bias()->data<float>()[n + chnnnel_start];
@@ -339,14 +336,8 @@ inline void split_filter_num(const ConvParam& c_param) {
                       &conv_param->filter,
                       &conv_param->scaleBias,
                       param.groups);
-    // conv_param->scaleBias.saveToFile("sb.txt");
     conv_param->scaleBias.flush();
     float* bs_data = conv_param->scaleBias.data<float>();
-    // conv_param->scaleBias.saveToFile("sb.txt");
-    // param.scale()->saveToFile("scale.txt");
-    // param.bias()->saveToFile("bias.txt");
-
-    // exit(-1);
 
     args.group_num = param.groups;
     args.relu_enabled = param.relu.enabled;
@@ -420,14 +411,12 @@ inline void split_channel(const ConvParam& c_param) {
     }
     scale.flush();
     bias.flush();
-    // Shape sb_shape(N, {2 * channel});
     format_scale_bias(&scale,
                       &bias,
                       &conv_param->filter,
                       &conv_param->scaleBias,
                       param.groups);
     conv_param->scaleBias.flush();
-    // conv_param->scaleBias.saveToFile("sb.txt");
 
     ConvArgs& args = conv_param->args;
     args.group_num = param.groups;
@@ -467,7 +456,6 @@ inline int fill_split_arg(const ConvParam& c_param) {
     split_filter_num(c_param);
     return 0;
   }
-  // split_filter_num(c_param);
 }
 
 inline bool compute_conv(const ConvParam& c_conv_params) {
@@ -479,7 +467,6 @@ inline bool compute_conv(const ConvParam& c_conv_params) {
   }
   size_t size = params.size();
   if (ret == 0 && size > 1) {
-    // Tensor* output = conv_params.output;
     Tensor& img = params[0]->output;
     for (int i = 0; i < 1; i++) {
       for (int i = 0; i < img.shape().numel(); i++) {

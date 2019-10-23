@@ -30,7 +30,6 @@ void ConcatCompute::PrepareForRun() {
   auto& param = this->Param<param_t>();
   param.output->mutable_data<float16>();
 
-  // ====================================================
   zynqmp::ConcatParam& concat_param = pe_.param();
   for (auto t : param.x) {
     concat_param.inputs.push_back(t->ZynqTensor());

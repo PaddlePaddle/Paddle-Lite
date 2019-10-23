@@ -75,66 +75,6 @@ void im2sequence(const float* input,
   }
 }
 
-// void im2sequence(const float16* input,
-//                  const int input_c,
-//                  const int input_h,
-//                  const int input_w,
-//                  const int kernel_h,
-//                  const int kernel_w,
-//                  const int pad_top,
-//                  const int pad_bottom,
-//                  const int pad_left,
-//                  const int pad_right,
-//                  const int stride_h,
-//                  const int stride_w,
-//                  const int out_h,
-//                  const int out_w,
-//                  float16* out) {
-//   int window_size = kernel_h * kernel_w;
-//   int out_rows = out_h * out_w;
-//   int out_cols = input_c * window_size;
-//   int H_pad = input_h + pad_top + pad_bottom;
-//   int W_pad = input_w + pad_left + pad_right;
-
-//   size_t channel_mem_size = input_c * sizeof(float16);
-
-//   int index = 0;
-
-//   float16 zero = float_to_half(0.0f);
-
-//   for (int h_id = 0; h_id < out_h; h_id++) {
-//     for (int w_id = 0; w_id < out_w; w_id++) {
-//       // consider dilation.
-//       int start_h = h_id * stride_h - pad_top;
-//       int start_w = w_id * stride_w - pad_left;
-//       for (int c_id = 0; c_id < input_c; c_id++) {
-//       for (int k_h_id = 0; k_h_id < kernel_h; k_h_id++) {
-//         int in_h_id = start_h + k_h_id;
-//         bool exceed_flag = (in_h_id < 0) || (in_h_id >= H_pad);
-//         int out_start_id =
-//             (h_id * out_w + w_id) * out_cols + c_id * window_size;
-//         for (int k_w_id = 0; k_w_id < kernel_w; k_w_id++) {
-//           int in_w_id = start_w + k_w_id;
-//           void* dst = out + index;//TODO
-//           exceed_flag = exceed_flag || (in_w_id < 0) || (in_w_id >= W_pad);
-//           // if (exceed_flag) {
-//           //   memset( dst, 0, channel_mem_size);
-//           // } else {
-//           //   void* src = const_cast<float16*>(input) + (in_h_id * input_w +
-//           in_w_id);
-//           //   memcpy(dst, src, channel_mem_size);
-//           // }
-//           // index++;
-//           int input_id = (c_id * input_h + in_h_id) * input_w + in_w_id;
-//           int out_id = out_start_id + k_h_id * kernel_w + k_w_id;
-//           out[out_id] = exceed_flag ? zero : input[input_id];
-//         }
-//       }
-//       }
-//     }
-//   }
-// }
-
 void Im2SequenceCompute::PrepareForRun() {}
 
 void Im2SequenceCompute::Run() {
@@ -156,9 +96,6 @@ void Im2SequenceCompute::Run() {
   x_float.copyFrom(param.X->ZynqTensor());
 
   int out_cols = input_dims[1] * kernels[0] * kernels[1];
-
-  std::cout << "im_num:" << im_num << " im_size:" << im_size << std::endl;
-  std::cout << "out_cols:" << out_cols << std::endl;
 
   int total_rows = 0;
   std::vector<uint64_t> im_offset;
