@@ -12,22 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
-
-#include <cmath>
-#include "lite/core/context.h"
+#include "lite/operators/fake_quantize_dequantize_moving_avg_max_abs.h"
+#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
-namespace arm {
-namespace math {
-void increment(const float* input,
-               const int n,
-               const float step,
-               float* out,
-               Context<TARGET(kARM)>* ctx);
-
-}  // namespace math
-}  // namespace arm
+namespace operators {}  // namespace operators
 }  // namespace lite
 }  // namespace paddle
+
+REGISTER_LITE_OP(
+    fake_quantize_dequantize_moving_average_abs_max,
+    paddle::lite::operators::FakeQuantizeDequantizeMovingAvgMaxAbsOpLite);
