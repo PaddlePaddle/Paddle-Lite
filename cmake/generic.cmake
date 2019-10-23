@@ -507,7 +507,7 @@ function(nv_test TARGET_NAME)
     cuda_add_executable(${TARGET_NAME} ${nv_test_SRCS})
     get_property(os_dependency_modules GLOBAL PROPERTY OS_DEPENDENCY_MODULES)
     target_link_libraries(${TARGET_NAME} ${nv_test_DEPS} lite_gtest_main gtest
-gflags glog ${os_dependency_modules} ${CUDNN_LIBRARY})
+gflags glog ${os_dependency_modules} ${CUDNN_LIBRARY} ${CUBLAS_LIBRARIES} )
     add_dependencies(${TARGET_NAME} ${nv_test_DEPS} lite_gtest_main gtest gflags glog)
     common_link(${TARGET_NAME})
     add_test(${TARGET_NAME} ${TARGET_NAME})

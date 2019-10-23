@@ -200,8 +200,7 @@ class CLEngine {
 
   bool BuildProgram(cl_program program, const std::string &options = "") {
     cl_int status;
-    std::string path = options + " -cl-fast-relaxed-math -I " +
-                       CLEngine::Instance()->GetCLPath() + "/cl_kernel";
+    std::string path = options + " -cl-fast-relaxed-math";
 
     status = clBuildProgram(program, 0, 0, path.c_str(), 0, 0);
 

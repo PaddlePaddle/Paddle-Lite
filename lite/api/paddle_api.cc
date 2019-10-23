@@ -43,16 +43,16 @@ const int8_t *Tensor::data() const {
 }
 
 template <>
-int *Tensor::mutable_data() const {
-  return tensor(raw_tensor_)->mutable_data<int>();
+int *Tensor::mutable_data(TargetType type) const {
+  return tensor(raw_tensor_)->mutable_data<int>(type);
 }
 template <>
-float *Tensor::mutable_data() const {
-  return tensor(raw_tensor_)->mutable_data<float>();
+float *Tensor::mutable_data(TargetType type) const {
+  return tensor(raw_tensor_)->mutable_data<float>(type);
 }
 template <>
-int8_t *Tensor::mutable_data() const {
-  return tensor(raw_tensor_)->mutable_data<int8_t>();
+int8_t *Tensor::mutable_data(TargetType type) const {
+  return tensor(raw_tensor_)->mutable_data<int8_t>(type);
 }
 
 shape_t Tensor::shape() const {
