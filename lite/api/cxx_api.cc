@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/api/cxx_api.h"
+#include <algorithm>
 #include <memory>
 #include <string>
 #include <utility>
@@ -38,6 +39,107 @@ void Predictor::SaveModel(const std::string &dir,
       break;
     default:
       LOG(FATAL) << "Unknown model type";
+  }
+  SaveOpKernelInfo(dir);
+}
+
+void Predictor::SaveOpKernelInfo(const std::string &model_dir) {
+  std::vector<std::string> op_info;
+  std::vector<std::string> kernel_info;
+
+  for (size_t i = 0; i < program_desc_.BlocksSize(); ++i) {
+    auto *cpp_block_desc = program_desc_.GetBlock<cpp::BlockDesc>(i);
+    for (size_t j = 0; j < cpp_block_desc->OpsSize(); ++j) {
+      // parse op type infomation
+      auto op = cpp_block_desc->GetOp<cpp::OpDesc>(j);
+      op_info.push_back(op->Type());
+      auto kernel_type = op->GetAttr<std::string>(kKernelTypeAttr);
+      std::vector<std::string> kernel_result;
+
+      // parse kernel type information
+      while (!kernel_type.empty()) {
+        size_t next_offset = kernel_type.find("/");
+        kernel_result.push_back(kernel_type.substr(0, next_offset));
+        if (next_offset == std::string::npos) {
+          break;
+        } else {
+          kernel_type = kernel_type.substr(next_offset + 1);
+        }
+      }
+
+      int target = std::stoi(kernel_result[2]);
+      int precision = std::stoi(kernel_result[3]);
+      int layout = std::stoi(kernel_result[4]);
+      std::string kernel_type_str =
+          kernel_result[0] + "," +
+          TargetRepr(static_cast<TargetType>(target)).c_str() + "," +
+          PrecisionRepr(static_cast<PrecisionType>(precision)).c_str() + "," +
+          DataLayoutRepr(static_cast<DataLayoutType>(layout)).c_str() + "," +
+          kernel_result[1];
+      kernel_info.push_back(kernel_type_str);
+    }
+  }
+
+  // remove repeated elements
+  std::sort(op_info.begin(), op_info.end());
+  op_info.erase(std::unique(op_info.begin(), op_info.end()), op_info.end());
+
+  std::sort(kernel_info.begin(), kernel_info.end());
+  kernel_info.erase(unique(kernel_info.begin(), kernel_info.end()),
+                    kernel_info.end());
+
+  // get souce_file name from op type and kernel type
+  auto op2pathmap = CollectedInfo::Global().Getop2path();
+  auto kernel2pathmap = CollectedInfo::Global().Getkernel2path();
+
+  // write used op and kernel info into files
+  std::string opf_path = model_dir + "/ops_list.txt";
+  std::string opf_source_path = model_dir + "/ops_source_list.txt";
+  std::string kpf_path = model_dir + "/kernels_list.txt";
+  std::string kpf_source_path = model_dir + "/kernels_source_list.txt";
+  std::map<std::string, std::string> op2path;
+
+  std::FILE *opf = std::fopen(opf_path.c_str(), "w");
+  std::FILE *opf_source = std::fopen(opf_source_path.c_str(), "w");
+  std::FILE *kpf = std::fopen(kpf_path.c_str(), "w");
+  std::FILE *kpf_source = std::fopen(kpf_source_path.c_str(), "w");
+
+  std::vector<std::string> opcompile;
+  std::vector<std::string> kernelcompile;
+
+  if (nullptr == opf || nullptr == opf_source || nullptr == opf ||
+      nullptr == kpf_source) {
+    LOG(INFO) << "create info file error";
+    exit(0);
+  } else {
+    for (size_t i = 0; i < op_info.size(); ++i) {
+      // write OP_type and OP_path into file
+      fputs(op_info[i].c_str(), opf);
+      fputc('\n', opf);
+      std::string op_path = op2pathmap[op_info[i]];
+      fputs(op_path.c_str(), opf_source);
+      fputc('\n', opf_source);
+    }
+
+    std::fclose(opf_source);
+    std::fclose(opf);
+
+    // write Kernel_type and Kernel_path into file
+    for (size_t j = 0; j < kernel_info.size(); ++j) {
+      fputs(kernel_info[j].c_str(), kpf);
+      fputc('\n', kpf);
+      std::string kernel_path = kernel2pathmap[kernel_info[j]];
+      fputs(kernel_path.c_str(), kpf_source);
+      fputc('\n', kpf_source);
+      if (kernel_path == "conv_compute.cc") {
+        fputs(
+            "conv_depthwise.cc\nconv_direct.cc\nconv_gemmlike.cc\nconv_"
+            "winograd.cc\n",
+            kpf_source);
+      }
+    }
+    std::fclose(kpf_source);
+    std::fclose(kpf);
   }
 }
 

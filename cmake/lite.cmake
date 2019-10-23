@@ -252,6 +252,15 @@ function(add_kernel TARGET device level)
         ARGS)
     cmake_parse_arguments(args "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
+    if(LITE_BUILD_TAILOR)
+      foreach(src ${args_SRCS})
+        list (FIND kernels_list ${src} _index)
+        if (${_index} EQUAL -1)
+          return()
+        endif()
+      endforeach()
+    endif()
+
     if ("${level}" STREQUAL "extra" AND (NOT LITE_BUILD_EXTRA))
         return()
     endif()
@@ -338,6 +347,10 @@ endfunction()
 set(ops CACHE INTERNAL "ops")
 set(ops_src_list "${CMAKE_BINARY_DIR}/ops_src_list.txt")
 file(WRITE ${ops_src_list} "") # clean
+if(LITE_BUILD_TAILOR)
+  set(ops_opt_list "${LITE_OPTMODEL_DIR}/ops_source_list.txt")
+  file(STRINGS ${ops_opt_list} ops_list)
+endif()
 # add an operator
 # level: one of (basic, extra)
 function(add_operator TARGET level)
@@ -348,15 +361,23 @@ function(add_operator TARGET level)
         ARGS)
     cmake_parse_arguments(args "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
+
     if ("${level}" STREQUAL "extra" AND (NOT LITE_BUILD_EXTRA))
         return()
     endif()
 
-    set(ops "${ops};${TARGET}" CACHE INTERNAL "source")
 
     foreach(src ${args_SRCS})
+      if(LITE_BUILD_TAILOR)
+        list (FIND ops_list ${src} _index)
+        if (${_index} EQUAL -1)
+          return()
+        endif()
+      endif()
       file(APPEND ${ops_src_list} "${CMAKE_CURRENT_SOURCE_DIR}/${src}\n")
     endforeach()
+
+    set(ops "${ops};${TARGET}" CACHE INTERNAL "source")
 
     lite_cc_library(${TARGET} SRCS ${args_SRCS}
               DEPS ${args_DEPS}

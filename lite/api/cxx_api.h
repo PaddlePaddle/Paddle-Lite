@@ -92,6 +92,7 @@ class LITE_API Predictor {
   void SaveModel(
       const std::string& dir,
       lite_api::LiteModelType model_type = lite_api::LiteModelType::kProtobuf);
+  void SaveOpKernelInfo(const std::string& model_dir);
 
 #ifdef LITE_WITH_TRAIN
   void Run(const std::vector<framework::Tensor>& tensors) {

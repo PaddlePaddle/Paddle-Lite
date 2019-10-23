@@ -85,6 +85,7 @@ lite_option(LITE_ON_TINY_PUBLISH "Publish tiny predictor lib." OFF)
 lite_option(LITE_ON_MODEL_OPTIMIZE_TOOL "Build the model optimize tool" OFF)
 # publish options
 lite_option(LITE_BUILD_EXTRA "Enable extra algorithm support in Lite, both kernels and operators" OFF)
+lite_option(LITE_BUILD_TAILOR "Enable tailoring library according to model" OFF)
 
 set(THIRD_PARTY_PATH "${CMAKE_BINARY_DIR}/third_party" CACHE STRING
         "A path setting third party libraries download & build directories.")
