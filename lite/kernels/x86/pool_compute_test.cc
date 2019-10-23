@@ -15,6 +15,8 @@
 #include "lite/kernels/x86/pool_compute.h"
 #include <gtest/gtest.h>
 #include <iostream>
+#include <memory>
+#include <utility>
 #include <vector>
 #include "lite/core/op_registry.h"
 
@@ -61,7 +63,9 @@ TEST(pool2d_x86, run_test) {
   param.paddings = {0, 0};
   param.ksize = {2, 2};
   param.pooling_type = "max";
-
+  std::unique_ptr<KernelContext> ctx(new KernelContext);
+  ctx->As<X86Context>();
+  pool2d.SetContext(std::move(ctx));
   pool2d.SetParam(param);
   pool2d.Run();
 

@@ -30,7 +30,7 @@ template <typename PoolProcess, typename T>
 class Pool2dFunctor<lite::TargetType::kX86, PoolProcess, T> {
  public:
   void operator()(const lite::X86Context& context,
-                  const lite::Tensor& input,
+                  const lite::Tensor* input,
                   const std::vector<int>& ksize,
                   const std::vector<int>& strides,
                   const std::vector<int>& paddings,
@@ -38,9 +38,9 @@ class Pool2dFunctor<lite::TargetType::kX86, PoolProcess, T> {
                   bool exclusive,
                   bool adaptive,
                   lite::Tensor* output) {
-    const int batch_size = input.dims()[0];
-    const int input_height = input.dims()[2];
-    const int input_width = input.dims()[3];
+    const int batch_size = input->dims()[0];
+    const int input_height = input->dims()[2];
+    const int input_width = input->dims()[3];
     const int output_channels = output->dims()[1];
     const int output_height = output->dims()[2];
     const int output_width = output->dims()[3];
@@ -54,7 +54,7 @@ class Pool2dFunctor<lite::TargetType::kX86, PoolProcess, T> {
     const int input_stride = input_height * input_width;
     const int output_stride = output_height * output_width;
 
-    const T* input_data = input.data<T>();
+    const T* input_data = input->data<T>();
     T* output_data = output->mutable_data<T>(lite::TargetType::kX86);
 
     int hstart, hend;
