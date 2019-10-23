@@ -79,12 +79,15 @@ if(ANDROID OR IOS OR ARMLINUX)
             "Disable DSO when cross-compiling for Android and iOS" FORCE)
     set(WITH_AVX OFF CACHE STRING
             "Disable AVX when cross-compiling for Android and iOS" FORCE)
-    set(LITE_WITH_PYTHON OFF CACHE STRING
-            "Disable PYTHON when cross-compiling for Android and iOS" FORCE)
     set(WITH_RDMA OFF CACHE STRING
             "Disable RDMA when cross-compiling for Android and iOS" FORCE)
     set(WITH_MKL OFF CACHE STRING
             "Disable MKL when cross-compiling for Android and iOS" FORCE)
+endif()
+
+if(ANDROID OR IOS)
+    set(LITE_WITH_PYTHON OFF CACHE STRING
+            "Disable PYTHON when cross-compiling for Android and iOS" FORCE)
 endif()
 
 set(THIRD_PARTY_PATH "${CMAKE_BINARY_DIR}/third_party" CACHE STRING
