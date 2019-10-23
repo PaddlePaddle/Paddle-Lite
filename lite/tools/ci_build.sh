@@ -196,7 +196,7 @@ function test_server {
     # TODO(xxx) clear the skip list latter
     local skip_list=("test_paddle_api" "test_cxx_api" "test_googlenet"
                      "test_mobilenetv1_lite_x86" "test_mobilenetv2_lite_x86"
-                    "test_light_api"
+                     "test_inceptionv4_lite_x86" "test_light_api"
                      "test_apis" "test_model_bin"
                     )
     local to_skip=0
