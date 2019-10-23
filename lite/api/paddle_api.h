@@ -45,8 +45,15 @@ struct LITE_API Tensor {
   template <typename T>
   T* mutable_data(TargetType type = TargetType::kHost) const;
 
+  template <typename T, TargetType type = TargetType::kHost>
+  void CopyFromCpu(const T* data);
+
+  template <typename T>
+  void CopyToCpu(T* data);
   /// Shape of the tensor.
   shape_t shape() const;
+  TargetType target() const;
+  PrecisionType precision() const;
 
   // LoD of the tensor
   lod_t lod() const;
@@ -75,9 +82,9 @@ class LITE_API PaddlePredictor {
   virtual std::string GetVersion() const = 0;
 
   // Get input names
-  virtual const std::vector<std::string>& GetInputNames() = 0;
+  virtual std::vector<std::string> GetInputNames() = 0;
   // Get output names
-  virtual const std::vector<std::string>& GetOutputNames() = 0;
+  virtual std::vector<std::string> GetOutputNames() = 0;
 
   // Get Input by name
   virtual std::unique_ptr<Tensor> GetInputByName(const std::string& name) = 0;
