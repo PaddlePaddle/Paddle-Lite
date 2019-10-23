@@ -21,12 +21,19 @@
 #include "lite/api/paddle_use_passes.h"
 #include "lite/api/test_helper.h"
 #include "lite/core/device_info.h"
+#include "lite/tests/utils/timer.h"
 #include "lite/utils/cp_logging.h"
 #include "lite/utils/string.h"
+
+using paddle::lite::Timer;
 
 DEFINE_string(input_shape,
               "1,3,224,224",
               "input shapes, separated by colon and comma");
+
+DEFINE_bool(use_optimize_nb,
+            false,
+            "optimized & naive buffer model for mobile devices");
 
 namespace paddle {
 namespace lite_api {
@@ -58,15 +65,14 @@ void OutputOptModel(const std::string& load_model_dir,
 #ifdef LITE_WITH_LIGHT_WEIGHT_FRAMEWORK
 void Run(const std::vector<std::vector<int64_t>>& input_shapes,
          const std::string& model_dir,
-         const int repeat,
+         const PowerMode power_mode,
          const int thread_num,
+         const int repeat,
          const int warmup_times = 0) {
-#ifdef LITE_WITH_ARM
-  lite::DeviceInfo::Init();
-  lite::DeviceInfo::Global().SetRunMode(lite_api::LITE_POWER_HIGH, thread_num);
-#endif
   lite_api::MobileConfig config;
   config.set_model_dir(model_dir);
+  config.set_power_mode(power_mode);
+  config.set_threads(thread_num);
 
   auto predictor = lite_api::CreatePaddlePredictor(config);
 
@@ -87,17 +93,22 @@ void Run(const std::vector<std::vector<int64_t>>& input_shapes,
     predictor->Run();
   }
 
-  auto start = lite::GetCurrentUS();
-  for (int i = 0; i < repeat; ++i) {
+  Timer ti;
+  for (int j = 0; j < repeat; ++j) {
+    ti.start();
     predictor->Run();
+    ti.end();
+    LOG(INFO) << "iter: " << j << ", time: " << ti.latest_time() << " ms";
   }
-  auto end = lite::GetCurrentUS();
 
   LOG(INFO) << "================== Speed Report ===================";
-  LOG(INFO) << "Model: " << model_dir << ", threads num " << thread_num
-            << ", warmup: " << warmup_times << ", repeats: " << repeat
-            << ", spend " << (end - start) / repeat / 1000.0
-            << " ms in average.";
+  LOG(INFO) << "Model: " << model_dir
+            << ", power_mode: " << static_cast<int>(power_mode)
+            << ", threads num " << thread_num << ", warmup: " << warmup_times
+            << ", repeats: " << repeat << ", avg time: " << ti.get_average_ms()
+            << " ms"
+            << ", min time: " << ti.get_min_time() << " ms"
+            << ", max time: " << ti.get_max_time() << " ms.";
 
   auto output = predictor->GetOutput(0);
   auto out = output->data<float>();
@@ -122,7 +133,12 @@ int main(int argc, char** argv) {
               << "--model_dir /path/to/your/model";
     exit(0);
   }
-  std::string save_optimized_model_dir = FLAGS_model_dir + "opt2";
+  std::string save_optimized_model_dir = "";
+  if (FLAGS_use_optimize_nb) {
+    save_optimized_model_dir = FLAGS_model_dir;
+  } else {
+    save_optimized_model_dir = FLAGS_model_dir + "opt2";
+  }
 
   auto split_string =
       [](const std::string& str_in) -> std::vector<std::string> {
@@ -164,17 +180,21 @@ int main(int argc, char** argv) {
     input_shapes.push_back(get_shape(str_input_shapes[i]));
   }
 
-  // Output optimized model
-  paddle::lite_api::OutputOptModel(
-      FLAGS_model_dir, save_optimized_model_dir, input_shapes);
+  if (!FLAGS_use_optimize_nb) {
+    // Output optimized model
+    paddle::lite_api::OutputOptModel(
+        FLAGS_model_dir, save_optimized_model_dir, input_shapes);
+  }
 
 #ifdef LITE_WITH_LIGHT_WEIGHT_FRAMEWORK
   // Run inference using optimized model
-  paddle::lite_api::Run(input_shapes,
-                        save_optimized_model_dir,
-                        FLAGS_repeats,
-                        FLAGS_threads,
-                        FLAGS_warmup);
+  paddle::lite_api::Run(
+      input_shapes,
+      save_optimized_model_dir,
+      static_cast<paddle::lite_api::PowerMode>(FLAGS_power_mode),
+      FLAGS_threads,
+      FLAGS_repeats,
+      FLAGS_warmup);
 #endif
   return 0;
 }
