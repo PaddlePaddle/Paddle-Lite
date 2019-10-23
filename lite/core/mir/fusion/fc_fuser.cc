@@ -25,7 +25,7 @@ void FcFuser::BuildPattern() {
   // create nodes.
   auto* x = VarNode("x")->assert_is_op_input("mul", "X");
   auto* W = VarNode("W")->assert_is_op_input("mul", "Y");
-  auto* b = VarNode("b");
+  auto* b = VarNode("b")->assert_is_persistable_var();
   auto* mul = OpNode("mul", "mul");
   auto* mul_out = VarNode("mul_out");
   auto* add = OpNode("add", "elementwise_add");
