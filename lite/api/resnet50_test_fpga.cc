@@ -41,7 +41,7 @@ std::vector<std::string> GetDirectoryFiles(const std::string& dir) {
   return files;
 }
 
-void readFromFile(int num, std::string path, float* data) {
+void ReadFromFile(int num, std::string path, float* data) {
   std::ifstream file_stream(path);
   if (!file_stream.good()) {
     return;

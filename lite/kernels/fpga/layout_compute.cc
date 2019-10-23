@@ -27,7 +27,7 @@ namespace fpga {
 using float16 = zynqmp::float16;
 
 template <typename T>
-void convert_to_hwc(
+void ConvertToHwc(
     T* chw_data, T* hwc_data, int num, int channel, int height, int width) {
   int chw = channel * height * width;
   int wc = width * channel;
@@ -45,7 +45,7 @@ void convert_to_hwc(
 }
 
 template <typename T>
-void hwc_to_chw(
+void HwcToChw(
     T* chw_data, T* hwc_data, int num, int channel, int height, int width) {
   int chw = channel * height * width;
   int wc = width * channel;
@@ -77,7 +77,7 @@ void TransHwcToChw(Tensor* dest, const Tensor* src) {
     if (dest->dims().size() > 3) {
       width = dest->dims()[3];
     }
-    hwc_to_chw<float>(chw, hwc, num, channel, height, width);
+    HwcToChw<float>(chw, hwc, num, channel, height, width);
   }
 }
 void TransChwToHwc(Tensor* dest, const Tensor* src) {}

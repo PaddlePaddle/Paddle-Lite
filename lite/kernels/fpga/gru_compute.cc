@@ -31,7 +31,7 @@ namespace fpga {
 
 using float16 = zynqmp::float16;
 
-inline lite_api::ActivationType get_gru_act_type(const std::string& type) {
+inline lite_api::ActivationType GetGruActType(const std::string& type) {
   if (type == "sigmoid") {
     return lite_api::ActivationType::kSigmoid;
   } else if (type == "tanh") {

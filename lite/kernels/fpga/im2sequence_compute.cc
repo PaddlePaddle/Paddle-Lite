@@ -28,7 +28,7 @@ namespace fpga {
 
 using float16 = zynqmp::float16;
 
-void im2sequence(const float* input,
+void Im2Sequence(const float* input,
                  const int input_c,
                  const int input_h,
                  const int input_w,
@@ -131,7 +131,7 @@ void Im2SequenceCompute::Run() {
 
     int out_offset = 0;
     for (int im_id = 0; im_id < im_num; im_id++) {
-      im2sequence(in + im_id * im_size,
+      Im2Sequence(in + im_id * im_size,
                   input_dims[1],
                   input_dims[2],
                   input_dims[3],
@@ -156,7 +156,7 @@ void Im2SequenceCompute::Run() {
         1;
     for (int im_id = 0; im_id < im_num; im_id++) {
       int out_size_per_im = out_h * out_w * out_cols;
-      im2sequence(in + im_id * im_size,
+      Im2Sequence(in + im_id * im_size,
                   input_dims[1],
                   input_dims[2],
                   input_dims[3],
@@ -177,7 +177,6 @@ void Im2SequenceCompute::Run() {
     lod->resize(1);
     (*lod)[0] = im_offset;
   }
-  param.Out->ZynqTensor()->saveToFile("im2sequence.txt");
 }
 
 }  // namespace fpga
