@@ -74,8 +74,8 @@ class LITE_API Predictor {
   // get input by name.
   lite::Tensor* GetInputByName(const std::string& name);
   // get inputnames and get outputnames.
-  const std::vector<std::string>& GetInputNames();
-  const std::vector<std::string>& GetOutputNames();
+  std::vector<std::string> GetInputNames();
+  std::vector<std::string> GetOutputNames();
   void PrepareFeedFetch();
 
   // Get offset-th col of fetch results.
@@ -109,6 +109,40 @@ class LITE_API Predictor {
   bool program_generated_{false};
   std::vector<std::string> input_names_;
   std::vector<std::string> output_names_;
+};
+
+class CxxPaddleApiImpl : public lite_api::PaddlePredictor {
+ public:
+  CxxPaddleApiImpl() {}
+
+  /// Create a new predictor from a config.
+  void Init(const lite_api::CxxConfig& config);
+
+  std::unique_ptr<lite_api::Tensor> GetInput(int i) override;
+
+  std::unique_ptr<const lite_api::Tensor> GetOutput(int i) const override;
+
+  void Run() override;
+
+  std::string GetVersion() const override;
+
+  // get inputs names and get outputs names
+  std::vector<std::string> GetInputNames() override;
+  std::vector<std::string> GetOutputNames() override;
+
+  std::unique_ptr<const lite_api::Tensor> GetTensor(
+      const std::string& name) const override;
+
+  // Get InputTebsor by name
+  std::unique_ptr<lite_api::Tensor> GetInputByName(
+      const std::string& name) override;
+
+  void SaveOptimizedModel(const std::string& model_dir,
+                          lite_api::LiteModelType model_type =
+                              lite_api::LiteModelType::kProtobuf) override;
+
+ private:
+  Predictor raw_predictor_;
 };
 
 /*
