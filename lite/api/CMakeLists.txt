@@ -15,8 +15,10 @@ if (NOT LITE_ON_TINY_PUBLISH)
     add_library(paddle_full_api_shared SHARED "")
     target_sources(paddle_full_api_shared PUBLIC ${__lite_cc_files} paddle_api.cc light_api.cc cxx_api.cc cxx_api_impl.cc light_api_impl.cc)
     add_dependencies(paddle_full_api_shared op_list_h kernel_list_h framework_proto xxhash )
-    target_link_libraries(paddle_full_api_shared framework_proto xxhash ${math_cuda})# ${cuda_kernels})
-    target_link_libraries(paddle_full_api_shared "-Wl,--whole-archive"  ${cuda_kernels} "-Wl,--no-whole-archive")
+    target_link_libraries(paddle_full_api_shared framework_proto xxhash)# ${cuda_kernels})
+    if(LITE_WITH_CUDA)
+        target_link_libraries(paddle_full_api_shared ${math_cuda} "-Wl,--whole-archive" ${cuda_kernels} "-Wl,--no-whole-archive")
+    endif(LITE_WITH_CUDA)
     add_dependencies(lite_compile_deps paddle_full_api_shared)
     #light api dynamic library
     lite_cc_library(paddle_light_api_shared MODULE
