@@ -346,7 +346,7 @@ void test_conv_int8(const std::vector<DDim>& input_dims,
             if (max_diff > 5e-5f) {
               LOG(WARNING) << "basic result";
               print_tensor(tout_basic_fp32);
-              LOG(WARNING) << "saber result";
+              LOG(WARNING) << "lite result";
               print_tensor(*param_fp32_out.output);
               Tensor tdiff;
               tdiff.Resize(tout_basic_fp32.dims());
@@ -407,7 +407,7 @@ void test_conv_int8(const std::vector<DDim>& input_dims,
             if (!check) {
               LOG(WARNING) << "int8 basic result";
               print_tensor(tout_basic_int8);
-              LOG(WARNING) << "int8 saber result";
+              LOG(WARNING) << "int8 lite result";
               print_tensor(*param_int8_out.output);
               LOG(WARNING) << "int8 diff tensor";
               print_tensor(tdiff);

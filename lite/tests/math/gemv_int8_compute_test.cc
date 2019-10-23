@@ -228,7 +228,7 @@ bool test_gemv_int8(
       tensor_diff(tc_basic_fp32, tc_fp32, tdiff);
       LOG(INFO) << "basic result: ";
       print_tensor(tc_basic_fp32);
-      LOG(INFO) << "saber result: ";
+      LOG(INFO) << "lite result: ";
       print_tensor(tc_fp32);
       LOG(INFO) << "diff result: ";
       print_tensor(tdiff);
@@ -267,7 +267,7 @@ bool test_gemv_int8(
       if (!check) {
         LOG(WARNING) << "int8 basic result";
         print_tensor(tc_basic_int8);
-        LOG(WARNING) << "int8 saber result";
+        LOG(WARNING) << "int8 lite result";
         print_tensor(tc_int8);
         LOG(WARNING) << "int8 diff tensor";
         print_tensor(tdiff);
