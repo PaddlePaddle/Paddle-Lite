@@ -12,20 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 #include <gflags/gflags.h>
 #include <gtest/gtest.h>
 #include <vector>
@@ -36,9 +22,6 @@
 #include "lite/api/paddle_use_passes.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/tensor.h"
-
-// for googlenet
-DEFINE_string(model_dir, "", "");
 
 namespace paddle {
 namespace lite {
@@ -57,7 +40,21 @@ TEST(CXXApi, test_lite_googlenet) {
   for (int i = 0; i < input_tensor->dims().production(); i++) {
     data[i] = 1;
   }
-  predictor.Run();
+
+  for (int i = 0; i < FLAGS_warmup; ++i) {
+    predictor.Run();
+  }
+
+  auto start = GetCurrentUS();
+  for (int i = 0; i < FLAGS_repeats; ++i) {
+    predictor.Run();
+  }
+
+  LOG(INFO) << "================== Speed Report ===================";
+  LOG(INFO) << "Model: " << FLAGS_model_dir << ", threads num " << FLAGS_threads
+            << ", warmup: " << FLAGS_warmup << ", repeats: " << FLAGS_repeats
+            << ", spend " << (GetCurrentUS() - start) / FLAGS_repeats / 1000.0
+            << " ms in average.";
 
   auto* out = predictor.GetOutput(0);
   std::vector<float> results(
