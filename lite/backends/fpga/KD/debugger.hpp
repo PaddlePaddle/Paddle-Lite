@@ -31,7 +31,6 @@ inline void ChwToHwc(Tensor* t, float* dst) {
   if (t->dims().size() > 3) {
     width = t->dims()[3];
   }
-  // int width = t->dims()[3];
   const float* chw_data = t->data<float>();
   float* hwc_data = dst;
 
@@ -67,7 +66,6 @@ inline void SaveTensor(lite::Tensor* t,
 
   ofs.open(file);
 
-  // float* data = dst;
   for (int i = 0; i < t->numel(); i++) {
     float value = data[i];
     ofs << value << std::endl;

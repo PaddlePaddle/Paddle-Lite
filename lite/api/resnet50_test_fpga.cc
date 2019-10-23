@@ -43,11 +43,9 @@ std::vector<std::string> GetDirectoryFiles(const std::string& dir) {
 
 void readFromFile(int num, std::string path, float* data) {
   std::ifstream file_stream(path);
-  // file_stream.open(path);
   if (!file_stream.good()) {
     return;
   }
-  // float* data = mutableData<float>();
   for (int i = 0; i < num; ++i) {
     float value = 0;
     file_stream >> value;
@@ -62,7 +60,6 @@ TEST(ResNet50, test) {
   std::vector<Place> valid_places({
       Place{TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)},
       Place{TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNHWC)},
-      // Place{TARGET(kARM), PRECISION(kFloat), DATALAYOUT(kNHWC)},
   });
 
   predictor.Build(FLAGS_model_dir,
