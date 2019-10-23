@@ -2,7 +2,7 @@
 set -ex
 
 # global variables with default value
-XPU_SDK_ROOT="$(pwd)/../XPU_SDK"    # XPU SDK from http://bb-inf-sat6.bb01:8080/for_paddle/output.tar.gz
+XPU_SDK_ROOT="$(pwd)/../XPU_SDK"    # XPU SDK
 TARGET_NAME="lite_compile_deps"     # default target
 BUILD_EXTRA=ON                      # ON(with sequence ops)/OFF
 WITH_TESTING=ON                     # ON/OFF
@@ -26,9 +26,9 @@ readonly CMAKE_COMMON_OPTIONS="-DWITH_LITE=ON \
 readonly NUM_CORES_FOR_COMPILE=${LITE_BUILD_THREADS:-1}
 
 readonly THIRDPARTY_TAR=https://paddle-inference-dist.bj.bcebos.com/PaddleLite/third-party-05b862.tar.gz
+readonly workspace=$(pwd)
 
 function prepare_thirdparty {
-    readonly workspace=$(pwd)
     if [ ! -d $workspace/third-party -o -f $workspace/third-party-05b862.tar.gz ]; then
         rm -rf $workspace/third-party
 
@@ -61,9 +61,7 @@ function prepare_workspace {
 }
 
 function build_xpu {
-    cur_dir=$(pwd)
-
-    build_dir=$cur_dir/build.lite.xpu
+    build_dir=${workspace}/build.lite.xpu
     mkdir -p $build_dir
     cd $build_dir
 
