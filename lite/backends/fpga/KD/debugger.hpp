@@ -16,11 +16,10 @@
 #pragma once
 #include <string>
 #include "lite/backends/fpga/lite_tensor.h"
-// #include "lite/core/tensor.h"
 namespace paddle {
 namespace lite {
 
-inline void chw_to_hwc(Tensor* t, float* dst) {
+inline void ChwToHwc(Tensor* t, float* dst) {
   int num = t->dims()[0];
   int channel = t->dims()[1];
 
@@ -51,13 +50,13 @@ inline void chw_to_hwc(Tensor* t, float* dst) {
   }
 }
 
-inline void save_tensor(lite::Tensor* t,
-                        const std::string& name,
-                        bool convert = true) {
+inline void SaveTensor(lite::Tensor* t,
+                       const std::string& name,
+                       bool convert = true) {
   float* data = const_cast<float*>(t->data<float>());
   float* dst = new float[t->numel()];
   if (convert) {
-    chw_to_hwc(t, dst);
+    ChwToHwc(t, dst);
     data = dst;
   }
 

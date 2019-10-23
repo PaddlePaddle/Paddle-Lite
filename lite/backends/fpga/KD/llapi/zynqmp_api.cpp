@@ -86,8 +86,6 @@ size_t fpga_get_memory_size_max() { return memory_size_max; }
 
 size_t fpga_diagnose_memory(int detailed) {
   size_t total = 0;
-  //        size_t size = 0;
-  //        int i = 0;
   auto iter = memory_map.begin();  // std::map<void *, size_t>::iterator
   while (iter != memory_map.end()) {
     total += iter->second;
@@ -160,11 +158,9 @@ int ioctl_conv(const struct ConvArgs &args) {
 }
 
 int compute_fpga_conv(const struct SplitConvArgs &args) {
-  // return do_ioctl(IOCTL_CONFIG_CONV, &args);
   int split_num = args.split_num;
   int ret = -1;
   for (int i = 0; i < split_num; i++) {
-    // ComputeBasicConv(args.conv_args[i]);
     ret = compute_fpga_conv_basic(args.conv_arg[i]);
   }
 
@@ -183,8 +179,6 @@ int compute_fpga_ewadd(const struct EWAddArgs &args) {
 }
 
 int get_device_info(const struct DeviceInfo &args) {
-  // DeviceInfo info;
-  // struct DeviceInfo* a = &info;
   int ret = do_ioctl(IOCTL_DEVICE_INFO, &args);
   return ret;
 }
@@ -255,10 +249,6 @@ int compute_fpga_dwconv(const struct DWconvArgs &args) {
 int config_activation(const struct ActiveParamterArgs &args) {
   return do_ioctl(IOCTL_CONFIG_ACTIVATION_PARAMETER, &args);
 }
-
-// int config_power(const struct PowerArgs& args) {
-//     return do_ioctl(IOCTL_CONFIG_POWER, &args);
-// }
 
 int config_inplace(const struct InplaceArgs &args) {
   return do_ioctl(IOCTL_CONFIG_INPLACE, &args);
