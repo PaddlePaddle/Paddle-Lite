@@ -73,12 +73,14 @@ void BindLiteApi(py::module *m) {
 #endif
   BindLiteLightPredictor(m);
   // Global helper methods
+#ifndef LITE_ON_TINY_PUBLISH
   m->def("create_paddle_predictor",
          [](const CxxConfig &config) -> std::unique_ptr<CxxPaddleApiImpl> {
            auto x = std::unique_ptr<CxxPaddleApiImpl>(new CxxPaddleApiImpl());
            x->Init(config);
            return std::move(x);
          });
+#endif
   m->def("create_paddle_predictor",
          [](const MobileConfig &config) -> std::unique_ptr<LightPredictorImpl> {
            auto x =

@@ -47,6 +47,9 @@ if (WITH_TESTING)
     endif()
 endif()
 
+# ----------------------------- PUBLISH -----------------------------
+# The final target for publish lite lib
+add_custom_target(publish_inference)
 if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM)
     # for publish
     set(INFER_LITE_PUBLISH_ROOT "${CMAKE_BINARY_DIR}/inference_lite_lib.${ARM_TARGET_OS}.${ARM_TARGET_ARCH_ABI}")
@@ -59,10 +62,32 @@ if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM)
     if (LITE_WITH_FPGA)
         set(INFER_LITE_PUBLISH_ROOT "${INFER_LITE_PUBLISH_ROOT}.fpga")
     endif(LITE_WITH_FPGA)
-    message(STATUS "publish inference lib to ${INFER_LITE_PUBLISH_ROOT}")
+else()
+    set(INFER_LITE_PUBLISH_ROOT "${CMAKE_BINARY_DIR}/inference_lite_lib")
+endif()
+message(STATUS "publish inference lib to ${INFER_LITE_PUBLISH_ROOT}")
 
-    # The final target for publish lite lib
-    add_custom_target(publish_inference)
+# add python lib
+if (LITE_WITH_PYTHON)
+    add_custom_target(publish_inference_python_lib ${TARGET}
+            COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/python/lib"
+            COMMAND cp "${CMAKE_BINARY_DIR}/lite/api/python/pybind/liblite_pybind.so" "${INFER_LITE_PUBLISH_ROOT}/python/lib/lite_core.so")
+    add_custom_target(publish_inference_python_light_demo ${TARGET}
+    	COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/demo/python"
+    	COMMAND cp "${CMAKE_SOURCE_DIR}/lite/demo/python/mobilenetv1_light_api.py" "${INFER_LITE_PUBLISH_ROOT}/demo/python/"
+            COMMAND cp "${CMAKE_SOURCE_DIR}/lite/demo/python/README" "${INFER_LITE_PUBLISH_ROOT}/demo/python/")
+    if (NOT LITE_ON_TINY_PUBLISH)
+        add_custom_target(publish_inference_python_full_demo ${TARGET}
+    	    COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/demo/python"
+    	    COMMAND cp "${CMAKE_SOURCE_DIR}/lite/demo/python/mobilenetv1_full_api.py" "${INFER_LITE_PUBLISH_ROOT}/demo/python/")
+        add_dependencies(publish_inference publish_inference_python_full_demo)
+    endif()
+    add_dependencies(publish_inference_python_lib lite_pybind)
+    add_dependencies(publish_inference publish_inference_python_lib)
+    add_dependencies(publish_inference publish_inference_python_light_demo)
+endif()
+
+if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM)
     if (NOT LITE_ON_TINY_PUBLISH)
         # add cxx lib
         add_custom_target(publish_inference_cxx_lib ${TARGET}
