@@ -32,7 +32,7 @@ namespace ops = paddle_mobile::operators;
 #ifdef PADDLE_MOBILE_CPU
 REGISTER_OPERATOR_CPU(elementwise_mul, ops::ElementwiseMulOp);
 #endif
-#ifdef PADDLE_MOBILE_CPU
+#ifdef PADDLE_MOBILE_CL
 REGISTER_OPERATOR_CL(elementwise_mul, ops::ElementwiseMulOp);
 #endif
 #ifdef PADDLE_MOBILE_FPGA

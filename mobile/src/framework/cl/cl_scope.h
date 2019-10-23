@@ -30,6 +30,7 @@ namespace paddle_mobile {
 
 extern const std::map<std::string, std::vector<unsigned char>> opencl_kernels;
 extern const std::map<std::string, std::vector<unsigned char>> opencl_headers;
+extern const std::string yolonano_kernel;
 
 namespace framework {
 
@@ -51,8 +52,19 @@ class CLScope {
     auto program = Program(file_name, kernel_name, options);
     DLOG << " end get program ~ ";
     DLOG << " to create kernel: " << kernel_name;
+    std::string tmp_op = options;
+    size_t start_pos = 0;
+    while((start_pos = tmp_op.find("-", start_pos)) != std::string::npos) {
+      tmp_op.replace(start_pos, 1, "_");
+      start_pos += 1;
+    }
+    start_pos = 0;
+    while((start_pos = tmp_op.find(" ", start_pos)) != std::string::npos) {
+      tmp_op.erase(start_pos, 1);
+    }
+    const std::string kernel_name_with_option = kernel_name + tmp_op;
     std::unique_ptr<_cl_kernel, CLKernelDeleter> kernel(
-        clCreateKernel(program, kernel_name.c_str(), &status_));
+        clCreateKernel(program, kernel_name_with_option.c_str(), &status_));
     CL_CHECK_ERRORS(status_);
     DLOG << " end create kernel ~ ";
     return std::move(kernel);
@@ -63,6 +75,19 @@ class CLScope {
   cl_program Program(const std::string &file_name,
                      const std::string &kernel_name,
                      const std::string &options) {
+    bool useSpecialClForLens = true;
+    if (useSpecialClForLens) {
+      std::string program_key = "yolonano_v1";
+      auto it = programs_.find(program_key);
+      if (it != programs_.end()) {
+        return it->second.get();
+      }
+      auto program = CLEngine::Instance()->CreateProgramWithSource(
+              context_, yolonano_kernel.c_str());
+      CLEngine::Instance()->BuildProgram(program.get(), "-DRELU -DBIASE_CH");
+      programs_[program_key] = std::move(program);
+      return programs_[program_key].get();
+    }
     if (opencl_kernels.find(kernel_name) != opencl_kernels.end() &&
         opencl_headers.find(file_name) != opencl_headers.end()) {
       std::string program_key = file_name + kernel_name;

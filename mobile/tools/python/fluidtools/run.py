@@ -6,7 +6,7 @@ import subprocess
 import numpy as np
 import paddle.fluid as fluid
 
-model_path = "model"
+model_path = "yolonano"
 checked_model_path = "checked_model"
 feed_path = "feeds"
 output_path = "outputs"
@@ -411,6 +411,7 @@ def check_mobile_results(args, fuse, mem_opt):
     args = "{} {} {} {} {}".format("1" if fuse else "0", "1" if mem_opt else "0", "1" if quantification else "0", quantification_fold, args)
     res = sh("adb shell \"cd {} && export LD_LIBRARY_PATH=. && ./test-net {}\"".format(mobile_exec_root, args))
     lines = res.split("\n")
+    print(res)
     # for line in lines:
     #     print(line)
     for line in lines:
@@ -666,10 +667,10 @@ def main():
         args += " " + var_name
     args += " " + str(1 if check_shape else 0)
     if not fast_check:
-        check_mobile_results(args, False, False)
-        check_mobile_results(args, False, True)
-    check_mobile_results(args, True, False)
-    check_mobile_results(args, True, True)
+        # check_mobile_results(args, False, False)
+        # check_mobile_results(args, False, True)
+      check_mobile_results(args, True, False)
+    # check_mobile_results(args, True, True)
 
 if __name__ == "__main__":
     main()
