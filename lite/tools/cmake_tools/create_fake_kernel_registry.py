@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import print_function
 import sys
 import logging
 from ast import RegisterLiteKernelParser
@@ -51,7 +52,7 @@ class %s : public KernelLite<TARGET(%s), PRECISION(%s), DATALAYOUT(%s)> {
 with open(ops_list_path) as f:
     paths = set([path for path in f])
     for path in paths:
-        print 'path', path
+        print('path', path)
         with open(path.strip()) as g:
             c = g.read()
             kernel_parser = RegisterLiteKernelParser(c)
