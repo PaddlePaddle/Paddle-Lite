@@ -66,4 +66,5 @@ REGISTER_LITE_KERNEL(leaky_relu,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kCUDA))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kCUDA))})
+    .SetVersion("1.5.0")
     .Finalize();
