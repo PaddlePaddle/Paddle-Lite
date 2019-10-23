@@ -15,6 +15,7 @@ readonly NUM_PROC=${LITE_BUILD_THREADS:-4}
 # global variables
 BUILD_EXTRA=OFF
 BUILD_JAVA=ON
+BUILD_PYTHON=OFF
 BUILD_DIR=$(pwd)
 
 readonly THIRDPARTY_TAR=https://paddle-inference-dist.bj.bcebos.com/PaddleLite/third-party-05b862.tar.gz
@@ -84,9 +85,11 @@ function make_tiny_publish_so {
   fi
 
   cmake .. \
+      ${PYTHON_FLAGS} \
       ${CMAKE_COMMON_OPTIONS} \
       -DWITH_TESTING=OFF \
       -DLITE_WITH_JAVA=$BUILD_JAVA \
+      -DLITE_WITH_PYTHON=$BUILD_PYTHON \
       -DLITE_SHUTDOWN_LOG=ON \
       -DLITE_ON_TINY_PUBLISH=ON \
       -DANDROID_STL_TYPE=$android_stl \
@@ -122,9 +125,11 @@ function make_full_publish_so {
 
   prepare_workspace $root_dir $build_directory
   cmake $root_dir \
+      ${PYTHON_FLAGS} \
       ${CMAKE_COMMON_OPTIONS} \
       -DWITH_TESTING=OFF \
       -DLITE_WITH_JAVA=$BUILD_JAVA \
+      -DLITE_WITH_PYTHON=$BUILD_PYTHON \
       -DLITE_SHUTDOWN_LOG=ON \
       -DANDROID_STL_TYPE=$android_stl \
       -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
@@ -216,6 +221,8 @@ function print_usage {
     echo
     echo -e "optional argument:"
     echo -e "--build_extra: (OFF|ON); controls whether to publish extra operators and kernels for (sequence-related model such as OCR or NLP)"
+    echo -e "--build_python: (OFF|ON); controls whether to publish python api lib (ANDROID and IOS is not supported)"
+    echo -e "--build_java: (OFF|ON); controls whether to publish java api lib (Only ANDROID is supported)"
     echo -e "--build_dir: directory for building"
     echo
     echo -e "argument choices:"
@@ -267,6 +274,14 @@ function main {
                 ;;
             --build_extra=*)
                 BUILD_EXTRA="${i#*=}"
+                shift
+                ;;
+            --build_python=*)
+                BUILD_PYTHON="${i#*=}"
+                shift
+                ;;
+            --build_java=*)
+                BUILD_JAVA="${i#*=}"
                 shift
                 ;;
             --build_dir=*)
