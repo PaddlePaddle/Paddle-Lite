@@ -197,7 +197,7 @@ function test_server {
     local skip_list=("test_paddle_api" "test_cxx_api" "test_googlenet"
                      "test_mobilenetv1_lite_x86" "test_mobilenetv2_lite_x86"
                      "test_inceptionv4_lite_x86" "test_light_api"
-                     "test_apis" "test_model_bin"
+                     "test_apis" "test_model_bin" "test_resnet50_lite_x86"
                     )
     local to_skip=0
     for _test in $(cat $TESTS_FILE); do
