@@ -13,9 +13,13 @@ if ((NOT LITE_ON_TINY_PUBLISH) AND (LITE_WITH_X86 OR ARM_TARGET_OS STREQUAL "and
     #full api dynamic library
     add_library(paddle_full_api_shared SHARED "")
     target_sources(paddle_full_api_shared PUBLIC ${__lite_cc_files} paddle_api.cc light_api.cc cxx_api.cc cxx_api_impl.cc light_api_impl.cc)
-    add_dependencies(paddle_full_api_shared op_list_h kernel_list_h framework_proto xxhash)
-    target_link_libraries(paddle_full_api_shared framework_proto xxhash)
+    add_dependencies(paddle_full_api_shared op_list_h kernel_list_h framework_proto)
+    target_link_libraries(paddle_full_api_shared framework_proto)
     add_dependencies(lite_compile_deps paddle_full_api_shared)
+    if(LITE_WITH_X86)
+       add_dependencies(paddle_full_api_shared xxhash)
+       target_link_libraries(paddle_full_api_shared xxhash)
+    endif()
     
     #light api dynamic library
     lite_cc_library(paddle_light_api_shared MODULE
