@@ -13,12 +13,14 @@
 // limitations under the License.
 #pragma once
 
+#include <Eigen/Core>
 #include <random>
 #include <string>
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
-#include "paddle/fluid/framework/eigen.h"
-#include "paddle/fluid/framework/operator.h"
+#include "lite/core/types.h"
+#include "lite/fluid/eigen.h"
+#include "lite/operators/batch_norm_op.h"
 
 namespace paddle {
 namespace lite {
@@ -42,6 +44,7 @@ class BatchNormCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
  public:
   using param_t = operators::BatchNormParam;
   void Run() override {
+    // auto &context = ctx_->As<X86Context>();
     auto &param = *param_.get_mutable<operators::BatchNormParam>();
     bool global_stats = param.is_test || param.use_global_stats;
 
@@ -55,12 +58,12 @@ class BatchNormCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
     const int sample_size = x->dims().production() / N / C;
 
     // alloc memory
-    param.y->template mutable_data<T>();
+    param.y->mutable_data<T>();
     if (!param.is_test) {
-      param.mean_out->template mutable_data<T>();
-      param.variance_out->template mutable_data<T>();
-      param.saved_mean->template mutable_data<T>();
-      param.saved_variance->template mutable_data<T>();
+      param.mean_out->mutable_data<T>();
+      param.variance_out->mutable_data<T>();
+      param.saved_mean->mutable_data<T>();
+      param.saved_variance->mutable_data<T>();
     }
     if (!global_stats) {
       // saved_xx is use just in this batch of data
@@ -79,8 +82,7 @@ class BatchNormCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
       if ((N * sample_size) == 1) {
         LOG(WARNING) << "Only 1 element in normalization dimension, "
                      << "we skip the batch norm calculation, let y = x.";
-        framework::TensorCopy(
-            x->raw_tensor(), platform::CPUPlace(), &param.y->raw_tensor());
+        param.y->CopyDataFrom(*x);
         return;
       }
 

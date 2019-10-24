@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/api/cxx_api.h"
+#include <algorithm>
 #include <memory>
 #include <string>
 #include <utility>
@@ -42,60 +43,62 @@ void Predictor::SaveModel(const std::string &dir,
 }
 
 lite::Tensor *Predictor::GetInput(size_t offset) {
-  auto *_feed_list = exec_scope_->FindVar("feed");
-  CHECK(_feed_list) << "no feed variable in exec_scope";
-  auto *feed_list = _feed_list->GetMutable<std::vector<lite::Tensor>>();
-  if (offset >= feed_list->size()) {
-    feed_list->resize(offset + 1);
-  }
-  return &feed_list->at(offset);
+  CHECK(input_names_.size() > offset)
+      << "The network has " << input_names_.size() << " inputs"
+      << ", the offset should be less than this.";
+  auto *in_var = exec_scope_->FindVar(input_names_[offset]);
+  CHECK(in_var) << "no fatch variable " << input_names_[offset]
+                << " in exec_scope";
+  return in_var->GetMutable<lite::Tensor>();
 }
 
 // get inputs names
-std::vector<std::string> Predictor::GetInputNames() {
-  std::vector<std::string> input_names;
-  for (auto &item : input_names_) {
-    input_names.push_back(item.second);
-  }
-  return input_names;
-}
+std::vector<std::string> Predictor::GetInputNames() { return input_names_; }
 // get outputnames
-std::vector<std::string> Predictor::GetOutputNames() {
-  std::vector<std::string> output_names;
-  for (auto &item : output_names_) {
-    output_names.push_back(item.second);
-  }
-  return output_names;
-}
+std::vector<std::string> Predictor::GetOutputNames() { return output_names_; }
 // append the names of inputs and outputs into input_names_ and output_names_
 void Predictor::PrepareFeedFetch() {
   auto current_block = program_desc_.GetBlock<cpp::BlockDesc>(0);
+  std::vector<cpp::OpDesc *> feeds;
+  std::vector<cpp::OpDesc *> fetchs;
   for (int i = 0; i < current_block->OpsSize(); i++) {
     auto op = current_block->GetOp<cpp::OpDesc>(i);
     if (op->Type() == "feed") {
-      int idx = op->GetAttr<int>("col");
-      input_names_[idx] = op->Output("Out").front();
-      idx2feeds_[op->Output("Out").front()] = idx;
+      feeds.push_back(op);
     } else if (op->Type() == "fetch") {
-      int idx = op->GetAttr<int>("col");
-      output_names_[idx] = op->Input("X").front();
+      fetchs.push_back(op);
     }
+  }
+  input_names_.resize(feeds.size());
+  output_names_.resize(fetchs.size());
+  for (int i = 0; i < feeds.size(); i++) {
+    input_names_[feeds[i]->GetAttr<int>("col")] =
+        feeds[i]->Output("Out").front();
+  }
+  for (int i = 0; i < fetchs.size(); i++) {
+    output_names_[fetchs[i]->GetAttr<int>("col")] =
+        fetchs[i]->Input("X").front();
   }
 }
 
 const lite::Tensor *Predictor::GetOutput(size_t offset) const {
-  auto *_fetch_list = exec_scope_->FindVar("fetch");
-  CHECK(_fetch_list) << "no fatch variable in exec_scope";
-  auto &fetch_list = *_fetch_list->GetMutable<std::vector<lite::Tensor>>();
-  CHECK_LT(offset, fetch_list.size()) << "offset " << offset << " overflow";
-  return &fetch_list.at(offset);
+  CHECK(output_names_.size() > offset)
+      << "The network has " << output_names_.size() << " outputs"
+      << ", the offset should be less than this.";
+  const std::string name = output_names_.at(offset);
+  auto *out_var = exec_scope_->FindVar(name);
+  CHECK(out_var) << "no fatch variable " << name << " in exec_scope";
+  return out_var->GetMutable<lite::Tensor>();
 }
 
-const std::vector<lite::Tensor> *Predictor::GetOutputs() const {
-  auto *_fetch_list = exec_scope_->FindVar("fetch");
-  CHECK(_fetch_list) << "no fatch variable in exec_scope";
-  auto &fetch_list = *_fetch_list->GetMutable<std::vector<lite::Tensor>>();
-  return &fetch_list;
+std::vector<const lite::Tensor *> Predictor::GetOutputs() const {
+  std::vector<const lite::Tensor *> outputs;
+  size_t out_size = output_names_.size();
+  for (size_t i = 0; i < out_size; i++) {
+    const std::string name = output_names_.at(i);
+    outputs.push_back(GetTensor(name));
+  }
+  return outputs;
 }
 
 const cpp::ProgramDesc &Predictor::program_desc() const {
@@ -110,14 +113,12 @@ void Predictor::Build(const lite_api::CxxConfig &config,
   const std::string &model_path = config.model_dir();
   const std::string &model_file = config.model_file();
   const std::string &param_file = config.param_file();
-  const Place prefer_place = config.preferred_place();
   const bool model_from_memory = config.model_from_memory();
   LOG(INFO) << "load from memory " << model_from_memory;
 
   Build(model_path,
         model_file,
         param_file,
-        prefer_place,
         valid_places,
         passes,
         model_type,
@@ -126,7 +127,6 @@ void Predictor::Build(const lite_api::CxxConfig &config,
 void Predictor::Build(const std::string &model_path,
                       const std::string &model_file,
                       const std::string &param_file,
-                      const Place &prefer_place,
                       const std::vector<Place> &valid_places,
                       const std::vector<std::string> &passes,
                       lite_api::LiteModelType model_type,
@@ -153,22 +153,26 @@ void Predictor::Build(const std::string &model_path,
     default:
       LOG(FATAL) << "Unknown model type";
   }
-  Build(program_desc_, prefer_place, valid_places, passes);
+  Build(program_desc_, valid_places, passes);
 }
 
 void Predictor::Build(const cpp::ProgramDesc &desc,
-                      const Place &prefer_place,
                       const std::vector<Place> &valid_places,
                       const std::vector<std::string> &passes) {
   program_desc_ = desc;
-  Program program(desc, scope_, valid_places);
-  optimizer_.KernelPickPreferPlace(prefer_place);
+  std::vector<Place> inner_places = valid_places;
+  inner_places.emplace_back(TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny));
+  inner_places.emplace_back(
+      TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
+  Program program(desc, scope_, inner_places);
+  /// The first place in valid_places is
   core::KernelPickFactor factor;
   factor.ConsiderTarget();
   factor.ConsiderPrecision();
   factor.ConsiderDataLayout();
-  optimizer_.Run(std::move(program), valid_places, factor, passes);
+  optimizer_.Run(std::move(program), inner_places, factor, passes);
   exec_scope_ = optimizer_.exec_scope();
+  PrepareFeedFetch();
 }
 
 void Predictor::GenRuntimeProgram() {
@@ -183,16 +187,17 @@ const lite::Tensor *Predictor::GetTensor(const std::string &name) const {
 }
 // get input by name
 lite::Tensor *Predictor::GetInputByName(const std::string &name) {
-  if (idx2feeds_.find(name) == idx2feeds_.end()) {
+  auto element = std::find(input_names_.begin(), input_names_.end(), name);
+  if (element == input_names_.end()) {
     LOG(ERROR) << "Model do not have input named with: [" << name
                << "], model's inputs include:";
     for (int i = 0; i < input_names_.size(); i++) {
       LOG(ERROR) << "[" << input_names_[i] << "]";
     }
-    return NULL;
+    return nullptr;
   } else {
-    int idx = idx2feeds_[name];
-    return GetInput(idx);
+    int position = std::distance(input_names_.begin(), element);
+    return GetInput(position);
   }
 }
 

@@ -113,6 +113,8 @@ void RuntimeProgram::UpdateVarsOfProgram(cpp::ProgramDesc* desc) {
 
 void RuntimeProgram::Run() {
   for (auto& inst : instructions_) {
+    std::string op_type = inst.op()->op_info()->Type();
+    if (op_type == "feed" || op_type == "fetch") continue;
     inst.Run();
 #ifdef LITE_WITH_PROFILE
 #ifdef LITE_WITH_PRECISION_PROFILE
