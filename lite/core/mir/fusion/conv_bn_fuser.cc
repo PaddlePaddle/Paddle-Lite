@@ -188,11 +188,7 @@ void ConvBNFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
     for (unsigned int i = 0; i < h; i++) {
       weight_scale[i] *= alpha_data[i];
     }
-
-    // Interface like this should be abandoned.
-    conv_op_desc->SetAttr("weight_scale", weight_scale);
-    auto update_conv_desc = *conv_instruct->mutable_op_info();
-    conv_instruct->ResetOp(update_conv_desc, graph->valid_places());
+    op_desc.SetAttr("weight_scale", weight_scale);
   } else {
     VLOG(4) << "enable_int8 branch: enable_int8 is false";
     // compute new conv_weight
