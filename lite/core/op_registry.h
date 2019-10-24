@@ -32,8 +32,6 @@
 
 using LiteType = paddle::lite::Type;
 
-static std::map<std::string, std::string> OP2Path;
-
 class CollectedInfo {
  public:
   static CollectedInfo &Global() {
