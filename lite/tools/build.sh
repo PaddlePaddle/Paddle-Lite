@@ -328,7 +328,7 @@ function main {
                 shift
                 ;;
             --build_tailor=*)
-                BUILD_TAILOR=ON
+                BUILD_TAILOR="${i#*=}"
                 shift
                 ;;
             tiny_publish)

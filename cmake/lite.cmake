@@ -242,8 +242,8 @@ set(host_kernels CACHE INTERNAL "host kernels")
 set(kernels_src_list "${CMAKE_BINARY_DIR}/kernels_src_list.txt")
 file(WRITE ${kernels_src_list} "") # clean
 if(LITE_BUILD_TAILOR)
-  set(kernels_opt_list "${LITE_OPTMODEL_DIR}/.kernels_source_list")
-  file(STRINGS ${kernels_opt_list} kernels_list)
+  set(kernels_tailored_list "${LITE_OPTMODEL_DIR}/.tailored_kernels_source_list")
+  file(STRINGS ${kernels_tailored_list} kernels_list)
 endif()
 # add a kernel for some specific device
 # device: one of (Host, ARM, X86, NPU, FPGA, OPENCL, CUDA)
@@ -352,8 +352,8 @@ set(ops CACHE INTERNAL "ops")
 set(ops_src_list "${CMAKE_BINARY_DIR}/ops_src_list.txt")
 file(WRITE ${ops_src_list} "") # clean
 if(LITE_BUILD_TAILOR)
-  set(ops_opt_list "${LITE_OPTMODEL_DIR}/.ops_source_list")
-  file(STRINGS ${ops_opt_list} ops_list)
+  set(ops_tailored_list "${LITE_OPTMODEL_DIR}/.tailored_ops_source_list")
+  file(STRINGS ${ops_tailored_list} ops_list)
 endif()
 # add an operator
 # level: one of (basic, extra)

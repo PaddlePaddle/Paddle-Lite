@@ -92,10 +92,10 @@ void Predictor::SaveOpKernelInfo(const std::string &model_dir) {
   auto kernel2pathmap = OpKernelInfoCollector::Global().Getkernel2path();
 
   // write used op and kernel info into files
-  std::string opf_path = model_dir + "/.ops_list";
-  std::string opf_source_path = model_dir + "/.ops_source_list";
-  std::string kpf_path = model_dir + "/.kernels_list";
-  std::string kpf_source_path = model_dir + "/.kernels_source_list";
+  std::string opf_path = model_dir + "/.tailored_ops_list";
+  std::string opf_source_path = model_dir + "/.tailored_ops_source_list";
+  std::string kpf_path = model_dir + "/.tailored_kernels_list";
+  std::string kpf_source_path = model_dir + "/.tailored_kernels_source_list";
   std::map<std::string, std::string> op2path;
 
   std::FILE *opf = std::fopen(opf_path.c_str(), "w");

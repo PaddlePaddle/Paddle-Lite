@@ -71,7 +71,7 @@ add_custom_command(
   COMMAND python ${CMAKE_SOURCE_DIR}/lite/tools/cmake_tools/parse_kernel_registry.py
   ${kernels_src_list}
   ${CMAKE_SOURCE_DIR}/lite/api/paddle_use_kernels.h
-  "${LITE_OPTMODEL_DIR}/.kernels_list"
+  "${LITE_OPTMODEL_DIR}/.tailored_kernels_list"
   LITE_BUILD_TAILOR
   OUTPUT kernels.h # not a real path to the output to force it execute every time.
   )
@@ -80,7 +80,7 @@ add_custom_command(
   COMMAND python ${CMAKE_SOURCE_DIR}/lite/tools/cmake_tools/parse_op_registry.py
   ${ops_src_list}
   ${CMAKE_SOURCE_DIR}/lite/api/paddle_use_ops.h
-  "${LITE_OPTMODEL_DIR}/.ops_list"
+  "${LITE_OPTMODEL_DIR}/.tailored_ops_list"
   LITE_BUILD_TAILOR
   OUTPUT ops.h # not a real path to the output to force it execute every time.
   )

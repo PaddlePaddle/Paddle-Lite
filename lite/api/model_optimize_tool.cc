@@ -108,6 +108,10 @@ void Main() {
 
   predictor->SaveOptimizedModel(
       FLAGS_optimize_out, model_type, FLAGS_record_info);
+  if (FLAGS_record_info) {
+    LOG(INFO) << "Record the information of tailored model into :"
+              << FLAGS_optimize_out;
+  }
 }
 
 }  // namespace lite_api
