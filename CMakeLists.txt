@@ -47,29 +47,14 @@ include(simd)
 ################################ Exposed Configurations #######################################
 lite_option(WITH_DSO         "Compile PaddlePaddle with dynamic linked CUDA" ON)
 lite_option(WITH_AVX         "Compile PaddlePaddle with AVX intrinsics"      ON IF ${AVX_FOUND})
-lite_option(WITH_PYTHON      "Compile PaddlePaddle with python interpreter"  ON)
 lite_option(WITH_TESTING     "Compile PaddlePaddle with unit testing"        OFF)
 lite_option(WITH_MKL         "Compile PaddlePaddle with MKL support."        ON IF ${AVX_FOUND})
 lite_option(WITH_ARM_DOTPROD "Compile PaddlePaddle with ARM dot production"  ON)
 lite_option(WITH_SYSTEM_BLAS   "Use system blas library"           OFF)
-# TODO(Superjomn) Remove WITH_ANAKIN option if not needed latter.
-if(ANDROID OR IOS OR ARMLINUX)
-    set(WITH_GPU OFF CACHE STRING
-            "Disable GPU when cross-compiling for Android and iOS" FORCE)
-    set(WITH_DSO OFF CACHE STRING
-            "Disable DSO when cross-compiling for Android and iOS" FORCE)
-    set(WITH_AVX OFF CACHE STRING
-            "Disable AVX when cross-compiling for Android and iOS" FORCE)
-    set(WITH_PYTHON OFF CACHE STRING
-            "Disable PYTHON when cross-compiling for Android and iOS" FORCE)
-    set(WITH_RDMA OFF CACHE STRING
-            "Disable RDMA when cross-compiling for Android and iOS" FORCE)
-    set(WITH_MKL OFF CACHE STRING
-            "Disable MKL when cross-compiling for Android and iOS" FORCE)
-endif()
 
 # for lite, both server and mobile framework.
 lite_option(LITE_WITH_JAVA "Enable Java JNI lib in lite mode" OFF)
+lite_option(LITE_WITH_PYTHON "Enable Python api lib in lite mode" OFF)
 lite_option(LITE_WITH_CUDA "Enable CUDA in lite mode" OFF)
 lite_option(LITE_WITH_X86  "Enable X86 in lite mode"  ON)
 lite_option(LITE_WITH_ARM  "Enable ARM in lite mode"  OFF)
@@ -86,6 +71,25 @@ lite_option(LITE_ON_MODEL_OPTIMIZE_TOOL "Build the model optimize tool" OFF)
 # publish options
 lite_option(LITE_BUILD_EXTRA "Enable extra algorithm support in Lite, both kernels and operators" OFF)
 lite_option(LITE_BUILD_TAILOR "Enable tailoring library according to model" OFF)
+
+# TODO(Superjomn) Remove WITH_ANAKIN option if not needed latter.
+if(ANDROID OR IOS OR ARMLINUX)
+    set(WITH_GPU OFF CACHE STRING
+            "Disable GPU when cross-compiling for Android and iOS" FORCE)
+    set(WITH_DSO OFF CACHE STRING
+            "Disable DSO when cross-compiling for Android and iOS" FORCE)
+    set(WITH_AVX OFF CACHE STRING
+            "Disable AVX when cross-compiling for Android and iOS" FORCE)
+    set(WITH_RDMA OFF CACHE STRING
+            "Disable RDMA when cross-compiling for Android and iOS" FORCE)
+    set(WITH_MKL OFF CACHE STRING
+            "Disable MKL when cross-compiling for Android and iOS" FORCE)
+endif()
+
+if(ANDROID OR IOS)
+    set(LITE_WITH_PYTHON OFF CACHE STRING
+            "Disable PYTHON when cross-compiling for Android and iOS" FORCE)
+endif()
 
 set(THIRD_PARTY_PATH "${CMAKE_BINARY_DIR}/third_party" CACHE STRING
         "A path setting third party libraries download & build directories.")
@@ -110,6 +114,12 @@ include_directories("${PADDLE_SOURCE_DIR}")
 # the generated header files.
 set(LITE_GENERATED_INCLUDE_DIR "${CMAKE_BINARY_DIR}")
 include_directories("${LITE_GENERATED_INCLUDE_DIR}")
+
+if (LITE_WITH_PYTHON)
+    include(external/python)    # download, build, install python
+    include(external/pybind11)    # download, build, install pybind11
+endif()
+
 
 # for mobile
 if (WITH_LITE AND LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)

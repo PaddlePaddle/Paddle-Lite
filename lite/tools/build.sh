@@ -15,6 +15,7 @@ readonly NUM_PROC=${LITE_BUILD_THREADS:-4}
 # global variables
 BUILD_EXTRA=OFF
 BUILD_JAVA=ON
+BUILD_PYTHON=OFF
 BUILD_DIR=$(pwd)
 OPTMODEL_DIR=""
 BUILD_TAILOR=OFF
@@ -87,9 +88,11 @@ function make_tiny_publish_so {
   fi
 
   cmake .. \
+      ${PYTHON_FLAGS} \
       ${CMAKE_COMMON_OPTIONS} \
       -DWITH_TESTING=OFF \
       -DLITE_WITH_JAVA=$BUILD_JAVA \
+      -DLITE_WITH_PYTHON=$BUILD_PYTHON \
       -DLITE_SHUTDOWN_LOG=ON \
       -DLITE_ON_TINY_PUBLISH=ON \
       -DANDROID_STL_TYPE=$android_stl \
@@ -127,9 +130,11 @@ function make_full_publish_so {
 
   prepare_workspace $root_dir $build_directory
   cmake $root_dir \
+      ${PYTHON_FLAGS} \
       ${CMAKE_COMMON_OPTIONS} \
       -DWITH_TESTING=OFF \
       -DLITE_WITH_JAVA=$BUILD_JAVA \
+      -DLITE_WITH_PYTHON=$BUILD_PYTHON \
       -DLITE_SHUTDOWN_LOG=ON \
       -DANDROID_STL_TYPE=$android_stl \
       -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
@@ -201,6 +206,35 @@ function make_ios {
     cd -
 }
 
+function make_cuda {
+  prepare_thirdparty
+
+  root_dir=$(pwd)
+  build_directory=$BUILD_DIR/build_cuda
+
+  if [ -d $build_directory ]
+  then
+    rm -rf $build_directory
+  fi
+  mkdir -p $build_directory
+  cd $build_directory
+
+  prepare_workspace $root_dir $build_directory
+
+  cmake ..  -DWITH_MKL=OFF       \
+            -DLITE_WITH_CUDA=ON  \
+            -DWITH_MKLDNN=OFF    \
+            -DLITE_WITH_X86=OFF  \
+            -DLITE_WITH_PROFILE=OFF \
+            -DWITH_LITE=ON \
+            -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF \
+            -DWITH_TESTING=OFF \
+            -DLITE_WITH_ARM=OFF \
+            -DLITE_WITH_PYTHON=ON 
+
+  make publish_inference_python_lib -j8
+  cd -
+}
 
 function print_usage {
     set +x
@@ -221,6 +255,8 @@ function print_usage {
     echo
     echo -e "optional argument:"
     echo -e "--build_extra: (OFF|ON); controls whether to publish extra operators and kernels for (sequence-related model such as OCR or NLP)"
+    echo -e "--build_python: (OFF|ON); controls whether to publish python api lib (ANDROID and IOS is not supported)"
+    echo -e "--build_java: (OFF|ON); controls whether to publish java api lib (Only ANDROID is supported)"
     echo -e "--build_dir: directory for building"
     echo
     echo -e "argument choices:"
@@ -274,6 +310,14 @@ function main {
                 BUILD_EXTRA="${i#*=}"
                 shift
                 ;;
+            --build_python=*)
+                BUILD_PYTHON="${i#*=}"
+                shift
+                ;;
+            --build_java=*)
+                BUILD_JAVA="${i#*=}"
+                shift
+                ;;
             --build_dir=*)
                 BUILD_DIR="${i#*=}"
                 shift
@@ -305,6 +349,10 @@ function main {
             tailored_publish)
                 BUILD_TAILOR=ON
                 make_tiny_publish_so $ARM_OS $ARM_ABI $ARM_LANG $ANDROID_STL $OPTMODEL_DIR
+                shift
+                ;;
+            cuda)
+                make_cuda 
                 shift
                 ;;
             *)

@@ -15,6 +15,7 @@
 
 import sys
 import logging
+from ast import RegisterLiteOpParser
 
 ops_list_path = sys.argv[1]
 dest_path = sys.argv[2]
@@ -26,32 +27,26 @@ out_lines = [
     '',
 ]
 
-lines = set()
-with open(ops_list_path) as f:
-    for line in f:
-        lines.add(line.strip())
+paths = set()
+for line in open(ops_list_path):
+    paths.add(line.strip())
 
 if tailored=="ON":
     minlines = set()
     with open(minops_list_path) as f1:
         for line in f1:
             minlines.add(line.strip())
-
-for line in lines:
-    path = line.strip()
-
-    with open(path) as g:
-        for line in g:
-            key = 'REGISTER_LITE_OP'
-            if line.startswith(key):
-                end = line.find(',')
-                op = line[len(key) + 1:end]
-                if not op: continue
-                if "_grad" in op: continue
-                if tailored=="ON":
-                   if not op in minlines: continue
-                out = "USE_LITE_OP(%s);" % op
-                out_lines.append(out)
+for path in paths:
+    str_info = open(path.strip()).read()
+    op_parser = RegisterLiteOpParser(str_info)
+    ops = op_parser.parse()
+    for op in ops:
+        if "_grad" in op: 
+            continue
+        if tailored=="ON":
+            if not op in minlines: continue
+        out = "USE_LITE_OP(%s);" % op
+        out_lines.append(out)
 
 with open(dest_path, 'w') as f:
     logging.info("write op list to %s" % dest_path)

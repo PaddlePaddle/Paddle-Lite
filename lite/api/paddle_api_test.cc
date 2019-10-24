@@ -28,7 +28,6 @@ namespace lite_api {
 TEST(CxxApi, run) {
   lite_api::CxxConfig config;
   config.set_model_dir(FLAGS_model_dir);
-  config.set_preferred_place(Place{TARGET(kX86), PRECISION(kFloat)});
   config.set_valid_places({
       Place{TARGET(kX86), PRECISION(kFloat)},
       Place{TARGET(kARM), PRECISION(kFloat)},
@@ -38,12 +37,12 @@ TEST(CxxApi, run) {
 
   LOG(INFO) << "Version: " << predictor->GetVersion();
 
-  std::vector<std::string> inputs = predictor->GetInputNames();
+  auto inputs = predictor->GetInputNames();
   LOG(INFO) << "input size: " << inputs.size();
   for (int i = 0; i < inputs.size(); i++) {
     LOG(INFO) << "inputnames: " << inputs[i];
   }
-  std::vector<std::string> outputs = predictor->GetOutputNames();
+  auto outputs = predictor->GetOutputNames();
   for (int i = 0; i < outputs.size(); i++) {
     LOG(INFO) << "outputnames: " << outputs[i];
   }
@@ -77,14 +76,14 @@ TEST(LightApi, run) {
 
   auto predictor = lite_api::CreatePaddlePredictor(config);
 
-  std::vector<std::string> inputs = predictor->GetInputNames();
+  auto inputs = predictor->GetInputNames();
   LOG(INFO) << "input size: " << inputs.size();
   for (int i = 0; i < inputs.size(); i++) {
-    LOG(INFO) << "inputnames: " << inputs[i];
+    LOG(INFO) << "inputnames: " << inputs.at(i);
   }
-  std::vector<std::string> outputs = predictor->GetOutputNames();
+  auto outputs = predictor->GetOutputNames();
   for (int i = 0; i < outputs.size(); i++) {
-    LOG(INFO) << "outputnames: " << outputs[i];
+    LOG(INFO) << "outputnames: " << outputs.at(i);
   }
 
   LOG(INFO) << "Version: " << predictor->GetVersion();

@@ -87,14 +87,13 @@ void CompareCompute<Functor>::Run() {
   auto x_dims = param.X->dims();
   auto y_dims = param.Y->dims();
   bool *z = param.Out->template mutable_data<bool>();
-  const auto *x = param.X->template data<int>();
+  const auto *x = param.X->template data<float>();
   const auto *y = param.Y->template data<float>();
   auto axis = param.axis;
   bool force_cpu = param.force_cpu;
   if (x_size == y_size) {
     for (int i = 0; i < x_size; ++i) {
       z[i] = CompareFunctor()(x[i], y[i]);
-      // z[i] = x[i] < y[i];
     }
   } else {
     int axis = (param.axis == -1 ? x_dims.size() - y_dims.size() : param.axis);
