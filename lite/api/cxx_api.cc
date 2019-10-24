@@ -49,38 +49,34 @@ void Predictor::SaveModel(const std::string &dir,
 void Predictor::SaveOpKernelInfo(const std::string &model_dir) {
   std::vector<std::string> op_info;
   std::vector<std::string> kernel_info;
-
-  for (size_t i = 0; i < program_desc_.BlocksSize(); ++i) {
-    auto *cpp_block_desc = program_desc_.GetBlock<cpp::BlockDesc>(i);
-    for (size_t j = 0; j < cpp_block_desc->OpsSize(); ++j) {
-      // parse op type infomation
-      auto op = cpp_block_desc->GetOp<cpp::OpDesc>(j);
-      op_info.push_back(op->Type());
-      auto kernel_type = op->GetAttr<std::string>(kKernelTypeAttr);
-      std::vector<std::string> kernel_result;
-
-      // parse kernel type information
-      while (!kernel_type.empty()) {
-        size_t next_offset = kernel_type.find("/");
-        kernel_result.push_back(kernel_type.substr(0, next_offset));
-        if (next_offset == std::string::npos) {
-          break;
-        } else {
-          kernel_type = kernel_type.substr(next_offset + 1);
-        }
+  const auto &instructions_ = program_->instructions();
+  for (auto &node : instructions_) {
+    // parse op type infomation
+    auto op = node.op()->op_info();
+    op_info.push_back(op->Type());
+    // parse kernel type information
+    auto kernel_type = node.kernel()->SerializedKernelType();
+    std::vector<std::string> kernel_result;
+    while (!kernel_type.empty()) {
+      size_t next_offset = kernel_type.find("/");
+      kernel_result.push_back(kernel_type.substr(0, next_offset));
+      if (next_offset == std::string::npos) {
+        break;
+      } else {
+        kernel_type = kernel_type.substr(next_offset + 1);
       }
-
-      int target = std::stoi(kernel_result[2]);
-      int precision = std::stoi(kernel_result[3]);
-      int layout = std::stoi(kernel_result[4]);
-      std::string kernel_type_str =
-          kernel_result[0] + "," +
-          TargetRepr(static_cast<TargetType>(target)).c_str() + "," +
-          PrecisionRepr(static_cast<PrecisionType>(precision)).c_str() + "," +
-          DataLayoutRepr(static_cast<DataLayoutType>(layout)).c_str() + "," +
-          kernel_result[1];
-      kernel_info.push_back(kernel_type_str);
     }
+
+    int target = std::stoi(kernel_result[2]);
+    int precision = std::stoi(kernel_result[3]);
+    int layout = std::stoi(kernel_result[4]);
+    std::string kernel_type_str =
+        kernel_result[0] + "," +
+        TargetRepr(static_cast<TargetType>(target)).c_str() + "," +
+        PrecisionRepr(static_cast<PrecisionType>(precision)).c_str() + "," +
+        DataLayoutRepr(static_cast<DataLayoutType>(layout)).c_str() + "," +
+        kernel_result[1];
+    kernel_info.push_back(kernel_type_str);
   }
 
   // remove repeated elements
@@ -106,7 +102,6 @@ void Predictor::SaveOpKernelInfo(const std::string &model_dir) {
   std::FILE *opf_source = std::fopen(opf_source_path.c_str(), "w");
   std::FILE *kpf = std::fopen(kpf_path.c_str(), "w");
   std::FILE *kpf_source = std::fopen(kpf_source_path.c_str(), "w");
-
   std::vector<std::string> opcompile;
   std::vector<std::string> kernelcompile;
 
@@ -126,7 +121,6 @@ void Predictor::SaveOpKernelInfo(const std::string &model_dir) {
 
     std::fclose(opf_source);
     std::fclose(opf);
-
     // write Kernel_type and Kernel_path into file
     for (size_t j = 0; j < kernel_info.size(); ++j) {
       fputs(kernel_info[j].c_str(), kpf);

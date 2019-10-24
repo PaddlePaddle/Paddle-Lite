@@ -72,7 +72,6 @@ function make_tiny_publish_so {
   local abi=$2
   local lang=$3
   local android_stl=$4
-  local optmodel_dir=$5
 
   cur_dir=$(pwd)
   build_dir=$cur_dir/build.lite.${os}.${abi}.${lang}
