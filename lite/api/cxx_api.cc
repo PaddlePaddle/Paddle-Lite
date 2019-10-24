@@ -134,7 +134,7 @@ void Predictor::Build(const std::string &model_path,
   switch (model_type) {
     case lite_api::LiteModelType::kProtobuf: {
       bool combined_param = false;
-      if (!model_file.empty() && !param_file.empty()) {
+      if (!model_path.empty() || model_from_memory) {
         combined_param = true;
       }
       LoadModelPb(model_path,
