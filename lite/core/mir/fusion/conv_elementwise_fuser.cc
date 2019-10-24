@@ -51,6 +51,13 @@ void ConvElementwiseFuser::BuildPattern() {
 
   // create topology.
   std::vector<PMNode*> conv2d_inputs{filter, input};
+  // consider a special case: conv with bias
+  if (conv_has_bias_) {
+    PMNode* conv_bias = VarNode("conv_bias")
+                            ->assert_is_op_input(conv_type_, "Bias")
+                            ->AsIntermediate();
+    conv2d_inputs.emplace_back(conv_bias);
+  }
   std::vector<PMNode*> add_inputs{conv2d_out, bias};
   conv2d_inputs >> *conv2d >> *conv2d_out;
   add_inputs >> *add >> *add_out;
@@ -60,11 +67,57 @@ void ConvElementwiseFuser::InsertNewNode(SSAGraph* graph,
                                          const key2nodes_t& matched) {
   auto op_desc = GenOpDesc(matched);
   auto conv_op = LiteOpRegistry::Global().Create(conv_type_);
-  auto conv_old = matched.at("conv2d")->stmt()->op();
-  auto* scope = conv_old->scope();
-  auto& valid_places = conv_old->valid_places();
-  conv_op->Attach(op_desc, scope);
+  auto old_conv_instruct = matched.at("conv2d")->stmt();
+  auto old_conv_op = old_conv_instruct->op();
+  auto* scope = old_conv_op->scope();
+  auto& valid_places = old_conv_op->valid_places();
 
+  // elementwise_add bias
+  auto elementwise_add_bias_t = scope->FindVar(matched.at("bias")->arg()->name)
+                                    ->GetMutable<lite::Tensor>();
+  auto elementwise_add_bias_d = elementwise_add_bias_t->mutable_data<float>();
+
+  // conv weight
+  auto conv_weight_t = scope->FindVar(matched.at("filter")->arg()->name)
+                           ->GetMutable<lite::Tensor>();
+
+  /////////////////////////////////////////////////////////////////////////////////////
+  // ConvElementwiseFuser
+  //   if `conv_bias` existed, store previous old `conv_bias` to
+  //   `new_conv_bias`,
+  //     accumulate `elementwise_add_bias` to `new_conv_bias`.
+  //   if `conv_bias` not existed, initalize `new_conv_bias` with zero value,
+  //   with {conv_weight_t.dims()[0], 1, 1, 1} dimension,
+  //     accumulate `elementwise_add_bias` to `new_conv_bias`.
+  /////////////////////////////////////////////////////////////////////////////////////
+  Tensor new_conv_bias_t;
+  new_conv_bias_t.Resize({conv_weight_t->dims()[0], 1, 1, 1});
+  auto new_conv_bias_d = new_conv_bias_t.mutable_data<float>();
+
+  // auto old_op_desc = old_conv_instruct->mutable_op_info();
+  if (conv_has_bias_ == true && op_desc.HasInput("Bias") &&
+      op_desc.Input("Bias").size() > 0) {
+    auto conv_bias_var = scope->FindVar(op_desc.Input("Bias").front());
+    if (conv_bias_var != nullptr) {
+      auto old_conv_bias_t = &(conv_bias_var->Get<lite::Tensor>());
+      new_conv_bias_t.CopyDataFrom(*old_conv_bias_t);
+    }
+  } else {
+    for (unsigned int i = 0; i < new_conv_bias_t.data_size(); ++i) {
+      new_conv_bias_d[i] = 0;
+    }
+  }
+  // add `elementwise_add_bias` to `new_conv_bias`
+  CHECK(elementwise_add_bias_t->data_size() == new_conv_bias_t.data_size())
+      << "elementwise_add_bias_t.data_size() != new_conv_bias_t.data_size()";
+  for (unsigned int i = 0; i < new_conv_bias_t.data_size(); ++i) {
+    new_conv_bias_d[i] += elementwise_add_bias_d[i];
+  }
+
+  /// store `new_conv_bias` in `elementwise_add_bias`
+  elementwise_add_bias_t->CopyDataFrom(new_conv_bias_t);
+
+  conv_op->Attach(op_desc, scope);
   auto* new_op_node = graph->GraphCreateInstructNode(conv_op, valid_places);
 
   IR_NODE_LINK_TO(matched.at("input"), new_op_node);
@@ -75,26 +128,15 @@ void ConvElementwiseFuser::InsertNewNode(SSAGraph* graph,
 
 cpp::OpDesc ConvElementwiseFuser::GenOpDesc(const key2nodes_t& matched) {
   auto* desc = matched.at("conv2d")->stmt()->op_info();
-
   cpp::OpDesc op_desc = *desc;
+
   op_desc.SetType(conv_type_);
   op_desc.SetInput("Input", {matched.at("input")->arg()->name});
   op_desc.SetInput("Filter", {matched.at("filter")->arg()->name});
   op_desc.SetInput("Bias", {matched.at("bias")->arg()->name});
   op_desc.SetOutput("Output", {matched.at("output")->arg()->name});
-  // Other inputs. See operators/conv_op.h
-  std::vector<std::string> input_arg_names = desc->InputArgumentNames();
 
-  if (std::find(input_arg_names.begin(),
-                input_arg_names.end(),
-                "ResidualData") != input_arg_names.end()) {
-    op_desc.SetInput("ResidualData", desc->Input("ResidualData"));
-  }
-  // Only consider strides, padding, groups, dilations for now
-  op_desc.SetAttr("strides", desc->GetAttr<std::vector<int>>("strides"));
-  op_desc.SetAttr("paddings", desc->GetAttr<std::vector<int>>("paddings"));
-  op_desc.SetAttr("groups", desc->GetAttr<int>("groups"));
-  op_desc.SetAttr("dilations", desc->GetAttr<std::vector<int>>("dilations"));
+  // Other inputs. See operators/conv_op.h
   return op_desc;
 }
 
