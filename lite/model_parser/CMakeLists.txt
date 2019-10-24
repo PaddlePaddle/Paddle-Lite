@@ -29,5 +29,15 @@ lite_cc_library(model_parser SRCS model_parser.cc DEPS
     compatible_pb
     memory
     CUDA_DEPS target_wrapper_cuda)
-
 lite_cc_test(test_compatible_pb SRCS compatible_pb_test.cc DEPS compatible_pb)
+
+if (LITE_WITH_CUDA AND NOT LITE_ON_TINY_PUBLISH)
+    lite_cc_library(compatibility SRCS compatibility.cc DEPS
+        kernel
+        variable
+        compatible_pb
+        type_system
+        ${cpp_wrapper}
+        ${naive_wrapper})
+    lite_cc_test(test_compatibility SRCS compatibility_test.cc DEPS compatibility leaky_relu_compute_cuda)
+endif()

@@ -23,7 +23,7 @@ if ((NOT LITE_ON_TINY_PUBLISH) AND (ARM_TARGET_OS STREQUAL "android"))
     ARM_DEPS ${arm_kernels} NPU_DEPS ${npu_kernels})
     target_link_libraries(paddle_light_api_shared ${light_lib_DEPS} ${arm_kernels} ${npu_kernels})
 else()
-    if (ARM_TARGET_OS STREQUAL "android")
+    if ((ARM_TARGET_OS STREQUAL "android") OR (ARM_TARGET_OS STREQUAL "armlinux"))
         add_library(paddle_light_api_shared SHARED "")
         target_sources(paddle_light_api_shared PUBLIC ${__lite_cc_files} paddle_api.cc light_api.cc light_api_impl.cc)
         add_dependencies(paddle_light_api_shared op_list_h kernel_list_h)
@@ -220,6 +220,10 @@ lite_cc_test(test_apis SRCS apis_test.cc
 
 if (LITE_WITH_JAVA AND LITE_WITH_ARM)
     add_subdirectory(android)
+endif()
+
+if (LITE_WITH_PYTHON) 
+    add_subdirectory(python)
 endif()
 
 if (LITE_ON_TINY_PUBLISH)

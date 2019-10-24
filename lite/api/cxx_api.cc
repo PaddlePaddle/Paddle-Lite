@@ -53,13 +53,9 @@ lite::Tensor *Predictor::GetInput(size_t offset) {
 }
 
 // get inputs names
-const std::vector<std::string> &Predictor::GetInputNames() {
-  return input_names_;
-}
+std::vector<std::string> Predictor::GetInputNames() { return input_names_; }
 // get outputnames
-const std::vector<std::string> &Predictor::GetOutputNames() {
-  return output_names_;
-}
+std::vector<std::string> Predictor::GetOutputNames() { return output_names_; }
 // append the names of inputs and outputs into input_names_ and output_names_
 void Predictor::PrepareFeedFetch() {
   auto current_block = program_desc_.GetBlock<cpp::BlockDesc>(0);

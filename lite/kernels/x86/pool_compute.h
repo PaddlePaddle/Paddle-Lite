@@ -14,12 +14,12 @@
 #pragma once
 
 #include <Eigen/Core>
+#include "lite/backends/x86/math/math_function.h"
+#include "lite/backends/x86/math/pooling.h"
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/types.h"
-#include "paddle/fluid/framework/eigen.h"
-#include "paddle/fluid/operators/math/math_function.h"
-#include "paddle/fluid/operators/math/pooling.h"
+#include "lite/fluid/eigen.h"
 
 namespace paddle {
 namespace lite {
@@ -31,6 +31,7 @@ class PoolCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
  public:
   using param_t = operators::PoolParam;
   void Run() override {
+    auto& context = ctx_->As<X86Context>();
     auto& param = *param_.get_mutable<param_t>();
     if (param.global_pooling) {
       for (size_t i = 0; i < param.ksize.size(); ++i) {
@@ -41,37 +42,37 @@ class PoolCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
     switch (param.ksize.size()) {
       case 2: {
         if (param.pooling_type == "max") {
-          paddle::operators::math::Pool2dFunctor<
-              platform::CPUDeviceContext,
-              paddle::operators::math::MaxPool<T>,
+          paddle::lite::x86::math::Pool2dFunctor<
+              lite::TargetType::kX86,
+              paddle::lite::x86::math::MaxPool<T>,
               T>
               pool2d_forward;
-          paddle::operators::math::MaxPool<T> pool_process;
-          pool2d_forward(platform::CPUDeviceContext(),
-                         param.x->raw_tensor(),
+          paddle::lite::x86::math::MaxPool<T> pool_process;
+          pool2d_forward(context,
+                         param.x,
                          param.ksize,
                          param.strides,
                          param.paddings,
                          pool_process,
                          true,
                          false,
-                         &(param.output->raw_tensor()));
+                         param.output);
         } else if (param.pooling_type == "avg") {
-          paddle::operators::math::Pool2dFunctor<
-              platform::CPUDeviceContext,
-              paddle::operators::math::AvgPool<T>,
+          paddle::lite::x86::math::Pool2dFunctor<
+              lite::TargetType::kX86,
+              paddle::lite::x86::math::AvgPool<T>,
               T>
               pool2d_forward;
-          paddle::operators::math::AvgPool<T> pool_process;
-          pool2d_forward(platform::CPUDeviceContext(),
-                         param.x->raw_tensor(),
+          paddle::lite::x86::math::AvgPool<T> pool_process;
+          pool2d_forward(context,
+                         param.x,
                          param.ksize,
                          param.strides,
                          param.paddings,
                          pool_process,
                          param.exclusive,
                          param.adaptive,
-                         &(param.output->raw_tensor()));
+                         param.output);
         }
       } break;
       case 3: {
