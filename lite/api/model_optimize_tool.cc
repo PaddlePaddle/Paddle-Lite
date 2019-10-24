@@ -35,6 +35,7 @@ DEFINE_string(
     "protobuf",
     "store type of the output optimized model. protobuf/naive_buffer");
 DEFINE_bool(display_kernels, false, "Display kernel information");
+DEFINE_bool(record_info, false, "Record kernel and operator information");
 DEFINE_string(optimize_out, "", "path of the output optimized model");
 DEFINE_string(valid_targets,
               "arm",
@@ -105,7 +106,8 @@ void Main() {
     LOG(FATAL) << "Unsupported Model type :" << FLAGS_optimize_out_type;
   }
 
-  predictor->SaveOptimizedModel(FLAGS_optimize_out, model_type);
+  predictor->SaveOptimizedModel(
+      FLAGS_optimize_out, model_type, FLAGS_record_info);
 }
 
 }  // namespace lite_api

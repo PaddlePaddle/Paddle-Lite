@@ -24,7 +24,8 @@ namespace paddle {
 namespace lite {
 
 void Predictor::SaveModel(const std::string &dir,
-                          lite_api::LiteModelType model_type) {
+                          lite_api::LiteModelType model_type,
+                          bool record_info) {
   if (!program_) {
     GenRuntimeProgram();
   }
@@ -40,7 +41,9 @@ void Predictor::SaveModel(const std::string &dir,
     default:
       LOG(FATAL) << "Unknown model type";
   }
-  SaveOpKernelInfo(dir);
+  if (record_info) {
+    SaveOpKernelInfo(dir);
+  }
 }
 
 void Predictor::SaveOpKernelInfo(const std::string &model_dir) {
