@@ -32,6 +32,7 @@ class PaddleMobilePredictor : public PaddlePredictor {
   bool Run(const std::vector<PaddleTensor>& inputs,
            std::vector<PaddleTensor>* output_data,
            int batch_size = -1) override;
+  std::string GetExceptionMsg();
 #ifdef PADDLE_MOBILE_FPGA
   void Predict_From_To(int start, int end) override;
   void FeedPaddleTensors(const std::vector<PaddleTensor>& inputs) override;

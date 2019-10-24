@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/api/cxx_api.h"
+#include <algorithm>
 #include <memory>
 #include <string>
 #include <utility>
@@ -52,34 +53,31 @@ lite::Tensor *Predictor::GetInput(size_t offset) {
 }
 
 // get inputs names
-std::vector<std::string> Predictor::GetInputNames() {
-  std::vector<std::string> input_names;
-  for (auto &item : input_names_) {
-    input_names.push_back(item.second);
-  }
-  return input_names;
-}
+std::vector<std::string> Predictor::GetInputNames() { return input_names_; }
 // get outputnames
-std::vector<std::string> Predictor::GetOutputNames() {
-  std::vector<std::string> output_names;
-  for (auto &item : output_names_) {
-    output_names.push_back(item.second);
-  }
-  return output_names;
-}
+std::vector<std::string> Predictor::GetOutputNames() { return output_names_; }
 // append the names of inputs and outputs into input_names_ and output_names_
 void Predictor::PrepareFeedFetch() {
   auto current_block = program_desc_.GetBlock<cpp::BlockDesc>(0);
+  std::vector<cpp::OpDesc *> feeds;
+  std::vector<cpp::OpDesc *> fetchs;
   for (int i = 0; i < current_block->OpsSize(); i++) {
     auto op = current_block->GetOp<cpp::OpDesc>(i);
     if (op->Type() == "feed") {
-      int idx = op->GetAttr<int>("col");
-      input_names_[idx] = op->Output("Out").front();
-      idx2feeds_[op->Output("Out").front()] = idx;
+      feeds.push_back(op);
     } else if (op->Type() == "fetch") {
-      int idx = op->GetAttr<int>("col");
-      output_names_[idx] = op->Input("X").front();
+      fetchs.push_back(op);
     }
+  }
+  input_names_.resize(feeds.size());
+  output_names_.resize(fetchs.size());
+  for (int i = 0; i < feeds.size(); i++) {
+    input_names_[feeds[i]->GetAttr<int>("col")] =
+        feeds[i]->Output("Out").front();
+  }
+  for (int i = 0; i < fetchs.size(); i++) {
+    output_names_[fetchs[i]->GetAttr<int>("col")] =
+        fetchs[i]->Input("X").front();
   }
 }
 
@@ -189,16 +187,17 @@ const lite::Tensor *Predictor::GetTensor(const std::string &name) const {
 }
 // get input by name
 lite::Tensor *Predictor::GetInputByName(const std::string &name) {
-  if (idx2feeds_.find(name) == idx2feeds_.end()) {
+  auto element = std::find(input_names_.begin(), input_names_.end(), name);
+  if (element == input_names_.end()) {
     LOG(ERROR) << "Model do not have input named with: [" << name
                << "], model's inputs include:";
     for (int i = 0; i < input_names_.size(); i++) {
       LOG(ERROR) << "[" << input_names_[i] << "]";
     }
-    return NULL;
+    return nullptr;
   } else {
-    int idx = idx2feeds_[name];
-    return GetInput(idx);
+    int position = std::distance(input_names_.begin(), element);
+    return GetInput(position);
   }
 }
 

@@ -126,6 +126,9 @@ class CLImage {
 
   void InitEmptyImage(cl_context context, cl_command_queue command_queue,
                       const DDim &dim) {
+    if (image_converter_ != nullptr) {
+      delete image_converter_;
+    }
     PADDLE_MOBILE_ENFORCE(tensor_data_ == nullptr,
                           " empty image tensor data shouldn't have value");
 
@@ -153,7 +156,9 @@ class CLImage {
                          const DDim &need_dims, const DDim &real_image_dims) {
     PADDLE_MOBILE_ENFORCE(tensor_data_ == nullptr,
                           " empty image tensor data shouldn't have value");
-
+    if (image_converter_ != nullptr) {
+      delete image_converter_;
+    }
     CLImageConverterNormal *normal_converter = new CLImageConverterNormal();
     // use real image dims to create mem
     real_image_dims_ = real_image_dims;
@@ -178,6 +183,9 @@ class CLImage {
    */
   void InitWithExistMem(cl_context context, cl_command_queue command_queue,
                         DDim need_dims, const CLImage &src) {
+    if (image_converter_ != nullptr) {
+      delete image_converter_;
+    }
     CLImageConverterNormal *normal_converter = new CLImageConverterNormal();
 
     real_image_dims_ = src.real_image_dims_;

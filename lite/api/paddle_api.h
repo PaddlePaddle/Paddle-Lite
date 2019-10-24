@@ -45,8 +45,15 @@ struct LITE_API Tensor {
   template <typename T>
   T* mutable_data(TargetType type = TargetType::kHost) const;
 
+  template <typename T, TargetType type = TargetType::kHost>
+  void CopyFromCpu(const T* data);
+
+  template <typename T>
+  void CopyToCpu(T* data);
   /// Shape of the tensor.
   shape_t shape() const;
+  TargetType target() const;
+  PrecisionType precision() const;
 
   // LoD of the tensor
   lod_t lod() const;

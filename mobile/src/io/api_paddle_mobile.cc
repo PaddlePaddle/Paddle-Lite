@@ -111,10 +111,14 @@ bool PaddleMobilePredictor<Device, T>::Run(
     if (input.dtype == UINT8) {
       framework::Tensor input_tensor(static_cast<uint8_t *>(input.data.data()),
                                      ddim);
-      paddle_mobile_->Predict(input_tensor);
+      if (paddle_mobile_->Predict(input_tensor) != PMStatus::PMSuccess) {
+        return false;
+      }
     } else {
       framework::Tensor input_tensor(static_cast<T *>(input.data.data()), ddim);
-      paddle_mobile_->Predict(input_tensor);
+      if (paddle_mobile_->Predict(input_tensor) != PMStatus::PMSuccess) {
+        return false;
+      }
     }
   }
 
@@ -151,6 +155,11 @@ bool PaddleMobilePredictor<Device, T>::Run(
   }
 
   return true;
+}
+
+template <typename Device, typename T>
+std::string PaddleMobilePredictor<Device, T>::GetExceptionMsg() {
+  return paddle_mobile_->GetExceptionMsg();
 }
 
 #ifdef PADDLE_MOBILE_FPGA

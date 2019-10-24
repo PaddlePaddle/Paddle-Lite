@@ -43,5 +43,6 @@ REGISTER_LITE_KERNEL(
     top_k, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::TopkCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Indices", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Indices",
+                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
     .Finalize();

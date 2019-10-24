@@ -82,9 +82,34 @@ class LITE_API LightPredictor {
   std::shared_ptr<Scope> scope_;
   std::unique_ptr<RuntimeProgram> program_;
   cpp::ProgramDesc cpp_program_desc_;
-  std::map<size_t, std::string> input_names_;
-  std::map<std::string, size_t> idx2feeds_;
-  std::map<size_t, std::string> output_names_;
+  std::vector<std::string> input_names_;
+  std::vector<std::string> output_names_;
+};
+
+class LightPredictorImpl : public lite_api::PaddlePredictor {
+ public:
+  LightPredictorImpl() = default;
+
+  std::unique_ptr<lite_api::Tensor> GetInput(int i) override;
+
+  std::unique_ptr<const lite_api::Tensor> GetOutput(int i) const override;
+
+  void Run() override;
+
+  std::string GetVersion() const override;
+  std::vector<std::string> GetInputNames() override;
+  std::vector<std::string> GetOutputNames() override;
+
+  std::unique_ptr<const lite_api::Tensor> GetTensor(
+      const std::string& name) const override;
+  // Get InputTebsor by name
+  std::unique_ptr<lite_api::Tensor> GetInputByName(
+      const std::string& name) override;
+
+  void Init(const lite_api::MobileConfig& config);
+
+ private:
+  std::unique_ptr<lite::LightPredictor> raw_predictor_;
 };
 
 }  // namespace lite

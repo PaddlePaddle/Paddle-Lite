@@ -32,10 +32,11 @@ void fp32_scale_nhwc(int num,
                      cudaStream_t stream);
 
 template <typename T>
-void scale(int num, const T* in, T* out, float scale, cudaStream_t stream);
+void scale(
+    int num, const T* in, T* out, T scale, cudaStream_t stream, T bias = 0);
 
 template <typename T>
-void scale(int num, const T* in, T* out, float scale);
+void scale(int num, const T* in, T* out, T scale, T bias = 0);
 
 }  // namespace math
 }  // namespace cuda

@@ -30,10 +30,8 @@ namespace cuda {
  * Some basic methods.
  */
 struct BlasBase {
-  /*
   BlasBase() { CUBLAS_CHECK(cublasCreate(&handle_)); }
   ~BlasBase() { CUBLAS_CHECK(cublasDestroy(handle_)); }
-   */
 
   void SetStream(cudaStream_t stream) {
     CUBLAS_CHECK(cublasSetStream(handle_, stream));
