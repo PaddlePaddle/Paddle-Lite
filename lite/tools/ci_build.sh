@@ -194,9 +194,9 @@ function build {
 function test_server {
     # Due to the missing of x86 kernels, we skip the following tests temporarily.
     # TODO(xxx) clear the skip list latter
-    local skip_list=("test_paddle_api" "test_cxx_api" "test_googlenet"
+    local skip_list=("test_paddle_api" "test_cxx_api"
                      "test_mobilenetv1_lite_x86" "test_mobilenetv2_lite_x86"
-                     "test_inceptionv4_lite_x86" "test_light_api"
+                     "test_light_api"
                      "test_apis" "test_model_bin"
                     )
     local to_skip=0

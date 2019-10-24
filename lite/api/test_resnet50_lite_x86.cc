@@ -16,29 +16,36 @@
 #include <gtest/gtest.h>
 #include <vector>
 #include "lite/api/cxx_api.h"
-#include "lite/api/lite_api_test_helper.h"
 #include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
 #include "lite/api/paddle_use_passes.h"
 #include "lite/api/test_helper.h"
 #include "lite/core/op_registry.h"
-#include "lite/core/tensor.h"
 
 namespace paddle {
 namespace lite {
-#ifdef LITE_WITH_X86
-TEST(CXXApi, test_lite_googlenet) {
+
+TEST(Resnet50, test_resnet50_lite_x86) {
+  // DeviceInfo::Init();
+  // DeviceInfo::Global().SetRunMode(lite_api::LITE_POWER_HIGH, FLAGS_threads);
   lite::Predictor predictor;
-  std::vector<Place> valid_places({Place{TARGET(kX86), PRECISION(kFloat)}});
+  std::vector<Place> valid_places({Place{TARGET(kX86), PRECISION(kFloat)},
+                                   Place{TARGET(kHost), PRECISION(kFloat)}});
 
-  //  LOG(INFO)<<"FLAGS_eval_googlenet_dir:"<<FLAGS_test_lite_googlenet_dir;
   std::string model_dir = FLAGS_model_dir;
-  predictor.Build(model_dir, "", "", valid_places);
-
+  std::vector<std::string> passes({"static_kernel_pick_pass",
+                                   "variable_place_inference_pass",
+                                   "type_target_cast_pass",
+                                   "variable_place_inference_pass",
+                                   "io_copy_kernel_pick_pass",
+                                   "variable_place_inference_pass",
+                                   "runtime_context_assign_pass"});
+  predictor.Build(model_dir, "", "", valid_places, passes);
   auto* input_tensor = predictor.GetInput(0);
   input_tensor->Resize(DDim(std::vector<DDim::value_type>({1, 3, 224, 224})));
   auto* data = input_tensor->mutable_data<float>();
-  for (int i = 0; i < input_tensor->dims().production(); i++) {
+  auto item_size = input_tensor->dims().production();
+  for (int i = 0; i < item_size; i++) {
     data[i] = 1;
   }
 
@@ -57,20 +64,28 @@ TEST(CXXApi, test_lite_googlenet) {
             << ", spend " << (GetCurrentUS() - start) / FLAGS_repeats / 1000.0
             << " ms in average.";
 
+  std::vector<std::vector<float>> results;
+  // i = 1
+  results.emplace_back(std::vector<float>(
+      {0.00024139918, 0.00020566184, 0.00022418296, 0.00041731037,
+       0.0005366107,  0.00016948722, 0.00028638865, 0.0009257241,
+       0.00072681636, 8.531815e-05,  0.0002129998,  0.0021168243,
+       0.006387163,   0.0037145028,  0.0012812682,  0.00045948103,
+       0.00013535398, 0.0002483765,  0.00076759676, 0.0002773295}));
   auto* out = predictor.GetOutput(0);
-  std::vector<float> results(
-      {0.00034298553, 0.0008200012, 0.0005046297, 0.000839279,
-       0.00052616704, 0.0003447803, 0.0010877076, 0.00081762316,
-       0.0003941339,  0.0011430943, 0.0008892841, 0.00080191303,
-       0.0004442384,  0.000658702,  0.0026721435, 0.0013686896,
-       0.0005618166,  0.0006556497, 0.0006984528, 0.0014619455});
-  for (size_t i = 0; i < results.size(); ++i) {
-    EXPECT_NEAR(out->data<float>()[i * 51], results[i], 1e-5);
-  }
   ASSERT_EQ(out->dims().size(), 2);
   ASSERT_EQ(out->dims()[0], 1);
   ASSERT_EQ(out->dims()[1], 1000);
+
+  int step = 50;
+  for (int i = 0; i < results.size(); ++i) {
+    for (int j = 0; j < results[i].size(); ++j) {
+      EXPECT_NEAR(out->data<float>()[j * step + (out->dims()[1] * i)],
+                  results[i][j],
+                  1e-6);
+    }
+  }
 }
-#endif
+
 }  // namespace lite
 }  // namespace paddle
