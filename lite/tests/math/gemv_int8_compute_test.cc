@@ -40,25 +40,16 @@ DEFINE_int32(repeats, 1, "repeats times");
 DEFINE_bool(basic_test, false, "do all tests");
 DEFINE_bool(check_result, true, "check the result");
 
-DEFINE_int32(M, 512, "gemm: M");
-DEFINE_int32(N, 512, "gemm: N");
-DEFINE_int32(K, 512, "gemm: K");
+DEFINE_int32(M, 512, "gemv: M");
+DEFINE_int32(N, 512, "gemv: N");
 
-DEFINE_bool(traA, false, "gemm: A transpose");
-DEFINE_bool(traB, false, "gemm: B transpose");
+DEFINE_bool(traA, false, "gemv: A transpose");
 
 DEFINE_bool(flag_relu, false, "do relu");
 DEFINE_bool(flag_bias, false, "with bias");
 
-bool test_gemm_int8(bool tra,
-                    bool trb,
-                    int m,
-                    int n,
-                    int k,
-                    bool has_bias,
-                    bool has_relu,
-                    int cls,
-                    int ths) {
+bool test_gemv_int8(
+    bool tra, int m, int n, bool has_bias, bool has_relu, int cls, int ths) {
   Tensor ta;
   Tensor tb;
   Tensor tc_int8;
@@ -67,12 +58,12 @@ bool test_gemm_int8(bool tra,
   Tensor tc_basic_fp32;
   Tensor tbias;
 
-  ta.Resize({m, k});
-  tb.Resize({k, n});
-  tc_int8.Resize({m, n});
-  tc_fp32.Resize({m, n});
-  tc_basic_int8.Resize({m, n});
-  tc_basic_fp32.Resize({m, n});
+  ta.Resize({m, n});
+  tb.Resize({n});
+  tc_int8.Resize({m});
+  tc_fp32.Resize({m});
+  tc_basic_int8.Resize({m});
+  tc_basic_fp32.Resize({m});
   tbias.Resize({m});
 
   ta.set_precision(PRECISION(kInt8));
@@ -89,7 +80,7 @@ bool test_gemm_int8(bool tra,
 
   std::vector<float> scale_a(static_cast<size_t>(m), 1.f / 127);
   std::vector<float> scale_b = {1.f / 127};
-  std::vector<float> scale_c = {k / 127.f};
+  std::vector<float> scale_c = {n / 127.f};
   std::vector<float> scale_merge_fp32(static_cast<size_t>(m));
   std::vector<float> scale_merge_int8(static_cast<size_t>(m));
   for (int j = 0; j < m; ++j) {
@@ -97,16 +88,11 @@ bool test_gemm_int8(bool tra,
     scale_merge_int8[j] = scale_merge_fp32[j] / scale_c[0];
   }
 
-  LOG(INFO) << "gemm_int8 M: " << m << ", N: " << n << ", K: " << k
+  LOG(INFO) << "gemv_int8 M: " << m << ", N: " << n
             << ", transA: " << (tra ? "true" : "false")
-            << ", transB: " << (trb ? "true" : "false")
             << ", relu: " << (has_relu ? "true" : "false")
             << ", bias: " << (has_bias ? "true" : "false");
 #ifdef LITE_WITH_ARM
-  int lda = tra ? m : k;
-  int ldb = trb ? k : n;
-  int ldc = n;
-
   auto da = ta.mutable_data<int8_t>();
   auto db = tb.mutable_data<int8_t>();
   auto dc_int8 = tc_int8.mutable_data<int8_t>();
@@ -118,9 +104,9 @@ bool test_gemm_int8(bool tra,
   if (FLAGS_check_result) {
     Tensor ta_fp32;
     Tensor tb_fp32;
-    ta_fp32.Resize({m, k});
+    ta_fp32.Resize({m, n});
     ta_fp32.set_precision(PRECISION(kFloat));
-    tb_fp32.Resize({k, n});
+    tb_fp32.Resize({n});
     tb_fp32.set_precision(PRECISION(kFloat));
 
     auto da_fp32 = ta_fp32.mutable_data<float>();
@@ -130,20 +116,15 @@ bool test_gemm_int8(bool tra,
         da, da_fp32, scale_a.data(), 1, 1, ta.numel());
     paddle::lite::arm::math::int8_to_fp32(
         db, db_fp32, scale_b.data(), 1, 1, tb.numel());
-    basic_gemm(tra,
-               trb,
-               m,
+    basic_gemv(m,
                n,
-               k,
-               1.f,
                da_fp32,
-               lda,
                db_fp32,
-               ldb,
-               0.f,
-               dc_basic_fp32,
-               ldc,
                dbias,
+               dc_basic_fp32,
+               1.f,
+               0.f,
+               false,
                has_bias,
                has_relu);
     paddle::lite::arm::math::fp32_to_int8(dc_basic_fp32,
@@ -155,33 +136,24 @@ bool test_gemm_int8(bool tra,
   }
   Timer t0;
   //! compute
-  double ops = 2.0 * m * n * k;
+  double ops = 2.0 * m * n;
   std::unique_ptr<paddle::lite::KernelContext> ctx1(
       new paddle::lite::KernelContext);
   auto& ctx = ctx1->As<paddle::lite::ARMContext>();
   ctx.SetRunMode(static_cast<paddle::lite_api::PowerMode>(cls), ths);
-  //! prepack
-  Tensor tpackedA;
-  int hblock = paddle::lite::arm::math::get_hblock_int8(&ctx);
-  int round_up_a = ((hblock + m - 1) / hblock) * hblock;
-  int round_up_k = 4 * ((k + 3) / 4);
-  tpackedA.Resize({round_up_a * round_up_k});
-  paddle::lite::arm::math::prepackA_int8(
-      tpackedA.mutable_data<int8_t>(), da, lda, 0, m, 0, k, tra, &ctx);
   /// warmup
   for (int j = 0; j < FLAGS_warmup; ++j) {
-    paddle::lite::arm::math::gemm_prepack_int8(tpackedA.data<int8_t>(),
-                                               db,
-                                               dbias,
-                                               dc_fp32,
-                                               m,
-                                               n,
-                                               k,
-                                               has_bias,
-                                               has_relu,
-                                               trb,
-                                               scale_merge_fp32.data(),
-                                               &ctx);
+    paddle::lite::arm::math::gemv_int8(da,
+                                       db,
+                                       dc_fp32,
+                                       false,
+                                       m,
+                                       n,
+                                       scale_merge_fp32.data(),
+                                       has_bias,
+                                       dbias,
+                                       has_relu,
+                                       &ctx);
   }
 
   /// int8 output compute
@@ -194,21 +166,20 @@ bool test_gemm_int8(bool tra,
   }
   for (int i = 0; i < FLAGS_repeats; ++i) {
     t0.start();
-    paddle::lite::arm::math::gemm_prepack_int8(tpackedA.data<int8_t>(),
-                                               db,
-                                               dbias_int8,
-                                               dc_int8,
-                                               m,
-                                               n,
-                                               k,
-                                               has_bias,
-                                               has_relu,
-                                               trb,
-                                               scale_merge_int8.data(),
-                                               &ctx);
+    paddle::lite::arm::math::gemv_int8(da,
+                                       db,
+                                       dc_fp32,
+                                       false,
+                                       m,
+                                       n,
+                                       scale_merge_fp32.data(),
+                                       has_bias,
+                                       dbias,
+                                       has_relu,
+                                       &ctx);
     t0.end();
   }
-  LOG(INFO) << "gemm_int8_int8 output: M: " << m << ", N: " << n << ", K: " << k
+  LOG(INFO) << "gemv_int8_int8 output: M: " << m << ", N: " << n
             << ", power_mode: " << cls << ", threads: " << ths
             << ", GOPS: " << ops * 1e-9f
             << " GOPS, avg time: " << t0.get_average_ms()
@@ -221,21 +192,20 @@ bool test_gemm_int8(bool tra,
   t0.clear();
   for (int i = 0; i < FLAGS_repeats; ++i) {
     t0.start();
-    paddle::lite::arm::math::gemm_prepack_int8(tpackedA.data<int8_t>(),
-                                               db,
-                                               dbias,
-                                               dc_fp32,
-                                               m,
-                                               n,
-                                               k,
-                                               has_bias,
-                                               has_relu,
-                                               trb,
-                                               scale_merge_fp32.data(),
-                                               &ctx);
+    paddle::lite::arm::math::gemv_int8(da,
+                                       db,
+                                       dc_int8,
+                                       false,
+                                       m,
+                                       n,
+                                       scale_merge_int8.data(),
+                                       has_bias,
+                                       dbias_int8,
+                                       has_relu,
+                                       &ctx);
     t0.end();
   }
-  LOG(INFO) << "gemm_int8_fp32 output: M: " << m << ", N: " << n << ", K: " << k
+  LOG(INFO) << "gemm_int8_fp32 output: M: " << m << ", N: " << n
             << ", power_mode: " << cls << ", threads: " << ths
             << ", GOPS: " << ops * 1e-9f
             << " GOPS, avg time: " << t0.get_average_ms()
@@ -309,7 +279,7 @@ bool test_gemm_int8(bool tra,
   return true;
 }
 
-TEST(TestLiteGemmInt8, gemm_prepacked_int8) {
+TEST(TestLiteGemvInt8, gemv_prepacked_int8) {
   if (FLAGS_basic_test) {
 #ifdef LITE_WITH_ARM
     paddle::lite::DeviceInfo::Init();
@@ -317,39 +287,24 @@ TEST(TestLiteGemmInt8, gemm_prepacked_int8) {
     LOG(INFO) << "run basic sgemm test";
     for (auto& m : {1, 3, 8, 32, 397}) {
       for (auto& n : {1, 3, 13, 141, 512, 789}) {
-        for (auto& k : {1, 3, 8, 59, 234}) {
-          for (auto& tra : {false, true}) {
-            for (auto& trb : {false, true}) {
-              for (auto& has_bias : {false, true}) {
-                for (auto& has_relu : {false, true}) {
-                  for (auto& th : {1, 2, 4}) {
-                    auto flag = test_gemm_int8(tra,
-                                               trb,
-                                               m,
-                                               n,
-                                               k,
-                                               has_bias,
-                                               has_relu,
-                                               FLAGS_power_mode,
-                                               th);
-                    if (flag) {
-                      LOG(INFO) << "test m = " << m << ", n=" << n
-                                << ", k=" << k
-                                << ", bias: " << (has_bias ? "true" : "false")
-                                << ", relu: " << (has_relu ? "true" : "false")
-                                << ", trans A: " << (tra ? "true" : "false")
-                                << ", trans B: " << (trb ? "true" : "false")
-                                << " passed\n";
-                    } else {
-                      LOG(FATAL) << "test m = " << m << ", n=" << n
-                                 << ", k=" << k
-                                 << ", bias: " << (has_bias ? "true" : "false")
-                                 << ", relu: " << (has_relu ? "true" : "false")
-                                 << ", trans A: " << (tra ? "true" : "false")
-                                 << ", trans B: " << (trb ? "true" : "false")
-                                 << " failed\n";
-                    }
-                  }
+        for (auto& tra : {false}) {
+          for (auto& has_bias : {false, true}) {
+            for (auto& has_relu : {false, true}) {
+              for (auto& th : {1, 2, 4}) {
+                auto flag = test_gemv_int8(
+                    tra, m, n, has_bias, has_relu, FLAGS_power_mode, th);
+                if (flag) {
+                  LOG(INFO) << "test m = " << m << ", n=" << n
+                            << ", bias: " << (has_bias ? "true" : "false")
+                            << ", relu: " << (has_relu ? "true" : "false")
+                            << ", trans A: " << (tra ? "true" : "false")
+                            << " passed\n";
+                } else {
+                  LOG(FATAL) << "test m = " << m << ", n=" << n
+                             << ", bias: " << (has_bias ? "true" : "false")
+                             << ", relu: " << (has_relu ? "true" : "false")
+                             << ", trans A: " << (tra ? "true" : "false")
+                             << " failed\n";
                 }
               }
             }
@@ -360,27 +315,23 @@ TEST(TestLiteGemmInt8, gemm_prepacked_int8) {
   }
 }
 
-TEST(TestGemmInt8Custom, gemm_prepacked_int8_custom) {
+TEST(TestGemvInt8Custom, gemv_prepacked_int8_custom) {
 #ifdef LITE_WITH_ARM
   paddle::lite::DeviceInfo::Init();
 #endif
-  auto flag = test_gemm_int8(FLAGS_traA,
-                             FLAGS_traB,
+  auto flag = test_gemv_int8(FLAGS_traA,
                              FLAGS_M,
                              FLAGS_N,
-                             FLAGS_K,
                              FLAGS_flag_bias,
                              FLAGS_flag_relu,
                              FLAGS_power_mode,
                              FLAGS_threads);
   if (!flag) {
     LOG(FATAL) << "test m = " << FLAGS_M << ", n=" << FLAGS_N
-               << ", k=" << FLAGS_K << ", trans A: " << FLAGS_traA
-               << ", trans B: " << FLAGS_traB << ", bias: " << FLAGS_flag_bias
+               << ", trans A: " << FLAGS_traA << ", bias: " << FLAGS_flag_bias
                << ", relu: " << FLAGS_flag_relu << " failed!!";
   }
-  LOG(INFO) << "test m = " << FLAGS_M << ", n=" << FLAGS_N << ", k=" << FLAGS_K
-            << ", trans A: " << FLAGS_traA << ", trans B: " << FLAGS_traB
-            << ", bias: " << FLAGS_flag_bias << ", relu: " << FLAGS_flag_relu
-            << " passed!!";
+  LOG(INFO) << "test m = " << FLAGS_M << ", n=" << FLAGS_N
+            << ", trans A: " << FLAGS_traA << ", bias: " << FLAGS_flag_bias
+            << ", relu: " << FLAGS_flag_relu << " passed!!";
 }
