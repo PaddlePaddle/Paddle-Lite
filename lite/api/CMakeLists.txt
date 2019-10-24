@@ -119,6 +119,11 @@ if(WITH_TESTING)
            ${ops} ${host_kernels} ${x86_kernels}
            ARGS --model_dir=${LITE_MODEL_DIR}/inception_v4_simple)
         add_dependencies(test_inceptionv4_lite_x86 extern_lite_download_inception_v4_simple_tar_gz)
+        lite_cc_test(test_resnet50_lite_x86 SRCS test_resnet50_lite_x86.cc
+           DEPS cxx_api mir_passes lite_api_test_helper
+           ${ops} ${host_kernels} ${x86_kernels}
+           ARGS --model_dir=${LITE_MODEL_DIR}/resnet50)
+        add_dependencies(test_resnet50_lite_x86 extern_lite_download_resnet50_tar_gz)
     endif()
 endif()
 
