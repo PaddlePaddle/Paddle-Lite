@@ -21,42 +21,6 @@
 namespace paddle {
 namespace lite {
 
-class CxxPaddleApiImpl : public lite_api::PaddlePredictor {
- public:
-  CxxPaddleApiImpl();
-
-  /// Create a new predictor from a config.
-  void Init(const lite_api::CxxConfig &config);
-
-  std::unique_ptr<lite_api::Tensor> GetInput(int i) override;
-
-  std::unique_ptr<const lite_api::Tensor> GetOutput(int i) const override;
-
-  void Run() override;
-
-  std::string GetVersion() const override;
-
-  // get inputs names and get outputs names
-  const std::vector<std::string> &GetInputNames() override;
-  const std::vector<std::string> &GetOutputNames() override;
-
-  std::unique_ptr<const lite_api::Tensor> GetTensor(
-      const std::string &name) const override;
-
-  // Get InputTebsor by name
-  std::unique_ptr<lite_api::Tensor> GetInputByName(
-      const std::string &name) override;
-
-  void SaveOptimizedModel(const std::string &model_dir,
-                          lite_api::LiteModelType model_type =
-                              lite_api::LiteModelType::kProtobuf) override;
-
- private:
-  Predictor raw_predictor_;
-};
-
-CxxPaddleApiImpl::CxxPaddleApiImpl() {}
-
 void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
 #ifdef LITE_WITH_CUDA
   Env<TARGET(kCUDA)>::Init();
@@ -76,11 +40,11 @@ std::unique_ptr<const lite_api::Tensor> CxxPaddleApiImpl::GetOutput(
   return std::unique_ptr<lite_api::Tensor>(new lite_api::Tensor(x));
 }
 
-const std::vector<std::string> &CxxPaddleApiImpl::GetInputNames() {
+std::vector<std::string> CxxPaddleApiImpl::GetInputNames() {
   return raw_predictor_.GetInputNames();
 }
 
-const std::vector<std::string> &CxxPaddleApiImpl::GetOutputNames() {
+std::vector<std::string> CxxPaddleApiImpl::GetOutputNames() {
   return raw_predictor_.GetOutputNames();
 }
 

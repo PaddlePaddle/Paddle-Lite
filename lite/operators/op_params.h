@@ -83,6 +83,7 @@ struct FcParam {
   lite::Tensor* output{nullptr};
   lite::DDim in_mat_dims;
   int in_num_col_dims{1};
+  std::string activation_type{""};
   // for int8
   WITH_INT8_CONFIG
 };
@@ -323,6 +324,8 @@ struct SplitParam {
 struct TransposeParam {
   const lite::Tensor* x{};
   lite::Tensor* output{};
+  lite::Tensor* xshape{};
+
   std::vector<int> axis;
   bool use_mkldnn{false};
   std::string data_format{"AnyLayout"};
