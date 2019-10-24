@@ -82,12 +82,12 @@ if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM)
                 add_dependencies(publish_inference_cxx_lib bundle_full_api)
                 add_dependencies(publish_inference_cxx_lib bundle_light_api)
                 add_dependencies(publish_inference_cxx_lib test_model_bin)
-#                if (ARM_TARGET_OS STREQUAL "android") 
+                if (ARM_TARGET_OS STREQUAL "android") 
                     add_dependencies(publish_inference_cxx_lib paddle_full_api_shared)
                     add_dependencies(publish_inference paddle_light_api_shared)
                     add_custom_command(TARGET publish_inference_cxx_lib 
                           COMMAND cp ${CMAKE_BINARY_DIR}/lite/api/*.so ${INFER_LITE_PUBLISH_ROOT}/cxx/lib)
- #               endif()
+                endif()
                 add_dependencies(publish_inference publish_inference_cxx_lib)
                 add_custom_command(TARGET publish_inference_cxx_lib POST_BUILD
                         COMMAND ${CMAKE_STRIP} "--strip-debug" ${INFER_LITE_PUBLISH_ROOT}/cxx/lib/*.a)
@@ -103,7 +103,7 @@ if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM)
             add_dependencies(tiny_publish_lib bundle_light_api)
             add_dependencies(publish_inference tiny_publish_lib)
         else()
- #           if (ARM_TARGET_OS STREQUAL "android")
+            if (ARM_TARGET_OS STREQUAL "android")
                 add_custom_target(tiny_publish_cxx_lib ${TARGET}
                     COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/cxx"
                     COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/cxx/include"
@@ -113,7 +113,7 @@ if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM)
                 )
                 add_dependencies(tiny_publish_cxx_lib paddle_light_api_shared)
                 add_dependencies(publish_inference tiny_publish_cxx_lib)  
-  #          endif() 
+            endif() 
         endif()
     endif()
 
