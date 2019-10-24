@@ -34,40 +34,40 @@ TEST(CxxApi, run) {
   });
 
   auto predictor = lite_api::CreatePaddlePredictor(config);
+  /*
+    LOG(INFO) << "Version: " << predictor->GetVersion();
 
-  LOG(INFO) << "Version: " << predictor->GetVersion();
+    auto inputs = predictor->GetInputNames();
+    LOG(INFO) << "input size: " << inputs.size();
+    for (int i = 0; i < inputs.size(); i++) {
+      LOG(INFO) << "inputnames: " << inputs[i];
+    }
+    auto outputs = predictor->GetOutputNames();
+    for (int i = 0; i < outputs.size(); i++) {
+      LOG(INFO) << "outputnames: " << outputs[i];
+    }
+    auto input_tensor = predictor->GetInputByName(inputs[0]);
+    input_tensor->Resize(std::vector<int64_t>({100, 100}));
+    auto* data = input_tensor->mutable_data<float>();
+    for (int i = 0; i < 100 * 100; i++) {
+      data[i] = i;
+    }
 
-  auto inputs = predictor->GetInputNames();
-  LOG(INFO) << "input size: " << inputs.size();
-  for (int i = 0; i < inputs.size(); i++) {
-    LOG(INFO) << "inputnames: " << inputs[i];
-  }
-  auto outputs = predictor->GetOutputNames();
-  for (int i = 0; i < outputs.size(); i++) {
-    LOG(INFO) << "outputnames: " << outputs[i];
-  }
-  auto input_tensor = predictor->GetInputByName(inputs[0]);
-  input_tensor->Resize(std::vector<int64_t>({100, 100}));
-  auto* data = input_tensor->mutable_data<float>();
-  for (int i = 0; i < 100 * 100; i++) {
-    data[i] = i;
-  }
+    predictor->Run();
 
-  predictor->Run();
+    auto output = predictor->GetTensor(outputs[0]);
+    auto* out = output->data<float>();
+    LOG(INFO) << out[0];
+    LOG(INFO) << out[1];
 
-  auto output = predictor->GetTensor(outputs[0]);
-  auto* out = output->data<float>();
-  LOG(INFO) << out[0];
-  LOG(INFO) << out[1];
-
-  EXPECT_NEAR(out[0], 50.2132, 1e-3);
-  EXPECT_NEAR(out[1], -28.8729, 1e-3);
-
+    EXPECT_NEAR(out[0], 50.2132, 1e-3);
+    EXPECT_NEAR(out[1], -28.8729, 1e-3);
+  */
   predictor->SaveOptimizedModel(FLAGS_model_dir + ".opt2");
   predictor->SaveOptimizedModel(
       FLAGS_model_dir + ".opt2.naive", LiteModelType::kNaiveBuffer, true);
 }
-
+/*
 // Demo1 for Mobile Devices :Load model from file and run
 #ifdef LITE_WITH_LIGHT_WEIGHT_FRAMEWORK
 TEST(LightApi, run) {
@@ -138,7 +138,7 @@ TEST(MobileConfig, LoadfromMemory) {
   }
 }
 
-#endif
+#endif*/
 
 }  // namespace lite_api
 }  // namespace paddle

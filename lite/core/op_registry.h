@@ -50,6 +50,10 @@ class OpKernelInfoCollector {
     kernel2path.insert(std::pair<std::string, std::string>(
         kernel_name, kernel_path.substr(index + 1)));
   }
+  void SetKernel2path(
+      const std::map<std::string, std::string> &kernel2path_map) {
+    kernel2path = kernel2path_map;
+  }
   const std::map<std::string, std::string> &Getop2path() { return op2path; }
   const std::map<std::string, std::string> &Getkernel2path() {
     return kernel2path;

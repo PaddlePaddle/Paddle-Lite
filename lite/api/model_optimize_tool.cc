@@ -17,6 +17,7 @@
 #include <gtest/gtest.h>
 #endif
 #include "all_kernel_faked.cc"  // NOLINT
+#include "kernel_src_map.h"     // NOLINT
 #include "lite/api/paddle_api.h"
 #include "lite/api/paddle_use_ops.h"
 #include "lite/api/paddle_use_passes.h"
@@ -105,6 +106,7 @@ void Main() {
   } else {
     LOG(FATAL) << "Unsupported Model type :" << FLAGS_optimize_out_type;
   }
+  OpKernelInfoCollector::Global().SetKernel2path(kernel2path_map);
 
   predictor->SaveOptimizedModel(
       FLAGS_optimize_out, model_type, FLAGS_record_info);

@@ -89,6 +89,7 @@ add_custom_command(
   COMMAND python ${CMAKE_SOURCE_DIR}/lite/tools/cmake_tools/create_fake_kernel_registry.py
   ${kernels_src_list}
   ${CMAKE_BINARY_DIR}/all_kernel_faked.cc
+  ${CMAKE_BINARY_DIR}/kernel_src_map.h
   OUTPUT all_kernel_faked.cc # not a real path to the output to force it execute every time.
   )
 add_custom_target(op_list_h DEPENDS ops.h)
