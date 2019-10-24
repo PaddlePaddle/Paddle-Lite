@@ -32,19 +32,19 @@
 
 using LiteType = paddle::lite::Type;
 
-class CollectedInfo {
+class OpKernelInfoCollector {
  public:
-  static CollectedInfo &Global() {
-    static auto *x = new CollectedInfo;
+  static OpKernelInfoCollector &Global() {
+    static auto *x = new OpKernelInfoCollector;
     return *x;
   }
-  void add_op2path(const std::string &op_name, const std::string &op_path) {
+  void AddOp2path(const std::string &op_name, const std::string &op_path) {
     size_t index = op_path.find_last_of('/');
     op2path.insert(std::pair<std::string, std::string>(
         op_name, op_path.substr(index + 1)));
   }
-  void add_kernel2path(const std::string &kernel_name,
-                       const std::string &kernel_path) {
+  void AddKernel2path(const std::string &kernel_name,
+                      const std::string &kernel_path) {
     size_t index = kernel_path.find_last_of('/');
     std::string path = kernel_path;
     kernel2path.insert(std::pair<std::string, std::string>(
@@ -314,7 +314,7 @@ class KernelRegistor : public lite::Registor<KernelType> {
   static paddle::lite::OpLiteRegistor<OpClass> LITE_OP_REGISTER_INSTANCE( \
       op_type__)(#op_type__);                                             \
   int touch_op_##op_type__() {                                            \
-    CollectedInfo::Global().add_op2path(#op_type__, __FILE__);            \
+    OpKernelInfoCollector::Global().AddOp2path(#op_type__, __FILE__);     \
     return LITE_OP_REGISTER_INSTANCE(op_type__).Touch();                  \
   }
 
@@ -340,7 +340,7 @@ class KernelRegistor : public lite::Registor<KernelType> {
   static KernelClass LITE_KERNEL_INSTANCE(                                     \
       op_type__, target__, precision__, layout__, alias__);                    \
   int touch_##op_type__##target__##precision__##layout__##alias__() {          \
-    CollectedInfo::Global().add_kernel2path(                                   \
+    OpKernelInfoCollector::Global().AddKernel2path(                            \
         #op_type__ "," #target__ "," #precision__ "," #layout__ "," #alias__,  \
         __FILE__);                                                             \
     LITE_KERNEL_INSTANCE(op_type__, target__, precision__, layout__, alias__)  \

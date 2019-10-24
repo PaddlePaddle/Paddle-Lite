@@ -89,8 +89,8 @@ void Predictor::SaveOpKernelInfo(const std::string &model_dir) {
                     kernel_info.end());
 
   // get souce_file name from op type and kernel type
-  auto op2pathmap = CollectedInfo::Global().Getop2path();
-  auto kernel2pathmap = CollectedInfo::Global().Getkernel2path();
+  auto op2pathmap = OpKernelInfoCollector::Global().Getop2path();
+  auto kernel2pathmap = OpKernelInfoCollector::Global().Getkernel2path();
 
   // write used op and kernel info into files
   std::string opf_path = model_dir + "/.ops_list";

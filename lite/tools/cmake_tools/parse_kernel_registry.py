@@ -18,8 +18,8 @@ from ast import RegisterLiteKernelParser
 
 ops_list_path = sys.argv[1]
 dest_path = sys.argv[2]
-minkernels_list_path=sys.argv[3]
-tailored=sys.argv[4]
+minkernels_list_path = sys.argv[3]
+tailored = sys.argv[4]
 
 out_lines = [
     '#pragma once',
@@ -27,7 +27,7 @@ out_lines = [
     '',
 ]
 minlines = set()
-if tailored=="ON":
+if tailored == "ON":
     with open(minkernels_list_path) as f1:
         for line in f1:
             minlines.add(line.strip())
@@ -47,8 +47,8 @@ with open(ops_list_path) as f:
                      k.data_layout,
                      k.alias,
                   )
-                  if tailored=="ON":
-                      if not kernel in minlines: continue
+                  if tailored == "ON":
+                      if kernel not in minlines: continue
                   key = "USE_LITE_KERNEL(%s, %s, %s, %s, %s);" % (
                      k.op_type,
                      k.target,
