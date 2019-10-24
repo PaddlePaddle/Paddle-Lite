@@ -33,7 +33,6 @@ class ConvBNFuser : public FuseBase {
   void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override;
 
  private:
-  cpp::OpDesc GenOpDesc(const key2nodes_t& matched) override;
   void ComputeAlphaAndBeta(float* scale_d,
                            float* mean_d,
                            float* var_d,
