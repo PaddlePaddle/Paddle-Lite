@@ -13,8 +13,10 @@
 // limitations under the License.
 #pragma once
 
+#include <algorithm>
 #include <utility>
 #include <vector>
+#include "lite/backends/x86/math/blas.h"
 #include "lite/core/kernel.h"
 #include "lite/core/op_lite.h"
 #include "lite/core/op_registry.h"
@@ -137,6 +139,52 @@ class TanhCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
   }
 
   virtual ~TanhCompute() = default;
+};
+
+// gelu(x) = 0.5 * x *  (1 + erf(x / sqrt(2)))
+template <typename T>
+struct GeluFunctor : public BaseActivationFunctor<T> {
+  template <typename Device, typename X, typename Out>
+  void operator()(Device d, X x, Out out) const {
+// Because the execute or device context can not be deliver here, it keep the
+// marco for NVCC.
+#if defined(PADDLE_WITH_MKLML) && !defined(_WIN32) && !defined(__APPLE__) && \
+    !defined(__OSX__) && !defined(PADDLE_WITH_CUDA)
+    auto x_data = x.data();
+    auto out_data = out.data();
+    int n = std::min(x.size(), out.size());
+
+    std::memset(out_data, 0, n * sizeof(T));
+    paddle::lite::x86::math::CBlas<T>::AXPY(
+        n, static_cast<T>(M_SQRT1_2), x_data, 1, out_data, 1);
+    paddle::lite::x86::math::CBlas<T>::VMERF(n, out_data, out_data, VML_LA);
+    for (int i = 0; i < n; i++) {
+      out_data[i] += static_cast<T>(1);
+    }
+    paddle::lite::x86::math::CBlas<T>::VMUL(n, x_data, out_data, out_data);
+    for (int i = 0; i < n; i++) {
+      out_data[i] *= static_cast<T>(0.5);
+    }
+#else
+    auto temp = (x * static_cast<T>(M_SQRT1_2)).erf();
+    out.device(d) = x * static_cast<T>(0.5) * (static_cast<T>(1) + temp);
+#endif
+  }
+};
+
+template <typename T>
+class GeluCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::ActivationParam;
+
+  void Run() override {
+    auto& param = *param_.get_mutable<operators::ActivationParam>();
+
+    param.Out->template mutable_data<T>();
+    Activate<GeluFunctor<T>>(param.X, param.Out);
+  }
+
+  virtual ~GeluCompute() = default;
 };
 
 }  // namespace x86
