@@ -65,78 +65,49 @@ void ConvElementwiseFuser::BuildPattern() {
 
 void ConvElementwiseFuser::InsertNewNode(SSAGraph* graph,
                                          const key2nodes_t& matched) {
-  auto op_desc = GenOpDesc(matched);
-  auto conv_op = LiteOpRegistry::Global().Create(conv_type_);
-  auto old_conv_instruct = matched.at("conv2d")->stmt();
-  auto old_conv_op = old_conv_instruct->op();
-  auto* scope = old_conv_op->scope();
-  auto& valid_places = old_conv_op->valid_places();
-
-  // elementwise_add bias
-  auto elementwise_add_bias_t = scope->FindVar(matched.at("bias")->arg()->name)
-                                    ->GetMutable<lite::Tensor>();
-  auto elementwise_add_bias_d = elementwise_add_bias_t->mutable_data<float>();
-
-  // conv weight
-  auto conv_weight_t = scope->FindVar(matched.at("filter")->arg()->name)
-                           ->GetMutable<lite::Tensor>();
+  auto conv_instruct = matched.at("conv2d")->stmt();
+  auto conv_op_desc = conv_instruct->mutable_op_info();
+  auto* scope = conv_instruct->op()->scope();
 
   /////////////////////////////////////////////////////////////////////////////////////
   // ConvElementwiseFuser
   //   if `conv_bias` existed, store previous old `conv_bias` to
-  //   `new_conv_bias`,
-  //     add `elementwise_add_bias` to `new_conv_bias`.
-  //   if `conv_bias` not existed, initalize `new_conv_bias` with zero value,
-  //   with {conv_weight_t.dims()[0], 1, 1, 1} dimension,
-  //     accumulate `elementwise_add_bias` to `new_conv_bias`.
+  //   `elemwise_bias`, and add `elementwise_add_bias` to `new_conv_bias`.
+  //   if `conv_bias` not existed, set `elementwise_add_bias` as
+  //   `new_conv_bias`.
   /////////////////////////////////////////////////////////////////////////////////////
-  Tensor new_conv_bias_t;
-  new_conv_bias_t.Resize({conv_weight_t->dims()[0], 1, 1, 1});
-  auto new_conv_bias_d = new_conv_bias_t.mutable_data<float>();
 
-  if (conv_has_bias_ == true && op_desc.HasInput("Bias") &&
-      op_desc.Input("Bias").size() > 0) {
-    auto conv_bias_var = scope->FindVar(op_desc.Input("Bias").front());
+  if (conv_has_bias_ == true && conv_op_desc->HasInput("Bias") &&
+      conv_op_desc->Input("Bias").size() > 0) {
+    auto conv_bias_var = scope->FindVar(conv_op_desc->Input("Bias").front());
     if (conv_bias_var != nullptr) {
-      auto old_conv_bias_t = &(conv_bias_var->Get<lite::Tensor>());
-      new_conv_bias_t.CopyDataFrom(*old_conv_bias_t);
-    }
-  } else {  // conv_has_bias_ == false
-    for (unsigned int i = 0; i < new_conv_bias_t.data_size(); ++i) {
-      new_conv_bias_d[i] = 0;
+      // conv bias
+      auto conv_bias_t = &(conv_bias_var->Get<lite::Tensor>());
+      auto conv_bias_d = conv_bias_t->data<float>();
+
+      // elementwise_add bias
+      auto elementwise_add_bias_t =
+          scope->FindVar(matched.at("bias")->arg()->name)
+              ->GetMutable<lite::Tensor>();
+      auto elementwise_add_bias_d =
+          elementwise_add_bias_t->mutable_data<float>();
+
+      for (unsigned int i = 0; i < conv_bias_t->data_size(); ++i) {
+        elementwise_add_bias_d[i] += conv_bias_d[i];
+      }
     }
   }
-  // add `elementwise_add_bias` to `new_conv_bias`
-  CHECK(elementwise_add_bias_t->data_size() == new_conv_bias_t.data_size())
-      << "elementwise_add_bias_t.data_size() != new_conv_bias_t.data_size()";
-  for (unsigned int i = 0; i < new_conv_bias_t.data_size(); ++i) {
-    new_conv_bias_d[i] += elementwise_add_bias_d[i];
-  }
 
-  /// store `new_conv_bias` in `elementwise_add_bias`
-  elementwise_add_bias_t->CopyDataFrom(new_conv_bias_t);
+  conv_op_desc->SetType(conv_type_);
+  conv_op_desc->SetInput("Input", {matched.at("input")->arg()->name});
+  conv_op_desc->SetInput("Filter", {matched.at("filter")->arg()->name});
+  conv_op_desc->SetOutput("Output", {matched.at("output")->arg()->name});
+  conv_op_desc->SetInput("Bias", {matched.at("bias")->arg()->name});
+  auto update_conv_desc = *conv_instruct->mutable_op_info();
+  conv_instruct->ResetOp(update_conv_desc, graph->valid_places());
 
-  conv_op->Attach(op_desc, scope);
-  auto* new_op_node = graph->GraphCreateInstructNode(conv_op, valid_places);
-
-  IR_NODE_LINK_TO(matched.at("input"), new_op_node);
-  IR_NODE_LINK_TO(matched.at("filter"), new_op_node);
-  IR_NODE_LINK_TO(matched.at("bias"), new_op_node);
-  IR_NODE_LINK_TO(new_op_node, matched.at("output"));
-}
-
-cpp::OpDesc ConvElementwiseFuser::GenOpDesc(const key2nodes_t& matched) {
-  auto* desc = matched.at("conv2d")->stmt()->op_info();
-  cpp::OpDesc op_desc = *desc;
-
-  op_desc.SetType(conv_type_);
-  op_desc.SetInput("Input", {matched.at("input")->arg()->name});
-  op_desc.SetInput("Filter", {matched.at("filter")->arg()->name});
-  op_desc.SetInput("Bias", {matched.at("bias")->arg()->name});
-  op_desc.SetOutput("Output", {matched.at("output")->arg()->name});
-
-  // Other inputs. See operators/conv_op.h
-  return op_desc;
+  IR_NODE_LINK_TO(matched.at("bias"), matched.at("conv2d"));
+  IR_OP_VAR_LINK(matched.at("conv2d"), matched.at("output"));
 }
 
 }  // namespace fusion

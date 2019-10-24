@@ -23,24 +23,33 @@ namespace mir {
 namespace fusion {
 
 void ConvBNFuser::BuildPattern() {
-  // Create op
-  auto* conv =
-      OpNode("conv2d", conv_type_)->assert_is_op(conv_type_)->AsIntermediate();
-  auto* bn =
-      OpNode("bn", "batch_norm")->assert_is_op("batch_norm")->AsIntermediate();
-
-  // Create input
   auto* conv_input =
       VarNode("conv_input")->assert_is_op_input(conv_type_, "Input")->AsInput();
   auto* conv_weight = VarNode("conv_weight")
                           ->assert_is_op_input(conv_type_, "Filter")
                           ->AsInput();
-  auto* bn_bias = VarNode("bn_bias")
-                      ->assert_is_op_input("batch_norm", "Bias")
-                      ->AsInput()
-                      ->assert_is_persistable_var();
+  auto* conv = OpNode("conv2d", conv_type_)->assert_is_op(conv_type_);
+  auto* conv_out = VarNode("conv_out")
+                       ->assert_is_op_output(conv_type_, "Output")
+                       ->assert_is_op_input("batch_norm", "X")
+                       ->AsIntermediate();
 
-  // Create intermediate
+  auto* bn_scale = VarNode("bn_scale")
+                       ->assert_is_op_input("batch_norm", "Scale")
+                       ->AsIntermediate();
+  auto* bn_bias =
+      VarNode("bn_bias")->assert_is_op_input("batch_norm", "Bias")->AsInput();
+  auto* bn_mean = VarNode("bn_mean")
+                      ->assert_is_op_input("batch_norm", "Mean")
+                      ->AsIntermediate();
+  auto* bn_var = VarNode("bn_variance")
+                     ->assert_is_op_input("batch_norm", "Variance")
+                     ->AsIntermediate();
+  auto* bn =
+      OpNode("bn", "batch_norm")->assert_is_op("batch_norm")->AsIntermediate();
+
+  auto* bn_out =
+      VarNode("bn_out")->assert_is_op_output("batch_norm", "Y")->AsOutput();
   auto* bn_mean_out = VarNode("bn_mean_out")
                           ->assert_is_op_output("batch_norm", "MeanOut")
                           ->AsIntermediate();
@@ -53,50 +62,26 @@ void ConvBNFuser::BuildPattern() {
   auto* bn_saved_var = VarNode("bn_saved_var")
                            ->assert_is_op_output("batch_norm", "SavedVariance")
                            ->AsIntermediate();
-  auto* bn_scale = VarNode("bn_scale")
-                       ->assert_is_op_input("batch_norm", "Scale")
-                       ->AsIntermediate();
-  auto* bn_mean = VarNode("bn_mean")
-                      ->assert_is_op_input("batch_norm", "Mean")
-                      ->AsIntermediate();
-  auto* bn_var = VarNode("bn_variance")
-                     ->assert_is_op_input("batch_norm", "Variance")
-                     ->AsIntermediate();
 
-  auto* conv_out = VarNode("conv_out")
-                       ->assert_is_op_output(conv_type_, "Output")
-                       ->assert_is_op_input("batch_norm", "X")
-                       ->AsIntermediate();
-  // Create output
-  auto* bn_out =
-      VarNode("bn_out")->assert_is_op_output("batch_norm", "Y")->AsOutput();
-
-  // Because `conv_has_bias_` term is not sure existed or not,
-  //   the process of old `conv_bias` term deletion is difficult.
-  //   Thus, use `conv_has_bias_` to define two pattern.
-  //   Using two patterns, avoid to seek and delete old conv_bias term.
-  //
-  // Store new `conv_bias` term in `bn_bias` term,
-  //   because `bn_bias` term is sure existed.
-  if (false == conv_has_bias_) {
-    conv->LinksFrom({conv_input, conv_weight}).LinksTo({conv_out});
-  } else {  // true == conv_has_bias_
+  if (conv_has_bias_) {
     auto* conv_bias = VarNode("conv_bias")
                           ->assert_is_op_input(conv_type_, "Bias")
+                          ->AsInput()
                           ->AsIntermediate();
     conv->LinksFrom({conv_input, conv_weight, conv_bias}).LinksTo({conv_out});
+  } else {
+    conv->LinksFrom({conv_input, conv_weight}).LinksTo({conv_out});
   }
+
   bn->LinksFrom({conv_out, bn_scale, bn_bias, bn_mean, bn_var})
       .LinksTo({bn_out, bn_mean_out, bn_saved_mean, bn_saved_var, bn_var_out});
 }
 
 void ConvBNFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
-  auto op_desc = GenOpDesc(matched);
-  auto new_conv_op = LiteOpRegistry::Global().Create("conv2d");
   auto conv_instruct = matched.at("conv2d")->stmt();
+  auto conv_op_desc = conv_instruct->mutable_op_info();
   auto conv = conv_instruct->op();
   auto* scope = conv->scope();
-  auto& valid_places = conv->valid_places();
 
   // bn
   auto bn_scale_t = scope->FindVar(matched.at("bn_scale")->arg()->name)
@@ -123,6 +108,7 @@ void ConvBNFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
       << "The BN bias's size should be equal to the size of the first "
       << "dim size of the conv weights";
   size_t weight_num = conv_weight_t->data_size();
+  bool enable_int8 = conv_op_desc->HasAttr("enable_int8") ? true : false;
 
   // comupte BN alpha and beta
   Tensor alpha_tensor, beta_tensor;
@@ -140,6 +126,7 @@ void ConvBNFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
 
   ComputeAlphaAndBeta(
       bn_scale_d, bn_mean_d, bn_var_d, alpha_data, beta_data, eps, h, w);
+
   ///////////////////////////////////////////////////////////////////////////////
   // Compute ConvBNFuser
   // Before fusion
@@ -157,78 +144,58 @@ void ConvBNFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
   //       w = `conv_weight_num` / bias_size = in channel num of conv weight
   //       little difference for int8
   ///////////////////////////////////////////////////////////////////////////////
-  // compute new new weight and bias
-  // initialize new `conv bias` with old `conv_bias` (if existed) or zero
-  Tensor new_conv_bias_tensor;
-  new_conv_bias_tensor.Resize(bn_bias_t->dims());
-  auto new_conv_bias_d = new_conv_bias_tensor.mutable_data<float>();
-  if (op_desc.HasInput("Bias") && op_desc.Input("Bias").size() > 0) {
-    auto bias_var = scope->FindVar(op_desc.Input("Bias").front());
-    if (bias_var != nullptr) {
-      auto old_conv_bias_t = &(bias_var->Get<lite::Tensor>());
-      new_conv_bias_tensor.CopyDataFrom(*old_conv_bias_t);
-    }
-  } else {
-    for (unsigned int i = 0; i < new_conv_bias_tensor.data_size(); ++i) {
-      new_conv_bias_d[i] = 0;
-    }
-  }
-
-  auto conv_op_desc = conv_instruct->mutable_op_info();
-  if (conv_op_desc->HasAttr("enable_int8") == true) {
-    VLOG(4) << "enable_int8 branch: enable_int8 is true";
+  if (enable_int8) {
     PADDLE_ENFORCE(conv_op_desc->HasAttr("weight_scale"),
                    "INT8 mode: Conv should has weight_scale attr");
+    auto conv_weight_d = conv_weight_t->mutable_data<int8_t>();
     // compute new conv_weight for int8
     auto weight_scale =
         conv_op_desc->GetAttr<std::vector<float>>("weight_scale");
-    for (unsigned int i = 0; i < h; i++) {
-      weight_scale[i] *= alpha_data[i];
+    for (unsigned int i = 0; i < h; ++i) {
+      weight_scale[i] *= fabsf(alpha_data[i]);
+      if (alpha_data[i] < 0.f) {
+        auto ptr_row = conv_weight_d + i * w;
+        for (unsigned int j = 0; j < w; ++j) {
+          ptr_row[j] *= -1;
+        }
+      }
     }
-    op_desc.SetAttr("weight_scale", weight_scale);
+    conv_op_desc->SetAttr("weight_scale", weight_scale);
   } else {
-    VLOG(4) << "enable_int8 branch: enable_int8 is false";
     // compute new conv_weight
     auto conv_weight_d = conv_weight_t->mutable_data<float>();
-    for (unsigned int i = 0; i < h; i++) {    // n: conv2d output channels
-      for (unsigned int j = 0; j < w; j++) {  // w: conv2d input channels
+    for (unsigned int i = 0; i < h; ++i) {    // n: conv2d output channels
+      for (unsigned int j = 0; j < w; ++j) {  // w: conv2d input channels
         conv_weight_d[i * w + j] *= alpha_data[i];
       }
     }
   }
 
   // compute new conv_bias
-  for (unsigned int i = 0; i < bn_scale_t->data_size();
-       i++) {  // bias_size == h == conv2d output channls
-    new_conv_bias_d[i] =
-        alpha_data[i] * new_conv_bias_d[i] + (bn_bias_d[i] + beta_data[i]);
+  if (conv_has_bias_) {
+    auto conv_bias_t = scope->FindVar(matched.at("conv_bias")->arg()->name)
+                           ->GetMutable<lite::Tensor>();
+    auto conv_bias_d = conv_bias_t->data<float>();
+    for (unsigned int i = 0; i < bn_bias_t->data_size();
+         ++i) {  // bias_size == h == conv2d output channls
+      bn_bias_d[i] += alpha_data[i] * conv_bias_d[i];
+    }
+  }
+  for (unsigned int i = 0; i < bn_bias_t->data_size(); ++i) {
+    bn_bias_d[i] += beta_data[i];
   }
 
-  // store new `conv_bias_d` to `bn_bias` arg node
-  bn_bias_t->CopyDataFrom(new_conv_bias_tensor);
-  op_desc.SetInput("Bias",
-                   {matched.at("bn_bias")->arg()->name});  // add Bias flag
+  conv_op_desc->SetType(conv_type_);
+  conv_op_desc->SetInput("Input", {matched.at("conv_input")->arg()->name});
+  conv_op_desc->SetInput("Filter", {matched.at("conv_weight")->arg()->name});
+  conv_op_desc->SetOutput("Output", {matched.at("bn_out")->arg()->name});
+  conv_op_desc->SetInput("Bias",
+                         {matched.at("bn_bias")->arg()->name});  // conv_bias
+  auto update_conv_desc = *conv_instruct->mutable_op_info();
+  conv_instruct->ResetOp(update_conv_desc, graph->valid_places());
 
-  new_conv_op->Attach(op_desc, scope);
-  auto* new_op_node = graph->GraphCreateInstructNode(new_conv_op, valid_places);
-
-  IR_NODE_LINK_TO(matched.at("conv_input"), new_op_node);
-  IR_NODE_LINK_TO(matched.at("conv_weight"), new_op_node);
-  IR_NODE_LINK_TO(matched.at("bn_bias"), new_op_node);
-  IR_NODE_LINK_TO(new_op_node, matched.at("bn_out"));
-}
-
-cpp::OpDesc ConvBNFuser::GenOpDesc(const key2nodes_t& matched) {
-  cpp::OpDesc op_desc = *matched.at("conv2d")->stmt()->op_info();
-
-  op_desc.SetType(conv_type_);
-  op_desc.SetInput("Input", {matched.at("conv_input")->arg()->name});
-  op_desc.SetInput("Filter", {matched.at("conv_weight")->arg()->name});
-  // `SetInput` `conv_bias` term added in `InsertNewNode` function
-  op_desc.SetOutput("Output", {matched.at("bn_out")->arg()->name});
-
-  // Other inputs. See operators/conv_op.h
-  return op_desc;
+  IR_NODE_LINK_TO(matched.at("bn_bias"), matched.at("conv2d"));
+  IR_OP_VAR_LINK(matched.at("conv2d"), matched.at("bn_out"));
 }
 
 }  // namespace fusion
