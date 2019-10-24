@@ -27,15 +27,17 @@ namespace fusion {
 
 class ConvBNFuser : public FuseBase {
  public:
-  explicit ConvBNFuser(const std::string& conv_type) : conv_type_(conv_type) {}
+  explicit ConvBNFuser(const std::string& conv_type, bool has_bias) {
+    conv_type_ = conv_type;
+    has_bias_ = has_bias;
+  }
   void BuildPattern() override;
   void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override;
 
  private:
-  cpp::OpDesc GenOpDesc(const key2nodes_t& matched) override;
-  void ComputeAlphaAndBeta(float* scale_d,
-                           float* mean_d,
-                           float* var_d,
+  void ComputeAlphaAndBeta(const float* scale_d,
+                           const float* mean_d,
+                           const float* var_d,
                            float* alpha,
                            float* beta,
                            float eps,
@@ -50,6 +52,7 @@ class ConvBNFuser : public FuseBase {
   }
 
  private:
+  bool has_bias_{false};
   std::string conv_type_{"conv2d"};
 };
 

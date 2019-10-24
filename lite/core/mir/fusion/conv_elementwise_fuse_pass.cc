@@ -13,8 +13,6 @@
 // limitations under the License.
 
 #include "lite/core/mir/fusion/conv_elementwise_fuse_pass.h"
-#include <memory>
-#include <vector>
 #include "lite/core/mir/fusion/conv_elementwise_fuser.h"
 #include "lite/core/mir/pass_registry.h"
 
@@ -23,14 +21,12 @@ namespace lite {
 namespace mir {
 
 void ConvElementwiseFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
-  fusion::ConvElementwiseFuser fuser("conv2d");
-  fuser(graph.get());
-
-  fusion::ConvElementwiseFuser depthwise_fuser("depthwise_conv2d");
-  depthwise_fuser(graph.get());
-
-  fusion::ConvElementwiseFuser conv2d_transpose_fuser("conv2d_transpose");
-  conv2d_transpose_fuser(graph.get());
+  for (auto& op_type : {"conv2d", "depthwise_conv2d", "conv2d_transpose"}) {
+    for (auto& has_bias : {true, false}) {
+      fusion::ConvElementwiseFuser fuser(op_type, has_bias);
+      fuser(graph.get());
+    }
+  }
 }
 
 }  // namespace mir

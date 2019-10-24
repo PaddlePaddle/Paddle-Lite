@@ -13,21 +13,19 @@
 // limitations under the License.
 
 #include "lite/core/mir/fusion/conv_bn_fuse_pass.h"
-#include <memory>
-#include <vector>
 #include "lite/core/mir/fusion/conv_bn_fuser.h"
 #include "lite/core/mir/pass_registry.h"
-
 namespace paddle {
 namespace lite {
 namespace mir {
 
 void ConvBNFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
-  fusion::ConvBNFuser fuser("conv2d");
-  fuser(graph.get());
-
-  fusion::ConvBNFuser fuser2("depthwise_conv2d");
-  fuser2(graph.get());
+  for (auto& op_type : {"conv2d", "depthwise_conv2d"}) {
+    for (auto& has_bias : {true, false}) {
+      fusion::ConvBNFuser fuser(op_type, has_bias);
+      fuser(graph.get());
+    }
+  }
 }
 
 }  // namespace mir
@@ -35,5 +33,4 @@ void ConvBNFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 }  // namespace paddle
 
 REGISTER_MIR_PASS(lite_conv_bn_fuse_pass, paddle::lite::mir::ConvBNFusePass)
-    .BindTargets({TARGET(kAny)})
-    .BindKernel("elementwise_add");
+    .BindTargets({TARGET(kAny)});

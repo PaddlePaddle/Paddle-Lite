@@ -30,7 +30,8 @@ void ConvBNFuser::BuildPattern() {
   auto* conv = OpNode("conv2d", conv_type_)->assert_is_op(conv_type_);
   auto* conv_out = VarNode("conv_out")
                        ->assert_is_op_output(conv_type_, "Output")
-                       ->assert_is_op_input("batch_norm", "X");
+                       ->assert_is_op_input("batch_norm", "X")
+                       ->AsIntermediate();
 
   auto* bn_scale = VarNode("bn_scale")
                        ->assert_is_op_input("batch_norm", "Scale")
@@ -61,20 +62,24 @@ void ConvBNFuser::BuildPattern() {
                            ->assert_is_op_output("batch_norm", "SavedVariance")
                            ->AsIntermediate();
 
-  conv->LinksFrom({conv_input, conv_weight}).LinksTo({conv_out});
+  if (has_bias_) {
+    auto* conv_bias = VarNode("conv_bias")
+                          ->assert_is_op_input(conv_type_, "Bias")
+                          ->AsInput()
+                          ->AsIntermediate();
+    conv->LinksFrom({conv_input, conv_weight, conv_bias}).LinksTo({conv_out});
+  } else {
+    conv->LinksFrom({conv_input, conv_weight}).LinksTo({conv_out});
+  }
 
   bn->LinksFrom({conv_out, bn_scale, bn_bias, bn_mean, bn_var})
       .LinksTo({bn_out, bn_mean_out, bn_saved_mean, bn_saved_var, bn_var_out});
 }
 
 void ConvBNFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
-  auto op_desc = GenOpDesc(matched);
-  auto eltwise_op = LiteOpRegistry::Global().Create("elementwise_add");
-
   auto conv_instruct = matched.at("conv2d")->stmt();
   auto conv = conv_instruct->op();
   auto* scope = conv->scope();
-  auto& valid_places = conv->valid_places();
 
   auto conv_weight_t = scope->FindVar(matched.at("conv_weight")->arg()->name)
                            ->GetMutable<lite::Tensor>();
@@ -121,13 +126,18 @@ void ConvBNFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
                    "INT8 mode: Conv should has weight_scale attr");
     auto weight_scale =
         conv_op_desc->GetAttr<std::vector<float>>("weight_scale");
+    auto conv_weight_d = conv_weight_t->mutable_data<int8_t>();
     for (int i = 0; i < h; i++) {
-      weight_scale[i] *= alpha_data[i];
+      weight_scale[i] *= fabsf(alpha_data[i]);
+      if (alpha_data[i] < 0.f) {
+        auto ptr_row = conv_weight_d + i * w;
+        for (int j = 0; j < w; j++) {
+          ptr_row[j] *= -1;
+        }
+      }
     }
     // Interface like this should be abandoned.
     conv_op_desc->SetAttr("weight_scale", weight_scale);
-    auto update_conv_desc = *conv_instruct->mutable_op_info();
-    conv_instruct->ResetOp(update_conv_desc, graph->valid_places());
   } else {
     auto conv_weight_d = conv_weight_t->mutable_data<float>();
     for (int i = 0; i < h; i++) {
@@ -139,22 +149,24 @@ void ConvBNFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
   for (int i = 0; i < bias_size; i++) {
     bn_bias_d[i] += beta_data[i];
   }
-  eltwise_op->Attach(op_desc, scope);
-  auto* new_op_node = graph->GraphCreateInstructNode(eltwise_op, valid_places);
+  if (has_bias_) {
+    auto conv_bias_var_t = scope->FindVar(matched.at("conv_bias")->arg()->name)
+                               ->GetMutable<lite::Tensor>();
+    auto conv_bias_var_d = conv_bias_var_t->mutable_data<float>();
+    for (int i = 0; i < bias_size; i++) {
+      bn_bias_d[i] += conv_bias_var_d[i] * alpha_data[i];
+    }
+  }
+  conv_op_desc->SetType(conv_type_);
+  conv_op_desc->SetInput("Input", {matched.at("conv_input")->arg()->name});
+  conv_op_desc->SetInput("Filter", {matched.at("conv_weight")->arg()->name});
+  conv_op_desc->SetOutput("Output", {matched.at("bn_out")->arg()->name});
+  conv_op_desc->SetInput("Bias", {matched.at("bn_bias")->arg()->name});
+  auto update_conv_desc = *conv_instruct->mutable_op_info();
+  conv_instruct->ResetOp(update_conv_desc, graph->valid_places());
 
-  IR_NODE_LINK_TO(matched.at("conv_out"), new_op_node);
-  IR_NODE_LINK_TO(matched.at("bn_bias"), new_op_node);
-  IR_NODE_LINK_TO(new_op_node, matched.at("bn_out"));
-}
-
-cpp::OpDesc ConvBNFuser::GenOpDesc(const key2nodes_t& matched) {
-  cpp::OpDesc op_desc;
-  op_desc.SetType("elementwise_add");
-  op_desc.SetInput("X", {matched.at("conv_out")->arg()->name});
-  op_desc.SetInput("Y", {matched.at("bn_bias")->arg()->name});
-  op_desc.SetOutput("Out", {matched.at("bn_out")->arg()->name});
-  op_desc.SetAttr("axis", 1);
-  return op_desc;
+  IR_NODE_LINK_TO(matched.at("bn_bias"), matched.at("conv2d"));
+  IR_OP_VAR_LINK(matched.at("conv2d"), matched.at("bn_out"));
 }
 
 }  // namespace fusion

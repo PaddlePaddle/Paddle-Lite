@@ -33,8 +33,7 @@ void ConvElementwiseFuser::BuildPattern() {
                    ->assert_is_persistable_var();
 
   // create op nodes
-  auto* conv2d =
-      OpNode("conv2d", conv_type_)->assert_is_op(conv_type_)->AsIntermediate();
+  auto* conv2d = OpNode("conv2d", conv_type_)->assert_is_op(conv_type_);
   auto* add = OpNode("add", "elementwise_add")
                   ->assert_is_op("elementwise_add")
                   ->AsIntermediate();
@@ -50,52 +49,46 @@ void ConvElementwiseFuser::BuildPattern() {
                       ->AsOutput();
 
   // create topology.
-  std::vector<PMNode*> conv2d_inputs{filter, input};
-  std::vector<PMNode*> add_inputs{conv2d_out, bias};
-  conv2d_inputs >> *conv2d >> *conv2d_out;
-  add_inputs >> *add >> *add_out;
+  if (has_bias_) {
+    auto* conv_bias = VarNode("conv_bias")
+                          ->assert_is_op_input(conv_type_, "Bias")
+                          ->AsInput()
+                          ->AsIntermediate();
+    conv2d->LinksFrom({input, filter, conv_bias}).LinksTo({conv2d_out});
+  } else {
+    conv2d->LinksFrom({input, filter}).LinksTo({conv2d_out});
+  }
+  add->LinksFrom({conv2d_out, bias}).LinksTo({add_out});
 }
 
 void ConvElementwiseFuser::InsertNewNode(SSAGraph* graph,
                                          const key2nodes_t& matched) {
-  auto op_desc = GenOpDesc(matched);
-  auto conv_op = LiteOpRegistry::Global().Create(conv_type_);
-  auto conv_old = matched.at("conv2d")->stmt()->op();
-  auto* scope = conv_old->scope();
-  auto& valid_places = conv_old->valid_places();
-  conv_op->Attach(op_desc, scope);
+  auto conv_instruct = matched.at("conv2d")->stmt();
+  auto conv_op_desc = conv_instruct->mutable_op_info();
+  auto* scope = conv_instruct->op()->scope();
 
-  auto* new_op_node = graph->GraphCreateInstructNode(conv_op, valid_places);
+  if (has_bias_) {
+    auto bias_t = scope->FindVar(matched.at("bias")->arg()->name)
+                      ->GetMutable<lite::Tensor>();
+    auto bias_d = bias_t->mutable_data<float>();
 
-  IR_NODE_LINK_TO(matched.at("input"), new_op_node);
-  IR_NODE_LINK_TO(matched.at("filter"), new_op_node);
-  IR_NODE_LINK_TO(matched.at("bias"), new_op_node);
-  IR_NODE_LINK_TO(new_op_node, matched.at("output"));
-}
-
-cpp::OpDesc ConvElementwiseFuser::GenOpDesc(const key2nodes_t& matched) {
-  auto* desc = matched.at("conv2d")->stmt()->op_info();
-
-  cpp::OpDesc op_desc = *desc;
-  op_desc.SetType(conv_type_);
-  op_desc.SetInput("Input", {matched.at("input")->arg()->name});
-  op_desc.SetInput("Filter", {matched.at("filter")->arg()->name});
-  op_desc.SetInput("Bias", {matched.at("bias")->arg()->name});
-  op_desc.SetOutput("Output", {matched.at("output")->arg()->name});
-  // Other inputs. See operators/conv_op.h
-  std::vector<std::string> input_arg_names = desc->InputArgumentNames();
-
-  if (std::find(input_arg_names.begin(),
-                input_arg_names.end(),
-                "ResidualData") != input_arg_names.end()) {
-    op_desc.SetInput("ResidualData", desc->Input("ResidualData"));
+    auto conv_bias_var_t = scope->FindVar(matched.at("conv_bias")->arg()->name)
+                               ->GetMutable<lite::Tensor>();
+    auto conv_bias_var_d = conv_bias_var_t->mutable_data<float>();
+    for (int i = 0; i < bias_t->numel(); i++) {
+      bias_d[i] += conv_bias_var_d[i];
+    }
   }
-  // Only consider strides, padding, groups, dilations for now
-  op_desc.SetAttr("strides", desc->GetAttr<std::vector<int>>("strides"));
-  op_desc.SetAttr("paddings", desc->GetAttr<std::vector<int>>("paddings"));
-  op_desc.SetAttr("groups", desc->GetAttr<int>("groups"));
-  op_desc.SetAttr("dilations", desc->GetAttr<std::vector<int>>("dilations"));
-  return op_desc;
+  conv_op_desc->SetType(conv_type_);
+  conv_op_desc->SetInput("Input", {matched.at("input")->arg()->name});
+  conv_op_desc->SetInput("Filter", {matched.at("filter")->arg()->name});
+  conv_op_desc->SetOutput("Output", {matched.at("output")->arg()->name});
+  conv_op_desc->SetInput("Bias", {matched.at("bias")->arg()->name});
+  auto update_conv_desc = *conv_instruct->mutable_op_info();
+  conv_instruct->ResetOp(update_conv_desc, graph->valid_places());
+
+  IR_NODE_LINK_TO(matched.at("bias"), matched.at("conv2d"));
+  IR_OP_VAR_LINK(matched.at("conv2d"), matched.at("output"));
 }
 
 }  // namespace fusion

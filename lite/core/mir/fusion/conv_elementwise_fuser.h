@@ -25,16 +25,17 @@ namespace fusion {
 
 class ConvElementwiseFuser : public FuseBase {
  public:
-  explicit ConvElementwiseFuser(const std::string& conv_type) {
+  explicit ConvElementwiseFuser(const std::string& conv_type, bool has_bias) {
     conv_type_ = conv_type;
+    has_bias_ = has_bias;
   }
 
   void BuildPattern() override;
   void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override;
 
  private:
-  cpp::OpDesc GenOpDesc(const key2nodes_t& matched) override;
   std::string conv_type_;
+  bool has_bias_;
 };
 
 }  // namespace fusion
