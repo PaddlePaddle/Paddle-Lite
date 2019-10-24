@@ -85,7 +85,7 @@ void ConvElementwiseFuser::InsertNewNode(SSAGraph* graph,
   // ConvElementwiseFuser
   //   if `conv_bias` existed, store previous old `conv_bias` to
   //   `new_conv_bias`,
-  //     accumulate `elementwise_add_bias` to `new_conv_bias`.
+  //     add `elementwise_add_bias` to `new_conv_bias`.
   //   if `conv_bias` not existed, initalize `new_conv_bias` with zero value,
   //   with {conv_weight_t.dims()[0], 1, 1, 1} dimension,
   //     accumulate `elementwise_add_bias` to `new_conv_bias`.
@@ -94,7 +94,6 @@ void ConvElementwiseFuser::InsertNewNode(SSAGraph* graph,
   new_conv_bias_t.Resize({conv_weight_t->dims()[0], 1, 1, 1});
   auto new_conv_bias_d = new_conv_bias_t.mutable_data<float>();
 
-  // auto old_op_desc = old_conv_instruct->mutable_op_info();
   if (conv_has_bias_ == true && op_desc.HasInput("Bias") &&
       op_desc.Input("Bias").size() > 0) {
     auto conv_bias_var = scope->FindVar(op_desc.Input("Bias").front());
@@ -102,7 +101,7 @@ void ConvElementwiseFuser::InsertNewNode(SSAGraph* graph,
       auto old_conv_bias_t = &(conv_bias_var->Get<lite::Tensor>());
       new_conv_bias_t.CopyDataFrom(*old_conv_bias_t);
     }
-  } else {
+  } else {  // conv_has_bias_ == false
     for (unsigned int i = 0; i < new_conv_bias_t.data_size(); ++i) {
       new_conv_bias_d[i] = 0;
     }

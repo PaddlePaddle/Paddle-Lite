@@ -80,14 +80,11 @@ void ConvBNFuser::BuildPattern() {
   //   because `bn_bias` term is sure existed.
   if (false == conv_has_bias_) {
     conv->LinksFrom({conv_input, conv_weight}).LinksTo({conv_out});
-  } else if (true == conv_has_bias_) {
-    // conv_op_desc->HasAttr("enable_int8")
+  } else {  // true == conv_has_bias_
     auto* conv_bias = VarNode("conv_bias")
                           ->assert_is_op_input(conv_type_, "Bias")
                           ->AsIntermediate();
     conv->LinksFrom({conv_input, conv_weight, conv_bias}).LinksTo({conv_out});
-  } else {  // conv_has_bias(bool) unsupported value
-    LOG(FATAL) << "conv_has_bias_(bool) is invalid value";
   }
   bn->LinksFrom({conv_out, bn_scale, bn_bias, bn_mean, bn_var})
       .LinksTo({bn_out, bn_mean_out, bn_saved_mean, bn_saved_var, bn_var_out});
