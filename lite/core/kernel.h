@@ -82,8 +82,9 @@ class KernelBase {
 #endif
 
 #ifdef LITE_WITH_PROFILE
-    CHECK_GE(profile_id_, 0) << "Must set profile id first";
-    profile::ProfileBlock x(profile_id_, "kernel");
+    if (profile_id_ >= 0) {
+      profile::ProfileBlock x(profile_id_, "kernel");
+    }
 #endif
     Run();
   }
