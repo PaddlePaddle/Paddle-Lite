@@ -33,8 +33,7 @@ void ConvElementwiseFuser::BuildPattern() {
                    ->assert_is_persistable_var();
 
   // create op nodes
-  auto* conv2d =
-      OpNode("conv2d", conv_type_)->assert_is_op(conv_type_)->AsIntermediate();
+  auto* conv2d = OpNode("conv2d", conv_type_)->assert_is_op(conv_type_);
   auto* add = OpNode("add", "elementwise_add")
                   ->assert_is_op("elementwise_add")
                   ->AsIntermediate();
