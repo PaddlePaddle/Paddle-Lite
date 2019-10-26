@@ -25,11 +25,11 @@ namespace paddle {
 namespace lite {
 
 static const char TAILORD_OPS_SOURCE_LIST_FILENAME[] =
-    "/.tailored_ops_source_list";
-static const char TAILORD_OPS_LIST_NAME[] = "/.tailored_ops_list";
+    ".tailored_ops_source_list";
+static const char TAILORD_OPS_LIST_NAME[] = ".tailored_ops_list";
 static const char TAILORD_KERNELS_SOURCE_LIST_FILENAME[] =
-    "/.tailored_ops_source_list";
-static const char TAILORD_KERNELS_LIST_NAME[] = "/.tailored_kernels_list";
+    ".tailored_kernels_source_list";
+static const char TAILORD_KERNELS_LIST_NAME[] = ".tailored_kernels_list";
 
 void Predictor::SaveModel(const std::string &dir,
                           lite_api::LiteModelType model_type,
@@ -64,9 +64,9 @@ void Predictor::SaveOpKernelInfo(const std::string &model_dir) {
     ops_info.insert(op->Type());
     // parse kernel type information
     std::string kernel_type_str =
-        node.kernel()->op_type() + "," + TargetToStr(node.kernel()->target()) +
-        "," + PrecisionToStr(node.kernel()->precision()) + "," +
-        DataLayoutToStr(node.kernel()->layout()) + "," + node.kernel()->alias();
+        node.kernel()->op_type() + "," + TargetRepr(node.kernel()->target()) +
+        "," + PrecisionRepr(node.kernel()->precision()) + "," +
+        DataLayoutRepr(node.kernel()->layout()) + "," + node.kernel()->alias();
     kernels_info.insert(kernel_type_str);
   }
 
@@ -75,11 +75,12 @@ void Predictor::SaveOpKernelInfo(const std::string &model_dir) {
   auto kernel2pathmap = OpKernelInfoCollector::Global().GetKernel2PathDict();
 
   // write used op and kernel info into files
-  std::string opf_path = model_dir + TAILORD_OPS_LIST_NAME;
-  std::string opf_source_path = model_dir + TAILORD_OPS_SOURCE_LIST_FILENAME;
-  std::string kpf_path = model_dir + TAILORD_KERNELS_LIST_NAME;
+  std::string opf_path = model_dir + "/" + TAILORD_OPS_LIST_NAME;
+  std::string opf_source_path =
+      model_dir + "/" + TAILORD_OPS_SOURCE_LIST_FILENAME;
+  std::string kpf_path = model_dir + "/" + TAILORD_KERNELS_LIST_NAME;
   std::string kpf_source_path =
-      model_dir + TAILORD_KERNELS_SOURCE_LIST_FILENAME;
+      model_dir + "/" + TAILORD_KERNELS_SOURCE_LIST_FILENAME;
   std::map<std::string, std::string> op2path;
 
   std::FILE *opf = std::fopen(opf_path.c_str(), "w");
@@ -146,7 +147,7 @@ void Predictor::PrepareFeedFetch() {
   auto current_block = program_desc_.GetBlock<cpp::BlockDesc>(0);
   std::vector<cpp::OpDesc *> feeds;
   std::vector<cpp::OpDesc *> fetchs;
-  for (int i = 0; i < current_block->OpsSize(); i++) {
+  for (size_t i = 0; i < current_block->OpsSize(); i++) {
     auto op = current_block->GetOp<cpp::OpDesc>(i);
     if (op->Type() == "feed") {
       feeds.push_back(op);
@@ -156,11 +157,11 @@ void Predictor::PrepareFeedFetch() {
   }
   input_names_.resize(feeds.size());
   output_names_.resize(fetchs.size());
-  for (int i = 0; i < feeds.size(); i++) {
+  for (size_t i = 0; i < feeds.size(); i++) {
     input_names_[feeds[i]->GetAttr<int>("col")] =
         feeds[i]->Output("Out").front();
   }
-  for (int i = 0; i < fetchs.size(); i++) {
+  for (size_t i = 0; i < fetchs.size(); i++) {
     output_names_[fetchs[i]->GetAttr<int>("col")] =
         fetchs[i]->Input("X").front();
   }
@@ -276,7 +277,7 @@ lite::Tensor *Predictor::GetInputByName(const std::string &name) {
   if (element == input_names_.end()) {
     LOG(ERROR) << "Model do not have input named with: [" << name
                << "], model's inputs include:";
-    for (int i = 0; i < input_names_.size(); i++) {
+    for (size_t i = 0; i < input_names_.size(); i++) {
       LOG(ERROR) << "[" << input_names_[i] << "]";
     }
     return nullptr;
