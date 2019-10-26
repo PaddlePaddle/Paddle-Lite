@@ -40,28 +40,33 @@ class OpKernelInfoCollector {
   }
   void AddOp2path(const std::string &op_name, const std::string &op_path) {
     size_t index = op_path.find_last_of('/');
-    op2path.insert(std::pair<std::string, std::string>(
-        op_name, op_path.substr(index + 1)));
+    if (index != std::string::npos) {
+      op2path_.insert(std::pair<std::string, std::string>(
+          op_name, op_path.substr(index + 1)));
+    }
   }
   void AddKernel2path(const std::string &kernel_name,
                       const std::string &kernel_path) {
     size_t index = kernel_path.find_last_of('/');
-    std::string path = kernel_path;
-    kernel2path.insert(std::pair<std::string, std::string>(
-        kernel_name, kernel_path.substr(index + 1)));
+    if (index != std::string::npos) {
+      kernel2path_.insert(std::pair<std::string, std::string>(
+          kernel_name, kernel_path.substr(index + 1)));
+    }
   }
   void SetKernel2path(
       const std::map<std::string, std::string> &kernel2path_map) {
-    kernel2path = kernel2path_map;
+    kernel2path_ = kernel2path_map;
   }
-  const std::map<std::string, std::string> &Getop2path() { return op2path; }
-  const std::map<std::string, std::string> &Getkernel2path() {
-    return kernel2path;
+  const std::map<std::string, std::string> &GetOp2PathDict() {
+    return op2path_;
+  }
+  const std::map<std::string, std::string> &GetKernel2PathDict() {
+    return kernel2path_;
   }
 
  private:
-  std::map<std::string, std::string> op2path;
-  std::map<std::string, std::string> kernel2path;
+  std::map<std::string, std::string> op2path_;
+  std::map<std::string, std::string> kernel2path_;
 };
 
 namespace paddle {

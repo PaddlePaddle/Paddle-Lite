@@ -15,6 +15,7 @@
 #include "lite/api/cxx_api.h"
 #include <algorithm>
 #include <memory>
+#include <set>
 #include <string>
 #include <utility>
 #include <vector>
@@ -22,6 +23,13 @@
 
 namespace paddle {
 namespace lite {
+
+static const char TAILORD_OPS_SOURCE_LIST_FILENAME[] =
+    "/.tailored_ops_source_list";
+static const char TAILORD_OPS_LIST_NAME[] = "/.tailored_ops_list";
+static const char TAILORD_KERNELS_SOURCE_LIST_FILENAME[] =
+    "/.tailored_ops_source_list";
+static const char TAILORD_KERNELS_LIST_NAME[] = "/.tailored_kernels_list";
 
 void Predictor::SaveModel(const std::string &dir,
                           lite_api::LiteModelType model_type,
@@ -47,55 +55,31 @@ void Predictor::SaveModel(const std::string &dir,
 }
 
 void Predictor::SaveOpKernelInfo(const std::string &model_dir) {
-  std::vector<std::string> op_info;
-  std::vector<std::string> kernel_info;
+  std::set<std::string> ops_info;
+  std::set<std::string> kernels_info;
   const auto &instructions_ = program_->instructions();
   for (auto &node : instructions_) {
     // parse op type infomation
     auto op = node.op()->op_info();
-    op_info.push_back(op->Type());
+    ops_info.insert(op->Type());
     // parse kernel type information
-    auto kernel_type = node.kernel()->SerializedKernelType();
-    std::vector<std::string> kernel_result;
-    while (!kernel_type.empty()) {
-      size_t next_offset = kernel_type.find("/");
-      kernel_result.push_back(kernel_type.substr(0, next_offset));
-      if (next_offset == std::string::npos) {
-        break;
-      } else {
-        kernel_type = kernel_type.substr(next_offset + 1);
-      }
-    }
-
-    int target = std::stoi(kernel_result[2]);
-    int precision = std::stoi(kernel_result[3]);
-    int layout = std::stoi(kernel_result[4]);
     std::string kernel_type_str =
-        kernel_result[0] + "," +
-        TargetRepr(static_cast<TargetType>(target)).c_str() + "," +
-        PrecisionRepr(static_cast<PrecisionType>(precision)).c_str() + "," +
-        DataLayoutRepr(static_cast<DataLayoutType>(layout)).c_str() + "," +
-        kernel_result[1];
-    kernel_info.push_back(kernel_type_str);
+        node.kernel()->op_type() + "," + TargetToStr(node.kernel()->target()) +
+        "," + PrecisionToStr(node.kernel()->precision()) + "," +
+        DataLayoutToStr(node.kernel()->layout()) + "," + node.kernel()->alias();
+    kernels_info.insert(kernel_type_str);
   }
 
-  // remove repeated elements
-  std::sort(op_info.begin(), op_info.end());
-  op_info.erase(std::unique(op_info.begin(), op_info.end()), op_info.end());
-
-  std::sort(kernel_info.begin(), kernel_info.end());
-  kernel_info.erase(unique(kernel_info.begin(), kernel_info.end()),
-                    kernel_info.end());
-
   // get souce_file name from op type and kernel type
-  auto op2pathmap = OpKernelInfoCollector::Global().Getop2path();
-  auto kernel2pathmap = OpKernelInfoCollector::Global().Getkernel2path();
+  auto op2pathmap = OpKernelInfoCollector::Global().GetOp2PathDict();
+  auto kernel2pathmap = OpKernelInfoCollector::Global().GetKernel2PathDict();
 
   // write used op and kernel info into files
-  std::string opf_path = model_dir + "/.tailored_ops_list";
-  std::string opf_source_path = model_dir + "/.tailored_ops_source_list";
-  std::string kpf_path = model_dir + "/.tailored_kernels_list";
-  std::string kpf_source_path = model_dir + "/.tailored_kernels_source_list";
+  std::string opf_path = model_dir + TAILORD_OPS_LIST_NAME;
+  std::string opf_source_path = model_dir + TAILORD_OPS_SOURCE_LIST_FILENAME;
+  std::string kpf_path = model_dir + TAILORD_KERNELS_LIST_NAME;
+  std::string kpf_source_path =
+      model_dir + TAILORD_KERNELS_SOURCE_LIST_FILENAME;
   std::map<std::string, std::string> op2path;
 
   std::FILE *opf = std::fopen(opf_path.c_str(), "w");
@@ -107,37 +91,40 @@ void Predictor::SaveOpKernelInfo(const std::string &model_dir) {
 
   if (nullptr == opf || nullptr == opf_source || nullptr == opf ||
       nullptr == kpf_source) {
-    LOG(INFO) << "create info file error";
-    exit(0);
-  } else {
-    for (size_t i = 0; i < op_info.size(); ++i) {
-      // write OP_type and OP_path into file
-      fputs(op_info[i].c_str(), opf);
-      fputc('\n', opf);
-      std::string op_path = op2pathmap[op_info[i]];
-      fputs(op_path.c_str(), opf_source);
-      fputc('\n', opf_source);
-    }
-
-    std::fclose(opf_source);
-    std::fclose(opf);
-    // write Kernel_type and Kernel_path into file
-    for (size_t j = 0; j < kernel_info.size(); ++j) {
-      fputs(kernel_info[j].c_str(), kpf);
-      fputc('\n', kpf);
-      std::string kernel_path = kernel2pathmap[kernel_info[j]];
-      fputs(kernel_path.c_str(), kpf_source);
-      fputc('\n', kpf_source);
-      if (kernel_path == "conv_compute.cc") {
-        fputs(
-            "conv_depthwise.cc\nconv_direct.cc\nconv_gemmlike.cc\nconv_"
-            "winograd.cc\n",
-            kpf_source);
-      }
-    }
-    std::fclose(kpf_source);
-    std::fclose(kpf);
+    LOG(FATAL) << "failed to create info file into: " << model_dir;
   }
+  for (auto op_info = ops_info.begin(); op_info != ops_info.end(); op_info++) {
+    fputs(op_info->c_str(), opf);
+    fputc('\n', opf);
+    std::string op_path = op2pathmap[*op_info];
+    fputs(op_path.c_str(), opf_source);
+    fputc('\n', opf_source);
+  }
+  std::fclose(opf_source);
+  std::fclose(opf);
+  LOG(INFO) << "operators information of tailored model is stored into: "
+            << opf_path;
+
+  // write Kernel_type and Kernel_path into file
+  for (auto kernel_info = kernels_info.begin();
+       kernel_info != kernels_info.end();
+       kernel_info++) {
+    fputs(kernel_info->c_str(), kpf);
+    fputc('\n', kpf);
+    std::string kernel_path = kernel2pathmap[*kernel_info];
+    fputs(kernel_path.c_str(), kpf_source);
+    fputc('\n', kpf_source);
+    if (kernel_path == "conv_compute.cc") {
+      fputs(
+          "conv_depthwise.cc\nconv_direct.cc\nconv_gemmlike.cc\nconv_"
+          "winograd.cc\n",
+          kpf_source);
+    }
+  }
+  std::fclose(kpf_source);
+  std::fclose(kpf);
+  LOG(INFO) << "kernels information of tailored model is stored into: "
+            << kpf_path;
 }
 
 lite::Tensor *Predictor::GetInput(size_t offset) {

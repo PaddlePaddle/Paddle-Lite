@@ -140,8 +140,8 @@ with open(dest_path, 'w') as f:
     logging.info("write kernel list to %s" % dest_path)
     f.write('\n'.join(out_lines))
 
-with open(kernelmap_path, 'w') as f1:
+with open(kernelmap_path, 'w') as fd:
     logging.info("write kernel map to %s" % dest_path)
     kernel_src_map_lines.append('  {"  ", "  "}')
     kernel_src_map_lines.append('};')
-    f1.write('\n'.join(kernel_src_map_lines))
+    fd.write('\n'.join(kernel_src_map_lines))

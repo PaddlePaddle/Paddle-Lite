@@ -33,8 +33,8 @@ for line in open(ops_list_path):
 
 if tailored == "ON":
     minlines = set()
-    with open(minops_list_path) as f1:
-        for line in f1:
+    with open(minops_list_path) as fd:
+        for line in fd:
             minlines.add(line.strip())
 for path in paths:
     str_info = open(path.strip()).read()

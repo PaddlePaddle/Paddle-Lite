@@ -28,8 +28,8 @@ out_lines = [
 ]
 minlines = set()
 if tailored == "ON":
-    with open(minkernels_list_path) as f1:
-        for line in f1:
+    with open(minkernels_list_path) as fd:
+        for line in fd:
             minlines.add(line.strip())
 with open(ops_list_path) as f:
     paths = set([path for path in f])
