@@ -14,10 +14,9 @@
 
 #include "lite/kernels/npu/bridges/test_helper.h"
 #include <utility>
-#include "ai_ddk_lib/include/graph/op/all_ops.h"
+#include "lite/backends/npu/builder.h"
 #include "lite/core/op_registry.h"
 #include "lite/kernels/npu/bridges/registry.h"
-#include "lite/kernels/npu/bridges/utils.h"
 #include "lite/operators/graph_op.h"
 
 namespace paddle {
@@ -63,7 +62,7 @@ void LauchOp(const std::shared_ptr<lite::OpLite> op,
   auto weight = scope->Var(weight_var_name)->GetMutable<Tensor>();
   weight->set_persistable(true);
   weight->set_precision(PRECISION(kInt8));
-  CHECK(BuildModel(graph_inputs, graph_outputs, weight));
+  CHECK(lite::npu::BuildModel(graph_inputs, graph_outputs, weight));
   CHECK_GT(weight->numel(), 0);
   CHECK_NE(weight->data<uint8_t>(), 0);
 
@@ -94,7 +93,7 @@ void LauchOp(const std::shared_ptr<lite::OpLite> op,
   graph_kernel->Launch();
 
   // release all of resources of generated model
-  OpList::Global().clear();
+  lite::npu::OpList::Global().clear();
 }
 
 }  // namespace bridges

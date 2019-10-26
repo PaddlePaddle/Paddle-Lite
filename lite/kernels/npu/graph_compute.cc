@@ -126,7 +126,7 @@ void GraphCompute::Run() {
   CHECK_EQ(hiai::AI_SUCCESS,
            model_client_->Process(
                model_context_, npu_itensors_, npu_otensors_, 1000, istamp));
-  LOG(INFO) << "[NPU] Process cost " << GetCurrentUS() - start_time << " us";
+  VLOG(3) << "[NPU] Process cost " << GetCurrentUS() - start_time << " us";
 
   for (size_t i = 0; i < param.outputs.size(); ++i) {
     auto* otensor = param.outputs[i];

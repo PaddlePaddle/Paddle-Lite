@@ -22,11 +22,21 @@ if ((NOT LITE_ON_TINY_PUBLISH) AND (ARM_TARGET_OS STREQUAL "android"))
     DEPS ${light_lib_DEPS}
     ARM_DEPS ${arm_kernels} NPU_DEPS ${npu_kernels})
     target_link_libraries(paddle_light_api_shared ${light_lib_DEPS} ${arm_kernels} ${npu_kernels})
+    if (LITE_WITH_NPU)
+        # Strips the symbols of our protobuf functions to fix the conflicts during
+        # loading HIAI builder libs (libhiai_ir.so and libhiai_ir_build.so)
+        set(LINK_FLAGS "-Wl,--version-script ${PADDLE_SOURCE_DIR}/lite/core/lite.map")
+        set_target_properties(paddle_light_api_shared PROPERTIES LINK_FLAGS "${LINK_FLAGS}")
+    endif()
 else()
     if ((ARM_TARGET_OS STREQUAL "android") OR (ARM_TARGET_OS STREQUAL "armlinux"))
         add_library(paddle_light_api_shared SHARED "")
         target_sources(paddle_light_api_shared PUBLIC ${__lite_cc_files} paddle_api.cc light_api.cc light_api_impl.cc)
         add_dependencies(paddle_light_api_shared op_list_h kernel_list_h)
+        if (LITE_WITH_NPU)
+            # Need to add HIAI runtime libs (libhiai.so) dependency
+            target_link_libraries(paddle_light_api_shared ${npu_runtime_libs})
+        endif()
     endif()
 endif()
 

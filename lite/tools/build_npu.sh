@@ -5,12 +5,13 @@ set -ex
 ARM_OS="android"                    # android only yet
 ARM_ABI="armv8"                     # armv8, armv7
 ARM_LANG="gcc"                      # gcc only yet
-ANDROID_STL="c++_shared"            # c++_shared, c++_static
+ANDROID_STL="c++_static"            # c++_shared, c++_static
 DDK_ROOT="$(pwd)/ai_ddk_lib/"       # HIAI SDK from https://developer.huawei.com/consumer/cn/hiai/
 TARGET_NAME="test_npu_pass"         # default target
 BUILD_EXTRA=OFF                     # ON(with sequence ops)/OFF
 WITH_JAVA=ON                        # ON(build jar and jni so)/OFF
 WITH_TESTING=ON                     # ON/OFF
+SHUTDOWN_LOG=OFF                    # ON(disable logging)/OFF
 ON_TINY_PUBLISH=OFF                 # ON(tiny publish)/OFF(full publish)
 
 function print_usage {
@@ -75,6 +76,7 @@ function build_npu {
     fi
     if [[ "${ON_TINY_PUBLISH}" == "ON" ]]; then
         WITH_TESTING=OFF
+        SHUTDOWN_LOG=ON
         publish_dir="tiny_publish"
     else
         publish_dir="full_publish"
@@ -83,7 +85,7 @@ function build_npu {
     mkdir -p $build_dir
     cd $build_dir
 
-    # NPU libs need API LEVEL 24 above
+    # NPU libs need API LEVEL 23 above
     prepare_workspace
     cmake .. \
         -DWITH_GPU=OFF \
@@ -97,9 +99,10 @@ function build_npu {
         -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
         -DWITH_TESTING=${WITH_TESTING} \
         -DLITE_WITH_JAVA=${WITH_JAVA} \
+        -DLITE_SHUTDOWN_LOG=${SHUTDOWN_LOG} \
         -DLITE_WITH_NPU=ON \
         -DLITE_ON_TINY_PUBLISH=${ON_TINY_PUBLISH} \
-        -DANDROID_API_LEVEL=24 \
+        -DANDROID_API_LEVEL=23 \
         -DARM_TARGET_OS=${ARM_OS} \
         -DARM_TARGET_ARCH_ABI=${ARM_ABI} \
         -DARM_TARGET_LANG=${ARM_LANG} \
