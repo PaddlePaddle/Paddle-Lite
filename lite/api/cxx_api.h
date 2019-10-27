@@ -89,7 +89,9 @@ class LITE_API Predictor {
   // This method is disabled in mobile, for unnecessary dependencies required.
   void SaveModel(
       const std::string& dir,
-      lite_api::LiteModelType model_type = lite_api::LiteModelType::kProtobuf);
+      lite_api::LiteModelType model_type = lite_api::LiteModelType::kProtobuf,
+      bool record_info = false);
+  void SaveOpKernelInfo(const std::string& model_dir);
 
 #ifdef LITE_WITH_TRAIN
   void Run(const std::vector<framework::Tensor>& tensors) {
@@ -137,9 +139,10 @@ class CxxPaddleApiImpl : public lite_api::PaddlePredictor {
   std::unique_ptr<lite_api::Tensor> GetInputByName(
       const std::string& name) override;
 
-  void SaveOptimizedModel(const std::string& model_dir,
-                          lite_api::LiteModelType model_type =
-                              lite_api::LiteModelType::kProtobuf) override;
+  void SaveOptimizedModel(
+      const std::string& model_dir,
+      lite_api::LiteModelType model_type = lite_api::LiteModelType::kProtobuf,
+      bool record_info = false) override;
 
  private:
   Predictor raw_predictor_;

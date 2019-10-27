@@ -65,8 +65,9 @@ std::unique_ptr<lite_api::Tensor> CxxPaddleApiImpl::GetInputByName(
 }
 
 void CxxPaddleApiImpl::SaveOptimizedModel(const std::string &model_dir,
-                                          lite_api::LiteModelType model_type) {
-  raw_predictor_.SaveModel(model_dir, model_type);
+                                          lite_api::LiteModelType model_type,
+                                          bool record_info) {
+  raw_predictor_.SaveModel(model_dir, model_type, record_info);
 }
 
 }  // namespace lite
