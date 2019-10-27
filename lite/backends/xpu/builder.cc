@@ -140,7 +140,15 @@ std::shared_ptr<xtcl::xNDArray> CvtTensor(lite::Tensor* in_tensor,
   return out_tensor;
 }
 
-// Build graph to model, and output model data into lite tensor
+// Build the XPU subgraph to the XPU model, store the model data into the
+// weight tensor of the graph op, and the model data will be loaded again
+// by the graph computing kernel when the graph op is executed for inference.
+// Due to the lack of XPU APIs for building and outputing the model data,
+// the compiled XPU runtime object will be managed by the global variable
+// 'DeviceInfo' and the key name for finding the runtime object will be
+// stored in the weight tensor of graph op.
+// TODO(hong19860320) Compile the XPU subgraph and output the compiled model
+// data to the weight tensor of graph op.
 bool BuildModel(
     std::shared_ptr<xtcl::network::xNetworkBuilder> builder,
     std::shared_ptr<xtcl::network::xTensorCompiler::ParamNDArrayMap> params,

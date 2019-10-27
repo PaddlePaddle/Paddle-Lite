@@ -20,7 +20,12 @@ namespace paddle {
 namespace lite {
 namespace xpu {
 
-// Extract model data and restore model runtime
+// Extract the model data and recover the XPU model for inference, the function
+// is called by the graph computing kernel when the graph op is executed.
+// Due to the lack of XPU APIs for loading and recovering the XPU model from
+// memory, the key name is obtained from the weight tensor of graph op, to get
+// the runtime object for inference from the global variable 'DeviceInfo'.
+// TODO(hong19860320) Recover the XPU model from the weight tensor of graph op.
 bool LoadModel(const lite::Tensor &model,
                std::shared_ptr<xtcl::network::xRuntimeInstance> *runtime) {
   LOG(INFO) << "[XPU] Load Model.";

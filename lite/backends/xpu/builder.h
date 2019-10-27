@@ -49,7 +49,6 @@ std::shared_ptr<xtcl::xNDArray> CvtTensor(
     PrecisionType in_ptype = PRECISION(kFloat),
     DataLayoutType in_ltype = DATALAYOUT(kNCHW));
 
-// Build network graph to model data, and store model data into lite tensor
 bool BuildModel(
     std::shared_ptr<xtcl::network::xNetworkBuilder> builder,
     std::shared_ptr<xtcl::network::xTensorCompiler::ParamNDArrayMap> params,
