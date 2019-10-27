@@ -71,6 +71,8 @@ add_custom_command(
   COMMAND python ${CMAKE_SOURCE_DIR}/lite/tools/cmake_tools/parse_kernel_registry.py
   ${kernels_src_list}
   ${CMAKE_SOURCE_DIR}/lite/api/paddle_use_kernels.h
+  "${LITE_OPTMODEL_DIR}/.tailored_kernels_list"
+  LITE_BUILD_TAILOR
   OUTPUT kernels.h # not a real path to the output to force it execute every time.
   )
 # A trick to generate the paddle_use_ops.h
@@ -78,6 +80,8 @@ add_custom_command(
   COMMAND python ${CMAKE_SOURCE_DIR}/lite/tools/cmake_tools/parse_op_registry.py
   ${ops_src_list}
   ${CMAKE_SOURCE_DIR}/lite/api/paddle_use_ops.h
+  "${LITE_OPTMODEL_DIR}/.tailored_ops_list"
+  LITE_BUILD_TAILOR
   OUTPUT ops.h # not a real path to the output to force it execute every time.
   )
 # generate fake kernels for memory_optimize_tool
@@ -85,6 +89,7 @@ add_custom_command(
   COMMAND python ${CMAKE_SOURCE_DIR}/lite/tools/cmake_tools/create_fake_kernel_registry.py
   ${kernels_src_list}
   ${CMAKE_BINARY_DIR}/all_kernel_faked.cc
+  ${CMAKE_BINARY_DIR}/kernel_src_map.h
   OUTPUT all_kernel_faked.cc # not a real path to the output to force it execute every time.
   )
 add_custom_target(op_list_h DEPENDS ops.h)
