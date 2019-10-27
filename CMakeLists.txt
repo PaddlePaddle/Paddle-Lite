@@ -70,6 +70,7 @@ lite_option(LITE_ON_TINY_PUBLISH "Publish tiny predictor lib." OFF)
 lite_option(LITE_ON_MODEL_OPTIMIZE_TOOL "Build the model optimize tool" OFF)
 # publish options
 lite_option(LITE_BUILD_EXTRA "Enable extra algorithm support in Lite, both kernels and operators" OFF)
+lite_option(LITE_BUILD_TAILOR "Enable tailoring library according to model" OFF)
 
 # TODO(Superjomn) Remove WITH_ANAKIN option if not needed latter.
 if(ANDROID OR IOS OR ARMLINUX)

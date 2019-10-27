@@ -216,7 +216,7 @@ bool test_sgemm(bool tra,
       print_tensor(tc_backup);
       LOG(INFO) << "basic result: ";
       print_tensor(tc_basic);
-      LOG(INFO) << "saber result: ";
+      LOG(INFO) << "lite result: ";
       print_tensor(tc);
       LOG(INFO) << "diff result: ";
       print_tensor(tdiff);

@@ -17,6 +17,8 @@ BUILD_EXTRA=OFF
 BUILD_JAVA=ON
 BUILD_PYTHON=OFF
 BUILD_DIR=$(pwd)
+OPTMODEL_DIR=""
+BUILD_TAILOR=OFF
 
 readonly THIRDPARTY_TAR=https://paddle-inference-dist.bj.bcebos.com/PaddleLite/third-party-05b862.tar.gz
 
@@ -94,6 +96,8 @@ function make_tiny_publish_so {
       -DLITE_ON_TINY_PUBLISH=ON \
       -DANDROID_STL_TYPE=$android_stl \
       -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
+      -DLITE_BUILD_TAILOR=$BUILD_TAILOR \
+      -DLITE_OPTMODEL_DIR=$OPTMODEL_DIR \
       -DARM_TARGET_OS=${os} -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
 
   make publish_inference -j$NUM_PROC
@@ -133,6 +137,8 @@ function make_full_publish_so {
       -DLITE_SHUTDOWN_LOG=ON \
       -DANDROID_STL_TYPE=$android_stl \
       -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
+      -DLITE_BUILD_TAILOR=$BUILD_TAILOR \
+      -DLITE_OPTMODEL_DIR=$OPTMODEL_DIR \
       -DARM_TARGET_OS=${os} -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
 
   make publish_inference -j4
@@ -317,6 +323,14 @@ function main {
                 BUILD_DIR="${i#*=}"
                 shift
 		            ;;
+            --opt_model_dir=*)
+                OPTMODEL_DIR="${i#*=}"
+                shift
+                ;;
+            --build_tailor=*)
+                BUILD_TAILOR="${i#*=}"
+                shift
+                ;;
             tiny_publish)
                 make_tiny_publish_so $ARM_OS $ARM_ABI $ARM_LANG $ANDROID_STL
                 shift

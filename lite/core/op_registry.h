@@ -32,6 +32,43 @@
 
 using LiteType = paddle::lite::Type;
 
+class OpKernelInfoCollector {
+ public:
+  static OpKernelInfoCollector &Global() {
+    static auto *x = new OpKernelInfoCollector;
+    return *x;
+  }
+  void AddOp2path(const std::string &op_name, const std::string &op_path) {
+    size_t index = op_path.find_last_of('/');
+    if (index != std::string::npos) {
+      op2path_.insert(std::pair<std::string, std::string>(
+          op_name, op_path.substr(index + 1)));
+    }
+  }
+  void AddKernel2path(const std::string &kernel_name,
+                      const std::string &kernel_path) {
+    size_t index = kernel_path.find_last_of('/');
+    if (index != std::string::npos) {
+      kernel2path_.insert(std::pair<std::string, std::string>(
+          kernel_name, kernel_path.substr(index + 1)));
+    }
+  }
+  void SetKernel2path(
+      const std::map<std::string, std::string> &kernel2path_map) {
+    kernel2path_ = kernel2path_map;
+  }
+  const std::map<std::string, std::string> &GetOp2PathDict() {
+    return op2path_;
+  }
+  const std::map<std::string, std::string> &GetKernel2PathDict() {
+    return kernel2path_;
+  }
+
+ private:
+  std::map<std::string, std::string> op2path_;
+  std::map<std::string, std::string> kernel2path_;
+};
+
 namespace paddle {
 namespace lite {
 
@@ -59,7 +96,6 @@ class OpLiteRegistor : public Registor<OpClass> {
               });
         }) {}
 };
-
 template <TargetType Target, PrecisionType Precision, DataLayoutType Layout>
 using KernelRegistryForTarget =
     Factory<KernelLite<Target, Precision, Layout>, std::unique_ptr<KernelBase>>;
@@ -287,6 +323,7 @@ class KernelRegistor : public lite::Registor<KernelType> {
   static paddle::lite::OpLiteRegistor<OpClass> LITE_OP_REGISTER_INSTANCE( \
       op_type__)(#op_type__);                                             \
   int touch_op_##op_type__() {                                            \
+    OpKernelInfoCollector::Global().AddOp2path(#op_type__, __FILE__);     \
     return LITE_OP_REGISTER_INSTANCE(op_type__).Touch();                  \
   }
 
@@ -312,6 +349,9 @@ class KernelRegistor : public lite::Registor<KernelType> {
   static KernelClass LITE_KERNEL_INSTANCE(                                     \
       op_type__, target__, precision__, layout__, alias__);                    \
   int touch_##op_type__##target__##precision__##layout__##alias__() {          \
+    OpKernelInfoCollector::Global().AddKernel2path(                            \
+        #op_type__ "," #target__ "," #precision__ "," #layout__ "," #alias__,  \
+        __FILE__);                                                             \
     LITE_KERNEL_INSTANCE(op_type__, target__, precision__, layout__, alias__)  \
         .Touch();                                                              \
     return 0;                                                                  \

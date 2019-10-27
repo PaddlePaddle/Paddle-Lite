@@ -145,7 +145,8 @@ lod_t Tensor::lod() const { return ctensor(raw_tensor_)->lod(); }
 void Tensor::SetLoD(const lod_t &lod) { tensor(raw_tensor_)->set_lod(lod); }
 
 void PaddlePredictor::SaveOptimizedModel(const std::string &model_dir,
-                                         LiteModelType model_type) {
+                                         LiteModelType model_type,
+                                         bool record_info) {
   LOG(FATAL)
       << "The SaveOptimizedModel API is only supported by CxxConfig predictor.";
 }
