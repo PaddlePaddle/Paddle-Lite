@@ -85,7 +85,7 @@ function build_npu {
     mkdir -p $build_dir
     cd $build_dir
 
-    # NPU libs need API LEVEL 23 above
+    # NPU libs need API LEVEL 24 above
     prepare_workspace
     cmake .. \
         -DWITH_GPU=OFF \
@@ -102,7 +102,7 @@ function build_npu {
         -DLITE_SHUTDOWN_LOG=${SHUTDOWN_LOG} \
         -DLITE_WITH_NPU=ON \
         -DLITE_ON_TINY_PUBLISH=${ON_TINY_PUBLISH} \
-        -DANDROID_API_LEVEL=23 \
+        -DANDROID_API_LEVEL=24 \
         -DARM_TARGET_OS=${ARM_OS} \
         -DARM_TARGET_ARCH_ABI=${ARM_ABI} \
         -DARM_TARGET_LANG=${ARM_LANG} \

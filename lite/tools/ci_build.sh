@@ -451,7 +451,7 @@ function cmake_npu {
         -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
         -DWITH_TESTING=ON \
         -DLITE_WITH_NPU=ON \
-        -DANDROID_API_LEVEL=23 \
+        -DANDROID_API_LEVEL=24 \
         -DLITE_BUILD_EXTRA=ON \
         -DNPU_DDK_ROOT="${build_dir}/../ai_ddk_lib/" \
         -DARM_TARGET_OS=$1 -DARM_TARGET_ARCH_ABI=$2 -DARM_TARGET_LANG=$3
