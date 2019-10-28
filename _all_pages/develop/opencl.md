@@ -31,7 +31,7 @@ rm ./lite/api/paddle_use_ops.h
 
 - **运行文件准备**
 
-下面以android、ARMv8、gcc的环境，为例，介绍如何在手机上执行基于OpenCL的ARM GPU推理过程。
+下面以android、ARMv8、gcc的环境为例，介绍如何在手机上执行基于OpenCL的ARM GPU推理过程。
 
 **注意：** 以下命令均在Lite源码根目录下运行。
 
@@ -51,7 +51,7 @@ adb shell mkdir -p /data/local/tmp/opencl/mobilenet_v1
 adb push build.lite.android.armv8.gcc.opencl/third_party/install/mobilenet_v1/* /data/local/tmp/opencl/mobilenet_v1/
 
 # 将OpenCL测试程序(如test_mobilenetv1)推送到/data/local/tmp/opencl目录下
-adb push build_opencl/lite/api/test_mobilenetv1 /data/local/tmp/opencl
+adb push build.lite.android.armv8.gcc.opencl/lite/api/test_mobilenetv1 /data/local/tmp/opencl
 ```
 
 - **执行OpenCL推理过程**
@@ -106,4 +106,4 @@ auto* out = predictor.GetOutput(0);
 
 # 其它注意
 
-因OpenCL有两种形式：cl::Image2D和cl::Buffer，如果出现 segmentationfault 的情况，很有可能是因为OpenCL在选择kernel的时候，上一个kernel的输出是cl::Buffer或者cl::Image2D的格式，下一个kernel的输入是cl::Image2D或cl::Buffer，导致不匹配出现的问题。
+因OpenCL有两种形式：cl::Image2D和cl::Buffer，如果出现 segmentationFault 的情况，很有可能是因为OpenCL在选择kernel的时候，上一个kernel的输出是cl::Buffer或者cl::Image2D的格式，下一个kernel的输入是cl::Image2D或cl::Buffer，导致不匹配出现的问题。
