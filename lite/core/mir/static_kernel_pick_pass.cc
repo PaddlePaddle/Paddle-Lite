@@ -24,8 +24,8 @@ namespace paddle {
 namespace lite {
 namespace mir {
 
-bool KernelScoreCmp(const std::pair<size_t, std::unique_ptr<KernelBase>>& a,
-                    const std::pair<size_t, std::unique_ptr<KernelBase>>& b) {
+bool KernelScoreCmp(const std::pair<float, std::unique_ptr<KernelBase>>& a,
+                    const std::pair<float, std::unique_ptr<KernelBase>>& b) {
   return a.first > b.first;
 }
 
@@ -44,12 +44,12 @@ void StaticKernelPickPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
     auto& instruct = node.AsStmt();
 
     // Get candidate kernels
-    std::vector<std::pair<size_t, std::unique_ptr<KernelBase>>> scored;
+    std::vector<std::pair<float, std::unique_ptr<KernelBase>>> scored;
     CHECK(!instruct.kernels().empty()) << "No kernels found for "
                                        << instruct.op_type();
     VLOG(4) << "instruct.kernels().size():" << instruct.kernels().size();
     for (auto&& kernel : instruct.kernels()) {
-      size_t score = KernelGrade(*kernel);
+      float score = KernelGrade(*kernel, graph->valid_places());
       VLOG(4) << "kernel->summary():" << kernel->summary()
               << " score:" << score;
       scored.emplace_back(score, std::move(kernel));
@@ -99,7 +99,7 @@ void StaticKernelPickPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
         instruct.ResetOp(update_desc, graph->valid_places());
         scored.clear();
         for (auto&& kernel : instruct.kernels()) {
-          size_t score = KernelGrade(*kernel);
+          float score = KernelGrade(*kernel, graph->valid_places());
           scored.emplace_back(score, std::move(kernel));
         }
         std::sort(scored.begin(), scored.end(), KernelScoreCmp);

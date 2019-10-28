@@ -241,6 +241,10 @@ set(host_kernels CACHE INTERNAL "host kernels")
 
 set(kernels_src_list "${CMAKE_BINARY_DIR}/kernels_src_list.txt")
 file(WRITE ${kernels_src_list} "") # clean
+if(LITE_BUILD_TAILOR)
+  set(tailored_kernels_list_path "${LITE_OPTMODEL_DIR}/.tailored_kernels_source_list")
+  file(STRINGS ${tailored_kernels_list_path} tailored_kernels_list)
+endif()
 # add a kernel for some specific device
 # device: one of (Host, ARM, X86, NPU, FPGA, OPENCL, CUDA)
 # level: one of (basic, extra)
@@ -251,6 +255,15 @@ function(add_kernel TARGET device level)
         LIGHT_DEPS HVY_DEPS EXCLUDE_COMPILE_DEPS
         ARGS)
     cmake_parse_arguments(args "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+
+    if(LITE_BUILD_TAILOR)
+      foreach(src ${args_SRCS})
+        list (FIND tailored_kernels_list ${src} _index)
+        if (${_index} EQUAL -1)
+          return()
+        endif()
+      endforeach()
+    endif()
 
     if ("${level}" STREQUAL "extra" AND (NOT LITE_BUILD_EXTRA))
         return()
@@ -338,6 +351,10 @@ endfunction()
 set(ops CACHE INTERNAL "ops")
 set(ops_src_list "${CMAKE_BINARY_DIR}/ops_src_list.txt")
 file(WRITE ${ops_src_list} "") # clean
+if(LITE_BUILD_TAILOR)
+  set(tailored_ops_list_path "${LITE_OPTMODEL_DIR}/.tailored_ops_source_list")
+  file(STRINGS ${tailored_ops_list_path} tailored_ops_list)
+endif()
 # add an operator
 # level: one of (basic, extra)
 function(add_operator TARGET level)
@@ -348,15 +365,23 @@ function(add_operator TARGET level)
         ARGS)
     cmake_parse_arguments(args "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
+
     if ("${level}" STREQUAL "extra" AND (NOT LITE_BUILD_EXTRA))
         return()
     endif()
 
-    set(ops "${ops};${TARGET}" CACHE INTERNAL "source")
 
     foreach(src ${args_SRCS})
+      if(LITE_BUILD_TAILOR)
+        list(FIND tailored_ops_list ${src} _index)
+        if (${_index} EQUAL -1)
+          return()
+        endif()
+      endif()
       file(APPEND ${ops_src_list} "${CMAKE_CURRENT_SOURCE_DIR}/${src}\n")
     endforeach()
+
+    set(ops "${ops};${TARGET}" CACHE INTERNAL "source")
 
     lite_cc_library(${TARGET} SRCS ${args_SRCS}
               DEPS ${args_DEPS}

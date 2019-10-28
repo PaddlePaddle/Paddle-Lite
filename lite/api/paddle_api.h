@@ -43,10 +43,17 @@ struct LITE_API Tensor {
   const T* data() const;
 
   template <typename T>
-  T* mutable_data() const;
+  T* mutable_data(TargetType type = TargetType::kHost) const;
 
+  template <typename T, TargetType type = TargetType::kHost>
+  void CopyFromCpu(const T* data);
+
+  template <typename T>
+  void CopyToCpu(T* data);
   /// Shape of the tensor.
   shape_t shape() const;
+  TargetType target() const;
+  PrecisionType precision() const;
 
   // LoD of the tensor
   lod_t lod() const;
@@ -90,7 +97,8 @@ class LITE_API PaddlePredictor {
   /// CxxConfig, and the persisted model can be reused for MobileConfig.
   virtual void SaveOptimizedModel(
       const std::string& model_dir,
-      LiteModelType model_type = LiteModelType::kProtobuf);
+      LiteModelType model_type = LiteModelType::kProtobuf,
+      bool record_info = false);
 
   virtual ~PaddlePredictor() = default;
 };
@@ -116,14 +124,12 @@ class LITE_API ConfigBase {
 
 /// CxxConfig is the config for the Full feature predictor.
 class LITE_API CxxConfig : public ConfigBase {
-  Place preferred_place_;
   std::vector<Place> valid_places_;
   std::string model_file_;
   std::string param_file_;
   bool model_from_memory_{false};
 
  public:
-  void set_preferred_place(const Place& x) { preferred_place_ = x; }
   void set_valid_places(const std::vector<Place>& x) { valid_places_ = x; }
   void set_model_file(const std::string& path) { model_file_ = path; }
   void set_param_file(const std::string& path) { param_file_ = path; }
@@ -136,7 +142,6 @@ class LITE_API CxxConfig : public ConfigBase {
     model_from_memory_ = true;
   }
 
-  const Place& preferred_place() const { return preferred_place_; }
   const std::vector<Place>& valid_places() const { return valid_places_; }
   std::string model_file() const { return model_file_; }
   std::string param_file() const { return param_file_; }

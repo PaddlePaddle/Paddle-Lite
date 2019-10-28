@@ -50,14 +50,12 @@ class LITE_API Predictor {
       const std::string& model_path,
       const std::string& model_file_path,
       const std::string& param_file_path,
-      const Place& prefer_place,
       const std::vector<Place>& valid_places,
       const std::vector<std::string>& passes = {},
       lite_api::LiteModelType model_type = lite_api::LiteModelType::kProtobuf,
       bool memory_from_memory = false);
 
   void Build(const cpp::ProgramDesc& desc,
-             const Place& prefer_place,
              const std::vector<Place>& valid_places,
              const std::vector<std::string>& passes = {});
 
@@ -82,7 +80,7 @@ class LITE_API Predictor {
 
   // Get offset-th col of fetch results.
   const lite::Tensor* GetOutput(size_t offset) const;
-  const std::vector<lite::Tensor>* GetOutputs() const;
+  std::vector<const lite::Tensor*> GetOutputs() const;
 
   const cpp::ProgramDesc& program_desc() const;
   const lite::Tensor* GetTensor(const std::string& name) const;
@@ -91,7 +89,9 @@ class LITE_API Predictor {
   // This method is disabled in mobile, for unnecessary dependencies required.
   void SaveModel(
       const std::string& dir,
-      lite_api::LiteModelType model_type = lite_api::LiteModelType::kProtobuf);
+      lite_api::LiteModelType model_type = lite_api::LiteModelType::kProtobuf,
+      bool record_info = false);
+  void SaveOpKernelInfo(const std::string& model_dir);
 
 #ifdef LITE_WITH_TRAIN
   void Run(const std::vector<framework::Tensor>& tensors) {
@@ -109,9 +109,43 @@ class LITE_API Predictor {
   const Scope* exec_scope_;
   std::unique_ptr<RuntimeProgram> program_;
   bool program_generated_{false};
-  std::map<size_t, std::string> input_names_;
-  std::map<std::string, size_t> idx2feeds_;
-  std::map<size_t, std::string> output_names_;
+  std::vector<std::string> input_names_;
+  std::vector<std::string> output_names_;
+};
+
+class CxxPaddleApiImpl : public lite_api::PaddlePredictor {
+ public:
+  CxxPaddleApiImpl() {}
+
+  /// Create a new predictor from a config.
+  void Init(const lite_api::CxxConfig& config);
+
+  std::unique_ptr<lite_api::Tensor> GetInput(int i) override;
+
+  std::unique_ptr<const lite_api::Tensor> GetOutput(int i) const override;
+
+  void Run() override;
+
+  std::string GetVersion() const override;
+
+  // get inputs names and get outputs names
+  std::vector<std::string> GetInputNames() override;
+  std::vector<std::string> GetOutputNames() override;
+
+  std::unique_ptr<const lite_api::Tensor> GetTensor(
+      const std::string& name) const override;
+
+  // Get InputTebsor by name
+  std::unique_ptr<lite_api::Tensor> GetInputByName(
+      const std::string& name) override;
+
+  void SaveOptimizedModel(
+      const std::string& model_dir,
+      lite_api::LiteModelType model_type = lite_api::LiteModelType::kProtobuf,
+      bool record_info = false) override;
+
+ private:
+  Predictor raw_predictor_;
 };
 
 /*
@@ -132,10 +166,8 @@ class LITE_API Predictor {
 class LITE_API CXXTrainer {
  public:
   CXXTrainer(const std::shared_ptr<lite::Scope>& root_scope,
-             const Place& preferred_place,
              const std::vector<Place>& valid_places)
       : scope_(root_scope),
-        preferred_place_(preferred_place),
         valid_places_(valid_places),
         main_program_executor_(Predictor(scope_)) {}
 
@@ -144,7 +176,7 @@ class LITE_API CXXTrainer {
   // NOTE Just support to execute the 0-th block currently.
   Predictor& BuildMainProgramExecutor(const framework::proto::ProgramDesc& desc,
                                       int block_id = 0) {
-    main_program_executor_.Build(desc, preferred_place_, valid_places_);
+    main_program_executor_.Build(desc, valid_places_);
     return main_program_executor_;
   }
 
@@ -162,14 +194,12 @@ class LITE_API CXXTrainer {
   void RunStartupProgram(const framework::proto::ProgramDesc& desc,
                          int block_id = 0) {
     Predictor exe(scope_);
-    exe.Build(desc, preferred_place_, valid_places_);
+    exe.Build(desc,  valid_places_);
     exe.Run();
   }
 
  private:
   std::shared_ptr<lite::Scope> scope_;
-
-  Place preferred_place_;
   std::vector<Place> valid_places_;
 
   // The training program.

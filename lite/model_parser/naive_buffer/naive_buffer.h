@@ -126,6 +126,41 @@ using UInt64Builder = PrimaryBuilder<uint64_t>;
 using Float32Builder = PrimaryBuilder<float>;
 using Float64Builder = PrimaryBuilder<double>;
 
+template <typename Primary>
+class PrimaryListBuilder : public FieldBuilder {
+  std::vector<Primary> data_;
+
+ public:
+  using value_type = Primary;
+
+  explicit PrimaryListBuilder(BinaryTable* table) : FieldBuilder(table) {}
+  PrimaryListBuilder(BinaryTable* table, const std::vector<Primary>& val)
+      : FieldBuilder(table), data_(val) {}
+
+  /// Set data.
+  void set(const std::vector<Primary>& x) { data_ = x; }
+
+  const std::vector<Primary>& data() const { return data_; }
+
+  /// Save information to the corresponding BinaryTable.
+  void Save() override;
+
+  /// Load information from the corresponding BinaryTable.
+  void Load() override;
+
+  /// Number of elements.
+  size_t size() const { return data_.size(); }
+
+  Type type() const override {
+    return core::StdTypeToRepr<std::vector<Primary>>();
+  }
+
+  /// clear builder
+  void Clear() { data_.clear(); }
+
+  ~PrimaryListBuilder() = default;
+};
+
 /*
  * Builder for all the primary types. int32, float, bool and so on.
  */
@@ -342,6 +377,36 @@ template <typename Primary>
 void PrimaryBuilder<Primary>::Load() {
   memcpy(&data_, table()->cursor(), sizeof(value_type));
   table()->Consume(sizeof(value_type));
+}
+
+template <typename Primary>
+void PrimaryListBuilder<Primary>::Load() {
+  CHECK(data_.empty()) << "Duplicate load";
+  // Load number of elements first.
+  uint64_t num_elems{};
+  memcpy(&num_elems, table()->cursor(), sizeof(uint64_t));
+  table()->Consume(sizeof(uint64_t));
+
+  data_.resize(num_elems);
+  for (uint64_t i = 0; i < num_elems; i++) {
+    memcpy(&data_[i], table()->cursor(), sizeof(value_type));
+    table()->Consume(sizeof(value_type));
+  }
+}
+
+template <typename Primary>
+void PrimaryListBuilder<Primary>::Save() {
+  // store number of elements in the head.
+  uint64_t num_elems = size();
+  table()->Require(sizeof(uint64_t));
+  memcpy(table()->cursor(), &num_elems, sizeof(uint64_t));
+  table()->Consume(sizeof(uint64_t));
+
+  table()->Require(num_elems * sizeof(value_type));
+  memcpy(table()->cursor(),
+         reinterpret_cast<byte_t*>(&data_[0]),
+         num_elems * sizeof(value_type));
+  table()->Consume(num_elems * sizeof(value_type));
 }
 
 template <typename EnumType>

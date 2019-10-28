@@ -25,8 +25,15 @@
 #include "lite/tests/utils/timer.h"
 
 typedef paddle::lite::Tensor Tensor;
+using paddle::lite::Timer;
 
-DEFINE_int32(cluster, 3, "cluster id");
+DEFINE_int32(power_mode,
+             3,
+             "power mode: "
+             "0 for POWER_HIGH;"
+             "1 for POWER_LOW;"
+             "2 for POWER_FULL;"
+             "3 for NO_BIND");
 DEFINE_int32(threads, 1, "threads num");
 DEFINE_int32(warmup, 0, "warmup times");
 DEFINE_int32(repeats, 1, "repeats times");
@@ -146,7 +153,7 @@ bool test_gemm_int8(bool tra,
                                           1,
                                           tc_basic_fp32.numel());
   }
-  lite::test::Timer t0;
+  Timer t0;
   //! compute
   double ops = 2.0 * m * n * k;
   std::unique_ptr<paddle::lite::KernelContext> ctx1(
@@ -202,7 +209,7 @@ bool test_gemm_int8(bool tra,
     t0.end();
   }
   LOG(INFO) << "gemm_int8_int8 output: M: " << m << ", N: " << n << ", K: " << k
-            << ", cluster: " << cls << ", threads: " << ths
+            << ", power_mode: " << cls << ", threads: " << ths
             << ", GOPS: " << ops * 1e-9f
             << " GOPS, avg time: " << t0.get_average_ms()
             << " ms, min time: " << t0.get_min_time()
@@ -229,7 +236,7 @@ bool test_gemm_int8(bool tra,
     t0.end();
   }
   LOG(INFO) << "gemm_int8_fp32 output: M: " << m << ", N: " << n << ", K: " << k
-            << ", cluster: " << cls << ", threads: " << ths
+            << ", power_mode: " << cls << ", threads: " << ths
             << ", GOPS: " << ops * 1e-9f
             << " GOPS, avg time: " << t0.get_average_ms()
             << " ms, min time: " << t0.get_min_time()
@@ -251,7 +258,7 @@ bool test_gemm_int8(bool tra,
       tensor_diff(tc_basic_fp32, tc_fp32, tdiff);
       LOG(INFO) << "basic result: ";
       print_tensor(tc_basic_fp32);
-      LOG(INFO) << "saber result: ";
+      LOG(INFO) << "lite result: ";
       print_tensor(tc_fp32);
       LOG(INFO) << "diff result: ";
       print_tensor(tdiff);
@@ -290,7 +297,7 @@ bool test_gemm_int8(bool tra,
       if (!check) {
         LOG(WARNING) << "int8 basic result";
         print_tensor(tc_basic_int8);
-        LOG(WARNING) << "int8 saber result";
+        LOG(WARNING) << "int8 lite result";
         print_tensor(tc_int8);
         LOG(WARNING) << "int8 diff tensor";
         print_tensor(tdiff);
@@ -323,7 +330,7 @@ TEST(TestLiteGemmInt8, gemm_prepacked_int8) {
                                                k,
                                                has_bias,
                                                has_relu,
-                                               FLAGS_cluster,
+                                               FLAGS_power_mode,
                                                th);
                     if (flag) {
                       LOG(INFO) << "test m = " << m << ", n=" << n
@@ -364,7 +371,7 @@ TEST(TestGemmInt8Custom, gemm_prepacked_int8_custom) {
                              FLAGS_K,
                              FLAGS_flag_bias,
                              FLAGS_flag_relu,
-                             FLAGS_cluster,
+                             FLAGS_power_mode,
                              FLAGS_threads);
   if (!flag) {
     LOG(FATAL) << "test m = " << FLAGS_M << ", n=" << FLAGS_N
