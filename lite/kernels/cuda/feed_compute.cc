@@ -45,7 +45,7 @@ void FeedCompute::Run() {
 REGISTER_LITE_KERNEL(
     feed, kCUDA, kFloat, kNCHW, paddle::lite::kernels::cuda::FeedCompute, nchw)
     .BindInput("X",
-               {LiteType::GetTensorTy(TARGET(kCUDA),
+               {LiteType::GetTensorTy(TARGET(kHost),
                                       PRECISION(kFloat),
                                       DATALAYOUT(kNCHW))})
     .BindOutput("Out",
@@ -57,7 +57,7 @@ REGISTER_LITE_KERNEL(
 REGISTER_LITE_KERNEL(
     feed, kCUDA, kFloat, kNHWC, paddle::lite::kernels::cuda::FeedCompute, nhwc)
     .BindInput("X",
-               {LiteType::GetTensorTy(TARGET(kCUDA),
+               {LiteType::GetTensorTy(TARGET(kHost),
                                       PRECISION(kFloat),
                                       DATALAYOUT(kNHWC))})
     .BindOutput("Out",

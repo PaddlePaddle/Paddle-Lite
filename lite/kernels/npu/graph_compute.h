@@ -15,6 +15,7 @@
 #pragma once
 
 #include <memory>
+#include <string>
 #include <vector>
 #include "ai_ddk_lib/include/HiAiModelManagerService.h"
 #include "lite/core/kernel.h"
@@ -39,15 +40,15 @@ class GraphCompute : public KernelLite<TARGET(kNPU), PRECISION(kFloat)> {
   bool input_dims_changed() const;
 
  private:
-  hiai::AiModelMngerClient* exec_;
+  std::shared_ptr<hiai::AiModelMngerClient> model_client_;
+  std::string model_name_;
+  hiai::AiContext model_context_;
+
   std::vector<hiai::TensorDimension> npu_idims_;
   std::vector<hiai::TensorDimension> npu_odims_;
 
   std::vector<std::shared_ptr<hiai::AiTensor>> npu_itensors_;
   std::vector<std::shared_ptr<hiai::AiTensor>> npu_otensors_;
-
-  // TODO(TJ): find better place
-  hiai::AiContext npu_context_;
 };
 
 }  // namespace npu

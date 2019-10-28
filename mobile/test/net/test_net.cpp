@@ -102,7 +102,8 @@ void test(int argc, char *argv[]) {
 
   auto time1 = time();
   if (paddle_mobile.Load("./checked_model/model", "./checked_model/params",
-                         fuse, quantification, 1, true, quantification_fold)) {
+                         fuse, quantification, 1, is_lod,
+                         quantification_fold)) {
     auto time2 = time();
     std::cout << "auto-test"
               << " load-time-cost :" << time_diff(time1, time2) << "ms"
@@ -185,8 +186,8 @@ void test(int argc, char *argv[]) {
       if (len == 0) {
         continue;
       }
-      int width = cl_image->ImageDims()[0];
-      int height = cl_image->ImageDims()[1];
+      size_t width = cl_image->ImageDims()[0];
+      size_t height = cl_image->ImageDims()[1];
       paddle_mobile::framework::half_t *image_data =
           new paddle_mobile::framework::half_t[height * width * 4];
       cl_int err;

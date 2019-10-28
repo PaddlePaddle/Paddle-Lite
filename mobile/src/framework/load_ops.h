@@ -377,3 +377,6 @@ LOAD_OP1(range, CPU);
 #ifdef REDUCE_PROD_OP
 LOAD_OP1(reduce_prod, CPU);
 #endif
+#ifdef PIXEL_SHUFFLE_OP
+LOAD_OP1(pixel_shuffle, GPU_CL);
+#endif

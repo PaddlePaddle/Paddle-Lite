@@ -15,6 +15,8 @@
 #include "lite/kernels/x86/dropout_compute.h"
 #include <gtest/gtest.h>
 #include <iostream>
+#include <memory>
+#include <utility>
 #include <vector>
 #include "lite/core/op_registry.h"
 
@@ -60,7 +62,9 @@ TEST(dropout_x86, run_test) {
   param.is_test = true;
   param.fix_seed = true;
   param.output = &out;
-
+  std::unique_ptr<KernelContext> ctx(new KernelContext);
+  ctx->As<X86Context>();
+  dropout.SetContext(std::move(ctx));
   dropout.SetParam(param);
   dropout.Run();
 

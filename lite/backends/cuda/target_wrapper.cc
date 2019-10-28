@@ -74,5 +74,16 @@ void TargetWrapperCuda::MemcpyAsync(void* dst,
   }
 }
 
+void TargetWrapperCuda::MemsetSync(void* devPtr, int value, size_t count) {
+  CUDA_CALL(cudaMemset(devPtr, value, count));
+}
+
+void TargetWrapperCuda::MemsetAsync(void* devPtr,
+                                    int value,
+                                    size_t count,
+                                    const stream_t& stream) {
+  CUDA_CALL(cudaMemsetAsync(devPtr, value, count, stream));
+}
+
 }  // namespace lite
 }  // namespace paddle

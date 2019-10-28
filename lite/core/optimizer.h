@@ -28,6 +28,9 @@
 #ifdef LITE_WITH_NPU
 #include "lite/core/mir/subgraph/generate_npu_program_pass.h"
 #endif
+#ifdef LITE_WITH_XPU
+#include "lite/core/mir/subgraph/generate_xpu_program_pass.h"
+#endif
 
 namespace paddle {
 namespace lite {
@@ -106,7 +109,8 @@ class Optimizer {
 
            "runtime_context_assign_pass",
            "argument_type_display_pass",  //
-#ifndef LITE_WITH_OPENCL
+#if !defined(LITE_WITH_OPENCL) && !defined(LITE_WITH_NPU) && \
+    !defined(LITE_WITH_XPU)
            // TODO(ysh329): cause CL_INVALID_MEM_OBJECT when setArg in kernel
            "memory_optimize_pass",
 #endif
@@ -117,26 +121,31 @@ class Optimizer {
     exec_scope_ = program.exec_scope();
   }
 
-  void KernelPickPreferPlace(const Place& place) {
-    auto* pass = mir::PassManager::Global().LookUp<mir::StaticKernelPickPass>(
-        "static_kernel_pick_pass");
-    CHECK(pass);
-    pass->SetPreferPlace(place);
-  }
-
   const lite::Scope* exec_scope() const { return exec_scope_; }
 
   // Generate a new program based on the mir graph.
   std::unique_ptr<RuntimeProgram> GenRuntimeProgram() {
+#if defined(LITE_WITH_NPU) || defined(LITE_WITH_XPU)
+    auto target_place = Place{
 #ifdef LITE_WITH_NPU
-    if (std::find(valid_places_.begin(),
-                  valid_places_.end(),
-                  Place{TARGET(kNPU), PRECISION(kFloat)}) !=
+        TARGET(kNPU),
+#endif
+#ifdef LITE_WITH_XPU
+        TARGET(kXPU),
+#endif
+        PRECISION(kFloat)};
+    if (std::find(valid_places_.begin(), valid_places_.end(), target_place) !=
         valid_places_.end()) {
-      CheckInputDimsNotEmpty(exec_scope_);
+#ifdef LITE_WITH_NPU
       auto pass = mir::PassManager::Global()
                       .LookUp<mir::subgraph::GenerateNPUProgramPass>(
                           "generate_npu_program_pass");
+#endif
+#ifdef LITE_WITH_XPU
+      auto pass = mir::PassManager::Global()
+                      .LookUp<mir::subgraph::GenerateXPUProgramPass>(
+                          "generate_xpu_program_pass");
+#endif
       try {
         pass->Apply(graph_);
         auto program = pass->GenProgram();
@@ -144,7 +153,8 @@ class Optimizer {
         program->set_exec_scope(exec_scope_);
         return program;
       } catch (...) {
-        LOG(WARNING) << "Build NPU graph failed";
+        LOG(WARNING) << "Build " << TargetToStr(target_place.target)
+                     << " program failed!";
       }
     }
 #endif
@@ -155,19 +165,6 @@ class Optimizer {
     CHECK(exec_scope_);
     program->set_exec_scope(exec_scope_);
     return program;
-  }
-
-  // check the input dims in the scope, must not be empty
-  void CheckInputDimsNotEmpty(const lite::Scope* scope) {
-    CHECK(scope);
-    auto* feed_var = scope->FindVar("feed");
-    CHECK(feed_var) << "no feed variable in exec_scope: " << scope;
-    auto* feed_tensor_list = feed_var->GetMutable<std::vector<lite::Tensor>>();
-    CHECK_GE(feed_tensor_list->size(), 1);
-    for (size_t i = 0; i < feed_tensor_list->size(); ++i) {
-      CHECK(!feed_tensor_list->at(i).dims().empty())
-          << "Input " << i << " dims can not be empty.";
-    }
   }
 
   void InitTargetTypeTransformPass() {
@@ -211,7 +208,8 @@ class Optimizer {
       }
       matched = matched && PassMatchesKernels(*pass);
       if (!matched) {
-        LOG(INFO) << "   - Skip " << x << " because the target does not match.";
+        LOG(INFO) << "   - Skip " << x
+                  << " because the target or kernel does not match.";
       } else {
         pass->Apply(graph_);
         LOG(INFO) << "== Finished running: " << x;
