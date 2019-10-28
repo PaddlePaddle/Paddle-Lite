@@ -50,6 +50,471 @@ void sgemv_bias_relu(const bool transA,
                      const float *x,
                      float *y,
                      const float *bias);
+#ifdef __aarch64__
+void sgemv_trans(const int M,
+                 const int N,
+                 const float *A,
+                 const float *x,
+                 float *y,
+                 bool flag_bias,
+                 const float *bias,
+                 bool flag_relu) {
+  int m_cnt16 = M >> 4;
+  int m_cnt8 = (M & 15) >> 3;
+  int m_cnt4 = (M & 15 & 7) >> 2;
+  int m_remain = M & 15 & 7 & 3;
+  int n_cnt = N >> 2;
+  int n_remain = N & 3;
+  int flag_remain = m_remain > 0;
+  float zbias[16] = {0.f,
+                     0.f,
+                     0.f,
+                     0.f,
+                     0.f,
+                     0.f,
+                     0.f,
+                     0.f,
+                     0.f,
+                     0.f,
+                     0.f,
+                     0.f,
+                     0.f,
+                     0.f,
+                     0.f,
+                     0.f};
+  const int lda = M << 2;
+  const int lda_s = M;
+  const int slda = lda * sizeof(float);
+  const int slda_s = lda_s * sizeof(float);
+  const float *a0 = nullptr;
+  const float *a1 = nullptr;
+  const float *a2 = nullptr;
+  const float *a3 = nullptr;
+
+  for (int i = 0; i < m_cnt16; ++i) {
+    a0 = A + i * 16;
+    a1 = a0 + lda_s;
+    a2 = a1 + lda_s;
+    a3 = a2 + lda_s;
+    const float *bias_ptr = flag_bias ? bias : zbias;
+    const float *x_ptr = x;
+    int cnt = n_cnt;
+    int remain = n_remain;
+    asm volatile(
+        "movi v30.16b, #0\n"
+        "ld1  {v0.4s,  v1.4s,  v2.4s,  v3.4s},  [%[bias]]\n"
+        "ld1  {v4.4s,  v5.4s,  v6.4s,  v7.4s},  [%[a0]], %[lda]\n"
+        "ld1  {v8.4s,  v9.4s,  v10.4s, v11.4s}, [%[a1]], %[lda]\n"
+        "ld1  {v12.4s, v13.4s, v14.4s, v15.4s}, [%[a2]], %[lda]\n"
+        "ld1  {v16.4s, v17.4s, v18.4s, v19.4s}, [%[a3]], %[lda]\n"
+        "cbz  %w[cnt], 2f\n"
+        "1:\n"
+        "ld1  {v20.4s}, [%[x]], #16 \n"
+        "fmla v0.4s, v4.4s,  v20.s[0]\n"
+        "fmla v1.4s, v5.4s,  v20.s[0]\n"
+        "fmla v2.4s, v6.4s,  v20.s[0]\n"
+        "fmla v3.4s, v7.4s,  v20.s[0]\n"
+        "ld1  {v4.4s, v5.4s, v6.4s, v7.4s}, [%[a0]], %[lda]\n"
+        "fmla v0.4s, v8.4s,  v20.s[1]\n"
+        "fmla v1.4s, v9.4s,  v20.s[1]\n"
+        "fmla v2.4s, v10.4s, v20.s[1]\n"
+        "fmla v3.4s, v11.4s, v20.s[1]\n"
+        "ld1  {v8.4s, v9.4s, v10.4s, v11.4s}, [%[a1]], %[lda]\n"
+        "fmla v0.4s, v12.4s, v20.s[2]\n"
+        "fmla v1.4s, v13.4s, v20.s[2]\n"
+        "fmla v2.4s, v14.4s, v20.s[2]\n"
+        "fmla v3.4s, v15.4s, v20.s[2]\n"
+        "subs %w[cnt], %w[cnt], #1\n"
+        "ld1  {v12.4s, v13.4s, v14.4s, v15.4s}, [%[a2]], %[lda]\n"
+        "fmla v0.4s, v16.4s, v20.s[3]\n"
+        "fmla v1.4s, v17.4s, v20.s[3]\n"
+        "fmla v2.4s, v18.4s, v20.s[3]\n"
+        "fmla v3.4s, v19.4s, v20.s[3]\n"
+        "ld1  {v16.4s, v17.4s, v18.4s, v19.4s}, [%[a3]], %[lda]\n"
+        "bne  1b\n"
+        //! remain
+        "2:\n"
+        "cbz  %w[remain],   4f\n"
+        "sub  %[a0], %[a0], %[lda]\n"
+        "add  %[a0], %[a0], %[ldas]\n"
+        "3:\n"
+        "ld1  {v20.s}[0],   [%[x]], #4\n"
+        "fmla v0.4s, v4.4s, v20.s[0] \n"
+        "fmla v1.4s, v5.4s, v20.s[0] \n"
+        "subs %w[remain],   %w[remain], #1\n"
+        "fmla v2.4s, v6.4s, v20.s[0] \n"
+        "fmla v3.4s, v7.4s, v20.s[0] \n"
+        "ld1  {v4.4s, v5.4s, v6.4s, v7.4s}, [%[a0]], %[ldas]\n"
+        "bne  3b\n"
+        "4:\n"
+        "cbz  %w[relu], 5f\n"
+        "fmax v0.4s, v0.4s, v30.4s\n"
+        "fmax v1.4s, v1.4s, v30.4s\n"
+        "fmax v2.4s, v2.4s, v30.4s\n"
+        "fmax v3.4s, v3.4s, v30.4s\n"
+        "5:\n"
+        "st1  {v0.4s, v1.4s, v2.4s, v3.4s}, [%[y]], #64\n"
+        : [a0] "+r"(a0),
+          [a1] "+r"(a1),
+          [a2] "+r"(a2),
+          [a3] "+r"(a3),
+          [x] "+r"(x_ptr),
+          [y] "+r"(y),
+          [cnt] "+r"(cnt),
+          [remain] "+r"(remain)
+        : [bias] "r"(bias_ptr),
+          [lda] "r"(slda),
+          [ldas] "r"(slda_s),
+          [relu] "r"(flag_relu)
+        : "v0",
+          "v1",
+          "v2",
+          "v3",
+          "v4",
+          "v5",
+          "v6",
+          "v7",
+          "v8",
+          "v9",
+          "v10",
+          "v11",
+          "v12",
+          "v13",
+          "v14",
+          "v15",
+          "v16",
+          "v17",
+          "v18",
+          "v19",
+          "v20",
+          "v30",
+          "cc",
+          "memory");
+    bias += 16;
+  }
+  A += m_cnt16 << 4;
+  for (int i = 0; i < m_cnt8; ++i) {
+    a0 = A + i * 8;
+    a1 = a0 + lda_s;
+    a2 = a1 + lda_s;
+    a3 = a2 + lda_s;
+    const float *bias_ptr = flag_bias ? bias : zbias;
+    const float *x_ptr = x;
+    int cnt = n_cnt;
+    int remain = n_remain;
+    asm volatile(
+        "movi v30.16b, #0\n"
+        "ld1  {v0.4s,  v1.4s},  [%[bias]]\n"
+        "ld1  {v4.4s,  v5.4s},  [%[a0]], %[lda]\n"
+        "ld1  {v8.4s,  v9.4s},  [%[a1]], %[lda]\n"
+        "ld1  {v12.4s, v13.4s}, [%[a2]], %[lda]\n"
+        "ld1  {v16.4s, v17.4s}, [%[a3]], %[lda]\n"
+        "cbz  %w[cnt], 2f\n"
+        "1:\n"
+        "ld1  {v20.4s},  [%[x]], #16\n"
+        "fmla v0.4s, v4.4s, v20.s[0]\n"
+        "fmla v1.4s, v5.4s, v20.s[0]\n"
+        "ld1  {v4.4s, v5.4s}, [%[a0]], %[lda]\n"
+        "fmla v0.4s, v8.4s, v20.s[1]\n"
+        "fmla v1.4s, v9.4s, v20.s[1]\n"
+        "ld1  {v8.4s, v9.4s}, [%[a1]], %[lda]\n"
+        "fmla v0.4s, v12.4s, v20.s[2]\n"
+        "fmla v1.4s, v13.4s, v20.s[2]\n"
+        "subs %w[cnt], %w[cnt], #1\n"
+        "ld1  {v12.4s, v13.4s}, [%[a2]], %[lda]\n"
+        "fmla v0.4s, v16.4s, v20.s[3]\n"
+        "fmla v1.4s, v17.4s, v20.s[3]\n"
+        "ld1  {v16.4s, v17.4s}, [%[a3]], %[lda]\n"
+        "bne  1b\n"
+        //! remain
+        "2:\n"
+        "cbz  %w[remain], 4f\n"
+        "sub  %[a0], %[a0], %[lda]\n"
+        "add  %[a0], %[a0], %[ldas]\n"
+        "3:\n"
+        "ld1  {v20.s}[0], [%[x]], #4\n"
+        "fmla v0.4s, v4.4s, v20.s[0]\n"
+        "fmla v1.4s, v5.4s, v20.s[0]\n"
+        "subs %w[remain], %w[remain], #1\n"
+        "ld1  {v4.4s, v5.4s}, [%[a0]], %[ldas]\n"
+        "bne  3b\n"
+        "4:\n"
+        "cbz  %w[relu], 5f\n"
+        "fmax v0.4s, v0.4s, v30.4s\n"
+        "fmax v1.4s, v1.4s, v30.4s\n"
+        "5:\n"
+        "st1  {v0.4s, v1.4s}, [%[y]], #32\n"
+        : [a0] "+r"(a0),
+          [a1] "+r"(a1),
+          [a2] "+r"(a2),
+          [a3] "+r"(a3),
+          [x] "+r"(x_ptr),
+          [y] "+r"(y),
+          [cnt] "+r"(cnt),
+          [remain] "+r"(remain)
+        : [bias] "r"(bias_ptr),
+          [lda] "r"(slda),
+          [ldas] "r"(slda_s),
+          [relu] "r"(flag_relu)
+        : "v0",
+          "v1",
+          "v4",
+          "v5",
+          "v8",
+          "v9",
+          "v12",
+          "v13",
+          "v16",
+          "v17",
+          "v20",
+          "v30",
+          "cc",
+          "memory");
+    bias += 8;
+  }
+  A += m_cnt8 << 3;
+  for (int i = 0; i < m_cnt4 + flag_remain; ++i) {
+    a0 = A + i * 4;
+    a1 = a0 + lda_s;
+    a2 = a1 + lda_s;
+    a3 = a2 + lda_s;
+    const float *bias_ptr = flag_bias ? bias : zbias;
+    const float *x_ptr = x;
+    int cnt = n_cnt;
+    int remain = n_remain;
+    int flag = (i == m_cnt4);
+    asm volatile(
+        "movi v1.16b, #0\n"
+        "ld1  {v0.4s}, [%[bias]]\n"
+        "ld1  {v4.4s}, [%[a0]], %[lda]\n"
+        "ld1  {v8.4s}, [%[a1]], %[lda]\n"
+        "ld1  {v12.4s}, [%[a2]], %[lda]\n"
+        "ld1  {v16.4s}, [%[a3]], %[lda]\n"
+        "movi v30.16b, #0\n"
+        "cbz  %w[cnt], 2f\n"
+        "1:\n"
+        "ld1  {v20.4s}, [%[x]], #16\n"
+        "fmla v0.4s, v4.4s, v20.s[0]\n"
+        "ld1  {v4.4s}, [%[a0]], %[lda]\n"
+        "fmla v1.4s, v8.4s, v20.s[1]\n"
+        "ld1  {v8.4s}, [%[a1]], %[lda]\n"
+        "fmla v0.4s, v12.4s, v20.s[2]\n"
+        "subs %w[cnt], %w[cnt], #1\n"
+        "ld1  {v12.4s}, [%[a2]], %[lda]\n"
+        "fmla v1.4s, v16.4s, v20.s[3]\n"
+        "ld1  {v16.4s}, [%[a3]], %[lda]\n"
+        "bne  1b\n"
+        "fadd v0.4s, v0.4s, v1.4s\n"
+        //! remain
+        "2:\n"
+        "cbz  %w[remain], 4f\n"
+        "sub  %[a0], %[a0], %[lda]\n"
+        "add  %[a0], %[a0], %[ldas]\n"
+        "3:\n"
+        "ld1  {v20.s}[0], [%[x]], #4\n"
+        "fmla v0.4s, v4.4s, v20.s[0]\n"
+        "subs %w[remain], %w[remain], #1\n"
+        "ld1  {v4.4s}, [%[a0]], %[ldas]\n"
+        "bne  3b\n"
+        "4:\n"
+        "cbz  %w[relu], 8f\n"
+        "fmax v0.4s, v0.4s, v30.4s\n"
+        "8:\n"
+        //！ check mremain
+        "cbnz %w[flag], 5f\n"
+        "st1  {v0.4s}, [%[y]], #16\n"
+        "b 9f\n"
+        //！ switch mremain num
+        "5:\n"
+        "cmp  %w[mremain], #3\n"  // remain 3
+        "bne  6f\n"
+        "st1  {v0.2s}, [%[y]], #8\n"
+        "st1  {v0.s}[2], [%[y]]\n"
+        "b 9f\n"
+        "6:\n"  // remain 2
+        "cmp  %w[mremain], #2\n"
+        "bne  7f\n"
+        "st1  {v0.2s}, [%[y]]\n"
+        "b 9f\n"
+        "7:\n"  // remain 1
+        "st1  {v0.s}[0], [%[y]]\n"
+        "9:\n"
+        : [a0] "+r"(a0),
+          [a1] "+r"(a1),
+          [a2] "+r"(a2),
+          [a3] "+r"(a3),
+          [x] "+r"(x_ptr),
+          [y] "+r"(y),
+          [cnt] "+r"(cnt),
+          [remain] "+r"(remain)
+        : [bias] "r"(bias_ptr),
+          [lda] "r"(slda),
+          [ldas] "r"(slda_s),
+          [flag] "r"(flag),
+          [mremain] "r"(m_remain),
+          [relu] "r"(flag_relu)
+        : "v0", "v1", "v4", "v8", "v12", "v16", "v20", "v30", "cc", "memory");
+    bias += 4;
+  }
+}
+#else
+void sgemv_trans(const int M,
+                 const int N,
+                 const float *A,
+                 const float *x,
+                 float *y,
+                 bool flag_bias,
+                 const float *bias,
+                 bool flag_relu) {
+  int m_cnt8 = M >> 3;
+  int m_cnt4 = (M & 7) >> 2;
+  int m_remain = M & 7 & 3;
+  int n_cnt = N >> 1;
+  int n_remain = N & 1;
+  int flag_remain = m_remain > 0;
+  float zbias[16] = {0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f};
+  const int lda = M << 1;
+  const int lda_s = M;
+  const float *a0 = nullptr;
+  const float *a1 = nullptr;
+  for (int i = 0; i < m_cnt8; ++i) {
+    a0 = A + i * 8;
+    a1 = a0 + lda_s;
+    const float *bias_ptr = flag_bias ? bias : zbias;
+    const float *x_ptr = x;
+    int cnt = n_cnt;
+    int remain = n_remain;
+    int slda = lda * sizeof(float);
+    asm volatile(
+        "vmov.u32 q15, #0\n"
+        "vld1.32  {d0-d3},  [%[bias]]\n"
+        "vld1.32  {d4-d7},  [%[a0]], %[lda]\n"
+        "vld1.32  {d8-d11}, [%[a1]], %[lda]\n"
+        "cmp  %[cnt], #0\n"
+        "beq  2f\n"
+        "1:\n"
+        "vld1.32  {d12},  [%[x]]!\n"
+        "vmla.f32 q0, q2, d12[0]\n"
+        "vmla.f32 q1, q3, d12[0]\n"
+        "vld1.32  {d4-d7}, [%[a0]], %[lda]\n"
+        "vmla.f32 q0, q4, d12[1]\n"
+        "vmla.f32 q1, q5, d12[1]\n"
+        "vld1.32  {d8-d11}, [%[a1]], %[lda]\n"
+        "subs %[cnt], %[cnt], #1\n"
+        "bne 1b\n"
+        //! remain
+        "2:\n"
+        "cmp  %[remain], #0\n"
+        "beq  4f\n"
+        "sub  %[a0], %[a0], %[lda]\n"
+        "asr  %[lda], %[lda], #1\n"
+        "add  %[a0], %[a0], %[lda]\n"
+        "3:\n"
+        "vld1.32  {d12[0]}, [%[x]]!\n"
+        "vmla.f32 q0, q2, d12[0] \n"
+        "vmla.f32 q1, q3, d12[0] \n"
+        "subs %[remain], %[remain], #1\n"
+        "vld1.f32 {d4-d7}, [%[a0]], %[lda]\n"
+        "bne 3b\n"
+        "4:\n"
+        "cmp %[relu], #0\n"
+        "beq 5f\n"
+        "vmax.f32 q0, q0, q15\n"
+        "vmax.f32 q1, q1, q15\n"
+        "5:\n"
+        "vst1.32  {d0-d3}, [%[y]]!\n"
+        : [a0] "+r"(a0),
+          [a1] "+r"(a1),
+          [x] "+r"(x_ptr),
+          [y] "+r"(y),
+          [cnt] "+r"(cnt),
+          [lda] "+r"(slda),
+          [remain] "+r"(remain)
+        : [bias] "r"(bias_ptr), [relu] "r"(flag_relu)
+        : "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q15", "cc", "memory");
+    bias += 8;
+  }
+  A += m_cnt8 << 3;
+  for (int i = 0; i < m_cnt4 + flag_remain; ++i) {
+    a0 = A + i * 4;
+    a1 = a0 + lda_s;
+    const float *bias_ptr = flag_bias ? bias : zbias;
+    const float *x_ptr = x;
+    int cnt = n_cnt;
+    int remain = n_remain;
+    int slda = lda * sizeof(float);
+    int flag = (i == m_cnt4);
+    asm volatile(
+        "vmov.u32 q1, #0\n"
+        "vld1.32  {d0-d1}, [%[bias]]\n"
+        "vld1.32  {d4-d5}, [%[a0]], %[lda]\n"
+        "vld1.32  {d6-d7}, [%[a1]], %[lda]\n"
+        "vmov.u32 q15, #0\n"
+        "cmp %[cnt], #0\n"
+        "beq 2f\n"
+        "1:\n"
+        "vld1.32  {d8}, [%[x]]!\n"
+        "vmla.f32 q0, q2, d8[0]\n"
+        "vld1.32  {d4-d5}, [%[a0]], %[lda]\n"
+        "vmla.f32 q1, q3, d8[1]\n"
+        "subs %[cnt], %[cnt], #1\n"
+        "vld1.32  {d6-d7}, [%[a1]], %[lda]\n"
+        "bne  1b\n"
+        "vadd.f32 q0, q0, q1\n"
+        //! remain
+        "2:\n"
+        "cmp  %[remain], #0\n"
+        "beq  4f\n"
+        "sub  %[a0], %[a0], %[lda]\n"
+        "asr  %[lda], %[lda], #1\n"
+        "add  %[a0], %[a0], %[lda]\n"
+        "3:\n"
+        "vld1.32  {d8[0]}, [%[x]]!\n"
+        "vmla.f32 q0, q2, d8[0] \n"
+        "subs %[remain], %[remain], #1\n"
+        "vld1.32  {d4-d5}, [%[a0]], %[lda]\n"
+        "bne  3b\n"
+        "4:\n"
+        "cmp  %[relu], #0\n"
+        "beq  8f\n"
+        "vmax.f32 q0, q0, q15\n"
+        "8:\n"
+        //! check mremain
+        "cmp  %[flag], #0\n"
+        "bne  5f\n"
+        "vst1.32  {d0-d1}, [%[y]]!\n"
+        "b  9f\n"
+        // switch mremain num
+        "5:\n"  // remain 3
+        "cmp  %[mremain], #3\n"
+        "bne  6f\n"
+        "vst1.32  {d0}, [%[y]]!\n"
+        "vst1.32  {d1[0]}, [%[y]]\n"
+        "b  9f\n"
+        "6:\n"  // remain 2
+        "cmp  %[mremain], #2\n"
+        "bne  7f\n"
+        "vst1.32  {d0}, [%[y]]\n"
+        "b  9f\n"
+        "7:\n"  // remain 1
+        "vst1.32  {d0[0]}, [%[y]]\n"
+        "9:\n"
+        : [a0] "+r"(a0),
+          [a1] "+r"(a1),
+          [x] "+r"(x_ptr),
+          [y] "+r"(y),
+          [cnt] "+r"(cnt),
+          [lda] "+r"(slda),
+          [remain] "+r"(remain)
+        : [bias] "r"(bias_ptr),
+          [flag] "r"(flag),
+          [mremain] "r"(m_remain),
+          [relu] "r"(flag_relu)
+        : "q0", "q1", "q2", "q3", "q4", "q15", "cc", "memory");
+    bias += 4;
+  }
+}
+#endif  // __aarch64__
 
 bool sgemv(const float *A,
            const float *x,
@@ -61,31 +526,31 @@ bool sgemv(const float *A,
            const float *bias,
            bool is_relu) {
   if (transA) {
-    LOG(ERROR) << " sgemv, transA is not supported now";
-    return false;
-  }
-  if (is_bias) {
-    //! with bias
-    if (is_relu) {
-      //! with relu
-      sgemv_bias_relu(transA, M, N, A, x, y, bias);
-    } else {
-      //! without relu
-      sgemv_bias(transA, M, N, A, x, y, bias);
-    }
+    sgemv_trans(M, N, A, x, y, is_bias, bias, is_relu);
   } else {
-    //! without bias
-    if (is_relu) {
-      //! with relu
-      sgemv_relu(transA, M, N, A, x, y);
+    if (is_bias) {
+      //! with bias
+      if (is_relu) {
+        //! with relu
+        sgemv_bias_relu(transA, M, N, A, x, y, bias);
+      } else {
+        //! without relu
+        sgemv_bias(transA, M, N, A, x, y, bias);
+      }
     } else {
-      //! without relu
-      sgemv(transA, M, N, A, x, y);
+      //! without bias
+      if (is_relu) {
+        //! with relu
+        sgemv_relu(transA, M, N, A, x, y);
+      } else {
+        //! without relu
+        sgemv(transA, M, N, A, x, y);
+      }
     }
   }
   return true;
 }
-
+// clang-format off
 //! define compute kernel
 #ifdef __aarch64__
 #define SGEMV_IN_8                                    \
@@ -179,8 +644,8 @@ bool sgemv(const float *A,
   "fmla v5.4s, v9.4s, v21.4s  \n"                    /* mul + add*/            \
   "fmla v6.4s, v9.4s, v23.4s  \n"                    /* mul + add*/            \
   "fmla v7.4s, v9.4s, v25.4s  \n"                    /* mul + add*/            \
-  "bne 1b                     \n" /* jump to main loop */ /* pair add to final \
-                                                             result */         \
+  "bne 1b                     \n" /* jump to main loop */                      \
+  /* pair add to final result */                                               \
   "2:                         \n"  /* reduce to scale */                       \
   "faddp  v16.4s, v0.4s, v0.4s\n"  /* pair add to vector */                    \
   "faddp  s8, v16.2s          \n"  /* pair add to scale */                     \
@@ -231,8 +696,8 @@ bool sgemv(const float *A,
   "fmla v0.4s, v8.4s, v10.4s  \n"                    /* mul + add*/            \
   "subs %w[cnt], %w[cnt], #1  \n"                    /* sub main loop count */ \
   "fmla v1.4s, v9.4s, v11.4s  \n"                    /* mul + add*/            \
-  "bne 1b                     \n" /* jump to main loop */ /* pair add to final \
-                                                             result */         \
+  "bne 1b                     \n" /* jump to main loop */                      \
+  /* pair add to final result */                                               \
   "2:                         \n" /* reduce to scale */                        \
   "fadd   v9.4s, v0.4s, v1.4s \n" /* add 2 vector */                           \
   "faddp  v10.4s, v9.4s, v9.4s\n" /* pair add to vector */                     \
@@ -283,7 +748,7 @@ bool sgemv(const float *A,
   "fmax   s8, s8, s0          \n" /* relu */               \
   "str s8, [%[out]]           \n" /* save result */
 
-#else  //__aarch64__
+#else  // __aarch64__
 
 #define SGEMV_IN_4                                                    \
   "pld [%[in]]                    @ preload cache line, input\n"      \
@@ -349,8 +814,8 @@ bool sgemv(const float *A,
   "vmla.f32 q1, q5, q9            @ mul add\n"                                 \
   "vmla.f32 q2, q5, q11           @ mul add\n"                                 \
   "vmla.f32 q3, q5, q13           @ mul add\n"                                 \
-  "bne 1b                         @ jump to main loop\n" /* pair add to final  \
-                                                            result */          \
+  "bne 1b                         @ jump to main loop\n"                       \
+  /* pair add to final result */                                               \
   "2:                             @ pair add \n"                               \
   "vpadd.f32 d8, d0, d1           @ pair add, first step\n"                    \
   "vpadd.f32 d9, d2, d3           @ pair add, first step\n"                    \
@@ -382,13 +847,10 @@ bool sgemv(const float *A,
   "vmla.f32 q0, q12, q14              @ mul add\n"                             \
   "vmla.f32 q0, q13, q15              @ mul add\n"                             \
   "subs %[cnt] , #1                   @ sub loop count \n"                     \
-  "bne 1b                             @ jump to main loop\n" /* pair add to    \
-                                                                final result   \
-                                                                */             \
+  "bne 1b                             @ jump to main loop\n"                   \
   "2:                                 @ end processing\n"                      \
   "vpadd.f32 d2, d0, d1               @ pair add, first step\n"                \
-  "vpadd.f32 d0, d2, d2               @ pair add, final step\n" /* check tails \
-                                                                   */          \
+  "vpadd.f32 d0, d2, d2               @ pair add, final step\n"/*check tails*/ \
   "cmp %[tail], #1                    @ check whether has mid cols\n"          \
   "blt  4f                            @ jump to end\n"                         \
   "3:                                 @ tail loop\n"                           \
@@ -422,7 +884,7 @@ bool sgemv(const float *A,
   "vmax.f32   d0, d0, d1          @ relu\n"          \
   "vst1.32 {d0[0]}, [%[out]]      @ save result\n"
 #endif
-
+// clang-format on
 void sgemv(const bool transA,
            const int M,
            const int N,
@@ -523,7 +985,7 @@ void sgemv(const bool transA,
           [tmp4] "r"(tmp4)
         : "v0", "v1", "v8", "v9", "v10", "v11", "v16", "v17", "cc", "memory");
   }
-#else  //__aarch64__
+#else  // __aarch64__
   int out_cnt = M >> 2;
 #pragma omp parallel for
   for (int j = 0; j < out_cnt; j++) {
@@ -579,7 +1041,7 @@ void sgemv(const bool transA,
                  : [out] "r"(ptr_out)
                  : "q0", "q1", "q12", "q13", "q14", "q15", "cc", "memory");
   }
-#endif  //__aarch64__
+#endif  // __aarch64__
 }
 
 void sgemv_relu(const bool transA,
@@ -671,7 +1133,7 @@ void sgemv_relu(const bool transA,
         : [out] "r"(ptr_out)
         : "v0", "v1", "v8", "v9", "v10", "v11", "v16", "v17", "cc", "memory");
   }
-#else  //__aarch64__
+#else  // __aarch64__
   int out_cnt = M >> 2;
 #pragma omp parallel for
   for (int j = 0; j < out_cnt; j++) {
@@ -727,7 +1189,7 @@ void sgemv_relu(const bool transA,
                  : [out] "r"(ptr_out)
                  : "q0", "q1", "q12", "q13", "q14", "q15", "cc", "memory");
   }
-#endif  //__aarch64__
+#endif  // __aarch64__
 }
 
 void sgemv_bias(const bool transA,
@@ -822,7 +1284,7 @@ void sgemv_bias(const bool transA,
         : [out] "r"(ptr_out), [bias0] "r"(bias0)
         : "v0", "v1", "v8", "v9", "v10", "v11", "v16", "v17", "cc", "memory");
   }
-#else  //__aarch64__
+#else  // __aarch64__
   int out_cnt = M >> 2;
 #pragma omp parallel for
   for (int j = 0; j < out_cnt; j++) {
@@ -887,7 +1349,7 @@ void sgemv_bias(const bool transA,
                  : [out] "r"(ptr_out), [bias0] "r"(bias0)
                  : "q0", "q1", "q12", "q13", "q14", "q15", "cc", "memory");
   }
-#endif  //__aarch64__
+#endif  // __aarch64__
 }
 
 void sgemv_bias_relu(const bool transA,
@@ -980,7 +1442,7 @@ void sgemv_bias_relu(const bool transA,
         : [out] "r"(ptr_out), [bias0] "r"(bias0)
         : "v0", "v1", "v8", "v9", "v10", "v11", "v16", "v17", "cc", "memory");
   }
-#else  //__aarch64__
+#else  // __aarch64__
   int out_cnt = M >> 2;
 #pragma omp parallel for
   for (int j = 0; j < out_cnt; j++) {
@@ -1045,7 +1507,7 @@ void sgemv_bias_relu(const bool transA,
                  : [out] "r"(ptr_out), [bias0] "r"(bias0)
                  : "q0", "q1", "q12", "q13", "q14", "q15", "cc", "memory");
   }
-#endif  //__aarch64__
+#endif  // __aarch64__
 }
 
 }  // namespace math

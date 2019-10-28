@@ -197,10 +197,10 @@ void Instruction::Run() {
     return;
   }
 
-  VLOG(4) << "kernel launch";
+  // VLOG(4) << "kernel launch";
   op_->InferShape();
-  VLOG(4) << ">> Running kernel: " << op_->op_info()->Repr() << " on Target "
-          << TargetToStr(kernel_->target());
+  // VLOG(4) << ">> Running kernel: " << op_->op_info()->Repr() << " on Target "
+  //        << TargetToStr(kernel_->target());
   kernel_->Launch();
   has_run_ = true;
 }
