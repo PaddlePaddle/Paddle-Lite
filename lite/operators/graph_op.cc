@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/operators/graph_op.h"
+#include <utility>
 #include "lite/core/op_registry.h"
 
 namespace paddle {
@@ -34,7 +35,8 @@ bool GraphOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
 
   for (auto var : inputs) {
     CHECK(scope->FindVar(var));
-    param_.inputs.push_back(scope->FindVar(var)->GetMutable<lite::Tensor>());
+    param_.inputs.push_back(
+        std::make_pair(var, scope->FindVar(var)->GetMutable<lite::Tensor>()));
   }
 
   param_.weight = scope->FindVar(weight.front())->GetMutable<lite::Tensor>();
@@ -42,7 +44,8 @@ bool GraphOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
 
   for (auto var : outputs) {
     CHECK(scope->FindVar(var));
-    param_.outputs.push_back(scope->FindVar(var)->GetMutable<lite::Tensor>());
+    param_.outputs.push_back(
+        std::make_pair(var, scope->FindVar(var)->GetMutable<lite::Tensor>()));
   }
 
   return true;

@@ -184,7 +184,9 @@ void Instruction::Run() {
   CHECK(op_) << "op null";
   CHECK(kernel_) << "kernel null";
 #ifdef LITE_WITH_PROFILE
-  profile::ProfileBlock x(profile_id_, "instruction");
+  if (profile_id_ >= 0) {
+    profile::ProfileBlock x(profile_id_, "instruction");
+  }
 #endif  // LITE_WITH_PROFILE
   if (first_epoch_) {
     first_epoch_ = false;

@@ -59,6 +59,7 @@ lite_option(LITE_WITH_CUDA "Enable CUDA in lite mode" OFF)
 lite_option(LITE_WITH_X86  "Enable X86 in lite mode"  ON)
 lite_option(LITE_WITH_ARM  "Enable ARM in lite mode"  OFF)
 lite_option(LITE_WITH_NPU  "Enable NPU in lite mode"  OFF)
+lite_option(LITE_WITH_XPU  "Enable XPU in lite mode"  OFF)
 lite_option(LITE_WITH_OPENMP "Enable OpenMP in lite framework" ON)
 lite_option(LITE_WITH_OPENCL   "Enable OpenCL support in lite" OFF)
 lite_option(LITE_WITH_FPGA   "Enable FPGA support in lite" OFF)
@@ -70,6 +71,7 @@ lite_option(LITE_ON_TINY_PUBLISH "Publish tiny predictor lib." OFF)
 lite_option(LITE_ON_MODEL_OPTIMIZE_TOOL "Build the model optimize tool" OFF)
 # publish options
 lite_option(LITE_BUILD_EXTRA "Enable extra algorithm support in Lite, both kernels and operators" OFF)
+lite_option(LITE_BUILD_TAILOR "Enable tailoring library according to model" OFF)
 
 # TODO(Superjomn) Remove WITH_ANAKIN option if not needed latter.
 if(ANDROID OR IOS OR ARMLINUX)
@@ -79,12 +81,15 @@ if(ANDROID OR IOS OR ARMLINUX)
             "Disable DSO when cross-compiling for Android and iOS" FORCE)
     set(WITH_AVX OFF CACHE STRING
             "Disable AVX when cross-compiling for Android and iOS" FORCE)
-    set(LITE_WITH_PYTHON OFF CACHE STRING
-            "Disable PYTHON when cross-compiling for Android and iOS" FORCE)
     set(WITH_RDMA OFF CACHE STRING
             "Disable RDMA when cross-compiling for Android and iOS" FORCE)
     set(WITH_MKL OFF CACHE STRING
             "Disable MKL when cross-compiling for Android and iOS" FORCE)
+endif()
+
+if(ANDROID OR IOS)
+    set(LITE_WITH_PYTHON OFF CACHE STRING
+            "Disable PYTHON when cross-compiling for Android and iOS" FORCE)
 endif()
 
 set(THIRD_PARTY_PATH "${CMAKE_BINARY_DIR}/third_party" CACHE STRING
@@ -178,6 +183,10 @@ include(configure)          # add paddle env configuration
 
 if(LITE_WITH_CUDA) 
   include(cuda)
+endif()
+
+if(LITE_WITH_XPU)
+  include(xpu)
 endif()
 
 include(generic)            # simplify cmake module
