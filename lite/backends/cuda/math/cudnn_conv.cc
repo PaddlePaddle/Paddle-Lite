@@ -441,6 +441,7 @@ bool CudnnConv2DInt8<Ptype_out>::run(const operators::ConvParam& param) {
   if (Ptype_out == PRECISION(kInt8)) {
     temp_out = this->temp_tensor_.template mutable_data<float>(TARGET(kCUDA));
   } else {
+    // LOG(INFO) << param.output->dims().repr();
     temp_out = param.output->mutable_data<float>(TARGET(kCUDA));
   }
 
@@ -462,30 +463,30 @@ bool CudnnConv2DInt8<Ptype_out>::run(const operators::ConvParam& param) {
 
   auto out_dims = param.output->dims();
   int n = out_dims[0], h = out_dims[1], w = out_dims[2], c = out_dims[3];
-  int num = n * h * w * c / 4;
+  int num = n * h * w * c;
 
   if (!param.activation_param.has_active && !b_data) {
     if (Ptype_out == PRECISION(kInt8)) {
       auto* out = param.output->mutable_data<int8_t>(TARGET(kCUDA));
-      fp32_to_int8_nhwc4(num,
-                         static_cast<const void*>(temp_out),
-                         static_cast<void*>(out),
-                         static_cast<const void*>(scale),
-                         n,
-                         c / 4,
-                         h,
-                         w,
-                         this->stream_);
+      fp32_to_int8_nhwc(num,
+                        static_cast<const void*>(temp_out),
+                        static_cast<void*>(out),
+                        static_cast<const void*>(scale),
+                        n,
+                        c,
+                        h,
+                        w,
+                        this->stream_);
     } else {
-      fp32_scale_nhwc4(num,
-                       static_cast<const void*>(temp_out),
-                       static_cast<void*>(temp_out),
-                       static_cast<const void*>(scale),
-                       n,
-                       c / 4,
-                       h,
-                       w,
-                       this->stream_);
+      fp32_scale_nhwc(num,
+                      static_cast<const void*>(temp_out),
+                      static_cast<void*>(temp_out),
+                      static_cast<const void*>(scale),
+                      n,
+                      c,
+                      h,
+                      w,
+                      this->stream_);
     }
     return true;
   }
@@ -497,29 +498,55 @@ bool CudnnConv2DInt8<Ptype_out>::run(const operators::ConvParam& param) {
         alpha = param.activation_param.Leaky_relu_alpha;
       if (Ptype_out == PRECISION(kInt8)) {
         auto* out = param.output->mutable_data<int8_t>(TARGET(kCUDA));
-        bias_relu_int8_nhwc4<int8_t>(num,
-                                     static_cast<const void*>(temp_out),
-                                     static_cast<const void*>(b_data),
-                                     static_cast<void*>(out),
-                                     n,
-                                     c / 4,
-                                     h,
-                                     w,
-                                     static_cast<const void*>(scale),
-                                     alpha,
-                                     this->stream_);
-      } else {
-        bias_relu_int8_nhwc4<float>(num,
+        bias_relu_int8_nhwc<int8_t>(num,
                                     static_cast<const void*>(temp_out),
                                     static_cast<const void*>(b_data),
-                                    static_cast<void*>(temp_out),
+                                    static_cast<void*>(out),
                                     n,
-                                    c / 4,
+                                    c,
                                     h,
                                     w,
                                     static_cast<const void*>(scale),
                                     alpha,
                                     this->stream_);
+      } else {
+        bias_relu_int8_nhwc<float>(num,
+                                   static_cast<const void*>(temp_out),
+                                   static_cast<const void*>(b_data),
+                                   static_cast<void*>(temp_out),
+                                   n,
+                                   c,
+                                   h,
+                                   w,
+                                   static_cast<const void*>(scale),
+                                   alpha,
+                                   this->stream_);
+      }
+      return true;
+    } else {
+      if (Ptype_out == PRECISION(kInt8)) {
+        auto* out = param.output->mutable_data<int8_t>(TARGET(kCUDA));
+        bias_int8_nhwc<int8_t>(num,
+                               static_cast<const void*>(temp_out),
+                               static_cast<const void*>(b_data),
+                               static_cast<void*>(out),
+                               n,
+                               c,
+                               h,
+                               w,
+                               static_cast<const void*>(scale),
+                               this->stream_);
+      } else {
+        bias_int8_nhwc<float>(num,
+                              static_cast<const void*>(temp_out),
+                              static_cast<const void*>(b_data),
+                              static_cast<void*>(temp_out),
+                              n,
+                              c,
+                              h,
+                              w,
+                              static_cast<const void*>(scale),
+                              this->stream_);
       }
       return true;
     }

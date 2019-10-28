@@ -82,6 +82,10 @@ Type StdTypeToRepr<double>() {
   return Type::_float64;
 }
 template <>
+Type StdTypeToRepr<std::vector<char>>() {
+  return Type::_char_list;
+}
+template <>
 Type StdTypeToRepr<std::string>() {
   return Type::_string;
 }

@@ -59,6 +59,7 @@ void ConvAddBnReluPt1x2(framework::CLHelper *cl_helper,
   int input_height = param.Input()->dims()[2];
   int output_width = param.Output()->dims()[3];
   int output_height = param.Output()->dims()[2];
+  int output_c = param.Output()->dims()[1];
   int filter_channel = param.Filter()->dims()[1];
   int input_channel = param.Input()->dims()[1];
   //
@@ -211,11 +212,13 @@ void ConvAddBnRelu(framework::CLHelper *cl_helper,
   int input_c = reinterpret_cast<framework::CLImageConverterFolder *>(
                     param.Input()->Converter())
                     ->GetCBlock();
+  int input_c_origin = param.Input()->dims()[1];
   int dilation = param.Dilations()[0];
   int input_width = param.Input()->dims()[3];
   int input_height = param.Input()->dims()[2];
   int output_width = param.Output()->dims()[3];
   int output_height = param.Output()->dims()[2];
+  int output_c = param.Output()->dims()[1];
   int filter_channel = param.Filter()->dims()[1];
   int input_channel = param.Input()->dims()[1];
 
@@ -280,6 +283,9 @@ void ConvAddBnRelu(framework::CLHelper *cl_helper,
     CL_CHECK_ERRORS(status);
 
     status = clSetKernelArg(kernel, index++, sizeof(int), &input_c);
+    CL_CHECK_ERRORS(status);
+
+    status = clSetKernelArg(kernel, index++, sizeof(int), &input_c_origin);
     CL_CHECK_ERRORS(status);
 
     status = clSetKernelArg(kernel, index++, sizeof(int), &dilation);
@@ -398,20 +404,24 @@ void ConvAddBnRelu(framework::CLHelper *cl_helper,
     CL_CHECK_ERRORS(status);
 
     if (param.Filter()->dims()[2] == 3 && param.Filter()->dims()[3] == 3) {
-      if (filter_channel != input_channel) {
-        if (filter_channel != 1) {
-          status =
-              clSetKernelArg(kernel, index++, sizeof(int), &filter_channel);
-          CL_CHECK_ERRORS(status);
-          int has_group = 1;
-          status = clSetKernelArg(kernel, index++, sizeof(int), &has_group);
-          CL_CHECK_ERRORS(status);
-        }
-      } else {
+      // normal conv
+      if (param.Filter()->dims()[0] == param.Output()->dims()[1] &&
+          param.Filter()->dims()[1] == param.Input()->dims()[1]) {
+        status = clSetKernelArg(kernel, index++, sizeof(int), &output_c);
+        CL_CHECK_ERRORS(status);
         status = clSetKernelArg(kernel, index++, sizeof(int), &filter_channel);
         CL_CHECK_ERRORS(status);
-        int has_group = 0;
-        status = clSetKernelArg(kernel, index++, sizeof(int), &has_group);
+        int group = 1;
+        status = clSetKernelArg(kernel, index++, sizeof(int), &group);
+        CL_CHECK_ERRORS(status);
+      } else if (!(param.Filter()->dims()[0] == param.Input()->dims()[1] &&
+                   param.Filter()->dims()[1] == 1)) {  // not depwise
+        status = clSetKernelArg(kernel, index++, sizeof(int), &output_c);
+        CL_CHECK_ERRORS(status);
+        status = clSetKernelArg(kernel, index++, sizeof(int), &filter_channel);
+        CL_CHECK_ERRORS(status);
+        int group = input_channel / filter_channel;
+        status = clSetKernelArg(kernel, index++, sizeof(int), &group);
         CL_CHECK_ERRORS(status);
       }
     }

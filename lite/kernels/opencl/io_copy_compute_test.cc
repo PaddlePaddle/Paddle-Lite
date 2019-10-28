@@ -79,5 +79,5 @@ TEST(io_copy, compute) {
 }  // namespace lite
 }  // namespace paddle
 
-USE_LITE_KERNEL(io_copy, kOpenCL, kFloat, kNCHW, host_to_device);
-USE_LITE_KERNEL(io_copy, kOpenCL, kFloat, kNCHW, device_to_host);
+USE_LITE_KERNEL(io_copy, kOpenCL, kAny, kAny, host_to_device);
+USE_LITE_KERNEL(io_copy, kOpenCL, kAny, kAny, device_to_host);

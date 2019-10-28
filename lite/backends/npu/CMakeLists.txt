@@ -2,5 +2,4 @@ if(NOT LITE_WITH_NPU)
   return()
 endif()
 
-lite_cc_library(npu_helper SRCS npu_helper.cc DEPS ${npu_ddk_libs})
-add_subdirectory(bridge)
+lite_cc_library(npu_runtime SRCS runtime.cc DEPS npu_ddk_hiai)

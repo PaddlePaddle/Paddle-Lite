@@ -28,12 +28,12 @@ namespace mir {
 void PrecisionCastPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   // Start from inputs of the graph, those should have place set.
   std::list<Node*> nodes;
-  for (auto& node : graph->mutable_nodes()) {
-    nodes.push_back(&node);
+  for (auto& node : graph->StmtTopologicalOrder()) {
+    nodes.push_back(node);
   }
 
   for (auto& node : nodes) {
-    if (!node->IsStmt()) continue;
+    if (!node->IsStmt() || node->AsStmt().op_type() == "while") continue;
     auto inlinks = node->inlinks;
     for (auto* in : inlinks) {
       ComplementInputs(graph.get(), node, in);
@@ -86,9 +86,9 @@ void PrecisionCastPass::AddCastInst(const Type& from,
   // var -> new_transform_op -> new_var -> inst
   // So there will be a new Argument node and a new Cast Statement Node.
   CHECK(in->IsArg());
-  auto node_id = [&] { return graph->nodes().size(); };
-  auto cast_op_output_name =
-      in->AsArg().name + "/precision_trans/" + std::to_string(node_id());
+  // auto node_id = [&] { return graph->nodes().size(); };
+  auto cast_op_output_name = in->AsArg().name + "/precision_trans";
+  // in->AsArg().name + "/precision_trans/" + std::to_string(node_id());
   auto* cast_op_output_arg = graph->NewArgumentNode(cast_op_output_name);
   cast_op_output_arg->AsArg().type =
       LiteType::GetTensorTy(from.target(), to.precision(), from.layout());

@@ -20,12 +20,24 @@ namespace lite {
 namespace kernels {
 namespace cuda {
 
-class ConcatCompute : public KernelLite<TARGET(kCUDA), PRECISION(kFloat)> {
+template <typename Dtype>
+class ConcatCompute
+    : public KernelLite<TARGET(kCUDA), PRECISION(kFloat), DATALAYOUT(kNCHW)> {
  public:
   using param_t = operators::ConcatParam;
 
   void Run() override;
   virtual ~ConcatCompute() = default;
+};
+
+template <typename Dtype>
+class ConcatComputeNHWC
+    : public KernelLite<TARGET(kCUDA), PRECISION(kFloat), DATALAYOUT(kNHWC)> {
+ public:
+  using param_t = operators::ConcatParam;
+
+  void Run() override {}
+  virtual ~ConcatComputeNHWC() = default;
 };
 
 }  // namespace cuda

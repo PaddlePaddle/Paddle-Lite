@@ -21,6 +21,7 @@
 USE_LITE_OP(mul);
 USE_LITE_OP(matmul);
 USE_LITE_OP(fc);
+USE_LITE_OP(assign);
 USE_LITE_OP(relu);
 USE_LITE_OP(relu6);
 USE_LITE_OP(scale);
@@ -127,3 +128,4 @@ USE_LITE_OP(roi_align)
 USE_LITE_OP(box_clip)
 USE_LITE_OP(assign_value)
 USE_LITE_OP(hard_sigmoid)
+USE_LITE_OP(rsqrt)

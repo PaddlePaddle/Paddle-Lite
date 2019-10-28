@@ -26,6 +26,7 @@ quantification = False
 quantification_fold = 1000
 architecture = "arm-v7a"
 # architecture = "arm-v8a"
+correct_persistable = False
 
 np.set_printoptions(linewidth=150)
 
@@ -69,6 +70,18 @@ exe.run(fluid.default_startup_program())
 # 加载模型
 def load_model(model_path):
     prog, feeds, fetches = fluid.io.load_inference_model(dirname=model_path, executor=exe, model_filename="model", params_filename="params")
+    global correct_persistable
+    if correct_persistable:
+        ops = prog.current_block().ops
+        vars = prog.current_block().vars
+        for op in ops:
+            for var_name in op.output_arg_names:
+                if var_name == "fetch":
+                    continue
+                var = vars[var_name]
+                if var.persistable:
+                    pp_red("has found non-persistable output var : {}".format(var_name))
+                    var.persistable = False
     return (prog, feeds, fetches)
 
 prog, feeds, fetches = load_model(model_path)
@@ -546,7 +559,7 @@ def check_mobile_results(args, fuse, mem_opt):
                     for i in range(len(values1)):
                         v1 = values1[i]
                         v2 = values2[len(shape) + i]
-                        if abs(v1 - v2) > diff_threshold:
+                        if ((not math.isnan(v1)) and math.isnan(v2)) or abs(v1 - v2) > diff_threshold:
                             error_index = index
                             break
                 checked_names.append(op_output_var_name)
