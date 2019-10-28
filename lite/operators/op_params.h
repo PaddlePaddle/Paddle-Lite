@@ -14,6 +14,7 @@
 
 #pragma once
 #include <string>
+#include <utility>
 #include <vector>
 #include "lite/api/paddle_place.h"
 #include "lite/core/scope.h"
@@ -69,9 +70,9 @@ struct CalibParam {
 };
 
 struct GraphParam {
-  std::vector<const lite::Tensor*> inputs{};
+  std::vector<std::pair<std::string, const lite::Tensor*>> inputs{};
   lite::Tensor* weight{};
-  std::vector<lite::Tensor*> outputs{};
+  std::vector<std::pair<std::string, lite::Tensor*>> outputs{};
 };
 
 /// -------------------------- NN operators ------------------------------------
