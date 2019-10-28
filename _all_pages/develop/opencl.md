@@ -60,7 +60,12 @@ adb push build.lite.android.armv8.gcc.opencl/lite/api/test_mobilenetv1 /data/loc
 `--modle_dir`指定了模型文件所在目录。
 
 ```bash
-adb shell /data/local/tmp/opencl/test_mobilenetv1 --cl_path=/data/local/tmp/opencl --model_dir=/data/local/tmp/opencl/mobilenet_v1 --warmup=1 --repeats=1
+adb shell chmod +x /data/local/tmp/opencl/test_mobilenetv1
+adb shell /data/local/tmp/opencl/test_mobilenetv1 \
+  --cl_path=/data/local/tmp/opencl \
+  --model_dir=/data/local/tmp/opencl/mobilenet_v1 \
+  --warmup=1 \
+  --repeats=1
 ```
 
 **注意：** 因为权重参数均会在Op Kernel第一次运行时进行加载，所以第一次的执行时间会略长。一般将warmup的值设为1，repeats值设为多次。
