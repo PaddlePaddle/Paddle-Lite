@@ -49,7 +49,6 @@ adb push lite/backends/opencl/cl_kernel/image/* /data/local/tmp/opencl/cl_kernel
 # 将mobilenet_v1的模型文件推送到/data/local/tmp/opencl目录下
 adb shell mkdir -p /data/local/tmp/opencl/mobilenet_v1
 adb push build.lite.android.armv8.gcc.opencl/third_party/install/mobilenet_v1/* /data/local/tmp/opencl/mobilenet_v1/
-
 # 将OpenCL测试程序(如test_mobilenetv1)推送到/data/local/tmp/opencl目录下
 adb push build.lite.android.armv8.gcc.opencl/lite/api/test_mobilenetv1 /data/local/tmp/opencl
 ```
