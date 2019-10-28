@@ -127,6 +127,10 @@ if (LITE_WITH_NPU)
     add_definitions("-DLITE_WITH_NPU")
 endif()
 
+if (LITE_WITH_XPU)
+    add_definitions("-DLITE_WITH_XPU")
+endif()
+
 if (LITE_WITH_OPENCL)
     add_definitions("-DLITE_WITH_OPENCL")
 endif()
