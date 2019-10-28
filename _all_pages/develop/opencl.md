@@ -9,31 +9,21 @@ Lite支持在Android系统上运行基于OpenCL的程序，目前提供armv8和a
 
 - 编译环境: 使用基于`paddle/fluid/lite/tools/Dockerfile.mobile`生成docker镜像。
 - cmake编译选项介绍
-    * `ARM_TARGET_OS` 代表目标操作系统， 目前仅支持android, 亦为默认值。
-    * `ARM_TARGET_ARCH_ABI` 代表体系结构类型，支持输入armv8和armv7。其中，armv8等效于arm64-v8a，亦为默认值；armv7等效于 armeabi-v7a。
-    * `ARM_TARGET_LANG` 代表编译目标文件所使用的编译器， 默认为gcc，支持 gcc和clang两种。
+    * `--arm_os` 代表目标操作系统， 目前仅支持`android`, 亦为默认值。
+    * `--arm_abi` 代表体系结构类型，支持输入armv8和armv7。其中，armv8等效于arm64-v8a，亦为默认值；armv7等效于 armeabi-v7a。
+    * `--arm_lang` 代表编译目标文件所使用的编译器， 默认为gcc，支持 gcc和clang两种。
 - 参考示例
 
 ```bash
 # 假设处于Lite源码根目录下
-mkdir -p build_opencl && cd build_opencl
-cmake .. \
-    -DLITE_WITH_OPENCL=ON \
-    -DWITH_GPU=OFF \
-    -DWITH_MKL=OFF \
-    -DWITH_LITE=ON \
-    -DLITE_WITH_CUDA=OFF \
-    -DLITE_WITH_X86=OFF \
-    -DLITE_WITH_ARM=ON \
-    -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
-    -DWITH_TESTING=ON \
-    -DARM_TARGET_OS="android" -DARM_TARGET_ARCH_ABI="armv8" -DARM_TARGET_LANG="gcc"
-# 注意：在编译其他目标对象前，需要先执行如下命令完成OpenCL所需头文件的下载和生成
-make opencl_clhpp
-# 接着，用户可以选择完整编译
-make lite_compile_deps -j4
-# 或者选择只编译某一目标文件，例如test_mobilenetv1
-make test_mobilenetv1 -j4
+export NDK_ROOT=/opt/android-ndk-r17c
+rm ./lite/api/paddle_use_kernels.h
+rm ./lite/api/paddle_use_ops.h
+./lite/tools/ci_build.sh \
+  --arm_os=android \
+  --arm_abi=armv8 \
+  --arm_lang=gcc \
+  build_test_arm_opencl
 ```
 
 
@@ -41,7 +31,7 @@ make test_mobilenetv1 -j4
 
 - **运行文件准备**
 
-下面以MobileNetV1为例，介绍如何在手机上执行基于OpenCL的ARM GPU推理过程。
+下面以android、ARMv8、gcc的环境，为例，介绍如何在手机上执行基于OpenCL的ARM GPU推理过程。
 
 **注意：** 以下命令均在Lite源码根目录下运行。
 
@@ -50,13 +40,16 @@ make test_mobilenetv1 -j4
 adb shell mkdir -p /data/local/tmp/opencl
 adb shell mkdir -p /data/local/tmp/opencl/cl_kernel/buffer
 adb shell mkdir -p /data/local/tmp/opencl/cl_kernel/image
+
 # 将OpenCL的kernels文件推送到/data/local/tmp/opencl目录下
-adb push lite/opencl/cl_kernel/cl_common.h /data/local/tmp/opencl/cl_kernel/
-adb push lite/opencl/cl_kernel/buffer/* /data/local/tmp/opencl/cl_kernel/buffer/
-adb push lite/opencl/cl_kernel/image/* /data/local/tmp/opencl/cl_kernel/image/
+adb push lite/backends/opencl/cl_kernel/cl_common.h /data/local/tmp/opencl/cl_kernel/
+adb push lite/backends/opencl/cl_kernel/buffer/* /data/local/tmp/opencl/cl_kernel/buffer/
+adb push lite/backends/opencl/cl_kernel/image/* /data/local/tmp/opencl/cl_kernel/image/
+
 # 将mobilenet_v1的模型文件推送到/data/local/tmp/opencl目录下
 adb shell mkdir -p /data/local/tmp/opencl/mobilenet_v1
-adb push build_opencl/third_party/install/mobilenet_v1/* /data/local/tmp/opencl/mobilenet_v1/
+adb push build.lite.android.armv8.gcc.opencl/third_party/install/mobilenet_v1/* /data/local/tmp/opencl/mobilenet_v1/
+
 # 将OpenCL测试程序(如test_mobilenetv1)推送到/data/local/tmp/opencl目录下
 adb push build_opencl/lite/api/test_mobilenetv1 /data/local/tmp/opencl
 ```
@@ -76,24 +69,27 @@ adb shell /data/local/tmp/opencl/test_mobilenetv1 --cl_path=/data/local/tmp/open
 # 如何在Code中使用
 
 Lite支持对ARM CPU和ARM GPU的混调执行，具体描述如下：
-1. 设置Lite推断执行的有效Places，使其包含ARM CPU(kARM)和ARM GPU(kOpenCL)；
-2. 设置Lite推断执行的偏好Place为ARM GPU(kOpenCL)。
 
-通过以上两步设置，Lite在推断执行过程中如果发现某一Op存在着基于OpenCL的实现，其会优先选择使用该实现执行Op的计算过程。若发现某一Op没有基于OpenCL实现的Kernel，其会自动选择执行基于ARM CPU的实现。
+- 设置Lite推断执行的有效Places，使其包含ARM CPU(kARM)和ARM GPU(kOpenCL)；
+- 确保GPU(kOpenCL)在第一位，位置代表Places的重要性和kernel选择有直接关系。  
+G
+通过以上设置，Lite在推断执行过程中如果发现某一Op存在着基于OpenCL的实现，其会优先选择使用该实现执行Op的计算过程。若发现某一Op没有基于OpenCL实现的Kernel，其会自动选择执行基于ARM CPU的实现。
 
 代码示例：
 ```cpp
 DeviceInfo::Init();
 DeviceInfo::Global().SetRunMode(LITE_POWER_HIGH, FLAGS_threads);
 lite::Predictor predictor;
-// 设置Lite推断执行的有效Places为{kOpenCL, kARM}
+
+// 设置Lite推断执行的硬件信息Places为{kOpenCL, kARM}
 std::vector<Place> valid_places({
       Place({TARGET(kOpenCL), PRECISION(kFloat)}),
       Place({TARGET(kARM), PRECISION(kFloat)})
   });
 
-// 根据有效Places和偏好Place构建模型
+// 根据Place构建模型
 predictor.Build(model_dir, "", "", valid_places);
+
 // 设置模型的输入
 auto* input_tensor = predictor.GetInput(0);
 input_tensor->Resize(DDim(std::vector<DDim::value_type>({1, 3, 224, 224})));
@@ -102,7 +98,12 @@ auto item_size = input_tensor->dims().production();
 for (int i = 0; i < item_size; i++) {
   data[i] = 1;
 }
+
 // 执行模型推断并获取模型的预测结果
 predictor.Run();
 auto* out = predictor.GetOutput(0);
 ```
+
+# 其它注意
+
+因OpenCL有两种形式：cl::Image2D和cl::Buffer，如果出现 segmentationfault 的情况，很有可能是因为OpenCL在选择kernel的时候，上一个kernel的输出是cl::Buffer或者cl::Image2D的格式，下一个kernel的输入是cl::Image2D或cl::Buffer，导致不匹配出现的问题。
