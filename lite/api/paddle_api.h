@@ -97,7 +97,8 @@ class LITE_API PaddlePredictor {
   /// CxxConfig, and the persisted model can be reused for MobileConfig.
   virtual void SaveOptimizedModel(
       const std::string& model_dir,
-      LiteModelType model_type = LiteModelType::kProtobuf);
+      LiteModelType model_type = LiteModelType::kProtobuf,
+      bool record_info = false);
 
   virtual ~PaddlePredictor() = default;
 };

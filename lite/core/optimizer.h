@@ -28,6 +28,9 @@
 #ifdef LITE_WITH_NPU
 #include "lite/core/mir/subgraph/generate_npu_program_pass.h"
 #endif
+#ifdef LITE_WITH_XPU
+#include "lite/core/mir/subgraph/generate_xpu_program_pass.h"
+#endif
 
 namespace paddle {
 namespace lite {
@@ -106,7 +109,8 @@ class Optimizer {
 
            "runtime_context_assign_pass",
            "argument_type_display_pass",  //
-#if !defined(LITE_WITH_OPENCL) && !defined(LITE_WITH_NPU)
+#if !defined(LITE_WITH_OPENCL) && !defined(LITE_WITH_NPU) && \
+    !defined(LITE_WITH_XPU)
            // TODO(ysh329): cause CL_INVALID_MEM_OBJECT when setArg in kernel
            "memory_optimize_pass",
 #endif
@@ -121,14 +125,27 @@ class Optimizer {
 
   // Generate a new program based on the mir graph.
   std::unique_ptr<RuntimeProgram> GenRuntimeProgram() {
+#if defined(LITE_WITH_NPU) || defined(LITE_WITH_XPU)
+    auto target_place = Place{
 #ifdef LITE_WITH_NPU
-    if (std::find(valid_places_.begin(),
-                  valid_places_.end(),
-                  Place{TARGET(kNPU), PRECISION(kFloat)}) !=
+        TARGET(kNPU),
+#endif
+#ifdef LITE_WITH_XPU
+        TARGET(kXPU),
+#endif
+        PRECISION(kFloat)};
+    if (std::find(valid_places_.begin(), valid_places_.end(), target_place) !=
         valid_places_.end()) {
+#ifdef LITE_WITH_NPU
       auto pass = mir::PassManager::Global()
                       .LookUp<mir::subgraph::GenerateNPUProgramPass>(
                           "generate_npu_program_pass");
+#endif
+#ifdef LITE_WITH_XPU
+      auto pass = mir::PassManager::Global()
+                      .LookUp<mir::subgraph::GenerateXPUProgramPass>(
+                          "generate_xpu_program_pass");
+#endif
       try {
         pass->Apply(graph_);
         auto program = pass->GenProgram();
@@ -136,7 +153,8 @@ class Optimizer {
         program->set_exec_scope(exec_scope_);
         return program;
       } catch (...) {
-        LOG(WARNING) << "Build NPU graph failed";
+        LOG(WARNING) << "Build " << TargetToStr(target_place.target)
+                     << " program failed!";
       }
     }
 #endif
