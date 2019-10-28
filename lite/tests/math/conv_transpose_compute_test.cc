@@ -24,7 +24,13 @@
 #include "lite/kernels/arm/conv_transpose_compute.h"
 #endif  // LITE_WITH_ARM
 
-DEFINE_int32(cluster, 3, "cluster id");
+DEFINE_int32(power_mode,
+             3,
+             "power mode: "
+             "0 for POWER_HIGH;"
+             "1 for POWER_LOW;"
+             "2 for POWER_FULL;"
+             "3 for NO_BIND");
 DEFINE_int32(threads, 1, "threads num");
 DEFINE_int32(warmup, 0, "warmup times");
 DEFINE_int32(repeats, 1, "repeats times");
@@ -53,6 +59,7 @@ DEFINE_bool(flag_bias, false, "with bias");
 typedef paddle::lite::DDim DDim;
 typedef paddle::lite::Tensor Tensor;
 typedef paddle::lite::operators::ConvParam ConvParam;
+using paddle::lite::Timer;
 
 DDim compute_out_dim(const DDim& dim_in,
                      const paddle::lite::operators::ConvParam& param) {
@@ -78,7 +85,7 @@ void test_conv_transpose_fp32(const std::vector<DDim>& input_dims,
                               bool flag_bias,
                               bool flag_relu,
                               const std::vector<int>& thread_num,
-                              const std::vector<int>& cluster_id) {
+                              const std::vector<int>& power_mode) {
 #ifdef LITE_WITH_ARM
   paddle::lite::DeviceInfo::Init();
 #endif
@@ -114,7 +121,7 @@ void test_conv_transpose_fp32(const std::vector<DDim>& input_dims,
   auto wptr = tmp_weights.data<float>();
   auto bias_ptr = flag_bias ? param.bias->data<float>() : nullptr;
 
-  for (auto& cls : cluster_id) {
+  for (auto& cls : power_mode) {
     for (auto& th : thread_num) {
       paddle::lite::kernels::arm::Conv2DTransposeCompute conv_t;
       std::unique_ptr<paddle::lite::KernelContext> ctx1(
@@ -185,7 +192,7 @@ void test_conv_transpose_fp32(const std::vector<DDim>& input_dims,
           conv_t.Launch();
         }
         /// compute
-        lite::test::Timer t0;
+        Timer t0;
         for (int i = 0; i < FLAGS_repeats; ++i) {
           t0.start();
           conv_t.Launch();
@@ -211,7 +218,7 @@ void test_conv_transpose_fp32(const std::vector<DDim>& input_dims,
             if (max_diff > 5e-4f) {
               LOG(WARNING) << "basic result";
               print_tensor(tout_basic);
-              LOG(WARNING) << "saber result";
+              LOG(WARNING) << "lite result";
               print_tensor(*param.output);
               Tensor tdiff;
               tdiff.Resize(tout_basic.dims());
@@ -226,7 +233,7 @@ void test_conv_transpose_fp32(const std::vector<DDim>& input_dims,
                          << ", dila_: " << dilas[0] << ", " << dilas[1]
                          << ", bias: " << (flag_bias ? "true" : "false")
                          << ", relu: " << (flag_relu ? "true" : "false")
-                         << ", threads: " << th << ", cluster: " << cls
+                         << ", threads: " << th << ", power_mode: " << cls
                          << " failed!!\n";
             }
           }
@@ -238,7 +245,7 @@ void test_conv_transpose_fp32(const std::vector<DDim>& input_dims,
                   << ", dila_: " << dilas[0] << ", " << dilas[1]
                   << ", bias: " << (flag_bias ? "true" : "false")
                   << ", relu: " << (flag_relu ? "true" : "false")
-                  << ", threads: " << th << ", cluster: " << cls
+                  << ", threads: " << th << ", power_mode: " << cls
                   << " successed!!\n";
       }
     }
@@ -259,7 +266,7 @@ void test_conv_transpose_fp32(const std::vector<DDim>& input_dims,
                               bool flag_bias,
                               bool flag_relu,
                               const std::vector<int>& thread_num,
-                              const std::vector<int>& cluster_id) {}
+                              const std::vector<int>& power_mode) {}
 #endif  // LITE_WITH_ARM
 
 #if 1  /// random param conv
@@ -294,7 +301,7 @@ TEST(TestConvRand, test_conv_transpose_rand) {
                                                  flag_bias,
                                                  flag_relu,
                                                  {1, 2, 4},
-                                                 {FLAGS_cluster});
+                                                 {FLAGS_power_mode});
                       }
                     }
                   }
@@ -328,6 +335,6 @@ TEST(TestConvCustom, test_conv_transpose_fp32_custom_size) {
       FLAGS_flag_bias,
       FLAGS_flag_relu,
       {FLAGS_threads},
-      {FLAGS_cluster});
+      {FLAGS_power_mode});
 }
 #endif  // custom

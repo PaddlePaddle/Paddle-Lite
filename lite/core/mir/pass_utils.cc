@@ -53,6 +53,7 @@ void ExpandPlaces(std::set<Place>* places, const Place& place) {
                                              TARGET(kARM),
                                              TARGET(kOpenCL),
                                              TARGET(kNPU),
+                                             TARGET(kXPU),
                                              TARGET(kFPGA)});
   static const Types<PrecisionType> precision_set(
       {PRECISION(kFloat), PRECISION(kInt8), PRECISION(kFP16), PRECISION(kAny)});

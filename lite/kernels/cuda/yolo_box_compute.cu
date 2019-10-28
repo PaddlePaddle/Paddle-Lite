@@ -171,6 +171,10 @@ void YoloBoxCompute::Run() {
   const int* imgsize = ImgSize->data<int>();
   float* boxes = Boxes->mutable_data<float>(TARGET(kCUDA));
   float* scores = Scores->mutable_data<float>(TARGET(kCUDA));
+  TargetWrapperCuda::MemsetAsync(
+      boxes, 0, Boxes->numel() * sizeof(float), stream);
+  TargetWrapperCuda::MemsetAsync(
+      scores, 0, Scores->numel() * sizeof(float), stream);
 
   const int n = X->dims()[0];
   const int h = X->dims()[2];

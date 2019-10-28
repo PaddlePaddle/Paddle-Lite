@@ -628,7 +628,7 @@ bool gemv_int8_sdot(const int8_t* A,
         "str s2, [%[out]]               \n" /* save result */
         : [in] "+r"(ptr_in), [w0] "+r"(ptr_w0), [cnt] "+r"(cnt_loop)
         : [out] "r"(ptr_out)
-        : "cc", "memory", "v0", "v8", "v9", "v18");
+        : "cc", "memory", "v0", "v1", "v2", "v8", "v9", "v18");
     for (int i = 0; i < tail; ++i) {
       ptr_out[0] += ptr_in[i] * ptr_w0[i];
     }
@@ -652,12 +652,15 @@ bool gemv_int8<float>(const int8_t* A,
                       const ARMContext* ctx) {
 #if defined(__aarch64__) && defined(WITH_ARM_DOTPROD)
   if (ctx->has_dot()) {
-    gemv_int8_sdot<float>(A, x, y, transA, M, N, scale, is_bias, bias, is_relu);
+    return gemv_int8_sdot<float>(
+        A, x, y, transA, M, N, scale, is_bias, bias, is_relu);
   } else {
-    gemv_int8_oth<float>(A, x, y, transA, M, N, scale, is_bias, bias, is_relu);
+    return gemv_int8_oth<float>(
+        A, x, y, transA, M, N, scale, is_bias, bias, is_relu);
   }
 #else
-  gemv_int8_oth<float>(A, x, y, transA, M, N, scale, is_bias, bias, is_relu);
+  return gemv_int8_oth<float>(
+      A, x, y, transA, M, N, scale, is_bias, bias, is_relu);
 #endif
 }
 
@@ -675,13 +678,15 @@ bool gemv_int8<int8_t>(const int8_t* A,
                        const ARMContext* ctx) {
 #if defined(__aarch64__) && defined(WITH_ARM_DOTPROD)
   if (ctx->has_dot()) {
-    gemv_int8_sdot<int8_t>(
+    return gemv_int8_sdot<int8_t>(
         A, x, y, transA, M, N, scale, is_bias, bias, is_relu);
   } else {
-    gemv_int8_oth<int8_t>(A, x, y, transA, M, N, scale, is_bias, bias, is_relu);
+    return gemv_int8_oth<int8_t>(
+        A, x, y, transA, M, N, scale, is_bias, bias, is_relu);
   }
 #else
-  gemv_int8_oth<int8_t>(A, x, y, transA, M, N, scale, is_bias, bias, is_relu);
+  return gemv_int8_oth<int8_t>(
+      A, x, y, transA, M, N, scale, is_bias, bias, is_relu);
 #endif
 }
 

@@ -154,6 +154,10 @@ bool Transpose2Op::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
   if (op_desc.HasAttr("data_format")) {
     param_.data_format = op_desc.GetAttr<std::string>("data_format");
   }
+  if (op_desc.HasOutput("XShape")) {
+    auto xshape_var = scope->FindVar(op_desc.Output("XShape").front());
+    param_.xshape = xshape_var->GetMutable<lite::Tensor>();
+  }
   return true;
 }
 

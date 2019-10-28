@@ -17,8 +17,8 @@
 #include <chrono>  // NOLINT
 #include <list>
 
+namespace paddle {
 namespace lite {
-namespace test {
 
 class Timer final {
  public:
@@ -34,11 +34,13 @@ class Timer final {
     tend_ = std::chrono::system_clock::now();
     auto ts =
         std::chrono::duration_cast<std::chrono::microseconds>(tend_ - tstart_);
-    float elapse_ms = 1000.f * static_cast<float>(ts.count()) *
-                      std::chrono::microseconds::period::num /
-                      std::chrono::microseconds::period::den;
-    ms_time_.push_back(elapse_ms);
+    latest_time_ = 1000.f * static_cast<float>(ts.count()) *
+                   std::chrono::microseconds::period::num /
+                   std::chrono::microseconds::period::den;
+    ms_time_.push_back(latest_time_);
   }
+
+  float latest_time() const { return latest_time_; }
 
   float get_average_ms() {
     if (ms_time_.size() == 0) {
@@ -96,7 +98,8 @@ class Timer final {
   std::chrono::time_point<std::chrono::system_clock> tstart_;
   std::chrono::time_point<std::chrono::system_clock> tend_;
   std::list<float> ms_time_;
+  float latest_time_;
 };
 
-}  // namespace test
 }  // namespace lite
+}  // namespace paddle
