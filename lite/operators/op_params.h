@@ -14,6 +14,7 @@
 
 #pragma once
 #include <string>
+#include <utility>
 #include <vector>
 #include "lite/api/paddle_place.h"
 #include "lite/core/scope.h"
@@ -69,9 +70,9 @@ struct CalibParam {
 };
 
 struct GraphParam {
-  std::vector<const lite::Tensor*> inputs{};
+  std::vector<std::pair<std::string, const lite::Tensor*>> inputs{};
   lite::Tensor* weight{};
-  std::vector<lite::Tensor*> outputs{};
+  std::vector<std::pair<std::string, lite::Tensor*>> outputs{};
 };
 
 /// -------------------------- NN operators ------------------------------------
@@ -83,6 +84,7 @@ struct FcParam {
   lite::Tensor* output{nullptr};
   lite::DDim in_mat_dims;
   int in_num_col_dims{1};
+  std::string activation_type{""};
   // for int8
   WITH_INT8_CONFIG
 };
@@ -97,6 +99,7 @@ struct InterpolateParam {
   int out_h{-1};
   int out_w{-1};
   bool align_corners{true};
+  int align_mode{1};
   std::string interp_method{"Nearest"};
 };
 
@@ -293,6 +296,8 @@ struct PoolParam {
   bool ceil_mode{false};
   bool use_quantizer{false};
   std::string data_format{"AnyLayout"};
+  // for int8
+  WITH_INT8_CONFIG
 };
 
 // For Dropout op
@@ -320,6 +325,8 @@ struct SplitParam {
 struct TransposeParam {
   const lite::Tensor* x{};
   lite::Tensor* output{};
+  lite::Tensor* xshape{};
+
   std::vector<int> axis;
   bool use_mkldnn{false};
   std::string data_format{"AnyLayout"};
@@ -331,7 +338,10 @@ struct ElementwiseParam {
   const lite::Tensor* Y{};
   lite::Tensor* Out{};
   int axis{-1};  // for broadcasting.
+  // for int8
   WITH_INT8_CONFIG
+  float x_input_scale{1.0};
+  float y_input_scale{1.0};
 };
 
 struct ElementwiseGradParam {
@@ -371,6 +381,17 @@ struct FillConstantParam {
   // useless for x86, keep it for compatibility
   bool force_cpu{false};
   lite::Tensor* Out{};
+};
+struct FillConstantBatchLikeParam {
+  int dtype{static_cast<int>(VarDescAPI::VarDataType::FP32)};
+  std::vector<int64_t> shape{};
+  float value{0.0f};
+  // useless for x86, keep it for compatibility
+  bool force_cpu{false};
+  lite::Tensor* out{};
+  const lite::Tensor* input{};
+  int input_dim_idx{0};
+  int output_dim_idx{0};
 };
 
 struct FillConstantBatchSizeLikeParam {
@@ -618,6 +639,16 @@ struct NormParam {
   int axis{1};
   float epsilon{1e-10};
 };
+struct LayerNormParam {
+  const lite::Tensor* X{};
+  const lite::Tensor* Scale{};
+  const lite::Tensor* Bias{};
+  lite::Tensor* Y{};
+  lite::Tensor* Mean{};
+  lite::Tensor* Variance{};
+  int begin_norm_axis{1};
+  float epsilon{1e-5};
+};
 
 struct LogicalParam {
   const lite::Tensor* X{};
@@ -813,6 +844,12 @@ struct MatMulParam {
   bool transpose_X{false};
   bool transpose_Y{false};
   float alpha{1.0f};
+};
+
+struct GatherParam {
+  const lite::Tensor* X{};
+  const lite::Tensor* Index{};
+  lite::Tensor* Out{};
 };
 
 /// ----------------------- assign operators -----------------------

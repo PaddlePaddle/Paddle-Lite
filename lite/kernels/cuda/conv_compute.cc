@@ -111,6 +111,28 @@ REGISTER_LITE_KERNEL(
                                        DATALAYOUT(kNCHW))})
     .Finalize();
 
+REGISTER_LITE_KERNEL(depthwise_conv2d,
+                     kCUDA,
+                     kFloat,
+                     kNCHW,
+                     paddle::lite::kernels::cuda::ConvCompute,
+                     def)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kCUDA),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kNCHW))})
+    .BindInput("Bias",
+               {LiteType::GetTensorTy(TARGET(kCUDA), PRECISION(kFloat))})
+    .BindInput("Filter",
+               {LiteType::GetTensorTy(TARGET(kCUDA),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kNCHW))})
+    .BindOutput("Output",
+                {LiteType::GetTensorTy(TARGET(kCUDA),
+                                       PRECISION(kFloat),
+                                       DATALAYOUT(kNCHW))})
+    .Finalize();
+
 REGISTER_LITE_KERNEL(
     conv2d,
     kCUDA,

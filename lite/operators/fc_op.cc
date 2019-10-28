@@ -87,6 +87,10 @@ bool FcOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
   param_.output = scope->FindVar(out)->GetMutable<lite::Tensor>();
   param_.in_num_col_dims = op_desc.GetAttr<int>("in_num_col_dims");
 
+  if (op_desc.HasAttr("activation_type")) {
+    param_.activation_type = op_desc.GetAttr<std::string>("activation_type");
+  }
+
   // For Int8
   if (op_desc.HasAttr("enable_int8")) {
     param_.enable_int8 = op_desc.GetAttr<bool>("enable_int8");

@@ -28,7 +28,7 @@ if ((NOT LITE_ON_TINY_PUBLISH) AND (LITE_WITH_X86 OR ARM_TARGET_OS STREQUAL "and
     ARM_DEPS ${arm_kernels} NPU_DEPS ${npu_kernels})
     target_link_libraries(paddle_light_api_shared ${light_lib_DEPS} ${arm_kernels} ${npu_kernels})
 else()
-    if (ARM_TARGET_OS STREQUAL "android")
+    if ((ARM_TARGET_OS STREQUAL "android") OR (ARM_TARGET_OS STREQUAL "armlinux"))
         add_library(paddle_light_api_shared SHARED "")
         target_sources(paddle_light_api_shared PUBLIC ${__lite_cc_files} paddle_api.cc light_api.cc light_api_impl.cc)
         add_dependencies(paddle_light_api_shared op_list_h kernel_list_h)
@@ -40,7 +40,8 @@ if (WITH_TESTING)
       DEPS scope optimizer target_wrapper_host model_parser program
            ${ops} ${host_kernels}
       CUDA_DEPS ${cuda_kernels}
-      X86_DEPS ${x86_kernels})
+      X86_DEPS ${x86_kernels}
+      XPU_DEPS ${xpu_kernels})
 endif()
 if(LITE_WITH_FPGA)
     set(light_api_deps ${light_api_deps} ${fpga_deps})
@@ -52,6 +53,7 @@ message(STATUS "get X86 kernels ${x86_kernels}")
 message(STATUS "get Host kernels ${host_kernels}")
 message(STATUS "get ARM kernels ${arm_kernels}")
 message(STATUS "get NPU kernels ${npu_kernels}")
+message(STATUS "get XPU kernels ${xpu_kernels}")
 message(STATUS "get FPGA kernels ${fpga_kernels}")
 
 # for full api
@@ -64,6 +66,7 @@ if (NOT LITE_ON_TINY_PUBLISH)
                     X86_DEPS ${x86_kernels}
                     ARM_DEPS ${arm_kernels}
                     NPU_DEPS ${npu_kernels} ${npu_bridges} npu_pass
+                    XPU_DEPS ${xpu_kernels} ${xpu_bridges} xpu_pass
                     CL_DEPS ${opencl_kenrels}
                     FPGA_DEPS ${fpga_kenrels})
 endif()
@@ -73,6 +76,8 @@ set(light_api_deps
     scope target_wrapper_host model_parser program)
 if(LITE_WITH_CUDA)
     set(light_api_deps ${light_api_deps} target_wrapper_cuda)
+    set(cuda_static_deps cudart_static cublas_static curand_static
+        cudnn_static culibos_static)
 endif()
 lite_cc_library(light_api SRCS light_api.cc
         DEPS scope target_wrapper_host model_parser
@@ -81,6 +86,7 @@ lite_cc_library(light_api SRCS light_api.cc
         X86_DEPS ${x86_kernels}
         ARM_DEPS ${arm_kernels}
         NPU_DEPS ${npu_kernels}
+        XPU_DEPS ${xpu_kernels}
         CL_DEPS ${opencl_kenrels}
         FPGA_DEPS ${fpga_kenrels})
 
@@ -95,6 +101,7 @@ if(WITH_TESTING)
        X86_DEPS ${x86_kernels}
        ARM_DEPS ${arm_kernels}
        NPU_DEPS ${npu_kernels}
+       XPU_DEPS ${xpu_kernels}
        CL_DEPS ${opencl_kernels}
        FPGA_DEPS ${fpga_kernels}
        EXCLUDE_COMPILE_DEPS "ON"
@@ -122,6 +129,11 @@ if(WITH_TESTING)
            ${ops} ${host_kernels} ${x86_kernels}
            ARGS --model_dir=${LITE_MODEL_DIR}/inception_v4_simple)
         add_dependencies(test_inceptionv4_lite_x86 extern_lite_download_inception_v4_simple_tar_gz)
+        lite_cc_test(test_resnet50_lite_x86 SRCS test_resnet50_lite_x86.cc
+           DEPS cxx_api mir_passes lite_api_test_helper
+           ${ops} ${host_kernels} ${x86_kernels}
+           ARGS --model_dir=${LITE_MODEL_DIR}/resnet50)
+        add_dependencies(test_resnet50_lite_x86 extern_lite_download_resnet50_tar_gz)
     endif()
 endif()
 
@@ -200,7 +212,7 @@ if (NOT LITE_ON_TINY_PUBLISH)
     # The final inference library for just MobileConfig.
     bundle_static_library(paddle_api_full paddle_api_full_bundled bundle_full_api)
     get_property(fluid_modules GLOBAL PROPERTY FLUID_MODULES)
-    cc_library(api_full_static SRCS DEPS paddle_api_full cxx_api paddle_api light_api  ${cxx_api_deps} ${ops} ${host_kernels} ${cuda_kernels} program tensor memory naive_buffer types ${fluid_modules} protobuf)
+    cc_library(api_full_static SRCS DEPS paddle_api_full cxx_api paddle_api light_api  ${cxx_api_deps} ${ops} ${host_kernels} ${cuda_kernels} program tensor memory naive_buffer types ${fluid_modules} protobuf ${cuda_static_deps})
 endif()
 bundle_static_library(paddle_api_light paddle_api_light_bundled bundle_light_api)
 #-----------------------------------------------------------------------------------------------------
@@ -217,12 +229,17 @@ lite_cc_test(test_apis SRCS apis_test.cc
         DEPS cxx_api light_api ${ops} paddle_api_light
         CL_DEPS ${opencl_kernels}
         X86_DEPS ${x86_kernels}
+        XPU_DEPS ${xpu_kernels}
         FPGA_DEPS ${fpga_kernels}
         ARGS --model_dir=${LITE_MODEL_DIR}/lite_naive_model
         --optimized_model=${LITE_MODEL_DIR}/lite_naive_model_opt SERIAL)
 
 if (LITE_WITH_JAVA AND LITE_WITH_ARM)
     add_subdirectory(android)
+endif()
+
+if (LITE_WITH_PYTHON) 
+    add_subdirectory(python)
 endif()
 
 if (LITE_ON_TINY_PUBLISH)
@@ -240,6 +257,7 @@ lite_cc_test(test_paddle_api SRCS paddle_api_test.cc DEPS paddle_api_full paddle
   ${ops}
   ARM_DEPS ${arm_kernels}
   NPU_DEPS ${npu_kernels}
+  XPU_DEPS ${xpu_kernels}
   CL_DEPS ${opencl_kernels}
   X86_DEPS ${x86_kernels}
   FPGA_DEPS ${fpga_kernels}
@@ -254,6 +272,7 @@ if(NOT IOS)
     ${ops} ${host_kernels}
     ARM_DEPS ${arm_kernels}
     NPU_DEPS ${npu_kernels}
+    XPU_DEPS ${xpu_kernels}
     CL_DEPS ${opencl_kernels}
     FPGA_DEPS ${fpga_kernels}
     X86_DEPS ${x86_kernels})
@@ -261,6 +280,7 @@ if(NOT IOS)
     ${ops} ${host_kernels}
     ARM_DEPS ${arm_kernels}
     NPU_DEPS ${npu_kernels}
+    XPU_DEPS ${xpu_kernels}
     CL_DEPS ${opencl_kernels}
     FPGA_DEPS ${fpga_kernels}
     X86_DEPS ${x86_kernels})

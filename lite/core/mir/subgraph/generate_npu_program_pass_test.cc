@@ -106,7 +106,6 @@ std::shared_ptr<lite_api::PaddlePredictor> TestModel(
     const std::string& model_dir,
     const std::string& model_file,
     const std::string& params_file,
-    const lite_api::Place& preferred_place,
     const std::vector<lite_api::Place>& valid_places,
     const std::vector<std::vector<int64_t>>& input_tensor_shape,
     const std::string& optimized_model_dir) {
@@ -115,7 +114,6 @@ std::shared_ptr<lite_api::PaddlePredictor> TestModel(
   cxx_config.set_model_dir(model_dir);
   cxx_config.set_model_file(model_file);
   cxx_config.set_param_file(params_file);
-  cxx_config.set_preferred_place(preferred_place);
   cxx_config.set_valid_places(valid_places);
   auto predictor = lite_api::CreatePaddlePredictor(cxx_config);
   FillInputTensor(predictor, input_tensor_shape, 1);
@@ -151,9 +149,7 @@ TEST(NPUSubgraph, compare) {
       TestModel(FLAGS_model_dir,
                 FLAGS_model_file,
                 FLAGS_params_file,
-                lite_api::Place{TARGET(kARM), PRECISION(kFloat)},
-                {lite_api::Place{TARGET(kHost), PRECISION(kFloat)},
-                 lite_api::Place{TARGET(kARM), PRECISION(kFloat)}},
+                {lite_api::Place{TARGET(kARM), PRECISION(kFloat)}},
                 input_tensor_shape,
                 FLAGS_optimized_model_dir + "/CPU");
   // generate and run optimized NPU model
@@ -162,9 +158,7 @@ TEST(NPUSubgraph, compare) {
       TestModel(FLAGS_model_dir,
                 FLAGS_model_file,
                 FLAGS_params_file,
-                lite_api::Place{TARGET(kARM), PRECISION(kFloat)},
-                {lite_api::Place{TARGET(kHost), PRECISION(kFloat)},
-                 lite_api::Place{TARGET(kARM), PRECISION(kFloat)},
+                {lite_api::Place{TARGET(kARM), PRECISION(kFloat)},
                  lite_api::Place{TARGET(kNPU), PRECISION(kFloat)}},
                 input_tensor_shape,
                 FLAGS_optimized_model_dir + "/NPU");
