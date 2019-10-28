@@ -49,8 +49,8 @@ void GraphCompute::PrepareForRun() {
     VLOG(3) << "npu_idims[" << i << "]: " << npu_idims_[i].GetNumber() << ","
             << npu_idims_[i].GetChannel() << "," << npu_idims_[i].GetHeight()
             << "," << npu_idims_[i].GetWidth();
-    VLOG(3) << "lite_idims[" << i << "]: " << param.inputs[i]->dims();
-    CHECK_EQ(param.inputs[i]->dims().production(),
+    VLOG(3) << "lite_idims[" << i << "]: " << param.inputs[i].second->dims();
+    CHECK_EQ(param.inputs[i].second->dims().production(),
              npu_idims_[i].GetNumber() * npu_idims_[i].GetChannel() *
                  npu_idims_[i].GetHeight() * npu_idims_[i].GetWidth());
     npu_itensors_[i].reset(new hiai::AiTensor);
@@ -61,16 +61,16 @@ void GraphCompute::PrepareForRun() {
     VLOG(3) << "npu_odims[" << i << "]: " << npu_odims_[i].GetNumber() << ","
             << npu_odims_[i].GetChannel() << "," << npu_odims_[i].GetHeight()
             << "," << npu_odims_[i].GetWidth();
-    VLOG(3) << "lite_odims[" << i << "]: " << param.outputs[i]->dims();
+    VLOG(3) << "lite_odims[" << i << "]: " << param.outputs[i].second->dims();
     auto out_size = npu_odims_[i].GetNumber() * npu_odims_[i].GetChannel() *
                     npu_odims_[i].GetHeight() * npu_odims_[i].GetWidth();
-    if (param.outputs[i]->dims().production() != out_size) {
-      param.outputs[i]->Resize({npu_odims_[i].GetNumber(),
-                                npu_odims_[i].GetChannel(),
-                                npu_odims_[i].GetHeight(),
-                                npu_odims_[i].GetWidth()});
+    if (param.outputs[i].second->dims().production() != out_size) {
+      param.outputs[i].second->Resize({npu_odims_[i].GetNumber(),
+                                       npu_odims_[i].GetChannel(),
+                                       npu_odims_[i].GetHeight(),
+                                       npu_odims_[i].GetWidth()});
     }
-    LOG(INFO) << param.outputs[i]->dims();
+    LOG(INFO) << param.outputs[i].second->dims();
     npu_otensors_[i].reset(new hiai::AiTensor);
     npu_otensors_[i]->Init(&(npu_odims_[i]));
   }
@@ -80,7 +80,7 @@ bool GraphCompute::input_dims_changed() const {
   auto& param = this->Param<param_t>();
   CHECK_EQ(param.inputs.size(), npu_idims_.size());
   for (size_t i = 0; i < param.inputs.size(); ++i) {
-    auto param_idims = param.inputs[i]->dims();
+    auto param_idims = param.inputs[i].second->dims();
     CHECK(!param_idims.empty());
     CHECK_EQ(param_idims.size(), 4);
     std::vector<int> idims{static_cast<int>(npu_idims_[i].GetNumber()),
@@ -105,7 +105,7 @@ void GraphCompute::Run() {
   CHECK_EQ(param.outputs.size(), npu_otensors_.size());
 
   for (size_t i = 0; i < param.inputs.size(); ++i) {
-    auto* itensor = param.inputs[i];
+    auto* itensor = param.inputs[i].second;
     CHECK(itensor);
     const auto* i_data = itensor->data<float>();
     std::memcpy(
@@ -129,7 +129,7 @@ void GraphCompute::Run() {
   VLOG(3) << "[NPU] Process cost " << GetCurrentUS() - start_time << " us";
 
   for (size_t i = 0; i < param.outputs.size(); ++i) {
-    auto* otensor = param.outputs[i];
+    auto* otensor = param.outputs[i].second;
     CHECK(otensor);
     auto* o_data = otensor->mutable_data<float>();
     auto* npu_obuffer = static_cast<float*>(npu_otensors_[i]->GetBuffer());
