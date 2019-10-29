@@ -179,7 +179,7 @@ make
 sudo make install
 ```
 
-之后可通过cmake --version查看cmake是否安装成功
+之后可通过cmake --version查看cmake是否安装成功。
 
 至此，完成 Linux 交叉编译环境的准备。
 
