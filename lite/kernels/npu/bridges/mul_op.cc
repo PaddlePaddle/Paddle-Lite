@@ -12,14 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "ai_ddk_lib/include/graph/buffer.h"
-#include "ai_ddk_lib/include/graph/graph.h"
-#include "ai_ddk_lib/include/graph/model.h"
-#include "ai_ddk_lib/include/graph/op/all_ops.h"
-#include "ai_ddk_lib/include/graph/operator.h"
-#include "ai_ddk_lib/include/graph/operator_reg.h"
+#include "lite/backends/npu/builder.h"
 #include "lite/kernels/npu/bridges/registry.h"
-#include "lite/kernels/npu/bridges/utils.h"
 
 namespace paddle {
 namespace lite {
@@ -34,7 +28,8 @@ node_map_type MulConverter(const std::shared_ptr<lite::OpLite> mul_op,
   LOG(INFO) << "converting mul...";
   lite::Scope* scope = mul_op->scope();
   const lite::OpInfo* op_info = mul_op->op_info();
-  auto output_node = std::make_shared<ge::op::MatMul>(UniqueName("mul"));
+  auto output_node =
+      std::make_shared<ge::op::MatMul>(lite::npu::UniqueName("mul"));
 
   auto x_var_name = op_info->Input("X").front();
   auto y_var_name = op_info->Input("Y").front();
@@ -66,8 +61,8 @@ node_map_type MulConverter(const std::shared_ptr<lite::OpLite> mul_op,
     reshapex->set_input_tensor(*xsrc);
     reshapex->set_attr_shape({m, k});
     reshapex->set_attr_axis(0);
-    OpList::Global().add(xsrc);
-    OpList::Global().add(reshapex);
+    lite::npu::OpList::Global().add(xsrc);
+    lite::npu::OpList::Global().add(reshapex);
     output_node->set_input_x(*reshapex);
   } else {
     auto constx = std::make_shared<ge::op::Const>(x_var_name);
@@ -79,7 +74,7 @@ node_map_type MulConverter(const std::shared_ptr<lite::OpLite> mul_op,
     auto* pdata = reinterpret_cast<uint8_t*>(xtensor->mutable_data<float>());
     ptensor->SetData(pdata, size * sizeof(float));
     constx->set_attr_value(ptensor);
-    OpList::Global().add(constx);
+    lite::npu::OpList::Global().add(constx);
     output_node->set_input_x(*constx);
   }
 
@@ -89,8 +84,8 @@ node_map_type MulConverter(const std::shared_ptr<lite::OpLite> mul_op,
     reshapey->set_input_tensor(*ysrc);
     reshapey->set_attr_shape({k, n});
     reshapey->set_attr_axis(0);
-    OpList::Global().add(ysrc);
-    OpList::Global().add(reshapey);
+    lite::npu::OpList::Global().add(ysrc);
+    lite::npu::OpList::Global().add(reshapey);
     output_node->set_input_w(*reshapey);
   } else {
     auto consty = std::make_shared<ge::op::Const>(y_var_name);
@@ -102,11 +97,11 @@ node_map_type MulConverter(const std::shared_ptr<lite::OpLite> mul_op,
     auto* pdata = reinterpret_cast<uint8_t*>(ytensor->mutable_data<float>());
     ptensor->SetData(pdata, size * sizeof(float));
     consty->set_attr_value(ptensor);
-    OpList::Global().add(consty);
+    lite::npu::OpList::Global().add(consty);
     output_node->set_input_w(*consty);
   }
 
-  OpList::Global().add(output_node);
+  lite::npu::OpList::Global().add(output_node);
 
   node_map_type outputs_map;
   outputs_map[op_info->Output("Out").front()] = output_node;
