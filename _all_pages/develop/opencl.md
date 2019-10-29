@@ -7,14 +7,14 @@ Lite支持在Android系统上运行基于OpenCL的程序，目前支持Ubuntu环
 
 ## 编译
 
-编译环境：
+### 编译环境
 
 1. Docker 容器环境；
 2. Linux（推荐 Ubuntu 16.04）环境。
 
 详见[ **源码编译指南-环境准备** 章节](./source_compile.md)
 
-编译选项：
+### 编译选项
 
 |参数|介绍|值|
 |--------|--------|--------|
@@ -22,7 +22,9 @@ Lite支持在Android系统上运行基于OpenCL的程序，目前支持Ubuntu环
 |--arm_abi|代表体系结构类型，支持armv8和armv7|默认为`armv8`即arm64-v8a；`armv7`即armeabi-v7a|
 |--arm_lang|代表编译目标文件所使用的编译器|默认为gcc，支持 gcc和clang两种|
 
-编译范例（以Docker容器环境为例，CMake3.10，android-ndk-r17c位于`/opt/`目录下）：
+### 编译范例
+
+注：以Docker容器环境为例，CMake3.10，android-ndk-r17c位于`/opt/`目录下。
 
 ```bash
 # 假设当前位于处于Lite源码根目录下
