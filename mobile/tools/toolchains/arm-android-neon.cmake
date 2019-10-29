@@ -1,5 +1,0 @@
-set(ANDROID_ARM_NEON ON)
-set(ANDROID_PIE TRUE)
-set(ANDROID_STL "c++_static")
-set(ANDROID_PLATFORM "android-22")
-include("${CMAKE_CURRENT_LIST_DIR}/../android-cmake/android.toolchain.cmake")
