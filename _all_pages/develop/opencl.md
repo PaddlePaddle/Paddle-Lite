@@ -153,7 +153,3 @@ auto out0_dims = out0_tensor->dims();
 auto out0_item_size = out0_tensor->dims().production();
 auto* out0_pointer = out0_tensor->data<float>();
 ```
-
-# 其它注意
-
-因OpenCL有两种形式：cl::Image2D和cl::Buffer，如果出现 segmentationFault 的情况，很有可能是因为OpenCL在选择kernel的时候，上一个kernel的输出是cl::Buffer或者cl::Image2D的格式，下一个kernel的输入是cl::Image2D或cl::Buffer，导致不匹配出现的问题。
