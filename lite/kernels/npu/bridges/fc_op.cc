@@ -12,14 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "ai_ddk_lib/include/graph/buffer.h"
-#include "ai_ddk_lib/include/graph/graph.h"
-#include "ai_ddk_lib/include/graph/model.h"
-#include "ai_ddk_lib/include/graph/op/all_ops.h"
-#include "ai_ddk_lib/include/graph/operator.h"
-#include "ai_ddk_lib/include/graph/operator_reg.h"
+#include "lite/backends/npu/builder.h"
 #include "lite/kernels/npu/bridges/registry.h"
-#include "lite/kernels/npu/bridges/utils.h"
 
 namespace paddle {
 namespace lite {
@@ -32,7 +26,8 @@ node_map_type FCConverter(const std::shared_ptr<lite::OpLite> fc_op,
   LOG(INFO) << "Converting fc...";
   lite::Scope* scope = fc_op->scope();
   const lite::OpInfo* op_info = fc_op->op_info();
-  auto output_node = std::make_shared<ge::op::MatMul>(UniqueName("fc"));
+  auto output_node =
+      std::make_shared<ge::op::MatMul>(lite::npu::UniqueName("fc"));
 
   auto x_var_name = op_info->Input("Input").front();
   auto w_var_name = op_info->Input("W").front();
@@ -64,8 +59,8 @@ node_map_type FCConverter(const std::shared_ptr<lite::OpLite> fc_op,
   reshapex->set_input_tensor(*xsrc);
   reshapex->set_attr_shape({m, k});
   reshapex->set_attr_axis(0);
-  OpList::Global().add(xsrc);
-  OpList::Global().add(reshapex);
+  lite::npu::OpList::Global().add(xsrc);
+  lite::npu::OpList::Global().add(reshapex);
   output_node->set_input_x(*reshapex);
 
   auto wconst = std::make_shared<ge::op::Const>(w_var_name);
@@ -77,10 +72,10 @@ node_map_type FCConverter(const std::shared_ptr<lite::OpLite> fc_op,
   auto* pdata = reinterpret_cast<uint8_t*>(wtensor->mutable_data<float>());
   ptensor->SetData(pdata, size * sizeof(float));
   wconst->set_attr_value(ptensor);
-  OpList::Global().add(wconst);
+  lite::npu::OpList::Global().add(wconst);
   output_node->set_input_w(*wconst);
 
-  if (HasInputArg(op_info, scope, "Bias")) {
+  if (lite::npu::HasInputArg(op_info, scope, "Bias")) {
     auto b_var_name = op_info->Input("Bias").front();
     auto* btensor = scope->FindVar(b_var_name)->GetMutable<lite::Tensor>();
 
@@ -99,12 +94,12 @@ node_map_type FCConverter(const std::shared_ptr<lite::OpLite> fc_op,
     auto* pdata = reinterpret_cast<uint8_t*>(btensor->mutable_data<float>());
     ptensor->SetData(pdata, size * sizeof(float));
     bconst->set_attr_value(ptensor);
-    OpList::Global().add(bconst);
+    lite::npu::OpList::Global().add(bconst);
     output_node->set_input_bias(*bconst);
     output_node->set_attr_has_bias(ge::AttrValue::BOOL{true});
   }
 
-  OpList::Global().add(output_node);
+  lite::npu::OpList::Global().add(output_node);
 
   node_map_type outputs_map;
   outputs_map[op_info->Output("Out").front()] = output_node;

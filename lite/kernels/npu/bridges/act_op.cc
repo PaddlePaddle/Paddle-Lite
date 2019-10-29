@@ -12,14 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "ai_ddk_lib/include/graph/buffer.h"
-#include "ai_ddk_lib/include/graph/graph.h"
-#include "ai_ddk_lib/include/graph/model.h"
-#include "ai_ddk_lib/include/graph/op/all_ops.h"
-#include "ai_ddk_lib/include/graph/operator.h"
-#include "ai_ddk_lib/include/graph/operator_reg.h"
+#include "lite/backends/npu/builder.h"
 #include "lite/kernels/npu/bridges/registry.h"
-#include "lite/kernels/npu/bridges/utils.h"
 
 namespace paddle {
 namespace lite {
@@ -32,7 +26,7 @@ node_map_type ActConverter(const std::shared_ptr<lite::OpLite> act_op,
   auto scope = act_op->scope();
   auto op_info = act_op->op_info();
   auto op_type = op_info->Type();
-  auto unique_op_type = UniqueName(op_type);
+  auto unique_op_type = lite::npu::UniqueName(op_type);
   LOG(INFO) << "Converting " + op_type + "...";
 
   // create act node and set input node from inputs_map
@@ -40,8 +34,8 @@ node_map_type ActConverter(const std::shared_ptr<lite::OpLite> act_op,
   auto act_node = std::make_shared<ge::op::Activation>(unique_op_type);
   CHECK(inputs_map.count(x_var_name));
   act_node->set_input_x(*inputs_map.at(x_var_name));
-  OpList::Global().add(inputs_map.at(x_var_name));
-  OpList::Global().add(act_node);
+  lite::npu::OpList::Global().add(inputs_map.at(x_var_name));
+  lite::npu::OpList::Global().add(act_node);
 
   // parse and set activation type
   int act_mode = 1;
