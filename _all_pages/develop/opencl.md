@@ -145,7 +145,7 @@ for (int i = 0; i < item_size; i++) {
 predictor.Run();
 
 // 获取模型的预测结果tensor
-//   下面将会取出第一个输入tensor
+// 下面展示如何取出第一个输入tensor，及其维度，元素个数，指针
 auto* out0_tensor = predictor.GetOutput(0);
 auto out0_dims = out0_tensor->dims();
 auto out0_item_size = out0_tensor->dims().production();
