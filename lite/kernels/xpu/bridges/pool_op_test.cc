@@ -181,7 +181,7 @@ void test_pool(int bs,
   }
 }
 
-TEST(NPUBridges, pool) {
+TEST(XPUBridges, pool) {
   for (auto pooling_type : {"max", "avg"}) {
     for (auto bs : {1, 3}) {
       for (auto ic : {2}) {
