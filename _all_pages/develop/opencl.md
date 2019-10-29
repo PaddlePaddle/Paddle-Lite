@@ -3,22 +3,38 @@ layout: post
 title: 基于OpenCL的ARM GPU预测
 ---
 
-Lite支持在Android系统上运行基于OpenCL的程序，目前提供armv8和armv7的交叉编译。
+Lite支持在Android系统上运行基于OpenCL的程序，目前支持Ubuntu环境下armv8、armv7的交叉编译。
 
 ## 编译
 
-- 编译环境: 使用基于`paddle/fluid/lite/tools/Dockerfile.mobile`生成docker镜像。
-- cmake编译选项介绍
-    * `--arm_os` 代表目标操作系统， 目前仅支持`android`, 亦为默认值。
-    * `--arm_abi` 代表体系结构类型，支持输入armv8和armv7。其中，armv8等效于arm64-v8a，亦为默认值；armv7等效于 armeabi-v7a。
-    * `--arm_lang` 代表编译目标文件所使用的编译器， 默认为gcc，支持 gcc和clang两种。
-- 参考示例
+编译环境：
+
+1. Docker 容器环境；
+2. Linux（推荐 Ubuntu 16.04）环境。
+
+详见[ **源码编译指南-环境准备** 章节](./source_compile.md)
+
+编译选项：
+
+|参数|介绍|值|
+|--------|--------|--------|
+|--arm_os|代表目标操作系统|目前仅支持且默认为`android`|
+|--arm_abi|代表体系结构类型，支持armv8和armv7|默认为`armv8`即arm64-v8a；`armv7`即armeabi-v7a|
+|--arm_lang|代表编译目标文件所使用的编译器|默认为gcc，支持 gcc和clang两种|
+
+编译范例（以Docker容器环境为例，CMake3.10，android-ndk-r17c位于`/opt/目录下`）：
 
 ```bash
-# 假设处于Lite源码根目录下
+# 假设当前位于处于Lite源码根目录下
+
+# 导入NDK_ROOT变量，注意检查您的安装目录若与本示例不同
 export NDK_ROOT=/opt/android-ndk-r17c
+
+# 删除上一次CMake自动生成的.h文件
 rm ./lite/api/paddle_use_kernels.h
 rm ./lite/api/paddle_use_ops.h
+
+# 根据指定编译参数编译
 ./lite/tools/ci_build.sh \
   --arm_os=android \
   --arm_abi=armv8 \
