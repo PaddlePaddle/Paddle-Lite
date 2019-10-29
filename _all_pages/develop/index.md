@@ -43,6 +43,7 @@ Paddle-Lite 框架是 PaddleMobile 新一代架构，重点支持移动端推理
 - [使用华为NPU]({{site.baseurl}}/develop/npu)
 - [使用Android GPU]({{site.baseurl}}/develop/opencl)
 - [使用FPGA]({{site.baseurl}}/develop/fpga)
+- [使用CUDA]({{site.baseurl}}/develop/cuda)
 
 ## 开发者文档
 
