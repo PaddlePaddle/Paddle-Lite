@@ -22,14 +22,9 @@
 #include "lite/core/mir/pass_registry.h"
 #include "lite/core/mir/pattern_matcher.h"
 
-#include "ai_ddk_lib/include/HiAiModelManagerService.h"
-#include "ai_ddk_lib/include/graph/graph.h"
-#include "ai_ddk_lib/include/graph/model.h"
-#include "ai_ddk_lib/include/graph/op/all_ops.h"  // for ge::op::Data
-#include "ai_ddk_lib/include/graph/operator_reg.h"
+#include "lite/backends/npu/builder.h"
 #include "lite/kernels/npu/bridges/paddle_use_npu_bridges.h"
 #include "lite/kernels/npu/bridges/registry.h"
-#include "lite/kernels/npu/bridges/utils.h"
 
 namespace paddle {
 namespace lite {
@@ -51,7 +46,7 @@ std::shared_ptr<ge::Operator> GenerateNPUProgramPass::CvtVarNode(
     auto wgt = std::make_shared<ge::op::Const>(arg.name);
     LOG(INFO) << "in convert const:" << arg.name;
     VLOG(4) << dims;
-    wgt->set_attr_value(lite::kernels::npu::bridges::CvtFromLiteTensor(tensor));
+    wgt->set_attr_value(lite::npu::CvtFromLiteTensor(tensor));
     return wgt;
   } else {
     CHECK_EQ(dims.size(), 4);
@@ -132,7 +127,7 @@ std::string GenerateNPUProgramPass::BuildNPUGraph(
   // Compiling IR graph to NPU model and store mode data into weight tensor with
   // persistable=true, Sothat the model parser can recognize it and save it to
   // param files
-  if (!lite::kernels::npu::bridges::BuildModel(inputs, outputs, weight)) {
+  if (!lite::npu::BuildModel(inputs, outputs, weight)) {
     LOG(WARNING) << "Build NPU failed subgraph " << sub_id;
     throw std::runtime_error("Build NPU failed subgraph.");
   }

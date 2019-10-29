@@ -1,7 +1,6 @@
-lite_cc_library(npu_bridge_registry SRCS registry.cc DEPS ${npu_ddk_libs})
-lite_cc_library(npu_bridge_utils SRCS utils.cc DEPS ${npu_ddk_libs} npu_runtime tensor op scope)
+lite_cc_library(npu_bridge_registry SRCS registry.cc)
 
-set(npu_bridge_deps npu_bridge_registry npu_bridge_utils op)
+set(npu_bridge_deps npu_bridge_registry npu_builder op)
 
 lite_cc_library(npu_bridge_fc_op SRCS fc_op.cc DEPS ${npu_bridge_deps})
 lite_cc_library(npu_bridge_conv_op SRCS conv_op.cc DEPS ${npu_bridge_deps})
@@ -23,7 +22,6 @@ lite_cc_library(npu_bridge_pad2d_op SRCS pad2d_op.cc DEPS ${npu_bridge_deps})
 
 set(npu_bridges
         npu_bridge_registry
-        npu_bridge_utils
         npu_bridge_fc_op
         npu_bridge_conv_op
         npu_bridge_mul_op
@@ -43,7 +41,7 @@ set(npu_bridges
         npu_bridge_pad2d_op
         CACHE INTERNAL "npu_bridges")
 
-set(npu_bridge_test_deps ${npu_ddk_libs} ${npu_bridges} ${npu_kernels} ${ops})
+set(npu_bridge_test_deps ${npu_bridges} ${npu_kernels} ${ops})
 
 lite_cc_test(test_npu_bridge_fc_op SRCS fc_op_test.cc test_helper.cc DEPS ${npu_bridge_test_deps})
 lite_cc_test(test_npu_bridge_conv_op SRCS conv_op_test.cc test_helper.cc DEPS ${npu_bridge_test_deps})
