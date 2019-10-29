@@ -58,7 +58,7 @@ node_map_type MulConverter(const std::shared_ptr<lite::OpLite> op,
   y_dims_t[0] = y_dims[1];
   y_dims_t[1] = y_dims[0];
   auto y_var_name_t = unique_op_type + "/Y";
-  auto y_tensor_t = scope->NewTensor(y_var_name_t);
+  Tensor* y_tensor_t = new Tensor();
   y_tensor_t->Resize(y_dims_t);
   auto y_data_t = y_tensor_t->mutable_data<float>();
   auto y_data = y_tensor->mutable_data<float>();
@@ -74,6 +74,7 @@ node_map_type MulConverter(const std::shared_ptr<lite::OpLite> op,
       y_var_name_t, lite::xpu::CvtShape(y_dims_t), ::xtcl::Float(32)));
   auto y_const_tensor = lite::xpu::CvtTensor(y_tensor_t);
   graph_ctx->params->emplace(std::make_pair(y_var_name_t, *y_const_tensor));
+  delete y_tensor_t;
 
   // create mul node and set params from op
   std::shared_ptr<xtcl::xExpr> mul_node = nullptr;
