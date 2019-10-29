@@ -43,7 +43,7 @@ void LauchOp(const std::shared_ptr<lite::OpLite> op,
         ge::Shape(input->dims().Vectorize()), ge::FORMAT_NCHW, ge::DT_FLOAT);
     auto input_node = std::make_shared<ge::op::Data>(input_var_name);
     input_node->update_input_desc_x(input_desc);
-    OpList::Global().add(input_node);
+    lite::npu::OpList::Global().add(input_node);
     inputs_map[input_var_name] = input_node;
   }
   auto outputs_map = supported_lists.at(op_type)(op, inputs_map);

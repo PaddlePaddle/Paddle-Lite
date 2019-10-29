@@ -31,7 +31,19 @@
 
 // Extended Ops of HIAI DDK
 namespace ge {
-
+/**
+ * Multiply the matrix x1 by the matrix x2 to generate x1 * x2.
+ * The inputs must be two-dimensional matrices and the inner dimension of "x1"
+ * (after being transposed if transpose_x1 is true) must match the outer
+ * dimension of "x2" (after being transposed if transposed_x2 is true). <Input>
+ *      x : the first input tensor, must be non const op.
+ *      w : the second input tensor, must be const op.
+ *      bias: the optional bias tensor, must be const op.
+ * <Output>
+ *      y : the output tensor.
+ * <Attr>
+ *      has_bias: If true, enable input bias.
+ */
 REG_OP(MatMul)
     .INPUT(x, TensorType({DT_FLOAT}))
     .INPUT(w, TensorType({DT_FLOAT}))
