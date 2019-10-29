@@ -55,11 +55,14 @@ function prepare_thirdparty {
 }
 
 function build_model_optimize_tool {
-    cd $workspace
+    root_dir=$(pwd)
     prepare_thirdparty
-    mkdir -p build.model_optimize_tool
-    cd build.model_optimize_tool
-    cmake .. -DWITH_LITE=ON \
+    build_directory=$BUILD_DIR/build.model_optimize_tool
+    mkdir -p $build_directory
+    cd $build_directory
+    prepare_workspace $root_dir $build_directory
+    cmake $root_dir \
+      -DWITH_LITE=ON \
       -DLITE_ON_MODEL_OPTIMIZE_TOOL=ON \
       -DWITH_TESTING=OFF \
       -DLITE_BUILD_EXTRA=ON \
@@ -175,17 +178,18 @@ function make_all_tests {
 function make_ios {
     local os=$1
     local abi=$2
-    build_dir=build.ios.${os}.${abi}
-    echo "building ios target into $build_dir"
+    root_dir=$(pwd)
+    build_directory=$BUILD_DIR/build.ios.${os}.${abi}
+    echo "building ios target into $build_directory"
     echo "target os: $os"
     echo "target abi: $abi"
-    mkdir -p ${build_dir}
-    cd ${build_dir}
+    mkdir -p ${build_directory}
+    cd ${build_directory}
     GEN_CODE_PATH_PREFIX=lite/gen_code
     mkdir -p ./${GEN_CODE_PATH_PREFIX}
     touch ./${GEN_CODE_PATH_PREFIX}/__generated_code__.cc
 
-    cmake .. \
+    cmake $root_dir \
             -DWITH_GPU=OFF \
             -DWITH_MKL=OFF \
             -DWITH_LITE=ON \
