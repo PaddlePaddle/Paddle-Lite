@@ -20,19 +20,23 @@ namespace utils {
 namespace cv {
 // typedef paddle::lite::utils::cv::ImageFormat ImageFormat;
 // typedef paddle::lite::utils::cv::FlipParm FlipParm;
-void rotate(const uint8_t* src,
+
+class ImageTransform {
+ public:
+  void rotate(const uint8_t* src,
+              uint8_t* dst,
+              ImageFormat srcFormat,
+              int srcw,
+              int srch,
+              float degree);
+
+  void flip(const uint8_t* src,
             uint8_t* dst,
             ImageFormat srcFormat,
             int srcw,
             int srch,
-            float degree);
-
-void flip(const uint8_t* src,
-          uint8_t* dst,
-          ImageFormat srcFormat,
-          int srcw,
-          int srch,
-          FlipParam flip_param);
+            FlipParam flip_param);
+};
 }  // namespace cv
 }  // namespace utils
 }  // namespace lite

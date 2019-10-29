@@ -56,7 +56,7 @@ void Image2Tensor::choose(const uint8_t* src,
                           int srch,
                           float* means,
                           float* scales) {
-  float* output = reinterpret_cast<float*>(dst->mutable_data());
+  float* output = dst->mutable_data<float>();
   if (layout == CHW && (srcFormat == BGR || srcFormat == RGB)) {
     impl_ = bgr_to_tensor_chw;
   } else if (layout == HWC && (srcFormat == BGR || srcFormat == RGB)) {

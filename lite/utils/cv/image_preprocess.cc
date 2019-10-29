@@ -14,6 +14,7 @@
 
 #include "lite/utils/cv/image_preprocess.h"
 #include <arm_neon.h>
+#include <math.h>
 #include <algorithm>
 namespace paddle {
 namespace lite {
@@ -132,9 +133,6 @@ void ImagePreprocess::imageResize(const uint8_t* src,
   int16_t* rowsbuf1 = new int16_t[w_out];
 #pragma omp parallel for
   for (int dy = 0; dy < dsth; dy++) {
-    // int16_t* rows0 = rowsbuf0;
-    // int16_t* rows1 = rowsbuf1;
-
     int sy = yofs[dy];
     if (dy >= orih) {
       xofs = xofs1;
@@ -332,7 +330,7 @@ void ImagePreprocess::imageTransform(const uint8_t* src, uint8_t* dst) {
 }
 
 void ImagePreprocess::image2Tensor(const uint8_t* src,
-                                   TensorHf* dstTensor,
+                                   Tensor* dstTensor,
                                    LayOut layout,
                                    float* means,
                                    float* scales) {

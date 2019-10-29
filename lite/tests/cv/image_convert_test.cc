@@ -73,16 +73,6 @@ void data_diff_kernel(const uint8_t* src1_truth,
   }
 }
 
-void print_tensor_host_impl(const uint8_t* din, int64_t size, int64_t width) {
-  for (int i = 0; i < size; ++i) {
-    printf("%d ", din[i]);
-    if ((i + 1) % width == 0) {
-      printf("\n");
-    }
-  }
-  printf("\n");
-}
-
 #ifdef LITE_WITH_ARM
 void test_image_convert(const std::vector<int>& thread_num,
                         const std::vector<int>& cluster_id,

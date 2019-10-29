@@ -58,7 +58,7 @@ class ImagePreprocess {
   void imageTransform(const uint8_t* src, uint8_t* dst);
   // image2Tensor and normalize
   void image2Tensor(const uint8_t* src,
-                    TensorHf* dstTensor,
+                    Tensor* dstTensor,
                     LayOut layout,
                     float* means,
                     float* scales);

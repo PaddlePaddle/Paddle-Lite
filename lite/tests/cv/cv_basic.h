@@ -817,7 +817,7 @@ void bgr_to_tensor_hwc_basic(const uint8_t* bgr,
 
   for (int h = 0; h < height; h++) {
     const uint8_t* ptr_bgr = bgr + h * width * num;
-    float* out_bgr = output + h * width;
+    float* out_bgr = output + h * width * num;
     for (int i = 0; i < width; i++) {
       *out_bgr++ = (ptr_bgr[0] - b_means) * b_scales;
       *out_bgr++ = (ptr_bgr[1] - g_means) * g_scales;
