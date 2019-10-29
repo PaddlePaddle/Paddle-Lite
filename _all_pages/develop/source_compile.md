@@ -120,7 +120,7 @@ source ~/.bashrc
 
 #### ARM Linux
 
-适用于基于ARMv8和ARMv7架构CPU的各种开发板，例如RK3399，树莓派等，目前支持交叉编译和本地编译两种方式，对于交叉编译方式，在完成目标程序编译后，可通过scp方式将程序拷贝到开发板运行。
+适用于基于 ARMv8 和 ARMv7 架构 CPU 的各种开发板，例如 RK3399，树莓派等，目前支持交叉编译和本地编译两种方式，对于交叉编译方式，在完成目标程序编译后，可通过 scp 方式将程序拷贝到开发板运行。
 
 ##### 交叉编译
 
@@ -162,7 +162,7 @@ wget -c https://mms-res.cdn.bcebos.com/cmake-3.10.3-Linux-x86_64.tar.gz && \
 
 ###### 具体步骤
 
-安装软件部分以Ubuntu为例，其他Linux发行版本类似。
+安装软件部分以 Ubuntu 为例，其他 Linux 发行版本类似。
 
 ```shell
 # 1. Install basic software
