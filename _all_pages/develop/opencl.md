@@ -116,11 +116,13 @@ Lite支持对ARM CPU和ARM GPU的混调执行，具体描述如下：
 
 - 设置Lite推断执行的有效Places，使其包含ARM CPU(kARM)和ARM GPU(kOpenCL)；
 - 确保GPU(kOpenCL)在第一位，位置代表Places的重要性和kernel选择有直接关系。  
-G
+
 通过以上设置，Lite在推断执行过程中如果发现某一Op存在着基于OpenCL的实现，其会优先选择使用该实现执行Op的计算过程。若发现某一Op没有基于OpenCL实现的Kernel，其会自动选择执行基于ARM CPU的实现。
 
-代码示例：
+代码示例（来自`lite/api/mobilenetv1_test.cc`）：
+
 ```cpp
+// 初始化预测实例、CPU线程数、CPU策略
 DeviceInfo::Init();
 DeviceInfo::Global().SetRunMode(LITE_POWER_HIGH, FLAGS_threads);
 lite::Predictor predictor;
