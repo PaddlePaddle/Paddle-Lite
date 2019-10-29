@@ -110,7 +110,7 @@ void test_softmax(int bs, int ic, int ih, int iw, int axis) {
   }
 }
 
-TEST(NPUBridges, softmax) {
+TEST(XPUBridges, softmax) {
   for (auto bs : {2, 3}) {
     for (auto ic : {4}) {
       for (auto ih : {5}) {
