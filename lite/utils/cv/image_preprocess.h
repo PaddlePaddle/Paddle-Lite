@@ -36,7 +36,7 @@ typedef struct {
   int iw;
   int oh;
   int ow;
-  FlipParm flip_param;
+  FlipParam flip_param;
   float rotate_param;
   std::vector<Transform> v_trans;
 } TransParam;
@@ -44,23 +44,28 @@ typedef struct {
 class ImagePreprocess {
  public:
   // init
-  ImagePreprocess(const uint8_t* src, ImageFormat srcFormat, TransParam param);
+  ImagePreprocess(ImageFormat srcFormat,
+                  ImageFormat dstFormat,
+                  TransParam param);
   // 颜色空间转换
   void imageCovert(const uint8_t* src,
                    uint8_t* dst,
                    ImageFormat srcFormat,
                    ImageFormat dstFormat);
+  // 图像resize
+  void imageResize(const uint8_t* src, uint8_t* dst, ImageFormat srcFormat);
   // 图像转换
   void imageTransform(const uint8_t* src, uint8_t* dst);
   // image2Tensor and normalize
   void image2Tensor(const uint8_t* src,
-                    Tensor* dstTensor,
+                    TensorHf* dstTensor,
                     LayOut layout,
                     float* means,
                     float* scales);
 
  private:
   ImageFormat srcFormat_;
+  ImageFormat dstFormat_;
   TransParam transParam_;
 };
 }  // namespace cv

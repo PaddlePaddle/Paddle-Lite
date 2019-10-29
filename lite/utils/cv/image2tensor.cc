@@ -26,24 +26,28 @@ void bgr_to_tensor_chw(const uint8_t* src,
                        int height,
                        float* means,
                        float* scales);
+
 void bgra_to_tensor_chw(const uint8_t* src,
                         float* output,
                         int width,
                         int height,
                         float* means,
                         float* scales);
+
 void bgr_to_tensor_hwc(const uint8_t* src,
                        float* output,
                        int width,
                        int height,
                        float* means,
                        float* scales);
+
 void bgra_to_tensor_hwc(const uint8_t* src,
                         float* output,
                         int width,
                         int height,
                         float* means,
                         float* scales);
+
 void Image2Tensor::choose(const uint8_t* src,
                           Tensor* dst,
                           ImageFormat srcFormat,
@@ -52,7 +56,7 @@ void Image2Tensor::choose(const uint8_t* src,
                           int srch,
                           float* means,
                           float* scales) {
-  float* output = dst->mutable_data<float>();
+  float* output = reinterpret_cast<float*>(dst->mutable_data());
   if (layout == CHW && (srcFormat == BGR || srcFormat == RGB)) {
     impl_ = bgr_to_tensor_chw;
   } else if (layout == HWC && (srcFormat == BGR || srcFormat == RGB)) {
@@ -93,198 +97,170 @@ void bgr_to_tensor_chw(const uint8_t* src,
   float32x4_t vrscale = vdupq_n_f32(r_scales);
 
   for (int i = 0; i < height; i += 1) {
-    const unsigned char* din_ptr = src + i * 3 * width;
+    const uint8_t* din_ptr = src + i * 3 * width;
     float* ptr_b_h = ptr_b + i * width;
     float* ptr_g_h = ptr_g + i * width;
     float* ptr_r_h = ptr_r + i * width;
     int cnt = dim8;
+    if (cnt > 0) {
 #ifdef __aarch64__
-    asm volatile(
-        "prfm   pldl1keep, [%[inptr0]]                \n"
-        "prfm   pldl1keep, [%[inptr0], #64]   \n"
-        "prfm   pldl1keep, [%[inptr0], #128]   \n"
-        "prfm   pldl1keep, [%[inptr0], #192]   \n"
-        "1:     \n"
-        "ld3 {v0.8b, v1.8b, v2.8b}, [%[inptr0]], #24 \n" //d8 = y0y3y6y9.. d9 = y1y4y7..."
-        //8->16
-        "ushll v3.8h, v0.8b, #0  \n"
-        "ushll v4.8h, v1.8b, #0  \n"
-        "ushll v5.8h, v2.8b, #0  \n"
-        //16->32
-        "ushll v6.4s, v3.4h, #0   \n"
-        "ushll2 v7.4s, v3.8h, #0   \n"
-        "ushll v8.4s, v4.4h, #0   \n"
-        "ushll2 v9.4s, v4.8h, #0   \n"
-        "ushll v10.4s, v5.4h, #0  \n"
-        "ushll2 v11.4s, v5.8h, #0   \n"
-        //int32->fp32
-        "ucvtf v12.4s, v6.4s \n"
-        "ucvtf v13.4s, v7.4s \n"
-        "ucvtf v14.4s, v8.4s \n"
-        "ucvtf v15.4s, v9.4s \n"
-        "ucvtf v16.4s, v10.4s \n"
-        "ucvtf v17.4s, v11.4s \n"
-        //sub -mean
-        "fsub v12.4s, v12.4s, %w[vbmean].4s \n"
-        "fsub v13.4s, v13.4s, %w[vbmean].4s \n"
-        "fsub v14.4s, v14.4s, %w[vgmean].4s \n"
-        "fsub v15.4s, v15.4s, %w[vgmean].4s \n"
-        "fsub v16.4s, v16.4s, %w[vrmean].4s \n"
-        "fsub v17.4s, v17.4s, %w[vrmean].4s \n"
-        //mul * scale
-        "fmul v6.4s, v12.4s, %w[vbscale].4s \n"
-        "fmul v7.4s, v13.4s, %w[vbscale].4s \n"
-        "fmul v8.4s, v14.4s, %w[vgscale].4s \n"
-        "fmul v9.4s, v15.4s, %w[vgscale].4s \n"
-        "fmul v10.4s, v16.4s, %w[vrscale].4s \n"
-        "fmul v11.4s, v17.4s, %w[vrscale].4s \n"
-        //store
-        "st1 {v6.4s}, [%[outr0]], #16 \n"
-        "st1 {v8.4s}, [%[outr1]], #16 \n"
-        "st1 {v10.4s}, [%[outr2]], #16 \n"
-        "subs %w[cnt], %w[cnt], #1 \n"
-        "st1 {v7.4s}, [%[outr0]], #16 \n"
-        "st1 {v9.4s}, [%[outr1]], #16 \n"
-        "st1 {v11.4s}, [%[outr2]], #16 \n"
-        "bne 1b \n"
-        :[inptr0] "+r" (din_ptr),  [outr0] "+r" (ptr_b_h), [outr1] "+r" (ptr_g_h), [outr2] "+r" (ptr_r_h),
-         [cnt] "+r" (cnt)
-        :[vbmean] "w" (vbmean), [vgmean] "w" (vgmean), [vrmean] "w" (vrmean), \ 
-         [vbscale] "w" (vbscale), [vgscale] "w" (vgscale), [vrscale] "w" (vrscale)
-        : "cc", "memory", "v0",
-                "v1",
-                "v2",
-                "v3",
-                "v4",
-                "v5",
-                "v6",
-                "v7",
-                "v8",
-                "v9",
-                "v10",
-                "v11",
-                "v12",
-                "v13",
-                "v14",
-                "v15",
-                "v16",
-                "v17",
-                "v18",
-                "v19",
-                "v20"
-    );
+      asm volatile(
+          "prfm   pldl1keep, [%[inptr0]]                \n"
+          "prfm   pldl1keep, [%[inptr0], #64]   \n"
+          "prfm   pldl1keep, [%[inptr0], #128]   \n"
+          "prfm   pldl1keep, [%[inptr0], #192]   \n"
+          "1:     \n"
+          "ld3 {v0.8b, v1.8b, v2.8b}, [%[inptr0]], #24 \n"  // d8 = y0y3y6y9..
+                                                            // d9 = y1y4y7..."
+          // 8->16
+          "ushll v3.8h, v0.8b, #0  \n"
+          "ushll v4.8h, v1.8b, #0  \n"
+          "ushll v5.8h, v2.8b, #0  \n"
+          // 16->32
+          "ushll v6.4s, v3.4h, #0   \n"
+          "ushll2 v7.4s, v3.8h, #0   \n"
+          "ushll v8.4s, v4.4h, #0   \n"
+          "ushll2 v9.4s, v4.8h, #0   \n"
+          "ushll v10.4s, v5.4h, #0  \n"
+          "ushll2 v11.4s, v5.8h, #0   \n"
+          // int32->fp32
+          "ucvtf v12.4s, v6.4s \n"
+          "ucvtf v13.4s, v7.4s \n"
+          "ucvtf v14.4s, v8.4s \n"
+          "ucvtf v15.4s, v9.4s \n"
+          "ucvtf v16.4s, v10.4s \n"
+          "ucvtf v17.4s, v11.4s \n"
+          // sub -mean
+          "fsub v12.4s, v12.4s, %w[vbmean].4s \n"
+          "fsub v13.4s, v13.4s, %w[vbmean].4s \n"
+          "fsub v14.4s, v14.4s, %w[vgmean].4s \n"
+          "fsub v15.4s, v15.4s, %w[vgmean].4s \n"
+          "fsub v16.4s, v16.4s, %w[vrmean].4s \n"
+          "fsub v17.4s, v17.4s, %w[vrmean].4s \n"
+          // mul * scale
+          "fmul v6.4s, v12.4s, %w[vbscale].4s \n"
+          "fmul v7.4s, v13.4s, %w[vbscale].4s \n"
+          "fmul v8.4s, v14.4s, %w[vgscale].4s \n"
+          "fmul v9.4s, v15.4s, %w[vgscale].4s \n"
+          "fmul v10.4s, v16.4s, %w[vrscale].4s \n"
+          "fmul v11.4s, v17.4s, %w[vrscale].4s \n"
+          // store
+          "st1 {v6.4s}, [%[outr0]], #16 \n"
+          "st1 {v8.4s}, [%[outr1]], #16 \n"
+          "st1 {v10.4s}, [%[outr2]], #16 \n"
+          "subs %w[cnt], %w[cnt], #1 \n"
+          "st1 {v7.4s}, [%[outr0]], #16 \n"
+          "st1 {v9.4s}, [%[outr1]], #16 \n"
+          "st1 {v11.4s}, [%[outr2]], #16 \n"
+          "bne 1b \n"
+          : [inptr0] "+r"(din_ptr),
+            [outr0] "+r"(ptr_b_h),
+            [outr1] "+r"(ptr_g_h),
+            [outr2] "+r"(ptr_r_h),
+            [cnt] "+r"(cnt)
+          : [vbmean] "w"(vbmean),
+            [vgmean] "w"(vgmean),
+            [vrmean] "w"(vrmean),
+            [vbscale] "w"(vbscale),
+            [vgscale] "w"(vgscale),
+            [vrscale] "w"(vrscale)
+          : "cc",
+            "memory",
+            "v0",
+            "v1",
+            "v2",
+            "v3",
+            "v4",
+            "v5",
+            "v6",
+            "v7",
+            "v8",
+            "v9",
+            "v10",
+            "v11",
+            "v12",
+            "v13",
+            "v14",
+            "v15",
+            "v16",
+            "v17",
+            "v18",
+            "v19",
+            "v20");
 #else
-    asm volatile(
-        "pld [%[inptr0]]                         @ preload a, 64byte\n"
-        "pld [%[inptr0], #64]                         @ preload a, 64byte\n"
-        "pld [%[inptr0], #128]                         @ preload a, 64byte\n"
-        "pld [%[inptr0], #192]                         @ preload a, 64byte\n"
-        "1: \n"
-        "vld3.8 {d12, d13, d14}, [%[inptr0]]! \n"
-        //8->16
-        "vmovl.u8 q8, d12 \n"
-        "vmovl.u8 q9, d13 \n"
-        "vmovl.u8 q10, d14 \n"
-        //16->32
-        "vmovl.u16 q11, d16 \n"
-        "vmovl.u16 q12, d17 \n"
-        "vmovl.u16 q13, d18 \n"
-        "vmovl.u16 q14, d19 \n"
-        "vmovl.u16 q15, d20 \n"
-        "vmovl.u16 q6, d21 \n"
-        //int32->fp32
-        "vcvt.f32.u32 q7, q11 \n"
-        "vcvt.f32.u32 q8, q12 \n"
-        "vcvt.f32.u32 q9, q13 \n"
-        "vcvt.f32.u32 q10, q14 \n"
-        "vcvt.f32.u32 q11, q15 \n"
-        "vcvt.f32.u32 q12, 16 \n"
-        //sub -mean
-        "vsub.f32 q7, q7, %[vbmean] \n"
-        "vsub.f32 q8, q8, %[vbmean] \n"
-        "vsub.f32 q9, q9, %[vgmean] \n"
-        "vsub.f32 q10, q10, %[vgmean] \n"
-        "vsub.f32 q11, q11, %[vrmean] \n"
-        "vsub.f32 q12, q12, %[vrmean] \n"
-        //mul *scale
-        "vmul.f32 q13, q7, %[vbscale] \n"
-        "vmul.f32 q14, q8, %[vbscale] \n"
-        "vmul.f32 q15, q9, %[vgscale] \n"
-        "vmul.f32 q6, q10, %[vgscale] \n"
-        "vmul.f32 q7, q11, %[vrscale] \n"
-        "vmul.f32 q8, q12, %[vrscale] \n"
-        //store
-        "vst1.32  {d26 - d27}, [%[outr0]]! \n"
-        "vst1.32  {d30 - d31}, [%[outr1]]! \n"
-        "vst1.32  {d14 - d15}, [%[outr2]]! \n"
-        "subs %[cnt], #1 \n"
-        "vst1.32  {d28 - d29}, [%[outr0]]! \n"
-        "vst1.32  {d12 - d13}, [%[outr1]]! \n"
-        "vst1.32  {d16 - d17}, [%[outr2]]! \n"
-        "bne 1b"
-        :[inptr0] "+r" (din_ptr), [outr0] "+r" (ptr_b_h), [outr1] "+r" (ptr_g_h), [outr2] "+r" (ptr_r_h), \
-          [cnt] "+r" (cnt)
-        : [vbmean] "w" (vbmean), [vgmean] "w" (vgmean), [vrmean] "w" (vrmean), \ 
-         [vbscale] "w" (vbscale), [vgscale] "w" (vgscale), [vrscale] "w" (vrscale)
-        : "cc", "memory", "q6", "q7", "q8", "q9", \
-           "q10", "q11", "q12", "q13", "q14", "q15"
-    );
+      asm volatile(
+          "pld [%[inptr0]]                         @ preload a, 64byte\n"
+          "pld [%[inptr0], #64]                         @ preload a, 64byte\n"
+          "pld [%[inptr0], #128]                         @ preload a, 64byte\n"
+          "pld [%[inptr0], #192]                         @ preload a, 64byte\n"
+          "1: \n"
+          "vld3.8 {d12, d13, d14}, [%[inptr0]]! \n"
+          // 8->16
+          "vmovl.u8 q8, d12 \n"
+          "vmovl.u8 q9, d13 \n"
+          "vmovl.u8 q10, d14 \n"
+          // 16->32
+          "vmovl.u16 q11, d16 \n"
+          "vmovl.u16 q12, d17 \n"
+          "vmovl.u16 q13, d18 \n"
+          "vmovl.u16 q14, d19 \n"
+          "vmovl.u16 q15, d20 \n"
+          "vmovl.u16 q6, d21 \n"
+          // int32->fp32
+          "vcvt.f32.u32 q7, q11 \n"
+          "vcvt.f32.u32 q8, q12 \n"
+          "vcvt.f32.u32 q9, q13 \n"
+          "vcvt.f32.u32 q10, q14 \n"
+          "vcvt.f32.u32 q11, q15 \n"
+          "vcvt.f32.u32 q12, q6 \n"
+          // sub -mean
+          "vsub.f32 q7, q7, %q[vbmean] \n"
+          "vsub.f32 q8, q8, %q[vbmean] \n"
+          "vsub.f32 q9, q9, %q[vgmean] \n"
+          "vsub.f32 q10, q10, %q[vgmean] \n"
+          "vsub.f32 q11, q11, %q[vrmean] \n"
+          "vsub.f32 q12, q12, %q[vrmean] \n"
+          // mul *scale
+          "vmul.f32 q13, q7, %q[vbscale] \n"
+          "vmul.f32 q14, q8, %q[vbscale] \n"
+          "vmul.f32 q15, q9, %q[vgscale] \n"
+          "vmul.f32 q6, q10, %q[vgscale] \n"
+          "vmul.f32 q7, q11, %q[vrscale] \n"
+          "vmul.f32 q8, q12, %q[vrscale] \n"
+          // store
+          "vst1.32  {d26 - d27}, [%[outr0]]! \n"
+          "vst1.32  {d30 - d31}, [%[outr1]]! \n"
+          "vst1.32  {d14 - d15}, [%[outr2]]! \n"
+          "subs %[cnt], #1 \n"
+          "vst1.32  {d28 - d29}, [%[outr0]]! \n"
+          "vst1.32  {d12 - d13}, [%[outr1]]! \n"
+          "vst1.32  {d16 - d17}, [%[outr2]]! \n"
+          "bne 1b"
+          : [inptr0] "+r"(din_ptr),
+            [outr0] "+r"(ptr_b_h),
+            [outr1] "+r"(ptr_g_h),
+            [outr2] "+r"(ptr_r_h),
+            [cnt] "+r"(cnt)
+          : [vbmean] "w"(vbmean),
+            [vgmean] "w"(vgmean),
+            [vrmean] "w"(vrmean),
+            [vbscale] "w"(vbscale),
+            [vgscale] "w"(vgscale),
+            [vrscale] "w"(vrscale)
+          : "cc",
+            "memory",
+            "q6",
+            "q7",
+            "q8",
+            "q9",
+            "q10",
+            "q11",
+            "q12",
+            "q13",
+            "q14",
+            "q15");
 #endif
-    /*
-    for (int j = 0; j < dim8; j++) {
-      uint8x8x3_t v_bgr = vld3_u8(din_ptr);
-
-      uint16x8_t vb_16 = vmovl_u8(v_bgr.val[0]);
-      uint16x8_t vg_16 = vmovl_u8(v_bgr.val[1]);
-      uint16x8_t vr_16 = vmovl_u8(v_bgr.val[2]);
-
-      uint32x4_t vb_low_32 = vmovl_u16(vget_low_u16(vb_16));
-      uint32x4_t vg_low_32 = vmovl_u16(vget_low_u16(vg_16));
-      uint32x4_t vr_low_32 = vmovl_u16(vget_low_u16(vr_16));
-
-      uint32x4_t vb_high_32 = vmovl_u16(vget_high_u16(vb_16));
-      uint32x4_t vg_high_32 = vmovl_u16(vget_high_u16(vg_16));
-      uint32x4_t vr_high_32 = vmovl_u16(vget_high_u16(vr_16));
-
-      float32x4_t vb_low_f32 = vcvtq_f32_u32(vb_low_32);
-      float32x4_t vr_low_f32 = vcvtq_f32_u32(vr_low_32);
-      float32x4_t vg_low_f32 = vcvtq_f32_u32(vg_low_32);
-
-      float32x4_t vb_high_f32 = vcvtq_f32_u32(vb_high_32);
-      float32x4_t vg_high_f32 = vcvtq_f32_u32(vg_high_32);
-      float32x4_t vr_high_f32 = vcvtq_f32_u32(vr_high_32);
-
-      vb_low_f32 = vsubq_f32(vb_low_f32, vbmean);
-      vg_low_f32 = vsubq_f32(vg_low_f32, vgmean);
-      vr_low_f32 = vsubq_f32(vr_low_f32, vrmean);
-
-      vb_high_f32 = vsubq_f32(vb_high_f32, vbmean);
-      vg_high_f32 = vsubq_f32(vg_high_f32, vgmean);
-      vr_high_f32 = vsubq_f32(vr_high_f32, vrmean);
-
-      vb_low_f32 = vmulq_f32(vb_low_f32, vbscale);
-      vg_low_f32 = vmulq_f32(vg_low_f32, vgscale);
-      vr_low_f32 = vmulq_f32(vr_low_f32, vrscale);
-
-      vb_high_f32 = vmulq_f32(vb_high_f32, vbscale);
-      vg_high_f32 = vmulq_f32(vg_high_f32, vgscale);
-      vr_high_f32 = vmulq_f32(vr_high_f32, vrscale);
-
-      vst1q_f32(ptr_b_h, vb_low_f32);
-      vst1q_f32(ptr_g_h, vg_low_f32);
-      vst1q_f32(ptr_r_h, vr_low_f32);
-
-      din_ptr += 24;
-
-      vst1q_f32(ptr0_b + 4, vb_high_f32);
-      vst1q_f32(ptr1_g + 4, vg_high_f32);
-      vst1q_f32(ptr2_r + 4, vr_high_f32);
-
-      ptr_b_h += 8;
-      ptr_g_h += 8;
-      ptr_r_h += 8;
     }
-    */
     for (int j = 0; j < remain; j++) {
       *ptr_b_h++ = (*din_ptr - b_means) * b_scales;
       din_ptr++;
@@ -325,7 +301,7 @@ void bgra_to_tensor_chw(const uint8_t* src,
   float32x4_t vrscale = vdupq_n_f32(r_scales);
 
   for (int i = 0; i < height; i += 1) {
-    const unsigned char* din_ptr = src + i * 4 * width;
+    const uint8_t* din_ptr = src + i * 4 * width;
     float* ptr_b_h = ptr_b + i * width;
     float* ptr_g_h = ptr_g + i * width;
     float* ptr_r_h = ptr_r + i * width;
@@ -422,7 +398,7 @@ void bgr_to_tensor_hwc(const uint8_t* src,
   float32x4_t vrscale = vdupq_n_f32(r_scales);
 
   for (int i = 0; i < height; i += 1) {
-    const unsigned char* din_ptr = src + i * 3 * width;
+    const uint8_t* din_ptr = src + i * 3 * width;
     float* dout_ptr = dout + i * 3 * width;
 
     for (int j = 0; j < dim8; j++) {
@@ -521,7 +497,7 @@ void bgra_to_tensor_hwc(const uint8_t* src,
   float32x4_t vrscale = vdupq_n_f32(r_scales);
 
   for (int i = 0; i < height; i += 1) {
-    const unsigned char* din_ptr = src + i * 4 * width;
+    const uint8_t* din_ptr = src + i * 4 * width;
     float* dout_ptr = dout + i * 3 * width;
 
     for (int j = 0; j < dim8; j++) {

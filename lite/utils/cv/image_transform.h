@@ -18,44 +18,21 @@ namespace paddle {
 namespace lite {
 namespace utils {
 namespace cv {
-typedef paddle::lite::utils::cv::ImageFormat ImageFormat;
-typedef paddle::lite::utils::cv::FlipParm FlipParm;
-typedef void (*rotate_func)(const uint8_t* src,
-                            uint8_t* dst,
-                            int srcw,
-                            int srch);
-typedef void (*flip_func)(const uint8_t* src, uint8_t* dst, int srcw, int srch);
-typedef void (*resize_func)(
-    const uint8_t* src, uint8_t* dst, int srcw, int srch, int dstw, int dsth);
-class ImageTransform {
- public:
-  void rotate(const uint8_t* src,
-              uint8_t* dst,
-              ImageFormat srcFormat,
-              int srcw,
-              int srch,
-              float degree);
-
-  void flip(const uint8_t* src,
+// typedef paddle::lite::utils::cv::ImageFormat ImageFormat;
+// typedef paddle::lite::utils::cv::FlipParm FlipParm;
+void rotate(const uint8_t* src,
             uint8_t* dst,
             ImageFormat srcFormat,
             int srcw,
             int srch,
-            FlipParm flip_param);
+            float degree);
 
-  void resize(const uint8_t* src,
-              uint8_t* dst,
-              ImageFormat srcFormat,
-              int srcw,
-              int srch,
-              int dstw,
-              int dsth);
-
- private:
-  rotate_func rotate_impl_{nullptr};
-  flip_func flip_impl_{nullptr};
-  resize_func resize_impl_{nullptr};
-};
+void flip(const uint8_t* src,
+          uint8_t* dst,
+          ImageFormat srcFormat,
+          int srcw,
+          int srch,
+          FlipParam flip_param);
 }  // namespace cv
 }  // namespace utils
 }  // namespace lite

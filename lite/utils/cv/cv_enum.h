@@ -24,11 +24,11 @@ enum ImageFormat {
   RGB,
   BGR,
   GRAY,
-  NV21,
+  NV21 = 11,
   NV12,
 };
-enum Transform { Resize = 0, Flip, Rotate };
-enum FlipParm { X = 0, Y, XY };
+enum Transform { Flip = 0, Rotate };
+enum FlipParam { X = 0, Y, XY };
 enum LayOut { CHW = 0, HWC };
 }  // namespace cv
 }  // namespace utils
