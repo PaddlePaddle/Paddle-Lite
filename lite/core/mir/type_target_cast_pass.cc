@@ -12,6 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 #include "lite/core/mir/type_target_cast_pass.h"
 #include <list>
 #include <memory>
@@ -125,7 +139,8 @@ void TypeTargetTransformPass::AddIoCopyInst(
     VLOG(4) << "------ kernel info -------";
     VLOG(4) << "*in_arg_ty(io_copy kernel input):" << *in_arg_ty;
     VLOG(4) << "from(last kernel output):" << from;
-    VLOG(4) << "to:" << to;
+    VLOG(4) << "out_arg_ty(io_copy kernel output):" << *out_arg_ty;
+    VLOG(4) << "to:" << to << "\n";
 
 // kernel choose branch for opencl backend
 //   judge inst's target whether is kOpenCL
@@ -143,7 +158,7 @@ void TypeTargetTransformPass::AddIoCopyInst(
     if (TargetCompatibleTo(*in_arg_ty, from) &&
         PrecisionCompatibleTo(*in_arg_ty, from) &&
         DeviceCompatibleTo(*in_arg_ty, from) &&
-        out_arg_ty->target() == to.target()) {
+        TargetCompatibleTo(*out_arg_ty, to)) {
       VLOG(4) << "do nothing. opencl found";
 #else
     if (TypeCompatible(*in_arg_ty, from) &&
