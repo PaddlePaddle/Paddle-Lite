@@ -126,10 +126,10 @@ predictor.Run();
 
 // 获取模型的预测结果tensor
 //   下面将会取出第一个输入tensor
-auto* out0 = predictor.GetOutput(0);
-auto out0_dims = out0->dims();
-auto out0_item_size = out0->dims().production();
-auto* out0_pointer = out0->data<float>();
+auto* out0_tensor = predictor.GetOutput(0);
+auto out0_dims = out0_tensor->dims();
+auto out0_item_size = out0_tensor->dims().production();
+auto* out0_pointer = out0_tensor->data<float>();
 ```
 
 # 其它注意
