@@ -50,31 +50,31 @@ REG_OP(MatMul)
     .OPTIONAL_INPUT(bias, TensorType({DT_FLOAT}))  // bias must be const input
     .OUTPUT(y, TensorType({DT_FLOAT}))
     .ATTR(has_bias, AttrValue::BOOL{false})  // when has input::bias,set true
-    .OP_END()
+    .OP_END();
 
-    /**
-     * Computes the gradients of convolution with respect to the input.
-     * <Input>
-     *      input_sizes : An integer vector representing the shape of input,
-     * where input is a 4-D [batch, height, width, channels] tensor.
-     *      filter : the filter tensor, with shape [H , W, filter_channel,
-     * filter_number], filter_channel must be same as x channel.
-     *      x :  The input tensor.
-     * <Output>
-     *      y : The output tensor.
-     * <Attr>
-     *      format: 0: NCHW. 1: NHWC
-     *      group : 1: default
-     *      num_output : 0: default, num_output must be equal to
-     * (filter_channel * group)
-     *      pad : Padding for the beginning and ending along each axis
-     *      stride : Stride along each axis.
-     *      dilation : dilation value along each axis of the filter.
-     *      pad_mode : 0:NOTSET, 5:VALID 6:SAME. defaul value is 0:NOTSET
-     *      bias_term : 0: default
-     *      kernel : The shape of the convolution kernel
-     */
-    REG_OP(Deconvolution)
+/**
+ * Computes the gradients of convolution with respect to the input.
+ * <Input>
+ *      input_sizes : An integer vector representing the shape of input,
+ * where input is a 4-D [batch, height, width, channels] tensor.
+ *      filter : the filter tensor, with shape [H , W, filter_channel,
+ * filter_number], filter_channel must be same as x channel.
+ *      x :  The input tensor.
+ * <Output>
+ *      y : The output tensor.
+ * <Attr>
+ *      format: 0: NCHW. 1: NHWC
+ *      group : 1: default
+ *      num_output : 0: default, num_output must be equal to
+ * (filter_channel * group)
+ *      pad : Padding for the beginning and ending along each axis
+ *      stride : Stride along each axis.
+ *      dilation : dilation value along each axis of the filter.
+ *      pad_mode : 0:NOTSET, 5:VALID 6:SAME. defaul value is 0:NOTSET
+ *      bias_term : 0: default
+ *      kernel : The shape of the convolution kernel
+ */
+REG_OP(Deconvolution)
     .INPUT(input_sizes, TensorType({DT_UINT8}))
     .INPUT(filter, TensorType({DT_FLOAT}))
     .INPUT(x, TensorType({DT_FLOAT}))
@@ -90,28 +90,28 @@ REG_OP(MatMul)
     .ATTR(pad_mode, AttrValue::INT{0})
     .ATTR(bias_term, AttrValue::INT{0})
     .ATTR(kernel, AttrValue::LIST_INT({0, 0}))
-    .OP_END()
+    .OP_END();
 
-    /**
-     * Resize images to size using bilinear interpolation.
-     * <Input>
-     *      x : The tensor of 4-D
-     *      w : A int32 Tensor of 2 elements: [height, width].
-     * <Output>
-     *      y : the output tensor
-     * <Attr>
-     *      align_corners : If true, the centers of the 4 corner pixels of the
-     * input and output tensors are aligned, preserving the values at the corner
-     * pixels.
-     *      output_dim_mode : Defaults 2, including 0: zoom_factor , 1:
-     * shrink_factor, 2: height/width. when output_dim_mode=2, the output-dim is
-     * controled by the [height, width] of w.
-     *      shrink_factor : shrink factor.
-     *      zoom_factor : zoom factor.
-     *      pad_begin : begin of pad.
-     *      pad_end : end of pad.
-     */
-    REG_OP(ResizeBilinear)
+/**
+ * Resize images to size using bilinear interpolation.
+ * <Input>
+ *      x : The tensor of 4-D
+ *      w : A int32 Tensor of 2 elements: [height, width].
+ * <Output>
+ *      y : the output tensor
+ * <Attr>
+ *      align_corners : If true, the centers of the 4 corner pixels of the
+ * input and output tensors are aligned, preserving the values at the corner
+ * pixels.
+ *      output_dim_mode : Defaults 2, including 0: zoom_factor , 1:
+ * shrink_factor, 2: height/width. when output_dim_mode=2, the output-dim is
+ * controled by the [height, width] of w.
+ *      shrink_factor : shrink factor.
+ *      zoom_factor : zoom factor.
+ *      pad_begin : begin of pad.
+ *      pad_end : end of pad.
+ */
+REG_OP(ResizeBilinear)
     .INPUT(x, TensorType({DT_FLOAT, DT_INT32}))
     .INPUT(w, TensorType({DT_FLOAT, DT_INT32}))
     .OUTPUT(y, TensorType({DT_FLOAT, DT_INT32}))
@@ -121,42 +121,42 @@ REG_OP(MatMul)
     .ATTR(zoom_factor, AttrValue::INT{1})
     .ATTR(pad_begin, AttrValue::INT{0})
     .ATTR(pad_end, AttrValue::INT{0})
-    .OP_END()
+    .OP_END();
 
-    /**
-     * Resize images to size using nearest neighbor interpolation.
-     * <Input>
-     *      image : Resize images to size using nearest neighbor interpolation.
-     *      size : Must be one dimension and two  elements
-     * <Output>
-     *      output : the output tensor
-     * <Attr>
-     *      align_corners : If true, the centers of the 4 corner pixels of the
-     * input and output tensors are aligned, preserving the values at the corner
-     * pixels. Defaults to false
-     */
-    REG_OP(ResizeNearestNeighbor)
+/**
+ * Resize images to size using nearest neighbor interpolation.
+ * <Input>
+ *      image : Resize images to size using nearest neighbor interpolation.
+ *      size : Must be one dimension and two  elements
+ * <Output>
+ *      output : the output tensor
+ * <Attr>
+ *      align_corners : If true, the centers of the 4 corner pixels of the
+ * input and output tensors are aligned, preserving the values at the corner
+ * pixels. Defaults to false
+ */
+REG_OP(ResizeNearestNeighbor)
     .INPUT(image, TensorType({DT_FLOAT, DT_INT32, DT_UINT8, DT_BOOL}))
     .INPUT(size, TensorType({DT_INT32}))
     .OUTPUT(output, TensorType({DT_FLOAT, DT_INT32, DT_UINT8, DT_BOOL}))
     .ATTR(align_corners, AttrValue::BOOL{false})
-    .OP_END()
+    .OP_END();
 
-    /**
-     * Pads a tensor.
-     * <Input>
-     *      x : the input tensor
-     *      padding : the input tensor must be 2-D
-     *      constant_values : constant values must be a scalar
-     * <Output>
-     *      output : the output tensor
-     * <Attr>
-     *      t_paddings : Default DT_INT32 , t_paddings must be  the same with
-     * datatype of the padding
-     *      mode : 0: CONSTANT, 1: REFLECT, 2: SYMMETRIC
-     *      T  :  datatype of constant_values  DT_INT32:3   DT_FLOAT:0
-     */
-    REG_OP(Pad)
+/**
+ * Pads a tensor.
+ * <Input>
+ *      x : the input tensor
+ *      padding : the input tensor must be 2-D
+ *      constant_values : constant values must be a scalar
+ * <Output>
+ *      output : the output tensor
+ * <Attr>
+ *      t_paddings : Default DT_INT32 , t_paddings must be  the same with
+ * datatype of the padding
+ *      mode : 0: CONSTANT, 1: REFLECT, 2: SYMMETRIC
+ *      T  :  datatype of constant_values  DT_INT32:3   DT_FLOAT:0
+ */
+REG_OP(Pad)
     .INPUT(x, TensorType({DT_FLOAT, DT_INT32}))
     .INPUT(padding, TensorType({DT_INT32}))
     .OPTIONAL_INPUT(constant_values, TensorType({DT_INT32, DT_FLOAT}))
@@ -164,7 +164,7 @@ REG_OP(MatMul)
     .ATTR(t_paddings, AttrValue::INT{3})
     .ATTR(mode, AttrValue::INT{0})
     .REQUIRED_ATTR(T, AttrValue::INT)
-    .OP_END()
+    .OP_END();
 
 }  // namespace ge
 
