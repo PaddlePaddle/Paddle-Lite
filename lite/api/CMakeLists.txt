@@ -9,7 +9,7 @@ if (LITE_ON_TINY_PUBLISH)
     set(CMAKE_C_FLAGS_RELEASE "-Os -DNDEBUG")
 endif()
 set(light_lib_DEPS light_api paddle_api paddle_api_light optimizer)
-if ((NOT LITE_ON_TINY_PUBLISH) AND (LITE_WITH_X86 OR ARM_TARGET_OS STREQUAL "android"))
+if ((NOT LITE_ON_TINY_PUBLISH) AND (LITE_WITH_X86 OR ARM_TARGET_OS STREQUAL "android" OR ARM_TARGET_OS STREQUAL "armlinux"))
     #full api dynamic library
     add_library(paddle_full_api_shared SHARED "")
     target_sources(paddle_full_api_shared PUBLIC ${__lite_cc_files} paddle_api.cc light_api.cc cxx_api.cc cxx_api_impl.cc light_api_impl.cc)
