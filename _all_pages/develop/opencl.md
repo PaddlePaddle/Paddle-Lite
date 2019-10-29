@@ -65,6 +65,7 @@ adb push lite/backends/opencl/cl_kernel/image/* /data/local/tmp/opencl/cl_kernel
 # 将mobilenet_v1的模型文件推送到/data/local/tmp/opencl目录下
 adb shell mkdir -p /data/local/tmp/opencl/mobilenet_v1
 adb push build.lite.android.armv8.gcc.opencl/third_party/install/mobilenet_v1/* /data/local/tmp/opencl/mobilenet_v1/
+
 # 将OpenCL测试程序(如test_mobilenetv1)推送到/data/local/tmp/opencl目录下
 adb push build.lite.android.armv8.gcc.opencl/lite/api/test_mobilenetv1 /data/local/tmp/opencl
 ```
@@ -76,6 +77,7 @@ adb push build.lite.android.armv8.gcc.opencl/lite/api/test_mobilenetv1 /data/loc
 
 ```bash
 adb shell chmod +x /data/local/tmp/opencl/test_mobilenetv1
+
 adb shell /data/local/tmp/opencl/test_mobilenetv1 \
   --cl_path=/data/local/tmp/opencl \
   --model_dir=/data/local/tmp/opencl/mobilenet_v1 \
@@ -119,9 +121,15 @@ for (int i = 0; i < item_size; i++) {
   data[i] = 1;
 }
 
-// 执行模型推断并获取模型的预测结果
+// 执行模型推断
 predictor.Run();
-auto* out = predictor.GetOutput(0);
+
+// 获取模型的预测结果tensor
+//   下面将会取出第一个输入tensor
+auto* out0 = predictor.GetOutput(0);
+auto out0_dims = out0->dims();
+auto out0_item_size = out0->dims().production();
+auto* out0_pointer = out0->data<float>();
 ```
 
 # 其它注意
