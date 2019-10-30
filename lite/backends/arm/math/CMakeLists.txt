@@ -76,8 +76,6 @@ if (NOT HAS_ARM_MATH_LIB_DIR)
       conv5x5s1_depthwise_int8.cc
       conv5x5s1_depthwise_fp32.cc
       conv5x5s2_depthwise_fp32.cc
-      conv_depthwise_3x3p0.cc
-      conv_depthwise_3x3p1.cc
       conv_depthwise_3x3s1.cc
       conv_depthwise_3x3s2.cc
       conv_winograd_3x3.cc
