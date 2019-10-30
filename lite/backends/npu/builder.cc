@@ -12,21 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/npu/bridges/utils.h"
+#include "lite/backends/npu/builder.h"
 #include <mutex>  // NOLINT
 #include <utility>
-#include "ai_ddk_lib/include/graph/buffer.h"
-#include "ai_ddk_lib/include/graph/model.h"
-#include "ai_ddk_lib/include/graph/op/all_ops.h"  // for ge::op::Data
-#include "ai_ddk_lib/include/graph/tensor.h"      // for ge::TensorUtils
-#include "ai_ddk_lib/include/hiai_ir_build.h"
 #include "lite/backends/npu/runtime.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
 namespace npu {
-namespace bridges {
 
 // Build HIAI IR graph to om model, and store om model data into lite tensor
 bool BuildModel(std::vector<ge::Operator>& inputs,   // NOLINT
@@ -165,8 +158,6 @@ bool HasInputArg(const OpInfo* op_info,
   }
 }
 
-}  // namespace bridges
 }  // namespace npu
-}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
