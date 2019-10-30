@@ -126,6 +126,7 @@ TEST(NPUBridges, fc) {
     test_fc({1, 8, 8, 1}, {8, 4}, 2, use_bias);
     test_fc({1, 5, 5, 1}, {5, 7}, 2, use_bias);
     test_fc({1, 4, 1, 1}, {4, 8}, 1, use_bias);
+    test_fc({1, 1024, 1, 1}, {1024, 1000}, 1, use_bias);
   }
 }
 
