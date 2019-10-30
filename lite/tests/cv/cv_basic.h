@@ -18,6 +18,7 @@
 typedef paddle::lite::utils::cv::ImageFormat ImageFormat;
 typedef paddle::lite::utils::cv::FlipParam FlipParam;
 typedef paddle::lite::utils::cv::LayOut LayOut;
+typedef paddle::lite::Tensor Tensor;
 
 void nv2bgr(const uint8_t* in_data,
             uint8_t* out_data,
@@ -835,7 +836,7 @@ void image_to_tensor_basic(const uint8_t* in_data,
                            int srch,
                            float* means,
                            float* scales) {
-  float* output = reinterpret_cast<float*>(dst->mutable_data());
+  float* output = dst->mutable_data<float>();
   if (layout == LayOut::CHW &&
       (srcFormat == ImageFormat::BGR || srcFormat == ImageFormat::RGB)) {
     bgr_to_tensor_chw_basic(in_data, output, srcw, srch, means, scales, 3);
