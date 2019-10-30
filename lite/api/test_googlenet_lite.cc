@@ -15,30 +15,33 @@
 #include <gflags/gflags.h>
 #include <gtest/gtest.h>
 #include <vector>
-#include "lite/api/cxx_api.h"
 #include "lite/api/lite_api_test_helper.h"
+#include "lite/api/paddle_api.h"
 #include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
 #include "lite/api/paddle_use_passes.h"
 #include "lite/api/test_helper.h"
-#include "lite/core/op_registry.h"
-#include "lite/core/tensor.h"
+#include "lite/utils/cp_logging.h"
 
 namespace paddle {
 namespace lite {
 #ifdef LITE_WITH_X86
 TEST(CXXApi, test_lite_googlenet) {
-  lite::Predictor predictor;
-  std::vector<Place> valid_places({Place{TARGET(kX86), PRECISION(kFloat)}});
+  lite_api::CxxConfig config;
+  config.set_model_dir(FLAGS_model_dir);
+  config.set_valid_places({lite_api::Place{TARGET(kX86), PRECISION(kFloat)},
+                           lite_api::Place{TARGET(kHost), PRECISION(kFloat)}});
+  auto predictor = lite_api::CreatePaddlePredictor(config);
 
-  //  LOG(INFO)<<"FLAGS_eval_googlenet_dir:"<<FLAGS_test_lite_googlenet_dir;
-  std::string model_dir = FLAGS_model_dir;
-  predictor.Build(model_dir, "", "", valid_places);
-
-  auto* input_tensor = predictor.GetInput(0);
-  input_tensor->Resize(DDim(std::vector<DDim::value_type>({1, 3, 224, 224})));
+  auto input_tensor = predictor->GetInput(0);
+  std::vector<int64_t> input_shape{1, 3, 224, 224};
+  input_tensor->Resize(input_shape);
   auto* data = input_tensor->mutable_data<float>();
-  for (int i = 0; i < input_tensor->dims().production(); i++) {
+  int input_num = 1;
+  for (int i = 0; i < input_shape.size(); ++i) {
+    input_num *= input_shape[i];
+  }
+  for (int i = 0; i < input_num; i++) {
     data[i] = 1;
   }
 
