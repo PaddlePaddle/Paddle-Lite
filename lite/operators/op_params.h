@@ -14,6 +14,7 @@
 
 #pragma once
 #include <string>
+#include <utility>
 #include <vector>
 #include "lite/api/paddle_place.h"
 #include "lite/core/scope.h"
@@ -69,9 +70,9 @@ struct CalibParam {
 };
 
 struct GraphParam {
-  std::vector<const lite::Tensor*> inputs{};
+  std::vector<std::pair<std::string, const lite::Tensor*>> inputs{};
   lite::Tensor* weight{};
-  std::vector<lite::Tensor*> outputs{};
+  std::vector<std::pair<std::string, lite::Tensor*>> outputs{};
 };
 
 /// -------------------------- NN operators ------------------------------------
@@ -83,6 +84,7 @@ struct FcParam {
   lite::Tensor* output{nullptr};
   lite::DDim in_mat_dims;
   int in_num_col_dims{1};
+  std::string activation_type{""};
   // for int8
   WITH_INT8_CONFIG
 };
@@ -323,6 +325,8 @@ struct SplitParam {
 struct TransposeParam {
   const lite::Tensor* x{};
   lite::Tensor* output{};
+  lite::Tensor* xshape{};
+
   std::vector<int> axis;
   bool use_mkldnn{false};
   std::string data_format{"AnyLayout"};

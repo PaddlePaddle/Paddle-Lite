@@ -212,6 +212,7 @@ void ConvAddBnRelu(framework::CLHelper *cl_helper,
   int input_c = reinterpret_cast<framework::CLImageConverterFolder *>(
                     param.Input()->Converter())
                     ->GetCBlock();
+  int input_c_origin = param.Input()->dims()[1];
   int dilation = param.Dilations()[0];
   int input_width = param.Input()->dims()[3];
   int input_height = param.Input()->dims()[2];
@@ -282,6 +283,9 @@ void ConvAddBnRelu(framework::CLHelper *cl_helper,
     CL_CHECK_ERRORS(status);
 
     status = clSetKernelArg(kernel, index++, sizeof(int), &input_c);
+    CL_CHECK_ERRORS(status);
+
+    status = clSetKernelArg(kernel, index++, sizeof(int), &input_c_origin);
     CL_CHECK_ERRORS(status);
 
     status = clSetKernelArg(kernel, index++, sizeof(int), &dilation);
