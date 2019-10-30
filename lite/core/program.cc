@@ -196,11 +196,14 @@ void Instruction::Run() {
   if (op_->run_once() && has_run_) {
     return;
   }
-
-  // VLOG(4) << "kernel launch";
+#ifndef LITE_SHUTDOWN_LOG
+  VLOG(4) << "kernel launch";
+#endif
   op_->InferShape();
-  // VLOG(4) << ">> Running kernel: " << op_->op_info()->Repr() << " on Target "
-  //        << TargetToStr(kernel_->target());
+#ifndef LITE_SHUTDOWN_LOG
+  VLOG(4) << ">> Running kernel: " << op_->op_info()->Repr() << " on Target "
+          << TargetToStr(kernel_->target());
+#endif
   kernel_->Launch();
   has_run_ = true;
 }

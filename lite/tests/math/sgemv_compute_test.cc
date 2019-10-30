@@ -83,7 +83,7 @@ bool test_sgemv(
     basic_gemv(
         m, k, da, db, dbias, dc_basic, 1.f, 0.f, tra, has_bias, has_relu);
   }
-  lite::test::Timer t0;
+  paddle::lite::Timer t0;
   //! compute
   double ops = 2.0 * m * k;
   std::unique_ptr<paddle::lite::KernelContext> ctx1(
@@ -93,14 +93,14 @@ bool test_sgemv(
   /// warmup
   for (int j = 0; j < FLAGS_warmup; ++j) {
     paddle::lite::arm::math::sgemv(
-        da, db, dc, tra, m, k, has_bias, dbias, has_relu);
+        da, db, dc, tra, m, k, has_bias, dbias, has_relu, &ctx);
   }
 
   t0.clear();
   for (int i = 0; i < FLAGS_repeats; ++i) {
     t0.start();
     paddle::lite::arm::math::sgemv(
-        da, db, dc, tra, m, k, has_bias, dbias, has_relu);
+        da, db, dc, tra, m, k, has_bias, dbias, has_relu, &ctx);
     t0.end();
   }
   LOG(INFO) << "gemv output: M: " << m << ", K: " << k << ", cluster: " << cls
@@ -142,8 +142,8 @@ TEST(TestLiteSgemv, Sgemv) {
     paddle::lite::DeviceInfo::Init();
 #endif
     LOG(INFO) << "run basic sgemv test";
-    for (auto& m : {1, 3, 8, 32, 397}) {
-      for (auto& k : {1, 3, 8, 59, 234}) {
+    for (auto& m : {1, 3, 8, 21, 32, 397}) {
+      for (auto& k : {1, 3, 8, 17, 59, 234}) {
         for (auto& tra : {true, false}) {
           for (auto& has_bias : {false, true}) {
             for (auto& has_relu : {false, true}) {
@@ -155,13 +155,13 @@ TEST(TestLiteSgemv, Sgemv) {
                             << ", bias: " << (has_bias ? "true" : "false")
                             << ", relu: " << (has_relu ? "true" : "false")
                             << ", trans A: " << (tra ? "true" : "false")
-                            << " passed\n";
+                            << ", threads: " << th << " passed\n";
                 } else {
                   LOG(FATAL) << "test m = " << m << ", k=" << k
                              << ", bias: " << (has_bias ? "true" : "false")
                              << ", relu: " << (has_relu ? "true" : "false")
                              << ", trans A: " << (tra ? "true" : "false")
-                             << " failed\n";
+                             << ", threads: " << th << " failed\n";
                 }
               }
             }

@@ -14,6 +14,7 @@
 
 #include "lite/backends/arm/math/sgemv.h"
 #include <arm_neon.h>
+#include <algorithm>
 #include "lite/utils/cp_logging.h"
 
 namespace paddle {
@@ -58,7 +59,8 @@ void sgemv_trans(const int M,
                  float *y,
                  bool flag_bias,
                  const float *bias,
-                 bool flag_relu) {
+                 bool flag_relu,
+                 const ARMContext *ctx) {
   int m_cnt16 = M >> 4;
   int m_cnt8 = (M & 15) >> 3;
   int m_cnt4 = (M & 15 & 7) >> 2;
@@ -365,153 +367,237 @@ void sgemv_trans(const int M,
                  float *y,
                  bool flag_bias,
                  const float *bias,
-                 bool flag_relu) {
+                 bool flag_relu,
+                 const ARMContext *ctx) {
   int m_cnt8 = M >> 3;
   int m_cnt4 = (M & 7) >> 2;
   int m_remain = M & 7 & 3;
-  int n_cnt = N >> 1;
-  int n_remain = N & 1;
-  int flag_remain = m_remain > 0;
-  float zbias[16] = {0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f};
-  const int lda = M << 1;
-  const int lda_s = M;
-  const float *a0 = nullptr;
-  const float *a1 = nullptr;
-  for (int i = 0; i < m_cnt8; ++i) {
-    a0 = A + i * 8;
-    a1 = a0 + lda_s;
-    const float *bias_ptr = flag_bias ? bias : zbias;
-    const float *x_ptr = x;
-    int cnt = n_cnt;
-    int remain = n_remain;
-    int slda = lda * sizeof(float);
-    asm volatile(
-        "vmov.u32 q15, #0\n"
-        "vld1.32  {d0-d3},  [%[bias]]\n"
-        "vld1.32  {d4-d7},  [%[a0]], %[lda]\n"
-        "vld1.32  {d8-d11}, [%[a1]], %[lda]\n"
-        "cmp  %[cnt], #0\n"
-        "beq  2f\n"
-        "1:\n"
-        "vld1.32  {d12},  [%[x]]!\n"
-        "vmla.f32 q0, q2, d12[0]\n"
-        "vmla.f32 q1, q3, d12[0]\n"
-        "vld1.32  {d4-d7}, [%[a0]], %[lda]\n"
-        "vmla.f32 q0, q4, d12[1]\n"
-        "vmla.f32 q1, q5, d12[1]\n"
-        "vld1.32  {d8-d11}, [%[a1]], %[lda]\n"
-        "subs %[cnt], %[cnt], #1\n"
-        "bne 1b\n"
-        //! remain
-        "2:\n"
-        "cmp  %[remain], #0\n"
-        "beq  4f\n"
-        "sub  %[a0], %[a0], %[lda]\n"
-        "asr  %[lda], %[lda], #1\n"
-        "add  %[a0], %[a0], %[lda]\n"
-        "3:\n"
-        "vld1.32  {d12[0]}, [%[x]]!\n"
-        "vmla.f32 q0, q2, d12[0] \n"
-        "vmla.f32 q1, q3, d12[0] \n"
-        "subs %[remain], %[remain], #1\n"
-        "vld1.f32 {d4-d7}, [%[a0]], %[lda]\n"
-        "bne 3b\n"
-        "4:\n"
-        "cmp %[relu], #0\n"
-        "beq 5f\n"
-        "vmax.f32 q0, q0, q15\n"
-        "vmax.f32 q1, q1, q15\n"
-        "5:\n"
-        "vst1.32  {d0-d3}, [%[y]]!\n"
-        : [a0] "+r"(a0),
-          [a1] "+r"(a1),
-          [x] "+r"(x_ptr),
-          [y] "+r"(y),
-          [cnt] "+r"(cnt),
-          [lda] "+r"(slda),
-          [remain] "+r"(remain)
-        : [bias] "r"(bias_ptr), [relu] "r"(flag_relu)
-        : "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q15", "cc", "memory");
-    bias += 8;
+  int ths = ctx->threads();
+  int valid_ths = std::min((N + 3) / 4, ths);
+  int valid_block = std::max(4, (N / valid_ths + 3) / 4 * 4);
+  valid_ths = (N + valid_block - 1) / valid_block;
+  int block_cnt = valid_block / 4;
+  float zero_buf[M];           // NOLINT
+  float y_buf[valid_ths * M];  // NOLINT
+  memset(zero_buf, 0, M * sizeof(float));
+  if (flag_bias) {
+    memcpy(y_buf, bias, M * sizeof(float));
+    memset(y_buf + M, 0, (valid_ths - 1) * M * sizeof(float));
+  } else {
+    memset(y_buf, 0, valid_ths * M * sizeof(float));
   }
-  A += m_cnt8 << 3;
-  for (int i = 0; i < m_cnt4 + flag_remain; ++i) {
-    a0 = A + i * 4;
-    a1 = a0 + lda_s;
-    const float *bias_ptr = flag_bias ? bias : zbias;
-    const float *x_ptr = x;
-    int cnt = n_cnt;
-    int remain = n_remain;
-    int slda = lda * sizeof(float);
-    int flag = (i == m_cnt4);
-    asm volatile(
-        "vmov.u32 q1, #0\n"
-        "vld1.32  {d0-d1}, [%[bias]]\n"
-        "vld1.32  {d4-d5}, [%[a0]], %[lda]\n"
-        "vld1.32  {d6-d7}, [%[a1]], %[lda]\n"
-        "vmov.u32 q15, #0\n"
-        "cmp %[cnt], #0\n"
-        "beq 2f\n"
-        "1:\n"
-        "vld1.32  {d8}, [%[x]]!\n"
-        "vmla.f32 q0, q2, d8[0]\n"
-        "vld1.32  {d4-d5}, [%[a0]], %[lda]\n"
-        "vmla.f32 q1, q3, d8[1]\n"
-        "subs %[cnt], %[cnt], #1\n"
-        "vld1.32  {d6-d7}, [%[a1]], %[lda]\n"
-        "bne  1b\n"
-        "vadd.f32 q0, q0, q1\n"
-        //! remain
-        "2:\n"
-        "cmp  %[remain], #0\n"
-        "beq  4f\n"
-        "sub  %[a0], %[a0], %[lda]\n"
-        "asr  %[lda], %[lda], #1\n"
-        "add  %[a0], %[a0], %[lda]\n"
-        "3:\n"
-        "vld1.32  {d8[0]}, [%[x]]!\n"
-        "vmla.f32 q0, q2, d8[0] \n"
-        "subs %[remain], %[remain], #1\n"
-        "vld1.32  {d4-d5}, [%[a0]], %[lda]\n"
-        "bne  3b\n"
-        "4:\n"
-        "cmp  %[relu], #0\n"
-        "beq  8f\n"
-        "vmax.f32 q0, q0, q15\n"
-        "8:\n"
-        //! check mremain
-        "cmp  %[flag], #0\n"
-        "bne  5f\n"
-        "vst1.32  {d0-d1}, [%[y]]!\n"
-        "b  9f\n"
-        // switch mremain num
-        "5:\n"  // remain 3
-        "cmp  %[mremain], #3\n"
-        "bne  6f\n"
-        "vst1.32  {d0}, [%[y]]!\n"
-        "vst1.32  {d1[0]}, [%[y]]\n"
-        "b  9f\n"
-        "6:\n"  // remain 2
-        "cmp  %[mremain], #2\n"
-        "bne  7f\n"
-        "vst1.32  {d0}, [%[y]]\n"
-        "b  9f\n"
-        "7:\n"  // remain 1
-        "vst1.32  {d0[0]}, [%[y]]\n"
-        "9:\n"
-        : [a0] "+r"(a0),
-          [a1] "+r"(a1),
-          [x] "+r"(x_ptr),
-          [y] "+r"(y),
-          [cnt] "+r"(cnt),
-          [lda] "+r"(slda),
-          [remain] "+r"(remain)
-        : [bias] "r"(bias_ptr),
-          [flag] "r"(flag),
-          [mremain] "r"(m_remain),
-          [relu] "r"(flag_relu)
-        : "q0", "q1", "q2", "q3", "q4", "q15", "cc", "memory");
-    bias += 4;
+#pragma omp parallel for
+  for (int t = 0; t < valid_ths; ++t) {
+    float *block_y = y_buf + t * M;
+    const float *block_x = x + t * valid_block;
+    const float *block_A = A + t * valid_block * M;
+    for (int i = 0; i < block_cnt; ++i) {
+      float *y_ptr = block_y;
+      const float *x_ptr = block_x + i * 4;
+      const float *in0_ptr = block_A + i * 4 * M;
+      const float *in1_ptr = in0_ptr + M;
+      const float *in2_ptr = in1_ptr + M;
+      const float *in3_ptr = in2_ptr + M;
+      int offset = t * valid_block + (i + 1) * 4 - N;
+      if (offset > 0) {
+        if (offset > 3) {
+          in0_ptr = zero_buf;
+          in1_ptr = zero_buf;
+          in2_ptr = zero_buf;
+          in3_ptr = zero_buf;
+        } else {
+          switch (offset) {
+            case 3:
+              in1_ptr = zero_buf;
+            case 2:
+              in2_ptr = zero_buf;
+            case 1:
+              in3_ptr = zero_buf;
+            default:
+              break;
+          }
+        }
+      }
+      if (m_cnt8 > 0) {
+        int cnt8 = m_cnt8;
+        asm volatile(
+            "vld1.32  {d4-d5},  [%[x]]    \n" /* load x   to q2      */
+            "vld1.32  {d6-d9},  [%[in0]]! \n" /* load in0 to q3, q4  */
+            "vld1.32  {d10-d13},[%[in1]]! \n" /* load in0 to q5, q6  */
+            "vld1.32  {d14-d17},[%[in2]]! \n" /* load in0 to q7, q8  */
+            "vld1.32  {d18-d21},[%[in3]]! \n" /* load in0 to q9, q10 */
+            "1:\n"
+            "vld1.32  {d0-d3},  [%[y]]    \n" /*  load y to q0, q1  */
+            "vmla.f32 q0, q3,   d4[0]     \n" /*  q0 += q3 * vx[0]  */
+            "vmla.f32 q1, q4,   d4[0]     \n" /*  q1 += q4 * vx[0]  */
+            "pld  [%[in0]]                \n" /*    preload in0     */
+            "vld1.32  {d6-d9},  [%[in0]]! \n" /* load in0 to q3, q4 */
+            "vmla.f32 q0, q5,   d4[1]     \n" /*  q0 += q5 * vx[1]  */
+            "vmla.f32 q1, q6,   d4[1]     \n" /*  q1 += q6 * vx[1]  */
+            "pld  [%[in1]]                \n" /*    preload in1     */
+            "vld1.32  {d10-d13},[%[in1]]! \n" /* load in0 to q5, q6 */
+            "vmla.f32 q0, q7,   d5[0]     \n" /*  q0 += q7 * vx[2]  */
+            "vmla.f32 q1, q8,   d5[0]     \n" /*  q1 += q8 * vx[2]  */
+            "pld  [%[in2]]                \n" /*    preload in2     */
+            "vld1.32  {d14-d17},[%[in2]]! \n" /* load in0 to q7, q8 */
+            "vmla.f32 q0, q9,   d5[1]     \n" /*  q0 += q9 * vx[3]  */
+            "vmla.f32 q1, q10,  d5[1]     \n" /*  q1 += q10 * vx[3] */
+            "subs %[cnt], %[cnt], #1      \n" /*      sub cnt       */
+            "pld  [%[in3]]                \n" /*    preload in3     */
+            "vst1.32  {d0-d3},  [%[y]]!   \n" /*  store q0, q1 to y */
+            "vld1.32  {d18-d21},[%[in3]]! \n" /* load in0 to q9, q10*/
+            "pld  [%[y], #32] \n"             /*     preload y      */
+            "bne  1b  \n"                     /*  branch to label 1 */
+            "sub  %[in0], %[in0], #32     \n" /* restore in0 address */
+            "sub  %[in1], %[in1], #32     \n" /* restore in1 address */
+            "sub  %[in2], %[in2], #32     \n" /* restore in2 address */
+            "sub  %[in3], %[in3], #32     \n" /* restore in3 address */
+            : [cnt] "+r"(cnt8),
+              [in0] "+r"(in0_ptr),
+              [in1] "+r"(in1_ptr),
+              [in2] "+r"(in2_ptr),
+              [in3] "+r"(in3_ptr),
+              [y] "+r"(y_ptr)
+            : [x] "r"(x_ptr)
+            : "q0",
+              "q1",
+              "q2",
+              "q3",
+              "q4",
+              "q5",
+              "q6",
+              "q7",
+              "q8",
+              "q9",
+              "q10",
+              "cc",
+              "memory");
+      }
+      if (m_cnt4 > 0) {
+        int cnt4 = m_cnt4;
+        asm volatile(
+            "vld1.32  {d2-d3},  [%[in0]]! \n" /* load in0 to q1  */
+            "vld1.32  {d4-d5},  [%[in1]]! \n" /* load in0 to q2  */
+            "vld1.32  {d6-d7},  [%[in2]]! \n" /* load in0 to q3  */
+            "vld1.32  {d8-d9},  [%[in3]]! \n" /* load in0 to q4  */
+            "vld1.32  {d10-d11},[%[x]]    \n" /* load x   to q5  */
+            "1:\n"
+            "vld1.32  {d0-d1},  [%[y]]    \n" /*   load y to q0    */
+            "vmla.f32 q0, q1,   d10[0]    \n" /* q0 += q1 * q5[0]  */
+            "pld  [%[in0]]                \n" /*    preload in0    */
+            "vld1.32  {d2-d3},  [%[in0]]! \n" /*  load in0 to q1   */
+            "vmla.f32 q0, q2,   d10[1]    \n" /* q0 += q2 * q5[1]  */
+            "pld  [%[in1]]                \n" /*    preload in1    */
+            "vld1.32  {d4-d5},  [%[in1]]! \n" /*  load in0 to q2   */
+            "vmla.f32 q0, q3,   d11[0]    \n" /* q0 += q3 * q5[2]  */
+            "pld  [%[in2]]                \n" /*    preload in2    */
+            "vld1.32  {d6-d7},  [%[in2]]! \n" /*  load in0 to q3   */
+            "vmla.f32 q0, q4,   d11[1]    \n" /* q0 += q4 * q5[3]  */
+            "subs %[cnt], %[cnt], #1      \n" /*      sub cnt      */
+            "pld  [%[in3]]                \n" /*    preload in3    */
+            "vst1.32  {d0-d1},  [%[y]]!   \n" /*  store q0 to y    */
+            "vld1.32  {d8-d9},  [%[in3]]! \n" /*  load in0 to q4   */
+            "pld  [%[y], #32] \n"             /*     preload y     */
+            "bne  1b  \n"                     /*  branch to label 1 */
+            "sub  %[in0], %[in0], #16     \n" /* restore in0 address*/
+            "sub  %[in1], %[in1], #16     \n" /* restore in1 address*/
+            "sub  %[in2], %[in2], #16     \n" /* restore in2 address*/
+            "sub  %[in3], %[in3], #16     \n" /* restore in3 address*/
+            : [cnt] "+r"(cnt4),
+              [in0] "+r"(in0_ptr),
+              [in1] "+r"(in1_ptr),
+              [in2] "+r"(in2_ptr),
+              [in3] "+r"(in3_ptr),
+              [y] "+r"(y_ptr)
+            : [x] "r"(x_ptr)
+            : "q0", "q1", "q2", "q3", "q4", "q5", "cc", "memory");
+      }
+      for (int r = 0; r < m_remain; ++r) {
+        float val0 = x_ptr[0] * in0_ptr[r];
+        float val1 = x_ptr[1] * in1_ptr[r];
+        float val2 = x_ptr[2] * in2_ptr[r];
+        float val3 = x_ptr[3] * in3_ptr[r];
+        y_ptr[r] += val0 + val1 + val2 + val3;
+      }
+    }
+  }
+  //! do reduction
+  int rdc_ths = valid_ths >> 1;
+  while (rdc_ths > 0) {
+#pragma omp parallel for
+    for (int t = 0; t < rdc_ths; ++t) {
+      float *y0 = y_buf + t * M;
+      for (int i = t + rdc_ths; i < valid_ths; i += rdc_ths) {
+        float *y0_ptr = y0;
+        float *y_ptr = y_buf + i * M;
+        for (int j = 0; j < m_cnt8; ++j) {
+          float32x4_t val00 = vld1q_f32(y0_ptr + j * 8);
+          float32x4_t val01 = vld1q_f32(y0_ptr + j * 8 + 4);
+          float32x4_t val10 = vld1q_f32(y_ptr + j * 8);
+          float32x4_t val11 = vld1q_f32(y_ptr + j * 8 + 4);
+          float32x4_t val0 = vaddq_f32(val00, val10);
+          float32x4_t val1 = vaddq_f32(val01, val11);
+          vst1q_f32(y0_ptr + j * 8, val0);
+          vst1q_f32(y0_ptr + j * 8 + 4, val1);
+        }
+        y0_ptr += m_cnt8 * 8;
+        y_ptr += m_cnt8 * 8;
+        for (int j = 0; j < m_cnt4; ++j) {
+          float32x4_t val0 = vld1q_f32(y0_ptr + j * 4);
+          float32x4_t val1 = vld1q_f32(y_ptr + j * 4);
+          float32x4_t val = vaddq_f32(val0, val1);
+          vst1q_f32(y0_ptr + j * 4, val);
+        }
+        y0_ptr += m_cnt4 * 4;
+        y_ptr += m_cnt4 * 4;
+        for (int j = 0; j < m_remain; ++j) {
+          y0_ptr[j] += y_ptr[j];
+        }
+      }
+    }
+    valid_ths = rdc_ths;
+    rdc_ths = rdc_ths >> 1;
+  }
+  if (flag_relu) {
+    float *in_y = y_buf;
+    float32x4_t vzero = vdupq_n_f32(0.f);
+    if (m_cnt8 > 0) {
+      int cnt8 = m_cnt8;
+      asm volatile(
+          "vld1.32  {d0-d3},  [%[in_y]]!  \n" /* load y to q0, q1 */
+          "1:\n"
+          "vmax.f32 q2, q0,   %q[vzero]   \n" /*      q0 relu     */
+          "vld1.32  {d0-d1},  [%[in_y]]!  \n" /*   load y to q0   */
+          "vmax.f32 q3, q1,   %q[vzero]   \n" /*      q1 relu     */
+          "subs %[cnt], %[cnt], #1        \n" /*      sub cnt     */
+          "vst1.32  {d4-d7},  [%[out_y]]! \n" /* store q0, q1 to y*/
+          "vld1.32  {d2-d3},  [%[in_y]]!  \n" /*   load y to q0   */
+          "bne  1b                        \n" /* branch to label 1*/
+          "sub  %[in_y],  %[in_y],  #32   \n" /*   restore in_y   */
+          : [cnt] "+r"(cnt8), [in_y] "+r"(in_y), [out_y] "+r"(y)
+          : [vzero] "w"(vzero)
+          : "q0", "q1", "q2", "q3", "cc", "memory");
+    }
+    if (m_cnt4 > 0) {
+      int cnt4 = m_cnt4;
+      asm volatile(
+          "vld1.32  {d0-d1},  [%[in_y]]!  \n" /*  load y to q0    */
+          "1:\n"
+          "vmax.f32 q1, q0,   %q[vzero]   \n" /*      q0 relu     */
+          "vld1.32  {d0-d1},  [%[in_y]]!  \n" /*   load y to q0   */
+          "subs %[cnt], %[cnt], #1        \n" /*      sub cnt     */
+          "vst1.32  {d2-d3},  [%[out_y]]! \n" /*  store q1 to y   */
+          "bne  1b                        \n" /* branch to label 1*/
+          "sub  %[in_y],  %[in_y],  #16   \n" /*   restore in_y   */
+          : [cnt] "+r"(cnt4), [in_y] "+r"(in_y), [out_y] "+r"(y)
+          : [vzero] "w"(vzero)
+          : "q0", "q1", "cc", "memory");
+    }
+    for (int r = 0; r < m_remain; ++r) {
+      y[r] = in_y[r] > 0.f ? in_y[r] : 0.f;
+    }
+  } else {
+    memcpy(y, y_buf, M * sizeof(float));
   }
 }
 #endif  // __aarch64__
@@ -524,9 +610,10 @@ bool sgemv(const float *A,
            int N,
            bool is_bias,
            const float *bias,
-           bool is_relu) {
+           bool is_relu,
+           const ARMContext *ctx) {
   if (transA) {
-    sgemv_trans(M, N, A, x, y, is_bias, bias, is_relu);
+    sgemv_trans(M, N, A, x, y, is_bias, bias, is_relu, ctx);
   } else {
     if (is_bias) {
       //! with bias
