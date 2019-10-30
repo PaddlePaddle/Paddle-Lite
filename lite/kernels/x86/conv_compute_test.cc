@@ -84,8 +84,9 @@ TEST(conv2d_x86, run_test) {
   conv2d.Run();
 
   LOG(INFO) << "output: ";
+  float ref_result[1] = {27.};
   for (int i = 0; i < out.dims().production(); i++) {
-    LOG(INFO) << out_data[i] << " ";
+    EXPECT_NEAR(out_data[i], ref_result[i], 1e-5);
   }
 }
 

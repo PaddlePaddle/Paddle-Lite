@@ -12,14 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "ai_ddk_lib/include/graph/buffer.h"
-#include "ai_ddk_lib/include/graph/graph.h"
-#include "ai_ddk_lib/include/graph/model.h"
-#include "ai_ddk_lib/include/graph/op/all_ops.h"
-#include "ai_ddk_lib/include/graph/operator.h"
-#include "ai_ddk_lib/include/graph/operator_reg.h"
+#include "lite/backends/npu/builder.h"
 #include "lite/kernels/npu/bridges/registry.h"
-#include "lite/kernels/npu/bridges/utils.h"
 
 namespace paddle {
 namespace lite {
@@ -32,7 +26,7 @@ node_map_type SoftmaxConverter(const std::shared_ptr<lite::OpLite> softmax_op,
   auto scope = softmax_op->scope();
   auto op_info = softmax_op->op_info();
   auto op_type = op_info->Type();
-  auto unique_op_type = UniqueName(op_type);
+  auto unique_op_type = lite::npu::UniqueName(op_type);
   LOG(INFO) << "Converting " + op_type + "...";
 
   std::shared_ptr<ge::op::Softmax> softmax_node =
@@ -51,8 +45,8 @@ node_map_type SoftmaxConverter(const std::shared_ptr<lite::OpLite> softmax_op,
   softmax_node->set_input_x(*inputs_map.at(x_var_name));
   softmax_node->set_attr_axis(axis);
 
-  OpList::Global().add(inputs_map.at(x_var_name));
-  OpList::Global().add(softmax_node);
+  lite::npu::OpList::Global().add(inputs_map.at(x_var_name));
+  lite::npu::OpList::Global().add(softmax_node);
 
   node_map_type outputs_map;
   outputs_map[op_info->Output("Out").front()] = softmax_node;

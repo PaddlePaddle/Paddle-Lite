@@ -64,8 +64,8 @@ TEST(CxxApi, run) {
   EXPECT_NEAR(out[1], -28.8729, 1e-3);
 
   predictor->SaveOptimizedModel(FLAGS_model_dir + ".opt2");
-  predictor->SaveOptimizedModel(FLAGS_model_dir + ".opt2.naive",
-                                LiteModelType::kNaiveBuffer);
+  predictor->SaveOptimizedModel(
+      FLAGS_model_dir + ".opt2.naive", LiteModelType::kNaiveBuffer, true);
 }
 
 // Demo1 for Mobile Devices :Load model from file and run
