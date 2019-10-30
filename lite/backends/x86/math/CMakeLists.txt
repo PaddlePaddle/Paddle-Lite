@@ -6,7 +6,7 @@ function(math_library TARGET)
     # But it handle split GPU/CPU code and link some common library.
     set(cc_srcs)
     set(hip_srcs)
-    set(math_common_deps context framework_proto)
+    set(math_common_deps context framework_proto eigen3)
     set(multiValueArgs DEPS)
     cmake_parse_arguments(math_library "${options}" "${oneValueArgs}"
             "${multiValueArgs}" ${ARGN})
@@ -20,7 +20,7 @@ function(math_library TARGET)
 endfunction()
 
 # please add new math_library in alphabetical order
-math_library(concat_and_split)
+math_library(concat_and_split DEPS fluid_data_type)
 math_library(context_project DEPS im2col math_function)
 math_library(cross_entropy)
 math_library(cos_sim_functor)
@@ -33,7 +33,7 @@ math_library(gru_compute DEPS activation_functions math_function)
 math_library(lstm_compute DEPS activation_functions)
 
 lite_cc_library(blas SRCS blas.cc DEPS cblas framework_proto eigen3 dynload_mklml)
-math_library(math_function DEPS blas dynload_mklml)
+math_library(math_function DEPS blas dynload_mklml eigen3)
 math_library(maxouting)
 math_library(pooling)
 math_library(selected_rows_functor DEPS selected_rows math_function blas)

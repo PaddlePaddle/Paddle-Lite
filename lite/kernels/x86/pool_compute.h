@@ -13,13 +13,11 @@
 // limitations under the License.
 #pragma once
 
-#include <Eigen/Core>
 #include "lite/backends/x86/math/math_function.h"
 #include "lite/backends/x86/math/pooling.h"
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/types.h"
-#include "lite/fluid/eigen.h"
 
 namespace paddle {
 namespace lite {

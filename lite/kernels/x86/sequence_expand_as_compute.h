@@ -18,7 +18,6 @@
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/types.h"
-#include "lite/fluid/eigen.h"
 
 namespace paddle {
 namespace lite {

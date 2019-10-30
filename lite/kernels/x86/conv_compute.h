@@ -13,7 +13,6 @@
 // limitations under the License.
 #pragma once
 
-#include <Eigen/Core>
 #include <string>
 #include <vector>
 #include "lite/backends/x86/math/blas.h"
@@ -22,7 +21,6 @@
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/types.h"
-#include "lite/fluid/eigen.h"
 #include "lite/operators/conv_op.h"
 
 namespace paddle {

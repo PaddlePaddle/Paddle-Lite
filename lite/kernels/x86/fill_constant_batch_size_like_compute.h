@@ -14,7 +14,6 @@
 
 #pragma once
 
-#include <Eigen/Core>
 #include "lite/backends/x86/math/blas.h"
 #include "lite/backends/x86/math/math_function.h"
 #include "lite/core/kernel.h"
