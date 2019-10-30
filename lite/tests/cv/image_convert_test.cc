@@ -25,37 +25,22 @@
 #include "lite/utils/cv/image_preprocess.h"
 #endif  // LITE_WITH_ARM
 
-// DEFINE_int32(cluster, 3, "cluster id");
-// DEFINE_int32(threads, 1, "threads num");
-// DEFINE_int32(warmup, 0, "warmup times");
-// DEFINE_int32(repeats, 1, "repeats times");
-// DEFINE_bool(basic_test, false, "do all tests");
-// DEFINE_bool(check_result, true, "check the result");
+DEFINE_int32(cluster, 3, "cluster id");
+DEFINE_int32(threads, 1, "threads num");
+DEFINE_int32(warmup, 0, "warmup times");
+DEFINE_int32(repeats, 1, "repeats times");
+DEFINE_bool(basic_test, false, "do all tests");
+DEFINE_bool(check_result, true, "check the result");
 
-// DEFINE_int32(srcFormat, 0, "input image format");
-// DEFINE_int32(dstFormat, 1, "output image format");
-// DEFINE_int32(srch, 1920, "input height");
-// DEFINE_int32(srcw, 1080, "input width");
-// DEFINE_int32(dsth, 960, "output height");
-// DEFINE_int32(dstw, 540, "output width");
-// DEFINE_float(angle, 90, "rotate angel");
-// DEFINE_int32(flip_num, 0, "flip x");
-// DEFINE_int32(layout, 0, "layout chw");
-int FLAGS_srch = 1920;
-int FLAGS_srcw = 1080;
-int FLAGS_dstw = 960;
-int FLAGS_dsth = 540;
-int FLAGS_angle = 90;
-int FLAGS_flip_num = 1;
-int FLAGS_check_result = 1;
-int FLAGS_cluster = 3;
-int FLAGS_threads = 1;
-int FLAGS_warmup = 0;
-int FLAGS_repeats = 1;
-int FLAGS_srcFormat = 0;
-int FLAGS_dstFormat = 1;
-int FLAGS_layout = 0;
-bool FLAGS_basic_test = 1;
+DEFINE_int32(srcFormat, 0, "input image format");
+DEFINE_int32(dstFormat, 1, "output image format");
+DEFINE_int32(srch, 1920, "input height");
+DEFINE_int32(srcw, 1080, "input width");
+DEFINE_int32(dsth, 960, "output height");
+DEFINE_int32(dstw, 540, "output width");
+DEFINE_int32(angle, 90, "rotate angel");
+DEFINE_int32(flip_num, 0, "flip x");
+DEFINE_int32(layout, 0, "layout chw");
 
 typedef paddle::lite::utils::cv::ImageFormat ImageFormat;
 typedef paddle::lite::utils::cv::FlipParam FlipParam;
@@ -129,6 +114,7 @@ void test_img(const std::vector<int>& cluster_id,
           new paddle::lite::KernelContext);
       auto& ctx = ctx1->As<paddle::lite::ARMContext>();
       ctx.SetRunMode(static_cast<paddle::lite_api::PowerMode>(cls), th);
+      LOG(INFO) << "cluster: " << cls << ", threads: " << th;
 
       LOG(INFO) << " input tensor size, num= " << 1 << ", channel= " << 1
                 << ", height= " << srch << ", width= " << srcw
@@ -345,8 +331,8 @@ void test_img(const std::vector<int>& cluster_id,
           min_time = tdiff;
         }
       }
-      LOG(INFO) << "image trans total time : " << to << ",  avg time : %"
-                << to / test_iter;
+      LOG(INFO) << "image trans total time : " << to
+                << ",  avg time : " << to / test_iter;
       // print_tensor(tout);
       double max_ratio = 0;
       double max_diff = 0;
@@ -584,7 +570,7 @@ TEST(TestImageConvertRand, test_func_image_convert_preprocess) {
                         }
                       }
                       test_img({FLAGS_cluster},
-                               {1, 2, 4},
+                               {1},
                                w,
                                h,
                                ww,
@@ -669,7 +655,7 @@ TEST(TestImageConvertRand, test_func_image_trans_preprocess) {
     for (auto w : {1, 8, 16, 112, 224, 1092}) {
       for (auto h : {1, 16, 112, 224}) {
         for (auto ww : {32, 112}) {
-          for (auto hh : {32, 112}) {
+          for (auto hh : {112}) {
             for (auto rotate : {90, 180, 270}) {
               for (auto flip : {0, 1, 2}) {
                 for (auto srcFormat : {11}) {

@@ -128,11 +128,11 @@ void ImagePreprocess::imageResize(const uint8_t* src,
   int cnt = w_out >> 3;
   int remain = w_out % 8;
   int32x4_t _v2 = vdupq_n_s32(2);
-  // size = dsth * w_out;
-  int16_t* rowsbuf0 = new int16_t[w_out];
-  int16_t* rowsbuf1 = new int16_t[w_out];
+// size = dsth * w_out;
 #pragma omp parallel for
   for (int dy = 0; dy < dsth; dy++) {
+    int16_t* rowsbuf0 = new int16_t[w_out];
+    int16_t* rowsbuf1 = new int16_t[w_out];
     int sy = yofs[dy];
     if (dy >= orih) {
       xofs = xofs1;
@@ -185,19 +185,21 @@ void ImagePreprocess::imageResize(const uint8_t* src,
         }
         for (int i = 0; i < num; i++) {
           if (sx < 0) {
-            *rows0p++ = ((*S0pl++) * a1) >> 4;
-            *rows1p++ = ((*S1pl++) * a1) >> 4;
+            *rows0p = ((*S0pl++) * a1) >> 4;
+            *rows1p = ((*S1pl++) * a1) >> 4;
+            rows0p++;
+            rows1p++;
           } else {
             *rows0p++ = ((*S0pl++) * a0 + (*S0pr++) * a1) >> 4;
             *rows1p++ = ((*S1pl++) * a0 + (*S1pr++) * a1) >> 4;
           }
         }
-
         ialphap += 2;
       }
     }
-    int16_t b0 = ibeta[0];
-    int16_t b1 = ibeta[1];
+    int ind = dy * 2;
+    int16_t b0 = ibeta[ind];
+    int16_t b1 = ibeta[ind + 1];
     int16x8_t _b0 = vdupq_n_s16(b0);
     int16x8_t _b1 = vdupq_n_s16(b1);
     uint8_t* dp_ptr = dst + dy * w_out;
@@ -288,11 +290,8 @@ void ImagePreprocess::imageResize(const uint8_t* src,
                      (int16_t)((b1 * (int16_t)(*rows1p++)) >> 16) + 2) >>
                     2);
     }
-    ibeta += 2;
   }
   delete[] buf;
-  delete[] rowsbuf0;
-  delete[] rowsbuf1;
 }
 
 void ImagePreprocess::imageTransform(const uint8_t* src, uint8_t* dst) {
