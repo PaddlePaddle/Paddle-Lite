@@ -52,12 +52,10 @@ void saveFloatToFile(std::string name,float* data_in, int size) {
 
 void set_filter_capacity(uint32_t cap) {
   FILTER_SIZE = cap;
-  std::cout << "set_filter_capacity:" << FILTER_SIZE << std::endl;
 }
 
 void set_colunm(uint32_t column) {
   COLUMN = column;
-  std::cout << "set_colunm:" << COLUMN << std::endl;
 }
 
 // replace zynqmp_api.h  #define FILTER_NUM_ALIGNMENT

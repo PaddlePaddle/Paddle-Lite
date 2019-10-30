@@ -26,5 +26,7 @@ extern std::vector<float> preprocess_mean;
 
 extern std::vector<float> preprocess_scale; 
 
+extern bool use_yolov3_416;
+
 
 #endif /* PREPROCESS_CONF_HPP */

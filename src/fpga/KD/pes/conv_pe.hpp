@@ -119,6 +119,7 @@ class ConvPE : public PE {
         (param_.relu.leaky_relu_factor != 0) ? true : false;
     inplace_.relu_enable =
         inplace_.leaky_relu_enable ? false : param_.relu.enabled;
+
     inplace_.power_enable = false;
     inplace_.normalize_enable = false;
     if (inplace_.relu_enable || inplace_.leaky_relu_enable) {

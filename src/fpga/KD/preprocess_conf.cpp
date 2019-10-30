@@ -23,3 +23,5 @@ extern std::vector<float> preprocess_mean = {0, 0, 0};
 
 extern std::vector<float> preprocess_scale = {0, 0, 0}; 
 
+extern bool use_yolov3_416 = false;
+

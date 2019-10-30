@@ -46,10 +46,13 @@ bool ConvBNLeakyReluKernel<FPGA, float>::Init(FusionConvBNLeakyReluParam<FPGA>* 
   conv_param.groups = param->Groups();
   conv_param.strides = param->Strides();
   conv_param.paddings = param->Paddings();
+  conv_param.dilations = param->Dilations();
 
+  // conv_param.filter->saveToFile("conv_bn_leakyrelu_filter_", true);
   combine_bn_params(bn_param, &conv_param);
   pe.init();
   pe.apply();
+  
   delete bn_param;
 
   return true;
@@ -61,8 +64,15 @@ void ConvBNLeakyReluKernel<FPGA, float>::Compute(
   ConvPE& pe = context.pe<ConvPE>();
   pe.dispatch();
 
+  param.Input()->zynqmpTensor()->printScale();
   param.Output()->zynqmpTensor()->printScale();
-  // param.Output()->zynqmpTensor()->saveToFile("conv_bn_leakyrelu", true);
+  // param.Input()->zynqmpTensor()->saveToFile("conv_bn_leakyrelu_input_", true);
+
+  // param.Output()->zynqmpTensor()->saveToFile("conv_bn_leakyrelu_output_", true);
+#ifdef PADDLE_MOBILE_DEBUG
+  zynqmp::Debugger::get_instance().registerOutput(
+      "conv_bn_leakyrelu", param.Output()->zynqmpTensor());
+#endif
 }
 
 }  // namespace operators

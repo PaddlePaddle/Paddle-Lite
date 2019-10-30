@@ -60,6 +60,7 @@ bool ConvAddKernel<FPGA, float>::Init(FusionConvAddParam<FPGA>* param) {
     conv_param.groups = param->Groups();
     conv_param.strides = param->Strides();
     conv_param.paddings = param->Paddings();
+    conv_param.dilations = param->Dilations();
 
     fill_scale_bias_const(&conv_param);
     Tensor* bias = param->Bias();

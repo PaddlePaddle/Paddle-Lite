@@ -53,6 +53,12 @@ void YoloBoxKernel<FPGA, float>::Compute(const YoloBoxParam<FPGA>& param) {
 
   // param.OutputBoxes()->zynqmpTensor()->saveToFile("yolobox_OutputBoxes", true);
   // param.OutputScores()->zynqmpTensor()->saveToFile("yolobox_OutputScores", true);
+#ifdef PADDLE_MOBILE_DEBUG
+  zynqmp::Debugger::get_instance().registerOutput(
+      "yolobox_boxes", param.OutputBoxes()->zynqmpTensor());
+  zynqmp::Debugger::get_instance().registerOutput(
+      "yolobox_scores", param.OutputScores()->zynqmpTensor());
+#endif
 }
 
 template class YoloBoxKernel<FPGA, float>;

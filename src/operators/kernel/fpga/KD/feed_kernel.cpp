@@ -14,6 +14,7 @@ limitations under the License. */
 
 #include "operators/kernel/feed_kernel.h"
 #include "fpga/KD/pes/input_pe.hpp"
+#include "fpga/KD/preprocess_conf.hpp"
 
 using InputParam = paddle_mobile::zynqmp::InputParam;
 using InputPE = paddle_mobile::zynqmp::InputPE;
@@ -48,10 +49,15 @@ void FeedKernel<FPGA, float>::Compute(const FeedParam<FPGA>& param) {
   auto input = const_cast<LoDTensor*>(&param.InputX()->at(col));
   if (input->dims().size() != 4) {
     float* data = param.Out()->mutable_data<float>();
-    data[0] = 608;
-    data[1] = 608;
-    // data[0] = 3040;
-    // data[1] = 4056;
+    if (!use_yolov3_416) {
+       data[0] = 608;
+       data[1] = 608;
+    } else {
+       data[0] = 416;
+       data[1] = 416;
+    }
+   
+
     auto out = param.Out()->zynqmpTensor();
     InputParam& input_param = pe.param();
     input_param.output = out;

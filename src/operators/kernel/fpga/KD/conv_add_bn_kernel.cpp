@@ -75,6 +75,7 @@ bool ConvAddBNKernel<FPGA, float>::Init(FusionConvAddBNParam<FPGA>* param) {
     conv_param.groups = param->Groups();
     conv_param.strides = param->Strides();
     conv_param.paddings = param->Paddings();
+    conv_param.dilations = param->Dilations();
 
     combine_add_bn_params(bn_param, param->Bias()->zynqmpTensor(), &conv_param);
 

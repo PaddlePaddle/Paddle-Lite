@@ -360,6 +360,8 @@ inline void split_filter_num(const ConvParam& c_param) {
     args.image.height = input->shape().height();
     args.image.pad_width = param.paddings[1];
     args.image.pad_height = param.paddings[0];
+     // TODO dilations[0] = dilations[1]
+    args.dilation = param.dilations[0];
 
     args.output.address = out_address;
     args.output.scale_address = out_scale_address;
@@ -440,6 +442,8 @@ inline void split_channel(const ConvParam& c_param) {
     args.image.height = conv_param->input.shape().height();
     args.image.pad_width = param.paddings[1];
     args.image.pad_height = param.paddings[0];
+    // TODO dilations[0] = dilations[1]
+    args.dilation = param.dilations[0];
     args.output.address = conv_param->output.mutableData<void>();
     args.output.scale_address = conv_param->output.scale();
     param.splitParams().push_back(conv_param);

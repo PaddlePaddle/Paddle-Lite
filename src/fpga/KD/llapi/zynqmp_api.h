@@ -118,6 +118,7 @@ struct ConvArgs {
   void* filter_scale_address;
   uint32_t filter_num;
   uint32_t group_num;
+  uint32_t dilation;
 
   struct KernelArgs kernel;
   struct ImageInputArgs image;  // input image;
@@ -217,6 +218,8 @@ struct ActiveParamterArgs {
 struct InplaceArgs {
   bool leaky_relu_enable;
   bool relu_enable;
+  bool sigmoid_enable;
+  bool relu6_enable;
   bool power_enable;
   bool normalize_enable;
 };
