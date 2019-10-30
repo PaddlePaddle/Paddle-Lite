@@ -421,11 +421,11 @@ void sgemv_trans(const int M,
       if (m_cnt8 > 0) {
         int cnt8 = m_cnt8;
         asm volatile(
-            "vld1.32  {d4-d5},  [%[x]]    \n" /* load x   to q2      */
-            "vld1.32  {d6-d9},  [%[in0]]! \n" /* load in0 to q3, q4  */
-            "vld1.32  {d10-d13},[%[in1]]! \n" /* load in0 to q5, q6  */
-            "vld1.32  {d14-d17},[%[in2]]! \n" /* load in0 to q7, q8  */
-            "vld1.32  {d18-d21},[%[in3]]! \n" /* load in0 to q9, q10 */
+            "vld1.32  {d4-d5},  [%[x]]    \n" /* load x   to q2     */
+            "vld1.32  {d6-d9},  [%[in0]]! \n" /* load in0 to q3, q4 */
+            "vld1.32  {d10-d13},[%[in1]]! \n" /* load in0 to q5, q6 */
+            "vld1.32  {d14-d17},[%[in2]]! \n" /* load in0 to q7, q8 */
+            "vld1.32  {d18-d21},[%[in3]]! \n" /* load in0 to q9, q10*/
             "1:\n"
             "vld1.32  {d0-d3},  [%[y]]    \n" /*  load y to q0, q1  */
             "vmla.f32 q0, q3,   d4[0]     \n" /*  q0 += q3 * vx[0]  */
