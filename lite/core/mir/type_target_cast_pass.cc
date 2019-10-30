@@ -125,7 +125,8 @@ void TypeTargetTransformPass::AddIoCopyInst(
     VLOG(4) << "------ kernel info -------";
     VLOG(4) << "*in_arg_ty(io_copy kernel input):" << *in_arg_ty;
     VLOG(4) << "from(last kernel output):" << from;
-    VLOG(4) << "to:" << to;
+    VLOG(4) << "out_arg_ty(io_copy kernel output):" << *out_arg_ty;
+    VLOG(4) << "to:" << to << "\n";
 
 // kernel choose branch for opencl backend
 //   judge inst's target whether is kOpenCL
@@ -143,7 +144,7 @@ void TypeTargetTransformPass::AddIoCopyInst(
     if (TargetCompatibleTo(*in_arg_ty, from) &&
         PrecisionCompatibleTo(*in_arg_ty, from) &&
         DeviceCompatibleTo(*in_arg_ty, from) &&
-        out_arg_ty->target() == to.target()) {
+        TargetCompatibleTo(*out_arg_ty, to)) {
       VLOG(4) << "do nothing. opencl found";
 #else
     if (TypeCompatible(*in_arg_ty, from) &&
