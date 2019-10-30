@@ -44,6 +44,48 @@ rm ./lite/api/paddle_use_ops.h
   build_test_arm_opencl
 ```
 
+编译产物（以android、armv8、gcc、opencl的编译目标为例）位于`build.lite.android.armv8.gcc.opencl`下的`inference_lite_lib.android.armv8.opencl`文件夹内，其中：
+
+```bash
+.
+|-- bin
+|   |-- paddle_code_generator
+|   `-- test_model_bin
+|-- cxx
+|   |-- include
+|   |   |-- paddle_api.h
+|   |   |-- paddle_lite_factory_helper.h
+|   |   |-- paddle_place.h
+|   |   |-- paddle_use_kernels.h
+|   |   |-- paddle_use_ops.h
+|   |   `-- paddle_use_passes.h
+|   `-- lib
+|       |-- libpaddle_api_full_bundled.a
+|       |-- libpaddle_api_light_bundled.a
+|       |-- libpaddle_full_api_shared.so
+|       `-- libpaddle_light_api_shared.so
+`-- opencl
+    `-- cl_kernel
+        |-- buffer
+        |   |-- depthwise_conv2d_kernel.cl
+        |   |-- elementwise_add_kernel.cl
+        |   |-- fc_kernel.cl
+        |   |-- im2col_kernel.cl
+        |   |-- layout_kernel.cl
+        |   |-- mat_mul_kernel.cl
+        |   |-- pool_kernel.cl
+        |   `-- relu_kernel.cl
+        |-- cl_common.h
+        `-- image
+            |-- channel_add_kernel.cl
+            |-- elementwise_add_kernel.cl
+            |-- mat_mul_kernel.cl
+            |-- pool_kernel.cl
+            `-- relu_kernel.cl
+
+8 directories, 26 files
+```
+
 ## 运行示例准备
 
 下面以android、ARMv8、gcc的环境为例，介绍如何在手机上执行基于OpenCL的ARM GPU推理过程。  
