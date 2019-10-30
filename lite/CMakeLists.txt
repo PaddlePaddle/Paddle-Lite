@@ -77,7 +77,7 @@ if (LITE_WITH_PYTHON)
     	COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/demo/python"
     	COMMAND cp "${CMAKE_SOURCE_DIR}/lite/demo/python/mobilenetv1_light_api.py" "${INFER_LITE_PUBLISH_ROOT}/demo/python/")
     if (NOT LITE_ON_TINY_PUBLISH)
-        add_custom_target(publish_inference_pythonl_demo ${TARGET}
+        add_custom_target(publish_inference_python_full_demo ${TARGET}
     	    COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/demo/python"
     	    COMMAND cp "${CMAKE_SOURCE_DIR}/lite/demo/python/mobilenetv1_full_api.py" "${INFER_LITE_PUBLISH_ROOT}/demo/python/")
         add_dependencies(publish_inference publish_inference_python_full_demo)
