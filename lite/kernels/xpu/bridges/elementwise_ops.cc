@@ -69,7 +69,7 @@ node_map_type ElementwiseConverter(const std::shared_ptr<lite::OpLite> op,
   std::shared_ptr<xtcl::xExpr> elementwise_node = nullptr;
   if (y_dims.size() == 1) {
     elementwise_node = std::make_shared<xtcl::xExpr>(
-        graph_ctx->builder->CreateBiasAdd(*x_node, *y_node, axis));
+        graph_ctx->builder->CreateBiasAdd(*x_node, axis, *y_node));
   } else if (x_dims.size() == y_dims.size()) {
     elementwise_node = std::make_shared<xtcl::xExpr>(
         graph_ctx->builder->CreateBinaryOp("add", *x_node, *y_node));
