@@ -241,7 +241,7 @@ function make_x86 {
   prepare_thirdparty
 
   root_dir=$(pwd)
-  build_directory=$BUILD_DIR/build_x86
+  build_directory=$BUILD_DIR/build.lite.x86
 
   if [ -d $build_directory ]
   then
