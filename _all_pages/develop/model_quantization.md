@@ -7,7 +7,7 @@ title: 模型量化
 
 本文主要介绍使用PaddlePaddle和Paddle-Lite对模型进行端到端的量化训练和推理执行，模型示例为MobileNetV1。
 
-目前，PaddlePaddle框架的量化训练主要针对卷积层（包括二维卷积和Depthwise卷积）、全连接层和Pool2D（Max类型），对应算子是conv2d、depthwise_conv2d、mul和Pool2D，更多量化训练的原理请参考[文档](https://github.com/PaddlePaddle/models/blob/develop/PaddleSlim/docs/tutorial.md#1-quantization-aware-training%E9%87%8F%E5%8C%96%E4%BB%8B%E7%BB%8D)。Paddle-Lite支持运行PaddlePaddle框架量化训练产出的模型，可以进一步加快模型在移动端的执行速度。
+目前，PaddlePaddle框架的量化训练主要针对卷积层（包括二维卷积和Depthwise卷积）、和全连接层，对应算子是conv2d、depthwise_conv2d和mul，更多量化训练的原理请参考[文档](https://github.com/PaddlePaddle/models/blob/develop/PaddleSlim/docs/tutorial.md#1-quantization-aware-training%E9%87%8F%E5%8C%96%E4%BB%8B%E7%BB%8D)。Paddle-Lite支持运行PaddlePaddle框架量化训练产出的模型，可以进一步加快模型在移动端的执行速度。
 
 温馨提示：如果您是初次接触PaddlePaddle框架，建议首先学习[新人入门](https://www.paddlepaddle.org.cn/documentation/docs/zh/1.5/beginners_guide/index_cn.html)和[使用指南](https://www.paddlepaddle.org.cn/documentation/docs/zh/1.5/user_guides/index_cn.html)。
 
@@ -27,16 +27,16 @@ wget https://paddle-inference-dist.bj.bcebos.com/int8%2Fpretrain%2Fmobilenet_v1_
 
 #### 安装PaddlePaddle
 
-根据操作系统、安装方式、Python版本和CUDA版本，按照[官方说明](https://paddlepaddle.org.cn/start)安装1.5.1版本的PaddlePaddle。例如：
+根据操作系统、安装方式、Python版本和CUDA版本，按照[官方说明](https://paddlepaddle.org.cn/start)安装PaddlePaddle。例如：
 
 Ubuntu 16.04.4 LTS操作系统，CUDA9，cuDNN7，GPU版本安装:
 ```bash
-pip install paddlepaddle-gpu==1.5.1.post97 -i https://mirrors.aliyun.com/pypi/simple/
+pip install paddlepaddle-gpu==1.6.0.post97 -i https://mirrors.aliyun.com/pypi/simple/
 ```
 
 Ubuntu 16.04.4 LTS操作系统，CPU版本安装:
 ```bash
-pip install paddlepaddle==1.5.1 -i https://mirrors.aliyun.com/pypi/simple/
+pip install paddlepaddle==1.6.0 -i https://mirrors.aliyun.com/pypi/simple/
 ```
 
 #### 克隆量化训练所需的代码库
@@ -282,4 +282,3 @@ Output[900]: 0.000969
 **问题**：Inufficient GPU memory to allocation. at [/paddle/paddle/fluid/platform/gpu_info.cc:262]
 	
 **解答**：正确设置run.sh脚本中`CUDA_VISIBLE_DEVICES`，确保显卡剩余内存大于需要内存。
-
