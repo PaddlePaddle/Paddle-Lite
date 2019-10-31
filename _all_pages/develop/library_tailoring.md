@@ -1,18 +1,25 @@
-# 裁剪预测库方法
+---
+layout: post
+title: 裁剪预测库方法
+---
+* TOC
+{:toc}
+
+## 裁剪预测库方法
 
 Paddle-Lite支持**根据模型裁剪预测库**功能。Paddle-Lite的一般编译会将所有已注册的operator打包到预测库中，造成库文件体积膨胀；**裁剪预测库**能针对具体的模型，只打包优化后该模型需要的operator，有效降低预测库文件大小。
 
-#效果展示
+##效果展示
 
 | mobilenet_v1 | libpaddle_full_api_shared.so | libpaddle_light_api_shared.so | libpaddle_lite_jni.so |
 | ------------------ | ---------------------------- | ----------------------------- | --------------------- |
 | mobilenet_v1       | 14M                          | 14M                           | 6.2M                  |
 | 裁剪后mobilenet_v1 | 7.7M                         | 7.5M                          | 2.5M                  |
 
-#实现过程：
+##实现过程：
 
 
-## 1、转化模型时记录优化后模型信息
+### 1、转化模型时记录优化后模型信息
 
 说明：使用model_optimize_tool转化模型时，选择 `--record_tailoring_info =true`  会将优化后模型的OP和kernel信息保存到输出文件夹，这些信息将用于编译裁剪后的动态库。
 注意：需要使用Paddle-Lite 最新版本（release/v2.0.0之后）代码编译出的model_optimize_tool
@@ -23,7 +30,7 @@ Paddle-Lite支持**根据模型裁剪预测库**功能。Paddle-Lite的一般编
 ```
 效果：优化后模型使用的OP和kernel信息被保存在 `mobilenet_v1NB`文件夹中的隐藏文件里了
 
-##2、根据模型信息编译裁剪后的预测库
+###2、根据模型信息编译裁剪后的预测库
 
 说明：编译Paddle-Lite时选择`--build_tailor=ON` ，并且用   `–-opt_model_dir=`   指定优化后的模型的地址
 例如：
@@ -48,7 +55,7 @@ Paddle-Lite支持**根据模型裁剪预测库**功能。Paddle-Lite的一般编
 
 `build.lite.android.armv7.gcc/inference_lite_lib.android.armv7/java/so/`
 
-## 3、运行裁剪后的预测库文件
+### 3、运行裁剪后的预测库文件
 
 注意：基于某一模型裁剪出的预测库只能支持优化工具转化后的该模型，例如根据mobilenetV1裁剪出的 full_api预测库只能运行以protobuf格式转化出的模型mobilenetV1_opt_nb， 裁剪出的light_api预测库只能运行以naive_buffer格式转化出的模型mobilenetV1_opt_nb， 运行其他模型可能会出现`segementation fault:undifined op or kernel`。  模型转化方法参考：[使用model_optimize_tool转化模型](../model_optimize_tool))。
 
