@@ -3,7 +3,7 @@ layout: post
 title: 新增op的方法
 ---
 
-以下以添加argmax为例，详细说明新增op的方法步骤。
+以下以添加argmax为例，详细说明新增op的方法。
 
 ## 1. 添加OpParam 结构体以传导 Op 的输入和输出
 
@@ -76,10 +76,10 @@ title: 新增op的方法
     }
     REGISTER_LITE_OP(argmax, paddle::lite::operators::ArgmaxOpLite);
     ```
-- 在paddlelite/lite/operators/CMakeLists.txt中添加```lite_cc_library(argmax_op SRCS argmax_op.cc DEPS ${op_DEPS})```，并且在set ops lite 中添加argmax_op；
-- 在paddlelite/lite/api/paddle_use_ops.h中添加```USE_LITE_OP(argmax)```。
+- 在paddlelite/lite/operators/CMakeLists.txt中添加```add_operator(argmax_op basic SRCS argmax_op.cc DEPS ${op_DEPS})```
 
 ## 3. 添加Argmax Kernel并绑定
+
 以下以arm端argmax实现为例说明
 - 在paddlelite/lite/kernels/arm/目录下新建argmax_compute.h文件，声明ArgmaxCompute类，并继承KernelLite，主要代码如下：
     ```c++
@@ -90,7 +90,7 @@ title: 新增op的方法
         virtual ~ArgmaxCompute() = default;
     };
     ```
-- 在paddlelite/lite/kernels/arm/目录下新建argmax_compute.cc文件，主要实现Run函数。`Run()`函数调用paddlelite/lite/arm/math/argmax.h中的`argmax_func()`函数，根据输入计算输出。最后在argmax_compute.cc文件中，我们绑定argmax的输入输出（为tensor的输入参数都需要绑定），代码如下：
+- 在paddlelite/lite/kernels/arm/目录下新建argmax_compute.cc文件，主要实现Run函数。`Run()`函数调用paddlelite/lite/bachends/arm/math/argmax.h中的`argmax_func()`函数，根据输入计算输出。最后在argmax_compute.cc文件中，我们绑定argmax的输入输出（为tensor的输入参数都需要绑定），代码如下：
     ```c++
     void ArgmaxCompute::Run() {
         auto& param = Param<operators::ArgmaxParam>();
@@ -110,17 +110,16 @@ title: 新增op的方法
 
 - 在paddlelite/lite/kernels/arm/CMakeLists.txt中添加
     ```cmake
-    lite_cc_library(argmax_compute_arm SRCS argmax_compute.cc DEPS ${lite_kernel_deps} math_arm)
+    add_kernel(argmax_compute_arm ARM basic SRCS argmax_compute.cc DEPS ${lite_kernel_deps} math_arm)
     ```
-    CMakeLists.txt中set arm_kernels需要添加argmax_compute_arm;
-- 在paddlelite/lite/api/paddle_use_kernels.h中添加```USE_LITE_KERNEL(argmax, kARM, kFloat, kNCHW, def)```。
 
 ## 4. 添加Argmax实现
-- 在paddlelite/lite/arm/math/目录下新建argmax.h文件，声明`argmax_func()`函数，代码如下：
+
+- 在paddlelite/lite/backends/arm/math/目录下新建argmax.h文件，声明`argmax_func()`函数，代码如下：
     ```c++
     void argmax_func(const lite::Tensor* input, const int axis, lite::Tensor* output);
     ```
-- 在paddlelite/lite/arm/math/目录下新建argmax.cc文件，具体实现`argmax_func()`函数，代码如下：
+- 在paddlelite/lite/backends/arm/math/目录下新建argmax.cc文件，具体实现`argmax_func()`函数，代码如下：
     ```c++
     void argmax_func(const lite::Tensor *input,
                     const int axis,
@@ -155,9 +154,10 @@ title: 新增op的方法
     }
     }
     ```
-- 在paddlelite/lite/arm/math/CMakeFile.txt中的```math_arm library```中添加argmax.cc，在paddlelite/lite/arm/math/funcs.h中添加```#include "lite/arm/math/argmax.h"```
+- 在paddlelite/lite/backends/arm/math/CMakeFile.txt中的```math_arm library```中添加argmax.cc，在paddlelite/lite/backends/arm/math/funcs.h中添加```#include "lite/arm/math/argmax.h"```
 
 ## 5. 添加Argmax单测
+
 - 在paddlelite/lite/tests/kernels目录下新建argmax_compute_test.cc文件，声明并实现ArgmaxComputeTester类；
 - ArgmaxComputeTester类中主要包括PrepareOpDesc、PrepareData和RunBaseline函数。PrepareOpDesc函数设定单测op的类型和输入输出参数，PrepareData函数对输入tensor进行初始化，RunBaseline是基于输入计算得到输出，用于和框架计算的输出进行对比；
 - 使用gtest添加单测，代码如下：
