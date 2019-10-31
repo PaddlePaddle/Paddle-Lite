@@ -183,7 +183,7 @@ sudo make install
 
 至此，完成 Linux 交叉编译环境的准备。
 
-### 3、Mac OS 开发环境（只支持 tiny publish 编译 ）
+### 3、Mac OS 开发环境
 
 #### 交叉编译环境要求
 
@@ -217,6 +217,12 @@ brew cask install java
 ```
 
 至此，完成 Mac 交叉编译环境的准备。
+
+#### Mac下Full Publish编译时需要**注意**
+1. cmake版本需要为cmake 3.10
+2. Paddle-Lite项目路径中不可以含有中文字符
+3. 编译时如果报错: `Too many open files`
+   解决方法：修改mac电脑的 “程序可打开的最大文件数“，例如：`ulimit -n 1024`。
 
 ## 二、编译PaddleLite
 

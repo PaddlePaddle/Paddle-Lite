@@ -245,8 +245,21 @@ config.set_model_dir(FLAGS_model_dir);
 // 根据MobileConfig创建PaddlePredictor
 std::shared_ptr<PaddlePredictor> predictor = CreatePaddlePredictor<MobileConfig>(config);
 
+// 获得模型的输入和输出名称
+std::vector<std::string> input_names = predictor->GetInputNames();
+for (int i = 0; i < input_names.size(); i ++) {
+  printf("Input name[%d]: %s\n", i, input_names[i].c_str());
+}
+std::vector<std::string> output_names = predictor->GetOutputNames();
+for (int i = 0; i < output_names.size(); i ++) {
+  printf("Output name[%d]: %s\n", i, output_names[i].c_str());
+}
+
 // 准备输入数据
+// (1)根据index获取输入Tensor
 std::unique_ptr<Tensor> input_tensor(std::move(predictor->GetInput(0)));
+// (2)根据名称获取输入Tensor
+// std::unique_ptr<Tensor> input_tensor(std::move(predictor->GetInputByName(input_names[0])));
 input_tensor->Resize({1, 3, 224, 224});
 auto* data = input_tensor->mutable_data<float>();
 for (int i = 0; i < ShapeProduction(input_tensor->shape()); ++i) {
@@ -257,7 +270,10 @@ for (int i = 0; i < ShapeProduction(input_tensor->shape()); ++i) {
 predictor->Run();
 
 // 获取输出
+// (1)根据index获取输出Tensor
 std::unique_ptr<const Tensor> output_tensor(std::move(predictor->GetOutput(0)));
+// (2)根据名称获取输出Tensor
+// std::unique_ptr<const Tensor> output_tensor(std::move(predictor->GetOutput(output_names[0])));
 printf("Output dim: %d\n", output_tensor->shape()[1]);
 for (int i = 0; i < ShapeProduction(output_tensor->shape()); i += 100) {
   printf("Output[%d]: %f\n", i, output_tensor->data<float>()[i]);
@@ -290,7 +306,53 @@ for (int i = 0; i < ShapeProduction(output_tensor->shape()); i += 100) {
 
 返回类型：`std::unique_ptr<Tensor>`
 
+## `GetInputNames()`
 
+获取所有输入Tensor的名称。
+
+参数：
+
+- `None` 
+
+返回：所有输入Tensor的名称
+
+返回类型：`std::vector<std::string>`
+
+## `GetOutputNames()`
+
+获取所有输出Tensor的名称。
+
+参数：
+
+- `None`
+
+返回：所有输出Tensor的名称
+
+返回类型：`std::vector<std::string>`
+
+## `GetInputByName(name)`
+
+根据名称获取输出Tensor的指针，用来获取模型的输出结果。
+
+参数：
+
+- `name(const std::string)` - 输入Tensor的名称
+
+返回：输入Tensor`的指针
+
+返回类型：`std::unique_ptr<Tensor>`
+
+## `GetTensor(name)`
+
+根据名称获取输出Tensor的指针。
+
+参数：
+
+- `name(const std::string)` - Tensor的名称
+
+返回：指向`const Tensor`的指针
+
+返回类型：`std::unique_ptr<const Tensor>`
 
 ## `Run()`
 

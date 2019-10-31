@@ -30,6 +30,7 @@ Paddle-Lite 框架是 PaddleMobile 新一代架构，重点支持移动端推理
 - [Java实例]({{site.baseurl}}/develop/java_demo)
 - [Android/IOS APP demo](https://github.com/PaddlePaddle/Paddle-Lite-Demo)
 - [模型转化方法]({{site.baseurl}}/develop/model_optimize_tool)
+- [根据模型裁剪预测库方法]({{site.baseurl}}/develop/library_tailoring)
 
 ## 进阶
 

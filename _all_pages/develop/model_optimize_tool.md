@@ -50,7 +50,8 @@ fluid模型有两种形式，combined形式（权重保存为一个param文件�
     --optimize_out_type=(protobuf|naive_buffer) \
     --optimize_out=<output_optimize_model_dir> \
     --valid_targets=(arm|opencl|x86) \
-    --prefer_int8_kernel=(true|false)
+    --prefer_int8_kernel=(true|false) \
+    --record_tailoring_info =(true|false)
 ```
 
 | 选项         | 说明 |
@@ -62,7 +63,7 @@ fluid模型有两种形式，combined形式（权重保存为一个param文件�
 | --optimize_out      | 优化模型的输出路径。                                         |
 | --valid_targets     | 指定模型可执行的backend，目前可支持x86、arm、opencl，您可以同时指定多个backend(以空格分隔)，Model Optimize Tool将会自动选择最佳方式。默认为arm。 |
 | --prefer_int8_kernel | 若待优化模型为int8量化模型（如量化训练得到的量化模型），则设置该选项为true以使用int8内核函数进行推理加速，默认为false。                          |
-
+| --record_tailoring_info | 当使用**根据模型裁剪库文件**功能时，则设置该选项为true，以记录优化后模型含有的kernel和OP信息，默认为false。       |
 * 如果待优化的fluid模型是非combined形式，请设置`--model_dir`，忽略`--model_file`和`--param_file`。
 * 如果待优化的fluid模型是combined形式，请设置`--model_file`和`--param_file`，忽略`--model_dir`。
 * 优化后的模型包括__model__.nb和param.nb文件。
