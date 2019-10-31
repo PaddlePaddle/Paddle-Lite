@@ -209,6 +209,7 @@ struct BeamSearchDecoder {
         sentence_vector_list, id_tensor, score_tensor, true, true);
   }
 
+ private:
   size_t beam_size_;
   int end_id_;
 };
@@ -228,12 +229,13 @@ struct BeamSearchDecodeFunctor {
         score_tensor_(score_tensor) {}
 
   template <typename T>
-  void apply() const {
+  void Apply() const {
     BeamSearchDecoder<T> beam_search_decoder(beam_size_, end_id_);
     beam_search_decoder.Backtrace(
         step_ids_, step_scores_, id_tensor_, score_tensor_);
   }
 
+ private:
   size_t beam_size_;
   int end_id_;
   const LoDTensorArray& step_ids_;
@@ -243,7 +245,7 @@ struct BeamSearchDecodeFunctor {
 };
 
 template <>
-void BeamSearchDecodeFunctor::apply<bool>() const {
+void BeamSearchDecodeFunctor::Apply<bool>() const {
   LOG(FATAL) << "beam search decode op does not support bool!";
 }
 
@@ -275,7 +277,7 @@ void BeamSearchDecodeCompute::Run() {
                                param.beam_size,
                                param.end_id);
 
-  func.apply<float>();
+  func.Apply<float>();
 }
 
 }  // namespace arm
