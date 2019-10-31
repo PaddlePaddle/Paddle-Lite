@@ -66,7 +66,6 @@ void ConvBNFuser::BuildPattern() {
   if (conv_has_bias_) {
     auto* conv_bias = VarNode("conv_bias")
                           ->assert_is_op_input(conv_type_, "Bias")
-                          ->AsInput()
                           ->AsIntermediate();
     conv->LinksFrom({conv_input, conv_weight, conv_bias}).LinksTo({conv_out});
   } else {
@@ -172,7 +171,8 @@ void ConvBNFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
   }
 
   // compute new conv_bias
-  if (conv_has_bias_) {
+  if (conv_has_bias_ && conv_op_desc->HasInput("Bias") &&
+      conv_op_desc->Input("Bias").size() > 0) {
     auto conv_bias_t = scope->FindVar(matched.at("conv_bias")->arg()->name)
                            ->GetMutable<lite::Tensor>();
     auto conv_bias_d = conv_bias_t->data<float>();
