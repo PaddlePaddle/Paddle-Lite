@@ -87,6 +87,34 @@ if (LITE_WITH_PYTHON)
     add_dependencies(publish_inference publish_inference_python_light_demo)
 endif()
 
+if (LITE_WITH_X86)
+    add_custom_target(publish_inference_x86_cxx_lib ${TARGET}
+            COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
+            COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/bin"
+            COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/cxx/include"
+            COMMAND cp "${CMAKE_SOURCE_DIR}/lite/api/paddle_*.h" "${INFER_LITE_PUBLISH_ROOT}/cxx/include"
+            COMMAND cp "${CMAKE_BINARY_DIR}/libpaddle_api_full_bundled.a" "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
+            COMMAND cp "${CMAKE_BINARY_DIR}/libpaddle_api_light_bundled.a" "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
+            COMMAND cp "${CMAKE_BINARY_DIR}/lite/api/*.so" "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
+            COMMAND cp "${CMAKE_BINARY_DIR}/lite/api/test_model_bin" "${INFER_LITE_PUBLISH_ROOT}/bin"
+            )
+    add_dependencies(publish_inference_x86_cxx_lib bundle_full_api)
+    add_dependencies(publish_inference_x86_cxx_lib bundle_light_api)
+    add_dependencies(publish_inference_x86_cxx_lib test_model_bin)
+    add_dependencies(publish_inference_x86_cxx_lib paddle_full_api_shared)
+    add_dependencies(publish_inference_x86_cxx_lib paddle_light_api_shared)
+    add_dependencies(publish_inference publish_inference_x86_cxx_lib)
+
+    add_custom_target(publish_inference_x86_cxx_demos ${TARGET}
+           COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/third_party"
+           COMMAND cp -r "${CMAKE_BINARY_DIR}/third_party/install/*" "${INFER_LITE_PUBLISH_ROOT}/third_party"
+           COMMAND cp -r "${CMAKE_BINARY_DIR}/third_party/eigen3" "${INFER_LITE_PUBLISH_ROOT}/third_party"
+           COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/demo/cxx"
+           )
+    add_dependencies(publish_inference_x86_cxx_demos gflags eigen3 mklml  xbyak  xxhash glog)
+    add_dependencies(publish_inference_x86_cxx_lib publish_inference_x86_cxx_demos)
+endif()
+
 if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM)
     if (NOT LITE_ON_TINY_PUBLISH)
         # add cxx lib
