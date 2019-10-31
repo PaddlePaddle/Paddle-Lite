@@ -516,27 +516,6 @@ void image_resize_basic(const uint8_t* in_data,
                ialpha1,
                ibeta + dsth);
   }
-// printf("xofs: \n");
-// for (int i = 0; i < dstw; i++){
-//   printf("%d  ", xofs[i]);
-// }
-// printf("\n");
-// printf("yofs: \n");
-// for (int i = 0; i < dsth; i++){
-//   printf("%d  ", yofs[i]);
-// }
-// printf("\n");
-// printf("ialpha: \n");
-// for (int i = 0; i < dstw * 2; i++){
-//   printf("%f  ", ialpha[i]);
-// }
-// printf("\n");
-// printf("ibeta: \n");
-// for (int i = 0; i < dsth * 2; i++){
-//   printf("%f  ", ibeta[i]);
-// }
-// printf("\n");
-// printf("w_in: %d, w_out: %d \n", w_in, w_out);
 #pragma omp parallel for
   for (int dy = 0; dy < dsth; dy++) {
     uint8_t* out_ptr = out_data + dy * w_out;
