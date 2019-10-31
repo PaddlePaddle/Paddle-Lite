@@ -237,6 +237,35 @@ function make_cuda {
   cd -
 }
 
+function make_x86 {
+  prepare_thirdparty
+
+  root_dir=$(pwd)
+  build_directory=$BUILD_DIR/build.lite.x86
+
+  if [ -d $build_directory ]
+  then
+    rm -rf $build_directory
+  fi
+  mkdir -p $build_directory
+  cd $build_directory
+
+  prepare_workspace $root_dir $build_directory
+
+  cmake ..  -DWITH_MKL=ON       \
+            -DWITH_MKLDNN=OFF    \
+            -DLITE_WITH_X86=ON  \
+            -DLITE_WITH_PROFILE=OFF \
+            -DWITH_LITE=ON \
+            -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF \
+            -DLITE_WITH_ARM=OFF \
+            -DWITH_GPU=OFF \
+            -DLITE_BUILD_EXTRA=ON
+
+  make publish_inference -j4
+  cd -
+}
+
 function print_usage {
     set +x
     echo -e "\nUSAGE:"
@@ -355,6 +384,10 @@ function main {
                 make_cuda 
                 shift
                 ;;
+            x86)
+               make_x86
+               shift
+               ;;
             *)
                 # unknown option
                 print_usage
