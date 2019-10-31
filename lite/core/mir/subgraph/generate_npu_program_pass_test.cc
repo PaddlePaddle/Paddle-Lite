@@ -93,11 +93,13 @@ void CompareOutputTensor(
     auto ref_output_tensor_size = ShapeProduction(ref_output_tensor->shape());
     EXPECT_EQ(tar_output_tensor_size, ref_output_tensor_size);
     for (size_t j = 0; j < ref_output_tensor_size; j++) {
-      auto diff =
-          std::fabs(tar_output_tensor_data[j] - ref_output_tensor_data[j]) /
-          (std::fabs(ref_output_tensor_data[j]) + 1e-6);
-      VLOG(3) << diff;
-      EXPECT_LT(diff, 0.1);
+      auto abs_diff =
+          std::fabs(tar_output_tensor_data[j] - ref_output_tensor_data[j]);
+      auto rel_diff = abs_diff / (std::fabs(ref_output_tensor_data[j]) + 1e-6);
+      VLOG(3) << "val: " << tar_output_tensor_data[j]
+              << " ref: " << ref_output_tensor_data[j]
+              << " abs_diff: " << abs_diff << " rel_diff: " << rel_diff;
+      EXPECT_LT(rel_diff, 0.1);
     }
   }
 }
