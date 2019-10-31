@@ -77,14 +77,16 @@ docker rm <container-name>
 
 ### 2、Linux 开发环境
 
-#### 交叉编译环境要求
+#### Android
+
+##### 交叉编译环境要求
 
 - gcc、g++、git、make、wget、python、adb
 - Java environment
 - cmake（建议使用3.10或以上版本）
 - Android NDK (建议ndk-r17c)
 
-#### 具体步骤
+##### 具体步骤
 
 安装软件部分以 Ubuntu 为例，其他 Linux 发行版类似。
 
@@ -115,6 +117,69 @@ cd /opt && unzip /tmp/android-ndk-r17c-linux-x86_64.zip
 echo "export NDK_ROOT=/opt/android-ndk-r17c" >> ~/.bashrc
 source ~/.bashrc
 ```
+
+#### ARM Linux
+
+适用于基于 ARMv8 和 ARMv7 架构 CPU 的各种开发板，例如 RK3399，树莓派等，目前支持交叉编译和本地编译两种方式，对于交叉编译方式，在完成目标程序编译后，可通过 scp 方式将程序拷贝到开发板运行。
+
+##### 交叉编译
+
+###### 编译环境要求
+
+- gcc、g++、git、make、wget、python、scp
+- cmake（建议使用3.10或以上版本）
+
+###### 具体步骤
+
+安装软件部分以 Ubuntu 为例，其他 Linux 发行版类似。
+
+```shell
+# 1. Install basic software
+apt update
+apt-get install -y --no-install-recommends \
+  gcc g++ git make wget python unzip
+
+# 2. Install arm gcc toolchains
+apt-get install -y --no-install-recommends \
+  g++-arm-linux-gnueabi gcc-arm-linux-gnueabi \
+  g++-arm-linux-gnueabihf gcc-arm-linux-gnueabihf \
+  gcc-aarch64-linux-gnu g++-aarch64-linux-gnu 
+
+# 3. Install cmake 3.10 or above
+wget -c https://mms-res.cdn.bcebos.com/cmake-3.10.3-Linux-x86_64.tar.gz && \
+    tar xzf cmake-3.10.3-Linux-x86_64.tar.gz && \
+    mv cmake-3.10.3-Linux-x86_64 /opt/cmake-3.10 && \  
+    ln -s /opt/cmake-3.10/bin/cmake /usr/bin/cmake && \
+    ln -s /opt/cmake-3.10/bin/ccmake /usr/bin/ccmake
+```
+
+##### 本地编译（直接在RK3399或树莓派上编译）
+
+###### 编译环境要求
+
+- gcc、g++、git、make、wget、python
+- cmake（建议使用3.10或以上版本）
+
+###### 具体步骤
+
+安装软件部分以 Ubuntu 为例，其他 Linux 发行版本类似。
+
+```shell
+# 1. Install basic software
+apt update
+apt-get install -y --no-install-recomends \
+  gcc g++ make wget python unzip
+
+# 2. install cmake 3.10 or above
+wget https://www.cmake.org/files/v3.10/cmake-3.10.3.tar.gz
+tar -zxvf cmake-3.10.3.tar.gz
+cd cmake-3.10.3
+./configure
+make
+sudo make install
+```
+
+之后可通过cmake --version查看cmake是否安装成功。
 
 至此，完成 Linux 交叉编译环境的准备。
 
@@ -213,7 +278,7 @@ ios tiny publish支持的编译选项：
 ```shell
 sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
 ```
-##### ARMLinux(目前只支持Docker编译)
+##### ARMLinux
 ```shell
 ./lite/tools/build.sh \
   --arm_os=armlinux \
@@ -221,7 +286,8 @@ sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
   --arm_lang=gcc \
   tiny_publish
 ```
-
+- `--arm_abi`: 树莓派3b使用armv7hf，RK3399使用armv8
+  
 #### 编译`full publish`动态库（**Mac OS下不支持**）
 
 ##### Android
@@ -233,7 +299,7 @@ sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
   --android_stl=c++_static \
   full_publish
 ```
-##### ARMLinux(目前只支持Docker编译)
+##### ARMLinux
 ```shell
 ./lite/tools/build.sh \
   --arm_os=armlinux \
@@ -241,7 +307,8 @@ sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
   --arm_lang=gcc \
   full_publish
 ```
-
+- `--arm_abi`: 树莓派3b使用armv7hf，RK3399使用armv8
+  
 ### 编译结果说明
 
 **编译最终产物位置**在 `build.lite.xxx.xxx.xxx` 下的 `inference_lite_lib.xxx.xxx` ，如 Android 下 ARMv8 的产物位于`inference_lite_lib.android.armv8`：
