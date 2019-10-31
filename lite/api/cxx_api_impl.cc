@@ -13,6 +13,8 @@
 // limitations under the License.
 
 #include "lite/api/cxx_api.h"
+#include <memory>
+#include <mutex>  //NOLINT
 #include <string>
 #include "lite/api/paddle_api.h"
 #include "lite/core/device_info.h"
@@ -21,7 +23,47 @@
 namespace paddle {
 namespace lite {
 
+class CxxPaddleApiImpl : public lite_api::PaddlePredictor {
+ public:
+  CxxPaddleApiImpl();
+
+  /// Create a new predictor from a config.
+  void Init(const lite_api::CxxConfig &config);
+
+  std::unique_ptr<lite_api::Tensor> GetInput(int i) override;
+
+  std::unique_ptr<const lite_api::Tensor> GetOutput(int i) const override;
+
+  void Run() override;
+  std::shared_ptr<lite_api::PaddlePredictor> Clone() override;
+
+  std::string GetVersion() const override;
+
+  // get inputs names and get outputs names
+  const std::vector<std::string> &GetInputNames() override;
+  const std::vector<std::string> &GetOutputNames() override;
+
+  std::unique_ptr<const lite_api::Tensor> GetTensor(
+      const std::string &name) const override;
+
+  // Get InputTebsor by name
+  std::unique_ptr<lite_api::Tensor> GetInputByName(
+      const std::string &name) override;
+
+  void SaveOptimizedModel(const std::string &model_dir,
+                          lite_api::LiteModelType model_type =
+                              lite_api::LiteModelType::kProtobuf) override;
+
+ private:
+  Predictor raw_predictor_;
+  lite_api::CxxConfig config_;
+  std::mutex mutex_;
+};
+
+CxxPaddleApiImpl::CxxPaddleApiImpl() {}
+
 void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
+  config_ = config;
 #ifdef LITE_WITH_CUDA
   Env<TARGET(kCUDA)>::Init();
 #endif
@@ -49,6 +91,16 @@ std::vector<std::string> CxxPaddleApiImpl::GetOutputNames() {
 }
 
 void CxxPaddleApiImpl::Run() { raw_predictor_.Run(); }
+
+std::shared_ptr<lite_api::PaddlePredictor> CxxPaddleApiImpl::Clone() {
+  std::lock_guard<std::mutex> lock(mutex_);
+  auto predictor = std::make_shared<lite::CxxPaddleApiImpl>();
+  predictor->Init(config_);
+  // auto places = config.valid_places();
+  // places.emplace_back(TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny));
+  // raw_predictor_.Build(config.model_dir(), config.preferred_place(), places);
+  return predictor;
+}
 
 std::string CxxPaddleApiImpl::GetVersion() const { return version(); }
 

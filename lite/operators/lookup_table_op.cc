@@ -50,6 +50,7 @@ bool LookupTableOpLite::InferShape() const {
   }
   out_dims.push_back(table_dims[1]);
   param_.Out->Resize(lite::DDim{out_dims});
+  param_.Out->set_lod(param_.Ids->lod());
   return true;
 }
 
