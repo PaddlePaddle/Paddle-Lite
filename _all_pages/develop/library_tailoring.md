@@ -9,14 +9,14 @@ title: 裁剪预测库方法
 
 Paddle-Lite支持**根据模型裁剪预测库**功能。Paddle-Lite的一般编译会将所有已注册的operator打包到预测库中，造成库文件体积膨胀；**裁剪预测库**能针对具体的模型，只打包优化后该模型需要的operator，有效降低预测库文件大小。
 
-##效果展示
+## 效果展示
 
 | mobilenet_v1 | libpaddle_full_api_shared.so | libpaddle_light_api_shared.so | libpaddle_lite_jni.so |
 | ------------------ | ---------------------------- | ----------------------------- | --------------------- |
 | mobilenet_v1       | 14M                          | 14M                           | 6.2M                  |
 | 裁剪后mobilenet_v1 | 7.7M                         | 7.5M                          | 2.5M                  |
 
-##实现过程：
+## 实现过程：
 
 
 ### 1、转化模型时记录优化后模型信息
@@ -30,7 +30,7 @@ Paddle-Lite支持**根据模型裁剪预测库**功能。Paddle-Lite的一般编
 ```
 效果：优化后模型使用的OP和kernel信息被保存在 `mobilenet_v1NB`文件夹中的隐藏文件里了
 
-###2、根据模型信息编译裁剪后的预测库
+### 2、根据模型信息编译裁剪后的预测库
 
 说明：编译Paddle-Lite时选择`--build_tailor=ON` ，并且用   `–-opt_model_dir=`   指定优化后的模型的地址
 例如：
