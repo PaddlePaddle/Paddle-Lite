@@ -23,3 +23,4 @@ USE_XPU_BRIDGE(elementwise_add);
 USE_XPU_BRIDGE(pool2d);
 USE_XPU_BRIDGE(softmax);
 USE_XPU_BRIDGE(mul);
+USE_XPU_BRIDGE(batch_norm);
