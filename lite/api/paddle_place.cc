@@ -46,8 +46,16 @@ std::string Place::DebugString() const {
 }
 
 const std::string& TargetToStr(TargetType target) {
-  static const std::string target2string[] = {
-      "unk", "host", "x86", "cuda", "arm", "opencl", "any", "fpga", "npu"};
+  static const std::string target2string[] = {"unk",
+                                              "host",
+                                              "x86",
+                                              "cuda",
+                                              "arm",
+                                              "opencl",
+                                              "any",
+                                              "fpga",
+                                              "npu",
+                                              "xpu"};
   auto x = static_cast<int>(target);
   CHECK_LT(x, static_cast<int>(TARGET(NUM)));
   return target2string[x];
@@ -84,7 +92,8 @@ const std::string& TargetRepr(TargetType target) {
                                               "kOpenCL",
                                               "kAny",
                                               "kFPGA",
-                                              "kNPU"};
+                                              "kNPU",
+                                              "kXPU"};
   auto x = static_cast<int>(target);
   CHECK_LT(x, static_cast<int>(TARGET(NUM)));
   return target2string[x];

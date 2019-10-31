@@ -37,12 +37,12 @@ TEST(CxxApi, run) {
 
   LOG(INFO) << "Version: " << predictor->GetVersion();
 
-  auto& inputs = predictor->GetInputNames();
+  auto inputs = predictor->GetInputNames();
   LOG(INFO) << "input size: " << inputs.size();
   for (int i = 0; i < inputs.size(); i++) {
     LOG(INFO) << "inputnames: " << inputs[i];
   }
-  auto& outputs = predictor->GetOutputNames();
+  auto outputs = predictor->GetOutputNames();
   for (int i = 0; i < outputs.size(); i++) {
     LOG(INFO) << "outputnames: " << outputs[i];
   }
@@ -64,8 +64,8 @@ TEST(CxxApi, run) {
   EXPECT_NEAR(out[1], -28.8729, 1e-3);
 
   predictor->SaveOptimizedModel(FLAGS_model_dir + ".opt2");
-  predictor->SaveOptimizedModel(FLAGS_model_dir + ".opt2.naive",
-                                LiteModelType::kNaiveBuffer);
+  predictor->SaveOptimizedModel(
+      FLAGS_model_dir + ".opt2.naive", LiteModelType::kNaiveBuffer, true);
 }
 
 // Demo1 for Mobile Devices :Load model from file and run
@@ -76,12 +76,12 @@ TEST(LightApi, run) {
 
   auto predictor = lite_api::CreatePaddlePredictor(config);
 
-  auto& inputs = predictor->GetInputNames();
+  auto inputs = predictor->GetInputNames();
   LOG(INFO) << "input size: " << inputs.size();
   for (int i = 0; i < inputs.size(); i++) {
     LOG(INFO) << "inputnames: " << inputs.at(i);
   }
-  auto& outputs = predictor->GetOutputNames();
+  auto outputs = predictor->GetOutputNames();
   for (int i = 0; i < outputs.size(); i++) {
     LOG(INFO) << "outputnames: " << outputs.at(i);
   }

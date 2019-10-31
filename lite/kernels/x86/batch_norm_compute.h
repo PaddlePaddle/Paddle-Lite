@@ -46,6 +46,7 @@ class BatchNormCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
   void Run() override {
     // auto &context = ctx_->As<X86Context>();
     auto &param = *param_.get_mutable<operators::BatchNormParam>();
+    param.is_test = true;
     bool global_stats = param.is_test || param.use_global_stats;
 
     const auto *x = param.x;

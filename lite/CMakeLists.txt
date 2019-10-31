@@ -6,6 +6,7 @@ message(STATUS "LITE_WITH_CUDA:\t${LITE_WITH_CUDA}")
 message(STATUS "LITE_WITH_X86:\t${LITE_WITH_X86}")
 message(STATUS "LITE_WITH_ARM:\t${LITE_WITH_ARM}")
 message(STATUS "LITE_WITH_NPU:\t${LITE_WITH_NPU}")
+message(STATUS "LITE_WITH_XPU:\t${LITE_WITH_XPU}")
 message(STATUS "LITE_WITH_FPGA:\t${LITE_WITH_FPGA}")
 message(STATUS "LITE_WITH_PROFILE:\t${LITE_WITH_PROFILE}")
 
@@ -47,6 +48,9 @@ if (WITH_TESTING)
     endif()
 endif()
 
+# ----------------------------- PUBLISH -----------------------------
+# The final target for publish lite lib
+add_custom_target(publish_inference)
 if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM)
     # for publish
     set(INFER_LITE_PUBLISH_ROOT "${CMAKE_BINARY_DIR}/inference_lite_lib.${ARM_TARGET_OS}.${ARM_TARGET_ARCH_ABI}")
@@ -59,10 +63,59 @@ if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM)
     if (LITE_WITH_FPGA)
         set(INFER_LITE_PUBLISH_ROOT "${INFER_LITE_PUBLISH_ROOT}.fpga")
     endif(LITE_WITH_FPGA)
-    message(STATUS "publish inference lib to ${INFER_LITE_PUBLISH_ROOT}")
+else()
+    set(INFER_LITE_PUBLISH_ROOT "${CMAKE_BINARY_DIR}/inference_lite_lib")
+endif()
+message(STATUS "publish inference lib to ${INFER_LITE_PUBLISH_ROOT}")
 
-    # The final target for publish lite lib
-    add_custom_target(publish_inference)
+# add python lib
+if (LITE_WITH_PYTHON)
+    add_custom_target(publish_inference_python_lib ${TARGET}
+            COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/python/lib"
+            COMMAND cp "${CMAKE_BINARY_DIR}/lite/api/python/pybind/liblite_pybind.so" "${INFER_LITE_PUBLISH_ROOT}/python/lib/lite_core.so")
+    add_custom_target(publish_inference_python_light_demo ${TARGET}
+    	COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/demo/python"
+    	COMMAND cp "${CMAKE_SOURCE_DIR}/lite/demo/python/mobilenetv1_light_api.py" "${INFER_LITE_PUBLISH_ROOT}/demo/python/")
+    if (NOT LITE_ON_TINY_PUBLISH)
+        add_custom_target(publish_inference_python_full_demo ${TARGET}
+    	    COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/demo/python"
+    	    COMMAND cp "${CMAKE_SOURCE_DIR}/lite/demo/python/mobilenetv1_full_api.py" "${INFER_LITE_PUBLISH_ROOT}/demo/python/")
+        add_dependencies(publish_inference publish_inference_python_full_demo)
+    endif()
+    add_dependencies(publish_inference_python_lib lite_pybind)
+    add_dependencies(publish_inference publish_inference_python_lib)
+    add_dependencies(publish_inference publish_inference_python_light_demo)
+endif()
+
+if (LITE_WITH_X86)
+    add_custom_target(publish_inference_x86_cxx_lib ${TARGET}
+            COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
+            COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/bin"
+            COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/cxx/include"
+            COMMAND cp "${CMAKE_SOURCE_DIR}/lite/api/paddle_*.h" "${INFER_LITE_PUBLISH_ROOT}/cxx/include"
+            COMMAND cp "${CMAKE_BINARY_DIR}/libpaddle_api_full_bundled.a" "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
+            COMMAND cp "${CMAKE_BINARY_DIR}/libpaddle_api_light_bundled.a" "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
+            COMMAND cp "${CMAKE_BINARY_DIR}/lite/api/*.so" "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
+            COMMAND cp "${CMAKE_BINARY_DIR}/lite/api/test_model_bin" "${INFER_LITE_PUBLISH_ROOT}/bin"
+            )
+    add_dependencies(publish_inference_x86_cxx_lib bundle_full_api)
+    add_dependencies(publish_inference_x86_cxx_lib bundle_light_api)
+    add_dependencies(publish_inference_x86_cxx_lib test_model_bin)
+    add_dependencies(publish_inference_x86_cxx_lib paddle_full_api_shared)
+    add_dependencies(publish_inference_x86_cxx_lib paddle_light_api_shared)
+    add_dependencies(publish_inference publish_inference_x86_cxx_lib)
+
+    add_custom_target(publish_inference_x86_cxx_demos ${TARGET}
+           COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/third_party"
+           COMMAND cp -r "${CMAKE_BINARY_DIR}/third_party/install/*" "${INFER_LITE_PUBLISH_ROOT}/third_party"
+           COMMAND cp -r "${CMAKE_BINARY_DIR}/third_party/eigen3" "${INFER_LITE_PUBLISH_ROOT}/third_party"
+           COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/demo/cxx"
+           )
+    add_dependencies(publish_inference_x86_cxx_demos gflags eigen3 mklml  xbyak  xxhash glog)
+    add_dependencies(publish_inference_x86_cxx_lib publish_inference_x86_cxx_demos)
+endif()
+
+if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM)
     if (NOT LITE_ON_TINY_PUBLISH)
         # add cxx lib
         add_custom_target(publish_inference_cxx_lib ${TARGET}
@@ -82,7 +135,7 @@ if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM)
                 add_dependencies(publish_inference_cxx_lib bundle_full_api)
                 add_dependencies(publish_inference_cxx_lib bundle_light_api)
                 add_dependencies(publish_inference_cxx_lib test_model_bin)
-                if (ARM_TARGET_OS STREQUAL "android") 
+                if (ARM_TARGET_OS STREQUAL "android" OR ARM_TARGET_OS STREQUAL "armlinux") 
                     add_dependencies(publish_inference_cxx_lib paddle_full_api_shared)
                     add_dependencies(publish_inference paddle_light_api_shared)
                     add_custom_command(TARGET publish_inference_cxx_lib 
@@ -93,7 +146,7 @@ if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM)
                         COMMAND ${CMAKE_STRIP} "--strip-debug" ${INFER_LITE_PUBLISH_ROOT}/cxx/lib/*.a)
             endif()
     else()
-        if (IOS OR (ARM_TARGET_OS STREQUAL "armlinux"))
+        if (IOS)
             add_custom_target(tiny_publish_lib ${TARGET}
                     COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/lib"
                     COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/include"
@@ -103,17 +156,17 @@ if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM)
             add_dependencies(tiny_publish_lib bundle_light_api)
             add_dependencies(publish_inference tiny_publish_lib)
         else()
-            if (ARM_TARGET_OS STREQUAL "android")
+            if ((ARM_TARGET_OS STREQUAL "android") OR (ARM_TARGET_OS STREQUAL "armlinux"))
                 add_custom_target(tiny_publish_cxx_lib ${TARGET}
                     COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/cxx"
                     COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/cxx/include"
                     COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
                     COMMAND cp "${CMAKE_SOURCE_DIR}/lite/api/paddle_*.h" "${INFER_LITE_PUBLISH_ROOT}/cxx/include"
                     COMMAND cp "${CMAKE_BINARY_DIR}/lite/api/libpaddle_light_api_shared.so" "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
-                )
+                    )
                 add_dependencies(tiny_publish_cxx_lib paddle_light_api_shared)
-                add_dependencies(publish_inference tiny_publish_cxx_lib)  
-            endif() 
+                add_dependencies(publish_inference tiny_publish_cxx_lib)
+            endif()
         endif()
     endif()
 
