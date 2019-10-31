@@ -26,7 +26,7 @@ else
     CXX_FLAGS = -march=armv7-a -mthumb -mfpu=neon -mfloat-abi=softfp -funwind-tables -no-canonical-prefixes \
 		-D__ANDROID_API__=23 -fexceptions -frtti  -std=c++11 -fopenmp -O3 -DNDEBUG -fPIE
     CXXFLAGS_LINK = $(CXX_FLAGS) -pie -Wl,--fix-cortex-a8 -Wl,--gc-sections -Wl,-z,nocopyreloc
-    SYSROOT_LINK = --sysroot=/opt/android-ndk-r17c/platforms/android-22/arch-arm
+    SYSROOT_LINK = --sysroot=/opt/android-ndk-r17c/platforms/android-23/arch-arm
     SYSTEM_LIBS = /opt/android-ndk-r17c/sources/cxx-stl/llvm-libc++/libs/armeabi-v7a/libc++_static.a \
                   /opt/android-ndk-r17c/sources/cxx-stl/llvm-libc++/libs/armeabi-v7a/libc++abi.a \
                   /opt/android-ndk-r17c/sources/cxx-stl/llvm-libc++/libs/armeabi-v7a/libandroid_support.a \
