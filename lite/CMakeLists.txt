@@ -111,8 +111,11 @@ if (LITE_WITH_X86)
            COMMAND cp -r "${CMAKE_BINARY_DIR}/third_party/eigen3" "${INFER_LITE_PUBLISH_ROOT}/third_party"
            COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/demo/cxx"
            )
-    add_dependencies(publish_inference_x86_cxx_demos gflags eigen3 mklml  xbyak  xxhash glog)
     add_dependencies(publish_inference_x86_cxx_lib publish_inference_x86_cxx_demos)
+    add_dependencies(publish_inference_x86_cxx_demos gflags eigen3 xbyak xxhash glog)
+    if(WITH_MKL)
+        add_dependencies(publish_inference_x86_cxx_demos mklml)
+    endif()
 endif()
 
 if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM)
