@@ -1,7 +1,9 @@
 ---
 layout: post
 title: Python API 文档
+
 ---
+
 * TOC
 {:toc}
 
@@ -548,7 +550,7 @@ class TargetType;
 
 枚举型变量`TargetType`的所有可能取值包括：
 
-`{Host, X86, CUDA, ARM, OpenCL, FPGA, NPU, Any}`
+`{Host, X86, CUDA, ARM, OpenCL, FPGA, NPU}`
 
 
 # PrecisionType
@@ -582,11 +584,10 @@ class DataLayoutType {NCHW};
 class Place{
   TargetType target;
   PrecisionType precision{FP32};
-  DataLayoutType layout{NCHW};
-  int16_t device{0};
+  DataLayoutType layout{NCHW}
 }
 ```
-`Place`是`TargetType`、`PrecisionType`、`DataLayoutType`和`device`（设备编号）的集合，说明运行时的设备类型、数据精度、数据格式和设备编号。
+`Place`是`TargetType`、`PrecisionType`和`DataLayoutType`的集合，说明运行时的设备类型、数据精度和数据格式。
 
 示例：
 ```python
