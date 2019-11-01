@@ -112,10 +112,7 @@ if (LITE_WITH_X86)
            COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/demo/cxx"
            )
     add_dependencies(publish_inference_x86_cxx_lib publish_inference_x86_cxx_demos)
-    add_dependencies(publish_inference_x86_cxx_demos gflags eigen3 xbyak xxhash glog)
-    if(WITH_MKL)
-        add_dependencies(publish_inference_x86_cxx_demos mklml)
-    endif()
+    add_dependencies(publish_inference_x86_cxx_demos paddle_full_api_shared eigen3)
 endif()
 
 if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM)
