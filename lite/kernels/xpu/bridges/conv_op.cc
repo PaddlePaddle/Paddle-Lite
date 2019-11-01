@@ -136,7 +136,7 @@ node_map_type ConvConverter(const std::shared_ptr<lite::OpLite> op,
     std::shared_ptr<xtcl::xExpr> add_node = nullptr;
     if (is_channel_bias) {
       add_node = std::make_shared<xtcl::xExpr>(
-          graph_ctx->builder->CreateBiasAdd(*conv_node, *bias_node, 1));
+          graph_ctx->builder->CreateBiasAdd(*conv_node, 1, *bias_node));
     } else {
       add_node = std::make_shared<xtcl::xExpr>(
           graph_ctx->builder->CreateBinaryOp("add", *conv_node, *bias_node));
