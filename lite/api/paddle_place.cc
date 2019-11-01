@@ -113,5 +113,37 @@ const std::string& DataLayoutRepr(DataLayoutType layout) {
   return datalayout2string[x];
 }
 
+std::set<TargetType> ExpandValidTargets(TargetType target) {
+  static const std::set<TargetType> valid_set({TARGET(kX86),
+                                               TARGET(kCUDA),
+                                               TARGET(kARM),
+                                               TARGET(kOpenCL),
+                                               TARGET(kNPU),
+                                               TARGET(kXPU),
+                                               TARGET(kFPGA)});
+  if (target == TARGET(kAny)) {
+    return valid_set;
+  }
+  return std::set<TargetType>({target});
+}
+
+std::set<PrecisionType> ExpandValidPrecisions(PrecisionType precision) {
+  static const std::set<PrecisionType> valid_set(
+      {PRECISION(kFloat), PRECISION(kInt8), PRECISION(kFP16), PRECISION(kAny)});
+  if (precision == PRECISION(kAny)) {
+    return valid_set;
+  }
+  return std::set<PrecisionType>({precision});
+}
+
+std::set<DataLayoutType> ExpandValidLayouts(DataLayoutType layout) {
+  static const std::set<DataLayoutType> valid_set(
+      {DATALAYOUT(kNCHW), DATALAYOUT(kAny), DATALAYOUT(kNHWC)});
+  if (layout == DATALAYOUT(kAny)) {
+    return valid_set;
+  }
+  return std::set<DataLayoutType>({layout});
+}
+
 }  // namespace lite_api
 }  // namespace paddle
