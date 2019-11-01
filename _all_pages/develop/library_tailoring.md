@@ -11,10 +11,16 @@ Paddle-Lite支持**根据模型裁剪预测库**功能。Paddle-Lite的一般编
 
 ## 效果展示
 
-| mobilenet_v1 | libpaddle_full_api_shared.so | libpaddle_light_api_shared.so | libpaddle_lite_jni.so |
+| 测试模型 | 裁剪开关 | 是否编译控制流相关OP、kernel | libpaddle_lite_jni.so |
 | ------------------ | ---------------------------- | ----------------------------- | --------------------- |
-| mobilenet_v1       | 14M                          | 14M                           | 6.2M                  |
-| 裁剪后mobilenet_v1 | 7.7M                         | 7.5M                          | 2.5M                  |
+| mobilenetv1（armv8） | 裁剪前–build_tailor=OFF   | --build_extra=OFF          | 1.3M                |
+| mobilenetv1（armv8） | 裁剪前–build_tailor=ON    | --build_extra=OFF         | 788K              |
+| mobilenetv2（armv8） | 裁剪前–build_tailor=OFF      | --build_extra=OFF          | 1.3M                |
+| mobilenetv2（armv8） | 裁剪前–build_tailor=ON    | --build_extra=OFF         | 912K          |
+| resnet18（armv8） | 裁剪前–build_tailor=OFF      | --build_extra=OFF          | 1.3M                |
+| resnet18（armv8） | 裁剪前–build_tailor=ON    | --build_extra=OFF         | 912K           |
+| yolov3（armv7） | 裁剪前–build_tailor=OFF      | --build_extra=OFF          | 1.1M         |
+| yolov3（armv7） | 裁剪前–build_tailor=ON    | --build_extra=OFF         | 516K          |
 
 ## 实现过程：
 
