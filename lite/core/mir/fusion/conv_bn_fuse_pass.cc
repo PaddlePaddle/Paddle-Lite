@@ -44,5 +44,4 @@ void ConvBNFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 }  // namespace paddle
 
 REGISTER_MIR_PASS(lite_conv_bn_fuse_pass, paddle::lite::mir::ConvBNFusePass)
-    .BindTargets({TARGET(kAny)})
-    .ExcludeTargets({TARGET(kX86)});
+    .BindTargets({TARGET(kAny)});
