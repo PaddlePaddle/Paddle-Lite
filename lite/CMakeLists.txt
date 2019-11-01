@@ -190,7 +190,7 @@ if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM)
         endif()
     endif()
 
-    if ((ARM_TARGET_OS STREQUAL "android") AND
+    if ((ARM_TARGET_OS STREQUAL "android") AND (NOT LITE_WITH_OPENCL) AND
             ((ARM_TARGET_ARCH_ABI STREQUAL armv7) OR (ARM_TARGET_ARCH_ABI STREQUAL armv8)))
         if (NOT LITE_ON_TINY_PUBLISH)
             # copy
