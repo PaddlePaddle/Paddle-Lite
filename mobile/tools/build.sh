@@ -14,16 +14,19 @@ cd -
 
 # get cl headers
 opencl_header_dir="../third_party/opencl/OpenCL-Headers"
+commit_id="320d7189b3e0e7b6a8fc5c10334c79ef364b5ef6"
 if [[ -d "$opencl_header_dir" && -d "$opencl_header_dir/.git" ]]; then
     echo "pulling opencl headers"
     cd $opencl_header_dir
     git stash
     git pull
+    git checkout $commit_id
     cd -
 else
     echo "cloning opencl headers"
     rm -rf $opencl_header_dir
     git clone https://github.com/KhronosGroup/OpenCL-Headers $opencl_header_dir
+    git checkout $commit_id
 fi
 
 build_for_mac() {
