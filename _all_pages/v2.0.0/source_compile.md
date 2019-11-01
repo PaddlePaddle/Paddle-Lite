@@ -219,9 +219,10 @@ brew cask install java
 至此，完成 Mac 交叉编译环境的准备。
 
 #### Mac下Full Publish编译时需要**注意**
-1. cmake版本需要为cmake 3.10
-2. Paddle-Lite项目路径中不可以含有中文字符
-3. 编译时如果报错: `Too many open files`
+1. Mac下只支持Android的Full_publish编译
+2. cmake版本需要为cmake 3.10
+3. Paddle-Lite项目路径中不可以含有中文字符
+4. 编译时如果报错: `Too many open files`
    解决方法：修改mac电脑的 “程序可打开的最大文件数“，例如：`ulimit -n 1024`。
 
 ## 二、编译PaddleLite
@@ -294,7 +295,7 @@ sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
 ```
 - `--arm_abi`: 树莓派3b使用armv7hf，RK3399使用armv8
   
-#### 编译`full publish`动态库（**Mac OS下不支持**）
+#### 编译`full publish`动态库
 
 ##### Android
 ```shell
