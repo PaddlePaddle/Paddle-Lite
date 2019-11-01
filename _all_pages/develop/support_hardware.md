@@ -5,6 +5,7 @@ title: 支持硬件列表
 
 ## ARM CPU
 Paddle Lite支持[ARM Cortex-A系列处理器](https://en.wikipedia.org/wiki/ARM_Cortex-A)，支持列表如下:
+### 32bit(ARMv7a)
 - Cortex-A5
 - Cortex-A7
 - Cortex-A8
@@ -13,6 +14,7 @@ Paddle Lite支持[ARM Cortex-A系列处理器](https://en.wikipedia.org/wiki/ARM
 - Cortex-A15
 - Cortex-A17(RK3288)
 - Cortex-A32
+### 64bit(ARMv7a, ARMv8a)
 - Cortex-A35
 - Cortex-A53(树莓派3)
 - Cortex-A55
