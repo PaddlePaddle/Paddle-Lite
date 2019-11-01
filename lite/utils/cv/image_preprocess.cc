@@ -128,7 +128,6 @@ void ImagePreprocess::imageResize(const uint8_t* src,
   int cnt = w_out >> 3;
   int remain = w_out % 8;
   int32x4_t _v2 = vdupq_n_s32(2);
-// size = dsth * w_out;
 #pragma omp parallel for
   for (int dy = 0; dy < dsth; dy++) {
     int16_t* rowsbuf0 = new int16_t[w_out];

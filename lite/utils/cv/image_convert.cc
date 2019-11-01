@@ -148,7 +148,8 @@ void nv_to_bgr(const uint8_t* src,
   memset(zerobuf, 0, sizeof(uint8_t) * srcw);
 
   int i = 0;
-  for (; i < y_h; i += 2) {
+#pragma omp parallel for
+  for (i = 0; i < y_h; i += 2) {
     const uint8_t* ptr_y1 = y + i * srcw;
     const uint8_t* ptr_y2 = ptr_y1 + srcw;
     const uint8_t* ptr_vu = vu + (i / 2) * srcw;
@@ -463,7 +464,7 @@ void nv_to_bgra(const uint8_t* src,
   int16x8_t zero = vdupq_n_s16(0);
   int16x8_t max = vdupq_n_s16(255);
   uint8x8_t a_8 = vdup_n_u8(255);
-
+#pragma omp parallel for
   for (int i = 0; i < y_h; i += 2) {
     const uint8_t* ptr_y1 = y + i * srcw;
     const uint8_t* ptr_y2 = ptr_y1 + srcw;
@@ -820,7 +821,8 @@ void hwc3_to_hwc1(const uint8_t* src, uint8_t* dst, int srcw, int srch) {
   int remain_pro = srcw % 8;
   int win = srcw * 3;
   int i = 0;
-  for (; i < srch - 3; i += 4) {
+#pragma omp parallel for
+  for (i = 0; i < srch - 3; i += 4) {
     int j = 0;
     const uint8_t* inptr0 = src + i * win;
     const uint8_t* inptr1 = inptr0 + win;

@@ -1,3 +1,6 @@
+if(NOT LITE_WITH_ARM)
+    return()
+endif()
 set(lite_cv_deps)
 lite_cc_library(cv_arm SRCS
             image_convert.cc

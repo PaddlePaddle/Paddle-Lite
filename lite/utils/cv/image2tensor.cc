@@ -95,7 +95,7 @@ void bgr_to_tensor_chw(const uint8_t* src,
   float32x4_t vbscale = vdupq_n_f32(b_scales);
   float32x4_t vgscale = vdupq_n_f32(g_scales);
   float32x4_t vrscale = vdupq_n_f32(r_scales);
-
+#pragma omp parallel for
   for (int i = 0; i < height; i += 1) {
     const uint8_t* din_ptr = src + i * 3 * width;
     float* ptr_b_h = ptr_b + i * width;
@@ -299,7 +299,7 @@ void bgra_to_tensor_chw(const uint8_t* src,
   float32x4_t vbscale = vdupq_n_f32(b_scales);
   float32x4_t vgscale = vdupq_n_f32(g_scales);
   float32x4_t vrscale = vdupq_n_f32(r_scales);
-
+#pragma omp parallel for
   for (int i = 0; i < height; i += 1) {
     const uint8_t* din_ptr = src + i * 4 * width;
     float* ptr_b_h = ptr_b + i * width;
@@ -396,7 +396,7 @@ void bgr_to_tensor_hwc(const uint8_t* src,
   float32x4_t vbscale = vdupq_n_f32(b_scales);
   float32x4_t vgscale = vdupq_n_f32(g_scales);
   float32x4_t vrscale = vdupq_n_f32(r_scales);
-
+#pragma omp parallel for
   for (int i = 0; i < height; i += 1) {
     const uint8_t* din_ptr = src + i * 3 * width;
     float* dout_ptr = dout + i * 3 * width;
@@ -495,7 +495,7 @@ void bgra_to_tensor_hwc(const uint8_t* src,
   float32x4_t vbscale = vdupq_n_f32(b_scales);
   float32x4_t vgscale = vdupq_n_f32(g_scales);
   float32x4_t vrscale = vdupq_n_f32(r_scales);
-
+#pragma omp parallel for
   for (int i = 0; i < height; i += 1) {
     const uint8_t* din_ptr = src + i * 4 * width;
     float* dout_ptr = dout + i * 3 * width;

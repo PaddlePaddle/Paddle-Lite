@@ -126,9 +126,9 @@ namespace math {
 #define TRANS_C4                                                \
   "1: \n"                                                       \
   "vld1.32 {d0-d1}, [%[din0_ptr]] \n"                           \
-  "vld1.32 {d2-d3}, [%[din0_ptr]] \n"                           \
-  "vld1.32 {d4-d5}, [%[din0_ptr]] \n"                           \
-  "vld1.32 {d6-d7}, [%[din0_ptr]] \n"                           \
+  "vld1.32 {d2-d3}, [%[din1_ptr]] \n"                           \
+  "vld1.32 {d4-d5}, [%[din2_ptr]] \n"                           \
+  "vld1.32 {d6-d7}, [%[din3_ptr]] \n"                           \
                                                                 \
   "vtrn.32 q0, q1 \n" /*00 10 02 12 01 11 03 13*/               \
   "vtrn.32 q2, q3 \n" /*20 30 22 32 21 31 23 33 */              \
@@ -208,7 +208,8 @@ void NCHW2NHWC<float>(int N, int C, int size, const float* X, float* Y) {
     const float* din = X + n * sum;
     float* dout = Y + n * sum;
     int s = 0;
-    for (; s < size - 3; s += 4) {
+#pragma omp parallel for
+    for (s = 0; s < size - 3; s += 4) {
       const float* din0_ptr = din + s;
       const float* din1_ptr = din0_ptr + size;
       const float* din2_ptr = din1_ptr + size;
@@ -265,7 +266,6 @@ void NCHW2NHWC<float>(int N, int C, int size, const float* X, float* Y) {
                      : "cc", "memory", "q0", "q1", "q2", "q3");
 #endif
       }
-      const float* din_ptr = din + 4 * cnt * size + s;  // remain channel;
       for (int i = 0; i < remain; i++) {
         const float* ptr = din0_ptr;
         *out0_ptr++ = *ptr++;
@@ -310,15 +310,12 @@ void NCHW2NHWC<int8_t>(int N, int C, int size, const int8_t* X, int8_t* Y) {
     const int8_t* din = X + n * sum;
     int8_t* dout = Y + n * sum;
     int s = 0;
-    for (; s < size - 7; s += 8) {
+#pragma omp parallel for
+    for (s = 0; s < size - 7; s += 8) {
       const int8_t* din0_ptr = din + s;
       const int8_t* din1_ptr = din0_ptr + size;
       const int8_t* din2_ptr = din1_ptr + size;
       const int8_t* din3_ptr = din2_ptr + size;
-      // const int8_t* din4_ptr = din3_ptr + size;
-      // const int8_t* din5_ptr = din4_ptr + size;
-      // const int8_t* din6_ptr = din5_ptr + size;
-      // const int8_t* din7_ptr = din6_ptr + size;
       int8_t* out0_ptr = dout + s * C;
       int8_t* out1_ptr = out0_ptr + C;
       int8_t* out2_ptr = out1_ptr + C;
@@ -427,29 +424,31 @@ void NCHW2NHWC<int8_t>(int N, int C, int size, const int8_t* X, int8_t* Y) {
         din6_ptr += stride;
         din7_ptr += stride;
       }
-      const int8_t* din_ptr = din + 8 * cnt * size + s;  // remain channel
       for (int i = 0; i < remain; i++) {
-        *out0_ptr++ = *din_ptr++;
+        *out0_ptr++ = *din0_ptr;
+        din0_ptr += size;
       }
     }
   }
 }
 template <>
 void NHWC2NCHW<float>(int N, int C, int size, const float* X, float* Y) {
-  int cnt = C >> 2;
-  int remain = C % 4;
+  int cnt = size >> 2;
+  int remain = size % 4;
   int sum = C * size;
-  int stride = size << 2;  // 4 * size
+  int stride = C << 4;  // 4 * size
+  int stride_w = C << 2;
   for (int n = 0; n < N; n++) {
     const float* din = X + n * sum;
     float* dout = Y + n * sum;
     int s = 0;
-    for (; s < size - 3; s += 4) {
-      const float* din0_ptr = din + s * C;
+#pragma omp parallel for
+    for (s = 0; s < C - 3; s += 4) {
+      const float* din0_ptr = din + s;
       const float* din1_ptr = din0_ptr + C;
       const float* din2_ptr = din1_ptr + C;
       const float* din3_ptr = din2_ptr + C;
-      float* out0_ptr = dout + s;
+      float* out0_ptr = dout + s * size;
       float* out1_ptr = out0_ptr + size;
       float* out2_ptr = out1_ptr + size;
       float* out3_ptr = out2_ptr + size;
@@ -498,51 +497,54 @@ void NHWC2NCHW<float>(int N, int C, int size, const float* X, float* Y) {
                      : "cc", "memory", "q0", "q1", "q2", "q3");
 #endif
       }
-      const float* din_ptr = din + s * C + 4 * cnt;  // remain channel
+      //   const float* din_ptr = din + s + C * 4 * cnt;  // remain channel
       for (int i = 0; i < remain; i++) {
-        *out0_ptr++ = *din_ptr++;
-        *out1_ptr++ = *din_ptr++;
-        *out2_ptr++ = *din_ptr++;
-        *out3_ptr++ = *din_ptr++;
+        const float* ptr = din0_ptr;
+        *out0_ptr++ = *ptr++;
+        *out1_ptr++ = *ptr++;
+        *out2_ptr++ = *ptr++;
+        *out3_ptr++ = *ptr++;
+        din0_ptr += C;
       }
     }
     // remain size
-    for (; s < size; s++) {
-      const float* din0_ptr = din + s * C;
+    for (; s < C; s++) {
+      const float* din0_ptr = din + s;
       const float* din1_ptr = din0_ptr + C;
       const float* din2_ptr = din1_ptr + C;
       const float* din3_ptr = din2_ptr + C;
-      float* out0_ptr = dout + s;
+      float* out0_ptr = dout + s * size;
       for (int i = 0; i < cnt; i++) {
         *out0_ptr++ = *din0_ptr;
         *out0_ptr++ = *din1_ptr;
         *out0_ptr++ = *din2_ptr;
         *out0_ptr++ = *din3_ptr;
-        din0_ptr += stride;
-        din1_ptr += stride;
-        din2_ptr += stride;
-        din3_ptr += stride;
+        din0_ptr += stride_w;
+        din1_ptr += stride_w;
+        din2_ptr += stride_w;
+        din3_ptr += stride_w;
       }
-      const float* din_ptr = din + s * C + 4 * cnt;  // remain channel
       for (int i = 0; i < remain; i++) {
-        *out0_ptr++ = *din_ptr++;
+        *out0_ptr++ = *din0_ptr;
+        din0_ptr += C;
       }
     }
   }
 }
 template <>
 void NHWC2NCHW<int8_t>(int N, int C, int size, const int8_t* X, int8_t* Y) {
-  int cnt = C >> 3;
-  int remain = C % 8;
+  int cnt = size >> 3;
+  int remain = size % 8;
   int sum = C * size;
-  int stride = size << 3;    // 8 * size
-  int stride_w = size << 2;  // 4 * size
+  int stride = C << 3;    // 8 * size
+  int stride_w = C << 4;  // 4 * size
   for (int n = 0; n < N; n++) {
     const int8_t* din = X + n * sum;
     int8_t* dout = Y + n * sum;
     int s = 0;
-    for (; s < size - 7; s += 8) {
-      const int8_t* din0_ptr = din + s * C;
+#pragma omp parallel for
+    for (s = 0; s < C - 7; s += 8) {
+      const int8_t* din0_ptr = din + s;
       const int8_t* din1_ptr = din0_ptr + C;
       const int8_t* din2_ptr = din1_ptr + C;
       const int8_t* din3_ptr = din2_ptr + C;
@@ -550,7 +552,7 @@ void NHWC2NCHW<int8_t>(int N, int C, int size, const int8_t* X, int8_t* Y) {
       const int8_t* din5_ptr = din4_ptr + C;
       const int8_t* din6_ptr = din5_ptr + C;
       const int8_t* din7_ptr = din6_ptr + C;
-      int8_t* out0_ptr = dout + s;
+      int8_t* out0_ptr = dout + s * size;
       int8_t* out1_ptr = out0_ptr + size;
       int8_t* out2_ptr = out1_ptr + size;
       int8_t* out3_ptr = out2_ptr + size;
@@ -615,21 +617,22 @@ void NHWC2NCHW<int8_t>(int N, int C, int size, const int8_t* X, int8_t* Y) {
                      : "cc", "memory", "q0", "q1", "q2", "q3");
 #endif
       }
-      const int8_t* din_ptr = din + +s * C + 8 * cnt;  // remain channel
       for (int i = 0; i < remain; i++) {
-        *out0_ptr++ = *din_ptr++;
-        *out1_ptr++ = *din_ptr++;
-        *out2_ptr++ = *din_ptr++;
-        *out3_ptr++ = *din_ptr++;
-        *out4_ptr++ = *din_ptr++;
-        *out5_ptr++ = *din_ptr++;
-        *out6_ptr++ = *din_ptr++;
-        *out7_ptr++ = *din_ptr++;
+        const int8_t* ptr = din0_ptr;
+        *out0_ptr++ = *ptr++;
+        *out1_ptr++ = *ptr++;
+        *out2_ptr++ = *ptr++;
+        *out3_ptr++ = *ptr++;
+        *out4_ptr++ = *ptr++;
+        *out5_ptr++ = *ptr++;
+        *out6_ptr++ = *ptr++;
+        *out7_ptr++ = *ptr++;
+        din0_ptr += C;
       }
     }
     // remain size
-    for (; s < size; s++) {
-      const int8_t* din0_ptr = din + s * C;
+    for (; s < C; s++) {
+      const int8_t* din0_ptr = din + s;
       const int8_t* din1_ptr = din0_ptr + C;
       const int8_t* din2_ptr = din1_ptr + C;
       const int8_t* din3_ptr = din2_ptr + C;
@@ -637,7 +640,7 @@ void NHWC2NCHW<int8_t>(int N, int C, int size, const int8_t* X, int8_t* Y) {
       const int8_t* din5_ptr = din4_ptr + C;
       const int8_t* din6_ptr = din5_ptr + C;
       const int8_t* din7_ptr = din6_ptr + C;
-      int8_t* out0_ptr = dout + s;
+      int8_t* out0_ptr = dout + s * size;
       for (int i = 0; i < cnt; i++) {
         *out0_ptr++ = *din0_ptr;
         *out0_ptr++ = *din1_ptr;
@@ -656,9 +659,9 @@ void NHWC2NCHW<int8_t>(int N, int C, int size, const int8_t* X, int8_t* Y) {
         din6_ptr += stride;
         din7_ptr += stride;
       }
-      const int8_t* din_ptr = din + s * C + 8 * cnt;  // remain channel
       for (int i = 0; i < remain; i++) {
-        *out0_ptr++ = *din_ptr++;
+        *out0_ptr++ = *din0_ptr;
+        din0_ptr += C;
       }
     }
   }

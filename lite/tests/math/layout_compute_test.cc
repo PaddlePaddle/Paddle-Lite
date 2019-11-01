@@ -57,7 +57,7 @@ using paddle::lite::Timer;
               n * output_c * output_h * output_w]
 
 template <typename Dtype>
-void nchw2nhwc_ref(lite::Tensor* input, lite::Tensor* output) {
+void nchw2nhwc_ref(const Tensor* input, Tensor* output) {
   auto* input_data = input->data<Dtype>();
   auto* output_data = output->mutable_data<Dtype>();
 
@@ -89,7 +89,7 @@ void nchw2nhwc_ref(lite::Tensor* input, lite::Tensor* output) {
   output_data[c + w * output_c + h * output_w * output_c + \
               n * output_h * output_w * output_c]
 template <typename Dtype>
-void nhwc2nchw_ref(lite::Tensor* input, lite::Tensor* output) {
+void nhwc2nchw_ref(const Tensor* input, Tensor* output) {
   auto* input_data = input->data<Dtype>();
   auto* output_data = output->mutable_data<Dtype>();
 
@@ -113,59 +113,39 @@ void nhwc2nchw_ref(lite::Tensor* input, lite::Tensor* output) {
 }
 
 #ifdef LITE_WITH_ARM
-void test_layout_fp32(const std::vector<DDim>& input_dims,
-                      bool flag_nchw,
-                      const std::vector<int>& thread_num,
-                      const std::vector<int>& power_mode) {
+void test_layout_fp32_nchw(DDim dim_in,
+                           bool flag_nchw,
+                           const std::vector<int>& thread_num,
+                           const std::vector<int>& power_mode) {
 #ifdef LITE_WITH_ARM
   paddle::lite::DeviceInfo::Init();
 #endif
+
   LayoutParam param;
   param.x = new Tensor;
-  param.x->set_precision(PRECISION(kFloat));
+  const_cast<Tensor*>(param.x)->set_precision(PRECISION(kFloat));
 
-  param.output = new Tensor;
-  param.output->set_precision(PRECISION(kFloat));
+  param.y = new Tensor;
+  param.y->set_precision(PRECISION(kFloat));
 
   for (auto& cls : power_mode) {
     for (auto& th : thread_num) {
-      paddle::lite::kernels::arm::NCHWToNHWCCompute<PRECISION(kFloat),
-                                                    PRECISION(kFloat)>
-          layout;
-      /*
-      { //nchw to nhwc
-          paddle::lite::kernels::arm::NCHWToNHWCCompute<PRECISION(kFloat),
-                                            PRECISION(kFloat)> layout;
-      }else
-      */
-      DDim dim_out({dim_in[0], dim_in[3], dim_in[2], dim_in[1]});
-
-      if (!flag_nchw) {
-        // n h w c == n c h w
-        dim_out[1] = dim_in[1];
-        dim_out[2] = dim_in[2];
-        dim_out[3] = dim_in[3];
-        int channel = dim_in[1];
-        dim_in[1] = dim_in[2];
-        dim_in[2] = dim_in[3];
-        dim_in[3] = channel;
-        paddle::lite::kernels::arm::NHWCToNCHWCompute<PRECISION(kFloat),
-                                                      PRECISION(kFloat)>
-            layout;
-      }
+      paddle::lite::kernels::arm::NCHWToNHWCCompute layout;
+      DDim dim_out({dim_in[0], dim_in[2], dim_in[3], dim_in[1]});
 
       std::unique_ptr<paddle::lite::KernelContext> ctx1(
           new paddle::lite::KernelContext);
       auto& ctx = ctx1->As<paddle::lite::ARMContext>();
       ctx.SetRunMode(static_cast<paddle::lite_api::PowerMode>(cls), th);
       /// set param and context
-      param.x->Resize(dim_in);
-      param.output->Resize(dim_out);
+      const_cast<Tensor*>(param.x)->Resize(dim_in);
+      param.y->Resize(dim_out);
 
       layout.SetParam(param);
 
-      paddle::lite::fill_tensor_rand(*param.x, -1.f, 1.f);
-      // paddle::lite::fill_tensor_const(*param.x, 1.f);
+      paddle::lite::fill_tensor_rand(
+          *(const_cast<Tensor*>(param.x)), -1.f, 1.f);
+      //   paddle::lite::fill_tensor_const(*param.x, 1.f);
 
       auto din = param.x->data<float>();
 
@@ -176,11 +156,7 @@ void test_layout_fp32(const std::vector<DDim>& input_dims,
         tout_basic.Resize(dim_out);
         fill_tensor_const(tout_basic, 0.f);
         auto dout_basic = tout_basic.mutable_data<float>();
-        if (flag_nchw) {
-          nchw2nhwc_ref<float>(&param.x, &tout_basic);
-        } else {
-          nhwc2nchw_ref<float>(&param.x, &tout_basic);
-        }
+        nchw2nhwc_ref<float>(param.x, &tout_basic);
       }
       /// warm up
       for (int i = 0; i < FLAGS_warmup; ++i) {
@@ -204,22 +180,24 @@ void test_layout_fp32(const std::vector<DDim>& input_dims,
       if (FLAGS_check_result) {
         double max_ratio = 0;
         double max_diff = 0;
-        tensor_cmp_host(tout_basic, *param.output, max_ratio, max_diff);
+        tensor_cmp_host(tout_basic, *param.y, max_ratio, max_diff);
         LOG(INFO) << "compare result, max diff: " << max_diff
                   << ", max ratio: " << max_ratio;
         if (std::abs(max_ratio) > 1e-3f) {
           if (max_diff > 5e-4f) {
+            LOG(WARNING) << "din";
+            print_tensor(*(const_cast<Tensor*>(param.x)));
             LOG(WARNING) << "basic result";
             print_tensor(tout_basic);
             LOG(WARNING) << "lite result";
-            print_tensor(*param.output);
+            print_tensor(*param.y);
             Tensor tdiff;
             tdiff.Resize(tout_basic.dims());
             tdiff.set_precision(PRECISION(kFloat));
-            tensor_diff(tout_basic, *param.output, tdiff);
+            tensor_diff(tout_basic, *param.y, tdiff);
             print_tensor(tdiff);
             LOG(FATAL) << "test fp32 layout: input: " << dim_in
-                       << ", output: " << dim_out << ", nchw2nhwc: "
+                       << ", output: " << dim_out << ", flag_nchw: "
                        << (flag_nchw ? "nchw2nhwc" : "nhwc2nchw")
                        << ", threads: " << th << ", power_mode: " << cls
                        << " failed!!\n";
@@ -227,7 +205,7 @@ void test_layout_fp32(const std::vector<DDim>& input_dims,
         }
         LOG(INFO) << "test fp32 layout: input: " << dim_in
                   << ", output: " << dim_out
-                  << ", nchw2nhwc: " << (flag_nchw ? "nchw2nhwc" : "nhwc2nchw")
+                  << ", flag_nchw: " << (flag_nchw ? "nchw2nhwc" : "nhwc2nchw")
                   << ", threads: " << th << ", power_mode: " << cls
                   << " successed!!\n";
       }
@@ -235,26 +213,377 @@ void test_layout_fp32(const std::vector<DDim>& input_dims,
   }
 
   delete param.x;
-  delete param.output;
+  delete param.y;
+}
+void test_layout_fp32_nhwc(DDim dim_in,
+                           bool flag_nchw,
+                           const std::vector<int>& thread_num,
+                           const std::vector<int>& power_mode) {
+#ifdef LITE_WITH_ARM
+  paddle::lite::DeviceInfo::Init();
+#endif
+
+  LayoutParam param;
+  param.x = new Tensor;
+  const_cast<Tensor*>(param.x)->set_precision(PRECISION(kFloat));
+
+  param.y = new Tensor;
+  param.y->set_precision(PRECISION(kFloat));
+
+  for (auto& cls : power_mode) {
+    for (auto& th : thread_num) {
+      paddle::lite::kernels::arm::NHWCToNCHWCompute layout;
+      // n h w c == n c h w
+      DDim dim_out({dim_in[0], dim_in[3], dim_in[1], dim_in[2]});
+
+      std::unique_ptr<paddle::lite::KernelContext> ctx1(
+          new paddle::lite::KernelContext);
+      auto& ctx = ctx1->As<paddle::lite::ARMContext>();
+      ctx.SetRunMode(static_cast<paddle::lite_api::PowerMode>(cls), th);
+      /// set param and context
+      const_cast<Tensor*>(param.x)->Resize(dim_in);
+      param.y->Resize(dim_out);
+
+      layout.SetParam(param);
+
+      paddle::lite::fill_tensor_rand(
+          *(const_cast<Tensor*>(param.x)), -1.f, 1.f);
+      //   paddle::lite::fill_tensor_const(*param.x, 1.f);
+
+      auto din = param.x->data<float>();
+
+      Tensor tout_basic;
+
+      if (FLAGS_check_result) {
+        tout_basic.set_precision(PRECISION(kFloat));
+        tout_basic.Resize(dim_out);
+        fill_tensor_const(tout_basic, 0.f);
+        auto dout_basic = tout_basic.mutable_data<float>();
+        nhwc2nchw_ref<float>(param.x, &tout_basic);
+      }
+      /// warm up
+      for (int i = 0; i < FLAGS_warmup; ++i) {
+        layout.Run();
+      }
+      /// compute
+      Timer t0;
+      for (int i = 0; i < FLAGS_repeats; ++i) {
+        t0.start();
+        layout.Run();
+        t0.end();
+      }
+      double gops = 2.0 * dim_out.production();
+      LOG(INFO) << "layout fp32: input shape: " << dim_in << ", output shape"
+                << dim_out << ",running time, avg: " << t0.get_average_ms()
+                << ", min time: " << t0.get_min_time()
+                << ", total GOPS: " << 1e-9 * gops
+                << " GOPS, avg GOPs: " << 1e-6 * gops / t0.get_average_ms()
+                << " GOPs, max GOPs: " << 1e-6 * gops / t0.get_min_time();
+
+      if (FLAGS_check_result) {
+        double max_ratio = 0;
+        double max_diff = 0;
+        tensor_cmp_host(tout_basic, *param.y, max_ratio, max_diff);
+        LOG(INFO) << "compare result, max diff: " << max_diff
+                  << ", max ratio: " << max_ratio;
+        if (std::abs(max_ratio) > 1e-3f) {
+          if (max_diff > 5e-4f) {
+            LOG(WARNING) << "din";
+            print_tensor(*(const_cast<Tensor*>(param.x)));
+            LOG(WARNING) << "basic result";
+            print_tensor(tout_basic);
+            LOG(WARNING) << "lite result";
+            print_tensor(*param.y);
+            Tensor tdiff;
+            tdiff.Resize(tout_basic.dims());
+            tdiff.set_precision(PRECISION(kFloat));
+            tensor_diff(tout_basic, *param.y, tdiff);
+            print_tensor(tdiff);
+            LOG(FATAL) << "test fp32 layout: input: " << dim_in
+                       << ", output: " << dim_out << ", flag_nchw: "
+                       << (flag_nchw ? "nchw2nhwc" : "nhwc2nchw")
+                       << ", threads: " << th << ", power_mode: " << cls
+                       << " failed!!\n";
+          }
+        }
+        LOG(INFO) << "test fp32 layout: input: " << dim_in
+                  << ", output: " << dim_out
+                  << ", flag_nchw: " << (flag_nchw ? "nchw2nhwc" : "nhwc2nchw")
+                  << ", threads: " << th << ", power_mode: " << cls
+                  << " successed!!\n";
+      }
+    }
+  }
+
+  delete param.x;
+  delete param.y;
+}
+void test_layout_int8_nchw(DDim dim_in,
+                           bool flag_nchw,
+                           const std::vector<int>& thread_num,
+                           const std::vector<int>& power_mode) {
+#ifdef LITE_WITH_ARM
+  paddle::lite::DeviceInfo::Init();
+#endif
+
+  LayoutParam param;
+  param.x = new Tensor;
+  const_cast<Tensor*>(param.x)->set_precision(PRECISION(kInt8));
+
+  param.y = new Tensor;
+  param.y->set_precision(PRECISION(kInt8));
+
+  for (auto& cls : power_mode) {
+    for (auto& th : thread_num) {
+      paddle::lite::kernels::arm::NCHWToNHWCComputeInt8 layout;
+      DDim dim_out({dim_in[0], dim_in[2], dim_in[3], dim_in[1]});
+
+      std::unique_ptr<paddle::lite::KernelContext> ctx1(
+          new paddle::lite::KernelContext);
+      auto& ctx = ctx1->As<paddle::lite::ARMContext>();
+      ctx.SetRunMode(static_cast<paddle::lite_api::PowerMode>(cls), th);
+      /// set param and context
+      const_cast<Tensor*>(param.x)->Resize(dim_in);
+      param.y->Resize(dim_out);
+
+      layout.SetParam(param);
+
+      paddle::lite::fill_tensor_rand(*(const_cast<Tensor*>(param.x)));
+      //   paddle::lite::fill_tensor_const(*param.x, 1.f);
+
+      auto din = param.x->data<int8_t>();
+
+      Tensor tout_basic;
+
+      if (FLAGS_check_result) {
+        tout_basic.set_precision(PRECISION(kInt8));
+        tout_basic.Resize(dim_out);
+        fill_tensor_const(tout_basic, 0);
+        auto dout_basic = tout_basic.mutable_data<int8_t>();
+        nchw2nhwc_ref<int8_t>(param.x, &tout_basic);
+      }
+      /// warm up
+      for (int i = 0; i < FLAGS_warmup; ++i) {
+        layout.Run();
+      }
+      /// compute
+      Timer t0;
+      for (int i = 0; i < FLAGS_repeats; ++i) {
+        t0.start();
+        layout.Run();
+        t0.end();
+      }
+      double gops = 2.0 * dim_out.production();
+      LOG(INFO) << "layout int8: input shape: " << dim_in << ", output shape"
+                << dim_out << ",running time, avg: " << t0.get_average_ms()
+                << ", min time: " << t0.get_min_time()
+                << ", total GOPS: " << 1e-9 * gops
+                << " GOPS, avg GOPs: " << 1e-6 * gops / t0.get_average_ms()
+                << " GOPs, max GOPs: " << 1e-6 * gops / t0.get_min_time();
+
+      if (FLAGS_check_result) {
+        double max_ratio = 0;
+        double max_diff = 0;
+        tensor_cmp_host(tout_basic, *param.y, max_ratio, max_diff);
+        LOG(INFO) << "compare result, max diff: " << max_diff
+                  << ", max ratio: " << max_ratio;
+        if (std::abs(max_ratio) > 1e-3f) {
+          if (max_diff > 5e-4f) {
+            LOG(WARNING) << "din";
+            print_tensor(*(const_cast<Tensor*>(param.x)));
+            LOG(WARNING) << "basic result";
+            print_tensor(tout_basic);
+            LOG(WARNING) << "lite result";
+            print_tensor(*param.y);
+            Tensor tdiff;
+            tdiff.Resize(tout_basic.dims());
+            tdiff.set_precision(PRECISION(kInt8));
+            tensor_diff(tout_basic, *param.y, tdiff);
+            print_tensor(tdiff);
+            LOG(FATAL) << "test int8 layout: input: " << dim_in
+                       << ", output: " << dim_out << ", flag_nchw: "
+                       << (flag_nchw ? "nchw2nhwc" : "nhwc2nchw")
+                       << ", threads: " << th << ", power_mode: " << cls
+                       << " failed!!\n";
+          }
+        }
+        LOG(INFO) << "test int8 layout: input: " << dim_in
+                  << ", output: " << dim_out
+                  << ", flag_nchw: " << (flag_nchw ? "nchw2nhwc" : "nhwc2nchw")
+                  << ", threads: " << th << ", power_mode: " << cls
+                  << " successed!!\n";
+      }
+    }
+  }
+
+  delete param.x;
+  delete param.y;
+}
+void test_layout_int8_nhwc(DDim dim_in,
+                           bool flag_nchw,
+                           const std::vector<int>& thread_num,
+                           const std::vector<int>& power_mode) {
+#ifdef LITE_WITH_ARM
+  paddle::lite::DeviceInfo::Init();
+#endif
+
+  LayoutParam param;
+  param.x = new Tensor;
+  const_cast<Tensor*>(param.x)->set_precision(PRECISION(kInt8));
+
+  param.y = new Tensor;
+  param.y->set_precision(PRECISION(kInt8));
+
+  for (auto& cls : power_mode) {
+    for (auto& th : thread_num) {
+      paddle::lite::kernels::arm::NHWCToNCHWComputeInt8 layout;
+      // n h w c == n c h w
+      DDim dim_out({dim_in[0], dim_in[3], dim_in[1], dim_in[2]});
+
+      std::unique_ptr<paddle::lite::KernelContext> ctx1(
+          new paddle::lite::KernelContext);
+      auto& ctx = ctx1->As<paddle::lite::ARMContext>();
+      ctx.SetRunMode(static_cast<paddle::lite_api::PowerMode>(cls), th);
+      /// set param and context
+      const_cast<Tensor*>(param.x)->Resize(dim_in);
+      param.y->Resize(dim_out);
+
+      layout.SetParam(param);
+
+      paddle::lite::fill_tensor_rand(*(const_cast<Tensor*>(param.x)));
+      //   paddle::lite::fill_tensor_const(*param.x, 1.f);
+
+      auto din = param.x->data<int8_t>();
+
+      Tensor tout_basic;
+
+      if (FLAGS_check_result) {
+        tout_basic.set_precision(PRECISION(kInt8));
+        tout_basic.Resize(dim_out);
+        fill_tensor_const(tout_basic, 0.f);
+        auto dout_basic = tout_basic.mutable_data<int8_t>();
+        nhwc2nchw_ref<int8_t>(param.x, &tout_basic);
+      }
+      /// warm up
+      for (int i = 0; i < FLAGS_warmup; ++i) {
+        layout.Run();
+      }
+      /// compute
+      Timer t0;
+      for (int i = 0; i < FLAGS_repeats; ++i) {
+        t0.start();
+        layout.Run();
+        t0.end();
+      }
+      double gops = 2.0 * dim_out.production();
+      LOG(INFO) << "layout int8: input shape: " << dim_in << ", output shape"
+                << dim_out << ",running time, avg: " << t0.get_average_ms()
+                << ", min time: " << t0.get_min_time()
+                << ", total GOPS: " << 1e-9 * gops
+                << " GOPS, avg GOPs: " << 1e-6 * gops / t0.get_average_ms()
+                << " GOPs, max GOPs: " << 1e-6 * gops / t0.get_min_time();
+
+      if (FLAGS_check_result) {
+        double max_ratio = 0;
+        double max_diff = 0;
+        tensor_cmp_host(tout_basic, *param.y, max_ratio, max_diff);
+        LOG(INFO) << "compare result, max diff: " << max_diff
+                  << ", max ratio: " << max_ratio;
+        if (std::abs(max_ratio) > 1e-3f) {
+          if (max_diff > 5e-4f) {
+            LOG(WARNING) << "din";
+            print_tensor(*(const_cast<Tensor*>(param.x)));
+            LOG(WARNING) << "basic result";
+            print_tensor(tout_basic);
+            LOG(WARNING) << "lite result";
+            print_tensor(*param.y);
+            Tensor tdiff;
+            tdiff.Resize(tout_basic.dims());
+            tdiff.set_precision(PRECISION(kInt8));
+            tensor_diff(tout_basic, *param.y, tdiff);
+            print_tensor(tdiff);
+            LOG(FATAL) << "test int8 layout: input: " << dim_in
+                       << ", output: " << dim_out << ", flag_nchw: "
+                       << (flag_nchw ? "nchw2nhwc" : "nhwc2nchw")
+                       << ", threads: " << th << ", power_mode: " << cls
+                       << " failed!!\n";
+          }
+        }
+        LOG(INFO) << "test int8 layout: input: " << dim_in
+                  << ", output: " << dim_out
+                  << ", flag_nchw: " << (flag_nchw ? "nchw2nhwc" : "nhwc2nchw")
+                  << ", threads: " << th << ", power_mode: " << cls
+                  << " successed!!\n";
+      }
+    }
+  }
+
+  delete param.x;
+  delete param.y;
 }
 #else
-void test_layout_fp32(const std::vector<DDim>& input_dims,
-                      bool flag_nchw,
-                      const std::vector<int>& thread_num,
-                      const std::vector<int>& power_mode) {}
+void test_layout_fp32_nchw(const std::vector<DDim>& input_dims,
+                           bool flag_nchw,
+                           const std::vector<int>& thread_num,
+                           const std::vector<int>& power_mode) {}
+void test_layout_fp32_nhwc(const std::vector<DDim>& input_dims,
+                           bool flag_nchw,
+                           const std::vector<int>& thread_num,
+                           const std::vector<int>& power_mode) {}
+void test_layout_int8_nchw(DDim dim_in,
+                           bool flag_nchw,
+                           const std::vector<int>& thread_num,
+                           const std::vector<int>& power_mode) {}
+void test_layout_int8_nhwc(DDim dim_in,
+                           bool flag_nchw,
+                           const std::vector<int>& thread_num,
+                           const std::vector<int>& power_mode) {}
 #endif  // LITE_WITH_ARM
 
-#if 1  ///
-TEST(TestLayout, test_Layout) {
+#if 1  //
+TEST(TestLayout, test_Layout_fp32) {
   if (FLAGS_basic_test) {
     for (auto n : {1, 3}) {
       for (auto c : {1, 3, 5, 32}) {
         for (auto h : {3, 16, 20, 32}) {
-          for (auto w : {3, 16, 20, 32}) {
+          for (auto w : {3, 4, 32, 112}) {
             for (auto nchw2nhwc : {true, false}) {
-              DDim dim_in({batch, c, h, h});
-              test_layout_fp32(
-                  dim_in, nchw2nhwc, {1, 2, 4}, {FLAGS_power_mode});
+              DDim dim_in({n, c, h, w});
+              if (nchw2nhwc) {
+                LOG(INFO) << "NCHW2NHWC";
+                test_layout_fp32_nchw(
+                    dim_in, nchw2nhwc, {1, 2, 4}, {FLAGS_power_mode});
+              } else {
+                LOG(INFO) << "NHWC2NCHW";
+                test_layout_fp32_nhwc(
+                    dim_in, nchw2nhwc, {1, 2, 4}, {FLAGS_power_mode});
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+#endif
+#if 1
+TEST(TestLayout, test_Layout_int8) {
+  if (FLAGS_basic_test) {
+    for (auto n : {1, 3}) {
+      for (auto c : {1, 3, 5, 32}) {
+        for (auto h : {3, 16, 20, 32}) {
+          for (auto w : {3, 4, 32, 112}) {
+            for (auto nchw2nhwc : {true, false}) {
+              DDim dim_in({n, c, h, w});
+              if (nchw2nhwc) {
+                LOG(INFO) << "NCHW2NHWC int8";
+                test_layout_int8_nchw(
+                    dim_in, nchw2nhwc, {1, 2, 4}, {FLAGS_power_mode});
+              } else {
+                LOG(INFO) << "NHWC2NCHW int8";
+                test_layout_int8_nhwc(
+                    dim_in, nchw2nhwc, {1, 2, 4}, {FLAGS_power_mode});
+              }
             }
           }
         }
@@ -266,13 +595,9 @@ TEST(TestLayout, test_Layout) {
 
 #if 1  /// custom
 TEST(TestLayoutCustom, test_Layout_custom_size) {
-  CHECK_EQ(FLAGS_in_channel % FLAGS_group, 0)
-      << "input channel must be divided by group";
-  CHECK_EQ(FLAGS_out_channel % FLAGS_group, 0)
-      << "num_output must be divided by group";
-  test_layout_fp32(
+  test_layout_fp32_nchw(
       {DDim({FLAGS_batch, FLAGS_in_channel, FLAGS_in_height, FLAGS_in_width})},
-      FLAGS_flag_nchw,
+      true,
       {FLAGS_threads},
       {FLAGS_power_mode});
 }
