@@ -119,7 +119,6 @@ std::set<TargetType> ExpandValidTargets(TargetType target) {
                                                TARGET(kARM),
                                                TARGET(kOpenCL),
                                                TARGET(kNPU),
-                                               TARGET(kXPU),
                                                TARGET(kFPGA)});
   if (target == TARGET(kAny)) {
     return valid_set;
