@@ -156,6 +156,7 @@ class DirectConv : public KernelLite<TARGET(kARM), Ptype> {
     auto x_dims = param.x->dims();
     auto w_dims = param.filter->dims();
     auto o_dims = param.output->dims();
+    last_shape_ = x_dims;
 
     int ic = x_dims[1];
     int oc = o_dims[1];
