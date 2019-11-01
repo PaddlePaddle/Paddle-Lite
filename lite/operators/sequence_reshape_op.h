@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #pragma once
+
 #include <string>
 #include <vector>
 #include "lite/core/op_lite.h"

@@ -57,9 +57,6 @@ std::shared_ptr<lite_api::PaddlePredictor> CxxPaddleApiImpl::Clone() {
   std::lock_guard<std::mutex> lock(mutex_);
   auto predictor = std::make_shared<lite::CxxPaddleApiImpl>();
   predictor->Init(config_);
-  // auto places = config.valid_places();
-  // places.emplace_back(TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny));
-  // raw_predictor_.Build(config.model_dir(), config.preferred_place(), places);
   return predictor;
 }
 

@@ -13,7 +13,6 @@
 // limitations under the License.
 #pragma once
 
-#include <iostream>
 #include <vector>
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
@@ -23,22 +22,6 @@ namespace paddle {
 namespace lite {
 namespace kernels {
 namespace x86 {
-
-/*struct LookupTableTimer {
-  std::chrono::time_point<std::chrono::high_resolution_clock> timer_{};
-  uint64_t total_{};
-
-  void Start() { timer_ = std::chrono::high_resolution_clock::now(); }
-  void Stop() {
-    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(
-        std::chrono::high_resolution_clock::now() - timer_);
-    Log(duration.count());
-  }
-  void Log(uint32_t timespan) { total_ += timespan; }
-  ~LookupTableTimer() {
-    LOG(INFO) << "lookup table timer: [" << total_ << "us]";
-  }
-};*/
 
 template <typename T>
 class LookupTableCompute : public KernelLite<TARGET(kX86), PRECISION(kInt64)> {
