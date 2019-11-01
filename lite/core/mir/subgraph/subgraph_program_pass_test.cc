@@ -29,10 +29,16 @@ DEFINE_string(model_dir, "", "model_dir");
 namespace paddle {
 namespace lite {
 
-TEST(SubgraphTest, mobilenetv2) {
+TEST(SubgraphTest, models) {
   cpp::ProgramDesc program_desc;
   auto scope = std::make_shared<Scope>();
-  LoadModelPb(FLAGS_model_dir, scope.get(), &program_desc);
+  // LoadModelPb(FLAGS_model_dir,
+  //             FLAGS_model_dir + "/model",
+  //             FLAGS_model_dir + "/params",
+  //             scope.get(),
+  //             &program_desc,
+  //             true);
+  LoadModelPb(FLAGS_model_dir, "", "", scope.get(), &program_desc);
   std::vector<Place> valid_places({
       Place{TARGET(kHost), PRECISION(kFloat)},
 #ifdef LITE_WITH_ARM
@@ -40,6 +46,9 @@ TEST(SubgraphTest, mobilenetv2) {
 #endif
 #ifdef LITE_WITH_NPU
       Place{TARGET(kNPU), PRECISION(kFloat)},
+#endif
+#ifdef LITE_WITH_XPU
+      Place{TARGET(kXPU), PRECISION(kFloat)},
 #endif
   });
   lite::Program program(program_desc, scope, valid_places);
@@ -208,7 +217,6 @@ TEST(SubGraphTest, SimpleNet) {
   auto* pass = new mir::subgraph::SubgraphProgramPass;
   ASSERT_EQ(pass->FuseSubgraph(graph, supported_op_types), 1);
 
-  const int num_nodes = graph->nodes().size();
   ASSERT_EQ(graph->nodes().size(), 9);
   // LOG(INFO) << "After NPU Pass \n" << Visualize(graph.get());
 }

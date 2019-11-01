@@ -4,10 +4,28 @@ set -ex
 TESTS_FILE="./lite_tests.txt"
 LIBS_FILE="./lite_libs.txt"
 
+
 readonly ADB_WORK_DIR="/data/local/tmp"
 readonly common_flags="-DWITH_LITE=ON -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF -DWITH_PYTHON=OFF -DWITH_TESTING=ON -DLITE_WITH_ARM=OFF"
 
-NUM_CORES_FOR_COMPILE=8
+readonly THIRDPARTY_TAR=https://paddle-inference-dist.bj.bcebos.com/PaddleLite/third-party-05b862.tar.gz
+readonly workspace=$PWD
+
+NUM_CORES_FOR_COMPILE=${LITE_BUILD_THREADS:-8}
+
+function prepare_thirdparty {
+    if [ ! -d $workspace/third-party -o -f $workspace/third-party-05b862.tar.gz ]; then
+        rm -rf $workspace/third-party
+
+        if [ ! -f $workspace/third-party-05b862.tar.gz ]; then
+            wget $THIRDPARTY_TAR
+        fi
+        tar xzf third-party-05b862.tar.gz
+    else
+        git submodule update --init --recursive
+    fi
+}
+
 
 # for code gen, a source file is generated after a test, but is dependended by some targets in cmake.
 # here we fake an empty file to make cmake works.
@@ -22,6 +40,10 @@ function prepare_workspace {
     DEBUG_TOOL_PATH_PREFIX=lite/tools/debug
     mkdir -p ./${DEBUG_TOOL_PATH_PREFIX}
     cp ../${DEBUG_TOOL_PATH_PREFIX}/analysis_tool.py ./${DEBUG_TOOL_PATH_PREFIX}/
+
+    # clone submodule
+    # git submodule update --init --recursive
+    prepare_thirdparty
 }
 
 function check_need_ci {
@@ -49,6 +71,7 @@ function cmake_opencl {
         -DWITH_ARM_DOTPROD=ON   \
         -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
         -DWITH_TESTING=ON \
+        -DLITE_BUILD_EXTRA=ON \
         -DARM_TARGET_OS=$1 -DARM_TARGET_ARCH_ABI=$2 -DARM_TARGET_LANG=$3
 }
 
@@ -128,7 +151,8 @@ function build_opencl {
 # This method is only called in CI.
 function cmake_x86_for_CI {
     prepare_workspace # fake an empty __generated_code__.cc to pass cmake.
-    cmake ..  -DWITH_GPU=OFF -DWITH_MKLDNN=OFF -DLITE_WITH_X86=ON ${common_flags} -DLITE_WITH_PROFILE=ON -DWITH_MKL=OFF
+    cmake ..  -DWITH_GPU=OFF -DWITH_MKLDNN=OFF -DLITE_WITH_X86=ON ${common_flags} -DLITE_WITH_PROFILE=ON -DWITH_MKL=ON \
+        -DLITE_BUILD_EXTRA=ON \
 
     # Compile and execute the gen_code related test, so it will generate some code, and make the compilation reasonable.
     # make test_gen_code -j$NUM_CORES_FOR_COMPILE
@@ -170,9 +194,9 @@ function build {
 function test_server {
     # Due to the missing of x86 kernels, we skip the following tests temporarily.
     # TODO(xxx) clear the skip list latter
-    local skip_list=("test_paddle_api" "test_cxx_api" "test_googlenet"
+    local skip_list=("test_paddle_api" "test_cxx_api"
                      "test_mobilenetv1_lite_x86" "test_mobilenetv2_lite_x86"
-                     "test_inceptionv4_lite_x86" "test_light_api"
+                     "test_light_api"
                      "test_apis" "test_model_bin"
                     )
     local to_skip=0
@@ -195,11 +219,12 @@ function test_server {
 function build_test_server {
     mkdir -p ./build
     cd ./build
-    export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/paddle/build/third_party/install/mklml/lib"
+    export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$PWD/third_party/install/mklml/lib"
     cmake_x86_for_CI
     build
 
     test_server
+    test_model_optimize_tool_compile
 }
 
 function build_test_train {
@@ -207,7 +232,8 @@ function build_test_train {
     cd ./build
     export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/paddle/build/third_party/install/mklml/lib"
     prepare_workspace # fake an empty __generated_code__.cc to pass cmake.
-    cmake .. -DWITH_LITE=ON -DWITH_GPU=OFF -DWITH_PYTHON=ON -DLITE_WITH_X86=ON -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF -DWITH_TESTING=ON -DWITH_MKL=OFF
+    cmake .. -DWITH_LITE=ON -DWITH_GPU=OFF -DWITH_PYTHON=ON -DLITE_WITH_X86=ON -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF -DWITH_TESTING=ON -DWITH_MKL=OFF \
+        -DLITE_BUILD_EXTRA=ON \
 
     make test_gen_code -j$NUM_CORES_FOR_COMPILE
     make test_cxx_api -j$NUM_CORES_FOR_COMPILE
@@ -218,8 +244,65 @@ function build_test_train {
     make -j$NUM_CORES_FOR_COMPILE
 
     find -name "*.whl" | xargs pip2 install
-    python ../lite/python/lite_test.py
+    python ../lite/tools/python/lite_test.py
 
+}
+
+function cmake_xpu {
+    export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$PWD/third_party/install/mklml/lib"
+    prepare_workspace
+    cmake .. \
+        ${common_flags} \
+        -DWITH_GPU=OFF \
+        -DWITH_MKLDNN=OFF \
+        -DLITE_WITH_X86=ON \
+        -DWITH_MKL=ON \
+        -DLITE_BUILD_EXTRA=ON \
+        -DLITE_WITH_XPU=ON \
+        -DXPU_SDK_ROOT="$(pwd)/../../XPU_SDK"
+}
+
+function build_xpu {
+    make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
+}
+
+# It will eagerly test all lite related unittests.
+function test_xpu {
+    # Due to the missing of xpu kernels, we skip the following tests temporarily.
+    # TODO(xxx) clear the skip list latter
+    local skip_list=("test_paddle_api" "test_cxx_api" "test_googlenet"
+                     "test_mobilenetv1_lite_x86" "test_mobilenetv2_lite_x86"
+                     "test_inceptionv4_lite_x86" "test_light_api"
+                     "test_apis" "test_model_bin"
+                    )
+    local to_skip=0
+    for _test in $(cat $TESTS_FILE); do
+        to_skip=0
+        for skip_name in ${skip_list[@]}; do
+            if [ $skip_name = $_test ]; then
+                echo "to skip " $skip_name
+                to_skip=1
+            fi
+        done
+
+        if [ $to_skip -eq 0 ]; then
+            ctest -R $_test -V
+        fi
+    done
+}
+
+# Build the code and run lite server tests. This is executed in the CI system.
+function build_test_xpu {
+    cur_dir=$(pwd)
+
+    build_dir=$cur_dir/build.lite.xpu
+    mkdir -p $build_dir
+    cd $build_dir
+
+    cmake_xpu
+    build_xpu
+
+    test_xpu
 }
 
 # test_arm_android <some_test_name> <adb_port_number>
@@ -368,20 +451,27 @@ function test_arm_model {
     adb -s emulator-${port} shell "${adb_work_dir}/${test_name} --model_dir=$adb_model_path"
 }
 
-function _test_model_optimize_tool {
-    local port=$1
-    local remote_model_path=$ADB_WORK_DIR/lite_naive_model
-    local remote_test=$ADB_WORK_DIR/model_optimize_tool
-    local adb="adb -s emulator-${port}"
+# function _test_model_optimize_tool {
+#     local port=$1
+#     local remote_model_path=$ADB_WORK_DIR/lite_naive_model
+#     local remote_test=$ADB_WORK_DIR/model_optimize_tool
+#     local adb="adb -s emulator-${port}"
 
+#     make model_optimize_tool -j$NUM_CORES_FOR_COMPILE
+#     local test_path=$(find . -name model_optimize_tool | head -n1)
+#     local model_path=$(find . -name lite_naive_model | head -n1)
+#     $adb push ${test_path} ${ADB_WORK_DIR}
+#     $adb shell mkdir -p $remote_model_path
+#     $adb push $model_path/* $remote_model_path
+#     $adb shell $remote_test --model_dir $remote_model_path --optimize_out ${remote_model_path}.opt \
+#          --valid_targets "arm"
+# }
+
+function test_model_optimize_tool_compile {
+    cd $workspace
+    cd build
+    cmake .. -DWITH_LITE=ON -DLITE_ON_MODEL_OPTIMIZE_TOOL=ON -DWITH_TESTING=OFF -DLITE_BUILD_EXTRA=ON
     make model_optimize_tool -j$NUM_CORES_FOR_COMPILE
-    local test_path=$(find . -name model_optimize_tool | head -n1)
-    local model_path=$(find . -name lite_naive_model | head -n1)
-    $adb push ${test_path} ${ADB_WORK_DIR}
-    $adb shell mkdir -p $remote_model_path
-    $adb push $model_path/* $remote_model_path
-    $adb shell $remote_test --model_dir $remote_model_path --optimize_out ${remote_model_path}.opt \
-         --valid_targets "arm"
 }
 
 function _test_paddle_code_generator {
@@ -419,6 +509,7 @@ function cmake_npu {
         -DWITH_TESTING=ON \
         -DLITE_WITH_NPU=ON \
         -DANDROID_API_LEVEL=24 \
+        -DLITE_BUILD_EXTRA=ON \
         -DNPU_DDK_ROOT="${build_dir}/../ai_ddk_lib/" \
         -DARM_TARGET_OS=$1 -DARM_TARGET_ARCH_ABI=$2 -DARM_TARGET_LANG=$3
 }
@@ -438,6 +529,7 @@ function cmake_arm {
         -DWITH_ARM_DOTPROD=ON   \
         -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
         -DWITH_TESTING=ON \
+        -DLITE_BUILD_EXTRA=ON \
         -DARM_TARGET_OS=$1 -DARM_TARGET_ARCH_ABI=$2 -DARM_TARGET_LANG=$3
 }
 
@@ -497,22 +589,6 @@ function build_npu {
     fi
 }
 
-function __prepare_multiclass_nms_test_files {
-    local port=$1
-    local adb_work_dir="/data/local/tmp"
-
-    wget --no-check-certificate https://raw.githubusercontent.com/jiweibo/TestData/master/multiclass_nms_bboxes_file.txt \
-        -O lite/tests/kernels/multiclass_nms_bboxes_file.txt
-    wget --no-check-certificate https://raw.githubusercontent.com/jiweibo/TestData/master/multiclass_nms_scores_file.txt \
-        -O lite/tests/kernels/multiclass_nms_scores_file.txt
-    wget --no-check-certificate https://raw.githubusercontent.com/jiweibo/TestData/master/multiclass_nms_out_file.txt \
-        -O lite/tests/kernels/multiclass_nms_out_file.txt
-
-    adb -s emulator-${port} push lite/tests/kernels/multiclass_nms_bboxes_file.txt ${adb_work_dir}
-    adb -s emulator-${port} push lite/tests/kernels/multiclass_nms_scores_file.txt ${adb_work_dir}
-    adb -s emulator-${port} push lite/tests/kernels/multiclass_nms_out_file.txt ${adb_work_dir}
-}
-
 # $1: ARM_TARGET_OS in "android" , "armlinux"
 # $2: ARM_TARGET_ARCH_ABI in "armv8", "armv7" ,"armv7hf"
 # $3: ARM_TARGET_LANG in "gcc" "clang"
@@ -535,9 +611,6 @@ function test_arm {
         return 0
     fi
 
-    echo "prepare multiclass_nms_test files..."
-    __prepare_multiclass_nms_test_files $port
-
     # prepare for CXXApi test
     local adb="adb -s emulator-${port}"
     $adb shell mkdir -p /data/local/tmp/lite_naive_model_opt
@@ -550,8 +623,8 @@ function test_arm {
     # test finally
     test_arm_api $port
 
-    _test_model_optimize_tool $port
-    _test_paddle_code_generator $port
+    # _test_model_optimize_tool $port
+    # _test_paddle_code_generator $port
 }
 
 function prepare_emulator {
@@ -834,6 +907,10 @@ function main {
                 cmake_x86
                 shift
                 ;;
+            cmake_xpu)
+                cmake_xpu
+                shift
+                ;;
             cmake_opencl)
                 cmake_opencl $ARM_OS $ARM_ABI $ARM_LANG
                 shift
@@ -858,6 +935,10 @@ function main {
                 test_server
                 shift
                 ;;
+            test_xpu)
+                test_xpu
+                shift
+                ;;
             test_arm)
                 test_arm $ARM_OS $ARM_ABI $ARM_LANG $ARM_PORT
                 shift
@@ -872,6 +953,10 @@ function main {
                 ;;
             build_test_server)
                 build_test_server
+                shift
+                ;;
+            build_test_xpu)
+                build_test_xpu
                 shift
                 ;;
             build_test_train)

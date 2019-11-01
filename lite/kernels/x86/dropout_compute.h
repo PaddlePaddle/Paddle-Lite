@@ -13,12 +13,14 @@
 // limitations under the License.
 #pragma once
 
+#include <Eigen/Core>
 #include <random>
 #include <string>
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
-#include "paddle/fluid/framework/eigen.h"
-#include "paddle/fluid/framework/operator.h"
+#include "lite/core/types.h"
+#include "lite/fluid/eigen.h"
+#include "lite/operators/dropout_op.h"
 
 namespace paddle {
 namespace lite {
@@ -28,7 +30,7 @@ namespace x86 {
 template <typename T,
           int MajorType = Eigen::RowMajor,
           typename IndexType = Eigen::DenseIndex>
-using EigenMatrix = framework::EigenMatrix<T, MajorType, IndexType>;
+using EigenMatrix = lite::fluid::EigenMatrix<T, MajorType, IndexType>;
 
 template <typename T>
 class DropoutCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
@@ -37,16 +39,16 @@ class DropoutCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
   void Run() override {
     auto& param = *param_.get_mutable<operators::DropoutParam>();
     const auto* x_data = param.x->data<T>();
-    auto* out_data = param.output->template mutable_data<T>();
+    auto* out_data = param.output->mutable_data<T>();
     if (!param.is_test) {
-      auto* mask_data = param.mask->template mutable_data<T>();
+      auto* mask_data = param.mask->mutable_data<T>();
       std::random_device rnd;
       std::minstd_rand engine;
       int seed = param.fix_seed ? param.seed : rnd();
       engine.seed(seed);
       std::uniform_real_distribution<float> dist(0, 1);
 
-      size_t size = framework::product(param.mask->dims().data());
+      size_t size = param.mask->dims().production();
       for (size_t i = 0; i < size; ++i) {
         if (dist(engine) < param.dropout_prob) {
           mask_data[i] = 0;
@@ -62,13 +64,13 @@ class DropoutCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
         }
       }
     } else {
-      auto X = EigenMatrix<T>::Reshape(param.x->raw_tensor(), 1);
-      auto Y = EigenMatrix<T>::Reshape(param.output->raw_tensor(), 1);
-      auto& place = *platform::CPUDeviceContext().eigen_device();
+      auto X = EigenMatrix<T>::Reshape(*param.x, 1);
+      auto Y = EigenMatrix<T>::Reshape(*param.output, 1);
       if (param.dropout_implementation == "upscale_in_train") {
-        Y.device(place) = X;
+        Y.device(lite::fluid::EigenDeviceType<lite::TargetType::kX86>()) = X;
       } else {
-        Y.device(place) = X * static_cast<T>(1.0f - param.dropout_prob);
+        Y.device(lite::fluid::EigenDeviceType<lite::TargetType::kX86>()) =
+            X * static_cast<T>(1.0f - param.dropout_prob);
       }
     }
   }

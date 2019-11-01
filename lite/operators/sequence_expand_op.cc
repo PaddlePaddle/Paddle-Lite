@@ -50,23 +50,20 @@ bool SequenceExpandOp::InferShape() const {
   const auto y_lod = param_.Y->lod()[ref_level];
   auto out_dims = param_.X->dims();
   int64_t out_first_dim = 0;
-  if (x_lod.size() > 0) {
-    if (y_lod.size() <= 1) {
-      out_first_dim = x_dims[0];
-    } else {
-      for (int i = 1; i < y_lod.size(); ++i) {
-        int64_t x_seq_len = 1;
-        if (x_lod.size() == 1) {
-          x_seq_len = x_lod[0][i] - x_lod[0][i - 1];
-        }
-        out_first_dim += (y_lod[i] - y_lod[i - 1]) * x_seq_len;
-      }
-      out_dims[0] = out_first_dim;
-    }
+  if (y_lod.size() <= 1) {
+    out_first_dim = x_dims[0];
   } else {
-    out_dims[0] = -1;
+    for (int i = 1; i < y_lod.size(); ++i) {
+      int64_t x_seq_len = 1;
+      if (x_lod.size() == 1) {
+        x_seq_len = x_lod[0][i] - x_lod[0][i - 1];
+      }
+      out_first_dim += (y_lod[i] - y_lod[i - 1]) * x_seq_len;
+    }
+    out_dims[0] = out_first_dim;
   }
   param_.Out->Resize(out_dims);
+  param_.Out->set_lod(x_lod);
   return true;
 }
 
@@ -79,10 +76,6 @@ bool SequenceExpandOp::AttachImpl(const cpp::OpDesc &opdesc,
   param_.Out =
       scope->FindVar(opdesc.Output("Out").front())->GetMutable<lite::Tensor>();
   param_.ref_level = opdesc.GetAttr<int>("ref_level");
-
-  CHECK(param_.X);
-  CHECK(param_.Y);
-  CHECK(param_.Out);
   return true;
 }
 

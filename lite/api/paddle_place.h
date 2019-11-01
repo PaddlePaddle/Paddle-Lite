@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #pragma once
+#include <set>
 #include <string>
 
 // Generic helper definitions for shared library support
@@ -50,18 +51,21 @@ enum class TargetType : int {
   kOpenCL = 5,
   kFPGA = 7,
   kNPU = 8,
+  kXPU = 9,
   kAny = 6,  // any target
-  NUM = 9,   // number of fields.
+  NUM = 10,  // number of fields.
 };
 enum class PrecisionType : int {
   kUnk = 0,
   kFloat = 1,
   kInt8 = 2,
-  kFP16 = 5,
   kInt32 = 3,
   kAny = 4,  // any precision
+  kFP16 = 5,
   kBool = 6,
-  NUM = 7,  // number of fields.
+  kInt64 = 7,
+  kInt16 = 8,
+  NUM = 9,  // number of fields.
 };
 enum class DataLayoutType : int {
   kUnk = 0,
@@ -70,6 +74,15 @@ enum class DataLayoutType : int {
   kAny = 2,  // any data layout
   NUM = 4,   // number of fields.
 };
+
+typedef enum {
+  LITE_POWER_HIGH = 0,
+  LITE_POWER_LOW = 1,
+  LITE_POWER_FULL = 2,
+  LITE_POWER_NO_BIND = 3,
+  LITE_POWER_RAND_HIGH = 4,
+  LITE_POWER_RAND_LOW = 5
+} PowerMode;
 
 enum class ActivationType : int {
   kIndentity = 0,
@@ -112,6 +125,17 @@ const std::string& TargetRepr(TargetType target);
 const std::string& PrecisionRepr(PrecisionType precision);
 
 const std::string& DataLayoutRepr(DataLayoutType layout);
+
+// Get a set of all the elements represented by the target.
+std::set<TargetType> ExpandValidTargets(TargetType target = TARGET(kAny));
+
+// Get a set of all the elements represented by the precision.
+std::set<PrecisionType> ExpandValidPrecisions(
+    PrecisionType precision = PRECISION(kAny));
+
+// Get a set of all the elements represented by the layout.
+std::set<DataLayoutType> ExpandValidLayouts(
+    DataLayoutType layout = DATALAYOUT(kAny));
 
 /*
  * Place specifies the execution context of a Kernel or input/output for a

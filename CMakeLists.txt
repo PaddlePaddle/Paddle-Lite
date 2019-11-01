@@ -14,8 +14,9 @@
 
 cmake_minimum_required(VERSION 3.0)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+include(lite_utils)
 
-option(WITH_PADDLE_MOBILE   "Use the paddle-mobile legacy build"    OFF)
+lite_option(WITH_PADDLE_MOBILE   "Use the paddle-mobile legacy build"    OFF)
 if (WITH_PADDLE_MOBILE)
     add_subdirectory(mobile)
     return()
@@ -44,13 +45,34 @@ find_package(Threads REQUIRED)
 include(simd)
 
 ################################ Exposed Configurations #######################################
-option(WITH_DSO         "Compile PaddlePaddle with dynamic linked CUDA" ON)
-option(WITH_AVX         "Compile PaddlePaddle with AVX intrinsics"      ${AVX_FOUND})
-option(WITH_PYTHON      "Compile PaddlePaddle with python interpreter"  ON)
-option(WITH_TESTING     "Compile PaddlePaddle with unit testing"        OFF)
-option(WITH_MKL         "Compile PaddlePaddle with MKL support."        ${AVX_FOUND})
-option(WITH_ARM_DOTPROD "Compile PaddlePaddle with ARM dot production"  ON)
-option(WITH_SYSTEM_BLAS   "Use system blas library"           OFF)
+lite_option(WITH_DSO         "Compile PaddlePaddle with dynamic linked CUDA" ON)
+lite_option(WITH_AVX         "Compile PaddlePaddle with AVX intrinsics"      ON IF ${AVX_FOUND})
+lite_option(WITH_TESTING     "Compile PaddlePaddle with unit testing"        OFF)
+lite_option(WITH_MKL         "Compile PaddlePaddle with MKL support."        ON IF ${AVX_FOUND})
+lite_option(WITH_ARM_DOTPROD "Compile PaddlePaddle with ARM dot production"  ON)
+lite_option(WITH_SYSTEM_BLAS   "Use system blas library"           OFF)
+
+# for lite, both server and mobile framework.
+lite_option(LITE_WITH_JAVA "Enable Java JNI lib in lite mode" OFF)
+lite_option(LITE_WITH_PYTHON "Enable Python api lib in lite mode" OFF)
+lite_option(LITE_WITH_CUDA "Enable CUDA in lite mode" OFF)
+lite_option(LITE_WITH_X86  "Enable X86 in lite mode"  ON)
+lite_option(LITE_WITH_ARM  "Enable ARM in lite mode"  OFF)
+lite_option(LITE_WITH_NPU  "Enable NPU in lite mode"  OFF)
+lite_option(LITE_WITH_XPU  "Enable XPU in lite mode"  OFF)
+lite_option(LITE_WITH_OPENMP "Enable OpenMP in lite framework" ON)
+lite_option(LITE_WITH_OPENCL   "Enable OpenCL support in lite" OFF)
+lite_option(LITE_WITH_FPGA   "Enable FPGA support in lite" OFF)
+lite_option(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK  "Enable light-weight framework" OFF)
+lite_option(LITE_WITH_PROFILE  "Enable profile mode in lite framework"  OFF)
+lite_option(LITE_WITH_PRECISION_PROFILE "Enable precision profile in profile mode ON in lite" OFF IF LITE_WITH_PROFILE)
+lite_option(LITE_SHUTDOWN_LOG "Shutdown log system or not." OFF)
+lite_option(LITE_ON_TINY_PUBLISH "Publish tiny predictor lib." OFF)
+lite_option(LITE_ON_MODEL_OPTIMIZE_TOOL "Build the model optimize tool" OFF)
+# publish options
+lite_option(LITE_BUILD_EXTRA "Enable extra algorithm support in Lite, both kernels and operators" OFF)
+lite_option(LITE_BUILD_TAILOR "Enable tailoring library according to model" OFF)
+
 # TODO(Superjomn) Remove WITH_ANAKIN option if not needed latter.
 if(ANDROID OR IOS OR ARMLINUX)
     set(WITH_GPU OFF CACHE STRING
@@ -59,27 +81,16 @@ if(ANDROID OR IOS OR ARMLINUX)
             "Disable DSO when cross-compiling for Android and iOS" FORCE)
     set(WITH_AVX OFF CACHE STRING
             "Disable AVX when cross-compiling for Android and iOS" FORCE)
-    set(WITH_PYTHON OFF CACHE STRING
-            "Disable PYTHON when cross-compiling for Android and iOS" FORCE)
     set(WITH_RDMA OFF CACHE STRING
             "Disable RDMA when cross-compiling for Android and iOS" FORCE)
     set(WITH_MKL OFF CACHE STRING
             "Disable MKL when cross-compiling for Android and iOS" FORCE)
 endif()
 
-# for lite, both server and mobile framework.
-option(LITE_WITH_JAVA "Enable Java JNI lib in lite mode" OFF)
-option(LITE_WITH_CUDA "Enable CUDA in lite mode" OFF)
-option(LITE_WITH_X86  "Enable X86 in lite mode"  ON)
-option(LITE_WITH_ARM  "Enable ARM in lite mode"  OFF)
-option(LITE_WITH_NPU  "Enable NPU in lite mode"  OFF)
-option(LITE_WITH_OPENMP "Enable OpenMP in lite framework" ON)
-option(LITE_WITH_OPENCL   "Enable OpenCL support in lite" OFF)
-option(LITE_WITH_FPGA   "Enable FPGA support in lite" OFF)
-option(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK  "Enable light-weight framework" OFF)
-option(LITE_WITH_PROFILE  "Enable profile mode in lite framework"  OFF)
-option(LITE_SHUTDOWN_LOG "Shutdown log system or not." OFF)
-option(LITE_ON_TINY_PUBLISH "Publish tiny predictor lib." OFF)
+if(ANDROID OR IOS)
+    set(LITE_WITH_PYTHON OFF CACHE STRING
+            "Disable PYTHON when cross-compiling for Android and iOS" FORCE)
+endif()
 
 set(THIRD_PARTY_PATH "${CMAKE_BINARY_DIR}/third_party" CACHE STRING
         "A path setting third party libraries download & build directories.")
@@ -90,16 +101,26 @@ if(NOT CMAKE_BUILD_TYPE)
             "Choose the type of build, options are: Debug Release RelWithDebInfo MinSizeRel"
             FORCE)
 endif()
+message(STATUS "CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
 
 # check options
 if (LITE_ON_TINY_PUBLISH)
-    if (NOT (WITH_LITE AND LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_JAVA AND NOT WITH_TESTING))
+    if (NOT (WITH_LITE AND LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND NOT WITH_TESTING))#LITE_WITH_JAVA AND
         message(FATAL_ERROR "LITE_ON_TINY_PUBLISH=ON must be used with WITH_LITE=ON LITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON LITE_WITH_JAVA=ON WITH_TESTING=OFF")
         return()
     endif()
 endif()
 
 include_directories("${PADDLE_SOURCE_DIR}")
+# the generated header files.
+set(LITE_GENERATED_INCLUDE_DIR "${CMAKE_BINARY_DIR}")
+include_directories("${LITE_GENERATED_INCLUDE_DIR}")
+
+if (LITE_WITH_PYTHON)
+    include(external/python)    # download, build, install python
+    include(external/pybind11)    # download, build, install pybind11
+endif()
+
 
 # for mobile
 if (WITH_LITE AND LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
@@ -107,16 +128,15 @@ if (WITH_LITE AND LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
     include(cross_compiling/postproject)
     include(cross_compiling/npu) # check and prepare NPU DDK
 
-    # include the necessary thirdparty dependencies
-    include(external/gflags)    # download, build, install gflags
-
-    # LITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON will disable glog
-    # TODO(sangoly): refine WITH_LITE and LITE_WITH_LIGHT_WEIGHT_FRAMEWORK
-    #include(external/glog)     # download, build, install glog
-    include(external/gtest)     # download, build, install gtest
-    include(ccache)             # set ccache for compilation
-
+    # We compile the mobile deployment library when LITE_ON_TINY_PUBLISH=ON
+    # So the following third party dependencies are not needed.
     if (NOT LITE_ON_TINY_PUBLISH)
+        # include the necessary thirdparty dependencies
+        include(external/gflags)    # download, build, install gflags
+        # LITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON will disable glog
+        # TODO(sangoly): refine WITH_LITE and LITE_WITH_LIGHT_WEIGHT_FRAMEWORK
+        include(external/gtest)     # download, build, install gtest
+        include(ccache)             # set ccache for compilation
         include(external/protobuf)  # download, build, install protobuf
     endif()
 
@@ -132,6 +152,7 @@ if (WITH_LITE AND LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
     add_subdirectory(lite)
     return()
 endif()
+#################################  End of mobile compile ##############################
 
 set(WITH_MKLML ${WITH_MKL})
 if (NOT DEFINED WITH_MKLDNN)
@@ -157,12 +178,22 @@ include(external/mkldnn)    # download, build, install mkldnn
 include(external/eigen)     # download eigen3
 include(external/xxhash)    # download install xxhash needed for x86 jit
 
+include(cudnn)
 include(configure)          # add paddle env configuration
+
+if(LITE_WITH_CUDA) 
+  include(cuda)
+endif()
+
+if(LITE_WITH_XPU)
+  include(xpu)
+endif()
 
 include(generic)            # simplify cmake module
 include(ccache)             # set ccache for compilation
 include(util)               # set unittest and link libs
 include(version)            # set PADDLE_VERSION
+include(flags)
 
 set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O3 -g -DNDEBUG")
 set(CMAKE_C_FLAGS_RELWITHDEBINFO "-O3 -g -DNDEBUG")

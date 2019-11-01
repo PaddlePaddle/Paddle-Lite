@@ -18,6 +18,10 @@
  */
 #pragma once
 
+#ifndef _LOGGING_H_
+#define _LOGGING_H_
+
+#include <assert.h>
 #include <sys/time.h>
 #include <sys/types.h>
 #include <time.h>
@@ -80,7 +84,7 @@ void gen_log(STL::ostream& log_stream_,
              const char* func,
              int lineno,
              const char* level,
-             const int kMaxLen = 20);
+             const int kMaxLen = 40);
 
 // LogMessage
 class LogMessage {
@@ -182,3 +186,4 @@ class VoidifyFatal : public Voidify {
 
 }  // namespace lite
 }  // namespace paddle
+#endif

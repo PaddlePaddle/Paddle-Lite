@@ -31,11 +31,23 @@ bool YoloBoxOp::CheckShape() const {
   CHECK_OR_FALSE(ImgSize);
   CHECK_OR_FALSE(Boxes);
   CHECK_OR_FALSE(Scores);
+
+  auto dim_x = X->dims();
+  auto dim_imgsize = ImgSize->dims();
+  std::vector<int> anchors = param_.anchors;
+  int anchor_num = anchors.size() / 2;
+  auto class_num = param_.class_num;
+  CHECK_OR_FALSE(dim_x.size() == 4);
+  CHECK_OR_FALSE(dim_x[1] == anchor_num * (5 + class_num));
+  CHECK_OR_FALSE(dim_imgsize[0] == dim_x[0]);
+  CHECK_OR_FALSE(dim_imgsize[1] == 2);
+  CHECK_OR_FALSE(anchors.size() > 0 && anchors.size() % 2 == 0);
+  CHECK_OR_FALSE(class_num > 0);
+  return true;
 }
 
 bool YoloBoxOp::InferShape() const {
   auto* X = param_.X;
-  auto* ImgSize = param_.ImgSize;
   auto anchors = param_.anchors;
   int anchor_num = anchors.size() / 2;
   auto class_num = param_.class_num;

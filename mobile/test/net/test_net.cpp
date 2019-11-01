@@ -31,6 +31,10 @@ void test(int argc, char *argv[]) {
   arg_index++;
   bool enable_memory_optimization = std::stoi(argv[arg_index]) == 1;
   arg_index++;
+  bool quantification = std::stoi(argv[arg_index]) == 1;
+  arg_index++;
+  int quantification_fold = std::stoi(argv[arg_index]);
+  arg_index++;
   paddle_mobile::PaddleMobileConfigInternal config;
   config.memory_optimization_level = enable_memory_optimization
                                          ? MemoryOptimizationWithoutFeeds
@@ -93,10 +97,13 @@ void test(int argc, char *argv[]) {
     var_names.push_back(var_name);
   }
   arg_index += var_count;
+  bool check_shape = std::stoi(argv[arg_index]) == 1;
+  arg_index++;
 
   auto time1 = time();
   if (paddle_mobile.Load("./checked_model/model", "./checked_model/params",
-                         fuse, false, 1, true)) {
+                         fuse, quantification, 1, is_lod,
+                         quantification_fold)) {
     auto time2 = time();
     std::cout << "auto-test"
               << " load-time-cost :" << time_diff(time1, time2) << "ms"
@@ -172,12 +179,15 @@ void test(int argc, char *argv[]) {
 #ifdef PADDLE_MOBILE_CL
     for (auto var_name : var_names) {
       auto cl_image = paddle_mobile.FetchImage(var_name);
+      if (cl_image == nullptr || cl_image->GetCLImage() == nullptr) {
+        continue;
+      }
       auto len = cl_image->numel();
       if (len == 0) {
         continue;
       }
-      int width = cl_image->ImageDims()[0];
-      int height = cl_image->ImageDims()[1];
+      size_t width = cl_image->ImageDims()[0];
+      size_t height = cl_image->ImageDims()[1];
       paddle_mobile::framework::half_t *image_data =
           new paddle_mobile::framework::half_t[height * width * 4];
       cl_int err;
@@ -194,6 +204,11 @@ void test(int argc, char *argv[]) {
 
       auto data = tensor_data;
       std::string sample = "";
+      if (check_shape) {
+        for (int i = 0; i < cl_image->dims().size(); i++) {
+          sample += " " + std::to_string(cl_image->dims()[i]);
+        }
+      }
       if (!is_sample_step) {
         sample_step = len / sample_num;
       }
@@ -219,6 +234,11 @@ void test(int argc, char *argv[]) {
       if (out->type() == type_id<int>()) {
         auto data = out->data<int>();
         std::string sample = "";
+        if (check_shape) {
+          for (int i = 0; i < out->dims().size(); i++) {
+            sample += " " + std::to_string(out->dims()[i]);
+          }
+        }
         if (!is_sample_step) {
           sample_step = len / sample_num;
         }
@@ -233,6 +253,11 @@ void test(int argc, char *argv[]) {
       } else if (out->type() == type_id<float>()) {
         auto data = out->data<float>();
         std::string sample = "";
+        if (check_shape) {
+          for (int i = 0; i < out->dims().size(); i++) {
+            sample += " " + std::to_string(out->dims()[i]);
+          }
+        }
         if (!is_sample_step) {
           sample_step = len / sample_num;
         }

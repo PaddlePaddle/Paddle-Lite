@@ -14,7 +14,7 @@
 
 #include "lite/kernels/arm/mul_compute.h"
 #include <vector>
-#include "lite/arm/math/funcs.h"
+#include "lite/backends/arm/math/funcs.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/type_system.h"
 
@@ -56,7 +56,7 @@ void MulCompute::Run() {
   } else {
     constexpr bool is_tranposed_y = false;
     auto& ctx = this->ctx_->template As<ARMContext>();
-    int hblock = lite::arm::math::get_hblock(ctx.arch());
+    int hblock = lite::arm::math::get_hblock(&ctx);
     int m_round = hblock * ((m_ + hblock - 1) / hblock);
     ctx.ExtendWorkspace(m_round * k_ * sizeof(float));
 

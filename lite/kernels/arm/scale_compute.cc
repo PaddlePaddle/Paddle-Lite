@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include "lite/kernels/arm/scale_compute.h"
-#include "lite/arm/math/funcs.h"
+#include "lite/backends/arm/math/funcs.h"
 
 namespace paddle {
 namespace lite {
@@ -32,6 +32,9 @@ void ScaleCompute::Run() {
     bias *= scale;
   }
   lite::arm::math::scale(x_data, output_data, x_dims.production(), scale, bias);
+  if (!param.x->lod().empty()) {
+    param.output->set_lod(param.x->lod());
+  }
 }
 
 }  // namespace arm

@@ -14,6 +14,7 @@
 
 #include "lite/operators/reshape_op.h"
 #include "lite/core/op_registry.h"
+#include "lite/core/tensor.h"
 
 namespace paddle {
 namespace lite {
@@ -22,13 +23,31 @@ namespace operators {
 bool ReshapeOp::CheckShape() const {
   CHECK_OR_FALSE(param_.x);
   CHECK_OR_FALSE(param_.output);
-  CHECK_OR_FALSE(!param_.shape.empty());
   return true;
 }
 
 bool ReshapeOp::InferShape() const {
+  auto shape_tensor_vct = param_.shape_tensor_vct;
+  auto *shape_tensor = param_.shape_tensor;
+  auto shape_vct = param_.shape_vct;
+  std::vector<int> final_shape;
+
+  if (shape_tensor_vct.size() > 0) {
+    for (int i = 0; i < shape_tensor_vct.size(); i++) {
+      final_shape.push_back(shape_tensor_vct[i]->data<int>()[0]);
+    }
+  } else if (shape_tensor != nullptr) {
+    auto *shape_tensor_data = shape_tensor->data<int>();
+    final_shape = std::vector<int>(shape_tensor_data,
+                                   shape_tensor_data + shape_tensor->numel());
+  } else if (!shape_vct.empty()) {
+    final_shape = shape_vct;
+  } else {
+    LOG(FATAL) << "input shape error";
+  }
+
   auto x_dims = param_.x->dims();
-  auto output_dims = ValidateShape(param_.shape, x_dims);
+  auto output_dims = ValidateShape(final_shape, x_dims);
   param_.output->Resize(output_dims);
   auto out_lod = param_.output->mutable_lod();
   *out_lod = param_.x->lod();
@@ -36,31 +55,33 @@ bool ReshapeOp::InferShape() const {
 }
 
 bool ReshapeOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
-  auto x_var = scope->FindVar(opdesc.Input("X").front());
-  auto output_var = scope->FindVar(opdesc.Output("Out").front());
-  CHECK(x_var);
-  CHECK(output_var);
-  param_.x = const_cast<lite::Tensor *>(&(x_var->Get<lite::Tensor>()));
-  param_.output = output_var->GetMutable<lite::Tensor>();
-  std::vector<std::string> input_arg_names = opdesc.InputArgumentNames();
-  if (std::find(input_arg_names.begin(), input_arg_names.end(), "Shape") !=
-      input_arg_names.end()) {
-    if (opdesc.Input("Shape").size() > 0) {
-      auto actual_shape_var = scope->FindVar(opdesc.Input("Shape").front());
-      if (actual_shape_var != nullptr) {
-        param_.actual_shape = const_cast<lite::Tensor *>(
-            &(actual_shape_var->Get<lite::Tensor>()));
+  param_.x =
+      scope->FindVar(opdesc.Input("X").front())->GetMutable<lite::Tensor>();
+  param_.output =
+      scope->FindVar(opdesc.Output("Out").front())->GetMutable<lite::Tensor>();
+
+  if (opdesc.HasInput("ShapeTensor") &&
+      opdesc.Input("ShapeTensor").size() > 0) {
+    auto args = opdesc.Input("ShapeTensor");
+    for (auto arg : args) {
+      auto *var = scope->FindVar(arg);
+      if (var != nullptr) {
+        param_.shape_tensor_vct.push_back(var->GetMutable<lite::Tensor>());
       }
     }
   }
-  param_.shape = (opdesc.GetAttr<std::vector<int>>("shape"));
+  if (opdesc.HasInput("Shape") && opdesc.Input("Shape").size() > 0) {
+    auto var = scope->FindVar(opdesc.Input("Shape").front());
+    if (var != nullptr) {
+      param_.shape_tensor = var->GetMutable<lite::Tensor>();
+    }
+  }
+  if (opdesc.HasAttr("shape")) {
+    param_.shape_vct = opdesc.GetAttr<std::vector<int>>("shape");
+  }
   if (opdesc.HasAttr("inplace")) {
     param_.inplace = opdesc.GetAttr<bool>("inplace");
   }
-  CHECK(param_.x) << "Input(X) of ReshapeOp should not be null.";
-  CHECK(param_.output) << "Output(Out) of ReshapeOp should not be null.";
-  CHECK(!param_.shape.empty())
-      << "The shape information must be set by Attr(shape).";
   return true;
 }
 
@@ -73,36 +94,37 @@ bool Reshape2Op::CheckShape() const {
 bool Reshape2Op::InferShape() const {
   ReshapeOp::InferShape();
   auto x_dims = param_.x->dims();
-  std::vector<DDim::value_type> xshape_dims(x_dims.size() + 1, 1);
+  std::vector<DDim::value_type> xshape_dims(x_dims.size() + 1, 0);
   for (size_t i = 0; i < x_dims.size(); i++) {
     xshape_dims[i + 1] = x_dims[i];
   }
-  param_.xshape->Resize(DDim(xshape_dims));
+  param_.xshape->Resize(xshape_dims);
+  auto xshape_lod = param_.xshape->mutable_lod();
+  *xshape_lod = param_.x->lod();
   return true;
 }
 
 bool Reshape2Op::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   ReshapeOp::AttachImpl(opdesc, scope);
   auto xshape_var = scope->FindVar(opdesc.Output("XShape").front());
-  CHECK(xshape_var);
   param_.xshape = xshape_var->GetMutable<lite::Tensor>();
-  CHECK(param_.xshape) << "Output(XShape) of ReshapeOp should not be null.";
   return true;
 }
 
 DDim ValidateShape(const std::vector<int> &shape, const DDim &input_dims) {
-  const DDim::value_type input_size = input_dims.production();
+  const lite::DDim::value_type input_size = input_dims.production();
   auto input_shape = input_dims.Vectorize();
-  bool all_positive = std::all_of(input_shape.cbegin(),
-                                  input_shape.cend(),
-                                  [](DDim::value_type i) { return i > 0; });
+  bool all_positive = std::all_of(
+      input_shape.cbegin(), input_shape.cend(), [](lite::DDim::value_type i) {
+        return i > 0;
+      });
   // only one dimension can be set to -1, whose size will be automatically
   // infered.
   const int unk_dim_val = -1;
   const int copy_dim_val = 0;
 
-  std::vector<DDim::value_type> output_shape(shape.size(), 0);
-  DDim::value_type capacity = 1;
+  std::vector<lite::DDim::value_type> output_shape(shape.size(), 0);
+  lite::DDim::value_type capacity = 1;
   int unk_dim_idx = -1;
   for (size_t i = 0; i < shape.size(); ++i) {
     if (shape[i] == unk_dim_val) {
@@ -118,10 +140,10 @@ DDim ValidateShape(const std::vector<int> &shape, const DDim &input_dims) {
                                "be negtive except one unknown dimension.";
     }
 
-    capacity *=
-        (shape[i] ? static_cast<DDim::value_type>(shape[i]) : input_shape[i]);
-    output_shape[i] =
-        (shape[i] ? static_cast<DDim::value_type>(shape[i]) : input_shape[i]);
+    capacity *= (shape[i] ? static_cast<lite::DDim::value_type>(shape[i])
+                          : input_shape[i]);
+    output_shape[i] = (shape[i] ? static_cast<lite::DDim::value_type>(shape[i])
+                                : input_shape[i]);
   }
 
   if (unk_dim_idx != -1) {
@@ -139,7 +161,7 @@ DDim ValidateShape(const std::vector<int> &shape, const DDim &input_dims) {
   } else {
     CHECK_EQ(capacity, input_size) << "Invalid shape is given.";
   }
-  return DDim(output_shape);
+  return lite::DDim(output_shape);
 }
 
 }  // namespace operators

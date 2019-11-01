@@ -78,6 +78,9 @@ std::list<std::unique_ptr<KernelBase>> KernelRegistry::Create(
     case TARGET(kNPU): {
       CREATE_KERNEL(kNPU);
     } break;
+    case TARGET(kXPU): {
+      CREATE_KERNEL(kXPU);
+    } break;
     case TARGET(kFPGA): {
       CREATE_KERNEL(kFPGA);
     } break;
@@ -105,8 +108,11 @@ KernelRegistry::KernelRegistry()
                                    DATALAYOUT(layout__)>::Global());
   // Currently, just register 2 kernel targets.
   INIT_FOR(kCUDA, kFloat, kNCHW);
+  INIT_FOR(kCUDA, kFloat, kNHWC);
+  INIT_FOR(kCUDA, kInt8, kNCHW);
   INIT_FOR(kCUDA, kAny, kNCHW);
   INIT_FOR(kCUDA, kAny, kAny);
+  INIT_FOR(kCUDA, kInt8, kNHWC);
 
   INIT_FOR(kHost, kFloat, kNCHW);
   INIT_FOR(kHost, kAny, kNCHW);
@@ -127,13 +133,22 @@ KernelRegistry::KernelRegistry()
   INIT_FOR(kARM, kAny, kAny);
 
   INIT_FOR(kOpenCL, kFloat, kNCHW);
+  INIT_FOR(kOpenCL, kFloat, kNHWC);
   INIT_FOR(kOpenCL, kAny, kNCHW);
+  INIT_FOR(kOpenCL, kAny, kNHWC);
+  INIT_FOR(kOpenCL, kFloat, kAny);
+  INIT_FOR(kOpenCL, kInt8, kNCHW);
   INIT_FOR(kOpenCL, kAny, kAny);
 
   INIT_FOR(kNPU, kFloat, kNCHW);
   INIT_FOR(kNPU, kInt8, kNCHW);
   INIT_FOR(kNPU, kAny, kNCHW);
   INIT_FOR(kNPU, kAny, kAny);
+
+  INIT_FOR(kXPU, kFloat, kNCHW);
+  INIT_FOR(kXPU, kInt8, kNCHW);
+  INIT_FOR(kXPU, kAny, kNCHW);
+  INIT_FOR(kXPU, kAny, kAny);
 
   INIT_FOR(kFPGA, kFP16, kNHWC);
   INIT_FOR(kFPGA, kFP16, kAny);

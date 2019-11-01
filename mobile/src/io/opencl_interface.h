@@ -22,6 +22,6 @@ cl_context getContext();
 cl_command_queue getClCommandQueue();
 bool isInitSuccess();
 
-#endif
-
 }  // namespace paddle_mobile
+
+#endif

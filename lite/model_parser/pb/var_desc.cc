@@ -39,6 +39,7 @@ VarDescAPI::Type VarDesc::GetType() const {
     GET_TYPE_CASE_ITEM(READER);
     default:
       LOG(FATAL) << "Unknown var type";
+      return VarDescAPI::Type();
   }
 #undef GET_TYPE_CASE_ITEM
 }

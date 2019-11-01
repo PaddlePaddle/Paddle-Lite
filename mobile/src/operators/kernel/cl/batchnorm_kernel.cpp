@@ -87,18 +87,20 @@ void BatchNormKernel<GPU_CL, float>::Compute(
   DLOG << out_width;
   DLOG << *param.OutputY();
   cl_int status;
-  clSetKernelArg(kernel, 0, sizeof(cl_int), &out_width);
+  status = clSetKernelArg(kernel, 0, sizeof(cl_int), &out_width);
   CL_CHECK_ERRORS(status);
-  clSetKernelArg(kernel, 1, sizeof(cl_mem), &input);
+  status = clSetKernelArg(kernel, 1, sizeof(cl_mem), &input);
   CL_CHECK_ERRORS(status);
-  clSetKernelArg(kernel, 2, sizeof(cl_mem), &new_scale);
+  status = clSetKernelArg(kernel, 2, sizeof(cl_mem), &new_scale);
   CL_CHECK_ERRORS(status);
-  clSetKernelArg(kernel, 3, sizeof(cl_mem), &new_bias);
+  status = clSetKernelArg(kernel, 3, sizeof(cl_mem), &new_bias);
   CL_CHECK_ERRORS(status);
-  clSetKernelArg(kernel, 4, sizeof(cl_mem), &out);
+  status = clSetKernelArg(kernel, 4, sizeof(cl_mem), &out);
   CL_CHECK_ERRORS(status);
-  clEnqueueNDRangeKernel(this->cl_helper_.CLCommandQueue(), kernel, 3, NULL,
-                         default_work_size.data(), NULL, 0, NULL, NULL);
+  status =
+      clEnqueueNDRangeKernel(this->cl_helper_.CLCommandQueue(), kernel, 3, NULL,
+                             default_work_size.data(), NULL, 0, NULL, NULL);
+  CL_CHECK_ERRORS(status);
 }
 
 template class BatchNormKernel<GPU_CL, float>;

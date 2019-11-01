@@ -14,8 +14,8 @@
 
 #include "lite/kernels/opencl/conv_compute.h"
 #include <sstream>
+#include "lite/backends/opencl/cl_include.h"
 #include "lite/core/op_registry.h"
-#include "lite/opencl/cl_include.h"
 #include "lite/operators/op_params.h"
 
 namespace paddle {

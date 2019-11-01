@@ -19,7 +19,7 @@
 #include "lite/api/paddle_use_ops.h"
 #include "lite/api/paddle_use_passes.h"
 #include "lite/utils/cp_logging.h"
-
+#include "lite/utils/io.h"
 DEFINE_string(model_dir, "", "");
 
 namespace paddle {
@@ -28,7 +28,6 @@ namespace lite_api {
 TEST(CxxApi, run) {
   lite_api::CxxConfig config;
   config.set_model_dir(FLAGS_model_dir);
-  config.set_preferred_place(Place{TARGET(kX86), PRECISION(kFloat)});
   config.set_valid_places({
       Place{TARGET(kX86), PRECISION(kFloat)},
       Place{TARGET(kARM), PRECISION(kFloat)},
@@ -36,7 +35,18 @@ TEST(CxxApi, run) {
 
   auto predictor = lite_api::CreatePaddlePredictor(config);
 
-  auto input_tensor = predictor->GetInput(0);
+  LOG(INFO) << "Version: " << predictor->GetVersion();
+
+  auto inputs = predictor->GetInputNames();
+  LOG(INFO) << "input size: " << inputs.size();
+  for (int i = 0; i < inputs.size(); i++) {
+    LOG(INFO) << "inputnames: " << inputs[i];
+  }
+  auto outputs = predictor->GetOutputNames();
+  for (int i = 0; i < outputs.size(); i++) {
+    LOG(INFO) << "outputnames: " << outputs[i];
+  }
+  auto input_tensor = predictor->GetInputByName(inputs[0]);
   input_tensor->Resize(std::vector<int64_t>({100, 100}));
   auto* data = input_tensor->mutable_data<float>();
   for (int i = 0; i < 100 * 100; i++) {
@@ -45,7 +55,7 @@ TEST(CxxApi, run) {
 
   predictor->Run();
 
-  auto output = predictor->GetOutput(0);
+  auto output = predictor->GetTensor(outputs[0]);
   auto* out = output->data<float>();
   LOG(INFO) << out[0];
   LOG(INFO) << out[1];
@@ -54,16 +64,29 @@ TEST(CxxApi, run) {
   EXPECT_NEAR(out[1], -28.8729, 1e-3);
 
   predictor->SaveOptimizedModel(FLAGS_model_dir + ".opt2");
-  predictor->SaveOptimizedModel(FLAGS_model_dir + ".opt2.naive",
-                                LiteModelType::kNaiveBuffer);
+  predictor->SaveOptimizedModel(
+      FLAGS_model_dir + ".opt2.naive", LiteModelType::kNaiveBuffer, true);
 }
 
+// Demo1 for Mobile Devices :Load model from file and run
 #ifdef LITE_WITH_LIGHT_WEIGHT_FRAMEWORK
 TEST(LightApi, run) {
   lite_api::MobileConfig config;
   config.set_model_dir(FLAGS_model_dir + ".opt2.naive");
 
   auto predictor = lite_api::CreatePaddlePredictor(config);
+
+  auto inputs = predictor->GetInputNames();
+  LOG(INFO) << "input size: " << inputs.size();
+  for (int i = 0; i < inputs.size(); i++) {
+    LOG(INFO) << "inputnames: " << inputs.at(i);
+  }
+  auto outputs = predictor->GetOutputNames();
+  for (int i = 0; i < outputs.size(); i++) {
+    LOG(INFO) << "outputnames: " << outputs.at(i);
+  }
+
+  LOG(INFO) << "Version: " << predictor->GetVersion();
 
   auto input_tensor = predictor->GetInput(0);
   input_tensor->Resize(std::vector<int64_t>({100, 100}));
@@ -82,6 +105,39 @@ TEST(LightApi, run) {
   EXPECT_NEAR(out[0], 50.2132, 1e-3);
   EXPECT_NEAR(out[1], -28.8729, 1e-3);
 }
+
+// Demo2 for Loading model from memory
+TEST(MobileConfig, LoadfromMemory) {
+  // Get naive buffer
+  auto model_path = std::string(FLAGS_model_dir) + ".opt2.naive/__model__.nb";
+  auto params_path = std::string(FLAGS_model_dir) + ".opt2.naive/param.nb";
+  std::string model_buffer = lite::ReadFile(model_path);
+  size_t size_model = model_buffer.length();
+  std::string params_buffer = lite::ReadFile(params_path);
+  size_t size_params = params_buffer.length();
+  // set model buffer and run model
+  lite_api::MobileConfig config;
+  config.set_model_buffer(
+      model_buffer.c_str(), size_model, params_buffer.c_str(), size_params);
+
+  auto predictor = lite_api::CreatePaddlePredictor(config);
+  auto input_tensor = predictor->GetInput(0);
+  input_tensor->Resize(std::vector<int64_t>({100, 100}));
+  auto* data = input_tensor->mutable_data<float>();
+  for (int i = 0; i < 100 * 100; i++) {
+    data[i] = i;
+  }
+
+  predictor->Run();
+
+  const auto output = predictor->GetOutput(0);
+  const float* raw_output = output->data<float>();
+
+  for (int i = 0; i < 10; i++) {
+    LOG(INFO) << "out " << raw_output[i];
+  }
+}
+
 #endif
 
 }  // namespace lite_api

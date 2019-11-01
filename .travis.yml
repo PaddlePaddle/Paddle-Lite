@@ -9,18 +9,17 @@ os:
 addons:
   apt:
     packages:
-      - git
-      - python
-      - python-pip
-      - python2.7-dev
-      - libc6-i386
-      - curl
-
-compiler:
-  - clang
+#      - git
+#      - python
+#      - python-pip
+#      - python2.7-dev
+#      - libc6-i386
+#      - curl
+      - clang-format-3.8
         
 before_install:
-  - sudo pip install -U virtualenv pre-commit pip
+  - sudo pip install cpplint pre-commit
+  - sudo ln -s /usr/bin/clang-format-3.8 /usr/bin/clang-format
   # Download and install recent cmake
 
 script:

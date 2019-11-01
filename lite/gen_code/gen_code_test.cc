@@ -145,7 +145,10 @@ TEST(gen_code, auto_gen) {
 TEST(gen_code, optimized_program) {
   lite::Scope scope;
   cpp::ProgramDesc cpp_desc;
-  LoadModelPb(FLAGS_optimized_model, &scope, &cpp_desc);
+  std::string model_file = FLAGS_optimized_model + "/model";
+  std::string param_file = FLAGS_optimized_model + "/params";
+  LoadModelPb(
+      FLAGS_optimized_model, model_file, param_file, &scope, &cpp_desc, true);
 
   framework::proto::ProgramDesc pb_proto_desc;
   lite::pb::ProgramDesc pb_desc(&pb_proto_desc);

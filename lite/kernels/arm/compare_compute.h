@@ -14,7 +14,7 @@
 
 #pragma once
 #include <stdint.h>
-#include "lite/arm/math/type_trans.h"
+#include "lite/backends/arm/math/type_trans.h"
 #include "lite/core/kernel.h"
 #include "lite/operators/compare_op.h"
 

@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include "lite/kernels/arm/read_from_array_compute.h"
-#include "lite/arm/math/funcs.h"
+#include "lite/backends/arm/math/funcs.h"
 
 namespace paddle {
 namespace lite {
@@ -28,14 +28,13 @@ void ReadFromArrayCompute::Run() {
 
   int in_num = param.X->size();
   CHECK_EQ(param.I->numel(), 1) << "I should have only one element";
-  int id = param.I->data<int>()[0];
+  int id = param.I->data<float>()[0];
   CHECK_LE(id, in_num) << "id is not valid";
   int input_size = (*param.X)[id].numel();
 
   param.Out->Resize((*param.X)[id].dims());
-  auto* o_data = param.Out->mutable_data<float>();
-  const auto* x_data = (*param.X)[id].data<float>();
-  memcpy(o_data, x_data, sizeof(float) * input_size);
+  param.Out->CopyDataFrom((*param.X)[id]);
+
   auto out_lod = param.Out->mutable_lod();
   *out_lod = (*param.X)[id].lod();
 }

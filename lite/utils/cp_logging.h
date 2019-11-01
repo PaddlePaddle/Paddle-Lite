@@ -13,7 +13,8 @@
 // limitations under the License.
 
 #pragma once
-#ifdef LITE_WITH_LIGHT_WEIGHT_FRAMEWORK
+#if defined(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK) || \
+    defined(LITE_ON_MODEL_OPTIMIZE_TOOL)
 #include "lite/utils/logging.h"
 #else  // LITE_WITH_LIGHT_WEIGHT_FRAMEWORK
 #include <glog/logging.h>

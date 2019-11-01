@@ -30,16 +30,85 @@ lite_cc_library(types SRCS types.cc)
 endif()
 lite_cc_library(op_registry SRCS op_registry.cc DEPS kernel)
 lite_cc_library(scope SRCS scope.cc DEPS tensor)
-lite_cc_library(cpu_info SRCS cpu_info.cc DEPS tensor)
+lite_cc_library(device_info SRCS device_info.cc DEPS tensor)
 
 if (LITE_WITH_ARM)
-lite_cc_library(context SRCS context.cc DEPS tensor any cpu_info CL_DEPS cl_context gflags NPU_DEPS ${npu_ddk_libs})
+lite_cc_library(context SRCS context.cc DEPS tensor any device_info CL_DEPS cl_context gflags NPU_DEPS npu_runtime)
 else()
-lite_cc_library(context SRCS context.cc DEPS tensor any cpu_info eigen3 CL_DEPS cl_context gflags)
+lite_cc_library(context SRCS context.cc DEPS tensor any device_info eigen3 CL_DEPS cl_context gflags XPU_DEPS xpu_runtime)
 endif()
-lite_cc_library(kernel SRCS kernel.cc DEPS context type_system target_wrapper any op_params tensor)
+
+#-------------------------------------------- GET CODE META INFO ------------------------------------------
+execute_process(
+  COMMAND git describe --tags --exact-match
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+  OUTPUT_VARIABLE PADDLE_LITE_TAG
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
+execute_process(
+  COMMAND git rev-parse --abbrev-ref HEAD
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+  OUTPUT_VARIABLE PADDLE_LITE_BRANCH
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
+execute_process(
+  COMMAND git log -1 --format=%h
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+  OUTPUT_VARIABLE PADDLE_LITE_COMMIT
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
+message(STATUS "tag: ${PADDLE_LITE_TAG}")
+message(STATUS "branch: ${PADDLE_LITE_BRANCH}")
+message(STATUS "commit: ${PADDLE_LITE_COMMIT}")
+
+configure_file(version.h.in version.h)
+#----------------------------------------------- NOT CHANGE -----------------------------------------------
+# A trick to generate the paddle_use_kernels.h
+add_custom_command(
+  COMMAND python ${CMAKE_SOURCE_DIR}/lite/tools/cmake_tools/parse_kernel_registry.py
+  ${kernels_src_list}
+  ${CMAKE_SOURCE_DIR}/lite/api/paddle_use_kernels.h
+  "${LITE_OPTMODEL_DIR}/.tailored_kernels_list"
+  LITE_BUILD_TAILOR
+  OUTPUT kernels.h # not a real path to the output to force it execute every time.
+  )
+# A trick to generate the paddle_use_ops.h
+add_custom_command(
+  COMMAND python ${CMAKE_SOURCE_DIR}/lite/tools/cmake_tools/parse_op_registry.py
+  ${ops_src_list}
+  ${CMAKE_SOURCE_DIR}/lite/api/paddle_use_ops.h
+  "${LITE_OPTMODEL_DIR}/.tailored_ops_list"
+  LITE_BUILD_TAILOR
+  OUTPUT ops.h # not a real path to the output to force it execute every time.
+  )
+# generate fake kernels for memory_optimize_tool
+add_custom_command(
+  COMMAND python ${CMAKE_SOURCE_DIR}/lite/tools/cmake_tools/create_fake_kernel_registry.py
+  ${kernels_src_list}
+  ${CMAKE_BINARY_DIR}/all_kernel_faked.cc
+  ${CMAKE_BINARY_DIR}/kernel_src_map.h
+  OUTPUT all_kernel_faked.cc # not a real path to the output to force it execute every time.
+  )
+add_custom_target(op_list_h DEPENDS ops.h)
+add_custom_target(kernel_list_h DEPENDS kernels.h)
+add_custom_target(all_kernel_faked_cc DEPENDS all_kernel_faked.cc)
+
+#----------------------------------------------- NOT CHANGE -----------------------------------------------
+lite_cc_library(kernel SRCS kernel.cc
+        DEPS context type_system target_wrapper any op_params tensor
+        PROFILE_DEPS basic_profiler
+  )
 lite_cc_library(op SRCS op_lite.cc DEPS scope op_registry target_wrapper kernel
-  cpp_op_desc tensor)
+  cpp_op_desc tensor
+  )
+
+add_dependencies(kernel kernel_list_h)
+add_dependencies(op op_list_h)
+
+
 lite_cc_library(type_system SRCS type_system.cc DEPS tensor target_wrapper)
 
 lite_cc_library(program SRCS program.cc
@@ -73,3 +142,17 @@ lite_cc_test(test_type_system SRCS type_system_test.cc DEPS type_system utils)
 lite_cc_test(test_types SRCS types_test.cc DEPS types)
 lite_cc_test(test_memory SRCS memory_test.cc DEPS memory)
 lite_cc_test(test_context SRCS context_test.cc DEPS context)
+
+
+# # A trick to generate the paddle_use_kernels.h
+# execute_process(
+#   COMMAND python ${CMAKE_SOURCE_DIR}/lite/tools/cmake_tools/parse_kernel_registry.py
+#   ${kernels_src_list}
+#   ${CMAKE_SOURCE_DIR}/lite/api/paddle_use_kernels.h
+#   )
+# # A trick to generate the paddle_use_ops.h
+# execute_process(
+#   COMMAND python ${CMAKE_SOURCE_DIR}/lite/tools/cmake_tools/parse_op_registry.py
+#   ${ops_src_list}
+#   ${CMAKE_SOURCE_DIR}/lite/api/paddle_use_ops.h
+#   )

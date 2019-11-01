@@ -27,9 +27,9 @@ void IncrementOp<Dtype, T>::InferShape() const {
   auto out = this->param_.Out();
   PADDLE_MOBILE_ENFORCE(input->numel() == 1, "input's numel should be 1");
   out->Resize(input->dims());
-#ifdef PADDLE_MOBILE_CPU
-  out->set_lod(input->lod());
-#endif
+  if (std::is_same<DeviceType<kCPU>, Dtype>::value) {
+    out->set_lod(input->lod());
+  }
 }
 
 }  // namespace operators

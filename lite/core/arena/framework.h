@@ -17,6 +17,7 @@
 #include <time.h>
 #include <algorithm>
 #include <chrono>  // NOLINT
+#include <cmath>
 #include <iomanip>
 #include <memory>
 #include <string>
@@ -41,6 +42,7 @@ class TestCase {
       : place_(place), scope_(new Scope), alias_(alias) {
     ctx_ = ContextScheduler::Global().NewContext(place_.target);
   }
+  virtual ~TestCase() {}
 
   void Prepare() {
     PrepareScopes();
@@ -137,20 +139,18 @@ class TestCase {
   }
 
  private:
+  Place place_;
   std::shared_ptr<Scope> scope_;
+  std::string alias_;
   // The workspace for the Instruction.
   Scope* inst_scope_{};
   // The workspace for the baseline implementation.
   Scope* base_scope_{};
   std::unique_ptr<cpp::OpDesc> op_desc_;
   std::unique_ptr<Instruction> instruction_;
-  Place place_;
-  std::string alias_;
 };
 
 class Arena {
-  float abs_error_{};
-
  public:
   Arena(std::unique_ptr<TestCase>&& tester,
         const Place& place,
@@ -202,12 +202,14 @@ class Arena {
 
       default:
         LOG(FATAL) << "not support type " << PrecisionToStr(type->precision());
+        return false;
     }
   }
 
  private:
   std::unique_ptr<TestCase> tester_;
   Place place_;
+  float abs_error_;
 };
 
 template <typename T>

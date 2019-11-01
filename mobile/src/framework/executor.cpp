@@ -33,7 +33,7 @@ limitations under the License. */
 #include "pass/model_obfuscate.h"
 #ifdef PADDLE_MOBILE_CL
 #include "framework/cl/cl_image.h"
-#include "pass/memory_optimize_super.h"
+#include "pass/memory_optimize_cl.h"
 #endif
 
 namespace paddle_mobile {
@@ -101,11 +101,49 @@ Executor<Device, T>::Executor(const Program<Device> &program,
     InitMemory();
   }
   int count = 0;
+#ifdef PADDLE_MOBILE_PROFILE
+  std::vector<ProfInfo> profile(ops_of_block0_.size());
+  struct timespec ts;
+  int op_index = 0;
+#endif
   for (auto &op_handler : ops_of_block0_) {
+#ifdef PADDLE_MOBILE_PROFILE
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    profile[op_index].runBegin = (uint64_t)ts.tv_sec * 1e9 + ts.tv_nsec;
+#endif
     DLOG << "Initialize op[" << count++ << "]: " << op_handler->Type();
+    if (op_handler->Type() == "feed" || op_handler->Type() == "fetch") {
+      op_handler->setPrePostType(config_.pre_post_type);
+    }
     op_handler->Init();
+#ifdef PADDLE_MOBILE_PROFILE
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    profile[op_index].runEnd = (uint64_t)ts.tv_sec * 1e9 + ts.tv_nsec;
+    ++op_index;
+#endif
+  }
+#ifdef PADDLE_MOBILE_PROFILE
+  printf("================[ op init profile ]==================\n");
+  PrintProfile(profile);
+#endif
+  ApplyMemoryOptimise(config, lod_mode);
+}
+
+template <typename Device, typename T>
+void Executor<Device, T>::ApplyMemoryOptimise(
+    const PaddleMobileConfigInternal &config, const bool lod_mode) const {}
+
+#ifdef PADDLE_MOBILE_CL
+template <>
+void Executor<GPU_CL, float>::ApplyMemoryOptimise(
+    const PaddleMobileConfigInternal &config, const bool lod_mode) const {
+  if (!config.load_when_predict && !lod_mode &&
+      config_.memory_optimization_level != NoMemoryOptimization) {
+    pass::MemoryOptPassCl()(program_desc_.get(), program_.scope.get(),
+                            config_.memory_optimization_level);
   }
 }
+#endif
 
 template <typename Device, typename T>
 void Executor<Device, T>::InitFeedFetchList() {
@@ -135,24 +173,35 @@ void Executor<Device, T>::InitFeedFetchList() {
 }
 
 template <typename T>
-static void LoadMemInternal(void **data, LoDTensor *tensor,
-                            bool quant_uint8 = false) {
-  char **data_buf = reinterpret_cast<char **>(data);
-  int64_t size = tensor->numel();
-  T *tensor_data = tensor->mutable_data<T>();
+static void LoadMemInternal(void **in_data, void *out_data, int64_t size,
+                            bool quant_uint8 = false, int quant_fold = 1) {
+  char **data_buf = reinterpret_cast<char **>(in_data);
+  T *tensor_data = reinterpret_cast<T *>(out_data);
   if (quant_uint8) {
-    // should be moved into operator init function
-    float min_value;
-    float max_value;
-    memory::Copy(&min_value, *data_buf, sizeof(float));
-    memory::Copy(&max_value, *data_buf + sizeof(float), sizeof(float));
-    *data_buf += 2 * sizeof(float);
-    const float factor = (max_value - min_value) / 255.0;
-    const uint8_t *uint8_data = reinterpret_cast<uint8_t *>(*data_buf);
-    for (int k = 0; k < size; ++k) {
-      tensor_data[k] = uint8_data[k] * factor + min_value;
+    const int minimal_fold_size = 2;
+    quant_fold = fmin(fmax(1, size / minimal_fold_size), quant_fold);
+    int step = fmax(size / quant_fold, 1);
+    int visited_fold = 0;
+    while (visited_fold * step < size) {
+      // should be moved into operator init function
+      float min_value;
+      float max_value;
+      memory::Copy(&min_value, *data_buf, sizeof(float));
+      memory::Copy(&max_value, *data_buf + sizeof(float), sizeof(float));
+      *data_buf += 2 * sizeof(float);
+      const float factor = (max_value - min_value) / 255.0;
+      const uint8_t *uint8_data = reinterpret_cast<uint8_t *>(*data_buf);
+      int k = 0;
+      for (; k < step; ++k) {
+        int tensor_data_idx = visited_fold * step + k;
+        if (tensor_data_idx >= size) {
+          break;
+        }
+        tensor_data[tensor_data_idx] = uint8_data[k] * factor + min_value;
+      }
+      *data_buf += k * sizeof(uint8_t);
+      visited_fold++;
     }
-    *data_buf += size * sizeof(uint8_t);
   } else {
     memory::Copy(tensor_data, *data_buf, size * sizeof(T));
     *data_buf += size * sizeof(T);
@@ -197,14 +246,20 @@ void Executor<Device, T>::LoadMemory(void **data,
   // parse tensor from stream
   switch (tensor_desc.DataType()) {
     case VARTYPE_TYPE_FP32:
-      LoadMemInternal<float>(reinterpret_cast<void **>(data_buf), tensor,
-                             program_.quantification);
+      LoadMemInternal<float>(
+          reinterpret_cast<void **>(data_buf),
+          reinterpret_cast<void *>(tensor->mutable_data<T>()), tensor->numel(),
+          program_.quantification, program_.quantification_fold);
       break;
     case VARTYPE_TYPE_INT8:
-      LoadMemInternal<int8_t>(reinterpret_cast<void **>(data_buf), tensor);
+      LoadMemInternal<int8_t>(
+          reinterpret_cast<void **>(data_buf),
+          reinterpret_cast<void *>(tensor->mutable_data<T>()), tensor->numel());
       break;
     case VARTYPE_TYPE_INT32:
-      LoadMemInternal<int>(reinterpret_cast<void **>(data_buf), tensor);
+      LoadMemInternal<int>(reinterpret_cast<void **>(data_buf),
+                           reinterpret_cast<void *>(tensor->mutable_data<T>()),
+                           tensor->numel());
       break;
     default:
       LOG(kLOG_ERROR) << "data type is not supported";
@@ -480,44 +535,52 @@ const CLImage *Executor<Device, T>::GetOutputImage(
 
 template <typename Device, typename T>
 PMStatus Executor<Device, T>::Predict() {
+  try {
 #if _OPENMP
-  omp_set_num_threads(CPUContext::Context()->get_thread_num());
+    omp_set_num_threads(CPUContext::Context()->get_thread_num());
 #endif
-  // clear all no persistable tensor array since write_to_array
-  // is always push back a new tensor in the array
-  ClearNoPersistableTensorArray(program_desc_.get(), program_.scope.get());
+    // clear all no persistable tensor array since write_to_array
+    // is always push back a new tensor in the array
+    ClearNoPersistableTensorArray(program_desc_.get(), program_.scope.get());
 
 #ifdef PADDLE_MOBILE_PROFILE
-  std::vector<ProfInfo> profile(ops_of_block0_.size());
-  struct timespec ts;
-  int op_index = 0;
+    std::vector<ProfInfo> profile(ops_of_block0_.size());
+    struct timespec ts;
+    int op_index = 0;
 #endif
-  for (int i = 0; i < ops_of_block0_.size(); ++i) {
-    auto &op_handler = ops_of_block0_[i];
+    for (int i = 0; i < ops_of_block0_.size(); ++i) {
+      auto &op_handler = ops_of_block0_[i];
 #ifdef PADDLE_MOBILE_PROFILE
-    clock_gettime(CLOCK_MONOTONIC, &ts);
-    profile[op_index].runBegin = (uint64_t)ts.tv_sec * 1e9 + ts.tv_nsec;
+      clock_gettime(CLOCK_MONOTONIC, &ts);
+      profile[op_index].runBegin = (uint64_t)ts.tv_sec * 1e9 + ts.tv_nsec;
 #endif
-    DLOG << i << "th, "
-         << "run op: " << op_handler->Type();
-    if (lod_mode_ && input_dim_has_changed_) {
-      op_handler->InferShape();
+      DLOG << i << "th, "
+           << "run op: " << op_handler->Type();
+      if (lod_mode_ && input_dim_has_changed_) {
+        op_handler->InferShape();
+      }
+      op_handler->Run();
+#ifdef PADDLE_MOBILE_PROFILE
+      clock_gettime(CLOCK_MONOTONIC, &ts);
+      profile[op_index].runEnd = (uint64_t)ts.tv_sec * 1e9 + ts.tv_nsec;
+      ++op_index;
+#endif
     }
-    op_handler->Run();
-#ifdef PADDLE_MOBILE_PROFILE
-    clock_gettime(CLOCK_MONOTONIC, &ts);
-    profile[op_index].runEnd = (uint64_t)ts.tv_sec * 1e9 + ts.tv_nsec;
-    ++op_index;
-#endif
-  }
-  if (feed_indices_.size() == 1) {
-    input_dim_has_changed_ = false;
-  }
+    if (feed_indices_.size() == 1) {
+      input_dim_has_changed_ = false;
+    }
 
 #ifdef PADDLE_MOBILE_PROFILE
-  PrintProfile(profile);
+    PrintProfile(profile);
 #endif
-  return PMSuccess;
+    return PMSuccess;
+  } catch (PaddleMobileException &e) {
+    exception_msg_ = e.what();
+    return PMException;
+  } catch (std::exception &e) {
+    exception_msg_ = e.what();
+    return PMException;
+  }
 }
 
 #ifdef PADDLE_MOBILE_PROFILE
@@ -586,6 +649,11 @@ void Executor<Device, T>::GetTensorResults(
         fetch_var->template GetMutable<framework::LoDTensorArray>()->at(i);
     v->push_back(&target);
   }
+}
+
+template <typename Device, typename T>
+std::string Executor<Device, T>::GetExceptionMsg() {
+  return exception_msg_;
 }
 
 #ifdef PADDLE_MOBILE_FPGA
@@ -819,10 +887,13 @@ void Executor<GPU_CL, float>::SetInput(const Tensor &input,
       DLOG << "SetInput ---- > resize1";
       input_tensor->Resize(input.dims());
       input_tensor->mutable_data<float>();
-      //     InitNoPersistableMemory(*input_tensor);
-      pass::MemoryOptPassSuper()(program_desc_.get(), program_.scope.get(),
-                                 config_.memory_optimization_level,
-                                 input.dims());
+      if (config_.memory_optimization_level == NoMemoryOptimization) {
+        InitNoPersistableMemory(*input_tensor);
+      } else {
+        pass::MemoryOptPassCl()(program_desc_.get(), program_.scope.get(),
+                                config_.memory_optimization_level,
+                                input.dims());
+      }
     }
   } else {
     DLOG << "SetInput ---- > resize2";
@@ -890,31 +961,10 @@ void Executor<GPU_CL, float>::LoadMemory(const VarDesc var_desc,
   void *memory = nullptr;
   int type_size = 4;
   memory = tensorInput;
-  if (program_.quantification) {
-    float min_value;
-    float max_value;
 
-    memcpy(&min_value, *data, sizeof(float));
-    memcpy(&max_value, *data + sizeof(float), sizeof(float));
-    *data += 2 * sizeof(float);
-    const float factor = (max_value - min_value) / 255.0;
-    uint8_t *uint8_data = reinterpret_cast<uint8_t *>(*data);
-    for (int k = 0; k < memory_size; ++k) {
-      static_cast<float *>(memory)[k] = uint8_data[k] * factor + min_value;
-    }
-    *data += (memory_size * sizeof(uint8_t));
-  } else {
-    for (int n = 0; n < memory_size; n++) {
-      float value;
-      memcpy(&value, *data + n * type_size, type_size);
-      if (value < 1e-30 && value > -1e-30) {
-        static_cast<float *>(memory)[n] = 0.0;
-      } else {
-        static_cast<float *>(memory)[n] = value;
-      }
-    }
-    (*data) += (sizeof(char) * memory_size * type_size);
-  }
+  LoadMemInternal<float>(reinterpret_cast<void **>(data),
+                         reinterpret_cast<void *>(memory), memory_size,
+                         program_.quantification, program_.quantification_fold);
 }
 
 template <>

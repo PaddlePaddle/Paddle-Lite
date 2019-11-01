@@ -35,13 +35,11 @@ void Run(const char* model_dir, int repeat) {
 #endif
   lite::Predictor predictor;
   std::vector<Place> valid_places({
-      Place{TARGET(kHost), PRECISION(kFloat)},
-      Place{TARGET(kARM), PRECISION(kFloat)},
       Place{TARGET(kARM), PRECISION(kInt8)},
+      Place{TARGET(kARM), PRECISION(kFloat)},
   });
 
-  predictor.Build(
-      model_dir, Place{TARGET(kARM), PRECISION(kInt8)}, valid_places);
+  predictor.Build(model_dir, "", "", valid_places);
 
   auto* input_tensor = predictor.GetInput(0);
   input_tensor->Resize(DDim(std::vector<DDim::value_type>({1, 3, 224, 224})));

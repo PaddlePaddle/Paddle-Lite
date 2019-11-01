@@ -51,14 +51,12 @@ bool CompareTensors(const std::string& name,
 TEST(CXXApi_LightApi, optim_model) {
   lite::Predictor cxx_api;
   std::vector<Place> valid_places({
-      Place{TARGET(kHost), PRECISION(kFloat)},
       Place{TARGET(kX86), PRECISION(kFloat)},
       Place{TARGET(kARM), PRECISION(kFloat)},  // Both works on X86 and ARM
   });
   // On ARM devices, the preferred X86 target not works, but it can still
   // select ARM kernels.
-  cxx_api.Build(
-      FLAGS_model_dir, Place{TARGET(kX86), PRECISION(kFloat)}, valid_places);
+  cxx_api.Build(FLAGS_model_dir, "", "", valid_places);
   cxx_api.SaveModel(FLAGS_optimized_model);
 }
 
@@ -69,14 +67,12 @@ TEST(CXXApi_LightApi, save_and_load_model) {
   // CXXAPi
   {
     std::vector<Place> valid_places({
-        Place{TARGET(kHost), PRECISION(kFloat)},
         Place{TARGET(kX86), PRECISION(kFloat)},
         Place{TARGET(kARM), PRECISION(kFloat)},  // Both works on X86 and ARM
     });
     // On ARM devices, the preferred X86 target not works, but it can still
     // select ARM kernels.
-    cxx_api.Build(
-        FLAGS_model_dir, Place{TARGET(kX86), PRECISION(kFloat)}, valid_places);
+    cxx_api.Build(FLAGS_model_dir, "", "", valid_places);
 
     auto* x = cxx_api.GetInput(0);
     SetConstInput(x);

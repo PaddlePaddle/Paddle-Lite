@@ -17,10 +17,20 @@ if (NOT LITE_ON_TINY_PUBLISH)
     # Unlike static library, module library has to link target to be able to work
     # as a single .so lib.
     target_link_libraries(paddle_lite_jni ${lib_DEPS} ${arm_kernels} ${npu_kernels})
+    if (LITE_WITH_NPU)
+        # Strips the symbols of our protobuf functions to fix the conflicts during
+        # loading HIAI builder libs (libhiai_ir.so and libhiai_ir_build.so)
+        set(LINK_FLAGS "-Wl,--version-script ${PADDLE_SOURCE_DIR}/lite/core/lite.map")
+        set_target_properties(paddle_lite_jni PROPERTIES LINK_FLAGS "${LINK_FLAGS}")
+    endif()
 else()
     add_library(paddle_lite_jni SHARED "")
     target_sources(paddle_lite_jni PUBLIC ${__lite_cc_files} paddle_lite_jni.cc tensor_jni.cc)
-    #add_dependencies(paddle_lite_jni ${lib_DEPS} ${arm_kernels} ${npu_kernels})
+    add_dependencies(paddle_lite_jni op_list_h kernel_list_h)
+    if (LITE_WITH_NPU)
+        # Need to add HIAI runtime libs (libhiai.so) dependency
+        target_link_libraries(paddle_lite_jni ${npu_runtime_libs})
+    endif()
 endif()
 
 if (APPLE)

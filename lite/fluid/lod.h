@@ -21,7 +21,7 @@ namespace lite {
 namespace fluid {
 using LoD = std::vector<std::vector<size_t>>;
 
-LoD ToAbsOffset(const LoD &in) {
+static LoD ToAbsOffset(const LoD &in) {
   // the lowest level stores relative offsets
   if (in.empty() || in.size() == 1) return in;
   LoD result = in;

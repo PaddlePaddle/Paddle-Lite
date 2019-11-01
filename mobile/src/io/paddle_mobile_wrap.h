@@ -16,9 +16,9 @@ limitations under the License. */
 
 #include <cstdint>
 #include <map>
+#include <memory>
 #include <string>
 #include <unordered_map>
-#include <memory>
 #include <utility>
 #include <vector>
 
@@ -28,84 +28,67 @@ namespace wrap {
 #ifndef PADDLE_MOBILE_FPGA
 
 // device type
-enum DeviceTypeEnum {
-  kINVALID = -1,
+__attribute__((__visibility__("default"))) enum DeviceTypeEnum {
   kCPU = 0,
-  kFPGA = 1,
-  kGPU_MALI = 2,
-  kGPU_CL = 3
+  kGPU_CL = 1
 };
-
-template <DeviceTypeEnum T>
-struct DeviceType {};
-
-typedef DeviceType<kCPU> CPU;
-typedef DeviceType<kFPGA> FPGA;
-typedef DeviceType<kGPU_MALI> GPU_MALI;
-typedef DeviceType<kGPU_CL> GPU_CL;
 
 // ddim class
 class DDim {
  public:
-  int size();
-  int64_t &operator[](int idx);
-  int64_t operator[](int idx) const;
+  __attribute__((__visibility__("default"))) int size();
+  __attribute__((__visibility__("default"))) int64_t &operator[](int idx);
+  __attribute__((__visibility__("default"))) int64_t operator[](int idx) const;
 
-  std::vector<int64_t> dims;
+  __attribute__((__visibility__("default"))) std::vector<int64_t> dims;
 };
-DDim make_ddim(const std::vector<int64_t> &dims);
+__attribute__((__visibility__("default"))) DDim make_ddim(
+    const std::vector<int64_t> &dims);
 
 // tensor class
 class Tensor {
  public:
-  Tensor(float *data, DDim ddim);
+  __attribute__((__visibility__("default"))) Tensor(float *data, DDim ddim);
 
-  template <typename T>
-  float *data() const;
-  DDim dims() const;
+  __attribute__((__visibility__("default"))) float *data() const;
+  __attribute__((__visibility__("default"))) DDim dims() const;
 
+ private:
   float *data_;
   DDim ddim_;
 };
 
-// pm status
-enum PMStatus {
-  PMSuccess = 0xFF,        /*!< No errors */
-  PMNotInitialized = 0x01, /*!< Data not initialized. */
-  PMInvalidValue = 0x02,   /*!< Incorrect variable value. */
-  PMMemAllocFailed = 0x03, /*!< Memory allocation error. */
-  PMUnKownError = 0x04,    /*!< Unknown error. */
-  PMOutOfAuthority = 0x05, /*!< Try to modified data not your own*/
-  PMOutOfMem = 0x06,       /*!< OOM error*/
-  PMUnImplError = 0x07,    /*!< Unimplement error. */
-  PMWrongDevice = 0x08     /*!< un-correct device. */
-};
-
 // net class
-template <typename Device>
 class Net {
  public:
-  Net();
-  ~Net();
-  void SetThreadNum(int thread_num);
-  PMStatus Load(const std::string &dirname, const bool optimize = false,
-                const bool quantification = false, const int batch_size = 1,
-                const bool lod_mode = false);
-  PMStatus Load(const std::string &model_path, const std::string &para_path,
-                const bool optimize = false, const bool quantification = false,
-                const int batch_size = 1, const bool lod_mode = false);
-  bool LoadCombinedMemory(size_t model_len, const uint8_t *model_buf,
-                          size_t combined_params_len,
-                          uint8_t *combined_params_buf, bool optimize = false,
-                          bool quantification = false, int batch_size = 1,
-                          bool lod_mode = false);
-  PMStatus Predict(const Tensor &input);
-  std::vector<float> Predict(const std::vector<float> &input,
-                             const std::vector<int64_t> &dims);
-  PMStatus Predict();
-  void Feed(const std::string &var_name, const Tensor &input);
-  std::shared_ptr<Tensor> Fetch(const std::string &var_name);
+  __attribute__((__visibility__("default"))) Net(DeviceTypeEnum device);
+  __attribute__((__visibility__("default"))) ~Net();
+  __attribute__((__visibility__("default"))) void SetThreadNum(int thread_num);
+  __attribute__((__visibility__("default"))) void SetCLPath(std::string path);
+  __attribute__((__visibility__("default"))) bool Load(
+      const std::string &dirname, const bool optimize = false,
+      const bool quantification = false, const int batch_size = 1,
+      const bool lod_mode = false);
+  __attribute__((__visibility__("default"))) bool Load(
+      const std::string &model_path, const std::string &para_path,
+      const bool optimize = false, const bool quantification = false,
+      const int batch_size = 1, const bool lod_mode = false);
+  __attribute__((__visibility__("default"))) bool LoadCombinedMemory(
+      size_t model_len, const uint8_t *model_buf, size_t combined_params_len,
+      uint8_t *combined_params_buf, bool optimize = false,
+      bool quantification = false, int batch_size = 1, bool lod_mode = false);
+  __attribute__((__visibility__("default"))) std::vector<float> Predict(
+      const std::vector<float> &input, const std::vector<int64_t> &dims);
+  __attribute__((__visibility__("default"))) bool Predict();
+  __attribute__((__visibility__("default"))) bool Predict(const Tensor &input);
+  __attribute__((__visibility__("default"))) void Feed(
+      const std::string &var_name, const Tensor &input);
+  __attribute__((__visibility__("default"))) std::shared_ptr<Tensor> Fetch(
+      const std::string &var_name);
+
+ private:
   void *engine_ = nullptr;
+  DeviceTypeEnum device_;
 };
 
 #endif

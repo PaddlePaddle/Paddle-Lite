@@ -32,40 +32,57 @@ TEST(reshape_host, compute) {
   ReshapeCompute reshape;
   operators::ReshapeParam param;
 
-  Tensor x;
-  Tensor actual_shape;
+  Tensor input;
   Tensor output;
-
-  x.Resize(DDim(std::vector<int64_t>({1, 2, 4, 6})));
-  actual_shape.Resize(DDim(std::vector<int64_t>({2})));
-
-  auto* x_data = x.mutable_data<float>();
-  auto* actual_shape_data = actual_shape.mutable_data<int>();
-  for (int i = 0; i < x.dims().production(); i++) {
-    x_data[i] = i;
+  input.Resize({1, 2, 4, 6});
+  auto* input_data = input.mutable_data<float>();
+  for (int i = 0; i < input.numel(); i++) {
+    input_data[i] = i;
   }
-  actual_shape_data[0] = 6;
-  actual_shape_data[1] = 8;
+  Tensor shape_tensor;
+  shape_tensor.Resize({2});
+  auto* shape_tensor_data = shape_tensor.mutable_data<int>();
+  shape_tensor_data[0] = 6;
+  shape_tensor_data[1] = 8;
 
-  param.x = &x;
-  param.shape = {-1, 0, 3, 2, 1};
-  param.output = &output;
-  param.actual_shape = &actual_shape;
+  // set param and run
+  param.x = &input;
+  param.shape_tensor = &shape_tensor;  // use shape_tensor
   param.inplace = false;
+  param.output = &output;
   reshape.SetParam(param);
   reshape.Run();
 
   // check output dims
-  CHECK_EQ(actual_shape.dims().production(), output.dims().size());
+  CHECK_EQ(shape_tensor.numel(), output.numel());
   for (int i = 0; i < output.dims().size(); i++) {
-    CHECK_EQ(output.dims()[i], actual_shape_data[i]);
+    CHECK_EQ(output.dims()[i], shape_tensor_data[i]);
   }
 
   // check output data
   auto* output_data = output.mutable_data<float>();
-  CHECK_NE(output_data, x_data);
-  for (int i = 0; i < output.dims().production(); i++) {
-    EXPECT_NEAR(output_data[i], x_data[i], 1e-6);
+  CHECK_NE(output_data, input_data);
+  for (int i = 0; i < output.numel(); i++) {
+    EXPECT_NEAR(output_data[i], input_data[i], 1e-6);
+  }
+
+  // use shape, set param and run
+  param.shape_tensor = nullptr;
+  param.shape_vct = {-1, 0, 3, 2, 1};
+  reshape.SetParam(param);
+  reshape.Run();
+
+  // check output dims
+  CHECK_EQ(shape_tensor.numel(), output.numel());
+  for (int i = 0; i < output.dims().size(); i++) {
+    CHECK_EQ(output.dims()[i], shape_tensor_data[i]);
+  }
+
+  // check output data
+  output_data = output.mutable_data<float>();
+  CHECK_NE(output_data, input_data);
+  for (int i = 0; i < output.numel(); i++) {
+    EXPECT_NEAR(output_data[i], input_data[i], 1e-6);
   }
 
   // check output data if inplace = true;
@@ -73,7 +90,7 @@ TEST(reshape_host, compute) {
   reshape.SetParam(param);
   reshape.Run();
   output_data = output.mutable_data<float>();
-  CHECK_EQ(output_data, x_data);
+  CHECK_EQ(output_data, input_data);
 }
 
 TEST(reshape, retrive_op) {

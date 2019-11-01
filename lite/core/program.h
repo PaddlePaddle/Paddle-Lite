@@ -89,9 +89,18 @@ struct Instruction {
               std::unique_ptr<KernelBase>&& kernel)
       : op_(op), kernel_(std::move(kernel)) {
 #ifdef LITE_WITH_PROFILE
-    profile_id_ = profile::BasicProfiler<profile::BasicTimer>::Global()
-                      .NewRcd(kernel_->SerializedKernelType())
-                      .id();
+    if (op_->Type() != "feed" && op_->Type() != "fetch") {
+      profile_id_ = profile::BasicProfiler<profile::BasicTimer>::Global()
+                        .NewRcd(kernel_->SerializedKernelType())
+                        .id();
+      kernel_->SetProfileID(profile_id_);
+      // Set profile custom info
+      auto& profiler =
+          *profile::BasicProfiler<profile::BasicTimer>::Global().mutable_record(
+              profile_id_);
+      profiler.SetCustomInfo("op_type", op_->Type());
+      profiler.SetCustomInfo("op_info", op_->SerializedOpInfo());
+    }
 #endif  // LITE_WITH_PROFILE
   }
 
@@ -137,7 +146,14 @@ class LITE_API RuntimeProgram {
 
   const std::vector<Instruction>& instructions() const { return instructions_; }
 
+  // `SaveOpInfosToProgram` will update the op list(ops_) of the block 0
+  // in ProgramDesc.
   void SaveOpInfosToProgram(cpp::ProgramDesc* desc);
+
+  // `UpdateVarsOfProgram` will update the var list(vars_) of the block 0 in
+  // ProgramDesc. Namely, if a new var created in some passes, its var_desc will
+  // be added in vars_.
+  void UpdateVarsOfProgram(cpp::ProgramDesc* desc);
 
  private:
   RuntimeProgram(const RuntimeProgram&) = delete;

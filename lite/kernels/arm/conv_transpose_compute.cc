@@ -14,7 +14,7 @@
 
 #include "lite/kernels/arm/conv_transpose_compute.h"
 #include <vector>
-#include "lite/arm/math/funcs.h"
+#include "lite/backends/arm/math/funcs.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/type_system.h"
 
@@ -49,10 +49,11 @@ void Conv2DTransposeCompute::PrepareForRun() {
 
   lite::Tensor tmp_weights;
   lite::arm::math::prepackA(
-      &tmp_weights, *(param.filter), 1., m, k, group, true, &ctx);
+      &tmp_weights, *(param.filter), 1.f, m, k, group, true, &ctx);
   param.filter->Resize(tmp_weights.dims());
   param.filter->CopyDataFrom(tmp_weights);
   param.filter->Resize(w_dims);
+  is_first_epoch_ = false;
 }
 
 void Conv2DTransposeCompute::Run() {
@@ -80,7 +81,7 @@ void Conv2DTransposeCompute::Run() {
   int group_size_out = wout * hout * chout / group;
   int group_size_coldata = m * n;
   auto& ctx = this->ctx_->template As<ARMContext>();
-  int hblock = lite::arm::math::get_hblock(ctx.arch());
+  int hblock = lite::arm::math::get_hblock(&ctx);
   int m_roundup = hblock * ((m + hblock - 1) / hblock);
   int group_size_weights = ((m_roundup * k + 15) / 16) * 16;
   bool flag_1x1s1p1 = (kw == 1) && (kh == 1) && (param.strides[0] == 1) &&
@@ -96,7 +97,7 @@ void Conv2DTransposeCompute::Run() {
     const float* din_batch = din + i * chin * hin * win;
     float* dout_batch = dout + i * chout * hout * wout;
     float* col_data = static_cast<float*>(ctx.workspace_data<float>()) +
-                      ctx.l2_cache_size() / sizeof(float);
+                      ctx.llc_size() / sizeof(float);
     if (flag_1x1s1p1) {
       col_data = dout_batch;
     }
@@ -112,7 +113,7 @@ void Conv2DTransposeCompute::Run() {
                                      weights_group,
                                      din_group,
                                      n,
-                                     0.,
+                                     0.f,
                                      coldata_group,
                                      n,
                                      nullptr,

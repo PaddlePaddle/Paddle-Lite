@@ -21,7 +21,7 @@ namespace operators {
 
 bool IsEmptyOp::CheckShape() const { return true; }
 
-bool IsEmptyOp::InferShape() const {}
+bool IsEmptyOp::InferShape() const { return true; }
 
 bool IsEmptyOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   param_.X =

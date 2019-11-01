@@ -1,6 +1,9 @@
 lite_cc_library(fuse_fc
         SRCS fc_fuser.cc
         DEPS pattern_matcher_high_api)
+lite_cc_library(fuse_shuffle_channel
+        SRCS shuffle_channel_fuser.cc
+        DEPS pattern_matcher_high_api)
 lite_cc_library(fuse_conv_elementwise
         SRCS conv_elementwise_fuser.cc
         DEPS pattern_matcher_high_api)
@@ -16,14 +19,23 @@ lite_cc_library(fuse_elementwise_add_activation
 lite_cc_library(fuse_quant_dequant
         SRCS quant_dequant_op_fuser.cc
         DEPS pattern_matcher_high_api)
+lite_cc_library(fuse_transpose_softmax_transpose
+        SRCS transpose_softmax_transpose_fuser.cc
+        DEPS pattern_matcher_high_api)
+lite_cc_library(fuse_interpolate
+        SRCS interpolate_fuser.cc
+        DEPS pattern_matcher_high_api)       
 
 set(mir_fusers
     fuse_fc
+    fuse_shuffle_channel
     fuse_conv_elementwise
     fuse_conv_activation
     fuse_conv_bn
     fuse_quant_dequant
     fuse_elementwise_add_activation
+    fuse_transpose_softmax_transpose
+    fuse_interpolate
     CACHE INTERNAL "fusers")
 
 if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)

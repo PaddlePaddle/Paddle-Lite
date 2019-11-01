@@ -14,9 +14,12 @@
 
 #pragma once
 #include <string>
+#include <utility>
 #include <vector>
+#include "lite/api/paddle_place.h"
 #include "lite/core/scope.h"
 #include "lite/core/tensor.h"
+#include "lite/core/types.h"
 #include "lite/model_parser/cpp/block_desc.h"
 #include "lite/model_parser/desc_apis.h"
 #include "lite/utils/all.h"
@@ -33,7 +36,8 @@ using param_t = Any;
   bool enable_int8{false};           \
   float input_scale{1.0};            \
   std::vector<float> weight_scale{}; \
-  float output_scale{1.0};
+  float output_scale{1.0};           \
+  int bit_length{8};
 
 /// ----------------------- Functional operators ------------------------------
 struct FeedParam {
@@ -66,9 +70,9 @@ struct CalibParam {
 };
 
 struct GraphParam {
-  std::vector<const lite::Tensor*> inputs{};
-  std::vector<lite::Tensor*> outputs{};
-  std::string model_name{"model"};
+  std::vector<std::pair<std::string, const lite::Tensor*>> inputs{};
+  lite::Tensor* weight{};
+  std::vector<std::pair<std::string, lite::Tensor*>> outputs{};
 };
 
 /// -------------------------- NN operators ------------------------------------
@@ -80,7 +84,7 @@ struct FcParam {
   lite::Tensor* output{nullptr};
   lite::DDim in_mat_dims;
   int in_num_col_dims{1};
-  bool weight_transposed{false};
+  std::string activation_type{""};
   // for int8
   WITH_INT8_CONFIG
 };
@@ -95,6 +99,7 @@ struct InterpolateParam {
   int out_h{-1};
   int out_w{-1};
   bool align_corners{true};
+  int align_mode{1};
   std::string interp_method{"Nearest"};
 };
 
@@ -119,6 +124,23 @@ struct MulGradParam {
 
   int x_num_col_dims{1};
   int y_num_col_dims{1};
+};
+
+// For ReduceMean Op
+struct ReduceMeanParam {
+  lite::Tensor* X{};
+  lite::Tensor* Out{};
+
+  std::vector<int> dim;
+  bool keep_dim{false};
+};
+
+// For Stack Op
+struct StackParam {
+  std::vector<lite::Tensor*> X;
+  lite::Tensor* Out{};
+
+  int axis{0};
 };
 
 // For Power Op
@@ -171,11 +193,12 @@ struct SoftmaxParam {
 // For Reshape and Reshape2 Op
 struct ReshapeParam {
   const lite::Tensor* x{};
-  const lite::Tensor* actual_shape{nullptr};
+  std::vector<const lite::Tensor*> shape_tensor_vct{};
+  const lite::Tensor* shape_tensor{};
+  std::vector<int> shape_vct{};
   lite::Tensor* output{};
-  lite::Tensor* xshape{};
 
-  std::vector<int> shape{};
+  lite::Tensor* xshape{};
   bool inplace{false};
 };
 
@@ -184,6 +207,30 @@ struct ConcatParam {
   std::vector<lite::Tensor*> x{};
   lite::Tensor* output{};
   int axis{0};
+};
+
+/// ----------------------- activation operators ----------------------
+struct ActivationParam {
+  const lite::Tensor* X{};
+  float Leaky_relu_alpha{0};   // leaky_relu param
+  float Relu_clipped_coef{6};  // relu_clipped param
+  std::string Prelu_mode{
+      "channel"};  // prelu param, can be "all", "channel" or "element"
+  lite::Tensor* Prelu_alpha{};  // prelu param
+  float Swish_beta;             // swish param
+  float hard_sigmoid_slope{0.2};
+  float hard_sigmoid_offset{0.5};
+  lite::Tensor* Out{};
+  bool has_active{false};
+  lite_api::ActivationType active_type;
+};
+
+struct ActivationGradParam {
+  const lite::Tensor* X{};
+  const lite::Tensor* Out{};
+  // for backward
+  lite::Tensor* X_grad{};
+  const lite::Tensor* Out_grad{};
 };
 
 // For Convolution op
@@ -209,6 +256,8 @@ struct ConvParam {
   float scale_weights{1.0f};      // only used with mkl-dnn int8
   bool force_fp32_output{false};  // only used in mkl-dnn int8
   std::string data_format{"Anylayout"};
+  // for activation
+  ActivationParam activation_param;
   // for int8
   WITH_INT8_CONFIG
 };
@@ -247,6 +296,8 @@ struct PoolParam {
   bool ceil_mode{false};
   bool use_quantizer{false};
   std::string data_format{"AnyLayout"};
+  // for int8
+  WITH_INT8_CONFIG
 };
 
 // For Dropout op
@@ -274,6 +325,8 @@ struct SplitParam {
 struct TransposeParam {
   const lite::Tensor* x{};
   lite::Tensor* output{};
+  lite::Tensor* xshape{};
+
   std::vector<int> axis;
   bool use_mkldnn{false};
   std::string data_format{"AnyLayout"};
@@ -285,6 +338,10 @@ struct ElementwiseParam {
   const lite::Tensor* Y{};
   lite::Tensor* Out{};
   int axis{-1};  // for broadcasting.
+  // for int8
+  WITH_INT8_CONFIG
+  float x_input_scale{1.0};
+  float y_input_scale{1.0};
 };
 
 struct ElementwiseGradParam {
@@ -301,26 +358,6 @@ struct FusionElementwiseActivationParam : public ElementwiseParam {
 
 struct FusionElementwiseActivationGradParam : public ElementwiseGradParam {
   std::string act_type;
-};
-
-/// ----------------------- activation operators ----------------------
-struct ActivationParam {
-  const lite::Tensor* X{};
-  float Leaky_relu_alpha{0};   // leaky_relu param
-  float Relu_clipped_coef{6};  // relu_clipped param
-  std::string Prelu_mode{
-      "channel"};  // prelu param, can be "all", "channel" or "element"
-  lite::Tensor* Prelu_alpha{};  // prelu param
-  float Swish_beta;             // swish param
-  lite::Tensor* Out{};
-};
-
-struct ActivationGradParam {
-  const lite::Tensor* X{};
-  const lite::Tensor* Out{};
-  // for backward
-  lite::Tensor* X_grad{};
-  const lite::Tensor* Out_grad{};
 };
 
 /// ----------------------- mean operators ----------------------
@@ -344,6 +381,28 @@ struct FillConstantParam {
   // useless for x86, keep it for compatibility
   bool force_cpu{false};
   lite::Tensor* Out{};
+};
+struct FillConstantBatchLikeParam {
+  int dtype{static_cast<int>(VarDescAPI::VarDataType::FP32)};
+  std::vector<int64_t> shape{};
+  float value{0.0f};
+  // useless for x86, keep it for compatibility
+  bool force_cpu{false};
+  lite::Tensor* out{};
+  const lite::Tensor* input{};
+  int input_dim_idx{0};
+  int output_dim_idx{0};
+};
+
+struct FillConstantBatchSizeLikeParam {
+  lite::Tensor* Input;
+  lite::Tensor* Out;
+
+  std::vector<int> shape;
+  int input_dim_idx{0};
+  int output_dim_idx{0};
+  int dtype{static_cast<int>(VarDescAPI::VarDataType::FP32)};
+  float value{0.0f};
 };
 
 //
@@ -473,26 +532,25 @@ struct BoxCoderParam {
   const lite::Tensor* prior_box_var{};
   const lite::Tensor* target_box{};
   lite::Tensor* proposals{};
-  int axis{0};
-  bool box_normalized{true};
   // code_type: encode_center_size and decode_center_size
-  std::string code_type;
+  std::string code_type{"encode_center_size"};
+  bool box_normalized{true};
+  int axis{0};
+  std::vector<float> variance{};
 };
 
 /// ----------------------- multiclass_nms operators ----------------------
 struct MulticlassNmsParam {
-  const lite::Tensor* bbox_data{};
-  const lite::Tensor* conf_data{};
-  lite::Tensor* out;
-  std::vector<int> priors;
-  int class_num;
-  int background_label;
+  const lite::Tensor* bboxes{};
+  const lite::Tensor* scores{};
+  lite::Tensor* out{};
+  int background_label{0};
+  float score_threshold{};
+  int nms_top_k{};
+  float nms_threshold{0.3};
+  float nms_eta{1.0};
   int keep_top_k;
-  int nms_top_k;
-  float score_threshold;
-  float nms_threshold;
-  float nms_eta;
-  bool share_location{true};
+  bool normalized{true};
 };
 
 /// ----------------------- priorbox operators ----------------------
@@ -516,12 +574,13 @@ struct PriorBoxParam {
   int prior_num{0};
   // priortype: prior_min, prior_max, prior_com
   std::vector<std::string> order;
+  bool min_max_aspect_ratios_order{false};
 };
 
 struct DensityPriorBoxParam : public PriorBoxParam {
   std::vector<float> fixed_sizes;
   std::vector<float> fixed_ratios;
-  std::vector<float> density_sizes;
+  std::vector<int> density_sizes;
 };
 /// ----------------------- GRU operators ----------------------f
 struct GRUParam {
@@ -576,8 +635,19 @@ struct SequenceSoftmaxParam {
 struct NormParam {
   const lite::Tensor* X{};
   lite::Tensor* Out{};
+  lite::Tensor* Norm{};
   int axis{1};
   float epsilon{1e-10};
+};
+struct LayerNormParam {
+  const lite::Tensor* X{};
+  const lite::Tensor* Scale{};
+  const lite::Tensor* Bias{};
+  lite::Tensor* Y{};
+  lite::Tensor* Mean{};
+  lite::Tensor* Variance{};
+  int begin_norm_axis{1};
+  float epsilon{1e-5};
 };
 
 struct LogicalParam {
@@ -644,7 +714,11 @@ struct BeamSearchParam {
 struct SequencePoolParam {
   const lite::Tensor* X{};
   lite::Tensor* Out{};
-  std::string pool_type;
+  std::string pool_type{"AVERAGE"};
+#ifdef LITE_WITH_X86
+  float pad_value{0.0};
+  lite::Tensor* MaxIndex{};
+#endif
 };
 
 struct SequenceExpandParam {
@@ -652,6 +726,12 @@ struct SequenceExpandParam {
   const lite::Tensor* Y{};
   lite::Tensor* Out{};
   int ref_level{-1};
+};
+
+struct SequenceExpandAsParam {
+  const lite::Tensor* x{nullptr};
+  const lite::Tensor* y{nullptr};
+  lite::Tensor* out{nullptr};
 };
 
 struct ReduceMaxParam {
@@ -695,8 +775,54 @@ struct SliceParam {
   std::vector<int> decrease_axis{};
 };
 
-/// ----------------------- shape operators ----------------------
+struct AffineChannelParam {
+  const lite::Tensor* X{};  // X is 4D tensor
+  const lite::Tensor* Scale{};
+  const lite::Tensor* Bias{};
+  std::string data_layout{"NCHW"};  // optional string from: NHWC, NCHW.
+  lite::Tensor* Out{};
+};
+
+struct AnchorGeneratorParam {
+  const lite::Tensor* Input{};
+  std::vector<float> anchor_sizes{};
+  std::vector<float> aspect_ratios{};
+  std::vector<float> stride{};
+  std::vector<float> variances{{0.1, 0.1, 0.2, 0.2}};
+  float offset{0.5};
+
+  lite::Tensor* Anchors{};
+  lite::Tensor* Variances{};
+};
+
+struct GenerateProposalsParam {
+  // inputs
+  const lite::Tensor* Scores{};
+  const lite::Tensor* BboxDeltas{};
+  const lite::Tensor* ImInfo{};
+  lite::Tensor* Anchors{};
+  lite::Tensor* Variances{};
+
+  // attrs
+  int pre_nms_topN{6000};
+  int post_nms_topN{1000};
+  float nms_thresh{0.5};
+  float min_size{0.1};
+  float eta{1.0};
+
+  // outputs
+  lite::Tensor* RpnRois{};
+  lite::Tensor* RpnRoiProbs{};
+};
+/// ----------------------- squeeze operators ----------------------
 struct SqueezeParam {
+  const lite::Tensor* X{};
+  lite::Tensor* Out{};
+  lite::Tensor* XShape{};
+  std::vector<int> axes{};
+};
+
+struct UnsqueezeParam {
   const lite::Tensor* X{};
   lite::Tensor* Out{};
   lite::Tensor* XShape{};
@@ -718,6 +844,52 @@ struct MatMulParam {
   bool transpose_X{false};
   bool transpose_Y{false};
   float alpha{1.0f};
+};
+
+struct GatherParam {
+  const lite::Tensor* X{};
+  const lite::Tensor* Index{};
+  lite::Tensor* Out{};
+};
+
+/// ----------------------- assign operators -----------------------
+struct AssignParam {
+  const lite::Tensor* X{};
+  lite::Tensor* Out{};
+};
+
+/// ----------------------- roi_align operators -----------------------
+struct RoiAlignParam {
+  lite::Tensor* X{};
+  lite::Tensor* ROIs{};
+  lite::Tensor* Out{};
+  float spatial_scale{1.0};
+  int pooled_height{1};
+  int pooled_width{1};
+  int sampling_ratio{-1};
+};
+
+/// ----------------------- box_clip operators -----------------------
+struct BoxClipParam {
+  const lite::Tensor* Input{};
+  const lite::Tensor* ImInfo{};
+  lite::Tensor* Output{};
+};
+
+struct RangeParam {
+  const lite::Tensor* Start;
+  const lite::Tensor* End;
+  const lite::Tensor* Step;
+  lite::Tensor* Out;
+};
+
+/// ----------------------- assign_value operators -----------------------
+struct AssignValueParam {
+  std::vector<int> shape{};
+  int dtype{};
+  std::vector<float> fp32_values{};
+  std::vector<int> int32_values{};
+  lite::Tensor* Out{};
 };
 
 }  // namespace operators

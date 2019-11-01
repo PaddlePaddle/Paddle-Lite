@@ -22,175 +22,176 @@
 #include "lite/core/mir/pass_registry.h"
 #include "lite/core/mir/pattern_matcher.h"
 
-#include "ai_ddk_lib/include/HiAiModelManagerService.h"
-#include "ai_ddk_lib/include/graph/graph.h"
-#include "ai_ddk_lib/include/graph/model.h"
-#include "ai_ddk_lib/include/graph/op/all_ops.h"  // for ge::op::Data
-#include "ai_ddk_lib/include/graph/operator_reg.h"
-#include "lite/npu/bridge/paddle_use_npu_bridges.h"
-#include "lite/npu/bridge/registry.h"
-#include "lite/npu/bridge/utils.h"
-#include "lite/npu/npu_helper.h"
+#include "lite/backends/npu/builder.h"
+#include "lite/kernels/npu/bridges/paddle_use_npu_bridges.h"
+#include "lite/kernels/npu/bridges/registry.h"
 
 namespace paddle {
 namespace lite {
 namespace mir {
 namespace subgraph {
 
-void GenerateNPUProgramPass::NPUSortHelper(
-    Node* node,
-    const std::unordered_set<Node*>& nodes_all,
-    std::unordered_set<const Node*>* visited_nodes,
-    std::vector<Node*>* ret) {
-  for (auto& var_node : node->inlinks) {
-    if (var_node->inlinks.empty()) continue;
-    auto* op_node = var_node->inlinks.front();
-    if (nodes_all.count(op_node) && !visited_nodes->count(op_node)) {
-      NPUSortHelper(op_node, nodes_all, visited_nodes, ret);
-    }
+std::shared_ptr<ge::Operator> GenerateNPUProgramPass::CvtVarNode(
+    lite::mir::Node* var_node, const Scope* scope) {
+  CHECK(var_node->IsArg());
+  const auto& arg = var_node->AsArg();
+  VLOG(4) << "Convert var node " << arg.name;
+
+  auto* var = scope->FindVar(arg.name);
+  CHECK(var);
+  auto* tensor = var->GetMutable<lite::Tensor>();
+  CHECK(tensor);
+  auto dims = tensor->dims();
+  if (arg.is_weight) {
+    auto wgt = std::make_shared<ge::op::Const>(arg.name);
+    LOG(INFO) << "in convert const:" << arg.name;
+    VLOG(4) << dims;
+    wgt->set_attr_value(lite::npu::CvtFromLiteTensor(tensor));
+    return wgt;
+  } else {
+    CHECK_EQ(dims.size(), 4);
+    LOG(INFO) << "in convert data:" << arg.name;
+    LOG(INFO) << dims;
+    // TODO(xxx): support more types and dims size
+    ge::TensorDesc desc(ge::Shape(dims.Vectorize()),
+                        ge::Format::FORMAT_NCHW,
+                        ge::DataType::DT_FLOAT);
+
+    //   auto size = desc.GetShape().GetShapeSize();
+    //  ge::TensorUtils::SetSize(desc, size*sizeof(float));
+    //  ge::TensorUtils::SetRealDimCnt(desc, 4);
+    auto data = std::make_shared<ge::op::Data>(arg.name);
+    data->update_input_desc_x(desc);
+    return data;
   }
-  ret->push_back(node);
-  visited_nodes->insert(node);
+  return nullptr;
 }
 
-void GenerateNPUProgramPass::CvtOpNodes(
+void GenerateNPUProgramPass::CvtAllOpNodes(
     const std::vector<Node*>& nodes2cvt,
-    std::vector<std::string>* in_vars_name,
-    std::vector<std::string>* out_vars_name,
-    lite::npu::bridge::node_map_type* cvted_vars,
-    std::unordered_set<const Node*>* nodes2rm) {
-  const auto& bridges = lite::npu::bridge::Factory::Instance();
+    lite::kernels::npu::bridges::node_map_type* converted_vars) {
+  const auto& bridges = lite::kernels::npu::bridges::Factory::Instance();
   const auto& cvtfunc_map = bridges.AllFunctions();
+  // return record all converted vars
+  // op node's inputs must be found in converted_vars
   for (auto& node : nodes2cvt) {
-    lite::npu::bridge::node_map_type node_inputs;
+    lite::kernels::npu::bridges::node_map_type node_inputs;
     auto& stmt = node->AsStmt();
     for (auto& var_node : node->inlinks) {
       auto& arg = var_node->AsArg();
-      auto var_name = arg.name;
-      if (!cvted_vars->count(var_name)) {
-        if (arg.is_weight) continue;
-        cvted_vars->insert(std::make_pair(
-            var_name,
-            lite::npu::bridge::CvtNode(var_node, stmt.op()->scope())));
-        in_vars_name->push_back(var_name);
+      // weight should be handled in the converter, so skip here
+      if (arg.is_weight) {
+        continue;
       }
-      node_inputs.insert(*cvted_vars->find(var_name));
+      auto var_name = arg.name;
+      if (!converted_vars->count(var_name)) {
+        converted_vars->insert(
+            std::make_pair(var_name, CvtVarNode(var_node, stmt.op()->scope())));
+      }
+      node_inputs.insert(*converted_vars->find(var_name));
     }
     auto node_outputs = cvtfunc_map.at(stmt.op_type())(stmt.op(), node_inputs);
-    cvted_vars->insert(node_outputs.begin(), node_outputs.end());
-    nodes2rm->insert(node);
-    for (auto& var_node : node->outlinks) {
-      for (auto& next_op_node : var_node->outlinks) {
-        if (std::find(nodes2cvt.begin(), nodes2cvt.end(), next_op_node) ==
-            nodes2cvt.end()) {
-          out_vars_name->push_back(var_node->AsArg().name);
-          break;
-        }
-      }
-    }
+    converted_vars->insert(node_outputs.begin(), node_outputs.end());
   }
 }
 
-void GenerateNPUProgramPass::GenNPUGraphOpNode(
-    const std::unique_ptr<SSAGraph>& graph,
-    int sub_id,
-    const std::unordered_set<Node*>& nodes_all) {
-  std::unordered_set<const Node*> visited_nodes;
-  std::vector<Node*> ret;
-  for (auto& node : nodes_all) {
-    if (!node->IsStmt()) continue;
-    if (visited_nodes.count(node)) continue;
-    NPUSortHelper(node, nodes_all, &visited_nodes, &ret);
-  }
+std::string GenerateNPUProgramPass::BuildNPUGraph(
+    const std::unordered_set<Node*>& op_nodes,
+    const std::unordered_set<Node*>& in_data_vars,
+    const std::unordered_set<Node*>& out_data_vars,
+    int sub_id) {
+  auto ordered_nodes = GetTopologicalOrder(op_nodes);
+  lite::kernels::npu::bridges::node_map_type converted_vars;
+  CvtAllOpNodes(ordered_nodes, &converted_vars);
 
-  std::vector<std::string> in_vars_name;
-  std::vector<std::string> out_vars_name;
-  lite::npu::bridge::node_map_type cvted_vars;
-  std::unordered_set<const Node*> nodes2rm;
-  CvtOpNodes(ret, &in_vars_name, &out_vars_name, &cvted_vars, &nodes2rm);
-  // insert new graph op node
+  std::vector<std::string> in_var_names;
+  std::vector<std::string> out_var_names;
   std::vector<ge::Operator> inputs;
   std::vector<ge::Operator> outputs;
-  for (auto i : in_vars_name) {
-    inputs.push_back(*cvted_vars.at(i));
+  for (auto i : in_data_vars) {
+    auto argname = i->AsArg().name;
+    in_var_names.push_back(argname);
+    inputs.push_back(*converted_vars.at(argname));
   }
-  for (auto i : out_vars_name) {
-    outputs.push_back(*cvted_vars.at(i));
+  for (auto i : out_data_vars) {
+    auto argname = i->AsArg().name;
+    out_var_names.push_back(argname);
+    outputs.push_back(*converted_vars.at(argname));
   }
-  std::string model_name("hiai_npu_client_" + std::to_string(sub_id) + ".om");
-  if (!npu::BuildNPUClient(inputs, outputs, model_name)) {
-    LOG(FATAL) << "Build NPU failed subgraph " << sub_id;
+
+  std::string weight_var_name = "graph" + std::to_string(sub_id) + "_weights";
+  auto any_op = (*op_nodes.begin())->AsStmt().op();
+  auto weight = any_op->scope()->Var(weight_var_name)->GetMutable<Tensor>();
+  weight->set_persistable(true);
+  weight->set_precision(PRECISION(kInt8));
+  // Compiling IR graph to NPU model and store mode data into weight tensor with
+  // persistable=true, Sothat the model parser can recognize it and save it to
+  // param files
+  if (!lite::npu::BuildModel(inputs, outputs, weight)) {
+    LOG(WARNING) << "Build NPU failed subgraph " << sub_id;
+    throw std::runtime_error("Build NPU failed subgraph.");
   }
   LOG(INFO) << "[NPU] Build NPU Client success subgraph " << sub_id;
+  return weight_var_name;
+}
 
-  cpp::OpDesc op_desc;
-  op_desc.SetType("graph_op");
-  op_desc.SetInput("Inputs", in_vars_name);
-  op_desc.SetOutput("Outputs", out_vars_name);
-  op_desc.SetAttr("model_name", model_name);
-  auto graph_op = LiteOpRegistry::Global().Create("graph_op");
-  // TODO(zpy): support multi inputs op
-  auto start_op = ret.front()->AsStmt().op();
-  auto* scope = start_op->scope();
-  graph_op->Attach(op_desc, scope);
+void GenerateNPUProgramPass::GenNPUSubgraph(
+    const std::unique_ptr<SSAGraph>& graph,
+    const std::unordered_set<Node*>& op_nodes,
+    int sub_id) {
+  std::unordered_set<Node*> in_data_vars;
+  std::unordered_set<Node*> in_wgt_vars;
+  std::unordered_set<Node*> out_data_vars;
+  std::unordered_set<Node*> out_unused_vars;
+  FindInputOutputVars(
+      op_nodes, &in_data_vars, &in_wgt_vars, &out_data_vars, &out_unused_vars);
 
-  auto valid_places = start_op->valid_places();
-  auto* new_op_node = graph->GraphCreateInstructNode(graph_op, valid_places);
+  auto weight_var_name =
+      BuildNPUGraph(op_nodes, in_data_vars, out_data_vars, sub_id);
 
-  for (auto& var_node : ret.front()->inlinks) {
-    auto& arg = var_node->AsArg();
-    if (arg.is_weight) continue;
-    IR_NODE_LINK_TO(var_node, new_op_node);
-  }
-  for (auto& var_node : ret.back()->outlinks) {
-    auto& arg = var_node->AsArg();
-    if (arg.is_weight) continue;
-    IR_NODE_LINK_TO(var_node, new_op_node);
-  }
+  auto any_op = (*op_nodes.begin())->AsStmt().op();
+  InsertNewNode(graph,
+                weight_var_name,
+                any_op->scope(),
+                any_op->valid_places(),
+                in_data_vars,
+                in_wgt_vars,
+                out_data_vars,
+                out_unused_vars);
 
-  // assign context
-  auto& inst = new_op_node->AsStmt();
-  inst.picked_kernel().SetContext(
-      ContextScheduler::Global().NewContext(inst.picked_kernel().target()));
+  auto nodes2rm = GetNode2rm(
+      op_nodes, {in_data_vars, in_wgt_vars, out_data_vars, out_unused_vars});
 
   GraphSafeRemoveNodes(graph.get(), nodes2rm);
 }
 
-void GenerateNPUProgramPass::ConvertSubgraph(
-    const std::unique_ptr<SSAGraph>& graph, int sub_num) {
-  std::unordered_map<int, std::unordered_set<Node*>> nodes_all;
-  for (auto& item : graph->StmtTopologicalOrder()) {
-    if (!item->IsStmt()) continue;
-    auto& stmt = item->AsStmt();
-    int sub_id = stmt.subgraph_id();
-    if (sub_id < 1) continue;
-    if (nodes_all.count(sub_id) == 0) {
-      nodes_all[sub_id] = std::unordered_set<Node*>();
-    }
-    nodes_all.at(sub_id).insert(item);
-  }
-
-  for (int id = 1; id <= sub_num; ++id) {
-    LOG(INFO) << "Converting subgraph_id:" << id;
-    GenNPUGraphOpNode(graph, id, nodes_all.at(id));
-  }
-}
-
 void GenerateNPUProgramPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   LOG(INFO) << "Before NPU Pass \n" << Visualize(graph.get());
-  const auto& bridges = lite::npu::bridge::Factory::Instance();
+  const auto& bridges = lite::kernels::npu::bridges::Factory::Instance();
   const auto& op_map = bridges.AllFunctions();
   std::vector<std::string> supported_op_types;
   for (auto& i : op_map) {
-    LOG(INFO) << i.first;
+    LOG(INFO) << "Supported type: " << i.first;
     supported_op_types.push_back(i.first);
   }
-  int num_subgraph = FuseSubgraph(graph, supported_op_types);
-  LOG(INFO) << "detected " << num_subgraph << " NPU subgraph";
 
-  InferOnce(graph);
-  ConvertSubgraph(graph, num_subgraph);
-  LOG(INFO) << "After NPU Pass \n" << Visualize(graph.get());
+  try {
+    int num_subgraph = FuseSubgraph(graph, supported_op_types);
+    InferOnce(graph);
+    auto op_nodes_all = ClassifySubgraph(graph);
+    CHECK_EQ(op_nodes_all.size(), num_subgraph);
+    int id = 1;
+    for (auto& op_nodes : op_nodes_all) {
+      LOG(INFO) << "Converting subgraph_id:" << id;
+      GenNPUSubgraph(graph, op_nodes.second, id);
+      LOG(INFO) << "After NPU Pass Subgraph " << id << "\n"
+                << Visualize(graph.get());
+      id++;
+    }
+  } catch (...) {
+    LOG(WARNING) << "Build NPU graph failed";
+    throw std::runtime_error("Build NPU graph failed");
+  }
 
   for (auto& item : graph->StmtTopologicalOrder()) {
     if (item->IsStmt()) {
@@ -214,6 +215,5 @@ std::unique_ptr<RuntimeProgram> GenerateNPUProgramPass::GenProgram() {
 }  // namespace paddle
 
 REGISTER_MIR_PASS(generate_npu_program_pass,
-                  paddle::lite::mir::subgraph::GenerateNPUProgramPass);
-
-// USE_LITE_OP(graph_op);
+                  paddle::lite::mir::subgraph::GenerateNPUProgramPass)
+    .BindTargets({TARGET(kNPU)});

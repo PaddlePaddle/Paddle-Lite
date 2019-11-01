@@ -28,15 +28,13 @@ namespace paddle {
 namespace lite {
 
 void TestModel(const std::vector<Place>& valid_places,
-               const Place& preferred_place,
                const std::string& model_dir = FLAGS_model_dir,
-               bool gen_npu = false,
                bool save_model = false) {
   DeviceInfo::Init();
-  DeviceInfo::Global().SetRunMode(LITE_POWER_HIGH, FLAGS_threads);
+  DeviceInfo::Global().SetRunMode(lite_api::LITE_POWER_NO_BIND, FLAGS_threads);
   lite::Predictor predictor;
 
-  predictor.Build(model_dir, preferred_place, valid_places);
+  predictor.Build(model_dir, "", "", valid_places);
 
   auto* input_tensor = predictor.GetInput(0);
   input_tensor->Resize(DDim(std::vector<DDim::value_type>({1, 3, 224, 224})));
@@ -44,10 +42,6 @@ void TestModel(const std::vector<Place>& valid_places,
   auto item_size = input_tensor->dims().production();
   for (int i = 0; i < item_size; i++) {
     data[i] = 1;
-  }
-
-  if (gen_npu) {
-    predictor.GenNPURuntimeProgram();
   }
 
   for (int i = 0; i < FLAGS_warmup; ++i) {
@@ -108,43 +102,32 @@ void TestModel(const std::vector<Place>& valid_places,
 #ifdef LITE_WITH_NPU
 TEST(MobileNetV1, test_npu) {
   std::vector<Place> valid_places({
-      Place{TARGET(kHost), PRECISION(kFloat)},
       Place{TARGET(kARM), PRECISION(kFloat)},
       Place{TARGET(kNPU), PRECISION(kFloat)},
   });
 
-  TestModel(valid_places,
-            Place({TARGET(kARM), PRECISION(kFloat)}),
-            FLAGS_model_dir,
-            true /* gen_npu */,
-            true /* save_model*/);
+  TestModel(valid_places, FLAGS_model_dir, true /* save_model*/);
 
-  TestModel(valid_places,
-            Place({TARGET(kARM), PRECISION(kFloat)}),
-            FLAGS_optimized_model,
-            false /* gen_npu */,
-            false /* save model */);
+  TestModel(valid_places, FLAGS_optimized_model, false /* save model */);
 }
 #endif  // LITE_WITH_NPU
 
 TEST(MobileNetV1, test_arm) {
   std::vector<Place> valid_places({
-      Place{TARGET(kHost), PRECISION(kFloat)},
       Place{TARGET(kARM), PRECISION(kFloat)},
   });
 
-  TestModel(valid_places, Place({TARGET(kARM), PRECISION(kFloat)}));
+  TestModel(valid_places);
 }
 
 #ifdef LITE_WITH_OPENCL
 TEST(MobileNetV1, test_opencl) {
   std::vector<Place> valid_places({
-      Place{TARGET(kHost), PRECISION(kFloat)},
-      Place{TARGET(kARM), PRECISION(kFloat)},
       Place{TARGET(kOpenCL), PRECISION(kFloat)},
+      Place{TARGET(kARM), PRECISION(kFloat)},
   });
 
-  TestModel(valid_places, Place({TARGET(kOpenCL), PRECISION(kFloat)}));
+  TestModel(valid_places);
 }
 #endif  // LITE_WITH_OPENCL
 

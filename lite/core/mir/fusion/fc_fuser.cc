@@ -25,7 +25,7 @@ void FcFuser::BuildPattern() {
   // create nodes.
   auto* x = VarNode("x")->assert_is_op_input("mul", "X");
   auto* W = VarNode("W")->assert_is_op_input("mul", "Y");
-  auto* b = VarNode("b");
+  auto* b = VarNode("b")->assert_is_persistable_var();
   auto* mul = OpNode("mul", "mul");
   auto* mul_out = VarNode("mul_out");
   auto* add = OpNode("add", "elementwise_add");
@@ -61,6 +61,8 @@ void FcFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
 
 cpp::OpDesc FcFuser::GenOpDesc(const key2nodes_t& matched) {
   cpp::OpDesc op_desc = *matched.at("mul")->stmt()->op_info();
+  op_desc.mutable_inputs()->clear();
+  op_desc.mutable_outputs()->clear();
   op_desc.SetType("fc");
   op_desc.SetInput("Input", {matched.at("x")->arg()->name});
   op_desc.SetInput("W", {matched.at("W")->arg()->name});

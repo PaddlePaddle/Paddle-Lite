@@ -17,9 +17,9 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include "lite/backends/opencl/cl_include.h"
 #include "lite/core/kernel.h"
 #include "lite/core/tensor.h"
-#include "lite/opencl/cl_include.h"
 #include "lite/operators/op_params.h"
 
 namespace paddle {

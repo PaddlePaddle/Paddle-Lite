@@ -79,7 +79,9 @@ bool SliceOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   param_.axes = opdesc.GetAttr<std::vector<int>>("axes");
   param_.starts = opdesc.GetAttr<std::vector<int>>("starts");
   param_.ends = opdesc.GetAttr<std::vector<int>>("ends");
-  param_.decrease_axis = opdesc.GetAttr<std::vector<int>>("decrease_axis");
+  if (opdesc.HasAttr("decrease_axis")) {
+    param_.decrease_axis = opdesc.GetAttr<std::vector<int>>("decrease_axis");
+  }
   return true;
 }
 

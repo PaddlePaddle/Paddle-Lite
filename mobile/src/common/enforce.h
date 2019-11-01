@@ -43,7 +43,6 @@ struct PaddleMobileException : public std::exception {
   {                                                                        \
     char buffer[1000];                                                     \
     snprintf(buffer, sizeof(buffer), __VA_ARGS__);                         \
-    std::string detail(buffer);                                            \
     throw paddle_mobile::PaddleMobileException("Custom Exception", buffer, \
                                                __FILE__, __LINE__);        \
   }                                                                        \
@@ -55,7 +54,6 @@ struct PaddleMobileException : public std::exception {
     } else {                                                                  \
       char buffer[1000];                                                      \
       snprintf(buffer, sizeof(buffer), __VA_ARGS__);                          \
-      std::string detail(buffer);                                             \
       throw paddle_mobile::PaddleMobileException("paddle-mobile enforce",     \
                                                  buffer, __FILE__, __LINE__); \
     }                                                                         \

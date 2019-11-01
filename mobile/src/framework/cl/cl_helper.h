@@ -14,8 +14,10 @@ limitations under the License. */
 
 #pragma once
 
+#include <memory>
 #include <string>
 #include <type_traits>
+#include <utility>
 #include <vector>
 
 #include "common/log.h"
@@ -49,6 +51,13 @@ class CLHelper {
 
   cl_context CLContext() { return scope_->Context(); }
 
+  CLLocalWorkSizeInfo LocalWorkSizeInfo() {
+    return scope_->LocalWorkSizeInfo();
+  }
+  size_t KernelWorkSize(cl_kernel kernel) {
+    return scope_->KernelWorkSize(kernel);
+  }
+
   std::vector<size_t> DefaultWorkSize(const CLImage &image) {
     // n c h w
     auto image_dim = image.dims();
@@ -57,9 +66,9 @@ class CLHelper {
       auto h = image_dim[2];
       auto w = image_dim[3];
       auto image_width = image.ImageWidth();
-      auto work_size_0 = image_width / w;
-      auto work_size_1 = w;
-      auto work_size_2 = n * h;
+      size_t work_size_0 = image_width / w;
+      size_t work_size_1 = w;
+      size_t work_size_2 = n * h;
       return {work_size_0, work_size_1, work_size_2};
     } else if (image_dim.size() == 2) {
       auto h = image_dim[0];
@@ -68,9 +77,9 @@ class CLHelper {
     } else if (image_dim.size() == 1) {
       return {1, image.ImageWidth(), 1};
     } else if (image_dim.size() == 3) {
-      int c = image_dim[0];
-      int h = image_dim[1];
-      int w = image_dim[2];
+      size_t c = image_dim[0];
+      size_t h = image_dim[1];
+      size_t w = image_dim[2];
       return {(c + 3) / 4, w, h};
     }
     PADDLE_MOBILE_THROW_EXCEPTION(" not support this dim, need imp ");

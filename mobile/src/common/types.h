@@ -83,7 +83,13 @@ enum PMStatus {
   PMOutOfAuthority = 0x05, /*!< Try to modified data not your own*/
   PMOutOfMem = 0x06,       /*!< OOM error*/
   PMUnImplError = 0x07,    /*!< Unimplement error. */
-  PMWrongDevice = 0x08     /*!< un-correct device. */
+  PMWrongDevice = 0x08,    /*!< un-correct device. */
+  PMException = 0x09       /*!< throw exception. */
+};
+
+enum PrePostType {
+  NONE_PRE_POST = 0,
+  UINT8_255 = 1,
 };
 
 enum RoundType {
@@ -142,6 +148,7 @@ struct PaddleMobileConfigInternal {
   MemoryOptimizationLevel memory_optimization_level =
       MemoryOptimizationWithoutFeeds;
   std::string model_obfuscate_key = "";
+  PrePostType pre_post_type = NONE_PRE_POST;
 };
 
 enum ARMArch {
@@ -158,6 +165,7 @@ enum ARMArch {
 
 extern const char *G_OP_TYPE_CONV;
 extern const char *G_OP_TYPE_BATCHNORM;
+extern const char *G_OP_TYPE_INSTANCENORM;
 extern const char *G_OP_TYPE_BOX_CODER;
 extern const char *G_OP_TYPE_CONCAT;
 extern const char *G_OP_TYPE_ELEMENTWISE_ADD;
@@ -255,8 +263,8 @@ extern const char *G_OP_TYPE_PAD2D;
 extern const char *G_OP_TYPE_FUSION_DECONV_ADD_BN_RELU;
 extern const char *G_OP_TYPE_FUSION_DECONV_ADD_BN;
 extern const char *G_OP_TYPE_FUSION_DECONV_BN_RELU;
-
-extern const char *G_OP_TYPE_PAD2D;
+extern const char *G_OP_TYPE_FUSION_INSTANCENORM_RELU;
+extern const char *G_OP_TYPE_PIXEL_SHUFFLE;
 
 extern std::unordered_map<
     std::string, std::pair<std::vector<std::string>, std::vector<std::string>>>

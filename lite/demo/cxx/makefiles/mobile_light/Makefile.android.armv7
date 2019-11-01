@@ -18,5 +18,5 @@ mobilenetv1_light_api.o: mobilenetv1_light_api.cc
 
 .PHONY: clean
 clean:
-	rm mobilenetv1_light_api.o
-	rm mobilenetv1_light_api
+	rm -f mobilenetv1_light_api.o
+	rm -f mobilenetv1_light_api

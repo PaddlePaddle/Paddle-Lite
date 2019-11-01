@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/x86/relu_compute.h"
 #include <gtest/gtest.h>
 #include <iostream>
 #include <vector>
 #include "lite/core/op_registry.h"
+#include "lite/kernels/x86/activation_compute.h"
 
 namespace paddle {
 namespace lite {
@@ -64,6 +64,8 @@ TEST(relu_x86, run_test) {
   LOG(INFO) << "output: ";
   for (int i = 0; i < out.dims().production(); i++) {
     LOG(INFO) << out_data[i];
+    int sign = i % 2 == 0 ? 1 : 0;
+    ASSERT_EQ(out_data[i], i * sign);
   }
 }
 
