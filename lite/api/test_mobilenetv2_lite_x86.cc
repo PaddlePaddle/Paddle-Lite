@@ -60,8 +60,7 @@ TEST(Mobilenet_v2, test_mobilenetv2_lite_x86) {
             << ", repeats: " << FLAGS_repeats << ", spend "
             << (GetCurrentUS() - start) / FLAGS_repeats / 1000.0
             << " ms in average.";
-  // TODO(FrostML): open this check.
-  /*std::vector<std::vector<float>> results;
+  std::vector<std::vector<float>> results;
   // i = 1
   results.emplace_back(std::vector<float>(
       {0.00017082224, 5.699624e-05,  0.000260885,   0.00016412718,
@@ -81,7 +80,7 @@ TEST(Mobilenet_v2, test_mobilenetv2_lite_x86) {
                   results[i][j],
                   1e-6);
     }
-  }*/
+  }
 }
 
 }  // namespace lite

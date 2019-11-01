@@ -59,8 +59,7 @@ TEST(InceptionV4, test_inceptionv4_lite_x86) {
             << ", repeats: " << FLAGS_repeats << ", spend "
             << (GetCurrentUS() - start) / FLAGS_repeats / 1000.0
             << " ms in average.";
-  // TODO(FrostML): open this check.
-  /*std::vector<std::vector<float>> results;
+  std::vector<std::vector<float>> results;
   // i = 1
   results.emplace_back(std::vector<float>(
       {0.0011684548,  0.0010390386,  0.0011301535,  0.0010133048,
@@ -81,7 +80,7 @@ TEST(InceptionV4, test_inceptionv4_lite_x86) {
                   results[i][j],
                   1e-6);
     }
-  }*/
+  }
 }
 
 }  // namespace lite
