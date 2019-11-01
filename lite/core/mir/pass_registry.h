@@ -34,10 +34,6 @@ class PassRegistry {
     pass_->BindTargets(targets);
     return *this;
   }
-  PassRegistry& ExcludeTargets(const std::set<TargetType>& targets) {
-    pass_->ExcludeTargets(targets);
-    return *this;
-  }
   PassRegistry& BindKernel(const std::string& name,
                            const lite_api::Place& place) {
     pass_->BindKernel(name, place);
