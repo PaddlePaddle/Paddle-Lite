@@ -46,7 +46,7 @@ title: Benchmark 数据
       * HUAWEI Mate10
  
 * 测试说明
-    * commit id: 
+    * commit id: 351a7743a67f989
     * warmup=10, repeats=30，统计平均时间，单位是ms
     * 当线程数为1时，```DeviceInfo::Global().SetRunMode```设置LITE_POWER_HIGH，否者设置LITE_POWER_NO_BIND
     * 模型的输入图像的维度是{1, 3, 224, 224}，输入图像的每一位数值是1
