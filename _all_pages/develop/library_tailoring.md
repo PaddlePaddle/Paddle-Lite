@@ -79,6 +79,7 @@ Paddle-Lite支持**根据模型裁剪预测库**功能。Paddle-Lite的一般编
 
 
 **示例2**：使用裁剪后的full_api预测库运行mobilenetv1
+
 1、执行第二步编译后，full_api的C++ 示例位于
 
 `/Paddle-Lite/build.lite.android.armv7.gcc/inference_lite_lib.android.armv7/demo/cxx/mobile_light`
