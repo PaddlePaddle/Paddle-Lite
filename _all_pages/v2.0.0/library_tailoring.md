@@ -19,7 +19,7 @@ Paddle-Lite支持**根据模型裁剪预测库**功能。Paddle-Lite的一般编
 | mobilenetv2（armv8） | 裁剪前–build_tailor=ON    | --build_extra=OFF         | 912K          |
 | resnet18（armv8） | 裁剪前–build_tailor=OFF      | --build_extra=OFF          | 1.3M                |
 | resnet18（armv8） | 裁剪前–build_tailor=ON    | --build_extra=OFF         | 912K           |
-| yolov3（armv7） | 裁剪前–build_tailor=OFF      | --build_extra=OFF          | 1.1M         |
+| yolov3（armv7） | 裁剪前–build_tailor=OFF      | --build_extra=OFF          | 820K      |
 | yolov3（armv7） | 裁剪前–build_tailor=ON    | --build_extra=OFF         | 516K          |
 
 
@@ -36,7 +36,7 @@ Paddle-Lite支持**根据模型裁剪预测库**功能。Paddle-Lite的一般编
 注意：需要使用Paddle-Lite 最新版本（release/v2.0.0之后）代码编译出的model_optimize_tool
 例如：
 
-```
+```bash
 ./model_optimize_tool     --model_dir=./mobilenet_v1     --optimize_out_type=naive_buffer     --optimize_out=mobilenet_v1NB     --record_tailoring_info =true     --valid_targets=arm
 ```
 效果：优化后模型使用的OP和kernel信息被保存在 `mobilenet_v1NB`文件夹中的隐藏文件里了
@@ -46,17 +46,12 @@ Paddle-Lite支持**根据模型裁剪预测库**功能。Paddle-Lite的一般编
 说明：编译Paddle-Lite时选择`--build_tailor=ON` ，并且用   `–-opt_model_dir=`   指定优化后的模型的地址
 例如：
 
-```
+```bash
 ./lite/tools/build.sh   --arm_os=android   --arm_abi=armv7   --arm_lang=gcc   --android_stl=c++_static   --build_extra=ON --build_tailor=ON --opt_model_dir=../mobilenet_v1NB full_publish
 ```
 **注意**：上面命令中的`../mobilenet_v1NB`是第1步得到的转化模型的输出路径
 
 **效果**：编译出来的动态库文件变小，且可以运行优化后的模型。
-
-|                    | libpaddle_full_api_shared.so | libpaddle_light_api_shared.so | libpaddle_lite_jni.so |
-| ------------------ | ---------------------------- | ----------------------------- | --------------------- |
-| mobilenet_v1       | 14M                          | 14M                           | 6.2M                  |
-| 裁剪后mobilenet_v1 | 7.7M                         | 7.5M                          | 2.5M                  |
 
 编译出的C++预测库文件位于  ：
 
