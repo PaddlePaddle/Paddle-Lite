@@ -427,6 +427,13 @@ struct FakeDequantizeMaxAbsParam {
   float max_range;
 };
 
+struct FakeChannelWiseDequantizeMaxAbsParam {
+  const lite::Tensor* x{};
+  std::vector<const lite::Tensor*> scale_tensors{};
+  lite::Tensor* out{};
+  std::vector<int> quant_bits;
+};
+
 /// ----------------------- sgd operators ----------------------
 struct SGDParam {
   int dtype{static_cast<int>(VarDescAPI::VarDataType::FP32)};
