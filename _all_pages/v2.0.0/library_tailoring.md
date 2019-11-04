@@ -17,8 +17,8 @@ Paddle-Lite支持**根据模型裁剪预测库**功能。Paddle-Lite的一般编
 | mobilenetv1（armv8） | 裁剪后–build_tailor=ON    | --build_extra=OFF         | 788K              |
 | mobilenetv2（armv8） | 裁剪前–build_tailor=OFF      | --build_extra=OFF          | 1.3M                |
 | mobilenetv2（armv8） | 裁剪后–build_tailor=ON   | --build_extra=OFF         | 912K          |
-| resnet18（armv8） | 裁剪前–build_tailor=OFF      | --build_extra=OFF          | 1.3M                |
-| resnet18（armv8） | 裁剪后–build_tailor=ON   | --build_extra=OFF         | 912K           |
+| inceptionv4（armv7） | 裁剪前–build_tailor=OFF      | --build_extra=OFF          | 820K            |
+| inceptionv4（armv7） | 裁剪后–build_tailor=ON   | --build_extra=OFF         | 512K        |
 | yolov3（armv7） | 裁剪前–build_tailor=OFF      | --build_extra=OFF          | 820K      |
 | yolov3（armv7） | 裁剪后–build_tailor=ON   | --build_extra=OFF         | 516K          |
 
