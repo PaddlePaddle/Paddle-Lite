@@ -67,7 +67,7 @@ config.set_valid_places(places)
 predictor = create_paddle_predictor(config)
 ```
 
-> **set_model_dir(model_dir)**
+## `set_model_dir(model_dir)`
 
 设置模型文件夹路径，当需要从磁盘加载非combined模型时使用。
 
@@ -81,7 +81,7 @@ predictor = create_paddle_predictor(config)
 
 
 
-> **model_dir()**
+## `model_dir()`
 
 返回设置的模型文件夹路径。
 
@@ -95,7 +95,7 @@ predictor = create_paddle_predictor(config)
 
 
 
-> **set_model_file(model_file)**
+## `set_model_file(model_file)`
 
 设置模型文件路径，加载combined形式模型时使用。
 
@@ -107,7 +107,7 @@ predictor = create_paddle_predictor(config)
 
 
 
-> **model_file()**
+## `model_file()`
 
 获取设置模型文件路径，加载combined形式模型时使用。
 
@@ -121,7 +121,7 @@ predictor = create_paddle_predictor(config)
 
 
 
-> **set_param_file(param_file)**
+## `set_param_file(param_file)`
 
 设置模型参数文件路径，加载combined形式模型时使用。
 
@@ -133,7 +133,7 @@ predictor = create_paddle_predictor(config)
 
 
 
-> **param_file()**
+## `param_file()`
 
 获取设置模型参数文件路径，加载combined形式模型时使用。
 
@@ -147,7 +147,7 @@ predictor = create_paddle_predictor(config)
 
 
 
-> **set_valid_places(valid_places)**
+## `set_valid_places(valid_places)`
 
 设置可用的places列表。
 
@@ -178,7 +178,7 @@ predictor = create_paddle_predictor(config)
 
 
 
-> **set_power_mode(mode)**
+## `set_power_mode(mode)`
 
 设置CPU能耗模式。若不设置，则默认使用`PowerMode.LITE_POWER_HIGH`。
 
@@ -194,7 +194,7 @@ predictor = create_paddle_predictor(config)
 
 
 
-> **power_mode()**
+## `power_mode()`
 
 获取设置的CPU能耗模式。
 
@@ -210,7 +210,7 @@ predictor = create_paddle_predictor(config)
 
 
 
-> **set_threads(threads)**
+## `set_threads(threads)`
 
 设置工作线程数。若不设置，则默认使用单线程。
 
@@ -226,7 +226,7 @@ predictor = create_paddle_predictor(config)
 
 
 
-> **threads()**
+## `threads()`
 
 获取设置的工作线程数。
 
@@ -265,7 +265,7 @@ config.set_power_mode(PowerMode.LITE_POWER_NO_BIND)
 predictor = create_paddle_predictor(config)
 ```
 
-> **set_model_dir(model_dir)**
+## `set_model_dir(model_dir)`
 
 设置模型文件夹路径。
 
@@ -281,7 +281,7 @@ predictor = create_paddle_predictor(config)
 
 
 
-> **model_dir()**
+## `model_dir()`
 
 返回设置的模型文件夹路径。
 
@@ -295,7 +295,7 @@ predictor = create_paddle_predictor(config)
 
 
 
-> **set_power_mode(mode)**
+## `set_power_mode(mode)`
 
 设置CPU能耗模式。若不设置，则默认使用`PowerMode.LITE_POWER_HIGH`。
 
@@ -311,7 +311,7 @@ predictor = create_paddle_predictor(config)
 
 
 
-> **power_mode()**
+## `power_mode()`
 
 获取设置的CPU能耗模式。
 
@@ -327,7 +327,7 @@ predictor = create_paddle_predictor(config)
 
 
 
-> **set_threads(threads)**
+## `set_threads(threads)`
 
 设置工作线程数。若不设置，则默认使用单线程。
 
@@ -343,7 +343,7 @@ predictor = create_paddle_predictor(config)
 
 
 
-> **threads()**
+## `threads()`
 
 获取设置的工作线程数。
 
@@ -398,7 +398,7 @@ print(output_tensor.shape())
 print(output_tensor.float_data()[:10])
 ```
 
-> **get_input(index)**
+## `get_input(index)`
 
 获取输入Tensor，用来设置模型的输入数据。
 
@@ -412,7 +412,7 @@ print(output_tensor.float_data()[:10])
 
 
 
-> **get_output(index)**
+## `get_output(index)`
 
 获取输出Tensor，用来获取模型的输出结果。
 
@@ -426,7 +426,7 @@ print(output_tensor.float_data()[:10])
 
 
 
-> **run()**
+## `run()`
 
 执行模型预测，需要在***设置输入数据后***调用。
 
@@ -440,7 +440,7 @@ print(output_tensor.float_data()[:10])
 
 
 
-> **get_version()**
+## `get_version()`
 
 用于获取当前lib使用的代码版本。若代码有相应tag则返回tag信息，如`v2.0-beta`；否则返回代码的`branch(commitid)`，如`develop(7e44619)`。
 
@@ -487,7 +487,7 @@ print(output_tensor.shape())
 print(output_tensor.float_data()[:10])
 ```
 
-> **get_input(index)**
+## `get_input(index)`
 
 获取输入Tensor，用来设置模型的输入数据。
 
@@ -501,7 +501,7 @@ print(output_tensor.float_data()[:10])
 
 
 
-> **get_output(index)**
+## `get_output(index)`
 
 获取输出Tensor，用来获取模型的输出结果。
 
@@ -515,7 +515,7 @@ print(output_tensor.float_data()[:10])
 
 
 
-> **run()**
+## `run()`
 
 执行模型预测，需要在***设置输入数据后***调用。
 
@@ -529,7 +529,7 @@ print(output_tensor.float_data()[:10])
 
 
 
-> **get_version()**
+## `get_version()`
 
 用于获取当前lib使用的代码版本。若代码有相应tag则返回tag信息，如`v2.0-beta`；否则返回代码的`branch(commitid)`，如`develop(7e44619)`。
 
@@ -677,7 +677,7 @@ print(output_tensor.shape())
 print(output_tensor.float_data()[:10])
 ```
 
-> **resize(shape)**
+## `resize(shape)`
 
 设置Tensor的维度信息。
 
@@ -691,7 +691,7 @@ print(output_tensor.float_data()[:10])
 
 
 
-> **shape()**
+## `shape()`
 
 获取Tensor的维度信息。
 
@@ -705,7 +705,7 @@ print(output_tensor.float_data()[:10])
 
 
 
-> **float_data()**
+## `float_data()`
 
 获取Tensor的持有的float型数据。
 
@@ -727,7 +727,7 @@ print(output_tensor.float_data()[:10])
 
 
 
-> **set_float_data(float_data)**
+## `set_float_data(float_data)`
 
 设置Tensor持有float数据。
 
@@ -749,7 +749,7 @@ input_tensor.set_float_data([1.] * 3 * 224 * 224)
 
 
 
-> **set_lod(lod)**
+## `set_lod(lod)`
 
 设置Tensor的LoD信息。
 
@@ -763,7 +763,7 @@ input_tensor.set_float_data([1.] * 3 * 224 * 224)
 
 
 
-> **lod()**
+## `lod()`
 
 获取Tensor的LoD信息
 
