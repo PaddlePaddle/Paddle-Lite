@@ -33,7 +33,7 @@ if(ARM_TARGET_LANG STREQUAL "gcc")
 endif()
 
 if(NOT DEFINED ANDROID_API_LEVEL)
-    set(ANDROID_API_LEVEL "23")
+    set(ANDROID_API_LEVEL "22")
 endif()
 
 # then check input arm abi
