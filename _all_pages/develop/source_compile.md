@@ -259,7 +259,7 @@ git checkout <release-version-tag>
 
 ### 编译代码
 
-<font color="orange" > **注意**：非开发者建议在编译前使用[**“加速第三方依赖库的下载”**](#加速第三方依赖库的下载)的方法，加速工程中第三方依赖库的下载与编译。 </font>
+**<font color="orange" >注意</font>**<font color="orange" >：非开发者建议在编译前使用</font>[**“加速第三方依赖库的下载”**](#加速第三方依赖库的下载)<font color="orange" >的方法，加速工程中第三方依赖库的下载与编译。 </font>
 
 #### 编译`tiny publish`动态库
 
