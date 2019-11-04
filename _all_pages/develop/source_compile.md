@@ -259,7 +259,7 @@ git checkout <release-version-tag>
 
 ### 编译代码
 
-**<font color="orange" >注意</font>**<font color="orange" >：非开发者建议在编译前使用</font>[**“加速第三方依赖库的下载”**](#加速第三方依赖库的下载)<font color="orange" >的方法，加速工程中第三方依赖库的下载与编译。 </font>
+**<font color="orange" >注意</font>**<font color="orange" >：非开发者建议在编译前使用</font>[**“加速第三方依赖库的下载”**](#加速第三方依赖库的下载)<font color="orange" >的方法，加速工程中第三方依赖库的下载与编译。 </font> **该加速方法只对arm平台的移动端（android/armlinux/ios）编译有效，无法加速server平台（x86/cuda）的第三方库编译。所以当[编译cuda 预测库](../cuda.md)和[编译x86预测库](../x86.md)时，需要保证良好的网络环境。**
 
 #### 编译`tiny publish`动态库
 
@@ -395,3 +395,5 @@ rm -rf third-party
 ```
 
 之后再根据本文档，进行后续编译时，便会忽略第三方依赖对应的`submodule`，改为下载第三方压缩包。
+
+**注意：该加速方法只对arm平台的移动端（android/armlinux/ios）编译有效，无法加速server平台（x86/cuda）的第三方库编译。所以当**[编译cuda 预测库](../cuda.md)**和**[编译x86预测库](../x86.md)**时，需要保证良好的网络环境。**
