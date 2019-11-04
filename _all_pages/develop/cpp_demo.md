@@ -92,7 +92,7 @@ cd ../mobile_light
 make
 adb -s emulator-5554 push mobilenetv1_light_api /data/local/tmp/
 adb -s emulator-5554 shell chmod +x /data/local/tmp/mobilenetv1_light_api
-adb -s emulator-5554 shell "/data/local/tmp/mobilenetv1_light_api --model_dir=/data/local/tmp/mobilenet_v1.opt --threads=1 "
+adb -s emulator-5554 shell "/data/local/tmp/mobilenetv1_light_api --model_dir=/data/local/tmp/mobilenet_v1.opt  "
 {% endhighlight %}
 
 ## Demo 程序运行结果
