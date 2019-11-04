@@ -83,7 +83,7 @@ void AppendProposals(Tensor *dst, int64_t offset, const Tensor &src) {
 }
 
 template <class T>
-static inline void BoxCoder(Tensor *all_anchors, Tensor *bbox_deltas, 
+static inline void BoxCoder(Tensor *all_anchors, Tensor *bbox_deltas,
                             Tensor *proposals) {
   T *proposals_data = proposals->mutable_data<T>();
 
@@ -368,8 +368,8 @@ void ProposalKernel<FPGA, float>::Compute(const ProposalParam<FPGA> &param) {
                         score_height * alignedCW * sizeof(int8_t));
 
   Tensor score_tensor = *input_score;
-  for(int h = 0; h < score_height; h++){
-    for(int w = 0; w < score_width; w++){
+  for (int h = 0; h < score_height; h++) {
+    for (int w = 0; w < score_width; w++) {
       for (int c = 0; c < score_channels; ++c) {
         int dstidx = h*unalignedCW + w*score_channels + c;
         int srcidx = h*alignedCW + w*score_channels + c;
@@ -385,12 +385,14 @@ void ProposalKernel<FPGA, float>::Compute(const ProposalParam<FPGA> &param) {
                         bbox_height * alignedCW * sizeof(int8_t));
 
   auto bbox_tensor = param.float_bbox.get();
-  for(int h = 0; h < bbox_height; h++){
-    for(int w = 0; w < bbox_width; w++){
+  for (int h = 0; h < bbox_height; h++) {
+    for (int w = 0; w < bbox_width; w++) {
       for (int c = 0; c < bbox_channels; ++c) {
         int dstidx = h*unalignedCW + w*bbox_channels + c;
         int srcidx = h*alignedCW + w*bbox_channels + c;
-        bbox_tensor->data<float>()[dstidx] = ((int)(input_bbox_data[srcidx])) / 127.0 * input_bbox->scale[0];
+        bbox_tensor->data<float>()[dstidx] =
+            (static_cast<int>(input_bbox_data[srcidx]))/127.0*
+               input_bbox->scale[0];
       }
     }
   }
