@@ -231,7 +231,8 @@ function make_cuda {
             -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF \
             -DWITH_TESTING=OFF \
             -DLITE_WITH_ARM=OFF \
-            -DLITE_WITH_PYTHON=ON 
+            -DLITE_WITH_PYTHON=ON \
+            -DLITE_BUILD_EXTRA=ON
 
   make publish_inference_python_lib -j8
   cd -
