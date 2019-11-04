@@ -152,7 +152,9 @@ function(lite_cc_library TARGET)
 endfunction()
 
 function(lite_cc_binary TARGET)
-    set(options "")
+    if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
+        set(options " -g ")
+    endif()
     set(oneValueArgs "")
     set(multiValueArgs SRCS DEPS X86_DEPS CUDA_DEPS CL_DEPS ARM_DEPS FPGA_DEPS PROFILE_DEPS
       LIGHT_DEPS HVY_DEPS EXCLUDE_COMPILE_DEPS ARGS)
