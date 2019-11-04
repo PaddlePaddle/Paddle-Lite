@@ -258,7 +258,7 @@ git checkout <release-version-tag>
 
 ### 编译代码
 
-注意：编译前请删除lite/api目录下的paddle_use_ops.h和paddle_use_kernels.h
+注意：非开发者建议在编译前使用**“加速第三方依赖库的下载”**的方法，加速工程中第三方依赖库的下载与编译（**“加速第三方依赖库的下载”**的具体步骤在本文底部有详细说明）。
 
 #### 编译`tiny publish`动态库
 
