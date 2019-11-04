@@ -60,8 +60,7 @@ TEST(Resnet50, test_resnet50_lite_x86) {
             << ", spend " << (GetCurrentUS() - start) / FLAGS_repeats / 1000.0
             << " ms in average.";
 
-  // TODO(FrostML): open this check.
-  /*std::vector<std::vector<float>> results;
+  std::vector<std::vector<float>> results;
   // i = 1
   results.emplace_back(std::vector<float>(
       {0.00024139918, 0.00020566184, 0.00022418296, 0.00041731037,
@@ -81,7 +80,7 @@ TEST(Resnet50, test_resnet50_lite_x86) {
                   results[i][j],
                   1e-6);
     }
-  }*/
+  }
 }
 
 }  // namespace lite
