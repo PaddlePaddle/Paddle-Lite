@@ -37,10 +37,10 @@ CMAKE编译选项：
         -DLITE_WITH_ARM=ON \
         -DLITE_WITH_OPENMP=ON   \
         -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
-        -DWITH_TESTING=ON \
+        -DWITH_TESTING=OFF \
         -DLITE_WITH_FPGA=ON \
         -DARM_TARGET_OS=armlinux 
-    make -j2
+    make publish_inference -j2
 ```
 Lite提供FPGA编译脚本，位于lite/tools/build_FPGA.sh，在Lite根目录执行该脚本即可编译
 
@@ -84,18 +84,16 @@ chmod +x test_resnet50_FPGA
 
 在Lite中使用FPGA与ARM相似，具体的区别如下：
 
-- 由于FPGA运行模式为fp16精度、nhwc布局，所以需要修改相应的`valid_place`和`preferred_place`
-- FPGA不需要device的初始化和运行模式设置
+- 由于fpga运行模式为fp16精度、nhwc布局，所以需要修改相应的`valid_place`
+- fpga不需要device的初始化和运行模式设置
 
 代码示例：
 ```cpp
 lite::Predictor predictor;
 std::vector<Place> valid_places(
-      {Place{TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)},
-       Place{TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNHWC)}});
-Place preferred_place = Place{TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)};
+      {Place{TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)}});
 
-predictor.Build(model_dir, preferred_place, valid_places);
+predictor.Build(model_dir, "", "", valid_places);
 
 auto* input_tensor = predictor.GetInput(0);
 input_tensor->Resize(DDim(std::vector<DDim::value_type>({1, 3, 224, 224})));
