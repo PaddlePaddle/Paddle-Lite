@@ -48,8 +48,8 @@ std::unique_ptr<const lite_api::Tensor> LightPredictorImpl::GetOutput(
 void LightPredictorImpl::Run() {
 #ifdef LITE_WITH_ARM
   lite::DeviceInfo::Global().SetRunMode(mode_, threads_);
-  raw_predictor_->Run();
 #endif
+  raw_predictor_->Run();
 }
 
 std::string LightPredictorImpl::GetVersion() const { return lite::version(); }

@@ -110,8 +110,6 @@ class LightPredictorImpl : public lite_api::PaddlePredictor {
 
  private:
   std::unique_ptr<lite::LightPredictor> raw_predictor_;
-  int threads_{1};
-  lite_api::PowerMode mode_{lite_api::LITE_POWER_NO_BIND};
 };
 
 }  // namespace lite
