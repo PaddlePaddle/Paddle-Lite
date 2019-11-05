@@ -82,7 +82,7 @@ if (NOT HAS_ARM_MATH_LIB_DIR)
       conv_impl.cc
       softmax.cc 
       scale.cc
-      pooling_fp.cc
+      pooling.cc
       elementwise.cc
       lrn.cc
       layout.cc
