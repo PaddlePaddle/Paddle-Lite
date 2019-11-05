@@ -60,6 +60,7 @@ namespace lite {
 
 #ifdef LITE_WITH_ARM
 
+thread_local TensorLite DeviceInfo::workspace_;
 #ifdef TARGET_IOS
 const int DEFAULT_L1_CACHE_SIZE = 64 * 1024;
 const int DEFAULT_L2_CACHE_SIZE = 2048 * 1024;

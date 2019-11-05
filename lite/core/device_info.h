@@ -100,7 +100,7 @@ class DeviceInfo {
   // LITE_POWER_FULL stands for using all cores
   lite_api::PowerMode mode_;
   std::vector<int> active_ids_;
-  TensorLite workspace_;
+  static thread_local TensorLite workspace_;
   int64_t count_{0};
 
   void SetDotInfo(int argc, ...);
@@ -119,7 +119,6 @@ class DeviceInfo {
 
   DeviceInfo() = default;
 };
-
 #endif  // LITE_WITH_ARM
 
 template <TargetType Type>
