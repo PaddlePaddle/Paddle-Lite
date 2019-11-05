@@ -106,6 +106,27 @@ void pooling3x3s1p1_avg(const float* din,
                         int win,
                         bool exclusive);
 
+void pooling3x3s1p0_max(const float* din,
+                        float* dout,
+                        int num,
+                        int chout,
+                        int hout,
+                        int wout,
+                        int chin,
+                        int hin,
+                        int win);
+
+void pooling3x3s1p0_avg(const float* din,
+                        float* dout,
+                        int num,
+                        int chout,
+                        int hout,
+                        int wout,
+                        int chin,
+                        int hin,
+                        int win,
+                        bool exclusive);
+
 void pooling3x3s2p1_max(const float* din,
                         float* dout,
                         int num,

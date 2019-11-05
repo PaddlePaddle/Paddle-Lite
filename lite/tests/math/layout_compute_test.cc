@@ -362,6 +362,7 @@ void test_layout_int8_nchw(DDim dim_in,
         auto dout_basic = tout_basic.mutable_data<int8_t>();
         nchw2nhwc_ref<int8_t>(param.x, &tout_basic);
       }
+      LOG(INFO) << "saber compute";
       /// warm up
       for (int i = 0; i < FLAGS_warmup; ++i) {
         layout.Run();
@@ -373,6 +374,7 @@ void test_layout_int8_nchw(DDim dim_in,
         layout.Run();
         t0.end();
       }
+      LOG(INFO) << "saber compute end";
       double gops = 2.0 * dim_out.production();
       LOG(INFO) << "layout int8: input shape: " << dim_in << ", output shape"
                 << dim_out << ",running time, avg: " << t0.get_average_ms()
@@ -464,6 +466,7 @@ void test_layout_int8_nhwc(DDim dim_in,
         auto dout_basic = tout_basic.mutable_data<int8_t>();
         nhwc2nchw_ref<int8_t>(param.x, &tout_basic);
       }
+      LOG(INFO) << "saber compute";
       /// warm up
       for (int i = 0; i < FLAGS_warmup; ++i) {
         layout.Run();
@@ -475,6 +478,7 @@ void test_layout_int8_nhwc(DDim dim_in,
         layout.Run();
         t0.end();
       }
+      LOG(INFO) << "run";
       double gops = 2.0 * dim_out.production();
       LOG(INFO) << "layout int8: input shape: " << dim_in << ", output shape"
                 << dim_out << ",running time, avg: " << t0.get_average_ms()
@@ -522,11 +526,11 @@ void test_layout_int8_nhwc(DDim dim_in,
   delete param.y;
 }
 #else
-void test_layout_fp32_nchw(const std::vector<DDim>& input_dims,
+void test_layout_fp32_nchw(DDim dim_in,
                            bool flag_nchw,
                            const std::vector<int>& thread_num,
                            const std::vector<int>& power_mode) {}
-void test_layout_fp32_nhwc(const std::vector<DDim>& input_dims,
+void test_layout_fp32_nhwc(DDim dim_in,
                            bool flag_nchw,
                            const std::vector<int>& thread_num,
                            const std::vector<int>& power_mode) {}
