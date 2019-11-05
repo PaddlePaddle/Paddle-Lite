@@ -59,8 +59,7 @@ TEST(CXXApi, test_lite_googlenet) {
             << ", warmup: " << FLAGS_warmup << ", repeats: " << FLAGS_repeats
             << ", spend " << (GetCurrentUS() - start) / FLAGS_repeats / 1000.0
             << " ms in average.";
-  // TODO(FrostML): open this check.
-  /*auto out = predictor->GetOutput(0);
+  auto out = predictor->GetOutput(0);
   std::vector<float> results(
       {0.00034298553, 0.0008200012, 0.0005046297, 0.000839279,
        0.00052616704, 0.0003447803, 0.0010877076, 0.00081762316,
@@ -72,7 +71,7 @@ TEST(CXXApi, test_lite_googlenet) {
   }
   ASSERT_EQ(out->shape().size(), 2);
   ASSERT_EQ(out->shape()[0], 1);
-  ASSERT_EQ(out->shape()[1], 1000);*/
+  ASSERT_EQ(out->shape()[1], 1000);
 }
 #endif
 }  // namespace lite
