@@ -255,8 +255,6 @@ class Context<TargetType::kX86> {
  public:
   Context() {}
 
-  Context(Context&& ctx) {}
-
   // NOTE: InitOnce should only be used by ContextScheduler
   void InitOnce() {}
 

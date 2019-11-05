@@ -44,6 +44,10 @@ std::unique_ptr<const lite_api::Tensor> LightPredictorImpl::GetOutput(
 
 void LightPredictorImpl::Run() { raw_predictor_->Run(); }
 
+std::shared_ptr<lite_api::PaddlePredictor> LightPredictorImpl::Clone() {
+  LOG(FATAL) << "The Clone API is not supported in LigthPredictor";
+}
+
 std::string LightPredictorImpl::GetVersion() const { return lite::version(); }
 
 std::unique_ptr<const lite_api::Tensor> LightPredictorImpl::GetTensor(
