@@ -22,6 +22,14 @@ namespace lite {
 
 class Any {
  public:
+  Any() = default;
+  explicit Any(const Any& other) {
+    type_ = other.type_;
+    data_ = other.clone_data_(other.data_);
+    deleter_ = other.deleter_;
+    clone_data_ = other.clone_data_;
+  }
+
   template <typename T>
   void set(const T& v) {
     set<T>();
@@ -34,7 +42,16 @@ class Any {
       CHECK(type_ == typeid(T).hash_code());
     } else {
       type_ = typeid(T).hash_code();
-      deleter_ = [&] { delete static_cast<T*>(data_); };
+      deleter_ = [&](void** data) {
+        delete static_cast<T*>(*data);
+        *data = nullptr;
+      };
+      clone_data_ = [&](void* data) {
+        T* res = new T;
+        CHECK(data) << "data pointer is nullptr";
+        *res = *static_cast<T*>(data);
+        return res;
+      };
     }
     data_ = new T;
   }
@@ -54,17 +71,18 @@ class Any {
 
   bool valid() const { return (data_ != nullptr); }
 
-  // ~Any() {
-  //    if (valid()) {
-  //      deleter_();
-  //    }
-  //  }
+  ~Any() {
+    if (valid()) {
+      deleter_(&data_);
+    }
+  }
 
  private:
   static size_t kInvalidType;
   size_t type_{kInvalidType};
   void* data_{nullptr};
-  std::function<void()> deleter_;
+  std::function<void(void**)> deleter_;
+  std::function<void*(void*)> clone_data_;
 };
 
 }  // namespace lite
