@@ -13,6 +13,8 @@
 // limitations under the License.
 
 #include "lite/api/cxx_api.h"
+#include <memory>
+#include <mutex>  //NOLINT
 #include <string>
 #include "lite/api/paddle_api.h"
 #include "lite/core/device_info.h"
@@ -22,6 +24,7 @@ namespace paddle {
 namespace lite {
 
 void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
+  config_ = config;
 #ifdef LITE_WITH_CUDA
   Env<TARGET(kCUDA)>::Init();
 #endif
@@ -49,6 +52,13 @@ std::vector<std::string> CxxPaddleApiImpl::GetOutputNames() {
 }
 
 void CxxPaddleApiImpl::Run() { raw_predictor_.Run(); }
+
+std::shared_ptr<lite_api::PaddlePredictor> CxxPaddleApiImpl::Clone() {
+  std::lock_guard<std::mutex> lock(mutex_);
+  auto predictor = std::make_shared<lite::CxxPaddleApiImpl>();
+  predictor->Init(config_);
+  return predictor;
+}
 
 std::string CxxPaddleApiImpl::GetVersion() const { return version(); }
 

@@ -78,6 +78,7 @@ class LITE_API PaddlePredictor {
   virtual std::unique_ptr<const Tensor> GetOutput(int i) const = 0;
 
   virtual void Run() = 0;
+  virtual std::shared_ptr<PaddlePredictor> Clone() = 0;
 
   virtual std::string GetVersion() const = 0;
 
