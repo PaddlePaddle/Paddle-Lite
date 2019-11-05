@@ -234,7 +234,6 @@ void ChannelWiseDequantOpFuser::InsertNewNode(SSAGraph* graph,
   auto* quantized_op_weight = matched.at("quantized_op_weight");
   auto* quantized_op = matched.at("quantized_op");
   auto* dequant_op_channel_scale = matched.at("dequant_op_channel_scale");
-  auto* dequant_op = matched.at("dequant_op");
   auto* dequant_op_out = matched.at("dequant_op_out");
 
   // obtain input_scale and weight_scale
