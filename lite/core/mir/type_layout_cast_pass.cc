@@ -37,7 +37,7 @@ void TypeLayoutTransformPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   VLOG(4) << "nodes.size():" << nodes.size();
   for (auto& node : nodes) {
     VLOG(4) << "!node->IsStmt():" << !node->IsStmt();
-    if (!node->IsStmt()) continue;
+    if (!node->IsStmt() || node->AsStmt().op_type() == "while") continue;
     auto inlinks = node->inlinks;
     VLOG(4) << "node->AsStmt().desc:" << node->AsStmt().desc
             << " inlinks.size():" << inlinks.size();

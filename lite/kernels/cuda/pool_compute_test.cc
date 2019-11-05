@@ -194,9 +194,9 @@ TEST(pool_cuda, compute) {
             for (auto stride : {1, 2}) {
               for (auto pad : {0, 1}) {
                 for (auto n : {1, 2}) {
-                  for (auto c : {1, 3, 256}) {
-                    for (auto h : {2, 3, 4, 6, 13}) {
-                      for (auto w : {2, 3, 4, 6, 13}) {
+                  for (auto c : {1, 3}) {
+                    for (auto h : {2, 3, 4, 11}) {
+                      for (auto w : {2, 3, 4, 11}) {
                         VLOG(3) << "n:" << n << " c:" << c << " h:" << h
                                 << " w:" << w << " ksize:" << ksize
                                 << " stride:" << stride << " pad:" << pad
