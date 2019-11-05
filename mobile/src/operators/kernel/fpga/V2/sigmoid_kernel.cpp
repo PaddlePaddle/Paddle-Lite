@@ -21,11 +21,12 @@ namespace operators {
 
 template <>
 bool SigmoidKernel<FPGA, float>::Init(SigmoidParam<FPGA> *param) {
-  paddle_mobile::fpga::ActivationType activation_enable =
-      paddle_mobile::fpga::SIGMOID;
-  int16_t leaky_relu_negative_slope = 0;
   auto input = const_cast<LoDTensor *>(param->InputX());
   auto input_ptr = input->data<int8_t>();
+  paddle_mobile::fpga::ActivationType activation_enable =
+      paddle_mobile::fpga::SIGMOID;
+  int16_t leaky_relu_negative_slope =
+      fpga::fp32_2_fp16(input->scale[0] / 127.0);
   auto out = param->Out();
   fpga::format_ofm(out);
 

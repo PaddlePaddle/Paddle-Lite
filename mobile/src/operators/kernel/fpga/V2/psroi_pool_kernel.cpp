@@ -176,8 +176,8 @@ void PSRoiPoolKernel<FPGA, float>::Compute(const PSRoiPoolParam<FPGA>& param) {
         PSROIPoolingForward<float>(
             input_data, height, width, input_channels, offset_output_data,
             pooled_height, pooled_width, output_channels, input_rois,
-            bin_size_h, bin_size_w, roi_start_h, roi_start_w, pw, ph, 
-			scale, roi_batch_ind);
+            bin_size_h, bin_size_w, roi_start_h, roi_start_w, pw, ph,
+            scale, roi_batch_ind);
       }
     }
   }
