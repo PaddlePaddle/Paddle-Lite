@@ -15,9 +15,7 @@
 #include <gflags/gflags.h>
 #include <stdio.h>
 #include <vector>
-#include "paddle_api.h"          // NOLINT
-#include "paddle_use_kernels.h"  // NOLINT
-#include "paddle_use_ops.h"      // NOLINT
+#include "paddle_api.h"  // NOLINT
 
 using namespace paddle::lite_api;  // NOLINT
 
