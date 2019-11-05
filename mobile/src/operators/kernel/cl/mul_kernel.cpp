@@ -63,7 +63,7 @@ void MulCompute(const MulParam<GPU_CL> &param, cl_context context,
                              static_cast<float>(1), output_tensor,
                              static_cast<float>(0));
 
-  output->InitEmptyImage(context, commandQueue, output_tensor->dims());
+  //  output->InitEmptyImage(context, commandQueue, output_tensor->dims());
   framework::TensorToCLImage(output_tensor, output, context, commandQueue,
                              kernel1);
 

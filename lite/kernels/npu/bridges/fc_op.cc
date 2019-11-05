@@ -12,14 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "ai_ddk_lib/include/graph/buffer.h"
-#include "ai_ddk_lib/include/graph/graph.h"
-#include "ai_ddk_lib/include/graph/model.h"
-#include "ai_ddk_lib/include/graph/op/all_ops.h"
-#include "ai_ddk_lib/include/graph/operator.h"
-#include "ai_ddk_lib/include/graph/operator_reg.h"
+#include "lite/backends/npu/builder.h"
 #include "lite/kernels/npu/bridges/registry.h"
-#include "lite/kernels/npu/bridges/utils.h"
 
 namespace paddle {
 namespace lite {
@@ -29,19 +23,22 @@ namespace bridges {
 
 node_map_type FCConverter(const std::shared_ptr<lite::OpLite> fc_op,
                           const node_map_type& inputs_map) {
-  LOG(INFO) << "Converting fc...";
-  lite::Scope* scope = fc_op->scope();
-  const lite::OpInfo* op_info = fc_op->op_info();
-  auto output_node = std::make_shared<ge::op::MatMul>(UniqueName("fc"));
+  auto scope = fc_op->scope();
+  auto op_info = fc_op->op_info();
+  auto op_type = op_info->Type();
+  auto unique_op_type = lite::npu::UniqueName(op_type);
+  LOG(INFO) << "Converting " + op_type + "...";
+
+  auto fc_node = std::make_shared<ge::op::FullConnection>(unique_op_type);
 
   auto x_var_name = op_info->Input("Input").front();
   auto w_var_name = op_info->Input("W").front();
 
   int in_num_col_dims = op_info->GetAttr<int>("in_num_col_dims");
-  auto* xtensor = scope->FindVar(x_var_name)->GetMutable<lite::Tensor>();
-  auto* wtensor = scope->FindVar(w_var_name)->GetMutable<lite::Tensor>();
-  auto x_dims = xtensor->dims();
-  auto w_dims = wtensor->dims();
+  auto x = scope->FindVar(x_var_name)->GetMutable<lite::Tensor>();
+  auto w = scope->FindVar(w_var_name)->GetMutable<lite::Tensor>();
+  auto x_dims = x->dims();
+  auto w_dims = w->dims();
 
   CHECK_GE(x_dims.size(), 2UL);
   CHECK_EQ(w_dims.size(), 2UL);
@@ -49,65 +46,69 @@ node_map_type FCConverter(const std::shared_ptr<lite::OpLite> fc_op,
   int m = x_dims.Slice(0, in_num_col_dims).production();
   int k = x_dims.Slice(in_num_col_dims, x_dims.size()).production();
   int n = w_dims[1];
+  CHECK_EQ(k * n, w_dims.production());
+  VLOG(3) << "x dims: " << x_dims << " w dims: " << w_dims << " m: " << m
+          << " k: " << k << " n: " << n;
 
   CHECK(inputs_map.count(x_var_name));
   CHECK(!inputs_map.count(w_var_name));
 
-  LOG(INFO) << "m:" << m << ",n:" << n << ",k:" << k;
-  LOG(INFO) << "x_var_name:" << x_var_name
-            << ", is data: " << inputs_map.count(x_var_name);
-  LOG(INFO) << "w_var_name:" << w_var_name
-            << ", is data: " << inputs_map.count(w_var_name);
+  // reshape x to (m, k, 1, 1)
+  auto reshaped_x_node =
+      std::make_shared<ge::op::Reshape>(x_var_name + "_reshape");
+  reshaped_x_node->set_input_tensor(*inputs_map.at(x_var_name));
+  reshaped_x_node->set_attr_shape({m, k, 1, 1});
+  reshaped_x_node->set_attr_axis(0);
+  fc_node->set_input_x(*reshaped_x_node);
+  lite::npu::OpList::Global().add(inputs_map.at(x_var_name));
+  lite::npu::OpList::Global().add(reshaped_x_node);
 
-  auto xsrc = inputs_map.at(x_var_name);
-  auto reshapex = std::make_shared<ge::op::Reshape>(x_var_name + "_reshape");
-  reshapex->set_input_tensor(*xsrc);
-  reshapex->set_attr_shape({m, k});
-  reshapex->set_attr_axis(0);
-  OpList::Global().add(xsrc);
-  OpList::Global().add(reshapex);
-  output_node->set_input_x(*reshapex);
-
-  auto wconst = std::make_shared<ge::op::Const>(w_var_name);
-  ge::TensorDesc wdesc(ge::Shape({k, n}), ge::FORMAT_NCHW, ge::DT_FLOAT);
-  auto size = wdesc.GetShape().GetShapeSize();
-  CHECK_EQ(size, w_dims.production());
-  ge::TensorPtr ptensor = std::make_shared<ge::Tensor>();
-  ptensor->SetTensorDesc(wdesc);
-  auto* pdata = reinterpret_cast<uint8_t*>(wtensor->mutable_data<float>());
-  ptensor->SetData(pdata, size * sizeof(float));
-  wconst->set_attr_value(ptensor);
-  OpList::Global().add(wconst);
-  output_node->set_input_w(*wconst);
-
-  if (HasInputArg(op_info, scope, "Bias")) {
-    auto b_var_name = op_info->Input("Bias").front();
-    auto* btensor = scope->FindVar(b_var_name)->GetMutable<lite::Tensor>();
-
-    LOG(INFO) << "b_var_name:" << b_var_name
-              << ", is data: " << inputs_map.count(b_var_name);
-    CHECK(!inputs_map.count(b_var_name));
-    CHECK_EQ(btensor->numel(), n);
-
-    auto bconst = std::make_shared<ge::op::Const>(b_var_name);
-    ge::TensorDesc bdesc(
-        ge::Shape({1, n, 1, 1}), ge::FORMAT_NCHW, ge::DT_FLOAT);
-    auto size = bdesc.GetShape().GetShapeSize();
-    CHECK_EQ(size, n);
-    ge::TensorPtr ptensor = std::make_shared<ge::Tensor>();
-    ptensor->SetTensorDesc(bdesc);
-    auto* pdata = reinterpret_cast<uint8_t*>(btensor->mutable_data<float>());
-    ptensor->SetData(pdata, size * sizeof(float));
-    bconst->set_attr_value(ptensor);
-    OpList::Global().add(bconst);
-    output_node->set_input_bias(*bconst);
-    output_node->set_attr_has_bias(ge::AttrValue::BOOL{true});
+  // create w const node, set its shape to (k, n, 1, 1) and fill with
+  // the transposed w tensor
+  auto w_const_node = std::make_shared<ge::op::Const>(w_var_name);
+  ge::TensorDesc w_const_desc(
+      ge::Shape({n, k, 1, 1}), ge::FORMAT_NCHW, ge::DT_FLOAT);
+  ge::TensorPtr w_const_tensor = std::make_shared<ge::Tensor>();
+  w_const_tensor->SetTensorDesc(w_const_desc);
+  auto w_data = w->mutable_data<float>();
+  std::vector<float> transposed_w_data(w_dims.production());
+  for (int i = 0; i < k; i++) {
+    for (int j = 0; j < n; j++) {
+      transposed_w_data[j * k + i] = w_data[i * n + j];
+    }
   }
+  w_const_tensor->SetData(reinterpret_cast<uint8_t*>(transposed_w_data.data()),
+                          transposed_w_data.size() * sizeof(float));
+  w_const_node->set_attr_value(w_const_tensor);
+  fc_node->set_input_w(*w_const_node);
+  lite::npu::OpList::Global().add(w_const_node);
 
-  OpList::Global().add(output_node);
+  // add bias node if bias tensor exists
+  if (lite::npu::HasInputArg(op_info, scope, "Bias")) {
+    auto bias_var_name = op_info->Input("Bias").front();
+    auto bias = scope->FindVar(bias_var_name)->GetMutable<lite::Tensor>();
+    auto bias_dims = bias->dims();
+    CHECK(!inputs_map.count(bias_var_name));
+    CHECK_EQ(bias_dims.production(), n);
+
+    auto bias_const_node = std::make_shared<ge::op::Const>(bias_var_name);
+    bias_const_node->set_attr_value(
+        lite::npu::CvtFromLiteTensor(bias, {1, n, 1, 1}));
+    fc_node->set_input_b(*bias_const_node);
+    lite::npu::OpList::Global().add(bias_const_node);
+  }
+  lite::npu::OpList::Global().add(fc_node);
+
+  // reshape output of fc_node from (m, n, 1, 1) to (m, n)
+  auto reshaped_fc_node =
+      std::make_shared<ge::op::Reshape>(unique_op_type + "_reshape");
+  reshaped_fc_node->set_input_tensor(*fc_node);
+  reshaped_fc_node->set_attr_shape({m, n});
+  reshaped_fc_node->set_attr_axis(0);
+  lite::npu::OpList::Global().add(reshaped_fc_node);
 
   node_map_type outputs_map;
-  outputs_map[op_info->Output("Out").front()] = output_node;
+  outputs_map[op_info->Output("Out").front()] = reshaped_fc_node;
   return outputs_map;
 }
 

@@ -23,51 +23,16 @@ namespace lite {
 
 using lite_api::Place;
 
-namespace {
-
-template <typename T>
-class Types final {
- public:
-  explicit Types(const std::set<T>& types) : types_(types) {}
-  ~Types() = default;
-  std::set<T> ValidSet(const T& element) const;
-
- private:
-  const std::set<T> types_;
-};
-
-template <typename T>
-std::set<T> Types<T>::ValidSet(const T& element) const {
-  if (element == T::kAny) {
-    return types_;
-  } else if (element == T::kUnk) {
-    LOG(FATAL) << "The type of the kernel's place is unknown.";
-  }
-  return std::set<T>({element});
-}
-
 void ExpandPlaces(std::set<Place>* places, const Place& place) {
-  static const Types<TargetType> target_set({TARGET(kHost),
-                                             TARGET(kX86),
-                                             TARGET(kCUDA),
-                                             TARGET(kARM),
-                                             TARGET(kOpenCL),
-                                             TARGET(kNPU),
-                                             TARGET(kFPGA)});
-  static const Types<PrecisionType> precision_set(
-      {PRECISION(kFloat), PRECISION(kInt8), PRECISION(kFP16), PRECISION(kAny)});
-  static const Types<DataLayoutType> layout_set(
-      {DATALAYOUT(kNCHW), DATALAYOUT(kAny), DATALAYOUT(kNHWC)});
-  for (const auto& target : target_set.ValidSet(place.target)) {
-    for (const auto& precision : precision_set.ValidSet(place.precision)) {
-      for (const auto& layout : layout_set.ValidSet(place.layout)) {
+  for (const auto& target : lite_api::ExpandValidTargets(place.target)) {
+    for (const auto& precision :
+         lite_api::ExpandValidPrecisions(place.precision)) {
+      for (const auto& layout : lite_api::ExpandValidLayouts(place.layout)) {
         places->insert(Place(target, precision, layout));
       }
     }
   }
 }
-
-}  // anonymous namespace
 
 bool KernelRegistered(const std::string name, const Place& place) {
   std::set<Place> places;

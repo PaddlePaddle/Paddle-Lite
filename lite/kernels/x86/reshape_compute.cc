@@ -34,3 +34,14 @@ REGISTER_LITE_KERNEL(reshape2,
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindOutput("XShape", {LiteType::GetTensorTy(TARGET(kX86))})
     .Finalize();
+REGISTER_LITE_KERNEL(reshape2,
+                     kX86,
+                     kInt64,
+                     kNCHW,
+                     paddle::lite::kernels::x86::Reshape2Compute<int64_t>,
+                     def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
+    .BindOutput("XShape",
+                {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
+    .Finalize();

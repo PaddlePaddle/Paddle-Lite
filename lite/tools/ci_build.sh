@@ -208,9 +208,9 @@ function build {
 function test_server {
     # Due to the missing of x86 kernels, we skip the following tests temporarily.
     # TODO(xxx) clear the skip list latter
-    local skip_list=("test_paddle_api" "test_cxx_api" "test_googlenet"
+    local skip_list=("test_paddle_api" "test_cxx_api"
                      "test_mobilenetv1_lite_x86" "test_mobilenetv2_lite_x86"
-                     "test_inceptionv4_lite_x86" "test_light_api"
+                     "test_light_api"
                      "test_apis" "test_model_bin"
                     )
     local to_skip=0
@@ -272,6 +272,63 @@ function build_test_train {
     find -name "*.whl" | xargs pip2 install
     python ../lite/tools/python/lite_test.py
 
+}
+
+function cmake_xpu {
+    export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$PWD/third_party/install/mklml/lib"
+    prepare_workspace
+    cmake .. \
+        ${common_flags} \
+        -DWITH_GPU=OFF \
+        -DWITH_MKLDNN=OFF \
+        -DLITE_WITH_X86=ON \
+        -DWITH_MKL=ON \
+        -DLITE_BUILD_EXTRA=ON \
+        -DLITE_WITH_XPU=ON \
+        -DXPU_SDK_ROOT="$(pwd)/../../XPU_SDK"
+}
+
+function build_xpu {
+    make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
+}
+
+# It will eagerly test all lite related unittests.
+function test_xpu {
+    # Due to the missing of xpu kernels, we skip the following tests temporarily.
+    # TODO(xxx) clear the skip list latter
+    local skip_list=("test_paddle_api" "test_cxx_api" "test_googlenet"
+                     "test_mobilenetv1_lite_x86" "test_mobilenetv2_lite_x86"
+                     "test_inceptionv4_lite_x86" "test_light_api"
+                     "test_apis" "test_model_bin"
+                    )
+    local to_skip=0
+    for _test in $(cat $TESTS_FILE); do
+        to_skip=0
+        for skip_name in ${skip_list[@]}; do
+            if [ $skip_name = $_test ]; then
+                echo "to skip " $skip_name
+                to_skip=1
+            fi
+        done
+
+        if [ $to_skip -eq 0 ]; then
+            ctest -R $_test -V
+        fi
+    done
+}
+
+# Build the code and run lite server tests. This is executed in the CI system.
+function build_test_xpu {
+    cur_dir=$(pwd)
+
+    build_dir=$cur_dir/build.lite.xpu
+    mkdir -p $build_dir
+    cd $build_dir
+
+    cmake_xpu
+    build_xpu
+
+    test_xpu
 }
 
 # test_arm_android <some_test_name> <adb_port_number>
@@ -876,6 +933,10 @@ function main {
                 cmake_x86
                 shift
                 ;;
+            cmake_xpu)
+                cmake_xpu
+                shift
+                ;;
             cmake_opencl)
                 cmake_opencl $ARM_OS $ARM_ABI $ARM_LANG
                 shift
@@ -900,6 +961,10 @@ function main {
                 test_server
                 shift
                 ;;
+            test_xpu)
+                test_xpu
+                shift
+                ;;
             test_arm)
                 test_arm $ARM_OS $ARM_ABI $ARM_LANG $ARM_PORT
                 shift
@@ -918,6 +983,10 @@ function main {
                 ;;
             build_test_server_nv)
                 build_test_server_nv
+		shift
+		;;
+            build_test_xpu)
+                build_test_xpu
                 shift
                 ;;
             build_test_train)

@@ -22,7 +22,7 @@ endfunction()
 function (lite_deps TARGET)
   set(options "")
   set(oneValueArgs "")
-  set(multiValueArgs DEPS X86_DEPS CUDA_DEPS ARM_DEPS PROFILE_DEPS LIGHT_DEPS HVY_DEPS CL_DEPS FPGA_DEPS NPU_DEPS ARGS)
+  set(multiValueArgs DEPS X86_DEPS CUDA_DEPS ARM_DEPS PROFILE_DEPS LIGHT_DEPS HVY_DEPS CL_DEPS FPGA_DEPS NPU_DEPS XPU_DEPS ARGS)
   cmake_parse_arguments(lite_deps "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
   set(deps ${lite_deps_DEPS})
@@ -83,6 +83,12 @@ function (lite_deps TARGET)
     endforeach(var)
   endif()
 
+  if (LITE_WITH_XPU)
+    foreach(var ${lite_deps_XPU_DEPS})
+      set(deps ${deps} ${var})
+    endforeach(var)
+  endif()
+
   set(${TARGET} ${deps} PARENT_SCOPE)
 endfunction()
 
@@ -107,7 +113,7 @@ file(WRITE ${offline_lib_registry_file} "") # clean
 function(lite_cc_library TARGET)
     set(options SHARED shared STATIC static MODULE module)
     set(oneValueArgs "")
-    set(multiValueArgs SRCS DEPS X86_DEPS CUDA_DEPS CL_DEPS NPU_DEPS ARM_DEPS FPGA_DEPS PROFILE_DEPS LIGHT_DEPS
+    set(multiValueArgs SRCS DEPS X86_DEPS CUDA_DEPS CL_DEPS NPU_DEPS XPU_DEPS ARM_DEPS FPGA_DEPS PROFILE_DEPS LIGHT_DEPS
       HVY_DEPS EXCLUDE_COMPILE_DEPS ARGS)
     cmake_parse_arguments(args "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
@@ -118,6 +124,7 @@ function(lite_cc_library TARGET)
             CUDA_DEPS ${args_CUDA_DEPS}
             CL_DEPS ${args_CL_DEPS}
             NPU_DEPS ${args_NPU_DEPS}
+            XPU_DEPS ${args_XPU_DEPS}
             ARM_DEPS ${args_ARM_DEPS}
             FPGA_DEPS ${args_FPGA_DEPS}
             PROFILE_DEPS ${args_PROFILE_DEPS}
@@ -237,11 +244,16 @@ set(x86_kernels CACHE INTERNAL "x86 kernels")
 set(cuda_kernels CACHE INTERNAL "cuda kernels")
 set(fpga_kernels CACHE INTERNAL "fpga kernels")
 set(npu_kernels CACHE INTERNAL "npu kernels")
+set(xpu_kernels CACHE INTERNAL "xpu kernels")
 set(opencl_kernels CACHE INTERNAL "opencl kernels")
 set(host_kernels CACHE INTERNAL "host kernels")
 
 set(kernels_src_list "${CMAKE_BINARY_DIR}/kernels_src_list.txt")
 file(WRITE ${kernels_src_list} "") # clean
+if(LITE_BUILD_TAILOR)
+  set(tailored_kernels_list_path "${LITE_OPTMODEL_DIR}/.tailored_kernels_source_list")
+  file(STRINGS ${tailored_kernels_list_path} tailored_kernels_list)
+endif()
 # add a kernel for some specific device
 # device: one of (Host, ARM, X86, NPU, FPGA, OPENCL, CUDA)
 # level: one of (basic, extra)
@@ -252,6 +264,15 @@ function(add_kernel TARGET device level)
         LIGHT_DEPS HVY_DEPS EXCLUDE_COMPILE_DEPS
         ARGS)
     cmake_parse_arguments(args "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+
+    if(LITE_BUILD_TAILOR)
+      foreach(src ${args_SRCS})
+        list (FIND tailored_kernels_list ${src} _index)
+        if (${_index} EQUAL -1)
+          return()
+        endif()
+      endforeach()
+    endif()
 
     if ("${level}" STREQUAL "extra" AND (NOT LITE_BUILD_EXTRA))
         return()
@@ -293,6 +314,12 @@ function(add_kernel TARGET device level)
         endif()
         set(npu_kernels "${npu_kernels};${TARGET}" CACHE INTERNAL "")
     endif()
+    if ("${device}" STREQUAL "XPU")
+        if (NOT LITE_WITH_XPU)
+            return()
+        endif()
+        set(xpu_kernels "${xpu_kernels};${TARGET}" CACHE INTERNAL "")
+    endif()
     if ("${device}" STREQUAL "FPGA")
         if (NOT LITE_WITH_FPGA)
             return()
@@ -326,6 +353,7 @@ function(add_kernel TARGET device level)
     lite_cc_library(${TARGET} SRCS ${args_SRCS}
               DEPS ${args_DEPS}
               X86_DEPS ${args_X86_DEPS}
+              XPU_DEPS ${args_XPU_DEPS}
               CUDA_DEPS ${args_CUDA_DEPS}
               CL_DEPS ${args_CL_DEPS}
               ARM_DEPS ${args_ARM_DEPS}
@@ -339,6 +367,10 @@ endfunction()
 set(ops CACHE INTERNAL "ops")
 set(ops_src_list "${CMAKE_BINARY_DIR}/ops_src_list.txt")
 file(WRITE ${ops_src_list} "") # clean
+if(LITE_BUILD_TAILOR)
+  set(tailored_ops_list_path "${LITE_OPTMODEL_DIR}/.tailored_ops_source_list")
+  file(STRINGS ${tailored_ops_list_path} tailored_ops_list)
+endif()
 # add an operator
 # level: one of (basic, extra)
 function(add_operator TARGET level)
@@ -349,19 +381,28 @@ function(add_operator TARGET level)
         ARGS)
     cmake_parse_arguments(args "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
+
     if ("${level}" STREQUAL "extra" AND (NOT LITE_BUILD_EXTRA))
         return()
     endif()
 
-    set(ops "${ops};${TARGET}" CACHE INTERNAL "source")
 
     foreach(src ${args_SRCS})
+      if(LITE_BUILD_TAILOR)
+        list(FIND tailored_ops_list ${src} _index)
+        if (${_index} EQUAL -1)
+          return()
+        endif()
+      endif()
       file(APPEND ${ops_src_list} "${CMAKE_CURRENT_SOURCE_DIR}/${src}\n")
     endforeach()
+
+    set(ops "${ops};${TARGET}" CACHE INTERNAL "source")
 
     lite_cc_library(${TARGET} SRCS ${args_SRCS}
               DEPS ${args_DEPS}
               X86_DEPS ${args_X86_DEPS}
+              XPU_DEPS ${args_XPU_DEPS}
               CUDA_DEPS ${args_CUDA_DEPS}
               CL_DEPS ${args_CL_DEPS}
               ARM_DEPS ${args_ARM_DEPS}

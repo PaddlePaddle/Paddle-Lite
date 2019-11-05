@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #pragma once
+#include <set>
 #include <string>
 
 // Generic helper definitions for shared library support
@@ -50,8 +51,9 @@ enum class TargetType : int {
   kOpenCL = 5,
   kFPGA = 7,
   kNPU = 8,
+  kXPU = 9,
   kAny = 6,  // any target
-  NUM = 9,   // number of fields.
+  NUM = 10,  // number of fields.
 };
 enum class PrecisionType : int {
   kUnk = 0,
@@ -101,6 +103,8 @@ static size_t PrecisionTypeLength(PrecisionType type) {
       return 1;
     case PrecisionType::kInt32:
       return 4;
+    case PrecisionType::kInt64:
+      return 8;
     case PrecisionType::kFP16:
       return 2;
     default:
@@ -123,6 +127,17 @@ const std::string& TargetRepr(TargetType target);
 const std::string& PrecisionRepr(PrecisionType precision);
 
 const std::string& DataLayoutRepr(DataLayoutType layout);
+
+// Get a set of all the elements represented by the target.
+std::set<TargetType> ExpandValidTargets(TargetType target = TARGET(kAny));
+
+// Get a set of all the elements represented by the precision.
+std::set<PrecisionType> ExpandValidPrecisions(
+    PrecisionType precision = PRECISION(kAny));
+
+// Get a set of all the elements represented by the layout.
+std::set<DataLayoutType> ExpandValidLayouts(
+    DataLayoutType layout = DATALAYOUT(kAny));
 
 /*
  * Place specifies the execution context of a Kernel or input/output for a
