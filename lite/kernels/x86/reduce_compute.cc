@@ -12,15 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
+#include "lite/kernels/x86/reduce_compute.h"
 
-#include "lite/kernels/xpu/bridges/registry.h"
-
-USE_XPU_BRIDGE(relu);
-USE_XPU_BRIDGE(conv2d);
-USE_XPU_BRIDGE(depthwise_conv2d);
-USE_XPU_BRIDGE(elementwise_add);
-USE_XPU_BRIDGE(pool2d);
-USE_XPU_BRIDGE(softmax);
-USE_XPU_BRIDGE(mul);
-USE_XPU_BRIDGE(batch_norm);
+REGISTER_LITE_KERNEL(reduce_sum,
+                     kX86,
+                     kFloat,
+                     kNCHW,
+                     paddle::lite::kernels::x86::ReduceSumCompute<float>,
+                     def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
+    .Finalize();

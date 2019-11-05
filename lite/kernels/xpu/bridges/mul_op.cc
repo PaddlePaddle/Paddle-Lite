@@ -78,8 +78,11 @@ node_map_type MulConverter(const std::shared_ptr<lite::OpLite> op,
 
   // create mul node and set params from op
   std::shared_ptr<xtcl::xExpr> mul_node = nullptr;
-  mul_node = std::make_shared<xtcl::xExpr>(graph_ctx->builder->CreateDense(
-      *x_node, *y_const_node, static_cast<int>(y_dims[1])));
+  mul_node = std::make_shared<xtcl::xExpr>(
+      graph_ctx->builder->CreateDense(*x_node,
+                                      static_cast<int>(y_dims[1]),
+                                      ::xtcl::NullValue<::xtcl::DataType>(),
+                                      *y_const_node));
   graph_ctx->builder->SetLayer(unique_op_type);
 
   // output converted nodes
