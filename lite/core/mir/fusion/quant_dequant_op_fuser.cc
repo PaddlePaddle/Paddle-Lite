@@ -234,6 +234,7 @@ void ChannelWiseDequantOpFuser::InsertNewNode(SSAGraph* graph,
   auto* quantized_op_weight = matched.at("quantized_op_weight");
   auto* quantized_op = matched.at("quantized_op");
   auto* dequant_op_channel_scale = matched.at("dequant_op_channel_scale");
+  auto* dequant_op = matched.at("dequant_op");
   auto* dequant_op_out = matched.at("dequant_op_out");
 
   // obtain input_scale and weight_scale
@@ -243,8 +244,10 @@ void ChannelWiseDequantOpFuser::InsertNewNode(SSAGraph* graph,
       quantized_op->stmt()->op_info()->GetAttr<float>("input_scale");
 
   std::vector<float> weight_scale;
-  int bit_length = quantized_op->stmt()->op_info()->GetAttr<int>("bit_length");
-  int range = ((1 << (bit_length - 1)) - 1);
+  std::vector<int> quant_bits =
+      dequant_op->stmt()->op_info()->GetAttr<std::vector<int>>("quant_bits");
+  int weight_bit_length = quant_bits[0];
+  int range = ((1 << (weight_bit_length - 1)) - 1);
   auto channel_scale_name = dequant_op_channel_scale->arg()->name;
   auto channel_scale_tensor =
       scope->FindVar(channel_scale_name)->GetMutable<lite::Tensor>();
