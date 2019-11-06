@@ -15,6 +15,7 @@
 #pragma once
 #include <map>
 #include <memory>
+#include <mutex>  //NOLINT
 #include <string>
 #include <utility>
 #include <vector>
@@ -126,6 +127,8 @@ class CxxPaddleApiImpl : public lite_api::PaddlePredictor {
 
   void Run() override;
 
+  std::shared_ptr<lite_api::PaddlePredictor> Clone() override;
+
   std::string GetVersion() const override;
 
   // get inputs names and get outputs names
@@ -146,6 +149,8 @@ class CxxPaddleApiImpl : public lite_api::PaddlePredictor {
 
  private:
   Predictor raw_predictor_;
+  lite_api::CxxConfig config_;
+  std::mutex mutex_;
 };
 
 /*

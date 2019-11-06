@@ -12,15 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
+#include "lite/kernels/x86/sequence_reshape_compute.h"
 
-#include "lite/kernels/xpu/bridges/registry.h"
-
-USE_XPU_BRIDGE(relu);
-USE_XPU_BRIDGE(conv2d);
-USE_XPU_BRIDGE(depthwise_conv2d);
-USE_XPU_BRIDGE(elementwise_add);
-USE_XPU_BRIDGE(pool2d);
-USE_XPU_BRIDGE(softmax);
-USE_XPU_BRIDGE(mul);
-USE_XPU_BRIDGE(batch_norm);
+REGISTER_LITE_KERNEL(
+    sequence_reshape,
+    kX86,
+    kInt64,
+    kNCHW,
+    paddle::lite::kernels::x86::SequenceReshapeCompute<int64_t>,
+    def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
+    .Finalize();
