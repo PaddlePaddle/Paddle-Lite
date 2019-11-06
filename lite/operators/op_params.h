@@ -788,6 +788,11 @@ struct SliceParam {
   std::vector<int> starts{};
   std::vector<int> ends{};
   std::vector<int> decrease_axis{};
+  std::vector<int> infer_flags{};
+  std::vector<lite::Tensor*> StartsTensorList{};
+  std::vector<lite::Tensor*> EndsTensorList{};
+  lite::Tensor* StartsTensor{nullptr};
+  lite::Tensor* EndsTensor{nullptr};
 };
 
 struct AffineChannelParam {
