@@ -24,6 +24,9 @@
 #include "lite/tests/utils/timer.h"
 #include "lite/utils/cp_logging.h"
 #include "lite/utils/string.h"
+#ifdef LITE_WITH_PROFILE
+#include "lite/core/profile/basic_profiler.h"
+#endif  // LITE_WITH_PROFILE
 
 using paddle::lite::Timer;
 
@@ -69,6 +72,10 @@ void Run(const std::vector<std::vector<int64_t>>& input_shapes,
          const int thread_num,
          const int repeat,
          const int warmup_times = 0) {
+#ifdef LITE_WITH_PROFILE
+  lite::profile::BasicProfiler<lite::profile::BasicTimer>::Global().SetWarmup(
+      warmup_times);
+#endif
   lite_api::MobileConfig config;
   config.set_model_dir(model_dir);
   config.set_power_mode(power_mode);

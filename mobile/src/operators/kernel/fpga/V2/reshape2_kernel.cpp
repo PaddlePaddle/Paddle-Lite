@@ -25,6 +25,7 @@ bool Reshape2Kernel<FPGA, float>::Init(Reshape2Param<FPGA> *param) {
   auto input = const_cast<LoDTensor *>(param->InputX());
   auto output = param->Out();
   auto shape = param->Shape();
+  output->scale[0] = input->scale[0];
 
   auto num_in = framework::product(input->dims());
   auto num_shape = framework::product(framework::make_ddim(shape));

@@ -156,22 +156,41 @@ void test(int argc, char *argv[]) {
     }
 
     // 测速
-    auto time5 = time();
+    auto max_time = -1;
+    auto min_time = 100000;
+    auto all_time = 0;
     if (is_lod) {
       for (int i = 0; i < run_times; i++) {
+        auto time7 = time();
         paddle_mobile.Predict(input_lod_tensor);
+        auto time8 = time();
+        const double diff_time_single = time_diff(time7, time8);
+        max_time = fmax(diff_time_single, max_time);
+        min_time = fmin(diff_time_single, min_time);
+        all_time += diff_time_single;
       }
     } else {
       paddle_mobile.Feed(var_names[0], input_tensor);
       for (int i = 0; i < run_times; i++) {
+        auto time7 = time();
         paddle_mobile.Predict();
+        auto time8 = time();
+        const double diff_time_single = time_diff(time7, time8);
+        max_time = fmax(diff_time_single, max_time);
+        min_time = fmin(diff_time_single, min_time);
+        all_time += diff_time_single;
       }
     }
 
-    auto time6 = time();
     std::cout << "auto-test"
-              << " predict-time-cost " << time_diff(time5, time6) / run_times
+              << " predict-time-cost-avg " << all_time * 1.0f / run_times
               << "ms" << std::endl;
+    std::cout << "auto-test"
+              << " predict-time-cost-max " << double(max_time) << "ms"
+              << std::endl;
+    std::cout << "auto-test"
+              << " predict-time-cost-min " << double(min_time) << "ms"
+              << std::endl;
 
     std::cout << std::endl;
   }
