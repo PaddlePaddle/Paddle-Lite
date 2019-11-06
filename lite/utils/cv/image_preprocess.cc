@@ -16,6 +16,7 @@
 #include <arm_neon.h>
 #include <math.h>
 #include <algorithm>
+#include <climits>
 namespace paddle {
 namespace lite {
 namespace utils {

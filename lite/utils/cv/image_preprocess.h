@@ -14,6 +14,7 @@
 
 #pragma once
 #include <stdint.h>
+#include <stdio.h>
 #include <vector>
 #include "lite/core/tensor.h"
 #include "lite/utils/cv/cv_enum.h"
