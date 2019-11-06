@@ -34,6 +34,9 @@ endif()
 
 if(NOT DEFINED ANDROID_API_LEVEL)
     set(ANDROID_API_LEVEL "23")
+    if(ARM_TARGET_ARCH_ABI STREQUAL "armv7")
+        set(ANDROID_API_LEVEL "22")
+    endif()
 endif()
 
 # then check input arm abi
