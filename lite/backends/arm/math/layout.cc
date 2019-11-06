@@ -22,7 +22,6 @@ namespace lite {
 namespace arm {
 namespace math {
 #ifdef __aarch64__
-
 #define TRANS_C4                                                \
   "ld1 {v0.4s}, [%[din0_ptr]]   \n"                             \
   "ld1 {v1.4s}, [%[din1_ptr]]   \n"                             \
@@ -122,7 +121,6 @@ namespace math {
   "bne 1b \n"
 
 #else
-
 #define TRANS_C4                                                \
   "1: \n"                                                       \
   "vld1.32 {d0-d1}, [%[din0_ptr]] \n"                           \

@@ -47,6 +47,7 @@ DEFINE_bool(flag_nchw, true, "do nchw to nhwc");
 typedef paddle::lite::DDim DDim;
 typedef paddle::lite::Tensor Tensor;
 typedef paddle::lite::operators::LayoutParam LayoutParam;
+
 using paddle::lite::Timer;
 
 #define IN(n, c, h, w)                                 \
