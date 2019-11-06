@@ -1,9 +1,9 @@
 # for conv op
-add_kernel(conv_depthwise ARM extra SRCS conv_depthwise.cc DEPS ${lite_kernel_deps} math_arm)
-add_kernel(conv_direct ARM extra SRCS conv_direct.cc DEPS ${lite_kernel_deps} math_arm)
-add_kernel(conv_gemmlike ARM extra SRCS conv_gemmlike.cc DEPS ${lite_kernel_deps} math_arm)
-add_kernel(conv_winograd ARM extra SRCS conv_winograd.cc DEPS ${lite_kernel_deps} math_arm)
-add_kernel(conv_compute_arm ARM extra SRCS conv_compute.cc DEPS ${lite_kernel_deps}
+add_kernel(conv_depthwise ARM basic SRCS conv_depthwise.cc DEPS ${lite_kernel_deps} math_arm)
+add_kernel(conv_direct ARM basic SRCS conv_direct.cc DEPS ${lite_kernel_deps} math_arm)
+add_kernel(conv_gemmlike ARM basic SRCS conv_gemmlike.cc DEPS ${lite_kernel_deps} math_arm)
+add_kernel(conv_winograd ARM basic SRCS conv_winograd.cc DEPS ${lite_kernel_deps} math_arm)
+add_kernel(conv_compute_arm ARM basic SRCS conv_compute.cc DEPS ${lite_kernel_deps}
         conv_depthwise conv_direct conv_gemmlike conv_winograd)
 
 add_kernel(fc_compute_arm ARM basic SRCS fc_compute.cc DEPS ${lite_kernel_deps} math_arm)
