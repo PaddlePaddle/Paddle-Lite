@@ -102,6 +102,10 @@ class LITE_API PaddlePredictor {
       bool record_info = false);
 
   virtual ~PaddlePredictor() = default;
+
+ protected:
+  int threads_{1};
+  lite_api::PowerMode mode_{lite_api::LITE_POWER_NO_BIND};
 };
 
 /// Base class for all the configs.
