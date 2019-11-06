@@ -21,7 +21,7 @@ namespace lite {
 namespace operators {
 
 bool ConcatOpLite::CheckShape() const {
-  CHECK_GT_OR_FALSE(param_.x.size(), 1UL);
+  CHECK_GE_OR_FALSE(param_.x.size(), 1UL);
   CHECK_OR_FALSE(param_.output);
   return true;
 }
