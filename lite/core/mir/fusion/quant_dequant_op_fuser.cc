@@ -119,7 +119,7 @@ void DequantOpFuser::BuildPattern() {
 
 void DequantOpFuser::InsertNewNode(SSAGraph* graph,
                                    const key2nodes_t& matched) {
-  auto* quant_op_input = matched.at("quantized_op_input");
+  auto* quantized_op_input = matched.at("quantized_op_input");
   auto* quantized_op_weight = matched.at("quantized_op_weight");
   auto* quantized_op = matched.at("quantized_op");
   auto* dequant_op = matched.at("dequant_op");
@@ -148,13 +148,13 @@ void DequantOpFuser::InsertNewNode(SSAGraph* graph,
   int weight_scale_size;
   if (quantized_op_type_ == "conv2d" ||
       quantized_op_type_ == "depthwise_conv2d") {
-    op_desc.SetInput("Input", {quant_op_input->arg()->name});
+    op_desc.SetInput("Input", {quantized_op_input->arg()->name});
     op_desc.SetOutput("Output", {dequant_op_out->arg()->name});
     // Conv weight shape: Cout * Cin * kh * hw, the weight_scale_size should
     // be Cout.
     weight_scale_size = quantized_weight_t->dims()[0];
   } else if (quantized_op_type_ == "mul") {
-    op_desc.SetInput("X", {quant_op_input->arg()->name});
+    op_desc.SetInput("X", {quantized_op_input->arg()->name});
     op_desc.SetOutput("Out", {dequant_op_out->arg()->name});
     // Fc weight: Cin * Cout, the weight_scale_size should be Cout.
     weight_scale_size = quantized_weight_t->dims()[1];
@@ -183,7 +183,7 @@ void DequantOpFuser::InsertNewNode(SSAGraph* graph,
   new_quantized_op->Attach(op_desc, scope);
   auto* new_quantized_op_node =
       graph->GraphCreateInstructNode(new_quantized_op, valid_places);
-  IR_NODE_LINK_TO(quant_op_input, new_quantized_op_node);
+  IR_NODE_LINK_TO(quantized_op_input, new_quantized_op_node);
   IR_NODE_LINK_TO(quantized_op_weight, new_quantized_op_node);
   IR_NODE_LINK_TO(new_quantized_op_node, dequant_op_out);
 }
@@ -230,7 +230,7 @@ void ChannelWiseDequantOpFuser::BuildPattern() {
 
 void ChannelWiseDequantOpFuser::InsertNewNode(SSAGraph* graph,
                                               const key2nodes_t& matched) {
-  auto* quant_op_input = matched.at("quantized_op_input");
+  auto* quantized_op_input = matched.at("quantized_op_input");
   auto* quantized_op_weight = matched.at("quantized_op_weight");
   auto* quantized_op = matched.at("quantized_op");
   auto* dequant_op_channel_scale = matched.at("dequant_op_channel_scale");
@@ -255,7 +255,7 @@ void ChannelWiseDequantOpFuser::InsertNewNode(SSAGraph* graph,
 
   // set op desc
   cpp::OpDesc op_desc = *quantized_op->stmt()->op_info();
-  op_desc.SetInput("Input", {quant_op_input->arg()->name});
+  op_desc.SetInput("Input", {quantized_op_input->arg()->name});
   op_desc.SetOutput("Output", {dequant_op_out->arg()->name});
 
   op_desc.SetAttr("enable_int8", true);
@@ -281,7 +281,7 @@ void ChannelWiseDequantOpFuser::InsertNewNode(SSAGraph* graph,
   new_quantized_op->Attach(op_desc, scope);
   auto* new_quantized_op_node =
       graph->GraphCreateInstructNode(new_quantized_op, valid_places);
-  IR_NODE_LINK_TO(quant_op_input, new_quantized_op_node);
+  IR_NODE_LINK_TO(quantized_op_input, new_quantized_op_node);
   IR_NODE_LINK_TO(quantized_op_weight, new_quantized_op_node);
   IR_NODE_LINK_TO(new_quantized_op_node, dequant_op_out);
 }

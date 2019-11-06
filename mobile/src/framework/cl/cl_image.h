@@ -207,7 +207,7 @@ class CLImage {
                               real_image_dims_[1] >= image_dims_[1],
                           "real image is not enough!");
     if (cl_image_ != src.cl_image_) {
-      cl_image_.reset(src.cl_image_.get());
+      cl_image_.reset(src.cl_image_.get(), CLMemDeleter());
     }
 
     tensor_dims_ = need_dims;
@@ -236,7 +236,7 @@ class CLImage {
         "Tensor holds no memory. Call Tensor::mutable_data first.")
 
     if (cl_image_ != src.cl_image_) {
-      cl_image_.reset(src.cl_image_.get());
+      cl_image_.reset(src.cl_image_.get(), CLMemDeleter());
     }
     return *this;
   }
@@ -310,7 +310,7 @@ class CLImage {
         &cid,  // const cl_image_desc *image_desc
         data,  // void *host_ptr
         &err);
-    cl_image_.reset(cl_image);
+    cl_image_.reset(cl_image, CLMemDeleter());
     if (err != CL_SUCCESS) {
       CL_CHECK_ERRORS(err);
       PADDLE_MOBILE_THROW_EXCEPTION(" create image 2d error ");
@@ -318,7 +318,7 @@ class CLImage {
   }
 
   bool initialized_ = false;
-  std::unique_ptr<_cl_mem, CLMemDeleter> cl_image_;
+  std::shared_ptr<_cl_mem> cl_image_;
   std::unique_ptr<_cl_event, CLEventDeleter> cl_event_;
   DDim tensor_dims_;
   DDim image_dims_;
