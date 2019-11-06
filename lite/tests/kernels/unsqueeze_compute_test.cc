@@ -28,9 +28,9 @@ class UnsqueezeComputeTester : public arena::TestCase {
   std::string axes_tensor_ = "AxesTensor";
   std::vector<std::string> axes_tensor_list_;
   std::vector<int> axes_;
-  int input_axes_flag_ =
-      1;  // 1 for axes, 2 for axes_tensor, 3 for axes_tensor_list
-  DDim dims_;
+  // input_axes_flag_1: for axes, 2 for axes_tensor, 3 for axes_tensor_list
+  int input_axes_flag_ = 1;
+  DDim dims_{};
 
  public:
   UnsqueezeComputeTester(const Place& place,
@@ -121,7 +121,7 @@ class UnsqueezeComputeTester : public arena::TestCase {
       SetCommonTensor(axes_tensor_, axes_tensor_dim, axes_tensor_data.data());
     } else if (input_axes_flag_ == 3) {
       std::string name = "axes_tensor_";
-      for (int i = 0; i < axes_.size(); i++) {
+      for (size_t i = 0; i < axes_.size(); i++) {
         name = name + std::to_string(i);
         axes_tensor_list_.push_back(name);
         SetCommonTensor(name, DDim({1}), &axes_[i]);
