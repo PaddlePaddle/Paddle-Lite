@@ -225,7 +225,7 @@ void test_conv_fp32(const std::vector<DDim>& input_dims,
             if (max_diff > 5e-4f) {
               LOG(WARNING) << "basic result";
               print_tensor(tout_basic);
-              LOG(WARNING) << "saber result";
+              LOG(WARNING) << "lite result";
               print_tensor(*param.output);
               Tensor tdiff;
               tdiff.Resize(tout_basic.dims());

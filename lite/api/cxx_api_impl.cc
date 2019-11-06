@@ -13,6 +13,8 @@
 // limitations under the License.
 
 #include "lite/api/cxx_api.h"
+#include <memory>
+#include <mutex>  //NOLINT
 #include <string>
 #include "lite/api/paddle_api.h"
 #include "lite/core/device_info.h"
@@ -22,11 +24,15 @@ namespace paddle {
 namespace lite {
 
 void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
+  config_ = config;
 #ifdef LITE_WITH_CUDA
   Env<TARGET(kCUDA)>::Init();
 #endif
   auto places = config.valid_places();
   raw_predictor_.Build(config, places);
+
+  mode_ = config.power_mode();
+  threads_ = config.threads();
 }
 
 std::unique_ptr<lite_api::Tensor> CxxPaddleApiImpl::GetInput(int i) {
@@ -48,7 +54,19 @@ std::vector<std::string> CxxPaddleApiImpl::GetOutputNames() {
   return raw_predictor_.GetOutputNames();
 }
 
-void CxxPaddleApiImpl::Run() { raw_predictor_.Run(); }
+void CxxPaddleApiImpl::Run() {
+#ifdef LITE_WITH_ARM
+  lite::DeviceInfo::Global().SetRunMode(mode_, threads_);
+#endif
+  raw_predictor_.Run();
+}
+
+std::shared_ptr<lite_api::PaddlePredictor> CxxPaddleApiImpl::Clone() {
+  std::lock_guard<std::mutex> lock(mutex_);
+  auto predictor = std::make_shared<lite::CxxPaddleApiImpl>();
+  predictor->Init(config_);
+  return predictor;
+}
 
 std::string CxxPaddleApiImpl::GetVersion() const { return version(); }
 
@@ -65,8 +83,9 @@ std::unique_ptr<lite_api::Tensor> CxxPaddleApiImpl::GetInputByName(
 }
 
 void CxxPaddleApiImpl::SaveOptimizedModel(const std::string &model_dir,
-                                          lite_api::LiteModelType model_type) {
-  raw_predictor_.SaveModel(model_dir, model_type);
+                                          lite_api::LiteModelType model_type,
+                                          bool record_info) {
+  raw_predictor_.SaveModel(model_dir, model_type, record_info);
 }
 
 }  // namespace lite

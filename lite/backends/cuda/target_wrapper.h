@@ -59,6 +59,13 @@ class TargetWrapper<TARGET(kCUDA)> {
                           size_t size,
                           IoDirection dir,
                           const stream_t& stream);
+
+  static void MemsetSync(void* devPtr, int value, size_t count);
+
+  static void MemsetAsync(void* devPtr,
+                          int value,
+                          size_t count,
+                          const stream_t& stream);
 };
 }  // namespace lite
 }  // namespace paddle

@@ -49,10 +49,35 @@ class Pass {
 
   // Some passes only apply to qualified targets, which need to be explicitly
   // declared.
-  // Bind the target. At runtime, there must be one device in the bound targets.
+
+  // Bind targets. At runtime, there must be one device in the bound targets.
   void BindTargets(const std::set<TargetType>& targets) {
-    bound_targets_ = targets;
+    std::set<TargetType> res;
+    for (const auto& target : targets) {
+      const std::set<TargetType>& universe = ExpandValidTargets(target);
+      std::set_union(bound_targets_.begin(),
+                     bound_targets_.end(),
+                     universe.begin(),
+                     universe.end(),
+                     std::inserter(res, res.begin()));
+    }
+    bound_targets_ = res;
   }
+
+  // Exclude targets. At runtime, there must be one device in the bound targets.
+  void ExcludeTargets(const std::set<TargetType>& targets) {
+    std::set<TargetType> res;
+    for (const auto& target : targets) {
+      const std::set<TargetType>& universe = ExpandValidTargets(target);
+      std::set_difference(bound_targets_.begin(),
+                          bound_targets_.end(),
+                          universe.begin(),
+                          universe.end(),
+                          std::inserter(res, res.begin()));
+    }
+    bound_targets_ = res;
+  }
+
   // Get all bound targets.
   const std::set<TargetType>& Targets() const { return bound_targets_; }
 

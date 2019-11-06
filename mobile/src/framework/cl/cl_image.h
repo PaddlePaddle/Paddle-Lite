@@ -135,7 +135,7 @@ class CLImage {
     //    CLImageConverterFolder *folder_converter = new
     //    CLImageConverterFolder();
     CLImageConverterNormal *normal_converter = new CLImageConverterNormal();
-
+    PADDLE_MOBILE_ENFORCE(!shared_mem_, "do not init mem after shared .")
     DLOG << " to get image dims ";
     image_dims_ = normal_converter->InitImageDimInfoWith(dim);
     DLOG << " end get image dims " << image_dims_;
@@ -176,7 +176,9 @@ class CLImage {
     image_converter_ = normal_converter;
     cl_event_ = CLEngine::Instance()->CreateEvent(context);
     initialized_ = true;
-    DLOG << " end init cl image";
+    shared_mem_ = true;
+
+    DLOG << " end init FakeSizeImage";
   }
   /**
    * init cl mem with a exist cl mem
@@ -194,17 +196,18 @@ class CLImage {
     DLOG << "InitWithExistMem ... ";
     DLOG << "real_image_dims:  " << real_image_dims_;
     DLOG << "image_dims_:  " << image_dims_;
-    //    PADDLE_MOBILE_ENFORCE(real_image_dims[0] >= image_dims_[0] &&
-    //                              real_image_dims[1] >= image_dims_[1],
-    //                          "real image is not enough!");
+
     if (real_image_dims_[0] < image_dims_[0] ||
         real_image_dims_[1] < image_dims_[1]) {
       DLOG << "real image is not enough!";
       DLOG << "real_image_dims:  " << real_image_dims_;
       DLOG << "image_dims_:  " << image_dims_;
     }
+    PADDLE_MOBILE_ENFORCE(real_image_dims_[0] >= image_dims_[0] &&
+                              real_image_dims_[1] >= image_dims_[1],
+                          "real image is not enough!");
     if (cl_image_ != src.cl_image_) {
-      cl_image_.reset(src.cl_image_.get());
+      cl_image_.reset(src.cl_image_.get(), CLMemDeleter());
     }
 
     tensor_dims_ = need_dims;
@@ -212,7 +215,9 @@ class CLImage {
     image_converter_ = normal_converter;
     cl_event_ = CLEngine::Instance()->CreateEvent(context);
     initialized_ = true;
-    DLOG << " end init cl image";
+    shared_mem_ = true;
+
+    DLOG << " end init WithExistMem";
   }
 
   void InitConv2dTransposeFilterCLImage(cl_context context,
@@ -231,7 +236,7 @@ class CLImage {
         "Tensor holds no memory. Call Tensor::mutable_data first.")
 
     if (cl_image_ != src.cl_image_) {
-      cl_image_.reset(src.cl_image_.get());
+      cl_image_.reset(src.cl_image_.get(), CLMemDeleter());
     }
     return *this;
   }
@@ -281,6 +286,8 @@ class CLImage {
  private:
   void InitCLImage(cl_context context, size_t width, size_t height,
                    void *data) {
+    PADDLE_MOBILE_ENFORCE(!shared_mem_, "do not init mem after shared .")
+
     cl_image_format cf = {.image_channel_order = CL_RGBA,
                           .image_channel_data_type = CL_HALF_FLOAT};
     cl_image_desc cid = {
@@ -303,7 +310,7 @@ class CLImage {
         &cid,  // const cl_image_desc *image_desc
         data,  // void *host_ptr
         &err);
-    cl_image_.reset(cl_image);
+    cl_image_.reset(cl_image, CLMemDeleter());
     if (err != CL_SUCCESS) {
       CL_CHECK_ERRORS(err);
       PADDLE_MOBILE_THROW_EXCEPTION(" create image 2d error ");
@@ -311,7 +318,7 @@ class CLImage {
   }
 
   bool initialized_ = false;
-  std::unique_ptr<_cl_mem, CLMemDeleter> cl_image_;
+  std::shared_ptr<_cl_mem> cl_image_;
   std::unique_ptr<_cl_event, CLEventDeleter> cl_event_;
   DDim tensor_dims_;
   DDim image_dims_;
@@ -321,6 +328,7 @@ class CLImage {
   cl_context context_;
   cl_command_queue command_queue_;
   CLImageConverterBase *image_converter_ = nullptr;
+  bool shared_mem_ = false;
 };
 
 void TensorToCLImage(Tensor *tensor, CLImage *image, cl_context context,

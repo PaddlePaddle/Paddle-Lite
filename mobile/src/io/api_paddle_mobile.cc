@@ -41,6 +41,10 @@ bool PaddleMobilePredictor<Device, T>::Init(const PaddleMobileConfig &config) {
   if (config.pre_post_type == PaddleMobileConfig::UINT8_255) {
     configInternal.pre_post_type = PrePostType::UINT8_255;
   }
+
+  configInternal.memory_optimization_level =
+      config.mem_opt ? MemoryOptimizationWithoutFeeds : NoMemoryOptimization;
+
   paddle_mobile_.reset(new PaddleMobile<Device, T>(configInternal));
 #ifdef PADDLE_MOBILE_CL
   paddle_mobile_->SetCLPath(config.cl_path);

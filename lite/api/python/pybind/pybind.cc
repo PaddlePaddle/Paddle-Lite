@@ -72,13 +72,15 @@ void BindLiteApi(py::module *m) {
   BindLiteCxxPredictor(m);
 #endif
   BindLiteLightPredictor(m);
-  // Global helper methods
+// Global helper methods
+#ifndef LITE_ON_TINY_PUBLISH
   m->def("create_paddle_predictor",
          [](const CxxConfig &config) -> std::unique_ptr<CxxPaddleApiImpl> {
            auto x = std::unique_ptr<CxxPaddleApiImpl>(new CxxPaddleApiImpl());
            x->Init(config);
            return std::move(x);
          });
+#endif
   m->def("create_paddle_predictor",
          [](const MobileConfig &config) -> std::unique_ptr<LightPredictorImpl> {
            auto x =
@@ -252,12 +254,7 @@ void BindLiteLightPredictor(py::module *m) {
       .def("get_input", &LightPredictorImpl::GetInput)
       .def("get_output", &LightPredictorImpl::GetOutput)
       .def("run", &LightPredictorImpl::Run)
-      .def("get_version", &LightPredictorImpl::GetVersion)
-      .def("save_optimized_model",
-           [](LightPredictorImpl &self, const std::string &output_dir) {
-             self.SaveOptimizedModel(output_dir,
-                                     lite_api::LiteModelType::kNaiveBuffer);
-           });
+      .def("get_version", &LightPredictorImpl::GetVersion);
 }
 
 }  // namespace pybind
