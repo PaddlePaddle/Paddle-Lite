@@ -21,5 +21,6 @@ REGISTER_LITE_KERNEL(concat,
                      paddle::lite::kernels::x86::ConcatCompute<float>,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindInput("AxisTensor", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
     .Finalize();
