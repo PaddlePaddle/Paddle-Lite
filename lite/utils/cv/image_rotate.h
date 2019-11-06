@@ -21,8 +21,6 @@ namespace utils {
 namespace cv {
 void rotate_hwc1(
     const uint8_t* src, uint8_t* dst, int srcw, int srch, float degree);
-void rotate_hwc2(
-    const uint8_t* src, uint8_t* dst, int srcw, int srch, float degree);
 void rotate_hwc3(
     const uint8_t* src, uint8_t* dst, int srcw, int srch, float degree);
 void rotate_hwc4(

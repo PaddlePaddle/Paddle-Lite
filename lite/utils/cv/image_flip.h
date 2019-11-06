@@ -23,8 +23,6 @@ namespace cv {
 typedef paddle::lite::utils::cv::FlipParam FlipParam;
 void flip_hwc1(
     const uint8_t* src, uint8_t* dst, int srcw, int srch, FlipParam flip_param);
-void flip_hwc2(
-    const uint8_t* src, uint8_t* dst, int srcw, int srch, FlipParam flip_param);
 void flip_hwc3(
     const uint8_t* src, uint8_t* dst, int srcw, int srch, FlipParam flip_param);
 void flip_hwc4(

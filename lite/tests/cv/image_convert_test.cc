@@ -286,13 +286,8 @@ void test_img(const std::vector<int>& cluster_id,
       tparam.ow = dstw;
       tparam.flip_param = flip;
       tparam.rotate_param = rotate;
-      std::vector<Transform> v_trans;
-      v_trans.push_back((Transform)0);
-      v_trans.push_back((Transform)1);
-      tparam.v_trans = v_trans;
 
       ImagePreprocess image_preprocess(srcFormat, dstFormat, tparam);
-      ImageTransform image_trans;
 
       for (int i = 0; i < test_iter; ++i) {
         t1.clear();
@@ -307,17 +302,16 @@ void test_img(const std::vector<int>& cluster_id,
             lite_dst, resize_tmp, (ImageFormat)dstFormat);
 
         LOG(INFO) << "image rotate saber compute";
-        // image_preprocess.imageTransform(resize_tmp, tv_out_flip_basic);
-        image_trans.rotate(resize_tmp,
-                           tv_out_ratote,
-                           (ImageFormat)dstFormat,
-                           dstw,
-                           dsth,
-                           rotate);
+        image_preprocess.imageRotate(resize_tmp,
+                                     tv_out_ratote,
+                                     (ImageFormat)dstFormat,
+                                     dstw,
+                                     dsth,
+                                     rotate);
 
         LOG(INFO) << "image flip saber compute";
         // imFLAGS_preprocess.imageTransform(resize_tmp, tv_out_flip);
-        image_trans.flip(
+        image_preprocess.imageFlip(
             resize_tmp, tv_out_flip, (ImageFormat)dstFormat, dstw, dsth, flip);
 
         LOG(INFO) << "image to tensor compute";

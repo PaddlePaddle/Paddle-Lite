@@ -54,11 +54,11 @@ void compute_xy(int srcw,
 
 void ImagePreprocess::imageResize(const uint8_t* src,
                                   uint8_t* dst,
-                                  ImageFormat srcFormat) {
-  int srcw = this->transParam_.iw;
-  int srch = this->transParam_.ih;
-  int dstw = this->transParam_.ow;
-  int dsth = this->transParam_.oh;
+                                  ImageFormat srcFormat,
+                                  int srcw,
+                                  int srch,
+                                  int dstw,
+                                  int dsth) {
   int size = srcw * srch;
   if (srcw == dstw && srch == dsth) {
     if (srcFormat == NV12 || srcFormat == NV21) {
@@ -292,39 +292,82 @@ void ImagePreprocess::imageResize(const uint8_t* src,
   }
   delete[] buf;
 }
-
-void ImagePreprocess::imageTransform(const uint8_t* src, uint8_t* dst) {
-  std::vector<Transform> v_trans = this->transParam_.v_trans;
-  ImageTransform img_trans;
-  int size = this->transParam_.ow * this->transParam_.oh;
-  uint8_t* temp1 = new uint8_t[size];
-  uint8_t* temp2 = new uint8_t[size];
-
-  for (auto val : v_trans) {
-    if (val == Flip) {
-      img_trans.flip(src,
-                     temp1,
-                     this->dstFormat_,
-                     this->transParam_.ow,
-                     this->transParam_.oh,
-                     this->transParam_.flip_param);
-    } else if (val == Rotate) {
-      img_trans.rotate(src,
-                       temp1,
-                       this->dstFormat_,
-                       this->transParam_.ow,
-                       this->transParam_.oh,
-                       this->transParam_.rotate_param);
-    } else {
-      printf("val: %d does not support !", val);
-    }
-    uint8_t* ptr = temp1;
-    src = temp1;
-    temp1 = temp2;
+void ImagePreprocess::imageResize(const uint8_t* src,
+                                  uint8_t* dst,
+                                  ImageFormat srcFormat) {
+  int srcw = this->transParam_.iw;
+  int srch = this->transParam_.ih;
+  int dstw = this->transParam_.ow;
+  int dsth = this->transParam_.oh;
+  ImagePreprocess::imageResize(src, dst, srcw, srch, dstw, dsth);
+}
+void ImagePreprocess::imageFlip(const uint8_t* src,
+                                uint8_t* dst,
+                                ImageFormat srcFormat,
+                                int srcw,
+                                int srch,
+                                FlipParam flip_param) {
+  if (srcFormat == GRAY) {
+    flip_hwc1(src, dst, srcw, srch, flip_param);
+  } else if (srcFormat == BGR || srcFormat == RGB) {
+    flip_hwc3(src, dst, srcw, srch, flip_param);
+  } else if (srcFormat == BGRA || srcFormat == RGBA) {
+    flip_hwc4(src, dst, srcw, srch, flip_param);
   }
-  dst = temp2;
-  delete[] temp1;
-  delete[] temp2;
+}
+void ImagePreprocess::imageFlip(const uint8_t* src,
+                                uint8_t* dst,
+                                ImageFormat srcFormat,
+                                int srcw,
+                                int srch,
+                                FlipParam flip_param) {
+  if (srcFormat == GRAY) {
+    flip_hwc1(src, dst, srcw, srch, flip_param);
+  } else if (srcFormat == BGR || srcFormat == RGB) {
+    flip_hwc3(src, dst, srcw, srch, flip_param);
+  } else if (srcFormat == BGRA || srcFormat == RGBA) {
+    flip_hwc4(src, dst, srcw, srch, flip_param);
+  }
+}
+void ImagePreprocess::imageFlip(const uint8_t* src, uint8_t* dst) {
+  auto srcw = this->transParam_.ow;
+  auto srch = this->transParam_.oh, auto srcFormat = this->dstFormat_;
+  auto flip_param = this->transParam_.flip_param;
+  if (srcFormat == GRAY) {
+    flip_hwc1(src, dst, srcw, srch, flip_param);
+  } else if (srcFormat == BGR || srcFormat == RGB) {
+    flip_hwc3(src, dst, srcw, srch, flip_param);
+  } else if (srcFormat == BGRA || srcFormat == RGBA) {
+    flip_hwc4(src, dst, srcw, srch, flip_param);
+  }
+}
+
+void ImagePreprocess::imageRotate(const uint8_t* src,
+                                  uint8_t* dst,
+                                  ImageFormat srcFormat,
+                                  int srcw,
+                                  int srch,
+                                  float degree) {
+  if (srcFormat == GRAY) {
+    rotate_hwc1(src, dst, srcw, srch, degree);
+  } else if (srcFormat == BGR || srcFormat == RGB) {
+    rotate_hwc3(src, dst, srcw, srch, degree);
+  } else if (srcFormat == BGRA || srcFormat == RGBA) {
+    rotate_hwc4(src, dst, srcw, srch, degree);
+  }
+}
+
+void ImagePreprocess::imageRotate(const uint8_t* src, uint8_t* dst) {
+  auto srcw = this->transParam_.ow;
+  auto srch = this->transParam_.oh, auto srcFormat = this->dstFormat_;
+  auto rotate_param = this->transParam_.rotate_param;
+  if (srcFormat == GRAY) {
+    rotate_hwc1(src, dst, srcw, srch, rotate_param);
+  } else if (srcFormat == BGR || srcFormat == RGB) {
+    rotate_hwc3(src, dst, srcw, srch, rotate_param);
+  } else if (srcFormat == BGRA || srcFormat == RGBA) {
+    rotate_hwc4(src, dst, srcw, srch, rotate_param);
+  }
 }
 
 void ImagePreprocess::image2Tensor(const uint8_t* src,

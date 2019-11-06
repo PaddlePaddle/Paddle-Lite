@@ -19,7 +19,8 @@
 #include "lite/utils/cv/cv_enum.h"
 #include "lite/utils/cv/image2tensor.h"
 #include "lite/utils/cv/image_convert.h"
-#include "lite/utils/cv/image_transform.h"
+#include "lite/utils/cv/image_flip.h"
+#include "lite/utils/cv/image_rotate.h"
 namespace paddle {
 namespace lite {
 namespace utils {
@@ -39,7 +40,6 @@ typedef struct {
   int ow;
   FlipParam flip_param;
   float rotate_param;
-  std::vector<Transform> v_trans;
 } TransParam;
 
 class ImagePreprocess {
@@ -55,8 +55,15 @@ class ImagePreprocess {
                    ImageFormat dstFormat);
   // 图像resize
   void imageResize(const uint8_t* src, uint8_t* dst, ImageFormat srcFormat);
+  void imageResize(const uint8_t* src, uint8_t* dst, ImageFormat srcFormat, \
+                  int srcw, int srch, int dstw, int dsth));
   // 图像转换
-  void imageTransform(const uint8_t* src, uint8_t* dst);
+  void imageFlip((const uint8_t* src, uint8_t* dst);
+  void imageFlip(const uint8_t* src, uint8_t* dst, ImageFormat srcFormat, \
+                  int srcw, int srch, FlipParam flip_param);
+  void imageRotate((const uint8_t* src, uint8_t* dst);
+  void imageRotate(const uint8_t* src, uint8_t* dst, ImageFormat srcFormat, \
+                  int srcw, int srch, float degree);
   // image2Tensor and normalize
   void image2Tensor(const uint8_t* src,
                     Tensor* dstTensor,

@@ -14,7 +14,6 @@
 
 #pragma once
 #include "lite/utils/cv/cv_enum.h"
-
 typedef paddle::lite::utils::cv::ImageFormat ImageFormat;
 typedef paddle::lite::utils::cv::FlipParam FlipParam;
 typedef paddle::lite::utils::cv::LayOut LayOut;

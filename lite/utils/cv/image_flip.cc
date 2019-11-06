@@ -46,20 +46,6 @@ void flip_hwc1(const uint8_t* src,
   }
 }
 
-void flip_hwc2(const uint8_t* src,
-               uint8_t* dst,
-               int srcw,
-               int srch,
-               FlipParam flip_param) {
-  // if (flip_param == X){
-  //     flip_hwc2_x(src, dst, srcw, srch);
-  // }else if (flip_param == Y){
-  //     flip_hwc2_y(src, dst, srcw, srch);
-  // }else if (flip_param == XY){
-  //     flip_hwc2_xy(src, dst, srcw, srch);
-  // }
-}
-
 void flip_hwc3(const uint8_t* src,
                uint8_t* dst,
                int srcw,

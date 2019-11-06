@@ -52,16 +52,6 @@ void rotate_hwc1(
     rotate_hwc1_270(src, dst, srcw, srch, srch, srcw);
   }
 }
-void rotate_hwc2(
-    const uint8_t* src, uint8_t* dst, int srcw, int srch, float degree) {
-  // if (degree == 90){
-  //     rotate_hwc2_90(src, dst, srcw, srch, srch, srcw);
-  // }else if (degree == 180){
-  //     rotate_hwc2_180(src, dst, srcw, srch, srcw, srch);
-  // }else if (degree == 270){
-  //     rotate_hwc2_270(src, dst, srcw, srch, srch, srcw);
-  // }
-}
 
 void rotate_hwc3(
     const uint8_t* src, uint8_t* dst, int srcw, int srch, float degree) {
