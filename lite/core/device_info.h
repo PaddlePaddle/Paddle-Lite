@@ -79,7 +79,6 @@ class DeviceInfo {
   int core_num_;
   std::vector<int> max_freqs_;
   std::vector<int> min_freqs_;
-  int mem_size_;
   std::string dev_name_;
 
   std::vector<int> L1_cache_;
@@ -94,14 +93,15 @@ class DeviceInfo {
   std::vector<bool> fp16_;
   std::vector<bool> dot_;
 
-  ARMArch arch_;
   // LITE_POWER_HIGH stands for using big cores,
   // LITE_POWER_LOW stands for using small core,
   // LITE_POWER_FULL stands for using all cores
-  lite_api::PowerMode mode_;
-  std::vector<int> active_ids_;
+  static thread_local lite_api::PowerMode mode_;
+  static thread_local ARMArch arch_;
+  static thread_local int mem_size_;
+  static thread_local std::vector<int> active_ids_;
   static thread_local TensorLite workspace_;
-  int64_t count_{0};
+  static thread_local int64_t count_;
 
   void SetDotInfo(int argc, ...);
   void SetFP16Info(int argc, ...);
