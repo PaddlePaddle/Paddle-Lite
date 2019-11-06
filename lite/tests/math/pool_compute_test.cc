@@ -377,7 +377,7 @@ void test_pool_fp32(const std::vector<DDim>& input_dims,
 }
 #else
 void test_pool_fp32(const std::vector<DDim>& input_dims,
-                    const std::vector<innt>& ksize,
+                    const std::vector<int>& ksize,
                     const std::vector<int>& strides,
                     const std::vector<int>& pads,
                     bool ceil_mode,
