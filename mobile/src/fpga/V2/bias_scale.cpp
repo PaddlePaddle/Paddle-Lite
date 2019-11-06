@@ -14,6 +14,7 @@ limitations under the License. */
 
 #include "fpga/V2/bias_scale.h"
 #include <memory.h>
+#include <math.h>
 #include "fpga/common/fpga_common.h"
 
 namespace paddle_mobile {
@@ -55,10 +56,22 @@ void align_element(float **data_in, int num_per_div_before_alignment, int num) {
   *data_in = ptr_aligned;
 }
 
+void fixed_scale_bias_new(void*data_in, int data_len) {
+    int* data_tmp = static_cast<int*>(data_in);
+    for (int idx = 0; idx < data_len/2; ++idx) {
+        float tmp = (static_cast<float*>(data_in))[idx];
+        data_tmp[idx] = static_cast<int>(round(tmp*pow(2.0, 23.0)));
+        tmp = (static_cast<float*>(data_in))[idx+data_len/2];
+        data_tmp[idx+data_len/2] = static_cast<int>(round(tmp*pow(2.0, 30.0)));
+    }
+    return;
+}
+
 void interleave(float **data_in, int num_after_alignment) {
   // num_after_alignment: number of bias after alignment
 
   float *ptr_uninterleaved = *data_in;
+  // fixed_scale_bias_new(ptr_uninterleaved, 2 * num_after_alignment);
   float *ptr_interleaved =
       (float *)fpga_malloc(2 * num_after_alignment * sizeof(float));  // NOLINT
   int num = num_after_alignment / 4;

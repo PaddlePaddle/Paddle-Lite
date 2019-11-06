@@ -79,7 +79,8 @@ using namespace std;     // NOLINT
 #define REG_CONVERT_CMD 0x400
 #define REG_CONVERT_SRC_ADDR 0x408
 #define REG_CONVERT_DST_ADDR 0x410
-#define REG_CONVERT_LENGTH 0x418
+#define REG_CONVERT_RD_LENGTH 0x418
+#define REG_CONVERT_WR_LENGTH 0x420
 
 /*resize*/
 #define REG_RESIZE_CMD 0x600
@@ -693,7 +694,8 @@ int PerformBypass(const struct BypassArgs &args) {
   reg_writeq(output_scale, REG_SCALE_PARAMETER);
   reg_writeq(input_address_phy, REG_CONVERT_SRC_ADDR);
   reg_writeq(output_address_phy, REG_CONVERT_DST_ADDR);
-  reg_writeq(datalen, REG_CONVERT_LENGTH);
+  reg_writeq(datalen, REG_CONVERT_RD_LENGTH);
+  reg_writeq(datalen, REG_CONVERT_WR_LENGTH);
   reg_writeq(cmd, REG_CONVERT_CMD);
   DLOG << "before reg poll";
   if (0 != fpga_regpoll(REG_INTERRUPT, INTERRUPT_BYPASS, PE_IRQ_TIMEOUT)) {
