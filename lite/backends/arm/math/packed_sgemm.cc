@@ -169,7 +169,7 @@ void prepackA(TensorLite *tout,
               int group,
               bool is_trans,
               ARMContext *ctx) {
-  int hblock = get_hblock(ctx->arch());
+  int hblock = get_hblock(ctx);
   int m_roundup = hblock * ((m + hblock - 1) / hblock);
   int group_size_round_up = ((m_roundup * k + 15) / 16) * 16;
   if (tout->numel() < group_size_round_up * group) {
@@ -1516,6 +1516,7 @@ void loadb_trans(
       }
     }
     for (; x > 7; x -= 8) {
+      // clang-format off
       asm volatile(
           "ldp    q0, q1, [%[inptr0]], #32\n" /* r0, a0~a7 */
           "ldp    q2, q3, [%[inptr1]], #32\n" /* r1, b0~b7 */
@@ -1638,40 +1639,12 @@ void loadb_trans(
             [inptr11] "+r"(inptr11),
             [outptr] "+r"(outptr)
           :
-          : "v0",
-            "v1",
-            "v2",
-            "v3",
-            "v4",
-            "v5",
-            "v6",
-            "v7",
-            "v8",
-            "v9",
-            "v10",
-            "v11",
-            "v12",
-            "v13",
-            "v14",
-            "v15",
-            "v16",
-            "v17",
-            "v18",
-            "v19",
-            "v20",
-            "v21",
-            "v22",
-            "v23",
-            "v24",
-            "v25",
-            "v26",
-            "v27",
-            "v28",
-            "v29",
-            "v30",
-            "v31",
-            "cc",
-            "memory");
+          : "v0","v1","v2","v3","v4","v5",
+            "v6","v7","v8","v9","v10","v11","v12",
+            "v13","v14","v15","v16","v17","v18","v19",
+            "v20","v21","v22","v23","v24","v25","v26",
+            "v27","v28","v29","v30","v31","cc","memory");
+      // clang-format on
     }
 
     for (; x > 0; x--) {
@@ -2135,7 +2108,7 @@ void sgemm_prepacked_8x12(bool is_transB,
         const float *a_ptr = a_ptr_l;
         int tail = tail_pre;
         int k = k_pre;
-
+        // clang-format off
         asm volatile(
             "prfm   pldl1keep, [%[a_ptr]]\n"       /* preload a*/
             "ldp	q2, q3, [%[bias_ptr]]\n"         /* load bias to q2, q3*/
@@ -2596,40 +2569,13 @@ void sgemm_prepacked_8x12(bool is_transB,
               [relu] "r"(has_relu),
               [has_beta] "r"(has_beta),
               [beta] "r"(beta)
-            : "cc",
-              "memory",
-              "v0",
-              "v1",
-              "v2",
-              "v3",
-              "v4",
-              "v5",
-              "v6",
-              "v7",
-              "v8",
-              "v9",
-              "v10",
-              "v11",
-              "v12",
-              "v13",
-              "v14",
-              "v15",
-              "v16",
-              "v17",
-              "v18",
-              "v19",
-              "v20",
-              "v21",
-              "v22",
-              "v23",
-              "v24",
-              "v25",
-              "v26",
-              "v27",
-              "v28",
-              "v29",
-              "v30",
-              "v31");
+            : "cc","memory",
+              "v0","v1","v2","v3","v4","v5","v6","v7",
+              "v8","v9","v10","v11","v12","v13",
+              "v14","v15","v16","v17","v18","v19",
+              "v20","v21","v22","v23","v24","v25",
+              "v26","v27","v28","v29","v30","v31");
+        // clang-format on
         if (flag_p_remain && (xb == bblocks - 1)) {
           for (int i = 0; i < remain; ++i) {
             *pout0++ = cout0[i];
@@ -2799,6 +2745,7 @@ void sgemm_prepacked_6x8(bool is_transB,
         const float* a_ptr = a_ptr_l;
         int tails = tail_pre;
         int k = k_pre;
+        // clang-format off
         asm volatile(
             // sgemm 6x8
             "vld1.32	{d2-d4}, [%[bias_ptr]]      @ load bias 6 elements\n"
@@ -2826,7 +2773,7 @@ void sgemm_prepacked_6x8(bool is_transB,
             "pld [%[b_ptr], #320]                   @ preload b\n"
             "vdup.i32	q11,d3[1]                   @ out31=0\n"
             "pld [%[b_ptr], #384]                   @ preload b\n"
-            "cmp %[has_beta], #0\n"
+            "cmp %[beta], #0\n"
             "beq    11f\n" /* check beta == 0? */
             /* process beta */
             "vdup.32    q3, %[beta]\n"          /* beta to vector */
@@ -3082,26 +3029,11 @@ void sgemm_prepacked_6x8(bool is_transB,
               [tails] "+r"(tails)
             : [bias_ptr] "r"(bias_local),
               [relu] "r"(has_relu),
-              [has_beta] "r"(has_beta),
               [beta] "r"(beta)
-            : "q0",
-              "q1",
-              "q2",
-              "q3",
-              "q4",
-              "q5",
-              "q6",
-              "q7",
-              "q8",
-              "q9",
-              "q10",
-              "q11",
-              "q12",
-              "q13",
-              "q14",
-              "q15",
-              "cc",
-              "memory");
+            : "q0","q1","q2","q3","q4",
+              "q5","q6","q7","q8","q9","q10","q11",
+              "q12","q13","q14","q15","cc","memory");
+        // clang-format on
 
         if (flag_p_remain && (xb == bblocks - 1)) {
           for (int i = 0; i < remain; ++i) {
@@ -3243,6 +3175,7 @@ void sgemm_prepacked_4x8(bool is_transB,
         const float* a_ptr = a_ptr_l;
         int tails = tail_pre;
         int k = k_pre;
+        // clang-format off
         asm volatile(
             "vld1.32    {d4-d5}, [%[bias_ptr]]      @ load bias\n"
             "vdup.32    q8, d4[0]                   @ add bias to out00\n"
@@ -3260,7 +3193,7 @@ void sgemm_prepacked_4x8(bool is_transB,
             "pld [%[b_ptr], #128]                   @ preload b\n"
             "vdup.32    q15, d5[1]                  @ add bias to out31\n"
             "pld [%[b_ptr], #192]                   @ preload b\n"
-            "cmp %[has_beta], #0\n"
+            "cmp %[beta], #0\n"
             "beq    11f\n" /* check beta == 0? */
             /* process beta */
             "vdup.32    q4, %[beta]\n"          /* beta to vector */
@@ -3440,27 +3373,11 @@ void sgemm_prepacked_4x8(bool is_transB,
               [tails] "+r"(tails)
             : [bias_ptr] "r"(bias_local),
               [relu] "r"(has_relu),
-              [has_beta] "r"(has_beta),
               [beta] "r"(beta)
-            : "q0",
-              "q1",
-              "q2",
-              "q3",
-              "q4",
-              "q5",
-              "q6",
-              "q7",
-              "q8",
-              "q9",
-              "q10",
-              "q11",
-              "q12",
-              "q13",
-              "q14",
-              "q15",
-              "cc",
-              "memory");
-
+            : "q0","q1","q2","q3",
+              "q4","q5","q6","q7","q8","q9","q10",
+              "q11","q12","q13","q14","q15","cc","memory");
+        // clang-format on
         if (flag_p_remain && (xb == bblocks - 1)) {
           for (int i = 0; i < remain; ++i) {
             *pout0++ = cout0[i];

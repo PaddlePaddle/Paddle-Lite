@@ -113,9 +113,8 @@ void RuntimeProgram::UpdateVarsOfProgram(cpp::ProgramDesc* desc) {
 
 void RuntimeProgram::Run() {
   for (auto& inst : instructions_) {
-    VLOG(4) << ">> Running kernel: " << inst.op()->op_info()->Repr()
-            << " on Target " << TargetToStr(inst.kernel()->target());
-
+    std::string op_type = inst.op()->op_info()->Type();
+    if (op_type == "feed" || op_type == "fetch") continue;
     inst.Run();
 #ifdef LITE_WITH_PROFILE
 #ifdef LITE_WITH_PRECISION_PROFILE
@@ -140,7 +139,7 @@ void Program::Build(const cpp::ProgramDesc& prog) {
     auto op = LiteOpRegistry::Global().Create(op_type);
     CHECK(op) << "no Op found for " << op_type;
     if (op_type == "while") {
-      auto sub_block_idx = op_desc.GetAttr<int16_t>("sub_block");
+      auto sub_block_idx = op_desc.GetAttr<int32_t>("sub_block");
       auto sub_block =
           const_cast<cpp::ProgramDesc&>(prog).GetBlock<cpp::BlockDesc>(
               sub_block_idx);
@@ -182,19 +181,29 @@ void Program::PrepareWorkspace(const cpp::ProgramDesc& prog) {
 }
 
 void Instruction::Run() {
-#ifdef LITE_WITH_PROFILE
-  profile::ProfileBlock x(profile_id_);
-#endif  // LITE_WITH_PROFILE
   CHECK(op_) << "op null";
   CHECK(kernel_) << "kernel null";
+#ifdef LITE_WITH_PROFILE
+  if (profile_id_ >= 0) {
+    profile::ProfileBlock x(profile_id_, "instruction");
+  }
+#endif  // LITE_WITH_PROFILE
   if (first_epoch_) {
     first_epoch_ = false;
     CHECK(op_->CheckShape());
   }
 
-  if (op_->run_once() && has_run_) return;
+  if (op_->run_once() && has_run_) {
+    return;
+  }
+#ifndef LITE_SHUTDOWN_LOG
   VLOG(4) << "kernel launch";
+#endif
   op_->InferShape();
+#ifndef LITE_SHUTDOWN_LOG
+  VLOG(4) << ">> Running kernel: " << op_->op_info()->Repr() << " on Target "
+          << TargetToStr(kernel_->target());
+#endif
   kernel_->Launch();
   has_run_ = true;
 }

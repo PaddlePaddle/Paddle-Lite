@@ -100,7 +100,8 @@ void DensityPriorBoxCompute::Run() {
                                      prior_num,
                                      is_flip,
                                      is_clip,
-                                     order);
+                                     order,
+                                     false);
 }
 
 }  // namespace arm

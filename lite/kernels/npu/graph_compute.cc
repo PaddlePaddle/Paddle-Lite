@@ -30,10 +30,16 @@ void GraphCompute::PrepareForRun() {
   auto& ctx = this->ctx_->template As<NPUContext>();
   auto& param = this->Param<param_t>();
 
-  exec_ = ctx.client(param.model_name);
-  CHECK(exec_);
+  CHECK(param.weight);
+  CHECK(lite::npu::LoadModel(*param.weight, &model_client_, &model_name_));
+  // TODO(hong19860320): find an good way to free the model data.
+  // No interface exists to free the data of tensor, so I resize the dim to 1
+  // and change target to force it to realloc a small size memory.
+  param.weight->Resize({1});
+  param.weight->mutable_data<int8_t>(TargetType::kARM);
+  CHECK(model_client_);
   int ret =
-      exec_->GetModelIOTensorDim(param.model_name, npu_idims_, npu_odims_);
+      model_client_->GetModelIOTensorDim(model_name_, npu_idims_, npu_odims_);
   CHECK_EQ(ret, hiai::AI_SUCCESS) << "[NPU] Get dims failed.";
 
   npu_itensors_.resize(npu_idims_.size());
@@ -43,8 +49,8 @@ void GraphCompute::PrepareForRun() {
     VLOG(3) << "npu_idims[" << i << "]: " << npu_idims_[i].GetNumber() << ","
             << npu_idims_[i].GetChannel() << "," << npu_idims_[i].GetHeight()
             << "," << npu_idims_[i].GetWidth();
-    VLOG(3) << "lite_idims[" << i << "]: " << param.inputs[i]->dims();
-    CHECK_EQ(param.inputs[i]->dims().production(),
+    VLOG(3) << "lite_idims[" << i << "]: " << param.inputs[i].second->dims();
+    CHECK_EQ(param.inputs[i].second->dims().production(),
              npu_idims_[i].GetNumber() * npu_idims_[i].GetChannel() *
                  npu_idims_[i].GetHeight() * npu_idims_[i].GetWidth());
     npu_itensors_[i].reset(new hiai::AiTensor);
@@ -55,16 +61,16 @@ void GraphCompute::PrepareForRun() {
     VLOG(3) << "npu_odims[" << i << "]: " << npu_odims_[i].GetNumber() << ","
             << npu_odims_[i].GetChannel() << "," << npu_odims_[i].GetHeight()
             << "," << npu_odims_[i].GetWidth();
-    VLOG(3) << "lite_odims[" << i << "]: " << param.outputs[i]->dims();
+    VLOG(3) << "lite_odims[" << i << "]: " << param.outputs[i].second->dims();
     auto out_size = npu_odims_[i].GetNumber() * npu_odims_[i].GetChannel() *
                     npu_odims_[i].GetHeight() * npu_odims_[i].GetWidth();
-    if (param.outputs[i]->dims().production() != out_size) {
-      param.outputs[i]->Resize({npu_odims_[i].GetNumber(),
-                                npu_odims_[i].GetChannel(),
-                                npu_odims_[i].GetHeight(),
-                                npu_odims_[i].GetWidth()});
+    if (param.outputs[i].second->dims().production() != out_size) {
+      param.outputs[i].second->Resize({npu_odims_[i].GetNumber(),
+                                       npu_odims_[i].GetChannel(),
+                                       npu_odims_[i].GetHeight(),
+                                       npu_odims_[i].GetWidth()});
     }
-    LOG(INFO) << param.outputs[i]->dims();
+    LOG(INFO) << param.outputs[i].second->dims();
     npu_otensors_[i].reset(new hiai::AiTensor);
     npu_otensors_[i]->Init(&(npu_odims_[i]));
   }
@@ -74,7 +80,7 @@ bool GraphCompute::input_dims_changed() const {
   auto& param = this->Param<param_t>();
   CHECK_EQ(param.inputs.size(), npu_idims_.size());
   for (size_t i = 0; i < param.inputs.size(); ++i) {
-    auto param_idims = param.inputs[i]->dims();
+    auto param_idims = param.inputs[i].second->dims();
     CHECK(!param_idims.empty());
     CHECK_EQ(param_idims.size(), 4);
     std::vector<int> idims{static_cast<int>(npu_idims_[i].GetNumber()),
@@ -99,7 +105,7 @@ void GraphCompute::Run() {
   CHECK_EQ(param.outputs.size(), npu_otensors_.size());
 
   for (size_t i = 0; i < param.inputs.size(); ++i) {
-    auto* itensor = param.inputs[i];
+    auto* itensor = param.inputs[i].second;
     CHECK(itensor);
     const auto* i_data = itensor->data<float>();
     std::memcpy(
@@ -108,7 +114,7 @@ void GraphCompute::Run() {
         sizeof(float) * static_cast<size_t>(itensor->dims().production()));
   }
   std::string key = "model_name";  // Note: key seems must be model_name
-  npu_context_.AddPara(key, param.model_name);
+  model_context_.AddPara(key, model_name_);
 
   auto GetCurrentUS = []() -> double {
     struct timeval time;
@@ -117,13 +123,13 @@ void GraphCompute::Run() {
   };
   int istamp;
   auto start_time = GetCurrentUS();
-  CHECK_EQ(
-      hiai::AI_SUCCESS,
-      exec_->Process(npu_context_, npu_itensors_, npu_otensors_, 1000, istamp));
-  LOG(INFO) << "[NPU] Process cost " << GetCurrentUS() - start_time << " us";
+  CHECK_EQ(hiai::AI_SUCCESS,
+           model_client_->Process(
+               model_context_, npu_itensors_, npu_otensors_, 1000, istamp));
+  VLOG(3) << "[NPU] Process cost " << GetCurrentUS() - start_time << " us";
 
   for (size_t i = 0; i < param.outputs.size(); ++i) {
-    auto* otensor = param.outputs[i];
+    auto* otensor = param.outputs[i].second;
     CHECK(otensor);
     auto* o_data = otensor->mutable_data<float>();
     auto* npu_obuffer = static_cast<float*>(npu_otensors_[i]->GetBuffer());
@@ -147,5 +153,6 @@ REGISTER_LITE_KERNEL(graph_op,
                      paddle::lite::kernels::npu::GraphCompute,
                      def)
     .BindInput("Inputs", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindInput("Weight", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindOutput("Outputs", {LiteType::GetTensorTy(TARGET(kHost))})
     .Finalize();

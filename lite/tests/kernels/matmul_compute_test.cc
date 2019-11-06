@@ -120,12 +120,12 @@ class MatMulComputeTester : public arena::TestCase {
   // common attributes for this op.
   std::string x_ = "X";
   std::string y_ = "Y";
-  std::string out_ = "Out";
-  DDim x_dims_;
-  DDim y_dims_;
   bool x_transpose_;
   bool y_transpose_;
   float alpha_;
+  std::string out_ = "Out";
+  DDim x_dims_;
+  DDim y_dims_;
 
  public:
   MatMulComputeTester(const Place& place,

@@ -14,7 +14,6 @@
 
 #include "lite/kernels/x86/concat_compute.h"
 #include <gtest/gtest.h>
-#include <iostream>
 #include <vector>
 #include "lite/core/op_registry.h"
 
@@ -68,11 +67,11 @@ TEST(concat_x86, run_test) {
   concat.SetParam(param);
   concat.Run();
 
-  std::cout << "output: ";
+  std::vector<float> ref_results = {
+      1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2};
   for (int i = 0; i < out.dims().production(); i++) {
-    std::cout << out_data[i] << " ";
+    EXPECT_NEAR(out_data[i], ref_results[i], 1e-3);
   }
-  std::cout << std::endl;
 }
 
 }  // namespace x86

@@ -23,14 +23,21 @@ namespace lite {
 namespace mir {
 
 void ConvElementwiseFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
-  fusion::ConvElementwiseFuser fuser("conv2d");
-  fuser(graph.get());
+  // initialze fuser params
+  // note: `true` of conv_has_bias must as first pattern to match
+  std::vector<bool> conv_has_bias_cases{true, false};
+  std::vector<std::string> conv_type_cases{
+      "conv2d", "depthwise_conv2d", "conv2d_transpose"};
 
-  fusion::ConvElementwiseFuser depthwise_fuser("depthwise_conv2d");
-  depthwise_fuser(graph.get());
-
-  fusion::ConvElementwiseFuser conv2d_transpose_fuser("conv2d_transpose");
-  conv2d_transpose_fuser(graph.get());
+  // start fuse using params
+  for (auto conv_has_bias : conv_has_bias_cases) {
+    for (auto conv_type : conv_type_cases) {
+      VLOG(4) << "conv_has_bias:" << conv_has_bias
+              << " conv_type:" << conv_type;
+      fusion::ConvElementwiseFuser fuser(conv_type, conv_has_bias);
+      fuser(graph.get());
+    }
+  }
 }
 
 }  // namespace mir
@@ -38,4 +45,5 @@ void ConvElementwiseFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 }  // namespace paddle
 
 REGISTER_MIR_PASS(lite_conv_elementwise_fuse_pass,
-                  paddle::lite::mir::ConvElementwiseFusePass);
+                  paddle::lite::mir::ConvElementwiseFusePass)
+    .BindTargets({TARGET(kAny)});

@@ -38,6 +38,22 @@ class ElementwiseAddActivationCompute
   virtual ~ElementwiseAddActivationCompute() = default;
 };
 
+class ElementwiseSubCompute
+    : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+ public:
+  void Run() override;
+
+  virtual ~ElementwiseSubCompute() = default;
+};
+
+class ElementwiseSubActivationCompute
+    : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+ public:
+  void Run() override;
+
+  virtual ~ElementwiseSubActivationCompute() = default;
+};
+
 class ElementwiseMulCompute
     : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
  public:

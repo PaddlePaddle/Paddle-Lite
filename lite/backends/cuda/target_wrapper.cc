@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/backends/cuda/target_wrapper.h"
+#include "lite/backends/cuda/cuda_utils.h"
 
 namespace paddle {
 namespace lite {
@@ -25,13 +26,11 @@ size_t TargetWrapperCuda::num_devices() {
 
 void* TargetWrapperCuda::Malloc(size_t size) {
   void* ptr{};
-  CHECK_EQ(cudaSuccess, cudaMalloc(&ptr, size));
+  CUDA_CALL(cudaMalloc(&ptr, size));
   return ptr;
 }
 
-void TargetWrapperCuda::Free(void* ptr) {
-  CHECK_EQ(cudaSuccess, cudaFree(ptr));
-}
+void TargetWrapperCuda::Free(void* ptr) { CUDA_CALL(cudaFree(ptr)); }
 
 void TargetWrapperCuda::MemcpySync(void* dst,
                                    const void* src,
@@ -39,14 +38,13 @@ void TargetWrapperCuda::MemcpySync(void* dst,
                                    IoDirection dir) {
   switch (dir) {
     case IoDirection::DtoD:
-      CHECK(cudaSuccess ==
-            cudaMemcpy(dst, src, size, cudaMemcpyDeviceToDevice));
+      CUDA_CALL(cudaMemcpy(dst, src, size, cudaMemcpyDeviceToDevice));
       break;
     case IoDirection::HtoD:
-      CHECK(cudaSuccess == cudaMemcpy(dst, src, size, cudaMemcpyHostToDevice));
+      CUDA_CALL(cudaMemcpy(dst, src, size, cudaMemcpyHostToDevice));
       break;
     case IoDirection::DtoH:
-      CHECK(cudaSuccess == cudaMemcpy(dst, src, size, cudaMemcpyDeviceToHost));
+      CUDA_CALL(cudaMemcpy(dst, src, size, cudaMemcpyDeviceToHost));
       break;
     default:
       LOG(FATAL) << "Unsupported IoDirection " << static_cast<int>(dir);
@@ -60,20 +58,31 @@ void TargetWrapperCuda::MemcpyAsync(void* dst,
                                     const stream_t& stream) {
   switch (dir) {
     case IoDirection::DtoD:
-      CHECK(cudaSuccess ==
-            cudaMemcpyAsync(dst, src, size, cudaMemcpyDeviceToDevice, stream));
+      CUDA_CALL(
+          cudaMemcpyAsync(dst, src, size, cudaMemcpyDeviceToDevice, stream));
       break;
     case IoDirection::HtoD:
-      CHECK(cudaSuccess ==
-            cudaMemcpyAsync(dst, src, size, cudaMemcpyHostToDevice, stream));
+      CUDA_CALL(
+          cudaMemcpyAsync(dst, src, size, cudaMemcpyHostToDevice, stream));
       break;
     case IoDirection::DtoH:
-      CHECK(cudaSuccess ==
-            cudaMemcpyAsync(dst, src, size, cudaMemcpyDeviceToHost, stream));
+      CUDA_CALL(
+          cudaMemcpyAsync(dst, src, size, cudaMemcpyDeviceToHost, stream));
       break;
     default:
       LOG(FATAL) << "Unsupported IoDirection " << static_cast<int>(dir);
   }
+}
+
+void TargetWrapperCuda::MemsetSync(void* devPtr, int value, size_t count) {
+  CUDA_CALL(cudaMemset(devPtr, value, count));
+}
+
+void TargetWrapperCuda::MemsetAsync(void* devPtr,
+                                    int value,
+                                    size_t count,
+                                    const stream_t& stream) {
+  CUDA_CALL(cudaMemsetAsync(devPtr, value, count, stream));
 }
 
 }  // namespace lite

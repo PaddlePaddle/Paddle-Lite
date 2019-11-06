@@ -74,7 +74,11 @@ class Node {
 
     KernelBase& picked_kernel();
 
-    friend std::ostream& operator<<(std::ostream& os, const Stmt& other);
+    friend std::ostream& operator<<(std::ostream& os, const Stmt& other) {
+      os << "Statement " << other.op_type() << " "
+         << other.place().DebugString();
+      return os;
+    }
 
     // Description.
     std::string desc;

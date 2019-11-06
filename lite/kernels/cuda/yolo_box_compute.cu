@@ -12,10 +12,10 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#pragma once
 #include <vector>
 #include "lite/core/op_registry.h"
 #include "lite/kernels/cuda/yolo_box_compute.h"
+// #include "lite/core/target_wrapper.h"
 
 namespace paddle {
 namespace lite {
@@ -95,7 +95,7 @@ __host__ __device__ inline void CalcLabelScore(T* scores,
 
 template <typename T>
 __global__ void KeYoloBoxFw(const T* input,
-                            const T* imgsize,
+                            const int* imgsize,
                             T* boxes,
                             T* scores,
                             const float conf_thresh,
@@ -118,8 +118,8 @@ __global__ void KeYoloBoxFw(const T* input,
     int l = tid % w;
 
     int an_stride = (5 + class_num) * grid_num;
-    int img_height = static_cast<int>(imgsize[2 * i]);
-    int img_width = static_cast<int>(imgsize[2 * i + 1]);
+    int img_height = imgsize[2 * i];
+    int img_width = imgsize[2 * i + 1];
 
     int obj_idx =
         GetEntryIndex(i, j, k * w + l, an_num, an_stride, grid_num, 4);
@@ -168,9 +168,13 @@ void YoloBoxCompute::Run() {
   int downsample_ratio = param.downsample_ratio;
 
   const float* input = X->data<float>();
-  const float* imgsize = ImgSize->data<float>();
+  const int* imgsize = ImgSize->data<int>();
   float* boxes = Boxes->mutable_data<float>(TARGET(kCUDA));
   float* scores = Scores->mutable_data<float>(TARGET(kCUDA));
+  TargetWrapperCuda::MemsetAsync(
+      boxes, 0, Boxes->numel() * sizeof(float), stream);
+  TargetWrapperCuda::MemsetAsync(
+      scores, 0, Scores->numel() * sizeof(float), stream);
 
   const int n = X->dims()[0];
   const int h = X->dims()[2];
@@ -179,8 +183,13 @@ void YoloBoxCompute::Run() {
   const int an_num = anchors.size() / 2;
   int input_size = downsample_ratio * h;
 
-  anchors_.Resize(static_cast<int>({anchors.size()}));
+  anchors_.Resize({static_cast<int64_t>(anchors.size())});
   int* d_anchors = anchors_.mutable_data<int>(TARGET(kCUDA));
+  // TargetWrapperCuda::MemcpyAsync(d_anchors,
+  //                               anchors.data(),
+  //                               sizeof(int) * anchors.size(),
+  //                               IoDirection::HtoD,
+  //                               stream);
   CopySync<TARGET(kCUDA)>(d_anchors,
                           anchors.data(),
                           sizeof(int) * anchors.size(),
@@ -218,8 +227,20 @@ REGISTER_LITE_KERNEL(yolo_box,
                      kNCHW,
                      paddle::lite::kernels::cuda::YoloBoxCompute,
                      def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kCUDA))})
-    .BindInput("ImgSize", {LiteType::GetTensorTy(TARGET(kCUDA))})
-    .BindOutput("Boxes", {LiteType::GetTensorTy(TARGET(kCUDA))})
-    .BindOutput("Scores", {LiteType::GetTensorTy(TARGET(kCUDA))})
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kCUDA),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kNCHW))})
+    .BindInput("ImgSize",
+               {LiteType::GetTensorTy(TARGET(kCUDA),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kNCHW))})
+    .BindOutput("Boxes",
+                {LiteType::GetTensorTy(TARGET(kCUDA),
+                                       PRECISION(kFloat),
+                                       DATALAYOUT(kNCHW))})
+    .BindOutput("Scores",
+                {LiteType::GetTensorTy(TARGET(kCUDA),
+                                       PRECISION(kFloat),
+                                       DATALAYOUT(kNCHW))})
     .Finalize();

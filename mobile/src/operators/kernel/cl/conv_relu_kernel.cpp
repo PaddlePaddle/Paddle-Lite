@@ -86,7 +86,8 @@ bool ConvReluKernel<GPU_CL, float>::Init(FusionConvReluParam<GPU_CL> *param) {
       param->ExecMode() = ConvParam<GPU_CL>::EXEC_SLIDINGWINDOW3x3S1_FLOAT;
       param->Filter()->InitCLImage(cl_helper_.CLContext(),
                                    cl_helper_.CLCommandQueue());
-      this->cl_helper_.AddKernel("conv_3x3s1", conv_kernel_file, build_options);
+      this->cl_helper_.AddKernel("conv_3x3spl", conv_kernel_file,
+                                 build_options);
     } else {
       param->ExecMode() = ConvParam<GPU_CL>::EXEC_SLIDINGWINDOW3x3_FLOAT;
       param->Filter()->InitCLImage(cl_helper_.CLContext(),

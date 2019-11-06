@@ -95,7 +95,7 @@ void dump_stride_float(std::string filename, PaddleTensor input_tensor) {
 }
 
 void dump_stride(std::string filename, PaddleTensor input_tensor) {
-  if (input_tensor.dtypeid == type_id<float>().hash_code()) {
+  if (input_tensor.dtypeid == PaddlekTypeId_t::paddle_float) {
     dump_stride_float(filename, input_tensor);
   } else {
     std::cout << "only support dumping float data" << std::endl;
@@ -134,7 +134,7 @@ int main() {
   // t_img.dtypeid = type_id<float>().hash_code();
   quantize(&img, img_length);
   t_img.dtype = INT8;
-  t_img.dtypeid = type_id<int8_t>().hash_code();
+  t_img.dtypeid = PaddlekTypeId_t::paddle_int8_t;
   t_img.layout = LAYOUT_HWC;
   t_img.shape = std::vector<int>({1, 256, 416, 3});
   t_img.name = "Image information";

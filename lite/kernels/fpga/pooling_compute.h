@@ -36,8 +36,6 @@ class PoolCompute
 
  private:
   zynqmp::PoolingPE pe_;
-  zynqmp::Tensor input_;
-  zynqmp::Tensor output_;
 };
 
 }  // namespace fpga

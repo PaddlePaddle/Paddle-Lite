@@ -13,8 +13,10 @@
 // limitations under the License.
 
 #include "lite/core/mir/fusion/quant_dequant_fuse_pass.h"
+#include <list>
 #include <memory>
 #include <vector>
+#include "lite/api/paddle_place.h"
 #include "lite/core/mir/fusion/quant_dequant_op_fuser.h"
 #include "lite/core/mir/pass_registry.h"
 
@@ -23,17 +25,26 @@ namespace lite {
 namespace mir {
 
 void QuantDequantFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
-  std::unordered_set<std::string> quant_types = {
+  // delete quant node
+  std::vector<std::string> quant_op_types = {
       "fake_quantize_range_abs_max", "fake_quantize_moving_average_abs_max"};
-  std::unordered_set<std::string> quantized_op_types = {
+  for (auto& op_type : quant_op_types) {
+    fusion::DeleteQuantOpFuser fuser(op_type);
+    fuser(graph.get());
+  }
+
+  // fuse quantized node and dequant node
+  std::vector<std::string> quantized_op_types = {
       "conv2d", "mul", "depthwise_conv2d"};
-  for (auto& quant_type : quant_types) {
-    for (auto& op_type : quantized_op_types) {
-      for (int i = 6; i >= 1; i--) {
-        fusion::QuantDequantOpFuser fuser(op_type, quant_type, i);
-        fuser(graph.get());
-      }
-    }
+  for (auto& op_type : quantized_op_types) {
+    fusion::DequantOpFuser fuser(op_type);
+    fuser(graph.get());
+  }
+
+  // delete quant_dequant_node
+  for (auto op_type : {"pool2d", "elementwise_add"}) {
+    fusion::DeleteQuantDequantOpFuser fuser(op_type);
+    fuser(graph.get());
   }
 }
 
@@ -42,4 +53,6 @@ void QuantDequantFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 }  // namespace paddle
 
 REGISTER_MIR_PASS(lite_quant_dequant_fuse_pass,
-                  paddle::lite::mir::QuantDequantFusePass);
+                  paddle::lite::mir::QuantDequantFusePass)
+    .BindTargets({TARGET(kAny)})
+    .BindKernel("calib");

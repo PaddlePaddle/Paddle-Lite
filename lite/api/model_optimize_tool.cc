@@ -16,10 +16,14 @@
 #ifdef PADDLE_WITH_TESTING
 #include <gtest/gtest.h>
 #endif
+// "all_kernel_faked.cc" and "kernel_src_map.h" are created automatically during
+// model_optimize_tool's compiling period
+#include "all_kernel_faked.cc"  // NOLINT
+#include "kernel_src_map.h"     // NOLINT
 #include "lite/api/paddle_api.h"
-#include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
 #include "lite/api/paddle_use_passes.h"
+#include "lite/core/op_registry.h"
 #include "lite/utils/cp_logging.h"
 #include "lite/utils/string.h"
 
@@ -33,6 +37,12 @@ DEFINE_string(
     optimize_out_type,
     "protobuf",
     "store type of the output optimized model. protobuf/naive_buffer");
+DEFINE_bool(display_kernels, false, "Display kernel information");
+DEFINE_bool(record_tailoring_info,
+            false,
+            "Record kernels and operators information of the optimized model "
+            "for tailoring compiling, information are stored into optimized "
+            "model path as hidden files");
 DEFINE_string(optimize_out, "", "path of the output optimized model");
 DEFINE_string(valid_targets,
               "arm",
@@ -43,10 +53,20 @@ DEFINE_bool(prefer_int8_kernel, false, "Prefer to run model with int8 kernels");
 namespace paddle {
 namespace lite_api {
 
+//! Display the kernel information.
+void DisplayKernels() {
+  LOG(INFO) << ::paddle::lite::KernelRegistry::Global().DebugString();
+}
+
 void Main() {
   if (!FLAGS_model_file.empty() && !FLAGS_param_file.empty()) {
     LOG(WARNING)
         << "Load combined-param model. Option model_dir will be ignored";
+  }
+
+  if (FLAGS_display_kernels) {
+    DisplayKernels();
+    exit(0);
   }
 
   lite_api::CxxConfig config;
@@ -74,10 +94,11 @@ void Main() {
   CHECK(!valid_places.empty())
       << "At least one target should be set, should set the "
          "command argument 'valid_targets'";
+
   if (FLAGS_prefer_int8_kernel) {
     LOG(WARNING) << "Int8 mode is only support by ARM target";
-    valid_places.push_back(Place{TARGET(kARM), PRECISION(kInt8)});
-    config.set_preferred_place(Place{TARGET(kARM), PRECISION(kInt8)});
+    valid_places.insert(valid_places.begin(),
+                        Place{TARGET(kARM), PRECISION(kInt8)});
   }
   config.set_valid_places(valid_places);
 
@@ -91,8 +112,14 @@ void Main() {
   } else {
     LOG(FATAL) << "Unsupported Model type :" << FLAGS_optimize_out_type;
   }
+  OpKernelInfoCollector::Global().SetKernel2path(kernel2path_map);
 
-  predictor->SaveOptimizedModel(FLAGS_optimize_out, model_type);
+  predictor->SaveOptimizedModel(
+      FLAGS_optimize_out, model_type, FLAGS_record_tailoring_info);
+  if (FLAGS_record_tailoring_info) {
+    LOG(INFO) << "Record the information of tailored model into :"
+              << FLAGS_optimize_out;
+  }
 }
 
 }  // namespace lite_api

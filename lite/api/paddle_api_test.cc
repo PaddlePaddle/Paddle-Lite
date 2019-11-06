@@ -28,7 +28,6 @@ namespace lite_api {
 TEST(CxxApi, run) {
   lite_api::CxxConfig config;
   config.set_model_dir(FLAGS_model_dir);
-  config.set_preferred_place(Place{TARGET(kX86), PRECISION(kFloat)});
   config.set_valid_places({
       Place{TARGET(kX86), PRECISION(kFloat)},
       Place{TARGET(kARM), PRECISION(kFloat)},
@@ -36,7 +35,18 @@ TEST(CxxApi, run) {
 
   auto predictor = lite_api::CreatePaddlePredictor(config);
 
-  auto input_tensor = predictor->GetInput(0);
+  LOG(INFO) << "Version: " << predictor->GetVersion();
+
+  auto inputs = predictor->GetInputNames();
+  LOG(INFO) << "input size: " << inputs.size();
+  for (int i = 0; i < inputs.size(); i++) {
+    LOG(INFO) << "inputnames: " << inputs[i];
+  }
+  auto outputs = predictor->GetOutputNames();
+  for (int i = 0; i < outputs.size(); i++) {
+    LOG(INFO) << "outputnames: " << outputs[i];
+  }
+  auto input_tensor = predictor->GetInputByName(inputs[0]);
   input_tensor->Resize(std::vector<int64_t>({100, 100}));
   auto* data = input_tensor->mutable_data<float>();
   for (int i = 0; i < 100 * 100; i++) {
@@ -45,7 +55,7 @@ TEST(CxxApi, run) {
 
   predictor->Run();
 
-  auto output = predictor->GetOutput(0);
+  auto output = predictor->GetTensor(outputs[0]);
   auto* out = output->data<float>();
   LOG(INFO) << out[0];
   LOG(INFO) << out[1];
@@ -54,8 +64,8 @@ TEST(CxxApi, run) {
   EXPECT_NEAR(out[1], -28.8729, 1e-3);
 
   predictor->SaveOptimizedModel(FLAGS_model_dir + ".opt2");
-  predictor->SaveOptimizedModel(FLAGS_model_dir + ".opt2.naive",
-                                LiteModelType::kNaiveBuffer);
+  predictor->SaveOptimizedModel(
+      FLAGS_model_dir + ".opt2.naive", LiteModelType::kNaiveBuffer, true);
 }
 
 // Demo1 for Mobile Devices :Load model from file and run
@@ -65,6 +75,18 @@ TEST(LightApi, run) {
   config.set_model_dir(FLAGS_model_dir + ".opt2.naive");
 
   auto predictor = lite_api::CreatePaddlePredictor(config);
+
+  auto inputs = predictor->GetInputNames();
+  LOG(INFO) << "input size: " << inputs.size();
+  for (int i = 0; i < inputs.size(); i++) {
+    LOG(INFO) << "inputnames: " << inputs.at(i);
+  }
+  auto outputs = predictor->GetOutputNames();
+  for (int i = 0; i < outputs.size(); i++) {
+    LOG(INFO) << "outputnames: " << outputs.at(i);
+  }
+
+  LOG(INFO) << "Version: " << predictor->GetVersion();
 
   auto input_tensor = predictor->GetInput(0);
   input_tensor->Resize(std::vector<int64_t>({100, 100}));

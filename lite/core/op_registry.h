@@ -15,9 +15,11 @@
 #pragma once
 
 #include <list>
+#include <map>
 #include <memory>
 #include <set>
 #include <string>
+#include <tuple>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -26,8 +28,46 @@
 #include "lite/core/op_lite.h"
 #include "lite/core/target_wrapper.h"
 #include "lite/utils/all.h"
+#include "lite/utils/macros.h"
 
 using LiteType = paddle::lite::Type;
+
+class OpKernelInfoCollector {
+ public:
+  static OpKernelInfoCollector &Global() {
+    static auto *x = new OpKernelInfoCollector;
+    return *x;
+  }
+  void AddOp2path(const std::string &op_name, const std::string &op_path) {
+    size_t index = op_path.find_last_of('/');
+    if (index != std::string::npos) {
+      op2path_.insert(std::pair<std::string, std::string>(
+          op_name, op_path.substr(index + 1)));
+    }
+  }
+  void AddKernel2path(const std::string &kernel_name,
+                      const std::string &kernel_path) {
+    size_t index = kernel_path.find_last_of('/');
+    if (index != std::string::npos) {
+      kernel2path_.insert(std::pair<std::string, std::string>(
+          kernel_name, kernel_path.substr(index + 1)));
+    }
+  }
+  void SetKernel2path(
+      const std::map<std::string, std::string> &kernel2path_map) {
+    kernel2path_ = kernel2path_map;
+  }
+  const std::map<std::string, std::string> &GetOp2PathDict() {
+    return op2path_;
+  }
+  const std::map<std::string, std::string> &GetKernel2PathDict() {
+    return kernel2path_;
+  }
+
+ private:
+  std::map<std::string, std::string> op2path_;
+  std::map<std::string, std::string> kernel2path_;
+};
 
 namespace paddle {
 namespace lite {
@@ -56,7 +96,6 @@ class OpLiteRegistor : public Registor<OpClass> {
               });
         }) {}
 };
-
 template <TargetType Target, PrecisionType Precision, DataLayoutType Layout>
 using KernelRegistryForTarget =
     Factory<KernelLite<Target, Precision, Layout>, std::unique_ptr<KernelBase>>;
@@ -68,8 +107,14 @@ class KernelRegistry final {
                                       PRECISION(kFloat),
                                       DATALAYOUT(kNCHW)> *,  //
               KernelRegistryForTarget<TARGET(kCUDA),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kNHWC)> *,  //
+              KernelRegistryForTarget<TARGET(kCUDA),
                                       PRECISION(kInt8),
                                       DATALAYOUT(kNCHW)> *,  //
+              KernelRegistryForTarget<TARGET(kCUDA),
+                                      PRECISION(kInt8),
+                                      DATALAYOUT(kNHWC)> *,  //
               KernelRegistryForTarget<TARGET(kX86),
                                       PRECISION(kFloat),
                                       DATALAYOUT(kNCHW)> *,  //
@@ -100,12 +145,29 @@ class KernelRegistry final {
               KernelRegistryForTarget<TARGET(kARM),
                                       PRECISION(kInt8),
                                       DATALAYOUT(kNCHW)> *,  //
+
               KernelRegistryForTarget<TARGET(kOpenCL),
                                       PRECISION(kFloat),
                                       DATALAYOUT(kNCHW)> *,  //
               KernelRegistryForTarget<TARGET(kOpenCL),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kNHWC)> *,  //
+              KernelRegistryForTarget<TARGET(kOpenCL),
+                                      PRECISION(kAny),
+                                      DATALAYOUT(kNHWC)> *,  //
+              KernelRegistryForTarget<TARGET(kOpenCL),
+                                      PRECISION(kAny),
+                                      DATALAYOUT(kNCHW)> *,  //
+              KernelRegistryForTarget<TARGET(kOpenCL),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kAny)> *,  //
+              KernelRegistryForTarget<TARGET(kOpenCL),
                                       PRECISION(kInt8),
                                       DATALAYOUT(kNCHW)> *,  //
+              KernelRegistryForTarget<TARGET(kOpenCL),
+                                      PRECISION(kAny),
+                                      DATALAYOUT(kAny)> *,  //
+
               KernelRegistryForTarget<TARGET(kNPU),
                                       PRECISION(kAny),
                                       DATALAYOUT(kAny)> *,  //
@@ -115,6 +177,17 @@ class KernelRegistry final {
               KernelRegistryForTarget<TARGET(kNPU),
                                       PRECISION(kInt8),
                                       DATALAYOUT(kNCHW)> *,  //
+
+              KernelRegistryForTarget<TARGET(kXPU),
+                                      PRECISION(kAny),
+                                      DATALAYOUT(kAny)> *,  //
+              KernelRegistryForTarget<TARGET(kXPU),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kNCHW)> *,  //
+              KernelRegistryForTarget<TARGET(kXPU),
+                                      PRECISION(kInt8),
+                                      DATALAYOUT(kNCHW)> *,  //
+
               KernelRegistryForTarget<TARGET(kFPGA),
                                       PRECISION(kFloat),
                                       DATALAYOUT(kNCHW)> *,  //
@@ -150,15 +223,16 @@ class KernelRegistry final {
       const std::string &name,
       typename KernelRegistryForTarget<Target, Precision, Layout>::creator_t
           &&creator) {
-    VLOG(3) << "register for " << TargetToStr(Target) << ":"
-            << PrecisionToStr(Precision) << "//"
-            << GetKernelOffset<Target, Precision, Layout>();
     using kernel_registor_t =
         KernelRegistryForTarget<Target, Precision, Layout>;
     auto &varient = registries_[GetKernelOffset<Target, Precision, Layout>()];
     auto *reg = varient.template get<kernel_registor_t *>();
     CHECK(reg) << "Can not be empty of " << name;
     reg->Register(name, std::move(creator));
+#ifdef LITE_ON_MODEL_OPTIMIZE_TOOL
+    kernel_info_map_[name].push_back(
+        std::make_tuple(Target, Precision, Layout));
+#endif  // LITE_ON_MODEL_OPTIMIZE_TOOL
   }
 
   template <TargetType Target,
@@ -167,9 +241,13 @@ class KernelRegistry final {
   std::list<std::unique_ptr<KernelBase>> Create(const std::string &op_type) {
     using kernel_registor_t =
         KernelRegistryForTarget<Target, Precision, Layout>;
-    return registries_[GetKernelOffset<Target, Precision, Layout>()]
-        .template get<kernel_registor_t *>()
-        ->Creates(op_type);
+    std::list<std::unique_ptr<KernelBase>> kernel_list;
+    if (registries_[GetKernelOffset<Target, Precision, Layout>()].valid()) {
+      kernel_list = registries_[GetKernelOffset<Target, Precision, Layout>()]
+                        .template get<kernel_registor_t *>()
+                        ->Creates(op_type);
+    }
+    return kernel_list;
   }
 
   std::list<std::unique_ptr<KernelBase>> Create(const std::string &op_type,
@@ -190,22 +268,42 @@ class KernelRegistry final {
   }
 
   std::string DebugString() const {
+#ifndef LITE_ON_MODEL_OPTIMIZE_TOOL
+    return "No more debug info";
+#else   // LITE_ON_MODEL_OPTIMIZE_TOOL
     STL::stringstream ss;
-    ss << "KernelCreator<host, float>:\n";
-    constexpr TargetType tgt = TARGET(kHost);
-    constexpr PrecisionType dt = PRECISION(kFloat);
-    constexpr DataLayoutType lt = DATALAYOUT(kNCHW);
-    constexpr DataLayoutType kany = DATALAYOUT(kAny);
-    using kernel_registor_t = KernelRegistryForTarget<tgt, dt, lt>;
-    auto *reg = registries_[GetKernelOffset<tgt, dt, kany>()]
-                    .template get<kernel_registor_t *>();
-    ss << reg->DebugString() << "\n";
+    ss << "\n";
+    ss << "Count of kernel kinds: ";
+    int count = 0;
+    for (auto &item : kernel_info_map_) {
+      count += item.second.size();
+    }
+    ss << count << "\n";
+
+    ss << "Count of registered kernels: " << kernel_info_map_.size() << "\n";
+    for (auto &item : kernel_info_map_) {
+      ss << "op: " << item.first << "\n";
+      for (auto &kernel : item.second) {
+        ss << "   - (" << TargetToStr(std::get<0>(kernel)) << ",";
+        ss << PrecisionToStr(std::get<1>(kernel)) << ",";
+        ss << DataLayoutToStr(std::get<2>(kernel));
+        ss << ")";
+        ss << "\n";
+      }
+    }
+
     return ss.str();
-    return "";
+#endif  // LITE_ON_MODEL_OPTIMIZE_TOOL
   }
 
  private:
   mutable std::vector<any_kernel_registor_t> registries_;
+#ifndef LITE_ON_TINY_PUBLISH
+  mutable std::map<
+      std::string,
+      std::vector<std::tuple<TargetType, PrecisionType, DataLayoutType>>>
+      kernel_info_map_;
+#endif
 };
 
 template <TargetType target,
@@ -216,9 +314,6 @@ class KernelRegistor : public lite::Registor<KernelType> {
  public:
   KernelRegistor(const std::string &op_type, const std::string &alias)
       : Registor<KernelType>([=] {
-          VLOG(3) << "Register kernel " << op_type << " for "
-                  << TargetToStr(target) << " " << PrecisionToStr(precision)
-                  << " " << DataLayoutToStr(layout) << " alias " << alias;
           KernelRegistry::Global().Register<target, precision, layout>(
               op_type, [=]() -> std::unique_ptr<KernelType> {
                 std::unique_ptr<KernelType> x(new KernelType);
@@ -238,6 +333,7 @@ class KernelRegistor : public lite::Registor<KernelType> {
   static paddle::lite::OpLiteRegistor<OpClass> LITE_OP_REGISTER_INSTANCE( \
       op_type__)(#op_type__);                                             \
   int touch_op_##op_type__() {                                            \
+    OpKernelInfoCollector::Global().AddOp2path(#op_type__, __FILE__);     \
     return LITE_OP_REGISTER_INSTANCE(op_type__).Touch();                  \
   }
 
@@ -246,7 +342,8 @@ class KernelRegistor : public lite::Registor<KernelType> {
   op_type__##__##target__##__##precision__##__registor__
 #define LITE_KERNEL_REGISTER_INSTANCE(                   \
     op_type__, target__, precision__, layout__, alias__) \
-  op_type__##__##target__##__##precision__##__registor__instance__##alias__
+  op_type__##__##target__##__##precision__##__##layout__##registor__instance__##alias__  // NOLINT
+
 #define LITE_KERNEL_REGISTER_FAKE(op_type__, target__, precision__, alias__) \
   LITE_KERNEL_REGISTER_INSTANCE(op_type__, target__, precision__, alias__)
 
@@ -262,6 +359,9 @@ class KernelRegistor : public lite::Registor<KernelType> {
   static KernelClass LITE_KERNEL_INSTANCE(                                     \
       op_type__, target__, precision__, layout__, alias__);                    \
   int touch_##op_type__##target__##precision__##layout__##alias__() {          \
+    OpKernelInfoCollector::Global().AddKernel2path(                            \
+        #op_type__ "," #target__ "," #precision__ "," #layout__ "," #alias__,  \
+        __FILE__);                                                             \
     LITE_KERNEL_INSTANCE(op_type__, target__, precision__, layout__, alias__)  \
         .Touch();                                                              \
     return 0;                                                                  \

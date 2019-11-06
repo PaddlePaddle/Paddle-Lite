@@ -354,7 +354,7 @@ LOAD_OP1(pad2d, CPU);
 LOAD_OP1(one_hot, CPU);
 #endif
 #ifdef ASSIGN_VALUE_OP
-LOAD_OP1(assign_value, CPU);
+LOAD_OP2(assign_value, CPU, GPU_CL);
 #endif
 #ifdef EXP_OP
 LOAD_OP1(exp, CPU);
@@ -376,4 +376,7 @@ LOAD_OP1(range, CPU);
 #endif
 #ifdef REDUCE_PROD_OP
 LOAD_OP1(reduce_prod, CPU);
+#endif
+#ifdef PIXEL_SHUFFLE_OP
+LOAD_OP1(pixel_shuffle, GPU_CL);
 #endif

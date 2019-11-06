@@ -16,9 +16,6 @@
 #include <string>
 #include <vector>
 #include "lite/api/cxx_api.h"
-#include "lite/api/paddle_use_kernels.h"
-#include "lite/api/paddle_use_ops.h"
-#include "lite/api/paddle_use_passes.h"
 #include "lite/core/op_registry.h"
 #include "lite/model_parser/model_parser.h"
 #include "lite/model_parser/pb/program_desc.h"
@@ -38,7 +35,6 @@ void Run(DebugConfig* conf) {
 #endif
   lite::Predictor predictor;
   std::vector<Place> valid_places({
-      Place{TARGET(kHost), PRECISION(kFloat)},
 #ifdef LITE_WITH_ARM
       Place{TARGET(kARM), PRECISION(kFloat)},
 #endif
@@ -47,6 +43,9 @@ void Run(DebugConfig* conf) {
 #endif
 #ifdef LITE_WITH_FPGA
       Place{TARGET(kFPGA), PRECISION(kFloat)},
+#endif
+#ifdef LITE_WITH_CUDA
+      Place{TARGET(kCUDA), PRECISION(kFloat)},
 #endif
   });
 
@@ -60,17 +59,7 @@ void Run(DebugConfig* conf) {
       "runtime_context_assign_pass",
   }};
 
-  predictor.Build(conf->model_dir,
-                  "",
-                  "",
-#ifdef LITE_WITH_ARM
-                  Place{TARGET(kARM), PRECISION(kFloat)},
-#endif
-#ifdef LITE_WITH_X86
-                  Place{TARGET(kX86), PRECISION(kFloat)},
-#endif
-                  valid_places,
-                  passes);
+  predictor.Build(conf->model_dir, "", "", valid_places, passes);
 
   predictor.GenRuntimeProgram();
   auto& instructions = predictor.runtime_program().instructions();

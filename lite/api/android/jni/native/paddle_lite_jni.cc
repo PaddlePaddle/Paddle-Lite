@@ -50,6 +50,16 @@ JNIEXPORT jboolean JNICALL Java_com_baidu_paddle_lite_PaddlePredictor_run(
   return JNI_TRUE;
 }
 
+JNIEXPORT jstring JNICALL Java_com_baidu_paddle_lite_PaddlePredictor_getVersion(
+    JNIEnv *env, jobject jpaddle_predictor) {
+  std::shared_ptr<PaddlePredictor> *predictor =
+      getPaddlePredictorPointer(env, jpaddle_predictor);
+  if (predictor == nullptr || (*predictor == nullptr)) {
+    return cpp_string_to_jstring(env, "");
+  }
+  return cpp_string_to_jstring(env, (*predictor)->GetVersion());
+}
+
 JNIEXPORT jboolean JNICALL
 Java_com_baidu_paddle_lite_PaddlePredictor_saveOptimizedModel(
     JNIEnv *env, jobject jpaddle_predictor, jstring model_dir) {

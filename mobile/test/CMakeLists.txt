@@ -534,9 +534,16 @@ if (ENABLE_ALL_TEST)
         # gen test
         ADD_EXECUTABLE(test-net net/test_net.cpp test_helper.h test_include.h executor_for_test.h)
         target_link_libraries(test-net paddle-mobile)
+
+        # gen test
+        ADD_EXECUTABLE(test-net-performance net/test_net_performance.cpp test_helper.h test_include.h executor_for_test.h)
+        target_link_libraries(test-net-performance paddle-mobile)
     endif ()
 else()
     # gen test
     ADD_EXECUTABLE(test-net net/test_net.cpp test_helper.h test_include.h executor_for_test.h)
     target_link_libraries(test-net paddle-mobile)
+
+    ADD_EXECUTABLE(test-net-benchmark net/test_net_benchmark.cpp test_helper.h test_include.h)
+    target_link_libraries(test-net-benchmark paddle-mobile)
 endif()

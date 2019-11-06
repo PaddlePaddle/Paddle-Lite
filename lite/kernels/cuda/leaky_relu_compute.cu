@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
 #include "lite/core/op_registry.h"
 #include "lite/kernels/cuda/leaky_relu_compute.h"
 
@@ -67,4 +66,5 @@ REGISTER_LITE_KERNEL(leaky_relu,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kCUDA))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kCUDA))})
+    .SetVersion("1.5.0")
     .Finalize();

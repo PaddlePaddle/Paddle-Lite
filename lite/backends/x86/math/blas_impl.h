@@ -463,9 +463,9 @@ void Blas<Target>::MatMul(const lite::Tensor &mat_a,
   auto dim_out = mat_out->dims();
   PADDLE_ENFORCE(dim_a.size() == 2 && dim_b.size() == 2 && dim_out.size() == 2,
                  "The input and output of matmul be matrix");
-  PADDLE_ENFORCE(
-      mat_a.target() == mat_b.target() && mat_a.target() == mat_out->target(),
-      "The targets of matrices must be same");
+  // PADDLE_ENFORCE(
+  //    mat_a.target() == mat_b.target() && mat_a.target() == mat_out->target(),
+  //    "The targets of matrices must be same");
 
   int M = dim_out[0];
   int N = dim_out[1];
@@ -483,7 +483,7 @@ void Blas<Target>::MatMul(const lite::Tensor &mat_a,
              mat_a.data<T>(),
              mat_b.data<T>(),
              beta,
-             mat_out->data<T>());
+             mat_out->mutable_data<T>());
 }
 
 template <>
@@ -759,7 +759,7 @@ void Blas<Target>::MatMul(const lite::Tensor &mat_a,
                            mat_a.data<T>(),
                            mat_b.data<T>(),
                            beta,
-                           mat_out->data<T>());
+                           mat_out->mutable_data<T>());
   } else {
     PADDLE_ENFORCE(dim_a.batch_size_ == dim_b.batch_size_ ||
                    dim_a.batch_size_ == 0 || dim_b.batch_size_ == 0);
@@ -773,7 +773,7 @@ void Blas<Target>::MatMul(const lite::Tensor &mat_a,
         mat_a.data<T>(),
         mat_b.data<T>(),
         beta,
-        mat_out->data<T>(),
+        mat_out->mutable_data<T>(),
         dim_a.batch_size_ == 0 ? dim_b.batch_size_ : dim_a.batch_size_,
         dim_a.stride_,
         dim_b.stride_);

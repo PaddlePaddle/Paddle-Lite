@@ -109,8 +109,7 @@ macro(PROMPT_PROTOBUF_LIB)
 
     ADD_LIBRARY(protobuf ${protobuf_LIBTYPE} IMPORTED GLOBAL)
     SET_PROPERTY(TARGET protobuf PROPERTY IMPORTED_LOCATION ${PROTOBUF_LIBRARY})
-
-    ADD_LIBRARY(protobuf_lite ${protobuf_LIBTYPE} IMPORTED GLOBAL)
+ADD_LIBRARY(protobuf_lite ${protobuf_LIBTYPE} IMPORTED GLOBAL)
     SET_PROPERTY(TARGET protobuf_lite PROPERTY IMPORTED_LOCATION ${PROTOBUF_LITE_LIBRARY})
 
     ADD_LIBRARY(libprotoc ${protobuf_LIBTYPE} IMPORTED GLOBAL)
@@ -185,6 +184,12 @@ FUNCTION(build_protobuf TARGET_NAME BUILD_FOR_HOST)
     SET(SOURCE_DIR "${CMAKE_SOURCE_DIR}/third-party/protobuf-host")
 
     IF(BUILD_FOR_HOST)
+        # set for server compile.
+        if (NOT LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
+          set(HOST_C_COMPILER "${CMAKE_C_COMPILER}")
+          set(HOST_CXX_COMPILER "${CMAKE_CXX_COMPILER}")
+        endif()
+
         SET(OPTIONAL_ARGS
             "-DCMAKE_C_COMPILER=${HOST_C_COMPILER}"
             "-DCMAKE_CXX_COMPILER=${HOST_CXX_COMPILER}"
@@ -247,6 +252,7 @@ FUNCTION(build_protobuf TARGET_NAME BUILD_FOR_HOST)
             GIT_REPOSITORY  ""
             GIT_TAG         ${PROTOBUF_TAG}
             SOURCE_DIR      ${SOURCE_DIR}
+            BUILD_ALWAYS 1
             CONFIGURE_COMMAND ${CMAKE_COMMAND} ${SOURCE_DIR}/cmake
                 ${OPTIONAL_ARGS}
                 -Dprotobuf_BUILD_TESTS=OFF
@@ -276,7 +282,11 @@ IF(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
 ENDIF()
 
 IF(NOT PROTOBUF_FOUND)
-    build_protobuf(extern_protobuf FALSE)
+    if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
+      build_protobuf(extern_protobuf FALSE)
+    else()
+      build_protobuf(extern_protobuf TRUE)
+    endif()
 
     SET(PROTOBUF_INCLUDE_DIR ${extern_protobuf_INCLUDE_DIR}
         CACHE PATH "protobuf include directory." FORCE)

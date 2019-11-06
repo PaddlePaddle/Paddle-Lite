@@ -30,16 +30,12 @@ namespace mir {
 TEST(fc_fuse_pass, fuse_test) {
   lite::Predictor predictor;
 #ifndef LITE_WITH_CUDA
-  std::vector<Place> valid_places({Place{TARGET(kHost), PRECISION(kFloat)},
-                                   Place{TARGET(kX86), PRECISION(kFloat)}});
+  std::vector<Place> valid_places({Place{TARGET(kX86), PRECISION(kFloat)}});
 #else
   std::vector<Place> valid_places({
-      Place{TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW)},
       Place{TARGET(kCUDA), PRECISION(kFloat), DATALAYOUT(kNCHW)},
       Place{TARGET(kCUDA), PRECISION(kAny), DATALAYOUT(kNCHW)},
-      Place{TARGET(kHost), PRECISION(kAny), DATALAYOUT(kNCHW)},
       Place{TARGET(kCUDA), PRECISION(kAny), DATALAYOUT(kAny)},
-      Place{TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny)},
   });
 #endif
 
@@ -72,8 +68,7 @@ TEST(fc_fuse_pass, fuse_test) {
 #ifndef LITE_WITH_LIGHT_WEIGHT_FRAMEWORK
 TEST(fc_fuse_pass, save_model_test) {
   lite::Predictor predictor;
-  std::vector<Place> valid_places({Place{TARGET(kHost), PRECISION(kFloat)},
-                                   Place{TARGET(kX86), PRECISION(kFloat)}});
+  std::vector<Place> valid_places({Place{TARGET(kX86), PRECISION(kFloat)}});
   predictor.Build(FLAGS_model_dir,
                   "",
                   "",

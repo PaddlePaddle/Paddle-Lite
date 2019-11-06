@@ -21,7 +21,7 @@ namespace lite {
 namespace operators {
 
 bool ConcatOpLite::CheckShape() const {
-  CHECK_GT_OR_FALSE(param_.x.size(), 1UL);
+  CHECK_GE_OR_FALSE(param_.x.size(), 1UL);
   CHECK_OR_FALSE(param_.output);
   return true;
 }
@@ -60,6 +60,7 @@ bool ConcatOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
   auto inputs = op_desc.Input("X");
   auto out = op_desc.Output("Out").front();
 
+  param_.x.clear();
   for (auto var : inputs) {
     param_.x.push_back(scope->FindVar(var)->GetMutable<lite::Tensor>());
   }

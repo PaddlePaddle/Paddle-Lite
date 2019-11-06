@@ -121,6 +121,7 @@ class OpDesc : public OpDescAPI {
       DEF_ONE(LONGS);
       default:
         LOG(FATAL) << "Unknown attribute type";
+        return static_cast<AttrType>(-1);
     }
 #undef DEF_ONE
   }
@@ -141,8 +142,6 @@ class OpDesc : public OpDescAPI {
 
   template <typename T>
   T GetAttr(const std::string &name) const;
-
-  std::string DebugString() const { return desc_->DebugString(); }
 
  private:
   std::vector<std::string> GetArguments(

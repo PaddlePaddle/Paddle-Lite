@@ -15,7 +15,6 @@ limitations under the License. */
 #include <gflags/gflags.h>
 #include <gtest/gtest.h>
 #include <algorithm>
-#include <array>
 #include <memory>
 #include <random>
 #include <vector>
@@ -395,51 +394,74 @@ TEST(cl_test, target_wrapper_buffer_test) {
 }
 
 TEST(cl_test, target_wrapper_image_test) {
-  const std::array<size_t, 2> image_shape{28, 32};
+  const size_t cl_image2d_width = 28;
+  const size_t cl_image2d_height = 32;
+  const size_t cl_image2d_row_pitch{0};
+  const size_t cl_image2d_slice_pitch{0};
   auto *d_image = static_cast<cl::Image2D *>(
-      TargetWrapperCL::MallocImage(image_shape, PRECISION(kFloat)));
-  std::array<size_t, 2> image_pitch;
+      TargetWrapperCL::MallocImage<float>(cl_image2d_width, cl_image2d_height));
   // Map/Unmap test
-  auto *h_image = static_cast<float *>(
-      TargetWrapperCL::MapImage(d_image, image_shape, &image_pitch));
-  // row_pitch = 448 = 28 * 4 (RGBA: 4 floats) * 4 (float in bytes)
-  // slice_pitch = 0
-  size_t row_pitch = image_pitch[0];
-  size_t slice_pitch = image_pitch[1];
-  CHECK_EQ(row_pitch, 448);
-  CHECK_EQ(slice_pitch, 0);
-  LOG(INFO) << "row_pitch = " << row_pitch << ", slice_pitch " << slice_pitch;
+  auto *h_image =
+      static_cast<float *>(TargetWrapperCL::MapImage(d_image,
+                                                     cl_image2d_width,
+                                                     cl_image2d_height,
+                                                     cl_image2d_row_pitch,
+                                                     cl_image2d_slice_pitch));
+  CHECK_EQ(
+      cl_image2d_row_pitch,
+      cl_image2d_width * 4 *
+          4);  // row_pitch = 448 = 28 * 4 (RGBA: 4 floats) * 4 (float in bytes)
+  CHECK_EQ(cl_image2d_slice_pitch, 0);  // slice_pitch = 0
+  LOG(INFO) << "cl_image2d_row_pitch = " << cl_image2d_row_pitch
+            << ", cl_image2d_slice_pitch " << cl_image2d_slice_pitch;
 
   for (int i = 0; i < 10; i++) {
     h_image[i] = 3.14f * i;
   }
   TargetWrapperCL::Unmap(d_image, h_image);
 
-  auto *h_ptr = static_cast<float *>(
-      TargetWrapperCL::MapImage(d_image, image_shape, &image_pitch));
+  auto *h_ptr =
+      static_cast<float *>(TargetWrapperCL::MapImage(d_image,
+                                                     cl_image2d_width,
+                                                     cl_image2d_height,
+                                                     cl_image2d_row_pitch,
+                                                     cl_image2d_slice_pitch));
   for (int i = 0; i < 10; i++) {
     EXPECT_NEAR(h_ptr[i], 3.14f * i, 1e-6);
   }
   TargetWrapperCL::Unmap(d_image, h_ptr);
 
   // Imagecpy test
-  std::vector<float> h_image_cpy(28 * 4 * 32);
-  for (int i = 0; i < 28 * 4 * 32; i++) {
+  std::vector<float> h_image_cpy(cl_image2d_width * 4 *
+                                 cl_image2d_height);  // 4 for RGBA channels
+  for (int i = 0; i < cl_image2d_width * 4 * cl_image2d_height; i++) {
     h_image_cpy[i] = 3.14f;
   }
-  TargetWrapperCL::ImgcpySync(
-      d_image, h_image_cpy.data(), image_shape, image_pitch, IoDirection::HtoD);
+  TargetWrapperCL::ImgcpySync(d_image,
+                              h_image_cpy.data(),
+                              cl_image2d_width,
+                              cl_image2d_height,
+                              cl_image2d_row_pitch,
+                              cl_image2d_slice_pitch,
+                              IoDirection::HtoD);
   auto *d_image_cpy = static_cast<cl::Image2D *>(
-      TargetWrapperCL::MallocImage(image_shape, PRECISION(kFloat)));
-  TargetWrapperCL::ImgcpySync(
-      d_image_cpy, d_image, image_shape, image_pitch, IoDirection::DtoD);
+      TargetWrapperCL::MallocImage<float>(cl_image2d_width, cl_image2d_height));
+  TargetWrapperCL::ImgcpySync(d_image_cpy,
+                              d_image,
+                              cl_image2d_width,
+                              cl_image2d_height,
+                              cl_image2d_row_pitch,
+                              cl_image2d_slice_pitch,
+                              IoDirection::DtoD);
   std::fill(h_image_cpy.begin(), h_image_cpy.end(), 0);
   TargetWrapperCL::ImgcpySync(h_image_cpy.data(),
                               d_image_cpy,
-                              image_shape,
-                              image_pitch,
+                              cl_image2d_width,
+                              cl_image2d_height,
+                              cl_image2d_row_pitch,
+                              cl_image2d_slice_pitch,
                               IoDirection::DtoH);
-  for (int i = 0; i < 28 * 4 * 32; i++) {
+  for (int i = 0; i < cl_image2d_width * 4 * cl_image2d_height; i++) {
     EXPECT_NEAR(h_image_cpy[i], 3.14f, 1e-6);
   }
 

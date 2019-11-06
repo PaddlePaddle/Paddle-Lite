@@ -47,6 +47,9 @@ TEST(SubgraphTest, models) {
 #ifdef LITE_WITH_NPU
       Place{TARGET(kNPU), PRECISION(kFloat)},
 #endif
+#ifdef LITE_WITH_XPU
+      Place{TARGET(kXPU), PRECISION(kFloat)},
+#endif
   });
   lite::Program program(program_desc, scope, valid_places);
   auto graph = std::unique_ptr<mir::SSAGraph>(new mir::SSAGraph());
@@ -214,7 +217,6 @@ TEST(SubGraphTest, SimpleNet) {
   auto* pass = new mir::subgraph::SubgraphProgramPass;
   ASSERT_EQ(pass->FuseSubgraph(graph, supported_op_types), 1);
 
-  const int num_nodes = graph->nodes().size();
   ASSERT_EQ(graph->nodes().size(), 9);
   // LOG(INFO) << "After NPU Pass \n" << Visualize(graph.get());
 }

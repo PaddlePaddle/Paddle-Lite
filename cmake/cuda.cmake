@@ -4,9 +4,9 @@ endif()
 
 set(paddle_known_gpu_archs "30 35 50 52 60 61 70")
 set(paddle_known_gpu_archs7 "30 35 50 52")
-set(paddle_known_gpu_archs8 "30 35 50 52 60 61")
-set(paddle_known_gpu_archs9 "30 35 50 52 60 61 70")
-set(paddle_known_gpu_archs10 "30 35 50 52 60 61 70 75")
+set(paddle_known_gpu_archs8 "30 35 50 52 53 60 61 62")
+set(paddle_known_gpu_archs9 "30 35 50 52 53 60 61 62 70")
+set(paddle_known_gpu_archs10 "30 35 50 52 53 60 61 62 70 72 75")
 
 ######################################################################################
 # A function for automatic detection of GPUs installed  (if autodetection is enabled)
@@ -173,6 +173,16 @@ if(NOT WITH_DSO)
       set_property(GLOBAL PROPERTY CUDA_MODULES ${CUDNN_LIBRARY} ${CUDA_CUBLAS_LIBRARIES} ${CUDA_curand_LIBRARY})
     endif(WIN32)
 endif(NOT WITH_DSO)
+
+get_filename_component(CUDA_LIB_PATH ${CUDA_curand_LIBRARY} DIRECTORY)
+function(import_static_library alias path)
+    add_library(${alias} STATIC IMPORTED GLOBAL)
+    set_property(TARGET ${alias} PROPERTY IMPORTED_LOCATION ${path})
+endfunction()
+import_static_library(cudart_static ${CUDA_LIB_PATH}/libcudart_static.a)
+import_static_library(cublas_static ${CUDA_LIB_PATH}/libcublas_static.a)
+import_static_library(curand_static ${CUDA_LIB_PATH}/libcurand_static.a)
+import_static_library(culibos_static ${CUDA_LIB_PATH}/libculibos.a)
 
 # setting nvcc arch flags
 select_nvcc_arch_flags(NVCC_FLAGS_EXTRA)

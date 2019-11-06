@@ -26,7 +26,10 @@
 #include "lite/backends/opencl/cl_runtime.h"
 #endif
 #ifdef LITE_WITH_NPU
-#include "lite/backends/npu/npu_helper.h"
+#include "lite/backends/npu/runtime.h"
+#endif
+#ifdef LITE_WITH_XPU
+#include "lite/backends/xpu/runtime.h"
 #endif
 
 #include <map>
@@ -55,6 +58,7 @@ using X86Context = Context<TargetType::kX86>;
 using CUDAContext = Context<TargetType::kCUDA>;
 using ARMContext = Context<TargetType::kARM>;
 using NPUContext = Context<TargetType::kNPU>;
+using XPUContext = Context<TargetType::kXPU>;
 using OpenCLContext = Context<TargetType::kOpenCL>;
 using FPGAContext = Context<TargetType::kFPGA>;
 
@@ -81,9 +85,20 @@ class Context<TargetType::kNPU> {
 
   NPUContext& operator=(const NPUContext& ctx) {}
   std::string name() const { return "NPUContext"; }
-  hiai::AiModelMngerClient* client(const std::string& model_name) const {
-    return npu::DeviceInfo::Global().client(model_name);
-  }
+};
+#endif
+
+#ifdef LITE_WITH_XPU
+template <>
+class Context<TargetType::kXPU> {
+ public:
+  Context() {}
+  explicit Context(const NPUContext& ctx);
+  // NOTE: InitOnce should only be used by ContextScheduler
+  void InitOnce() {}
+  void CopySharedTo(XPUContext* ctx) {}
+
+  std::string name() const { return "XPUContext"; }
 };
 #endif
 
@@ -160,9 +175,9 @@ class Context<TargetType::kCUDA> {
     cublas_fp32_ = std::make_shared<lite::cuda::Blas<float>>();
   }
   void Init(int dev_id, int exec_stream_id = 0, int io_stream_id = 0) {
-    CHECK_GT(devs.size(), 0)
+    CHECK_GT(devs.size(), 0UL)
         << "Env is not initialized or current target is not exit!";
-    if (dev_id >= devs.size()) {
+    if (dev_id >= static_cast<int>(devs.size())) {
       LOG(WARNING) << "device index exceeds the number of devices, set to "
                       "default device(0)!";
       device_id_ = 0;
@@ -192,10 +207,10 @@ class Context<TargetType::kCUDA> {
     ctx->cublas_fp32_ = cublas_fp32_;
   }
 
-  const cudaStream_t exec_stream() { return exec_stream_; }
+  const cudaStream_t& exec_stream() const { return exec_stream_; }
   void SetExecStream(cudaStream_t stream) { exec_stream_ = stream; }
 
-  const cudaStream_t io_stream() { return io_stream_; }
+  const cudaStream_t& io_stream() const { return io_stream_; }
   void SetIoStream(cudaStream_t stream) { io_stream_ = stream; }
 
   std::shared_ptr<cuda::Blas<float>> cublas_fp32() { return cublas_fp32_; }
@@ -240,8 +255,6 @@ class Context<TargetType::kX86> {
  public:
   Context() {}
 
-  Context(Context&& ctx) {}
-
   // NOTE: InitOnce should only be used by ContextScheduler
   void InitOnce() {}
 
@@ -261,7 +274,7 @@ template <>
 class Context<TargetType::kOpenCL> {
   std::shared_ptr<CLContext> cl_context_;
   using WaitListType =
-      std::unordered_map<decltype(static_cast<const cl::Buffer*>(nullptr)),
+      std::unordered_map<decltype(static_cast<const void*>(nullptr)),
                          std::shared_ptr<cl::Event>>;
   std::shared_ptr<WaitListType> cl_wait_list_;
 
@@ -343,6 +356,12 @@ class ContextScheduler {
             &ctx->As<NPUContext>());
         break;
 #endif
+#ifdef LITE_WITH_XPU
+      case TARGET(kXPU):
+        kernel_contexts_[TargetType::kXPU].As<XPUContext>().CopySharedTo(
+            &ctx->As<XPUContext>());
+        break;
+#endif
 #ifdef LITE_WITH_OPENCL
       case TARGET(kOpenCL):
         kernel_contexts_[TargetType::kOpenCL].As<OpenCLContext>().CopySharedTo(
@@ -356,7 +375,10 @@ class ContextScheduler {
         break;
 #endif
       default:
+#ifndef LITE_ON_MODEL_OPTIMIZE_TOOL
         LOG(FATAL) << "unsupported target " << TargetToStr(target);
+#endif
+        break;
     }
     return ctx;
   }
@@ -386,6 +408,9 @@ class ContextScheduler {
 #endif
 #ifdef LITE_WITH_NPU
     InitContext<TargetType::kNPU, NPUContext>();
+#endif
+#ifdef LITE_WITH_XPU
+    InitContext<TargetType::kXPU, XPUContext>();
 #endif
   }
 

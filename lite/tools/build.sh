@@ -15,6 +15,10 @@ readonly NUM_PROC=${LITE_BUILD_THREADS:-4}
 # global variables
 BUILD_EXTRA=OFF
 BUILD_JAVA=ON
+BUILD_PYTHON=OFF
+BUILD_DIR=$(pwd)
+OPTMODEL_DIR=""
+BUILD_TAILOR=OFF
 
 readonly THIRDPARTY_TAR=https://paddle-inference-dist.bj.bcebos.com/PaddleLite/third-party-05b862.tar.gz
 
@@ -23,16 +27,18 @@ readonly workspace=$PWD
 # for code gen, a source file is generated after a test, but is dependended by some targets in cmake.
 # here we fake an empty file to make cmake works.
 function prepare_workspace {
+    local root_dir=$1
+    local build_dir=$2
     # in build directory
     # 1. Prepare gen_code file
-    GEN_CODE_PATH_PREFIX=lite/gen_code
-    mkdir -p ./${GEN_CODE_PATH_PREFIX}
-    touch ./${GEN_CODE_PATH_PREFIX}/__generated_code__.cc
+    GEN_CODE_PATH_PREFIX=$build_dir/lite/gen_code
+    mkdir -p ${GEN_CODE_PATH_PREFIX}
+    touch ${GEN_CODE_PATH_PREFIX}/__generated_code__.cc
 
     # 2.Prepare debug tool
-    DEBUG_TOOL_PATH_PREFIX=lite/tools/debug
-    mkdir -p ./${DEBUG_TOOL_PATH_PREFIX}
-    cp ../${DEBUG_TOOL_PATH_PREFIX}/analysis_tool.py ./${DEBUG_TOOL_PATH_PREFIX}/
+    DEBUG_TOOL_PATH_PREFIX=$build_dir/lite/tools/debug
+    mkdir -p ${DEBUG_TOOL_PATH_PREFIX}
+    cp $root_dir/lite/tools/debug/analysis_tool.py ${DEBUG_TOOL_PATH_PREFIX}/
 }
 
 function prepare_thirdparty {
@@ -46,6 +52,19 @@ function prepare_thirdparty {
     else
         git submodule update --init --recursive
     fi
+}
+
+function build_model_optimize_tool {
+    cd $workspace
+    prepare_thirdparty
+    mkdir -p build.model_optimize_tool
+    cd build.model_optimize_tool
+    cmake .. -DWITH_LITE=ON \
+      -DLITE_ON_MODEL_OPTIMIZE_TOOL=ON \
+      -DWITH_TESTING=OFF \
+      -DLITE_BUILD_EXTRA=ON \
+      -DWITH_MKL=OFF
+    make model_optimize_tool -j$NUM_PROC
 }
 
 function make_tiny_publish_so {
@@ -68,13 +87,17 @@ function make_tiny_publish_so {
   fi
 
   cmake .. \
+      ${PYTHON_FLAGS} \
       ${CMAKE_COMMON_OPTIONS} \
       -DWITH_TESTING=OFF \
       -DLITE_WITH_JAVA=$BUILD_JAVA \
+      -DLITE_WITH_PYTHON=$BUILD_PYTHON \
       -DLITE_SHUTDOWN_LOG=ON \
       -DLITE_ON_TINY_PUBLISH=ON \
       -DANDROID_STL_TYPE=$android_stl \
       -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
+      -DLITE_BUILD_TAILOR=$BUILD_TAILOR \
+      -DLITE_OPTMODEL_DIR=$OPTMODEL_DIR \
       -DARM_TARGET_OS=${os} -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
 
   make publish_inference -j$NUM_PROC
@@ -90,27 +113,32 @@ function make_full_publish_so {
   #git submodule update --init --recursive
   prepare_thirdparty
 
-  cur_dir=$(pwd)
-  build_dir=$cur_dir/build.lite.${os}.${abi}.${lang}
-  if [ -d $build_dir ]
+  root_dir=$(pwd)
+  build_directory=$BUILD_DIR/build.lite.${os}.${abi}.${lang}
+
+  if [ -d $build_directory ]
   then
-    rm -rf $build_dir
+    rm -rf $build_directory
   fi
-  mkdir -p $build_dir
-  cd $build_dir
+  mkdir -p $build_directory
+  cd $build_directory
   
   if [ ${os} == "armlinux" ]; then
     BUILD_JAVA=OFF
   fi
 
-  prepare_workspace
-  cmake .. \
+  prepare_workspace $root_dir $build_directory
+  cmake $root_dir \
+      ${PYTHON_FLAGS} \
       ${CMAKE_COMMON_OPTIONS} \
       -DWITH_TESTING=OFF \
       -DLITE_WITH_JAVA=$BUILD_JAVA \
+      -DLITE_WITH_PYTHON=$BUILD_PYTHON \
       -DLITE_SHUTDOWN_LOG=ON \
       -DANDROID_STL_TYPE=$android_stl \
       -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
+      -DLITE_BUILD_TAILOR=$BUILD_TAILOR \
+      -DLITE_OPTMODEL_DIR=$OPTMODEL_DIR \
       -DARM_TARGET_OS=${os} -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
 
   make publish_inference -j4
@@ -124,23 +152,23 @@ function make_all_tests {
 
   #git submodule update --init --recursive
   prepare_thirdparty
-  cur_dir=$(pwd)
-  build_dir=$cur_dir/build.lite.${os}.${abi}.${lang}
+  root_dir=$(pwd)
+  build_directory=$BUILD_DIR/build.lite.${os}.${abi}.${lang}
   if [ -d $build_dir ]
   then
     rm -rf $build_dir
   fi
-  mkdir -p $build_dir
-  cd $build_dir
+  mkdir -p $build_directory
+  cd $build_directory
 
-  prepare_workspace
-  cmake .. \
+  prepare_workspace $root_dir $build_directory
+  cmake $root_dir \
       ${CMAKE_COMMON_OPTIONS} \
       -DWITH_TESTING=ON \
       -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
       -DARM_TARGET_OS=${os} -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
 
-  make lite_compile_deps -j4
+  make lite_compile_deps -j$NUM_PROC
   cd - > /dev/null
 }
 
@@ -179,6 +207,65 @@ function make_ios {
     cd -
 }
 
+function make_cuda {
+  prepare_thirdparty
+
+  root_dir=$(pwd)
+  build_directory=$BUILD_DIR/build_cuda
+
+  if [ -d $build_directory ]
+  then
+    rm -rf $build_directory
+  fi
+  mkdir -p $build_directory
+  cd $build_directory
+
+  prepare_workspace $root_dir $build_directory
+
+  cmake ..  -DWITH_MKL=OFF       \
+            -DLITE_WITH_CUDA=ON  \
+            -DWITH_MKLDNN=OFF    \
+            -DLITE_WITH_X86=OFF  \
+            -DLITE_WITH_PROFILE=OFF \
+            -DWITH_LITE=ON \
+            -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF \
+            -DWITH_TESTING=OFF \
+            -DLITE_WITH_ARM=OFF \
+            -DLITE_WITH_PYTHON=ON \
+            -DLITE_BUILD_EXTRA=ON
+
+  make publish_inference_python_lib -j8
+  cd -
+}
+
+function make_x86 {
+  prepare_thirdparty
+
+  root_dir=$(pwd)
+  build_directory=$BUILD_DIR/build.lite.x86
+
+  if [ -d $build_directory ]
+  then
+    rm -rf $build_directory
+  fi
+  mkdir -p $build_directory
+  cd $build_directory
+
+  prepare_workspace $root_dir $build_directory
+
+  cmake ..  -DWITH_MKL=ON       \
+            -DWITH_MKLDNN=OFF    \
+            -DLITE_WITH_X86=ON  \
+            -DLITE_WITH_PROFILE=OFF \
+            -DWITH_LITE=ON \
+            -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF \
+            -DLITE_WITH_ARM=OFF \
+            -DWITH_GPU=OFF \
+            -DLITE_BUILD_EXTRA=ON
+
+  make publish_inference -j4
+  cd -
+}
 
 function print_usage {
     set +x
@@ -199,11 +286,14 @@ function print_usage {
     echo
     echo -e "optional argument:"
     echo -e "--build_extra: (OFF|ON); controls whether to publish extra operators and kernels for (sequence-related model such as OCR or NLP)"
+    echo -e "--build_python: (OFF|ON); controls whether to publish python api lib (ANDROID and IOS is not supported)"
+    echo -e "--build_java: (OFF|ON); controls whether to publish java api lib (Only ANDROID is supported)"
+    echo -e "--build_dir: directory for building"
     echo
     echo -e "argument choices:"
     echo -e "--arm_os:\t android|ios|ios64"
     echo -e "--arm_abi:\t armv8|armv7"
-    echo -e "--arm_lang:\t gcc|clang (for android)"
+    echo -e "--arm_lang:\t only support gcc now, clang will be supported in future.(for android)"
     echo -e "--android_stl:\t c++_static|c++_shared (for android)"
     echo
     echo -e "tasks:"
@@ -234,6 +324,13 @@ function main {
                 ;;
             --arm_lang=*)
                 ARM_LANG="${i#*=}"
+                if [ ${ARM_LANG} == "clang" ]; then
+                     set +x
+                     echo
+                     echo -e "error: only support gcc now, clang will be supported in future."
+                     echo
+                     exit 1
+                fi
                 shift
                 ;;
             --android_stl=*)
@@ -242,6 +339,26 @@ function main {
                 ;;
             --build_extra=*)
                 BUILD_EXTRA="${i#*=}"
+                shift
+                ;;
+            --build_python=*)
+                BUILD_PYTHON="${i#*=}"
+                shift
+                ;;
+            --build_java=*)
+                BUILD_JAVA="${i#*=}"
+                shift
+                ;;
+            --build_dir=*)
+                BUILD_DIR="${i#*=}"
+                shift
+		            ;;
+            --opt_model_dir=*)
+                OPTMODEL_DIR="${i#*=}"
+                shift
+                ;;
+            --build_tailor=*)
+                BUILD_TAILOR="${i#*=}"
                 shift
                 ;;
             tiny_publish)
@@ -260,6 +377,18 @@ function main {
                 make_ios $ARM_OS $ARM_ABI
                 shift
                 ;;
+            build_optimize_tool)
+                build_model_optimize_tool
+                shift
+                ;;
+            cuda)
+                make_cuda 
+                shift
+                ;;
+            x86)
+               make_x86
+               shift
+               ;;
             *)
                 # unknown option
                 print_usage

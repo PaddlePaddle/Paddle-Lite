@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/api/light_api.h"
+#include <algorithm>
 
 namespace paddle {
 namespace lite {
@@ -22,44 +23,94 @@ void LightPredictor::Build(const std::string& model_dir,
                            const std::string& param_buffer,
                            lite_api::LiteModelType model_type,
                            bool model_from_memory) {
-  cpp::ProgramDesc desc;
   switch (model_type) {
 #ifndef LITE_ON_TINY_PUBLISH
     case lite_api::LiteModelType::kProtobuf:
-      LoadModelPb(model_dir, "", "", scope_.get(), &desc);
+      LoadModelPb(model_dir, "", "", scope_.get(), &cpp_program_desc_);
       break;
 #endif
     case lite_api::LiteModelType::kNaiveBuffer: {
       if (model_from_memory) {
         LoadModelNaiveFromMemory(
-            model_buffer, param_buffer, scope_.get(), &desc);
+            model_buffer, param_buffer, scope_.get(), &cpp_program_desc_);
       } else {
-        LoadModelNaive(model_dir, scope_.get(), &desc);
+        LoadModelNaive(model_dir, scope_.get(), &cpp_program_desc_);
       }
       break;
     }
     default:
       LOG(FATAL) << "Unknown model type";
   }
-  BuildRuntimeProgram(desc);
+  BuildRuntimeProgram(cpp_program_desc_);
+  PrepareFeedFetch();
 }
 
 Tensor* LightPredictor::GetInput(size_t offset) {
-  auto* _feed_list = program_->exec_scope()->FindVar("feed");
-  CHECK(_feed_list) << "no feed variable in exec_scope";
-  auto* feed_list = _feed_list->GetMutable<std::vector<Tensor>>();
-  if (offset >= feed_list->size()) {
-    feed_list->resize(offset + 1);
+  CHECK(input_names_.size() > offset)
+      << "The network has " << input_names_.size() << " inputs"
+      << ", the offset should be less than this.";
+  auto* in_var = program_->exec_scope()->FindVar(input_names_[offset]);
+  CHECK(in_var) << "no fatch variable " << input_names_[offset]
+                << " in exec_scope";
+  return in_var->GetMutable<lite::Tensor>();
+}
+
+// get input by name
+Tensor* LightPredictor::GetInputByName(const std::string& name) {
+  auto element = std::find(input_names_.begin(), input_names_.end(), name);
+  if (element == input_names_.end()) {
+    LOG(ERROR) << "Model do not have input named with: [" << name
+               << "], model's inputs include:";
+    for (int i = 0; i < input_names_.size(); i++) {
+      LOG(ERROR) << "[" << input_names_[i] << "]";
+    }
+    return nullptr;
+  } else {
+    int position = std::distance(input_names_.begin(), element);
+    return GetInput(position);
   }
-  return &feed_list->at(offset);
 }
 
 const Tensor* LightPredictor::GetOutput(size_t offset) {
-  auto* _fetch_list = program_->exec_scope()->FindVar("fetch");
-  CHECK(_fetch_list) << "no fatch variable in exec_scope";
-  auto& fetch_list = *_fetch_list->GetMutable<std::vector<lite::Tensor>>();
-  CHECK_LT(offset, fetch_list.size()) << "offset " << offset << " overflow";
-  return &fetch_list.at(offset);
+  CHECK(output_names_.size() > offset)
+      << "The network has " << output_names_.size() << " outputs"
+      << ", the offset should be less than this.";
+  auto* out_var = program_->exec_scope()->FindVar(output_names_.at(offset));
+  CHECK(out_var) << "no fatch variable " << output_names_.at(offset)
+                 << " in exec_scope";
+  return out_var->GetMutable<lite::Tensor>();
+}
+// get inputs names
+std::vector<std::string> LightPredictor::GetInputNames() {
+  return input_names_;
+}
+// get outputnames
+std::vector<std::string> LightPredictor::GetOutputNames() {
+  return output_names_;
+}
+// append the names of inputs and outputs into input_names_ and output_names_
+void LightPredictor::PrepareFeedFetch() {
+  auto current_block = cpp_program_desc_.GetBlock<cpp::BlockDesc>(0);
+  std::vector<cpp::OpDesc*> feeds;
+  std::vector<cpp::OpDesc*> fetchs;
+  for (int i = 0; i < current_block->OpsSize(); i++) {
+    auto op = current_block->GetOp<cpp::OpDesc>(i);
+    if (op->Type() == "feed") {
+      feeds.push_back(op);
+    } else if (op->Type() == "fetch") {
+      fetchs.push_back(op);
+    }
+  }
+  input_names_.resize(feeds.size());
+  output_names_.resize(fetchs.size());
+  for (int i = 0; i < feeds.size(); i++) {
+    input_names_[feeds[i]->GetAttr<int>("col")] =
+        feeds[i]->Output("Out").front();
+  }
+  for (int i = 0; i < fetchs.size(); i++) {
+    output_names_[fetchs[i]->GetAttr<int>("col")] =
+        fetchs[i]->Input("X").front();
+  }
 }
 
 void LightPredictor::BuildRuntimeProgram(const cpp::ProgramDesc& prog) {
@@ -84,9 +135,11 @@ void LightPredictor::BuildRuntimeProgram(const cpp::ProgramDesc& prog) {
         });
     CHECK(it != kernels.end());
     (*it)->SetContext(ContextScheduler::Global().NewContext((*it)->target()));
+
     insts.emplace_back(op, std::move(*it));
   }
   program_.reset(new RuntimeProgram(std::move(insts)));
+
   CHECK(program.exec_scope());
   program_->set_exec_scope(program.exec_scope());
 }

@@ -128,21 +128,21 @@ void conv_depthwise_3x3s2p1_bias_s_relu(float* dout,
                                         const int w_out,
                                         ARMContext* ctx);
 
-void conv_depthwise_3x3p1(const float* din,
-                          float* dout,
-                          int num,
-                          int ch_out,
-                          int h_out,
-                          int w_out,
-                          int ch_in,
-                          int h_in,
-                          int w_in,
-                          const float* weights,
-                          const float* bias,
-                          int stride,
-                          bool flag_bias,
-                          bool flag_relu,
-                          ARMContext* ctx) {
+void conv_depthwise_3x3p1_fp32(const float* din,
+                               float* dout,
+                               int num,
+                               int ch_out,
+                               int h_out,
+                               int w_out,
+                               int ch_in,
+                               int h_in,
+                               int w_in,
+                               const float* weights,
+                               const float* bias,
+                               int stride,
+                               bool flag_bias,
+                               bool flag_relu,
+                               ARMContext* ctx) {
   if (stride == 1) {
     if (flag_relu) {
       if (w_in > 4) {

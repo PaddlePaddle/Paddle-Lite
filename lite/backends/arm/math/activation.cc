@@ -471,7 +471,7 @@ void act_prelu<float>(const float* din,
 }
 
 template <>
-void act_sigmoid(const float* din, float* dout, int size, int threads) {
+void act_sigmoid<float>(const float* din, float* dout, int size, int threads) {
   int nums_per_thread = size / threads;
   int remain = size - threads * nums_per_thread;
   int neon_loop_cnt_dim4 = nums_per_thread >> 2;
@@ -595,15 +595,11 @@ void act_swish<float>(
 }
 
 template <>
-void act_log(const float* din, float* dout, int size, int threads) {
+void act_log<float>(const float* din, float* dout, int size, int threads) {
   int nums_per_thread = size / threads;
   int remain = size - threads * nums_per_thread;
   int neon_loop_cnt_dim4 = nums_per_thread >> 2;
   int neon_loop_remain_dim4 = nums_per_thread - (neon_loop_cnt_dim4 << 2);
-  LOG(INFO) << "nums_per_thread" << nums_per_thread;
-  LOG(INFO) << "remain" << remain;
-  LOG(INFO) << "neon_loop_cnt_dim4" << neon_loop_cnt_dim4;
-  LOG(INFO) << "neon_loop_remian_dim4" << neon_loop_remain_dim4;
 
   float32x4_t vzero = vdupq_n_f32(0.f);
 #pragma omp parallel for
@@ -633,7 +629,7 @@ void act_log(const float* din, float* dout, int size, int threads) {
 }
 
 template <>
-void act_exp(const float* din, float* dout, int size, int threads) {
+void act_exp<float>(const float* din, float* dout, int size, int threads) {
   int nums_per_thread = size / threads;
   int remain = size - threads * nums_per_thread;
   int neon_loop_cnt_dim4 = nums_per_thread >> 2;
@@ -672,6 +668,33 @@ void act_floor<float>(const float* din, float* dout, int size, int threads) {
   float* ptr_out = dout;
   for (int i = 0; i < size; ++i) {
     ptr_out[0] = floorf(ptr_in[0]);
+    ptr_in++;
+    ptr_out++;
+  }
+}
+
+template <>
+void act_hard_sigmoid<float>(const float* din,
+                             float* dout,
+                             const int64_t size,
+                             const float slope,
+                             const float offset,
+                             int threads) {
+  for (int64_t i = 0; i < size; ++i) {
+    dout[0] = din[0] * slope + offset;
+    dout[0] = dout[0] < 1.0f ? dout[0] : 1.0f;
+    dout[0] = dout[0] > 0.0f ? dout[0] : 0.0f;
+    ++din;
+    ++dout;
+  }
+}
+
+template <>
+void act_rsqrt<float>(const float* din, float* dout, int size, int threads) {
+  const float* ptr_in = din;
+  float* ptr_out = dout;
+  for (int i = 0; i < size; ++i) {
+    ptr_out[0] = 1.0 / sqrtf(ptr_in[0]);
     ptr_in++;
     ptr_out++;
   }

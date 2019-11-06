@@ -25,6 +25,35 @@ bool DensityPriorBoxKernel<GPU_CL, float>::Init(
         *param) {
   this->cl_helper_.AddKernel("density_prior_box",
                              "density_prior_box_kernel.cl");
+  vector<float> fixed_sizes = param->FixedSizes();
+  vector<float> fixed_ratios = param->FixedRatios();
+  vector<int> densities = param->Densities();
+  vector<float> variances = param->Variances();
+  int fix_ratio_size = fixed_ratios.size();
+  int total_size = densities.size() + fixed_sizes.size() + fix_ratio_size;
+  float *densities_data = new float[total_size];
+  for (int i = 0; i < densities.size(); ++i) {
+    float density = densities[i];
+    densities_data[i] = density;
+  }
+
+  for (int k = 0; k < fixed_sizes.size(); ++k) {
+    densities_data[k + densities.size()] = fixed_sizes[k];
+  }
+
+  for (int j = 0; j < fixed_ratios.size(); ++j) {
+    float sqrt_ratios = sqrt(fixed_ratios[j]);
+    densities_data[j + densities.size() + fixed_sizes.size()] = sqrt_ratios;
+  }
+
+  framework::CLImage *new_density = new framework::CLImage();
+  new_density->SetTensorData(densities_data, {1, 1, 1, total_size});
+  new_density->InitCLImage(this->cl_helper_.CLContext(),
+                           this->cl_helper_.CLCommandQueue());
+  param->setNewDensity(new_density);
+
+  delete[](densities_data);
+
   return true;
 }
 
@@ -39,6 +68,7 @@ void DensityPriorBoxKernel<GPU_CL, float>::Compute(
 
   auto output_boxes = param.OutputBoxes()->GetCLImage();
   auto output_var = param.OutputVariances()->GetCLImage();
+  auto new_density = param.getNewDensity()->GetCLImage();
 
   float step_w = param.StepW();
   float step_h = param.StepH();
@@ -73,43 +103,17 @@ void DensityPriorBoxKernel<GPU_CL, float>::Compute(
 
   auto default_work = this->cl_helper_.DefaultWorkSize(*param.OutputBoxes());
 
-  float *densities_data[densities.size() + fixed_sizes.size() + fix_ratio_size];
-
-  int status;
-
-  for (int i = 0; i < densities.size(); ++i) {
-    float density = densities[i];
-    densities_data[i] = &density;
-  }
-
-  for (int k = 0; k < fixed_sizes.size(); ++k) {
-    densities_data[k + densities.size()] = &fixed_sizes[k];
-  }
-
-  for (int j = 0; j < fixed_ratios.size(); ++j) {
-    float sqrt_ratios = sqrt(fixed_ratios[j]);
-    densities_data[j + densities.size() + fixed_sizes.size()] = &sqrt_ratios;
-  }
-
-  cl_mem densities_memobj = clCreateBuffer(
-      this->cl_helper_.CLContext(), CL_MEM_READ_WRITE,
-      sizeof(float) * (densities.size() * 2 + fix_ratio_size), NULL, &status);
-  status = clEnqueueWriteBuffer(
-      this->cl_helper_.CLCommandQueue(), densities_memobj, CL_FALSE, 0,
-      (densities.size() * 2 + fix_ratio_size) * sizeof(float), densities_data,
-      0, NULL, NULL);
-  CL_CHECK_ERRORS(status);
-
   float variances0 = variances[0];
   float variances1 = variances[1];
   float variances2 = variances[2];
   float variances3 = variances[3];
 
+  cl_int status;
   status = clSetKernelArg(kernel, 0, sizeof(cl_mem), &output_boxes);
   CL_CHECK_ERRORS(status);
   status = clSetKernelArg(kernel, 1, sizeof(cl_mem), &output_var);
   CL_CHECK_ERRORS(status);
-  status = clSetKernelArg(kernel, 2, sizeof(cl_mem), &densities_memobj);
+  status = clSetKernelArg(kernel, 2, sizeof(cl_mem), &new_density);
   CL_CHECK_ERRORS(status);
   status = clSetKernelArg(kernel, 3, sizeof(float), &step_h);
   CL_CHECK_ERRORS(status);

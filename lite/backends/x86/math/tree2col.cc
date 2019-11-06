@@ -107,7 +107,8 @@ class Tree2ColFunctor<lite::TargetType::kX86, T> {
     //    patch->mutable_data<T>({static_cast<int64_t>(patch_size),
     //                            static_cast<int64_t>(patch_elem_size)},
     //                           cpu_place);
-    patch->Resize({static_cast<int64_t>(patch_size, patch_elem_size)});
+    patch->Resize({static_cast<int64_t>(patch_size),
+                   static_cast<int64_t>(patch_elem_size)});
     auto *patch_data = patch->mutable_data<T>(lite::TargetType::kX86);
     constant(context, patch, 0);
     const T *features = node_features.data<T>();

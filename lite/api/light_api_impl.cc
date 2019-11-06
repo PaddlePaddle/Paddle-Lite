@@ -13,64 +13,78 @@
 // limitations under the License.
 
 #include "lite/api/light_api.h"
+#include <string>
 #include "lite/api/paddle_api.h"
+#include "lite/core/version.h"
 #include "lite/model_parser/model_parser.h"
 
 namespace paddle {
-namespace lite_api {
+namespace lite {
 
-class LightPredictorImpl : public PaddlePredictor {
- public:
-  LightPredictorImpl() = default;
+void LightPredictorImpl::Init(const lite_api::MobileConfig& config) {
+  // LightPredictor Only support NaiveBuffer backend in publish lib
+  raw_predictor_.reset(
+      new LightPredictor(config.model_dir(),
+                         config.model_buffer(),
+                         config.param_buffer(),
+                         config.model_from_memory(),
+                         lite_api::LiteModelType::kNaiveBuffer));
 
-  std::unique_ptr<Tensor> GetInput(int i) override;
+  mode_ = config.power_mode();
+  threads_ = config.threads();
+}
 
-  std::unique_ptr<const Tensor> GetOutput(int i) const override;
+std::unique_ptr<lite_api::Tensor> LightPredictorImpl::GetInput(int i) {
+  return std::unique_ptr<lite_api::Tensor>(
+      new lite_api::Tensor(raw_predictor_->GetInput(i)));
+}
 
-  void Run() override;
+std::unique_ptr<const lite_api::Tensor> LightPredictorImpl::GetOutput(
+    int i) const {
+  return std::unique_ptr<lite_api::Tensor>(
+      new lite_api::Tensor(raw_predictor_->GetOutput(i)));
+}
 
-  std::unique_ptr<const Tensor> GetTensor(
-      const std::string& name) const override;
-
-  void Init(const MobileConfig& config);
-
- private:
-  std::unique_ptr<lite::LightPredictor> raw_predictor_;
-};
-
-void LightPredictorImpl::Init(const MobileConfig& config) {
-// LightPredictor Only support NaiveBuffer backend in publish lib
+void LightPredictorImpl::Run() {
 #ifdef LITE_WITH_ARM
-  lite::DeviceInfo::Init();
-  lite::DeviceInfo::Global().SetRunMode(config.power_mode(), config.threads());
+  lite::DeviceInfo::Global().SetRunMode(mode_, threads_);
 #endif
-  raw_predictor_.reset(new lite::LightPredictor(config.model_dir(),
-                                                config.model_buffer(),
-                                                config.param_buffer(),
-                                                config.model_from_memory(),
-                                                LiteModelType::kNaiveBuffer));
+  raw_predictor_->Run();
 }
 
-std::unique_ptr<Tensor> LightPredictorImpl::GetInput(int i) {
-  return std::unique_ptr<Tensor>(new Tensor(raw_predictor_->GetInput(i)));
+std::shared_ptr<lite_api::PaddlePredictor> LightPredictorImpl::Clone() {
+  LOG(FATAL) << "The Clone API is not supported in LigthPredictor";
 }
 
-std::unique_ptr<const Tensor> LightPredictorImpl::GetOutput(int i) const {
-  return std::unique_ptr<Tensor>(new Tensor(raw_predictor_->GetOutput(i)));
-}
+std::string LightPredictorImpl::GetVersion() const { return lite::version(); }
 
-void LightPredictorImpl::Run() { raw_predictor_->Run(); }
-
-std::unique_ptr<const Tensor> LightPredictorImpl::GetTensor(
+std::unique_ptr<const lite_api::Tensor> LightPredictorImpl::GetTensor(
     const std::string& name) const {
-  return std::unique_ptr<const Tensor>(
-      new Tensor(raw_predictor_->GetTensor(name)));
+  return std::unique_ptr<const lite_api::Tensor>(
+      new lite_api::Tensor(raw_predictor_->GetTensor(name)));
 }
+std::unique_ptr<lite_api::Tensor> LightPredictorImpl::GetInputByName(
+    const std::string& name) {
+  return std::unique_ptr<lite_api::Tensor>(
+      new lite_api::Tensor(raw_predictor_->GetInputByName(name)));
+}
+
+std::vector<std::string> LightPredictorImpl::GetInputNames() {
+  return raw_predictor_->GetInputNames();
+}
+
+std::vector<std::string> LightPredictorImpl::GetOutputNames() {
+  return raw_predictor_->GetOutputNames();
+}
+
+}  // namespace lite
+
+namespace lite_api {
 
 template <>
 std::shared_ptr<PaddlePredictor> CreatePaddlePredictor(
     const MobileConfig& config) {
-  auto x = std::make_shared<LightPredictorImpl>();
+  auto x = std::make_shared<lite::LightPredictorImpl>();
   x->Init(config);
   return x;
 }

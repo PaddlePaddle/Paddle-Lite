@@ -49,6 +49,27 @@ inline std::string jstring_to_cpp_string(JNIEnv *env, jstring jstr) {
   return ret;
 }
 
+inline jstring cpp_string_to_jstring(JNIEnv *env, std::string str) {
+  auto *data = str.c_str();
+  jclass strClass = env->FindClass("java/lang/String");
+  jmethodID strClassInitMethodID =
+      env->GetMethodID(strClass, "<init>", "([BLjava/lang/String;)V");
+
+  jbyteArray bytes = env->NewByteArray(strlen(data));
+  env->SetByteArrayRegion(
+      bytes, 0, strlen(data), reinterpret_cast<const jbyte *>(data));
+
+  jstring encoding = env->NewStringUTF("UTF-8");
+  jstring res = (jstring)(
+      env->NewObject(strClass, strClassInitMethodID, bytes, encoding));
+
+  env->DeleteLocalRef(strClass);
+  env->DeleteLocalRef(encoding);
+  env->DeleteLocalRef(bytes);
+
+  return res;
+}
+
 inline jfloatArray cpp_array_to_jfloatarray(JNIEnv *env,
                                             const float *buf,
                                             int64_t len) {
@@ -124,8 +145,6 @@ inline CxxConfig jcxxconfig_to_cpp_cxxconfig(JNIEnv *env, jobject jcxxconfig) {
 
   jmethodID model_dir_method =
       env->GetMethodID(cxxconfig_jclazz, "getModelDir", "()Ljava/lang/String;");
-  jmethodID preferred_place_method = env->GetMethodID(
-      cxxconfig_jclazz, "getPreferredPlace", "()Lcom/baidu/paddle/lite/Place;");
   jmethodID valid_places_method = env->GetMethodID(
       cxxconfig_jclazz, "getValidPlaces", "()[Lcom/baidu/paddle/lite/Place;");
 
@@ -136,13 +155,6 @@ inline CxxConfig jcxxconfig_to_cpp_cxxconfig(JNIEnv *env, jobject jcxxconfig) {
   if (java_model_dir != nullptr) {
     std::string cpp_model_dir = jstring_to_cpp_string(env, java_model_dir);
     config.set_model_dir(cpp_model_dir);
-  }
-
-  jobject java_preferred_place =
-      env->CallObjectMethod(jcxxconfig, preferred_place_method);
-  if (java_preferred_place != nullptr) {
-    Place cpp_preferred_place = jplace_to_cpp_place(env, java_preferred_place);
-    config.set_preferred_place(cpp_preferred_place);
   }
 
   jobject object_valid_places =

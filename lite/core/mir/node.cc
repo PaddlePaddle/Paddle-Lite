@@ -54,11 +54,6 @@ void mir::Node::Stmt::ResetOp(const cpp::OpDesc &op_desc,
   valid_kernels_ = op_->CreateKernels(valid_places);
 }
 
-std::ostream &mir::operator<<(std::ostream &os, const mir::Node::Stmt &other) {
-  os << "Statement " << other.op_type() << " " << other.place().DebugString();
-  return os;
-}
-
 mir::Node::Arg &mir::Node::AsArg(const std::string &name, int id) {
   auto &x = AsArg();
   x.name = name;

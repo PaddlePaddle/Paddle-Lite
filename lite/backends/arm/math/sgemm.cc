@@ -36,8 +36,7 @@ void sgemm(bool is_transA,
            bool is_bias,
            bool is_relu,
            ARMContext* ctx) {
-  auto arch = ctx->arch();
-  int hblock = get_hblock(arch);
+  int hblock = get_hblock(ctx);
   int m_roundup = hblock * ((M + hblock - 1) / hblock);
 
   auto packed_A = static_cast<float*>(

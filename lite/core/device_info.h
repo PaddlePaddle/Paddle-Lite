@@ -73,7 +73,7 @@ class DeviceInfo {
   T* workspace_data() {
     return reinterpret_cast<T*>(workspace_.mutable_data<int8_t>());
   }
-  bool ExtendWorkspace(int size);
+  bool ExtendWorkspace(size_t size);
 
  private:
   int core_num_;
@@ -167,7 +167,7 @@ class Device<TARGET(kCUDA)> {
 
   int id() { return idx_; }
   int max_stream() { return max_stream_; }
-  int SetId(int idx) { idx_ = idx; }
+  void SetId(int idx) { idx_ = idx; }
   std::string name() { return device_prop_.name; }
   int core_num() { return device_prop_.multiProcessorCount; }
   float max_memory() { return device_prop_.totalGlobalMem / 1048576.; }
@@ -186,8 +186,8 @@ class Device<TARGET(kCUDA)> {
   void GetInfo();
 
  private:
-  int max_stream_;
   int idx_{0};
+  int max_stream_;
   cudaDeviceProp device_prop_;
   std::string device_name_;
   float max_memory_;

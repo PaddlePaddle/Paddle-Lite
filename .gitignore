@@ -34,6 +34,7 @@
 .DS_Store
 
 build/
+build_fpga/
 
 .idea/
 
@@ -70,6 +71,9 @@ build
 # clion building directories
 cmake-build-debug
 cmake-build-release
+
+# vscode
+.vscode
 
 # ios
 tools/libomp.a

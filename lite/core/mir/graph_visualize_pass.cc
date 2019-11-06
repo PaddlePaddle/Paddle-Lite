@@ -90,7 +90,9 @@ std::string Visualize(mir::SSAGraph* graph) {
   }
 
   auto res = dot.Build();
-  LOG(INFO) << "dot:\n" << res;
+  // If we use VLOG here, we can not type all graph out.
+  // So we change VLOG to std::cout.
+  std::cout << "dot:\n" << res << std::endl;
   return res;
 }
 
@@ -98,4 +100,5 @@ std::string Visualize(mir::SSAGraph* graph) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_MIR_PASS(graph_visualze, paddle::lite::mir::GraphVisualizePass);
+REGISTER_MIR_PASS(graph_visualze, paddle::lite::mir::GraphVisualizePass)
+    .BindTargets({TARGET(kAny)});

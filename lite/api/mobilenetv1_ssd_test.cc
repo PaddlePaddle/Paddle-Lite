@@ -26,13 +26,12 @@ namespace paddle {
 namespace lite {
 
 #ifdef LITE_WITH_ARM
-void TestModel(const std::vector<Place>& valid_places,
-               const Place& preferred_place) {
+void TestModel(const std::vector<Place>& valid_places) {
   DeviceInfo::Init();
-  DeviceInfo::Global().SetRunMode(lite_api::LITE_POWER_HIGH, FLAGS_threads);
+  DeviceInfo::Global().SetRunMode(lite_api::LITE_POWER_NO_BIND, FLAGS_threads);
   lite::Predictor predictor;
 
-  predictor.Build(FLAGS_model_dir, "", "", preferred_place, valid_places);
+  predictor.Build(FLAGS_model_dir, "", "", valid_places);
 
   auto* input_tensor = predictor.GetInput(0);
   input_tensor->Resize(DDim(std::vector<DDim::value_type>({1, 3, 300, 300})));
@@ -99,7 +98,6 @@ void TestModel(const std::vector<Place>& valid_places,
 
 TEST(MobileNetV1_SSD, test_arm) {
   std::vector<Place> valid_places({
-      Place{TARGET(kHost), PRECISION(kFloat)},
       Place{TARGET(kARM), PRECISION(kFloat)},
   });
 
