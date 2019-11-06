@@ -28,9 +28,9 @@ class UnsqueezeComputeTester : public arena::TestCase {
   std::string axes_tensor_ = "AxesTensor";
   std::vector<std::string> axes_tensor_list_;
   std::vector<int> axes_;
-  // input_axes_flag_1: for axes, 2 for axes_tensor, 3 for axes_tensor_list
+  DDim dims_;
+  // input_axes_flag_: 1 for axes, 2 for axes_tensor, 3 for axes_tensor_list
   int input_axes_flag_ = 1;
-  DDim dims_{};
 
  public:
   UnsqueezeComputeTester(const Place& place,
@@ -38,10 +38,11 @@ class UnsqueezeComputeTester : public arena::TestCase {
                          const std::vector<int>& axes,
                          DDim dims,
                          int input_axes_flag)
-      : TestCase(place, alias),
-        axes_(axes),
-        dims_(dims),
-        input_axes_flag_(input_axes_flag) {}
+      : TestCase(place, alias), dims_(dims), input_axes_flag_(input_axes_flag) {
+    for (int v : axes) {
+      axes_.push_back(v);
+    }
+  }
 
   void RunBaseline(Scope* scope) override {
     const auto* input = scope->FindTensor(x_);
