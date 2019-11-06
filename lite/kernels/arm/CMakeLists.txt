@@ -1,9 +1,9 @@
 # for conv op
-add_kernel(conv_depthwise ARM extra SRCS conv_depthwise.cc DEPS ${lite_kernel_deps} math_arm)
-add_kernel(conv_direct ARM extra SRCS conv_direct.cc DEPS ${lite_kernel_deps} math_arm)
-add_kernel(conv_gemmlike ARM extra SRCS conv_gemmlike.cc DEPS ${lite_kernel_deps} math_arm)
-add_kernel(conv_winograd ARM extra SRCS conv_winograd.cc DEPS ${lite_kernel_deps} math_arm)
-add_kernel(conv_compute_arm ARM extra SRCS conv_compute.cc DEPS ${lite_kernel_deps}
+add_kernel(conv_depthwise ARM basic SRCS conv_depthwise.cc DEPS ${lite_kernel_deps} math_arm)
+add_kernel(conv_direct ARM basic SRCS conv_direct.cc DEPS ${lite_kernel_deps} math_arm)
+add_kernel(conv_gemmlike ARM basic SRCS conv_gemmlike.cc DEPS ${lite_kernel_deps} math_arm)
+add_kernel(conv_winograd ARM basic SRCS conv_winograd.cc DEPS ${lite_kernel_deps} math_arm)
+add_kernel(conv_compute_arm ARM basic SRCS conv_compute.cc DEPS ${lite_kernel_deps}
         conv_depthwise conv_direct conv_gemmlike conv_winograd)
 
 add_kernel(fc_compute_arm ARM basic SRCS fc_compute.cc DEPS ${lite_kernel_deps} math_arm)
@@ -46,7 +46,7 @@ add_kernel(reduce_max_compute_arm ARM basic SRCS reduce_max_compute.cc DEPS ${li
 add_kernel(sequence_expand_compute_arm ARM basic SRCS sequence_expand_compute.cc DEPS ${lite_kernel_deps} math_arm)
 add_kernel(im2sequence_compute_arm ARM basic SRCS im2sequence_compute.cc DEPS ${lite_kernel_deps} math_arm)
 add_kernel(sequence_pool_compute_arm ARM basic SRCS sequence_pool_compute.cc DEPS ${lite_kernel_deps} math_arm)
-add_kernel(layer_norm_compute_arm ARM extra SRCS layer_norm_compute.cc DEPS ${lite_kernel_deps} math_arm)
+add_kernel(layer_norm_compute_arm ARM basic SRCS layer_norm_compute.cc DEPS ${lite_kernel_deps} math_arm)
 add_kernel(gather_compute_arm ARM extra SRCS gather_compute.cc DEPS ${lite_kernel_deps} math_arm)
 add_kernel(reduce_mean_compute_arm ARM extra SRCS reduce_mean_compute.cc DEPS ${lite_kernel_deps} math_arm)
 add_kernel(stack_compute_arm ARM extra SRCS stack_compute.cc DEPS ${lite_kernel_deps} math_arm)
