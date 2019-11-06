@@ -14,6 +14,7 @@
 
 #pragma once
 #include <stdint.h>
+#include <stdio.h>
 #include "lite/utils/cv/cv_enum.h"
 namespace paddle {
 namespace lite {

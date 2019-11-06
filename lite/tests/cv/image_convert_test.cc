@@ -46,9 +46,7 @@ typedef paddle::lite::utils::cv::ImageFormat ImageFormat;
 typedef paddle::lite::utils::cv::FlipParam FlipParam;
 typedef paddle::lite::utils::cv::LayOut LayOut;
 typedef paddle::lite::utils::cv::ImageConvert ImageConvert;
-typedef paddle::lite::utils::cv::Transform Transform;
 typedef paddle::lite::utils::cv::TransParam TransParam;
-typedef paddle::lite::utils::cv::ImageTransform ImageTransform;
 typedef paddle::lite::utils::cv::ImagePreprocess ImagePreprocess;
 typedef paddle::lite::Tensor Tensor;
 using paddle::lite::Timer;
@@ -298,8 +296,7 @@ void test_img(const std::vector<int>& cluster_id,
             src, lite_dst, (ImageFormat)srcFormat, (ImageFormat)dstFormat);
 
         LOG(INFO) << "image resize saber compute";
-        image_preprocess.imageResize(
-            lite_dst, resize_tmp, (ImageFormat)dstFormat);
+        image_preprocess.imageResize(lite_dst, resize_tmp);
 
         LOG(INFO) << "image rotate saber compute";
         image_preprocess.imageRotate(resize_tmp,

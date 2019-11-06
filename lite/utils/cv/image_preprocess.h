@@ -27,7 +27,6 @@ namespace utils {
 namespace cv {
 typedef paddle::lite::utils::cv::ImageFormat ImageFormat;
 typedef paddle::lite::utils::cv::LayOut LayOut;
-typedef paddle::lite::utils::cv::Transform Transform;
 #define PI 3.14159265f
 #define Degrees2Radians(degrees) ((degrees) * (SK_ScalarPI / 180))
 #define Radians2Degrees(radians) ((radians) * (180 / SK_ScalarPI))
@@ -54,16 +53,29 @@ class ImagePreprocess {
                    ImageFormat srcFormat,
                    ImageFormat dstFormat);
   // 图像resize
-  void imageResize(const uint8_t* src, uint8_t* dst, ImageFormat srcFormat);
-  void imageResize(const uint8_t* src, uint8_t* dst, ImageFormat srcFormat, \
-                  int srcw, int srch, int dstw, int dsth));
+  void imageResize(const uint8_t* src, uint8_t* dst);
+  void imageResize(const uint8_t* src,
+                   uint8_t* dst,
+                   ImageFormat srcFormat,
+                   int srcw,
+                   int srch,
+                   int dstw,
+                   int dsth);
   // 图像转换
-  void imageFlip((const uint8_t* src, uint8_t* dst);
-  void imageFlip(const uint8_t* src, uint8_t* dst, ImageFormat srcFormat, \
-                  int srcw, int srch, FlipParam flip_param);
-  void imageRotate((const uint8_t* src, uint8_t* dst);
-  void imageRotate(const uint8_t* src, uint8_t* dst, ImageFormat srcFormat, \
-                  int srcw, int srch, float degree);
+  void imageFlip(const uint8_t* src, uint8_t* dst);
+  void imageFlip(const uint8_t* src,
+                 uint8_t* dst,
+                 ImageFormat srcFormat,
+                 int srcw,
+                 int srch,
+                 FlipParam flip_param);
+  void imageRotate(const uint8_t* src, uint8_t* dst);
+  void imageRotate(const uint8_t* src,
+                   uint8_t* dst,
+                   ImageFormat srcFormat,
+                   int srcw,
+                   int srch,
+                   float degree);
   // image2Tensor and normalize
   void image2Tensor(const uint8_t* src,
                     Tensor* dstTensor,

@@ -292,29 +292,15 @@ void ImagePreprocess::imageResize(const uint8_t* src,
   }
   delete[] buf;
 }
-void ImagePreprocess::imageResize(const uint8_t* src,
-                                  uint8_t* dst,
-                                  ImageFormat srcFormat) {
+void ImagePreprocess::imageResize(const uint8_t* src, uint8_t* dst) {
   int srcw = this->transParam_.iw;
   int srch = this->transParam_.ih;
   int dstw = this->transParam_.ow;
   int dsth = this->transParam_.oh;
-  ImagePreprocess::imageResize(src, dst, srcw, srch, dstw, dsth);
+  auto srcFormat = this->dstFormat_;
+  ImagePreprocess::imageResize(src, dst, srcFormat, srcw, srch, dstw, dsth);
 }
-void ImagePreprocess::imageFlip(const uint8_t* src,
-                                uint8_t* dst,
-                                ImageFormat srcFormat,
-                                int srcw,
-                                int srch,
-                                FlipParam flip_param) {
-  if (srcFormat == GRAY) {
-    flip_hwc1(src, dst, srcw, srch, flip_param);
-  } else if (srcFormat == BGR || srcFormat == RGB) {
-    flip_hwc3(src, dst, srcw, srch, flip_param);
-  } else if (srcFormat == BGRA || srcFormat == RGBA) {
-    flip_hwc4(src, dst, srcw, srch, flip_param);
-  }
-}
+
 void ImagePreprocess::imageFlip(const uint8_t* src,
                                 uint8_t* dst,
                                 ImageFormat srcFormat,
@@ -331,7 +317,8 @@ void ImagePreprocess::imageFlip(const uint8_t* src,
 }
 void ImagePreprocess::imageFlip(const uint8_t* src, uint8_t* dst) {
   auto srcw = this->transParam_.ow;
-  auto srch = this->transParam_.oh, auto srcFormat = this->dstFormat_;
+  auto srch = this->transParam_.oh;
+  auto srcFormat = this->dstFormat_;
   auto flip_param = this->transParam_.flip_param;
   if (srcFormat == GRAY) {
     flip_hwc1(src, dst, srcw, srch, flip_param);
@@ -359,7 +346,8 @@ void ImagePreprocess::imageRotate(const uint8_t* src,
 
 void ImagePreprocess::imageRotate(const uint8_t* src, uint8_t* dst) {
   auto srcw = this->transParam_.ow;
-  auto srch = this->transParam_.oh, auto srcFormat = this->dstFormat_;
+  auto srch = this->transParam_.oh;
+  auto srcFormat = this->dstFormat_;
   auto rotate_param = this->transParam_.rotate_param;
   if (srcFormat == GRAY) {
     rotate_hwc1(src, dst, srcw, srch, rotate_param);

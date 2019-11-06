@@ -26,7 +26,6 @@ enum ImageFormat {
   NV21 = 11,
   NV12,
 };
-enum Transform { Flip = 0, Rotate };
 enum FlipParam { X = 0, Y, XY };
 enum LayOut { CHW = 0, HWC };
 }  // namespace cv
