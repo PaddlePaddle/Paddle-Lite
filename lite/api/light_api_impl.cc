@@ -29,6 +29,9 @@ void LightPredictorImpl::Init(const lite_api::MobileConfig& config) {
                          config.param_buffer(),
                          config.model_from_memory(),
                          lite_api::LiteModelType::kNaiveBuffer));
+
+  mode_ = config.power_mode();
+  threads_ = config.threads();
 }
 
 std::unique_ptr<lite_api::Tensor> LightPredictorImpl::GetInput(int i) {
@@ -42,7 +45,12 @@ std::unique_ptr<const lite_api::Tensor> LightPredictorImpl::GetOutput(
       new lite_api::Tensor(raw_predictor_->GetOutput(i)));
 }
 
-void LightPredictorImpl::Run() { raw_predictor_->Run(); }
+void LightPredictorImpl::Run() {
+#ifdef LITE_WITH_ARM
+  lite::DeviceInfo::Global().SetRunMode(mode_, threads_);
+#endif
+  raw_predictor_->Run();
+}
 
 std::shared_ptr<lite_api::PaddlePredictor> LightPredictorImpl::Clone() {
   LOG(FATAL) << "The Clone API is not supported in LigthPredictor";
