@@ -168,8 +168,8 @@ wget -c https://mms-res.cdn.bcebos.com/cmake-3.10.3-Linux-x86_64.tar.gz && \
 ```shell
 # 1. Install basic software
 apt update
-apt-get install -y --no-install-recomends \
-  gcc g++ make wget python unzip
+apt-get install -y --no-install-recommends \
+  gcc g++ git make wget python unzip
 
 # 2. install cmake 3.10 or above
 wget https://www.cmake.org/files/v3.10/cmake-3.10.3.tar.gz
@@ -307,6 +307,7 @@ sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
   --android_stl=c++_static \
   full_publish
 ```
+
 ##### ARMLinux
 ```shell
 ./lite/tools/build.sh \
