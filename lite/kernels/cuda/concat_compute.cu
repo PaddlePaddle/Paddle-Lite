@@ -102,6 +102,7 @@ REGISTER_LITE_KERNEL(concat,
                      paddle::lite::kernels::cuda::ConcatCompute<float>,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kCUDA))})
-    .BindInput("AxisTensor", {LiteType::GetTensorTy(TARGET(kCUDA))})
+    .BindInput("AxisTensor",
+               {LiteType::GetTensorTy(TARGET(kCUDA), PRECISION(kInt32))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kCUDA))})
     .Finalize();
