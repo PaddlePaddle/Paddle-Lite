@@ -12,14 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "ai_ddk_lib/include/graph/buffer.h"
-#include "ai_ddk_lib/include/graph/graph.h"
-#include "ai_ddk_lib/include/graph/model.h"
-#include "ai_ddk_lib/include/graph/op/all_ops.h"
-#include "ai_ddk_lib/include/graph/operator.h"
-#include "ai_ddk_lib/include/graph/operator_reg.h"
+#include "lite/backends/npu/builder.h"
 #include "lite/kernels/npu/bridges/registry.h"
-#include "lite/kernels/npu/bridges/utils.h"
 
 namespace paddle {
 namespace lite {
@@ -33,7 +27,7 @@ node_map_type ElementwiseConverter(
   auto scope = elementwise_op->scope();
   auto op_info = elementwise_op->op_info();
   auto op_type = op_info->Type();
-  auto unique_op_type = UniqueName(op_type);
+  auto unique_op_type = lite::npu::UniqueName(op_type);
   LOG(INFO) << "converting elementwise...";
 
   std::shared_ptr<ge::op::Eltwise> elementwise_node =
@@ -47,20 +41,20 @@ node_map_type ElementwiseConverter(
 
   CHECK(inputs_map.find(x_var_name) != inputs_map.end());
   elementwise_node->set_input_x1(*inputs_map.at(x_var_name));
-  OpList::Global().add(inputs_map.at(x_var_name));
+  lite::npu::OpList::Global().add(inputs_map.at(x_var_name));
 
   if (inputs_map.find(y_var_name) != inputs_map.end()) {
     elementwise_node->set_input_x2(*inputs_map.at(y_var_name));
-    OpList::Global().add(inputs_map.at(y_var_name));
+    lite::npu::OpList::Global().add(inputs_map.at(y_var_name));
   } else {
     auto consty = std::make_shared<ge::op::Const>(y_var_name);
     auto* y = scope->FindVar(y_var_name)->GetMutable<Tensor>();
-    consty->set_attr_value(CvtFromLiteTensor(y));
+    consty->set_attr_value(lite::npu::CvtFromLiteTensor(y));
     elementwise_node->set_input_x2(*consty);
-    OpList::Global().add(consty);
+    lite::npu::OpList::Global().add(consty);
   }
 
-  OpList::Global().add(elementwise_node);
+  lite::npu::OpList::Global().add(elementwise_node);
 
   // paddlelite has sum only
   elementwise_node->set_attr_mode(1);

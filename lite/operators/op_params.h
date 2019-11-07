@@ -14,6 +14,7 @@
 
 #pragma once
 #include <string>
+#include <utility>
 #include <vector>
 #include "lite/api/paddle_place.h"
 #include "lite/core/scope.h"
@@ -69,9 +70,9 @@ struct CalibParam {
 };
 
 struct GraphParam {
-  std::vector<const lite::Tensor*> inputs{};
+  std::vector<std::pair<std::string, const lite::Tensor*>> inputs{};
   lite::Tensor* weight{};
-  std::vector<lite::Tensor*> outputs{};
+  std::vector<std::pair<std::string, lite::Tensor*>> outputs{};
 };
 
 /// -------------------------- NN operators ------------------------------------
@@ -426,6 +427,13 @@ struct FakeDequantizeMaxAbsParam {
   float max_range;
 };
 
+struct FakeChannelWiseDequantizeMaxAbsParam {
+  const lite::Tensor* x{};
+  std::vector<const lite::Tensor*> scale_tensors{};
+  lite::Tensor* out{};
+  std::vector<int> quant_bits;
+};
+
 /// ----------------------- sgd operators ----------------------
 struct SGDParam {
   int dtype{static_cast<int>(VarDescAPI::VarDataType::FP32)};
@@ -720,6 +728,12 @@ struct SequencePoolParam {
 #endif
 };
 
+struct SequenceReshapeParam {
+  lite::Tensor* x{};
+  lite::Tensor* output{};
+  int new_dim;
+};
+
 struct SequenceExpandParam {
   const lite::Tensor* X{};
   const lite::Tensor* Y{};
@@ -752,6 +766,15 @@ struct IsEmptyParam {
   const lite::Tensor* X{};
   lite::Tensor* Out{};
 };
+
+struct ReduceParam {
+  lite::Tensor* x{};
+  lite::Tensor* output{};
+  std::vector<int> dim{0};
+  bool keep_dim{false};
+  bool reduce_all{false};
+};
+
 /// ----------------------- shape operators ----------------------
 struct ShapeParam {
   const lite::Tensor* X{};
@@ -772,6 +795,11 @@ struct SliceParam {
   std::vector<int> starts{};
   std::vector<int> ends{};
   std::vector<int> decrease_axis{};
+  std::vector<int> infer_flags{};
+  std::vector<lite::Tensor*> StartsTensorList{};
+  std::vector<lite::Tensor*> EndsTensorList{};
+  lite::Tensor* StartsTensor{nullptr};
+  lite::Tensor* EndsTensor{nullptr};
 };
 
 struct AffineChannelParam {

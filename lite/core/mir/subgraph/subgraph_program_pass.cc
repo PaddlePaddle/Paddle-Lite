@@ -207,10 +207,30 @@ void SubgraphProgramPass::InferOnce(const std::unique_ptr<SSAGraph>& graph) {
     if (!item->IsStmt()) continue;
     auto& stmt = item->AsStmt();
     auto& op = stmt.op();
+    auto scope = op->scope();
     std::string op_type = op->op_info()->Type();
-    if (op_type == "feed" || op_type == "fetch") continue;
+    // check the dimension of input variables in the scope, must not be empty !
+    if (op_type == "feed") {
+      auto input_var_names = op->op_info()->output_names();
+      CHECK_GE(input_var_names.size(), 1);
+      for (auto input_var_name : input_var_names) {
+        auto input_var = scope->FindVar(input_var_name);
+        CHECK(input_var) << "No input variable '" << input_var_name
+                         << "' found in scope " << scope;
+        auto input = input_var->GetMutable<lite::Tensor>();
+        CHECK(!input->dims().empty()) << "The dimension of input variable '"
+                                      << input_var_name
+                                      << "' can not be empty.";
+      }
+      continue;
+    }
+    if (op_type == "fetch") {
+      continue;
+    }
     op->CheckShape();
     op->InferShape();
+
+#ifndef LITH_WITH_XPU
     // TOOD(xxx): remove Launch() at last
     auto& kkks = stmt.kernels();
     if (!kkks.empty()) {
@@ -219,6 +239,7 @@ void SubgraphProgramPass::InferOnce(const std::unique_ptr<SSAGraph>& graph) {
         kk->Launch();
       }
     }
+#endif
   }
 }
 

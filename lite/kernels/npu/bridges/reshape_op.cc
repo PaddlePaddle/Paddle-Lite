@@ -13,14 +13,8 @@
 // limitations under the License.
 
 #include "lite/operators/reshape_op.h"
-#include "ai_ddk_lib/include/graph/buffer.h"
-#include "ai_ddk_lib/include/graph/graph.h"
-#include "ai_ddk_lib/include/graph/model.h"
-#include "ai_ddk_lib/include/graph/op/all_ops.h"
-#include "ai_ddk_lib/include/graph/operator.h"
-#include "ai_ddk_lib/include/graph/operator_reg.h"
+#include "lite/backends/npu/builder.h"
 #include "lite/kernels/npu/bridges/registry.h"
-#include "lite/kernels/npu/bridges/utils.h"
 
 namespace paddle {
 namespace lite {
@@ -33,7 +27,7 @@ node_map_type ReshapeConverter(const std::shared_ptr<lite::OpLite> reshape_op,
   auto scope = reshape_op->scope();
   auto op_info = reshape_op->op_info();
   auto op_type = op_info->Type();
-  auto unique_op_type = UniqueName(op_type);
+  auto unique_op_type = lite::npu::UniqueName(op_type);
   LOG(INFO) << "Converting " + op_type + "...";
 
   // get input, output and op attributes
@@ -45,10 +39,10 @@ node_map_type ReshapeConverter(const std::shared_ptr<lite::OpLite> reshape_op,
   auto reshape_node = std::make_shared<ge::op::Reshape>(unique_op_type);
   CHECK(inputs_map.count(x_var_name));
   reshape_node->set_input_tensor(*inputs_map.at(x_var_name));
-  OpList::Global().add(inputs_map.at(x_var_name));
+  lite::npu::OpList::Global().add(inputs_map.at(x_var_name));
 
   // read shape from actual shape tensor as input "w" if 'Shape' is found
-  if (HasInputArg(op_info, scope, "Shape")) {
+  if (lite::npu::HasInputArg(op_info, scope, "Shape")) {
     auto actual_shape_var_name = op_info->Input("Shape").front();
     if (!inputs_map.count(actual_shape_var_name)) {
       auto actual_shape =
@@ -67,13 +61,14 @@ node_map_type ReshapeConverter(const std::shared_ptr<lite::OpLite> reshape_op,
       }
       auto actual_shape_const_node =
           std::make_shared<ge::op::Const>(actual_shape_var_name);
-      actual_shape_const_node->set_attr_value(CreateTensorAndFillData(
-          std::vector<int>(out_shape.begin(), out_shape.end())));
+      actual_shape_const_node->set_attr_value(
+          lite::npu::CreateTensorAndFillData(
+              std::vector<int>(out_shape.begin(), out_shape.end())));
       reshape_node->set_input_w(*actual_shape_const_node);
-      OpList::Global().add(actual_shape_const_node);
+      lite::npu::OpList::Global().add(actual_shape_const_node);
     } else {
       reshape_node->set_input_w(*inputs_map.at(actual_shape_var_name));
-      OpList::Global().add(inputs_map.at(actual_shape_var_name));
+      lite::npu::OpList::Global().add(inputs_map.at(actual_shape_var_name));
     }
   } else {
     auto shape = op_info->GetAttr<std::vector<int>>("shape");
@@ -87,7 +82,7 @@ node_map_type ReshapeConverter(const std::shared_ptr<lite::OpLite> reshape_op,
     reshape_node->set_attr_shape(
         ge::AttrValue::LIST_INT(out_shape.begin(), out_shape.end()));
   }
-  OpList::Global().add(reshape_node);
+  lite::npu::OpList::Global().add(reshape_node);
 
   node_map_type outputs_map;
   outputs_map[op_info->Output("Out").front()] = reshape_node;
@@ -107,7 +102,7 @@ node_map_type ReshapeConverter(const std::shared_ptr<lite::OpLite> reshape_op,
     xshape_node->set_input_tensor(*inputs_map.at(x_var_name));
     xshape_node->set_attr_shape(
         ge::AttrValue::LIST_INT(xshape_dims.begin(), xshape_dims.end()));
-    OpList::Global().add(xshape_node);
+    lite::npu::OpList::Global().add(xshape_node);
     outputs_map[op_info->Output("XShape").front()] = xshape_node;
   }
   return outputs_map;

@@ -254,12 +254,7 @@ void BindLiteLightPredictor(py::module *m) {
       .def("get_input", &LightPredictorImpl::GetInput)
       .def("get_output", &LightPredictorImpl::GetOutput)
       .def("run", &LightPredictorImpl::Run)
-      .def("get_version", &LightPredictorImpl::GetVersion)
-      .def("save_optimized_model",
-           [](LightPredictorImpl &self, const std::string &output_dir) {
-             self.SaveOptimizedModel(output_dir,
-                                     lite_api::LiteModelType::kNaiveBuffer);
-           });
+      .def("get_version", &LightPredictorImpl::GetVersion);
 }
 
 }  // namespace pybind

@@ -12,14 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "ai_ddk_lib/include/graph/buffer.h"
-#include "ai_ddk_lib/include/graph/graph.h"
-#include "ai_ddk_lib/include/graph/model.h"
-#include "ai_ddk_lib/include/graph/op/all_ops.h"
-#include "ai_ddk_lib/include/graph/operator.h"
-#include "ai_ddk_lib/include/graph/operator_reg.h"
+#include "lite/backends/npu/builder.h"
 #include "lite/kernels/npu/bridges/registry.h"
-#include "lite/kernels/npu/bridges/utils.h"
 
 namespace paddle {
 namespace lite {
@@ -32,7 +26,7 @@ node_map_type ConvConverter(const std::shared_ptr<lite::OpLite> conv_op,
   auto scope = conv_op->scope();
   auto op_info = conv_op->op_info();
   auto op_type = op_info->Type();
-  auto unique_op_type = UniqueName(op_type);
+  auto unique_op_type = lite::npu::UniqueName(op_type);
   LOG(INFO) << "Converting " << op_type << "... ";
 
   // get input, filter and op attributes
@@ -78,13 +72,13 @@ node_map_type ConvConverter(const std::shared_ptr<lite::OpLite> conv_op,
 
   // check input
   CHECK(inputs_map.count(input_var_name));
-  OpList::Global().add(inputs_map.at(input_var_name));
+  lite::npu::OpList::Global().add(inputs_map.at(input_var_name));
 
   // create filter node
   CHECK(!inputs_map.count(filter_var_name));
   auto filter_const_node = std::make_shared<ge::op::Const>(filter_var_name);
-  filter_const_node->set_attr_value(CvtFromLiteTensor(filter));
-  OpList::Global().add(filter_const_node);
+  filter_const_node->set_attr_value(lite::npu::CvtFromLiteTensor(filter));
+  lite::npu::OpList::Global().add(filter_const_node);
 
   // create bias node if has bias
   // supports the bias nodes with the following dimensions
@@ -93,7 +87,7 @@ node_map_type ConvConverter(const std::shared_ptr<lite::OpLite> conv_op,
   // 2: {n, oc, oh, ow}
   std::shared_ptr<ge::Operator> bias_node = nullptr;
   bool is_channel_bias = false;
-  if (HasInputArg(op_info, scope, "Bias")) {
+  if (lite::npu::HasInputArg(op_info, scope, "Bias")) {
     auto bias_var_name = op_info->Input("Bias").front();
     auto* bias = scope->FindVar(bias_var_name)->GetMutable<lite::Tensor>();
     auto bias_dims = bias->dims();
@@ -121,10 +115,11 @@ node_map_type ConvConverter(const std::shared_ptr<lite::OpLite> conv_op,
     } else {
       // bias node with const data
       auto bias_const_node = std::make_shared<ge::op::Const>(bias_var_name);
-      bias_const_node->set_attr_value(CvtFromLiteTensor(bias, bias_shape));
+      bias_const_node->set_attr_value(
+          lite::npu::CvtFromLiteTensor(bias, bias_shape));
       bias_node = bias_const_node;
     }
-    OpList::Global().add(bias_node);
+    lite::npu::OpList::Global().add(bias_node);
   }
 
   // create conv node and set input, filter, bias nodes and attributes
@@ -147,7 +142,7 @@ node_map_type ConvConverter(const std::shared_ptr<lite::OpLite> conv_op,
         ge::AttrValue::LIST_INT({strides[0], strides[1]}));
     depthwise_conv_node->set_attr_kernel(
         ge::AttrValue::LIST_INT({filter_dims[2], filter_dims[3]}));
-    OpList::Global().add(depthwise_conv_node);
+    lite::npu::OpList::Global().add(depthwise_conv_node);
     conv_node = depthwise_conv_node;
     // ConvolutionDepthwise Op doesn't support bias, so append Add node to
     // support bias
@@ -155,7 +150,7 @@ node_map_type ConvConverter(const std::shared_ptr<lite::OpLite> conv_op,
       auto add_node = std::make_shared<ge::op::Add>(unique_op_type + "/add");
       add_node->set_input_x1(*depthwise_conv_node);
       add_node->set_input_x2(*bias_node);
-      OpList::Global().add(add_node);
+      lite::npu::OpList::Global().add(add_node);
       conv_node = add_node;
     }
   } else {
@@ -174,7 +169,7 @@ node_map_type ConvConverter(const std::shared_ptr<lite::OpLite> conv_op,
         ge::AttrValue::LIST_INT({strides[0], strides[1]}));
     common_conv_node->set_attr_kernel(
         ge::AttrValue::LIST_INT({filter_dims[2], filter_dims[3]}));
-    OpList::Global().add(common_conv_node);
+    lite::npu::OpList::Global().add(common_conv_node);
     conv_node = common_conv_node;
     // Convolution Op only support bias with dimension {1, oc, 1, 1},
     // so append Add node if dimension is {1, oc, oh, ow} or (n, oc, oh, ow)
@@ -185,7 +180,7 @@ node_map_type ConvConverter(const std::shared_ptr<lite::OpLite> conv_op,
         auto add_node = std::make_shared<ge::op::Add>(unique_op_type + "/add");
         add_node->set_input_x1(*common_conv_node);
         add_node->set_input_x2(*bias_node);
-        OpList::Global().add(add_node);
+        lite::npu::OpList::Global().add(add_node);
         conv_node = add_node;
       }
     }
@@ -199,7 +194,7 @@ node_map_type ConvConverter(const std::shared_ptr<lite::OpLite> conv_op,
         std::make_shared<ge::op::Activation>(unique_op_type + "/relu");
     relu_node->set_input_x(*conv_node);
     relu_node->set_attr_mode(1);
-    OpList::Global().add(relu_node);
+    lite::npu::OpList::Global().add(relu_node);
     outputs_map[op_info->Output("Output").front()] = relu_node;
   } else {
     outputs_map[op_info->Output("Output").front()] = conv_node;
