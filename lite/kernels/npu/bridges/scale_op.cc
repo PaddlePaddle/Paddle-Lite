@@ -27,7 +27,7 @@ node_map_type ScaleConverter(const std::shared_ptr<lite::OpLite> scale_op,
   auto op_info = scale_op->op_info();
   auto op_type = op_info->Type();
   auto unique_op_type = lite::npu::UniqueName(op_type);
-  LOG(INFO) << "Converting " + op_type + "...";
+  LOG(INFO) << "[NPU] Converting " + op_type + "...";
 
   // get input, output and op attributes
   auto x_var_name = op_info->Input("X").front();

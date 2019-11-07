@@ -73,7 +73,7 @@ void softmax_ref(const std::shared_ptr<operators::SoftmaxOp> op) {
   }
 }
 
-void test_softmax(int bs, int ic, int ih, int iw, int axis) {
+void test_softmax(const std::vector<int64_t>& input_shape, int axis) {
   // prepare input&output variables
   Scope scope;
   std::string x_var_name = "x";
@@ -82,7 +82,7 @@ void test_softmax(int bs, int ic, int ih, int iw, int axis) {
   auto* x = scope.Var(x_var_name)->GetMutable<Tensor>();
   auto* out = scope.Var(out_var_name)->GetMutable<Tensor>();
   auto* out_ref = scope.Var(out_ref_var_name)->GetMutable<Tensor>();
-  x->Resize({bs, ic, ih, iw});
+  x->Resize(input_shape);
 
   // initialize input&output data
   FillTensor<float>(x);
@@ -111,19 +111,36 @@ void test_softmax(int bs, int ic, int ih, int iw, int axis) {
 }
 
 TEST(NPUBridges, softmax) {
-  for (auto bs : {1, 4, 7}) {
-    for (auto ic : {1, 4, 7}) {
-      for (auto ih : {1, 4, 7}) {
-        for (auto iw : {1, 4, 7}) {
-          for (auto axis : {-3, -1, 0, 1, 2, 3}) {
-            // npu softmax exists bugs when axis is 2 and iw > 1
-            if (axis == 2 && iw > 1) continue;
-            test_softmax(bs, ic, ih, iw, axis);
-          }
-        }
-      }
-    }
-  }
+  test_softmax({1, 4}, -1);
+  // Bug exists in HiAI DDK when the number of items > 16500
+  // test_softmax({1, 16500}, -1);
+  test_softmax({1, 4}, 0);
+  test_softmax({1, 4}, 1);
+  test_softmax({3, 4}, -1);
+  test_softmax({3, 4}, 0);
+  test_softmax({3, 4}, 1);
+  test_softmax({1, 4, 7}, -1);
+  test_softmax({1, 4, 7}, 0);
+  // Bug exists in HiAI DDK when axis is 1 and iw > 1
+  // test_softmax({1, 4, 7}, 1);
+  test_softmax({1, 4, 1}, 1);
+  test_softmax({1, 4, 7}, 2);
+  test_softmax({3, 4, 7}, -1);
+  test_softmax({3, 4, 7}, 0);
+  test_softmax({3, 4, 1}, 1);
+  test_softmax({3, 4, 7}, 2);
+  test_softmax({1, 4, 7, 9}, -1);
+  test_softmax({1, 4, 7, 9}, 0);
+  test_softmax({1, 4, 7, 9}, 1);
+  // Bug exists in HiAI DDK when axis is 2 and iw > 1
+  // test_softmax({1, 4, 7, 9}, 2);
+  test_softmax({1, 4, 7, 1}, 2);
+  test_softmax({1, 4, 7, 9}, 3);
+  test_softmax({3, 4, 7, 9}, -1);
+  test_softmax({3, 4, 7, 9}, 0);
+  test_softmax({3, 4, 7, 9}, 1);
+  test_softmax({3, 4, 7, 1}, 2);
+  test_softmax({3, 4, 7, 9}, 3);
 }
 
 }  // namespace bridges
