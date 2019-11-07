@@ -25,6 +25,39 @@ class FillConstantCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
  public:
   using param_t = operators::FillConstantParam;
 
+  inline DDimLite GetShape(const param_t &param) {
+  // 1. shape is a Tensor
+  if (param.ShapeTensor != NULL) {
+    auto *shape_tensor = &param.ShapeTensor;
+    auto *shape_data = shape_tensor->data<int>();
+
+    auto vec_shape =
+        std::vector<int>(shape_data, shape_data + shape_tensor->numel());
+    return DDimLite(vec_shape);
+  }
+
+  // 2. shape is a list/tuple containing Tensor
+  auto shape_tensor_list = param.ShapeTensorList;
+  if (shape_tensor_list.size() > 0) {
+    std::vector<int> vec_shape;
+    for (size_t i = 0; i < shape_tensor_list.size(); ++i) {
+      auto tensor = shape_tensor_list[i];
+      vec_shape.push_back(*tensor->data<int>());
+    }
+    return DDimLite(vec_shape);
+  }
+
+  // 3. shape is a list/tuple without containing Tensor
+  auto vec_shape = param.shape;
+  return DDimLite(vec_shape);
+}
+
+  void PrepareForRun() override {
+    auto& param = *param_.get_mutable<param_t>();
+    auto outdims = GetShape(param);
+    param.out->Resize(outdims);
+  }
+
   void Run() override {
     auto& param = *param_.get_mutable<param_t>();
     auto& context = ctx_->As<ARMContext>();
