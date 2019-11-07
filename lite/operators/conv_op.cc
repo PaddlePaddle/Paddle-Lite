@@ -59,13 +59,14 @@ inline void UpdatePaddingAndDilation(std::vector<int>* paddings,
                                      const std::string padding_algorithm,
                                      const lite::DDim data_dims,
                                      const lite::DDim& ksize) {
-  if (paddings->size() == data_dims.size()) {
+  if (paddings->size() * 2 == data_dims.size()) {
     for (size_t i = 0; i < data_dims.size(); ++i) {
-      int copy_pad = *(paddings->begin() + 2 * i);
-      paddings->insert(paddings->begin() + 2 * i + 1, copy_pad);
+      int copy_pad = *(paddings->begin() + i);
+      i++;
+      paddings->insert(paddings->begin() + i, copy_pad);
     }
   } else {
-    if ((data_dims.size() * 2) != paddings->size()) {
+    if ((paddings->size() * 2) != data_dims.size()) {
       printf(
           "Paddings size should be the same or twice as the input data "
           "size.\n");
