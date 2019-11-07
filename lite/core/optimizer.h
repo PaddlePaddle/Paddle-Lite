@@ -75,9 +75,6 @@ class Optimizer {
            "lite_conv_elementwise_fuse_pass",  // conv-elemwise-bn
            "lite_conv_bn_fuse_pass",           //
            "lite_conv_elementwise_fuse_pass",  // conv-bn-elemwise
-           // This pass is disabled to force some opencl kernels selected for
-           // final running, otherwise, they will be fused to ARM fusion
-           // kernels, and the OpenCL devices will be discarded.
            // TODO(Superjomn) Refine the fusion related design to select fusion
            // kernels for devices automatically.
            "lite_conv_activation_fuse_pass",              //

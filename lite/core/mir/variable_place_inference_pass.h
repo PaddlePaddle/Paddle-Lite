@@ -59,10 +59,10 @@ class VariablePlaceInferencePass : public DebugPass {
                      const LiteType& type,
                      const std::map<std::string, bool>& lite_with_targets) {
     VLOG(4) << "type.precision():" << PrecisionRepr(type.precision());
-    if (lite_with_targets["kFPGA"]) {
+    if (lite_with_targets.at("kFPGA")) {
       w->AsArg().type = LiteType::GetTensorTy(
           TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
-    } else if (lite_with_targets["kOpenCL"]) {
+    } else if (lite_with_targets.at("kOpenCL")) {
       w->AsArg().type = LiteType::GetTensorTy(
           TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
     } else {
