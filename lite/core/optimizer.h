@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #pragma once
+#include <map>
 #include <memory>
 #include <string>
 #include <vector>
@@ -49,6 +50,18 @@ class Optimizer {
     valid_places_ = valid_places;
     CHECK(!valid_places.empty()) << "At least one valid_place should be set";
     CHECK(!graph_) << "duplicate optimize found";
+    auto valid_places_has_target = [&](TargetType t) -> bool {
+      for (auto& p : valid_places) {
+        if (p.target == t) {
+          return true;
+        }
+      }
+      return false;
+    };
+    std::map<std::string, bool> lite_with_targets{
+        {"kOpenCL", valid_places_has_target(TARGET(kOpenCL))},
+        {"kNPU", valid_places_has_target(TARGET(kNPU))},
+        {"kXPU", valid_places_has_target(TARGET(kXPU))}};
     graph_.reset(new mir::SSAGraph);
     graph_->Build(program, valid_places);
     graph_->SetValidPlaces(valid_places);
@@ -57,7 +70,7 @@ class Optimizer {
     InitTargetTypeTransformPass();
 
     if (passes.empty()) {
-      RunPasses(std::vector<std::string>{
+      std::vector<std::string> passes_local{
           {"lite_quant_dequant_fuse_pass",     //
            "lite_conv_elementwise_fuse_pass",  // conv-elemwise-bn
            "lite_conv_bn_fuse_pass",           //
@@ -105,16 +118,17 @@ class Optimizer {
            "argument_type_display_pass",  //
 
            "variable_place_inference_pass",  //
-           "argument_type_display_pass",     //
+           "argument_type_display_pass",
 
            "runtime_context_assign_pass",
-           "argument_type_display_pass",  //
-#if !defined(LITE_WITH_OPENCL) && !defined(LITE_WITH_NPU) && \
-    !defined(LITE_WITH_XPU)
-           // TODO(ysh329): cause CL_INVALID_MEM_OBJECT when setArg in kernel
-           "memory_optimize_pass",
-#endif
-           "argument_type_display_pass"}});
+           "argument_type_display_pass"}};
+      if ((!lite_with_targets["kOpenCL"]) && (!lite_with_targets["kNPU"]) &&
+          (!lite_with_targets["kXPU"])) {
+        // TODO(ysh329): cause CL_INVALID_MEM_OBJECT when setArg in OpenCL
+        // kernel
+        passes_local.emplace_back("memory_optimize_pass");
+      }
+      RunPasses(passes_local);
     } else {
       RunPasses(passes);
     }
