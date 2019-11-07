@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "lite/utils/cv/image_convert.h"
 #include <gflags/gflags.h>
 #include <gtest/gtest.h>
 #include <math.h>
@@ -19,11 +20,7 @@
 #include "lite/core/context.h"
 #include "lite/tests/cv/cv_basic.h"
 #include "lite/tests/utils/timer.h"
-// #include "lite/utils/cv/image_convert.h"
-#ifdef LITE_WITH_ARM
-#include "lite/utils/cv/image_convert.h"
 #include "lite/utils/cv/image_preprocess.h"
-#endif  // LITE_WITH_ARM
 
 DEFINE_int32(cluster, 3, "cluster id");
 DEFINE_int32(threads, 1, "threads num");

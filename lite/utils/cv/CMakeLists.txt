@@ -1,4 +1,4 @@
-if((NOT LITE_WITH_OPENCL AND NOT LITE_WITH_FPGA) AND LITE_WITH_ARM)
+if(LITE_WITH_CV AND (NOT LITE_WITH_OPENCL AND NOT LITE_WITH_FPGA) AND LITE_WITH_ARM)
     set(lite_cv_deps)
     lite_cc_library(cv_arm SRCS
             image_convert.cc
