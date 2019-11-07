@@ -85,7 +85,7 @@ inline void UpdatePaddingAndDilation(std::vector<int>* paddings,
       int pad_1 = pad_sum - pad_0;
       // pad
       *(paddings->begin() + i * 2) = pad_0;
-      *(paddings->begin() + i * 2 + 1) = pad_0;
+      *(paddings->begin() + i * 2 + 1) = pad_1;
       // dilation
       *(dilations->begin() + i) = 1;
     }
