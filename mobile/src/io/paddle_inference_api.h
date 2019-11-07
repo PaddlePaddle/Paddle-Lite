@@ -221,6 +221,7 @@ struct PaddleMobileConfig : public PaddlePredictor::Config {
   bool lod_mode = false;
   int thread_num = 1;
   bool load_when_predict = false;
+  bool mem_opt = true;
   std::string cl_path;
   struct PaddleModelMemoryPack memory_pack;
 };

@@ -544,12 +544,6 @@ else()
     ADD_EXECUTABLE(test-net net/test_net.cpp test_helper.h test_include.h executor_for_test.h)
     target_link_libraries(test-net paddle-mobile)
 
-    ADD_EXECUTABLE(test-super net/test_super.cpp test_helper.h test_include.h executor_for_test.h)
-    target_link_libraries(test-super paddle-mobile)
-
-    ADD_EXECUTABLE(test-inference-pre-post net/test_inference_pre_post.cpp)
-    target_link_libraries(test-inference-pre-post paddle-mobile)
-
-    ADD_EXECUTABLE(test-inference-super net/test_inference_super.cpp)
-    target_link_libraries(test-inference-super paddle-mobile)
+    ADD_EXECUTABLE(test-net-benchmark net/test_net_benchmark.cpp test_helper.h test_include.h)
+    target_link_libraries(test-net-benchmark paddle-mobile)
 endif()
