@@ -31,19 +31,28 @@ void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
   // select dw conv kernel
   if (kw == 3) {
     VLOG(5) << "invoke 3x3 dw conv fp32";
-    // trans weights
-    constexpr int cblock = 4;
-    auto oc = w_dims[0];
-    auto kh = w_dims[2];
-    auto cround = ROUNDUP(oc, cblock);
-    weights_.Resize({cround, 1, kh, kw});
-    // auto w_data = weights_.mutable_data<float>();
-    // auto w_data_in = param.filter->data<float>();
-    // lite::arm::math::conv_trans_weights_numc(
-    //    w_data_in, w_data, oc, 1, cblock, kh * kw);
-    impl_ = lite::arm::math::conv_depthwise_3x3_fp32;
-    flag_trans_weights_ = false;
-    // flag_trans_weights_ = true;
+    auto paddings = param.paddings;
+    bool pads_equal =
+        ((paddings[0] == paddings[1]) && (paddings[2] == paddings[3]));
+
+    if (pads_equal && paddings[0] == paddings[2] &&
+        (paddings[0] == 0 || paddings[0] == 1)) {
+      impl_ = lite::arm::math::conv_depthwise_3x3_fp32;
+      flag_trans_weights_ = false;
+    } else {
+      // trans weights
+      constexpr int cblock = 4;
+      auto oc = w_dims[0];
+      auto kh = w_dims[2];
+      auto cround = ROUNDUP(oc, cblock);
+      weights_.Resize({cround, 1, kh, kw});
+      auto w_data = weights_.mutable_data<float>();
+      auto w_data_in = param.filter->data<float>();
+      lite::arm::math::conv_trans_weights_numc(
+          w_data_in, w_data, oc, 1, cblock, kh * kw);
+      impl_ = lite::arm::math::conv_depthwise_3x3_fp32;
+      flag_trans_weights_ = true;
+    }
   } else if (kw == 5) {
     VLOG(5) << "invoke 5x5 dw conv fp32";
     impl_ = lite::arm::math::conv_depthwise_5x5_fp32;

@@ -53,8 +53,16 @@ node_map_type ConvConverter(const std::shared_ptr<lite::OpLite> conv_op,
   auto dilations = op_info->GetAttr<std::vector<int>>("dilations");
   auto fuse_relu = op_info->GetAttr<bool>("fuse_relu");
   CHECK_EQ(strides.size(), 2);
-  CHECK_EQ(paddings.size(), 2);
+  // CHECK_EQ(paddings.size(), 2);
+  CHECK_EQ(paddings.size(), 4);
   CHECK_EQ(dilations.size(), 2);
+
+  bool pad_equal =
+      ((paddings[0] == paddings[1]) && (paddings[2] == paddings[3]));
+  if (!pad_equal) {
+    LOG(FATA) << "This pad not support ! " << paddings[0] << ", " << paddings[1]
+              << ", " << paddings[2] << ", " << paddings[3];
+  }
 
   // check depthwise mode, and decide whether use ConvolutionDepthwise Op
   bool use_depthwise_conv =
@@ -135,7 +143,7 @@ node_map_type ConvConverter(const std::shared_ptr<lite::OpLite> conv_op,
     depthwise_conv_node->set_attr_pad_mode(5);  // VALID
     depthwise_conv_node->set_attr_group(groups);
     depthwise_conv_node->set_attr_pad(ge::AttrValue::LIST_INT(
-        {paddings[0], paddings[0], paddings[1], paddings[1]}));
+        {paddings[0], paddings[0], paddings[2], paddings[2]}));
     depthwise_conv_node->set_attr_dilation(
         ge::AttrValue::LIST_INT({dilations[0], dilations[1]}));
     depthwise_conv_node->set_attr_stride(
@@ -162,7 +170,7 @@ node_map_type ConvConverter(const std::shared_ptr<lite::OpLite> conv_op,
     common_conv_node->set_attr_pad_mode(0);  // NOTSET
     common_conv_node->set_attr_group(groups);
     common_conv_node->set_attr_pad(ge::AttrValue::LIST_INT(
-        {paddings[0], paddings[0], paddings[1], paddings[1]}));
+        {paddings[0], paddings[0], paddings[2], paddings[2]}));
     common_conv_node->set_attr_dilation(
         ge::AttrValue::LIST_INT({dilations[0], dilations[1]}));
     common_conv_node->set_attr_stride(

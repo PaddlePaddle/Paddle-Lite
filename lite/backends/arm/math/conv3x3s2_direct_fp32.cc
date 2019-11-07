@@ -34,7 +34,7 @@ size_t conv3x3s2_direct_workspace_size(const operators::ConvParam& param,
   auto dim_out = param.output->dims();
   const int threads = ctx->threads();
   int llc_size = ctx->llc_size() / sizeof(float);
-  const int pad_w = param.paddings[1];
+  const int pad_w = param.paddings[2];
   const int pad_h = param.paddings[0];
   int ow = dim_out[3];
   int oh = dim_out[2];
@@ -75,7 +75,7 @@ void conv_3x3s2_direct_fp32(const float* i_data,
   //! write output to tmp buffer
   const int threads = ctx->threads();
   int l2_size = ctx->llc_size() / sizeof(float);
-  const int pad_w = param.paddings[1];
+  const int pad_w = param.paddings[2];
   const int pad_h = param.paddings[0];
   const int wout_round = ROUNDUP(ow, OUT_W_BLOCK);
   const int win_round = wout_round * 2 /*stride_w*/ + 1;

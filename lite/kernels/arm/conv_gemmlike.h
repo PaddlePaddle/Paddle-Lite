@@ -54,10 +54,13 @@ class GemmLikeConv : public KernelLite<TARGET(kARM), Ptype> {
     int kh = w_dims[2];
     int sw = param.strides[1];
     int sh = param.strides[0];
-    int pw = param.paddings[1];
+    int pw = param.paddings[2];
     int ph = param.paddings[0];
     int dw = param.dilations[1];
     int dh = param.dilations[0];
+
+    bool pads_equal = ((param.paddings[0] == param.paddings[1]) &&
+                       (param.paddings[2] == param.paddings[3]));
 
     int m = oc / param.groups;
     int k = ic * kh * kw / param.groups;
@@ -66,7 +69,7 @@ class GemmLikeConv : public KernelLite<TARGET(kARM), Ptype> {
     bool kps_equal = (pw == ph) && (sw == sh) && (kw == kh);
     bool ks_equal = (sw == sh) && (kw == kh);
     //! select conv gemmlike kernel
-    if (kw == 1 && sw == 1 && pw == 0 && kps_equal) {
+    if (kw == 1 && sw == 1 && pw == 0 && kps_equal && pads_equal) {
       //! 1x1s1p0 gemmlike conv
       flag_1x1gemm_ = true;
     } else {

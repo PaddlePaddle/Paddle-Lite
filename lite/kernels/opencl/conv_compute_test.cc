@@ -227,7 +227,7 @@ TEST(conv2d, compute_conv2d_1x1) {
                 param.bias = bias_flag ? &bias : nullptr;
                 param.output = &out;
                 param.strides = {stride, stride};
-                param.paddings = {pad, pad};
+                param.paddings = {pad, pad, pad, pad};
                 param.groups = group;
                 param.dilations = {dilation, dilation};
                 param.fuse_relu = relu_flag;
@@ -454,7 +454,7 @@ TEST(conv2d, compute_conv2d_gemm) {
                 param.bias = bias_flag ? &bias : nullptr;
                 param.output = &out;
                 param.strides = {stride, stride};
-                param.paddings = {pad, pad};
+                param.paddings = {pad, pad, pad, pad};
                 param.groups = group;
                 param.dilations = {dilation, dilation};
                 param.fuse_relu = relu_flag;

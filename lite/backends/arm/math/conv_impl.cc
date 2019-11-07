@@ -107,29 +107,35 @@ void im2col(const Dtype* data_im,
             int width,
             int kernel_h,
             int kernel_w,
-            int pad_h,
-            int pad_w,
+            int pad_top,
+            int pad_bottom,
+            int pad_left,
+            int pad_right,
             int stride_h,
             int stride_w,
             int dilation_h,
             int dilation_w,
             Dtype* data_col) {
   const int output_h =
-      (height + 2 * pad_h - (dilation_h * (kernel_h - 1) + 1)) / stride_h + 1;
+      (height + pad_top + pad_bottom - (dilation_h * (kernel_h - 1) + 1)) /
+          stride_h +
+      1;
   const int output_w =
-      (width + 2 * pad_w - (dilation_w * (kernel_w - 1) + 1)) / stride_w + 1;
+      (width + pad_left + pad_right - (dilation_w * (kernel_w - 1) + 1)) /
+          stride_w +
+      1;
   const int channel_size = height * width;
   for (int channel = channels; channel--; data_im += channel_size) {
     for (int kernel_row = 0; kernel_row < kernel_h; kernel_row++) {
       for (int kernel_col = 0; kernel_col < kernel_w; kernel_col++) {
-        int input_row = -pad_h + kernel_row * dilation_h;
+        int input_row = -pad_top + kernel_row * dilation_h;
         for (int output_rows = output_h; output_rows; output_rows--) {
           if (!is_a_ge_zero_and_a_lt_b(input_row, height)) {
             for (int output_cols = output_w; output_cols; output_cols--) {
               *(data_col++) = 0;
             }
           } else {
-            int input_col = -pad_w + kernel_col * dilation_w;
+            int input_col = -pad_left + kernel_col * dilation_w;
             for (int output_col = output_w; output_col; output_col--) {
               if (is_a_ge_zero_and_a_lt_b(input_col, width)) {
                 *(data_col++) = data_im[input_row * width + input_col];
@@ -380,6 +386,8 @@ void conv_im2col_gemm(const float* i_data,
              kernel_w,
              param.paddings[0],
              param.paddings[1],
+             param.paddings[2],
+             param.paddings[3],
              param.strides[0],
              param.strides[1],
              param.dilations[0],
@@ -441,7 +449,7 @@ void conv_im2col_gemm_int8(const int8_t* i_data,
   int dila_h = param.dilations[0];
   int dila_w = param.dilations[1];
   int pad_h = param.paddings[0];
-  int pad_w = param.paddings[1];
+  int pad_w = param.paddings[2];
   const int m = oc / group;
   const int n = oh * ow;
   const int k = ic * kernel_h * kernel_w / group;
@@ -482,7 +490,9 @@ void conv_im2col_gemm_int8(const int8_t* i_data,
              kernel_h,
              kernel_w,
              pad_h,
+             param.paddings[1],
              pad_w,
+             param.paddings[3],
              stride_h,
              stride_w,
              dila_h,
@@ -562,90 +572,97 @@ void conv_depthwise_3x3_fp32(const void* din,
                              const operators::ConvParam& param,
                              ARMContext* ctx,
                              const float* scale) {
-  const int pad_h = param.paddings[0];
-  const int pad_w = param.paddings[1];
-  if (pad_w != pad_h) {
-    LOG(FATAL) << "fp32 depthwise conv3x3 pad_w: " << pad_w
-               << ", pad_h: " << pad_h << " must be equal";
-    return;
-  }
+  auto paddings = param.paddings;
+  const int pad_h = paddings[0];
+  const int pad_w = paddings[2];
+  // if (pad_w != pad_h) {
+  //   LOG(FATAL) << "fp32 depthwise conv3x3 pad_w: " << pad_w
+  //              << ", pad_h: " << pad_h << " must be equal";
+  //   return;
+  // }
   int stride = param.strides[1];
   int pad = pad_w;
   bool flag_relu = param.fuse_relu;
   bool flag_bias = param.bias != nullptr;
-  if (stride == 1 && pad < 2) {  // support pad = [0, 1]
-    conv_depthwise_3x3s1_fp32(reinterpret_cast<const float*>(din),
-                              reinterpret_cast<float*>(dout),
-                              num,
-                              ch_out,
-                              h_out,
-                              w_out,
-                              ch_in,
-                              h_in,
-                              w_in,
-                              reinterpret_cast<const float*>(weights),
-                              bias,
-                              pad,
-                              flag_bias,
-                              flag_relu,
-                              ctx);
-  } else if (stride == 2 && pad < 2) {  // support pad = [0, 1]
-    conv_depthwise_3x3s2_fp32(reinterpret_cast<const float*>(din),
-                              reinterpret_cast<float*>(dout),
-                              num,
-                              ch_out,
-                              h_out,
-                              w_out,
-                              ch_in,
-                              h_in,
-                              w_in,
-                              reinterpret_cast<const float*>(weights),
-                              bias,
-                              pad,
-                              flag_bias,
-                              flag_relu,
-                              ctx);
+  bool pads_equal =
+      ((paddings[0] == paddings[1]) && (paddings[2] == paddings[3]));
+  printf("padding size: %d \n", param.paddings.size());
+  printf("paddings: %d, %d, %d, %d \n",
+         param.paddings[0],
+         param.paddings[1],
+         param.paddings[2],
+         param.paddings[3]);
+  if (stride == 1) {
+    if (pads_equal && (pad_h == pad_w) && (pad < 2)) {  // support pad = [0, 1]
+      printf("conv_depthwise_3x3s1_fp32 \n");
+      conv_depthwise_3x3s1_fp32(reinterpret_cast<const float*>(din),
+                                reinterpret_cast<float*>(dout),
+                                num,
+                                ch_out,
+                                h_out,
+                                w_out,
+                                ch_in,
+                                h_in,
+                                w_in,
+                                reinterpret_cast<const float*>(weights),
+                                bias,
+                                pad,
+                                flag_bias,
+                                flag_relu,
+                                ctx);
+    } else {
+      printf("conv_3x3s1_depthwise_fp32 \n");
+      conv_3x3s1_depthwise_fp32(reinterpret_cast<const float*>(din),
+                                reinterpret_cast<float*>(dout),
+                                num,
+                                ch_out,
+                                h_out,
+                                w_out,
+                                ch_in,
+                                h_in,
+                                w_in,
+                                reinterpret_cast<const float*>(weights),
+                                bias,
+                                param,
+                                ctx);
+    }
+
+  } else if (stride == 2) {
+    if (pad_h == pad_w && (pad < 2)) {  // support pad = [0, 1]
+      conv_depthwise_3x3s2_fp32(reinterpret_cast<const float*>(din),
+                                reinterpret_cast<float*>(dout),
+                                num,
+                                ch_out,
+                                h_out,
+                                w_out,
+                                ch_in,
+                                h_in,
+                                w_in,
+                                reinterpret_cast<const float*>(weights),
+                                bias,
+                                pad,
+                                flag_bias,
+                                flag_relu,
+                                ctx);
+    } else {
+      conv_3x3s2_depthwise_fp32(reinterpret_cast<const float*>(din),
+                                reinterpret_cast<float*>(dout),
+                                num,
+                                ch_out,
+                                h_out,
+                                w_out,
+                                ch_in,
+                                h_in,
+                                w_in,
+                                reinterpret_cast<const float*>(weights),
+                                bias,
+                                param,
+                                ctx);
+    }
   } else {
     LOG(FATAL) << "fp32 depthwise conv3x3 stride: " << stride
-               << " or pad(<2): " << pad << " unsupported";
+               << " or pad: " << pad << " unsupported";
   }
-#if 0
-  if (pad == 1) {
-    conv_depthwise_3x3p1_fp32(reinterpret_cast<const float*>(din),
-                              reinterpret_cast<float*>(dout),
-                              num,
-                              ch_out,
-                              h_out,
-                              w_out,
-                              ch_in,
-                              h_in,
-                              w_in,
-                              reinterpret_cast<const float*>(weights),
-                              bias,
-                              stride,
-                              flag_bias,
-                              flag_relu,
-                              ctx);
-  } else if (pad == 0 && h_in > 2) {
-    conv_depthwise_3x3p0_fp32(reinterpret_cast<const float*>(din),
-                              reinterpret_cast<float*>(dout),
-                              num,
-                              ch_out,
-                              h_out,
-                              w_out,
-                              ch_in,
-                              h_in,
-                              w_in,
-                              reinterpret_cast<const float*>(weights),
-                              bias,
-                              stride,
-                              flag_bias,
-                              flag_relu,
-                              ctx);
-  } else {
-    LOG(FATAL) << "unsupport this type 3x3 dw conv";
-  }
-#endif
 }
 
 void conv_depthwise_5x5_fp32(const void* din,

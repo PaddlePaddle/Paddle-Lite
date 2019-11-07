@@ -21,10 +21,14 @@ namespace lite {
 namespace kernels {
 namespace cuda {
 
-inline int ConvOutputSize(
-    int input_size, int filter_size, int dilation, int padding, int stride) {
+inline int ConvOutputSize(int input_size,
+                          int filter_size,
+                          int dilation,
+                          int pad_left,
+                          int pad_right,
+                          int stride) {
   const int dkernel = dilation * (filter_size - 1) + 1;
-  int output_size = (input_size + 2 * padding - dkernel) / stride + 1;
+  int output_size = (input_size + pad_left + pad_right - dkernel) / stride + 1;
   CHECK_GT_OR_FALSE(output_size, 0);
 
   return output_size;
@@ -54,7 +58,8 @@ void ConvComputeInt8<Ptype_out>::PrepareForRun() {
     output_shape.push_back(ConvOutputSize(in_dims[i + 1],
                                           filter_dims[i + 1],
                                           param.dilations[i],
-                                          param.paddings[i],
+                                          param.paddings[2 * i],
+                                          param.paddings[2 * i + 1],
                                           param.strides[i]));
   }
   output_shape.push_back(filter_dims[0]);
@@ -76,7 +81,8 @@ void ConvComputeInt8<Ptype_out>::Run() {
     output_shape.push_back(ConvOutputSize(in_dims[i + 1],
                                           filter_dims[i + 1],
                                           param.dilations[i],
-                                          param.paddings[i],
+                                          param.paddings[2 * i],
+                                          param.paddings[2 * i + 1],
                                           param.strides[i]));
   }
   output_shape.push_back(filter_dims[0]);

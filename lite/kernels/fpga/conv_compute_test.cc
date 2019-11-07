@@ -277,7 +277,8 @@ TEST(conv_fpga, compute) {
                             param.bias = &bias;
                           }
                           param.fuse_relu = flag_relu;
-                          param.paddings = std::vector<int>({padding, padding});
+                          param.paddings = std::vector<int>(
+                              {padding, padding, padding, padding});
                           param.strides = std::vector<int>({stride, stride});
                           param.dilations =
                               std::vector<int>({dilation, dilation});

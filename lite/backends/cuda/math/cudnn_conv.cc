@@ -41,7 +41,7 @@ bool CudnnConv2D<PRECISION(kFloat)>::create(const operators::ConvParam& param,
   int kh = w_dims[2];
   int sw = param.strides[1];
   int sh = param.strides[0];
-  int pw = param.paddings[1];
+  int pw = param.paddings[2];
   int ph = param.paddings[0];
   int dw = param.dilations[1];
   int dh = param.dilations[0];
@@ -313,7 +313,7 @@ bool CudnnConv2DInt8<Ptype_out>::create(const operators::ConvParam& param,
 
   int sw = param.strides[1];
   int sh = param.strides[0];
-  int pw = param.paddings[1];
+  int pw = param.paddings[2];
   int ph = param.paddings[0];
   int dw = param.dilations[1];
   int dh = param.dilations[0];

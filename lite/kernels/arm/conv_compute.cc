@@ -32,13 +32,16 @@ void ConvCompute<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
   auto w_dims = param.filter->dims();
   auto& ctx = this->ctx_->template As<ARMContext>();
 
+  auto paddings = param.paddings;
   int ic = w_dims[1] * param.groups;
   int oc = w_dims[0];
   int kh = w_dims[2];  // oihw
   int kw = w_dims[3];
-  int pad = param.paddings[0];
+  int pad = paddings[0];
   int stride = param.strides[0];
 
+  bool pads_equal =
+      ((paddings[0] == paddings[1]) && (paddings[2] == paddings[3]));
   int chin = param.x->dims()[1];
   int hin = param.x->dims()[2];
   int win = param.x->dims()[3];
@@ -46,16 +49,18 @@ void ConvCompute<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
   int hout = param.output->dims()[2];
   int wout = param.output->dims()[3];
 
-  bool kps_equal = (param.paddings[0] == param.paddings[1]) &&
-                   (param.strides[0] == param.strides[1]) && (kw == kh);
+  bool pads_all_equal = (pads_equal && paddings[0] == paddings[2]);
+
+  bool kps_equal = (param.strides[0] == param.strides[1]) && (kw == kh);
   bool no_dilation = (param.dilations[0] == 1) && (param.dilations[1] == 1);
   bool flag_dw_3x3 = (kw == 3 && kh == 3 && (stride == 1 || stride == 2));
-  bool flag_dw_5x5 =
-      (kw == 5 && stride == 1) || (kw == 5 && stride == 2 && pad == 2);
+  bool flag_dw_5x5 = pads_all_equal && ((kw == 5 && stride == 1) ||
+                                        (kw == 5 && stride == 2 && pad == 2));
   bool flag_dw = flag_dw_3x3 || flag_dw_5x5;
 
   /// select conv impl
-  if (param.groups == ic && ic == oc && kps_equal && no_dilation && flag_dw) {
+  if (param.groups == ic && ic == oc && kps_equal && pads_equal &&
+      no_dilation && flag_dw) {
     /// dw conv impl
     impl_ = new DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>;
     VLOG(3) << "invoking dw conv";

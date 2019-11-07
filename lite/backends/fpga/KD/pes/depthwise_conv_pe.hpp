@@ -61,6 +61,7 @@ class DepthwiseConvPE : public PE {
     args.image.channels = input->shape().channel();
     args.image.height = input->shape().height();
     args.image.width = input->shape().width();
+    auto paddings = param.paddings;
     args.image.pad_width = param.paddings[0];
     args.image.pad_height = param.paddings[1];
     args.image.scale_address = input->scale();
@@ -69,6 +70,12 @@ class DepthwiseConvPE : public PE {
     args.out_width = param.output->shape().width();
     args.out_height = param.output->shape().height();
     args.sub_conv_num = 1;
+    bool pad_equal =
+        ((paddings[0] == paddings[1]) && (paddings[2] == paddings[3]));
+    if (!pad_equal) {
+      LOG(FATA) << "This pad not support ! " << paddings[0] << ", "
+                << paddings[1] << ", " << paddings[2] << ", " << paddings[3];
+    }
     param.args = args;
 
     inplace_.relu_enable = param_.relu.enabled;

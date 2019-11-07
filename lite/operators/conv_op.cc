@@ -39,10 +39,15 @@ bool ConvOpLite::CheckShape() const {
   return true;
 }
 
-inline int ConvOutputSize(
-    int input_size, int filter_size, int dilation, int padding, int stride) {
+inline int ConvOutputSize(int input_size,
+                          int filter_size,
+                          int dilation,
+                          int pad_left,
+                          int pad_right,
+                          int stride) {
   const int dkernel = dilation * (filter_size - 1) + 1;
-  int output_size = (input_size + 2 * padding - dkernel) / stride + 1;
+  int output_size =
+      (input_size + (pad_left + pad_right) - dkernel) / stride + 1;
   // CHECK_GT_OR_FALSE(output_size, 0);
 
   return output_size;
@@ -54,6 +59,20 @@ inline void UpdatePaddingAndDilation(std::vector<int>* paddings,
                                      const std::string padding_algorithm,
                                      const lite::DDim data_dims,
                                      const lite::DDim& ksize) {
+  if (paddings->size() == data_dims.size()) {
+    for (size_t i = 0; i < data_dims.size(); ++i) {
+      int copy_pad = *(paddings->begin() + 2 * i);
+      paddings->insert(paddings->begin() + 2 * i + 1, copy_pad);
+    }
+  } else {
+    if ((data_dims.size() * 2) != paddings->size()) {
+      printf(
+          "Paddings size should be the same or twice as the input data "
+          "size.\n");
+      return;
+    }
+  }
+
   // when padding_desc is "VALID" or "SAME"
   if (padding_algorithm == "SAME") {
     for (size_t i = 0; i < strides.size(); ++i) {
@@ -61,8 +80,11 @@ inline void UpdatePaddingAndDilation(std::vector<int>* paddings,
       int pad_sum =
           std::max((out_size - 1) * strides[i] + ksize[i] - data_dims[i + 2],
                    (int64_t)0);
+      int pad_0 = pad_sum / 2;
+      int pad_1 = pad_sum - pad_0;
       // pad
-      *(paddings->begin() + i) = pad_sum / 2;
+      *(paddings->begin() + i * 2) = pad_0;
+      *(paddings->begin() + i * 2 + 1) = pad_0;
       // dilation
       *(dilations->begin() + i) = 1;
     }
@@ -88,7 +110,8 @@ bool ConvOpLite::InferShape() const {
     output_shape.push_back(ConvOutputSize(in_dims[i + 2],
                                           filter_dims[i + 2],
                                           param_.dilations[i],
-                                          param_.paddings[i],
+                                          param_.paddings[i * 2],
+                                          param_.paddings[i * 2 + 1],
                                           param_.strides[i]));
   }
 

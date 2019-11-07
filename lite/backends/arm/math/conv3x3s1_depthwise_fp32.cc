@@ -40,7 +40,7 @@ void conv_3x3s1_depthwise_fp32(const float* i_data,
                                ARMContext* ctx) {
   int threads = ctx->threads();
   const int pad_h = param.paddings[0];
-  const int pad_w = param.paddings[1];
+  const int pad_w = param.paddings[2];
   const int out_c_block = 4;
   const int out_h_kernel = 2;
   const int out_w_kernel = 4;

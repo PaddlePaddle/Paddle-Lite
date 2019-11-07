@@ -38,14 +38,18 @@ void ConvCompute::PrepareForRun() {
   int w_out = output_dims[3];
   int kernel_h = filter_dims[2];  // oihw
   int kernel_w = filter_dims[3];
-  int pad_h = param.paddings[0];
-  int pad_w = param.paddings[1];
+  auto paddings = param.paddings;
   int stride_h = param.strides[0];
   int stride_w = param.strides[1];
+  int pad_h = paddings[0];
+  int pad_w = paddings[2];
   int groups = param.groups;
   bool relu_fused = param.fuse_relu;
   bool no_dilation = (param.dilations[0] == 1) && (param.dilations[1] == 1);
   bool zero_pad = (pad_h == 0) && (pad_w == 0);
+
+  bool pad_equal =
+      ((paddings[0] == paddings[1]) && (paddings[2] == paddings[3]));
 
   VLOG(3) << "Is relu fused? / " << (relu_fused ? "Yes" : "No");
   VLOG(3) << "groups:" << groups << " stride_h:" << stride_h
@@ -60,7 +64,7 @@ void ConvCompute::PrepareForRun() {
           << filter_dims[2] << " " << filter_dims[3];
 
   if (kernel_h == 1 && kernel_w == 1 && stride_h == 1 && stride_w == 1 &&
-      zero_pad && no_dilation) {
+      zero_pad && no_dilation && pad_equal) {
     // conv2d_1x1
     kernel_func_names_.push_back("gemm_batch");
     kernel_func_paths_.push_back("buffer/fc_kernel.cl");
@@ -70,7 +74,7 @@ void ConvCompute::PrepareForRun() {
       build_options_.push_back("-DCL_DTYPE=float");
     }
     impl_ = &ConvCompute::Conv2d1x1;
-  } else {
+  } else if (pad_equal) {
     kernel_func_names_.push_back("im2col");
     kernel_func_names_.push_back("gemm_batch");
     kernel_func_paths_.push_back("buffer/im2col_kernel.cl");
@@ -85,6 +89,9 @@ void ConvCompute::PrepareForRun() {
     col_buffer_.reset(new lite::Tensor);
     col_buffer_->Resize({bs, c_in, kernel_h * kernel_w, h_out * w_out});
     col_buffer_->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
+  } else {
+    LOG(FATAL) << "This pad not support ! " << paddings[0] << ", "
+               << paddings[1] << ", " << paddings[2] << ", " << paddings[3];
   }
 
   for (size_t i = 0; i < kernel_func_names_.size(); i++) {
@@ -108,7 +115,7 @@ void ConvCompute::GemmlikeConv2d() {
   int kernel_h = filter_dims[2];
   int kernel_w = filter_dims[3];
   int pad_h = param.paddings[0];
-  int pad_w = param.paddings[1];
+  int pad_w = param.paddings[2];
   int stride_h = param.strides[0];
   int stride_w = param.strides[1];
   int dilation_h = param.dilations[0];
