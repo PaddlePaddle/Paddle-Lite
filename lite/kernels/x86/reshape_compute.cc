@@ -21,6 +21,8 @@ REGISTER_LITE_KERNEL(reshape,
                      paddle::lite::kernels::x86::ReshapeCompute<float>,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindInput("ShapeTensor", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindInput("Shape", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
     .Finalize();
 
@@ -31,6 +33,8 @@ REGISTER_LITE_KERNEL(reshape2,
                      paddle::lite::kernels::x86::Reshape2Compute<float>,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindInput("ShapeTensor", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindInput("Shape", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindOutput("XShape", {LiteType::GetTensorTy(TARGET(kX86))})
     .Finalize();
@@ -41,6 +45,8 @@ REGISTER_LITE_KERNEL(reshape2,
                      paddle::lite::kernels::x86::Reshape2Compute<int64_t>,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
+    .BindInput("ShapeTensor", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindInput("Shape", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
     .BindOutput("XShape",
                 {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
