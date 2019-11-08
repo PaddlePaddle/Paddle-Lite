@@ -25,11 +25,13 @@ namespace bridges {
 // handle in this converter
 node_map_type MulConverter(const std::shared_ptr<lite::OpLite> mul_op,
                            const node_map_type& inputs_map) {
-  LOG(INFO) << "converting mul...";
-  lite::Scope* scope = mul_op->scope();
-  const lite::OpInfo* op_info = mul_op->op_info();
-  auto output_node =
-      std::make_shared<ge::op::MatMul>(lite::npu::UniqueName("mul"));
+  auto scope = mul_op->scope();
+  auto op_info = mul_op->op_info();
+  auto op_type = op_info->Type();
+  auto unique_op_type = lite::npu::UniqueName(op_type);
+  LOG(INFO) << "[NPU] Converting " + op_type + "...";
+
+  auto output_node = std::make_shared<ge::op::MatMul>(unique_op_type);
 
   auto x_var_name = op_info->Input("X").front();
   auto y_var_name = op_info->Input("Y").front();
@@ -46,7 +48,7 @@ node_map_type MulConverter(const std::shared_ptr<lite::OpLite> mul_op,
   int n = ytensor->dims()
               .Slice(y_num_col_dims, ytensor->dims().size())
               .production();
-  CHECK_EQ(x_w, y_h) << "x_w must be equal with y_h";
+  CHECK_EQ(x_w, y_h) << "[NPU] x_w must be equal with y_h";
   int k = x_w;
   LOG(INFO) << "m:" << m << ",n:" << n << ",k:" << k;
   LOG(INFO) << "x_var_name:" << x_var_name
