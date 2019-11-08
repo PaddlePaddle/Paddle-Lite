@@ -66,6 +66,7 @@ add_kernel(beam_search_decode_compute_arm ARM extra SRCS beam_search_decode_comp
 add_kernel(lookup_table_compute_arm ARM extra SRCS lookup_table_compute.cc DEPS ${lite_kernel_deps} math_arm)
 add_kernel(logical_compute_arm ARM extra SRCS logical_compute.cc DEPS ${lite_kernel_deps} math_arm)
 add_kernel(sequence_softmax_compute_arm ARM extra SRCS sequence_softmax_compute.cc DEPS ${lite_kernel_deps} math_arm)
+add_kernel(sequence_reverse_compute_arm ARM extra SRCS sequence_reverse_compute.cc DEPS ${lite_kernel_deps} math_arm)
 add_kernel(less_than_arm ARM extra SRCS compare_compute.cc DEPS ${lite_kernel_deps} math_arm)
 add_kernel(while_compute_arm ARM extra SRCS while_compute.cc DEPS ${lite_kernel_deps} math_arm)
 add_kernel(compare_compute_arm ARM extra SRCS compare_compute.cc DEPS ${lite_kernel_deps} math_arm)

@@ -740,6 +740,11 @@ struct SequenceExpandAsParam {
   lite::Tensor* out{nullptr};
 };
 
+struct SequenceReverseParam {
+  const lite::Tensor* X{};
+  lite::Tensor* Out{};
+};
+
 struct ReduceMaxParam {
   const lite::Tensor* X{};
   lite::Tensor* Out{};
