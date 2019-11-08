@@ -16,6 +16,7 @@
 #include "lite/backends/cuda/cuda_utils.h"
 #include "lite/backends/cuda/math/scale.h"
 #include "lite/backends/cuda/math/utils.h"
+
 namespace paddle {
 namespace lite {
 namespace cuda {

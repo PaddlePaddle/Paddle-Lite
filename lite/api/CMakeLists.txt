@@ -285,28 +285,25 @@ endif()
 
 # Some bins
 if(NOT IOS)
-  if(LITE_WITH_CUDA)
+  lite_cc_binary(test_model_bin SRCS model_test.cc DEPS paddle_api_full paddle_api_light gflags utils
+    ${ops} ${host_kernels}
+    ARM_DEPS ${arm_kernels}
+    NPU_DEPS ${npu_kernels}
+    XPU_DEPS ${xpu_kernels}
+    CL_DEPS ${opencl_kernels}
+    FPGA_DEPS ${fpga_kernels}
+    X86_DEPS ${x86_kernels}
+    CUDA_DEPS ${cuda_kernels})
+  lite_cc_binary(benchmark_bin SRCS benchmark.cc DEPS paddle_api_full paddle_api_light gflags utils
+    ${ops} ${host_kernels}
+    ARM_DEPS ${arm_kernels}
+    NPU_DEPS ${npu_kernels}
+    XPU_DEPS ${xpu_kernels}
+    CL_DEPS ${opencl_kernels}
+    FPGA_DEPS ${fpga_kernels}
+    X86_DEPS ${x86_kernels}
+    CUDA_DEPS ${cuda_kernels})
 
-    nv_binary(test_model_bin SRCS model_test.cc DEPS paddle_api_full paddle_api_light gflags utils
-        ${ops} ${host_kernels} ${cuda_kernels})
-    nv_binary(benchmark_bin SRCS benchmark.cc DEPS paddle_api_full paddle_api_light gflags utils
-         ${ops} ${host_kernels} ${cuda_kernels})
-  else()  
-     lite_cc_binary(test_model_bin SRCS model_test.cc DEPS paddle_api_full paddle_api_light gflags utils
-        ${ops} ${host_kernels}
-        ARM_DEPS ${arm_kernels}
-        NPU_DEPS ${npu_kernels}
-        CL_DEPS ${opencl_kernels}
-        FPGA_DEPS ${fpga_kernels}
-        X86_DEPS ${x86_kernels})
-      lite_cc_binary(benchmark_bin SRCS benchmark.cc DEPS paddle_api_full paddle_api_light gflags utils
-        ${ops} ${host_kernels}
-        ARM_DEPS ${arm_kernels}
-        NPU_DEPS ${npu_kernels}
-        CL_DEPS ${opencl_kernels}
-        FPGA_DEPS ${fpga_kernels}
-        X86_DEPS ${x86_kernels})
-  endif(LITE_WITH_CUDA)
 endif()
 
 #lite_cc_binary(cxx_api_bin SRCS cxx_api_bin.cc
