@@ -19,7 +19,7 @@ BUILD_PYTHON=OFF
 BUILD_DIR=$(pwd)
 OPTMODEL_DIR=""
 BUILD_TAILOR=OFF
-BUILD_CV=ON
+BUILD_CV=OFF
 
 readonly THIRDPARTY_TAR=https://paddle-inference-dist.bj.bcebos.com/PaddleLite/third-party-05b862.tar.gz
 
