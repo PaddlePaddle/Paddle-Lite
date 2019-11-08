@@ -48,16 +48,18 @@ void hwc4_trans_hwc3(const uint8_t* src, uint8_t* dst, int srcw, int srch);
 void hwc3_trans_hwc4(const uint8_t* src, uint8_t* dst, int srcw, int srch);
 
 /*
-  * 颜色空间转换
-  * 目前支持NV12/NV21_to_BGR(RGB), NV12/NV21_to_BGRA(RGBA),
- * BGR(RGB)和BGRA(RGBA)相互转换,
-  * BGR(RGB)和RGB(BGR)相互转换,
- * BGR(RGB)和RGBA(BGRA)相互转换，以及BGR(RGB)和GRAY相互转换
-  * param src: 输入图像数据
-  * param dst: 输出图像数据
-  * param srcFormat: 输入图像的颜色空间,
- * 支持GRAY、NV12(NV21)、BGR(RGB)和BGRA(RGBA)
-  * param dstFormat: 输出图像的颜色空间, 支持GRAY、BGR(RGB)和BGRA(RGBA)
+  * image color convert
+  * support NV12/NV21_to_BGR(RGB), NV12/NV21_to_BGRA(RGBA),
+  * BGR(RGB)and BGRA(RGBA) transform,
+  * BGR(RGB)and RGB(BGR) transform,
+  * BGR(RGB)and RGBA(BGRA) transform,
+  * BGR(RGB)and GRAY transform,
+  * param src: input image data
+  * param dst: output image data
+  * param srcFormat: input image image format support: GRAY, NV12(NV21),
+ * BGR(RGB) and BGRA(RGBA)
+  * param dstFormat: output image image format, support GRAY, BGR(RGB) and
+ * BGRA(RGBA)
 */
 void ImageConvert::choose(const uint8_t* src,
                           uint8_t* dst,
@@ -78,11 +80,9 @@ void ImageConvert::choose(const uint8_t* src,
     memcpy(dst, src, sizeof(uint8_t) * size);
     return;
   } else {
-    if (srcFormat == ImageFormat::NV12 &&
-        (dstFormat == BGR || dstFormat == RGB)) {
+    if (srcFormat == NV12 && (dstFormat == BGR || dstFormat == RGB)) {
       impl_ = nv12_to_bgr;
-    } else if (srcFormat == ImageFormat::NV21 &&
-               (dstFormat == BGR || dstFormat == RGB)) {
+    } else if (srcFormat == NV21 && (dstFormat == BGR || dstFormat == RGB)) {
       impl_ = nv21_to_bgr;
     } else if (srcFormat == NV12 && (dstFormat == BGRA || dstFormat == RGBA)) {
       impl_ = nv12_to_bgra;

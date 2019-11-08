@@ -31,7 +31,7 @@ class Image2Tensor {
   void choose(const uint8_t* src,
               Tensor* dst,
               ImageFormat srcFormat,
-              LayOut layout,
+              LayoutType layout,
               int srcw,
               int srch,
               float* means,

@@ -21,7 +21,6 @@ namespace paddle {
 namespace lite {
 namespace utils {
 namespace cv {
-typedef paddle::lite::utils::cv::ImageFormat ImageFormat;
 typedef void (*convert_func)(const uint8_t* src,
                              uint8_t* dst,
                              int srcw,

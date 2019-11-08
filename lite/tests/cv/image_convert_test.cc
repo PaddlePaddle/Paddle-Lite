@@ -36,11 +36,11 @@ DEFINE_int32(dsth, 960, "output height");
 DEFINE_int32(dstw, 540, "output width");
 DEFINE_int32(angle, 90, "rotate angel");
 DEFINE_int32(flip_num, 0, "flip x");
-DEFINE_int32(layout, 0, "layout chw");
+DEFINE_int32(layout, 0, "layout nchw");
 
 typedef paddle::lite::utils::cv::ImageFormat ImageFormat;
 typedef paddle::lite::utils::cv::FlipParam FlipParam;
-typedef paddle::lite::utils::cv::LayOut LayOut;
+typedef paddle::lite_api::DataLayoutType LayoutType;
 typedef paddle::lite::utils::cv::TransParam TransParam;
 typedef paddle::lite::utils::cv::ImagePreprocess ImagePreprocess;
 typedef paddle::lite_api::Tensor Tensor_api;
@@ -98,7 +98,7 @@ void test_img(const std::vector<int>& cluster_id,
               ImageFormat dstFormat,
               float rotate,
               FlipParam flip,
-              LayOut layout,
+              LayoutType layout,
               int test_iter = 1) {
 #ifdef LITE_WITH_ARM
   paddle::lite::DeviceInfo::Init();
@@ -163,7 +163,7 @@ void test_img(const std::vector<int>& cluster_id,
       }
 
       LOG(INFO) << "Rotate = " << rotate << ", Flip = " << flip
-                << ", Layout = " << layout;
+                << ", Layout = " << static_cast<int>(layout);
 
       int size = 3 * srch * srcw;
       if (srcFormat == ImageFormat::NV12 || srcFormat == ImageFormat::NV21) {
@@ -547,7 +547,7 @@ TEST(TestImageConvertRand, test_func_image_convert_preprocess) {
               for (auto flip : {0}) {
                 for (auto srcFormat : {0, 1, 2, 3, 4, 11, 12}) {
                   for (auto dstFormat : {0, 1, 2, 3}) {
-                    for (auto layout : {0}) {
+                    for (auto layout : {1}) {
                       if ((dstFormat == ImageFormat::GRAY &&
                            (srcFormat == ImageFormat::RGBA ||
                             srcFormat == ImageFormat::BGRA)) ||
@@ -578,7 +578,7 @@ TEST(TestImageConvertRand, test_func_image_convert_preprocess) {
                                (ImageFormat)dstFormat,
                                rotate,
                                (FlipParam)flip,
-                               (LayOut)layout);
+                               (LayoutType)layout);
                     }
                   }
                 }
@@ -602,7 +602,7 @@ TEST(TestImageConvertRand, test_func_image_resize_preprocess) {
               for (auto flip : {0}) {
                 for (auto srcFormat : {0, 1, 2, 3, 4, 11, 12}) {
                   for (auto dstFormat : {0, 1, 2, 3}) {
-                    for (auto layout : {0}) {
+                    for (auto layout : {1}) {
                       if (dstFormat == ImageFormat::NV12 ||
                           dstFormat == ImageFormat::NV21 ||
                           (dstFormat == ImageFormat::GRAY &&
@@ -635,7 +635,7 @@ TEST(TestImageConvertRand, test_func_image_resize_preprocess) {
                                (ImageFormat)dstFormat,
                                rotate,
                                (FlipParam)flip,
-                               (LayOut)layout);
+                               (LayoutType)layout);
                     }
                   }
                 }
@@ -659,7 +659,7 @@ TEST(TestImageConvertRand, test_func_image_trans_preprocess) {
               for (auto flip : {0, 1, 2}) {
                 for (auto srcFormat : {11}) {
                   for (auto dstFormat : {3}) {
-                    for (auto layout : {0, 1}) {
+                    for (auto layout : {1, 3}) {
                       if (dstFormat == ImageFormat::NV12 ||
                           dstFormat == ImageFormat::NV21 ||
                           (dstFormat == ImageFormat::GRAY &&
@@ -692,7 +692,7 @@ TEST(TestImageConvertRand, test_func_image_trans_preprocess) {
                                (ImageFormat)dstFormat,
                                rotate,
                                (FlipParam)flip,
-                               (LayOut)layout);
+                               (LayoutType)layout);
                     }
                   }
                 }
@@ -717,7 +717,7 @@ TEST(TestImageConvertCustom, test_func_image_preprocess_custom) {
            (ImageFormat)FLAGS_dstFormat,
            FLAGS_angle,
            (FlipParam)FLAGS_flip_num,
-           (LayOut)FLAGS_layout);
+           (LayoutType)FLAGS_layout);
 }
 #endif
 #endif

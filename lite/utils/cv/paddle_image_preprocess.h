@@ -18,16 +18,14 @@
 #include <stdio.h>
 #include <vector>
 #include "lite/api/paddle_api.h"
+#include "lite/api/paddle_place.h"
 namespace paddle {
 namespace lite {
 namespace utils {
 namespace cv {
-#define PI 3.14159265f
-#define Degrees2Radians(degrees) ((degrees) * (SK_ScalarPI / 180))
-#define Radians2Degrees(radians) ((radians) * (180 / SK_ScalarPI))
-#define ScalarNearlyZero (1.0f / (1 << 12))
 typedef paddle::lite_api::Tensor Tensor;
-// 颜色空间枚举
+typedef paddle::lite_api::DataLayoutType LayoutType;
+// color enum
 enum ImageFormat {
   RGBA = 0,
   BGRA,
@@ -37,78 +35,79 @@ enum ImageFormat {
   NV21 = 11,
   NV12,
 };
-// 翻转枚举
+// flip enum
 enum FlipParam { X = 0, Y, XY };
-// 输出tensor的格式枚举
-enum LayOut { CHW = 0, HWC };
-// 图像转换参数的结构体
+// transform param
 typedef struct {
-  int ih;                // 输入height
-  int iw;                // 输入width
-  int oh;                // 输出height
-  int ow;                // 输出width
-  FlipParam flip_param;  // 翻转参数
-  float rotate_param;    // 旋转角度， 目前支持90, 180, 270
+  int ih;                // input height
+  int iw;                // input width
+  int oh;                // outpu theight
+  int ow;                // output width
+  FlipParam flip_param;  // flip, support x, y, xy
+  float rotate_param;    // rotate, support 90, 180, 270
 } TransParam;
 
 class ImagePreprocess {
  public:
   /*
-  * 图像处理函数初始化
-  * param srcFormat: 输入图像的颜色空间
-  * param dstFormat: 输出图像的颜色空间
-  * param param: 输入图像的转换参数， 如输入图像大小、输出图像大小等
+  * init
+  * param srcFormat: input image color
+  * param dstFormat: output image color
+  * param param: input image parameter, egs: input size
   */
   ImagePreprocess(ImageFormat srcFormat,
                   ImageFormat dstFormat,
                   TransParam param);
 
   /*
-  * 颜色空间转换
-  * 目前支持NV12/NV21_to_BGR(RGB), NV12/NV21_to_BGRA(RGBA),
-  * BGR(RGB)和BGRA(RGBA)相互转换,
-  * BGR(RGB)和RGB(BGR)相互转换,
-  * BGR(RGB)和RGBA(BGRA)相互转换，以及BGR(RGB)和GRAY相互转换
-  * param src: 输入图像数据
-  * param dst: 输出图像数据
-  * 输入图像和输出图像的颜色空间参数从成员变量srcFormat_和dstFormat_获取
+  * image color convert
+  * support NV12/NV21_to_BGR(RGB), NV12/NV21_to_BGRA(RGBA),
+  * BGR(RGB)and BGRA(RGBA) transform,
+  * BGR(RGB)and RGB(BGR) transform,
+  * BGR(RGB)and RGBA(BGRA) transform,
+  * BGR(RGB)and GRAY transform,
+  * param src: input image data
+  * param dst: output image data
   */
   void imageCovert(const uint8_t* src, uint8_t* dst);
   /*
-  * 颜色空间转换
-  * 目前支持NV12/NV21_to_BGR(RGB), NV12/NV21_to_BGRA(RGBA),
-  * BGR(RGB)和BGRA(RGBA)相互转换,
-  * BGR(RGB)和RGB(BGR)相互转换,
-  * BGR(RGB)和RGBA(BGRA)相互转换，以及BGR(RGB)和GRAY相互转换
-  * param src: 输入图像数据
-  * param dst: 输出图像数据
-  * param srcFormat: 输入图像的颜色空间,
-  * 支持GRAY、NV12(NV21)、BGR(RGB)和BGRA(RGBA)
-  * param dstFormat: 输出图像的颜色空间, 支持GRAY、BGR(RGB)和BGRA(RGBA)
+  * image color convert
+  * support NV12/NV21_to_BGR(RGB), NV12/NV21_to_BGRA(RGBA),
+  * BGR(RGB)and BGRA(RGBA) transform,
+  * BGR(RGB)and RGB(BGR) transform,
+  * BGR(RGB)and RGBA(BGRA) transform,
+  * BGR(RGB)and GRAY transform,
+  * param src: input image data
+  * param dst: output image data
+  * param srcFormat: input image image format support: GRAY, NV12(NV21),
+  * BGR(RGB) and BGRA(RGBA)
+  * param dstFormat: output image image format, support GRAY, BGR(RGB) and
+  * BGRA(RGBA)
   */
   void imageCovert(const uint8_t* src,
                    uint8_t* dst,
                    ImageFormat srcFormat,
                    ImageFormat dstFormat);
   /*
-  * 图像resize
-  * 颜色空间支持一通道（如GRAY）、NV12、 NV21、三通道（如BGR）和四通道（如BGRA）
-  * param src: 输入图像数据
-  * param dst: 输出图像数据
-  * 输入图像和输出图像大小数从成员变量transParam_获取
+  * image resize, use bilinear method
+  * support image format: 1-channel image (egs: GRAY, 2-channel image (egs:
+  * NV12, NV21),
+  *               3-channel(egs: BGR), 4-channel(egs: BGRA)
+  * param src: input image data
+  * param dst: output image data
   */
   void imageResize(const uint8_t* src, uint8_t* dst);
   /*
-  * 图像resize
-  * 颜色空间支持一通道（如GRAY）、NV12、 NV21、三通道（如BGR）和四通道（如BGRA）
-  * param src: 输入图像数据
-  * param dst: 输出图像数据
-  * param srcFormat:
-  * 输入图像的颜色空间，支持GRAY、NV12(NV21)、BGR(GRB)和BGRA(RGBA)格式
-  * param srcw: 输入图像width
-  * param srch: 输入图像height
-  * param dstw: 输出图像width
-  * param dsth: 输出图像height
+   image resize, use bilinear method
+  * support image format: 1-channel image (egs: GRAY, 2-channel image (egs:
+  NV12, NV21),
+  *               3-channel image(egs: BGR), 4-channel image(egs: BGRA)
+  * param src: input image data
+  * param dst: output image data
+  * param srcw: input image width
+  * param srch: input image height
+  * param dstw: output image width
+  * param dsth: output image height
   */
   void imageResize(const uint8_t* src,
                    uint8_t* dst,
@@ -119,24 +118,23 @@ class ImagePreprocess {
                    int dsth);
 
   /*
-  * 图像Rotate
-  * 目前支持90, 180 和 270,
-  * 颜色空间支持一通道（如GRAY）、三通道（如BGR）和四通道（如BGRA）
-  * param src: 输入图像数据
-  * param dst: 输出图像数据
-  * Rotate参数和图像大小参数从成员变量transParam_获取，图像大小取得是ow和oh
+  * image Rotate
+  * support 90, 180 and 270 Rotate process
+  * color format support 1-channel image, 3-channel image and 4-channel image
+  * param src: input image data
+  * param dst: output image data
   */
   void imageRotate(const uint8_t* src, uint8_t* dst);
   /*
-  * 图像Rotate
-  * 目前支持90, 180 和 270,
-  * 颜色空间支持一通道（如GRAY）、三通道（如BGR）和四通道（如BGRA）
-  * param src: 输入图像数据
-  * param dst: 输出图像数据
-  * param srcFormat: 输入图像的颜色空间，支持GRAY、BGR(GRB)和BGRA(RGBA)格式
-  * param srcw: 输入图像width
-  * param srch: 输入图像height
-  * param degree: Rotate 度数
+  * image Rotate
+  * support 90, 180 and 270 Rotate process
+  * color format support 1-channel image, 3-channel image and 4-channel image
+  * param src: input image data
+  * param dst: output image data
+  * param srcFormat: input image format, support GRAYm BGR(GRB) and BGRA(RGBA)
+  * param srcw: input image width
+  * param srch: input image height
+  * param degree: Rotate degree, support 90, 180 and 270
   */
   void imageRotate(const uint8_t* src,
                    uint8_t* dst,
@@ -145,24 +143,23 @@ class ImagePreprocess {
                    int srch,
                    float degree);
   /*
-  * 图像Flip
-  * 目前支持x、y 和 xy 翻转,
-  * 颜色空间支持一通道（如GRAY）、三通道（如BGR）和四通道（如BGRA）
-  * param src: 输入图像数据
-  * param dst: 输出图像数据
-  * Flip参数和图像大小参数从成员变量transParam_获取，图像大小取得是ow和oh
+  * image Flip
+  * support X, Y and XY flip process
+  * color format support 1-channel image, 3-channel image and 4-channel image
+  * param src: input image data
+  * param dst: output image data
   */
   void imageFlip(const uint8_t* src, uint8_t* dst);
   /*
-  * 图像Flip
-  * 目前支持x、y 和 xy 翻转,
-  * 颜色空间支持一通道（如GRAY）、三通道（如BGR）和四通道（如BGRA）
-  * param src: 输入图像数据
-  * param dst: 输出图像数据
-  * param srcFormat: 输入图像的颜色空间，支持GRAY、BGR(GRB)和BGRA(RGBA)格式
-  * param srcw: 输入图像width
-  * param srch: 输入图像height
-  * param flip_param: Flip 参数
+  * image Flip
+  * support X, Y and XY flip process
+  * color format support 1-channel image, 3-channel image and 4-channel image
+  * param src: input image data
+  * param dst: output image data
+  * param srcFormat: input image format, support GRAY, BGR(GRB) and BGRA(RGBA)
+  * param srcw: input image width
+  * param srch: input image height
+  * param flip_param: flip parameter, support X, Y and XY
   */
   void imageFlip(const uint8_t* src,
                  uint8_t* dst,
@@ -171,38 +168,39 @@ class ImagePreprocess {
                  int srch,
                  FlipParam flip_param);
   /*
-  * 将图像数据转换为tensor
-  * 目前支持BGR（RGB）和BGRA（RGBA）数据转换为NCHW/NHWC格式的tensor
-  * param src: 输入图像数据
-  * param dstTensor: 输出Tensor数据
-  * param layout: 输出Tensor格式，支持NCHW和NHWC两种格式
-  * param means: 图像相应通道的均值
-  * param scales: 图像相应通道的scale， 用于图像的归一化处理
-  * 图像大小参数从成员变量transParam_获取，图像大小取得是ow和oh
+  * change image data to tensor data
+  * support image format is BGR(RGB) and BGRA(RGBA), Data layout is NHWC and
+  * NCHW
+  * param src: input image data
+  * param dstTensor: output tensor data
+  * param layout: output tensor layout，support NHWC and NCHW
+  * param means: means of image
+  * param scales: scales of image
   */
   void image2Tensor(const uint8_t* src,
                     Tensor* dstTensor,
-                    LayOut layout,
+                    LayoutType layout,
                     float* means,
                     float* scales);
   /*
-  * 将图像数据转换为tensor
-  * 目前支持BGR（RGB）和BGRA（RGBA）数据转换为NCHW/NHWC格式的tensor
-  * param src: 输入图像数据
-  * param dstTensor: 输出Tensor数据
-  * param srcFormat: 输入图像的颜色空间，支持BGR（RGB）和BGRA（RGBA）格式
-  * param srcw: 输入图像width
-  * param srch: 输入图像height
-  * param layout: 输出Tensor格式，支持NCHW和NHWC两种格式
-  * param means: 图像相应通道的均值
-  * param scales: 图像相应通道的scale， 用于图像的归一化处理
+   * change image data to tensor data
+  * support image format is BGR(RGB) and BGRA(RGBA), Data layout is NHWC and
+  * NCHW
+  * param src: input image data
+  * param dstTensor: output tensor data
+  * param srcFormat: input image format, support BGR(GRB) and BGRA(RGBA)
+  * param srcw: input image width
+  * param srch: input image height
+  * param layout: output tensor layout，support NHWC and NCHW
+  * param means: means of image
+  * param scales: scales of image
   */
   void image2Tensor(const uint8_t* src,
                     Tensor* dstTensor,
                     ImageFormat srcFormat,
                     int srcw,
                     int srch,
-                    LayOut layout,
+                    LayoutType layout,
                     float* means,
                     float* scales);
 

@@ -47,34 +47,43 @@ void bgra_to_tensor_hwc(const uint8_t* src,
                         float* scales);
 
 /*
-* 将图像数据转换为tensor
-* 目前支持BGR（RGB）和BGRA（RGBA）数据转换为NCHW/NHWC格式的tensor
-* param src: 输入图像数据
-* param dst: 输出Tensor数据
-* param srcFormat: 输入图像的颜色空间，支持BGR（RGB）和BGRA（RGBA）格式
-* param srcw: 输入图像width
-* param srch: 输入图像height
-* param layout: 输出Tensor格式，支持NCHW和NHWC两种格式
-* param means: 图像相应通道的均值
-* param scales: 图像相应通道的scale， 用于图像的归一化处理
+  * change image data to tensor data
+  * support image format is BGR(RGB) and BGRA(RGBA), Data layout is NHWC and
+ * NCHW
+  * param src: input image data
+  * param dstTensor: output tensor data
+  * param srcFormat: input image format, support BGR(GRB) and BGRA(RGBA)
+  * param srcw: input image width
+  * param srch: input image height
+  * param layout: output tensor layout，support NHWC and NCHW
+  * param means: means of image
+  * param scales: scales of image
 */
 void Image2Tensor::choose(const uint8_t* src,
                           Tensor* dst,
                           ImageFormat srcFormat,
-                          LayOut layout,
+                          LayoutType layout,
                           int srcw,
                           int srch,
                           float* means,
                           float* scales) {
   float* output = dst->mutable_data<float>();
-  if (layout == CHW && (srcFormat == BGR || srcFormat == RGB)) {
+  if (layout == LayoutType::kNCHW && (srcFormat == BGR || srcFormat == RGB)) {
     impl_ = bgr_to_tensor_chw;
-  } else if (layout == HWC && (srcFormat == BGR || srcFormat == RGB)) {
+  } else if (layout == LayoutType::kNHWC &&
+             (srcFormat == BGR || srcFormat == RGB)) {
     impl_ = bgr_to_tensor_hwc;
-  } else if (layout == CHW && (srcFormat == BGRA || srcFormat == RGBA)) {
+  } else if (layout == LayoutType::kNCHW &&
+             (srcFormat == BGRA || srcFormat == RGBA)) {
     impl_ = bgra_to_tensor_chw;
-  } else if (layout == HWC && (srcFormat == BGRA || srcFormat == RGBA)) {
+  } else if (layout == LayoutType::kNHWC &&
+             (srcFormat == BGRA || srcFormat == RGBA)) {
     impl_ = bgra_to_tensor_hwc;
+  } else {
+    printf("this layout: %d or image format: %d not support \n",
+           static_cast<int>(layout),
+           srcFormat);
+    return;
   }
   impl_(src, output, srcw, srch, means, scales);
 }

@@ -18,8 +18,8 @@
 
 typedef paddle::lite::utils::cv::ImageFormat ImageFormat;
 typedef paddle::lite::utils::cv::FlipParam FlipParam;
-typedef paddle::lite::utils::cv::LayOut LayOut;
 typedef paddle::lite::Tensor Tensor;
+typedef paddle::lite_api::DataLayoutType LayoutType;
 
 void nv2bgr(const uint8_t* in_data,
             uint8_t* out_data,
@@ -810,23 +810,23 @@ void bgr_to_tensor_hwc_basic(const uint8_t* bgr,
 void image_to_tensor_basic(const uint8_t* in_data,
                            Tensor* dst,
                            ImageFormat srcFormat,
-                           LayOut layout,
+                           LayoutType layout,
                            int srcw,
                            int srch,
                            float* means,
                            float* scales) {
   float* output = dst->mutable_data<float>();
-  if (layout == LayOut::CHW &&
+  if (layout == LayoutType::kNCHW &&
       (srcFormat == ImageFormat::BGR || srcFormat == ImageFormat::RGB)) {
     bgr_to_tensor_chw_basic(in_data, output, srcw, srch, means, scales, 3);
-  } else if (layout == LayOut::HWC &&
+  } else if (layout == LayoutType::kNHWC &&
              (srcFormat == ImageFormat::BGR || srcFormat == ImageFormat::RGB)) {
     bgr_to_tensor_hwc_basic(in_data, output, srcw, srch, means, scales, 3);
-  } else if (layout == LayOut::CHW && (srcFormat == ImageFormat::BGRA ||
-                                       srcFormat == ImageFormat::RGBA)) {
+  } else if (layout == LayoutType::kNCHW && (srcFormat == ImageFormat::BGRA ||
+                                             srcFormat == ImageFormat::RGBA)) {
     bgr_to_tensor_chw_basic(in_data, output, srcw, srch, means, scales, 4);
-  } else if (layout == LayOut::HWC && (srcFormat == ImageFormat::BGRA ||
-                                       srcFormat == ImageFormat::RGBA)) {
+  } else if (layout == LayoutType::kNHWC && (srcFormat == ImageFormat::BGRA ||
+                                             srcFormat == ImageFormat::RGBA)) {
     bgr_to_tensor_hwc_basic(in_data, output, srcw, srch, means, scales, 4);
   }
 }
