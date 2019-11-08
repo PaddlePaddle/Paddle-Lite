@@ -66,7 +66,7 @@ bool UnsqueezeOp::InferShape() const {
   std::vector<int> final_axes;
   auto axes = param_.axes;
   auto *axes_tensor = param_.axes_tensor;
-  auto axes_tensor_vct = param_.axes_tensor_vct;
+  auto axes_tensor_vct = *(param_.axes_tensor_vct);
 
   if (!axes.empty()) {
     final_axes = axes;
@@ -76,7 +76,7 @@ bool UnsqueezeOp::InferShape() const {
                                   axes_tensor_data + axes_tensor->numel());
   } else if (!axes_tensor_vct.empty()) {
     for (int i = 0; i < axes_tensor_vct.size(); i++) {
-      final_axes.push_back(axes_tensor_vct[i]->data<int>()[0]);
+      final_axes.push_back(axes_tensor_vct[i].data<int>()[0]);
     }
   } else {
     LOG(FATAL) << "Input axis error";
@@ -111,12 +111,16 @@ bool UnsqueezeOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   if (opdesc.HasInput("AxesTensorList") &&
       opdesc.Input("AxesTensorList").size() > 0) {
     auto args = opdesc.Input("AxesTensorList");
+    /*
     for (auto arg : args) {
       auto *var = scope->FindVar(arg);
       if (var != nullptr) {
         param_.axes_tensor_vct.push_back(var->GetMutable<lite::Tensor>());
       }
     }
+    */
+    auto *var = scope->FindVar(args.front());
+    param_.axes_tensor_vct = var->GetMutable<std::vector<lite::Tensor>>();
   }
   CHECK(param_.X) << "Input(X) of UnsqueezeOp should not be null.";
   CHECK(param_.Out) << "Output(Out) of UnsqueezeOp should not be null.";
