@@ -37,16 +37,13 @@ class GraphCompute : public KernelLite<TARGET(kNPU), PRECISION(kFloat)> {
 
   virtual ~GraphCompute() = default;
 
-  bool input_dims_changed() const;
-
  private:
   std::shared_ptr<hiai::AiModelMngerClient> model_client_;
   std::string model_name_;
   hiai::AiContext model_context_;
 
-  std::vector<hiai::TensorDimension> npu_idims_;
-  std::vector<hiai::TensorDimension> npu_odims_;
-
+  std::vector<int64_t> npu_idatasizes_;
+  std::vector<int64_t> npu_odatasizes_;
   std::vector<std::shared_ptr<hiai::AiTensor>> npu_itensors_;
   std::vector<std::shared_ptr<hiai::AiTensor>> npu_otensors_;
 };

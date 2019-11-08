@@ -104,3 +104,7 @@ lite_cc_test(test_axpy_compute_arm SRCS axpy_compute_test.cc DEPS axpy_compute_a
 lite_cc_test(test_layout_compute_arm SRCS layout_compute_test.cc DEPS layout_compute_arm)
 lite_cc_test(test_layer_norm_compute_arm SRCS layer_norm_compute_test.cc DEPS layer_norm_compute_arm)
 lite_cc_test(test_conv_transpose_compute_arm SRCS conv_transpose_compute_test.cc DEPS conv_transpose_compute_arm)
+
+if(LITE_BUILD_EXTRA)
+    lite_cc_test(test_layer_norm_compute_arm SRCS layer_norm_compute_test.cc DEPS layer_norm_compute_arm)
+endif()

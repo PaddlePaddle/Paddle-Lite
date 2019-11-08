@@ -23,6 +23,7 @@ USE_NPU_BRIDGE(depthwise_conv2d);
 USE_NPU_BRIDGE(pool2d);
 USE_NPU_BRIDGE(relu);
 USE_NPU_BRIDGE(elementwise_add);
+USE_NPU_BRIDGE(fusion_elementwise_add_activation);
 USE_NPU_BRIDGE(scale);
 USE_NPU_BRIDGE(softmax);
 USE_NPU_BRIDGE(concat);

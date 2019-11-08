@@ -192,14 +192,14 @@ bool BuildModel(std::vector<ge::Operator>& inputs,   // NOLINT
 
 std::string UniqueName(const std::string& prefix);
 
-ge::DataType PrecisionConverter(PrecisionType itype);
+ge::DataType CvtPrecisionType(PrecisionType itype);
 
-ge::Format DataLayoutConverter(DataLayoutType itype);
+ge::Format CvtDataLayoutType(DataLayoutType itype);
 
-ge::TensorPtr CvtFromLiteTensor(Tensor* in_tensor,
-                                std::vector<int64_t> out_shape = {},
-                                PrecisionType in_ptype = PRECISION(kFloat),
-                                DataLayoutType in_ltype = DATALAYOUT(kNCHW));
+ge::TensorPtr CvtTensor(Tensor* in_tensor,
+                        std::vector<int64_t> out_shape = {},
+                        PrecisionType in_ptype = PRECISION(kFloat),
+                        DataLayoutType in_ltype = DATALAYOUT(kNCHW));
 
 template <typename T>
 ge::TensorPtr CreateTensorAndFillData(std::vector<T> data,
@@ -214,7 +214,7 @@ ge::TensorPtr CreateTensorAndFillData(std::vector<T> data,
   } else if (info == typeid(int32_t)) {
     type = ge::DT_INT32;
   } else {
-    LOG(FATAL) << "Unknow value type " << info.name();
+    LOG(FATAL) << "[NPU] Unknow value type " << info.name();
   }
   if (shape.empty()) {
     shape = {static_cast<int64_t>(data.size())};
@@ -244,6 +244,8 @@ ge::TensorPtr CreateTensorAndFillData(T value,
   std::vector<T> data(size, value);
   return CreateTensorAndFillData(data, shape, format);
 }
+
+int CvtActMode(std::string act_type);
 
 bool HasInputArg(const OpInfo* op_info,
                  const Scope* scope,
