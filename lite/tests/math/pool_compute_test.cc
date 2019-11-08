@@ -156,6 +156,7 @@ void pooling_basic(const float* din,
     }
   } else {
     for (int ind_n = 0; ind_n < num; ++ind_n) {
+#pragma omp parallel for
       for (int ind_c = 0; ind_c < chin; ++ind_c) {
         for (int ind_h = 0; ind_h < hout; ++ind_h) {
           int sh = ind_h * stride_h;
@@ -219,6 +220,7 @@ void pooling_basic(const float* din,
     }
   }
 }
+
 #ifdef LITE_WITH_ARM
 void test_pool_fp32(const std::vector<DDim>& input_dims,
                     const std::vector<int>& ksize,
