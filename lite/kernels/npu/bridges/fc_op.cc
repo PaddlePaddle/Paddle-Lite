@@ -27,7 +27,7 @@ node_map_type FCConverter(const std::shared_ptr<lite::OpLite> fc_op,
   auto op_info = fc_op->op_info();
   auto op_type = op_info->Type();
   auto unique_op_type = lite::npu::UniqueName(op_type);
-  LOG(INFO) << "Converting " + op_type + "...";
+  LOG(INFO) << "[NPU] Converting " + op_type + "...";
 
   auto fc_node = std::make_shared<ge::op::FullConnection>(unique_op_type);
 
@@ -47,7 +47,7 @@ node_map_type FCConverter(const std::shared_ptr<lite::OpLite> fc_op,
   int k = x_dims.Slice(in_num_col_dims, x_dims.size()).production();
   int n = w_dims[1];
   CHECK_EQ(k * n, w_dims.production());
-  VLOG(3) << "x dims: " << x_dims << " w dims: " << w_dims << " m: " << m
+  VLOG(3) << "[NPU] x dims: " << x_dims << " w dims: " << w_dims << " m: " << m
           << " k: " << k << " n: " << n;
 
   CHECK(inputs_map.count(x_var_name));
@@ -92,8 +92,7 @@ node_map_type FCConverter(const std::shared_ptr<lite::OpLite> fc_op,
     CHECK_EQ(bias_dims.production(), n);
 
     auto bias_const_node = std::make_shared<ge::op::Const>(bias_var_name);
-    bias_const_node->set_attr_value(
-        lite::npu::CvtFromLiteTensor(bias, {1, n, 1, 1}));
+    bias_const_node->set_attr_value(lite::npu::CvtTensor(bias, {1, n, 1, 1}));
     fc_node->set_input_b(*bias_const_node);
     lite::npu::OpList::Global().add(bias_const_node);
   }

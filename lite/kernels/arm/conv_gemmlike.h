@@ -72,7 +72,7 @@ class GemmLikeConv : public KernelLite<TARGET(kARM), Ptype> {
     } else {
       //! im2col gemmlike conv
       flag_1x1gemm_ = false;
-      ctx.ExtendWorkspace(k * n * sizeof(float));
+      workspace_size_ = k * n * sizeof(float);
     }
     if (!flag_trans_weights_ && n > 1) {
       lite::arm::math::trans_gemm_weights<Ptype>(
@@ -97,6 +97,7 @@ class GemmLikeConv : public KernelLite<TARGET(kARM), Ptype> {
   bool flag_trans_bias_{false};
   Tensor weights_;
   Tensor bias_;
+  int workspace_size_{0};
 };
 
 }  // namespace arm
