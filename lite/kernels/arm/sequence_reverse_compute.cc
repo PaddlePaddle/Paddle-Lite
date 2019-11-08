@@ -36,7 +36,6 @@ void SequenceReverseCompute::Run() {
       << "SequenceReverse Op does not support in-place operation";
   const auto lod = param.X->lod()[0];
   const size_t lod_count = lod.size();
-  const size_t* lod_data = lod.data();
 
   size_t limit = static_cast<size_t>(param.X->numel());
   size_t row_numel = static_cast<size_t>(limit / param.X->dims()[0]);
