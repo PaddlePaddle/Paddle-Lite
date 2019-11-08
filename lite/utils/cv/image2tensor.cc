@@ -12,10 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
 #include "lite/utils/cv/image2tensor.h"
 #include <arm_neon.h>
-#include "lite/core/tensor.h"
 namespace paddle {
 namespace lite {
 namespace utils {
@@ -48,6 +46,18 @@ void bgra_to_tensor_hwc(const uint8_t* src,
                         float* means,
                         float* scales);
 
+/*
+* 将图像数据转换为tensor
+* 目前支持BGR（RGB）和BGRA（RGBA）数据转换为NCHW/NHWC格式的tensor
+* param src: 输入图像数据
+* param dst: 输出Tensor数据
+* param srcFormat: 输入图像的颜色空间，支持BGR（RGB）和BGRA（RGBA）格式
+* param srcw: 输入图像width
+* param srch: 输入图像height
+* param layout: 输出Tensor格式，支持NCHW和NHWC两种格式
+* param means: 图像相应通道的均值
+* param scales: 图像相应通道的scale， 用于图像的归一化处理
+*/
 void Image2Tensor::choose(const uint8_t* src,
                           Tensor* dst,
                           ImageFormat srcFormat,

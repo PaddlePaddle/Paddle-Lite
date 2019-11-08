@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/utils/cv/image_convert.h"
 #include <gflags/gflags.h>
 #include <gtest/gtest.h>
 #include <math.h>
@@ -20,7 +19,7 @@
 #include "lite/core/context.h"
 #include "lite/tests/cv/cv_basic.h"
 #include "lite/tests/utils/timer.h"
-#include "lite/utils/cv/image_preprocess.h"
+#include "lite/utils/cv/paddle_image_preprocess.h"
 
 DEFINE_int32(cluster, 3, "cluster id");
 DEFINE_int32(threads, 1, "threads num");
@@ -42,10 +41,11 @@ DEFINE_int32(layout, 0, "layout chw");
 typedef paddle::lite::utils::cv::ImageFormat ImageFormat;
 typedef paddle::lite::utils::cv::FlipParam FlipParam;
 typedef paddle::lite::utils::cv::LayOut LayOut;
-typedef paddle::lite::utils::cv::ImageConvert ImageConvert;
 typedef paddle::lite::utils::cv::TransParam TransParam;
 typedef paddle::lite::utils::cv::ImagePreprocess ImagePreprocess;
+typedef paddle::lite_api::Tensor Tensor_api;
 typedef paddle::lite::Tensor Tensor;
+
 using paddle::lite::Timer;
 
 void fill_tensor_host_rand(uint8_t* dio, int64_t size) {
@@ -64,6 +64,7 @@ void print_int8(uint8_t* ptr, int size, int width) {
   }
   printf("\n");
 }
+
 void print_int(int* ptr, int size, int width) {
   int j = 0;
   for (int i = 0; i < size; i++) {
@@ -99,7 +100,6 @@ void test_img(const std::vector<int>& cluster_id,
               FlipParam flip,
               LayOut layout,
               int test_iter = 1) {
-  LOG(INFO) << "test_func_image_preprocess start";
 #ifdef LITE_WITH_ARM
   paddle::lite::DeviceInfo::Init();
 #endif
@@ -195,7 +195,6 @@ void test_img(const std::vector<int>& cluster_id,
         resize = dsth * dstw;
       }
       // out
-      // uint8_t* convert_buff = new uint8_t[out_size * 2];
       uint8_t* basic_dst = new uint8_t[out_size];
       uint8_t* lite_dst = new uint8_t[out_size];
 
@@ -209,7 +208,6 @@ void test_img(const std::vector<int>& cluster_id,
       uint8_t* tv_out_flip_basic = new uint8_t[resize];
       uint8_t* tv_out_flip = new uint8_t[resize];
 
-      // Shape shape_out(1, 3, dsth, dstw);
       std::vector<int64_t> shape_out = {1, 3, dsth, dstw};
 
       Tensor tensor;
@@ -218,8 +216,7 @@ void test_img(const std::vector<int>& cluster_id,
       tensor_basic.Resize(shape_out);
       tensor.set_precision(PRECISION(kFloat));
       tensor_basic.set_precision(PRECISION(kFloat));
-      // fill_tensor_const(tensor, 0.f);
-      // fill_tensor_const(tensor_basic, 0.f);
+
       float means[3] = {127.5f, 127.5f, 127.5f};
       float scales[3] = {1 / 127.5f, 1 / 127.5f, 1 / 127.5f};
 
@@ -282,6 +279,9 @@ void test_img(const std::vector<int>& cluster_id,
       tparam.flip_param = flip;
       tparam.rotate_param = rotate;
 
+      Tensor_api dst_tensor(&tensor);
+      dst_tensor.Resize(shape_out);
+
       ImagePreprocess image_preprocess(srcFormat, dstFormat, tparam);
 
       for (int i = 0; i < test_iter; ++i) {
@@ -289,14 +289,22 @@ void test_img(const std::vector<int>& cluster_id,
         t1.start();
 
         LOG(INFO) << "image convert saber compute";
+        // 方法一: image_preprocess.imageCovert(src, lite_dst);
         image_preprocess.imageCovert(
             src, lite_dst, (ImageFormat)srcFormat, (ImageFormat)dstFormat);
 
         LOG(INFO) << "image resize saber compute";
-        image_preprocess.imageResize(lite_dst, resize_tmp);
+        // 方法一:image_preprocess.imageResize(lite_dst, resize_tmp);
+        image_preprocess.imageResize(lite_dst,
+                                     resize_tmp,
+                                     (ImageFormat)dstFormat,
+                                     srcw,
+                                     srch,
+                                     dstw,
+                                     dsth);
 
         LOG(INFO) << "image rotate saber compute";
-        // image_preprocess.imageRotate(resize_tmp, tv_out_ratote);
+        // 方法一: image_preprocess.imageRotate(resize_tmp, tv_out_ratote);
         image_preprocess.imageRotate(resize_tmp,
                                      tv_out_ratote,
                                      (ImageFormat)dstFormat,
@@ -305,13 +313,21 @@ void test_img(const std::vector<int>& cluster_id,
                                      rotate);
 
         LOG(INFO) << "image flip saber compute";
-        // image_preprocess.imageFlip(resize_tmp, tv_out_flip);
+        // 方法一: image_preprocess.imageFlip(resize_tmp, tv_out_flip);
         image_preprocess.imageFlip(
             resize_tmp, tv_out_flip, (ImageFormat)dstFormat, dstw, dsth, flip);
 
         LOG(INFO) << "image to tensor compute";
-        image_preprocess.image2Tensor(
-            resize_tmp, &tensor, layout, means, scales);
+        // 方法一: image_preprocess.image2Tensor(
+        //  resize_tmp, &dst_tensor, layout, means, scales);
+        image_preprocess.image2Tensor(resize_tmp,
+                                      &dst_tensor,
+                                      (ImageFormat)dstFormat,
+                                      dstw,
+                                      dsth,
+                                      layout,
+                                      means,
+                                      scales);
 
         t1.end();
         double tdiff = t1.get_average_ms();
@@ -322,7 +338,7 @@ void test_img(const std::vector<int>& cluster_id,
       }
       LOG(INFO) << "image trans total time : " << to
                 << ",  avg time : " << to / test_iter;
-      // print_tensor(tout);
+
       double max_ratio = 0;
       double max_diff = 0;
       const double eps = 1e-6f;
@@ -486,7 +502,6 @@ void test_img(const std::vector<int>& cluster_id,
       if (FLAGS_check_result) {
         max_ratio = 0;
         max_diff = 0;
-        // const double eps = 1e-6f;
         LOG(INFO) << "diff, iamge to tensor size: " << tensor.numel();
         const float* ptr_a = tensor.data<float>();
         const float* ptr_b = tensor_basic.data<float>();
@@ -515,7 +530,6 @@ void test_img(const std::vector<int>& cluster_id,
           printf("diff result: \n");
           print_ff(diff_v, resize, width);
         }
-        // printf("\n");
         LOG(INFO) << "compare result, max diff: " << max_diff
                   << ", max ratio: " << max_ratio;
         bool rst = std::abs(max_ratio) < 1e-5f;

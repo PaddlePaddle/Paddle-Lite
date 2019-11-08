@@ -13,9 +13,9 @@
 // limitations under the License.
 
 #pragma once
+
 #include <stdint.h>
-#include "lite/core/tensor.h"
-#include "lite/utils/cv/cv_enum.h"
+#include "lite/utils/cv/paddle_image_preprocess.h"
 namespace paddle {
 namespace lite {
 namespace utils {

@@ -13,7 +13,8 @@
 // limitations under the License.
 
 #pragma once
-#include "lite/utils/cv/cv_enum.h"
+
+#include "lite/utils/cv/paddle_image_preprocess.h"
 
 typedef paddle::lite::utils::cv::ImageFormat ImageFormat;
 typedef paddle::lite::utils::cv::FlipParam FlipParam;

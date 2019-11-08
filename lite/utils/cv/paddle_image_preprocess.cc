@@ -12,11 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/utils/cv/image_preprocess.h"
+#include "lite/utils/cv/paddle_image_preprocess.h"
 #include <arm_neon.h>
 #include <math.h>
 #include <algorithm>
 #include <climits>
+#include "lite/utils/cv/image2tensor.h"
+#include "lite/utils/cv/image_convert.h"
+#include "lite/utils/cv/image_flip.h"
+#include "lite/utils/cv/image_rotate.h"
 namespace paddle {
 namespace lite {
 namespace utils {
@@ -363,6 +367,19 @@ void ImagePreprocess::imageFlip(const uint8_t* src, uint8_t* dst) {
   auto srcFormat = this->dstFormat_;
   auto flip_param = this->transParam_.flip_param;
   ImagePreprocess::imageFlip(src, dst, srcFormat, srcw, srch, flip_param);
+}
+
+void ImagePreprocess::image2Tensor(const uint8_t* src,
+                                   Tensor* dstTensor,
+                                   ImageFormat srcFormat,
+                                   int srcw,
+                                   int srch,
+                                   LayOut layout,
+                                   float* means,
+                                   float* scales) {
+  Image2Tensor img2tensor;
+  img2tensor.choose(
+      src, dstTensor, srcFormat, layout, srcw, srch, means, scales);
 }
 
 void ImagePreprocess::image2Tensor(const uint8_t* src,

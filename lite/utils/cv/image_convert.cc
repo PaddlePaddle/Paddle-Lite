@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
 #include "lite/utils/cv/image_convert.h"
 #include <arm_neon.h>
 #include <math.h>
@@ -48,6 +47,18 @@ void hwc4_trans_hwc3(const uint8_t* src, uint8_t* dst, int srcw, int srch);
 // bgr to rgba or rgb to bgra
 void hwc3_trans_hwc4(const uint8_t* src, uint8_t* dst, int srcw, int srch);
 
+/*
+  * 颜色空间转换
+  * 目前支持NV12/NV21_to_BGR(RGB), NV12/NV21_to_BGRA(RGBA),
+ * BGR(RGB)和BGRA(RGBA)相互转换,
+  * BGR(RGB)和RGB(BGR)相互转换,
+ * BGR(RGB)和RGBA(BGRA)相互转换，以及BGR(RGB)和GRAY相互转换
+  * param src: 输入图像数据
+  * param dst: 输出图像数据
+  * param srcFormat: 输入图像的颜色空间,
+ * 支持GRAY、NV12(NV21)、BGR(RGB)和BGRA(RGBA)
+  * param dstFormat: 输出图像的颜色空间, 支持GRAY、BGR(RGB)和BGRA(RGBA)
+*/
 void ImageConvert::choose(const uint8_t* src,
                           uint8_t* dst,
                           ImageFormat srcFormat,
@@ -518,8 +529,6 @@ void nv_to_bgra(const uint8_t* src,
       int16x8_t b0_2 = vaddq_s16(y1_1_8, b0_bias);
       int16x8_t g0_2 = vsubq_s16(y1_1_8, g0_bias);
 
-      // printf("r0_1: %d, %d, %d %d \n", y1_0_8[0], r0_1[0], r0_1[1], r0_1[2],
-      // r0_1[3]);
       r0_1 = vmaxq_s16(r0_1, zero);
       b0_1 = vmaxq_s16(b0_1, zero);
       g0_1 = vmaxq_s16(g0_1, zero);
@@ -528,7 +537,6 @@ void nv_to_bgra(const uint8_t* src,
       b0_2 = vmaxq_s16(b0_2, zero);
       g0_2 = vmaxq_s16(g0_2, zero);
 
-      // printf("r0_1: %d, %d, %d %d \n", r0_1[0], r0_1[1], r0_1[2], r0_1[3]);
       r0_1 = vminq_s16(r0_1, max);
       b0_1 = vminq_s16(b0_1, max);
       g0_1 = vminq_s16(g0_1, max);
