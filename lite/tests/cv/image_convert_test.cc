@@ -420,7 +420,6 @@ void test_img(const std::vector<int>& cluster_id,
       if (FLAGS_check_result) {
         max_ratio = 0;
         max_diff = 0;
-        // const double eps = 1e-6f;
         int* diff_v = new int[resize];
         LOG(INFO) << "diff, image rotate size: " << resize;
         for (int i = 0; i < resize; i++) {
@@ -447,7 +446,6 @@ void test_img(const std::vector<int>& cluster_id,
           print_int(diff_v, resize, width);
         }
         delete[] diff_v;
-        // printf("\n");
         LOG(INFO) << "compare result, max diff: " << max_diff
                   << ", max ratio: " << max_ratio;
         bool rst = std::abs(max_ratio) < 1e-5f;
@@ -460,7 +458,6 @@ void test_img(const std::vector<int>& cluster_id,
       if (FLAGS_check_result) {
         max_ratio = 0;
         max_diff = 0;
-        // const double eps = 1e-6f;
         int* diff_v = new int[resize];
         LOG(INFO) << "diff, image flip size: " << resize;
         for (int i = 0; i < resize; i++) {
@@ -487,7 +484,6 @@ void test_img(const std::vector<int>& cluster_id,
           print_int(diff_v, resize, width);
         }
         delete[] diff_v;
-        // printf("\n");
         LOG(INFO) << "compare result, max diff: " << max_diff
                   << ", max ratio: " << max_ratio;
         bool rst = std::abs(max_ratio) < 1e-5f;
