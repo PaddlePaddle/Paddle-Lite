@@ -218,8 +218,6 @@ void NCHW2NHWC<float>(int N, int C, int size, const float* X, float* Y) {
       float* out3_ptr = out2_ptr + C;
       int cnt_num = cnt;
       if (cnt_num > 0) {
-// printf("din0_ptr: %x, din1_ptr: %x \n", din0_ptr, din1_ptr);
-// printf("out0_ptr: %x, out1_ptr: %x \n", out0_ptr, out1_ptr);
 #ifdef __aarch64__
         asm volatile(TRANS_C4
                      : [din0_ptr] "+r"(din0_ptr),
@@ -495,7 +493,6 @@ void NHWC2NCHW<float>(int N, int C, int size, const float* X, float* Y) {
                      : "cc", "memory", "q0", "q1", "q2", "q3");
 #endif
       }
-      //   const float* din_ptr = din + s + C * 4 * cnt;  // remain channel
       for (int i = 0; i < remain; i++) {
         const float* ptr = din0_ptr;
         *out0_ptr++ = *ptr++;

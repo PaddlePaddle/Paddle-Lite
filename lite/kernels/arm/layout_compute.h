@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #pragma once
+
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 
@@ -20,35 +21,20 @@ namespace paddle {
 namespace lite {
 namespace kernels {
 namespace arm {
-
-class NCHWToNHWCCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+template <PrecisionType Ptype>
+class NCHWToNHWCCompute : public KernelLite<TARGET(kARM), Ptype> {
  public:
   using param_t = operators::LayoutParam;
   void Run() override;
   virtual ~NCHWToNHWCCompute() = default;
 };
 
-class NCHWToNHWCComputeInt8
-    : public KernelLite<TARGET(kARM), PRECISION(kInt8)> {
- public:
-  using param_t = operators::LayoutParam;
-  void Run() override;
-  virtual ~NCHWToNHWCComputeInt8() = default;
-};
-
-class NHWCToNCHWCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+template <PrecisionType Ptype>
+class NHWCToNCHWCompute : public KernelLite<TARGET(kARM), Ptype> {
  public:
   using param_t = operators::LayoutParam;
   void Run() override;
   virtual ~NHWCToNCHWCompute() = default;
-};
-
-class NHWCToNCHWComputeInt8
-    : public KernelLite<TARGET(kARM), PRECISION(kInt8)> {
- public:
-  using param_t = operators::LayoutParam;
-  void Run() override;
-  virtual ~NHWCToNCHWComputeInt8() = default;
 };
 
 }  // namespace arm

@@ -121,7 +121,6 @@ void test_layout_fp32_nchw(DDim dim_in,
 #ifdef LITE_WITH_ARM
   paddle::lite::DeviceInfo::Init();
 #endif
-
   LayoutParam param;
   param.x = new Tensor;
   const_cast<Tensor*>(param.x)->set_precision(PRECISION(kFloat));
@@ -131,7 +130,7 @@ void test_layout_fp32_nchw(DDim dim_in,
 
   for (auto& cls : power_mode) {
     for (auto& th : thread_num) {
-      paddle::lite::kernels::arm::NCHWToNHWCCompute layout;
+      paddle::lite::kernels::arm::NCHWToNHWCCompute<PRECISION(kFloat)> layout;
       DDim dim_out({dim_in[0], dim_in[2], dim_in[3], dim_in[1]});
 
       std::unique_ptr<paddle::lite::KernelContext> ctx1(
@@ -233,7 +232,7 @@ void test_layout_fp32_nhwc(DDim dim_in,
 
   for (auto& cls : power_mode) {
     for (auto& th : thread_num) {
-      paddle::lite::kernels::arm::NHWCToNCHWCompute layout;
+      paddle::lite::kernels::arm::NHWCToNCHWCompute<PRECISION(kFloat)> layout;
       // n h w c == n c h w
       DDim dim_out({dim_in[0], dim_in[3], dim_in[1], dim_in[2]});
 
@@ -336,7 +335,7 @@ void test_layout_int8_nchw(DDim dim_in,
 
   for (auto& cls : power_mode) {
     for (auto& th : thread_num) {
-      paddle::lite::kernels::arm::NCHWToNHWCComputeInt8 layout;
+      paddle::lite::kernels::arm::NCHWToNHWCCompute<PRECISION(kInt8)> layout;
       DDim dim_out({dim_in[0], dim_in[2], dim_in[3], dim_in[1]});
 
       std::unique_ptr<paddle::lite::KernelContext> ctx1(
@@ -439,7 +438,7 @@ void test_layout_int8_nhwc(DDim dim_in,
 
   for (auto& cls : power_mode) {
     for (auto& th : thread_num) {
-      paddle::lite::kernels::arm::NHWCToNCHWComputeInt8 layout;
+      paddle::lite::kernels::arm::NHWCToNCHWCompute<PRECISION(kInt8)> layout;
       // n h w c == n c h w
       DDim dim_out({dim_in[0], dim_in[3], dim_in[1], dim_in[2]});
 

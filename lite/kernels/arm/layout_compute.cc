@@ -56,25 +56,41 @@ namespace arm {
   }                                                                       \
   lite::arm::math::NHWC2NCHW<type>(n, c, h * w, input, output);
 
-void NCHWToNHWCCompute::Run() { NCHWTONHWC(float) }
+template <>
+void NCHWToNHWCCompute<PRECISION(kFloat)>::Run() {
+  NCHWTONHWC(float);
+}
 
-void NCHWToNHWCComputeInt8::Run() { NCHWTONHWC(int8_t) }
+template <>
+void NCHWToNHWCCompute<PRECISION(kInt8)>::Run() {
+  NCHWTONHWC(int8_t);
+}
 
-void NHWCToNCHWCompute::Run() { NHWCTONCHW(float) }
+template <>
+void NHWCToNCHWCompute<PRECISION(kFloat)>::Run() {
+  NHWCTONCHW(float);
+}
 
-void NHWCToNCHWComputeInt8::Run() { NHWCTONCHW(int8_t) }
+template <>
+void NHWCToNCHWCompute<PRECISION(kInt8)>::Run() {
+  NHWCTONCHW(int8_t);
+}
 
 }  // namespace arm
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(layout,
-                     kARM,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::arm::NCHWToNHWCCompute,
-                     nchw2nhwc)
+typedef paddle::lite::kernels::arm::NCHWToNHWCCompute<PRECISION(kFloat)>
+    NCHW_fp32;
+typedef paddle::lite::kernels::arm::NCHWToNHWCCompute<PRECISION(kInt8)>
+    NCHW_int8;
+typedef paddle::lite::kernels::arm::NHWCToNCHWCompute<PRECISION(kFloat)>
+    NHWC_fp32;
+typedef paddle::lite::kernels::arm::NHWCToNCHWCompute<PRECISION(kInt8)>
+    NHWC_int8;
+
+REGISTER_LITE_KERNEL(layout, kARM, kFloat, kNCHW, NCHW_fp32, nchw2nhwc)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kARM),
                                       PRECISION(kFloat),
@@ -85,76 +101,7 @@ REGISTER_LITE_KERNEL(layout,
                                        DATALAYOUT(kNHWC))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(layout,
-                     kARM,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::arm::NHWCToNCHWCompute,
-                     nhwc2nchw)
-    .BindInput("Input",
-               {LiteType::GetTensorTy(TARGET(kARM),
-                                      PRECISION(kFloat),
-                                      DATALAYOUT(kNHWC))})
-    .BindOutput("Out",
-                {LiteType::GetTensorTy(TARGET(kARM),
-                                       PRECISION(kFloat),
-                                       DATALAYOUT(kNCHW))})
-    .Finalize();
-
-REGISTER_LITE_KERNEL(layout,
-                     kARM,
-                     kInt8,
-                     kNCHW,
-                     paddle::lite::kernels::arm::NCHWToNHWCComputeInt8,
-                     int8_nchw2nhwc)
-    .BindInput("Input",
-               {LiteType::GetTensorTy(TARGET(kARM),
-                                      PRECISION(kInt8),
-                                      DATALAYOUT(kNCHW))})
-    .BindOutput("Out",
-                {LiteType::GetTensorTy(TARGET(kARM),
-                                       PRECISION(kInt8),
-                                       DATALAYOUT(kNHWC))})
-    .Finalize();
-
-REGISTER_LITE_KERNEL(layout,
-                     kARM,
-                     kInt8,
-                     kNCHW,
-                     paddle::lite::kernels::arm::NHWCToNCHWComputeInt8,
-                     int8_nhwc2nchw)
-    .BindInput("Input",
-               {LiteType::GetTensorTy(TARGET(kARM),
-                                      PRECISION(kInt8),
-                                      DATALAYOUT(kNHWC))})
-    .BindOutput("Out",
-                {LiteType::GetTensorTy(TARGET(kARM),
-                                       PRECISION(kInt8),
-                                       DATALAYOUT(kNCHW))})
-    .Finalize();
-
-REGISTER_LITE_KERNEL(layout_once,
-                     kARM,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::arm::NCHWToNHWCCompute,
-                     nchw2nhwc)
-    .BindInput("Input",
-               {LiteType::GetTensorTy(TARGET(kARM),
-                                      PRECISION(kFloat),
-                                      DATALAYOUT(kNCHW))})
-    .BindOutput("Out",
-                {LiteType::GetTensorTy(TARGET(kARM),
-                                       PRECISION(kFloat),
-                                       DATALAYOUT(kNHWC))})
-    .Finalize();
-
-REGISTER_LITE_KERNEL(layout_once,
-                     kARM,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::arm::NHWCToNCHWCompute,
-                     nhwc2nchw)
+REGISTER_LITE_KERNEL(layout, kARM, kFloat, kNHWC, NHWC_fp32, nhwc2nchw)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kARM),
                                       PRECISION(kFloat),
@@ -165,12 +112,7 @@ REGISTER_LITE_KERNEL(layout_once,
                                        DATALAYOUT(kNCHW))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(layout_once,
-                     kARM,
-                     kInt8,
-                     kNCHW,
-                     paddle::lite::kernels::arm::NCHWToNHWCComputeInt8,
-                     int8_nchw2nhwc)
+REGISTER_LITE_KERNEL(layout, kARM, kInt8, kNCHW, NCHW_int8, int8_nchw2nhwc)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kARM),
                                       PRECISION(kInt8),
@@ -181,12 +123,51 @@ REGISTER_LITE_KERNEL(layout_once,
                                        DATALAYOUT(kNHWC))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(layout_once,
-                     kARM,
-                     kInt8,
-                     kNCHW,
-                     paddle::lite::kernels::arm::NHWCToNCHWComputeInt8,
-                     int8_nhwc2nchw)
+REGISTER_LITE_KERNEL(layout, kARM, kInt8, kNHWC, NHWC_int8, int8_nhwc2nchw)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kARM),
+                                      PRECISION(kInt8),
+                                      DATALAYOUT(kNHWC))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kARM),
+                                       PRECISION(kInt8),
+                                       DATALAYOUT(kNCHW))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(layout_once, kARM, kFloat, kNCHW, NCHW_fp32, nchw2nhwc)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kARM),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kNCHW))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kARM),
+                                       PRECISION(kFloat),
+                                       DATALAYOUT(kNHWC))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(layout_once, kARM, kFloat, kNHWC, NHWC_fp32, nhwc2nchw)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kARM),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kNHWC))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kARM),
+                                       PRECISION(kFloat),
+                                       DATALAYOUT(kNCHW))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(layout_once, kARM, kInt8, kNCHW, NCHW_int8, int8_nchw2nhwc)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kARM),
+                                      PRECISION(kInt8),
+                                      DATALAYOUT(kNCHW))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kARM),
+                                       PRECISION(kInt8),
+                                       DATALAYOUT(kNHWC))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(layout_once, kARM, kInt8, kNHWC, NHWC_int8, int8_nhwc2nchw)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kARM),
                                       PRECISION(kInt8),

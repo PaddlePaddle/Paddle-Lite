@@ -105,13 +105,13 @@ TEST(layout_arm, retrive_op) {
 }
 
 TEST(layout_arm, init) {
-  NCHWToNHWCCompute layout;
+  NCHWToNHWCCompute<PRECISION(kFloat)> layout;
   ASSERT_EQ(layout.precision(), PRECISION(kFloat));
   ASSERT_EQ(layout.target(), TARGET(kARM));
 }
 
 TEST(layout_arm, compute) {
-  NCHWToNHWCCompute layout;
+  NCHWToNHWCCompute<PRECISION(kFloat)> layout;
   operators::LayoutParam param;
   lite::Tensor x;
   lite::Tensor out, out_ref;
