@@ -84,6 +84,13 @@ class SliceComputeTester : public arena::TestCase {
   std::vector<int> ends_;
   std::vector<int> decrease_axis_;
   DDim dims_;
+  std::vector<int> infer_flags_;
+  std::string starts_tensor_ = "StartsTensor";
+  std::string ends_tensor_ = "EndsTensor";
+  // std::string starts_tensor_list_ = "StartsTensorList";
+  // std::string ends_tensor_list_ = "EndsTensorList";
+  bool use_tensor_;
+  bool use_tensor_list_;
 
  public:
   SliceComputeTester(const Place& place,
@@ -92,13 +99,19 @@ class SliceComputeTester : public arena::TestCase {
                      const std::vector<int>& starts,
                      const std::vector<int>& ends,
                      const std::vector<int>& decrease_axis,
-                     const DDim& dims)
+                     const DDim& dims,
+                     bool use_tensor = false,
+                     bool use_tensor_list = false,
+                     const std::vector<int>& infer_flags = {})
       : TestCase(place, alias),
         axes_(axes),
         starts_(starts),
         ends_(ends),
         decrease_axis_(decrease_axis),
-        dims_(dims) {}
+        dims_(dims),
+        infer_flags_(infer_flags),
+        use_tensor_(use_tensor),
+        use_tensor_list_(use_tensor_list) {}
 
   void RunBaseline(Scope* scope) override {
     auto* out = scope->NewTensor(output_);
@@ -146,6 +159,25 @@ class SliceComputeTester : public arena::TestCase {
   void PrepareOpDesc(cpp::OpDesc* op_desc) {
     op_desc->SetType("slice");
     op_desc->SetInput("Input", {input_});
+
+    if (use_tensor_) {
+      op_desc->SetInput("StartsTensor", {starts_tensor_});
+      op_desc->SetInput("EndsTensor", {ends_tensor_});
+    } else if (use_tensor_list_) {
+      std::vector<std::string> starts_tensor_list_;
+      std::vector<std::string> ends_tensor_list_;
+      for (int i = 0; i < starts_.size(); ++i) {
+        starts_tensor_list_.push_back("starts_tensor_list_" +
+                                      std::to_string(i));
+        ends_tensor_list_.push_back("ends_tensor_list_" + std::to_string(i));
+      }
+      op_desc->SetInput("StartsTensorList", {starts_tensor_list_});
+      op_desc->SetInput("EndsTensorList", {ends_tensor_list_});
+    }
+
+    if (infer_flags_.size() > 0) {
+      op_desc->SetAttr("infer_flags", infer_flags_);
+    }
     op_desc->SetOutput("Out", {output_});
     op_desc->SetAttr("axes", axes_);
     op_desc->SetAttr("starts", starts_);
@@ -161,6 +193,30 @@ class SliceComputeTester : public arena::TestCase {
     }
 
     SetCommonTensor(input_, dims_, data.data());
+    if (use_tensor_) {
+      SetCommonTensor(starts_tensor_,
+                      DDim({static_cast<int64_t>(starts_.size())}),
+                      starts_.data());
+      SetCommonTensor(ends_tensor_,
+                      DDim({static_cast<int64_t>(ends_.size())}),
+                      ends_.data());
+    } else if (use_tensor_list_) {
+      Scope& scope_ = this->scope();
+      for (int i = 0; i < starts_.size(); ++i) {
+        auto* tensor =
+            scope_.NewTensor("starts_tensor_list_" + std::to_string(i));
+        tensor->Resize(DDim({1}));
+        auto* d = tensor->mutable_data<int>();
+        d[0] = starts_[i];
+      }
+      for (int i = 0; i < ends_.size(); ++i) {
+        auto* tensor =
+            scope_.NewTensor("ends_tensor_list_" + std::to_string(i));
+        tensor->Resize(DDim({1}));
+        auto* d = tensor->mutable_data<int>();
+        d[0] = ends_[i];
+      }
+    }
   }
 };
 
@@ -176,6 +232,40 @@ void test_slice(Place place) {
   arena.TestPrecision();
 }
 
+void test_slice_tensor(Place place) {
+  std::vector<int> axes({0, 1, 2});
+  std::vector<int> starts({2, 2, 2});
+  std::vector<int> ends({5, 6, 7});
+
+  std::vector<int> decrease_axis({});
+  DDim dims({10, 10, 10});
+  std::unique_ptr<arena::TestCase> tester(new SliceComputeTester(
+      place, "def", axes, starts, ends, decrease_axis, dims, true));
+  arena::Arena arena(std::move(tester), place, 2e-4);
+  arena.TestPrecision();
+}
+
+void test_slice_tensor_list(Place place) {
+  std::vector<int> axes({0, 1, 2});
+  std::vector<int> starts({2, 2, 2});
+  std::vector<int> ends({5, 6, 7});
+  std::vector<int> decrease_axis({});
+  std::vector<int> infer_flags({});
+  DDim dims({10, 10, 10});
+  std::unique_ptr<arena::TestCase> tester(new SliceComputeTester(place,
+                                                                 "def",
+                                                                 axes,
+                                                                 starts,
+                                                                 ends,
+                                                                 decrease_axis,
+                                                                 dims,
+                                                                 false,
+                                                                 true,
+                                                                 infer_flags));
+  arena::Arena arena(std::move(tester), place, 2e-4);
+  arena.TestPrecision();
+}
+
 TEST(Slice, precision) {
 #ifdef LITE_WITH_X86
   Place place(TARGET(kX86));
@@ -183,6 +273,8 @@ TEST(Slice, precision) {
 #ifdef LITE_WITH_ARM
   Place place(TARGET(kARM));
   test_slice(place);
+  test_slice_tensor(place);
+  test_slice_tensor_list(place);
 #endif
 }
 

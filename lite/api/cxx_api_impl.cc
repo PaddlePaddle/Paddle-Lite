@@ -30,6 +30,9 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
 #endif
   auto places = config.valid_places();
   raw_predictor_.Build(config, places);
+
+  mode_ = config.power_mode();
+  threads_ = config.threads();
 }
 
 std::unique_ptr<lite_api::Tensor> CxxPaddleApiImpl::GetInput(int i) {
@@ -51,7 +54,12 @@ std::vector<std::string> CxxPaddleApiImpl::GetOutputNames() {
   return raw_predictor_.GetOutputNames();
 }
 
-void CxxPaddleApiImpl::Run() { raw_predictor_.Run(); }
+void CxxPaddleApiImpl::Run() {
+#ifdef LITE_WITH_ARM
+  lite::DeviceInfo::Global().SetRunMode(mode_, threads_);
+#endif
+  raw_predictor_.Run();
+}
 
 std::shared_ptr<lite_api::PaddlePredictor> CxxPaddleApiImpl::Clone() {
   std::lock_guard<std::mutex> lock(mutex_);

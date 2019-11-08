@@ -28,7 +28,7 @@ node_map_type TransposeConverter(
   auto op_info = transpose_op->op_info();
   auto op_type = op_info->Type();
   auto unique_op_type = lite::npu::UniqueName(op_type);
-  LOG(INFO) << "Converting " + op_type + "...";
+  LOG(INFO) << "[NPU] Converting " + op_type + "...";
 
   std::shared_ptr<ge::op::Permute> transpose_node =
       std::make_shared<ge::op::Permute>(unique_op_type);
@@ -44,7 +44,7 @@ node_map_type TransposeConverter(
     w_data[i] = 1.f;
   }
   auto npu_w = std::make_shared<ge::op::Const>(w_var_name);
-  npu_w->set_attr_value(lite::npu::CvtFromLiteTensor(w));
+  npu_w->set_attr_value(lite::npu::CvtTensor(w));
   lite::npu::OpList::Global().add(npu_w);
 
   auto axis = op_info->GetAttr<std::vector<int>>("axis");

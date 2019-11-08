@@ -24,18 +24,21 @@ namespace mir {
 namespace fusion {
 
 /* The model trained by fluid quantization is a simulation of real int8.
- * The quantized Ops(conv2d, mul, depthwise conv2d etc) have fake_quantop
- * in front and fake_dequantop behind.
+ * The quantized Ops(conv2d, mul, depthwise conv2d etc) have fake_quant op
+ * in front and fake_dequant op behind.
  *
- * When in int8 mode, the pattern like "fake_quant + quantized_op +
- * fake_dequant"
- * can be detected by this fuser. The fuser extract the input_scale and
- * the weight_scale info from fake_quant, fake_dequant op and fuse those into
- * the quantized_op.
+ * For int8 mode, the pattern like "fake_quant + quantized_op + fake_dequant"
+ * can be processed by the following three fuser. The fuser extract the
+ * input_scale and the weight_scale info from fake_quant, fake_dequant op and
+ * fuse those into the quantized_op.
  * In addition, the fuser delete fake_quant and fake_dequant op in the graph at
  * the last.
 */
 
+/* DeleteQuantOpFuser process
+ * fake_quantize_range_abs_max/fake_quantize_moving_average_abs_max
+ * + conv2d/mul/depthwise.
+*/
 class DeleteQuantOpFuser : public FuseBase {
  public:
   explicit DeleteQuantOpFuser(const std::string& quant_op_type)
@@ -50,9 +53,12 @@ class DeleteQuantOpFuser : public FuseBase {
   std::string quant_op_type_{};
 };
 
+/* DequantOpFuser process conv2d/depthwise_conv2d/mul + fake_dequantize_max_abs.
+*/
 class DequantOpFuser : public FuseBase {
  public:
-  explicit DequantOpFuser(const std::string& op_type) : op_type_(op_type) {}
+  explicit DequantOpFuser(const std::string& quantized_op_type)
+      : quantized_op_type_(quantized_op_type) {}
   void BuildPattern() override;
   void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override;
 
@@ -60,7 +66,24 @@ class DequantOpFuser : public FuseBase {
   cpp::OpDesc GenOpDesc(const key2nodes_t& matched) override;
 
  private:
-  std::string op_type_{};
+  std::string quantized_op_type_{};
+};
+
+/* ChannelWiseDequantOpFuser process conv2d/depthwise_conv2d +
+ * fake_channel_wise_dequantize_max_abs.
+*/
+class ChannelWiseDequantOpFuser : public FuseBase {
+ public:
+  explicit ChannelWiseDequantOpFuser(const std::string& quantized_op_type)
+      : quantized_op_type_(quantized_op_type) {}
+  void BuildPattern() override;
+  void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override;
+
+ private:
+  cpp::OpDesc GenOpDesc(const key2nodes_t& matched) override;
+
+ private:
+  std::string quantized_op_type_{};
 };
 
 /* The pattern like "fake_quantize_dequantize_moving_average_abs_max +

@@ -28,7 +28,7 @@ node_map_type InterpolateConverter(
   auto op_info = interpolate_op->op_info();
   auto op_type = op_info->Type();
   auto unique_op_type = lite::npu::UniqueName(op_type);
-  LOG(INFO) << "Converting " + op_type + "...";
+  LOG(INFO) << "[NPU] Converting " + op_type + "...";
 
   // get input, output and attributes from lite op
   auto x_var_name = op_info->Input("X").front();
@@ -45,8 +45,9 @@ node_map_type InterpolateConverter(
   auto out_h = op_info->GetAttr<int>("out_h");
   auto align_corners = op_info->GetAttr<bool>("align_corners");
   int align_mode = op_info->GetAttr<int>("align_mode");
-  CHECK(!(align_mode == 0 && !align_corners))
-      << "align_mode = 0 && align_corners = false isn't supported in NPU DDK";
+  CHECK(!(align_mode == 0 && !align_corners)) << "[NPU] align_mode = 0 && "
+                                                 "align_corners = false isn't "
+                                                 "supported in HiAI DDK";
 
   // priority: OutSize > scale > out_h/out_w
   if (scale > 0) {
@@ -87,9 +88,9 @@ node_map_type InterpolateConverter(
       const float largest_multiple = 7.0f;
       float multiple = static_cast<float>(x_h * x_w) / (out_h * out_w);
       CHECK_LT(multiple, largest_multiple)
-          << "multiple=(ih*iw)/(oh*ow)=" << multiple
+          << "[NPU] multiple=(ih*iw)/(oh*ow)=" << multiple
           << " is too large, should not exceed " << largest_multiple
-          << " in NPU DDK";
+          << " in HiAI DDK";
       auto w_const_node =
           std::make_shared<ge::op::Const>(unique_op_type + "/w");
       w_const_node->set_attr_value(
@@ -121,7 +122,7 @@ node_map_type InterpolateConverter(
     interp_node->set_attr_align_corners(align_corners);
     outputs_map[op_info->Output("Out").front()] = interp_node;
   } else {
-    LOG(FATAL) << "unsupported interpolate method: " << interp_method;
+    LOG(FATAL) << "[NPU] Unsupported interpolate method: " << interp_method;
   }
 
   return outputs_map;

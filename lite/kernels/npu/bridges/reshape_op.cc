@@ -28,7 +28,7 @@ node_map_type ReshapeConverter(const std::shared_ptr<lite::OpLite> reshape_op,
   auto op_info = reshape_op->op_info();
   auto op_type = op_info->Type();
   auto unique_op_type = lite::npu::UniqueName(op_type);
-  LOG(INFO) << "Converting " + op_type + "...";
+  LOG(INFO) << "[NPU] Converting " + op_type + "...";
 
   // get input, output and op attributes
   auto x_var_name = op_info->Input("X").front();
@@ -55,9 +55,9 @@ node_map_type ReshapeConverter(const std::shared_ptr<lite::OpLite> reshape_op,
       auto out_dims = operators::ValidateShape(shape, x_dims);
       auto out_shape = out_dims.Vectorize();
       if (out_shape.size() > 4) {
-        LOG(WARNING)
-            << "NPU DDK only supports less than 4 dimensions, but Shape has "
-            << out_shape.size();
+        LOG(WARNING) << "[NPU] HiAI DDK only supports less than 4 dimensions, "
+                        "but Shape has "
+                     << out_shape.size();
       }
       auto actual_shape_const_node =
           std::make_shared<ge::op::Const>(actual_shape_var_name);
@@ -75,9 +75,9 @@ node_map_type ReshapeConverter(const std::shared_ptr<lite::OpLite> reshape_op,
     auto out_dims = operators::ValidateShape(shape, x_dims);
     auto out_shape = out_dims.Vectorize();
     if (out_shape.size() > 4) {
-      LOG(WARNING)
-          << "NPU DDK only supports less than 4 dimensions, but shape has "
-          << out_shape.size();
+      LOG(WARNING) << "[NPU] HiAI DDK only supports less than 4 dimensions, "
+                      "but shape has "
+                   << out_shape.size();
     }
     reshape_node->set_attr_shape(
         ge::AttrValue::LIST_INT(out_shape.begin(), out_shape.end()));
@@ -93,9 +93,9 @@ node_map_type ReshapeConverter(const std::shared_ptr<lite::OpLite> reshape_op,
       xshape_dims[i + 1] = x_dims[i];
     }
     if (xshape_dims.size() > 4) {
-      LOG(WARNING)
-          << "NPU DDK only supports less than 4 dimensions, but XShape has "
-          << xshape_dims.size();
+      LOG(WARNING) << "[NPU] HiAI DDK only supports less than 4 dimensions, "
+                      "but XShape has "
+                   << xshape_dims.size();
     }
     auto xshape_node =
         std::make_shared<ge::op::Reshape>(unique_op_type + "/xshape");

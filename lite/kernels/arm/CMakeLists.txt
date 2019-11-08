@@ -1,9 +1,9 @@
 # for conv op
-add_kernel(conv_depthwise ARM extra SRCS conv_depthwise.cc DEPS ${lite_kernel_deps} math_arm)
-add_kernel(conv_direct ARM extra SRCS conv_direct.cc DEPS ${lite_kernel_deps} math_arm)
-add_kernel(conv_gemmlike ARM extra SRCS conv_gemmlike.cc DEPS ${lite_kernel_deps} math_arm)
-add_kernel(conv_winograd ARM extra SRCS conv_winograd.cc DEPS ${lite_kernel_deps} math_arm)
-add_kernel(conv_compute_arm ARM extra SRCS conv_compute.cc DEPS ${lite_kernel_deps}
+add_kernel(conv_depthwise ARM basic SRCS conv_depthwise.cc DEPS ${lite_kernel_deps} math_arm)
+add_kernel(conv_direct ARM basic SRCS conv_direct.cc DEPS ${lite_kernel_deps} math_arm)
+add_kernel(conv_gemmlike ARM basic SRCS conv_gemmlike.cc DEPS ${lite_kernel_deps} math_arm)
+add_kernel(conv_winograd ARM basic SRCS conv_winograd.cc DEPS ${lite_kernel_deps} math_arm)
+add_kernel(conv_compute_arm ARM basic SRCS conv_compute.cc DEPS ${lite_kernel_deps}
         conv_depthwise conv_direct conv_gemmlike conv_winograd)
 
 add_kernel(fc_compute_arm ARM basic SRCS fc_compute.cc DEPS ${lite_kernel_deps} math_arm)
@@ -100,5 +100,8 @@ lite_cc_test(test_dropout_compute_arm SRCS dropout_compute_test.cc DEPS dropout_
 lite_cc_test(test_transpose_compute_arm SRCS transpose_compute_test.cc DEPS transpose_compute_arm COMPILE_LEVEL extra)
 lite_cc_test(test_argmax_compute_arm SRCS argmax_compute_test.cc DEPS argmax_compute_arm)
 lite_cc_test(test_axpy_compute_arm SRCS axpy_compute_test.cc DEPS axpy_compute_arm)
-lite_cc_test(test_layer_norm_compute_arm SRCS layer_norm_compute_test.cc DEPS layer_norm_compute_arm)
 lite_cc_test(test_conv_transpose_compute_arm SRCS conv_transpose_compute_test.cc DEPS conv_transpose_compute_arm)
+
+if(LITE_BUILD_EXTRA)
+    lite_cc_test(test_layer_norm_compute_arm SRCS layer_norm_compute_test.cc DEPS layer_norm_compute_arm)
+endif()

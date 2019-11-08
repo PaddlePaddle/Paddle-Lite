@@ -27,7 +27,7 @@ node_map_type Pad2dConverter(const std::shared_ptr<lite::OpLite> pad2d_op,
   auto op_info = pad2d_op->op_info();
   auto op_type = op_info->Type();
   auto unique_op_type = lite::npu::UniqueName(op_type);
-  LOG(INFO) << "Converting " + op_type + "...";
+  LOG(INFO) << "[NPU] Converting " + op_type + "...";
 
   std::shared_ptr<ge::op::Pad> pad2d_node =
       std::make_shared<ge::op::Pad>(unique_op_type);
@@ -40,10 +40,10 @@ node_map_type Pad2dConverter(const std::shared_ptr<lite::OpLite> pad2d_op,
   if (mode == "constant") {
     pad2d_node->set_attr_mode(0);
   } else if (mode == "reflect") {
-    LOG(FATAL) << "NPU doesn't support this pad mod: " << mode;
+    LOG(FATAL) << "[NPU] pad mode " << mode << " isn't supported in HiAI DDK";
     pad2d_node->set_attr_mode(1);
   } else {
-    LOG(FATAL) << "NPU doesn't support this pad mod: " << mode;
+    LOG(FATAL) << "[NPU] pad mode " << mode << " isn't supported in HiAI DDK";
   }
 
   auto x_dims = scope->FindTensor(x_var_name)->dims();
