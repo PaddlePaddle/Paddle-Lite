@@ -26,12 +26,8 @@ bool LookupTableOpLite::CheckShape() const {
   CHECK_OR_FALSE(param_.Out)
 
   auto table_dims = param_.W->dims();
-  auto ids_dims = param_.Ids->dims();
-
-  int ids_rank = ids_dims.size();
 
   CHECK_EQ_OR_FALSE(table_dims.size(), 2)
-  CHECK_EQ_OR_FALSE(ids_dims[ids_rank - 1], 1)
 
   return true;
 }
@@ -40,12 +36,8 @@ bool LookupTableOpLite::InferShape() const {
   auto table_dims = param_.W->dims();
   auto ids_dims = param_.Ids->dims();
 
-  int ids_rank = ids_dims.size();
-
-  auto output_dims = ids_dims.Slice(0, ids_rank - 1);
-
   std::vector<int64_t> out_dims;
-  for (int i = 0; i < ids_rank - 1; ++i) {
+  for (int i = 0; i < ids_dims.size(); ++i) {
     out_dims.push_back(ids_dims[i]);
   }
   out_dims.push_back(table_dims[1]);

@@ -28,7 +28,6 @@ namespace arm {
 
 void LookupTableCompute::Run() {
   auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->template As<ARMContext>();
   // inputs
   auto w = param.W;
   auto ids = param.Ids;
@@ -37,7 +36,7 @@ void LookupTableCompute::Run() {
 
   auto table_dim = w->dims();
   int64_t ids_numel = ids->numel();
-  auto ids_data = ids->data<float>();
+  auto ids_data = ids->data<int64_t>();
 
   int64_t row_number = table_dim[0];
   int64_t row_width = table_dim[1];
