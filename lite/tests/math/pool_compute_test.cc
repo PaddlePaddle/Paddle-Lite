@@ -69,8 +69,7 @@ DDim compute_out_dim(const DDim& dim_in,
   auto kernel_w = param.ksize[1];
   auto h = dim_in[2];
   auto w = dim_in[3];
-  int pad_h = param.paddings[0];
-  int pad_w = param.paddings[1];
+  auto paddings = param.paddings;
   int stride_h = param.strides[0];
   int stride_w = param.strides[1];
   bool ceil_mode = param.ceil_mode;
@@ -79,11 +78,15 @@ DDim compute_out_dim(const DDim& dim_in,
   int wout = 1;
   if (!flag_global) {
     if (!ceil_mode) {
-      hout = (h - kernel_h + 2 * pad_h) / stride_h + 1;
-      wout = (w - kernel_w + 2 * pad_w) / stride_w + 1;
+      hout = (h - kernel_h + paddings[0] + paddings[1]) / stride_h + 1;
+      wout = (w - kernel_w + paddings[2] + paddings[3]) / stride_w + 1;
     } else {
-      hout = (h - kernel_h + 2 * pad_h + stride_h - 1) / stride_h + 1;
-      wout = (w - kernel_w + 2 * pad_w + stride_w - 1) / stride_w + 1;
+      hout =
+          (h - kernel_h + paddings[0] + paddings[1] + stride_h - 1) / stride_h +
+          1;
+      wout =
+          (w - kernel_w + paddings[2] + paddings[3] + stride_w - 1) / stride_w +
+          1;
     }
   }
   dim_out[2] = hout;
@@ -116,7 +119,7 @@ void pooling_basic(const float* din,
   int stride_h = strides[0];
   int stride_w = strides[1];
   int pad_h = paddings[0];
-  int pad_w = paddings[1];
+  int pad_w = paddings[2];
   int size_channel_in = win * hin;
   int size_channel_out = wout * hout;
   if (global_pooling) {
@@ -195,18 +198,18 @@ void pooling_basic(const float* din,
                 int bh = kernel_h;
                 int bw = kernel_w;
                 if (ew == win) {
-                  bw = sw + kernel_w >= win + pad_w ? win + pad_w
-                                                    : sw + kernel_w;
+                  bw = sw + kernel_w >= win + paddings[3] ? win + paddings[3]
+                                                          : sw + kernel_w;
                   bw -= sw;
-                  if (sw - pad_w < 0 && sw + kernel_w > win + pad_w) {
+                  if (sw - pad_w < 0 && sw + kernel_w > win + paddings[3]) {
                     bw += pad_w;
                   }
                 }
                 if (eh == hin) {
-                  bh = sh + kernel_h >= hin + pad_h ? hin + pad_h
-                                                    : sh + kernel_h;
+                  bh = sh + kernel_h >= hin + paddings[1] ? hin + paddings[1]
+                                                          : sh + kernel_h;
                   bh -= sh;
-                  if (sh - pad_h < 0 && sh + kernel_h > hin + pad_h) {
+                  if (sh - pad_h < 0 && sh + kernel_h > hin + paddings[1]) {
                     bh += pad_h;
                   }
                 }
@@ -399,31 +402,38 @@ TEST(TestPoolRand, test_pool_rand) {
       for (auto& kw : {1, 2, 3}) {
         for (auto& kh : {1, 2, 3}) {
           for (auto& stride : {1, 2}) {
-            for (auto& pad : {0, 1, 2}) {
-              for (auto& flag_global : {false, true}) {
-                for (auto& exclusive : {false, true}) {
-                  for (auto& ceil_mode : {false, true}) {
-                    for (auto& pooling_type : {"max", "avg"}) {
-                      bool adaptive = false;
-                      bool use_quantizer = false;
-                      std::vector<DDim> dims;
-                      for (auto& batch : {1, 2}) {
-                        for (auto& h : {1, 2, 3, 4, 11, 19, 32, 28}) {
-                          dims.push_back(DDim({batch, cin, h, h}));
+            for (auto& pad_top : {0, 1, 2}) {
+              for (auto& pad_bottom : {0, 1, 2}) {
+                for (auto& pad_left : {0, 1, 2}) {
+                  for (auto& pad_right : {0, 1, 2}) {
+                    for (auto& flag_global : {false, true}) {
+                      for (auto& exclusive : {false, true}) {
+                        for (auto& ceil_mode : {false, true}) {
+                          for (auto& pooling_type : {"max", "avg"}) {
+                            bool adaptive = false;
+                            bool use_quantizer = false;
+                            std::vector<DDim> dims;
+                            for (auto& batch : {1, 2}) {
+                              for (auto& h : {1, 2, 3, 4, 11, 19, 32, 28}) {
+                                dims.push_back(DDim({batch, cin, h, h}));
+                              }
+                            }
+                            test_pool_fp32(
+                                dims,
+                                {kh, kw},
+                                {stride, stride},
+                                {pad_top, pad_bottom, pad_left, pad_right},
+                                ceil_mode,
+                                flag_global,
+                                exclusive,
+                                adaptive,
+                                use_quantizer,
+                                pooling_type,
+                                {1, 2, 4},
+                                {FLAGS_power_mode});
+                          }
                         }
                       }
-                      test_pool_fp32(dims,
-                                     {kh, kw},
-                                     {stride, stride},
-                                     {pad, pad},
-                                     ceil_mode,
-                                     flag_global,
-                                     exclusive,
-                                     adaptive,
-                                     use_quantizer,
-                                     pooling_type,
-                                     {1, 2, 4},
-                                     {FLAGS_power_mode});
                     }
                   }
                 }
@@ -443,7 +453,7 @@ TEST(TesPoolCustom, test_pool_fp32_custom_size) {
       {DDim({FLAGS_batch, FLAGS_in_channel, FLAGS_in_height, FLAGS_in_width})},
       {FLAGS_kernel_h, FLAGS_kernel_w},
       {FLAGS_stride_h, FLAGS_stride_w},
-      {FLAGS_pad_h, FLAGS_pad_w},
+      {FLAGS_pad_h, FLAGS_pad_h, FLAGS_pad_w, FLAGS_pad_w},
       FLAGS_ceil_mode,
       FLAGS_flag_global,
       FLAGS_exclusive,

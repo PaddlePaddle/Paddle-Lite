@@ -49,11 +49,17 @@ class PoolCompute
     std::vector<int> ksize = param.ksize;
     if (global_pooling) {
       for (size_t i = 0; i < ksize.size(); ++i) {
-        paddings[i] = 0;
+        paddings[2 * i] = 0;
+        paddings[2 * i + 1] = 0;
         ksize[i] = static_cast<int>(in_dims[i + 2]);
       }
     }
-
+    bool pads_equal =
+        (paddings[0] == paddings[1]) && (paddings[2] == paddings[3]);
+    if (!pads_equal) {
+      LOG(FATAL)
+          << "padding requires pad_left == pad_right, pad_top == pad_bottom";
+    }
     auto& context = ctx_->As<OpenCLContext>();
     CHECK(context.cl_context() != nullptr);
     auto* input_buf = param.x->data<float, cl::Buffer>();
@@ -89,7 +95,7 @@ class PoolCompute
     CL_CHECK_FATAL(status);
     status = kernel.setArg(++arg_idx, static_cast<const int>(paddings[0]));
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(paddings[1]));
+    status = kernel.setArg(++arg_idx, static_cast<const int>(paddings[2]));
     CL_CHECK_FATAL(status);
     status = kernel.setArg(++arg_idx, *output_buf);
     CL_CHECK_FATAL(status);

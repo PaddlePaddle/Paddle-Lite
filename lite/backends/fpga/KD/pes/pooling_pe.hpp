@@ -51,7 +51,7 @@ class PoolingPE : public PE {
     args.image.height = input->shape().height();
     args.image.width = input->shape().width();
     args.image.pad_height = param_.paddings[0];
-    args.image.pad_width = param_.paddings[1];
+    args.image.pad_width = param_.paddings[2];
     args.image.scale_address = input->scale();
     args.output.address = output->mutableData<float16>();
     args.output.scale_address = output->scale();
@@ -81,7 +81,7 @@ class PoolingPE : public PE {
     int image_width = input->shape().width();
     int image_channels = input->shape().channel();
     int image_pad_h = param_.paddings[0];
-    int image_pad_w = param_.paddings[1];
+    int image_pad_w = param_.paddings[2];
     int kernel_height = param_.kernelSize[1];
     int kernel_width = param_.kernelSize[0];
     int kernel_step_h = param_.strides[0];

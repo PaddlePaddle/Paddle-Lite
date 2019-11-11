@@ -65,6 +65,9 @@ class PoolOpLite : public OpLite {
     if (op_desc.HasAttr("use_quantizer")) {
       param_.use_quantizer = op_desc.GetAttr<bool>("use_quantizer");
     }
+    if (op_desc.HasAttr("padding_algorithm")) {
+      padding_algorithm_ = op_desc.GetAttr<std::string>("padding_algorithm");
+    }
     // param_.data_format = op_desc.GetAttr<bool>("data_format");
     return true;
   }
@@ -75,6 +78,7 @@ class PoolOpLite : public OpLite {
 
  private:
   mutable PoolParam param_;
+  std::string padding_algorithm_{""};
 };
 
 }  // namespace operators

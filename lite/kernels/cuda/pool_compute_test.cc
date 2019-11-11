@@ -27,14 +27,21 @@ namespace cuda {
 using Tensor = lite::Tensor;
 using DDim = lite::DDim;
 
-static int PoolOutputSize(
-    int input_size, int filter_size, int padding, int stride, bool ceil_mode) {
+static int PoolOutputSize(int input_size,
+                          int filter_size,
+                          int pad_left,
+                          int pad_right,
+                          int stride,
+                          bool ceil_mode) {
   int output_size;
   if (!ceil_mode) {
-    output_size = (input_size - filter_size + 2 * padding) / stride + 1;
+    output_size =
+        (input_size - filter_size + pad_left + pad_right) / stride + 1;
   } else {
     output_size =
-        (input_size - filter_size + 2 * padding + stride - 1) / stride + 1;
+        (input_size - filter_size + pad_left + pad_right + stride - 1) /
+            stride +
+        1;
   }
   return output_size;
 }
@@ -45,7 +52,8 @@ static std::vector<int64_t> compute_output_shape(operators::PoolParam* param_) {
   if (param_->global_pooling) {
     ksize.resize(static_cast<size_t>(x_dims.size()) - 2);
     for (size_t i = 0; i < ksize.size(); ++i) {
-      param_->paddings[i] = 0;
+      param_->paddings[2 * i] = 0;
+      param_->paddings[2 * i + 1] = 0;
       ksize[i] = static_cast<int>(x_dims[i + 2]);
     }
   }
@@ -58,7 +66,8 @@ static std::vector<int64_t> compute_output_shape(operators::PoolParam* param_) {
     for (size_t i = 0; i < param_->ksize.size(); ++i) {
       output_shape.push_back(PoolOutputSize(x_dims[i + 2],
                                             param_->ksize[i],
-                                            param_->paddings[i],
+                                            param_->paddings[2 * i],
+                                            param_->paddings[2 * i + 1],
                                             param_->strides[i],
                                             param_->ceil_mode));
     }
@@ -99,7 +108,7 @@ static void pool_compute_ref(const operators::PoolParam& param) {
   int stride_h = strides[0];
   int stride_w = strides[1];
   int pad_h = paddings[0];
-  int pad_w = paddings[1];
+  int pad_w = paddings[2];
 
   if (global_pooling == true) {
     for (int n = 0; n < in_n; ++n) {
@@ -226,7 +235,7 @@ TEST(pool_cuda, compute) {
                         }
                         param.global_pooling = global_pooling;
                         param.strides = {stride, stride};
-                        param.paddings = {pad, pad};
+                        param.paddings = {pad, pad, pad, pad};
                         param.exclusive = exclusive;
                         param.ceil_mode = ceil_mode;
                         param.adaptive = false;

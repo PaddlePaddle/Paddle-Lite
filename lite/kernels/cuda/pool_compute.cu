@@ -267,7 +267,7 @@ void PoolCompute::Run() {
   const int stride_h = param.strides[0];
   const int stride_w = param.strides[1];
   const int pad_h = param.paddings[0];
-  const int pad_w = param.paddings[1];
+  const int pad_w = param.paddings[2];
   const int total_threads = out_dims.production();
   const int threads = 512;
   const int blocks = (total_threads + threads - 1) / threads;

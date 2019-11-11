@@ -25,14 +25,21 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
-int PoolOutputSize(
-    int input_size, int filter_size, int padding, int stride, bool ceil_mode) {
+int PoolOutputSize(int input_size,
+                   int filter_size,
+                   int pad_left,
+                   int pad_right,
+                   int stride,
+                   bool ceil_mode) {
   int output_size;
   if (!ceil_mode) {
-    output_size = (input_size - filter_size + 2 * padding) / stride + 1;
+    output_size =
+        (input_size - filter_size + pad_left + pad_right) / stride + 1;
   } else {
     output_size =
-        (input_size - filter_size + 2 * padding + stride - 1) / stride + 1;
+        (input_size - filter_size + pad_left + pad_right + stride - 1) /
+            stride +
+        1;
   }
   return output_size;
 }
@@ -43,7 +50,8 @@ std::vector<int64_t> compute_output_shape(operators::PoolParam* param_) {
   if (param_->global_pooling) {
     ksize.resize(static_cast<size_t>(x_dims.size()) - 2);
     for (size_t i = 0; i < ksize.size(); ++i) {
-      param_->paddings[i] = 0;
+      param_->paddings[2 * i] = 0;
+      param_->paddings[2 * i + 1] = 0;
       ksize[i] = static_cast<int>(x_dims[i + 2]);
     }
   }
@@ -56,7 +64,8 @@ std::vector<int64_t> compute_output_shape(operators::PoolParam* param_) {
     for (size_t i = 0; i < param_->ksize.size(); ++i) {
       output_shape.push_back(PoolOutputSize(x_dims[i + 2],
                                             param_->ksize[i],
-                                            param_->paddings[i],
+                                            param_->paddings[2 * i],
+                                            param_->paddings[2 * i + 1],
                                             param_->strides[i],
                                             param_->ceil_mode));
     }
@@ -99,7 +108,7 @@ void pool_compute_ref(const operators::PoolParam& param) {
   int stride_h = strides[0];
   int stride_w = strides[1];
   int pad_h = paddings[0];
-  int pad_w = paddings[1];
+  int pad_w = paddings[2];
   int size_channel_in = win * hin;
   int size_channel_out = wout * hout;
   if (global_pooling) {
@@ -178,18 +187,18 @@ void pool_compute_ref(const operators::PoolParam& param) {
                 int bh = kernel_h;
                 int bw = kernel_w;
                 if (ew == win) {
-                  bw = sw + kernel_w >= win + pad_w ? win + pad_w
-                                                    : sw + kernel_w;
+                  bw = sw + kernel_w >= win + paddings[3] ? win + paddings[3]
+                                                          : sw + kernel_w;
                   bw -= sw;
-                  if (sw - pad_w < 0 && sw + kernel_w > win + pad_w) {
+                  if (sw - pad_w < 0 && sw + kernel_w > win + paddings[3]) {
                     bw += pad_w;
                   }
                 }
                 if (eh == hin) {
-                  bh = sh + kernel_h >= hin + pad_h ? hin + pad_h
-                                                    : sh + kernel_h;
+                  bh = sh + kernel_h >= hin + paddings[1] ? hin + paddings[1]
+                                                          : sh + kernel_h;
                   bh -= sh;
-                  if (sh - pad_h < 0 && sh + kernel_h > hin + pad_h) {
+                  if (sh - pad_h < 0 && sh + kernel_h > hin + paddings[1]) {
                     bh += pad_h;
                   }
                 }
@@ -262,7 +271,7 @@ TEST(pool_arm, compute) {
                         }
                         param.global_pooling = global_pooling;
                         param.strides = {stride, stride};
-                        param.paddings = {pad, pad};
+                        param.paddings = {pad, pad, pad, pad};
                         param.exclusive = exclusive;
                         param.ceil_mode = ceil_mode;
                         param.adaptive = false;

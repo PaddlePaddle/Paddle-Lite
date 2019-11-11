@@ -48,12 +48,14 @@ void PoolCompute::Run() {
   bool use_quantizer = param.use_quantizer;
   std::string& data_format = param.data_format;
 
+  bool pads_equal =
+      (paddings[0] == paddings[1]) && (paddings[2] == paddings[3]);
+
   bool kps_equal = (ksize[0] == ksize[1]) && (strides[0] == strides[1]) &&
-                   (paddings[0] == paddings[1]);
+                   (paddings[0] == paddings[2]);
 
   if (global_pooling) {
     for (size_t i = 0; i < ksize.size(); ++i) {
-      paddings[i] = 0;
       ksize[i] = static_cast<int>(in_dims[i + 2]);
     }
     if (pooling_type == "max") {
@@ -80,7 +82,8 @@ void PoolCompute::Run() {
       return;
     }
   } else {
-    if (ksize[0] == 2 && strides[0] == 2 && paddings[0] == 0 && kps_equal) {
+    if (ksize[0] == 2 && strides[0] == 2 && paddings[0] == 0 && pads_equal &&
+        kps_equal) {
       if (pooling_type == "max") {
         lite::arm::math::pooling2x2s2_max(din,
                                           dout,
@@ -106,7 +109,7 @@ void PoolCompute::Run() {
         return;
       }
     } else if (ksize[0] == 3 && strides[0] == 1 && paddings[0] == 1 &&
-               kps_equal) {
+               pads_equal && kps_equal) {
       if (pooling_type == "max") {
         lite::arm::math::pooling3x3s1p1_max(din,
                                             dout,
@@ -132,7 +135,7 @@ void PoolCompute::Run() {
         return;
       }
     } else if (ksize[0] == 3 && strides[0] == 1 && paddings[0] == 0 &&
-               kps_equal) {
+               pads_equal && kps_equal) {
       if (pooling_type == "max") {
         lite::arm::math::pooling3x3s1p0_max(din,
                                             dout,
@@ -158,7 +161,7 @@ void PoolCompute::Run() {
         return;
       }
     } else if (ksize[0] == 3 && strides[0] == 2 && paddings[0] == 0 &&
-               kps_equal) {
+               pads_equal && kps_equal) {
       if (pooling_type == "max") {
         lite::arm::math::pooling3x3s2p0_max(din,
                                             dout,
@@ -184,7 +187,7 @@ void PoolCompute::Run() {
         return;
       }
     } else if (ksize[0] == 3 && strides[0] == 2 && paddings[0] == 1 &&
-               kps_equal) {
+               pads_equal && kps_equal) {
       if (pooling_type == "max") {
         lite::arm::math::pooling3x3s2p1_max(din,
                                             dout,

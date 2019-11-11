@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/operators/pool_op.h"
+#include <algorithm>
 #include "lite/core/op_registry.h"
 
 namespace paddle {
@@ -35,19 +36,72 @@ bool PoolOpLite::CheckShape() const {
   // Strides size and pooling size should be the same.
   CHECK_OR_FALSE(ksize.size() == strides.size());
   // Paddings size and pooling size should be the same.
-  CHECK_OR_FALSE(ksize.size() == paddings.size());
+  // CHECK_OR_FALSE(ksize.size() == paddings.size());
 
   return true;
 }
 
-int PoolOutputSize(
-    int input_size, int filter_size, int padding, int stride, bool ceil_mode) {
+inline void UpdatePadding(std::vector<int>* paddings,
+                          const bool global_pooling,
+                          const bool adaptive,
+                          const std::string padding_algorithm,
+                          const lite::DDim data_dims,
+                          const std::vector<int>& strides,
+                          const std::vector<int>& ksize) {
+  // set padding size * 2 == data_dims.size()
+  if (paddings->size() * 2 == data_dims.size()) {
+    for (size_t i = 0; i < strides.size(); ++i) {
+      int copy_pad = *(paddings->begin() + i);
+      paddings->insert(paddings->begin() + 2 * i + 1, copy_pad);
+    }
+  } else {
+    if (paddings->size() != data_dims.size()) {
+      LOG(FATAL)
+          << "Paddings size should be the same or twice as the pooling size.";
+    }
+  }
+
+  // when padding_algorithm is "VALID" or "SAME"
+  if (padding_algorithm == "SAME") {
+    for (int i = 0; i < strides.size(); ++i) {
+      int out_size = (data_dims[i + 2] + strides[i] - 1) / strides[i];
+      int pad_sum =
+          std::max((out_size - 1) * strides[i] + ksize[i] - data_dims[i + 2],
+                   (int64_t)0);
+      int pad_0 = pad_sum / 2;
+      int pad_1 = pad_sum - pad_0;
+      *(paddings->begin() + i * 2) = pad_0;
+      *(paddings->begin() + i * 2 + 1) = pad_1;
+    }
+  } else if (padding_algorithm == "VALID") {
+    for (auto it = paddings->begin(); it != paddings->end(); it++) {
+      *it = 0;
+    }
+  }
+
+  // if global_pooling == true or adaptive == true, padding will be ignore
+  if (global_pooling || adaptive) {
+    for (auto it = paddings->begin(); it != paddings->end(); it++) {
+      *it = 0;
+    }
+  }
+}
+
+int PoolOutputSize(int input_size,
+                   int filter_size,
+                   int pad_left,
+                   int pad_right,
+                   int stride,
+                   bool ceil_mode) {
   int output_size;
   if (!ceil_mode) {
-    output_size = (input_size - filter_size + 2 * padding) / stride + 1;
+    output_size =
+        (input_size - filter_size + pad_left + pad_right) / stride + 1;
   } else {
     output_size =
-        (input_size - filter_size + 2 * padding + stride - 1) / stride + 1;
+        (input_size - filter_size + pad_left + pad_right + stride - 1) /
+            stride +
+        1;
   }
   return output_size;
 }
@@ -55,6 +109,14 @@ int PoolOutputSize(
 bool PoolOpLite::InferShape() const {
   const auto x_dims = param_.x->dims();
   std::vector<int>& ksize = param_.ksize;
+  // 2-pad to 4-pad
+  UpdatePadding(&param_.paddings,
+                param_.global_pooling,
+                param_.adaptive,
+                padding_algorithm_,
+                x_dims,
+                param_.strides,
+                ksize);
   if (param_.global_pooling) {
     ksize.resize(static_cast<size_t>(x_dims.size()) - 2);
     for (size_t i = 0; i < ksize.size(); ++i) {
@@ -71,15 +133,14 @@ bool PoolOpLite::InferShape() const {
     for (size_t i = 0; i < param_.ksize.size(); ++i) {
       output_shape.push_back(PoolOutputSize(x_dims[i + 2],
                                             param_.ksize[i],
-                                            param_.paddings[i],
+                                            param_.paddings[2 * i],
+                                            param_.paddings[2 * i + 1],
                                             param_.strides[i],
                                             param_.ceil_mode));
     }
   }
   param_.output->Resize(lite::DDim(output_shape));
 
-  // ctx->SetOutputDim("Out", framework::make_ddim(output_shape));
-  // ctx->ShareLoD("X", "Out");
   return true;
 }
 
