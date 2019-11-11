@@ -36,7 +36,11 @@ enum ImageFormat {
   NV12,
 };
 // flip enum
-enum FlipParam { X = 0, Y, XY };
+enum FlipParam { 
+  X = 0,  // flip along the X axis
+  Y,     // flip along the Y axis
+  XY     // flip along the XY axis
+};
 // transform param
 typedef struct {
   int ih;                // input height
@@ -131,7 +135,7 @@ class ImagePreprocess {
   * color format support 1-channel image, 3-channel image and 4-channel image
   * param src: input image data
   * param dst: output image data
-  * param srcFormat: input image format, support GRAYm BGR(GRB) and BGRA(RGBA)
+  * param srcFormat: input image format, support GRAY, BGR(GRB) and BGRA(RGBA)
   * param srcw: input image width
   * param srch: input image height
   * param degree: Rotate degree, support 90, 180 and 270
