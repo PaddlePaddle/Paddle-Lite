@@ -139,9 +139,8 @@ void TypeLayoutTransformPass::AddLayoutInst(
          DeviceCompatibleTo(*in_arg_ty, from) &&
          out_arg_ty->layout() == to.layout())) {
       is_found = true;
-    }
-    if (TypeCompatible(*in_arg_ty, from) &&
-        out_arg_ty->layout() == to.layout()) {
+    } else if (TypeCompatible(*in_arg_ty, from) &&
+               out_arg_ty->layout() == to.layout()) {
       is_found = true;
     }
     if (is_found) {

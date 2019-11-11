@@ -62,6 +62,10 @@ class Optimizer {
         {"kOpenCL", valid_places_has_target(TARGET(kOpenCL))},
         {"kNPU", valid_places_has_target(TARGET(kNPU))},
         {"kXPU", valid_places_has_target(TARGET(kXPU))}};
+    VLOG(4) << "lite_with_targets['kOpenCL']:" << lite_with_targets["kOpenCL"];
+    VLOG(4) << "lite_with_targets['kNPU']:" << lite_with_targets["kNPU"];
+    VLOG(4) << "lite_with_targets['kXPU']:" << lite_with_targets["kXPU"];
+
     graph_.reset(new mir::SSAGraph);
     graph_->Build(program, valid_places);
     graph_->SetValidPlaces(valid_places);
@@ -152,6 +156,7 @@ class Optimizer {
                       .LookUp<mir::subgraph::GenerateNPUProgramPass>(
                           "generate_npu_program_pass");
 #endif
+
 #ifdef LITE_WITH_XPU
       auto pass = mir::PassManager::Global()
                       .LookUp<mir::subgraph::GenerateXPUProgramPass>(
