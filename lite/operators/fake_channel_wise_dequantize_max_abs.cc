@@ -12,37 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
-
-#include <cmath>
-#include "lite/backends/arm/math/conv_impl.h"
-#include "lite/core/context.h"
-#include "lite/core/kernel.h"
-#include "lite/core/target_wrapper.h"
+#include "lite/operators/fake_channel_wise_dequantize_max_abs.h"
+#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
-namespace arm {
-
-/// only support 3x3s1 and 3x3s2
-template <PrecisionType Ptype, PrecisionType OutType>
-class WinogradConv : public KernelLite<TARGET(kARM), Ptype> {
- public:
-  WinogradConv() = default;
-  ~WinogradConv() {}
-  virtual void PrepareForRun();
-  virtual void ReInitWhenNeeded();
-  virtual void Run();
-
- protected:
-  using param_t = operators::ConvParam;
-  Tensor weights_;
-  DDim last_shape_;
-  int workspace_size_{0};
-};
-
-}  // namespace arm
-}  // namespace kernels
+namespace operators {}  // namespace operators
 }  // namespace lite
 }  // namespace paddle
+
+REGISTER_LITE_OP(
+    fake_channel_wise_dequantize_max_abs,
+    paddle::lite::operators::FakeChannelWiseDequantizeMaxAbsOpLite);
