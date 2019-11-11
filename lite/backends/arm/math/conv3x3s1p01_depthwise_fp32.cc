@@ -107,7 +107,6 @@ void conv_depthwise_3x3s1_fp32(const float *din,
                                   w_out,
                                   ctx);
     } else {
-      printf("conv_depthwise_3x3s1p0_bias_s \n");
       conv_depthwise_3x3s1p0_bias_s(dout,
                                     din,
                                     weights,
