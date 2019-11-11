@@ -107,8 +107,13 @@ bool ConvBNReluKernel<GPU_CL, float>::Init(
     param->Filter()->InitNImage(cl_helper_.CLContext(),
                                 cl_helper_.CLCommandQueue());
 
-    this->cl_helper_.AddKernel("conv_1x1_spl", conv_kernel_file, build_options);
-
+    if (param->Input()->dims()[1] % 4 == 0) {
+      this->cl_helper_.AddKernel("conv_1x1_simple", conv_kernel_file,
+                                 build_options);
+    } else {
+      this->cl_helper_.AddKernel("conv_1x1_wrapped", conv_kernel_file,
+                                 build_options);
+    }
   } else if (param->Filter()->dims()[1] == 1 &&
              param->Input()->dims()[1] == param->Output()->dims()[1] &&
              param->Filter()->dims()[2] == 3) {

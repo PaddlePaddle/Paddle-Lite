@@ -27,7 +27,7 @@ node_map_type SplitConverter(const std::shared_ptr<lite::OpLite> split_op,
   const lite::OpInfo* op_info = split_op->op_info();
   auto op_type = op_info->Type();
   auto unique_op_type = lite::npu::UniqueName(op_type);
-  LOG(INFO) << "Converting " << op_type << " ... ";
+  LOG(INFO) << "[NPU] Converting " << op_type << " ... ";
 
   auto x_var_name = op_info->Input("X").front();
   auto axis = op_info->GetAttr<int>("axis");

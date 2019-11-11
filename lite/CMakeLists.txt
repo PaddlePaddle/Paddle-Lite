@@ -143,8 +143,10 @@ if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM)
                           COMMAND cp ${CMAKE_BINARY_DIR}/lite/api/*.so ${INFER_LITE_PUBLISH_ROOT}/cxx/lib)
                 endif()
                 add_dependencies(publish_inference publish_inference_cxx_lib)
-                add_custom_command(TARGET publish_inference_cxx_lib POST_BUILD
-                        COMMAND ${CMAKE_STRIP} "--strip-debug" ${INFER_LITE_PUBLISH_ROOT}/cxx/lib/*.a)
+                if(NOT "${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
+                    add_custom_command(TARGET publish_inference_cxx_lib POST_BUILD
+                            COMMAND ${CMAKE_STRIP} "--strip-debug" ${INFER_LITE_PUBLISH_ROOT}/cxx/lib/*.a)
+                endif()
             endif()
     else()
         if (IOS)
@@ -183,8 +185,10 @@ if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM)
         )
         add_dependencies(publish_inference_java_lib paddle_lite_jni PaddlePredictor)
         add_dependencies(publish_inference publish_inference_java_lib)
-        add_custom_command(TARGET publish_inference_java_lib POST_BUILD
-                                   COMMAND ${CMAKE_STRIP} "-s" ${INFER_LITE_PUBLISH_ROOT}/java/so/libpaddle_lite_jni.so)
+        if(NOT "${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
+            add_custom_command(TARGET publish_inference_java_lib POST_BUILD
+                                       COMMAND ${CMAKE_STRIP} "-s" ${INFER_LITE_PUBLISH_ROOT}/java/so/libpaddle_lite_jni.so)
+        endif()
     endif()
 
     if ((ARM_TARGET_OS STREQUAL "android") AND (NOT LITE_WITH_OPENCL) AND
