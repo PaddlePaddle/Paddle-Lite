@@ -27,7 +27,7 @@ node_map_type ConvConverter(const std::shared_ptr<lite::OpLite> conv_op,
   auto op_info = conv_op->op_info();
   auto op_type = op_info->Type();
   auto unique_op_type = lite::npu::UniqueName(op_type);
-  LOG(INFO) << "Converting " << op_type << "... ";
+  LOG(INFO) << "[NPU] Converting " << op_type << "... ";
 
   // get input, filter and op attributes
   auto input_var_name = op_info->Input("Input").front();
@@ -72,10 +72,10 @@ node_map_type ConvConverter(const std::shared_ptr<lite::OpLite> conv_op,
       !((groups == 1 || groups >= 5) && dilations[0] == 1 &&
         dilations[1] == 1)) {
     use_depthwise_conv = true;
-    LOG(WARNING) << "For depthwise mode, dilation = 1 and groups >= 5 (or "
-                    "groups = 1) is only supported in "
-                    "Convolution Op, so force to use ConvolutionDepthwise Op, "
-                    "but may lead poor performance.";
+    LOG(WARNING) << "[NPU] For depthwise mode, dilation = 1 and groups >= 5 "
+                    "(or groups = 1) is only supported in Convolution Op, so "
+                    "force to use ConvolutionDepthwise Op, but may lead poor "
+                    "performance.";
   }
 
   // check input
@@ -85,7 +85,7 @@ node_map_type ConvConverter(const std::shared_ptr<lite::OpLite> conv_op,
   // create filter node
   CHECK(!inputs_map.count(filter_var_name));
   auto filter_const_node = std::make_shared<ge::op::Const>(filter_var_name);
-  filter_const_node->set_attr_value(lite::npu::CvtFromLiteTensor(filter));
+  filter_const_node->set_attr_value(lite::npu::CvtTensor(filter));
   lite::npu::OpList::Global().add(filter_const_node);
 
   // create bias node if has bias
@@ -123,8 +123,7 @@ node_map_type ConvConverter(const std::shared_ptr<lite::OpLite> conv_op,
     } else {
       // bias node with const data
       auto bias_const_node = std::make_shared<ge::op::Const>(bias_var_name);
-      bias_const_node->set_attr_value(
-          lite::npu::CvtFromLiteTensor(bias, bias_shape));
+      bias_const_node->set_attr_value(lite::npu::CvtTensor(bias, bias_shape));
       bias_node = bias_const_node;
     }
     lite::npu::OpList::Global().add(bias_node);
@@ -201,7 +200,7 @@ node_map_type ConvConverter(const std::shared_ptr<lite::OpLite> conv_op,
     auto relu_node =
         std::make_shared<ge::op::Activation>(unique_op_type + "/relu");
     relu_node->set_input_x(*conv_node);
-    relu_node->set_attr_mode(1);
+    relu_node->set_attr_mode(lite::npu::CvtActMode("relu"));
     lite::npu::OpList::Global().add(relu_node);
     outputs_map[op_info->Output("Output").front()] = relu_node;
   } else {
