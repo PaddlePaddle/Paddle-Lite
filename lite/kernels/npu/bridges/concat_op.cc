@@ -27,7 +27,7 @@ node_map_type ConcatConverter(const std::shared_ptr<lite::OpLite> concat_op,
   const lite::OpInfo* op_info = concat_op->op_info();
   auto op_type = op_info->Type();
   auto unique_op_type = lite::npu::UniqueName(op_type);
-  LOG(INFO) << "converting " << op_type << " ... ";
+  LOG(INFO) << "[NPU] Converting " << op_type << " ... ";
 
   auto x_var_names = op_info->Input("X");
   auto axis = op_info->GetAttr<int>("axis");
@@ -46,7 +46,7 @@ node_map_type ConcatConverter(const std::shared_ptr<lite::OpLite> concat_op,
     } else {
       auto consty = std::make_shared<ge::op::Const>(x_var_name);
       auto* x = scope->FindVar(x_var_name)->GetMutable<Tensor>();
-      consty->set_attr_value(lite::npu::CvtFromLiteTensor(x));
+      consty->set_attr_value(lite::npu::CvtTensor(x));
       output_node->set_dynamic_input_x(index + 1, *consty);
       lite::npu::OpList::Global().add(consty);
     }
