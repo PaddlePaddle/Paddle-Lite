@@ -65,11 +65,8 @@ inline void UpdatePaddingAndDilation(std::vector<int>* paddings,
       paddings->insert(paddings->begin() + 2 * i + 1, copy_pad);
     }
   } else {
-    if ((paddings->size() * 2) != data_dims.size()) {
-      printf(
-          "Paddings size should be the same or twice as the input data "
-          "size.\n");
-      return;
+    if (paddings->size() != data_dims.size()) {
+      LOG(FATAL) << "Paddings size should be the same or twice as the pooling size.";
     }
   }
 
