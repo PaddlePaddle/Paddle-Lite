@@ -279,7 +279,10 @@ git checkout <release-version-tag>
   --arm_abi=armv8 \
   ios
 ```
+**注意：mac环境编译IOS 时，cmake版本需要高于cmake 3.15；mac环境上编译Android时，cmake版本需要设置为cmake 3.10。**
+
 ios tiny publish支持的编译选项：
+
 * `--arm_os`: 可选ios或者ios64
 * `--arm_abi`: 可选armv7和armv8（**注意**：当`arm_os=ios`时只能选择`arm_abi=armv7`，当`arm_os=ios64`时只能选择`arm_abi=armv8`）
 * 如果mac编译过程中报错："Invalid CMAKE_DEVELOPER_ROOT: does not exist", 运行：
@@ -396,4 +399,4 @@ rm -rf third-party
 
 之后再根据本文档，进行后续编译时，便会忽略第三方依赖对应的`submodule`，改为下载第三方压缩包。
 
-**注意：该加速方法只对arm平台的移动端（android/armlinux/ios）编译有效，无法加速server平台（x86/cuda）的第三方库编译。所以当**[编译cuda 预测库](../cuda.md)**和**[编译x86预测库](../x86.md)**时，需要保证良好的网络环境。**
+**注意：该加速方法只对arm平台的移动端（android/armlinux/ios）编译有效，无法加速server平台（x86/cuda）的第三方库编译。所以当**[编译cuda 预测库](../cuda)**和**[编译x86预测库](../x86)**时，需要保证良好的网络环境。**
