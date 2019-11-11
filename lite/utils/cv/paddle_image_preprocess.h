@@ -36,10 +36,10 @@ enum ImageFormat {
   NV12,
 };
 // flip enum
-enum FlipParam { 
+enum FlipParam {
   X = 0,  // flip along the X axis
-  Y,     // flip along the Y axis
-  XY     // flip along the XY axis
+  Y,      // flip along the Y axis
+  XY      // flip along the XY axis
 };
 // transform param
 typedef struct {
@@ -95,8 +95,7 @@ class ImagePreprocess {
   /*
   * image resize, use bilinear method
   * support image format: 1-channel image (egs: GRAY, 2-channel image (egs:
-  * NV12, NV21),
-  *               3-channel(egs: BGR), 4-channel(egs: BGRA)
+  * NV12, NV21), 3-channel(egs: BGR), 4-channel(egs: BGRA)
   * param src: input image data
   * param dst: output image data
   */
@@ -104,8 +103,7 @@ class ImagePreprocess {
   /*
    image resize, use bilinear method
   * support image format: 1-channel image (egs: GRAY, 2-channel image (egs:
-  NV12, NV21),
-  *               3-channel image(egs: BGR), 4-channel image(egs: BGRA)
+  NV12, NV21), 3-channel image(egs: BGR), 4-channel image(egs: BGRA)
   * param src: input image data
   * param dst: output image data
   * param srcw: input image width
