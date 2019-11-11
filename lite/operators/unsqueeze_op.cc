@@ -66,7 +66,10 @@ bool UnsqueezeOp::InferShape() const {
   std::vector<int> final_axes;
   auto axes = param_.axes;
   auto *axes_tensor = param_.axes_tensor;
-  auto axes_tensor_vct = *(param_.axes_tensor_vct);
+  std::vector<lite::Tensor> axes_tensor_vct;
+  if (param_.axes_tensor_vct) {
+    axes_tensor_vct = *(param_.axes_tensor_vct);
+  }
 
   if (!axes.empty()) {
     final_axes = axes;

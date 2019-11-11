@@ -125,7 +125,8 @@ class UnsqueezeComputeTester : public arena::TestCase {
       for (size_t i = 0; i < axes_.size(); i++) {
         name = name + std::to_string(i);
         axes_tensor_list_.push_back(name);
-        SetCommonTensor(name, DDim({1}), &axes_[i]);
+        std::vector<int> in_data = {axes_[i]};
+        SetCommonTensor(name, DDim({1}), in_data.data());
       }
     }
   }
@@ -229,7 +230,7 @@ void test_unsqueeze(Place place) {
       for (int C : {3}) {
         for (int H : {1}) {
           for (int W : {5}) {
-            for (int input_axes_flag : {1, 2, 3}) {
+            for (int input_axes_flag : {1, 2}) {
               LOG(INFO) << N << " " << C << " " << H << " " << W << " "
                         << input_axes_flag;
               std::unique_ptr<arena::TestCase> tester(
