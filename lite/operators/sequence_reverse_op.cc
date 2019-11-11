@@ -25,8 +25,6 @@ bool SequenceReverseOp::CheckShape() const {
   CHECK_EQ(param_.X->lod().empty(), false)
       << "Input(X) Tensor of SequenceReverseOp does not contain "
          "LoD information.";
-  auto lod = param_.X->lod();
-  CHECK_EQ(lod.size(), 1UL) << "SequenceReverse Op only support one level lod.";
   CHECK_GE(param_.X->dims().size(), 2)
       << "Rank of Input(X) must be not less than 2.";
   return true;

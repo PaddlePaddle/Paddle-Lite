@@ -38,13 +38,17 @@ class SequenceReverseComputeTester : public arena::TestCase {
     auto* x = scope->FindMutableTensor(input_);
     const auto* x_data = x->data<float>();
     (x->mutable_lod())->clear();
-    (x->mutable_lod())->push_back(lod_[0]);
+    for (size_t i = 0; i < lod_.size(); ++i) {
+      (x->mutable_lod())->push_back(lod_[i]);
+    }
     auto seq_offset = x->lod()[0];
     int width = x->numel() / dims_[0];
     auto* out = scope->NewTensor(output_);
     out->Resize(x->dims());
     (out->mutable_lod())->clear();
-    (out->mutable_lod())->push_back(lod_[0]);
+    for (size_t i = 0; i < lod_.size(); ++i) {
+      (out->mutable_lod())->push_back(lod_[i]);
+    }
     auto* out_data = out->mutable_data<float>();
 
     for (int i = 0; i < seq_offset.size() - 1; ++i) {
@@ -77,7 +81,7 @@ class SequenceReverseComputeTester : public arena::TestCase {
 
 void test_sequence_reverse(Place place) {
   DDim dims{{10, 4}};
-  LoD lod{{0, 2, 5, 10}};
+  LoD lod{{0, 2, 3}, {0, 2, 5, 10}};
   std::unique_ptr<arena::TestCase> tester(
       new SequenceReverseComputeTester(place, "def", lod, dims));
   arena::Arena arena(std::move(tester), place, 2e-5);
@@ -85,8 +89,8 @@ void test_sequence_reverse(Place place) {
 }
 
 TEST(SequenceReverse, prec) {
-#ifdef LITE_WITH_ARM
-  Place place(TARGET(kARM));
+#ifdef LITE_WITH_X86
+  Place place(TARGET(kX86));
   test_sequence_reverse(place);
 #endif
 }

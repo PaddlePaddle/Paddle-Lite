@@ -12,22 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/cuda/sequence_reverse_compute.h"
+#include "lite/kernels/x86/sequence_reverse_compute.h"
 #include <gtest/gtest.h>
 #include <memory>
 #include <utility>
+#include <vector>
+#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace cuda {
+namespace x86 {
 
+namespace {
 static void sequence_reverse_ref(const lite::Tensor* x, lite::Tensor* y) {
   const auto* x_data = x->data<float>();
   auto seq_offset = x->lod()[x->lod().size() - 1];
   int width = x->numel() / x->dims()[0];
   auto* y_data = y->mutable_data<float>();
-  for (int i = 0; i < static_cast<int>(seq_offset.size()) - 1; ++i) {
+  for (int i = 0; i < seq_offset.size() - 1; ++i) {
     auto start_pos = seq_offset[i];
     auto end_pos = seq_offset[i + 1];
     for (auto pos = start_pos; pos < end_pos; ++pos) {
@@ -38,71 +41,68 @@ static void sequence_reverse_ref(const lite::Tensor* x, lite::Tensor* y) {
     }
   }
 }
+}  // namespace
 
-TEST(sequence_reverse_cuda, normal) {
-  SequenceReverseCompute seq_kernel;
+TEST(sequence_reverse_x86, retrive_op) {
+  auto sequence_reverse =
+      KernelRegistry::Global().Create<TARGET(kX86), PRECISION(kFloat)>(
+          "sequence_reverse");
+  ASSERT_FALSE(sequence_reverse.empty());
+  ASSERT_TRUE(sequence_reverse.front());
+}
+
+TEST(sequence_reverse_x86, init) {
+  SequenceReverseCompute<float> sequence_reverse;
+  ASSERT_EQ(sequence_reverse.precision(), PRECISION(kFloat));
+  ASSERT_EQ(sequence_reverse.target(), TARGET(kX86));
+}
+
+TEST(sequence_reverse_x86, run_test) {
+  SequenceReverseCompute<float> seq_kernel;
   std::unique_ptr<KernelContext> ctx(new KernelContext);
-  auto& context = ctx->As<CUDAContext>();
 
   operators::SequenceReverseParam param;
-  lite::Tensor x, x_cpu, x_ref;
-  lite::Tensor y, y_cpu, y_ref;
+  lite::Tensor x, x_ref;
+  lite::Tensor y, y_ref;
 
   int32_t lod_len = 10, feature_len = 4;
   LoD lod_info{{0, 2, 4}, {0, 3, 5, 6, 10}};
 
   x.Resize({lod_len, feature_len});
-  x_cpu.Resize({lod_len, feature_len});
   x_ref.Resize({lod_len, feature_len});
   y.Resize({lod_len, feature_len});
-  y_cpu.Resize({lod_len, feature_len});
   y_ref.Resize({lod_len, feature_len});
   x.set_lod(lod_info);
-  x_cpu.set_lod(lod_info);
   x_ref.set_lod(lod_info);
   y.set_lod(lod_info);
-  y_cpu.set_lod(lod_info);
   y_ref.set_lod(lod_info);
 
-  auto* y_data = y.mutable_data<float>(TARGET(kCUDA));
-
-  float* x_cpu_data = x_cpu.mutable_data<float>();
+  auto* y_data = y.mutable_data<float>();
+  float* x_data = x.mutable_data<float>();
   float* x_ref_data = x_ref.mutable_data<float>();
-  float* y_cpu_data = y_cpu.mutable_data<float>();
   float* y_ref_data = y_ref.mutable_data<float>();
 
-  for (int i = 0; i < x_cpu.numel(); ++i) {
-    x_cpu_data[i] = (i - 2.0) * 1.0;
+  for (int i = 0; i < x.numel(); ++i) {
     x_ref_data[i] = (i - 2.0) * 1.0;
+    x_data[i] = (i - 2.0) * 1.0;
   }
-
-  x.Assign<float, lite::DDim, TARGET(kCUDA)>(x_cpu_data, x_cpu.dims());
 
   param.X = &x;
   param.Out = &y;
   seq_kernel.SetParam(param);
 
-  cudaStream_t stream;
-  cudaStreamCreate(&stream);
-  context.SetExecStream(stream);
-
   seq_kernel.SetContext(std::move(ctx));
   seq_kernel.Launch();
-  cudaDeviceSynchronize();
-
-  CopySync<TARGET(kCUDA)>(
-      y_cpu_data, y_data, sizeof(float) * y.numel(), IoDirection::DtoH);
 
   sequence_reverse_ref(&x_ref, &y_ref);
   for (int i = 0; i < y.numel(); i++) {
-    EXPECT_NEAR(y_cpu_data[i], y_ref_data[i], 1e-5);
+    EXPECT_NEAR(y_data[i], y_ref_data[i], 1e-5);
   }
-  for (int i = 0; i < y.numel(); i += 4)
-    LOG(INFO) << y_cpu_data[i] << " " << y_cpu_data[i + 1] << " "
-              << y_cpu_data[i + 2] << " " << y_cpu_data[i + 3];
 }
 
-}  // namespace cuda
+}  // namespace x86
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
+
+USE_LITE_KERNEL(sequence_reverse, kX86, kFloat, kNCHW, def);

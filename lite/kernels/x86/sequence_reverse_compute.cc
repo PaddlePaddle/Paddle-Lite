@@ -12,30 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
-#include <stdint.h>
-#include "lite/backends/arm/math/type_trans.h"
-#include "lite/core/kernel.h"
-#include "lite/core/op_registry.h"
+#include "lite/kernels/x86/sequence_reverse_compute.h"
 
-namespace paddle {
-namespace lite {
-namespace kernels {
-namespace arm {
-
-class SequenceReverseCompute
-    : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
- public:
-  void PrepareForRun() override;
-
-  void Run() override;
-
-  virtual ~SequenceReverseCompute() = default;
-
- private:
-};
-
-}  // namespace arm
-}  // namespace kernels
-}  // namespace lite
-}  // namespace paddle
+REGISTER_LITE_KERNEL(sequence_reverse,
+                     kX86,
+                     kFloat,
+                     kNCHW,
+                     paddle::lite::kernels::x86::SequenceReverseCompute<float>,
+                     def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindOutput("Y", {LiteType::GetTensorTy(TARGET(kX86))})
+    .Finalize();

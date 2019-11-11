@@ -82,7 +82,7 @@ void SequenceReverseCompute::Run() {
   auto y_data = param.Out->mutable_data<float>(TARGET(kCUDA));
   CHECK_NE(x_data, y_data)
       << "SequenceReverse Op does not support in-place operation";
-  const auto lod = param.X->lod()[0];
+  const auto lod = param.X->lod()[param.X->lod().size() - 1];
   const size_t lod_count = lod.size();
 
   lod_cuda.Resize({static_cast<int64_t>(lod.size())});
