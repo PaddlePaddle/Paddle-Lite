@@ -60,10 +60,9 @@ inline void UpdatePaddingAndDilation(std::vector<int>* paddings,
                                      const lite::DDim data_dims,
                                      const lite::DDim& ksize) {
   if (paddings->size() * 2 == data_dims.size()) {
-    for (size_t i = 0; i < data_dims.size(); ++i) {
+    for (size_t i = 0; i < strides.size(); ++i) {
       int copy_pad = *(paddings->begin() + i);
-      i++;
-      paddings->insert(paddings->begin() + i, copy_pad);
+      paddings->insert(paddings->begin() + 2 * i + 1, copy_pad);
     }
   } else {
     if ((paddings->size() * 2) != data_dims.size()) {
