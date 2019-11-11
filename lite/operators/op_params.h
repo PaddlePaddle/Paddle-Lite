@@ -377,8 +377,8 @@ struct MeanGradParam {
 struct FillConstantParam {
   int dtype{static_cast<int>(VarDescAPI::VarDataType::FP32)};
   std::vector<int64_t> shape{};
-  lite::Tensor ShapeTensor;
-  std::vector<lite::Tensor> ShapeTensorList{};
+  lite::Tensor* shape_tensor;
+  std::vector<lite::Tensor>* shape_tensor_list{};
 
   float value{0.0f};
   // useless for x86, keep it for compatibility

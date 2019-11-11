@@ -29,6 +29,12 @@ class FillConstantOp : public OpLite {
   }
 
   bool InferShape() const override {
+    lite::Tensor* shape_tensor_ = param_.shape_tensor;
+    if (param_.shape.empty() && shape_tensor_ != nullptr) {
+      param_.Out->Resize(shape_tensor_->dims());
+      return true;
+    }
+
     param_.Out->Resize(param_.shape);
     return true;
   }
@@ -41,6 +47,16 @@ class FillConstantOp : public OpLite {
     param_.shape = opdesc.GetAttr<std::vector<int64_t>>("shape");
     param_.value = opdesc.GetAttr<float>("value");
     param_.force_cpu = opdesc.GetAttr<bool>("force_cpu");
+    if (opdesc.HasAttr("ShapeTensor")) {
+      auto args = opdesc.Input("ShapeTensor");
+      auto* var = scope->FindVar(args.front());
+      param_.shape_tensor = var->GetMutable<lite::Tensor>();
+    }
+    if (opdesc.HasAttr("ShapeTensorList")) {
+      auto args = opdesc.Input("AxesTensorList");
+      auto* var = scope->FindVar(args.front());
+      param_.shape_tensor_list = var->GetMutable<std::vector<lite::Tensor>>();
+    }
     return true;
   }
 
