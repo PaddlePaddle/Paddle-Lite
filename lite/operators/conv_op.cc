@@ -48,7 +48,6 @@ inline int ConvOutputSize(int input_size,
   const int dkernel = dilation * (filter_size - 1) + 1;
   int output_size =
       (input_size + (pad_left + pad_right) - dkernel) / stride + 1;
-  // CHECK_GT_OR_FALSE(output_size, 0);
 
   return output_size;
 }
@@ -66,7 +65,8 @@ inline void UpdatePaddingAndDilation(std::vector<int>* paddings,
     }
   } else {
     if (paddings->size() != data_dims.size()) {
-      LOG(FATAL) << "Paddings size should be the same or twice as the pooling size.";
+      LOG(FATAL)
+          << "Paddings size should be the same or twice as the pooling size.";
     }
   }
 

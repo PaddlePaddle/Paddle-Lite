@@ -47,15 +47,23 @@ node_map_type ConvConverter(const std::shared_ptr<lite::OpLite> op,
   auto dilations = op_info->GetAttr<std::vector<int>>("dilations");
   auto fuse_relu = op_info->GetAttr<bool>("fuse_relu");
   CHECK_EQ(strides.size(), 2);
-  CHECK_EQ(paddings.size(), 2);
+  CHECK_EQ(paddings.size(), 4);
   CHECK_EQ(dilations.size(), 2);
   std::vector<int64_t> output_shape({bs, oc});
   for (size_t i = 0; i < 2; i++) {
     const int dkernel = dilations[i] * (filter_dims[2 + i] - 1) + 1;
     output_shape.push_back(
-        (input_dims[i + 2] + 2 * paddings[i] - dkernel) / strides[i] + 1);
+        (input_dims[i + 2] + paddings[2 * i] + paddings[2 * i + 1] - dkernel) /
+            strides[i] +
+        1);
   }
   DDim output_dims(output_shape);
+
+  bool pads_equal =
+      (paddings[0] == paddings[1]) && (paddings[2] == paddings[3]);
+  if (!pads_equal) {
+    LOG(FATAL) << "Padding requies pad_top==pad_bottom and pad_lef==pad_right.";
+  }
 
   // check context
   CHECK(graph_ctx != nullptr);

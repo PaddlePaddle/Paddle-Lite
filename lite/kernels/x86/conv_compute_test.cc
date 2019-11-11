@@ -73,7 +73,7 @@ TEST(conv2d_x86, run_test) {
   param.bias = &b;
   param.output = &out;
   param.strides = {1, 1};
-  param.paddings = {0, 0};
+  param.paddings = {0, 0, 0, 0};
   param.groups = 1;
   param.dilations = {1, 1};
   LOG(INFO) << 123;
