@@ -28,7 +28,7 @@ node_map_type BatchNormConverter(
   auto op_info = batch_norm_op->op_info();
   auto op_type = op_info->Type();
   auto unique_op_type = lite::npu::UniqueName(op_type);
-  LOG(INFO) << "Converting " + op_type + "...";
+  LOG(INFO) << "[NPU] Converting " + op_type + "...";
 
   std::shared_ptr<ge::op::BatchNorm> batch_norm_node =
       std::make_shared<ge::op::BatchNorm>(unique_op_type);
@@ -37,26 +37,26 @@ node_map_type BatchNormConverter(
   auto scale_var_name = op_info->Input("Scale").front();
   lite::Tensor* scale = scope->FindVar(scale_var_name)->GetMutable<Tensor>();
   auto npu_scale = std::make_shared<ge::op::Const>(scale_var_name);
-  npu_scale->set_attr_value(lite::npu::CvtFromLiteTensor(scale));
+  npu_scale->set_attr_value(lite::npu::CvtTensor(scale));
   lite::npu::OpList::Global().add(npu_scale);
 
   auto bias_var_name = op_info->Input("Bias").front();
   lite::Tensor* bias = scope->FindVar(bias_var_name)->GetMutable<Tensor>();
   auto npu_bias = std::make_shared<ge::op::Const>(bias_var_name);
-  npu_bias->set_attr_value(lite::npu::CvtFromLiteTensor(bias));
+  npu_bias->set_attr_value(lite::npu::CvtTensor(bias));
   lite::npu::OpList::Global().add(npu_bias);
 
   auto mean_var_name = op_info->Input("Mean").front();
   lite::Tensor* mean = scope->FindVar(mean_var_name)->GetMutable<Tensor>();
   auto npu_mean = std::make_shared<ge::op::Const>(mean_var_name);
-  npu_mean->set_attr_value(lite::npu::CvtFromLiteTensor(mean));
+  npu_mean->set_attr_value(lite::npu::CvtTensor(mean));
   lite::npu::OpList::Global().add(npu_mean);
 
   auto variance_var_name = op_info->Input("Variance").front();
   lite::Tensor* variance =
       scope->FindVar(variance_var_name)->GetMutable<Tensor>();
   auto npu_variance = std::make_shared<ge::op::Const>(variance_var_name);
-  npu_variance->set_attr_value(lite::npu::CvtFromLiteTensor(variance));
+  npu_variance->set_attr_value(lite::npu::CvtTensor(variance));
   lite::npu::OpList::Global().add(npu_variance);
 
   float npu_momentum = op_info->GetAttr<float>("momentum");

@@ -156,7 +156,6 @@ class DirectConv : public KernelLite<TARGET(kARM), Ptype> {
     auto x_dims = param.x->dims();
     auto w_dims = param.filter->dims();
     auto o_dims = param.output->dims();
-    last_shape_ = x_dims;
 
     int ic = x_dims[1];
     int oc = o_dims[1];
@@ -179,12 +178,10 @@ class DirectConv : public KernelLite<TARGET(kARM), Ptype> {
                                                   w_scale_);
   }
 
-  virtual void ReInitWhenNeeded();
   virtual void Run();
 
   /// todo, support inplace weights transform
  protected:
-  DDim last_shape_;
   Tensor weights_;
   Tensor bias_;
   bool flag_trans_weights_{false};
