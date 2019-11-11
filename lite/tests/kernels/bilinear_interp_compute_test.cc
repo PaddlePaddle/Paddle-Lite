@@ -22,6 +22,27 @@
 namespace paddle {
 namespace lite {
 
+inline std::vector<int> get_new_shape(
+    std::vector<const lite::Tensor*> list_new_shape_tensor) {
+  // get tensor from
+  std::vector<int> vec_new_shape;
+  for (size_t i = 0; i < list_new_shape_tensor.size(); ++i) {
+    auto tensor = list_new_shape_tensor[i];
+    vec_new_shape.push_back(static_cast<int32_t>(*(tensor->data<int32_t>())));
+  }
+  return vec_new_shape;
+}
+
+template <typename T>
+inline std::vector<T> get_new_data_from_tensor(const Tensor* new_data_tensor) {
+  std::vector<T> vec_new_data;
+  auto* new_data = new_data_tensor->data<T>();
+  lite::Tensor cpu_starts_tensor;
+  vec_new_data =
+      std::vector<T>(new_data, new_data + new_data_tensor->dims().production());
+  return vec_new_data;
+}
+
 template <typename dtype>
 void resize_bilinear_align(std::vector<const lite::Tensor*> inputs,
                            lite::Tensor* output) {
@@ -149,6 +170,9 @@ class BilinearInterpComputeTester : public arena::TestCase {
  protected:
   // common attributes for this op.
   std::string input0_ = "X";
+  std::string sizetensor0_ = "SizeTensor0";
+  std::string sizetensor1_ = "SizeTensor1";
+  std::string input_scale_ = "Scale";
   std::string input1_ = "OutSize";
   std::string output_ = "Out";
 
@@ -162,6 +186,8 @@ class BilinearInterpComputeTester : public arena::TestCase {
   std::string interp_method_ = "Bilinear";
   DDim _dims0_{{1, 1, 16, 16}};
   DDim _dims1_{{2}};
+  DDim sizetensor_dims_{{1}};
+  DDim scale_dims_{{1}};
 
  public:
   BilinearInterpComputeTester(const Place& place,
@@ -190,33 +216,48 @@ class BilinearInterpComputeTester : public arena::TestCase {
     if (outsize_height_ > 0 && outsize_width_ > 0) {
       inputs.emplace_back(scope->FindTensor(input1_));
     }
+    std::vector<const lite::Tensor*> SizeTensor;
+    if (outsize_height_ > 0 && outsize_width_ > 0) {
+      SizeTensor.emplace_back(scope->FindTensor(sizetensor0_));
+      SizeTensor.emplace_back(scope->FindTensor(sizetensor1_));
+    }
+    const lite::Tensor* input_scale = scope->FindTensor(input_scale_);
+    float scale = height_scale_;
+    int in_h = inputs[0]->dims()[2];
+    int in_w = inputs[0]->dims()[3];
+    if (SizeTensor.size() > 0) {
+      auto new_size = get_new_shape(SizeTensor);
+      out_height_ = new_size[0];
+      out_width_ = new_size[1];
+    } else {
+      auto scale_tensor = input_scale;
+      if (scale_tensor != nullptr) {
+        auto scale_data = get_new_data_from_tensor<float>(scale_tensor);
+        scale = scale_data[0];
+      }
+      if (scale > 0) {
+        out_height_ = static_cast<int>(in_h * scale);
+        out_width_ = static_cast<int>(in_w * scale);
+      }
+      if (inputs.size() > 1) {
+        auto out_size = inputs[1];
+        auto out_size_data = get_new_data_from_tensor<int>(out_size);
+        out_height_ = out_size_data[0];
+        out_width_ = out_size_data[1];
+      }
+    }
+    float height_scale = scale;
+    float width_scale = scale;
+
     if (out_width_ != -1 && out_height_ != -1) {
       height_scale_ = static_cast<float>(out_height_ / inputs[0]->dims()[2]);
       width_scale_ = static_cast<float>(out_width_ / inputs[0]->dims()[3]);
     }
     auto* outputs = scope->NewTensor(output_);
     CHECK(outputs);
-    if (inputs.size() > 1) {
-      auto outsize_data = inputs[1]->data<int>();
-      int h_out = outsize_data[0];  // HW
-      int w_out = outsize_data[1];  // HW
-      int num_cout = inputs[0]->dims()[0];
-      int c_cout = inputs[0]->dims()[1];
-      outputs->Resize({num_cout, c_cout, h_out, w_out});
-    } else {
-      int out_h;
-      int out_w;
-      if (-1 == out_height_ && -1 == out_width_) {
-        out_h = inputs[0]->dims()[2] * height_scale_;
-        out_w = inputs[0]->dims()[3] * width_scale_;
-      } else {
-        out_h = out_height_;
-        out_w = out_width_;
-      }
-      outputs->Resize(
-          {inputs[0]->dims()[0], inputs[0]->dims()[1], out_h, out_w});
-    }
-
+    int num_cout = inputs[0]->dims()[0];
+    int c_cout = inputs[0]->dims()[1];
+    outputs->Resize({num_cout, c_cout, out_height_, out_width_});
     if (align_corners_) {
       resize_bilinear_align<float>(inputs, outputs);
     } else {
@@ -229,6 +270,10 @@ class BilinearInterpComputeTester : public arena::TestCase {
     op_desc->SetInput("X", {input0_});
     if (outsize_height_ > 0 && outsize_width_ > 0) {
       op_desc->SetInput("OutSize", {input1_});
+      op_desc->SetInput("SizeTensor", {sizetensor0_, sizetensor1_});
+    }
+    if (height_scale_ > 0) {
+      op_desc->SetInput("Scale", {input_scale_});
     }
     op_desc->SetOutput("Out", {output_});
     op_desc->SetAttr("scale", height_scale_);
@@ -250,6 +295,19 @@ class BilinearInterpComputeTester : public arena::TestCase {
       data1[0] = outsize_height_;
       data1[1] = outsize_width_;
       SetCommonTensor(input1_, _dims1_, data1.data());
+
+      std::vector<int> sizetensor_data(1);
+      sizetensor_data[0] = outsize_height_;
+      SetCommonTensor(sizetensor0_, sizetensor_dims_, sizetensor_data.data());
+
+      sizetensor_data[0] = outsize_width_;
+      SetCommonTensor(sizetensor1_, sizetensor_dims_, sizetensor_data.data());
+    }
+
+    if (height_scale_ > 0) {
+      std::vector<float> scale_data(1);
+      scale_data[0] = height_scale_;
+      SetCommonTensor(input_scale_, scale_dims_, scale_data.data());
     }
   }
 };

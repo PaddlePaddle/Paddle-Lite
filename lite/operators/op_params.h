@@ -94,6 +94,8 @@ struct InterpolateParam {
   lite::Tensor* X{};
   lite::Tensor* OutSize{};
   lite::Tensor* Out{};
+  std::vector<const lite::Tensor*> SizeTensor;
+  lite::Tensor* Scale;
 
   float scale{0.f};
   int out_h{-1};
@@ -101,6 +103,7 @@ struct InterpolateParam {
   bool align_corners{true};
   int align_mode{1};
   std::string interp_method{"Nearest"};
+  DataLayoutType data_layout{DATALAYOUT(kNCHW)};
 };
 
 // For Mul Op
