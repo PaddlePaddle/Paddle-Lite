@@ -12,16 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/x86/concat_compute.h"
+#pragma once
 
-REGISTER_LITE_KERNEL(concat,
-                     kX86,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::x86::ConcatCompute<float>,
-                     def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
-    .BindInput("AxisTensor",
-               {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt32))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
-    .Finalize();
+#include "lite/core/kernel.h"
+
+namespace paddle {
+namespace lite {
+namespace kernels {
+namespace cuda {
+
+class LookupTableCompute
+    : public KernelLite<TARGET(kCUDA), PRECISION(kFloat), DATALAYOUT(kNCHW)> {
+ public:
+  using param_t = operators::LookupTableParam;
+
+  void Run() override;
+  virtual ~LookupTableCompute() = default;
+};
+
+}  // namespace cuda
+}  // namespace kernels
+}  // namespace lite
+}  // namespace paddle
