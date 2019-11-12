@@ -32,7 +32,9 @@ DEFINE_string(input_shape,
 DEFINE_string(result_filename, "", "save test result");
 DEFINE_bool(run_model_optimize,
             false,
-            "apply model_optimize_tool to model, use optimized model to test");
+            "if set true, apply model_optimize_tool to model, use optimized "
+            "model to test");
+DEFINE_bool(is_quantized_model, false, "if set true, test the quantized model");
 
 namespace paddle {
 namespace lite_api {
@@ -42,12 +44,14 @@ void OutputOptModel(const std::string& load_model_dir,
                     const std::vector<std::vector<int64_t>>& input_shapes) {
   lite_api::CxxConfig config;
   config.set_model_dir(load_model_dir);
-  config.set_valid_places({
-      Place{TARGET(kARM), PRECISION(kFloat)},
-      Place{TARGET(kARM), PRECISION(kInt8)},
-      Place{TARGET(kX86), PRECISION(kFloat)},
-      Place{TARGET(kOpenCL), PRECISION(kFloat)},
-  });
+  std::vector<Place> vaild_places = {Place{TARGET(kARM), PRECISION(kFloat)},
+                                     Place{TARGET(kX86), PRECISION(kFloat)},
+                                     Place{TARGET(kOpenCL), PRECISION(kFloat)}};
+  if (FLAGS_is_quantized_model) {
+    vaild_places.insert(vaild_places.begin(),
+                        Place{TARGET(kARM), PRECISION(kInt8)});
+  }
+  config.set_valid_places(vaild_places);
   auto predictor = lite_api::CreatePaddlePredictor(config);
 
   int ret = system(

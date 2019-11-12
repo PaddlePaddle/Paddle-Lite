@@ -46,8 +46,7 @@ void WinogradConv<PRECISION(kFloat), PRECISION(kFloat)>::ReInitWhenNeeded() {
   int max_ch = ic > oc ? ic : oc;
 
   const int n_wino = size_tile;
-  ctx.ExtendWorkspace((size_trans_channel * max_ch * 2 + n_wino) *
-                      sizeof(float));
+  workspace_size_ = (size_trans_channel * max_ch * 2 + n_wino) * sizeof(float);
   last_shape_ = x_dims;
 }
 
@@ -76,8 +75,7 @@ void WinogradConv<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
   int hblock = lite::arm::math::get_hblock(&ctx);
   int m_round = hblock * ((m_wino + hblock - 1) / hblock);
   weights_.Resize({1, 1, 1, 8 * 8 * m_round * ic});
-  ctx.ExtendWorkspace((size_trans_channel * max_ch * 2 + n_wino) *
-                      sizeof(float));
+  workspace_size_ = (size_trans_channel * max_ch * 2 + n_wino) * sizeof(float);
   auto weights_wino =
       static_cast<float*>(malloc(sizeof(float) * 8 * 8 * oc * ic));
   void* trans_tmp_ptr = malloc(sizeof(float) * 8 * 8 * oc * ic);
@@ -106,6 +104,9 @@ template <>
 void WinogradConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->template As<ARMContext>();
+  // extend workspace
+  ctx.ExtendWorkspace(workspace_size_);
+
   const auto* i_data = param.x->data<float>();
   const auto* w_data = weights_.data<float>();
   const auto* b_data = param.bias ? param.bias->data<float>() : nullptr;

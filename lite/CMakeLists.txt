@@ -45,6 +45,7 @@ if (WITH_TESTING)
         lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL} "mobilenet_v2_relu.tar.gz")
         lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL} "resnet50.tar.gz")
         lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL} "inception_v4_simple.tar.gz")
+        lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL} "step_rnn.tar.gz")
     endif()
 endif()
 
@@ -88,13 +89,31 @@ if (LITE_WITH_PYTHON)
 endif()
 
 if (LITE_WITH_X86)
-    add_dependencies(publish_inference eigen3)
-    add_dependencies(publish_inference fluid_data_type)
-    add_dependencies(publish_inference bundle_full_api)
-    add_dependencies(publish_inference bundle_light_api)
-    add_dependencies(publish_inference test_model_bin)
-    add_dependencies(publish_inference paddle_full_api_shared)
-    add_dependencies(publish_inference paddle_light_api_shared)
+    add_custom_target(publish_inference_x86_cxx_lib ${TARGET}
+            COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
+            COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/bin"
+            COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/cxx/include"
+            COMMAND cp "${CMAKE_SOURCE_DIR}/lite/api/paddle_*.h" "${INFER_LITE_PUBLISH_ROOT}/cxx/include"
+            COMMAND cp "${CMAKE_BINARY_DIR}/libpaddle_api_full_bundled.a" "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
+            COMMAND cp "${CMAKE_BINARY_DIR}/libpaddle_api_light_bundled.a" "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
+            COMMAND cp "${CMAKE_BINARY_DIR}/lite/api/*.so" "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
+            COMMAND cp "${CMAKE_BINARY_DIR}/lite/api/test_model_bin" "${INFER_LITE_PUBLISH_ROOT}/bin"
+            )
+    add_dependencies(publish_inference_x86_cxx_lib bundle_full_api)
+    add_dependencies(publish_inference_x86_cxx_lib bundle_light_api)
+    add_dependencies(publish_inference_x86_cxx_lib test_model_bin)
+    add_dependencies(publish_inference_x86_cxx_lib paddle_full_api_shared)
+    add_dependencies(publish_inference_x86_cxx_lib paddle_light_api_shared)
+    add_dependencies(publish_inference publish_inference_x86_cxx_lib)
+
+    add_custom_target(publish_inference_x86_cxx_demos ${TARGET}
+           COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/third_party"
+           COMMAND cp -r "${CMAKE_BINARY_DIR}/third_party/install/*" "${INFER_LITE_PUBLISH_ROOT}/third_party"
+           COMMAND cp -r "${CMAKE_BINARY_DIR}/third_party/eigen3" "${INFER_LITE_PUBLISH_ROOT}/third_party"
+           COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/demo/cxx"
+           )
+    add_dependencies(publish_inference_x86_cxx_lib publish_inference_x86_cxx_demos)
+    add_dependencies(publish_inference_x86_cxx_demos paddle_full_api_shared eigen3)
 endif()
 
 if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM)
@@ -124,8 +143,10 @@ if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM)
                           COMMAND cp ${CMAKE_BINARY_DIR}/lite/api/*.so ${INFER_LITE_PUBLISH_ROOT}/cxx/lib)
                 endif()
                 add_dependencies(publish_inference publish_inference_cxx_lib)
-                add_custom_command(TARGET publish_inference_cxx_lib POST_BUILD
-                        COMMAND ${CMAKE_STRIP} "--strip-debug" ${INFER_LITE_PUBLISH_ROOT}/cxx/lib/*.a)
+                if(NOT "${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
+                    add_custom_command(TARGET publish_inference_cxx_lib POST_BUILD
+                            COMMAND ${CMAKE_STRIP} "--strip-debug" ${INFER_LITE_PUBLISH_ROOT}/cxx/lib/*.a)
+                endif()
             endif()
     else()
         if (IOS)
@@ -164,8 +185,10 @@ if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM)
         )
         add_dependencies(publish_inference_java_lib paddle_lite_jni PaddlePredictor)
         add_dependencies(publish_inference publish_inference_java_lib)
-        add_custom_command(TARGET publish_inference_java_lib POST_BUILD
-                                   COMMAND ${CMAKE_STRIP} "-s" ${INFER_LITE_PUBLISH_ROOT}/java/so/libpaddle_lite_jni.so)
+        if(NOT "${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
+            add_custom_command(TARGET publish_inference_java_lib POST_BUILD
+                                       COMMAND ${CMAKE_STRIP} "-s" ${INFER_LITE_PUBLISH_ROOT}/java/so/libpaddle_lite_jni.so)
+        endif()
     endif()
 
     if ((ARM_TARGET_OS STREQUAL "android") AND (NOT LITE_WITH_OPENCL) AND

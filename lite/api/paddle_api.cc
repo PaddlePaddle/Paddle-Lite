@@ -46,6 +46,10 @@ template <>
 const int8_t *Tensor::data() const {
   return ctensor(raw_tensor_)->data<int8_t>();
 }
+template <>
+const int64_t *Tensor::data() const {
+  return ctensor(raw_tensor_)->data<int64_t>();
+}
 
 template <>
 const int32_t *Tensor::data() const {
@@ -63,6 +67,10 @@ float *Tensor::mutable_data(TargetType type) const {
 template <>
 int8_t *Tensor::mutable_data(TargetType type) const {
   return tensor(raw_tensor_)->mutable_data<int8_t>(type);
+}
+template <>
+int64_t *Tensor::mutable_data(TargetType type) const {
+  return tensor(raw_tensor_)->mutable_data<int64_t>(type);
 }
 
 template <typename T, TargetType type>
