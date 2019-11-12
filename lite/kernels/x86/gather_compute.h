@@ -15,6 +15,7 @@
 #pragma once
 
 #include <vector>
+#include "lite/api/paddle_place.h"
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/types.h"
@@ -78,19 +79,15 @@ class GatherCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
 
     out->mutable_data<T>();
     if (x->dims().production() == 0) return;
-
-    const auto& index_type = index->type();
-    bool index_type_match = index_type == framework::proto::VarType::INT32 ||
-                            index_type == framework::proto::VarType::INT64;
-
-    CHECK(index_type_match) << "Gather(Op)'s Index(Input) holds the wrong "
-                               "type. Desire to be INT32 or INT64.";
-
-    if (index_type == framework::proto::VarType::INT32) {
-      CPUGather<T, int>(x, index, out);
-    } else if (index_type == framework::proto::VarType::INT64) {
-      CPUGather<T, int64_t>(x, index, out);
-    }
+    /*
+     * Since there's no type defined for lite::Tensor in Paddle-Lite, then
+     * convert the Index's value to float which must be int32_t or int64_t and
+     * this supposes to cause no precision difference during inference just for
+     * now.
+     * Alternatively, if define the Tensor's type during registering, may cause
+     * a redefinition error.
+     */
+    CPUGather<T, float>(x, index, out);
   }
 
   virtual ~GatherCompute() = default;
