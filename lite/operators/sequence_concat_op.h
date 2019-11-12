@@ -34,7 +34,7 @@ class SequenceConcatOp : public OpLite {
 
  private:
   mutable SequenceConcatParam param_;
-}
+};
 
 }  // namespace operators
 }  // namespace lite
