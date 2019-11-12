@@ -68,8 +68,8 @@ void pool_compute_ref(const operators::PoolParam& param) {
   auto& in_dims = param.x->dims();
   auto& out_dims = param.output->dims();
 
-  const float* src_ptr = param.x->data<const float>();
-  float* dst_ptr = param.output->mutable_data<float>();
+  const float* din = param.x->data<const float>();
+  float* dout = param.output->mutable_data<float>();
 
   std::vector<int> ksize = param.ksize;
   std::vector<int> strides = param.strides;
@@ -83,84 +83,120 @@ void pool_compute_ref(const operators::PoolParam& param) {
   bool use_quantizer = param.use_quantizer;
   std::string data_format = param.data_format;
 
-  int in_n = in_dims[0];
-  int in_c = in_dims[1];
-  int in_h = in_dims[2];
-  int in_w = in_dims[3];
-  int size_in_n = in_c * in_h * in_w;
-  int size_in_c = in_h * in_w;
+  int num = in_dims[0];
+  int chin = in_dims[1];
+  int hin = in_dims[2];
+  int win = in_dims[3];
 
-  int out_h = out_dims[2];
-  int out_w = out_dims[3];
-  int size_out_n = in_c * out_h * out_w;
-  int size_out_c = out_h * out_w;
+  int chout = out_dims[1];
+  int hout = out_dims[2];
+  int wout = out_dims[3];
 
-  int window_h = ksize[0];
-  int window_w = ksize[1];
+  // no need to pad input tensor, border is zero pad inside this function
+  memset(dout, 0, num * chout * hout * wout * sizeof(float));
+  int kernel_h = ksize[0];
+  int kernel_w = ksize[1];
   int stride_h = strides[0];
   int stride_w = strides[1];
   int pad_h = paddings[0];
   int pad_w = paddings[1];
-
-  if (global_pooling == true) {
-    for (int n = 0; n < in_n; ++n) {
-      for (int c = 0; c < in_c; ++c) {
-        const float* src = src_ptr + n * size_in_n + c * size_in_c;
-        float res = src[0];
-        if (pooling_type == "max") {
-          for (int i = 1; i < size_in_c; ++i) {
-            float cur_val = src[i];
-            res = cur_val > res ? cur_val : res;
+  int size_channel_in = win * hin;
+  int size_channel_out = wout * hout;
+  if (global_pooling) {
+    if (pooling_type == "max") {  // Pooling_max
+      for (int n = 0; n < num; ++n) {
+        float* dout_batch = dout + n * chout * size_channel_out;
+        const float* din_batch = din + n * chin * size_channel_in;
+#pragma omp parallel for
+        for (int c = 0; c < chout; ++c) {
+          const float* din_ch = din_batch + c * size_channel_in;  // in address
+          float tmp1 = din_ch[0];
+          for (int i = 0; i < size_channel_in; ++i) {
+            float tmp2 = din_ch[i];
+            tmp1 = tmp1 > tmp2 ? tmp1 : tmp2;
           }
-        } else if (pooling_type == "avg") {
-          for (int i = 1; i < size_in_c; ++i) {
-            float cur_val = src[i];
-            res += cur_val;
-          }
-          res /= size_in_c;
+          dout_batch[c] = tmp1;
         }
-        dst_ptr[n * size_out_n + c] = res;
       }
+    } else if (pooling_type == "avg") {
+      // Pooling_average_include_padding
+      // Pooling_average_exclude_padding
+      for (int n = 0; n < num; ++n) {
+        float* dout_batch = dout + n * chout * size_channel_out;
+        const float* din_batch = din + n * chin * size_channel_in;
+#pragma omp parallel for
+        for (int c = 0; c < chout; ++c) {
+          const float* din_ch = din_batch + c * size_channel_in;  // in address
+          float sum = 0.f;
+          for (int i = 0; i < size_channel_in; ++i) {
+            sum += din_ch[i];
+          }
+          dout_batch[c] = sum / size_channel_in;
+        }
+      }
+    } else {
+      LOG(FATAL) << "unsupported pooling type: " << pooling_type;
     }
   } else {
-    for (int n = 0; n < in_n; ++n) {
-      for (int c = 0; c < in_c; ++c) {
-        for (int h = 0; h < out_h; ++h) {
-          int sh = h * stride_h;
-          int eh = sh + window_h;
+    for (int ind_n = 0; ind_n < num; ++ind_n) {
+#pragma omp parallel for
+      for (int ind_c = 0; ind_c < chin; ++ind_c) {
+        for (int ind_h = 0; ind_h < hout; ++ind_h) {
+          int sh = ind_h * stride_h;
+          int eh = sh + kernel_h;
           sh = (sh - pad_h) < 0 ? 0 : sh - pad_h;
-          eh = (eh - pad_h) > in_h ? in_h : eh - pad_h;
-          for (int w = 0; w < out_w; ++w) {
-            int sw = w * stride_w;
-            int ew = sw + window_w;
+          eh = (eh - pad_h) > hin ? hin : eh - pad_h;
+          for (int ind_w = 0; ind_w < wout; ++ind_w) {
+            int sw = ind_w * stride_w;
+            int ew = sw + kernel_w;
             sw = (sw - pad_w) < 0 ? 0 : sw - pad_w;
-            ew = (ew - pad_w) > in_w ? in_w : ew - pad_w;
-            int pooling_size = (ew - sw) * (eh - sh);
-            if (pooling_size == 0) continue;
-            float res = 0.f;
+            ew = (ew - pad_w) > win ? win : ew - pad_w;
+            float result = static_cast<float>(0);
+            int dst_ind = (ind_n * chout + ind_c) * size_channel_out +
+                          ind_h * wout + ind_w;
             for (int kh = sh; kh < eh; ++kh) {
               for (int kw = sw; kw < ew; ++kw) {
-                int src_idx = n * size_in_n + c * size_in_c + kh * in_w + kw;
+                int src_ind =
+                    (ind_n * chin + ind_c) * size_channel_in + kh * win + kw;
                 if (kh == sh && kw == sw) {
-                  res = src_ptr[src_idx];
+                  result = din[src_ind];
                 } else {
                   if (pooling_type == "max") {
-                    res = res >= src_ptr[src_idx] ? res : src_ptr[src_idx];
-                  }
-                  if (pooling_type == "avg") {
-                    res += src_ptr[src_idx];
+                    result = result >= din[src_ind] ? result : din[src_ind];
+                  } else if (pooling_type == "avg") {
+                    result += din[src_ind];
                   }
                 }
               }
             }
             if (pooling_type == "avg") {
               if (exclusive) {
-                res /= pooling_size;
+                int div = (ew - sw) * (eh - sh);
+                div = div > 0 ? div : 1;
+                result /= div;
               } else {
-                res /= window_h * window_w;
+                int bh = kernel_h;
+                int bw = kernel_w;
+                if (ew == win) {
+                  bw = sw + kernel_w >= win + pad_w ? win + pad_w
+                                                    : sw + kernel_w;
+                  bw -= sw;
+                  if (sw - pad_w < 0 && sw + kernel_w > win + pad_w) {
+                    bw += pad_w;
+                  }
+                }
+                if (eh == hin) {
+                  bh = sh + kernel_h >= hin + pad_h ? hin + pad_h
+                                                    : sh + kernel_h;
+                  bh -= sh;
+                  if (sh - pad_h < 0 && sh + kernel_h > hin + pad_h) {
+                    bh += pad_h;
+                  }
+                }
+                result /= bh * bw;
               }
             }
-            dst_ptr[n * size_out_n + c * size_out_c + h * out_w + w] = res;
+            dout[dst_ind] = result;
           }
         }
       }
