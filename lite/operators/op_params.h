@@ -919,16 +919,22 @@ struct AssignValueParam {
   lite::Tensor* Out{};
 };
 
-/// ----------------------- match_matrix_tensor operators
-/// -----------------------
+/// --------------------- match_matrix_tensor operators --------------------
 struct MatchMatrixTensorParam {
-  lite::Tensor* x;
-  lite::Tensor* y;
-  lite::Tensor* w;
+  const lite::Tensor* x;
+  const lite::Tensor* y;
+  const lite::Tensor* w;
   lite::Tensor* out;
   lite::Tensor* tmp;
 
   int dim_t;
+};
+
+/// --------------------- search_seq_depadding operators --------------------
+struct SearchSeqDepaddingParam {
+  const lite::Tensor* pad;
+  const lite::Tensor* src;
+  lite::Tensor* out;
 };
 
 }  // namespace operators
