@@ -23,6 +23,7 @@ add_kernel(softmax_compute_cuda CUDA basic SRCS softmax_compute.cu DEPS ${lite_k
 add_kernel(pool_compute_cuda CUDA basic SRCS pool_compute.cu DEPS
 ${lite_kernel_deps} cudnn_pool)
 add_kernel(bilinear_interp_compute_cuda CUDA basic SRCS bilinear_interp_compute.cu DEPS ${lite_kernel_deps})
+add_kernel(lookup_table_compute_cuda CUDA extra SRCS lookup_table_compute.cu DEPS ${lite_kernel_deps})
 
 lite_cc_test(calib_compute_cuda_test SRCS calib_compute_cuda_test.cc DEPS calib_compute_cuda)
 nv_test(conv2d_cuda_test SRCS conv_compute_test.cc DEPS conv2d_cuda)
@@ -39,3 +40,6 @@ nv_test(mul_compute_cuda_test SRCS mul_compute_test.cc DEPS mul_compute_cuda)
 nv_test(dropout_compute_cuda_test SRCS dropout_compute_test.cc DEPS dropout_compute_cuda )
 nv_test(bilinear_interp_compute_cuda_test SRCS bilinear_interp_compute_test.cc DEPS bilinear_interp_compute_cuda)
 nv_test(pool_compute_cuda_test SRCS pool_compute_test.cc DEPS pool_compute_cuda)
+if(LITE_BUILD_EXTRA)
+    nv_test(lookup_table_compute_cuda_test SRCS lookup_table_compute_test.cc DEPS lookup_table_compute_cuda)
+endif()

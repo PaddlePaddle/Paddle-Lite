@@ -12,14 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "ai_ddk_lib/include/graph/buffer.h"
-#include "ai_ddk_lib/include/graph/graph.h"
-#include "ai_ddk_lib/include/graph/model.h"
-#include "ai_ddk_lib/include/graph/op/all_ops.h"
-#include "ai_ddk_lib/include/graph/operator.h"
-#include "ai_ddk_lib/include/graph/operator_reg.h"
+#include "lite/backends/npu/builder.h"
 #include "lite/kernels/npu/bridges/registry.h"
-#include "lite/kernels/npu/bridges/utils.h"
 
 namespace paddle {
 namespace lite {
@@ -32,8 +26,8 @@ node_map_type ConcatConverter(const std::shared_ptr<lite::OpLite> concat_op,
   lite::Scope* scope = concat_op->scope();
   const lite::OpInfo* op_info = concat_op->op_info();
   auto op_type = op_info->Type();
-  auto unique_op_type = UniqueName(op_type);
-  LOG(INFO) << "converting " << op_type << " ... ";
+  auto unique_op_type = lite::npu::UniqueName(op_type);
+  LOG(INFO) << "[NPU] Converting " << op_type << " ... ";
 
   auto x_var_names = op_info->Input("X");
   auto axis = op_info->GetAttr<int>("axis");
@@ -48,17 +42,17 @@ node_map_type ConcatConverter(const std::shared_ptr<lite::OpLite> concat_op,
   for (auto x_var_name : x_var_names) {
     if (inputs_map.find(x_var_name) != inputs_map.end()) {
       output_node->set_dynamic_input_x(index + 1, *inputs_map.at(x_var_name));
-      OpList::Global().add(inputs_map.at(x_var_name));
+      lite::npu::OpList::Global().add(inputs_map.at(x_var_name));
     } else {
       auto consty = std::make_shared<ge::op::Const>(x_var_name);
       auto* x = scope->FindVar(x_var_name)->GetMutable<Tensor>();
-      consty->set_attr_value(CvtFromLiteTensor(x));
+      consty->set_attr_value(lite::npu::CvtTensor(x));
       output_node->set_dynamic_input_x(index + 1, *consty);
-      OpList::Global().add(consty);
+      lite::npu::OpList::Global().add(consty);
     }
     index++;
   }
-  OpList::Global().add(output_node);
+  lite::npu::OpList::Global().add(output_node);
 
   node_map_type outputs_map;
   outputs_map[op_info->Output("Out").front()] = output_node;

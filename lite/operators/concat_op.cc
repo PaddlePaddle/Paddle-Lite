@@ -21,7 +21,7 @@ namespace lite {
 namespace operators {
 
 bool ConcatOpLite::CheckShape() const {
-  CHECK_GT_OR_FALSE(param_.x.size(), 1UL);
+  CHECK_GE_OR_FALSE(param_.x.size(), 1UL);
   CHECK_OR_FALSE(param_.output);
   return true;
 }
@@ -31,14 +31,25 @@ bool ConcatOpLite::InferShape() const {
   for (auto p : param_.x) {
     input_dims.push_back(p->dims());
   }
-  size_t axis = static_cast<size_t>(param_.axis);
   const size_t n = input_dims.size();
   CHECK_GT_OR_FALSE(n, 0);
+
+  int axis = 0;
+  if (param_.axis_tensor == nullptr) {
+    axis = param_.axis;
+  } else {
+    auto *axis_tensor_val = param_.axis_tensor->data<int>();
+    axis = axis_tensor_val[0];
+  }
+  if (axis < 0) {
+    axis += input_dims[0].size();
+  }
+
   auto &out_dims = input_dims[0];
   size_t in_zero_dims_size = out_dims.size();
   for (size_t i = 1; i < n; i++) {
     for (size_t j = 0; j < in_zero_dims_size; j++) {
-      if (j == axis) {
+      if (j == static_cast<size_t>(axis)) {
         out_dims[axis] += input_dims[i][j];
       } else {
         CHECK_EQ_OR_FALSE(out_dims[j], input_dims[i][j]);
@@ -68,6 +79,17 @@ bool ConcatOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
   param_.output = scope->FindVar(out)->GetMutable<lite::Tensor>();
   param_.axis = op_desc.GetAttr<int>("axis");
 
+  std::vector<std::string> input_arg_names = op_desc.InputArgumentNames();
+  if (std::find(input_arg_names.begin(), input_arg_names.end(), "AxisTensor") !=
+      input_arg_names.end()) {
+    auto arguments = op_desc.Input("AxisTensor");
+    if (arguments.size() > 0) {
+      auto var = scope->FindVar(arguments.front());
+      if (var != nullptr) {
+        param_.axis_tensor = var->GetMutable<lite::Tensor>();
+      }
+    }
+  }
   return true;
 }
 

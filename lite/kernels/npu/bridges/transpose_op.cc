@@ -12,14 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "ai_ddk_lib/include/graph/buffer.h"
-#include "ai_ddk_lib/include/graph/graph.h"
-#include "ai_ddk_lib/include/graph/model.h"
-#include "ai_ddk_lib/include/graph/op/all_ops.h"
-#include "ai_ddk_lib/include/graph/operator.h"
-#include "ai_ddk_lib/include/graph/operator_reg.h"
+#include "lite/backends/npu/builder.h"
 #include "lite/kernels/npu/bridges/registry.h"
-#include "lite/kernels/npu/bridges/utils.h"
 
 namespace paddle {
 namespace lite {
@@ -33,8 +27,8 @@ node_map_type TransposeConverter(
   auto scope = transpose_op->scope();
   auto op_info = transpose_op->op_info();
   auto op_type = op_info->Type();
-  auto unique_op_type = UniqueName(op_type);
-  LOG(INFO) << "Converting " + op_type + "...";
+  auto unique_op_type = lite::npu::UniqueName(op_type);
+  LOG(INFO) << "[NPU] Converting " + op_type + "...";
 
   std::shared_ptr<ge::op::Permute> transpose_node =
       std::make_shared<ge::op::Permute>(unique_op_type);
@@ -50,8 +44,8 @@ node_map_type TransposeConverter(
     w_data[i] = 1.f;
   }
   auto npu_w = std::make_shared<ge::op::Const>(w_var_name);
-  npu_w->set_attr_value(CvtFromLiteTensor(w));
-  OpList::Global().add(npu_w);
+  npu_w->set_attr_value(lite::npu::CvtTensor(w));
+  lite::npu::OpList::Global().add(npu_w);
 
   auto axis = op_info->GetAttr<std::vector<int>>("axis");
   auto npu_axis = ge::AttrValue::LIST_INT(axis.begin(), axis.end());
@@ -61,8 +55,8 @@ node_map_type TransposeConverter(
   transpose_node->set_input_w(*npu_w);
   transpose_node->set_attr_order(npu_axis);
 
-  OpList::Global().add(inputs_map.at(x_var_name));
-  OpList::Global().add(transpose_node);
+  lite::npu::OpList::Global().add(inputs_map.at(x_var_name));
+  lite::npu::OpList::Global().add(transpose_node);
 
   node_map_type outputs_map;
   outputs_map[op_info->Output("Out").front()] = transpose_node;

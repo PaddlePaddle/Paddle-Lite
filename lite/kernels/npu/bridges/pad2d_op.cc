@@ -12,14 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "ai_ddk_lib/include/graph/buffer.h"
-#include "ai_ddk_lib/include/graph/graph.h"
-#include "ai_ddk_lib/include/graph/model.h"
-#include "ai_ddk_lib/include/graph/op/all_ops.h"
-#include "ai_ddk_lib/include/graph/operator.h"
-#include "ai_ddk_lib/include/graph/operator_reg.h"
+#include "lite/backends/npu/builder.h"
 #include "lite/kernels/npu/bridges/registry.h"
-#include "lite/kernels/npu/bridges/utils.h"
 
 namespace paddle {
 namespace lite {
@@ -32,24 +26,24 @@ node_map_type Pad2dConverter(const std::shared_ptr<lite::OpLite> pad2d_op,
   auto scope = pad2d_op->scope();
   auto op_info = pad2d_op->op_info();
   auto op_type = op_info->Type();
-  auto unique_op_type = UniqueName(op_type);
-  LOG(INFO) << "Converting " + op_type + "...";
+  auto unique_op_type = lite::npu::UniqueName(op_type);
+  LOG(INFO) << "[NPU] Converting " + op_type + "...";
 
   std::shared_ptr<ge::op::Pad> pad2d_node =
       std::make_shared<ge::op::Pad>(unique_op_type);
   auto x_var_name = op_info->Input("X").front();
   pad2d_node->set_input_x(*inputs_map.at(x_var_name));
-  OpList::Global().add(inputs_map.at(x_var_name));
-  OpList::Global().add(pad2d_node);
+  lite::npu::OpList::Global().add(inputs_map.at(x_var_name));
+  lite::npu::OpList::Global().add(pad2d_node);
 
   auto mode = op_info->GetAttr<std::string>("mode");
   if (mode == "constant") {
     pad2d_node->set_attr_mode(0);
   } else if (mode == "reflect") {
-    LOG(FATAL) << "NPU doesn't support this pad mod: " << mode;
+    LOG(FATAL) << "[NPU] pad mode " << mode << " isn't supported in HiAI DDK";
     pad2d_node->set_attr_mode(1);
   } else {
-    LOG(FATAL) << "NPU doesn't support this pad mod: " << mode;
+    LOG(FATAL) << "[NPU] pad mode " << mode << " isn't supported in HiAI DDK";
   }
 
   auto x_dims = scope->FindTensor(x_var_name)->dims();
@@ -59,17 +53,19 @@ node_map_type Pad2dConverter(const std::shared_ptr<lite::OpLite> pad2d_op,
   padding.insert(padding.begin(), xds * 2 - 4, 0);
   auto npu_padding =
       std::make_shared<ge::op::Const>(unique_op_type + "/padding");
-  npu_padding->set_attr_value(CreateTensorAndFillData<int>(padding, {xds, 2}));
+  npu_padding->set_attr_value(
+      lite::npu::CreateTensorAndFillData<int>(padding, {xds, 2}));
   pad2d_node->set_input_padding(*npu_padding);
-  OpList::Global().add(npu_padding);
+  lite::npu::OpList::Global().add(npu_padding);
 
   if (mode == "constant") {
     auto pad_value = op_info->GetAttr<float>("pad_value");
     auto npu_pad_value =
         std::make_shared<ge::op::Const>(unique_op_type + "/pad_value");
-    npu_pad_value->set_attr_value(CreateTensorAndFillData<float>({pad_value}));
+    npu_pad_value->set_attr_value(
+        lite::npu::CreateTensorAndFillData<float>({pad_value}));
     pad2d_node->set_input_constant_values(*npu_pad_value);
-    OpList::Global().add(npu_pad_value);
+    lite::npu::OpList::Global().add(npu_pad_value);
 
     pad2d_node->set_attr_T(0);  // type of pad_value:  0:float  3:int32
   }

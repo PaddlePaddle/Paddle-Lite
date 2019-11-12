@@ -229,6 +229,8 @@ void SubgraphProgramPass::InferOnce(const std::unique_ptr<SSAGraph>& graph) {
     }
     op->CheckShape();
     op->InferShape();
+
+#ifndef LITH_WITH_XPU
     // TOOD(xxx): remove Launch() at last
     auto& kkks = stmt.kernels();
     if (!kkks.empty()) {
@@ -237,6 +239,7 @@ void SubgraphProgramPass::InferOnce(const std::unique_ptr<SSAGraph>& graph) {
         kk->Launch();
       }
     }
+#endif
   }
 }
 

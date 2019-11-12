@@ -12,14 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "ai_ddk_lib/include/graph/buffer.h"
-#include "ai_ddk_lib/include/graph/graph.h"
-#include "ai_ddk_lib/include/graph/model.h"
-#include "ai_ddk_lib/include/graph/op/all_ops.h"
-#include "ai_ddk_lib/include/graph/operator.h"
-#include "ai_ddk_lib/include/graph/operator_reg.h"
+#include "lite/backends/npu/builder.h"
 #include "lite/kernels/npu/bridges/registry.h"
-#include "lite/kernels/npu/bridges/utils.h"
 
 namespace paddle {
 namespace lite {
@@ -32,8 +26,8 @@ node_map_type PoolConverter(const std::shared_ptr<lite::OpLite> pool_op,
   auto scope = pool_op->scope();
   auto op_info = pool_op->op_info();
   auto op_type = op_info->Type();
-  auto unique_op_type = UniqueName(op_type);
-  LOG(INFO) << "Converting " + op_type + "...";
+  auto unique_op_type = lite::npu::UniqueName(op_type);
+  LOG(INFO) << "[NPU] Converting " + op_type + "...";
 
   std::shared_ptr<ge::op::Pooling> pool_node =
       std::make_shared<ge::op::Pooling>(unique_op_type);
@@ -45,9 +39,9 @@ node_map_type PoolConverter(const std::shared_ptr<lite::OpLite> pool_op,
   } else if (pooling_type == "avg") {
     npu_mode = 1;
     CHECK(op_info->GetAttr<bool>("exclusive"))
-        << "exclusive must be true when use npu";
+        << "[NPU] exclusive must be true in HiAI DDK";
   } else {
-    LOG(FATAL) << "Unsupported pooling type: " << pooling_type;
+    LOG(FATAL) << "[NPU] Unsupported pooling type: " << pooling_type;
   }
   bool npu_global_pooling = op_info->GetAttr<bool>("global_pooling");
   auto ksize = op_info->GetAttr<std::vector<int>>("ksize");
@@ -73,8 +67,8 @@ node_map_type PoolConverter(const std::shared_ptr<lite::OpLite> pool_op,
   pool_node->set_attr_ceil_mode(npu_ceil_mode);
   // output_node->set_attr_data_mode(npu_data_mode);
 
-  OpList::Global().add(inputs_map.at(x_var_name));
-  OpList::Global().add(pool_node);
+  lite::npu::OpList::Global().add(inputs_map.at(x_var_name));
+  lite::npu::OpList::Global().add(pool_node);
 
   node_map_type outputs_map;
   outputs_map[op_info->Output("Out").front()] = pool_node;
