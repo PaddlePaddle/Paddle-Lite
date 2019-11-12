@@ -1,0 +1,102 @@
+// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#pragma once
+
+#include <vector>
+#include "lite/core/kernel.h"
+#include "lite/core/op_registry.h"
+#include "lite/core/types.h"
+#include "lite/fluid/data_type.h"
+
+namespace paddle {
+namespace lite {
+namespace kernels {
+namespace x86 {
+
+/**
+ * A thin wrapper for gathering on cpu tensor
+ * Return a new tensor from source tensor, gathered according to index
+ * input[src]: type-T source Tensor
+ * input[index]: type-IndexT index Tensor (1-D)
+ * return: output tensor
+ */
+template <typename T, typename IndexT = int>
+void CPUGather(const lite::Tensor* src,
+               const lite::Tensor* index,
+               lite::Tensor* output) {
+  // check index of shape 1-D
+  if (index->dims().size() == 2) {
+    CHECK(index->dims()[1] == 1) << "Index(Input)'s dimension[1] should be 1 "
+                                    "when Index(input)'s dimension's size "
+                                    "equal to 2 in Gather(Op).";
+  } else {
+    CHECK(index->dims().size() == 1)
+        << "Index(Input)'s dimension's size() should be 1 or 2 in Gather(Op).";
+  }
+  int64_t index_size = index->dims()[0];
+
+  auto src_dims = src->dims();
+
+  const T* p_src = src->data<T>();
+  const IndexT* p_index = index->data<IndexT>();
+  T* p_output = output->data<T>();
+
+  // slice size
+  int slice_size = 1;
+  for (int i = 1; i < src_dims.size(); ++i) slice_size *= src_dims[i];
+
+  const size_t slice_bytes = slice_size * sizeof(T);
+
+  for (int64_t i = 0; i < index_size; ++i) {
+    IndexT index_ = p_index[i];
+    memcpy(p_output + i * slice_size, p_src + index_ * slice_size, slice_bytes);
+  }
+}
+
+template <typename T>
+class GatherCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::GatherParam;
+
+  void Run() override {
+    auto& param = *param_.get_mutable<param_t>();
+    auto x = param.X;
+    auto index = param.Index;
+    auto out = param.Out;
+
+    out->mutable_data<T>();
+    if (x->dims().production() == 0) return;
+
+    const auto& index_type = index->type();
+    bool index_type_match = index_type == framework::proto::VarType::INT32 ||
+                            index_type == framework::proto::VarType::INT64;
+
+    CHECK(index_type_match) << "Gather(Op)'s Index(Input) holds the wrong "
+                               "type. Desire to be INT32 or INT64.";
+
+    if (index_type == framework::proto::VarType::INT32) {
+      CPUGather<T, int>(x, index, out);
+    } else if (index_type == framework::proto::VarType::INT64) {
+      CPUGather<T, int64_t>(x, index, out);
+    }
+  }
+
+  virtual ~GatherCompute() = default;
+};
+
+}  // namespace x86
+}  // namespace kernels
+}  // namespace lite
+}  // namespace paddle
