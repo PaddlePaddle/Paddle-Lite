@@ -68,11 +68,26 @@ class PoolOpLite : public OpLite {
     if (op_desc.HasAttr("padding_algorithm")) {
       padding_algorithm_ = op_desc.GetAttr<std::string>("padding_algorithm");
     }
-    // param_.data_format = op_desc.GetAttr<bool>("data_format");
     return true;
   }
 
-  void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
+  void AttachKernel(KernelBase *kernel) override {
+    auto paddings = param_.paddings;
+    // 2-pad to 4-pad
+    if (paddings.size() == param_.strides.size()) {
+      for (size_t i = 0; i < param_.strides.size(); ++i) {
+        int copy_pad = *(paddings.begin() + 2 * i);
+        paddings.insert(paddings.begin() + 2 * i + 1, copy_pad);
+      }
+    } else {
+      if (paddings.size() != param_.strides.size() * 2) {
+        LOG(FATAL)
+            << "Paddings size should be the same or twice as the inputs size.";
+      }
+    }
+    param_.paddings = paddings;
+    kernel->SetParam(param_);
+  }
 
   std::string DebugString() const override { return "pool2d"; }
 

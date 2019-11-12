@@ -56,6 +56,8 @@ void PoolCompute::Run() {
 
   if (global_pooling) {
     for (size_t i = 0; i < ksize.size(); ++i) {
+      paddings[2 * i] = 0;
+      paddings[2 * i + 1] = 0;
       ksize[i] = static_cast<int>(in_dims[i + 2]);
     }
     if (pooling_type == "max") {

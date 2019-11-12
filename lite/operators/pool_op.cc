@@ -36,7 +36,7 @@ bool PoolOpLite::CheckShape() const {
   // Strides size and pooling size should be the same.
   CHECK_OR_FALSE(ksize.size() == strides.size());
   // Paddings size and pooling size should be the same.
-  // CHECK_OR_FALSE(ksize.size() == paddings.size());
+  CHECK_OR_FALSE(paddings.size() == 4);
 
   return true;
 }
@@ -48,19 +48,6 @@ inline void UpdatePadding(std::vector<int>* paddings,
                           const lite::DDim data_dims,
                           const std::vector<int>& strides,
                           const std::vector<int>& ksize) {
-  // set padding size * 2 == data_dims.size()
-  if (paddings->size() * 2 == data_dims.size()) {
-    for (size_t i = 0; i < strides.size(); ++i) {
-      int copy_pad = *(paddings->begin() + i);
-      paddings->insert(paddings->begin() + 2 * i + 1, copy_pad);
-    }
-  } else {
-    if (paddings->size() != data_dims.size()) {
-      LOG(FATAL)
-          << "Paddings size should be the same or twice as the pooling size.";
-    }
-  }
-
   // when padding_algorithm is "VALID" or "SAME"
   if (padding_algorithm == "SAME") {
     for (int i = 0; i < strides.size(); ++i) {
@@ -109,7 +96,7 @@ int PoolOutputSize(int input_size,
 bool PoolOpLite::InferShape() const {
   const auto x_dims = param_.x->dims();
   std::vector<int>& ksize = param_.ksize;
-  // 2-pad to 4-pad
+  // dynamic update 4-pad
   UpdatePadding(&param_.paddings,
                 param_.global_pooling,
                 param_.adaptive,
@@ -120,11 +107,9 @@ bool PoolOpLite::InferShape() const {
   if (param_.global_pooling) {
     ksize.resize(static_cast<size_t>(x_dims.size()) - 2);
     for (size_t i = 0; i < ksize.size(); ++i) {
-      param_.paddings[i] = 0;
       ksize[i] = static_cast<int>(x_dims[i + 2]);
     }
   }
-
   std::vector<int64_t> output_shape({x_dims[0], x_dims[1]});
   if (param_.adaptive) {
     output_shape.insert(
