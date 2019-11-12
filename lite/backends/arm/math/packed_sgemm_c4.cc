@@ -87,48 +87,26 @@ void loadb_c4(float* out,
     const float* in_ptr = in + i * 4 * n;
     for (int j = 0; j < xloop; ++j) {
       float* out_p = out_ptr + j * ldo;
-      float* out_bak = out_p;
-      // if ((j == xloop - 1) && flag_remain){
-      //     for (int r = 0; r < remain; ++r){
-      //       float32x4_t q0 = vld1q_f32(in_ptr + r * 4);
-      //       vst1q_f32(out_p + r * 4, q0);
-      //     }
-      //     memset(out_p + remain * 4, 0, (NBLOCK_C4 - remain) * 4 *
-      //     sizeof(float));
-      // } else{
-      //   asm volatile(
-      //     "ld1 {v0.4s, v1.4s}, [%[in]],  #32  \n"
-      //     "ld1 {v2.4s, v3.4s}, [%[in]],  #32  \n"
-      //     "st1 {v0.4s, v1.4s}, [%[out]], #32  \n"
-      //     "ld1 {v4.4s, v5.4s}, [%[in]],  #32  \n"
-      //     "st1 {v2.4s, v3.4s}, [%[out]], #32  \n"
-      //     "ld1 {v6.4s, v7.4s}, [%[in]],  #32  \n"
-      //     "st1 {v4.4s, v5.4s}, [%[out]], #32  \n"
-      //     "st1 {v6.4s, v7.4s}, [%[out]], #32  \n"
-      //     : [in] "+r" (in_ptr),
-      //       [out] "+r" (out_p)
-      //     :
-      //     : "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7"
-      //   );
-      // }
       if ((j == xloop - 1) && flag_remain) {
         for (int r = 0; r < remain; ++r) {
           float32x4_t q0 = vld1q_f32(in_ptr + r * 4);
           vst1q_f32(out_p + r * 4, q0);
         }
         memset(out_p + remain * 4, 0, (NBLOCK_C4 - remain) * 4 * sizeof(float));
-        in_ptr = out_bak;
+      } else {
+        asm volatile(
+            "ld1 {v0.4s, v1.4s}, [%[in]],  #32  \n"
+            "ld1 {v2.4s, v3.4s}, [%[in]],  #32  \n"
+            "st1 {v0.4s, v1.4s}, [%[out]], #32  \n"
+            "ld1 {v4.4s, v5.4s}, [%[in]],  #32  \n"
+            "st1 {v2.4s, v3.4s}, [%[out]], #32  \n"
+            "ld1 {v6.4s, v7.4s}, [%[in]],  #32  \n"
+            "st1 {v4.4s, v5.4s}, [%[out]], #32  \n"
+            "st1 {v6.4s, v7.4s}, [%[out]], #32  \n"
+            : [in] "+r"(in_ptr), [out] "+r"(out_p)
+            :
+            : "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7");
       }
-      asm volatile(
-          "ld1 {v0.4s, v1.4s}, [%[in]],  #32  \n"
-          "ld1 {v2.4s, v3.4s}, [%[in]],  #32  \n"
-          "ld1 {v4.4s, v5.4s}, [%[in]],  #32  \n"
-          "st4 {v0.4s, v1.4s, v2.4s, v3.4s}, [%[out]], #64  \n"
-          "ld1 {v6.4s, v7.4s}, [%[in]],  #32  \n"
-          "st4 {v4.4s, v5.4s, v6.4s, v7.4s}, [%[out]], #64  \n"
-          : [in] "+r"(in_ptr), [out] "+r"(out_p)
-          :
-          : "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7");
     }
   }
 }
@@ -167,7 +145,6 @@ void sgemm_prepack_c4(int M,
   } else {
     memset(bias_buf, 0, m_round * sizeof(float));
   }
-  // printf("bchunk_w, bchunk_loop: %d, %d\n", bchunk_w, bchunk_loop);
   // bchunk_loop
   float* c = C;
   for (int n = 0; n < bchunk_loop; ++n) {
@@ -182,9 +159,6 @@ void sgemm_prepack_c4(int M,
     }
     int bblock_remain = N - x_start - (w_loop - 1) * NBLOCK_C4;
     float* bchunk = workspace;
-    // printf("bchunk_loop xstart, xend, flag_remain, bblock_remain: %d, %d, %d,
-    // %d\n",
-    // x_start, x_end, flag_remain, bblock_remain);
     loadb_c4(bchunk, B, x_start, x_end, k_round, N);
     float* cchunk = c + n * bchunk_w * 4;
 #pragma omp parallel for num_threads(threads)
@@ -211,6 +185,7 @@ void sgemm_prepack_c4(int M,
             "mov  v10.16b,  v0.16b   \n" /* mov bias to c1*/
             "mov  v11.16b,  v0.16b   \n" /* mov bias to c2*/
             "mov  v12.16b,  v0.16b   \n" /* mov bias to c3*/
+            /* load a0a1 to v1-v2 */
             "ld1   {v1.4s, v2.4s}, [%[a]], #32 \n"
             "mov  v13.16b,  v0.16b   \n" /* mov bias to c4*/
             "mov  v14.16b,  v0.16b   \n" /* mov bias to c5*/
@@ -218,7 +193,6 @@ void sgemm_prepack_c4(int M,
             "mov  v16.16b,  v0.16b   \n" /* mov bias to c7*/
             "movi v30.16b,  #0       \n"
             "1:\n"
-            /* c0c1c2c3 */
             /* load b0b1b2b3 to v5-v8 */
             "ld1   {v5.4s, v6.4s}, [%[b]], #32 \n"
             "ld1   {v7.4s, v8.4s}, [%[b]], #32 \n"
@@ -227,6 +201,7 @@ void sgemm_prepack_c4(int M,
             "fmla  v10.4s, v1.4s, v6.s[0]   \n"
             "fmla  v11.4s, v1.4s, v7.s[0]   \n"
             "fmla  v12.4s, v1.4s, v8.s[0]   \n"
+            /* load b4b5b6b7 to v25-v28 */
             "ld1   {v25.4s, v26.4s}, [%[b]], #32 \n"
             "ld1   {v27.4s, v28.4s}, [%[b]], #32 \n"
             "prfm  pldl1keep, [%[a], #32]   \n"
@@ -261,7 +236,7 @@ void sgemm_prepack_c4(int M,
             "fmla  v10.4s, v4.4s, v6.s[3]   \n"
             "fmla  v11.4s, v4.4s, v7.s[3]   \n"
             "fmla  v12.4s, v4.4s, v8.s[3]   \n"
-            /* c4c5c6c7 */
+
             "fmla  v13.4s, v4.4s, v25.s[3]  \n"
             "fmla  v14.4s, v4.4s, v26.s[3]  \n"
             "fmla  v15.4s, v4.4s, v27.s[3]  \n"
@@ -352,14 +327,14 @@ void loadb_c4(float* out,
         memset(out_p + remain * 4, 0, (NBLOCK_C4 - remain) * 4 * sizeof(float));
       } else {
         asm volatile(
-            "vld1.32 {d0-d3}, [%[in]]!  \n"
-            "vld1.32 {d4-d7}, [%[in]]!  \n"
-            "vst1.32 {d0-d3}, [%[out]]!  \n"
-            "vld1.32 {d8-d11}, [%[in]]!  \n"
-            "vst1.32 {d4-d7}, [%[out]]!  \n"
+            "vld1.32 {d0-d3},   [%[in]]!  \n"
+            "vld1.32 {d4-d7},   [%[in]]!  \n"
+            "vst1.32 {d0-d3},   [%[out]]! \n"
+            "vld1.32 {d8-d11},  [%[in]]!  \n"
+            "vst1.32 {d4-d7},   [%[out]]! \n"
             "vld1.32 {d12-d15}, [%[in]]!  \n"
-            "vst1.32 {d8-d11}, [%[out]]!  \n"
-            "vst1.32 {d12-d15}, [%[out]]!  \n"
+            "vst1.32 {d8-d11},  [%[out]]! \n"
+            "vst1.32 {d12-d15}, [%[out]]! \n"
             : [in] "+r"(in_ptr), [out] "+r"(out_p)
             :
             : "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7");
@@ -402,7 +377,6 @@ void sgemm_prepack_c4(int M,
   } else {
     memset(bias_buf, 0, m_round * sizeof(float));
   }
-  // printf("bchunk_w, bchunk_loop: %d, %d\n", bchunk_w, bchunk_loop);
   // bchunk_loop
   float* c = C;
   for (int n = 0; n < bchunk_loop; ++n) {
@@ -417,9 +391,6 @@ void sgemm_prepack_c4(int M,
     }
     int bblock_remain = N - x_start - (w_loop - 1) * NBLOCK_C4;
     float* bchunk = workspace;
-    // printf("bchunk_loop xstart, xend, flag_remain, bblock_remain: %d, %d, %d,
-    // %d\n",
-    // x_start, x_end, flag_remain, bblock_remain);
     loadb_c4(bchunk, B, x_start, x_end, k_round, N);
     float* cchunk = c + n * bchunk_w * 4;
 #pragma omp parallel for num_threads(threads)
@@ -453,63 +424,62 @@ void sgemm_prepack_c4(int M,
             "vmov.32  q15,  q3   \n" /* mov bias to c7*/
             "1:\n"
             /* c0c1c2c3 */
-            /* load b0b1b2b3 to q4-q7 */
-            "vld1.32   {d8-d11}, [%[b]]! \n"
+            "vld1.32   {d8-d11},  [%[b]]! \n"
             "vld1.32   {d12-d15}, [%[b]]! \n"
-            "pld  [%[b]]        \n"
-            "vmla.f32  q8,  q0, d8[0]   \n"
-            "vmla.f32  q9,  q0, d10[0]   \n"
-            "vmla.f32  q10, q0, d12[0]   \n"
-            "vmla.f32  q11, q0, d14[0]   \n"
-            "vld1.32   {d4-d7}, [%[a]]! \n"
-            "vmla.f32  q8,  q1, d8[1]   \n"
-            "vmla.f32  q9,  q1, d10[1]   \n"
-            "vmla.f32  q10, q1, d12[1]   \n"
-            "vmla.f32  q11, q1, d14[1]   \n"
-            "pld [%[b], #64]   \n"
-            "vmla.f32  q8,  q2, d9[0]   \n"
-            "vmla.f32  q9,  q2, d11[0]   \n"
-            "vmla.f32  q10, q2, d13[0]   \n"
-            "vmla.f32  q11, q2, d15[0]   \n"
+            "pld  [%[b]]                  \n"
+            "vmla.f32  q8,  q0, d8[0]     \n"
+            "vmla.f32  q9,  q0, d10[0]    \n"
+            "vmla.f32  q10, q0, d12[0]    \n"
+            "vmla.f32  q11, q0, d14[0]    \n"
+            "vld1.32   {d4-d7}, [%[a]]!   \n"
+            "vmla.f32  q8,  q1, d8[1]     \n"
+            "vmla.f32  q9,  q1, d10[1]    \n"
+            "vmla.f32  q10, q1, d12[1]    \n"
+            "vmla.f32  q11, q1, d14[1]    \n"
+            "pld [%[b], #64]              \n"
+            "vmla.f32  q8,  q2, d9[0]     \n"
+            "vmla.f32  q9,  q2, d11[0]    \n"
+            "vmla.f32  q10, q2, d13[0]    \n"
+            "vmla.f32  q11, q2, d15[0]    \n"
             "subs  %[cnt], %[cnt], #1     \n"
-            "vmla.f32  q8,  q3, d9[1]   \n"
-            "vmla.f32  q9,  q3, d11[1]   \n"
-            "vld1.f32  {d8-d11}, [%[b]]! \n"
-            "vmla.f32  q10, q3, d13[1]   \n"
-            "vmla.f32  q11, q3, d15[1]   \n"
+            "vmla.f32  q8,  q3, d9[1]     \n"
+            "vmla.f32  q9,  q3, d11[1]    \n"
+            "vld1.f32  {d8-d11}, [%[b]]!  \n"
+            "vmla.f32  q10, q3, d13[1]    \n"
+            "vmla.f32  q11, q3, d15[1]    \n"
             "vld1.32   {d12-d15}, [%[b]]! \n"
-
-            "vmla.f32  q12,  q0, d8[0]   \n"
-            "vmla.f32  q13,  q0, d10[0]   \n"
-            "vmla.f32  q14, q0, d12[0]   \n"
-            "vmla.f32  q15, q0, d14[0]   \n"
-            "pld  [%[a], #32]   \n"
-            "vmla.f32  q12,  q1, d8[1]   \n"
-            "vmla.f32  q13,  q1, d10[1]   \n"
-            "vmla.f32  q14, q1, d12[1]   \n"
-            "vmla.f32  q15, q1, d14[1]   \n"
-            "vld1.32   {d0-d3}, [%[a]]! \n"
-            "vmla.f32  q12,  q2, d9[0]   \n"
-            "vmla.f32  q13,  q2, d11[0]   \n"
-            "vmla.f32  q14, q2, d13[0]   \n"
-            "vmla.f32  q15, q2, d15[0]   \n"
-            "pld [%[b], #64]   \n"
-            "vmla.f32  q12,  q3, d9[1]   \n"
-            "vmla.f32  q13,  q3, d11[1]   \n"
-            "vmla.f32  q14, q3, d13[1]   \n"
-            "vmla.f32  q15, q3, d15[1]   \n"
+            /* c4c5c6c7 */
+            "vmla.f32  q12, q0, d8[0]     \n"
+            "vmla.f32  q13, q0, d10[0]    \n"
+            "vmla.f32  q14, q0, d12[0]    \n"
+            "vmla.f32  q15, q0, d14[0]    \n"
+            "pld  [%[a], #32]             \n"
+            "vmla.f32  q12, q1, d8[1]     \n"
+            "vmla.f32  q13, q1, d10[1]    \n"
+            "vmla.f32  q14, q1, d12[1]    \n"
+            "vmla.f32  q15, q1, d14[1]    \n"
+            "vld1.32   {d0-d3}, [%[a]]!   \n"
+            "vmla.f32  q12, q2, d9[0]     \n"
+            "vmla.f32  q13, q2, d11[0]    \n"
+            "vmla.f32  q14, q2, d13[0]    \n"
+            "vmla.f32  q15, q2, d15[0]    \n"
+            "pld [%[b], #64]              \n"
+            "vmla.f32  q12, q3, d9[1]     \n"
+            "vmla.f32  q13, q3, d11[1]    \n"
+            "vmla.f32  q14, q3, d13[1]    \n"
+            "vmla.f32  q15, q3, d15[1]    \n"
             "bne   1b\n"
-            "cmp   %[relu], #0             \n"
-            "beq   2f                      \n"
-            "vmov.u32 q0, #0               \n"
-            "vmax.f32  q8,  q8,  q0       \n"
-            "vmax.f32  q9,  q9,  q0       \n"
-            "vmax.f32  q10,  q10,  q0       \n"
-            "vmax.f32  q11,  q11,  q0       \n"
-            "vmax.f32  q12,  q12,  q0       \n"
-            "vmax.f32  q13,  q13,  q0       \n"
-            "vmax.f32  q14,  q14,  q0       \n"
-            "vmax.f32  q15,  q15,  q0       \n"
+            "cmp   %[relu], #0            \n"
+            "beq   2f                     \n"
+            "vmov.u32 q0, #0              \n"
+            "vmax.f32  q8,   q8,   q0     \n"
+            "vmax.f32  q9,   q9,   q0     \n"
+            "vmax.f32  q10,  q10,  q0     \n"
+            "vmax.f32  q11,  q11,  q0     \n"
+            "vmax.f32  q12,  q12,  q0     \n"
+            "vmax.f32  q13,  q13,  q0     \n"
+            "vmax.f32  q14,  q14,  q0     \n"
+            "vmax.f32  q15,  q15,  q0     \n"
             "2:\n"
             "cmp   %[frem], #0\n"
             "bne   3f\n"

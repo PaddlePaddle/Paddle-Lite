@@ -60,6 +60,7 @@ if (NOT HAS_ARM_MATH_LIB_DIR)
   cc_library(math_arm SRCS  
       funcs.cc 
       packed_sgemm.cc
+      packed_sgemm_c4.cc
       sgemm.cc
       gemm_prepacked_int8.cc
       gemm_s8.cc
