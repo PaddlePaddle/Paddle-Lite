@@ -142,7 +142,7 @@ TEST(sequence_concat_cuda, normal) {
   context.SetExecStream(stream);
 
   seq_kernel.SetContext(std::move(ctx));
-  seq_kernel.Launch();
+  seq_kernel.Run();
   cudaDeviceSynchronize();
 
   auto* y_data = y.mutable_data<float>(TARGET(kCUDA));

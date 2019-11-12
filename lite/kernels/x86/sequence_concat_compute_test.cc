@@ -144,7 +144,7 @@ TEST(sequence_concat_x86, run_test) {
   seq_kernel.SetParam(param);
 
   seq_kernel.SetContext(std::move(ctx));
-  seq_kernel.Launch();
+  seq_kernel.Run();
 
   auto* y_data = y.mutable_data<float>();
   sequence_concat_ref(xs, &y_ref);
