@@ -97,9 +97,6 @@ TEST(sequence_reverse_cuda, normal) {
   for (int i = 0; i < y.numel(); i++) {
     EXPECT_NEAR(y_cpu_data[i], y_ref_data[i], 1e-5);
   }
-  for (int i = 0; i < y.numel(); i += 4)
-    LOG(INFO) << y_cpu_data[i] << " " << y_cpu_data[i + 1] << " "
-              << y_cpu_data[i + 2] << " " << y_cpu_data[i + 3];
 }
 
 }  // namespace cuda

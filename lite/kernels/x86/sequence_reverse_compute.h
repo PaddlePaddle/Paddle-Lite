@@ -30,7 +30,7 @@ class SequenceReverseCompute
 
   void Run() override {
     auto& param = *param_.get_mutable<operators::SequenceReverseParam>();
-    auto& output = param.Out;
+    auto* output = param.Out;
     const auto* din = param.X->data<T>();
 
     T* dout = output->mutable_data<T>();
