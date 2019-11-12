@@ -246,8 +246,8 @@ class BilinearInterpComputeTester : public arena::TestCase {
         out_width_ = out_size_data[1];
       }
     }
-    float height_scale = scale;
-    float width_scale = scale;
+    height_scale_ = scale;
+    width_scale_ = scale;
 
     if (out_width_ != -1 && out_height_ != -1) {
       height_scale_ = static_cast<float>(out_height_ / inputs[0]->dims()[2]);
