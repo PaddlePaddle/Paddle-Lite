@@ -748,6 +748,11 @@ struct SequenceExpandAsParam {
   lite::Tensor* out{nullptr};
 };
 
+struct SequenceConcatParam {
+  std::vector<lite::Tensor*> X{};
+  lite::Tensor* Out{};
+};
+
 struct ReduceMaxParam {
   const lite::Tensor* X{};
   lite::Tensor* Out{};
