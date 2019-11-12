@@ -207,11 +207,11 @@ function make_ios {
     cd -
 }
 
-function make_cuda_p {
+function make_cuda {
   prepare_thirdparty
 
   root_dir=$(pwd)
-  build_directory=$BUILD_DIR/build_cuda_p
+  build_directory=$BUILD_DIR/build_cuda
 
   if [ -d $build_directory ]
   then
@@ -231,36 +231,9 @@ function make_cuda_p {
             -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF \
             -DWITH_TESTING=OFF \
             -DLITE_WITH_ARM=OFF \
-            -DLITE_WITH_PYTHON=ON \
+            -DLITE_WITH_PYTHON=${BUILD_PYTHON} \
             -DLITE_BUILD_EXTRA=ON
  
-  make publish_inference_python_lib -j8
-  cd -
-}
-
-function make_cuda_c {
-  prepare_thirdparty
-
-  root_dir=$(pwd)
-  build_directory=$BUILD_DIR/build_cuda_c
-
-  mkdir -p $build_directory
-  cd $build_directory
-
-  prepare_workspace $root_dir $build_directory
-
-  cmake ..  -DWITH_MKL=OFF       \
-            -DLITE_WITH_CUDA=ON  \
-            -DWITH_MKLDNN=OFF    \
-            -DLITE_WITH_X86=OFF  \
-            -DLITE_WITH_PROFILE=OFF \
-            -DWITH_LITE=ON \
-            -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF \
-            -DWITH_TESTING=OFF \
-            -DLITE_WITH_ARM=OFF \
-            -DLITE_WITH_PYTHON=OFF \
-            -DLITE_BUILD_EXTRA=ON
-
   make publish_inference -j4
   cd -
 }
@@ -289,34 +262,6 @@ function make_x86 {
             -DLITE_WITH_ARM=OFF \
             -DWITH_GPU=OFF \
             -DLITE_BUILD_EXTRA=ON
-
-  make publish_inference -j4
-  cd -
-}
-
-function make_nv {
-  prepare_thirdparty
-
-  root_dir=$(pwd)
-  build_directory=$BUILD_DIR/build_nv
-
-  if [ -d $build_directory ]
-  then
-    rm -rf $build_directory
-  fi
-  mkdir -p $build_directory
-  cd $build_directory
-
-  prepare_workspace $root_dir $build_directory
-  cmake .. -DCMAKE_BUILD_TYPE=RelWithDebInfo \
-  -DWITH_MKL=OFF \
-  -DLITE_WITH_CUDA=ON \
-  -DWITH_MKLDNN=OFF \
-  -DLITE_WITH_X86=OFF \
-  -DWITH_LITE=ON \
-  -DWITH_PYTHON=OFF \
-  -DWITH_TESTING=OFF \
-  -DLITE_WITH_ARM=OFF
 
   make publish_inference -j4
   cd -
@@ -436,12 +381,8 @@ function main {
                 build_model_optimize_tool
                 shift
                 ;;
-            cuda_c)
-                make_cuda_c
-                shift
-                ;;
-            cuda_p)
-                make_cuda_p 
+            cuda)
+                make_cuda 
                 shift
                 ;;
             x86)
