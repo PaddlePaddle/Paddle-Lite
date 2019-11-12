@@ -48,3 +48,5 @@ bool SequenceSoftmaxOp::AttachImpl(const cpp::OpDesc &opdesc,
 }  // namespace paddle
 
 REGISTER_LITE_OP(sequence_softmax, paddle::lite::operators::SequenceSoftmaxOp);
+REGISTER_LITE_OP(search_seq_softmax,
+                 paddle::lite::operators::SequenceSoftmaxOp);
