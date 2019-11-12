@@ -87,7 +87,7 @@ TEST(sequence_reverse_cuda, normal) {
   context.SetExecStream(stream);
 
   seq_kernel.SetContext(std::move(ctx));
-  seq_kernel.Launch();
+  seq_kernel.Run();
   cudaDeviceSynchronize();
 
   CopySync<TARGET(kCUDA)>(
