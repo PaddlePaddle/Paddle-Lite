@@ -47,7 +47,7 @@ class ConvOpLite : public OpLite {
     param_.output = scope->FindVar(Out)->GetMutable<lite::Tensor>();
 
     param_.strides = op_desc.GetAttr<std::vector<int>>("strides");
-    param_.paddings = op_desc.GetAttr<std::vector<int>>("paddings");
+    auto paddings = op_desc.GetAttr<std::vector<int>>("paddings");
     param_.groups = op_desc.GetAttr<int>("groups");
     param_.dilations = op_desc.GetAttr<std::vector<int>>("dilations");
 
@@ -109,6 +109,20 @@ class ConvOpLite : public OpLite {
         param_.output_scale = op_desc.GetAttr<float>("output_scale");
       }
     }
+
+    // 2-pad to 4-pad
+    if (paddings.size() == param_.strides.size()) {
+      for (size_t i = 0; i < param_.strides.size(); ++i) {
+        int copy_pad = *(paddings.begin() + 2 * i);
+        paddings.insert(paddings.begin() + 2 * i + 1, copy_pad);
+      }
+    } else {
+      if (paddings.size() != param_.strides.size() * 2) {
+        LOG(FATAL)
+            << "Paddings size should be the same or twice as the input size.";
+      }
+    }
+    param_.paddings = paddings;
     return true;
   }
 
