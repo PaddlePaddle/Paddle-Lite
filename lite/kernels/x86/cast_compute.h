@@ -32,25 +32,28 @@ struct CastOpTransformFunctor {
 };
 
 template <lite::TargetType Target, typename InT>
-struct CastOpFunctor {
-  const lite::Tensor* in_;
-  lite::Tensor* out_;
-  const lite::Context<Target>& ctx_;
+class CastOpFunctor {
+ public:
   CastOpFunctor(const lite::Tensor* in,
                 lite::Tensor* out,
-                const lite::Context<Target>& ctx)
-      : in_(in), out_(out), ctx_(ctx) {}
+                const lite::Context<Target>& context)
+      : input(in), output(out), ctx(context) {}
 
   template <typename OutT>
   void apply() const {
-    auto* in_begin = in_->data<InT>();
-    auto numel = in_->dims().production();
+    auto* in_begin = input->data<InT>();
+    auto numel = input->dims().production();
     auto* in_end = in_begin + numel;
-    auto* out_begin = out_->mutable_data<OutT>();
+    auto* out_begin = output->mutable_data<OutT>();
     paddle::lite::fluid::Transform<lite::TargetType::kX86> trans;
     trans(
-        ctx_, in_begin, in_end, out_begin, CastOpTransformFunctor<InT, OutT>());
+        ctx, in_begin, in_end, out_begin, CastOpTransformFunctor<InT, OutT>());
   }
+
+ private:
+  const lite::Tensor* input;
+  lite::Tensor* output;
+  const lite::Context<Target>& ctx;
 };
 
 template <typename InT>
@@ -59,12 +62,11 @@ class CastCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
   using param_t = operators::CastParam;
 
   void Run() override {
-    auto& param = *param_.get_mutable<param_t>();
+    auto param = param_.get_mutable<param_t>();
     auto& context = ctx_->As<X86Context>();
-    auto x = param.X;
-    auto out = param.Out;
-    // auto in_dtype = param.in_dtype;
-    auto out_dtype = param.out_dtype;
+    auto x = param->X;
+    auto out = param->Out;
+    auto out_dtype = param->out_dtype;
     paddle::lite::fluid::VisitDataType(
         static_cast<framework::proto::VarType::Type>(out_dtype),
         CastOpFunctor<lite::TargetType::kX86, InT>(x, out, context));
