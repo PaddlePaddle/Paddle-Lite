@@ -40,9 +40,17 @@ class ConcatCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
   void Run() override {
     auto& param = *param_.get_mutable<param_t>();
     int64_t axis = static_cast<int64_t>(param.axis);
+    auto* axis_tensor = param.axis_tensor;
+    if (axis_tensor != nullptr) {
+      auto* axis_tensor_data = axis_tensor->data<int>();
+      axis = static_cast<int64_t>(axis_tensor_data[0]);
+    }
     auto x_dims = param.x[0]->dims();
     auto out = param.output;
-    if (param.x.size() == 1) return;
+    if (param.x.size() == 1) {
+      param.output->ShareDataWith(*param.x[0]);
+      return;
+    }
 
     auto output_data = param.output->template mutable_data<T>();
     int offset_concat_axis = 0;
