@@ -75,3 +75,14 @@ REGISTER_LITE_KERNEL(lookup_table,
     .BindInput("Ids", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
+
+REGISTER_LITE_KERNEL(lookup_table_v2,
+                     kARM,
+                     kFloat,
+                     kNCHW,
+                     paddle::lite::kernels::arm::LookupTableCompute,
+                     def)
+    .BindInput("W", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Ids", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .Finalize();

@@ -98,3 +98,14 @@ REGISTER_LITE_KERNEL(lookup_table,
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kCUDA), PRECISION(kFloat))})
     .Finalize();
+REGISTER_LITE_KERNEL(lookup_table_v2,
+                     kCUDA,
+                     kFloat,
+                     kNCHW,
+                     paddle::lite::kernels::cuda::LookupTableCompute,
+                     def)
+    .BindInput("W", {LiteType::GetTensorTy(TARGET(kCUDA), PRECISION(kFloat))})
+    .BindInput("Ids", {LiteType::GetTensorTy(TARGET(kCUDA), PRECISION(kInt64))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kCUDA), PRECISION(kFloat))})
+    .Finalize();

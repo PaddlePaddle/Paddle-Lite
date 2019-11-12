@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/operators/lookup_table_op.h"
+#include "lite/operators/lookup_table_v2_op.h"
 #include "lite/core/op_lite.h"
 #include "lite/core/op_registry.h"
 
@@ -20,32 +20,24 @@ namespace paddle {
 namespace lite {
 namespace operators {
 
-bool LookupTableOpLite::CheckShape() const {
+bool LookupTableV2OpLite::CheckShape() const {
   CHECK_OR_FALSE(param_.W)
   CHECK_OR_FALSE(param_.Ids)
   CHECK_OR_FALSE(param_.Out)
 
   auto table_dims = param_.W->dims();
-  auto ids_dims = param_.Ids->dims();
-
-  int ids_rank = ids_dims.size();
 
   CHECK_EQ_OR_FALSE(table_dims.size(), 2)
-  CHECK_EQ_OR_FALSE(ids_dims[ids_rank - 1], 1)
 
   return true;
 }
 
-bool LookupTableOpLite::InferShape() const {
+bool LookupTableV2OpLite::InferShape() const {
   auto table_dims = param_.W->dims();
   auto ids_dims = param_.Ids->dims();
 
-  int ids_rank = ids_dims.size();
-
-  auto output_dims = ids_dims.Slice(0, ids_rank - 1);
-
   std::vector<int64_t> out_dims;
-  for (int i = 0; i < ids_rank - 1; ++i) {
+  for (int i = 0; i < ids_dims.size(); ++i) {
     out_dims.push_back(ids_dims[i]);
   }
   out_dims.push_back(table_dims[1]);
@@ -54,8 +46,8 @@ bool LookupTableOpLite::InferShape() const {
   return true;
 }
 
-bool LookupTableOpLite::AttachImpl(const cpp::OpDesc &op_desc,
-                                   lite::Scope *scope) {
+bool LookupTableV2OpLite::AttachImpl(const cpp::OpDesc &op_desc,
+                                     lite::Scope *scope) {
   auto input = op_desc.Input("W").front();
   auto ids = op_desc.Input("Ids").front();
   auto out = op_desc.Output("Out").front();
@@ -73,4 +65,4 @@ bool LookupTableOpLite::AttachImpl(const cpp::OpDesc &op_desc,
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(lookup_table, paddle::lite::operators::LookupTableOpLite)
+REGISTER_LITE_OP(lookup_table_v2, paddle::lite::operators::LookupTableV2OpLite)
