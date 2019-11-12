@@ -51,7 +51,7 @@ class PoolOpLite : public OpLite {
     param_.ksize = op_desc.GetAttr<std::vector<int>>("ksize");
     param_.global_pooling = op_desc.GetAttr<bool>("global_pooling");
     param_.strides = op_desc.GetAttr<std::vector<int>>("strides");
-    param_.paddings = op_desc.GetAttr<std::vector<int>>("paddings");
+    auto paddings = op_desc.GetAttr<std::vector<int>>("paddings");
 
     if (op_desc.HasAttr("exclusive")) {
       param_.exclusive = op_desc.GetAttr<bool>("exclusive");
@@ -68,11 +68,6 @@ class PoolOpLite : public OpLite {
     if (op_desc.HasAttr("padding_algorithm")) {
       padding_algorithm_ = op_desc.GetAttr<std::string>("padding_algorithm");
     }
-    return true;
-  }
-
-  void AttachKernel(KernelBase *kernel) override {
-    auto paddings = param_.paddings;
     // 2-pad to 4-pad
     if (paddings.size() == param_.strides.size()) {
       for (size_t i = 0; i < param_.strides.size(); ++i) {
@@ -86,8 +81,10 @@ class PoolOpLite : public OpLite {
       }
     }
     param_.paddings = paddings;
-    kernel->SetParam(param_);
+    return true;
   }
+
+  void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
   std::string DebugString() const override { return "pool2d"; }
 
