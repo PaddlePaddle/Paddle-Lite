@@ -92,7 +92,7 @@ TEST(sequence_reverse_x86, run_test) {
   seq_kernel.SetParam(param);
 
   seq_kernel.SetContext(std::move(ctx));
-  seq_kernel.Launch();
+  seq_kernel.Run();
 
   sequence_reverse_ref(&x_ref, &y_ref);
   for (int i = 0; i < y.numel(); i++) {
