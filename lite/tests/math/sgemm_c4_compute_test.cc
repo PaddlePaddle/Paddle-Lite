@@ -47,7 +47,7 @@ DEFINE_int32(K, 512, "gemm_c4: K");
 DEFINE_bool(flag_relu, false, "do relu");
 DEFINE_bool(flag_bias, false, "with bias");
 
-bool test_sgemm(
+bool test_sgemm_c4(
     int m, int n, int k, bool has_bias, bool has_relu, int cls, int ths) {
   int m_round = (m + 3) / 4 * 4;
   int k_round = (k + 3) / 4 * 4;
@@ -92,12 +92,11 @@ bool test_sgemm(
   auto db_c4 = tb_c4.mutable_data<float>();
   auto dc = tc.mutable_data<float>();
   auto dc_basic = tc_basic.mutable_data<float>();
-  auto dc_backup = tc_backup.mutable_data<float>();
   auto dbias = tbias.mutable_data<float>();
 
   // trans A, B to c4
-  paddle::lite::arm::math::trans_mat_to_c4(da, da_c4, k, m, k, true);
-  paddle::lite::arm::math::trans_mat_to_c4(db, db_c4, n, k, n, false);
+  basic_trans_mat_to_c4(da, da_c4, k, m, k, true);
+  basic_trans_mat_to_c4(db, db_c4, n, k, n, false);
 
   LOG(INFO) << "sgemm_c4 M: " << m << ", N: " << n << ", K: " << k
             << ", relu: " << (has_relu ? "true" : "false")
@@ -193,7 +192,7 @@ TEST(TestSgemmC4, test_func_sgemm_c4_prepacked) {
           for (auto& has_bias : {false, true}) {
             for (auto& has_relu : {false, true}) {
               for (auto& th : {1, 2, 4}) {
-                auto flag = test_sgemm(
+                auto flag = test_sgemm_c4(
                     m, n, k, has_bias, has_relu, FLAGS_power_mode, th);
                 if (flag) {
                   LOG(INFO) << "test m = " << m << ", n=" << n << ", k=" << k
@@ -219,13 +218,13 @@ TEST(TestSgemmC4Custom, test_func_sgemm_c4_prepacked_custom) {
 #ifdef LITE_WITH_ARM
   paddle::lite::DeviceInfo::Init();
 #endif
-  auto flag = test_sgemm(FLAGS_M,
-                         FLAGS_N,
-                         FLAGS_K,
-                         FLAGS_flag_bias,
-                         FLAGS_flag_relu,
-                         FLAGS_power_mode,
-                         FLAGS_threads);
+  auto flag = test_sgemm_c4(FLAGS_M,
+                            FLAGS_N,
+                            FLAGS_K,
+                            FLAGS_flag_bias,
+                            FLAGS_flag_relu,
+                            FLAGS_power_mode,
+                            FLAGS_threads);
   if (!flag) {
     LOG(FATAL) << "test m = " << FLAGS_M << ", n=" << FLAGS_N
                << ", k=" << FLAGS_K << ", bias: " << FLAGS_flag_bias
