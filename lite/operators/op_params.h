@@ -789,6 +789,22 @@ struct ReduceParam {
   bool reduce_all{false};
 };
 
+struct VarConv2DParam {
+  const lite::Tensor* X{};
+  const lite::Tensor* ROW{};
+  const lite::Tensor* COLUMN{};
+  const lite::Tensor* W{};
+  lite::Tensor* Out{};
+  lite::Tensor* Col{};
+
+  int input_channel;
+  int output_channel;
+  int stride_h;
+  int stride_w;
+  int kernel_h;
+  int kernel_w;
+};
+
 /// ----------------------- shape operators ----------------------
 struct ShapeParam {
   const lite::Tensor* X{};
