@@ -856,7 +856,7 @@ struct UnsqueezeParam {
   lite::Tensor* XShape{};
   std::vector<int> axes{};
   const lite::Tensor* axes_tensor{};
-  std::vector<lite::Tensor>* axes_tensor_vct{};
+  std::vector<const lite::Tensor*> axes_tensor_vct{};
 };
 
 /// ----------------------- expand operators ----------------------
