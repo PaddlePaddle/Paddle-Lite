@@ -72,6 +72,9 @@ lite_option(LITE_ON_MODEL_OPTIMIZE_TOOL "Build the model optimize tool" OFF)
 # publish options
 lite_option(LITE_BUILD_EXTRA "Enable extra algorithm support in Lite, both kernels and operators" OFF)
 lite_option(LITE_BUILD_TAILOR "Enable tailoring library according to model" OFF)
+# cv build options
+lite_option(LITE_WITH_CV  "Enable build cv image in lite" OFF IF NOT LITE_WITH_ARM)
+
 
 # TODO(Superjomn) Remove WITH_ANAKIN option if not needed latter.
 if(ANDROID OR IOS OR ARMLINUX)
@@ -181,7 +184,7 @@ include(external/xxhash)    # download install xxhash needed for x86 jit
 include(cudnn)
 include(configure)          # add paddle env configuration
 
-if(LITE_WITH_CUDA) 
+if(LITE_WITH_CUDA)
   include(cuda)
 endif()
 
