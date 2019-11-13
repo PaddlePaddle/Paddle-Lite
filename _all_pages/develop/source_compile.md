@@ -12,10 +12,11 @@ Paddle-Lite 提供了移动端的一键源码编译脚本 `lite/tools/build.sh`�
 
 ## 一、环境准备
 
-目前支持两种编译的环境：
+目前支持三种编译的环境：
 
-1. Docker 容器环境；
-2. Linux（推荐 Ubuntu 16.04）环境。
+1. Docker 容器环境，
+2. Linux（推荐 Ubuntu 16.04）环境，
+3. Mac OS 环境。
 
 ### 1、 Docker开发环境
 
@@ -77,14 +78,16 @@ docker rm <container-name>
 
 ### 2、Linux 开发环境
 
-#### 交叉编译环境要求
+#### Android
+
+##### 交叉编译环境要求
 
 - gcc、g++、git、make、wget、python、adb
 - Java environment
 - cmake（建议使用3.10或以上版本）
 - Android NDK (建议ndk-r17c)
 
-#### 具体步骤
+##### 具体步骤
 
 安装软件部分以 Ubuntu 为例，其他 Linux 发行版类似。
 
@@ -116,9 +119,72 @@ echo "export NDK_ROOT=/opt/android-ndk-r17c" >> ~/.bashrc
 source ~/.bashrc
 ```
 
+#### ARM Linux
+
+适用于基于 ARMv8 和 ARMv7 架构 CPU 的各种开发板，例如 RK3399，树莓派等，目前支持交叉编译和本地编译两种方式，对于交叉编译方式，在完成目标程序编译后，可通过 scp 方式将程序拷贝到开发板运行。
+
+##### 交叉编译
+
+###### 编译环境要求
+
+- gcc、g++、git、make、wget、python、scp
+- cmake（建议使用3.10或以上版本）
+
+###### 具体步骤
+
+安装软件部分以 Ubuntu 为例，其他 Linux 发行版类似。
+
+```shell
+# 1. Install basic software
+apt update
+apt-get install -y --no-install-recommends \
+  gcc g++ git make wget python unzip
+
+# 2. Install arm gcc toolchains
+apt-get install -y --no-install-recommends \
+  g++-arm-linux-gnueabi gcc-arm-linux-gnueabi \
+  g++-arm-linux-gnueabihf gcc-arm-linux-gnueabihf \
+  gcc-aarch64-linux-gnu g++-aarch64-linux-gnu 
+
+# 3. Install cmake 3.10 or above
+wget -c https://mms-res.cdn.bcebos.com/cmake-3.10.3-Linux-x86_64.tar.gz && \
+    tar xzf cmake-3.10.3-Linux-x86_64.tar.gz && \
+    mv cmake-3.10.3-Linux-x86_64 /opt/cmake-3.10 && \  
+    ln -s /opt/cmake-3.10/bin/cmake /usr/bin/cmake && \
+    ln -s /opt/cmake-3.10/bin/ccmake /usr/bin/ccmake
+```
+
+##### 本地编译（直接在RK3399或树莓派上编译）
+
+###### 编译环境要求
+
+- gcc、g++、git、make、wget、python
+- cmake（建议使用3.10或以上版本）
+
+###### 具体步骤
+
+安装软件部分以 Ubuntu 为例，其他 Linux 发行版本类似。
+
+```shell
+# 1. Install basic software
+apt update
+apt-get install -y --no-install-recommends \
+  gcc g++ git make wget python unzip
+
+# 2. install cmake 3.10 or above
+wget https://www.cmake.org/files/v3.10/cmake-3.10.3.tar.gz
+tar -zxvf cmake-3.10.3.tar.gz
+cd cmake-3.10.3
+./configure
+make
+sudo make install
+```
+
+之后可通过cmake --version查看cmake是否安装成功。
+
 至此，完成 Linux 交叉编译环境的准备。
 
-### 3、Mac OS 开发环境（只支持 tiny publish 编译 ）
+### 3、Mac OS 开发环境
 
 #### 交叉编译环境要求
 
@@ -153,6 +219,13 @@ brew cask install java
 
 至此，完成 Mac 交叉编译环境的准备。
 
+#### Mac下Full Publish编译时需要**注意**
+1. Mac下只支持Android的Full_publish编译
+2. cmake版本需要为cmake 3.10
+3. Paddle-Lite项目路径中不可以含有中文字符
+4. 编译时如果报错: `Too many open files`
+   解决方法：修改mac电脑的 “程序可打开的最大文件数“，例如：`ulimit -n 1024`。
+
 ## 二、编译PaddleLite
 
 ### 下载代码
@@ -186,7 +259,7 @@ git checkout <release-version-tag>
 
 ### 编译代码
 
-注意：编译前请删除lite/api目录下的paddle_use_ops.h和paddle_use_kernels.h
+**<font color="orange" >注意</font>**<font color="orange" >：非开发者建议在编译前使用</font>[**“加速第三方依赖库的下载”**](#加速第三方依赖库的下载)<font color="orange" >的方法，加速工程中第三方依赖库的下载与编译。 </font> **该加速方法只对arm平台的移动端（android/armlinux/ios）编译有效，无法加速server平台（x86/cuda）的第三方库编译。所以当[编译cuda 预测库](../cuda.md)和[编译x86预测库](../x86.md)时，需要保证良好的网络环境。**
 
 #### 编译`tiny publish`动态库
 
@@ -206,14 +279,18 @@ git checkout <release-version-tag>
   --arm_abi=armv8 \
   ios
 ```
+**注意：mac环境编译IOS 时，cmake版本需要高于cmake 3.15；mac环境上编译Android时，cmake版本需要设置为cmake 3.10。**
+
 ios tiny publish支持的编译选项：
+
 * `--arm_os`: 可选ios或者ios64
-* `--arm_abi`: 可选armv7和armv8（**注意**：当`arm_os=ios`时只能选择`arm_abi=armv7`）
+* `--arm_abi`: 可选armv7和armv8（**注意**：当`arm_os=ios`时只能选择`arm_abi=armv7`，当`arm_os=ios64`时只能选择`arm_abi=armv8`）
 * 如果mac编译过程中报错："Invalid CMAKE_DEVELOPER_ROOT: does not exist", 运行：
 ```shell
 sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
 ```
-##### ARMLinux(目前只支持Docker编译)
+##### ARMLinux
+
 ```shell
 ./lite/tools/build.sh \
   --arm_os=armlinux \
@@ -221,8 +298,9 @@ sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
   --arm_lang=gcc \
   tiny_publish
 ```
-
-#### 编译`full publish`动态库（**Mac OS下不支持**）
+- `--arm_abi`: 树莓派3b使用armv7hf，RK3399使用armv8
+  
+#### 编译`full publish`动态库
 
 ##### Android
 ```shell
@@ -233,7 +311,8 @@ sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
   --android_stl=c++_static \
   full_publish
 ```
-##### ARMLinux(目前只支持Docker编译)
+
+##### ARMLinux
 ```shell
 ./lite/tools/build.sh \
   --arm_os=armlinux \
@@ -241,7 +320,8 @@ sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
   --arm_lang=gcc \
   full_publish
 ```
-
+- `--arm_abi`: 树莓派3b使用armv7hf，RK3399使用armv8
+  
 ### 编译结果说明
 
 **编译最终产物位置**在 `build.lite.xxx.xxx.xxx` 下的 `inference_lite_lib.xxx.xxx` ，如 Android 下 ARMv8 的产物位于`inference_lite_lib.android.armv8`：
@@ -320,3 +400,5 @@ rm -rf third-party
 ```
 
 之后再根据本文档，进行后续编译时，便会忽略第三方依赖对应的`submodule`，改为下载第三方压缩包。
+
+**注意：该加速方法只对arm平台的移动端（android/armlinux/ios）编译有效，无法加速server平台（x86/cuda）的第三方库编译。所以当**[编译cuda 预测库](../cuda)**和**[编译x86预测库](../x86)**时，需要保证良好的网络环境。**
