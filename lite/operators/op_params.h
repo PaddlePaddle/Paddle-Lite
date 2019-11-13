@@ -94,6 +94,8 @@ struct InterpolateParam {
   lite::Tensor* X{};
   lite::Tensor* OutSize{};
   lite::Tensor* Out{};
+  std::vector<const lite::Tensor*> SizeTensor;
+  lite::Tensor* Scale;
 
   float scale{0.f};
   int out_h{-1};
@@ -101,6 +103,7 @@ struct InterpolateParam {
   bool align_corners{true};
   int align_mode{1};
   std::string interp_method{"Nearest"};
+  DataLayoutType data_layout{DATALAYOUT(kNCHW)};
 };
 
 // For Mul Op
@@ -207,6 +210,7 @@ struct ConcatParam {
   std::vector<lite::Tensor*> x{};
   lite::Tensor* output{};
   int axis{0};
+  lite::Tensor* axis_tensor{};
 };
 
 /// ----------------------- activation operators ----------------------
@@ -752,6 +756,11 @@ struct SequenceReverseParam {
   lite::Tensor* Out{};
 };
 
+struct SequenceConcatParam {
+  std::vector<lite::Tensor*> X{};
+  lite::Tensor* Out{};
+};
+
 struct ReduceMaxParam {
   const lite::Tensor* X{};
   lite::Tensor* Out{};
@@ -859,6 +868,8 @@ struct UnsqueezeParam {
   lite::Tensor* Out{};
   lite::Tensor* XShape{};
   std::vector<int> axes{};
+  const lite::Tensor* axes_tensor{};
+  std::vector<const lite::Tensor*> axes_tensor_vct{};
 };
 
 /// ----------------------- expand operators ----------------------

@@ -12,16 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/x86/concat_compute.h"
+#include "lite/kernels/x86/sequence_concat_compute.h"
 
-REGISTER_LITE_KERNEL(concat,
+REGISTER_LITE_KERNEL(sequence_concat,
                      kX86,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::x86::ConcatCompute<float>,
+                     paddle::lite::kernels::x86::SequenceConcatCompute<float>,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
-    .BindInput("AxisTensor",
-               {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt32))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
     .Finalize();

@@ -12,16 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/x86/concat_compute.h"
+#pragma once
 
-REGISTER_LITE_KERNEL(concat,
-                     kX86,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::x86::ConcatCompute<float>,
-                     def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
-    .BindInput("AxisTensor",
-               {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt32))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
-    .Finalize();
+#include <stdint.h>
+#include <vector>
+namespace paddle {
+namespace lite {
+namespace utils {
+namespace cv {
+void rotate_hwc1(
+    const uint8_t* src, uint8_t* dst, int srcw, int srch, float degree);
+void rotate_hwc3(
+    const uint8_t* src, uint8_t* dst, int srcw, int srch, float degree);
+void rotate_hwc4(
+    const uint8_t* src, uint8_t* dst, int srcw, int srch, float degree);
+}  // namespace cv
+}  // namespace utils
+}  // namespace lite
+}  // namespace paddle
