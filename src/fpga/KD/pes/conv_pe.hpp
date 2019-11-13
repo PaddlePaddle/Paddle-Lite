@@ -115,14 +115,18 @@ class ConvPE : public PE {
       return true;
     }
 
-    inplace_.leaky_relu_enable =
-        (param_.relu.leaky_relu_factor != 0) ? true : false;
-    inplace_.relu_enable =
-        inplace_.leaky_relu_enable ? false : param_.relu.enabled;
+    if (param_.activeParam.type = ActiveParam.RELU) {
+      inplace_.relu_enable = true;
+    } else if (param_.activeParam.type = ActiveParam.RELU6) {
+      inplace_.relu6_enable = true;
+    } else if (param_.activeParam.type = ActiveParam.SIGMOID) {
+      inplace_.sigmoid_enable = true;
+    } else if (param_.activeParam.type = ActiveParam.SIGMOID) {
+      inplace_.leaky_relu_enable = true;
+    }
 
-    inplace_.power_enable = false;
-    inplace_.normalize_enable = false;
-    if (inplace_.relu_enable || inplace_.leaky_relu_enable) {
+    if (inplace_.relu_enable || inplace_.leaky_relu_enable || 
+      inplace_.relu6_enable || inplace_.sigmoid_enable) {
       config_inplace(inplace_);
       if (inplace_.leaky_relu_enable) {
         activeParamterArgs.type = TYPE_LEAK_RELU;
@@ -139,9 +143,12 @@ class ConvPE : public PE {
       ret |= compute_fpga_conv_basic(conv_param->args);
     }
 
-    if (inplace_.relu_enable || inplace_.leaky_relu_enable) {
+    if (inplace_.relu_enable || inplace_.leaky_relu_enable || 
+      inplace_.relu6_enable || inplace_.sigmoid_enable) {
       inplace_.relu_enable = false;
       inplace_.leaky_relu_enable = false;
+      inplace_.relu6_enable = false;
+      inplace_.sigmoid_enable = false;
       config_inplace(inplace_);
 
       if (inplace_.leaky_relu_enable) {

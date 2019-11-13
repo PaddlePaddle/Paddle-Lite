@@ -36,6 +36,11 @@ void BoxCoderKernel<FPGA, float>::Compute(const BoxCoderParam<FPGA> &param) {
   BoxCoderCompute<float>(param);
   param.OutputBox()->zynqmpTensor()->syncToCPU();
   // param.OutputBox()->zynqmpTensor()->saveToFile("boxcoder.txt");
+
+#ifdef PADDLE_MOBILE_DEBUG
+  zynqmp::Debugger::get_instance().registerOutput(
+      "boxcoder_", param.OutputBox()->zynqmpTensor());
+#endif
 }
 
 template class BoxCoderKernel<FPGA, float>;

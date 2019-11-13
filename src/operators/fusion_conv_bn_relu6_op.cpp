@@ -12,16 +12,16 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef FUSION_CONVBNRELU6_OP
+#ifdef FUSION_CONVBNRELU_OP
 
-#include "operators/fusion_conv_bn_relu6_op.h"
+#include "operators/fusion_conv_bn_relu_op.h"
 #include "operators/kernel/central-arm-func/conv_arm_func.h"
 
 namespace paddle_mobile {
 namespace operators {
 
 template <typename Dtype, typename T>
-void FusionConvBNRelu6Op<Dtype, T>::InferShape() const {
+void FusionConvBNReluOp<Dtype, T>::InferShape() const {
   auto in_dims = this->param_.Input()->dims();
   auto filter_dims = this->param_.Filter()->dims();
   const std::vector<int> &strides = this->param_.Strides();
@@ -49,16 +49,16 @@ void FusionConvBNRelu6Op<Dtype, T>::InferShape() const {
 }  // namespace paddle_mobile
 
 namespace ops = paddle_mobile::operators;
-REGISTER_FUSION_MATCHER(fusion_conv_bn_relu6, ops::FusionConvBNRelu6Matcher);
+REGISTER_FUSION_MATCHER(fusion_conv_bn_relu, ops::FusionConvBNReluMatcher);
 
 #ifdef PADDLE_MOBILE_CPU
-REGISTER_OPERATOR_CPU(fusion_conv_bn_relu6, ops::FusionConvBNRelu6Op);
+REGISTER_OPERATOR_CPU(fusion_conv_bn_relu, ops::FusionConvBNReluOp);
 #endif
 #ifdef PADDLE_MOBILE_CL
-REGISTER_OPERATOR_CL(fusion_conv_bn_relu6, ops::FusionConvBNRelu6Op);
+REGISTER_OPERATOR_CL(fusion_conv_bn_relu, ops::FusionConvBNReluOp);
 #endif
 #if defined(PADDLE_MOBILE_FPGA) || defined(PADDLE_MOBILE_FPGA_KD)
-REGISTER_OPERATOR_FPGA(fusion_conv_bn_relu6, ops::FusionConvBNRelu6Op);
+REGISTER_OPERATOR_FPGA(fusion_conv_bn_relu, ops::FusionConvBNReluOp);
 #endif
 
 #endif

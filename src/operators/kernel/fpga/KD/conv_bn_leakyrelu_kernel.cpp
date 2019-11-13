@@ -41,8 +41,9 @@ bool ConvBNLeakyReluKernel<FPGA, float>::Init(FusionConvBNLeakyReluParam<FPGA>* 
   conv_param.input = param->Input()->zynqmpTensor();
   conv_param.output = param->Output()->zynqmpTensor();
   conv_param.filter = param->Filter()->zynqmpTensor();
-  conv_param.relu.enabled = true;
-  conv_param.relu.leaky_relu_factor = param->Alpha();
+  // conv_param.relu.enabled = true;
+  conv_param.activeParam.type = zynqmp::ActiveType.TYPE_LEAKY_RELU;
+  conv_param.activeParam.leaky_relu_factor = param->Alpha();
   conv_param.groups = param->Groups();
   conv_param.strides = param->Strides();
   conv_param.paddings = param->Paddings();

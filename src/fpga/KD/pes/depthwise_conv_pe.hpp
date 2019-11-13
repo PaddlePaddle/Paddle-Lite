@@ -95,13 +95,28 @@ class DepthwiseConvPE : public PE {
 
   bool dispatch() {
     param_.input->syncToDevice();
-    if (param_.relu.enabled) {
-      inplace_.relu_enable = param_.relu.enabled;
+
+    if (param_.activeParam.type = ActiveParam.RELU) {
+      inplace_.relu_enable = true;
+    } else if (param_.activeParam.type = ActiveParam.RELU6) {
+      inplace_.relu6_enable = true;
+    } else if (param_.activeParam.type = ActiveParam.SIGMOID) {
+      inplace_.sigmoid_enable = true;
+    } else if (param_.activeParam.type = ActiveParam.SIGMOID) {
+      inplace_.leaky_relu_enable = true;
+    }
+
+    iif (inplace_.relu_enable || inplace_.leaky_relu_enable || 
+      inplace_.relu6_enable || inplace_.sigmoid_enable) {
       config_inplace(inplace_);
     }
     bool ret = compute_fpga_dwconv(param_.args) == 0;
-    if (param_.relu.enabled) {
+    if (inplace_.relu_enable || inplace_.leaky_relu_enable || 
+      inplace_.relu6_enable || inplace_.sigmoid_enable) {
       inplace_.relu_enable = false;
+      inplace_.leaky_relu_enable = false;
+      inplace_.relu6_enable = false;
+      inplace_.sigmoid_enable = false;
       config_inplace(inplace_);
     }
     return ret;

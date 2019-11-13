@@ -32,9 +32,16 @@ struct ReLUParam {
   float leaky_relu_factor = 0.0f;
 };
 
-struct PEParam {
-  ReLUParam relu;
+struct ActiveParam {
+    enum ActiveType  type;
+    float leaky_relu_factor;
 };
+
+struct PEParam {
+  ActiveParam activeParam;
+};
+
+
 
 struct InputParam : PEParam {
  public:

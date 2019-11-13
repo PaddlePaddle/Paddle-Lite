@@ -32,7 +32,8 @@ bool ElementwiseAddKernel<FPGA, float>::Init(ElementwiseAddParam<FPGA>* param) {
       param->InputY()->zynqmpTensor(),
   };
   ew_param.output = param->Out()->zynqmpTensor();
-  ew_param.relu.enabled = false;
+  // ew_param.relu.enabled = false;
+  ew_param.activeParam.type = zynqmp::ActiveType.NONE;
 
   pe.init();
   pe.apply();
