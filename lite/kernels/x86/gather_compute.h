@@ -52,16 +52,15 @@ void CPUGather(const lite::Tensor* src,
 
   const T* p_src = src->data<T>();
   const IndexT* p_index = index->data<IndexT>();
-  T* p_output = output->data<T>();
+  T* p_output = output->mutable_data<T>();
 
   // slice size
   int slice_size = 1;
   for (int i = 1; i < src_dims.size(); ++i) slice_size *= src_dims[i];
 
   const size_t slice_bytes = slice_size * sizeof(T);
-
   for (int64_t i = 0; i < index_size; ++i) {
-    IndexT index_ = p_index[i];
+    int index_ = static_cast<int>(p_index[i]);
     memcpy(p_output + i * slice_size, p_src + index_ * slice_size, slice_bytes);
   }
 }

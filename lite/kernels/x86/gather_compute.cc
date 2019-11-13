@@ -21,19 +21,6 @@ REGISTER_LITE_KERNEL(gather,
                      paddle::lite::kernels::x86::GatherCompute<float>,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
-    .BindInput("Index",
-               {LiteType::GetTensorTy(TARGET(kX86)), PRECISION(kInt32)})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
-    .Finalize();
-
-REGISTER_LITE_KERNEL(gather,
-                     kX86,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::x86::GatherCompute<float>,
-                     def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
-    .BindInput("Index",
-               {LiteType::GetTensorTy(TARGET(kX86)), PRECISION(kInt64)})
+    .BindInput("Index", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
     .Finalize();
