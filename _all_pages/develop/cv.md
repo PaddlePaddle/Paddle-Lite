@@ -8,6 +8,9 @@ title: CV 类图像预处理API接口介绍
 
 请把编译脚本`Paddle-Lite/lite/too/build.sh`中`BUILD_CV`变量设置为`ON`， 其他编译参数设置请参考[源码编译](../source_compile)， 以确保 Lite 可以正确编译。
 
+- 硬件平台： `ARM`
+- 操作系统：`MAC` 和 `LINUX`
+
 ## CV 图像预处理功能
 
 Lite 支持不同颜色空间的图像相互转换 `Convert` 、缩放 `Resize` 、翻转 `Flip`、旋转 `Rotate` 和图像数据转换为 `Tensor` 存储`ImageToTensor` 功能，下文将详细介绍每个功能的API接口。
