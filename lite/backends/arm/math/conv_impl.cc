@@ -647,8 +647,7 @@ void conv_depthwise_3x3_fp32(const void* din,
                                 ctx);
     }
   } else {
-    LOG(FATAL) << "fp32 depthwise conv3x3 stride: " << stride
-               << " or pad: " << pad << " unsupported";
+    LOG(FATAL) << "fp32 depthwise conv3x3 stride: " << stride << " unsupported";
   }
 }
 

@@ -301,7 +301,7 @@ TEST(TestConv3x3DW, test_conv3x3_depthwise) {
                                    weights_dim,
                                    c,
                                    {stride, stride},
-                                   {pad_left, pad_right, pad_top, pad_bottom},
+                                   {pad_top, pad_bottom, pad_left, pad_right},
                                    {1, 1},
                                    flag_bias,
                                    flag_relu,
@@ -395,26 +395,32 @@ TEST(TestConv3x3s1, test_conv_3x3s1) {
   if (FLAGS_basic_test) {
     for (auto& cin : {1, 3, 8, 32, 48}) {
       for (auto& cout : {1, 5, 8, 32, 48}) {
-        for (auto& pad : {1, 2}) {
-          for (auto& flag_bias : {false, true}) {
-            for (auto& flag_relu : {false, true}) {
-              std::vector<DDim> dims;
-              DDim weights_dim({cout, cin, 3, 3});
-              for (auto& batch : {1, 2}) {
-                for (auto& h : {1, 7, 19, 56, 32}) {
-                  dims.push_back(DDim({batch, cin, h, h}));
+        for (auto& pad_left : {1, 2}) {
+          for (auto& pad_right : {1, 2}) {
+            for (auto& pad_top : {1, 2}) {
+              for (auto& pad_bottom : {1, 2}) {
+                for (auto& flag_bias : {false, true}) {
+                  for (auto& flag_relu : {false, true}) {
+                    std::vector<DDim> dims;
+                    DDim weights_dim({cout, cin, 3, 3});
+                    for (auto& batch : {1, 2}) {
+                      for (auto& h : {1, 7, 19, 56, 32}) {
+                        dims.push_back(DDim({batch, cin, h, h}));
+                      }
+                    }
+                    test_conv_fp32(dims,
+                                   weights_dim,
+                                   1,
+                                   {1, 1},
+                                   {pad_top, pad_bottom, pad_left, pad_right},
+                                   {1, 1},
+                                   flag_bias,
+                                   flag_relu,
+                                   {1, 2, 4},
+                                   {FLAGS_power_mode});
+                  }
                 }
               }
-              test_conv_fp32(dims,
-                             weights_dim,
-                             1,
-                             {1, 1},
-                             {pad, pad, pad, pad},
-                             {1, 1},
-                             flag_bias,
-                             flag_relu,
-                             {1, 2, 4},
-                             {FLAGS_power_mode});
             }
           }
         }
@@ -429,26 +435,32 @@ TEST(TestConv3x3s2, test_conv_3x3s2) {
   if (FLAGS_basic_test) {
     for (auto& cin : {1, 3, 8, 32}) {
       for (auto& cout : {1, 5, 8, 32}) {
-        for (auto& pad : {1, 2}) {
-          for (auto& flag_bias : {false, true}) {
-            for (auto& flag_relu : {false, true}) {
-              std::vector<DDim> dims;
-              DDim weights_dim({cout, cin, 3, 3});
-              for (auto& batch : {1, 2}) {
-                for (auto& h : {1, 7, 19, 28, 75, 56, 32}) {
-                  dims.push_back(DDim({batch, cin, h, h}));
+        for (auto& pad_left : {1, 2}) {
+          for (auto& pad_right : {1, 2}) {
+            for (auto& pad_top : {1, 2}) {
+              for (auto& pad_bottom : {1, 2}) {
+                for (auto& flag_bias : {false, true}) {
+                  for (auto& flag_relu : {false, true}) {
+                    std::vector<DDim> dims;
+                    DDim weights_dim({cout, cin, 3, 3});
+                    for (auto& batch : {1, 2}) {
+                      for (auto& h : {1, 7, 19, 28, 75, 56, 32}) {
+                        dims.push_back(DDim({batch, cin, h, h}));
+                      }
+                    }
+                    test_conv_fp32(dims,
+                                   weights_dim,
+                                   1,
+                                   {2, 2},
+                                   {pad_top, pad_bottom, pad_left, pad_right},
+                                   {1, 1},
+                                   flag_bias,
+                                   flag_relu,
+                                   {1, 2, 4},
+                                   {FLAGS_power_mode});
+                  }
                 }
               }
-              test_conv_fp32(dims,
-                             weights_dim,
-                             1,
-                             {2, 2},
-                             {pad, pad, pad, pad},
-                             {1, 1},
-                             flag_bias,
-                             flag_relu,
-                             {1, 2, 4},
-                             {FLAGS_power_mode});
             }
           }
         }
@@ -489,7 +501,7 @@ TEST(TestConvRand, test_conv_rand) {
                                   weights_dim,
                                   g,
                                   {stride, stride},
-                                  {pad_left, pad_right, pad_top, pad_bottom},
+                                  {pad_top, pad_bottom, pad_left, pad_right},
                                   {dila, dila},
                                   flag_bias,
                                   flag_relu,
