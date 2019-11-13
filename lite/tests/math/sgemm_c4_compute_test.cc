@@ -90,7 +90,6 @@ bool test_sgemm_c4(
   auto db = tb.mutable_data<float>();
   auto da_c4 = ta_c4.mutable_data<float>();
   auto db_c4 = tb_c4.mutable_data<float>();
-  auto dc = tc.mutable_data<float>();
   auto dc_basic = tc_basic.mutable_data<float>();
   auto dbias = tbias.mutable_data<float>();
 
@@ -128,6 +127,7 @@ bool test_sgemm_c4(
       new paddle::lite::KernelContext);
   auto& ctx = ctx1->As<paddle::lite::ARMContext>();
   ctx.SetRunMode(static_cast<paddle::lite_api::PowerMode>(cls), ths);
+  auto dc = tc.mutable_data<float>();
   for (int j = 0; j < FLAGS_warmup; ++j) {
     paddle::lite::arm::math::sgemm_prepack_c4(
         m, n, k, da_c4, db_c4, dc, dbias, has_bias, has_relu, &ctx);
