@@ -207,6 +207,7 @@ struct ConcatParam {
   std::vector<lite::Tensor*> x{};
   lite::Tensor* output{};
   int axis{0};
+  lite::Tensor* axis_tensor{};
 };
 
 /// ----------------------- activation operators ----------------------
@@ -425,6 +426,13 @@ struct FakeDequantizeMaxAbsParam {
   const lite::Tensor* in_scale{};
   lite::Tensor* out{};
   float max_range;
+};
+
+struct FakeChannelWiseDequantizeMaxAbsParam {
+  const lite::Tensor* x{};
+  std::vector<const lite::Tensor*> scale_tensors{};
+  lite::Tensor* out{};
+  std::vector<int> quant_bits;
 };
 
 /// ----------------------- sgd operators ----------------------
@@ -788,6 +796,11 @@ struct SliceParam {
   std::vector<int> starts{};
   std::vector<int> ends{};
   std::vector<int> decrease_axis{};
+  std::vector<int> infer_flags{};
+  std::vector<lite::Tensor*> StartsTensorList{};
+  std::vector<lite::Tensor*> EndsTensorList{};
+  lite::Tensor* StartsTensor{nullptr};
+  lite::Tensor* EndsTensor{nullptr};
 };
 
 struct AffineChannelParam {
@@ -842,6 +855,8 @@ struct UnsqueezeParam {
   lite::Tensor* Out{};
   lite::Tensor* XShape{};
   std::vector<int> axes{};
+  const lite::Tensor* axes_tensor{};
+  std::vector<const lite::Tensor*> axes_tensor_vct{};
 };
 
 /// ----------------------- expand operators ----------------------

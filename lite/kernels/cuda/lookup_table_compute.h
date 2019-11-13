@@ -14,35 +14,23 @@
 
 #pragma once
 
-#include <cmath>
-#include "lite/backends/arm/math/conv_impl.h"
-#include "lite/core/context.h"
 #include "lite/core/kernel.h"
-#include "lite/core/target_wrapper.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace cuda {
 
-/// only support 3x3s1 and 3x3s2
-template <PrecisionType Ptype, PrecisionType OutType>
-class WinogradConv : public KernelLite<TARGET(kARM), Ptype> {
+class LookupTableCompute
+    : public KernelLite<TARGET(kCUDA), PRECISION(kFloat), DATALAYOUT(kNCHW)> {
  public:
-  WinogradConv() = default;
-  ~WinogradConv() {}
-  virtual void PrepareForRun();
-  virtual void ReInitWhenNeeded();
-  virtual void Run();
+  using param_t = operators::LookupTableParam;
 
- protected:
-  using param_t = operators::ConvParam;
-  Tensor weights_;
-  DDim last_shape_;
-  int workspace_size_{0};
+  void Run() override;
+  virtual ~LookupTableCompute() = default;
 };
 
-}  // namespace arm
+}  // namespace cuda
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
