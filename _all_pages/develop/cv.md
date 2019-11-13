@@ -4,15 +4,15 @@ title: CV 类图像预处理API接口介绍
 ---
 
 
-# CV类图像预处理API接口介绍
+# CV 图像预处理API接口介绍
 
-请把编译脚本`Paddle-Lite/lite/too/build.sh`中`BUILD_CV`变量设置为ON， 其他编译参数设置请参考[源码编译](../source_compile)， 以确保 Lite 可以正确编译。
+请把编译脚本`Paddle-Lite/lite/too/build.sh`中`BUILD_CV`变量设置为`ON`， 其他编译参数设置请参考[源码编译](../source_compile)， 以确保 Lite 可以正确编译。
 
-## CV图像预处理功能
+## CV 图像预处理功能
 
-Lite 支持不同颜色空间的图像相互转换`Convert`、缩放`Resize`、翻转`Flip`、旋转`Rotate`和图像数据转换为`Tensor`存储`ImageToTensor`功能，下文将详细介绍每个功能的API接口。
+Lite 支持不同颜色空间的图像相互转换 `Convert` 、缩放 `Resize` 、翻转 `Flip`、旋转 `Rotate` 和图像数据转换为 `Tensor` 存储`ImageToTensor` 功能，下文将详细介绍每个功能的API接口。
 
-### CV类枚举变量和结构体变量
+### CV 枚举变量和结构体变量
 
 - 颜色空间
 ```cpp
@@ -46,9 +46,9 @@ typedef struct {
 } TransParam;
 ```
 
-### `ImagePreprocess`类的成员变量
+### `ImagePreprocess` 类的成员变量
 
-`ImagePreprocess`类含有以下三个私有成员变量，通过构造函数进行初始化。
+`ImagePreprocess` 类含有以下三个私有成员变量，通过构造函数进行初始化。
 ```cpp
 private:
   ImageFormat srcFormat_; // input image color format
@@ -63,9 +63,9 @@ ImagePreprocess::ImagePreprocess(ImageFormat srcFormat, ImageFormat dstFormat, T
 }
 ```
 
-### 颜色空间转换`Convert`
+### 颜色空间转换 `Convert`
 
-`Convert`函数支持颜色空间：GRAY、NV12（NV21）、RGB（BGR）和RGBA（BGRA）
+`Convert` 函数支持颜色空间：GRAY、NV12（NV21）、RGB（BGR）和RGBA（BGRA）
 
 + 目前支持以下颜色空间的相互转换：
     - GRAY2BGR
@@ -87,7 +87,7 @@ ImagePreprocess::ImagePreprocess(ImageFormat srcFormat, ImageFormat dstFormat, T
     - NV12—RGBA
     - NV21—RGBA
 
-+ `Convert`功能的API接口
++ `Convert` 功能的API接口
     ```cpp
     // 方法一
     void ImagePreprocess::imageCovert(const uint8_t* src, uint8_t* dst);
@@ -96,18 +96,18 @@ ImagePreprocess::ImagePreprocess(ImageFormat srcFormat, ImageFormat dstFormat, T
     uint8_t* dst, ImageFormat srcFormat, ImageFormat dstFormat);
     ```
 
-    + 第一个`imageCovert`接口，缺省参数来源于`ImagePreprocess`类的成员变量。故在初始化`ImagePreprocess`类的对象时，必须要给以下成员变量赋值，
-        - param srcFormat：`ImagePreprocess`类的成员变量`srcFormat_`
-        - param dstFormat：`ImagePreprocess`类的成员变量`dstFormat_`
+    + 第一个 `imageCovert` 接口，缺省参数来源于 `ImagePreprocess` 类的成员变量。故在初始化 `ImagePreprocess` 类的对象时，必须要给以下成员变量赋值，
+        - param srcFormat：`ImagePreprocess` 类的成员变量`srcFormat_`
+        - param dstFormat：`ImagePreprocess` 类的成员变量`dstFormat_`
     
-    - 第二个`imageCovert`接口，可以直接使用
+    - 第二个`imageCovert` 接口，可以直接使用
 
-### 缩放`Resize`
+### 缩放 `Resize`
 
-`Resize`功能支持颜色空间：GRAY、NV12（NV21）、RGB（BGR）和RGBA（BGRA）
-`Resize`功能目前支持的方法是`bilinear`
+`Resize` 功能支持颜色空间：GRAY、NV12（NV21）、RGB（BGR）和RGBA（BGRA）
+`Resize` 功能目前支持的方法：`bilinear`
 
-+ `Resize`功能的API接口
++ `Resize` 功能的API接口
     ```cpp
     // 方法一
     void ImagePreprocess::imageResize(const uint8_t* src, uint8_t* dst);
@@ -115,21 +115,21 @@ ImagePreprocess::ImagePreprocess(ImageFormat srcFormat, ImageFormat dstFormat, T
     void ImagePreprocess::imageResize(const uint8_t* src, uint8_t* dst, ImageFormat srcFormat, ImageFormat srcFormat, int srcw, int srch, int dstw, int dsth);
     ```
 
-    + 第一个`imageResize`接口，缺省参数来源于`ImagePreprocess`类的成员变量。故在初始化`ImagePreprocess`类的对象时，必须要给以下成员变量赋值，
-        - param srcFormat：`ImagePreprocess`类的成员变量`dstFormat_`
-        - param srcw：`ImagePreprocess`类的成员变量`transParam_.iw`
-        - param srch：`ImagePreprocess`类的成员变量`transParam_.ih`
-        - param dstw：`ImagePreprocess`类的成员变量`transParam_.ow`
-        - param dsth：`ImagePreprocess`类的成员变量`transParam_.ow`
+    + 第一个`imageResize` 接口，缺省参数来源于`ImagePreprocess` 类的成员变量。故在初始化`ImagePreprocess` 类的对象时，必须要给以下成员变量赋值，
+        - param srcFormat：`ImagePreprocess` 类的成员变量`dstFormat_`
+        - param srcw：`ImagePreprocess` 类的成员变量`transParam_.iw`
+        - param srch：`ImagePreprocess` 类的成员变量`transParam_.ih`
+        - param dstw：`ImagePreprocess` 类的成员变量`transParam_.ow`
+        - param dsth：`ImagePreprocess` 类的成员变量`transParam_.ow`
     
-    - 第二个`imageResize`接口，可以直接使用
+    - 第二个`imageResize` 接口，可以直接使用
 
-### 旋转`Rotate`
+### 旋转 `Rotate`
 
-`Rotate`功能支持颜色空间：GRAY、RGB（BGR）和RGBA（BGRA）
-`Rotate`功能目前支持的角度：90、180 和 270
+`Rotate` 功能支持颜色空间：GRAY、RGB（BGR）和RGBA（BGRA）
+`Rotate` 功能目前支持的角度：90、180 和 270
 
-+ `Rotate`功能的API接口
++ `Rotate` 功能的API接口
     ```cpp
     // 方法一
     void ImagePreprocess::imageRotate(const uint8_t* src, uint8_t* dst);
@@ -137,20 +137,20 @@ ImagePreprocess::ImagePreprocess(ImageFormat srcFormat, ImageFormat dstFormat, T
     void ImagePreprocess::imageRotate(const uint8_t* src, uint8_t* dst, ImageFormat srcFormat, ImageFormat srcFormat, int srcw, int srch, float degree);
     ```
 
-    + 第一个`imageRotate`接口，缺省参数来源于`ImagePreprocess`类的成员变量。故在初始化`ImagePreprocess`类的对象时，必须要给以下成员变量赋值，
-        - param srcFormat：`ImagePreprocess`类的成员变量`dstFormat_`
-        - param srcw：`ImagePreprocess`类的成员变量`transParam_.ow`
-        - param srch：`ImagePreprocess`类的成员变量`transParam_.oh`
-        - param degree：`ImagePreprocess`类的成员变量`transParam_.rotate_param`
+    + 第一个`imageRotate` 接口，缺省参数来源于`ImagePreprocess` 类的成员变量。故在初始化`ImagePreprocess` 类的对象时，必须要给以下成员变量赋值，
+        - param srcFormat：`ImagePreprocess` 类的成员变量`dstFormat_`
+        - param srcw：`ImagePreprocess` 类的成员变量`transParam_.ow`
+        - param srch：`ImagePreprocess` 类的成员变量`transParam_.oh`
+        - param degree：`ImagePreprocess` 类的成员变量`transParam_.rotate_param`
     
-    - 第二个`imageRotate`接口，可以直接使用
+    - 第二个`imageRotate` 接口，可以直接使用
 
-### 翻转`Flip`
+### 翻转 `Flip`
 
-`Flip`功能支持颜色空间：GRAY、RGB（BGR）和RGBA（BGRA）
-`Flip`功能目前支持的功能：沿X轴翻转、沿Y轴翻转和沿XY轴翻转
+`Flip` 功能支持颜色空间：GRAY、RGB（BGR）和RGBA（BGRA）
+`Flip` 功能目前支持的功能：沿X轴翻转、沿Y轴翻转和沿XY轴翻转
 
-+ `Flip`功能的API接口
++ `Flip` 功能的API接口
     ```cpp
     // 方法一
     void ImagePreprocess::imageFlip(const uint8_t* src, uint8_t* dst);
@@ -158,21 +158,21 @@ ImagePreprocess::ImagePreprocess(ImageFormat srcFormat, ImageFormat dstFormat, T
     void ImagePreprocess::imageFlip(const uint8_t* src, uint8_t* dst, ImageFormat srcFormat, ImageFormat srcFormat, int srcw, int srch, FlipParam flip_param);
     ```
 
-    + 第一个`imageFlip`接口，缺省参数来源于`ImagePreprocess`类的成员变量。故在初始化`ImagePreprocess`类的对象时，必须要给以下成员变量赋值，
-        - param srcFormat：`ImagePreprocess`类的成员变量`dstFormat_`
-        - param srcw：`ImagePreprocess`类的成员变量`transParam_.ow`
-        - param srch：`ImagePreprocess`类的成员变量`transParam_.oh`
-        - param flip_param：`ImagePreprocess`类的成员变量`transParam_.flip_param`
+    + 第一个`imageFlip` 接口，缺省参数来源于`ImagePreprocess` 类的成员变量。故在初始化`ImagePreprocess` 类的对象时，必须要给以下成员变量赋值，
+        - param srcFormat：`ImagePreprocess` 类的成员变量`dstFormat_`
+        - param srcw：`ImagePreprocess` 类的成员变量`transParam_.ow`
+        - param srch：`ImagePreprocess` 类的成员变量`transParam_.oh`
+        - param flip_param：`ImagePreprocess` 类的成员变量`transParam_.flip_param`
     
-    - 第二个`imageFlip`接口，可以直接使用
+    - 第二个`imageFlip` 接口，可以直接使用
 
 ### `Image2Tensor`
 
-`Image2Tensor`功能支持颜色空间：RGB（BGR）和RGBA（BGRA）
-`Image2Tensor`功能目前支持的Layout：`NCHW`和 `NHWC`
-`Image2Tensor`不仅完成图像转换为tensor数据处理，而且还完成了图像数据的归一化处理
+`Image2Tensor` 功能支持颜色空间：RGB（BGR）和RGBA（BGRA）
+`Image2Tensor` 功能目前支持的Layout：`NCHW`和 `NHWC`
+`Image2Tensor` 不仅完成图像转换为`Tensor`数据处理，而且还完成了图像数据的归一化处理
 
-+ `Image2Tensor`功能的API接口
++ `Image2Tensor` 功能的API接口
     ```cpp
     // 方法一
     void ImagePreprocess::image2Tensor(const uint8_t* src, Tensor* dstTensor, LayoutType layout, float* means, float* scales);
@@ -180,20 +180,20 @@ ImagePreprocess::ImagePreprocess(ImageFormat srcFormat, ImageFormat dstFormat, T
     void ImagePreprocess::image2Tensor(const uint8_t* src, Tensor* dstTensor, ImageFormat srcFormat,  srcw, int srch, LayoutType layout, float* means, float* scales;
     ```
 
-    + 第一个`image2Tensor`接口，缺省参数来源于`ImagePreprocess`类的成员变量。故在初始化`ImagePreprocess`类的对象时，必须要给以下成员变量赋值，
-        - param srcFormat：`ImagePreprocess`类的成员变量`dstFormat_`
-        - param srcw：`ImagePreprocess`类的成员变量`transParam_.ow`
-        - param srch：`ImagePreprocess`类的成员变量`transParam_.oh`
+    + 第一个`image2Tensor` 接口，缺省参数来源于`ImagePreprocess` 类的成员变量。故在初始化`ImagePreprocess` 类的对象时，必须要给以下成员变量赋值，
+        - param srcFormat：`ImagePreprocess` 类的成员变量`dstFormat_`
+        - param srcw：`ImagePreprocess` 类的成员变量`transParam_.ow`
+        - param srch：`ImagePreprocess` 类的成员变量`transParam_.oh`
     
-    - 第二个`image2Tensor`接口，可以直接使用
+    - 第二个`image2Tensor` 接口，可以直接使用
 
 
 
-## CV图像预处理Demo示例
+## CV 图像预处理 Demo 示例
 
-例子：输入`1920x1080`大小的`NV12`图像src，输出`960x540`大小`RGB`格式的图像dst；然后，完成90 度旋转和沿X轴翻转功能；最后，用`NHWC`格式存储在Tensor里。
+例子：输入 `1920x1080` 大小的 `NV12` 图像src，输出 `960x540` 大小 `RGB` 格式的图像dst；然后，完成 `90` 度旋转和沿 `X` 轴翻转功能；最后，用 `NHWC` 格式存储在Tensor里。
 
-定义`ImagePreprocess`类的对象，初始化成员变量
+定义 `ImagePreprocess` 类的对象，初始化成员变量
 
 ```cpp
 // init
