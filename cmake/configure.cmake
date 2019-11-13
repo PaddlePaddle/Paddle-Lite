@@ -117,7 +117,11 @@ endif()
 
 if (LITE_WITH_ARM)
     add_definitions("-DLITE_WITH_ARM")
+    if (LITE_WITH_CV)
+        add_definitions("-DLITE_WITH_CV")
+    endif()
 endif()
+
 
 if (WITH_ARM_DOTPROD)
     add_definitions("-DWITH_ARM_DOTPROD")
