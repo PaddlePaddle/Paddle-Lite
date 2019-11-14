@@ -29,7 +29,7 @@ inline std::vector<int> get_new_shape(
     auto tensor = list_new_shape_tensor[i];
     lite::Tensor temp;
     auto temp_data = temp.mutable_data<int32_t>();
-    auto tensor_data = tensor->data<int32_t>(TARGET(kCUDA));
+    auto tensor_data = tensor->data<int32_t>();
     cudaMemcpy(temp_data,
                tensor_data,
                tensor->dims().production() * sizeof(float),
@@ -44,7 +44,7 @@ inline std::vector<int> get_new_shape(
 template <typename T>
 inline std::vector<T> get_new_data_from_tensor(const Tensor* new_data_tensor) {
   std::vector<T> vec_new_data;
-  auto* new_data = new_data_tensor->data<T>(kCUDA);
+  auto* new_data = new_data_tensor->data<T>();
   lite::Tensor cpu_starts_tensor;
   auto cpu_starts_tensor_data = cpu_starts_tensor.mutable_data<T>();
   cudaMemcpy(cpu_starts_tensor_data,
@@ -141,7 +141,6 @@ void BilinearInterpCompute::Run() {
   int out_w = param.out_w;
   float scale = param.scale;
   bool align_corners = param.align_corners;
-  auto align_mode = param.align_mode;
 
   auto list_new_shape_tensor = param.SizeTensor;
   if (list_new_shape_tensor.size() > 0) {
@@ -159,7 +158,6 @@ void BilinearInterpCompute::Run() {
       out_h = static_cast<int>(in_h * scale);
       out_w = static_cast<int>(in_w * scale);
     }
-
     if (out_size != nullptr) {
       lite::Tensor sizes;
       float* size_data = sizes.mutable_data<float>();
@@ -172,7 +170,6 @@ void BilinearInterpCompute::Run() {
   }
 
   auto output_data = output->mutable_data<float>(TARGET(kCUDA));
-
   if (in_h == out_h && in_w == out_w) {
     cudaMemcpy(output_data,
                input_data,
