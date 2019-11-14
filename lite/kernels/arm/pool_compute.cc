@@ -38,7 +38,7 @@ void PoolCompute::Run() {
 
   std::vector<int>& ksize = param.ksize;
   std::vector<int>& strides = param.strides;
-  std::vector<int>& paddings = param.paddings;
+  std::vector<int>& paddings = *param.paddings;
 
   std::string& pooling_type = param.pooling_type;
   bool global_pooling = param.global_pooling;
@@ -53,7 +53,6 @@ void PoolCompute::Run() {
 
   bool kps_equal = (ksize[0] == ksize[1]) && (strides[0] == strides[1]) &&
                    (paddings[0] == paddings[2]);
-
   if (global_pooling) {
     for (size_t i = 0; i < ksize.size(); ++i) {
       paddings[2 * i] = 0;

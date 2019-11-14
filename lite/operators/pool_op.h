@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <memory>
 #include <string>
 #include <vector>
 #include "lite/core/kernel.h"
@@ -69,18 +70,19 @@ class PoolOpLite : public OpLite {
       padding_algorithm_ = op_desc.GetAttr<std::string>("padding_algorithm");
     }
     // 2-pad to 4-pad
-    if (paddings.size() == param_.strides.size()) {
+    if (paddings.size() == 2L) {
       for (size_t i = 0; i < param_.strides.size(); ++i) {
         int copy_pad = *(paddings.begin() + 2 * i);
         paddings.insert(paddings.begin() + 2 * i + 1, copy_pad);
       }
     } else {
-      if (paddings.size() != param_.strides.size() * 2) {
+      if (paddings.size() != 4L) {
         LOG(FATAL)
             << "Paddings size should be the same or twice as the inputs size.";
       }
     }
-    param_.paddings = paddings;
+    param_.paddings = std::make_shared<std::vector<int>>(paddings);
+
     return true;
   }
 

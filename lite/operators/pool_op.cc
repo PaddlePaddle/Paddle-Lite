@@ -27,7 +27,7 @@ bool PoolOpLite::CheckShape() const {
   const auto& x_dims = param_.x->dims();
   const auto& ksize = param_.ksize;
   const auto& strides = param_.strides;
-  const auto& paddings = param_.paddings;
+  const auto& paddings = *param_.paddings;
 
   // "Pooling intput should be 4-D or 5-D tensor."
   CHECK_OR_FALSE(x_dims.size() == 4 || x_dims.size() == 5);
@@ -97,7 +97,7 @@ bool PoolOpLite::InferShape() const {
   const auto x_dims = param_.x->dims();
   std::vector<int>& ksize = param_.ksize;
   // dynamic update 4-pad
-  UpdatePadding(&param_.paddings,
+  UpdatePadding(param_.paddings.get(),
                 param_.global_pooling,
                 param_.adaptive,
                 padding_algorithm_,
@@ -110,6 +110,7 @@ bool PoolOpLite::InferShape() const {
       ksize[i] = static_cast<int>(x_dims[i + 2]);
     }
   }
+  auto paddings = *param_.paddings;
   std::vector<int64_t> output_shape({x_dims[0], x_dims[1]});
   if (param_.adaptive) {
     output_shape.insert(
@@ -118,8 +119,8 @@ bool PoolOpLite::InferShape() const {
     for (size_t i = 0; i < param_.ksize.size(); ++i) {
       output_shape.push_back(PoolOutputSize(x_dims[i + 2],
                                             param_.ksize[i],
-                                            param_.paddings[2 * i],
-                                            param_.paddings[2 * i + 1],
+                                            paddings[2 * i],
+                                            paddings[2 * i + 1],
                                             param_.strides[i],
                                             param_.ceil_mode));
     }

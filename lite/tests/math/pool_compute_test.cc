@@ -69,7 +69,7 @@ DDim compute_out_dim(const DDim& dim_in,
   auto kernel_w = param.ksize[1];
   auto h = dim_in[2];
   auto w = dim_in[3];
-  auto paddings = param.paddings;
+  auto paddings = *param.paddings;
   int stride_h = param.strides[0];
   int stride_w = param.strides[1];
   bool ceil_mode = param.ceil_mode;
@@ -250,7 +250,7 @@ void test_pool_fp32(const std::vector<DDim>& input_dims,
   param.ksize = ksize;
 
   param.strides = strides;
-  param.paddings = pads;
+  param.paddings = std::make_shared<std::vector<int>>(pads);
   param.ceil_mode = ceil_mode;
   param.global_pooling = flag_global;
   param.pooling_type = pooling_type;
