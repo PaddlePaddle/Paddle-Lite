@@ -71,7 +71,7 @@ class PoolOpLite : public OpLite {
     }
     // 2-pad to 4-pad
     if (paddings.size() == 2L) {
-      for (size_t i = 0; i < param_.strides.size(); ++i) {
+      for (size_t i = 0; i < 2L; ++i) {
         int copy_pad = *(paddings.begin() + 2 * i);
         paddings.insert(paddings.begin() + 2 * i + 1, copy_pad);
       }
