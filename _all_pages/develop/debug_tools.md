@@ -5,6 +5,11 @@ title: Debug tools
 
 **Lite Model Debug Tool** 是用来检查Paddle-Lite框架与Paddle-Fluid框架运行时tensor(包括variable与weight)之间diff信息的基础工具。
 
+## 编译方法:
+
+1. 参照 [编译安装](../source_compile) 中的**full_publish**部分进行环境配置和编译。
+2. 在生成的`build`目录下，执行`make lite_model_debug_tool`，`lite_model_debug_tool`产出在编译目录的`lite/tools/debug`目录下。
+
 ## 工作流程:
 
 1. 运行 `/bin/bash check_model.sh --model_dir=<your_model_path> --build_root_dir=<your_cmake_root_dir> debug_cpp_stage` 获得模型在Paddle-Lite框架下的运行拓扑信息、varibles信息和weights信息。运行后拓扑信息将会存储在默认名为 `topo_file.txt` 的文件中，variables和weights信息将会存储在默认名为 `tensor_cpp.txt` 的文件中。
