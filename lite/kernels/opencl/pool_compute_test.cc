@@ -89,9 +89,10 @@ TEST(pool2d, compute) {
   param.output = &out;
   param.global_pooling = true;
   param.pooling_type = "avg";
-  param.paddings = std::make_shared<std::vector<int>>({0, 0, 0, 0});
+  std::vector<int> paddings = {0, 0, 0, 0};
   param.strides = std::vector<int>{1, 1};
   param.ksize = std::vector<int>{7, 7};
+  param.paddings = std::make_shared<std::vector<int>>(paddings);
 
   std::unique_ptr<KernelContext> context(new KernelContext);
   context->As<OpenCLContext>().InitOnce();

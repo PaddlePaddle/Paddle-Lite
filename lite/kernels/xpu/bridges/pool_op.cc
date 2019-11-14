@@ -38,8 +38,7 @@ node_map_type PoolConverter(const std::shared_ptr<lite::OpLite> op,
   auto x_var_name = op_info->Input("X").front();
   auto pooling_type = op_info->GetAttr<std::string>("pooling_type");
   auto ceil_mode = op_info->GetAttr<bool>("ceil_mode");
-  auto paddings =
-      op_info->GetAttr<std::shared_ptr<std::vector<int>>>("paddings");
+  auto paddings = op_info->GetAttr<std::vector<int>>("paddings");
   auto global_pooling = op_info->GetAttr<bool>("global_pooling");
   auto ksize = op_info->GetAttr<std::vector<int>>("ksize");
   auto strides = op_info->GetAttr<std::vector<int>>("strides");
@@ -58,7 +57,7 @@ node_map_type PoolConverter(const std::shared_ptr<lite::OpLite> op,
           graph_ctx->builder->CreateMaxPool2D(*input_nodes.at(x_var_name),
                                               lite::xpu::CvtShape(ksize),
                                               lite::xpu::CvtShape(strides),
-                                              lite::xpu::CvtShape(*paddings),
+                                              lite::xpu::CvtShape(paddings),
                                               "NCHW",
                                               ceil_mode));
     }
@@ -73,7 +72,7 @@ node_map_type PoolConverter(const std::shared_ptr<lite::OpLite> op,
           graph_ctx->builder->CreateAvgPool2D(*input_nodes.at(x_var_name),
                                               lite::xpu::CvtShape(ksize),
                                               lite::xpu::CvtShape(strides),
-                                              lite::xpu::CvtShape(*paddings),
+                                              lite::xpu::CvtShape(paddings),
                                               "NCHW",
                                               ceil_mode,
                                               !exclusive));
