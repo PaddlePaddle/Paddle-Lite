@@ -34,7 +34,7 @@ class VarConv2dOp : public OpLite {
 
  private:
   mutable VarConv2DParam param_;
-}
+};
 
 }  // namespace operators
 }  // namespace lite

@@ -36,8 +36,8 @@ bool VarConv2dOp::CheckShape() const {
   LoD row_lod = param_.ROW->lod();
   CHECK_EQ(row_lod.empty(), false) << "The Input(ROW) must hold lod info.";
   LoD col_lod = param_.COLUMN->lod();
-  CHECK_EQ(col_lod.empty(), false)
-      << "The Input(COLUMN) must hold lod info." return true;
+  CHECK_EQ(col_lod.empty(), false) << "The Input(COLUMN) must hold lod info.";
+  return true;
 }
 
 bool VarConv2dOp::InferShape() const { return true; }
