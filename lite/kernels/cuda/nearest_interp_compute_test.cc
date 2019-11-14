@@ -202,6 +202,7 @@ TEST(nearest_interp, update) {
   float* size_tensor1_ref_data = size_tensor_ref[1].mutable_data<float>();
   float* input_scale_ref_data = input_scale_ref.mutable_data<float>();
   float* osz_ref_data = osz_ref.mutable_data<float>();
+  float* out_ref_data = out_ref.mutable_data<float>();
 
   for (int i = 0; i < x_cpu.numel(); ++i) {
     x_cpu_data[i] = i + 5.0;
@@ -247,8 +248,9 @@ TEST(nearest_interp, update) {
 
   CopySync<TARGET(kCUDA)>(
       out_cpu_data, out_data, sizeof(float) * out.numel(), IoDirection::DtoH);
+  NearestInterpRef(&x_ref, &out_ref, false);
   for (int i = 0; i < out.numel(); i++) {
-    LOG(INFO) << out_cpu_data[i];
+    EXPECT_NEAR(out_cpu_data[i], out_ref_data[i], 1e-5);
   }
 }
 
