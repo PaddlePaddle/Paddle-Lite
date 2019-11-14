@@ -95,7 +95,7 @@ struct InterpolateParam {
   lite::Tensor* OutSize{};
   lite::Tensor* Out{};
   std::vector<const lite::Tensor*> SizeTensor;
-  lite::Tensor* Scale;
+  lite::Tensor* Scale{};
 
   float scale{0.f};
   int out_h{-1};
