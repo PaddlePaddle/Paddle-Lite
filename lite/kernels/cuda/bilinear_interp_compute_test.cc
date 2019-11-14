@@ -121,14 +121,14 @@ TEST(bilinear_interp, update) {
   param.scale = scale;
   param.align_corners = false;
   param.align_mode = 0;
-  LOG(INFO) << 1;
+
   x.Resize({n, c, in_h, in_w});
   size_tensor[0].Resize({1});
   size_tensor[1].Resize({1});
   input_scale.Resize({1});
   osz.Resize({2});
   out.Resize({n, c, out_h, out_w});
-  LOG(INFO) << 2;
+
   x_cpu.Resize({n, c, in_h, in_w});
   size_tensor_cpu[0].Resize({1});
   size_tensor_cpu[1].Resize({1});
@@ -142,16 +142,16 @@ TEST(bilinear_interp, update) {
   input_scale_ref.Resize({1});
   osz_ref.Resize({2});
   out_ref.Resize({n, c, out_h, out_w});
-  LOG(INFO) << 3;
+
   auto* out_data = out.mutable_data<float>(TARGET(kCUDA));
-  LOG(INFO) << 4;
+
   float* x_cpu_data = x_cpu.mutable_data<float>();
   float* size_tensor0_cpu_data = size_tensor_cpu[0].mutable_data<float>();
   float* size_tensor1_cpu_data = size_tensor_cpu[1].mutable_data<float>();
   float* input_scale_cpu_data = input_scale_cpu.mutable_data<float>();
   float* osz_cpu_data = osz_cpu.mutable_data<float>();
   float* out_cpu_data = out_cpu.mutable_data<float>();
-  LOG(INFO) << 5;
+
   float* x_ref_data = x_ref.mutable_data<float>();
   float* size_tensor0_ref_data = size_tensor_ref[0].mutable_data<float>();
   float* size_tensor1_ref_data = size_tensor_ref[1].mutable_data<float>();
@@ -162,7 +162,7 @@ TEST(bilinear_interp, update) {
     x_cpu_data[i] = i + 5.0;
     x_ref_data[i] = i + 5.0;
   }
-  LOG(INFO) << 6;
+
   osz_cpu_data[0] = out_h;
   osz_cpu_data[1] = out_w;
   size_tensor0_cpu_data[0] = out_h;
@@ -173,7 +173,7 @@ TEST(bilinear_interp, update) {
   size_tensor0_ref_data[0] = out_h;
   size_tensor1_ref_data[0] = out_w;
   input_scale_ref_data[0] = scale;
-  LOG(INFO) << 7;
+
   x.Assign<float, lite::DDim, TARGET(kCUDA)>(x_cpu_data, x_cpu.dims());
   size_tensor[0].Assign<float, lite::DDim, TARGET(kCUDA)>(
       size_tensor0_cpu_data, size_tensor[0].dims());
@@ -182,7 +182,7 @@ TEST(bilinear_interp, update) {
   input_scale.Assign<float, lite::DDim, TARGET(kCUDA)>(input_scale_cpu_data,
                                                        input_scale.dims());
   osz.Assign<float, lite::DDim, TARGET(kCUDA)>(osz_cpu_data, osz_cpu.dims());
-  LOG(INFO) << 8;
+
   param.X = &x;
   param.SizeTensor.emplace_back(
       reinterpret_cast<const Tensor*>(&size_tensor[0]));
@@ -191,7 +191,7 @@ TEST(bilinear_interp, update) {
   param.Scale = &input_scale;
   param.OutSize = &osz;
   param.Out = &out;
-  LOG(INFO) << 9;
+
   bilinear_interp_kernel.SetParam(param);
 
   cudaStream_t stream;
