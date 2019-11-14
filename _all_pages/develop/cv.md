@@ -99,7 +99,7 @@ ImagePreprocess::ImagePreprocess(ImageFormat srcFormat, ImageFormat dstFormat, T
     uint8_t* dst, ImageFormat srcFormat, ImageFormat dstFormat);
     ```
 
-    + 第一个 `imageCovert` 接口，缺省参数来源于 `ImagePreprocess` 类的成员变量。故在初始化 `ImagePreprocess` 类的对象时，必须要给以下成员变量赋值，
+    + 第一个 `imageCovert` 接口，缺省参数来源于 `ImagePreprocess` 类的成员变量。故在初始化 `ImagePreprocess` 类的对象时，必须要给以下成员变量赋值：
         - param srcFormat：`ImagePreprocess` 类的成员变量`srcFormat_`
         - param dstFormat：`ImagePreprocess` 类的成员变量`dstFormat_`
     
@@ -118,7 +118,7 @@ ImagePreprocess::ImagePreprocess(ImageFormat srcFormat, ImageFormat dstFormat, T
     void ImagePreprocess::imageResize(const uint8_t* src, uint8_t* dst, ImageFormat srcFormat, ImageFormat srcFormat, int srcw, int srch, int dstw, int dsth);
     ```
 
-    + 第一个`imageResize` 接口，缺省参数来源于`ImagePreprocess` 类的成员变量。故在初始化`ImagePreprocess` 类的对象时，必须要给以下成员变量赋值，
+    + 第一个`imageResize` 接口，缺省参数来源于`ImagePreprocess` 类的成员变量。故在初始化`ImagePreprocess` 类的对象时，必须要给以下成员变量赋值：
         - param srcFormat：`ImagePreprocess` 类的成员变量`dstFormat_`
         - param srcw：`ImagePreprocess` 类的成员变量`transParam_.iw`
         - param srch：`ImagePreprocess` 类的成员变量`transParam_.ih`
@@ -140,7 +140,7 @@ ImagePreprocess::ImagePreprocess(ImageFormat srcFormat, ImageFormat dstFormat, T
     void ImagePreprocess::imageRotate(const uint8_t* src, uint8_t* dst, ImageFormat srcFormat, ImageFormat srcFormat, int srcw, int srch, float degree);
     ```
 
-    + 第一个`imageRotate` 接口，缺省参数来源于`ImagePreprocess` 类的成员变量。故在初始化`ImagePreprocess` 类的对象时，必须要给以下成员变量赋值，
+    + 第一个`imageRotate` 接口，缺省参数来源于`ImagePreprocess` 类的成员变量。故在初始化`ImagePreprocess` 类的对象时，必须要给以下成员变量赋值：
         - param srcFormat：`ImagePreprocess` 类的成员变量`dstFormat_`
         - param srcw：`ImagePreprocess` 类的成员变量`transParam_.ow`
         - param srch：`ImagePreprocess` 类的成员变量`transParam_.oh`
@@ -161,7 +161,7 @@ ImagePreprocess::ImagePreprocess(ImageFormat srcFormat, ImageFormat dstFormat, T
     void ImagePreprocess::imageFlip(const uint8_t* src, uint8_t* dst, ImageFormat srcFormat, ImageFormat srcFormat, int srcw, int srch, FlipParam flip_param);
     ```
 
-    + 第一个`imageFlip` 接口，缺省参数来源于`ImagePreprocess` 类的成员变量。故在初始化`ImagePreprocess` 类的对象时，必须要给以下成员变量赋值，
+    + 第一个`imageFlip` 接口，缺省参数来源于`ImagePreprocess` 类的成员变量。故在初始化`ImagePreprocess` 类的对象时，必须要给以下成员变量赋值：
         - param srcFormat：`ImagePreprocess` 类的成员变量`dstFormat_`
         - param srcw：`ImagePreprocess` 类的成员变量`transParam_.ow`
         - param srch：`ImagePreprocess` 类的成员变量`transParam_.oh`
@@ -183,7 +183,7 @@ ImagePreprocess::ImagePreprocess(ImageFormat srcFormat, ImageFormat dstFormat, T
     void ImagePreprocess::image2Tensor(const uint8_t* src, Tensor* dstTensor, ImageFormat srcFormat,  srcw, int srch, LayoutType layout, float* means, float* scales;
     ```
 
-    + 第一个`image2Tensor` 接口，缺省参数来源于`ImagePreprocess` 类的成员变量。故在初始化`ImagePreprocess` 类的对象时，必须要给以下成员变量赋值，
+    + 第一个`image2Tensor` 接口，缺省参数来源于`ImagePreprocess` 类的成员变量。故在初始化`ImagePreprocess` 类的对象时，必须要给以下成员变量赋值：
         - param srcFormat：`ImagePreprocess` 类的成员变量`dstFormat_`
         - param srcw：`ImagePreprocess` 类的成员变量`transParam_.ow`
         - param srch：`ImagePreprocess` 类的成员变量`transParam_.oh`
