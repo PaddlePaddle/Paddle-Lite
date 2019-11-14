@@ -5,8 +5,8 @@ set -ex
 ARM_OS="android"                    # android only yet
 ARM_ABI="armv8"                     # armv8, armv7
 ARM_LANG="gcc"                      # gcc only yet
-ANDROID_STL="c++_static"            # c++_shared, c++_static
-DDK_ROOT="$(pwd)/ai_ddk_lib/"       # HIAI SDK from https://developer.huawei.com/consumer/cn/hiai/
+ANDROID_STL="c++_shared"            # c++_shared/c++_static, c++_shared is used by HiAI DDK 310
+DDK_ROOT="$(pwd)/ai_ddk_lib/"       # HiAI DDK 310 from https://developer.huawei.com/consumer/cn/hiai/
 TARGET_NAME="test_npu_pass"         # default target
 BUILD_EXTRA=OFF                     # ON(with sequence ops)/OFF
 WITH_JAVA=ON                        # ON(build jar and jni so)/OFF

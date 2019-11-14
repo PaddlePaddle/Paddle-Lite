@@ -82,7 +82,6 @@ node_map_type ConvTransposeConverter(
   lite::npu::OpList::Global().add(inputs_map.at(input_var_name));
 
   // set attributes
-  conv_transpose_node->set_attr_mode(1);
   conv_transpose_node->set_attr_format(0);    // NCHW
   conv_transpose_node->set_attr_pad_mode(0);  // NOTSET
   conv_transpose_node->set_attr_group(groups);
