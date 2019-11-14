@@ -55,9 +55,8 @@ bool VarConv2dOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
       scope->FindVar(opdesc.Output("Out").front())->GetMutable<lite::Tensor>();
   param_.Col =
       scope->FindVar(opdesc.Output("Col").front())->GetMutable<lite::Tensor>();
-  CHECK(param_.X) << "X(Input) of VarConv2dOP should not be null."； CHECK(
-                         param_.ROW)
-                  << "Input(ROW) of VarConv2dOP should not be null.";
+  CHECK(param_.X) << "X(Input) of VarConv2dOP should not be null.";
+  CHECK(param_.ROW) << "Input(ROW) of VarConv2dOP should not be null.";
   CHECK(param_.COLUMN) << "Input(COLUMN) of VarConv2dOP should not be null.";
   CHECK(param_.W) << "W(Input) of VarConv2dOP should not be null.";
   CHECK(param_.Out) << "Out(Output) of VarConv2dOP should not be null.";
