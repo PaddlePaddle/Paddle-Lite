@@ -758,7 +758,7 @@ struct LodResetParam {
   const lite::Tensor* X{};
   const lite::Tensor* Y{};
   lite::Tensor* Out{};
-  std::vector<int> target_lod;
+  std::vector<int> targetlod;
   bool append;
 };
 
@@ -917,6 +917,26 @@ struct AssignValueParam {
   std::vector<float> fp32_values{};
   std::vector<int> int32_values{};
   lite::Tensor* Out{};
+};
+
+/// --------------- sequence_topk_avg_pooling operators ------------------
+struct SequenceTopkAvgPoolingParam {
+  const lite::Tensor* X{};
+  const lite::Tensor* ROW{};
+  const lite::Tensor* COLUMN{};
+  lite::Tensor* Out{};
+  lite::Tensor* pos{};
+  int channel_num{};
+  std::vector<int> topks{};
+};
+
+/// --------------- search_fc operators ------------------
+struct SearchFcParam {
+  const lite::Tensor* X{};
+  const lite::Tensor* W{};
+  const lite::Tensor* b{};
+  lite::Tensor* Out{};
+  int out_size{};
 };
 
 }  // namespace operators

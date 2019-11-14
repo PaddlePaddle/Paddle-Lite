@@ -40,6 +40,10 @@ add_kernel(reduce_sum_compute_x86 X86 basic SRCS reduce_compute.cc DEPS ${lite_k
 add_kernel(lookup_table_compute_x86 X86 basic SRCS lookup_table_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(sequence_reshape_compute_x86 X86 basic SRCS sequence_reshape_compute.cc DEPS ${lite_kernel_deps})
 
+#added by zhiqiang
+add_kernel(sequence_topk_avg_pooling_compute_x86 X86 basic SRCS sequence_topk_avg_pooling_compute.cc DEPS ${lite_kernel_deps} sequence_topk_avg_pooling)
+add_kernel(search_fc_compute_x86 X86 basic SRCS search_fc_compute.cc DEPS ${lite_kernel_deps} search_fc)
+
 if(NOT LITE_WITH_X86)
     return()
 endif()
