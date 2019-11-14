@@ -256,6 +256,7 @@ void PoolCompute::Run() {
   bool adaptive = param.adaptive;
   auto x_dims = param.x->dims();
   auto out_dims = param.output->dims();
+  auto paddings = *param.paddings;
   const int in_h = x_dims[2];
   const int in_w = x_dims[3];
   const int out_h = out_dims[2];
@@ -266,8 +267,8 @@ void PoolCompute::Run() {
   const int win_w = param.ksize[1];
   const int stride_h = param.strides[0];
   const int stride_w = param.strides[1];
-  const int pad_h = param.paddings[0];
-  const int pad_w = param.paddings[2];
+  const int pad_h = paddings[0];
+  const int pad_w = paddings[2];
   const int total_threads = out_dims.production();
   const int threads = 512;
   const int blocks = (total_threads + threads - 1) / threads;

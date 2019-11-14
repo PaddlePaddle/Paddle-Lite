@@ -44,7 +44,7 @@ class PoolCompute
     const auto& out_dims = param.output->dims();
     const std::string pooling_type = param.pooling_type;
     const bool global_pooling = param.global_pooling;
-    std::vector<int> paddings = param.paddings;
+    std::vector<int> paddings = *param.paddings;
     std::vector<int> strides = param.strides;
     std::vector<int> ksize = param.ksize;
     if (global_pooling) {

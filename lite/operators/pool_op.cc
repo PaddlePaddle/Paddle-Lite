@@ -35,7 +35,7 @@ bool PoolOpLite::CheckShape() const {
   CHECK_OR_FALSE(x_dims.size() - ksize.size() == 2U);
   // Strides size and pooling size should be the same.
   CHECK_OR_FALSE(ksize.size() == strides.size());
-  // Paddings size and pooling size should be the same.
+  // Paddings size must be 4.
   CHECK_OR_FALSE(paddings.size() == 4L);
 
   return true;

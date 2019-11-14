@@ -45,13 +45,14 @@ class PoolingPE : public PE {
 
     PoolingArgs args = {0};
     args.mode = param_.type;
+    auto paddings = *param_.paddings;
     args.kernel_reciprocal = fp32_2_fp16(1.0f / (k_width * k_height));
     args.image.address = input->data<float16>();
     args.image.channels = input->shape().channel();
     args.image.height = input->shape().height();
     args.image.width = input->shape().width();
-    args.image.pad_height = param_.paddings[0];
-    args.image.pad_width = param_.paddings[2];
+    args.image.pad_height = paddings[0];
+    args.image.pad_width = paddings[2];
     args.image.scale_address = input->scale();
     args.output.address = output->mutableData<float16>();
     args.output.scale_address = output->scale();
@@ -76,12 +77,13 @@ class PoolingPE : public PE {
     float* image_addr = float_input.mutableData<float>(FP32, input->shape());
     float_input.copyFrom(input);
     float16* data_out = output->data<float16>();
+    auto paddings = *param_.paddings;
 
     int image_height = input->shape().height();
     int image_width = input->shape().width();
     int image_channels = input->shape().channel();
-    int image_pad_h = param_.paddings[0];
-    int image_pad_w = param_.paddings[2];
+    int image_pad_h = paddings[0];
+    int image_pad_w = paddings[2];
     int kernel_height = param_.kernelSize[1];
     int kernel_width = param_.kernelSize[0];
     int kernel_step_h = param_.strides[0];

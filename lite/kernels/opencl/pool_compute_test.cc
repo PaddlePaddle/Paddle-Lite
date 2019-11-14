@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <gtest/gtest.h>
+#include <memory>
 #include <random>
 #include "lite/backends/opencl/target_wrapper.h"
 #include "lite/core/op_registry.h"
@@ -88,7 +89,7 @@ TEST(pool2d, compute) {
   param.output = &out;
   param.global_pooling = true;
   param.pooling_type = "avg";
-  param.paddings = std::vector<int>{0, 0, 0, 0};
+  param.paddings = std::make_shared<std::vector<int>>({0, 0, 0, 0});
   param.strides = std::vector<int>{1, 1};
   param.ksize = std::vector<int>{7, 7};
 

@@ -51,9 +51,10 @@ static std::vector<int64_t> compute_output_shape(operators::PoolParam* param_) {
   std::vector<int>& ksize = param_->ksize;
   if (param_->global_pooling) {
     ksize.resize(static_cast<size_t>(x_dims.size()) - 2);
+    auto paddings = *param_->paddings;
     for (size_t i = 0; i < ksize.size(); ++i) {
-      param_->paddings[2 * i] = 0;
-      param_->paddings[2 * i + 1] = 0;
+      paddings[2 * i] = 0;
+      paddings[2 * i + 1] = 0;
       ksize[i] = static_cast<int>(x_dims[i + 2]);
     }
   }
@@ -66,8 +67,8 @@ static std::vector<int64_t> compute_output_shape(operators::PoolParam* param_) {
     for (size_t i = 0; i < param_->ksize.size(); ++i) {
       output_shape.push_back(PoolOutputSize(x_dims[i + 2],
                                             param_->ksize[i],
-                                            param_->paddings[2 * i],
-                                            param_->paddings[2 * i + 1],
+                                            paddings[2 * i],
+                                            paddings[2 * i + 1],
                                             param_->strides[i],
                                             param_->ceil_mode));
     }
@@ -84,7 +85,7 @@ static void pool_compute_ref(const operators::PoolParam& param) {
 
   std::vector<int> ksize = param.ksize;
   std::vector<int> strides = param.strides;
-  std::vector<int> paddings = param.paddings;
+  std::vector<int> paddings = *param.paddings;
 
   std::string pooling_type = param.pooling_type;
   bool global_pooling = param.global_pooling;
@@ -235,7 +236,9 @@ TEST(pool_cuda, compute) {
                         }
                         param.global_pooling = global_pooling;
                         param.strides = {stride, stride};
-                        param.paddings = {pad, pad, pad, pad};
+                        std::vector<int> paddings = {pad, pad, pad, pad};
+                        param.paddings =
+                            std::make_shared<std::vector<int>>(paddings);
                         param.exclusive = exclusive;
                         param.ceil_mode = ceil_mode;
                         param.adaptive = false;
