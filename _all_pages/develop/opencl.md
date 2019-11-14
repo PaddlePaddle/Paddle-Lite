@@ -140,7 +140,7 @@ adb push lite/backends/opencl/cl_kernel/image/* /data/local/tmp/opencl/cl_kernel
 #   4.运行demo得到预期结果.                                          #
 ######################################################################
 adb shell mkdir /data/local/tmp/opencl/mobilenet_v1
-chmod +x ./build.lite.android.armv8.gcc.opencl/inference_lite_lib.android.armv8.opencl/demo/cxx/mobile_full/mobilenetv1_full_api"
+chmod +x ./build.lite.android.armv8.gcc.opencl/inference_lite_lib.android.armv8.opencl/demo/cxx/mobile_full/mobilenetv1_full_api
 adb push ./build.lite.android.armv8.gcc.opencl/inference_lite_lib.android.armv8.opencl/demo/cxx/mobile_full/mobilenetv1_full_api /data/local/tmp/opencl/
 adb push ./build.lite.android.armv8.gcc.opencl/install/mobilenet_v1/* /data/local/tmp/opencl/mobilenet_v1
 
@@ -171,7 +171,7 @@ adb shell "export GLOG_v=0; \
   --valid_targets=opencl
 
 adb shell mkdir /data/local/tmp/opencl/mobilenet_v1
-chmod +x ./build.lite.android.armv8.gcc.opencl/inference_lite_lib.android.armv8.opencl/demo/cxx/mobile_light/mobilenetv1_light_api"
+chmod +x ./build.lite.android.armv8.gcc.opencl/inference_lite_lib.android.armv8.opencl/demo/cxx/mobile_light/mobilenetv1_light_api
 adb push ./build.lite.android.armv8.gcc.opencl/inference_lite_lib.android.armv8.opencl/demo/cxx/mobile_light/mobilenetv1_light_api /data/local/tmp/opencl/
 adb push ./build.lite.android.armv8.gcc.opencl/install/mobilenet_v1/* /data/local/tmp/opencl/mobilenet_v1
 
