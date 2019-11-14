@@ -104,4 +104,5 @@ lite_cc_test(test_conv_transpose_compute_arm SRCS conv_transpose_compute_test.cc
 
 if(LITE_BUILD_EXTRA)
     lite_cc_test(test_layer_norm_compute_arm SRCS layer_norm_compute_test.cc DEPS layer_norm_compute_arm)
+    lite_cc_test(test_lookup_table_compute_arm SRCS lookup_table_compute_test.cc DEPS lookup_table_compute_arm)
 endif()

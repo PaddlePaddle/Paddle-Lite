@@ -85,6 +85,7 @@ add_operator(sequence_concat_op_lite extra SRCS sequence_concat_op.cc DEPS ${op_
 # for OCR specific
 add_operator(while_op extra SRCS while_op.cc DEPS ${op_DEPS})
 add_operator(lookup_table_op extra SRCS lookup_table_op.cc DEPS ${op_DEPS})
+add_operator(lookup_table_v2_op extra SRCS lookup_table_v2_op.cc DEPS ${op_DEPS})
 add_operator(beam_search_decode_op extra SRCS beam_search_decode_op.cc DEPS ${op_DEPS})
 add_operator(graph_op_lite extra SRCS graph_op.cc DEPS ${op_DEPS})
 add_operator(logical_xor  extra SRCS logical_op.cc DEPS ${op_DEPS})
