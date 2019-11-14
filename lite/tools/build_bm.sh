@@ -2,10 +2,10 @@
 set -ex
 
 # global variables with default value
-XPU_SDK_ROOT="$(pwd)/../BM_SDK"     # BM SDK
-TARGET_NAME="lite_compile_deps"     # default target
-BUILD_EXTRA=ON                      # ON(with sequence ops)/OFF
-WITH_TESTING=ON                     # ON/OFF
+BM_SDK_ROOT="$(pwd)/../BM_SDK"     # BM SDK
+TARGET_NAME="BM1682"     # default target
+BUILD_EXTRA=OFF                     # ON(with sequence ops)/OFF
+WITH_TESTING=OFF                    # ON/OFF
 
 function print_usage {
     echo -e "\nUSAGE:"
@@ -23,7 +23,7 @@ readonly CMAKE_COMMON_OPTIONS="-DWITH_LITE=ON \
                                -DWITH_PYTHON=OFF \
                                -DLITE_WITH_ARM=OFF"
 
-readonly NUM_CORES_FOR_COMPILE=${LITE_BUILD_THREADS:-1}
+readonly NUM_CORES_FOR_COMPILE=${LITE_BUILD_THRLITE_BUILD_THREADSEADS:-1}
 
 readonly THIRDPARTY_TAR=https://paddle-inference-dist.bj.bcebos.com/PaddleLite/third-party-05b862.tar.gz
 readonly workspace=$(pwd)
@@ -74,8 +74,9 @@ function build_bm {
         -DWITH_MKL=OFF \
         -DLITE_BUILD_EXTRA=OFF \
         -DLITE_WITH_XPU=OFF \
+        -DLITE_WITH_BM=ON \
         -DWITH_TESTING=${WITH_TESTING} \
-        -DXPU_SDK_ROOT=${XPU_SDK_ROOT}
+        -DBM_SDK_ROOT=${BM_SDK_ROOT}
 
     make $TARGET_NAME -j$NUM_CORES_FOR_COMPILE
 
@@ -91,15 +92,11 @@ function main {
                 TARGET_NAME="${i#*=}"
                 shift
                 ;;
-            --build_extra=*)
-                BUILD_EXTRA="${i#*=}"
-                shift
-                ;;
-            --xpu_sdk_root=*)
+            --bm_sdk_root=*)
                 BM_SDK_ROOT="${i#*=}"
                 shift
                 ;;
-            build)
+            bm)
                 build_bm
                 shift
                 ;;
