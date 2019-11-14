@@ -54,9 +54,9 @@ void SearchSeqDepaddingCompute::Run() {
   const int count = out->numel();
 
   const auto& pad_seq_offset = pad->lod()[0];
-  const auto& src_seq_offset = src->lod()[];
-  int max_len = pad_lod[1];
-  int seq_num = pad_lod.size() - 1;
+  const auto& src_seq_offset = src->lod()[0];
+  int max_len = pad_seq_offset[1];
+  int seq_num = pad_seq_offset.size() - 1;
   int emb_size = pad->dims()[1];
 
   std::vector<int> seq_id_map;

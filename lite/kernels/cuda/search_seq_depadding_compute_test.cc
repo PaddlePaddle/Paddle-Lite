@@ -48,7 +48,8 @@ TEST(search_seq_depadding, normal) {
   src_cpu.Resize({3, 1});
   out_cpu.Resize({3, 4});
 
-  auto* pad_cpu_data = x_cpu.mutable_data<float>();
+  auto* pad_cpu_data = pad_cpu.mutable_data<float>();
+  auto* src_cpu_data = src_cpu.mutable_data<float>();
   for (int i = 0; i < pad_cpu.numel(); ++i) {
     pad_cpu_data[i] = static_cast<float>(i);
   }

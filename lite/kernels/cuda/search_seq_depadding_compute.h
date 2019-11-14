@@ -24,6 +24,7 @@ class SearchSeqDepaddingCompute
     : public KernelLite<TARGET(kCUDA), PRECISION(kFloat), DATALAYOUT(kNCHW)> {
  public:
   using param_t = operators::SearchSeqDepaddingParam;
+  using TargetW = TargetWrapper<TARGET(kCUDA)>;
 
   void Run() override;
   virtual ~SearchSeqDepaddingCompute() = default;
