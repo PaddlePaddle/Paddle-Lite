@@ -732,6 +732,14 @@ struct SequencePoolParam {
 #endif
 };
 
+struct SearchGroupPaddingParam {
+  lite::Tensor* x{};
+  lite::Tensor* out_emb_padding{};
+  lite::Tensor* out_new{};
+  lite::Tensor* out_padding{};
+  int pad_id;
+};
+
 struct SequenceReshapeParam {
   lite::Tensor* x{};
   lite::Tensor* output{};
