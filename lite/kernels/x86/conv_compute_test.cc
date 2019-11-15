@@ -76,8 +76,8 @@ TEST(conv2d_x86, run_test) {
   std::vector<int> paddings = {0, 0, 0, 0};
   param.groups = 1;
   std::vector<int> dilations = {1, 1};
-  param.paddings = std : make_shared<std::vector<int>>(paddings);
-  param.dilations = std : make_shared<std::vector<int>>(dilations);
+  param.paddings = std::make_shared<std::vector<int>>(paddings);
+  param.dilations = std::make_shared<std::vector<int>>(dilations);
   LOG(INFO) << 123;
   std::unique_ptr<KernelContext> ctx(new KernelContext);
   ctx->As<X86Context>();

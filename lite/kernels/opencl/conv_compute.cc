@@ -38,14 +38,15 @@ void ConvCompute::PrepareForRun() {
   int w_out = output_dims[3];
   int kernel_h = filter_dims[2];  // oihw
   int kernel_w = filter_dims[3];
-  auto paddings = param.paddings;
+  auto paddings = *param.paddings;
+  auto dilations = *param.dilations;
   int stride_h = param.strides[0];
   int stride_w = param.strides[1];
   int pad_h = paddings[0];
   int pad_w = paddings[2];
   int groups = param.groups;
   bool relu_fused = param.fuse_relu;
-  bool no_dilation = (param.dilations[0] == 1) && (param.dilations[1] == 1);
+  bool no_dilation = (dilations[0] == 1) && (dilations[1] == 1);
   bool zero_pad = (pad_h == 0) && (pad_w == 0);
 
   bool pad_equal =
@@ -109,17 +110,19 @@ void ConvCompute::GemmlikeConv2d() {
   int c_in = x_dims[1];
   int h_in = x_dims[2];
   int w_in = x_dims[3];
+  auto paddings = *param.paddings;
+  auto dilations = *param.dilations;
   int c_out = output_dims[1];
   int h_out = output_dims[2];
   int w_out = output_dims[3];
   int kernel_h = filter_dims[2];
   int kernel_w = filter_dims[3];
-  int pad_h = param.paddings[0];
-  int pad_w = param.paddings[2];
+  int pad_h = paddings[0];
+  int pad_w = paddings[2];
   int stride_h = param.strides[0];
   int stride_w = param.strides[1];
-  int dilation_h = param.dilations[0];
-  int dilation_w = param.dilations[1];
+  int dilation_h = dilations[0];
+  int dilation_w = dilations[1];
 
   auto* x_buf = param.x->data<float, cl::Buffer>();
   auto* filter_buf = param.filter->data<float, cl::Buffer>();
