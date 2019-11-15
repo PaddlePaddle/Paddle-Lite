@@ -16,6 +16,7 @@
 #include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
 #include "lite/core/arena/framework.h"
+#include "lite/tests/utils/fill_data.h"
 #include "lite/tests/utils/naive_math_impl.h"
 
 namespace paddle {
@@ -55,8 +56,8 @@ class SearchAlignedMatMulComputeTester : public arena::TestCase {
         y_lod_(y_lod) {}
 
   void RunBaseline(Scope* scope) override {
-    auto* x = scope->FindTensor(x_);
-    auto* y = scope->FindTensor(y_);
+    auto x = scope->FindTensor(x_);
+    auto y = scope->FindTensor(y_);
     CHECK(x);
     CHECK(y);
     const auto x_data = x->data<float>();
@@ -135,14 +136,8 @@ class SearchAlignedMatMulComputeTester : public arena::TestCase {
   void PrepareData() override {
     std::vector<float> x_data(x_dims_.production());
     std::vector<float> y_data(y_dims_.production());
-
-    for (int i = 0; i < x_dims_.production(); ++i) {
-      x_data[i] = 1;  // i * 1.1;
-    }
-    for (int i = 0; i < y_dims_.production(); ++i) {
-      y_data[i] = 1;  // i * 0.9;
-    }
-
+    fill_data_rand(x_data.data(), -1.f, 1.f, x_dims_.production());
+    fill_data_rand(y_data.data(), -1.f, 1.f, y_dims_.production());
     SetCommonTensor(x_, x_dims_, x_data.data(), x_lod_);
     SetCommonTensor(y_, y_dims_, y_data.data(), y_lod_);
   }

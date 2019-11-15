@@ -23,11 +23,11 @@ namespace paddle {
 namespace lite {
 namespace operators {
 
-class SearchAlignedMatMulOpLite : public OpLite {
+class SearchSeqFcOpLite : public OpLite {
  public:
-  SearchAlignedMatMulOpLite() {}
+  SearchSeqFcOpLite() {}
 
-  explicit SearchAlignedMatMulOpLite(const std::string &type) : OpLite(type) {}
+  explicit SearchSeqFcOpLite(const std::string &type) : OpLite(type) {}
 
   bool CheckShape() const override;
 
@@ -36,10 +36,10 @@ class SearchAlignedMatMulOpLite : public OpLite {
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
   bool AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) override;
-  std::string DebugString() const override { return "search_aligned_mat_mul"; }
+  std::string DebugString() const override { return "search_seq_fc"; }
 
  private:
-  mutable MatMulParam param_;
+  mutable SearchSeqFcParam param_;
 };
 
 }  // namespace operators

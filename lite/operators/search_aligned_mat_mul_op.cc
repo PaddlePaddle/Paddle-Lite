@@ -81,11 +81,9 @@ bool SearchAlignedMatMulOpLite::AttachImpl(const cpp::OpDesc& op_desc,
   CHECK(!op_desc.Input("X").empty());
   CHECK(!op_desc.Input("Y").empty());
   CHECK(!op_desc.Output("Out").empty());
-
   auto X = op_desc.Input("X").front();
   auto Y = op_desc.Input("Y").front();
   auto Out = op_desc.Output("Out").front();
-
   param_.X = GetVar<lite::Tensor>(scope, X);
   param_.Y = GetVar<lite::Tensor>(scope, Y);
   param_.Out = GetMutableVar<lite::Tensor>(scope, Out);
