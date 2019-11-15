@@ -37,11 +37,11 @@ namespace lite {
 namespace profile {
 
 struct TimerInfo {
-  uint64_t total_{};
-  uint64_t count_{};
-  uint32_t max_{std::numeric_limits<uint32_t>::min()};
-  uint32_t min_{std::numeric_limits<uint32_t>::max()};
-  uint64_t timer_{};
+  uint64_t total_{0};
+  uint64_t count_{0};
+  uint64_t max_{std::numeric_limits<uint64_t>::min()};
+  uint64_t min_{std::numeric_limits<uint64_t>::max()};
+  uint64_t timer_{0};
 
   double ave() const { return total_ * 1. / count_; }
   double max() const { return max_; }
@@ -56,7 +56,7 @@ class TimerBase {
  public:
   void Start(const std::string& key) { self()->Start(key); }
   void Stop(const std::string& key) { self()->Stop(key); }
-  void Log(TimerInfo* timer_info, uint32_t x) {
+  void Log(TimerInfo* timer_info, uint64_t x) {
     return self()->Log(timer_info, x);
   }
   std::string basic_repr() const { return const_self()->basic_repr(); }
@@ -75,6 +75,7 @@ class TimerBase {
 
 class BasicTimer : TimerBase<BasicTimer> {
   int id_{-1};
+  int warmup_{0};
   std::string key_;
   std::map<std::string, TimerInfo> timer_infos_;
   std::map<std::string, std::string> custom_infos_;
@@ -100,7 +101,7 @@ class BasicTimer : TimerBase<BasicTimer> {
   void Start(const std::string& timer_key);
   void Stop(const std::string& timer_key);
 
-  void Log(TimerInfo* timer_info, uint32_t timespan);
+  void Log(TimerInfo* timer_info, uint64_t timespan);
 
   void SetCustomInfo(const std::string& key, const std::string& value);
   std::string GetCustomInfo(const std::string& key) const;
@@ -112,6 +113,8 @@ class BasicTimer : TimerBase<BasicTimer> {
 
   // BasicRecord(const BasicRecord &) = delete;
   void operator=(const BasicTimer&) = delete;
+
+  void SetWarmup(int warmup_times);
 };
 
 /*
@@ -132,6 +135,7 @@ class BasicProfiler {
     records_.emplace_back();
     records_.back().SetId(records_.size() - 1);
     records_.back().SetKey(key);
+    records_.back().SetWarmup(warmup_);
     return records_.back();
   }
 
@@ -158,11 +162,21 @@ class BasicProfiler {
   std::string summary_repr_header() const;
   std::string summary_repr() const;
 
+  void SetWarmup(int warmup_times) {
+    CHECK_GE(warmup_times, 0) << "warmup times must >= 0";
+    // Instruction and kernel share the common BasicTimer instance, so the
+    // warmup count
+    // will be decrease twice when instruction execute once
+    // TODO(sangoly): fix the ugly code.
+    warmup_ = warmup_times * 2;
+  }
+
   ~BasicProfiler();
 
  private:
   std::string name_;
   std::vector<record_t> records_;
+  int warmup_{0};
 };
 
 struct ProfileBlock {

@@ -94,6 +94,8 @@ struct InterpolateParam {
   lite::Tensor* X{};
   lite::Tensor* OutSize{};
   lite::Tensor* Out{};
+  std::vector<const lite::Tensor*> SizeTensor;
+  lite::Tensor* Scale{};
 
   float scale{0.f};
   int out_h{-1};
@@ -101,6 +103,7 @@ struct InterpolateParam {
   bool align_corners{true};
   int align_mode{1};
   std::string interp_method{"Nearest"};
+  DataLayoutType data_layout{DATALAYOUT(kNCHW)};
 };
 
 // For Mul Op
@@ -207,6 +210,7 @@ struct ConcatParam {
   std::vector<lite::Tensor*> x{};
   lite::Tensor* output{};
   int axis{0};
+  lite::Tensor* axis_tensor{};
 };
 
 /// ----------------------- activation operators ----------------------
@@ -425,6 +429,13 @@ struct FakeDequantizeMaxAbsParam {
   const lite::Tensor* in_scale{};
   lite::Tensor* out{};
   float max_range;
+};
+
+struct FakeChannelWiseDequantizeMaxAbsParam {
+  const lite::Tensor* x{};
+  std::vector<const lite::Tensor*> scale_tensors{};
+  lite::Tensor* out{};
+  std::vector<int> quant_bits;
 };
 
 /// ----------------------- sgd operators ----------------------
@@ -740,6 +751,16 @@ struct SequenceExpandAsParam {
   lite::Tensor* out{nullptr};
 };
 
+struct SequenceReverseParam {
+  const lite::Tensor* X{};
+  lite::Tensor* Out{};
+};
+
+struct SequenceConcatParam {
+  std::vector<lite::Tensor*> X{};
+  lite::Tensor* Out{};
+};
+
 struct ReduceMaxParam {
   const lite::Tensor* X{};
   lite::Tensor* Out{};
@@ -768,6 +789,22 @@ struct ReduceParam {
   bool reduce_all{false};
 };
 
+struct VarConv2DParam {
+  const lite::Tensor* X{};
+  const lite::Tensor* ROW{};
+  const lite::Tensor* COLUMN{};
+  const lite::Tensor* W{};
+  lite::Tensor* Out{};
+  lite::Tensor* Col{};
+
+  int input_channel;
+  int output_channel;
+  int stride_h;
+  int stride_w;
+  int kernel_h;
+  int kernel_w;
+};
+
 /// ----------------------- shape operators ----------------------
 struct ShapeParam {
   const lite::Tensor* X{};
@@ -788,6 +825,11 @@ struct SliceParam {
   std::vector<int> starts{};
   std::vector<int> ends{};
   std::vector<int> decrease_axis{};
+  std::vector<int> infer_flags{};
+  std::vector<lite::Tensor*> StartsTensorList{};
+  std::vector<lite::Tensor*> EndsTensorList{};
+  lite::Tensor* StartsTensor{nullptr};
+  lite::Tensor* EndsTensor{nullptr};
 };
 
 struct AffineChannelParam {
@@ -842,6 +884,8 @@ struct UnsqueezeParam {
   lite::Tensor* Out{};
   lite::Tensor* XShape{};
   std::vector<int> axes{};
+  const lite::Tensor* axes_tensor{};
+  std::vector<const lite::Tensor*> axes_tensor_vct{};
 };
 
 /// ----------------------- expand operators ----------------------

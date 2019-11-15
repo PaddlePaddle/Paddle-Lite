@@ -24,3 +24,5 @@ if(LITE_ON_TINY_PUBLISH OR LITE_ON_MODEL_OPTIMIZE_TOOL)
 else()
   lite_cc_library(utils SRCS string.cc DEPS ${utils_DEPS} any)
 endif()
+
+add_subdirectory(cv)

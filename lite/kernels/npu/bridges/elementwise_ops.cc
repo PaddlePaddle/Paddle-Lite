@@ -28,7 +28,7 @@ node_map_type ElementwiseConverter(
   auto op_info = elementwise_op->op_info();
   auto op_type = op_info->Type();
   auto unique_op_type = lite::npu::UniqueName(op_type);
-  LOG(INFO) << "converting elementwise...";
+  LOG(INFO) << "[NPU] Converting " + op_type + "...";
 
   std::shared_ptr<ge::op::Eltwise> elementwise_node =
       std::make_shared<ge::op::Eltwise>(unique_op_type);
@@ -37,7 +37,7 @@ node_map_type ElementwiseConverter(
   auto y_var_name = op_info->Input("Y").front();
 
   CHECK_EQ(op_info->GetAttr<int>("axis"), -1)
-      << "npu elementwise only support inputs with same size";
+      << "[NPU] elementwise only support inputs with same size";
 
   CHECK(inputs_map.find(x_var_name) != inputs_map.end());
   elementwise_node->set_input_x1(*inputs_map.at(x_var_name));
@@ -47,11 +47,11 @@ node_map_type ElementwiseConverter(
     elementwise_node->set_input_x2(*inputs_map.at(y_var_name));
     lite::npu::OpList::Global().add(inputs_map.at(y_var_name));
   } else {
-    auto consty = std::make_shared<ge::op::Const>(y_var_name);
+    auto y_const_node = std::make_shared<ge::op::Const>(y_var_name);
     auto* y = scope->FindVar(y_var_name)->GetMutable<Tensor>();
-    consty->set_attr_value(lite::npu::CvtFromLiteTensor(y));
-    elementwise_node->set_input_x2(*consty);
-    lite::npu::OpList::Global().add(consty);
+    y_const_node->set_attr_value(lite::npu::CvtTensor(y));
+    elementwise_node->set_input_x2(*y_const_node);
+    lite::npu::OpList::Global().add(y_const_node);
   }
 
   lite::npu::OpList::Global().add(elementwise_node);
@@ -60,7 +60,19 @@ node_map_type ElementwiseConverter(
   elementwise_node->set_attr_mode(1);
 
   node_map_type outputs_map;
-  outputs_map[op_info->Output("Out").front()] = elementwise_node;
+  if (op_type == "fusion_elementwise_add_activation") {
+    auto act_type = op_info->GetAttr<std::string>("act_type");
+    auto act_node =
+        std::make_shared<ge::op::Activation>(unique_op_type + "/act");
+    act_node->set_input_x(*elementwise_node);
+    // TODO(hong19860320) set the coef value for act Ops, such as leaky_relu,
+    // clipped_relu etc.
+    act_node->set_attr_mode(lite::npu::CvtActMode(act_type));
+    lite::npu::OpList::Global().add(act_node);
+    outputs_map[op_info->Output("Out").front()] = act_node;
+  } else {
+    outputs_map[op_info->Output("Out").front()] = elementwise_node;
+  }
   return outputs_map;
 }
 
@@ -71,4 +83,6 @@ node_map_type ElementwiseConverter(
 }  // namespace paddle
 
 REGISTER_NPU_BRIDGE(elementwise_add,
+                    paddle::lite::kernels::npu::bridges::ElementwiseConverter);
+REGISTER_NPU_BRIDGE(fusion_elementwise_add_activation,
                     paddle::lite::kernels::npu::bridges::ElementwiseConverter);

@@ -27,7 +27,7 @@ node_map_type SoftmaxConverter(const std::shared_ptr<lite::OpLite> softmax_op,
   auto op_info = softmax_op->op_info();
   auto op_type = op_info->Type();
   auto unique_op_type = lite::npu::UniqueName(op_type);
-  LOG(INFO) << "Converting " + op_type + "...";
+  LOG(INFO) << "[NPU] Converting " + op_type + "...";
 
   std::shared_ptr<ge::op::Softmax> softmax_node =
       std::make_shared<ge::op::Softmax>(unique_op_type);
@@ -37,7 +37,7 @@ node_map_type SoftmaxConverter(const std::shared_ptr<lite::OpLite> softmax_op,
   auto axis = op_info->GetAttr<int>("axis");
   if (x_dims.size() > 3) {
     CHECK(!(axis == 2 && x_dims[3] > 1))
-        << "unsupported npu softmax params: axis = " << axis
+        << "[NPU] Unsupported softmax params: axis = " << axis
         << "  :x_w = " << x_dims[3];
   }
 

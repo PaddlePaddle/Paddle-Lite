@@ -28,7 +28,7 @@ node_map_type ShuffleChannelConverter(
   auto op_info = shuffle_channel_op->op_info();
   auto op_type = op_info->Type();
   auto unique_op_type = lite::npu::UniqueName(op_type);
-  LOG(INFO) << "Converting " + op_type + "...";
+  LOG(INFO) << "[NPU] Converting " + op_type + "...";
 
   std::shared_ptr<ge::op::ShuffleChannel> shuffle_channel_node =
       std::make_shared<ge::op::ShuffleChannel>(unique_op_type);
