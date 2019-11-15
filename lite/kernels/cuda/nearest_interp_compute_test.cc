@@ -151,10 +151,11 @@ TEST(nearest_interp, update) {
 
   operators::InterpolateParam param;
 
-  std::vector<Tensor *> size_tensor(2), size_tensor_cpu(2), size_tensor_ref(2);
+  std::vector<Tensor> size_tensor(2);
+  std::vector<Tensor> size_tensor_cpu(2), size_tensor_ref(2);
   Tensor x, input_scale, osz, out;
   Tensor x_cpu, input_scale_cpu, osz_cpu, out_cpu;
-  Tensor x_ref, size_tensor_ref, input_scale_ref, osz_ref, out_ref;
+  Tensor x_ref, input_scale_ref, osz_ref, out_ref;
 
   int n = 1, c = 3, in_h = 40, in_w = 40;
   int out_h = 80, out_w = 80;
@@ -167,22 +168,22 @@ TEST(nearest_interp, update) {
   param.align_mode = 0;
 
   x.Resize({n, c, in_h, in_w});
-  size_tensor[0]->Resize({1});
-  size_tensor[1]->Resize({1});
+  size_tensor[0].Resize({1});
+  size_tensor[1].Resize({1});
   input_scale.Resize({1});
   osz.Resize({2});
   out.Resize({n, c, out_h, out_w});
 
   x_cpu.Resize({n, c, in_h, in_w});
-  size_tensor_cpu[0]->Resize({1});
-  size_tensor_cpu[1]->Resize({1});
+  size_tensor_cpu[0].Resize({1});
+  size_tensor_cpu[1].Resize({1});
   input_scale_cpu.Resize({1});
   osz_cpu.Resize({2});
   out_cpu.Resize({n, c, out_h, out_w});
 
   x_ref.Resize({n, c, in_h, in_w});
-  size_tensor_ref[0]->Resize({1});
-  size_tensor_ref[1]->Resize({1});
+  size_tensor_ref[0].Resize({1});
+  size_tensor_ref[1].Resize({1});
   input_scale_ref.Resize({1});
   osz_ref.Resize({2});
   out_ref.Resize({n, c, out_h, out_w});
@@ -190,17 +191,18 @@ TEST(nearest_interp, update) {
   auto* out_data = out.mutable_data<float>(TARGET(kCUDA));
 
   float* x_cpu_data = x_cpu.mutable_data<float>();
-  float* size_tensor0_cpu_data = size_tensor_cpu[0]->mutable_data<float>();
-  float* size_tensor1_cpu_data = size_tensor_cpu[1]->mutable_data<float>();
+  float* size_tensor0_cpu_data = size_tensor_cpu[0].mutable_data<float>();
+  float* size_tensor1_cpu_data = size_tensor_cpu[1].mutable_data<float>();
   float* input_scale_cpu_data = input_scale_cpu.mutable_data<float>();
   float* osz_cpu_data = osz_cpu.mutable_data<float>();
   float* out_cpu_data = out_cpu.mutable_data<float>();
 
   float* x_ref_data = x_ref.mutable_data<float>();
-  float* size_tensor0_ref_data = size_tensor_ref[0]->mutable_data<float>();
-  float* size_tensor1_ref_data = size_tensor_ref[1]->mutable_data<float>();
+  float* size_tensor0_ref_data = size_tensor_ref[0].mutable_data<float>();
+  float* size_tensor1_ref_data = size_tensor_ref[1].mutable_data<float>();
   float* input_scale_ref_data = input_scale_ref.mutable_data<float>();
   float* osz_ref_data = osz_ref.mutable_data<float>();
+  float* out_ref_data = out_ref.mutable_data<float>();
 
   for (int i = 0; i < x_cpu.numel(); ++i) {
     x_cpu_data[i] = i + 5.0;
@@ -218,16 +220,19 @@ TEST(nearest_interp, update) {
   input_scale_ref_data[0] = scale;
 
   x.Assign<float, lite::DDim, TARGET(kCUDA)>(x_cpu_data, x_cpu.dims());
-  size_tensor[0]->Assign<float, lite::DDim, TARGET(kCUDA)>(
-      size_tensor0_cpu_data, {1});
-  size_tensor[1]->Assign<float, lite::DDim, TARGET(kCUDA)>(
-      size_tensor1_cpu_data, {1});
+  size_tensor[0].Assign<float, lite::DDim, TARGET(kCUDA)>(
+      size_tensor0_cpu_data, size_tensor[0].dims());
+  size_tensor[1].Assign<float, lite::DDim, TARGET(kCUDA)>(
+      size_tensor1_cpu_data, size_tensor[1].dims());
   input_scale.Assign<float, lite::DDim, TARGET(kCUDA)>(input_scale_cpu_data,
-                                                       {1});
+                                                       input_scale.dims());
   osz.Assign<float, lite::DDim, TARGET(kCUDA)>(osz_cpu_data, osz_cpu.dims());
 
   param.X = &x;
-  param.SizeTensor = size_tensor;
+  param.SizeTensor.emplace_back(
+      reinterpret_cast<const Tensor*>(&size_tensor[0]));
+  param.SizeTensor.emplace_back(
+      reinterpret_cast<const Tensor*>(&size_tensor[1]));
   param.Scale = &input_scale;
   param.OutSize = &osz;
   param.Out = &out;
@@ -243,8 +248,9 @@ TEST(nearest_interp, update) {
 
   CopySync<TARGET(kCUDA)>(
       out_cpu_data, out_data, sizeof(float) * out.numel(), IoDirection::DtoH);
+  NearestInterpRef(&x_ref, &out_ref, false);
   for (int i = 0; i < out.numel(); i++) {
-    LOG(INFO) << out_cpu_data[i];
+    EXPECT_NEAR(out_cpu_data[i], out_ref_data[i], 1e-5);
   }
 }
 

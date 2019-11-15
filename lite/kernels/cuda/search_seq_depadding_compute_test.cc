@@ -16,6 +16,7 @@
 #include <gtest/gtest.h>
 #include <memory>
 #include <utility>
+#include <vector>
 #include "lite/api/test_helper.h"
 
 namespace paddle {
@@ -73,9 +74,11 @@ TEST(search_seq_depadding, normal) {
   auto* out_data = out.mutable_data<float>(TARGET(kCUDA));
   CopySync<TARGET(kCUDA)>(
       out_cpu_data, out_data, sizeof(float) * out.numel(), IoDirection::DtoH);
+
+  std::vector<float> ref_results = {0, 1, 2, 3, 4, 5, 6, 7, 16, 17, 18, 19};
   for (int i = 0; i < out.numel(); i++) {
-    // EXPECT_NEAR(out_cpu_data[i], out_ref_data[i], 1e-5);
-    LOG(INFO) << out_cpu_data[i];
+    EXPECT_NEAR(out_cpu_data[i], ref_results[i], 1e-5);
+    // LOG(INFO) << out_cpu_data[i];
   }
 }
 

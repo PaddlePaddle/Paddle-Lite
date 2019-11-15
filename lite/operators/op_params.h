@@ -95,7 +95,7 @@ struct InterpolateParam {
   lite::Tensor* OutSize{};
   lite::Tensor* Out{};
   std::vector<const lite::Tensor*> SizeTensor;
-  lite::Tensor* Scale;
+  lite::Tensor* Scale{};
 
   float scale{0.f};
   int out_h{-1};
@@ -787,6 +787,22 @@ struct ReduceParam {
   std::vector<int> dim{0};
   bool keep_dim{false};
   bool reduce_all{false};
+};
+
+struct VarConv2DParam {
+  const lite::Tensor* X{};
+  const lite::Tensor* ROW{};
+  const lite::Tensor* COLUMN{};
+  const lite::Tensor* W{};
+  lite::Tensor* Out{};
+  lite::Tensor* Col{};
+
+  int input_channel;
+  int output_channel;
+  int stride_h;
+  int stride_w;
+  int kernel_h;
+  int kernel_w;
 };
 
 /// ----------------------- shape operators ----------------------
