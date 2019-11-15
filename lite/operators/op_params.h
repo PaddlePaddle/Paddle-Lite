@@ -761,6 +761,15 @@ struct SequenceConcatParam {
   lite::Tensor* Out{};
 };
 
+struct AttentionPaddingMaskParam {
+  const lite::Tensor* X{};
+  const lite::Tensor* Y{};
+  int pad_id;
+  float mask;
+  lite::Tensor* Out{};
+  lite::Tensor* pad_begin{};
+};
+
 struct ReduceMaxParam {
   const lite::Tensor* X{};
   lite::Tensor* Out{};
