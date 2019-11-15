@@ -31,7 +31,7 @@ void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
   // select dw conv kernel
   if (kw == 3) {
     VLOG(5) << "invoke 3x3 dw conv fp32";
-    auto paddings = param.paddings;
+    auto paddings = *param.paddings;
     bool pads_equal =
         ((paddings[0] == paddings[1]) && (paddings[2] == paddings[3]));
 

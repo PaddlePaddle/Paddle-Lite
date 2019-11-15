@@ -61,9 +61,9 @@ class DepthwiseConvPE : public PE {
     args.image.channels = input->shape().channel();
     args.image.height = input->shape().height();
     args.image.width = input->shape().width();
-    auto paddings = param.paddings;
-    args.image.pad_width = param.paddings[0];
-    args.image.pad_height = param.paddings[1];
+    auto paddings = *param.paddings;
+    args.image.pad_width = param.paddings[2];
+    args.image.pad_height = param.paddings[0];
     args.image.scale_address = input->scale();
     args.output.address = output->data<void>();
     args.output.scale_address = output->scale();

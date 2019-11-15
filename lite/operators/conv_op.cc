@@ -84,19 +84,21 @@ bool ConvOpLite::InferShape() const {
   const auto in_dims = param_.x->dims();
   const auto filter_dims = param_.filter->dims();
 
-  UpdatePaddingAndDilation(&param_.paddings,
-                           &param_.dilations,
+  UpdatePaddingAndDilation(param_.paddings.get(),
+                           param_.dilations.get(),
                            param_.strides,
                            padding_algorithm_,
                            in_dims,
                            filter_dims);
   std::vector<int64_t> output_shape({in_dims[0], filter_dims[0]});
+  auto paddings = *param_.paddings;
+  auto dilations = *param_.dilations;
   for (size_t i = 0; i < param_.strides.size(); ++i) {
     output_shape.push_back(ConvOutputSize(in_dims[i + 2],
                                           filter_dims[i + 2],
-                                          param_.dilations[i],
-                                          param_.paddings[i * 2],
-                                          param_.paddings[i * 2 + 1],
+                                          dilations[i],
+                                          paddings[i * 2],
+                                          paddings[i * 2 + 1],
                                           param_.strides[i]));
   }
 

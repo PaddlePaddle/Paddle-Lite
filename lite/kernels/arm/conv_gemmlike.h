@@ -52,15 +52,19 @@ class GemmLikeConv : public KernelLite<TARGET(kARM), Ptype> {
     int oc = o_dims[1];
     int kw = w_dims[3];
     int kh = w_dims[2];
+
+    auto paddings = *param.paddings;
+    auto dilations = *param.dilations;
+
     int sw = param.strides[1];
     int sh = param.strides[0];
-    int pw = param.paddings[2];
-    int ph = param.paddings[0];
-    int dw = param.dilations[1];
-    int dh = param.dilations[0];
+    int pw = paddings[2];
+    int ph = paddings[0];
+    int dw = dilations[1];
+    int dh = dilations[0];
 
-    bool pads_equal = ((param.paddings[0] == param.paddings[1]) &&
-                       (param.paddings[2] == param.paddings[3]));
+    bool pads_equal =
+        ((paddings[0] == paddings[1]) && (paddings[2] == paddings[3]));
 
     int m = oc / param.groups;
     int k = ic * kh * kw / param.groups;

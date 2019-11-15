@@ -36,7 +36,7 @@ void ConvCompute::PrepareForRun() {
   conv_param.filter = param.filter->ZynqTensor();
   conv_param.groups = param.groups;
   conv_param.strides = param.strides;
-  auto paddings = param.paddings;
+  auto paddings = *param.paddings;
   conv_param.paddings = param.paddings;
   conv_param.dilations = param.dilations;
   bool pad_equal =

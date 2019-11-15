@@ -294,7 +294,7 @@ inline void split_filter_num(const ConvParam& c_param) {
     args.image.channels = input->shape().channel();
     args.image.width = input->shape().width();
     args.image.height = input->shape().height();
-    auto paddings = param.padding;
+    auto paddings = *param.padding;
     args.image.pad_width = param.paddings[2];
     args.image.pad_height = param.paddings[0];
     args.output.address = out_address;
@@ -379,9 +379,10 @@ inline void split_channel(const ConvParam& c_param) {
     args.image.channels = conv_param->input.shape().channel();
     args.image.width = conv_param->input.shape().width();
     args.image.height = conv_param->input.shape().height();
-    args.image.pad_width = param.paddings[2];
-    args.image.pad_height = param.paddings[0];
-    auto paddings = param.paddings;
+    auto paddings = *param.paddings;
+    args.image.pad_width = paddings[2];
+    args.image.pad_height = paddings[0];
+
     args.output.address = conv_param->output.mutableData<void>();
     args.output.scale_address = conv_param->output.scale();
     bool pad_equal =

@@ -39,9 +39,10 @@ void conv_3x3s2_depthwise_fp32(const float* i_data,
                                const float* bias,
                                const operators::ConvParam& param,
                                ARMContext* ctx) {
+  auto paddings = *param.paddings;
   int threads = ctx->threads();
-  const int pad_h = param.paddings[0];
-  const int pad_w = param.paddings[2];
+  const int pad_h = paddings[0];
+  const int pad_w = paddings[2];
   const int out_c_block = 4;
   const int out_h_kernel = 1;
   const int out_w_kernel = 4;

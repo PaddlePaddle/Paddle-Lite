@@ -54,12 +54,15 @@ void ConvComputeInt8<Ptype_out>::PrepareForRun() {
   const auto filter_dims = param.filter->dims();
   std::vector<int64_t> output_shape({in_dims[0]});
 
+  auto paddings = *param.paddings;
+  auto dilations = *param.dilations;
+
   for (size_t i = 0; i < param.strides.size(); ++i) {
     output_shape.push_back(ConvOutputSize(in_dims[i + 1],
                                           filter_dims[i + 1],
-                                          param.dilations[i],
-                                          param.paddings[2 * i],
-                                          param.paddings[2 * i + 1],
+                                          dilations[i],
+                                          paddings[2 * i],
+                                          paddings[2 * i + 1],
                                           param.strides[i]));
   }
   output_shape.push_back(filter_dims[0]);
@@ -76,13 +79,15 @@ void ConvComputeInt8<Ptype_out>::Run() {
   const auto in_dims = param.x->dims();
   const auto filter_dims = param.filter->dims();
   std::vector<int64_t> output_shape({in_dims[0]});
+  auto paddings = *param.paddings;
+  auto dilations = *param.dilations;
 
   for (size_t i = 0; i < param.strides.size(); ++i) {
     output_shape.push_back(ConvOutputSize(in_dims[i + 1],
                                           filter_dims[i + 1],
-                                          param.dilations[i],
-                                          param.paddings[2 * i],
-                                          param.paddings[2 * i + 1],
+                                          dilations[i],
+                                          paddings[2 * i],
+                                          paddings[2 * i + 1],
                                           param.strides[i]));
   }
   output_shape.push_back(filter_dims[0]);

@@ -41,7 +41,8 @@ TEST(conv_compute, fp32) {
   act_param.Leaky_relu_alpha = 0.1;
   operators::ConvParam param;
   param.activation_param = act_param;
-  param.paddings = {1, 1, 1, 1};
+  std::vector<int> pads = {1, 1, 1, 1};
+  param.paddings = std::make_shared<std::vector<int>>(pads);
   param.groups = 1;
 
   Tensor x, filter, bias, y, x_cpu, filter_cpu, bias_cpu, y_cpu;

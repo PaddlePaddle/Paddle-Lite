@@ -194,15 +194,18 @@ void conv2d_transpose_compute_ref(const operators::ConvParam& param) {
   }
 
   int group = param.groups;
+  auto paddings = *param.paddings;
+  auto dilations = *param.dilations;
+
   int kernel_h = param.filter->dims()[2];
   int kernel_w = param.filter->dims()[3];
   int stride_h = param.strides[0];
   int stride_w = param.strides[1];
-  int dila_h = param.dilations[0];
-  int dila_w = param.dilations[1];
+  int dila_h = dilations[0];
+  int dila_w = dilations[1];
 
-  int pad_h = param.paddings[0];
-  int pad_w = param.paddings[1];
+  int pad_h = paddings[0];
+  int pad_w = paddings[2];
   bool flag_bias = (param.bias != nullptr);
   bool flag_relu = param.fuse_relu;
 
@@ -332,10 +335,14 @@ TEST(conv2d_transpose_arm, compute) {
                             param.bias = &bias;
                           }
                           param.fuse_relu = flag_relu;
-                          param.paddings = std::vector<int>({padding, padding});
+                          std::vector<int> paddings = {
+                              padding, padding, padding, padding};
                           param.strides = std::vector<int>({stride, stride});
+                          std::vector<int> dolations = {dilation, dilation};
+                          param.paddings =
+                              std::make_shared<std::vector<int>>(padding);
                           param.dilations =
-                              std::vector<int>({dilation, dilation});
+                              std::make_shared<std::vector<int>>(dolations);
                           param.groups = group;
                           conv2d_transpose.SetParam(param);
                           conv2d_transpose.Launch();

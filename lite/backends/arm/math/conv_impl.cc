@@ -367,6 +367,8 @@ void conv_im2col_gemm(const float* i_data,
   float* tmp_work_space =
       ctx->workspace_data<float>() + ctx->llc_size() / sizeof(float);
 
+  auto paddings = *param.paddings;
+  auto dilations = *param.dilations;
   //! use gemv when the output channel size = 1
   for (int b = 0; b < num; ++b) {
     // dC
@@ -384,14 +386,14 @@ void conv_im2col_gemm(const float* i_data,
              win,
              kernel_h,
              kernel_w,
-             param.paddings[0],
-             param.paddings[1],
-             param.paddings[2],
-             param.paddings[3],
+             paddings[0],
+             paddings[1],
+             paddings[2],
+             paddings[3],
              param.strides[0],
              param.strides[1],
-             param.dilations[0],
-             param.dilations[1],
+             dilations[0],
+             dilations[1],
              dB);
 
       if (n == 1) {
@@ -442,14 +444,16 @@ void conv_im2col_gemm_int8(const int8_t* i_data,
                            const float* scale) {
   int group = param.groups;
   auto filter_dims = param.filter->dims();
+  auto paddings = *param.paddings;
+  auto dilations = *param.dilations;
   int kernel_h = filter_dims[2];
   int kernel_w = filter_dims[3];
   int stride_h = param.strides[0];
   int stride_w = param.strides[1];
-  int dila_h = param.dilations[0];
-  int dila_w = param.dilations[1];
-  int pad_h = param.paddings[0];
-  int pad_w = param.paddings[2];
+  int dila_h = dilations[0];
+  int dila_w = dilations[1];
+  int pad_h = paddings[0];
+  int pad_w = paddings[2];
   const int m = oc / group;
   const int n = oh * ow;
   const int k = ic * kernel_h * kernel_w / group;
@@ -490,9 +494,9 @@ void conv_im2col_gemm_int8(const int8_t* i_data,
              kernel_h,
              kernel_w,
              pad_h,
-             param.paddings[1],
+             paddings[1],
              pad_w,
-             param.paddings[3],
+             paddings[3],
              stride_h,
              stride_w,
              dila_h,
@@ -572,7 +576,7 @@ void conv_depthwise_3x3_fp32(const void* din,
                              const operators::ConvParam& param,
                              ARMContext* ctx,
                              const float* scale) {
-  auto paddings = param.paddings;
+  auto paddings = *param.paddings;
   const int pad_h = paddings[0];
   const int pad_w = paddings[2];
   int stride = param.strides[1];
@@ -665,7 +669,8 @@ void conv_depthwise_5x5_fp32(const void* din,
                              const operators::ConvParam& param,
                              ARMContext* ctx,
                              const float* scale) {
-  int pad = param.paddings[1];
+  auto paddings = *param.paddings;
+  int pad = paddings[0];
   int stride = param.strides[1];
   bool flag_relu = param.fuse_relu;
   bool flag_bias = param.bias != nullptr;
@@ -721,8 +726,9 @@ void conv_depthwise_3x3_int8_fp32(const void* din,
                                   const operators::ConvParam& param,
                                   ARMContext* ctx,
                                   const float* scale) {
-  int pad_h = param.paddings[0];
-  int pad_w = param.paddings[1];
+  auto paddings = *param.paddings;
+  int pad_h = paddings[0];
+  int pad_w = paddings[2];
   int stride = param.strides[1];
   bool flag_relu = param.fuse_relu;
   bool flag_bias = param.bias != nullptr;
@@ -779,8 +785,9 @@ void conv_depthwise_3x3_int8_int8(const void* din,
                                   const operators::ConvParam& param,
                                   ARMContext* ctx,
                                   const float* scale) {
-  int pad_h = param.paddings[0];
-  int pad_w = param.paddings[1];
+  auto paddings = *param.paddings;
+  int pad_h = paddings[0];
+  int pad_w = paddings[2];
   int stride = param.strides[1];
   bool flag_relu = param.fuse_relu;
   bool flag_bias = param.bias != nullptr;
@@ -837,8 +844,9 @@ void conv_depthwise_5x5_int8_fp32(const void* din,
                                   const operators::ConvParam& param,
                                   ARMContext* ctx,
                                   const float* scale) {
-  int pad_h = param.paddings[0];
-  int pad_w = param.paddings[1];
+  auto paddings = *param.paddings;
+  int pad_h = paddings[0];
+  int pad_w = paddings[2];
   int stride = param.strides[1];
   bool flag_relu = param.fuse_relu;
   bool flag_bias = param.bias != nullptr;
@@ -878,8 +886,9 @@ void conv_depthwise_5x5_int8_int8(const void* din,
                                   const operators::ConvParam& param,
                                   ARMContext* ctx,
                                   const float* scale) {
-  int pad_h = param.paddings[0];
-  int pad_w = param.paddings[1];
+  auto paddings = *param.paddings;
+  int pad_h = paddings[0];
+  int pad_w = paddings[2];
   int stride = param.strides[1];
   bool flag_relu = param.fuse_relu;
   bool flag_bias = param.bias != nullptr;

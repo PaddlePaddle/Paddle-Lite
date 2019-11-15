@@ -31,6 +31,9 @@ bool CudnnConv2D<PRECISION(kFloat)>::create(const operators::ConvParam& param,
   auto o_dims = param.output->dims();
   int batch = x_dims[0];
 
+  auto paddings = *param.paddings;
+  auto dilations = *param.dilations;
+
   int iw = x_dims[3];  // nchw
   int ih = x_dims[2];
   int ic = x_dims[1];
@@ -41,10 +44,10 @@ bool CudnnConv2D<PRECISION(kFloat)>::create(const operators::ConvParam& param,
   int kh = w_dims[2];
   int sw = param.strides[1];
   int sh = param.strides[0];
-  int pw = param.paddings[2];
-  int ph = param.paddings[0];
-  int dw = param.dilations[1];
-  int dh = param.dilations[0];
+  int pw = paddings[2];
+  int ph = paddings[0];
+  int dw = dilations[1];
+  int dh = dilations[0];
 
   CHECK(ic % param.groups == 0)
       << "The conv input channel shoud be divide group number.";
@@ -133,8 +136,8 @@ bool CudnnConv2D<PRECISION(kFloat)>::create(const operators::ConvParam& param,
     this->fwd_algo_ = algo_cache.GetAlgorithm(x_dims.Vectorize(),
                                               w_dims.Vectorize(),
                                               param.strides,
-                                              param.paddings,
-                                              param.dilations,
+                                              *param.paddings,
+                                              *param.dilations,
                                               0,
                                               search_func);
 
@@ -311,12 +314,15 @@ bool CudnnConv2DInt8<Ptype_out>::create(const operators::ConvParam& param,
   int kw = w_dims[2];
   int kh = w_dims[1];
 
+  auto paddings = *param.paddings;
+  auto dilations = *param.dilations;
+
   int sw = param.strides[1];
   int sh = param.strides[0];
-  int pw = param.paddings[2];
-  int ph = param.paddings[0];
-  int dw = param.dilations[1];
-  int dh = param.dilations[0];
+  int pw = paddings[2];
+  int ph = paddings[0];
+  int dw = dilations[1];
+  int dh = dilations[0];
 
   std::vector<float> weight_scale = param.weight_scale;
   float input_scale = param.input_scale;

@@ -64,17 +64,19 @@ using paddle::lite::Timer;
 DDim compute_out_dim(const DDim& dim_in,
                      const paddle::lite::operators::ConvParam& param) {
   DDim dim_out = dim_in;
+  auto paddings = *param.paddings;
+  auto dilations = *param.dilations;
   dim_out[1] = param.filter->dims()[0];
   auto kernel_h = param.filter->dims()[2];
   auto kernel_w = param.filter->dims()[3];
   auto h = dim_in[2];
   auto w = dim_in[3];
-  int dila_h = param.dilations[0];
-  int dila_w = param.dilations[1];
-  int pad_top = param.paddings[0];
-  int pad_bottom = param.paddings[1];
-  int pad_left = param.paddings[2];
-  int pad_right = param.paddings[3];
+  int dila_h = dilations[0];
+  int dila_w = dilations[1];
+  int pad_top = paddings[0];
+  int pad_bottom = paddings[1];
+  int pad_left = paddings[2];
+  int pad_right = paddings[3];
   int stride_h = param.strides[0];
   int stride_w = param.strides[1];
   auto kernel_exten = dila_h * (kernel_h - 1) + 1;
@@ -112,8 +114,8 @@ void test_conv_fp32(const std::vector<DDim>& input_dims,
     param.bias->set_precision(PRECISION(kFloat));
   }
   param.strides = strides;
-  param.paddings = pads;
-  param.dilations = dilas;
+  param.paddings = std::make_shared<std::vector<int>>(pads);
+  param.dilations = std::make_shared<std::vector<int>>(dilas);
   param.fuse_relu = flag_relu;
   param.groups = group;
 
