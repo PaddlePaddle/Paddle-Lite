@@ -49,11 +49,12 @@ TEST(match_matrix_tensor, normal) {
   y.set_lod(y_lod);
 
   // init ins tensor in cpu
-  Tensor x_cpu, w_cpu, y_cpu, out_cpu;
+  Tensor x_cpu, w_cpu, y_cpu, out_cpu, tmp_cpu;
   x_cpu.Resize({ix, h});
   w_cpu.Resize({h, dim_t, h});
   y_cpu.Resize({iy, h});
   out_cpu.Resize({18, 1});
+  tmp_cpu.Resize({20, 1});
 
   auto* x_cpu_data = x_cpu.mutable_data<float>();
   auto* w_cpu_data = w_cpu.mutable_data<float>();
@@ -69,13 +70,14 @@ TEST(match_matrix_tensor, normal) {
   }
 
   // cpu tensor data assigin to gpu tensor
-  x.Assign<float, lite::DDim, TARGET(kCUDA)>(x_cpu_data, pad_cpu.dims());
-  w.Assign<float, lite::DDim, TARGET(kCUDA)>(w_cpu_data, src_cpu.dims());
-  y.Assign<float, lite::DDim, TARGET(kCUDA)>(y_cpu_data, src_cpu.dims());
+  x.Assign<float, lite::DDim, TARGET(kCUDA)>(x_cpu_data, x_cpu.dims());
+  w.Assign<float, lite::DDim, TARGET(kCUDA)>(w_cpu_data, w_cpu.dims());
+  y.Assign<float, lite::DDim, TARGET(kCUDA)>(y_cpu_data, y_cpu.dims());
 
   param.x = &x;
   param.w = &w;
   param.y = &y;
+  param.dim_t = dim_t;
   param.out = &out;
   param.tmp = &tmp;
   kernel.SetParam(param);
@@ -91,11 +93,26 @@ TEST(match_matrix_tensor, normal) {
   auto* out_data = out.mutable_data<float>(TARGET(kCUDA));
   CopySync<TARGET(kCUDA)>(
       out_cpu_data, out_data, sizeof(float) * out.numel(), IoDirection::DtoH);
-
-  std::vector<float> ref_results = {0, 1, 2, 3, 4, 5, 6, 7, 16, 17, 18, 19};
+  std::vector<float> ref_results = {5,
+                                    23,
+                                    41,
+                                    17,
+                                    75,
+                                    133,
+                                    7,
+                                    33,
+                                    59,
+                                    27,
+                                    125,
+                                    223,
+                                    323,
+                                    455,
+                                    587,
+                                    557,
+                                    793,
+                                    1029};
   for (int i = 0; i < out.numel(); i++) {
-    // EXPECT_NEAR(out_cpu_data[i], ref_results[i], 1e-5);
-    LOG(INFO) << out_cpu_data[i];
+    EXPECT_NEAR(out_cpu_data[i], ref_results[i], 1e-5);
   }
 }
 

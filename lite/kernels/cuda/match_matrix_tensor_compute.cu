@@ -20,7 +20,7 @@ namespace kernels {
 namespace cuda {
 using Tensor = lite::Tensor;
 
-void MatchMatrixTensorCompute::Run() {
+void MatchMatrixTensorCompute::PrepareForRun() {
   gemm_impl_.reset(new lite::cuda::math::Gemm<float, float>);
 }
 
@@ -58,7 +58,8 @@ void MatchMatrixTensorCompute::Run() {
 
   gemm_impl_->init(
       false, false, x->dims()[0], dim_t * dim_in, dim_in, &context);
-  gemm_impl_->run(1.0f, 0.0f, bottom_l_data, t_data, bottom_l_trans_data);
+  gemm_impl_->run(
+      1.0f, 0.0f, bottom_l_data, t_data, bottom_l_trans_data, &context);
 
   for (size_t b = 0; b < x->lod()[0].size() - 1; b++) {
     for (int t = 0; t < dim_t; t++) {
@@ -69,8 +70,16 @@ void MatchMatrixTensorCompute::Run() {
           bottom_l_trans_data + offset_l[b] * dim_t * dim_in + t * dim_in;
       const auto* r_data = bottom_r_data + offset_r[b] * dim_in;
 
-      gemm_impl_->init(false, true, len_l, len_r, dim_in, &context);
-      gemm_impl_->run(1.0f, 0.0f, l_t_data, r_data, top_data);
+      gemm_impl_->init(false,
+                       true,
+                       len_l,
+                       len_r,
+                       dim_in,
+                       dim_t * dim_in,
+                       dim_in,
+                       len_r,
+                       &context);
+      gemm_impl_->run(1.0f, 0.0f, l_t_data, r_data, top_data, &context);
     }
   }
   LoD out_lod;
