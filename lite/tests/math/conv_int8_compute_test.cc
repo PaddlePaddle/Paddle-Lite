@@ -73,8 +73,6 @@ DDim compute_out_dim(const DDim& dim_in,
   auto w = dim_in[3];
   int dila_h = dilations[0];
   int dila_w = dilations[1];
-  int pad_h = paddings[0];
-  int pad_w = paddings[2];
   int stride_h = param.strides[0];
   int stride_w = param.strides[1];
   auto kernel_exten = dila_h * (kernel_h - 1) + 1;

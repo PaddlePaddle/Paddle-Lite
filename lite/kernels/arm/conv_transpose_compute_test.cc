@@ -338,11 +338,11 @@ TEST(conv2d_transpose_arm, compute) {
                           std::vector<int> paddings = {
                               padding, padding, padding, padding};
                           param.strides = std::vector<int>({stride, stride});
-                          std::vector<int> dolations = {dilation, dilation};
+                          std::vector<int> dilations = {dilation, dilation};
                           param.paddings =
-                              std::make_shared<std::vector<int>>(padding);
+                              std::make_shared<std::vector<int>>(paddings);
                           param.dilations =
-                              std::make_shared<std::vector<int>>(dolations);
+                              std::make_shared<std::vector<int>>(dilations);
                           param.groups = group;
                           conv2d_transpose.SetParam(param);
                           conv2d_transpose.Launch();
