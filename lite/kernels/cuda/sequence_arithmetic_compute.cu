@@ -124,11 +124,13 @@ void SequenceArithmeticCompute::Run() {
   auto y_lod = param.Y->lod()[0];
   auto out_data = param.Out->mutable_data<float>(TARGET(kCUDA));
 
-  offset_x.Resize(std::vector<int64_t>(x_lod.size()));
+  offset_x.Resize({static_cast<int64_t>(x_lod.size())});
   auto offset_x_data = offset_x.mutable_data<int>(TARGET(kCUDA));
-  offset_y.Resize(std::vector<int64_t>(y_lod.size()));
+
+  offset_y.Resize({static_cast<int64_t>(y_lod.size())});
   auto offset_y_data = offset_y.mutable_data<int>(TARGET(kCUDA));
-  word_id_to_seq_id.Resize(std::vector<int64_t>(x_lod.size()));
+
+  word_id_to_seq_id.Resize({param.X->numel()});
   auto word_id_to_seq_id_data =
       word_id_to_seq_id.mutable_data<int>(TARGET(kCUDA));
 
@@ -139,14 +141,26 @@ void SequenceArithmeticCompute::Run() {
     }
   }
 
+  std::vector<int> offset_x_data_cpu(x_lod.size(), 0);
+  auto x_lod_data = x_lod.data();
+  for (int i = 0; i < offset_x_data_cpu.size(); i++) {
+    offset_x_data_cpu[i] = x_lod_data[i];
+  }
+
+  std::vector<int> offset_y_data_cpu(y_lod.size(), 0);
+  auto y_lod_data = y_lod.data();
+  for (int i = 0; i < offset_y_data_cpu.size(); i++) {
+    offset_y_data_cpu[i] = y_lod_data[i];
+  }
+
   TargetWrapperCuda::MemcpyAsync(offset_x_data,
-                                 reinterpret_cast<int*>(x_lod.data()),
+                                 offset_x_data_cpu.data(),
                                  sizeof(int) * x_lod.size(),
                                  IoDirection::HtoD,
                                  stream);
 
   TargetWrapperCuda::MemcpyAsync(offset_y_data,
-                                 reinterpret_cast<int*>(y_lod.data()),
+                                 offset_y_data_cpu.data(),
                                  sizeof(int) * y_lod.size(),
                                  IoDirection::HtoD,
                                  stream);

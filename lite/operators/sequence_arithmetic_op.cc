@@ -20,8 +20,8 @@ namespace lite {
 namespace operators {
 
 bool SequenceArithmeticOp::CheckShape() const {
-  CHECK_OR_FALSE(param_.X) << "Input X should not be null";
-  CHECK_OR_FALSE(param_.Y) << "Input Y should not be null";
+  CHECK_OR_FALSE(param_.X);
+  CHECK_OR_FALSE(param_.Y);
   CHECK_EQ(param_.X->dims().size(), 2) << "Input X should a 2-D Tensor";
   CHECK_EQ(param_.Y->dims().size(), 2) << "Input Y should a 2-D Tensor";
   CHECK_OR_FALSE(param_.Out);
@@ -40,7 +40,7 @@ bool SequenceArithmeticOp::AttachImpl(const cpp::OpDesc &opdesc,
   param_.Y = scope->FindTensor(opdesc.Input("Y").front());
   param_.Out = scope->FindMutableTensor(opdesc.Input("Out").front());
 
-  param_.op_type = op_desc.GetAttr<int>("op_type");
+  param_.op_type = opdesc.GetAttr<int>("op_type");
 
   CHECK(param_.X);
   CHECK(param_.Y);

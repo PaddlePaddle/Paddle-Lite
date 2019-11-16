@@ -22,10 +22,10 @@ namespace paddle {
 namespace lite {
 namespace operators {
 
-class SequenceAritnmeticOp : public OpLite {
+class SequenceArithmeticOp : public OpLite {
  public:
-  SequenceAritnmeticOp() {}
-  explicit SequenceAritnmeticOp(const std::string &op_type) : OpLite(op_type) {}
+  SequenceArithmeticOp() {}
+  explicit SequenceArithmeticOp(const std::string &op_type) : OpLite(op_type) {}
 
   bool CheckShape() const override;
 
