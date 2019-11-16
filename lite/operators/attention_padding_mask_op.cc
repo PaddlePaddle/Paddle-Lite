@@ -31,15 +31,16 @@ bool AttentionPaddingMaskOp::CheckShape() const {
 bool AttentionPaddingMaskOp::InferShape() const {
   auto src_len = param_.X->lod()[0][1];
   CHECK_EQ(src_len, param_.X->dims()[1])
-      << "Mismatch source length, expect: " << src_len << ", get: %d"
-      << param_.X->lod()[0][1];
-  auto att_batch = param -.X->lod()[0].size() - 1;
+      << "Mismatch source length, expect: " << src_len
+      << ", get: " << param_.X->lod()[0][1];
+  auto att_batch = param_.X->lod()[0].size() - 1;
   auto src_batch = param_.Y->lod()[0].size() - 1;
-  CHECK_EQ(att_batch % src_batch, 0) << "Mismatch batch size, bottom0: "
-                                     << att_batch ", bottom1: " << src_batch;
+  CHECK_EQ(att_batch % src_batch, 0)
+      << "Mismatch batch size, bottom0: " << att_batch
+      << ", bottom1: " << src_batch;
 
-  param_.pad_begin->Resize({src_batch});
-  param_.Out->Resize(param_.X->size());
+  param_.pad_begin->Resize({static_cast<int64_t>(src_batch)});
+  param_.Out->Resize(param_.X->dims());
   param_.Out->set_lod(param_.X->lod());
 
   return true;

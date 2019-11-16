@@ -13,34 +13,26 @@
 // limitations under the License.
 
 #pragma once
-#include <string>
-#include "lite/core/op_lite.h"
+#include "lite/core/kernel.h"
 
 namespace paddle {
 namespace lite {
-namespace operators {
+namespace kernels {
+namespace cuda {
 
-class AttentionPaddingMaskOp : public OpLite {
+class AttentionPaddingMaskCompute
+    : public KernelLite<TARGET(kCUDA), PRECISION(kFloat)> {
  public:
-  AttentionPaddingMaskOp() {}
+  using param_t = operators::AttentionPaddingMaskParam;
 
-  explicit AttentionPaddingMaskOp(const std::string &op_type)
-      : OpLite(op_type) {}
-
-  bool CheckShape() const override;
-
-  bool InferShape() const override;
-
-  bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
-
-  void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
-
-  std::string DebugString() const override { return "attention_padding_mask"; }
+  void Run() override;
+  virtual ~AttentionPaddingMaskCompute() = default;
 
  private:
-  mutable AttentionPaddingMaskParam param_;
+  lite::Tensor src_offset_cuda;
 };
 
-}  // namespace operators
+}  // namespace cuda
+}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

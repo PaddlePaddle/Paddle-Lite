@@ -66,6 +66,9 @@ class AttentionPaddingMaskCompute
   }
 
   virtual ~AttentionPaddingMaskCompute() = default;
+
+ private:
+  lite::Tensor src_offset_;
 };
 
 }  // namespace x86
