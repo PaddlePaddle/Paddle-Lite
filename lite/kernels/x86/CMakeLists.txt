@@ -47,6 +47,10 @@ add_kernel(search_grnn_compute_x86 X86 basic SRCS search_grnn_compute.cc DEPS ${
 add_kernel(sequence_concat_compute_x86 X86 basic SRCS sequence_concat_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(var_conv_2d_compute_x86 X86 basic SRCS var_conv_2d_compute.cc DEPS ${lite_kernel_deps} blas fluid_data_type)
 
+# for content-dnn specific
+add_kernel(search_aligned_mat_mul_compute_x86 X86 extra SRCS search_aligned_mat_mul_compute.cc DEPS ${lite_kernel_deps} blas)
+add_kernel(search_seq_fc_compute_x86 X86 extra SRCS search_seq_fc_compute.cc DEPS ${lite_kernel_deps} blas)
+
 if(NOT LITE_WITH_X86)
     return()
 endif()
