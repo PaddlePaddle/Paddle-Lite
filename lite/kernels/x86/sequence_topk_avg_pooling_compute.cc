@@ -15,7 +15,7 @@
 #include "lite/kernels/x86/sequence_topk_avg_pooling_compute.h"
 
 REGISTER_LITE_KERNEL(
-    SequenceTopkAvgPooling,
+    sequence_topk_avg_pooling,
     kX86,
     kFloat,
     kNCHW,
