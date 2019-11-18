@@ -89,6 +89,14 @@ struct FcParam {
   WITH_INT8_CONFIG
 };
 
+struct SearchSeqFcParam {
+  lite::Tensor* x{nullptr};
+  lite::Tensor* w{nullptr};
+  lite::Tensor* b{nullptr};
+  lite::Tensor* out{nullptr};
+  int out_size;
+};
+
 // For Interpolate Op
 struct InterpolateParam {
   lite::Tensor* X{};
@@ -768,6 +776,13 @@ struct AttentionPaddingMaskParam {
   float mask;
   lite::Tensor* Out{};
   lite::Tensor* pad_begin{};
+};
+
+struct SequenceArithmeticParam {
+  const lite::Tensor* X{};
+  const lite::Tensor* Y{};
+  int op_type{1};
+  lite::Tensor* Out{};
 };
 
 struct ReduceMaxParam {

@@ -47,6 +47,11 @@ add_kernel(search_grnn_compute_x86 X86 basic SRCS search_grnn_compute.cc DEPS ${
 add_kernel(sequence_concat_compute_x86 X86 basic SRCS sequence_concat_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(var_conv_2d_compute_x86 X86 basic SRCS var_conv_2d_compute.cc DEPS ${lite_kernel_deps} blas fluid_data_type)
 add_kernel(attention_padding_mask_compute_x86 X86 basic SRCS attention_padding_mask_compute.cc DEPS ${lite_kernel_deps})
+add_kernel(sequence_arithmetic_compute_x86 X86 basic SRCS sequence_arithmetic_compute.cc DEPS ${lite_kernel_deps})
+
+# for content-dnn specific
+add_kernel(search_aligned_mat_mul_compute_x86 X86 extra SRCS search_aligned_mat_mul_compute.cc DEPS ${lite_kernel_deps} blas)
+add_kernel(search_seq_fc_compute_x86 X86 extra SRCS search_seq_fc_compute.cc DEPS ${lite_kernel_deps} blas)
 
 if(NOT LITE_WITH_X86)
     return()
@@ -85,3 +90,4 @@ lite_cc_test(test_sequence_concat_compute_x86 SRCS sequence_concat_compute_test.
 lite_cc_test(test_match_matrix_compute_x86 SRCS match_matrix_tensor_compute_test.cc DEPS match_matrix_tensor_compute_x86)
 lite_cc_test(test_var_conv_2d_compute_x86 SRCS var_conv_2d_compute_test.cc DEPS var_conv_2d_compute_x86)
 lite_cc_test(test_attention_padding_mask_compute_x86 SRCS attention_padding_mask_compute_test.cc DEPS attention_padding_mask_compute_x86)
+lite_cc_test(test_sequence_arithmetic_compute_x86 SRCS sequence_arithmetic_compute_test.cc DEPS sequence_arithmetic_compute_x86)
