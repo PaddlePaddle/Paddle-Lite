@@ -77,16 +77,18 @@ void VarConv2DCompute::var_im2col(const cudaStream_t& stream) {
   int kernel_w = param.kernel_w;
   int stride_h = param.stride_h;
   int stride_w = param.stride_w;
-  auto* in_row = param.ROW;
-  auto* in_col = param.COLUMN;
+  // auto* in_row = param.ROW;
+  // auto* in_col = param.COLUMN;
   const auto* input = param.X;
   auto* col = param.Col;
 
   int batch = input->lod()[0].size() - 1;
   const auto& bottom_offset = input->lod()[0];
   // 2-D lod info.
-  const auto& offset_x = in_col->lod()[0];
-  const auto& offset_y = in_row->lod()[0];
+  // const auto& offset_x = in_col->lod()[0];
+  // const auto& offset_y = in_row->lod()[0];
+  const auto& offset_y = param.X->lod()[1];
+  const auto& offset_x = param.X->lod()[2];
   // top offset is the whole size of each data sample
   std::vector<uint64_t> top_offset;
   int top_size = 0;
@@ -163,8 +165,8 @@ void VarConv2DCompute::Run() {
   auto stream = ctx.exec_stream();
 
   auto* bottom = param.X;
-  auto* in_row = param.ROW;
-  auto* in_col = param.COLUMN;
+  // auto* in_row = param.ROW;
+  // auto* in_col = param.COLUMN;
   auto* w = param.W;
   auto* top = param.Out;
   auto* col = param.Col;
@@ -179,8 +181,10 @@ void VarConv2DCompute::Run() {
 
   int batch = bottom->lod()[0].size() - 1;
   const auto& col_offset = col->lod()[0];
-  const auto& offset_x = in_col->lod()[0];
-  const auto& offset_y = in_row->lod()[0];
+  // const auto& offset_x = in_col->lod()[0];
+  // const auto& offset_y = in_row->lod()[0];
+  const auto& offset_y = param.X->lod()[1];
+  const auto& offset_x = param.X->lod()[2];
   std::vector<size_t> top_offset;
   std::vector<int64_t> height_vector;
   std::vector<int64_t> width_vector;
@@ -254,8 +258,6 @@ REGISTER_LITE_KERNEL(var_conv_2d,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kCUDA))})
     .BindInput("W", {LiteType::GetTensorTy(TARGET(kCUDA))})
-    .BindInput("ROW", {LiteType::GetTensorTy(TARGET(kCUDA))})
-    .BindInput("COLUMN", {LiteType::GetTensorTy(TARGET(kCUDA))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kCUDA))})
     .BindOutput("Col", {LiteType::GetTensorTy(TARGET(kCUDA))})
     .Finalize();

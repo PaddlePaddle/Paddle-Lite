@@ -260,6 +260,8 @@ TEST(var_conv_2d_x86, run_test) {
   std::vector<int64_t> x_dims_vec{x_size, 1};
   LoD x_lod;
   x_lod.push_back(x_lod_vec);
+  x_lod.push_back(row_lod_vec);
+  x_lod.push_back(column_lod_vec);
   X.Resize(x_dims_vec);
   X.set_lod(x_lod);
   auto* x_data = X.mutable_data<float>();
@@ -269,8 +271,8 @@ TEST(var_conv_2d_x86, run_test) {
 
   param.X = &X;
   param.W = &W;
-  param.ROW = &ROW;
-  param.COLUMN = &COLUMN;
+  // param.ROW = &ROW;
+  // param.COLUMN = &COLUMN;
   param.Out = &Out;
   param.Col = &Col;
   param.stride_h = stride_h;
