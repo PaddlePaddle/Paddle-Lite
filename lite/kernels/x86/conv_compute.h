@@ -38,7 +38,7 @@ inline bool IsExpand(const std::vector<int64_t>& filter_dim,
   for (size_t j = 0; j < strides.size(); ++j) {
     filter_1 = filter_1 && (static_cast<int>(filter_dim[j + 2]) == 1);
     strides_1 = strides_1 && (strides[j] == 1);
-    padding_0 = padding_0 && (paddings[j + 2] == 0);
+    padding_0 = padding_0 && (paddings[j] == 0);
     dilation_1 = dilation_1 && (dilations[j] == 1);
   }
   return !(filter_1 && strides_1 && padding_0 && dilation_1);

@@ -105,7 +105,8 @@ TEST(depthwise_conv2d, compute) {
   param.x = &input;
   param.filter = &filter;
   param.output = &output;
-  param.paddings = std::vector<int>{0, 0};
+  std::vector<int> paddings = {0, 0};
+  param.paddings = std::make_shared<std::vector<int>>(paddings);
   param.strides = std::vector<int>{1, 1};
 
   std::unique_ptr<KernelContext> context(new KernelContext);
