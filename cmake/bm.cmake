@@ -30,12 +30,13 @@ if(NOT BM_SDK_INC)
   message(FATAL_ERROR "Can not find bmruntime_interface.h in ${BM_SDK_ROOT}/include")
 endif()
 
-include_directories("${BM_SDK_ROOT}/include")
 include_directories("${BM_SDK_ROOT}/include/bmruntime")
 include_directories("${BM_SDK_ROOT}/include/bmlib")
+include_directories("${BM_SDK_ROOT}/include/bmcompiler")
+include_directories("${BM_SDK_ROOT}/include/bmcpu")
 
 find_library(BM_SDK_RT_LIB NAMES bmrt
-  PATHS ${BM_SDK_ROOT}/lib/app)
+  PATHS ${BM_SDK_ROOT}/lib/bmnn/pcie)
 if(NOT BM_SDK_RT_LIB)
   message(FATAL_ERROR "Can not find bmrt Library in ${BM_SDK_ROOT}")
 else()
@@ -45,7 +46,7 @@ else()
 endif()
 
 find_library(BM_SDK_BM_LIB NAMES bmlib
-  PATHS ${BM_SDK_ROOT}/lib/app)
+  PATHS ${BM_SDK_ROOT}/lib/bmnn/pcie)
 if(NOT BM_SDK_BM_LIB)
   message(FATAL_ERROR "Can not find bmlib Library in ${BM_SDK_ROOT}")
 else()
@@ -65,7 +66,7 @@ else()
 endif()
 
 find_library(BM_SDK_CPU_LIB NAMES bmcpu
-  PATHS ${BM_SDK_ROOT}/lib/bmcpu)
+  PATHS ${BM_SDK_ROOT}/lib/bmnn/pcie)
 if(NOT BM_SDK_CPU_LIB)
   message(FATAL_ERROR "Can not find bmcpu Library in ${BM_SDK_ROOT}")
 else()
