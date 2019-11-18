@@ -89,6 +89,14 @@ struct FcParam {
   WITH_INT8_CONFIG
 };
 
+struct SearchSeqFcParam {
+  lite::Tensor* x{nullptr};
+  lite::Tensor* w{nullptr};
+  lite::Tensor* b{nullptr};
+  lite::Tensor* out{nullptr};
+  int out_size;
+};
+
 // For Interpolate Op
 struct InterpolateParam {
   lite::Tensor* X{};
