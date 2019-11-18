@@ -177,6 +177,7 @@ void SearchGrnnCompute<T>::Run() {
   top_lod.push_back(offset);
   top->set_lod(top_lod);
   std::vector<int64_t> top_dims_vec{_cap_l, _cap_h};
+  LOG(INFO) << _cap_l << " " << _cap_h;
   top->Resize(top_dims_vec);
   auto* top_hidden = top->template mutable_data<T>();
 
@@ -196,6 +197,10 @@ void SearchGrnnCompute<T>::Run() {
   auto* new_emb = _layout_input->template mutable_data<T>();
   const auto& new_offset = _layout_input->lod()[0];
   int max_width = _layout_input->lod()[0].size() - 1;
+  LOG(INFO) << "_layout_input data:";
+  for (int i = 0; i < _layout_input->numel(); i++) {
+    LOG(INFO) << new_emb[i];
+  }
 
   // this buffer is used for book keeping info which will be used in bp
   // buffer also needed in bp, so make it larger
@@ -247,6 +252,10 @@ void SearchGrnnCompute<T>::Run() {
            e2hz,
            0.0f,
            wz_x_e);
+  LOG(INFO) << "buffer data:";
+  for (int i = 0; i < _buffer->numel(); i++) {
+    LOG(INFO) << buffer_data[i];
+  }
 
   // precompute hidden0
   for (int i = 0; i < batch * _cap_h; i++) {
