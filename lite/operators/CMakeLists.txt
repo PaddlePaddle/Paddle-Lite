@@ -7,6 +7,7 @@ add_operator(pool_op basic SRCS pool_op.cc DEPS ${op_DEPS})
 add_operator(fc_op basic SRCS fc_op.cc DEPS ${op_DEPS})
 add_operator(assign_op extra SRCS assign_op.cc DEPS ${op_DEPS})
 add_operator(relu_op basic SRCS relu_op.cc DEPS ${op_DEPS})
+add_operator(search_group_padding extra SRCS search_group_padding_op.cc DEPS ${op_DEPS})
 add_operator(mul_op basic SRCS mul_op.cc DEPS ${op_DEPS})
 add_operator(matmul_op basic SRCS matmul_op.cc DEPS ${op_DEPS})
 add_operator(scale_op basic SRCS scale_op.cc DEPS ${op_DEPS})
@@ -85,6 +86,7 @@ add_operator(search_seq_depadding_op_lite extra SRCS search_seq_depadding_op.cc 
 add_operator(search_grnn_op_lite extra SRCS search_grnn_op.cc DEPS ${op_DEPS})
 add_operator(sequence_concat_op_lite extra SRCS sequence_concat_op.cc DEPS ${op_DEPS})
 add_operator(var_conv_2d_op_lite extra SRCS var_conv_2d_op.cc DEPS ${op_DEPS})
+add_operator(sequence_arithmetic_op_lite extra SRCS sequence_arithmetic_op.cc DEPS ${op_DEPS})
 
 # for OCR specific
 add_operator(while_op extra SRCS while_op.cc DEPS ${op_DEPS})
@@ -114,6 +116,9 @@ add_operator(increment_op extra SRCS increment_op.cc DEPS ${op_DEPS})
 add_operator(layer_norm_op extra SRCS layer_norm_op.cc DEPS ${op_DEPS})
 add_operator(sequence_softmax_op extra SRCS sequence_softmax_op.cc DEPS ${op_DEPS})
 
+# for content-dnn specific
+add_operator(search_aligned_mat_mul_op extra SRCS search_aligned_mat_mul_op.cc DEPS ${op_DEPS})
+add_operator(search_seq_fc_op extra SRCS search_seq_fc_op.cc DEPS ${op_DEPS})
 
 if (NOT LITE_WITH_X86)
     lite_cc_test(test_fc_op SRCS fc_op_test.cc

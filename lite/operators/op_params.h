@@ -89,6 +89,14 @@ struct FcParam {
   WITH_INT8_CONFIG
 };
 
+struct SearchSeqFcParam {
+  lite::Tensor* x{nullptr};
+  lite::Tensor* w{nullptr};
+  lite::Tensor* b{nullptr};
+  lite::Tensor* out{nullptr};
+  int out_size;
+};
+
 // For Interpolate Op
 struct InterpolateParam {
   lite::Tensor* X{};
@@ -732,6 +740,14 @@ struct SequencePoolParam {
 #endif
 };
 
+struct SearchGroupPaddingParam {
+  lite::Tensor* x{};
+  lite::Tensor* out_emb_padding{};
+  lite::Tensor* out_new{};
+  lite::Tensor* out_padding{};
+  int pad_id;
+};
+
 struct SequenceReshapeParam {
   lite::Tensor* x{};
   lite::Tensor* output{};
@@ -758,6 +774,13 @@ struct SequenceReverseParam {
 
 struct SequenceConcatParam {
   std::vector<lite::Tensor*> X{};
+  lite::Tensor* Out{};
+};
+
+struct SequenceArithmeticParam {
+  const lite::Tensor* X{};
+  const lite::Tensor* Y{};
+  int op_type{1};
   lite::Tensor* Out{};
 };
 
