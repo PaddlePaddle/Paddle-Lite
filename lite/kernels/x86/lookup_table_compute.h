@@ -30,7 +30,6 @@ class LookupTableCompute : public KernelLite<TARGET(kX86), PRECISION(kInt64)> {
 
   void Run() override {
     auto &param = *param_.get_mutable<operators::LookupTableParam>();
-    // auto& context = context_->As<X86Context>();
     auto *ids_t = param.Ids;
     auto *output_t = param.Out;
     int64_t padding_idx = param.padding_idx;

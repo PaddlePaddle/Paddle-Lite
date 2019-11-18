@@ -89,13 +89,21 @@ struct FcParam {
   WITH_INT8_CONFIG
 };
 
+struct SearchSeqFcParam {
+  lite::Tensor* x{nullptr};
+  lite::Tensor* w{nullptr};
+  lite::Tensor* b{nullptr};
+  lite::Tensor* out{nullptr};
+  int out_size;
+};
+
 // For Interpolate Op
 struct InterpolateParam {
   lite::Tensor* X{};
   lite::Tensor* OutSize{};
   lite::Tensor* Out{};
   std::vector<const lite::Tensor*> SizeTensor;
-  lite::Tensor* Scale;
+  lite::Tensor* Scale{};
 
   float scale{0.f};
   int out_h{-1};
@@ -751,6 +759,11 @@ struct SequenceExpandAsParam {
   lite::Tensor* out{nullptr};
 };
 
+struct SequenceReverseParam {
+  const lite::Tensor* X{};
+  lite::Tensor* Out{};
+};
+
 struct SequenceConcatParam {
   std::vector<lite::Tensor*> X{};
   lite::Tensor* Out{};
@@ -782,6 +795,22 @@ struct ReduceParam {
   std::vector<int> dim{0};
   bool keep_dim{false};
   bool reduce_all{false};
+};
+
+struct VarConv2DParam {
+  const lite::Tensor* X{};
+  const lite::Tensor* ROW{};
+  const lite::Tensor* COLUMN{};
+  const lite::Tensor* W{};
+  lite::Tensor* Out{};
+  lite::Tensor* Col{};
+
+  int input_channel;
+  int output_channel;
+  int stride_h;
+  int stride_w;
+  int kernel_h;
+  int kernel_w;
 };
 
 /// ----------------------- shape operators ----------------------
@@ -928,6 +957,38 @@ struct AssignValueParam {
   std::vector<float> fp32_values{};
   std::vector<int> int32_values{};
   lite::Tensor* Out{};
+};
+
+/// --------------------- match_matrix_tensor operators --------------------
+struct MatchMatrixTensorParam {
+  const lite::Tensor* x{};
+  const lite::Tensor* y{};
+  const lite::Tensor* w{};
+  lite::Tensor* out{};
+  lite::Tensor* tmp{};
+
+  int dim_t;
+};
+
+/// --------------------- search_seq_depadding operators --------------------
+struct SearchSeqDepaddingParam {
+  const lite::Tensor* pad{};
+  const lite::Tensor* src{};
+  lite::Tensor* out{};
+};
+
+/// --------------------- search_grnn operators --------------------
+struct SearchGrnnParam {
+  const lite::Tensor* x{};
+  const lite::Tensor* wi{};
+  const lite::Tensor* wh{};
+  int num_input;
+  int num_hidden;
+
+  lite::Tensor* out{};
+  lite::Tensor* tmp_buffer{};
+  lite::Tensor* idx_sorted_by_width{};
+  lite::Tensor* layout_input{};
 };
 
 }  // namespace operators

@@ -28,8 +28,8 @@ inline std::vector<int> get_new_shape(
   for (size_t i = 0; i < list_new_shape_tensor.size(); ++i) {
     auto tensor = list_new_shape_tensor[i];
     lite::Tensor temp;
-    auto temp_data = temp.mutable_data<int32_t>();
-    auto tensor_data = tensor->data<int32_t>(TARGET(kCUDA));
+    auto temp_data = temp.mutable_data<float>();
+    auto tensor_data = tensor->data<float>();
     cudaMemcpy(temp_data,
                tensor_data,
                tensor->dims().production() * sizeof(float),
@@ -44,7 +44,7 @@ inline std::vector<int> get_new_shape(
 template <typename T>
 inline std::vector<T> get_new_data_from_tensor(const Tensor* new_data_tensor) {
   std::vector<T> vec_new_data;
-  auto* new_data = new_data_tensor->data<T>(kCUDA);
+  auto* new_data = new_data_tensor->data<T>();
   lite::Tensor cpu_starts_tensor;
   auto cpu_starts_tensor_data = cpu_starts_tensor.mutable_data<T>();
   cudaMemcpy(cpu_starts_tensor_data,
