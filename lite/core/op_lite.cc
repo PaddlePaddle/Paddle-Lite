@@ -30,8 +30,10 @@ std::vector<std::unique_ptr<KernelBase>> OpLite::CreateKernels(
   auto pick_kernel = [&](const Place &place) {
     auto ks = KernelRegistry::Global().Create(
         op_type_, place.target, place.precision, place.layout);
+#ifndef LITE_SHUTDOWN_LOG
     VLOG(5) << "pick kernel for " << op_info()->Type() << " "
             << place.DebugString() << " get " << ks.size() << " kernels";
+#endif
     for (auto &&it : ks) {
       AttachKernel(it.get());
       kernels.emplace_back(std::move(it));
@@ -63,7 +65,9 @@ std::vector<std::unique_ptr<KernelBase>> OpLite::CreateKernels(
     targets.insert(place.target);
   }
 
+#ifndef LITE_SHUTDOWN_LOG
   VLOG(5) << "op " << op_type_ << " get " << kernels.size() << " kernels";
+#endif
   return kernels;
 }
 

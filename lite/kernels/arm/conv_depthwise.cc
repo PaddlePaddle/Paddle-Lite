@@ -30,7 +30,9 @@ void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
   auto kw = w_dims[3];
   // select dw conv kernel
   if (kw == 3) {
+#ifndef LITE_SHUTDOWN_LOG
     VLOG(5) << "invoke 3x3 dw conv fp32";
+#endif
     // trans weights
     constexpr int cblock = 4;
     auto oc = w_dims[0];
@@ -45,7 +47,9 @@ void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
     flag_trans_weights_ = false;
     // flag_trans_weights_ = true;
   } else if (kw == 5) {
+#ifndef LITE_SHUTDOWN_LOG
     VLOG(5) << "invoke 5x5 dw conv fp32";
+#endif
     impl_ = lite::arm::math::conv_depthwise_5x5_fp32;
   } else {
     LOG(FATAL) << "this type dw conv not impl";
@@ -76,8 +80,10 @@ void DepthwiseConv<PRECISION(kInt8), PRECISION(kFloat)>::PrepareForRun() {
   }
   /// select dw conv kernel
   if (kw == 3) {
-    // trans weights
+// trans weights
+#ifndef LITE_SHUTDOWN_LOG
     VLOG(5) << "invoke 3x3 dw conv int8 kernel fp32 out";
+#endif
     impl_ = lite::arm::math::conv_depthwise_3x3_int8_fp32;
     int cround = ROUNDUP(w_dims[0], 8);
     weights_.Resize({cround / 8, 1, kh * kw, 8});
@@ -86,8 +92,10 @@ void DepthwiseConv<PRECISION(kInt8), PRECISION(kFloat)>::PrepareForRun() {
     lite::arm::math::conv_trans_weights_numc(wptr, wptr_new, oc, 1, 8, 9);
     flag_trans_weights_ = true;
   } else if (kw == 5) {
-    // trans weights
+// trans weights
+#ifndef LITE_SHUTDOWN_LOG
     VLOG(5) << "invoke 5x5 dw conv int8 kernel fp32 out";
+#endif
     impl_ = lite::arm::math::conv_depthwise_5x5_int8_fp32;
     int cround = ROUNDUP(w_dims[0], 8);
     weights_.Resize({cround / 8, 1, kh * kw, 8});
@@ -135,8 +143,10 @@ void DepthwiseConv<PRECISION(kInt8), PRECISION(kInt8)>::PrepareForRun() {
   }
   /// select dw conv kernel
   if (kw == 3) {
-    // trans weights
+// trans weights
+#ifndef LITE_SHUTDOWN_LOG
     VLOG(5) << "invoke 3x3 dw conv int8 kernel int8 out";
+#endif
     impl_ = lite::arm::math::conv_depthwise_3x3_int8_int8;
     int cround = ROUNDUP(w_dims[0], 8);
     weights_.Resize({cround / 8, 1, kh * kw, 8});
@@ -145,8 +155,10 @@ void DepthwiseConv<PRECISION(kInt8), PRECISION(kInt8)>::PrepareForRun() {
     lite::arm::math::conv_trans_weights_numc(wptr, wptr_new, oc, 1, 8, 9);
     flag_trans_weights_ = true;
   } else if (kw == 5) {
-    // trans weights
+// trans weights
+#ifndef LITE_SHUTDOWN_LOG
     VLOG(5) << "invoke 5x5 dw conv int8 kernel int8 out";
+#endif
     impl_ = lite::arm::math::conv_depthwise_5x5_int8_int8;
     int cround = ROUNDUP(w_dims[0], 8);
     weights_.Resize({cround / 8, 1, kh * kw, 8});

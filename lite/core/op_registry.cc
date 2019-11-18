@@ -25,7 +25,10 @@ std::list<std::unique_ptr<KernelBase>> KernelRegistry::Create(
     PrecisionType precision,
     DataLayoutType layout) {
   Place place{target, precision, layout};
+#ifndef LITE_SHUTDOWN_LOG
   VLOG(5) << "creating " << op_type << " kernel for " << place.DebugString();
+#endif
+
 #define CREATE_KERNEL1(target__, precision__)                                \
   switch (layout) {                                                          \
     case DATALAYOUT(kNCHW):                                                  \
