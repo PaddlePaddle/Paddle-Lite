@@ -89,6 +89,14 @@ struct FcParam {
   WITH_INT8_CONFIG
 };
 
+struct SearchSeqFcParam {
+  lite::Tensor* x{nullptr};
+  lite::Tensor* w{nullptr};
+  lite::Tensor* b{nullptr};
+  lite::Tensor* out{nullptr};
+  int out_size;
+};
+
 // For Interpolate Op
 struct InterpolateParam {
   lite::Tensor* X{};
@@ -949,6 +957,38 @@ struct AssignValueParam {
   std::vector<float> fp32_values{};
   std::vector<int> int32_values{};
   lite::Tensor* Out{};
+};
+
+/// --------------------- match_matrix_tensor operators --------------------
+struct MatchMatrixTensorParam {
+  const lite::Tensor* x{};
+  const lite::Tensor* y{};
+  const lite::Tensor* w{};
+  lite::Tensor* out{};
+  lite::Tensor* tmp{};
+
+  int dim_t;
+};
+
+/// --------------------- search_seq_depadding operators --------------------
+struct SearchSeqDepaddingParam {
+  const lite::Tensor* pad{};
+  const lite::Tensor* src{};
+  lite::Tensor* out{};
+};
+
+/// --------------------- search_grnn operators --------------------
+struct SearchGrnnParam {
+  const lite::Tensor* x{};
+  const lite::Tensor* wi{};
+  const lite::Tensor* wh{};
+  int num_input;
+  int num_hidden;
+
+  lite::Tensor* out{};
+  lite::Tensor* tmp_buffer{};
+  lite::Tensor* idx_sorted_by_width{};
+  lite::Tensor* layout_input{};
 };
 
 }  // namespace operators

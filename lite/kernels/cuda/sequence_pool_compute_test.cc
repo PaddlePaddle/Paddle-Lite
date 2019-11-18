@@ -26,26 +26,6 @@ namespace cuda {
 
 namespace {
 
-static void sequence_pool_ref(const operators::SequencePoolParam& param, ) {
-  auto* x = param.X;
-  auto* out = param.Out;
-  auto dims = x->dims();
-  auto lod = x->lod();
-  CHECK_EQ(lod.size(), 1UL);
-  CHECK_GE(dims[0], static_cast<int64_t>(lod[0].size() - 1));
-
-  dims[0] = lod[0].size() - 1;
-  out->Resize({dims});
-  out->mutable_data<float>();
-  lite::Tensor* index = nullptr;
-
-  const bool is_test = true;
-  float pad_value = 0.0;
-
-  lite::x86::math::SequencePoolFunctor<lite::TargetType::kX86, float> pool;
-  pool(context, param.pool_type, pad_value, *x, out, is_test, index);
-}
-
 #define PREPARE_INPUT_DATA(name)                                 \
   name.Resize({name##_lod_len, feature_len});                    \
   name##_cpu.Resize({name##_lod_len, feature_len});              \
@@ -78,24 +58,19 @@ TEST(sequence_pool_cuda, normal) {
   auto& context_ref = ctx_ref->As<X86Context>();
 
   operators::SequencePoolParam param;
-  lite::Tensor x1, x2, x3, x1_cpu, x2_cpu, x3_cpu, x1_ref, x2_ref, x3_ref;
+  lite::Tensor x1, x1_cpu, x1_ref;
   lite::Tensor y, y_cpu, y_ref;
 
   int32_t x1_lod_len = 10, feature_len = 4;
-  int32_t x2_lod_len = 4, x3_lod_len = 8;
-  int32_t y_lod_len = x1_lod_len + x2_lod_len + x3_lod_len;
+  int32_t y_lod_len = x1_lod_len;
   LoD lod_info_x1{{0, 3, 5, 6, 10}};
-  LoD lod_info_x2{{0, 1, 2, 3, 4}};
-  LoD lod_info_x3{{0, 2, 4, 6, 8}};
-  LoD lod_info_y{{0, 0, 0, 0, 0}};
+  LoD lod_info_y{{0, 3, 5, 6, 10}};
+
   for (size_t i = 0; i < lod_info_x1[0].size(); ++i) {
-    lod_info_y[0][i] =
-        lod_info_x1[0][i] + lod_info_x2[0][i] + lod_info_x3[0][i];
+    lod_info_y[0][i] = lod_info_x1[0][i];
   }
 
   PREPARE_INPUT_DATA(x1);
-  PREPARE_INPUT_DATA(x2);
-  PREPARE_INPUT_DATA(x3);
   PREPARE_OUTPUT_INFO(y);
 
   param.X = &x1;
@@ -117,10 +92,19 @@ TEST(sequence_pool_cuda, normal) {
 
   param.X = &x1_ref;
   param.Out = &y_ref;
-  sequence_pool_ref(param);
+
+  lite::Tensor* index = nullptr;
+  const bool is_test = true;
+  float pad_value = 0.0;
 
   lite::x86::math::SequencePoolFunctor<lite::TargetType::kX86, float> pool;
-  pool(context, param.pool_type, pad_value, *x, out, is_test, index);
+  pool(context_ref,
+       param.pool_type,
+       pad_value,
+       param.X,
+       param.Out,
+       is_test,
+       index);
 
   float* y_ref_data = y_ref.mutable_data<float>();
   for (int i = 0; i < y.numel(); i++) {
