@@ -769,6 +769,13 @@ struct SequenceConcatParam {
   lite::Tensor* Out{};
 };
 
+struct SequenceArithmeticParam {
+  const lite::Tensor* X{};
+  const lite::Tensor* Y{};
+  int op_type{1};
+  lite::Tensor* Out{};
+};
+
 struct ReduceMaxParam {
   const lite::Tensor* X{};
   lite::Tensor* Out{};
