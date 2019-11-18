@@ -150,7 +150,8 @@ void DepthwiseConv3x3S1<float, float>(const framework::Tensor &input,
   const int out_image_size = output_h * output_w;
   const int valid_h_start = padding_h;
   const int valid_h_end = output_h - valid_h_start;
-  const int valid_h = valid_h_end - valid_h_start;
+  const int valid_h =
+      valid_h_end - valid_h_start > 0 ? valid_h_end - valid_h_start : 0;
   const int valid_w_start = padding_w;
   const int valid_w_end = output_w - valid_w_start;
   const int valid_w = valid_w_end - valid_w_start;
@@ -631,7 +632,7 @@ void DepthwiseConv3x3S1<float, float>(const framework::Tensor &input,
       }
     }
     // pad bottom
-    for (int h = valid_h_end; h < output_h; ++h) {
+    for (int h = valid_h_end; (h < output_h) && (h > valid_h_start - 1); ++h) {
       DepthwiseConv3x3NormalRow<1, 1>(input_ptr, filter_ptr, h, input_h,
                                       input_w, padding_h, padding_w, output_w,
                                       output_ptr, _ker);
@@ -659,7 +660,8 @@ void DepthwiseConv3x3S2<float, float>(const framework::Tensor &input,
   const int valid_h_start = (padding_h + 1) / 2;
   const int valid_h_end =
       std::max((input_h + padding_h - 1) / 2, valid_h_start);
-  const int valid_h = valid_h_end - valid_h_start;
+  const int valid_h =
+      valid_h_end - valid_h_start > 0 ? valid_h_end - valid_h_start : 0;
   const int valid_w_start = (padding_w + 1) / 2;
   const int valid_w_end =
       std::max((input_w + padding_w - 1) / 2, valid_w_start);
@@ -1045,7 +1047,7 @@ void DepthwiseConv3x3S2<float, float>(const framework::Tensor &input,
       }
     }
     // pad bottom
-    for (int h = valid_h_end; h < output_h; ++h) {
+    for (int h = valid_h_end; (h < output_h) && (h < valid_h_start - 1); ++h) {
       DepthwiseConv3x3NormalRow<2, 2>(input_ptr, filter_ptr, h, input_h,
                                       input_w, padding_h, padding_w, output_w,
                                       output_ptr, _ker);
