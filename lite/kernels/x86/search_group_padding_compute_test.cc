@@ -23,68 +23,6 @@ namespace paddle {
 namespace lite {
 namespace kernels {
 namespace x86 {
-/*
-static void search_group_padding_ref(const lite::Tensor* bottom0,
-                                     lite::Tensor* top0,
-                                     lite::Tensor* top1,
-                                     lite::Tensor* top2,
-                                     int _pad_id) {
-  int batch = bottom0->lod()[0].size() - 1;
-  int dim0 = bottom0->dims()[0];
-  int dim1 = bottom0->dims()[1];
-
-  const auto offset = bottom0->lod()[0];
-  int max_seq = 0;
-  for (int i = 0; i < batch; ++i) {
-    if (offset[i + 1] - offset[i] > max_seq) {
-      max_seq = offset[i + 1] - offset[i];
-    }
-  }
-  std::vector<size_t> new_offset;
-  new_offset.resize(batch + 1);
-  for (int i = 0; i < batch + 1; ++i) {
-    new_offset[i] = i * max_seq;
-  }
-  // for padding data
-  lite::LoD top0_lod;
-  top0_lod.push_back(new_offset);
-  top0->set_lod(top0_lod);
-  top0->Resize({batch * max_seq, dim1});
-  // for origin input id
-  // already set by ShareLoD in InferShape
-  lite::LoD top1_lod;
-  top1_lod.push_back(offset);
-  top1->set_lod(top1_lod);
-  top1->Resize({dim0, 1});
-  memset(top1->mutable_data<float>()),
-         0,
-         top1->dims()[0] * top1->dims()[1] * sizeof(float));
-  // for padding input id
-  lite::LoD top2_lod;
-  top2_lod.push_back(new_offset);
-  top2->set_lod(top2_lod);
-  top2->Resize({batch * max_seq, 1});
-  // copy data
-  const auto* bottom_data = bottom0->data<float>();
-  auto* top_data = top0->mutable_data<float>();
-  auto* top_padding_input_data = top2->mutable_data<float>();
-  for (int i = 0; i < batch; i++) {
-    const int copy_step = offset[i + 1] - offset[i];
-    const int start = i * max_seq;
-    memcpy(top_data + start * dim1,
-           bottom_data + offset[i] * dim1,
-           copy_step * dim1 * sizeof(float));
-    memset(top_data + (start + copy_step) * dim1,
-           0,
-           (max_seq - copy_step) * dim1 * sizeof(float));
-    // for padding input id
-    memset(top_padding_input_data + start, 0, copy_step * sizeof(T));
-    for (int j = start + copy_step; j < start + max_seq; j++) {
-      top_padding_input_data[j] = static_cast<float>(_pad_id);
-    }
-  }
-}
-*/
 
 TEST(search_group_padding_x86, retrieve_op) {
   auto search_group_padding =
