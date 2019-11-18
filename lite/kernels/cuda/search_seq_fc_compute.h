@@ -31,7 +31,7 @@ class SearchSeqFcCompute : public KernelLite<TARGET(kCUDA), PRECISION(kFloat)> {
 
   void PrepareForRun() override;
   void Run() override;
-  virtual ~SearchAlignedMatMulCompute() = default;
+  virtual ~SearchSeqFcCompute() = default;
 
  private:
   std::unique_ptr<lite::cuda::math::Gemm<float, float>> gemm_impl_{nullptr};

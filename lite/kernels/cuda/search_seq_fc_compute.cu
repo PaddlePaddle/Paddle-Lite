@@ -40,7 +40,7 @@ void SearchSeqFcCompute::Run() {
   auto& param = this->Param<param_t>();
   CHECK(ctx_) << "running context should be set first";
   auto& cuda_ctx = ctx_->template As<CUDAContext>();
-  auto cuda_stream = ctx.exec_stream();
+  auto cuda_stream = cuda_ctx.exec_stream();
 
   auto x = param.x;
   auto w = param.w;
@@ -61,21 +61,22 @@ void SearchSeqFcCompute::Run() {
   int K = x_dims[1];
   int N = w_dims[0];
   auto x_data = x->data<float>();
-  auto y_data = y->data<float>();
+  auto w_data = w->data<float>();
   auto out_data = out->mutable_data<float>(TARGET(kCUDA));
 
   CHECK(gemm_impl_->init(false, true, M, N, K, &cuda_ctx));
-  gemm_impl_->run(1.0f, 0.0f, x_data, y_data, out_data);
+  gemm_impl_->run(1.0f, 0.0f, x_data, w_data, out_data, &cuda_ctx);
 
   if (b != nullptr) {
     auto b_dims = b->dims();
     CHECK_EQ(b_dims.size(), 1) << "b should be 1-D tensor.";
     CHECK_EQ(b_dims[0], w_dims[0]) << "Wrong shape: b_dims[0] != w_dims[0]";
+    auto b_data = b->mutable_data<float>();
     int total_size = M * N;
     add_bias<float><<<CUDA_GET_BLOCKS(total_size),
                       CUDA_NUM_THREADS,
                       0,
-                      cuda_stream>>>(total_size, N, b, out_data);
+                      cuda_stream>>>(total_size, N, b_data, out_data);
   }
 }
 

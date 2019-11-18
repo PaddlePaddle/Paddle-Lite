@@ -30,8 +30,6 @@ void search_seq_fc_compute_ref(const operators::SearchSeqFcParam& param) {
   auto b = param.b;
   auto out = param.out;
   auto out_size = param.out_size;
-  const auto x_data = x->data<float>();
-  const auto w_data = w->data<float>();
   const auto x_dims = x->dims();
   const auto w_dims = w->dims();
   const auto& x_lod = x->lod();
@@ -44,10 +42,13 @@ void search_seq_fc_compute_ref(const operators::SearchSeqFcParam& param) {
   CHECK_EQ(w_dims.size(), 2) << "W should be 2-D tensor.";
   CHECK_EQ(x_dims[1], w_dims[1]) << "Wrong shape: x_dims[1] != w_dims[1]";
   CHECK_EQ(w_dims[0], out_size) << "Wrong shape: w_dims[0] != out_size";
-
+  int M = x_dims[0];
+  int K = x_dims[1];
+  int N = w_dims[0];
   auto x_data = x->data<T>();
   auto w_data = w->data<T>();
   auto out_data = out->mutable_data<T>();
+
 #pragma omp parallel for
   for (int i = 0; i < M; i++) {
     for (int j = 0; j < N; j++) {
@@ -65,7 +66,7 @@ void search_seq_fc_compute_ref(const operators::SearchSeqFcParam& param) {
     auto b_dims = b->dims();
     CHECK_EQ(b_dims.size(), 1) << "b should be 1-D tensor.";
     CHECK_EQ(b_dims[0], w_dims[0]) << "Wrong shape: b_dims[0] != w_dims[0]";
-    auto b_data = b->data<float>();
+    auto b_data = b->data<T>();
     for (int i = 0; i < M; i++) {
       for (int j = 0; j < N; j++) {
         out_data[i * N + j] += b_data[j];
@@ -115,7 +116,7 @@ TEST(search_seq_fc_compute, normal) {
           for (int i = 0; i < x_host.dims().production(); i++) {
             x_host_data[i] = i * 0.125f;
           }
-          for (int i = 0; i < y_host.dims().production(); i++) {
+          for (int i = 0; i < w_host.dims().production(); i++) {
             w_host_data[i] = i * 0.5f;
           }
           x_dev.Assign<float, lite::DDim, TARGET(kCUDA)>(x_host_data,
