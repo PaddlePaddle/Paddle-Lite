@@ -50,8 +50,6 @@ math_library(unpooling)
 math_library(vol2col)
 ## math_library(prelu)
 math_library(tree2col DEPS math_function)
-
-#add by zhiqiang
 math_library(sequence_topk_avg_pooling)
 math_library(search_fc DEPS blas dynload_mklml)
 # cc_test(math_function_test SRCS math_function_test.cc DEPS math_function)
