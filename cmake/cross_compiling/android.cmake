@@ -18,6 +18,7 @@ endif()
 
 set(ANDROID TRUE)
 add_definitions(-DLITE_WITH_LINUX)
+add_definitions(-DLITE_WITH_ANDROID)
 
 if(NOT DEFINED ANDROID_NDK)
     set(ANDROID_NDK $ENV{NDK_ROOT})
@@ -32,7 +33,10 @@ if(ARM_TARGET_LANG STREQUAL "gcc")
 endif()
 
 if(NOT DEFINED ANDROID_API_LEVEL)
-    set(ANDROID_API_LEVEL "22")
+    set(ANDROID_API_LEVEL "23")
+    if(ARM_TARGET_ARCH_ABI STREQUAL "armv7")
+        set(ANDROID_API_LEVEL "22")
+    endif()
 endif()
 
 # then check input arm abi

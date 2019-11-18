@@ -45,23 +45,42 @@ bool InterpolateOp::InferShape() const {
   int out_h;
   int out_w;
 
-  if (OutSize != nullptr) {
-    auto outsize_data = OutSize->data<int>();
-    int h_out = outsize_data[0];  // HW
-    int w_out = outsize_data[1];  // HW
-    param_.Out->Resize({n, c, h_out, w_out});
+  auto SizeTensor = param_.SizeTensor;
+  if (!SizeTensor.empty()) {
+    CHECK(SizeTensor.size() == 2)
+        << "Input(SizeTensor)'size of Op(interpolate) must be 2. "
+           "Attr(out_shape)'s length must be 2 for 4-D input tensor.";
+    out_h = param_.out_h;
+    out_w = param_.out_w;
+    param_.Out->Resize({n, c, out_h, out_w});
+    return true;
+  }
+
+  auto Scale = param_.Scale;
+  if (Scale) {
+    auto scale_dims = Scale->dims();
+    CHECK(scale_dims.size() == 1) << "Scale's dimension size must be 1.";
+    out_h = -1;
+    out_w = -1;
   } else {
-    if (0 >= param_.out_h && 0 >= param_.out_w) {
-      out_h = h * param_.scale;
-      out_w = w * param_.scale;
+    auto scale = param_.scale;
+    if (scale > 0) {
+      out_h = static_cast<int>(h * scale);
+      out_w = static_cast<int>(w * scale);
       out_h = out_h > 0 ? out_h : -1;
       out_w = out_w > 0 ? out_w : -1;
     } else {
       out_h = param_.out_h;
       out_w = param_.out_w;
     }
-    param_.Out->Resize({n, c, out_h, out_w});
   }
+
+  if (OutSize != nullptr) {
+    auto out_lod = param_.Out->mutable_lod();
+    *out_lod = param_.X->lod();
+  }
+  param_.Out->Resize({n, c, out_h, out_w});
+
   return true;
 }
 
@@ -76,6 +95,24 @@ bool InterpolateOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
   } else {
     param_.OutSize = nullptr;
   }
+
+  if (op_desc.HasInput("SizeTensor")) {
+    auto size_tensor = op_desc.Input("SizeTensor");
+    for (auto var : size_tensor) {
+      param_.SizeTensor.push_back(
+          scope->FindVar(var)->GetMutable<lite::Tensor>());
+    }
+  }
+
+  if (op_desc.HasInput("Scale")) {
+    auto scale_var_names = op_desc.Input("Scale");
+    if (scale_var_names.size() > 0) {
+      param_.Scale =
+          scope->FindVar(scale_var_names.front())->GetMutable<lite::Tensor>();
+    }
+  } else {
+    param_.Scale = nullptr;
+  }
   auto Out = op_desc.Output("Out").front();
   param_.X = scope->FindVar(X)->GetMutable<lite::Tensor>();
   param_.Out = scope->FindVar(Out)->GetMutable<lite::Tensor>();
@@ -87,6 +124,9 @@ bool InterpolateOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
   }
   if (op_desc.HasAttr("out_h")) {
     param_.out_h = op_desc.GetAttr<int>("out_h");
+  }
+  if (op_desc.HasAttr("align_mode")) {
+    param_.align_mode = op_desc.GetAttr<int>("align_mode");
   }
   param_.align_corners = op_desc.GetAttr<bool>("align_corners");
   param_.interp_method = op_desc.GetAttr<std::string>("interp_method");

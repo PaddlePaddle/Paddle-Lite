@@ -174,6 +174,7 @@ class PaddlePredictor {
   virtual bool Run(const std::vector<PaddleTensor>& inputs,
                    std::vector<PaddleTensor>* output_data,
                    int batch_size = -1) = 0;
+  virtual std::string GetExceptionMsg() { return ""; }
   // Destroy the Predictor.
   virtual ~PaddlePredictor() = default;
 
@@ -220,6 +221,7 @@ struct PaddleMobileConfig : public PaddlePredictor::Config {
   bool lod_mode = false;
   int thread_num = 1;
   bool load_when_predict = false;
+  bool mem_opt = true;
   std::string cl_path;
   struct PaddleModelMemoryPack memory_pack;
 };

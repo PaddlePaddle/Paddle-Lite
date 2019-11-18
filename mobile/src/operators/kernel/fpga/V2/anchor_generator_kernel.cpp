@@ -37,7 +37,7 @@ bool AnchorGeneratorKernel<FPGA, float>::Init(
   int anchors_offset[] = {-2,  -2,   18,   18,  -10, -9,   26,   25,   -23,
                           -20, 39,   36,   -43, -34, 59,   49,   -63,  -54,
                           79,  69,   -96,  -77, 112, 93,   -137, -118, 153,
-                          134, -204, -188, 220, 204, -281, -395, 296,  441};
+                          134, -204, -188, 220, 204, -281, -395, 296,  411};
 
   int anchors_offset2[] = {0, 0, 51, 77, 0, 0, 30, 35, 0, 0, 81, 103,
                            0, 0, 20, 21, 0, 0, 36, 44, 0, 0, 43, 58,
@@ -45,9 +45,9 @@ bool AnchorGeneratorKernel<FPGA, float>::Init(
 
   if (offset > 0.6) {
     memcpy(anchors_offset, anchors_offset2, sizeof(anchors_offset));
-    std::cout << "anchor generator marker" << std::endl;
+    DLOG << "anchor generator marker";
   } else {
-    std::cout << "anchor generator rfcn" << std::endl;
+    DLOG << "anchor generator rfcn";
   }
   int num_anchors = sizeof(anchors_offset) / (sizeof(int) * 4);
 

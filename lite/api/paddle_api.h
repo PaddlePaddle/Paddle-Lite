@@ -45,8 +45,15 @@ struct LITE_API Tensor {
   template <typename T>
   T* mutable_data(TargetType type = TargetType::kHost) const;
 
+  template <typename T, TargetType type = TargetType::kHost>
+  void CopyFromCpu(const T* data);
+
+  template <typename T>
+  void CopyToCpu(T* data);
   /// Shape of the tensor.
   shape_t shape() const;
+  TargetType target() const;
+  PrecisionType precision() const;
 
   // LoD of the tensor
   lod_t lod() const;
@@ -71,6 +78,7 @@ class LITE_API PaddlePredictor {
   virtual std::unique_ptr<const Tensor> GetOutput(int i) const = 0;
 
   virtual void Run() = 0;
+  virtual std::shared_ptr<PaddlePredictor> Clone() = 0;
 
   virtual std::string GetVersion() const = 0;
 
@@ -90,9 +98,14 @@ class LITE_API PaddlePredictor {
   /// CxxConfig, and the persisted model can be reused for MobileConfig.
   virtual void SaveOptimizedModel(
       const std::string& model_dir,
-      LiteModelType model_type = LiteModelType::kProtobuf);
+      LiteModelType model_type = LiteModelType::kProtobuf,
+      bool record_info = false);
 
   virtual ~PaddlePredictor() = default;
+
+ protected:
+  int threads_{1};
+  lite_api::PowerMode mode_{lite_api::LITE_POWER_NO_BIND};
 };
 
 /// Base class for all the configs.

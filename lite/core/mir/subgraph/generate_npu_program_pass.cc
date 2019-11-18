@@ -22,14 +22,9 @@
 #include "lite/core/mir/pass_registry.h"
 #include "lite/core/mir/pattern_matcher.h"
 
-#include "ai_ddk_lib/include/HiAiModelManagerService.h"
-#include "ai_ddk_lib/include/graph/graph.h"
-#include "ai_ddk_lib/include/graph/model.h"
-#include "ai_ddk_lib/include/graph/op/all_ops.h"  // for ge::op::Data
-#include "ai_ddk_lib/include/graph/operator_reg.h"
-#include "lite/backends/npu/bridge/paddle_use_npu_bridges.h"
-#include "lite/backends/npu/bridge/registry.h"
-#include "lite/backends/npu/bridge/utils.h"
+#include "lite/backends/npu/builder.h"
+#include "lite/kernels/npu/bridges/paddle_use_npu_bridges.h"
+#include "lite/kernels/npu/bridges/registry.h"
 
 namespace paddle {
 namespace lite {
@@ -40,7 +35,7 @@ std::shared_ptr<ge::Operator> GenerateNPUProgramPass::CvtVarNode(
     lite::mir::Node* var_node, const Scope* scope) {
   CHECK(var_node->IsArg());
   const auto& arg = var_node->AsArg();
-  VLOG(4) << "Convert var node " << arg.name;
+  VLOG(4) << "[NPU] Convert var node " << arg.name;
 
   auto* var = scope->FindVar(arg.name);
   CHECK(var);
@@ -49,13 +44,13 @@ std::shared_ptr<ge::Operator> GenerateNPUProgramPass::CvtVarNode(
   auto dims = tensor->dims();
   if (arg.is_weight) {
     auto wgt = std::make_shared<ge::op::Const>(arg.name);
-    LOG(INFO) << "in convert const:" << arg.name;
+    LOG(INFO) << "[NPU] Convert const var node " << arg.name;
     VLOG(4) << dims;
-    wgt->set_attr_value(lite::npu::bridge::CvtFromLiteTensor(tensor));
+    wgt->set_attr_value(lite::npu::CvtTensor(tensor));
     return wgt;
   } else {
     CHECK_EQ(dims.size(), 4);
-    LOG(INFO) << "in convert data:" << arg.name;
+    LOG(INFO) << "[NPU] Convert data var node " << arg.name;
     LOG(INFO) << dims;
     // TODO(xxx): support more types and dims size
     ge::TensorDesc desc(ge::Shape(dims.Vectorize()),
@@ -74,13 +69,13 @@ std::shared_ptr<ge::Operator> GenerateNPUProgramPass::CvtVarNode(
 
 void GenerateNPUProgramPass::CvtAllOpNodes(
     const std::vector<Node*>& nodes2cvt,
-    lite::npu::bridge::node_map_type* converted_vars) {
-  const auto& bridges = lite::npu::bridge::Factory::Instance();
+    lite::kernels::npu::bridges::node_map_type* converted_vars) {
+  const auto& bridges = lite::kernels::npu::bridges::Factory::Instance();
   const auto& cvtfunc_map = bridges.AllFunctions();
   // return record all converted vars
   // op node's inputs must be found in converted_vars
   for (auto& node : nodes2cvt) {
-    lite::npu::bridge::node_map_type node_inputs;
+    lite::kernels::npu::bridges::node_map_type node_inputs;
     auto& stmt = node->AsStmt();
     for (auto& var_node : node->inlinks) {
       auto& arg = var_node->AsArg();
@@ -106,7 +101,7 @@ std::string GenerateNPUProgramPass::BuildNPUGraph(
     const std::unordered_set<Node*>& out_data_vars,
     int sub_id) {
   auto ordered_nodes = GetTopologicalOrder(op_nodes);
-  lite::npu::bridge::node_map_type converted_vars;
+  lite::kernels::npu::bridges::node_map_type converted_vars;
   CvtAllOpNodes(ordered_nodes, &converted_vars);
 
   std::vector<std::string> in_var_names;
@@ -132,11 +127,11 @@ std::string GenerateNPUProgramPass::BuildNPUGraph(
   // Compiling IR graph to NPU model and store mode data into weight tensor with
   // persistable=true, Sothat the model parser can recognize it and save it to
   // param files
-  if (!lite::npu::bridge::BuildModel(inputs, outputs, weight)) {
-    LOG(WARNING) << "Build NPU failed subgraph " << sub_id;
-    throw std::runtime_error("Build NPU failed subgraph.");
+  if (!lite::npu::BuildModel(inputs, outputs, weight)) {
+    LOG(WARNING) << "[NPU] Build NPU graph failed (subgraph=" << sub_id << ")";
+    throw std::runtime_error("Build NPU graph failed.");
   }
-  LOG(INFO) << "[NPU] Build NPU Client success subgraph " << sub_id;
+  LOG(INFO) << "[NPU] Build NPU graph success (subgraph=" << sub_id << ")";
   return weight_var_name;
 }
 
@@ -171,12 +166,12 @@ void GenerateNPUProgramPass::GenNPUSubgraph(
 }
 
 void GenerateNPUProgramPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
-  LOG(INFO) << "Before NPU Pass \n" << Visualize(graph.get());
-  const auto& bridges = lite::npu::bridge::Factory::Instance();
+  LOG(INFO) << "[NPU] Before NPU Pass \n" << Visualize(graph.get());
+  const auto& bridges = lite::kernels::npu::bridges::Factory::Instance();
   const auto& op_map = bridges.AllFunctions();
   std::vector<std::string> supported_op_types;
   for (auto& i : op_map) {
-    LOG(INFO) << "Supported type: " << i.first;
+    LOG(INFO) << "[NPU] Supported type: " << i.first;
     supported_op_types.push_back(i.first);
   }
 
@@ -187,15 +182,15 @@ void GenerateNPUProgramPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
     CHECK_EQ(op_nodes_all.size(), num_subgraph);
     int id = 1;
     for (auto& op_nodes : op_nodes_all) {
-      LOG(INFO) << "Converting subgraph_id:" << id;
+      LOG(INFO) << "[NPU] Converting Subgraph " << id;
       GenNPUSubgraph(graph, op_nodes.second, id);
-      LOG(INFO) << "After NPU Pass Subgraph " << id << "\n"
+      LOG(INFO) << "[NPU] After NPU Pass Subgraph " << id << "\n"
                 << Visualize(graph.get());
       id++;
     }
   } catch (...) {
-    LOG(WARNING) << "Build NPU graph failed";
-    throw std::runtime_error("Build NPU graph failed");
+    LOG(WARNING) << "[NPU] Build NPU graph failed.";
+    throw std::runtime_error("[NPU] Build NPU graph failed.");
   }
 
   for (auto& item : graph->StmtTopologicalOrder()) {
@@ -208,7 +203,7 @@ void GenerateNPUProgramPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 }
 
 std::unique_ptr<RuntimeProgram> GenerateNPUProgramPass::GenProgram() {
-  LOG(INFO) << "insts.size " << insts_.size();
+  LOG(INFO) << "[NPU] program insts.size " << insts_.size();
   std::unique_ptr<RuntimeProgram> program(
       new RuntimeProgram(std::move(insts_)));
   return program;

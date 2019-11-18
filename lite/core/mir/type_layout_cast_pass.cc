@@ -37,7 +37,7 @@ void TypeLayoutTransformPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   VLOG(4) << "nodes.size():" << nodes.size();
   for (auto& node : nodes) {
     VLOG(4) << "!node->IsStmt():" << !node->IsStmt();
-    if (!node->IsStmt()) continue;
+    if (!node->IsStmt() || node->AsStmt().op_type() == "while") continue;
     auto inlinks = node->inlinks;
     VLOG(4) << "node->AsStmt().desc:" << node->AsStmt().desc
             << " inlinks.size():" << inlinks.size();
@@ -127,24 +127,30 @@ void TypeLayoutTransformPass::AddLayoutInst(
   for (auto& kernel : kernels) {
     const Type* in_arg_ty = kernel->GetInputDeclType("Input");
     const Type* out_arg_ty = kernel->GetOutputDeclType("Out");
-#ifdef LITE_WITH_OPENCL
+
     // layout kernel choose
     //   must ignore [layout check] for layout of kernels's input and output
-    if (TargetCompatibleTo(*in_arg_ty, from) &&
-        PrecisionCompatibleTo(*in_arg_ty, from) &&
-        DeviceCompatibleTo(*in_arg_ty, from) &&
-        out_arg_ty->layout() == to.layout()) {
-#else
-    if (TypeCompatible(*in_arg_ty, from) &&
-        out_arg_ty->layout() == to.layout()) {
-#endif
+    // note: replace LITE_WITH_OPENCL macro with judge input and output target
+    // of layout_trans
+    if ((in_arg_ty->target() == TARGET(kOpenCL) ||
+         out_arg_ty->target() == TARGET(kOpenCL)) &&  // judge OpenCL first
+        (TargetCompatibleTo(*in_arg_ty, from) &&
+         PrecisionCompatibleTo(*in_arg_ty, from) &&
+         DeviceCompatibleTo(*in_arg_ty, from) &&
+         out_arg_ty->layout() == to.layout())) {
       is_found = true;
+    } else if (TypeCompatible(*in_arg_ty, from) &&
+               out_arg_ty->layout() == to.layout()) {
+      is_found = true;
+    }
+    if (is_found) {
       selected_kernels.emplace_back(std::move(kernel));
       // we pick the kernel
       layout_inst->AsStmt(layout_type, std::move(selected_kernels), layout_op);
       break;
     }
   }
+
   CHECK(is_found) << "Can't find a layout kernel for layout op: " << from << ":"
                   << in->AsArg().name << "->" << to << ":"
                   << inst_node->AsStmt().op_info()->Type();

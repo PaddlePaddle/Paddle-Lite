@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #pragma once
+#include <map>
 #include <memory>
 #include <string>
 #include <vector>
@@ -27,6 +28,9 @@
 #include "lite/model_parser/model_parser.h"
 #ifdef LITE_WITH_NPU
 #include "lite/core/mir/subgraph/generate_npu_program_pass.h"
+#endif
+#ifdef LITE_WITH_XPU
+#include "lite/core/mir/subgraph/generate_xpu_program_pass.h"
 #endif
 
 namespace paddle {
@@ -46,6 +50,22 @@ class Optimizer {
     valid_places_ = valid_places;
     CHECK(!valid_places.empty()) << "At least one valid_place should be set";
     CHECK(!graph_) << "duplicate optimize found";
+    auto valid_places_has_target = [&](TargetType t) -> bool {
+      for (auto& p : valid_places) {
+        if (p.target == t) {
+          return true;
+        }
+      }
+      return false;
+    };
+    std::map<std::string, bool> lite_with_targets{
+        {"kOpenCL", valid_places_has_target(TARGET(kOpenCL))},
+        {"kNPU", valid_places_has_target(TARGET(kNPU))},
+        {"kXPU", valid_places_has_target(TARGET(kXPU))}};
+    VLOG(4) << "lite_with_targets['kOpenCL']:" << lite_with_targets["kOpenCL"];
+    VLOG(4) << "lite_with_targets['kNPU']:" << lite_with_targets["kNPU"];
+    VLOG(4) << "lite_with_targets['kXPU']:" << lite_with_targets["kXPU"];
+
     graph_.reset(new mir::SSAGraph);
     graph_->Build(program, valid_places);
     graph_->SetValidPlaces(valid_places);
@@ -54,14 +74,11 @@ class Optimizer {
     InitTargetTypeTransformPass();
 
     if (passes.empty()) {
-      RunPasses(std::vector<std::string>{
+      std::vector<std::string> passes_local{
           {"lite_quant_dequant_fuse_pass",     //
            "lite_conv_elementwise_fuse_pass",  // conv-elemwise-bn
            "lite_conv_bn_fuse_pass",           //
            "lite_conv_elementwise_fuse_pass",  // conv-bn-elemwise
-           // This pass is disabled to force some opencl kernels selected for
-           // final running, otherwise, they will be fused to ARM fusion
-           // kernels, and the OpenCL devices will be discarded.
            // TODO(Superjomn) Refine the fusion related design to select fusion
            // kernels for devices automatically.
            "lite_conv_activation_fuse_pass",              //
@@ -102,15 +119,17 @@ class Optimizer {
            "argument_type_display_pass",  //
 
            "variable_place_inference_pass",  //
-           "argument_type_display_pass",     //
+           "argument_type_display_pass",
 
            "runtime_context_assign_pass",
-           "argument_type_display_pass",  //
-#if !defined(LITE_WITH_OPENCL) && !defined(LITE_WITH_NPU)
-           // TODO(ysh329): cause CL_INVALID_MEM_OBJECT when setArg in kernel
-           "memory_optimize_pass",
-#endif
-           "argument_type_display_pass"}});
+           "argument_type_display_pass"}};
+      if ((!lite_with_targets["kOpenCL"]) && (!lite_with_targets["kNPU"]) &&
+          (!lite_with_targets["kXPU"])) {
+        // TODO(ysh329): cause CL_INVALID_MEM_OBJECT when setArg in OpenCL
+        // kernel
+        passes_local.emplace_back("memory_optimize_pass");
+      }
+      RunPasses(passes_local);
     } else {
       RunPasses(passes);
     }
@@ -121,15 +140,28 @@ class Optimizer {
 
   // Generate a new program based on the mir graph.
   std::unique_ptr<RuntimeProgram> GenRuntimeProgram() {
+#if defined(LITE_WITH_NPU) || defined(LITE_WITH_XPU)
+    auto target_place = Place{
 #ifdef LITE_WITH_NPU
-    if (std::find(valid_places_.begin(),
-                  valid_places_.end(),
-                  Place{TARGET(kNPU), PRECISION(kFloat)}) !=
+        TARGET(kNPU),
+#endif
+#ifdef LITE_WITH_XPU
+        TARGET(kXPU),
+#endif
+        PRECISION(kFloat)};
+    if (std::find(valid_places_.begin(), valid_places_.end(), target_place) !=
         valid_places_.end()) {
-      CheckInputDimsNotEmpty(exec_scope_);
+#ifdef LITE_WITH_NPU
       auto pass = mir::PassManager::Global()
                       .LookUp<mir::subgraph::GenerateNPUProgramPass>(
                           "generate_npu_program_pass");
+#endif
+
+#ifdef LITE_WITH_XPU
+      auto pass = mir::PassManager::Global()
+                      .LookUp<mir::subgraph::GenerateXPUProgramPass>(
+                          "generate_xpu_program_pass");
+#endif
       try {
         pass->Apply(graph_);
         auto program = pass->GenProgram();
@@ -137,7 +169,8 @@ class Optimizer {
         program->set_exec_scope(exec_scope_);
         return program;
       } catch (...) {
-        LOG(WARNING) << "Build NPU graph failed";
+        LOG(WARNING) << "Build " << TargetToStr(target_place.target)
+                     << " program failed!";
       }
     }
 #endif
@@ -148,19 +181,6 @@ class Optimizer {
     CHECK(exec_scope_);
     program->set_exec_scope(exec_scope_);
     return program;
-  }
-
-  // check the input dims in the scope, must not be empty
-  void CheckInputDimsNotEmpty(const lite::Scope* scope) {
-    CHECK(scope);
-    auto* feed_var = scope->FindVar("feed");
-    CHECK(feed_var) << "no feed variable in exec_scope: " << scope;
-    auto* feed_tensor_list = feed_var->GetMutable<std::vector<lite::Tensor>>();
-    CHECK_GE(feed_tensor_list->size(), 1);
-    for (size_t i = 0; i < feed_tensor_list->size(); ++i) {
-      CHECK(!feed_tensor_list->at(i).dims().empty())
-          << "Input " << i << " dims can not be empty.";
-    }
   }
 
   void InitTargetTypeTransformPass() {

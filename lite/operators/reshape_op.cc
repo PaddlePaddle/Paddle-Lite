@@ -48,7 +48,6 @@ bool ReshapeOp::InferShape() const {
 
   auto x_dims = param_.x->dims();
   auto output_dims = ValidateShape(final_shape, x_dims);
-  LOG(INFO) << "output_dims:" << output_dims;
   param_.output->Resize(output_dims);
   auto out_lod = param_.output->mutable_lod();
   *out_lod = param_.x->lod();
@@ -61,8 +60,8 @@ bool ReshapeOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   param_.output =
       scope->FindVar(opdesc.Output("Out").front())->GetMutable<lite::Tensor>();
 
-  if (opdesc.HasInput("ShapeTensor") &&
-      opdesc.Input("ShapeTensor").size() > 0) {
+  // prority: input(ShapeTensor) > input(Shape) > attr(shape)
+  if (opdesc.HasInput("ShapeTensor") && !opdesc.Input("ShapeTensor").empty()) {
     auto args = opdesc.Input("ShapeTensor");
     for (auto arg : args) {
       auto *var = scope->FindVar(arg);
@@ -70,8 +69,13 @@ bool ReshapeOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
         param_.shape_tensor_vct.push_back(var->GetMutable<lite::Tensor>());
       }
     }
+    CHECK_GT(param_.shape_tensor_vct.size(), 0)
+        << "ShapeError: When `shape` in ReshapeOp is a list or tuple "
+           "which contains Tensor, the shape's size can't be zero. "
+           "But received shape's size is "
+        << param_.shape_tensor_vct.size();
   }
-  if (opdesc.HasInput("Shape") && opdesc.Input("Shape").size() > 0) {
+  if (opdesc.HasInput("Shape") && !opdesc.Input("Shape").empty()) {
     auto var = scope->FindVar(opdesc.Input("Shape").front());
     if (var != nullptr) {
       param_.shape_tensor = var->GetMutable<lite::Tensor>();

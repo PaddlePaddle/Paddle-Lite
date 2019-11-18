@@ -28,6 +28,9 @@
 #ifdef LITE_WITH_NPU
 #include "lite/backends/npu/runtime.h"
 #endif
+#ifdef LITE_WITH_XPU
+#include "lite/backends/xpu/runtime.h"
+#endif
 
 #include <map>
 #include <memory>
@@ -55,6 +58,7 @@ using X86Context = Context<TargetType::kX86>;
 using CUDAContext = Context<TargetType::kCUDA>;
 using ARMContext = Context<TargetType::kARM>;
 using NPUContext = Context<TargetType::kNPU>;
+using XPUContext = Context<TargetType::kXPU>;
 using OpenCLContext = Context<TargetType::kOpenCL>;
 using FPGAContext = Context<TargetType::kFPGA>;
 
@@ -81,6 +85,20 @@ class Context<TargetType::kNPU> {
 
   NPUContext& operator=(const NPUContext& ctx) {}
   std::string name() const { return "NPUContext"; }
+};
+#endif
+
+#ifdef LITE_WITH_XPU
+template <>
+class Context<TargetType::kXPU> {
+ public:
+  Context() {}
+  explicit Context(const NPUContext& ctx);
+  // NOTE: InitOnce should only be used by ContextScheduler
+  void InitOnce() {}
+  void CopySharedTo(XPUContext* ctx) {}
+
+  std::string name() const { return "XPUContext"; }
 };
 #endif
 
@@ -214,6 +232,13 @@ class Context<TargetType::kCUDA> {
 
   std::string name() const { return "CUDAContext"; }
 
+  CUDAContext& operator=(const CUDAContext& context) {
+    this->Init(
+        context.device_id_, context.exec_stream_id_, context.io_stream_id_);
+    cublas_fp32_ = const_cast<CUDAContext&>(context).cublas_fp32();
+    return *this;
+  }
+
  private:
   int device_id_;
   // overall information
@@ -236,8 +261,6 @@ template <>
 class Context<TargetType::kX86> {
  public:
   Context() {}
-
-  Context(Context&& ctx) {}
 
   // NOTE: InitOnce should only be used by ContextScheduler
   void InitOnce() {}
@@ -340,6 +363,12 @@ class ContextScheduler {
             &ctx->As<NPUContext>());
         break;
 #endif
+#ifdef LITE_WITH_XPU
+      case TARGET(kXPU):
+        kernel_contexts_[TargetType::kXPU].As<XPUContext>().CopySharedTo(
+            &ctx->As<XPUContext>());
+        break;
+#endif
 #ifdef LITE_WITH_OPENCL
       case TARGET(kOpenCL):
         kernel_contexts_[TargetType::kOpenCL].As<OpenCLContext>().CopySharedTo(
@@ -386,6 +415,9 @@ class ContextScheduler {
 #endif
 #ifdef LITE_WITH_NPU
     InitContext<TargetType::kNPU, NPUContext>();
+#endif
+#ifdef LITE_WITH_XPU
+    InitContext<TargetType::kXPU, XPUContext>();
 #endif
   }
 

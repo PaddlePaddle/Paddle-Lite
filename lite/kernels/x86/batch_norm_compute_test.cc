@@ -104,7 +104,7 @@ TEST(batch_norm_x86, run_test) {
   operators::BatchNormParam param;
 
   param.x = &x;
-  param.is_test = false;
+  param.is_test = true;
   param.scale = &scale;
   param.bias = &bias;
   param.mean = &mean;

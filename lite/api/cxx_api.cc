@@ -13,7 +13,9 @@
 // limitations under the License.
 
 #include "lite/api/cxx_api.h"
+#include <algorithm>
 #include <memory>
+#include <set>
 #include <string>
 #include <utility>
 #include <vector>
@@ -22,8 +24,16 @@
 namespace paddle {
 namespace lite {
 
+static const char TAILORD_OPS_SOURCE_LIST_FILENAME[] =
+    ".tailored_ops_source_list";
+static const char TAILORD_OPS_LIST_NAME[] = ".tailored_ops_list";
+static const char TAILORD_KERNELS_SOURCE_LIST_FILENAME[] =
+    ".tailored_kernels_source_list";
+static const char TAILORD_KERNELS_LIST_NAME[] = ".tailored_kernels_list";
+
 void Predictor::SaveModel(const std::string &dir,
-                          lite_api::LiteModelType model_type) {
+                          lite_api::LiteModelType model_type,
+                          bool record_info) {
   if (!program_) {
     GenRuntimeProgram();
   }
@@ -39,6 +49,83 @@ void Predictor::SaveModel(const std::string &dir,
     default:
       LOG(FATAL) << "Unknown model type";
   }
+  if (record_info) {
+    SaveOpKernelInfo(dir);
+  }
+}
+
+void Predictor::SaveOpKernelInfo(const std::string &model_dir) {
+  std::set<std::string> ops_info;
+  std::set<std::string> kernels_info;
+  const auto &instructions_ = program_->instructions();
+  for (auto &node : instructions_) {
+    // parse op type infomation
+    auto op = node.op()->op_info();
+    ops_info.insert(op->Type());
+    // parse kernel type information
+    std::string kernel_type_str =
+        node.kernel()->op_type() + "," + TargetRepr(node.kernel()->target()) +
+        "," + PrecisionRepr(node.kernel()->precision()) + "," +
+        DataLayoutRepr(node.kernel()->layout()) + "," + node.kernel()->alias();
+    kernels_info.insert(kernel_type_str);
+  }
+
+  // get souce_file name from op type and kernel type
+  auto op2pathmap = OpKernelInfoCollector::Global().GetOp2PathDict();
+  auto kernel2pathmap = OpKernelInfoCollector::Global().GetKernel2PathDict();
+
+  // write used op and kernel info into files
+  std::string opf_path = model_dir + "/" + TAILORD_OPS_LIST_NAME;
+  std::string opf_source_path =
+      model_dir + "/" + TAILORD_OPS_SOURCE_LIST_FILENAME;
+  std::string kpf_path = model_dir + "/" + TAILORD_KERNELS_LIST_NAME;
+  std::string kpf_source_path =
+      model_dir + "/" + TAILORD_KERNELS_SOURCE_LIST_FILENAME;
+  std::map<std::string, std::string> op2path;
+
+  std::FILE *opf = std::fopen(opf_path.c_str(), "w");
+  std::FILE *opf_source = std::fopen(opf_source_path.c_str(), "w");
+  std::FILE *kpf = std::fopen(kpf_path.c_str(), "w");
+  std::FILE *kpf_source = std::fopen(kpf_source_path.c_str(), "w");
+  std::vector<std::string> opcompile;
+  std::vector<std::string> kernelcompile;
+
+  if (nullptr == opf || nullptr == opf_source || nullptr == opf ||
+      nullptr == kpf_source) {
+    LOG(FATAL) << "failed to create info file into: " << model_dir;
+  }
+  for (auto op_info = ops_info.begin(); op_info != ops_info.end(); op_info++) {
+    fputs(op_info->c_str(), opf);
+    fputc('\n', opf);
+    std::string op_path = op2pathmap[*op_info];
+    fputs(op_path.c_str(), opf_source);
+    fputc('\n', opf_source);
+  }
+  std::fclose(opf_source);
+  std::fclose(opf);
+  LOG(INFO) << "operators information of tailored model is stored into: "
+            << opf_path;
+
+  // write Kernel_type and Kernel_path into file
+  for (auto kernel_info = kernels_info.begin();
+       kernel_info != kernels_info.end();
+       kernel_info++) {
+    fputs(kernel_info->c_str(), kpf);
+    fputc('\n', kpf);
+    std::string kernel_path = kernel2pathmap[*kernel_info];
+    fputs(kernel_path.c_str(), kpf_source);
+    fputc('\n', kpf_source);
+    if (kernel_path == "conv_compute.cc") {
+      fputs(
+          "conv_depthwise.cc\nconv_direct.cc\nconv_gemmlike.cc\nconv_"
+          "winograd.cc\n",
+          kpf_source);
+    }
+  }
+  std::fclose(kpf_source);
+  std::fclose(kpf);
+  LOG(INFO) << "kernels information of tailored model is stored into: "
+            << kpf_path;
 }
 
 lite::Tensor *Predictor::GetInput(size_t offset) {
@@ -52,34 +139,38 @@ lite::Tensor *Predictor::GetInput(size_t offset) {
 }
 
 // get inputs names
-std::vector<std::string> Predictor::GetInputNames() {
-  std::vector<std::string> input_names;
-  for (auto &item : input_names_) {
-    input_names.push_back(item.second);
-  }
-  return input_names;
-}
+std::vector<std::string> Predictor::GetInputNames() { return input_names_; }
+
 // get outputnames
-std::vector<std::string> Predictor::GetOutputNames() {
-  std::vector<std::string> output_names;
-  for (auto &item : output_names_) {
-    output_names.push_back(item.second);
-  }
-  return output_names;
-}
+std::vector<std::string> Predictor::GetOutputNames() { return output_names_; }
+
 // append the names of inputs and outputs into input_names_ and output_names_
 void Predictor::PrepareFeedFetch() {
-  auto current_block = program_desc_.GetBlock<cpp::BlockDesc>(0);
-  for (int i = 0; i < current_block->OpsSize(); i++) {
-    auto op = current_block->GetOp<cpp::OpDesc>(i);
+  if (!program_) {
+    GenRuntimeProgram();
+  }
+  std::vector<const cpp::OpDesc *> feeds;
+  std::vector<const cpp::OpDesc *> fetchs;
+  const auto &insts = program_->instructions();
+
+  for (size_t i = 0; i < program_->num_instructions(); i++) {
+    const auto &op = insts[i].op()->op_info();
     if (op->Type() == "feed") {
-      int idx = op->GetAttr<int>("col");
-      input_names_[idx] = op->Output("Out").front();
-      idx2feeds_[op->Output("Out").front()] = idx;
+      feeds.push_back(op);
     } else if (op->Type() == "fetch") {
-      int idx = op->GetAttr<int>("col");
-      output_names_[idx] = op->Input("X").front();
+      fetchs.push_back(op);
     }
+  }
+
+  input_names_.resize(feeds.size());
+  output_names_.resize(fetchs.size());
+  for (size_t i = 0; i < feeds.size(); i++) {
+    input_names_[feeds[i]->GetAttr<int>("col")] =
+        feeds[i]->Output("Out").front();
+  }
+  for (size_t i = 0; i < fetchs.size(); i++) {
+    output_names_[fetchs[i]->GetAttr<int>("col")] =
+        fetchs[i]->Input("X").front();
   }
 }
 
@@ -106,6 +197,7 @@ std::vector<const lite::Tensor *> Predictor::GetOutputs() const {
 const cpp::ProgramDesc &Predictor::program_desc() const {
   return program_desc_;
 }
+
 const RuntimeProgram &Predictor::runtime_program() const { return *program_; }
 
 void Predictor::Build(const lite_api::CxxConfig &config,
@@ -162,16 +254,18 @@ void Predictor::Build(const cpp::ProgramDesc &desc,
                       const std::vector<Place> &valid_places,
                       const std::vector<std::string> &passes) {
   program_desc_ = desc;
+  // `inner_places` is used to optimize passes
   std::vector<Place> inner_places = valid_places;
   inner_places.emplace_back(TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny));
   inner_places.emplace_back(
       TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
   Program program(desc, scope_, inner_places);
-  /// The first place in valid_places is
+
   core::KernelPickFactor factor;
   factor.ConsiderTarget();
   factor.ConsiderPrecision();
   factor.ConsiderDataLayout();
+
   optimizer_.Run(std::move(program), inner_places, factor, passes);
   exec_scope_ = optimizer_.exec_scope();
   PrepareFeedFetch();
@@ -187,18 +281,20 @@ const lite::Tensor *Predictor::GetTensor(const std::string &name) const {
   auto *var = exec_scope_->FindVar(name);
   return &var->Get<lite::Tensor>();
 }
+
 // get input by name
 lite::Tensor *Predictor::GetInputByName(const std::string &name) {
-  if (idx2feeds_.find(name) == idx2feeds_.end()) {
+  auto element = std::find(input_names_.begin(), input_names_.end(), name);
+  if (element == input_names_.end()) {
     LOG(ERROR) << "Model do not have input named with: [" << name
                << "], model's inputs include:";
-    for (int i = 0; i < input_names_.size(); i++) {
+    for (size_t i = 0; i < input_names_.size(); i++) {
       LOG(ERROR) << "[" << input_names_[i] << "]";
     }
-    return NULL;
+    return nullptr;
   } else {
-    int idx = idx2feeds_[name];
-    return GetInput(idx);
+    int position = std::distance(input_names_.begin(), element);
+    return GetInput(position);
   }
 }
 

@@ -91,12 +91,21 @@ const TimerInfo& BasicTimer::GetTimerInfo(const std::string& key) const {
   return iter->second;
 }
 
-void BasicTimer::Log(TimerInfo* timer_info, uint32_t timespan) {
+void BasicTimer::SetWarmup(int warmup_times) {
+  CHECK_GE(warmup_times, 0) << "warmup times must >= 0";
+  warmup_ = warmup_times;
+}
+
+void BasicTimer::Log(TimerInfo* timer_info, uint64_t timespan) {
+  if (warmup_ > 0) {
+    --warmup_;
+    return;
+  }
   CHECK(timer_info);
+  timer_info->count_++;
   timer_info->total_ += timespan;
   timer_info->max_ = std::max(timer_info->max_, timespan);
   timer_info->min_ = std::min(timer_info->min_, timespan);
-  timer_info->count_++;
 }
 
 std::string BasicTimer::basic_repr_header() {

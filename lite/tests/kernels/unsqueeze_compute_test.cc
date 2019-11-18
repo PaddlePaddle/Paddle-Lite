@@ -13,10 +13,10 @@
 // limitations under the License.
 
 #include <gtest/gtest.h>
+#include <string>
 #include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
 #include "lite/core/arena/framework.h"
-
 namespace paddle {
 namespace lite {
 
@@ -25,15 +25,24 @@ class UnsqueezeComputeTester : public arena::TestCase {
   // common attributes for this op.
   std::string x_ = "X";
   std::string out_ = "Out";
+  std::string axes_tensor_ = "AxesTensor";
+  std::vector<std::string> axes_tensor_list_;
   std::vector<int> axes_;
   DDim dims_;
+  // input_axes_flag_: 1 for axes, 2 for axes_tensor, 3 for axes_tensor_list
+  int input_axes_flag_ = 1;
 
  public:
   UnsqueezeComputeTester(const Place& place,
                          const std::string& alias,
                          const std::vector<int>& axes,
-                         DDim dims)
-      : TestCase(place, alias), axes_(axes), dims_(dims) {}
+                         DDim dims,
+                         int input_axes_flag)
+      : TestCase(place, alias), dims_(dims), input_axes_flag_(input_axes_flag) {
+    for (int v : axes) {
+      axes_.push_back(v);
+    }
+  }
 
   void RunBaseline(Scope* scope) override {
     const auto* input = scope->FindTensor(x_);
@@ -86,7 +95,15 @@ class UnsqueezeComputeTester : public arena::TestCase {
     op_desc->SetType("unsqueeze");
     op_desc->SetInput("X", {x_});
     op_desc->SetOutput("Out", {out_});
-    op_desc->SetAttr("axes", axes_);
+    if (input_axes_flag_ == 1) {
+      op_desc->SetAttr("axes", axes_);
+    } else if (input_axes_flag_ == 2) {
+      op_desc->SetInput("AxesTensor", {axes_tensor_});
+    } else if (input_axes_flag_ == 3) {
+      op_desc->SetInput("AxesTensorList", axes_tensor_list_);
+    } else {
+      LOG(FATAL) << "input input_axes_flag_ error. " << input_axes_flag_;
+    }
   }
 
   void PrepareData() override {
@@ -95,6 +112,22 @@ class UnsqueezeComputeTester : public arena::TestCase {
       in_data[i] = i;
     }
     SetCommonTensor(x_, dims_, in_data.data());
+
+    if (input_axes_flag_ == 2) {
+      DDim axes_tensor_dim{{static_cast<int>(axes_.size())}};
+      std::vector<int> axes_tensor_data(axes_.size());
+      for (int i = 0; i < axes_tensor_dim.production(); i++) {
+        axes_tensor_data[i] = axes_[i];
+      }
+      SetCommonTensor(axes_tensor_, axes_tensor_dim, axes_tensor_data.data());
+    } else if (input_axes_flag_ == 3) {
+      std::string name = "axes_tensor_";
+      for (size_t i = 0; i < axes_.size(); i++) {
+        name = name + std::to_string(i);
+        axes_tensor_list_.push_back(name);
+        SetCommonTensor(name, DDim({1}), &axes_[i]);
+      }
+    }
   }
 };
 
@@ -189,17 +222,22 @@ class Unsqueeze2ComputeTester : public arena::TestCase {
 };
 
 void test_unsqueeze(Place place) {
-  for (std::vector<int> axes : {std::vector<int>({}),
+  for (std::vector<int> axes : {std::vector<int>({1}),
                                 std::vector<int>({0, 2}),
                                 std::vector<int>({0, -2})}) {
     for (int N : {1}) {
       for (int C : {3}) {
         for (int H : {1}) {
           for (int W : {5}) {
-            std::unique_ptr<arena::TestCase> tester(new UnsqueezeComputeTester(
-                place, "def", axes, DDim({N, C, H, W})));
-            arena::Arena arena(std::move(tester), place, 2e-5);
-            arena.TestPrecision();
+            for (int input_axes_flag : {1, 2, 3}) {
+              LOG(INFO) << N << " " << C << " " << H << " " << W << " "
+                        << input_axes_flag;
+              std::unique_ptr<arena::TestCase> tester(
+                  new UnsqueezeComputeTester(
+                      place, "def", axes, DDim({N, C, H, W}), input_axes_flag));
+              arena::Arena arena(std::move(tester), place, 2e-5);
+              arena.TestPrecision();
+            }
           }
         }
       }
@@ -208,7 +246,7 @@ void test_unsqueeze(Place place) {
 }
 
 void test_unsqueeze2(Place place) {
-  for (std::vector<int> axes : {std::vector<int>({}),
+  for (std::vector<int> axes : {std::vector<int>({0}),
                                 std::vector<int>({0, 2}),
                                 std::vector<int>({0, -2})}) {
     for (int N : {1}) {
