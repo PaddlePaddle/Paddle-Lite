@@ -1047,7 +1047,7 @@ void DepthwiseConv3x3S2<float, float>(const framework::Tensor &input,
       }
     }
     // pad bottom
-    for (int h = valid_h_end; (h < output_h) && (h < valid_h_start - 1); ++h) {
+    for (int h = valid_h_end; (h < output_h) && (h > valid_h_start - 1); ++h) {
       DepthwiseConv3x3NormalRow<2, 2>(input_ptr, filter_ptr, h, input_h,
                                       input_w, padding_h, padding_w, output_w,
                                       output_ptr, _ker);
