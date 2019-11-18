@@ -780,7 +780,7 @@ struct LodResetParam {
   const lite::Tensor* X{};
   const lite::Tensor* Y{};
   lite::Tensor* Out{};
-  std::vector<int> targetlod;
+  std::vector<int> target_lod;
   bool append;
 };
 
