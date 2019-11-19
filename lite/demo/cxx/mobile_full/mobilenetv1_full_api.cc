@@ -32,7 +32,7 @@ int64_t ShapeProduction(const shape_t& shape) {
   return res;
 }
 
-void CheckInput() {
+void CheckInput(char*** argv) {
   if (FLAGS_model_dir == "") {
     printf(
         "Usage: %s --model_dir=<your-model-directory> "
@@ -107,7 +107,7 @@ void RunModel() {
 
 int main(int argc, char** argv) {
   google::ParseCommandLineFlags(&argc, &argv, true);
-  CheckInput();
+  CheckInput(argv);
   RunModel();
   return 0;
 }
