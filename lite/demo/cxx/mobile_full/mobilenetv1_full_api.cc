@@ -38,7 +38,7 @@ void CheckInput(char*** argv) {
         "Usage: %s --model_dir=<your-model-directory> "
         "--optimized_model_dir=<your-optmized-model-directory> "
         "--prefer_int8_kernel=[true|false]\n",
-        argv[0]);
+        *argv[0]);
     abort();
   }
   if (FLAGS_optimized_model_dir == "") {
@@ -48,8 +48,8 @@ void CheckInput(char*** argv) {
         ":= `model_dir`:%s\n",
         FLAGS_optimized_model_dir);
   }
-  printf("[WARN] model_dir:%s\n", FLAGS_model_dir);
-  printf("[WARN] optimized_model_dir:%s\n", FLAGS_optimized_model_dir);
+  printf("[WARN] model_dir:%s\n", FLAGS_model_dir.c_str());
+  printf("[WARN] optimized_model_dir:%s\n", FLAGS_optimized_model_dir.c_str());
   printf("[WARN] prefer_int8_kernel:%s\n", FLAGS_prefer_int8_kernel);
 }
 
@@ -107,7 +107,7 @@ void RunModel() {
 
 int main(int argc, char** argv) {
   google::ParseCommandLineFlags(&argc, &argv, true);
-  CheckInput(argv);
+  CheckInput(&argv);
   RunModel();
   return 0;
 }
