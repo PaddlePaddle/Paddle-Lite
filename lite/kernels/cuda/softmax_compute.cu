@@ -244,3 +244,18 @@ REGISTER_LITE_KERNEL(softmax,
                                        PRECISION(kFloat),
                                        DATALAYOUT(kNCHW))})
     .Finalize();
+REGISTER_LITE_KERNEL(search_seq_softmax,
+                     kCUDA,
+                     kFloat,
+                     kNCHW,
+                     paddle::lite::kernels::cuda::SoftmaxCompute,
+                     def)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kCUDA),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kNCHW))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kCUDA),
+                                       PRECISION(kFloat),
+                                       DATALAYOUT(kNCHW))})
+    .Finalize();

@@ -12,23 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/x86/softmax_compute.h"
+#include "lite/kernels/cuda/search_aligned_mat_mul_compute.h"
+#include "lite/core/op_registry.h"
 
-REGISTER_LITE_KERNEL(softmax,
-                     kX86,
+namespace paddle {
+namespace lite {
+namespace kernels {
+namespace cuda {}  // namespace cuda
+}  // namespace kernels
+}  // namespace lite
+}  // namespace paddle
+
+REGISTER_LITE_KERNEL(search_aligned_mat_mul,
+                     kCUDA,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::x86::SoftmaxCompute<float>,
+                     paddle::lite::kernels::cuda::SearchAlignedMatMulCompute,
                      def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
-    .Finalize();
-REGISTER_LITE_KERNEL(search_seq_softmax,
-                     kX86,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::x86::SoftmaxCompute<float>,
-                     def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kCUDA))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kCUDA))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kCUDA))})
     .Finalize();
