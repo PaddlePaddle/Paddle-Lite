@@ -983,6 +983,25 @@ struct AssignValueParam {
   lite::Tensor* Out{};
 };
 
+/// --------------- sequence_topk_avg_pooling operators ------------------
+struct SequenceTopkAvgPoolingParam {
+  const lite::Tensor* X{};
+  const lite::Tensor* ROW{};
+  const lite::Tensor* COLUMN{};
+  lite::Tensor* Out{};
+  lite::Tensor* pos{};
+  int channel_num{};
+  std::vector<int> topks{};
+};
+
+/// --------------- search_fc operators ------------------
+struct SearchFcParam {
+  const lite::Tensor* X{};
+  const lite::Tensor* W{};
+  const lite::Tensor* b{};
+  lite::Tensor* Out{};
+  int out_size{};
+};
 /// --------------------- match_matrix_tensor operators --------------------
 struct MatchMatrixTensorParam {
   const lite::Tensor* x{};
