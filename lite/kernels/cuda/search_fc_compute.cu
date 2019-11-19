@@ -36,7 +36,7 @@ void anakin_NV_gemv<float>(cublasHandle_t handle,
                            const float* x,
                            const float beta,
                            float* y) {
-LOG(INFO)<<"1";
+  LOG(INFO) << "1";
   cublasOperation_t cuTransA = (TransA == false) ? CUBLAS_OP_T : CUBLAS_OP_N;
   CUBLAS_CHECK(
       cublasSgemv(handle, cuTransA, N, M, &alpha, A, N, x, 1, &beta, y, 1));
@@ -66,17 +66,17 @@ void anakin_NV_gemm<float>(cublasHandle_t handle,
                            const float* B,
                            const float beta,
                            float* C) {
-LOG(INFO)<<"1";
+  LOG(INFO) << "1";
   // Note that cublas follows fortran order.
   int lda = (!TransA /* == CblasNoTrans*/) ? K : M;
   int ldb = (!TransB /* == CblasNoTrans*/) ? N : K;
-LOG(INFO)<<"1";
+  LOG(INFO) << "1";
   cublasOperation_t cuTransA =
       (!TransA /* == CblasNoTrans*/) ? CUBLAS_OP_N : CUBLAS_OP_T;
-LOG(INFO)<<"1";
+  LOG(INFO) << "1";
   cublasOperation_t cuTransB =
       (!TransB /* == CblasNoTrans*/) ? CUBLAS_OP_N : CUBLAS_OP_T;
-LOG(INFO)<<"1";
+  LOG(INFO) << "1";
   CUBLAS_CHECK(cublasSgemm(handle,
                            cuTransB,
                            cuTransA,
@@ -91,7 +91,7 @@ LOG(INFO)<<"1";
                            &beta,
                            C,
                            N));
-LOG(INFO)<<"1";
+  LOG(INFO) << "1";
 }
 
 template <>
@@ -123,16 +123,16 @@ static __global__ void add_bias(int n,
 
 template <typename T>
 void SearchFcCompute<T>::Run() {
-LOG(INFO)<<"1";
+  LOG(INFO) << "1";
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->template As<CUDAContext>();
   auto stream = ctx.exec_stream();
-LOG(INFO)<<"1";
+  LOG(INFO) << "1";
   const Tensor* x_tensor = param.X;
   _M = x_tensor->dims().count(0, 1);
   _K = x_tensor->dims().count(1, x_tensor->numel());
   _N = param.out_size;
-LOG(INFO)<<"1";
+  LOG(INFO) << "1";
   const T* din = x_tensor->data<T>();
   Tensor* out_tensor = param.Out;
   T* dout = out_tensor->mutable_data<T>(TARGET(kCUDA));
@@ -141,12 +141,12 @@ LOG(INFO)<<"1";
   const Tensor* b_tensor = param.b;
   const T* bias = b_tensor->data<T>();
   cublasCreate(&_handle);
-LOG(INFO)<<"1";
+  LOG(INFO) << "1";
   if (_M == 1 && _K > 50000) {
-LOG(INFO)<<"1";
+    LOG(INFO) << "1";
     anakin_NV_gemv<T>(_handle, false, _N, _K, (T)1, weight, din, (T)0, dout);
   } else {
-LOG(INFO)<<"1";
+    LOG(INFO) << "1";
     anakin_NV_gemm<T>(_handle,
                       false,
                       !_flag_trans_weights,
@@ -162,8 +162,7 @@ LOG(INFO)<<"1";
   int total_size = _M * _N;
   add_bias<T><<<CUDA_GET_BLOCKS(total_size), CUDA_NUM_THREADS, 0, stream>>>(
       total_size, _N, bias, dout);
- }
-
+}
 }
 }  // namespace cuda
 }  // namespace kernels
