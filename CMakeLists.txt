@@ -62,7 +62,6 @@ lite_option(LITE_WITH_NPU  "Enable NPU in lite mode"  OFF)
 lite_option(LITE_WITH_XPU  "Enable XPU in lite mode"  OFF)
 lite_option(LITE_WITH_OPENMP "Enable OpenMP in lite framework" ON)
 lite_option(LITE_WITH_OPENCL   "Enable OpenCL support in lite" OFF)
-lite_option(LITE_WITH_VULKAN   "Enable VULKAN support in lite" OFF)
 lite_option(LITE_WITH_FPGA   "Enable FPGA support in lite" OFF)
 lite_option(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK  "Enable light-weight framework" OFF)
 lite_option(LITE_WITH_PROFILE  "Enable profile mode in lite framework"  OFF)
@@ -181,7 +180,6 @@ include(external/xxhash)    # download install xxhash needed for x86 jit
 
 include(cudnn)
 include(configure)          # add paddle env configuration
-include(vulkan)
 
 if(LITE_WITH_CUDA) 
   include(cuda)

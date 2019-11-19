@@ -47,15 +47,22 @@ class FillConstantOp : public OpLite {
     param_.shape = opdesc.GetAttr<std::vector<int64_t>>("shape");
     param_.value = opdesc.GetAttr<float>("value");
     param_.force_cpu = opdesc.GetAttr<bool>("force_cpu");
-    if (opdesc.HasAttr("ShapeTensor")) {
+    param_.shape_tensor = nullptr;
+    param_.shape_tensor_list = {};
+
+    std::vector<std::string> input_arg_names = opdesc.InputArgumentNames();
+    if (std::find(input_arg_names.begin(),
+                  input_arg_names.end(),
+                  "ShapeTensor") != input_arg_names.end()) {
       auto args = opdesc.Input("ShapeTensor");
       auto* var = scope->FindVar(args.front());
       param_.shape_tensor = var->GetMutable<lite::Tensor>();
     }
     if (opdesc.HasAttr("ShapeTensorList")) {
-      auto args = opdesc.Input("AxesTensorList");
+      auto args = opdesc.Input("ShapeTensorList");
       auto* var = scope->FindVar(args.front());
-      param_.shape_tensor_list = var->GetMutable<std::vector<lite::Tensor>>();
+      param_.shape_tensor_list =
+          *(var->GetMutable<std::vector<lite::Tensor*>>());
     }
     return true;
   }
