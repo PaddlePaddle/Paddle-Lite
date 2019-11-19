@@ -12,16 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/x86/var_conv_2d_compute.h"
+#pragma once
+#include "lite/core/kernel.h"
 
-REGISTER_LITE_KERNEL(var_conv_2d,
-                     kX86,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::x86::VarConv2DCompute<float>,
-                     def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
-    .BindInput("W", {LiteType::GetTensorTy(TARGET(kX86))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
-    .BindOutput("Col", {LiteType::GetTensorTy(TARGET(kX86))})
-    .Finalize();
+namespace paddle {
+namespace lite {
+namespace kernels {
+namespace cuda {
+
+class AttentionPaddingMaskCompute
+    : public KernelLite<TARGET(kCUDA), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::AttentionPaddingMaskParam;
+
+  void Run() override;
+  virtual ~AttentionPaddingMaskCompute() = default;
+
+ private:
+  lite::Tensor src_offset_cuda;
+};
+
+}  // namespace cuda
+}  // namespace kernels
+}  // namespace lite
+}  // namespace paddle

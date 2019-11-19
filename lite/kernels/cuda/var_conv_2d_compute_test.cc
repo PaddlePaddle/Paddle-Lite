@@ -12,17 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/x86/var_conv_2d_compute.h"
+#include "lite/kernels/cuda/var_conv_2d_compute.h"
 #include <gtest/gtest.h>
 #include <memory>
 #include <utility>
 #include <vector>
-#include "lite/core/op_registry.h"
-#include "lite/core/tensor.h"
+
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace x86 {
+namespace cuda {
 
 static void im2col_ref(const lite::Tensor& input,
                        const lite::Tensor* in_row,
@@ -112,6 +111,42 @@ static void im2col_ref(const lite::Tensor& input,
   }
 }
 
+static void naive_sgemm(const bool transpose_A,
+                        const bool transpose_B,
+                        const int M,
+                        const int N,
+                        const int K,
+                        const float alpha,
+                        const float* A,  // m x k (after transpose if TransA)
+                        const int lda,   // leading dimension of a
+                        const float* B,  // k x n (after transpose if TransB)
+                        const int ldb,   // leading dimension of b
+                        const float beta,
+                        float* C,  // m x n
+                        const int ldc) {
+  for (int m = 0; m < M; ++m) {
+    for (int k = 0; k < K; ++k) {
+      for (int n = 0; n < N; ++n) {
+        C[m * N + n] += beta * C[m * N + n];
+        size_t A_idx = 0, B_idx = 0;
+        if (transpose_A) {
+          A_idx = k * M + m;  // A is k x m
+        } else {
+          A_idx = m * K + k;  // A is m x k
+        }
+
+        if (transpose_B) {
+          B_idx = n * K + k;  // B is n x k
+        } else {
+          B_idx = k * N + n;  // B is k x n
+        }
+
+        C[m * N + n] += alpha * A[A_idx] * B[B_idx];
+      }
+    }
+  }
+}
+
 static void var_conv_2d_ref(const lite::Tensor* bottom,
                             const lite::Tensor* w,
                             const lite::Tensor* in_row,
@@ -124,9 +159,6 @@ static void var_conv_2d_ref(const lite::Tensor* bottom,
                             const int output_channel,
                             lite::Tensor* top,
                             lite::Tensor* col) {
-  std::unique_ptr<KernelContext> ctx(new KernelContext);
-  auto& context = ctx->As<X86Context>();
-
   im2col_ref(*bottom,
              in_row,
              in_col,
@@ -173,69 +205,50 @@ static void var_conv_2d_ref(const lite::Tensor* bottom,
   const auto* w_data = w->data<float>();
   const auto* col_data = col->data<float>();
 
-  auto blas = lite::x86::math::GetBlas<lite::TargetType::kX86, float>(context);
   for (int b = 0; b < batch; ++b) {
     int top_im_size = (top_offset[b + 1] - top_offset[b]) / output_channel;
     if (top_im_size == 0) {
       continue;
     }
 
-    blas.GEMM(false,
-              false,
-              output_channel,
-              top_im_size,
-              input_channel * kernel_h * kernel_w,
-              1.0,
-              w_data,
-              input_channel * kernel_h * kernel_w,
-              col_data + col_offset[b],
-              top_im_size,
-              0.0,
-              top_data + top_offset[b],
-              top_im_size);
+    naive_sgemm(false,
+                false,
+                output_channel,
+                top_im_size,
+                input_channel * kernel_h * kernel_w,
+                1.0,
+                w_data,
+                input_channel * kernel_h * kernel_w,
+                col_data + col_offset[b],
+                top_im_size,
+                0.0,
+                top_data + top_offset[b],
+                top_im_size);
   }
 }
 
-TEST(var_conv_2d_x86, retrive_op) {
-  auto var_conv_2d =
-      KernelRegistry::Global().Create<TARGET(kX86), PRECISION(kFloat)>(
-          "var_conv_2d");
-  ASSERT_FALSE(var_conv_2d.empty());
-  ASSERT_TRUE(var_conv_2d.front());
-}
-
-TEST(var_conv_2d_x86, init) {
-  VarConv2DCompute<float> var_conv_2d;
-  ASSERT_EQ(var_conv_2d.precision(), PRECISION(kFloat));
-  ASSERT_EQ(var_conv_2d.target(), TARGET(kX86));
-}
-
-TEST(var_conv_2d_x86, run_test) {
-  VarConv2DCompute<float> var_conv_2d;
+TEST(var_conv_2d_cuda, normal) {
+  VarConv2DCompute var_conv_kernel;
   std::unique_ptr<KernelContext> ctx(new KernelContext);
-  ctx->As<X86Context>();
+  auto& context = ctx->As<CUDAContext>();
 
   operators::VarConv2DParam param;
 
   lite::Tensor X, W, ROW, COLUMN;
-  lite::Tensor Out, Col;
-  int kernel_h, kernel_w;
-  int stride_h, stride_w;
-  int input_channel, output_channel;
+  lite::Tensor x_cpu, w_cpu;
+  lite::Tensor Out, Col, out_cpu, col_cpu;
+  int kernel_h = 5, kernel_w = 5;
+  int stride_h = 1, stride_w = 1;
+  int input_channel = 5, output_channel = 5;
 
-  output_channel = 5;
-  input_channel = 5;
-  kernel_h = 5;
-  kernel_w = 5;
-  stride_h = 1;
-  stride_w = 1;
   std::vector<int64_t> w_dims_vec;
   w_dims_vec.push_back(output_channel);
   w_dims_vec.push_back(input_channel * kernel_h * kernel_w);
   W.Resize(w_dims_vec);
-  auto* w_data = W.mutable_data<float>();
+  w_cpu.Resize(w_dims_vec);
+  auto* w_cpu_data = w_cpu.mutable_data<float>();
   for (int i = 0; i < W.numel(); ++i) {
-    w_data[i] = i - 1.f;
+    w_cpu_data[i] = i - 1.f;
   }
 
   std::vector<uint64_t> row_lod_vec{0, 10, 20};
@@ -254,20 +267,42 @@ TEST(var_conv_2d_x86, run_test) {
   for (size_t i = 0; i < row_lod_vec.size() - 1; ++i) {
     int height = row_lod_vec[i + 1] - row_lod_vec[i];
     int width = column_lod_vec[i + 1] - column_lod_vec[i];
-    x_lod_vec.push_back(height * width * input_channel);
-    x_size += height * width * input_channel;
+    x_lod_vec.push_back(x_lod_vec.back() + height * width);
+    x_size += height * width;
   }
+  for (size_t i = 0; i < x_lod_vec.size(); ++i) {
+    x_lod_vec[i] *= input_channel;
+  }
+  x_size *= input_channel;
   std::vector<int64_t> x_dims_vec{x_size, 1};
   LoD x_lod;
   x_lod.push_back(x_lod_vec);
   x_lod.push_back(row_lod_vec);
   x_lod.push_back(column_lod_vec);
   X.Resize(x_dims_vec);
+  x_cpu.Resize(x_dims_vec);
   X.set_lod(x_lod);
-  auto* x_data = X.mutable_data<float>();
+  x_cpu.set_lod(x_lod);
+  auto* x_cpu_data = x_cpu.mutable_data<float>();
   for (int i = 0; i < X.numel(); ++i) {
-    x_data[i] = i % 20 * 1.f;
+    x_cpu_data[i] = i % 20 * 1.f;
   }
+
+  int sum_num = 0;
+  int out_sum_num = 0;
+  for (size_t i = 0; i < row_lod_vec.size() - 1; ++i) {
+    int height = row_lod_vec[i + 1] - row_lod_vec[i];
+    int width = column_lod_vec[i + 1] - column_lod_vec[i];
+    sum_num += height * width * input_channel * kernel_h * kernel_w;
+    out_sum_num += height * width * output_channel;
+  }
+  col_cpu.Resize({sum_num, 1});
+  out_cpu.Resize({out_sum_num, 1});
+  float* out_cpu_data = out_cpu.mutable_data<float>();
+  float* col_cpu_data = col_cpu.mutable_data<float>();
+
+  X.Assign<float, lite::DDim, TARGET(kCUDA)>(x_cpu_data, x_cpu.dims());
+  W.Assign<float, lite::DDim, TARGET(kCUDA)>(w_cpu_data, w_cpu.dims());
 
   param.X = &X;
   param.W = &W;
@@ -281,13 +316,25 @@ TEST(var_conv_2d_x86, run_test) {
   param.kernel_w = kernel_w;
   param.input_channel = input_channel;
   param.output_channel = output_channel;
-  var_conv_2d.SetParam(param);
-  var_conv_2d.SetContext(std::move(ctx));
-  var_conv_2d.Run();
+  var_conv_kernel.SetParam(param);
+  cudaStream_t stream;
+  cudaStreamCreate(&stream);
+  context.SetExecStream(stream);
+  var_conv_kernel.SetContext(std::move(ctx));
+  var_conv_kernel.Run();
+  cudaDeviceSynchronize();
+
+  const float* out_data = Out.data<float>();
+  const float* col_data = Col.data<float>();
+
+  CopySync<TARGET(kCUDA)>(
+      out_cpu_data, out_data, sizeof(float) * Out.numel(), IoDirection::DtoH);
+  CopySync<TARGET(kCUDA)>(
+      col_cpu_data, col_data, sizeof(float) * Col.numel(), IoDirection::DtoH);
 
   lite::Tensor top_ref, col_ref;
-  var_conv_2d_ref(&X,
-                  &W,
+  var_conv_2d_ref(&x_cpu,
+                  &w_cpu,
                   &ROW,
                   &COLUMN,
                   kernel_h,
@@ -300,16 +347,14 @@ TEST(var_conv_2d_x86, run_test) {
                   &col_ref);
 
   for (int i = 0; i < Out.numel(); ++i) {
-    EXPECT_NEAR(Out.data<float>()[i], top_ref.data<float>()[i], 1e-5);
+    EXPECT_NEAR(out_cpu_data[i], top_ref.data<float>()[i], 1e-5);
   }
   for (int i = 0; i < Col.numel(); ++i) {
-    EXPECT_NEAR(Col.data<float>()[i], col_ref.data<float>()[i], 1e-5);
+    EXPECT_NEAR(col_cpu_data[i], col_ref.data<float>()[i], 1e-5);
   }
 }
 
-}  // namespace x86
+}  // namespace cuda
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
-
-USE_LITE_KERNEL(var_conv_2d, kX86, kFloat, kNCHW, def);
