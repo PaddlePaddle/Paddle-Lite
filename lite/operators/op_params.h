@@ -522,8 +522,8 @@ struct GRUUnitParam {
 struct LrnParam {
   const lite::Tensor* X{};
   lite::Tensor* Out{};
-  int local_size{5};
-  float alpha{1.};
+  int n{5};
+  float alpha{1e-4};
   float beta{0.75};
   float k{1.};
   std::string norm_region{"AcrossChannels"};
