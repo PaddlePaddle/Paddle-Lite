@@ -43,10 +43,10 @@ void gen_log(STL::ostream& log_stream_,
   gettimeofday(&tv, NULL);
 
   // print date / time
-  log_stream_ << '[' << level << ' ' << std::setw(2) << 1 + tm_time.tm_mon
-              << '/' << std::setw(2) << tm_time.tm_mday << ' ' << std::setw(2)
-              << tm_time.tm_hour << ':' << std::setw(2) << tm_time.tm_min << ':'
-              << std::setw(2) << tm_time.tm_sec << '.' << std::setw(3)
+  log_stream_ << '[' << level << ' ' << STL::setw(2) << 1 + tm_time.tm_mon
+              << '/' << STL::setw(2) << tm_time.tm_mday << ' ' << STL::setw(2)
+              << tm_time.tm_hour << ':' << STL::setw(2) << tm_time.tm_min << ':'
+              << STL::setw(2) << tm_time.tm_sec << '.' << STL::setw(3)
               << tv.tv_usec / 1000 << " ";
 
   if (len > kMaxLen) {
