@@ -163,12 +163,11 @@ void SequencePoolCompute::Run() {
   auto stream = ctx.exec_stream();
 
   std::vector<uint64_t> seq_offset = param.X->lod()[0];
-  int slice_size =
-      param.Out->dims()[1] * param.Out->dims()[2] * param.Out->dims()[3];
+  int batch_size = param.X->lod()[0].size() - 1;
+  int slice_size = param.Out->dims().production() / batch_size;
 
   float* out_data = param.Out->mutable_data<float>(TARGET(kCUDA));
   const float* in_data = param.X->data<float>();
-  int batch_size = param.X->lod().size() - 1;
 
   lite::Tensor seq_offset_D;
   seq_offset_D.Resize({static_cast<int64_t>(seq_offset.size())});

@@ -14,7 +14,9 @@
 
 #include "lite/kernels/cuda/sequence_pool_compute.h"
 #include <gtest/gtest.h>
+#include <map>
 #include <memory>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -50,7 +52,7 @@ TEST(sequence_pool_cuda, normal) {
 
   auto x_cpu_data = x_cpu.mutable_data<float>();
   auto out_data = out.mutable_data<float>(TARGET(kCUDA));
-  auto out_cpu_data = out.mutable_data<float>();
+  auto out_cpu_data = out_cpu.mutable_data<float>();
 
   for (int64_t i = 0; i < x_cpu.dims().production(); i++) {
     x_cpu_data[i] = 1.1f * i;
@@ -60,26 +62,39 @@ TEST(sequence_pool_cuda, normal) {
   operators::SequencePoolParam param;
   param.X = &x;
   param.Out = &out;
-  seq_kernel.SetParam(param);
+  std::vector<std::string> pool_types(
+      {"MAX", "AVERAGE", "SUM", "SQRT", "FIRST", "LAST"});
+  std::map<std::string, std::vector<float>> type_map;
+  type_map["MAX"] = {79.2, 80.3, 81.4, 82.5, 83.6, 84.7, 85.8, 86.9};
+  type_map["AVERAGE"] = {39.6, 40.7, 41.8, 42.9, 44, 45.1, 46.2, 47.3};
+  type_map["SUM"] = {396, 407, 418, 429, 440, 451, 462, 473};
+  type_map["SQRT"] = {
+      125.226, 128.705, 132.183, 135.662, 139.14, 142.619, 146.097, 149.576};
+  type_map["FIRST"] = {0, 1.1, 2.2, 3.3, 4.4, 5.5, 6.6, 7.7};
+  type_map["LAST"] = {79.2, 80.3, 81.4, 82.5, 83.6, 84.7, 85.8, 86.9};
 
   cudaStream_t stream;
   cudaStreamCreate(&stream);
   context.SetExecStream(stream);
 
   seq_kernel.SetContext(std::move(ctx));
-  seq_kernel.Run();
-  cudaDeviceSynchronize();
+  for (std::string pool_type : pool_types) {
+    param.pool_type = pool_type;
+    seq_kernel.SetParam(param);
 
-  CopySync<TARGET(kCUDA)>(out_cpu_data,
-                          out_data,
-                          sizeof(float) * out_cpu.numel(),
-                          IoDirection::DtoH);
+    seq_kernel.Run();
+    cudaDeviceSynchronize();
 
-  std::vector<float> ref_results = {
-      39.6, 40.7, 41.8, 42.9, 44, 45.1, 46.2, 47.3};
+    CopySync<TARGET(kCUDA)>(out_cpu_data,
+                            out_data,
+                            sizeof(float) * out_cpu.numel(),
+                            IoDirection::DtoH);
 
-  for (int i = 0; i < out_cpu.numel(); i++) {
-    EXPECT_NEAR(out_cpu_data[i], ref_results[i], 1e-5);
+    std::vector<float> ref_results = type_map[pool_type];
+
+    for (int i = 0; i < out_cpu.numel(); i++) {
+      EXPECT_NEAR(out_cpu_data[i], ref_results[i], 1e-3);
+    }
   }
 }
 
