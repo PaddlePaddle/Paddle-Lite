@@ -1,4 +1,5 @@
 #!/bin/bash
+# The git version of CI is 2.7.4. This script is not compatible with git version 1.7.1.
 set -ex
 
 TESTS_FILE="./lite_tests.txt"
@@ -232,7 +233,8 @@ function build_test_server {
     test_model_optimize_tool_compile
 }
 
-# Build the code and run lite server tests. This is executed in the CI system.
+# The CUDA version of CI is cuda_10.1.243_418.87.00_linux.
+# The cuDNN version is cudnn-10.1-linux-x64-v7.5.0.56.
 function build_test_cuda_server {
     mkdir -p ./build
     cd ./build
