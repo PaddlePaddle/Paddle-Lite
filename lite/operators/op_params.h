@@ -740,6 +740,14 @@ struct SequencePoolParam {
 #endif
 };
 
+struct SearchGroupPaddingParam {
+  lite::Tensor* x{};
+  lite::Tensor* out_emb_padding{};
+  lite::Tensor* out_new{};
+  lite::Tensor* out_padding{};
+  int pad_id;
+};
+
 struct SequenceReshapeParam {
   lite::Tensor* x{};
   lite::Tensor* output{};
@@ -766,6 +774,22 @@ struct SequenceReverseParam {
 
 struct SequenceConcatParam {
   std::vector<lite::Tensor*> X{};
+  lite::Tensor* Out{};
+};
+
+struct AttentionPaddingMaskParam {
+  const lite::Tensor* X{};
+  const lite::Tensor* Y{};
+  int pad_id;
+  float mask;
+  lite::Tensor* Out{};
+  lite::Tensor* pad_begin{};
+};
+
+struct SequenceArithmeticParam {
+  const lite::Tensor* X{};
+  const lite::Tensor* Y{};
+  int op_type{1};
   lite::Tensor* Out{};
 };
 
@@ -959,6 +983,25 @@ struct AssignValueParam {
   lite::Tensor* Out{};
 };
 
+/// --------------- sequence_topk_avg_pooling operators ------------------
+struct SequenceTopkAvgPoolingParam {
+  const lite::Tensor* X{};
+  const lite::Tensor* ROW{};
+  const lite::Tensor* COLUMN{};
+  lite::Tensor* Out{};
+  lite::Tensor* pos{};
+  int channel_num{};
+  std::vector<int> topks{};
+};
+
+/// --------------- search_fc operators ------------------
+struct SearchFcParam {
+  const lite::Tensor* X{};
+  const lite::Tensor* W{};
+  const lite::Tensor* b{};
+  lite::Tensor* Out{};
+  int out_size{};
+};
 /// --------------------- match_matrix_tensor operators --------------------
 struct MatchMatrixTensorParam {
   const lite::Tensor* x{};
