@@ -12,23 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/x86/softmax_compute.h"
+#include "lite/kernels/x86/attention_padding_mask_compute.h"
 
-REGISTER_LITE_KERNEL(softmax,
-                     kX86,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::x86::SoftmaxCompute<float>,
-                     def)
+REGISTER_LITE_KERNEL(
+    attention_padding_mask,
+    kX86,
+    kFloat,
+    kNCHW,
+    paddle::lite::kernels::x86::AttentionPaddingMaskCompute<float>,
+    def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
-    .Finalize();
-REGISTER_LITE_KERNEL(search_seq_softmax,
-                     kX86,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::x86::SoftmaxCompute<float>,
-                     def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindOutput("out", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindOutput("pad_begin", {LiteType::GetTensorTy(TARGET(kX86))})
     .Finalize();

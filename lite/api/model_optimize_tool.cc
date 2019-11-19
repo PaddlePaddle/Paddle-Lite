@@ -80,7 +80,16 @@ void Main() {
     if (target_repr == "arm") {
       valid_places.emplace_back(TARGET(kARM));
     } else if (target_repr == "opencl") {
-      valid_places.emplace_back(TARGET(kOpenCL));
+      valid_places.emplace_back(
+          Place{TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kNCHW)});
+      valid_places.emplace_back(
+          Place{TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kNHWC)});
+      valid_places.emplace_back(
+          Place{TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW)});
+      valid_places.emplace_back(
+          Place{TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNHWC)});
+      valid_places.emplace_back(
+          TARGET(kARM));  // enable kARM CPU kernel when no opencl kernel
     } else if (target_repr == "x86") {
       valid_places.emplace_back(TARGET(kX86));
     } else {
