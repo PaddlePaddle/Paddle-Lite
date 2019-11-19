@@ -34,6 +34,10 @@ DEFINE_string(input_shape,
               "1,3,224,224",
               "input shapes, separated by colon and comma");
 
+DEFINE_string(out_txt,
+              "",
+              "output text path");
+
 DEFINE_bool(use_optimize_nb,
             false,
             "optimized & naive buffer model for mobile devices");
@@ -101,11 +105,13 @@ void Run(const std::vector<std::vector<int64_t>>& input_shapes,
   }
 
   Timer ti;
+  std::vector<float> times;
   for (int j = 0; j < repeat; ++j) {
     ti.start();
     predictor->Run();
     ti.end();
     LOG(INFO) << "iter: " << j << ", time: " << ti.latest_time() << " ms";
+    times.push_back(ti.latest_time());
   }
 
   LOG(INFO) << "================== Speed Report ===================";
@@ -116,17 +122,40 @@ void Run(const std::vector<std::vector<int64_t>>& input_shapes,
             << " ms"
             << ", min time: " << ti.get_min_time() << " ms"
             << ", max time: " << ti.get_max_time() << " ms.";
-
+  //compute variance
+  float avg = ti.get_average_ms();
+  float sum = 0;
+  for (auto val: times){
+    sum += (val - avg) * (val - avg);
+  }
+  sum = sum / times.size();
+  FILE* fp_w = fopen("time.txt", "a+");
+  if (!fp_w){
+    printf("open file failed \n");
+    return;
+  }
+  fprintf(fp_w, "model: %s, threads: %d, avg: %f ms, var: %f \n", model_dir.c_str(), thread_num, avg, sum);
+  fclose(fp_w);
   auto output = predictor->GetOutput(0);
   auto out = output->data<float>();
   LOG(INFO) << "out " << out[0];
   LOG(INFO) << "out " << out[1];
+  
   auto output_shape = output->shape();
   int output_num = 1;
   for (int i = 0; i < output_shape.size(); ++i) {
     output_num *= output_shape[i];
   }
   LOG(INFO) << "output_num: " << output_num;
+  FILE* fp = fopen(FLAGS_out_txt.c_str(), "w");
+  if (!fp){
+    printf("open file %s failed \n", FLAGS_out_txt.c_str());
+    return;
+  }
+  for (int i = 0; i < output_num; ++i){
+    fprintf(fp, "%f\n", out[i]);
+  }
+  fclose(fp);
 }
 #endif
 
