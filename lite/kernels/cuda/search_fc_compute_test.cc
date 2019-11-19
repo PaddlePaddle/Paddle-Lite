@@ -55,10 +55,8 @@ TEST(search_fc, normal) {
   std::unique_ptr<KernelContext> ctx(new KernelContext);
   auto& context = ctx->As<CUDAContext>();
   operators::SearchFcParam param;
-
   lite::Tensor X, X_gpu, W, W_gpu, b, b_gpu;
   lite::Tensor Out, Out_cpu, out_ref;
-
   std::vector<int64_t> x_shape{1, 4};
   X.Resize(lite::DDim(x_shape));
   std::vector<int64_t> w_shape{3, 4};
@@ -81,11 +79,9 @@ TEST(search_fc, normal) {
   for (int64_t i = 0; i < b.dims().production(); i++) {
     b_data[i] = static_cast<float>(i);
   }
-
   X_gpu.Assign<float, lite::DDim, TARGET(kCUDA)>(x_data, X.dims());
   W_gpu.Assign<float, lite::DDim, TARGET(kCUDA)>(w_data, W.dims());
   b_gpu.Assign<float, lite::DDim, TARGET(kCUDA)>(b_data, b.dims());
-
   param.X = &X_gpu;
   param.W = &W_gpu;
   param.b = &b_gpu;
@@ -97,16 +93,12 @@ TEST(search_fc, normal) {
   context.SetExecStream(stream);
   search_fc_kernel.SetContext(std::move(ctx));
   search_fc_kernel.Run();
-
   fc_cpu_base(&X, &W, &b, 4, &out_ref);
-
   cudaDeviceSynchronize();
-
   const float* out_data = Out.data<float>();
   float* out_cpu_data = Out_cpu.mutable_data<float>();
   CopySync<TARGET(kCUDA)>(
       out_cpu_data, out_data, sizeof(float) * Out.numel(), IoDirection::DtoH);
-
   for (int i = 0; i < Out.numel(); ++i) {
     EXPECT_NEAR(out_cpu_data[i], out_data_ref[i], 1e-5);
   }
