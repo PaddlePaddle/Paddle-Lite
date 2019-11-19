@@ -12,16 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/x86/var_conv_2d_compute.h"
+#include "lite/kernels/x86/search_group_padding_compute.h"
 
-REGISTER_LITE_KERNEL(var_conv_2d,
-                     kX86,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::x86::VarConv2DCompute<float>,
-                     def)
+REGISTER_LITE_KERNEL(
+    search_group_padding,
+    kX86,
+    kFloat,
+    kNCHW,
+    paddle::lite::kernels::x86::SearchGroupPaddingCompute<float>,
+    def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
-    .BindInput("W", {LiteType::GetTensorTy(TARGET(kX86))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
-    .BindOutput("Col", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindOutput("Out_emb_padding", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindOutput("Out_new", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindOutput("Out_padding", {LiteType::GetTensorTy(TARGET(kX86))})
     .Finalize();
