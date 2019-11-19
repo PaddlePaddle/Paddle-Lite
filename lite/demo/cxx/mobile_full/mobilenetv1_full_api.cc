@@ -32,6 +32,27 @@ int64_t ShapeProduction(const shape_t& shape) {
   return res;
 }
 
+void CheckInput() {
+  if (FLAGS_model_dir == "") {
+    printf(
+        "Usage: %s --model_dir=<your-model-directory> "
+        "--optimized_model_dir=<your-optmized-model-directory> "
+        "--prefer_int8_kernel=[true|false]\n",
+        argv[0]);
+    abort();
+  }
+  if (FLAGS_optimized_model_dir == "") {
+    FLAGS_optimized_model_dir = FLAGS_model_dir;
+    printf(
+        "[WARN] no `optimized_model_dir` provided. set `optimized_model_dir` "
+        ":= `model_dir`:%s\n",
+        FLAGS_optimized_model_dir);
+  }
+  printf("[WARN] model_dir:%s\n", FLAGS_model_dir);
+  printf("[WARN] optimized_model_dir:%s\n", FLAGS_optimized_model_dir);
+  printf("[WARN] prefer_int8_kernel:%s\n", FLAGS_prefer_int8_kernel);
+}
+
 void RunModel() {
   // 1. Set CxxConfig
   CxxConfig config;
@@ -76,6 +97,7 @@ void RunModel() {
 
 int main(int argc, char** argv) {
   google::ParseCommandLineFlags(&argc, &argv, true);
+  CheckInput();
   RunModel();
   return 0;
 }

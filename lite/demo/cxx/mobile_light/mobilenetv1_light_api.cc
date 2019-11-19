@@ -29,6 +29,14 @@ int64_t ShapeProduction(const shape_t& shape) {
   return res;
 }
 
+void CheckInput() {
+  if (FLAGS_model_dir == "") {
+    printf("Usage: %s --model_dir=<your-nb-model-directory>\n", argv[0]);
+    abort();
+  }
+  printf("[WARN] model_dir:%s\n", FLAGS_model_dir);
+}
+
 void RunModel() {
   // 1. Set MobileConfig
   MobileConfig config;
