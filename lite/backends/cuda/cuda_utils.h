@@ -56,6 +56,15 @@
     CHECK_EQ(status, CUDNN_STATUS_SUCCESS) << CudnnGetErrorInfo(status); \
   }
 
+const int CUDA_NUM_THREADS = 512;
+// CUDA: number of blocks for threads.
+inline int CUDA_GET_BLOCKS(const int N) {
+  return (N + CUDA_NUM_THREADS - 1) / CUDA_NUM_THREADS;
+}
+inline int CUDA_GET_BLOCKS(const int N, const int base) {
+  return (N + base - 1) / base;
+}
+
 namespace paddle {
 namespace lite {
 namespace cuda {
