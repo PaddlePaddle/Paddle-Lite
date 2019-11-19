@@ -68,6 +68,7 @@ void RunModel() {
 
 int main(int argc, char** argv) {
   google::ParseCommandLineFlags(&argc, &argv, true);
+  CheckInput();
   RunModel();
   return 0;
 }
