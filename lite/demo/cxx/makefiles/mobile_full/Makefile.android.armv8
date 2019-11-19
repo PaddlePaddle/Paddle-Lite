@@ -8,6 +8,7 @@ LITE_ROOT=../../../
 CXX_INCLUDES = $(INCLUDES) -I$(LITE_ROOT)/cxx/include
 
 CXX_LIBS = $(THIRD_PARTY_LIBS) $(LITE_ROOT)/cxx/lib/libpaddle_api_full_bundled.a $(SYSTEM_LIBS)
+#CXX_LIBS = $(THIRD_PARTY_LIBS) $(LITE_ROOT)/cxx/lib/libpaddle_full_api_shared.so $(SYSTEM_LIBS)
 
 mobilenetv1_full_api: mobilenetv1_full_api.o
 	$(CC) $(SYSROOT_LINK) $(CXXFLAGS_LINK) mobilenetv1_full_api.o -o mobilenetv1_full_api  $(CXX_LIBS) $(LDFLAGS)
