@@ -48,7 +48,7 @@ bool SigmoidKernel<FPGA, float>::Init(SigmoidParam<FPGA> *param) {
 template <>
 void SigmoidKernel<FPGA, float>::Compute(const SigmoidParam<FPGA> &param) {
   fpga::PerformBypass(param.FpgaArgs());
-  param.Out()->scale[0] = 127.0;
+  param.Out()->scale[0] = 1.0;
 }
 
 }  // namespace operators

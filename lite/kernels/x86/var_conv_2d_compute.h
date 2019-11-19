@@ -36,14 +36,16 @@ class VarConv2DCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
     int kernel_w = param.kernel_w;
     int stride_h = param.stride_h;
     int stride_w = param.stride_w;
-    auto* in_row = param.ROW;
-    auto* in_col = param.COLUMN;
+    // auto* in_row = param.ROW;
+    // auto* in_col = param.COLUMN;
 
     int batch = input.lod()[0].size() - 1;
     const auto& bottom_offset = input.lod()[0];
     // 2-D lod info.
-    const auto& offset_x = in_col->lod()[0];
-    const auto& offset_y = in_row->lod()[0];
+    // const auto& offset_x = in_col->lod()[0];
+    // const auto& offset_y = in_row->lod()[0];
+    const auto& offset_y = param.X->lod()[1];
+    const auto& offset_x = param.X->lod()[2];
 
     // top offset is the whole size of each data sample
     std::vector<uint64_t> top_offset;
@@ -126,8 +128,8 @@ class VarConv2DCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
     auto& param = *param_.get_mutable<param_t>();
     auto& context = ctx_->As<X86Context>();
     auto* bottom = param.X;
-    auto* in_row = param.ROW;
-    auto* in_col = param.COLUMN;
+    // auto* in_row = param.ROW;
+    // auto* in_col = param.COLUMN;
     auto* w = param.W;
     auto* top = param.Out;
     auto* col = param.Col;
@@ -142,8 +144,10 @@ class VarConv2DCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
     Im2Col(*bottom, col);
     int batch = bottom->lod()[0].size() - 1;
     const auto& col_offset = col->lod()[0];
-    const auto& offset_x = in_col->lod()[0];
-    const auto& offset_y = in_row->lod()[0];
+    // const auto& offset_x = in_col->lod()[0];
+    // const auto& offset_y = in_row->lod()[0];
+    const auto& offset_y = param.X->lod()[1];
+    const auto& offset_x = param.X->lod()[2];
     std::vector<size_t> top_offset;
     int top_size = 0;
     top_offset.push_back(top_size);

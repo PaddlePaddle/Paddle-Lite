@@ -30,13 +30,15 @@ bool VarConv2dOp::CheckShape() const {
       << "W dim[1] should be equal to InputChannel * KernelH * KernelW";
   LoD x_lod = param_.X->lod();
   CHECK_EQ(x_lod.empty(), false) << "The Input(X) must hold lod info.";
-  CHECK_GE(x_lod.size(), 1) << "The Input(X)'s lod info is corrupted.";
+  // CHECK_GE(x_lod.size(), 1) << "The Input(X)'s lod info is corrupted.";
+  CHECK_GE(x_lod.size(), 3) << "The Input(X)'s lod info is corrupted.";
   CHECK_EQ(x_dims[0], static_cast<int64_t>(x_lod[0].back()))
       << "The Input(X)'s lod info mismatches the actual tensor shape.";
-  LoD row_lod = param_.ROW->lod();
-  CHECK_EQ(row_lod.empty(), false) << "The Input(ROW) must hold lod info.";
-  LoD col_lod = param_.COLUMN->lod();
-  CHECK_EQ(col_lod.empty(), false) << "The Input(COLUMN) must hold lod info.";
+  // LoD row_lod = param_.ROW->lod();
+  // CHECK_EQ(row_lod.empty(), false) << "The Input(ROW) must hold lod info.";
+  // LoD col_lod = param_.COLUMN->lod();
+  // CHECK_EQ(col_lod.empty(), false) << "The Input(COLUMN) must hold lod
+  // info.";
   return true;
 }
 
@@ -45,10 +47,10 @@ bool VarConv2dOp::InferShape() const { return true; }
 bool VarConv2dOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   param_.X = const_cast<lite::Tensor *>(
       &scope->FindVar(opdesc.Input("X").front())->Get<lite::Tensor>());
-  param_.ROW = const_cast<lite::Tensor *>(
-      &scope->FindVar(opdesc.Input("ROW").front())->Get<lite::Tensor>());
-  param_.COLUMN = const_cast<lite::Tensor *>(
-      &scope->FindVar(opdesc.Input("COLUMN").front())->Get<lite::Tensor>());
+  // param_.ROW = const_cast<lite::Tensor *>(
+  //     &scope->FindVar(opdesc.Input("ROW").front())->Get<lite::Tensor>());
+  // param_.COLUMN = const_cast<lite::Tensor *>(
+  //     &scope->FindVar(opdesc.Input("COLUMN").front())->Get<lite::Tensor>());
   param_.W = const_cast<lite::Tensor *>(
       &scope->FindVar(opdesc.Input("W").front())->Get<lite::Tensor>());
   param_.Out =
@@ -56,8 +58,8 @@ bool VarConv2dOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   param_.Col =
       scope->FindVar(opdesc.Output("Col").front())->GetMutable<lite::Tensor>();
   CHECK(param_.X) << "X(Input) of VarConv2dOP should not be null.";
-  CHECK(param_.ROW) << "Input(ROW) of VarConv2dOP should not be null.";
-  CHECK(param_.COLUMN) << "Input(COLUMN) of VarConv2dOP should not be null.";
+  // CHECK(param_.ROW) << "Input(ROW) of VarConv2dOP should not be null.";
+  // CHECK(param_.COLUMN) << "Input(COLUMN) of VarConv2dOP should not be null.";
   CHECK(param_.W) << "W(Input) of VarConv2dOP should not be null.";
   CHECK(param_.Out) << "Out(Output) of VarConv2dOP should not be null.";
   CHECK(param_.Col) << "Col(Output) of VarConv2dOP should not be null.";
