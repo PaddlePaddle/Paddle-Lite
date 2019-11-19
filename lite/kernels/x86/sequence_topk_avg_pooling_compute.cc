@@ -12,23 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/x86/softmax_compute.h"
+#include "lite/kernels/x86/sequence_topk_avg_pooling_compute.h"
 
-REGISTER_LITE_KERNEL(softmax,
-                     kX86,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::x86::SoftmaxCompute<float>,
-                     def)
+REGISTER_LITE_KERNEL(
+    sequence_topk_avg_pooling,
+    kX86,
+    kFloat,
+    kNCHW,
+    paddle::lite::kernels::x86::SequenceTopkAvgPoolingCompute<float>,
+    def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindInput("ROW", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindInput("COLUMN", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
-    .Finalize();
-REGISTER_LITE_KERNEL(search_seq_softmax,
-                     kX86,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::x86::SoftmaxCompute<float>,
-                     def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindOutput("pos", {LiteType::GetTensorTy(TARGET(kX86))})
     .Finalize();

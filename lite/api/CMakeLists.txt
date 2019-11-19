@@ -76,8 +76,8 @@ if (NOT LITE_ON_TINY_PUBLISH)
                     ARM_DEPS ${arm_kernels}
                     NPU_DEPS ${npu_kernels} ${npu_bridges} npu_pass
                     XPU_DEPS ${xpu_kernels} ${xpu_bridges} xpu_pass
-                    CL_DEPS ${opencl_kenrels}
-                    FPGA_DEPS ${fpga_kenrels})
+                    CL_DEPS ${opencl_kernels}
+                    FPGA_DEPS ${fpga_kernels})
 endif()
 
 # for light api
@@ -96,8 +96,8 @@ lite_cc_library(light_api SRCS light_api.cc
         ARM_DEPS ${arm_kernels}
         NPU_DEPS ${npu_kernels}
         XPU_DEPS ${xpu_kernels}
-        CL_DEPS ${opencl_kenrels}
-        FPGA_DEPS ${fpga_kenrels})
+        CL_DEPS ${opencl_kernels}
+        FPGA_DEPS ${fpga_kernels})
 
 include(ExternalProject)
 set(LITE_DEMO_INSTALL_DIR "${THIRD_PARTY_PATH}/inference_demo" CACHE STRING
