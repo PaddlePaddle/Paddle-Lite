@@ -17,19 +17,6 @@
 #include "lite/core/target_wrapper.h"
 #include "lite/kernels/cuda/sequence_pool_compute.h"
 
-const int CUDA_NUM_THREADS = 512;
-#define CUDA_KERNEL_LOOP(i, n)                                 \
-  for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < (n); \
-       i += blockDim.x * gridDim.x)
-
-/// CUDA: number of blocks for threads.
-inline int CUDA_GET_BLOCKS(const int N) {
-  return (N + CUDA_NUM_THREADS - 1) / CUDA_NUM_THREADS;
-}
-inline int CUDA_GET_BLOCKS(const int N, const int base) {
-  return (N + base - 1) / base;
-}
-
 namespace paddle {
 namespace lite {
 namespace kernels {
