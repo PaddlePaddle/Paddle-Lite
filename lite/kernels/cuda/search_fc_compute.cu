@@ -123,16 +123,14 @@ static __global__ void add_bias(int n,
 
 template <typename T>
 void SearchFcCompute<T>::Run() {
-  LOG(INFO) << "1";
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->template As<CUDAContext>();
   auto stream = ctx.exec_stream();
-  LOG(INFO) << "1";
   const Tensor* x_tensor = param.X;
+  param.Out->Resize({x_tensor->dims()[0], param.out_size()});
   _M = x_tensor->dims().count(0, 1);
   _K = x_tensor->dims().count(1, x_tensor->numel());
   _N = param.out_size;
-  LOG(INFO) << "1";
   const T* din = x_tensor->data<T>();
   Tensor* out_tensor = param.Out;
   T* dout = out_tensor->mutable_data<T>(TARGET(kCUDA));
@@ -141,12 +139,9 @@ void SearchFcCompute<T>::Run() {
   const Tensor* b_tensor = param.b;
   const T* bias = b_tensor->data<T>();
   cublasCreate(&_handle);
-  LOG(INFO) << "1";
   if (_M == 1 && _K > 50000) {
-    LOG(INFO) << "1";
     anakin_NV_gemv<T>(_handle, false, _N, _K, (T)1, weight, din, (T)0, dout);
   } else {
-    LOG(INFO) << "1";
     anakin_NV_gemm<T>(_handle,
                       false,
                       !_flag_trans_weights,
