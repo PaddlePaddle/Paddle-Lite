@@ -20,10 +20,10 @@ REGISTER_LITE_KERNEL(layer_norm,
                      kNCHW,
                      paddle::lite::kernels::x86::LayerNormCompute<float>,
                      def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("Scale", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Y", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Mean", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Variance", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindInput("Scale", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindOutput("Y", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindOutput("Mean", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindOutput("Variance", {LiteType::GetTensorTy(TARGET(kX86))})
     .Finalize();

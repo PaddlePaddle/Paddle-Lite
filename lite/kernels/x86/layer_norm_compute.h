@@ -29,7 +29,7 @@ namespace kernels {
 namespace x86 {
 
 template <typename T>
-class LayerNormCompute : public KernelLite<TARGET(kX86), PRECISION(kInt64)> {
+class LayerNormCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
  public:
   using param_t = operators::LayerNormParam;
 
@@ -56,8 +56,10 @@ class LayerNormCompute : public KernelLite<TARGET(kX86), PRECISION(kInt64)> {
     int right = static_cast<int>(matrix_dim[1]);
     lite::DDim matrix_shape({left, right});
 
-    x->Resize(matrix_shape);
-    Tensor out;
+    lite::Tensor in;
+    in.ShareDataWith(*x);
+    in.Resize(matrix_shape);
+    lite::Tensor out;
     out.ShareDataWith(*y);
     out.Resize(matrix_shape);
 
@@ -69,10 +71,10 @@ class LayerNormCompute : public KernelLite<TARGET(kX86), PRECISION(kInt64)> {
     auto ker = paddle::lite::jit::KernelFuncs<jit::LayerNormTuple<T>,
                                               lite::fluid::CPUPlace>::Cache()
                    .At(right);
-    ker(x->data<T>(),
-        out->data<T>(),
-        Mean->data<T>(),
-        Var->data<T>(),
+    ker(in.mutable_data<T>(),
+        out.mutable_data<T>(),
+        Mean->mutable_data<T>(),
+        Var->mutable_data<T>(),
         Scale->data<T>(),
         Bias->data<T>(),
         static_cast<int>(left),

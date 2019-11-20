@@ -27,9 +27,9 @@ namespace lite {
 namespace kernels {
 namespace x86 {
 
-std::vector<float> ref(const lite::Tensor& x,
-                       const lite::Tensor& Scale,
-                       const lite::Tensor& Bias,
+std::vector<float> ref(lite::Tensor* x,
+                       lite::Tensor* Scale,
+                       lite::Tensor* Bias,
                        lite::Tensor* y,
                        lite::Tensor* Mean,
                        lite::Tensor* Var,
@@ -54,10 +54,10 @@ std::vector<float> ref(const lite::Tensor& x,
   auto ker = paddle::lite::jit::KernelFuncs<jit::LayerNormTuple<float>,
                                             lite::fluid::CPUPlace>::Cache()
                  .At(right);
-  ker(x->data<float>(),
-      out->data<float>(),
-      Mean->data<float>(),
-      Var->data<float>(),
+  ker(x->mutable_data<float>(),
+      out.mutable_data<float>(),
+      Mean->mutable_data<float>(),
+      Var->mutable_data<float>(),
       Scale->data<float>(),
       Bias->data<float>(),
       static_cast<int>(left),
@@ -65,9 +65,9 @@ std::vector<float> ref(const lite::Tensor& x,
       right);
 
   std::vector<float> ref_data;
-  auto result = y->mutable_data<float>();
+  auto result = out.mutable_data<float>();
   for (int i = 0; i < y->dims().production(); ++i) {
-    ref_data.emplace_back(y[i]);
+    ref_data.emplace_back(result[i]);
   }
   return ref_data;
 }
@@ -96,9 +96,9 @@ TEST(layer_norm_x86, run_test) {
   lite::Tensor Mean;
   lite::Tensor Var;
 
-  std::vector<int64_t> x_shape({5, 15, 10, 20});
+  std::vector<int64_t> x_shape({1, 2, 3, 1});
   x.Resize(lite::DDim(x_shape));
-  std::vector<int64_t> out_shape({5, 15, 10, 20});
+  std::vector<int64_t> out_shape({1, 2, 3, 1});
   out.Resize(lite::DDim(out_shape));
 
   int begin_norm_axis = 0;
@@ -152,11 +152,13 @@ TEST(layer_norm_x86, run_test) {
   layer_norm.Run();
 
   std::vector<float> ref_data =
-      ref(x, Scale, Bias, &out, &Mean, &Var, begin_norm_axis, epsilon);
+      ref(&x, &Scale, &Bias, &out, &Mean, &Var, begin_norm_axis, epsilon);
   for (int j = 0; j < out.dims().production(); ++j) {
-    EXPECT_NEAR(out_data[j], x_data[j], 1e-5);
+    EXPECT_NEAR(out_data[j], ref_data[j], 1e-5);
     // LOG(INFO) << out_data[j];
   }
+  LOG(INFO) << *mean_data;
+  LOG(INFO) << *var_data;
 }
 
 }  // namespace x86
