@@ -12,23 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/x86/softmax_compute.h"
+#include "lite/kernels/x86/search_fc_compute.h"
 
-REGISTER_LITE_KERNEL(softmax,
+REGISTER_LITE_KERNEL(search_fc,
                      kX86,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::x86::SoftmaxCompute<float>,
+                     paddle::lite::kernels::x86::SearchFcCompute<float>,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
-    .Finalize();
-REGISTER_LITE_KERNEL(search_seq_softmax,
-                     kX86,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::x86::SoftmaxCompute<float>,
-                     def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindInput("W", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindInput("b", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
     .Finalize();
