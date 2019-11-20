@@ -46,7 +46,7 @@ void CheckInput(char*** argv) {
     printf(
         "[WARN] no `optimized_model_dir` provided. set `optimized_model_dir` "
         ":= `model_dir`:%s\n",
-        FLAGS_optimized_model_dir);
+        FLAGS_optimized_model_dir.c_str());
   }
   printf("[WARN] model_dir:%s\n", FLAGS_model_dir.c_str());
   printf("[WARN] optimized_model_dir:%s\n", FLAGS_optimized_model_dir.c_str());
