@@ -2,8 +2,7 @@ if(NOT LITE_WITH_CUDA)
     return()
 endif()
 
-set(cuda_static_deps cudnn_static cublas_static curand_static
-    culibos_static cudart_static)
+get_property(cuda_static_deps GLOBAL PROPERTY CUDA_STATIC_MODULES)
 
 nv_library(cuda_activation SRCS activation.cu DEPS ${cuda_static_deps})
 nv_library(cuda_scale SRCS scale.cu DEPS ${cuda_static_deps})
