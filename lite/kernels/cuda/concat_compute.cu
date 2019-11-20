@@ -51,9 +51,9 @@ void ConcatCompute<Dtype>::Run() {
   Tensor* output = param.output;
   auto* output_data = output->mutable_data<Dtype>(TARGET(kCUDA));
   int axis = param.axis;
-  auto* axis_tensor = param.axis_tensor;
+  Tensor* axis_tensor = param.axis_tensor;
   if (axis_tensor != nullptr) {
-    auto* axis_tensor_data = axis_tensor->data<int>();
+    const int* axis_tensor_data = axis_tensor->data<int>();
     axis = axis_tensor_data[0];
   }
   int inner_size = 1;

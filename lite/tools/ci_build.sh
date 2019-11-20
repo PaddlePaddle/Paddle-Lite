@@ -1,9 +1,10 @@
 #!/bin/bash
+# The git version of CI is 2.7.4. This script is not compatible with git version 1.7.1.
 set -ex
 
 TESTS_FILE="./lite_tests.txt"
 LIBS_FILE="./lite_libs.txt"
-
+CUDNN_ROOT="/usr/local/cudnn"
 
 readonly ADB_WORK_DIR="/data/local/tmp"
 readonly common_flags="-DWITH_LITE=ON -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF -DWITH_PYTHON=OFF -DWITH_TESTING=ON -DLITE_WITH_ARM=OFF"
@@ -162,6 +163,12 @@ function cmake_x86_for_CI {
     # make test_generated_code -j$NUM_CORES_FOR_COMPILE
 }
 
+function cmake_cuda_for_CI {
+    prepare_workspace # fake an empty __generated_code__.cc to pass cmake.
+    cmake ..  -DLITE_WITH_CUDA=ON -DWITH_MKLDNN=OFF -DLITE_WITH_X86=OFF ${common_flags} -DLITE_WITH_PROFILE=ON -DWITH_MKL=OFF \
+        -DLITE_BUILD_EXTRA=ON -DCUDNN_ROOT=${CUDNN_ROOT}
+}
+
 function cmake_gpu {
     prepare_workspace
     cmake .. " -DWITH_GPU=ON {common_flags} -DLITE_WITH_GPU=ON"
@@ -224,6 +231,16 @@ function build_test_server {
 
     test_server
     test_model_optimize_tool_compile
+}
+
+# The CUDA version of CI is cuda_10.1.243_418.87.00_linux.
+# The cuDNN version is cudnn-10.1-linux-x64-v7.5.0.56.
+function build_test_cuda_server {
+    mkdir -p ./build
+    cd ./build
+    export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$PWD/third_party/install/mklml/lib"
+    cmake_cuda_for_CI
+    build
 }
 
 function build_test_train {
@@ -948,6 +965,10 @@ function main {
                 ;;
             test_arm_android)
                 test_arm_android $TEST_NAME $ARM_PORT
+                shift
+                ;;
+            build_test_cuda_server)
+                build_test_cuda_server
                 shift
                 ;;
             build_test_server)
