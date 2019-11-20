@@ -12,16 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/x86/var_conv_2d_compute.h"
+#include "lite/kernels/x86/sequence_arithmetic_compute.h"
 
-REGISTER_LITE_KERNEL(var_conv_2d,
-                     kX86,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::x86::VarConv2DCompute<float>,
-                     def)
+REGISTER_LITE_KERNEL(
+    sequence_arithmetic,
+    kX86,
+    kFloat,
+    kNCHW,
+    paddle::lite::kernels::x86::SequenceArithmeticCompute<float>,
+    def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
-    .BindInput("W", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
-    .BindOutput("Col", {LiteType::GetTensorTy(TARGET(kX86))})
+    .Finalize();
+REGISTER_LITE_KERNEL(
+    search_seq_arithmetic,
+    kX86,
+    kFloat,
+    kNCHW,
+    paddle::lite::kernels::x86::SequenceArithmeticCompute<float>,
+    def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
     .Finalize();

@@ -70,6 +70,7 @@ class StaticKernelPickPass : public mir::StmtPass {
       const auto& place = places[i];
       float weight = static_cast<float>(place_size - i) / place_size;
       size_t score{};
+
       // The more important factor comes first
       if (kernel_pick_factors_.IsTargetConsidered() &&
           (place.target == kernel.target() || kernel.target() == TARGET(kAny) ||
@@ -102,17 +103,17 @@ class StaticKernelPickPass : public mir::StmtPass {
 
     VLOG(4) << "[score(final)]:" << final_score;
     VLOG(4) << "-------- pick summary --------";
-    VLOG(4) << " ===> place():" << PrecisionToStr(winner_place.precision) << " "
-            << DataLayoutToStr(winner_place.layout) << " "
+    VLOG(4) << " ===> winner_place():" << PrecisionToStr(winner_place.precision)
+            << " " << DataLayoutToStr(winner_place.layout) << " "
             << TargetToStr(winner_place.target);
     VLOG(4) << " ===> kernel.place():"
             << PrecisionToStr(kernel.place().precision) << " "
             << DataLayoutToStr(kernel.place().layout) << " "
             << TargetToStr(kernel.place().target);
     VLOG(4) << "kernel.op_type():" << kernel.op_type();
-    VLOG(4) << "picker tactic " << kernel_pick_factors_;
-    VLOG(4) << "kernel place " << kernel.place().DebugString();
-    VLOG(4) << "picker place " << winner_place.DebugString();
+    VLOG(4) << "kernel picker factors:" << kernel_pick_factors_;
+    VLOG(4) << "kernel place:" << kernel.place().DebugString();
+    VLOG(4) << "winner_picker place:" << winner_place.DebugString();
     VLOG(4) << "------------------------------";
 
     // The data layout is not considered, for the input and output arguments

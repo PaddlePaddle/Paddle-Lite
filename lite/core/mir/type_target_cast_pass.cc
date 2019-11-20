@@ -128,10 +128,9 @@ void TypeTargetTransformPass::AddIoCopyInst(
     VLOG(4) << "out_arg_ty(io_copy kernel output):" << *out_arg_ty;
     VLOG(4) << "to:" << to << "\n";
 
-// kernel choose branch for opencl backend
-//   judge inst's target whether is kOpenCL
-//   Note: to == *decl_arg_type == in of inst, not output of last inst
-#ifdef LITE_WITH_OPENCL
+    // kernel choose branch for opencl backend
+    //   judge inst's target whether is kOpenCL
+    //   Note: to == *decl_arg_type == in of inst, not output of last inst
     // ignore [layout check] for layout between [to] and [from]
     //   Because all of origin opencl insts in model, are not default layout
     //   NCHW,
@@ -141,25 +140,34 @@ void TypeTargetTransformPass::AddIoCopyInst(
     //     [*decl_arg_type] -> [to]: input of inst, not output of last
     //     [in_arg_ty]: in of io_copy
     //     [out_arg_ty]: out of io_copy
-    if (TargetCompatibleTo(*in_arg_ty, from) &&
-        PrecisionCompatibleTo(*in_arg_ty, from) &&
-        DeviceCompatibleTo(*in_arg_ty, from) &&
-        TargetCompatibleTo(*out_arg_ty, to)) {
-      VLOG(4) << "do nothing. opencl found";
-#else
-    if (TypeCompatible(*in_arg_ty, from) &&
-        out_arg_ty->target() == to.target()) {
-#endif
+    //
+    // noto: replace LITE_WITH_OPENCL macro with judge input and output target
+    // of io_copy
+    if ((in_arg_ty->target() == TARGET(kOpenCL) ||
+         out_arg_ty->target() == TARGET(kOpenCL)) &&  // judge OpenCL first
+        (TargetCompatibleTo(*in_arg_ty, from) &&
+         PrecisionCompatibleTo(*in_arg_ty, from) &&
+         DeviceCompatibleTo(*in_arg_ty, from) &&
+         TargetCompatibleTo(*out_arg_ty, to))) {
+      VLOG(4) << "picked, opencl found";
+      is_found = true;
+    } else if (TypeCompatible(*in_arg_ty, from) &&
+               out_arg_ty->target() == to.target()) {
       VLOG(4) << "picked";
       is_found = true;
+    }
+
+    if (is_found) {
       selected_kernels.emplace_back(std::move(kernel));
       // we pick the kernel
       io_copy_inst->AsStmt(
           io_copy_type, std::move(selected_kernels), io_copy_op);
       break;
     }
+
     VLOG(4) << "not picked";
   }
+
   CHECK(is_found) << "Can't find a io_copy  kernel for io_copy op: " << from
                   << ":" << in->AsArg().name << " -> " << to << ":"
                   << inst_node->AsStmt().op_info()->Type();
