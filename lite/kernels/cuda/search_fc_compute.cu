@@ -127,7 +127,7 @@ void SearchFcCompute<T>::Run() {
   auto& ctx = this->ctx_->template As<CUDAContext>();
   auto stream = ctx.exec_stream();
   const Tensor* x_tensor = param.X;
-  param.Out->Resize({x_tensor->dims()[0], param.out_size()});
+  param.Out->Resize({x_tensor->dims()[0], param.out_size});
   _M = x_tensor->dims().count(0, 1);
   _K = x_tensor->dims().count(1, x_tensor->numel());
   _N = param.out_size;
