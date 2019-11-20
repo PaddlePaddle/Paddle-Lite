@@ -61,9 +61,25 @@ class FillConstantCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
     auto& param = *param_.get_mutable<param_t>();
     auto& context = ctx_->As<ARMContext>();
 
-    auto data = param.Out->template mutable_data<T>();
-    for (int i = 0; i < param.Out->numel(); i++) {
-      data[i] = param.value;
+    if (param.dtype == static_cast<int32_t>(lite::core::FluidType::FP32)) {
+      auto data = param.Out->template mutable_data<float>();
+      for (int i = 0; i < param.Out->numel(); i++) {
+        data[i] = param.value;
+      }
+    } else if (param.dtype ==
+               static_cast<int32_t>(lite::core::FluidType::INT32)) {
+      auto data = param.Out->template mutable_data<int32_t>();
+      for (int i = 0; i < param.Out->numel(); i++) {
+        data[i] = param.value;
+      }
+    } else if (param.dtype ==
+               static_cast<int32_t>(lite::core::FluidType::INT8)) {
+      auto data = param.Out->template mutable_data<int8_t>();
+      for (int i = 0; i < param.Out->numel(); i++) {
+        data[i] = param.value;
+      }
+    } else {
+      LOG(FATAL) << "not supported dtype " << param.dtype;
     }
   }
 
@@ -86,9 +102,25 @@ class FillConstantBatchLikeCompute
       param.out->Resize(odims);
     }
 
-    auto data = param.out->template mutable_data<T>();
-    for (int i = 0; i < param.out->numel(); i++) {
-      data[i] = param.value;
+    if (param.dtype == static_cast<int32_t>(lite::core::FluidType::FP32)) {
+      auto data = param.out->template mutable_data<float>();
+      for (int i = 0; i < param.out->numel(); i++) {
+        data[i] = param.value;
+      }
+    } else if (param.dtype ==
+               static_cast<int32_t>(lite::core::FluidType::INT32)) {
+      auto data = param.out->template mutable_data<int32_t>();
+      for (int i = 0; i < param.out->numel(); i++) {
+        data[i] = param.value;
+      }
+    } else if (param.dtype ==
+               static_cast<int32_t>(lite::core::FluidType::INT8)) {
+      auto data = param.out->template mutable_data<int8_t>();
+      for (int i = 0; i < param.out->numel(); i++) {
+        data[i] = param.value;
+      }
+    } else {
+      LOG(FATAL) << "not supported dtype " << param.dtype;
     }
   }
 

@@ -19,6 +19,8 @@ BUILD_PYTHON=OFF
 BUILD_DIR=$(pwd)
 OPTMODEL_DIR=""
 BUILD_TAILOR=OFF
+BUILD_CV=OFF
+SHUTDOWN_LOG=ON
 
 readonly THIRDPARTY_TAR=https://paddle-inference-dist.bj.bcebos.com/PaddleLite/third-party-05b862.tar.gz
 
@@ -92,10 +94,11 @@ function make_tiny_publish_so {
       -DWITH_TESTING=OFF \
       -DLITE_WITH_JAVA=$BUILD_JAVA \
       -DLITE_WITH_PYTHON=$BUILD_PYTHON \
-      -DLITE_SHUTDOWN_LOG=ON \
+      -DLITE_SHUTDOWN_LOG=$SHUTDOWN_LOG \
       -DLITE_ON_TINY_PUBLISH=ON \
       -DANDROID_STL_TYPE=$android_stl \
       -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
+      -DLITE_WITH_CV=$BUILD_CV \
       -DLITE_BUILD_TAILOR=$BUILD_TAILOR \
       -DLITE_OPTMODEL_DIR=$OPTMODEL_DIR \
       -DARM_TARGET_OS=${os} -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
@@ -122,7 +125,7 @@ function make_full_publish_so {
   fi
   mkdir -p $build_directory
   cd $build_directory
-  
+
   if [ ${os} == "armlinux" ]; then
     BUILD_JAVA=OFF
   fi
@@ -134,9 +137,10 @@ function make_full_publish_so {
       -DWITH_TESTING=OFF \
       -DLITE_WITH_JAVA=$BUILD_JAVA \
       -DLITE_WITH_PYTHON=$BUILD_PYTHON \
-      -DLITE_SHUTDOWN_LOG=ON \
+      -DLITE_SHUTDOWN_LOG=$SHUTDOWN_LOG \
       -DANDROID_STL_TYPE=$android_stl \
       -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
+      -DLITE_WITH_CV=$BUILD_CV \
       -DLITE_BUILD_TAILOR=$BUILD_TAILOR \
       -DLITE_OPTMODEL_DIR=$OPTMODEL_DIR \
       -DARM_TARGET_OS=${os} -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
@@ -166,6 +170,7 @@ function make_all_tests {
       ${CMAKE_COMMON_OPTIONS} \
       -DWITH_TESTING=ON \
       -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
+      -DLITE_WITH_CV=$BUILD_CV \
       -DARM_TARGET_OS=${os} -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
 
   make lite_compile_deps -j$NUM_PROC
@@ -201,6 +206,7 @@ function make_ios {
             -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
             -DARM_TARGET_ARCH_ABI=$abi \
             -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
+            -DLITE_WITH_CV=$BUILD_CV \
             -DARM_TARGET_OS=$os
 
     make -j4 publish_inference
@@ -231,10 +237,10 @@ function make_cuda {
             -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF \
             -DWITH_TESTING=OFF \
             -DLITE_WITH_ARM=OFF \
-            -DLITE_WITH_PYTHON=ON \
+            -DLITE_WITH_PYTHON=${BUILD_PYTHON} \
             -DLITE_BUILD_EXTRA=ON
-
-  make publish_inference_python_lib -j8
+ 
+  make publish_inference -j4
   cd -
 }
 
@@ -285,6 +291,7 @@ function print_usage {
     echo -e "   ./build.sh --arm_os=<os> --arm_abi=<abi> --arm_lang=<lang> test"
     echo
     echo -e "optional argument:"
+    echo -e "--shutdown_log: (OFF|ON); controls whether to shutdown log, default is ON"
     echo -e "--build_extra: (OFF|ON); controls whether to publish extra operators and kernels for (sequence-related model such as OCR or NLP)"
     echo -e "--build_python: (OFF|ON); controls whether to publish python api lib (ANDROID and IOS is not supported)"
     echo -e "--build_java: (OFF|ON); controls whether to publish java api lib (Only ANDROID is supported)"
@@ -361,12 +368,16 @@ function main {
                 BUILD_TAILOR="${i#*=}"
                 shift
                 ;;
+            --shutdown_log=*)
+                SHUTDOWN_LOG="${i#*=}"
+                shift
+                ;;
             tiny_publish)
-                make_tiny_publish_so $ARM_OS $ARM_ABI $ARM_LANG $ANDROID_STL
+                make_tiny_publish_so $ARM_OS $ARM_ABI $ARM_LANG $ANDROID_STL 
                 shift
                 ;;
             full_publish)
-                make_full_publish_so $ARM_OS $ARM_ABI $ARM_LANG $ANDROID_STL
+                make_full_publish_so $ARM_OS $ARM_ABI $ARM_LANG $ANDROID_STL 
                 shift
                 ;;
             test)
@@ -382,7 +393,7 @@ function main {
                 shift
                 ;;
             cuda)
-                make_cuda 
+                make_cuda
                 shift
                 ;;
             x86)

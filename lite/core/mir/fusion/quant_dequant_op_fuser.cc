@@ -79,23 +79,26 @@ cpp::OpDesc DeleteQuantOpFuser::GenOpDesc(const key2nodes_t& matched) {
 
 void DequantOpFuser::BuildPattern() {
   std::string weight_name = "";
-  if (op_type_ == "conv2d" || op_type_ == "depthwise_conv2d") {
+  if (quantized_op_type_ == "conv2d" ||
+      quantized_op_type_ == "depthwise_conv2d") {
     weight_name = "Filter";
   } else {
     weight_name = "Y";
   }
 
-  auto* quantized_op_input =
-      VarNode("quantized_op_input")->assert_is_op_input(op_type_)->AsInput();
-  auto* quantized_op_weight = VarNode("quantized_op_weight")
-                                  ->assert_is_op_input(op_type_, weight_name)
-                                  ->AsInput();
-  auto* quantized_op = OpNode("quantized_op", op_type_)
-                           ->assert_is_op(op_type_)
+  auto* quantized_op_input = VarNode("quantized_op_input")
+                                 ->assert_is_op_input(quantized_op_type_)
+                                 ->AsInput();
+  auto* quantized_op_weight =
+      VarNode("quantized_op_weight")
+          ->assert_is_op_input(quantized_op_type_, weight_name)
+          ->AsInput();
+  auto* quantized_op = OpNode("quantized_op", quantized_op_type_)
+                           ->assert_is_op(quantized_op_type_)
                            ->AsIntermediate();
   auto* quantized_op_out =
       VarNode("quantized_op_out")
-          ->assert_is_op_output(op_type_)
+          ->assert_is_op_output(quantized_op_type_)
           ->assert_is_op_input("fake_dequantize_max_abs", "X")
           ->AsIntermediate();
   auto* dequant_op = OpNode("dequant_op", "fake_dequantize_max_abs")
@@ -110,12 +113,13 @@ void DequantOpFuser::BuildPattern() {
   quantized_op_out->LinksFrom({quantized_op});
   dequant_op->LinksFrom({quantized_op_out});
   dequant_op_out->LinksFrom({dequant_op});
-  VLOG(4) << "DeQuantOpFuser BuildPattern op_type:" << op_type_;
+
+  VLOG(4) << "DeQuantOpFuser BuildPattern op_type:" << quantized_op_type_;
 }
 
 void DequantOpFuser::InsertNewNode(SSAGraph* graph,
                                    const key2nodes_t& matched) {
-  auto* quant_op_input = matched.at("quantized_op_input");
+  auto* quantized_op_input = matched.at("quantized_op_input");
   auto* quantized_op_weight = matched.at("quantized_op_weight");
   auto* quantized_op = matched.at("quantized_op");
   auto* dequant_op = matched.at("dequant_op");
@@ -142,14 +146,15 @@ void DequantOpFuser::InsertNewNode(SSAGraph* graph,
       scope->FindVar(quantized_weight_var_name)->GetMutable<lite::Tensor>();
   std::vector<float> weight_scale;
   int weight_scale_size;
-  if (op_type_ == "conv2d" || op_type_ == "depthwise_conv2d") {
-    op_desc.SetInput("Input", {quant_op_input->arg()->name});
+  if (quantized_op_type_ == "conv2d" ||
+      quantized_op_type_ == "depthwise_conv2d") {
+    op_desc.SetInput("Input", {quantized_op_input->arg()->name});
     op_desc.SetOutput("Output", {dequant_op_out->arg()->name});
     // Conv weight shape: Cout * Cin * kh * hw, the weight_scale_size should
     // be Cout.
     weight_scale_size = quantized_weight_t->dims()[0];
-  } else if (op_type_ == "mul") {
-    op_desc.SetInput("X", {quant_op_input->arg()->name});
+  } else if (quantized_op_type_ == "mul") {
+    op_desc.SetInput("X", {quantized_op_input->arg()->name});
     op_desc.SetOutput("Out", {dequant_op_out->arg()->name});
     // Fc weight: Cin * Cout, the weight_scale_size should be Cout.
     weight_scale_size = quantized_weight_t->dims()[1];
@@ -174,16 +179,117 @@ void DequantOpFuser::InsertNewNode(SSAGraph* graph,
   quantized_weight_t->set_precision(PRECISION(kInt8));
 
   // new op and relink nodes
-  auto new_quantized_op = LiteOpRegistry::Global().Create(op_type_);
+  auto new_quantized_op = LiteOpRegistry::Global().Create(quantized_op_type_);
   new_quantized_op->Attach(op_desc, scope);
   auto* new_quantized_op_node =
       graph->GraphCreateInstructNode(new_quantized_op, valid_places);
-  IR_NODE_LINK_TO(quant_op_input, new_quantized_op_node);
+  IR_NODE_LINK_TO(quantized_op_input, new_quantized_op_node);
   IR_NODE_LINK_TO(quantized_op_weight, new_quantized_op_node);
   IR_NODE_LINK_TO(new_quantized_op_node, dequant_op_out);
 }
 
 cpp::OpDesc DequantOpFuser::GenOpDesc(const key2nodes_t& matched) {
+  cpp::OpDesc op_desc;
+  return op_desc;
+}
+
+void ChannelWiseDequantOpFuser::BuildPattern() {
+  std::string dequant_op_type = "fake_channel_wise_dequantize_max_abs";
+  auto* quantized_op_input = VarNode("quantized_op_input")
+                                 ->assert_is_op_input(quantized_op_type_)
+                                 ->AsInput();
+  auto* quantized_op_weight =
+      VarNode("quantized_op_weight")
+          ->assert_is_op_input(quantized_op_type_, "Filter")
+          ->AsInput();
+  auto* quantized_op = OpNode("quantized_op", quantized_op_type_)
+                           ->assert_is_op(quantized_op_type_)
+                           ->AsIntermediate();
+  auto* quantized_op_out = VarNode("quantized_op_out")
+                               ->assert_is_op_output(quantized_op_type_)
+                               ->assert_is_op_input(dequant_op_type, "X")
+                               ->AsIntermediate();
+  auto* dequant_op_channel_scale = VarNode("dequant_op_channel_scale")
+                                       ->assert_is_op_input(dequant_op_type)
+                                       ->AsIntermediate();
+  auto* dequant_op = OpNode("dequant_op", dequant_op_type)
+                         ->assert_is_op(dequant_op_type)
+                         ->AsIntermediate();
+  auto* dequant_op_out = VarNode("dequant_op_out")
+                             ->assert_is_op_output(dequant_op_type, "Out")
+                             ->AsOutput();
+
+  quantized_op->LinksFrom({quantized_op_input, quantized_op_weight});
+  quantized_op_out->LinksFrom({quantized_op});
+  dequant_op->LinksFrom({quantized_op_out, dequant_op_channel_scale});
+  dequant_op_out->LinksFrom({dequant_op});
+
+  VLOG(4) << "ChannelWiseDequantOpFuser BuildPattern op_type:"
+          << quantized_op_type_;
+}
+
+void ChannelWiseDequantOpFuser::InsertNewNode(SSAGraph* graph,
+                                              const key2nodes_t& matched) {
+  auto* quantized_op_input = matched.at("quantized_op_input");
+  auto* quantized_op_weight = matched.at("quantized_op_weight");
+  auto* quantized_op = matched.at("quantized_op");
+  auto* dequant_op_channel_scale = matched.at("dequant_op_channel_scale");
+  auto* dequant_op = matched.at("dequant_op");
+  auto* dequant_op_out = matched.at("dequant_op_out");
+
+  // obtain input_scale and weight_scale
+  auto* scope = quantized_op->stmt()->op()->scope();
+  auto& valid_places = quantized_op->stmt()->op()->valid_places();
+  float input_scale =
+      quantized_op->stmt()->op_info()->GetAttr<float>("input_scale");
+
+  std::vector<float> weight_scale;
+  std::vector<int> quant_bits =
+      dequant_op->stmt()->op_info()->GetAttr<std::vector<int>>("quant_bits");
+  int weight_bit_length = quant_bits[0];
+  int range = ((1 << (weight_bit_length - 1)) - 1);
+  auto channel_scale_name = dequant_op_channel_scale->arg()->name;
+  auto channel_scale_tensor =
+      scope->FindVar(channel_scale_name)->GetMutable<lite::Tensor>();
+  auto* channel_scale_data = channel_scale_tensor->data<float>();
+  for (int i = 0; i < channel_scale_tensor->data_size(); i++) {
+    weight_scale.push_back(channel_scale_data[i] / range);
+  }
+
+  // set op desc
+  cpp::OpDesc op_desc = *quantized_op->stmt()->op_info();
+  op_desc.SetInput("Input", {quantized_op_input->arg()->name});
+  op_desc.SetOutput("Output", {dequant_op_out->arg()->name});
+
+  op_desc.SetAttr("enable_int8", true);
+  op_desc.SetAttr("input_scale", input_scale);
+  op_desc.SetAttr("weight_scale", weight_scale);
+
+  // change the weight from the float type to int8 type.
+  auto quantized_weight_var_name = quantized_op_weight->arg()->name;
+  auto quantized_weight_t =
+      scope->FindVar(quantized_weight_var_name)->GetMutable<lite::Tensor>();
+  Tensor temp_tensor;
+  temp_tensor.CopyDataFrom(*quantized_weight_t);
+  float* temp_data = temp_tensor.mutable_data<float>();
+  int8_t* quantized_weight_data = quantized_weight_t->mutable_data<int8_t>();
+  for (size_t i = 0; i < quantized_weight_t->data_size(); i++) {
+    quantized_weight_data[i] = static_cast<int8_t>(temp_data[i]);
+  }
+  quantized_weight_t->set_persistable(true);
+  quantized_weight_t->set_precision(PRECISION(kInt8));
+
+  // new op and relink nodes
+  auto new_quantized_op = LiteOpRegistry::Global().Create(quantized_op_type_);
+  new_quantized_op->Attach(op_desc, scope);
+  auto* new_quantized_op_node =
+      graph->GraphCreateInstructNode(new_quantized_op, valid_places);
+  IR_NODE_LINK_TO(quantized_op_input, new_quantized_op_node);
+  IR_NODE_LINK_TO(quantized_op_weight, new_quantized_op_node);
+  IR_NODE_LINK_TO(new_quantized_op_node, dequant_op_out);
+}
+
+cpp::OpDesc ChannelWiseDequantOpFuser::GenOpDesc(const key2nodes_t& matched) {
   cpp::OpDesc op_desc;
   return op_desc;
 }
