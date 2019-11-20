@@ -202,7 +202,8 @@ void conv1x1s1_gemm(const float* i_data,
               k,
               flag_bias,
               bias_group,
-              flag_relu);
+              flag_relu,
+              ctx);
       } else {
         sgemm_prepack(false,
                       m,
@@ -395,7 +396,8 @@ void conv_im2col_gemm(const float* i_data,
               k,
               flag_bias,
               bias_group,
-              flag_relu);
+              flag_relu,
+              ctx);
       } else {
         int ldb = n;
         sgemm_prepack(false,
