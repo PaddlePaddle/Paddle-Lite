@@ -89,11 +89,21 @@ struct FcParam {
   WITH_INT8_CONFIG
 };
 
+struct SearchSeqFcParam {
+  lite::Tensor* x{nullptr};
+  lite::Tensor* w{nullptr};
+  lite::Tensor* b{nullptr};
+  lite::Tensor* out{nullptr};
+  int out_size;
+};
+
 // For Interpolate Op
 struct InterpolateParam {
   lite::Tensor* X{};
   lite::Tensor* OutSize{};
   lite::Tensor* Out{};
+  std::vector<const lite::Tensor*> SizeTensor;
+  lite::Tensor* Scale{};
 
   float scale{0.f};
   int out_h{-1};
@@ -101,6 +111,7 @@ struct InterpolateParam {
   bool align_corners{true};
   int align_mode{1};
   std::string interp_method{"Nearest"};
+  DataLayoutType data_layout{DATALAYOUT(kNCHW)};
 };
 
 // For Mul Op
@@ -207,6 +218,7 @@ struct ConcatParam {
   std::vector<lite::Tensor*> x{};
   lite::Tensor* output{};
   int axis{0};
+  lite::Tensor* axis_tensor{};
 };
 
 /// ----------------------- activation operators ----------------------
@@ -427,6 +439,13 @@ struct FakeDequantizeMaxAbsParam {
   float max_range;
 };
 
+struct FakeChannelWiseDequantizeMaxAbsParam {
+  const lite::Tensor* x{};
+  std::vector<const lite::Tensor*> scale_tensors{};
+  lite::Tensor* out{};
+  std::vector<int> quant_bits;
+};
+
 /// ----------------------- sgd operators ----------------------
 struct SGDParam {
   int dtype{static_cast<int>(VarDescAPI::VarDataType::FP32)};
@@ -503,8 +522,8 @@ struct GRUUnitParam {
 struct LrnParam {
   const lite::Tensor* X{};
   lite::Tensor* Out{};
-  int local_size{5};
-  float alpha{1.};
+  int n{5};
+  float alpha{1e-4};
   float beta{0.75};
   float k{1.};
   std::string norm_region{"AcrossChannels"};
@@ -721,6 +740,14 @@ struct SequencePoolParam {
 #endif
 };
 
+struct SearchGroupPaddingParam {
+  lite::Tensor* x{};
+  lite::Tensor* out_emb_padding{};
+  lite::Tensor* out_new{};
+  lite::Tensor* out_padding{};
+  int pad_id;
+};
+
 struct SequenceReshapeParam {
   lite::Tensor* x{};
   lite::Tensor* output{};
@@ -738,6 +765,32 @@ struct SequenceExpandAsParam {
   const lite::Tensor* x{nullptr};
   const lite::Tensor* y{nullptr};
   lite::Tensor* out{nullptr};
+};
+
+struct SequenceReverseParam {
+  const lite::Tensor* X{};
+  lite::Tensor* Out{};
+};
+
+struct SequenceConcatParam {
+  std::vector<lite::Tensor*> X{};
+  lite::Tensor* Out{};
+};
+
+struct AttentionPaddingMaskParam {
+  const lite::Tensor* X{};
+  const lite::Tensor* Y{};
+  int pad_id;
+  float mask;
+  lite::Tensor* Out{};
+  lite::Tensor* pad_begin{};
+};
+
+struct SequenceArithmeticParam {
+  const lite::Tensor* X{};
+  const lite::Tensor* Y{};
+  int op_type{1};
+  lite::Tensor* Out{};
 };
 
 struct ReduceMaxParam {
@@ -768,6 +821,22 @@ struct ReduceParam {
   bool reduce_all{false};
 };
 
+struct VarConv2DParam {
+  const lite::Tensor* X{};
+  const lite::Tensor* ROW{};
+  const lite::Tensor* COLUMN{};
+  const lite::Tensor* W{};
+  lite::Tensor* Out{};
+  lite::Tensor* Col{};
+
+  int input_channel;
+  int output_channel;
+  int stride_h;
+  int stride_w;
+  int kernel_h;
+  int kernel_w;
+};
+
 /// ----------------------- shape operators ----------------------
 struct ShapeParam {
   const lite::Tensor* X{};
@@ -788,6 +857,11 @@ struct SliceParam {
   std::vector<int> starts{};
   std::vector<int> ends{};
   std::vector<int> decrease_axis{};
+  std::vector<int> infer_flags{};
+  std::vector<lite::Tensor*> StartsTensorList{};
+  std::vector<lite::Tensor*> EndsTensorList{};
+  lite::Tensor* StartsTensor{nullptr};
+  lite::Tensor* EndsTensor{nullptr};
 };
 
 struct AffineChannelParam {
@@ -842,6 +916,8 @@ struct UnsqueezeParam {
   lite::Tensor* Out{};
   lite::Tensor* XShape{};
   std::vector<int> axes{};
+  const lite::Tensor* axes_tensor{};
+  std::vector<const lite::Tensor*> axes_tensor_vct{};
 };
 
 /// ----------------------- expand operators ----------------------
@@ -905,6 +981,57 @@ struct AssignValueParam {
   std::vector<float> fp32_values{};
   std::vector<int> int32_values{};
   lite::Tensor* Out{};
+};
+
+/// --------------- sequence_topk_avg_pooling operators ------------------
+struct SequenceTopkAvgPoolingParam {
+  const lite::Tensor* X{};
+  const lite::Tensor* ROW{};
+  const lite::Tensor* COLUMN{};
+  lite::Tensor* Out{};
+  lite::Tensor* pos{};
+  int channel_num{};
+  std::vector<int> topks{};
+};
+
+/// --------------- search_fc operators ------------------
+struct SearchFcParam {
+  const lite::Tensor* X{};
+  const lite::Tensor* W{};
+  const lite::Tensor* b{};
+  lite::Tensor* Out{};
+  int out_size{};
+};
+/// --------------------- match_matrix_tensor operators --------------------
+struct MatchMatrixTensorParam {
+  const lite::Tensor* x{};
+  const lite::Tensor* y{};
+  const lite::Tensor* w{};
+  lite::Tensor* out{};
+  lite::Tensor* tmp{};
+
+  int dim_t;
+};
+
+/// --------------------- search_seq_depadding operators --------------------
+struct SearchSeqDepaddingParam {
+  const lite::Tensor* pad{};
+  const lite::Tensor* src{};
+  lite::Tensor* out{};
+};
+
+/// --------------------- search_grnn operators --------------------
+struct SearchGrnnParam {
+  const lite::Tensor* x{};
+  const lite::Tensor* wi{};
+  const lite::Tensor* wh{};
+  int num_input;
+  int num_hidden;
+
+  lite::Tensor* out{};
+  lite::Tensor* tmp_buffer{};
+  lite::Tensor* idx_sorted_by_width{};
+  lite::Tensor* layout_input{};
 };
 
 }  // namespace operators

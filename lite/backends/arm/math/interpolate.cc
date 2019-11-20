@@ -22,6 +22,28 @@ namespace lite {
 namespace arm {
 namespace math {
 
+inline std::vector<int> get_new_shape(
+    std::vector<const lite::Tensor*> list_new_shape_tensor) {
+  // get tensor from
+  std::vector<int> vec_new_shape;
+  for (size_t i = 0; i < list_new_shape_tensor.size(); ++i) {
+    auto tensor = list_new_shape_tensor[i];
+    vec_new_shape.push_back(static_cast<int32_t>(*tensor->data<int32_t>()));
+  }
+
+  return vec_new_shape;
+}
+
+template <typename T>
+inline std::vector<T> get_new_data_from_tensor(const Tensor* new_data_tensor) {
+  std::vector<T> vec_new_data;
+  auto* new_data = new_data_tensor->data<T>();
+  lite::Tensor cpu_starts_tensor;
+  vec_new_data =
+      std::vector<T>(new_data, new_data + new_data_tensor->dims().production());
+  return vec_new_data;
+}
+
 // The following function bilinear_interp is partially base on
 // https://github.com/Tencent/ncnn/blob/master/src/layer/arm/interp_arm.cpp
 // Tencent is pleased to support the open source community by making ncnn
@@ -472,33 +494,52 @@ void nearest_interp(const float* src,
 
 void interpolate(lite::Tensor* X,
                  lite::Tensor* OutSize,
+                 std::vector<const lite::Tensor*> SizeTensor,
+                 lite::Tensor* Scale,
                  lite::Tensor* Out,
                  int out_height,
                  int out_width,
-                 float height_scale,
-                 float width_scale,
+                 float scale,
                  bool with_align,
                  std::string interpolate_type) {
+  int in_h = X->dims()[2];
+  int in_w = X->dims()[3];
+  if (SizeTensor.size() > 0) {
+    auto new_size = get_new_shape(SizeTensor);
+    out_height = new_size[0];
+    out_width = new_size[1];
+  } else {
+    auto scale_tensor = Scale;
+    if (scale_tensor != nullptr) {
+      auto scale_data = get_new_data_from_tensor<float>(scale_tensor);
+      scale = scale_data[0];
+    }
+    if (scale > 0) {
+      out_height = static_cast<int>(in_h * scale);
+      out_width = static_cast<int>(in_w * scale);
+    }
+    auto out_size = OutSize;
+    if (out_size != nullptr) {
+      auto out_size_data = get_new_data_from_tensor<float>(out_size);
+      out_height = static_cast<int>(out_size_data[0]);
+      out_width = static_cast<int>(out_size_data[1]);
+    }
+  }
+  float height_scale = scale;
+  float width_scale = scale;
   if (out_width > 0 && out_height > 0) {
     height_scale = static_cast<float>(out_height / X->dims()[2]);
     width_scale = static_cast<float>(out_width / X->dims()[3]);
   }
-  if (OutSize != nullptr) {
-    auto OutSize_data = OutSize->data<int>();
-    int h_out = OutSize_data[0];  // HW
-    int w_out = OutSize_data[1];  // HW
-    int num_cout = Out->dims()[0];
-    int c_cout = Out->dims()[1];
-    Out->Resize({num_cout, c_cout, h_out, w_out});
-  }
+  int num_cout = X->dims()[0];
+  int c_cout = X->dims()[1];
+  Out->Resize({num_cout, c_cout, out_height, out_width});
 
   float* dout = Out->mutable_data<float>();
   const float* din = X->data<float>();
   int out_num = Out->dims()[0];
   int out_c = Out->dims()[1];
   int count = out_num * out_c;
-  int in_h = X->dims()[2];
-  int in_w = X->dims()[3];
   int out_h = Out->dims()[2];
   int out_w = Out->dims()[3];
   int spatial_in = in_h * in_w;

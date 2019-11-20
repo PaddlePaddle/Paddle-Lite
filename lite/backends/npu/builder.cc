@@ -67,7 +67,7 @@ std::string UniqueName(const std::string& prefix) {
   return prefix + "_" + std::to_string(counter);
 }
 
-ge::DataType PrecisionConverter(PrecisionType itype) {
+ge::DataType CvtPrecisionType(PrecisionType itype) {
   ge::DataType otype = ge::DT_FLOAT;
   switch (itype) {
     case PRECISION(kFloat):
@@ -80,14 +80,14 @@ ge::DataType PrecisionConverter(PrecisionType itype) {
       otype = ge::DT_INT32;
       break;
     default:
-      LOG(FATAL) << "Can not convert precision type(" << PrecisionToStr(itype)
-                 << ") from Lite to NPU";
+      LOG(FATAL) << "[NPU] Can not convert precision type("
+                 << PrecisionToStr(itype) << ") from Lite to NPU";
       break;
   }
   return otype;
 }
 
-ge::Format DataLayoutConverter(DataLayoutType itype) {
+ge::Format CvtDataLayoutType(DataLayoutType itype) {
   ge::Format otype = ge::FORMAT_NCHW;
   switch (itype) {
     case DATALAYOUT(kNCHW):
@@ -95,17 +95,17 @@ ge::Format DataLayoutConverter(DataLayoutType itype) {
       break;
     // TODO(hong19860320) support more data layout type
     default:
-      LOG(FATAL) << "Can not convert data layout type("
+      LOG(FATAL) << "[NPU] Can not convert data layout type("
                  << DataLayoutToStr(itype) << ") from Lite to NPU";
       break;
   }
   return otype;
 }
 
-ge::TensorPtr CvtFromLiteTensor(lite::Tensor* in_tensor,
-                                std::vector<int64_t> out_shape,
-                                PrecisionType in_ptype,
-                                DataLayoutType in_ltype) {
+ge::TensorPtr CvtTensor(lite::Tensor* in_tensor,
+                        std::vector<int64_t> out_shape,
+                        PrecisionType in_ptype,
+                        DataLayoutType in_ltype) {
   uint8_t* in_data = nullptr;
   auto in_size = in_tensor->dims().production();
   auto in_shape = in_tensor->dims().Vectorize();
@@ -123,10 +123,10 @@ ge::TensorPtr CvtFromLiteTensor(lite::Tensor* in_tensor,
     in_data = reinterpret_cast<uint8_t*>(in_tensor->mutable_data<int8_t>());
     in_bytes = in_size * sizeof(int8_t);
   } else {
-    LOG(FATAL) << "Unknow precision type " << PrecisionToStr(in_ptype);
+    LOG(FATAL) << "[NPU] Unknow precision type " << PrecisionToStr(in_ptype);
   }
-  ge::DataType out_ptype = PrecisionConverter(in_ptype);
-  ge::Format out_ltype = DataLayoutConverter(in_ltype);
+  ge::DataType out_ptype = CvtPrecisionType(in_ptype);
+  ge::Format out_ltype = CvtDataLayoutType(in_ltype);
 
   ge::TensorDesc out_desc(ge::Shape(out_shape), out_ltype, out_ptype);
   CHECK_EQ(out_ltype, ge::FORMAT_NCHW);
@@ -138,6 +138,31 @@ ge::TensorPtr CvtFromLiteTensor(lite::Tensor* in_tensor,
   out_tensor->SetTensorDesc(out_desc);
   out_tensor->SetData(in_data, in_bytes);
   return out_tensor;
+}
+
+int CvtActMode(std::string act_type) {
+  int act_mode = 1;
+  if (act_type == "sigmod") {
+    act_mode = 0;
+  } else if (act_type == "relu") {
+    act_mode = 1;
+  } else if (act_type == "tanh") {
+    act_mode = 2;
+  } else if (act_type == "elu") {
+    act_mode = 4;
+  } else if (act_type == "abs") {
+    act_mode = 6;
+  } else if (act_type == "softsign") {
+    act_mode = 8;
+  } else if (act_type == "softplus") {
+    act_mode = 9;
+  } else if (act_type == "hardsigmoid") {
+    act_mode = 10;
+  } else {
+    // TODO(hong19860320) support more activation mode
+    LOG(FATAL) << "[NPU] Unsupported activation type " << act_type;
+  }
+  return act_mode;
 }
 
 bool HasInputArg(const OpInfo* op_info,

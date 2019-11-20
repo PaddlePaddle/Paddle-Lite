@@ -54,40 +54,50 @@ class VariablePlaceInferencePass : public DebugPass {
     }
   }
 
-  // Set the tye of the weight
-  void SetWeightType(Node* w, const LiteType& type) {
-// TODO(xg) to optimize this
-#ifdef LITE_WITH_FPGA
-    w->AsArg().type = LiteType::GetTensorTy(
-        TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
-#endif
-
-#ifdef LITE_WITH_OPENCL
-    w->AsArg().type = LiteType::GetTensorTy(
-        TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
-#endif
-
-#ifndef LITE_WITH_FPGA
-#ifndef LITE_WITH_OPENCL
-    w->AsArg().type = LiteType::GetTensorTy(
-        TARGET(kHost), type.precision(), DATALAYOUT(kNCHW));
-#endif
-#endif
+  // Set the type of the weight
+  void SetWeightType(Node* w,
+                     const LiteType& type,
+                     const std::map<std::string, bool>& lite_with_targets) {
+    VLOG(4) << "type.precision():" << PrecisionRepr(type.precision());
+    if (lite_with_targets.at("kFPGA")) {
+      w->AsArg().type = LiteType::GetTensorTy(
+          TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
+    } else if (lite_with_targets.at("kOpenCL")) {
+      w->AsArg().type = LiteType::GetTensorTy(
+          TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
+    } else {
+      w->AsArg().type = LiteType::GetTensorTy(
+          TARGET(kHost), type.precision(), DATALAYOUT(kNCHW));
+    }
   }
 
   void InferenceArgumentPlace(SSAGraph* graph) {
+    auto& valid_places = graph->valid_places();
+    auto valid_places_has_target = [&](TargetType t) -> bool {
+      for (auto& p : valid_places) {
+        if (p.target == t) {
+          return true;
+        }
+      }
+      return false;
+    };
+    std::map<std::string, bool> lite_with_targets{
+        {"kOpenCL", valid_places_has_target(TARGET(kOpenCL))},
+        {"kFPGA", valid_places_has_target(TARGET(kFPGA))}};
+    VLOG(4) << "lite_with_targets['kOpenCL']:" << lite_with_targets["kOpenCL"];
+    VLOG(4) << "lite_with_targets['kFPGA']:" << lite_with_targets["kFPGA"];
+
     VLOG(3) << "param-type-registry:\n" << ParamTypeRegistry::Global();
     for (auto& x : graph->StmtTopologicalOrder()) {
       auto& inst = x->AsStmt();
-// The IoCopyOp is a tool operator, it won't support the type inference.
-// in fpga, we has io_copy+cali+layout tool ops, so we need type inference for
-// tool operator
-#ifndef LITE_WITH_FPGA
-#ifndef LITE_WITH_OPENCL
-      VLOG(3) << "inst.op_type() == 'io_copy', continue";
-      if (inst.op_type() == "io_copy") continue;
-#endif
-#endif
+      // The IoCopyOp is a tool operator, it won't support the type inference.
+      // in fpga, we has io_copy+cali+layout tool ops, so we need type inference
+      // for
+      // tool operator
+      if ((!lite_with_targets["kFPGA"]) && (!lite_with_targets["kOpenCL"])) {
+        VLOG(3) << "inst.op_type() == 'io_copy', continue";
+        if (inst.op_type() == "io_copy") continue;
+      }
       // deal with inputs
       VLOG(4) << "Infering op " << inst.op_info()->Repr();
       // TODO(zhaolong): Add check if the node's name in op's arguments.
@@ -115,7 +125,7 @@ class VariablePlaceInferencePass : public DebugPass {
         if (!x_in->AsArg().type) {
           VLOG(4) << "set type " << *type << " " << x_in->AsArg().name;
           if (x_in->AsArg().is_weight) {
-            SetWeightType(x_in, *type);
+            SetWeightType(x_in, *type, lite_with_targets);
           } else {
             x_in->AsArg().type = type;
           }
@@ -135,7 +145,7 @@ class VariablePlaceInferencePass : public DebugPass {
         if (!x_out->AsArg().type) {
           VLOG(4) << "set type " << *type << " " << x_out->AsArg().name;
           if (x_out->AsArg().is_weight) {
-            SetWeightType(x_out, *type);
+            SetWeightType(x_out, *type, lite_with_targets);
           } else {
             x_out->AsArg().type = type;
           }

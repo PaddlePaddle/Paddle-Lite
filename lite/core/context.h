@@ -207,6 +207,13 @@ class Context<TargetType::kCUDA> {
     ctx->cublas_fp32_ = cublas_fp32_;
   }
 
+  CUDAContext& operator=(const CUDAContext& context) {
+    this->Init(
+        context.device_id_, context.exec_stream_id_, context.io_stream_id_);
+    this->cublas_fp32_ = context.cublas_fp32_;
+    return *this;
+  }
+
   const cudaStream_t& exec_stream() const { return exec_stream_; }
   void SetExecStream(cudaStream_t stream) { exec_stream_ = stream; }
 
@@ -231,6 +238,13 @@ class Context<TargetType::kCUDA> {
   }
 
   std::string name() const { return "CUDAContext"; }
+
+  CUDAContext& operator=(const CUDAContext& context) {
+    this->Init(
+        context.device_id_, context.exec_stream_id_, context.io_stream_id_);
+    cublas_fp32_ = const_cast<CUDAContext&>(context).cublas_fp32();
+    return *this;
+  }
 
  private:
   int device_id_;
