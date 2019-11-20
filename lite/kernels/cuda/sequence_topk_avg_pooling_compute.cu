@@ -75,8 +75,7 @@ __global__ void topk_avg_pooling_kernel_by_row_improve(
       if (max_val < -9999.0) {  // == -10000.0
         max_val = last_max_val;
       }
-      smem_start_col[max_pos] = -10000000.0;
-
+      smem_start_col[max_pos] = 10000000.0;
       int i = max_k - counter;
       for (int c = 0; c < topk_size; c++) {
         if (i <= topks[c] - 1) {
@@ -102,7 +101,7 @@ void SequenceTopkAvgPoolingCompute<T>::Run() {
   int topk_num = param.topks.size();
   lite::DDim top_ks_shape(std::vector<int64_t>{topk_num, 1, 1, 1});
   _top_ks.Resize(top_ks_shape);
-  cudaMemcpyAsync(_top_ks.mutable_data<int>(),
+  cudaMemcpyAsync(_top_ks.mutable_data<int>(TARGET(kCUDA)),
                   &param.topks[0],
                   sizeof(int) * topk_num,
                   cudaMemcpyHostToDevice,
@@ -112,16 +111,17 @@ void SequenceTopkAvgPoolingCompute<T>::Run() {
   lite::DDim width_offset_shape(
       std::vector<int64_t>{width_offset_len, 1, 1, 1});
   _width_offset.Resize(width_offset_shape);
-  cudaMemcpyAsync(_width_offset.mutable_data<int>(),
+  cudaMemcpyAsync(_width_offset.mutable_data<int>(TARGET(kCUDA)),
                   &(param.X->lod()[0][0]),
                   sizeof(int) * width_offset_len,
                   cudaMemcpyHostToDevice,
                   cuda_stream);
+
   int height_offset_len = param.ROW->lod()[0].size();
   lite::DDim height_offset_shape(
       std::vector<int64_t>{height_offset_len, 1, 1, 1});
   _height_offset.Resize(height_offset_shape);
-  cudaMemcpyAsync(_height_offset.mutable_data<int>(),
+  cudaMemcpyAsync(_height_offset.mutable_data<int>(TARGET(kCUDA)),
                   &(param.ROW->lod()[0][0]),
                   sizeof(int) * height_offset_len,
                   cudaMemcpyHostToDevice,
@@ -129,18 +129,19 @@ void SequenceTopkAvgPoolingCompute<T>::Run() {
 
   const Tensor *x_tensor = param.X;
   Tensor *out_tensor = param.Out;
-  TargetWrapperCuda::MemsetAsync(out_tensor->mutable_data<T>(),
+  const T *in_data = x_tensor->data<T>();
+  T *out_data = out_tensor->mutable_data<T>(TARGET(kCUDA));
+  TargetWrapperCuda::MemsetAsync(out_tensor->mutable_data<T>(TARGET(kCUDA)),
                                  0,
                                  sizeof(T) * out_tensor->numel(),
                                  cuda_stream);
+
   auto x_dims = x_tensor->dims();
+  int num = x_dims[0];
+  int channel = x_dims[1];
   int height = x_dims[2];
   int width = x_dims[3];
 
-  const T *in_data = x_tensor->data<T>();
-  T *out_data = out_tensor->mutable_data<T>();
-  int num = x_dims[0];
-  int channel = x_dims[1];
   const int *height_offset = _height_offset.data<int>();
   const int *width_offset = _width_offset.data<int>();
 
