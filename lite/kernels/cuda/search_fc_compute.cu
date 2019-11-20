@@ -163,7 +163,6 @@ void SearchFcCompute<T>::Run() {
   add_bias<T><<<CUDA_GET_BLOCKS(total_size), CUDA_NUM_THREADS, 0, stream>>>(
       total_size, _N, bias, dout);
 }
-}
 }  // namespace cuda
 }  // namespace kernels
 }  // namespace lite
