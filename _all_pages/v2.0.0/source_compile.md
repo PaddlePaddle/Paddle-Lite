@@ -189,7 +189,7 @@ sudo make install
 #### 交叉编译环境要求
 
 - gcc、git、make、curl、unzip、java
-- cmake（建议使用3.10或以上版本）
+- cmake（Android编译请使用3.10版本，IOS编译请使用3.15版本）
 - 编译Android: Android NDK (建议ndk-r17c)
 - 编译IOS: XCode(Version 10.1)
 
