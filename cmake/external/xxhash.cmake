@@ -1,5 +1,6 @@
 INCLUDE(ExternalProject)
 
+SET(XXHASH_SOURCECODE_DIR ${CMAKE_SOURCE_DIR}/third-party/xxhash)
 set(XXHASH_SOURCE_DIR ${THIRD_PARTY_PATH}/xxhash)
 set(XXHASH_INSTALL_DIR ${THIRD_PARTY_PATH}/install/xxhash)
 set(XXHASH_INCLUDE_DIR "${XXHASH_INSTALL_DIR}/include")
@@ -18,8 +19,11 @@ if(WIN32)
   ExternalProject_Add(
           extern_xxhash
           ${EXTERNAL_PROJECT_LOG_ARGS}
-          GIT_REPOSITORY  "https://github.com/Cyan4973/xxHash"
+#          GIT_REPOSITORY  "https://github.com/Cyan4973/xxHash"
           GIT_TAG         "v0.6.5"
+          URL             https://paddle-inference-dist.bj.bcebos.com/PaddleLite_ThirdParty%2FxxHash-dev-b47b48cceb59243ea6f7e9d3c499c567.zip
+          DOWNLOAD_DIR          ${XXHASH_SOURCECODE_DIR}
+          DOWNLOAD_NO_PROGRESS  1
           PREFIX          ${XXHASH_SOURCE_DIR}
           DOWNLOAD_NAME   "xxhash"
           UPDATE_COMMAND  ""
@@ -41,8 +45,11 @@ else()
   ExternalProject_Add(
       extern_xxhash
       ${EXTERNAL_PROJECT_LOG_ARGS}
-      GIT_REPOSITORY  "https://github.com/Cyan4973/xxHash"
+#      GIT_REPOSITORY  "https://github.com/Cyan4973/xxHash"
       GIT_TAG         "v0.6.5"
+      URL             https://paddle-inference-dist.bj.bcebos.com/PaddleLite_ThirdParty%2FxxHash-dev-b47b48cceb59243ea6f7e9d3c499c567.zip
+      DOWNLOAD_DIR          ${XXHASH_SOURCECODE_DIR}
+      DOWNLOAD_NO_PROGRESS  1
       PREFIX          ${XXHASH_SOURCE_DIR}
       DOWNLOAD_NAME   "xxhash"
       UPDATE_COMMAND  ""
