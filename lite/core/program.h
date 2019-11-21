@@ -43,17 +43,11 @@ struct Program {
           const std::vector<Place>& valid_places)
       : scope_(root), valid_places_(valid_places), desc_(desc) {
     CHECK(scope_) << "scope should be init first";
-#ifndef LITE_SHUTDOWN_LOG
     VLOG(4) << "prepare work";
-#endif
     PrepareWorkspace(desc);
-#ifndef LITE_SHUTDOWN_LOG
     VLOG(4) << "build desc";
-#endif
     Build(desc);
-#ifndef LITE_SHUTDOWN_LOG
     VLOG(4) << "build desc finished";
-#endif
   }
 
   std::unique_ptr<Program> Clone() const {
