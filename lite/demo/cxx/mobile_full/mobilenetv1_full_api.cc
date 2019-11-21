@@ -39,7 +39,7 @@ void CheckInput(char*** argv) {
         "--optimized_model_dir=<your-optmized-model-directory> "
         "--prefer_int8_kernel=[true|false]\n",
         *argv[0]);
-    abort();
+    exit(1);
   }
   if (FLAGS_optimized_model_dir == "") {
     FLAGS_optimized_model_dir = FLAGS_model_dir;

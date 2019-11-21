@@ -32,7 +32,7 @@ int64_t ShapeProduction(const shape_t& shape) {
 void CheckInput(char*** argv) {
   if (FLAGS_model_dir == "") {
     printf("Usage: %s --model_dir=<your-nb-model-directory>\n", *argv[0]);
-    abort();
+    exit(1);
   }
   printf("[WARN] model_dir:%s\n", FLAGS_model_dir.c_str());
 }
