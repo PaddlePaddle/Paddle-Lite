@@ -39,15 +39,13 @@ bool SplitOp::InferShape() const {
   const int outs_number = outs.size();
   std::vector<lite::DDim> outs_dims;
   outs_dims.reserve(outs_number);
-  std::vector<lite::Tensor> *sections_tensor_list_ =
+  std::vector<lite::Tensor *> sections_tensor_list_ =
       param_.sections_tensor_list;
-  if (sections.size() > 0 && sections_tensor_list_->size() > 0) {
+  if (sections.size() > 0 && sections_tensor_list_.size() > 0) {
     std::vector<int> vec_sections;
-    for (size_t i = 0; i < sections_tensor_list_->size(); ++i) {
+    for (size_t i = 0; i < sections_tensor_list_.size(); ++i) {
       auto dim = in_dims;
-      // lite::TensorLite aa = sections_tensor_list_[i];
-      dim[axis] = (*sections_tensor_list_)[i].data<int>()[0];
-      //  final_axes.push_back(axes_tensor_vct[i].data<int>()[0]);
+      dim[axis] = sections_tensor_list_[i]->data<int>()[0];
       outs_dims.push_back(dim);
     }
   } else if (num > 0) {
@@ -87,15 +85,20 @@ bool SplitOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   for (auto var : outs) {
     param_.output.push_back(scope->FindVar(var)->GetMutable<lite::Tensor>());
   }
-  if (opdesc.HasAttr("AxisTensor")) {
+  std::vector<std::string> input_arg_names = opdesc.InputArgumentNames();
+  if (std::find(input_arg_names.begin(), input_arg_names.end(), "AxisTensor") !=
+      input_arg_names.end()) {
     auto args = opdesc.Input("AxisTensor");
     auto *var = scope->FindVar(args.front());
     param_.axis_tensor = var->GetMutable<lite::Tensor>();
   }
-  if (opdesc.HasAttr("SectionsTensorList")) {
+  if (std::find(input_arg_names.begin(),
+                input_arg_names.end(),
+                "SectionsTensorList") != input_arg_names.end()) {
     auto args = opdesc.Input("SectionsTensorList");
     auto *var = scope->FindVar(args.front());
-    param_.sections_tensor_list = var->GetMutable<std::vector<lite::Tensor>>();
+    param_.sections_tensor_list =
+        *(var->GetMutable<std::vector<lite::Tensor *>>());
   }
   return true;
 }

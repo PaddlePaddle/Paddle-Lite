@@ -317,7 +317,7 @@ struct SplitParam {
   lite::Tensor* x{};
   std::vector<lite::Tensor*> output{};
   lite::Tensor* axis_tensor;
-  std::vector<lite::Tensor>* sections_tensor_list{};
+  std::vector<lite::Tensor*> sections_tensor_list{};
 
   int axis{-1};
   int num{0};
@@ -380,7 +380,6 @@ struct MeanGradParam {
 struct FillConstantParam {
   int dtype{static_cast<int>(VarDescAPI::VarDataType::FP32)};
   std::vector<int64_t> shape{};
-
   float value{0.0f};
   // useless for x86, keep it for compatibility
   bool force_cpu{false};
