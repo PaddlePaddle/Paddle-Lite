@@ -60,6 +60,7 @@ if (NOT HAS_ARM_MATH_LIB_DIR)
   cc_library(math_arm SRCS  
       funcs.cc 
       packed_sgemm.cc
+      packed_sgemm_c4.cc
       sgemm.cc
       gemm_prepacked_int8.cc
       gemm_s8.cc
@@ -80,7 +81,7 @@ if (NOT HAS_ARM_MATH_LIB_DIR)
       conv_depthwise_3x3p1.cc
       conv_depthwise_3x3s1.cc
       conv_depthwise_3x3s2.cc
-      conv_winograd_3x3.cc
+      conv3x3_winograd_fp32_c4.cc
       conv_impl.cc
       softmax.cc 
       scale.cc
