@@ -187,7 +187,7 @@ TEST(TestSgemmC4, test_func_sgemm_c4_prepacked) {
 #endif
     LOG(INFO) << "run basic sgemm_c4 test";
     for (auto& m : {1, 3, 8, 32, 397}) {
-      for (auto& n : {1, 3, 13, 141, 512, 789}) {
+      for (auto& n : {1, 2, 3, 4, 13, 141, 789}) {
         for (auto& k : {1, 3, 8, 59, 234}) {
           for (auto& has_bias : {false, true}) {
             for (auto& has_relu : {false, true}) {
