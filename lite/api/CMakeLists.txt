@@ -9,7 +9,7 @@ if (LITE_ON_TINY_PUBLISH)
     set(CMAKE_C_FLAGS_RELEASE "-Os -DNDEBUG")
 endif()
 set(light_lib_DEPS light_api paddle_api paddle_api_light optimizer)
-if ((NOT LITE_ON_TINY_PUBLISH) AND (LITE_WITH_X86 OR ARM_TARGET_OS STREQUAL "android" OR ARM_TARGET_OS STREQUAL "armlinux"))
+if ((NOT LITE_ON_TINY_PUBLISH) AND (LITE_WITH_CUDA OR LITE_WITH_X86 OR ARM_TARGET_OS STREQUAL "android" OR ARM_TARGET_OS STREQUAL "armlinux"))
     #full api dynamic library
     add_library(paddle_full_api_shared SHARED "")
     target_sources(paddle_full_api_shared PUBLIC ${__lite_cc_files} paddle_api.cc light_api.cc cxx_api.cc cxx_api_impl.cc light_api_impl.cc)
@@ -19,7 +19,9 @@ if ((NOT LITE_ON_TINY_PUBLISH) AND (LITE_WITH_X86 OR ARM_TARGET_OS STREQUAL "and
        add_dependencies(paddle_full_api_shared xxhash)
        target_link_libraries(paddle_full_api_shared xxhash)
     endif()
-    
+    if(LITE_WITH_CUDA)
+        target_link_libraries(paddle_full_api_shared ${math_cuda} "-Wl,--whole-archive" ${cuda_kernels} "-Wl,--no-whole-archive")
+    endif(LITE_WITH_CUDA) 
     #light api dynamic library
     lite_cc_library(paddle_light_api_shared MODULE
     SRCS light_api_shared.cc
@@ -59,6 +61,7 @@ endif()
 
 message(STATUS "get ops ${ops}")
 message(STATUS "get X86 kernels ${x86_kernels}")
+message(STATUS "get CUDA kernels ${cuda_kernels}")
 message(STATUS "get Host kernels ${host_kernels}")
 message(STATUS "get ARM kernels ${arm_kernels}")
 message(STATUS "get NPU kernels ${npu_kernels}")
@@ -84,9 +87,8 @@ endif()
 set(light_api_deps
     scope target_wrapper_host model_parser program)
 if(LITE_WITH_CUDA)
+    get_property(cuda_static_deps GLOBAL PROPERTY CUDA_STATIC_MODULES)
     set(light_api_deps ${light_api_deps} target_wrapper_cuda)
-    set(cuda_static_deps cudart_static cublas_static curand_static
-        cudnn_static culibos_static)
 endif()
 lite_cc_library(light_api SRCS light_api.cc
         DEPS scope target_wrapper_host model_parser
@@ -289,7 +291,8 @@ if(NOT IOS)
     XPU_DEPS ${xpu_kernels}
     CL_DEPS ${opencl_kernels}
     FPGA_DEPS ${fpga_kernels}
-    X86_DEPS ${x86_kernels})
+    X86_DEPS ${x86_kernels}
+    CUDA_DEPS ${cuda_kernels})
   lite_cc_binary(benchmark_bin SRCS benchmark.cc DEPS paddle_api_full paddle_api_light gflags utils
     ${ops} ${host_kernels}
     ARM_DEPS ${arm_kernels}
@@ -297,7 +300,9 @@ if(NOT IOS)
     XPU_DEPS ${xpu_kernels}
     CL_DEPS ${opencl_kernels}
     FPGA_DEPS ${fpga_kernels}
-    X86_DEPS ${x86_kernels})
+    X86_DEPS ${x86_kernels}
+    CUDA_DEPS ${cuda_kernels})
+
 endif()
 
 #lite_cc_binary(cxx_api_bin SRCS cxx_api_bin.cc

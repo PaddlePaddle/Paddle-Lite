@@ -11,34 +11,36 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#pragma once
 
-#include "lite/backends/x86/math/blas.h"
+#pragma once
+#include <memory>
+#include "lite/backends/cuda/blas.h"
+#include "lite/backends/cuda/math/gemm.h"
 #include "lite/core/kernel.h"
-#include "lite/core/op_lite.h"
-#include "lite/core/op_registry.h"
-#include "lite/operators/op_params.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace x86 {
+namespace cuda {
 
-template <typename T>
-class SearchGrnnCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
+class SearchGrnnCompute
+    : public KernelLite<TARGET(kCUDA), PRECISION(kFloat), DATALAYOUT(kNCHW)> {
  public:
   using param_t = operators::SearchGrnnParam;
+  using TargetW = TargetWrapper<TARGET(kCUDA)>;
 
+  void PrepareForRun() override;
   void Run() override;
-
   virtual ~SearchGrnnCompute() = default;
 
  private:
+  std::shared_ptr<Tensor> idx_sorted_by_width_cpu;
+  std::unique_ptr<lite::cuda::math::Gemm<float, float>> gemm_impl_;
   void PrepareLayout(const Tensor* input);
-  void CopyBack(T* from, T* to, int step);
+  void CopyBack(float* from, float* to, int step);
 };
 
-}  // namespace x86
+}  // namespace cuda
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

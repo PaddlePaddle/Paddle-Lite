@@ -118,6 +118,9 @@ if (LITE_WITH_X86)
     add_dependencies(publish_inference_x86_cxx_demos paddle_full_api_shared eigen3)
 endif()
 
+if(LITE_WITH_CUDA)
+    add_dependencies(publish_inference paddle_full_api_shared)
+endif(LITE_WITH_CUDA) 
 if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM)
     if (NOT LITE_ON_TINY_PUBLISH)
         # add cxx lib

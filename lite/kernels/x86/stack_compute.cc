@@ -12,30 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
+#include "lite/kernels/x86/stack_compute.h"
 
-#include <cmath>
-#include "lite/core/context.h"
-#include "lite/core/device_info.h"
-
-namespace paddle {
-namespace lite {
-namespace arm {
-namespace math {
-
-// TODO(xxx): fixme now only support transA = false
-bool sgemv(const float* A,
-           const float* x,
-           float* y,
-           bool transA,
-           int M,
-           int N,
-           bool is_bias,
-           const float* bias,
-           bool is_relu,
-           const ARMContext* ctx);
-
-}  // namespace math
-}  // namespace arm
-}  // namespace lite
-}  // namespace paddle
+REGISTER_LITE_KERNEL(stack,
+                     kX86,
+                     kFloat,
+                     kNCHW,
+                     paddle::lite::kernels::x86::StackCompute<float>,
+                     def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
+    .Finalize();
