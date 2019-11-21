@@ -87,9 +87,8 @@ endif()
 set(light_api_deps
     scope target_wrapper_host model_parser program)
 if(LITE_WITH_CUDA)
+    get_property(cuda_static_deps GLOBAL PROPERTY CUDA_STATIC_MODULES)
     set(light_api_deps ${light_api_deps} target_wrapper_cuda)
-    set(cuda_static_deps cudart_static cublas_static curand_static
-        cudnn_static culibos_static)
 endif()
 lite_cc_library(light_api SRCS light_api.cc
         DEPS scope target_wrapper_host model_parser
