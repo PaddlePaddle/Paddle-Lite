@@ -72,6 +72,7 @@ class GatherCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
 
   void Run() override {
     auto& param = *param_.get_mutable<param_t>();
+
     auto x = param.X;
     auto index = param.Index;
     auto out = param.Out;
