@@ -134,10 +134,8 @@ void Program::Build(const cpp::ProgramDesc& prog) {
   for (size_t i = 0; i < main_block.OpsSize(); ++i) {
     auto& op_desc = *main_block.GetOp<cpp::OpDesc>(i);
     auto op_type = op_desc.Type();
-// if (op_type == "feed" || op_type == "fetch") continue;
-#ifndef LITE_SHUTDOWN_LOG
+    // if (op_type == "feed" || op_type == "fetch") continue;
     VLOG(4) << "create Op [" << op_type << "]";
-#endif
     auto op = LiteOpRegistry::Global().Create(op_type);
     CHECK(op) << "no Op found for " << op_type;
     if (op_type == "while") {
@@ -171,9 +169,7 @@ void Program::PrepareWorkspace(const cpp::ProgramDesc& prog) {
         tmp_vars_.push_back(var_desc.Name());
         exec_scope_->Var(var_desc.Name());
         if (b > 0) {
-#ifndef LITE_SHUTDOWN_LOG
           VLOG(4) << "var: " << var_desc.Name();
-#endif
         }
       } else {
         if (var_desc.Name() == "feed" || var_desc.Name() == "fetch") continue;
