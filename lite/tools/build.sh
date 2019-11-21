@@ -269,7 +269,7 @@ function make_x86 {
             -DWITH_GPU=OFF \
             -DLITE_BUILD_EXTRA=ON
 
-  make publish_inference -j #4
+  make publish_inference -j4
   cd -
 }
 
