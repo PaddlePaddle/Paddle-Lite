@@ -11,8 +11,13 @@ limitations under the License. */
 
 #pragma once
 #include <vector>
+#include "lite/backends/cuda/cuda_utils.h"
 #include "lite/core/op_registry.h"
 #include "lite/kernels/cuda/search_group_padding_compute.h"
+
+#define CUDA_KERNEL_LOOP(i, n)                                 \
+  for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < (n); \
+       i += blockDim.x * gridDim.x)
 
 namespace paddle {
 namespace lite {
@@ -24,11 +29,11 @@ template <typename Dtype>
 __global__ void ker_search_group_padding(Dtype* out_emb_padding_data,
                                          Dtype* out_padding_data,
                                          const Dtype* in_data,
-                                         const int* offset,
+                                         const uint64_t* offset,
                                          const int seq_num,
                                          const int max_len,
                                          const int emb_size,
-                                         const int pad_id,
+                                         const Dtype pad_id,
                                          const int count) {
   CUDA_KERNEL_LOOP(tid, count) {
     int emb_id = tid % emb_size;
@@ -41,6 +46,7 @@ __global__ void ker_search_group_padding(Dtype* out_emb_padding_data,
           in_data[(offset[seq_id] + word_id_in_seq) * emb_size + emb_id];
     } else {
       out_emb_padding_data[tid] = 0.f;
+      out_padding_data[word_id] = pad_id;
     }
   }
 }
@@ -50,18 +56,17 @@ void SearchGroupPaddingCompute::Run() {
   auto& ctx = this->ctx_->template As<CUDAContext>();
   auto cuda_stream = ctx.exec_stream();
 
-  const Tensor* = param.x;
+  const Tensor* x = param.x;
   Tensor* out_emb_padding = param.out_emb_padding;
   Tensor* out_new = param.out_new;
   Tensor* out_padding = param.out_padding;
-  const int pad_id = param.out_padding;
+  const float pad_id = static_cast<float>(param.pad_id);
 
   const float* in_data = x->data<float>();
   float* out_emb_padding_data =
       out_emb_padding->mutable_data<float>(TARGET(kCUDA));
   float* out_new_data = out_new->mutable_data<float>(TARGET(kCUDA));
   float* out_padding_data = out_padding->mutable_data<float>(TARGET(kCUDA));
-
   const auto& in_seq_offset = x->lod()[0];
   int batch = in_seq_offset.size() - 1;
   int max_seq = 0;
@@ -75,8 +80,7 @@ void SearchGroupPaddingCompute::Run() {
   for (int i = 0; i < batch + 1; ++i) {
     new_offset[i] = i * max_seq;
   }
-  std::vector<int64_t> x_dims = param_.x->dims().Vectorize();
-
+  std::vector<int64_t> x_dims = x->dims().Vectorize();
   LoD out_emb_padding_lod;
   out_emb_padding_lod.push_back(new_offset);
   out_emb_padding->set_lod(out_emb_padding_lod);
@@ -98,23 +102,21 @@ void SearchGroupPaddingCompute::Run() {
   int seq_num = out_emb_padding_seq_offset.size() - 1;
   int emb_size = x->dims()[1];
   _in_seq_offset.Resize({seq_num + 1, 1, 1, 1});
-  int* offset_data = _in_seq_offset.mutable_data<int>(TARGET(kCUDA));
+  uint64_t* offset_data = _in_seq_offset.mutable_data<uint64_t>(TARGET(kCUDA));
 
   TargetWrapperCuda::MemcpyAsync(offset_data,
-                                 &in_seq_offset[0],
-                                 sizeof(int) * in_seq_offset.size(),
+                                 in_seq_offset.data(),
+                                 sizeof(uint64_t) * in_seq_offset.size(),
                                  IoDirection::HtoD,
-                                 stream);
+                                 cuda_stream);
 
   TargetWrapperCuda::MemsetSync(
-      void* out_new_data,
-      0,
-      out_new->dims()[0] * out_new->dims()[1] * sizeof(float));
+      out_new_data, 0, out_new->dims()[0] * out_new->dims()[1] * sizeof(float));
 
   ker_search_group_padding<
       float><<<CUDA_GET_BLOCKS(count), CUDA_NUM_THREADS, 0, cuda_stream>>>(
       out_emb_padding_data,
-      out_padding,
+      out_padding_data,
       in_data,
       offset_data,
       seq_num,

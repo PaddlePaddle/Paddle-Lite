@@ -24,21 +24,10 @@ namespace lite {
 namespace kernels {
 namespace cuda {
 
-TEST(search_group_padding_x86, retrieve_op) {
-  auto search_group_padding =
-      KernelRegistry::Global().Create<TARGET(kX86), PRECISION(kFloat)>(
-          "search_group_padding");
-  ASSERT_FALSE(search_group_padding.empty());
-  ASSERT_TRUE(search_group_padding.front());
-}
+TEST(search_group_padding_cuda, run_test) {
+  std::unique_ptr<KernelContext> ctx(new KernelContext);
+  auto& context = ctx->As<CUDAContext>();
 
-TEST(search_group_padding_x86, init) {
-  SearchGroupPaddingCompute<float> search_group_padding;
-  ASSERT_EQ(search_group_padding.precision(), PRECISION(kFloat));
-  ASSERT_EQ(search_group_padding.target(), TARGET(kX86));
-}
-
-TEST(search_group_padding_x86, run_test) {
   lite::Tensor x, x_cpu, x_ref;
   lite::Tensor out_emb_padding, out_emb_padding_cpu, out_emb_padding_ref;
   lite::Tensor out_new, out_new_cpu, out_new_ref;
@@ -50,15 +39,15 @@ TEST(search_group_padding_x86, run_test) {
   x.Resize({x_dims0, x_dims1});
   x_cpu.Resize({x_dims0, x_dims1});
   x_ref.Resize({x_dims0, x_dims1});
-  out_emb_padding.Resize({-1, x_dims1});
-  out_emb_padding_cpu.Resize({-1, x_dims1});
-  out_emb_padding_ref.Resize({-1, x_dims1});
+  out_emb_padding.Resize({1, x_dims1});
+  out_emb_padding_cpu.Resize({1, x_dims1});
+  out_emb_padding_ref.Resize({1, x_dims1});
   out_new.Resize({x_dims0, 1});
   out_new_cpu.Resize({x_dims0, 1});
   out_new_ref.Resize({x_dims0, 1});
-  out_padding.Resize({-1, 1});
-  out_padding_cpu.Resize({-1, 1});
-  out_padding_ref.Resize({-1, 1});
+  out_padding.Resize({1, 1});
+  out_padding_cpu.Resize({1, 1});
+  out_padding_ref.Resize({1, 1});
 
   LoD x_lod{};
   x_lod.push_back({0, 1});
@@ -82,13 +71,15 @@ TEST(search_group_padding_x86, run_test) {
     x_ref_data[i] = static_cast<float>(i);
   }
   x.Assign<float, lite::DDim, TARGET(kCUDA)>(x_cpu_data, x_cpu.dims());
+  out_emb_padding_ref_data[0] = 0.f;
+  out_emb_padding_ref_data[1] = 1.f;
+  out_emb_padding_ref_data[2] = 2.f;
+  out_new_ref_data[0] = 0.f;
+  out_new_ref_data[1] = 0.f;
+  out_padding_ref_data[0] = 0.f;
 
-  SearchGroupPaddingCompute<float> sgp_kernel;
+  SearchGroupPaddingCompute sgp_kernel;
   operators::SearchGroupPaddingParam param;
-
-  std::unique_ptr<KernelContext> ctx(new KernelContext);
-  ctx->As<CUDAContext>();
-  sgp_kernel.SetContext(std::move(ctx));
 
   param.x = &x;
   param.out_emb_padding = &out_emb_padding;
@@ -101,7 +92,7 @@ TEST(search_group_padding_x86, run_test) {
   cudaStreamCreate(&stream);
   context.SetExecStream(stream);
   sgp_kernel.SetContext(std::move(ctx));
-  sgp_kernel.Run();
+  sgp_kernel.Launch();
   cudaDeviceSynchronize();
 
   CopySync<TARGET(kCUDA)>(out_emb_padding_cpu_data,
@@ -117,20 +108,14 @@ TEST(search_group_padding_x86, run_test) {
                           sizeof(float) * out_padding.numel(),
                           IoDirection::DtoH);
 
-  std::vector<float> out_emb_padding_ref = {0, 1, 2};
-  std::vector<float> out_new_ref = {0, 0};
-  std::vector<float> out_padding_ref = {0};
-  auto* out_emb_padding_data = out_emb_padding.mutable_data<float>();
-  auto* out_new_data = out_new.mutable_data<float>();
-  auto* out_padding_data = out_padding.mutable_data<float>();
-  for (int i = 0; i < out_emb_padding.dims().production(); i++) {
-    EXPECT_NEAR(out_emb_padding_data[i], out_emb_padding_ref[i], 1e-5);
+  for (int i = 0; i < out_emb_padding_cpu.dims().production(); i++) {
+    EXPECT_NEAR(out_emb_padding_cpu_data[i], out_emb_padding_ref_data[i], 1e-5);
   }
-  for (int i = 0; i < out_new.dims().production(); i++) {
-    EXPECT_NEAR(out_new_data[i], out_new_ref[i], 1e-5);
+  for (int i = 0; i < out_new_cpu.dims().production(); i++) {
+    EXPECT_NEAR(out_new_cpu_data[i], out_new_ref_data[i], 1e-5);
   }
-  for (int i = 0; i < out_padding.dims().production(); i++) {
-    EXPECT_NEAR(out_padding_data[i], out_padding_ref[i], 1e-5);
+  for (int i = 0; i < out_padding_cpu.dims().production(); i++) {
+    EXPECT_NEAR(out_padding_cpu_data[i], out_padding_ref_data[i], 1e-5);
   }
 }
 
