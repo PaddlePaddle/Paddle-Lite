@@ -133,7 +133,7 @@ class ImagePreprocess {
   * color format support 1-channel image, 3-channel image and 4-channel image
   * param src: input image data
   * param dst: output image data
-  * param srcFormat: input image format, support GRAY, BGR(GRB) and BGRA(RGBA)
+  * param srcFormat: input image format, support GRAY, BGR(RGB) and BGRA(RGBA)
   * param srcw: input image width
   * param srch: input image height
   * param degree: Rotate degree, support 90, 180 and 270
@@ -158,7 +158,7 @@ class ImagePreprocess {
   * color format support 1-channel image, 3-channel image and 4-channel image
   * param src: input image data
   * param dst: output image data
-  * param srcFormat: input image format, support GRAY, BGR(GRB) and BGRA(RGBA)
+  * param srcFormat: input image format, support GRAY, BGR(RGB) and BGRA(RGBA)
   * param srcw: input image width
   * param srch: input image height
   * param flip_param: flip parameter, support X, Y and XY
@@ -190,7 +190,7 @@ class ImagePreprocess {
   * NCHW
   * param src: input image data
   * param dstTensor: output tensor data
-  * param srcFormat: input image format, support BGR(GRB) and BGRA(RGBA)
+  * param srcFormat: input image format, support BGR(RGB) and BGRA(RGBA)
   * param srcw: input image width
   * param srch: input image height
   * param layout: output tensor layout，support NHWC and NCHW
