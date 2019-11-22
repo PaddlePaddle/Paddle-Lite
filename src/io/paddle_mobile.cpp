@@ -176,7 +176,7 @@ void PaddleMobile<Device, T>::Clear() {
 }
 
 template <typename Device, typename T>
-double PaddleMobile<Device, T>::GetPredictTime() {}
+double PaddleMobile<Device, T>::GetPredictTime() {return 0;}
 
 #ifdef PADDLE_MOBILE_CPU
 template <>

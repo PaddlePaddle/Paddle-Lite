@@ -25,6 +25,9 @@ limitations under the License. */
 #include "framework/operator.h"
 #include "framework/program/program.h"
 #include "framework/tensor.h"
+#ifdef MODEL_SECU
+#include "seco/seco.h" 
+#endif
 
 namespace paddle_mobile {
 namespace framework {
