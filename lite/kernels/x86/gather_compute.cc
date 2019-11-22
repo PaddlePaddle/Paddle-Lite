@@ -14,13 +14,19 @@
 
 #include "lite/kernels/x86/gather_compute.h"
 
-REGISTER_LITE_KERNEL(gather,
-                     kX86,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::x86::GatherCompute<float>,
-                     def)
+typedef paddle::lite::kernels::x86::GatherCompute<float, int32_t> GatherInt32;
+typedef paddle::lite::kernels::x86::GatherCompute<float, int64_t> GatherInt64;
+
+REGISTER_LITE_KERNEL(gather, kX86, kFloat, kNCHW, GatherInt32, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
-    .BindInput("Index", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindInput("Index",
+               {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt32))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(gather, kX86, kFloat, kNCHW, GatherInt64, int64_in)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindInput("Index",
+               {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
     .Finalize();

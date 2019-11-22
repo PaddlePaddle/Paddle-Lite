@@ -60,12 +60,12 @@ void CPUGather(const lite::Tensor* src,
 
   const size_t slice_bytes = slice_size * sizeof(T);
   for (int64_t i = 0; i < index_size; ++i) {
-    int index_ = static_cast<int>(p_index[i]);
+    int index_ = p_index[i];
     memcpy(p_output + i * slice_size, p_src + index_ * slice_size, slice_bytes);
   }
 }
 
-template <typename T>
+template <typename T, typename IndexT>
 class GatherCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
  public:
   using param_t = operators::GatherParam;
@@ -87,7 +87,7 @@ class GatherCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
      * Alternatively, if define the Tensor's type during registering, may cause
      * a redefinition error.
      */
-    CPUGather<T, float>(x, index, out);
+    CPUGather<T, IndexT>(x, index, out);
   }
 
   virtual ~GatherCompute() = default;

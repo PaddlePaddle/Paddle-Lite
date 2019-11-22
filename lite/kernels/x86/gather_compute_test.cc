@@ -29,15 +29,27 @@ TEST(gather_x86, retrive_op) {
       KernelRegistry::Global().Create<TARGET(kX86), PRECISION(kFloat)>(
           "gather");
   ASSERT_FALSE(gather.empty());
-  ASSERT_TRUE(gather.front());
+  int cnt = 0;
+  for (auto item = gather.begin(); item != gather.end(); ++item) {
+    cnt++;
+    ASSERT_TRUE(item);
+  }
+  ASSERT_EQ(cnt, 2);
 }
 
-TEST(gather_x86, init) {
-  GatherCompute<float> gather;
+TEST(gather_x86, int32_init) {
+  GatherCompute<float, int32_t> gather;
   ASSERT_EQ(gather.precision(), PRECISION(kFloat));
   ASSERT_EQ(gather.target(), TARGET(kX86));
 }
 
+TEST(gather_x86, int64_init) {
+  GatherCompute<float, int64_t> gather;
+  ASSERT_EQ(gather.precision(), PRECISION(kFloat));
+  ASSERT_EQ(gather.target(), TARGET(kX86));
+}
+
+template <typename T>
 void test_case_1dims() {
   lite::Tensor x, index, out;
   std::vector<int64_t> x_shape{10};
@@ -48,18 +60,18 @@ void test_case_1dims() {
   out.Resize(lite::DDim(out_shape));
 
   auto x_data = x.mutable_data<float>();
-  auto index_data = index.mutable_data<float>();
+  auto index_data = index.mutable_data<T>();
   auto out_data = out.mutable_data<float>();
 
   for (int64_t i = 0; i < x.dims().production(); ++i) {
     x_data[i] = static_cast<float>(i);
   }
   std::vector<float> index_value{1, 3, 5};
-  for (int64_t i = 0; i < index.dims().production(); ++i) {
-    index_data[i] = index_value[i];
+  for (int i = 0; i < index.dims().production(); ++i) {
+    index_data[i] = static_cast<T>(index_value[i]);
   }
 
-  GatherCompute<float> gather;
+  GatherCompute<float, T> gather;
   operators::GatherParam param;
 
   param.X = &x;
@@ -78,6 +90,7 @@ void test_case_1dims() {
   }
 }
 
+template <typename T>
 void test_case_2dims() {
   lite::Tensor x, index, out;
   std::vector<int64_t> x_shape{10, 20};
@@ -88,18 +101,18 @@ void test_case_2dims() {
   out.Resize(lite::DDim(out_shape));
 
   auto x_data = x.mutable_data<float>();
-  auto index_data = index.mutable_data<float>();
+  auto index_data = index.mutable_data<T>();
   auto out_data = out.mutable_data<float>();
 
   for (int64_t i = 0; i < x.dims().production(); ++i) {
     x_data[i] = static_cast<float>(i);
   }
   std::vector<float> index_value{1, 3, 5};
-  for (int64_t i = 0; i < index.dims().production(); ++i) {
-    index_data[i] = index_value[i];
+  for (int i = 0; i < index.dims().production(); ++i) {
+    index_data[i] = static_cast<T>(index_value[i]);
   }
 
-  GatherCompute<float> gather;
+  GatherCompute<float, T> gather;
   operators::GatherParam param;
 
   param.X = &x;
@@ -127,9 +140,15 @@ void test_case_2dims() {
   }
 }
 
-TEST(gather_x86, run_test_1dims) { test_case_1dims(); }
+TEST(gather_x86, run_test_1dims) {
+  test_case_1dims<int32_t>();
+  test_case_1dims<int64_t>();
+}
 
-TEST(gather_x86, run_test_2dims) { test_case_2dims(); }
+TEST(gather_x86, run_test_2dims) {
+  test_case_2dims<int32_t>();
+  test_case_2dims<int64_t>();
+}
 
 }  // namespace x86
 }  // namespace kernels
