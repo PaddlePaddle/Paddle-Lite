@@ -37,9 +37,9 @@ void conv_winograd3x3(const float* din,
                       const operators::ConvParam& param,
                       ARMContext* ctx) {
   int threads = ctx->threads();
-
-  const int pad_h = param.paddings[0];
-  const int pad_w = param.paddings[1];
+  auto paddings = *param.paddings;
+  const int pad_h = paddings[0];
+  const int pad_w = paddings[1];
   int size_in_channel = win * hin;
   int size_out_channel = wout * hout;
   bool flag_relu = param.fuse_relu;
