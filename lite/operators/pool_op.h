@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <memory>
 #include <string>
 #include <vector>
 #include "lite/core/kernel.h"
@@ -51,7 +52,7 @@ class PoolOpLite : public OpLite {
     param_.ksize = op_desc.GetAttr<std::vector<int>>("ksize");
     param_.global_pooling = op_desc.GetAttr<bool>("global_pooling");
     param_.strides = op_desc.GetAttr<std::vector<int>>("strides");
-    param_.paddings = op_desc.GetAttr<std::vector<int>>("paddings");
+    auto paddings = op_desc.GetAttr<std::vector<int>>("paddings");
 
     if (op_desc.HasAttr("exclusive")) {
       param_.exclusive = op_desc.GetAttr<bool>("exclusive");
@@ -65,7 +66,23 @@ class PoolOpLite : public OpLite {
     if (op_desc.HasAttr("use_quantizer")) {
       param_.use_quantizer = op_desc.GetAttr<bool>("use_quantizer");
     }
-    // param_.data_format = op_desc.GetAttr<bool>("data_format");
+    if (op_desc.HasAttr("padding_algorithm")) {
+      padding_algorithm_ = op_desc.GetAttr<std::string>("padding_algorithm");
+    }
+    // 2-pad to 4-pad
+    if (paddings.size() == 2L) {
+      for (size_t i = 0; i < 2L; ++i) {
+        int copy_pad = *(paddings.begin() + 2 * i);
+        paddings.insert(paddings.begin() + 2 * i + 1, copy_pad);
+      }
+    } else {
+      if (paddings.size() != 4L) {
+        LOG(FATAL)
+            << "Paddings size should be the same or twice as the inputs size.";
+      }
+    }
+    param_.paddings = std::make_shared<std::vector<int>>(paddings);
+
     return true;
   }
 
@@ -75,6 +92,7 @@ class PoolOpLite : public OpLite {
 
  private:
   mutable PoolParam param_;
+  std::string padding_algorithm_{""};
 };
 
 }  // namespace operators
