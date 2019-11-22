@@ -108,7 +108,7 @@ class Conv2dCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
         in_slice.ShareDataWith(
             in_batch.Slice<T>(static_cast<int64_t>(g * in_step),
                               static_cast<int64_t>((g + 1) * in_step)));
-
+        auto paddings = *param.paddings;
         if (!is_expand) {
           col.ShareDataWith(in_slice);
           col_matrix.ShareDataWith(col);
@@ -119,7 +119,8 @@ class Conv2dCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
                  in_slice,
                  *param.dilations,
                  param.strides,
-                 *param.paddings,
+                 std::vector<int>{
+                     paddings[0], paddings[2], paddings[0], paddings[2]},
                  &(col));
         } else if (data_dim == 3U) {
           // vol2col

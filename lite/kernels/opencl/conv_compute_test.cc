@@ -24,7 +24,6 @@ namespace lite {
 #define A(i, j) a[i * lda + j]
 #define B(i, j) cur_b[i * ldb + j]
 #define C(i, j) cur_c[i * ldc + j]
-
 template <typename Dtype1, typename Dtype2>
 static void conv_basic(const Dtype1* din,
                        Dtype2* dout,
@@ -232,7 +231,7 @@ TEST(conv2d, compute_conv2d_1x1) {
                 std::vector<int> dilations = {dilation, dilation};
                 param.fuse_relu = relu_flag;
                 param.paddings = std::make_shared<std::vector<int>>(paddings);
-                param.dilations  = std::make_shared<std::vector<int>>(dilations);
+                param.dilations = std::make_shared<std::vector<int>>(dilations);
 
                 kernel->SetParam(param);
                 std::unique_ptr<KernelContext> conv_context(new KernelContext);
@@ -460,7 +459,7 @@ TEST(conv2d, compute_conv2d_gemm) {
                 param.groups = group;
                 std::vector<int> dilations = {dilation, dilation};
                 param.fuse_relu = relu_flag;
-                
+
                 param.paddings = std::make_shared<std::vector<int>>(paddings);
                 param.dilations = std::make_shared<std::vector<int>>(dilations);
 
