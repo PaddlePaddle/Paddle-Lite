@@ -85,6 +85,7 @@ if (NOT HAS_ARM_MATH_LIB_DIR)
       scale.cc
       pooling.cc
       elementwise.cc
+      layout.cc
       lrn.cc
       decode_bboxes.cc
       concat.cc
