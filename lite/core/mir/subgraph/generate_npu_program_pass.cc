@@ -128,10 +128,10 @@ std::string GenerateNPUProgramPass::BuildNPUGraph(
   // persistable=true, Sothat the model parser can recognize it and save it to
   // param files
   if (!lite::npu::BuildModel(inputs, outputs, weight)) {
-    LOG(WARNING) << "[NPU] Build NPU graph failed (subgraph=" << sub_id << ")";
-    throw std::runtime_error("Build NPU graph failed.");
+    LOG(FATAL) << "[NPU] Build NPU graph failed (subgraph=" << sub_id << ")";
+  } else {
+    LOG(INFO) << "[NPU] Build NPU graph success (subgraph=" << sub_id << ")";
   }
-  LOG(INFO) << "[NPU] Build NPU graph success (subgraph=" << sub_id << ")";
   return weight_var_name;
 }
 
@@ -175,22 +175,17 @@ void GenerateNPUProgramPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
     supported_op_types.push_back(i.first);
   }
 
-  try {
-    int num_subgraph = FuseSubgraph(graph, supported_op_types);
-    InferOnce(graph);
-    auto op_nodes_all = ClassifySubgraph(graph);
-    CHECK_EQ(op_nodes_all.size(), num_subgraph);
-    int id = 1;
-    for (auto& op_nodes : op_nodes_all) {
-      LOG(INFO) << "[NPU] Converting Subgraph " << id;
-      GenNPUSubgraph(graph, op_nodes.second, id);
-      LOG(INFO) << "[NPU] After NPU Pass Subgraph " << id << "\n"
-                << Visualize(graph.get());
-      id++;
-    }
-  } catch (...) {
-    LOG(WARNING) << "[NPU] Build NPU graph failed.";
-    throw std::runtime_error("[NPU] Build NPU graph failed.");
+  int num_subgraph = FuseSubgraph(graph, supported_op_types);
+  InferOnce(graph);
+  auto op_nodes_all = ClassifySubgraph(graph);
+  CHECK_EQ(op_nodes_all.size(), num_subgraph);
+  int id = 1;
+  for (auto& op_nodes : op_nodes_all) {
+    LOG(INFO) << "[NPU] Converting Subgraph " << id;
+    GenNPUSubgraph(graph, op_nodes.second, id);
+    LOG(INFO) << "[NPU] After NPU Pass Subgraph " << id << "\n"
+              << Visualize(graph.get());
+    id++;
   }
 }
 }  // namespace subgraph

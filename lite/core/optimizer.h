@@ -124,9 +124,9 @@ class Optimizer {
     // Extra passes are applied for NPU and XPU, they depends on the shapes
     // of input tensors. so GenRuntimeProgram() must be called after the shapes
     // of input tensors are determined.
-    std::vector<std::string> extra_passes{"generate_npu_program_pass",
-                                          "generate_xpu_program_pass"};
-    RunPasses(extra_passes);
+    std::vector<std::string> subgraph_passes{"generate_npu_program_pass",
+                                             "generate_xpu_program_pass"};
+    RunPasses(subgraph_passes);
 
     auto pass = mir::PassManager::Global().LookUp<mir::GenerateProgramPass>(
         "generate_program_pass");
@@ -183,12 +183,8 @@ class Optimizer {
         LOG(INFO) << "   - Skip " << x
                   << " because the target or kernel does not match.";
       } else {
-        try {
-          pass->Apply(graph_);
-          LOG(INFO) << "== Finished running: " << x;
-        } catch (...) {
-          LOG(WARNING) << "Apply pass: " << x << " failed!";
-        }
+        pass->Apply(graph_);
+        LOG(INFO) << "== Finished running: " << x;
       }
     }
   }

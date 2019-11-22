@@ -52,40 +52,36 @@ class Pass {
 
   // Bind targets. At runtime, there must be one device in the bound targets.
   void BindTargets(const std::set<TargetType>& targets) {
-    std::set<TargetType> res;
     for (const auto& target : targets) {
       const std::set<TargetType>& universe = ExpandValidTargets(target);
       std::set_union(bound_targets_.begin(),
                      bound_targets_.end(),
                      universe.begin(),
                      universe.end(),
-                     std::inserter(res, res.begin()));
+                     std::inserter(bound_targets_, bound_targets_.begin()));
     }
-    bound_targets_ = res;
   }
 
   // Exclude targets. At runtime, there must be one device in the bound targets.
   // Disable the pass if one of the valid devices is in the excluded targets.
   void ExcludeTargets(const std::set<TargetType>& targets) {
-    std::set<TargetType> bound_targets_res;
-    std::set<TargetType> excluded_targets_res;
     for (const auto& target : targets) {
       const std::set<TargetType>& universe = ExpandValidTargets(target);
+      std::set<TargetType> updated_bound_targets;
       std::set_difference(
           bound_targets_.begin(),
           bound_targets_.end(),
           universe.begin(),
           universe.end(),
-          std::inserter(bound_targets_res, bound_targets_res.begin()));
+          std::inserter(updated_bound_targets, updated_bound_targets.begin()));
+      bound_targets_ = updated_bound_targets;
       std::set_union(
           excluded_targets_.begin(),
           excluded_targets_.end(),
           universe.begin(),
           universe.end(),
-          std::inserter(excluded_targets_res, excluded_targets_res.begin()));
+          std::inserter(excluded_targets_, excluded_targets_.begin()));
     }
-    bound_targets_ = bound_targets_res;
-    excluded_targets_ = excluded_targets_res;
   }
 
   // Get all bound targets.
