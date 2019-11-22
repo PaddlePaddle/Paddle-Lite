@@ -32,7 +32,7 @@ TEST(gather_x86, retrive_op) {
   int cnt = 0;
   for (auto item = gather.begin(); item != gather.end(); ++item) {
     cnt++;
-    ASSERT_TRUE(item);
+    ASSERT_TRUE(*item);
   }
   ASSERT_EQ(cnt, 2);
 }
