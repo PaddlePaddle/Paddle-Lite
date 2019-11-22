@@ -11,8 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 #include "lite/operators/conv_transpose_op.h"
+#include <memory>
 #include "lite/core/op_lite.h"
 #include "lite/core/op_registry.h"
 
@@ -32,7 +32,6 @@ bool ConvTransposeOpLite::CheckShape() const {
 
   CHECK_EQ_OR_FALSE(in_dims.size(), filter_dims.size());
   CHECK_OR_FALSE(in_dims.size() - param_.strides.size() == 2U);
-  CHECK_EQ_OR_FALSE(param_.paddings.size(), param_.strides.size());
 
   CHECK_OR_FALSE(in_dims[1] % param_.groups == 0);
   return true;
@@ -42,13 +41,16 @@ bool ConvTransposeOpLite::InferShape() const {
   const auto in_dims = param_.x->dims();
   const auto filter_dims = param_.filter->dims();
 
+  auto paddings = *param_.paddings;
+  auto dilations = *param_.dilations;
+
   std::vector<int64_t> output_shape;
   output_shape.push_back(in_dims[0]);
   output_shape.push_back(filter_dims[1] * param_.groups);
   for (int i = 0; i < param_.strides.size(); i++) {
-    int kernel_extent = param_.dilations[i] * (filter_dims[i + 2] - 1) + 1;
+    int kernel_extent = dilations[i] * (filter_dims[i + 2] - 1) + 1;
     int output_len = (in_dims[i + 2] - 1) * param_.strides[i] + kernel_extent -
-                     2 * param_.paddings[i];
+                     (paddings[2 * i] + paddings[2 * i + 1]);
     output_shape.push_back(output_len);
   }
 
@@ -68,9 +70,24 @@ bool ConvTransposeOpLite::AttachImpl(const cpp::OpDesc &op_desc,
   param_.output = scope->FindVar(Out)->GetMutable<lite::Tensor>();
 
   param_.strides = op_desc.GetAttr<std::vector<int>>("strides");
-  param_.paddings = op_desc.GetAttr<std::vector<int>>("paddings");
+  auto paddings = op_desc.GetAttr<std::vector<int>>("paddings");
   param_.groups = op_desc.GetAttr<int>("groups");
-  param_.dilations = op_desc.GetAttr<std::vector<int>>("dilations");
+  auto dilations = op_desc.GetAttr<std::vector<int>>("dilations");
+
+  // 2-pad to 4-pad
+  if (paddings.size() == 2L) {
+    for (size_t i = 0; i < 2L; ++i) {
+      int copy_pad = *(paddings.begin() + 2 * i);
+      paddings.insert(paddings.begin() + 2 * i + 1, copy_pad);
+    }
+  } else {
+    if (paddings.size() != 4L) {
+      LOG(FATAL)
+          << "Paddings size should be the same or twice as the input size.";
+    }
+  }
+  param_.paddings = std::make_shared<std::vector<int>>(paddings);
+  param_.dilations = std::make_shared<std::vector<int>>(dilations);
 
   // optional params
   std::vector<std::string> input_arg_names = op_desc.InputArgumentNames();
