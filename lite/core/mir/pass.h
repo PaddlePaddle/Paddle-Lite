@@ -65,21 +65,35 @@ class Pass {
   }
 
   // Exclude targets. At runtime, there must be one device in the bound targets.
+  // Disable the pass if one of the valid devices is in the excluded targets.
   void ExcludeTargets(const std::set<TargetType>& targets) {
-    std::set<TargetType> res;
+    std::set<TargetType> bound_targets_res;
+    std::set<TargetType> excluded_targets_res;
     for (const auto& target : targets) {
       const std::set<TargetType>& universe = ExpandValidTargets(target);
-      std::set_difference(bound_targets_.begin(),
-                          bound_targets_.end(),
-                          universe.begin(),
-                          universe.end(),
-                          std::inserter(res, res.begin()));
+      std::set_difference(
+          bound_targets_.begin(),
+          bound_targets_.end(),
+          universe.begin(),
+          universe.end(),
+          std::inserter(bound_targets_res, bound_targets_res.begin()));
+      std::set_union(
+          excluded_targets_.begin(),
+          excluded_targets_.end(),
+          universe.begin(),
+          universe.end(),
+          std::inserter(excluded_targets_res, excluded_targets_res.begin()));
     }
-    bound_targets_ = res;
+    bound_targets_ = bound_targets_res;
+    excluded_targets_ = excluded_targets_res;
   }
 
   // Get all bound targets.
-  const std::set<TargetType>& Targets() const { return bound_targets_; }
+  const std::set<TargetType>& BoundTargets() const { return bound_targets_; }
+  // Get all excluded targets.
+  const std::set<TargetType>& ExcludedTargets() const {
+    return excluded_targets_;
+  }
 
   // Some passes are only available on qualified kernels and need to be
   // explicitly declared.
@@ -116,6 +130,7 @@ class Pass {
   std::string name_;
   std::string doc_;
   std::set<TargetType> bound_targets_;
+  std::set<TargetType> excluded_targets_;
   std::unordered_map<std::string, std::set<lite_api::Place>> bound_kernels_;
 };
 

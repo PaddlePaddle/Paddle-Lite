@@ -192,23 +192,7 @@ void GenerateNPUProgramPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
     LOG(WARNING) << "[NPU] Build NPU graph failed.";
     throw std::runtime_error("[NPU] Build NPU graph failed.");
   }
-
-  for (auto& item : graph->StmtTopologicalOrder()) {
-    if (item->IsStmt()) {
-      auto& stmt = item->AsStmt();
-      LOG(INFO) << stmt;
-      insts_.emplace_back(stmt.op(), std::move(stmt.kernels().front()));
-    }
-  }
 }
-
-std::unique_ptr<RuntimeProgram> GenerateNPUProgramPass::GenProgram() {
-  LOG(INFO) << "[NPU] program insts.size " << insts_.size();
-  std::unique_ptr<RuntimeProgram> program(
-      new RuntimeProgram(std::move(insts_)));
-  return program;
-}
-
 }  // namespace subgraph
 }  // namespace mir
 }  // namespace lite

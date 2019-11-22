@@ -179,23 +179,7 @@ void GenerateXPUProgramPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
     LOG(WARNING) << "[XPU] Build XPU graph failed.";
     throw std::runtime_error("[XPU] Build XPU graph failed.");
   }
-
-  for (auto& item : graph->StmtTopologicalOrder()) {
-    if (item->IsStmt()) {
-      auto& stmt = item->AsStmt();
-      LOG(INFO) << stmt;
-      insts_.emplace_back(stmt.op(), std::move(stmt.kernels().front()));
-    }
-  }
 }
-
-std::unique_ptr<RuntimeProgram> GenerateXPUProgramPass::GenProgram() {
-  LOG(INFO) << "[XPU] program insts.size=" << insts_.size();
-  std::unique_ptr<RuntimeProgram> program(
-      new RuntimeProgram(std::move(insts_)));
-  return program;
-}
-
 }  // namespace subgraph
 }  // namespace mir
 }  // namespace lite
