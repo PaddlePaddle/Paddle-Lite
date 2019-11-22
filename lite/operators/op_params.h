@@ -1042,6 +1042,15 @@ struct SplitLodTensorParam {
   int level{};
 };
 
+struct MergeLodTensorParam {
+  const lite::Tensor* x{};
+  const lite::Tensor* mask{};
+  const lite::Tensor* in_true{};
+  const lite::Tensor* in_false{};
+  lite::Tensor* out{};
+  int level{};
+};
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/arm/split_lod_tensor_compute.h"
+#include "lite/kernels/arm/merge_lod_tensor_compute.h"
 #include <string>
 #include <utility>
 #include <vector>
@@ -67,76 +67,93 @@ void AppendLoD(LoD *lod, const LoD &lod_length) {
   }
 }
 
-void SplitLodTensorCompute::Run() {
-  auto &param = Param<operators::SplitLodTensorParam>();
-  const lite::Tensor *x = param.x;
-  const lite::Tensor *mask = param.mask;
-  lite::Tensor *out_true = param.out_true;
-  lite::Tensor *out_false = param.out_false;
-  int level = param.level;
-
-  auto &x_lod = x->lod();
-  auto &mask_dim = mask->dims();
-  auto *mask_data = mask->data<float>();
-
-  std::vector<std::vector<CopyRange>> copy_ranges(2);
-  // set out_true/out_false lod
-  for (size_t t = 0; t < 2; t++) {
-    LoD *lod = nullptr;
-    if (t == 0) {
-      lod = out_false->mutable_lod();
-    } else {
-      lod = out_true->mutable_lod();
-    }
-    lod->clear();
-    for (size_t i = 0; i < static_cast<size_t>(mask_dim[0]); i++) {
-      if (static_cast<size_t>(mask_data[i]) == t) {
-        size_t start_idx = i;
-        auto lod_and_offset =
-            GetSubLoDAndAbsoluteOffset(x_lod, start_idx, start_idx + 1, level);
-
-        auto &lod_length = lod_and_offset.first;
-        AppendLoD(lod, lod_length);
-
-        size_t start_offset = lod_and_offset.second.first;
-        size_t end_offset = lod_and_offset.second.second;
-        copy_ranges[t].emplace_back(CopyRange{start_offset, end_offset});
-      }
+void log_lod(const LoD &lod, std::string info) {
+  LOG(INFO) << info;
+  for (auto l : lod) {
+    LOG(INFO) << "---";
+    for (auto i : l) {
+      LOG(INFO) << i;
     }
   }
+}
 
-  for (size_t t = 0; t < 2; ++t) {
-    Tensor *out;
-    if (t == 0) {
-      out = out_false;
+void log_tensor_data(const Tensor *t, std::string info) {
+  LOG(INFO) << info;
+  auto t_data = t->data<float>();
+  for (int i = 0; i < t->numel(); i++) {
+    LOG(INFO) << t_data[i];
+  }
+}
+
+void MergeLodTensorCompute::Run() {
+  auto &param = Param<operators::MergeLodTensorParam>();
+  const lite::Tensor *x = param.x;
+  const lite::Tensor *mask = param.mask;
+  const lite::Tensor *in_true = param.in_true;
+  const lite::Tensor *in_false = param.in_false;
+  lite::Tensor *out = param.out;
+  int level = param.level;
+  CHECK(in_true->numel() || in_false->numel());
+
+  auto &in_true_dim = in_true->dims();
+  auto &in_false_dim = in_false->dims();
+  for (int i = 1; i < in_true_dim.size(); i++) {
+    CHECK(in_true_dim[i] == in_false_dim[i]);
+  }
+
+  auto &mask_dim = mask->dims();
+  auto *mask_data = mask->data<float>();
+  int64_t batch_size = in_true->dims()[0] + in_false->dims()[0];
+  std::vector<int64_t> out_shape;
+  out_shape.push_back(batch_size);
+  for (int i = 1; i < in_true_dim.size(); i++) {
+    out_shape.push_back(in_true_dim[i]);
+  }
+  out->Resize(out_shape);
+  auto *out_lod = out->mutable_lod();
+  out_lod->clear();
+
+  size_t base_num = static_cast<size_t>(out->numel() / batch_size);
+  auto *out_data = out->mutable_data<float>();
+
+  size_t out_offset = 0;
+  size_t in_true_idx = 0;
+  size_t in_false_idx = 0;
+
+  for (size_t i = 0; i < static_cast<size_t>(mask_dim[0]); i++) {
+    const Tensor *input = nullptr;
+    size_t *in_idx = nullptr;
+    if (static_cast<int>(mask_data[i]) == 0) {
+      input = in_false;
+      in_idx = &in_false_idx;
     } else {
-      out = out_true;
+      input = in_true;
+      in_idx = &in_true_idx;
     }
-    auto &ranges = copy_ranges[t];
-    size_t height = std::accumulate(
-        ranges.begin(), ranges.end(), 0UL, [](size_t a, const CopyRange &b) {
-          return a + b.end - b.begin;
-        });
-    auto x_dim = x->dims();
-    x_dim[0] = static_cast<int64_t>(height);
-    out->Resize(x_dim);
-    auto *x_data = x->data<float>();
-    auto *out_data = out->mutable_data<float>();
-    auto out_dim = out->dims();
-    size_t base_num = static_cast<size_t>(out->numel() / out_dim[0]);
-    size_t offset = 0;
-    for (auto &each_range : ranges) {
-      size_t len = each_range.end - each_range.begin;
-      if (len == 0) {
-        continue;
-      }
+    auto lod_and_offset =
+        GetSubLoDAndAbsoluteOffset(input->lod(), *in_idx, (*in_idx) + 1, 0);
+    auto &lod_length = lod_and_offset.first;
 
-      auto *x_from = x_data + base_num * each_range.begin;
-      auto *out_dest = out_data + base_num * offset;
-      size_t copy_num = base_num * len * sizeof(float);
-      memcpy(out_dest, x_from, copy_num);
-      offset += len;
+    AppendLoD(out_lod, lod_length);
+
+    size_t start_offset = lod_and_offset.second.first;
+    size_t end_offset = lod_and_offset.second.second;
+
+    CHECK(end_offset >= start_offset);
+    size_t len = end_offset - start_offset;
+    if (len == 0) {
+      continue;
     }
+    auto *in_src = input->data<float>() + base_num * start_offset;
+    auto *out_dest = out_data + base_num * out_offset;
+    size_t copy_num = base_num * len * sizeof(float);
+    memcpy(out_dest, in_src, copy_num);
+    out_offset += len;
+    (*in_idx) += 1;
+  }
+
+  for (size_t i = 0; i < level; i++) {
+    out_lod->insert(out_lod->begin(), x->lod()[i]);
   }
 
   return;
@@ -147,14 +164,15 @@ void SplitLodTensorCompute::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(split_lod_tensor,
+REGISTER_LITE_KERNEL(merge_lod_tensor,
                      kARM,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::arm::SplitLodTensorCompute,
+                     paddle::lite::kernels::arm::MergeLodTensorCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Mask", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kBool))})
-    .BindOutput("OutTrue", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("OutFalse", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("InTrue", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("InFalse", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
