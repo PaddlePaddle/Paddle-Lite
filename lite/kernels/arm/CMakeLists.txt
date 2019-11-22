@@ -49,6 +49,7 @@ add_kernel(sequence_pool_compute_arm ARM basic SRCS sequence_pool_compute.cc DEP
 add_kernel(layer_norm_compute_arm ARM extra SRCS layer_norm_compute.cc DEPS ${lite_kernel_deps} math_arm)
 add_kernel(gather_compute_arm ARM extra SRCS gather_compute.cc DEPS ${lite_kernel_deps} math_arm)
 add_kernel(reduce_mean_compute_arm ARM extra SRCS reduce_mean_compute.cc DEPS ${lite_kernel_deps} math_arm)
+add_kernel(split_lod_tensor_compute_arm ARM extra SRCS split_lod_tensor_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(stack_compute_arm ARM extra SRCS stack_compute.cc DEPS ${lite_kernel_deps} math_arm)
 add_kernel(assign_compute_arm ARM extra SRCS assign_compute.cc DEPS ${lite_kernel_deps} math_arm)
 add_kernel(affine_channel_compute_arm ARM extra SRCS affine_channel_compute.cc DEPS ${lite_kernel_deps} math_arm)
@@ -86,6 +87,7 @@ endif()
 
 message(STATUS "compile with lite ARM kernels")
 
+lite_cc_test(test_split_lod_tensor_compute_arm SRCS split_lod_tensor_compute_test.cc DEPS split_lod_tensor_compute_arm)
 lite_cc_test(test_scale_compute_arm SRCS scale_compute_test.cc DEPS scale_compute_arm)
 lite_cc_test(test_softmax_compute_arm SRCS softmax_compute_test.cc DEPS softmax_compute_arm)
 lite_cc_test(test_batch_norm_compute_arm SRCS batch_norm_compute_test.cc DEPS batch_norm_compute_arm)

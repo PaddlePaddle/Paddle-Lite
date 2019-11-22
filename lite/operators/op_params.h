@@ -1034,6 +1034,14 @@ struct SearchGrnnParam {
   lite::Tensor* layout_input{};
 };
 
+struct SplitLodTensorParam {
+  const lite::Tensor* x{};
+  const lite::Tensor* mask{};
+  lite::Tensor* out_true{};
+  lite::Tensor* out_false{};
+  int level{};
+};
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle
