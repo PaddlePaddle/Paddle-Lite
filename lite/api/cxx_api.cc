@@ -24,13 +24,6 @@
 namespace paddle {
 namespace lite {
 
-static const char TAILORD_OPS_SOURCE_LIST_FILENAME[] =
-    ".tailored_ops_source_list";
-static const char TAILORD_OPS_LIST_NAME[] = ".tailored_ops_list";
-static const char TAILORD_KERNELS_SOURCE_LIST_FILENAME[] =
-    ".tailored_kernels_source_list";
-static const char TAILORD_KERNELS_LIST_NAME[] = ".tailored_kernels_list";
-
 void Predictor::SaveModel(const std::string &dir,
                           lite_api::LiteModelType model_type,
                           bool record_info) {
