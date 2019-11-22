@@ -18,6 +18,9 @@ limitations under the License. */
 
 #include "common/types.h"
 #include "framework/program/program.h"
+#ifdef MODEL_SECU
+#include "seco/seco.h" 
+#endif
 
 namespace paddle_mobile {
 namespace framework {

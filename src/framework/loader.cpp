@@ -19,6 +19,12 @@ limitations under the License. */
 #ifdef PADDLE_MOBILE_CL
 #include "framework/cl/cl_image.h"
 #endif
+#ifdef MODEL_SECU
+#include <stdlib.h>
+#include <stdio.h>
+#include "seco/seco.h"  
+#include <iostream> 
+#endif
 
 namespace paddle_mobile {
 namespace framework {
@@ -162,6 +168,28 @@ void FusionAndPrintInfos(
 }
 
 static size_t ReadBuffer(const char *file_name, uint8_t **out) {
+#ifdef MODEL_SECU
+   std::cout<<"begin readbuffer"<<std::endl;
+   Seco *seco = new Seco();
+   unsigned char pub_key[512];
+   int value = seco->read_pubkey_from_chip(pub_key);
+   if (value!=0){
+        delete seco;
+        LOG(kLOG_ERROR) << "read chip encrypt key error";
+        return 0;
+    }
+    long out_length = 0;
+    std::string model_file(file_name);
+    value = seco->parse_model(pub_key, model_file, out, out_length);  
+    delete seco;
+    if (value!=0){
+        LOG(kLOG_ERROR) << "read buffer error code is:" << value;
+        return 0;  
+    }
+    std::cout<<"out_length is:"<<out_length<<std::endl;
+    size_t cur_len = out_length;
+    return cur_len;
+#else
   FILE *fp;
   fp = fopen(file_name, "rb");
   PADDLE_MOBILE_ENFORCE(fp != NULL, " %s open failed !", file_name);
@@ -181,6 +209,7 @@ static size_t ReadBuffer(const char *file_name, uint8_t **out) {
   }
   fclose(fp);
   return cur_len;
+#endif
 }
 
 template <typename Device, typename T>
