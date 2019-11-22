@@ -186,7 +186,7 @@ add_cuda_static_lib(cudart_static CUDNN_CHECK_LIBRARY_DIRS libcudart_static.a)
 add_cuda_static_lib(cublas_static CUDNN_CHECK_LIBRARY_DIRS libcublas_static.a)
 add_cuda_static_lib(curand_static CUDNN_CHECK_LIBRARY_DIRS libcurand_static.a)
 add_cuda_static_lib(culibos_static CUDNN_CHECK_LIBRARY_DIRS libculibos.a)
-if((${CUDA_VERSION} GREATER 10.0) OR (${CUDA_VERSION} EQUAL 10.0))
+if(NOT ${CUDA_VERSION} LESS 10.0)
   add_cuda_static_lib(cublasLt_static CUDNN_CHECK_LIBRARY_DIRS libcublasLt_static.a)
 endif()
 

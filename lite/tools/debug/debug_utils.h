@@ -27,7 +27,7 @@
 #include "lite/model_parser/pb/var_desc.h"
 #include "lite/utils/all.h"
 
-DEFINE_string(model_path, "", "Model dir path");
+DEFINE_string(model_dir, "", "Model dir path");
 DEFINE_string(input_file, "", "Input datas file path");
 DEFINE_string(topo_output_file, "", "Runtime topology order output file path");
 DEFINE_bool(output_topo, true, "Dump runtime topology or not");
@@ -185,7 +185,7 @@ void ParseConfig(DebugConfig* conf) {
   CHECK(conf);
 #define CHECK_NON_EMPTY(name__) \
   CHECK(!FLAGS_##name__.empty()) << "Option " << #name__ << " can't be empty."
-  CHECK_NON_EMPTY(model_path);
+  CHECK_NON_EMPTY(model_dir);
   if (FLAGS_output_topo) {
     CHECK_NON_EMPTY(topo_output_file);
   }
@@ -193,7 +193,7 @@ void ParseConfig(DebugConfig* conf) {
     CHECK_NON_EMPTY(tensor_output_file);
   }
 #undef CHECK_NON_EMPTY
-  conf->model_dir = FLAGS_model_path;
+  conf->model_dir = FLAGS_model_dir;
   conf->topo_output_file = FLAGS_topo_output_file;
   conf->tensor_output_file = FLAGS_tensor_output_file;
   conf->input_file = FLAGS_input_file;
