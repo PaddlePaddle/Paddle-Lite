@@ -102,7 +102,7 @@ class Conv2dCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
       for (int g = 0; g < param.groups; g++) {
         lite::Tensor in_slice =
             in_batch.Slice<T>(static_cast<int64_t>(g * in_step),
-                              static_cast<int64_t>((g + 1) * in_step)));
+                              static_cast<int64_t>((g + 1) * in_step));
         auto paddings = *param.paddings;
         if (!is_expand) {
           col.ShareDataWith(in_slice);
