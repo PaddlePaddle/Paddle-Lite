@@ -55,10 +55,10 @@ class Optimizer {
 
     SpecifyKernelPickTactic(kernel_pick_factor);
     InitTargetTypeTransformPass();
-
     if (passes.empty()) {
       RunPasses(std::vector<std::string>{
           {"lite_quant_dequant_fuse_pass",     //
+#if 0
            "lite_conv_elementwise_fuse_pass",  // conv-elemwise-bn
            "lite_conv_bn_fuse_pass",           //
            "lite_conv_elementwise_fuse_pass",  // conv-bn-elemwise
@@ -114,7 +114,9 @@ class Optimizer {
            // TODO(ysh329): cause CL_INVALID_MEM_OBJECT when setArg in kernel
            "memory_optimize_pass",
 #endif
-           "argument_type_display_pass"}});
+           "argument_type_display_pass"
+#endif
+           }});
     } else {
       RunPasses(passes);
     }

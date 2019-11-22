@@ -61,6 +61,7 @@ using NPUContext = Context<TargetType::kNPU>;
 using XPUContext = Context<TargetType::kXPU>;
 using OpenCLContext = Context<TargetType::kOpenCL>;
 using FPGAContext = Context<TargetType::kFPGA>;
+using BMContext = Context<TargetType::kBM>;
 
 template <>
 class Context<TargetType::kHost> {
@@ -86,6 +87,21 @@ class Context<TargetType::kNPU> {
   NPUContext& operator=(const NPUContext& ctx) {}
   std::string name() const { return "NPUContext"; }
 };
+#endif
+
+#ifdef LITE_WITH_BM
+template <>
+class Context<TargetType::kBM> {
+ public:
+  Context() {}
+  explicit Context(const BMContext& ctx);
+  // NOTE: InitOnce should only be used by ContextScheduler
+  void InitOnce() {}
+  void CopySharedTo(NPUContext* ctx) {}
+
+  BMContext& operator=(const BMContext& ctx) {}
+  std::string name() const { return "BMContext"; }
+  };
 #endif
 
 #ifdef LITE_WITH_XPU
@@ -374,6 +390,12 @@ class ContextScheduler {
             &ctx->As<FPGAContext>());
         break;
 #endif
+#ifdef LITE_WITH_BM
+      case TARGET(kBM):
+        kernel_contexts_[TargetType::kBM].As<BMContext>().CopySharedTo(
+            &ctx->As<BMContext>());
+        break;
+#endif
       default:
 #ifndef LITE_ON_MODEL_OPTIMIZE_TOOL
         LOG(FATAL) << "unsupported target " << TargetToStr(target);
@@ -411,6 +433,9 @@ class ContextScheduler {
 #endif
 #ifdef LITE_WITH_XPU
     InitContext<TargetType::kXPU, XPUContext>();
+#endif
+#ifdef LITE_WITH_BM
+    InitContext<TargetType::kBM, BMContext>();
 #endif
   }
 

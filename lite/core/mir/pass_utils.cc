@@ -54,6 +54,7 @@ bool PassMatchesTarget(const mir::Pass& pass, TargetType target) {
 }
 
 bool PassMatchesKernels(const mir::Pass& pass) {
+#if 0  
   const auto& kernels = pass.GetBoundKernels();
   for (const auto& kernel : kernels) {
     for (const auto& place : kernel.second) {
@@ -62,6 +63,7 @@ bool PassMatchesKernels(const mir::Pass& pass) {
       }
     }
   }
+#endif
   return true;
 }
 
