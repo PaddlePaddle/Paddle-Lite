@@ -92,7 +92,6 @@ void WinogradConv<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
 
 template <>
 void WinogradConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
-  LOG(INFO) << "winograd";
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->template As<ARMContext>();
   const auto* i_data = param.x->data<float>();

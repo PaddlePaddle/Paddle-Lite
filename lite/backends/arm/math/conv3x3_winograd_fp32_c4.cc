@@ -211,21 +211,8 @@ void conv_compute_6x6_3x3(const float* input,
         float* origin_C = dst_temp_data + gi * c_gi_stride;
         float* origin_B = b_ptr + gi * b_gi_stride;
         const float* origin_A = weight + gi * w_gi_stride;
-#ifdef __aarch64__
         sgemm_prepack_c4_small(
             oc_4 * 4, tile_count, ic_4 * 4, origin_A, origin_B, origin_C, ctx);
-#else
-        sgemm_prepack_c4(oc_4 * 4,
-                         tile_count,
-                         ic_4 * 4,
-                         origin_A,
-                         origin_B,
-                         origin_C,
-                         nullptr,
-                         false,
-                         false,
-                         ctx);
-#endif
       }
 
       // output trans
