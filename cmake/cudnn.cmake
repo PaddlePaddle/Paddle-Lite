@@ -26,13 +26,15 @@ list(APPEND CUDNN_CHECK_LIBRARY_DIRS
     ${CUDNN_ROOT}/lib64
     ${CUDNN_ROOT}/lib
     ${CUDNN_ROOT}/lib/${TARGET_ARCH}-linux-gnu
-    ${CUDNN_ROOT}/local/cuda-${CUDA_VERSION}/targets/${TARGET_ARCH}-linux/lib/
+    /usr/local/cuda-${CUDA_VERSION}/targets/${TARGET_ARCH}-linux/lib/
+    /usr/lib/${TARGET_ARCH}-linux-gnu/
     $ENV{CUDNN_ROOT}
     $ENV{CUDNN_ROOT}/lib64
     $ENV{CUDNN_ROOT}/lib
     /usr/lib
 	${CUDA_TOOLKIT_ROOT_DIR}
-	${CUDA_TOOLKIT_ROOT_DIR}/lib/x64
+        ${CUDA_TOOLKIT_ROOT_DIR}/lib/x64
+	${CUDA_TOOLKIT_ROOT_DIR}/lib64
 	)
 
 if((${CUDA_VERSION} GREATER 10.0) OR (${CUDA_VERSION} EQUAL 10.0))

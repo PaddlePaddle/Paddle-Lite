@@ -65,7 +65,7 @@ class Conv2dCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
       col_shape_vec[j + 1 + data_dim] = output_shape_vec[j + 2];
     }
     lite::DDim col_shape(col_shape_vec);
-    lite::DDim col_matrix_shape = col_shape.Flatten2D(data_dim + 1);
+    lite::DDim col_matrix_shape = col_shape.Flatten2D(data_dim);
     bool is_expand = IsExpand(
         filter_shape_vec, param.strides, *param.paddings, *param.dilations);
     lite::Tensor col;
@@ -95,17 +95,12 @@ class Conv2dCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
     auto blas =
         paddle::lite::x86::math::GetBlas<lite::TargetType::kX86, T>(context);
     for (int i = 0; i < batch_size; i++) {
-      lite::Tensor in_batch;
-      lite::Tensor tmp_in_batch = param.x->Slice<T>(i, i + 1);
-      tmp_in_batch.Resize(input_shape);
-      in_batch.ShareDataWith(tmp_in_batch);
-      lite::Tensor out_batch;
-      lite::Tensor tmp_out_batch = param.output->Slice<T>(i, i + 1);
-      tmp_out_batch.Resize(output_matrix_shape);
-      out_batch.ShareDataWith(tmp_out_batch);
+      lite::Tensor in_batch = param.x->Slice<T>(i, i + 1);
+      in_batch.Resize(input_shape);
+      lite::Tensor out_batch = param.output->Slice<T>(i, i + 1);
+      out_batch.Resize(output_matrix_shape);
       for (int g = 0; g < param.groups; g++) {
-        lite::Tensor in_slice;
-        in_slice.ShareDataWith(
+        lite::Tensor in_slice =
             in_batch.Slice<T>(static_cast<int64_t>(g * in_step),
                               static_cast<int64_t>((g + 1) * in_step)));
         auto paddings = *param.paddings;
@@ -134,13 +129,13 @@ class Conv2dCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
 
         // gemm
         lite::Tensor out_slice;
-        out_slice.ShareDataWith(
+        out_slice =
             out_batch.Slice<T>(static_cast<int64_t>(g * out_step),
-                               static_cast<int64_t>((g + 1) * out_step)));
+                               static_cast<int64_t>((g + 1) * out_step));
         lite::Tensor filter_slice;
-        filter_slice.ShareDataWith(
+        filter_slice =
             filter.Slice<T>(static_cast<int64_t>(g * out_step),
-                            static_cast<int64_t>((g + 1) * out_step)));
+                            static_cast<int64_t>((g + 1) * out_step));
         blas.MatMul(filter_slice,
                     false,
                     col_matrix,

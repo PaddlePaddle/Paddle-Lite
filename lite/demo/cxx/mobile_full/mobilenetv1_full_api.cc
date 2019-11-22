@@ -32,11 +32,21 @@ int64_t ShapeProduction(const shape_t& shape) {
   return res;
 }
 
+// 0. Enable OpenCL, if needed
+// Enable `DEMO_WITH_OPENCL` macro below, if user need use gpu(opencl)
+// #define DEMO_WITH_OPENCL
 void RunModel() {
   // 1. Set CxxConfig
   CxxConfig config;
   config.set_model_dir(FLAGS_model_dir);
+#ifdef DEMO_WITH_OPENCL
+  std::vector<Place> valid_places{
+      Place{TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW)},
+      Place{TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNHWC)},
+      Place{TARGET(kARM), PRECISION(kFloat)}};
+#else
   std::vector<Place> valid_places{Place{TARGET(kARM), PRECISION(kFloat)}};
+#endif
   if (FLAGS_prefer_int8_kernel) {
     valid_places.insert(valid_places.begin(),
                         Place{TARGET(kARM), PRECISION(kInt8)});

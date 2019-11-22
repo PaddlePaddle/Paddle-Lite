@@ -75,7 +75,7 @@ void CLWrapper::InitFunctions() {
   do {                                                               \
     cl_func##_ = (cl_func##Type)dlsym(handle_, #cl_func);            \
     if (cl_func##_ == nullptr) {                                     \
-      LOG(ERROR) << "Cannot find the " << #cl_func                   \
+      LOG(FATAL) << "Cannot find the " << #cl_func                   \
                  << " symbol in libOpenCL.so!";                      \
       break;                                                         \
     }                                                                \
