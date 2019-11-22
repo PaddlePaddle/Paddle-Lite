@@ -361,7 +361,6 @@ void conv_im2col_gemm(const float* i_data,
 
   float* tmp_work_space =
       ctx->workspace_data<float>() + ctx->llc_size() / sizeof(float);
-
   //! use gemv when the output channel size = 1
   for (int b = 0; b < num; ++b) {
     // dC
