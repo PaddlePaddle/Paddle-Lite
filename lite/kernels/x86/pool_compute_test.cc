@@ -60,7 +60,8 @@ TEST(pool2d_x86, run_test) {
   param.x = &x;
   param.output = &out;
   param.strides = {2, 2};
-  param.paddings = {0, 0};
+  std::vector<int> paddings = {0, 0, 0, 0};
+  param.paddings = std::make_shared<std::vector<int>>(paddings);
   param.ksize = {2, 2};
   param.pooling_type = "max";
   std::unique_ptr<KernelContext> ctx(new KernelContext);
