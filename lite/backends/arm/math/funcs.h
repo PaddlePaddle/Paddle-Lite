@@ -43,6 +43,7 @@
 #include "lite/backends/arm/math/negative.h"
 #include "lite/backends/arm/math/norm.h"
 #include "lite/backends/arm/math/packed_sgemm.h"
+#include "lite/backends/arm/math/packed_sgemm_c4.h"
 #include "lite/backends/arm/math/pad2d.h"
 #include "lite/backends/arm/math/pooling.h"
 #include "lite/backends/arm/math/power.h"
