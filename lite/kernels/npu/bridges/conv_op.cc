@@ -42,9 +42,9 @@ node_map_type ConvConverter(const std::shared_ptr<lite::OpLite> conv_op,
   auto bs = input_dims[0];
   auto ic = input_dims[1];
   auto oc = filter_dims[0];
-  CHECK_EQ(input_dims.size(), 4);
-  CHECK_EQ(output_dims.size(), 4);
-  CHECK_EQ(filter_dims.size(), 4);
+  CHECK_EQ(input_dims.size(), 4L);
+  CHECK_EQ(output_dims.size(), 4L);
+  CHECK_EQ(filter_dims.size(), 4L);
   CHECK_EQ(output_dims[0], bs);
   CHECK_EQ(output_dims[1], oc);
   auto strides = op_info->GetAttr<std::vector<int>>("strides");
@@ -52,9 +52,16 @@ node_map_type ConvConverter(const std::shared_ptr<lite::OpLite> conv_op,
   auto groups = op_info->GetAttr<int>("groups");
   auto dilations = op_info->GetAttr<std::vector<int>>("dilations");
   auto fuse_relu = op_info->GetAttr<bool>("fuse_relu");
-  CHECK_EQ(strides.size(), 2);
-  CHECK_EQ(paddings.size(), 2);
-  CHECK_EQ(dilations.size(), 2);
+  CHECK_EQ(strides.size(), 2L);
+  CHECK_EQ(paddings.size(), 4L);
+  CHECK_EQ(dilations.size(), 2L);
+
+  bool pad_equal =
+      ((paddings[0] == paddings[1]) && (paddings[2] == paddings[3]));
+  if (!pad_equal) {
+    LOG(FATA) << "This pad not support ! " << paddings[0] << ", " << paddings[1]
+              << ", " << paddings[2] << ", " << paddings[3];
+  }
 
   // check depthwise mode, and decide whether use ConvolutionDepthwise Op
   bool use_depthwise_conv =
@@ -134,7 +141,7 @@ node_map_type ConvConverter(const std::shared_ptr<lite::OpLite> conv_op,
     depthwise_conv_node->set_attr_pad_mode(5);  // VALID
     depthwise_conv_node->set_attr_group(groups);
     depthwise_conv_node->set_attr_pad(ge::AttrValue::LIST_INT(
-        {paddings[0], paddings[0], paddings[1], paddings[1]}));
+        {paddings[0], paddings[0], paddings[2], paddings[2]}));
     depthwise_conv_node->set_attr_dilation(
         ge::AttrValue::LIST_INT({dilations[0], dilations[1]}));
     depthwise_conv_node->set_attr_stride(
@@ -161,7 +168,7 @@ node_map_type ConvConverter(const std::shared_ptr<lite::OpLite> conv_op,
     common_conv_node->set_attr_pad_mode(0);  // NOTSET
     common_conv_node->set_attr_group(groups);
     common_conv_node->set_attr_pad(ge::AttrValue::LIST_INT(
-        {paddings[0], paddings[0], paddings[1], paddings[1]}));
+        {paddings[0], paddings[0], paddings[2], paddings[2]}));
     common_conv_node->set_attr_dilation(
         ge::AttrValue::LIST_INT({dilations[0], dilations[1]}));
     common_conv_node->set_attr_stride(

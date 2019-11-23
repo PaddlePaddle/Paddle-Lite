@@ -49,7 +49,7 @@ struct LITE_API Tensor {
   void CopyFromCpu(const T* data);
 
   template <typename T>
-  void CopyToCpu(T* data);
+  void CopyToCpu(T* data) const;
   /// Shape of the tensor.
   shape_t shape() const;
   TargetType target() const;

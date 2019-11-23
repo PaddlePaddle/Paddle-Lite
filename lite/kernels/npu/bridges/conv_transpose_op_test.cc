@@ -278,7 +278,8 @@ void test_conv_transpose(int bs,
   opdesc.SetOutput("Output", {output_var_name});
   opdesc.SetAttr("dilations", std::vector<int32_t>({dilation, dilation}));
   opdesc.SetAttr("strides", std::vector<int32_t>({stride, stride}));
-  opdesc.SetAttr("paddings", std::vector<int32_t>({padding, padding}));
+  opdesc.SetAttr("paddings",
+                 std::vector<int32_t>({padding, padding, padding, padding}));
   opdesc.SetAttr("groups", groups);
   opdesc.SetAttr("fuse_relu", static_cast<bool>(fuse_relu));
   if (has_bias) {
