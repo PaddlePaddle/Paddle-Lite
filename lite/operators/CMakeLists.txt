@@ -44,6 +44,8 @@ add_operator(range_op basic SRCS range_op.cc DEPS ${op_DEPS})
 add_operator(reduce_mean_op basic SRCS reduce_mean_op.cc DEPS ${op_DEPS})
 add_operator(relu_op basic SRCS relu_op.cc DEPS ${op_DEPS})
 add_operator(io_copy_op basic SRCS io_copy_op.cc DEPS ${op_DEPS})
+add_operator(fusion_elementwise_activation_ops basic SRCS fusion_elementwise_activation_ops.cc DEPS elementwise_ops ${op_DEPS})
+
 # 2.basic ops not used in basic models
 add_operator(negative_op extra SRCS negative_op.cc DEPS ${op_DEPS})
 add_operator(crop_op extra SRCS crop_op.cc DEPS ${op_DEPS})
@@ -56,7 +58,6 @@ add_operator(search_group_padding extra SRCS search_group_padding_op.cc DEPS ${o
 add_operator(io_copy_once_op extra SRCS io_copy_once_op.cc DEPS io_copy_op ${op_DEPS})
 add_operator(lrn_op_lite extra SRCS lrn_op.cc DEPS ${op_DEPS})
 add_operator(decode_bboxes_op_lite extra SRCS decode_bboxes_op.cc DEPS ${op_DEPS})
-add_operator(fusion_elementwise_activation_ops extra SRCS fusion_elementwise_activation_ops.cc DEPS elementwise_ops ${op_DEPS})
 add_operator(uniform_random_op extra SRCS uniform_random_op.cc DEPS ${op_DEPS})
 add_operator(axpy_op extra SRCS axpy_op.cc DEPS ${op_DEPS})
 add_operator(gru_unit_op extra SRCS gru_unit_op.cc DEPS ${op_DEPS})
