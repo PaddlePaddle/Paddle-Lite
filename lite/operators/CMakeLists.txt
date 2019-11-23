@@ -41,7 +41,7 @@ add_operator(stack_op basic SRCS stack_op.cc DEPS ${op_DEPS})
 add_operator(cast_op_lite basic SRCS cast_op.cc DEPS ${op_DEPS})
 add_operator(affine_channel_op basic SRCS affine_channel_op.cc DEPS ${op_DEPS})
 add_operator(range_op basic SRCS range_op.cc DEPS ${op_DEPS})
-
+add_operator(reduce_mean_op basic SRCS reduce_mean_op.cc DEPS ${op_DEPS})
 # 2.basic ops not used in basic models
 add_operator(negative_op extra SRCS negative_op.cc DEPS ${op_DEPS})
 add_operator(crop_op extra SRCS crop_op.cc DEPS ${op_DEPS})
@@ -72,7 +72,6 @@ add_operator(shape_op_lite extra SRCS shape_op.cc DEPS ${op_DEPS})
 add_operator(sequence_expand_op_lite extra SRCS sequence_expand_op.cc DEPS ${op_DEPS})
 add_operator(im2sequence_op extra SRCS im2sequence_op.cc DEPS ${op_DEPS})
 add_operator(gather_op extra SRCS gather_op.cc DEPS ${op_DEPS})
-add_operator(reduce_mean_op extra SRCS reduce_mean_op.cc DEPS ${op_DEPS})
 add_operator(anchor_generator_op extra SRCS anchor_generator_op.cc DEPS ${op_DEPS})
 add_operator(generate_proposals_op extra SRCS generate_proposals_op.cc DEPS ${op_DEPS})
 add_operator(roi_align_op extra SRCS roi_align_op.cc DEPS ${op_DEPS})
@@ -143,8 +142,10 @@ if (NOT LITE_WITH_X86)
     lite_cc_test(test_batch_norm_op SRCS batch_norm_op_test.cc DEPS batch_norm_op memory)
     lite_cc_test(test_concat_op SRCS concat_op_test.cc DEPS concat_op memory scope)
     lite_cc_test(test_calib_op SRCS calib_op_test.cc DEPS calib_op memory ARM_DEPS calib_compute_arm)
-    lite_cc_test(test_fusion_elementwise_activation_ops
-                SRCS fusion_elementwise_activation_ops_test.cc
-                DEPS fusion_elementwise_activation_ops memory)
     lite_cc_test(test_transpose_op SRCS transpose_op_test.cc DEPS transpose_op memory)
+    if(LITE_BUILD_EXTRA)
+        lite_cc_test(test_fusion_elementwise_activation_ops
+                     SRCS fusion_elementwise_activation_ops_test.cc
+                     DEPS fusion_elementwise_activation_ops memory)
+    endif()
 endif()
