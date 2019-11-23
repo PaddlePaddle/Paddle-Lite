@@ -42,6 +42,8 @@ add_operator(cast_op_lite basic SRCS cast_op.cc DEPS ${op_DEPS})
 add_operator(affine_channel_op basic SRCS affine_channel_op.cc DEPS ${op_DEPS})
 add_operator(range_op basic SRCS range_op.cc DEPS ${op_DEPS})
 add_operator(reduce_mean_op basic SRCS reduce_mean_op.cc DEPS ${op_DEPS})
+add_operator(relu_op basic SRCS relu_op.cc DEPS ${op_DEPS})
+add_operator(io_copy_op basic SRCS io_copy_op.cc DEPS ${op_DEPS})
 # 2.basic ops not used in basic models
 add_operator(negative_op extra SRCS negative_op.cc DEPS ${op_DEPS})
 add_operator(crop_op extra SRCS crop_op.cc DEPS ${op_DEPS})
@@ -50,9 +52,7 @@ add_operator(power_op extra SRCS power_op.cc DEPS ${op_DEPS})
 add_operator(norm_op extra SRCS norm_op.cc DEPS ${op_DEPS})
 
 # 3.extra ops
-add_operator(relu_op extra SRCS relu_op.cc DEPS ${op_DEPS})
 add_operator(search_group_padding extra SRCS search_group_padding_op.cc DEPS ${op_DEPS})
-add_operator(io_copy_op extra SRCS io_copy_op.cc DEPS ${op_DEPS})
 add_operator(io_copy_once_op extra SRCS io_copy_once_op.cc DEPS io_copy_op ${op_DEPS})
 add_operator(lrn_op_lite extra SRCS lrn_op.cc DEPS ${op_DEPS})
 add_operator(decode_bboxes_op_lite extra SRCS decode_bboxes_op.cc DEPS ${op_DEPS})
