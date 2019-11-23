@@ -722,7 +722,57 @@ inline bool write_to_output_c1_fp32(const float* din,
   }
   return true;
 }
+#ifdef __aarch64__
+#define NCHWC2_TRANS_FP32_COMPUTE                                      \
+  "ldp q0, q1, [%[ptr_din]], #32  \n" /* load data, c0r0, c1r0, c0r1*/ \
+  "movi v20.4s, #0                \n" /* for relu */                   \
+  "1:                             \n" /* main loop*/                   \
+  "trn1   v2.4s, v0.4s, v1.4s     \n" /* trans q0, q1*/                \
+  "trn2   v3.4s, v0.4s, v1.4s     \n" /* trans q0, q1*/                \
+  "ldp q0, q1, [%[ptr_din]], #32  \n" /* load data, c0r0, c1r0, c0r1*/ \
+  "trn1   v4.2d, v2.2d, v3.2d     \n" /* trans q8, q10*/               \
+  "trn2   v5.2d, v2.2d, v3.2d     \n" /* trans q8, q10*/
 
+#define NCHWC2_TRANS_FP32_RELU                 \
+  "fmax   v2.4s, v4.4s, v20.4s    \n" /*relu*/ \
+  "fmax   v3.4s, v5.4s, v20.4s    \n" /*relu*/
+
+#define NCHWC2_TRANS_FP32_STORE                          \
+  "subs   %w[cnt], %w[cnt], #1    \n" /* loop count -1*/ \
+                                                         \
+  "str    q2, [%[doutc0r0]], #16  \n" /* store c0r0*/    \
+  "str    q3, [%[doutc1r0]], #16  \n" /* store c2r0*/    \
+                                                         \
+  "bne    1b                      \n" /* jump to main loop*/
+#else
+#define NCHWC2_TRANS_FP32_COMPUTE                                      \
+  "vld1.32 {d0-d3}, [%[ptr_din]]!                 @ load data, c0r0, " \
+  "c1r0, c0r1, c1r1, , c0r2, c1r2, c0r3, c1r3\n"                       \
+  "vmov.u32 q15, #0                       @ dump zero\n"               \
+  "1:                                     @ main loop\n"               \
+  "vtrn.32 d0, d1                         @ trans data:c0r0, c0r1, "   \
+  "c1r0, c1r1 \n"                                                      \
+  "vtrn.32 d2, d3                         @ trans data:c0r2, c0r3, "   \
+  "c1r2, c1r3 \n"                                                      \
+                                                                       \
+  "vswp  d1, d2                           @ swap data\n"
+
+#define NCHWC2_TRANS_FP32_RELU                      \
+  "vmax.f32   q0, q0, q15                 @ relu\n" \
+  "vmax.f32   q1, q1, q15                 @ relu\n"
+
+#define NCHWC2_TRANS_FP32_STORE                                 \
+  "vst1.32  {d0-d1}, [%[doutc0r0]]!       @ store result, add " \
+  "pointer\n"                                                   \
+  "vst1.32  {d2-d3}, [%[doutc1r0]]!       @ store result, add " \
+  "pointer\n"                                                   \
+                                                                \
+  "subs   %[cnt], %[cnt], #1              @ loop count - 1\n"   \
+                                                                \
+  "vld1.32 {d0-d3}, [%[ptr_din]]!         @ load data \n"       \
+                                                                \
+  "bne    1b                              @ jump to main loop\n"
+#endif
 /*wirte result in outputs
 * input din: [n, c / 4, h, w * 4], output dout: [n, c, h, w]
 */
@@ -777,127 +827,41 @@ inline bool write_to_output_c2_fp32(const float* din,
       int cnt_loop = cnt;
       if (flag_relu) {
 #ifdef __aarch64__
-        asm volatile(
-            "ldp q0, q1, [%[ptr_din]], #32  \n" /* load data, c0r0, c1r0, c0r1,
-                                                   c1r1, , c0r2, c1r2, c0r3,
-                                                   c1r3 */
-            "movi v20.4s, #0                \n" /* for relu */
-            "1:                             \n" /* main loop*/
-            "trn1   v2.4s, v0.4s, v1.4s     \n" /* trans q0, q1*/
-            "trn2   v3.4s, v0.4s, v1.4s     \n" /* trans q0, q1*/
-            "ldp q0, q1, [%[ptr_din]], #32  \n" /* load data, c0r0, c1r0, c0r1,
-                                                   c1r1, , c0r2, c1r2, c0r3,
-                                                   c1r3  */
-            "trn1   v4.2d, v2.2d, v3.2d     \n" /* trans q8, q10*/
-            "trn2   v5.2d, v2.2d, v3.2d     \n" /* trans q8, q10*/
-
-            "fmax   v2.4s, v4.4s, v20.4s    \n" /*relu*/
-            "fmax   v3.4s, v5.4s, v20.4s    \n" /*relu*/
-
-            "subs   %w[cnt], %w[cnt], #1    \n" /* loop count -1*/
-
-            "str    q2, [%[doutc0r0]], #16  \n" /* store c0r0*/
-            "str    q3, [%[doutc1r0]], #16  \n" /* store c2r0*/
-
-            "bne    1b                      \n" /* jump to main loop*/
-
-            : [doutc0r0] "+r"(doutc0_ptr),
-              [doutc1r0] "+r"(doutc1_ptr),
-              [cnt] "+r"(cnt_loop),
-              [ptr_din] "+r"(din_hei_ptr)
-            :
-            : "v0", "v1", "v2", "v3", "v4", "v5", "v20");
+        asm volatile(NCHWC2_TRANS_FP32_COMPUTE NCHWC2_TRANS_FP32_RELU
+                         NCHWC2_TRANS_FP32_STORE
+                     : [doutc0r0] "+r"(doutc0_ptr),
+                       [doutc1r0] "+r"(doutc1_ptr),
+                       [cnt] "+r"(cnt_loop),
+                       [ptr_din] "+r"(din_hei_ptr)
+                     :
+                     : "v0", "v1", "v2", "v3", "v4", "v5", "v20");
 #else
-        asm volatile(
-            "vld1.32 {d0-d3}, [%[ptr_din]]!                 @ load data, c0r0, "
-            "c1r0, c0r1, c1r1, , c0r2, c1r2, c0r3, c1r3\n"
-            "vmov.u32 q15, #0                       @ dump zero\n"
-            "1:                                     @ main loop\n"
-            "vtrn.32 d0, d1                         @ trans data:c0r0, c0r1, "
-            "c1r0, c1r1 \n"
-            "vtrn.32 d2, d3                         @ trans data:c0r2, c0r3, "
-            "c1r2, c1r3 \n"
-
-            "vswp  d1, d2                           @ swap data\n"
-
-            "vmax.f32   q0, q0, q15                 @ relu\n"
-            "vmax.f32   q1, q1, q15                 @ relu\n"
-
-            "vst1.32  {d0-d1}, [%[doutc0r0]]!       @ store result, add "
-            "pointer\n"
-            "vst1.32  {d2-d3}, [%[doutc1r0]]!       @ store result, add "
-            "pointer\n"
-
-            "subs   %[cnt], %[cnt], #1              @ loop count - 1\n"
-
-            "vld1.32 {d0-d3}, [%[ptr_din]]!         @ load data \n"
-
-            "bne    1b                              @ jump to main loop\n"
-
-            : [doutc0r0] "+r"(doutc0_ptr),
-              [doutc1r0] "+r"(doutc1_ptr),
-              [ptr_din] "+r"(din_hei_ptr),
-              [cnt] "+r"(cnt_loop)
-            :
-            : "q0", "q1", "q2", "q3", "q15");
+        asm volatile(NCHWC2_TRANS_FP32_COMPUTE NCHWC2_TRANS_FP32_RELU
+                         NCHWC2_TRANS_FP32_STORE
+                     : [doutc0r0] "+r"(doutc0_ptr),
+                       [doutc1r0] "+r"(doutc1_ptr),
+                       [ptr_din] "+r"(din_hei_ptr),
+                       [cnt] "+r"(cnt_loop)
+                     :
+                     : "q0", "q1", "q2", "q3", "q15");
 #endif
       } else {
 #ifdef __aarch64__
-        asm volatile(
-            "ldp q0, q1, [%[ptr_din]], #32  \n" /* load data, c0r0, c1r0, c0r1,
-                                                   c1r1, , c0r2, c1r2, c0r3,
-                                                   c1r3 */
-            "1:                             \n" /* main loop*/
-            "trn1   v2.4s, v0.4s, v1.4s     \n" /* trans q0, q1*/
-            "trn2   v3.4s, v0.4s, v1.4s     \n" /* trans q0, q1*/
-            "ldp q0, q1, [%[ptr_din]], #32  \n" /* load data, c0r0, c1r0, c0r1,
-                                                   c1r1, , c0r2, c1r2, c0r3,
-                                                   c1r3  */
-            "trn1   v4.2d, v2.2d, v3.2d     \n" /* trans q8, q10*/
-            "trn2   v5.2d, v2.2d, v3.2d     \n" /* trans q8, q10*/
-
-            "subs   %w[cnt], %w[cnt], #1    \n" /* loop count -1*/
-
-            "str    q4, [%[doutc0r0]], #16  \n" /* store c0r0*/
-            "str    q5, [%[doutc1r0]], #16  \n" /* store c2r0*/
-
-            "bne    1b                      \n" /* jump to main loop*/
-
-            : [doutc0r0] "+r"(doutc0_ptr),
-              [doutc1r0] "+r"(doutc1_ptr),
-              [cnt] "+r"(cnt_loop),
-              [ptr_din] "+r"(din_hei_ptr)
-            :
-            : "v0", "v1", "v2", "v3", "v4", "v5");
+        asm volatile(NCHWC2_TRANS_FP32_COMPUTE NCHWC2_TRANS_FP32_STORE
+                     : [doutc0r0] "+r"(doutc0_ptr),
+                       [doutc1r0] "+r"(doutc1_ptr),
+                       [cnt] "+r"(cnt_loop),
+                       [ptr_din] "+r"(din_hei_ptr)
+                     :
+                     : "v0", "v1", "v2", "v3", "v4", "v5");
 #else
-        asm volatile(
-            "vld1.32 {d0-d3}, [%[ptr_din]]!                 @ load data, c0r0, "
-            "c1r0, c0r1, c1r1, , c0r2, c1r2, c0r3, c1r3\n"
-            "1:                                     @ main loop\n"
-            "vtrn.32 d0, d1                         @ trans data:c0r0, c0r1, "
-            "c1r0, c1r1 \n"
-            "vtrn.32 d2, d3                         @ trans data:c0r2, c0r3, "
-            "c1r2, c1r3 \n"
-
-            "vswp  d1, d2                           @ swap data\n"
-
-            "vst1.32  {d0-d1}, [%[doutc0r0]]!       @ store result, add "
-            "pointer\n"
-            "vst1.32  {d2-d3}, [%[doutc1r0]]!       @ store result, add "
-            "pointer\n"
-
-            "subs   %[cnt], %[cnt], #1              @ loop count - 1\n"
-
-            "vld1.32 {d0-d3}, [%[ptr_din]]!         @ load data \n"
-
-            "bne    1b                              @ jump to main loop\n"
-
-            : [doutc0r0] "+r"(doutc0_ptr),
-              [doutc1r0] "+r"(doutc1_ptr),
-              [ptr_din] "+r"(din_hei_ptr),
-              [cnt] "+r"(cnt_loop)
-            :
-            : "q0", "q1", "q2", "q3", "q15");
+        asm volatile(NCHWC2_TRANS_FP32_COMPUTE NCHWC2_TRANS_FP32_STORE
+                     : [doutc0r0] "+r"(doutc0_ptr),
+                       [doutc1r0] "+r"(doutc1_ptr),
+                       [ptr_din] "+r"(din_hei_ptr),
+                       [cnt] "+r"(cnt_loop)
+                     :
+                     : "q0", "q1", "q2", "q3", "q15");
 #endif
       }
     }
@@ -922,6 +886,70 @@ inline bool write_to_output_c2_fp32(const float* din,
   return true;
 }
 
+#ifdef __aarch64__
+#define NCHWC4_TRANS_FP32_COMPUTE                                   \
+  "ldp q0, q1, [%[ptr_din]], #32  \n" /* load r00, r01 to q0, q1 */ \
+  "ldp q2, q3, [%[ptr_din]], #32  \n" /* load r02, r03 to q2, q3 */ \
+  "movi v20.4s, #0                \n" /* for relu */                \
+  "1:                             \n" /* main loop*/                \
+  "trn1   v8.4s, v0.4s, v1.4s     \n" /* trans q0, q1*/             \
+  "trn2   v9.4s, v0.4s, v1.4s     \n" /* trans q0, q1*/             \
+  "ldp q0, q1, [%[ptr_din]], #32  \n" /* load r00, r01 to q0, q1 */ \
+  "trn1   v10.4s, v2.4s, v3.4s    \n" /* trans q2, q3*/             \
+  "trn2   v11.4s, v2.4s, v3.4s    \n" /* trans q2, q3*/             \
+  "ldp q2, q3, [%[ptr_din]], #32  \n" /* load r02, r03 to q2, q3 */ \
+  "trn1   v16.2d, v8.2d, v10.2d   \n" /* trans q8, q10*/            \
+  "trn2   v17.2d, v8.2d, v10.2d   \n" /* trans q8, q10*/            \
+  "trn1   v18.2d, v9.2d, v11.2d   \n" /* trans q9, q11*/            \
+  "trn2   v19.2d, v9.2d, v11.2d   \n" /* trans q9, q11*/
+
+#define NCHWC4_TRANS_FP32_RELU                 \
+  "fmax   v16.4s, v16.4s, v20.4s  \n" /*relu*/ \
+  "fmax   v17.4s, v17.4s, v20.4s  \n" /*relu*/ \
+  "fmax   v18.4s, v18.4s, v20.4s  \n" /*relu*/ \
+  "fmax   v19.4s, v19.4s, v20.4s  \n" /*relu*/
+
+#define NCHWC4_TRANS_FP32_STORE                          \
+  "str    q16, [%[doutc0r0]], #16 \n" /* store c0r0*/    \
+  "str    q17, [%[doutc2r0]], #16 \n" /* store c2r0*/    \
+  "str    q18, [%[doutc1r0]], #16 \n" /* store c1r0*/    \
+  "str    q19, [%[doutc3r0]], #16 \n" /* store c3r0*/    \
+                                                         \
+  "subs   %w[cnt], %w[cnt], #1    \n" /* loop count -1*/ \
+  "bne    1b                      \n" /* jump to main loop*/
+#else
+#define NCHWC4_TRANS_FP32_COMPUTE                                     \
+  "vld1.32 {d0-d3}, [%[ptr_din]]!                 @load data \n"      \
+  "vld1.32 {d4-d7}, [%[ptr_din]]!         @load data \n"              \
+  "vmov.u32 q15, #0                       @ dump zero\n"              \
+  "1:                                     @ main loop\n"              \
+  "vtrn.32 q0, q1                         @ trans data:c00c01c20c21 " \
+  "\n"                                                                \
+  "vtrn.32 q2, q3                         @ trans data:c02c03c22c23 " \
+  "\n"                                                                \
+                                                                      \
+  "vswp   d1, d4                          @ swap data\n"              \
+  "vswp   d3, d6                          @ swap data\n"
+
+#define NCHWC4_TRANS_FP32_RELU             \
+  "vmax.f32   q0, q0, q15        @ relu\n" \
+  "vmax.f32   q1, q1, q15        @ relu\n" \
+  "vmax.f32   q2, q2, q15        @ relu\n" \
+  "vmax.f32   q3, q3, q15        @ relu\n"
+
+#define NCHWC4_TRANS_FP32_STORE                                        \
+  "vst1.32  {d0-d1}, [%[doutc0r0]]!     @ store result, add pointer\n" \
+  "vst1.32  {d2-d3}, [%[doutc1r0]]!     @ store result, add pointer\n" \
+  "vst1.32  {d4-d5}, [%[doutc2r0]]!     @ store result, add pointer\n" \
+  "vst1.32  {d6-d7}, [%[doutc3r0]]!     @ store result, add pointer\n" \
+                                                                       \
+  "subs   %[cnt], %[cnt], #1    @ loop count - 1\n"                    \
+                                                                       \
+  "vld1.32 {d0-d3}, [%[ptr_din]]!        @load data \n"                \
+  "vld1.32 {d4-d7}, [%[ptr_din]]!        @load data \n"                \
+                                                                       \
+  "bne    1b                            @ jump to main loop\n"
+#endif
 /*wirte result in outputs
 * input din: [n, c / 4, h, w * 4], output dout: [n, c, h, w]
 */
@@ -983,176 +1011,79 @@ inline bool write_to_output_c4_fp32(const float* din,
       int cnt_loop = cnt;
       if (flag_relu) {
 #ifdef __aarch64__
-        asm volatile(
-            "ldp q0, q1, [%[ptr_din]], #32  \n" /* load r00, r01 to q0, q1 */
-            "ldp q2, q3, [%[ptr_din]], #32  \n" /* load r02, r03 to q2, q3 */
-            "movi v20.4s, #0                \n" /* for relu */
-            "1:                             \n" /* main loop*/
-            "trn1   v8.4s, v0.4s, v1.4s     \n" /* trans q0, q1*/
-            "trn2   v9.4s, v0.4s, v1.4s     \n" /* trans q0, q1*/
-            "ldp q0, q1, [%[ptr_din]], #32  \n" /* load r00, r01 to q0, q1 */
-            "trn1   v10.4s, v2.4s, v3.4s    \n" /* trans q2, q3*/
-            "trn2   v11.4s, v2.4s, v3.4s    \n" /* trans q2, q3*/
-            "ldp q2, q3, [%[ptr_din]], #32  \n" /* load r02, r03 to q2, q3 */
-            "trn1   v16.2d, v8.2d, v10.2d   \n" /* trans q8, q10*/
-            "trn2   v17.2d, v8.2d, v10.2d   \n" /* trans q8, q10*/
-            "trn1   v18.2d, v9.2d, v11.2d   \n" /* trans q9, q11*/
-            "trn2   v19.2d, v9.2d, v11.2d   \n" /* trans q9, q11*/
-            "fmax   v16.4s, v16.4s, v20.4s  \n" /*relu*/
-            "fmax   v17.4s, v17.4s, v20.4s  \n" /*relu*/
-            "fmax   v18.4s, v18.4s, v20.4s  \n" /*relu*/
-            "fmax   v19.4s, v19.4s, v20.4s  \n" /*relu*/
-            "str    q16, [%[doutc0r0]], #16 \n" /* store c0r0*/
-            "str    q17, [%[doutc2r0]], #16 \n" /* store c2r0*/
-            "str    q18, [%[doutc1r0]], #16 \n" /* store c1r0*/
-            "str    q19, [%[doutc3r0]], #16 \n" /* store c3r0*/
-
-            "subs   %w[cnt], %w[cnt], #1    \n" /* loop count -1*/
-            "bne    1b                      \n" /* jump to main loop*/
-
-            : [doutc0r0] "+r"(doutc0_ptr),
-              [doutc1r0] "+r"(doutc1_ptr),
-              [doutc2r0] "+r"(doutc2_ptr),
-              [doutc3r0] "+r"(doutc3_ptr),
-              [cnt] "+r"(cnt_loop),
-              [ptr_din] "+r"(din_hei_ptr)
-            :
-            : "v0",
-              "v1",
-              "v2",
-              "v3",
-              "v4",
-              "v5",
-              "v6",
-              "v7",
-              "v8",
-              "v9",
-              "v10",
-              "v11",
-              "v12",
-              "v13",
-              "v14",
-              "v16",
-              "v17",
-              "v18",
-              "v19",
-              "v20");
+        asm volatile(NCHWC4_TRANS_FP32_COMPUTE NCHWC4_TRANS_FP32_RELU
+                         NCHWC4_TRANS_FP32_STORE
+                     : [doutc0r0] "+r"(doutc0_ptr),
+                       [doutc1r0] "+r"(doutc1_ptr),
+                       [doutc2r0] "+r"(doutc2_ptr),
+                       [doutc3r0] "+r"(doutc3_ptr),
+                       [cnt] "+r"(cnt_loop),
+                       [ptr_din] "+r"(din_hei_ptr)
+                     :
+                     : "v0",
+                       "v1",
+                       "v2",
+                       "v3",
+                       "v4",
+                       "v5",
+                       "v6",
+                       "v7",
+                       "v8",
+                       "v9",
+                       "v10",
+                       "v11",
+                       "v12",
+                       "v13",
+                       "v14",
+                       "v16",
+                       "v17",
+                       "v18",
+                       "v19",
+                       "v20");
 #else
-        asm volatile(
-            "vld1.32 {d0-d3}, [%[ptr_din]]!                 @load data \n"
-            "vld1.32 {d4-d7}, [%[ptr_din]]!         @load data \n"
-            "vmov.u32 q15, #0                       @ dump zero\n"
-            "1:                                     @ main loop\n"
-            "vtrn.32 q0, q1                         @ trans data:c00c01c20c21 "
-            "\n"
-            "vtrn.32 q2, q3                         @ trans data:c02c03c22c23 "
-            "\n"
-
-            "vswp   d1, d4                          @ swap data\n"
-            "vswp   d3, d6                          @ swap data\n"
-
-            "vmax.f32   q0, q0, q15        @ relu\n"
-            "vmax.f32   q1, q1, q15        @ relu\n"
-            "vmax.f32   q2, q2, q15        @ relu\n"
-            "vmax.f32   q3, q3, q15        @ relu\n"
-
-            "vst1.32  {d0-d1}, [%[doutc0r0]]!     @ store result, add pointer\n"
-            "vst1.32  {d2-d3}, [%[doutc1r0]]!     @ store result, add pointer\n"
-            "vst1.32  {d4-d5}, [%[doutc2r0]]!     @ store result, add pointer\n"
-            "vst1.32  {d6-d7}, [%[doutc3r0]]!     @ store result, add pointer\n"
-
-            "subs   %[cnt], %[cnt], #1    @ loop count - 1\n"
-
-            "vld1.32 {d0-d3}, [%[ptr_din]]!        @load data \n"
-            "vld1.32 {d4-d7}, [%[ptr_din]]!        @load data \n"
-
-            "bne    1b                            @ jump to main loop\n"
-
-            : [doutc0r0] "+r"(doutc0_ptr),
-              [doutc1r0] "+r"(doutc1_ptr),
-              [doutc2r0] "+r"(doutc2_ptr),
-              [doutc3r0] "+r"(doutc3_ptr),
-              [ptr_din] "+r"(din_hei_ptr),
-              [cnt] "+r"(cnt_loop)
-            :
-            : "q0", "q1", "q2", "q3", "q15");
+        asm volatile(NCHWC4_TRANS_FP32_COMPUTE NCHWC4_TRANS_FP32_RELU
+                         NCHWC4_TRANS_FP32_STORE
+                     : [doutc0r0] "+r"(doutc0_ptr),
+                       [doutc1r0] "+r"(doutc1_ptr),
+                       [doutc2r0] "+r"(doutc2_ptr),
+                       [doutc3r0] "+r"(doutc3_ptr),
+                       [ptr_din] "+r"(din_hei_ptr),
+                       [cnt] "+r"(cnt_loop)
+                     :
+                     : "q0", "q1", "q2", "q3", "q15");
 #endif
       } else {
 #ifdef __aarch64__
-        asm volatile(
-            "ldp q0, q1, [%[ptr_din]], #32  \n" /* load r00, r01 to q0, q1 */
-            "ldp q2, q3, [%[ptr_din]], #32  \n" /* load r02, r03 to q2, q3 */
-            "1:                             \n" /* main loop*/
-            "trn1   v8.4s, v0.4s, v1.4s     \n" /* trans q0, q1*/
-            "trn2   v9.4s, v0.4s, v1.4s     \n" /* trans q0, q1*/
-            "ldp q0, q1, [%[ptr_din]], #32  \n" /* load r00, r01 to q0, q1 */
-            "trn1   v10.4s, v2.4s, v3.4s    \n" /* trans q2, q3*/
-            "trn2   v11.4s, v2.4s, v3.4s    \n" /* trans q2, q3*/
-            "ldp q2, q3, [%[ptr_din]], #32  \n" /* load r02, r03 to q2, q3 */
-            "trn1   v16.2d, v8.2d, v10.2d   \n" /* trans q8, q10*/
-            "trn2   v17.2d, v8.2d, v10.2d   \n" /* trans q8, q10*/
-            "trn1   v18.2d, v9.2d, v11.2d   \n" /* trans q9, q11*/
-            "trn2   v19.2d, v9.2d, v11.2d   \n" /* trans q9, q11*/
-            "str    q16, [%[doutc0r0]], #16 \n" /* store c0r0*/
-            "str    q17, [%[doutc2r0]], #16 \n" /* store c2r0*/
-            "str    q18, [%[doutc1r0]], #16 \n" /* store c1r0*/
-            "str    q19, [%[doutc3r0]], #16 \n" /* store c3r0*/
-
-            "subs   %w[cnt], %w[cnt], #1    \n" /* loop count -1*/
-            "bne    1b                      \n" /* jump to main loop*/
-
-            : [doutc0r0] "+r"(doutc0_ptr),
-              [doutc1r0] "+r"(doutc1_ptr),
-              [doutc2r0] "+r"(doutc2_ptr),
-              [doutc3r0] "+r"(doutc3_ptr),
-              [cnt] "+r"(cnt_loop),
-              [ptr_din] "+r"(din_hei_ptr)
-            :
-            : "v0",
-              "v1",
-              "v2",
-              "v3",
-              "v8",
-              "v9",
-              "v10",
-              "v11",
-              "v16",
-              "v17",
-              "v18",
-              "v19");
+        asm volatile(NCHWC4_TRANS_FP32_COMPUTE NCHWC4_TRANS_FP32_STORE
+                     : [doutc0r0] "+r"(doutc0_ptr),
+                       [doutc1r0] "+r"(doutc1_ptr),
+                       [doutc2r0] "+r"(doutc2_ptr),
+                       [doutc3r0] "+r"(doutc3_ptr),
+                       [cnt] "+r"(cnt_loop),
+                       [ptr_din] "+r"(din_hei_ptr)
+                     :
+                     : "v0",
+                       "v1",
+                       "v2",
+                       "v3",
+                       "v8",
+                       "v9",
+                       "v10",
+                       "v11",
+                       "v16",
+                       "v17",
+                       "v18",
+                       "v19");
 #else
-        asm volatile(
-            "vld1.32 {d0-d3}, [%[ptr_din]]!                 @load data \n"
-            "vld1.32 {d4-d7}, [%[ptr_din]]!         @load data \n"
-            "1:                                     @ main loop\n"
-            "vtrn.32 q0, q1                         @ trans data:c00c01c20c21 "
-            "\n"
-            "vtrn.32 q2, q3                         @ trans data:c02c03c22c23 "
-            "\n"
-
-            "vswp   d1, d4                          @ swap data\n"
-            "vswp   d3, d6                          @ swap data\n"
-
-            "vst1.32  {d0-d1}, [%[doutc0r0]]!     @ store result, add pointer\n"
-            "vst1.32  {d2-d3}, [%[doutc1r0]]!     @ store result, add pointer\n"
-            "vst1.32  {d4-d5}, [%[doutc2r0]]!     @ store result, add pointer\n"
-            "vst1.32  {d6-d7}, [%[doutc3r0]]!     @ store result, add pointer\n"
-
-            "subs   %[cnt], %[cnt], #1    @ loop count - 1\n"
-
-            "vld1.32 {d0-d3}, [%[ptr_din]]!        @load data \n"
-            "vld1.32 {d4-d7}, [%[ptr_din]]!        @load data \n"
-
-            "bne    1b                            @ jump to main loop\n"
-
-            : [doutc0r0] "+r"(doutc0_ptr),
-              [doutc1r0] "+r"(doutc1_ptr),
-              [doutc2r0] "+r"(doutc2_ptr),
-              [doutc3r0] "+r"(doutc3_ptr),
-              [ptr_din] "+r"(din_hei_ptr),
-              [cnt] "+r"(cnt_loop)
-            :
-            : "q0", "q1", "q2", "q3");
+        asm volatile(NCHWC4_TRANS_FP32_COMPUTE NCHWC4_TRANS_FP32_STORE
+                     : [doutc0r0] "+r"(doutc0_ptr),
+                       [doutc1r0] "+r"(doutc1_ptr),
+                       [doutc2r0] "+r"(doutc2_ptr),
+                       [doutc3r0] "+r"(doutc3_ptr),
+                       [ptr_din] "+r"(din_hei_ptr),
+                       [cnt] "+r"(cnt_loop)
+                     :
+                     : "q0", "q1", "q2", "q3");
 #endif
       }
     }
@@ -1182,6 +1113,120 @@ inline bool write_to_output_c4_fp32(const float* din,
   return true;
 }
 
+#ifdef __aarch64__
+#define NCHWC8_TRANS_FP32_COMPUTE                                    \
+  "ldp q0, q1, [%[ptr_din]], #32  \n" /* load r00, r01 to q0, q1 */  \
+  "ldp q2, q3, [%[ptr_din]], #32  \n" /* load r02, r03 to q2, q3 */  \
+  "ldp q4, q5, [%[ptr_din]], #32  \n" /* load r00, r01 to q0, q1 */  \
+  "ldp q6, q7, [%[ptr_din]], #32  \n" /* load r02, r03 to q2, q3 */  \
+  "movi v20.4s, #0                \n" /* for relu */                 \
+  "1:                             \n" /* main loop*/                 \
+  "trn1   v8.4s, v0.4s, v2.4s     \n" /* trans q0, q1*/              \
+  "trn2   v9.4s, v0.4s, v2.4s     \n" /* trans q0, q1*/              \
+  "trn1   v10.4s, v1.4s, v3.4s    \n" /* trans q2, q3*/              \
+  "trn2   v11.4s, v1.4s, v3.4s    \n" /* trans q2, q3*/              \
+  "ldp q0, q1, [%[ptr_din]], #32  \n" /* load r00, r01 to q0, q1 */  \
+                                                                     \
+  "trn1   v12.4s, v4.4s, v6.4s    \n" /* trans q0, q1*/              \
+  "trn2   v13.4s, v4.4s, v6.4s    \n" /* trans q0, q1*/              \
+  "trn1   v14.4s, v5.4s, v7.4s    \n" /* trans q2, q3*/              \
+  "trn2   v15.4s, v5.4s, v7.4s    \n" /* trans q2, q3*/              \
+  "ldp q2, q3, [%[ptr_din]], #32  \n" /* load r02, r03 to q2, q3 */  \
+                                                                     \
+  "trn1   v16.2d, v8.2d, v12.2d   \n" /* trans q8, q10 00 01 02 03*/ \
+  "trn2   v17.2d, v8.2d, v12.2d   \n" /* trans q8, q10 20 21 22 23*/ \
+  "trn1   v18.2d, v9.2d, v13.2d   \n" /* trans q9, q11 10 11 12 13*/ \
+  "trn2   v19.2d, v9.2d, v13.2d   \n" /* trans q9, q11 30 31 32 33*/ \
+  "ldp q4, q5, [%[ptr_din]], #32  \n" /* load r00, r01 to q0, q1 */  \
+                                                                     \
+  "trn1   v8.2d, v10.2d, v14.2d   \n" /* trans q8, q10 40 41 42 43*/ \
+  "trn2   v9.2d, v10.2d, v14.2d   \n" /* trans q8, q10 60 61 62 63*/ \
+  "trn1   v12.2d, v11.2d, v15.2d  \n" /* trans q9, q11 50 51 52 53*/ \
+  "trn2   v13.2d, v11.2d, v15.2d  \n" /* trans q9, q11 70 71 72 73*/ \
+  "ldp q6, q7, [%[ptr_din]], #32  \n" /* load r02, r03 to q2, q3 */
+
+#define NCHWC8_TRANS_FP32_RELU                 \
+  "fmax   v16.4s, v16.4s, v20.4s  \n" /*relu*/ \
+  "fmax   v17.4s, v17.4s, v20.4s  \n" /*relu*/ \
+  "fmax   v18.4s, v18.4s, v20.4s  \n" /*relu*/ \
+  "fmax   v19.4s, v19.4s, v20.4s  \n" /*relu*/ \
+                                               \
+  "fmax   v8.4s,  v8.4s,  v20.4s  \n" /*relu*/ \
+  "fmax   v9.4s,  v9.4s,  v20.4s  \n" /*relu*/ \
+  "fmax   v12.4s, v12.4s, v20.4s  \n" /*relu*/ \
+  "fmax   v13.4s, v13.4s, v20.4s  \n" /*relu*/
+
+#define NCHWC8_TRANS_FP32_STORE                          \
+  "str    q16, [%[doutc0r0]], #16 \n" /* store c0r0*/    \
+  "str    q17, [%[doutc2r0]], #16 \n" /* store c2r0*/    \
+  "str    q18, [%[doutc1r0]], #16 \n" /* store c1r0*/    \
+  "str    q19, [%[doutc3r0]], #16 \n" /* store c3r0*/    \
+                                                         \
+  "subs   %w[cnt], %w[cnt], #1    \n" /* loop count -1*/ \
+  "str    q8,  [%[doutc4r0]], #16 \n" /* store c0r0*/    \
+  "str    q9,  [%[doutc6r0]], #16 \n" /* store c2r0*/    \
+  "str    q12, [%[doutc5r0]], #16 \n" /* store c1r0*/    \
+  "str    q13, [%[doutc7r0]], #16 \n" /* store c3r0*/    \
+                                                         \
+  "bne    1b                      \n" /* jump to main loop*/
+#else
+#define NCHWC8_TRANS_FP32_COMPUTE                           \
+  "vld1.32 {d0-d3}, [%[ptr_din]]!        @load data \n"     \
+  "vld1.32 {d4-d7}, [%[ptr_din]]!        @load data \n"     \
+  "vld1.32 {d8-d11}, [%[ptr_din]]!       @load data \n"     \
+  "vld1.32 {d12-d15}, [%[ptr_din]]!      @load data \n"     \
+  "vmov.u32 q15, #0                      @ dump zero\n"     \
+  "1:                                    @ main loop\n"     \
+  "vtrn.32   q0, q2                      @ trans q0, q2 \n" \
+  "vtrn.32   q4, q6                      @ trans q4, q6 \n" \
+  "vswp.32   d1, d8                      @ swap  d1, d8 \n" \
+  "vswp.32   d5, d12                     @ swap  d5, d12\n" \
+                                                            \
+  "vtrn.32   q1, q3                      @ trans q1, q3 \n" \
+  "vtrn.32   q5, q7                      @ trans q5, q7 \n" \
+  "vswp.32   d3, d10                     @ swap  d3, d10\n" \
+  "vswp.32   d7, d14                     @ swap  d7, d14\n"
+
+#define NCHWC8_TRANS_FP32_RELU                     \
+  "vmax.f32  q0, q0, q15                 @ relu\n" \
+  "vmax.f32  q1, q1, q15                 @ relu\n" \
+  "vmax.f32  q2, q2, q15                 @ relu\n" \
+  "vmax.f32  q3, q3, q15                 @ relu\n" \
+                                                   \
+  "vmax.f32  q4, q4, q15                 @ relu\n" \
+  "vmax.f32  q5, q5, q15                 @ relu\n" \
+  "vmax.f32  q6, q6, q15                 @ relu\n" \
+  "vmax.f32  q7, q7, q15                 @ relu\n"
+
+#define NCHWC8_TRANS_FP32_STORE                                \
+  "subs   %[cnt], %[cnt], #1             @ loop count - 1\n"   \
+  "vst1.32   {d0-d1}, [%[doutc0r0]]!     @ store result, add " \
+  "pointer\n"                                                  \
+  "vst1.32   {d2-d3}, [%[doutc4r0]]!     @ store result, add " \
+  "pointer\n"                                                  \
+  "vst1.32   {d4-d5}, [%[doutc1r0]]!     @ store result, add " \
+  "pointer\n"                                                  \
+  "vst1.32   {d6-d7}, [%[doutc5r0]]!     @ store result, add " \
+  "pointer\n"                                                  \
+                                                               \
+  "vld1.32   {d0-d3}, [%[ptr_din]]!      @load data \n"        \
+  "vld1.32   {d4-d7}, [%[ptr_din]]!      @load data \n"        \
+                                                               \
+  "vst1.32   {d8-d9},   [%[doutc2r0]]!   @ store result, add " \
+  "pointer\n"                                                  \
+  "vst1.32   {d10-d11}, [%[doutc6r0]]!   @ store result, add " \
+  "pointer\n"                                                  \
+  "vst1.32   {d12-d13}, [%[doutc3r0]]!   @ store result, add " \
+  "pointer\n"                                                  \
+  "vst1.32   {d14-d15}, [%[doutc7r0]]!   @ store result, add " \
+  "pointer\n"                                                  \
+                                                               \
+  "vld1.32 {d8-d11}, [%[ptr_din]]!       @load data \n"        \
+  "vld1.32 {d12-d15}, [%[ptr_din]]!      @load data \n"        \
+                                                               \
+  "bne    1b                             @ jump to main loop\n"
+
+#endif
 /*wirte result in outputs
 * input din: [n, c / 8, h, w * 8], output dout: [n, c, h, w]
 */
@@ -1261,158 +1306,54 @@ inline bool write_to_output_c8_fp32(const float* din,
       if (cnt > 0) {
         int cnt_loop = cnt;
 #ifdef __aarch64__
-        asm volatile(
-            "ldp q0, q1, [%[ptr_din]], #32  \n" /* load r00, r01 to q0, q1 */
-            "ldp q2, q3, [%[ptr_din]], #32  \n" /* load r02, r03 to q2, q3 */
-            "ldp q4, q5, [%[ptr_din]], #32  \n" /* load r00, r01 to q0, q1 */
-            "ldp q6, q7, [%[ptr_din]], #32  \n" /* load r02, r03 to q2, q3 */
-            "movi v20.4s, #0                \n" /* for relu */
-            "1:                             \n" /* main loop*/
-            "trn1   v8.4s, v0.4s, v2.4s     \n" /* trans q0, q1*/
-            "trn2   v9.4s, v0.4s, v2.4s     \n" /* trans q0, q1*/
-            "trn1   v10.4s, v1.4s, v3.4s    \n" /* trans q2, q3*/
-            "trn2   v11.4s, v1.4s, v3.4s    \n" /* trans q2, q3*/
-            "ldp q0, q1, [%[ptr_din]], #32  \n" /* load r00, r01 to q0, q1 */
-
-            "trn1   v12.4s, v4.4s, v6.4s    \n" /* trans q0, q1*/
-            "trn2   v13.4s, v4.4s, v6.4s    \n" /* trans q0, q1*/
-            "trn1   v14.4s, v5.4s, v7.4s    \n" /* trans q2, q3*/
-            "trn2   v15.4s, v5.4s, v7.4s    \n" /* trans q2, q3*/
-            "ldp q2, q3, [%[ptr_din]], #32  \n" /* load r02, r03 to q2, q3 */
-
-            "trn1   v16.2d, v8.2d, v12.2d   \n" /* trans q8, q10 00 01 02 03*/
-            "trn2   v17.2d, v8.2d, v12.2d   \n" /* trans q8, q10 20 21 22 23*/
-            "trn1   v18.2d, v9.2d, v13.2d   \n" /* trans q9, q11 10 11 12 13*/
-            "trn2   v19.2d, v9.2d, v13.2d   \n" /* trans q9, q11 30 31 32 33*/
-            "ldp q4, q5, [%[ptr_din]], #32  \n" /* load r00, r01 to q0, q1 */
-
-            "trn1   v8.2d, v10.2d, v14.2d   \n" /* trans q8, q10 40 41 42 43*/
-            "trn2   v9.2d, v10.2d, v14.2d   \n" /* trans q8, q10 60 61 62 63*/
-            "trn1   v12.2d, v11.2d, v15.2d  \n" /* trans q9, q11 50 51 52 53*/
-            "trn2   v13.2d, v11.2d, v15.2d  \n" /* trans q9, q11 70 71 72 73*/
-            "ldp q6, q7, [%[ptr_din]], #32  \n" /* load r02, r03 to q2, q3 */
-
-            "fmax   v16.4s, v16.4s, v20.4s  \n" /*relu*/
-            "fmax   v17.4s, v17.4s, v20.4s  \n" /*relu*/
-            "fmax   v18.4s, v18.4s, v20.4s  \n" /*relu*/
-            "fmax   v19.4s, v19.4s, v20.4s  \n" /*relu*/
-
-            "fmax   v8.4s,  v8.4s,  v20.4s  \n" /*relu*/
-            "fmax   v9.4s,  v9.4s,  v20.4s  \n" /*relu*/
-            "fmax   v12.4s, v12.4s, v20.4s  \n" /*relu*/
-            "fmax   v13.4s, v13.4s, v20.4s  \n" /*relu*/
-
-            "str    q16, [%[doutc0r0]], #16 \n" /* store c0r0*/
-            "str    q17, [%[doutc2r0]], #16 \n" /* store c2r0*/
-            "str    q18, [%[doutc1r0]], #16 \n" /* store c1r0*/
-            "str    q19, [%[doutc3r0]], #16 \n" /* store c3r0*/
-
-            "subs   %w[cnt], %w[cnt], #1    \n" /* loop count -1*/
-            "str    q8,  [%[doutc4r0]], #16 \n" /* store c0r0*/
-            "str    q9,  [%[doutc6r0]], #16 \n" /* store c2r0*/
-            "str    q12, [%[doutc5r0]], #16 \n" /* store c1r0*/
-            "str    q13, [%[doutc7r0]], #16 \n" /* store c3r0*/
-
-            "bne    1b                      \n" /* jump to main loop*/
-
-            : [doutc0r0] "+r"(doutc0_ptr),
-              [doutc1r0] "+r"(doutc1_ptr),
-              [doutc2r0] "+r"(doutc2_ptr),
-              [doutc3r0] "+r"(doutc3_ptr),
-              [doutc4r0] "+r"(doutc4_ptr),
-              [doutc5r0] "+r"(doutc5_ptr),
-              [doutc6r0] "+r"(doutc6_ptr),
-              [doutc7r0] "+r"(doutc7_ptr),
-              [cnt] "+r"(cnt_loop),
-              [ptr_din] "+r"(din_hei_ptr)
-            :
-            : "v1",
-              "v2",
-              "v3",
-              "v4",
-              "v5",
-              "v6",
-              "v7",
-              "v8",
-              "v9",
-              "v10",
-              "v11",
-              "v12",
-              "v13",
-              "v14",
-              "v15",
-              "v16",
-              "v17",
-              "v18",
-              "v19",
-              "v20");
+        asm volatile(NCHWC8_TRANS_FP32_COMPUTE NCHWC8_TRANS_FP32_RELU
+                         NCHWC8_TRANS_FP32_STORE
+                     : [doutc0r0] "+r"(doutc0_ptr),
+                       [doutc1r0] "+r"(doutc1_ptr),
+                       [doutc2r0] "+r"(doutc2_ptr),
+                       [doutc3r0] "+r"(doutc3_ptr),
+                       [doutc4r0] "+r"(doutc4_ptr),
+                       [doutc5r0] "+r"(doutc5_ptr),
+                       [doutc6r0] "+r"(doutc6_ptr),
+                       [doutc7r0] "+r"(doutc7_ptr),
+                       [cnt] "+r"(cnt_loop),
+                       [ptr_din] "+r"(din_hei_ptr)
+                     :
+                     : "v1",
+                       "v2",
+                       "v3",
+                       "v4",
+                       "v5",
+                       "v6",
+                       "v7",
+                       "v8",
+                       "v9",
+                       "v10",
+                       "v11",
+                       "v12",
+                       "v13",
+                       "v14",
+                       "v15",
+                       "v16",
+                       "v17",
+                       "v18",
+                       "v19",
+                       "v20");
 #else
-        asm volatile(
-            "vld1.32 {d0-d3}, [%[ptr_din]]!        @load data \n"
-            "vld1.32 {d4-d7}, [%[ptr_din]]!        @load data \n"
-            "vld1.32 {d8-d11}, [%[ptr_din]]!       @load data \n"
-            "vld1.32 {d12-d15}, [%[ptr_din]]!      @load data \n"
-            "vmov.u32 q15, #0                      @ dump zero\n"
-            "1:                                    @ main loop\n"
-            "vtrn.32   q0, q2                      @ trans q0, q2 \n"
-            "vtrn.32   q4, q6                      @ trans q4, q6 \n"
-            "vswp.32   d1, d8                      @ swap  d1, d8 \n"
-            "vswp.32   d5, d12                     @ swap  d5, d12\n"
-
-            "vtrn.32   q1, q3                      @ trans q1, q3 \n"
-            "vtrn.32   q5, q7                      @ trans q5, q7 \n"
-            "vswp.32   d3, d10                     @ swap  d3, d10\n"
-            "vswp.32   d7, d14                     @ swap  d7, d14\n"
-
-            "vmax.f32  q0, q0, q15                 @ relu\n"
-            "vmax.f32  q1, q1, q15                 @ relu\n"
-            "vmax.f32  q2, q2, q15                 @ relu\n"
-            "vmax.f32  q3, q3, q15                 @ relu\n"
-
-            "vmax.f32  q4, q4, q15                 @ relu\n"
-            "vmax.f32  q5, q5, q15                 @ relu\n"
-            "vmax.f32  q6, q6, q15                 @ relu\n"
-            "vmax.f32  q7, q7, q15                 @ relu\n"
-
-            "subs   %[cnt], %[cnt], #1             @ loop count - 1\n"
-            "vst1.32   {d0-d1}, [%[doutc0r0]]!     @ store result, add "
-            "pointer\n"
-            "vst1.32   {d2-d3}, [%[doutc4r0]]!     @ store result, add "
-            "pointer\n"
-            "vst1.32   {d4-d5}, [%[doutc1r0]]!     @ store result, add "
-            "pointer\n"
-            "vst1.32   {d6-d7}, [%[doutc5r0]]!     @ store result, add "
-            "pointer\n"
-
-            "vld1.32   {d0-d3}, [%[ptr_din]]!      @load data \n"
-            "vld1.32   {d4-d7}, [%[ptr_din]]!      @load data \n"
-
-            "vst1.32   {d8-d9},   [%[doutc2r0]]!   @ store result, add "
-            "pointer\n"
-            "vst1.32   {d10-d11}, [%[doutc6r0]]!   @ store result, add "
-            "pointer\n"
-            "vst1.32   {d12-d13}, [%[doutc3r0]]!   @ store result, add "
-            "pointer\n"
-            "vst1.32   {d14-d15}, [%[doutc7r0]]!   @ store result, add "
-            "pointer\n"
-
-            "vld1.32 {d8-d11}, [%[ptr_din]]!       @load data \n"
-            "vld1.32 {d12-d15}, [%[ptr_din]]!      @load data \n"
-
-            "bne    1b                             @ jump to main loop\n"
-
-            : [doutc0r0] "+r"(doutc0_ptr),
-              [doutc1r0] "+r"(doutc1_ptr),
-              [doutc2r0] "+r"(doutc2_ptr),
-              [doutc3r0] "+r"(doutc3_ptr),
-              [doutc4r0] "+r"(doutc4_ptr),
-              [doutc5r0] "+r"(doutc5_ptr),
-              [doutc6r0] "+r"(doutc6_ptr),
-              [doutc7r0] "+r"(doutc7_ptr),
-              [ptr_din] "+r"(din_hei_ptr),
-              [cnt] "+r"(cnt_loop)
-            :
-            : "q0", "q1", "q2", "q3", "q4", "q15");
+        asm volatile(NCHWC8_TRANS_FP32_COMPUTE NCHWC8_TRANS_FP32_RELU
+                         NCHWC8_TRANS_FP32_STORE
+                     : [doutc0r0] "+r"(doutc0_ptr),
+                       [doutc1r0] "+r"(doutc1_ptr),
+                       [doutc2r0] "+r"(doutc2_ptr),
+                       [doutc3r0] "+r"(doutc3_ptr),
+                       [doutc4r0] "+r"(doutc4_ptr),
+                       [doutc5r0] "+r"(doutc5_ptr),
+                       [doutc6r0] "+r"(doutc6_ptr),
+                       [doutc7r0] "+r"(doutc7_ptr),
+                       [ptr_din] "+r"(din_hei_ptr),
+                       [cnt] "+r"(cnt_loop)
+                     :
+                     : "q0", "q1", "q2", "q3", "q4", "q15");
 #endif
       }
       if (we > width) {
@@ -1468,138 +1409,53 @@ inline bool write_to_output_c8_fp32(const float* din,
       if (cnt > 0) {
         int cnt_loop = cnt;
 #ifdef __aarch64__
-        asm volatile(
-            "ldp q0, q1, [%[ptr_din]], #32  \n" /* load r00, r01 to q0, q1 */
-            "ldp q2, q3, [%[ptr_din]], #32  \n" /* load r02, r03 to q2, q3 */
-            "ldp q4, q5, [%[ptr_din]], #32  \n" /* load r00, r01 to q0, q1 */
-            "ldp q6, q7, [%[ptr_din]], #32  \n" /* load r02, r03 to q2, q3 */
-            "1:                             \n" /* main loop*/
-            "trn1   v8.4s, v0.4s, v2.4s     \n" /* trans q0, q1*/
-            "trn2   v9.4s, v0.4s, v2.4s     \n" /* trans q0, q1*/
-            "trn1   v10.4s, v1.4s, v3.4s    \n" /* trans q2, q3*/
-            "trn2   v11.4s, v1.4s, v3.4s    \n" /* trans q2, q3*/
-            "ldp q0, q1, [%[ptr_din]], #32  \n" /* load r00, r01 to q0, q1 */
-
-            "trn1   v12.4s, v4.4s, v6.4s    \n" /* trans q0, q1*/
-            "trn2   v13.4s, v4.4s, v6.4s    \n" /* trans q0, q1*/
-            "trn1   v14.4s, v5.4s, v7.4s    \n" /* trans q2, q3*/
-            "trn2   v15.4s, v5.4s, v7.4s    \n" /* trans q2, q3*/
-            "ldp q2, q3, [%[ptr_din]], #32  \n" /* load r02, r03 to q2, q3 */
-
-            "trn1   v16.2d, v8.2d, v12.2d   \n" /* trans q8, q10 00 01 02 03*/
-            "trn2   v17.2d, v8.2d, v12.2d   \n" /* trans q8, q10 20 21 22 23*/
-            "trn1   v18.2d, v9.2d, v13.2d   \n" /* trans q9, q11 10 11 12 13*/
-            "trn2   v19.2d, v9.2d, v13.2d   \n" /* trans q9, q11 30 31 32 33*/
-            "ldp q4, q5, [%[ptr_din]], #32  \n" /* load r00, r01 to q0, q1 */
-
-            "trn1   v8.2d, v10.2d, v14.2d   \n" /* trans q8, q10 40 41 42 43*/
-            "trn2   v9.2d, v10.2d, v14.2d   \n" /* trans q8, q10 60 61 62 63*/
-            "trn1   v12.2d, v11.2d, v15.2d  \n" /* trans q9, q11 50 51 52 53*/
-            "trn2   v13.2d, v11.2d, v15.2d  \n" /* trans q9, q11 70 71 72 73*/
-            "ldp q6, q7, [%[ptr_din]], #32  \n" /* load r02, r03 to q2, q3 */
-
-            "str    q16, [%[doutc0r0]], #16 \n" /* store c0r0*/
-            "str    q17, [%[doutc2r0]], #16 \n" /* store c2r0*/
-            "str    q18, [%[doutc1r0]], #16 \n" /* store c1r0*/
-            "str    q19, [%[doutc3r0]], #16 \n" /* store c3r0*/
-
-            "subs   %w[cnt], %w[cnt], #1    \n" /* loop count -1*/
-            "str    q8,  [%[doutc4r0]], #16 \n" /* store c0r0*/
-            "str    q9,  [%[doutc6r0]], #16 \n" /* store c2r0*/
-            "str    q12, [%[doutc5r0]], #16 \n" /* store c1r0*/
-            "str    q13, [%[doutc7r0]], #16 \n" /* store c3r0*/
-
-            "bne    1b                      \n" /* jump to main loop*/
-
-            : [doutc0r0] "+r"(doutc0_ptr),
-              [doutc1r0] "+r"(doutc1_ptr),
-              [doutc2r0] "+r"(doutc2_ptr),
-              [doutc3r0] "+r"(doutc3_ptr),
-              [doutc4r0] "+r"(doutc4_ptr),
-              [doutc5r0] "+r"(doutc5_ptr),
-              [doutc6r0] "+r"(doutc6_ptr),
-              [doutc7r0] "+r"(doutc7_ptr),
-              [cnt] "+r"(cnt_loop),
-              [ptr_din] "+r"(din_hei_ptr)
-            :
-            : "v0",
-              "v1",
-              "v2",
-              "v3",
-              "v4",
-              "v5",
-              "v6",
-              "v7",
-              "v8",
-              "v9",
-              "v10",
-              "v11",
-              "v12",
-              "v13",
-              "v14",
-              "v15",
-              "v16",
-              "v17",
-              "v18",
-              "v19",
-              "v20");
+        asm volatile(NCHWC8_TRANS_FP32_COMPUTE NCHWC8_TRANS_FP32_STORE
+                     : [doutc0r0] "+r"(doutc0_ptr),
+                       [doutc1r0] "+r"(doutc1_ptr),
+                       [doutc2r0] "+r"(doutc2_ptr),
+                       [doutc3r0] "+r"(doutc3_ptr),
+                       [doutc4r0] "+r"(doutc4_ptr),
+                       [doutc5r0] "+r"(doutc5_ptr),
+                       [doutc6r0] "+r"(doutc6_ptr),
+                       [doutc7r0] "+r"(doutc7_ptr),
+                       [cnt] "+r"(cnt_loop),
+                       [ptr_din] "+r"(din_hei_ptr)
+                     :
+                     : "v0",
+                       "v1",
+                       "v2",
+                       "v3",
+                       "v4",
+                       "v5",
+                       "v6",
+                       "v7",
+                       "v8",
+                       "v9",
+                       "v10",
+                       "v11",
+                       "v12",
+                       "v13",
+                       "v14",
+                       "v15",
+                       "v16",
+                       "v17",
+                       "v18",
+                       "v19",
+                       "v20");
 #else
-        asm volatile(
-            "vld1.32   {d0-d3}, [%[ptr_din]]!      @load data \n"
-            "vld1.32   {d4-d7}, [%[ptr_din]]!      @load data \n"
-            "vld1.32   {d8-d11}, [%[ptr_din]]!     @load data \n"
-            "vld1.32   {d12-d15}, [%[ptr_din]]!    @load data \n"
-            "1:                                    @ main loop\n"
-            "vtrn.32   q0, q2                      @ trans q0, q2 \n"
-            "vtrn.32   q4, q6                      @ trans q4, q6 \n"
-            "vswp.32   d1, d8                      @ swap  d1, d8 \n"
-            "vswp.32   d5, d12                     @ swap  d5, d12\n"
-
-            "vtrn.32   q1, q3                      @ trans q1, q3 \n"
-            "vtrn.32   q5, q7                      @ trans q5, q7 \n"
-            "vswp.32   d3, d10                     @ swap  d3, d10\n"
-            "vswp.32   d7, d14                     @ swap  d7, d14\n"
-
-            "subs      %[cnt], %[cnt], #1          @ loop count - 1\n"
-
-            "vst1.32   {d0-d1},   [%[doutc0r0]]!   @ store result, add "
-            "pointer\n"
-            "vst1.32   {d2-d3},   [%[doutc4r0]]!   @ store result, add "
-            "pointer\n"
-            "vst1.32   {d4-d5},   [%[doutc1r0]]!   @ store result, add "
-            "pointer\n"
-            "vst1.32   {d6-d7},   [%[doutc5r0]]!   @ store result, add "
-            "pointer\n"
-
-            "vld1.32   {d0-d3},   [%[ptr_din]]!    @load data \n"
-            "vld1.32   {d4-d7},   [%[ptr_din]]!    @load data \n"
-
-            "vst1.32   {d8-d9},   [%[doutc2r0]]!   @ store result, add "
-            "pointer\n"
-            "vst1.32   {d10-d11}, [%[doutc6r0]]!   @ store result, add "
-            "pointer\n"
-            "vst1.32   {d12-d13}, [%[doutc3r0]]!   @ store result, add "
-            "pointer\n"
-            "vst1.32   {d14-d15}, [%[doutc7r0]]!   @ store result, add "
-            "pointer\n"
-
-            "vld1.32 {d8-d11},  [%[ptr_din]]!      @load data \n"
-            "vld1.32 {d12-d15}, [%[ptr_din]]!      @load data \n"
-
-            "bne    1b                             @ jump to main loop\n"
-
-            : [doutc0r0] "+r"(doutc0_ptr),
-              [doutc1r0] "+r"(doutc1_ptr),
-              [doutc2r0] "+r"(doutc2_ptr),
-              [doutc3r0] "+r"(doutc3_ptr),
-              [doutc4r0] "+r"(doutc4_ptr),
-              [doutc5r0] "+r"(doutc5_ptr),
-              [doutc6r0] "+r"(doutc6_ptr),
-              [doutc7r0] "+r"(doutc7_ptr),
-              [ptr_din] "+r"(din_hei_ptr),
-              [cnt] "+r"(cnt_loop)
-            :
-            : "q0", "q1", "q2", "q3", "q4");
+        asm volatile(NCHWC8_TRANS_FP32_COMPUTE NCHWC8_TRANS_FP32_STORE
+                     : [doutc0r0] "+r"(doutc0_ptr),
+                       [doutc1r0] "+r"(doutc1_ptr),
+                       [doutc2r0] "+r"(doutc2_ptr),
+                       [doutc3r0] "+r"(doutc3_ptr),
+                       [doutc4r0] "+r"(doutc4_ptr),
+                       [doutc5r0] "+r"(doutc5_ptr),
+                       [doutc6r0] "+r"(doutc6_ptr),
+                       [doutc7r0] "+r"(doutc7_ptr),
+                       [ptr_din] "+r"(din_hei_ptr),
+                       [cnt] "+r"(cnt_loop)
+                     :
+                     : "q0", "q1", "q2", "q3", "q4");
 #endif
       }
       if (we > width) {

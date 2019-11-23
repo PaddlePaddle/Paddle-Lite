@@ -48,8 +48,13 @@ node_map_type PoolConverter(const std::shared_ptr<lite::OpLite> pool_op,
   auto npu_window = ge::AttrValue::LIST_INT(ksize.begin(), ksize.end());
 
   auto padding = op_info->GetAttr<std::vector<int>>("paddings");
+  bool pads_equal = (padding[0] == padding[1]) && (padding[2] == padding[3]);
+  if (!pads_equal) {
+    LOG(FATAL)
+        << "padding requires pad_left == pad_right, pad_top == pad_bottom";
+  }
   auto npu_pad =
-      ge::AttrValue::LIST_INT{padding[0], padding[0], padding[1], padding[1]};
+      ge::AttrValue::LIST_INT{padding[0], padding[1], padding[2], padding[3]};
   auto strides = op_info->GetAttr<std::vector<int>>("strides");
   auto npu_stride = ge::AttrValue::LIST_INT(strides.begin(), strides.end());
   int npu_ceil_mode = 0;

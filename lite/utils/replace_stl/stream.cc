@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/utils/replace_stl/stream.h"
+#include <assert.h>
 #include <stdio.h>
 
 #ifdef LITE_ON_TINY_PUBLISH

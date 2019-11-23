@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #pragma once
+#include <memory>
 #include <string>
 #include <utility>
 #include <vector>
@@ -253,9 +254,19 @@ struct ConvParam {
   lite::Tensor* residualData{nullptr};
   lite::Tensor* output{};
   std::vector<int> strides{1, 1};
-  std::vector<int> paddings{0, 0};
+  /* paddings type change
+  * from std::vector<int> to std::shared_ptr<std::vector<int>>
+  * to support dynamically modify padding
+  * let kernel param and operator param Synchronous update
+  */
+  std::shared_ptr<std::vector<int>> paddings;
   int groups{1};
-  std::vector<int> dilations{1, 1};
+  /* dilations type change
+  * from std::vector<int> to std::shared_ptr<std::vector<int>>
+  * to support dynamically modify padding
+  * let kernel param and operator param Synchronous update
+  */
+  std::shared_ptr<std::vector<int>> dilations;
   bool fuse_relu_before_depthwise_conv{false};
   bool use_mkldnn{false};
   bool fuse_relu{false};  // only used in mkldnn kernel
@@ -302,7 +313,12 @@ struct PoolParam {
   bool global_pooling{
       false};  // if true, knernel size and paddings will be ignored
   std::vector<int> strides{1, 1};
-  std::vector<int> paddings{0, 0};
+  /* paddings type change
+  * from std::vector<int> to std::shared_ptr<std::vector<int>>
+  * to support dynamically modify padding
+  * let kernel param and operator param Synchronous update
+  */
+  std::shared_ptr<std::vector<int>> paddings;
   bool exclusive{true};
   bool adaptive{false};
   bool ceil_mode{false};
