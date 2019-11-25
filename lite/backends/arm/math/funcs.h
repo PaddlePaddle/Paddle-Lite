@@ -49,6 +49,7 @@
 #include "lite/backends/arm/math/prior_box.h"
 #include "lite/backends/arm/math/reduce_max.h"
 #include "lite/backends/arm/math/reduce_mean.h"
+#include "lite/backends/arm/math/reduce_prob.h"
 #include "lite/backends/arm/math/scale.h"
 #include "lite/backends/arm/math/sequence_expand.h"
 #include "lite/backends/arm/math/sequence_pool.h"

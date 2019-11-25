@@ -120,6 +120,7 @@ if (NOT HAS_ARM_MATH_LIB_DIR)
       affine_channel.cc
       anchor_generator.cc
       split_merge_lod_tenosr.cc
+      reduce_prob.cc
       DEPS ${lite_kernel_deps} context tensor)
 endif()
  
