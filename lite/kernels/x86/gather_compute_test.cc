@@ -156,3 +156,4 @@ TEST(gather_x86, run_test_2dims) {
 }  // namespace paddle
 
 USE_LITE_KERNEL(gather, kX86, kFloat, kNCHW, def);
+USE_LITE_KERNEL(gather, kX86, kFloat, kNCHW, int64_in);
