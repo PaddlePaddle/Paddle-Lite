@@ -2,8 +2,7 @@ set(op_DEPS tensor op op_params scope memory)
 
 lite_cc_library(op_params SRCS op_params.cc DEPS tensor any)
 
-# 1.baisc kernels used in basic models
-
+# 1.baisc ops used in basic models
 add_operator(conv_op basic SRCS conv_op.cc DEPS ${op_DEPS})
 add_operator(pool_op basic SRCS pool_op.cc DEPS ${op_DEPS})
 add_operator(fc_op basic SRCS fc_op.cc DEPS ${op_DEPS})
