@@ -66,10 +66,12 @@ DDim compute_out_dim(const DDim& dim_in,
   auto filter_dims = param.filter->dims();
   DDim output_shape = dim_in;
   output_shape[1] = filter_dims[1] * param.groups;
+  auto paddings = *param.paddings;
+  auto dilations = *param.dilations;
   for (int i = 0; i < 2; i++) {
-    int kernel_extent = param.dilations[i] * (filter_dims[i + 2] - 1) + 1;
+    int kernel_extent = dilations[i] * (filter_dims[i + 2] - 1) + 1;
     int output_len = (dim_in[i + 2] - 1) * param.strides[i] + kernel_extent -
-                     2 * param.paddings[i];
+                     (paddings[2 * i] + paddings[2 * i + 1]);
     output_shape[i + 2] = output_len;
   }
   return output_shape;
@@ -101,8 +103,8 @@ void test_conv_transpose_fp32(const std::vector<DDim>& input_dims,
     param.bias->set_precision(PRECISION(kFloat));
   }
   param.strides = strides;
-  param.paddings = pads;
-  param.dilations = dilas;
+  param.paddings = std::make_shared<std::vector<int>>(pads);
+  param.dilations = std::make_shared<std::vector<int>>(dilas);
   param.fuse_relu = flag_relu;
   param.groups = group;
 
@@ -182,7 +184,7 @@ void test_conv_transpose_fp32(const std::vector<DDim>& input_dims,
                                      strides[0],
                                      dilas[1],
                                      dilas[0],
-                                     pads[1],
+                                     pads[2],
                                      pads[0],
                                      flag_bias,
                                      flag_relu);
@@ -296,7 +298,7 @@ TEST(TestConvRand, test_conv_transpose_rand) {
                                                  weights_dim,
                                                  g,
                                                  {stride, stride},
-                                                 {pad, pad},
+                                                 {pad, pad, pad, pad},
                                                  {dila, dila},
                                                  flag_bias,
                                                  flag_relu,
@@ -330,7 +332,7 @@ TEST(TestConvCustom, test_conv_transpose_fp32_custom_size) {
             FLAGS_kernel_w}),
       FLAGS_group,
       {FLAGS_stride_h, FLAGS_stride_w},
-      {FLAGS_pad_h, FLAGS_pad_w},
+      {FLAGS_pad_h, FLAGS_pad_h, FLAGS_pad_w, FLAGS_pad_w},
       {FLAGS_dila_h, FLAGS_dila_w},
       FLAGS_flag_bias,
       FLAGS_flag_relu,

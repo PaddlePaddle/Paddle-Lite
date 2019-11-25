@@ -39,6 +39,7 @@
 #include "lite/backends/arm/math/im2sequence.h"
 #include "lite/backends/arm/math/increment.h"
 #include "lite/backends/arm/math/interpolate.h"
+#include "lite/backends/arm/math/layout.h"
 #include "lite/backends/arm/math/lrn.h"
 #include "lite/backends/arm/math/negative.h"
 #include "lite/backends/arm/math/norm.h"
