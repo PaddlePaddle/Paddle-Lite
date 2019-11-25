@@ -31,4 +31,5 @@ REGISTER_LITE_KERNEL(search_seq_softmax,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindOutput("Out_log", {LiteType::GetTensorTy(TARGET(kX86))})
     .Finalize();
