@@ -67,7 +67,7 @@ class Conv2dCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
     lite::DDim col_shape(col_shape_vec);
     lite::DDim col_matrix_shape = col_shape.Flatten2D(data_dim);
     bool is_expand = IsExpand(
-        filter_shape_vec, param.strides, param.paddings, param.dilations);
+        filter_shape_vec, param.strides, *param.paddings, *param.dilations);
     lite::Tensor col;
     lite::Tensor col_matrix;
     if (is_expand) {
@@ -103,7 +103,7 @@ class Conv2dCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
         lite::Tensor in_slice =
             in_batch.Slice<T>(static_cast<int64_t>(g * in_step),
                               static_cast<int64_t>((g + 1) * in_step));
-
+        auto paddings = *param.paddings;
         if (!is_expand) {
           col.ShareDataWith(in_slice);
           col_matrix.ShareDataWith(col);
@@ -112,20 +112,18 @@ class Conv2dCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
           // im2col
           im2col(context,
                  in_slice,
-                 param.dilations,
+                 *param.dilations,
                  param.strides,
-                 std::vector<int>{param.paddings[0],
-                                  param.paddings[1],
-                                  param.paddings[0],
-                                  param.paddings[1]},
+                 std::vector<int>{
+                     paddings[0], paddings[2], paddings[0], paddings[2]},
                  &(col));
         } else if (data_dim == 3U) {
           // vol2col
           vol2col(context,
                   in_slice,
-                  param.dilations,
+                  *param.dilations,
                   param.strides,
-                  param.paddings,
+                  *param.paddings,
                   &(col));
         }
 

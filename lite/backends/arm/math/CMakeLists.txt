@@ -57,9 +57,10 @@ endif()
 
 if (NOT HAS_ARM_MATH_LIB_DIR)
   # TODO(xxx): seperate them and do not deps proto, eigen3
-  cc_library(math_arm SRCS  
-      funcs.cc 
+  cc_library(math_arm SRCS
+      funcs.cc
       packed_sgemm.cc
+      packed_sgemm_c4.cc
       sgemm.cc
       gemm_prepacked_int8.cc
       gemm_s8.cc
@@ -67,8 +68,10 @@ if (NOT HAS_ARM_MATH_LIB_DIR)
       gemv_arm_int8.cc
       conv3x3s1_direct_fp32.cc
       conv3x3s2_direct_fp32.cc
-      conv3x3s1_depthwise_fp32.cc
-      conv3x3s2_depthwise_fp32.cc
+      conv3x3s1p01_depthwise_fp32.cc
+      conv3x3s2p01_depthwise_fp32.cc
+      conv3x3s1px_depthwise_fp32.cc
+      conv3x3s2px_depthwise_fp32.cc
       conv3x3s1_direct_int8.cc
       conv3x3s2_direct_int8.cc
       conv3x3s1_depthwise_int8.cc
@@ -76,16 +79,13 @@ if (NOT HAS_ARM_MATH_LIB_DIR)
       conv5x5s1_depthwise_int8.cc
       conv5x5s1_depthwise_fp32.cc
       conv5x5s2_depthwise_fp32.cc
-      conv_depthwise_3x3p0.cc
-      conv_depthwise_3x3p1.cc
-      conv_depthwise_3x3s1.cc
-      conv_depthwise_3x3s2.cc
       conv_winograd_3x3.cc
       conv_impl.cc
-      softmax.cc 
+      softmax.cc
       scale.cc
       pooling.cc
       elementwise.cc
+      layout.cc
       lrn.cc
       decode_bboxes.cc
       concat.cc
@@ -123,4 +123,3 @@ if (NOT HAS_ARM_MATH_LIB_DIR)
       reduce_prob.cc
       DEPS ${lite_kernel_deps} context tensor)
 endif()
- 

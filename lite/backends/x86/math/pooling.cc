@@ -49,7 +49,7 @@ class Pool2dFunctor<lite::TargetType::kX86, PoolProcess, T> {
     const int stride_height = strides[0];
     const int stride_width = strides[1];
     const int padding_height = paddings[0];
-    const int padding_width = paddings[1];
+    const int padding_width = paddings[2];
 
     const int input_stride = input_height * input_width;
     const int output_stride = output_height * output_width;
@@ -130,7 +130,7 @@ class Pool2dGradFunctor<lite::TargetType::kX86, PoolProcess, T> {
     const int stride_height = strides[0];
     const int stride_width = strides[1];
     const int padding_height = paddings[0];
-    const int padding_width = paddings[1];
+    const int padding_width = paddings[2];
     const int input_stride = input_height * input_width;
     const int output_stride = output_height * output_width;
 
@@ -213,7 +213,7 @@ class MaxPool2dGradFunctor<lite::TargetType::kX86, T> {
     const int stride_height = strides[0];
     const int stride_width = strides[1];
     const int padding_height = paddings[0];
-    const int padding_width = paddings[1];
+    const int padding_width = paddings[2];
     const int input_stride = input_height * input_width;
     const int output_stride = output_height * output_width;
 
@@ -629,7 +629,7 @@ class MaxPool2dWithIndexFunctor<lite::TargetType::kX86, T1, T2> {
     const int stride_height = strides[0];
     const int stride_width = strides[1];
     const int padding_height = paddings[0];
-    const int padding_width = paddings[1];
+    const int padding_width = paddings[2];
     const int input_stride = input_height * input_width;
     const int output_stride = output_height * output_width;
 
