@@ -65,15 +65,10 @@ void conv_compute_6x6_3x3(const float* input,
   int oc_stride = wout * hout;
   int ic_4 = (chin + 3) / 4;
   int oc_4 = (chout + 3) / 4;
-  int ic_remain = chin - ic_4 * 4;
-  int oc_remain = chout - oc_4 * 4;
 
   int tile_w = (wout + 5) / 6;
   int tile_h = (hout + 5) / 6;
   int size_tile = tile_h * tile_w;
-  int m_pad = (chout + 3) / 4 * 4;
-  int m_remain = m_pad - chout;
-  int maxc_4 = ic_4 > oc_4 ? ic_4 : oc_4;
   float zero_ptr[8];
   memset(zero_ptr, 0, 8 * sizeof(float));
 
@@ -115,7 +110,6 @@ void conv_compute_6x6_3x3(const float* input,
                              hin,
                              zero_ptr);
     }
-    const float* input_ptr = input + ni * in_n_stride;
     float* output_ptr = output + ni * out_n_stride;
 
     const float* weight_ptr = weight;
@@ -224,6 +218,9 @@ void conv_compute_6x6_3x3(const float* input,
       }
 
       // output trans
+      float bias_value[4];
+      memset(bias_value, 0, 4 * sizeof(float));
+
       for (int ti = 0; ti < tile_count; ++ti) {
         int index = tile_index + ti;
 
@@ -238,9 +235,6 @@ void conv_compute_6x6_3x3(const float* input,
 
         float* dst_ptr = output + (dst_y * wout + dst_x) * 4;
         float* src_ptr = dst_temp_data + ti * 4;
-
-        float bias_value[4];
-        memset(bias_value, 0, 4 * sizeof(float));
 
         if (ex == 6) {
           // trans output

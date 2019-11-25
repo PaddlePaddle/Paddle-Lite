@@ -23,7 +23,6 @@ namespace lite {
 namespace arm {
 namespace math {
 
-void transpose(float* data_out, const float* data_in, int w_in, int h_in);
 /// conv 3x3s1
 size_t conv3x3s1_direct_workspace_size(const operators::ConvParam& param,
                                        ARMContext* ctx);
