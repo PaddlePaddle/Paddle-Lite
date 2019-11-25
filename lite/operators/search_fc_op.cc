@@ -77,4 +77,4 @@ bool SearchFcOpLite::AttachImpl(const cpp::OpDesc &op_desc,
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(SearchFc, paddle::lite::operators::SearchFcOpLite);
+REGISTER_LITE_OP(search_fc, paddle::lite::operators::SearchFcOpLite);
