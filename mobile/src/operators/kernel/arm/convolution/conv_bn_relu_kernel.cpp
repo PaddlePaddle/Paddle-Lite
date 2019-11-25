@@ -125,9 +125,14 @@ void ConvBNReluKernel<CPU, float>::Compute(
       break;
     case ConvParam<CPU>::EXEC_SLIDINGWINDOW3x3S1_FLOAT:
     case ConvParam<CPU>::EXEC_SLIDINGWINDOW3x3S2_FLOAT:
+#if 1 // 使用老的滑窗卷积，不支持融合
+        SlidingwindowConv3x3<float, float>(param, nullptr, false, false);
+#endif
+#if 0 // 使用新的卷积，支持融合
       SlidingwindowConv3x3<float, float>(param, param.NewBias()->data<float>(),
                                          true, true);
       fusion_has_been_computed = true;
+#endif
       break;
     default:
       PADDLE_MOBILE_THROW_EXCEPTION("Invalid convolution execute mode %d",
