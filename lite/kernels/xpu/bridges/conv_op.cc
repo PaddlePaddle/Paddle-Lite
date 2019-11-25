@@ -21,12 +21,12 @@ namespace kernels {
 namespace xpu {
 namespace bridges {
 
-void UpdatePadding(std::vector<int>* paddings,
-                   std::vector<int>* dilations,
-                   const std::vector<int>& strides,
-                   const std::string padding_algorithm,
-                   const lite::DDim data_dims,
-                   const lite::DDim& ksize) {
+void UpdatePaddingAndDilation(std::vector<int>* paddings,
+                              std::vector<int>* dilations,
+                              const std::vector<int>& strides,
+                              const std::string padding_algorithm,
+                              const lite::DDim data_dims,
+                              const lite::DDim& ksize) {
   if (paddings->size() == 2L) {
     for (size_t i = 0; i < strides.size(); ++i) {
       int copy_pad = *(paddings->begin() + 2 * i);
@@ -39,9 +39,9 @@ void UpdatePadding(std::vector<int>* paddings,
   if (padding_algorithm == "SAME") {
     for (size_t i = 0; i < strides.size(); ++i) {
       int out_size = (data_dims[i + 2] + strides[i] - 1) / strides[i];
-      int pad_sum =
-          std::max((out_size - 1) * strides[i] + ksize[i] - data_dims[i + 2],
-                   (int64_t)0);
+      int pad_sum = std::max(
+          (out_size - 1) * strides[i] + ksize[i + 2] - data_dims[i + 2],
+          (int64_t)0);
       int pad_0 = pad_sum / 2;
       int pad_1 = pad_sum - pad_0;
       // pad
@@ -89,12 +89,12 @@ node_map_type ConvConverter(const std::shared_ptr<lite::OpLite> op,
   if (op_info->HasAttr("padding_algorithm")) {
     padding_algorithm = op_info->GetAttr<std::string>("padding_algorithm");
   }
-  UpdatePadding(&paddings,
-                &dilations,
-                strides,
-                padding_algorithm,
-                input_dims,
-                filter_dims);
+  UpdatePaddingAndDilation(&paddings,
+                           &dilations,
+                           strides,
+                           padding_algorithm,
+                           input_dims,
+                           filter_dims);
 
   std::vector<int64_t> output_shape({bs, oc});
   for (size_t i = 0; i < 2; i++) {
