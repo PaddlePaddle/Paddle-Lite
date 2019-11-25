@@ -32,117 +32,6 @@
 // Extended Ops of HIAI DDK
 namespace ge {
 /**
- * Multiply the matrix x1 by the matrix x2 to generate x1 * x2.
- * The inputs must be two-dimensional matrices and the inner dimension of "x1"
- * (after being transposed if transpose_x1 is true) must match the outer
- * dimension of "x2" (after being transposed if transposed_x2 is true). <Input>
- *      x : the first input tensor, must be non const op.
- *      w : the second input tensor, must be const op.
- *      bias: the optional bias tensor, must be const op.
- * <Output>
- *      y : the output tensor.
- * <Attr>
- *      has_bias: If true, enable input bias.
- */
-REG_OP(MatMul)
-    .INPUT(x, TensorType({DT_FLOAT}))
-    .INPUT(w, TensorType({DT_FLOAT}))
-    .OPTIONAL_INPUT(bias, TensorType({DT_FLOAT}))  // bias must be const input
-    .OUTPUT(y, TensorType({DT_FLOAT}))
-    .ATTR(has_bias, AttrValue::BOOL{false})  // when has input::bias,set true
-    .OP_END();
-
-/**
- * Computes the gradients of convolution with respect to the input.
- * <Input>
- *      input_sizes : An integer vector representing the shape of input,
- * where input is a 4-D [batch, height, width, channels] tensor.
- *      filter : the filter tensor, with shape [H , W, filter_channel,
- * filter_number], filter_channel must be same as x channel.
- *      x :  The input tensor.
- * <Output>
- *      y : The output tensor.
- * <Attr>
- *      format: 0: NCHW. 1: NHWC
- *      group : 1: default
- *      num_output : 0: default, num_output must be equal to
- * (filter_channel * group)
- *      pad : Padding for the beginning and ending along each axis
- *      stride : Stride along each axis.
- *      dilation : dilation value along each axis of the filter.
- *      pad_mode : 0:NOTSET, 5:VALID 6:SAME. defaul value is 0:NOTSET
- *      bias_term : 0: default
- *      kernel : The shape of the convolution kernel
- */
-REG_OP(Deconvolution)
-    .INPUT(input_sizes, TensorType({DT_UINT8}))
-    .INPUT(filter, TensorType({DT_FLOAT}))
-    .INPUT(x, TensorType({DT_FLOAT}))
-    .OPTIONAL_INPUT(b, TensorType({DT_FLOAT}))
-    .OUTPUT(y, TensorType({DT_FLOAT}))
-    .ATTR(mode, AttrValue::INT{1})
-    .ATTR(format, AttrValue::INT{1})
-    .ATTR(group, AttrValue::INT{1})
-    .ATTR(num_output, AttrValue::INT{0})
-    .ATTR(pad, AttrValue::LIST_INT({0, 0, 0, 0}))
-    .ATTR(stride, AttrValue::LIST_INT({1, 1}))
-    .ATTR(dilation, AttrValue::LIST_INT({1, 1}))
-    .ATTR(pad_mode, AttrValue::INT{0})
-    .ATTR(bias_term, AttrValue::INT{0})
-    .ATTR(kernel, AttrValue::LIST_INT({0, 0}))
-    .OP_END();
-
-/**
- * Resize images to size using bilinear interpolation.
- * <Input>
- *      x : The tensor of 4-D
- *      w : A int32 Tensor of 2 elements: [height, width].
- * <Output>
- *      y : the output tensor
- * <Attr>
- *      align_corners : If true, the centers of the 4 corner pixels of the
- * input and output tensors are aligned, preserving the values at the corner
- * pixels.
- *      output_dim_mode : Defaults 2, including 0: zoom_factor , 1:
- * shrink_factor, 2: height/width. when output_dim_mode=2, the output-dim is
- * controled by the [height, width] of w.
- *      shrink_factor : shrink factor.
- *      zoom_factor : zoom factor.
- *      pad_begin : begin of pad.
- *      pad_end : end of pad.
- */
-REG_OP(ResizeBilinear)
-    .INPUT(x, TensorType({DT_FLOAT, DT_INT32}))
-    .INPUT(w, TensorType({DT_FLOAT, DT_INT32}))
-    .OUTPUT(y, TensorType({DT_FLOAT, DT_INT32}))
-    .ATTR(align_corners, AttrValue::BOOL{false})
-    .ATTR(output_dim_mode, AttrValue::INT{2})
-    .ATTR(shrink_factor, AttrValue::INT{1})
-    .ATTR(zoom_factor, AttrValue::INT{1})
-    .ATTR(pad_begin, AttrValue::INT{0})
-    .ATTR(pad_end, AttrValue::INT{0})
-    .OP_END();
-
-/**
- * Resize images to size using nearest neighbor interpolation.
- * <Input>
- *      image : Resize images to size using nearest neighbor interpolation.
- *      size : Must be one dimension and two  elements
- * <Output>
- *      output : the output tensor
- * <Attr>
- *      align_corners : If true, the centers of the 4 corner pixels of the
- * input and output tensors are aligned, preserving the values at the corner
- * pixels. Defaults to false
- */
-REG_OP(ResizeNearestNeighbor)
-    .INPUT(image, TensorType({DT_FLOAT, DT_INT32, DT_UINT8, DT_BOOL}))
-    .INPUT(size, TensorType({DT_INT32}))
-    .OUTPUT(output, TensorType({DT_FLOAT, DT_INT32, DT_UINT8, DT_BOOL}))
-    .ATTR(align_corners, AttrValue::BOOL{false})
-    .OP_END();
-
-/**
  * Pads a tensor.
  * <Input>
  *      x : the input tensor
@@ -192,14 +81,14 @@ bool BuildModel(std::vector<ge::Operator>& inputs,   // NOLINT
 
 std::string UniqueName(const std::string& prefix);
 
-ge::DataType PrecisionConverter(PrecisionType itype);
+ge::DataType CvtPrecisionType(PrecisionType itype);
 
-ge::Format DataLayoutConverter(DataLayoutType itype);
+ge::Format CvtDataLayoutType(DataLayoutType itype);
 
-ge::TensorPtr CvtFromLiteTensor(Tensor* in_tensor,
-                                std::vector<int64_t> out_shape = {},
-                                PrecisionType in_ptype = PRECISION(kFloat),
-                                DataLayoutType in_ltype = DATALAYOUT(kNCHW));
+ge::TensorPtr CvtTensor(Tensor* in_tensor,
+                        std::vector<int64_t> out_shape = {},
+                        PrecisionType in_ptype = PRECISION(kFloat),
+                        DataLayoutType in_ltype = DATALAYOUT(kNCHW));
 
 template <typename T>
 ge::TensorPtr CreateTensorAndFillData(std::vector<T> data,
@@ -214,7 +103,7 @@ ge::TensorPtr CreateTensorAndFillData(std::vector<T> data,
   } else if (info == typeid(int32_t)) {
     type = ge::DT_INT32;
   } else {
-    LOG(FATAL) << "Unknow value type " << info.name();
+    LOG(FATAL) << "[NPU] Unknow value type " << info.name();
   }
   if (shape.empty()) {
     shape = {static_cast<int64_t>(data.size())};
@@ -244,6 +133,8 @@ ge::TensorPtr CreateTensorAndFillData(T value,
   std::vector<T> data(size, value);
   return CreateTensorAndFillData(data, shape, format);
 }
+
+int CvtActMode(std::string act_type);
 
 bool HasInputArg(const OpInfo* op_info,
                  const Scope* scope,

@@ -35,7 +35,7 @@ std::shared_ptr<ge::Operator> GenerateNPUProgramPass::CvtVarNode(
     lite::mir::Node* var_node, const Scope* scope) {
   CHECK(var_node->IsArg());
   const auto& arg = var_node->AsArg();
-  VLOG(4) << "Convert var node " << arg.name;
+  VLOG(4) << "[NPU] Convert var node " << arg.name;
 
   auto* var = scope->FindVar(arg.name);
   CHECK(var);
@@ -44,13 +44,13 @@ std::shared_ptr<ge::Operator> GenerateNPUProgramPass::CvtVarNode(
   auto dims = tensor->dims();
   if (arg.is_weight) {
     auto wgt = std::make_shared<ge::op::Const>(arg.name);
-    LOG(INFO) << "in convert const:" << arg.name;
+    LOG(INFO) << "[NPU] Convert const var node " << arg.name;
     VLOG(4) << dims;
-    wgt->set_attr_value(lite::npu::CvtFromLiteTensor(tensor));
+    wgt->set_attr_value(lite::npu::CvtTensor(tensor));
     return wgt;
   } else {
     CHECK_EQ(dims.size(), 4);
-    LOG(INFO) << "in convert data:" << arg.name;
+    LOG(INFO) << "[NPU] Convert data var node " << arg.name;
     LOG(INFO) << dims;
     // TODO(xxx): support more types and dims size
     ge::TensorDesc desc(ge::Shape(dims.Vectorize()),
@@ -128,10 +128,10 @@ std::string GenerateNPUProgramPass::BuildNPUGraph(
   // persistable=true, Sothat the model parser can recognize it and save it to
   // param files
   if (!lite::npu::BuildModel(inputs, outputs, weight)) {
-    LOG(WARNING) << "Build NPU failed subgraph " << sub_id;
-    throw std::runtime_error("Build NPU failed subgraph.");
+    LOG(FATAL) << "[NPU] Build NPU graph failed (subgraph=" << sub_id << ")";
+  } else {
+    LOG(INFO) << "[NPU] Build NPU graph success (subgraph=" << sub_id << ")";
   }
-  LOG(INFO) << "[NPU] Build NPU Client success subgraph " << sub_id;
   return weight_var_name;
 }
 
@@ -166,49 +166,28 @@ void GenerateNPUProgramPass::GenNPUSubgraph(
 }
 
 void GenerateNPUProgramPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
-  LOG(INFO) << "Before NPU Pass \n" << Visualize(graph.get());
+  LOG(INFO) << "[NPU] Before NPU Pass \n" << Visualize(graph.get());
   const auto& bridges = lite::kernels::npu::bridges::Factory::Instance();
   const auto& op_map = bridges.AllFunctions();
   std::vector<std::string> supported_op_types;
   for (auto& i : op_map) {
-    LOG(INFO) << "Supported type: " << i.first;
+    LOG(INFO) << "[NPU] Supported type: " << i.first;
     supported_op_types.push_back(i.first);
   }
 
-  try {
-    int num_subgraph = FuseSubgraph(graph, supported_op_types);
-    InferOnce(graph);
-    auto op_nodes_all = ClassifySubgraph(graph);
-    CHECK_EQ(op_nodes_all.size(), num_subgraph);
-    int id = 1;
-    for (auto& op_nodes : op_nodes_all) {
-      LOG(INFO) << "Converting subgraph_id:" << id;
-      GenNPUSubgraph(graph, op_nodes.second, id);
-      LOG(INFO) << "After NPU Pass Subgraph " << id << "\n"
-                << Visualize(graph.get());
-      id++;
-    }
-  } catch (...) {
-    LOG(WARNING) << "Build NPU graph failed";
-    throw std::runtime_error("Build NPU graph failed");
-  }
-
-  for (auto& item : graph->StmtTopologicalOrder()) {
-    if (item->IsStmt()) {
-      auto& stmt = item->AsStmt();
-      LOG(INFO) << stmt;
-      insts_.emplace_back(stmt.op(), std::move(stmt.kernels().front()));
-    }
+  int num_subgraph = FuseSubgraph(graph, supported_op_types);
+  InferOnce(graph);
+  auto op_nodes_all = ClassifySubgraph(graph);
+  CHECK_EQ(op_nodes_all.size(), num_subgraph);
+  int id = 1;
+  for (auto& op_nodes : op_nodes_all) {
+    LOG(INFO) << "[NPU] Converting Subgraph " << id;
+    GenNPUSubgraph(graph, op_nodes.second, id);
+    LOG(INFO) << "[NPU] After NPU Pass Subgraph " << id << "\n"
+              << Visualize(graph.get());
+    id++;
   }
 }
-
-std::unique_ptr<RuntimeProgram> GenerateNPUProgramPass::GenProgram() {
-  LOG(INFO) << "insts.size " << insts_.size();
-  std::unique_ptr<RuntimeProgram> program(
-      new RuntimeProgram(std::move(insts_)));
-  return program;
-}
-
 }  // namespace subgraph
 }  // namespace mir
 }  // namespace lite

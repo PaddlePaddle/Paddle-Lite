@@ -48,14 +48,13 @@ void MulCompute::Run() {
 
   CHECK_EQ(x_w, y_h) << "x_w must be equal with y_h";
   k_ = x_w;
-
+  auto& ctx = this->ctx_->template As<ARMContext>();
   if (n_ == 1) {
     lite::arm::math::sgemv(
-        x_data, y_data, o_data, false, m_, k_, false, nullptr, false);
+        x_data, y_data, o_data, false, m_, k_, false, nullptr, false, &ctx);
 
   } else {
     constexpr bool is_tranposed_y = false;
-    auto& ctx = this->ctx_->template As<ARMContext>();
     int hblock = lite::arm::math::get_hblock(&ctx);
     int m_round = hblock * ((m_ + hblock - 1) / hblock);
     ctx.ExtendWorkspace(m_round * k_ * sizeof(float));

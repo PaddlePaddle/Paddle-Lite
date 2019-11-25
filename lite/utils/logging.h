@@ -30,6 +30,18 @@
 #include <string>
 #include "lite/utils/replace_stl/stream.h"
 
+#ifdef LITE_WITH_ANDROID
+#include <android/log.h>
+// Android log macors
+#define ANDROID_LOG_TAG "Paddle-Lite"
+#define ANDROID_LOG_I(msg) \
+  __android_log_print(ANDROID_LOG_INFO, ANDROID_LOG_TAG, msg)
+#define ANDROID_LOG_W(msg) \
+  __android_log_print(ANDROID_LOG_WARN, ANDROID_LOG_TAG, msg)
+#define ANDROID_LOG_F(msg) \
+  __android_log_print(ANDROID_LOG_FATAL, ANDROID_LOG_TAG, msg)
+#endif
+
 // NOLINTFILE()
 
 // LOG()
@@ -93,11 +105,22 @@ class LogMessage {
              const char* func,
              int lineno,
              const char* level = "I") {
+    level_ = level;
     paddle::lite::gen_log(log_stream_, file, func, lineno, level);
   }
 
   ~LogMessage() {
     log_stream_ << '\n';
+#ifdef LITE_WITH_ANDROID
+    if (level_ == "I") {
+      ANDROID_LOG_I(log_stream_.str().c_str());
+    } else if (level_ == "W") {
+      ANDROID_LOG_W(log_stream_.str().c_str());
+    } else {
+      fprintf(stderr, "Unsupported log level: %s", level_.c_str());
+      assert(false);
+    }
+#endif
     fprintf(stderr, "%s", log_stream_.str().c_str());
   }
 
@@ -105,6 +128,7 @@ class LogMessage {
 
  protected:
   STL::stringstream log_stream_;
+  std::string level_;
 
   LogMessage(const LogMessage&) = delete;
   void operator=(const LogMessage&) = delete;
@@ -121,7 +145,11 @@ class LogMessageFatal : public LogMessage {
 
   ~LogMessageFatal() {
     log_stream_ << '\n';
+#ifdef LITE_WITH_ANDROID
+    ANDROID_LOG_F(log_stream_.str().c_str());
+#endif
     fprintf(stderr, "%s", log_stream_.str().c_str());
+
 #ifndef LITE_ON_TINY_PUBLISH
     abort();
 #else
@@ -152,6 +180,9 @@ class VLogMessage {
       return;
     }
     log_stream_ << '\n';
+#ifdef LITE_WITH_ANDROID
+    ANDROID_LOG_I(log_stream_.str().c_str());
+#endif
     fprintf(stderr, "%s", log_stream_.str().c_str());
   }
 

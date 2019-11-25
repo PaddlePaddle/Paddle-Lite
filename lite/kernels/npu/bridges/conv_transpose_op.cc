@@ -28,7 +28,7 @@ node_map_type ConvTransposeConverter(
   auto op_info = conv_transpose_op->op_info();
   auto op_type = op_info->Type();
   auto unique_op_type = lite::npu::UniqueName(op_type);
-  LOG(INFO) << "Converting " << op_type << "... ";
+  LOG(INFO) << "[NPU] Converting " << op_type << "... ";
 
   // get input, output and op attributes
   auto input_var_name = op_info->Input("Input").front();
@@ -44,14 +44,19 @@ node_map_type ConvTransposeConverter(
   auto groups = op_info->GetAttr<int>("groups");
   auto dilations = op_info->GetAttr<std::vector<int>>("dilations");
   auto fuse_relu = op_info->GetAttr<bool>("fuse_relu");
-  CHECK_EQ(strides.size(), 2);
-  CHECK_EQ(paddings.size(), 2);
-  CHECK_EQ(dilations.size(), 2);
+  CHECK_EQ(strides.size(), 2L);
+  CHECK_EQ(paddings.size(), 4L);
+  CHECK_EQ(dilations.size(), 2L);
 
   // create deconv node
   auto conv_transpose_node =
       std::make_shared<ge::op::Deconvolution>(unique_op_type);
-
+  bool pad_equal =
+      ((paddings[0] == paddings[1]) && (paddings[2] == paddings[3]));
+  if (!pad_equal) {
+    LOG(FATA) << "This pad not support ! " << paddings[0] << ", " << paddings[1]
+              << ", " << paddings[2] << ", " << paddings[3];
+  }
   // create input sizes node to describe the dimensions of input tensor
   std::vector<int32_t> output_shape;
   output_shape.push_back(input_shape[0]);
@@ -72,7 +77,7 @@ node_map_type ConvTransposeConverter(
   // create filter node
   CHECK(!inputs_map.count(filter_var_name));
   auto filter_const_node = std::make_shared<ge::op::Const>(filter_var_name);
-  filter_const_node->set_attr_value(lite::npu::CvtFromLiteTensor(filter));
+  filter_const_node->set_attr_value(lite::npu::CvtTensor(filter));
   conv_transpose_node->set_input_filter(*filter_const_node);
   lite::npu::OpList::Global().add(filter_const_node);
 
@@ -82,7 +87,6 @@ node_map_type ConvTransposeConverter(
   lite::npu::OpList::Global().add(inputs_map.at(input_var_name));
 
   // set attributes
-  conv_transpose_node->set_attr_mode(1);
   conv_transpose_node->set_attr_format(0);    // NCHW
   conv_transpose_node->set_attr_pad_mode(0);  // NOTSET
   conv_transpose_node->set_attr_group(groups);
@@ -107,7 +111,7 @@ node_map_type ConvTransposeConverter(
     CHECK_EQ(channel_size, filter_shape[1] * groups);
     auto bias_const_node = std::make_shared<ge::op::Const>(bias_var_name);
     bias_const_node->set_attr_value(
-        lite::npu::CvtFromLiteTensor(bias, {1, channel_size, 1, 1}));
+        lite::npu::CvtTensor(bias, {1, channel_size, 1, 1}));
     lite::npu::OpList::Global().add(bias_const_node);
     // append add node to add bias node
     auto add_node = std::make_shared<ge::op::Add>(unique_op_type + "/add");
@@ -123,7 +127,7 @@ node_map_type ConvTransposeConverter(
     auto relu_node =
         std::make_shared<ge::op::Activation>(unique_op_type + "/relu");
     relu_node->set_input_x(*output_node);
-    relu_node->set_attr_mode(1);
+    relu_node->set_attr_mode(lite::npu::CvtActMode("relu"));
     lite::npu::OpList::Global().add(relu_node);
     outputs_map[op_info->Output("Output").front()] = relu_node;
   } else {
