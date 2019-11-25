@@ -236,3 +236,5 @@ adb shell /data/local/tmp/opencl/test_layout_opencl
 
 1. [./lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc);  
 2. [./lite/demo/cxx/mobile_full/mobilenetv1_full_api.cc](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/demo/cxx/mobile_full/mobilenetv1_full_api.cc).
+
+注：这里给出的链接会跳转到develop分支的代码， 建议参考你本地对应目录下的，即位于`lite/demo/cxx/`的代码。
