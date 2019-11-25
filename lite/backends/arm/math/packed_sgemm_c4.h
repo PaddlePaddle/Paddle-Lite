@@ -27,13 +27,6 @@ constexpr int MBLOCK_C4 = 4;
 constexpr int NBLOCK_C4 = 8;
 constexpr int KBLOCK_C4 = 4;
 
-void trans_mat_to_c4(const float* input,
-                     float* output,
-                     const int ldin,
-                     const int M,
-                     const int K,
-                     bool pack_k);
-
 void sgemm_prepack_c4(int M,
                       int N,
                       int K,
@@ -53,13 +46,6 @@ void sgemm_prepack_c4_small(int M,
                             const float* bias,
                             bool has_bias,
                             bool has_relu,
-                            ARMContext* ctx);
-void sgemm_prepack_c4_small(int M,
-                            int N,
-                            int K,
-                            const float* A_packed,
-                            const float* B,
-                            float* C,
                             ARMContext* ctx);
 }  // namespace math
 }  // namespace arm

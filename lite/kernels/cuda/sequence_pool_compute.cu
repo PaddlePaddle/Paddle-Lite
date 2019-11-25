@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <vector>
+#include "lite/backends/cuda/cuda_utils.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/target_wrapper.h"
 #include "lite/kernels/cuda/sequence_pool_compute.h"
@@ -21,6 +22,10 @@ namespace paddle {
 namespace lite {
 namespace kernels {
 namespace cuda {
+
+#define CUDA_KERNEL_LOOP(i, n)                                 \
+  for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < (n); \
+       i += blockDim.x * gridDim.x)
 
 template <typename Dtype>
 __global__ void seq_pool_average_kernel(Dtype* dst,

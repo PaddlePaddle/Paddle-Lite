@@ -32,10 +32,11 @@ size_t conv3x3s2_direct_workspace_size(const operators::ConvParam& param,
                                        ARMContext* ctx) {
   auto dim_in = param.x->dims();
   auto dim_out = param.output->dims();
+  auto paddings = *param.paddings;
   const int threads = ctx->threads();
   int llc_size = ctx->llc_size() / sizeof(float);
-  const int pad_w = param.paddings[1];
-  const int pad_h = param.paddings[0];
+  const int pad_w = paddings[2];
+  const int pad_h = paddings[0];
   int ow = dim_out[3];
   int oh = dim_out[2];
   int ic = dim_in[1];
@@ -73,10 +74,11 @@ void conv_3x3s2_direct_fp32(const float* i_data,
   //! 3x3s2 convolution, implemented by direct algorithm
   //! prepack input to tmp buffer
   //! write output to tmp buffer
+  auto paddings = *param.paddings;
   const int threads = ctx->threads();
   int l2_size = ctx->llc_size() / sizeof(float);
-  const int pad_w = param.paddings[1];
-  const int pad_h = param.paddings[0];
+  const int pad_w = paddings[2];
+  const int pad_h = paddings[0];
   const int wout_round = ROUNDUP(ow, OUT_W_BLOCK);
   const int win_round = wout_round * 2 /*stride_w*/ + 1;
   bool flag_relu = param.fuse_relu;
