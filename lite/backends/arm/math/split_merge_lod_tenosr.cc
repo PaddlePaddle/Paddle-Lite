@@ -48,13 +48,12 @@ void AppendLoD(LoD *lod, const LoD &lod_length) {
   CHECK(lod->empty() || lod->size() == lod_length.size());
   if (lod->empty()) {
     for (size_t i = 0; i < lod_length.size(); ++i) {
-      lod->emplace_back(1, 0);  // size = 1, value = 0;
+      lod->emplace_back(std::vector<uint64_t>({0}));
     }
-    *lod = LoD(lod_length.size(), std::vector<size_t>({0}));
   }
   for (size_t i = 0; i < lod->size(); ++i) {
     auto &level = (*lod)[i];
-    for (size_t len : lod_length[i]) {
+    for (auto len : lod_length[i]) {
       level.push_back(level.back() + len);
     }
   }
