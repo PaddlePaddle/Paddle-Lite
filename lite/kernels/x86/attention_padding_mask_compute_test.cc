@@ -129,4 +129,4 @@ TEST(attention_padding_mask_x86, run_test) {
 }  // namespace lite
 }  // namespace paddle
 
-USE_LITE_KERNEL(attention_padding_mask, kX86, kFloat, kNCHW, def);
+USE_LITE_KERNEL(search_attention_padding_mask, kX86, kFloat, kNCHW, def);

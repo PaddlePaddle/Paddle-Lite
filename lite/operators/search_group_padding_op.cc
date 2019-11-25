@@ -43,9 +43,9 @@ bool SearchGroupPaddingOp::InferShape() const {
 bool SearchGroupPaddingOp::AttachImpl(const cpp::OpDesc &op_desc,
                                       lite::Scope *scope) {
   auto x = op_desc.Input("X").front();
-  auto out_emb_padding = op_desc.Input("Out_emb_padding").front();
-  auto out_new = op_desc.Input("Out_new").front();
-  auto out_padding = op_desc.Input("Out_padding").front();
+  auto out_emb_padding = op_desc.Output("Out_emb_padding").front();
+  auto out_new = op_desc.Output("Out_new").front();
+  auto out_padding = op_desc.Output("Out_padding").front();
 
   param_.x = scope->FindVar(x)->GetMutable<lite::Tensor>();
   param_.out_emb_padding =

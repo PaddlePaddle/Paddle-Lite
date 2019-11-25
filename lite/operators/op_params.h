@@ -344,6 +344,9 @@ struct DropoutParam {
 struct SplitParam {
   lite::Tensor* x{};
   std::vector<lite::Tensor*> output{};
+  lite::Tensor* axis_tensor;
+  std::vector<lite::Tensor*> sections_tensor_list{};
+
   int axis{-1};
   int num{0};
   std::vector<int> sections;

@@ -38,7 +38,7 @@ bool SequenceArithmeticOp::AttachImpl(const cpp::OpDesc &opdesc,
                                       lite::Scope *scope) {
   param_.X = scope->FindTensor(opdesc.Input("X").front());
   param_.Y = scope->FindTensor(opdesc.Input("Y").front());
-  param_.Out = scope->FindMutableTensor(opdesc.Input("Out").front());
+  param_.Out = scope->FindMutableTensor(opdesc.Output("Out").front());
 
   param_.op_type = opdesc.GetAttr<int>("op_type");
 
