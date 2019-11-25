@@ -67,7 +67,7 @@ void ConvCompute<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
     VLOG(3) << "invoking dw conv";
   } else if (param.groups == 1 && kw == 3 && stride == 1 && kps_equal &&
              no_dilation) {
-    if (ic >= 4 && oc >= 4 && hout >= 6 && wout >= 6) {
+    if (ic >= 4 && oc >= 4 && hout >= 6 && wout >= 6 && pads_equal) {
       /// winograd conv impl
       impl_ = new WinogradConv<PRECISION(kFloat), PRECISION(kFloat)>;
       VLOG(3) << "invoking winograd conv";

@@ -54,8 +54,8 @@ void conv_compute_6x6_3x3(const float* input,
                           const float* bias,
                           const operators::ConvParam& param,
                           ARMContext* ctx) {
-  const int pad_h = param.paddings[0];
-  const int pad_w = param.paddings[1];
+  const int pad_h = (*param.paddings)[0];
+  const int pad_w = (*param.paddings)[2];
   float* tmp_work_space =
       ctx->workspace_data<float>() + ctx->llc_size() / sizeof(float);
 

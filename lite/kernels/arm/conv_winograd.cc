@@ -39,8 +39,9 @@ void WinogradConv<PRECISION(kFloat), PRECISION(kFloat)>::ReInitWhenNeeded() {
   int ih = x_dims[2];
   int iw = x_dims[3];
   int oc = o_dims[1];
-  int pad_h = param.paddings[0];
-  int pad_w = param.paddings[1];
+  auto pad = *(param.paddings);
+  int pad_h = pad[0];
+  int pad_w = pad[2];
   int tile_block = 8;
 #ifdef __aarch64__
   tile_block = 16;
@@ -68,8 +69,9 @@ void WinogradConv<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
   int ih = x_dims[2];
   int iw = x_dims[3];
   int oc = o_dims[1];
-  int pad_h = param.paddings[0];
-  int pad_w = param.paddings[1];
+  auto pad = *(param.paddings);
+  int pad_h = pad[0];
+  int pad_w = pad[2];
   int oc_pad = (oc + 3) / 4 * 4;
   int ic_pad = (ic + 3) / 4 * 4;
   int tile_block = 8;
