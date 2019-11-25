@@ -151,8 +151,34 @@ void VarDesc::SetDataTypes(
   }
 }
 
-proto::VarType::Type VarDesc::GetDataType() const {
-  return tensor_desc().data_type();
+// proto::VarType::Type VarDesc::GetDataType() const {
+//   return tensor_desc().data_type();
+// }
+VarDescAPI::VarDataType VarDesc::GetDataType() const {
+  CHECK(desc_->has_type()) << "The var's type hasn't been set.";
+  CHECK(desc_->type().has_type()) << "The var type hasn't been set.";
+  if (desc_->type().type() != proto::VarType::LOD_TENSOR) {
+    return VarDescAPI::Type();
+  }
+  auto type = tensor_desc().data_type();
+#define GET_DATA_TYPE_CASE_ITEM(type__)             \
+  case proto::VarType::Type::VarType_Type_##type__: \
+    return VarDescAPI::Type::type__
+
+  switch (type) {
+    GET_DATA_TYPE_CASE_ITEM(UINT8);
+    GET_DATA_TYPE_CASE_ITEM(INT8);
+    GET_DATA_TYPE_CASE_ITEM(INT16);
+    GET_DATA_TYPE_CASE_ITEM(INT32);
+    GET_DATA_TYPE_CASE_ITEM(INT64);
+    GET_DATA_TYPE_CASE_ITEM(FP16);
+    GET_DATA_TYPE_CASE_ITEM(FP32);
+    GET_DATA_TYPE_CASE_ITEM(FP64);
+    default:
+      LOG(FATAL) << "Unknown var type";
+      return VarDescAPI::Type();
+  }
+#undef GET_DATA_TYPE_CASE_ITEM
 }
 
 std::vector<proto::VarType::Type> VarDesc::GetDataTypes() const {

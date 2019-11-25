@@ -16,6 +16,7 @@
 #include <list>
 #include <memory>
 #include <string>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 #include "lite/core/kernel.h"
@@ -66,6 +67,11 @@ struct Program {
   lite::Scope* exec_scope() { return exec_scope_; }
   lite::Scope* scope() { return scope_.get(); }
 
+  const std::unordered_map<std::string, lite::VarDescAPI::Type>&
+  var_data_types() const {
+    return var_data_types_;
+  }
+
  private:
   // Build from a program and scope.
   void Build(const cpp::ProgramDesc& program);
@@ -73,6 +79,7 @@ struct Program {
   void PrepareWorkspace(const cpp::ProgramDesc& program);
 
  private:
+  std::unordered_map<std::string, lite::VarDescAPI::Type> var_data_types_;
   std::list<std::string> tmp_vars_;
   std::list<std::string> weights_;
   std::list<std::shared_ptr<OpLite>> ops_;

@@ -37,6 +37,7 @@ namespace lite {
     cpp_desc->SetName(any_desc.Name());                          \
     cpp_desc->SetType(any_desc.GetType());                       \
     cpp_desc->SetPersistable(any_desc.Persistable());            \
+    cpp_desc->SetDataType(any_desc.GetDataType());               \
   }                                                              \
                                                                  \
   template <>                                                    \

@@ -166,7 +166,11 @@ void Program::PrepareWorkspace(const cpp::ProgramDesc& prog) {
     for (size_t i = 0; i < main_block.VarsSize(); ++i) {
       auto& var_desc = *main_block.GetVar<cpp::VarDesc>(i);
       if (!var_desc.Persistable()) {
+        var_data_types_[var_desc.Name()] = var_desc.GetDataType();
         tmp_vars_.push_back(var_desc.Name());
+        VLOG(4) << "var name: " << var_desc.Name() << " type is "
+                << static_cast<int>(var_desc.GetType()) << " data type is "
+                << static_cast<int>(var_desc.GetDataType());
         exec_scope_->Var(var_desc.Name());
         if (b > 0) {
           VLOG(4) << "var: " << var_desc.Name();
