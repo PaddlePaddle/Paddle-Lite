@@ -24,4 +24,7 @@ REGISTER_LITE_KERNEL(
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindOutput("_a_addr", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindOutput("_b_addr", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindOutput("_c_addr", {LiteType::GetTensorTy(TARGET(kX86))})
     .Finalize();

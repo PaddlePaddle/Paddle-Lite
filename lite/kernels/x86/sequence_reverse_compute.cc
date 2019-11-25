@@ -14,12 +14,19 @@
 
 #include "lite/kernels/x86/sequence_reverse_compute.h"
 
-REGISTER_LITE_KERNEL(sequence_reverse,
-                     kX86,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::x86::SequenceReverseCompute<float>,
-                     def)
+typedef paddle::lite::kernels::x86::SequenceReverseCompute<float,
+                                                           PRECISION(kFloat)>
+    ReverseFp32;
+typedef paddle::lite::kernels::x86::SequenceReverseCompute<int64_t,
+                                                           PRECISION(kInt64)>
+    ReverseInt64;
+
+REGISTER_LITE_KERNEL(sequence_reverse, kX86, kFloat, kNCHW, ReverseFp32, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindOutput("Y", {LiteType::GetTensorTy(TARGET(kX86))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(sequence_reverse, kX86, kInt64, kNCHW, ReverseInt64, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
+    .BindOutput("Y", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
     .Finalize();

@@ -27,7 +27,7 @@ bool SequenceConcatOp::CheckShape() const {
   for (const auto &t : param_.X) {
     CHECK_EQ(t->lod().empty(), false)
         << "Input Tensor of X does not contain LoD information.";
-    CHECK_EQ(t->lod().size(), 1) << "Only support one level sequence now.";
+    // CHECK_EQ(t->lod().size(), 1) << "Only support one level sequence now.";
     if (lod_size == 0) {
       lod_size = t->lod()[0].size();
     } else {
