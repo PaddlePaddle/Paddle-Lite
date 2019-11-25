@@ -40,7 +40,7 @@ ExternalProject_Add(
     ${EXTERNAL_PROJECT_LOG_ARGS}
     DEPENDS             ""
     GIT_TAG             "v5.661"  # Jul 26th
-    URL                 https://paddle-inference-dist.bj.bcebos.com/PaddleLite_ThirdParty%2Fxbyak-5.66.zip
+    URL                 http://paddle-inference-dist.bj.bcebos.com/PaddleLite_ThirdParty%2Fxbyak-5.66.zip
     DOWNLOAD_DIR        ${XBYAK_SOURCECODE_DIR}
     DOWNLOAD_NAME   "xbyak-5.66.zip"
     DOWNLOAD_NO_PROGRESS 1
