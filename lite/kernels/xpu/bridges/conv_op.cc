@@ -21,6 +21,42 @@ namespace kernels {
 namespace xpu {
 namespace bridges {
 
+void UpdatePadding(std::vector<int>* paddings,
+                   std::vector<int>* dilations,
+                   const std::vector<int>& strides,
+                   const std::string padding_algorithm,
+                   const lite::DDim data_dims,
+                   const lite::DDim& ksize) {
+  if (paddings->size() == 2L) {
+    for (size_t i = 0; i < strides.size(); ++i) {
+      int copy_pad = *(paddings->begin() + 2 * i);
+      paddings->insert(paddings->begin() + 2 * i + 1, copy_pad);
+    }
+  }
+  CHECK_EQ(paddings->size(), 4L)
+      << "Paddings size should be the same or twice as the input size.";
+
+  if (padding_algorithm == "SAME") {
+    for (size_t i = 0; i < strides.size(); ++i) {
+      int out_size = (data_dims[i + 2] + strides[i] - 1) / strides[i];
+      int pad_sum =
+          std::max((out_size - 1) * strides[i] + ksize[i] - data_dims[i + 2],
+                   (int64_t)0);
+      int pad_0 = pad_sum / 2;
+      int pad_1 = pad_sum - pad_0;
+      // pad
+      *(paddings->begin() + i * 2) = pad_0;
+      *(paddings->begin() + i * 2 + 1) = pad_1;
+      // dilation
+      *(dilations->begin() + i) = 1;
+    }
+  } else if (padding_algorithm == "VALID") {
+    for (auto& it : *paddings) {
+      it = 0;
+    }
+  }
+}
+
 node_map_type ConvConverter(const std::shared_ptr<lite::OpLite> op,
                             graph_ctx_type* graph_ctx,
                             const node_map_type& input_nodes) {
@@ -47,8 +83,19 @@ node_map_type ConvConverter(const std::shared_ptr<lite::OpLite> op,
   auto dilations = op_info->GetAttr<std::vector<int>>("dilations");
   auto fuse_relu = op_info->GetAttr<bool>("fuse_relu");
   CHECK_EQ(strides.size(), 2L);
-  CHECK_EQ(paddings.size(), 4L);
   CHECK_EQ(dilations.size(), 2L);
+
+  std::string padding_algorithm("");
+  if (op_info->HasAttr("padding_algorithm")) {
+    padding_algorithm = op_info->GetAttr<std::string>("padding_algorithm");
+  }
+  UpdatePadding(&paddings,
+                &dilations,
+                strides,
+                padding_algorithm,
+                input_dims,
+                filter_dims);
+
   std::vector<int64_t> output_shape({bs, oc});
   for (size_t i = 0; i < 2; i++) {
     const int dkernel = dilations[i] * (filter_dims[2 + i] - 1) + 1;
@@ -58,12 +105,6 @@ node_map_type ConvConverter(const std::shared_ptr<lite::OpLite> op,
         1);
   }
   DDim output_dims(output_shape);
-
-  bool pads_equal =
-      (paddings[0] == paddings[1]) && (paddings[2] == paddings[3]);
-  if (!pads_equal) {
-    LOG(FATAL) << "Padding requies pad_top==pad_bottom and pad_lef==pad_right.";
-  }
 
   // check context
   CHECK(graph_ctx != nullptr);
