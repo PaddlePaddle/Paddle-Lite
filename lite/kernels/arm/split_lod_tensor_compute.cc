@@ -31,42 +31,6 @@ struct CopyRange {
   size_t end;
 };
 
-using LoDAndOffset = std::pair<LoD, std::pair<size_t, size_t>>;
-LoDAndOffset GetSubLoDAndAbsoluteOffset(const LoD &lod,
-                                        size_t start_idx,
-                                        size_t end_idx,
-                                        size_t start_level) {
-  LoD sub_lod;
-  for (size_t level_idx = start_level; level_idx < lod.size(); ++level_idx) {
-    CHECK(start_idx <= end_idx);
-    CHECK(end_idx < lod[level_idx].size());
-    std::vector<size_t> level_lens;
-    for (size_t i = start_idx; i < end_idx; ++i) {
-      level_lens.push_back(lod[level_idx][i + 1] - lod[level_idx][i]);
-    }
-    sub_lod.emplace_back(level_lens);
-    start_idx = lod[level_idx][start_idx];
-    end_idx = lod[level_idx][end_idx];
-  }
-  return LoDAndOffset{sub_lod, {start_idx, end_idx}};
-}
-
-void AppendLoD(LoD *lod, const LoD &lod_length) {
-  CHECK(lod->empty() || lod->size() == lod_length.size());
-  if (lod->empty()) {
-    for (size_t i = 0; i < lod_length.size(); ++i) {
-      lod->emplace_back(1, 0);  // size = 1, value = 0;
-    }
-    *lod = LoD(lod_length.size(), std::vector<size_t>({0}));
-  }
-  for (size_t i = 0; i < lod->size(); ++i) {
-    auto &level = (*lod)[i];
-    for (size_t len : lod_length[i]) {
-      level.push_back(level.back() + len);
-    }
-  }
-}
-
 void SplitLodTensorCompute::Run() {
   auto &param = Param<operators::SplitLodTensorParam>();
   const lite::Tensor *x = param.x;
@@ -92,11 +56,11 @@ void SplitLodTensorCompute::Run() {
     for (size_t i = 0; i < static_cast<size_t>(mask_dim[0]); i++) {
       if (static_cast<size_t>(mask_data[i]) == t) {
         size_t start_idx = i;
-        auto lod_and_offset =
-            GetSubLoDAndAbsoluteOffset(x_lod, start_idx, start_idx + 1, level);
+        auto lod_and_offset = lite::arm::math::GetSubLoDAndAbsoluteOffset(
+            x_lod, start_idx, start_idx + 1, level);
 
         auto &lod_length = lod_and_offset.first;
-        AppendLoD(lod, lod_length);
+        lite::arm::math::AppendLoD(lod, lod_length);
 
         size_t start_offset = lod_and_offset.second.first;
         size_t end_offset = lod_and_offset.second.second;

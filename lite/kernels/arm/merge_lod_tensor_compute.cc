@@ -31,60 +31,6 @@ struct CopyRange {
   size_t end;
 };
 
-using LoDAndOffset = std::pair<LoD, std::pair<size_t, size_t>>;
-LoDAndOffset GetSubLoDAndAbsoluteOffset(const LoD &lod,
-                                        size_t start_idx,
-                                        size_t end_idx,
-                                        size_t start_level) {
-  LoD sub_lod;
-  for (size_t level_idx = start_level; level_idx < lod.size(); ++level_idx) {
-    CHECK(start_idx <= end_idx);
-    CHECK(end_idx < lod[level_idx].size());
-    std::vector<size_t> level_lens;
-    for (size_t i = start_idx; i < end_idx; ++i) {
-      level_lens.push_back(lod[level_idx][i + 1] - lod[level_idx][i]);
-    }
-    sub_lod.emplace_back(level_lens);
-    start_idx = lod[level_idx][start_idx];
-    end_idx = lod[level_idx][end_idx];
-  }
-  return LoDAndOffset{sub_lod, {start_idx, end_idx}};
-}
-
-void AppendLoD(LoD *lod, const LoD &lod_length) {
-  CHECK(lod->empty() || lod->size() == lod_length.size());
-  if (lod->empty()) {
-    for (size_t i = 0; i < lod_length.size(); ++i) {
-      lod->emplace_back(1, 0);  // size = 1, value = 0;
-    }
-    *lod = LoD(lod_length.size(), std::vector<size_t>({0}));
-  }
-  for (size_t i = 0; i < lod->size(); ++i) {
-    auto &level = (*lod)[i];
-    for (size_t len : lod_length[i]) {
-      level.push_back(level.back() + len);
-    }
-  }
-}
-
-void log_lod(const LoD &lod, std::string info) {
-  LOG(INFO) << info;
-  for (auto l : lod) {
-    LOG(INFO) << "---";
-    for (auto i : l) {
-      LOG(INFO) << i;
-    }
-  }
-}
-
-void log_tensor_data(const Tensor *t, std::string info) {
-  LOG(INFO) << info;
-  auto t_data = t->data<float>();
-  for (int i = 0; i < t->numel(); i++) {
-    LOG(INFO) << t_data[i];
-  }
-}
-
 void MergeLodTensorCompute::Run() {
   auto &param = Param<operators::MergeLodTensorParam>();
   const lite::Tensor *x = param.x;
@@ -130,11 +76,11 @@ void MergeLodTensorCompute::Run() {
       input = in_true;
       in_idx = &in_true_idx;
     }
-    auto lod_and_offset =
-        GetSubLoDAndAbsoluteOffset(input->lod(), *in_idx, (*in_idx) + 1, 0);
+    auto lod_and_offset = lite::arm::math::GetSubLoDAndAbsoluteOffset(
+        input->lod(), *in_idx, (*in_idx) + 1, 0);
     auto &lod_length = lod_and_offset.first;
 
-    AppendLoD(out_lod, lod_length);
+    lite::arm::math::AppendLoD(out_lod, lod_length);
 
     size_t start_offset = lod_and_offset.second.first;
     size_t end_offset = lod_and_offset.second.second;

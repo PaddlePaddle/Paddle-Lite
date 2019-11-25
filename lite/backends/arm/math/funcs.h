@@ -59,6 +59,7 @@
 #include "lite/backends/arm/math/slice.h"
 #include "lite/backends/arm/math/softmax.h"
 #include "lite/backends/arm/math/split.h"
+#include "lite/backends/arm/math/split_merge_lod_tenosr.h"
 #include "lite/backends/arm/math/stack.h"
 #include "lite/backends/arm/math/topk.h"
 #include "lite/backends/arm/math/yolo_box.h"
