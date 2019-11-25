@@ -14,10 +14,8 @@
 
 #pragma once
 
-#include <algorithm>
 #include <string>
 #include <utility>
-#include <vector>
 #include "lite/core/tensor.h"
 #include "lite/utils/cp_logging.h"
 

@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #include "lite/backends/arm/math/split_merge_lod_tenosr.h"
-#include <algorithm>
 #include <limits>
 #include <memory>
 #include <utility>
