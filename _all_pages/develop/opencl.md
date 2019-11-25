@@ -232,52 +232,7 @@ adb shell /data/local/tmp/opencl/test_layout_opencl
 
 # 如何在Code中使用
 
+见运行示例1的demo代码:  
 
-注意：推荐用户首先参考前文中提到的编译产物`demo`中的使用方法。
-
-下面对单测中的代码进行讲解，Lite支持对ARM CPU和ARM GPU的混调执行，具体描述如下：
-
-- 设置Lite推断执行的有效Places，使其包含ARM CPU(kARM)和ARM GPU(kOpenCL)；
-- 确保GPU(kOpenCL)在第一位，位置代表Places的重要性和kernel选择有直接关系。  
-
-通过以上设置，Lite在推断执行过程中如果发现某一Op存在着基于OpenCL的实现，其会优先选择使用该实现执行Op的计算过程。若发现某一Op没有基于OpenCL实现的Kernel，其会自动选择执行基于ARM CPU的实现。
-
-代码示例（来自`lite/api/mobilenetv1_test.cc`）：
-
-```cpp
-// 初始化预测实例、CPU线程数、CPU策略
-DeviceInfo::Init();
-DeviceInfo::Global().SetRunMode(LITE_POWER_HIGH, FLAGS_threads);
-lite::Predictor predictor;
-
-// 设置Lite推断执行的硬件信息Places为{kOpenCL, kARM}
-std::vector<Place> valid_places({
-      Place({TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kNHWC)}),
-      Place({TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kNCHW)}),
-      Place({TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNHWC)}),
-      Place({TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW)}),
-      Place({TARGET(kARM), PRECISION(kFloat)})
-  });
-
-// 根据Place构建模型
-predictor.Build(model_dir, "", "", valid_places);
-
-// 设置模型的输入
-auto* input_tensor = predictor.GetInput(0);
-input_tensor->Resize(DDim(std::vector<DDim::value_type>({1, 3, 224, 224})));
-auto* data = input_tensor->mutable_data<float>();
-auto item_size = input_tensor->dims().production();
-for (int i = 0; i < item_size; i++) {
-  data[i] = 1;
-}
-
-// 执行模型推断
-predictor.Run();
-
-// 获取模型的预测结果tensor
-// 下面展示如何取出第一个输入tensor，及其维度，元素个数，指针
-auto* out0_tensor = predictor.GetOutput(0);
-auto out0_dims = out0_tensor->dims();
-auto out0_item_size = out0_tensor->dims().production();
-auto* out0_pointer = out0_tensor->data<float>();
-```
+1. [./lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc);  
+2. [./lite/demo/cxx/mobile_full/mobilenetv1_full_api.cc](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/demo/cxx/mobile_full/mobilenetv1_full_api.cc).
