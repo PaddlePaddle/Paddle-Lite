@@ -40,7 +40,7 @@ add_kernel(stack_compute_arm ARM basic SRCS stack_compute.cc DEPS ${lite_kernel_
 add_kernel(affine_channel_compute_arm ARM basic SRCS affine_channel_compute.cc DEPS ${lite_kernel_deps} math_arm)
 add_kernel(range_compute_arm ARM basic SRCS range_compute.cc DEPS ${lite_kernel_deps} math_arm)
 add_kernel(dropout_compute_arm ARM basic SRCS dropout_compute.cc DEPS ${lite_kernel_deps} math_arm)
-add_kernel(layout_compute_arm ARM extra SRCS layout_compute.cc DEPS ${lite_kernel_deps} math_arm)
+add_kernel(layout_compute_arm ARM basic SRCS layout_compute.cc DEPS ${lite_kernel_deps} math_arm)
 
 ## 2.other basic kernels: basic kernels that not used in basic models
 add_kernel(negative_compute_arm ARM extra SRCS negative_compute.cc DEPS ${lite_kernel_deps} math_arm)

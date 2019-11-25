@@ -47,7 +47,7 @@ add_operator(io_copy_op basic SRCS io_copy_op.cc DEPS ${op_DEPS})
 add_operator(fusion_elementwise_activation_ops basic SRCS fusion_elementwise_activation_ops.cc DEPS elementwise_ops ${op_DEPS})
 add_operator(io_copy_once_op basic SRCS io_copy_once_op.cc DEPS io_copy_op ${op_DEPS})
 add_operator(dropout_op basic SRCS dropout_op.cc DEPS ${op_DEPS})
-add_operator(layout_op extra SRCS layout_op.cc DEPS ${op_DEPS})
+add_operator(layout_op basic SRCS layout_op.cc DEPS ${op_DEPS})
 
 # 2.basic ops not used in basic models
 add_operator(graph_op extra SRCS graph_op.cc DEPS ${op_DEPS})
@@ -144,9 +144,7 @@ if (NOT LITE_WITH_X86)
     lite_cc_test(test_concat_op SRCS concat_op_test.cc DEPS concat_op memory scope)
     lite_cc_test(test_calib_op SRCS calib_op_test.cc DEPS calib_op memory ARM_DEPS calib_compute_arm)
     lite_cc_test(test_transpose_op SRCS transpose_op_test.cc DEPS transpose_op memory)
-    if(LITE_BUILD_EXTRA)
-        lite_cc_test(test_fusion_elementwise_activation_ops
-                     SRCS fusion_elementwise_activation_ops_test.cc
-                     DEPS fusion_elementwise_activation_ops memory)
-    endif()
+    lite_cc_test(test_fusion_elementwise_activation_ops
+                 SRCS fusion_elementwise_activation_ops_test.cc
+                 DEPS fusion_elementwise_activation_ops memory)
 endif()
