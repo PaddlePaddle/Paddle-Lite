@@ -54,8 +54,8 @@ node_map_type ConvTransposeConverter(
   bool pad_equal =
       ((paddings[0] == paddings[1]) && (paddings[2] == paddings[3]));
   if (!pad_equal) {
-    LOG(FATA) << "This pad not support ! " << paddings[0] << ", " << paddings[1]
-              << ", " << paddings[2] << ", " << paddings[3];
+    LOG(FATAL) << "This pad not support ! " << paddings[0] << ", "
+               << paddings[1] << ", " << paddings[2] << ", " << paddings[3];
   }
   // create input sizes node to describe the dimensions of input tensor
   std::vector<int32_t> output_shape;

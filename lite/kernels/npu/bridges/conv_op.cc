@@ -59,8 +59,8 @@ node_map_type ConvConverter(const std::shared_ptr<lite::OpLite> conv_op,
   bool pad_equal =
       ((paddings[0] == paddings[1]) && (paddings[2] == paddings[3]));
   if (!pad_equal) {
-    LOG(FATA) << "This pad not support ! " << paddings[0] << ", " << paddings[1]
-              << ", " << paddings[2] << ", " << paddings[3];
+    LOG(FATAL) << "This pad not support ! " << paddings[0] << ", "
+               << paddings[1] << ", " << paddings[2] << ", " << paddings[3];
   }
 
   // check depthwise mode, and decide whether use ConvolutionDepthwise Op
