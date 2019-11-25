@@ -6,7 +6,7 @@ title: CV 类图像预处理API接口介绍
 
 # CV 图像预处理API接口介绍
 
-请把编译脚本`Paddle-Lite/lite/too/build.sh`中`BUILD_CV`变量设置为`ON`， 其他编译参数设置请参考[源码编译](../source_compile)， 以确保 Lite 可以正确编译。
+`CV`图像预处理库的编译：请把编译脚本`Paddle-Lite/lite/too/build.sh`中`BUILD_CV`变量设置为`ON`， 其他编译参数设置请参考[源码编译](../source_compile)， 以确保 Lite 可以正确编译。这样`CV`图像的加速库就会编译进去，且会生成`paddle_image_preprocess.h`的API文件
 
 - 硬件平台： `ARM`
 - 操作系统：`MAC` 和 `LINUX`
