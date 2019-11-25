@@ -964,7 +964,7 @@ void sgemm_prepack_c4_small(int M,
         "vmla.f32   q9,   q5,   d2[1]  \n"
         "vmla.f32   q10,  q5,   d4[1]  \n"
         "vmla.f32   q11,  q5,   d6[1]  \n"
-        "subs   %[cnt],   %[cnt],   #1 \n"
+        "subs   %[cnt],   %[cnt],  #1  \n"
         "vmla.f32   q8,   q6,   d1[0]  \n"
         "vmla.f32   q9,   q6,   d3[0]  \n"
         "vmla.f32   q10,  q6,   d5[0]  \n"
