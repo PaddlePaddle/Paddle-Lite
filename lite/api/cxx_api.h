@@ -30,7 +30,7 @@ namespace paddle {
 namespace lite {
 
 static const char TAILORD_OPS_SOURCE_LIST_FILENAME[] =
-    ".tailored_ops_source_list";
+    ".tailored_ops_source_list_test_ci";
 static const char TAILORD_OPS_LIST_NAME[] = ".tailored_ops_list";
 static const char TAILORD_KERNELS_SOURCE_LIST_FILENAME[] =
     ".tailored_kernels_source_list";
