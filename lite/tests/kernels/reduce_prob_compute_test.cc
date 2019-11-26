@@ -176,10 +176,10 @@ class ReduceProbComputeTester : public arena::TestCase {
   // common attributes for this op.
   std::string input_ = "x";
   std::string output_ = "out";
-  std::vector<int> dim_{0};
-  bool keep_dim_ = false;
-  bool reduce_all_ = false;
-  DDim x_dims_{{1, 2}};
+  std::vector<int> dim_{};
+  bool keep_dim_{};
+  DDim x_dims_{};
+  bool reduce_all_{};
 
  public:
   ReduceProbComputeTester(const Place& place,
