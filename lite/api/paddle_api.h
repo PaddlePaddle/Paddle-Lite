@@ -77,6 +77,10 @@ class LITE_API PaddlePredictor {
   /// Get i-th output.
   virtual std::unique_ptr<const Tensor> GetOutput(int i) const = 0;
 
+  /// Get output tensor with `name` existed.
+  virtual std::unique_ptr<const Tensor> GetOutput(
+      const std::string& name) const = 0;
+
   virtual void Run() = 0;
   virtual std::shared_ptr<PaddlePredictor> Clone() = 0;
 

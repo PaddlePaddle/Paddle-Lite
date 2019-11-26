@@ -88,6 +88,7 @@ class LITE_API Predictor {
 
   // Get offset-th col of fetch results.
   const lite::Tensor* GetOutput(size_t offset) const;
+  const lite::Tensor* GetOutput(const std::string& name) const;
   std::vector<const lite::Tensor*> GetOutputs() const;
 
   const cpp::ProgramDesc& program_desc() const;
@@ -131,6 +132,8 @@ class CxxPaddleApiImpl : public lite_api::PaddlePredictor {
   std::unique_ptr<lite_api::Tensor> GetInput(int i) override;
 
   std::unique_ptr<const lite_api::Tensor> GetOutput(int i) const override;
+  std::unique_ptr<const lite_api::Tensor> GetOutput(
+      const std::string& name) const override;
 
   void Run() override;
 

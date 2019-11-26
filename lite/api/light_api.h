@@ -57,6 +57,7 @@ class LITE_API LightPredictor {
   Tensor* GetInputByName(const std::string& name);
   // Get offset-th col of fetch outputs.
   const Tensor* GetOutput(size_t offset);
+  const Tensor* GetOutput(const std::string& name);
 
   const lite::Tensor* GetTensor(const std::string& name) const {
     auto* var = program_->exec_scope()->FindVar(name);
@@ -93,6 +94,9 @@ class LightPredictorImpl : public lite_api::PaddlePredictor {
   std::unique_ptr<lite_api::Tensor> GetInput(int i) override;
 
   std::unique_ptr<const lite_api::Tensor> GetOutput(int i) const override;
+
+  std::unique_ptr<const lite_api::Tensor> GetOutput(
+      const std::string& name) const override;
 
   void Run() override;
 

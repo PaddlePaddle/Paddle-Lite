@@ -45,6 +45,11 @@ std::unique_ptr<const lite_api::Tensor> LightPredictorImpl::GetOutput(
       new lite_api::Tensor(raw_predictor_->GetOutput(i)));
 }
 
+std::unique_ptr<const lite_api::Tensor> LightPredictorImpl::GetOutput(
+    const std::string& name) const {
+  return LightPredictorImpl::GetTensor(name);
+}
+
 void LightPredictorImpl::Run() {
 #ifdef LITE_WITH_ARM
   lite::DeviceInfo::Global().SetRunMode(mode_, threads_);
@@ -63,6 +68,7 @@ std::unique_ptr<const lite_api::Tensor> LightPredictorImpl::GetTensor(
   return std::unique_ptr<const lite_api::Tensor>(
       new lite_api::Tensor(raw_predictor_->GetTensor(name)));
 }
+
 std::unique_ptr<lite_api::Tensor> LightPredictorImpl::GetInputByName(
     const std::string& name) {
   return std::unique_ptr<lite_api::Tensor>(
