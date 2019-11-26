@@ -32,21 +32,29 @@ namespace lite {
 /// For VarDesc transfrom
 #define TRANS_VAR_ANY_WITH_CPP_IMPL(T)                           \
   template <>                                                    \
-  void TransformVarDescAnyToCpp<T>(const T &any_desc,            \
-                                   cpp::VarDesc *cpp_desc) {     \
-    cpp_desc->SetName(any_desc.Name());                          \
-    cpp_desc->SetType(any_desc.GetType());                       \
-    cpp_desc->SetPersistable(any_desc.Persistable());            \
-    cpp_desc->SetDataType(any_desc.GetDataType());               \
-  }                                                              \
-                                                                 \
-  template <>                                                    \
   void TransformVarDescCppToAny<T>(const cpp::VarDesc &cpp_desc, \
                                    T *any_desc) {                \
     any_desc->SetName(cpp_desc.Name());                          \
     any_desc->SetType(cpp_desc.GetType());                       \
     any_desc->SetPersistable(cpp_desc.Persistable());            \
   }
+
+template <>
+void TransformVarDescAnyToCpp<pb::VarDesc>(const pb::VarDesc &any_desc,
+                                           cpp::VarDesc *cpp_desc) {
+  cpp_desc->SetName(any_desc.Name());
+  cpp_desc->SetType(any_desc.GetType());
+  cpp_desc->SetPersistable(any_desc.Persistable());
+  cpp_desc->SetDataType(any_desc.GetDataType());
+}
+
+template <>
+void TransformVarDescAnyToCpp<naive_buffer::VarDesc>(
+    const naive_buffer::VarDesc &any_desc, cpp::VarDesc *cpp_desc) {
+  cpp_desc->SetName(any_desc.Name());
+  cpp_desc->SetType(any_desc.GetType());
+  cpp_desc->SetPersistable(any_desc.Persistable());
+}
 
 /// For OpDesc transform
 template <typename OpDescType>

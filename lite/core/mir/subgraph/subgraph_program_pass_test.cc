@@ -84,23 +84,22 @@ std::vector<std::string> AddFCDesc(
   static int id = 0;
   std::string prefix = "fc_" + std::to_string(id);
   auto* op_desc = block_desc->AddOp<cpp::OpDesc>();
+
   auto* wgt = block_desc->AddVar<cpp::VarDesc>();
-  auto* bias = block_desc->AddVar<cpp::VarDesc>();
-  auto* out = block_desc->AddVar<cpp::VarDesc>();
-
   wgt->SetName(prefix + "_W");
-  bias->SetName(prefix + "_Bias");
-  out->SetName(prefix + "_Out");
-  std::vector<std::string> out_var_names{prefix + "_Out"};
-
   auto* wtensor = scope->Var(prefix + "_W")->GetMutable<lite::Tensor>();
   wtensor->Resize(wshape);
   wtensor->mutable_data<float>();
 
+  auto* bias = block_desc->AddVar<cpp::VarDesc>();
+  bias->SetName(prefix + "_Bias");
   auto* btensor = scope->Var(prefix + "_Bias")->GetMutable<lite::Tensor>();
   btensor->Resize({wshape[1]});
   btensor->mutable_data<float>();
 
+  auto* out = block_desc->AddVar<cpp::VarDesc>();
+  out->SetName(prefix + "_Out");
+  std::vector<std::string> out_var_names{prefix + "_Out"};
   scope->Var(prefix + "_Out")->GetMutable<lite::Tensor>();
 
   op_desc->SetType("fc");
@@ -192,7 +191,6 @@ std::unique_ptr<mir::SSAGraph> BuildSimpleNet(
   auto* block_desc = program_desc->AddBlock<cpp::BlockDesc>();
   block_desc->ClearOps();
   block_desc->ClearVars();
-
   auto* var_desc = block_desc->AddVar<cpp::VarDesc>();
   var_desc->SetName("feed_var");
   auto* feed_var = scope->Var("feed_var")->GetMutable<lite::Tensor>();
@@ -208,10 +206,12 @@ std::unique_ptr<mir::SSAGraph> BuildSimpleNet(
 }
 
 TEST(SubGraphTest, SimpleNet) {
-  cpp::ProgramDesc program_desc;
+  // cpp::ProgramDesc program_desc;
+  cpp::ProgramDesc* program_desc = new cpp::ProgramDesc;
   std::vector<Place> places{{TARGET(kHost), PRECISION(kFloat)}};
   auto scope = std::make_shared<Scope>();
-  auto graph = BuildSimpleNet(&program_desc, scope, places);
+  // auto graph = BuildSimpleNet(&program_desc, scope, places);
+  auto graph = BuildSimpleNet(program_desc, scope, places);
 
   std::vector<std::string> supported_op_types{"fc"};
   auto* pass = new mir::subgraph::SubgraphProgramPass;

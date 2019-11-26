@@ -14,6 +14,7 @@
 
 #include "lite/core/mir/static_kernel_pick_pass.h"
 #include <algorithm>
+#include <list>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -45,10 +46,18 @@ void StaticKernelPickPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
     if (!node.IsStmt()) continue;
     auto& instruct = node.AsStmt();
 
-    std::unordered_map<std::string, lite::VarDescAPI::Type> in_types =
-        instruct.get_in_types();
-    std::unordered_map<std::string, lite::VarDescAPI::Type> out_types =
-        instruct.get_out_types();
+    std::unordered_map<std::string, lite::VarDescAPI::Type> in_types;
+    std::unordered_map<std::string, lite::VarDescAPI::Type> out_types;
+    for (std::list<Node*>::iterator i = node.inlinks.begin();
+         i != node.inlinks.end();
+         ++i) {
+      in_types[(*i)->arg()->name] = (*i)->arg()->data_type;
+    }
+    for (std::list<Node*>::iterator i = node.outlinks.begin();
+         i != node.outlinks.end();
+         ++i) {
+      out_types[(*i)->arg()->name] = (*i)->arg()->data_type;
+    }
 
     // Get candidate kernels
     std::vector<std::pair<float, std::unique_ptr<KernelBase>>> scored;

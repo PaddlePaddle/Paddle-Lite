@@ -81,23 +81,6 @@ class Node {
       return os;
     }
 
-    void set_in_type(const std::string& name,
-                     const lite::VarDescAPI::Type& type) {
-      in_types[name] = type;
-    }
-    std::unordered_map<std::string, lite::VarDescAPI::Type> get_in_types()
-        const {
-      return in_types;
-    }
-    void set_out_type(const std::string& name,
-                      const lite::VarDescAPI::Type& type) {
-      out_types[name] = type;
-    }
-    std::unordered_map<std::string, lite::VarDescAPI::Type> get_out_types()
-        const {
-      return out_types;
-    }
-
     // Description.
     std::string desc;
 
@@ -105,9 +88,6 @@ class Node {
     // -1 means not in subgraph, 0 means supported but not one id, id started
     // from 1
     int subgraph_id_{-1};
-    // in_types and out_types means op's input/output tensor type: FP32, INT64.
-    std::unordered_map<std::string, lite::VarDescAPI::Type> in_types;
-    std::unordered_map<std::string, lite::VarDescAPI::Type> out_types;
   };
 
   struct Arg {
@@ -121,6 +101,8 @@ class Node {
     // if the need more than one tool operator(eg. io_copy layout calib), the
     // argument between them should be persist to make sure it's only run once
     bool is_persist{false};
+    // data_type stores the lod_tensor data type: INT8, FP32, etc.
+    lite::VarDescAPI::Type data_type;
   };
 
   Arg& AsArg(const std::string& name, int id);

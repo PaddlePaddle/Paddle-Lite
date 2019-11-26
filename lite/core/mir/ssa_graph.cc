@@ -141,7 +141,7 @@ void SSAGraph::Build(const Program &program,
         arg_update_node_map_[name] = arg_node;
       }
       if (var_types.count(name)) {
-        op_node->stmt()->set_in_type(name, var_types[name]);
+        arg_node->arg()->data_type = var_types[name];
       }
       if (is_weights(name)) arg_node->AsArg().is_weight = true;
       CHECK(arg_node->IsRoleSet());
@@ -153,7 +153,7 @@ void SSAGraph::Build(const Program &program,
       arg_node->AsArg(name, node_storage_.size() - 1);
       arg_update_node_map_[name] = arg_node;
       if (var_types.count(name)) {
-        op_node->stmt()->set_out_type(name, var_types[name]);
+        arg_node->arg()->data_type = var_types[name];
       }
 
       if (is_weights(name)) arg_node->AsArg().is_weight = true;
