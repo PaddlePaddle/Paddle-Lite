@@ -217,7 +217,7 @@ class ReduceProbComputeTester : public arena::TestCase {
       }
     } else {
       std::vector<int64_t> out_dims;
-      for (int i = 0; i < x_dims_.size(); i++) {
+      for (size_t i = 0; i < x_dims_.size(); i++) {
         out_dims.push_back(x_dims_[i]);
       }
       if (keep_dim_) {
@@ -242,7 +242,7 @@ class ReduceProbComputeTester : public arena::TestCase {
     if (reduce_all_ || dim_.empty()) {
       reduce_prob_all(x_data, out_data, x_dims_.production());
     } else {
-      CHECK_EQ(x_rank, 4);
+      CHECK_EQ(x_rank, 4U);
       int in_n = x_dims_[0];
       int in_c = x_dims_[1];
       int in_h = x_dims_[2];

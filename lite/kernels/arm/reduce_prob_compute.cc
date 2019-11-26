@@ -43,7 +43,7 @@ void ReduceProbCompute::Run() {
   if (reduce_all) {
     lite::arm::math::reduce_prob_all(input, output, x_dims.production());
   } else {
-    CHECK_EQ(x_rank, 4);
+    CHECK_EQ(x_rank, 4U);
     int n_in = x_dims[0];
     int c_in = x_dims[1];
     int h_in = x_dims[2];
