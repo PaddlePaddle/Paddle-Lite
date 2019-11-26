@@ -41,6 +41,12 @@ void output_trans_c4_post(const float* src,
 void weight_trans_c4(
     float* dest, const float* src, int ic, int oc, void* workspace);
 
+/*
+*The following function conv_compute_6x6_3x3 is base on
+*MNN[https://github.com/alibaba/MNN]
+*
+*Copyright © 2018, Alibaba Group Holding Limited
+*/
 void conv_compute_6x6_3x3(const float* input,
                           float* output,
                           int num,
