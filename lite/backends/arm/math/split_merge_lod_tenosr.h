@@ -14,10 +14,8 @@
 
 #pragma once
 
-#include <string>
 #include <utility>
 #include "lite/core/tensor.h"
-#include "lite/utils/cp_logging.h"
 
 namespace paddle {
 namespace lite {
