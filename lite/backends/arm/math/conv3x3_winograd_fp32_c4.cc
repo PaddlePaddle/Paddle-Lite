@@ -134,6 +134,7 @@ void conv_compute_6x6_3x3(const float* input,
       // input trans
       int c_gi_stride = tile_count * oc_4 * 4;
       int b_gi_stride = tile_count * ic_4 * 4;
+      //*
       for (int ti = 0; ti < tile_count; ++ti) {
         int index = tile_index + ti;
 
@@ -194,10 +195,11 @@ void conv_compute_6x6_3x3(const float* input,
           }  // for ci_4
         }
       }
+      //*/
       // input trans end
       // *begin compute dot
       // *
-
+      //*
       float* dst_temp_data = tmp_data + tile_block * ic_4 * 256;
       float* b_ptr = tmp_data;
       int w_gi_stride = ic_4 * oc_4 * 16;
@@ -216,7 +218,8 @@ void conv_compute_6x6_3x3(const float* input,
                                false,
                                ctx);
       }
-
+      //*/
+      //*
       // output trans
       float bias_value[4];
       memset(bias_value, 0, 4 * sizeof(float));
@@ -324,6 +327,7 @@ void conv_compute_6x6_3x3(const float* input,
           }
         }
       }
+      //*/
     }  // for block_count
   }    // for num
 }  // conv_compute
