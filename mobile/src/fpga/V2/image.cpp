@@ -110,6 +110,10 @@ void concat_images(int8_t **images_in, float **scales_in, void *image_out,
     }
   }
   fpga_flush(image_out, height * align_each_out_area_cw * sizeof(int8_t));
+  for (i = 0; i < image_num; i++) {
+    fpga_free(images_in_tmp[i]);
+  }
+  fpga_free(images_in_tmp);
 }
 
 void split_image(int8_t *image_in, void **images_out, int image_num,
