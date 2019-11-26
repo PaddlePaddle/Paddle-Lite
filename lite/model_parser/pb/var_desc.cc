@@ -28,8 +28,6 @@ VarDescAPI::Type VarDesc::GetType() const {
     return VarDescAPI::Type::type__;
 
   switch (type) {
-    GET_TYPE_CASE_ITEM(BOOL);
-    GET_TYPE_CASE_ITEM(SIZE_T);
     GET_TYPE_CASE_ITEM(LOD_TENSOR);
     GET_TYPE_CASE_ITEM(LOD_TENSOR_ARRAY);
     GET_TYPE_CASE_ITEM(LOD_RANK_TABLE);
@@ -40,7 +38,7 @@ VarDescAPI::Type VarDesc::GetType() const {
     GET_TYPE_CASE_ITEM(PLACE_LIST);
     GET_TYPE_CASE_ITEM(READER);
     default:
-      LOG(FATAL) << "Unknown var type: " << static_cast<int>(type);
+      LOG(FATAL) << "Unknown var type";
       return VarDescAPI::Type();
   }
 #undef GET_TYPE_CASE_ITEM
@@ -168,6 +166,8 @@ VarDescAPI::VarDataType VarDesc::GetDataType() const {
     return VarDescAPI::Type::type__
 
   switch (type) {
+    GET_DATA_TYPE_CASE_ITEM(BOOL);
+    GET_DATA_TYPE_CASE_ITEM(SIZE_T);
     GET_DATA_TYPE_CASE_ITEM(UINT8);
     GET_DATA_TYPE_CASE_ITEM(INT8);
     GET_DATA_TYPE_CASE_ITEM(INT16);
@@ -177,7 +177,7 @@ VarDescAPI::VarDataType VarDesc::GetDataType() const {
     GET_DATA_TYPE_CASE_ITEM(FP32);
     GET_DATA_TYPE_CASE_ITEM(FP64);
     default:
-      LOG(FATAL) << "Unknown var type";
+      LOG(FATAL) << "Unknown var type: " << static_cast<int>(type);
       return VarDescAPI::Type();
   }
 #undef GET_DATA_TYPE_CASE_ITEM
