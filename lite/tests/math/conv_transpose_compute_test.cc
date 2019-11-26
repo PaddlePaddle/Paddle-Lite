@@ -111,11 +111,11 @@ void test_conv_transpose_fp32(const std::vector<DDim>& input_dims,
   param.output = new Tensor;
   param.output->set_precision(PRECISION(kFloat));
 
-  //  paddle::lite::fill_tensor_rand(*param.filter, -1.f, 1.f);
-  paddle::lite::fill_tensor_const(*param.filter, 1.f);
+  paddle::lite::fill_tensor_rand(*param.filter, -1.f, 1.f);
+  // paddle::lite::fill_tensor_const(*param.filter, 1.f);
   if (flag_bias) {
-    //    paddle::lite::fill_tensor_rand(*param.bias, -1.f, 1.f);
-    paddle::lite::fill_tensor_const(*param.bias, 1.f);
+    paddle::lite::fill_tensor_rand(*param.bias, -1.f, 1.f);
+    // paddle::lite::fill_tensor_const(*param.bias, 1.f);
   }
   Tensor tmp_weights;
   tmp_weights.Resize(weight_dim);
@@ -130,21 +130,8 @@ void test_conv_transpose_fp32(const std::vector<DDim>& input_dims,
           new paddle::lite::KernelContext);
       auto& ctx = ctx1->As<paddle::lite::ARMContext>();
       ctx.SetRunMode(static_cast<paddle::lite_api::PowerMode>(cls), th);
-      /// set param and context
-      for (auto& dim_in : input_dims) {
-        param.x->Resize(dim_in);
-        DDim out_tmp_dims = compute_out_dim(dim_in, param);
-        if (out_tmp_dims[2] < 1 || out_tmp_dims[3] < 1) {
-          continue;
-        }
-        param.output->Resize(out_tmp_dims);
-        break;
-      }
       conv_t.SetParam(param);
       conv_t.SetContext(std::move(ctx1));
-      /// prepare for run
-      conv_t.PrepareForRun();
-
       for (auto& dim_in : input_dims) {
         CHECK_EQ(weight_dim[0], dim_in[1])
             << "input channel must equal to weights channel";
@@ -154,9 +141,11 @@ void test_conv_transpose_fp32(const std::vector<DDim>& input_dims,
         }
         param.x->Resize(dim_in);
         param.output->Resize(dim_out);
-
-        //        paddle::lite::fill_tensor_rand(*param.x, -1.f, 1.f);
-        paddle::lite::fill_tensor_const(*param.x, 1.f);
+        param.filter->CopyDataFrom(tmp_weights);
+        // prepare for run
+        conv_t.PrepareForRun();
+        paddle::lite::fill_tensor_rand(*param.x, -1.f, 1.f);
+        // paddle::lite::fill_tensor_const(*param.x, 1.f);
         auto din = param.x->data<float>();
 
         Tensor tout_basic;
@@ -185,7 +174,9 @@ void test_conv_transpose_fp32(const std::vector<DDim>& input_dims,
                                      dilas[1],
                                      dilas[0],
                                      pads[2],
+                                     pads[3],
                                      pads[0],
+                                     pads[1],
                                      flag_bias,
                                      flag_relu);
         }
@@ -230,7 +221,8 @@ void test_conv_transpose_fp32(const std::vector<DDim>& input_dims,
               LOG(FATAL) << "test fp32 conv: input: " << dim_in
                          << ", output: " << dim_out
                          << ", weight dim: " << weight_dim
-                         << ", pad: " << pads[0] << ", " << pads[1]
+                         << ", pad: " << pads[0] << ", " << pads[1] << ", "
+                         << pads[2] << ", " << pads[3]
                          << ", stride: " << strides[0] << ", " << strides[1]
                          << ", dila_: " << dilas[0] << ", " << dilas[1]
                          << ", bias: " << (flag_bias ? "true" : "false")
@@ -242,9 +234,9 @@ void test_conv_transpose_fp32(const std::vector<DDim>& input_dims,
         }
         LOG(INFO) << "test fp32 conv: input: " << dim_in
                   << ", output: " << dim_out << ", weight dim: " << weight_dim
-                  << ", pad: " << pads[0] << ", " << pads[1]
-                  << ", stride: " << strides[0] << ", " << strides[1]
-                  << ", dila_: " << dilas[0] << ", " << dilas[1]
+                  << ", pad: " << pads[0] << ", " << pads[1] << ", " << pads[2]
+                  << ", " << pads[3] << ", stride: " << strides[0] << ", "
+                  << strides[1] << ", dila_: " << dilas[0] << ", " << dilas[1]
                   << ", bias: " << (flag_bias ? "true" : "false")
                   << ", relu: " << (flag_relu ? "true" : "false")
                   << ", threads: " << th << ", power_mode: " << cls
@@ -280,30 +272,37 @@ TEST(TestConvRand, test_conv_transpose_rand) {
           for (auto& kw : {1, 2, 3}) {
             for (auto& kh : {1, 2, 3}) {
               for (auto& stride : {1, 2}) {
-                for (auto& pad : {0, 1, 2}) {
-                  for (auto& dila : {1, 2}) {
-                    for (auto& flag_bias : {false, true}) {
-                      for (auto& flag_relu : {false, true}) {
-                        if (cin % g != 0 || cout % g != 0) {
-                          continue;
-                        }
-                        std::vector<DDim> dims;
-                        DDim weights_dim({cin, cout / g, kh, kw});
-                        for (auto& batch : {1, 2}) {
-                          for (auto& h : {1, 3, 19, 32, 28}) {
-                            dims.push_back(DDim({batch, cin, h, h}));
+                for (auto& pad_h0 : {0, 1, 2}) {
+                  for (auto& pad_h1 : {0, 1, 2}) {
+                    for (auto& pad_w0 : {0, 1, 2}) {
+                      for (auto& pad_w1 : {0, 1, 2}) {
+                        for (auto& dila : {1, 2}) {
+                          for (auto& flag_bias : {false, true}) {
+                            for (auto& flag_relu : {false, true}) {
+                              if (cin % g != 0 || cout % g != 0) {
+                                continue;
+                              }
+                              std::vector<DDim> dims;
+                              DDim weights_dim({cin, cout / g, kh, kw});
+                              for (auto& batch : {1, 2}) {
+                                for (auto& h : {1, 3, 19, 32, 28}) {
+                                  dims.push_back(DDim({batch, cin, h, h}));
+                                }
+                              }
+                              test_conv_transpose_fp32(
+                                  dims,
+                                  weights_dim,
+                                  g,
+                                  {stride, stride},
+                                  {pad_h0, pad_h1, pad_w0, pad_w1},
+                                  {dila, dila},
+                                  flag_bias,
+                                  flag_relu,
+                                  {1, 4},
+                                  {FLAGS_power_mode});
+                            }
                           }
                         }
-                        test_conv_transpose_fp32(dims,
-                                                 weights_dim,
-                                                 g,
-                                                 {stride, stride},
-                                                 {pad, pad, pad, pad},
-                                                 {dila, dila},
-                                                 flag_bias,
-                                                 flag_relu,
-                                                 {1, 2, 4},
-                                                 {FLAGS_power_mode});
                       }
                     }
                   }
