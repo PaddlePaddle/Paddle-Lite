@@ -250,16 +250,18 @@ TEST(var_conv_2d_x86, run_test) {
 
   int x_size = 0;
   std::vector<uint64_t> x_lod_vec;
+  x_lod_vec.push_back(0);
   for (size_t i = 0; i < row_lod_vec.size() - 1; ++i) {
     int height = row_lod_vec[i + 1] - row_lod_vec[i];
     int width = column_lod_vec[i + 1] - column_lod_vec[i];
-    x_lod_vec.push_back(height * width);
-    x_size += height * width;
+    x_lod_vec.push_back(height * width * input_channel);
+    x_size += height * width * input_channel;
   }
-  x_size *= input_channel;
   std::vector<int64_t> x_dims_vec{x_size, 1};
   LoD x_lod;
   x_lod.push_back(x_lod_vec);
+  x_lod.push_back(row_lod_vec);
+  x_lod.push_back(column_lod_vec);
   X.Resize(x_dims_vec);
   X.set_lod(x_lod);
   auto* x_data = X.mutable_data<float>();
@@ -269,8 +271,8 @@ TEST(var_conv_2d_x86, run_test) {
 
   param.X = &X;
   param.W = &W;
-  param.ROW = &ROW;
-  param.COLUMN = &COLUMN;
+  // param.ROW = &ROW;
+  // param.COLUMN = &COLUMN;
   param.Out = &Out;
   param.Col = &Col;
   param.stride_h = stride_h;

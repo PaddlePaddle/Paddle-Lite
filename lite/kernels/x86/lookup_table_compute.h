@@ -40,18 +40,18 @@ class LookupTableCompute : public KernelLite<TARGET(kX86), PRECISION(kInt64)> {
     int64_t row_number = table_t->dims()[0];
     int64_t row_width = table_t->dims()[1];
 
-    auto *table = table_t->data<float>();
-    auto *output = output_t->mutable_data<float>();
-    memset(output, 0, output_t->dims().production() * sizeof(float));
+    auto *table = table_t->data<T>();
+    auto *output = output_t->mutable_data<T>();
+    memset(output, 0, output_t->dims().production() * sizeof(T));
     for (int64_t i = 0; i < ids_numel; ++i) {
       if (padding_idx != -1 && ids[i] == padding_idx) {
-        memset(output + i * row_width, 0, row_width * sizeof(float));
+        memset(output + i * row_width, 0, row_width * sizeof(T));
       } else {
         CHECK_LT(ids[i], row_number);
         CHECK_GE(ids[i], 0);
         memcpy(output + i * row_width,
                table + ids[i] * row_width,
-               row_width * sizeof(float));
+               row_width * sizeof(T));
       }
     }
   }

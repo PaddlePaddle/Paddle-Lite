@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #pragma once
+#include <memory>
 #include <string>
 #include <vector>
 #include "lite/core/kernel.h"
@@ -47,9 +48,10 @@ class ConvOpLite : public OpLite {
     param_.output = scope->FindVar(Out)->GetMutable<lite::Tensor>();
 
     param_.strides = op_desc.GetAttr<std::vector<int>>("strides");
-    param_.paddings = op_desc.GetAttr<std::vector<int>>("paddings");
+    auto paddings = op_desc.GetAttr<std::vector<int>>("paddings");
     param_.groups = op_desc.GetAttr<int>("groups");
-    param_.dilations = op_desc.GetAttr<std::vector<int>>("dilations");
+    auto dilations = op_desc.GetAttr<std::vector<int>>("dilations");
+    param_.dilations = std::make_shared<std::vector<int>>(dilations);
 
     // optional params
     std::vector<std::string> input_arg_names = op_desc.InputArgumentNames();
@@ -109,6 +111,20 @@ class ConvOpLite : public OpLite {
         param_.output_scale = op_desc.GetAttr<float>("output_scale");
       }
     }
+
+    // 2-pad to 4-pad
+    if (paddings.size() == 2L) {
+      for (size_t i = 0; i < param_.strides.size(); ++i) {
+        int copy_pad = *(paddings.begin() + 2 * i);
+        paddings.insert(paddings.begin() + 2 * i + 1, copy_pad);
+      }
+    } else {
+      if (paddings.size() != 4L) {
+        LOG(FATAL)
+            << "Paddings size should be the same or twice as the input size.";
+      }
+    }
+    param_.paddings = std::make_shared<std::vector<int>>(paddings);
     return true;
   }
 

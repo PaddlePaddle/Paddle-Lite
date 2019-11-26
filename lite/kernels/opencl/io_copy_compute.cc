@@ -103,8 +103,9 @@ class IoCopykOpenCLToHostCompute
     auto* wait_list = context.cl_wait_list();
     auto* x_ptr = param.x->data<float, cl::Buffer>();
 
-    /* TODO(ysh329): io_copy(device->host) jammed if emplace to `cl_wait_list`
-    in kernel and enable wait_list
+    /* TODO(ysh329): io_copy(device->host) jammed if `it` emplaced to
+    `cl_wait_list`
+    in kernel and `wait_list` enabled
     auto it = wait_list->find(x_ptr);
     if (it != wait_list->end()) {
       VLOG(4) << "--- Find the sync event for the target cl tensor. ---";

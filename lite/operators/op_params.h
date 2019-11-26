@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #pragma once
+#include <memory>
 #include <string>
 #include <utility>
 #include <vector>
@@ -253,9 +254,19 @@ struct ConvParam {
   lite::Tensor* residualData{nullptr};
   lite::Tensor* output{};
   std::vector<int> strides{1, 1};
-  std::vector<int> paddings{0, 0};
+  /* paddings type change
+  * from std::vector<int> to std::shared_ptr<std::vector<int>>
+  * to support dynamically modify padding
+  * let kernel param and operator param Synchronous update
+  */
+  std::shared_ptr<std::vector<int>> paddings;
   int groups{1};
-  std::vector<int> dilations{1, 1};
+  /* dilations type change
+  * from std::vector<int> to std::shared_ptr<std::vector<int>>
+  * to support dynamically modify padding
+  * let kernel param and operator param Synchronous update
+  */
+  std::shared_ptr<std::vector<int>> dilations;
   bool fuse_relu_before_depthwise_conv{false};
   bool use_mkldnn{false};
   bool fuse_relu{false};  // only used in mkldnn kernel
@@ -302,7 +313,12 @@ struct PoolParam {
   bool global_pooling{
       false};  // if true, knernel size and paddings will be ignored
   std::vector<int> strides{1, 1};
-  std::vector<int> paddings{0, 0};
+  /* paddings type change
+  * from std::vector<int> to std::shared_ptr<std::vector<int>>
+  * to support dynamically modify padding
+  * let kernel param and operator param Synchronous update
+  */
+  std::shared_ptr<std::vector<int>> paddings;
   bool exclusive{true};
   bool adaptive{false};
   bool ceil_mode{false};
@@ -328,6 +344,9 @@ struct DropoutParam {
 struct SplitParam {
   lite::Tensor* x{};
   std::vector<lite::Tensor*> output{};
+  lite::Tensor* axis_tensor;
+  std::vector<lite::Tensor*> sections_tensor_list{};
+
   int axis{-1};
   int num{0};
   std::vector<int> sections;
@@ -522,8 +541,8 @@ struct GRUUnitParam {
 struct LrnParam {
   const lite::Tensor* X{};
   lite::Tensor* Out{};
-  int local_size{5};
-  float alpha{1.};
+  int n{5};
+  float alpha{1e-4};
   float beta{0.75};
   float k{1.};
   std::string norm_region{"AcrossChannels"};
@@ -740,6 +759,14 @@ struct SequencePoolParam {
 #endif
 };
 
+struct SearchGroupPaddingParam {
+  lite::Tensor* x{};
+  lite::Tensor* out_emb_padding{};
+  lite::Tensor* out_new{};
+  lite::Tensor* out_padding{};
+  int pad_id;
+};
+
 struct SequenceReshapeParam {
   lite::Tensor* x{};
   lite::Tensor* output{};
@@ -766,6 +793,22 @@ struct SequenceReverseParam {
 
 struct SequenceConcatParam {
   std::vector<lite::Tensor*> X{};
+  lite::Tensor* Out{};
+};
+
+struct AttentionPaddingMaskParam {
+  const lite::Tensor* X{};
+  const lite::Tensor* Y{};
+  int pad_id;
+  float mask;
+  lite::Tensor* Out{};
+  lite::Tensor* pad_begin{};
+};
+
+struct SequenceArithmeticParam {
+  const lite::Tensor* X{};
+  const lite::Tensor* Y{};
+  int op_type{1};
   lite::Tensor* Out{};
 };
 
@@ -959,6 +1002,25 @@ struct AssignValueParam {
   lite::Tensor* Out{};
 };
 
+/// --------------- sequence_topk_avg_pooling operators ------------------
+struct SequenceTopkAvgPoolingParam {
+  const lite::Tensor* X{};
+  const lite::Tensor* ROW{};
+  const lite::Tensor* COLUMN{};
+  lite::Tensor* Out{};
+  lite::Tensor* pos{};
+  int channel_num{};
+  std::vector<int> topks{};
+};
+
+/// --------------- search_fc operators ------------------
+struct SearchFcParam {
+  const lite::Tensor* X{};
+  const lite::Tensor* W{};
+  const lite::Tensor* b{};
+  lite::Tensor* Out{};
+  int out_size{};
+};
 /// --------------------- match_matrix_tensor operators --------------------
 struct MatchMatrixTensorParam {
   const lite::Tensor* x{};
