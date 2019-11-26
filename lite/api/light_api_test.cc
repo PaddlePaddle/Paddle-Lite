@@ -51,6 +51,8 @@ TEST(LightAPI, load) {
   predictor.Run();
 
   const auto* output = predictor.GetOutput(0);
+  const auto* output_by_name = predictor.GetOutput(outputs[0]);
+  CHECK(output == output_by_name);
   const float* raw_output = output->data<float>();
 
   for (int i = 0; i < 10; i++) {

@@ -129,6 +129,12 @@ TEST(CXXApi, load_model_naive) {
                              0.8938774});
 
   auto* output_tensor = predictor.GetOutput(0);
+  const std::vector<std::string> output_names = predictor.GetOutputNames();
+  for (int i = 0; i < outputs.size(); i++) {
+    LOG(INFO) << "output_names[" << i << "]:" << output_names[i];
+  }
+  auto* output_tensor_by_name = predictor.GetOutput(output_names[0]);
+  CHECK(output_tensor == output_tensor_by_name);
   auto output_shape = output_tensor->dims().Vectorize();
   ASSERT_EQ(output_shape.size(), 2);
   ASSERT_EQ(output_shape[0], 1);
