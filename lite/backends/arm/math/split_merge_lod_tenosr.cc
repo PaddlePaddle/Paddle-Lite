@@ -30,7 +30,7 @@ LoDAndOffset GetSubLoDAndAbsoluteOffset(const LoD &lod,
   for (size_t level_idx = start_level; level_idx < lod.size(); ++level_idx) {
     CHECK(start_idx <= end_idx);
     CHECK(end_idx < lod[level_idx].size());
-    std::vector<size_t> level_lens;
+    std::vector<uint64_t> level_lens;
     for (size_t i = start_idx; i < end_idx; ++i) {
       level_lens.push_back(lod[level_idx][i + 1] - lod[level_idx][i]);
     }
