@@ -38,12 +38,11 @@ bool ReduceProbOpLite::InferShape() const {
   auto x_dims = x->dims();
   auto x_rank = x_dims.size();
   CHECK_OR_FALSE(x_rank <= 6);
-  CHECK_OR_FALSE(dim.size() >= 0);
   for (size_t i = 0; i < dim.size(); i++) {
     if (dim[i] < 0) {
       dim[i] = x_rank + dim[i];
     }
-    CHECK_OR_FALSE(dim[i] < x_rank);
+    CHECK_OR_FALSE(static_cast<size_t>(dim[i]) < x_rank);
   }
   std::sort(dim.begin(), dim.end());
 
