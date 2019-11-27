@@ -75,6 +75,7 @@ void conv_3x3s2_direct_fp32(const float* i_data,
   //! prepack input to tmp buffer
   //! write output to tmp buffer
   auto paddings = *param.paddings;
+  auto act_param = param.activation_param;
   const int threads = ctx->threads();
   int l2_size = ctx->llc_size() / sizeof(float);
   const int pad_w = paddings[2];
@@ -510,7 +511,8 @@ void conv_3x3s2_direct_fp32(const float* i_data,
                                 oh,
                                 ow,
                                 flag_relu,
-                                ptr_write);
+                                ptr_write,
+                                act_param);
       }
 
 #pragma omp parallel for num_threads(threads)
@@ -839,7 +841,8 @@ void conv_3x3s2_direct_fp32(const float* i_data,
                                 oh,
                                 ow,
                                 flag_relu,
-                                ptr_write);
+                                ptr_write,
+                                act_param);
       }
     }
   }
