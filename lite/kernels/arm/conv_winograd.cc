@@ -46,31 +46,52 @@ void WinogradConv<PRECISION(kFloat), PRECISION(kFloat)>::ReInitWhenNeeded() {
 #ifdef __aarch64__
   tile_block = 16;
 #endif
-  int parallel_threads =
-      (((ow + 5) / 6) * ((oh + 5) / 6) + tile_block - 1) / tile_block;
-  if (threads <= 2 && parallel_threads >= threads) {
+  // int parallel_threads =(((ow + 5) / 6) * ((oh + 5) / 6) + tile_block - 1) /
+  // tile_block;
+  choose_small_ = ow * oh / (tile_block * threads) < 36 ? true : false;
+  if (choose_small_) {
+    wino_iw = 4;
+    if (last_kernel_is_c4_ == 0) {
+      return;
+    }
+    last_kernel_is_c4_ = 0;
+    LOG(INFO) << "choose f23";
+  } else {
+    wino_iw = 8;
     if (last_kernel_is_c4_ == 1) {
       return;
     }
     last_kernel_is_c4_ = 1;
-    auto pad = *(param.paddings);
-    int pad_h = pad[0];
-    int pad_w = pad[2];
-    int oc_pad = (oc + 3) / 4 * 4;
-    int ic_pad = (ic + 3) / 4 * 4;
-    const int new_input_size =
-        (ic + 3) / 4 * 4 * (ih + pad_h * 2) * (iw + pad_w * 2);
-    const int temp_size =
-        (tile_block * ((ic + 3) / 4 + (oc + 3) / 4) * 256 + 512) * threads;
-    ctx.ExtendWorkspace((temp_size + new_input_size) * sizeof(float));
+    LOG(INFO) << "choose f63";
+  }
+  // if (!choose_small) {
+  auto pad = *(param.paddings);
+  int pad_h = pad[0];
+  int pad_w = pad[2];
+  int oc_pad = (oc + 3) / 4 * 4;
+  int ic_pad = (ic + 3) / 4 * 4;
+  const int new_input_size =
+      (ic + 3) / 4 * 4 * (ih + pad_h * 2) * (iw + pad_w * 2);
+  const int temp_size =
+      (tile_block * ((ic + 3) / 4 + (oc + 3) / 4) * 4 * wino_iw * wino_iw +
+       8 * wino_iw * wino_iw) *
+      threads;
+  ctx.ExtendWorkspace((temp_size + new_input_size) * sizeof(float));
 
-    weights_.Resize({1, 1, 1, 64 * oc_pad * ic_pad});
-    ctx.ExtendWorkspace((temp_size + new_input_size) * sizeof(float));
-    void* trans_tmp_ptr = malloc(sizeof(float) * 8 * 8 * oc * ic);
-    auto weights_data_ = weights_.mutable_data<float>();
-    lite::arm::math::weight_trans_c4(
+  weights_.Resize({1, 1, 1, wino_iw * wino_iw * oc_pad * ic_pad});
+  ctx.ExtendWorkspace((temp_size + new_input_size) * sizeof(float));
+  void* trans_tmp_ptr = malloc(sizeof(float) * wino_iw * wino_iw * oc * ic);
+  auto weights_data_ = weights_.mutable_data<float>();
+  if (!choose_small_) {
+    lite::arm::math::weight_trans_c4_8x8(
         weights_data_, param.filter->data<float>(), ic, oc, trans_tmp_ptr);
-    free(trans_tmp_ptr);
+  } else {
+    lite::arm::math::weight_trans_c4_4x4(
+        weights_data_, param.filter->data<float>(), ic, oc, trans_tmp_ptr);
+  }
+  free(trans_tmp_ptr);
+
+  /*
   } else {
     if (last_kernel_is_c4_ == 0) {
       return;
@@ -116,6 +137,7 @@ void WinogradConv<PRECISION(kFloat), PRECISION(kFloat)>::ReInitWhenNeeded() {
     free(trans_tmp_ptr);
     free(weights_wino);
   }
+  //*/
   last_shape_ = x_dims;
 }
 
@@ -150,9 +172,10 @@ void WinogradConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   tile_block = 16;
 #endif
   int threads = ctx.threads();
-  int parallel_threads =
-      (((ow + 5) / 6) * ((oh + 5) / 6) + tile_block - 1) / tile_block;
-  if (threads <= 2 && parallel_threads >= threads) {
+  // int parallel_threads = (((ow + 5) / 6) * ((oh + 5) / 6) + tile_block - 1) /
+  // tile_block;
+  // if (threads <= 2 && parallel_threads >= threads) {
+  if (!choose_small_) {
     lite::arm::math::conv_compute_6x6_3x3(i_data,
                                           o_data,
                                           bs,
@@ -167,20 +190,37 @@ void WinogradConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
                                           param,
                                           &ctx);
   } else {
-    lite::arm::math::conv_winograd3x3(i_data,
-                                      o_data,
-                                      bs,
-                                      oc,
-                                      oh,
-                                      ow,
-                                      ic,
-                                      ih,
-                                      iw,
-                                      w_data,
-                                      b_data,
-                                      param,
-                                      &ctx);
+    lite::arm::math::conv_compute_2x2_3x3(i_data,
+                                          o_data,
+                                          bs,
+                                          oc,
+                                          oh,
+                                          ow,
+                                          ic,
+                                          ih,
+                                          iw,
+                                          w_data,
+                                          b_data,
+                                          param,
+                                          &ctx);
   }
+  /*
+    } else {
+      lite::arm::math::conv_winograd3x3(i_data,
+                                        o_data,
+                                        bs,
+                                        oc,
+                                        oh,
+                                        ow,
+                                        ic,
+                                        ih,
+                                        iw,
+                                        w_data,
+                                        b_data,
+                                        param,
+                                        &ctx);
+    }
+  */
 }
 
 }  // namespace arm

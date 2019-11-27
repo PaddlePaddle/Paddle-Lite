@@ -41,6 +41,8 @@ class WinogradConv : public KernelLite<TARGET(kARM), Ptype> {
   DDim last_shape_;
   int workspace_size_{0};
   int last_kernel_is_c4_{-1};
+  bool choose_small_{false};
+  int wino_iw{8};
 };
 
 }  // namespace arm

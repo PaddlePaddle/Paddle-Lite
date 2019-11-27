@@ -169,6 +169,7 @@ function make_all_tests {
   cmake $root_dir \
       ${CMAKE_COMMON_OPTIONS} \
       -DWITH_TESTING=ON \
+      -DLITE_WITH_PROFILE=OFF \
       -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
       -DLITE_WITH_CV=$BUILD_CV \
       -DARM_TARGET_OS=${os} -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
