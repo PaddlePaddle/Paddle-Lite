@@ -134,7 +134,14 @@ void Run(const std::vector<std::vector<int64_t>>& input_shapes,
     printf("open file failed \n");
     return;
   }
-  fprintf(fp_w, "model: %s, threads: %d, avg: %f ms, var: %f \n", model_dir.c_str(), thread_num, avg, sum);
+  std::sort(times.begin(), times.end());
+  int mid = times.size() / 2;
+  int mid1 = mid;
+  if (time.size() % 2 != 0){
+    mid1 = mid - 1;
+  }
+  float mid_val = (times[mid] + times[mid1]) / 2.0;
+  fprintf(fp_w, "model: %s, threads: %d, avg: %f ms, min: %f ms, mid_val: %f ms, var: %f \n", model_dir.c_str(), thread_num, avg, ti.get_min_time(), mid_val, sum);
   fclose(fp_w);
   auto output = predictor->GetOutput(0);
   auto out = output->data<float>();
