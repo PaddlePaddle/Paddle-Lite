@@ -39,6 +39,7 @@ Paddle-Lite 框架是 PaddleMobile 新一代架构，重点支持移动端推理
 - [模型量化]({{site.baseurl}}/v2.1.0/model_quantization)
 - [支持Op列表]({{site.baseurl}}/v2.1.0/support_operation_list)
 - [新增Op方法]({{site.baseurl}}/v2.1.0/add_new_operation)
+- [新增Pass方法]({{site.baseurl}}/v2.1.0/add_new_pass)
 - [测试工具]({{site.baseurl}}/v2.1.0/test_tools)
 - [调试方法]({{site.baseurl}}/v2.1.0/debug_tools)
 - [使用华为NPU]({{site.baseurl}}/v2.1.0/npu)
