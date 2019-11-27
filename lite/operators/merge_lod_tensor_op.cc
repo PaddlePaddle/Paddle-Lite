@@ -54,7 +54,7 @@ bool MergeLodTensorOpLite::AttachImpl(const cpp::OpDesc &op_desc,
   auto out = op_desc.Output("Out").front();
   param_.out = scope->FindVar(out)->GetMutable<lite::Tensor>();
 
-  param_.level = op_desc.GetAttr<int>("leval");
+  param_.level = op_desc.GetAttr<int>("level");
   return true;
 }
 

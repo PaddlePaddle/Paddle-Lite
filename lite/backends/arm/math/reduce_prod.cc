@@ -12,7 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#include "lite/backends/arm/math/reduce_prob.h"
+#include "lite/backends/arm/math/reduce_prod.h"
 #include "lite/core/tensor.h"
 
 namespace paddle {
@@ -21,7 +21,7 @@ namespace arm {
 namespace math {
 
 template <>
-void reduce_prob_n<float>(const float* src,
+void reduce_prod_n<float>(const float* src,
                           float* dst,
                           int num_in,
                           int channel_in,
@@ -45,7 +45,7 @@ void reduce_prob_n<float>(const float* src,
 }
 
 template <>
-void reduce_prob_c<float>(const float* src,
+void reduce_prod_c<float>(const float* src,
                           float* dst,
                           int num_in,
                           int channel_in,
@@ -70,7 +70,7 @@ void reduce_prob_c<float>(const float* src,
 }
 
 template <>
-void reduce_prob_h<float>(const float* src,
+void reduce_prod_h<float>(const float* src,
                           float* dst,
                           int num_in,
                           int channel_in,
@@ -96,7 +96,7 @@ void reduce_prob_h<float>(const float* src,
 }
 
 template <>
-void reduce_prob_w<float>(const float* src,
+void reduce_prod_w<float>(const float* src,
                           float* dst,
                           int num_in,
                           int channel_in,
@@ -124,7 +124,7 @@ void reduce_prob_w<float>(const float* src,
 }
 
 template <>
-void reduce_prob_all<float>(const float* src, float* dst, int64_t total_num) {
+void reduce_prod_all<float>(const float* src, float* dst, int64_t total_num) {
   dst[0] = 1.0;
   for (int n = 0; n < total_num; ++n) {
     dst[0] *= src[n];
@@ -132,7 +132,7 @@ void reduce_prob_all<float>(const float* src, float* dst, int64_t total_num) {
 }
 
 template <>
-void reduce_prob_nc<float>(const float* src,
+void reduce_prod_nc<float>(const float* src,
                            float* dst,
                            int num_in,
                            int channel_in,
@@ -143,12 +143,12 @@ void reduce_prob_nc<float>(const float* src,
   lite::Tensor tensor_tmp;
   tensor_tmp.Resize(ddimA);
   float* tmp_out = tensor_tmp.mutable_data<float>();
-  reduce_prob_n(src, tmp_out, num_in, channel_in, height_in, width_in);
-  reduce_prob_c(tmp_out, dst, 1, channel_in, height_in, width_in);
+  reduce_prod_n(src, tmp_out, num_in, channel_in, height_in, width_in);
+  reduce_prod_c(tmp_out, dst, 1, channel_in, height_in, width_in);
 }
 
 template <>
-void reduce_prob_ch<float>(const float* src,
+void reduce_prod_ch<float>(const float* src,
                            float* dst,
                            int num_in,
                            int channel_in,
@@ -159,12 +159,12 @@ void reduce_prob_ch<float>(const float* src,
   lite::Tensor tensor_tmp;
   tensor_tmp.Resize(ddimA);
   float* tmp_out = tensor_tmp.mutable_data<float>();
-  reduce_prob_c(src, tmp_out, num_in, channel_in, height_in, width_in);
-  reduce_prob_h(tmp_out, dst, num_in, 1, height_in, width_in);
+  reduce_prod_c(src, tmp_out, num_in, channel_in, height_in, width_in);
+  reduce_prod_h(tmp_out, dst, num_in, 1, height_in, width_in);
 }
 
 template <>
-void reduce_prob_hw<float>(const float* src,
+void reduce_prod_hw<float>(const float* src,
                            float* dst,
                            int num_in,
                            int channel_in,
@@ -175,8 +175,8 @@ void reduce_prob_hw<float>(const float* src,
   lite::Tensor tensor_tmp;
   tensor_tmp.Resize(ddimA);
   float* tmp_out = tensor_tmp.mutable_data<float>();
-  reduce_prob_h(src, tmp_out, num_in, channel_in, height_in, width_in);
-  reduce_prob_w(tmp_out, dst, num_in, channel_in, 1, width_in);
+  reduce_prod_h(src, tmp_out, num_in, channel_in, height_in, width_in);
+  reduce_prod_w(tmp_out, dst, num_in, channel_in, 1, width_in);
 }
 
 }  // namespace math

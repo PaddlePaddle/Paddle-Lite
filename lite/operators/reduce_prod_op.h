@@ -21,11 +21,11 @@ namespace paddle {
 namespace lite {
 namespace operators {
 
-class ReduceProbOpLite : public OpLite {
+class ReduceProdOpLite : public OpLite {
  public:
-  ReduceProbOpLite() {}
+  ReduceProdOpLite() {}
 
-  explicit ReduceProbOpLite(const std::string &op_type) : OpLite(op_type) {}
+  explicit ReduceProdOpLite(const std::string &op_type) : OpLite(op_type) {}
 
   bool CheckShape() const override;
 
@@ -35,7 +35,7 @@ class ReduceProbOpLite : public OpLite {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
-  std::string DebugString() const override { return "reduce prob"; }
+  std::string DebugString() const override { return "reduce prod"; }
 
  private:
   mutable ReduceParam param_;

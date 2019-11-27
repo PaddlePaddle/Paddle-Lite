@@ -52,7 +52,7 @@ bool SplitLodTensorOpLite::AttachImpl(const cpp::OpDesc &op_desc,
   param_.out_true = scope->FindVar(out_true)->GetMutable<lite::Tensor>();
   param_.out_false = scope->FindVar(out_false)->GetMutable<lite::Tensor>();
 
-  param_.level = op_desc.GetAttr<int>("leval");
+  param_.level = op_desc.GetAttr<int>("level");
   return true;
 }
 

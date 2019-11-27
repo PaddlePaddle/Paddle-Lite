@@ -1070,6 +1070,16 @@ struct MergeLodTensorParam {
   int level{};
 };
 
+struct ConditionalBlockParam {
+  const lite::Tensor* cond{};
+  std::vector<lite::Tensor*> x{};
+  std::vector<lite::Tensor*> outs{};
+  cpp::BlockDesc* sub_block{};
+  Scope* scope{};
+
+  bool is_scalar_condition{};
+};
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle

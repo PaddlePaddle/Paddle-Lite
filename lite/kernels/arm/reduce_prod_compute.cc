@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/arm/reduce_prob_compute.h"
+#include "lite/kernels/arm/reduce_prod_compute.h"
 #include <string>
 #include <vector>
 #include "lite/backends/arm/math/funcs.h"
@@ -22,7 +22,7 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
-void ReduceProbCompute::Run() {
+void ReduceProdCompute::Run() {
   auto& param = Param<operators::ReduceParam>();
   auto* input = param.x->data<float>();
   auto x_dims = param.x->dims();
@@ -41,7 +41,7 @@ void ReduceProbCompute::Run() {
   }
 
   if (reduce_all) {
-    lite::arm::math::reduce_prob_all(input, output, x_dims.production());
+    lite::arm::math::reduce_prod_all(input, output, x_dims.production());
   } else {
     CHECK_EQ(x_rank, 4U);
     int n_in = x_dims[0];
@@ -52,27 +52,27 @@ void ReduceProbCompute::Run() {
     if (dim.size() == 1) {
       switch (dim[0]) {
         case 0:
-          lite::arm::math::reduce_prob_n(input, output, n_in, c_in, h_in, w_in);
+          lite::arm::math::reduce_prod_n(input, output, n_in, c_in, h_in, w_in);
           break;
         case 1:
-          lite::arm::math::reduce_prob_c(input, output, n_in, c_in, h_in, w_in);
+          lite::arm::math::reduce_prod_c(input, output, n_in, c_in, h_in, w_in);
           break;
         case 2:
-          lite::arm::math::reduce_prob_h(input, output, n_in, c_in, h_in, w_in);
+          lite::arm::math::reduce_prod_h(input, output, n_in, c_in, h_in, w_in);
           break;
         case 3:
-          lite::arm::math::reduce_prob_w(input, output, n_in, c_in, h_in, w_in);
+          lite::arm::math::reduce_prod_w(input, output, n_in, c_in, h_in, w_in);
           break;
         default:
           LOG(FATAL) << "error!!!";
       }
     } else if (dim.size() == 2) {
       if (dim[0] == 0 && dim[1] == 1) {
-        lite::arm::math::reduce_prob_nc(input, output, n_in, c_in, h_in, w_in);
+        lite::arm::math::reduce_prod_nc(input, output, n_in, c_in, h_in, w_in);
       } else if (dim[0] == 1 && dim[1] == 2) {
-        lite::arm::math::reduce_prob_ch(input, output, n_in, c_in, h_in, w_in);
+        lite::arm::math::reduce_prod_ch(input, output, n_in, c_in, h_in, w_in);
       } else if (dim[0] == 2 && dim[1] == 3) {
-        lite::arm::math::reduce_prob_hw(input, output, n_in, c_in, h_in, w_in);
+        lite::arm::math::reduce_prod_hw(input, output, n_in, c_in, h_in, w_in);
       } else {
         LOG(FATAL) << "invalid dim!!";
       }
@@ -87,11 +87,11 @@ void ReduceProbCompute::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(reduce_prob,
+REGISTER_LITE_KERNEL(reduce_prod,
                      kARM,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::arm::ReduceProbCompute,
+                     paddle::lite::kernels::arm::ReduceProdCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})

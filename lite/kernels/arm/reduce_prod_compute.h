@@ -23,11 +23,11 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
-class ReduceProbCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+class ReduceProdCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
  public:
   void Run() override;
 
-  virtual ~ReduceProbCompute() = default;
+  virtual ~ReduceProdCompute() = default;
 
  private:
 };

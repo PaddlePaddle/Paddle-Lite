@@ -21,7 +21,7 @@ namespace arm {
 namespace math {
 
 template <typename T>
-void reduce_prob_n(const T* src,
+void reduce_prod_n(const T* src,
                    T* dst,
                    int num_in,
                    int channel_in,
@@ -29,7 +29,7 @@ void reduce_prob_n(const T* src,
                    int width_in);
 
 template <typename T>
-void reduce_prob_c(const T* src,
+void reduce_prod_c(const T* src,
                    T* dst,
                    int num_in,
                    int channel_in,
@@ -37,7 +37,7 @@ void reduce_prob_c(const T* src,
                    int width_in);
 
 template <typename T>
-void reduce_prob_h(const T* src,
+void reduce_prod_h(const T* src,
                    T* dst,
                    int num_in,
                    int channel_in,
@@ -45,7 +45,7 @@ void reduce_prob_h(const T* src,
                    int width_in);
 
 template <typename T>
-void reduce_prob_w(const T* src,
+void reduce_prod_w(const T* src,
                    T* dst,
                    int num_in,
                    int channel_in,
@@ -53,7 +53,7 @@ void reduce_prob_w(const T* src,
                    int width_in);
 
 template <typename T>
-void reduce_prob_nc(const T* src,
+void reduce_prod_nc(const T* src,
                     T* dst,
                     int num_in,
                     int channel_in,
@@ -61,7 +61,7 @@ void reduce_prob_nc(const T* src,
                     int width_in);
 
 template <typename T>
-void reduce_prob_ch(const T* src,
+void reduce_prod_ch(const T* src,
                     T* dst,
                     int num_in,
                     int channel_in,
@@ -69,7 +69,7 @@ void reduce_prob_ch(const T* src,
                     int width_in);
 
 template <typename T>
-void reduce_prob_hw(const T* src,
+void reduce_prod_hw(const T* src,
                     T* dst,
                     int num_in,
                     int channel_in,
@@ -77,7 +77,7 @@ void reduce_prob_hw(const T* src,
                     int width_in);
 
 template <typename T>
-void reduce_prob_all(const T* src, T* dst, int64_t total_num);
+void reduce_prod_all(const T* src, T* dst, int64_t total_num);
 
 }  // namespace math
 }  // namespace arm

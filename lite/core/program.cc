@@ -17,6 +17,7 @@
 #include "lite/model_parser/cpp/block_desc.h"
 #include "lite/model_parser/cpp/op_desc.h"
 #include "lite/model_parser/cpp/var_desc.h"
+#include "lite/operators/conditional_block_op.h"
 #include "lite/operators/while_op.h"
 #ifdef LITE_WITH_PROFILE
 #include "lite/core/profile/precision_profiler.h"
@@ -138,12 +139,17 @@ void Program::Build(const cpp::ProgramDesc& prog) {
     VLOG(4) << "create Op [" << op_type << "]";
     auto op = LiteOpRegistry::Global().Create(op_type);
     CHECK(op) << "no Op found for " << op_type;
-    if (op_type == "while") {
+    if (op_type == "while" || op_type == "conditional_block") {
       auto sub_block_idx = op_desc.GetAttr<int32_t>("sub_block");
       auto sub_block =
           const_cast<cpp::ProgramDesc&>(prog).GetBlock<cpp::BlockDesc>(
               sub_block_idx);
-      static_cast<operators::WhileOpLite*>(op.get())->SetSubBlock(sub_block);
+      if (op_type == "while") {
+        static_cast<operators::WhileOpLite*>(op.get())->SetSubBlock(sub_block);
+      } else if (op_type == "conditional_block") {
+        static_cast<operators::ConditionalBlockOpLite*>(op.get())->SetSubBlock(
+            sub_block);
+      }
     }
     ops_.emplace_back(std::move(op));
     ops_.back()->Attach(op_desc, exec_scope_);

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/operators/reduce_prob_op.h"
+#include "lite/operators/reduce_prod_op.h"
 #include <algorithm>
 #include <vector>
 #include "lite/core/op_lite.h"
@@ -22,13 +22,13 @@ namespace paddle {
 namespace lite {
 namespace operators {
 
-bool ReduceProbOpLite::CheckShape() const {
+bool ReduceProdOpLite::CheckShape() const {
   CHECK_OR_FALSE(param_.x);
   CHECK_OR_FALSE(param_.output);
   return true;
 }
 
-bool ReduceProbOpLite::InferShape() const {
+bool ReduceProdOpLite::InferShape() const {
   auto x = param_.x;
   auto out = param_.output;
   std::vector<int> dim = param_.dim;
@@ -37,7 +37,7 @@ bool ReduceProbOpLite::InferShape() const {
 
   auto x_dims = x->dims();
   auto x_rank = x_dims.size();
-  CHECK_OR_FALSE(x_rank <= 6);
+  CHECK_OR_FALSE(x_rank <= 6U);
   for (size_t i = 0; i < dim.size(); i++) {
     if (dim[i] < 0) {
       dim[i] = x_rank + dim[i];
@@ -78,7 +78,7 @@ bool ReduceProbOpLite::InferShape() const {
   return true;
 }
 
-bool ReduceProbOpLite::AttachImpl(const cpp::OpDesc &op_desc,
+bool ReduceProdOpLite::AttachImpl(const cpp::OpDesc &op_desc,
                                   lite::Scope *scope) {
   auto x = op_desc.Input("X").front();
   param_.x = scope->FindVar(x)->GetMutable<lite::Tensor>();
@@ -96,4 +96,4 @@ bool ReduceProbOpLite::AttachImpl(const cpp::OpDesc &op_desc,
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(reduce_prob, paddle::lite::operators::ReduceProbOpLite);
+REGISTER_LITE_OP(reduce_prod, paddle::lite::operators::ReduceProdOpLite);
