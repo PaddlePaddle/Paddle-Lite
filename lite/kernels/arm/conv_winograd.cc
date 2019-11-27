@@ -49,6 +49,10 @@ void WinogradConv<PRECISION(kFloat), PRECISION(kFloat)>::ReInitWhenNeeded() {
   int parallel_threads =
       (((ow + 5) / 6) * ((oh + 5) / 6) + tile_block - 1) / tile_block;
   if (threads <= 2 && parallel_threads >= threads) {
+    if (last_kernel_is_c4_ == 1) {
+      return;
+    }
+    last_kernel_is_c4_ = 1;
     auto pad = *(param.paddings);
     int pad_h = pad[0];
     int pad_w = pad[2];
@@ -68,6 +72,10 @@ void WinogradConv<PRECISION(kFloat), PRECISION(kFloat)>::ReInitWhenNeeded() {
         weights_data_, param.filter->data<float>(), ic, oc, trans_tmp_ptr);
     free(trans_tmp_ptr);
   } else {
+    if (last_kernel_is_c4_ == 0) {
+      return;
+    }
+    last_kernel_is_c4_ = 0;
     int tile_w = (ow + 5) / 6;
     int tile_h = (oh + 5) / 6;
 
