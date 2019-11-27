@@ -68,10 +68,6 @@ void ConvCompute<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
     VLOG(3) << "invoking dw conv";
   } else if (param.groups == 1 && kw == 3 && stride == 1 && kps_equal &&
              no_dilation) {
-    int tile_block = 8;
-#ifdef __aarch64__
-    tile_block = 16;
-#endif
     bool use_winograd =
         (threads == 1 && oc >= 4 && ic >= 4 && hout >= 6 && wout >= 6 &&
          pads_equal) ||
