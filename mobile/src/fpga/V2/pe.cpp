@@ -248,8 +248,8 @@ int ComputeBasicConv(const struct ConvArgs &args) {
   // DLOG << "   activation_type:" << active_args.activation_type
   //     << "   leaky_relu_negative_slope:"
   //     << active_args.leaky_relu_negative_slope;
-  // DLOG << "   reg_ActivationArgs:" << reg_ActivationArgs;
-
+  DLOG << "   reg_ActivationArgs:";
+  uint64_t bypass_interrupt = reg_readq(REG_INTERRUPT);
   pthread_mutex_lock(&g_fpgainfo.pe_data->mutex);
   if (ERROR == g_fpgainfo.pe_data->pes[PE_IDX_CONV]->status) {
     ret = -EIO;
@@ -257,6 +257,10 @@ int ComputeBasicConv(const struct ConvArgs &args) {
     pthread_mutex_unlock(&g_fpgainfo.pe_data->mutex);
     return ret;
   }
+    // reg_writeq(reg_ActivationArgs,
+             // REG_ACTIVATION_MODE_AND_LEAKY_RELU_FACTOR);  // active functoion
+
+  reg_writeq(output_scale, REG_SCALE_PARAMETER);
   // new
   reg_writeq((args.driver.row_padding_down << 45) |
                  (args.driver.row_padding_up << 34) |
@@ -365,7 +369,7 @@ int ComputeFpgaPool(const struct PoolingArgs &args) {
   uint64_t cmd = 0;
   uint64_t image_physical_address = 0;
   uint64_t output_physical_address = 0;
-
+uint64_t bypass_interrupt = reg_readq(REG_INTERRUPT);
   image_physical_address = vaddr_to_paddr(args.image.address);
   output_physical_address = vaddr_to_paddr(args.output.address);
   uint64_t C_paral_64 = align_to_x((uint64_t)args.image.channels, 64);
@@ -440,7 +444,7 @@ int ComputeFpgaPool(const struct PoolingArgs &args) {
     pthread_mutex_unlock(&g_fpgainfo.pe_data->mutex);
     return ret;
   }
-
+  reg_writeq(output_scale, REG_SCALE_PARAMETER);
   reg_writeq(image_physical_address, 0x808);
   reg_writeq(result_addr_row, 0x810);
   reg_writeq(kernel_padding_step, 0x818);
@@ -497,7 +501,7 @@ int ComputeFpgaEWAdd(const struct EWAddArgs &args) {
 #endif
 #ifdef PADDLE_MOBILE_ZU5
   int ret = 0;
-
+uint64_t bypass_interrupt = reg_readq(REG_INTERRUPT);
 
   pthread_mutex_lock(&g_fpgainfo.pe_data->mutex);
   if (ERROR == g_fpgainfo.pe_data->pes[PE_IDX_EW]->status) {
@@ -534,6 +538,7 @@ int ComputeFpgaEWAdd(const struct EWAddArgs &args) {
   uint32_t* ew_scale = reinterpret_cast<uint32_t*>(&quantParam);
   uint64_t ew_scale_mult_factor = (*ew_scale) |
           ((uint64_t)args.const0 << 32) | ((uint64_t)args.const1 << 40);
+  reg_writeq(0ul, REG_SCALE_PARAMETER);
   reg_writeq(image_physical_address, 0x808);
   reg_writeq(result_addr_row, 0x810);
   reg_writeq(kernel_padding_step, 0x818);
@@ -928,6 +933,7 @@ int ComputeDWConv(const struct DWconvArgs &args) {
 #endif
 #ifdef PADDLE_MOBILE_ZU5
   DLOG << "DWConv";
+  uint64_t bypass_interrupt = reg_readq(REG_INTERRUPT);
   // return 0;
   uint64_t timer_cnt = 0;
   int ret = 0;
@@ -1011,7 +1017,7 @@ int ComputeDWConv(const struct DWconvArgs &args) {
     pthread_mutex_unlock(&g_fpgainfo.pe_data->mutex);
     return ret;
   }
-
+  reg_writeq(0ul, REG_SCALE_PARAMETER);
   reg_writeq(image_physical_address, 0x808);
   reg_writeq(result_addr_row, 0x810);
   reg_writeq(kernel_padding_step, 0x818);
