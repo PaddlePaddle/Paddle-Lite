@@ -18,6 +18,12 @@ NUM_CORES_FOR_COMPILE=${LITE_BUILD_THREADS:-8}
 #whether to use emulator as adb devices,when USE_ADB_EMULATOR=ON we use emulator, else we will use connected mobile phone as adb devices.
 USE_ADB_EMULATOR=ON
 
+# if operating in mac env, we should expand the maximum file num
+os_nmae=`uname -s`
+if [ ${os_nmae} == "Darwin" ]; then
+   ulimit -n 1024
+fi
+
 function prepare_thirdparty {
     if [ ! -d $workspace/third-party -o -f $workspace/third-party-05b862.tar.gz ]; then
         rm -rf $workspace/third-party
