@@ -106,9 +106,6 @@ void conv_compute_6x6_3x3(const float* input,
   int oc_4_stride = wout * hout * 4;
 
   int tile_block = 8;
-#ifdef __aarch64__
-  tile_block = 16;
-#endif
   int block_count = (size_tile + tile_block - 1) / tile_block;
 
   int threads = ctx->threads();
@@ -231,16 +228,8 @@ void conv_compute_6x6_3x3(const float* input,
         float* origin_C = dst_temp_data + gi * c_gi_stride;
         float* origin_B = b_ptr + gi * b_gi_stride;
         const float* origin_A = weight + gi * w_gi_stride;
-        sgemm_prepack_c4_small(oc_4 * 4,
-                               tile_count,
-                               ic_4 * 4,
-                               origin_A,
-                               origin_B,
-                               origin_C,
-                               nullptr,
-                               false,
-                               false,
-                               ctx);
+        sgemm_prepack_c4_small(
+            oc_4 * 4, tile_count, ic_4 * 4, origin_A, origin_B, origin_C, ctx);
       }
       //*/
       //*
@@ -398,9 +387,6 @@ void conv_compute_2x2_3x3(const float* input,
   int oc_4_stride = wout * hout * 4;
 
   int tile_block = 8;
-#ifdef __aarch64__
-  tile_block = 16;
-#endif
   int block_count = (size_tile + tile_block - 1) / tile_block;
 
   int threads = ctx->threads();
@@ -523,16 +509,280 @@ void conv_compute_2x2_3x3(const float* input,
         float* origin_C = dst_temp_data + gi * c_gi_stride;
         float* origin_B = b_ptr + gi * b_gi_stride;
         const float* origin_A = weight + gi * w_gi_stride;
-        sgemm_prepack_c4_small(oc_4 * 4,
-                               tile_count,
-                               ic_4 * 4,
-                               origin_A,
-                               origin_B,
-                               origin_C,
-                               nullptr,
-                               false,
-                               false,
-                               ctx);
+        sgemm_prepack_c4_small(
+            oc_4 * 4, tile_count, ic_4 * 4, origin_A, origin_B, origin_C, ctx);
+      }
+      //*/
+      //*
+      // output trans
+      float bias_value[4];
+      memset(bias_value, 0, 4 * sizeof(float));
+
+      for (int ti = 0; ti < tile_count; ++ti) {
+        int index = tile_index + ti;
+
+        int tw_index = index % tile_w;
+        int th_index = index / tile_w;
+
+        int dst_x = tw_index * 2;
+        int dst_y = th_index * 2;
+
+        int ex = dst_x + 2 > wout ? wout - dst_x : 2;
+        int ey = dst_y + 2 > hout ? hout - dst_y : 2;
+
+        float* dst_ptr = output + (dst_y * wout + dst_x) * 4;
+        float* src_ptr = dst_temp_data + ti * 4;
+
+        if (ex == 2) {
+          // trans output
+          for (int ci = 0; ci < oc_4; ++ci) {
+            if (param.bias) {
+              bias_value[0] = bias[ci * 4];
+              bias_value[1] = bias[ci * 4 + 1];
+              bias_value[2] = bias[ci * 4 + 2];
+              bias_value[3] = bias[ci * 4 + 3];
+            }
+
+            float* dst_ci = dst_ptr + ci * oc_4_stride;
+            float* src_ci = src_ptr + ci * tile_count * 4;
+            for (int i = 0; i < 4; ++i) {
+              output_trans_c4_2x4(src_ci + i * c_gi_stride * 4,
+                                  c_gi_stride,
+                                  trans_tmp_data + i * 4,
+                                  16);
+            }
+            for (int i = 0; i < ey; ++i) {
+              output_trans_c4_post_2x4(trans_tmp_data + i * 16,
+                                       4,
+                                       trans_remain_tmp_data + i * 8,
+                                       4,
+                                       bias_value,
+                                       param.fuse_relu);
+            }
+            write_to_output_c4_fp32(trans_remain_tmp_data,
+                                    output_ptr,
+                                    ci * 4,
+                                    ci * 4 + 4,
+                                    dst_y,
+                                    dst_y + ey,
+                                    dst_x,
+                                    dst_x + ex,
+                                    chout,
+                                    hout,
+                                    wout,
+                                    false,
+                                    zero_ptr);
+          }
+        } else {
+          for (int ci = 0; ci < oc_4; ++ci) {
+            if (param.bias) {
+              bias_value[0] = bias[ci * 4];
+              bias_value[1] = bias[ci * 4 + 1];
+              bias_value[2] = bias[ci * 4 + 2];
+              bias_value[3] = bias[ci * 4 + 3];
+            }
+            // trans output
+            float* dst_ci = dst_ptr + ci * oc_4_stride;
+            float* src_ci = src_ptr + ci * tile_count * 4;
+            for (int i = 0; i < 4; ++i) {
+              output_trans_c4_2x4(src_ci + i * c_gi_stride * 4,
+                                  c_gi_stride,
+                                  trans_tmp_data + i * 4,
+                                  16);
+            }
+            for (int i = 0; i < ey; ++i) {
+              output_trans_c4_post_2x4(trans_tmp_data + i * 16,
+                                       4,
+                                       trans_remain_tmp_data + i * 8,
+                                       4,
+                                       bias_value,
+                                       param.fuse_relu);
+            }
+            // copy to dest
+            memset(trans_tmp_data, 0, 16 * sizeof(float));
+            for (int i = 0; i < ey; ++i) {
+              memcpy(trans_tmp_data + i * ex * 4,
+                     trans_remain_tmp_data + i * 8,
+                     ex * sizeof(float) * 4);
+            }
+            write_to_output_c4_fp32(trans_tmp_data,
+                                    output_ptr,
+                                    ci * 4,
+                                    ci * 4 + 4,
+                                    dst_y,
+                                    dst_y + ey,
+                                    dst_x,
+                                    dst_x + ex,
+                                    chout,
+                                    hout,
+                                    wout,
+                                    false,
+                                    zero_ptr);
+          }
+        }
+      }
+      //*/
+    }  // for block_count
+  }    // for num
+}  // conv_compute
+void conv_compute_2x2_3x3_small(const float* input,
+                                float* output,
+                                int num,
+                                int chout,
+                                int hout,
+                                int wout,
+                                int chin,
+                                int hin,
+                                int win,
+                                const float* weight,
+                                const float* bias,
+                                const operators::ConvParam& param,
+                                ARMContext* ctx) {
+  const int pad_h = (*param.paddings)[0];
+  const int pad_w = (*param.paddings)[2];
+  float* tmp_work_space =
+      ctx->workspace_data<float>() + ctx->llc_size() / sizeof(float);
+
+  int in_n_stride = chin * hin * win;
+  int out_n_stride = chout * hout * wout;
+  int ic_stride = win * hin;
+  int oc_stride = wout * hout;
+  int ic_4 = (chin + 3) / 4;
+  int oc_4 = (chout + 3) / 4;
+
+  int tile_w = (wout + 1) / 2;
+  int tile_h = (hout + 1) / 2;
+  int size_tile = tile_h * tile_w;
+  float zero_ptr[8];
+  memset(zero_ptr, 0, 8 * sizeof(float));
+
+  int w_pad = win + pad_w * 2;
+  int h_pad = hin + pad_h * 2;
+  float* input_c4 = tmp_work_space;
+  int new_h_stride = w_pad * 4;
+  int new_c_stride = new_h_stride * h_pad;
+
+  int ic_4_stride = w_pad * h_pad * 4;
+  int oc_4_stride = wout * hout * 4;
+
+  int tile_block = 8;
+  int block_count = (size_tile + tile_block - 1) / tile_block;
+
+  int threads = ctx->threads();
+  float* g_tmp_data = tmp_work_space + ic_4 * new_c_stride;
+  int tmp_data_thread_stride = tile_block * (oc_4 + ic_4) * 64;
+  memset(g_tmp_data, 0, tmp_data_thread_stride * sizeof(float));
+  float* g_trans_tmp_data = g_tmp_data + tmp_data_thread_stride;
+  float* g_trans_remain_tmp_data = g_trans_tmp_data + 64;
+
+  // begin compute
+  for (int ni = 0; ni < num; ++ni) {
+    // trans input to c4
+
+    for (int i = 0; i < ic_4; ++i) {
+      prepack_input_nxwc4_dw(input + ni * in_n_stride,
+                             input_c4 + i * new_c_stride,
+                             i * 4,
+                             -pad_h,
+                             hin + pad_h,
+                             -pad_w,
+                             win + pad_w,
+                             chin,
+                             win,
+                             hin,
+                             zero_ptr);
+    }
+    float* output_ptr = output + ni * out_n_stride;
+
+    const float* weight_ptr = weight;
+    const float* bias_ptr = bias;
+    for (int tbi = 0; tbi < block_count; ++tbi) {
+      float* tmp_data = g_tmp_data;
+      float* trans_tmp_data = g_trans_tmp_data;
+      float* trans_remain_tmp_data = g_trans_remain_tmp_data;
+      int tile_index = tbi * tile_block;
+      int tile_remain = size_tile - tile_index;
+      int tile_count = tile_remain > tile_block ? tile_block : tile_remain;
+
+      // input trans
+      int c_gi_stride = tile_count * oc_4 * 4;
+      int b_gi_stride = tile_count * ic_4 * 4;
+      //*
+      for (int ti = 0; ti < tile_count; ++ti) {
+        int index = tile_index + ti;
+
+        int tw_index = index % tile_w;
+        int th_index = index / tile_w;
+
+        int src_x = tw_index + tw_index;
+        int src_y = th_index + th_index;
+        int ex = src_x + 4 > w_pad ? w_pad - src_x : 4;
+        int ey = src_y + 4 > h_pad ? h_pad - src_y : 4;
+
+        float* dst_ptr = tmp_data + ti * 4;
+        const float* src_ptr = input_c4 + (src_y * w_pad + src_x) * 4;
+
+        if (ex == 4 && ey == 4) {
+          // trans input
+          for (int ci = 0; ci < ic_4; ++ci) {
+            const float* src_ci = src_ptr + ci * ic_4_stride;
+            for (int i = 0; i < 4; ++i) {
+              const float* ci_ptr = src_ci + i * w_pad * 4;
+              input_trans_c4_4x4(ci_ptr, 4, trans_tmp_data + i * 4, 16);
+            }
+            float* dst_ci = dst_ptr + ci * tile_count * 4;
+            for (int i = 0; i < 4; ++i) {
+              input_trans_c4_4x4(trans_tmp_data + i * 16,
+                                 4,
+                                 dst_ci + i * b_gi_stride * 4,
+                                 b_gi_stride);
+            }
+          }
+        } else {
+          // trans remain input
+          int x_size = ex;
+          for (int ci = 0; ci < ic_4; ++ci) {
+            const float* src_ci = src_ptr + ci * ic_4_stride;
+            // pad
+            memset(trans_remain_tmp_data, 0, 64 * sizeof(float));
+            if (x_size > 0) {
+              for (int yi = 0; yi < ey; ++yi) {
+                float* dst_yi = trans_remain_tmp_data + yi * 16;
+                const float* src_yi = src_ci + w_pad * yi * 4;
+                memcpy(dst_yi, src_yi, x_size * sizeof(float) * 4);
+              }
+            }
+
+            // trans
+            for (int i = 0; i < 4; ++i) {
+              float* ci_ptr = trans_remain_tmp_data + i * 16;
+              input_trans_c4_4x4(ci_ptr, 4, trans_tmp_data + i * 4, 16);
+            }
+            float* dst_ci = dst_ptr + ci * tile_count * 4;
+            for (int i = 0; i < 4; ++i) {
+              input_trans_c4_4x4(trans_tmp_data + i * 16,
+                                 4,
+                                 dst_ci + i * b_gi_stride * 4,
+                                 b_gi_stride);
+            }
+          }  // for ci_4
+        }
+      }
+      //*/
+      // input trans end
+      // *begin compute dot
+      // *
+      //*
+      float* dst_temp_data = tmp_data + tile_block * ic_4 * 64;
+      float* b_ptr = tmp_data;
+      int w_gi_stride = ic_4 * oc_4 * 16;
+#pragma omp parallel for num_threads(threads)
+      for (int gi = 0; gi < 16; ++gi) {
+        float* origin_C = dst_temp_data + gi * c_gi_stride;
+        float* origin_B = b_ptr + gi * b_gi_stride;
+        const float* origin_A = weight + gi * w_gi_stride;
+        sgemm_prepack_c4_small(
+            oc_4 * 4, tile_count, ic_4 * 4, origin_A, origin_B, origin_C, ctx);
       }
       //*/
       //*

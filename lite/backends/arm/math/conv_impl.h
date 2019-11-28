@@ -346,6 +346,19 @@ void conv_compute_2x2_3x3(const float* input,
                           const float* bias,
                           const operators::ConvParam& param,
                           ARMContext* ctx);
+void conv_compute_2x2_3x3_small(const float* input,
+                                float* output,
+                                int num,
+                                int chout,
+                                int hout,
+                                int wout,
+                                int chin,
+                                int hin,
+                                int win,
+                                const float* weight,
+                                const float* bias,
+                                const operators::ConvParam& param,
+                                ARMContext* ctx);
 }  // namespace math
 }  // namespace arm
 }  // namespace lite

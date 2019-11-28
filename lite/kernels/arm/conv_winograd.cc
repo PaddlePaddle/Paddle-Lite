@@ -43,25 +43,23 @@ void WinogradConv<PRECISION(kFloat), PRECISION(kFloat)>::ReInitWhenNeeded() {
   int oh = o_dims[2];
   int ow = o_dims[3];
   int tile_block = 8;
-#ifdef __aarch64__
-  tile_block = 16;
-#endif
   // int parallel_threads =(((ow + 5) / 6) * ((oh + 5) / 6) + tile_block - 1) /
   // tile_block;
   choose_small_ = ow * oh / (tile_block * threads) < 36 ? true : false;
   if (choose_small_) {
     wino_iw = 4;
-    if (last_kernel_is_c4_ == 0) {
+
+    if (last_function_ == 0) {
       return;
     }
-    last_kernel_is_c4_ = 0;
+    last_function_ = 0;
     LOG(INFO) << "choose f23";
   } else {
     wino_iw = 8;
-    if (last_kernel_is_c4_ == 1) {
+    if (last_function_ == 1) {
       return;
     }
-    last_kernel_is_c4_ = 1;
+    last_function_ = 1;
     LOG(INFO) << "choose f63";
   }
   // if (!choose_small) {
@@ -167,11 +165,6 @@ void WinogradConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   int ow = o_dims[3];
   int oc = o_dims[1];
 
-  int tile_block = 8;
-#ifdef __aarch64__
-  tile_block = 16;
-#endif
-  int threads = ctx.threads();
   // int parallel_threads = (((ow + 5) / 6) * ((oh + 5) / 6) + tile_block - 1) /
   // tile_block;
   // if (threads <= 2 && parallel_threads >= threads) {
@@ -190,19 +183,38 @@ void WinogradConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
                                           param,
                                           &ctx);
   } else {
-    lite::arm::math::conv_compute_2x2_3x3(i_data,
-                                          o_data,
-                                          bs,
-                                          oc,
-                                          oh,
-                                          ow,
-                                          ic,
-                                          ih,
-                                          iw,
-                                          w_data,
-                                          b_data,
-                                          param,
-                                          &ctx);
+    int tile_block = 8;
+    int block_count =
+        (((ow + 1) / 2) * ((oh + 1) / 2) + tile_block - 1) / tile_block;
+    if (block_count != 1) {
+      lite::arm::math::conv_compute_2x2_3x3(i_data,
+                                            o_data,
+                                            bs,
+                                            oc,
+                                            oh,
+                                            ow,
+                                            ic,
+                                            ih,
+                                            iw,
+                                            w_data,
+                                            b_data,
+                                            param,
+                                            &ctx);
+    } else {
+      lite::arm::math::conv_compute_2x2_3x3_small(i_data,
+                                                  o_data,
+                                                  bs,
+                                                  oc,
+                                                  oh,
+                                                  ow,
+                                                  ic,
+                                                  ih,
+                                                  iw,
+                                                  w_data,
+                                                  b_data,
+                                                  param,
+                                                  &ctx);
+    }
   }
   /*
     } else {
