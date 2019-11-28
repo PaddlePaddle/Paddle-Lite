@@ -21,6 +21,7 @@ lite_cc_library(npu_bridge_shuffle_channel_op SRCS shuffle_channel_op.cc DEPS ${
 lite_cc_library(npu_bridge_pad2d_op SRCS pad2d_op.cc DEPS ${npu_bridge_deps})
 lite_cc_library(npu_bridge_square_op SRCS square_op.cc DEPS ${npu_bridge_deps})
 lite_cc_library(npu_bridge_sqrt_op SRCS sqrt_op.cc DEPS ${npu_bridge_deps})
+lite_cc_library(npu_bridge_reduce_mean_op SRCS reduce_mean_op.cc DEPS ${npu_bridge_deps})
 
 set(npu_bridges
         npu_bridge_registry
@@ -43,6 +44,7 @@ set(npu_bridges
         npu_bridge_pad2d_op
         npu_bridge_square_op
         npu_bridge_sqrt_op
+        npu_bridge_reduce_mean_op
         CACHE INTERNAL "npu_bridges")
 
 set(npu_bridge_test_deps ${npu_bridges} ${npu_kernels} ${ops})
@@ -66,5 +68,6 @@ lite_cc_test(test_npu_bridge_shuffle_channel_op SRCS shuffle_channel_op_test.cc 
 lite_cc_test(test_npu_bridge_pad2d_op SRCS pad2d_op_test.cc test_helper.cc DEPS ${npu_bridge_test_deps})
 lite_cc_test(test_npu_bridge_square_op SRCS square_op_test.cc test_helper.cc DEPS ${npu_bridge_test_deps})
 lite_cc_test(test_npu_bridge_sqrt_op SRCS sqrt_op_test.cc test_helper.cc DEPS ${npu_bridge_test_deps})
+lite_cc_test(test_npu_bridge_reduce_mean_op SRCS reduce_mean_op_test.cc test_helper.cc DEPS ${npu_bridge_test_deps})
 
 message(STATUS "+++++ npu_bridges: ${npu_bridges}")
