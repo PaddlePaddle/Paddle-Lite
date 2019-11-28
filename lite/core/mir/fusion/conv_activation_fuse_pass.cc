@@ -23,8 +23,15 @@ namespace lite {
 namespace mir {
 
 void ConvActivationFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
+  std::vector<std::string> act_types{"relu"};
+  for (auto& place : graph->valid_places()) {
+    if (place.target == TARGET(kCUDA)) {
+      act_types.push_back("leaky_relu");
+      break;
+    }
+  }
   for (auto conv_type : {"conv2d", "depthwise_conv2d"}) {
-    for (auto act_type : {"relu", "leaky_relu"}) {
+    for (auto act_type : act_types) {
       for (auto has_bias : {true, false}) {
         fusion::ConvActivationFuser fuser(conv_type, act_type, has_bias);
         fuser(graph.get());
@@ -40,4 +47,5 @@ void ConvActivationFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 REGISTER_MIR_PASS(lite_conv_activation_fuse_pass,
                   paddle::lite::mir::ConvActivationFusePass)
     .BindTargets({TARGET(kAny)})
+    .ExcludeTargets({TARGET(kXPU)})
     .BindKernel("conv2d");

@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "lite/operators/conv_op.h"
 #include "lite/backends/xpu/builder.h"
 #include "lite/kernels/xpu/bridges/registry.h"
 
@@ -46,14 +47,36 @@ node_map_type ConvConverter(const std::shared_ptr<lite::OpLite> op,
   auto groups = op_info->GetAttr<int>("groups");
   auto dilations = op_info->GetAttr<std::vector<int>>("dilations");
   auto fuse_relu = op_info->GetAttr<bool>("fuse_relu");
-  CHECK_EQ(strides.size(), 2);
-  CHECK_EQ(paddings.size(), 2);
-  CHECK_EQ(dilations.size(), 2);
+  CHECK_EQ(strides.size(), 2L);
+  CHECK_EQ(dilations.size(), 2L);
+
+  if (paddings.size() == 2L) {
+    for (size_t i = 0; i < strides.size(); ++i) {
+      int copy_pad = *(paddings.begin() + 2 * i);
+      paddings.insert(paddings.begin() + 2 * i + 1, copy_pad);
+    }
+  }
+  CHECK_EQ(paddings.size(), 4L)
+      << "Paddings size should be the same or twice as the input size.";
+
+  std::string padding_algorithm("");
+  if (op_info->HasAttr("padding_algorithm")) {
+    padding_algorithm = op_info->GetAttr<std::string>("padding_algorithm");
+  }
+  operators::UpdatePaddingAndDilation(&paddings,
+                                      &dilations,
+                                      strides,
+                                      padding_algorithm,
+                                      input_dims,
+                                      filter_dims);
+
   std::vector<int64_t> output_shape({bs, oc});
   for (size_t i = 0; i < 2; i++) {
     const int dkernel = dilations[i] * (filter_dims[2 + i] - 1) + 1;
     output_shape.push_back(
-        (input_dims[i + 2] + 2 * paddings[i] - dkernel) / strides[i] + 1);
+        (input_dims[i + 2] + paddings[2 * i] + paddings[2 * i + 1] - dkernel) /
+            strides[i] +
+        1);
   }
   DDim output_dims(output_shape);
 
@@ -136,7 +159,7 @@ node_map_type ConvConverter(const std::shared_ptr<lite::OpLite> op,
     std::shared_ptr<xtcl::xExpr> add_node = nullptr;
     if (is_channel_bias) {
       add_node = std::make_shared<xtcl::xExpr>(
-          graph_ctx->builder->CreateBiasAdd(*conv_node, *bias_node, 1));
+          graph_ctx->builder->CreateBiasAdd(*conv_node, 1, *bias_node));
     } else {
       add_node = std::make_shared<xtcl::xExpr>(
           graph_ctx->builder->CreateBinaryOp("add", *conv_node, *bias_node));

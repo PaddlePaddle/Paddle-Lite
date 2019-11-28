@@ -12,14 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "ai_ddk_lib/include/graph/buffer.h"
-#include "ai_ddk_lib/include/graph/graph.h"
-#include "ai_ddk_lib/include/graph/model.h"
-#include "ai_ddk_lib/include/graph/op/all_ops.h"
-#include "ai_ddk_lib/include/graph/operator.h"
-#include "ai_ddk_lib/include/graph/operator_reg.h"
+#include "lite/backends/npu/builder.h"
 #include "lite/kernels/npu/bridges/registry.h"
-#include "lite/kernels/npu/bridges/utils.h"
 
 namespace paddle {
 namespace lite {
@@ -33,8 +27,8 @@ node_map_type ShuffleChannelConverter(
   auto scope = shuffle_channel_op->scope();
   auto op_info = shuffle_channel_op->op_info();
   auto op_type = op_info->Type();
-  auto unique_op_type = UniqueName(op_type);
-  LOG(INFO) << "Converting " + op_type + "...";
+  auto unique_op_type = lite::npu::UniqueName(op_type);
+  LOG(INFO) << "[NPU] Converting " + op_type + "...";
 
   std::shared_ptr<ge::op::ShuffleChannel> shuffle_channel_node =
       std::make_shared<ge::op::ShuffleChannel>(unique_op_type);
@@ -43,8 +37,8 @@ node_map_type ShuffleChannelConverter(
   shuffle_channel_node->set_input_x(*inputs_map.at(x_var_name));
   shuffle_channel_node->set_attr_group(op_info->GetAttr<int>("group"));
 
-  OpList::Global().add(inputs_map.at(x_var_name));
-  OpList::Global().add(shuffle_channel_node);
+  lite::npu::OpList::Global().add(inputs_map.at(x_var_name));
+  lite::npu::OpList::Global().add(shuffle_channel_node);
 
   node_map_type outputs_map;
   outputs_map[op_info->Output("Out").front()] = shuffle_channel_node;

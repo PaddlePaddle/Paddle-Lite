@@ -232,6 +232,13 @@ class Context<TargetType::kCUDA> {
 
   std::string name() const { return "CUDAContext"; }
 
+  CUDAContext& operator=(const CUDAContext& context) {
+    this->Init(
+        context.device_id_, context.exec_stream_id_, context.io_stream_id_);
+    cublas_fp32_ = const_cast<CUDAContext&>(context).cublas_fp32();
+    return *this;
+  }
+
  private:
   int device_id_;
   // overall information
@@ -254,8 +261,6 @@ template <>
 class Context<TargetType::kX86> {
  public:
   Context() {}
-
-  Context(Context&& ctx) {}
 
   // NOTE: InitOnce should only be used by ContextScheduler
   void InitOnce() {}

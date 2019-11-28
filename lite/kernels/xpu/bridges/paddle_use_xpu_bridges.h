@@ -19,3 +19,8 @@
 USE_XPU_BRIDGE(relu);
 USE_XPU_BRIDGE(conv2d);
 USE_XPU_BRIDGE(depthwise_conv2d);
+USE_XPU_BRIDGE(elementwise_add);
+USE_XPU_BRIDGE(pool2d);
+USE_XPU_BRIDGE(softmax);
+USE_XPU_BRIDGE(mul);
+USE_XPU_BRIDGE(batch_norm);

@@ -12,12 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// TODO(zhengxi)
-// shuffle_channel_test can pass on local compilation
-// while on ci compilation, the test will be killed immediately.
-
-/*
-#include <gtest/gtest.h>
+// TODO(FrostML): shaffle_channel cannot pass on CI, but ok in local machine.
+// Open this.
+/*#include <gtest/gtest.h>
 #include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
 #include "lite/core/arena/framework.h"
@@ -30,8 +27,8 @@ class ShuffleChannelComputeTester : public arena::TestCase {
   // common attributes for this op.
   std::string input_ = "X";
   std::string output_ = "Out";
-  int group_ = 1;
-  DDim dims_{{1, 2}};
+  int group_ = 4;
+  DDim dims_{{10, 16, 4, 4}};
 
  public:
   ShuffleChannelComputeTester(const Place& place,
@@ -87,7 +84,7 @@ class ShuffleChannelComputeTester : public arena::TestCase {
 };
 
 void test_shuffle_channel(Place place) {
-  for (int group : {1, 2, 3}) {
+  for (int group : {4}) {
     std::unique_ptr<arena::TestCase> tester(
         new ShuffleChannelComputeTester(place, "def", group));
     arena::Arena arena(std::move(tester), place, 2e-5);

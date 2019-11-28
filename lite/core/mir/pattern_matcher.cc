@@ -415,7 +415,8 @@ bool IsNthOutput(const Node *var,
   CHECK(var->IsArg());
   CHECK(op->IsStmt());
   auto op_info = op->stmt()->op_info();
-  if (op_info->Output(argument).size() <= nth) return false;
+  if (!op_info->HasOutput(argument) || op_info->Output(argument).size() <= nth)
+    return false;
   return var->arg()->name == op_info->Output(argument)[nth];
 }
 
@@ -426,7 +427,8 @@ bool IsNthInput(const Node *var,
   CHECK(var->IsArg());
   CHECK(op->IsStmt());
   auto op_info = op->stmt()->op_info();
-  if (op_info->Input(argument).size() <= nth) return false;
+  if (!op_info->HasInput(argument) || op_info->Input(argument).size() <= nth)
+    return false;
   return var->arg()->name == op_info->Input(argument)[nth];
 }
 

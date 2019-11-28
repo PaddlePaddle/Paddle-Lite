@@ -38,7 +38,7 @@ void PoolCompute::Run() {
 
   std::vector<int>& ksize = param.ksize;
   std::vector<int>& strides = param.strides;
-  std::vector<int>& paddings = param.paddings;
+  std::vector<int>& paddings = *param.paddings;
 
   std::string& pooling_type = param.pooling_type;
   bool global_pooling = param.global_pooling;
@@ -48,12 +48,15 @@ void PoolCompute::Run() {
   bool use_quantizer = param.use_quantizer;
   std::string& data_format = param.data_format;
 
-  bool kps_equal = (ksize[0] == ksize[1]) && (strides[0] == strides[1]) &&
-                   (paddings[0] == paddings[1]);
+  bool pads_equal =
+      (paddings[0] == paddings[1]) && (paddings[2] == paddings[3]);
 
+  bool kps_equal = (ksize[0] == ksize[1]) && (strides[0] == strides[1]) &&
+                   (paddings[0] == paddings[2]);
   if (global_pooling) {
     for (size_t i = 0; i < ksize.size(); ++i) {
-      paddings[i] = 0;
+      paddings[2 * i] = 0;
+      paddings[2 * i + 1] = 0;
       ksize[i] = static_cast<int>(in_dims[i + 2]);
     }
     if (pooling_type == "max") {
@@ -66,7 +69,6 @@ void PoolCompute::Run() {
                                           in_dims[1],
                                           in_dims[2],
                                           in_dims[3]);
-      VLOG(3) << "invoking pooling_global_max";
       return;
     } else if (pooling_type == "avg") {
       lite::arm::math::pooling_global_avg(din,
@@ -78,11 +80,11 @@ void PoolCompute::Run() {
                                           in_dims[1],
                                           in_dims[2],
                                           in_dims[3]);
-      VLOG(3) << "invoking pooling_global_ave";
       return;
     }
   } else {
-    if (ksize[0] == 2 && strides[0] == 2 && paddings[0] == 0 && kps_equal) {
+    if (ksize[0] == 2 && strides[0] == 2 && paddings[0] == 0 && pads_equal &&
+        kps_equal) {
       if (pooling_type == "max") {
         lite::arm::math::pooling2x2s2_max(din,
                                           dout,
@@ -93,7 +95,6 @@ void PoolCompute::Run() {
                                           in_dims[1],
                                           in_dims[2],
                                           in_dims[3]);
-        VLOG(3) << "invoking pooling2x2s2_max";
         return;
       } else if (pooling_type == "avg") {
         lite::arm::math::pooling2x2s2_avg(din,
@@ -106,11 +107,10 @@ void PoolCompute::Run() {
                                           in_dims[2],
                                           in_dims[3],
                                           exclusive);
-        VLOG(3) << "invoking pooling2x2s2_avg";
         return;
       }
     } else if (ksize[0] == 3 && strides[0] == 1 && paddings[0] == 1 &&
-               kps_equal) {
+               pads_equal && kps_equal) {
       if (pooling_type == "max") {
         lite::arm::math::pooling3x3s1p1_max(din,
                                             dout,
@@ -121,7 +121,6 @@ void PoolCompute::Run() {
                                             in_dims[1],
                                             in_dims[2],
                                             in_dims[3]);
-        VLOG(3) << "invokingpooling3x3s1p1_max";
         return;
       } else if (pooling_type == "avg") {
         lite::arm::math::pooling3x3s1p1_avg(din,
@@ -134,11 +133,36 @@ void PoolCompute::Run() {
                                             in_dims[2],
                                             in_dims[3],
                                             exclusive);
-        VLOG(3) << "invoking pooling3x3s1p1_avg";
+        return;
+      }
+    } else if (ksize[0] == 3 && strides[0] == 1 && paddings[0] == 0 &&
+               pads_equal && kps_equal) {
+      if (pooling_type == "max") {
+        lite::arm::math::pooling3x3s1p0_max(din,
+                                            dout,
+                                            out_dims[0],
+                                            out_dims[1],
+                                            out_dims[2],
+                                            out_dims[3],
+                                            in_dims[1],
+                                            in_dims[2],
+                                            in_dims[3]);
+        return;
+      } else if (pooling_type == "avg") {
+        lite::arm::math::pooling3x3s1p0_avg(din,
+                                            dout,
+                                            out_dims[0],
+                                            out_dims[1],
+                                            out_dims[2],
+                                            out_dims[3],
+                                            in_dims[1],
+                                            in_dims[2],
+                                            in_dims[3],
+                                            exclusive);
         return;
       }
     } else if (ksize[0] == 3 && strides[0] == 2 && paddings[0] == 0 &&
-               kps_equal) {
+               pads_equal && kps_equal) {
       if (pooling_type == "max") {
         lite::arm::math::pooling3x3s2p0_max(din,
                                             dout,
@@ -149,7 +173,6 @@ void PoolCompute::Run() {
                                             in_dims[1],
                                             in_dims[2],
                                             in_dims[3]);
-        VLOG(3) << "pooling3x3s2p0_max";
         return;
       } else if (pooling_type == "avg") {
         lite::arm::math::pooling3x3s2p0_avg(din,
@@ -162,11 +185,10 @@ void PoolCompute::Run() {
                                             in_dims[2],
                                             in_dims[3],
                                             exclusive);
-        VLOG(3) << "invoking pooling3x3s2p0_avg";
         return;
       }
     } else if (ksize[0] == 3 && strides[0] == 2 && paddings[0] == 1 &&
-               kps_equal) {
+               pads_equal && kps_equal) {
       if (pooling_type == "max") {
         lite::arm::math::pooling3x3s2p1_max(din,
                                             dout,
@@ -177,7 +199,6 @@ void PoolCompute::Run() {
                                             in_dims[1],
                                             in_dims[2],
                                             in_dims[3]);
-        VLOG(3) << "invoking pooling3x3s2p1_max";
         return;
       } else if (pooling_type == "avg") {
         lite::arm::math::pooling3x3s2p1_avg(din,
@@ -190,7 +211,6 @@ void PoolCompute::Run() {
                                             in_dims[2],
                                             in_dims[3],
                                             exclusive);
-        VLOG(3) << "invoking pooling3x3s2p1_avg";
         return;
       }
     }
@@ -213,7 +233,6 @@ void PoolCompute::Run() {
                                  ceil_mode,
                                  use_quantizer,
                                  pooling_type);
-  VLOG(3) << "invoking pooling_basic";
 }
 
 }  // namespace arm

@@ -12,14 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "ai_ddk_lib/include/graph/buffer.h"
-#include "ai_ddk_lib/include/graph/graph.h"
-#include "ai_ddk_lib/include/graph/model.h"
-#include "ai_ddk_lib/include/graph/op/all_ops.h"
-#include "ai_ddk_lib/include/graph/operator.h"
-#include "ai_ddk_lib/include/graph/operator_reg.h"
+#include "lite/backends/npu/builder.h"
 #include "lite/kernels/npu/bridges/registry.h"
-#include "lite/kernels/npu/bridges/utils.h"
 
 namespace paddle {
 namespace lite {
@@ -32,8 +26,8 @@ node_map_type SplitConverter(const std::shared_ptr<lite::OpLite> split_op,
   lite::Scope* scope = split_op->scope();
   const lite::OpInfo* op_info = split_op->op_info();
   auto op_type = op_info->Type();
-  auto unique_op_type = UniqueName(op_type);
-  LOG(INFO) << "Converting " << op_type << " ... ";
+  auto unique_op_type = lite::npu::UniqueName(op_type);
+  LOG(INFO) << "[NPU] Converting " << op_type << " ... ";
 
   auto x_var_name = op_info->Input("X").front();
   auto axis = op_info->GetAttr<int>("axis");
@@ -45,7 +39,7 @@ node_map_type SplitConverter(const std::shared_ptr<lite::OpLite> split_op,
       std::make_shared<ge::op::Split>(unique_op_type);
   CHECK(inputs_map.count(x_var_name));
   output_node->set_input_x(*inputs_map.at(x_var_name));
-  OpList::Global().add(inputs_map.at(x_var_name));
+  lite::npu::OpList::Global().add(inputs_map.at(x_var_name));
 
   output_node->set_attr_axis(static_cast<int64_t>(axis));
   if (num > 0) {
@@ -63,18 +57,18 @@ node_map_type SplitConverter(const std::shared_ptr<lite::OpLite> split_op,
   for (auto out_var_name : out_var_names) {
     auto const_node = std::make_shared<ge::op::Const>(
         unique_op_type + "/const_zero" + std::to_string(index));
-    const_node->set_attr_value(CreateTensorAndFillData(0));
-    OpList::Global().add(const_node);
+    const_node->set_attr_value(lite::npu::CreateTensorAndFillData(0));
+    lite::npu::OpList::Global().add(const_node);
     auto add_node = std::make_shared<ge::op::Add>(unique_op_type + "/add" +
                                                   std::to_string(index));
     add_node->set_input_x1(*output_node, "y" + std::to_string(index));
     add_node->set_input_x2(*const_node);
     outputs_map[out_var_name] = add_node;
-    OpList::Global().add(add_node);
+    lite::npu::OpList::Global().add(add_node);
     index++;
   }
 
-  OpList::Global().add(output_node);
+  lite::npu::OpList::Global().add(output_node);
   return outputs_map;
 }
 

@@ -14,9 +14,12 @@
 
 #pragma once
 
+#include <dirent.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 #include <fstream>
 #include <string>
+#include <vector>
 #include "lite/utils/cp_logging.h"
 #include "lite/utils/string.h"
 
@@ -46,10 +49,67 @@ static void MkDirRecur(const std::string& path) {
 // read buffer from file
 static std::string ReadFile(const std::string& filename) {
   std::ifstream ifile(filename.c_str());
+  if (!ifile.is_open()) {
+    LOG(FATAL) << "Open file: [" << filename << "] failed.";
+  }
   std::ostringstream buf;
   char ch;
   while (buf && ifile.get(ch)) buf.put(ch);
+  ifile.close();
   return buf.str();
+}
+
+// read lines from file
+static std::vector<std::string> ReadLines(const std::string& filename) {
+  std::ifstream ifile(filename.c_str());
+  if (!ifile.is_open()) {
+    LOG(FATAL) << "Open file: [" << filename << "] failed.";
+  }
+  std::vector<std::string> res;
+  std::string tmp;
+  while (getline(ifile, tmp)) res.push_back(tmp);
+  ifile.close();
+  return res;
+}
+
+static void WriteLines(const std::vector<std::string>& lines,
+                       const std::string& filename) {
+  std::ofstream ofile(filename.c_str());
+  if (!ofile.is_open()) {
+    LOG(FATAL) << "Open file: [" << filename << "] failed.";
+  }
+  for (const auto& line : lines) {
+    ofile << line << "\n";
+  }
+  ofile.close();
+}
+
+static bool IsDir(const std::string& path) {
+  DIR* dir_fd = opendir(path.c_str());
+  if (dir_fd == nullptr) return false;
+  closedir(dir_fd);
+  return true;
+}
+
+static std::vector<std::string> ListDir(const std::string& path,
+                                        bool only_dir = false) {
+  if (!IsDir(path)) {
+    LOG(FATAL) << "[" << path << "] is not a valid dir path.";
+  }
+
+  std::vector<std::string> paths;
+  DIR* parent_dir_fd = opendir(path.c_str());
+  dirent* dp;
+  while ((dp = readdir(parent_dir_fd)) != nullptr) {
+    // Exclude '.', '..' and hidden dir
+    std::string name(dp->d_name);
+    if (name == "." || name == ".." || name[0] == '.') continue;
+    if (IsDir(Join<std::string>({path, name}, "/"))) {
+      paths.push_back(name);
+    }
+  }
+  closedir(parent_dir_fd);
+  return paths;
 }
 
 }  // namespace lite

@@ -25,13 +25,61 @@ class FillConstantCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
  public:
   using param_t = operators::FillConstantParam;
 
+  inline DDimLite GetShape(const param_t& param) {
+    // 1. shape is a Tensor
+    if (param.shape_tensor != nullptr) {
+      auto* shape_tensor = param.shape_tensor;
+      auto* shape_data = shape_tensor->data<int>();
+      auto vec_shape =
+          std::vector<int64_t>(shape_data, shape_data + shape_tensor->numel());
+      return DDimLite(vec_shape);
+    }
+
+    // 2. shape is a list/tuple containing Tensor
+    auto shape_tensor_list = param.shape_tensor_list;
+    if (shape_tensor_list.size() > 0) {
+      std::vector<int64_t> vec_shape;
+      for (size_t i = 0; i < shape_tensor_list.size(); ++i) {
+        auto tensor = shape_tensor_list[i];
+        vec_shape.push_back(*tensor->data<int>());
+      }
+      return DDimLite(vec_shape);
+    }
+
+    // 3. shape is a list/tuple without containing Tensor
+    auto vec_shape = param.shape;
+    return DDimLite(vec_shape);
+  }
+
+  void PrepareForRun() override {
+    auto& param = *param_.get_mutable<param_t>();
+    auto outdims = GetShape(param);
+    param.Out->Resize(outdims);
+  }
+
   void Run() override {
     auto& param = *param_.get_mutable<param_t>();
     auto& context = ctx_->As<ARMContext>();
 
-    auto data = param.Out->template mutable_data<T>();
-    for (int i = 0; i < param.Out->numel(); i++) {
-      data[i] = param.value;
+    if (param.dtype == static_cast<int32_t>(lite::core::FluidType::FP32)) {
+      auto data = param.Out->template mutable_data<float>();
+      for (int i = 0; i < param.Out->numel(); i++) {
+        data[i] = param.value;
+      }
+    } else if (param.dtype ==
+               static_cast<int32_t>(lite::core::FluidType::INT32)) {
+      auto data = param.Out->template mutable_data<int32_t>();
+      for (int i = 0; i < param.Out->numel(); i++) {
+        data[i] = param.value;
+      }
+    } else if (param.dtype ==
+               static_cast<int32_t>(lite::core::FluidType::INT8)) {
+      auto data = param.Out->template mutable_data<int8_t>();
+      for (int i = 0; i < param.Out->numel(); i++) {
+        data[i] = param.value;
+      }
+    } else {
+      LOG(FATAL) << "not supported dtype " << param.dtype;
     }
   }
 
@@ -54,9 +102,25 @@ class FillConstantBatchLikeCompute
       param.out->Resize(odims);
     }
 
-    auto data = param.out->template mutable_data<T>();
-    for (int i = 0; i < param.out->numel(); i++) {
-      data[i] = param.value;
+    if (param.dtype == static_cast<int32_t>(lite::core::FluidType::FP32)) {
+      auto data = param.out->template mutable_data<float>();
+      for (int i = 0; i < param.out->numel(); i++) {
+        data[i] = param.value;
+      }
+    } else if (param.dtype ==
+               static_cast<int32_t>(lite::core::FluidType::INT32)) {
+      auto data = param.out->template mutable_data<int32_t>();
+      for (int i = 0; i < param.out->numel(); i++) {
+        data[i] = param.value;
+      }
+    } else if (param.dtype ==
+               static_cast<int32_t>(lite::core::FluidType::INT8)) {
+      auto data = param.out->template mutable_data<int8_t>();
+      for (int i = 0; i < param.out->numel(); i++) {
+        data[i] = param.value;
+      }
+    } else {
+      LOG(FATAL) << "not supported dtype " << param.dtype;
     }
   }
 
@@ -75,6 +139,11 @@ REGISTER_LITE_KERNEL(fill_constant,
                      kNCHW,
                      paddle::lite::kernels::arm::FillConstantCompute<float>,
                      def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("ShapeTensor",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindInput("ShapeTensorList",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
 REGISTER_LITE_KERNEL(

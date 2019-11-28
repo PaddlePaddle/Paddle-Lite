@@ -12,14 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "ai_ddk_lib/include/graph/buffer.h"
-#include "ai_ddk_lib/include/graph/graph.h"
-#include "ai_ddk_lib/include/graph/model.h"
-#include "ai_ddk_lib/include/graph/op/all_ops.h"
-#include "ai_ddk_lib/include/graph/operator.h"
-#include "ai_ddk_lib/include/graph/operator_reg.h"
+#include "lite/backends/npu/builder.h"
 #include "lite/kernels/npu/bridges/registry.h"
-#include "lite/kernels/npu/bridges/utils.h"
 
 namespace paddle {
 namespace lite {
@@ -32,41 +26,20 @@ node_map_type ActConverter(const std::shared_ptr<lite::OpLite> act_op,
   auto scope = act_op->scope();
   auto op_info = act_op->op_info();
   auto op_type = op_info->Type();
-  auto unique_op_type = UniqueName(op_type);
-  LOG(INFO) << "Converting " + op_type + "...";
+  auto unique_op_type = lite::npu::UniqueName(op_type);
+  LOG(INFO) << "[NPU] Converting " + op_type + "...";
 
   // create act node and set input node from inputs_map
   auto x_var_name = op_info->Input("X").front();
   auto act_node = std::make_shared<ge::op::Activation>(unique_op_type);
   CHECK(inputs_map.count(x_var_name));
   act_node->set_input_x(*inputs_map.at(x_var_name));
-  OpList::Global().add(inputs_map.at(x_var_name));
-  OpList::Global().add(act_node);
+  lite::npu::OpList::Global().add(inputs_map.at(x_var_name));
+  lite::npu::OpList::Global().add(act_node);
 
-  // parse and set activation type
-  int act_mode = 1;
-  if (op_type == "sigmod") {
-    act_mode = 0;
-  } else if (op_type == "relu") {
-    act_mode = 1;
-  } else if (op_type == "tanh") {
-    act_mode = 2;
-  } else if (op_type == "elu") {
-    act_mode = 4;
-  } else if (op_type == "abs") {
-    act_mode = 6;
-  } else if (op_type == "softsign") {
-    act_mode = 8;
-  } else if (op_type == "softplus") {
-    act_mode = 9;
-  } else if (op_type == "hardsigmoid") {
-    act_mode = 10;
-  } else {
-    // TODO(hong19860320) add more activation mode, and set the coef value
-    // clipped ReLU, LEAKY_RELU, relu1, threshold, selu and linear
-    LOG(FATAL) << "Unsupported activation type " << op_type;
-  }
-  act_node->set_attr_mode(act_mode);
+  // TODO(hong19860320) set the coef value for act Ops, such as leaky_relu,
+  // clipped_relu etc.
+  act_node->set_attr_mode(lite::npu::CvtActMode(op_type));
 
   node_map_type outputs_map;
   outputs_map[op_info->Output("Out").front()] = act_node;

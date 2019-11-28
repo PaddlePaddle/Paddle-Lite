@@ -12,14 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "ai_ddk_lib/include/graph/buffer.h"
-#include "ai_ddk_lib/include/graph/graph.h"
-#include "ai_ddk_lib/include/graph/model.h"
-#include "ai_ddk_lib/include/graph/op/all_ops.h"
-#include "ai_ddk_lib/include/graph/operator.h"
-#include "ai_ddk_lib/include/graph/operator_reg.h"
+#include "lite/backends/npu/builder.h"
 #include "lite/kernels/npu/bridges/registry.h"
-#include "lite/kernels/npu/bridges/utils.h"
 
 namespace paddle {
 namespace lite {
@@ -32,8 +26,8 @@ node_map_type ScaleConverter(const std::shared_ptr<lite::OpLite> scale_op,
   auto scope = scale_op->scope();
   auto op_info = scale_op->op_info();
   auto op_type = op_info->Type();
-  auto unique_op_type = UniqueName(op_type);
-  LOG(INFO) << "Converting " + op_type + "...";
+  auto unique_op_type = lite::npu::UniqueName(op_type);
+  LOG(INFO) << "[NPU] Converting " + op_type + "...";
 
   // get input, output and op attributes
   auto x_var_name = op_info->Input("X").front();
@@ -52,26 +46,26 @@ node_map_type ScaleConverter(const std::shared_ptr<lite::OpLite> scale_op,
   auto scale_node = std::make_shared<ge::op::Scale>(unique_op_type);
   CHECK(inputs_map.count(x_var_name));
   scale_node->set_input_x(*inputs_map.at(x_var_name));
-  OpList::Global().add(inputs_map.at(x_var_name));
-  OpList::Global().add(scale_node);
+  lite::npu::OpList::Global().add(inputs_map.at(x_var_name));
+  lite::npu::OpList::Global().add(scale_node);
 
   // add filter node(fill with scale)
   auto filter_const_node =
       std::make_shared<ge::op::Const>(unique_op_type + "/filter");
   filter_const_node->set_attr_value(
-      CreateTensorAndFillData(scale, scale_bias_shape));
+      lite::npu::CreateTensorAndFillData(scale, scale_bias_shape));
   scale_node->set_input_filter(*filter_const_node);
-  OpList::Global().add(filter_const_node);
+  lite::npu::OpList::Global().add(filter_const_node);
 
   // add bias node(fill with bias)
   if (fabs(bias) > 1e-6f) {
     auto bias_const_node =
         std::make_shared<ge::op::Const>(unique_op_type + "/bias");
     bias_const_node->set_attr_value(
-        CreateTensorAndFillData(bias, scale_bias_shape));
+        lite::npu::CreateTensorAndFillData(bias, scale_bias_shape));
     scale_node->set_input_bias(*bias_const_node);
     scale_node->set_attr_has_bias_value(true);
-    OpList::Global().add(bias_const_node);
+    lite::npu::OpList::Global().add(bias_const_node);
   }
 
   scale_node->set_attr_axis(1);

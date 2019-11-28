@@ -46,6 +46,10 @@ template <>
 const int8_t *Tensor::data() const {
   return ctensor(raw_tensor_)->data<int8_t>();
 }
+template <>
+const int64_t *Tensor::data() const {
+  return ctensor(raw_tensor_)->data<int64_t>();
+}
 
 template <>
 const int32_t *Tensor::data() const {
@@ -63,6 +67,10 @@ float *Tensor::mutable_data(TargetType type) const {
 template <>
 int8_t *Tensor::mutable_data(TargetType type) const {
   return tensor(raw_tensor_)->mutable_data<int8_t>(type);
+}
+template <>
+int64_t *Tensor::mutable_data(TargetType type) const {
+  return tensor(raw_tensor_)->mutable_data<int64_t>(type);
 }
 
 template <typename T, TargetType type>
@@ -85,7 +93,7 @@ void Tensor::CopyFromCpu(const T *src_data) {
   }
 }
 template <typename T>
-void Tensor::CopyToCpu(T *data) {
+void Tensor::CopyToCpu(T *data) const {
   const T *src_data = tensor(raw_tensor_)->data<T>();
   int64_t num = tensor(raw_tensor_)->numel();
   CHECK(num > 0) << "You should call Resize interface first";
@@ -116,9 +124,9 @@ template void Tensor::CopyFromCpu<int, TargetType::kCUDA>(const int *);
 template void Tensor::CopyFromCpu<float, TargetType::kCUDA>(const float *);
 template void Tensor::CopyFromCpu<int8_t, TargetType::kCUDA>(const int8_t *);
 
-template void Tensor::CopyToCpu(int8_t *);
-template void Tensor::CopyToCpu(float *);
-template void Tensor::CopyToCpu(int *);
+template void Tensor::CopyToCpu(int8_t *) const;
+template void Tensor::CopyToCpu(float *) const;
+template void Tensor::CopyToCpu(int *) const;
 
 shape_t Tensor::shape() const {
   return ctensor(raw_tensor_)->dims().Vectorize();
