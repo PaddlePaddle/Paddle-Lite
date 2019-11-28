@@ -58,6 +58,11 @@ if(LITE_WITH_FPGA)
     set(cxx_api_deps ${cxx_api_deps} ${fpga_deps})
 endif()
 
+if(LITE_WITH_BM)
+    set(light_api_deps ${light_api_deps} ${bm_deps})
+    set(cxx_api_deps ${cxx_api_deps} ${bm_deps})
+endif()
+
 message(STATUS "get ops ${ops}")
 message(STATUS "get X86 kernels ${x86_kernels}")
 message(STATUS "get Host kernels ${host_kernels}")
@@ -79,7 +84,8 @@ if (NOT LITE_ON_TINY_PUBLISH)
                     NPU_DEPS ${npu_kernels} ${npu_bridges} npu_pass
                     XPU_DEPS ${xpu_kernels} ${xpu_bridges} xpu_pass
                     CL_DEPS ${opencl_kenrels}
-                    FPGA_DEPS ${fpga_kenrels})
+                    FPGA_DEPS ${fpga_kenrels}
+                    BM_DEPS ${bm_kenrels})
 endif()
 
 # for light api
@@ -245,6 +251,7 @@ lite_cc_test(test_light_api SRCS light_api_test.cc
         DEPS light_api program mir_passes paddle_api_light
         CL_DEPS ${opencl_kernels}
         FPGA_DEPS ${fpga_kernels}
+        BM_DEPS ${bm_kernels}
         ARGS --optimized_model=${LITE_MODEL_DIR}/lite_naive_model_opt SERIAL)
 
 lite_cc_test(test_apis SRCS apis_test.cc
@@ -253,6 +260,7 @@ lite_cc_test(test_apis SRCS apis_test.cc
         X86_DEPS ${x86_kernels}
         XPU_DEPS ${xpu_kernels}
         FPGA_DEPS ${fpga_kernels}
+        BM_DEPS ${bm_kernels}
         ARGS --model_dir=${LITE_MODEL_DIR}/lite_naive_model
         --optimized_model=${LITE_MODEL_DIR}/lite_naive_model_opt SERIAL)
 
@@ -298,6 +306,7 @@ if(NOT IOS)
     XPU_DEPS ${xpu_kernels}
     CL_DEPS ${opencl_kernels}
     FPGA_DEPS ${fpga_kernels}
+    BM_DEPS ${bm_kernels}
     X86_DEPS ${x86_kernels})
   lite_cc_binary(benchmark_bin SRCS benchmark.cc DEPS paddle_api_full paddle_api_light gflags utils
     ${ops} ${host_kernels}
@@ -305,6 +314,7 @@ if(NOT IOS)
     NPU_DEPS ${npu_kernels}
     XPU_DEPS ${xpu_kernels}
     CL_DEPS ${opencl_kernels}
+    BM_DEPS ${bm_kernels}
     FPGA_DEPS ${fpga_kernels}
     X86_DEPS ${x86_kernels})
 endif()

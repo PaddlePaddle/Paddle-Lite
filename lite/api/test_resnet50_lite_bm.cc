@@ -107,8 +107,7 @@ void TestModel(const std::vector<Place>& valid_places) {
 
 TEST(ResNet50, test_bm) {
   std::vector<Place> valid_places({
-      Place{TARGET(kBM), PRECISION(kInt8)},
-      Place{TARGET(kBM), PRECISION(kFloat)},
+      Place{TARGET(kBM), PRECISION(kInt8)}
   });
 
   TestModel(valid_places);
