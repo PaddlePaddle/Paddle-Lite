@@ -52,13 +52,13 @@ TEST(sequence_reverse_x86, retrive_op) {
 }
 
 TEST(sequence_reverse_x86, init) {
-  SequenceReverseCompute<float> sequence_reverse;
+  SequenceReverseCompute<float, PRECISION(kFloat)> sequence_reverse;
   ASSERT_EQ(sequence_reverse.precision(), PRECISION(kFloat));
   ASSERT_EQ(sequence_reverse.target(), TARGET(kX86));
 }
 
 TEST(sequence_reverse_x86, run_test) {
-  SequenceReverseCompute<float> seq_kernel;
+  SequenceReverseCompute<float, PRECISION(kFloat)> seq_kernel;
   std::unique_ptr<KernelContext> ctx(new KernelContext);
 
   operators::SequenceReverseParam param;

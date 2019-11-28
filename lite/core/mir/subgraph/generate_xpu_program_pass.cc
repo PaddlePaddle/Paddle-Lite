@@ -115,10 +115,10 @@ std::string GenerateXPUProgramPass::BuildXPUGraph(
                              graph_ctx.params,
                              &ordered_cvted_var_nodes,
                              weight)) {
-    LOG(WARNING) << "[XPU] Build XPU graph failed (subgraph=" << sub_id << ")";
-    throw std::runtime_error("[XPU] Build XPU graph failed.");
+    LOG(FATAL) << "[XPU] Build XPU graph failed (subgraph=" << sub_id << ")";
+  } else {
+    LOG(INFO) << "[XPU] Build XPU graph success (subgraph=" << sub_id << ")";
   }
-  LOG(INFO) << "[XPU] Build XPU graph success (subgraph=" << sub_id << ")";
   return weight_var_name;
 }
 
@@ -162,40 +162,19 @@ void GenerateXPUProgramPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
     supported_op_types.push_back(i.first);
   }
 
-  try {
-    int num_subgraph = FuseSubgraph(graph, supported_op_types);
-    InferOnce(graph);
-    auto op_nodes_all = ClassifySubgraph(graph);
-    CHECK_EQ(op_nodes_all.size(), num_subgraph);
-    int id = 1;
-    for (auto& op_nodes : op_nodes_all) {
-      LOG(INFO) << "[XPU] Converting Subgraph " << id;
-      GenXPUSubgraph(graph, op_nodes.second, id);
-      LOG(INFO) << "[XPU] After XPU Pass Subgraph " << id << "\n"
-                << Visualize(graph.get());
-      id++;
-    }
-  } catch (...) {
-    LOG(WARNING) << "[XPU] Build XPU graph failed.";
-    throw std::runtime_error("[XPU] Build XPU graph failed.");
-  }
-
-  for (auto& item : graph->StmtTopologicalOrder()) {
-    if (item->IsStmt()) {
-      auto& stmt = item->AsStmt();
-      LOG(INFO) << stmt;
-      insts_.emplace_back(stmt.op(), std::move(stmt.kernels().front()));
-    }
+  int num_subgraph = FuseSubgraph(graph, supported_op_types);
+  InferOnce(graph);
+  auto op_nodes_all = ClassifySubgraph(graph);
+  CHECK_EQ(op_nodes_all.size(), num_subgraph);
+  int id = 1;
+  for (auto& op_nodes : op_nodes_all) {
+    LOG(INFO) << "[XPU] Converting Subgraph " << id;
+    GenXPUSubgraph(graph, op_nodes.second, id);
+    LOG(INFO) << "[XPU] After XPU Pass Subgraph " << id << "\n"
+              << Visualize(graph.get());
+    id++;
   }
 }
-
-std::unique_ptr<RuntimeProgram> GenerateXPUProgramPass::GenProgram() {
-  LOG(INFO) << "[XPU] program insts.size=" << insts_.size();
-  std::unique_ptr<RuntimeProgram> program(
-      new RuntimeProgram(std::move(insts_)));
-  return program;
-}
-
 }  // namespace subgraph
 }  // namespace mir
 }  // namespace lite

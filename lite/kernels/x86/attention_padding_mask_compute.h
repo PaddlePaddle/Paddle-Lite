@@ -36,30 +36,36 @@ class AttentionPaddingMaskCompute
 
   void Run() override {
     auto& param = *param_.get_mutable<param_t>();
-    auto src = param.Y;
-    auto attn = param.X;
-    auto src_offset = src->lod()[0];
-    auto attn_offset = attn->lod()[0];
-    int attn_seq_num = attn_offset.size() - 1;
-    int src_seq_num = src_offset.size() - 1;
-    int attn_seq_len = attn_offset[1];
-    int src_seq_len = attn->numel() / attn->dims()[0];
-    size_t count = attn->numel();
-    auto attn_data = attn->data<T>();
+    auto* bottom0 = param.X;
+    auto* bottom1 = param.Y;
+    auto* _pad_begin = param.pad_begin;
+    auto* top = param.Out;
+    int _pad_id = param.pad_id;
+    float _mask = param.mask;
+    auto src_len = static_cast<int64_t>(bottom1->lod()[0][1]);
+    const int att_batch = bottom0->lod()[0].size() - 1;
+    const int src_batch = bottom1->lod()[0].size() - 1;
+    int* pad_begin = _pad_begin->mutable_data<int>();
+    for (int i = 0; i < src_batch; ++i) {
+      const auto* src_data = bottom1->data<T>() + src_len * i;
+      int index = src_len - 1;
+      for (; index >= 0 && _pad_id == static_cast<int>(src_data[index]);
+           --index) {
+      }
+      pad_begin[i] = index + 1;
+    }
 
-    auto out = param.Out;
-    out->Resize(attn->dims());
-    out->set_lod(attn->lod());
-    auto out_data = out->mutable_data<T>();
-    memcpy(out_data, attn_data, count * sizeof(T));
-
-    for (int i = 0; i < attn_seq_num; ++i) {
-      for (int j = 0; j < attn_seq_len; ++j) {
-        auto tmp_out_data = out_data + src_seq_len * (attn_seq_len * i + j);
-        int src_seq_idx = i % src_seq_num;
-        int cur_len = src_offset[src_seq_idx + 1] - src_offset[src_seq_idx];
-        for (int k = cur_len; k < src_seq_len; k++) {
-          tmp_out_data[k] = param.mask;
+    const auto att_len = static_cast<int64_t>(bottom0->lod()[0][1]);
+    auto* top_data = top->mutable_data<T>();
+    memcpy(top_data,
+           bottom0->data<T>(),
+           bottom0->dims()[0] * bottom0->dims()[1] * sizeof(T));
+    for (int i = 0; i < att_batch; ++i) {
+      for (int j = 0; j < att_len; ++j) {
+        top_data = top->mutable_data<T>() + src_len * (att_len * i + j);
+        int src_idx = i % src_batch;
+        for (int k = pad_begin[src_idx]; k < src_len; ++k) {
+          top_data[k] = _mask;
         }
       }
     }

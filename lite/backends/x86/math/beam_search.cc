@@ -14,6 +14,7 @@ limitations under the License. */
 
 #include "lite/backends/x86/math/beam_search.h"
 #include <algorithm>
+#include <cmath>
 #include <map>
 #include "lite/fluid/lod.h"
 

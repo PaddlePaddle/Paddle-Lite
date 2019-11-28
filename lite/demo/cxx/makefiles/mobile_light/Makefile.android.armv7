@@ -9,6 +9,25 @@ CXX_INCLUDES = $(INCLUDES) -I$(LITE_ROOT)/cxx/include
 
 CXX_LIBS = $(THIRD_PARTY_LIBS) $(LITE_ROOT)/cxx/lib/libpaddle_api_light_bundled.a $(SYSTEM_LIBS)
 
+###############################################################
+# How to use one of shared libraries:                         #
+#  `libpaddle_light_api_shared.so`                            #
+#  `libpaddle_full_api_shared.so`                             #
+###############################################################
+# Note: default use lite's static library.                    #
+###############################################################
+# 1. Comment above line using `libpaddle_api_light_bundled.a`;
+# 2. Undo comment below line and execute
+#   `export LD_LIBRARY_PATH=<libpaddle_light_api_shared.so dir>`
+#   in command line before `make`;
+# 3. After `adb push` model and mobilenetv1_light_api files to
+#   android devices, execute
+#   `export LD_LIBRARY_PATH=<libpaddle_light_api_shared.so android dir>`
+#   and `mobilenetv1_light_api` in android `adb shell`;
+# 4. Get executed result of `mobilenetv1_light_api` in android.
+
+# CXX_LIBS = $(THIRD_PARTY_LIBS) -L$(LITE_ROOT)/cxx/lib/ -lpaddle_light_api_shared $(SYSTEM_LIBS)
+
 mobilenetv1_light_api: mobilenetv1_light_api.o
 	$(CC) $(SYSROOT_LINK) $(CXXFLAGS_LINK) mobilenetv1_light_api.o -o mobilenetv1_light_api  $(CXX_LIBS) $(LDFLAGS)
 

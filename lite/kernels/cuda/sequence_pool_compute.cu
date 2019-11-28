@@ -13,27 +13,19 @@
 // limitations under the License.
 
 #include <vector>
+#include "lite/backends/cuda/cuda_utils.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/target_wrapper.h"
 #include "lite/kernels/cuda/sequence_pool_compute.h"
-
-const int CUDA_NUM_THREADS = 512;
-#define CUDA_KERNEL_LOOP(i, n)                                 \
-  for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < (n); \
-       i += blockDim.x * gridDim.x)
-
-/// CUDA: number of blocks for threads.
-inline int CUDA_GET_BLOCKS(const int N) {
-  return (N + CUDA_NUM_THREADS - 1) / CUDA_NUM_THREADS;
-}
-inline int CUDA_GET_BLOCKS(const int N, const int base) {
-  return (N + base - 1) / base;
-}
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace cuda {
+
+#define CUDA_KERNEL_LOOP(i, n)                                 \
+  for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < (n); \
+       i += blockDim.x * gridDim.x)
 
 template <typename Dtype>
 __global__ void seq_pool_average_kernel(Dtype* dst,
@@ -163,20 +155,20 @@ void SequencePoolCompute::Run() {
   auto stream = ctx.exec_stream();
 
   std::vector<uint64_t> seq_offset = param.X->lod()[0];
-  int slice_size =
-      param.Out->dims()[1] * param.Out->dims()[2] * param.Out->dims()[3];
+  int batch_size = param.X->lod()[0].size() - 1;
+  int slice_size = param.Out->dims().production() / batch_size;
 
   float* out_data = param.Out->mutable_data<float>(TARGET(kCUDA));
   const float* in_data = param.X->data<float>();
-  int batch_size = param.X->lod().size() - 1;
 
   lite::Tensor seq_offset_D;
   seq_offset_D.Resize({static_cast<int64_t>(seq_offset.size())});
-  TargetWrapperCuda::MemcpyAsync(seq_offset_D.mutable_data<uint64_t>(),
-                                 seq_offset.data(),
-                                 sizeof(uint64_t) * seq_offset.size(),
-                                 IoDirection::HtoD,
-                                 stream);
+  TargetWrapperCuda::MemcpyAsync(
+      seq_offset_D.mutable_data<uint64_t>(TARGET(kCUDA)),
+      seq_offset.data(),
+      sizeof(uint64_t) * seq_offset.size(),
+      IoDirection::HtoD,
+      stream);
 
   if (param.pool_type == "MAX") {
     seq_pool_max_kernel<float><<<CUDA_GET_BLOCKS(batch_size * slice_size),
@@ -187,7 +179,7 @@ void SequencePoolCompute::Run() {
                                            batch_size,
                                            seq_offset_D.data<uint64_t>(),
                                            slice_size);
-  } else if (param.pool_type == "AVERAGE ") {
+  } else if (param.pool_type == "AVERAGE") {
     seq_pool_average_kernel<float><<<CUDA_GET_BLOCKS(batch_size * slice_size),
                                      CUDA_NUM_THREADS,
                                      0,

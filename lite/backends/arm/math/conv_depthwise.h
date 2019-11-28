@@ -85,38 +85,6 @@ void conv_depthwise_3x3s2_fp32(const float* din,
                                bool flag_relu,
                                ARMContext* ctx);
 
-void conv_depthwise_3x3p0_fp32(const float* din,
-                               float* dout,
-                               int num,
-                               int ch_out,
-                               int h_out,
-                               int w_out,
-                               int ch_in,
-                               int h_in,
-                               int w_in,
-                               const float* weights,
-                               const float* bias,
-                               int stride,
-                               bool flag_bias,
-                               bool flag_relu,
-                               ARMContext* ctx);
-
-void conv_depthwise_3x3p1_fp32(const float* din,
-                               float* dout,
-                               int num,
-                               int ch_out,
-                               int h_out,
-                               int w_out,
-                               int ch_in,
-                               int h_in,
-                               int w_in,
-                               const float* weights,
-                               const float* bias,
-                               int stride,
-                               bool flag_bias,
-                               bool flag_relu,
-                               ARMContext* ctx);
-
 template <typename Dtype>
 void conv_depthwise_3x3s1_int8(Dtype* dout,
                                const int8_t* din,

@@ -36,8 +36,15 @@ void ConvCompute::PrepareForRun() {
   conv_param.filter = param.filter->ZynqTensor();
   conv_param.groups = param.groups;
   conv_param.strides = param.strides;
+  auto paddings = *param.paddings;
   conv_param.paddings = param.paddings;
   conv_param.dilations = param.dilations;
+  bool pad_equal =
+      ((paddings[0] == paddings[1]) && (paddings[2] == paddings[3]));
+  if (!pad_equal) {
+    LOG(FATA) << "This pad not support ! " << paddings[0] << ", " << paddings[1]
+              << ", " << paddings[2] << ", " << paddings[3];
+  }
   fill_scale_bias_const(&conv_param);
   conv_param.bias()->copyFrom(param.bias->ZynqTensor());
   conv_param.relu.enabled = param.fuse_relu;

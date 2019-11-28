@@ -29,6 +29,14 @@ int64_t ShapeProduction(const shape_t& shape) {
   return res;
 }
 
+void CheckInput(char*** argv) {
+  if (FLAGS_model_dir == "") {
+    printf("Usage: %s --model_dir=<your-nb-model-directory>\n", *argv[0]);
+    exit(1);
+  }
+  printf("[WARN] model_dir:%s\n", FLAGS_model_dir.c_str());
+}
+
 void RunModel() {
   // 1. Set MobileConfig
   MobileConfig config;
@@ -60,6 +68,7 @@ void RunModel() {
 
 int main(int argc, char** argv) {
   google::ParseCommandLineFlags(&argc, &argv, true);
+  CheckInput(&argv);
   RunModel();
   return 0;
 }
