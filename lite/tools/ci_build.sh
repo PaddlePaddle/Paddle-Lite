@@ -700,7 +700,7 @@ function build_test_arm_subtask_android {
        local portname_armv8=emulator-$port_armv8
        local portname_armv7=emulator-$port_armv7
    else
-       adb_devices=$(adb devices |grep -v devices |grep device | awk -F " " 'print $1')
+       adb_devices=$(adb devices |grep -v devices |grep device | awk -F " " '{print $1}')
        local portname_armv8=${adb_devices[0]}
        local portname_armv7=${adb_devices[0]}
       $port_armv7
@@ -741,7 +741,7 @@ function build_test_arm_subtask_armlinux {
        prepare_emulator $port_armv8 $port_armv7
        local portname_armv8=emulator-$port_armv8
     else
-       adb_devices=$(adb devices |grep -v devices | grep device | awk -F " " 'print $1')
+       adb_devices=$(adb devices |grep -v devices | grep device | awk -F " " '{print $1}')
        local portname_armv8=${adb_devices[0]}
        local portname_armv7=${adb_devices[0]}
     fi
@@ -787,7 +787,7 @@ function build_test_arm_subtask_model {
        prepare_emulator $port_armv8 $port_armv7
        local portname_armv8=emulator-$port_armv8
     else
-       adb_devices=$(adb devices |grep -v devices | grep device | awk -F " " 'print $1')
+       adb_devices=$(adb devices |grep -v devices | grep device | awk -F " " '{print $1}')
        local portname_armv8=${adb_devices[0]}
     fi
     # just test the model on armv8
@@ -847,7 +847,7 @@ function build_test_npu {
        prepare_emulator $port_armv8 $port_armv7
        local portname_armv8=emulator-$port_armv8
     else
-       adb_devices=$(adb devices |grep -v devices | grep device | awk -F " " 'print $1')
+       adb_devices=$(adb devices |grep -v devices | grep device | awk -F " " '{print $1}')
        local portname_armv8=${adb_devices[0]}
     fi
 
