@@ -703,7 +703,6 @@ function build_test_arm_subtask_android {
        adb_devices=$(adb devices |grep -v devices |grep device | awk -F " " '{print $1}')
        local portname_armv8=${adb_devices[0]}
        local portname_armv7=${adb_devices[0]}
-      $port_armv7
     fi
 
     # job 1
