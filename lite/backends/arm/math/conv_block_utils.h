@@ -854,7 +854,7 @@ inline bool write_to_output_c1_fp32(const float* din,
 
   int w_round = we - ws;
   int cnt = (width - ws) / w4;
-
+  int remain = (width - ws) % w4;
   for (int i = 0; i < size_h; i++) {
     int size_w = i * width;
     float* doutc0_ptr = doutc0r0 + size_w;  // doutc0r0 + width;
@@ -863,10 +863,10 @@ inline bool write_to_output_c1_fp32(const float* din,
       int cnt_loop = cnt;
       act_switch_c1_fp32(din_hei_ptr, doutc0_ptr, cnt_loop, act_param);
     }
-    if (we > width) {
+    if (remain > 0) {
       int offset = i * w_round * c1 + c1 * w4 * cnt;
       din_hei_ptr = ptr_din + offset;
-      int j = we - w4;
+      int j = w4 * cnt;
       bool has_active = act_param.has_active;
       float six = act_param.Relu_clipped_coef;
       float scale = act_param.Leaky_relu_alpha;
@@ -1150,7 +1150,6 @@ inline bool write_to_output_c2_fp32(const float* din,
   if (cs > channel) {
     return true;
   }
-
   const int c2 = 2;
   const int w4 = 4;
 
@@ -1568,6 +1567,7 @@ inline bool write_to_output_c4_fp32(const float* din,
   const int w4 = 4;
   const int w_round = we - ws;
   const int ch_n = ce - cs;
+
   if (ch_n != 4) {
     LOG(ERROR) << "write_to_output_c4_fp32 ch_n must be equal 4 and hei_n is "
                   "more than zero";
