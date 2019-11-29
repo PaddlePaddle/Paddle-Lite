@@ -51,9 +51,11 @@ class CondExecutor {
 
   void Run() {
     for (auto &op_handler : ops_of_block_) {
-      VLOG(4) << op_handler->op_info()->Repr();
+      VLOG(4) << "run " << op_handler->op_info()->Repr();
+      op_handler->CheckShape();
+      VLOG(4) << "conditional block: check shape ok";
       op_handler->InferShape();
-      VLOG(4) << "conditional block: infered shape";
+      VLOG(4) << "conditional block: infer shape ok";
       op_handler->Run();
     }
   }
