@@ -34,9 +34,7 @@ DEFINE_string(input_shape,
               "1,3,224,224",
               "input shapes, separated by colon and comma");
 
-DEFINE_string(out_txt,
-              "",
-              "output text path");
+DEFINE_string(out_txt, "", "output text path");
 
 DEFINE_bool(use_optimize_nb,
             false,
@@ -50,10 +48,7 @@ void OutputOptModel(const std::string& load_model_dir,
                     const std::vector<std::vector<int64_t>>& input_shapes) {
   lite_api::CxxConfig config;
   config.set_model_dir(load_model_dir);
-  config.set_valid_places({
-      Place{TARGET(kX86), PRECISION(kFloat)},
-      Place{TARGET(kARM), PRECISION(kFloat)},
-  });
+  config.set_valid_places({Place{TARGET(kARM), PRECISION(kFloat)}});
   auto predictor = lite_api::CreatePaddlePredictor(config);
 
   // delete old optimized model
@@ -122,32 +117,40 @@ void Run(const std::vector<std::vector<int64_t>>& input_shapes,
             << " ms"
             << ", min time: " << ti.get_min_time() << " ms"
             << ", max time: " << ti.get_max_time() << " ms.";
-  //compute variance
+  // compute variance
   float avg = ti.get_average_ms();
   float sum = 0;
-  for (auto val: times){
+  for (auto val : times) {
     sum += (val - avg) * (val - avg);
   }
   sum = sum / times.size();
   FILE* fp_w = fopen("time.txt", "a+");
-  if (!fp_w){
+  if (!fp_w) {
     printf("open file failed \n");
     return;
   }
   std::sort(times.begin(), times.end());
   int mid = times.size() / 2;
   int mid1 = mid;
-  if (time.size() % 2 != 0){
+  if (time.size() % 2 != 0) {
     mid1 = mid - 1;
   }
   float mid_val = (times[mid] + times[mid1]) / 2.0;
-  fprintf(fp_w, "model: %s, threads: %d, avg: %f ms, min: %f ms, mid_val: %f ms, var: %f \n", model_dir.c_str(), thread_num, avg, ti.get_min_time(), mid_val, sum);
+  fprintf(fp_w,
+          "model: %s, threads: %d, avg: %f ms, min: %f ms, mid_val: %f ms, "
+          "var: %f \n",
+          model_dir.c_str(),
+          thread_num,
+          avg,
+          ti.get_min_time(),
+          mid_val,
+          sum);
   fclose(fp_w);
   auto output = predictor->GetOutput(0);
   auto out = output->data<float>();
   LOG(INFO) << "out " << out[0];
   LOG(INFO) << "out " << out[1];
-  
+
   auto output_shape = output->shape();
   int output_num = 1;
   for (int i = 0; i < output_shape.size(); ++i) {
@@ -155,11 +158,11 @@ void Run(const std::vector<std::vector<int64_t>>& input_shapes,
   }
   LOG(INFO) << "output_num: " << output_num;
   FILE* fp = fopen(FLAGS_out_txt.c_str(), "w");
-  if (!fp){
+  if (!fp) {
     printf("open file %s failed \n", FLAGS_out_txt.c_str());
     return;
   }
-  for (int i = 0; i < output_num; ++i){
+  for (int i = 0; i < output_num; ++i) {
     fprintf(fp, "%f\n", out[i]);
   }
   fclose(fp);
