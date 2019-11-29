@@ -330,8 +330,10 @@ static void col2im(const Dtype* data_col,
                    const int width,
                    const int kernel_h,
                    const int kernel_w,
-                   const int pad_h,
-                   const int pad_w,
+                   const int pad_h0,
+                   const int pad_h1,
+                   const int pad_w0,
+                   const int pad_w1,
                    const int stride_h,
                    const int stride_w,
                    const int dilation_h,
@@ -339,21 +341,24 @@ static void col2im(const Dtype* data_col,
                    Dtype* data_im) {
   memset(data_im, 0, height * width * channels * sizeof(Dtype));
   const int output_h =
-      (height + 2 * pad_h - (dilation_h * (kernel_h - 1) + 1)) / stride_h + 1;
+      (height + pad_h0 + pad_h1 - (dilation_h * (kernel_h - 1) + 1)) /
+          stride_h +
+      1;
   const int output_w =
-      (width + 2 * pad_w - (dilation_w * (kernel_w - 1) + 1)) / stride_w + 1;
+      (width + pad_w0 + pad_w1 - (dilation_w * (kernel_w - 1) + 1)) / stride_w +
+      1;
   const int channel_size = height * width;
 
   for (int channel = channels; channel--; data_im += channel_size) {
     for (int kernel_row = 0; kernel_row < kernel_h; kernel_row++) {
       for (int kernel_col = 0; kernel_col < kernel_w; kernel_col++) {
-        int input_row = -pad_h + kernel_row * dilation_h;
+        int input_row = -pad_h0 + kernel_row * dilation_h;
 
         for (int output_rows = output_h; output_rows; output_rows--) {
           if (!is_a_ge_zero_and_a_lt_b(input_row, height)) {
             data_col += output_w;
           } else {
-            int input_col = -pad_w + kernel_col * dilation_w;
+            int input_col = -pad_w0 + kernel_col * dilation_w;
 
             for (int output_col = output_w; output_col; output_col--) {
               if (is_a_ge_zero_and_a_lt_b(input_col, width)) {
@@ -391,8 +396,10 @@ void deconv_basic(const Dtype1* din,
                   int stride_h,
                   int dila_w,
                   int dila_h,
-                  int pad_w,
-                  int pad_h,
+                  int pad_w0,
+                  int pad_w1,
+                  int pad_h0,
+                  int pad_h1,
                   bool flag_bias,
                   bool flag_relu) {
   int m = chout * kernel_w * kernel_h / group;
@@ -404,8 +411,9 @@ void deconv_basic(const Dtype1* din,
   int group_size_coldata = m * n;
   int group_size_weights = chin * chout * kernel_w * kernel_h / (group * group);
   bool flag_1x1s1p1 = (kernel_w == 1) && (kernel_h == 1) && (stride_h == 1) &&
-                      (stride_w == 1) && (pad_w == 1) && (pad_h == 1) &&
-                      (dila_w == 1) && (dila_h == 1);
+                      (stride_w == 1) && (pad_w0 == 0) && (pad_h0 == 0) &&
+                      (pad_w1 == 0) && (pad_h1 == 0) && (dila_w == 1) &&
+                      (dila_h == 1);
 
   Dtype2* workspace_ptr =
       static_cast<Dtype2*>(malloc(sizeof(float) * m * n * group));
@@ -418,7 +426,7 @@ void deconv_basic(const Dtype1* din,
     if (flag_1x1s1p1) {
       col_data = dout_batch;
     }
-    memset(col_data, 0, sizeof(Dtype2) * group_size_coldata);
+    memset(col_data, 0, sizeof(Dtype2) * group_size_coldata * group);
     for (int g = 0; g < group; ++g) {
       const Dtype1* din_group = din_batch + g * group_size_in;
       const Dtype1* weights_group = weights + g * group_size_weights;
@@ -448,8 +456,10 @@ void deconv_basic(const Dtype1* din,
              wout,
              kernel_h,
              kernel_w,
-             pad_h,
-             pad_w,
+             pad_h0,
+             pad_h1,
+             pad_w0,
+             pad_w1,
              stride_h,
              stride_w,
              dila_h,

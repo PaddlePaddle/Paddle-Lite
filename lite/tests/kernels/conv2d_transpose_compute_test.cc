@@ -31,8 +31,10 @@ void col2im(const Dtype* data_col,
             const int width,
             const int kernel_h,
             const int kernel_w,
-            const int pad_h,
-            const int pad_w,
+            const int pad_h0,
+            const int pad_h1,
+            const int pad_w0,
+            const int pad_w1,
             const int stride_h,
             const int stride_w,
             const int dilation_h,
@@ -40,19 +42,22 @@ void col2im(const Dtype* data_col,
             Dtype* data_im) {
   memset(data_im, 0, height * width * channels * sizeof(float));
   const int output_h =
-      (height + 2 * pad_h - (dilation_h * (kernel_h - 1) + 1)) / stride_h + 1;
+      (height + pad_h0 + pad_h1 - (dilation_h * (kernel_h - 1) + 1)) /
+          stride_h +
+      1;
   const int output_w =
-      (width + 2 * pad_w - (dilation_w * (kernel_w - 1) + 1)) / stride_w + 1;
+      (width + pad_w0 + pad_w1 - (dilation_w * (kernel_w - 1) + 1)) / stride_w +
+      1;
   const int channel_size = height * width;
   for (int channel = channels; channel--; data_im += channel_size) {
     for (int kernel_row = 0; kernel_row < kernel_h; kernel_row++) {
       for (int kernel_col = 0; kernel_col < kernel_w; kernel_col++) {
-        int input_row = -pad_h + kernel_row * dilation_h;
+        int input_row = -pad_h0 + kernel_row * dilation_h;
         for (int output_rows = output_h; output_rows; output_rows--) {
           if (!is_a_ge_zero_and_a_lt_b(input_row, height)) {
             data_col += output_w;
           } else {
-            int input_col = -pad_w + kernel_col * dilation_w;
+            int input_col = -pad_w0 + kernel_col * dilation_w;
             for (int output_col = output_w; output_col; output_col--) {
               if (is_a_ge_zero_and_a_lt_b(input_col, width)) {
                 data_im[input_row * width + input_col] += *data_col;
@@ -100,6 +105,34 @@ void fill_bias_relu<float>(float* tensor,
         data[i] += bias_data;
       }
       data += channel_size;
+    }
+  }
+}
+
+inline void UpdatePaddingAndDilation(std::vector<int>* paddings,
+                                     std::vector<int>* dilations,
+                                     const std::vector<int>& strides,
+                                     const std::string padding_algorithm,
+                                     const DDim data_dims,
+                                     const std::vector<int>& ksize) {
+  // when padding_desc is "VALID" or "SAME"
+  if (padding_algorithm == "SAME") {
+    for (size_t i = 0; i < strides.size(); ++i) {
+      int out_size = (data_dims[i + 2] + strides[i] - 1) / strides[i];
+      int pad_sum = std::max(
+          (out_size - 1) * strides[i] + ksize[i + 2] - data_dims[i + 2],
+          (int64_t)0);
+      int pad_0 = pad_sum / 2;
+      int pad_1 = pad_sum - pad_0;
+      // pad
+      *(paddings->begin() + i * 2) = pad_0;
+      *(paddings->begin() + i * 2 + 1) = pad_1;
+      // dilation
+      *(dilations->begin() + i) = 1;
+    }
+  } else if (padding_algorithm == "VALID") {
+    for (auto& it : *paddings) {
+      it = 0;
     }
   }
 }
@@ -172,8 +205,10 @@ bool deconv_basic(const Dtype1* din,
                   int stride_h,
                   int dila_w,
                   int dila_h,
-                  int pad_w,
-                  int pad_h,
+                  int pad_w0,
+                  int pad_w1,
+                  int pad_h0,
+                  int pad_h1,
                   bool flag_bias,
                   bool flag_relu) {
   int m = chout * kernel_w * kernel_h / group;
@@ -193,8 +228,9 @@ bool deconv_basic(const Dtype1* din,
   int group_size_coldata = m * n;
   int group_size_weights = chin * chout * kernel_w * kernel_h / (group * group);
   bool flag_1x1s1p1 = (kernel_w == 1) && (kernel_h == 1) && (stride_h == 1) &&
-                      (stride_w == 1) && (pad_w == 1) && (pad_h == 1) &&
-                      (dila_w == 1) && (dila_h == 1);
+                      (stride_w == 1) && (pad_w0 == 0) && (pad_h0 == 0) &&
+                      (pad_w1 == 0) && (pad_h1 == 0) && (dila_w == 1) &&
+                      (dila_h == 1);
 
   for (int i = 0; i < num; ++i) {
     const Dtype1* din_batch = din + i * chin * hin * win;
@@ -204,7 +240,7 @@ bool deconv_basic(const Dtype1* din,
     if (flag_1x1s1p1) {
       col_data = dout_batch;
     }
-    memset(col_data, 0, sizeof(Dtype2) * group_size_coldata);
+    memset(col_data, 0, sizeof(Dtype2) * group_size_coldata * group);
     for (int g = 0; g < group; ++g) {
       const Dtype1* din_group = din_batch + g * group_size_in;
       const Dtype1* weights_group = weights + g * group_size_weights;
@@ -230,8 +266,10 @@ bool deconv_basic(const Dtype1* din,
              wout,
              kernel_h,
              kernel_w,
-             pad_h,
-             pad_w,
+             pad_h0,
+             pad_h1,
+             pad_w0,
+             pad_w1,
              stride_h,
              stride_w,
              dila_h,
@@ -253,9 +291,10 @@ class Conv2DTransposeComputeTester : public arena::TestCase {
   std::string output_ = "out";
   std::string filter_ = "filter";
   std::string bias_ = "bias";
+  std::string padding_algorithm_ = "";
 
   std::vector<int> strides_{1, 1};
-  std::vector<int> paddings_{0, 0};
+  std::vector<int> paddings_{0, 0, 0, 0};
   int groups_{1};
   std::vector<int> dilations_{1, 1};
   bool flag_relu_{false};
@@ -280,9 +319,13 @@ class Conv2DTransposeComputeTester : public arena::TestCase {
                                bool flag_relu,
                                int dilation,
                                int stride,
-                               int padding,
+                               int pad_h0,
+                               int pad_h1,
+                               int pad_w0,
+                               int pad_w1,
                                int ks,
-                               int groups)
+                               int groups,
+                               std::string padding_algorithm)
       : TestCase(place, alias) {
     n_ = n;
     ic_ = ic;
@@ -291,20 +334,29 @@ class Conv2DTransposeComputeTester : public arena::TestCase {
     iw_ = iw;
     ks_ = ks;
     flag_bias_ = flag_bias;
-
+    padding_algorithm_ = padding_algorithm;
     strides_ = std::vector<int>({stride, stride});
-    paddings_ = std::vector<int>({padding, padding});
-    groups_ = groups;
+    paddings_ = std::vector<int>({pad_h0, pad_h1, pad_w0, pad_w1});
     dilations_ = std::vector<int>({dilation, dilation});
+    groups_ = groups;
     flag_relu_ = flag_relu;
   }
 
   void RunBaseline(Scope* scope) override {
     auto* out = scope->NewTensor(output_);
     CHECK(out);
-    int oh = (ih_ - 1) * strides_[0] - 2 * paddings_[0] +
+    auto* x = scope->FindTensor(x_);
+    auto input_dim = x->dims();
+    std::vector<int> ksize({1, 1, ks_, ks_});
+    UpdatePaddingAndDilation(&paddings_,
+                             &dilations_,
+                             strides_,
+                             padding_algorithm_,
+                             input_dim,
+                             ksize);
+    int oh = (ih_ - 1) * strides_[0] - paddings_[0] - paddings_[1] +
              dilations_[0] * (ks_ - 1) + 1;
-    int ow = (iw_ - 1) * strides_[1] - 2 * paddings_[1] +
+    int ow = (iw_ - 1) * strides_[1] - paddings_[2] - paddings_[3] +
              dilations_[1] * (ks_ - 1) + 1;
     CHECK(oh > 0 || ow > 0);
 
@@ -313,7 +365,6 @@ class Conv2DTransposeComputeTester : public arena::TestCase {
     out->Resize(output_dims);
     auto* output_data = out->mutable_data<float>();
 
-    auto* x = scope->FindTensor(x_);
     const auto* x_data = x->data<float>();
     auto* filter = scope->FindTensor(filter_);
     const auto* filter_data = filter->data<float>();
@@ -341,8 +392,10 @@ class Conv2DTransposeComputeTester : public arena::TestCase {
                                strides_[0],
                                dilations_[1],
                                dilations_[0],
-                               paddings_[1],
+                               paddings_[2],
+                               paddings_[3],
                                paddings_[0],
+                               paddings_[1],
                                flag_bias_,
                                flag_relu_);
   }
@@ -360,6 +413,7 @@ class Conv2DTransposeComputeTester : public arena::TestCase {
       op_desc->SetInput("Bias", {bias_});
     }
     op_desc->SetAttr("fuse_relu", flag_relu_);
+    op_desc->SetAttr("padding_algorithm", padding_algorithm_);
   }
 
   void PrepareData() override {
@@ -402,49 +456,66 @@ TEST(conv2d_transpose, precision) {
   LOG(INFO) << "test conv2d_transpose op";
 #ifdef LITE_WITH_ARM
   Place place(TARGET(kARM));
-  for (auto n : {1, 2}) {
+  for (auto n : {2}) {
     for (auto ic : {1, 4 /*, 128*/}) {
       for (auto oc : {1, 4 /*, 128*/}) {
         LOG(INFO) << "n:" << n << ",ic:" << ic << ",oc:" << oc;
-        for (auto ih : {8, 16 /*, 56 , 112, 224, 512*/}) {
+        for (auto ih : {8, 8 /*, 56 , 112, 224, 512*/}) {
           for (auto iw : {8, 16 /*, 56, 112, 224, 512*/}) {
             for (auto flag_bias : {false, true}) {
               for (auto flag_relu : {false, true}) {
                 for (auto dilation : {1, 2}) {
                   for (auto stride : {1, 2}) {
-                    for (auto padding : {0, 2}) {
-                      for (auto ks : {2, 5}) {
-                        for (auto group : {1, 2}) {
-                          // obtain shape
-                          // LOG(INFO) << "n:" << n << ",ic:" << ic << ",oc:" <<
-                          // oc
-                          //           << ",ih:" << ih << ",iw:" << iw
-                          //           << ",flag_bias:" << flag_bias
-                          //           << ",flag_relu:" << flag_relu
-                          //           << ",dila:" << dilation
-                          //           << ",stride:" << stride
-                          //           << ",padding:" << padding << ",ks:" << ks
-                          //           << ",group:" << group;
-                          if (ic % group != 0 || oc % group != 0) {
-                            group = 1;
+                    for (auto pad_h0 : {0, 1}) {
+                      for (auto pad_h1 : {0, 1}) {
+                        for (auto pad_w0 : {0, 1}) {
+                          for (auto pad_w1 : {0, 1}) {
+                            for (auto ks : {1, 4}) {
+                              for (auto group : {1, 2}) {
+                                for (auto padding_algorithm :
+                                     {"", "SAME", "VALID"}) {
+                                  // obtain shape
+                                  // LOG(INFO) << "n:" << n << ",ic:" << ic <<
+                                  // ",oc:" <<
+                                  // oc
+                                  //           << ",ih:" << ih << ",iw:" << iw
+                                  //           << ",flag_bias:" << flag_bias
+                                  //           << ",flag_relu:" << flag_relu
+                                  //           << ",dila:" << dilation
+                                  //           << ",stride:" << stride
+                                  //           << ",padding:" << padding <<
+                                  //           ",ks:" << ks
+                                  //           << ",group:" << group;
+                                  if (ic % group != 0 || oc % group != 0) {
+                                    group = 1;
+                                  }
+                                  std::unique_ptr<arena::TestCase> tester(
+                                      new Conv2DTransposeComputeTester(
+                                          place,
+                                          "def",
+                                          n,
+                                          ic,
+                                          oc,
+                                          ih,
+                                          iw,
+                                          flag_bias,
+                                          flag_relu,
+                                          dilation,
+                                          stride,
+                                          pad_h0,
+                                          pad_h1,
+                                          pad_w0,
+                                          pad_w1,
+                                          ks,
+                                          group,
+                                          padding_algorithm));
+                                  arena::Arena arena(
+                                      std::move(tester), place, 2e-5);
+                                  arena.TestPrecision();
+                                }
+                              }
+                            }
                           }
-                          std::unique_ptr<arena::TestCase> tester(
-                              new Conv2DTransposeComputeTester(place,
-                                                               "def",
-                                                               n,
-                                                               ic,
-                                                               oc,
-                                                               ih,
-                                                               iw,
-                                                               flag_bias,
-                                                               flag_relu,
-                                                               dilation,
-                                                               stride,
-                                                               padding,
-                                                               ks,
-                                                               group));
-                          arena::Arena arena(std::move(tester), place, 2e-5);
-                          arena.TestPrecision();
                         }
                       }
                     }
