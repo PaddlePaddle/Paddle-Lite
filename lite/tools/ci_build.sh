@@ -709,8 +709,8 @@ function build_test_arm_subtask_android {
        adb_devices=$(adb devices |grep -v devices |grep device | awk -F " " '{print $1}')
        local portname_armv8=${adb_devices[0]}
        local portname_armv7=${adb_devices[0]}
-       adb -s shell $portname_armv8 'rm -rf /data/local/tmp/*'
-       adb -s shell $portname_armv7 'rm -rf /data/local/tmp/*'
+       adb -s $portname_armv8 shell 'rm -rf /data/local/tmp/*'
+       adb -s $portname_armv7 shell 'rm -rf /data/local/tmp/*'
     fi
 
     # job 1
@@ -751,8 +751,8 @@ function build_test_arm_subtask_armlinux {
        adb_devices=$(adb devices |grep -v devices | grep device | awk -F " " '{print $1}')
        local portname_armv8=${adb_devices[0]}
        local portname_armv7=${adb_devices[0]}
-       adb -s shell $portname_armv8 'rm -rf /data/local/tmp/*'
-       adb -s shell $portname_armv7 'rm -rf /data/local/tmp/*'
+       adb -s $portname_armv8 shell 'rm -rf /data/local/tmp/*'
+       adb -s $portname_armv7 shell 'rm -rf /data/local/tmp/*'
     fi
 
     cur=$PWD
@@ -798,7 +798,7 @@ function build_test_arm_subtask_model {
     else
        adb_devices=$(adb devices |grep -v devices | grep device | awk -F " " '{print $1}')
        local portname_armv8=${adb_devices[0]}
-       adb -s shell $portname_armv8 'rm -rf /data/local/tmp/*'
+       adb -s $portname_armv8 shell 'rm -rf /data/local/tmp/*'
     fi
     # just test the model on armv8
     test_arm_model $test_name $portname_armv8 "./third_party/install/$model_name"
@@ -859,7 +859,7 @@ function build_test_npu {
     else
        adb_devices=$(adb devices |grep -v devices | grep device | awk -F " " '{print $1}')
        local portname_armv8=${adb_devices[0]}
-       adb -s shell $portname_armv8 'rm -rf /data/local/tmp/*'
+       adb -s $portname_armv8 shell 'rm -rf /data/local/tmp/*'
     fi
 
 
