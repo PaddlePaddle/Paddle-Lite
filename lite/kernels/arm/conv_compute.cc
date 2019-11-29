@@ -40,6 +40,7 @@ void ConvCompute<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
   int kw = w_dims[3];
   int pad = paddings[0];
   int stride = param.strides[0];
+  int threads = ctx.threads();
 
   bool pads_equal =
       ((paddings[0] == paddings[1]) && (paddings[2] == paddings[3]));
@@ -67,7 +68,11 @@ void ConvCompute<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
     VLOG(3) << "invoking dw conv";
   } else if (param.groups == 1 && kw == 3 && stride == 1 && kps_equal &&
              no_dilation) {
-    if (ic >= 32 && oc >= 32 && hout > 16 && wout > 16) {
+    bool use_winograd =
+        (threads == 1 && oc >= 4 && ic >= 4 && hout >= 6 && wout >= 6 &&
+         pads_equal) ||
+        (oc >= 32 && ic >= 32 && hout >= 16 && wout >= 16 && pads_equal);
+    if (use_winograd) {
       /// winograd conv impl
       impl_ = new WinogradConv<PRECISION(kFloat), PRECISION(kFloat)>;
       VLOG(3) << "invoking winograd conv";

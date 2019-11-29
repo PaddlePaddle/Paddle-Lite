@@ -30,34 +30,50 @@ node_map_type ElementwiseConverter(
   auto unique_op_type = lite::npu::UniqueName(op_type);
   LOG(INFO) << "[NPU] Converting " + op_type + "...";
 
-  std::shared_ptr<ge::op::Eltwise> elementwise_node =
-      std::make_shared<ge::op::Eltwise>(unique_op_type);
-
   auto x_var_name = op_info->Input("X").front();
   auto y_var_name = op_info->Input("Y").front();
-
-  CHECK_EQ(op_info->GetAttr<int>("axis"), -1)
-      << "[NPU] elementwise only support inputs with same size";
-
   CHECK(inputs_map.find(x_var_name) != inputs_map.end());
-  elementwise_node->set_input_x1(*inputs_map.at(x_var_name));
-  lite::npu::OpList::Global().add(inputs_map.at(x_var_name));
 
+  std::shared_ptr<ge::Operator> elementwise_node = nullptr;
+  std::shared_ptr<ge::Operator> x_node = inputs_map.at(x_var_name);
+  std::shared_ptr<ge::Operator> y_node = nullptr;
   if (inputs_map.find(y_var_name) != inputs_map.end()) {
-    elementwise_node->set_input_x2(*inputs_map.at(y_var_name));
-    lite::npu::OpList::Global().add(inputs_map.at(y_var_name));
+    y_node = inputs_map.at(y_var_name);
   } else {
     auto y_const_node = std::make_shared<ge::op::Const>(y_var_name);
-    auto* y = scope->FindVar(y_var_name)->GetMutable<Tensor>();
+    auto* y = scope->FindMutableTensor(y_var_name);
     y_const_node->set_attr_value(lite::npu::CvtTensor(y));
-    elementwise_node->set_input_x2(*y_const_node);
-    lite::npu::OpList::Global().add(y_const_node);
+    y_node = y_const_node;
+  }
+  lite::npu::OpList::Global().add(x_node);
+  lite::npu::OpList::Global().add(y_node);
+
+  if (op_type == "elementwise_add" ||
+      op_type == "fusion_elementwise_add_activation") {
+    auto elt_node = std::make_shared<ge::op::Add>(unique_op_type);
+    elt_node->set_input_x1(*x_node);
+    elt_node->set_input_x2(*y_node);
+    elementwise_node = elt_node;
+  } else if (op_type == "elementwise_sub") {
+    auto elt_node = std::make_shared<ge::op::Sub>(unique_op_type);
+    elt_node->set_input_x1(*x_node);
+    elt_node->set_input_x2(*y_node);
+    elementwise_node = elt_node;
+  } else if (op_type == "elementwise_mul") {
+    auto elt_node = std::make_shared<ge::op::Mul>(unique_op_type);
+    elt_node->set_input_x(*x_node);
+    elt_node->set_input_y(*y_node);
+    elementwise_node = elt_node;
+  } else if (op_type == "elementwise_div") {
+    auto elt_node = std::make_shared<ge::op::RealDiv>(unique_op_type);
+    elt_node->set_input_x1(*x_node);
+    elt_node->set_input_x2(*y_node);
+    elementwise_node = elt_node;
+  } else {
+    LOG(FATAL) << "unsupported op type: " << op_type;
   }
 
   lite::npu::OpList::Global().add(elementwise_node);
-
-  // paddlelite has sum only
-  elementwise_node->set_attr_mode(1);
 
   node_map_type outputs_map;
   if (op_type == "fusion_elementwise_add_activation") {
@@ -85,4 +101,10 @@ node_map_type ElementwiseConverter(
 REGISTER_NPU_BRIDGE(elementwise_add,
                     paddle::lite::kernels::npu::bridges::ElementwiseConverter);
 REGISTER_NPU_BRIDGE(fusion_elementwise_add_activation,
+                    paddle::lite::kernels::npu::bridges::ElementwiseConverter);
+REGISTER_NPU_BRIDGE(elementwise_sub,
+                    paddle::lite::kernels::npu::bridges::ElementwiseConverter);
+REGISTER_NPU_BRIDGE(elementwise_mul,
+                    paddle::lite::kernels::npu::bridges::ElementwiseConverter);
+REGISTER_NPU_BRIDGE(elementwise_div,
                     paddle::lite::kernels::npu::bridges::ElementwiseConverter);
