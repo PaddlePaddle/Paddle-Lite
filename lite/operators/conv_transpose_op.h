@@ -44,6 +44,7 @@ class ConvTransposeOpLite : public OpLite {
 
  private:
   mutable ConvParam param_;
+  std::string padding_algorithm_{""};
 };
 
 }  // namespace operators

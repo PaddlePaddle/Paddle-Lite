@@ -15,6 +15,7 @@
 #pragma once
 #include <map>
 #include <memory>
+#include <mutex>  //NOLINT
 #include <string>
 #include <utility>
 #include <vector>
@@ -27,6 +28,13 @@
 
 namespace paddle {
 namespace lite {
+
+static const char TAILORD_OPS_SOURCE_LIST_FILENAME[] =
+    ".tailored_ops_source_list";
+static const char TAILORD_OPS_LIST_NAME[] = ".tailored_ops_list";
+static const char TAILORD_KERNELS_SOURCE_LIST_FILENAME[] =
+    ".tailored_kernels_source_list";
+static const char TAILORD_KERNELS_LIST_NAME[] = ".tailored_kernels_list";
 
 /*
  * Predictor for inference, input a model, it will optimize and execute it.
@@ -126,6 +134,8 @@ class CxxPaddleApiImpl : public lite_api::PaddlePredictor {
 
   void Run() override;
 
+  std::shared_ptr<lite_api::PaddlePredictor> Clone() override;
+
   std::string GetVersion() const override;
 
   // get inputs names and get outputs names
@@ -146,6 +156,8 @@ class CxxPaddleApiImpl : public lite_api::PaddlePredictor {
 
  private:
   Predictor raw_predictor_;
+  lite_api::CxxConfig config_;
+  std::mutex mutex_;
 };
 
 /*

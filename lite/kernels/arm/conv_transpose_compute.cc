@@ -40,13 +40,13 @@ void Conv2DTransposeCompute::PrepareForRun() {
   int group = param.groups;
 
   // deconv weights layout: chin * chout * kh * kw
-  auto& ctx = this->ctx_->template As<ARMContext>();
   int m = chout * kw * kh / group;
   int n = hin * win;
   int k = chin / group;
 
-  ctx.ExtendWorkspace(group * m * n * sizeof(float));
+  workspace_size_ = group * m * n * sizeof(float);
 
+  auto& ctx = this->ctx_->template As<ARMContext>();
   lite::Tensor tmp_weights;
   lite::arm::math::prepackA(
       &tmp_weights, *(param.filter), 1.f, m, k, group, true, &ctx);
@@ -57,6 +57,8 @@ void Conv2DTransposeCompute::PrepareForRun() {
 }
 
 void Conv2DTransposeCompute::Run() {
+  auto& ctx = this->ctx_->template As<ARMContext>();
+  ctx.ExtendWorkspace(workspace_size_);
   auto& param = this->Param<param_t>();
   auto x_dims = param.x->dims();
   auto o_dims = param.output->dims();
@@ -74,20 +76,28 @@ void Conv2DTransposeCompute::Run() {
   bool fuse_relu = param.fuse_relu;
   bool flag_bias = (param.bias != nullptr);
 
+  auto paddings = *param.paddings;
+  auto dilations = *param.dilations;
+
   int m = chout * kw * kh / group;
   int n = hin * win;
   int k = chin / group;
+
+  bool pads_equal =
+      (paddings[0] == paddings[1]) && (paddings[2] == paddings[3]);
+
   int group_size_in = win * hin * chin / group;
   int group_size_out = wout * hout * chout / group;
   int group_size_coldata = m * n;
-  auto& ctx = this->ctx_->template As<ARMContext>();
+
+  bool pads_all_qual = pads_equal && (paddings[0] == paddings[2]);
   int hblock = lite::arm::math::get_hblock(&ctx);
   int m_roundup = hblock * ((m + hblock - 1) / hblock);
   int group_size_weights = ((m_roundup * k + 15) / 16) * 16;
   bool flag_1x1s1p1 = (kw == 1) && (kh == 1) && (param.strides[0] == 1) &&
-                      (param.strides[1] == 1) && (param.paddings[0] == 0) &&
-                      (param.paddings[1] == 0) && (param.dilations[0] == 1) &&
-                      (param.dilations[1] == 1);
+                      (param.strides[1] == 1) && pads_all_qual &&
+                      (paddings[0] == 0) && (dilations[0] == 1) &&
+                      (dilations[1] == 1);
   ctx.ExtendWorkspace(sizeof(float) * group * m * n);
 
   auto din = param.x->data<float>();
@@ -128,12 +138,14 @@ void Conv2DTransposeCompute::Run() {
                                      wout,
                                      kh,
                                      kw,
-                                     param.paddings[0],
-                                     param.paddings[1],
+                                     paddings[0],
+                                     paddings[1],
+                                     paddings[2],
+                                     paddings[3],
                                      param.strides[0],
                                      param.strides[1],
-                                     param.dilations[0],
-                                     param.dilations[1],
+                                     dilations[0],
+                                     dilations[1],
                                      dout_batch);
     }
     if (flag_bias) {

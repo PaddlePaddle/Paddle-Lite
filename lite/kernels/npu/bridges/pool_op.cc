@@ -27,7 +27,7 @@ node_map_type PoolConverter(const std::shared_ptr<lite::OpLite> pool_op,
   auto op_info = pool_op->op_info();
   auto op_type = op_info->Type();
   auto unique_op_type = lite::npu::UniqueName(op_type);
-  LOG(INFO) << "Converting " + op_type + "...";
+  LOG(INFO) << "[NPU] Converting " + op_type + "...";
 
   std::shared_ptr<ge::op::Pooling> pool_node =
       std::make_shared<ge::op::Pooling>(unique_op_type);
@@ -39,17 +39,22 @@ node_map_type PoolConverter(const std::shared_ptr<lite::OpLite> pool_op,
   } else if (pooling_type == "avg") {
     npu_mode = 1;
     CHECK(op_info->GetAttr<bool>("exclusive"))
-        << "exclusive must be true when use npu";
+        << "[NPU] exclusive must be true in HiAI DDK";
   } else {
-    LOG(FATAL) << "Unsupported pooling type: " << pooling_type;
+    LOG(FATAL) << "[NPU] Unsupported pooling type: " << pooling_type;
   }
   bool npu_global_pooling = op_info->GetAttr<bool>("global_pooling");
   auto ksize = op_info->GetAttr<std::vector<int>>("ksize");
   auto npu_window = ge::AttrValue::LIST_INT(ksize.begin(), ksize.end());
 
   auto padding = op_info->GetAttr<std::vector<int>>("paddings");
+  bool pads_equal = (padding[0] == padding[1]) && (padding[2] == padding[3]);
+  if (!pads_equal) {
+    LOG(FATAL)
+        << "padding requires pad_left == pad_right, pad_top == pad_bottom";
+  }
   auto npu_pad =
-      ge::AttrValue::LIST_INT{padding[0], padding[0], padding[1], padding[1]};
+      ge::AttrValue::LIST_INT{padding[0], padding[1], padding[2], padding[3]};
   auto strides = op_info->GetAttr<std::vector<int>>("strides");
   auto npu_stride = ge::AttrValue::LIST_INT(strides.begin(), strides.end());
   int npu_ceil_mode = 0;
