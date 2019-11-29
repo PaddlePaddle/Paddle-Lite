@@ -30,8 +30,8 @@ node_map_type BatchNormConverter(
   auto unique_op_type = lite::npu::UniqueName(op_type);
   LOG(INFO) << "[NPU] Converting " + op_type + "...";
 
-  std::shared_ptr<ge::op::BatchNorm> batch_norm_node =
-      std::make_shared<ge::op::BatchNorm>(unique_op_type);
+  std::shared_ptr<ge::op::BatchNormExt2> batch_norm_node =
+      std::make_shared<ge::op::BatchNormExt2>(unique_op_type);
   auto x_var_name = op_info->Input("X").front();
 
   auto scale_var_name = op_info->Input("Scale").front();
@@ -66,7 +66,7 @@ node_map_type BatchNormConverter(
 
   batch_norm_node->set_input_x(*inputs_map.at(x_var_name));
   batch_norm_node->set_input_scale(*npu_scale);
-  batch_norm_node->set_input_b(*npu_bias);
+  batch_norm_node->set_input_offset(*npu_bias);
   batch_norm_node->set_input_mean(*npu_mean);
   batch_norm_node->set_input_variance(*npu_variance);
   batch_norm_node->set_attr_momentum(npu_momentum);
