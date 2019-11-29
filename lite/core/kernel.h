@@ -31,7 +31,6 @@
 #include "lite/utils/replace_stl/stream.h"
 
 #ifdef LITE_WITH_PROFILE
-#include "lite/core/profile/basic_profiler.h"
 #include "lite/core/profile/profiler.h"
 #endif  // LITE_WITH_PROFILE
 

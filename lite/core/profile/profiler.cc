@@ -49,8 +49,8 @@ std::string Profiler::Summary(bool concise) {
     ss << "===== " << title << ": " << name << " =====" << std::endl;
     ss << std::setw(25) << std::left << "Operator Type" << std::setw(40)
        << std::left << "Kernel Name" << std::setw(10) << std::left << "Remark"
-       << std::setw(10) << std::left << "Avg Time" << std::setw(10) << std::left
-       << "Min Time" << std::setw(10) << std::left << "Max Time" << std::endl;
+       << std::setw(10) << std::left << "Avg (ms)" << std::setw(10) << std::left
+       << "Min (ms)" << std::setw(10) << std::left << "Max (ms)" << std::endl;
   };
   if (concise) {
     auto op_comp = [](const OpCharacter& c1, const OpCharacter& c2) {

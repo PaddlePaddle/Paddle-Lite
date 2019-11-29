@@ -22,9 +22,6 @@
 #include "lite/core/op_lite.h"
 #include "lite/core/op_registry.h"
 #include "lite/model_parser/cpp/program_desc.h"
-#ifdef LITE_WITH_PROFILE
-#include "lite/core/profile/basic_profiler.h"
-#endif  // LITE_WITH_PROFILE
 
 namespace paddle {
 namespace lite {

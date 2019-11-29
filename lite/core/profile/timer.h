@@ -16,7 +16,9 @@
 #include <algorithm>
 #include <chrono>  // NOLINT
 #include <list>
+#ifdef LITE_WITH_CUDA
 #include "lite/backends/cuda/cuda_utils.h"
+#endif
 #include "lite/core/context.h"
 
 namespace paddle {

@@ -64,7 +64,11 @@ TEST(profiler, real_latency) {
   (&ctx.As<CUDAContext>())->SetExecStream(exec_stream);
 
   Profiler profiler("name");
-  int idx = profiler.AddTimer(TargetType::kCUDA, "operator/1", "kernel/1");
+  profile::OpCharacter ch;
+  ch.target = TargetType::kCUDA;
+  ch.op_type = "operator/1";
+  ch.kernel_name = "kernel/1";
+  int idx = profiler.NewTimer(ch);
   profiler.StartTiming(idx, &ctx);
   std::this_thread::sleep_for(std::chrono::milliseconds(10));
   profiler.StopTiming(idx, &ctx);
