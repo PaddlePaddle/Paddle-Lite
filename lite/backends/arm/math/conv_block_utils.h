@@ -256,6 +256,7 @@ inline void prepack_input_nxwc4_dw(const float* din,
     LOG(FATAL) << "prepack_dw_input, valid height must > zero";
   }
   float32x4_t vzero = vdupq_n_f32(0.f);
+  auto out_data = dout;
 
   int size_w = we - ws;
   int w0 = ws < 0 ? 0 : ws;
@@ -271,6 +272,7 @@ inline void prepack_input_nxwc4_dw(const float* din,
 
   bool flag_ext_l = left_remain > 0;
   int left_sl = 4 - left_remain;
+  int left_valid_sl = left_sl > width ? width : left_sl;
   uint32x4_t vmask_padl;
   bool flag_mask_l = false;
   if (flag_ext_l) {
@@ -292,6 +294,7 @@ inline void prepack_input_nxwc4_dw(const float* din,
   }
   int size_c = width * height;
   for (int h = hs; h < he; ++h) {
+    dout = out_data + (h - hs) * 4 * size_w;
     auto ptr_c0 = din + cs * size_c + h * width;
     auto ptr_c1 = ptr_c0 + size_c;
     auto ptr_c2 = ptr_c1 + size_c;
@@ -353,10 +356,10 @@ inline void prepack_input_nxwc4_dw(const float* din,
       }
       transpose_4x4(vc0, vc1, vc2, vc3, dout);
       dout += 16;
-      ptr_c0 += left_sl;
-      ptr_c1 += left_sl;
-      ptr_c2 += left_sl;
-      ptr_c3 += left_sl;
+      ptr_c0 += left_valid_sl;
+      ptr_c1 += left_valid_sl;
+      ptr_c2 += left_valid_sl;
+      ptr_c3 += left_valid_sl;
     }
     /// valid
     for (int i = 0; i < cnt_valid; ++i) {
@@ -1679,7 +1682,7 @@ inline bool write_to_output_c4_fp32(const float* din,
                        << " fuse not support";
         }
       } else {
-        for (; j < width; ++j) {
+        for (; j < remain; ++j) {
           *(doutc0_ptr++) = din_hei_ptr[0];
           *(doutc1_ptr++) = din_hei_ptr[1];
           *(doutc2_ptr++) = din_hei_ptr[2];

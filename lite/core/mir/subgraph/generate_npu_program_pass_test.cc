@@ -160,8 +160,8 @@ TEST(NPUSubgraph, compare) {
       TestModel(FLAGS_model_dir,
                 FLAGS_model_file,
                 FLAGS_params_file,
-                {lite_api::Place{TARGET(kARM), PRECISION(kFloat)},
-                 lite_api::Place{TARGET(kNPU), PRECISION(kFloat)}},
+                {lite_api::Place{TARGET(kNPU), PRECISION(kFloat)},
+                 lite_api::Place{TARGET(kARM), PRECISION(kFloat)}},
                 input_tensor_shape,
                 FLAGS_optimized_model_dir + "/NPU");
   // verify results
