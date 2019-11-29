@@ -49,7 +49,7 @@ void StaticKernelPickPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
                                        << instruct.op_type();
     VLOG(4) << "instruct.kernels().size():" << instruct.kernels().size();
     for (auto&& kernel : instruct.kernels()) {
-      float score = KernelGrade(*kernel, graph->valid_places());
+      float score = KernelGrade(instruct, *kernel, graph->valid_places());
       VLOG(4) << "kernel->summary():" << kernel->summary()
               << " score:" << score;
       scored.emplace_back(score, std::move(kernel));
@@ -99,7 +99,7 @@ void StaticKernelPickPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
         instruct.ResetOp(update_desc, graph->valid_places());
         scored.clear();
         for (auto&& kernel : instruct.kernels()) {
-          float score = KernelGrade(*kernel, graph->valid_places());
+          float score = KernelGrade(instruct, *kernel, graph->valid_places());
           scored.emplace_back(score, std::move(kernel));
         }
         std::sort(scored.begin(), scored.end(), KernelScoreCmp);
