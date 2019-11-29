@@ -99,7 +99,7 @@ add_custom_target(all_kernel_faked_cc DEPENDS all_kernel_faked.cc)
 #----------------------------------------------- NOT CHANGE -----------------------------------------------
 lite_cc_library(kernel SRCS kernel.cc
         DEPS context type_system target_wrapper any op_params tensor
-        PROFILE_DEPS basic_profiler
+        PROFILE_DEPS basic_profiler lite_profiler
   )
 lite_cc_library(op SRCS op_lite.cc DEPS scope op_registry target_wrapper kernel
   cpp_op_desc tensor
@@ -113,7 +113,7 @@ lite_cc_library(type_system SRCS type_system.cc DEPS tensor target_wrapper)
 
 lite_cc_library(program SRCS program.cc
     DEPS op kernel model_parser ${ops} ${cpp_wrapper}
-    PROFILE_DEPS basic_profiler)
+    PROFILE_DEPS basic_profiler lite_profiler)
 
 if (NOT LITE_ON_TINY_PUBLISH)
   lite_cc_library(optimizer SRCS optimizer.cc DEPS mir_pass_manager model_parser program)

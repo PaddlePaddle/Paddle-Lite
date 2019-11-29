@@ -18,7 +18,7 @@ if(WITH_AMD_GPU)
         extern_eigen3
         ${EXTERNAL_PROJECT_LOG_ARGS}
         GIT_TAG         7cb2b6e5a4b4a1efe658abb215cd866c6fb2275e
-        URL             https://paddle-inference-dist.bj.bcebos.com/PaddleLite_ThirdParty%2Fhipeigen-upstream-702834151eaebcf955fd09ed0ad83c06.zip
+        URL             http://paddle-inference-dist.bj.bcebos.com/PaddleLite_ThirdParty%2Fhipeigen-upstream-702834151eaebcf955fd09ed0ad83c06.zip
         DOWNLOAD_DIR          ${EIGEN_SOURCECODE_DIR}
         DOWNLOAD_NO_PROGRESS  1
         PREFIX          ${EIGEN_SOURCE_DIR}
@@ -36,7 +36,7 @@ else()
         # eigen on cuda9.1 missing header of math_funtions.hpp
         # https://stackoverflow.com/questions/43113508/math-functions-hpp-not-found-when-using-cuda-with-eigen
         GIT_TAG         917060c364181f33a735dc023818d5a54f60e54c
-        URL             https://paddle-inference-dist.bj.bcebos.com/PaddleLite_ThirdParty%2Feigen-git-mirror-master-9ab917e9db99f5907d086aa73d5f9103.zip
+        URL             http://paddle-inference-dist.bj.bcebos.com/PaddleLite_ThirdParty%2Feigen-git-mirror-master-9ab917e9db99f5907d086aa73d5f9103.zip
         DOWNLOAD_DIR          ${EIGEN_SOURCECODE_DIR}
         DOWNLOAD_NO_PROGRESS  1
         PREFIX          ${EIGEN_SOURCE_DIR}

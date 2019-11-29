@@ -32,6 +32,7 @@
 
 #ifdef LITE_WITH_PROFILE
 #include "lite/core/profile/basic_profiler.h"
+#include "lite/core/profile/profiler.h"
 #endif  // LITE_WITH_PROFILE
 
 namespace paddle {
@@ -58,7 +59,10 @@ class KernelBase {
   virtual void Run() = 0;
 
 #ifdef LITE_WITH_PROFILE
-  void SetProfileID(uint32_t id) { profile_id_ = id; }
+  void SetProfiler(profile::Profiler* profiler, int id) {
+    profiler_ = profiler;
+    profile_id_ = id;
+  }
 #endif
 
   void Launch() {
@@ -83,8 +87,9 @@ class KernelBase {
 
 #ifdef LITE_WITH_PROFILE
     if (profile_id_ >= 0) {
-      profile::ProfileBlock x(profile_id_, "kernel");
+      profiler_->StartTiming(profile_id_, ctx_.get());
       Run();
+      profiler_->StopTiming(profile_id_, ctx_.get());
     }
 #else
     Run();
@@ -175,6 +180,7 @@ class KernelBase {
   bool is_first_epoch_{true};
 
 #ifdef LITE_WITH_PROFILE
+  profile::Profiler* profiler_;
   int profile_id_{-1};
 #endif
 };
