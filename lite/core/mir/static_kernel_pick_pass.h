@@ -48,7 +48,8 @@ class StaticKernelPickPass : public mir::StmtPass {
 
  private:
   // Score the kernel.
-  size_t KernelGrade(const lite::KernelBase& kernel,
+  size_t KernelGrade(const lite::mir::Node::Stmt& instruct,
+                     const lite::KernelBase& kernel,
                      const std::vector<Place>& places) {
     CHECK_GT(places.size(), 0) << "valid_places is empty.";
     float final_score{-1.};
@@ -66,7 +67,7 @@ class StaticKernelPickPass : public mir::StmtPass {
     // valid_places.size() as default.
     //         where i is the place's index in valid_places array.
     // score:  score is the weighted sum of target、percision and layout
-    for (int i = 0; i < place_size; ++i) {
+    for (size_t i = 0; i < place_size; ++i) {
       const auto& place = places[i];
       float weight = static_cast<float>(place_size - i) / place_size;
       size_t score{};
@@ -83,8 +84,12 @@ class StaticKernelPickPass : public mir::StmtPass {
           (place.precision == kernel.precision() ||
            kernel.precision() == PRECISION(kAny) ||
            place.precision == PRECISION(kAny))) {
-        score += kMax / static_cast<int>(
-                            core::KernelPickFactor::Factor::PrecisionFirst);
+        // score skipped, if kernel is int8, but op is not int8
+        if (!(kernel.precision() == PRECISION(kInt8) &&
+              !instruct.op_info()->HasAttr("enable_int8"))) {
+          score += kMax / static_cast<int>(
+                              core::KernelPickFactor::Factor::PrecisionFirst);
+        }
       }
       VLOG(4) << "[score s2]:" << score;
       if (kernel_pick_factors_.IsDataLayoutConsidered() &&
