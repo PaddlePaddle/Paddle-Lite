@@ -28,5 +28,9 @@ extern std::vector<float> preprocess_scale;
 
 extern bool use_yolov3_416;
 
+extern float img_shape_width;
+
+extern float img_shape_height;
+
 
 #endif /* PREPROCESS_CONF_HPP */
