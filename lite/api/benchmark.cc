@@ -44,10 +44,7 @@ void OutputOptModel(const std::string& load_model_dir,
                     const std::vector<std::vector<int64_t>>& input_shapes) {
   lite_api::CxxConfig config;
   config.set_model_dir(load_model_dir);
-  std::vector<Place> vaild_places = {
-      Place{TARGET(kARM), PRECISION(kFloat)},
-      Place{TARGET(kX86), PRECISION(kFloat)},
-  };
+  std::vector<Place> vaild_places = {Place{TARGET(kARM), PRECISION(kFloat)}};
   if (FLAGS_is_quantized_model) {
     vaild_places.insert(vaild_places.begin(),
                         Place{TARGET(kARM), PRECISION(kInt8)});
