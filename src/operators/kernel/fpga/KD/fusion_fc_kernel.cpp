@@ -31,6 +31,8 @@ bool FusionFcKernel<FPGA, float>::Init(FusionFcParam<FPGA>* param) {
   fc_param.output = param->Out()->zynqmpTensor();
   fc_param.filter = param->InputY()->zynqmpTensor();
   fc_param.bias = param->InputZ()->zynqmpTensor();
+  fc_param.activeParam.type = zynqmp::TYPE_NONE;
+
   pe.init();
   pe.apply();
   return true;

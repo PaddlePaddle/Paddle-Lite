@@ -42,7 +42,7 @@ bool ConvBNReluKernel<FPGA, float>::Init(FusionConvBNReluParam<FPGA>* param) {
   conv_param.output = param->Output()->zynqmpTensor();
   conv_param.filter = param->Filter()->zynqmpTensor();
   // conv_param.relu.enabled = true;
-  conv_param.activeParam.type = zynqmp::ActiveType.RELU;
+  conv_param.activeParam.type = zynqmp::TYPE_RELU;
   conv_param.groups = param->Groups();
   conv_param.strides = param->Strides();
   conv_param.paddings = param->Paddings();

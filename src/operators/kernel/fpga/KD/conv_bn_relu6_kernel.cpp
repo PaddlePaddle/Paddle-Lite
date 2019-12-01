@@ -17,7 +17,7 @@ limitations under the License. */
 #include "operators/kernel/conv_bn_relu6_kernel.h"
 #include "fpga/KD/pes/conv_pe.hpp"
 #include "fpga/KD/pes/conv_process.hpp"
-#include "fpga/KD/pes/pe_params.hpp"
+// #include "fpga/KD/pes/pe_params.hpp"
 
 #include <math.h>
 
@@ -42,11 +42,11 @@ bool ConvBNRelu6Kernel<FPGA, float>::Init(FusionConvBNReluParam<FPGA>* param) {
   conv_param.input = param->Input()->zynqmpTensor();
   conv_param.output = param->Output()->zynqmpTensor();
   conv_param.filter = param->Filter()->zynqmpTensor();
-  conv_param.activeParam.type = zynqmp::ActiveType.RELU6;
   conv_param.groups = param->Groups();
   conv_param.strides = param->Strides();
   conv_param.paddings = param->Paddings();
   conv_param.dilations = param->Dilations();
+  conv_param.activeParam.type = zynqmp::TYPE_RELU6;
 
   combine_bn_params(bn_param, &conv_param);
   // fill_scale_bias_const(&conv_param);

@@ -37,7 +37,7 @@ bool ConvAddKernel<FPGA, float>::Init(FusionConvAddParam<FPGA>* param) {
     depthwise_conv_param.output = param->Output()->zynqmpTensor();
     depthwise_conv_param.filter = param->Filter()->zynqmpTensor();
     // depthwise_conv_param.relu.enabled = false;
-    depthwise_conv_param.activeParam.type = zynqmp::ActiveType.NONE;
+    depthwise_conv_param.activeParam.type = zynqmp::TYPE_NONE;
     depthwise_conv_param.groups = param->Groups();
     depthwise_conv_param.strides = param->Strides();
     depthwise_conv_param.paddings = param->Paddings();
@@ -58,7 +58,7 @@ bool ConvAddKernel<FPGA, float>::Init(FusionConvAddParam<FPGA>* param) {
     conv_param.output = param->Output()->zynqmpTensor();
     conv_param.filter = param->Filter()->zynqmpTensor();
     // conv_param.relu.enabled = false;
-    conv_param.activeParam.type = zynqmp::ActiveType.NONE;
+    conv_param.activeParam.type = zynqmp::TYPE_NONE;
     conv_param.groups = param->Groups();
     conv_param.strides = param->Strides();
     conv_param.paddings = param->Paddings();

@@ -48,7 +48,7 @@ bool ConvAddBNReluKernel<FPGA, float>::Init(
     depthwise_conv_param.output = param->Output()->zynqmpTensor();
     depthwise_conv_param.filter = param->Filter()->zynqmpTensor();
     // depthwise_conv_param.relu.enabled = true;
-    depthwise_conv_param.activeParam.type = zynqmp::ActiveType.RELU;
+    depthwise_conv_param.activeParam.type = zynqmp::TYPE_RELU;
     depthwise_conv_param.groups = param->Groups();
     depthwise_conv_param.strides = param->Strides();
     depthwise_conv_param.paddings = param->Paddings();
@@ -77,7 +77,7 @@ bool ConvAddBNReluKernel<FPGA, float>::Init(
     conv_param.output = param->Output()->zynqmpTensor();
     conv_param.filter = param->Filter()->zynqmpTensor();
     // conv_param.relu.enabled = true;
-    conv_param.activeParam.type = zynqmp::ActiveType.RELU;
+    conv_param.activeParam.type = zynqmp::TYPE_RELU;
     conv_param.groups = param->Groups();
     conv_param.strides = param->Strides();
     conv_param.paddings = param->Paddings();

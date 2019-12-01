@@ -31,7 +31,9 @@ bool FusionFcReluKernel<FPGA, float>::Init(FusionFcReluParam<FPGA>* param) {
   fc_param.output = param->Out()->zynqmpTensor();
   fc_param.filter = param->InputY()->zynqmpTensor();
   fc_param.bias = param->InputZ()->zynqmpTensor();
-  fc_param.relu.enabled = true;
+  // fc_param.relu.enabled = true;
+  //  TYPE_RELU = 1,
+  fc_param.activeParam.type = zynqmp::TYPE_RELU;
   pe.init();
   pe.apply();
   return true;

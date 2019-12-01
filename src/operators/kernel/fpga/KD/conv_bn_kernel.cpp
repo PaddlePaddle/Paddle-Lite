@@ -39,7 +39,7 @@ bool ConvBNKernel<FPGA, float>::Init(FusionConvBNParam<FPGA>* param) {
   conv_param.filter = param->Filter()->zynqmpTensor();
   // conv_param.batchnorm = bn_param;
   // conv_param.relu.enabled = false;
-  conv_param.activeParam.type = zynqmp::ActiveType.NONE;
+  conv_param.activeParam.type = zynqmp::TYPE_NONE;
   conv_param.groups = param->Groups();
   conv_param.strides = param->Strides();
   conv_param.paddings = param->Paddings();

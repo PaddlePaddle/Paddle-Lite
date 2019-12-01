@@ -342,7 +342,8 @@ inline void split_filter_num(const ConvParam& c_param) {
     // exit(-1);
 
     args.group_num = param.groups;
-    args.relu_enabled = param.relu.enabled;
+    // TODO relu by inplace
+    // args.relu_enabled = param.relu.enabled;
     args.sb_address = conv_param->scaleBias.data<float>();
     args.sb_address = bs_data;
     args.kernel.stride_h = param.strides[1];
@@ -424,7 +425,8 @@ inline void split_channel(const ConvParam& c_param) {
 
     ConvArgs& args = conv_param->args;
     args.group_num = param.groups;
-    args.relu_enabled = param.relu.enabled;
+    // TODO relu by inplace
+    // args.relu_enabled = param.relu.enabled;
     args.sb_address = conv_param->scaleBias.data<float>();
     args.kernel.stride_h = param.strides[1];
     args.kernel.stride_w = param.strides[0];

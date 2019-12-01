@@ -33,6 +33,7 @@ const char *G_OP_TYPE_FUSION_CONV_ADD_BN_RELU = "fusion_conv_add_bn_relu";
 const char *G_OP_TYPE_FUSION_CONV_BN_ADD_RELU = "fusion_conv_bn_add_relu";
 const char *G_OP_TYPE_FUSION_DWCONV_BN_RELU = "fusion_dwconv_bn_relu";
 const char *G_OP_TYPE_FUSION_CONV_BN_RELU = "fusion_conv_bn_relu";
+const char *G_OP_TYPE_FUSION_CONV_BN_RELU6 = "fusion_conv_bn_relu6";
 const char *G_OP_TYPE_FUSION_CONV_BN_LEAKYRELU = "fusion_conv_bn_leakyrelu";
 const char *G_OP_TYPE_FC = "fusion_fc";
 const char *G_OP_TYPE_FUSION_CONV_ADD = "fusion_conv_add";

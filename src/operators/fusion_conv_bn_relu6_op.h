@@ -27,9 +27,9 @@ namespace paddle_mobile {
 namespace operators {
 using std::string;
 using std::vector;
-class FusionConvBNReluMatcher : public framework::FusionOpMatcher {
+class FusionConvBNRelu6Matcher : public framework::FusionOpMatcher {
  public:
-  FusionConvBNReluMatcher() {
+  FusionConvBNRelu6Matcher() {
     node_ = framework::Node(G_OP_TYPE_CONV);
     node_ > std::make_shared<framework::Node>(G_OP_TYPE_BATCHNORM) >
         std::make_shared<framework::Node>(G_OP_TYPE_RELU6);
@@ -47,15 +47,15 @@ class FusionConvBNReluMatcher : public framework::FusionOpMatcher {
                  removed_nodes);
   }
 
-  std::string Type() { return G_OP_TYPE_FUSION_CONV_BN_RELU; }
+  std::string Type() { return G_OP_TYPE_FUSION_CONV_BN_RELU6; }
 };
 
 template <typename DeviceType, typename T>
-class FusionConvBNReluOp : public framework::OperatorWithKernel<
+class FusionConvBNRelu6Op : public framework::OperatorWithKernel<
                                DeviceType, FusionConvBNReluParam<DeviceType>,
                                operators::ConvBNReluKernel<DeviceType, T>> {
  public:
-  FusionConvBNReluOp(const string &type, const VariableNameMap &inputs,
+  FusionConvBNRelu6Op(const string &type, const VariableNameMap &inputs,
                      const VariableNameMap &outputs,
                      const framework::AttributeMap &attrs,
                      framework::Scope *scope)

@@ -34,7 +34,8 @@ bool BatchNormKernel<FPGA, float>::Init(BatchNormParam<FPGA>* param) {
   bn_param.mean = param->InputMean()->zynqmpTensor();
   bn_param.variance = param->InputVariance()->zynqmpTensor();
   bn_param.epsilon = param->Epsilon();
-  bn_param.relu.enabled = false;  // TODO(chonwhite)
+  // bn_param.relu.enabled = false;  // TODO(chonwhite)
+  // bn_param.activeParam.type = zynqmp::ActiveType.TYPE_NONE;
 
   pe.init();
   pe.apply();

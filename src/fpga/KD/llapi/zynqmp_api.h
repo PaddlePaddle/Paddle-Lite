@@ -44,10 +44,11 @@ enum DLayoutType {
 };
 
 enum ActiveType {
-  TYPE_RELU = 0,
-  TYPE_RELU6 = 1,
-  TYPE_LEAK_RELU = 2,
-  TYPE_SIGMOID = 3,
+  TYPE_NONE = 0,
+  TYPE_RELU = 1,
+  TYPE_RELU6 = 2,
+  TYPE_LEAKY_RELU = 3,
+  TYPE_SIGMOID = 4,
 };
 
 struct VersionArgs {

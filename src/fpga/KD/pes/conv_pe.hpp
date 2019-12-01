@@ -115,13 +115,13 @@ class ConvPE : public PE {
       return true;
     }
 
-    if (param_.activeParam.type = ActiveParam.RELU) {
+    if (param_.activeParam.type = TYPE_RELU) {
       inplace_.relu_enable = true;
-    } else if (param_.activeParam.type = ActiveParam.RELU6) {
+    } else if (param_.activeParam.type = TYPE_RELU6) {
       inplace_.relu6_enable = true;
-    } else if (param_.activeParam.type = ActiveParam.SIGMOID) {
+    } else if (param_.activeParam.type = TYPE_SIGMOID) {
       inplace_.sigmoid_enable = true;
-    } else if (param_.activeParam.type = ActiveParam.SIGMOID) {
+    } else if (param_.activeParam.type = TYPE_LEAKY_RELU) {
       inplace_.leaky_relu_enable = true;
     }
 
@@ -129,9 +129,9 @@ class ConvPE : public PE {
       inplace_.relu6_enable || inplace_.sigmoid_enable) {
       config_inplace(inplace_);
       if (inplace_.leaky_relu_enable) {
-        activeParamterArgs.type = TYPE_LEAK_RELU;
+        activeParamterArgs.type = TYPE_LEAKY_RELU;
         activeParamterArgs.leaky_relu_factor =
-            fp32_2_fp16(param_.relu.leaky_relu_factor);
+            fp32_2_fp16(param_.activeParam.leaky_relu_factor);
         config_activation(activeParamterArgs);
       }
     }
@@ -152,7 +152,7 @@ class ConvPE : public PE {
       config_inplace(inplace_);
 
       if (inplace_.leaky_relu_enable) {
-        activeParamterArgs.type = TYPE_LEAK_RELU;
+        activeParamterArgs.type = TYPE_LEAKY_RELU;
         activeParamterArgs.leaky_relu_factor = fp32_2_fp16(0);
         config_activation(activeParamterArgs);
       }

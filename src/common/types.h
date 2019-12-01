@@ -132,6 +132,7 @@ extern const char *G_OP_TYPE_FUSION_CONV_ADD_BN_RELU;
 extern const char *G_OP_TYPE_FUSION_CONV_BN_ADD_RELU;
 extern const char *G_OP_TYPE_FUSION_DWCONV_BN_RELU;
 extern const char *G_OP_TYPE_FUSION_CONV_BN_RELU;
+extern const char *G_OP_TYPE_FUSION_CONV_BN_RELU6;
 extern const char *G_OP_TYPE_FUSION_CONV_BN_LEAKYRELU;
 
 extern const char *G_OP_TYPE_GRU;

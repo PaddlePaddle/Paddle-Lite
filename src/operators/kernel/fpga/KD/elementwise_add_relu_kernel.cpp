@@ -33,7 +33,8 @@ bool ElementwiseAddReluKernel<FPGA, float>::Init(
       param->InputY()->zynqmpTensor(),
   };
   ew_param.output = param->Out()->zynqmpTensor();
-  ew_param.relu.enabled = true;
+  // ew_param.relu.enabled = true;
+  ew_param.activeParam.type = zynqmp::TYPE_RELU;
 
   pe.init();
   pe.apply();
