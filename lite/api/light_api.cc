@@ -142,6 +142,7 @@ void LightPredictor::BuildRuntimeProgram(const cpp::ProgramDesc& prog) {
 
   CHECK(program.exec_scope());
   program_->set_exec_scope(program.exec_scope());
+  program_->set_name(name_);
 }
 
 }  // namespace lite

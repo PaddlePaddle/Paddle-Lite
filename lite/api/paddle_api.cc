@@ -164,7 +164,8 @@ std::shared_ptr<PaddlePredictor> CreatePaddlePredictor(const ConfigT &) {
   return std::shared_ptr<PaddlePredictor>();
 }
 
-ConfigBase::ConfigBase(PowerMode mode, int threads) {
+ConfigBase::ConfigBase(PowerMode mode, int threads, const std::string &name) {
+  name_ = name;
 #ifdef LITE_WITH_ARM
   lite::DeviceInfo::Init();
   lite::DeviceInfo::Global().SetRunMode(mode, threads);
@@ -188,6 +189,8 @@ void ConfigBase::set_threads(int threads) {
   threads_ = lite::DeviceInfo::Global().threads();
 #endif
 }
+
+void ConfigBase::set_name(const std::string &name) { name_ = name; }
 
 }  // namespace lite_api
 }  // namespace paddle

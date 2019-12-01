@@ -40,6 +40,19 @@ namespace lite {
 class LITE_API LightPredictor {
  public:
   LightPredictor(
+      const lite_api::MobileConfig& config,
+      lite_api::LiteModelType model_type = lite_api::LiteModelType::kProtobuf) {
+    // Set predictor's name
+    name_ = config.name();
+
+    Build(config.model_dir(),
+          config.model_buffer(),
+          config.param_buffer(),
+          model_type,
+          config.model_from_memory());
+  }
+
+  LightPredictor(
       const std::string& model_dir,
       const std::string& model_buffer = "",
       const std::string& param_buffer = "",
@@ -78,7 +91,11 @@ class LITE_API LightPredictor {
 
   void BuildRuntimeProgram(const cpp::ProgramDesc& prog);
 
+  void SetName(const std::string& name) { name_ = name; }
+  std::string name() { return name_; }
+
  private:
+  std::string name_;
   std::shared_ptr<Scope> scope_;
   std::unique_ptr<RuntimeProgram> program_;
   cpp::ProgramDesc cpp_program_desc_;

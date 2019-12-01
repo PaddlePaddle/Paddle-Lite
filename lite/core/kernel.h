@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <functional>
 #include <map>
 #include <memory>
 #include <set>
@@ -58,7 +59,10 @@ class KernelBase {
   virtual void Run() = 0;
 
 #ifdef LITE_WITH_PROFILE
-  void SetProfileID(uint32_t id) { profile_id_ = id; }
+  void SetProfile(const std::function<std::unique_ptr<profile::ProfileBlock>(
+                      const std::string&)>& creator) {
+    profile_block_creater_ = creator;
+  }
 #endif
 
   void Launch() {
@@ -82,13 +86,10 @@ class KernelBase {
 #endif
 
 #ifdef LITE_WITH_PROFILE
-    if (profile_id_ >= 0) {
-      profile::ProfileBlock x(profile_id_, "kernel");
-      Run();
-    }
-#else
-    Run();
+    std::unique_ptr<profile::ProfileBlock> block(
+        profile_block_creater_("kernel"));
 #endif
+    Run();
   }
 
   void SetContext(std::unique_ptr<KernelContext>&& ctx) {
@@ -175,7 +176,8 @@ class KernelBase {
   bool is_first_epoch_{true};
 
 #ifdef LITE_WITH_PROFILE
-  int profile_id_{-1};
+  std::function<std::unique_ptr<profile::ProfileBlock>(const std::string&)>
+      profile_block_creater_;
 #endif
 };
 

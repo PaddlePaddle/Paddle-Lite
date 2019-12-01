@@ -171,30 +171,49 @@ class BasicProfiler {
     warmup_ = warmup_times * 2;
   }
 
+  std::string detail_file() { return detail_file_; }
+
+  void SetDetailFile(const std::string& filename) { detail_file_ = filename; }
+
+  std::string summary_file() { return summary_file_; }
+
+  void SetSummaryFile(const std::string& filename) { summary_file_ = filename; }
+
+  std::string name() { return name_; }
+
+  void SetName(const std::string& name) { name_ = name; }
+
   ~BasicProfiler();
 
  private:
   std::string name_;
+  std::string detail_file_{"time_profile.txt"};
+  std::string summary_file_{"time_profile_summary.txt"};
   std::vector<record_t> records_;
   int warmup_{0};
 };
 
 struct ProfileBlock {
-  explicit ProfileBlock(int id, const std::string& key) : id_(id), key_(key) {
-    BasicProfiler<BasicTimer>::Global().mutable_record(id_)->Start(key_);
+  explicit ProfileBlock(
+      int id,
+      const std::string& key,
+      const std::shared_ptr<BasicProfiler<BasicTimer>>& profiler)
+      : id_(id), key_(key) {
+    profiler_ = profiler;
+    profiler_->mutable_record(id_)->Start(key_);
   }
 
   void Record() {
     if (has_recorded_) {
       LOG(FATAL) << "You can only call Record() once";
     }
-    BasicProfiler<BasicTimer>::Global().mutable_record(id_)->Stop(key_);
+    profiler_->mutable_record(id_)->Stop(key_);
     has_recorded_ = true;
   }
 
   ~ProfileBlock() {
     if (!has_recorded_) {
-      BasicProfiler<BasicTimer>::Global().mutable_record(id_)->Stop(key_);
+      profiler_->mutable_record(id_)->Stop(key_);
     }
   }
 
@@ -202,16 +221,8 @@ struct ProfileBlock {
   int id_{};
   bool has_recorded_{false};
   std::string key_{};
+  std::shared_ptr<BasicProfiler<BasicTimer>> profiler_;
 };
-
-#define LITE_PROFILE_ONE(key__)                            \
-  static int key__##__profiler_id =                        \
-      ::paddle::lite::profile::BasicProfiler<              \
-          ::paddle::lite::profile::BasicTimer>::Global()   \
-          .NewRcd(#key__)                                  \
-          .id();                                           \
-  ::paddle::lite::profile::ProfileBlock key__##profiler__( \
-      key__##__profiler_id, #key__);
 
 }  // namespace profile
 }  // namespace lite

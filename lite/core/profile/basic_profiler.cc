@@ -16,13 +16,9 @@
 #include <map>
 #include <string>
 
-DEFINE_string(time_profile_file,
-              "time_profile.txt",
-              "Lite time profile information dump file");
-
-DEFINE_string(time_profile_summary_file,
-              "time_profile_summary.txt",
-              "Lite time profile summary information dump file");
+DEFINE_bool(dump_profile_to_file,
+            false,
+            "Dump profile infomation to file or not");
 
 DEFINE_string(time_profile_unit,
               "ms",
@@ -210,27 +206,29 @@ std::string BasicProfiler<TimerT>::summary_repr() const {
 
 template <typename TimerT>
 BasicProfiler<TimerT>::~BasicProfiler() {
-  LOG(INFO) << "Basic Profile dumps:";
+  LOG(INFO) << "[" << name_ << "] Basic Profile dumps:";
   auto b_repr = TimerT::basic_repr_header() + "\n" + basic_repr();
   LOG(INFO) << "\n" + b_repr;
 
-  // Dump to file
-  std::ofstream basic_ostream(FLAGS_time_profile_file);
-  CHECK(basic_ostream.is_open()) << "Open " << FLAGS_time_profile_file
-                                 << " failed";
-  basic_ostream.write(b_repr.c_str(), b_repr.size());
-  basic_ostream.close();
-
-  LOG(INFO) << "Summary Profile dumps:";
+  LOG(INFO) << "[" << name_ << "] Summary Profile dumps:";
   auto s_repr = summary_repr_header() + "\n" + summary_repr();
   LOG(INFO) << "\n" + s_repr;
 
-  // Dump to file
-  std::ofstream summary_ostream(FLAGS_time_profile_summary_file);
-  CHECK(summary_ostream.is_open()) << "Open " << FLAGS_time_profile_summary_file
-                                   << " failed";
-  summary_ostream.write(s_repr.c_str(), s_repr.size());
-  summary_ostream.close();
+  if (FLAGS_dump_profile_to_file) {
+    // Dump detail profile information to file
+    std::string detail_file = name_ + '_' + detail_file_;
+    std::ofstream basic_ostream(detail_file);
+    CHECK(basic_ostream.is_open()) << "Open " << detail_file << " failed";
+    basic_ostream.write(b_repr.c_str(), b_repr.size());
+    basic_ostream.close();
+
+    // Dump summary profile information to file
+    std::string summary_file = name_ + '_' + summary_file_;
+    std::ofstream summary_ostream(summary_file);
+    CHECK(summary_ostream.is_open()) << "Open " << summary_file << " failed";
+    summary_ostream.write(s_repr.c_str(), s_repr.size());
+    summary_ostream.close();
+  }
 }
 
 }  // namespace profile

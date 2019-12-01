@@ -210,6 +210,9 @@ void Predictor::Build(const lite_api::CxxConfig &config,
   const bool model_from_memory = config.model_from_memory();
   LOG(INFO) << "load from memory " << model_from_memory;
 
+  // Set predictor's name
+  name_ = config.name();
+
   Build(model_path,
         model_file,
         param_file,
@@ -273,6 +276,7 @@ void Predictor::Build(const cpp::ProgramDesc &desc,
 
 void Predictor::GenRuntimeProgram() {
   program_ = optimizer_.GenRuntimeProgram();
+  program_->set_name(name_);
   CHECK_EQ(exec_scope_, program_->exec_scope());
   program_generated_ = true;
 }

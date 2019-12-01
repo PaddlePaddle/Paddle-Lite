@@ -184,10 +184,9 @@ void Instruction::Run() {
   CHECK(op_) << "op null";
   CHECK(kernel_) << "kernel null";
 #ifdef LITE_WITH_PROFILE
-  if (profile_id_ >= 0) {
-    profile::ProfileBlock x(profile_id_, "instruction");
-  }
-#endif  // LITE_WITH_PROFILE
+  std::unique_ptr<profile::ProfileBlock> block(
+      profile_block_creater_("instruction"));
+#endif
   if (first_epoch_) {
     first_epoch_ = false;
     CHECK(op_->CheckShape());

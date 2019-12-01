@@ -87,22 +87,26 @@ struct Program {
 struct Instruction {
   Instruction(const std::shared_ptr<OpLite>& op,
               std::unique_ptr<KernelBase>&& kernel)
-      : op_(op), kernel_(std::move(kernel)) {
+      : op_(op), kernel_(std::move(kernel)) {}
+
 #ifdef LITE_WITH_PROFILE
+  void SetProfile(
+      std::shared_ptr<profile::BasicProfiler<profile::BasicTimer>> profile) {
     if (op_->Type() != "feed" && op_->Type() != "fetch") {
-      profile_id_ = profile::BasicProfiler<profile::BasicTimer>::Global()
-                        .NewRcd(kernel_->SerializedKernelType())
-                        .id();
-      kernel_->SetProfileID(profile_id_);
+      auto profile_id = profile->NewRcd(kernel_->SerializedKernelType()).id();
       // Set profile custom info
-      auto& profiler =
-          *profile::BasicProfiler<profile::BasicTimer>::Global().mutable_record(
-              profile_id_);
+      auto& profiler = *profile->mutable_record(profile_id);
       profiler.SetCustomInfo("op_type", op_->Type());
       profiler.SetCustomInfo("op_info", op_->SerializedOpInfo());
+      profile_block_creater_ = [=](const std::string& key) {
+        auto res = std::unique_ptr<profile::ProfileBlock>(
+            new profile::ProfileBlock(profile_id, key, profile));
+        return std::move(res);
+      };
+      kernel_->SetProfile(profile_block_creater_);
     }
-#endif  // LITE_WITH_PROFILE
   }
+#endif
 
   // Run the instruction.
   void Run();
@@ -120,8 +124,8 @@ struct Instruction {
   bool has_run_{false};
 
 #ifdef LITE_WITH_PROFILE
-  // for profiler
-  int profile_id_{-1};
+  std::function<std::unique_ptr<profile::ProfileBlock>(const std::string&)>
+      profile_block_creater_;
 #endif  // LITE_WITH_PROFILE
 };
 
@@ -130,8 +134,16 @@ struct Instruction {
  */
 class LITE_API RuntimeProgram {
  public:
+  typedef profile::BasicProfiler<profile::BasicTimer> ProfileType;
+
   explicit RuntimeProgram(std::vector<Instruction>&& insts)
       : instructions_(std::move(insts)) {
+#ifdef LITE_WITH_PROFILE
+    profile_.reset(new ProfileType("default"));
+    for (auto& item : instructions_) {
+      item.SetProfile(profile_);
+    }
+#endif
     if (instructions_.empty()) {
       LOG(FATAL) << "no instructions";
     }
@@ -155,10 +167,22 @@ class LITE_API RuntimeProgram {
   // be added in vars_.
   void UpdateVarsOfProgram(cpp::ProgramDesc* desc);
 
+  void set_name(const std::string& name) {
+    name_ = name;
+#ifdef LITE_WITH_PROFILE
+    profile_->SetName(name);
+#endif
+  }
+  std::string name() { return name_; }
+
  private:
+  std::string name_;
   RuntimeProgram(const RuntimeProgram&) = delete;
   std::vector<Instruction> instructions_;
   lite::Scope* exec_scope_{};
+#ifdef LITE_WITH_PROFILE
+  std::shared_ptr<ProfileType> profile_;
+#endif
 };
 
 }  // namespace lite

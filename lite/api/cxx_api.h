@@ -110,7 +110,12 @@ class LITE_API Predictor {
   void FeedVars(const std::vector<framework::Tensor>& tensors);
 #endif
 
+  void SetName(const std::string& name) { name_ = name; }
+
+  std::string name() { return name_; }
+
  private:
+  std::string name_;
   Optimizer optimizer_;
   cpp::ProgramDesc program_desc_;
   std::shared_ptr<Scope> scope_;

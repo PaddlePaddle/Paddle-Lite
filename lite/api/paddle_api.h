@@ -110,12 +110,15 @@ class LITE_API PaddlePredictor {
 
 /// Base class for all the configs.
 class LITE_API ConfigBase {
+  std::string name_{"predictor"};
   std::string model_dir_;
   int threads_{1};
   PowerMode mode_{LITE_POWER_NO_BIND};
 
  public:
-  explicit ConfigBase(PowerMode mode = LITE_POWER_NO_BIND, int threads = 1);
+  explicit ConfigBase(PowerMode mode = LITE_POWER_NO_BIND,
+                      int threads = 1,
+                      const std::string& name = "");
   // set Model_dir
   void set_model_dir(const std::string& x) { model_dir_ = x; }
   const std::string& model_dir() const { return model_dir_; }
@@ -125,6 +128,9 @@ class LITE_API ConfigBase {
   // set Thread
   void set_threads(int threads);
   int threads() const { return threads_; }
+  // set predictor name
+  void set_name(const std::string& name);
+  std::string name() const { return name_; }
 };
 
 /// CxxConfig is the config for the Full feature predictor.

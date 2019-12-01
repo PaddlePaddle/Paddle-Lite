@@ -31,6 +31,7 @@ TEST(CXXApi, test_lite_googlenet) {
   config.set_model_dir(FLAGS_model_dir);
   config.set_valid_places({lite_api::Place{TARGET(kX86), PRECISION(kFloat)},
                            lite_api::Place{TARGET(kHost), PRECISION(kFloat)}});
+  config.set_name("GoogLeNet");
   auto predictor = lite_api::CreatePaddlePredictor(config);
 
   auto input_tensor = predictor->GetInput(0);
