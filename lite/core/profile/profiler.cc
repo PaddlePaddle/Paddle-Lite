@@ -27,6 +27,8 @@ int Profiler::NewTimer(const OpCharacter& ch) {
   if (ch.target == TargetType::kCUDA) {
 #ifdef LITE_WITH_CUDA
     unit.timer.reset(new DeviceTimer<TargetType::kCUDA>());
+#else
+    LOG(ERROR) << "The timer type specified as cuda is uninitialized, so the default x86 timer is used instead."
 #endif
   } else {
     unit.timer.reset(new DeviceTimer<TargetType::kHost>());
@@ -47,10 +49,13 @@ std::string Profiler::Summary(bool concise) {
   STL::stringstream ss;
   auto cout_title = [&ss](const std::string& title, const std::string& name) {
     ss << "===== " << title << ": " << name << " =====" << std::endl;
-    ss << std::setw(25) << std::left << "Operator Type" << std::setw(40)
-       << std::left << "Kernel Name" << std::setw(10) << std::left << "Remark"
-       << std::setw(10) << std::left << "Avg (ms)" << std::setw(10) << std::left
-       << "Min (ms)" << std::setw(10) << std::left << "Max (ms)" << std::endl;
+    ss << std::setw(25) << std::left << "Operator Type" \\
+       << std::setw(40) << std::left << "Kernel Name"   \\
+       << std::setw(10) << std::left << "Remark"        \\
+       << std::setw(10) << std::left << "Avg (ms)"      \\ 
+       << std::setw(10) << std::left << "Min (ms)"      \\
+       << std::setw(10) << std::left << "Max (ms)"      \\
+       << std::endl;                                    \\
   };
   if (concise) {
     auto op_comp = [](const OpCharacter& c1, const OpCharacter& c2) {
@@ -73,21 +78,24 @@ std::string Profiler::Summary(bool concise) {
     }
     cout_title("Concise Profiler Summary", name_);
     for (const auto& item : summary) {
-      ss << std::setw(25) << std::left << item.first.op_type << std::setw(40)
-         << std::left << item.first.kernel_name << std::setw(10) << std::left
-         << item.first.remark << std::setw(10) << std::left << item.second.avg
-         << std::setw(10) << std::left << item.second.min << std::setw(10)
-         << std::left << item.second.max << std::endl;
+      ss << std::setw(25) << std::left << item.first.op_type      \\
+         << std::setw(40) << std::left << item.first.kernel_name  \\
+         << std::setw(10) << std::left << item.first.remark       \\
+         << std::setw(10) << std::left << item.second.avg         \\
+         << std::setw(10) << std::left << item.second.min         \\
+         << std::setw(10) << std::left << item.second.max         \\
+         << std::endl;                                            \\
     }
   } else {
     cout_title("Detailed Profiler Summary", name_);
     for (auto& unit : units_) {
-      ss << std::setw(25) << std::left << unit.character.op_type
-         << std::setw(40) << std::left << unit.character.kernel_name
-         << std::setw(10) << std::left << unit.character.remark << std::setw(10)
-         << std::left << unit.timer->LapsTime().Avg() << std::setw(10)
-         << std::left << unit.timer->LapsTime().Min() << std::setw(10)
-         << std::left << unit.timer->LapsTime().Max() << std::endl;
+      ss << std::setw(25) << std::left << unit.character.op_type        \\
+         << std::setw(40) << std::left << unit.character.kernel_name    \\
+         << std::setw(10) << std::left << unit.character.remark         \\
+         << std::setw(10) << std::left << unit.timer->LapsTime().Avg()  \\
+         << std::setw(10) << std::left << unit.timer->LapsTime().Min()  \\
+         << std::setw(10) << std::left << unit.timer->LapsTime().Max()  \\
+         << std::endl;                                                  \\
     }
   }
   return ss.str();

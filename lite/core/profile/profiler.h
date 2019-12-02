@@ -43,7 +43,7 @@ struct StatisUnit {
 class Profiler final {
  public:
   Profiler() = default;
-  explicit Profiler(std::string name) : name_(name) {}
+  explicit Profiler(const std::string& name) : name_(name) {}
   int NewTimer(const OpCharacter& ch);
   void StartTiming(const int index, KernelContext* ctx);
   float StopTiming(const int index, KernelContext* ctx);

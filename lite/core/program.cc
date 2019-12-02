@@ -123,7 +123,7 @@ void RuntimeProgram::Run() {
 #endif  // LITE_WITH_PROFILE
   }
 #ifdef LITE_WITH_PROFILE
-  std::cout << profiler_.Summary();
+  LOG(INFO) << "\n" <<  profiler_.Summary();
 #endif  // LITE_WITH_PROFILE
 }
 

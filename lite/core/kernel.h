@@ -86,6 +86,7 @@ class KernelBase {
 
 #ifdef LITE_WITH_PROFILE
     if (profile_id_ >= 0) {
+      CHECK(profiler_) << "Profiler pointer of kernel can not be nullptr.";
       profiler_->StartTiming(profile_id_, ctx_.get());
       Run();
       profiler_->StopTiming(profile_id_, ctx_.get());
@@ -179,7 +180,7 @@ class KernelBase {
   bool is_first_epoch_{true};
 
 #ifdef LITE_WITH_PROFILE
-  profile::Profiler* profiler_;
+  profile::Profiler* profiler_{nullptr};
   int profile_id_{-1};
 #endif
 };
