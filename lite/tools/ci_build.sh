@@ -709,13 +709,11 @@ function build_test_arm_subtask_android {
        adb_devices=$(adb devices |grep -v devices |grep device | awk -F " " '{print $1}')
        local portname_armv8=${adb_devices[0]}
        local portname_armv7=${adb_devices[0]}
-       adb -s $portname_armv8 shell 'rm -rf /data/local/tmp/*'
-       adb -s $portname_armv7 shell 'rm -rf /data/local/tmp/*'
     fi
 
     # job 1
     build_arm "android" "armv8" "gcc"
-    adb shell 'rm -rf /data/local/tmp/*'
+    adb -s $portname_armv8 shell 'rm -rf /data/local/tmp/*'
     run_gen_code_test ${portname_armv8}
     test_arm "android" "armv8" "gcc" ${portname_armv8}
     cd -
@@ -728,7 +726,7 @@ function build_test_arm_subtask_android {
 
     # job 3
     build_arm "android" "armv7" "gcc"
-    adb shell 'rm -rf /data/local/tmp/*'
+    adb -s $portname_armv7 shell 'rm -rf /data/local/tmp/*'
     run_gen_code_test ${portname_armv7}
     test_arm "android" "armv7" "gcc" ${portname_armv7}
     cd -
