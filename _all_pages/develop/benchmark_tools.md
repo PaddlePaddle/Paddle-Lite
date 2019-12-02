@@ -34,7 +34,7 @@ List of devices attached
 执行以下命令，完成Benchmark：
 
 ```shell
-wget -c https://paddle-inference-dist.bj.bcebos.com/PaddleLite/run_benchmark.sh
+wget -c https://paddle-inference-dist.bj.bcebos.com/PaddleLite/benchmark_0/run_benchmark.sh
 sh run_benchmark.sh
 ```
 
@@ -55,10 +55,10 @@ benchmark_bin文件可以测试PaddleLite的性能，有下面两种方式获得
 
 ```shell
 # Download benchmark_bin for android-armv7
-wget -c https://paddle-inference-dist.bj.bcebos.com/PaddleLite/benchmark_bin_v7
+wget -c https://paddle-inference-dist.bj.bcebos.com/PaddleLite/benchmark_0/benchmark_bin_v7
 
 # Download benchmark_bin for android-armv8
-wget -c https://paddle-inference-dist.bj.bcebos.com/PaddleLite/benchmark_bin_v8
+wget -c https://paddle-inference-dist.bj.bcebos.com/PaddleLite/benchmark_0/benchmark_bin_v8
 ```
 
 #### 方式二：由源码编译benchmark_bin文件
@@ -75,7 +75,7 @@ wget -c https://paddle-inference-dist.bj.bcebos.com/PaddleLite/benchmark_bin_v8
   --arm_lang="gcc " \
   build_arm
 
-# build result see: <paddle-lite-repo>/build.lite.android.armv7.gcc/lite/api/benchmark_bin
+# `benchmark_bin` 在: <paddle-lite-repo>/build.lite.android.armv7.gcc/lite/api/benchmark_bin
 
 ###########################################
 # Build benchmark_bin for android-armv8   #
@@ -86,34 +86,23 @@ wget -c https://paddle-inference-dist.bj.bcebos.com/PaddleLite/benchmark_bin_v8
   --arm_lang="gcc "  \
   build_arm
 
-# build result see: <paddle-lite-repo>/build.lite.android.armv8.gcc/lite/api/benchmark_bin
+# `benchmark_bin` 在: <paddle-lite-repo>/build.lite.android.armv8.gcc/lite/api/benchmark_bin
 ```
 
 > **注意**：为了避免在docker内部访问不到手机的问题，建议编译得到benchmark_bin后退出到docker外面，并且将benchmark_bin文件拷贝到一个临时目录。然后在该临时目录下，按照下面步骤下载模型、拷贝脚本、测试。
 
-### 2. 下载模型
+### 2. 准备模型
 
-PaddleLite为Benchmark准备好了[常见Benchmark模型](https://paddle-inference-dist.bj.bcebos.com/PaddleLite/benchmark_models.tar.gz)。
+PaddleLite为Benchmark准备好了[常见Benchmark模型](https://paddle-inference-dist.bj.bcebos.com/PaddleLite/benchmark_0/benchmark_models.tgz)。
 
 执行以下命令，下载常见Benchmark模型并解压：
 
 ```shell
-wget -c https://paddle-inference-dist.bj.bcebos.com/PaddleLite/benchmark_models.tar.gz
-tar zxvf benchmark_models.tar.gz
+wget -c https://paddle-inference-dist.bj.bcebos.com/PaddleLite/benchmark_0/benchmark_models.tgz
+tar zxvf benchmark_models.tgz
 ```
 
-| 模型            | 下载地址                                                        |
-| --------------- | ------------------------------------------------------------ |
-| MobilenetV1     | [下载](https://paddle-inference-dist.bj.bcebos.com/PaddleLite/mobilenet_v1.tar.gz) |
-| MobilenetV2     | [下载](https://paddle-inference-dist.bj.bcebos.com/PaddleLite/mobilenet_v2.tar.gz) |
-| ShufflenetV2    | [下载](https://paddle-inference-dist.bj.bcebos.com/PaddleLite/shufflenet_v2.tar.gz) |
-| Squeezenet_V1.1 | [下载](https://paddle-inference-dist.bj.bcebos.com/PaddleLite/squeezenet_v11.tar.gz) |
-| Mnasnet         | [下载](https://paddle-inference-dist.bj.bcebos.com/PaddleLite/mnasnet.tar.gz) |
-
-> 注：若要使用测试脚本，**对单个模型测试**，请把单个模型放入 `benchmark_models` 文件夹，并确保测试脚本、`benchmark_models`文件夹在同一级的目录。
-
-注：上述模型都已经使用`model_optimize_tool`进行转化，而且Lite移动端只支持加载转化后的模型。如果需要测试其他模型，请先参考[模型转化方法](../model_optimize_tool)。
-
+如果测试其他模型，请将模型文件放到 `benchmark_models` 文件夹中。
 
 ### 3. benchmark.sh脚本
 
@@ -123,7 +112,7 @@ benchmark测试的执行脚本`benchmark.sh` 位于源码中的`/PaddleLite/lite
 
 从终端进入benchmark.sh、可执行文件（benchmark_bin_v7、benchmark_bin_v8）和模型文件（benchmark_models）所在文件夹。
 
-运行 benchmark.sh 脚本执行测试
+如果 `benchmark_models` 中所有模型文件都已经使用 `model_optimize_tool` 进行转换，则使用 benchmark.sh 脚本执行如下命令进行测试：
 
 ```shell
 # Benchmark for android-armv7
@@ -132,11 +121,24 @@ sh benchmark.sh ./benchmark_bin_v7 ./benchmark_models result_armv7.txt
 # Benchmark for android-armv8
 sh benchmark.sh ./benchmark_bin_v8 ./benchmark_models result_armv8.txt
 ```
+
+如果 `benchmark_models` 中所有模型文件都没有使用 `model_optimize_tool` 进行转换，则执行下面的命令。`benchmark_bin` 会首先转换模型，然后加载模型进行测试。
+
+```shell
+# Benchmark for android-armv7
+sh benchmark.sh ./benchmark_bin_v7 ./benchmark_models result_armv7.txt true
+
+# Benchmark for android-armv8
+sh benchmark.sh ./benchmark_bin_v8 ./benchmark_models result_armv8.txt true
+```
+
 测试结束后，armv7和armv8的结果，分别保存在当前目录下的`result_armv7.txt`和`result_armv8.txt`文件中。
 
 **查看测试结果**
 
 在当前目录的`result_armv7.txt`和`result_armv8.txt`文件，查看测试结果。
+
+> 不同手机，不同版本，测试模型的性能数据不同。
 
 ```shell
 run benchmark armv7
