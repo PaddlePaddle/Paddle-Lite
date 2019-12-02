@@ -591,7 +591,7 @@ inline void prepack_input_nxwc8_int8_dw(const int8_t* din,
     }
   }
 }
-
+// clang-format off
 #ifdef __aarch64__
 #define NCHWC1_TRANS_FP32_COMPUTE                                      \
   "ldr q0, [%[ptr_din]], #16      \n" /* load data, c0r0, c1r0, c0r1*/ \
@@ -686,6 +686,7 @@ inline void prepack_input_nxwc8_int8_dw(const int8_t* din,
                                                                 \
   "bne    1b                              @ jump to main loop\n"
 #endif
+// clang-format on
 inline void act_switch_c1_fp32(const float* din_ptr,
                                float* doutc0_ptr,
                                int cnt_loop,
@@ -869,6 +870,7 @@ inline bool write_to_output_c1_fp32(const float* din,
     if (remain > 0) {
       int offset = i * w_round * c1 + c1 * w4 * cnt;
       din_hei_ptr = ptr_din + offset;
+      doutc0_ptr += w4 * cnt;
       int j = w4 * cnt;
       bool has_active = act_param.has_active;
       float six = act_param.Relu_clipped_coef;
@@ -914,8 +916,8 @@ inline bool write_to_output_c1_fp32(const float* din,
   }
   return true;
 }
-#ifdef __aarch64__
 // clang-format off
+#ifdef __aarch64__
 #define NCHWC2_TRANS_FP32_COMPUTE                                      \
   "ldp q0, q1, [%[ptr_din]], #32  \n" /* load data, c0r0, c1r0, c0r1*/ \
   "movi v20.4s, #0                \n" /* for relu */                   \
@@ -950,7 +952,6 @@ inline bool write_to_output_c1_fp32(const float* din,
                                                          \
   "bne    1b                      \n" /* jump to main loop*/
 #else
-// clang-format off
 #define NCHWC2_TRANS_FP32_COMPUTE                                      \
   "vld1.32 {d0-d3}, [%[ptr_din]]!         @ load data, c0r0, c1r0 \n"  \
   "vmov.u32 q15, #0                       @ dump zero\n"               \
@@ -988,6 +989,7 @@ inline bool write_to_output_c1_fp32(const float* din,
                                                                 \
   "bne    1b                              @ jump to main loop\n"
 #endif
+// clang-format on
 inline void act_switch_c2_fp32(const float* din_ptr,
                                float* doutc0_ptr,
                                float* doutc1_ptr,
@@ -1191,6 +1193,8 @@ inline bool write_to_output_c2_fp32(const float* din,
     if (we > width) {
       int offset = i * w_round * c2 + c2 * w4 * cnt;
       din_hei_ptr = ptr_din + offset;
+      doutc0_ptr += w4 * cnt;
+      doutc1_ptr += w4 * cnt;
       int j = we - w4;
       bool has_active = act_param.has_active;
       if (has_active) {
@@ -1245,7 +1249,7 @@ inline bool write_to_output_c2_fp32(const float* din,
   }
   return true;
 }
-
+// clang-format off
 #ifdef __aarch64__
 #define NCHWC4_TRANS_FP32_COMPUTE                                   \
   "ldp q0, q1, [%[ptr_din]], #32  \n" /* load r00, r01 to q0, q1 */ \
@@ -1350,7 +1354,7 @@ inline bool write_to_output_c2_fp32(const float* din,
                                                                        \
   "bne    1b                            @ jump to main loop\n"
 #endif
-
+// clang-format on
 inline void act_switch_c4_fp32(const float* din_ptr,
                                float* doutc0_ptr,
                                float* doutc1_ptr,
@@ -1621,6 +1625,10 @@ inline bool write_to_output_c4_fp32(const float* din,
     if (we > width) {
       int offset = i * w_round * c4 + c4 * w4 * cnt;
       din_hei_ptr = ptr_din + offset;
+      doutc0_ptr += w4 * cnt;
+      doutc1_ptr += w4 * cnt;
+      doutc2_ptr += w4 * cnt;
+      doutc3_ptr += w4 * cnt;
       int j = we - w4;
       bool has_active = act_param.has_active;
       if (has_active) {
@@ -1682,7 +1690,7 @@ inline bool write_to_output_c4_fp32(const float* din,
                        << " fuse not support";
         }
       } else {
-        for (; j < remain; ++j) {
+        for (; j < width; ++j) {
           *(doutc0_ptr++) = din_hei_ptr[0];
           *(doutc1_ptr++) = din_hei_ptr[1];
           *(doutc2_ptr++) = din_hei_ptr[2];
@@ -1694,7 +1702,7 @@ inline bool write_to_output_c4_fp32(const float* din,
   }
   return true;
 }
-
+// clang-format off
 #ifdef __aarch64__
 #define NCHWC8_TRANS_FP32_COMPUTE                                    \
   "ldp q0, q1, [%[ptr_din]], #32  \n" /* load r00, r01 to q0, q1 */  \
@@ -1894,7 +1902,7 @@ inline bool write_to_output_c4_fp32(const float* din,
   "bne    1b                             @ jump to main loop\n"
 
 #endif
-
+// clang-format on
 inline void act_switch_c8_fp32(const float* din_ptr,
                                float* doutc0_ptr,
                                float* doutc1_ptr,
@@ -2143,6 +2151,7 @@ inline void act_switch_c8_fp32(const float* din_ptr,
 #endif
   }
 }
+
 /*wirte result in outputs
 * input din: [n, c / 8, h, w * 8], output dout: [n, c, h, w]
 */
@@ -2182,6 +2191,7 @@ inline bool write_to_output_c8_fp32(const float* din,
   int size_h = (he > height ? height : he) - hs;  // size_h == hei_n
 
   int valid_w = we - ws;
+  int w4 = 4;
   int cnt = valid_w / 4;
 
   if (we > width) {
@@ -2236,6 +2246,14 @@ inline bool write_to_output_c8_fp32(const float* din,
     if (we > width) {
       int offset = 32 * (valid_w / 4 - 1);
       din_hei_ptr = ptr_din + offset;
+      doutc0_ptr += w4 * cnt;
+      doutc1_ptr += w4 * cnt;
+      doutc2_ptr += w4 * cnt;
+      doutc3_ptr += w4 * cnt;
+      doutc4_ptr += w4 * cnt;
+      doutc5_ptr += w4 * cnt;
+      doutc6_ptr += w4 * cnt;
+      doutc7_ptr += w4 * cnt;
       int i = we - 4;
       bool has_active = act_param.has_active;
       if (has_active) {

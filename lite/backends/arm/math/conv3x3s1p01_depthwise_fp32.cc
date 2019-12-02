@@ -255,14 +255,12 @@ void conv_depthwise_3x3s1_fp32(const float *din,
   "fmla v14.4s ,  v17.4s,  %[w1].s[2]\n" /* outr00 += din1_0123 * w0[1]*/ \
   "fmla v13.4s ,  v17.4s,  %[w2].s[2]\n" /* outr00 += din1_0123 * w1[1]*/ \
                                                                           \
-  "ext  v16.16b, %[vzero].16b, v8.16b, #12 \n" /* v16 = 00123*/           \
-  "ext  v17.16b, v8.16b, v9.16b, #4 \n"        /* v16 = 1234 */
+  "ext  v16.16b, %[vzero].16b, v8.16b, #12 \n"           /* v16 = 00123*/ \
+  "ext  v17.16b, v8.16b, v9.16b, #4 \n" /* v16 = 1234 */ /* r4 */         \
+  "fmla v15.4s ,  v8.4s,  %[w1].s[1]\n" /* outr00 += din2_0123 * w1[1]*/  \
+  "fmla v14.4s ,  v8.4s,  %[w2].s[1]\n" /* outr00 += din2_0123 * w2[1]*/
 
 #define LEFT_RESULT_S1                                                      \
-  /* r4 */                                                                  \
-  "fmla v15.4s ,  v8.4s,  %[w1].s[1]\n" /* outr00 += din2_0123 * w1[1]*/    \
-  "fmla v14.4s ,  v8.4s,  %[w2].s[1]\n" /* outr00 += din2_0123 * w2[1]*/    \
-                                                                            \
   "st1 {v12.4s}, [%[doutr0]], #16 \n"    /* vst1q_f32() */                  \
   "st1 {v13.4s}, [%[doutr1]], #16 \n"    /* vst1q_f32() */                  \
   "ld1 {v8.4s}, [%[din_ptr4]], #16   \n" /*vld1q_f32(din_ptr0)*/            \
@@ -345,16 +343,15 @@ void conv_depthwise_3x3s1_fp32(const float *din,
   "fmla v13.4s ,  v17.4s,  %[w1].s[2]\n" /* outr00 += din0_2345 * w0[2]*/ \
   "fmla v12.4s ,  v17.4s,  %[w2].s[2]\n" /* outr00 += din0_2345 * w0[2]*/ \
                                                                           \
-  "ext  v16.16b, v6.16b, v7.16b, #4 \n" /* v16 = 1234*/                   \
-  "ext  v17.16b, v6.16b, v7.16b, #8 \n" /* v16 = 2345 */
+  "ext  v16.16b, v6.16b, v7.16b, #4 \n"                  /* v16 = 1234*/  \
+  "ext  v17.16b, v6.16b, v7.16b, #8 \n" /* v16 = 2345 */ /* r3 */         \
+  "fmla v15.4s ,  v6.4s,  %[w0].s[0]\n" /* outr00 += din0_0123 * w0[0]*/  \
+  "fmla v14.4s ,  v6.4s,  %[w1].s[0]\n" /* outr00 += din0_0123 * w0[0]*/  \
+  "fmla v13.4s ,  v6.4s,  %[w2].s[0]\n" /* outr00 += din0_0123 * w0[0]*/  \
+                                                                          \
+  "ld1 {v6.4s}, [%[din_ptr3]], #16   \n" /*vld1q_f32(din_ptr0)*/
 
 #define MID_RESULT_S1                                                      \
-  /* r3 */                                                                 \
-  "fmla v15.4s ,  v6.4s,  %[w0].s[0]\n" /* outr00 += din0_0123 * w0[0]*/   \
-  "fmla v14.4s ,  v6.4s,  %[w1].s[0]\n" /* outr00 += din0_0123 * w0[0]*/   \
-  "fmla v13.4s ,  v6.4s,  %[w2].s[0]\n" /* outr00 += din0_0123 * w0[0]*/   \
-                                                                           \
-  "ld1 {v6.4s}, [%[din_ptr3]], #16   \n" /*vld1q_f32(din_ptr0)*/           \
   "st1 {v12.4s}, [%[doutr0]], #16     \n"                                  \
                                                                            \
   "fmla v15.4s ,  v16.4s,  %[w0].s[1]\n" /* outr00 += din0_1234 * w0[1]*/  \
@@ -467,15 +464,13 @@ void conv_depthwise_3x3s1_fp32(const float *din,
   "fmla v13.4s ,  v17.4s,  %[w1].s[2]\n" /* outr00 += din0_2345 * w0[2]*/ \
   "fmla v12.4s ,  v17.4s,  %[w2].s[2]\n" /* outr00 += din0_2345 * w0[2]*/ \
                                                                           \
-  "ext  v16.16b, v6.16b, v7.16b, #4 \n" /* v16 = 1234*/                   \
-  "ext  v17.16b, v6.16b, v7.16b, #8 \n" /* v16 = 2345 */
+  "ext  v16.16b, v6.16b, v7.16b, #4 \n"                  /* v16 = 1234*/  \
+  "ext  v17.16b, v6.16b, v7.16b, #8 \n" /* v16 = 2345 */ /* r3 */         \
+  "fmla v15.4s ,  v6.4s,  %[w0].s[0]\n" /* outr00 += din0_0123 * w0[0]*/  \
+  "fmla v14.4s ,  v6.4s,  %[w1].s[0]\n" /* outr00 += din0_0123 * w0[0]*/  \
+  "fmla v13.4s ,  v6.4s,  %[w2].s[0]\n" /* outr00 += din0_0123 * w0[0]*/
 
 #define RIGHT_RESULT_S1                                                    \
-  /* r3 */                                                                 \
-  "fmla v15.4s ,  v6.4s,  %[w0].s[0]\n" /* outr00 += din0_0123 * w0[0]*/   \
-  "fmla v14.4s ,  v6.4s,  %[w1].s[0]\n" /* outr00 += din0_0123 * w0[0]*/   \
-  "fmla v13.4s ,  v6.4s,  %[w2].s[0]\n" /* outr00 += din0_0123 * w0[0]*/   \
-                                                                           \
   "bif v12.16b, v22.16b, v18.16b \n"                                       \
                                                                            \
   "fmla v15.4s ,  v16.4s,  %[w0].s[1]\n" /* outr00 += din0_1234 * w0[1]*/  \
@@ -520,10 +515,6 @@ void conv_depthwise_3x3s1_fp32(const float *din,
   "st1 {v15.4s}, [%[doutr3]], #16     \n"
 
 #define LEFT_RESULT_S1_RELU                                               \
-  /* r4 */                                                                \
-  "fmla v15.4s ,  v8.4s,  %[w1].s[1]\n" /* outr00 += din2_0123 * w1[1]*/  \
-  "fmla v14.4s ,  v8.4s,  %[w2].s[1]\n" /* outr00 += din2_0123 * w2[1]*/  \
-                                                                          \
   "fmax v12.4s, v12.4s, %[vzero].4s \n" /*relu*/                          \
   "fmax v13.4s, v13.4s, %[vzero].4s \n" /*relu*/                          \
                                                                           \
@@ -571,13 +562,7 @@ void conv_depthwise_3x3s1_fp32(const float *din,
   "blt 3f                         \n"
 
 #define MID_RESULT_S1_RELU                                                 \
-  /* r3 */                                                                 \
-  "fmla v15.4s ,  v6.4s,  %[w0].s[0]\n" /* outr00 += din0_0123 * w0[0]*/   \
-  "fmla v14.4s ,  v6.4s,  %[w1].s[0]\n" /* outr00 += din0_0123 * w0[0]*/   \
-  "fmla v13.4s ,  v6.4s,  %[w2].s[0]\n" /* outr00 += din0_0123 * w0[0]*/   \
-                                                                           \
-  "ld1 {v6.4s}, [%[din_ptr3]], #16   \n" /*vld1q_f32(din_ptr0)*/           \
-  "fmax v12.4s, v12.4s, %[vzero].4s \n"  /*relu*/                          \
+  "fmax v12.4s, v12.4s, %[vzero].4s \n" /*relu*/                           \
                                                                            \
   "fmla v15.4s ,  v16.4s,  %[w0].s[1]\n" /* outr00 += din0_1234 * w0[1]*/  \
   "fmla v14.4s ,  v16.4s,  %[w1].s[1]\n" /* outr00 += din0_1234 * w0[1]*/  \
@@ -641,11 +626,6 @@ void conv_depthwise_3x3s1_fp32(const float *din,
   "bne 1b \n"
 
 #define RIGHT_RESULT_S1_RELU                                               \
-  /* r3 */                                                                 \
-  "fmla v15.4s ,  v6.4s,  %[w0].s[0]\n" /* outr00 += din0_0123 * w0[0]*/   \
-  "fmla v14.4s ,  v6.4s,  %[w1].s[0]\n" /* outr00 += din0_0123 * w0[0]*/   \
-  "fmla v13.4s ,  v6.4s,  %[w2].s[0]\n" /* outr00 += din0_0123 * w0[0]*/   \
-                                                                           \
   "fmax v12.4s, v12.4s, %[vzero].4s \n" /*relu*/                           \
                                                                            \
   "fmla v15.4s ,  v16.4s,  %[w0].s[1]\n" /* outr00 += din0_1234 * w0[1]*/  \
