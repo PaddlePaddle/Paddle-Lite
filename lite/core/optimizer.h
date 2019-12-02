@@ -27,12 +27,6 @@
 #include "lite/core/program.h"
 #include "lite/core/types.h"
 #include "lite/model_parser/model_parser.h"
-#ifdef LITE_WITH_NPU
-#include "lite/core/mir/subgraph/generate_npu_program_pass.h"
-#endif
-#ifdef LITE_WITH_XPU
-#include "lite/core/mir/subgraph/generate_xpu_program_pass.h"
-#endif
 
 namespace paddle {
 namespace lite {
@@ -109,7 +103,8 @@ class Optimizer {
 
            "runtime_context_assign_pass",
            "argument_type_display_pass",
-           "memory_optimize_pass"}};
+           "memory_optimize_pass",
+           "subgraph_pass"}};
       RunPasses(passes_local);
     } else {
       RunPasses(passes);
@@ -121,13 +116,6 @@ class Optimizer {
 
   // Generate a new program based on the mir graph.
   std::unique_ptr<RuntimeProgram> GenRuntimeProgram() {
-    // Extra passes are applied for NPU and XPU, they depends on the shapes
-    // of input tensors. so GenRuntimeProgram() must be called after the shapes
-    // of input tensors are determined.
-    std::vector<std::string> subgraph_passes{"generate_npu_program_pass",
-                                             "generate_xpu_program_pass"};
-    RunPasses(subgraph_passes);
-
     auto pass = mir::PassManager::Global().LookUp<mir::GenerateProgramPass>(
         "generate_program_pass");
     pass->Apply(graph_);

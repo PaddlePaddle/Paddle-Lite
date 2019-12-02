@@ -14,10 +14,10 @@
 
 #pragma once
 
+#include <xtcl/xtcl.h>
 #include <memory>
 #include <string>
 #include <vector>
-#include "ai_ddk_lib/include/HiAiModelManagerService.h"
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/types.h"
@@ -25,30 +25,23 @@
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace npu {
+namespace xpu {
 
-class GraphCompute : public KernelLite<TARGET(kNPU), PRECISION(kFloat)> {
+class SubgraphCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
-  using param_t = operators::GraphParam;
+  using param_t = operators::SubgraphParam;
 
   void PrepareForRun() override;
 
   void Run() override;
 
-  virtual ~GraphCompute() = default;
+  virtual ~SubgraphCompute() = default;
 
  private:
-  std::shared_ptr<hiai::AiModelMngerClient> model_client_;
-  std::string model_name_;
-  hiai::AiContext model_context_;
-
-  std::vector<int64_t> npu_idatasizes_;
-  std::vector<int64_t> npu_odatasizes_;
-  std::vector<std::shared_ptr<hiai::AiTensor>> npu_itensors_;
-  std::vector<std::shared_ptr<hiai::AiTensor>> npu_otensors_;
+  std::shared_ptr<xtcl::network::xRuntimeInstance> runtime_{nullptr};
 };
 
-}  // namespace npu
+}  // namespace xpu
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

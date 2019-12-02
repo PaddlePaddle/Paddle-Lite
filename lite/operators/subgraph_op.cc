@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/operators/graph_op.h"
+#include "lite/operators/subgraph_op.h"
 #include <utility>
 #include "lite/core/op_registry.h"
 
@@ -20,34 +20,33 @@ namespace paddle {
 namespace lite {
 namespace operators {
 
-bool GraphOpLite::CheckShape() const {
-  CHECK_GE_OR_FALSE(param_.inputs.size(), 1UL);
+bool SubgraphOp::CheckShape() const {
   CHECK_GE_OR_FALSE(param_.outputs.size(), 1UL);
   return true;
 }
 
-bool GraphOpLite::InferShape() const { return CheckShape(); /* enrich me */ }
+bool SubgraphOp::InferShape() const { return CheckShape(); /* enrich me */ }
 
-bool GraphOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
+bool SubgraphOp::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
   auto inputs = op_desc.Input("Inputs");
-  auto weight = op_desc.Input("Weight");
   auto outputs = op_desc.Output("Outputs");
-
   for (auto var : inputs) {
     CHECK(scope->FindVar(var));
     param_.inputs.push_back(
         std::make_pair(var, scope->FindVar(var)->GetMutable<lite::Tensor>()));
   }
-
-  param_.weight = scope->FindVar(weight.front())->GetMutable<lite::Tensor>();
-  CHECK(param_.weight);
-
   for (auto var : outputs) {
     CHECK(scope->FindVar(var));
     param_.outputs.push_back(
         std::make_pair(var, scope->FindVar(var)->GetMutable<lite::Tensor>()));
   }
-
+  param_.input_name_mapping =
+      op_desc.GetAttr<std::vector<std::string>>("input_name_mapping");
+  param_.output_name_mapping =
+      op_desc.GetAttr<std::vector<std::string>>("output_name_mapping");
+  CHECK(param_.sub_block);
+  param_.scope = scope;
+  CHECK(param_.scope);
   return true;
 }
 
@@ -55,4 +54,4 @@ bool GraphOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(graph_op, paddle::lite::operators::GraphOpLite);
+REGISTER_LITE_OP(subgraph, paddle::lite::operators::SubgraphOp);

@@ -12,68 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/mir/subgraph/subgraph_program_pass.h"
+#include "lite/core/mir/subgraph/subgraph_detector.h"
 #include <gflags/gflags.h>
 #include <gtest/gtest.h>
 #include <vector>
 #include "lite/api/paddle_use_ops.h"
 #include "lite/api/paddle_use_passes.h"
-#include "lite/core/mir/graph_visualize_pass.h"
 #include "lite/core/mir/ssa_graph.h"
 #include "lite/core/program.h"
 #include "lite/model_parser/cpp/program_desc.h"
 #include "lite/model_parser/model_parser.h"
 
 DEFINE_string(model_dir, "", "model_dir");
+DEFINE_string(model_file, "", "model file path of combined protobuf model");
+DEFINE_string(params_file, "", "params file path of combined protobuf model");
 
 namespace paddle {
 namespace lite {
 
-TEST(SubgraphTest, models) {
-  cpp::ProgramDesc program_desc;
-  auto scope = std::make_shared<Scope>();
-  // LoadModelPb(FLAGS_model_dir,
-  //             FLAGS_model_dir + "/model",
-  //             FLAGS_model_dir + "/params",
-  //             scope.get(),
-  //             &program_desc,
-  //             true);
-  LoadModelPb(FLAGS_model_dir, "", "", scope.get(), &program_desc);
-  std::vector<Place> valid_places({
-      Place{TARGET(kHost), PRECISION(kFloat)},
-#ifdef LITE_WITH_ARM
-      Place{TARGET(kARM), PRECISION(kFloat)},
-#endif
-#ifdef LITE_WITH_NPU
-      Place{TARGET(kNPU), PRECISION(kFloat)},
-#endif
-#ifdef LITE_WITH_XPU
-      Place{TARGET(kXPU), PRECISION(kFloat)},
-#endif
-  });
-  lite::Program program(program_desc, scope, valid_places);
-  auto graph = std::unique_ptr<mir::SSAGraph>(new mir::SSAGraph());
-  graph->Build(program, valid_places);
-
-  std::vector<std::string> supported_op_types{"concat",
-                                              "conv2d",
-                                              "depthwise_conv2d",
-                                              "batch_norm",
-                                              "scale",
-                                              "pool2d",
-                                              "mul",
-                                              "elementwise_add",
-                                              "softmax",
-                                              "split",
-                                              "relu",
-                                              "reshape2",
-                                              "transpose2"};
-  auto* pass = new mir::subgraph::SubgraphProgramPass;
-  ASSERT_EQ(pass->FuseSubgraph(graph, supported_op_types), 1);
-  LOG(INFO) << "After NPU Pass \n" << Visualize(graph.get());
-}
-
-// return output_var_names
+// The helper functions for building model manually
 std::vector<std::string> AddFCDesc(
     cpp::BlockDesc* block_desc,
     const std::shared_ptr<Scope>& scope,
@@ -184,41 +141,83 @@ std::vector<std::string> AddFetchDesc(
   return out_var_names;
 }
 
-std::unique_ptr<mir::SSAGraph> BuildSimpleNet(
-    cpp::ProgramDesc* program_desc,
-    const std::shared_ptr<Scope>& scope,
-    const std::vector<Place>& valid_places) {
-  program_desc->ClearBlocks();
-  auto* block_desc = program_desc->AddBlock<cpp::BlockDesc>();
+TEST(Subgraph, detect_simple_model) {
+  cpp::ProgramDesc program_desc;
+  std::vector<Place> valid_places{{TARGET(kHost), PRECISION(kFloat)}};
+  auto scope = std::make_shared<Scope>();
+  // Build a simple network
+  program_desc.ClearBlocks();
+  auto* block_desc = program_desc.AddBlock<cpp::BlockDesc>();
   block_desc->ClearOps();
   block_desc->ClearVars();
-
   auto* var_desc = block_desc->AddVar<cpp::VarDesc>();
   var_desc->SetName("feed_var");
   auto* feed_var = scope->Var("feed_var")->GetMutable<lite::Tensor>();
   feed_var->Resize({1, 4});
   auto fc1_out = AddFCDesc(block_desc, scope, {"feed_var"}, {4, 5});
   auto fc2_out = AddFCDesc(block_desc, scope, fc1_out, {5, 2});
-
-  lite::Program program(*program_desc, scope, valid_places);
+  lite::Program program(program_desc, scope, valid_places);
   auto graph = std::unique_ptr<mir::SSAGraph>(new mir::SSAGraph());
   graph->Build(program, valid_places);
-
-  return graph;
+  // Apply subgraph detector and check results
+  auto teller = [](Node* node) {
+    if (!node->IsStmt()) return false;
+    auto& stmt = node->AsStmt();
+    auto op_type = stmt.op_type();
+    const std::vector<std::string> supported_types = {"fc"};
+    return std::find(supported_types.begin(), supported_types.end(), op_type) !=
+           supported_types.end();
+  };
+  std::vector<std::vector<Node*>> subgraphs =
+      SubgraphDetector(graph.get(), teller)();
+  ASSERT_EQ(subgraphs.size(), 1);
+  ASSERT_EQ(graph->nodes().size(), 9);
+  SubgraphVisualizer(graph.get(), subgraphs)();
 }
 
-TEST(SubGraphTest, SimpleNet) {
+TEST(Subgraph, detect_custom_model) {
   cpp::ProgramDesc program_desc;
-  std::vector<Place> places{{TARGET(kHost), PRECISION(kFloat)}};
   auto scope = std::make_shared<Scope>();
-  auto graph = BuildSimpleNet(&program_desc, scope, places);
-
-  std::vector<std::string> supported_op_types{"fc"};
-  auto* pass = new mir::subgraph::SubgraphProgramPass;
-  ASSERT_EQ(pass->FuseSubgraph(graph, supported_op_types), 1);
-
-  ASSERT_EQ(graph->nodes().size(), 9);
-  // LOG(INFO) << "After NPU Pass \n" << Visualize(graph.get());
+  LoadModelPb(FLAGS_model_dir,
+              FLAGS_model_file,
+              FLAGS_params_file,
+              scope.get(),
+              &program_desc,
+              !FLAGS_model_file.empty() && !FLAGS_params_file.empty(),
+              false);
+  std::vector<Place> valid_places({
+      Place{TARGET(kHost), PRECISION(kFloat)},
+#ifdef LITE_WITH_ARM
+      Place{TARGET(kARM), PRECISION(kFloat)},
+#endif
+#ifdef LITE_WITH_X86
+      Place{TARGET(kX86), PRECISION(kFloat)},
+#endif
+#ifdef LITE_WITH_NPU
+      Place{TARGET(kNPU), PRECISION(kFloat)},
+#endif
+#ifdef LITE_WITH_XPU
+      Place{TARGET(kXPU), PRECISION(kFloat)},
+#endif
+  });
+  lite::Program program(program_desc, scope, valid_places);
+  auto graph = std::unique_ptr<mir::SSAGraph>(new mir::SSAGraph());
+  graph->Build(program, valid_places);
+  // Apply subgraph detector and check results
+  auto teller = [](Node* node) {
+    if (!node->IsStmt()) return false;
+    auto& stmt = node->AsStmt();
+    auto op_type = stmt.op_type();
+    const std::vector<std::string> unsupported_types = {
+        "feed", "fetch", "subgraph"};
+    return std::find(unsupported_types.begin(),
+                     unsupported_types.end(),
+                     op_type) == unsupported_types.end();
+  };
+  std::vector<std::vector<Node*>> subgraphs =
+      SubgraphDetector(graph.get(), teller)();
+  ASSERT_EQ(subgraphs.size(), 1);
+  SubgraphVisualizer(graph.get(), subgraphs)();
 }
 
 }  // namespace lite

@@ -14,34 +14,24 @@
 
 #pragma once
 
-#include <xtcl/xtcl.h>
 #include <memory>
-#include <string>
 #include <vector>
-#include "lite/core/kernel.h"
-#include "lite/core/op_registry.h"
-#include "lite/core/types.h"
+#include "lite/core/mir/pass.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
-namespace xpu {
+namespace mir {
 
-class GraphCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+class SubgraphPass : public ProgramPass {
  public:
-  using param_t = operators::GraphParam;
-
-  void PrepareForRun() override;
-
-  void Run() override;
-
-  virtual ~GraphCompute() = default;
+  void Apply(const std::unique_ptr<SSAGraph>& graph) override;
 
  private:
-  std::shared_ptr<xtcl::network::xRuntimeInstance> runtime_{nullptr};
+  virtual void InsertNewNode(SSAGraph* graph,
+                             int subgraph_idx,
+                             const std::vector<Node*>& subgraph_nodes);
 };
 
-}  // namespace xpu
-}  // namespace kernels
+}  // namespace mir
 }  // namespace lite
 }  // namespace paddle

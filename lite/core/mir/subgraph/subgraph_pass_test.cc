@@ -30,7 +30,9 @@ DEFINE_int32(output_tensor_num, 1, "number of output tensors");
 namespace paddle {
 namespace lite {
 
-std::vector<std::vector<int64_t>> ParseShape(std::string txt) {
+// The helper functions for loading and running model from command line and
+// verifying output data
+std::vector<std::vector<int64_t>> ShapeParsing(std::string txt) {
   std::vector<std::vector<int64_t>> shape;
   while (!txt.empty()) {
     size_t idx = txt.find_first_of(":");
@@ -65,7 +67,7 @@ int64_t ShapeProduction(std::vector<int64_t> shape) {
   return s;
 }
 
-void FillInputTensor(
+void FillInputTensors(
     const std::shared_ptr<lite_api::PaddlePredictor>& predictor,
     const std::vector<std::vector<int64_t>>& input_tensor_shape,
     const float value) {
@@ -75,12 +77,12 @@ void FillInputTensor(
     auto input_tensor_data = input_tensor->mutable_data<float>();
     auto input_tensor_size = ShapeProduction(input_tensor->shape());
     for (int j = 0; j < input_tensor_size; j++) {
-      input_tensor_data[j] = value;
+      input_tensor_data[i] = value;
     }
   }
 }
 
-void CompareOutputTensor(
+void CheckOutputTensors(
     const std::shared_ptr<lite_api::PaddlePredictor>& tar_predictor,
     const std::shared_ptr<lite_api::PaddlePredictor>& ref_predictor,
     const int output_tensor_num) {
@@ -93,11 +95,13 @@ void CompareOutputTensor(
     auto ref_output_tensor_size = ShapeProduction(ref_output_tensor->shape());
     EXPECT_EQ(tar_output_tensor_size, ref_output_tensor_size);
     for (size_t j = 0; j < ref_output_tensor_size; j++) {
-      auto diff =
-          std::fabs(tar_output_tensor_data[j] - ref_output_tensor_data[j]) /
-          (std::fabs(ref_output_tensor_data[j]) + 1e-6);
-      VLOG(3) << diff;
-      EXPECT_LT(diff, 0.1);
+      auto abs_diff =
+          std::fabs(tar_output_tensor_data[j] - ref_output_tensor_data[j]);
+      auto rel_diff = abs_diff / (std::fabs(ref_output_tensor_data[j]) + 1e-6);
+      VLOG(3) << "val: " << tar_output_tensor_data[j]
+              << " ref: " << ref_output_tensor_data[j]
+              << " abs_diff: " << abs_diff << " rel_diff: " << rel_diff;
+      EXPECT_LT(rel_diff, 0.1);
     }
   }
 }
@@ -109,26 +113,23 @@ std::shared_ptr<lite_api::PaddlePredictor> TestModel(
     const std::vector<lite_api::Place>& valid_places,
     const std::vector<std::vector<int64_t>>& input_tensor_shape,
     const std::string& optimized_model_dir) {
-  // generate optimized model
+  // Generate optimized model
   lite_api::CxxConfig cxx_config;
   cxx_config.set_model_dir(model_dir);
   cxx_config.set_model_file(model_file);
   cxx_config.set_param_file(params_file);
   cxx_config.set_valid_places(valid_places);
   auto predictor = lite_api::CreatePaddlePredictor(cxx_config);
-  FillInputTensor(predictor, input_tensor_shape, -1);
   predictor->SaveOptimizedModel(optimized_model_dir,
                                 lite_api::LiteModelType::kNaiveBuffer);
-#if 0  // TODO(hong19860320) supports light api for XPU
-  // load optimized model
+  // Load optimized model
   lite_api::MobileConfig mobile_config;
   mobile_config.set_model_dir(optimized_model_dir);
   mobile_config.set_power_mode(lite_api::PowerMode::LITE_POWER_HIGH);
   mobile_config.set_threads(1);
   predictor = lite_api::CreatePaddlePredictor(mobile_config);
-  FillInputTensor(predictor, input_tensor_shape, 1);
-#endif
-  // run optimized model
+  FillInputTensors(predictor, input_tensor_shape, 1);
+  // Run optimized model
   for (int i = 0; i < FLAGS_warmup; i++) {
     predictor->Run();
   }
@@ -140,32 +141,43 @@ std::shared_ptr<lite_api::PaddlePredictor> TestModel(
   return predictor;
 }
 
-TEST(XPUSubgraph, compare) {
-  // parsing input tensor shape, supported formats: "1,3,224,224"
-  // "1,3,224,224:1,80"
+TEST(Subgraph, generate_model_and_check_precision) {
+  // Parsing the shapes of input tensors from strings, supported formats:
+  // "1,3,224,224" and "1,3,224,224:1,80"
   std::vector<std::vector<int64_t>> input_tensor_shape =
-      ParseShape(FLAGS_input_tensor_shape);
-  // generate and run optimized CPU model
-  LOG(INFO) << " ================ CPU ================== ";
-  auto cpu_predictor =
-      TestModel(FLAGS_model_dir,
-                FLAGS_model_file,
-                FLAGS_params_file,
-                {lite_api::Place{TARGET(kX86), PRECISION(kFloat)}},
-                input_tensor_shape,
-                FLAGS_optimized_model_dir + "/CPU");
-  // generate and run optimized XPU model
-  LOG(INFO) << " ================ XPU ================== ";
-  auto xpu_predictor =
-      TestModel(FLAGS_model_dir,
-                FLAGS_model_file,
-                FLAGS_params_file,
-                {lite_api::Place{TARGET(kXPU), PRECISION(kFloat)},
-                 lite_api::Place{TARGET(kX86), PRECISION(kFloat)}},
-                input_tensor_shape,
-                FLAGS_optimized_model_dir + "/XPU");
-  // verify results
-  CompareOutputTensor(xpu_predictor, cpu_predictor, FLAGS_output_tensor_num);
+      ShapeParsing(FLAGS_input_tensor_shape);
+  std::vector<lite_api::Place> valid_places({
+      lite_api::Place{TARGET(kHost), PRECISION(kFloat)},
+#ifdef LITE_WITH_ARM
+      lite_api::Place{TARGET(kARM), PRECISION(kFloat)},
+#endif
+#ifdef LITE_WITH_X86
+      lite_api::Place{TARGET(kX86), PRECISION(kFloat)},
+#endif
+  });
+  // Generate and run optimized model on CPU as the reference predictor
+  auto ref_predictor = TestModel(FLAGS_model_dir,
+                                 FLAGS_model_file,
+                                 FLAGS_params_file,
+                                 valid_places,
+                                 input_tensor_shape,
+                                 FLAGS_optimized_model_dir + "/ref_opt_model");
+// Generate and run optimized model on NPU/XPU as the target predictor
+#ifdef LITE_WITH_NPU
+  valid_places.push_back(lite_api::Place{TARGET(kNPU), PRECISION(kFloat)});
+#endif
+#ifdef LITE_WITH_XPU
+  valid_places.push_back(lite_api::Place{TARGET(kXPU), PRECISION(kFloat)});
+#endif
+  auto tar_predictor = TestModel(FLAGS_model_dir,
+                                 FLAGS_model_file,
+                                 FLAGS_params_file,
+                                 valid_places,
+                                 input_tensor_shape,
+                                 FLAGS_optimized_model_dir + "/tar_opt_model");
+  // Check the difference of the output tensors between reference predictor and
+  // target predictor
+  CheckOutputTensors(tar_predictor, ref_predictor, FLAGS_output_tensor_num);
 }
 
 }  // namespace lite

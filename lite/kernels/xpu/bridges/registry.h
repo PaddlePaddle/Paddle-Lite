@@ -30,7 +30,7 @@ namespace xpu {
 namespace bridges {
 
 // xpu network builder and constant tensors
-class graph_ctx_type {
+class subgraph_ctx_type {
  public:
   std::shared_ptr<xtcl::network::xNetworkBuilder> builder;
   std::shared_ptr<xtcl::network::xTensorCompiler::ParamNDArrayMap> params;
@@ -41,7 +41,7 @@ using node_map_type =
     std::unordered_map<std::string, std::shared_ptr<xtcl::xExpr>>;
 
 using func_type = std::function<node_map_type(
-    const std::shared_ptr<OpLite>, graph_ctx_type*, const node_map_type&)>;
+    const std::shared_ptr<OpLite>, subgraph_ctx_type*, const node_map_type&)>;
 using cvt_map_type = std::unordered_map<std::string, func_type>;
 class Factory {
  public:

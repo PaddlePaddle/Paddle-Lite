@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/xpu/graph_compute.h"
+#include "lite/kernels/xpu/subgraph_compute.h"
 #include <sys/time.h>
 #include <time.h>
 #include <string>
@@ -26,7 +26,7 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-void GraphCompute::PrepareForRun() {
+void SubgraphCompute::PrepareForRun() {
   // auto& ctx = this->ctx_->template As<XPUContext>();
   auto& param = this->Param<param_t>();
   CHECK(param.weight);
@@ -34,7 +34,7 @@ void GraphCompute::PrepareForRun() {
   CHECK(runtime_ != nullptr);
 }
 
-void GraphCompute::Run() {
+void SubgraphCompute::Run() {
   auto& param = this->Param<param_t>();
   auto GetCurrentUS = []() -> double {
     struct timeval time;
@@ -87,11 +87,11 @@ void GraphCompute::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(graph_op,
+REGISTER_LITE_KERNEL(subgraph,
                      kXPU,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::xpu::GraphCompute,
+                     paddle::lite::kernels::xpu::SubgraphCompute,
                      def)
     .BindInput("Inputs", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindInput("Weight", {LiteType::GetTensorTy(TARGET(kHost))})

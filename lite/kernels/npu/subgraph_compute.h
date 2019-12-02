@@ -14,39 +14,34 @@
 
 #pragma once
 
+#include <memory>
 #include <string>
 #include <vector>
 #include "lite/core/kernel.h"
-#include "lite/core/op_lite.h"
-#include "lite/core/scope.h"
-#include "lite/core/tensor.h"
-#include "lite/operators/op_params.h"
-#include "lite/utils/all.h"
+#include "lite/core/op_registry.h"
+#include "lite/core/program.h"
+#include "lite/core/types.h"
 
 namespace paddle {
 namespace lite {
-namespace operators {
+namespace kernels {
+namespace npu {
 
-class GraphOpLite : public OpLite {
+class SubgraphCompute : public KernelLite<TARGET(kNPU), PRECISION(kFloat)> {
  public:
-  GraphOpLite() {}
+  using param_t = operators::SubgraphParam;
 
-  explicit GraphOpLite(const std::string &type) : OpLite(type) {}
+  void PrepareForRun() override;
 
-  bool CheckShape() const override;
+  void Run() override;
 
-  bool InferShape() const override;
-
-  bool AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) override;
-
-  void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
-
-  std::string DebugString() const override { return "graph_op"; }
+  virtual ~SubgraphCompute() = default;
 
  private:
-  mutable GraphParam param_;
+  std::unique_ptr<RuntimeProgram> sub_program_;
 };
 
-}  // namespace operators
+}  // namespace npu
+}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
