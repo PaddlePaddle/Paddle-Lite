@@ -2,7 +2,7 @@
 layout: post
 title: 新增Pass的方法
 ---
-# 新增Pass方法
+
 本文从三个方面介绍了`Lite`中的`Pass`结构：**Pass是什么**、**Pass的实现与接口**、**Pass的一般注册流程**。最后以`Fc_fuse_pass`为例介绍了`fusion_pass`的作用与注册方法。
 
 ## 前述：Pass是什么？
