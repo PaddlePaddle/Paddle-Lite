@@ -15,10 +15,10 @@
 #include <gflags/gflags.h>
 #include <gtest/gtest.h>
 #include "lite/core/context.h"
+#include "lite/core/profile/timer.h"
 #include "lite/operators/op_params.h"
 #include "lite/tests/utils/naive_math_impl.h"
 #include "lite/tests/utils/tensor_utils.h"
-#include "lite/tests/utils/timer.h"
 
 #ifdef LITE_WITH_ARM
 #include "lite/kernels/arm/conv_transpose_compute.h"
@@ -59,7 +59,7 @@ DEFINE_bool(flag_bias, false, "with bias");
 typedef paddle::lite::DDim DDim;
 typedef paddle::lite::Tensor Tensor;
 typedef paddle::lite::operators::ConvParam ConvParam;
-using paddle::lite::Timer;
+using paddle::lite::profile::Timer;
 
 DDim compute_out_dim(const DDim& dim_in,
                      const paddle::lite::operators::ConvParam& param) {
@@ -187,19 +187,19 @@ void test_conv_transpose_fp32(const std::vector<DDim>& input_dims,
         /// compute
         Timer t0;
         for (int i = 0; i < FLAGS_repeats; ++i) {
-          t0.start();
+          t0.Start();
           conv_t.Launch();
-          t0.end();
+          t0.Stop();
         }
 
         float gops =
             2.f * tmp_weights.numel() * dim_in[0] * dim_in[2] * dim_in[3];
         LOG(INFO) << "conv fp32: input shape: " << dim_in << ", output shape"
-                  << dim_out << ",running time, avg: " << t0.get_average_ms()
-                  << ", min time: " << t0.get_min_time()
+                  << dim_out << ",running time, avg: " << t0.LapsTime().Avg()
+                  << ", min time: " << t0.LapsTime().Min()
                   << ", total GOPS: " << 1e-9 * gops
-                  << " GOPS, avg GOPs: " << 1e-6 * gops / t0.get_average_ms()
-                  << " GOPs, max GOPs: " << 1e-6 * gops / t0.get_min_time();
+                  << " GOPS, avg GOPs: " << 1e-6 * gops / t0.LapsTime().Avg()
+                  << " GOPs, max GOPs: " << 1e-6 * gops / t0.LapsTime().Min();
 
         if (FLAGS_check_result) {
           double max_ratio = 0;

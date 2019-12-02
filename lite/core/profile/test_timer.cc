@@ -35,7 +35,7 @@ TEST(timer, real_latency) {
   std::this_thread::sleep_for(std::chrono::milliseconds(50));
   timer.Stop();
 
-  LOG(INFO) << "AvgLapTimeMS() = " << timer.AvgLapTimeMS();
+  LOG(INFO) << "LapsTime().Avg() = " << timer.LapsTime().Avg();
 }
 
 #ifdef LITE_WITH_CUDA
@@ -54,7 +54,7 @@ TEST(gpu_timer, real_latency) {
   std::this_thread::sleep_for(std::chrono::milliseconds(50));
   timer.Stop(&ctx);
 
-  LOG(INFO) << "AvgLapTimeMS() = " << timer.AvgLapTimeMS();
+  LOG(INFO) << "LapsTime().Avg() = " << timer.LapsTime().Avg();
 }
 
 TEST(profiler, real_latency) {

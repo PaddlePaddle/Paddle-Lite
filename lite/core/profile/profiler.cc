@@ -29,7 +29,7 @@ int Profiler::NewTimer(const OpCharacter& ch) {
     unit.timer.reset(new DeviceTimer<TargetType::kCUDA>());
 #else
     LOG(ERROR) << "The timer type specified as cuda is uninitialized, so the "
-                  "default x86 timer is used instead."
+                  "default x86 timer is used instead.";
 #endif
   } else {
     unit.timer.reset(new DeviceTimer<TargetType::kHost>());

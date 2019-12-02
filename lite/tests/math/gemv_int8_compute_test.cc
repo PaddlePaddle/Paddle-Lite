@@ -20,12 +20,12 @@
 #include "lite/backends/arm/math/funcs.h"
 #endif  // LITE_WITH_ARM
 #include "lite/core/context.h"
+#include "lite/core/profile/timer.h"
 #include "lite/core/tensor.h"
 #include "lite/tests/utils/tensor_utils.h"
-#include "lite/tests/utils/timer.h"
 
 typedef paddle::lite::Tensor Tensor;
-using paddle::lite::Timer;
+using paddle::lite::profile::Timer;
 
 DEFINE_int32(power_mode,
              3,
@@ -165,7 +165,7 @@ bool test_gemv_int8(
     dbias_int8[l] = dbias[l] / scale_c[0];
   }
   for (int i = 0; i < FLAGS_repeats; ++i) {
-    t0.start();
+    t0.Start();
     paddle::lite::arm::math::gemv_int8(da,
                                        db,
                                        dc_fp32,
@@ -177,21 +177,21 @@ bool test_gemv_int8(
                                        dbias,
                                        has_relu,
                                        &ctx);
-    t0.end();
+    t0.Stop();
   }
   LOG(INFO) << "gemv_int8_int8 output: M: " << m << ", N: " << n
             << ", power_mode: " << cls << ", threads: " << ths
             << ", GOPS: " << ops * 1e-9f
-            << " GOPS, avg time: " << t0.get_average_ms()
-            << " ms, min time: " << t0.get_min_time()
-            << " ms, mean GOPs: " << ops * 1e-6f / t0.get_average_ms()
-            << " GOPs, max GOPs: " << ops * 1e-6f / t0.get_min_time()
+            << " GOPS, avg time: " << t0.LapsTime().Avg()
+            << " ms, min time: " << t0.LapsTime().Min()
+            << " ms, mean GOPs: " << ops * 1e-6f / t0.LapsTime().Avg()
+            << " GOPs, max GOPs: " << ops * 1e-6f / t0.LapsTime().Min()
             << " GOPs";
 
   /// fp32 output compute
-  t0.clear();
+  t0.Reset();
   for (int i = 0; i < FLAGS_repeats; ++i) {
-    t0.start();
+    t0.Start();
     paddle::lite::arm::math::gemv_int8(da,
                                        db,
                                        dc_int8,
@@ -203,15 +203,15 @@ bool test_gemv_int8(
                                        dbias_int8,
                                        has_relu,
                                        &ctx);
-    t0.end();
+    t0.Stop();
   }
   LOG(INFO) << "gemm_int8_fp32 output: M: " << m << ", N: " << n
             << ", power_mode: " << cls << ", threads: " << ths
             << ", GOPS: " << ops * 1e-9f
-            << " GOPS, avg time: " << t0.get_average_ms()
-            << " ms, min time: " << t0.get_min_time()
-            << " ms, mean GOPs: " << ops * 1e-6f / t0.get_average_ms()
-            << " GOPs, max GOPs: " << ops * 1e-6f / t0.get_min_time()
+            << " GOPS, avg time: " << t0.LapsTime().Avg()
+            << " ms, min time: " << t0.LapsTime().Min()
+            << " ms, mean GOPs: " << ops * 1e-6f / t0.LapsTime().Avg()
+            << " GOPs, max GOPs: " << ops * 1e-6f / t0.LapsTime().Min()
             << " GOPs";
 
   if (FLAGS_check_result) {

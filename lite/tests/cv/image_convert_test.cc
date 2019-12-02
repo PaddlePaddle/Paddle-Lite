@@ -17,8 +17,8 @@
 #include <math.h>
 #include <random>
 #include "lite/core/context.h"
+#include "lite/core/profile/timer.h"
 #include "lite/tests/cv/cv_basic.h"
-#include "lite/tests/utils/timer.h"
 #include "lite/utils/cv/paddle_image_preprocess.h"
 
 DEFINE_int32(cluster, 3, "cluster id");
@@ -46,7 +46,7 @@ typedef paddle::lite::utils::cv::ImagePreprocess ImagePreprocess;
 typedef paddle::lite_api::Tensor Tensor_api;
 typedef paddle::lite::Tensor Tensor;
 
-using paddle::lite::Timer;
+using paddle::lite::profile::Timer;
 
 void fill_tensor_host_rand(uint8_t* dio, int64_t size) {
   uint seed = 256;
@@ -285,8 +285,8 @@ void test_img(const std::vector<int>& cluster_id,
       ImagePreprocess image_preprocess(srcFormat, dstFormat, tparam);
 
       for (int i = 0; i < test_iter; ++i) {
-        t1.clear();
-        t1.start();
+        t1.Reset();
+        t1.Start();
 
         LOG(INFO) << "image convert saber compute";
         // 方法一: image_preprocess.imageCovert(src, lite_dst);
@@ -329,8 +329,8 @@ void test_img(const std::vector<int>& cluster_id,
                                       means,
                                       scales);
 
-        t1.end();
-        double tdiff = t1.get_average_ms();
+        t1.Stop();
+        double tdiff = t1.LapsTime().Avg();
         to += tdiff;
         if (tdiff < min_time) {
           min_time = tdiff;
