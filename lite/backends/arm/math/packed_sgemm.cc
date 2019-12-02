@@ -284,7 +284,7 @@ void sgemm_prepack(bool is_transB,
                          ctx);
   }
 #else   // armv7
-  if (ctx->arch() == kA73) {
+  if (ctx->arch() == kA73 || M <= 4) {
     sgemm_prepacked_4x8(is_transB,
                         M,
                         N,
