@@ -2074,6 +2074,10 @@ inline void act_switch_c8_fp32(const float* din_ptr,
                        [doutc1r0] "+r"(doutc1_ptr),
                        [doutc2r0] "+r"(doutc2_ptr),
                        [doutc3r0] "+r"(doutc3_ptr),
+                       [doutc4r0] "+r"(doutc4_ptr),
+                       [doutc5r0] "+r"(doutc5_ptr),
+                       [doutc6r0] "+r"(doutc6_ptr),
+                       [doutc7r0] "+r"(doutc7_ptr),
                        [ptr_din] "+r"(din_ptr),
                        [cnt] "+r"(cnt_loop)
                      : [scale] "w"(scale)
