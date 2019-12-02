@@ -106,22 +106,25 @@ std::vector<Object> detect_object(const float* data,
                                   int count,
                                   float thresh,
                                   cv::Mat& image) {  // NOLINT
+  if (data == nullptr) {
+    std::cout << "[ERROR] data can not be nullptr\n";
+    exit(1);
+  }
   std::vector<Object> rect_out;
-  const float* dout = data;
   for (int iw = 0; iw < count; iw++) {
     int oriw = image.cols;
     int orih = image.rows;
-    if (dout[1] > thresh && static_cast<int>(dout[0]) > 0) {
+    if (data[1] > thresh && static_cast<int>(data[0]) > 0) {
       Object obj;
-      int x = static_cast<int>(dout[2] * oriw);
-      int y = static_cast<int>(dout[3] * orih);
-      int w = static_cast<int>(dout[4] * oriw) - x;
-      int h = static_cast<int>(dout[5] * orih) - y;
+      int x = static_cast<int>(data[2] * oriw);
+      int y = static_cast<int>(data[3] * orih);
+      int w = static_cast<int>(data[4] * oriw) - x;
+      int h = static_cast<int>(data[5] * orih) - y;
       cv::Rect rec_clip =
           cv::Rect(x, y, w, h) & cv::Rect(0, 0, image.cols, image.rows);
       obj.batch_id = 0;
-      obj.class_id = static_cast<int>(dout[0]);
-      obj.prob = dout[1];
+      obj.class_id = static_cast<int>(data[0]);
+      obj.prob = data[1];
       obj.rec = rec_clip;
       if (w > 0 && h > 0 && obj.prob <= 1) {
         rect_out.push_back(obj);
@@ -157,7 +160,7 @@ std::vector<Object> detect_object(const float* data,
                   << std::endl;
       }
     }
-    dout += 6;
+    data += 6;
   }
   return rect_out;
 }
@@ -186,7 +189,7 @@ void RunModel() {
   // 5. Get output and post process
   std::unique_ptr<const Tensor> output_tensor(
       std::move(predictor->GetOutput(0)));
-  auto outptr = output_tensor->mutable_data<float>();
+  auto* outptr = output_tensor->data<float>();
   auto shape_out = output_tensor->shape();
   int64_t cnt = 1;
   for (auto& i : shape_out) {
