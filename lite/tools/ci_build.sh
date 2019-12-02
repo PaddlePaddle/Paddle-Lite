@@ -738,6 +738,7 @@ function build_test_arm_subtask_android {
     #run_gen_code_test ${port_armv7}
     #test_arm "android" "armv7" "clang" ${port_armv7}
     #cd -
+
     if [ $USE_ADB_EMULATOR == "ON" ]; then
         adb devices | grep emulator | cut -f1 | while read line; do adb -s $line emu kill; done
     fi
