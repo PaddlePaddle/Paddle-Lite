@@ -42,7 +42,7 @@ adb -s emulator-5554 push mobilenetv1_light_api /data/local/tmp/
 adb -s emulator-5554 push ../../../cxx/lib/libpaddle_light_api_shared.so /data/local/tmp/
 adb -s emulator-5554 shell chmod +x /data/local/tmp/mobilenetv1_light_api
 adb -s emulator-5554 shell "export LD_LIBRARY_PATH=/data/local/tmp/:$LD_LIBRARY_PATH && 
-/data/local/tmp/mobilenetv1_light_api --model_dir=/data/local/tmp/mobilenet_v1.opt"
+/data/local/tmp/mobilenetv1_light_api /data/local/tmp/mobilenet_v1.opt"
 ```
 
 7. 编译并运行目标检测的demo
@@ -56,7 +56,7 @@ adb -s emulator-5554 push test.jpg /data/local/tmp/
 adb -s emulator-5554 push ../../../cxx/lib/libpaddle_light_api_shared.so /data/local/tmp/
 adb -s emulator-5554 shell chmod +x /data/local/tmp/mobile_detection
 adb -s emulator-5554 shell "export LD_LIBRARY_PATH=/data/local/tmp/:$LD_LIBRARY_PATH && 
-/data/local/tmp/mobile_detection --model_dir=/data/local/tmp/mobilenetv1-ssd --img_path=/data/local/tmp/test.jpg"
+/data/local/tmp/mobile_detection /data/local/tmp/mobilenetv1-ssd /data/local/tmp/test.jpg"
 adb -s emulator-5554 pull /data/local/tmp/test_detection_result.jpg ./
 ```
 运行成功将在mobile_detection目录下看到生成的目标检测结果图像: test_detection_result.jpg

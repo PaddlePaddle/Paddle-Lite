@@ -3,15 +3,11 @@ CXX_DEFINES = -DARM_WITH_OMP -DHPPL_STUB_FUNC -DLITE_WITH_ARM -DLITE_WITH_LIGHT_
 LDFLAGS = -latomic -pthread -ldl -llog -lz
 
 SYSROOT_COMPLILE = --sysroot=/opt/android-ndk-r17c/sysroot
-
-THIRD_PARTY_LIBS = ../../../third_party/gflags/lib/libgflags.a
-                                     
+                                    
 SYSTEM_INCLUDES = -I/opt/android-ndk-r17c/sources/cxx-stl/llvm-libc++/include \
 	          -I/opt/android-ndk-r17c/sources/cxx-stl/llvm-libc++abi/include \
 	          -I/opt/android-ndk-r17c/sources/android/support/include \
 	          -I/opt/android-ndk-r17c/sysroot/usr/include \
-
-THIRD_PARTY_INCLUDES = -I../../../third_party/gflags/include
 
 ifeq ($(ARM_ABI), arm8)
     CC = /opt/android-ndk-r17c/toolchains/aarch64-linux-android-4.9/prebuilt/linux-x86_64/bin/aarch64-linux-android-g++ 
@@ -20,7 +16,7 @@ ifeq ($(ARM_ABI), arm8)
     SYSROOT_LINK = --sysroot=/opt/android-ndk-r17c/platforms/android-24/arch-arm64
     SYSTEM_LIBS = /opt/android-ndk-r17c/sources/cxx-stl/llvm-libc++/libs/arm64-v8a/libc++_static.a \
                   /opt/android-ndk-r17c/sources/cxx-stl/llvm-libc++/libs/arm64-v8a/libc++abi.a
-    INCLUDES = $(SYSTEM_INCLUDES) -I/opt/android-ndk-r17c/sysroot/usr/include/aarch64-linux-android $(THIRD_PARTY_INCLUDES)
+    INCLUDES = $(SYSTEM_INCLUDES) -I/opt/android-ndk-r17c/sysroot/usr/include/aarch64-linux-android
 else
     CC = /opt/android-ndk-r17c/toolchains/arm-linux-androideabi-4.9/prebuilt/linux-x86_64/bin/arm-linux-androideabi-g++
     CXX_FLAGS = -march=armv7-a -mthumb -mfpu=neon -mfloat-abi=softfp -funwind-tables -no-canonical-prefixes \
@@ -31,5 +27,5 @@ else
                   /opt/android-ndk-r17c/sources/cxx-stl/llvm-libc++/libs/armeabi-v7a/libc++abi.a \
                   /opt/android-ndk-r17c/sources/cxx-stl/llvm-libc++/libs/armeabi-v7a/libandroid_support.a \
                   /opt/android-ndk-r17c/sources/cxx-stl/llvm-libc++/libs/armeabi-v7a/libunwind.a
-    INCLUDES = $(SYSTEM_INCLUDES) -I/opt/android-ndk-r17c/sysroot/usr/include/arm-linux-androideabi $(THIRD_PARTY_INCLUDES)
+    INCLUDES = $(SYSTEM_INCLUDES) -I/opt/android-ndk-r17c/sysroot/usr/include/arm-linux-androideabi
 endif

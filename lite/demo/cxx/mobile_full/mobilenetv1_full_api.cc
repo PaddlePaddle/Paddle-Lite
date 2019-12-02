@@ -15,10 +15,8 @@
 #include <gflags/gflags.h>
 #include <stdio.h>
 #include <vector>
-#include "paddle_api.h"          // NOLINT
-#include "paddle_use_kernels.h"  // NOLINT
-#include "paddle_use_ops.h"      // NOLINT
-#include "paddle_use_passes.h"   // NOLINT
+#include "paddle_api.h"         // NOLINT
+#include "paddle_use_passes.h"  // NOLINT
 
 using namespace paddle::lite_api;  // NOLINT
 
@@ -32,13 +30,13 @@ int64_t ShapeProduction(const shape_t& shape) {
   return res;
 }
 
-void CheckInput(char*** argv) {
+void CheckInput(char** argv) {
   if (FLAGS_model_dir == "") {
     printf(
         "Usage: %s --model_dir=<your-model-directory> "
         "--optimized_model_dir=<your-optmized-model-directory> "
         "--prefer_int8_kernel=[true|false]\n",
-        *argv[0]);
+        argv[0]);
     exit(1);
   }
   if (FLAGS_optimized_model_dir == "") {
@@ -48,9 +46,9 @@ void CheckInput(char*** argv) {
         ":= `model_dir`:%s\n",
         FLAGS_optimized_model_dir.c_str());
   }
-  printf("[WARN] model_dir:%s\n", FLAGS_model_dir.c_str());
-  printf("[WARN] optimized_model_dir:%s\n", FLAGS_optimized_model_dir.c_str());
-  printf("[WARN] prefer_int8_kernel:%s\n", FLAGS_prefer_int8_kernel);
+  printf("[INFO] model_dir:%s\n", FLAGS_model_dir.c_str());
+  printf("[INFO] optimized_model_dir:%s\n", FLAGS_optimized_model_dir.c_str());
+  printf("[INFO] prefer_int8_kernel:%s\n", FLAGS_prefer_int8_kernel);
 }
 
 // 0. Enable OpenCL, if needed
@@ -107,7 +105,7 @@ void RunModel() {
 
 int main(int argc, char** argv) {
   google::ParseCommandLineFlags(&argc, &argv, true);
-  CheckInput(&argv);
+  CheckInput(argv);
   RunModel();
   return 0;
 }

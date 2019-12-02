@@ -12,29 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <gflags/gflags.h>
-#include <stdio.h>
+#include <iostream>
 #include <vector>
-#include "paddle_api.h"          // NOLINT
-#include "paddle_use_kernels.h"  // NOLINT
-#include "paddle_use_ops.h"      // NOLINT
+#include "paddle_api.h"  // NOLINT
 
 using namespace paddle::lite_api;  // NOLINT
 
-DEFINE_string(model_dir, "", "Model dir path.");
+static std::string FLAGS_model_dir;  // NOLINT
 
 int64_t ShapeProduction(const shape_t& shape) {
   int64_t res = 1;
   for (auto i : shape) res *= i;
   return res;
-}
-
-void CheckInput(char*** argv) {
-  if (FLAGS_model_dir == "") {
-    printf("Usage: %s --model_dir=<your-nb-model-directory>\n", *argv[0]);
-    exit(1);
-  }
-  printf("[WARN] model_dir:%s\n", FLAGS_model_dir.c_str());
 }
 
 void RunModel() {
@@ -60,15 +49,19 @@ void RunModel() {
   // 5. Get output
   std::unique_ptr<const Tensor> output_tensor(
       std::move(predictor->GetOutput(0)));
-  printf("Output dim: %d\n", output_tensor->shape()[1]);
+  std::cout << "Output dim: " << output_tensor->shape()[1] << std::endl;
   for (int i = 0; i < ShapeProduction(output_tensor->shape()); i += 100) {
-    printf("Output[%d]: %f\n", i, output_tensor->data<float>()[i]);
+    std::cout << "Output[" << i << "]: " << output_tensor->data<float>()[i]
+              << std::endl;
   }
 }
 
 int main(int argc, char** argv) {
-  google::ParseCommandLineFlags(&argc, &argv, true);
-  CheckInput(&argv);
+  if (argc < 2) {
+    std::cout << "[ERROR] usage: " << argv[0] << " naive_buffer_model_dir\n";
+    exit(1);
+  }
+  FLAGS_model_dir = argv[1];
   RunModel();
   return 0;
 }

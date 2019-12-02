@@ -5,7 +5,11 @@ include ../Makefile.def
 
 LITE_ROOT=../../../
 
-CXX_INCLUDES = $(INCLUDES) -I$(LITE_ROOT)/cxx/include
+THIRD_PARTY_INCLUDES = -I../../../third_party/gflags/include
+
+THIRD_PARTY_LIBS = ../../../third_party/gflags/lib/libgflags.a
+
+CXX_INCLUDES = $(INCLUDES) ${THIRD_PARTY_INCLUDES} -I$(LITE_ROOT)/cxx/include
 
 CXX_LIBS = $(THIRD_PARTY_LIBS) -L$(LITE_ROOT)/cxx/lib/ -lpaddle_full_api_shared $(SYSTEM_LIBS)
 

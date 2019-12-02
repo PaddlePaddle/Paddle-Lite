@@ -12,21 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <gflags/gflags.h>
-#include <stdio.h>
 #include <iostream>
 #include <vector>
 #include "opencv2/core.hpp"
 #include "opencv2/imgcodecs.hpp"
 #include "opencv2/imgproc.hpp"
-#include "paddle_api.h"          // NOLINT
-#include "paddle_use_kernels.h"  // NOLINT
-#include "paddle_use_ops.h"      // NOLINT
+#include "paddle_api.h"  // NOLINT
 
 using namespace paddle::lite_api;  // NOLINT
 
-DEFINE_string(model_dir, "", "Model dir path.");
-DEFINE_string(img_path, "", "source image path.");
+static std::string FLAGS_model_dir;  // NOLINT
+static std::string FLAGS_img_path;   // NOLINT
 
 struct Object {
   int batch_id;
@@ -41,17 +37,6 @@ int64_t ShapeProduction(const shape_t& shape) {
   return res;
 }
 
-void CheckInput(char*** argv) {
-  if (FLAGS_model_dir == "" || FLAGS_img_path == "") {
-    printf(
-        "Usage: %s --model_dir=<your-nb-model-directory> "
-        "--img_path=<source-img-path>\n",
-        *argv[0]);
-    exit(1);
-  }
-  printf("[WARN] model_dir:%s\n", FLAGS_model_dir.c_str());
-  printf("[WARN] img_path:%s\n", FLAGS_img_path.c_str());
-}
 const char* class_names[] = {
     "background", "aeroplane",   "bicycle", "bird",  "boat",
     "bottle",     "bus",         "car",     "cat",   "chair",
@@ -63,14 +48,18 @@ const char* class_names[] = {
 void neon_mean_scale(const float* din,
                      float* dout,
                      int size,
-                     std::vector<float> mean,
-                     std::vector<float> scale) {
+                     const std::vector<float> mean,
+                     const std::vector<float> scale) {
+  if (mean.size() != 3 || scale.size() != 3) {
+    std::cout << "[ERROR] mean or scale size must equal to 3\n";
+    exit(1);
+  }
   float32x4_t vmean0 = vdupq_n_f32(mean[0]);
   float32x4_t vmean1 = vdupq_n_f32(mean[1]);
   float32x4_t vmean2 = vdupq_n_f32(mean[2]);
   float32x4_t vscale0 = vdupq_n_f32(1.f / scale[0]);
-  float32x4_t vscale1 = vdupq_n_f32(1.f / scale[0]);
-  float32x4_t vscale2 = vdupq_n_f32(1.f / scale[0]);
+  float32x4_t vscale1 = vdupq_n_f32(1.f / scale[1]);
+  float32x4_t vscale2 = vdupq_n_f32(1.f / scale[2]);
 
   float* dout_c0 = dout;
   float* dout_c1 = dout + size;
@@ -101,10 +90,7 @@ void neon_mean_scale(const float* din,
   }
 }
 
-void pre_process(const cv::Mat& img,
-                 const int width,
-                 const int height,
-                 float* data) {
+void pre_process(const cv::Mat& img, int width, int height, float* data) {
   cv::Mat rgb_img;
   cv::cvtColor(img, rgb_img, cv::COLOR_BGR2RGB);
   cv::resize(rgb_img, rgb_img, cv::Size(width, height), 0.f, 0.f);
@@ -118,7 +104,7 @@ void pre_process(const cv::Mat& img,
 
 std::vector<Object> detect_object(const float* data,
                                   int count,
-                                  const float thresh,
+                                  float thresh,
                                   cv::Mat& image) {  // NOLINT
   std::vector<Object> rect_out;
   const float* dout = data;
@@ -213,8 +199,12 @@ void RunModel() {
 }
 
 int main(int argc, char** argv) {
-  google::ParseCommandLineFlags(&argc, &argv, true);
-  CheckInput(&argv);
+  if (argc < 3) {
+    std::cout << "[ERROR] usage: " << argv[0] << " model_dir image_path\n";
+    exit(1);
+  }
+  FLAGS_model_dir = argv[1];
+  FLAGS_img_path = argv[2];
   RunModel();
   return 0;
 }
