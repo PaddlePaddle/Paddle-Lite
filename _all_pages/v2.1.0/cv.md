@@ -49,7 +49,7 @@ typedef struct {
 } TransParam;
 ```
 
-### `ImagePreprocess` 类的成员变量
+### ImagePreprocess 类的成员变量
 
 `ImagePreprocess` 类含有以下三个私有成员变量，通过构造函数进行初始化。
 ```cpp
@@ -66,7 +66,7 @@ ImagePreprocess::ImagePreprocess(ImageFormat srcFormat, ImageFormat dstFormat, T
 }
 ```
 
-### 颜色空间转换 `Convert`
+### 颜色空间转换 Convert
 
 `Convert` 函数支持颜色空间：GRAY、NV12（NV21）、RGB（BGR）和RGBA（BGRA）
 
@@ -105,7 +105,7 @@ ImagePreprocess::ImagePreprocess(ImageFormat srcFormat, ImageFormat dstFormat, T
     
     - 第二个`imageCovert` 接口，可以直接使用
 
-### 缩放 `Resize`
+### 缩放 Resize
 
 `Resize` 功能支持颜色空间：GRAY、NV12（NV21）、RGB（BGR）和RGBA（BGRA）
 `Resize` 功能目前支持的方法：`bilinear`
@@ -127,7 +127,7 @@ ImagePreprocess::ImagePreprocess(ImageFormat srcFormat, ImageFormat dstFormat, T
     
     - 第二个`imageResize` 接口，可以直接使用
 
-### 旋转 `Rotate`
+### 旋转 Rotate
 
 `Rotate` 功能支持颜色空间：GRAY、RGB（BGR）和RGBA（BGRA）
 `Rotate` 功能目前支持的角度：90、180 和 270
@@ -148,7 +148,7 @@ ImagePreprocess::ImagePreprocess(ImageFormat srcFormat, ImageFormat dstFormat, T
     
     - 第二个`imageRotate` 接口，可以直接使用
 
-### 翻转 `Flip`
+### 翻转 Flip
 
 `Flip` 功能支持颜色空间：GRAY、RGB（BGR）和RGBA（BGRA）
 `Flip` 功能目前支持的功能：沿X轴翻转、沿Y轴翻转和沿XY轴翻转
@@ -169,7 +169,7 @@ ImagePreprocess::ImagePreprocess(ImageFormat srcFormat, ImageFormat dstFormat, T
     
     - 第二个`imageFlip` 接口，可以直接使用
 
-### `Image2Tensor`
+### Image2Tensor
 
 `Image2Tensor` 功能支持颜色空间：RGB（BGR）和RGBA（BGRA）
 `Image2Tensor` 功能目前支持的Layout：`NCHW`和 `NHWC`
@@ -222,7 +222,7 @@ ImagePreprocess image_preprocess(srcFormat, dstFormat, tparam);
 ImagePreprocess image_preprocess();
 ```
 
-### `imageConvert` Demo
+### imageConvert Demo
 
 ```cpp
 // 方法一: 
@@ -231,7 +231,7 @@ image_preprocess.imageCovert(src, lite_dst);
 image_preprocess.imageCovert(src, lite_dst, (ImageFormat)srcFormat, (ImageFormat)dstFormat);
 ```
 
-### `imageResize` Demo
+### imageResize Demo
 
 ```cpp
 // 方法一: 
@@ -241,7 +241,7 @@ image_preprocess.imageResize(lite_dst,resize_tmp, (ImageFormat)dstFormat, srcw,
 srch, dstw, dsth);
 ```
 
-### `imageRotate` Demo
+### imageRotate Demo
 
 ```cpp
 // 方法一: 
@@ -250,7 +250,7 @@ image_preprocess.imageRotate(resize_tmp, tv_out_ratote);
 image_preprocess.imageRotate(resize_tmp,tv_out_ratote, (ImageFormat)dstFormat, dstw, dsth, degree);
 ```
 
-### `imageFlip` Demo
+### imageFlip Demo
 
 ```cpp
 // 方法一: 
@@ -259,7 +259,7 @@ image_preprocess.imageFlip(tv_out_ratote, tv_out_flip);
 image_preprocess.imageFlip(tv_out_ratote, tv_out_flip, (ImageFormat)dstFormat， dstw, dsth, flip_param);
 ```
 
-### `image2Tensor` Demo
+### image2Tensor Demo
 
 ```cpp
 // 方法一: 
