@@ -61,7 +61,7 @@ void pool_ref(const std::shared_ptr<operators::PoolOpLite> op) {
   int stride_h = strides[0];
   int stride_w = strides[1];
   int pad_h = paddings[0];
-  int pad_w = paddings[1];
+  int pad_w = paddings[2];
 
   if (global_pooling == true) {
     for (int n = 0; n < in_n; ++n) {
@@ -163,7 +163,8 @@ void test_pool(int bs,
   opdesc.SetAttr("global_pooling", global_pooling);
   opdesc.SetAttr("exclusive", exclusive);
   opdesc.SetAttr("strides", std::vector<int>({stride, stride}));
-  opdesc.SetAttr("paddings", std::vector<int>({padding, padding}));
+  opdesc.SetAttr("paddings",
+                 std::vector<int>({padding, padding, padding, padding}));
 
   // create and convert op to NPU model, then run it on NPU
   auto op = CreateOp<operators::PoolOpLite>(opdesc, &scope);

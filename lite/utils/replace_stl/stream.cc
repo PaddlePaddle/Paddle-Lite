@@ -13,6 +13,8 @@
 // limitations under the License.
 
 #include "lite/utils/replace_stl/stream.h"
+#include <assert.h>
+#include <stdio.h>
 
 #ifdef LITE_ON_TINY_PUBLISH
 
@@ -20,93 +22,119 @@ namespace paddle {
 namespace lite {
 namespace replace_stl {
 
+void ostream::pad(const std::string& text) {
+  if (display_width_ > 0) {
+    if (display_width_ < text.size()) {
+      fprintf(stderr, "Replace STL IO display length less than text\n");
+      assert(false);
+    } else {
+      for (int i = 0; i < display_width_ - text.size(); ++i) {
+        data_.push_back(' ');
+      }
+      display_width_ = -1;
+    }
+  }
+}
+
 #ifdef LITE_SHUTDOWN_LOG
 #define ADD_DATA_AS_STRING(data_, obj_)
 #else
-#define ADD_DATA_AS_STRING(data_, obj_) data_ = data_ + std::to_string(obj_)
+#define ADD_DATA_AS_STRING(data_, obj_)    \
+  std::string text = std::to_string(obj_); \
+  pad(text);                               \
+  data_ = data_ + text;
+
 #endif
 
 template <>
 ostream& ostream::operator<<(const char* obj) {
-  _data = _data + std::string(obj);
+  data_ = data_ + std::string(obj);
   return *this;
 }
 
 template <>
 ostream& ostream::operator<<(const char& obj) {
-  _data = _data + obj;
+  data_ = data_ + obj;
   return *this;
 }
 
 template <>
 ostream& ostream::operator<<(const std::string& obj) {
-  _data = _data + obj;
+  data_ = data_ + obj;
   return *this;
 }
 
 template <>
 ostream& ostream::operator<<(const int16_t& obj) {
-  ADD_DATA_AS_STRING(_data, obj);
+  ADD_DATA_AS_STRING(data_, obj);
   return *this;
 }
 
 template <>
 ostream& ostream::operator<<(const int& obj) {
-  ADD_DATA_AS_STRING(_data, obj);
+  ADD_DATA_AS_STRING(data_, obj);
   return *this;
 }
 
 template <>
 ostream& ostream::operator<<(const bool& obj) {
-  ADD_DATA_AS_STRING(_data, obj);
+  ADD_DATA_AS_STRING(data_, obj);
   return *this;
 }
 
 template <>
 ostream& ostream::operator<<(const long& obj) {  // NOLINT
-  ADD_DATA_AS_STRING(_data, obj);
+  ADD_DATA_AS_STRING(data_, obj);
   return *this;
 }
 
 template <>
 ostream& ostream::operator<<(const long long& obj) {  // NOLINT
-  ADD_DATA_AS_STRING(_data, obj);
+  ADD_DATA_AS_STRING(data_, obj);
   return *this;
 }
 
 template <>
 ostream& ostream::operator<<(const unsigned& obj) {
-  ADD_DATA_AS_STRING(_data, obj);
+  ADD_DATA_AS_STRING(data_, obj);
   return *this;
 }
 
 template <>
 ostream& ostream::operator<<(const unsigned long& obj) {  // NOLINT
-  ADD_DATA_AS_STRING(_data, obj);
+  ADD_DATA_AS_STRING(data_, obj);
   return *this;
 }
 
 template <>
 ostream& ostream::operator<<(const unsigned long long& obj) {  // NOLINT
-  ADD_DATA_AS_STRING(_data, obj);
+  ADD_DATA_AS_STRING(data_, obj);
   return *this;
 }
 
 template <>
 ostream& ostream::operator<<(const float& obj) {
-  ADD_DATA_AS_STRING(_data, obj);
+  ADD_DATA_AS_STRING(data_, obj);
   return *this;
 }
 
 template <>
 ostream& ostream::operator<<(const double& obj) {
-  ADD_DATA_AS_STRING(_data, obj);
+  ADD_DATA_AS_STRING(data_, obj);
   return *this;
 }
 
 template <>
 ostream& ostream::operator<<(const long double& obj) {
-  ADD_DATA_AS_STRING(_data, obj);
+  ADD_DATA_AS_STRING(data_, obj);
+  return *this;
+}
+
+template <>
+ostream& ostream::operator<<(const LiteIoWidth& obj) {
+  int width = obj.width;
+  assert(width > 0);
+  display_width_ = width;
   return *this;
 }
 

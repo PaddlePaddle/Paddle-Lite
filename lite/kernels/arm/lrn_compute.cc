@@ -31,16 +31,16 @@ void LrnCompute::Run() {
   int channel = x_dims[1];
   int h = x_dims[2];
   int w = x_dims[3];
-  const int local_size = param.local_size;
+  const int n = param.n;
   const float alpha = param.alpha;
   const float beta = param.beta;
   const float k = param.k;
   if (param.norm_region == "AcrossChannels") {
     lite::arm::math::compute_across_channels(
-        x_data, out_data, num, channel, h, w, local_size, alpha, beta, k);
+        x_data, out_data, num, channel, h, w, n, alpha, beta, k);
   } else {
     lite::arm::math::compute_within_channels(
-        x_data, out_data, num, channel, h, w, local_size, alpha, beta, k);
+        x_data, out_data, num, channel, h, w, n, alpha, beta, k);
   }
 }
 
@@ -53,4 +53,5 @@ REGISTER_LITE_KERNEL(
     lrn, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::LrnCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("MidOut", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
