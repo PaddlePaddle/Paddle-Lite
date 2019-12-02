@@ -2,8 +2,10 @@
 layout: post
 title: 新增Pass的方法
 ---
+#新增Pass方法
+本文从三个方面介绍了`Lite`中的`Pass`结构：**Pass是什么**、**Pass的实现与接口**、**Pass的一般注册流程**。最后以`Fc_fuse_pass`为例介绍了`fusion_pass`的作用与注册方法。
 
-# 前述：Pass是什么？
+## 前述：Pass是什么？
 
 **CxxPredictor加载模型后，在执行预测前会先优化模型。模型优化过程是通过Pass实现的。**
 具体调用关系如下：
@@ -20,9 +22,9 @@ title: 新增Pass的方法
 
 
 
-#Pass的实现与接口 ：Pass基类、PassManager和Pass注册
+##Pass的实现与接口 ：Pass基类、PassManager和Pass注册
 
-## 1、Pass基类：`paddle::lite::mir::Pass`
+### 1、Pass基类：`paddle::lite::mir::Pass`
 ```c++
 class Pass {
  public:
@@ -76,7 +78,7 @@ class DebugPass : public Pass {
 **主要接口**： 
   `Pass::Apply(const std::unique_ptr& graph)` : Pass优化过程的具体操作，是新注册Pass需要实现的接口。输入为`SSAGraph`型指针，是对模型结构的拓扑表示。
 
-## 2、Pass管理 `paddle::lite::mir::PassManager` 
+### 2、Pass管理 `paddle::lite::mir::PassManager` 
 
 ```c++
 class PassManager {
@@ -111,16 +113,16 @@ class PassManager {
 ` bool AddNewPass(const std::string& name, Pass* pass)` 添加新的Pass到PassManager中
 
 
-## 3、 Pass 注册 `paddle::lite::mir::PassRegistry`
+### 3、 Pass 注册 `paddle::lite::mir::PassRegistry`
 **代码位置**：`lite/core/mir/pass_registry.h`
 **主要接口**：
 `REGISTER_MIR_PASS(name__, class__)` ：宏定义函数，用于注册Pass。注册Pass过程实现的是 `PassManager::Global().AddNewPass(name__, class__)`，将新注册Pass添加到全局变量`PassManager`中。
 
 
 
-# Pass的一般注册流程与使用方法
+## Pass的一般注册流程与使用方法
 
-## 1. Pass 注册流程
+### 1. Pass 注册流程
 在`lite/core/mir`或其子目录下继承`Pass基类`，实现`Pass::Apply`接口，并使用宏`REGISTER_MIR_PASS(name__, class__)`将Pass注册到`PassManager`即完成了新Pass注册。
 
 **以新建 **`new_demo_pass`**为例**，具体流程如下：
@@ -169,7 +171,7 @@ lite_cc_library(mir_passes
       memory_optimize_pass.cc
   DEPS mir_pass types context ${mir_fusers} ${subgraph_passes})
 ```
-## 2. Pass使用流程
+### 2. Pass使用流程
 
 将Pass注册到PassManager后不会自动生效。需要在`optimizer->run()` 函数中添加该Pass才会在模型优化过程中调用。
 （1）在`paddle_use_passes.h`文件中调用该Pass
@@ -211,13 +213,16 @@ void RunModel() {
 }
 ```
 
-# Fusion Pass的定义与注册
+
+
+
+## Fusion Pass的定义与注册
 
 `Fusion Pass`是一种常见图结构优化Pass，可将多个连续OP融合成单个等效OP，减少数据交换并简化图结构。Pass运行时调用`Fuser`自动查找并替换指定图结构，所以注册`FuserPass`时还需要实现对应的Fuser类。
 
 下面以`fc_fuse_pass`为例，详细说明`FusionPass`的效果和注册方法。
 
-##`fc_fuse_pass`的作用
+### `fc_fuse_pass`的作用
 将相邻的`mul`算子和 `element_wise add `算子 融合成一个 `FC`  算子
 ```c++
 mul(X) =  X * W 
@@ -231,9 +236,8 @@ Pass 运行效果如下：
 mul和elementwise_add的原有参数映射到FC的参数上：
 ![图片](https://user-images.githubusercontent.com/45189361/69638836-74446680-1096-11ea-9cdc-a961fa995dfe.png)
 
-## `fc_fuse_pass`的注册方法
-
-**1、创建FcFuser**
+### `fc_fuse_pass`的注册方法
+#### 1、创建FcFuser
 （1）在`lite/core/mir/fusion`路径下新建`fc_fuser.cc` 和 `fc_fuser.h` 文件
 （2）在`fc_fuser.h` 文件中继承`FuseBase`定义自己的Fuser类。
 
@@ -326,7 +330,6 @@ cpp::OpDesc FcFuser::GenOpDesc(const key2nodes_t& matched) {
 
 // 3. InsertNewNode函数用Fused OP 替换模型图中的原始 Pattern
 // FcFuser::InsertNewNode() 用Fc_OP替换原始模型图中的  " mul + element_wise add "
-`InsertNewNode()`函数  用新构建的 `FC` OP替换之前的` mul` OP和`elementwise_add` OP。
 void FcFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
   // (1) 创建FC OP的参数（OpDesc）
   auto op_desc = GenOpDesc(matched);
@@ -350,7 +353,7 @@ void FcFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
 }
 ```
 
-**2、注册fc_fuse_pass**
+#### 2、注册fc_fuse_pass
 
 （1）在`lite/core/mir/fusion`路径下新建`fc_fuse_pass.cc` 和 `fc_fuse_pass.h` 文件
 （2）在`fc_fuse_pass.h` 文件中，继承`ProgramPass`定义`FcFusePass`。
@@ -405,14 +408,14 @@ lite_cc_library(mir_passes
   DEPS mir_pass types context ${mir_fusers} ${subgraph_passes})
 ```
 
-**3、使用 fc_fuse_pass**
+#### 3、使用 fc_fuse_pass
 
-1、`lite/api/paddle_use_passes.h`使用`USE_LITE_PASS`宏来引入新加入的pass
+（1） `lite/api/paddle_use_passes.h`使用`USE_LITE_PASS`宏来引入新加入的pass
 
 ```c++
 USE_MIR_PASS(lite_fc_fuse_pass);
 ```
-2、 在`lite/core/optimizer.h`文件的`Optimizer::Run()`函数中添加新注册的pass
+（2）  在`lite/core/optimizer.h`文件的`Optimizer::Run()`函数中添加新注册的pass
 ```C++
 class Optimizer {
  public:
@@ -432,4 +435,4 @@ class Optimizer {
     exec_scope_ = program.exec_scope();
   }
 ```
-3、以上修改完成后，在CreatePredictor（CxxConfig）创建CxxPredictor时，模型优化过程会调用`lite_fc_fuse_pass `，扫描`mul + element_wise add`结构并替换为等效的Fc_OP。
+（3） 以上修改完成后，在CreatePredictor（CxxConfig）创建CxxPredictor时，模型优化过程会调用`lite_fc_fuse_pass `，扫描`mul + element_wise add`结构并替换为等效的Fc_OP。
