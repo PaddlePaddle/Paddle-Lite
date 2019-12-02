@@ -715,6 +715,7 @@ function build_test_arm_subtask_android {
 
     # job 1
     build_arm "android" "armv8" "gcc"
+    adb shell 'rm -rf /data/local/tmp/*'
     run_gen_code_test ${portname_armv8}
     test_arm "android" "armv8" "gcc" ${portname_armv8}
     cd -
@@ -727,6 +728,7 @@ function build_test_arm_subtask_android {
 
     # job 3
     build_arm "android" "armv7" "gcc"
+    adb shell 'rm -rf /data/local/tmp/*'
     run_gen_code_test ${portname_armv7}
     test_arm "android" "armv7" "gcc" ${portname_armv7}
     cd -
@@ -736,8 +738,9 @@ function build_test_arm_subtask_android {
     #run_gen_code_test ${port_armv7}
     #test_arm "android" "armv7" "clang" ${port_armv7}
     #cd -
-
-    adb devices | grep emulator | cut -f1 | while read line; do adb -s $line emu kill; done
+    if [ $USE_ADB_EMULATOR == "ON" ]; then
+        adb devices | grep emulator | cut -f1 | while read line; do adb -s $line emu kill; done
+    fi
     echo "Done"
 }
 
