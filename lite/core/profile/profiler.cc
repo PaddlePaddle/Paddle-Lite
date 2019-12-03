@@ -69,13 +69,13 @@ std::string Profiler::Summary(bool concise) {
     for (auto& unit : units_) {
       auto ch = summary.find(unit.character);
       if (ch != summary.end()) {
-        ch->second.avg += unit.timer->LapsTime().Avg();
-        ch->second.min += unit.timer->LapsTime().Min();
-        ch->second.max += unit.timer->LapsTime().Max();
+        ch->second.avg += unit.timer->LapTimes().Avg();
+        ch->second.min += unit.timer->LapTimes().Min();
+        ch->second.max += unit.timer->LapTimes().Max();
       } else {
-        TimeInfo info({unit.timer->LapsTime().Avg(),
-                       unit.timer->LapsTime().Min(),
-                       unit.timer->LapsTime().Max()});
+        TimeInfo info({unit.timer->LapTimes().Avg(),
+                       unit.timer->LapTimes().Min(),
+                       unit.timer->LapTimes().Max()});
         summary.insert({unit.character, info});
       }
     }
@@ -98,9 +98,9 @@ std::string Profiler::Summary(bool concise) {
       ss << std::setw(25) << std::left << unit.character.op_type        \
          << std::setw(40) << std::left << unit.character.kernel_name    \
          << std::setw(10) << std::left << unit.character.remark         \
-         << std::setw(10) << std::left << unit.timer->LapsTime().Avg()  \
-         << std::setw(10) << std::left << unit.timer->LapsTime().Min()  \
-         << std::setw(10) << std::left << unit.timer->LapsTime().Max()  \
+         << std::setw(10) << std::left << unit.timer->LapTimes().Avg()  \
+         << std::setw(10) << std::left << unit.timer->LapTimes().Min()  \
+         << std::setw(10) << std::left << unit.timer->LapTimes().Max()  \
          << std::endl;
       // clang-format on
     }

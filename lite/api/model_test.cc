@@ -112,10 +112,10 @@ void Run(const std::vector<std::vector<int64_t>>& input_shapes,
   LOG(INFO) << "Model: " << model_dir
             << ", power_mode: " << static_cast<int>(power_mode)
             << ", threads num " << thread_num << ", warmup: " << warmup_times
-            << ", repeats: " << repeat << ", avg time: " << ti.LapsTime().Avg()
+            << ", repeats: " << repeat << ", avg time: " << ti.LapTimes().Avg()
             << " ms"
-            << ", min time: " << ti.LapsTime().Min() << " ms"
-            << ", max time: " << ti.LapsTime().Max() << " ms.";
+            << ", min time: " << ti.LapTimes().Min() << " ms"
+            << ", max time: " << ti.LapTimes().Max() << " ms.";
 
   auto output = predictor->GetOutput(0);
   auto out = output->data<float>();

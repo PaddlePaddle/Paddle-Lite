@@ -211,10 +211,10 @@ bool test_gemm_int8(bool tra,
   LOG(INFO) << "gemm_int8_int8 output: M: " << m << ", N: " << n << ", K: " << k
             << ", power_mode: " << cls << ", threads: " << ths
             << ", GOPS: " << ops * 1e-9f
-            << " GOPS, avg time: " << t0.LapsTime().Avg()
-            << " ms, min time: " << t0.LapsTime().Min()
-            << " ms, mean GOPs: " << ops * 1e-6f / t0.LapsTime().Avg()
-            << " GOPs, max GOPs: " << ops * 1e-6f / t0.LapsTime().Min()
+            << " GOPS, avg time: " << t0.LapTimes().Avg()
+            << " ms, min time: " << t0.LapTimes().Min()
+            << " ms, mean GOPs: " << ops * 1e-6f / t0.LapTimes().Avg()
+            << " GOPs, max GOPs: " << ops * 1e-6f / t0.LapTimes().Min()
             << " GOPs";
 
   /// fp32 output compute
@@ -238,10 +238,10 @@ bool test_gemm_int8(bool tra,
   LOG(INFO) << "gemm_int8_fp32 output: M: " << m << ", N: " << n << ", K: " << k
             << ", power_mode: " << cls << ", threads: " << ths
             << ", GOPS: " << ops * 1e-9f
-            << " GOPS, avg time: " << t0.LapsTime().Avg()
-            << " ms, min time: " << t0.LapsTime().Min()
-            << " ms, mean GOPs: " << ops * 1e-6f / t0.LapsTime().Avg()
-            << " GOPs, max GOPs: " << ops * 1e-6f / t0.LapsTime().Min()
+            << " GOPS, avg time: " << t0.LapTimes().Avg()
+            << " ms, min time: " << t0.LapTimes().Min()
+            << " ms, mean GOPs: " << ops * 1e-6f / t0.LapTimes().Avg()
+            << " GOPs, max GOPs: " << ops * 1e-6f / t0.LapTimes().Min()
             << " GOPs";
 
   if (FLAGS_check_result) {

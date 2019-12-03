@@ -314,11 +314,11 @@ void test_conv_int8(const std::vector<DDim>& input_dims,
           t0.Stop();
         }
         LOG(INFO) << "int8 conv, fp32 output: output shape" << dim_out
-                  << ",running time, avg: " << t0.LapsTime().Avg()
-                  << ", min time: " << t0.LapsTime().Min()
+                  << ",running time, avg: " << t0.LapTimes().Avg()
+                  << ", min time: " << t0.LapTimes().Min()
                   << ", total GOPS: " << 1e-9 * gops
-                  << " GOPS, avg GOPs: " << 1e-6 * gops / t0.LapsTime().Avg()
-                  << " GOPs, max GOPs: " << 1e-6 * gops / t0.LapsTime().Min();
+                  << " GOPS, avg GOPs: " << 1e-6 * gops / t0.LapTimes().Avg()
+                  << " GOPs, max GOPs: " << 1e-6 * gops / t0.LapTimes().Min();
 
         /// compute int8 output
         t0.Reset();
@@ -328,11 +328,11 @@ void test_conv_int8(const std::vector<DDim>& input_dims,
           t0.Stop();
         }
         LOG(INFO) << "int8 conv, int8 output: output shape" << dim_out
-                  << ",running time, avg: " << t0.LapsTime().Avg()
-                  << ", min time: " << t0.LapsTime().Min()
+                  << ",running time, avg: " << t0.LapTimes().Avg()
+                  << ", min time: " << t0.LapTimes().Min()
                   << ", total GOPS: " << 1e-9 * gops
-                  << " GOPS, avg GOPs: " << 1e-6 * gops / t0.LapsTime().Avg()
-                  << " GOPs, max GOPs: " << 1e-6 * gops / t0.LapsTime().Min();
+                  << " GOPS, avg GOPs: " << 1e-6 * gops / t0.LapTimes().Avg()
+                  << " GOPs, max GOPs: " << 1e-6 * gops / t0.LapTimes().Min();
 
         /// compare result fp32 output
         if (FLAGS_check_result) {

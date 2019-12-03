@@ -330,7 +330,7 @@ void test_img(const std::vector<int>& cluster_id,
                                       scales);
 
         t1.Stop();
-        double tdiff = t1.LapsTime().Avg();
+        double tdiff = t1.LapTimes().Avg();
         to += tdiff;
         if (tdiff < min_time) {
           min_time = tdiff;

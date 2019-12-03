@@ -195,11 +195,11 @@ void test_conv_transpose_fp32(const std::vector<DDim>& input_dims,
         float gops =
             2.f * tmp_weights.numel() * dim_in[0] * dim_in[2] * dim_in[3];
         LOG(INFO) << "conv fp32: input shape: " << dim_in << ", output shape"
-                  << dim_out << ",running time, avg: " << t0.LapsTime().Avg()
-                  << ", min time: " << t0.LapsTime().Min()
+                  << dim_out << ",running time, avg: " << t0.LapTimes().Avg()
+                  << ", min time: " << t0.LapTimes().Min()
                   << ", total GOPS: " << 1e-9 * gops
-                  << " GOPS, avg GOPs: " << 1e-6 * gops / t0.LapsTime().Avg()
-                  << " GOPs, max GOPs: " << 1e-6 * gops / t0.LapsTime().Min();
+                  << " GOPS, avg GOPs: " << 1e-6 * gops / t0.LapTimes().Avg()
+                  << " GOPs, max GOPs: " << 1e-6 * gops / t0.LapTimes().Min();
 
         if (FLAGS_check_result) {
           double max_ratio = 0;

@@ -327,11 +327,11 @@ void test_pool_fp32(const std::vector<DDim>& input_dims,
 
         double gops = 2.0 * dim_out.production() * ksize[0] * ksize[1];
         LOG(INFO) << "pool fp32: input shape: " << dim_in << ", output shape"
-                  << dim_out << ", running time, avg: " << t0.LapsTime().Avg()
-                  << ", min time: " << t0.LapsTime().Min()
+                  << dim_out << ", running time, avg: " << t0.LapTimes().Avg()
+                  << ", min time: " << t0.LapTimes().Min()
                   << ", total GOPS: " << 1e-9 * gops
-                  << " GOPS, avg GOPs: " << 1e-6 * gops / t0.LapsTime().Avg()
-                  << " GOPs, max GOPs: " << 1e-6 * gops / t0.LapsTime().Min();
+                  << " GOPS, avg GOPs: " << 1e-6 * gops / t0.LapTimes().Avg()
+                  << " GOPs, max GOPs: " << 1e-6 * gops / t0.LapTimes().Min();
 
         if (FLAGS_check_result) {
           double max_ratio = 0;

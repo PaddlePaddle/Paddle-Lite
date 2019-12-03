@@ -65,8 +65,8 @@ class Timer {
   }
   virtual void Start(KernelContext* ctx) { return Start(); }
   virtual float Stop(KernelContext* ctx) { return Stop(); }
-  float AvgLapTimeMS() const { return laps_t_.Avg(); }
-  const TimeList<float>& LapsTime() const { return laps_t_; }
+  float AvgLapTimeMs() const { return laps_t_.Avg(); }
+  const TimeList<float>& LapTimes() const { return laps_t_; }
 
  protected:
   std::chrono::time_point<std::chrono::system_clock> t_start_, t_stop_;
