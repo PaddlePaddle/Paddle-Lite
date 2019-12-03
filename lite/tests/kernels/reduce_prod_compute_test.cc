@@ -20,7 +20,7 @@
 namespace paddle {
 namespace lite {
 
-void reduce_prob_n(const float* src,
+void reduce_prod_n(const float* src,
                    float* dst,
                    int num_in,
                    int channel_in,
@@ -43,7 +43,7 @@ void reduce_prob_n(const float* src,
   }
 }
 
-void reduce_prob_c(const float* src,
+void reduce_prod_c(const float* src,
                    float* dst,
                    int num_in,
                    int channel_in,
@@ -67,7 +67,7 @@ void reduce_prob_c(const float* src,
   }
 }
 
-void reduce_prob_h(const float* src,
+void reduce_prod_h(const float* src,
                    float* dst,
                    int num_in,
                    int channel_in,
@@ -92,7 +92,7 @@ void reduce_prob_h(const float* src,
   }
 }
 
-void reduce_prob_w(const float* src,
+void reduce_prod_w(const float* src,
                    float* dst,
                    int num_in,
                    int channel_in,
@@ -119,14 +119,14 @@ void reduce_prob_w(const float* src,
   }
 }
 
-void reduce_prob_all(const float* src, float* dst, int64_t total_num) {
+void reduce_prod_all(const float* src, float* dst, int64_t total_num) {
   dst[0] = 1.0;
   for (int64_t n = 0; n < total_num; ++n) {
     dst[0] *= src[n];
   }
 }
 
-void reduce_prob_nc(const float* src,
+void reduce_prod_nc(const float* src,
                     float* dst,
                     int num_in,
                     int channel_in,
@@ -137,11 +137,11 @@ void reduce_prob_nc(const float* src,
   lite::Tensor tensor_tmp;
   tensor_tmp.Resize(ddimA);
   float* tmp_out = tensor_tmp.mutable_data<float>();
-  reduce_prob_n(src, tmp_out, num_in, channel_in, height_in, width_in);
-  reduce_prob_c(tmp_out, dst, 1, channel_in, height_in, width_in);
+  reduce_prod_n(src, tmp_out, num_in, channel_in, height_in, width_in);
+  reduce_prod_c(tmp_out, dst, 1, channel_in, height_in, width_in);
 }
 
-void reduce_prob_ch(const float* src,
+void reduce_prod_ch(const float* src,
                     float* dst,
                     int num_in,
                     int channel_in,
@@ -152,11 +152,11 @@ void reduce_prob_ch(const float* src,
   lite::Tensor tensor_tmp;
   tensor_tmp.Resize(ddimA);
   float* tmp_out = tensor_tmp.mutable_data<float>();
-  reduce_prob_c(src, tmp_out, num_in, channel_in, height_in, width_in);
-  reduce_prob_h(tmp_out, dst, num_in, 1, height_in, width_in);
+  reduce_prod_c(src, tmp_out, num_in, channel_in, height_in, width_in);
+  reduce_prod_h(tmp_out, dst, num_in, 1, height_in, width_in);
 }
 
-void reduce_prob_hw(const float* src,
+void reduce_prod_hw(const float* src,
                     float* dst,
                     int num_in,
                     int channel_in,
@@ -167,11 +167,11 @@ void reduce_prob_hw(const float* src,
   lite::Tensor tensor_tmp;
   tensor_tmp.Resize(ddimA);
   float* tmp_out = tensor_tmp.mutable_data<float>();
-  reduce_prob_h(src, tmp_out, num_in, channel_in, height_in, width_in);
-  reduce_prob_w(tmp_out, dst, num_in, channel_in, 1, width_in);
+  reduce_prod_h(src, tmp_out, num_in, channel_in, height_in, width_in);
+  reduce_prod_w(tmp_out, dst, num_in, channel_in, 1, width_in);
 }
 
-class ReduceProbComputeTester : public arena::TestCase {
+class ReduceProdComputeTester : public arena::TestCase {
  protected:
   // common attributes for this op.
   std::string input_ = "x";
@@ -182,7 +182,7 @@ class ReduceProbComputeTester : public arena::TestCase {
   bool reduce_all_{};
 
  public:
-  ReduceProbComputeTester(const Place& place,
+  ReduceProdComputeTester(const Place& place,
                           const std::string& alias,
                           std::vector<int> dim,
                           bool keep_dim,
@@ -240,7 +240,7 @@ class ReduceProbComputeTester : public arena::TestCase {
 
     auto* out_data = out->mutable_data<float>();
     if (reduce_all_ || dim_.empty()) {
-      reduce_prob_all(x_data, out_data, x_dims_.production());
+      reduce_prod_all(x_data, out_data, x_dims_.production());
     } else {
       CHECK_EQ(x_rank, 4U);
       int in_n = x_dims_[0];
@@ -251,27 +251,27 @@ class ReduceProbComputeTester : public arena::TestCase {
       if (dim_.size() == 1) {
         switch (dim_[0]) {
           case 0:
-            reduce_prob_n(x_data, out_data, in_n, in_c, in_h, in_w);
+            reduce_prod_n(x_data, out_data, in_n, in_c, in_h, in_w);
             break;
           case 1:
-            reduce_prob_c(x_data, out_data, in_n, in_c, in_h, in_w);
+            reduce_prod_c(x_data, out_data, in_n, in_c, in_h, in_w);
             break;
           case 2:
-            reduce_prob_h(x_data, out_data, in_n, in_c, in_h, in_w);
+            reduce_prod_h(x_data, out_data, in_n, in_c, in_h, in_w);
             break;
           case 3:
-            reduce_prob_w(x_data, out_data, in_n, in_c, in_h, in_w);
+            reduce_prod_w(x_data, out_data, in_n, in_c, in_h, in_w);
             break;
           default:
             LOG(FATAL) << "error!!!";
         }
       } else if (dim_.size() == 2) {
         if (dim_[0] == 0 && dim_[1] == 1) {
-          reduce_prob_nc(x_data, out_data, in_n, in_c, in_h, in_w);
+          reduce_prod_nc(x_data, out_data, in_n, in_c, in_h, in_w);
         } else if (dim_[0] == 1 && dim_[1] == 2) {
-          reduce_prob_ch(x_data, out_data, in_n, in_c, in_h, in_w);
+          reduce_prod_ch(x_data, out_data, in_n, in_c, in_h, in_w);
         } else if (dim_[0] == 2 && dim_[1] == 3) {
-          reduce_prob_hw(x_data, out_data, in_n, in_c, in_h, in_w);
+          reduce_prod_hw(x_data, out_data, in_n, in_c, in_h, in_w);
         } else {
           LOG(FATAL) << "invalid dims_!!";
         }
@@ -280,7 +280,7 @@ class ReduceProbComputeTester : public arena::TestCase {
   }
 
   void PrepareOpDesc(cpp::OpDesc* op_desc) {
-    op_desc->SetType("reduce_prob");
+    op_desc->SetType("reduce_prod");
     op_desc->SetInput("X", {input_});
     op_desc->SetOutput("Out", {output_});
     op_desc->SetAttr("dim", dim_);
@@ -297,7 +297,7 @@ class ReduceProbComputeTester : public arena::TestCase {
   }
 };
 
-void test_reduce_prob(Place place) {
+void test_reduce_prod(Place place) {
   std::vector<std::vector<int>> reduce_dim{
       {0}, {1}, {2}, {3}, {0, 1}, {1, 2}, {2, 3}, {-2, -1}};
   for (auto n : {1, 3}) {
@@ -308,7 +308,7 @@ void test_reduce_prob(Place place) {
             for (auto dim : reduce_dim) {
               auto x_dims = DDim(std::vector<int64_t>({n, c, h, w}));
               std::unique_ptr<arena::TestCase> tester(
-                  new ReduceProbComputeTester(
+                  new ReduceProdComputeTester(
                       place, "def", dim, keep_dim, x_dims, false));
               arena::Arena arena(std::move(tester), place, 2e-5);
               arena.TestPrecision();
@@ -322,19 +322,19 @@ void test_reduce_prob(Place place) {
   bool keep_dim = false;
   bool reduce_all = true;
   auto x_dims = DDim({2, 2});
-  std::unique_ptr<arena::TestCase> tester(new ReduceProbComputeTester(
+  std::unique_ptr<arena::TestCase> tester(new ReduceProdComputeTester(
       place, "def", dim, keep_dim, x_dims, reduce_all));
   arena::Arena arena(std::move(tester), place, 2e-5);
   arena.TestPrecision();
 }
 
-TEST(ReduceProb, precision) {
+TEST(ReduceProd, precision) {
 // #ifdef LITE_WITH_X86
 //   Place place(TARGET(kX86));
 // #endif
 #ifdef LITE_WITH_ARM
   Place place(TARGET(kARM));
-  test_reduce_prob(place);
+  test_reduce_prod(place);
 #endif
 }
 
