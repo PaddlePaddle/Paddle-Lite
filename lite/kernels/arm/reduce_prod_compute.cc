@@ -21,13 +21,13 @@ namespace paddle {
 namespace lite {
 namespace kernels {
 namespace arm {
-
-void ReduceProdCompute::Run() {
-  auto& param = Param<operators::ReduceParam>();
-  auto* input = param.x->data<float>();
+template <typename T, PrecisionType Ptype>
+void ReduceProdCompute<T, Ptype>::Run() {
+  auto& param = this->template Param<operators::ReduceParam>();
+  auto* input = param.x->template data<T>();
   auto x_dims = param.x->dims();
   int x_rank = x_dims.size();
-  auto* output = param.output->mutable_data<float>();
+  auto* output = param.output->template mutable_data<T>();
   std::vector<int> dim = param.dim;
   bool keep_dim = param.keep_dim;
   bool reduce_all = param.reduce_all;
@@ -87,12 +87,18 @@ void ReduceProdCompute::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(reduce_prod,
-                     kARM,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::arm::ReduceProdCompute,
-                     def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+using reduce_prob_arm_int32 =
+    paddle::lite::kernels::arm::ReduceProdCompute<int, PRECISION(kInt32)>;
+using reduce_prob_arm_float =
+    paddle::lite::kernels::arm::ReduceProdCompute<float, PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(
+    reduce_prod, kARM, kInt32, kNCHW, reduce_prob_arm_int32, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    reduce_prod, kARM, kFloat, kNCHW, reduce_prob_arm_float, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
     .Finalize();

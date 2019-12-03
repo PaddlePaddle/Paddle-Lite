@@ -72,9 +72,9 @@ TEST(merge_lod_tensor_arm_0, compute) {
   for (size_t i = 0; i < in_false.numel(); i++) {
     in_false_data[i] = static_cast<float>(i + 1);
   }
-  auto* mask_data = mask.mutable_data<float>();
+  auto* mask_data = mask.mutable_data<bool>();
   for (size_t i = 0; i < mask.numel(); i++) {
-    mask_data[i] = i % 2;
+    mask_data[i] = static_cast<bool>(i % 2);
   }
 
   // prepare kernel params and run to obtain output_data
@@ -128,9 +128,9 @@ TEST(merge_lod_tensor_arm_1, compute) {
   for (size_t i = 0; i < in_false.numel(); i++) {
     in_false_data[i] = static_cast<float>(i + 1);
   }
-  auto* mask_data = mask.mutable_data<float>();
+  auto* mask_data = mask.mutable_data<bool>();
   for (size_t i = 0; i < mask.numel(); i++) {
-    mask_data[i] = i % 2;
+    mask_data[i] = static_cast<bool>(i % 2);
   }
 
   // prepare kernel params and run to obtain output_data

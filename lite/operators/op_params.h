@@ -1080,6 +1080,13 @@ struct ConditionalBlockParam {
   bool is_scalar_condition{};
 };
 
+struct CollectFpnProposalsParam {
+  std::vector<lite::Tensor*> multi_level_rois{};
+  std::vector<lite::Tensor*> multi_level_scores{};
+  lite::Tensor* fpn_rois{};
+  int post_nms_topN{};
+};
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle

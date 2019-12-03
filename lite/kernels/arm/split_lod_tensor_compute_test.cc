@@ -48,6 +48,7 @@ TEST(split_lod_tensor_arm_0, compute) {
   int level = 0;
 
   // set dims and lod
+  VLOG(5) << "set dims and lod";
   x.Resize({5, 1});
   LoD x_lod;
   std::vector<uint64_t> x_lod0 = {0, 2, 3, 5};
@@ -58,21 +59,24 @@ TEST(split_lod_tensor_arm_0, compute) {
   out_false.Resize({5, 1});
 
   // initialize data
+  VLOG(5) << "initialize data";
   auto* x_data = x.mutable_data<float>();
   for (size_t i = 0; i < x.numel(); i++) {
     x_data[i] = static_cast<float>(i);
   }
-  auto* mask_data = mask.mutable_data<float>();
+  auto* mask_data = mask.mutable_data<bool>();
   for (size_t i = 0; i < mask.numel(); i++) {
-    mask_data[i] = i % 2;
+    mask_data[i] = static_cast<bool>(i % 2);
   }
 
   // prepare kernel params and run to obtain output_data
+  VLOG(5) << "prepare kernel params";
   SplitLodTensorCompute op;
   std::unique_ptr<KernelContext> ctx(new KernelContext);
   ctx->As<ARMContext>();
   op.SetContext(std::move(ctx));
 
+  VLOG(5) << "run kernel";
   operators::SplitLodTensorParam param;
   param.x = &x;
   param.mask = &mask;
@@ -82,14 +86,17 @@ TEST(split_lod_tensor_arm_0, compute) {
   op.SetParam(param);
   op.Launch();
 
+  VLOG(5) << "obtain results";
   auto* out_true_data = out_true.data<float>();
   std::vector<float> out_true_ref = {2};
   for (int i = 0; i < out_true.numel(); i++) {
+    LOG(INFO) << out_true_data[i];
     EXPECT_NEAR(out_true_data[i], out_true_ref[i], 1e-5);
   }
   auto* out_false_data = out_false.data<float>();
   std::vector<float> out_false_ref = {0, 1, 3, 4};
   for (int i = 0; i < out_false.numel(); i++) {
+    LOG(INFO) << out_false_data[i];
     EXPECT_NEAR(out_false_data[i], out_false_ref[i], 1e-5);
   }
 }
@@ -118,9 +125,9 @@ TEST(split_lod_tensor_arm_1, compute) {
   for (size_t i = 0; i < x.numel(); i++) {
     x_data[i] = static_cast<float>(i);
   }
-  auto* mask_data = mask.mutable_data<float>();
+  auto* mask_data = mask.mutable_data<bool>();
   for (size_t i = 0; i < mask.numel(); i++) {
-    mask_data[i] = i % 2;
+    mask_data[i] = static_cast<bool>(i % 2);
   }
 
   // prepare kernel params and run to obtain output_data

@@ -13,29 +13,37 @@
 // limitations under the License.
 
 #pragma once
-#include <stdint.h>
-#include "lite/backends/arm/math/type_trans.h"
-#include "lite/core/kernel.h"
-#include "lite/core/op_registry.h"
+#include <string>
+#include "lite/core/op_lite.h"
+#include "lite/core/scope.h"
+#include "lite/operators/op_params.h"
+#include "lite/utils/all.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
-namespace arm {
+namespace operators {
 
-template <typename T, PrecisionType PType>
-class SliceCompute : public KernelLite<TARGET(kARM), PType> {
+class CollectFpnProposalsOpLite : public OpLite {
  public:
-  using param_t = operators::SliceParam;
+  CollectFpnProposalsOpLite() {}
 
-  void Run() override;
+  explicit CollectFpnProposalsOpLite(const std::string &op_type)
+      : OpLite(op_type) {}
 
-  ~SliceCompute() {}
+  bool CheckShape() const override;
+
+  bool InferShape() const override;
+
+  bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
+
+  void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
+
+  std::string DebugString() const override { return "collect_fpn_proposals"; }
 
  private:
+  mutable CollectFpnProposalsParam param_;
 };
 
-}  // namespace arm
-}  // namespace kernels
+}  // namespace operators
 }  // namespace lite
 }  // namespace paddle

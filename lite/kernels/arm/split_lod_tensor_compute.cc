@@ -54,7 +54,7 @@ void SplitLodTensorCompute::Run() {
     }
     lod->clear();
     for (size_t i = 0; i < static_cast<size_t>(mask_dim[0]); i++) {
-      LOG(INFO) << "mask: " << mask_data[i];
+      VLOG(4) << "mask: " << mask_data[i];
       if (static_cast<size_t>(mask_data[i]) == t) {
         size_t start_idx = i;
         auto lod_and_offset = lite::arm::math::GetSubLoDAndAbsoluteOffset(
@@ -103,20 +103,6 @@ void SplitLodTensorCompute::Run() {
       offset += len;
     }
   }
-  /*
-  LOG(INFO) << "out false:" << out_false;
-  for(auto lod : out_false->lod()) {
-    for(auto i : lod) {
-      LOG(INFO) << i;
-    }
-  }
-  LOG(INFO) << "out true:" << out_true;
-  for(auto lod : out_true->lod()) {
-    for(auto i : lod) {
-      LOG(INFO) << i;
-    }
-  }
-  */
   return;
 }
 

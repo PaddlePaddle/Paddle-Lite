@@ -37,6 +37,19 @@ class CompareCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
  private:
 };
 
+template <template <typename T> class Functor>
+class CompareCompute_int32
+    : public KernelLite<TARGET(kARM), PRECISION(kInt32)> {
+ public:
+  using param_t = operators::LogicalParam;
+
+  void Run() override;
+
+  ~CompareCompute_int32() {}
+
+ private:
+};
+
 }  // namespace arm
 }  // namespace kernels
 }  // namespace lite

@@ -15,10 +15,18 @@
 #pragma once
 #include <algorithm>
 #include <memory>
+#include <utility>
 #include <vector>
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
+#include "lite/core/program.h"
 #include "lite/operators/conditional_block_op.h"
+#ifdef LITE_WITH_PROFILE
+#include "lite/core/profile/basic_profiler.h"
+#endif  // LITE_WITH_PROFILE
+#ifdef LITE_WITH_PROFILE
+#include "lite/core/profile/precision_profiler.h"
+#endif
 
 namespace paddle {
 namespace lite {
@@ -36,7 +44,7 @@ class CondExecutor {
       auto &op_desc = *block->template GetOp<cpp::OpDesc>(i);
       auto op_type = op_desc.Type();
       auto op_handler = lite::LiteOpRegistry::Global().Create(op_desc.Type());
-      VLOG(4) << "conditional block: creating Op [" << op_type << "]";
+      VLOG(5) << "conditional block: creating Op [" << op_type << "]";
       op_handler->Attach(op_desc, scope);
 
       auto hostplace = place_;
@@ -51,12 +59,23 @@ class CondExecutor {
 
   void Run() {
     for (auto &op_handler : ops_of_block_) {
-      VLOG(4) << "run " << op_handler->op_info()->Repr();
+      VLOG(5) << "run " << op_handler->op_info()->Repr();
       op_handler->CheckShape();
-      VLOG(4) << "conditional block: check shape ok";
+      VLOG(5) << "conditional block: check shape ok";
       op_handler->InferShape();
-      VLOG(4) << "conditional block: infer shape ok";
+#ifdef LITE_WITH_PROFILE
+#ifdef LITE_WITH_PRECISION_PROFILE
+      std::unique_ptr<KernelBase> kernel(op_handler->GetKernel());
+      Instruction inst(op_handler, std::move(kernel));
+#endif  // LITE_WITH_PRECISION_PROFILE
+#endif  // LITE_WITH_PROFILE
+      VLOG(5) << "conditional block: infer shape ok";
       op_handler->Run();
+#ifdef LITE_WITH_PROFILE
+#ifdef LITE_WITH_PRECISION_PROFILE
+      LITE_PRECISION_PROFILE(inst)
+#endif  // LITE_WITH_PRECISION_PROFILE
+#endif  // LITE_WITH_PROFILE
     }
   }
 

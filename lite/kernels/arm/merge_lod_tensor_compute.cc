@@ -39,33 +39,43 @@ void MergeLodTensorCompute::Run() {
   const lite::Tensor *in_false = param.in_false;
   lite::Tensor *out = param.out;
   int level = param.level;
-  CHECK(in_true->numel() || in_false->numel());
+
+  CHECK(in_true->IsInitialized() || in_false->IsInitialized());
 
   auto &in_true_dim = in_true->dims();
   auto &in_false_dim = in_false->dims();
-  for (int i = 1; i < in_true_dim.size(); i++) {
-    CHECK(in_true_dim[i] == in_false_dim[i]);
-  }
 
-  auto &mask_dim = mask->dims();
-  auto *mask_data = mask->data<float>();
-  int64_t batch_size = in_true->dims()[0] + in_false->dims()[0];
+  // only merge the first dim
+  int64_t batch_size = 0;
   std::vector<int64_t> out_shape;
+  if (in_true->IsInitialized()) {
+    batch_size += in_true->dims()[0];
+  }
+  if (in_false->IsInitialized()) {
+    batch_size += in_false->dims()[0];
+  }
   out_shape.push_back(batch_size);
-  for (int i = 1; i < in_true_dim.size(); i++) {
-    out_shape.push_back(in_true_dim[i]);
+  if (in_true->IsInitialized()) {
+    for (int i = 1; i < in_true_dim.size(); i++) {
+      out_shape.push_back(in_true_dim[i]);
+    }
+  } else {
+    for (int i = 1; i < in_false_dim.size(); i++) {
+      out_shape.push_back(in_false_dim[i]);
+    }
   }
   out->Resize(out_shape);
-  auto *out_lod = out->mutable_lod();
-  out_lod->clear();
 
   size_t base_num = static_cast<size_t>(out->numel() / batch_size);
   auto *out_data = out->mutable_data<float>();
+  auto *out_lod = out->mutable_lod();
+  out_lod->clear();
+  auto &mask_dim = mask->dims();
+  auto *mask_data = mask->data<bool>();
 
   size_t out_offset = 0;
   size_t in_true_idx = 0;
   size_t in_false_idx = 0;
-
   for (size_t i = 0; i < static_cast<size_t>(mask_dim[0]); i++) {
     const Tensor *input = nullptr;
     size_t *in_idx = nullptr;

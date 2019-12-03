@@ -41,14 +41,14 @@ void ConditionalBlockCompute::Run() {
     need_run = cond_data[0];
   } else {
     auto x = param.x;
-    for (size_t i = 0; i < x.size(); i++) {
-      if (x[i] == nullptr || (x[i]->dims()).empty()) {
+    for (auto pt : x) {
+      if (pt == nullptr || !pt->IsInitialized() || pt->dims().empty()) {
         need_run = false;
         break;
       }
     }
   }
-
+  VLOG(5) << "need run:" << need_run;
   if (need_run) {
     executor_->Run();
   }
