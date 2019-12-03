@@ -39,10 +39,14 @@ int Profiler::NewTimer(const OpCharacter& ch) {
 }
 
 void Profiler::StartTiming(const int index, KernelContext* ctx) {
+  CHECK_LT(index, units_.size())
+      << "The timer index in the profiler is out of range.";
   units_[index].timer->Start(ctx);
 }
 
 float Profiler::StopTiming(const int index, KernelContext* ctx) {
+  CHECK_LT(index, units_.size())
+      << "The timer index in the profiler is out of range.";
   return units_[index].timer->Stop(ctx);
 }
 

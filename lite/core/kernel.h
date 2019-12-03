@@ -85,12 +85,12 @@ class KernelBase {
 #endif
 
 #ifdef LITE_WITH_PROFILE
-    if (profile_id_ >= 0) {
-      CHECK(profiler_) << "Profiler pointer of kernel can not be nullptr.";
-      profiler_->StartTiming(profile_id_, ctx_.get());
-      Run();
-      profiler_->StopTiming(profile_id_, ctx_.get());
-    }
+    CHECK(profiler_) << "Profiler pointer of kernel can not be nullptr. "
+                        "When LITE_WITH_PROFILE is defined, please set a "
+                        "Profiler for Instruction.";
+    profiler_->StartTiming(profile_id_, ctx_.get());
+    Run();
+    profiler_->StopTiming(profile_id_, ctx_.get());
 #else
     Run();
 #endif
