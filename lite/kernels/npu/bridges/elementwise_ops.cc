@@ -21,6 +21,30 @@ namespace kernels {
 namespace npu {
 namespace bridges {
 
+std::vector<int64_t> CvtYShape(const Tensor& x, Tensor* y, int axis) {
+  auto x_dims = x.dims();
+  CHECK_EQ(x_dims.size(), 4UL) << "[NPU] only support 4-dimension x";
+  auto y_dims = y->dims();
+  CHECK_GE(x_dims.size(), y_dims.size());
+
+  if (axis < 0) {
+    axis += x_dims.size();
+  }
+
+  std::vector<int64_t> y_new_shape(y_dims.Vectorize());
+  if (y_new_shape.size() == 4UL) {
+    return y_new_shape;
+  }
+  for (int i = 0; i < axis; i++) {
+    y_new_shape.insert(y_new_shape.begin(), 1);
+  }
+  while (y_new_shape.size() < 4) {
+    y_new_shape.push_back(1);
+  }
+  CHECK_EQ(y_new_shape.size(), 4UL);
+  return y_new_shape;
+}
+
 node_map_type ElementwiseConverter(
     const std::shared_ptr<lite::OpLite> elementwise_op,
     const node_map_type& inputs_map) {
@@ -33,6 +57,7 @@ node_map_type ElementwiseConverter(
   auto x_var_name = op_info->Input("X").front();
   auto y_var_name = op_info->Input("Y").front();
   CHECK(inputs_map.find(x_var_name) != inputs_map.end());
+  auto axis = op_info->GetAttr<int>("axis");
 
   std::shared_ptr<ge::Operator> elementwise_node = nullptr;
   std::shared_ptr<ge::Operator> x_node = inputs_map.at(x_var_name);
@@ -41,8 +66,10 @@ node_map_type ElementwiseConverter(
     y_node = inputs_map.at(y_var_name);
   } else {
     auto y_const_node = std::make_shared<ge::op::Const>(y_var_name);
-    auto* y = scope->FindMutableTensor(y_var_name);
-    y_const_node->set_attr_value(lite::npu::CvtTensor(y));
+    auto x = scope->FindTensor(x_var_name);
+    auto y = scope->FindMutableTensor(y_var_name);
+    auto y_new_shape = CvtYShape(*x, y, axis);
+    y_const_node->set_attr_value(lite::npu::CvtTensor(y, y_new_shape));
     y_node = y_const_node;
   }
   lite::npu::OpList::Global().add(x_node);

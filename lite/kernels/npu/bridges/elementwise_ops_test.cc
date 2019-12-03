@@ -45,7 +45,7 @@ void elementwise_add_ref(const std::shared_ptr<operators::ElementwiseOp> op) {
   if (axis < 0) {
     axis += x_dims.size();
   }
-  int batch = x_dims[0] / y_dims[0];
+  int batch = 1;
   int channels = y->numel();
   int num = x->numel() / channels / batch;
   // do elementwise add/sub/max...
@@ -143,8 +143,8 @@ void test_elementwise_add(const std::vector<int64_t>& x_shape,
   y->Resize(y_shape);
 
   // initialize input&output data
-  FillTensor<float>(x, 1, 5);
-  FillTensor<float>(y, 1, 5);
+  FillTensor<float>(x, 1, 3);
+  FillTensor<float>(y, 1, 3);
 
   // initialize op desc
   cpp::OpDesc opdesc;
@@ -171,6 +171,7 @@ void test_elementwise_add(const std::vector<int64_t>& x_shape,
 
 TEST(NPUBridges, elementwise_add) {
   for (auto elt_type : {"add", "sub", "mul", "div"}) {
+    test_elementwise_add({1, 2, 3, 4}, {2}, 1, elt_type);
     test_elementwise_add({1, 2, 3, 4}, {1, 2, 1, 1}, 1, elt_type);
     test_elementwise_add({1, 2, 3, 4}, {1, 2, 3, 4}, 3, elt_type);
   }
