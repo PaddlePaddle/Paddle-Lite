@@ -53,6 +53,15 @@ bool ConcatKernel<FPGA, float>::Init(ConcatParam<FPGA> *param) {
   concatArgs.channel_num = channel_num;
   concatArgs.height = height;
   concatArgs.width = width;
+
+  auto deleter = [](void *p) { fpga::fpga_free(p); };
+  concatArgs.vector_concat_space.push_back(std::shared_ptr<char>(
+      reinterpret_cast<char *>(concatArgs.images_in), deleter));
+  concatArgs.vector_concat_space.push_back(std::shared_ptr<char>(
+      reinterpret_cast<char *>(concatArgs.scales_in), deleter));
+  concatArgs.vector_concat_space.push_back(std::shared_ptr<char>(
+      reinterpret_cast<char *>(concatArgs.channel_num), deleter));
+
   param->SetFpgaArgs(concatArgs);
   return true;
 }

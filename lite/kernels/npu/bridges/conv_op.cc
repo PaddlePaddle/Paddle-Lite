@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "lite/operators/conv_op.h"
 #include "lite/backends/npu/builder.h"
 #include "lite/kernels/npu/bridges/registry.h"
 
@@ -53,15 +54,27 @@ node_map_type ConvConverter(const std::shared_ptr<lite::OpLite> conv_op,
   auto dilations = op_info->GetAttr<std::vector<int>>("dilations");
   auto fuse_relu = op_info->GetAttr<bool>("fuse_relu");
   CHECK_EQ(strides.size(), 2L);
-  CHECK_EQ(paddings.size(), 4L);
   CHECK_EQ(dilations.size(), 2L);
 
-  bool pad_equal =
-      ((paddings[0] == paddings[1]) && (paddings[2] == paddings[3]));
-  if (!pad_equal) {
-    LOG(FATAL) << "This pad not support ! " << paddings[0] << ", "
-               << paddings[1] << ", " << paddings[2] << ", " << paddings[3];
+  if (paddings.size() == 2L) {
+    for (size_t i = 0; i < strides.size(); ++i) {
+      int copy_pad = *(paddings.begin() + 2 * i);
+      paddings.insert(paddings.begin() + 2 * i + 1, copy_pad);
+    }
   }
+  CHECK_EQ(paddings.size(), 4L)
+      << "Paddings size should be the same or twice as the input size.";
+
+  std::string padding_algorithm("");
+  if (op_info->HasAttr("padding_algorithm")) {
+    padding_algorithm = op_info->GetAttr<std::string>("padding_algorithm");
+  }
+  operators::UpdatePaddingAndDilation(&paddings,
+                                      &dilations,
+                                      strides,
+                                      padding_algorithm,
+                                      input_dims,
+                                      filter_dims);
 
   // check depthwise mode, and decide whether use ConvolutionDepthwise Op
   bool use_depthwise_conv =
@@ -141,7 +154,7 @@ node_map_type ConvConverter(const std::shared_ptr<lite::OpLite> conv_op,
     depthwise_conv_node->set_attr_pad_mode(5);  // VALID
     depthwise_conv_node->set_attr_group(groups);
     depthwise_conv_node->set_attr_pad(ge::AttrValue::LIST_INT(
-        {paddings[0], paddings[0], paddings[2], paddings[2]}));
+        {paddings[0], paddings[1], paddings[2], paddings[3]}));
     depthwise_conv_node->set_attr_dilation(
         ge::AttrValue::LIST_INT({dilations[0], dilations[1]}));
     depthwise_conv_node->set_attr_stride(

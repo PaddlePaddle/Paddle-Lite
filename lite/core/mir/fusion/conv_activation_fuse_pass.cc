@@ -47,4 +47,5 @@ void ConvActivationFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 REGISTER_MIR_PASS(lite_conv_activation_fuse_pass,
                   paddle::lite::mir::ConvActivationFusePass)
     .BindTargets({TARGET(kAny)})
+    .ExcludeTargets({TARGET(kXPU)})
     .BindKernel("conv2d");
