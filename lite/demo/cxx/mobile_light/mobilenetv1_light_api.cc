@@ -18,18 +18,16 @@
 
 using namespace paddle::lite_api;  // NOLINT
 
-static std::string FLAGS_model_dir;  // NOLINT
-
 int64_t ShapeProduction(const shape_t& shape) {
   int64_t res = 1;
   for (auto i : shape) res *= i;
   return res;
 }
 
-void RunModel() {
+void RunModel(std::string model_dir) {
   // 1. Set MobileConfig
   MobileConfig config;
-  config.set_model_dir(FLAGS_model_dir);
+  config.set_model_dir(model_dir);
 
   // 2. Create PaddlePredictor by MobileConfig
   std::shared_ptr<PaddlePredictor> predictor =
@@ -49,7 +47,7 @@ void RunModel() {
   // 5. Get output
   std::unique_ptr<const Tensor> output_tensor(
       std::move(predictor->GetOutput(0)));
-  std::cout << "Output dim: " << output_tensor->shape()[1] << std::endl;
+  std::cout << "Output shape " << output_tensor->shape()[1] << std::endl;
   for (int i = 0; i < ShapeProduction(output_tensor->shape()); i += 100) {
     std::cout << "Output[" << i << "]: " << output_tensor->data<float>()[i]
               << std::endl;
@@ -58,10 +56,10 @@ void RunModel() {
 
 int main(int argc, char** argv) {
   if (argc < 2) {
-    std::cout << "[ERROR] usage: " << argv[0] << " naive_buffer_model_dir\n";
+    std::cerr << "[ERROR] usage: ./" << argv[0] << " naive_buffer_model_dir\n";
     exit(1);
   }
-  FLAGS_model_dir = argv[1];
-  RunModel();
+  std::string model_dir = argv[1];
+  RunModel(model_dir);
   return 0;
 }

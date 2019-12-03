@@ -21,9 +21,6 @@
 
 using namespace paddle::lite_api;  // NOLINT
 
-static std::string FLAGS_model_dir;  // NOLINT
-static std::string FLAGS_img_path;   // NOLINT
-
 struct Object {
   int batch_id;
   cv::Rect rec;
@@ -51,7 +48,7 @@ void neon_mean_scale(const float* din,
                      const std::vector<float> mean,
                      const std::vector<float> scale) {
   if (mean.size() != 3 || scale.size() != 3) {
-    std::cout << "[ERROR] mean or scale size must equal to 3\n";
+    std::cerr << "[ERROR] mean or scale size must equal to 3\n";
     exit(1);
   }
   float32x4_t vmean0 = vdupq_n_f32(mean[0]);
@@ -107,7 +104,7 @@ std::vector<Object> detect_object(const float* data,
                                   float thresh,
                                   cv::Mat& image) {  // NOLINT
   if (data == nullptr) {
-    std::cout << "[ERROR] data can not be nullptr\n";
+    std::cerr << "[ERROR] data can not be nullptr\n";
     exit(1);
   }
   std::vector<Object> rect_out;
@@ -165,10 +162,10 @@ std::vector<Object> detect_object(const float* data,
   return rect_out;
 }
 
-void RunModel() {
+void RunModel(std::string model_dir, std::string img_path) {
   // 1. Set MobileConfig
   MobileConfig config;
-  config.set_model_dir(FLAGS_model_dir);
+  config.set_model_dir(model_dir);
 
   // 2. Create PaddlePredictor by MobileConfig
   std::shared_ptr<PaddlePredictor> predictor =
@@ -180,7 +177,7 @@ void RunModel() {
   const int in_height = 300;
   input_tensor->Resize({1, 3, in_height, in_width});
   auto* data = input_tensor->mutable_data<float>();
-  cv::Mat img = imread(FLAGS_img_path, cv::IMREAD_COLOR);
+  cv::Mat img = imread(img_path, cv::IMREAD_COLOR);
   pre_process(img, in_width, in_height, data);
 
   // 4. Run predictor
@@ -196,18 +193,18 @@ void RunModel() {
     cnt *= i;
   }
   auto rec_out = detect_object(outptr, static_cast<int>(cnt / 6), 0.6f, img);
-  std::string result_name = FLAGS_img_path.substr(0, FLAGS_img_path.find(".")) +
-                            "_detection_result.jpg";
+  std::string result_name =
+      img_path.substr(0, img_path.find(".")) + "_detection_result.jpg";
   cv::imwrite(result_name, img);
 }
 
 int main(int argc, char** argv) {
   if (argc < 3) {
-    std::cout << "[ERROR] usage: " << argv[0] << " model_dir image_path\n";
+    std::cerr << "[ERROR] usage: " << argv[0] << " model_dir image_path\n";
     exit(1);
   }
-  FLAGS_model_dir = argv[1];
-  FLAGS_img_path = argv[2];
-  RunModel();
+  std::string model_dir = argv[1];
+  std::string img_path = argv[2];
+  RunModel(model_dir, img_path);
   return 0;
 }
