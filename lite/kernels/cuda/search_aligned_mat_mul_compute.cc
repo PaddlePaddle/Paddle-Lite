@@ -32,4 +32,7 @@ REGISTER_LITE_KERNEL(search_aligned_mat_mul,
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kCUDA))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kCUDA))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kCUDA))})
+    .BindOutput("_a_addr", {LiteType::GetTensorTy(TARGET(kCUDA))})
+    .BindOutput("_b_addr", {LiteType::GetTensorTy(TARGET(kCUDA))})
+    .BindOutput("_c_addr", {LiteType::GetTensorTy(TARGET(kCUDA))})
     .Finalize();

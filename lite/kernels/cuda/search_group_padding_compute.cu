@@ -46,7 +46,9 @@ __global__ void ker_search_group_padding(Dtype* out_emb_padding_data,
           in_data[(offset[seq_id] + word_id_in_seq) * emb_size + emb_id];
     } else {
       out_emb_padding_data[tid] = 0.f;
-      out_padding_data[word_id] = pad_id;
+      if (emb_id == 0) {
+        out_padding_data[word_id] = pad_id;
+      }
     }
   }
 }
@@ -61,12 +63,7 @@ void SearchGroupPaddingCompute::Run() {
   Tensor* out_new = param.out_new;
   Tensor* out_padding = param.out_padding;
   const float pad_id = static_cast<float>(param.pad_id);
-
   const float* in_data = x->data<float>();
-  float* out_emb_padding_data =
-      out_emb_padding->mutable_data<float>(TARGET(kCUDA));
-  float* out_new_data = out_new->mutable_data<float>(TARGET(kCUDA));
-  float* out_padding_data = out_padding->mutable_data<float>(TARGET(kCUDA));
   const auto& in_seq_offset = x->lod()[0];
   int batch = in_seq_offset.size() - 1;
   int max_seq = 0;
@@ -85,16 +82,20 @@ void SearchGroupPaddingCompute::Run() {
   out_emb_padding_lod.push_back(new_offset);
   out_emb_padding->set_lod(out_emb_padding_lod);
   out_emb_padding->Resize({batch * max_seq, x_dims[1]});
+  float* out_emb_padding_data =
+      out_emb_padding->mutable_data<float>(TARGET(kCUDA));
 
   LoD out_new_lod;
   out_new_lod.push_back(in_seq_offset);
   out_new->set_lod(out_new_lod);
   out_new->Resize({x_dims[0], 1});
+  float* out_new_data = out_new->mutable_data<float>(TARGET(kCUDA));
 
   LoD out_padding_lod;
   out_padding_lod.push_back(new_offset);
   out_padding->set_lod(out_padding_lod);
   out_padding->Resize({batch * max_seq, 1});
+  float* out_padding_data = out_padding->mutable_data<float>(TARGET(kCUDA));
 
   const int count = out_emb_padding->numel();
   const auto& out_emb_padding_seq_offset = out_emb_padding->lod()[0];
@@ -112,6 +113,10 @@ void SearchGroupPaddingCompute::Run() {
 
   TargetWrapperCuda::MemsetSync(
       out_new_data, 0, out_new->dims()[0] * out_new->dims()[1] * sizeof(float));
+  TargetWrapperCuda::MemsetSync(
+      out_padding_data,
+      0,
+      out_padding->dims()[0] * out_padding->dims()[1] * sizeof(float));
 
   ker_search_group_padding<
       float><<<CUDA_GET_BLOCKS(count), CUDA_NUM_THREADS, 0, cuda_stream>>>(
