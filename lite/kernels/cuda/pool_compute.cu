@@ -386,7 +386,7 @@ void PoolComputeNHWC::Run() {
   if (param.global_pooling) {
     ksize.resize(static_cast<size_t>(x_dims.size()) - 2);
     for (size_t i = 0; i < ksize.size(); ++i) {
-      param.paddings[i] = 0;
+      (*param.paddings)[i] = 0;
       ksize[i] = static_cast<int>(x_dims[i + 1]);
     }
   }
@@ -399,7 +399,7 @@ void PoolComputeNHWC::Run() {
     for (size_t i = 0; i < param.ksize.size(); ++i) {
       output_shape.push_back(PoolOutputSize(x_dims[i + 1],
                                             param.ksize[i],
-                                            param.paddings[i],
+                                            (*param.paddings)[i],
                                             param.strides[i],
                                             param.ceil_mode));
     }

@@ -133,6 +133,7 @@ static std::vector<int64_t> compute_output_shape(operators::PoolParam* param_,
     output_shape.insert(
         output_shape.end(), param_->ksize.begin(), param_->ksize.end());
   } else {
+    auto paddings = *param_->paddings;
     for (size_t i = 0; i < param_->ksize.size(); ++i) {
       output_shape.push_back(PoolOutputSize(x_dims[i + axis],
                                             param_->ksize[i],
@@ -275,15 +276,15 @@ TEST(pool_cuda, compute) {
               for (auto pad : {0, 1}) {
                 for (auto n : {1, 2}) {
                   for (auto c : {1, 3}) {
-                    for (auto h : {2, 3, 4, 11}) {
-                      for (auto w : {2, 3, 4, 11}) {
-                        VLOG(3) << "n:" << n << " c:" << c << " h:" << h
-                                << " w:" << w << " ksize:" << ksize
-                                << " stride:" << stride << " pad:" << pad
-                                << " exclusive:" << exclusive
-                                << " global_pooling:" << global_pooling
-                                << " ceil_mode: " << ceil_mode
-                                << " pooling_type:" << pooling_type;
+                    for (auto h : {3}) {
+                      for (auto w : {3}) {
+                        LOG(INFO) << "n:" << n << " c:" << c << " h:" << h
+                                  << " w:" << w << " ksize:" << ksize
+                                  << " stride:" << stride << " pad:" << pad
+                                  << " exclusive:" << exclusive
+                                  << " global_pooling:" << global_pooling
+                                  << " ceil_mode: " << ceil_mode
+                                  << " pooling_type:" << pooling_type;
 
                         // init x, output
                         x.Resize(DDim(std::vector<int64_t>({n, c, h, w})));
@@ -384,9 +385,9 @@ TEST(pool_cuda, nhwc) {
             for (auto stride : {3}) {
               for (auto pad : {1}) {
                 for (auto n : {1}) {
-                  for (auto c : {64}) {
-                    for (auto h : {112}) {
-                      for (auto w : {112}) {
+                  for (auto c : {3}) {
+                    for (auto h : {8}) {
+                      for (auto w : {8}) {
                         LOG(INFO) << "n:" << n << " c:" << c << " h:" << h
                                   << " w:" << w << " ksize:" << ksize
                                   << " stride:" << stride << " pad:" << pad
@@ -422,7 +423,9 @@ TEST(pool_cuda, nhwc) {
                         }
                         param.global_pooling = global_pooling;
                         param.strides = {stride, stride};
-                        param.paddings = {pad, pad};
+                        std::vector<int> paddings = {pad, pad, pad, pad};
+                        param.paddings =
+                            std::make_shared<std::vector<int>>(paddings);
                         param.exclusive = exclusive;
                         param.ceil_mode = ceil_mode;
                         param.adaptive = false;

@@ -91,7 +91,7 @@ bool CudnnPool2DNHWC<PRECISION(kFloat)>::run(
 
   std::vector<int> ksize = param.ksize;
   std::vector<int> strides = param.strides;
-  std::vector<int> paddings = param.paddings;
+  std::vector<int> paddings = *(param.paddings.get());
 
   std::string pooling_type = param.pooling_type;
   bool global_pooling = param.global_pooling;
