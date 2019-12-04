@@ -57,7 +57,7 @@ void search_aligned_mat_mul_compute_ref(const operators::MatMulParam& param) {
   auto x_data = x->data<T>();
   auto y_data = y->data<T>();
   auto out_data = out->mutable_data<T>();
-#pragma omp parallel for
+
   for (int seq = 0; seq < seq_num; seq++) {
     auto a = x_data + seq * x_stride;
     auto b = y_data + seq * y_stride;
