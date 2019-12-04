@@ -168,7 +168,7 @@ int main(int argc, char** argv) {
 ./model_optimize_tool                     \
     --model_set_dir=<your_model_set_dir>  \
     --optimize_out_type=naive_buffer      \
-    --optimize_out=<output_model_set)dir> \
+    --optimize_out=<output_model_set_dir> \
     --record_tailoring_info=true          \
     --valid_targets=arm
    
