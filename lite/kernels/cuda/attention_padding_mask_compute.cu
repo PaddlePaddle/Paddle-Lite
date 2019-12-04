@@ -40,6 +40,7 @@ __global__ void ker_attention_padding_mask(T* out_data,
                                            const int attn_seq_len,
                                            const int src_seq_num,
                                            const int src_seq_len,
+                                           const T* pad_begin_data,
                                            const T mask,
                                            const int count) {
   CUDA_KERNEL_LOOP(tid, count) {
@@ -49,7 +50,12 @@ __global__ void ker_attention_padding_mask(T* out_data,
     int attn_word_id = tmp_tid % attn_seq_len;
     int src_seq_id = attn_seq_id % src_seq_num;
     int cur_len = src_offset[src_seq_id + 1] - src_offset[src_seq_id];
-    if (src_word_id >= cur_len) {
+
+    int k = static_cast<int>(pad_begin_data[src_seq_id]);
+    if (k < cur_len &&
+        tid >= src_seq_len * (attn_seq_len * attn_seq_id + attn_word_id) + k &&
+        tid < src_seq_len * (attn_seq_len * attn_seq_id + attn_word_id) +
+                  cur_len) {
       out_data[tid] = mask;
     } else {
       out_data[tid] = attn_data[tid];
@@ -79,6 +85,35 @@ void AttentionPaddingMaskCompute::Run() {
   auto attn_data = attn->data<float>();
   auto out_data = out->mutable_data<float>(TARGET(kCUDA));
 
+  std::vector<float> src_cpu(src->numel(), 0);
+  TargetWrapperCuda::MemcpyAsync(src_cpu.data(),
+                                 src->data<float>(),
+                                 sizeof(float) * src->numel(),
+                                 IoDirection::DtoH,
+                                 stream);
+  cudaStreamSynchronize(stream);
+
+  std::vector<float> pad_begin(src_seq_num, 0);
+  auto src_len = static_cast<int64_t>(src->lod()[0][1]);
+  int _pad_id = param.pad_id;
+  for (int i = 0; i < src_seq_num; ++i) {
+    const auto* src_data = src_cpu.data() + src_len * i;
+    int index = src_len - 1;
+    for (; index >= 0 && _pad_id == static_cast<int>(src_data[index]);
+         --index) {
+    }
+    pad_begin[i] = static_cast<float>(index + 1);
+  }
+
+  param.pad_begin->Resize({static_cast<int64_t>(src_seq_num)});
+  auto pad_begin_cuda_data =
+      param.pad_begin->mutable_data<float>(TARGET(kCUDA));
+  TargetWrapperCuda::MemcpyAsync(pad_begin_cuda_data,
+                                 pad_begin.data(),
+                                 sizeof(float) * src_seq_num,
+                                 IoDirection::HtoD,
+                                 stream);
+
   std::vector<int> src_offset_cpu(src_offset.size(), 0);
   for (int i = 0; i < src_offset.size(); i++) {
     src_offset_cpu[i] = src_offset[i];
@@ -101,11 +136,12 @@ void AttentionPaddingMaskCompute::Run() {
       attn_seq_len,
       src_seq_num,
       src_seq_len,
+      pad_begin_cuda_data,
       param.mask,
       count);
 
   cudaError_t error = cudaGetLastError();
-  if (error != cudaSuccess) LOG(INFO) << cudaGetErrorString(error);
+  if (error != cudaSuccess) LOG(ERROR) << cudaGetErrorString(error);
 }
 
 }  // namespace cuda
@@ -113,7 +149,7 @@ void AttentionPaddingMaskCompute::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(attention_padding_mask,
+REGISTER_LITE_KERNEL(search_attention_padding_mask,
                      kCUDA,
                      kFloat,
                      kNCHW,
