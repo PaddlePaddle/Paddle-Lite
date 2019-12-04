@@ -24,13 +24,6 @@
 namespace paddle {
 namespace lite {
 
-static const char TAILORD_OPS_SOURCE_LIST_FILENAME[] =
-    ".tailored_ops_source_list";
-static const char TAILORD_OPS_LIST_NAME[] = ".tailored_ops_list";
-static const char TAILORD_KERNELS_SOURCE_LIST_FILENAME[] =
-    ".tailored_kernels_source_list";
-static const char TAILORD_KERNELS_LIST_NAME[] = ".tailored_kernels_list";
-
 void Predictor::SaveModel(const std::string &dir,
                           lite_api::LiteModelType model_type,
                           bool record_info) {
@@ -146,15 +139,22 @@ std::vector<std::string> Predictor::GetOutputNames() { return output_names_; }
 
 // append the names of inputs and outputs into input_names_ and output_names_
 void Predictor::PrepareFeedFetch() {
+  std::vector<const cpp::OpDesc *> feeds;
+  std::vector<const cpp::OpDesc *> fetchs;
+#if defined(LITE_WITH_NPU) || defined(LITE_WITH_XPU)
+  // The shape of input tensors must be determined before generating NPU and XPU
+  // program.
+  auto current_block = program_desc_.GetBlock<cpp::BlockDesc>(0);
+  for (size_t i = 0; i < current_block->OpsSize(); i++) {
+    auto op = current_block->GetOp<cpp::OpDesc>(i);
+#else
   if (!program_) {
     GenRuntimeProgram();
   }
-  std::vector<const cpp::OpDesc *> feeds;
-  std::vector<const cpp::OpDesc *> fetchs;
   const auto &insts = program_->instructions();
-
   for (size_t i = 0; i < program_->num_instructions(); i++) {
     const auto &op = insts[i].op()->op_info();
+#endif
     if (op->Type() == "feed") {
       feeds.push_back(op);
     } else if (op->Type() == "fetch") {

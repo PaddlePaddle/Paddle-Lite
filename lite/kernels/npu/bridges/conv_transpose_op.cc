@@ -44,9 +44,17 @@ node_map_type ConvTransposeConverter(
   auto groups = op_info->GetAttr<int>("groups");
   auto dilations = op_info->GetAttr<std::vector<int>>("dilations");
   auto fuse_relu = op_info->GetAttr<bool>("fuse_relu");
-  CHECK_EQ(strides.size(), 2);
-  CHECK_EQ(paddings.size(), 2);
-  CHECK_EQ(dilations.size(), 2);
+  CHECK_EQ(strides.size(), 2L);
+  CHECK_EQ(dilations.size(), 2L);
+
+  if (paddings.size() == 2L) {
+    for (size_t i = 0; i < 2L; ++i) {
+      int copy_pad = *(paddings.begin() + 2 * i);
+      paddings.insert(paddings.begin() + 2 * i + 1, copy_pad);
+    }
+  }
+  CHECK_EQ(paddings.size(), 4L)
+      << "Paddings size should be the same or twice as the input size.";
 
   // create deconv node
   auto conv_transpose_node =
@@ -86,7 +94,7 @@ node_map_type ConvTransposeConverter(
   conv_transpose_node->set_attr_pad_mode(0);  // NOTSET
   conv_transpose_node->set_attr_group(groups);
   conv_transpose_node->set_attr_pad(ge::AttrValue::LIST_INT(
-      {paddings[0], paddings[0], paddings[1], paddings[1]}));
+      {paddings[0], paddings[1], paddings[2], paddings[3]}));
   conv_transpose_node->set_attr_dilation(
       ge::AttrValue::LIST_INT({dilations[0], dilations[1]}));
   conv_transpose_node->set_attr_stride(

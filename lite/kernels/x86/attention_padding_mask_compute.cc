@@ -15,7 +15,7 @@
 #include "lite/kernels/x86/attention_padding_mask_compute.h"
 
 REGISTER_LITE_KERNEL(
-    attention_padding_mask,
+    search_attention_padding_mask,
     kX86,
     kFloat,
     kNCHW,
@@ -23,6 +23,6 @@ REGISTER_LITE_KERNEL(
     def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86))})
-    .BindOutput("out", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindOutput("pad_begin", {LiteType::GetTensorTy(TARGET(kX86))})
     .Finalize();
