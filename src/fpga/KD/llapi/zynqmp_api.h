@@ -53,6 +53,7 @@ enum ActiveType {
 
 struct VersionArgs {
   void* buffer;
+  size_t size;
 };
 
 struct DeviceInfo {

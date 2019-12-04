@@ -106,20 +106,20 @@ class NormPE : public PE {
   }
 
   bool dispatch() {
-    // cpuCompute();
+    cpuCompute();
     // std::cout << "CPU normalize ---------------------" << std::endl;
 
     
-    param_.input->syncToDevice();
-    // param_.input->saveToFile("normalize_fpga_", true);
-    config_norm_param(norm_param_args_);
-    inplace_args_.normalize_enable = true;
-    config_inplace(inplace_args_);
+    // param_.input->syncToDevice();
+    // // param_.input->saveToFile("normalize_fpga_", true);
+    // config_norm_param(norm_param_args_);
+    // inplace_args_.normalize_enable = true;
+    // config_inplace(inplace_args_);
 
-    perform_bypass(bypass_args_);
-    inplace_args_.normalize_enable = false;
-    config_inplace(inplace_args_);
-    compute_norm(norm_args_);
+    // perform_bypass(bypass_args_);
+    // inplace_args_.normalize_enable = false;
+    // config_inplace(inplace_args_);
+    // compute_norm(norm_args_);
     // param_.output->saveToFile("normalize_fpga_", true);
     // std::cout << "FPGA normalize ---------------------" << std::endl;
     return true;
