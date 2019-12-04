@@ -64,7 +64,6 @@ if (LITE_ON_TINY_PUBLISH)
     endif()
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ffast-math -Ofast -Os -fomit-frame-pointer -fno-asynchronous-unwind-tables -fno-unwind-tables")
     check_linker_flag(-Wl,--gc-sections)
-
 endif()
 
 if(LITE_WITH_OPENMP)
