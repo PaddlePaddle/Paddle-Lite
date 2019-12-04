@@ -122,6 +122,9 @@ void RuntimeProgram::Run() {
 #endif  // LITE_WITH_PRECISION_PROFILE
 #endif  // LITE_WITH_PROFILE
   }
+#ifdef LITE_WITH_PROFILE
+  LOG(INFO) << "\n" << profiler_.Summary();
+#endif  // LITE_WITH_PROFILE
 }
 
 void Program::Build(const cpp::ProgramDesc& prog) {
@@ -187,11 +190,6 @@ void Program::PrepareWorkspace(const cpp::ProgramDesc& prog) {
 void Instruction::Run() {
   CHECK(op_) << "op null";
   CHECK(kernel_) << "kernel null";
-#ifdef LITE_WITH_PROFILE
-  if (profile_id_ >= 0) {
-    profile::ProfileBlock x(profile_id_, "instruction");
-  }
-#endif  // LITE_WITH_PROFILE
   if (first_epoch_) {
     first_epoch_ = false;
     CHECK(op_->CheckShape());

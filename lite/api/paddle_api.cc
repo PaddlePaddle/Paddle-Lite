@@ -121,6 +121,7 @@ template void Tensor::CopyFromCpu<int, TargetType::kARM>(const int *);
 template void Tensor::CopyFromCpu<float, TargetType::kARM>(const float *);
 template void Tensor::CopyFromCpu<int8_t, TargetType::kARM>(const int8_t *);
 template void Tensor::CopyFromCpu<int, TargetType::kCUDA>(const int *);
+template void Tensor::CopyFromCpu<int64_t, TargetType::kCUDA>(const int64_t *);
 template void Tensor::CopyFromCpu<float, TargetType::kCUDA>(const float *);
 template void Tensor::CopyFromCpu<int8_t, TargetType::kCUDA>(const int8_t *);
 

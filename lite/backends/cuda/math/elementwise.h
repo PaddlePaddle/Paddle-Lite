@@ -15,11 +15,32 @@
 #pragma once
 #include <cuda.h>
 #include <cuda_runtime.h>
+#include "lite/backends/cuda/math/utils.h"
 
 namespace paddle {
 namespace lite {
 namespace cuda {
 namespace math {
+
+template <typename Dtype>
+void elementwise(const Dtype* x_data,
+                 const Dtype* y_data,
+                 Dtype* out_data,
+                 int pre,
+                 int n,
+                 int post,
+                 BinaryOperation type,
+                 cudaStream_t stream);
+
+template <typename Dtype>
+void elementwise_relu(const Dtype* x_data,
+                      const Dtype* y_data,
+                      Dtype* out_data,
+                      int pre,
+                      int n,
+                      int post,
+                      BinaryOperation type,
+                      cudaStream_t stream);
 
 template <typename Dtype>
 void elementwise_add(int num,
