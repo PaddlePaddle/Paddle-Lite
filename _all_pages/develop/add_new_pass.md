@@ -22,6 +22,7 @@ title: 新增Pass的方法
 
 
 
+
 ## Pass的实现与接口 ：Pass基类、PassManager和Pass注册
 
 ### 1、Pass基类：`paddle::lite::mir::Pass`

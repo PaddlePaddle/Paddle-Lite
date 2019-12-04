@@ -168,8 +168,8 @@ wget -c https://mms-res.cdn.bcebos.com/cmake-3.10.3-Linux-x86_64.tar.gz && \
 ```shell
 # 1. Install basic software
 apt update
-apt-get install -y --no-install-recommends \
-  gcc g++ git make wget python unzip
+apt-get install -y --no-install-recomends \
+  gcc g++ make wget python unzip
 
 # 2. install cmake 3.10 or above
 wget https://www.cmake.org/files/v3.10/cmake-3.10.3.tar.gz
@@ -259,7 +259,7 @@ git checkout <release-version-tag>
 
 ### 编译代码
 
-**<font color="orange" >注意</font>**<font color="orange" >：非开发者建议在编译前使用</font>[**“加速第三方依赖库的下载”**](#加速第三方依赖库的下载)<font color="orange" >的方法，加速工程中第三方依赖库的下载与编译。 </font> 
+**<font color="orange" >注意</font>**<font color="orange" >：非开发者建议在编译前使用</font>[**“加速第三方依赖库的下载”**](#加速第三方依赖库的下载)<font color="orange" >的方法，加速工程中第三方依赖库的下载与编译。 </font>
 
 #### 编译`tiny publish`动态库
 
@@ -290,7 +290,6 @@ ios tiny publish支持的编译选项：
 sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
 ```
 ##### ARMLinux
-
 ```shell
 ./lite/tools/build.sh \
   --arm_os=armlinux \
@@ -311,7 +310,6 @@ sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
   --android_stl=c++_static \
   full_publish
 ```
-
 ##### ARMLinux
 ```shell
 ./lite/tools/build.sh \
