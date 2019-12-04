@@ -15,10 +15,10 @@
 #include <gflags/gflags.h>
 #include <gtest/gtest.h>
 #include "lite/core/context.h"
+#include "lite/core/profile/timer.h"
 #include "lite/operators/op_params.h"
 #include "lite/tests/utils/naive_math_impl.h"
 #include "lite/tests/utils/tensor_utils.h"
-#include "lite/tests/utils/timer.h"
 
 #ifdef LITE_WITH_ARM
 #include "lite/kernels/arm/layout_compute.h"
@@ -48,7 +48,7 @@ typedef paddle::lite::DDim DDim;
 typedef paddle::lite::Tensor Tensor;
 typedef paddle::lite::operators::LayoutParam LayoutParam;
 
-using paddle::lite::Timer;
+using paddle::lite::profile::Timer;
 
 #define IN(n, c, h, w)                                 \
   input_data[w + h * input_w + c * input_h * input_w + \
@@ -165,17 +165,17 @@ void test_layout_fp32_nchw(DDim dim_in,
       /// compute
       Timer t0;
       for (int i = 0; i < FLAGS_repeats; ++i) {
-        t0.start();
+        t0.Start();
         layout.Run();
-        t0.end();
+        t0.Stop();
       }
       double gops = 2.0 * dim_out.production();
       LOG(INFO) << "layout fp32: input shape: " << dim_in << ", output shape"
-                << dim_out << ",running time, avg: " << t0.get_average_ms()
-                << ", min time: " << t0.get_min_time()
+                << dim_out << ",running time, avg: " << t0.LapTimes().Avg()
+                << ", min time: " << t0.LapTimes().Min()
                 << ", total GOPS: " << 1e-9 * gops
-                << " GOPS, avg GOPs: " << 1e-6 * gops / t0.get_average_ms()
-                << " GOPs, max GOPs: " << 1e-6 * gops / t0.get_min_time();
+                << " GOPS, avg GOPs: " << 1e-6 * gops / t0.LapTimes().Avg()
+                << " GOPs, max GOPs: " << 1e-6 * gops / t0.LapTimes().Min();
 
       if (FLAGS_check_result) {
         double max_ratio = 0;
@@ -268,17 +268,17 @@ void test_layout_fp32_nhwc(DDim dim_in,
       /// compute
       Timer t0;
       for (int i = 0; i < FLAGS_repeats; ++i) {
-        t0.start();
+        t0.Start();
         layout.Run();
-        t0.end();
+        t0.Stop();
       }
       double gops = 2.0 * dim_out.production();
       LOG(INFO) << "layout fp32: input shape: " << dim_in << ", output shape"
-                << dim_out << ",running time, avg: " << t0.get_average_ms()
-                << ", min time: " << t0.get_min_time()
+                << dim_out << ",running time, avg: " << t0.LapTimes().Avg()
+                << ", min time: " << t0.LapTimes().Min()
                 << ", total GOPS: " << 1e-9 * gops
-                << " GOPS, avg GOPs: " << 1e-6 * gops / t0.get_average_ms()
-                << " GOPs, max GOPs: " << 1e-6 * gops / t0.get_min_time();
+                << " GOPS, avg GOPs: " << 1e-6 * gops / t0.LapTimes().Avg()
+                << " GOPs, max GOPs: " << 1e-6 * gops / t0.LapTimes().Min();
 
       if (FLAGS_check_result) {
         double max_ratio = 0;
@@ -370,18 +370,18 @@ void test_layout_int8_nchw(DDim dim_in,
       /// compute
       Timer t0;
       for (int i = 0; i < FLAGS_repeats; ++i) {
-        t0.start();
+        t0.Start();
         layout.Run();
-        t0.end();
+        t0.Stop();
       }
       LOG(INFO) << "saber compute end";
       double gops = 2.0 * dim_out.production();
       LOG(INFO) << "layout int8: input shape: " << dim_in << ", output shape"
-                << dim_out << ",running time, avg: " << t0.get_average_ms()
-                << ", min time: " << t0.get_min_time()
+                << dim_out << ",running time, avg: " << t0.LapTimes().Avg()
+                << ", min time: " << t0.LapTimes().Min()
                 << ", total GOPS: " << 1e-9 * gops
-                << " GOPS, avg GOPs: " << 1e-6 * gops / t0.get_average_ms()
-                << " GOPs, max GOPs: " << 1e-6 * gops / t0.get_min_time();
+                << " GOPS, avg GOPs: " << 1e-6 * gops / t0.LapTimes().Avg()
+                << " GOPs, max GOPs: " << 1e-6 * gops / t0.LapTimes().Min();
 
       if (FLAGS_check_result) {
         double max_ratio = 0;
@@ -474,18 +474,18 @@ void test_layout_int8_nhwc(DDim dim_in,
       /// compute
       Timer t0;
       for (int i = 0; i < FLAGS_repeats; ++i) {
-        t0.start();
+        t0.Start();
         layout.Run();
-        t0.end();
+        t0.Stop();
       }
       LOG(INFO) << "run";
       double gops = 2.0 * dim_out.production();
       LOG(INFO) << "layout int8: input shape: " << dim_in << ", output shape"
-                << dim_out << ",running time, avg: " << t0.get_average_ms()
-                << ", min time: " << t0.get_min_time()
+                << dim_out << ",running time, avg: " << t0.LapTimes().Avg()
+                << ", min time: " << t0.LapTimes().Min()
                 << ", total GOPS: " << 1e-9 * gops
-                << " GOPS, avg GOPs: " << 1e-6 * gops / t0.get_average_ms()
-                << " GOPs, max GOPs: " << 1e-6 * gops / t0.get_min_time();
+                << " GOPS, avg GOPs: " << 1e-6 * gops / t0.LapTimes().Avg()
+                << " GOPs, max GOPs: " << 1e-6 * gops / t0.LapTimes().Min();
 
       if (FLAGS_check_result) {
         double max_ratio = 0;
