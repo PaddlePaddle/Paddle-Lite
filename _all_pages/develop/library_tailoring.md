@@ -9,7 +9,7 @@ title: 裁剪预测库方法
 
 Paddle-Lite支持**根据模型裁剪预测库**功能。Paddle-Lite的一般编译会将所有已注册的operator打包到预测库中，造成库文件体积膨胀；**裁剪预测库**能针对具体的模型，只打包优化后该模型需要的operator，有效降低预测库文件大小。
 
-## 效果展示
+## 效果展示(Tiny_publish Android动态预测库体积)
 
 | 测试模型 | 裁剪开关  | **libpaddle_lite_jni.so** |转化后模型中的OP|
 | ------------------ | ---------------------------- | -------- |------------------|
@@ -21,6 +21,11 @@ Paddle-Lite支持**根据模型裁剪预测库**功能。Paddle-Lite的一般编
 | inceptionv4（armv7） | 裁剪后--build_tailor=ON  | 512K       |feed,fetch,concat,conv2d,dropout,fc,pool2d,softmax|
 | yolov3（armv7） | 裁剪前--build_tailor=OFF     | 938K |feed,fetch,concat,conv2d,depthwise_conv2d,multiclass_nms,nearest_interp,transpose2,yolo_box|
 | yolov3（armv7） | 裁剪后--build_tailor=ON  |516K          |feed,fetch,concat,conv2d,depthwise_conv2d,multiclass_nms,nearest_interp,transpose2,yolo_box|
+
+
+
+
+
 
 ## 实现过程：
 
