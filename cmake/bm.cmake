@@ -74,3 +74,6 @@ else()
   add_library(bmcpu SHARED IMPORTED GLOBAL)
   set_property(TARGET bmcpu PROPERTY IMPORTED_LOCATION ${BM_SDK_CPU_LIB})
 endif()
+
+set(bm_runtime_libs bmrt bmlib bmcompiler bmcpu CACHE INTERNAL "bm runtime libs")
+set(bm_builder_libs bmrt bmlib bmcompiler bmcpu CACHE INTERNAL "bm builder libs")

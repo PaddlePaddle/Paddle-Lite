@@ -66,6 +66,6 @@ REGISTER_LITE_KERNEL(
                                       DATALAYOUT(kNCHW))})
     .BindOutput("Output",
                 {LiteType::GetTensorTy(TARGET(kBM),
-                                       PRECISION(kInt8),
+                                       PRECISION(kFloat),
                                        DATALAYOUT(kNCHW))})
     .Finalize();

@@ -112,7 +112,9 @@ class ConvOpLite : public OpLite {
     return true;
   }
 
-  void AttachKernel(KernelBase* kernel) override { kernel->SetParam(param_); }
+  void AttachKernel(KernelBase* kernel) override { 
+      kernel->SetParam(param_);
+  }
 
   std::string DebugString() const override { return "conv2d"; }
 

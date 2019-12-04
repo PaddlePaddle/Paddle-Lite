@@ -23,7 +23,6 @@ namespace kernels {
 namespace bm {
 
 void CalibComputeFp32ToInt8::Run() {
-  return;
 }
 
 void CalibComputeInt8ToFp32::Run() {

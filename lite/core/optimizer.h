@@ -57,8 +57,9 @@ class Optimizer {
     InitTargetTypeTransformPass();
     if (passes.empty()) {
       RunPasses(std::vector<std::string>{
-          {"lite_quant_dequant_fuse_pass",     //
-#if 0
+          {
+ #if 0
+          "lite_quant_dequant_fuse_pass",     //
            "lite_conv_elementwise_fuse_pass",  // conv-elemwise-bn
            "lite_conv_bn_fuse_pass",           //
            "lite_conv_elementwise_fuse_pass",  // conv-bn-elemwise
@@ -75,8 +76,9 @@ class Optimizer {
            "identity_scale_eliminate_pass",               //
 #ifdef LITE_WITH_LIGHT_WEIGHT_FRAMEWORK
            "lite_elementwise_add_activation_fuse_pass",  //
-#endif
-           "static_kernel_pick_pass",        // pick original kernel from graph
+#endif     
+#endif        
+           "static_kernel_pick_pass",        // pick original kernel from graph     
            "variable_place_inference_pass",  // inference arg/var's
            // info(target/precision/layout/device)
            // using kernel info
@@ -115,7 +117,6 @@ class Optimizer {
            "memory_optimize_pass",
 #endif
            "argument_type_display_pass"
-#endif
            }});
     } else {
       RunPasses(passes);

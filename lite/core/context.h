@@ -97,9 +97,8 @@ class Context<TargetType::kBM> {
   explicit Context(const BMContext& ctx);
   // NOTE: InitOnce should only be used by ContextScheduler
   void InitOnce() {}
-  void CopySharedTo(NPUContext* ctx) {}
+  void CopySharedTo(BMContext* ctx) {}
 
-  BMContext& operator=(const BMContext& ctx) {}
   std::string name() const { return "BMContext"; }
   };
 #endif
@@ -340,6 +339,8 @@ class ContextScheduler {
 
   std::unique_ptr<KernelContext> NewContext(TargetType target) {
     std::unique_ptr<KernelContext> ctx(new KernelContext);
+
+    LOG(INFO) << "aaaaaaaaaaaaaaaaaaaaaaaaaaaaa " << int(target) << " " << int(TARGET(kBM));
     switch (target) {
       case TARGET(kHost):
         kernel_contexts_[TargetType::kHost].As<HostContext>().CopySharedTo(
@@ -410,7 +411,6 @@ class ContextScheduler {
   void InitContext() {
     kernel_contexts_[Type].As<ContextT>().InitOnce();
   }
-
   ContextScheduler() {
     InitContext<TargetType::kHost, HostContext>();
 #ifdef LITE_WITH_X86
