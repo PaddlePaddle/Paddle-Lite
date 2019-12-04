@@ -587,7 +587,7 @@ function build_arm {
     build $TESTS_FILE
 
     # test publish inference lib
-    make publish_inference -j$NUM_CORES_FOR_COMPILE
+    # make publish_inference -j$NUM_CORES_FOR_COMPILE
 }
 
 # $1: ARM_TARGET_OS in "android"
