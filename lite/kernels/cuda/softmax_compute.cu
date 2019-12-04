@@ -173,9 +173,10 @@ void SoftmaxCompute::Run() {
   cudaGetDeviceProperties(&deviceProp, device_id);
   size_t sharedmem_size = deviceProp.sharedMemPerBlock;
   int max_dimsize = sharedmem_size / sizeof(float) / threads;
-
   auto input_data = param.x->data<float>();
   auto output_data = param.output->mutable_data<float>(TARGET(kCUDA));
+  TargetWrapperCuda::MemsetSync(
+      output_data, 0, param.output->numel() * sizeof(float));
   if (axis_size <= max_dimsize) {
     int use_sharemem_size = axis_size * threads * sizeof(float);
     sharemem_softmax_kernel<<<blocks, threads, use_sharemem_size, stream>>>(
@@ -194,7 +195,7 @@ void SoftmaxCompute::Run() {
     auto max_data = tmax_data.mutable_data<float>(TARGET(kCUDA));
     auto sum_data = tsum_data.mutable_data<float>(TARGET(kCUDA));
     //! firstly, get maximum data
-    float min_data = std::numeric_limits<float>::min();
+    float min_data = std::numeric_limits<float>::lowest();
     softmax_max_kernel<float><<<blocks, threads, 0, stream>>>(total_threads,
                                                               input_data,
                                                               max_data,
@@ -217,7 +218,7 @@ void SoftmaxCompute::Run() {
         total_threads, output_data, sum_data, inner_num, outer_num, axis_size);
   }
   cudaError_t error = cudaGetLastError();
-  if (error != cudaSuccess) LOG(INFO) << cudaGetErrorString(error);
+  if (error != cudaSuccess) LOG(ERROR) << cudaGetErrorString(error);
 }
 
 }  // namespace cuda
@@ -258,4 +259,5 @@ REGISTER_LITE_KERNEL(search_seq_softmax,
                 {LiteType::GetTensorTy(TARGET(kCUDA),
                                        PRECISION(kFloat),
                                        DATALAYOUT(kNCHW))})
+    .BindOutput("Out_log", {LiteType::GetTensorTy(TARGET(kCUDA))})
     .Finalize();
