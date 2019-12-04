@@ -141,15 +141,13 @@ void conv_compute_ref(const operators::ConvParam& param) {
   int group = param.groups;
   int kernel_w = param.filter->dims()[2];
   int kernel_h = param.filter->dims()[3];
-
-  auto paddings = *param.paddings;
-  auto dilations = *para.dilations;
   int stride_w = param.strides[0];
   int stride_h = param.strides[1];
-  int dila_w = dilations[0];
-  int dila_h = dilations[1];
-  int pad_w = paddings[2];
-  int pad_h = paddings[0];
+  int dila_w = param.dilations[0];
+  int dila_h = param.dilations[1];
+
+  int pad_w = param.paddings[0];
+  int pad_h = param.paddings[1];
   bool flag_bias = (param.bias != nullptr);
   bool flag_relu = param.fuse_relu;
 
@@ -279,14 +277,10 @@ TEST(conv_fpga, compute) {
                             param.bias = &bias;
                           }
                           param.fuse_relu = flag_relu;
-                          std::vector<int> paddings = {
-                              padding, padding, padding, padding};
+                          param.paddings = std::vector<int>({padding, padding});
                           param.strides = std::vector<int>({stride, stride});
-                          std::vector<int> dilations = {dilation, dilation};
-                          param.paddings =
-                              std::make_shared<std::vector<int>>(paddings);
                           param.dilations =
-                              std::make_shared<std::vector<int>>(dilations);
+                              std::vector<int>({dilation, dilation});
                           param.groups = group;
                           conv.SetParam(param);
                           conv.Launch();

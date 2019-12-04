@@ -15,7 +15,6 @@ limitations under the License. */
 #pragma once
 
 #include <stdio.h>
-
 #include "lite/backends/fpga/KD/llapi/filter.h"
 #include "lite/backends/fpga/KD/llapi/zynqmp_api.h"
 
@@ -29,8 +28,16 @@ class DLEngine {
     return s_instance;
   }
 
+  DeviceInfo& deviceInfo();
+
+  // bool isZU3() { return info_.device_type / 100 == 3; }
+  bool isZU3() { return true; }
+
+  float* out_data = nullptr;
+
  private:
   DLEngine();
+  DeviceInfo info_;
 };
 }  // namespace zynqmp
 }  // namespace paddle

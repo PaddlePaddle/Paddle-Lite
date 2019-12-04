@@ -16,6 +16,7 @@
 #include <algorithm>
 #include "lite/backends/fpga/KD/float16.hpp"
 #include "lite/backends/fpga/KD/pes/elementwise_add_pe.hpp"
+#include "lite/backends/fpga/KD/pes/scale_pe.hpp"
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 
@@ -48,6 +49,17 @@ class ElementwiseAddActivationCompute
 
  private:
   zynqmp::ElementwiseAddPE pe_;
+};
+
+class ElementwiseMulCompute
+    : public KernelLite<TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)> {
+ public:
+  void PrepareForRun() override;
+  void Run() override;
+
+  virtual ~ElementwiseMulCompute() = default;
+ private:
+  zynqmp::ScalePE pe_;
 };
 
 }  // namespace fpga

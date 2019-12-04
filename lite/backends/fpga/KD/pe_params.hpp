@@ -26,6 +26,7 @@ namespace zynqmp {
 struct ReLUParam {
  public:
   bool enabled = false;
+  float leaky_relu_factor = 0.0f;
 };
 
 struct PEParam {
@@ -98,6 +99,24 @@ struct DepthwiseConvParam : ConvParam {
   Tensor* quantizedFilter_ = new Tensor();
 };
 
+struct GRUParam : PEParam {
+public:
+  Tensor* input = nullptr;
+  Tensor* h0 = nullptr;
+  Tensor* weight = nullptr;
+  Tensor* bias = nullptr;
+
+  Tensor* batch_gate = nullptr;
+  Tensor* batch_reset_hidden_prev = nullptr;
+  Tensor* batch_hidden = nullptr;
+  Tensor* hidden = nullptr;
+
+  std::string gate_activation = "sigmoid";
+  std::string activation= "tanh";
+  bool is_reverse = false;
+  bool origin_mode = false;
+};
+
 enum PoolingType : int {
   MAX = 0,
   AVERAGE = 1,
@@ -131,6 +150,12 @@ struct ElementwiseAddParam : PEParam {
   int axis = 0;
 
   EWAddArgs ewargs;
+};
+
+struct ElementwiseMulParam : PEParam {
+ public:
+  std::vector<Tensor*> inputs;
+  Tensor* output = nullptr;
 };
 
 struct FullyConnectedParam : PEParam {

@@ -23,24 +23,45 @@ namespace lite {
 namespace kernels {
 namespace fpga {
 using float16 = zynqmp::float16;
+
+// void CalibComputeFp32ToFP16::PrepareForRun() {
+
+// }
+
 void CalibComputeFp32ToFP16::Run() {
   auto& param = this->Param<operators::CalibParam>();
   const auto* din = param.input->data<float>();
-  auto* dout = param.output->mutable_data<float16>(TARGET(kFPGA));
+  param.output->mutable_data<float16>();
+  param.output->ZynqTensor()->copyFrom(param.input->ZynqTensor());
 
-  for (int i = 0; i < param.input->numel(); ++i) {
-    dout[i] = zynqmp::float_to_half(din[i]);
-  }
+  // for (int i = 0; i < param.input->numel(); ++i) {
+  //   dout[i] = zynqmp::float_to_half(din[i]);
+  // }
+  param.input->ZynqTensor()->saveToFile("calib_input.txt");
+  param.output->ZynqTensor()->saveToFile("ouput_31.txt");
+  param.output->ZynqTensor()->printScale("calib");
+  auto out_lod = param.output->mutable_lod();
+  *out_lod = param.input->lod();
   return;
 }
+
+// void CalibComputeFP16ToFp32::PrepareForRun() {
+
+// }
 
 void CalibComputeFP16ToFp32::Run() {
   auto& param = this->Param<operators::CalibParam>();
   const auto* din = param.input->data<float16>();
-  auto* dout = param.output->mutable_data<float>(TARGET(kFPGA));
-  for (int i = 0; i < param.input->numel(); ++i) {
-    dout[i] = zynqmp::half_to_float(din[i]);
-  }
+  auto* dout = param.output->mutable_data<float>();
+  // for (int i = 0; i < param.input->numel(); ++i) {
+  //   dout[i] = zynqmp::half_to_float(din[i]);
+  // }
+
+  param.output->ZynqTensor()->copyFrom(param.input->ZynqTensor());
+  param.output->ZynqTensor()->saveToFile("ouput_13.txt");
+
+  auto out_lod = param.output->mutable_lod();
+  *out_lod = param.input->lod();
   return;
 }
 

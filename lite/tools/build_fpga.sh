@@ -18,9 +18,11 @@ cmake .. \
         -DLITE_WITH_FPGA=ON \
         -DLITE_WITH_OPENMP=ON \
         -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
-        -DWITH_TESTING=OFF \
-        -DARM_TARGET_OS=armlinux
+        -DWITH_TESTING=ON \
+        -DARM_TARGET_OS=armlinux \
+        -DLITE_BUILD_EXTRA=ON \
+        -DLITE_WITH_PROFILE=ON
 
-make -j8
+make -j32
 
 cd -

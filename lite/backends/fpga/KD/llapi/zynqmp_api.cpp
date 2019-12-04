@@ -23,13 +23,12 @@ limitations under the License. */
 #include <map>
 #include <utility>
 
-#include "lite/backends/fpga/KD/llapi/config.h"
 #include "lite/backends/fpga/KD/llapi/zynqmp_api.h"
 
 namespace paddle {
 namespace zynqmp {
 
-#define PADDLE_LITE_OS_LINUX
+#define PADDLE_MOBILE_OS_LINUX
 
 static int fd = -1;
 static const char *device_path = "/dev/fpgadrv0";
@@ -39,21 +38,19 @@ static size_t memory_size_max = 0;
 static size_t memory_size = 0;
 
 static inline int do_ioctl(uint64_t req, const void *arg) {
-  int ret = -1;
-#ifdef PADDLE_LITE_OS_LINUX
-  ret = ioctl(fd, req, arg);
-  if (ret != 0) {
-    throw - 1;
-  }
+#ifdef PADDLE_MOBILE_OS_LINUX
+  return ioctl(fd, req, arg);
 #else
-  return ret;
+  return -1;
 #endif
 }
 
 int open_device() {
+  // std::cout << "open_device" << std::endl;
   if (fd == -1) {
     fd = open(device_path, O_RDWR);
   }
+  // std::cout << "open_device fd:" << fd << std::endl;
   return fd;
 }
 
@@ -66,13 +63,19 @@ void reset_device() {
 
 // memory management;
 void *fpga_malloc(size_t size) {
-#ifdef PADDLE_LITE_OS_LINUX
+// std::cout << "fpga malloc: 0x" << std::hex << size  << std::dec << "  (" <<
+// size << ") - ";
+#ifdef ENABLE_DEBUG
+// std::cout << "fpga_malloc:" << size << std::endl;
+#endif
+#ifdef PADDLE_MOBILE_OS_LINUX
   void *ptr = reinterpret_cast<void *>(
       mmap64(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0));
   if (ptr == NULL) {
     std::cout << "not enough memory !";
     exit(-1);
   }
+  // std::cout << std::hex << ptr << std::dec << std::endl;
   memory_map.insert(std::make_pair(ptr, size));
   memory_size += size;
   if (memory_size > memory_size_max) {
@@ -90,6 +93,8 @@ size_t fpga_get_memory_size_max() { return memory_size_max; }
 
 size_t fpga_diagnose_memory(int detailed) {
   size_t total = 0;
+  //        size_t size = 0;
+  //        int i = 0;
   auto iter = memory_map.begin();  // std::map<void *, size_t>::iterator
   while (iter != memory_map.end()) {
     total += iter->second;
@@ -108,7 +113,7 @@ void fpga_free(void *ptr) {
 
   memory_size -= size;
 
-#ifdef PADDLE_LITE_OS_LINUX
+#ifdef PADDLE_MOBILE_OS_LINUX
 
   munmap(ptr, size);
 #else
@@ -126,6 +131,9 @@ int fpga_flush(void *address, size_t size) {
 }
 
 int fpga_invalidate(void *address, size_t size) {
+  // std::cout <<
+  // "=================================================================================="
+  // << std::endl;
   struct MemoryCacheArgs args;
   args.address = address;
   args.size = size;
@@ -150,18 +158,85 @@ void fpga_copy(void *dest, const void *src, size_t num) {
   memcpy(dest, src, num);
 }
 
+int fpga_reset() {
+  struct FpgaResetArgs args;
+  return  do_ioctl(IOCTL_FPGA_RESET, &args);
+}
+
 int ioctl_conv(const struct ConvArgs &args) {
+#ifdef ENABLE_DEBUG
+//        std::cout << "======Compute Basic Conv======";
+//        std::cout << "   relu_enabled:" << args.relu_enabled
+//       << "   sb_address:" << args.sb_address
+//       << "   filter_address:" << args.filter_address
+//       << "   filter_num:" << args.filter_num
+//       << "   group_num:" << args.group_num;
+//  std::cout << "   image_address:" << args.image.address
+//       << "   image_scale_address:" << args.image.scale_address
+//       << "   image_channels:" << args.image.channels
+//       << "   image_height:" << args.image.height
+//       << "   image_width:" << args.image.width
+//       << "   pad_height:" << args.image.pad_height
+//       << "   pad_width:" << args.image.pad_width;
+//  std::cout << "   kernel_height:" << args.kernel.height
+//       << "   kernel_width:" << args.kernel.width
+//       << "   stride_h:" << args.kernel.stride_h
+//       << "   stride_w:" << args.kernel.stride_w;
+//  std::cout << "   out_address:" << args.output.address
+//       << "   out_scale_address:" << args.output.scale_address;
+//
+//       float* in_scale = (float*)args.image.scale_address;
+//       std::cout << "inv_scale:" << in_scale[0] << "," << in_scale[1] <<
+//       std::endl;
+
+#endif
+
   return do_ioctl(IOCTL_CONFIG_CONV, &args);
+
+  // return 0;
 }
 
 int compute_fpga_conv_basic(const struct ConvArgs &args) {
+#ifdef ENABLE_DEBUG
+
+//        std::cout << "======Compute Basic Conv======";
+//        std::cout << "   relu_enabled:" << args.relu_enabled
+//       << "   sb_address:" << args.sb_address
+//       << "   filter_address:" << args.filter_address
+//       << "   filter_num:" << args.filter_num
+//       << "   group_num:" << args.group_num;
+//  std::cout << "   image_address:" << args.image.address
+//       << "   image_scale_address:" << args.image.scale_address
+//       << "   image_channels:" << args.image.channels
+//       << "   image_height:" << args.image.height
+//       << "   image_width:" << args.image.width
+//       << "   pad_height:" << args.image.pad_height
+//       << "   pad_width:" << args.image.pad_width;
+//  std::cout << "   kernel_height:" << args.kernel.height
+//       << "   kernel_width:" << args.kernel.width
+//       << "   stride_h:" << args.kernel.stride_h
+//       << "   stride_w:" << args.kernel.stride_w;
+//  std::cout << "   out_address:" << args.output.address
+//       << "   out_scale_address:" << args.output.scale_address;
+
+// float *in_scale = (float *)args.image.scale_address;
+//        std::cout << " scale:" << in_scale[0] << "," << in_scale[1] <<
+//        std::endl;
+
+// float *filter_scale = (float *)args.filter_scale_address;
+//        std::cout << " filter scale:" << filter_scale[0] << "," <<
+//        filter_scale[1] << std::endl;
+
+#endif
   return do_ioctl(IOCTL_CONFIG_CONV, &args);
 }
 
 int compute_fpga_conv(const struct SplitConvArgs &args) {
+  // return do_ioctl(IOCTL_CONFIG_CONV, &args);
   int split_num = args.split_num;
   int ret = -1;
   for (int i = 0; i < split_num; i++) {
+    // ComputeBasicConv(args.conv_args[i]);
     ret = compute_fpga_conv_basic(args.conv_arg[i]);
   }
 
@@ -181,11 +256,15 @@ int compute_fpga_ewadd(const struct EWAddArgs &args) {
 }
 
 int get_device_info(const struct DeviceInfo &args) {
+  // DeviceInfo info;
+  // struct DeviceInfo* a = &info;
   int ret = do_ioctl(IOCTL_DEVICE_INFO, &args);
+  // std::cout << "a." << a->filter_cap << std::endl;
   return ret;
 }
 
 int perform_bypass(const struct BypassArgs &args) {
+  int ret = -1;
   int size = args.image.channels * args.image.width * args.image.height;
   int max_size = 1 << 21;
 
@@ -206,6 +285,7 @@ int perform_bypass(const struct BypassArgs &args) {
   bypassArgs.image.height = 1;
   bypassArgs.output.scale_address = scales;
 
+
   float scale = 0;
   for (int i = 0; i < count; ++i) {
     bypassArgs.image.channels = max_size;
@@ -213,7 +293,7 @@ int perform_bypass(const struct BypassArgs &args) {
         reinterpret_cast<char *>(input_address + i * max_size * type_size);
     bypassArgs.output.address =
         reinterpret_cast<char *>(output_address + i * max_size * out_type_size);
-    int ret = do_ioctl(IOCTL_CONFIG_BYPASS, &bypassArgs);
+    ret = do_ioctl(IOCTL_CONFIG_BYPASS, &bypassArgs);
     scale = std::max(scale, scales[0]);
 
     if (ret != 0) {
@@ -222,13 +302,18 @@ int perform_bypass(const struct BypassArgs &args) {
   }
 
   int remainder = size - max_size * count;
-  bypassArgs.image.channels = remainder;
-  bypassArgs.image.address =
-      reinterpret_cast<char *>(input_address + count * max_size * type_size);
-  bypassArgs.output.address = reinterpret_cast<char *>(
-      output_address + count * max_size * out_type_size);
-  int ret = do_ioctl(IOCTL_CONFIG_BYPASS, &bypassArgs);
-  scale = std::max(scale, scales[0]);
+  // std::cout << "remainder:" << remainder << std::endl;
+  if (remainder > 0) {
+    bypassArgs.image.channels = remainder;
+    bypassArgs.image.address =
+        reinterpret_cast<char *>(input_address + count * max_size * type_size);
+    bypassArgs.output.address = reinterpret_cast<char *>(
+        output_address + count * max_size * out_type_size);
+    ret = do_ioctl(IOCTL_CONFIG_BYPASS, &bypassArgs);
+    scale = std::max(scale, scales[0]);
+
+  }
+ 
   args.output.scale_address[0] = scale;
   args.output.scale_address[1] = 1.0f / scale;
   return ret;
@@ -279,9 +364,20 @@ int compute_fpga_dwconv(const struct DWconvArgs &args) {
   std::cout << "   out_address:" << args.output.address
             << "   out_scale_address:" << args.output.scale_address;
 
+  // float *in_scale = (float *)args.image.scale_address;
+  // std::cout << "inv_scale:" << in_scale[0] << "," << in_scale[1] <<
+  // std::endl;
 #endif
   return do_ioctl(IOCTL_CONFIG_DWCONV, &args);
 }
+
+int config_activation(const struct ActiveParamterArgs& args) {
+    return do_ioctl(IOCTL_CONFIG_ACTIVATION_PARAMETER, &args);
+}
+
+// int config_power(const struct PowerArgs& args) {
+//     return do_ioctl(IOCTL_CONFIG_POWER, &args);
+// }
 
 int config_inplace(const struct InplaceArgs &args) {
   return do_ioctl(IOCTL_CONFIG_INPLACE, &args);
