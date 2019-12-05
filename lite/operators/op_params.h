@@ -86,6 +86,7 @@ struct FcParam {
   lite::DDim in_mat_dims;
   int in_num_col_dims{1};
   std::string activation_type{""};
+  bool padding_weights{false};
   // for int8
   WITH_INT8_CONFIG
 };

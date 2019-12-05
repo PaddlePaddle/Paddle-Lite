@@ -76,10 +76,10 @@ TEST(fc_x86, run_test) {
   param.output = &out;
   param.in_mat_dims = x.dims();
 
-  // std::unique_ptr<KernelContext> ctx(new KernelContext);
-  // ctx->As<X86Context>();
+  std::unique_ptr<KernelContext> ctx(new KernelContext);
+  ctx->As<X86Context>();
   fc.SetParam(param);
-  // fc.SetContext(std::move(ctx));
+  fc.SetContext(std::move(ctx));
   fc.Run();
 
   VLOG(3) << "output vs ref";
