@@ -39,6 +39,7 @@ namespace lite {
     any_desc->SetPersistable(cpp_desc.Persistable());            \
   }
 
+#ifndef LITE_ON_TINY_PUBLISH
 template <>
 void TransformVarDescAnyToCpp<pb::VarDesc>(const pb::VarDesc &any_desc,
                                            cpp::VarDesc *cpp_desc) {
@@ -47,6 +48,7 @@ void TransformVarDescAnyToCpp<pb::VarDesc>(const pb::VarDesc &any_desc,
   cpp_desc->SetPersistable(any_desc.Persistable());
   cpp_desc->SetDataType(any_desc.GetDataType());
 }
+#endif
 
 template <>
 void TransformVarDescAnyToCpp<naive_buffer::VarDesc>(
