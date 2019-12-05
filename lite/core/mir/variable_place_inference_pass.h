@@ -130,7 +130,7 @@ class VariablePlaceInferencePass : public DebugPass {
             x_in->AsArg().type = const_cast<lite::Type*>(type);
           }
         } else if (x_in->AsArg().type->target() == TARGET(kUnk) &&
-                   x_in->AsArg().type->precision() != PRECISION(kUnk),
+                   x_in->AsArg().type->precision() != PRECISION(kUnk) &&
                    x_in->AsArg().type->layout() == DATALAYOUT(kUnk)) {
           x_in->AsArg().type->set_target(type->target());
           x_in->AsArg().type->set_layout(type->layout());
