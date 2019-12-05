@@ -60,14 +60,14 @@ class VariablePlaceInferencePass : public DebugPass {
                      const std::map<std::string, bool>& lite_with_targets) {
     VLOG(4) << "type.precision():" << PrecisionRepr(type.precision());
     if (lite_with_targets.at("kFPGA")) {
-      w->AsArg().type = LiteType::GetTensorTy(
-          TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
+      w->AsArg().type = const_cast<lite::Type*>(LiteType::GetTensorTy(
+          TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW)));
     } else if (lite_with_targets.at("kOpenCL")) {
-      w->AsArg().type = LiteType::GetTensorTy(
-          TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
+      w->AsArg().type = const_cast<lite::Type*>(LiteType::GetTensorTy(
+          TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW)));
     } else {
-      w->AsArg().type = LiteType::GetTensorTy(
-          TARGET(kHost), type.precision(), DATALAYOUT(kNCHW));
+      w->AsArg().type = const_cast<lite::Type*>(LiteType::GetTensorTy(
+          TARGET(kHost), type.precision(), DATALAYOUT(kNCHW)));
     }
   }
 
@@ -127,9 +127,14 @@ class VariablePlaceInferencePass : public DebugPass {
           if (x_in->AsArg().is_weight) {
             SetWeightType(x_in, *type, lite_with_targets);
           } else {
-            x_in->AsArg().type = type;
+            x_in->AsArg().type = const_cast<lite::Type*>(type);
           }
+        } else if (x_in->AsArg().type->target() == TARGET(kUnk) &&
+                   x_in->AsArg().type->precision() != PRECISION(kUnk)) {
+          x_in->AsArg().type->set_target(type->target());
+          x_in->AsArg().type->set_layout(type->layout());
         }
+        x_in->AsArg().type->update_name();
       }
 
       VLOG(4) << "inst " << inst.op_info()->Repr();
@@ -147,9 +152,14 @@ class VariablePlaceInferencePass : public DebugPass {
           if (x_out->AsArg().is_weight) {
             SetWeightType(x_out, *type, lite_with_targets);
           } else {
-            x_out->AsArg().type = type;
+            x_out->AsArg().type = const_cast<lite::Type*>(type);
           }
+        } else if (x_out->AsArg().type->target() == TARGET(kUnk) &&
+                   x_out->AsArg().type->precision() != PRECISION(kUnk)) {
+          x_out->AsArg().type->set_target(type->target());
+          x_out->AsArg().type->set_layout(type->layout());
         }
+        x_out->AsArg().type->update_name();
       }
     }
   }

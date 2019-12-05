@@ -123,8 +123,8 @@ void SSAGraph::Build(const Program &program,
     return true;
   };
 
-  std::unordered_map<std::string, lite::VarDescAPI::Type> var_types =
-      program.var_data_types();
+  std::unordered_map<std::string, PrecisionType> var_types =
+      program.var_data_type();
 
   std::unordered_map<std::string, mir::Node *> arg_update_node_map_;
   for (auto &op : program.ops()) {
@@ -140,8 +140,12 @@ void SSAGraph::Build(const Program &program,
         arg_node->AsArg(name, node_storage_.size() - 1);
         arg_update_node_map_[name] = arg_node;
       }
-      if (var_types.count(name)) {
-        arg_node->arg()->data_type = var_types[name];
+      if (var_types.count(name) && !arg_node->arg()->type) {
+        arg_node->arg()->type =
+            const_cast<lite::Type *>(LiteType::Get(DataType::ID::Tensor,
+                                                   TARGET(kUnk),
+                                                   var_types[name],
+                                                   DATALAYOUT(kUnk)));
       }
       if (is_weights(name)) arg_node->AsArg().is_weight = true;
       CHECK(arg_node->IsRoleSet());
@@ -152,8 +156,12 @@ void SSAGraph::Build(const Program &program,
       auto *arg_node = &node_storage_.back();
       arg_node->AsArg(name, node_storage_.size() - 1);
       arg_update_node_map_[name] = arg_node;
-      if (var_types.count(name)) {
-        arg_node->arg()->data_type = var_types[name];
+      if (var_types.count(name) && !arg_node->arg()->type) {
+        arg_node->arg()->type =
+            const_cast<lite::Type *>(LiteType::Get(DataType::ID::Tensor,
+                                                   TARGET(kUnk),
+                                                   var_types[name],
+                                                   DATALAYOUT(kUnk)));
       }
 
       if (is_weights(name)) arg_node->AsArg().is_weight = true;

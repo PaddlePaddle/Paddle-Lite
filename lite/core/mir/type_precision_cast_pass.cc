@@ -90,8 +90,8 @@ void PrecisionCastPass::AddCastInst(const Type& from,
   auto cast_op_output_name = in->AsArg().name + "/precision_trans";
   // in->AsArg().name + "/precision_trans/" + std::to_string(node_id());
   auto* cast_op_output_arg = graph->NewArgumentNode(cast_op_output_name);
-  cast_op_output_arg->AsArg().type =
-      LiteType::GetTensorTy(from.target(), to.precision(), from.layout());
+  cast_op_output_arg->AsArg().type = const_cast<lite::Type*>(
+      LiteType::GetTensorTy(from.target(), to.precision(), from.layout()));
   auto* cast_inst = graph->NewInstructNode();
 
   // create Op and kernels.

@@ -64,9 +64,8 @@ struct Program {
   lite::Scope* exec_scope() { return exec_scope_; }
   lite::Scope* scope() { return scope_.get(); }
 
-  const std::unordered_map<std::string, lite::VarDescAPI::Type>&
-  var_data_types() const {
-    return var_data_types_;
+  const std::unordered_map<std::string, PrecisionType>& var_data_type() const {
+    return var_data_type_;
   }
 
  private:
@@ -76,7 +75,7 @@ struct Program {
   void PrepareWorkspace(const cpp::ProgramDesc& program);
 
  private:
-  std::unordered_map<std::string, lite::VarDescAPI::Type> var_data_types_;
+  std::unordered_map<std::string, PrecisionType> var_data_type_;
   std::list<std::string> tmp_vars_;
   std::list<std::string> weights_;
   std::list<std::shared_ptr<OpLite>> ops_;

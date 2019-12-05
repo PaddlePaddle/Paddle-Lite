@@ -105,6 +105,32 @@ const Type *Type::GetTensorListTy(TargetType target,
   return type_repo[v];
 }
 
+void Type::update_name() {
+  STL::stringstream name;
+  switch (id_) {
+    case DataType::ID::Tensor:
+      name << "Tensor<";
+      name << TargetToStr(place_.target) << ",";
+      name << PrecisionToStr(place_.precision) << ",";
+      name << DataLayoutToStr(place_.layout) << ",";
+      name << device();
+      name << ">";
+      name_ = name.str();
+      break;
+    case DataType::ID::TensorList:
+      name << "Tensor<";
+      name << TargetToStr(place_.target) << ",";
+      name << PrecisionToStr(place_.precision) << ",";
+      name << DataLayoutToStr(place_.layout) << ",";
+      name << device();
+      name << ">";
+      name_ = name.str();
+      break;
+    default:
+      LOG(FATAL) << "Not supported type info.";
+  }
+}
+
 const Type *Type::GetUnsupportedTy() {
   static std::map<size_t, const Type *> type_repo;
   std::hash<int> hasher;

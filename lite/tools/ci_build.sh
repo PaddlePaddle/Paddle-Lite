@@ -53,7 +53,7 @@ function check_need_ci {
 
 function cmake_x86 {
     prepare_workspace
-    cmake ..  -DWITH_GPU=OFF -DWITH_MKLDNN=OFF -DLITE_WITH_X86=ON ${common_flags}
+    cmake ..  -DWITH_GPU=OFF -DWITH_MKLDNN=OFF -DLITE_WITH_X86=ON  -DLITE_BUILD_EXTRA=ON -DLITE_WITH_PROFILE=ON -DLITE_WITH_PRECISION_PROFILE=ON ${common_flags}
 }
 
 function cmake_opencl {

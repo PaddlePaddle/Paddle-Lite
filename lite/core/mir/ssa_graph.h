@@ -125,7 +125,8 @@ static void LocalInferenceType(Node *a, Node *b, const std::string &arg_name) {
     auto &output = b->AsArg();
 
     if (!output.type) {
-      output.type = inst.picked_kernel().GetOutputDeclType(arg_name);
+      output.type = const_cast<lite::Type *>(
+          inst.picked_kernel().GetOutputDeclType(arg_name));
     }
   }
 
@@ -134,7 +135,8 @@ static void LocalInferenceType(Node *a, Node *b, const std::string &arg_name) {
     auto &input = a->AsArg();
     auto &inst = b->AsStmt();
     if (!input.type) {
-      input.type = inst.picked_kernel().GetInputDeclType(arg_name);
+      input.type = const_cast<lite::Type *>(
+          inst.picked_kernel().GetInputDeclType(arg_name));
     }
   }
 }

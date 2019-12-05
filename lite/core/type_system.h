@@ -144,11 +144,15 @@ class Type : public DataType {
                          int device = 0);
 
   TargetType target() const { return place_.target; }
+  void set_target(const TargetType& ttype) { place_.target = ttype; }
   PrecisionType precision() const { return place_.precision; }
+  void set_precision(const PrecisionType& ptype) { place_.precision = ptype; }
   DataLayoutType layout() const { return place_.layout; }
+  void set_layout(const DataLayoutType& dtype) { place_.layout = dtype; }
   int16_t device() const { return place().device; }
   const Place& place() const { return place_; }
   const std::string& name() const { return name_; }
+  void update_name();
 
   bool operator==(const Type& other) {
     return id_ == other.id() && place_ == other.place();
@@ -168,7 +172,7 @@ class Type : public DataType {
       : DataType(id), place_{target, precision, layout, device}, name_(name) {}
 
   Place place_;
-  const std::string name_;
+  std::string name_;
 };
 
 // -------------------------------- compatible check ---------------------------

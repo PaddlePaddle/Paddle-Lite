@@ -50,11 +50,12 @@ class StaticKernelPickPass : public mir::StmtPass {
 
  private:
   // Score the kernel.
-  size_t KernelGrade(const lite::mir::Node::Stmt& instruct,
+  size_t KernelGrade(
+      const lite::mir::Node::Stmt& instruct,
       const lite::KernelBase& kernel,
       const std::vector<Place>& places,
-      const std::unordered_map<std::string, lite::VarDescAPI::Type>& in_types,
-      const std::unordered_map<std::string, lite::VarDescAPI::Type>& out_types,
+      const std::unordered_map<std::string, PrecisionType>& in_types,
+      const std::unordered_map<std::string, PrecisionType>& out_types,
       const std::vector<std::string>& in_names,
       const std::vector<std::string>& out_names) {
     CHECK_GT(places.size(), 0) << "valid_places is empty.";
@@ -63,27 +64,6 @@ class StaticKernelPickPass : public mir::StmtPass {
     const int kMax =
         std::numeric_limits<core::KernelPickFactor::value_type>::max();
     size_t place_size = places.size();
-
-    auto VarPrecision2KernlPrecision =
-        [](const lite::VarDescAPI::Type& type) -> PrecisionType {
-      switch (type) {
-        case lite::VarDescAPI::Type::FP32:
-          return PRECISION(kFloat);
-        case lite::VarDescAPI::Type::FP16:
-          return PRECISION(kFP16);
-        case lite::VarDescAPI::Type::INT8:
-          return PRECISION(kInt8);
-        case lite::VarDescAPI::Type::INT16:
-          return PRECISION(kInt16);
-        case lite::VarDescAPI::Type::INT32:
-          return PRECISION(kInt32);
-        case lite::VarDescAPI::Type::INT64:
-          return PRECISION(kInt64);
-        default:
-          LOG(FATAL) << "not supported type";
-          return PRECISION(kUnk);
-      }
-    };
 
     // NOTE: We compare kernel's place with place in valid_places to select the
     // best match place
@@ -128,15 +108,29 @@ class StaticKernelPickPass : public mir::StmtPass {
       }
       VLOG(4) << "[score s3]:" << score;
 
-      // add new rules for precision: When the number of inputs is 1, the number
-      // of outputs is 1, and the input type is consistent with the output type
-      // and kernel precision. Select the kernel of the precision.
-      if (in_names.size() == 1 && out_names.size() == 1 &&
-          in_types.count(in_names[0]) && out_types.count(out_names[0]) &&
-          static_cast<int>(in_types.at(in_names[0])) ==
-              static_cast<int>(out_types.at(out_names[0])) &&
-          VarPrecision2KernlPrecision(in_types.at(in_names[0])) ==
-              kernel.precision()) {
+      // add new rules for precision: When the input types are consistent with
+      // kernel's input types  and the output types are consistent with kernel's
+      // output types. Select the kernel of the precision.
+      bool type_match = true;
+      for (size_t i = 0; i < in_names.size(); ++i) {
+        std::string tmp;
+        CHECK(instruct.op_info()->GetInputArgname(in_names[i], &tmp));
+        if (in_types.count(in_names[i]) &&
+            in_types.at(in_names[i]) !=
+                kernel.GetInputDeclType(tmp)->precision()) {
+          type_match = false;
+        }
+      }
+      for (size_t i = 0; i < out_names.size(); ++i) {
+        std::string tmp;
+        CHECK(instruct.op_info()->GetOutputArgname(out_names[i], &tmp));
+        if (out_types.count(out_names[i]) &&
+            out_types.at(out_names[i]) !=
+                kernel.GetOutputDeclType(tmp)->precision()) {
+          type_match = false;
+        }
+      }
+      if (type_match) {
         score *= 2;
       }
       VLOG(4) << "[score s4]:" << score;

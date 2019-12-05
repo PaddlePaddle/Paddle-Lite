@@ -100,8 +100,8 @@ void TypeLayoutTransformPass::AddLayoutInst(
   auto layout_output_name =
       string_format("%s/layout_trans", in->AsArg().name.c_str());
   auto* layout_output_arg = graph->NewArgumentNode(layout_output_name);
-  layout_output_arg->AsArg().type =
-      LiteType::GetTensorTy(from.target(), from.precision(), to.layout());
+  layout_output_arg->AsArg().type = const_cast<lite::Type*>(
+      LiteType::GetTensorTy(from.target(), from.precision(), to.layout()));
 
   auto* layout_inst = graph->NewInstructNode();
 

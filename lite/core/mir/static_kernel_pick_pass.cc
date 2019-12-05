@@ -46,26 +46,28 @@ void StaticKernelPickPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
     if (!node.IsStmt()) continue;
     auto& instruct = node.AsStmt();
 
-    std::unordered_map<std::string, lite::VarDescAPI::Type> in_types;
-    std::unordered_map<std::string, lite::VarDescAPI::Type> out_types;
+    std::unordered_map<std::string, PrecisionType> in_types;
+    std::unordered_map<std::string, PrecisionType> out_types;
     for (std::list<Node*>::iterator i = node.inlinks.begin();
          i != node.inlinks.end();
          ++i) {
-      in_types[(*i)->arg()->name] = (*i)->arg()->data_type;
+      if ((*i)->arg()->type)
+        in_types[(*i)->arg()->name] = (*i)->arg()->type->precision();
     }
     for (std::list<Node*>::iterator i = node.outlinks.begin();
          i != node.outlinks.end();
          ++i) {
-      out_types[(*i)->arg()->name] = (*i)->arg()->data_type;
+      if ((*i)->arg()->type)
+        out_types[(*i)->arg()->name] = (*i)->arg()->type->precision();
     }
-
     // Get candidate kernels
     std::vector<std::pair<float, std::unique_ptr<KernelBase>>> scored;
     CHECK(!instruct.kernels().empty()) << "No kernels found for "
                                        << instruct.op_type();
     VLOG(4) << "instruct.kernels().size():" << instruct.kernels().size();
     for (auto&& kernel : instruct.kernels()) {
-      float score = KernelGrade(instruct, *kernel,
+      float score = KernelGrade(instruct,
+                                *kernel,
                                 graph->valid_places(),
                                 in_types,
                                 out_types,
@@ -120,16 +122,13 @@ void StaticKernelPickPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
         instruct.ResetOp(update_desc, graph->valid_places());
         scored.clear();
         for (auto&& kernel : instruct.kernels()) {
-<<<<<<< HEAD
-          float score = KernelGrade(*kernel,
+          float score = KernelGrade(instruct,
+                                    *kernel,
                                     graph->valid_places(),
                                     in_types,
                                     out_types,
                                     instruct.op_info()->input_names(),
                                     instruct.op_info()->output_names());
-=======
-          float score = KernelGrade(instruct, *kernel, graph->valid_places());
->>>>>>> aa67c28e05e0937c2b68ddafb8179074a4594d7e
           scored.emplace_back(score, std::move(kernel));
         }
         std::sort(scored.begin(), scored.end(), KernelScoreCmp);

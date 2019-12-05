@@ -92,7 +92,7 @@ class Node {
   struct Arg {
     std::string name;
     int id{0};
-    const Type* type{};
+    Type* type{};
     // Weight is a special kind of argument, it is marked as weight explicitly
     // so that some weight related optimization can take place.
     bool is_weight{false};
@@ -100,8 +100,6 @@ class Node {
     // if the need more than one tool operator(eg. io_copy layout calib), the
     // argument between them should be persist to make sure it's only run once
     bool is_persist{false};
-    // data_type stores the lod_tensor data type: INT8, FP32, etc.
-    lite::VarDescAPI::Type data_type;
   };
 
   Arg& AsArg(const std::string& name, int id);

@@ -93,8 +93,8 @@ void TypeTargetTransformPass::AddIoCopyInst(
   // Set the place for io_copy_output_arg node, the target should be equal to
   // to.target()
   // The precision and layout should be equal to from.precision(), from.layout()
-  io_copy_output_arg->AsArg().type =
-      LiteType::GetTensorTy(to.target(), from.precision(), from.layout());
+  io_copy_output_arg->AsArg().type = const_cast<lite::Type*>(
+      LiteType::GetTensorTy(to.target(), from.precision(), from.layout()));
   auto* io_copy_inst = graph->NewInstructNode();
 
   bool in_persist = in->AsArg().is_weight || in->AsArg().is_persist;
