@@ -153,7 +153,7 @@ class VariablePlaceInferencePass : public DebugPass {
           if (x_out->AsArg().is_weight) {
             SetWeightType(x_out, *type, lite_with_targets);
           } else {
-            x_out->AsArg().type = const_cast<lite::Type*>(type);
+            x_out->AsArg().type = type;
           }
         } else if (x_out->AsArg().type->target() == TARGET(kUnk) &&
                    x_out->AsArg().type->precision() != PRECISION(kUnk) &&
