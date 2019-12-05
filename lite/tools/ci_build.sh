@@ -707,30 +707,10 @@ function build_test_arm_subtask_android {
        local portname_armv7=emulator-$port_armv7
    else
        adb_devices=$(adb devices |grep -v devices |grep device | awk -F " " '{print $1}')
-       echo  %system.agent.name%
-       index=${adbindex}
-       echo $index
-       echo ${adb_devices[${index}]}
-       echo ${adb_devices[$index]}
+       # adbindex is the env variable registered in ci agent to tell which mobile is to used as adb
        echo ${adb_devices[${adbindex}]}
-       echo ${adb_devices[$adbindex]}
-       echo "test"
-       echo ${adb_devices[0]}
-       agentname=%system.agent.name%
-       agentNames="%system.agent.name%"
-       if [ ${agentname} == "mobile_mac2" ]; then
-           echo ${agentname}
-       fi
-       if [ ${agentNames} == "mobile_mac2" ]; then
-           echo ${agentNames}
-       fi
-       if [ %system.agent.name% == "mobile_mac2" ]; then
-           local portname_armv8=${adb_devices[1]}
-           local portname_armv7=${adb_devices[1]}
-       else
-           local portname_armv8=${adb_devices[0]}
-           local portname_armv7=${adb_devices[0]}
-       fi
+       local portname_armv8=${adb_devices[${adbindex}]}
+       local portname_armv7=${adb_devices[${adbindex}]}
     fi
 
     # job 1
