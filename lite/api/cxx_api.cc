@@ -121,6 +121,7 @@ void Predictor::SaveOpKernelInfo(const std::string &model_dir) {
             << kpf_path;
 }
 
+#ifndef LITE_WITH_FPGA
 lite::Tensor *Predictor::GetInput(size_t offset) {
   CHECK(input_names_.size() > offset)
       << "The network has " << input_names_.size() << " inputs"
@@ -130,6 +131,19 @@ lite::Tensor *Predictor::GetInput(size_t offset) {
                 << " in exec_scope";
   return in_var->GetMutable<lite::Tensor>();
 }
+#else
+lite::Tensor *Predictor::GetInput(size_t offset) {
+  auto *_feed_list = exec_scope_->FindVar("feed");
+  CHECK(_feed_list) << "no feed variable in exec_scope";
+  auto *feed_list = _feed_list->GetMutable<std::vector<lite::Tensor>>();
+  if (offset >= feed_list->size()) {
+    feed_list->resize(offset + 1);
+  }
+  return &feed_list->at(offset);
+}
+#endif
+
+
 
 // get inputs names
 std::vector<std::string> Predictor::GetInputNames() { return input_names_; }

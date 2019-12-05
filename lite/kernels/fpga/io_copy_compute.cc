@@ -157,11 +157,11 @@ REGISTER_LITE_KERNEL(io_copy,
                      device_to_host)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kFPGA),
-                                      PRECISION(kAny),
-                                      DATALAYOUT(kAny))})
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kNHWC))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kARM),
-                                       PRECISION(kAny),
+                                       PRECISION(kFloat),
                                        DATALAYOUT(kNHWC))})
     .Finalize();
 

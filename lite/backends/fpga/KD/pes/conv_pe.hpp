@@ -59,7 +59,7 @@ class ConvPE : public PE {
 
     if (param_.filter->shape().width() == 1 &&
         param_.filter->shape().height() == 1) {
-        use_cpu_ = true;
+        // use_cpu_ = true;
     }
     if (!use_cpu_) {
       // param_.filter->releaseData();

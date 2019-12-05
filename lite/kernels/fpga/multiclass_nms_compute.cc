@@ -12,11 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "lite/kernels/fpga/multiclass_nms_compute.h"
 #include <map>
 #include <utility>
 #include <vector>
 
-#include "lite/kernels/fpga/multiclass_nms_compute.h"
+#include "lite/backends/fpga/KD/debugger.hpp"
 
 namespace paddle {
 namespace lite {
@@ -196,11 +197,15 @@ void MultiClassNMS(const operators::MulticlassNmsParam& param,
   int num_det = 0;
 
   int64_t class_num = scores_size == 3 ? scores.dims()[0] : scores.dims()[1];
-  Tensor bbox_slice, score_slice;
+  
+  // scores.ZynqTensor()->saveToFile("nms_scores", true);
+
   for (int64_t c = 0; c < class_num; ++c) {
+    Tensor bbox_slice, score_slice;
     if (c == background_label) continue;
     if (scores_size == 3) {
-      score_slice = scores.Slice<T>(c, c + 1);
+      scores.Slice<T>(score_slice, c, c + 1);
+      // score_slice.ZynqTensor()->saveToFile("nms_slice", true);
       bbox_slice = bboxes;
     } else {
       score_slice.Resize({scores.dims()[0], 1});
@@ -208,7 +213,7 @@ void MultiClassNMS(const operators::MulticlassNmsParam& param,
       SliceOneClass<T>(scores, c, &score_slice);
       SliceOneClass<T>(bboxes, c, &bbox_slice);
     }
-    NMSFast(bbox_slice,
+    NMSFast(bboxes,// TODO bbox_slice
             score_slice,
             score_threshold,
             nms_threshold,
@@ -225,6 +230,9 @@ void MultiClassNMS(const operators::MulticlassNmsParam& param,
   *num_nmsed_out = num_det;
   const T* scores_data = scores.data<T>();
   if (keep_top_k > -1 && num_det > keep_top_k) {
+
+    Tensor score_slice;
+
     const T* sdata;
     std::vector<std::pair<float, std::pair<int, int>>> score_index_pairs;
     for (const auto& it : *indices) {
@@ -315,48 +323,35 @@ void MultiClassOutput(const Tensor& scores,
 
 void MulticlassNmsCompute::Run() {
   auto& param = Param<operators::MulticlassNmsParam>();
-
   auto* boxes = param.bboxes;
   auto* scores = param.scores;
   auto* outs = param.out;
+  outs->mutable_data<float>();
 
-  auto boxes_dims = boxes->dims();
-  auto boxes_size = boxes_dims.size();
   auto score_dims = scores->dims();
   auto score_size = score_dims.size();
 
-  Tensor bboxes_tensor;
-  bboxes_tensor.Resize(boxes_dims);
-  auto bboxes_data = bboxes_tensor.mutable_data<float>();
-  bboxes_tensor.ZynqTensor()->copyFrom(boxes->ZynqTensor());
-
-  Tensor score_tensor;
-  score_tensor.Resize(score_dims);
-  auto score_data = score_tensor.mutable_data<float>();
-  score_tensor.ZynqTensor()->copyFrom(scores->ZynqTensor());
-
+  auto box_dims = boxes->dims();
+  int64_t box_dim = boxes->dims()[2];
 
   std::vector<std::map<int, std::vector<int>>> all_indices;
   std::vector<uint64_t> batch_starts = {0};
   int64_t batch_size = score_dims[0];
-  int64_t box_dim = boxes->dims()[2];
+  
   int64_t out_dim = box_dim + 2;
   int num_nmsed_out = 0;
   Tensor boxes_slice, scores_slice;
-  boxes_slice.mutable_data<float>();
-  scores_slice.mutable_data<float>();
-
   int n = score_size == 3 ? batch_size : boxes->lod().back().size() - 1;
   for (int i = 0; i < n; ++i) {
     if (score_size == 3) {
-      scores_slice = score_tensor.Slice<float>(i, i + 1);
+      scores->Slice<float>(scores_slice, i, i + 1);
       scores_slice.Resize({score_dims[1], score_dims[2]});
-      boxes_slice = bboxes_tensor.Slice<float>(i, i + 1);
+      boxes->Slice<float>(boxes_slice, i, i + 1);
       boxes_slice.Resize({score_dims[2], box_dim});
     } else {
-      auto boxes_lod = bboxes_tensor.lod().back();
-      scores_slice = score_tensor.Slice<float>(boxes_lod[i], boxes_lod[i + 1]);
-      boxes_slice = bboxes_tensor.Slice<float>(boxes_lod[i], boxes_lod[i + 1]);
+      auto boxes_lod = boxes->lod().back();
+      scores->Slice<float>(scores_slice, boxes_lod[i], boxes_lod[i + 1]);
+      boxes->Slice<float>(boxes_slice, boxes_lod[i], boxes_lod[i + 1]);
     }
     std::map<int, std::vector<int>> indices;
     MultiClassNMS<float>(
@@ -364,6 +359,8 @@ void MulticlassNmsCompute::Run() {
     all_indices.push_back(indices);
     batch_starts.push_back(batch_starts.back() + num_nmsed_out);
   }
+
+
 
   uint64_t num_kept = batch_starts.back();
   if (num_kept == 0) {
@@ -375,39 +372,44 @@ void MulticlassNmsCompute::Run() {
     outs->Resize({static_cast<int64_t>(num_kept), out_dim});
     for (int i = 0; i < n; ++i) {
       if (score_size == 3) {
-        scores_slice = score_tensor.Slice<float>(i, i + 1);
-        boxes_slice = bboxes_tensor.Slice<float>(i, i + 1);
+        scores->Slice<float>(scores_slice, i, i + 1);
+        boxes->Slice<float>(boxes_slice, i, i + 1);
         scores_slice.Resize({score_dims[1], score_dims[2]});
         boxes_slice.Resize({score_dims[2], box_dim});
       } else {
         auto boxes_lod = boxes->lod().back();
-        scores_slice = score_tensor.Slice<float>(boxes_lod[i], boxes_lod[i + 1]);
-        boxes_slice = bboxes_tensor.Slice<float>(boxes_lod[i], boxes_lod[i + 1]);
+        scores->Slice<float>(scores_slice, boxes_lod[i], boxes_lod[i + 1]);
+        boxes->Slice<float>(boxes_slice, boxes_lod[i], boxes_lod[i + 1]);
       }
       int64_t s = static_cast<int64_t>(batch_starts[i]);
       int64_t e = static_cast<int64_t>(batch_starts[i + 1]);
+
       if (e > s) {
-        Tensor out = outs->Slice<float>(s, e);
+        Tensor out;
+        outs->Slice<float>(out, s, e);
+        // scores_slice.ZynqTensor()->saveToFile("scores_slice", true);
         MultiClassOutput<float>(
             scores_slice, boxes_slice, all_indices[i], score_dims.size(), &out);
+        out.ZynqTensor()->saveToFile("out", true); 
+        outs->ZynqTensor()->copyFrom(out.ZynqTensor());
       }
     }
   }
+
+
+  // save_tensor(param.scores, "_scores.txt", false);
+  // save_tensor(param.bboxes, "_bboxes.txt", false);
+
+  boxes->ZynqTensor()->saveToFile("_boxes", true);
+  scores->ZynqTensor()->saveToFile("_scores", true);
+  outs->ZynqTensor()->saveToFile("_outs", true);
 
   LoD lod;
   lod.emplace_back(batch_starts);
 
   outs->set_lod(lod);
-
-
-  //   auto* boxes = param.bboxes;
-  // auto* scores = param.scores;
-  // auto* outs = param.out;
-  // boxes->ZynqTensor()->saveToFile("boxes", true);
-  //   scores->ZynqTensor()->saveToFile("scores", true);
-  // param.out->ZynqTensor()->saveToFile("nms_", true);
 }
-}  // namespace fpga
+}  // namespace host
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
@@ -418,10 +420,7 @@ REGISTER_LITE_KERNEL(multiclass_nms,
                      kNHWC,
                      paddle::lite::kernels::fpga::MulticlassNmsCompute,
                      def)
-    .BindInput("BBoxes",
-               {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("Scores",
-               {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Out",
-                {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("BBoxes", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindInput("Scores", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
     .Finalize();

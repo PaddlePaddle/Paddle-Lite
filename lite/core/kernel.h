@@ -84,11 +84,9 @@ class KernelBase {
 #ifdef LITE_WITH_PROFILE
     if (profile_id_ >= 0) {
       profile::ProfileBlock x(profile_id_, "kernel");
-      Run();
     }
-#else
-    Run();
 #endif
+    Run();
   }
 
   void SetContext(std::unique_ptr<KernelContext>&& ctx) {

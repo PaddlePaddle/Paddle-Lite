@@ -98,8 +98,10 @@ REGISTER_LITE_KERNEL(prior_box,
                      kNCHW,
                      paddle::lite::kernels::arm::PriorBoxCompute,
                      def)
-    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("Image", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Input",{LiteType::GetTensorTy(
+                   TARGET(kFPGA), PRECISION(kAny), DATALAYOUT(kAny))})
+    .BindInput("Image", {LiteType::GetTensorTy(
+                   TARGET(kFPGA), PRECISION(kAny), DATALAYOUT(kAny))})
     .BindOutput("Boxes", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Variances", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();

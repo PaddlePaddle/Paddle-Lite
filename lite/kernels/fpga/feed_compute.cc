@@ -37,6 +37,7 @@ void FeedCompute::PrepareForRun() {
 }
 
 void FeedCompute::Run() {
+  std::cout << "================= FeedCompute ================= \n";
   auto& param = this->Param<param_t>();
   Tensor& x = param.feed_list->at(param.col);
   zynqmp::InputParam& feed_param = pe_.param();

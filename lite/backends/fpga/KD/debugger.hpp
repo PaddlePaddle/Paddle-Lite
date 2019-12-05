@@ -79,7 +79,7 @@ inline void read_from_file(lite::Tensor* t,const std::string& path) {
 }
 
 inline void save_float(float* data, const std::string& name, int len) {
-    return;
+    // return;
   static int counter = 0;
   std::string old_string = std::to_string(counter);
   std::string new_string = std::string(3 - old_string.length(), '0') + old_string;
