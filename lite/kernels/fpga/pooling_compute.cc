@@ -38,7 +38,9 @@ void PoolCompute::PrepareForRun() {
   pool_param.globalPooling = param.global_pooling;
   pool_param.kernelSize = param.ksize;
   pool_param.strides = param.strides;
-  pool_param.paddings = param.paddings;
+  int pad_h = (*param.paddings)[0];
+  int pad_w = (*param.paddings)[2];
+  pool_param.paddings = std::vector<int>({pad_h, pad_w});
   pe_.init();
   pe_.apply();
 }
