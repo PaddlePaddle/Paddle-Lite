@@ -93,11 +93,14 @@ void conv_compute_6x6_3x3(const float* input,
   int tile_w = (wout + 5) / 6;
   int tile_h = (hout + 5) / 6;
   int size_tile = tile_h * tile_w;
-  float zero_ptr[8];
-  memset(zero_ptr, 0, 8 * sizeof(float));
 
   int w_pad = win + pad_w * 2;
   int h_pad = hin + pad_h * 2;
+
+  const int zero_len = w_pad;
+  float zero_ptr[zero_len];  // NOLINT
+  memset(zero_ptr, 0, zero_len * sizeof(float));
+
   float* input_c4 = tmp_work_space;
   int new_h_stride = w_pad * 4;
   int new_c_stride = new_h_stride * h_pad;
@@ -374,11 +377,14 @@ void conv_compute_2x2_3x3(const float* input,
   int tile_w = (wout + 1) / 2;
   int tile_h = (hout + 1) / 2;
   int size_tile = tile_h * tile_w;
-  float zero_ptr[8];
-  memset(zero_ptr, 0, 8 * sizeof(float));
 
   int w_pad = win + pad_w * 2;
   int h_pad = hin + pad_h * 2;
+
+  const int zero_len = w_pad;
+  float zero_ptr[zero_len];  // NOLINT
+  memset(zero_ptr, 0, zero_len * sizeof(float));
+
   float* input_c4 = tmp_work_space;
   int new_h_stride = w_pad * 4;
   int new_c_stride = new_h_stride * h_pad;
@@ -653,11 +659,14 @@ void conv_compute_2x2_3x3_small(const float* input,
   int tile_w = (wout + 1) / 2;
   int tile_h = (hout + 1) / 2;
   int size_tile = tile_h * tile_w;
-  float zero_ptr[8];
-  memset(zero_ptr, 0, 8 * sizeof(float));
 
   int w_pad = win + pad_w * 2;
   int h_pad = hin + pad_h * 2;
+
+  const int zero_len = w_pad;
+  float zero_ptr[zero_len];  // NOLINT
+  memset(zero_ptr, 0, zero_len * sizeof(float));
+
   float* input_c4 = tmp_work_space;
   int new_h_stride = w_pad * 4;
   int new_c_stride = new_h_stride * h_pad;

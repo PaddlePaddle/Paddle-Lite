@@ -53,14 +53,12 @@ void WinogradConv<PRECISION(kFloat), PRECISION(kFloat)>::ReInitWhenNeeded() {
       return;
     }
     last_function_ = 0;
-    LOG(INFO) << "choose f23";
   } else {
     wino_iw = 8;
     if (last_function_ == 1) {
       return;
     }
     last_function_ = 1;
-    LOG(INFO) << "choose f63";
   }
   // if (!choose_small) {
   auto pad = *(param.paddings);
@@ -89,53 +87,6 @@ void WinogradConv<PRECISION(kFloat), PRECISION(kFloat)>::ReInitWhenNeeded() {
   }
   free(trans_tmp_ptr);
 
-  /*
-  } else {
-    if (last_kernel_is_c4_ == 0) {
-      return;
-    }
-    last_kernel_is_c4_ = 0;
-    int tile_w = (ow + 5) / 6;
-    int tile_h = (oh + 5) / 6;
-
-    int size_tile = tile_h * tile_w;
-    int size_trans_channel = 8 * 8 * size_tile;
-    int max_ch = ic > oc ? ic : oc;
-
-    const int n_wino = size_tile;
-    ctx.ExtendWorkspace((size_trans_channel * max_ch * 2 + n_wino) *
-                        sizeof(float));
-
-    const int m_wino = oc;
-    int hblock = lite::arm::math::get_hblock(&ctx);
-    int m_round = hblock * ((m_wino + hblock - 1) / hblock);
-    weights_.Resize({1, 1, 1, 8 * 8 * m_round * ic});
-    ctx.ExtendWorkspace((size_trans_channel * max_ch * 2 + n_wino) *
-                        sizeof(float));
-    auto weights_wino =
-        static_cast<float*>(malloc(sizeof(float) * 8 * 8 * oc * ic));
-    void* trans_tmp_ptr = malloc(sizeof(float) * 8 * 8 * oc * ic);
-    lite::arm::math::winograd_transform_weights(
-        weights_wino, param.filter->data<float>(), oc, ic, trans_tmp_ptr);
-    auto weights_trans = weights_.mutable_data<float>();
-    for (int i = 0; i < 64; ++i) {
-      float* packed_weights = weights_trans + i * m_round * ic;
-      const float* weights_wino_ptr = weights_wino + i * oc * ic;
-      lite::arm::math::prepackA(packed_weights,
-                                weights_wino_ptr,
-                                1.f,
-                                ic,
-                                0,
-                                m_wino,
-                                0,
-                                ic,
-                                false,
-                                &ctx);
-    }
-    free(trans_tmp_ptr);
-    free(weights_wino);
-  }
-  //*/
   last_shape_ = x_dims;
 }
 
@@ -165,9 +116,6 @@ void WinogradConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   int ow = o_dims[3];
   int oc = o_dims[1];
 
-  // int parallel_threads = (((ow + 5) / 6) * ((oh + 5) / 6) + tile_block - 1) /
-  // tile_block;
-  // if (threads <= 2 && parallel_threads >= threads) {
   if (!choose_small_) {
     lite::arm::math::conv_compute_6x6_3x3(i_data,
                                           o_data,
@@ -216,23 +164,6 @@ void WinogradConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
                                                   &ctx);
     }
   }
-  /*
-    } else {
-      lite::arm::math::conv_winograd3x3(i_data,
-                                        o_data,
-                                        bs,
-                                        oc,
-                                        oh,
-                                        ow,
-                                        ic,
-                                        ih,
-                                        iw,
-                                        w_data,
-                                        b_data,
-                                        param,
-                                        &ctx);
-    }
-  */
 }
 
 }  // namespace arm

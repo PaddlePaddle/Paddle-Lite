@@ -1224,7 +1224,7 @@ void sgemm_prepack_c4_small(int M,
         "fmla v14.4s, v19.4s, v6.s[3] \n"
         "fmla v15.4s, v19.4s, v7.s[3] \n"
         "subs %w[cnt], %w[cnt], #1    \n"
-        "beq  2b                      \n"
+        "beq  2f                      \n"
         "1:\n"
         /* load b2, b3 */
         "ld1  {v2.4s,  v3.4s},  [%[b]], #32 \n"
@@ -1324,7 +1324,7 @@ void sgemm_prepack_c4_small(int M,
         "fmla v10.4s, v19.4s, v2.s[3] \n"
         "fmla v11.4s, v19.4s, v3.s[3] \n"
         "subs %w[cnt], %w[cnt], #1    \n"
-        "beq  2b                      \n"
+        "beq  2f                      \n"
         "1:\n"
         /* load b0-b3 */
         "ld1  {v0.4s,  v1.4s},  [%[b]], #32 \n"
@@ -1388,7 +1388,7 @@ void sgemm_prepack_c4_small(int M,
         "fmla v9.4s,  v19.4s, v0.s[3] \n"
          /* load a0, a1 */
         "ld1  {v16.4s, v17.4s}, [%[a]], #32 \n"
-        "beq  2b                      \n"
+        "beq  2f                      \n"
         "1:\n"
         /* load b0 */
         "ld1  {v0.4s},  [%[b]], #16  \n"
@@ -1478,7 +1478,7 @@ void sgemm_prepack_c4_small(int M,
         "vld1.32    {d0-d3},  [%[b]]!  \n"
         "vmla.f32   q14,  q7,   d5[1]  \n"
         "vmla.f32   q15,  q7,   d7[1]  \n"
-        "beq  2b                       \n"
+        "beq  2f                       \n"
         "1:\n"
         /* load b2, b3 */
         "vld1.32    {d4-d7},   [%[b]]! \n"
@@ -1580,7 +1580,7 @@ void sgemm_prepack_c4_small(int M,
         "vmla.f32  q10,  q7, d5[1]  \n"
         "vmla.f32  q11,  q7, d7[1]  \n"
         "subs %[cnt], %[cnt], #1    \n"
-        "beq  2b                    \n"
+        "beq  2f                    \n"
         "1:\n"
         /* load b0-b3 */
         "vld1.32  {d0-d3},  [%[b]]! \n"
@@ -1644,7 +1644,7 @@ void sgemm_prepack_c4_small(int M,
         "vmla.f32   q6, q4, d1[1]   \n"
          /* load a0, a1 */
         "vld1.32  {d2-d5}, [%[a]]!  \n"
-        "beq  2b                    \n"
+        "beq  2f                    \n"
         "1:\n"
         /* load b0 */
         "vld1.32  {d0-d1},  [%[b]]! \n"
