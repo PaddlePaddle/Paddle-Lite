@@ -201,7 +201,7 @@ function build_single {
 }
 
 function build {
-    make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
+    make lite_compile_deps -j4
 
     # test publish inference lib
     # make publish_inference
@@ -706,7 +706,7 @@ function build_test_arm_subtask_android {
        local portname_armv8=emulator-$port_armv8
        local portname_armv7=emulator-$port_armv7
    else
-       adb_devices=$(adb devices |grep -v devices |grep device | awk -F " " '{print $1}')
+       adb_devices=($(adb devices |grep -v devices |grep device | awk -F " " '{print $1}'))
        # adbindex is the env variable registered in ci agent to tell which mobile is to used as adb
        echo ${adb_devices[${adbindex}]}
        local portname_armv8=${adb_devices[${adbindex}]}
