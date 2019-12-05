@@ -159,6 +159,9 @@ KernelRegistry::KernelRegistry()
   INIT_FOR(kOpenCL, kFP16, kImageDefault);
   INIT_FOR(kOpenCL, kFP16, kImageFolder);
   INIT_FOR(kOpenCL, kFP16, kImageNW);
+  INIT_FOR(kOpenCL, kFloat, kImageDefault);
+  INIT_FOR(kOpenCL, kFloat, kImageFolder);
+  INIT_FOR(kOpenCL, kFloat, kImageNW);
 
   INIT_FOR(kNPU, kFloat, kNCHW);
   INIT_FOR(kNPU, kInt8, kNCHW);
