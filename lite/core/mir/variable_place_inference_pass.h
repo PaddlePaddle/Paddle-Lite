@@ -130,7 +130,8 @@ class VariablePlaceInferencePass : public DebugPass {
             x_in->AsArg().type = const_cast<lite::Type*>(type);
           }
         } else if (x_in->AsArg().type->target() == TARGET(kUnk) &&
-                   x_in->AsArg().type->precision() != PRECISION(kUnk)) {
+                   x_in->AsArg().type->precision() != PRECISION(kUnk),
+                   x_in->AsArg().type->layout() == DATALAYOUT(kUnk)) {
           x_in->AsArg().type->set_target(type->target());
           x_in->AsArg().type->set_layout(type->layout());
         }
@@ -155,7 +156,8 @@ class VariablePlaceInferencePass : public DebugPass {
             x_out->AsArg().type = const_cast<lite::Type*>(type);
           }
         } else if (x_out->AsArg().type->target() == TARGET(kUnk) &&
-                   x_out->AsArg().type->precision() != PRECISION(kUnk)) {
+                   x_out->AsArg().type->precision() != PRECISION(kUnk) &&
+                   x_out->AsArg().type->layout() == DATALAYOUT(kUnk)) {
           x_out->AsArg().type->set_target(type->target());
           x_out->AsArg().type->set_layout(type->layout());
         }
