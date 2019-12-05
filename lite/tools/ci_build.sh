@@ -14,6 +14,16 @@ readonly workspace=$PWD
 
 NUM_CORES_FOR_COMPILE=${LITE_BUILD_THREADS:-8}
 
+# global variables
+#whether to use emulator as adb devices,when USE_ADB_EMULATOR=ON we use emulator, else we will use connected mobile phone as adb devices.
+USE_ADB_EMULATOR=ON
+
+# if operating in mac env, we should expand the maximum file num
+os_nmae=`uname -s`
+if [ ${os_nmae} == "Darwin" ]; then
+   ulimit -n 1024
+fi
+
 function prepare_thirdparty {
     if [ ! -d $workspace/third-party -o -f $workspace/third-party-05b862.tar.gz ]; then
         rm -rf $workspace/third-party
@@ -87,20 +97,20 @@ function run_gen_code_test {
 
     # 2. run test_cxx_api_lite in emulator to get opt model 
     local test_cxx_api_lite_path=$(find ./lite -name test_cxx_api)
-    adb -s emulator-${port} push "./third_party/install/lite_naive_model" ${adb_work_dir}
-    adb -s emulator-${port} push ${test_cxx_api_lite_path} ${adb_work_dir}
-    adb -s emulator-${port} shell "${adb_work_dir}/test_cxx_api --model_dir=${adb_work_dir}/lite_naive_model --optimized_model=${adb_work_dir}/lite_naive_model_opt"
+    adb -s ${port} push "./third_party/install/lite_naive_model" ${adb_work_dir}
+    adb -s ${port} push ${test_cxx_api_lite_path} ${adb_work_dir}
+    adb -s ${port} shell "${adb_work_dir}/test_cxx_api --model_dir=${adb_work_dir}/lite_naive_model --optimized_model=${adb_work_dir}/lite_naive_model_opt"
 
     # 3. build test_gen_code
     make test_gen_code -j$NUM_CORES_FOR_COMPILE
 
     # 4. run test_gen_code_lite in emulator to get __generated_code__.cc
     local test_gen_code_lite_path=$(find ./lite -name test_gen_code)
-    adb -s emulator-${port} push ${test_gen_code_lite_path} ${adb_work_dir}
-    adb -s emulator-${port} shell "${adb_work_dir}/test_gen_code --optimized_model=${adb_work_dir}/lite_naive_model_opt --generated_code_file=${adb_work_dir}/${gen_code_file_name}"
+    adb -s ${port} push ${test_gen_code_lite_path} ${adb_work_dir}
+    adb -s ${port} shell "${adb_work_dir}/test_gen_code --optimized_model=${adb_work_dir}/lite_naive_model_opt --generated_code_file=${adb_work_dir}/${gen_code_file_name}"
 
     # 5. pull __generated_code__.cc down and mv to build real path
-    adb -s emulator-${port} pull "${adb_work_dir}/${gen_code_file_name}" .
+    adb -s ${port} pull "${adb_work_dir}/${gen_code_file_name}" .
     mv ${gen_code_file_name} ${gen_code_file_path}
 
     # 6. build test_generated_code
@@ -344,9 +354,9 @@ function test_arm_android {
 
     local testpath=$(find ./lite -name ${test_name})
 
-    adb -s emulator-${port} push ${testpath} ${adb_work_dir}
-    adb -s emulator-${port} shell "cd ${adb_work_dir} && ./${test_name}"
-    adb -s emulator-${port} shell "rm ${adb_work_dir}/${test_name}"
+    adb -s ${port} push ${testpath} ${adb_work_dir}
+    adb -s ${port} shell "cd ${adb_work_dir} && ./${test_name}"
+    adb -s ${port} shell "rm ${adb_work_dir}/${test_name}"
 }
 
 # test_npu <some_test_name> <adb_port_number>
@@ -373,20 +383,20 @@ function test_npu {
     local testpath=$(find ./lite -name ${test_name})
 
     # note the ai_ddk_lib is under paddle-lite root directory
-    adb -s emulator-${port} push ../ai_ddk_lib/lib64/* ${adb_work_dir}
-    adb -s emulator-${port} push ${testpath} ${adb_work_dir}
+    adb -s ${port} push ../ai_ddk_lib/lib64/* ${adb_work_dir}
+    adb -s ${port} push ${testpath} ${adb_work_dir}
 
     if [[ ${test_name} == "test_npu_pass" ]]; then
         local model_name=mobilenet_v1
-        adb -s emulator-${port} push "./third_party/install/${model_name}" ${adb_work_dir}
-        adb -s emulator-${port} shell "rm -rf ${adb_work_dir}/${model_name}_opt "
-        adb -s emulator-${port} shell "cd ${adb_work_dir}; export LD_LIBRARY_PATH=./ ; export GLOG_v=0; ./${test_name} --model_dir=./${model_name} --optimized_model=./${model_name}_opt"
+        adb -s ${port} push "./third_party/install/${model_name}" ${adb_work_dir}
+        adb -s ${port} shell "rm -rf ${adb_work_dir}/${model_name}_opt "
+        adb -s ${port} shell "cd ${adb_work_dir}; export LD_LIBRARY_PATH=./ ; export GLOG_v=0; ./${test_name} --model_dir=./${model_name} --optimized_model=./${model_name}_opt"
     elif [[ ${test_name} == "test_subgraph_pass" ]]; then
         local model_name=mobilenet_v1
-        adb -s emulator-${port} push "./third_party/install/${model_name}" ${adb_work_dir}
-        adb -s emulator-${port} shell "cd ${adb_work_dir}; export LD_LIBRARY_PATH=./ ; export GLOG_v=0; ./${test_name} --model_dir=./${model_name}"
+        adb -s ${port} push "./third_party/install/${model_name}" ${adb_work_dir}
+        adb -s ${port} shell "cd ${adb_work_dir}; export LD_LIBRARY_PATH=./ ; export GLOG_v=0; ./${test_name} --model_dir=./${model_name}"
     else
-        adb -s emulator-${port} shell "cd ${adb_work_dir}; export LD_LIBRARY_PATH=./ ; ./${test_name}"
+        adb -s ${port} shell "cd ${adb_work_dir}; export LD_LIBRARY_PATH=./ ; ./${test_name}"
     fi
 }
 
@@ -412,12 +422,12 @@ function test_npu_model {
     adb_work_dir="/data/local/tmp"
 
     testpath=$(find ./lite -name ${test_name})
-    adb -s emulator-${port} push ../ai_ddk_lib/lib64/* ${adb_work_dir}
-    adb -s emulator-${port} push ${model_dir} ${adb_work_dir}
-    adb -s emulator-${port} push ${testpath} ${adb_work_dir}
-    adb -s emulator-${port} shell chmod +x "${adb_work_dir}/${test_name}"
+    adb -s ${port} push ../ai_ddk_lib/lib64/* ${adb_work_dir}
+    adb -s ${port} push ${model_dir} ${adb_work_dir}
+    adb -s ${port} push ${testpath} ${adb_work_dir}
+    adb -s ${port} shell chmod +x "${adb_work_dir}/${test_name}"
     local adb_model_path="${adb_work_dir}/`basename ${model_dir}`"
-    adb -s emulator-${port} shell "export LD_LIBRARY_PATH=${adb_work_dir}; ${adb_work_dir}/${test_name} --model_dir=$adb_model_path"
+    adb -s ${port} shell "export LD_LIBRARY_PATH=${adb_work_dir}; ${adb_work_dir}/${test_name} --model_dir=$adb_model_path"
 }
 
 # test the inference high level api
@@ -432,10 +442,10 @@ function test_arm_api {
     local testpath=$(find ./lite -name ${test_name})
 
     arm_push_necessary_file $port $model_path $remote_model
-    adb -s emulator-${port} shell mkdir -p $remote_model
-    adb -s emulator-${port} push ${testpath} ${adb_work_dir}
-    adb -s emulator-${port} shell chmod +x "${adb_work_dir}/${test_name}"
-    adb -s emulator-${port} shell "${adb_work_dir}/${test_name} --model_dir $remote_model"
+    adb -s ${port} shell mkdir -p $remote_model
+    adb -s ${port} push ${testpath} ${adb_work_dir}
+    adb -s ${port} shell chmod +x "${adb_work_dir}/${test_name}"
+    adb -s ${port} shell "${adb_work_dir}/${test_name} --model_dir $remote_model"
 }
 
 function test_arm_model {
@@ -460,11 +470,11 @@ function test_arm_model {
     adb_work_dir="/data/local/tmp"
 
     testpath=$(find ./lite -name ${test_name})
-    adb -s emulator-${port} push ${model_dir} ${adb_work_dir}
-    adb -s emulator-${port} push ${testpath} ${adb_work_dir}
-    adb -s emulator-${port} shell chmod +x "${adb_work_dir}/${test_name}"
+    adb -s ${port} push ${model_dir} ${adb_work_dir}
+    adb -s ${port} push ${testpath} ${adb_work_dir}
+    adb -s ${port} shell chmod +x "${adb_work_dir}/${test_name}"
     local adb_model_path="${adb_work_dir}/`basename ${model_dir}`"
-    adb -s emulator-${port} shell "${adb_work_dir}/${test_name} --model_dir=$adb_model_path"
+    adb -s ${port} shell "${adb_work_dir}/${test_name} --model_dir=$adb_model_path"
 }
 
 # function _test_model_optimize_tool {
@@ -495,7 +505,7 @@ function _test_paddle_code_generator {
     local test_name=paddle_code_generator
     local remote_test=$ADB_WORK_DIR/$test_name
     local remote_model=$ADB_WORK_DIR/lite_naive_model.opt
-    local adb="adb -s emulator-${port}"
+    local adb="adb -s ${port}"
 
     make paddle_code_generator -j$NUM_CORES_FOR_COMPILE
     local test_path=$(find . -name $test_name | head -n1)
@@ -577,7 +587,7 @@ function build_arm {
     build $TESTS_FILE
 
     # test publish inference lib
-    make publish_inference
+    # make publish_inference -j$NUM_CORES_FOR_COMPILE
 }
 
 # $1: ARM_TARGET_OS in "android"
@@ -628,7 +638,7 @@ function test_arm {
     fi
 
     # prepare for CXXApi test
-    local adb="adb -s emulator-${port}"
+    local adb="adb -s ${port}"
     $adb shell mkdir -p /data/local/tmp/lite_naive_model_opt
 
     echo "test file: ${TESTS_FILE}"
@@ -665,7 +675,7 @@ function arm_push_necessary_file {
     local testpath=$2
     local adb_work_dir=$3
 
-    adb -s emulator-${port} push ${testpath} ${adb_work_dir}
+    adb -s ${port} push ${testpath} ${adb_work_dir}
 }
 
 function build_test_arm_opencl {
@@ -691,12 +701,26 @@ function build_test_arm_subtask_android {
     port_armv8=5554
     port_armv7=5556
 
-    prepare_emulator $port_armv8 $port_armv7
+    if [ $USE_ADB_EMULATOR == "ON" ]; then
+       prepare_emulator $port_armv8 $port_armv7
+       local portname_armv8=emulator-$port_armv8
+       local portname_armv7=emulator-$port_armv7
+   else
+       adb_devices=$(adb devices |grep -v devices |grep device | awk -F " " '{print $1}')
+       if [ %system.agent.name% == "mobile_mac2"]
+           local portname_armv8=${adb_devices[1]}
+           local portname_armv7=${adb_devices[1]}
+       else
+           local portname_armv8=${adb_devices[0]}
+           local portname_armv7=${adb_devices[0]}
+       fi
+    fi
 
     # job 1
     build_arm "android" "armv8" "gcc"
-    run_gen_code_test ${port_armv8}
-    test_arm "android" "armv8" "gcc" ${port_armv8}
+    adb -s $portname_armv8 shell 'rm -rf /data/local/tmp/*'
+    run_gen_code_test ${portname_armv8}
+    test_arm "android" "armv8" "gcc" ${portname_armv8}
     cd -
 
     # job 2
@@ -707,8 +731,9 @@ function build_test_arm_subtask_android {
 
     # job 3
     build_arm "android" "armv7" "gcc"
-    run_gen_code_test ${port_armv7}
-    test_arm "android" "armv7" "gcc" ${port_armv7}
+    adb -s $portname_armv7 shell 'rm -rf /data/local/tmp/*'
+    run_gen_code_test ${portname_armv7}
+    test_arm "android" "armv7" "gcc" ${portname_armv7}
     cd -
 
     # job 4
@@ -717,26 +742,40 @@ function build_test_arm_subtask_android {
     #test_arm "android" "armv7" "clang" ${port_armv7}
     #cd -
 
-    adb devices | grep emulator | cut -f1 | while read line; do adb -s $line emu kill; done
+    if [ $USE_ADB_EMULATOR == "ON" ]; then
+        adb devices | grep emulator | cut -f1 | while read line; do adb -s $line emu kill; done
+    fi
     echo "Done"
 }
 
 # sub-task2
 function build_test_arm_subtask_armlinux {
+
+    if [ $USE_ADB_EMULATOR == "ON" ]; then
+       prepare_emulator $port_armv8 $port_armv7
+       local portname_armv8=emulator-$port_armv8
+    else
+       adb_devices=$(adb devices |grep -v devices | grep device | awk -F " " '{print $1}')
+       local portname_armv8=${adb_devices[0]}
+       local portname_armv7=${adb_devices[0]}
+       adb -s $portname_armv8 shell 'rm -rf /data/local/tmp/*'
+       adb -s $portname_armv7 shell 'rm -rf /data/local/tmp/*'
+    fi
+
     cur=$PWD
     # job 5
     build_arm "armlinux" "armv8" "gcc"
-    test_arm "armlinux" "armv8" "gcc" $port_armv8
+    test_arm "armlinux" "armv8" "gcc" $portname_armv8
     cd $cur
 
     # job 6
     build_arm "armlinux" "armv7" "gcc"
-    test_arm "armlinux" "armv7" "gcc" $port_armv8
+    test_arm "armlinux" "armv7" "gcc" $portname_armv8
     cd $cur
 
     # job 7
     build_arm "armlinux" "armv7hf" "gcc"
-    test_arm "armlinux" "armv7hf" "gcc" $port_armv8
+    test_arm "armlinux" "armv7hf" "gcc" $portname_armv8
     cd $cur
 
     echo "Done"
@@ -760,11 +799,16 @@ function build_test_arm_subtask_model {
     cd $build_dir
     cmake_arm $os $abi $lang
     make $test_name -j$NUM_CORES_FOR_COMPILE
-
-    prepare_emulator $port_armv8 $port_armv7
-
+    if [ $USE_ADB_EMULATOR == "ON" ]; then
+       prepare_emulator $port_armv8 $port_armv7
+       local portname_armv8=emulator-$port_armv8
+    else
+       adb_devices=$(adb devices |grep -v devices | grep device | awk -F " " '{print $1}')
+       local portname_armv8=${adb_devices[0]}
+       adb -s $portname_armv8 shell 'rm -rf /data/local/tmp/*'
+    fi
     # just test the model on armv8
-    test_arm_model $test_name $port_armv8 "./third_party/install/$model_name"
+    test_arm_model $test_name $portname_armv8 "./third_party/install/$model_name"
 
     adb devices | grep emulator | cut -f1 | while read line; do adb -s $line emu kill; done
     echo "Done"
@@ -780,11 +824,11 @@ function test_arm_predict_apis {
     local naive_model_path=$3
     local api_test_path=$(find . -name "test_apis")
     # the model is pushed to ./lite_naive_model
-    adb -s emulator-${port} push ${naive_model_path} ${workspace}
-    adb -s emulator-${port} push $api_test_path ${workspace}
+    adb -s ${port} push ${naive_model_path} ${workspace}
+    adb -s ${port} push $api_test_path ${workspace}
 
     # test cxx_api first to store the optimized model.
-    adb -s emulator-${port} shell ./test_apis --model_dir ./lite_naive_model --optimized_model ./lite_naive_model_opt
+    adb -s ${port} shell ./test_apis --model_dir ./lite_naive_model --optimized_model ./lite_naive_model_opt
 }
 
 
@@ -816,16 +860,26 @@ function build_test_npu {
     # just test the model on armv8
     # prepare_emulator $port_armv8
 
+    if [ $USE_ADB_EMULATOR == "ON" ]; then
+       prepare_emulator $port_armv8 $port_armv7
+       local portname_armv8=emulator-$port_armv8
+    else
+       adb_devices=$(adb devices |grep -v devices | grep device | awk -F " " '{print $1}')
+       local portname_armv8=${adb_devices[0]}
+       adb -s $portname_armv8 shell 'rm -rf /data/local/tmp/*'
+    fi
+
+
     if [[ "${test_name}x" != "x" ]]; then
-        test_npu ${test_name} ${port_armv8}
+        test_npu ${test_name} ${portname_armv8}
     else
         # run_gen_code_test ${port_armv8}
         for _test in $(cat $TESTS_FILE | grep npu); do
-            test_npu $_test $port_armv8
+            test_npu $_test $portname_armv8
         done
     fi
 
-    test_npu_model $test_model_name $port_armv8 "./third_party/install/$model_name"
+    test_npu_model $test_model_name $portname_armv8 "./third_party/install/$model_name"
     cd -
     # just test the model on armv8
     # adb devices | grep emulator | cut -f1 | while read line; do adb -s $line emu kill; done
@@ -908,6 +962,10 @@ function main {
                 ;;
             --arm_port=*)
                 ARM_PORT="${i#*=}"
+                shift
+                ;;
+            --use_adb_emulator=*)
+                USE_ADB_EMULATOR="${i#*=}"
                 shift
                 ;;
             build)
