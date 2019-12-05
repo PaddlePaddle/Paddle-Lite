@@ -24,6 +24,7 @@ USE_NPU_BRIDGE(leaky_relu);
 USE_NPU_BRIDGE(softsign);
 USE_NPU_BRIDGE(hard_sigmoid);
 
+USE_NPU_BRIDGE(arg_max);
 USE_NPU_BRIDGE(batch_norm);
 USE_NPU_BRIDGE(concat);
 USE_NPU_BRIDGE(conv2d);
