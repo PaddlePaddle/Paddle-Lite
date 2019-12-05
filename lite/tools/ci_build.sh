@@ -708,6 +708,9 @@ function build_test_arm_subtask_android {
    else
        adb_devices=$(adb devices |grep -v devices |grep device | awk -F " " '{print $1}')
        echo  %system.agent.name%
+       index=${adbindex}
+       echo index
+       echo ${adb_devices[${index}]}
        agentname=%system.agent.name%
        agentNames="%system.agent.name%"
        if [ ${agentname} == "mobile_mac2" ]; then
