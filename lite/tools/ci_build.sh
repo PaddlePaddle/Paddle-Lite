@@ -707,7 +707,7 @@ function build_test_arm_subtask_android {
        local portname_armv7=emulator-$port_armv7
    else
        adb_devices=$(adb devices |grep -v devices |grep device | awk -F " " '{print $1}')
-       if [ %system.agent.name% == "mobile_mac2"]; then
+       if [ %system.agent.name% == "mobile_mac2" ]; then
            local portname_armv8=${adb_devices[1]}
            local portname_armv7=${adb_devices[1]}
        else
