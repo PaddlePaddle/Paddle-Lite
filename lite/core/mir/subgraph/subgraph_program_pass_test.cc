@@ -206,12 +206,10 @@ std::unique_ptr<mir::SSAGraph> BuildSimpleNet(
 }
 
 TEST(SubGraphTest, SimpleNet) {
-  // cpp::ProgramDesc program_desc;
-  cpp::ProgramDesc* program_desc = new cpp::ProgramDesc;
+  cpp::ProgramDesc program_desc;
   std::vector<Place> places{{TARGET(kHost), PRECISION(kFloat)}};
   auto scope = std::make_shared<Scope>();
-  // auto graph = BuildSimpleNet(&program_desc, scope, places);
-  auto graph = BuildSimpleNet(program_desc, scope, places);
+  auto graph = BuildSimpleNet(&program_desc, scope, places);
 
   std::vector<std::string> supported_op_types{"fc"};
   auto* pass = new mir::subgraph::SubgraphProgramPass;
