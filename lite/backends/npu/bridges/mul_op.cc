@@ -25,7 +25,6 @@ int MulConverter(cvt_ctx_type* ctx, lite::OpLite* op) {
   auto scope = op->scope();
   auto op_info = op->op_info();
   auto op_type = op_info->Type();
-  auto op_name = ctx->UniqueName(op_type);
   VLOG(3) << "[NPU] Converting " + op_type + "...";
 
   auto x_var_name = op_info->Input("X").front();
@@ -55,7 +54,7 @@ int MulConverter(cvt_ctx_type* ctx, lite::OpLite* op) {
   // reshape to (m, k)
   if (ctx->HasNode(x_var_name)) {
     auto reshaped_x_node =
-        ctx->AddNode<ge::op::Reshape>(x_var_name + "_reshape");
+        ctx->AddNode<ge::op::Reshape>(x_var_name + "/reshape");
     reshaped_x_node->set_input_tensor(*ctx->GetNode(x_var_name));
     reshaped_x_node->set_attr_shape({m, k});
     reshaped_x_node->set_attr_axis(0);
@@ -69,7 +68,7 @@ int MulConverter(cvt_ctx_type* ctx, lite::OpLite* op) {
   // (k,n)
   if (ctx->HasNode(y_var_name)) {
     auto reshaped_y_node =
-        ctx->AddNode<ge::op::Reshape>(y_var_name + "_reshape");
+        ctx->AddNode<ge::op::Reshape>(y_var_name + "/reshape");
     reshaped_y_node->set_input_tensor(*ctx->GetNode(y_var_name));
     reshaped_y_node->set_attr_shape({k, n});
     reshaped_y_node->set_attr_axis(0);

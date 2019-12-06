@@ -82,8 +82,32 @@ void MatchMatrixTensorCompute::Run() {
       gemm_impl_->run(1.0f, 0.0f, l_t_data, r_data, top_data, &context);
     }
   }
+
+  int batch_size = x->lod()[0].size() - 1;
+  int lod_lv1_size = batch_size * dim_t;
+  int lod_lv2_size = x->lod()[0].back() * dim_t;
+  std::vector<size_t> out_lod0(batch_size + 1, 0);
+  std::vector<size_t> out_lod1(lod_lv1_size + 1, 0);
+  std::vector<size_t> out_lod2(lod_lv2_size + 1, 0);
+  for (int i = 0; i < batch_size; i++) {
+    out_lod0[i + 1] = out_lod0[i] + dim_t;
+    int len_l = offset_l[i + 1] - offset_l[i];
+
+    for (int j = 0; j < dim_t; j++) {
+      out_lod1[i * dim_t + j + 1] = out_lod1[i * dim_t + j] + len_l;
+      int len_r = offset_r[i + 1] - offset_r[i];
+
+      for (int k = 0; k < len_l; k++) {
+        out_lod2[offset_l[i] * dim_t + j * len_l + k + 1] =
+            out_lod2[offset_l[i] * dim_t + j * len_l + k] + len_r;
+      }
+    }
+  }
+
   LoD out_lod;
   out_lod.push_back(top_offset);
+  out_lod.push_back(offset_l);
+  out_lod.push_back(offset_r);
   out->set_lod(out_lod);
 }
 

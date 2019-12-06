@@ -24,7 +24,6 @@ int SplitConverter(cvt_ctx_type* ctx, lite::OpLite* op) {
   auto scope = op->scope();
   auto op_info = op->op_info();
   auto op_type = op_info->Type();
-  auto op_name = ctx->UniqueName(op_type);
   VLOG(3) << "[NPU] Converting " << op_type << " ... ";
 
   auto x_var_name = op_info->Input("X").front();
@@ -34,7 +33,7 @@ int SplitConverter(cvt_ctx_type* ctx, lite::OpLite* op) {
   auto sections = op_info->GetAttr<std::vector<int>>("sections");
   int64_t sections_num = static_cast<int64_t>(sections.size());
 
-  auto split_node = ctx->AddNode<ge::op::Split>(op_name);
+  auto split_node = ctx->AddNode<ge::op::Split>(op_type + "/" + x_var_name);
   CHECK(ctx->HasNode(x_var_name));
   split_node->set_input_x(*ctx->GetNode(x_var_name));
   split_node->set_attr_axis(static_cast<int64_t>(axis));
@@ -49,8 +48,8 @@ int SplitConverter(cvt_ctx_type* ctx, lite::OpLite* op) {
   split_node->create_dynamic_output_y(out_var_names.size());
   int idx = 1;
   for (auto& out_var_name : out_var_names) {
-    auto zero_const_node =
-        ctx->AddNode<ge::op::Const>(op_name + "/zero" + std::to_string(idx));
+    auto zero_const_node = ctx->AddNode<ge::op::Const>(out_var_name + "/zero" +
+                                                       std::to_string(idx));
     zero_const_node->set_attr_value(CreateTensorAndFillData(0));
     auto add_node = ctx->AddNode<ge::op::Add>(out_var_name);
     add_node->set_input_x1(*split_node, "y" + std::to_string(idx));

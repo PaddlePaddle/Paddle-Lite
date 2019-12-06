@@ -24,7 +24,6 @@ int ConvTransposeConverter(cvt_ctx_type* ctx, lite::OpLite* op) {
   auto scope = op->scope();
   auto op_info = op->op_info();
   auto op_type = op_info->Type();
-  auto op_name = ctx->UniqueName(op_type);
   VLOG(3) << "[NPU] Converting " << op_type << "... ";
 
   // Get input, output and op attributes
@@ -55,7 +54,8 @@ int ConvTransposeConverter(cvt_ctx_type* ctx, lite::OpLite* op) {
       << "Paddings size should be the same or twice as the input size.";
 
   // Create deconv node
-  auto conv_transpose_node = ctx->AddNode<ge::op::Deconvolution>(op_name);
+  auto conv_transpose_node =
+      ctx->AddNode<ge::op::Deconvolution>(output_var_name);
 
   // Create input sizes node to describe the dimensions of input tensor
   std::vector<int32_t> output_shape;
@@ -68,7 +68,7 @@ int ConvTransposeConverter(cvt_ctx_type* ctx, lite::OpLite* op) {
     output_shape.push_back(output_size);
   }
   auto input_sizes_const_node =
-      ctx->AddNode<ge::op::Const>(op_name + "/input_size");
+      ctx->AddNode<ge::op::Const>(output_var_name + "/input_sizes");
   input_sizes_const_node->set_attr_value(CreateTensorAndFillData(output_shape));
   conv_transpose_node->set_input_input_sizes(*input_sizes_const_node);
 
@@ -107,7 +107,7 @@ int ConvTransposeConverter(cvt_ctx_type* ctx, lite::OpLite* op) {
     auto bias_const_node = ctx->AddNode<ge::op::Const>(bias_var_name);
     bias_const_node->set_attr_value(CvtTensor(bias, {1, channel_size, 1, 1}));
     // Append add node to add bias node
-    auto add_node = ctx->AddNode<ge::op::Add>(op_name + "/add");
+    auto add_node = ctx->AddNode<ge::op::Add>(output_var_name);
     add_node->set_input_x1(*conv_transpose_node);
     add_node->set_input_x2(*bias_const_node);
     output_node = add_node;
@@ -115,12 +115,9 @@ int ConvTransposeConverter(cvt_ctx_type* ctx, lite::OpLite* op) {
 
   if (fuse_relu) {
     // Append relu node if fuse_relu is true
-    auto relu_node = ctx->AddNode<ge::op::Activation>(op_name + "/relu");
+    auto relu_node = ctx->AddNode<ge::op::Activation>(output_var_name);
     relu_node->set_input_x(*output_node);
     relu_node->set_attr_mode(CvtActMode("relu"));
-    ctx->SetNode(output_var_name, relu_node);
-  } else {
-    ctx->SetNode(output_var_name, output_node);
   }
   return REBUILD_WHEN_SHAPE_CHANGED;
 }

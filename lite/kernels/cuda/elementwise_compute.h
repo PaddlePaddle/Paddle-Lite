@@ -38,13 +38,58 @@ class ElementwiseAddComputeNHWC
   virtual ~ElementwiseAddComputeNHWC() = default;
 };
 
-class ElementwiseAddComputeInt8
+class ElementwiseMulCompute
+    : public KernelLite<TARGET(kCUDA), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::ElementwiseParam;
+
+  void Run() override;
+  virtual ~ElementwiseMulCompute() = default;
+};
+
+class ElementwiseMulComputeNHWC
     : public KernelLite<TARGET(kCUDA), PRECISION(kFloat), DATALAYOUT(kNHWC)> {
  public:
   using param_t = operators::ElementwiseParam;
 
   void Run() override;
-  virtual ~ElementwiseAddComputeInt8() = default;
+  virtual ~ElementwiseMulComputeNHWC() = default;
+};
+
+class ElementwiseAddReluCompute
+    : public KernelLite<TARGET(kCUDA), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::FusionElementwiseActivationParam;
+
+  void Run() override;
+  virtual ~ElementwiseAddReluCompute() = default;
+};
+
+class ElementwiseAddReluComputeNHWC
+    : public KernelLite<TARGET(kCUDA), PRECISION(kFloat), DATALAYOUT(kNHWC)> {
+ public:
+  using param_t = operators::FusionElementwiseActivationParam;
+
+  void Run() override;
+  virtual ~ElementwiseAddReluComputeNHWC() = default;
+};
+
+class ElementwiseMulReluCompute
+    : public KernelLite<TARGET(kCUDA), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::FusionElementwiseActivationParam;
+
+  void Run() override;
+  virtual ~ElementwiseMulReluCompute() = default;
+};
+
+class ElementwiseMulReluComputeNHWC
+    : public KernelLite<TARGET(kCUDA), PRECISION(kFloat), DATALAYOUT(kNHWC)> {
+ public:
+  using param_t = operators::FusionElementwiseActivationParam;
+
+  void Run() override;
+  virtual ~ElementwiseMulReluComputeNHWC() = default;
 };
 
 }  // namespace cuda

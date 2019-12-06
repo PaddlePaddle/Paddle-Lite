@@ -40,19 +40,19 @@ int ScaleConverter(cvt_ctx_type* ctx, lite::OpLite* op) {
     bias *= scale;
   }
 
-  // create scale node and set input node from inputs_map
+  // Create scale node and set input node from inputs_map
   auto scale_node = ctx->AddNode<ge::op::Scale>(out_var_name);
   CHECK(ctx->HasNode(x_var_name));
   scale_node->set_input_x(*ctx->GetNode(x_var_name));
 
-  // add filter node(fill with scale)
+  // Add filter node(fill with scale)
   auto filter_const_node =
       ctx->AddNode<ge::op::Const>(out_var_name + "/filter");
   filter_const_node->set_attr_value(
       CreateTensorAndFillData(scale, scale_bias_shape));
   scale_node->set_input_filter(*filter_const_node);
 
-  // add bias node(fill with bias)
+  // Add bias node(fill with bias)
   if (fabs(bias) > 1e-6f) {
     auto bias_const_node = ctx->AddNode<ge::op::Const>(out_var_name + "/bias");
     bias_const_node->set_attr_value(

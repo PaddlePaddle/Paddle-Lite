@@ -20,48 +20,74 @@ namespace lite {
 namespace npu {
 namespace bridges {
 
-int ElementwiseConverter(cvt_ctx_type* ctx, OpLite* op) {
+std::vector<int64_t> CvtYShape(const Tensor& x, Tensor* y, int axis) {
+  auto x_dims = x.dims();
+  CHECK_EQ(x_dims.size(), 4UL) << "[NPU] Only support 4-dimension x";
+  auto y_dims = y->dims();
+  CHECK_GE(x_dims.size(), y_dims.size());
+
+  if (axis < 0) {
+    axis += x_dims.size();
+  }
+
+  std::vector<int64_t> y_new_shape(y_dims.Vectorize());
+  if (y_new_shape.size() == 4UL) {
+    return y_new_shape;
+  }
+  for (int i = 0; i < axis; i++) {
+    y_new_shape.insert(y_new_shape.begin(), 1);
+  }
+  while (y_new_shape.size() < 4) {
+    y_new_shape.push_back(1);
+  }
+  CHECK_EQ(y_new_shape.size(), 4UL);
+  return y_new_shape;
+}
+
+int ElementwiseConverter(cvt_ctx_type* ctx, lite::OpLite* op) {
   auto scope = op->scope();
   auto op_info = op->op_info();
   auto op_type = op_info->Type();
-  auto op_name = ctx->UniqueName(op_type);
   VLOG(3) << "[NPU] Converting " + op_type + "...";
 
   auto x_var_name = op_info->Input("X").front();
   auto y_var_name = op_info->Input("Y").front();
   auto out_var_name = op_info->Output("Out").front();
+  auto axis = op_info->GetAttr<int>("axis");
 
-  CHECK(ctx->HasNode(x_var_name));
+  std::shared_ptr<ge::Operator> elementwise_node = nullptr;
+  CHECK(!ctx->HasNode(x_var_name));
   std::shared_ptr<ge::Operator> x_node = ctx->GetNode(x_var_name);
   std::shared_ptr<ge::Operator> y_node = nullptr;
   if (ctx->HasNode(y_var_name)) {
     y_node = ctx->GetNode(y_var_name);
   } else {
     auto y_const_node = ctx->AddNode<ge::op::Const>(y_var_name);
-    auto* y = scope->FindMutableTensor(y_var_name);
-    y_const_node->set_attr_value(CvtTensor(y));
+    auto x = scope->FindTensor(x_var_name);
+    auto y = scope->FindMutableTensor(y_var_name);
+    auto y_new_shape = CvtYShape(*x, y, axis);
+    y_const_node->set_attr_value(CvtTensor(y, y_new_shape));
     y_node = y_const_node;
   }
 
-  std::shared_ptr<ge::Operator> elementwise_node = nullptr;
   if (op_type == "elementwise_add" ||
       op_type == "fusion_elementwise_add_activation") {
-    auto elt_node = ctx->AddNode<ge::op::Add>(op_name);
+    auto elt_node = ctx->AddNode<ge::op::Add>(out_var_name);
     elt_node->set_input_x1(*x_node);
     elt_node->set_input_x2(*y_node);
     elementwise_node = elt_node;
   } else if (op_type == "elementwise_sub") {
-    auto elt_node = ctx->AddNode<ge::op::Sub>(op_name);
+    auto elt_node = ctx->AddNode<ge::op::Sub>(out_var_name);
     elt_node->set_input_x1(*x_node);
     elt_node->set_input_x2(*y_node);
     elementwise_node = elt_node;
   } else if (op_type == "elementwise_mul") {
-    auto elt_node = ctx->AddNode<ge::op::Mul>(op_name);
+    auto elt_node = ctx->AddNode<ge::op::Mul>(out_var_name);
     elt_node->set_input_x(*x_node);
     elt_node->set_input_y(*y_node);
     elementwise_node = elt_node;
   } else if (op_type == "elementwise_div") {
-    auto elt_node = ctx->AddNode<ge::op::RealDiv>(op_name);
+    auto elt_node = ctx->AddNode<ge::op::RealDiv>(out_var_name);
     elt_node->set_input_x1(*x_node);
     elt_node->set_input_x2(*y_node);
     elementwise_node = elt_node;
@@ -72,16 +98,13 @@ int ElementwiseConverter(cvt_ctx_type* ctx, OpLite* op) {
 
   if (op_type == "fusion_elementwise_add_activation") {
     auto act_type = op_info->GetAttr<std::string>("act_type");
-    auto act_node = ctx->AddNode<ge::op::Activation>(op_name + "/act");
+    auto act_node = ctx->AddNode<ge::op::Activation>(out_var_name);
     act_node->set_input_x(*elementwise_node);
     // TODO(hong19860320) set the coef value for act Ops, such as leaky_relu,
     // clipped_relu etc.
     act_node->set_attr_mode(CvtActMode(act_type));
-    ctx->SetNode(out_var_name, act_node);
-  } else {
-    ctx->SetNode(out_var_name, elementwise_node);
   }
-  return SUCCESS;
+  return REBUILD_WHEN_SHAPE_CHANGED;
 }
 
 }  // namespace bridges

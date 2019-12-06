@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #include "lite/backends/npu/bridges/registry.h"
-#include <utility>
 
 namespace paddle {
 namespace lite {

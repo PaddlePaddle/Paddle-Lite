@@ -24,10 +24,7 @@ int FCConverter(cvt_ctx_type* ctx, OpLite* op) {
   auto scope = op->scope();
   auto op_info = op->op_info();
   auto op_type = op_info->Type();
-  auto op_name = ctx->UniqueName(op_type);
   VLOG(3) << "[NPU] Converting " + op_type + "...";
-
-  auto fc_node = ctx->AddNode<ge::op::FullConnection>(op_name);
 
   auto x_var_name = op_info->Input("Input").front();
   auto w_var_name = op_info->Input("W").front();
@@ -49,11 +46,12 @@ int FCConverter(cvt_ctx_type* ctx, OpLite* op) {
   VLOG(3) << "[NPU] x dims: " << x_dims << " w dims: " << w_dims << " m: " << m
           << " k: " << k << " n: " << n;
 
+  auto fc_node = ctx->AddNode<ge::op::FullConnection>(out_var_name + "/fc");
   CHECK(ctx->HasNode(x_var_name));
   CHECK(!ctx->HasNode(w_var_name));
 
   // Reshape x to (m, k, 1, 1)
-  auto reshaped_x_node = ctx->AddNode<ge::op::Reshape>(x_var_name + "_reshape");
+  auto reshaped_x_node = ctx->AddNode<ge::op::Reshape>(x_var_name + "/reshape");
   reshaped_x_node->set_input_tensor(*ctx->GetNode(x_var_name));
   reshaped_x_node->set_attr_shape({m, k, 1, 1});
   reshaped_x_node->set_attr_axis(0);

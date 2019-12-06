@@ -18,6 +18,7 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 #include "ai_ddk_lib/include/graph/operator_reg.h"
 #include "lite/core/op_lite.h"
@@ -33,34 +34,34 @@ class cvt_ctx_type {
  public:
   template <typename T>
   std::shared_ptr<T> AddNode(std::string name) {
-    CHECK(!nodes_.count(name));
-    auto node = std::make_shared<T>(name);
-    nodes_[name] = node;
+    auto unique_name = [&](const std::string& name) {
+      int idx = 1;
+      auto it = counts_.find(name);
+      if (it == counts_.end()) {
+        counts_.insert(std::make_pair(name, idx));
+      } else {
+        idx = ++(it->second);
+      }
+      return name + "_" + std::to_string(idx);
+    };
+    auto it = nodes_.find(name);
+    if (it != nodes_.end()) {
+      // Generate a new unique name as the key to bind the origin node:
+      // new_name->node
+      nodes_.insert(std::make_pair(unique_name(name + "_var"), it->second));
+      nodes_.erase(it);
+    }
+    // Create a new node and bind with the name: name->new_node
+    auto node = std::make_shared<T>(unique_name(name + "_op"));
+    nodes_.insert(std::make_pair(name, node));
     return node;
   }
 
-  void SetNode(std::string name, std::shared_ptr<ge::Operator> node) {
-    CHECK(!nodes_.count(name));
-    nodes_[name] = node;
-  }
-
   std::shared_ptr<ge::Operator> GetNode(std::string name) {
-    CHECK(nodes_.count(name));
-    return nodes_[name];
+    return nodes_.at(name);
   }
 
-  bool HasNode(std::string name) { return nodes_.count(name); }
-
-  std::string UniqueName(const std::string& name) {
-    int count = 1;
-    auto it = counts_.find(name);
-    if (it == counts_.end()) {
-      counts_[name] = count;
-    } else {
-      count = ++(it->second);
-    }
-    return name + "__" + std::to_string(count);
-  }
+  bool HasNode(std::string name) { return nodes_.find(name) != nodes_.end(); }
 
  private:
   std::unordered_map<std::string, std::shared_ptr<ge::Operator>> nodes_;

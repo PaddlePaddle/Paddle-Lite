@@ -25,7 +25,6 @@ int ConvConverter(cvt_ctx_type* ctx, OpLite* op) {
   auto scope = op->scope();
   auto op_info = op->op_info();
   auto op_type = op_info->Type();
-  auto op_name = ctx->UniqueName(op_type);
   VLOG(3) << "[NPU] Converting " << op_type << "... ";
 
   // Get input, filter and op attributes
@@ -140,7 +139,7 @@ int ConvConverter(cvt_ctx_type* ctx, OpLite* op) {
   std::shared_ptr<ge::Operator> conv_node = nullptr;
   if (use_depthwise_conv && is_depthwise_mode) {
     auto depthwise_conv_node =
-        ctx->AddNode<ge::op::ConvolutionDepthwise>(op_name);
+        ctx->AddNode<ge::op::ConvolutionDepthwise>(output_var_name);
     depthwise_conv_node->set_input_x(*ctx->GetNode(input_var_name));
     depthwise_conv_node->set_input_filter(*filter_const_node);
     depthwise_conv_node->set_attr_mode(1);
@@ -160,13 +159,13 @@ int ConvConverter(cvt_ctx_type* ctx, OpLite* op) {
     // ConvolutionDepthwise Op doesn't support bias, so append Add node to
     // support bias
     if (bias_node != nullptr) {
-      auto add_node = ctx->AddNode<ge::op::Add>(op_name + "/add");
+      auto add_node = ctx->AddNode<ge::op::Add>(output_var_name);
       add_node->set_input_x1(*depthwise_conv_node);
       add_node->set_input_x2(*bias_node);
       conv_node = add_node;
     }
   } else {
-    auto common_conv_node = ctx->AddNode<ge::op::Convolution>(op_name);
+    auto common_conv_node = ctx->AddNode<ge::op::Convolution>(output_var_name);
     common_conv_node->set_input_x(*ctx->GetNode(input_var_name));
     common_conv_node->set_input_w(*filter_const_node);
     common_conv_node->set_attr_mode(1);
@@ -187,7 +186,7 @@ int ConvConverter(cvt_ctx_type* ctx, OpLite* op) {
       if (is_channel_bias) {
         common_conv_node->set_input_b(*bias_node);
       } else {
-        auto add_node = ctx->AddNode<ge::op::Add>(op_name + "/add");
+        auto add_node = ctx->AddNode<ge::op::Add>(output_var_name);
         add_node->set_input_x1(*common_conv_node);
         add_node->set_input_x2(*bias_node);
         conv_node = add_node;
@@ -198,12 +197,9 @@ int ConvConverter(cvt_ctx_type* ctx, OpLite* op) {
 
   if (fuse_relu) {
     // Append relu node if fuse_relu is true
-    auto relu_node = ctx->AddNode<ge::op::Activation>(op_name + "/relu");
+    auto relu_node = ctx->AddNode<ge::op::Activation>(output_var_name);
     relu_node->set_input_x(*conv_node);
     relu_node->set_attr_mode(CvtActMode("relu"));
-    ctx->SetNode(output_var_name, relu_node);
-  } else {
-    ctx->SetNode(output_var_name, conv_node);
   }
   return REBUILD_WHEN_SHAPE_CHANGED;
 }

@@ -62,6 +62,9 @@ void TestCase::CreateInstruction() {
   // prepare context
   (*it)->SetContext(std::move(ctx_));
   instruction_.reset(new Instruction(op, std::move(*it)));
+#ifdef LITE_WITH_PROFILE
+  instruction_->set_profiler(new profile::Profiler());
+#endif
 }
 
 void TestCase::PrepareInputsForInstruction() {

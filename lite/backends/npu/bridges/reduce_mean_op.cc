@@ -43,7 +43,7 @@ int ReduceMeanConverter(cvt_ctx_type* ctx, lite::OpLite* op) {
   // Create reduce_mean(using reduce_sum + scale) node and set input node from
   // node map
   auto reduce_sum_node =
-      ctx->AddNode<ge::op::ReduceSum>(out_var_name + "/reduce_sum");
+      ctx->AddNode<ge::op::ReduceSum>(out_var_name + "/reducesum");
   CHECK(ctx->HasNode(x_var_name));
   reduce_sum_node->set_input_x(*ctx->GetNode(x_var_name));
 
@@ -51,9 +51,6 @@ int ReduceMeanConverter(cvt_ctx_type* ctx, lite::OpLite* op) {
   dim_const_node->set_attr_value(CreateTensorAndFillData<int>(dim));
   reduce_sum_node->set_input_w(*dim_const_node);
   reduce_sum_node->set_attr_keep_dims(keep_dim);
-
-  auto scale_node = ctx->AddNode<ge::op::Scale>(out_var_name);
-  scale_node->set_input_x(*reduce_sum_node);
 
   float scale = 1;
   for (size_t i = 0; i < dim.size(); i++) {
@@ -79,6 +76,8 @@ int ReduceMeanConverter(cvt_ctx_type* ctx, lite::OpLite* op) {
       ctx->AddNode<ge::op::Const>(out_var_name + "/filter");
   filter_const_node->set_attr_value(
       CreateTensorAndFillData(scale, scale_bias_shape));
+  auto scale_node = ctx->AddNode<ge::op::Scale>(out_var_name);
+  scale_node->set_input_x(*reduce_sum_node);
   scale_node->set_input_filter(*filter_const_node);
   scale_node->set_attr_axis(1);
   return REBUILD_WHEN_SHAPE_CHANGED;
