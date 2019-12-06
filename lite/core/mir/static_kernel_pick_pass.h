@@ -110,30 +110,33 @@ class StaticKernelPickPass : public mir::StmtPass {
 
       // add new rules for precision: When the input types are consistent with
       // kernel's input types  and the output types are consistent with kernel's
-      // output types. Select the kernel of the precision.
-      bool type_match = true;
-      for (size_t i = 0; i < in_names.size(); ++i) {
-        std::string tmp;
-        CHECK(instruct.op_info()->GetInputArgname(in_names[i], &tmp));
-        if (in_types.count(in_names[i]) &&
-            in_types.at(in_names[i]) !=
-                kernel.GetInputDeclType(tmp)->precision()) {
-          type_match = false;
+      // output types. Select the kernel of the precision. Note that this
+      // strategy is not compatible with quantization, so skip quantization op.
+      if (!instruct.op_info()->HasAttr("enable_int8")) {
+        bool type_match = true;
+        for (size_t i = 0; i < in_names.size(); ++i) {
+          std::string tmp;
+          CHECK(instruct.op_info()->GetInputArgname(in_names[i], &tmp));
+          if (in_types.count(in_names[i]) &&
+              in_types.at(in_names[i]) !=
+                  kernel.GetInputDeclType(tmp)->precision()) {
+            type_match = false;
+          }
         }
-      }
-      for (size_t i = 0; i < out_names.size(); ++i) {
-        std::string tmp;
-        CHECK(instruct.op_info()->GetOutputArgname(out_names[i], &tmp));
-        if (out_types.count(out_names[i]) &&
-            out_types.at(out_names[i]) !=
-                kernel.GetOutputDeclType(tmp)->precision()) {
-          type_match = false;
+        for (size_t i = 0; i < out_names.size(); ++i) {
+          std::string tmp;
+          CHECK(instruct.op_info()->GetOutputArgname(out_names[i], &tmp));
+          if (out_types.count(out_names[i]) &&
+              out_types.at(out_names[i]) !=
+                  kernel.GetOutputDeclType(tmp)->precision()) {
+            type_match = false;
+          }
         }
+        if (type_match) {
+          score *= 2;
+        }
+        VLOG(4) << "[score s4]:" << score;
       }
-      if (type_match) {
-        score *= 2;
-      }
-      VLOG(4) << "[score s4]:" << score;
 
       if (weight * score > final_score) {
         final_score = weight * score;
