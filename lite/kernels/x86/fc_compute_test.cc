@@ -64,10 +64,6 @@ TEST(fc_x86, run_test) {
     b_data[i] = static_cast<float>(i);
   }
 
-  /* lite::x86::math::fc_compute_eigen(x_data, batch_size, 3,  //
-                                     w_data, 3, 4,           //
-                                     b_data, ref_data); */
-
   // FcCompute fc;
   FcCompute<float> fc;
   operators::FcParam param;
@@ -85,14 +81,9 @@ TEST(fc_x86, run_test) {
   fc.SetContext(std::move(ctx));
   fc.Run();
 
-  VLOG(3) << "output vs ref";
   for (int i = 0; i < out.dims().production(); i++) {
     VLOG(3) << out_data[i];
   }
-
-  /* for (int i = 0; i < out.dims().production(); ++i) {
-     EXPECT_NEAR(out_data[i], ref_data[i], 1e-5);
-   }*/
 }
 
 }  // namespace x86
