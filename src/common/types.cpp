@@ -32,6 +32,7 @@ const char *G_OP_TYPE_FUSION_CONV_ADD_ADD_PRELU = "fusion_conv_add_add_prelu";
 const char *G_OP_TYPE_FUSION_CONV_ADD_BN_RELU = "fusion_conv_add_bn_relu";
 const char *G_OP_TYPE_FUSION_CONV_BN_ADD_RELU = "fusion_conv_bn_add_relu";
 const char *G_OP_TYPE_FUSION_DWCONV_BN_RELU = "fusion_dwconv_bn_relu";
+const char *G_OP_TYPE_FUSION_DWCONV_BN_RELU6 = "fusion_dwconv_bn_relu6";
 const char *G_OP_TYPE_FUSION_CONV_BN_RELU = "fusion_conv_bn_relu";
 const char *G_OP_TYPE_FUSION_CONV_BN_RELU6 = "fusion_conv_bn_relu6";
 const char *G_OP_TYPE_FUSION_CONV_BN_LEAKYRELU = "fusion_conv_bn_leakyrelu";
@@ -128,7 +129,9 @@ std::unordered_map<
     op_input_output_key = {
         {G_OP_TYPE_CONV, {{"Input"}, {"Output"}}},
         {G_OP_TYPE_FUSION_DWCONV_BN_RELU, {{"Input"}, {"Out"}}},
+        {G_OP_TYPE_FUSION_DWCONV_BN_RELU6, {{"Input"}, {"Out"}}},
         {G_OP_TYPE_FUSION_CONV_BN_RELU, {{"Input"}, {"Out"}}},
+        {G_OP_TYPE_FUSION_CONV_BN_RELU6, {{"Input"}, {"Out"}}},
         {G_OP_TYPE_FUSION_CONV_BN_LEAKYRELU, {{"Input"}, {"Out"}}},
         {G_OP_TYPE_PRELU, {{"X", "Alpha"}, {"Out"}}},
         {G_OP_TYPE_FUSION_CONV_ADD, {{"Input"}, {"Out"}}},

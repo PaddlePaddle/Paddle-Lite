@@ -72,16 +72,18 @@ void *fpga_malloc(size_t size) {
 #ifdef PADDLE_MOBILE_OS_LINUX
   void *ptr = reinterpret_cast<void *>(
       mmap64(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0));
-  if (ptr == NULL) {
+  if (ptr == MAP_FAILED) {
     std::cout << "not enough memory !";
     exit(-1);
   }
-  // std::cout << std::hex << ptr << std::dec << std::endl;
+
   memory_map.insert(std::make_pair(ptr, size));
   memory_size += size;
+
   if (memory_size > memory_size_max) {
     memory_size_max = memory_size;
   }
+  std::cout << "memory_size_max:" << memory_size << std::endl;
   return ptr;
 #else
   return malloc(size);

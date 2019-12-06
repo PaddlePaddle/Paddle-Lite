@@ -12,7 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef FUSION_CONVBNRELU6_OP
+#ifdef FUSION_DWCONVBNRELU6_OP
 
 #pragma once
 
@@ -20,17 +20,17 @@ limitations under the License. */
 #include <vector>
 #include "framework/operator.h"
 #include "framework/program/program-optimize/fusion_op_register.h"
-#include "operators/kernel/conv_bn_relu6_kernel.h"
+#include "operators/kernel/dwconv_bn_relu6_kernel.h"
 #include "operators/op_param.h"
 
 namespace paddle_mobile {
 namespace operators {
 using std::string;
 using std::vector;
-class FusionConvBNRelu6Matcher : public framework::FusionOpMatcher {
+class FusionDWConvBNRelu6Matcher : public framework::FusionOpMatcher {
  public:
-  FusionConvBNRelu6Matcher() {
-    node_ = framework::Node(G_OP_TYPE_CONV);
+  FusionDWConvBNRelu6Matcher() {
+    node_ = framework::Node(G_OP_TYPE_DEPTHWISE_CONV);
     node_ > std::make_shared<framework::Node>(G_OP_TYPE_BATCHNORM) >
         std::make_shared<framework::Node>(G_OP_TYPE_RELU6);
   }
@@ -47,22 +47,24 @@ class FusionConvBNRelu6Matcher : public framework::FusionOpMatcher {
                  removed_nodes);
   }
 
-  std::string Type() { return G_OP_TYPE_FUSION_CONV_BN_RELU6; }
+  std::string Type() { return G_OP_TYPE_FUSION_DWCONV_BN_RELU6; }
 };
 
 template <typename DeviceType, typename T>
-class FusionConvBNRelu6Op : public framework::OperatorWithKernel<
-                               DeviceType, FusionConvBNReluParam<DeviceType>,
-                               operators::ConvBNRelu6Kernel<DeviceType, T>> {
+class FusionDWConvBNRelu6Op
+    : public framework::OperatorWithKernel<
+          DeviceType, FusionDWConvBNReluParam<DeviceType>,
+          operators::DWConvBNRelu6Kernel<DeviceType, T>> {
  public:
-  FusionConvBNRelu6Op(const string &type, const VariableNameMap &inputs,
-                     const VariableNameMap &outputs,
-                     const framework::AttributeMap &attrs,
-                     framework::Scope *scope)
+  FusionDWConvBNRelu6Op(const string &type, const VariableNameMap &inputs,
+                       const VariableNameMap &outputs,
+                       const framework::AttributeMap &attrs,
+                       framework::Scope *scope)
       : framework::OperatorWithKernel<
-            DeviceType, FusionConvBNReluParam<DeviceType>,
-            operators::ConvBNRelu6Kernel<DeviceType, T>>(type, inputs, outputs,
-                                                        attrs, scope) {}
+            DeviceType, FusionDWConvBNReluParam<DeviceType>,
+            operators::DWConvBNRelu6Kernel<DeviceType, T>>(type, inputs, outputs,
+                                                          attrs, scope) {}
+
   void InferShape() const override;
 
  protected:
