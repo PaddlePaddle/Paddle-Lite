@@ -190,7 +190,9 @@ void Program::PrepareWorkspace(const cpp::ProgramDesc& prog) {
     for (size_t i = 0; i < main_block.VarsSize(); ++i) {
       auto& var_desc = *main_block.GetVar<cpp::VarDesc>(i);
       if (!var_desc.Persistable()) {
-        if (var_desc.GetType() == lite::VarDescAPI::Type::LOD_TENSOR) {
+        if (var_desc.GetType() == lite::VarDescAPI::Type::LOD_TENSOR &&
+            VarPrecision2KernlPrecision(var_desc.GetDataType()) !=
+                PRECISION(kUnk)) {
           var_data_type_[var_desc.Name()] =
               VarPrecision2KernlPrecision(var_desc.GetDataType());
         }
