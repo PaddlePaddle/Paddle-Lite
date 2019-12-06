@@ -12,30 +12,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/npu/bridges/registry.h"
+#include "lite/backends/npu/bridges/registry.h"
 #include <utility>
 
 namespace paddle {
 namespace lite {
-namespace kernels {
 namespace npu {
 namespace bridges {
 
 Factory& Factory::Instance() {
-  static Factory g_npu_bridge;
-  return g_npu_bridge;
+  static Factory x;
+  return x;
 }
 
 bool Factory::HasType(const std::string& op_type) const {
   return map_.count(op_type);
 }
 
-void Factory::Insert(const std::string& op_type, const func_type& func_name) {
-  map_.insert(std::make_pair(op_type, func_name));
+void Factory::Insert(const std::string& op_type,
+                     const cvt_func_type& cvt_func) {
+  map_.insert(std::make_pair(op_type, cvt_func));
 }
 
 }  // namespace bridges
 }  // namespace npu
-}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

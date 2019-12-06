@@ -13,40 +13,38 @@
 // limitations under the License.
 
 #include "lite/operators/reshape_op.h"
-#include "lite/backends/npu/builder.h"
-#include "lite/kernels/npu/bridges/registry.h"
+#include "lite/backends/npu/bridges/registry.h"
+#include "lite/backends/npu/bridges/utility.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
 namespace npu {
 namespace bridges {
 
-node_map_type ReshapeConverter(const std::shared_ptr<lite::OpLite> reshape_op,
-                               const node_map_type& inputs_map) {
-  auto scope = reshape_op->scope();
-  auto op_info = reshape_op->op_info();
+int ReshapeConverter(cvt_ctx_type* ctx, lite::OpLite* op) {
+  auto scope = op->scope();
+  auto op_info = op->op_info();
   auto op_type = op_info->Type();
-  auto unique_op_type = lite::npu::UniqueName(op_type);
-  LOG(INFO) << "[NPU] Converting " + op_type + "...";
+  VLOG(3) << "[NPU] Converting " + op_type + "...";
 
-  // get input, output and op attributes
+  // Get input, output and op attributes
   auto x_var_name = op_info->Input("X").front();
+  auto out_var_name = op_info->Output("Out").front();
   auto x = scope->FindVar(x_var_name)->GetMutable<lite::Tensor>();
   auto x_dims = x->dims();
 
-  // create reshape node and set input node from inputs_map
-  auto reshape_node = std::make_shared<ge::op::Reshape>(unique_op_type);
-  CHECK(inputs_map.count(x_var_name));
-  reshape_node->set_input_tensor(*inputs_map.at(x_var_name));
-  lite::npu::OpList::Global().add(inputs_map.at(x_var_name));
+  // Create reshape node and set input node from inputs_map
+  auto reshape_node = ctx->AddNode<ge::op::Reshape>(out_var_name);
+  CHECK(ctx->HasNode(x_var_name));
+  reshape_node->set_input_tensor(*ctx->GetNode(x_var_name));
 
-  // read shape from "ShapeTensor"(input), or "Shape"(input), or "shape"(attr)
-  if (lite::npu::HasInputArg(op_info, scope, "ShapeTensor")) {
-    LOG(FATAL) << "[NPU] not support \"Shape\" from more than one Tensor.";
-  } else if (lite::npu::HasInputArg(op_info, scope, "Shape")) {
+  // Read shape from "ShapeTensor"(input), or "Shape"(input), or "shape"(attr)
+  if (HasInputArg(op_info, scope, "ShapeTensor")) {
+    LOG(WARNING) << "[NPU] not support \"Shape\" from more than one Tensor.";
+    return FAILED;
+  } else if (HasInputArg(op_info, scope, "Shape")) {
     auto actual_shape_var_name = op_info->Input("Shape").front();
-    if (!inputs_map.count(actual_shape_var_name)) {
+    if (!ctx->HasNode(actual_shape_var_name)) {
       auto actual_shape =
           scope->FindVar(actual_shape_var_name)->GetMutable<lite::Tensor>();
       auto actual_shape_dims = actual_shape->dims();
@@ -62,15 +60,12 @@ node_map_type ReshapeConverter(const std::shared_ptr<lite::OpLite> reshape_op,
                      << out_shape.size();
       }
       auto actual_shape_const_node =
-          std::make_shared<ge::op::Const>(actual_shape_var_name);
-      actual_shape_const_node->set_attr_value(
-          lite::npu::CreateTensorAndFillData(
-              std::vector<int>(out_shape.begin(), out_shape.end())));
+          ctx->AddNode<ge::op::Const>(actual_shape_var_name);
+      actual_shape_const_node->set_attr_value(CreateTensorAndFillData(
+          std::vector<int>(out_shape.begin(), out_shape.end())));
       reshape_node->set_input_w(*actual_shape_const_node);
-      lite::npu::OpList::Global().add(actual_shape_const_node);
     } else {
-      reshape_node->set_input_w(*inputs_map.at(actual_shape_var_name));
-      lite::npu::OpList::Global().add(inputs_map.at(actual_shape_var_name));
+      reshape_node->set_input_w(*ctx->GetNode(actual_shape_var_name));
     }
   } else {
     auto shape = op_info->GetAttr<std::vector<int>>("shape");
@@ -84,12 +79,9 @@ node_map_type ReshapeConverter(const std::shared_ptr<lite::OpLite> reshape_op,
     reshape_node->set_attr_shape(
         ge::AttrValue::LIST_INT(out_shape.begin(), out_shape.end()));
   }
-  lite::npu::OpList::Global().add(reshape_node);
 
-  node_map_type outputs_map;
-  outputs_map[op_info->Output("Out").front()] = reshape_node;
   if (op_type == "reshape2") {
-    // append an extra reshape node to calc XShape
+    // Append an extra reshape node to calc XShape
     std::vector<int64_t> xshape_dims(x_dims.size() + 1, 1);
     for (size_t i = 0; i < x_dims.size(); i++) {
       xshape_dims[i + 1] = x_dims[i];
@@ -99,24 +91,19 @@ node_map_type ReshapeConverter(const std::shared_ptr<lite::OpLite> reshape_op,
                       "but XShape has "
                    << xshape_dims.size();
     }
-    auto xshape_node =
-        std::make_shared<ge::op::Reshape>(unique_op_type + "/xshape");
-    xshape_node->set_input_tensor(*inputs_map.at(x_var_name));
+    auto xshape_var_name = op_info->Output("XShape").front();
+    auto xshape_node = ctx->AddNode<ge::op::Reshape>(xshape_var_name);
+    xshape_node->set_input_tensor(*ctx->GetNode(x_var_name));
     xshape_node->set_attr_shape(
         ge::AttrValue::LIST_INT(xshape_dims.begin(), xshape_dims.end()));
-    lite::npu::OpList::Global().add(xshape_node);
-    outputs_map[op_info->Output("XShape").front()] = xshape_node;
   }
-  return outputs_map;
+  return REBUILD_WHEN_SHAPE_CHANGED;
 }
 
 }  // namespace bridges
 }  // namespace npu
-}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_NPU_BRIDGE(reshape,
-                    paddle::lite::kernels::npu::bridges::ReshapeConverter);
-REGISTER_NPU_BRIDGE(reshape2,
-                    paddle::lite::kernels::npu::bridges::ReshapeConverter);
+REGISTER_NPU_BRIDGE(reshape, paddle::lite::npu::bridges::ReshapeConverter);
+REGISTER_NPU_BRIDGE(reshape2, paddle::lite::npu::bridges::ReshapeConverter);

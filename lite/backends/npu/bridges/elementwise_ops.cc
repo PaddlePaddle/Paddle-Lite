@@ -12,99 +12,90 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/backends/npu/builder.h"
-#include "lite/kernels/npu/bridges/registry.h"
+#include "lite/backends/npu/bridges/registry.h"
+#include "lite/backends/npu/bridges/utility.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
 namespace npu {
 namespace bridges {
 
-node_map_type ElementwiseConverter(
-    const std::shared_ptr<lite::OpLite> elementwise_op,
-    const node_map_type& inputs_map) {
-  auto scope = elementwise_op->scope();
-  auto op_info = elementwise_op->op_info();
+int ElementwiseConverter(cvt_ctx_type* ctx, OpLite* op) {
+  auto scope = op->scope();
+  auto op_info = op->op_info();
   auto op_type = op_info->Type();
-  auto unique_op_type = lite::npu::UniqueName(op_type);
-  LOG(INFO) << "[NPU] Converting " + op_type + "...";
+  auto op_name = ctx->UniqueName(op_type);
+  VLOG(3) << "[NPU] Converting " + op_type + "...";
 
   auto x_var_name = op_info->Input("X").front();
   auto y_var_name = op_info->Input("Y").front();
-  CHECK(inputs_map.find(x_var_name) != inputs_map.end());
+  auto out_var_name = op_info->Output("Out").front();
 
-  std::shared_ptr<ge::Operator> elementwise_node = nullptr;
-  std::shared_ptr<ge::Operator> x_node = inputs_map.at(x_var_name);
+  CHECK(ctx->HasNode(x_var_name));
+  std::shared_ptr<ge::Operator> x_node = ctx->GetNode(x_var_name);
   std::shared_ptr<ge::Operator> y_node = nullptr;
-  if (inputs_map.find(y_var_name) != inputs_map.end()) {
-    y_node = inputs_map.at(y_var_name);
+  if (ctx->HasNode(y_var_name)) {
+    y_node = ctx->GetNode(y_var_name);
   } else {
-    auto y_const_node = std::make_shared<ge::op::Const>(y_var_name);
+    auto y_const_node = ctx->AddNode<ge::op::Const>(y_var_name);
     auto* y = scope->FindMutableTensor(y_var_name);
-    y_const_node->set_attr_value(lite::npu::CvtTensor(y));
+    y_const_node->set_attr_value(CvtTensor(y));
     y_node = y_const_node;
   }
-  lite::npu::OpList::Global().add(x_node);
-  lite::npu::OpList::Global().add(y_node);
 
+  std::shared_ptr<ge::Operator> elementwise_node = nullptr;
   if (op_type == "elementwise_add" ||
       op_type == "fusion_elementwise_add_activation") {
-    auto elt_node = std::make_shared<ge::op::Add>(unique_op_type);
+    auto elt_node = ctx->AddNode<ge::op::Add>(op_name);
     elt_node->set_input_x1(*x_node);
     elt_node->set_input_x2(*y_node);
     elementwise_node = elt_node;
   } else if (op_type == "elementwise_sub") {
-    auto elt_node = std::make_shared<ge::op::Sub>(unique_op_type);
+    auto elt_node = ctx->AddNode<ge::op::Sub>(op_name);
     elt_node->set_input_x1(*x_node);
     elt_node->set_input_x2(*y_node);
     elementwise_node = elt_node;
   } else if (op_type == "elementwise_mul") {
-    auto elt_node = std::make_shared<ge::op::Mul>(unique_op_type);
+    auto elt_node = ctx->AddNode<ge::op::Mul>(op_name);
     elt_node->set_input_x(*x_node);
     elt_node->set_input_y(*y_node);
     elementwise_node = elt_node;
   } else if (op_type == "elementwise_div") {
-    auto elt_node = std::make_shared<ge::op::RealDiv>(unique_op_type);
+    auto elt_node = ctx->AddNode<ge::op::RealDiv>(op_name);
     elt_node->set_input_x1(*x_node);
     elt_node->set_input_x2(*y_node);
     elementwise_node = elt_node;
   } else {
-    LOG(FATAL) << "unsupported op type: " << op_type;
+    LOG(WARNING) << "[NPU] Unsupported op type: " << op_type;
+    return FAILED;
   }
 
-  lite::npu::OpList::Global().add(elementwise_node);
-
-  node_map_type outputs_map;
   if (op_type == "fusion_elementwise_add_activation") {
     auto act_type = op_info->GetAttr<std::string>("act_type");
-    auto act_node =
-        std::make_shared<ge::op::Activation>(unique_op_type + "/act");
+    auto act_node = ctx->AddNode<ge::op::Activation>(op_name + "/act");
     act_node->set_input_x(*elementwise_node);
     // TODO(hong19860320) set the coef value for act Ops, such as leaky_relu,
     // clipped_relu etc.
-    act_node->set_attr_mode(lite::npu::CvtActMode(act_type));
-    lite::npu::OpList::Global().add(act_node);
-    outputs_map[op_info->Output("Out").front()] = act_node;
+    act_node->set_attr_mode(CvtActMode(act_type));
+    ctx->SetNode(out_var_name, act_node);
   } else {
-    outputs_map[op_info->Output("Out").front()] = elementwise_node;
+    ctx->SetNode(out_var_name, elementwise_node);
   }
-  return outputs_map;
+  return SUCCESS;
 }
 
 }  // namespace bridges
 }  // namespace npu
-}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
 
 REGISTER_NPU_BRIDGE(elementwise_add,
-                    paddle::lite::kernels::npu::bridges::ElementwiseConverter);
+                    paddle::lite::npu::bridges::ElementwiseConverter);
 REGISTER_NPU_BRIDGE(fusion_elementwise_add_activation,
-                    paddle::lite::kernels::npu::bridges::ElementwiseConverter);
+                    paddle::lite::npu::bridges::ElementwiseConverter);
 REGISTER_NPU_BRIDGE(elementwise_sub,
-                    paddle::lite::kernels::npu::bridges::ElementwiseConverter);
+                    paddle::lite::npu::bridges::ElementwiseConverter);
 REGISTER_NPU_BRIDGE(elementwise_mul,
-                    paddle::lite::kernels::npu::bridges::ElementwiseConverter);
+                    paddle::lite::npu::bridges::ElementwiseConverter);
 REGISTER_NPU_BRIDGE(elementwise_div,
-                    paddle::lite::kernels::npu::bridges::ElementwiseConverter);
+                    paddle::lite::npu::bridges::ElementwiseConverter);

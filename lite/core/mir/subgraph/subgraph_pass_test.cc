@@ -98,7 +98,7 @@ void CheckOutputTensors(
       auto abs_diff =
           std::fabs(tar_output_tensor_data[j] - ref_output_tensor_data[j]);
       auto rel_diff = abs_diff / (std::fabs(ref_output_tensor_data[j]) + 1e-6);
-      VLOG(3) << "val: " << tar_output_tensor_data[j]
+      VLOG(5) << "val: " << tar_output_tensor_data[j]
               << " ref: " << ref_output_tensor_data[j]
               << " abs_diff: " << abs_diff << " rel_diff: " << rel_diff;
       EXPECT_LT(rel_diff, 0.1);

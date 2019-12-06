@@ -21,6 +21,7 @@
 #include "lite/core/mir/dot.h"
 #include "lite/core/mir/pass_registry.h"
 #include "lite/core/mir/pattern_matcher.h"
+#include "lite/operators/subgraph_op.h"
 
 namespace paddle {
 namespace lite {
@@ -93,9 +94,7 @@ std::string SubgraphVisualizer::operator()() {
   }
 
   auto res = dot.Build();
-  // If we use VLOG here, we can not type all graph out.
-  // So we change VLOG to std::cout.
-  std::cout << "subgraphs: " << subgraphs_.size() << "\n" << res << std::endl;
+  VLOG(3) << "subgraphs: " << subgraphs_.size() << "\n" << res << std::endl;
   return res;
 }
 
@@ -324,6 +323,129 @@ std::vector<std::vector<Node *>> SubgraphDetector::operator()() {
   }
   return subgraphs;
 }
+
+void SubgraphFuser::InsertNewNode(SSAGraph *graph,
+                                  int subgraph_idx,
+                                  const std::vector<Node *> &subgraph_nodes) {
+  // Create and attach a new subgraph op
+  cpp::OpDesc subgraph_op_desc;
+  subgraph_op_desc.SetType("subgraph");
+
+  // Create a new sub block desc for storing all of Ops an Vars of the target
+  // subgraph and sub_block_idx is set as a attribute of subgraph op,
+  // sub_block_idx < 0 means it's a new subgraph op
+  int sub_block_idx = -(subgraph_idx + 1);
+  cpp::BlockDesc sub_block_desc;
+  sub_block_desc.ClearOps();
+  sub_block_desc.ClearVars();
+  for (auto &op_node : subgraph_nodes) {
+    auto sub_block_op_desc = sub_block_desc.AddOp<cpp::OpDesc>();
+    *sub_block_op_desc = *op_node->AsStmt().op_info();
+    sub_block_op_desc->SetAttr(
+        kKernelTypeAttr,
+        op_node->AsStmt().picked_kernel().SerializedKernelType());
+  }
+  subgraph_op_desc.SetAttr<int32_t>("sub_block", sub_block_idx);
+
+  // Extract input and output nodes from the target subgraph
+  std::unordered_set<Node *> input_var_nodes;
+  std::unordered_set<Node *> weight_var_nodes;
+  std::unordered_set<Node *> output_var_nodes;
+  std::unordered_set<Node *> local_var_nodes;
+  std::unordered_set<Node *> unused_var_nodes;
+  ExtractInputsOutputs(subgraph_nodes,
+                       &input_var_nodes,
+                       &weight_var_nodes,
+                       &output_var_nodes,
+                       &local_var_nodes,
+                       &unused_var_nodes);
+
+  // Set input and output name mapping which stores the real inputs and
+  // outputs
+  std::vector<std::string> input_var_names;
+  std::vector<std::string> output_var_names;
+  for (auto &var_node : input_var_nodes) {
+    input_var_names.push_back(var_node->AsArg().name);
+  }
+  for (auto &var_node : output_var_nodes) {
+    output_var_names.push_back(var_node->AsArg().name);
+  }
+  subgraph_op_desc.SetAttr<std::vector<std::string>>("input_data_names",
+                                                     input_var_names);
+  subgraph_op_desc.SetAttr<std::vector<std::string>>("output_data_names",
+                                                     output_var_names);
+
+  // Set all of the inputs and outputs to the target subgraph op
+  // To prevent vars are removed in RuntimeProgram::UpdateVarsOfProgram()
+  for (auto &var_node : weight_var_nodes) {
+    input_var_names.push_back(var_node->AsArg().name);
+  }
+  for (auto &var_node : local_var_nodes) {
+    output_var_names.push_back(var_node->AsArg().name);
+  }
+  for (auto &var_node : unused_var_nodes) {
+    output_var_names.push_back(var_node->AsArg().name);
+  }
+  subgraph_op_desc.SetInput("Inputs", input_var_names);
+  subgraph_op_desc.SetOutput("Outputs", output_var_names);
+  auto subgraph_op = LiteOpRegistry::Global().Create("subgraph");
+  static_cast<operators::SubgraphOp *>(subgraph_op.get())
+      ->SetSubBlock(sub_block_desc);
+  auto any_op = (*subgraph_nodes.begin())->AsStmt().op();
+  subgraph_op->Attach(subgraph_op_desc, any_op->scope());
+
+  // Create and add a new subgraph node into the graph
+  auto subgraph_op_node =
+      graph->GraphCreateInstructNode(subgraph_op, any_op->valid_places());
+  for (auto &var_node : input_var_nodes) {
+    IR_NODE_LINK_TO(var_node, subgraph_op_node);
+  }
+  for (auto &var_node : weight_var_nodes) {
+    IR_NODE_LINK_TO(var_node, subgraph_op_node);
+  }
+  for (auto &var_node : output_var_nodes) {
+    IR_OP_VAR_LINK(subgraph_op_node, var_node);
+  }
+  for (auto &var_node : local_var_nodes) {
+    IR_OP_VAR_LINK(subgraph_op_node, var_node);
+  }
+  for (auto &var_node : unused_var_nodes) {
+    IR_OP_VAR_LINK(subgraph_op_node, var_node);
+  }
+
+  // Create and assign the context to the picked kernel of the new subgraph
+  // node
+  auto &inst = subgraph_op_node->AsStmt();
+  inst.picked_kernel().SetContext(
+      ContextScheduler::Global().NewContext(inst.picked_kernel().target()));
+
+  // Remove subgraph nodes and unused var nodes
+  auto nodes2rm = GetNodes2RM(subgraph_nodes,
+                              {input_var_nodes,
+                               weight_var_nodes,
+                               output_var_nodes,
+                               local_var_nodes,
+                               unused_var_nodes});
+  GraphSafeRemoveNodes(graph, nodes2rm);
+}
+
+void SubgraphFuser::ReplaceNodesWithSubgraphs(SSAGraph *graph,
+                                              const SubgraphTeller &teller,
+                                              int min_subgraph_size) {
+  std::vector<std::vector<Node *>> subgraphs =
+      SubgraphDetector(graph, teller)();
+  SubgraphVisualizer(graph, subgraphs)();
+  for (int subgraph_idx = 0; subgraph_idx < subgraphs.size(); subgraph_idx++) {
+    if (subgraphs[subgraph_idx].size() >= min_subgraph_size) {
+      InsertNewNode(graph, subgraph_idx, subgraphs[subgraph_idx]);
+    }
+  }
+}
+
+void SubgraphFuser::operator()() {
+  ReplaceNodesWithSubgraphs(graph_, teller_, min_subgraph_size_);
+}
+
 void ExtractInputsOutputs(const std::vector<Node *> &op_nodes,
                           std::unordered_set<Node *> *input_var_nodes,
                           std::unordered_set<Node *> *weight_var_nodes,

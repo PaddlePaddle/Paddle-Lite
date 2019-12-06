@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <functional>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -24,12 +25,10 @@
 #include "ai_ddk_lib/include/graph/op/all_ops.h"
 #include "ai_ddk_lib/include/graph/operator.h"
 #include "ai_ddk_lib/include/graph/operator_reg.h"
-#include "ai_ddk_lib/include/hiai_ir_build.h"
 #include "lite/core/op_lite.h"
-#include "lite/core/target_wrapper.h"
-#include "lite/core/tensor.h"
+#include "lite/utils/macros.h"
 
-// Extended Ops of HIAI DDK
+// Extended ops based on HIAI DDK
 namespace ge {
 /**
  * Pads a tensor.
@@ -60,32 +59,18 @@ REG_OP(Pad)
 namespace paddle {
 namespace lite {
 namespace npu {
+namespace bridges {
 
-class OpList {
- public:
-  static OpList& Global() {
-    static thread_local OpList x;
-    return x;
-  }
-  void clear() { lists_.clear(); }
-  void add(std::shared_ptr<ge::Operator> p) { lists_.push_back(p); }
-
- private:
-  std::vector<std::shared_ptr<ge::Operator>> lists_;
-};
-
-// Build HIAI IR graph to om model, and store om model data into lite tensor
-bool BuildModel(std::vector<ge::Operator>& inputs,   // NOLINT
-                std::vector<ge::Operator>& outputs,  // NOLINT
-                lite::Tensor* model_data);
-
-std::string UniqueName(const std::string& prefix);
+// Type/tensor converters for converting Paddle type/tensor to HiAI type/tensor
+bool HasInputArg(const lite::OpInfo* op_info,
+                 const lite::Scope* scope,
+                 const std::string& argname);
 
 ge::DataType CvtPrecisionType(PrecisionType itype);
 
 ge::Format CvtDataLayoutType(DataLayoutType itype);
 
-ge::TensorPtr CvtTensor(Tensor* in_tensor,
+ge::TensorPtr CvtTensor(lite::Tensor* in_tensor,
                         std::vector<int64_t> out_shape = {},
                         PrecisionType in_ptype = PRECISION(kFloat),
                         DataLayoutType in_ltype = DATALAYOUT(kNCHW));
@@ -136,10 +121,7 @@ ge::TensorPtr CreateTensorAndFillData(T value,
 
 int CvtActMode(std::string act_type);
 
-bool HasInputArg(const OpInfo* op_info,
-                 const Scope* scope,
-                 const std::string& argname);
-
+}  // namespace bridges
 }  // namespace npu
 }  // namespace lite
 }  // namespace paddle

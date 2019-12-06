@@ -12,39 +12,31 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
-#include <memory>
-#include <string>
-#include "ai_ddk_lib/include/HiAiModelManagerService.h"
-#include "lite/core/tensor.h"
+#include "lite/backends/npu/bridges/registry.h"
+#include "lite/backends/npu/bridges/utility.h"
 
 namespace paddle {
 namespace lite {
 namespace npu {
+namespace bridges {
 
-class DeviceInfo {
- public:
-  static DeviceInfo &Global() {
-    static DeviceInfo x;
-    return x;
-  }
-  DeviceInfo() {}
+int SqrtConverter(cvt_ctx_type* ctx, lite::OpLite* op) {
+  auto scope = op->scope();
+  auto op_info = op->op_info();
+  auto op_type = op_info->Type();
+  VLOG(3) << "[NPU] Converting " + op_type + "...";
 
-  int freq_level() { return freq_level_; }
-  int framework_type() { return framework_type_; }
-  int model_type() { return model_type_; }
-  int device_type() { return device_type_; }
+  auto x_var_name = op_info->Input("X").front();
+  auto out_var_name = op_info->Output("Out").front();
+  auto sqrt_node = ctx->AddNode<ge::op::Sqrt>(out_var_name);
+  CHECK(ctx->HasNode(x_var_name));
+  sqrt_node->set_input_x(*ctx->GetNode(x_var_name));
+  return SUCCESS;
+}
 
- private:
-  int freq_level_{3};
-  int framework_type_{0};
-  int model_type_{0};
-  int device_type_{0};
-};
-
-bool LoadModel(const lite::Tensor &model_data,
-               std::shared_ptr<hiai::AiModelMngerClient> *model_client,
-               std::string *model_name);
+}  // namespace bridges
 }  // namespace npu
 }  // namespace lite
 }  // namespace paddle
+
+REGISTER_NPU_BRIDGE(sqrt, paddle::lite::npu::bridges::SqrtConverter);

@@ -14,8 +14,6 @@
 
 #pragma once
 
-#include "lite/kernels/npu/bridges/registry.h"
-
 USE_NPU_BRIDGE(sigmoid);
 USE_NPU_BRIDGE(relu);
 USE_NPU_BRIDGE(tanh);

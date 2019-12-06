@@ -25,39 +25,19 @@ namespace npu {
 void SubgraphCompute::PrepareForRun() {
   auto& ctx = this->ctx_->template As<NPUContext>();
   auto& param = this->Param<param_t>();
-  auto sub_block = param.sub_block;
-  CHECK(sub_block);
-  auto scope = param.scope;
-  CHECK(scope);
-  int32_t ops_size = sub_block->OpsSize();
-  std::vector<Instruction> insts;
-  for (int32_t i = 0; i < ops_size; i++) {
-    auto& op_desc = *sub_block->GetOp<cpp::OpDesc>(i);
-    auto kernel_type = op_desc.GetAttr<std::string>(lite::kKernelTypeAttr);
-    // Create op and pick up kernel according to the kKernelTypeAttr attribute
-    auto op = lite::LiteOpRegistry::Global().Create(op_desc.Type());
-    op->Attach(op_desc, scope);
-    std::string op_type, alias;
-    Place place;
-    KernelBase::ParseKernelType(kernel_type, &op_type, &alias, &place);
-    LOG(INFO) << "op_type: " << op_type << " kernel_type: " << kernel_type;
-    auto kernels = op->CreateKernels({place});
-    CHECK_GT(kernels.size(), 0) << "No kernels found for " << op_type;
-    auto it = std::find_if(
-        kernels.begin(), kernels.end(), [&](std::unique_ptr<KernelBase>& it) {
-          return it->alias() == alias;
-        });
-    CHECK(it != kernels.end());
-    (*it)->SetContext(ContextScheduler::Global().NewContext((*it)->target()));
-    insts.emplace_back(std::move(op), std::move(*it));
-  }
-  sub_program_.reset(new RuntimeProgram(std::move(insts)));
-  sub_program_->set_exec_scope(scope);
+  engine_.reset(new lite::npu::Engine(param.sub_block_idx,
+                                      &param.sub_block_desc,
+                                      param.input_data_names,
+                                      param.output_data_names,
+                                      param.scope));
+  CHECK(engine_);
+  engine_->Build();
 }
 
 void SubgraphCompute::Run() {
   auto& param = this->Param<param_t>();
-  sub_program_->Run();
+  CHECK(engine_);
+  engine_->Run();
 }
 
 }  // namespace npu

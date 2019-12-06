@@ -40,17 +40,16 @@ void RuntimeProgram::SaveOpInfosToProgram(cpp::ProgramDesc* desc) {
           static_cast<const operators::SubgraphOp*>(node.op()));
       int sub_block_idx = subgraph_op->op_info()->GetAttr<int32_t>("sub_block");
       if (sub_block_idx < 0) {
-        // It's a new subgraph op, append its subblock desc to the program desc
-        // Update sub_block_idx and sub_block based on the added subblock desc
+        // It's a new subgraph op when its sub_block_idx < 0, Now we add its
+        // subblock desc to the program desc, Then update its sub_block_idx to
+        // the index of block desc of the program desc.
         sub_block_idx = desc->BlocksSize();
-        auto sub_block_desc = subgraph_op->GetSubBlock();
-        CHECK(sub_block_desc);
+        auto& sub_block_desc = subgraph_op->GetSubBlock();
+        CHECK_GT(sub_block_desc.OpsSize(), 0);
         auto new_block_desc = desc->AddBlock<cpp::BlockDesc>();
-        *new_block_desc = *sub_block_desc;
-        delete sub_block_desc;
+        *new_block_desc = sub_block_desc;
         subgraph_op->mutable_op_info()->SetAttr<int32_t>("sub_block",
                                                          sub_block_idx);
-        subgraph_op->SetSubBlock(new_block_desc);
         // Update main block desc after a new subblock desc is added
         main_block = desc->GetBlock<cpp::BlockDesc>(0);
       }
@@ -175,7 +174,7 @@ void Program::Build(const cpp::ProgramDesc& prog) {
       }
       if (op_type == "subgraph") {
         static_cast<operators::SubgraphOp*>(op.get())->SetSubBlock(
-            sub_block_desc);
+            *sub_block_desc);
       }
     }
     ops_.emplace_back(std::move(op));

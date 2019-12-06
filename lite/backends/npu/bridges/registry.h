@@ -25,24 +25,66 @@
 
 namespace paddle {
 namespace lite {
-namespace kernels {
 namespace npu {
 namespace bridges {
 
-// var_name, npu node point
-using node_map_type =
-    std::unordered_map<std::string, std::shared_ptr<ge::Operator>>;
+// Type and registers of converters for converting Paddle Ops to HiAI IR graph
+class cvt_ctx_type {
+ public:
+  template <typename T>
+  std::shared_ptr<T> AddNode(std::string name) {
+    CHECK(!nodes_.count(name));
+    auto node = std::make_shared<T>(name);
+    nodes_[name] = node;
+    return node;
+  }
 
-using func_type = std::function<node_map_type(const std::shared_ptr<OpLite>,
-                                              const node_map_type&)>;
-using cvt_map_type = std::unordered_map<std::string, func_type>;
+  void SetNode(std::string name, std::shared_ptr<ge::Operator> node) {
+    CHECK(!nodes_.count(name));
+    nodes_[name] = node;
+  }
+
+  std::shared_ptr<ge::Operator> GetNode(std::string name) {
+    CHECK(nodes_.count(name));
+    return nodes_[name];
+  }
+
+  bool HasNode(std::string name) { return nodes_.count(name); }
+
+  std::string UniqueName(const std::string& name) {
+    int count = 1;
+    auto it = counts_.find(name);
+    if (it == counts_.end()) {
+      counts_[name] = count;
+    } else {
+      count = ++(it->second);
+    }
+    return name + "__" + std::to_string(count);
+  }
+
+ private:
+  std::unordered_map<std::string, std::shared_ptr<ge::Operator>> nodes_;
+  std::unordered_map<std::string, int> counts_;
+};
+
+const int FAILED = 1;
+const int SUCCESS = 0;
+const int REBUILD_WHEN_SHAPE_CHANGED = 2;
+inline bool CHECK_FAILED(int status) { return status & FAILED; }
+inline bool CHECK_SUCCESS(int status) { return !CHECK_FAILED(status); }
+inline bool CHECK_REBUILD_WHEN_SHAPE_CHANGED(int status) {
+  return status & REBUILD_WHEN_SHAPE_CHANGED;
+}
+
+using cvt_func_type = std::function<int(cvt_ctx_type* ctx, lite::OpLite* op)>;
+using cvt_map_type = std::unordered_map<std::string, cvt_func_type>;
 class Factory {
  public:
   static Factory& Instance();
 
   const cvt_map_type& AllFunctions() const { return map_; }
   bool HasType(const std::string& op_type) const;
-  void Insert(const std::string& op_type, const func_type& func_name);
+  void Insert(const std::string& op_type, const cvt_func_type& cvt_func);
   Factory() = default;
 
  private:
@@ -52,7 +94,6 @@ class Factory {
 
 }  // namespace bridges
 }  // namespace npu
-}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
 
@@ -75,8 +116,8 @@ class Factory {
       __reg_npu_bridge_##op_type##__,                                       \
       "REGISTER_NPU_BRIDGE must be called in global namespace only once!"); \
   int __reg_npu_bridge_##op_type##_Insert() {                               \
-    paddle::lite::kernels::npu::bridges::Factory::Instance().Insert(        \
-        #op_type, cvt_func_name);                                           \
+    paddle::lite::npu::bridges::Factory::Instance().Insert(#op_type,        \
+                                                           cvt_func_name);  \
     return 0;                                                               \
   }
 

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/npu/bridges/test_helper.h"
+#include "lite/backends/npu/bridges/test_helper.h"
 #include <utility>
 #include "lite/backends/npu/builder.h"
 #include "lite/core/op_registry.h"

@@ -12,36 +12,31 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
-
-#include <memory>
-#include <string>
-#include <vector>
-#include "lite/backends/npu/engine.h"
-#include "lite/core/kernel.h"
-#include "lite/core/op_registry.h"
-#include "lite/core/types.h"
+#include "lite/backends/npu/bridges/registry.h"
+#include "lite/backends/npu/bridges/utility.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
 namespace npu {
+namespace bridges {
 
-class SubgraphCompute : public KernelLite<TARGET(kNPU), PRECISION(kFloat)> {
- public:
-  using param_t = operators::SubgraphParam;
+int SquareConverter(cvt_ctx_type* ctx, lite::OpLite* op) {
+  auto scope = op->scope();
+  auto op_info = op->op_info();
+  auto op_type = op_info->Type();
+  VLOG(3) << "[NPU] Converting " + op_type + "...";
 
-  void PrepareForRun() override;
+  auto x_var_name = op_info->Input("X").front();
+  auto out_var_name = op_info->Output("Out").front();
+  auto square_node = ctx->AddNode<ge::op::Square>(out_var_name);
+  CHECK(ctx->HasNode(x_var_name));
+  square_node->set_input_x(*ctx->GetNode(x_var_name));
+  return SUCCESS;
+}
 
-  void Run() override;
-
-  virtual ~SubgraphCompute() = default;
-
- private:
-  std::unique_ptr<lite::npu::Engine> engine_;
-};
-
+}  // namespace bridges
 }  // namespace npu
-}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
+
+REGISTER_NPU_BRIDGE(square, paddle::lite::npu::bridges::SquareConverter);

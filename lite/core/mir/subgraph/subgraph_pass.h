@@ -22,14 +22,14 @@ namespace paddle {
 namespace lite {
 namespace mir {
 
-class SubgraphPass : public ProgramPass {
+class NPUSubgraphPass : public ProgramPass {
  public:
   void Apply(const std::unique_ptr<SSAGraph>& graph) override;
+};
 
- private:
-  virtual void InsertNewNode(SSAGraph* graph,
-                             int subgraph_idx,
-                             const std::vector<Node*>& subgraph_nodes);
+class XPUSubgraphPass : public ProgramPass {
+ public:
+  void Apply(const std::unique_ptr<SSAGraph>& graph) override;
 };
 
 }  // namespace mir

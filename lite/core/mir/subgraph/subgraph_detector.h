@@ -54,7 +54,7 @@ class SubgraphDetector {
   using node_map_t = std::unordered_map<Node*, node_dat_t*>;
   using node_set_t = std::vector<node_dat_t*>;
   struct node_dat_t {
-    explicit node_dat_t(Node* _node) { node = _node; }
+    explicit node_dat_t(Node* _node) : node(_node) {}
     Node* node;
     bool marked{false};
     node_dat_t* union_find_parent{this};
@@ -77,6 +77,35 @@ class SubgraphDetector {
  protected:
   SSAGraph* graph_{nullptr};
   SubgraphTeller teller_;
+};
+
+/*
+ * Replace all of subgraphs with the subgraph ops, a block desc is added into
+ * the subgraph op to wrap the original op nodes, keep all of var nodes of the
+ * original ops nodes as the inputs and outputs of the subgraph op
+ */
+class SubgraphFuser {
+ public:
+  SubgraphFuser(SSAGraph* graph,
+                const SubgraphTeller& teller,
+                int min_subgraph_size)
+      : graph_(graph), teller_(teller), min_subgraph_size_{min_subgraph_size} {}
+  void operator()();
+
+  // Remove the op nodes of the subgraphs and replace with the subgraph ops.
+  void ReplaceNodesWithSubgraphs(SSAGraph* graph,
+                                 const SubgraphTeller& teller,
+                                 int min_subgraph_size);
+  // Create a subgraph node with a block desc to wrap the original op nodes of
+  // the subgraph
+  void InsertNewNode(SSAGraph* graph,
+                     int subgraph_idx,
+                     const std::vector<Node*>& subgraph_nodes);
+
+ protected:
+  SSAGraph* graph_{nullptr};
+  SubgraphTeller teller_;
+  int min_subgraph_size_;
 };
 
 void ExtractInputsOutputs(const std::vector<Node*>& op_nodes,

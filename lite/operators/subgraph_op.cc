@@ -20,31 +20,27 @@ namespace paddle {
 namespace lite {
 namespace operators {
 
-bool SubgraphOp::CheckShape() const {
-  CHECK_GE_OR_FALSE(param_.outputs.size(), 1UL);
-  return true;
-}
+bool SubgraphOp::CheckShape() const { return true; }
 
 bool SubgraphOp::InferShape() const { return CheckShape(); /* enrich me */ }
 
-bool SubgraphOp::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
-  auto inputs = op_desc.Input("Inputs");
-  auto outputs = op_desc.Output("Outputs");
-  for (auto var : inputs) {
-    CHECK(scope->FindVar(var));
-    param_.inputs.push_back(
-        std::make_pair(var, scope->FindVar(var)->GetMutable<lite::Tensor>()));
+bool SubgraphOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
+  param_.input_names = op_desc.Input("Inputs");
+  param_.output_names = op_desc.Output("Outputs");
+  for (auto& input_name : param_.input_names) {
+    CHECK(scope->FindVar(input_name));
+    scope->FindVar(input_name)->GetMutable<lite::Tensor>();
   }
-  for (auto var : outputs) {
-    CHECK(scope->FindVar(var));
-    param_.outputs.push_back(
-        std::make_pair(var, scope->FindVar(var)->GetMutable<lite::Tensor>()));
+  for (auto& output_name : param_.output_names) {
+    CHECK(scope->FindVar(output_name));
+    scope->FindVar(output_name)->GetMutable<lite::Tensor>();
   }
-  param_.input_name_mapping =
-      op_desc.GetAttr<std::vector<std::string>>("input_name_mapping");
-  param_.output_name_mapping =
-      op_desc.GetAttr<std::vector<std::string>>("output_name_mapping");
-  CHECK(param_.sub_block);
+  param_.input_data_names =
+      op_desc.GetAttr<std::vector<std::string>>("input_data_names");
+  param_.output_data_names =
+      op_desc.GetAttr<std::vector<std::string>>("output_data_names");
+  CHECK_GT(param_.sub_block_desc.OpsSize(), 0);
+  param_.sub_block_idx = op_desc.GetAttr<int32_t>("sub_block");
   param_.scope = scope;
   CHECK(param_.scope);
   return true;

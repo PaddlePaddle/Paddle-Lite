@@ -71,11 +71,12 @@ struct CalibParam {
 };
 
 struct SubgraphParam {
-  std::vector<std::pair<std::string, const lite::Tensor*>> inputs{};
-  std::vector<std::pair<std::string, lite::Tensor*>> outputs{};
-  std::vector<std::string> input_name_mapping{};
-  std::vector<std::string> output_name_mapping{};
-  cpp::BlockDesc* sub_block{nullptr};
+  std::vector<std::string> input_names{};
+  std::vector<std::string> output_names{};
+  std::vector<std::string> input_data_names{};
+  std::vector<std::string> output_data_names{};
+  int sub_block_idx{-1};
+  cpp::BlockDesc sub_block_desc;
   Scope* scope{nullptr};
 };
 
