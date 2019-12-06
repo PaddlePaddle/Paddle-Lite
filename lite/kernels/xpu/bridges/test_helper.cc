@@ -17,7 +17,7 @@
 #include "lite/backends/xpu/builder.h"
 #include "lite/core/op_registry.h"
 #include "lite/kernels/xpu/bridges/registry.h"
-#include "lite/operators/subgraph_op.h"
+#include "lite/operators/graph_op.h"
 
 namespace paddle {
 namespace lite {
@@ -35,21 +35,20 @@ void LauchOp(const std::shared_ptr<lite::OpLite> op,
   const auto& bridges = lite::kernels::xpu::bridges::Factory::Instance();
   const auto& supported_lists = bridges.AllFunctions();
   CHECK(bridges.HasType(op_type));
-  subgraph_ctx_type subgraph_ctx;
-  subgraph_ctx.builder = std::make_shared<xtcl::network::xNetworkBuilder>();
-  subgraph_ctx.params =
+  graph_ctx_type graph_ctx;
+  graph_ctx.builder = std::make_shared<xtcl::network::xNetworkBuilder>();
+  graph_ctx.params =
       std::make_shared<xtcl::network::xTensorCompiler::ParamNDArrayMap>();
   node_map_type input_nodes;
   for (auto input_var_name : input_var_names) {
     auto input = scope->FindVar(input_var_name)->GetMutable<lite::Tensor>();
     auto input_node = std::make_shared<xtcl::xExpr>(
-        subgraph_ctx.builder->CreateTensor(input_var_name,
-                                           lite::xpu::CvtShape(input->dims()),
-                                           ::xtcl::Float(32)));
+        graph_ctx.builder->CreateTensor(input_var_name,
+                                        lite::xpu::CvtShape(input->dims()),
+                                        ::xtcl::Float(32)));
     input_nodes[input_var_name] = input_node;
   }
-  auto output_nodes =
-      supported_lists.at(op_type)(op, &subgraph_ctx, input_nodes);
+  auto output_nodes = supported_lists.at(op_type)(op, &graph_ctx, input_nodes);
   CHECK_GT(output_nodes.size(), 0);
 
   // build network graph and output model data
@@ -61,38 +60,36 @@ void LauchOp(const std::shared_ptr<lite::OpLite> op,
   auto weight = scope->Var(weight_var_name)->GetMutable<Tensor>();
   weight->set_persistable(true);
   weight->set_precision(PRECISION(kInt8));
-  CHECK(lite::xpu::BuildModel(subgraph_ctx.builder,
-                              subgraph_ctx.params,
-                              &ordered_output_nodes,
-                              weight));
+  CHECK(lite::xpu::BuildModel(
+      graph_ctx.builder, graph_ctx.params, &ordered_output_nodes, weight));
   CHECK_GT(weight->numel(), 0);
   CHECK(weight->data<uint8_t>() != nullptr);
 
-  // create subgraph op and set inputs and outputs
-  cpp::OpDesc subgraph_op_desc;
-  subgraph_op_desc.SetType("subgraph_op");
-  subgraph_op_desc.SetInput("Inputs", input_var_names);
-  subgraph_op_desc.SetInput("Weight", {weight_var_name});
-  subgraph_op_desc.SetOutput("Outputs", output_var_names);
+  // create graph op and set inputs and outputs
+  cpp::OpDesc graph_op_desc;
+  graph_op_desc.SetType("graph_op");
+  graph_op_desc.SetInput("Inputs", input_var_names);
+  graph_op_desc.SetInput("Weight", {weight_var_name});
+  graph_op_desc.SetOutput("Outputs", output_var_names);
 
-  auto subgraph_op =
-      std::make_shared<operators::SubgraphOp>(subgraph_op_desc.Type());
-  subgraph_op->SetValidPlaces({Place{TARGET(kXPU), PRECISION(kFloat)}});
-  CHECK(subgraph_op->Attach(subgraph_op_desc, scope));
-  CHECK(subgraph_op->CheckShape());
-  CHECK(subgraph_op->InferShape());
+  auto graph_op =
+      std::make_shared<operators::GraphOpLite>(graph_op_desc.Type());
+  graph_op->SetValidPlaces({Place{TARGET(kXPU), PRECISION(kFloat)}});
+  CHECK(graph_op->Attach(graph_op_desc, scope));
+  CHECK(graph_op->CheckShape());
+  CHECK(graph_op->InferShape());
 
   // create graph op kernel and set XPU context
-  auto subgraph_kernels =
-      subgraph_op->CreateKernels({Place{TARGET(kXPU), PRECISION(kFloat)}});
-  CHECK(!subgraph_kernels.empty());
-  auto subgraph_kernel =
-      std::move(subgraph_kernels.front());  // use the first kernel by default
-  auto subgraph_device = ContextScheduler::Global().NewContext(TARGET(kXPU));
-  subgraph_kernel->SetContext(std::move(subgraph_device));
+  auto graph_kernels =
+      graph_op->CreateKernels({Place{TARGET(kXPU), PRECISION(kFloat)}});
+  CHECK(!graph_kernels.empty());
+  auto graph_kernel =
+      std::move(graph_kernels.front());  // use the first kernel by default
+  auto graph_device = ContextScheduler::Global().NewContext(TARGET(kXPU));
+  graph_kernel->SetContext(std::move(graph_device));
 
-  // perform subgraph op kernel and store to output variables
-  subgraph_kernel->Launch();
+  // perform graph op kernel and store to output variables
+  graph_kernel->Launch();
 
   lite::xpu::DeviceInfo::Global().Clear();
 }
@@ -103,5 +100,5 @@ void LauchOp(const std::shared_ptr<lite::OpLite> op,
 }  // namespace lite
 }  // namespace paddle
 
-USE_LITE_OP(subgraph);
-USE_LITE_KERNEL(subgraph, kXPU, kFloat, kNCHW, def);
+USE_LITE_OP(graph_op);
+USE_LITE_KERNEL(graph_op, kXPU, kFloat, kNCHW, def);
