@@ -35,11 +35,11 @@ if ((NOT LITE_ON_TINY_PUBLISH) AND (LITE_WITH_CUDA OR LITE_WITH_X86 OR ARM_TARGE
         set_target_properties(paddle_light_api_shared PROPERTIES LINK_FLAGS "${LINK_FLAGS}")
     endif()
 else()
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -flto -fvisibility=hidden -fvisibility-inlines-hidden -fdata-sections -ffunction-sections")
     if ((ARM_TARGET_OS STREQUAL "android") OR (ARM_TARGET_OS STREQUAL "armlinux"))
         add_library(paddle_light_api_shared SHARED "")
         target_sources(paddle_light_api_shared PUBLIC ${__lite_cc_files} paddle_api.cc light_api.cc light_api_impl.cc)
-        add_dependencies(paddle_light_api_shared op_list_h kernel_list_h)
+       set_target_properties(paddle_light_api_shared PROPERTIES COMPILE_FLAGS "-flto -fdata-sections")
+       add_dependencies(paddle_light_api_shared op_list_h kernel_list_h)
         if (LITE_WITH_NPU)
             # Need to add HIAI runtime libs (libhiai.so) dependency
             target_link_libraries(paddle_light_api_shared ${npu_runtime_libs})

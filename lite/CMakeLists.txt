@@ -177,7 +177,7 @@ if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM)
                     COMMAND cp "${CMAKE_SOURCE_DIR}/lite/utils/cv/paddle_*.h" "${INFER_LITE_PUBLISH_ROOT}/cxx/include"
                     )
                 add_dependencies(tiny_publish_cxx_lib paddle_light_api_shared)
-                add_dependencies(paddle_light_api_shared bundle_light_api)
+                add_dependencies(tiny_publish_cxx_lib bundle_light_api)
                 add_dependencies(publish_inference tiny_publish_cxx_lib)
                 add_custom_command(TARGET tiny_publish_cxx_lib POST_BUILD
                             COMMAND ${CMAKE_STRIP} "-s" ${INFER_LITE_PUBLISH_ROOT}/cxx/lib/libpaddle_light_api_shared.so)
