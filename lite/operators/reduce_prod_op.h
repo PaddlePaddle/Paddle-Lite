@@ -35,7 +35,7 @@ class ReduceProdOpLite : public OpLite {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
-  std::string DebugString() const override { return "reduce prod"; }
+  std::string DebugString() const override { return "reduce_prod"; }
 
  private:
   mutable ReduceParam param_;

@@ -1079,7 +1079,6 @@ struct ConditionalBlockParam {
   std::vector<lite::Tensor*> outs{};
   cpp::BlockDesc* sub_block{};
   Scope* scope{};
-
   bool is_scalar_condition{};
 };
 

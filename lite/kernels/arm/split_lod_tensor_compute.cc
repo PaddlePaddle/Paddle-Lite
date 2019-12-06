@@ -103,7 +103,6 @@ void SplitLodTensorCompute::Run() {
       offset += len;
     }
   }
-  return;
 }
 
 }  // namespace arm

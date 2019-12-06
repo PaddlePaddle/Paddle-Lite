@@ -29,8 +29,6 @@ class ReduceProdCompute : public KernelLite<TARGET(kARM), Ptype> {
   void Run() override;
 
   virtual ~ReduceProdCompute() = default;
-
- private:
 };
 
 }  // namespace arm

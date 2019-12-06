@@ -44,7 +44,6 @@ class CondExecutor {
       auto &op_desc = *block->template GetOp<cpp::OpDesc>(i);
       auto op_type = op_desc.Type();
       auto op_handler = lite::LiteOpRegistry::Global().Create(op_desc.Type());
-      VLOG(5) << "conditional block: creating Op [" << op_type << "]";
       op_handler->Attach(op_desc, scope);
 
       auto hostplace = place_;
@@ -59,9 +58,7 @@ class CondExecutor {
 
   void Run() {
     for (auto &op_handler : ops_of_block_) {
-      VLOG(5) << "run " << op_handler->op_info()->Repr();
       op_handler->CheckShape();
-      VLOG(5) << "conditional block: check shape ok";
       op_handler->InferShape();
 #ifdef LITE_WITH_PROFILE
 #ifdef LITE_WITH_PRECISION_PROFILE
@@ -69,7 +66,6 @@ class CondExecutor {
       Instruction inst(op_handler, std::move(kernel));
 #endif  // LITE_WITH_PRECISION_PROFILE
 #endif  // LITE_WITH_PROFILE
-      VLOG(5) << "conditional block: infer shape ok";
       op_handler->Run();
 #ifdef LITE_WITH_PROFILE
 #ifdef LITE_WITH_PRECISION_PROFILE

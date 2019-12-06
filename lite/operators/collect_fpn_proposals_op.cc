@@ -48,15 +48,15 @@ bool CollectFpnProposalsOpLite::InferShape() const {
   return true;
 }
 
-bool CollectFpnProposalsOpLite::AttachImpl(const cpp::OpDesc &op_desc,
-                                           lite::Scope *scope) {
+bool CollectFpnProposalsOpLite::AttachImpl(const cpp::OpDesc& op_desc,
+                                           lite::Scope* scope) {
   auto rois_names = op_desc.Input("MultiLevelRois");
-  for (auto var_name : rois_names) {
+  for (const auto& var_name : rois_names) {
     param_.multi_level_rois.push_back(
         scope->FindVar(var_name)->GetMutable<lite::Tensor>());
   }
   auto scores_names = op_desc.Input("MultiLevelScores");
-  for (auto var_name : scores_names) {
+  for (const auto& var_name : scores_names) {
     param_.multi_level_scores.push_back(
         scope->FindVar(var_name)->GetMutable<lite::Tensor>());
   }

@@ -33,8 +33,6 @@ class CompareCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
   void Run() override;
 
   ~CompareCompute() {}
-
- private:
 };
 
 template <template <typename T> class Functor>
@@ -46,8 +44,6 @@ class CompareCompute_int32
   void Run() override;
 
   ~CompareCompute_int32() {}
-
- private:
 };
 
 }  // namespace arm

@@ -37,7 +37,7 @@ class SplitLodTensorOpLite : public OpLite {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
-  std::string DebugString() const override { return "split lod tensor"; }
+  std::string DebugString() const override { return "split_lod_tensor"; }
 
  private:
   mutable SplitLodTensorParam param_;

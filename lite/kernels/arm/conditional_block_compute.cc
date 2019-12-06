@@ -48,7 +48,6 @@ void ConditionalBlockCompute::Run() {
       }
     }
   }
-  VLOG(5) << "need run:" << need_run;
   if (need_run) {
     executor_->Run();
   }

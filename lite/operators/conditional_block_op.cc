@@ -45,7 +45,7 @@ bool ConditionalBlockOpLite::AttachImpl(const cpp::OpDesc &op_desc,
   }
 
   param_.is_scalar_condition = op_desc.GetAttr<bool>("is_scalar_condition");
-  // obtail sub_block in core program.cc
+  // obtain sub_block in core program.cc
   param_.sub_block = sub_block_;
   param_.scope = scope;
 

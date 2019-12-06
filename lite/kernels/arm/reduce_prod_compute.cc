@@ -64,7 +64,7 @@ void ReduceProdCompute<T, Ptype>::Run() {
           lite::arm::math::reduce_prod_w(input, output, n_in, c_in, h_in, w_in);
           break;
         default:
-          LOG(FATAL) << "error!!!";
+          LOG(FATAL) << "dim[0] should be less than 4.";
       }
     } else if (dim.size() == 2) {
       if (dim[0] == 0 && dim[1] == 1) {
@@ -74,7 +74,8 @@ void ReduceProdCompute<T, Ptype>::Run() {
       } else if (dim[0] == 2 && dim[1] == 3) {
         lite::arm::math::reduce_prod_hw(input, output, n_in, c_in, h_in, w_in);
       } else {
-        LOG(FATAL) << "invalid dim!!";
+        LOG(FATAL)
+            << "Only support the values of the dim are 0,1 1,2 or 2,3 for now.";
       }
     } else {
       LOG(FATAL) << "dim's size over than 2, which is not supported now!!";
