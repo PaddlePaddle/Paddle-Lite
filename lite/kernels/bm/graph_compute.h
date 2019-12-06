@@ -13,36 +13,29 @@
 // limitations under the License.
 
 #pragma once
-#include <algorithm>
+
+#include <memory>
+#include <string>
+#include <vector>
 #include "lite/core/kernel.h"
-#include "lite/operators/softmax_op.h"
+#include "lite/core/op_registry.h"
+#include "lite/core/types.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace bm {
 
-class SoftmaxCompute : public KernelLite<TARGET(kBM), PRECISION(kFloat)> {
-  public:
-    using param_t = operators::SoftmaxParam;
+class GraphCompute : public KernelLite<TARGET(kBM), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::GraphParam;
 
-    void PrepareForRun() override;
-    void Run() override;
+  void PrepareForRun() override;
 
-    virtual ~SoftmaxCompute() = default;
+  void Run() override;
+
+  virtual ~GraphCompute() = default;
 };
-
-template <PrecisionType Ptype_out>
-class SoftmaxComputeInt8 : public KernelLite<TARGET(kBM), PRECISION(kInt8)> {
-  public:
-    using param_t = operators::SoftmaxParam;
-        
-    void PrepareForRun() override;
-    void Run() override;
-        
-    virtual ~SoftmaxComputeInt8() = default;
-};
-    
 
 }  // namespace bm
 }  // namespace kernels

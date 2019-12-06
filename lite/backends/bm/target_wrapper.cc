@@ -14,13 +14,14 @@
 #include <map>
 #include "lite/backends/bm/target_wrapper.h"
 #include "bmlib_runtime.h"
+#include "bmcompiler_if.h"
 
 namespace paddle {
 namespace lite {
 
 static int g_current_device_id = 0;
 static std::map<int, bm_handle_t> g_bm_handles;
-    
+
 size_t TargetWrapperBM::num_devices() {
   int count = 0;
   bm_dev_getcount(&count);
@@ -32,7 +33,8 @@ void TargetWrapperBM::SetDevice(int id) {
 
   if (g_bm_handles.find(id) == g_bm_handles.end()) {
     bm_handle_t bm_handle;
-    bm_dev_request(&bm_handle, id);
+    bm_status_t ret = bm_dev_request(&bm_handle, id);
+    CHECK_EQ(ret, BM_SUCCESS) << "Failed with error code: " << (int)ret;
     g_bm_handles.insert(std::pair<int, bm_handle_t>(id, bm_handle));
   }
   return;
@@ -40,6 +42,10 @@ void TargetWrapperBM::SetDevice(int id) {
 
 void* TargetWrapperBM::Malloc(size_t size) {
   void* ptr{};
+
+  if (g_bm_handles.find(g_current_device_id) == g_bm_handles.end()) {
+      SetDevice(g_current_device_id);
+  } 
 
   bm_handle_t bm_handle = g_bm_handles.at(g_current_device_id);
   bm_device_mem_t* p_mem = (bm_device_mem_t*)malloc(sizeof(bm_device_mem_t));

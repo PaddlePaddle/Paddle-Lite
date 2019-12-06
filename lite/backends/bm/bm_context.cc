@@ -11,41 +11,18 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
-#pragma once
-#include "lite/core/kernel.h"
-#include "lite/operators/calib_op.h"
+#include "lite/core/context.h"
+#include "bmcompiler_if.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
-namespace bm {
 
-class CalibComputeFp32ToInt8
-    : public KernelLite<TARGET(kBM), PRECISION(kInt8)> {
- public:
-  using param_t = operators::CalibParam;
+static const char* CHIP_NAME = "BM1684";
 
-  void Run() override;
+void BMContext::InitOnce() {
+    compiler_handle_ = create_bmcompiler(CHIP_NAME);
+    CHECK(NULL != compiler_handle_);
+}
 
-  ~CalibComputeFp32ToInt8() override{};
-
- private:
-};
-
-class CalibComputeInt8ToFp32
-    : public KernelLite<TARGET(kBM), PRECISION(kInt8)> {
- public:
-  using param_t = operators::CalibParam;
-
-  void Run() override;
-
-  ~CalibComputeInt8ToFp32() override{};
-
- private:
-};
-
-}  // namespace bm
-}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

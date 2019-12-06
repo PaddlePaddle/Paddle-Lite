@@ -35,7 +35,7 @@ void TestModel(const std::vector<Place>& valid_places) {
   //DeviceInfo::Global().SetRunMode(lite_api::LITE_POWER_NO_BIND, FLAGS_threads);
   lite::Predictor predictor;
   predictor.Build(FLAGS_model_dir, "", "", valid_places);
-#if 0
+
   auto* input_tensor = predictor.GetInput(0);
   input_tensor->Resize(DDim(std::vector<DDim::value_type>({1, 3, 224, 224})));
   auto* data = input_tensor->mutable_data<float>();
@@ -53,7 +53,6 @@ void TestModel(const std::vector<Place>& valid_places) {
       fs >> data[i];
     }
   }
-
   for (int i = 0; i < FLAGS_warmup; ++i) {
     predictor.Run();
   }
@@ -102,7 +101,6 @@ void TestModel(const std::vector<Place>& valid_places) {
     }
   }
   LOG(INFO) << "max val:" << max_val << ", max_val_arg:" << max_val_arg;
-#endif
 }
 
 TEST(ResNet50, test_bm) {

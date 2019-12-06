@@ -25,6 +25,10 @@
 #include "lite/backends/cuda/target_wrapper.h"
 #endif  // LITE_WITH_CUDA
 
+#ifdef LITE_WITH_BM
+#include "lite/backends/bm/target_wrapper.h" 
+#endif  // LITE_WITH_BM
+
 namespace paddle {
 namespace lite {
 
@@ -70,6 +74,11 @@ void CopySync(void* dst, const void* src, size_t size, IoDirection dir) {
 #ifdef LITE_WITH_FPGA
     case TARGET(kFPGA):
       TargetWrapper<TARGET(kFPGA)>::MemcpySync(dst, src, size, dir);
+      break;
+#endif
+#ifdef LITE_WITH_BM
+    case TARGET(kBM):
+      TargetWrapper<TARGET(kBM)>::MemcpySync(dst, src, size, dir);
       break;
 #endif
   }

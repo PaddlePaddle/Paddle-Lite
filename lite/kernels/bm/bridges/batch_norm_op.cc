@@ -12,39 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
-#include <algorithm>
-#include "lite/core/kernel.h"
-#include "lite/operators/scale_op.h"
+#include "lite/kernels/bm/bridges/registry.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace bm {
+namespace bridges {
 
-class ScaleCompute : public KernelLite<TARGET(kBM), PRECISION(kFloat)> {
-  public:
-    using param_t = operators::ScaleParam;
+node_map_type BatchNormConverter(const std::shared_ptr<lite::OpLite> op,
+                            const node_map_type& input_nodes) {
+  // output converted nodes
+  node_map_type output_nodes;
+  return output_nodes;
+}
 
-    void PrepareForRun() override;
-    void Run() override;
-
-    virtual ~ScaleCompute() = default;
-};
-
-template <PrecisionType Ptype_out>
-class ScaleComputeInt8 : public KernelLite<TARGET(kBM), PRECISION(kInt8)> {
-  public:
-    using param_t = operators::ScaleParam;
-        
-    void PrepareForRun() override;
-    void Run() override;
-        
-    virtual ~ScaleComputeInt8() = default;
-};
-    
-
+}  // namespace bridges
 }  // namespace bm
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
+
+REGISTER_BM_BRIDGE(batch_norm, paddle::lite::kernels::bm::bridges::BatchNormConverter);

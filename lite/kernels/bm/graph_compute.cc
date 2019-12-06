@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/bm/mul_compute.h"
+#include "lite/kernels/bm/graph_compute.h"
+#include <sys/time.h>
+#include <time.h>
 #include <string>
 #include <vector>
 #include "lite/core/op_registry.h"
@@ -23,22 +25,10 @@ namespace lite {
 namespace kernels {
 namespace bm {
 
-void MulCompute::PrepareForRun() {
-  return;
+void GraphCompute::PrepareForRun() {
 }
 
-void MulCompute::Run() {
-  return;
-}
-
-template <PrecisionType Ptype_out>
-void MulComputeInt8<Ptype_out>::PrepareForRun() {
-  return;
-}
-
-template <PrecisionType Ptype_out> 
-void MulComputeInt8<Ptype_out>::Run() {
-  return;
+void GraphCompute::Run() {
 }
 
 }  // namespace bm
@@ -46,16 +36,13 @@ void MulComputeInt8<Ptype_out>::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(
-  mul, kBM, kFloat, kNCHW, paddle::lite::kernels::bm::MulCompute, def)
-  .BindInput("X", {LiteType::GetTensorTy(TARGET(kBM))})
-  .BindInput("Y", {LiteType::GetTensorTy(TARGET(kBM))})
-  .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kBM))})
-  .Finalize();
-
-REGISTER_LITE_KERNEL(
-  mul, kBM, kInt8, kNCHW, paddle::lite::kernels::bm::MulComputeInt8<PRECISION(kInt8)>, def)
-  .BindInput("X", {LiteType::GetTensorTy(TARGET(kBM))})
-  .BindInput("Y", {LiteType::GetTensorTy(TARGET(kBM))})
-  .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kBM))})
-  .Finalize();
+REGISTER_LITE_KERNEL(graph_op,
+                     kBM,
+                     kFloat,
+                     kNCHW,
+                     paddle::lite::kernels::bm::GraphCompute,
+                     def)
+    .BindInput("Inputs", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindInput("Weight", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindOutput("Outputs", {LiteType::GetTensorTy(TARGET(kHost))})
+    .Finalize();

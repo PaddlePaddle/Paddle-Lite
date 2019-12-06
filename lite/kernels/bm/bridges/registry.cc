@@ -12,38 +12,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
-#include <algorithm>
-#include "lite/core/kernel.h"
-#include "lite/operators/pool_op.h"
+#include "lite/kernels/bm/bridges/registry.h"
+#include <utility>
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace bm {
+namespace bridges {
 
-class PoolCompute : public KernelLite<TARGET(kBM), PRECISION(kFloat)> {
-  public:
-    using param_t = operators::PoolParam;
+Factory& Factory::Instance() {
+  static Factory g_bm_bridge;
+  return g_bm_bridge;
+}
 
-    void PrepareForRun() override;
-    void Run() override;
+bool Factory::HasType(const std::string& op_type) const {
+  return map_.count(op_type);
+}
 
-    virtual ~PoolCompute() = default;
-};
+void Factory::Insert(const std::string& op_type, const func_type& func_name) {
+  map_.insert(std::make_pair(op_type, func_name));
+}
 
-template <PrecisionType Ptype_out>
-class PoolComputeInt8 : public KernelLite<TARGET(kBM), PRECISION(kInt8)> {
-  public:
-    using param_t = operators::PoolParam;
-        
-    void PrepareForRun() override;
-    void Run() override;
-        
-    virtual ~PoolComputeInt8() = default;
-};
-    
-
+}  // namespace bridges
 }  // namespace bm
 }  // namespace kernels
 }  // namespace lite

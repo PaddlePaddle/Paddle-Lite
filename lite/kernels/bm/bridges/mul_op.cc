@@ -12,39 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
-#include <algorithm>
-#include "lite/core/kernel.h"
-#include "lite/operators/relu_op.h"
+#include "lite/kernels/bm/bridges/registry.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace bm {
+namespace bridges {
 
-class ReluCompute : public KernelLite<TARGET(kBM), PRECISION(kFloat)> {
-  public:
-    using param_t = operators::ActivationParam;
+node_map_type MulConverter(const std::shared_ptr<lite::OpLite> op,
+                            const node_map_type& input_nodes) {
+  // output converted nodes
+  node_map_type output_nodes;
+  return output_nodes;
+}
 
-    void PrepareForRun() override;
-    void Run() override;
-
-    virtual ~ReluCompute() = default;
-};
-
-template <PrecisionType Ptype_out>
-class ReluComputeInt8 : public KernelLite<TARGET(kBM), PRECISION(kInt8)> {
-  public:
-    using param_t = operators::ActivationParam;
-        
-    void PrepareForRun() override;
-    void Run() override;
-        
-    virtual ~ReluComputeInt8() = default;
-};
-    
-
+}  // namespace bridges
 }  // namespace bm
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
+
+REGISTER_BM_BRIDGE(mul, paddle::lite::kernels::bm::bridges::MulConverter);
