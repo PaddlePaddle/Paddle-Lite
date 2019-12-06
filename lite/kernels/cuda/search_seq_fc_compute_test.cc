@@ -49,7 +49,6 @@ void search_seq_fc_compute_ref(const operators::SearchSeqFcParam& param) {
   auto w_data = w->data<T>();
   auto out_data = out->mutable_data<T>();
 
-#pragma omp parallel for
   for (int i = 0; i < M; i++) {
     for (int j = 0; j < N; j++) {
       auto sum = static_cast<T>(0);

@@ -396,6 +396,8 @@ void DeleteQuantDequantOpFuser::InsertNewNode(SSAGraph* graph,
     op_desc->SetAttr<float>("input_scale", scale_value);
     op_desc->SetInput("X", {input_act_node->arg()->name});
     IR_NODE_LINK_TO(input_act_node, quantized_node)
+    auto update_op_desc = *quantized_node->stmt()->mutable_op_info();
+    quantized_node->stmt()->ResetOp(update_op_desc, graph->valid_places());
 
     // delete nodes and edges
     std::unordered_set<const Node*> nodes2rm = {input_scale_node,
@@ -440,6 +442,8 @@ void DeleteQuantDequantOpFuser::InsertNewNode(SSAGraph* graph,
     op_desc->SetInput("Y", {input_act_right_node->arg()->name});
     IR_NODE_LINK_TO(input_act_left_node, quantized_node)
     IR_NODE_LINK_TO(input_act_right_node, quantized_node)
+    auto update_op_desc = *quantized_node->stmt()->mutable_op_info();
+    quantized_node->stmt()->ResetOp(update_op_desc, graph->valid_places());
 
     // delete nodes and edges
     std::unordered_set<const Node*> nodes2rm = {input_scale_left_node,

@@ -254,4 +254,5 @@ REGISTER_LITE_KERNEL(sequence_pool,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kCUDA))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kCUDA))})
+    .BindOutput("MaxIndex", {LiteType::GetTensorTy(TARGET(kCUDA))})
     .Finalize();
