@@ -52,9 +52,8 @@ enum class TargetType : int {
   kFPGA = 7,
   kNPU = 8,
   kXPU = 9,
-  kBM = 10,
   kAny = 6,  // any target
-  NUM = 11,  // number of fields.
+  NUM = 10,  // number of fields.
 };
 enum class PrecisionType : int {
   kUnk = 0,

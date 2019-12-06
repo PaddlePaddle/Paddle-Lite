@@ -314,7 +314,23 @@ void fill_bias_int8(int* tensor,
                     const int* bias,
                     int channel,
                     int channel_size);
+// new winograd
 
+void weight_trans_c4(
+    float* dest, const float* src, int ic, int oc, void* workspace);
+void conv_compute_6x6_3x3(const float* input,
+                          float* output,
+                          int num,
+                          int chout,
+                          int hout,
+                          int wout,
+                          int chin,
+                          int hin,
+                          int win,
+                          const float* weight,
+                          const float* bias,
+                          const operators::ConvParam& param,
+                          ARMContext* ctx);
 }  // namespace math
 }  // namespace arm
 }  // namespace lite

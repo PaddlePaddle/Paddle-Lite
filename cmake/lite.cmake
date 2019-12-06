@@ -164,7 +164,9 @@ function(lite_cc_library TARGET)
 endfunction()
 
 function(lite_cc_binary TARGET)
-    set(options "")
+    if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
+        set(options " -g ")
+    endif()
     set(oneValueArgs "")
     set(multiValueArgs SRCS DEPS X86_DEPS CUDA_DEPS CL_DEPS ARM_DEPS FPGA_DEPS BM_DEPS PROFILE_DEPS
       LIGHT_DEPS HVY_DEPS EXCLUDE_COMPILE_DEPS ARGS)
@@ -255,6 +257,7 @@ endfunction()
 
 set(arm_kernels CACHE INTERNAL "arm kernels")
 set(x86_kernels CACHE INTERNAL "x86 kernels")
+set(cuda_kernels CACHE INTERNAL "cuda kernels")
 set(fpga_kernels CACHE INTERNAL "fpga kernels")
 set(npu_kernels CACHE INTERNAL "npu kernels")
 set(xpu_kernels CACHE INTERNAL "xpu kernels")

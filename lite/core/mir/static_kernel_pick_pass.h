@@ -48,7 +48,8 @@ class StaticKernelPickPass : public mir::StmtPass {
 
  private:
   // Score the kernel.
-  size_t KernelGrade(const lite::KernelBase& kernel,
+  size_t KernelGrade(const lite::mir::Node::Stmt& instruct,
+                     const lite::KernelBase& kernel,
                      const std::vector<Place>& places) {
     CHECK_GT(places.size(), 0) << "valid_places is empty.";
     float final_score{-1.};
@@ -66,10 +67,11 @@ class StaticKernelPickPass : public mir::StmtPass {
     // valid_places.size() as default.
     //         where i is the place's index in valid_places array.
     // score:  score is the weighted sum of target、percision and layout
-    for (int i = 0; i < place_size; ++i) {
+    for (size_t i = 0; i < place_size; ++i) {
       const auto& place = places[i];
       float weight = static_cast<float>(place_size - i) / place_size;
       size_t score{};
+
       // The more important factor comes first
       if (kernel_pick_factors_.IsTargetConsidered() &&
           (place.target == kernel.target() || kernel.target() == TARGET(kAny) ||
@@ -82,8 +84,12 @@ class StaticKernelPickPass : public mir::StmtPass {
           (place.precision == kernel.precision() ||
            kernel.precision() == PRECISION(kAny) ||
            place.precision == PRECISION(kAny))) {
-        score += kMax / static_cast<int>(
-                            core::KernelPickFactor::Factor::PrecisionFirst);
+        // score skipped, if kernel is int8, but op is not int8
+        if (!(kernel.precision() == PRECISION(kInt8) &&
+              !instruct.op_info()->HasAttr("enable_int8"))) {
+          score += kMax / static_cast<int>(
+                              core::KernelPickFactor::Factor::PrecisionFirst);
+        }
       }
       VLOG(4) << "[score s2]:" << score;
       if (kernel_pick_factors_.IsDataLayoutConsidered() &&
@@ -102,17 +108,17 @@ class StaticKernelPickPass : public mir::StmtPass {
 
     VLOG(4) << "[score(final)]:" << final_score;
     VLOG(4) << "-------- pick summary --------";
-    VLOG(4) << " ===> place():" << PrecisionToStr(winner_place.precision) << " "
-            << DataLayoutToStr(winner_place.layout) << " "
+    VLOG(4) << " ===> winner_place():" << PrecisionToStr(winner_place.precision)
+            << " " << DataLayoutToStr(winner_place.layout) << " "
             << TargetToStr(winner_place.target);
     VLOG(4) << " ===> kernel.place():"
             << PrecisionToStr(kernel.place().precision) << " "
             << DataLayoutToStr(kernel.place().layout) << " "
             << TargetToStr(kernel.place().target);
     VLOG(4) << "kernel.op_type():" << kernel.op_type();
-    VLOG(4) << "picker tactic " << kernel_pick_factors_;
-    VLOG(4) << "kernel place " << kernel.place().DebugString();
-    VLOG(4) << "picker place " << winner_place.DebugString();
+    VLOG(4) << "kernel picker factors:" << kernel_pick_factors_;
+    VLOG(4) << "kernel place:" << kernel.place().DebugString();
+    VLOG(4) << "winner_picker place:" << winner_place.DebugString();
     VLOG(4) << "------------------------------";
 
     // The data layout is not considered, for the input and output arguments

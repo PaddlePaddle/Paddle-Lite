@@ -253,6 +253,13 @@ class Context<TargetType::kCUDA> {
 
   std::string name() const { return "CUDAContext"; }
 
+  CUDAContext& operator=(const CUDAContext& context) {
+    this->Init(
+        context.device_id_, context.exec_stream_id_, context.io_stream_id_);
+    cublas_fp32_ = const_cast<CUDAContext&>(context).cublas_fp32();
+    return *this;
+  }
+
  private:
   int device_id_;
   // overall information
@@ -345,7 +352,6 @@ class ContextScheduler {
 
   std::unique_ptr<KernelContext> NewContext(TargetType target) {
     std::unique_ptr<KernelContext> ctx(new KernelContext);
-
     switch (target) {
       case TARGET(kHost):
         kernel_contexts_[TargetType::kHost].As<HostContext>().CopySharedTo(
@@ -416,6 +422,7 @@ class ContextScheduler {
   void InitContext() {
     kernel_contexts_[Type].As<ContextT>().InitOnce();
   }
+
   ContextScheduler() {
     InitContext<TargetType::kHost, HostContext>();
 #ifdef LITE_WITH_X86

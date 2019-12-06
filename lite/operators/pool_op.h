@@ -14,6 +14,8 @@
 
 #pragma once
 
+#include <algorithm>
+#include <memory>
 #include <string>
 #include <vector>
 #include "lite/core/kernel.h"
@@ -51,7 +53,7 @@ class PoolOpLite : public OpLite {
     param_.ksize = op_desc.GetAttr<std::vector<int>>("ksize");
     param_.global_pooling = op_desc.GetAttr<bool>("global_pooling");
     param_.strides = op_desc.GetAttr<std::vector<int>>("strides");
-    param_.paddings = op_desc.GetAttr<std::vector<int>>("paddings");
+    auto paddings = op_desc.GetAttr<std::vector<int>>("paddings");
 
     if (op_desc.HasAttr("exclusive")) {
       param_.exclusive = op_desc.GetAttr<bool>("exclusive");
@@ -65,7 +67,23 @@ class PoolOpLite : public OpLite {
     if (op_desc.HasAttr("use_quantizer")) {
       param_.use_quantizer = op_desc.GetAttr<bool>("use_quantizer");
     }
-    // param_.data_format = op_desc.GetAttr<bool>("data_format");
+    if (op_desc.HasAttr("padding_algorithm")) {
+      padding_algorithm_ = op_desc.GetAttr<std::string>("padding_algorithm");
+    }
+    // 2-pad to 4-pad
+    if (paddings.size() == 2L) {
+      for (size_t i = 0; i < 2L; ++i) {
+        int copy_pad = *(paddings.begin() + 2 * i);
+        paddings.insert(paddings.begin() + 2 * i + 1, copy_pad);
+      }
+    } else {
+      if (paddings.size() != 4L) {
+        LOG(FATAL)
+            << "Paddings size should be the same or twice as the inputs size.";
+      }
+    }
+    param_.paddings = std::make_shared<std::vector<int>>(paddings);
+
     return true;
   }
 
@@ -75,7 +93,41 @@ class PoolOpLite : public OpLite {
 
  private:
   mutable PoolParam param_;
+  std::string padding_algorithm_{""};
 };
+
+inline void UpdatePadding(std::vector<int> *paddings,
+                          const bool global_pooling,
+                          const bool adaptive,
+                          const std::string padding_algorithm,
+                          const lite::DDim data_dims,
+                          const std::vector<int> &strides,
+                          const std::vector<int> &ksize) {
+  // when padding_algorithm is "VALID" or "SAME"
+  if (padding_algorithm == "SAME") {
+    for (int i = 0; i < strides.size(); ++i) {
+      int out_size = (data_dims[i + 2] + strides[i] - 1) / strides[i];
+      int pad_sum =
+          std::max((out_size - 1) * strides[i] + ksize[i] - data_dims[i + 2],
+                   (int64_t)0);
+      int pad_0 = pad_sum / 2;
+      int pad_1 = pad_sum - pad_0;
+      *(paddings->begin() + i * 2) = pad_0;
+      *(paddings->begin() + i * 2 + 1) = pad_1;
+    }
+  } else if (padding_algorithm == "VALID") {
+    for (auto it = paddings->begin(); it != paddings->end(); it++) {
+      *it = 0;
+    }
+  }
+
+  // if global_pooling == true or adaptive == true, padding will be ignore
+  if (global_pooling || adaptive) {
+    for (auto it = paddings->begin(); it != paddings->end(); it++) {
+      *it = 0;
+    }
+  }
+}
 
 }  // namespace operators
 }  // namespace lite

@@ -35,7 +35,6 @@ class GenerateNPUProgramPass : public SubgraphProgramPass {
   using key2nodes_t = std::map<std::string, Node*>;
 
   void Apply(const std::unique_ptr<SSAGraph>& graph) override;
-  std::unique_ptr<RuntimeProgram> GenProgram();
 
  protected:
   // nodes2cvt: op nodes to convert
@@ -54,9 +53,6 @@ class GenerateNPUProgramPass : public SubgraphProgramPass {
   void GenNPUSubgraph(const std::unique_ptr<SSAGraph>& graph,
                       const std::unordered_set<Node*>& op_nodes,
                       int sub_id);
-
- private:
-  std::vector<Instruction> insts_;
 };
 
 }  // namespace subgraph

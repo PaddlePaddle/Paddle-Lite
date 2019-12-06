@@ -41,8 +41,10 @@ node_map_type ReshapeConverter(const std::shared_ptr<lite::OpLite> reshape_op,
   reshape_node->set_input_tensor(*inputs_map.at(x_var_name));
   lite::npu::OpList::Global().add(inputs_map.at(x_var_name));
 
-  // read shape from actual shape tensor as input "w" if 'Shape' is found
-  if (lite::npu::HasInputArg(op_info, scope, "Shape")) {
+  // read shape from "ShapeTensor"(input), or "Shape"(input), or "shape"(attr)
+  if (lite::npu::HasInputArg(op_info, scope, "ShapeTensor")) {
+    LOG(FATAL) << "[NPU] not support \"Shape\" from more than one Tensor.";
+  } else if (lite::npu::HasInputArg(op_info, scope, "Shape")) {
     auto actual_shape_var_name = op_info->Input("Shape").front();
     if (!inputs_map.count(actual_shape_var_name)) {
       auto actual_shape =

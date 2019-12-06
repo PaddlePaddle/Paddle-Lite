@@ -110,7 +110,7 @@ void TargetCopy(TargetType target, void* dst, const void* src, size_t size) {
       TargetWrapper<TARGET(kBM)>::MemcpySync(
           dst, src, size, IoDirection::DtoD);
       break;
-#endif 
+#endif
 #ifdef LITE_WITH_OPENCL
     case TargetType::kOpenCL:
       TargetWrapperCL::MemcpySync(dst, src, size, IoDirection::DtoD);
