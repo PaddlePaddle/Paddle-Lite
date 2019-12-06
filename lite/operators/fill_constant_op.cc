@@ -51,9 +51,8 @@ class FillConstantOp : public OpLite {
     param_.shape_tensor_list = {};
 
     std::vector<std::string> input_arg_names = opdesc.InputArgumentNames();
-    if (std::find(input_arg_names.begin(),
-                  input_arg_names.end(),
-                  "ShapeTensor") != input_arg_names.end()) {
+    if (opdesc.HasInput("ShapeTensor") &&
+        !opdesc.Input("ShapeTensor").empty()) {
       auto args = opdesc.Input("ShapeTensor");
       auto* var = scope->FindVar(args.front());
       param_.shape_tensor = var->GetMutable<lite::Tensor>();
