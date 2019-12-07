@@ -13,29 +13,34 @@
 // limitations under the License.
 
 #pragma once
-#include <stdint.h>
-#include "lite/backends/arm/math/type_trans.h"
-#include "lite/core/kernel.h"
-#include "lite/core/op_registry.h"
+#include <string>
+#include "lite/core/op_lite.h"
+#include "lite/operators/op_params.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
-namespace arm {
+namespace operators {
 
-template <typename T, PrecisionType PType>
-class SliceCompute : public KernelLite<TARGET(kARM), PType> {
+class ReduceProdOpLite : public OpLite {
  public:
-  using param_t = operators::SliceParam;
+  ReduceProdOpLite() {}
 
-  void Run() override;
+  explicit ReduceProdOpLite(const std::string &op_type) : OpLite(op_type) {}
 
-  ~SliceCompute() {}
+  bool CheckShape() const override;
+
+  bool InferShape() const override;
+
+  bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
+
+  void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
+
+  std::string DebugString() const override { return "reduce_prod"; }
 
  private:
+  mutable ReduceParam param_;
 };
 
-}  // namespace arm
-}  // namespace kernels
+}  // namespace operators
 }  // namespace lite
 }  // namespace paddle

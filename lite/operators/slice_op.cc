@@ -83,7 +83,6 @@ bool SliceOp::InferShape() const {
   if (axes[0] != 0) {
     param_.Out->set_lod(param_.X->lod());
   }
-  LOG(INFO) << "infer shape done";
   return true;
 }
 
@@ -162,7 +161,6 @@ bool SliceOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
     CHECK_EQ(ends_size, param_.axes.size())
         << "The size of ends must be equal to the size of axes.";
   }
-  LOG(INFO) << "attach impl done";
   return true;
 }
 

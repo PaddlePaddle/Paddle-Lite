@@ -13,29 +13,21 @@
 // limitations under the License.
 
 #pragma once
-#include <stdint.h>
-#include "lite/backends/arm/math/type_trans.h"
-#include "lite/core/kernel.h"
-#include "lite/core/op_registry.h"
+
+#include <utility>
+#include "lite/core/tensor.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
 namespace arm {
+namespace math {
 
-template <typename T, PrecisionType PType>
-class SliceCompute : public KernelLite<TARGET(kARM), PType> {
- public:
-  using param_t = operators::SliceParam;
+std::pair<LoD, std::pair<size_t, size_t>> GetSubLoDAndAbsoluteOffset(
+    const LoD &lod, size_t start_idx, size_t end_idx, size_t start_level);
 
-  void Run() override;
+void AppendLoD(LoD *lod, const LoD &lod_length);
 
-  ~SliceCompute() {}
-
- private:
-};
-
+}  // namespace math
 }  // namespace arm
-}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
