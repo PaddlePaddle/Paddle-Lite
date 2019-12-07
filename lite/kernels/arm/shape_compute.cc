@@ -37,5 +37,5 @@ void ShapeCompute::Run() {
 REGISTER_LITE_KERNEL(
     shape, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::ShapeCompute, def)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
     .Finalize();

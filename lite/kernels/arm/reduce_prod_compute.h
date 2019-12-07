@@ -23,16 +23,12 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
-template <typename T, PrecisionType PType>
-class SliceCompute : public KernelLite<TARGET(kARM), PType> {
+template <typename T, PrecisionType Ptype>
+class ReduceProdCompute : public KernelLite<TARGET(kARM), Ptype> {
  public:
-  using param_t = operators::SliceParam;
-
   void Run() override;
 
-  ~SliceCompute() {}
-
- private:
+  virtual ~ReduceProdCompute() = default;
 };
 
 }  // namespace arm

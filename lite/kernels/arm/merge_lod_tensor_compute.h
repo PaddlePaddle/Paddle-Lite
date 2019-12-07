@@ -13,26 +13,23 @@
 // limitations under the License.
 
 #pragma once
-#include <stdint.h>
-#include "lite/backends/arm/math/type_trans.h"
+#include <algorithm>
 #include "lite/core/kernel.h"
-#include "lite/core/op_registry.h"
+#include "lite/operators/merge_lod_tensor_op.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace arm {
 
-template <typename T, PrecisionType PType>
-class SliceCompute : public KernelLite<TARGET(kARM), PType> {
+class MergeLodTensorCompute
+    : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
  public:
-  using param_t = operators::SliceParam;
+  using param_t = operators::MergeLodTensorParam;
 
   void Run() override;
 
-  ~SliceCompute() {}
-
- private:
+  virtual ~MergeLodTensorCompute() = default;
 };
 
 }  // namespace arm

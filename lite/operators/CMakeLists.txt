@@ -83,6 +83,9 @@ add_operator(assign_value_op extra SRCS assign_value_op.cc DEPS ${op_DEPS})
 
 add_operator(fake_quantize_dequantize_moving_avg_abs_max_op extra SRCS fake_quantize_dequantize_moving_avg_max_abs.cc DEPS ${op_DEPS})
 add_operator(fake_channel_wise_dequantize_max_abs_op extra SRCS fake_channel_wise_dequantize_max_abs.cc DEPS ${op_DEPS})
+add_operator(split_lod_tensor_op_lite extra SRCS split_lod_tensor_op.cc DEPS ${op_DEPS})
+add_operator(merge_lod_tensor_op_lite extra SRCS merge_lod_tensor_op.cc DEPS ${op_DEPS})
+add_operator(reduce_prod_op_lite extra SRCS reduce_prod_op.cc DEPS ${op_DEPS})
 add_operator(sequence_reshape_op_lite extra SRCS sequence_reshape_op.cc DEPS ${op_DEPS})
 add_operator(sequence_reverse_op_lite extra SRCS sequence_reverse_op.cc DEPS ${op_DEPS})
 add_operator(reduce_sum_op_lite extra SRCS reduce_ops.cc DEPS ${op_DEPS})
@@ -94,6 +97,8 @@ add_operator(sequence_concat_op_lite extra SRCS sequence_concat_op.cc DEPS ${op_
 add_operator(var_conv_2d_op_lite extra SRCS var_conv_2d_op.cc DEPS ${op_DEPS})
 add_operator(attention_padding_mask_op_lite extra SRCS attention_padding_mask_op.cc DEPS ${op_DEPS})
 add_operator(sequence_arithmetic_op_lite extra SRCS sequence_arithmetic_op.cc DEPS ${op_DEPS})
+add_operator(conditional_block_op_lite extra SRCS conditional_block_op.cc DEPS ${op_DEPS})
+add_operator(collect_fpn_proposals_op_lite extra SRCS collect_fpn_proposals_op.cc DEPS ${op_DEPS})
 
 # for OCR specific
 add_operator(while_op extra SRCS while_op.cc DEPS ${op_DEPS})
