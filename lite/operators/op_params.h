@@ -1090,6 +1090,17 @@ struct CollectFpnProposalsParam {
   int post_nms_topN{};
 };
 
+/// --------------------- instance_norm operators --------------------
+struct InstanceNormParam {
+  lite::Tensor* x{};
+  lite::Tensor* out{};
+  lite::Tensor* bias{};
+  lite::Tensor* scale{};
+  lite::Tensor* saved_mean{};
+  lite::Tensor* saved_variance{};
+  float epsilon;
+};
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle
