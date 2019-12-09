@@ -148,7 +148,7 @@ int CvtActMode(std::string act_type) {
     act_mode = 1;
   } else if (act_type == "tanh") {
     act_mode = 2;
-  } else if (act_type == "relu_clipped") {
+  } else if (act_type == "relu_clipped" || act_type == "relu6") {
     act_mode = 3;
   } else if (act_type == "elu") {
     act_mode = 4;
