@@ -20,6 +20,7 @@ USE_NPU_BRIDGE(sigmoid);
 USE_NPU_BRIDGE(relu);
 USE_NPU_BRIDGE(tanh);
 USE_NPU_BRIDGE(relu_clipped);
+USE_NPU_BRIDGE(relu6);
 USE_NPU_BRIDGE(leaky_relu);
 USE_NPU_BRIDGE(softsign);
 USE_NPU_BRIDGE(hard_sigmoid);
