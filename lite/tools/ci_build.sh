@@ -37,6 +37,25 @@ function prepare_thirdparty {
     fi
 }
 
+# prepare adb devices
+# if USE_ADB_EMULATOR=ON , we create adb emulator port_armv8 and port_armv7 for usage, else we will use actual mobilephone according to adbindex.
+function prepare_adb_devices {
+    if [ $USE_ADB_EMULATOR == "ON" ]; then
+       prepare_emulator $port_armv8 $port_armv7
+       portname_armv8=emulator-$port_armv8
+       portname_armv7=emulator-$port_armv7
+    else
+       adb_devices=($(adb devices |grep -v devices |grep device | awk -F " " '{print $1}'))
+       # adbindex is the env variable registered in ci agent to tell which mobile is to used as adb
+       if[ ${adbindex} > ${#adb_devices[@]}-1 ]; then
+           echo -e "Error: the adb devices on ci agent are not enough, at least ${adbindex} adb devices are needed."
+           exit 1
+       fi
+       echo ${adb_devices[${adbindex}]}
+       portname_armv8=${adb_devices[${adbindex}]}
+       portname_armv7=${adb_devices[${adbindex}]}
+    fi
+}
 
 # for code gen, a source file is generated after a test, but is dependended by some targets in cmake.
 # here we fake an empty file to make cmake works.
@@ -699,21 +718,7 @@ function build_test_arm_subtask_android {
     port_armv8=5554
     port_armv7=5556
 
-    if [ $USE_ADB_EMULATOR == "ON" ]; then
-       prepare_emulator $port_armv8 $port_armv7
-       local portname_armv8=emulator-$port_armv8
-       local portname_armv7=emulator-$port_armv7
-   else
-       adb_devices=($(adb devices |grep -v devices |grep device | awk -F " " '{print $1}'))
-       # adbindex is the env variable registered in ci agent to tell which mobile is to used as adb
-       if[ adbindex > ${#adb_devices[@]}-1 ]; then
-           echo -e "Error: the adb devices on ci agent are not enough."
-           exit 1
-       fi
-       echo ${adb_devices[${adbindex}]}
-       local portname_armv8=${adb_devices[${adbindex}]}
-       local portname_armv7=${adb_devices[${adbindex}]}
-    fi
+    prepare_adb_devices
 
     # job 1
     build_arm "android" "armv8" "gcc"
@@ -786,18 +791,17 @@ function build_test_arm_subtask_model {
     cd $build_dir
     cmake_arm $os $abi $lang
     make $test_name -j$NUM_CORES_FOR_COMPILE
-    if [ $USE_ADB_EMULATOR == "ON" ]; then
-       prepare_emulator $port_armv8 $port_armv7
-       local portname_armv8=emulator-$port_armv8
-    else
-       adb_devices=$(adb devices |grep -v devices | grep device | awk -F " " '{print $1}')
-       local portname_armv8=${adb_devices[0]}
-       adb -s $portname_armv8 shell 'rm -rf /data/local/tmp/*'
-    fi
+
+    # prepare adb devices
+    prepare_adb_devices
+    adb -s $portname_armv8 shell 'rm -rf /data/local/tmp/*'
+
     # just test the model on armv8
     test_arm_model $test_name $portname_armv8 "./third_party/install/$model_name"
 
-    adb devices | grep emulator | cut -f1 | while read line; do adb -s $line emu kill; done
+    if [ $USE_ADB_EMULATOR == "ON" ]; then
+        adb devices | grep emulator | cut -f1 | while read line; do adb -s $line emu kill; done
+    fi
     echo "Done"
     cd -
     rm -rf $build_dir
