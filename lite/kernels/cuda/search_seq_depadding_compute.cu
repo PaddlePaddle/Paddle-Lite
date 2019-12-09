@@ -50,6 +50,7 @@ void SearchSeqDepaddingCompute::Run() {
   auto* out = param.out;
 
   auto* in_data = pad->data<float>();
+  out->Resize({src->dims()[0], pad->dims()[1]});
   auto* out_data = out->mutable_data<float>(TARGET(kCUDA));
   const int count = out->numel();
 
@@ -59,6 +60,9 @@ void SearchSeqDepaddingCompute::Run() {
   int seq_num = pad_seq_offset.size() - 1;
   int emb_size = pad->dims()[1];
 
+  LoD out_lod;
+  out_lod.push_back(src_seq_offset);
+  out->set_lod(out_lod);
   std::vector<int> seq_id_map;
   for (int i = 0; i < seq_num; i++) {
     int cur_len = src_seq_offset[i + 1] - src_seq_offset[i];
@@ -77,11 +81,12 @@ void SearchSeqDepaddingCompute::Run() {
                        cuda_stream);
 
   int threads = 512;
-  ker_sequence_depadding_fwd<<<count, threads, 0, cuda_stream>>>(
+  int blocks = (count + threads - 1) / threads;
+  ker_sequence_depadding_fwd<<<blocks, threads, 0, cuda_stream>>>(
       out_data, in_data, seq_id_map_data, seq_num, max_len, emb_size, count);
 
   cudaError_t error = cudaGetLastError();
-  if (error != cudaSuccess) LOG(INFO) << cudaGetErrorString(error);
+  if (error != cudaSuccess) LOG(ERROR) << cudaGetErrorString(error);
 }
 
 }  // namespace cuda

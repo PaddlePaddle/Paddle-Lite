@@ -13,41 +13,26 @@
 // limitations under the License.
 
 #pragma once
+#include <algorithm>
 #include "lite/core/kernel.h"
+#include "lite/operators/merge_lod_tensor_op.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace cuda {
+namespace arm {
 
-class ElementwiseAddCompute
-    : public KernelLite<TARGET(kCUDA), PRECISION(kFloat)> {
+class MergeLodTensorCompute
+    : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
  public:
-  using param_t = operators::ElementwiseParam;
+  using param_t = operators::MergeLodTensorParam;
 
   void Run() override;
-  virtual ~ElementwiseAddCompute() = default;
+
+  virtual ~MergeLodTensorCompute() = default;
 };
 
-class ElementwiseAddComputeNHWC
-    : public KernelLite<TARGET(kCUDA), PRECISION(kFloat), DATALAYOUT(kNHWC)> {
- public:
-  using param_t = operators::ElementwiseParam;
-
-  void Run() override;
-  virtual ~ElementwiseAddComputeNHWC() = default;
-};
-
-class ElementwiseAddComputeInt8
-    : public KernelLite<TARGET(kCUDA), PRECISION(kFloat), DATALAYOUT(kNHWC)> {
- public:
-  using param_t = operators::ElementwiseParam;
-
-  void Run() override;
-  virtual ~ElementwiseAddComputeInt8() = default;
-};
-
-}  // namespace cuda
+}  // namespace arm
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

@@ -36,7 +36,6 @@ void anakin_NV_gemv<float>(cublasHandle_t handle,
                            const float* x,
                            const float beta,
                            float* y) {
-  LOG(INFO) << "1";
   cublasOperation_t cuTransA = (TransA == false) ? CUBLAS_OP_T : CUBLAS_OP_N;
   CUBLAS_CHECK(
       cublasSgemv(handle, cuTransA, N, M, &alpha, A, N, x, 1, &beta, y, 1));
@@ -66,17 +65,13 @@ void anakin_NV_gemm<float>(cublasHandle_t handle,
                            const float* B,
                            const float beta,
                            float* C) {
-  LOG(INFO) << "1";
   // Note that cublas follows fortran order.
   int lda = (!TransA /* == CblasNoTrans*/) ? K : M;
   int ldb = (!TransB /* == CblasNoTrans*/) ? N : K;
-  LOG(INFO) << "1";
   cublasOperation_t cuTransA =
       (!TransA /* == CblasNoTrans*/) ? CUBLAS_OP_N : CUBLAS_OP_T;
-  LOG(INFO) << "1";
   cublasOperation_t cuTransB =
       (!TransB /* == CblasNoTrans*/) ? CUBLAS_OP_N : CUBLAS_OP_T;
-  LOG(INFO) << "1";
   CUBLAS_CHECK(cublasSgemm(handle,
                            cuTransB,
                            cuTransA,
@@ -91,7 +86,6 @@ void anakin_NV_gemm<float>(cublasHandle_t handle,
                            &beta,
                            C,
                            N));
-  LOG(INFO) << "1";
 }
 
 template <>

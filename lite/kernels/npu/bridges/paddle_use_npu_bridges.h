@@ -53,3 +53,5 @@ USE_NPU_BRIDGE(sqrt);
 USE_NPU_BRIDGE(square);
 USE_NPU_BRIDGE(transpose);
 USE_NPU_BRIDGE(transpose2);
+USE_NPU_BRIDGE(unsqueeze);
+USE_NPU_BRIDGE(unsqueeze2);

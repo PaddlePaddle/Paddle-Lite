@@ -90,6 +90,9 @@ bool FcOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
   if (op_desc.HasAttr("activation_type")) {
     param_.activation_type = op_desc.GetAttr<std::string>("activation_type");
   }
+  if (op_desc.HasAttr("padding_weights")) {
+    param_.activation_type = op_desc.GetAttr<bool>("padding_weights");
+  }
 
   // For Int8
   if (op_desc.HasAttr("enable_int8")) {
