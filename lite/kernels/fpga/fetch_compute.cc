@@ -14,6 +14,7 @@
 #include "lite/kernels/fpga/fetch_compute.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/type_system.h"
+#include "lite/backends/fpga/KD/debugger.hpp"
 
 namespace paddle {
 namespace lite {
@@ -25,7 +26,7 @@ using float16 = zynqmp::float16;
 void FetchCompute::PrepareForRun() {
   auto& param = this->Param<param_t>();
   // ====================================================
-  zynqmp::OutputParam& conv_param = pe_.param();
+  zynqmp::OutputParam& fetch_param = pe_.param();
   auto fetch_list = param.fetch_list;
   if (fetch_list->size() <= static_cast<size_t>(param.col)) {
     fetch_list->resize(param.col + 1);
@@ -34,8 +35,8 @@ void FetchCompute::PrepareForRun() {
   out.Resize(param.input->dims());
   out.mutable_data<float>();
 
-  conv_param.input = param.input->ZynqTensor();
-  conv_param.output = out.ZynqTensor();
+  fetch_param.input = param.input->ZynqTensor();
+  fetch_param.output = out.ZynqTensor();
 
   pe_.init();
   pe_.apply();
@@ -44,8 +45,11 @@ void FetchCompute::PrepareForRun() {
 void FetchCompute::Run() {
   pe_.dispatch();
   auto& param = this->Param<param_t>();
-  zynqmp::OutputParam& conv_param = pe_.param();
-  conv_param.output->saveToFile("fetch", true);
+  
+#ifdef FPGA_PRINT_TENSOR
+  zynqmp::OutputParam& fetch_param = pe_.param();
+  Debugger::get_instance().registerOutput("fetch", fetch_param.output);
+#endif
 }
 
 }  // namespace fpga

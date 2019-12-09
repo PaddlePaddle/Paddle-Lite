@@ -5,6 +5,8 @@
 namespace paddle {
 namespace lite {
 
+#define FPGA_PRINT_TENSOR
+
 class Debugger {
  public:
   static Debugger& get_instance() {
@@ -12,7 +14,7 @@ class Debugger {
     return s_instance;
   }
 
-  void registerOutput(std::string op_type, Tensor* tensor) {
+  void registerOutput(std::string op_type, zynqmp::Tensor* tensor) {
     // tensor->printScale();
     // tensor->saveToFile(op_type, true);
   }
@@ -101,8 +103,6 @@ inline void save_float(float* data, const std::string& name, int len) {
 }
 
 inline void save_tensor(lite::Tensor* t,const std::string& name, bool convert = true) {
-  
-
   float* data = const_cast<float*>(t->data<float>());
 	float* dst = new float[t->numel()];
   if (convert) {
@@ -111,7 +111,6 @@ inline void save_tensor(lite::Tensor* t,const std::string& name, bool convert = 
   }
 
   save_float(data, name, t->numel());
-
   delete[] dst;
 }
 

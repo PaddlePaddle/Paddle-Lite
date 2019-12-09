@@ -15,6 +15,7 @@
 #include "lite/kernels/fpga/fc_compute.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/type_system.h"
+#include "lite/backends/fpga/KD/debugger.hpp"
 
 namespace paddle {
 namespace lite {
@@ -30,7 +31,6 @@ void FcCompute::PrepareForRun() {
   zynqmp::FullyConnectedParam& fc_param = pe_.param();
 
   param.output->mutable_data<float16>();
-
   fc_param.input = param.input->ZynqTensor();
   fc_param.output = param.output->ZynqTensor();
   fc_param.filter = param.w->ZynqTensor();
@@ -42,8 +42,10 @@ void FcCompute::PrepareForRun() {
 
 void FcCompute::Run() {
   pe_.dispatch();
+#ifdef FPGA_PRINT_TENSOR
   zynqmp::FullyConnectedParam& fc_param = pe_.param();
-  // fc_param.output->saveToFile("fc", true);
+  Debugger::get_instance().registerOutput("fc", fc_param.output);
+#endif
 }
 
 }  // namespace fpga

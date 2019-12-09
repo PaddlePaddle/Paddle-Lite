@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/fpga/dropout_compute.h"
 #include <string>
+#include "lite/kernels/fpga/dropout_compute.h"
 
 #include "lite/backends/fpga/KD/float16.hpp"
-// #include "lite/backends/arm/math/funcs.h"
+#include "lite/backends/fpga/KD/debugger.hpp"
 
 namespace paddle {
 namespace lite {
@@ -54,12 +54,11 @@ void DropoutCompute::PrepareForRun() {
 }
 
 void DropoutCompute::Run() {
-  auto& param = Param<operators::DropoutParam>();
-  zynqmp::ScaleParam& scale_param = pe_.param();
-  // scale_param.input->saveToFile("drop_in.txt");
   pe_.dispatch();
-  // scale_param.output->saveToFile("drop_out.txt");
-  // std::cout << "prob:" << param.dropout_prob << std::endl;
+#ifdef FPGA_PRINT_TENSOR
+  zynqmp::ScaleParam& scale_param = pe_.param();
+  Debugger::get_instance().registerOutput("dropout", scale_param.output);
+#endif
 }
 
 }  // namespace fpga

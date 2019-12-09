@@ -195,17 +195,13 @@ void MultiClassNMS(const operators::MulticlassNmsParam& param,
   T score_threshold = static_cast<T>(param.score_threshold);
 
   int num_det = 0;
-
   int64_t class_num = scores_size == 3 ? scores.dims()[0] : scores.dims()[1];
-  
-  // scores.ZynqTensor()->saveToFile("nms_scores", true);
 
   for (int64_t c = 0; c < class_num; ++c) {
     Tensor bbox_slice, score_slice;
     if (c == background_label) continue;
     if (scores_size == 3) {
       scores.Slice<T>(score_slice, c, c + 1);
-      // score_slice.ZynqTensor()->saveToFile("nms_slice", true);
       bbox_slice = bboxes;
     } else {
       score_slice.Resize({scores.dims()[0], 1});
@@ -387,27 +383,19 @@ void MulticlassNmsCompute::Run() {
       if (e > s) {
         Tensor out;
         outs->Slice<float>(out, s, e);
-        // scores_slice.ZynqTensor()->saveToFile("scores_slice", true);
         MultiClassOutput<float>(
             scores_slice, boxes_slice, all_indices[i], score_dims.size(), &out);
-        out.ZynqTensor()->saveToFile("out", true); 
         outs->ZynqTensor()->copyFrom(out.ZynqTensor());
       }
     }
   }
-
-
-  // save_tensor(param.scores, "_scores.txt", false);
-  // save_tensor(param.bboxes, "_bboxes.txt", false);
-
-  boxes->ZynqTensor()->saveToFile("_boxes", true);
-  scores->ZynqTensor()->saveToFile("_scores", true);
-  outs->ZynqTensor()->saveToFile("_outs", true);
-
   LoD lod;
   lod.emplace_back(batch_starts);
-
   outs->set_lod(lod);
+
+#ifdef FPGA_PRINT_TENSOR
+  Debugger::get_instance().registerOutput("nms", outs->ZynqTensor());
+#endif
 }
 }  // namespace host
 }  // namespace kernels

@@ -12,9 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/fpga/elementwise_compute.h"
 #include <string>
+#include "lite/kernels/fpga/elementwise_compute.h"
 #include "lite/backends/arm/math/funcs.h"
+#include "lite/backends/fpga/KD/debugger.hpp"
 
 namespace paddle {
 namespace lite {
@@ -39,8 +40,10 @@ void ElementwiseAddCompute::PrepareForRun() {
 }
 void ElementwiseAddCompute::Run() { 
   pe_.dispatch();
+#ifdef FPGA_PRINT_TENSOR
   zynqmp::ElementwiseAddParam& ew_param = pe_.param();
-  // ew_param.output->saveToFile("ew", true);
+  Debugger::get_instance().registerOutput("ew_add", ew_param.output);
+#endif
 }
 
 void ElementwiseAddActivationCompute::PrepareForRun() {
@@ -59,6 +62,10 @@ void ElementwiseAddActivationCompute::PrepareForRun() {
 }
 void ElementwiseAddActivationCompute::Run() { 
   pe_.dispatch(); 
+#ifdef FPGA_PRINT_TENSOR
+  zynqmp::ElementwiseAddParam& ew_param = pe_.param();
+  Debugger::get_instance().registerOutput("ew_add", ew_param.output);
+#endif
 }
 
 void ElementwiseMulCompute::PrepareForRun() {
@@ -66,14 +73,8 @@ void ElementwiseMulCompute::PrepareForRun() {
   auto& param = Param<operators::ElementwiseParam>();
   param.Out->mutable_data<float16>();
 
-
   scale_param.input = param.X->ZynqTensor();
   scale_param.output = param.Out->ZynqTensor();
-  // param.Y->ZynqTensor()->saveToFile("scale_y", true);
-
-  std::cout << "y_production:" << param.Y->dims().production() << std::endl;
-
-  // exit(-1);
 
   scale_param.relu.enabled = false;
 
@@ -85,39 +86,26 @@ void ElementwiseMulCompute::PrepareForRun() {
   zynqmp::Shape shape(zynqmp::N, {channel});
   float* scale_data = scale->mutableData<float>(zynqmp::FP32, shape);
   float* bias_data = bias->mutableData<float>(zynqmp::FP32, shape);
-
   float scale_value = param.Y->data<float>()[0];;
-
-  std::cout << "scale_value:" << scale_value << std::endl;
-  std::cout << "channel:" << channel << std::endl;
-  std::cout << "data_type:" << param.Y->ZynqTensor()->dataType() << std::endl;
-
-  // exit(-1);
 
   for (int i = 0; i < channel; ++i) {
     if (param.Y->dims().production() != 1) {
       scale_value = param.Y->ZynqTensor()->data<float>()[i];
     } 
     scale_data[i] = scale_value;
-    
     bias_data[i] = 0;
   }
 
   pe_.init();
   pe_.apply();
-
-  // scale_param.input->saveToFile("scale_input", true);
-  // scale_param.scale->saveToFile("scale_scale", true);
-  param.Y->ZynqTensor()->saveToFile("ew_y", true);
-
-  // exit(-1);
 }
 
 void ElementwiseMulCompute::Run() { 
   pe_.dispatch();
+#ifdef FPGA_PRINT_TENSOR
   zynqmp::ScaleParam& scale_param = pe_.param();
-  // scale_param.output->saveToFile("ew_mul", true);
-  // exit(-1);
+  Debugger::get_instance().registerOutput("ew_mul", scale_param.output);
+#endif
 }
 
 }  // namespace fpga

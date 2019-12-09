@@ -15,6 +15,7 @@
 #include "lite/kernels/fpga/feed_compute.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/type_system.h"
+#include "lite/backends/fpga/KD/debugger.hpp"
 
 namespace paddle {
 namespace lite {
@@ -37,24 +38,17 @@ void FeedCompute::PrepareForRun() {
 }
 
 void FeedCompute::Run() {
-  std::cout << "================= FeedCompute ================= \n";
   auto& param = this->Param<param_t>();
   Tensor& x = param.feed_list->at(param.col);
-  zynqmp::InputParam& feed_param = pe_.param();
-
-  if (x.dims().production() == 7590) {
-    feed_param.input->readFromFile("position_encoding.data");
-    feed_param.input->saveToFile("read.txt");
-  }
-
   pe_.dispatch();
 
-  
   auto out_lod = param.out->mutable_lod();
   *out_lod = x.lod();
 
-  feed_param.input->saveToFile("feed_in.txt");
-  feed_param.output->saveToFile("feed.txt");
+#ifdef FPGA_PRINT_TENSOR
+  zynqmp::InputParam& feed_param = pe_.param();
+  Debugger::get_instance().registerOutput("feed", feed_param.output);
+#endif
 }
 
 }  // namespace fpga

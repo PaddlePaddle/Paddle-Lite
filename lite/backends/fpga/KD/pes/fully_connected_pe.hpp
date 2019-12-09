@@ -94,21 +94,7 @@ class FullyConnectedPE : public PE {
   }
 
   bool dispatch() { 
-    // return 
     return convPE_.dispatch();
-    // convPE_.dispatch(); 
-    // if (num_ == 1) {
-    //   return true;
-    // }
-    // Tensor* output = param_.output;
-    // int size = output->shape().numel() * sizeof(floa16);
-    // memcpy(output->data<void>(), tempOut_->data<void>(), size);
-
-    // for (int i = 1;i < num_;i ++) {
-
-    //   memcpy(output->data<void>(), tempOut_->data<void>(), size);
-    // }
-    // return true;
   }
 
   FullyConnectedParam& param() { return param_; }

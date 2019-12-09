@@ -13,8 +13,7 @@
 // limitations under the License.
 
 #include "lite/kernels/fpga/norm_compute.h"
-// #include "lite/backends/arm/math/funcs.h"
-
+#include "lite/backends/fpga/KD/debugger.hpp"
 
 namespace paddle {
 namespace lite {
@@ -27,7 +26,6 @@ void NormCompute::PrepareForRun() {
   auto& param = this->Param<operators::NormParam>();
   param.Out->mutable_data<float16>();
 
-
   zynqmp::NormParam& norm_param = pe_.param();
   norm_param.input = param.X->ZynqTensor();
   norm_param.output = param.Out->ZynqTensor();
@@ -39,20 +37,10 @@ void NormCompute::PrepareForRun() {
 
 void NormCompute::Run() {
   pe_.dispatch();
-  pe_.param().output->saveToFile("norm.txt", true);
-  // auto& ctx = this->ctx_->template As<ARMContext>();
-  // auto& param = this->Param<operators::NormParam>();
-
-  // auto input_dims = param.X->dims();
-  // int dim_size = param.X->dims().size();
-  // auto axis = (param.axis < 0) ? param.axis + dim_size : param.axis;
-
-  // const auto* x_data = param.X->data<float>();
-  // auto* o_data = param.Out->mutable_data<float>();
-  // int pre_n = input_dims.count(0, axis);
-  // int post_n = input_dims.count(axis + 1, dim_size);
-  // int n = input_dims[axis];
-  // lite::arm::math::norm(x_data, pre_n, n, post_n, param.epsilon, o_data, &ctx);
+#ifdef FPGA_PRINT_TENSOR
+  zynqmp::NormParam& norm_param = pe_.param();
+  Debugger::get_instance().registerOutput("norm", norm_param.output);
+#endif
 }
 
 }  // namespace fpga

@@ -28,7 +28,7 @@ limitations under the License. */
 namespace paddle {
 namespace zynqmp {
 
-#define PADDLE_MOBILE_OS_LINUX
+#define PADDLE_OS_LINUX
 
 static int fd = -1;
 static const char *device_path = "/dev/fpgadrv0";
@@ -38,7 +38,7 @@ static size_t memory_size_max = 0;
 static size_t memory_size = 0;
 
 static inline int do_ioctl(uint64_t req, const void *arg) {
-#ifdef PADDLE_MOBILE_OS_LINUX
+#ifdef PADDLE_OS_LINUX
   return ioctl(fd, req, arg);
 #else
   return -1;
@@ -46,11 +46,9 @@ static inline int do_ioctl(uint64_t req, const void *arg) {
 }
 
 int open_device() {
-  // std::cout << "open_device" << std::endl;
   if (fd == -1) {
     fd = open(device_path, O_RDWR);
   }
-  // std::cout << "open_device fd:" << fd << std::endl;
   return fd;
 }
 
@@ -68,7 +66,7 @@ void *fpga_malloc(size_t size) {
 #ifdef ENABLE_DEBUG
 // std::cout << "fpga_malloc:" << size << std::endl;
 #endif
-#ifdef PADDLE_MOBILE_OS_LINUX
+#ifdef PADDLE_OS_LINUX
   void *ptr = reinterpret_cast<void *>(
       mmap64(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0));
   if (ptr == NULL) {
@@ -113,7 +111,7 @@ void fpga_free(void *ptr) {
 
   memory_size -= size;
 
-#ifdef PADDLE_MOBILE_OS_LINUX
+#ifdef PADDLE_OS_LINUX
 
   munmap(ptr, size);
 #else

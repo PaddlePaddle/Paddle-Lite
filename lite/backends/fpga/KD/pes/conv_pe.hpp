@@ -64,13 +64,10 @@ class ConvPE : public PE {
     if (!use_cpu_) {
       // param_.filter->releaseData();
     }
-
-    // exit(-1);
   }
 
 
   void cpu_conv_hwc() {
-
 
     Tensor* input = param_.input;
     Tensor* output = param_.output;

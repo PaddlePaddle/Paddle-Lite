@@ -135,16 +135,16 @@ TEST(ResNet50, test) {
   //   std::cout << ":" << out1->data<float>()[i] << std::endl; 
   // }
 
-  // std::string file = "output/" + FLAGS_input_file.substr (6);
-  // std::cout << "file:::" << file << std::endl;
+  std::string file = "output/" + FLAGS_input_file.substr (6);
+  std::cout << "file:::" << file << std::endl;
 
-  // std::ofstream ofs;
-  // ofs.open(file);
-  // for (int i = 0; i < out->dims().production(); i++) {
-  //   float value = out->data<float>()[i];
-  //   ofs << value << std::endl;
-  // }
-  // ofs.close();
+  std::ofstream ofs;
+  ofs.open(file);
+  for (int i = 0; i < out->dims().production(); i++) {
+    float value = out->data<float>()[i];
+    ofs << value << std::endl;
+  }
+  ofs.close();
 
   LOG(INFO) << "================== Speed Report ===================";
 }

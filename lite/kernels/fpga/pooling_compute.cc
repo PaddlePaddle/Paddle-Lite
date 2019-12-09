@@ -12,11 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/fpga/pooling_compute.h"
 #include <string>
 #include <vector>
+#include "lite/kernels/fpga/pooling_compute.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/type_system.h"
+
+#include "lite/backends/fpga/KD/debugger.hpp"
 
 namespace paddle {
 namespace lite {
@@ -47,9 +49,10 @@ void PoolCompute::PrepareForRun() {
 
 void PoolCompute::Run() {
   pe_.dispatch();
+#ifdef FPGA_PRINT_TENSOR
   zynqmp::PoolingParam& pool_param = pe_.param();
-  pool_param.output->printScale("pooling");
-  pool_param.output->saveToFile("pool", true);
+  Debugger::get_instance().registerOutput("pooling", pool_param.output);
+#endif
 }
 
 }  // namespace fpga

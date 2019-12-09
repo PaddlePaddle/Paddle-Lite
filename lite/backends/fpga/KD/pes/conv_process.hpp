@@ -324,7 +324,7 @@ inline void split_filter_num(const ConvParam& c_param) {
     Shape s_shape(N, {filter_num});
     float* scale_data = scale.mutableData<float>(FP32, s_shape);
     float* bias_data = bias.mutableData<float>(FP32, s_shape);
-    std::cout << "v size: " << v.size() << std::endl;
+    // std::cout << "v size: " << v.size() << std::endl;
     for (int n = 0; n < filter_num; n++) {
         scale_data[n] = param.scale()->data<float>()[n + chnnnel_start] * v[n];
       // scale_data[n] = param.scale()->data<float>()[n + chnnnel_start];

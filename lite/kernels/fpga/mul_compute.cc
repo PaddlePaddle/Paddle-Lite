@@ -12,11 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/fpga/mul_compute.h"
 #include <vector>
-// #include "lite/backends/arm/math/funcs.h"
+#include "lite/kernels/fpga/mul_compute.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/type_system.h"
+
+#include "lite/backends/fpga/KD/debugger.hpp"
 
 namespace paddle {
 namespace lite {
@@ -37,7 +38,6 @@ void MulCompute::PrepareForRun() {
   fc_param.output = param.output->ZynqTensor();
   fc_param.filter = param.y->ZynqTensor();
 
-  // fc_param.bias = param.bias->ZynqTensor();
   fc_param.bias = &bias_;
 
   int channel = fc_param.filter->shape().channel();
@@ -59,15 +59,7 @@ void mul(MulCompute* k) {
 
   int fn = param.y->dims()[1];
 
-  std::cout << "num: " << num << std::endl;
-  std::cout << "channel: " << channel << std::endl;
-  std::cout << "fn: " << fn << std::endl;
-
-  param.y->ZynqTensor()->saveToFile("filter.txt");
   float16* out_data = param.output->mutable_data<float16>();
-
-  // int si = 0;
-
   int g_index = 0;
   for (int n = 0; n < 1; n++) {
 
@@ -77,12 +69,10 @@ void mul(MulCompute* k) {
       for (int c = 0; c < channel; c++) {
         float value = zynqmp::half_to_float(param.x->data<float16>()[si]);
         int index = c * fn + on;
-        // std::cout << "index: " << index << std::endl; 
         float weight = param.y->data<float>()[index];
         sum += value * weight;
         si++;
       }
-      std::cout << sum << "\n";
       out_data[g_index] = zynqmp::float_to_half(sum);
       g_index++;
     }
@@ -91,37 +81,12 @@ void mul(MulCompute* k) {
 
 
 void MulCompute::Run() {
-  // auto& param = Param<param_t>();
-  zynqmp::FullyConnectedParam& fc_param = pe_.param();
-  std::cout << "1\n";
-
-  // fc_param.input->readFromFile("arm_8_im_in.data");
-  // fc_param.input->flush();
-  float16* data_in = fc_param.input->data<float16>();
-  // float16 one = zynqmp::float_to_half(1.0f);
-  // for (int i = 0; i < fc_param.input->shape().alignedElementCount(); i++) {
-  //   data_in[i] = one;
-  // }
-  // fc_param.input->scale()[0] = 1.0 / 127;
-  // fc_param.input->scale()[1] = 127;
-
   pe_.dispatch();
-  // std::cout << "2\n";
-  // fc_param.input->printScale("mul");
-  // std::cout << "3\n";
-  fc_param.input->saveToFile("mul_in.txt");
-  // std::cout << "4\n";
-  // mul(this);
-  // std::cout << "5\n";
-
-  fc_param.output->saveToFile("mul_out.txt");
-  // exit(-1);
-  // exit(-1);
-  // fc_param.output->saveToFile("mul.txt");
-  // Tensor* output = const_cast<Tensor*>(param.output);
-  // const auto* x_data = param.x->data<float>();
-  // param.y->mutable_data<float16>();
-  // param.output->mutable_data<float16>();
+  
+#ifdef FPGA_PRINT_TENSOR
+  zynqmp::FullyConnectedParam& fc_param = pe_.param();
+  Debugger.get_instance().registerOutput("mul", fc_param.output);
+#endif
 }
 
 }  // namespace fpga

@@ -12,10 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/fpga/conv_compute.h"
 #include <vector>
+#include "lite/kernels/fpga/conv_compute.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/type_system.h"
+
+#include "lite/backends/fpga/KD/debugger.hpp"
+
 namespace paddle {
 namespace lite {
 namespace kernels {
@@ -60,14 +63,9 @@ void ConvCompute::PrepareForRun() {
     fill_scale_bias_const(&conv_param);
     if (param.bias != nullptr) {
       conv_param.bias()->copyFrom(param.bias->ZynqTensor());
-      std::cout << "copy bias \n";
     }
 
     conv_param.relu.enabled = param.fuse_relu;
-
-    // conv_param.filter->saveToFile("filter", true);
-    // conv_param.bias()->saveToFile("bias", true);
-    // conv_param.scale()->saveToFile("scale", true);
     conv_pe_.init();
     conv_pe_.apply();
   }
@@ -75,18 +73,15 @@ void ConvCompute::PrepareForRun() {
 
 void ConvCompute::Run() {
   auto& param = this->Param<param_t>();
-  // std::cout << "in:" << param.x->ZynqTensor()->data<void>() << std::endl;
   if (param.x->ZynqTensor()->shape().channel() != 1 &&
       param.groups == param.x->ZynqTensor()->shape().channel()) {
     dw_conv_pe_.dispatch();
-    // param.output->ZynqTensor()->saveToFile("dw", true);
   } else {
-    zynqmp::ConvParam& conv_param = conv_pe_.param();
     conv_pe_.dispatch();
-    // conv_param.input->saveToFile("_conv_in", true);
-    conv_param.output->printScale("conv");
-    param.output->ZynqTensor()->saveToFile("_conv", true);
-    // conv_param.output->saveToFile("_conv_param", true);
+#ifdef FPGA_PRINT_TENSOR
+  zynqmp::ConvParam& conv_param = conv_pe_.param();
+  Debugger::get_instance().registerOutput("conv", conv_param.output);
+#endif
   }
 }
 

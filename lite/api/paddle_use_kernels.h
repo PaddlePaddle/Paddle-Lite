@@ -15,6 +15,7 @@ USE_LITE_KERNEL(floor, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(hard_sigmoid, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(rsqrt, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(prior_box, kARM, kFloat, kNCHW, def);
+USE_LITE_KERNEL(prior_box_fpga, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(affine_channel, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(logical_xor, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(logical_and, kARM, kFloat, kNCHW, def);

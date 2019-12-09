@@ -12,12 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/fpga/concat_compute.h"
 #include <string>
 #include <vector>
+#include "lite/kernels/fpga/concat_compute.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/tensor.h"
 #include "lite/core/type_system.h"
+
+#include "lite/backends/fpga/KD/debugger.hpp"
 
 namespace paddle {
 namespace lite {
@@ -43,8 +45,10 @@ void ConcatCompute::PrepareForRun() {
 
 void ConcatCompute::Run() {
   pe_.dispatch();
+#ifdef FPGA_PRINT_TENSOR
   zynqmp::ConcatParam& concat_param = pe_.param();
-  concat_param.output->saveToFile("concat", true);
+  Debugger.get_instance()::registerOutput("concat", concat_param.output);
+#endif
 }
 
 }  // namespace fpga
