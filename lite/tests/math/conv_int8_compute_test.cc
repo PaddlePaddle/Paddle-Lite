@@ -15,10 +15,10 @@
 #include <gflags/gflags.h>
 #include <gtest/gtest.h>
 #include "lite/core/context.h"
+#include "lite/core/profile/timer.h"
 #include "lite/operators/op_params.h"
 #include "lite/tests/utils/naive_math_impl.h"
 #include "lite/tests/utils/tensor_utils.h"
-#include "lite/tests/utils/timer.h"
 
 #ifdef LITE_WITH_ARM
 #include "lite/kernels/arm/conv_compute.h"
@@ -59,7 +59,7 @@ DEFINE_bool(flag_bias, true, "with bias");
 typedef paddle::lite::DDim DDim;
 typedef paddle::lite::Tensor Tensor;
 typedef paddle::lite::operators::ConvParam ConvParam;
-using paddle::lite::Timer;
+using paddle::lite::profile::Timer;
 
 DDim compute_out_dim(const DDim& dim_in,
                      const paddle::lite::operators::ConvParam& param) {
@@ -309,30 +309,30 @@ void test_conv_int8(const std::vector<DDim>& input_dims,
         /// compute fp32 output
         Timer t0;
         for (int i = 0; i < FLAGS_repeats; ++i) {
-          t0.start();
+          t0.Start();
           conv_int8_fp32.Launch();
-          t0.end();
+          t0.Stop();
         }
         LOG(INFO) << "int8 conv, fp32 output: output shape" << dim_out
-                  << ",running time, avg: " << t0.get_average_ms()
-                  << ", min time: " << t0.get_min_time()
+                  << ",running time, avg: " << t0.LapTimes().Avg()
+                  << ", min time: " << t0.LapTimes().Min()
                   << ", total GOPS: " << 1e-9 * gops
-                  << " GOPS, avg GOPs: " << 1e-6 * gops / t0.get_average_ms()
-                  << " GOPs, max GOPs: " << 1e-6 * gops / t0.get_min_time();
+                  << " GOPS, avg GOPs: " << 1e-6 * gops / t0.LapTimes().Avg()
+                  << " GOPs, max GOPs: " << 1e-6 * gops / t0.LapTimes().Min();
 
         /// compute int8 output
-        t0.clear();
+        t0.Reset();
         for (int i = 0; i < FLAGS_repeats; ++i) {
-          t0.start();
+          t0.Start();
           conv_int8_int8.Launch();
-          t0.end();
+          t0.Stop();
         }
         LOG(INFO) << "int8 conv, int8 output: output shape" << dim_out
-                  << ",running time, avg: " << t0.get_average_ms()
-                  << ", min time: " << t0.get_min_time()
+                  << ",running time, avg: " << t0.LapTimes().Avg()
+                  << ", min time: " << t0.LapTimes().Min()
                   << ", total GOPS: " << 1e-9 * gops
-                  << " GOPS, avg GOPs: " << 1e-6 * gops / t0.get_average_ms()
-                  << " GOPs, max GOPs: " << 1e-6 * gops / t0.get_min_time();
+                  << " GOPS, avg GOPs: " << 1e-6 * gops / t0.LapTimes().Avg()
+                  << " GOPs, max GOPs: " << 1e-6 * gops / t0.LapTimes().Min();
 
         /// compare result fp32 output
         if (FLAGS_check_result) {

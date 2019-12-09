@@ -16,6 +16,7 @@
 #include <gtest/gtest.h>
 #include <memory>
 #include <utility>
+#include "lite/backends/cuda/blas.h"
 
 namespace paddle {
 namespace lite {
@@ -26,6 +27,7 @@ TEST(mul_compute, normal) {
   MulCompute mul_kernel;
   std::unique_ptr<KernelContext> ctx(new KernelContext);
   auto& context = ctx->As<CUDAContext>();
+  context.InitOnce();
 
   Tensor x, y, out, x_cpu, y_cpu, out_cpu;
   int x_h = 2, x_w_y_h = 3, y_w = 4;

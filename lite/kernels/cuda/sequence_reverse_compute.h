@@ -20,8 +20,8 @@ namespace lite {
 namespace kernels {
 namespace cuda {
 
-class SequenceReverseCompute
-    : public KernelLite<TARGET(kCUDA), PRECISION(kFloat)> {
+template <typename T, PrecisionType Ptype>
+class SequenceReverseCompute : public KernelLite<TARGET(kCUDA), Ptype> {
  public:
   using param_t = operators::SequenceReverseParam;
 

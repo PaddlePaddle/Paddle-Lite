@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "lite/kernels/cuda/calib_compute.h"
 #include <gtest/gtest.h>
 #include <algorithm>
 #include <memory>
@@ -58,12 +59,7 @@ void calib_ref(const operators::CalibParam& param, bool to_float = true) {
 }
 
 TEST(calib_cuda, int8_to_fp32) {
-  LOG(INFO) << "to get kernel ...";
-  auto kernels = KernelRegistry::Global().Create(
-      "calib", TARGET(kCUDA), PRECISION(kInt8), DATALAYOUT(kNCHW));
-  ASSERT_FALSE(kernels.empty());
-  auto calib = std::move(*std::next(kernels.begin(), 1));
-  LOG(INFO) << "get kernel: " << calib->doc();
+  CalibComputeInt8ToFp32 calib;
   const int n = 64, c = 32, h = 18, w = 18;
   Tensor x;
   Tensor x_cpu;
@@ -87,14 +83,14 @@ TEST(calib_cuda, int8_to_fp32) {
   cudaStream_t stream;
   cudaStreamCreate(&stream);
   context.SetExecStream(stream);
-  calib->SetContext(std::move(ctx));
+  calib.SetContext(std::move(ctx));
 
   operators::CalibParam param;
   param.scale = 0.013f;
   param.input = &x;
   param.output = &output;
-  calib->SetParam(param);
-  calib->Launch();
+  calib.SetParam(param);
+  calib.Launch();
   cudaDeviceSynchronize();
   // invoking ref implementation and compare results
   param.input = &x_cpu;
@@ -113,12 +109,7 @@ TEST(calib_cuda, int8_to_fp32) {
 }
 
 TEST(calib_cuda, fp32_to_int8) {
-  LOG(INFO) << "to get kernel ...";
-  auto kernels = KernelRegistry::Global().Create(
-      "calib", TARGET(kCUDA), PRECISION(kInt8), DATALAYOUT(kNCHW));
-  ASSERT_FALSE(kernels.empty());
-  auto calib = std::move(kernels.front());
-  LOG(INFO) << "get kernel: " << calib->doc();
+  CalibComputeFp32ToInt8 calib;
   const int n = 64, c = 32, h = 18, w = 18;
   Tensor x;
   Tensor x_cpu;
@@ -142,14 +133,14 @@ TEST(calib_cuda, fp32_to_int8) {
   cudaStream_t stream;
   cudaStreamCreate(&stream);
   context.SetExecStream(stream);
-  calib->SetContext(std::move(ctx));
+  calib.SetContext(std::move(ctx));
 
   operators::CalibParam param;
   param.scale = 0.013f;
   param.input = &x;
   param.output = &output;
-  calib->SetParam(param);
-  calib->Launch();
+  calib.SetParam(param);
+  calib.Launch();
   cudaDeviceSynchronize();
   // invoking ref implementation and compare results
   param.input = &x_cpu;

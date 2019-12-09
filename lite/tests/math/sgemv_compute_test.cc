@@ -20,9 +20,9 @@
 #include "lite/backends/arm/math/funcs.h"
 #endif  // LITE_WITH_ARM
 #include "lite/core/context.h"
+#include "lite/core/profile/timer.h"
 #include "lite/core/tensor.h"
 #include "lite/tests/utils/tensor_utils.h"
-#include "lite/tests/utils/timer.h"
 
 typedef paddle::lite::Tensor Tensor;
 
@@ -83,7 +83,7 @@ bool test_sgemv(
     basic_gemv(
         m, k, da, db, dbias, dc_basic, 1.f, 0.f, tra, has_bias, has_relu);
   }
-  paddle::lite::Timer t0;
+  paddle::lite::profile::Timer t0;
   //! compute
   double ops = 2.0 * m * k;
   std::unique_ptr<paddle::lite::KernelContext> ctx1(
@@ -96,19 +96,19 @@ bool test_sgemv(
         da, db, dc, tra, m, k, has_bias, dbias, has_relu, &ctx);
   }
 
-  t0.clear();
+  t0.Reset();
   for (int i = 0; i < FLAGS_repeats; ++i) {
-    t0.start();
+    t0.Start();
     paddle::lite::arm::math::sgemv(
         da, db, dc, tra, m, k, has_bias, dbias, has_relu, &ctx);
-    t0.end();
+    t0.Stop();
   }
   LOG(INFO) << "gemv output: M: " << m << ", K: " << k << ", cluster: " << cls
             << ", threads: " << ths << ", GOPS: " << ops * 1e-9f
-            << " GOPS, avg time: " << t0.get_average_ms()
-            << " ms, min time: " << t0.get_min_time()
-            << " ms, mean GOPs: " << ops * 1e-6f / t0.get_average_ms()
-            << " GOPs, max GOPs: " << ops * 1e-6f / t0.get_min_time()
+            << " GOPS, avg time: " << t0.LapTimes().Avg()
+            << " ms, min time: " << t0.LapTimes().Min()
+            << " ms, mean GOPs: " << ops * 1e-6f / t0.LapTimes().Avg()
+            << " GOPs, max GOPs: " << ops * 1e-6f / t0.LapTimes().Min()
             << " GOPs";
 
   if (FLAGS_check_result) {

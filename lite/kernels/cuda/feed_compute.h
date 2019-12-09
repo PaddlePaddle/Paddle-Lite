@@ -20,7 +20,8 @@ namespace lite {
 namespace kernels {
 namespace cuda {
 
-class FeedCompute : public KernelLite<TARGET(kCUDA), PRECISION(kFloat)> {
+template <typename T, PrecisionType Ptype>
+class FeedCompute : public KernelLite<TARGET(kCUDA), Ptype> {
  public:
   using param_t = operators::FeedParam;
   using TargetW = TargetWrapper<TARGET(kCUDA)>;
