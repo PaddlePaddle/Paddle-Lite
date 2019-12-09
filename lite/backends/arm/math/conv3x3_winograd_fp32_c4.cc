@@ -40,24 +40,10 @@ void output_trans_c4_post_6x8(const float* src,
                               bool has_relu);
 void input_trans_c4_4x4(const float* src,
                         int src_stride,
-                        float* dest,
-                        int dest_stride);
-void input_trans_c4_4x4(const float* src,
-                        int src_stride,
                         int src_h_stride,
                         float* dest,
                         int dest_stride,
                         int dest_h_stride);
-void output_trans_c4_2x4(const float* src,
-                         int src_stride,
-                         float* dest,
-                         int dest_stride);
-void output_trans_c4_post_2x4(const float* src,
-                              int src_stride,
-                              float* dest,
-                              int dest_stride,
-                              float* bias_value,
-                              bool has_relu);
 void output_trans_c4_post_2x4(const float* src,
                               int src_stride,
                               int src_h_stride,
@@ -1043,25 +1029,6 @@ void input_trans_c4_8x8(const float* src,
 //    0, 1,  0, -1]
 void input_trans_c4_4x4(const float* src,
                         int src_stride,
-                        float* dest,
-                        int dest_stride) {
-  float32x4_t src0 = vld1q_f32(src);
-  float32x4_t src1 = vld1q_f32(src + src_stride);
-  float32x4_t src2 = vld1q_f32(src + src_stride + src_stride);
-  float32x4_t src3 = vld1q_f32(src + src_stride + src_stride + src_stride);
-
-  float32x4_t dst0 = vsubq_f32(src0, src2);
-  float32x4_t dst1 = vaddq_f32(src1, src2);
-  float32x4_t dst2 = vsubq_f32(src2, src1);
-  float32x4_t dst3 = vsubq_f32(src1, src3);
-
-  vst1q_f32(dest, dst0);
-  vst1q_f32(dest + dest_stride, dst1);
-  vst1q_f32(dest + dest_stride + dest_stride, dst2);
-  vst1q_f32(dest + dest_stride + dest_stride + dest_stride, dst3);
-}
-void input_trans_c4_4x4(const float* src,
-                        int src_stride,
                         int src_h_stride,
                         float* dest,
                         int dest_stride,
@@ -1149,50 +1116,6 @@ void input_trans_c4_4x4(const float* src,
 
 // AT=[1, 1,  1,  0,
 //    0, 1, -1, -1]
-void output_trans_c4_2x4(const float* src,
-                         int src_stride,
-                         float* dest,
-                         int dest_stride) {
-  float32x4_t src0 = vld1q_f32(src);
-  float32x4_t src1 = vld1q_f32(src + src_stride);
-  float32x4_t src2 = vld1q_f32(src + src_stride + src_stride);
-  float32x4_t src3 = vld1q_f32(src + src_stride + src_stride + src_stride);
-
-  float32x4_t dst0 = vaddq_f32(vaddq_f32(src0, src1), src2);
-  float32x4_t dst1 = vsubq_f32(vsubq_f32(src1, src2), src3);
-
-  vst1q_f32(dest, dst0);
-  vst1q_f32(dest + dest_stride, dst1);
-}
-void output_trans_c4_post_2x4(const float* src,
-                              int src_stride,
-                              float* dest,
-                              int dest_stride,
-                              float* bias_value,
-                              bool has_relu = false) {
-  float32x4_t src0 = vld1q_f32(src);
-  float32x4_t src1 = vld1q_f32(src + src_stride);
-  float32x4_t src2 = vld1q_f32(src + src_stride + src_stride);
-  float32x4_t src3 = vld1q_f32(src + src_stride + src_stride + src_stride);
-
-  float32x4_t dst0 = vaddq_f32(vaddq_f32(src0, src1), src2);
-  float32x4_t dst1 = vsubq_f32(vsubq_f32(src1, src2), src3);
-
-  if (bias_value) {
-    float32x4_t bias = vld1q_f32(bias_value);
-    dst0 = vaddq_f32(dst0, bias);
-    dst1 = vaddq_f32(dst1, bias);
-  }
-
-  if (has_relu) {
-    float32x4_t zeros = vdupq_n_f32(0);
-    dst0 = vmaxq_f32(dst0, zeros);
-    dst1 = vmaxq_f32(dst1, zeros);
-  }
-
-  vst1q_f32(dest, dst0);
-  vst1q_f32(dest + dest_stride, dst1);
-}
 void output_trans_c4_post_2x4(const float* src,
                               int src_stride,
                               int src_h_stride,
