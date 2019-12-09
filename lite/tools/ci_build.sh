@@ -201,7 +201,7 @@ function build_single {
 }
 
 function build {
-    make lite_compile_deps -j4
+    make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
 
     # test publish inference lib
     # make publish_inference
@@ -586,8 +586,6 @@ function build_arm {
     cmake_arm ${os} ${abi} ${lang}
     build $TESTS_FILE
 
-    # test publish inference lib
-    # make publish_inference -j$NUM_CORES_FOR_COMPILE
 }
 
 # $1: ARM_TARGET_OS in "android"
@@ -708,6 +706,10 @@ function build_test_arm_subtask_android {
    else
        adb_devices=($(adb devices |grep -v devices |grep device | awk -F " " '{print $1}'))
        # adbindex is the env variable registered in ci agent to tell which mobile is to used as adb
+       if[ adbindex > ${#adb_devices[@]}-1 ]; then
+           echo -e "Error: the adb devices on ci agent are not enough."
+           exit 1
+       fi
        echo ${adb_devices[${adbindex}]}
        local portname_armv8=${adb_devices[${adbindex}]}
        local portname_armv7=${adb_devices[${adbindex}]}
@@ -747,18 +749,6 @@ function build_test_arm_subtask_android {
 
 # sub-task2
 function build_test_arm_subtask_armlinux {
-
-    if [ $USE_ADB_EMULATOR == "ON" ]; then
-       prepare_emulator $port_armv8 $port_armv7
-       local portname_armv8=emulator-$port_armv8
-    else
-       adb_devices=$(adb devices |grep -v devices | grep device | awk -F " " '{print $1}')
-       local portname_armv8=${adb_devices[0]}
-       local portname_armv7=${adb_devices[0]}
-       adb -s $portname_armv8 shell 'rm -rf /data/local/tmp/*'
-       adb -s $portname_armv7 shell 'rm -rf /data/local/tmp/*'
-    fi
-
     cur=$PWD
     # job 5
     build_arm "armlinux" "armv8" "gcc"
