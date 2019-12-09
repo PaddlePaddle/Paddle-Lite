@@ -42,18 +42,18 @@ function prepare_thirdparty {
 function prepare_adb_devices {
     if [ $USE_ADB_EMULATOR == "ON" ]; then
        prepare_emulator $port_armv8 $port_armv7
-       portname_armv8=emulator-$port_armv8
-       portname_armv7=emulator-$port_armv7
+       device_armv8=emulator-$port_armv8
+       device_armv7=emulator-$port_armv7
     else
        adb_devices=($(adb devices |grep -v devices |grep device | awk -F " " '{print $1}'))
        # adbindex is the env variable registered in ci agent to tell which mobile is to used as adb
-       if[ ${adbindex} > ${#adb_devices[@]}-1 ]; then
+       if [ ${adbindex} > ${#adb_devices[@]}-1 ]; then
            echo -e "Error: the adb devices on ci agent are not enough, at least ${adbindex} adb devices are needed."
            exit 1
        fi
        echo ${adb_devices[${adbindex}]}
-       portname_armv8=${adb_devices[${adbindex}]}
-       portname_armv7=${adb_devices[${adbindex}]}
+       device_armv8=${adb_devices[${adbindex}]}
+       device_armv7=${adb_devices[${adbindex}]}
     fi
 }
 
@@ -722,9 +722,9 @@ function build_test_arm_subtask_android {
 
     # job 1
     build_arm "android" "armv8" "gcc"
-    adb -s $portname_armv8 shell 'rm -rf /data/local/tmp/*'
-    run_gen_code_test ${portname_armv8}
-    test_arm "android" "armv8" "gcc" ${portname_armv8}
+    adb -s $device_armv8 shell 'rm -rf /data/local/tmp/*'
+    run_gen_code_test ${device_armv8}
+    test_arm "android" "armv8" "gcc" ${device_armv8}
     cd -
 
     # job 2
@@ -735,9 +735,9 @@ function build_test_arm_subtask_android {
 
     # job 3
     build_arm "android" "armv7" "gcc"
-    adb -s $portname_armv7 shell 'rm -rf /data/local/tmp/*'
-    run_gen_code_test ${portname_armv7}
-    test_arm "android" "armv7" "gcc" ${portname_armv7}
+    adb -s $device_armv7 shell 'rm -rf /data/local/tmp/*'
+    run_gen_code_test ${device_armv7}
+    test_arm "android" "armv7" "gcc" ${device_armv7}
     cd -
 
     # job 4
@@ -757,17 +757,17 @@ function build_test_arm_subtask_armlinux {
     cur=$PWD
     # job 5
     build_arm "armlinux" "armv8" "gcc"
-    test_arm "armlinux" "armv8" "gcc" $portname_armv8
+    test_arm "armlinux" "armv8" "gcc" $device_armv8
     cd $cur
 
     # job 6
     build_arm "armlinux" "armv7" "gcc"
-    test_arm "armlinux" "armv7" "gcc" $portname_armv8
+    test_arm "armlinux" "armv7" "gcc" $device_armv8
     cd $cur
 
     # job 7
     build_arm "armlinux" "armv7hf" "gcc"
-    test_arm "armlinux" "armv7hf" "gcc" $portname_armv8
+    test_arm "armlinux" "armv7hf" "gcc" $device_armv8
     cd $cur
 
     echo "Done"
@@ -794,10 +794,10 @@ function build_test_arm_subtask_model {
 
     # prepare adb devices
     prepare_adb_devices
-    adb -s $portname_armv8 shell 'rm -rf /data/local/tmp/*'
+    adb -s $device_armv8 shell 'rm -rf /data/local/tmp/*'
 
     # just test the model on armv8
-    test_arm_model $test_name $portname_armv8 "./third_party/install/$model_name"
+    test_arm_model $test_name $device_armv8 "./third_party/install/$model_name"
 
     if [ $USE_ADB_EMULATOR == "ON" ]; then
         adb devices | grep emulator | cut -f1 | while read line; do adb -s $line emu kill; done
@@ -851,26 +851,19 @@ function build_test_npu {
     # just test the model on armv8
     # prepare_emulator $port_armv8
 
-    if [ $USE_ADB_EMULATOR == "ON" ]; then
-       prepare_emulator $port_armv8 $port_armv7
-       local portname_armv8=emulator-$port_armv8
-    else
-       adb_devices=$(adb devices |grep -v devices | grep device | awk -F " " '{print $1}')
-       local portname_armv8=${adb_devices[0]}
-       adb -s $portname_armv8 shell 'rm -rf /data/local/tmp/*'
-    fi
-
+    prepare_emulator $port_armv8 $port_armv7
+    local device_armv8=emulator-$port_armv8
 
     if [[ "${test_name}x" != "x" ]]; then
-        test_npu ${test_name} ${portname_armv8}
+        test_npu ${test_name} ${device_armv8}
     else
         # run_gen_code_test ${port_armv8}
         for _test in $(cat $TESTS_FILE | grep npu); do
-            test_npu $_test $portname_armv8
+            test_npu $_test $device_armv8
         done
     fi
 
-    test_npu_model $test_model_name $portname_armv8 "./third_party/install/$model_name"
+    test_npu_model $test_model_name $device_armv8 "./third_party/install/$model_name"
     cd -
     # just test the model on armv8
     # adb devices | grep emulator | cut -f1 | while read line; do adb -s $line emu kill; done
