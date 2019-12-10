@@ -17,6 +17,7 @@
 #include "lite/backends/opencl/target_wrapper.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/tensor.h"
+#include "lite/kernels/opencl/image_helper.h"
 
 namespace paddle {
 namespace lite {
@@ -28,6 +29,7 @@ void relu_compute_ref(const dtype *x_data, const DDim &x_dim, dtype *out_data) {
   }
 }
 
+#if 0   // relu_buffer
 TEST(opencl_relu_buffer, compute) {
   // prepare data
   const DDim x_dim = DDim(std::vector<DDim::value_type>{3, 6, 10, 10});
@@ -87,23 +89,25 @@ TEST(opencl_relu_buffer, compute) {
   TargetWrapperCL::Unmap(out_data, mapped_out);
   TargetWrapperCL::Unmap(x_data, mapped_x);
 }
+#endif  // relu_buffer
 
 // #define LOOP_TEST
 // #define PRINT_RESULT
-TEST(layout, compute) {
-  LOG(INFO) << "main steps of test: host -> layout(buf2img) -> layout(img2buf) "
-               "-> device";
+TEST(relu_image2d, compute) {
+  LOG(INFO) << "main steps of test: host -> layout(buf2img) -> relu(img) -> "
+               "layout(img2buf) "
+               "-> host";
 
 #ifdef LOOP_TEST
-  for (int n = 1; n <= 100; n += 21) {
+  for (int n = 1; n <= 100; n += 33) {
     for (auto c : {1, 3}) {
-      for (int h = 1; h <= 100; h += 13) {
-        for (int w = 1; w <= 100; w += 17) {
+      for (int h = 12; h <= 100; h += 13) {
+        for (int w = 12; w <= 100; w += 25) {
 #else
   const int n = 1;
-  const int c = 1;
-  const int h = 1;
-  const int w = 100;
+  const int c = 2;
+  const int h = 3;
+  const int w = 4;
 #endif  // LOOP_TEST
 
           LOG(INFO) << "======== input shape[n,c,h,w]:" << n << " " << c << " "
@@ -114,7 +118,7 @@ TEST(layout, compute) {
           auto img_to_buf_kernels = KernelRegistry::Global().Create(
               "layout", TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kNCHW));
           auto relu_img_kernels = KernelRegistry::Global().Create(
-              "relu", TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kNHWC));
+              "relu", TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNHWC));
           ASSERT_FALSE(buf_to_img_kernels.empty());
           ASSERT_FALSE(buf_to_img_kernels.empty());
           ASSERT_FALSE(relu_img_kernels.empty());
@@ -128,12 +132,15 @@ TEST(layout, compute) {
 
           // set tensors about op param
           LOG(INFO) << "set tensors about op param";
-          lite::Tensor x, y_image, y, relu_in, relu_out;
+          // layout(buf->img): x -> relu_in
+          // relu(img): relu_in -> relu_out
+          // layout(img->buf): relu_out -> y
+          lite::Tensor x, y, relu_in, relu_out, y_ref;
           operators::LayoutParam BufferToImageParam;
           operators::LayoutParam ImageToBufferParam;
           BufferToImageParam.x = &x;
-          BufferToImageParam.y = &y_image;
-          ImageToBufferParam.x = &y_image;
+          BufferToImageParam.y = &relu_in;
+          ImageToBufferParam.x = &relu_out;
           ImageToBufferParam.y = &y;
           operators::ActivationParam ReluParam;
           ReluParam.X = &relu_in;
@@ -141,35 +148,30 @@ TEST(layout, compute) {
 
           const DDim x_dim = DDim(std::vector<DDim::value_type>{n, c, h, w});
           x.Resize(x_dim);
-          y_image.Resize(x_dim);  // useless for image2D
           y.Resize(x_dim);
-          std::map<std::string, size_t> &relu_image2d_shape =
-              InitImageDimInfoWith(x_dims);
+          relu_in.Resize(x_dim);
+          relu_out.Resize(x_dim);
+          y_ref.Resize(x_dim);
+          auto relu_image2d_shape =
+              paddle::lite::kernels::opencl::InitImageDimInfoWith(x_dim);
 
           // initialize tensors
           LOG(INFO) << "initialize tensors";
           auto *x_data = x.mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
           auto *y_data = y.mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
-          auto image_shape =
-              paddle::lite::kernels::opencl::InitImageDimInfoWith(x_dim);
-          auto *y_image_data = y_image.mutable_data<float, cl::Image2D>(
-              image_shape["width"], image_shape["height"]);
+          auto *y_data_ref = y_ref.mutable_data<float>(TARGET(kARM));
           auto *mapped_x = static_cast<float *>(TargetWrapperCL::Map(
               x_data, 0, sizeof(float) * x_dim.production()));
           auto *mapped_y = static_cast<float *>(TargetWrapperCL::Map(
               y_data, 0, sizeof(float) * x_dim.production()));
           for (int i = 0; i < x_dim.production(); ++i) {
-            mapped_x[i] = static_cast<int>(i);
+            mapped_x[i] = static_cast<int>(i) - x_dim.production() / 2;
             mapped_y[i] = static_cast<int>(0);
           }
           auto *relu_in_data = relu_in.mutable_data<float, cl::Image2D>(
-              TARGET(kOpenCL),
-              relu_image2d_shape["width"],
-              relu_image2d_shape["height"]);
+              relu_image2d_shape["width"], relu_image2d_shape["height"]);
           auto *relu_out_data = relu_out.mutable_data<float, cl::Image2D>(
-              TARGET(kOpenCL),
-              relu_image2d_shape["width"],
-              relu_image2d_shape["height"]);
+              relu_image2d_shape["width"], relu_image2d_shape["height"]);
 
           // set context and kernel args
           LOG(INFO) << "set context and kernel args";
@@ -202,10 +204,12 @@ TEST(layout, compute) {
           LOG(INFO) << "run kernel: img_to_buf_kernel";
           img_to_buf_kernel->Launch();
 
+          // compute ref cpu
+          relu_compute_ref<float>(mapped_x, x_dim, y_data_ref);
 // result
 #ifdef PRINT_RESULT
-          LOG(INFO) << "---- print result ----";
-          for (int eidx = 0; i < x_dim.production(); ++eidx) {
+          LOG(INFO) << "---- print kernel result (input -> output) ----";
+          for (int eidx = 0; eidx < x_dim.production(); ++eidx) {
             std::cout << mapped_x[eidx] << " -> " << mapped_y[eidx]
                       << std::endl;
           }
@@ -213,11 +217,11 @@ TEST(layout, compute) {
 
           // check result: compare input and output
           for (int eidx = 0; eidx < x_dim.production(); eidx++) {
-            EXPECT_NEAR(max(0.0f, mapped_x[eidx]), mapped_y[eidx], 1e-6);
-            if (abs(max(0.0f, mapped_x[eidx]) - mapped_y[eidx]) > 1e-6) {
+            EXPECT_NEAR(y_data_ref[eidx], mapped_y[eidx], 1e-6);
+            if (abs(y_data_ref[eidx] - mapped_y[eidx]) > 1e-6) {
               LOG(INFO) << "1st diff in this case at eidx[from 0]:" << eidx
-                        << " / " << x_dim.production() << ", mapped_x[" << eidx
-                        << "]:" << max(0.0f, mapped_x[eidx]) << ", mapped_y["
+                        << " / " << x_dim.production() << ", y_data_ref["
+                        << eidx << "]:" << y_data_ref[eidx] << ", mapped_y["
                         << eidx << "]:" << mapped_y[eidx];
               break;
             }
@@ -237,68 +241,15 @@ TEST(layout, compute) {
 #endif
 }
 
-TEST(opencl_relu_image2d, compute) {
-  // prepare data
-  const DDim x_dim = DDim(std::vector<DDim::value_type>{3, 6, 10, 10});
-  lite::Tensor x, out;
-  x.Resize(x_dim);
-  out.Resize(x_dim);
-
-  auto *x_data = x.mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
-  std::default_random_engine engine;
-  std::uniform_real_distribution<float> dist(-10, 10);
-  auto *mapped_x = static_cast<float *>(
-      TargetWrapperCL::Map(x_data, 0, sizeof(float) * x_dim.production()));
-  for (int i = 0; i < x_dim.production(); i++) {
-    mapped_x[i] = dist(engine);
-  }
-
-  // set param and kernel, then run
-  operators::ActivationParam param;
-  param.X = &x;
-  param.Out = &out;
-
-  std::unique_ptr<KernelContext> context(new KernelContext);
-  context->As<OpenCLContext>().InitOnce();
-  auto kernels = KernelRegistry::Global().Create(
-      "relu", TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW));
-  ASSERT_FALSE(kernels.empty());
-  auto kernel = std::move(kernels.front());
-  kernel->SetParam(param);
-  std::unique_ptr<KernelContext> relu_context(new KernelContext);
-  context->As<OpenCLContext>().CopySharedTo(
-      &(relu_context->As<OpenCLContext>()));
-  kernel->SetContext(std::move(relu_context));
-
-  kernel->Launch();
-
-  auto *wait_list = context->As<OpenCLContext>().cl_wait_list();
-  auto *out_ptr = param.Out->data<float, cl::Buffer>();
-  auto it = wait_list->find(out_ptr);
-  if (it != wait_list->end()) {
-    VLOG(4) << "--- Find the sync event for the target cl tensor. ---";
-    auto &event = *(it->second);
-    event.wait();
-  } else {
-    LOG(FATAL) << "Could not find the sync event for the target cl tensor.";
-  }
-
-  // run compute ref and check
-  std::unique_ptr<float[]> out_ref(new float[x_dim.production()]);
-  relu_compute_ref<float>(mapped_x, x_dim, out_ref.get());
-
-  auto *out_data = out.mutable_data<float, cl::Buffer>();
-  auto *mapped_out = static_cast<float *>(
-      TargetWrapperCL::Map(out_data, 0, sizeof(float) * x_dim.production()));
-  for (int i = 0; i < x_dim.production(); i++) {
-    EXPECT_NEAR(mapped_out[i], out_ref[i], 1e-6);
-  }
-  TargetWrapperCL::Unmap(out_data, mapped_out);
-  TargetWrapperCL::Unmap(x_data, mapped_x);
-}
-
 }  // namespace lite
 }  // namespace paddle
 
-USE_LITE_KERNEL(relu, kOpenCL, kFloat, kNCHW, def);
-USE_LITE_KERNEL(relu, kOpenCL, kFloat, kNHWC, def);
+// relu buffer
+// USE_LITE_KERNEL(relu, kOpenCL, kFloat, kNCHW, def);
+
+// relu image2d
+USE_LITE_KERNEL(
+    layout, kOpenCL, kAny, kNHWC, buffer_chw_to_image2d_hwc_opencl_fp32);
+USE_LITE_KERNEL(
+    layout, kOpenCL, kAny, kNCHW, image2d_hwc_to_buffer_chw_opencl_fp32);
+USE_LITE_KERNEL(relu, kOpenCL, kFloat, kNHWC, image2d);

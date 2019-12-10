@@ -40,7 +40,7 @@ lite_cc_test(test_io_copy_compute_opencl SRCS io_copy_compute_test.cc
 
 #TODO(ysh329): comment buffer-impl relu
 lite_cc_test(test_relu_opencl SRCS relu_compute_test.cc
-        DEPS relu_opencl op_registry program context
+        DEPS relu_opencl layout_opencl op_registry program context
         ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)
 
 lite_cc_test(test_depthwise_conv2d_opencl SRCS depthwise_conv2d_compute_test.cc

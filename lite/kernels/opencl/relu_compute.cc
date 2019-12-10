@@ -29,6 +29,7 @@ class ReluCompute
  public:
   using param_t = operators::ActivationParam;
 
+  std::string doc() const override { return "Relu using cl::Buffer"; }
   void PrepareForRun() override {
     auto& context = ctx_->As<OpenCLContext>();
     context.cl_context()->AddKernel(
@@ -80,6 +81,8 @@ class ReluComputeFloatImage
     : public KernelLite<TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNHWC)> {
  public:
   using param_t = operators::ActivationParam;
+
+  std::string doc() const override { return "Relu using cl::Image2D(RGBA)"; }
 
   void PrepareForRun() override {
     auto& context = ctx_->As<OpenCLContext>();
