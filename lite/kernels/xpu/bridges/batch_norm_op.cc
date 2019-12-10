@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include "lite/core/mir/subgraph/subgraph_bridge_registry.h"
-#include "lite/kernels/xpu/bridges/context.h"
+#include "lite/kernels/xpu/bridges/graph.h"
 #include "lite/kernels/xpu/bridges/utility.h"
 
 namespace paddle {
@@ -24,7 +24,7 @@ namespace xpu {
 int BatchNormConverter(void* ctx, OpLite* op) {
   CHECK(ctx != nullptr);
   CHECK(op != nullptr);
-  auto graph_ctx = static_cast<Context*>(ctx);
+  auto graph = static_cast<Graph*>(ctx);
   auto op_info = op->op_info();
   auto op_type = op_info->Type();
   auto scope = op->scope();
@@ -44,22 +44,21 @@ int BatchNormConverter(void* ctx, OpLite* op) {
   auto epsilon = op_info->GetAttr<float>("epsilon");
 
   // Create scale, bias, mean, variance nodes
-  auto scale_const_node = graph_ctx->AddNode(scale_var_name, *scale);
-  auto bias_const_node = graph_ctx->AddNode(bias_var_name, *bias);
-  auto mean_const_node = graph_ctx->AddNode(mean_var_name, *mean);
-  auto variance_const_node = graph_ctx->AddNode(variance_var_name, *variance);
+  auto scale_const_node = graph->AddNode(scale_var_name, *scale);
+  auto bias_const_node = graph->AddNode(bias_var_name, *bias);
+  auto mean_const_node = graph->AddNode(mean_var_name, *mean);
+  auto variance_const_node = graph->AddNode(variance_var_name, *variance);
 
   // Create batch_norm node and set params from op
   auto batch_norm_node =
-      graph_ctx->builder_.CreateBatchNorm(*graph_ctx->GetNode(x_var_name),
-                                          *scale_const_node,
-                                          *bias_const_node,
-                                          *mean_const_node,
-                                          *variance_const_node,
-                                          1,
-                                          epsilon);
-  graph_ctx->AddNode(y_var_name,
-                     graph_ctx->builder_.GetField(batch_norm_node, 0));
+      graph->builder_.CreateBatchNorm(*graph->GetNode(x_var_name),
+                                      *scale_const_node,
+                                      *bias_const_node,
+                                      *mean_const_node,
+                                      *variance_const_node,
+                                      1,
+                                      epsilon);
+  graph->AddNode(y_var_name, graph->builder_.GetField(batch_norm_node, 0));
   return SUCCESS;
 }
 

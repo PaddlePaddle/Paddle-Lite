@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include "lite/core/mir/subgraph/subgraph_bridge_registry.h"
-#include "lite/kernels/xpu/bridges/context.h"
+#include "lite/kernels/xpu/bridges/graph.h"
 #include "lite/kernels/xpu/bridges/utility.h"
 
 namespace paddle {
@@ -24,7 +24,7 @@ namespace xpu {
 int MulConverter(void* ctx, OpLite* op) {
   CHECK(ctx != nullptr);
   CHECK(op != nullptr);
-  auto graph_ctx = static_cast<Context*>(ctx);
+  auto graph = static_cast<Graph*>(ctx);
   auto op_info = op->op_info();
   auto op_type = op_info->Type();
   auto scope = op->scope();
@@ -44,9 +44,9 @@ int MulConverter(void* ctx, OpLite* op) {
   CHECK_EQ(y_num_col_dims, 1) << "xpu now only support y_num_col_dims == 1";
 
   // Flatten x node
-  auto x_node = graph_ctx->AddNode(
+  auto x_node = graph->AddNode(
       x_var_name + "/flatten",
-      graph_ctx->builder_.CreateBatchFlatten(*graph_ctx->GetNode(x_var_name)));
+      graph->builder_.CreateBatchFlatten(*graph->GetNode(x_var_name)));
 
   // Transpose y data and create y node
   Tensor transpose_y;
@@ -60,16 +60,15 @@ int MulConverter(void* ctx, OpLite* op) {
           y_data[j * transpose_y_dims[0] + i];
     }
   }
-  auto y_const_node =
-      graph_ctx->AddNode(y_var_name + "/transpose", transpose_y);
+  auto y_const_node = graph->AddNode(y_var_name + "/transpose", transpose_y);
 
   // Create mul node and set params from op
-  graph_ctx->AddNode(
+  graph->AddNode(
       out_var_name,
-      graph_ctx->builder_.CreateDense(*x_node,
-                                      static_cast<int>(y_dims[1]),
-                                      ::xtcl::NullValue<::xtcl::DataType>(),
-                                      *y_const_node));
+      graph->builder_.CreateDense(*x_node,
+                                  static_cast<int>(y_dims[1]),
+                                  ::xtcl::NullValue<::xtcl::DataType>(),
+                                  *y_const_node));
   return REBUILD_WHEN_SHAPE_CHANGED;
 }
 

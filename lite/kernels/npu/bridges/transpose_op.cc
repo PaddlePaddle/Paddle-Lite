@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include "lite/core/mir/subgraph/subgraph_bridge_registry.h"
-#include "lite/kernels/npu/bridges/context.h"
+#include "lite/kernels/npu/bridges/graph.h"
 #include "lite/kernels/npu/bridges/utility.h"
 
 namespace paddle {
@@ -24,7 +24,7 @@ namespace npu {
 int TransposeConverter(void* ctx, OpLite* op) {
   CHECK(ctx != nullptr);
   CHECK(op != nullptr);
-  auto graph_ctx = static_cast<Context*>(ctx);
+  auto graph = static_cast<Graph*>(ctx);
   auto op_info = op->op_info();
   auto op_type = op_info->Type();
   auto scope = op->scope();
@@ -34,9 +34,9 @@ int TransposeConverter(void* ctx, OpLite* op) {
   auto out_var_name = op_info->Input("Out").front();
   auto axis = op_info->GetAttr<std::vector<int>>("axis");
 
-  auto transpose_node = graph_ctx->AddNode<ge::op::Permute>(out_var_name);
-  transpose_node->set_input_x(*graph_ctx->GetNode(x_var_name));
-  auto w_const_node = graph_ctx->AddNode(out_var_name + "/w", 1.0f);
+  auto transpose_node = graph->AddNode<ge::op::Permute>(out_var_name);
+  transpose_node->set_input_x(*graph->GetNode(x_var_name));
+  auto w_const_node = graph->AddNode(out_var_name + "/w", 1.0f);
   transpose_node->set_input_w(*w_const_node);
   transpose_node->set_attr_order(
       ge::AttrValue::LIST_INT(axis.begin(), axis.end()));

@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include "lite/core/mir/subgraph/subgraph_bridge_registry.h"
-#include "lite/kernels/npu/bridges/context.h"
+#include "lite/kernels/npu/bridges/graph.h"
 #include "lite/kernels/npu/bridges/utility.h"
 
 namespace paddle {
@@ -24,7 +24,7 @@ namespace npu {
 int ScaleConverter(void* ctx, OpLite* op) {
   CHECK(ctx != nullptr);
   CHECK(op != nullptr);
-  auto graph_ctx = static_cast<Context*>(ctx);
+  auto graph = static_cast<Graph*>(ctx);
   auto op_info = op->op_info();
   auto op_type = op_info->Type();
   auto scope = op->scope();
@@ -45,18 +45,18 @@ int ScaleConverter(void* ctx, OpLite* op) {
   }
 
   // Create scale node and set input node from inputs_map
-  auto scale_node = graph_ctx->AddNode<ge::op::Scale>(out_var_name);
-  scale_node->set_input_x(*graph_ctx->GetNode(x_var_name));
+  auto scale_node = graph->AddNode<ge::op::Scale>(out_var_name);
+  scale_node->set_input_x(*graph->GetNode(x_var_name));
 
   // Add filter node(fill with scale)
   auto filter_const_node =
-      graph_ctx->AddNode(out_var_name + "/filter", scale, scale_bias_shape);
+      graph->AddNode(out_var_name + "/filter", scale, scale_bias_shape);
   scale_node->set_input_filter(*filter_const_node);
 
   // Add bias node(fill with bias)
   if (fabs(bias) > 1e-6f) {
     auto bias_const_node =
-        graph_ctx->AddNode(out_var_name + "/bias", bias, scale_bias_shape);
+        graph->AddNode(out_var_name + "/bias", bias, scale_bias_shape);
     scale_node->set_input_bias(*bias_const_node);
     scale_node->set_attr_has_bias_value(true);
   }

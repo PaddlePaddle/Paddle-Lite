@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include "lite/core/mir/subgraph/subgraph_bridge_registry.h"
-#include "lite/kernels/npu/bridges/context.h"
+#include "lite/kernels/npu/bridges/graph.h"
 #include "lite/kernels/npu/bridges/utility.h"
 
 namespace paddle {
@@ -24,7 +24,7 @@ namespace npu {
 int InterpolateConverter(void* ctx, OpLite* op) {
   CHECK(ctx != nullptr);
   CHECK(op != nullptr);
-  auto graph_ctx = static_cast<Context*>(ctx);
+  auto graph = static_cast<Graph*>(ctx);
   auto op_info = op->op_info();
   auto op_type = op_info->Type();
   auto scope = op->scope();
@@ -60,8 +60,8 @@ int InterpolateConverter(void* ctx, OpLite* op) {
   std::shared_ptr<ge::Operator> out_size_node = nullptr;
   if (HasInputArg(op_info, scope, "OutSize")) {
     auto out_size_var_name = op_info->Input("OutSize").front();
-    if (graph_ctx->HasNode(out_size_var_name)) {
-      out_size_node = graph_ctx->GetNode(out_size_var_name);
+    if (graph->HasNode(out_size_var_name)) {
+      out_size_node = graph->GetNode(out_size_var_name);
     } else {
       auto out_size = scope->FindVar(out_size_var_name)->GetMutable<Tensor>();
       CHECK_EQ(out_size->numel(), 2);
@@ -80,20 +80,20 @@ int InterpolateConverter(void* ctx, OpLite* op) {
           << " is too large, should not exceed " << largest_multiple
           << " in HiAI DDK";
     }
-    out_size_node = graph_ctx->AddNode(out_var_name + "/out_size",
-                                       std::vector<int>({out_h, out_w}));
+    out_size_node = graph->AddNode(out_var_name + "/out_size",
+                                   std::vector<int>({out_h, out_w}));
   }
 
   if (interp_method == "bilinear") {
     auto bilinear_interp_node =
-        graph_ctx->AddNode<ge::op::ResizeBilinear>(out_var_name);
-    bilinear_interp_node->set_input_x(*graph_ctx->GetNode(x_var_name));
+        graph->AddNode<ge::op::ResizeBilinear>(out_var_name);
+    bilinear_interp_node->set_input_x(*graph->GetNode(x_var_name));
     bilinear_interp_node->set_input_size(*out_size_node);
     bilinear_interp_node->set_attr_align_corners(align_corners);
   } else if (interp_method == "nearest") {
     auto nearest_interp_node =
-        graph_ctx->AddNode<ge::op::ResizeNearestNeighbor>(out_var_name);
-    nearest_interp_node->set_input_image(*graph_ctx->GetNode(x_var_name));
+        graph->AddNode<ge::op::ResizeNearestNeighbor>(out_var_name);
+    nearest_interp_node->set_input_image(*graph->GetNode(x_var_name));
     nearest_interp_node->set_input_size(*out_size_node);
     nearest_interp_node->set_attr_align_corners(align_corners);
   } else {

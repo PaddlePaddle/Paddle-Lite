@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include "lite/core/mir/subgraph/subgraph_bridge_registry.h"
-#include "lite/kernels/npu/bridges/context.h"
+#include "lite/kernels/npu/bridges/graph.h"
 #include "lite/kernels/npu/bridges/utility.h"
 
 namespace paddle {
@@ -24,7 +24,7 @@ namespace npu {
 int Pad2dConverter(void* ctx, OpLite* op) {
   CHECK(ctx != nullptr);
   CHECK(op != nullptr);
-  auto graph_ctx = static_cast<Context*>(ctx);
+  auto graph = static_cast<Graph*>(ctx);
   auto op_info = op->op_info();
   auto op_type = op_info->Type();
   auto scope = op->scope();
@@ -32,8 +32,8 @@ int Pad2dConverter(void* ctx, OpLite* op) {
 
   auto x_var_name = op_info->Input("X").front();
   auto out_var_name = op_info->Output("Out").front();
-  auto pad2d_node = graph_ctx->AddNode<ge::op::Pad>(out_var_name);
-  pad2d_node->set_input_x(*graph_ctx->GetNode(x_var_name));
+  auto pad2d_node = graph->AddNode<ge::op::Pad>(out_var_name);
+  pad2d_node->set_input_x(*graph->GetNode(x_var_name));
 
   auto mode = op_info->GetAttr<std::string>("mode");
   if (mode == "constant") {
@@ -53,13 +53,13 @@ int Pad2dConverter(void* ctx, OpLite* op) {
   int xds = x_dims.size();
   padding.insert(padding.begin(), xds * 2 - 4, 0);
   auto padding_const_node =
-      graph_ctx->AddNode(out_var_name + "/padding", padding, {xds, 2});
+      graph->AddNode(out_var_name + "/padding", padding, {xds, 2});
   pad2d_node->set_input_padding(*padding_const_node);
 
   if (mode == "constant") {
     auto pad_value = op_info->GetAttr<float>("pad_value");
     auto pad_value_const_node =
-        graph_ctx->AddNode(out_var_name + "/pad_value", pad_value);
+        graph->AddNode(out_var_name + "/pad_value", pad_value);
     pad2d_node->set_input_constant_values(*pad_value_const_node);
     pad2d_node->set_attr_T(0);  // type of pad_value:  0:float  3:int32
   }

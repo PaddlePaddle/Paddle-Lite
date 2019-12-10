@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include "lite/core/mir/subgraph/subgraph_bridge_registry.h"
-#include "lite/kernels/xpu/bridges/context.h"
+#include "lite/kernels/xpu/bridges/graph.h"
 #include "lite/kernels/xpu/bridges/utility.h"
 
 namespace paddle {
@@ -24,7 +24,7 @@ namespace xpu {
 int ElementwiseConverter(void* ctx, OpLite* op) {
   CHECK(op != nullptr);
   CHECK(ctx != nullptr);
-  auto graph_ctx = static_cast<Context*>(ctx);
+  auto graph = static_cast<Graph*>(ctx);
   auto op_info = op->op_info();
   auto op_type = op_info->Type();
   auto scope = op->scope();
@@ -42,29 +42,27 @@ int ElementwiseConverter(void* ctx, OpLite* op) {
 
   // Create x and y node
   std::shared_ptr<xtcl::xExpr> x_node = nullptr;
-  if (graph_ctx->HasNode(x_var_name)) {
-    x_node = graph_ctx->GetNode(x_var_name);
+  if (graph->HasNode(x_var_name)) {
+    x_node = graph->GetNode(x_var_name);
   } else {
-    x_node = graph_ctx->AddNode(x_var_name, *x);
+    x_node = graph->AddNode(x_var_name, *x);
   }
 
   std::shared_ptr<xtcl::xExpr> y_node = nullptr;
-  if (graph_ctx->HasNode(y_var_name)) {
-    y_node = graph_ctx->GetNode(y_var_name);
+  if (graph->HasNode(y_var_name)) {
+    y_node = graph->GetNode(y_var_name);
   } else {
-    y_node = graph_ctx->AddNode(y_var_name, *y);
+    y_node = graph->AddNode(y_var_name, *y);
   }
 
   // Create elementwise node and set input, attributes
   std::shared_ptr<xtcl::xExpr> elementwise_node = nullptr;
   if (y_dims.size() == 1) {
-    elementwise_node = graph_ctx->AddNode(
-        out_var_name,
-        graph_ctx->builder_.CreateBiasAdd(*x_node, axis, *y_node));
+    elementwise_node = graph->AddNode(
+        out_var_name, graph->builder_.CreateBiasAdd(*x_node, axis, *y_node));
   } else if (x_dims.size() == y_dims.size()) {
-    elementwise_node = graph_ctx->AddNode(
-        out_var_name,
-        graph_ctx->builder_.CreateBinaryOp("add", *x_node, *y_node));
+    elementwise_node = graph->AddNode(
+        out_var_name, graph->builder_.CreateBinaryOp("add", *x_node, *y_node));
   } else {
     LOG(WARNING)
         << "[XPU] elementwise_add only support y of one dimension, or x "

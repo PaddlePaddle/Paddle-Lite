@@ -18,7 +18,7 @@
 #include <utility>
 #include "lite/backends/npu/device.h"
 #include "lite/core/mir/subgraph/subgraph_bridge_registry.h"
-#include "lite/kernels/npu/bridges/context.h"
+#include "lite/kernels/npu/bridges/graph.h"
 #include "lite/kernels/npu/bridges/paddle_use_bridges.h"
 
 namespace paddle {
@@ -29,12 +29,12 @@ namespace npu {
 int Engine::BuildDeviceProgram() {
   int status = 0;
   // Convert all of input data vars and added into the HiAI IR graph
-  Context graph_ctx;
+  Graph graph;
   for (auto& input_name : input_names_) {
     auto input_tensor = scope_->FindMutableTensor(input_name);
     CHECK(input_tensor);
     auto input_node =
-        graph_ctx.AddNode(input_name, input_tensor->dims().Vectorize());
+        graph.AddNode(input_name, input_tensor->dims().Vectorize());
     CHECK(input_node);
     // HiAI DDK doesn't support dynamic dimensions/shapes, so need to rebuild
     // the program when the shape of any input tensor is changed.
@@ -51,8 +51,8 @@ int Engine::BuildDeviceProgram() {
     if (!bridges.Exists("NPU", op_type)) {
       return subgraph::FAILED;
     }
-    status |= bridges.Select("NPU", op_type)(
-        reinterpret_cast<void*>(&graph_ctx), const_cast<OpLite*>(op));
+    status |= bridges.Select("NPU", op_type)(reinterpret_cast<void*>(&graph),
+                                             const_cast<OpLite*>(op));
     if (subgraph::CHECK_FAILED(status)) {
       return subgraph::FAILED;
     }
@@ -60,10 +60,10 @@ int Engine::BuildDeviceProgram() {
   // Set the input and output nodes of the HiAI IR graph
   std::vector<ge::Operator> input_nodes, output_nodes;
   for (auto& input_name : input_names_) {
-    input_nodes.push_back(*graph_ctx.GetNode(input_name));
+    input_nodes.push_back(*graph.GetNode(input_name));
   }
   for (auto& output_name : output_names_) {
-    output_nodes.push_back(*graph_ctx.GetNode(output_name));
+    output_nodes.push_back(*graph.GetNode(output_name));
   }
   // Build the HiAI IR graph to HiAI om model
   device_program_ =

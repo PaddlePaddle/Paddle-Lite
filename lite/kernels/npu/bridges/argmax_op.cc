@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include "lite/core/mir/subgraph/subgraph_bridge_registry.h"
-#include "lite/kernels/npu/bridges/context.h"
+#include "lite/kernels/npu/bridges/graph.h"
 #include "lite/kernels/npu/bridges/utility.h"
 
 namespace paddle {
@@ -24,7 +24,7 @@ namespace npu {
 int ArgmaxConverter(void* ctx, OpLite* op) {
   CHECK(ctx != nullptr);
   CHECK(op != nullptr);
-  auto graph_ctx = static_cast<Context*>(ctx);
+  auto graph = static_cast<Graph*>(ctx);
   auto op_info = op->op_info();
   auto op_type = op_info->Type();
   auto scope = op->scope();
@@ -34,10 +34,10 @@ int ArgmaxConverter(void* ctx, OpLite* op) {
   auto out_var_name = op_info->Output("Out").front();
   int axis = op_info->GetAttr<int64_t>("axis");
 
-  auto argmax_node = graph_ctx->AddNode<ge::op::ArgMax>(out_var_name);
-  argmax_node->set_input_x1(*graph_ctx->GetNode(x_var_name));
+  auto argmax_node = graph->AddNode<ge::op::ArgMax>(out_var_name);
+  argmax_node->set_input_x1(*graph->GetNode(x_var_name));
 
-  auto x2 = graph_ctx->AddNode(out_var_name + "/axis", axis);
+  auto x2 = graph->AddNode(out_var_name + "/axis", axis);
   argmax_node->set_input_x2(*x2);
 
   // argmax_node->set_attr_axis(axis);

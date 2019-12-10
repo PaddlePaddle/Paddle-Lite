@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include "lite/core/mir/subgraph/subgraph_bridge_registry.h"
-#include "lite/kernels/npu/bridges/context.h"
+#include "lite/kernels/npu/bridges/graph.h"
 #include "lite/kernels/npu/bridges/utility.h"
 
 namespace paddle {
@@ -24,7 +24,7 @@ namespace npu {
 int ConvTransposeConverter(void* ctx, OpLite* op) {
   CHECK(ctx != nullptr);
   CHECK(op != nullptr);
-  auto graph_ctx = static_cast<Context*>(ctx);
+  auto graph = static_cast<Graph*>(ctx);
   auto op_info = op->op_info();
   auto op_type = op_info->Type();
   auto scope = op->scope();
@@ -59,7 +59,7 @@ int ConvTransposeConverter(void* ctx, OpLite* op) {
 
   // Create deconv node
   auto conv_transpose_node =
-      graph_ctx->AddNode<ge::op::Deconvolution>(output_var_name);
+      graph->AddNode<ge::op::Deconvolution>(output_var_name);
 
   // Create input sizes node to describe the dimensions of input tensor
   std::vector<int32_t> input_sizes;
@@ -72,15 +72,15 @@ int ConvTransposeConverter(void* ctx, OpLite* op) {
     input_sizes.push_back(output_size);
   }
   auto input_sizes_const_node =
-      graph_ctx->AddNode(output_var_name + "/input_sizes", input_sizes);
+      graph->AddNode(output_var_name + "/input_sizes", input_sizes);
   conv_transpose_node->set_input_input_sizes(*input_sizes_const_node);
 
   // Create filter node
-  auto filter_const_node = graph_ctx->AddNode(filter_var_name, *filter);
+  auto filter_const_node = graph->AddNode(filter_var_name, *filter);
   conv_transpose_node->set_input_filter(*filter_const_node);
 
   // Set input node
-  conv_transpose_node->set_input_x(*graph_ctx->GetNode(input_var_name));
+  conv_transpose_node->set_input_x(*graph->GetNode(input_var_name));
 
   // Set attributes
   conv_transpose_node->set_attr_format(0);    // NCHW
@@ -100,14 +100,14 @@ int ConvTransposeConverter(void* ctx, OpLite* op) {
   if (HasInputArg(op_info, scope, "Bias")) {
     // Create bias node
     auto bias_var_name = op_info->Input("Bias").front();
-    CHECK(!graph_ctx->HasNode(bias_var_name));
+    CHECK(!graph->HasNode(bias_var_name));
     auto* bias = scope->FindVar(bias_var_name)->GetMutable<Tensor>();
     auto channel_size = bias->dims().production();
     CHECK_EQ(channel_size, filter_shape[1] * groups);
     auto bias_const_node =
-        graph_ctx->AddNode(bias_var_name, *bias, {1, channel_size, 1, 1});
+        graph->AddNode(bias_var_name, *bias, {1, channel_size, 1, 1});
     // Append add node to add bias node
-    auto add_node = graph_ctx->AddNode<ge::op::Add>(output_var_name);
+    auto add_node = graph->AddNode<ge::op::Add>(output_var_name);
     add_node->set_input_x1(*conv_transpose_node);
     add_node->set_input_x2(*bias_const_node);
     output_node = add_node;
@@ -115,7 +115,7 @@ int ConvTransposeConverter(void* ctx, OpLite* op) {
 
   if (fuse_relu) {
     // Append relu node if fuse_relu is true
-    auto relu_node = graph_ctx->AddNode<ge::op::Activation>(output_var_name);
+    auto relu_node = graph->AddNode<ge::op::Activation>(output_var_name);
     relu_node->set_input_x(*output_node);
     relu_node->set_attr_mode(CvtActMode("relu"));
   }

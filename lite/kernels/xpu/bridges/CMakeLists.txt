@@ -1,7 +1,7 @@
 lite_cc_library(subgraph_bridge_utility_xpu SRCS utility.cc DEPS ${xpu_builder_libs} tensor)
-lite_cc_library(subgraph_bridge_context_xpu SRCS context.cc DEPS subgraph_bridge_utility_xpu)
+lite_cc_library(subgraph_bridge_graph_xpu SRCS graph.cc DEPS subgraph_bridge_utility_xpu)
 
-set(xpu_subgraph_bridge_deps subgraph_bridge_registry subgraph_bridge_utility_xpu subgraph_bridge_context_xpu)
+set(xpu_subgraph_bridge_deps subgraph_bridge_registry subgraph_bridge_utility_xpu subgraph_bridge_graph_xpu)
 
 lite_cc_library(subgraph_bridge_act_op_xpu SRCS act_op.cc DEPS ${xpu_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_conv_op_xpu SRCS conv_op.cc DEPS ${xpu_subgraph_bridge_deps})
@@ -14,7 +14,7 @@ lite_cc_library(subgraph_bridge_batch_norm_op_xpu SRCS batch_norm_op.cc DEPS ${x
 set(xpu_subgraph_bridges
         subgraph_bridge_registry
         subgraph_bridge_utility_xpu
-        subgraph_bridge_context_xpu
+        subgraph_bridge_graph_xpu
         subgraph_bridge_act_op_xpu
         subgraph_bridge_conv_op_xpu
         subgraph_bridge_elementwise_ops_xpu

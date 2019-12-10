@@ -14,7 +14,7 @@
 
 #include "lite/operators/pool_op.h"
 #include "lite/core/mir/subgraph/subgraph_bridge_registry.h"
-#include "lite/kernels/npu/bridges/context.h"
+#include "lite/kernels/npu/bridges/graph.h"
 #include "lite/kernels/npu/bridges/utility.h"
 
 namespace paddle {
@@ -25,7 +25,7 @@ namespace npu {
 int PoolConverter(void* ctx, OpLite* op) {
   CHECK(ctx != nullptr);
   CHECK(op != nullptr);
-  auto graph_ctx = static_cast<Context*>(ctx);
+  auto graph = static_cast<Graph*>(ctx);
   auto op_info = op->op_info();
   auto op_type = op_info->Type();
   auto scope = op->scope();
@@ -34,8 +34,8 @@ int PoolConverter(void* ctx, OpLite* op) {
   auto x_var_name = op_info->Input("X").front();
   auto x = scope->FindTensor(x_var_name);
   auto out_var_name = op_info->Output("Out").front();
-  auto pool_node = graph_ctx->AddNode<ge::op::Pooling>(out_var_name);
-  pool_node->set_input_x(*graph_ctx->GetNode(x_var_name));
+  auto pool_node = graph->AddNode<ge::op::Pooling>(out_var_name);
+  pool_node->set_input_x(*graph->GetNode(x_var_name));
 
   int mode = 0;
   auto pooling_type = op_info->GetAttr<std::string>("pooling_type");

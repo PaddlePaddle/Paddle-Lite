@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include "lite/core/mir/subgraph/subgraph_bridge_registry.h"
-#include "lite/kernels/npu/bridges/context.h"
+#include "lite/kernels/npu/bridges/graph.h"
 #include "lite/kernels/npu/bridges/utility.h"
 
 namespace paddle {
@@ -24,7 +24,7 @@ namespace npu {
 int ShuffleChannelConverter(void* ctx, OpLite* op) {
   CHECK(ctx != nullptr);
   CHECK(op != nullptr);
-  auto graph_ctx = static_cast<Context*>(ctx);
+  auto graph = static_cast<Graph*>(ctx);
   auto op_info = op->op_info();
   auto op_type = op_info->Type();
   auto scope = op->scope();
@@ -33,9 +33,9 @@ int ShuffleChannelConverter(void* ctx, OpLite* op) {
   auto x_var_name = op_info->Input("X").front();
   auto out_var_name = op_info->Output("Out").front();
   auto shuffle_channel_node =
-      graph_ctx->AddNode<ge::op::ShuffleChannel>(out_var_name);
+      graph->AddNode<ge::op::ShuffleChannel>(out_var_name);
 
-  shuffle_channel_node->set_input_x(*graph_ctx->GetNode(x_var_name));
+  shuffle_channel_node->set_input_x(*graph->GetNode(x_var_name));
   shuffle_channel_node->set_attr_group(op_info->GetAttr<int>("group"));
   return SUCCESS;
 }

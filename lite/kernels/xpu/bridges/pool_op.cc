@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include "lite/core/mir/subgraph/subgraph_bridge_registry.h"
-#include "lite/kernels/xpu/bridges/context.h"
+#include "lite/kernels/xpu/bridges/graph.h"
 #include "lite/kernels/xpu/bridges/utility.h"
 
 namespace paddle {
@@ -24,7 +24,7 @@ namespace xpu {
 int PoolConverter(void* ctx, OpLite* op) {
   CHECK(ctx != nullptr);
   CHECK(op != nullptr);
-  auto graph_ctx = static_cast<Context*>(ctx);
+  auto graph = static_cast<Graph*>(ctx);
   auto op_info = op->op_info();
   auto op_type = op_info->Type();
   VLOG(3) << "[XPU] Converting " + op_type + "...";
@@ -43,35 +43,35 @@ int PoolConverter(void* ctx, OpLite* op) {
   // Create pool node and set params from op
   if (pooling_type == "max") {
     if (global_pooling) {
-      graph_ctx->AddNode(out_var_name,
-                         graph_ctx->builder_.CreateGlobalMaxPool2D(
-                             *graph_ctx->GetNode(x_var_name)));
-    } else {
-      graph_ctx->AddNode(
+      graph->AddNode(
           out_var_name,
-          graph_ctx->builder_.CreateMaxPool2D(*graph_ctx->GetNode(x_var_name),
-                                              CvtShape(ksize),
-                                              CvtShape(strides),
-                                              CvtShape(paddings),
-                                              "NCHW",
-                                              ceil_mode));
+          graph->builder_.CreateGlobalMaxPool2D(*graph->GetNode(x_var_name)));
+    } else {
+      graph->AddNode(
+          out_var_name,
+          graph->builder_.CreateMaxPool2D(*graph->GetNode(x_var_name),
+                                          CvtShape(ksize),
+                                          CvtShape(strides),
+                                          CvtShape(paddings),
+                                          "NCHW",
+                                          ceil_mode));
     }
   } else if (pooling_type == "avg") {
     if (global_pooling) {
-      graph_ctx->AddNode(out_var_name,
-                         graph_ctx->builder_.CreateGlobalAvgPool2D(
-                             *graph_ctx->GetNode(x_var_name)));
+      graph->AddNode(
+          out_var_name,
+          graph->builder_.CreateGlobalAvgPool2D(*graph->GetNode(x_var_name)));
     } else {
       // !exclusive ---> count_include_pad
-      graph_ctx->AddNode(
+      graph->AddNode(
           out_var_name,
-          graph_ctx->builder_.CreateAvgPool2D(*graph_ctx->GetNode(x_var_name),
-                                              CvtShape(ksize),
-                                              CvtShape(strides),
-                                              CvtShape(paddings),
-                                              "NCHW",
-                                              ceil_mode,
-                                              !exclusive));
+          graph->builder_.CreateAvgPool2D(*graph->GetNode(x_var_name),
+                                          CvtShape(ksize),
+                                          CvtShape(strides),
+                                          CvtShape(paddings),
+                                          "NCHW",
+                                          ceil_mode,
+                                          !exclusive));
     }
   } else {
     LOG(WARNING) << "[XPU] Unsupported pooling type: " << pooling_type;

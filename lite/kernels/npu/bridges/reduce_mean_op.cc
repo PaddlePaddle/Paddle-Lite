@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include "lite/core/mir/subgraph/subgraph_bridge_registry.h"
-#include "lite/kernels/npu/bridges/context.h"
+#include "lite/kernels/npu/bridges/graph.h"
 #include "lite/kernels/npu/bridges/utility.h"
 
 namespace paddle {
@@ -24,7 +24,7 @@ namespace npu {
 int ReduceMeanConverter(void* ctx, OpLite* op) {
   CHECK(ctx != nullptr);
   CHECK(op != nullptr);
-  auto graph_ctx = static_cast<Context*>(ctx);
+  auto graph = static_cast<Graph*>(ctx);
   auto op_info = op->op_info();
   auto op_type = op_info->Type();
   auto scope = op->scope();
@@ -47,10 +47,10 @@ int ReduceMeanConverter(void* ctx, OpLite* op) {
   // Create reduce_mean(using reduce_sum + scale) node and set input node from
   // node map
   auto reduce_sum_node =
-      graph_ctx->AddNode<ge::op::ReduceSum>(out_var_name + "/reducesum");
-  reduce_sum_node->set_input_x(*graph_ctx->GetNode(x_var_name));
+      graph->AddNode<ge::op::ReduceSum>(out_var_name + "/reducesum");
+  reduce_sum_node->set_input_x(*graph->GetNode(x_var_name));
 
-  auto dim_const_node = graph_ctx->AddNode(out_var_name + "/dim", dim);
+  auto dim_const_node = graph->AddNode(out_var_name + "/dim", dim);
   reduce_sum_node->set_input_w(*dim_const_node);
   reduce_sum_node->set_attr_keep_dims(keep_dim);
 
@@ -75,8 +75,8 @@ int ReduceMeanConverter(void* ctx, OpLite* op) {
   }
 
   auto filter_const_node =
-      graph_ctx->AddNode(out_var_name + "/filter", scale, scale_bias_shape);
-  auto scale_node = graph_ctx->AddNode<ge::op::Scale>(out_var_name);
+      graph->AddNode(out_var_name + "/filter", scale, scale_bias_shape);
+  auto scale_node = graph->AddNode<ge::op::Scale>(out_var_name);
   scale_node->set_input_x(*reduce_sum_node);
   scale_node->set_input_filter(*filter_const_node);
   scale_node->set_attr_axis(1);

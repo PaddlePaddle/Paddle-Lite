@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include "lite/core/mir/subgraph/subgraph_bridge_registry.h"
-#include "lite/kernels/npu/bridges/context.h"
+#include "lite/kernels/npu/bridges/graph.h"
 #include "lite/kernels/npu/bridges/utility.h"
 
 namespace paddle {
@@ -24,7 +24,7 @@ namespace npu {
 int ActConverter(void* ctx, OpLite* op) {
   CHECK(ctx != nullptr);
   CHECK(op != nullptr);
-  auto graph_ctx = static_cast<Context*>(ctx);
+  auto graph = static_cast<Graph*>(ctx);
   auto op_info = op->op_info();
   auto op_type = op_info->Type();
   VLOG(3) << "[NPU] Converting " + op_type + "...";
@@ -32,8 +32,8 @@ int ActConverter(void* ctx, OpLite* op) {
   // Create act node and set input node which is obtained from the node map
   auto x_var_name = op_info->Input("X").front();
   auto out_var_name = op_info->Output("Out").front();
-  auto act_node = graph_ctx->AddNode<ge::op::Activation>(out_var_name);
-  act_node->set_input_x(*graph_ctx->GetNode(x_var_name));
+  auto act_node = graph->AddNode<ge::op::Activation>(out_var_name);
+  act_node->set_input_x(*graph->GetNode(x_var_name));
 
   // TODO(hong19860320) set the coef value for act Ops, such as leaky_relu,
   // clipped_relu etc.

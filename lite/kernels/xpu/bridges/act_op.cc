@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include "lite/core/mir/subgraph/subgraph_bridge_registry.h"
-#include "lite/kernels/xpu/bridges/context.h"
+#include "lite/kernels/xpu/bridges/graph.h"
 #include "lite/kernels/xpu/bridges/utility.h"
 
 namespace paddle {
@@ -24,7 +24,7 @@ namespace xpu {
 int ActConverter(void* ctx, OpLite* op) {
   CHECK(ctx != nullptr);
   CHECK(op != nullptr);
-  auto graph_ctx = static_cast<Context*>(ctx);
+  auto graph = static_cast<Graph*>(ctx);
   auto op_info = op->op_info();
   auto op_type = op_info->Type();
   VLOG(3) << "[XPU] Converting " + op_type + "...";
@@ -32,11 +32,10 @@ int ActConverter(void* ctx, OpLite* op) {
   // Create act node and set params from op
   auto x_var_name = op_info->Input("X").front();
   auto out_var_name = op_info->Output("Out").front();
-  CHECK(graph_ctx->HasNode(x_var_name));
+  CHECK(graph->HasNode(x_var_name));
   if (op_type == "relu") {
-    graph_ctx->AddNode(
-        out_var_name,
-        graph_ctx->builder_.CreateRelu(*graph_ctx->GetNode(x_var_name)));
+    graph->AddNode(out_var_name,
+                   graph->builder_.CreateRelu(*graph->GetNode(x_var_name)));
   } else {
     // TODO(hong19860320) supports more activation ops
     LOG(WARNING) << "[XPU] Unsupported activation type " << op_type;

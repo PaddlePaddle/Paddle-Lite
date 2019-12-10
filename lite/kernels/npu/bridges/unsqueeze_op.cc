@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include "lite/core/mir/subgraph/subgraph_bridge_registry.h"
-#include "lite/kernels/npu/bridges/context.h"
+#include "lite/kernels/npu/bridges/graph.h"
 #include "lite/kernels/npu/bridges/utility.h"
 
 namespace paddle {
@@ -24,7 +24,7 @@ namespace npu {
 int UnsqueezeConverter(void* ctx, OpLite* op) {
   CHECK(ctx != nullptr);
   CHECK(op != nullptr);
-  auto graph_ctx = static_cast<Context*>(ctx);
+  auto graph = static_cast<Graph*>(ctx);
   auto op_info = op->op_info();
   auto op_type = op_info->Type();
   auto scope = op->scope();
@@ -36,8 +36,8 @@ int UnsqueezeConverter(void* ctx, OpLite* op) {
   CHECK(op_info->HasAttr("axes"))
       << "[NPU] unsqueeze not support axes from tensor now";
 
-  auto unsqueeze_node = graph_ctx->AddNode<ge::op::Reshape>(out_var_name);
-  unsqueeze_node->set_input_tensor(*graph_ctx->GetNode(x_var_name));
+  auto unsqueeze_node = graph->AddNode<ge::op::Reshape>(out_var_name);
+  unsqueeze_node->set_input_tensor(*graph->GetNode(x_var_name));
   unsqueeze_node->set_attr_shape(
       ge::AttrValue::LIST_INT(out_shape.begin(), out_shape.end()));
   return REBUILD_WHEN_SHAPE_CHANGED;

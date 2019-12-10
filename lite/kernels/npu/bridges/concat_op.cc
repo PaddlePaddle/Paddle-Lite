@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include "lite/core/mir/subgraph/subgraph_bridge_registry.h"
-#include "lite/kernels/npu/bridges/context.h"
+#include "lite/kernels/npu/bridges/graph.h"
 #include "lite/kernels/npu/bridges/utility.h"
 
 namespace paddle {
@@ -24,7 +24,7 @@ namespace npu {
 int ConcatConverter(void* ctx, OpLite* op) {
   CHECK(ctx != nullptr);
   CHECK(op != nullptr);
-  auto graph_ctx = static_cast<Context*>(ctx);
+  auto graph = static_cast<Graph*>(ctx);
   auto op_info = op->op_info();
   auto op_type = op_info->Type();
   auto scope = op->scope();
@@ -34,17 +34,17 @@ int ConcatConverter(void* ctx, OpLite* op) {
   auto out_var_name = op_info->Output("Out").front();
   auto axis = op_info->GetAttr<int>("axis");
   auto num = x_var_names.size();
-  auto concat_node = graph_ctx->AddNode<ge::op::Concat>(out_var_name);
+  auto concat_node = graph->AddNode<ge::op::Concat>(out_var_name);
   concat_node->set_attr_axis(axis);
   concat_node->set_attr_N(num);
   concat_node->create_dynamic_input_x(num);
   int idx = 1;
   for (auto& x_var_name : x_var_names) {
-    if (graph_ctx->HasNode(x_var_name)) {
-      concat_node->set_dynamic_input_x(idx, *graph_ctx->GetNode(x_var_name));
+    if (graph->HasNode(x_var_name)) {
+      concat_node->set_dynamic_input_x(idx, *graph->GetNode(x_var_name));
     } else {
       auto x = scope->FindVar(x_var_name)->GetMutable<Tensor>();
-      auto x_const_node = graph_ctx->AddNode(x_var_name, *x);
+      auto x_const_node = graph->AddNode(x_var_name, *x);
       concat_node->set_dynamic_input_x(idx, *x_const_node);
     }
     idx++;

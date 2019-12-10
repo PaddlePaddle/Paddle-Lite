@@ -18,7 +18,7 @@
 #include <utility>
 #include "lite/backends/xpu/device.h"
 #include "lite/core/mir/subgraph/subgraph_bridge_registry.h"
-#include "lite/kernels/xpu/bridges/context.h"
+#include "lite/kernels/xpu/bridges/graph.h"
 #include "lite/kernels/xpu/bridges/paddle_use_bridges.h"
 
 namespace paddle {
@@ -29,12 +29,12 @@ namespace xpu {
 int Engine::BuildDeviceProgram() {
   int status = 0;
   // Convert all of input data vars and added into the XPU IR graph
-  Context graph_ctx;
+  Graph graph;
   for (auto& input_name : input_names_) {
     auto input_tensor = scope_->FindMutableTensor(input_name);
     CHECK(input_tensor);
     auto input_node =
-        graph_ctx.AddNode(input_name, input_tensor->dims().Vectorize());
+        graph.AddNode(input_name, input_tensor->dims().Vectorize());
     CHECK(input_node);
     // XTCL doesn't support dynamic dimensions/shapes, so need to rebuild
     // the program when the shape of any input tensor is changed.
@@ -51,8 +51,8 @@ int Engine::BuildDeviceProgram() {
     if (!bridges.Exists("XPU", op_type)) {
       return subgraph::FAILED;
     }
-    status |= bridges.Select("XPU", op_type)(
-        reinterpret_cast<void*>(&graph_ctx), const_cast<OpLite*>(op));
+    status |= bridges.Select("XPU", op_type)(reinterpret_cast<void*>(&graph),
+                                             const_cast<OpLite*>(op));
     if (subgraph::CHECK_FAILED(status)) {
       return subgraph::FAILED;
     }
@@ -61,10 +61,10 @@ int Engine::BuildDeviceProgram() {
   // runtime
   std::vector<xtcl::xExpr*> output_nodes;
   for (auto& output_name : output_names_) {
-    output_nodes.push_back(graph_ctx.GetNode(output_name).get());
+    output_nodes.push_back(graph.GetNode(output_name).get());
   }
   device_program_ = lite::xpu::Device::Global().Build(
-      &graph_ctx.builder_, &graph_ctx.params_, &output_nodes);
+      &graph.builder_, &graph.params_, &output_nodes);
   if (device_program_ == nullptr) {
     LOG(WARNING) << "[XPU] Build model failed!";
     return subgraph::FAILED;

@@ -27,8 +27,9 @@ namespace lite {
 namespace subgraph {
 namespace xpu {
 
-// The Context of the converters which used for converting Paddle Ops to XTCL IR
-class Context {
+// The Context of the converters which used for converting the ops of subgraph
+// to the XPU IR graph
+class Graph {
  public:
   // Layer node
   std::shared_ptr<xtcl::xExpr> AddNode(const std::string& name,

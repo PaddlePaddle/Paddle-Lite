@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include "lite/core/mir/subgraph/subgraph_bridge_registry.h"
-#include "lite/kernels/npu/bridges/context.h"
+#include "lite/kernels/npu/bridges/graph.h"
 #include "lite/kernels/npu/bridges/utility.h"
 
 namespace paddle {
@@ -24,7 +24,7 @@ namespace npu {
 int FCConverter(void* ctx, OpLite* op) {
   CHECK(ctx != nullptr);
   CHECK(op != nullptr);
-  auto graph_ctx = static_cast<Context*>(ctx);
+  auto graph = static_cast<Graph*>(ctx);
   auto op_info = op->op_info();
   auto op_type = op_info->Type();
   auto scope = op->scope();
@@ -50,14 +50,13 @@ int FCConverter(void* ctx, OpLite* op) {
   VLOG(3) << "[NPU] x dims: " << x_dims << " w dims: " << w_dims << " m: " << m
           << " k: " << k << " n: " << n;
 
-  auto fc_node =
-      graph_ctx->AddNode<ge::op::FullConnection>(out_var_name + "/fc");
-  CHECK(!graph_ctx->HasNode(w_var_name));
+  auto fc_node = graph->AddNode<ge::op::FullConnection>(out_var_name + "/fc");
+  CHECK(!graph->HasNode(w_var_name));
 
   // Reshape x to (m, k, 1, 1)
   auto reshaped_x_node =
-      graph_ctx->AddNode<ge::op::Reshape>(x_var_name + "/reshape");
-  reshaped_x_node->set_input_tensor(*graph_ctx->GetNode(x_var_name));
+      graph->AddNode<ge::op::Reshape>(x_var_name + "/reshape");
+  reshaped_x_node->set_input_tensor(*graph->GetNode(x_var_name));
   reshaped_x_node->set_attr_shape({m, k, 1, 1});
   reshaped_x_node->set_attr_axis(0);
   fc_node->set_input_x(*reshaped_x_node);
@@ -73,7 +72,7 @@ int FCConverter(void* ctx, OpLite* op) {
       transpose_w_data[j * k + i] = w_data[i * n + j];
     }
   }
-  auto w_const_node = graph_ctx->AddNode(w_var_name, transpose_w);
+  auto w_const_node = graph->AddNode(w_var_name, transpose_w);
   fc_node->set_input_w(*w_const_node);
 
   // Add bias node if bias tensor exists
@@ -81,16 +80,15 @@ int FCConverter(void* ctx, OpLite* op) {
     auto bias_var_name = op_info->Input("Bias").front();
     auto bias = scope->FindVar(bias_var_name)->GetMutable<lite::Tensor>();
     auto bias_dims = bias->dims();
-    CHECK(!graph_ctx->HasNode(bias_var_name));
+    CHECK(!graph->HasNode(bias_var_name));
     CHECK_EQ(bias_dims.production(), n);
 
-    auto bias_const_node =
-        graph_ctx->AddNode(bias_var_name, *bias, {1, n, 1, 1});
+    auto bias_const_node = graph->AddNode(bias_var_name, *bias, {1, n, 1, 1});
     fc_node->set_input_b(*bias_const_node);
   }
 
   // Reshape output of fc_node from (m, n, 1, 1) to (m, n)
-  auto reshaped_fc_node = graph_ctx->AddNode<ge::op::Reshape>(out_var_name);
+  auto reshaped_fc_node = graph->AddNode<ge::op::Reshape>(out_var_name);
   reshaped_fc_node->set_input_tensor(*fc_node);
   reshaped_fc_node->set_attr_shape({m, n});
   reshaped_fc_node->set_attr_axis(0);

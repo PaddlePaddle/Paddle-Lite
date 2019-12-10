@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include "lite/core/mir/subgraph/subgraph_bridge_registry.h"
-#include "lite/kernels/npu/bridges/context.h"
+#include "lite/kernels/npu/bridges/graph.h"
 #include "lite/kernels/npu/bridges/utility.h"
 
 namespace paddle {
@@ -24,15 +24,15 @@ namespace npu {
 int SquareConverter(void* ctx, OpLite* op) {
   CHECK(ctx != nullptr);
   CHECK(op != nullptr);
-  auto graph_ctx = static_cast<Context*>(ctx);
+  auto graph = static_cast<Graph*>(ctx);
   auto op_info = op->op_info();
   auto op_type = op_info->Type();
   VLOG(3) << "[NPU] Converting " + op_type + "...";
 
   auto x_var_name = op_info->Input("X").front();
   auto out_var_name = op_info->Output("Out").front();
-  auto square_node = graph_ctx->AddNode<ge::op::Square>(out_var_name);
-  square_node->set_input_x(*graph_ctx->GetNode(x_var_name));
+  auto square_node = graph->AddNode<ge::op::Square>(out_var_name);
+  square_node->set_input_x(*graph->GetNode(x_var_name));
   return SUCCESS;
 }
 

@@ -14,7 +14,7 @@
 
 #include "lite/operators/conv_op.h"
 #include "lite/core/mir/subgraph/subgraph_bridge_registry.h"
-#include "lite/kernels/npu/bridges/context.h"
+#include "lite/kernels/npu/bridges/graph.h"
 #include "lite/kernels/npu/bridges/utility.h"
 
 namespace paddle {
@@ -25,7 +25,7 @@ namespace npu {
 int ConvConverter(void* ctx, OpLite* op) {
   CHECK(ctx != nullptr);
   CHECK(op != nullptr);
-  auto graph_ctx = static_cast<Context*>(ctx);
+  auto graph = static_cast<Graph*>(ctx);
   auto op_info = op->op_info();
   auto op_type = op_info->Type();
   auto scope = op->scope();
@@ -92,7 +92,7 @@ int ConvConverter(void* ctx, OpLite* op) {
   }
 
   // Create filter node
-  auto filter_const_node = graph_ctx->AddNode(filter_var_name, *filter);
+  auto filter_const_node = graph->AddNode(filter_var_name, *filter);
 
   // Create bias node if exists bias
   // Supports the bias nodes with the following dimensions
@@ -124,12 +124,12 @@ int ConvConverter(void* ctx, OpLite* op) {
                    << output_dims;
       return FAILED;
     }
-    if (graph_ctx->HasNode(bias_var_name)) {
+    if (graph->HasNode(bias_var_name)) {
       // Bias node from input map
-      bias_node = graph_ctx->GetNode(bias_var_name);
+      bias_node = graph->GetNode(bias_var_name);
     } else {
       // Bias node with const data
-      bias_node = graph_ctx->AddNode(bias_var_name, *bias, bias_shape);
+      bias_node = graph->AddNode(bias_var_name, *bias, bias_shape);
     }
   }
 
@@ -137,8 +137,8 @@ int ConvConverter(void* ctx, OpLite* op) {
   std::shared_ptr<ge::Operator> conv_node = nullptr;
   if (use_depthwise_conv && is_depthwise_mode) {
     auto depthwise_conv_node =
-        graph_ctx->AddNode<ge::op::ConvolutionDepthwise>(output_var_name);
-    depthwise_conv_node->set_input_x(*graph_ctx->GetNode(input_var_name));
+        graph->AddNode<ge::op::ConvolutionDepthwise>(output_var_name);
+    depthwise_conv_node->set_input_x(*graph->GetNode(input_var_name));
     depthwise_conv_node->set_input_filter(*filter_const_node);
     depthwise_conv_node->set_attr_mode(1);
     depthwise_conv_node->set_attr_algo(0);
@@ -157,15 +157,15 @@ int ConvConverter(void* ctx, OpLite* op) {
     // ConvolutionDepthwise Op doesn't support bias, so append Add node to
     // support bias
     if (bias_node != nullptr) {
-      auto add_node = graph_ctx->AddNode<ge::op::Add>(output_var_name);
+      auto add_node = graph->AddNode<ge::op::Add>(output_var_name);
       add_node->set_input_x1(*depthwise_conv_node);
       add_node->set_input_x2(*bias_node);
       conv_node = add_node;
     }
   } else {
     auto common_conv_node =
-        graph_ctx->AddNode<ge::op::Convolution>(output_var_name);
-    common_conv_node->set_input_x(*graph_ctx->GetNode(input_var_name));
+        graph->AddNode<ge::op::Convolution>(output_var_name);
+    common_conv_node->set_input_x(*graph->GetNode(input_var_name));
     common_conv_node->set_input_w(*filter_const_node);
     common_conv_node->set_attr_mode(1);
     common_conv_node->set_attr_pad_mode(0);  // NOTSET
@@ -185,7 +185,7 @@ int ConvConverter(void* ctx, OpLite* op) {
       if (is_channel_bias) {
         common_conv_node->set_input_b(*bias_node);
       } else {
-        auto add_node = graph_ctx->AddNode<ge::op::Add>(output_var_name);
+        auto add_node = graph->AddNode<ge::op::Add>(output_var_name);
         add_node->set_input_x1(*common_conv_node);
         add_node->set_input_x2(*bias_node);
         conv_node = add_node;
@@ -196,7 +196,7 @@ int ConvConverter(void* ctx, OpLite* op) {
 
   if (fuse_relu) {
     // Append relu node if fuse_relu is true
-    auto relu_node = graph_ctx->AddNode<ge::op::Activation>(output_var_name);
+    auto relu_node = graph->AddNode<ge::op::Activation>(output_var_name);
     relu_node->set_input_x(*conv_node);
     relu_node->set_attr_mode(CvtActMode("relu"));
   }

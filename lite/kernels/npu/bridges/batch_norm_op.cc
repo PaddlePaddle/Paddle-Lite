@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include "lite/core/mir/subgraph/subgraph_bridge_registry.h"
-#include "lite/kernels/npu/bridges/context.h"
+#include "lite/kernels/npu/bridges/graph.h"
 #include "lite/kernels/npu/bridges/utility.h"
 
 namespace paddle {
@@ -24,7 +24,7 @@ namespace npu {
 int BatchNormConverter(void* ctx, OpLite* op) {
   CHECK(ctx != nullptr);
   CHECK(op != nullptr);
-  auto graph_ctx = static_cast<Context*>(ctx);
+  auto graph = static_cast<Graph*>(ctx);
   auto op_info = op->op_info();
   auto op_type = op_info->Type();
   auto scope = op->scope();
@@ -32,24 +32,24 @@ int BatchNormConverter(void* ctx, OpLite* op) {
 
   auto x_var_name = op_info->Input("X").front();
   auto y_var_name = op_info->Output("Y").front();
-  auto batch_norm_node = graph_ctx->AddNode<ge::op::BatchNormExt2>(y_var_name);
-  batch_norm_node->set_input_x(*graph_ctx->GetNode(x_var_name));
+  auto batch_norm_node = graph->AddNode<ge::op::BatchNormExt2>(y_var_name);
+  batch_norm_node->set_input_x(*graph->GetNode(x_var_name));
 
   auto scale_var_name = op_info->Input("Scale").front();
   auto scale = scope->FindVar(scale_var_name)->GetMutable<Tensor>();
-  auto scale_const_node = graph_ctx->AddNode(scale_var_name, *scale);
+  auto scale_const_node = graph->AddNode(scale_var_name, *scale);
 
   auto bias_var_name = op_info->Input("Bias").front();
   auto bias = scope->FindVar(bias_var_name)->GetMutable<Tensor>();
-  auto bias_const_node = graph_ctx->AddNode(bias_var_name, *bias);
+  auto bias_const_node = graph->AddNode(bias_var_name, *bias);
 
   auto mean_var_name = op_info->Input("Mean").front();
   auto mean = scope->FindVar(mean_var_name)->GetMutable<Tensor>();
-  auto mean_const_node = graph_ctx->AddNode(mean_var_name, *mean);
+  auto mean_const_node = graph->AddNode(mean_var_name, *mean);
 
   auto variance_var_name = op_info->Input("Variance").front();
   auto variance = scope->FindVar(variance_var_name)->GetMutable<Tensor>();
-  auto variance_const_node = graph_ctx->AddNode(variance_var_name, *variance);
+  auto variance_const_node = graph->AddNode(variance_var_name, *variance);
 
   float momentum = op_info->GetAttr<float>("momentum");
   float epsilon = op_info->GetAttr<float>("epsilon");

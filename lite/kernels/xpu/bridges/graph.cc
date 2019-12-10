@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/xpu/bridges/context.h"
+#include "lite/kernels/xpu/bridges/graph.h"
 #include <utility>
 #include "lite/kernels/xpu/bridges/utility.h"
 
@@ -21,8 +21,8 @@ namespace lite {
 namespace subgraph {
 namespace xpu {
 
-std::shared_ptr<xtcl::xExpr> Context::AddNode(const std::string& name,
-                                              const xtcl::xExpr& layer) {
+std::shared_ptr<xtcl::xExpr> Graph::AddNode(const std::string& name,
+                                            const xtcl::xExpr& layer) {
   auto unique_name = [&](const std::string& key) {
     int idx = 1;
     auto it = counts_.find(key);
@@ -50,18 +50,18 @@ std::shared_ptr<xtcl::xExpr> Context::AddNode(const std::string& name,
 }
 
 // Const node
-std::shared_ptr<xtcl::xExpr> Context::AddNode(const std::string& name,
-                                              const Tensor& tensor,
-                                              PrecisionType ptype,
-                                              DataLayoutType ltype) {
+std::shared_ptr<xtcl::xExpr> Graph::AddNode(const std::string& name,
+                                            const Tensor& tensor,
+                                            PrecisionType ptype,
+                                            DataLayoutType ltype) {
   return AddNode(name, tensor, tensor.dims().Vectorize(), ptype, ltype);
 }
 
-std::shared_ptr<xtcl::xExpr> Context::AddNode(const std::string& name,
-                                              const Tensor& tensor,
-                                              std::vector<int64_t> shape,
-                                              PrecisionType ptype,
-                                              DataLayoutType ltype) {
+std::shared_ptr<xtcl::xExpr> Graph::AddNode(const std::string& name,
+                                            const Tensor& tensor,
+                                            std::vector<int64_t> shape,
+                                            PrecisionType ptype,
+                                            DataLayoutType ltype) {
   auto node = AddNode(name, shape, ptype, ltype);
   params_.emplace(
       std::make_pair(name, *CvtTensor(tensor, shape, ptype, ltype)));
@@ -69,10 +69,10 @@ std::shared_ptr<xtcl::xExpr> Context::AddNode(const std::string& name,
 }
 
 // Data node
-std::shared_ptr<xtcl::xExpr> Context::AddNode(const std::string& name,
-                                              std::vector<int64_t> shape,
-                                              PrecisionType ptype,
-                                              DataLayoutType ltype) {
+std::shared_ptr<xtcl::xExpr> Graph::AddNode(const std::string& name,
+                                            std::vector<int64_t> shape,
+                                            PrecisionType ptype,
+                                            DataLayoutType ltype) {
   CHECK(!HasNode(name));
   auto node = std::make_shared<xtcl::xExpr>(
       builder_.CreateTensor(name, CvtShape(shape), CvtPrecisionType(ptype)));

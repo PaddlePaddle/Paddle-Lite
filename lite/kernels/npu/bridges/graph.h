@@ -29,7 +29,7 @@ namespace subgraph {
 namespace npu {
 
 // Type and registers of converters for converting Paddle Ops to HiAI IR graph
-class Context {
+class Graph {
  public:
   template <typename T>
   std::shared_ptr<T> AddNode(const std::string& name) {

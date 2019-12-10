@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include "lite/core/mir/subgraph/subgraph_bridge_registry.h"
-#include "lite/kernels/npu/bridges/context.h"
+#include "lite/kernels/npu/bridges/graph.h"
 #include "lite/kernels/npu/bridges/utility.h"
 
 namespace paddle {
@@ -24,7 +24,7 @@ namespace npu {
 int SoftmaxConverter(void* ctx, OpLite* op) {
   CHECK(ctx != nullptr);
   CHECK(op != nullptr);
-  auto graph_ctx = static_cast<Context*>(ctx);
+  auto graph = static_cast<Graph*>(ctx);
   auto op_info = op->op_info();
   auto op_type = op_info->Type();
   auto scope = op->scope();
@@ -40,8 +40,8 @@ int SoftmaxConverter(void* ctx, OpLite* op) {
         << "  :x_w = " << x_dims[3];
   }
 
-  auto softmax_node = graph_ctx->AddNode<ge::op::Softmax>(out_var_name);
-  softmax_node->set_input_x(*graph_ctx->GetNode(x_var_name));
+  auto softmax_node = graph->AddNode<ge::op::Softmax>(out_var_name);
+  softmax_node->set_input_x(*graph->GetNode(x_var_name));
   softmax_node->set_attr_axis(axis);
   return REBUILD_WHEN_SHAPE_CHANGED;
 }
