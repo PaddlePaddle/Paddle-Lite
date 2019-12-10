@@ -534,7 +534,8 @@ uint64_t bypass_interrupt = reg_readq(REG_INTERRUPT);
           (((uint64_t)args.image0.height * 2) << 32);
   uint64_t image_row_col_padding_down = image_amount_per_row |
           (image_amount_per_row << 32);
-  float  quantParam = (args.output.scale_address)[0];
+  float  quantParam =
+          ((args.image0.scale_address)[0]) / ((args.output.scale_address)[0]);
   uint32_t* ew_scale = reinterpret_cast<uint32_t*>(&quantParam);
   uint64_t ew_scale_mult_factor = (*ew_scale) |
           ((uint64_t)args.const0 << 32) | ((uint64_t)args.const1 << 40);

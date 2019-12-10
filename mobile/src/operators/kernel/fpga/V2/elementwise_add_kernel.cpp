@@ -33,8 +33,8 @@ bool ElementwiseAddKernel<FPGA, float>::Init(ElementwiseAddParam<FPGA> *param) {
   float C1 = Si_1 / So;
   float C2 = Si_2 / So;
   fpga::EWAddArgs ewaddArgs = {0};
-  ewaddArgs.const0 = fpga::fp32_2_fp16(C1);
-  ewaddArgs.const1 = fpga::fp32_2_fp16(C2);
+  ewaddArgs.const0 = 1;
+  ewaddArgs.const1 = 1;
   ewaddArgs.relu_enabled = 0;
   ewaddArgs.image0.address = input_x_ptr;
   ewaddArgs.image0.channels = (uint32_t)input_x->dims()[1];

@@ -35,8 +35,8 @@ bool ElementwiseAddReluKernel<FPGA, float>::Init(
   float C2 = Si_2 / So;
   fpga::EWAddArgs ewaddArgs = {0};
   ewaddArgs.relu_enabled = 1;
-  ewaddArgs.const0 = fpga::fp32_2_fp16(C1);
-  ewaddArgs.const1 = fpga::fp32_2_fp16(C2);
+  ewaddArgs.const0 = 1;
+  ewaddArgs.const1 = 1;
   ewaddArgs.image0.address = input_x_ptr;
   ewaddArgs.image0.channels = (uint32_t)input_x->dims()[1];
   ewaddArgs.image0.scale_address = input_x->scale;
