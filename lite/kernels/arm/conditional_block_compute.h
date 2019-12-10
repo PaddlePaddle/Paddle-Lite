@@ -57,7 +57,7 @@ class CondExecutor {
   }
 
   void Run() {
-    profile::Profiler profiler;
+    lite::profile::Profiler profiler;
     for (auto &op_handler : ops_of_block_) {
       op_handler->CheckShape();
       op_handler->InferShape();
