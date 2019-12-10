@@ -146,6 +146,9 @@ class KernelRegistry final {
                                       PRECISION(kInt8),
                                       DATALAYOUT(kNCHW)> *,  //
               KernelRegistryForTarget<TARGET(kARM),
+                                      PRECISION(kInt32),
+                                      DATALAYOUT(kNCHW)> *,  //
+              KernelRegistryForTarget<TARGET(kARM),
                                       PRECISION(kFloat),
                                       DATALAYOUT(kNHWC)> *,  //
               KernelRegistryForTarget<TARGET(kARM),

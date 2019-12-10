@@ -41,23 +41,22 @@ std::vector<std::string> AddFCDesc(
   static int id = 0;
   std::string prefix = "fc_" + std::to_string(id);
   auto* op_desc = block_desc->AddOp<cpp::OpDesc>();
+
   auto* wgt = block_desc->AddVar<cpp::VarDesc>();
-  auto* bias = block_desc->AddVar<cpp::VarDesc>();
-  auto* out = block_desc->AddVar<cpp::VarDesc>();
-
   wgt->SetName(prefix + "_W");
-  bias->SetName(prefix + "_Bias");
-  out->SetName(prefix + "_Out");
-  std::vector<std::string> out_var_names{prefix + "_Out"};
-
   auto* wtensor = scope->Var(prefix + "_W")->GetMutable<lite::Tensor>();
   wtensor->Resize(wshape);
   wtensor->mutable_data<float>();
 
+  auto* bias = block_desc->AddVar<cpp::VarDesc>();
+  bias->SetName(prefix + "_Bias");
   auto* btensor = scope->Var(prefix + "_Bias")->GetMutable<lite::Tensor>();
   btensor->Resize({wshape[1]});
   btensor->mutable_data<float>();
 
+  auto* out = block_desc->AddVar<cpp::VarDesc>();
+  out->SetName(prefix + "_Out");
+  std::vector<std::string> out_var_names{prefix + "_Out"};
   scope->Var(prefix + "_Out")->GetMutable<lite::Tensor>();
 
   op_desc->SetType("fc");

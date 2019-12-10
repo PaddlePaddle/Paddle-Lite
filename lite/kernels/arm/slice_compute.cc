@@ -42,11 +42,10 @@ inline std::vector<int32_t> get_new_data_from_tensor(
   return vec_new_data;
 }
 
-void SliceCompute::PrepareForRun() {}
-
-void SliceCompute::Run() {
+template <typename T, PrecisionType PType>
+void SliceCompute<T, PType>::Run() {
   auto& ctx = this->ctx_->template As<ARMContext>();
-  auto& param = this->Param<operators::SliceParam>();
+  auto& param = this->template Param<operators::SliceParam>();
 
   auto in = param.X;
   auto in_dims = in->dims();
@@ -156,8 +155,8 @@ void SliceCompute::Run() {
   }
 
   auto new_out_dims = out->dims();
-  const auto* x_data = in->data<int>();
-  auto* o_data = out->mutable_data<int>();
+  const auto* x_data = in->template data<T>();
+  auto* o_data = out->template mutable_data<T>();
   lite::arm::math::slice(
       x_data, in_dims.data(), axes, starts, ends, o_data, &ctx);
 }
@@ -167,8 +166,9 @@ void SliceCompute::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(
-    slice, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::SliceCompute, def)
+using slice_float =
+    paddle::lite::kernels::arm::SliceCompute<float, PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(slice, kARM, kFloat, kNCHW, slice_float, def)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("StartsTensor", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("EndsTensor", {LiteType::GetTensorTy(TARGET(kARM))})

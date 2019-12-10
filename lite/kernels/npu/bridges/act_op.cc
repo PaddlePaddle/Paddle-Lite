@@ -42,6 +42,9 @@ int ActConverter(void* ctx, OpLite* op) {
   if (op_type == "relu_clipped") {
     auto Relu_clipped_coef = op_info->GetAttr<float>("Relu_clipped_coef");
     act_node->set_attr_coef(Relu_clipped_coef);
+  } else if (op_type == "relu6") {
+    float Relu_clipped_coef = 6.f;
+    act_node->set_attr_coef(Relu_clipped_coef);
   } else if (op_type == "leaky_relu") {
     auto alpha = op_info->GetAttr<float>("alpha");
     act_node->set_attr_negative_slope(alpha);
@@ -67,6 +70,7 @@ REGISTER_SUBGRAPH_BRIDGE(NPU, tanh, paddle::lite::subgraph::npu::ActConverter);
 REGISTER_SUBGRAPH_BRIDGE(NPU,
                          relu_clipped,
                          paddle::lite::subgraph::npu::ActConverter);
+REGISTER_SUBGRAPH_BRIDGE(NPU, relu6, paddle::lite::subgraph::npu::ActConverter);
 // REGISTER_SUBGRAPH_BRIDGE(NPU, elu,
 // paddle::lite::subgraph::npu::ActConverter);
 REGISTER_SUBGRAPH_BRIDGE(NPU,

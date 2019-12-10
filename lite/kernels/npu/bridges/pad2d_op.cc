@@ -58,8 +58,8 @@ int Pad2dConverter(void* ctx, OpLite* op) {
 
   if (mode == "constant") {
     auto pad_value = op_info->GetAttr<float>("pad_value");
-    auto pad_value_const_node = graph_ctx->AddNode(
-        out_var_name + "/pad_value", std::vector<float>({pad_value}));
+    auto pad_value_const_node =
+        graph_ctx->AddNode(out_var_name + "/pad_value", pad_value);
     pad2d_node->set_input_constant_values(*pad_value_const_node);
     pad2d_node->set_attr_T(0);  // type of pad_value:  0:float  3:int32
   }

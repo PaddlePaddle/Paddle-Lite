@@ -17,6 +17,7 @@
 #include "lite/model_parser/cpp/block_desc.h"
 #include "lite/model_parser/cpp/op_desc.h"
 #include "lite/model_parser/cpp/var_desc.h"
+#include "lite/operators/conditional_block_op.h"
 #include "lite/operators/subgraph_op.h"
 #include "lite/operators/while_op.h"
 #ifdef LITE_WITH_PROFILE
@@ -162,7 +163,8 @@ void Program::Build(const cpp::ProgramDesc& prog) {
     VLOG(4) << "create Op [" << op_type << "]";
     auto op = LiteOpRegistry::Global().Create(op_type);
     CHECK(op) << "no Op found for " << op_type;
-    if (op_type == "while" || op_type == "subgraph") {
+    if (op_type == "while" || op_type == "conditional_block" ||
+        op_type == "subgraph") {
       auto sub_block_idx = op_desc.GetAttr<int32_t>("sub_block");
       CHECK(sub_block_idx >= 0 && sub_block_idx < program.BlocksSize())
           << "Invalid attribute sub_block(" << sub_block_idx << ") for "
@@ -174,8 +176,10 @@ void Program::Build(const cpp::ProgramDesc& prog) {
       if (op_type == "while") {
         static_cast<operators::WhileOpLite*>(op.get())->SetSubBlock(
             sub_block_desc);
-      }
-      if (op_type == "subgraph") {
+      } else if (op_type == "conditional_block") {
+        static_cast<operators::ConditionalBlockOpLite*>(op.get())->SetSubBlock(
+            sub_block_desc);
+      } else if (op_type == "subgraph") {
         static_cast<operators::SubgraphOp*>(op.get())->SetSubBlock(
             *sub_block_desc);
       }
@@ -194,6 +198,27 @@ void Program::PrepareWorkspace(const cpp::ProgramDesc& prog) {
   tmp_vars_.push_back("feed");
   tmp_vars_.push_back("fetch");
 
+  auto VarPrecision2KernlPrecision =
+      [](const lite::VarDescAPI::Type& type) -> PrecisionType {
+    switch (type) {
+      case lite::VarDescAPI::Type::FP32:
+        return PRECISION(kFloat);
+      case lite::VarDescAPI::Type::FP16:
+        return PRECISION(kFP16);
+      case lite::VarDescAPI::Type::INT8:
+        return PRECISION(kInt8);
+      case lite::VarDescAPI::Type::INT16:
+        return PRECISION(kInt16);
+      case lite::VarDescAPI::Type::INT32:
+        return PRECISION(kInt32);
+      case lite::VarDescAPI::Type::INT64:
+        return PRECISION(kInt64);
+      default:
+        // LOG(FATAL) << "not supported type: " << static_cast<int>(type);
+        return PRECISION(kUnk);
+    }
+  };
+
   auto program = prog;
   CHECK(program.BlocksSize());
   for (size_t b = 0; b < program.BlocksSize(); ++b) {
@@ -201,7 +226,16 @@ void Program::PrepareWorkspace(const cpp::ProgramDesc& prog) {
     for (size_t i = 0; i < main_block.VarsSize(); ++i) {
       auto& var_desc = *main_block.GetVar<cpp::VarDesc>(i);
       if (!var_desc.Persistable()) {
+        if (var_desc.GetType() == lite::VarDescAPI::Type::LOD_TENSOR &&
+            VarPrecision2KernlPrecision(var_desc.GetDataType()) !=
+                PRECISION(kUnk)) {
+          var_data_type_[var_desc.Name()] =
+              VarPrecision2KernlPrecision(var_desc.GetDataType());
+        }
         tmp_vars_.push_back(var_desc.Name());
+        VLOG(4) << "var name: " << var_desc.Name() << " type is "
+                << static_cast<int>(var_desc.GetType()) << " data type is "
+                << static_cast<int>(var_desc.GetDataType());
         exec_scope_->Var(var_desc.Name());
         if (b > 0) {
           VLOG(4) << "var: " << var_desc.Name();
