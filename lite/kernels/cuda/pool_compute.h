@@ -13,6 +13,9 @@
 // limitations under the License.
 
 #pragma once
+#include <memory>
+#include <vector>
+#include "lite/backends/cuda/math/cudnn_pool.h"
 #include "lite/core/kernel.h"
 
 namespace paddle {
@@ -27,6 +30,20 @@ class PoolCompute
 
   void Run() override;
   virtual ~PoolCompute() = default;
+};
+
+class PoolComputeNHWC
+    : public KernelLite<TARGET(kCUDA), PRECISION(kFloat), DATALAYOUT(kNHWC)> {
+ public:
+  using param_t = operators::PoolParam;
+
+  void PrepareForRun() override;
+  void Run() override;
+  virtual ~PoolComputeNHWC() = default;
+
+ private:
+  std::unique_ptr<lite::cuda::math::CudnnPool2DNHWC<PRECISION(kFloat)>>
+      pool_impl_;
 };
 
 }  // namespace cuda

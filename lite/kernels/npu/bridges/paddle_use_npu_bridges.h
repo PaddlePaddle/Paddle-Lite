@@ -20,10 +20,12 @@ USE_NPU_BRIDGE(sigmoid);
 USE_NPU_BRIDGE(relu);
 USE_NPU_BRIDGE(tanh);
 USE_NPU_BRIDGE(relu_clipped);
+USE_NPU_BRIDGE(relu6);
 USE_NPU_BRIDGE(leaky_relu);
 USE_NPU_BRIDGE(softsign);
 USE_NPU_BRIDGE(hard_sigmoid);
 
+USE_NPU_BRIDGE(arg_max);
 USE_NPU_BRIDGE(batch_norm);
 USE_NPU_BRIDGE(concat);
 USE_NPU_BRIDGE(conv2d);
@@ -53,3 +55,5 @@ USE_NPU_BRIDGE(sqrt);
 USE_NPU_BRIDGE(square);
 USE_NPU_BRIDGE(transpose);
 USE_NPU_BRIDGE(transpose2);
+USE_NPU_BRIDGE(unsqueeze);
+USE_NPU_BRIDGE(unsqueeze2);
