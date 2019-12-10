@@ -216,6 +216,7 @@ TEST(cl_test, target_wrapper_image_test) {
   const size_t cl_image2d_slice_pitch{0};
   auto *d_image = static_cast<cl::Image2D *>(
       TargetWrapperCL::MallocImage<float>(cl_image2d_width, cl_image2d_height));
+
   // Map/Unmap test
   auto *h_image =
       static_cast<float *>(TargetWrapperCL::MapImage(d_image,
@@ -223,14 +224,7 @@ TEST(cl_test, target_wrapper_image_test) {
                                                      cl_image2d_height,
                                                      cl_image2d_row_pitch,
                                                      cl_image2d_slice_pitch));
-  LOG(INFO) << "cl_image2d_row_pitch: " << cl_image2d_row_pitch;
-#if 0
-  CHECK_EQ(
-      cl_image2d_row_pitch,
-      cl_image2d_width * 4 *
-          4);  // row_pitch = 448 = 28 * 4 (RGBA: 4 floats) * 4 (float in bytes)
-#endif
-  CHECK_EQ(cl_image2d_slice_pitch, 0);  // slice_pitch = 0
+  CHECK_EQ(cl_image2d_slice_pitch, 0);
   LOG(INFO) << "cl_image2d_row_pitch = " << cl_image2d_row_pitch
             << ", cl_image2d_slice_pitch " << cl_image2d_slice_pitch;
 

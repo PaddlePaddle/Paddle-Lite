@@ -215,7 +215,7 @@ TEST(relu_image2d, compute) {
           }
 #endif  // PRINT_RESULT
 
-          // check result: compare input and output
+          // check result: compare kernel output and cpu output(y_data_ref)
           for (int eidx = 0; eidx < x_dim.production(); eidx++) {
             EXPECT_NEAR(y_data_ref[eidx], mapped_y[eidx], 1e-6);
             if (abs(y_data_ref[eidx] - mapped_y[eidx]) > 1e-6) {
