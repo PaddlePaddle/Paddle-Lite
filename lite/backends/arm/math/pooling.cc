@@ -167,7 +167,7 @@ void pooling_basic(const float* din,
   "ld1 {v2.4s-v3.4s}, [%[data_in_channel]], #32    \n" \
   "fmax v6.4s, v4.4s, v5.4s \n"                        \
   "subs %w[cnt], %w[cnt], #1 \n"                       \
-  "fmax %w[vmax].4s, %w[vmax].4s, v6.4s \n"            \
+  "fmax %[vmax].4s, %[vmax].4s, v6.4s \n"              \
   "bne 1b \n"
 #define GLOBAL_AVG                                  \
   "1: \n"                                           \
@@ -176,7 +176,7 @@ void pooling_basic(const float* din,
   "ld1 {v0.4s-v1.4s}, [%[data_in_channel]], #32 \n" \
   "fadd %[vsum].4s, %[vsum].4s, v3.4s \n"           \
   "subs %w[cnt], %w[cnt], #1 \n"                    \
-  "fadd %w[vsum].4s, %w[vsum].4s, v4.4s \n"         \
+  "fadd %[vsum].4s, %[vsum].4s, v4.4s \n"           \
   "ld1 {v2.4s-v3.4s}, [%[data_in_channel]], #32 \n" \
   "bne 1b \n"
 

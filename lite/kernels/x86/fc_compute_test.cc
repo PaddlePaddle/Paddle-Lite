@@ -11,8 +11,11 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 #include "lite/kernels/x86/fc_compute.h"
 #include <gtest/gtest.h>
+#include <memory>
+#include <utility>
 #include <vector>
 #include "lite/core/op_registry.h"
 
@@ -43,7 +46,7 @@ TEST(fc_x86, run_test) {
   w.Resize(lite::DDim(w_shape));
   std::vector<int64_t> b_shape{1, 4};
   b.Resize(lite::DDim(b_shape));
-  std::vector<int64_t> out_shape{1, 4};
+  std::vector<int64_t> out_shape{batch_size, 4};
   out.Resize(lite::DDim(out_shape));
 
   auto x_data = x.mutable_data<float>();
@@ -55,15 +58,11 @@ TEST(fc_x86, run_test) {
     x_data[i] = static_cast<float>(i);
   }
   for (int64_t i = 0; i < w.dims().production(); i++) {
-    w_data[i] = static_cast<float>(i);
+    w_data[i] = static_cast<float>(2);
   }
   for (int64_t i = 0; i < b.dims().production(); i++) {
-    b_data[i] = static_cast<float>(i);
+    b_data[i] = static_cast<float>(2);
   }
-
-  /* lite::x86::math::fc_compute_eigen(x_data, batch_size, 3,  //
-                                     w_data, 3, 4,           //
-                                     b_data, ref_data); */
 
   // FcCompute fc;
   FcCompute<float> fc;
@@ -75,21 +74,17 @@ TEST(fc_x86, run_test) {
   param.bias = &b;
   param.output = &out;
   param.in_mat_dims = x.dims();
+  param.activation_type = "relu";
 
-  // std::unique_ptr<KernelContext> ctx(new KernelContext);
-  // ctx->As<X86Context>();
+  std::unique_ptr<KernelContext> ctx(new KernelContext);
+  ctx->As<X86Context>();
   fc.SetParam(param);
-  // fc.SetContext(std::move(ctx));
+  fc.SetContext(std::move(ctx));
   fc.Run();
-
-  VLOG(3) << "output vs ref";
+  std::vector<float> ref_data({8, 8, 8, 8, 26, 26, 26, 26});
   for (int i = 0; i < out.dims().production(); i++) {
-    VLOG(3) << out_data[i];
+    EXPECT_NEAR(out_data[i], ref_data[i], 1e-5);
   }
-
-  /* for (int i = 0; i < out.dims().production(); ++i) {
-     EXPECT_NEAR(out_data[i], ref_data[i], 1e-5);
-   }*/
 }
 
 }  // namespace x86
