@@ -51,11 +51,6 @@ enum ActiveType {
   TYPE_SIGMOID = 4,
 };
 
-struct VersionArgs {
-  void* buffer;
-  size_t size;
-};
-
 struct DeviceInfo {
   uint32_t filter_cap;
   uint32_t version;
@@ -69,6 +64,11 @@ struct DeviceInfo {
   uint32_t reserved6;
 };
 
+struct VersionArgs {
+  void* buffer;
+  size_t size;
+};
+
 struct MemoryCopyArgs {
   void* src;
   void* dest;
@@ -80,7 +80,9 @@ struct MemoryCacheArgs {
   size_t size;
 };
 
-struct MemoryBarrierArgs {};
+struct MemoryBarrierArgs {
+    uint16_t                dummy;
+};
 
 struct BNArgs {
   bool enabled;

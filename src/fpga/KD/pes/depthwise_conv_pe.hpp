@@ -95,14 +95,15 @@ class DepthwiseConvPE : public PE {
 
   bool dispatch() {
     param_.input->syncToDevice();
-
-    if (param_.activeParam.type = TYPE_RELU) {
+    std::cout << "depthwise_conv dispatch" << param_.activeParam.type << std::endl;
+    if (param_.activeParam.type == TYPE_RELU) {
       inplace_.relu_enable = true;
-    } else if (param_.activeParam.type = TYPE_RELU6) {
+    } else if (param_.activeParam.type == TYPE_RELU6) {
       inplace_.relu6_enable = true;
-    } else if (param_.activeParam.type = TYPE_SIGMOID) {
+      std::cout << "depthwise_conv relu6_enable" << std::endl;
+    } else if (param_.activeParam.type == TYPE_SIGMOID) {
       inplace_.sigmoid_enable = true;
-    } else if (param_.activeParam.type = TYPE_LEAKY_RELU) {
+    } else if (param_.activeParam.type == TYPE_LEAKY_RELU) {
       inplace_.leaky_relu_enable = true;
     }
 

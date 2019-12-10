@@ -42,11 +42,23 @@ bool FeedKernel<FPGA, float>::Init(FeedParam<FPGA>* param) {
 
 template <>
 void FeedKernel<FPGA, float>::Compute(const FeedParam<FPGA>& param) {
+  
+
   zynqmp::Context& context = const_cast<zynqmp::Context&>(param.context_);
   InputPE& pe = context.pe<InputPE>();
 
   int col = param.Col();
   auto input = const_cast<LoDTensor*>(&param.InputX()->at(col));
+
+  // InputParam& input_param = pe.param();
+  // input->mutable_data<float>();
+  // zynqmp::Tensor* input_tensor = input->zynqmpTensor();
+  // input_param.input = input_tensor;
+  // param->Out()->mutable_data<half>();
+  // auto out = param->Out()->zynqmpTensor();
+  // input_param.output = out;
+  // pe.init();
+
   if (input->dims().size() != 4) {
     float* data = param.Out()->mutable_data<float>();
     if (!use_yolov3_416) {
@@ -73,6 +85,7 @@ void FeedKernel<FPGA, float>::Compute(const FeedParam<FPGA>& param) {
   param.Out()->mutable_data<half>();
   auto out = param.Out()->zynqmpTensor();
   input_param.output = out;
+  pe.init();
   pe.dispatch();
 
 #ifdef PADDLE_MOBILE_DEBUG

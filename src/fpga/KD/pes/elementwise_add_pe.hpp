@@ -61,13 +61,13 @@ class ElementwiseAddPE : public PE {
     param_.inputs[1]->syncToDevice();
     // InplaceArgs inplace_ = {0};
 
-    if (param_.activeParam.type = TYPE_RELU) {
+    if (param_.activeParam.type == TYPE_RELU) {
       inplace_.relu_enable = true;
-    } else if (param_.activeParam.type = TYPE_RELU6) {
+    } else if (param_.activeParam.type == TYPE_RELU6) {
       inplace_.relu6_enable = true;
-    } else if (param_.activeParam.type = TYPE_SIGMOID) {
+    } else if (param_.activeParam.type == TYPE_SIGMOID) {
       inplace_.sigmoid_enable = true;
-    } else if (param_.activeParam.type = TYPE_LEAKY_RELU) {
+    } else if (param_.activeParam.type == TYPE_LEAKY_RELU) {
       inplace_.leaky_relu_enable = true;
     }
     if (inplace_.relu_enable || inplace_.leaky_relu_enable || 

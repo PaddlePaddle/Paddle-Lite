@@ -64,7 +64,7 @@ void reset_device() {
 
 // memory management;
 void *fpga_malloc(size_t size) {
-// std::cout << "fpga malloc: 0x" << std::hex << size  << std::dec << "  (" <<
+std::cout << "fpga malloc:"  << size  << std::endl;
 // size << ") - ";
 #ifdef ENABLE_DEBUG
 // std::cout << "fpga_malloc:" << size << std::endl;
@@ -74,7 +74,8 @@ void *fpga_malloc(size_t size) {
       mmap64(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0));
   if (ptr == MAP_FAILED) {
     std::cout << "not enough memory !";
-    exit(-1);
+    // exit(-1);
+    throw -1;
   }
 
   memory_map.insert(std::make_pair(ptr, size));
