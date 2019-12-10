@@ -19,7 +19,7 @@ lite_cc_test(test_subgraph_pass
     SRCS subgraph_pass_test.cc
     DEPS mir_passes paddle_api_full paddle_api_light gflags
     ARGS --model_dir=${LITE_MODEL_DIR}/mobilenet_v1
-         --optimized_model=${LITE_MODEL_DIR}/lite_model_opt SERIAL)
+         --optimized_model_dir=${LITE_MODEL_DIR}/lite_model_opt SERIAL)
 if (WITH_TESTING)
     add_dependencies(test_subgraph_pass extern_lite_download_mobilenet_v1_tar_gz)
     add_dependencies(test_subgraph_pass extern_lite_download_mobilenet_v2_relu_tar_gz)
