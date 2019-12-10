@@ -17,7 +17,7 @@
 #include <memory>
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
-#include "lite/kernels/xpu/subgraph_engine.h"
+#include "lite/kernels/xpu/bridges/engine.h"
 
 namespace paddle {
 namespace lite {

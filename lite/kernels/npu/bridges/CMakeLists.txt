@@ -1,3 +1,7 @@
+if(NOT LITE_WITH_NPU)
+  return()
+endif()
+
 lite_cc_library(subgraph_bridge_utility_npu SRCS utility.cc DEPS ${npu_builder_libs} tensor)
 lite_cc_library(subgraph_bridge_graph_npu SRCS graph.cc DEPS subgraph_bridge_utility_npu)
 
@@ -55,3 +59,5 @@ set(npu_subgraph_bridges
         CACHE INTERNAL "npu_subgraph_bridges")
 
 message(STATUS "+++++ npu_subgraph_bridges: ${npu_subgraph_bridges}")
+
+lite_cc_library(subgraph_engine_npu SRCS engine.cc DEPS subgraph_engine_base device_npu ${npu_subgraph_bridges})

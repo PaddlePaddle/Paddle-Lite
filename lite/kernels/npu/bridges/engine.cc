@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/npu/subgraph_engine.h"
+#include "lite/kernels/npu/bridges/engine.h"
 #include <sys/time.h>
 #include <time.h>
 #include <utility>

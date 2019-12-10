@@ -3,7 +3,7 @@ set -ex
 
 # global variables with default value
 XPU_SDK_ROOT="$(pwd)/../XPU_SDK"    # XPU SDK
-TARGET_NAME="lite_compile_deps"     # default target
+TARGET_NAME="test_subgraph_pass"    # default target
 BUILD_EXTRA=ON                      # ON(with sequence ops)/OFF
 WITH_TESTING=ON                     # ON/OFF
 
