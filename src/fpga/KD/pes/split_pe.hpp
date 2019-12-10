@@ -73,7 +73,7 @@ class SplitPE : public PE {
     }
 
     for (int64_t i = 0; i < before; ++i) {
-      memory::Copy(dst + i * dst_after, src + i * src_after, sizeof(T) * size);
+      memcpy(dst + i * dst_after, src + i * src_after, sizeof(T) * size);
     }
   }
 
@@ -109,22 +109,26 @@ class SplitPE : public PE {
     std::vector<Tensor*> outputs = param_.outputs;
 
     int in_channel = input->shape().channel();
-    int split_channel = input->shape().channel() / param_.num;
+    //int split_channel = input->shape().channel() / param_.num;
     int hw = input->shape().height() * input->shape().width();
 
     float16* in_data = input->data<float16>();
+
     for (int i = 0; i < hw; i++) {
+      int channel_stride = 0;
       for (int n = 0; n < outputs.size(); n++) {
-        Tensor* out = outputs[n];
+        Tensor* out = outputs[n];       
         float16* out_data = out->data<float16>();
-        memcpy(out_data + i * split_channel,
-               in_data + i * in_channel + n * split_channel,
-               split_channel * sizeof(float16));
+        memcpy(out_data + i * out->shape().channel(),
+               in_data + i * in_channel + channel_stride,
+               out->shape().channel() * sizeof(float16));
+        channel_stride += out->shape().channel();
       }
     }
+
     for (int n = 0; n < outputs.size(); n++) {
       Tensor* out = outputs[n];
-      // out->flush();
+      out->flush();
       out->copyScaleFrom(input);
     }
     return true;

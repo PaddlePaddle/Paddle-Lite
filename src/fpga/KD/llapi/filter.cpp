@@ -91,6 +91,14 @@ int calc_num_per_div(int num, int group_num, int division_capacity) {
   }
 }
 
+int calc_pack_num (int num_per_group, int group, int division_capacity) {
+  auto n = 1;
+  while ((num_per_group * (group + n - 1)/n) > division_capacity) {
+    n++;
+  }
+  return (n);
+}
+
 void convert_to_hwc(int8_t* chw_data, int8_t* hwc_data, int num, int channel,
                     int height, int width) {
   int chw = channel * height * width;
