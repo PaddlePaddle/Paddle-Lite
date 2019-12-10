@@ -168,6 +168,27 @@ void Program::PrepareWorkspace(const cpp::ProgramDesc& prog) {
   tmp_vars_.push_back("feed");
   tmp_vars_.push_back("fetch");
 
+  auto VarPrecision2KernlPrecision =
+      [](const lite::VarDescAPI::Type& type) -> PrecisionType {
+    switch (type) {
+      case lite::VarDescAPI::Type::FP32:
+        return PRECISION(kFloat);
+      case lite::VarDescAPI::Type::FP16:
+        return PRECISION(kFP16);
+      case lite::VarDescAPI::Type::INT8:
+        return PRECISION(kInt8);
+      case lite::VarDescAPI::Type::INT16:
+        return PRECISION(kInt16);
+      case lite::VarDescAPI::Type::INT32:
+        return PRECISION(kInt32);
+      case lite::VarDescAPI::Type::INT64:
+        return PRECISION(kInt64);
+      default:
+        // LOG(FATAL) << "not supported type: " << static_cast<int>(type);
+        return PRECISION(kUnk);
+    }
+  };
+
   auto program = prog;
   CHECK(program.BlocksSize());
   for (size_t b = 0; b < program.BlocksSize(); ++b) {
@@ -175,7 +196,16 @@ void Program::PrepareWorkspace(const cpp::ProgramDesc& prog) {
     for (size_t i = 0; i < main_block.VarsSize(); ++i) {
       auto& var_desc = *main_block.GetVar<cpp::VarDesc>(i);
       if (!var_desc.Persistable()) {
+        if (var_desc.GetType() == lite::VarDescAPI::Type::LOD_TENSOR &&
+            VarPrecision2KernlPrecision(var_desc.GetDataType()) !=
+                PRECISION(kUnk)) {
+          var_data_type_[var_desc.Name()] =
+              VarPrecision2KernlPrecision(var_desc.GetDataType());
+        }
         tmp_vars_.push_back(var_desc.Name());
+        VLOG(4) << "var name: " << var_desc.Name() << " type is "
+                << static_cast<int>(var_desc.GetType()) << " data type is "
+                << static_cast<int>(var_desc.GetDataType());
         exec_scope_->Var(var_desc.Name());
         if (b > 0) {
           VLOG(4) << "var: " << var_desc.Name();
