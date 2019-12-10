@@ -27,13 +27,13 @@ bool DistributeFpnProposalsOpLite::CheckShape() const {
   CHECK_OR_FALSE(param_.multi_fpn_rois.size() > 1);
   CHECK_OR_FALSE(param_.max_level >= param_.min_level);
   size_t num_out_rois =
-      static_cast<size_t>(param_.max_level - param_.min_level);
+      static_cast<size_t>(param_.max_level - param_.min_level + 1);
   CHECK_OR_FALSE(num_out_rois == param_.multi_fpn_rois.size());
   return true;
 }
 
 bool DistributeFpnProposalsOpLite::InferShape() const {
-  int num_out_rois = param_.max_level - param_.min_level;
+  int num_out_rois = param_.max_level - param_.min_level + 1;
   for (int i = 0; i < num_out_rois; i++) {
     param_.multi_fpn_rois[i]->Resize({-1, 4});
   }

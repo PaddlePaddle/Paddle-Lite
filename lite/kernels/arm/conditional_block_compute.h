@@ -57,6 +57,7 @@ class CondExecutor {
   }
 
   void Run() {
+    profile::Profiler profiler;
     for (auto &op_handler : ops_of_block_) {
       op_handler->CheckShape();
       op_handler->InferShape();
@@ -64,6 +65,7 @@ class CondExecutor {
 #ifdef LITE_WITH_PRECISION_PROFILE
       std::unique_ptr<KernelBase> kernel(op_handler->GetKernel());
       Instruction inst(op_handler, std::move(kernel));
+      inst.set_profiler(&profiler);
 #endif  // LITE_WITH_PRECISION_PROFILE
 #endif  // LITE_WITH_PROFILE
       op_handler->Run();
