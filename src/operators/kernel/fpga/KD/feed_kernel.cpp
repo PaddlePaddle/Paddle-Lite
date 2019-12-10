@@ -57,6 +57,11 @@ void FeedKernel<FPGA, float>::Compute(const FeedParam<FPGA>& param) {
        data[1] = 416;
     }
    
+    if (img_shape_width != 0 && img_shape_height != 0) {
+      data[0] = img_shape_height;
+      data[1] = img_shape_width;
+    }
+
 
     auto out = param.Out()->zynqmpTensor();
     InputParam& input_param = pe.param();

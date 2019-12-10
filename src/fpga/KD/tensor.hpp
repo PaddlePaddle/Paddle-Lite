@@ -115,7 +115,7 @@ class Tensor {
 
   template <typename Dtype>
   Dtype* mutableData() {
-    size_t memorySize = shape_->memorySize(CellSize(dataType_)) * mem_factor_;
+    size_t memorySize = shape_->memorySize(CellSize(dataType_)) * mem_factor_ + 16;
     if (placeHolder_ != nullptr) {
       if (memorySize > placeHolder_->memorySize()) {
         placeHolder_.reset(new PlaceHolder(memorySize));

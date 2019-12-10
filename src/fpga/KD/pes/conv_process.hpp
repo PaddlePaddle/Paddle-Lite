@@ -203,6 +203,7 @@ inline void format_filter(Tensor* filter, Tensor* quantized_filter, int group,
 
   memcpy(src, quantized_data, mem_size);
   quantized_filter->flush();
+  fpga_free(quantized_data);
 
   // for (size_t i = 0; i < max_values.size(); i++) {
   //   // scales.push_back(max_values[i] / max_value);
