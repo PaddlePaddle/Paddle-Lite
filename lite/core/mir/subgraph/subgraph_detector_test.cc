@@ -160,7 +160,7 @@ TEST(Subgraph, detect_simple_model) {
   auto graph = std::unique_ptr<mir::SSAGraph>(new mir::SSAGraph());
   graph->Build(program, valid_places);
   // Apply subgraph detector and check results
-  auto teller = [](Node* node) {
+  auto teller = [](mir::Node* node) {
     if (!node->IsStmt()) return false;
     auto& stmt = node->AsStmt();
     auto op_type = stmt.op_type();
@@ -168,11 +168,11 @@ TEST(Subgraph, detect_simple_model) {
     return std::find(supported_types.begin(), supported_types.end(), op_type) !=
            supported_types.end();
   };
-  std::vector<std::vector<Node*>> subgraphs =
-      SubgraphDetector(graph.get(), teller)();
+  std::vector<std::vector<mir::Node*>> subgraphs =
+      mir::SubgraphDetector(graph.get(), teller)();
   ASSERT_EQ(subgraphs.size(), 1);
   ASSERT_EQ(graph->nodes().size(), 9);
-  SubgraphVisualizer(graph.get(), subgraphs)();
+  mir::SubgraphVisualizer(graph.get(), subgraphs)();
 }
 
 TEST(Subgraph, detect_custom_model) {
@@ -204,7 +204,7 @@ TEST(Subgraph, detect_custom_model) {
   auto graph = std::unique_ptr<mir::SSAGraph>(new mir::SSAGraph());
   graph->Build(program, valid_places);
   // Apply subgraph detector and check results
-  auto teller = [](Node* node) {
+  auto teller = [](mir::Node* node) {
     if (!node->IsStmt()) return false;
     auto& stmt = node->AsStmt();
     auto op_type = stmt.op_type();
@@ -214,10 +214,10 @@ TEST(Subgraph, detect_custom_model) {
                      unsupported_types.end(),
                      op_type) == unsupported_types.end();
   };
-  std::vector<std::vector<Node*>> subgraphs =
-      SubgraphDetector(graph.get(), teller)();
+  std::vector<std::vector<mir::Node*>> subgraphs =
+      mir::SubgraphDetector(graph.get(), teller)();
   ASSERT_EQ(subgraphs.size(), 1);
-  SubgraphVisualizer(graph.get(), subgraphs)();
+  mir::SubgraphVisualizer(graph.get(), subgraphs)();
 }
 
 }  // namespace lite

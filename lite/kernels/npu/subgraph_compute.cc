@@ -13,9 +13,6 @@
 // limitations under the License.
 
 #include "lite/kernels/npu/subgraph_compute.h"
-#include <sys/time.h>
-#include <time.h>
-#include <utility>
 
 namespace paddle {
 namespace lite {
@@ -23,21 +20,19 @@ namespace kernels {
 namespace npu {
 
 void SubgraphCompute::PrepareForRun() {
-  auto& ctx = this->ctx_->template As<NPUContext>();
   auto& param = this->Param<param_t>();
-  engine_.reset(new lite::npu::Engine(param.sub_block_idx,
-                                      &param.sub_block_desc,
-                                      param.input_data_names,
-                                      param.output_data_names,
-                                      param.scope));
+  engine_.reset(new lite::subgraph::npu::Engine(param.sub_block_idx,
+                                                &param.sub_block_desc,
+                                                param.input_data_names,
+                                                param.output_data_names,
+                                                param.scope));
   CHECK(engine_);
   engine_->Build();
 }
 
 void SubgraphCompute::Run() {
-  auto& param = this->Param<param_t>();
   CHECK(engine_);
-  engine_->Run();
+  engine_->Launch();
 }
 
 }  // namespace npu

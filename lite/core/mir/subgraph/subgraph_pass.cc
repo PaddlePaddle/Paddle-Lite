@@ -27,9 +27,9 @@ namespace mir {
 
 void NPUSubgraphPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   std::unordered_set<std::string> supported_lists;
-#define USE_NPU_BRIDGE(op_type) supported_lists.insert(#op_type);
-#include "lite/backends/npu/bridges/paddle_use_bridges.h"
-#undef USE_NPU_BRIDGE
+#define USE_SUBGRAPH_BRIDGE(dev_type, op_type) supported_lists.insert(#op_type);
+#include "lite/kernels/npu/bridges/paddle_use_bridges.h"
+#undef USE_SUBGRAPH_BRIDGE
   auto teller = [&](Node* node) {
     if (!node->IsStmt()) return false;
     auto& stmt = node->AsStmt();
@@ -41,9 +41,9 @@ void NPUSubgraphPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 
 void XPUSubgraphPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   std::unordered_set<std::string> supported_lists;
-#define USE_XPU_BRIDGE(op_type) supported_lists.insert(#op_type);
-//  #include "lite/backends/xpu/bridges/paddle_use_bridges.h"
-#undef USE_XPU_BRIDGE
+#define USE_SUBGRAPH_BRIDGE(dev_type, op_type) supported_lists.insert(#op_type);
+#include "lite/kernels/xpu/bridges/paddle_use_bridges.h"
+#undef USE_SUBGRAPH_BRIDGE
   auto teller = [&](Node* node) {
     if (!node->IsStmt()) return false;
     auto& stmt = node->AsStmt();

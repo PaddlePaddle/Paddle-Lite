@@ -12,30 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/backends/xpu/builder.h"
-#include "lite/kernels/xpu/bridges/registry.h"
+#include "lite/core/mir/subgraph/subgraph_bridge_registry.h"
+#include "lite/kernels/xpu/bridges/context.h"
+#include "lite/kernels/xpu/bridges/utility.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
+namespace subgraph {
 namespace xpu {
-namespace bridges {
 
-node_map_type PoolConverter(const std::shared_ptr<lite::OpLite> op,
-                            graph_ctx_type* graph_ctx,
-                            const node_map_type& input_nodes) {
+int PoolConverter(void* ctx, OpLite* op) {
+  CHECK(ctx != nullptr);
+  CHECK(op != nullptr);
+  auto graph_ctx = static_cast<Context*>(ctx);
   auto op_info = op->op_info();
   auto op_type = op_info->Type();
-  auto unique_op_type = lite::xpu::UniqueName(op_type);
-  LOG(INFO) << "[XPU] Converting " + op_type + "...";
+  VLOG(3) << "[XPU] Converting " + op_type + "...";
 
-  // check context
-  CHECK(graph_ctx != nullptr);
-  CHECK(graph_ctx->builder != nullptr);
-  CHECK(graph_ctx->params != nullptr);
-
-  // get input, and attributes
+  // Get input, and attributes
   auto x_var_name = op_info->Input("X").front();
+  auto out_var_name = op_info->Output("Out").front();
   auto pooling_type = op_info->GetAttr<std::string>("pooling_type");
   auto ceil_mode = op_info->GetAttr<bool>("ceil_mode");
   auto paddings = op_info->GetAttr<std::vector<int>>("paddings");
@@ -44,54 +40,51 @@ node_map_type PoolConverter(const std::shared_ptr<lite::OpLite> op,
   auto strides = op_info->GetAttr<std::vector<int>>("strides");
   auto exclusive = op_info->GetAttr<bool>("exclusive");
 
-  // create pool node and set params from op
-  CHECK(input_nodes.count(x_var_name));
-  std::shared_ptr<xtcl::xExpr> pool_node = nullptr;
+  // Create pool node and set params from op
   if (pooling_type == "max") {
     if (global_pooling) {
-      pool_node = std::make_shared<xtcl::xExpr>(
-          graph_ctx->builder->CreateGlobalMaxPool2D(
-              *input_nodes.at(x_var_name)));
+      graph_ctx->AddNode(out_var_name,
+                         graph_ctx->builder_.CreateGlobalMaxPool2D(
+                             *graph_ctx->GetNode(x_var_name)));
     } else {
-      pool_node = std::make_shared<xtcl::xExpr>(
-          graph_ctx->builder->CreateMaxPool2D(*input_nodes.at(x_var_name),
-                                              lite::xpu::CvtShape(ksize),
-                                              lite::xpu::CvtShape(strides),
-                                              lite::xpu::CvtShape(paddings),
+      graph_ctx->AddNode(
+          out_var_name,
+          graph_ctx->builder_.CreateMaxPool2D(*graph_ctx->GetNode(x_var_name),
+                                              CvtShape(ksize),
+                                              CvtShape(strides),
+                                              CvtShape(paddings),
                                               "NCHW",
                                               ceil_mode));
     }
   } else if (pooling_type == "avg") {
     if (global_pooling) {
-      pool_node = std::make_shared<xtcl::xExpr>(
-          graph_ctx->builder->CreateGlobalAvgPool2D(
-              *input_nodes.at(x_var_name)));
+      graph_ctx->AddNode(out_var_name,
+                         graph_ctx->builder_.CreateGlobalAvgPool2D(
+                             *graph_ctx->GetNode(x_var_name)));
     } else {
-      pool_node = std::make_shared<xtcl::xExpr>(
-          // !exclusive ---> count_include_pad
-          graph_ctx->builder->CreateAvgPool2D(*input_nodes.at(x_var_name),
-                                              lite::xpu::CvtShape(ksize),
-                                              lite::xpu::CvtShape(strides),
-                                              lite::xpu::CvtShape(paddings),
+      // !exclusive ---> count_include_pad
+      graph_ctx->AddNode(
+          out_var_name,
+          graph_ctx->builder_.CreateAvgPool2D(*graph_ctx->GetNode(x_var_name),
+                                              CvtShape(ksize),
+                                              CvtShape(strides),
+                                              CvtShape(paddings),
                                               "NCHW",
                                               ceil_mode,
                                               !exclusive));
     }
   } else {
-    LOG(FATAL) << "Unsupported pooling type: " << pooling_type;
+    LOG(WARNING) << "[XPU] Unsupported pooling type: " << pooling_type;
+    return FAILED;
   }
-  graph_ctx->builder->SetLayer(unique_op_type);
-
-  // output converted nodes
-  node_map_type output_nodes;
-  output_nodes[op_info->Output("Out").front()] = pool_node;
-  return output_nodes;
+  return SUCCESS;
 }
 
-}  // namespace bridges
 }  // namespace xpu
-}  // namespace kernels
+}  // namespace subgraph
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_XPU_BRIDGE(pool2d, paddle::lite::kernels::xpu::bridges::PoolConverter);
+REGISTER_SUBGRAPH_BRIDGE(XPU,
+                         pool2d,
+                         paddle::lite::subgraph::xpu::PoolConverter);

@@ -13,13 +13,6 @@
 // limitations under the License.
 
 #include "lite/kernels/xpu/subgraph_compute.h"
-#include <sys/time.h>
-#include <time.h>
-#include <string>
-#include <vector>
-#include "lite/backends/xpu/runtime.h"
-#include "lite/core/op_registry.h"
-#include "lite/core/type_system.h"
 
 namespace paddle {
 namespace lite {
@@ -27,59 +20,19 @@ namespace kernels {
 namespace xpu {
 
 void SubgraphCompute::PrepareForRun() {
-  // auto& ctx = this->ctx_->template As<XPUContext>();
   auto& param = this->Param<param_t>();
-  CHECK(param.weight);
-  CHECK(lite::xpu::LoadModel(*param.weight, &runtime_));
-  CHECK(runtime_ != nullptr);
+  engine_.reset(new lite::subgraph::xpu::Engine(param.sub_block_idx,
+                                                &param.sub_block_desc,
+                                                param.input_data_names,
+                                                param.output_data_names,
+                                                param.scope));
+  CHECK(engine_);
+  engine_->Build();
 }
 
 void SubgraphCompute::Run() {
-  auto& param = this->Param<param_t>();
-  auto GetCurrentUS = []() -> double {
-    struct timeval time;
-    gettimeofday(&time, NULL);
-    return 1e+6 * time.tv_sec + time.tv_usec;
-  };
-  auto start_time = GetCurrentUS();
-  for (int i = 0; i < param.inputs.size(); i++) {
-    auto input_var_name = param.inputs[i].first;
-    auto input_tensor = param.inputs[i].second;
-    LOG(INFO) << "input dims[" << i << ":" << input_var_name
-              << "]: " << input_tensor->dims();
-    auto input_tensor_data = input_tensor->data<float>();
-    for (int j = 0; j < input_tensor->dims().production(); j++) {
-      VLOG(3) << input_tensor_data[j];
-    }
-    auto input_ndarray = xtcl::xNDArray::Empty(
-        input_tensor->dims().Vectorize(), {kDLFloat, 32, 1}, {kDLCPU, 0});
-    auto input_ndarray_data =
-        static_cast<float*>(input_ndarray.ToDLPack()->dl_tensor.data);
-    std::memcpy(input_ndarray_data,
-                input_tensor_data,
-                sizeof(float) * input_tensor->dims().production());
-    runtime_->SetInputZeroCopy(input_var_name,
-                               &input_ndarray.ToDLPack()->dl_tensor);
-  }
-  runtime_->Run();
-  for (int i = 0; i < param.outputs.size(); i++) {
-    auto output_ndarray = runtime_->GetOutput(i);
-    auto output_var_name = param.outputs[i].first;
-    auto output_tensor = param.outputs[i].second;
-    output_tensor->Resize(output_ndarray.Shape());
-    LOG(INFO) << "output dims[" << i << ":" << output_var_name
-              << "]: " << output_tensor->dims();
-    auto output_ndarray_data =
-        static_cast<float*>(output_ndarray.ToDLPack()->dl_tensor.data);
-    auto output_tensor_data = output_tensor->mutable_data<float>();
-    std::memcpy(output_tensor_data,
-                output_ndarray_data,
-                sizeof(float) * output_tensor->dims().production());
-    for (int j = 0; j < output_tensor->dims().production(); j++) {
-      VLOG(3) << output_tensor_data[j];
-    }
-  }
-  LOG(INFO) << "[XPU] Process cost " << GetCurrentUS() - start_time << " us";
+  CHECK(engine_);
+  engine_->Launch();
 }
 
 }  // namespace xpu
@@ -94,6 +47,5 @@ REGISTER_LITE_KERNEL(subgraph,
                      paddle::lite::kernels::xpu::SubgraphCompute,
                      def)
     .BindInput("Inputs", {LiteType::GetTensorTy(TARGET(kHost))})
-    .BindInput("Weight", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindOutput("Outputs", {LiteType::GetTensorTy(TARGET(kHost))})
     .Finalize();

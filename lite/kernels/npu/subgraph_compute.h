@@ -15,12 +15,9 @@
 #pragma once
 
 #include <memory>
-#include <string>
-#include <vector>
-#include "lite/backends/npu/engine.h"
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
-#include "lite/core/types.h"
+#include "lite/kernels/npu/subgraph_engine.h"
 
 namespace paddle {
 namespace lite {
@@ -38,7 +35,7 @@ class SubgraphCompute : public KernelLite<TARGET(kNPU), PRECISION(kFloat)> {
   virtual ~SubgraphCompute() = default;
 
  private:
-  std::unique_ptr<lite::npu::Engine> engine_;
+  std::unique_ptr<lite::subgraph::npu::Engine> engine_;
 };
 
 }  // namespace npu

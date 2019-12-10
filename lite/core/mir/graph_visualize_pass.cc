@@ -44,7 +44,6 @@ std::string Visualize(mir::SSAGraph* graph) {
       key = string_format("%s%d", node.AsStmt().op_type().c_str(), id++);
     }
     if (node.IsStmt()) {
-      auto& stmt = node.AsStmt();
       dot.AddNode(key,
                   {Dot::Attr("shape", "box"),
                    Dot::Attr("style", "filled"),

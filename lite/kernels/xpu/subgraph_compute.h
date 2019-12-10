@@ -14,13 +14,10 @@
 
 #pragma once
 
-#include <xtcl/xtcl.h>
 #include <memory>
-#include <string>
-#include <vector>
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
-#include "lite/core/types.h"
+#include "lite/kernels/xpu/subgraph_engine.h"
 
 namespace paddle {
 namespace lite {
@@ -38,7 +35,7 @@ class SubgraphCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
   virtual ~SubgraphCompute() = default;
 
  private:
-  std::shared_ptr<xtcl::network::xRuntimeInstance> runtime_{nullptr};
+  std::unique_ptr<lite::subgraph::xpu::Engine> engine_;
 };
 
 }  // namespace xpu
