@@ -55,6 +55,10 @@ void act_ref(const std::shared_ptr<operators::ActivationOp> op) {
     for (size_t i = 0; i < out->numel(); i++) {
       out_data[i] = std::min(std::max(0.f, x_data[i]), relu_clipped_coef);
     }
+  } else if (op_type == "relu6") {
+    for (size_t i = 0; i < out->numel(); i++) {
+      out_data[i] = std::min(std::max(0.f, x_data[i]), 6.f);
+    }
   } else if (op_type == "leaky_relu") {
     auto alpha = op_info->GetAttr<float>("alpha");
     for (size_t i = 0; i < out->numel(); i++) {
@@ -96,6 +100,8 @@ void test_act(std::vector<int64_t> x_shape, std::string op_type) {
   opdesc.SetInput("X", {x_var_name});
   opdesc.SetOutput("Out", {out_var_name});
   if (op_type == "relu_clipped") {
+    opdesc.SetAttr("Relu_clipped_coef", 3.f);
+  } else if (op_type == "relu6") {
     opdesc.SetAttr("Relu_clipped_coef", 6.f);
   } else if (op_type == "leaky_relu") {
     opdesc.SetAttr("alpha", 0.02f);
@@ -125,6 +131,7 @@ TEST(NPUBridges, activation) {
                                  "relu",
                                  "tanh",
                                  "relu_clipped",
+                                 "relu6",
                                  "leaky_relu",
                                  "softsign",
                                  "hard_sigmoid"};
@@ -149,6 +156,8 @@ USE_LITE_OP(tanh);
 USE_NPU_BRIDGE(tanh);
 USE_LITE_OP(relu_clipped);
 USE_NPU_BRIDGE(relu_clipped);
+USE_LITE_OP(relu6);
+USE_NPU_BRIDGE(relu6);
 
 USE_LITE_OP(leaky_relu);
 USE_NPU_BRIDGE(leaky_relu);
