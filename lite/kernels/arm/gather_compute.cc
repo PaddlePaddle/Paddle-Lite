@@ -50,6 +50,7 @@ void GatherCompute::Run() {
 
 REGISTER_LITE_KERNEL(
     gather, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::GatherCompute, def)
-    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Index", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
