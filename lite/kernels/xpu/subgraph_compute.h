@@ -14,15 +14,35 @@
 
 #pragma once
 
+#include <xtcl/xtcl.h>
 #include <memory>
+#include <string>
+#include <vector>
 #include "lite/core/kernel.h"
-#include "lite/core/op_registry.h"
-#include "lite/kernels/xpu/bridges/engine.h"
+#include "lite/kernels/npu/bridges/engine.h"
+#include "lite/kernels/npu/bridges/registry.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace xpu {
+
+class SubgraphEngine : public subgraph::Engine {
+ public:
+  SubgraphEngine(int block_idx,
+                 cpp::BlockDesc *block_desc,
+                 const std::vector<std::string> &input_names,
+                 const std::vector<std::string> &output_names,
+                 Scope *scope)
+      : subgraph::Engine(
+            block_idx, block_desc, input_names, output_names, scope) {}
+
+ protected:
+  int BuildDeviceProgram() override;
+  int LaunchDeviceProgram() override;
+
+  std::unique_ptr<xtcl::network::xRuntimeInstance> device_program_{nullptr};
+};
 
 class SubgraphCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
@@ -35,7 +55,7 @@ class SubgraphCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
   virtual ~SubgraphCompute() = default;
 
  private:
-  std::unique_ptr<lite::subgraph::xpu::Engine> engine_;
+  std::unique_ptr<SubgraphEngine> engine_;
 };
 
 }  // namespace xpu

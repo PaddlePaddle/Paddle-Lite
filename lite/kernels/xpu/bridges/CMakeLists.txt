@@ -29,5 +29,3 @@ set(xpu_subgraph_bridges
         CACHE INTERNAL "xpu_subgraph_bridges")
 
 message(STATUS "+++++ xpu_subgraph_bridges: ${xpu_subgraph_bridges}")
-
-lite_cc_library(subgraph_engine_xpu SRCS engine.cc DEPS subgraph_engine_base device_xpu ${xpu_subgraph_bridges})

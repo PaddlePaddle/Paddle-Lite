@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/mir/subgraph/subgraph_bridge_registry.h"
+#include "lite/kernels/npu/bridges/registry.h"
 #include <utility>
 
 namespace paddle {

@@ -27,14 +27,5 @@ if (WITH_TESTING)
     set_target_properties(test_subgraph_pass PROPERTIES LINK_FLAGS "${LINK_FLAGS}")
 endif()
 
-if(LITE_WITH_NPU OR LITE_WITH_XPU)
-    lite_cc_library(subgraph_bridge_registry
-        SRCS subgraph_bridge_registry.cc
-        DEPS op)
-    lite_cc_library(subgraph_engine_base
-        SRCS subgraph_engine_base.cc
-        DEPS tensor op scope program)
-endif()
-
 set(mir_subgraphs subgraph_pass CACHE INTERNAL "mir_subgraphs")
 message(STATUS "----> mir_subgraphs: ${mir_subgraphs}")

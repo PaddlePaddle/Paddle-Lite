@@ -260,7 +260,6 @@ TEST(Activation_relu, precision) {
     for (auto c : {3, 6}) {
       for (auto h : {9, 18}) {
         for (auto w : {9, 18}) {
-          // for (auto slope : {0.01, 0.1}) {
           std::unique_ptr<arena::TestCase> tester(new ActivationComputeTester(
               place,
               "def",
@@ -273,7 +272,6 @@ TEST(Activation_relu, precision) {
               RELU));
           arena::Arena arena(std::move(tester), place, abs_error);
           arena.TestPrecision();
-          //}
         }
       }
     }

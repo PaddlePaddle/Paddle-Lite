@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include "lite/operators/conv_op.h"
-#include "lite/core/mir/subgraph/subgraph_bridge_registry.h"
+#include "lite/kernels/npu/bridges/registry.h"
 #include "lite/kernels/xpu/bridges/graph.h"
 #include "lite/kernels/xpu/bridges/utility.h"
 
