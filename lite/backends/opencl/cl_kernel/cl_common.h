@@ -61,3 +61,19 @@ inline CL_DTYPE activation(CL_DTYPE in
 #endif
   return output;
 }
+inline CL_DTYPE4 activation_type4(CL_DTYPE4 in
+#ifdef PRELU
+                                  ,
+                                  CL_DTYPE4 prelu_alpha
+#endif
+                                  ) {
+  CL_DTYPE4 output;
+#ifdef PRELU
+  output = select(prelu_alpha * in, in, in >= (CL_DTYPE4)0.0);
+#endif
+
+#ifdef RELU
+  output = fmax(in, (CL_DTYPE4)0);
+#endif
+  return output;
+}
