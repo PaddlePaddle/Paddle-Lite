@@ -143,8 +143,6 @@ lite::Tensor *Predictor::GetInput(size_t offset) {
 }
 #endif
 
-
-
 // get inputs names
 std::vector<std::string> Predictor::GetInputNames() { return input_names_; }
 

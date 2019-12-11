@@ -18,7 +18,6 @@
 #include "lite/core/op_registry.h"
 #include "lite/core/target_wrapper.h"
 #include "lite/core/type_system.h"
-#include "lite/api/paddle_place.h"
 
 namespace paddle {
 namespace lite {
@@ -27,13 +26,9 @@ namespace fpga {
 
 using float16 = zynqmp::float16;
 
-template<typename T>
-void convert_to_hwc(T* chw_data,
-                    T* hwc_data,
-                    int num,
-                    int channel,
-                    int height,
-                    int width) {
+template <typename T>
+void convert_to_hwc(
+    T* chw_data, T* hwc_data, int num, int channel, int height, int width) {
   std::cout << "  -------------- chw -> HWC ---------------\n";
   std::cout << "channel: " << channel << std::endl;
   std::cout << "height: " << height << std::endl;
@@ -54,13 +49,9 @@ void convert_to_hwc(T* chw_data,
   }
 }
 
-template<typename T>
-void hwc_to_chw(T* chw_data,
-                T* hwc_data,
-                int num,
-                int channel,
-                int height,
-                int width) {
+template <typename T>
+void hwc_to_chw(
+    T* chw_data, T* hwc_data, int num, int channel, int height, int width) {
   std::cout << "  ============= HWC -> CHW =============\n";
   std::cout << "channel: " << channel << std::endl;
   std::cout << "height: " << height << std::endl;
@@ -98,13 +89,13 @@ void TransHwcToChw(Tensor* dest, const Tensor* src) {
     if (dest->dims().size() > 3) {
       width = dest->dims()[3];
     }
-    
+
     hwc_to_chw<float>(chw, hwc, num, channel, height, width);
   }
 
   if (src->ZynqTensor()->dataType() == zynqmp::FP16) {
     std::cout << "float16\n";
-    float16* chw =  dest->mutable_data<float16>();
+    float16* chw = dest->mutable_data<float16>();
     float16* hwc = const_cast<float16*>(src->data<float16>());
     int num = dest->dims()[0];
     int channel = dest->dims()[1];
@@ -116,10 +107,9 @@ void TransHwcToChw(Tensor* dest, const Tensor* src) {
     if (dest->dims().size() > 3) {
       width = dest->dims()[3];
     }
-    
+
     hwc_to_chw<float16>(chw, hwc, num, channel, height, width);
   }
-  
 }
 void TransChwToHwc(Tensor* dest, const Tensor* src) {
   std::cout << "chw to hwc \n";

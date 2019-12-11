@@ -3,4 +3,3 @@
   --arm_abi=armv8 \
   --arm_lang=gcc \
   test
-

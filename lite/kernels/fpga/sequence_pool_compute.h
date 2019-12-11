@@ -23,8 +23,8 @@ namespace lite {
 namespace kernels {
 namespace fpga {
 
-class SequencePoolCompute 
-	: public KernelLite<TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)> {
+class SequencePoolCompute
+    : public KernelLite<TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)> {
  public:
   void PrepareForRun() override;
 

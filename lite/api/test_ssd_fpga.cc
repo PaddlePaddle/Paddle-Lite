@@ -23,7 +23,6 @@
 #include "lite/api/test_helper.h"
 #include "lite/core/op_registry.h"
 
-
 DEFINE_string(input_file, "", "input_file");
 
 namespace paddle {
@@ -71,11 +70,7 @@ TEST(ResNet50, test) {
       Place{TARGET(kARM), PRECISION(kFloat)},
   });
 
-  predictor.Build(FLAGS_model_dir,
-                  "",
-                  "",
-                  valid_places);
-
+  predictor.Build(FLAGS_model_dir, "", "", valid_places);
 
   // predictor.Build(FLAGS_model_dir,
   //                 FLAGS_model_dir + "/model",
@@ -83,12 +78,10 @@ TEST(ResNet50, test) {
   //                 Place{TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)},
   //                 valid_places);
 
-
   auto* input_tensor = predictor.GetInput(0);
 
   int width = 416;
   int height = 416;
-
 
   std::ifstream file_stream(FLAGS_input_file);
   // file_stream.open(path);
@@ -101,7 +94,8 @@ TEST(ResNet50, test) {
   file_stream >> height;
   file_stream >> width;
 
-  input_tensor->Resize(DDim(std::vector<DDim::value_type>({1, 3, height, width})));
+  input_tensor->Resize(
+      DDim(std::vector<DDim::value_type>({1, 3, height, width})));
   auto* data = input_tensor->mutable_data<float>();
   auto item_size = input_tensor->dims().production();
 
@@ -125,17 +119,17 @@ TEST(ResNet50, test) {
   }
 
   auto* out = predictor.GetOutput(0);
-  for (int i = 0;i < out->dims().production();i++) {
-    std::cout << ":" << out->data<float>()[i] << std::endl; 
+  for (int i = 0; i < out->dims().production(); i++) {
+    std::cout << ":" << out->data<float>()[i] << std::endl;
   }
 
   // std::cout << "-------\n";
   // auto* out1 = predictor.GetOutput(1);
   // for (int i = 0;i < out1->dims().production();i++) {
-  //   std::cout << ":" << out1->data<float>()[i] << std::endl; 
+  //   std::cout << ":" << out1->data<float>()[i] << std::endl;
   // }
 
-  std::string file = "output/" + FLAGS_input_file.substr (6);
+  std::string file = "output/" + FLAGS_input_file.substr(6);
   std::cout << "file:::" << file << std::endl;
 
   std::ofstream ofs;

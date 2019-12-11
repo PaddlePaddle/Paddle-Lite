@@ -73,11 +73,13 @@ REGISTER_LITE_KERNEL(sequence_pool,
                      kNHWC,
                      paddle::lite::kernels::fpga::SequencePoolCompute,
                      def)
-    .BindInput("X",  {LiteType::GetTensorTy(TARGET(kFPGA),
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kFPGA),
                                       PRECISION(kFP16),
                                       DATALAYOUT(kNHWC))})
-    .BindOutput("Out",  {LiteType::GetTensorTy(TARGET(kFPGA),
-                                      PRECISION(kFP16),
-                                      DATALAYOUT(kNHWC))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kFPGA),
+                                       PRECISION(kFP16),
+                                       DATALAYOUT(kNHWC))})
     .BindOutput("MaxIndex", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();

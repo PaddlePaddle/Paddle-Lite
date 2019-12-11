@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <vector>
 #include "lite/kernels/fpga/conv_compute.h"
+#include <vector>
 #include "lite/core/op_registry.h"
 #include "lite/core/type_system.h"
 
@@ -79,8 +79,8 @@ void ConvCompute::Run() {
   } else {
     conv_pe_.dispatch();
 #ifdef FPGA_PRINT_TENSOR
-  zynqmp::ConvParam& conv_param = conv_pe_.param();
-  Debugger::get_instance().registerOutput("conv", conv_param.output);
+    zynqmp::ConvParam& conv_param = conv_pe_.param();
+    Debugger::get_instance().registerOutput("conv", conv_param.output);
 #endif
   }
 }

@@ -221,6 +221,10 @@ void BoxCoderCompute::Run() {
       }
     }
   }
+
+  // prior_box->ZynqTensor()->saveToFile("prior_box", true);
+  // prior_box_var->ZynqTensor()->saveToFile("prior_box_var", true);
+  // output_box->ZynqTensor()->saveToFile("box_coder", true);
 }
 
 }  // namespace arm

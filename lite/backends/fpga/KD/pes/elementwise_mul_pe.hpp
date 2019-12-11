@@ -57,7 +57,7 @@ class ElementwiseMulPE : public PE {
 
   void updateInput(Tensor* t, int index) {
     if (index == 0) {
-      args_.scale_address = t->data<void>();//replace inputs?
+      args_.scale_address = t->data<void>();  // replace inputs?
     }
   }
 

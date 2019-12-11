@@ -11,10 +11,12 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
-#include "lite/kernels/fpga/gru_compute.h"
+#include <unistd.h>
+// #include <chrono>
+#include <iostream>
 #include <string>
 #include <vector>
+
 #include "lite/api/paddle_place.h"
 #include "lite/backends/arm/math/funcs.h"
 #include "lite/backends/arm/math/gru_utils.h"
@@ -23,20 +25,16 @@
 #include "lite/core/op_registry.h"
 #include "lite/core/tensor.h"
 #include "lite/core/type_system.h"
+#include "lite/kernels/fpga/gru_compute.h"
 
 #include "lite/backends/fpga/KD/debugger.hpp"
 #include "lite/backends/fpga/KD/pes/gru_util.hpp"
-
-#include <iostream>
-#include <chrono>
-#include <unistd.h>
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace fpga {
 
-using namespace std;
 using float16 = zynqmp::float16;
 
 inline lite_api::ActivationType get_gru_act_type(const std::string& type) {
@@ -71,7 +69,8 @@ void GRUCompute::PrepareForRun() {
   gru_param.bias = bias->ZynqTensor();
 
   gru_param.batch_gate = param.batch_gate->ZynqTensor();
-  gru_param.batch_reset_hidden_prev = param.batch_reset_hidden_prev->ZynqTensor();
+  gru_param.batch_reset_hidden_prev =
+      param.batch_reset_hidden_prev->ZynqTensor();
   gru_param.batch_hidden = param.batch_hidden->ZynqTensor();
   gru_param.hidden = param.hidden->ZynqTensor();
 
@@ -105,12 +104,12 @@ void GRUCompute::Run() {
   float* batch_gate_data = batch_gate->mutable_data<float>();
 
   lite::arm::math::LoDTensor2BatchFunctor<float> to_batch;
-  to_batch(*input, batch_gate, true, param.is_reverse); //1.
+  to_batch(*input, batch_gate, true, param.is_reverse);  // 1.
 
   save_tensor(batch_gate, "_batch_gate.txt");
 
   if (bias) {
-    auto bias_data = bias->data<float>(); //2.
+    auto bias_data = bias->data<float>();  // 2.
     lite::arm::math::gru_add_with_bias(batch_gate_data,
                                        bias_data,
                                        batch_gate_data,
@@ -130,13 +129,12 @@ void GRUCompute::Run() {
   Tensor ordered_h0;
   std::vector<uint64_t> order(batch_gate->lod()[2]);
 
-  
-
   if (h0) {
     // Since the batch computing for GRU reorders the input sequences
     // according to their length. The initialized cell state also needs
     // to reorder.
-    // lite::arm::math::ReorderInitState<float>(*h0, order, &ordered_h0, true); //3.
+    // lite::arm::math::ReorderInitState<float>(*h0, order, &ordered_h0, true);
+    // //3.
     gru_value.prev_out_value = ordered_h0.mutable_data<float>();
     gru_tensors.pre_output = ordered_h0.ZynqTensor();
     std::cout << "================= h0 =================\n";
@@ -171,31 +169,36 @@ void GRUCompute::Run() {
         batch_reset_hidden_prev->mutable_data<float>() +
         bstart * batch_reset_hidden_prev->dims()[1];
 
-    zynqmp::Shape float_input_shape(zynqmp::NC, {cur_batch_size, batch_gate->dims()[1]});
-    float* float_data = float_input.mutableData<float>(zynqmp::FP32, float_input_shape);
-    memcpy(float_data, gru_value.gate_value, batch_gate->dims()[1] * sizeof(float));
+    zynqmp::Shape float_input_shape(zynqmp::NC,
+                                    {cur_batch_size, batch_gate->dims()[1]});
+    float* float_data =
+        float_input.mutableData<float>(zynqmp::FP32, float_input_shape);
+    memcpy(float_data,
+           gru_value.gate_value,
+           batch_gate->dims()[1] * sizeof(float));
     float_input.flush();
 
-    float* hidden_data = hidden_out.mutableData<float>(zynqmp::FP32, float_input_shape);
+    float* hidden_data =
+        hidden_out.mutableData<float>(zynqmp::FP32, float_input_shape);
     // memcpy(hidden_prev_data, )
 
     // zynqmp::Tensor* gate = pe_.gate();
     gru_tensors.gate = &float_input;
     gru_tensors.output = &hidden_out;
-    
-    pe_.GRUCOmpute(gru_tensors, frame_size,
-                                cur_batch_size,
-                                active_node,
-                                active_gate,
-                                param.origin_mode);
 
-    //TODO copy data back to original tensor;
+    pe_.GRUCOmpute(gru_tensors,
+                   frame_size,
+                   cur_batch_size,
+                   active_node,
+                   active_gate,
+                   param.origin_mode);
+
+    // TODO(chonwhite): copy data back to original tensor;
 
     gru_tensors.pre_output = gru_tensors.output;
-    // exit(-1);
     // gru_value.prev_out_value = gru_value.output_value;
   }
-  lite::arm::math::Batch2LoDTensorFunctor<float> to_seq; //5.
+  lite::arm::math::Batch2LoDTensorFunctor<float> to_seq;  // 5.
   *(batch_hidden->mutable_lod()) = batch_gate->lod();
   batch_hidden->mutable_data<float>();
   to_seq(*batch_hidden, hidden);
@@ -204,7 +207,6 @@ void GRUCompute::Run() {
   save_tensor(hidden, "_gru.txt");
 
   exit(-1);
-
 }
 
 }  // namespace fpga

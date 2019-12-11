@@ -26,8 +26,8 @@ namespace lite {
 namespace kernels {
 namespace fpga {
 
-class NormCompute 
-	: public KernelLite<TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)> {
+class NormCompute
+    : public KernelLite<TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)> {
  public:
   using param_t = operators::NormParam;
 

@@ -15,6 +15,7 @@ limitations under the License. */
 #pragma once
 
 #include <arm_neon.h>
+#include <algorithm>
 #include <vector>
 
 #include "lite/backends/fpga/KD/pe.hpp"
@@ -59,16 +60,14 @@ class ConvPE : public PE {
 
     if (param_.filter->shape().width() == 1 &&
         param_.filter->shape().height() == 1) {
-        // use_cpu_ = true;
+      // use_cpu_ = true;
     }
     if (!use_cpu_) {
       // param_.filter->releaseData();
     }
   }
 
-
   void cpu_conv_hwc() {
-
     Tensor* input = param_.input;
     Tensor* output = param_.output;
     input->syncToCPU();
@@ -106,10 +105,12 @@ class ConvPE : public PE {
       for (int pw = 0; pw < pooled_width_; pw++) {
         int hstart = ph * kernel_step_h - image_pad_h;
         int wstart = pw * kernel_step_w - image_pad_w;
-        int hend = std::min(hstart + kernel_height, (int) image_height);
-        int wend = std::min(wstart + kernel_width, (int) image_width);
-        hstart = std::max(hstart, (int) 0);
-        wstart = std::max(wstart, (int) 0);
+        int hend =
+            std::min(hstart + kernel_height, static_cast<int>(image_height));
+        int wend =
+            std::min(wstart + kernel_width, static_cast<int>(image_width));
+        hstart = std::max(hstart, static_cast<int>(0));
+        wstart = std::max(wstart, static_cast<int>(0));
         for (int oc = 0; oc < out_channel; oc++) {
           float sum = 0.0f;
           const int pool_index = (ph * pooled_width_ + pw) * out_channel + oc;
@@ -117,28 +118,32 @@ class ConvPE : public PE {
             for (int h = hstart; h < hend; h++) {
               int hi = 0;
               if (ph == 0) {
-                  hi = h - hstart + image_pad_h;
-              } else{
-                  hi = h - hstart;
+                hi = h - hstart + image_pad_h;
+              } else {
+                hi = h - hstart;
               }
               for (int w = wstart; w < wend; w++) {
                 int wi = 0;
                 if (pw == 0) {
-                    wi = w - wstart + image_pad_w;
-                }else {
-                    wi = w - wstart;
+                  wi = w - wstart + image_pad_w;
+                } else {
+                  wi = w - wstart;
                 }
                 const int index = (h * image_width + w) * image_channels + c;
-//                          int weight_index = (hi * kernel_width + wi) * image_channels + c;//TODO
-                int weight_index = oc * filter_chw + kernel_width *
-                    kernel_height * c + kernel_width * hi + wi;
+                //                          int weight_index = (hi *
+                //                          kernel_width + wi) * image_channels
+                //                          + c;//TODO
+                int weight_index = oc * filter_chw +
+                                   kernel_width * kernel_height * c +
+                                   kernel_width * hi + wi;
                 float value = image_addr[index] * filter_data[weight_index];
                 sum += value;
               }
             }
           }
-            // std::cout << " ============================= pool_index:" << pool_index << " sum:" << sum << std::endl;
-          
+          // std::cout << " ============================= pool_index:" <<
+          // pool_index << " sum:" << sum << std::endl;
+
           if (param_.relu.enabled && sum < 0) {
             sum = -sum;
           }
@@ -154,9 +159,6 @@ class ConvPE : public PE {
     output->scale()[0] = max / 127;
     output->scale()[1] = 127 / max;
   }
-
-
-
 
   void cpu_compute() {
     Tensor* input = param_.input;
@@ -196,7 +198,6 @@ class ConvPE : public PE {
 
       for (int h = 0; h < output->shape().height(); h++) {
         for (int w = 0; w < output->shape().width(); w++) {
-
           float sum = 0;
 
           // #pragma omp parallel for
@@ -204,11 +205,10 @@ class ConvPE : public PE {
             int image_index = h * out_width * in_channel + w * in_channel + j;
             float value = image_addr[image_index] * filter_ptr[j];
             sum += value;
-  
+
             // mi[j] = value;
           }
 
-          
           // for (int j = 0; j < in_channel; j++) {
           //   sum += mi[j];
           // }
@@ -305,7 +305,8 @@ class ConvPE : public PE {
       // }
     }
 
-    if (param_.input->shape().channel() == 64 && param_.output->shape().channel() == 128) {
+    if (param_.input->shape().channel() == 64 &&
+        param_.output->shape().channel() == 128) {
       // exit(-1);
     }
 

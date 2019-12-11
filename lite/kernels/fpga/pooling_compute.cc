@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "lite/kernels/fpga/pooling_compute.h"
 #include <string>
 #include <vector>
-#include "lite/kernels/fpga/pooling_compute.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/type_system.h"
 

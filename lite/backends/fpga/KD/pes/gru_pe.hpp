@@ -14,16 +14,16 @@ limitations under the License. */
 
 #pragma once
 
+#include "lite/backends/arm/math/sgemm.h"
+#include "lite/backends/fpga/KD/pe.hpp"
+#include "lite/backends/fpga/KD/pe_params.hpp"
 #include "lite/backends/fpga/KD/pes/elementwise_add_pe.hpp"
 #include "lite/backends/fpga/KD/pes/elementwise_mul_pe.hpp"
 #include "lite/backends/fpga/KD/pes/fully_connected_pe.hpp"
 #include "lite/backends/fpga/KD/pes/relu_pe.hpp"
-#include "lite/backends/fpga/KD/pe.hpp"
-#include "lite/backends/fpga/KD/pe_params.hpp"
-#include "lite/backends/arm/math/sgemm.h"
 
-#include "lite/backends/arm/math/funcs.h"
 #include "lite/api/paddle_place.h"
+#include "lite/backends/arm/math/funcs.h"
 #include "lite/core/type_system.h"
 
 namespace paddle {
@@ -38,8 +38,6 @@ struct GRUTensors {
 
 class GRUPE : public PE {
  public:
-
-
   bool init() {
     // Tensor* output = param_.output;
     // output->setAligned(true);
@@ -51,9 +49,10 @@ class GRUPE : public PE {
     auto hidden = param_.hidden;
     // auto hidden_dims = hidden->dims();
     int frame_size = hidden->shape().channel();
-    
+
     zynqmp::Shape hidden_shape{zynqmp::NCHW, {1, frame_size, 1, 1}};
-    float16* prev_hidden_data = prev_hidden_.mutableData<float16>(zynqmp::FP16, hidden_shape);
+    float16* prev_hidden_data =
+        prev_hidden_.mutableData<float16>(zynqmp::FP16, hidden_shape);
     // set previous hidden data to 0;
     memset(prev_hidden_data, 0, hidden_shape.numel() * sizeof(float16));
 
@@ -62,7 +61,9 @@ class GRUPE : public PE {
     float* weight_data = weight_.mutableData<float>(zynqmp::FP32, weight_shape);
     memset(weight_data, 0, weight_shape.numel() * sizeof(float));
     weight_data = weight_.mutableData<float>(zynqmp::FP32, weight_shape);
-    memcpy(weight_data, param_.weight->data<float>(), weight_shape.numel() * sizeof(float));
+    memcpy(weight_data,
+           param_.weight->data<float>(),
+           weight_shape.numel() * sizeof(float));
 
     Shape gate_shape(zynqmp::NC, {1, frame_size * 2});
     gate_ping_.mutableData<void>(FP32, gate_shape);
@@ -85,8 +86,9 @@ class GRUPE : public PE {
     // // ====================
 
     // Shape state_weight_shape(NC,{frame_size, frame_size});
-    // float* state_weight_data = state_weight_.mutableData<float>(FP32, state_weight_shape);
-    // memcpy(state_weight_data, weight_data + 2 * frame_size * frame_size, 
+    // float* state_weight_data = state_weight_.mutableData<float>(FP32,
+    // state_weight_shape);
+    // memcpy(state_weight_data, weight_data + 2 * frame_size * frame_size,
     //   state_weight_shape.numel() * sizeof(float));
     // FullyConnectedParam& reset_out_param = reset_out_pe_.param();
     // reset_out_param.input = &prev_hidden;
@@ -95,13 +97,12 @@ class GRUPE : public PE {
 
     // // ============== unit reset;
     // update_gate_.mutableData<void>(FP16, pre_input_shape);
-    // InputParam& relu_param = update_relu_pe_.param(); 
+    // InputParam& relu_param = update_relu_pe_.param();
     // relu_param.input = &tempTensor;
     // relu_param.output = &update_gate_;
     // update_relu_pe_.init();
     // update_relu_pe_.apply();
 
-    
     reset_gate_.mutableData<void>(FP16, hidden_shape);
     prev_hidden_.mutableData<void>(FP16, hidden_shape);
     reset_hidden_.mutableData<void>(FP16, hidden_shape);
@@ -112,7 +113,8 @@ class GRUPE : public PE {
     // reset_relu_pe_.apply();
 
     // float16* prev_data = prev_.mutableData<float16>(FP16, pre_input_shape);
-    // memset(prev_data, 0, (pre_input_shape.numel() + 32) * sizeof(float16)); // TODO
+    // memset(prev_data, 0, (pre_input_shape.numel() + 32) * sizeof(float16));
+    // // TODO
     // reset_hidden_prev_.mutableData<float16>(FP16, pre_input_shape);
 
     ElementwiseMulParam& mul_param = mul_pe_.param();
@@ -120,17 +122,15 @@ class GRUPE : public PE {
     mul_param.output = &reset_hidden_;
     mul_pe_.init();
     mul_pe_.apply();
-    // ============== 
-
+    // ==============
   }
 
-  bool dispatch() {
-    return true;
-  }
+  bool dispatch() { return true; }
 
-  void gru_unit_reset_act(const lite_api::ActivationType active_gate, GRUTensors& value,
-                int frame_size, int batch_size) {
-
+  void gru_unit_reset_act(const lite_api::ActivationType active_gate,
+                          GRUTensors& value,  // NOLINT
+                          int frame_size,
+                          int batch_size) {
     int stride_update = 3 * frame_size;
     int stride_cell_state = 3 * frame_size;
     int stride_hidden_prev = frame_size;
@@ -143,17 +143,22 @@ class GRUPE : public PE {
     float* reset_gate_data = update_gate_data + frame_size;
 
     for (int b = 0; b < batch_size; b++) {
-      // memcpy(tempTensor.data<void>(), reset_gate_data, gate->shape().numel() * sizeof(float));
+      // memcpy(tempTensor.data<void>(), reset_gate_data, gate->shape().numel()
+      // * sizeof(float));
       // tempTensor.flush();
 
       Tensor tmp;
-      Shape s(NC, {1, frame_size}); //TODO
+      Shape s(NC, {1, frame_size});
       float* tmp_data = tmp.mutableData<float>(FP32, s);
 
       for (int i = 0; i < frame_size; i++) {
         // f(x) = x / (1 + abs(x))?
-        update_gate_data[i] = lite::arm::math::active_f32<lite_api::ActivationType::kSigmoid>(update_gate_data[i]);
-        reset_gate_data[i] = lite::arm::math::active_f32<lite_api::ActivationType::kSigmoid>(reset_gate_data[i]);
+        update_gate_data[i] =
+            lite::arm::math::active_f32<lite_api::ActivationType::kSigmoid>(
+                update_gate_data[i]);
+        reset_gate_data[i] =
+            lite::arm::math::active_f32<lite_api::ActivationType::kSigmoid>(
+                reset_gate_data[i]);
       }
       memcpy(tmp_data, reset_gate_data, frame_size * sizeof(float));
       tmp.flush();
@@ -163,7 +168,7 @@ class GRUPE : public PE {
       Tensor* hidden_prev = value.pre_output;
       if (hidden_prev) {
         // memcpy(prev_data, )
-        // TODO change to pre_out;
+        // TODO(chonwhite): change to pre_out;
         prev_hidden_.copyFrom(value.pre_output);
         prev_hidden_.saveToFile("prev_.txt");
       }
@@ -179,9 +184,11 @@ class GRUPE : public PE {
     }
   }
 
-  void gru_unit_out_act(const lite_api::ActivationType active_node, bool origin_mode,
-                GRUTensors& value, int frame_size, int batch_size) {
-
+  void gru_unit_out_act(const lite_api::ActivationType active_node,
+                        bool origin_mode,
+                        GRUTensors& value,  // NOLINT
+                        int frame_size,
+                        int batch_size) {
     // int stride_update = 3 * frame_size;
     // int stride_cell_state = 3 * frame_size;
     // int stride_hidden_prev = frame_size;
@@ -206,13 +213,16 @@ class GRUPE : public PE {
     //     //   if (hidden_prev) {
     //     //     prev = hidden_prev[i];
     //     //   }
-    //     //   cell_state[i] = lite::arm::math::active_f32<kSigmoid>(cell_state[i]);
+    //     //   cell_state[i] =
+    //     lite::arm::math::active_f32<kSigmoid>(cell_state[i]);
     //     //   hidden[i] =
-    //     //       cell_state[i] * (1.f - updata_gate[i]) + updata_gate[i] * prev;
+    //     //       cell_state[i] * (1.f - updata_gate[i]) + updata_gate[i] *
+    //     prev;
     //     // }
     //   } else {
     //     for (int i = 0; i < frame_size; ++i) {
-    //       cell_state[i] = lite::arm::math::active_f32<lite_api::ActivationType::kRelu>(cell_state[i]);
+    //       cell_state[i] =
+    //       lite::arm::math::active_f32<lite_api::ActivationType::kRelu>(cell_state[i]);
     //       if (hidden_prev) {
     //        prev = hidden_prev[i];
     //       }
@@ -228,19 +238,17 @@ class GRUPE : public PE {
     // }
   }
 
-  void copy_input(GRUTensors& value) {
+  void copy_input(GRUTensors& value) {  // NOLINT
     float max = find_max(*(value.gate));
     gate_ping_.mutableData<void>(FP32, value.gate->shape());
     gate_ping_.copyFrom(value.gate);
-    // TODO update input pointer?
-
+    // update input pointer?
 
     // gate_.readFromFile("input/in.txt");
     // // pre_input_.saveToFile("pppp_in.txt");
     // gate_.scale()[0] = max / 127;
     // gate_.scale()[1] = 127 / max;
     // gate_.printScale("pre_input_");
-
 
     // gate_.saveToFile("pre_input_.txt");
 
@@ -249,12 +257,12 @@ class GRUPE : public PE {
     // pre_output_.saveToFile("pp_out.txt");
   }
 
-  void GRUCOmpute(GRUTensors& value,
-                      int frame_size,
-                      int batch_size,
-                      const lite_api::ActivationType active_node,
-                      const lite_api::ActivationType active_gate,
-                      bool origin_mode) {
+  void GRUCOmpute(GRUTensors& value,  // NOLINT
+                  int frame_size,
+                  int batch_size,
+                  const lite_api::ActivationType active_node,
+                  const lite_api::ActivationType active_gate,
+                  bool origin_mode) {
     copy_input(value);
 
     if (value.pre_output) {
@@ -269,7 +277,8 @@ class GRUPE : public PE {
     //   // state weight;
     //   reset_out_pe_.dispatch();
     // }
-    // gru_unit_out_act(active_node, origin_mode, value, frame_size, batch_size);
+    // gru_unit_out_act(active_node, origin_mode, value, frame_size,
+    // batch_size);
   }
 
   GRUParam& param() { return param_; }
@@ -282,13 +291,9 @@ class GRUPE : public PE {
   //   return &gate_;
   // }
 
-  Tensor* updateGate() {
-    return &update_gate_;
-  }
+  Tensor* updateGate() { return &update_gate_; }
 
-  Tensor* resetGate() {
-    return &reset_gate_;
-  }
+  Tensor* resetGate() { return &reset_gate_; }
 
  private:
   GRUParam param_;

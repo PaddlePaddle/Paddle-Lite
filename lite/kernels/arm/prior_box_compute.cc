@@ -85,6 +85,9 @@ void PriorBoxCompute::Run() {
                              is_clip,
                              order,
                              min_max_aspect_ratios_order);
+
+  param.boxes->ZynqTensor()->saveToFile("pb_boxes", true);
+  param.variances->ZynqTensor()->saveToFile("pb_variance", true);
 }
 
 }  // namespace arm
@@ -98,22 +101,22 @@ REGISTER_LITE_KERNEL(prior_box,
                      kNCHW,
                      paddle::lite::kernels::arm::PriorBoxCompute,
                      def)
-    .BindInput("Input",{LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Image", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Boxes", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Variances", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(prior_box_fpga,
-                     kARM,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::arm::PriorBoxCompute,
-                     def)
-    .BindInput("Input",{LiteType::GetTensorTy(
-                   TARGET(kFPGA), PRECISION(kAny), DATALAYOUT(kAny))})
-    .BindInput("Image", {LiteType::GetTensorTy(
-                   TARGET(kFPGA), PRECISION(kAny), DATALAYOUT(kAny))})
-    .BindOutput("Boxes", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Variances", {LiteType::GetTensorTy(TARGET(kARM))})
-    .Finalize();
+// REGISTER_LITE_KERNEL(prior_box,
+//                      kFPGA,
+//                      kFP16,
+//                      kNHWC,
+//                      paddle::lite::kernels::arm::PriorBoxCompute,
+//                      def)
+//     .BindInput("Input",{LiteType::GetTensorTy(
+//                    TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC))})
+//     .BindInput("Image", {LiteType::GetTensorTy(
+//                    TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC))})
+//     .BindOutput("Boxes", {LiteType::GetTensorTy(TARGET(kARM))})
+//     .BindOutput("Variances", {LiteType::GetTensorTy(TARGET(kARM))})
+//     .Finalize();

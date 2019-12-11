@@ -15,6 +15,7 @@ limitations under the License. */
 #pragma once
 
 #include <stdio.h>
+#include <string>
 #include <vector>
 
 #include "lite/backends/fpga/KD/llapi/zynqmp_api.h"
@@ -100,7 +101,7 @@ struct DepthwiseConvParam : ConvParam {
 };
 
 struct GRUParam : PEParam {
-public:
+ public:
   Tensor* input = nullptr;
   Tensor* h0 = nullptr;
   Tensor* weight = nullptr;
@@ -112,7 +113,7 @@ public:
   Tensor* hidden = nullptr;
 
   std::string gate_activation = "sigmoid";
-  std::string activation= "tanh";
+  std::string activation = "tanh";
   bool is_reverse = false;
   bool origin_mode = false;
 };

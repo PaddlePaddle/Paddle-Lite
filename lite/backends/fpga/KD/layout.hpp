@@ -45,12 +45,8 @@ struct None : Layout {
   int channelIndex() { return -1; }
   int heightIndex() { return -1; }
   int widthIndex() { return -1; }
-  int alignedElementCount(const std::vector<int>& dims) {
-    return 16;
-  }
-  virtual int elementCount(const std::vector<int>& dims) {
-    return 1;
-  }
+  int alignedElementCount(const std::vector<int>& dims) { return 16; }
+  virtual int elementCount(const std::vector<int>& dims) { return 1; }
 };
 
 struct NCHW : Layout {

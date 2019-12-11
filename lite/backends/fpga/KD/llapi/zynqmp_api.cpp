@@ -158,7 +158,7 @@ void fpga_copy(void *dest, const void *src, size_t num) {
 
 int fpga_reset() {
   struct FpgaResetArgs args;
-  return  do_ioctl(IOCTL_FPGA_RESET, &args);
+  return do_ioctl(IOCTL_FPGA_RESET, &args);
 }
 
 int ioctl_conv(const struct ConvArgs &args) {
@@ -283,7 +283,6 @@ int perform_bypass(const struct BypassArgs &args) {
   bypassArgs.image.height = 1;
   bypassArgs.output.scale_address = scales;
 
-
   float scale = 0;
   for (int i = 0; i < count; ++i) {
     bypassArgs.image.channels = max_size;
@@ -309,9 +308,8 @@ int perform_bypass(const struct BypassArgs &args) {
         output_address + count * max_size * out_type_size);
     ret = do_ioctl(IOCTL_CONFIG_BYPASS, &bypassArgs);
     scale = std::max(scale, scales[0]);
-
   }
- 
+
   args.output.scale_address[0] = scale;
   args.output.scale_address[1] = 1.0f / scale;
   return ret;
@@ -362,15 +360,15 @@ int compute_fpga_dwconv(const struct DWconvArgs &args) {
   std::cout << "   out_address:" << args.output.address
             << "   out_scale_address:" << args.output.scale_address;
 
-  // float *in_scale = (float *)args.image.scale_address;
-  // std::cout << "inv_scale:" << in_scale[0] << "," << in_scale[1] <<
-  // std::endl;
+// float *in_scale = (float *)args.image.scale_address;
+// std::cout << "inv_scale:" << in_scale[0] << "," << in_scale[1] <<
+// std::endl;
 #endif
   return do_ioctl(IOCTL_CONFIG_DWCONV, &args);
 }
 
-int config_activation(const struct ActiveParamterArgs& args) {
-    return do_ioctl(IOCTL_CONFIG_ACTIVATION_PARAMETER, &args);
+int config_activation(const struct ActiveParamterArgs &args) {
+  return do_ioctl(IOCTL_CONFIG_ACTIVATION_PARAMETER, &args);
 }
 
 // int config_power(const struct PowerArgs& args) {

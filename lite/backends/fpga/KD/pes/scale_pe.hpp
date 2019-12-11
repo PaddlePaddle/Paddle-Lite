@@ -14,19 +14,16 @@ limitations under the License. */
 
 #pragma once
 
-#include "lite/backends/fpga/KD/pe.hpp"
-#include "lite/backends/fpga/KD/pe_params.hpp"
-
-#include <algorithm> 
+#include <algorithm>
 
 #include "lite/backends/fpga/KD/pe.hpp"
 #include "lite/backends/fpga/KD/pe_params.hpp"
-#include "lite/backends/fpga/KD/tensor.hpp"
 #include "lite/backends/fpga/KD/pes/depthwise_conv_pe.hpp"
+#include "lite/backends/fpga/KD/tensor.hpp"
 
 namespace paddle {
 namespace zynqmp {
-  
+
 class ScalePE : public PE {
  public:
   inline int gcd(int a, int b) {
@@ -124,7 +121,7 @@ class ScalePE : public PE {
   void apply() {
     Tensor* input = param_.input;
     Tensor* output = param_.output;
-    Shape& input_shape = input->shape(); 
+    Shape& input_shape = input->shape();
     DepthwiseConvParam& dw_param = dw_pe_.param();
 
     int channel = input_shape.channel();
@@ -136,19 +133,19 @@ class ScalePE : public PE {
       int c_lcm = lcm(channel, alignment);
       repeat = c_lcm / (channel);
     }
-    
-    // TODO FPGA限制 H >2047, W >1023 , WC> 65536 ，需要使用CPU实现
+
+    // FPGA限制 H >2047, W >1023 , WC> 65536 ，需要使用CPU实现
     Shape shape(N, {channel * repeat});
 
     float* filter_data = filter.mutableData<float>(FP32, shape);
     std::fill_n(filter_data, input->shape().channel(), 1.0f);
-  
-    Tensor *scale = dw_param.scale();
+
+    Tensor* scale = dw_param.scale();
     float16* scale_data = scale->mutableData<float16>(FP16, shape);
-    // memcpy(scale_data, param_.scale->data<float>(), input->shape().channel() * sizeof(float));
+    // memcpy(scale_data, param_.scale->data<float>(), input->shape().channel()
+    // * sizeof(float));
 
-
-    Tensor *bias = dw_param.bias();
+    Tensor* bias = dw_param.bias();
     float16* bias_data = bias->mutableData<float16>(FP16, shape);
     std::fill_n(bias_data, input->shape().channel(), 0);
 
@@ -206,13 +203,14 @@ class ScalePE : public PE {
     }
 
     // if (param_.bias != nullptr) {
-    //   memcpy(bias_data, param_.bias->data<float>(), input->shape().channel() * sizeof(float));
+    //   memcpy(bias_data, param_.bias->data<float>(), input->shape().channel()
+    //   * sizeof(float));
     // }
 
     dw_param.input = param_.input;
     dw_param.output = param_.output;
     dw_param.filter = &filter;
-    
+
     dw_param.strides = {1, 1};
     dw_param.paddings = {0, 0};
     dw_param.kernelSize = {1, 1};
@@ -220,7 +218,6 @@ class ScalePE : public PE {
 
     dw_pe_.init();
     dw_pe_.apply();
-
   }
 
   void cpu_compute() {
@@ -244,7 +241,8 @@ class ScalePE : public PE {
       for (int c = 0; c < input->shape().channel(); c++) {
         int index = i * input->shape().channel() + c;
         float value = half_to_float(in_data[index]) * scale_data[c];
-        std::cout << "value:" << value << " = " << half_to_float(in_data[index]) << " x " << scale_data[c] << std::endl;
+        std::cout << "value:" << value << " = " << half_to_float(in_data[index])
+                  << " x " << scale_data[c] << std::endl;
         data_out[index] = float_to_half(value);
 
         if (value < 0) {
@@ -261,18 +259,19 @@ class ScalePE : public PE {
   }
 
   bool dispatch() {
-
     // cpu_compute();
     // return true;
 
     if (param_.scale->dataType() == FP16) {
-       DepthwiseConvParam& dw_param = dw_pe_.param();
-       memcpy(dw_param.quantizedFilter()->mutableData<float16>(), param_.scale->data<float16>(), param_.scale->shape().numel() * sizeof(float16));
-       dw_param.quantizedFilter()->scale()[0] = param_.scale->scale()[0];
-       dw_param.quantizedFilter()->scale()[1] = param_.scale->scale()[1];
- 
-       dw_param.quantizedFilter()->flush();
-       // apply();
+      DepthwiseConvParam& dw_param = dw_pe_.param();
+      memcpy(dw_param.quantizedFilter()->mutableData<float16>(),
+             param_.scale->data<float16>(),
+             param_.scale->shape().numel() * sizeof(float16));
+      dw_param.quantizedFilter()->scale()[0] = param_.scale->scale()[0];
+      dw_param.quantizedFilter()->scale()[1] = param_.scale->scale()[1];
+
+      dw_param.quantizedFilter()->flush();
+      // apply();
     }
     // param_.scale->saveToFile("scale.txt");
     // cpu_compute();
@@ -293,5 +292,3 @@ class ScalePE : public PE {
 };
 }  // namespace zynqmp
 }  // namespace paddle
-
-

@@ -60,57 +60,57 @@ class Optimizer {
     InitTargetTypeTransformPass();
 
     if (passes.empty()) {
-      std::vector<std::string> passes_local{
-          {"lite_quant_dequant_fuse_pass",     //
-           "lite_conv_elementwise_fuse_pass",  // conv-elemwise-bn
-           "lite_conv_bn_fuse_pass",           //
-           "lite_conv_elementwise_fuse_pass",  // conv-bn-elemwise
-           // TODO(Superjomn) Refine the fusion related design to select fusion
-           // kernels for devices automatically.
-           "lite_conv_activation_fuse_pass",              //
-           "lite_fc_fuse_pass",                           //
-           "lite_shuffle_channel_fuse_pass",              //
-           "lite_transpose_softmax_transpose_fuse_pass",  //
-           "lite_interpolate_fuse_pass",                  //
-           "identity_scale_eliminate_pass",               //
+      std::vector<std::string> passes_local{{
+          "lite_quant_dequant_fuse_pass",     //
+          "lite_conv_elementwise_fuse_pass",  // conv-elemwise-bn
+          "lite_conv_bn_fuse_pass",           //
+          "lite_conv_elementwise_fuse_pass",  // conv-bn-elemwise
+          // TODO(Superjomn) Refine the fusion related design to select fusion
+          // kernels for devices automatically.
+          "lite_conv_activation_fuse_pass",              //
+          "lite_fc_fuse_pass",                           //
+          "lite_shuffle_channel_fuse_pass",              //
+          "lite_transpose_softmax_transpose_fuse_pass",  //
+          "lite_interpolate_fuse_pass",                  //
+          "identity_scale_eliminate_pass",               //
 #ifdef LITE_WITH_LIGHT_WEIGHT_FRAMEWORK
-           "lite_elementwise_add_activation_fuse_pass",  //
+          "lite_elementwise_add_activation_fuse_pass",  //
 #endif
-           "static_kernel_pick_pass",        // pick original kernel from graph
-           "variable_place_inference_pass",  // inference arg/var's
-           // info(target/precision/layout/device)
-           // using kernel info
-           "argument_type_display_pass",  // debug pass: show arg-type-node's
-                                          // info
-                                          // (target/precision/layout/device)
+          "static_kernel_pick_pass",        // pick original kernel from graph
+          "variable_place_inference_pass",  // inference arg/var's
+          // info(target/precision/layout/device)
+          // using kernel info
+          "argument_type_display_pass",  // debug pass: show arg-type-node's
+                                         // info
+                                         // (target/precision/layout/device)
 
-           "type_target_cast_pass",  // add io_copy/io_copy_once if meet
-                                     // different targets when last and next
-                                     // node
-           "variable_place_inference_pass",  //
-           "argument_type_display_pass",     //
+          "type_target_cast_pass",  // add io_copy/io_copy_once if meet
+                                    // different targets when last and next
+                                    // node
+          "variable_place_inference_pass",  //
+          "argument_type_display_pass",     //
 
-           "io_copy_kernel_pick_pass",    //
-           "argument_type_display_pass",  //
+          "io_copy_kernel_pick_pass",    //
+          "argument_type_display_pass",  //
 
-           "variable_place_inference_pass",  //
-           "argument_type_display_pass",     //
+          "variable_place_inference_pass",  //
+          "argument_type_display_pass",     //
 
-           "type_precision_cast_pass",       //
-           "variable_place_inference_pass",  //
-           "argument_type_display_pass",     //
+          "type_precision_cast_pass",       //
+          "variable_place_inference_pass",  //
+          "argument_type_display_pass",     //
 
-           "type_layout_cast_pass",  // add layout/layout_once op if meet
-                                     // different layout when last and next node
-           "argument_type_display_pass",  //
+          "type_layout_cast_pass",  // add layout/layout_once op if meet
+                                    // different layout when last and next node
+          "argument_type_display_pass",  //
 
-           "variable_place_inference_pass",  //
-           "argument_type_display_pass",
+          "variable_place_inference_pass",  //
+          "argument_type_display_pass",
 
-           "runtime_context_assign_pass",
-           "argument_type_display_pass",
-           // "memory_optimize_pass"
-         }};
+          "runtime_context_assign_pass",
+          "argument_type_display_pass",
+          // "memory_optimize_pass"
+      }};
       RunPasses(passes_local);
     } else {
       RunPasses(passes);

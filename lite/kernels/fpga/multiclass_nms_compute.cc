@@ -209,7 +209,7 @@ void MultiClassNMS(const operators::MulticlassNmsParam& param,
       SliceOneClass<T>(scores, c, &score_slice);
       SliceOneClass<T>(bboxes, c, &bbox_slice);
     }
-    NMSFast(bboxes,// TODO bbox_slice
+    NMSFast(bboxes,
             score_slice,
             score_threshold,
             nms_threshold,
@@ -226,7 +226,6 @@ void MultiClassNMS(const operators::MulticlassNmsParam& param,
   *num_nmsed_out = num_det;
   const T* scores_data = scores.data<T>();
   if (keep_top_k > -1 && num_det > keep_top_k) {
-
     Tensor score_slice;
 
     const T* sdata;
@@ -333,7 +332,7 @@ void MulticlassNmsCompute::Run() {
   std::vector<std::map<int, std::vector<int>>> all_indices;
   std::vector<uint64_t> batch_starts = {0};
   int64_t batch_size = score_dims[0];
-  
+
   int64_t out_dim = box_dim + 2;
   int num_nmsed_out = 0;
   Tensor boxes_slice, scores_slice;
@@ -355,8 +354,6 @@ void MulticlassNmsCompute::Run() {
     all_indices.push_back(indices);
     batch_starts.push_back(batch_starts.back() + num_nmsed_out);
   }
-
-
 
   uint64_t num_kept = batch_starts.back();
   if (num_kept == 0) {
@@ -394,10 +391,12 @@ void MulticlassNmsCompute::Run() {
   outs->set_lod(lod);
 
 #ifdef FPGA_PRINT_TENSOR
+  Debugger::get_instance().registerOutput("boxes", boxes->ZynqTensor());
+  Debugger::get_instance().registerOutput("scores", scores->ZynqTensor());
   Debugger::get_instance().registerOutput("nms", outs->ZynqTensor());
 #endif
 }
-}  // namespace host
+}  // namespace fpga
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

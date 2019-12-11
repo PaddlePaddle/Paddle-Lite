@@ -50,13 +50,16 @@ void NormCompute::Run() {
 
 REGISTER_LITE_KERNEL(
     norm, kFPGA, kFP16, kNHWC, paddle::lite::kernels::fpga::NormCompute, def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kFPGA),
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kFPGA),
                                       PRECISION(kFP16),
                                       DATALAYOUT(kNHWC))})
-    .BindOutput("Norm", {LiteType::GetTensorTy(TARGET(kFPGA),
-                                      PRECISION(kFP16),
-                                      DATALAYOUT(kNHWC))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kFPGA),
-                                      PRECISION(kFP16),
-                                      DATALAYOUT(kNHWC))})
+    .BindOutput("Norm",
+                {LiteType::GetTensorTy(TARGET(kFPGA),
+                                       PRECISION(kFP16),
+                                       DATALAYOUT(kNHWC))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kFPGA),
+                                       PRECISION(kFP16),
+                                       DATALAYOUT(kNHWC))})
     .Finalize();

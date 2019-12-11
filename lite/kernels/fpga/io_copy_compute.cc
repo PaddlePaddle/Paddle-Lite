@@ -47,9 +47,11 @@ class IoCopyHostToFpgaCompute
           param.x->target() == TARGET(kFPGA));
     // param.y->CopyDataFrom(*param.x);
     param.y->mutable_data<float16>();
-    if (param.x->ZynqTensor()->aligned() && param.x->ZynqTensor()->shape().shouldAlign()) {
+    if (param.x->ZynqTensor()->aligned() &&
+        param.x->ZynqTensor()->shape().shouldAlign()) {
       zynqmp::Tensor tempTensor;
-      tempTensor.mutableData<float16>(zynqmp::FP16, param.x->ZynqTensor()->shape());
+      tempTensor.mutableData<float16>(zynqmp::FP16,
+                                      param.x->ZynqTensor()->shape());
       tempTensor.copyFrom(param.x->ZynqTensor());
       // tempTensor.saveToFile("tempTensor", true);
       tempTensor.setAligned(true);
@@ -63,7 +65,6 @@ class IoCopyHostToFpgaCompute
     param.y->ZynqTensor()->copyScaleFrom(param.x->ZynqTensor());
     auto out_lod = param.y->mutable_lod();
     *out_lod = param.x->lod();
-    
   }
 
   std::unique_ptr<type_infer_handler_t> GetTypeInferHandler() override {
@@ -106,9 +107,11 @@ class IoCopyFpgaToHostCompute
     param.y->ZynqTensor()->setDataType(zynqmp::FP32);
     param.x->ZynqTensor()->syncToDevice();
 
-    if (param.x->ZynqTensor()->aligned() && param.x->ZynqTensor()->shape().shouldAlign()) {
+    if (param.x->ZynqTensor()->aligned() &&
+        param.x->ZynqTensor()->shape().shouldAlign()) {
       zynqmp::Tensor tempTensor;
-      tempTensor.mutableData<float16>(zynqmp::FP16, param.x->ZynqTensor()->shape());
+      tempTensor.mutableData<float16>(zynqmp::FP16,
+                                      param.x->ZynqTensor()->shape());
       tempTensor.copyFrom(param.x->ZynqTensor());
       // tempTensor.saveToFile("tempTensor", true);
       tempTensor.setAligned(true);
@@ -123,7 +126,6 @@ class IoCopyFpgaToHostCompute
     auto out_lod = param.y->mutable_lod();
     *out_lod = param.x->lod();
   }
-
 
   std::string doc() const override { return "Copy IO from FPGA to HOST"; }
 };

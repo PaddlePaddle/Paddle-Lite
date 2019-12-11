@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <string>
 #include "lite/kernels/fpga/elementwise_compute.h"
+#include <string>
 #include "lite/backends/arm/math/funcs.h"
 #include "lite/backends/fpga/KD/debugger.hpp"
 
@@ -38,7 +38,7 @@ void ElementwiseAddCompute::PrepareForRun() {
   pe_.init();
   pe_.apply();
 }
-void ElementwiseAddCompute::Run() { 
+void ElementwiseAddCompute::Run() {
   pe_.dispatch();
 #ifdef FPGA_PRINT_TENSOR
   zynqmp::ElementwiseAddParam& ew_param = pe_.param();
@@ -60,8 +60,8 @@ void ElementwiseAddActivationCompute::PrepareForRun() {
   pe_.init();
   pe_.apply();
 }
-void ElementwiseAddActivationCompute::Run() { 
-  pe_.dispatch(); 
+void ElementwiseAddActivationCompute::Run() {
+  pe_.dispatch();
 #ifdef FPGA_PRINT_TENSOR
   zynqmp::ElementwiseAddParam& ew_param = pe_.param();
   Debugger::get_instance().registerOutput("ew_add", ew_param.output);
@@ -86,12 +86,12 @@ void ElementwiseMulCompute::PrepareForRun() {
   zynqmp::Shape shape(zynqmp::N, {channel});
   float* scale_data = scale->mutableData<float>(zynqmp::FP32, shape);
   float* bias_data = bias->mutableData<float>(zynqmp::FP32, shape);
-  float scale_value = param.Y->data<float>()[0];;
+  float scale_value = param.Y->data<float>()[0];
 
   for (int i = 0; i < channel; ++i) {
     if (param.Y->dims().production() != 1) {
       scale_value = param.Y->ZynqTensor()->data<float>()[i];
-    } 
+    }
     scale_data[i] = scale_value;
     bias_data[i] = 0;
   }
@@ -100,10 +100,11 @@ void ElementwiseMulCompute::PrepareForRun() {
   pe_.apply();
 }
 
-void ElementwiseMulCompute::Run() { 
+void ElementwiseMulCompute::Run() {
   pe_.dispatch();
 #ifdef FPGA_PRINT_TENSOR
   zynqmp::ScaleParam& scale_param = pe_.param();
+  Debugger::get_instance().registerOutput("ew_mul_in", scale_param.input);
   Debugger::get_instance().registerOutput("ew_mul", scale_param.output);
 #endif
 }
@@ -123,8 +124,7 @@ REGISTER_LITE_KERNEL(elementwise_add,
                {LiteType::GetTensorTy(TARGET(kFPGA),
                                       PRECISION(kFP16),
                                       DATALAYOUT(kNHWC))})
-    .BindInput("Y",
-               {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kFPGA),
                                        PRECISION(kFP16),
@@ -162,12 +162,9 @@ REGISTER_LITE_KERNEL(elementwise_mul,
                {LiteType::GetTensorTy(TARGET(kFPGA),
                                       PRECISION(kFP16),
                                       DATALAYOUT(kNHWC))})
-    .BindInput("Y",
-               {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kFPGA),
                                        PRECISION(kFP16),
                                        DATALAYOUT(kNHWC))})
     .Finalize();
-
-

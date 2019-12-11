@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <vector>
 #include "lite/kernels/fpga/mul_compute.h"
+#include <vector>
 #include "lite/core/op_registry.h"
 #include "lite/core/type_system.h"
 
@@ -27,7 +27,7 @@ namespace fpga {
 using float16 = zynqmp::float16;
 
 void MulCompute::PrepareForRun() {
-	auto& param = this->Param<param_t>();
+  auto& param = this->Param<param_t>();
 
   // ====================================================
   zynqmp::FullyConnectedParam& fc_param = pe_.param();
@@ -44,7 +44,8 @@ void MulCompute::PrepareForRun() {
 
   zynqmp::Shape bias_shape(zynqmp::N, {channel});
 
-  float* bias_data = fc_param.bias->mutableData<float>(zynqmp::FP32, bias_shape);
+  float* bias_data =
+      fc_param.bias->mutableData<float>(zynqmp::FP32, bias_shape);
   memset(bias_data, 0, channel * sizeof(float));
   bias_.flush();
 
@@ -62,7 +63,6 @@ void mul(MulCompute* k) {
   float16* out_data = param.output->mutable_data<float16>();
   int g_index = 0;
   for (int n = 0; n < 1; n++) {
-
     for (int on = 0; on < fn; on++) {
       float sum = 0;
       int si = 0;
@@ -79,10 +79,9 @@ void mul(MulCompute* k) {
   }
 }
 
-
 void MulCompute::Run() {
   pe_.dispatch();
-  
+
 #ifdef FPGA_PRINT_TENSOR
   zynqmp::FullyConnectedParam& fc_param = pe_.param();
   Debugger.get_instance().registerOutput("mul", fc_param.output);
@@ -96,11 +95,13 @@ void MulCompute::Run() {
 
 REGISTER_LITE_KERNEL(
     mul, kFPGA, kFP16, kNHWC, paddle::lite::kernels::fpga::MulCompute, def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kFPGA),
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kFPGA),
                                       PRECISION(kFP16),
                                       DATALAYOUT(kNHWC))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kFPGA),
-                                      PRECISION(kFP16),
-                                      DATALAYOUT(kNHWC))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kFPGA),
+                                       PRECISION(kFP16),
+                                       DATALAYOUT(kNHWC))})
     .Finalize();

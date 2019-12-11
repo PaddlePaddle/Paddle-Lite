@@ -38,7 +38,6 @@ class PoolingPE : public PE {
     uint32_t k_height = param_.kernelSize[0];
     uint32_t k_width = param_.kernelSize[1];
 
-
     if (param_.globalPooling) {
       k_width = input->shape().width();
       k_height = input->shape().height();
@@ -68,8 +67,9 @@ class PoolingPE : public PE {
 
     use_cpu_ = output->shape().width() == 1 && output->shape().height() == 1 &&
                (k_width > 7 || k_height > 7);
-    // use_cpu_ = output->shape().width() == 1 && output->shape().height() == 1 &&
-    //            (k_width > 255 || k_height > 255);           
+    // use_cpu_ = output->shape().width() == 1 && output->shape().height() == 1
+    // &&
+    //            (k_width > 255 || k_height > 255);
     use_cpu_ = param_.type == AVERAGE;
   }
 
@@ -172,7 +172,8 @@ class PoolingPE : public PE {
     input->syncToCPU();
 
     Tensor float_input;
-    float* float_input_data = float_input.mutableData<float>(FP32, input->shape());
+    float* float_input_data =
+        float_input.mutableData<float>(FP32, input->shape());
     float_input.copyFrom(input);
 
     float16* data_out = output->data<float16>();

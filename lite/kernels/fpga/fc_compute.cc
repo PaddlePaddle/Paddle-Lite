@@ -13,9 +13,9 @@
 // limitations under the License.
 
 #include "lite/kernels/fpga/fc_compute.h"
+#include "lite/backends/fpga/KD/debugger.hpp"
 #include "lite/core/op_registry.h"
 #include "lite/core/type_system.h"
-#include "lite/backends/fpga/KD/debugger.hpp"
 
 namespace paddle {
 namespace lite {

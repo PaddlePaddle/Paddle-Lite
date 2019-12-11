@@ -161,7 +161,7 @@ class TensorLite {
   TensorLite Slice(int64_t begin, int64_t end) const;
 
   template <typename T>
-  void Slice(TensorLite& dst, int64_t begin, int64_t end) const;
+  void Slice(TensorLite &dst, int64_t begin, int64_t end) const;  // NOLINT
 
   TargetType target() const { return target_; }
 
@@ -247,9 +247,7 @@ R *TensorLite::mutable_data(TargetType target) {
 
 template <typename T>
 TensorLite TensorLite::Slice(int64_t begin, int64_t end) const {
-
-
-  throw -1;
+  throw - 1;
   CHECK_GE(begin, 0);
   CHECK_LE(end, dims_[0]);
   CHECK_LT(begin, end);
@@ -265,20 +263,21 @@ TensorLite TensorLite::Slice(int64_t begin, int64_t end) const {
     auto dst_dims = dims_;
     dst_dims[0] = end - begin;
     dst.Resize(dst_dims);
-    void* dst_data = dst.mutable_data<T>();
+    void *dst_data = dst.mutable_data<T>();
 
-    T* src_data = const_cast<T*>(data<T>());
-    memcpy(dst_data, src_data + static_cast<size_t>(begin * base) * sizeof(T), dst_dims.production() * sizeof(T));
+    T *src_data = const_cast<T *>(data<T>());
+    memcpy(dst_data,
+           src_data + static_cast<size_t>(begin * base) * sizeof(T),
+           dst_dims.production() * sizeof(T));
     dst.ZynqTensor()->saveToFile("_slice", true);
 
     // dst.offset_ = offset_ + static_cast<size_t>(begin * base) * sizeof(T);
     return dst;
-  }  
+  }
 }
 
 template <typename T>
-void TensorLite::Slice(TensorLite& dst, int64_t begin, int64_t end) const {
-
+void TensorLite::Slice(TensorLite &dst, int64_t begin, int64_t end) const {
   CHECK_GE(begin, 0);
   CHECK_LE(end, dims_[0]);
   CHECK_LT(begin, end);
@@ -287,13 +286,14 @@ void TensorLite::Slice(TensorLite& dst, int64_t begin, int64_t end) const {
   auto dst_dims = dims_;
   dst_dims[0] = end - begin;
   dst.Resize(dst_dims);
-  void* dst_data = dst.mutable_data<T>();
-
+  void *dst_data = dst.mutable_data<T>();
 
   int64_t base = numel() / dims_[0];
 
-  T* src_data = const_cast<T*>(data<T>());
-  memcpy(dst_data, src_data + static_cast<size_t>(begin * dst_dims.production()), dst_dims.production() * sizeof(T));
+  T *src_data = const_cast<T *>(data<T>());
+  memcpy(dst_data,
+         src_data + static_cast<size_t>(begin * dst_dims.production()),
+         dst_dims.production() * sizeof(T));
 }
 
 template <typename TensorT>

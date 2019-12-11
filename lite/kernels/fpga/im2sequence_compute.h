@@ -23,8 +23,8 @@ namespace lite {
 namespace kernels {
 namespace fpga {
 
-class Im2SequenceCompute 
-	: public KernelLite<TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)> {
+class Im2SequenceCompute
+    : public KernelLite<TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)> {
  public:
   using param_t = operators::Im2SequenceParam;
 

@@ -15,6 +15,7 @@ limitations under the License. */
 #pragma once
 
 #include <stdio.h>
+#include <unistd.h>
 #include <algorithm>
 #include <cmath>
 #include <cstring>
@@ -23,8 +24,6 @@ limitations under the License. */
 #include <memory>
 #include <string>
 #include <vector>
-
-#include <unistd.h>
 
 // #include "lite/core/tensor.h"
 
@@ -303,13 +302,15 @@ class Tensor {
     this->invalidate();
   }
 
-  void flush() { 
-    size_t memorySize = shape_->memorySize(CellSize(dataType_)) * mem_scale_factor_;
-    fpga_flush(placeHolder_->data(), memorySize); 
+  void flush() {
+    size_t memorySize =
+        shape_->memorySize(CellSize(dataType_)) * mem_scale_factor_;
+    fpga_flush(placeHolder_->data(), memorySize);
   }
 
   void invalidate() {
-    size_t memorySize = shape_->memorySize(CellSize(dataType_)) * mem_scale_factor_;
+    size_t memorySize =
+        shape_->memorySize(CellSize(dataType_)) * mem_scale_factor_;
     fpga_invalidate(placeHolder_->data(), memorySize);
   }
 
@@ -357,7 +358,8 @@ class Tensor {
     std::cout << type << " : "
               << std::to_string(shape_->num()) + "_" +
                      std::to_string(shape_->channel()) + "_" +
-                     std::to_string(shape_->height()) + "_" + std::to_string(shape_->width())
+                     std::to_string(shape_->height()) + "_" +
+                     std::to_string(shape_->width())
               << std::endl;
     std::cout << type << " \n";
     printScale();
@@ -383,7 +385,6 @@ class Tensor {
   }
 
   void saveToFile(std::string path) {
-    
     syncToCPU();
     invalidate();
     std::ofstream ofs;
@@ -395,7 +396,7 @@ class Tensor {
   }
 
   void save_file_with_name(std::string path) {
-    return;
+    // return;
     invalidate();
     // usleep(20000);
     // return;
@@ -405,7 +406,6 @@ class Tensor {
 
     ofs << "dataType: " << dataType_ << std::endl;
     ofs << "scale: " << scale()[0] << " , " << scale()[1] << std::endl;
-
 
     for (int i = 0; i < shape_->numel(); i++) {
       float value = 0;

@@ -1,3 +1,21 @@
+// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#pragma once
+
+#include <string>
+#include <unordered_map>
 
 // #include "lite/backends/fpga/lite_tensor.h"
 #include "lite/core/tensor.h"
@@ -16,19 +34,16 @@ class Debugger {
 
   void registerOutput(std::string op_type, zynqmp::Tensor* tensor) {
     // tensor->printScale();
-    // tensor->saveToFile(op_type, true);
+    if (op_type != "conv") {
+      // tensor->saveToFile(op_type, true);
+    }
   }
 
  private:
   std::unordered_map<std::string, bool> op_config;
   Debugger() {
     op_config["concat"] = true;
-    op_config["conv_add_bn"] = true;
-    op_config["conv_add_bn_relu"] = true;
-    op_config["conv_add"] = true;
-    op_config["conv_add_relu"] = true;
-    op_config["conv_bn"] = true;
-    op_config["conv_bn_relu"] = true;
+    op_config["conv"] = true;
     op_config["crop"] = true;
   }
 };
@@ -39,16 +54,16 @@ inline void chw_to_hwc(Tensor* t, float* dst) {
 
   int height = 1;
   int width = 1;
-  if (t->dims().size() > 2){
-  	height = t->dims()[2];
+  if (t->dims().size() > 2) {
+    height = t->dims()[2];
   }
-  if (t->dims().size() > 3){
-  	width = t->dims()[3];
+  if (t->dims().size() > 3) {
+    width = t->dims()[3];
   }
   // int width = t->dims()[3];
   const float* chw_data = t->data<float>();
   float* hwc_data = dst;
-  
+
   int chw = channel * height * width;
   int wc = width * channel;
   int index = 0;
@@ -64,7 +79,7 @@ inline void chw_to_hwc(Tensor* t, float* dst) {
   }
 }
 
-inline void read_from_file(lite::Tensor* t,const std::string& path) {
+inline void read_from_file(lite::Tensor* t, const std::string& path) {
   std::ifstream file_stream;
   file_stream.open(path);
   if (!file_stream) {
@@ -81,17 +96,18 @@ inline void read_from_file(lite::Tensor* t,const std::string& path) {
 }
 
 inline void save_float(float* data, const std::string& name, int len) {
-    // return;
+  // return;
   static int counter = 0;
   std::string old_string = std::to_string(counter);
-  std::string new_string = std::string(3 - old_string.length(), '0') + old_string;
+  std::string new_string =
+      std::string(3 - old_string.length(), '0') + old_string;
 
   std::string file = "arm_" + new_string + name;
   counter++;
 
-  std::cout << "-------------------------- saving file: --------------------------" << file << std::endl;
-
-
+  std::cout
+      << "-------------------------- saving file: --------------------------"
+      << file << std::endl;
   std::ofstream ofs;
   ofs.open(file);
   // float* data = dst;
@@ -102,9 +118,11 @@ inline void save_float(float* data, const std::string& name, int len) {
   ofs.close();
 }
 
-inline void save_tensor(lite::Tensor* t,const std::string& name, bool convert = true) {
+inline void save_tensor(lite::Tensor* t,
+                        const std::string& name,
+                        bool convert = true) {
   float* data = const_cast<float*>(t->data<float>());
-	float* dst = new float[t->numel()];
+  float* dst = new float[t->numel()];
   if (convert) {
     chw_to_hwc(t, dst);
     data = dst;
@@ -114,8 +132,9 @@ inline void save_tensor(lite::Tensor* t,const std::string& name, bool convert = 
   delete[] dst;
 }
 
-inline void save_tensor(const lite::Tensor* t,const std::string& name, bool convert = true) {
-  
+inline void save_tensor(const lite::Tensor* t,
+                        const std::string& name,
+                        bool convert = true) {
   // return;
   float* data = const_cast<float*>(t->data<float>());
   float* dst = new float[t->numel()];
@@ -128,6 +147,5 @@ inline void save_tensor(const lite::Tensor* t,const std::string& name, bool conv
 
   delete[] dst;
 }
-
-}
-}
+}  // namespace lite
+}  // namespace paddle

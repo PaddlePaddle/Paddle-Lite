@@ -27,7 +27,6 @@ namespace fpga {
 
 using float16 = zynqmp::float16;
 
-
 // Transpose
 void TransposeCompute::Run() {
   auto& param = this->Param<param_t>();
@@ -45,7 +44,6 @@ void Transpose2Compute::Run() {
     // auto out = param.Out();
     // auto out_data = out->data<half>();
 
-
     //   int num = input_x_dims[1];
     // int channel = input_x_dims[2];
 
@@ -58,7 +56,7 @@ void Transpose2Compute::Run() {
     //     index++;
     //   }
     // }
-    
+
   } else {
     param.output->ZynqTensor()->copyFrom(param.x->ZynqTensor());
   }
@@ -97,8 +95,6 @@ REGISTER_LITE_KERNEL(transpose2,
                {LiteType::GetTensorTy(TARGET(kFPGA),
                                       PRECISION(kFP16),
                                       DATALAYOUT(kNHWC))})
-    .BindOutput("Out",
-                {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("XShape",
-                {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("XShape", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();

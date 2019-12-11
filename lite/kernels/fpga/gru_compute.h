@@ -25,8 +25,8 @@ namespace lite {
 namespace kernels {
 namespace fpga {
 
-class GRUCompute 
-	: public KernelLite<TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)> {
+class GRUCompute
+    : public KernelLite<TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)> {
  public:
   using param_t = operators::GRUParam;
 
@@ -37,6 +37,7 @@ class GRUCompute
   void Run() override;
 
   virtual ~GRUCompute() = default;
+
  private:
   zynqmp::Tensor pre_output_;
   zynqmp::Tensor pre_bias_;
@@ -47,7 +48,7 @@ class GRUCompute
   zynqmp::FullyConnectedPE reset_out_pe_;
   // zynqmp::Tensor input_;
 
-  zynqmp::GRUPE pe_; 
+  zynqmp::GRUPE pe_;
 };
 
 }  // namespace fpga

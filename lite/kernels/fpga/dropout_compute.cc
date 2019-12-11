@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <string>
 #include "lite/kernels/fpga/dropout_compute.h"
+#include <string>
 
-#include "lite/backends/fpga/KD/float16.hpp"
 #include "lite/backends/fpga/KD/debugger.hpp"
+#include "lite/backends/fpga/KD/float16.hpp"
 
 namespace paddle {
 namespace lite {

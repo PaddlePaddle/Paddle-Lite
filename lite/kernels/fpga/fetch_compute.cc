@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 #include "lite/kernels/fpga/fetch_compute.h"
+#include "lite/backends/fpga/KD/debugger.hpp"
 #include "lite/core/op_registry.h"
 #include "lite/core/type_system.h"
-#include "lite/backends/fpga/KD/debugger.hpp"
 
 namespace paddle {
 namespace lite {
@@ -45,7 +45,7 @@ void FetchCompute::PrepareForRun() {
 void FetchCompute::Run() {
   pe_.dispatch();
   auto& param = this->Param<param_t>();
-  
+
 #ifdef FPGA_PRINT_TENSOR
   zynqmp::OutputParam& fetch_param = pe_.param();
   Debugger::get_instance().registerOutput("fetch", fetch_param.output);

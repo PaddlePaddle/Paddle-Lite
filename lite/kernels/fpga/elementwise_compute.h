@@ -58,6 +58,7 @@ class ElementwiseMulCompute
   void Run() override;
 
   virtual ~ElementwiseMulCompute() = default;
+
  private:
   zynqmp::ScalePE pe_;
 };

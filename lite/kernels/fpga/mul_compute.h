@@ -25,8 +25,8 @@ namespace lite {
 namespace kernels {
 namespace fpga {
 
-class MulCompute 
-	: public KernelLite<TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)> {
+class MulCompute
+    : public KernelLite<TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)> {
  public:
   using param_t = operators::MulParam;
 

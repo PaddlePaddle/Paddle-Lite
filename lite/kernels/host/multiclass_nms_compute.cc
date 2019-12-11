@@ -392,9 +392,13 @@ REGISTER_LITE_KERNEL(multiclass_nms,
                      kNCHW,
                      paddle::lite::kernels::host::MulticlassNmsCompute,
                      def)
-    .BindInput("BBoxes", {LiteType::GetTensorTy(
-                   TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny))})
-    .BindInput("Scores", {LiteType::GetTensorTy(
-                   TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny))})
+    .BindInput("BBoxes",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kAny),
+                                      DATALAYOUT(kAny))})
+    .BindInput("Scores",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kAny),
+                                      DATALAYOUT(kAny))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
     .Finalize();

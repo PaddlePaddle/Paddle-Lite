@@ -40,13 +40,13 @@ class FullyConnectedPE : public PE {
     num_ = param_.input->shape().num();
 
     // if (num_ == 1) {
-      
+
     // } else {
     //   tempOut_.mutableData<void>(FP16, param_.out->shape());
     //   convParam_.output = &tempOut_;
     // }
     convParam_.output = param_.output;
-    
+
     convParam_.groups = 1;
     convParam_.strides = {1, 1};
     convParam_.paddings = {0, 0};
@@ -93,9 +93,7 @@ class FullyConnectedPE : public PE {
     convPE_.apply();
   }
 
-  bool dispatch() { 
-    return convPE_.dispatch();
-  }
+  bool dispatch() { return convPE_.dispatch(); }
 
   FullyConnectedParam& param() { return param_; }
 
