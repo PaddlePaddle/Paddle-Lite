@@ -120,8 +120,8 @@ TEST(conv2d_1x1, compute) {
   const bool relu_flag = true;
   const int batch_size = 8;
   const int oc = 64;
-  const int ih = 112;
-  const int iw = 112;
+  const int ih = 28;
+  const int iw = 28;
   const int ic = 63;
 
   const int oh = ih;
