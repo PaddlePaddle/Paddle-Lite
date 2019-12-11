@@ -47,6 +47,13 @@ void sgemm_prepack_c4_small(int M,
                             bool has_bias,
                             bool has_relu,
                             ARMContext* ctx);
+void sgemm_prepack_c4_small(int M,
+                            int N,
+                            int K,
+                            const float* A_packed,
+                            const float* B,
+                            float* C,
+                            ARMContext* ctx);
 }  // namespace math
 }  // namespace arm
 }  // namespace lite
