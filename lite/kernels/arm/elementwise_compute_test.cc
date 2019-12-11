@@ -329,13 +329,13 @@ TEST(elementwise_mul_arm, retrive_op) {
 }
 
 TEST(elementwise_mul_arm, init) {
-  ElementwiseMulCompute elementwise_mul;
+  ElementwiseMulCompute<float> elementwise_mul;
   ASSERT_EQ(elementwise_mul.precision(), PRECISION(kFloat));
   ASSERT_EQ(elementwise_mul.target(), TARGET(kARM));
 }
 
 TEST(elementwise_mul, compute) {
-  ElementwiseMulCompute elementwise_mul;
+  ElementwiseMulCompute<float> elementwise_mul;
   operators::ElementwiseParam param;
   lite::Tensor x, y, output, output_ref;
 
