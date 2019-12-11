@@ -20,6 +20,11 @@
 #include "lite/core/device_info.h"
 #include "lite/core/version.h"
 
+#ifdef PADDLE_WITH_MKLML
+#include <omp.h>
+#include "lite/backends/x86/mklml.h"
+#endif
+
 namespace paddle {
 namespace lite {
 
@@ -33,6 +38,13 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
 
   mode_ = config.power_mode();
   threads_ = config.threads();
+
+#ifdef PADDLE_WITH_MKLML
+  int num_threads = config.cpu_math_library_num_threads();
+  int real_num_threads = num_threads > 1 ? num_threads : 1;
+  paddle::lite::x86::MKL_Set_Num_Threads(real_num_threads);
+  omp_set_num_threads(real_num_threads);
+#endif
 }
 
 std::unique_ptr<lite_api::Tensor> CxxPaddleApiImpl::GetInput(int i) {
