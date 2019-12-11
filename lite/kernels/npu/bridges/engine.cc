@@ -81,10 +81,10 @@ int Engine::LaunchOriginProgram() {
 }
 
 int Engine::Build() {
-  // Need build original program before to attach all of the ops of the block
-  // desc
-  /* build_target_program_status_ = */ BuildOriginProgram();
-  // Run InferShape() of all of ops, and convert Paddle ops to NPU/XPU graph
+  // In order to attach all of the ops of the block desc, we need to build the
+  // original program firstly.
+  BuildOriginProgram();
+  // Run InferShape() of all of ops, and convert Paddle ops to NPU/XPU IR graph
   build_device_program_status_ = BuildDeviceProgram();
   return build_device_program_status_;
 }

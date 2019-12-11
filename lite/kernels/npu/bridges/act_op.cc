@@ -71,8 +71,6 @@ REGISTER_SUBGRAPH_BRIDGE(NPU,
                          relu_clipped,
                          paddle::lite::subgraph::npu::ActConverter);
 REGISTER_SUBGRAPH_BRIDGE(NPU, relu6, paddle::lite::subgraph::npu::ActConverter);
-// REGISTER_SUBGRAPH_BRIDGE(NPU, elu,
-// paddle::lite::subgraph::npu::ActConverter);
 REGISTER_SUBGRAPH_BRIDGE(NPU,
                          leaky_relu,
                          paddle::lite::subgraph::npu::ActConverter);

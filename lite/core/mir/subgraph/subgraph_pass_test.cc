@@ -147,7 +147,6 @@ TEST(Subgraph, generate_model_and_check_precision) {
   std::vector<std::vector<int64_t>> input_tensor_shape =
       ShapeParsing(FLAGS_input_tensor_shape);
   std::vector<lite_api::Place> valid_places({
-      lite_api::Place{TARGET(kHost), PRECISION(kFloat)},
 #ifdef LITE_WITH_ARM
       lite_api::Place{TARGET(kARM), PRECISION(kFloat)},
 #endif

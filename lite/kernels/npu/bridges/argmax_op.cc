@@ -39,10 +39,6 @@ int ArgmaxConverter(void* ctx, OpLite* op) {
 
   auto x2 = graph->AddNode(out_var_name + "/axis", axis);
   argmax_node->set_input_x2(*x2);
-
-  // argmax_node->set_attr_axis(axis);
-  // argmax only support output_type==int32
-  // argmax_node->set_attr_output_type(3);
   return SUCCESS;
 }
 

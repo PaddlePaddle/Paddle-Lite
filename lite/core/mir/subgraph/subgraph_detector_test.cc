@@ -44,20 +44,20 @@ std::vector<std::string> AddFCDesc(
 
   auto* wgt = block_desc->AddVar<cpp::VarDesc>();
   wgt->SetName(prefix + "_W");
-  auto* wtensor = scope->Var(prefix + "_W")->GetMutable<lite::Tensor>();
+  auto* wtensor = scope->Var(prefix + "_W")->GetMutable<Tensor>();
   wtensor->Resize(wshape);
   wtensor->mutable_data<float>();
 
   auto* bias = block_desc->AddVar<cpp::VarDesc>();
   bias->SetName(prefix + "_Bias");
-  auto* btensor = scope->Var(prefix + "_Bias")->GetMutable<lite::Tensor>();
+  auto* btensor = scope->Var(prefix + "_Bias")->GetMutable<Tensor>();
   btensor->Resize({wshape[1]});
   btensor->mutable_data<float>();
 
   auto* out = block_desc->AddVar<cpp::VarDesc>();
   out->SetName(prefix + "_Out");
   std::vector<std::string> out_var_names{prefix + "_Out"};
-  scope->Var(prefix + "_Out")->GetMutable<lite::Tensor>();
+  scope->Var(prefix + "_Out")->GetMutable<Tensor>();
 
   op_desc->SetType("fc");
   op_desc->SetInput("Input", input_var_names);
@@ -83,7 +83,7 @@ std::vector<std::string> AddElementwiseAddDesc(
   out->SetName(prefix + "_Out");
   std::vector<std::string> out_var_names{prefix + "_Out"};
 
-  scope->Var(prefix + "_Out")->GetMutable<lite::Tensor>();
+  scope->Var(prefix + "_Out")->GetMutable<Tensor>();
 
   op_desc->SetType("elementwise_add");
   op_desc->SetInput("X", input_X_names);
@@ -107,7 +107,7 @@ std::vector<std::string> AddFeedDesc(
   out->SetName(prefix + "_Out");
   std::vector<std::string> out_var_names{prefix + "_Out"};
 
-  scope->Var(prefix + "_Out")->GetMutable<lite::Tensor>();
+  scope->Var(prefix + "_Out")->GetMutable<Tensor>();
 
   op_desc->SetType("feed");
   op_desc->SetInput("X", input_X_names);
@@ -130,7 +130,7 @@ std::vector<std::string> AddFetchDesc(
   out->SetName(prefix + "_Out");
   std::vector<std::string> out_var_names{prefix + "_Out"};
 
-  scope->Var(prefix + "_Out")->GetMutable<lite::Tensor>();
+  scope->Var(prefix + "_Out")->GetMutable<Tensor>();
 
   op_desc->SetType("fetch");
   op_desc->SetInput("X", input_X_names);
@@ -151,11 +151,11 @@ TEST(Subgraph, detect_simple_model) {
   block_desc->ClearVars();
   auto* var_desc = block_desc->AddVar<cpp::VarDesc>();
   var_desc->SetName("feed_var");
-  auto* feed_var = scope->Var("feed_var")->GetMutable<lite::Tensor>();
+  auto* feed_var = scope->Var("feed_var")->GetMutable<Tensor>();
   feed_var->Resize({1, 4});
   auto fc1_out = AddFCDesc(block_desc, scope, {"feed_var"}, {4, 5});
   auto fc2_out = AddFCDesc(block_desc, scope, fc1_out, {5, 2});
-  lite::Program program(program_desc, scope, valid_places);
+  Program program(program_desc, scope, valid_places);
   auto graph = std::unique_ptr<mir::SSAGraph>(new mir::SSAGraph());
   graph->Build(program, valid_places);
   // Apply subgraph detector and check results
@@ -185,7 +185,6 @@ TEST(Subgraph, detect_custom_model) {
               !FLAGS_model_file.empty() && !FLAGS_params_file.empty(),
               false);
   std::vector<Place> valid_places({
-      Place{TARGET(kHost), PRECISION(kFloat)},
 #ifdef LITE_WITH_ARM
       Place{TARGET(kARM), PRECISION(kFloat)},
 #endif
@@ -199,7 +198,7 @@ TEST(Subgraph, detect_custom_model) {
       Place{TARGET(kXPU), PRECISION(kFloat)},
 #endif
   });
-  lite::Program program(program_desc, scope, valid_places);
+  Program program(program_desc, scope, valid_places);
   auto graph = std::unique_ptr<mir::SSAGraph>(new mir::SSAGraph());
   graph->Build(program, valid_places);
   // Apply subgraph detector and check results
