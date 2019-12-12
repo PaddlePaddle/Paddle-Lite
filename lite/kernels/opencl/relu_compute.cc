@@ -73,16 +73,20 @@ class ReluCompute
 
  private:
   std::string kernel_func_name_{"relu"};
-  std::string build_options_{"-DCL_DTYPE=float -DRELU"};
+  std::string build_options_{"-DCL_DTYPE_float -DRELU"};
   std::shared_ptr<cl::Event> event_{new cl::Event};
 };
 
-class ReluComputeFloatImage
-    : public KernelLite<TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNHWC)> {
+class ReluComputeFloatImageDefault
+    : public KernelLite<TARGET(kOpenCL),
+                        PRECISION(kFloat),
+                        DATALAYOUT(kImageDefault)> {
  public:
   using param_t = operators::ActivationParam;
 
-  std::string doc() const override { return "Relu using cl::Image2D(RGBA)"; }
+  std::string doc() const override {
+    return "Relu using cl::Image2D(ImageDefault/RGBA)";
+  }
 
   void PrepareForRun() override {
     auto& context = ctx_->As<OpenCLContext>();
@@ -157,18 +161,19 @@ class ReluComputeFloatImage
 //    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kOpenCL))})
 //    .Finalize();
 
-REGISTER_LITE_KERNEL(relu,
-                     kOpenCL,
-                     kFloat,
-                     kNHWC,
-                     paddle::lite::kernels::opencl::ReluComputeFloatImage,
-                     image2d)
+REGISTER_LITE_KERNEL(
+    relu,
+    kOpenCL,
+    kFloat,
+    kImageDefault,
+    paddle::lite::kernels::opencl::ReluComputeFloatImageDefault,
+    ImageDefault)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
                                       PRECISION(kFloat),
-                                      DATALAYOUT(kNHWC))})
+                                      DATALAYOUT(kImageDefault))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kOpenCL),
                                        PRECISION(kFloat),
-                                       DATALAYOUT(kNHWC))})
+                                       DATALAYOUT(kImageDefault))})
     .Finalize();

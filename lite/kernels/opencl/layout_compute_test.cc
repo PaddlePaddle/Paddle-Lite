@@ -43,8 +43,11 @@ TEST(layout, compute) {
           LOG(INFO) << "======== input shape[n,c,h,w]:" << n << " " << c << " "
                     << h << " " << w << " ========";
           // set layout kernels
-          auto buf_to_img_kernels = KernelRegistry::Global().Create(
-              "layout", TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kNHWC));
+          auto buf_to_img_kernels =
+              KernelRegistry::Global().Create("layout",
+                                              TARGET(kOpenCL),
+                                              PRECISION(kAny),
+                                              DATALAYOUT(kImageDefault));
           auto img_to_buf_kernels = KernelRegistry::Global().Create(
               "layout", TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kNCHW));
           ASSERT_FALSE(buf_to_img_kernels.empty());
@@ -148,7 +151,5 @@ TEST(layout, compute) {
 }  // namespace lite
 }  // namespace paddle
 
-USE_LITE_KERNEL(
-    layout, kOpenCL, kAny, kNHWC, buffer_chw_to_image2d_hwc_opencl_fp32);
-USE_LITE_KERNEL(
-    layout, kOpenCL, kAny, kNCHW, image2d_hwc_to_buffer_chw_opencl_fp32);
+USE_LITE_KERNEL(layout, kOpenCL, kAny, kImageDefault, NCHW_to_ImageDefault);
+USE_LITE_KERNEL(layout, kOpenCL, kAny, kNCHW, ImageDefault_to_NCHW);

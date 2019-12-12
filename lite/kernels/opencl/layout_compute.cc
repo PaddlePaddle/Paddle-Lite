@@ -28,8 +28,10 @@ namespace lite {
 namespace kernels {
 namespace opencl {
 
-class LayoutComputeBufferChwToImage2DHwc
-    : public KernelLite<TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kNHWC)> {
+class LayoutComputeBufferChwToImageDefault
+    : public KernelLite<TARGET(kOpenCL),
+                        PRECISION(kAny),
+                        DATALAYOUT(kImageDefault)> {
  public:
   using param_t = operators::LayoutParam;
 
@@ -117,7 +119,8 @@ class LayoutComputeBufferChwToImage2DHwc
   }
 
   std::string doc() const override {
-    return "Trans Layout from cl::Buffer(NCHW) to cl::Image2D(RGBA)";
+    return "Trans Layout from cl::Buffer(NCHW) to "
+           "cl::Image2D(ImageDefault/RGBA)";
   }
 
  private:
@@ -126,7 +129,7 @@ class LayoutComputeBufferChwToImage2DHwc
   std::shared_ptr<cl::Event> event_{new cl::Event};
 };
 
-class LayoutComputeImage2DHwcToBufferChw
+class LayoutComputeImageDefaultToBufferChw
     : public KernelLite<TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kNCHW)> {
  public:
   using param_t = operators::LayoutParam;
@@ -206,7 +209,8 @@ class LayoutComputeImage2DHwcToBufferChw
   }
 
   std::string doc() const override {
-    return "Trans Layout from cl::Image2D(RGBA) to cl::Buffer(NCHW)";
+    return "Trans Layout from cl::Image2D(ImageDefault/RGBA) to "
+           "cl::Buffer(NCHW)";
   }
 
  private:
@@ -226,9 +230,9 @@ REGISTER_LITE_KERNEL(
     layout,
     kOpenCL,
     kAny,
-    kNHWC,
-    paddle::lite::kernels::opencl::LayoutComputeBufferChwToImage2DHwc,
-    buffer_chw_to_image2d_hwc_opencl_fp32)
+    kImageDefault,
+    paddle::lite::kernels::opencl::LayoutComputeBufferChwToImageDefault,
+    NCHW_to_ImageDefault)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
                                       PRECISION(kAny),
@@ -236,7 +240,7 @@ REGISTER_LITE_KERNEL(
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kOpenCL),
                                        PRECISION(kAny),
-                                       DATALAYOUT(kNHWC))})
+                                       DATALAYOUT(kImageDefault))})
     .Finalize();
 
 // [chw] -> [hwc]
@@ -244,9 +248,9 @@ REGISTER_LITE_KERNEL(
     layout_once,
     kOpenCL,
     kAny,
-    kNHWC,
-    paddle::lite::kernels::opencl::LayoutComputeBufferChwToImage2DHwc,
-    buffer_chw_to_image2d_hwc_opencl_fp32)
+    kImageDefault,
+    paddle::lite::kernels::opencl::LayoutComputeBufferChwToImageDefault,
+    NCHW_to_ImageDefault)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
                                       PRECISION(kAny),
@@ -254,7 +258,7 @@ REGISTER_LITE_KERNEL(
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kOpenCL),
                                        PRECISION(kAny),
-                                       DATALAYOUT(kNHWC))})
+                                       DATALAYOUT(kImageDefault))})
     .Finalize();
 
 // Image2DHwcBufferChw
@@ -264,12 +268,12 @@ REGISTER_LITE_KERNEL(
     kOpenCL,
     kAny,
     kNCHW,
-    paddle::lite::kernels::opencl::LayoutComputeImage2DHwcToBufferChw,
-    image2d_hwc_to_buffer_chw_opencl_fp32)
+    paddle::lite::kernels::opencl::LayoutComputeImageDefaultToBufferChw,
+    ImageDefault_to_NCHW)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
                                       PRECISION(kAny),
-                                      DATALAYOUT(kNHWC))})
+                                      DATALAYOUT(kImageDefault))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kOpenCL),
                                        PRECISION(kAny),
@@ -282,12 +286,12 @@ REGISTER_LITE_KERNEL(
     kOpenCL,
     kAny,
     kNCHW,
-    paddle::lite::kernels::opencl::LayoutComputeImage2DHwcToBufferChw,
-    image2d_hwc_to_buffer_chw_opencl_fp32)
+    paddle::lite::kernels::opencl::LayoutComputeImageDefaultToBufferChw,
+    ImageDefault_to_NCHW)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
                                       PRECISION(kAny),
-                                      DATALAYOUT(kNHWC))})
+                                      DATALAYOUT(kImageDefault))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kOpenCL),
                                        PRECISION(kAny),

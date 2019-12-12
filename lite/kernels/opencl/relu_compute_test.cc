@@ -113,12 +113,18 @@ TEST(relu_image2d, compute) {
           LOG(INFO) << "======== input shape[n,c,h,w]:" << n << " " << c << " "
                     << h << " " << w << " ========";
           // set layout kernels
-          auto buf_to_img_kernels = KernelRegistry::Global().Create(
-              "layout", TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kNHWC));
+          auto buf_to_img_kernels =
+              KernelRegistry::Global().Create("layout",
+                                              TARGET(kOpenCL),
+                                              PRECISION(kAny),
+                                              DATALAYOUT(kImageDefault));
           auto img_to_buf_kernels = KernelRegistry::Global().Create(
               "layout", TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kNCHW));
-          auto relu_img_kernels = KernelRegistry::Global().Create(
-              "relu", TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNHWC));
+          auto relu_img_kernels =
+              KernelRegistry::Global().Create("relu",
+                                              TARGET(kOpenCL),
+                                              PRECISION(kFloat),
+                                              DATALAYOUT(kImageDefault));
           ASSERT_FALSE(buf_to_img_kernels.empty());
           ASSERT_FALSE(buf_to_img_kernels.empty());
           ASSERT_FALSE(relu_img_kernels.empty());
@@ -248,8 +254,6 @@ TEST(relu_image2d, compute) {
 // USE_LITE_KERNEL(relu, kOpenCL, kFloat, kNCHW, def);
 
 // relu image2d
-USE_LITE_KERNEL(
-    layout, kOpenCL, kAny, kNHWC, buffer_chw_to_image2d_hwc_opencl_fp32);
-USE_LITE_KERNEL(
-    layout, kOpenCL, kAny, kNCHW, image2d_hwc_to_buffer_chw_opencl_fp32);
-USE_LITE_KERNEL(relu, kOpenCL, kFloat, kNHWC, image2d);
+USE_LITE_KERNEL(layout, kOpenCL, kAny, kImageDefault, NCHW_to_ImageDefault);
+USE_LITE_KERNEL(layout, kOpenCL, kAny, kNCHW, ImageDefault_to_NCHW);
+USE_LITE_KERNEL(relu, kOpenCL, kFloat, kImageDefault, ImageDefault);
