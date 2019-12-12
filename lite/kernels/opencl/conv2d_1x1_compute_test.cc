@@ -128,8 +128,10 @@ TEST(conv2d_1x1, compute) {
   const int ow = iw;
 
   LOG(INFO) << "to get kernel ...";
-  auto kernels = KernelRegistry::Global().Create(
-      "conv2d_1x1", TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNHWC));
+  auto kernels = KernelRegistry::Global().Create("conv2d_1x1",
+                                                 TARGET(kOpenCL),
+                                                 PRECISION(kFloat),
+                                                 DATALAYOUT(kImageDefault));
   ASSERT_FALSE(kernels.empty());
 
   auto kernel = std::move(kernels.front());
@@ -373,4 +375,4 @@ TEST(conv2d_1x1, compute) {
 }  // namespace lite
 }  // namespace paddle
 
-USE_LITE_KERNEL(conv2d_1x1, kOpenCL, kFloat, kNHWC, image2d);
+USE_LITE_KERNEL(conv2d_1x1, kOpenCL, kFloat, kImageDefault, image2d);
