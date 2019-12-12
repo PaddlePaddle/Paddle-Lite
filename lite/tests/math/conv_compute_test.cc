@@ -60,8 +60,8 @@ typedef paddle::lite::DDim DDim;
 typedef paddle::lite::Tensor Tensor;
 typedef paddle::lite::operators::ConvParam ConvParam;
 typedef paddle::lite::operators::ActivationParam ActivationParam;
-using paddle::lite::profile::Timer;
 
+using paddle::lite::profile::Timer;
 
 DDim compute_out_dim(const DDim& dim_in,
                      const paddle::lite::operators::ConvParam& param) {
