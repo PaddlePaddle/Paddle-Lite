@@ -28,11 +28,17 @@ namespace kernels {
 namespace bm {
 namespace bridges {
 
+class graph_ctx_type{
+  public:
+    void* bm_compiler_handle{nullptr};      
+};
+
 // var_name, bm node point
 using node_map_type =
-    std::unordered_map<std::string, std::shared_ptr<void*>>;
+    std::unordered_map<std::string, std::string>;
 
 using func_type = std::function<node_map_type(const std::shared_ptr<OpLite>,
+                                              graph_ctx_type*,
                                               const node_map_type&)>;
 using cvt_map_type = std::unordered_map<std::string, func_type>;
 class Factory {

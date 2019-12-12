@@ -13,6 +13,8 @@
 // limitations under the License.
 
 #include "lite/kernels/bm/bridges/registry.h"
+#include "lite/backends/bm/builder.h"
+#include "bmcompiler_if.h"
 
 namespace paddle {
 namespace lite {
@@ -20,11 +22,98 @@ namespace kernels {
 namespace bm {
 namespace bridges {
 
-node_map_type BatchNormConverter(const std::shared_ptr<lite::OpLite> op,
+node_map_type BatchNormConverter(const std::shared_ptr<lite::OpLite> bn_op,
+                            graph_ctx_type* graph_ctx,
                             const node_map_type& input_nodes) {
-  // output converted nodes
-  node_map_type output_nodes;
-  return output_nodes;
+    // output converted nodes
+    node_map_type output_nodes;
+    
+    auto scope = bn_op->scope();
+    auto op_info = bn_op->op_info();
+    auto op_type = op_info->Type();
+    auto unique_op_name = lite::bm::UniqueName(op_type);
+    
+    // input
+    auto x_var_name = op_info->Input("X").front();
+    auto x = scope->FindVar(x_var_name)->GetMutable<lite::Tensor>();
+    auto x_dims = x->dims();
+    const long int* x_shape_data = const_cast<const long int*>(&x_dims.data()[0]);
+    int i_x_shape_data[x_dims.size()];
+    for (size_t i = 0; i < x_dims.size(); i++) {
+        i_x_shape_data[i] = static_cast<int>(x_shape_data[i]);
+    }
+    
+    auto scale_var_name = op_info->Input("Scale").front();
+    auto scale = scope->FindVar(scale_var_name)->GetMutable<lite::Tensor>();
+    
+    auto bias_var_name = op_info->Input("Bias").front();
+    auto bias = scope->FindVar(bias_var_name)->GetMutable<lite::Tensor>();
+    
+    auto mean_var_name = op_info->Input("Mean").front();
+    auto mean = scope->FindVar(mean_var_name)->GetMutable<lite::Tensor>();
+ 
+    auto variance_var_name = op_info->Input("Variance").front();
+    auto variance = scope->FindVar(variance_var_name)->GetMutable<lite::Tensor>();
+
+    // output
+    auto output_var_name = op_info->Output("Y").front();
+    auto output = scope->FindVar(output_var_name)->GetMutable<lite::Tensor>();
+    auto output_dims = output->dims();
+    const long int* output_shape_data = const_cast<const long int*>(&output_dims.data()[0]);
+    int i_output_shape_data[output_dims.size()];
+    for (size_t i = 0; i < output_dims.size(); i++) {
+        i_output_shape_data[i] = static_cast<int>(output_shape_data[i]);
+    }
+    
+    auto epsilon = op_info->GetAttr<float>("epsilon");
+    auto unique_bn_out_name = lite::bm::UniqueName("batch_norm_out");
+    
+    add_batchnorm_layer(graph_ctx->bm_compiler_handle,
+                    const_cast<const int*>(i_x_shape_data),
+                    x_dims.size(),
+                    static_cast<const char*>(x_var_name.c_str()),
+                    const_cast<const int*>(i_output_shape_data),
+                    output_dims.size(),
+                    static_cast<const char*>(unique_bn_out_name.c_str()),
+                    static_cast<const char*>(unique_op_name.c_str()),
+                    static_cast<const float*>(mean->mutable_data<float>()),
+                    static_cast<const float*>(variance->mutable_data<float>()),
+                    1.f,
+                    epsilon,
+                    0,
+                    1);
+    
+    const int input_num = 1;
+    int **shape = new int *[input_num];
+    int *dim = new int[input_num];
+    const char **name = new const char *[input_num];
+    
+    name[0] = static_cast<const char*>(unique_bn_out_name.c_str());
+    dim[0] = output_dims.size();
+    shape[0] = i_output_shape_data;
+                        
+    auto unique_scale_name = lite::bm::UniqueName("scale");
+    add_scale_layer(graph_ctx->bm_compiler_handle,
+        input_num,
+        shape,
+        dim,
+        name,
+        const_cast<const int*>(i_output_shape_data),
+        output_dims.size(),
+        static_cast<const char*>(output_var_name.c_str()),
+        static_cast<const char*>(unique_scale_name.c_str()),
+        static_cast<const float*>(scale->mutable_data<float>()),
+        static_cast<const float*>(bias->mutable_data<float>()),
+        1,
+        1,
+        0);
+   
+    delete [] shape;
+    delete [] name;
+    delete [] dim;
+
+    output_nodes[output_var_name] = output_var_name;
+    return output_nodes;
 }
 
 }  // namespace bridges

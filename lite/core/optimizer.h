@@ -33,6 +33,9 @@
 #ifdef LITE_WITH_XPU
 #include "lite/core/mir/subgraph/generate_xpu_program_pass.h"
 #endif
+#ifdef LITE_WITH_BM
+#include "lite/core/mir/subgraph/generate_bm_program_pass.h"
+#endif
 
 namespace paddle {
 namespace lite {
@@ -59,7 +62,8 @@ class Optimizer {
     SpecifyKernelPickTactic(kernel_pick_factor);
     InitTargetTypeTransformPass();
 
-    if (passes.empty()) {
+    //if (passes.empty()) {
+    if (0) {
       std::vector<std::string> passes_local{
           {"lite_quant_dequant_fuse_pass",     //
            "lite_conv_elementwise_fuse_pass",  // conv-elemwise-bn
@@ -125,7 +129,9 @@ class Optimizer {
     // of input tensors. so GenRuntimeProgram() must be called after the shapes
     // of input tensors are determined.
     std::vector<std::string> subgraph_passes{"generate_npu_program_pass",
-                                             "generate_xpu_program_pass"};
+                                             "generate_xpu_program_pass",
+                                              "generate_bm_program_pass"};
+
     RunPasses(subgraph_passes);
 
     auto pass = mir::PassManager::Global().LookUp<mir::GenerateProgramPass>(

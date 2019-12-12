@@ -86,9 +86,9 @@ if (NOT LITE_ON_TINY_PUBLISH)
                     ARM_DEPS ${arm_kernels}
                     NPU_DEPS ${npu_kernels} ${npu_bridges} npu_pass
                     XPU_DEPS ${xpu_kernels} ${xpu_bridges} xpu_pass
+                    BM_DEPS ${bm_kernels} ${bm_bridges} bm_pass
                     CL_DEPS ${opencl_kernels}
                     FPGA_DEPS ${fpga_kernels})
-                    BM_DEPS ${bm_kernels})
 endif()
 
 # for light api
@@ -107,7 +107,7 @@ lite_cc_library(light_api SRCS light_api.cc
         NPU_DEPS ${npu_kernels}
         XPU_DEPS ${xpu_kernels}
         CL_DEPS ${opencl_kernels}
-        FPGA_DEPS ${fpga_kernels})
+        FPGA_DEPS ${fpga_kernels}
         BM_DEPS ${bm_kernels})
 
 include(ExternalProject)
@@ -162,7 +162,7 @@ if(WITH_TESTING)
         add_dependencies(test_step_rnn_lite_x86 extern_lite_download_step_rnn_tar_gz)
         lite_cc_test(test_resnet50_lite_bm SRCS test_resnet50_lite_bm.cc
            DEPS mir_passes lite_api_test_helper paddle_api_full paddle_api_light gflags utils
-           ${ops} ${host_kernels} ${bm_kernels}
+           ${ops} ${host_kernels} ${bm_kernels} ${bm_bridges}
            ARGS --model_dir=${LITE_MODEL_DIR}/resnet50)
     endif()
 endif()

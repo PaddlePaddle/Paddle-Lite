@@ -13,6 +13,8 @@
 // limitations under the License.
 
 #include "lite/kernels/bm/bridges/registry.h"
+#include "lite/backends/bm/builder.h"
+#include "bmcompiler_if.h"
 
 namespace paddle {
 namespace lite {
@@ -20,10 +22,84 @@ namespace kernels {
 namespace bm {
 namespace bridges {
 
-node_map_type ConvConverter(const std::shared_ptr<lite::OpLite> op,
+node_map_type ConvConverter(const std::shared_ptr<lite::OpLite> conv_op,
+                            graph_ctx_type* graph_ctx,
                             const node_map_type& input_nodes) {
   // output converted nodes
   node_map_type output_nodes;
+  
+  auto scope = conv_op->scope();
+  auto op_info = conv_op->op_info();
+  auto op_type = op_info->Type();
+  auto unique_op_name = lite::bm::UniqueName(op_type);
+
+  auto input_var_name = op_info->Input("Input").front();
+  auto input = scope->FindVar(input_var_name)->GetMutable<lite::Tensor>();
+  auto input_dims = input->dims();
+  auto output_var_name = op_info->Output("Output").front();
+  auto output = scope->FindVar(output_var_name)->GetMutable<lite::Tensor>();
+  auto output_dims = output->dims();
+  auto filter_var_name = op_info->Input("Filter").front();
+  auto filter = scope->FindVar(filter_var_name)->GetMutable<lite::Tensor>();
+  auto filter_dims = filter->dims();
+    
+  CHECK(input_dims.size() == 4);
+  CHECK(output_dims.size() == 4);
+  CHECK(filter_dims.size() == 4);
+    
+  bool has_bias = lite::bm::HasInputArg(op_info, scope, "Bias");
+  float* bias_data = nullptr;
+  if (has_bias) {
+    auto bias_var_name = op_info->Input("Bias").front();
+    auto* bias = scope->FindVar(bias_var_name)->GetMutable<lite::Tensor>();
+    bias_data = static_cast<float*>(bias->mutable_data<float>());
+  }
+    
+  const long int* input_shape_data = const_cast<const long int*>(&input_dims.data()[0]);
+  const long int* output_shape_data = const_cast<const long int*>(&output_dims.data()[0]);
+
+  int i_input_shape_data[input_dims.size()];
+  int i_output_shape_data[output_dims.size()];
+
+  for (size_t i = 0; i < input_dims.size(); i++) {
+    i_input_shape_data[i] = static_cast<int>(input_shape_data[i]);
+  }
+
+  for (size_t i = 0; i < output_dims.size(); i++) {
+    i_output_shape_data[i] = static_cast<int>(output_shape_data[i]);
+  }
+    
+  const float* filter_data = const_cast<const float*>(filter->mutable_data<float>());
+
+  auto groups = op_info->GetAttr<int>("groups");
+  auto paddings = op_info->GetAttr<std::vector<int>>("paddings");
+  auto strides = op_info->GetAttr<std::vector<int>>("strides");
+  auto dilations = op_info->GetAttr<std::vector<int>>("dilations");
+
+  add_conv_layer(graph_ctx->bm_compiler_handle,
+                 const_cast<const int*>(i_input_shape_data),
+                 input_dims.size(),
+                 static_cast<const char*>(input_var_name.c_str()),
+                 const_cast<const int*>(i_output_shape_data),
+                 output_dims.size(),
+                 static_cast<const char*>(output_var_name.c_str()),
+                 static_cast<const char*>(unique_op_name.c_str()),
+                 filter_data,
+                 bias_data,
+                 filter_dims.data()[2],
+                 filter_dims.data()[3],
+                 groups,
+                 paddings[0],
+                 paddings[0],
+                 paddings[1],
+                 paddings[1],
+                 strides[0],
+                 strides[1],
+                 dilations[0],
+                 dilations[1],
+                 static_cast<int>(has_bias));
+    
+  output_nodes[output_var_name] = output_var_name;
   return output_nodes;
 }
 

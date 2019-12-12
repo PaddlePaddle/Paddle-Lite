@@ -141,7 +141,7 @@ std::vector<std::string> Predictor::GetOutputNames() { return output_names_; }
 void Predictor::PrepareFeedFetch() {
   std::vector<const cpp::OpDesc *> feeds;
   std::vector<const cpp::OpDesc *> fetchs;
-#if defined(LITE_WITH_NPU) || defined(LITE_WITH_XPU)
+#if defined(LITE_WITH_NPU) || defined(LITE_WITH_XPU) || defined(LITE_WITH_BM)
   // The shape of input tensors must be determined before generating NPU and XPU
   // program.
   auto current_block = program_desc_.GetBlock<cpp::BlockDesc>(0);

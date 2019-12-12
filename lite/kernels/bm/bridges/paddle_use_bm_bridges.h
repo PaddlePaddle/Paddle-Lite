@@ -12,26 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/mir/fusion/fc_fuse_pass.h"
-#include <memory>
-#include <vector>
-#include "lite/core/mir/fusion/fc_fuser.h"
-#include "lite/core/mir/pass_registry.h"
+#pragma once
 
-namespace paddle {
-namespace lite {
-namespace mir {
+#include "lite/kernels/bm/bridges/registry.h"
 
-void FcFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
-  fusion::FcFuser fuser;
-  fuser(graph.get());
-}
-
-}  // namespace mir
-}  // namespace lite
-}  // namespace paddle
-
-REGISTER_MIR_PASS(lite_fc_fuse_pass, paddle::lite::mir::FcFusePass)
-    .BindTargets({TARGET(kAny)})
-    .ExcludeTargets({TARGET(kXPU), TARGET(kBM)})
-    .BindKernel("fc");
+USE_BM_BRIDGE(relu);
+USE_BM_BRIDGE(conv2d);
+USE_BM_BRIDGE(elementwise_add);
+USE_BM_BRIDGE(pool2d);
+USE_BM_BRIDGE(softmax);
+USE_BM_BRIDGE(mul);
+USE_BM_BRIDGE(batch_norm);
+USE_BM_BRIDGE(scale);

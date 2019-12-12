@@ -26,6 +26,9 @@ USE_MIR_PASS(generate_npu_program_pass);
 #ifdef LITE_WITH_XPU
 USE_MIR_PASS(generate_xpu_program_pass);
 #endif
+#ifdef LITE_WITH_BM
+USE_MIR_PASS(generate_bm_program_pass);
+#endif
 
 USE_MIR_PASS(io_copy_kernel_pick_pass);
 USE_MIR_PASS(argument_type_display_pass);

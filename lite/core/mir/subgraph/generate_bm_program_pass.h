@@ -24,6 +24,8 @@
 #include "lite/core/mir/pass.h"
 #include "lite/core/mir/subgraph/subgraph_program_pass.h"
 
+#include "lite/kernels/bm/bridges/registry.h"
+
 namespace paddle {
 namespace lite {
 namespace mir {
@@ -40,9 +42,9 @@ class GenerateBMProgramPass : public SubgraphProgramPass {
   // nodes2cvt: op nodes to convert
   // return cvted_vars: converted var nodes
   void CvtAllOpNodes(const std::vector<Node*>& nodes2cvt,
-                     lite::kernels::npu::bridges::node_map_type* cvted_vars);
+                     lite::kernels::bm::bridges::node_map_type* cvted_vars);
 
-  std::shared_ptr<ge::Operator> CvtVarNode(lite::mir::Node* var_node,
+  std::shared_ptr<void*> CvtVarNode(lite::mir::Node* var_node,
                                            const Scope* scope);
 
   std::string BuildGraph(const std::unordered_set<Node*>& op_nodes,
@@ -50,6 +52,9 @@ class GenerateBMProgramPass : public SubgraphProgramPass {
                             const std::unordered_set<Node*>& out_data_vars,
                             int sub_id);
 
+  void GenSubgraph(const std::unique_ptr<SSAGraph>& graph,
+                      const std::unordered_set<Node*>& op_nodes,
+                      int sub_id);
  private:
   std::vector<Instruction> insts_;
 };

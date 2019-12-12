@@ -34,6 +34,7 @@ include_directories("${BM_SDK_ROOT}/include/bmruntime")
 include_directories("${BM_SDK_ROOT}/include/bmlib")
 include_directories("${BM_SDK_ROOT}/include/bmcompiler")
 include_directories("${BM_SDK_ROOT}/include/bmcpu")
+include_directories("${BM_SDK_ROOT}/include/bmlog")
 
 find_library(BM_SDK_RT_LIB NAMES bmrt
   PATHS ${BM_SDK_ROOT}/lib/bmnn/pcie)

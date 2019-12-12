@@ -12,26 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/mir/fusion/fc_fuse_pass.h"
+#pragma once
+
 #include <memory>
+#include <string>
+#include <unordered_map>
 #include <vector>
-#include "lite/core/mir/fusion/fc_fuser.h"
-#include "lite/core/mir/pass_registry.h"
+#include "lite/core/op_lite.h"
+#include "lite/core/target_wrapper.h"
+#include "lite/core/tensor.h"
 
 namespace paddle {
 namespace lite {
-namespace mir {
+namespace bm {
 
-void FcFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
-  fusion::FcFuser fuser;
-  fuser(graph.get());
-}
+std::string UniqueName(const std::string& prefix);
+bool HasInputArg(const OpInfo* op_info, const Scope* scope, const std::string& argname);
 
-}  // namespace mir
+}  // namespace bm
 }  // namespace lite
 }  // namespace paddle
-
-REGISTER_MIR_PASS(lite_fc_fuse_pass, paddle::lite::mir::FcFusePass)
-    .BindTargets({TARGET(kAny)})
-    .ExcludeTargets({TARGET(kXPU), TARGET(kBM)})
-    .BindKernel("fc");

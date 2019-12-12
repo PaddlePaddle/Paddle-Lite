@@ -46,5 +46,11 @@ if(LITE_WITH_XPU)
   endif()
 endif()
 
+if(LITE_WITH_BM)
+  lite_cc_library(bm_pass SRCS generate_bm_program_pass.cc
+      DEPS mir_pass types context ${mir_fusers} ${bm_bridges} ${bm_builder_libs} graph_op subgraph_pass)
+  list(APPEND subgraph_passes bm_pass)
+endif()
+
 set(subgraph_passes ${subgraph_passes} CACHE INTERNAL "subgraph_passes")
 message(STATUS "----> subgraph_passes: ${subgraph_passes}")
