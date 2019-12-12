@@ -37,6 +37,7 @@ void conv_3x3s1_depthwise_fp32(const float* i_data,
                                const float* weights,
                                const float* bias,
                                const operators::ConvParam& param,
+                               const operators::ActivationParam act_param,
                                ARMContext* ctx);
 
 void conv_3x3s2_depthwise_fp32(const float* i_data,

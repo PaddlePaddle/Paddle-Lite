@@ -619,6 +619,7 @@ void conv_depthwise_3x3_fp32(const void* din,
                                 reinterpret_cast<const float*>(weights),
                                 bias,
                                 param,
+                                act_param,
                                 ctx);
     }
 

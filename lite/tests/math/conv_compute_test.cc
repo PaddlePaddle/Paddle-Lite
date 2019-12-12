@@ -59,6 +59,7 @@ DEFINE_bool(flag_bias, true, "with bias");
 typedef paddle::lite::DDim DDim;
 typedef paddle::lite::Tensor Tensor;
 typedef paddle::lite::operators::ConvParam ConvParam;
+typedef paddle::lite::operators::ActivationParam ActivationParam;
 using paddle::lite::Timer;
 
 DDim compute_out_dim(const DDim& dim_in,
@@ -118,6 +119,13 @@ void test_conv_fp32(const std::vector<DDim>& input_dims,
   param.dilations = std::make_shared<std::vector<int>>(dilas);
   param.fuse_relu = flag_relu;
   param.groups = group;
+  if (flag_relu) {
+    ActivationParam act_param;
+    act_param.has_active = true;
+    act_param.active_type =
+        (paddle::lite_api::ActivationType)1;  // 2-relu6 4-leakyrelu
+    param.activation_param = act_param;
+  }
 
   param.output = new Tensor;
   param.output->set_precision(PRECISION(kFloat));
@@ -243,6 +251,7 @@ void test_conv_fp32(const std::vector<DDim>& input_dims,
                          << pads[2] << ", " << pads[3]
                          << ", stride: " << strides[0] << ", " << strides[1]
                          << ", dila_: " << dilas[0] << ", " << dilas[1]
+                         << ", group: " << group
                          << ", bias: " << (flag_bias ? "true" : "false")
                          << ", relu: " << (flag_relu ? "true" : "false")
                          << ", threads: " << th << ", power_mode: " << cls
@@ -255,6 +264,7 @@ void test_conv_fp32(const std::vector<DDim>& input_dims,
                   << ", pad: " << pads[0] << ", " << pads[1]
                   << ", stride: " << strides[0] << ", " << strides[1]
                   << ", dila_: " << dilas[0] << ", " << dilas[1]
+                  << ", group: " << group
                   << ", bias: " << (flag_bias ? "true" : "false")
                   << ", relu: " << (flag_relu ? "true" : "false")
                   << ", threads: " << th << ", power_mode: " << cls
