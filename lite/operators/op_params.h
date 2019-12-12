@@ -1116,6 +1116,12 @@ struct InstanceNormParam {
   lite::Tensor* saved_variance{};
   float epsilon;
 };
+/// --------------------- grid sampler operators --------------------
+struct GridSamplerParam {
+  lite::Tensor* x{};
+  lite::Tensor* out{};
+  lite::Tensor* grid{};
+};
 
 }  // namespace operators
 }  // namespace lite
