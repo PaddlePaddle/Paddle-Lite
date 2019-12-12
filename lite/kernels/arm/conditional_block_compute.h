@@ -26,6 +26,7 @@
 #endif  // LITE_WITH_PROFILE
 #ifdef LITE_WITH_PROFILE
 #include "lite/core/profile/precision_profiler.h"
+#include "lite/core/profile/profiler.h"
 #endif
 
 namespace paddle {
