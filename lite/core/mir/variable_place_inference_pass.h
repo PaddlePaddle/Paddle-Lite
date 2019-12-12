@@ -48,6 +48,10 @@ class VariablePlaceInferencePass : public DebugPass {
   void CheckAllArgumentTypeDetermined(SSAGraph* graph) {
     for (auto& node : graph->mutable_nodes()) {
       if (node.IsArg()) {
+        if (node.inlinks.size() == 0 && node.outlinks.size() == 0) {
+          // empty node
+          continue;
+        }
         CHECK(node.AsArg().type) << "node " << node.AsArg().name
                                  << " type not determined, " << &node;
       }
