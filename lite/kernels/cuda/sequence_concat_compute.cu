@@ -24,6 +24,24 @@ namespace cuda {
 
 const int CUDA_NUM_THREADS = 512;
 
+template <typename T>
+inline LoD ConcatLoD(const std::vector<lite::Tensor*>& xs) {
+  std::vector<size_t> result;
+  result.resize(xs[0]->lod()[0].size());
+
+  for (size_t i = 1; i < result.size(); ++i) {
+    size_t sum = 0;
+    for (size_t j = 0; j < xs.size(); ++j) {
+      auto& x_lod = xs[j]->lod()[0];
+      sum += x_lod[i];
+    }
+    result[i] = sum;
+  }
+  LoD lod;
+  lod.emplace_back(result);
+  return lod;
+}
+
 template <typename Dtype>
 __global__ void ker_sequence_concat(Dtype* out_data,
                                     const uint64_t* in_locate_data,
@@ -95,6 +113,8 @@ void SequenceConcatCompute::Run() {
                                  sizeof(uint64_t) * in_locate_vec.size(),
                                  IoDirection::HtoD,
                                  stream);
+
+  param.Out->set_lod(ConcatLoD<float>(param.X));
 
   int count = param.X[0]->numel();
   for (int i = 1; i < param.X.size(); ++i) {

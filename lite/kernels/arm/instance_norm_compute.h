@@ -14,40 +14,27 @@
 
 #pragma once
 #include "lite/core/kernel.h"
+#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace cuda {
+namespace arm {
 
-class ElementwiseAddCompute
-    : public KernelLite<TARGET(kCUDA), PRECISION(kFloat)> {
+class InstanceNormCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
  public:
-  using param_t = operators::ElementwiseParam;
+  using param_t = operators::InstanceNormParam;
+
+  void PrepareForRun() override;
 
   void Run() override;
-  virtual ~ElementwiseAddCompute() = default;
+
+  virtual ~InstanceNormCompute() = default;
+
+ private:
 };
 
-class ElementwiseAddComputeNHWC
-    : public KernelLite<TARGET(kCUDA), PRECISION(kFloat), DATALAYOUT(kNHWC)> {
- public:
-  using param_t = operators::ElementwiseParam;
-
-  void Run() override;
-  virtual ~ElementwiseAddComputeNHWC() = default;
-};
-
-class ElementwiseAddComputeInt8
-    : public KernelLite<TARGET(kCUDA), PRECISION(kFloat), DATALAYOUT(kNHWC)> {
- public:
-  using param_t = operators::ElementwiseParam;
-
-  void Run() override;
-  virtual ~ElementwiseAddComputeInt8() = default;
-};
-
-}  // namespace cuda
+}  // namespace arm
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

@@ -41,6 +41,22 @@ node_map_type ActConverter(const std::shared_ptr<lite::OpLite> act_op,
   // clipped_relu etc.
   act_node->set_attr_mode(lite::npu::CvtActMode(op_type));
 
+  if (op_type == "relu_clipped") {
+    auto Relu_clipped_coef = op_info->GetAttr<float>("Relu_clipped_coef");
+    act_node->set_attr_coef(Relu_clipped_coef);
+  } else if (op_type == "relu6") {
+    float Relu_clipped_coef = 6.f;
+    act_node->set_attr_coef(Relu_clipped_coef);
+  } else if (op_type == "leaky_relu") {
+    auto alpha = op_info->GetAttr<float>("alpha");
+    act_node->set_attr_negative_slope(alpha);
+  } else if (op_type == "hard_sigmoid") {
+    auto slope = op_info->GetAttr<float>("slope");
+    auto offset = op_info->GetAttr<float>("offset");
+    act_node->set_attr_negative_slope(slope);
+    act_node->set_attr_coef(offset);
+  }
+
   node_map_type outputs_map;
   outputs_map[op_info->Output("Out").front()] = act_node;
   return outputs_map;
@@ -52,14 +68,19 @@ node_map_type ActConverter(const std::shared_ptr<lite::OpLite> act_op,
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_NPU_BRIDGE(sigmod, paddle::lite::kernels::npu::bridges::ActConverter);
+REGISTER_NPU_BRIDGE(sigmoid, paddle::lite::kernels::npu::bridges::ActConverter);
 REGISTER_NPU_BRIDGE(relu, paddle::lite::kernels::npu::bridges::ActConverter);
 REGISTER_NPU_BRIDGE(tanh, paddle::lite::kernels::npu::bridges::ActConverter);
-REGISTER_NPU_BRIDGE(elu, paddle::lite::kernels::npu::bridges::ActConverter);
+REGISTER_NPU_BRIDGE(relu_clipped,
+                    paddle::lite::kernels::npu::bridges::ActConverter);
+REGISTER_NPU_BRIDGE(relu6, paddle::lite::kernels::npu::bridges::ActConverter);
+// REGISTER_NPU_BRIDGE(elu, paddle::lite::kernels::npu::bridges::ActConverter);
+REGISTER_NPU_BRIDGE(leaky_relu,
+                    paddle::lite::kernels::npu::bridges::ActConverter);
 REGISTER_NPU_BRIDGE(abs, paddle::lite::kernels::npu::bridges::ActConverter);
 REGISTER_NPU_BRIDGE(softsign,
                     paddle::lite::kernels::npu::bridges::ActConverter);
 REGISTER_NPU_BRIDGE(softplus,
                     paddle::lite::kernels::npu::bridges::ActConverter);
-REGISTER_NPU_BRIDGE(hardsigmoid,
+REGISTER_NPU_BRIDGE(hard_sigmoid,
                     paddle::lite::kernels::npu::bridges::ActConverter);

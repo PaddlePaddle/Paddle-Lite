@@ -120,6 +120,22 @@ JNIEXPORT jboolean JNICALL Java_com_baidu_paddle_lite_Tensor_nativeSetData___3B(
   return JNI_TRUE;
 }
 
+JNIEXPORT jboolean JNICALL Java_com_baidu_paddle_lite_Tensor_nativeSetData___3I(
+    JNIEnv *env, jobject jtensor, jintArray buf) {
+  std::unique_ptr<Tensor> *tensor = get_writable_tensor_pointer(env, jtensor);
+  if (tensor == nullptr || (*tensor == nullptr)) {
+    return JNI_FALSE;
+  }
+  int64_t buf_size = (int64_t)env->GetArrayLength(buf);
+  if (buf_size != product((*tensor)->shape())) {
+    return JNI_FALSE;
+  }
+
+  int32_t *input = (*tensor)->mutable_data<int32_t>();
+  env->GetIntArrayRegion(buf, 0, buf_size, input);
+  return JNI_TRUE;
+}
+
 JNIEXPORT jfloatArray JNICALL
 Java_com_baidu_paddle_lite_Tensor_getFloatData(JNIEnv *env, jobject jtensor) {
   if (is_const_tensor(env, jtensor)) {
@@ -145,6 +161,20 @@ Java_com_baidu_paddle_lite_Tensor_getByteData(JNIEnv *env, jobject jtensor) {
     std::unique_ptr<Tensor> *tensor = get_writable_tensor_pointer(env, jtensor);
     return cpp_array_to_jbytearray(
         env, (*tensor)->data<int8_t>(), product((*tensor)->shape()));
+  }
+}
+
+JNIEXPORT jintArray JNICALL
+Java_com_baidu_paddle_lite_Tensor_getIntData(JNIEnv *env, jobject jtensor) {
+  if (is_const_tensor(env, jtensor)) {
+    std::unique_ptr<const Tensor> *tensor =
+        get_read_only_tensor_pointer(env, jtensor);
+    return cpp_array_to_jintarray(
+        env, (*tensor)->data<int32_t>(), product((*tensor)->shape()));
+  } else {
+    std::unique_ptr<Tensor> *tensor = get_writable_tensor_pointer(env, jtensor);
+    return cpp_array_to_jintarray(
+        env, (*tensor)->data<int32_t>(), product((*tensor)->shape()));
   }
 }
 

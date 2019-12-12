@@ -1178,7 +1178,7 @@ __kernel void conv_1x1_wrapped(
     __private const int output_height,
     __private const int old_w
     ) {
-  half zero = 0.0f;
+
   const int out_c = get_global_id(0);
   const int out_w = get_global_id(1);
   const int out_nh = get_global_id(2);
@@ -1217,14 +1217,14 @@ __kernel void conv_1x1_wrapped(
 
 #ifdef BIASE_CH
     half4 output0 = read_imageh(bias, sampler, (int2)(out_c, 0));
-    half4 output1 = output0;
-    half4 output2 = output0;
-    half4 output3 = output0;
+    half4 output1 = read_imageh(bias, sampler, (int2)(out_c, 0));
+    half4 output2 = read_imageh(bias, sampler, (int2)(out_c, 0));
+    half4 output3 = read_imageh(bias, sampler, (int2)(out_c, 0));
 #elif defined(BIASE_ELE)
     half4 output0 = read_imageh(bias, sampler, output_pos0);
-    half4 output1 = output0;
-    half4 output2 = output0;
-    half4 output3 = output0;
+    half4 output1 = read_imageh(bias, sampler, output_pos1);
+    half4 output2 = read_imageh(bias, sampler, output_pos2);
+    half4 output3 = read_imageh(bias, sampler, output_pos3);
 
 #else
   half4 output0 = 0.0f;
@@ -1235,10 +1235,6 @@ __kernel void conv_1x1_wrapped(
 
   int max_w_bound = input_c * input_width;
   int burndary_index = input_c * 4 - input_c_origin;
-  bool burndary_index_w = burndary_index==1||burndary_index==2||burndary_index==3;
-  bool burndary_index_z = burndary_index==2||burndary_index==3;
-  bool burndary_index_y = burndary_index==3;
-
   for (int i = 0; i < input_c; ++i) {
     // ------------0---------------
     int2 pos_in = (int2)(i * input_width + in_pos_in_one_block0.x, in_pos_in_one_block0.y);
@@ -1248,63 +1244,138 @@ __kernel void conv_1x1_wrapped(
     half4 weight1 = read_imageh(filter, sampler, (int2)(out_c, i * 4 + 1));
     half4 weight2 = read_imageh(filter, sampler, (int2)(out_c, i * 4 + 2));
     half4 weight3 = read_imageh(filter, sampler, (int2)(out_c, i * 4 + 3));
-    int bound_gap = max_w_bound - pos_in.x - 1;
 
-    bool outof_bound =  bound_gap < input_width && bound_gap >= 0;
-    input0.w = select(input0.w,zero,outof_bound && burndary_index_w);
-    input0.z = select(input0.z,zero,outof_bound && burndary_index_z);
-    input0.y = select(input0.y,zero,outof_bound && burndary_index_y);
+    if ((max_w_bound - pos_in.x-1) < input_width && (max_w_bound - pos_in.x-1)>=0 ){
+      if (burndary_index==0){
+        output0 = mad(input0.x, weight0, output0);
+        output0 = mad(input0.y, weight1, output0);
+        output0 = mad(input0.z, weight2, output0);
+        output0 = mad(input0.w, weight3, output0);
+      } else if (burndary_index==1){
+        output0 = mad(input0.x, weight0, output0);
+        output0 = mad(input0.y, weight1, output0);
+        output0 = mad(input0.z, weight2, output0);
+        output0 = mad(0.0f, weight3, output0);
 
-    output0 = mad(input0.x, weight0, output0);
-    output0 = mad(input0.y, weight1, output0);
-    output0 = mad(input0.z, weight2, output0);
-    output0 = mad(input0.w, weight3, output0);
+      } else if (burndary_index==2){
+        output0 = mad(input0.x, weight0, output0);
+        output0 = mad(input0.y, weight1, output0);
+        output0 = mad(0.0f, weight2, output0);
+        output0 = mad(0.0f, weight3, output0);
+      } else if (burndary_index==3){
+        output0 = mad(input0.x, weight0, output0);
+        output0 = mad(0.0f, weight1, output0);
+        output0 = mad(0.0f, weight2, output0);
+        output0 = mad(0.0f, weight3, output0);
+      }
+    }else {
+      output0 = mad(input0.x, weight0, output0);
+      output0 = mad(input0.y, weight1, output0);
+      output0 = mad(input0.z, weight2, output0);
+      output0 = mad(input0.w, weight3, output0);
+    }
+
     // -------------1--------------
     pos_in = (int2)(i * input_width + in_pos_in_one_block1.x, in_pos_in_one_block1.y);
     half4 input1 = read_imageh(input_image, sampler, pos_in);
 
-    bound_gap = max_w_bound - pos_in.x - 1;
+    if (abs(max_w_bound - pos_in.x) < input_width){
+      if (burndary_index==0){
+        output1 = mad(input1.x, weight0, output1);
+        output1 = mad(input1.y, weight1, output1);
+        output1 = mad(input1.z, weight2, output1);
+        output1 = mad(input1.w, weight3, output1);
+      } else if (burndary_index==1){
+        output1 = mad(input1.x, weight0, output1);
+        output1 = mad(input1.y, weight1, output1);
+        output1 = mad(input1.z, weight2, output1);
+        output1 = mad(0.0f, weight3, output1);
 
-    outof_bound =  bound_gap < input_width && bound_gap >= 0;
-    input1.w = select(input1.w,zero,outof_bound && burndary_index_w);
-    input1.z = select(input1.z,zero,outof_bound && burndary_index_z);
-    input1.y = select(input1.y,zero,outof_bound && burndary_index_y);
-
-    output1 = mad(input1.x, weight0, output1);
-    output1 = mad(input1.y, weight1, output1);
-    output1 = mad(input1.z, weight2, output1);
-    output1 = mad(input1.w, weight3, output1);
+      } else if (burndary_index==2){
+        output1 = mad(input1.x, weight0, output1);
+        output1 = mad(input1.y, weight1, output1);
+        output1 = mad(0.0f, weight2, output1);
+        output1 = mad(0.0f, weight3, output1);
+      } else if (burndary_index==3){
+        output1 = mad(input1.x, weight0, output1);
+        output1 = mad(0.0f, weight1, output1);
+        output1 = mad(0.0f, weight2, output1);
+        output1 = mad(0.0f, weight3, output1);
+      }
+    }else {
+      output1 = mad(input1.x, weight0, output1);
+      output1 = mad(input1.y, weight1, output1);
+      output1 = mad(input1.z, weight2, output1);
+      output1 = mad(input1.w, weight3, output1);
+    }
 
     // -------------2--------------
     pos_in = (int2)(i * input_width + in_pos_in_one_block2.x, in_pos_in_one_block2.y);
     half4 input2 = read_imageh(input_image, sampler, pos_in);
 
-    bound_gap = max_w_bound - pos_in.x - 1;
+    if (abs(max_w_bound - pos_in.x) < input_width){
+      if (burndary_index==0){
+        output2 = mad(input2.x, weight0, output2);
+        output2 = mad(input2.y, weight1, output2);
+        output2 = mad(input2.z, weight2, output2);
+        output2 = mad(input2.w, weight3, output2);
+      } else if (burndary_index==1){
+        output2 = mad(input2.x, weight0, output2);
+        output2 = mad(input2.y, weight1, output2);
+        output2 = mad(input2.z, weight2, output2);
+        output2 = mad(0.0f, weight3, output2);
 
-    outof_bound =  bound_gap < input_width && bound_gap >= 0;
-    input2.w = select(input2.w,zero,outof_bound && burndary_index_w);
-    input2.z = select(input2.z,zero,outof_bound && burndary_index_z);
-    input2.y = select(input2.y,zero,outof_bound && burndary_index_y);
-
-    output2 = mad(input2.x, weight0, output2);
-    output2 = mad(input2.y, weight1, output2);
-    output2 = mad(input2.z, weight2, output2);
-    output2 = mad(input2.w, weight3, output2);
+      } else if (burndary_index==2){
+        output2 = mad(input2.x, weight0, output2);
+        output2 = mad(input2.y, weight1, output2);
+        output2 = mad(0.0f, weight2, output2);
+        output2 = mad(0.0f, weight3, output2);
+      } else if (burndary_index==3){
+        output2 = mad(input2.x, weight0, output2);
+        output2 = mad(0.0f, weight1, output2);
+        output2 = mad(0.0f, weight2, output2);
+        output2 = mad(0.0f, weight3, output2);
+      }
+    }else {
+      output2 = mad(input2.x, weight0, output2);
+      output2 = mad(input2.y, weight1, output2);
+      output2 = mad(input2.z, weight2, output2);
+      output2 = mad(input2.w, weight3, output2);
+    }
 
     // -------------3--------------
     pos_in = (int2)(i * input_width + in_pos_in_one_block3.x, in_pos_in_one_block3.y);
     half4 input3 = read_imageh(input_image, sampler, pos_in);
-    bound_gap = max_w_bound - pos_in.x - 1;
 
-    outof_bound =  bound_gap < input_width && bound_gap >= 0;
-    input3.w = select(input3.w,zero,outof_bound && (burndary_index==1||burndary_index==2||burndary_index==3));
-    input3.z = select(input3.z,zero,outof_bound && (burndary_index==2||burndary_index==3));
-    input3.y = select(input3.y,zero,outof_bound && burndary_index==3);
+    if (abs(max_w_bound - pos_in.x) < input_width){
+      if (burndary_index==0){
+        output3 = mad(input3.x, weight0, output3);
+        output3 = mad(input3.y, weight1, output3);
+        output3 = mad(input3.z, weight2, output3);
+        output3 = mad(input3.w, weight3, output3);
+      } else if (burndary_index==1){
+        output3 = mad(input3.x, weight0, output3);
+        output3 = mad(input3.y, weight1, output3);
+        output3 = mad(input3.z, weight2, output3);
+        output3 = mad(0.0f, weight3, output3);
 
-    output3 = mad(input3.x, weight0, output3);
-    output3 = mad(input3.y, weight1, output3);
-    output3 = mad(input3.z, weight2, output3);
-    output3 = mad(input3.w, weight3, output3);
+      } else if (burndary_index==2){
+        output3 = mad(input3.x, weight0, output3);
+        output3 = mad(input3.y, weight1, output3);
+        output3 = mad(0.0f, weight2, output3);
+        output3 = mad(0.0f, weight3, output3);
+      } else if (burndary_index==3){
+        output3 = mad(input3.x, weight0, output3);
+        output3 = mad(0.0f, weight1, output3);
+        output3 = mad(0.0f, weight2, output3);
+        output3 = mad(0.0f, weight3, output3);
+      }
+    }else {
+      output3 = mad(input3.x, weight0, output3);
+      output3 = mad(input3.y, weight1, output3);
+      output3 = mad(input3.z, weight2, output3);
+      output3 = mad(input3.w, weight3, output3);
+    }
   }
 
 #ifdef BATCH_NORM

@@ -68,19 +68,9 @@ void ConvCompute<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
     VLOG(3) << "invoking dw conv";
   } else if (param.groups == 1 && kw == 3 && stride == 1 && kps_equal &&
              no_dilation) {
-    bool use_winograd =
-        (threads == 1 && oc >= 4 && ic >= 4 && hout >= 6 && wout >= 6 &&
-         pads_equal) ||
-        (oc >= 32 && ic >= 32 && hout >= 16 && wout >= 16 && pads_equal);
-    if (use_winograd) {
-      /// winograd conv impl
-      impl_ = new WinogradConv<PRECISION(kFloat), PRECISION(kFloat)>;
-      VLOG(3) << "invoking winograd conv";
-    } else {
-      /// direct conv impl
-      impl_ = new DirectConv<PRECISION(kFloat), PRECISION(kFloat)>;
-      VLOG(3) << "invoking direct conv";
-    }
+    /// winograd conv impl
+    impl_ = new WinogradConv<PRECISION(kFloat), PRECISION(kFloat)>;
+    VLOG(3) << "invoking winograd conv";
   } else if (param.groups == 1 && kw == 3 && stride == 2 &&
              chin * chout < 4 * hin * win && kps_equal && no_dilation) {
     /// direct conv impl
@@ -219,7 +209,7 @@ REGISTER_LITE_KERNEL(depthwise_conv2d, kARM, kFloat, kNCHW, ConvFp32, def)
 
 REGISTER_LITE_KERNEL(conv2d, kARM, kInt8, kNCHW, ConvInt8_Int8, int8_out)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt8))})
-    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
     .BindInput("Filter",
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt8))})
     .BindOutput("Output",
@@ -228,7 +218,7 @@ REGISTER_LITE_KERNEL(conv2d, kARM, kInt8, kNCHW, ConvInt8_Int8, int8_out)
 
 REGISTER_LITE_KERNEL(conv2d, kARM, kInt8, kNCHW, ConvInt8_Fp32, fp32_out)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt8))})
-    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
     .BindInput("Filter",
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt8))})
     .BindOutput("Output",
@@ -238,7 +228,7 @@ REGISTER_LITE_KERNEL(conv2d, kARM, kInt8, kNCHW, ConvInt8_Fp32, fp32_out)
 REGISTER_LITE_KERNEL(
     depthwise_conv2d, kARM, kInt8, kNCHW, ConvInt8_Int8, int8_out)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt8))})
-    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
     .BindInput("Filter",
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt8))})
     .BindOutput("Output",
@@ -248,7 +238,7 @@ REGISTER_LITE_KERNEL(
 REGISTER_LITE_KERNEL(
     depthwise_conv2d, kARM, kInt8, kNCHW, ConvInt8_Fp32, fp32_out)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt8))})
-    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
     .BindInput("Filter",
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt8))})
     .BindOutput("Output",

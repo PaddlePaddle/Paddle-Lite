@@ -12,14 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/x86/relu_compute.h"
+#pragma once
+#include <algorithm>
+#include "lite/core/kernel.h"
+#include "lite/operators/merge_lod_tensor_op.h"
 
-REGISTER_LITE_KERNEL(relu,
-                     kX86,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::x86::ReluCompute<float>,
-                     def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
-    .Finalize();
+namespace paddle {
+namespace lite {
+namespace kernels {
+namespace arm {
+
+class MergeLodTensorCompute
+    : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::MergeLodTensorParam;
+
+  void Run() override;
+
+  virtual ~MergeLodTensorCompute() = default;
+};
+
+}  // namespace arm
+}  // namespace kernels
+}  // namespace lite
+}  // namespace paddle
