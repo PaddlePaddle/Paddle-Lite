@@ -39,7 +39,7 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
   mode_ = config.power_mode();
   threads_ = config.threads();
 
-#ifdef PADDLE_WITH_MKLML
+#if (defined PADDLE_WITH_MKLML) && (defined LITE_WITH_X86)
   int num_threads = config.cpu_math_library_num_threads();
   int real_num_threads = num_threads > 1 ? num_threads : 1;
   paddle::lite::x86::MKL_Set_Num_Threads(real_num_threads);
