@@ -47,10 +47,11 @@ function prepare_adb_devices {
        device_armv8=emulator-$port_armv8
        device_armv7=emulator-$port_armv7
     else
-       adb_devices=($(adb devices |grep -v devices |grep device | awk -F " " '{print $1}'))
+       adb_devices_num=($(adb devices |grep -v devices |grep device | awk -F " " '{print $1}'))
        # adbindex is the env variable registered in ci agent to tell which mobile is to used as adb
-       if [ ${adbindex} > ${#adb_devices[@]}-1 ]; then
-           echo -e "Error: the adb devices on ci agent are not enough, at least ${adbindex} adb devices are needed."
+       adbindex_pos=`expr ${adbindex} + 1`
+       if [ ${adbindex_pos} -gt ${adb_devices_num} ]; then
+           echo -e "Error: the adb devices on ci agent are not enough, at least ${adbindex_pos} adb devices are needed."
            exit 1
        fi
        echo ${adb_devices[${adbindex}]}
