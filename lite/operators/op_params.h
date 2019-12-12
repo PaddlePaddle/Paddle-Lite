@@ -76,7 +76,7 @@ struct SubgraphParam {
   std::vector<std::string> input_data_names{};
   std::vector<std::string> output_data_names{};
   int sub_block_idx{-1};
-  cpp::BlockDesc sub_block_desc;
+  cpp::BlockDesc* sub_block_desc{nullptr};
   Scope* scope{nullptr};
 };
 

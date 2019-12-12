@@ -25,10 +25,10 @@ void TestCase::CreateInstruction() {
   if (place_.target == TARGET(kNPU) || place_.target == TARGET(kXPU)) {
     // Create a new block desc to wrap the original op desc
     int sub_block_idx = 0;
-    cpp::BlockDesc sub_block_desc;
-    sub_block_desc.ClearOps();
-    sub_block_desc.ClearVars();
-    auto sub_block_op_desc = sub_block_desc.AddOp<cpp::OpDesc>();
+    auto sub_block_desc = new cpp::BlockDesc();
+    sub_block_desc->ClearOps();
+    sub_block_desc->ClearVars();
+    auto sub_block_op_desc = sub_block_desc->AddOp<cpp::OpDesc>();
     *sub_block_op_desc = *op_desc_;
     // Add the block desc into the subgraph op which used to replace the
     // original op
@@ -89,6 +89,19 @@ void TestCase::PrepareInputsForInstruction() {
                    shared_tensor->raw_data(),
                    shared_tensor->memory_size());
       }
+    }
+  }
+}
+
+TestCase::~TestCase() {
+  if (op_desc_->Type() == "subgraph") {
+    // Release the subblock desc of Subgraph op
+    auto subgraph_op = const_cast<operators::SubgraphOp*>(
+        static_cast<const operators::SubgraphOp*>(instruction_->op()));
+    CHECK(subgraph_op);
+    auto sub_block_desc = subgraph_op->GetSubBlock();
+    if (sub_block_desc) {
+      delete sub_block_desc;
     }
   }
 }

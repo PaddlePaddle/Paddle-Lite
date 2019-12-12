@@ -335,11 +335,11 @@ void SubgraphFuser::InsertNewNode(SSAGraph *graph,
   // subgraph and sub_block_idx is set as a attribute of subgraph op,
   // sub_block_idx < 0 means it's a new subgraph op
   int sub_block_idx = -(subgraph_idx + 1);
-  cpp::BlockDesc sub_block_desc;
-  sub_block_desc.ClearOps();
-  sub_block_desc.ClearVars();
+  auto sub_block_desc = new cpp::BlockDesc();
+  sub_block_desc->ClearOps();
+  sub_block_desc->ClearVars();
   for (auto &op_node : subgraph_nodes) {
-    auto sub_block_op_desc = sub_block_desc.AddOp<cpp::OpDesc>();
+    auto sub_block_op_desc = sub_block_desc->AddOp<cpp::OpDesc>();
     *sub_block_op_desc = *op_node->AsStmt().op_info();
     sub_block_op_desc->SetAttr(
         kKernelTypeAttr,

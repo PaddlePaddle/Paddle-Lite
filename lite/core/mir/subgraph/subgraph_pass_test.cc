@@ -142,6 +142,12 @@ std::shared_ptr<lite_api::PaddlePredictor> TestModel(
 }
 
 TEST(Subgraph, generate_model_and_check_precision) {
+  if (FLAGS_model_dir.empty() && FLAGS_model_file.empty() &&
+      FLAGS_params_file.empty()) {
+    LOG(INFO) << "Using --model_dir, or --model_file and --params_file to set "
+                 "the path of model files.";
+    return;
+  }
   // Parsing the shapes of input tensors from strings, supported formats:
   // "1,3,224,224" and "1,3,224,224:1,80"
   std::vector<std::vector<int64_t>> input_tensor_shape =

@@ -125,7 +125,7 @@ int SubgraphEngine::LaunchDeviceProgram() {
 void SubgraphCompute::PrepareForRun() {
   auto& param = this->Param<param_t>();
   engine_.reset(new SubgraphEngine(param.sub_block_idx,
-                                   &param.sub_block_desc,
+                                   param.sub_block_desc,
                                    param.input_data_names,
                                    param.output_data_names,
                                    param.scope));

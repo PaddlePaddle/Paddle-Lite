@@ -42,7 +42,7 @@ class TestCase {
       : place_(place), scope_(new Scope), alias_(alias) {
     ctx_ = ContextScheduler::Global().NewContext(place_.target);
   }
-  virtual ~TestCase() {}
+  virtual ~TestCase();
 
   void Prepare() {
     PrepareScopes();

@@ -43,8 +43,8 @@ class SubgraphOp : public OpLite {
 
   std::string DebugString() const override { return "subgraph"; }
 
-  void SetSubBlock(const cpp::BlockDesc &desc) { param_.sub_block_desc = desc; }
-  cpp::BlockDesc &GetSubBlock() { return param_.sub_block_desc; }
+  void SetSubBlock(cpp::BlockDesc *desc) { param_.sub_block_desc = desc; }
+  cpp::BlockDesc *GetSubBlock() { return param_.sub_block_desc; }
 
  private:
   mutable SubgraphParam param_;

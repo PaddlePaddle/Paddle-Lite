@@ -175,6 +175,12 @@ TEST(Subgraph, detect_simple_model) {
 }
 
 TEST(Subgraph, detect_custom_model) {
+  if (FLAGS_model_dir.empty() && FLAGS_model_file.empty() &&
+      FLAGS_params_file.empty()) {
+    LOG(INFO) << "Using --model_dir, or --model_file and --params_file to set "
+                 "the path of model files.";
+    return;
+  }
   cpp::ProgramDesc program_desc;
   auto scope = std::make_shared<Scope>();
   LoadModelPb(FLAGS_model_dir,

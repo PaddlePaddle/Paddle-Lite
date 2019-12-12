@@ -45,12 +45,14 @@ void RuntimeProgram::SaveOpInfosToProgram(cpp::ProgramDesc* desc) {
         // subblock desc to the program desc, Then update its sub_block_idx to
         // the index of block desc of the program desc.
         sub_block_idx = desc->BlocksSize();
-        auto& sub_block_desc = subgraph_op->GetSubBlock();
-        CHECK_GT(sub_block_desc.OpsSize(), 0);
+        auto sub_block_desc = subgraph_op->GetSubBlock();
+        CHECK(sub_block_desc);
         auto new_block_desc = desc->AddBlock<cpp::BlockDesc>();
-        *new_block_desc = sub_block_desc;
+        *new_block_desc = *sub_block_desc;
+        delete sub_block_desc;
         subgraph_op->mutable_op_info()->SetAttr<int32_t>("sub_block",
                                                          sub_block_idx);
+        subgraph_op->SetSubBlock(new_block_desc);
         // Update main block desc after a new subblock desc is added
         main_block = desc->GetBlock<cpp::BlockDesc>(0);
       }
@@ -181,7 +183,7 @@ void Program::Build(const cpp::ProgramDesc& prog) {
             sub_block_desc);
       } else if (op_type == "subgraph") {
         static_cast<operators::SubgraphOp*>(op.get())->SetSubBlock(
-            *sub_block_desc);
+            sub_block_desc);
       }
     }
     ops_.emplace_back(std::move(op));
