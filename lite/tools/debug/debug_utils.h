@@ -27,7 +27,7 @@
 #include "lite/model_parser/pb/var_desc.h"
 #include "lite/utils/all.h"
 
-DEFINE_string(model_dir, "", "Model dir path");
+DEFINE_string(model_path, "", "Model dir path");
 DEFINE_string(input_file, "", "Input datas file path");
 DEFINE_string(topo_output_file, "", "Runtime topology order output file path");
 DEFINE_bool(output_topo, true, "Dump runtime topology or not");
@@ -148,8 +148,8 @@ void PrepareModelInputTensor(const DebugConfig& conf,
     auto* input_tensor = &feed_var->at(item.first);
     input_tensor->Resize(DDim(dim));
     switch (val_type) {
-#define FILL_TENSOR_BY_TYPE_ONCE(pb_type__, type__)         \
-  case framework::proto::VarType::pb_type__:                \
+#define FILL_TENSOR_BY_TYPE_ONCE(var_type__, type__)        \
+  case VarDescAPI::Type::var_type__:                        \
     FillTensorData<type__>(input_tensor, conf, item.first); \
     break
 
@@ -185,7 +185,7 @@ void ParseConfig(DebugConfig* conf) {
   CHECK(conf);
 #define CHECK_NON_EMPTY(name__) \
   CHECK(!FLAGS_##name__.empty()) << "Option " << #name__ << " can't be empty."
-  CHECK_NON_EMPTY(model_dir);
+  CHECK_NON_EMPTY(model_path);
   if (FLAGS_output_topo) {
     CHECK_NON_EMPTY(topo_output_file);
   }
@@ -193,7 +193,7 @@ void ParseConfig(DebugConfig* conf) {
     CHECK_NON_EMPTY(tensor_output_file);
   }
 #undef CHECK_NON_EMPTY
-  conf->model_dir = FLAGS_model_dir;
+  conf->model_dir = FLAGS_model_path;
   conf->topo_output_file = FLAGS_topo_output_file;
   conf->tensor_output_file = FLAGS_tensor_output_file;
   conf->input_file = FLAGS_input_file;

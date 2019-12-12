@@ -46,7 +46,7 @@ void pooling_basic(const float* din,
   int stride_h = strides[0];
   int stride_w = strides[1];
   int pad_h = paddings[0];
-  int pad_w = paddings[1];
+  int pad_w = paddings[2];
   int size_channel_in = win * hin;
   int size_channel_out = wout * hout;
   if (global_pooling) {
@@ -125,18 +125,22 @@ void pooling_basic(const float* din,
                 int bh = kernel_h;
                 int bw = kernel_w;
                 if (ew == win) {
-                  bw = sw + kernel_w >= win + pad_w ? win + pad_w
-                                                    : sw + kernel_w;
+                  bw = (sw + kernel_w) >= (win + paddings[3])
+                           ? (win + paddings[3])
+                           : (sw + kernel_w);
                   bw -= sw;
-                  if (sw - pad_w < 0 && sw + kernel_w > win + pad_w) {
+                  if ((sw - pad_w) < 0 &&
+                      (sw + kernel_w) > (win + paddings[3])) {
                     bw += pad_w;
                   }
                 }
                 if (eh == hin) {
-                  bh = sh + kernel_h >= hin + pad_h ? hin + pad_h
-                                                    : sh + kernel_h;
+                  bh = (sh + kernel_h) >= (hin + paddings[1])
+                           ? (hin + paddings[1])
+                           : (sh + kernel_h);
                   bh -= sh;
-                  if (sh - pad_h < 0 && sh + kernel_h > hin + pad_h) {
+                  if ((sh - pad_h) < 0 &&
+                      (sh + kernel_h) > (hin + paddings[1])) {
                     bh += pad_h;
                   }
                 }
@@ -163,7 +167,7 @@ void pooling_basic(const float* din,
   "ld1 {v2.4s-v3.4s}, [%[data_in_channel]], #32    \n" \
   "fmax v6.4s, v4.4s, v5.4s \n"                        \
   "subs %w[cnt], %w[cnt], #1 \n"                       \
-  "fmax %w[vmax].4s, %w[vmax].4s, v6.4s \n"            \
+  "fmax %[vmax].4s, %[vmax].4s, v6.4s \n"              \
   "bne 1b \n"
 #define GLOBAL_AVG                                  \
   "1: \n"                                           \
@@ -172,7 +176,7 @@ void pooling_basic(const float* din,
   "ld1 {v0.4s-v1.4s}, [%[data_in_channel]], #32 \n" \
   "fadd %[vsum].4s, %[vsum].4s, v3.4s \n"           \
   "subs %w[cnt], %w[cnt], #1 \n"                    \
-  "fadd %w[vsum].4s, %w[vsum].4s, v4.4s \n"         \
+  "fadd %[vsum].4s, %[vsum].4s, v4.4s \n"           \
   "ld1 {v2.4s-v3.4s}, [%[data_in_channel]], #32 \n" \
   "bne 1b \n"
 

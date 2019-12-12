@@ -256,6 +256,7 @@ void PoolCompute::Run() {
   bool adaptive = param.adaptive;
   auto x_dims = param.x->dims();
   auto out_dims = param.output->dims();
+  auto paddings = *param.paddings;
   const int in_h = x_dims[2];
   const int in_w = x_dims[3];
   const int out_h = out_dims[2];
@@ -266,8 +267,8 @@ void PoolCompute::Run() {
   const int win_w = param.ksize[1];
   const int stride_h = param.strides[0];
   const int stride_w = param.strides[1];
-  const int pad_h = param.paddings[0];
-  const int pad_w = param.paddings[1];
+  const int pad_h = paddings[0];
+  const int pad_w = paddings[2];
   const int total_threads = out_dims.production();
   const int threads = 512;
   const int blocks = (total_threads + threads - 1) / threads;
@@ -357,6 +358,61 @@ void PoolCompute::Run() {
   if (error != cudaSuccess) LOG(FATAL) << cudaGetErrorString(error);
 }
 
+inline int PoolOutputSize(
+    int input_size, int filter_size, int padding, int stride, bool ceil_mode) {
+  int output_size;
+  if (!ceil_mode) {
+    output_size = (input_size - filter_size + 2 * padding) / stride + 1;
+  } else {
+    output_size =
+        (input_size - filter_size + 2 * padding + stride - 1) / stride + 1;
+  }
+  return output_size;
+}
+
+void PoolComputeNHWC::PrepareForRun() {
+  auto& param = this->Param<param_t>();
+  auto& ctx = this->ctx_->template As<CUDAContext>();
+  pool_impl_.reset(new lite::cuda::math::CudnnPool2DNHWC<PRECISION(kFloat)>);
+  pool_impl_->init(param, &ctx);
+}
+
+void PoolComputeNHWC::Run() {
+  auto& param = this->Param<param_t>();
+  auto& ctx = this->ctx_->template As<CUDAContext>();
+  auto stream = ctx.exec_stream();
+  const auto x_dims = param.x->dims();
+  std::vector<int>& ksize = param.ksize;
+  if (param.global_pooling) {
+    ksize.resize(static_cast<size_t>(x_dims.size()) - 2);
+    for (size_t i = 0; i < ksize.size(); ++i) {
+      (*param.paddings)[i] = 0;
+      ksize[i] = static_cast<int>(x_dims[i + 1]);
+    }
+  }
+
+  std::vector<int64_t> output_shape({x_dims[0]});
+  if (param.adaptive) {
+    output_shape.insert(
+        output_shape.end(), param.ksize.begin(), param.ksize.end());
+  } else {
+    for (size_t i = 0; i < param.ksize.size(); ++i) {
+      output_shape.push_back(PoolOutputSize(x_dims[i + 1],
+                                            param.ksize[i],
+                                            (*param.paddings)[i],
+                                            param.strides[i],
+                                            param.ceil_mode));
+    }
+  }
+  output_shape.push_back(x_dims[3]);
+  param.output->Resize(lite::DDim(output_shape));
+
+  pool_impl_->run(param);
+
+  cudaError_t error = cudaGetLastError();
+  if (error != cudaSuccess) LOG(FATAL) << cudaGetErrorString(error);
+}
+
 }  // namespace cuda
 }  // namespace kernels
 }  // namespace lite
@@ -372,4 +428,20 @@ REGISTER_LITE_KERNEL(
                 {LiteType::GetTensorTy(TARGET(kCUDA),
                                        PRECISION(kFloat),
                                        DATALAYOUT(kNCHW))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(pool2d,
+                     kCUDA,
+                     kFloat,
+                     kNHWC,
+                     paddle::lite::kernels::cuda::PoolComputeNHWC,
+                     def)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kCUDA),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kNHWC))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kCUDA),
+                                       PRECISION(kFloat),
+                                       DATALAYOUT(kNHWC))})
     .Finalize();

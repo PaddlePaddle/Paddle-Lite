@@ -35,7 +35,6 @@ class PoolCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
     auto& param = *param_.get_mutable<param_t>();
     if (param.global_pooling) {
       for (size_t i = 0; i < param.ksize.size(); ++i) {
-        param.paddings[i] = 0;
         param.ksize[i] = static_cast<int>(param.x->dims()[i + 2]);
       }
     }
@@ -52,7 +51,7 @@ class PoolCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
                          param.x,
                          param.ksize,
                          param.strides,
-                         param.paddings,
+                         *param.paddings,
                          pool_process,
                          true,
                          false,
@@ -68,7 +67,7 @@ class PoolCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
                          param.x,
                          param.ksize,
                          param.strides,
-                         param.paddings,
+                         *param.paddings,
                          pool_process,
                          param.exclusive,
                          param.adaptive,

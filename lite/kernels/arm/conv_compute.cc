@@ -32,13 +32,18 @@ void ConvCompute<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
   auto w_dims = param.filter->dims();
   auto& ctx = this->ctx_->template As<ARMContext>();
 
+  auto paddings = *param.paddings;
+  auto dilations = *param.dilations;
   int ic = w_dims[1] * param.groups;
   int oc = w_dims[0];
   int kh = w_dims[2];  // oihw
   int kw = w_dims[3];
-  int pad = param.paddings[0];
+  int pad = paddings[0];
   int stride = param.strides[0];
+  int threads = ctx.threads();
 
+  bool pads_equal =
+      ((paddings[0] == paddings[1]) && (paddings[2] == paddings[3]));
   int chin = param.x->dims()[1];
   int hin = param.x->dims()[2];
   int win = param.x->dims()[3];
@@ -46,30 +51,26 @@ void ConvCompute<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
   int hout = param.output->dims()[2];
   int wout = param.output->dims()[3];
 
-  bool kps_equal = (param.paddings[0] == param.paddings[1]) &&
-                   (param.strides[0] == param.strides[1]) && (kw == kh);
-  bool no_dilation = (param.dilations[0] == 1) && (param.dilations[1] == 1);
+  bool pads_all_equal = (pads_equal && paddings[0] == paddings[2]);
+
+  bool kps_equal = (param.strides[0] == param.strides[1]) && (kw == kh);
+  bool no_dilation = (dilations[0] == 1) && (dilations[1] == 1);
   bool flag_dw_3x3 = (kw == 3 && kh == 3 && (stride == 1 || stride == 2));
-  bool flag_dw_5x5 =
-      (kw == 5 && stride == 1) || (kw == 5 && stride == 2 && pad == 2);
+  bool flag_dw_5x5 = pads_all_equal && ((kw == 5 && stride == 1) ||
+                                        (kw == 5 && stride == 2 && pad == 2));
   bool flag_dw = flag_dw_3x3 || flag_dw_5x5;
 
   /// select conv impl
-  if (param.groups == ic && ic == oc && kps_equal && no_dilation && flag_dw) {
+  if (param.groups == ic && ic == oc && kps_equal && pads_equal &&
+      no_dilation && flag_dw) {
     /// dw conv impl
     impl_ = new DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>;
     VLOG(3) << "invoking dw conv";
   } else if (param.groups == 1 && kw == 3 && stride == 1 && kps_equal &&
              no_dilation) {
-    if (ic >= 32 && oc >= 32 && hout > 16 && wout > 16) {
-      /// winograd conv impl
-      impl_ = new WinogradConv<PRECISION(kFloat), PRECISION(kFloat)>;
-      VLOG(3) << "invoking winograd conv";
-    } else {
-      /// direct conv impl
-      impl_ = new DirectConv<PRECISION(kFloat), PRECISION(kFloat)>;
-      VLOG(3) << "invoking direct conv";
-    }
+    /// winograd conv impl
+    impl_ = new WinogradConv<PRECISION(kFloat), PRECISION(kFloat)>;
+    VLOG(3) << "invoking winograd conv";
   } else if (param.groups == 1 && kw == 3 && stride == 2 &&
              chin * chout < 4 * hin * win && kps_equal && no_dilation) {
     /// direct conv impl
@@ -92,22 +93,29 @@ void ConvCompute<PRECISION(kInt8), PRECISION(kFloat)>::PrepareForRun() {
 
   auto& ctx = this->ctx_->template As<ARMContext>();
 
+  auto paddings = *param.paddings;
+  auto dilations = *param.dilations;
+  bool pads_equal =
+      ((paddings[0] == paddings[1]) && (paddings[2] == paddings[3]));
   int ic = param.groups * w_dims[1];
   int oc = w_dims[0];
   int kh = w_dims[2];  // oihw
   int kw = w_dims[3];
-  int ph = param.paddings[1];
-  int pw = param.paddings[0];
+  int ph = paddings[0];
+  int pw = paddings[2];
   int sh = param.strides[1];
   int sw = param.strides[0];
+  bool pads_all_equal = (pads_equal && paddings[0] == paddings[2]);
 
   bool kps_equal = (pw == ph) && (sh == sw) && (kw == kh);
-  bool no_dilation = (param.dilations[0] == 1) && (param.dilations[1] == 1);
-  bool flag_dw_3x3 = (kw == 3 && kh == 3) && (sw == 1 || sw == 2);
-  bool flag_dw_5x5 = (kw == 5 && sw == 1);
+  bool no_dilation = (dilations[0] == 1) && (dilations[1] == 1);
+  bool flag_dw_3x3 = (kw == 3 && kh == 3 && (sw == 1 || sw == 2));
+  bool flag_dw_5x5 = pads_all_equal &&
+                     ((kw == 5 && sw == 1) || (kw == 5 && sw == 2 && pw == 2));
   bool flag_dw = flag_dw_3x3 || flag_dw_5x5;
 
-  if (param.groups == ic && ic == oc && kps_equal && no_dilation && flag_dw) {
+  if (param.groups == ic && ic == oc && kps_equal && pads_equal &&
+      no_dilation && flag_dw) {
     impl_ = new DepthwiseConv<PRECISION(kInt8), PRECISION(kFloat)>;
     VLOG(3) << "Run DepthwiseConv Int8";
   } else if (param.groups == 1 && kw == 3 && (sw == 1 || sw == 2) &&
@@ -130,23 +138,30 @@ void ConvCompute<PRECISION(kInt8), PRECISION(kInt8)>::PrepareForRun() {
   auto w_dims = param.filter->dims();
 
   auto& ctx = this->ctx_->template As<ARMContext>();
+  auto paddings = *param.paddings;
+  auto dilations = *param.dilations;
+  bool pads_equal =
+      ((paddings[0] == paddings[1]) && (paddings[2] == paddings[3]));
 
   int ic = w_dims[1] * param.groups;
   int oc = w_dims[0];
   int kh = w_dims[2];  // oihw
   int kw = w_dims[3];
-  int ph = param.paddings[1];
-  int pw = param.paddings[0];
+  int ph = paddings[0];
+  int pw = paddings[2];
   int sh = param.strides[1];
   int sw = param.strides[0];
+  bool pads_all_equal = (pads_equal && paddings[0] == paddings[2]);
 
   bool kps_equal = (pw == ph) && (sh == sw) && (kw == kh);
-  bool no_dilation = (param.dilations[0] == 1) && (param.dilations[1] == 1);
-  bool flag_dw_3x3 = (kw == 3 && kh == 3) && (sw == 1 || sw == 2);
-  bool flag_dw_5x5 = (kw == 5 && sw == 1);
+  bool no_dilation = (dilations[0] == 1) && (dilations[1] == 1);
+  bool flag_dw_3x3 = (kw == 3 && kh == 3 && (sw == 1 || sw == 2));
+  bool flag_dw_5x5 = pads_all_equal &&
+                     ((kw == 5 && sw == 1) || (kw == 5 && sw == 2 && pw == 2));
   bool flag_dw = flag_dw_3x3 || flag_dw_5x5;
 
-  if (param.groups == ic && ic == oc && kps_equal && no_dilation && flag_dw) {
+  if (param.groups == ic && ic == oc && kps_equal && pads_equal &&
+      no_dilation && flag_dw) {
     impl_ = new DepthwiseConv<PRECISION(kInt8), PRECISION(kInt8)>;
     VLOG(3) << "Run DepthwiseConv Int8";
   } else if (param.groups == 1 && kw == 3 && (sw == 1 || sw == 2) &&
@@ -194,7 +209,7 @@ REGISTER_LITE_KERNEL(depthwise_conv2d, kARM, kFloat, kNCHW, ConvFp32, def)
 
 REGISTER_LITE_KERNEL(conv2d, kARM, kInt8, kNCHW, ConvInt8_Int8, int8_out)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt8))})
-    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
     .BindInput("Filter",
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt8))})
     .BindOutput("Output",
@@ -203,7 +218,7 @@ REGISTER_LITE_KERNEL(conv2d, kARM, kInt8, kNCHW, ConvInt8_Int8, int8_out)
 
 REGISTER_LITE_KERNEL(conv2d, kARM, kInt8, kNCHW, ConvInt8_Fp32, fp32_out)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt8))})
-    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
     .BindInput("Filter",
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt8))})
     .BindOutput("Output",
@@ -213,7 +228,7 @@ REGISTER_LITE_KERNEL(conv2d, kARM, kInt8, kNCHW, ConvInt8_Fp32, fp32_out)
 REGISTER_LITE_KERNEL(
     depthwise_conv2d, kARM, kInt8, kNCHW, ConvInt8_Int8, int8_out)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt8))})
-    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
     .BindInput("Filter",
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt8))})
     .BindOutput("Output",
@@ -223,7 +238,7 @@ REGISTER_LITE_KERNEL(
 REGISTER_LITE_KERNEL(
     depthwise_conv2d, kARM, kInt8, kNCHW, ConvInt8_Fp32, fp32_out)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt8))})
-    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
     .BindInput("Filter",
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt8))})
     .BindOutput("Output",

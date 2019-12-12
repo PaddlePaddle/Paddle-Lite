@@ -44,7 +44,7 @@ class DepthwiseConv2dCompute
     auto x_dims = param.x->dims();
     auto filter_dims = param.filter->dims();
     auto output_dims = param.output->dims();
-    auto paddings = param.paddings;
+    auto paddings = *param.paddings;
     auto strides = param.strides;
 
     auto& context = ctx_->As<OpenCLContext>();

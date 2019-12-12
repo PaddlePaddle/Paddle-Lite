@@ -20,10 +20,17 @@ BUILD_DIR=$(pwd)
 OPTMODEL_DIR=""
 BUILD_TAILOR=OFF
 BUILD_CV=OFF
+SHUTDOWN_LOG=ON
 
 readonly THIRDPARTY_TAR=https://paddle-inference-dist.bj.bcebos.com/PaddleLite/third-party-05b862.tar.gz
 
 readonly workspace=$PWD
+
+# if operating in mac env, we should expand the maximum file num
+os_nmae=`uname -s`
+if [ ${os_nmae} == "Darwin" ]; then
+   ulimit -n 1024
+fi
 
 # for code gen, a source file is generated after a test, but is dependended by some targets in cmake.
 # here we fake an empty file to make cmake works.
@@ -93,7 +100,7 @@ function make_tiny_publish_so {
       -DWITH_TESTING=OFF \
       -DLITE_WITH_JAVA=$BUILD_JAVA \
       -DLITE_WITH_PYTHON=$BUILD_PYTHON \
-      -DLITE_SHUTDOWN_LOG=ON \
+      -DLITE_SHUTDOWN_LOG=$SHUTDOWN_LOG \
       -DLITE_ON_TINY_PUBLISH=ON \
       -DANDROID_STL_TYPE=$android_stl \
       -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
@@ -136,7 +143,7 @@ function make_full_publish_so {
       -DWITH_TESTING=OFF \
       -DLITE_WITH_JAVA=$BUILD_JAVA \
       -DLITE_WITH_PYTHON=$BUILD_PYTHON \
-      -DLITE_SHUTDOWN_LOG=ON \
+      -DLITE_SHUTDOWN_LOG=$SHUTDOWN_LOG \
       -DANDROID_STL_TYPE=$android_stl \
       -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
       -DLITE_WITH_CV=$BUILD_CV \
@@ -236,10 +243,10 @@ function make_cuda {
             -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF \
             -DWITH_TESTING=OFF \
             -DLITE_WITH_ARM=OFF \
-            -DLITE_WITH_PYTHON=ON \
+            -DLITE_WITH_PYTHON=${BUILD_PYTHON} \
             -DLITE_BUILD_EXTRA=ON
-
-  make publish_inference_python_lib -j8
+ 
+  make publish_inference -j4
   cd -
 }
 
@@ -290,6 +297,7 @@ function print_usage {
     echo -e "   ./build.sh --arm_os=<os> --arm_abi=<abi> --arm_lang=<lang> test"
     echo
     echo -e "optional argument:"
+    echo -e "--shutdown_log: (OFF|ON); controls whether to shutdown log, default is ON"
     echo -e "--build_extra: (OFF|ON); controls whether to publish extra operators and kernels for (sequence-related model such as OCR or NLP)"
     echo -e "--build_python: (OFF|ON); controls whether to publish python api lib (ANDROID and IOS is not supported)"
     echo -e "--build_java: (OFF|ON); controls whether to publish java api lib (Only ANDROID is supported)"
@@ -364,6 +372,10 @@ function main {
                 ;;
             --build_tailor=*)
                 BUILD_TAILOR="${i#*=}"
+                shift
+                ;;
+            --shutdown_log=*)
+                SHUTDOWN_LOG="${i#*=}"
                 shift
                 ;;
             tiny_publish)

@@ -24,21 +24,3 @@ REGISTER_LITE_KERNEL(mul,
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
     .Finalize();
-
-// #ifdef LITE_WITH_TRAIN
-// REGISTER_LITE_KERNEL(mul_grad,
-//                      kX86,
-//                      kFloat,
-//                      kNCHW,
-//                      paddle::lite::kernels::x86::MulGradCompute<float>,
-//                      def)
-//     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
-//     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86))})
-//     .BindInput(paddle::framework::GradVarName("Out"),
-//                {LiteType::GetTensorTy(TARGET(kX86))})
-//     .BindOutput(paddle::framework::GradVarName("X"),
-//                 {LiteType::GetTensorTy(TARGET(kX86))})
-//     .BindOutput(paddle::framework::GradVarName("Y"),
-//                 {LiteType::GetTensorTy(TARGET(kX86))})
-//     .Finalize();
-// #endif

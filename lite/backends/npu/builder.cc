@@ -142,21 +142,25 @@ ge::TensorPtr CvtTensor(lite::Tensor* in_tensor,
 
 int CvtActMode(std::string act_type) {
   int act_mode = 1;
-  if (act_type == "sigmod") {
+  if (act_type == "sigmoid") {
     act_mode = 0;
   } else if (act_type == "relu") {
     act_mode = 1;
   } else if (act_type == "tanh") {
     act_mode = 2;
+  } else if (act_type == "relu_clipped" || act_type == "relu6") {
+    act_mode = 3;
   } else if (act_type == "elu") {
     act_mode = 4;
+  } else if (act_type == "leaky_relu") {
+    act_mode = 5;
   } else if (act_type == "abs") {
     act_mode = 6;
   } else if (act_type == "softsign") {
     act_mode = 8;
   } else if (act_type == "softplus") {
     act_mode = 9;
-  } else if (act_type == "hardsigmoid") {
+  } else if (act_type == "hard_sigmoid") {
     act_mode = 10;
   } else {
     // TODO(hong19860320) support more activation mode
