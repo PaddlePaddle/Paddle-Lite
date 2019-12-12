@@ -77,7 +77,8 @@ const std::string& PrecisionToStr(PrecisionType precision) {
 }
 
 const std::string& DataLayoutToStr(DataLayoutType layout) {
-  static const std::string datalayout2string[] = {"unk", "NCHW", "any", "NHWC"};
+  static const std::string datalayout2string[] = {
+      "unk", "NCHW", "any", "NHWC", "ImageDefault", "ImageFolder", "ImageNW"};
   auto x = static_cast<int>(layout);
   CHECK_LT(x, static_cast<int>(DATALAYOUT(NUM)));
   return datalayout2string[x];

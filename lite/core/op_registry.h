@@ -200,6 +200,15 @@ class KernelRegistry final {
               KernelRegistryForTarget<TARGET(kOpenCL),
                                       PRECISION(kFloat),
                                       DATALAYOUT(kImageNW)> *,  //
+              KernelRegistryForTarget<TARGET(kOpenCL),
+                                      PRECISION(kAny),
+                                      DATALAYOUT(kImageDefault)> *,  //
+              KernelRegistryForTarget<TARGET(kOpenCL),
+                                      PRECISION(kAny),
+                                      DATALAYOUT(kImageFolder)> *,  //
+              KernelRegistryForTarget<TARGET(kOpenCL),
+                                      PRECISION(kAny),
+                                      DATALAYOUT(kImageNW)> *,  //
 
               KernelRegistryForTarget<TARGET(kNPU),
                                       PRECISION(kAny),

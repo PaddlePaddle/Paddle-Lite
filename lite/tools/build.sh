@@ -26,6 +26,12 @@ readonly THIRDPARTY_TAR=https://paddle-inference-dist.bj.bcebos.com/PaddleLite/t
 
 readonly workspace=$PWD
 
+# if operating in mac env, we should expand the maximum file num
+os_nmae=`uname -s`
+if [ ${os_nmae} == "Darwin" ]; then
+   ulimit -n 1024
+fi
+
 # for code gen, a source file is generated after a test, but is dependended by some targets in cmake.
 # here we fake an empty file to make cmake works.
 function prepare_workspace {
