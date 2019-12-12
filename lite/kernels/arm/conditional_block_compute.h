@@ -23,8 +23,6 @@
 #include "lite/operators/conditional_block_op.h"
 #ifdef LITE_WITH_PROFILE
 #include "lite/core/profile/basic_profiler.h"
-#endif  // LITE_WITH_PROFILE
-#ifdef LITE_WITH_PROFILE
 #include "lite/core/profile/precision_profiler.h"
 #include "lite/core/profile/profiler.h"
 #endif
@@ -58,7 +56,11 @@ class CondExecutor {
   }
 
   void Run() {
+#ifdef LITE_WITH_PROFILE
+#ifdef LITE_WITH_PRECISION_PROFILE
     lite::profile::Profiler profiler;
+#endif  // LITE_WITH_PRECISION_PROFILE
+#endif  // LITE_WITH_PROFILE
     for (auto &op_handler : ops_of_block_) {
       op_handler->CheckShape();
       op_handler->InferShape();
