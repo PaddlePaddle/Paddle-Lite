@@ -162,7 +162,8 @@ class CLImage {
     CLImageConverterNormal *normal_converter = new CLImageConverterNormal();
     // use real image dims to create mem
     real_image_dims_ = real_image_dims;
-    // when init fake size image , reinit image is allow , it is disallowed after this..
+    // when init fake size image ,
+    // reinit image is allow , it is disallowed after this..
     shared_mem_ = false;
     InitCLImage(context, real_image_dims_[0], real_image_dims_[1], nullptr);
     // cheat cl_image they got what they wanted
