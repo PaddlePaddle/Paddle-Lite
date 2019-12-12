@@ -129,7 +129,103 @@ class LayoutComputeBufferChwToImageDefault
   std::shared_ptr<cl::Event> event_{new cl::Event};
 };
 
-class LayoutComputeImageDefaultToBufferChw
+// buffer chw 2 image2d nw
+class LayoutComputeBufferChwToImage2DNw
+    : public KernelLite<TARGET(kOpenCL),
+                        PRECISION(kFloat),
+                        DATALAYOUT(kImageNW)> {
+ public:
+  using param_t = operators::LayoutParam;
+
+  void PrepareForRun() override {
+    auto& context = ctx_->As<OpenCLContext>();
+    context.cl_context()->AddKernel(
+        kernel_func_name_, "buffer/layout_kernel.cl", build_options_);
+  }
+
+  void Run() override {
+    auto& param = Param<param_t>();
+    auto* x_data = param.x->data<float, cl::Buffer>();
+    auto x_dims = param.x->dims();
+
+    CHECK(x_dims.size() == 4) << " Tensor dim is not 4.";
+    size_t image_width = x_dims[3] * ((x_dims[0] + 3) / 4);
+    size_t image_height = x_dims[1] * x_dims[2];
+
+    auto* y_data =
+        param.y->mutable_data<float, cl::Image2D>(image_width, image_height);
+    auto y_dims = param.y->dims();
+
+    // out info
+    std::vector<size_t> new_dims = {1, 1, 1, 1};
+    for (int tidx = 0; tidx < x_dims.size(); ++tidx) {
+      new_dims[4 - x_dims.size() + tidx] = x_dims[tidx];
+    }
+
+    const int out_N = new_dims[0];
+    const int out_C = new_dims[1];
+    const int out_H = new_dims[2];
+    const int out_W = new_dims[3];
+
+    const int Stride2 = out_C * out_H * out_W;
+    const int Stride1 = out_H * out_W;
+    const int Stride0 = out_W;
+
+    auto& context = ctx_->As<OpenCLContext>();
+    CHECK(context.cl_context() != nullptr);
+    STL::stringstream kernel_key;
+    kernel_key << kernel_func_name_ << build_options_;
+    auto kernel = context.cl_context()->GetKernel(kernel_key.str());
+
+    int arg_idx = 0;
+    cl_int status = kernel.setArg(arg_idx, *x_data);
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(++arg_idx, *y_data);
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(++arg_idx, static_cast<const int>(out_H));
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(++arg_idx, static_cast<const int>(out_W));
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(++arg_idx, static_cast<const int>(out_N));
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(++arg_idx, static_cast<const int>(Stride0));
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(++arg_idx, static_cast<const int>(Stride1));
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(++arg_idx, static_cast<const int>(Stride2));
+    CL_CHECK_FATAL(status);
+
+    VLOG(4) << "gws:[3D]" << ((out_N + 3) / 4) << " " << out_W << " "
+            << (out_C * out_H);
+    auto global_work_size =
+        cl::NDRange{static_cast<cl::size_type>((out_N + 3) / 4),  // N blocks
+                    static_cast<cl::size_type>(out_W),            // w
+                    static_cast<cl::size_type>(out_C * out_H)};   // ch
+    status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
+        kernel,
+        cl::NullRange,
+        global_work_size,
+        cl::NullRange,
+        nullptr,
+        event_.get());
+    CL_CHECK_FATAL(status);
+    // TODO(ysh329): io_copy(device->host) jammed if emplace to `cl_wait_list`
+    // context.cl_wait_list()->emplace(y_data, event_);
+    context.cl_context()->GetCommandQueue().finish();
+    //    auto image_shape = InitImageDimInfoWith(x_dims);
+  }
+
+  std::string doc() const override {
+    return "Trans Layout from cl::Buffer(NCHW) to cl::Image2D(CLNW)";
+  }
+
+ private:
+  std::string kernel_func_name_{"buffer_to_image2d_nw"};
+  std::string build_options_{"-DCL_DTYPE_float "};
+  std::shared_ptr<cl::Event> event_{new cl::Event};
+};
+
+class LayoutComputeImage2DHwcToBufferChw
     : public KernelLite<TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kNCHW)> {
  public:
   using param_t = operators::LayoutParam;
@@ -224,8 +320,7 @@ class LayoutComputeImageDefaultToBufferChw
 }  // namespace lite
 }  // namespace paddle
 
-// BufferChwToImage2DHwc
-// [chw] -> [hwc]
+// [NCHW] -> [ImageDefault]
 REGISTER_LITE_KERNEL(
     layout,
     kOpenCL,
@@ -243,7 +338,6 @@ REGISTER_LITE_KERNEL(
                                        DATALAYOUT(kImageDefault))})
     .Finalize();
 
-// [chw] -> [hwc]
 REGISTER_LITE_KERNEL(
     layout_once,
     kOpenCL,
@@ -261,8 +355,7 @@ REGISTER_LITE_KERNEL(
                                        DATALAYOUT(kImageDefault))})
     .Finalize();
 
-// Image2DHwcBufferChw
-// [hwc] -> [chw]
+// [ImageDefault] -> [NCHW]
 REGISTER_LITE_KERNEL(
     layout,
     kOpenCL,
@@ -280,7 +373,6 @@ REGISTER_LITE_KERNEL(
                                        DATALAYOUT(kNCHW))})
     .Finalize();
 
-// [hwc] -> [chw]
 REGISTER_LITE_KERNEL(
     layout_once,
     kOpenCL,
@@ -296,4 +388,22 @@ REGISTER_LITE_KERNEL(
                 {LiteType::GetTensorTy(TARGET(kOpenCL),
                                        PRECISION(kAny),
                                        DATALAYOUT(kNCHW))})
+    .Finalize();
+
+// [NCHW] -> [ImageNW]
+REGISTER_LITE_KERNEL(
+    layout_once,
+    kOpenCL,
+    kFloat,
+    kImageNW,
+    paddle::lite::kernels::opencl::LayoutComputeBufferChwToImage2DNw,
+    NCHW_to_ImageNW)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kNCHW))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                       PRECISION(kFloat),
+                                       DATALAYOUT(kImageNW))})
     .Finalize();
