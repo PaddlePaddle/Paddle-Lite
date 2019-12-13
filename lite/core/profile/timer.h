@@ -30,6 +30,7 @@ class TimeList {
  public:
   void Clear() { laps_t_.clear(); }
   void Add(T t) { laps_t_.push_back(t); }
+  T Last() const { return laps_t_.back(); }
   T Max() const { return *std::max_element(laps_t_.begin(), laps_t_.end()); }
   T Min() const { return *std::min_element(laps_t_.begin(), laps_t_.end()); }
   T Sum() const { return std::accumulate(laps_t_.begin(), laps_t_.end(), 0.0); }

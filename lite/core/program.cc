@@ -124,7 +124,7 @@ void RuntimeProgram::Run() {
 #endif  // LITE_WITH_PROFILE
   }
 #ifdef LITE_WITH_PROFILE
-  LOG(INFO) << "\n" << profiler_.Summary();
+    LOG(INFO) << "\n" << profiler_.Summary(false);
 #endif  // LITE_WITH_PROFILE
 }
 
