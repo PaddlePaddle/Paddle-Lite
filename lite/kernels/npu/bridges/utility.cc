@@ -12,59 +12,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/backends/npu/builder.h"
-#include <mutex>  // NOLINT
+#include "lite/kernels/npu/bridges/utility.h"
 #include <utility>
-#include "lite/backends/npu/runtime.h"
 
 namespace paddle {
 namespace lite {
+namespace subgraph {
 namespace npu {
 
-// Build HIAI IR graph to om model, and store om model data into lite tensor
-bool BuildModel(std::vector<ge::Operator>& inputs,   // NOLINT
-                std::vector<ge::Operator>& outputs,  // NOLINT
-                lite::Tensor* model_data) {
-  LOG(INFO) << "[NPU] Build model.";
-  CHECK_GT(inputs.size(), 0);
-  CHECK_GT(outputs.size(), 0);
-  CHECK_NE(model_data, 0);
-  // build IR graph to om model
-  ge::Graph ir_graph("graph");
-  ir_graph.SetInputs(inputs).SetOutputs(outputs);
-  ge::Model om_model("model", "model");
-  om_model.SetGraph(ir_graph);
-  domi::HiaiIrBuild ir_build;
-  domi::ModelBufferData om_model_buf;
-  if (!ir_build.CreateModelBuff(om_model, om_model_buf)) {
-    LOG(WARNING) << "[NPU] CreateModelBuff failed!";
-    return false;
-  }
-  if (!ir_build.BuildIRModel(om_model, om_model_buf)) {
-    LOG(WARNING) << "[NPU] BuildIRModel failed!";
-    return false;
-  }
-  // store om model into tensor
-  model_data->Resize({om_model_buf.length});
-  memcpy(model_data->mutable_data<int8_t>(),
-         om_model_buf.data,
-         om_model_buf.length);
-  ir_build.ReleaseModelBuff(om_model_buf);
-  return true;
-}
-
-std::string UniqueName(const std::string& prefix) {
-  static std::mutex counter_mtx;
-  static std::unordered_map<std::string, int> counter_map;
-  std::unique_lock<std::mutex> counter_lck(counter_mtx);
-  int counter = 1;
-  auto it = counter_map.find(prefix);
-  if (it == counter_map.end()) {
-    counter_map[prefix] = counter;
+bool HasInputArg(const OpInfo* op_info,
+                 const Scope* scope,
+                 const std::string& argname) {
+  auto iarg_names = op_info->input_argnames();
+  if (std::find(iarg_names.begin(), iarg_names.end(), argname) !=
+      iarg_names.end()) {
+    auto inputs = op_info->Input(argname);
+    if (inputs.empty()) {
+      return false;
+    }
+    auto var_name = inputs.front();
+    auto var = scope->FindVar(var_name);
+    return var != nullptr;
   } else {
-    counter = ++(it->second);
+    return false;
   }
-  return prefix + "_" + std::to_string(counter);
 }
 
 ge::DataType CvtPrecisionType(PrecisionType itype) {
@@ -102,25 +73,25 @@ ge::Format CvtDataLayoutType(DataLayoutType itype) {
   return otype;
 }
 
-ge::TensorPtr CvtTensor(lite::Tensor* in_tensor,
+ge::TensorPtr CvtTensor(const Tensor& in_tensor,
                         std::vector<int64_t> out_shape,
                         PrecisionType in_ptype,
                         DataLayoutType in_ltype) {
-  uint8_t* in_data = nullptr;
-  auto in_size = in_tensor->dims().production();
-  auto in_shape = in_tensor->dims().Vectorize();
+  const uint8_t* in_data = nullptr;
+  auto in_size = in_tensor.dims().production();
+  auto in_shape = in_tensor.dims().Vectorize();
   if (out_shape.empty()) {
     out_shape = in_shape;
   }
   int in_bytes;
   if (in_ptype == PRECISION(kFloat)) {
-    in_data = reinterpret_cast<uint8_t*>(in_tensor->mutable_data<float>());
+    in_data = reinterpret_cast<const uint8_t*>(in_tensor.data<float>());
     in_bytes = in_size * sizeof(float);
   } else if (in_ptype == PRECISION(kInt32)) {
-    in_data = reinterpret_cast<uint8_t*>(in_tensor->mutable_data<int32_t>());
+    in_data = reinterpret_cast<const uint8_t*>(in_tensor.data<int32_t>());
     in_bytes = in_size * sizeof(int32_t);
   } else if (in_ptype == PRECISION(kInt8)) {
-    in_data = reinterpret_cast<uint8_t*>(in_tensor->mutable_data<int8_t>());
+    in_data = reinterpret_cast<const uint8_t*>(in_tensor.data<int8_t>());
     in_bytes = in_size * sizeof(int8_t);
   } else {
     LOG(FATAL) << "[NPU] Unknow precision type " << PrecisionToStr(in_ptype);
@@ -169,24 +140,7 @@ int CvtActMode(std::string act_type) {
   return act_mode;
 }
 
-bool HasInputArg(const OpInfo* op_info,
-                 const Scope* scope,
-                 const std::string& argname) {
-  auto iarg_names = op_info->input_argnames();
-  if (std::find(iarg_names.begin(), iarg_names.end(), argname) !=
-      iarg_names.end()) {
-    auto inputs = op_info->Input(argname);
-    if (inputs.empty()) {
-      return false;
-    }
-    auto var_name = inputs.front();
-    auto var = scope->FindVar(var_name);
-    return var != nullptr;
-  } else {
-    return false;
-  }
-}
-
 }  // namespace npu
+}  // namespace subgraph
 }  // namespace lite
 }  // namespace paddle

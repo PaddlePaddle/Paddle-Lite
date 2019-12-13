@@ -12,51 +12,41 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/backends/xpu/builder.h"
-#include "lite/kernels/xpu/bridges/registry.h"
+#include "lite/kernels/npu/bridges/registry.h"
+#include "lite/kernels/xpu/bridges/graph.h"
+#include "lite/kernels/xpu/bridges/utility.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
+namespace subgraph {
 namespace xpu {
-namespace bridges {
 
-node_map_type ActConverter(const std::shared_ptr<lite::OpLite> op,
-                           graph_ctx_type* graph_ctx,
-                           const node_map_type& input_nodes) {
+int ActConverter(void* ctx, OpLite* op) {
+  CHECK(ctx != nullptr);
+  CHECK(op != nullptr);
+  auto graph = static_cast<Graph*>(ctx);
   auto op_info = op->op_info();
   auto op_type = op_info->Type();
-  auto unique_op_type = lite::xpu::UniqueName(op_type);
-  LOG(INFO) << "[XPU] Converting " + op_type + "...";
+  VLOG(3) << "[XPU] Converting " + op_type + "...";
 
-  // check context
-  CHECK(graph_ctx != nullptr);
-  CHECK(graph_ctx->builder != nullptr);
-  CHECK(graph_ctx->params != nullptr);
-
-  // create act node and set params from op
+  // Create act node and set params from op
   auto x_var_name = op_info->Input("X").front();
-  CHECK(input_nodes.count(x_var_name));
-  std::shared_ptr<xtcl::xExpr> act_node = nullptr;
+  auto out_var_name = op_info->Output("Out").front();
+  CHECK(graph->HasNode(x_var_name));
   if (op_type == "relu") {
-    act_node = std::make_shared<xtcl::xExpr>(
-        graph_ctx->builder->CreateRelu(*input_nodes.at(x_var_name)));
+    graph->AddNode(out_var_name,
+                   graph->builder_.CreateRelu(*graph->GetNode(x_var_name)));
   } else {
     // TODO(hong19860320) supports more activation ops
-    LOG(FATAL) << "[XPU] Unsupported activation type " << op_type;
+    LOG(WARNING) << "[XPU] Unsupported activation type " << op_type;
+    return FAILED;
   }
-  graph_ctx->builder->SetLayer(unique_op_type);
-
-  // output converted nodes
-  node_map_type output_nodes;
-  output_nodes[op_info->Output("Out").front()] = act_node;
-  return output_nodes;
+  return SUCCESS;
 }
 
-}  // namespace bridges
 }  // namespace xpu
-}  // namespace kernels
+}  // namespace subgraph
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_XPU_BRIDGE(relu, paddle::lite::kernels::xpu::bridges::ActConverter);
+REGISTER_SUBGRAPH_BRIDGE(XPU, relu, paddle::lite::subgraph::xpu::ActConverter);

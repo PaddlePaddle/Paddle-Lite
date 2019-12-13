@@ -14,41 +14,42 @@
 
 #pragma once
 
-#include <memory>
 #include <string>
 #include <vector>
-#include "ai_ddk_lib/include/HiAiModelManagerService.h"
 #include "lite/core/kernel.h"
-#include "lite/core/op_registry.h"
-#include "lite/core/types.h"
+#include "lite/core/op_lite.h"
+#include "lite/core/scope.h"
+#include "lite/core/tensor.h"
+#include "lite/operators/op_params.h"
+#include "lite/utils/all.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
-namespace npu {
+namespace operators {
 
-class GraphCompute : public KernelLite<TARGET(kNPU), PRECISION(kFloat)> {
+class SubgraphOp : public OpLite {
  public:
-  using param_t = operators::GraphParam;
+  SubgraphOp() {}
 
-  void PrepareForRun() override;
+  explicit SubgraphOp(const std::string &type) : OpLite(type) {}
 
-  void Run() override;
+  bool CheckShape() const override;
 
-  virtual ~GraphCompute() = default;
+  bool InferShape() const override;
+
+  bool AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) override;
+
+  void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
+
+  std::string DebugString() const override { return "subgraph"; }
+
+  void SetSubBlock(cpp::BlockDesc *desc) { param_.sub_block_desc = desc; }
+  cpp::BlockDesc *GetSubBlock() { return param_.sub_block_desc; }
 
  private:
-  std::shared_ptr<hiai::AiModelMngerClient> model_client_;
-  std::string model_name_;
-  hiai::AiContext model_context_;
-
-  std::vector<int64_t> npu_idatasizes_;
-  std::vector<int64_t> npu_odatasizes_;
-  std::vector<std::shared_ptr<hiai::AiTensor>> npu_itensors_;
-  std::vector<std::shared_ptr<hiai::AiTensor>> npu_otensors_;
+  mutable SubgraphParam param_;
 };
 
-}  // namespace npu
-}  // namespace kernels
+}  // namespace operators
 }  // namespace lite
 }  // namespace paddle

@@ -64,9 +64,6 @@ class Node {
       return valid_kernels_;
     }
 
-    void ClearSubgraphID() { subgraph_id_ = -1 /* note: not 0 */; }
-    void SetSubgraphID(int id) { subgraph_id_ = id; }
-    int subgraph_id() const { return subgraph_id_; }
     void SetOp(const std::shared_ptr<OpLite>& op) { op_ = op; }
     const std::shared_ptr<OpLite> op() const { return op_; }
 
@@ -82,11 +79,6 @@ class Node {
 
     // Description.
     std::string desc;
-
-   protected:
-    // -1 means not in subgraph, 0 means supported but not one id, id started
-    // from 1
-    int subgraph_id_{-1};
   };
 
   struct Arg {

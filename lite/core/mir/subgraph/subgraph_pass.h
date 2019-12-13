@@ -14,39 +14,24 @@
 
 #pragma once
 
-#include <string>
+#include <memory>
 #include <vector>
-#include "lite/core/kernel.h"
-#include "lite/core/op_lite.h"
-#include "lite/core/scope.h"
-#include "lite/core/tensor.h"
-#include "lite/operators/op_params.h"
-#include "lite/utils/all.h"
+#include "lite/core/mir/pass.h"
 
 namespace paddle {
 namespace lite {
-namespace operators {
+namespace mir {
 
-class GraphOpLite : public OpLite {
+class NPUSubgraphPass : public ProgramPass {
  public:
-  GraphOpLite() {}
-
-  explicit GraphOpLite(const std::string &type) : OpLite(type) {}
-
-  bool CheckShape() const override;
-
-  bool InferShape() const override;
-
-  bool AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) override;
-
-  void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
-
-  std::string DebugString() const override { return "graph_op"; }
-
- private:
-  mutable GraphParam param_;
+  void Apply(const std::unique_ptr<SSAGraph>& graph) override;
 };
 
-}  // namespace operators
+class XPUSubgraphPass : public ProgramPass {
+ public:
+  void Apply(const std::unique_ptr<SSAGraph>& graph) override;
+};
+
+}  // namespace mir
 }  // namespace lite
 }  // namespace paddle

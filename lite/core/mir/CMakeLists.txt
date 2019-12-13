@@ -32,7 +32,7 @@ lite_cc_library(mir_passes
       demo_pass.cc
       runtime_context_assign_pass.cc
       memory_optimize_pass.cc
-  DEPS mir_pass types context ${mir_fusers} ${subgraph_passes})
+  DEPS mir_pass types context ${mir_fusers} ${mir_subgraphs})
 
 # lite_cc_test(test_ssa_graph SRCS ssa_graph_test.cc DEPS
         #mir_ssa_graph scope op

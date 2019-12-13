@@ -12,27 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/backends/npu/builder.h"
+#include "lite/kernels/npu/bridges/graph.h"
 #include "lite/kernels/npu/bridges/registry.h"
+#include "lite/kernels/npu/bridges/utility.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
+namespace subgraph {
 namespace npu {
-namespace bridges {
 
-node_map_type SoftmaxConverter(const std::shared_ptr<lite::OpLite> softmax_op,
-                               const node_map_type& inputs_map) {
-  auto scope = softmax_op->scope();
-  auto op_info = softmax_op->op_info();
+int SoftmaxConverter(void* ctx, OpLite* op) {
+  CHECK(ctx != nullptr);
+  CHECK(op != nullptr);
+  auto graph = static_cast<Graph*>(ctx);
+  auto op_info = op->op_info();
   auto op_type = op_info->Type();
-  auto unique_op_type = lite::npu::UniqueName(op_type);
-  LOG(INFO) << "[NPU] Converting " + op_type + "...";
+  auto scope = op->scope();
+  VLOG(3) << "[NPU] Converting " + op_type + "...";
 
-  std::shared_ptr<ge::op::Softmax> softmax_node =
-      std::make_shared<ge::op::Softmax>(unique_op_type);
   auto x_var_name = op_info->Input("X").front();
-
+  auto out_var_name = op_info->Output("Out").front();
   auto x_dims = scope->FindVar(x_var_name)->GetMutable<Tensor>()->dims();
   auto axis = op_info->GetAttr<int>("axis");
   if (x_dims.size() > 3) {
@@ -41,23 +40,17 @@ node_map_type SoftmaxConverter(const std::shared_ptr<lite::OpLite> softmax_op,
         << "  :x_w = " << x_dims[3];
   }
 
-  CHECK(inputs_map.count(x_var_name));
-  softmax_node->set_input_x(*inputs_map.at(x_var_name));
+  auto softmax_node = graph->AddNode<ge::op::Softmax>(out_var_name);
+  softmax_node->set_input_x(*graph->GetNode(x_var_name));
   softmax_node->set_attr_axis(axis);
-
-  lite::npu::OpList::Global().add(inputs_map.at(x_var_name));
-  lite::npu::OpList::Global().add(softmax_node);
-
-  node_map_type outputs_map;
-  outputs_map[op_info->Output("Out").front()] = softmax_node;
-  return outputs_map;
+  return REBUILD_WHEN_SHAPE_CHANGED;
 }
 
-}  // namespace bridges
 }  // namespace npu
-}  // namespace kernels
+}  // namespace subgraph
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_NPU_BRIDGE(softmax,
-                    paddle::lite::kernels::npu::bridges::SoftmaxConverter);
+REGISTER_SUBGRAPH_BRIDGE(NPU,
+                         softmax,
+                         paddle::lite::subgraph::npu::SoftmaxConverter);

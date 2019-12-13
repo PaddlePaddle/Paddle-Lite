@@ -42,7 +42,7 @@ else()
        add_dependencies(paddle_light_api_shared op_list_h kernel_list_h)
         if (LITE_WITH_NPU)
             # Need to add HIAI runtime libs (libhiai.so) dependency
-            target_link_libraries(paddle_light_api_shared ${npu_runtime_libs})
+            target_link_libraries(paddle_light_api_shared ${npu_builder_libs} ${npu_runtime_libs})
         endif()
     endif()
 endif()
@@ -78,8 +78,8 @@ if (NOT LITE_ON_TINY_PUBLISH)
                     DEPS ${cxx_api_deps} ${ops} ${host_kernels} program
                     X86_DEPS ${x86_kernels}
                     ARM_DEPS ${arm_kernels}
-                    NPU_DEPS ${npu_kernels} ${npu_bridges} npu_pass
-                    XPU_DEPS ${xpu_kernels} ${xpu_bridges} xpu_pass
+                    NPU_DEPS ${npu_kernels}
+                    XPU_DEPS ${xpu_kernels}
                     CL_DEPS ${opencl_kernels}
                     FPGA_DEPS ${fpga_kernels})
 endif()
