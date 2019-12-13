@@ -205,8 +205,8 @@ if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND WITH_TESTING)
        ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl
             --model_dir=${LITE_MODEL_DIR}/inception_v4 SERIAL)
     add_dependencies(test_inceptionv4 extern_lite_download_inception_v4_simple_tar_gz)
-   # lite_cc_test(test_ocr_attention SRCS ocr_attention_test.cc
-   #    DEPS ${lite_model_test_DEPS})
+   lite_cc_test(test_ocr_attention_fpga SRCS ocr_attention_test_fpga.cc
+      DEPS ${lite_model_test_DEPS})
 
    # lite_cc_test(model_run_test_image SRCS model_run_test_image.cc
    #    DEPS ${lite_model_test_DEPS}

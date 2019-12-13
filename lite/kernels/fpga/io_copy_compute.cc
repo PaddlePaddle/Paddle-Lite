@@ -45,7 +45,6 @@ class IoCopyHostToFpgaCompute
     auto& param = Param<operators::IoCopyParam>();
     CHECK(param.x->target() == TARGET(kHost) ||
           param.x->target() == TARGET(kFPGA));
-    // param.y->CopyDataFrom(*param.x);
     param.y->mutable_data<float16>();
     if (param.x->ZynqTensor()->aligned() &&
         param.x->ZynqTensor()->shape().shouldAlign()) {
@@ -53,10 +52,8 @@ class IoCopyHostToFpgaCompute
       tempTensor.mutableData<float16>(zynqmp::FP16,
                                       param.x->ZynqTensor()->shape());
       tempTensor.copyFrom(param.x->ZynqTensor());
-      // tempTensor.saveToFile("tempTensor", true);
       tempTensor.setAligned(true);
       tempTensor.unalignImage();
-      // tempTensor.saveToFile("unaligned", true);
       param.y->ZynqTensor()->copyFrom(&tempTensor);
     } else {
       param.y->ZynqTensor()->copyFrom(param.x->ZynqTensor());
@@ -97,11 +94,9 @@ class IoCopyFpgaToHostCompute
     : public KernelLite<TARGET(kFPGA), PRECISION(kAny), DATALAYOUT(kAny)> {
  public:
   void Run() override {
-    // std::cout << "IoCopyFpgaToHostCompute \n";
     auto& param = Param<operators::IoCopyParam>();
     CHECK(param.x->target() == TARGET(kHost) ||
           param.x->target() == TARGET(kFPGA));
-    // std::cout << "before CopyDataFrom \n";
 
     param.y->mutable_data<float>();
     param.y->ZynqTensor()->setDataType(zynqmp::FP32);
@@ -113,10 +108,8 @@ class IoCopyFpgaToHostCompute
       tempTensor.mutableData<float16>(zynqmp::FP16,
                                       param.x->ZynqTensor()->shape());
       tempTensor.copyFrom(param.x->ZynqTensor());
-      // tempTensor.saveToFile("tempTensor", true);
       tempTensor.setAligned(true);
       tempTensor.unalignImage();
-      // tempTensor.saveToFile("unaligned", true);
       param.y->ZynqTensor()->copyFrom(&tempTensor);
     } else {
       param.y->ZynqTensor()->copyFrom(param.x->ZynqTensor());

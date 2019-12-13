@@ -43,81 +43,6 @@ class ScalePE : public PE {
     return true;
   }
 
-  // void apply() {
-  //   Tensor* input = param_.input;
-  //   Tensor* output = param_.output;
-  //   Shape& input_shape = input->shape();
-  //   int channel = input_shape.channel();
-  //   int repeat = 1;
-  //   int alignment = 16;
-  //   int length = channel;
-
-  //   if (channel % alignment != 0 || channel < alignment) {
-  //     int c_lcm = lcm(channel, alignment);
-  //     repeat = c_lcm / (channel);
-  //   }
-  //   Shape shape(N, {channel * repeat});
-  //   param_.alignedBias()->mutableData<float16>(FP16, shape);
-  //   param_.alignedScale()->mutableData<float16>(FP16, shape);
-
-  //   float16* bias_data = param_.alignedBias()->data<float16>();
-  //   float16* scale_data = param_.alignedScale()->data<float16>();
-
-  //   if (param_.bias != nullptr) {
-  //     float* bias_data_float = param_.bias->data<float>();
-  //     for (int i = 0; i < repeat; i++) {
-  //       for (int j = 0; j < length; j++) {
-  //         float16 value = float_to_half(bias_data_float[j]);
-  //         bias_data[i * length + j] = value;
-  //         // bias_data[i * length + j] = float_to_half(1.0f);
-  //       }
-  //     }
-  //   } else {
-  //     float16 zero = float_to_half(0.0f);
-  //     for (int i = 0; i < repeat; i++) {
-  //       for (int j = 0; j < length; j++) {
-  //         bias_data[i * length + j] = zero;
-  //       }
-  //     }
-  //   }
-
-  //   float* scale_data_float = param_.scale->data<float>();
-  //   for (int i = 0; i < repeat; i++) {
-  //     for (int j = 0; j < length; j++) {
-  //       float16 value = float_to_half(scale_data_float[j]);
-  //       scale_data[i * length + j] = value;
-  //     }
-  //   }
-
-  //   param_.alignedScale()->flush();
-  //   param_.alignedBias()->flush();
-
-  //   int wc = input_shape.width() * input_shape.channel();
-  //   int wc_aligned = align_image(wc);
-
-  //   ScaleArgs& args = param_.args;
-  //   args.scale_address = param_.alignedScale()->data<void>();
-  //   args.bias_address = param_.alignedBias()->data<void>();
-  //   args.wc_alignment = wc_aligned;
-  //   args.channel_alignment = channel * repeat;
-
-  //   args.image.address = input->data<void>();
-  //   args.image.scale_address = input->scale();
-  //   args.image.channels = channel;
-  //   args.image.height = input_shape.height();
-  //   args.image.width = input_shape.width();
-  //   args.image.pad_width = 0;
-  //   args.image.pad_height = 0;
-  //   args.output.address = output->data<void>();
-  //   args.output.scale_address = output->scale();
-  // }
-
-  // bool dispatch() {
-  //   param_.input->syncToDevice();
-  //   std::cout << "scale dispatch" << std::endl;
-  //   return compute_fpga_scale(param_.args) == 0;
-  // }
-
   void apply() {
     Tensor* input = param_.input;
     Tensor* output = param_.output;
@@ -241,8 +166,6 @@ class ScalePE : public PE {
       for (int c = 0; c < input->shape().channel(); c++) {
         int index = i * input->shape().channel() + c;
         float value = half_to_float(in_data[index]) * scale_data[c];
-        std::cout << "value:" << value << " = " << half_to_float(in_data[index])
-                  << " x " << scale_data[c] << std::endl;
         data_out[index] = float_to_half(value);
 
         if (value < 0) {
@@ -273,12 +196,6 @@ class ScalePE : public PE {
       dw_param.quantizedFilter()->flush();
       // apply();
     }
-    // param_.scale->saveToFile("scale.txt");
-    // cpu_compute();
-    // return true;
-    // param_.input->syncToDevice();
-    // return compute_fpga_scale(param_.args) == 0;
-
     param_.input->syncToDevice();
     return dw_pe_.dispatch();
   }

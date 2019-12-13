@@ -130,9 +130,6 @@ class ConvPE : public PE {
                   wi = w - wstart;
                 }
                 const int index = (h * image_width + w) * image_channels + c;
-                //                          int weight_index = (hi *
-                //                          kernel_width + wi) * image_channels
-                //                          + c;//TODO
                 int weight_index = oc * filter_chw +
                                    kernel_width * kernel_height * c +
                                    kernel_width * hi + wi;
@@ -141,8 +138,6 @@ class ConvPE : public PE {
               }
             }
           }
-          // std::cout << " ============================= pool_index:" <<
-          // pool_index << " sum:" << sum << std::endl;
 
           if (param_.relu.enabled && sum < 0) {
             sum = -sum;
@@ -171,13 +166,6 @@ class ConvPE : public PE {
     float_input.copyFrom(input);
     float_input.syncToCPU();
 
-    // float_input.saveToFile("input", true);
-    // param_.filter->saveToFile("filter", true);
-    // param_.bias()->saveToFile("bias", true);
-
-    // exit(-1);
-
-    // float16* data_out = output->data<float16>();
     float* out = float_output.mutableData<float>(FP32, output->shape());
 
     float* bias_data = param_.bias()->data<float>();
@@ -205,13 +193,7 @@ class ConvPE : public PE {
             int image_index = h * out_width * in_channel + w * in_channel + j;
             float value = image_addr[image_index] * filter_ptr[j];
             sum += value;
-
-            // mi[j] = value;
           }
-
-          // for (int j = 0; j < in_channel; j++) {
-          //   sum += mi[j];
-          // }
 
           sum += bias_data[i];
 
@@ -232,10 +214,6 @@ class ConvPE : public PE {
     output->copyFrom(&float_output);
     output->scale()[0] = max / 127;
     output->scale()[1] = 127 / max;
-
-    // float_output.saveToFile("out", true);
-
-    // exit(-1);
   }
 
   bool dispatch() {
@@ -264,7 +242,6 @@ class ConvPE : public PE {
     std::vector<BasicConvParam*>& params = param_.splitParams();
     int ret = 0;
     for (auto conv_param : params) {
-      // conv_param->input.printScale();
       ret |= compute_fpga_conv_basic(conv_param->args);
     }
 
@@ -282,34 +259,16 @@ class ConvPE : public PE {
 
     size_t size = params.size();
     if (split_axis == 0 && ret == 0 && size > 1) {
-      // std::cout << "concat size:" << size << std::endl;
       concatPE_.dispatch();
     }
     if (split_axis == 1 && ret == 0 && size > 1) {
-      // for (int n = 0; n < size - 1; n++) {
       ElementwiseAddParam& add_param = addPE_.param();
       add_param.inputs = {&params[0]->output, &params[1]->output};
       add_param.output = param_.output;
       addPE_.init();
       addPE_.apply();
       addPE_.dispatch();
-
-      // param_.output->printScale();
-
-      // params[0]->input.saveToFile("conv_1.txt");
-      // params[1]->input.saveToFile("conv_2.txt");
-
-      // params[0]->output.saveToFile("ew_o1.txt");
-      // params[1]->output.saveToFile("ew_o2.txt");
-      // std::cout << "\n ================== EW ================== \n";
-      // }
     }
-
-    if (param_.input->shape().channel() == 64 &&
-        param_.output->shape().channel() == 128) {
-      // exit(-1);
-    }
-
     return ret == 0;
   }
 

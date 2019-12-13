@@ -114,8 +114,6 @@ class PoolingPE : public PE {
         for (int c = 0; c < image_channels; ++c) {
           const int pool_index = (ph * pooled_width_ + pw) * image_channels + c;
           float sum = 0;
-          // const int index =
-          //     (hstart * image_width + wstart) * image_channels + c;
           for (int h = hstart; h < hend; ++h) {
             for (int w = wstart; w < wend; ++w) {
               const int index = (h * image_width + w) * image_channels + c;
@@ -144,9 +142,7 @@ class PoolingPE : public PE {
     Tensor float_input;
     float_input.mutableData<float>(FP32, input->shape());
     float_input.copyFrom(input);
-    // float_input.saveToFile("pool_float.txt");
     float16* data_out = output->data<float16>();
-
     int kernel_hw = param_.kernelSize[0] * param_.kernelSize[1];
 
     float scale_max = 0;
@@ -163,7 +159,6 @@ class PoolingPE : public PE {
     output->scale()[0] = scale_max / 127.0f;
     output->scale()[1] = 127.0f / scale_max;
     output->flush();
-    // exit(-1);
   }
 
   void cpu_compute() {
@@ -193,7 +188,6 @@ class PoolingPE : public PE {
     output->scale()[0] = scale_max / 127.0f;
     output->scale()[1] = 127.0f / scale_max;
     output->flush();
-    // exit(-1);
   }
 
   bool dispatch() {

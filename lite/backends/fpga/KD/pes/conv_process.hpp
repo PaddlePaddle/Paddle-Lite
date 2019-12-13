@@ -212,7 +212,6 @@ inline void format_filter(Tensor* filter,
 
   for (size_t i = 0; i < max_values.size(); i++) {
     scales.push_back(max_values[i] / max_value);
-    // scales.push_back(1.0f);
   }
 
   // filter->saveToFile("filter.txt");
@@ -345,10 +344,8 @@ inline void split_filter_num(const ConvParam& c_param) {
     Shape s_shape(N, {filter_num});
     float* scale_data = scale.mutableData<float>(FP32, s_shape);
     float* bias_data = bias.mutableData<float>(FP32, s_shape);
-    // std::cout << "v size: " << v.size() << std::endl;
     for (int n = 0; n < filter_num; n++) {
       scale_data[n] = param.scale()->data<float>()[n + chnnnel_start] * v[n];
-      // scale_data[n] = param.scale()->data<float>()[n + chnnnel_start];
     }
     for (int n = 0; n < filter_num; n++) {
       bias_data[n] = param.bias()->data<float>()[n + chnnnel_start];
@@ -365,8 +362,6 @@ inline void split_filter_num(const ConvParam& c_param) {
     // conv_param->scaleBias.saveToFile("sb.txt");
     // param.scale()->saveToFile("scale.txt");
     // param.bias()->saveToFile("bias.txt");
-
-    // exit(-1);
 
     args.group_num = param.groups;
     args.relu_enabled = param.relu.enabled;
@@ -492,7 +487,6 @@ inline int fill_split_arg(const ConvParam& c_param) {
     split_filter_num(c_param);
     return 0;
   }
-  // split_filter_num(c_param);
 }
 
 inline bool compute_conv(const ConvParam& c_conv_params) {

@@ -30,8 +30,7 @@ class DLEngine {
 
   DeviceInfo& deviceInfo();
 
-  // bool isZU3() { return info_.device_type / 100 == 3; }
-  bool isZU3() { return true; }
+  bool isZU3() { return info_.device_type / 100 == 3; }
 
   float* out_data = nullptr;
 

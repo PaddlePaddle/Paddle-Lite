@@ -84,7 +84,7 @@ void MulCompute::Run() {
 
 #ifdef FPGA_PRINT_TENSOR
   zynqmp::FullyConnectedParam& fc_param = pe_.param();
-  Debugger.get_instance().registerOutput("mul", fc_param.output);
+  Debugger::get_instance().registerOutput("mul", fc_param.output);
 #endif
 }
 

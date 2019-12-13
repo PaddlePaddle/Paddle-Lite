@@ -29,11 +29,6 @@ using float16 = zynqmp::float16;
 template <typename T>
 void convert_to_hwc(
     T* chw_data, T* hwc_data, int num, int channel, int height, int width) {
-  std::cout << "  -------------- chw -> HWC ---------------\n";
-  std::cout << "channel: " << channel << std::endl;
-  std::cout << "height: " << height << std::endl;
-  std::cout << "width: " << width << std::endl;
-
   int chw = channel * height * width;
   int wc = width * channel;
   int index = 0;
@@ -52,10 +47,6 @@ void convert_to_hwc(
 template <typename T>
 void hwc_to_chw(
     T* chw_data, T* hwc_data, int num, int channel, int height, int width) {
-  std::cout << "  ============= HWC -> CHW =============\n";
-  std::cout << "channel: " << channel << std::endl;
-  std::cout << "height: " << height << std::endl;
-  std::cout << "width: " << width << std::endl;
   int chw = channel * height * width;
   int wc = width * channel;
   int wh = width * height;
@@ -73,10 +64,7 @@ void hwc_to_chw(
 }
 
 void TransHwcToChw(Tensor* dest, const Tensor* src) {
-  std::cout << "precision:" << static_cast<int>(src->precision()) << std::endl;
-  std::cout << "dataType:" << src->ZynqTensor()->dataType() << std::endl;
   if (src->ZynqTensor()->dataType() == zynqmp::FP32) {
-    std::cout << "float\n";
     float* chw = dest->mutable_data<float>();
     float* hwc = const_cast<float*>(src->data<float>());
     int num = dest->dims()[0];
@@ -94,7 +82,6 @@ void TransHwcToChw(Tensor* dest, const Tensor* src) {
   }
 
   if (src->ZynqTensor()->dataType() == zynqmp::FP16) {
-    std::cout << "float16\n";
     float16* chw = dest->mutable_data<float16>();
     float16* hwc = const_cast<float16*>(src->data<float16>());
     int num = dest->dims()[0];
@@ -125,9 +112,6 @@ class TransHwcToChwCompute
     TransHwcToChw(param.y, param.x);
     param.y->ZynqTensor()->flush();
     param.y->ZynqTensor()->copyScaleFrom(param.x->ZynqTensor());
-
-    // param.x->ZynqTensor()->saveToFile("src_hwc", true);
-    // param.y->ZynqTensor()->saveToFile("src_dst", true);
 
     auto out_lod = param.y->mutable_lod();
     *out_lod = param.x->lod();
