@@ -38,6 +38,8 @@ void BilinearInterpCompute(const BilinearInterpParam<FPGA>& param) {
 
   zynqmp::Tensor input_float;
   // input_float.setDataLocation(CPU);
+  // input_x.setAligned(true);
+  input_x->unalignImage();
   float* input = input_float.mutableData<float>(zynqmp::FP32, input_x->shape());
   input_float.copyFrom(input_x);
 
@@ -64,27 +66,27 @@ void BilinearInterpCompute(const BilinearInterpParam<FPGA>& param) {
     for (int k = 0; k < batch_size; ++k) {  // loop for batches
       for (int i = 0; i < out_h; ++i) {     // loop for images
         int h = ratio_h * i;
-        int hid = (h < in_h - 1) ? 1 : 0;
+        int hid = (h < in_h - 1) ? in_w * channels : 0;
         float h1lambda = ratio_h * i - h;
         float h2lambda = 1.f - h1lambda;
 
         for (int j = 0; j < out_w; ++j) {
           int w = ratio_w * j;
-          int wid = (w < in_w - 1) ? 1 : 0;
+          int wid = (w < in_w - 1) ? channels : 0;
           float w1lambda = ratio_w * j - w;
           float w2lambda = 1.f - w1lambda;
           // calculate four position for bilinear interpolation
-          const float* in_pos = &input[k * in_chw + h * in_w + w];
-          float* out_pos = &output[k * out_chw + i * out_w + j];
+          const float* in_pos = &input[(k * in_h * in_w + h * in_w + w) * channels];
+          float* out_pos = &output[(k * out_w * out_h + i * out_w + j) * channels];
 
           for (int c = 0; c < channels; ++c) {  // loop for channels
             // bilinear interpolation
-            out_pos[0] = static_cast<float>(
-                h2lambda * (w2lambda * in_pos[0] + w1lambda * in_pos[wid]) +
-                h1lambda * (w2lambda * in_pos[hid * in_w] +
-                            w1lambda * in_pos[hid * in_w + wid]));
-            in_pos += in_hw;
-            out_pos += out_hw;
+            out_pos[c] = static_cast<float>(
+                h2lambda * (w2lambda * in_pos[0 + c] + w1lambda * in_pos[wid + c]) +
+                h1lambda * (w2lambda * in_pos[hid + c] +
+                            w1lambda * in_pos[hid + wid + c]));
+            // in_pos++;
+            // out_pos++;
           }
         }
       }
@@ -106,6 +108,10 @@ void BilinearInterpKernel<FPGA, float>::Compute(
 
   
   BilinearInterpCompute<float>(param);
+#ifdef PADDLE_MOBILE_DEBUG
+  zynqmp::Debugger::get_instance().registerOutput(
+      "bilinear_interp", param.Out()->zynqmpTensor());
+#endif
 }
 
 }  // namespace operators

@@ -106,8 +106,10 @@ void Transpose2Kernel<FPGA, float>::Compute(
   input->zynqmpTensor()->syncToCPU();
   input->zynqmpTensor()->unalignImage();
   // input->zynqmpTensor()->saveToFile("transpose.txt");
-
-  if (param.InputX()->dims().size() != 4) {
+  const vector<int> axis = param.Axis();;
+  std::cout <<"Transpose2Kernel:" << axis[1] << "," << axis[2] << "," << axis[3] << std::endl;
+  if (param.InputX()->dims().size() != 4 || (axis[1] == 3 && axis[2] == 1 && axis[3] == 2)) {
+  // if (param.InputX()->dims().size() != 4) {
     TransposeCompute<float>(param);
     auto out = param.Out();
     auto out_data = out->data<half>();

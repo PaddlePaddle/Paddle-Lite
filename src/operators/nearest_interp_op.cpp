@@ -27,7 +27,7 @@ void NearestInterpOp<Dtype, T>::InferShape() const {
   int outHeight = this->param_.OutHeight();
   int outWidth = this->param_.OutWidth();
 
-  if (outHeight != 0 && outWidth != 0) {
+  if (outHeight > 0 && outWidth > 0) {
   	out_dims[2] = this->param_.OutHeight();
   	out_dims[3] = this->param_.OutWidth();
   } else {
@@ -35,6 +35,7 @@ void NearestInterpOp<Dtype, T>::InferShape() const {
   	out_dims[2] = x_dims[2] * scale;
   	out_dims[3] = x_dims[3] * scale;
   }
+
   this->param_.Out()->Resize(out_dims);
 
 }

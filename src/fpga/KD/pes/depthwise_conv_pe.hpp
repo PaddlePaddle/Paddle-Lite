@@ -95,7 +95,7 @@ class DepthwiseConvPE : public PE {
 
   bool dispatch() {
     param_.input->syncToDevice();
-    std::cout << "depthwise_conv dispatch" << param_.activeParam.type << std::endl;
+    std::cout << "depthwise_conv dispatch:" << param_.activeParam.type << std::endl;
     if (param_.activeParam.type == TYPE_RELU) {
       inplace_.relu_enable = true;
     } else if (param_.activeParam.type == TYPE_RELU6) {
