@@ -27,6 +27,8 @@ void FeedOp<DeviceType, T>::InferShape() const {
     this->param_.Out()->Resize(input_dims);
   } else {
     this->param_.Out()->Resize(out_dims);
+    auto input = const_cast<LoDTensor*>(&(this->param_.InputX()->at(col)));
+    input->Resize(out_dims);
   }
 }
 
