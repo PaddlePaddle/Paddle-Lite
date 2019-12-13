@@ -89,7 +89,7 @@ void DistributeFpnProposalsCompute::Run() {
     // allocate memory for each level rois
     multi_fpn_rois[i]->Resize({num_rois_level[i], kBoxDim});
     multi_fpn_rois_data[i] = multi_fpn_rois[i]->mutable_data<float>();
-    std::vector<size_t> lod0(1, 0);
+    std::vector<uint64_t> lod0(1, 0);
     multi_fpn_rois_lod0.push_back(lod0);
     // statistic start point for each level rois
     num_rois_level_integral[i + 1] =
