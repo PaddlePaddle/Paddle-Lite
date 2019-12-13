@@ -48,7 +48,6 @@ inline int get_split_num(Tensor* filter) {
              filter->shape().width();
   auto num = filter->shape().num();
   int div_capacity = filter::calc_division_capacity(chw);
-  // int aligned_num = align_to_x(num ,FILTER_NUM_ALIGNMENT);
   int filter_num_alignment = filter::get_filter_num_alignment();
   int aligned_num = align_to_x(num, filter_num_alignment);
   return filter::calc_split_num(aligned_num, div_capacity);
@@ -213,16 +212,6 @@ inline void format_filter(Tensor* filter,
   for (size_t i = 0; i < max_values.size(); i++) {
     scales.push_back(max_values[i] / max_value);
   }
-
-  // filter->saveToFile("filter.txt");
-  // std::ofstream ofs;
-  // ofs.open("quant.txt");
-  // for (int i = 0; i < mem_size; i++) {
-  //   float value = quantized_data[i];
-  //   ofs << value << std::endl;
-  // }
-  // ofs.close();
-  // exit(-1);
 }
 
 inline void format_dw_filter(Tensor* filter,
@@ -356,12 +345,9 @@ inline void split_filter_num(const ConvParam& c_param) {
                       &conv_param->filter,
                       &conv_param->scaleBias,
                       param.groups);
-    // conv_param->scaleBias.saveToFile("sb.txt");
+
     conv_param->scaleBias.flush();
     float* bs_data = conv_param->scaleBias.data<float>();
-    // conv_param->scaleBias.saveToFile("sb.txt");
-    // param.scale()->saveToFile("scale.txt");
-    // param.bias()->saveToFile("bias.txt");
 
     args.group_num = param.groups;
     args.relu_enabled = param.relu.enabled;
@@ -445,7 +431,6 @@ inline void split_channel(const ConvParam& c_param) {
                       &conv_param->scaleBias,
                       param.groups);
     conv_param->scaleBias.flush();
-    // conv_param->scaleBias.saveToFile("sb.txt");
 
     ConvArgs& args = conv_param->args;
     args.group_num = param.groups;

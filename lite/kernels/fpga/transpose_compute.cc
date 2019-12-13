@@ -47,8 +47,6 @@ void Transpose2Compute::Run() {
     //   int num = input_x_dims[1];
     // int channel = input_x_dims[2];
 
-    // // DLOG << "num::" << num << "  channel::" << channel;
-
     // int index = 0;
     // for (int n = 0; n < num; n++) {
     //   for (int c = 0; c < channel; c++) {

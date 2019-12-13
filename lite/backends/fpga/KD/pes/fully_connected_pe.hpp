@@ -39,12 +39,6 @@ class FullyConnectedPE : public PE {
     convParam_.input = param_.input;
     num_ = param_.input->shape().num();
 
-    // if (num_ == 1) {
-
-    // } else {
-    //   tempOut_.mutableData<void>(FP16, param_.out->shape());
-    //   convParam_.output = &tempOut_;
-    // }
     convParam_.output = param_.output;
 
     convParam_.groups = 1;
@@ -72,11 +66,8 @@ class FullyConnectedPE : public PE {
         new_filter_data[i * chw + j] = scale;
       }
     }
-    // conv_filter->copyFrom(param_.filter);
-
     conv_filter->flush();
     convParam_.filter = conv_filter;
-    // convParam_.filter = param_.filter;
 
     Shape sb_shape(N, {channel});
     float* scale_data = convParam_.scale()->mutableData<float>(FP32, sb_shape);
