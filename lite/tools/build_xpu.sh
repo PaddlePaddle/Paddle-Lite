@@ -73,8 +73,8 @@ function build_xpu {
         -DWITH_MKLDNN=OFF \
         -DLITE_WITH_X86=ON \
         -DWITH_MKL=ON \
-        -DLITE_BUILD_EXTRA=ON \
         -DLITE_WITH_XPU=ON \
+        -DLITE_BUILD_EXTRA=${BUILD_EXTRA} \
         -DWITH_TESTING=${WITH_TESTING} \
         -DXPU_SDK_ROOT=${XPU_SDK_ROOT}
 
