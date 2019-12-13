@@ -355,7 +355,8 @@ void test_pool_fp32(const std::vector<DDim>& input_dims,
               LOG(FATAL) << "test fp32 pool: input: " << dim_in
                          << ", output: " << dim_out
                          << ", kernel dim: " << ksize[0] << ", " << ksize[1]
-                         << ", pad: " << pads[0] << ", " << pads[1]
+                         << ", pad: " << pads[0] << ", " << pads[1] << ", "
+                         << pads[2] << ", " << pads[3]
                          << ", stride: " << strides[0] << ", " << strides[1]
                          << ", global_pooling: "
                          << (flag_global ? "global" : "false")
@@ -370,6 +371,7 @@ void test_pool_fp32(const std::vector<DDim>& input_dims,
         LOG(INFO) << "test fp32 pool: input: " << dim_in
                   << ", output: " << dim_out << ", kernel dim: " << ksize[0]
                   << ", " << ksize[1] << ", pad: " << pads[0] << ", " << pads[1]
+                  << ", " << pads[2] << ", " << pads[3]
                   << ", stride: " << strides[0] << ", " << strides[1]
                   << ", global_pooling: " << (flag_global ? "global" : "false")
                   << ", pooling_type: " << pooling_type
