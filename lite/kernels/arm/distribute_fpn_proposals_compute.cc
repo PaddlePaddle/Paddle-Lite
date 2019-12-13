@@ -84,7 +84,7 @@ void DistributeFpnProposalsCompute::Run() {
   // pointer which point to each level fpn rois
   std::vector<float*> multi_fpn_rois_data(num_level);
   // lod0 which will record the offset information of each level rois
-  std::vector<std::vector<size_t>> multi_fpn_rois_lod0;
+  std::vector<std::vector<uint64_t>> multi_fpn_rois_lod0;
   for (int i = 0; i < num_level; ++i) {
     // allocate memory for each level rois
     multi_fpn_rois[i]->Resize({num_rois_level[i], kBoxDim});
