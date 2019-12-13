@@ -14,13 +14,11 @@
 
 #pragma once
 
-#include "lite/kernels/xpu/bridges/registry.h"
-
-USE_XPU_BRIDGE(relu);
-USE_XPU_BRIDGE(conv2d);
-USE_XPU_BRIDGE(depthwise_conv2d);
-USE_XPU_BRIDGE(elementwise_add);
-USE_XPU_BRIDGE(pool2d);
-USE_XPU_BRIDGE(softmax);
-USE_XPU_BRIDGE(mul);
-USE_XPU_BRIDGE(batch_norm);
+USE_SUBGRAPH_BRIDGE(XPU, relu);
+USE_SUBGRAPH_BRIDGE(XPU, conv2d);
+USE_SUBGRAPH_BRIDGE(XPU, depthwise_conv2d);
+USE_SUBGRAPH_BRIDGE(XPU, elementwise_add);
+USE_SUBGRAPH_BRIDGE(XPU, pool2d);
+USE_SUBGRAPH_BRIDGE(XPU, softmax);
+USE_SUBGRAPH_BRIDGE(XPU, mul);
+USE_SUBGRAPH_BRIDGE(XPU, batch_norm);

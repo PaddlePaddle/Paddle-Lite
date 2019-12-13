@@ -12,30 +12,39 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/xpu/bridges/registry.h"
+#pragma once
+
+#include <xtcl/xtcl.h>
+#include <memory>
+#include <string>
 #include <utility>
+#include <vector>
 
 namespace paddle {
 namespace lite {
-namespace kernels {
 namespace xpu {
-namespace bridges {
 
-Factory& Factory::Instance() {
-  static Factory g_xpu_bridge;
-  return g_xpu_bridge;
-}
+class Device {
+ public:
+  static Device& Global() {
+    static Device x;
+    return x;
+  }
+  Device() {}
 
-bool Factory::HasType(const std::string& op_type) const {
-  return map_.count(op_type);
-}
+  // Build the XPU graph to the XPU runtime, return the XPU runtime which can be
+  // used to run inference.
+  std::unique_ptr<xtcl::network::xRuntimeInstance> Build(
+      xtcl::network::xNetworkBuilder* builder,
+      xtcl::network::xTensorCompiler::ParamNDArrayMap* params,
+      std::vector<xtcl::xExpr*>* outputs);
 
-void Factory::Insert(const std::string& op_type, const func_type& func_name) {
-  map_.insert(std::make_pair(op_type, func_name));
-}
+ private:
+  // Keep reserved fields
+  int device_id_{0};
+  std::string device_name_{"llvm"};
+};
 
-}  // namespace bridges
 }  // namespace xpu
-}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

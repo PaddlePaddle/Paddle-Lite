@@ -90,6 +90,10 @@ std::vector<Place> ParserValidPlaces() {
           TARGET(kARM));  // enable kARM CPU kernel when no opencl kernel
     } else if (target_repr == "x86") {
       valid_places.emplace_back(TARGET(kX86));
+    } else if (target_repr == "npu") {
+      valid_places.emplace_back(TARGET(kNPU));
+    } else if (target_repr == "xpu") {
+      valid_places.emplace_back(TARGET(kXPU));
     } else {
       LOG(FATAL) << lite::string_format(
           "Wrong target '%s' found, please check the command flag "

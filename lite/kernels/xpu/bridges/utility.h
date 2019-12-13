@@ -17,21 +17,19 @@
 #include <xtcl/xtcl.h>
 #include <memory>
 #include <string>
-#include <unordered_map>
 #include <vector>
 #include "lite/core/op_lite.h"
-#include "lite/core/target_wrapper.h"
 #include "lite/core/tensor.h"
 
 namespace paddle {
 namespace lite {
+namespace subgraph {
 namespace xpu {
 
+// Type/tensor converters for converting Paddle type/tensor to XPU type/tensor
 bool HasInputArg(const OpInfo* op_info,
                  const Scope* scope,
                  const std::string& argname);
-
-std::string UniqueName(const std::string& prefix);
 
 xtcl::DataType CvtPrecisionType(PrecisionType in_type);
 
@@ -44,17 +42,12 @@ xtcl::Array<xtcl::xIndexExpr> CvtShape(const std::vector<int64_t>& in_shape);
 xtcl::Array<xtcl::xIndexExpr> CvtShape(const DDim& in_dims);
 
 std::shared_ptr<xtcl::xNDArray> CvtTensor(
-    Tensor* in_tensor,
+    const Tensor& in_tensor,
     std::vector<int64_t> out_shape = {},
     PrecisionType in_ptype = PRECISION(kFloat),
     DataLayoutType in_ltype = DATALAYOUT(kNCHW));
 
-bool BuildModel(
-    std::shared_ptr<xtcl::network::xNetworkBuilder> builder,
-    std::shared_ptr<xtcl::network::xTensorCompiler::ParamNDArrayMap> params,
-    std::vector<std::shared_ptr<xtcl::xExpr>>* outputs,
-    lite::Tensor* model);
-
 }  // namespace xpu
+}  // namespace subgraph
 }  // namespace lite
 }  // namespace paddle

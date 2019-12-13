@@ -70,10 +70,14 @@ struct CalibParam {
   float scale;
 };
 
-struct GraphParam {
-  std::vector<std::pair<std::string, const lite::Tensor*>> inputs{};
-  lite::Tensor* weight{};
-  std::vector<std::pair<std::string, lite::Tensor*>> outputs{};
+struct SubgraphParam {
+  std::vector<std::string> input_names{};
+  std::vector<std::string> output_names{};
+  std::vector<std::string> input_data_names{};
+  std::vector<std::string> output_data_names{};
+  int sub_block_idx{-1};
+  cpp::BlockDesc* sub_block_desc{nullptr};
+  Scope* scope{nullptr};
 };
 
 /// -------------------------- NN operators ------------------------------------
