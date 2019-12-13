@@ -199,7 +199,7 @@ sudo make install
 # 1. Install basic software
 brew install curl gcc git make unzip wget
 
-# 2. Install cmake 3.10
+# 2. Install cmake: mac上实现IOS编译和Android编译要求的cmake版本不一致,可以根据需求选择安装。
 # （1）在mac环境编译 Paddle-Lite 的Android版本，需要安装cmake 3.10
 #     可以手动下载安装包`https://cmake.org/files/v3.10/cmake-3.10.3-Darwin-x86_64.dmg`
 #     手动安装cmake3.10后,设置环境变量：
