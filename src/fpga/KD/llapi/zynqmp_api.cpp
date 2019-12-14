@@ -64,7 +64,7 @@ void reset_device() {
 
 // memory management;
 void *fpga_malloc(size_t size) {
-std::cout << "fpga malloc:"  << size  << std::endl;
+// std::cout << "fpga malloc:"  << size  << std::endl;
 // size << ") - ";
 #ifdef ENABLE_DEBUG
 // std::cout << "fpga_malloc:" << size << std::endl;
@@ -84,7 +84,7 @@ std::cout << "fpga malloc:"  << size  << std::endl;
   if (memory_size > memory_size_max) {
     memory_size_max = memory_size;
   }
-  std::cout << "memory_size_max:" << memory_size << std::endl;
+  // std::cout << "memory_size_max:" << memory_size << std::endl;
   return ptr;
 #else
   return malloc(size);

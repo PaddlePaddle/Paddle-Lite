@@ -41,7 +41,6 @@ bool DWConvBNRelu6Kernel<FPGA, float>::Init(
   depthwise_conv_param.filter = param->Filter()->zynqmpTensor();
   // depthwise_conv_param.relu.enabled = true;
   depthwise_conv_param.activeParam.type = zynqmp::TYPE_RELU6;
-  std::cout << "DWConvBNRelu6Kernel:" << depthwise_conv_param.activeParam.type << std::endl;
   depthwise_conv_param.groups = param->Groups();
   depthwise_conv_param.strides = param->Strides();
   depthwise_conv_param.paddings = param->Paddings();
