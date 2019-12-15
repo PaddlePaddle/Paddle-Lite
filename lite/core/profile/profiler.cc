@@ -22,10 +22,10 @@ namespace lite {
 namespace profile {
 
 namespace {
-  auto op_comp = [](const OpCharacter& c1, const OpCharacter& c2) {
-    return (c1.target < c2.target) || (c1.op_type < c2.op_type) ||
-           (c1.kernel_name < c2.kernel_name) || (c1.remark < c2.remark);
-  };
+auto op_comp = [](const OpCharacter& c1, const OpCharacter& c2) {
+  return (c1.target < c2.target) || (c1.op_type < c2.op_type) ||
+         (c1.kernel_name < c2.kernel_name) || (c1.remark < c2.remark);
+};
 }
 
 int Profiler::NewTimer(const OpCharacter& ch) {
@@ -57,7 +57,7 @@ float Profiler::StopTiming(const int index, KernelContext* ctx) {
   return units_[index].timer->Stop(ctx);
 }
 
-std::string Profiler::Summary(bool concise) {
+std::string Profiler::Summary(bool concise, size_t w) {
   using std::setw;
   using std::left;
   using std::fixed;
@@ -65,32 +65,34 @@ std::string Profiler::Summary(bool concise) {
   std::string title;
   // Title.
   if (concise) {
-    ss << "Timing cycle = " << units_.front().timer->LapTimes().Size() << std::endl;
-    ss << "===== Concise Profiler Summary: " << name_ << " =====" << std::endl;
+    ss << "Timing cycle = " << units_.front().timer->LapTimes().Size()
+       << std::endl;
+    ss << "===== Concise Profiler Summary: " << name_ << ", Exclude " << w
+       << " warm-ups =====" << std::endl;
   } else {
-    ss << "===== Detailed Profiler Summary: " << name_ << " =====" << std::endl;
+    ss << "===== Detailed Profiler Summary: " << name_ << ", Exclude " << w
+       << " warm-ups =====" << std::endl;
   }
-  ss << setw(25) << left << "Operator Type" \
-     << " " << setw(40) << left << "Kernel Name"   \
-     << " " << setw(12) << left << "Remark"        \
-     << " " << setw(12) << left << "Avg (ms)"      \
-     << " " << setw(12) << left << "Min (ms)"      \
-     << " " << setw(12) << left << "Max (ms)"      \
-     << " " << setw(12) << left << "Last (ms)"     \
-     << std::endl;
+  ss << setw(25) << left << "Operator Type"
+     << " " << setw(40) << left << "Kernel Name"
+     << " " << setw(12) << left << "Remark"
+     << " " << setw(12) << left << "Avg (ms)"
+     << " " << setw(12) << left << "Min (ms)"
+     << " " << setw(12) << left << "Max (ms)"
+     << " " << setw(12) << left << "Last (ms)" << std::endl;
   // Profile information.
   if (concise) {
     std::map<OpCharacter, TimeInfo, decltype(op_comp)> summary(op_comp);
     for (auto& unit : units_) {
       auto ch = summary.find(unit.character);
       if (ch != summary.end()) {
-        ch->second.avg += unit.timer->LapTimes().Avg();
-        ch->second.min += unit.timer->LapTimes().Min();
-        ch->second.max += unit.timer->LapTimes().Max();
+        ch->second.avg += unit.timer->LapTimes().Avg(w);
+        ch->second.min += unit.timer->LapTimes().Min(w);
+        ch->second.max += unit.timer->LapTimes().Max(w);
       } else {
-        TimeInfo info({unit.timer->LapTimes().Avg(),
-                       unit.timer->LapTimes().Min(),
-                       unit.timer->LapTimes().Max()});
+        TimeInfo info({unit.timer->LapTimes().Avg(w),
+                       unit.timer->LapTimes().Min(w),
+                       unit.timer->LapTimes().Max(w)});
         summary.insert({unit.character, info});
       }
     }
@@ -108,13 +110,13 @@ std::string Profiler::Summary(bool concise) {
   } else {
     for (auto& unit : units_) {
       // clang-format off
-      ss << setw(25) << left << fixed << unit.character.op_type              \
-         << " " << setw(40) << left << fixed << unit.character.kernel_name    \
-         << " " << setw(12) << left << fixed << unit.character.remark         \
-         << " " << setw(12) << left << fixed << unit.timer->LapTimes().Avg()  \
-         << " " << setw(12) << left << fixed << unit.timer->LapTimes().Min()  \
-         << " " << setw(12) << left << fixed << unit.timer->LapTimes().Max()  \
-         << " " << setw(12) << left << fixed << unit.timer->LapTimes().Last() \
+      ss << setw(25) << left << fixed << unit.character.op_type                \
+         << " " << setw(40) << left << fixed << unit.character.kernel_name     \
+         << " " << setw(12) << left << fixed << unit.character.remark          \
+         << " " << setw(12) << left << fixed << unit.timer->LapTimes().Avg(w)  \
+         << " " << setw(12) << left << fixed << unit.timer->LapTimes().Min(w)  \
+         << " " << setw(12) << left << fixed << unit.timer->LapTimes().Max(w)  \
+         << " " << setw(12) << left << fixed << unit.timer->LapTimes().Last(w) \
          << std::endl;
       // clang-format on
     }

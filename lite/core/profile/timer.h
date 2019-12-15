@@ -15,7 +15,7 @@
 #pragma once
 #include <algorithm>
 #include <chrono>  // NOLINT
-#include <list>
+#include <vector>
 #ifdef LITE_WITH_CUDA
 #include "lite/backends/cuda/cuda_utils.h"
 #endif
@@ -30,21 +30,44 @@ class TimeList {
  public:
   void Clear() { laps_t_.clear(); }
   void Add(T t) { laps_t_.push_back(t); }
-  T Last() const { return laps_t_.back(); }
-  T Max() const { return *std::max_element(laps_t_.begin(), laps_t_.end()); }
-  T Min() const { return *std::min_element(laps_t_.begin(), laps_t_.end()); }
-  T Sum() const { return std::accumulate(laps_t_.begin(), laps_t_.end(), 0.0); }
-  size_t Size() const { return laps_t_.size(); }
-  T Avg() const {
-    if (!Size()) {
+  T Last(size_t offset = 0) const {
+    if (!Size(offset)) {
       return 0;
     }
-    return Sum() / Size();
+    return laps_t_.back();
   }
-  const std::list<T>& Raw() const { return laps_t_; }
+  T Max(size_t offset = 0) const {
+    if (!Size(offset)) {
+      return 0;
+    }
+    return *std::max_element((laps_t_.begin() + offset), laps_t_.end());
+  }
+  T Min(size_t offset = 0) const {
+    if (!Size(offset)) {
+      return 0;
+    }
+    return *std::min_element((laps_t_.begin() + offset), laps_t_.end());
+  }
+  T Sum(size_t offset = 0) const {
+    if (!Size(offset)) {
+      return 0;
+    }
+    return std::accumulate((laps_t_.begin() + offset), laps_t_.end(), 0.0);
+  }
+  size_t Size(size_t offset = 0) const {
+    size_t size = (laps_t_.size() <= offset) ? 0 : (laps_t_.size() - offset);
+    return size;
+  }
+  T Avg(size_t offset = 0) const {
+    if (!Size(offset)) {
+      return 0;
+    }
+    return Sum(offset) / Size(offset);
+  }
+  const std::vector<T>& Raw() const { return laps_t_; }
 
  private:
-  std::list<T> laps_t_;
+  std::vector<T> laps_t_;
 };
 
 class Timer {
@@ -70,8 +93,10 @@ class Timer {
   const TimeList<float>& LapTimes() const { return laps_t_; }
 
  protected:
-  std::chrono::time_point<std::chrono::system_clock> t_start_, t_stop_;
   TimeList<float> laps_t_;
+
+ private:
+  std::chrono::time_point<std::chrono::system_clock> t_start_, t_stop_;
 };
 
 template <TargetType Target>
