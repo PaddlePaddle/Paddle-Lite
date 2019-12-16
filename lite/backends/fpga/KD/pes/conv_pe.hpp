@@ -59,11 +59,9 @@ class ConvPE : public PE {
     }
 
     if (param_.filter->shape().width() == 1 &&
-        param_.filter->shape().height() == 1) {
-      // use_cpu_ = true;
+        param_.filter->shape().height() == 1) {  // NOLINT
     }
-    if (!use_cpu_) {
-      // param_.filter->releaseData();
+    if (!use_cpu_) {  // NOLINT
     }
   }
 
@@ -94,7 +92,6 @@ class ConvPE : public PE {
     int kernel_width = param_.filter->shape().width();
     int kernel_step_h = param_.strides[0];
     int kernel_step_w = param_.strides[1];
-    // int out_channel = param_.strides[1];
     int pooled_height_ = output->shape().height();
     int pooled_width_ = out_width;
     int filter_chw = image_channels * kernel_height * kernel_width;
@@ -205,7 +202,6 @@ class ConvPE : public PE {
           }
           out_index = h * out_width * out_channel + w * out_channel + i;
           out[out_index] = sum;
-          // out_index++;
         }
       }
     }

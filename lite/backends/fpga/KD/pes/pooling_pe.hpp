@@ -67,9 +67,6 @@ class PoolingPE : public PE {
 
     use_cpu_ = output->shape().width() == 1 && output->shape().height() == 1 &&
                (k_width > 7 || k_height > 7);
-    // use_cpu_ = output->shape().width() == 1 && output->shape().height() == 1
-    // &&
-    //            (k_width > 255 || k_height > 255);
     use_cpu_ = param_.type == AVERAGE;
   }
 
@@ -79,7 +76,6 @@ class PoolingPE : public PE {
     input->syncToCPU();
 
     Tensor float_input;
-    // Tensor float_output;
     float* image_addr = float_input.mutableData<float>(FP32, input->shape());
     float_input.copyFrom(input);
     float16* data_out = output->data<float16>();
@@ -192,9 +188,7 @@ class PoolingPE : public PE {
 
   bool dispatch() {
     if (use_cpu_) {
-      // cpu_compute();
       compute();
-      // exit(-1);
       return true;
     }
     param_.input->syncToDevice();

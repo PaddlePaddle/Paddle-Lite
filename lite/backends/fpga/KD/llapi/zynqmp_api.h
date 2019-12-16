@@ -14,8 +14,8 @@ limitations under the License. */
 
 #pragma once
 
-#ifndef PADDLE_MOBILE_SRC_FPGA_KD_ZYNQMP_API_H
-#define PADDLE_MOBILE_SRC_FPGA_KD_ZYNQMP_API_H
+#ifndef PADDLE_LITE_SRC_FPGA_KD_ZYNQMP_API_H
+#define PADDLE_LITE_SRC_FPGA_KD_ZYNQMP_API_H
 
 #include <stdint.h>
 #include <cstddef>
@@ -371,4 +371,4 @@ float fp16_2_fp32(int16_t fp16_num);
 }  // namespace zynqmp
 }  // namespace paddle
 
-#endif  // PADDLE_MOBILE_SRC_FPGA_KD_ZYNQMP_API_H
+#endif  // PADDLE_LITE_SRC_FPGA_KD_ZYNQMP_API_H

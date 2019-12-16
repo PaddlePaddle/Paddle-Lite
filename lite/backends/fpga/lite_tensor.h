@@ -165,9 +165,6 @@ class TensorLite {
 
   TargetType target() const { return target_; }
 
-  // template <typename T>
-  // TensorLite Slice(int64_t begin, int64_t end) const;
-
   zynqmp::Tensor *ZynqTensor() const { return zynq_tensor_; }
 
   friend std::ostream &operator<<(std::ostream &os, const TensorLite &tensor) {
@@ -257,8 +254,6 @@ TensorLite TensorLite::Slice(int64_t begin, int64_t end) const {
     int64_t base = numel() / dims_[0];
 
     TensorLite dst;
-    // dst.buffer_ = buffer_;
-    // dst.zynq_tensor_ = zynq_tensor_;
     dst.target_ = target_;
     auto dst_dims = dims_;
     dst_dims[0] = end - begin;
@@ -271,7 +266,6 @@ TensorLite TensorLite::Slice(int64_t begin, int64_t end) const {
            dst_dims.production() * sizeof(T));
     dst.ZynqTensor()->saveToFile("_slice", true);
 
-    // dst.offset_ = offset_ + static_cast<size_t>(begin * base) * sizeof(T);
     return dst;
   }
 }

@@ -67,15 +67,12 @@ class ScalePE : public PE {
 
     Tensor* scale = dw_param.scale();
     float16* scale_data = scale->mutableData<float16>(FP16, shape);
-    // memcpy(scale_data, param_.scale->data<float>(), input->shape().channel()
-    // * sizeof(float));
 
     Tensor* bias = dw_param.bias();
     float16* bias_data = bias->mutableData<float16>(FP16, shape);
     std::fill_n(bias_data, input->shape().channel(), 0);
 
     if (param_.scale->dataType() == FP32) {
-      // std::cout << "scale dataType FP32:" << std::endl;
       if (param_.bias != nullptr) {
         float* bias_data_float = param_.bias->data<float>();
         for (int i = 0; i < repeat; i++) {
@@ -127,11 +124,6 @@ class ScalePE : public PE {
       }
     }
 
-    // if (param_.bias != nullptr) {
-    //   memcpy(bias_data, param_.bias->data<float>(), input->shape().channel()
-    //   * sizeof(float));
-    // }
-
     dw_param.input = param_.input;
     dw_param.output = param_.output;
     dw_param.filter = &filter;
@@ -182,9 +174,6 @@ class ScalePE : public PE {
   }
 
   bool dispatch() {
-    // cpu_compute();
-    // return true;
-
     if (param_.scale->dataType() == FP16) {
       DepthwiseConvParam& dw_param = dw_pe_.param();
       memcpy(dw_param.quantizedFilter()->mutableData<float16>(),
@@ -194,7 +183,6 @@ class ScalePE : public PE {
       dw_param.quantizedFilter()->scale()[1] = param_.scale->scale()[1];
 
       dw_param.quantizedFilter()->flush();
-      // apply();
     }
     param_.input->syncToDevice();
     return dw_pe_.dispatch();
