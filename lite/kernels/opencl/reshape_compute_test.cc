@@ -225,4 +225,3 @@ TEST(reshape_opencl, compute) {
 
 USE_LITE_KERNEL(reshape, kOpenCL, kFloat, kImageDefault, image2d);
 USE_LITE_KERNEL(reshape2, kOpenCL, kFloat, kImageDefault, image2d);
-
