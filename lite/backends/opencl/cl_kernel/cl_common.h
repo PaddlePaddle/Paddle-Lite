@@ -40,10 +40,10 @@ limitations under the License. */
 #define WRITE_IMG_TYPE(type_char, img, pos, value) \
   _WRITE_IMG_TYPE(type_char, img, pos, value)
 
-#define _READ_IMG_TYPE(type_char, img, pos, sampler) \
+#define _READ_IMG_TYPE(type_char, img, sampler, pos) \
   read_image##type_char(img, sampler, pos)
-#define READ_IMG_TYPE(type_char, img, pos, sampler) \
-  _READ_IMG_TYPE(type_char, img, pos, sampler)
+#define READ_IMG_TYPE(type_char, img, sampler, pos) \
+  _READ_IMG_TYPE(type_char, img, sampler, pos)
 
 inline CL_DTYPE activation(CL_DTYPE in
 #ifdef PRELU
