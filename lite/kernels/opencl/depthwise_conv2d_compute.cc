@@ -227,7 +227,7 @@ class DepthwiseConv2dComputeFP16Image
 };
 
 class DepthwiseConv2d3x3s1ComputeFP16Image
-    : public KernelLite<TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kNCHW)> {
+    : public KernelLite<TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kNHWC)> {
  public:
   using param_t = operators::ConvParam;
 
