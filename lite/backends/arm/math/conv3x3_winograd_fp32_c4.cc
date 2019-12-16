@@ -81,7 +81,6 @@ void conv_compute_6x6_3x3(const float* input,
                           ARMContext* ctx) {
   const int pad_h = (*param.paddings)[0];
   const int pad_w = (*param.paddings)[2];
-  auto act_param = param.activation_param;
   float* tmp_work_space =
       ctx->workspace_data<float>() + ctx->llc_size() / sizeof(float);
 
@@ -282,7 +281,7 @@ void conv_compute_6x6_3x3(const float* input,
                                        trans_remain_tmp_data + i * 24,
                                        4,
                                        bias_value,
-                                       false);
+                                       param.fuse_relu);
             }
             write_to_output_c4_fp32(trans_remain_tmp_data,
                                     output_ptr,
@@ -297,7 +296,7 @@ void conv_compute_6x6_3x3(const float* input,
                                     wout,
                                     false,
                                     zero_ptr,
-                                    &act_param);
+                                    nullptr);
           }
         } else {
           for (int ci = 0; ci < oc_4; ++ci) {
@@ -322,7 +321,7 @@ void conv_compute_6x6_3x3(const float* input,
                                        trans_remain_tmp_data + i * 24,
                                        4,
                                        bias_value,
-                                       false);
+                                       param.fuse_relu);
             }
             // copy to dest
             memset(trans_tmp_data, 0, 144 * sizeof(float));
@@ -344,7 +343,7 @@ void conv_compute_6x6_3x3(const float* input,
                                     wout,
                                     false,
                                     zero_ptr,
-                                    &act_param);
+                                    nullptr);
           }
         }
       }
@@ -369,7 +368,6 @@ void conv_compute_2x2_3x3(const float* input,
                           ARMContext* ctx) {
   const int pad_h = (*param.paddings)[0];
   const int pad_w = (*param.paddings)[2];
-  auto act_param = param.activation_param;
   float* tmp_work_space =
       ctx->workspace_data<float>() + ctx->llc_size() / sizeof(float);
 
@@ -553,7 +551,7 @@ void conv_compute_2x2_3x3(const float* input,
                                      4,
                                      8,
                                      bias_value,
-                                     false);
+                                     param.fuse_relu);
             write_to_output_c4_fp32(trans_remain_tmp_data,
                                     output_ptr,
                                     ci * 4,
@@ -567,7 +565,7 @@ void conv_compute_2x2_3x3(const float* input,
                                     wout,
                                     false,
                                     zero_ptr,
-                                    &act_param);
+                                    nullptr);
           }
         } else {
           for (int ci = 0; ci < oc_4; ++ci) {
@@ -587,7 +585,7 @@ void conv_compute_2x2_3x3(const float* input,
                                      4,
                                      8,
                                      bias_value,
-                                     false);
+                                     param.fuse_relu);
             // copy to dest
             memset(trans_tmp_data, 0, 16 * sizeof(float));
             for (int i = 0; i < ey; ++i) {
@@ -608,7 +606,7 @@ void conv_compute_2x2_3x3(const float* input,
                                     wout,
                                     false,
                                     zero_ptr,
-                                    &act_param);
+                                    nullptr);
           }
         }
       }
@@ -631,7 +629,6 @@ void conv_compute_2x2_3x3_small(const float* input,
                                 ARMContext* ctx) {
   const int pad_h = (*param.paddings)[0];
   const int pad_w = (*param.paddings)[2];
-  auto act_param = param.activation_param;
   float* tmp_work_space =
       ctx->workspace_data<float>() + ctx->llc_size() / sizeof(float);
 
@@ -808,7 +805,7 @@ void conv_compute_2x2_3x3_small(const float* input,
                                      4,
                                      8,
                                      bias_value,
-                                     false);
+                                     param.fuse_relu);
             write_to_output_c4_fp32(trans_remain_tmp_data,
                                     output_ptr,
                                     ci * 4,
@@ -822,7 +819,7 @@ void conv_compute_2x2_3x3_small(const float* input,
                                     wout,
                                     false,
                                     zero_ptr,
-                                    &act_param);
+                                    nullptr);
           }
         } else {
           for (int ci = 0; ci < oc_4; ++ci) {
@@ -842,7 +839,7 @@ void conv_compute_2x2_3x3_small(const float* input,
                                      4,
                                      8,
                                      bias_value,
-                                     false);
+                                     param.fuse_relu);
             // copy to dest
             memset(trans_tmp_data, 0, 16 * sizeof(float));
             for (int i = 0; i < ey; ++i) {
@@ -863,7 +860,7 @@ void conv_compute_2x2_3x3_small(const float* input,
                                     wout,
                                     false,
                                     zero_ptr,
-                                    &act_param);
+                                    nullptr);
           }
         }
       }

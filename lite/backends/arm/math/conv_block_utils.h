@@ -1586,7 +1586,9 @@ inline bool write_to_output_c4_fp32(const float* din,
 
   int size_h = (he > height ? height : he) - hs;  // size_h == hei_n
 
-  int cnt = (width - ws) / w4;
+  int valid_we = we > width ? width : we;
+  int cnt = (valid_we - ws) / w4;
+  int remain = valid_we - ws - cnt * w4;
 
   for (int i = 0; i < size_h; i++) {
     int size_w = i * width;
@@ -1617,20 +1619,20 @@ inline bool write_to_output_c4_fp32(const float* din,
                          cnt_loop,
                          act_param);
     }
-    if (we > width) {
+    if (remain > 0) {
       int offset = i * w_round * c4 + c4 * w4 * cnt;
       din_hei_ptr = ptr_din + offset;
       doutc0_ptr += w4 * cnt;
       doutc1_ptr += w4 * cnt;
       doutc2_ptr += w4 * cnt;
       doutc3_ptr += w4 * cnt;
-      int j = we - w4;
+      int j = 0;
       if (act_param != nullptr && act_param->has_active) {
         float six = act_param->Relu_clipped_coef;
         float scale = act_param->Leaky_relu_alpha;
         switch (act_param->active_type) {
           case lite_api::ActivationType::kRelu:
-            for (; j < width; ++j) {
+            for (; j < remain; ++j) {
               *(doutc0_ptr++) = LITEMAX(din_hei_ptr[0], 0.f);
               *(doutc1_ptr++) = LITEMAX(din_hei_ptr[1], 0.f);
               *(doutc2_ptr++) = LITEMAX(din_hei_ptr[2], 0.f);
@@ -1640,7 +1642,7 @@ inline bool write_to_output_c4_fp32(const float* din,
             break;
           case lite_api::ActivationType::kRelu6:
             /* 0 <= din <= 6 */
-            for (; j < width; ++j) {
+            for (; j < remain; ++j) {
               float tmp1 = LITEMAX(din_hei_ptr[0], 0.f);
               float tmp2 = LITEMAX(din_hei_ptr[1], 0.f);
               float tmp3 = LITEMAX(din_hei_ptr[2], 0.f);
@@ -1654,7 +1656,7 @@ inline bool write_to_output_c4_fp32(const float* din,
             break;
           case lite_api::ActivationType::kLeakyRelu:
             /*din = din >= 0 ? din : din * scale*/
-            for (; j < width; ++j) {
+            for (; j < remain; ++j) {
               if (din_hei_ptr[0] >= 0) {
                 *(doutc0_ptr++) = din_hei_ptr[0];
               } else {
@@ -1684,7 +1686,7 @@ inline bool write_to_output_c4_fp32(const float* din,
                        << " fuse not support";
         }
       } else {
-        for (; j < width; ++j) {
+        for (; j < remain; ++j) {
           *(doutc0_ptr++) = din_hei_ptr[0];
           *(doutc1_ptr++) = din_hei_ptr[1];
           *(doutc2_ptr++) = din_hei_ptr[2];
