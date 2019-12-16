@@ -690,12 +690,11 @@ inline void prepack_input_nxwc8_int8_dw(const int8_t* din,
 inline void act_switch_c1_fp32(const float* din_ptr,
                                float* doutc0_ptr,
                                int cnt_loop,
-                               const operators::ActivationParam act_param) {
-  bool has_active = act_param.has_active;
-  if (has_active) {
-    float32x4_t six = vdupq_n_f32(act_param.Relu_clipped_coef);
-    float32x4_t scale = vdupq_n_f32(act_param.Leaky_relu_alpha);
-    switch (act_param.active_type) {
+                               const operators::ActivationParam* act_param) {
+  if (act_param != nullptr && act_param->has_active) {
+    float32x4_t six = vdupq_n_f32(act_param->Relu_clipped_coef);
+    float32x4_t scale = vdupq_n_f32(act_param->Leaky_relu_alpha);
+    switch (act_param->active_type) {
       case lite_api::ActivationType::kRelu:
 #ifdef __aarch64__
         asm volatile(NCHWC1_TRANS_FP32_COMPUTE NCHWC1_TRANS_FP32_RELU
@@ -803,7 +802,7 @@ inline void act_switch_c1_fp32(const float* din_ptr,
         break;
       default:
         LOG(FATAL) << "this act_type: "
-                   << static_cast<int>(act_param.active_type)
+                   << static_cast<int>(act_param->active_type)
                    << " fuse not support";
     }
   } else {
@@ -840,7 +839,7 @@ inline bool write_to_output_c1_fp32(const float* din,
                                     int width,
                                     bool flag_relu,
                                     float* trash_ptr,
-                                    operators::ActivationParam act_param) {
+                                    operators::ActivationParam* act_param) {
   if (cs > channel) {
     return true;
   }
@@ -872,11 +871,10 @@ inline bool write_to_output_c1_fp32(const float* din,
       din_hei_ptr = ptr_din + offset;
       doutc0_ptr += w4 * cnt;
       int j = w4 * cnt;
-      bool has_active = act_param.has_active;
-      float six = act_param.Relu_clipped_coef;
-      float scale = act_param.Leaky_relu_alpha;
-      if (has_active) {
-        switch (act_param.active_type) {
+      if (act_param != nullptr && act_param->has_active) {
+        float six = act_param->Relu_clipped_coef;
+        float scale = act_param->Leaky_relu_alpha;
+        switch (act_param->active_type) {
           case lite_api::ActivationType::kRelu:
             for (; j < width; ++j) {
               *(doutc0_ptr++) = LITEMAX(din_hei_ptr[0], 0.f);
@@ -904,7 +902,7 @@ inline bool write_to_output_c1_fp32(const float* din,
             break;
           default:
             LOG(FATAL) << "this act_type: "
-                       << static_cast<int>(act_param.active_type)
+                       << static_cast<int>(act_param->active_type)
                        << " fuse not support";
         }
       } else {
@@ -994,12 +992,11 @@ inline void act_switch_c2_fp32(const float* din_ptr,
                                float* doutc0_ptr,
                                float* doutc1_ptr,
                                int cnt_loop,
-                               const operators::ActivationParam act_param) {
-  bool has_active = act_param.has_active;
-  if (has_active) {
-    float32x4_t six = vdupq_n_f32(act_param.Relu_clipped_coef);
-    float32x4_t scale = vdupq_n_f32(act_param.Leaky_relu_alpha);
-    switch (act_param.active_type) {
+                               const operators::ActivationParam* act_param) {
+  if (act_param != nullptr && act_param->has_active) {
+    float32x4_t six = vdupq_n_f32(act_param->Relu_clipped_coef);
+    float32x4_t scale = vdupq_n_f32(act_param->Leaky_relu_alpha);
+    switch (act_param->active_type) {
       case lite_api::ActivationType::kRelu:
 #ifdef __aarch64__
         asm volatile(NCHWC2_TRANS_FP32_COMPUTE NCHWC2_TRANS_FP32_RELU
@@ -1112,7 +1109,7 @@ inline void act_switch_c2_fp32(const float* din_ptr,
         break;
       default:
         LOG(FATAL) << "this act_type: "
-                   << static_cast<int>(act_param.active_type)
+                   << static_cast<int>(act_param->active_type)
                    << " fuse not support";
     }
   } else {
@@ -1151,7 +1148,7 @@ inline bool write_to_output_c2_fp32(const float* din,
                                     int width,
                                     bool flag_relu,
                                     float* trash_ptr,
-                                    operators::ActivationParam act_param) {
+                                    operators::ActivationParam* act_param) {
   if (cs > channel) {
     return true;
   }
@@ -1196,11 +1193,10 @@ inline bool write_to_output_c2_fp32(const float* din,
       doutc0_ptr += w4 * cnt;
       doutc1_ptr += w4 * cnt;
       int j = we - w4;
-      bool has_active = act_param.has_active;
-      if (has_active) {
-        float six = act_param.Relu_clipped_coef;
-        float scale = act_param.Leaky_relu_alpha;
-        switch (act_param.active_type) {
+      if (act_param != nullptr && act_param->has_active) {
+        float six = act_param->Relu_clipped_coef;
+        float scale = act_param->Leaky_relu_alpha;
+        switch (act_param->active_type) {
           case lite_api::ActivationType::kRelu:
             for (; j < width; ++j) {
               *(doutc0_ptr++) = LITEMAX(din_hei_ptr[0], 0.f);
@@ -1236,7 +1232,7 @@ inline bool write_to_output_c2_fp32(const float* din,
             break;
           default:
             LOG(FATAL) << "this act_type: "
-                       << static_cast<int>(act_param.active_type)
+                       << static_cast<int>(act_param->active_type)
                        << " fuse not support";
         }
       } else {
@@ -1361,12 +1357,11 @@ inline void act_switch_c4_fp32(const float* din_ptr,
                                float* doutc2_ptr,
                                float* doutc3_ptr,
                                int cnt_loop,
-                               const operators::ActivationParam act_param) {
-  bool has_active = act_param.has_active;
-  if (has_active) {
-    float32x4_t six = vdupq_n_f32(act_param.Relu_clipped_coef);
-    float32x4_t scale = vdupq_n_f32(act_param.Leaky_relu_alpha);
-    switch (act_param.active_type) {
+                               const operators::ActivationParam* act_param) {
+  if (act_param != nullptr && act_param->has_active) {
+    float32x4_t six = vdupq_n_f32(act_param->Relu_clipped_coef);
+    float32x4_t scale = vdupq_n_f32(act_param->Leaky_relu_alpha);
+    switch (act_param->active_type) {
       case lite_api::ActivationType::kRelu:
 #ifdef __aarch64__
         asm volatile(NCHWC4_TRANS_FP32_COMPUTE NCHWC4_TRANS_FP32_RELU
@@ -1515,7 +1510,7 @@ inline void act_switch_c4_fp32(const float* din_ptr,
         break;
       default:
         LOG(FATAL) << "this act_type: "
-                   << static_cast<int>(act_param.active_type)
+                   << static_cast<int>(act_param->active_type)
                    << " fuse not support";
     }
   } else {
@@ -1569,7 +1564,7 @@ inline bool write_to_output_c4_fp32(const float* din,
                                     int width,
                                     bool flag_relu,
                                     float* trash_ptr,
-                                    operators::ActivationParam act_param) {
+                                    operators::ActivationParam* act_param) {
   const int c4 = 4;
   const int w4 = 4;
   const int w_round = we - ws;
@@ -1630,11 +1625,10 @@ inline bool write_to_output_c4_fp32(const float* din,
       doutc2_ptr += w4 * cnt;
       doutc3_ptr += w4 * cnt;
       int j = we - w4;
-      bool has_active = act_param.has_active;
-      if (has_active) {
-        float six = act_param.Relu_clipped_coef;
-        float scale = act_param.Leaky_relu_alpha;
-        switch (act_param.active_type) {
+      if (act_param != nullptr && act_param->has_active) {
+        float six = act_param->Relu_clipped_coef;
+        float scale = act_param->Leaky_relu_alpha;
+        switch (act_param->active_type) {
           case lite_api::ActivationType::kRelu:
             for (; j < width; ++j) {
               *(doutc0_ptr++) = LITEMAX(din_hei_ptr[0], 0.f);
@@ -1686,7 +1680,7 @@ inline bool write_to_output_c4_fp32(const float* din,
             break;
           default:
             LOG(FATAL) << "this act_type: "
-                       << static_cast<int>(act_param.active_type)
+                       << static_cast<int>(act_param->active_type)
                        << " fuse not support";
         }
       } else {
@@ -1913,12 +1907,11 @@ inline void act_switch_c8_fp32(const float* din_ptr,
                                float* doutc6_ptr,
                                float* doutc7_ptr,
                                int cnt_loop,
-                               const operators::ActivationParam act_param) {
-  bool has_active = act_param.has_active;
-  if (has_active) {
-    float32x4_t six = vdupq_n_f32(act_param.Relu_clipped_coef);
-    float32x4_t scale = vdupq_n_f32(act_param.Leaky_relu_alpha);
-    switch (act_param.active_type) {
+                               const operators::ActivationParam* act_param) {
+  if (act_param != nullptr && act_param->has_active) {
+    float32x4_t six = vdupq_n_f32(act_param->Relu_clipped_coef);
+    float32x4_t scale = vdupq_n_f32(act_param->Leaky_relu_alpha);
+    switch (act_param->active_type) {
       case lite_api::ActivationType::kRelu:
 #ifdef __aarch64__
         asm volatile(NCHWC8_TRANS_FP32_COMPUTE NCHWC8_TRANS_FP32_RELU
@@ -2100,7 +2093,7 @@ inline void act_switch_c8_fp32(const float* din_ptr,
         break;
       default:
         LOG(FATAL) << "this act_type: "
-                   << static_cast<int>(act_param.active_type)
+                   << static_cast<int>(act_param->active_type)
                    << " fuse not support";
     }
   } else {
@@ -2174,7 +2167,7 @@ inline bool write_to_output_c8_fp32(const float* din,
                                     int width,
                                     bool flag_relu,
                                     float* trash_ptr,
-                                    operators::ActivationParam act_param) {
+                                    operators::ActivationParam* act_param) {
   if (ch_n != 8 || hei_n <= 0) {
     LOG(ERROR) << "ch_n must be equal 8 and hei_n is more than zero";
     return false;
@@ -2259,11 +2252,10 @@ inline bool write_to_output_c8_fp32(const float* din,
       doutc6_ptr += w4 * cnt;
       doutc7_ptr += w4 * cnt;
       int i = we - 4;
-      bool has_active = act_param.has_active;
-      if (has_active) {
-        float six = act_param.Relu_clipped_coef;
-        float scale = act_param.Leaky_relu_alpha;
-        switch (act_param.active_type) {
+      if (act_param != nullptr && act_param->has_active) {
+        float six = act_param->Relu_clipped_coef;
+        float scale = act_param->Leaky_relu_alpha;
+        switch (act_param->active_type) {
           case lite_api::ActivationType::kRelu:
             for (; i < width; ++i) {
               *(doutc0_ptr++) = LITEMAX(din_hei_ptr[0], 0.f);
@@ -2347,7 +2339,7 @@ inline bool write_to_output_c8_fp32(const float* din,
             break;
           default:
             LOG(FATAL) << "this act_type: "
-                       << static_cast<int>(act_param.active_type)
+                       << static_cast<int>(act_param->active_type)
                        << " fuse not support";
         }
       } else {

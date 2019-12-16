@@ -512,7 +512,7 @@ void conv_3x3s2_direct_fp32(const float* i_data,
                                 ow,
                                 flag_relu,
                                 ptr_write,
-                                act_param);
+                                &act_param);
       }
 
 #pragma omp parallel for num_threads(threads)
@@ -842,7 +842,7 @@ void conv_3x3s2_direct_fp32(const float* i_data,
                                 ow,
                                 flag_relu,
                                 ptr_write,
-                                act_param);
+                                &act_param);
       }
     }
   }

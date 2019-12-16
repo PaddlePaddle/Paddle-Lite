@@ -471,7 +471,7 @@ void conv_3x3s1_direct_fp32(const float* i_data,
                                 ow,
                                 flag_relu,
                                 ptr_write,
-                                act_param);
+                                &act_param);
       }
       const float* weight_remain_ptr = weights + c_round_down * w_stride;
 #pragma omp parallel for num_threads(threads)
@@ -783,7 +783,7 @@ void conv_3x3s1_direct_fp32(const float* i_data,
                                 ow,
                                 flag_relu,
                                 ptr_write,
-                                act_param);
+                                &act_param);
       }
     }
   }

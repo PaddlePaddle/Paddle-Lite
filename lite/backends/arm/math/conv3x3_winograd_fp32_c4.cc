@@ -282,7 +282,7 @@ void conv_compute_6x6_3x3(const float* input,
                                        trans_remain_tmp_data + i * 24,
                                        4,
                                        bias_value,
-                                       param.fuse_relu);
+                                       false);
             }
             write_to_output_c4_fp32(trans_remain_tmp_data,
                                     output_ptr,
@@ -297,7 +297,7 @@ void conv_compute_6x6_3x3(const float* input,
                                     wout,
                                     false,
                                     zero_ptr,
-                                    act_param);
+                                    &act_param);
           }
         } else {
           for (int ci = 0; ci < oc_4; ++ci) {
@@ -322,7 +322,7 @@ void conv_compute_6x6_3x3(const float* input,
                                        trans_remain_tmp_data + i * 24,
                                        4,
                                        bias_value,
-                                       param.fuse_relu);
+                                       false);
             }
             // copy to dest
             memset(trans_tmp_data, 0, 144 * sizeof(float));
@@ -344,7 +344,7 @@ void conv_compute_6x6_3x3(const float* input,
                                     wout,
                                     false,
                                     zero_ptr,
-                                    act_param);
+                                    &act_param);
           }
         }
       }
@@ -553,7 +553,7 @@ void conv_compute_2x2_3x3(const float* input,
                                      4,
                                      8,
                                      bias_value,
-                                     param.fuse_relu);
+                                     false);
             write_to_output_c4_fp32(trans_remain_tmp_data,
                                     output_ptr,
                                     ci * 4,
@@ -567,7 +567,7 @@ void conv_compute_2x2_3x3(const float* input,
                                     wout,
                                     false,
                                     zero_ptr,
-                                    act_param);
+                                    &act_param);
           }
         } else {
           for (int ci = 0; ci < oc_4; ++ci) {
@@ -587,7 +587,7 @@ void conv_compute_2x2_3x3(const float* input,
                                      4,
                                      8,
                                      bias_value,
-                                     param.fuse_relu);
+                                     false);
             // copy to dest
             memset(trans_tmp_data, 0, 16 * sizeof(float));
             for (int i = 0; i < ey; ++i) {
@@ -608,7 +608,7 @@ void conv_compute_2x2_3x3(const float* input,
                                     wout,
                                     false,
                                     zero_ptr,
-                                    act_param);
+                                    &act_param);
           }
         }
       }
@@ -808,7 +808,7 @@ void conv_compute_2x2_3x3_small(const float* input,
                                      4,
                                      8,
                                      bias_value,
-                                     param.fuse_relu);
+                                     false);
             write_to_output_c4_fp32(trans_remain_tmp_data,
                                     output_ptr,
                                     ci * 4,
@@ -822,7 +822,7 @@ void conv_compute_2x2_3x3_small(const float* input,
                                     wout,
                                     false,
                                     zero_ptr,
-                                    act_param);
+                                    &act_param);
           }
         } else {
           for (int ci = 0; ci < oc_4; ++ci) {
@@ -842,7 +842,7 @@ void conv_compute_2x2_3x3_small(const float* input,
                                      4,
                                      8,
                                      bias_value,
-                                     param.fuse_relu);
+                                     false);
             // copy to dest
             memset(trans_tmp_data, 0, 16 * sizeof(float));
             for (int i = 0; i < ey; ++i) {
@@ -863,7 +863,7 @@ void conv_compute_2x2_3x3_small(const float* input,
                                     wout,
                                     false,
                                     zero_ptr,
-                                    act_param);
+                                    &act_param);
           }
         }
       }
